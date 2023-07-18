@@ -263,45 +263,57 @@ findImageNameIndex(int argc, const char** argv) {
 }
 
 static VMErrorCode
-splitVMAndImageParameters(int argc, const char** argv, VMParameters* parameters) {
-    VMErrorCode error;
-    int imageNameIndex = findImageNameIndex(argc, argv);
-    int numberOfVMParameters = imageNameIndex;
-    int numberOfImageParameters = argc - imageNameIndex - 1;
+fillUpImageName(int argc, const char** argv, VMParameters* parameters){
+	
+	VMErrorCode error;
+		
+	int imageNameIndex = findImageNameIndex(argc, argv);
 
-    if (numberOfImageParameters < 0)
-        numberOfImageParameters = 0;
+	// We get the image file name
+	if(imageNameIndex != argc && strcmp("--", argv[imageNameIndex]) != 0) {
+		parameters->imageFileName = strdup(argv[imageNameIndex]);
+		parameters->isDefaultImage = false;
+		parameters->isInteractiveSession = false;		
+	}
 
-    if (parameters->imageFileName == NULL) {
-        // We get the image file name
-        if (imageNameIndex == argc || strcmp("--", argv[imageNameIndex]) == 0) {
-            error = vm_find_startup_image(argv[0], parameters);
-            if (error) {
-                return error;
-            }
-        } else {
-            parameters->imageFileName = strdup(argv[imageNameIndex]);
-            parameters->isDefaultImage = false;
-        }
+	return VM_SUCCESS;
+}
 
-        // Is this an interactive environment?
-        parameters->isInteractiveSession = !isInConsole() && parameters->isDefaultImage;
-    }
+static VMErrorCode
+splitVMAndImageParameters(int argc, const char** argv, VMParameters* parameters)
+{
+	VMErrorCode error;
+	int imageNameIndex = findImageNameIndex(argc, argv);
+	int numberOfVMParameters = imageNameIndex;
+	int numberOfImageParameters = argc - imageNameIndex - 1;
 
-    // Copy image parameters.
-    error = vm_parameter_vector_insert_from(&parameters->imageParameters, numberOfImageParameters,
-                                            &argv[imageNameIndex + 1]);
-    if (error) {
-        vm_parameters_destroy(parameters);
-        return error;
-    }
+	//If we still have an empty image file, we try the default
+	if(parameters->imageFileName == NULL){
+		error = vm_find_startup_image(argv[0], parameters);
+		if(error) return error;
+		
+		// Is this an interactive environment?
+		parameters->isInteractiveSession = !isInConsole() && parameters->isDefaultImage;		
+	}
 
-    // Copy the VM parameters.
-    error = vm_parameter_vector_insert_from(&parameters->vmParameters, numberOfVMParameters, argv);
-    if (error) {
-        vm_parameters_destroy(parameters);
-        return error;
-    }
+	if(numberOfImageParameters < 0)
+		numberOfImageParameters = 0;
+
+	// Copy image parameters.
+	error = vm_parameter_vector_insert_from(&parameters->imageParameters, numberOfImageParameters, &argv[imageNameIndex + 1]);
+	if(error)
+	{
+		vm_parameters_destroy(parameters);
+		return error;
+	}
+
+	// Copy the VM parameters.
+	error = vm_parameter_vector_insert_from(&parameters->vmParameters, numberOfVMParameters, argv);
+	if(error) {
+		vm_parameters_destroy(parameters);
+		return error;
+	}
+
 
 #if !ALWAYS_INTERACTIVE
     // Add additional VM parameters.
@@ -639,9 +651,14 @@ vm_parameters_parse(int argc, const char** argv, VMParameters* parameters) {
     fillParametersFromPList(parameters);
 #endif
 
-    // Split the argument vector in two separate vectors.
-    VMErrorCode error = splitVMAndImageParameters(argc, argv, parameters);
-    if (error) return error;
+	//We read the arguments from the command line, and override whatever is set before
+	VMErrorCode error = fillUpImageName(argc, argv, parameters);
+	if(error) return error;	
+
+	// Split the argument vector in two separate vectors (If there is no Image, it gives a default one).
+	error = splitVMAndImageParameters(argc, argv, parameters);
+	if(error) return error;
+
 
     // I get the VM location from the argv[0]
     char* fullPathBuffer = (char*) calloc(1, FILENAME_MAX);

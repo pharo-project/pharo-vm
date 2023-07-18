@@ -6138,31 +6138,6 @@ StackInterpreter >> findSPOrNilOf: theFP on: thePage startingFrom: startFrame [
 ]
 
 { #category : #'debug support' }
-StackInterpreter >> findSelectorAndClassForMethod: meth lookupClass: startClass do: binaryBlock [
-	"Search startClass' class hierarchy searching for method and if found, evaluate aBinaryBlock
-	 with the selector and class where the method is found.  Otherwise evaluate aBinaryBlock
-	 with doesNotUnderstand: and nil."
-	| currClass classDict classDictSize methodArray i |
-	currClass := startClass.
-	[classDict := objectMemory fetchPointer: MethodDictionaryIndex ofObject: currClass.
-	 classDictSize := objectMemory numSlotsOf: classDict.
-	 classDictSize > MethodArrayIndex ifTrue:
-		[methodArray := objectMemory fetchPointer: MethodArrayIndex ofObject: classDict.
-		 i := 0.
-		 [i <= (classDictSize - SelectorStart)] whileTrue:
-			[meth = (objectMemory fetchPointer: i ofObject: methodArray) ifTrue:
-				[^binaryBlock
-					value: (objectMemory fetchPointer: i + SelectorStart ofObject: classDict)
-					value: currClass].
-				i := i + 1]].
-	 currClass := self superclassOf: currClass.
-	 currClass = objectMemory nilObject] whileFalse.
-	^binaryBlock    "method not found in superclass chain"
-		value: (objectMemory splObj: SelectorDoesNotUnderstand)
-		value: nil
-]
-
-{ #category : #'debug support' }
 StackInterpreter >> findSelectorOfMethod: meth [
 	| classObj classDict classDictSize methodArray i |
 	(objectMemory addressCouldBeObj: meth) ifFalse:
@@ -8956,7 +8931,7 @@ StackInterpreter >> lookupMethodFor: selector InDictionary: dictionary [
 
 { #category : #'message sending' }
 StackInterpreter >> lookupMethodInClass: class [
-	| currentClass dictionary found |
+	| currentClass superClass dictionary found |
 	<inline: false>
 	self assert: (self addressCouldBeClassObj: class).
 	self lookupBreakFor: class.
@@ -8965,11 +8940,14 @@ StackInterpreter >> lookupMethodInClass: class [
 		[dictionary := objectMemory followObjField: MethodDictionaryIndex ofObject: currentClass.
 		dictionary = objectMemory nilObject ifTrue:
 			["MethodDict pointer is nil (hopefully due a swapped out stub)
-				-- raise exception #cannotInterpret:."
+				-- send #cannotInterpret: from the superclass."
 			self createActualMessageTo: class.
 			messageSelector := objectMemory splObj: SelectorCannotInterpret.
 			self sendBreakpoint: messageSelector receiver: nil.
-			^self lookupMethodInClass: (self superclassOf: currentClass)].
+			superClass := self superclassOf: currentClass.
+			superClass = objectMemory nilObject ifTrue: [
+				self error: 'cannotInterpret: cannot be send without a superclass' ].
+			^self lookupMethodInClass: superClass ].
 		found := self lookupMethodInDictionary: dictionary.
 		found ifTrue: [^currentClass].
 		currentClass := self superclassOf: currentClass].
