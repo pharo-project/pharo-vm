@@ -11697,7 +11697,7 @@ SpurMemoryManager >> setFreeOldSpaceStart: newFreeOldSpaceStart [
 SpurMemoryManager >> setGarbageCollectorType: type [
 
 	<api>
-	gcType := type
+	GCType := type
 ]
 
 { #category : #'header access' }
