@@ -5127,7 +5127,7 @@ VMPrimitiveTest >> testPrimitiveVMParameterGetsGarbageCollectorType [
 	memory setGarbageCollectorType: 3.
 
 	interpreter push: memory nilObject.
-	interpreter push: (memory integerObjectOf: 80).
+	interpreter push: (memory integerObjectOf: 86).
 
 	interpreter argumentCount: 1.
 	interpreter primitiveVMParameter.

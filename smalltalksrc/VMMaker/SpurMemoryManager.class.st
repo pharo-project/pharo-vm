@@ -619,7 +619,7 @@ Class {
 		'fromOldSpaceRememberedSet',
 		'fromPermToOldSpaceRememberedSet',
 		'fromPermToNewSpaceRememberedSet',
-        'garbageCollectorType'
+		'garbageCollectorType'
 	],
 	#classVars : [
 		'BitsPerByte',
@@ -5907,6 +5907,11 @@ SpurMemoryManager >> garbageCollectForSnapshot [
 	compactor biasForGC.
 	segmentManager prepareForSnapshot.
 	self checkFreeSpace: GCModeFull
+]
+
+{ #category : #'gc - global' }
+SpurMemoryManager >> garbageCollectorType [
+	^garbageCollectorType 
 ]
 
 { #category : #accessing }
@@ -11628,6 +11633,11 @@ SpurMemoryManager >> setFormatOf: objOop to: format [
 SpurMemoryManager >> setFreeOldSpaceStart: newFreeOldSpaceStart [
 	"Set by the segment manager on parsing the image."
 	freeOldSpaceStart := newFreeOldSpaceStart
+]
+
+{ #category : #'gc - global' }
+SpurMemoryManager >> setGarbageCollectorType: aGCType [
+	garbageCollectorType := aGCType 
 ]
 
 { #category : #'header access' }
