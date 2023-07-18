@@ -11637,7 +11637,9 @@ SpurMemoryManager >> setFreeOldSpaceStart: newFreeOldSpaceStart [
 
 { #category : #'gc - global' }
 SpurMemoryManager >> setGarbageCollectorType: aGCType [
-	garbageCollectorType := aGCType 
+
+	<api>
+	garbageCollectorType := aGCType
 ]
 
 { #category : #'header access' }
