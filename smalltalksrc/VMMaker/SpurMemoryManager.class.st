@@ -619,8 +619,7 @@ Class {
 		'fromPermToOldSpaceRememberedSet',
 		'fromPermToNewSpaceRememberedSet',
 		'gcType',
-		'planningCompactor',
-		'sweepCompactor'
+		'planningCompactor'
 	],
 	#classVars : [
 		'BitsPerByte',
@@ -723,31 +722,40 @@ SpurMemoryManager class >> compactorClass [
 
 { #category : #translation }
 SpurMemoryManager class >> declareCVarsIn: aCCodeGenerator [
-	self declareCAsOop: #(freeStart scavengeThreshold pastSpaceStart
-							lowSpaceThreshold freeOldSpaceStart)
+
+	self
+		declareCAsOop:
+			#( freeStart scavengeThreshold pastSpaceStart lowSpaceThreshold
+			   freeOldSpaceStart )
 		in: aCCodeGenerator.
-	self declareCAsUSqLong: (self allInstVarNames select: [:ivn| ivn endsWith: 'Usecs']), #(statAllocatedBytes)
+	self
+		declareCAsUSqLong:
+			(self allInstVarNames select: [ :ivn | ivn endsWith: 'Usecs' ])
+			, #( statAllocatedBytes )
 		in: aCCodeGenerator.
 	aCCodeGenerator
 		var: #freeListsMask type: #usqInt;
 		var: #freeLists type: #'sqInt *';
-		var: #unscannedEphemeronsQueueInitialSize declareC: 'int unscannedEphemeronsQueueInitialSize = 10000; /* 10k ephemerons by default */';
+		var: #unscannedEphemeronsQueueInitialSize
+		declareC:
+			'int unscannedEphemeronsQueueInitialSize = 10000; /* 10k ephemerons by default */';
 		var: #objStackInvalidBecause type: #'char *';
 		var: #unscannedEphemerons type: #SpurContiguousObjStack;
 		var: #heapGrowthToSizeGCRatio type: #float;
 		var: #heapSizeAtPreviousGC type: #usqInt;
 		var: #totalFreeOldSpace type: #usqInt;
 		var: #maxOldSpaceSize type: #usqInt.
-	aCCodeGenerator
-		var: #oldSpaceUsePriorToScavenge type: #sqLong.
+	aCCodeGenerator var: #oldSpaceUsePriorToScavenge type: #sqLong.
 	aCCodeGenerator
 		var: #remapBuffer
-		declareC: 'sqInt remapBuffer[RemapBufferSize + 1 /* ', (RemapBufferSize + 1) printString, ' */]'.
+		declareC: 'sqInt remapBuffer[RemapBufferSize + 1 /* '
+			, (RemapBufferSize + 1) printString , ' */]'.
 	aCCodeGenerator
 		var: #extraRoots
-		declareC: 'sqInt *extraRoots[ExtraRootsSize + 1 /* ', (ExtraRootsSize + 1) printString, ' */]'.
-		
-	aCCodeGenerator 
+		declareC: 'sqInt *extraRoots[ExtraRootsSize + 1 /* '
+			, (ExtraRootsSize + 1) printString , ' */]'.
+
+	aCCodeGenerator
 		var: #memoryMap type: #'VMMemoryMap *';
 		var: #fromOldSpaceRememberedSet type: #'VMRememberedSet *';
 		var: #fromPermToOldSpaceRememberedSet type: #'VMRememberedSet *';
@@ -755,18 +763,15 @@ SpurMemoryManager class >> declareCVarsIn: aCCodeGenerator [
 
 	aCCodeGenerator
 		resolvePolymorphicReceiver: #compactor
-		usingAsVariableType: 'gcType'
+		usingAsVariableType: #gcType
 		to: {
-			SpurPlanningCompactor.
-			SpurSweeper.
-		}.	
+				SpurPlanningCompactor.
+				SpurSweeper.
+				"SpurSelectiveCompactor" }.
 
 	aCCodeGenerator
 		staticallyResolvedPolymorphicReceiver: 'planningCompactor'
-		to: SpurPlanningCompactor;
-		staticallyResolvedPolymorphicReceiver: 'sweepCompactor'
-		to: SpurSweeper "SpurSelectiveCompactor"
-
+		to: SpurPlanningCompactor
 ]
 
 { #category : #translation }
@@ -1991,9 +1996,6 @@ SpurMemoryManager >> allocateMemoryOfSize: memoryBytes newSpaceSize: newSpaceByt
 		             yourself.
 		
 	planningCompactor := SpurPlanningCompactor simulatorClass new
-		             manager: self;
-		             yourself.
-	 sweepCompactor := SpurSweeper simulatorClass new
 		             manager: self;
 		             yourself.
 	
@@ -5936,18 +5938,10 @@ SpurMemoryManager >> fullGCLock [
 SpurMemoryManager >> garbageCollectForSnapshot [
 	self flushNewSpace. "There is no place to put newSpace in the snapshot file."
 	self flag: 'If we wanted to shrink the rememberedSet prior to snapshot this is the place to do it.'.
-	gcType caseOf: { 
-		[ 0 ] -> [ planningCompactor biasForSnapshot ].
-		[ 1 ] -> [ sweepCompactor biasForSnapshot ].
-	 }.
 
-	
+	compactor biasForSnapshot.	
 	self fullGC.
-
-	gcType caseOf: { 
-		[ 0 ] -> [ planningCompactor biasForGC ].
-		[ 1 ] -> [ sweepCompactor biasForGC ].
-	 }.
+	compactor biasForGC.
 
 	segmentManager prepareForSnapshot.
 	self checkFreeSpace: GCModeFull
@@ -6045,10 +6039,7 @@ SpurMemoryManager >> globalGarbageCollect [
 	compactionStartUsecs := coInterpreter ioUTCMicrosecondsNow.
 	segmentManager prepareForGlobalSweep. "for notePinned:"
 	
-	gcType caseOf: { 
-		[ 0 ] -> [ planningCompactor compact ].
-		[ 1 ] -> [ sweepCompactor compact ].
-	 }.
+	compactor compact.
 	
 	self attemptToShrink.
 	self setHeapSizeAtPreviousGC.
@@ -6826,11 +6817,8 @@ SpurMemoryManager >> initializeObjectMemory: bytesToShift [
 	
 	segmentManager checkSegments.
 	
-	gcType caseOf: { 
-		[ 0 ] -> [ planningCompactor biasForGC ].
-		[ 1 ] -> [ sweepCompactor biasForGC ].
-	 }.
-
+	compactor biasForGC.
+	
 	"These defaults should depend on machine size; e.g. too small on a powerful laptop, too big on a Pi."
 	growHeadroom := 16*1024*1024.		"headroom when growing"
 	shrinkThreshold := 32*1024*1024.		"free space before shrinking"
@@ -11336,7 +11324,7 @@ SpurMemoryManager >> remapObj: objOop [
 	<api>
 	"Polymorphic call: this will be translated as a switch-case statement.
 	Inlining this method is not allowed."
-	<inline: #never> 
+	<inline: false> 
 	^ compactor remapObjCompactor: objOop
 ]
 
@@ -11889,11 +11877,10 @@ SpurMemoryManager >> shouldRemapObj: objOop [
 	 shouldRemapObj: for compatibility with ObjectMemory.  Defer to the compactor
 	 to choose the actual test, there being a difference between the vanilla test and
 	 that used with a sliding compactor where objects are not marked as forwarded."
+
 	<api>
-	gcType caseOf: { 
-		[ 0 ] -> [ ^ planningCompactor shouldRemapObjCompactor: objOop ].
-		[ 1 ] -> [ ^ sweepCompactor shouldRemapObjCompactor: objOop ].
-	 }.
+	<inline: false>
+	^ compactor shouldRemapObjCompactor: objOop
 ]
 
 { #category : #'gc - scavenge/compact' }
