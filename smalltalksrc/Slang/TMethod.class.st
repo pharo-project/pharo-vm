@@ -2257,9 +2257,14 @@ TMethod >> prepareMethodIn: aCodeGen [
 		pushScope: self
 		while:"N.B.  nodesWithParentsDo: is bottom-up, hence replacement is destructive and conserved."
 			[parseTree nodesWithParentsDo:
-				[:node :parent|
+				[:currentNode :parent| | node |
+				 node := currentNode.
+				node isSend ifTrue: [ 
+					node := aCodeGen ifStaticallyResolvedPolymorphicReceiverThenUpdateSelectorIn: node.
+					currentNode = node ifFalse: [ parent replaceNodesIn: (Dictionary newFromPairs: { currentNode. node }) ].
+				].
 				 node isSend ifTrue:
-					[aCodeGen ifStaticallyResolvedPolymorphicReceiverThenUpdateSelectorIn: node.
+					[
 					 (aCodeGen isBuiltinSelector: node selector)
 						ifTrue:
 							[node isBuiltinOperator: true.

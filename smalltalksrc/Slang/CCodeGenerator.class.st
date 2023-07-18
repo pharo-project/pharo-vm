@@ -481,6 +481,20 @@ CCodeGenerator >> arrayInitializerCalled: varName for: array sizeString: sizeStr
 				 s crtab; nextPut: $}]]
 ]
 
+{ #category : #converting }
+CCodeGenerator >> asPolymorphicCall: aSendNode withDescriptor: descriptor [
+
+	| variableToTest possibleClasses |
+	variableToTest := descriptor first.
+	possibleClasses := descriptor allButFirst.
+
+	^ TCaseStmtNode
+		  newWithExpression: (TVariableNode named: variableToTest)
+		  selectors: (possibleClasses collect: [ :class |
+				   class staticallyResolvePolymorphicSelector: aSendNode selector ])
+		  arguments: aSendNode arguments
+]
+
 { #category : #utilities }
 CCodeGenerator >> asmLabelNodeFor: selector [
 	| count label |
@@ -3031,14 +3045,24 @@ CCodeGenerator >> ifStaticallyResolvedPolymorphicReceiverThenUpdateSelectorIn: a
 	 prefixed with a given string to disambiguate. This hack allows us to use two different
 	 compaction algorithms with the same API at the same time; the selection being done
 	 by a class which holds the flag stating which algorithm is in effect at the current time."
-	| class |
-	staticallyResolvedPolymorphicReceivers ifNil: [^self].
-	aSendNode receiver isVariable ifFalse:
-		[^self].
-	class := staticallyResolvedPolymorphicReceivers
-				at: aSendNode receiver name
-				ifAbsent: [^self].
-	aSendNode selector: (class staticallyResolvePolymorphicSelector: aSendNode selector)
+
+	| staticallyClassOrPolymorphicDescriptor |
+	staticallyResolvedPolymorphicReceivers ifNil: [ ^ aSendNode ].
+	aSendNode receiver isVariable ifFalse: [ ^ aSendNode ].
+
+	staticallyClassOrPolymorphicDescriptor := staticallyResolvedPolymorphicReceivers
+		                                          at:
+		                                          aSendNode receiver name
+		                                          ifAbsent: [ ^ aSendNode ].
+
+	^ staticallyClassOrPolymorphicDescriptor isCollection
+		  ifTrue: [ "Transform into a switch-case"
+			  self
+				  asPolymorphicCall: aSendNode
+				  withDescriptor: staticallyClassOrPolymorphicDescriptor ]
+		  ifFalse: [
+			  aSendNode selector: (staticallyClassOrPolymorphicDescriptor
+					   staticallyResolvePolymorphicSelector: aSendNode selector) ]
 ]
 
 { #category : #'type inference' }
@@ -4453,6 +4477,14 @@ CCodeGenerator >> reservedWords [
 	^ self class reservedWords
 ]
 
+{ #category : #public }
+CCodeGenerator >> resolvePolymorphicReceiver: polymorphicVariable usingAsVariableType: typeVariable to: classes [
+
+	self staticallyResolvedPolymorphicReceivers
+		at: polymorphicVariable
+		put: { typeVariable } , classes
+]
+
 { #category : #inlining }
 CCodeGenerator >> retainMethods: aListOfSelectorsToKeep [
 	"add aListOfSelectorsToKeep to requiredSelectors so that they will not be pruned"
@@ -4809,9 +4841,16 @@ CCodeGenerator >> staticallyResolvedPolymorphicReceiver: variableName to: aClass
 	 prefixed with a given string to disambiguate. This hack allows us to use two different
 	 compaction algorithms with the same API at the same time; the selection being done
 	 by a class which holds the flag stating which algorithm is in effect at the current time."
-	(staticallyResolvedPolymorphicReceivers ifNil: [staticallyResolvedPolymorphicReceivers := Dictionary new])
+
+	self staticallyResolvedPolymorphicReceivers
 		at: variableName
 		put: aClass
+]
+
+{ #category : #accessing }
+CCodeGenerator >> staticallyResolvedPolymorphicReceivers [
+
+	^ staticallyResolvedPolymorphicReceivers ifNil: [staticallyResolvedPolymorphicReceivers := Dictionary new]
 ]
 
 { #category : #'C translation support' }

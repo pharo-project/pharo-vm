@@ -754,10 +754,18 @@ SpurMemoryManager class >> declareCVarsIn: aCCodeGenerator [
 		var: #fromPermToNewSpaceRememberedSet type: #'VMRememberedSet *'.
 
 	aCCodeGenerator
+		resolvePolymorphicReceiver: #compactor
+		usingAsVariableType: 'gcType'
+		to: {
+			SpurPlanningCompactor.
+			SpurSweeper.
+		}.	
+
+	aCCodeGenerator
 		staticallyResolvedPolymorphicReceiver: 'planningCompactor'
 		to: SpurPlanningCompactor;
 		staticallyResolvedPolymorphicReceiver: 'sweepCompactor'
-		to: SpurSweeper "SpurSelectiveCompactor" "The selector mangling is easier this way"
+		to: SpurSweeper "SpurSelectiveCompactor"
 
 ]
 
@@ -6631,9 +6639,7 @@ SpurMemoryManager >> initialize [
 	"N.B. We *don't* initialize extraRoots because we don't simulate it."
 	maxOldSpaceSize := self class initializationOptions
 							ifNotNil: [:initOpts| initOpts at: #maxOldSpaceSize ifAbsent: [0]]
-							ifNil: [0].
-	
-	gcType := GCType
+							ifNil: [0]
 ]
 
 { #category : #bootstrap }
@@ -6768,9 +6774,7 @@ SpurMemoryManager >> initializeObjectMemory: bytesToShift [
 	"Catch mis-initializations leading to bad translations to C"
 	self assert: self baseHeaderSize = self baseHeaderSize.
 	self assert: (self maxSlotsForAlloc * self wordSize) asInteger > 0.
-	
-	gcType := GCType.
-	
+		
 	self bootstrapping ifFalse:
 		[self
 			initSegmentBridgeWithBytes: self bridgeSize
@@ -11307,11 +11311,6 @@ SpurMemoryManager >> relocateObjStacksForPlanningCompactor [
 	mournQueue := self relocateObjStackForPlanningCompactor: mournQueue
 ]
 
-{ #category : #'gc - global' }
-SpurMemoryManager >> remap: oop [
-	self shouldNotImplement
-]
-
 { #category : #'interpreter access' }
 SpurMemoryManager >> remapBuffer [
 	"We support this excessence for compatibility with ObjectMemory.
@@ -11333,12 +11332,12 @@ SpurMemoryManager >> remapObj: objOop [
 	 Defer to the compactor to choose the actual method, there being a
 	 difference between the vanilla method and that used with a sliding
 	 compactor where objects are not marked as forwarded."
+
 	<api>
-	gcType caseOf: { 
-		[ 0 ] -> [ ^ planningCompactor remapObjCompactor: objOop ].
-		[ 1 ] -> [ ^ sweepCompactor remapObjCompactor: objOop ].
-	 }.
- 
+	"Polymorphic call: this will be translated as a switch-case statement.
+	Inlining this method is not allowed."
+	<inline: #never> 
+	^ compactor remapObjCompactor: objOop
 ]
 
 { #category : #'object access' }
@@ -11697,7 +11696,7 @@ SpurMemoryManager >> setFreeOldSpaceStart: newFreeOldSpaceStart [
 SpurMemoryManager >> setGarbageCollectorType: type [
 
 	<api>
-	GCType := type
+	gcType := type
 ]
 
 { #category : #'header access' }
