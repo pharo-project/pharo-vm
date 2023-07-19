@@ -5382,21 +5382,23 @@ StackInterpreter >> extSendSuperBytecode [
 		ExtendB < 64
 			ifTrue: [Send To Superclass Literal Selector #iiiii (+ Extend A * 32) with jjj (+ Extend B * 8) Arguments]
 			ifFalse: [Send To Superclass of Stacked Class Literal Selector #iiiii (+ Extend A * 32) with jjj (+ (Extend B bitAnd: 63) * 8) Arguments]"
-	| byte |
 	<compilationInfo: #isMapped>
+
+	| byte selectorIndex numArgs |
 	byte := self fetchByte.
-	messageSelector := self literal: (byte >> 3) + (extA << 5).
+	selectorIndex := byte >> 3 + (extA << 5).
 	extA := 0.
-	BytecodeSetHasDirectedSuperSend ifTrue:
-		[extB >= 64 ifTrue:
-			[argumentCount := (byte bitAnd: 7) + (extB - 64 << 3).
-			 extB := 0.
-			 numExtB := 0.
-			 ^self directedSuperclassSend]].
-	argumentCount := (byte bitAnd: 7) + (extB << 3).
+	BytecodeSetHasDirectedSuperSend ifTrue: [
+		extB >= 64 ifTrue: [
+			numArgs := (byte bitAnd: 7) + (extB - 64 << 3).
+			extB := 0.
+			numExtB := 0.
+			^ self sendDirectSuper: selectorIndex numArgs: numArgs. ] ].
+	numArgs := (byte bitAnd: 7) + (extB << 3).
 	extB := 0.
 	numExtB := 0.
-	self superclassSend
+	self sendSuper: selectorIndex numArgs: numArgs.
+
 ]
 
 { #category : #'stack bytecodes' }
@@ -13240,6 +13242,14 @@ StackInterpreter >> sendCannotReturn: resultOop [
 ]
 
 { #category : #'send bytecodes' }
+StackInterpreter >> sendDirectSuper: selectorIndex numArgs: numArgs [
+
+	messageSelector := self literal: selectorIndex.
+	argumentCount := numArgs.
+	self directedSuperclassSend
+]
+
+{ #category : #'send bytecodes' }
 StackInterpreter >> sendLiteralSelector0ArgsBytecode [
 	"Can use any of the first 16 literals for the selector."
 
@@ -13267,6 +13277,14 @@ StackInterpreter >> sendLiteralSelector2ArgsBytecode [
 	self
 		normalLiteralSelectorAt: (currentBytecode bitAnd: 16rF)
 		argumentCount: 2
+]
+
+{ #category : #'send bytecodes' }
+StackInterpreter >> sendSuper: selectorIndex numArgs: numArgs [
+
+	messageSelector := self literal: selectorIndex.
+	argumentCount := numArgs.
+	self superclassSend
 ]
 
 { #category : #'debug support' }

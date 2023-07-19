@@ -223,9 +223,9 @@ Spur32BitCoMemoryManager >> receiverTagBitsForMethod: aMethodObj [
 	<api>
 	| methodClassOrNil |
 	methodClassOrNil := coInterpreter methodClassOf: aMethodObj.
-	(methodClassOrNil = nilObj
-			 or: [(self instSpecOfClass: methodClassOrNil) ~= self forwardedFormat]) ifTrue:
-				[^0].
+	(methodClassOrNil = nilObj or: [(self isImmediateClass: methodClassOrNil) not]) ifTrue:
+		[^0].
+	"Method class is immediate"
 	^methodClassOrNil = (self fetchPointer: self smallIntegerTag ofObject: classTableFirstPage)
 		ifTrue: [self smallIntegerTag]
 		ifFalse: [self assert: methodClassOrNil = (self fetchPointer: self characterTag ofObject: classTableFirstPage).
