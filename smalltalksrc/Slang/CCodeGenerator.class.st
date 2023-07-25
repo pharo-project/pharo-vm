@@ -4445,7 +4445,7 @@ CCodeGenerator >> renameConflictingMethods [
 	| cFunctionNames toRename |
 	cFunctionNames := IdentityDictionary new.
 
-	methods do: [ :m |
+	methods reject: [ :m | m isStructAccessor ] thenDo: [ :m |
 		| functionName conflicts |
 		functionName := self cFunctionNameFor: m selector.
 
@@ -4455,22 +4455,15 @@ CCodeGenerator >> renameConflictingMethods [
 
 	toRename := cFunctionNames select: [ :conflicts | conflicts size > 1 ].
 
-	toRename keysDo: [ :key |
-		| conflictingMethods |
-		conflictingMethods := toRename at: key.
-
-		"api methods cannot be renamed"
-		(conflictingMethods select: [ :m | m isAPIMethod ]) size > 1
-			ifTrue: [
+	toRename keysAndValuesDo: [ :key :conflictingMethods |
+		conflictingMethods do: [ :method |
+			method isAPIMethod ifTrue: [ "api methods cannot be renamed"
 				TranslationError signal:
 					'Conflicting API methods would be translated to "' , key , '"' ].
 
-
-		(conflictingMethods reject: [ :m | m isAPIMethod ]) do: [ :method |
-			method isStructAccessor ifFalse: [
-				self
-					addSelectorTranslation: method selector
-					to: key , method args size asString ] ] ]
+			self
+				addSelectorTranslation: method selector
+				to: key , method args size asString ] ]
 ]
 
 { #category : #renaming }

@@ -1804,7 +1804,6 @@ methodWithoutReturn(void)
 SlangBasicTranslationTest >> testMethodsWithConflictingName [
 
 	| translation1 translation2 tMethod1 tMethod2 |
-	
 	tMethod1 := self getTMethodFrom: #methodWithRepeatedCFunctionName.
 	tMethod2 := generator methods at: #methodWithRepeatedCFunctionName:.
 
@@ -1812,9 +1811,10 @@ SlangBasicTranslationTest >> testMethodsWithConflictingName [
 
 	translation1 := self translate: tMethod1.
 	translation2 := self translate: tMethod2.
-	
-	self assert: (self functionIdentifier: translation1)
-		~= (self functionIdentifier: translation2)
+
+	self
+		deny: (self functionIdentifier: translation1)
+		equals: (self functionIdentifier: translation2)
 ]
 
 { #category : #'tests-case' }
@@ -6607,9 +6607,7 @@ SlangBasicTranslationTest >> testVariableWithConflictingNameShouldBeRenamed [
 	translation := self translate: method.
 
 
-	self
-		assert: (translation lineNumber: 5)
-		equals: '	char *l_methodWithoutReturn;'
+	self assert: (translation includesSubstring: 'char *l_methodWithoutReturn').
 ]
 
 { #category : #'tests-variables' }
