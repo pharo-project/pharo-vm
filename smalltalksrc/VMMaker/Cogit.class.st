@@ -204,12 +204,9 @@ Class {
 		'ceEnterCogCodePopReceiverReg',
 		'ceCallCogCodePopReceiverReg',
 		'ceCallCogCodePopReceiverAndClassRegs',
-		'cePrimReturnEnterCogCode',
-		'cePrimReturnEnterCogCodeProfiling',
 		'ceNonLocalReturnTrampoline',
 		'ceFetchContextInstVarTrampoline',
 		'ceStoreContextInstVarTrampoline',
-		'ceEnclosingObjectTrampoline',
 		'ceFlushICache',
 		'ceCheckFeaturesFunction',
 		'ceTraceLinkedSendTrampoline',
@@ -222,9 +219,6 @@ Class {
 		'superSendTrampolines',
 		'directedSuperSendTrampolines',
 		'directedSuperBindingSendTrampolines',
-		'dynamicSuperSendTrampolines',
-		'outerSendTrampolines',
-		'selfSendTrampolines',
 		'firstSend',
 		'lastSend',
 		'realCEEnterCogCodePopReceiverReg',
@@ -242,13 +236,8 @@ Class {
 		'extB',
 		'numExtB',
 		'tempOop',
-		'numIRCs',
-		'indexOfIRC',
-		'theIRCs',
 		'receiverTags',
-		'implicitReceiverSendTrampolines',
 		'cogMethodSurrogateClass',
-		'cogBlockMethodSurrogateClass',
 		'CStackPointer',
 		'CFramePointer',
 		'cPICPrototype',
@@ -266,7 +255,9 @@ Class {
 		'statCompileFullBlockUsecs',
 		'statCompileMethodCount',
 		'statCompileMethodUsecs',
-		'jitCodeZoneWriteEnabled'
+		'jitCodeZoneWriteEnabled',
+		'cePrimReturnEnterCogCode',
+		'cePrimReturnEnterCogCodeProfiling'
 	],
 	#classVars : [
 		'AnnotationConstantNames',
@@ -494,19 +485,13 @@ Cogit class >> cogToBytecodeMethodMapping [
 Cogit class >> declareCVarsIn: aCCodeGenerator [
 
 	#( 'coInterpreter' 'objectMemory' 'methodZone' 'objectRepresentation'
-	   'cogBlockMethodSurrogateClass' 'cogMethodSurrogateClass'
+	   'cogMethodSurrogateClass'
 	   'processor' 'lastNInstructions' 'simulatedAddresses'
 	   'simulatedTrampolines' 'simulatedVariableGetters'
 	   'simulatedVariableSetters' 'printRegisters' 'printInstructions'
 	   'clickConfirm' 'singleStep' ) do: [
 		:simulationVariableNotNeededForRealVM |
 		aCCodeGenerator removeVariable: simulationVariableNotNeededForRealVM ].
-	#( 'selfSendTrampolines' 'dynamicSuperSendTrampolines'
-	   'implicitReceiverSendTrampolines'
-	   'outerSendTrampolines' 'ceEnclosingObjectTrampoline'
-	   'numIRCs' 'indexOfIRC' 'theIRCs' ) do: [
-		:variableNotNeededInNormalVM |
-		aCCodeGenerator removeVariable: variableNotNeededInNormalVM ].
 
 	aCCodeGenerator
 		addHeaderFile: '<stddef.h>';
@@ -7800,12 +7785,12 @@ Cogit >> generateEnilopmarts [
 					and: ClassReg
 					forCall: true
 					called: 'ceCallCogCodePopReceiverAndClassRegs'].
-
+	
 	self genPrimReturnEnterCogCodeEnilopmart: false.
 	cePrimReturnEnterCogCode := methodZoneBase.
 	self outputInstructionsForGeneratedRuntimeAt: cePrimReturnEnterCogCode.
 	self recordGeneratedRunTime: 'cePrimReturnEnterCogCode' address: cePrimReturnEnterCogCode.
-
+	
 	self genPrimReturnEnterCogCodeEnilopmart: true.
 	cePrimReturnEnterCogCodeProfiling := methodZoneBase.
 	self outputInstructionsForGeneratedRuntimeAt: cePrimReturnEnterCogCodeProfiling.

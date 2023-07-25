@@ -883,9 +883,6 @@ SpurMemoryManager class >> initializeSpecialObjectIndices [
 	ClassFloat32Register := 31.
 	ClassFloat64Register := 32.
 	SelectorCannotInterpret := 34.
-	"Was MethodContextProto := 35."
-	"Was ClassBlockClosure := 36."
-	"Was BlockContextProto := 37."
 	ExternalObjectsArray := 38.
 	ClassMutex := 39. "Only used for debugging (StackInterpreter>>#printAllStacks)"
 	"Was: ClassTranslatedMethod := 40."
@@ -9075,8 +9072,8 @@ SpurMemoryManager >> methodHeaderFromSavedFirstField: oop [
 { #category : #'memory access' }
 SpurMemoryManager >> methodHeaderOf: methodObj [
 	"Answer the method header of a CompiledMethod object."
-	self assert: (self isCompiledMethod: methodObj).
-	^self fetchPointer: HeaderIndex ofObject: methodObj
+	<inline: true>
+	^ self rawHeaderOf: methodObj
 ]
 
 { #category : #'simulation only' }
@@ -11042,6 +11039,13 @@ SpurMemoryManager >> rawHashBitsOf: objOop [
 	^(self uint32AtPointer: objOop + 4) bitAnd: self identityHashHalfWordMask
 ]
 
+{ #category : #'compiled methods' }
+SpurMemoryManager >> rawHeaderOf: methodPointer [
+
+	<api>
+	^ self fetchPointer: HeaderIndex ofObject: methodPointer
+]
+
 { #category : #'object access' }
 SpurMemoryManager >> rawNumSlotsOf: objOop [
 	<returnTypeC: #usqInt>
@@ -11831,13 +11835,6 @@ SpurMemoryManager >> shouldRemapOop: oop [
 	<inline: true>
 	^(self isNonImmediate: oop)
 	   and: [self shouldRemapObj: oop]
-]
-
-{ #category : #'simulation only' }
-SpurMemoryManager >> showDisplayBits: aForm Left: l Top: t Right: r Bottom: b [
-	"hack around the CoInterpreter/ObjectMemory split refactoring"
-	<doNotGenerate>
-	^coInterpreter showDisplayBits: aForm Left: l Top: t Right: r Bottom: b
 ]
 
 { #category : #'free space' }

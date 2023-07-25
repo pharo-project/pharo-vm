@@ -416,22 +416,6 @@ BitBltSimulation class >> timingTest: extent [
 		with: (Time millisecondsToRun: [100 timesRepeat: [f copyBits: f boundingBox from: f2 at: 0 @ 0 colorMap: map]])
 ]
 
-{ #category : #'system simulation' }
-BitBltSimulation class >> warpBitsFrom: aBitBlt [
-	"Simulate the warpBits primitive"
-	| proxy bb |
-	proxy := InterpreterProxy new.
-	proxy loadStackFrom: thisContext sender home.
-	bb := self simulatorClass new.
-	bb initialiseModule.
-	bb setInterpreter: proxy.
-	proxy success: (bb loadWarpBltFrom: aBitBlt).
-	bb warpBits.
-	proxy failed ifFalse:[
-		proxy showDisplayBits: aBitBlt destForm Left: bb affectedLeft Top: bb affectedTop Right: bb affectedRight Bottom: bb affectedBottom].
-	^proxy stackValue: 0
-]
-
 { #category : #'combination rules' }
 BitBltSimulation >> OLDrgbDiff: sourceWord with: destinationWord [
 	"Subract the pixels in the source and destination, color by color,
@@ -3842,17 +3826,6 @@ BitBltSimulation >> setupColorMasksFrom: srcBits to: targetBits [
 	cmMaskTable := masks.
 	cmFlags := cmFlags bitOr: (ColorMapPresent bitOr: ColorMapFixedPart).
 
-]
-
-{ #category : #'interpreter interface' }
-BitBltSimulation >> showDisplayBits [
-	self ensureDestAndSourceFormsAreValid.
-	interpreterProxy 
-		showDisplayBits: destForm
-		Left: affectedL
-		Top: affectedT
-		Right: affectedR
-		Bottom: affectedB
 ]
 
 { #category : #setup }
