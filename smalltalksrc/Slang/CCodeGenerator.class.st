@@ -1045,6 +1045,7 @@ CCodeGenerator >> emitCCodeOn: aStream doInlining: inlineFlag doAssertions: asse
 		logger cr ].
 	assertionFlag ifFalse: [ self removeAssertions ].
 
+
 	self doInlining: inlineFlag.
 
 	SLAutomaticLocalization new
@@ -1055,6 +1056,8 @@ CCodeGenerator >> emitCCodeOn: aStream doInlining: inlineFlag doAssertions: asse
 
 	self renameConflictingMethods.
 	self renameKeywordsConflicts.
+
+	self renameConflictingLocals.
 
 	"If we're outputting the VM put the main interpreter loop first for two reasons.
 	 1, so that the dispdbg.h header included at the bytecode dispatch can define
@@ -1073,6 +1076,8 @@ CCodeGenerator >> emitCCodeOn: aStream doInlining: inlineFlag doAssertions: asse
 			checkForGlobalUsage: (m removeUnusedTempsAndNilIfRequiredIn: self)
 			in: m ].
 	self localizeGlobalVariables.
+
+
 
 	self emitCHeaderOn: aStream.
 	self emitCConstantsOn: aStream.
