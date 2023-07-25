@@ -1045,6 +1045,9 @@ CCodeGenerator >> emitCCodeOn: aStream doInlining: inlineFlag doAssertions: asse
 		logger cr ].
 	assertionFlag ifFalse: [ self removeAssertions ].
 
+	self renameConflictingMethods.
+	self renameKeywordsConflicts.
+	self renameConflictingLocals.
 
 	self doInlining: inlineFlag.
 
@@ -1053,11 +1056,6 @@ CCodeGenerator >> emitCCodeOn: aStream doInlining: inlineFlag doAssertions: asse
 		applyMethodNamed: #interpret.
 
 	"code generation"
-
-	self renameConflictingMethods.
-	self renameKeywordsConflicts.
-
-	self renameConflictingLocals.
 
 	"If we're outputting the VM put the main interpreter loop first for two reasons.
 	 1, so that the dispdbg.h header included at the bytecode dispatch can define
