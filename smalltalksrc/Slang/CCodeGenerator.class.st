@@ -4427,8 +4427,6 @@ CCodeGenerator >> renameConflictingLocals [
 	allFunctions := methods values collect: [ :method |
 		                self cFunctionNameFor: method selector ].
 
-
-
 	methods do: [ :method |
 		| renames |
 		renames := Dictionary new.
@@ -4456,14 +4454,17 @@ CCodeGenerator >> renameConflictingMethods [
 	toRename := cFunctionNames select: [ :conflicts | conflicts size > 1 ].
 
 	toRename keysAndValuesDo: [ :key :conflictingMethods |
-		conflictingMethods do: [ :method |
-			method isAPIMethod ifTrue: [ "api methods cannot be renamed"
+		(conflictingMethods select: [ :m | m isAPIMethod ]) size > 1
+			ifTrue: [ "api methods cannot be renamed"
 				TranslationError signal:
 					'Conflicting API methods would be translated to "' , key , '"' ].
 
-			self
-				addSelectorTranslation: method selector
-				to: key , method args size asString ] ]
+		conflictingMethods
+			reject: [ :m | m isAPIMethod ]
+			thenDo: [ :m |
+				self
+					addSelectorTranslation: m selector
+					to: key , m args size asString ] ]
 ]
 
 { #category : #renaming }
