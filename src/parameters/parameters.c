@@ -316,8 +316,7 @@ splitVMAndImageParameters(int argc, const char** argv, VMParameters* parameters)
 
 	// Copy the VM parameters.
 	error = vm_parameter_vector_insert_from(&parameters->vmParameters, numberOfVMParameters, argv);
-	if(error)
-	{
+	if(error) {
 		vm_parameters_destroy(parameters);
 		return error;
 	}
@@ -700,13 +699,13 @@ vm_parameters_parse(int argc, const char** argv, VMParameters* parameters)
 	error = splitVMAndImageParameters(argc, argv, parameters);
 	if(error) return error;
 
-	// I get the VM location from the argv[0]
-	char *fullPathBuffer = (char*)calloc(1, FILENAME_MAX);
-	if(!fullPathBuffer)
-	{
-		vm_parameters_destroy(parameters);
-		return VM_ERROR_OUT_OF_MEMORY;
-	}
+
+    // I get the VM location from the argv[0]
+    char* fullPathBuffer = (char*) calloc(1, FILENAME_MAX);
+    if (!fullPathBuffer) {
+        vm_parameters_destroy(parameters);
+        return VM_ERROR_OUT_OF_MEMORY;
+    }
 
 #if _WIN32
 	WCHAR pathString[MAX_PATH];
