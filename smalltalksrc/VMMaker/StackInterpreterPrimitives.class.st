@@ -1684,18 +1684,20 @@ StackInterpreterPrimitives >> primitiveGetVMParameter: index [
 			[77] ->	[^self getBlockCompilationCount]. 
 			[78] ->	[^self getBlockCompilationMSecs].
 			[79] ->  [^objectMemory integerObjectOf: self getImageVersion ].
-			[80] ->  [^objectMemory integerObjectOf: 
+			[80] ->  [^objectMemory integerObjectOf:
 								objectMemory getFromOldSpaceRememberedSet rememberedSetSize].
-			[81] ->  [^objectMemory integerObjectOf: 
+			[81] ->  [^objectMemory integerObjectOf:
 								objectMemory getFromOldSpaceRememberedSet rememberedSetLimit].
-			[82] ->  [^objectMemory integerObjectOf: 
+			[82] ->  [^objectMemory integerObjectOf:
 								objectMemory getFromPermToOldSpaceRememberedSet rememberedSetSize].
-			[83] ->  [^objectMemory integerObjectOf: 
+			[83] ->  [^objectMemory integerObjectOf:
 								objectMemory getFromPermToOldSpaceRememberedSet rememberedSetLimit].
-			[84] ->  [^objectMemory integerObjectOf: 
+			[84] ->  [^objectMemory integerObjectOf:
 								objectMemory getFromPermToNewSpaceRememberedSet rememberedSetSize].
-			[85] ->  [^objectMemory integerObjectOf: 
-								objectMemory getFromPermToNewSpaceRememberedSet rememberedSetLimit]}
+			[85] ->  [^objectMemory integerObjectOf:
+								objectMemory getFromPermToNewSpaceRememberedSet rememberedSetLimit].
+			[86] ->  [^objectMemory integerObjectOf:
+            					objectMemory garbageCollectorType]}
 		otherwise: [^nil]
 ]
 
@@ -3976,7 +3978,7 @@ StackInterpreterPrimitives >> primitiveVMParameter [
 	Otherwise the *real* list is in the code: `StackInterpreterPrimitives>>#primitiveGetVMParameter:`"
 
 	| paramsArraySize index |
-	paramsArraySize := 85.
+	paramsArraySize := 86.
 	argumentCount = 0 ifTrue: [^self primitiveAllVMParameters: paramsArraySize].
 	argumentCount > 2 ifTrue: [^self primitiveFailFor: PrimErrBadNumArgs].
 	
