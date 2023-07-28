@@ -30,7 +30,7 @@ Class {
 { #category : #translation }
 SpurHybridCompactor class >> classesForTranslation [
 	^{	SpurPlanningCompactor.
-		SpurSelectiveCompactor.
+		"SpurSelectiveCompactor".
 		SpurSweeper }, super classesForTranslation
 ]
 
@@ -87,11 +87,12 @@ SpurHybridCompactor >> manager: aSpurNBitMMXEndianSimulator [
 
 { #category : #api }
 SpurHybridCompactor >> remapObjCompactor: objOop [
+
 	<api>
 	<inline: false>
-	planNotSelect ifTrue:
-		[^manager slidingCompactionRemapObj: objOop].
-	^super remapObjCompactor: objOop
+	<slangHalt>
+	planNotSelect ifTrue: [ ^ manager slidingCompactionRemapObj: objOop ].
+	^ super remapObjCompactor: objOop
 ]
 
 { #category : #initialization }

@@ -618,8 +618,7 @@ Class {
 		'fromOldSpaceRememberedSet',
 		'fromPermToOldSpaceRememberedSet',
 		'fromPermToNewSpaceRememberedSet',
-		'gcType',
-		'planningCompactor'
+		'gcType'
 	],
 	#classVars : [
 		'BitsPerByte',
@@ -658,7 +657,8 @@ Class {
 SpurMemoryManager class >> allCompactorClasses [
 
 	^ SpurCompactor allSubclasses reject: [ :class |
-		  class name includesSubstring: 'Simulator' ]
+		  class name = #SpurSelectiveCompactor or: [
+			  class name includesSubstring: 'Simulator' ] ]
 ]
 
 { #category : #translation }
@@ -769,9 +769,6 @@ SpurMemoryManager class >> declareCVarsIn: aCCodeGenerator [
 				SpurSweeper.
 				"SpurSelectiveCompactor" }.
 
-	aCCodeGenerator
-		staticallyResolvedPolymorphicReceiver: 'planningCompactor'
-		to: SpurPlanningCompactor
 ]
 
 { #category : #translation }
@@ -1995,10 +1992,6 @@ SpurMemoryManager >> allocateMemoryOfSize: memoryBytes newSpaceSize: newSpaceByt
 		             manager: self;
 		             yourself.
 		
-	planningCompactor := SpurPlanningCompactor simulatorClass new
-		             manager: self;
-		             yourself.
-	
 	vmMemoryConf := (VMMemoryMapConfiguration forWordsize: self wordSize) new.
 				
 	permSpaceFreeStart := memoryMap permSpaceStart 
@@ -5947,11 +5940,6 @@ SpurMemoryManager >> garbageCollectForSnapshot [
 	self checkFreeSpace: GCModeFull
 ]
 
-{ #category : #'gc - global' }
-SpurMemoryManager >> garbageCollectorType [
-	^garbageCollectorType 
-]
-
 { #category : #accessing }
 SpurMemoryManager >> gcStartUsecs [
 	^gcStartUsecs
@@ -7627,6 +7615,13 @@ SpurMemoryManager >> isMaybeFiredEphemeronFormat: format [
 	 their format is ephemeronFormat, but when they fire their format is changed to 3 (inst vars
 	 plus indexable fields) or 1 (objects with inst vars), we haven't decided which yet."
 	^format <= self lastPointerFormat and: [format odd]
+]
+
+{ #category : #'gc - scavenge/compact' }
+SpurMemoryManager >> isMemoryMobileObj: objOop [
+
+	<inline: false>
+	^ compactor isMobileObj: objOop
 ]
 
 { #category : #'object enumeration' }
@@ -11252,6 +11247,16 @@ SpurMemoryManager >> recreateFromPermSpaceRememberedSet [
 ]
 
 { #category : #compaction }
+SpurMemoryManager >> relocateObjInHeapEntity: stackOrNil [
+
+	<inline: false>
+	^ compactor
+		  relocateObjInHeapEntity: stackOrNil
+		  from: ObjStackFreex
+		  to: ObjStackNextx + (self rawHashBitsOf: stackOrNil)
+]
+
+{ #category : #compaction }
 SpurMemoryManager >> relocateObjStackForPlanningCompactor: objStack [
 	"Relocate all objStack pages that comprise objStack."
 	| stackOrNil freeList next relocated result |
@@ -11264,16 +11269,8 @@ SpurMemoryManager >> relocateObjStackForPlanningCompactor: objStack [
 	   if there were 5 slots in an oop stack, full would be 2, and the last 0-rel index is 4.
 	   Hence the last index is topx + fixed slots - 1, or topx + ObjStackNextx"
 	 next := self fetchPointer: ObjStackNextx ofObject: stackOrNil.
-	
-	
-	gcType caseOf: { 
-		[ 0 ] -> [ 
-		relocated := planningCompactor
-					relocateObjInHeapEntity: stackOrNil
-					from: ObjStackFreex
-					to: ObjStackNextx + (self rawHashBitsOf: stackOrNil) ].
-	 }.
-	 
+	 relocated := self	relocateObjInHeapEntity: stackOrNil.
+	  
 	 stackOrNil = objStack ifTrue:
 		[result := relocated].
 	 next ~= 0]
@@ -11282,14 +11279,10 @@ SpurMemoryManager >> relocateObjStackForPlanningCompactor: objStack [
 	[freeList ~= 0] whileTrue:
 		[self assert: (self numSlotsOfAny: freeList) = ObjStackPageSlots.
 		 next := self fetchPointer: ObjStackFreex ofObject: freeList.
-		
-	gcType caseOf: { 
-		[ 0 ] -> [ planningCompactor 
+		 compactor 
 			relocateObjInHeapEntity: freeList
 			from: ObjStackFreex
-			to: ObjStackFreex ].
-	 }.
-
+			to: ObjStackFreex.
 		 freeList := next].
 	
 	^ result
@@ -11685,8 +11678,8 @@ SpurMemoryManager >> setFreeOldSpaceStart: newFreeOldSpaceStart [
 	freeOldSpaceStart := newFreeOldSpaceStart
 ]
 
-{ #category : #'gc - global' }
-SpurMemoryManager >> setGarbageCollectorType: aGCType [
+{ #category : #accessing }
+SpurMemoryManager >> setGarbageCollectorType: type [
 
 	<api>
 	gcType := type
@@ -12060,35 +12053,27 @@ SpurMemoryManager >> slidingCompactionRemapObj: objOop [
 	"Scavenge or simply follow objOop.  Answer the new location of objOop.
 	 The send should have been guarded by a send of shouldRemapOop:.
 	 The method is called remapObj: for compatibility with ObjectMemory."
+
 	<inline: true>
 	| resolvedObj |
 	self assert: (self shouldRemapOop: objOop).
 	(self isForwarded: objOop)
-		ifTrue:
-			[resolvedObj := self followForwarded: objOop]
-		ifFalse:
-			[self deny: (self isInFutureSpace: objOop).
-			 resolvedObj := objOop].
-	gcPhaseInProgress > 0 ifTrue:
-		[self scavengeInProgress
-			ifTrue:
-				[((self isReallyYoung: resolvedObj) "don't scavenge immediate, old, or CogMethod objects."
-				  and: [(self isInFutureSpace: resolvedObj) not]) ifTrue: 
-					[^scavenger copyAndForward: resolvedObj]]
-			ifFalse:
-				[self assert: self slidingCompactionInProgress.
-				
-				
-	gcType caseOf: { 
-		[ 0 ] -> [ (planningCompactor isMobileObj: objOop) ifTrue:
-					[^self fetchPointer: 0 ofObject: objOop]
-				 ].
-	 }.
-	
-				]
-			
-			].
-	^resolvedObj
+		ifTrue: [ resolvedObj := self followForwarded: objOop ]
+		ifFalse: [
+			self deny: (self isInFutureSpace: objOop).
+			resolvedObj := objOop ].
+	gcPhaseInProgress > 0 ifTrue: [
+		self scavengeInProgress
+			ifTrue: [
+				((self isReallyYoung: resolvedObj) and: [
+					 (self isInFutureSpace: resolvedObj) not ]) ifTrue: [
+					^ scavenger copyAndForward: resolvedObj ] "don't scavenge immediate, old, or CogMethod objects." ]
+			ifFalse: [
+				self assert: self slidingCompactionInProgress.
+
+				(self isMemoryMobileObj: objOop) ifTrue: [
+					^ self fetchPointer: 0 ofObject: objOop ] ] ].
+	^ resolvedObj
 ]
 
 { #category : #'gc - scavenge/compact' }
@@ -12104,16 +12089,7 @@ SpurMemoryManager >> slidingCompactionShouldRemapObj: objOop [
 		   and: [self scavengeInProgress
 					ifTrue: [(memoryMap isYoungObject: objOop)
 							and: [(self isInFutureSpace: objOop) not]]
-					ifFalse: [
-						
-	gcType caseOf: { 
-		[ 0 ] -> [ planningCompactor isMobileObj: objOop ].
-	 }.
-
-						
-						
-						
-						]]]
+					ifFalse: [ self isMemoryMobileObj: objOop ]]]
 ]
 
 { #category : #'object access' }

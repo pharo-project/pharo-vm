@@ -45,13 +45,16 @@ SpurCompactor class >> classesForTranslation [
 SpurCompactor class >> declareCVarsIn: aCCodeGenerator [
 	"If subclasses are being used but are not the compactorClass itself
 	 then statically resolve their api selectors."
-	(self inheritsFrom: SpurCompactor) ifTrue: "leave SpurCompactor methods alone"
-		[#(compact biasForGC biasForSnapshot remapObjCompactor: shouldRemapObjCompactor: postSwizzleAction isMobileObj: relocateObjInHeapEntity:from:to: ) do: "map the public api methods only"
-				[:selectorToStaticallyResolve|
-				 aCCodeGenerator
-					staticallyResolveMethodNamed: selectorToStaticallyResolve
-					forClass: self
-					to: (self staticallyResolvePolymorphicSelector: selectorToStaticallyResolve)]]
+
+	(self inheritsFrom: SpurCompactor) ifTrue: [ "leave SpurCompactor methods alone"
+		self flag: #TODO. "Do not hardcode these selectors"
+		#( compact biasForGC biasForSnapshot remapObjCompactor: shouldRemapObjCompactor:
+		   postSwizzleAction isMobileObj: #relocateObjInHeapEntity:from:to: ) do: [
+			:selectorToStaticallyResolve | "map the public api methods only"
+			aCCodeGenerator
+				staticallyResolveMethodNamed: selectorToStaticallyResolve
+				forClass: self
+				to: (self staticallyResolvePolymorphicSelector: selectorToStaticallyResolve) ] ]
 ]
 
 { #category : #translation }
@@ -81,6 +84,13 @@ SpurCompactor >> compact [
 	self subclassResponsibility
 ]
 
+{ #category : #testing }
+SpurCompactor >> isMobileObj: obj [
+
+	<inline: true>
+	^ false
+]
+
 { #category : #initialization }
 SpurCompactor >> manager: aSpurNBitMMXEndianSimulator [
 	<doNotGenerate>
@@ -96,10 +106,18 @@ SpurCompactor >> postSwizzleAction [
 	"do nothing"
 ]
 
+{ #category : #compaction }
+SpurCompactor >> relocateObjInHeapEntity: heapEntity from: startIndex to: finishIndex [
+
+	<inline: true>
+	^ nil "Fake polymorphism for Slang generation"
+]
+
 { #category : #api }
 SpurCompactor >> remapObjCompactor: objOop [
 	<api>
 	<inline: false>
+	<slangHalt>
 	^manager vanillaRemapObj: objOop
 ]
 
