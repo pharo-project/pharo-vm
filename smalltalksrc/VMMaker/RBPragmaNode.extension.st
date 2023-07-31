@@ -3,5 +3,5 @@ Extension { #name : #RBPragmaNode }
 { #category : #'*VMMaker' }
 RBPragmaNode >> isTypeDefinition [
 
-	^ self selector = #var:type:
+	^ #( #var:type: #var:declareC: ) includes: self selector
 ]
