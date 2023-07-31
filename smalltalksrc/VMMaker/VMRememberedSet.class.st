@@ -164,6 +164,15 @@ VMRememberedSet >> initialize [
 VMRememberedSet >> initializeRememberedSetShouldStartEmpty: shouldStartEmpty [
 	| obj |
 	obj := self objectOop.
+	
+	(manager isInOldSpace: obj) 
+		ifFalse: [ 
+			manager logWarn: 'Remembered Set is in an invalid position %p. Signal of a corrupted root table.' _: obj.
+			shouldStartEmpty 
+				ifTrue: [ 
+					obj := manager nilObject.
+					manager logWarn: 'As it starts empty, we can ignore it' ]]. 
+	
 	obj = manager nilObject
 		ifTrue:
 			[obj := manager allocatePinnedSlots: 1024.
