@@ -1011,13 +1011,6 @@ InterpreterProxy >> sendInvokeCallbackContext: vmCallbackContext [
 	self notYetImplemented
 ]
 
-{ #category : #other }
-InterpreterProxy >> showDisplayBits: aForm Left: l Top: t Right: r Bottom: b [
-	aForm == Display ifTrue:[
-		Display class isDeferringUpdates ifTrue: [^ nil].
-		Display forceToScreen: (Rectangle left: l right: r top: t bottom: b)].
-]
-
 { #category : #'callback support' }
 InterpreterProxy >> signalNoResume: aSemaphore [
 	^self notYetImplementedError

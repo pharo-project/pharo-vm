@@ -337,9 +337,7 @@ Class {
 		'nextWakeupUsecs',
 		'nextPollUsecs',
 		'interruptPending',
-		'savedWindowSize',
 		'imageHeaderFlags',
-		'fullScreenFlag',
 		'extraVMMemory',
 		'interpreterProxy',
 		'primitiveTable',
@@ -359,7 +357,6 @@ Class {
 		'classNameIndex',
 		'thisClassIndex',
 		'metaclassNumSlots',
-		'interruptCheckChain',
 		'suppressHeartbeatFlag',
 		'breakSelector',
 		'breakSelectorLength',
@@ -376,17 +373,12 @@ Class {
 		'tempOop2',
 		'metaAccessorDepth',
 		'theUnknownShort',
-		'the2ndUnknownShort',
 		'imageFloatsBigEndian',
 		'maxExtSemTabSizeSet',
 		'lastMethodCacheProbeWrite',
 		'gcSemaphoreIndex',
 		'classByteArrayCompactIndex',
 		'checkedPluginName',
-		'displayBits',
-		'displayWidth',
-		'displayHeight',
-		'displayDepth',
 		'statForceInterruptCheck',
 		'statStackOverflow',
 		'statStackPageDivorce',
@@ -401,7 +393,6 @@ Class {
 		'maxStackMessagePrinted',
 		'libFFI',
 		'codeGeneratorToComputeAccessorDepth',
-		'showSurfaceFn',
 		'imageReader',
 		'imageWriter',
 		'pendingFinalizationSignals',
@@ -578,9 +569,7 @@ If ffi is put as a separate header, slang will sort the header and put it outsid
 				type: 'signed char'
 				sizeString: 'MaxPrimitiveIndex + 2 /* ', (MaxPrimitiveIndex + 2) printString, ' */'
 				array: vmClass primitiveAccessorDepthTable.
-	aCCodeGenerator
-		var: #displayBits type: #'void *'.
-	self declareC: #(displayWidth displayHeight displayDepth) as: #int in: aCCodeGenerator.
+
 	aCCodeGenerator
 		var: #primitiveFunctionPointer
 			declareC: 'void (*primitiveFunctionPointer)()';
@@ -4974,12 +4963,6 @@ StackInterpreter >> dispatchFunctionPointer: aFunctionPointer [
 	
 ]
 
-{ #category : #simulation }
-StackInterpreter >> displayBits [
-	<doNotGenerate>
-	^displayBits
-]
-
 { #category : #'frame access' }
 StackInterpreter >> divorceAllFrames [
 	| activeContext |
@@ -7022,11 +7005,6 @@ StackInterpreter >> getExtraVMMemory [
 	^ extraVMMemory
 ]
 
-{ #category : #'plugin primitive support' }
-StackInterpreter >> getFullScreenFlag [
-	^fullScreenFlag
-]
-
 { #category : #'object memory support' }
 StackInterpreter >> getGCMode [
 	"This is a no-op in the StackVM"
@@ -7536,7 +7514,6 @@ StackInterpreter >> initialize [
 	nextWakeupUsecs := 0.
 	tempOop := tempOop2 := theUnknownShort := 0.
 	maxStacksToPrint := 0.
-	displayBits := displayWidth := displayHeight := displayDepth := 0.
 	pendingFinalizationSignals := 0.
 	globalSessionID := 0.
 	jmpDepth := 0.
@@ -14036,12 +14013,6 @@ StackInterpreter >> shortUnconditionalJump [
 	self jump: (currentBytecode bitAnd: 7) + 1.
 ]
 
-{ #category : #'I/O primitive support' }
-StackInterpreter >> showDisplayBits: aForm Left: l Top: t Right: r Bottom: b [
-	"Repaint the portion of the Smalltalk screen bounded by the affected rectangle. Used to synchronize the screen after a Bitblt to the Smalltalk Display object."
-	self updateDisplayLeft: l Top: t Right: r Bottom: b
-]
-
 { #category : #'send bytecodes' }
 StackInterpreter >> shuffleArgumentsAndStoreAbsentReceiver: theReceiver [
 	"For the absent receiver sends move the arguments up the stack and store the supplied receiver."
@@ -15732,30 +15703,6 @@ StackInterpreter >> unknownInlinePrimitive [
 StackInterpreter >> unknownShortOrCodeSizeInKs [
 	"preserve whatever this value was (for images run on Cog)"
 	^theUnknownShort
-]
-
-{ #category : #'I/O primitive support' }
-StackInterpreter >> updateDisplayLeft: l Top: t Right: r Bottom: b [
-	"Repaint the portion of the Smalltalk screen bounded by the affected rectangle.
-	 Used to synchronize the screen after a Bitblt to the Smalltalk Display object."
-	| left right top bottom surfaceHandle |
-	left := l max: 0.
-	right := r min: displayWidth.
-	top := t max: 0.
-	bottom := b min: displayHeight.
-	(left <= right and: [top <= bottom]) ifFalse: [^nil].
-	(objectMemory isIntegerObject: displayBits asInteger)
-		ifTrue:
-			[surfaceHandle := objectMemory integerValueOf: displayBits asInteger.
-			 showSurfaceFn = 0 ifTrue:
-				[showSurfaceFn := self ioLoadFunction: 'ioShowSurface' From: 'SurfacePlugin'.
-				 showSurfaceFn = 0 ifTrue: [^self primitiveFailFor: PrimErrNotFound]].
-			 self show: surfaceHandle Sur: left fa: top ce: right - left Fn: bottom - top]
-		ifFalse:
-			[self assert: (objectMemory isNonImmediate: displayBits asInteger).
-			 self ioShow: displayBits asInteger
-				D: displayWidth i: displayHeight s: displayDepth
-				p: left l: right a: top y: bottom]
 ]
 
 { #category : #'image save/restore' }
