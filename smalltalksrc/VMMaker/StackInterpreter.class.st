@@ -339,7 +339,6 @@ Class {
 		'interruptPending',
 		'imageHeaderFlags',
 		'extraVMMemory',
-		'interpreterProxy',
 		'primitiveTable',
 		'primitiveAccessorDepthTable',
 		'externalPrimitiveTable',
@@ -385,9 +384,6 @@ Class {
 		'statCheckForEvents',
 		'statProcessSwitch',
 		'statIdleUsecs',
-		'debugCallbackPath',
-		'debugCallbackReturns',
-		'debugCallbackInvokes',
 		'printedStackFrames',
 		'maxStacksToPrint',
 		'maxStackMessagePrinted',
@@ -426,8 +422,6 @@ Class {
 		'DirEntryFound',
 		'DirNoMoreEntries',
 		'DumpStackOnLowSpace',
-		'EnclosingMixinIndex',
-		'EnclosingObjectIndex',
 		'FailImbalancedPrimitives',
 		'LongStoreBytecode',
 		'MaxExternalPrimitiveTableSize',
@@ -437,7 +431,6 @@ Class {
 		'MethodHeaderArgCountShift',
 		'MethodHeaderFlagBitPosition',
 		'MethodHeaderTempCountShift',
-		'MixinIndex',
 		'PrimitiveTable',
 		'ReturnToInterpreter',
 		'StackPageReachedButUntraced',
@@ -5188,12 +5181,6 @@ StackInterpreter >> doWaitSemaphore: sema reEnterInterpreter: hasToReenter [
 			hasToReenter ifTrue: [self forProcessPrimitiveReturnToExecutivePostContextSwitch: inInterpreter]]
 ]
 
-{ #category : #initialization }
-StackInterpreter >> dummyReferToProxy [
-	<inline: false>
-	interpreterProxy := interpreterProxy
-]
-
 { #category : #'debug support' }
 StackInterpreter >> dumpPrimTraceLog [
 	"Dummy definition to allow the StackInterpreter to link against the Cog run-time."
@@ -7519,7 +7506,6 @@ StackInterpreter >> initialize [
 	jmpDepth := 0.
 	longRunningPrimitiveStartUsecs := longRunningPrimitiveStopUsecs := 0.
 	maxExtSemTabSizeSet := false.
-	debugCallbackInvokes := debugCallbackPath := debugCallbackReturns := 0.
 	statForceInterruptCheck := statStackOverflow := statCheckForEvents :=
 	statProcessSwitch := statStackPageDivorce :=
 	statIdleUsecs := 0.
@@ -7566,8 +7552,6 @@ StackInterpreter >> initializeGlobalSessionID [
 StackInterpreter >> initializeInterpreter: bytesToShift [
 	
 	"Initialize Interpreter state before starting execution of a new image."
-	interpreterProxy := self sqGetInterpreterProxy.
-	self dummyReferToProxy.
 	objectMemory initializeObjectMemory: bytesToShift.
 	self checkAssumedCompactClasses.
 	self initializeExtraClassInstVarIndices.
