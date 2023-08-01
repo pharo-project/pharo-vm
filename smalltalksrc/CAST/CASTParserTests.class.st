@@ -104,6 +104,16 @@ void f() {
 			ex resume: ex tag first ]
 ]
 
+{ #category : #'tests-declarators' }
+CASTParserTests >> assertIntDeclaration: aDeclaration [
+
+	| declarationSpecifiers |
+	declarationSpecifiers := aDeclaration specifiers.
+
+	self assert: declarationSpecifiers first value equals: 'int'.
+	self assert: aDeclaration declarators size equals: 1.
+]
+
 { #category : #helpers }
 CASTParserTests >> parseDeclaration: aStratement [
 
@@ -373,13 +383,10 @@ CASTParserTests >> testParseFloatingPointConstant [
 { #category : #'tests-declarators' }
 CASTParserTests >> testParseFunctionDeclarator [
 
-	| declaration declarator declarationSpecifiers |
+	| declaration declarator |
 	declaration := self parseDeclaration: 'int f(void)'.
-	declarationSpecifiers := declaration specifiers.
-	
-	self assert: declarationSpecifiers first value equals: 'int'.
-	self assert: declaration declarators size equals: 1.
 
+	self assertIntDeclaration: declaration.
 	declarator := declaration declarators first.
 	self assert: declarator isFunctionDeclarator.
 	self assert: declarator declarator name equals: 'f'.
@@ -389,13 +396,10 @@ CASTParserTests >> testParseFunctionDeclarator [
 { #category : #'tests-declarators' }
 CASTParserTests >> testParseFunctionPointerDeclarator [
 
-	| declaration declarator declarationSpecifiers |
+	| declaration declarator |
 	declaration := self parseDeclaration: 'int (*pf)(void)'.
-	declarationSpecifiers := declaration specifiers.
-	
-	self assert: declarationSpecifiers first value equals: 'int'.
-	self assert: declaration declarators size equals: 1.
 
+	self assertIntDeclaration: declaration.
 	declarator := declaration declarators first.
 	self assert: declarator isFunctionDeclarator.
 	self assert: declarator declarator isPointerDeclarator.
@@ -629,12 +633,10 @@ CASTParserTests >> testParseParenthesizedExpression [
 { #category : #'tests-declarators' }
 CASTParserTests >> testParsePointerDeclarator [
 
-	| declaration declarator declarationSpecifiers |
+	| declaration declarator |
+
 	declaration := self parseDeclaration: 'int *a'.
-	declarationSpecifiers := declaration specifiers.
-	
-	self assert: declarationSpecifiers first value equals: 'int'.
-	self assert: declaration declarators size equals: 1.
+	self assertIntDeclaration: declaration.
 
 	declarator := declaration declarators first.
 	self assert: declarator isPointerDeclarator.
@@ -694,12 +696,9 @@ CASTParserTests >> testParseSequenceOfDeclarators [
 { #category : #'tests-declarators' }
 CASTParserTests >> testParseSimpleArrayDeclaration [
 
-	| declaration declarator declarationSpecifiers |
+	| declaration declarator |
 	declaration := self parseDeclaration: 'int a[]'.
-	declarationSpecifiers := declaration specifiers.
-
-	self assert: declarationSpecifiers first value equals: 'int'.
-	self assert: declaration declarators size equals: 1.
+	self assertIntDeclaration: declaration.
 
 	declarator := declaration declarators first.
 	self assert: declarator isArrayDeclarator.
