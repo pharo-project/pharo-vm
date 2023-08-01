@@ -221,11 +221,6 @@ InterpreterProxy >> copyBitsFrom: leftX to: rightX at: yValue [
 	bb copyBitsFrom: leftX to: rightX at: yValue.
 ]
 
-{ #category : #'special objects' }
-InterpreterProxy >> displayObject [
-	^Display
-]
-
 { #category : #other }
 InterpreterProxy >> failed [
 
