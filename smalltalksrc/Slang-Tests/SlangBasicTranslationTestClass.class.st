@@ -54,6 +54,13 @@ SlangBasicTranslationTestClass >> methodCallingMethodWithInlinePragma [
 ]
 
 { #category : #inline }
+SlangBasicTranslationTestClass >> methodDefiningConflictingVariable [
+
+	<var: 'methodWithoutReturn' type: 'char *'>
+	| methodWithoutReturn |
+]
+
+{ #category : #inline }
 SlangBasicTranslationTestClass >> methodDefiningSingleExternVariable [
 
 	<var: 'foo' type: #'extern int' >
@@ -156,6 +163,18 @@ SlangBasicTranslationTestClass >> methodWithOptionPragma [
 	<notOption: #OPTION2>
 	<option: #OPTION3>
 	
+]
+
+{ #category : #'as yet unclassified' }
+SlangBasicTranslationTestClass >> methodWithRepeatedCFunctionName [
+
+	^ true
+]
+
+{ #category : #'as yet unclassified' }
+SlangBasicTranslationTestClass >> methodWithRepeatedCFunctionName: arg1 [
+
+	^ true
 ]
 
 { #category : #inline }

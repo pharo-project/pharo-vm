@@ -39,6 +39,17 @@ SlangBasicTranslationTest >> defineAtCompileTime: aString [
 	^ #(#OPTION1 #OPTION3 #OPTION) includes: aString
 ]
 
+{ #category : #helpers }
+SlangBasicTranslationTest >> functionIdentifier: aMethodTranslation [
+	| prototype matchIdentifier |
+	
+	prototype := aMethodTranslation lineNumber: 3.
+	
+	matchIdentifier := '([a-zA-Z0-9_])+\(' asRegex.
+	
+	^((matchIdentifier matchesIn: prototype) first) copyWithout: $(
+]
+
 { #category : #accessing }
 SlangBasicTranslationTest >> generator [
 
@@ -92,6 +103,16 @@ SlangBasicTranslationTest >> shouldGenerateDeadCode [
 	
 	"Compatibility method to make the test look like a VM translatable class"
 	^ true
+]
+
+{ #category : #'tests-method' }
+SlangBasicTranslationTest >> testApiMethodsWithConflictingName [
+	
+	generator addClass: SlangConflictingApiTestClass.
+	
+	self should: [generator renameConflictingMethods] raise: TranslationError.
+	
+	
 ]
 
 { #category : #'tests-blocks' }
@@ -1777,6 +1798,23 @@ methodWithoutReturn(void)
 {
 	return 0;
 }'
+]
+
+{ #category : #'tests-method' }
+SlangBasicTranslationTest >> testMethodsWithConflictingName [
+
+	| translation1 translation2 tMethod1 tMethod2 |
+	tMethod1 := self getTMethodFrom: #methodWithRepeatedCFunctionName.
+	tMethod2 := generator methods at: #methodWithRepeatedCFunctionName:.
+
+	generator renameConflictingMethods.
+
+	translation1 := self translate: tMethod1.
+	translation2 := self translate: tMethod2.
+
+	self
+		deny: (self functionIdentifier: translation1)
+		equals: (self functionIdentifier: translation2)
 ]
 
 { #category : #'tests-case' }
@@ -6555,6 +6593,21 @@ SlangBasicTranslationTest >> testVariableUpdateAssignmentPlus [
 			expression: expression).
 
 	self assert: translation equals: 'var += 7'
+]
+
+{ #category : #'tests-variables' }
+SlangBasicTranslationTest >> testVariableWithConflictingNameShouldBeRenamed [
+	"tests if a local that would conflict with a function name is renamed"
+
+	| method translation |
+	method := self getTMethodFrom: #methodDefiningConflictingVariable.
+
+	generator renameConflictingLocals.
+
+	translation := self translate: method.
+
+
+	self assert: (translation includesSubstring: 'char *l_methodWithoutReturn').
 ]
 
 { #category : #'tests-variables' }
