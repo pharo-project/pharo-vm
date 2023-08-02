@@ -163,6 +163,7 @@ VMRememberedSet >> initialize [
 { #category : #initialization }
 VMRememberedSet >> initializeRememberedSetShouldStartEmpty: shouldStartEmpty [
 	| obj |
+
 	obj := self objectOop.
 	obj = manager nilObject
 		ifTrue:
