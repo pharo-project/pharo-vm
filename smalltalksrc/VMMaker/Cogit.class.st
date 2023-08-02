@@ -223,8 +223,6 @@ Class {
 		'directedSuperSendTrampolines',
 		'directedSuperBindingSendTrampolines',
 		'dynamicSuperSendTrampolines',
-		'outerSendTrampolines',
-		'selfSendTrampolines',
 		'firstSend',
 		'lastSend',
 		'realCEEnterCogCodePopReceiverReg',
@@ -242,13 +240,8 @@ Class {
 		'extB',
 		'numExtB',
 		'tempOop',
-		'numIRCs',
-		'indexOfIRC',
-		'theIRCs',
 		'receiverTags',
-		'implicitReceiverSendTrampolines',
 		'cogMethodSurrogateClass',
-		'cogBlockMethodSurrogateClass',
 		'CStackPointer',
 		'CFramePointer',
 		'cPICPrototype',
@@ -294,7 +287,6 @@ Class {
 		'MaxNumberOfAbstractOpcodes',
 		'MaxX2NDisplacement',
 		'NumObjRefsInRuntime',
-		'NumOopsPerNSC',
 		'NumSpecialSelectors',
 		'NumTrampolines',
 		'ProcessorClass',
@@ -494,17 +486,15 @@ Cogit class >> cogToBytecodeMethodMapping [
 Cogit class >> declareCVarsIn: aCCodeGenerator [
 
 	#( 'coInterpreter' 'objectMemory' 'methodZone' 'objectRepresentation'
-	   'cogBlockMethodSurrogateClass' 'cogMethodSurrogateClass'
+	   'cogMethodSurrogateClass'
 	   'processor' 'lastNInstructions' 'simulatedAddresses'
 	   'simulatedTrampolines' 'simulatedVariableGetters'
 	   'simulatedVariableSetters' 'printRegisters' 'printInstructions'
 	   'clickConfirm' 'singleStep' ) do: [
 		:simulationVariableNotNeededForRealVM |
 		aCCodeGenerator removeVariable: simulationVariableNotNeededForRealVM ].
-	#( 'selfSendTrampolines' 'dynamicSuperSendTrampolines'
-	   'implicitReceiverSendTrampolines'
-	   'outerSendTrampolines' 'ceEnclosingObjectTrampoline'
-	   'numIRCs' 'indexOfIRC' 'theIRCs' ) do: [
+	#( 'dynamicSuperSendTrampolines'
+	   'ceEnclosingObjectTrampoline') do: [
 		:variableNotNeededInNormalVM |
 		aCCodeGenerator removeVariable: variableNotNeededInNormalVM ].
 

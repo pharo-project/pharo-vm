@@ -488,14 +488,6 @@ CogVMSimulator >> desiredCogCodeSize: anInteger [
 	desiredCogCodeSize := anInteger
 ]
 
-{ #category : #UI }
-CogVMSimulator >> desiredDisplayExtent [
-	^(savedWindowSize
-		ifNil: [640@480]
-		ifNotNil: [savedWindowSize >> 16 @ (savedWindowSize bitAnd: 16rFFFF)])
-			min: Display extent * 2 // 3
-]
-
 { #category : #initialization }
 CogVMSimulator >> desiredEdenBytes: anInteger [
 	desiredEdenBytes := anInteger
@@ -1877,11 +1869,6 @@ CogVMSimulator >> saneFunctionPointerForFailureOfPrimIndex: primIndex [
 		 ^(cogit lookupAddress: primitiveFunctionPointer) endsWith: basePrimitive].
 
 	^super saneFunctionPointerForFailureOfPrimIndex: primIndex
-]
-
-{ #category : #'I/O primitives' }
-CogVMSimulator >> savedWindowSize [
-	^savedWindowSize ifNil: [0]
 ]
 
 { #category : #accessing }

@@ -137,13 +137,7 @@ Class {
 		'realCECallCogCodePopReceiverArg1Arg0Regs',
 		'deadCode',
 		'useTwoPaths',
-		'currentCallCleanUpSize',
-		'compilationPass',
 		'counterIndex'
-	],
-	#classVars : [
-		'NeedsMergeFixupFlag',
-		'NeedsNonMergeFixupFlag'
 	],
 	#pools : [
 		'CogCompilationConstants',

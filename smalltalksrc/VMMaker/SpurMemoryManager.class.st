@@ -11833,13 +11833,6 @@ SpurMemoryManager >> shouldRemapOop: oop [
 	   and: [self shouldRemapObj: oop]
 ]
 
-{ #category : #'simulation only' }
-SpurMemoryManager >> showDisplayBits: aForm Left: l Top: t Right: r Bottom: b [
-	"hack around the CoInterpreter/ObjectMemory split refactoring"
-	<doNotGenerate>
-	^coInterpreter showDisplayBits: aForm Left: l Top: t Right: r Bottom: b
-]
-
 { #category : #'free space' }
 SpurMemoryManager >> shrinkThreshold [
 	^shrinkThreshold
