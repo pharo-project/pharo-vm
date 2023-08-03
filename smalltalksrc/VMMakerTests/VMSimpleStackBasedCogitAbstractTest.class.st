@@ -63,7 +63,7 @@ VMSimpleStackBasedCogitAbstractTest class >> wordSize64Parameters [
 { #category : #'building suites' }
 VMSimpleStackBasedCogitAbstractTest class >> wordSizeParameters [
 
-	^ self wordSize32Parameters + self wordSize64Parameters 
+	^ self wordSize64Parameters + self wordSize32Parameters
 ]
 
 { #category : #running }
@@ -570,6 +570,7 @@ VMSimpleStackBasedCogitAbstractTest >> openMachineDebuggerAt: anAddress [
 	
 	^ VMMachineCodeDebugger new
 		cogit: cogit;
+		abstractInstructions: (self abstractInstructions);
 		machineSimulator: machineSimulator;
 		initialInstructionToDisassemble: anAddress;
 		openWithSpec.

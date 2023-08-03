@@ -492,7 +492,6 @@ VMLookUpTest >> testPrimitivePerformCreatesCorrectFrame [
 	interpreter argumentCount: 1.
 	interpreter primitivePerform.
 	
-	interpreter internalizeIPandSP.
 	frame := VMStackFrame newFramePointer: (interpreter framePointer) withInterpreter: interpreter.
 	self assert: frame receiver equals: receiverOop.
  	self assert: frame method equals: methodOop.

@@ -20,7 +20,7 @@ AbstractComposedImageAccess >> createImageDirectory: imageFileName [
 			self
 				cppIf: ((self defined: #_WIN32) or: [(self defined: #_WIN64)])
 				ifTrue: [ self mkdir: imageFileName ]
-				ifFalse: [ self mkdir: imageFileName _: 0777 ] ]
+				ifFalse: [ self mkdir: imageFileName _: 8r777 ] ]
 		inSmalltalk: [ 
 			imageFileName asFileReference ensureDeleteAll.
 			imageFileName asFileReference ensureCreateDirectory ]

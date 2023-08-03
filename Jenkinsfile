@@ -188,7 +188,7 @@ def runUnitTests(platform){
 		saveIsReleaseFlag()
     }
 
-    cmakeBuild generator: "Unix Makefiles", sourceDir: "repository", buildDir: "runTests", installation: "InSearchPath"
+    cmakeBuild generator: "Unix Makefiles", sourceDir: "repository", buildDir: "runTests", installation: "InSearchPath", cmakeArgs: "-DPHARO_DEPENDENCIES_PREFER_DOWNLOAD_BINARIES=TRUE -DICEBERG_DEFAULT_REMOTE=httpsUrl"
     dir("runTests"){
       shell "VERBOSE=1 make vmmaker"
       dir("build/vmmaker"){
@@ -233,8 +233,8 @@ def runTests(platform, configuration, packages, withWorker, additionalParameters
 		shell "mkdir runTests"
 		dir("runTests"){
 			try{
-				shell "wget -O - get.pharo.org/64/100 | bash "
-				shell "echo 100 > pharo.version"
+				shell "wget -O - get.pharo.org/64/110 | bash "
+				shell "echo 110 > pharo.version"
           
 				if(isWindows()){
 					runInCygwin "cd runTests && unzip ../build/build/packages/PharoVM-*-${platform}-bin.zip -d ."
@@ -256,7 +256,16 @@ def runTests(platform, configuration, packages, withWorker, additionalParameters
 							shell "PHARO_CI_TESTING_ENVIRONMENT=true ./pharo --logLevel=4 ${hasWorker} Pharo.image ${additionalParameters} test --junit-xml-output --stage-name=${stageName} '${packages}'" 
 						}
 				}
-				junit allowEmptyResults: true, testResults: "*.xml"
+                
+                // If the tests fail, continue and just mark this as a failure
+                try {
+                  junit allowEmptyResults: true, testResults: "*.xml"
+                } catch (ex) {
+                  if (currentBuild.result == 'UNSTABLE'){
+                    currentBuild.result = 'FAILURE'
+                  }
+                  archiveArtifacts artifacts: '*.xml', excludes: '_CPack_Packages'
+                }
 			} finally{
 				if(fileExists('PharoDebug.log')){
 					shell "mv PharoDebug.log PharoDebug-${stageName}.log"
@@ -273,7 +282,6 @@ def runTests(platform, configuration, packages, withWorker, additionalParameters
 				}
 			}
 		}
-		archiveArtifacts artifacts: 'runTests/*.xml', excludes: '_CPack_Packages'
 	}
 }
 
@@ -455,7 +463,6 @@ try{
 	def platforms = parallelBuilderPlatforms + ['Linux-aarch64', 'Linux-armv7l']
 	def builders = [:]
 	def dockerBuilders = [:]
-	def tests = [:]
 
 	node('Darwin-x86_64'){
 		runUnitTests('Darwin-x86_64')
@@ -473,6 +480,12 @@ try{
 				timeout(30){
 					runBuild(platform, "StackVM")
 				}
+				timeout(45){
+					runTests(platform, "CoInterpreter", ".*", false)
+				}
+				timeout(45){
+					runTests(platform, "CoInterpreter", ".*", true)
+				}
 				timeout(30){
 					runBuild("${platform}-ComposedFormat", "CoInterpreter", true, " -DIMAGE_FORMAT=ComposedFormat ")
 				}
@@ -483,23 +496,12 @@ try{
 					}
 				}
 			}
-		}
-		
-		tests[platform] = {
-			node(platform){
-				timeout(45){
-					runTests(platform, "CoInterpreter", ".*", false)
-				}
-				timeout(45){
-					runTests(platform, "CoInterpreter", ".*", true)
-				}				
-			}
-		}
+		}		
 	}
 
 	dockerBuilders['Linux-aarch64'] = {
-		buildUsingDocker('Linux-aarch64', 'ubuntu-arm64', "CoInterpreter")	
-
+		buildUsingDocker('Linux-aarch64', 'ubuntu-arm64', "CoInterpreter")
+        runTestsUsingDocker('Linux-aarch64', 'ubuntu-arm64', "CoInterpreter", "Kernel.*|Zinc.*", false)
 		if(isMainBranch()){
 			buildUsingDocker('Linux-aarch64', 'ubuntu-arm64', "CoInterpreter", false)
 		}
@@ -507,7 +509,7 @@ try{
 
 	dockerBuilders['Linux-armv7l'] = {
 		buildUsingDocker('Linux-armv7l', 'debian10-armv7', "CoInterpreter")	
-
+        runTestsUsingDocker('Linux-armv7l', 'debian10-armv7', "CoInterpreter", "Kernel.*|Zinc.*", false)
 		if(isMainBranch()){
 			buildUsingDocker('Linux-armv7l', 'debian10-armv7', "CoInterpreter", false)
 		}
@@ -516,20 +518,10 @@ try{
 	parallel builders
 
 	parallel dockerBuilders
-	
-	tests['Linux-aarch64'] = { 
-		runTestsUsingDocker('Linux-aarch64', 'ubuntu-arm64', "CoInterpreter", "Kernel.*|Zinc.*", false)
-	}
-
-	tests['Linux-armv7l'] = { 
-		runTestsUsingDocker('Linux-armv7l', 'debian10-armv7', "CoInterpreter", "Kernel.*|Zinc.*", false)
-	}
-	
+		
 	uploadPackages(platforms)
 
 	buildGTKBundle()
-
-	parallel tests
 
 } catch (e) {
   throw e

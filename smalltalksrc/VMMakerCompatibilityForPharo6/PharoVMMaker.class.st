@@ -29,7 +29,7 @@ PharoVMMaker class >> default64BitsMemoryManagerClass [
 { #category : #defaults }
 PharoVMMaker class >> defaultImageFormatName [
 
-	^ 'SpurImage'
+	^ 'SpurFormat'
 ]
 
 { #category : #defaults }

@@ -5,10 +5,10 @@
 #include "pharovm/pathUtilities.h"
 
 extern void setMaxStacksToPrint(sqInt anInteger);
-extern void setMaxOldSpaceSize(sqInt anInteger);
+extern sqInt setMaxOldSpaceSize(usqInt limit);
 extern void setDesiredCogCodeSize(sqInt anInteger);
-extern void setDesiredEdenBytes(sqLong anInteger);
-extern void setMinimalPermSpaceSize(sqLong anInteger);
+extern sqInt setDesiredEdenBytes(usqLong bytes);
+extern void setMinimalPermSpaceSize(sqInt min);
 
 #if defined(__GNUC__) && ( defined(i386) || defined(__i386) || defined(__i386__)  \
 			|| defined(i486) || defined(__i486) || defined (__i486__) \

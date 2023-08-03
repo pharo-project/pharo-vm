@@ -23,6 +23,7 @@ StackInterpreterPrimitives >> allocateParameters: anInteger using: allocationBlo
 StackInterpreterPrimitives >> cloneContext: aContext [ 
 	| sz cloned spouseFP sp |
 	<var: #spouseFP type: #'char *'>
+	<var: #sp type: #'sqInt'>
 	sz := objectMemory numSlotsOf: aContext.
 	cloned := objectMemory eeInstantiateMethodContextSlots: sz.
 	cloned ~= 0 ifTrue:
@@ -31,7 +32,7 @@ StackInterpreterPrimitives >> cloneContext: aContext [
 			objectMemory
 				storePointerUnchecked: i
 				ofObject: cloned
-				withValue: (self externalInstVar: i ofContext: aContext)].
+				withValue: (self instVar: i ofContext: aContext)].
 		MethodIndex to: ReceiverIndex do:
 			[:i|
 			objectMemory
@@ -900,7 +901,7 @@ StackInterpreterPrimitives >> primitiveContextAt [
 		 self successful ifTrue:
 			[self pop: argumentCount + 1 thenPush: value].
 		 ^self].
-	self externalWriteBackHeadFramePointers.
+	self writeBackHeadFramePointers.
 	(self isStillMarriedContext: aContext) ifFalse:
 		[fmt := objectMemory formatOfHeader: hdr.
 		 totalLength := objectMemory lengthOf: aContext format: fmt.
@@ -938,7 +939,7 @@ StackInterpreterPrimitives >> primitiveContextAtPut [
 	index := objectMemory integerValueOf: index.
 	(objectMemory isContextHeader: hdr) ifFalse: "might be an instance of a subclass"
 		[^self primitiveFailFor: PrimErrBadReceiver ].
-	self externalWriteBackHeadFramePointers.
+	self writeBackHeadFramePointers.
 	(self isStillMarriedContext: aContext) ifFalse:
 		[fmt := objectMemory formatOfHeader: hdr.
 		 totalLength := objectMemory lengthOf: aContext format: fmt.
@@ -971,7 +972,7 @@ StackInterpreterPrimitives >> primitiveContextSize [
 	fixedFields := objectMemory fixedFieldsOf: rcvr format: fmt length: totalLength.
 	(objectMemory isContextHeader: hdr)
 		ifTrue:
-			[self externalWriteBackHeadFramePointers.
+			[self writeBackHeadFramePointers.
 			sz := self stackPointerForMaybeMarriedContext: rcvr]
 		ifFalse: [sz := totalLength - fixedFields].
 	self pop: argumentCount + 1 thenPush: (objectMemory integerObjectOf: sz)
@@ -1137,7 +1138,7 @@ StackInterpreterPrimitives >> primitiveDoPrimitiveWithArgs [
 		 index := index + 1].
 
 	self isPrimitiveFunctionPointerAnIndex ifTrue:
-		[self externalQuickPrimitiveResponse.
+		[self executeQuickPrimitive.
 		 tempOop2 := 0.
 		^nil].
 	"We use tempOop instead of pushRemappableOop:/popRemappableOop here because in
@@ -1500,7 +1501,7 @@ StackInterpreterPrimitives >> primitiveFindHandlerContext [
 	"Primitive. Search up the context stack for the next method context marked
 	 for exception handling starting at the receiver. Return nil if none found"
 	| handlerOrNilOrZero |
-	self externalWriteBackHeadFramePointers.
+	self writeBackHeadFramePointers.
 	handlerOrNilOrZero := self
 							findMethodWithPrimitive: 199
 							FromContext: self stackTop
@@ -1523,7 +1524,7 @@ StackInterpreterPrimitives >> primitiveFindNextUnwindContext [
 	"The following should never be true, but developing full blocks, early in September
 	 2016 we were seeing invalid invocations of this primitive..  Hence the assert:"
 	self assert: stopContext ~= calleeContext.
-	self externalWriteBackHeadFramePointers.
+	self writeBackHeadFramePointers.
 	(self isStillMarriedContext: calleeContext)
 		ifTrue:
 			[| theFP |
@@ -1580,7 +1581,7 @@ StackInterpreterPrimitives >> primitiveFullGC [
 	 of bytes available (including swap space if dynamic memory management is
 	 supported).  In Spur, answer the size of the largest free chunk."
 
-	self externalWriteBackHeadFramePointers.
+	self writeBackHeadFramePointers.
 	super primitiveFullGC
 ]
 
@@ -1682,7 +1683,19 @@ StackInterpreterPrimitives >> primitiveGetVMParameter: index [
 			[76] ->	[^self getMethodCompilationMSecs]. 
 			[77] ->	[^self getBlockCompilationCount]. 
 			[78] ->	[^self getBlockCompilationMSecs].
-			[79] ->  [^objectMemory integerObjectOf: self getImageVersion ] }
+			[79] ->  [^objectMemory integerObjectOf: self getImageVersion ].
+			[80] ->  [^objectMemory integerObjectOf: 
+								objectMemory getFromOldSpaceRememberedSet rememberedSetSize].
+			[81] ->  [^objectMemory integerObjectOf: 
+								objectMemory getFromOldSpaceRememberedSet rememberedSetLimit].
+			[82] ->  [^objectMemory integerObjectOf: 
+								objectMemory getFromPermToOldSpaceRememberedSet rememberedSetSize].
+			[83] ->  [^objectMemory integerObjectOf: 
+								objectMemory getFromPermToOldSpaceRememberedSet rememberedSetLimit].
+			[84] ->  [^objectMemory integerObjectOf: 
+								objectMemory getFromPermToNewSpaceRememberedSet rememberedSetSize].
+			[85] ->  [^objectMemory integerObjectOf: 
+								objectMemory getFromPermToNewSpaceRememberedSet rememberedSetLimit]}
 		otherwise: [^nil]
 ]
 
@@ -1691,7 +1704,7 @@ StackInterpreterPrimitives >> primitiveIncrementalGC [
 	"Do a quick, incremental garbage collection and return the number of bytes immediately available.
 	 (Note: more space may be made available by doing a full garbage collection."
 
-	self externalWriteBackHeadFramePointers.
+	self writeBackHeadFramePointers.
 	super primitiveIncrementalGC
 ]
 
@@ -1714,7 +1727,7 @@ StackInterpreterPrimitives >> primitiveInstVarAt [
 		[^self primitiveFailFor: PrimErrBadIndex].
 	(fmt = objectMemory indexablePointersFormat
 	 and: [objectMemory isContextHeader: hdr])
-		ifTrue: [value := self externalInstVar: index - 1 ofContext: rcvr]
+		ifTrue: [value := self instVar: index - 1 ofContext: rcvr]
 		ifFalse: [value := self subscript: rcvr with: index format: fmt].
 	self pop: argumentCount + 1 thenPush: value
 ]
@@ -1742,7 +1755,7 @@ StackInterpreterPrimitives >> primitiveInstVarAtPut [
 		[^self primitiveFailFor: PrimErrBadIndex].
 	(fmt = objectMemory indexablePointersFormat
 	 and: [objectMemory isContextHeader: hdr])
-		ifTrue: [self externalInstVar: index - 1 ofContext: rcvr put: newValue]
+		ifTrue: [self instVar: index - 1 ofContext: rcvr put: newValue]
 		ifFalse: [self subscript: rcvr with: index storing: newValue format: fmt].
 	self pop: argumentCount + 1 thenPush: newValue
 ]
@@ -2543,7 +2556,7 @@ StackInterpreterPrimitives >> primitiveObjectPointsTo [
 			  and: [objectMemory isContextHeader: header]) 
 				ifTrue:
 	 				[(self isMarriedOrWidowedContext: rcvr) ifTrue:
-						[self externalWriteBackHeadFramePointers.
+						[self writeBackHeadFramePointers.
 						 (self isStillMarriedContext: rcvr) ifTrue:
 							[^self pop: 2
 									thenPushBool: (self marriedContext: rcvr
@@ -2857,10 +2870,10 @@ StackInterpreterPrimitives >> primitiveSlotAt [
 			[| value numLiveSlots |
 			 (objectMemory isContextNonImm: rcvr)
 				ifTrue:
-					[self externalWriteBackHeadFramePointers.
+					[self writeBackHeadFramePointers.
 					 numLiveSlots := (self stackPointerForMaybeMarriedContext: rcvr) + CtxtTempFrameStart.
 					 value := (self asUnsigned: index) < numLiveSlots
-								ifTrue: [self externalInstVar: index ofContext: rcvr]
+								ifTrue: [self instVar: index ofContext: rcvr]
 								ifFalse: [objectMemory nilObject]]
 				ifFalse:
 					[value := objectMemory fetchPointer: index ofObject: rcvr].
@@ -2930,7 +2943,7 @@ StackInterpreterPrimitives >> primitiveSlotAtPut [
 		(self asUnsigned: index) < numSlots ifTrue: [ 
 			(objectMemory isContextNonImm: rcvr)
 				ifTrue: [ 
-				self externalInstVar: index ofContext: rcvr put: newValue ]
+				self instVar: index ofContext: rcvr put: newValue ]
 				ifFalse: [ 
 				objectMemory
 					storePointer: index
@@ -3558,14 +3571,14 @@ StackInterpreterPrimitives >> primitiveStoreStackp [
 	(self successful
 	 and: [newStackp between: 0 and: (objectMemory numSlotsOf: ctxt) - CtxtTempFrameStart]) ifFalse:
 		[^self primitiveFail].
-	self externalWriteBackHeadFramePointers.
+	self writeBackHeadFramePointers.
 	(self isStillMarriedContext: ctxt) ifTrue:
 		[theFP := self frameOfMarriedContext: ctxt.
 		 thePage := stackPages stackPageFor: theFP.
 		 ((onCurrentPage := thePage = stackPage)
 		 and: [theFP = framePointer]) ifTrue:
 			[^self primitiveFail]. "Probably easy to do this right here right now (just move stackPointer).  But fail for now."
-		 self externalDivorceFrame: theFP andContext: ctxt.
+		 self divorceFrame: theFP andContext: ctxt.
 		 onCurrentPage
 			ifTrue:
 				[self setStackPointersFromPage: stackPage]
@@ -3815,7 +3828,7 @@ StackInterpreterPrimitives >> primitiveTerminateTo [
 		[^self primitiveFail].		
 
 	"All stackPages need to have current head pointers to avoid confusion."
-	self externalWriteBackHeadFramePointers.
+	self writeBackHeadFramePointers.
 
 	"If we're searching for aContextOrNil it might be on a stack page.  Helps to know
 	 if we can free a whole page or not, or if we can short-cut the termination."
@@ -3858,7 +3871,7 @@ StackInterpreterPrimitives >> primitiveTerminateTo [
 				self pop: 1.
 				self assert: stackPage = stackPages mostRecentlyUsedPage.
 				^nil].
-			 theFP := self externalEnsureIsBaseFrame: theFP. "May cause a GC!!"
+			 theFP := self ensureIsBaseFrame: theFP. "May cause a GC!!"
 			 currentCtx := self frameCallerContext: theFP.
 			 "May also reclaim aContextOrNil's page, hence..."
 			 (aContextOrNil ~= objectMemory nilObject and: [self isStillMarriedContext: aContextOrNil])
@@ -3913,7 +3926,7 @@ StackInterpreterPrimitives >> primitiveTerminateTo [
 						ifTrue:
 							[frameAbove := self findFrameAbove: theFP inPage: thePage.
 							self assert: frameAbove ~= 0.
-							frameAbove := self externalEnsureIsBaseFrame: frameAbove. "May cause a GC!! May also reclaim aContextOrNil's page, hence..."
+							frameAbove := self ensureIsBaseFrame: frameAbove. "May cause a GC!! May also reclaim aContextOrNil's page, hence..."
 							(aContextOrNil ~= objectMemory nilObject and: [self isStillMarriedContext: aContextOrNil])
 								ifTrue: [contextsFP := self frameOfMarriedContext: aContextOrNil.
 										pageToStopOn := stackPages stackPageFor: contextsFP]
@@ -3963,7 +3976,7 @@ StackInterpreterPrimitives >> primitiveVMParameter [
 	Otherwise the *real* list is in the code: `StackInterpreterPrimitives>>#primitiveGetVMParameter:`"
 
 	| paramsArraySize index |
-	paramsArraySize := 79.
+	paramsArraySize := 85.
 	argumentCount = 0 ifTrue: [^self primitiveAllVMParameters: paramsArraySize].
 	argumentCount > 2 ifTrue: [^self primitiveFailFor: PrimErrBadNumArgs].
 	
@@ -4125,7 +4138,7 @@ StackInterpreterPrimitives >> ptExitInterpreterToCallback: aPointer [
 	
 	suspendedProcess := self popSameThreadCalloutSuspendedProcess.
 	self putToSleep: self activeProcess yieldingIf: preemptionYields.
-	self transferTo: suspendedProcess.
+	self transferTo: suspendedProcess from: CSCallbackLeave.
 	
 	newMethod := self popStack.
 	

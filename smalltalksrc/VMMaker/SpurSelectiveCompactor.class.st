@@ -99,7 +99,7 @@ SpurSelectiveCompactor >> compactSegment: segInfo freeStart: initialFreeStart se
 				 (manager isRemembered: copy) ifTrue: 
 					["copy has the remembered bit set, but is not in the remembered table."
 					 manager setIsRememberedOf: copy to: false.
-					 self getFromOldSpaceRememberedSet doRemember: copy].
+					 self getFromOldSpaceRememberedSet remember: copy].
 				 manager forward: currentEntity to: (manager objectStartingAt: fillStart).
 				 fillStart := fillStart + bytesToCopy.
 				 self assert: (self oop: fillStart isLessThan: (segmentToFill segLimit - manager bridgeSize))].

@@ -1,5 +1,13 @@
 # Change log
 
+## v10.0.5
+
+* Testing scavenger tenuring by @PalumboN in https://github.com/pharo-project/pharo-vm/pull/588
+* Deleting Pharo image from the vm repo by @jordanmontt in https://github.com/pharo-project/pharo-vm/pull/591
+* Cleaning Up Third Party Libraries by @tesonep in https://github.com/pharo-project/pharo-vm/pull/581
+
+**Full Changelog**: https://github.com/pharo-project/pharo-vm/compare/v10.0.4...v10.0.5
+
 ## v10.0.4
 
 - Composed image format by @PalumboN in https://github.com/pharo-project/pharo-vm/pull/377

@@ -4,40 +4,6 @@ Class {
 	#category : #'VMMaker-JIT'
 }
 
-{ #category : #'process primitives' }
-CoInterpreterPrimitives >> doWaitSemaphore: sema [
-
-	<api>
-	<returnTypeC: #void>
-	
-	self doWaitSemaphore: sema reEnterInterpreter: true
-]
-
-{ #category : #'process primitives' }
-CoInterpreterPrimitives >> doWaitSemaphore: sema reEnterInterpreter: hasToReenter [
-	| excessSignals activeProc inInterpreter |
-	<api>
-	<returnTypeC: #void>	
-
-	excessSignals := self fetchInteger: ExcessSignalsIndex ofObject: sema.
-	excessSignals > 0
-		ifTrue:
-			[self storeInteger: ExcessSignalsIndex
-				ofObject: sema
-				withValue: excessSignals - 1]
-		ifFalse:
-			["We're going to switch process, either to an interpreted frame or a machine
-			  code frame. To know whether to return or enter machine code we have to
-			  know from whence we came.  We could have come from the interpreter,
-			  either directly or via a machine code primitive.  We could have come from
-			  machine code.  The instructionPointer tells us where from:"
-			inInterpreter := self isInstructionPointerInInterpreter: instructionPointer.
-			activeProc := self activeProcess.
-			self addLastLink: activeProc toList: sema.
-			self transferTo: self wakeHighestPriority from: CSWait.
-			hasToReenter ifTrue: [self forProcessPrimitiveReturnToExecutivePostContextSwitch: inInterpreter]]
-]
-
 { #category : #'object access primitives' }
 CoInterpreterPrimitives >> frameIsMarked: theFPInt [
 	| methodField |
@@ -256,75 +222,6 @@ CoInterpreterPrimitives >> primitiveContextXray [
 	self pop: 1 thenPush: (objectMemory integerObjectOf: flags)
 ]
 
-{ #category : #'process primitives' }
-CoInterpreterPrimitives >> primitiveEnterCriticalSection [
-	"Attempt to enter a CriticalSection/Mutex.  If not owned, set the owner to the current
-	 process and answer false. If owned by the current process  answer true.   Otherwise
-	 suspend the process.  Answer if the receiver is owned by the current process."
-	| criticalSection owningProcessIndex owningProcess activeProc inInterpreter |
-	argumentCount > 0
-		ifTrue:
-			[criticalSection := self stackValue: 1.  "rcvr"
-			 activeProc := self stackTop]
-		ifFalse:
-			[criticalSection := self stackTop.  "rcvr"
-			 activeProc := self activeProcess].
-	owningProcessIndex := ExcessSignalsIndex. "CriticalSections are laid out like Semaphores"
-	owningProcess := objectMemory fetchPointer: owningProcessIndex ofObject: criticalSection.
-	owningProcess = objectMemory nilObject ifTrue:
-		[objectMemory storePointer: owningProcessIndex
-			ofObject: criticalSection
-			withValue: activeProc.
-		 ^self pop: argumentCount + 1 thenPush: objectMemory falseObject].
-	owningProcess = activeProc ifTrue:
-		[^self pop: argumentCount + 1 thenPush: objectMemory trueObject].
-	"Arrange to answer false (unowned) when the process is resumed."
-	self pop: argumentCount + 1 thenPush: objectMemory falseObject.
-	"We're going to switch process, either to an interpreted frame or a machine
-	 code frame. To know whether to return or enter machine code we have to
-	 know from whence we came.  We could have come from the interpreter,
-	 either directly or via a machine code primitive.  We could have come from
-	 machine code.  The instructionPointer tells us where from:"
-	inInterpreter := self isInstructionPointerInInterpreter: instructionPointer.
-	self addLastLink: activeProc toList: criticalSection.
-	self transferTo: self wakeHighestPriority from: CSEnterCriticalSection.
-	self forProcessPrimitiveReturnToExecutivePostContextSwitch: inInterpreter
-]
-
-{ #category : #'process primitives' }
-CoInterpreterPrimitives >> primitiveExitCriticalSection [
-	"Exit the critical section.
-	 This may change the active process as a result."
-	| criticalSection owningProcessIndex inInterpreter owningProcess |
-	criticalSection := self stackTop.  "rcvr"
-	owningProcessIndex := ExcessSignalsIndex. "CriticalSections are laid out like Semaphores"
-	(self isEmptyList: criticalSection)
-		ifTrue:
-			[objectMemory storePointerUnchecked: owningProcessIndex
-				ofObject: criticalSection
-				withValue: objectMemory nilObject]
-		ifFalse:
-			["We're going to switch process, either to an interpreted frame or a machine
-			  code frame. To know whether to return or enter machine code we have to
-			  know from whence we came.  We could have come from the interpreter,
-			  either directly or via a machine code primitive.  We could have come from
-			  machine code.  The instructionPointer tells us where from:"
-			 inInterpreter := self isInstructionPointerInInterpreter: instructionPointer.
-			 owningProcess := self removeFirstLinkOfList: criticalSection.
-			 "store check unnecessary because aSemaphore referred to owningProcess
-			  via its FirstLinkIndex slot before owningProcess was removed."
-			 objectMemory storePointerUnchecked: owningProcessIndex
-				ofObject: criticalSection
-				withValue: owningProcess.
-			 "Note that resume: isn't fair; it won't suspend the active process.
-			  For fairness we must do the equivalent of a primitiveYield, but that
-			  may break old code, so we stick with unfair resume:."
-			 (self resume: owningProcess
-				preemptedYieldingIf: preemptionYields
-				from: CSExitCriticalSection) ifTrue:
-						[self forProcessPrimitiveReturnToExecutivePostContextSwitch: inInterpreter]]
-]
-
 { #category : #'system control primitives' }
 CoInterpreterPrimitives >> primitiveFlushCacheByMethod [
 	"The receiver is a compiledMethod.  Clear all entries in the method lookup cache that
@@ -462,7 +359,7 @@ CoInterpreterPrimitives >> primitiveMethodXray [
 						             selector: objectMemory nilObject.
 					(cogMethod = nil and: [ cogCompiledCodeCompactionCalledFor ]) 
 						ifTrue: [ 
-							self externalWriteBackHeadFramePointers.
+							self writeBackHeadFramePointers.
 							self commenceCogCompiledCodeCompaction.
 							cogMethod := cogit
 								             cog: self stackTop
@@ -594,46 +491,6 @@ CoInterpreterPrimitives >> primitiveResetCountersInMethod [
 ]
 
 { #category : #'process primitives' }
-CoInterpreterPrimitives >> primitiveResume [
-	"Put this process on the scheduler's lists thus allowing it to proceed next time there is
-	 a chance for processes of it's priority level.  It must go to the back of its run queue so
-	 as not to preempt any already running processes at this level.  If the process's priority
-	 is higher than the current process, preempt the current process."
-	| proc inInterpreter |
-	proc := self stackTop.  "rcvr"
-	(objectMemory isContext: (objectMemory followField: SuspendedContextIndex ofObject: proc)) ifFalse:
-		[^self primitiveFail].
-	"We're about to switch process, either to an interpreted frame or a
-	 machine code frame. To know whether to return or enter machine code
-	 we have to know from whence we came.  We could have come from the
-	 interpreter, either directly or via a machine code primitive.  We could have
-	 come from machine code.  The instructionPointer tells us where from:"
-	inInterpreter := self isInstructionPointerInInterpreter: instructionPointer.
-	(self resume: proc preemptedYieldingIf: preemptionYields from: CSResume) ifTrue:
-		[self forProcessPrimitiveReturnToExecutivePostContextSwitch: inInterpreter]
-
-	"Personally I would like to check MyList, which should not be one of the elements of the scheduler lists.
-	 But there are awful race conditions in things like should:notTakeMoreThan: that mean we can't.
-	 eem 9/27/2010 23:08. e.g.
-
-	| proc myList classLinkedList |
-	proc := self stackTop.
-	myList := objectMemory fetchPointer: MyListIndex ofObject: proc.
-	classLinkedList := self superclassOf: (objectMemory splObj: ClassSemaphore).
-	((self fetchClassOfNonInt: myList) ~= classLinkedList
-	and: [objectMemory isContext: (objectMemory fetchPointer: SuspendedContextIndex ofObject: proc)]) ifFalse:
-		[^self primitiveFail].
-	''We're about to switch process, either to an interpreted frame or a
-	 machine code frame. To know whether to return or enter machine code
-	 we have to know from whence we came.  We could have come from the
-	 interpreter, either directly or via a machine code primitive.  We could have
-	 come from machine code.  The instructionPointer tells us where from:''
-	inInterpreter := instructionPointer >= objectMemory startOfMemory.
-	(self resume: proc  preemptedYieldingIf: preemptionYields from: CSResume) ifTrue:
-		[self forProcessPrimitiveReturnToExecutivePostContextSwitch: inInterpreter]"
-]
-
-{ #category : #'process primitives' }
 CoInterpreterPrimitives >> primitiveSignal [
 	"Synchronously signal the semaphore.
 	 This may change the active process as a result."
@@ -662,39 +519,6 @@ CoInterpreterPrimitives >> primitiveSnapshot [
 		instructionPointer := instructionPointer - 1].
 	self siglong: reenterInterpreter jmp: ReturnToInterpreter
 	"NOTREACHED"
-]
-
-{ #category : #'process primitives' }
-CoInterpreterPrimitives >> primitiveSuspend [
-	"Primitive. Suspend the receiver, aProcess such that it can be executed again
-	by sending #resume. If the given process is not currently running, take it off
-	its corresponding list. The primitive returns the list the receiver was previously on."
-	| process myList |
-	process := self stackTop.
-	process = self activeProcess ifTrue:
-		[| inInterpreter |
-		"We're going to switch process, either to an interpreted frame or a machine
-		 code frame. To know whether to return or enter machine code we have to
-		 know from whence we came.  We could have come from the interpreter,
-		 either directly or via a machine code primitive.  We could have come from
-		 machine code.  The instructionPointer tells us where from:"
-		self pop: 1 thenPush: objectMemory nilObject.
-		inInterpreter := self isInstructionPointerInInterpreter: instructionPointer.
-		self transferTo: self wakeHighestPriority from: CSSuspend.
-		^self forProcessPrimitiveReturnToExecutivePostContextSwitch: inInterpreter].
-	myList := objectMemory fetchPointer: MyListIndex ofObject: process.
-	"XXXX Fixme. We should really check whether myList is a kind of LinkedList or not
-	but we can't easily so just do a quick check for nil which is the most common case."
-	myList = objectMemory nilObject ifTrue:
-		[^self primitiveFailFor: PrimErrBadReceiver].
-	"Alas in Spur we need a read barrier"
-	(objectMemory isForwarded: myList) ifTrue:
-		[myList := objectMemory followForwarded: myList.
-		 objectMemory storePointer: MyListIndex ofObject: process withValue: myList].
-	self removeProcess: process fromList: myList.
-	self successful ifTrue:
-		[objectMemory storePointer: MyListIndex ofObject: process withValue: objectMemory nilObject.
-		 self pop: 1 thenPush: myList]
 ]
 
 { #category : #'control primitives' }
@@ -726,7 +550,7 @@ CoInterpreterPrimitives >> primitiveTerminateTo [
 		[^self primitiveFail].		
 
 	"All stackPages need to have current head pointers to avoid confusion."
-	self externalWriteBackHeadFramePointers.
+	self writeBackHeadFramePointers.
 
 	"If we're searching for aContextOrNil it might be on a stack page.  Helps to know
 	 if we can free a whole page or not, or if we can short-cut the termination."
@@ -780,7 +604,7 @@ CoInterpreterPrimitives >> primitiveTerminateTo [
 				 self assert: stackPage = stackPages mostRecentlyUsedPage.
 				 ^nil].
 			 self assertValidStackedInstructionPointers: #'__LINE__'.
-			 theFP := self externalEnsureIsBaseFrame: theFP. "May cause a GC!!"
+			 theFP := self ensureIsBaseFrame: theFP. "May cause a GC!!"
 			 currentCtx := self frameCallerContext: theFP.
 			 "May also reclaim aContextOrNil's page, hence..."
 			 (aContextOrNil ~= objectMemory nilObject and: [self isStillMarriedContext: aContextOrNil])
@@ -836,7 +660,7 @@ CoInterpreterPrimitives >> primitiveTerminateTo [
 						ifTrue:
 							[frameAbove := self findFrameAbove: theFP inPage: thePage.
 							self assert: frameAbove ~= 0.
-							frameAbove := self externalEnsureIsBaseFrame: frameAbove. "May cause a GC!! May also reclaim aContextOrNil's page, hence..."
+							frameAbove := self ensureIsBaseFrame: frameAbove. "May cause a GC!! May also reclaim aContextOrNil's page, hence..."
 							(aContextOrNil ~= objectMemory nilObject and: [self isStillMarriedContext: aContextOrNil])
 								ifTrue: [contextsFP := self frameOfMarriedContext: aContextOrNil.
 										pageToStopOn := stackPages stackPageFor: contextsFP]
@@ -912,7 +736,7 @@ CoInterpreterPrimitives >> primitiveVoidVMStateForMethod [
 	self flushMethodCacheForMethod: methodObj.
 	activeContext := self ensureFrameIsMarried: framePointer SP: stackPointer.
 	self ensurePushedInstructionPointer.
-	self externalWriteBackHeadFramePointers.
+	self writeBackHeadFramePointers.
 	(hasCogMethod := self methodHasCogMethod: methodObj) ifTrue:
 		[self divorceMachineCodeFramesWithMethod: methodObj].
 	"One might think (as this author did) that the heap scan is unnecessary if the method does not
@@ -944,29 +768,6 @@ CoInterpreterPrimitives >> primitiveVoidVMStateForMethod [
 	instructionPointer := self popStack.
 	self assert: (methodObj = self stackTop or: [argumentCount > 0 and: [methodObj = (self stackValue: 1)]]).
 	self pop: argumentCount
-]
-
-{ #category : #'process primitives' }
-CoInterpreterPrimitives >> primitiveYield [
-"primitively do the equivalent of Process>yield"
-	| scheduler activeProc priority processLists processList inInterpreter |
-	scheduler := self schedulerPointer.
-	activeProc := objectMemory fetchPointer: ActiveProcessIndex ofObject: scheduler.
-	priority := self quickFetchInteger: PriorityIndex ofObject: activeProc.
-	processLists := objectMemory fetchPointer: ProcessListsIndex ofObject: scheduler.
-	processList := objectMemory fetchPointer: priority - 1 ofObject: processLists.
-
-	(self isEmptyList: processList) ifTrue:
-		[^nil].
-	"We're going to switch process, either to an interpreted frame or a machine
-	 code frame. To know whether to return or enter machine code we have to
-	 know from whence we came.  We could have come from the interpreter,
-	 either directly or via a machine code primitive.  We could have come from
-	 machine code.  The instructionPointer tells us where from:"
-	inInterpreter := self isInstructionPointerInInterpreter: instructionPointer.
-	self addLastLink: activeProc toList: processList.
-	self transferTo: self wakeHighestPriority from: CSYield.
-	self forProcessPrimitiveReturnToExecutivePostContextSwitch: inInterpreter
 ]
 
 { #category : #'method introspection support' }

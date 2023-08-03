@@ -55,8 +55,11 @@ VMSpurRememberedSetTest >> testMoveToPermSpaceObjectWithOldObjectShouldRememberP
 	
 	permObjectAddress := memory moveToPermSpace: oldObjectAddress.
 
-	self assert: (memory isRemembered: permObjectAddress).
+	self deny: (memory isRemembered: permObjectAddress).
 	self deny: (memory isRemembered: referencedOldObjectAddress).
+
+	self assert: (memory getFromPermToOldSpaceRememberedSet isInRememberedSet: permObjectAddress).
+	self deny: (memory getFromPermToOldSpaceRememberedSet isInRememberedSet: referencedOldObjectAddress).
 
 ]
 
@@ -70,12 +73,12 @@ VMSpurRememberedSetTest >> testMoveToPermSpaceObjectWithOldObjectShouldUpdateOld
 	referencedOldObjectAddress := self newOldSpaceObjectWithSlots: 0.
 	memory storePointer: 0 ofObject: oldObjectAddress withValue: referencedOldObjectAddress.
 	
-	self assert: memory fromPermSpaceRememberedSet rememberedSetSize equals: 0.
+	self assert: memory getFromPermToOldSpaceRememberedSet rememberedSetSize equals: 0.
 		
 	permObjectAddress := memory moveToPermSpace: oldObjectAddress.
 	
-	self assert: memory fromPermSpaceRememberedSet rememberedSetSize equals: 1.
-	self assert: (memory fromPermSpaceRememberedSet objectAt: 0) equals: permObjectAddress.
+	self assert: memory getFromPermToOldSpaceRememberedSet rememberedSetSize equals: 1.
+	self assert: (memory getFromPermToOldSpaceRememberedSet objectAt: 0) equals: permObjectAddress.
 
 ]
 
@@ -110,7 +113,7 @@ VMSpurRememberedSetTest >> testMoveToPermSpaceRememberedObjectShouldUpdateNewRem
 		
 	permObjectAddress := memory moveToPermSpace: oldObjectAddress.
 	
-	self assert: (memory fromPermSpaceRememberedSet objectAt: 0) equals: permObjectAddress.
+	self assert: (memory getFromPermToNewSpaceRememberedSet objectAt: 0) equals: permObjectAddress.
 
 ]
 
@@ -259,8 +262,8 @@ VMSpurRememberedSetTest >> testStoreYoungAndOldObjectInPermObjectShouldRememberP
 	"Check sets"	
 	self assert: memory fromOldSpaceRememberedSet rememberedSetSize equals: 0.
 	
-	self assert: memory fromPermSpaceRememberedSet rememberedSetSize equals: 1.
-	self assert: (memory fromPermSpaceRememberedSet objectAt: 0) equals: permObjectAddress.
+	self assert: memory getFromPermToNewSpaceRememberedSet rememberedSetSize equals: 1.
+	self assert: (memory getFromPermToNewSpaceRememberedSet objectAt: 0) equals: permObjectAddress.
 
 ]
 
