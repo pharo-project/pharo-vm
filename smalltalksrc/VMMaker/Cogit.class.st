@@ -223,8 +223,6 @@ Class {
 		'directedSuperSendTrampolines',
 		'directedSuperBindingSendTrampolines',
 		'dynamicSuperSendTrampolines',
-		'outerSendTrampolines',
-		'selfSendTrampolines',
 		'firstSend',
 		'lastSend',
 		'realCEEnterCogCodePopReceiverReg',
@@ -242,13 +240,8 @@ Class {
 		'extB',
 		'numExtB',
 		'tempOop',
-		'numIRCs',
-		'indexOfIRC',
-		'theIRCs',
 		'receiverTags',
-		'implicitReceiverSendTrampolines',
 		'cogMethodSurrogateClass',
-		'cogBlockMethodSurrogateClass',
 		'CStackPointer',
 		'CFramePointer',
 		'cPICPrototype',
@@ -294,7 +287,6 @@ Class {
 		'MaxNumberOfAbstractOpcodes',
 		'MaxX2NDisplacement',
 		'NumObjRefsInRuntime',
-		'NumOopsPerNSC',
 		'NumSpecialSelectors',
 		'NumTrampolines',
 		'ProcessorClass',
@@ -494,17 +486,15 @@ Cogit class >> cogToBytecodeMethodMapping [
 Cogit class >> declareCVarsIn: aCCodeGenerator [
 
 	#( 'coInterpreter' 'objectMemory' 'methodZone' 'objectRepresentation'
-	   'cogBlockMethodSurrogateClass' 'cogMethodSurrogateClass'
+	   'cogMethodSurrogateClass'
 	   'processor' 'lastNInstructions' 'simulatedAddresses'
 	   'simulatedTrampolines' 'simulatedVariableGetters'
 	   'simulatedVariableSetters' 'printRegisters' 'printInstructions'
 	   'clickConfirm' 'singleStep' ) do: [
 		:simulationVariableNotNeededForRealVM |
 		aCCodeGenerator removeVariable: simulationVariableNotNeededForRealVM ].
-	#( 'selfSendTrampolines' 'dynamicSuperSendTrampolines'
-	   'implicitReceiverSendTrampolines'
-	   'outerSendTrampolines' 'ceEnclosingObjectTrampoline'
-	   'numIRCs' 'indexOfIRC' 'theIRCs' ) do: [
+	#( 'dynamicSuperSendTrampolines'
+	   'ceEnclosingObjectTrampoline') do: [
 		:variableNotNeededInNormalVM |
 		aCCodeGenerator removeVariable: variableNotNeededInNormalVM ].
 
@@ -3140,7 +3130,8 @@ Cogit >> addressIsInCurrentCompilation: address [
 { #category : #testing }
 Cogit >> addressIsInFixups: address [
 	<var: #address type: #'BytecodeFixup *'>
-	^self cCode: '(BytecodeFixup *)address >= fixups && (BytecodeFixup *)address < (fixups + numAbstractOpcodes)'
+	"Hardcode renaming to l_address"
+	^self cCode: '(BytecodeFixup *)l_address >= fixups && (BytecodeFixup *)l_address < (fixups + numAbstractOpcodes)'
 		inSmalltalk:
 			[fixups notNil
 			 and: [(fixups object identityIndexOf: address) between: 1 and: numAbstractOpcodes]]
@@ -3149,9 +3140,10 @@ Cogit >> addressIsInFixups: address [
 { #category : #testing }
 Cogit >> addressIsInInstructions: address [
 	<var: #address type: #'AbstractInstruction *'>
-	^self cCode: '!((usqInt)(address) & BytesPerWord-1) \
-				&& (address) >= &abstractOpcodes[0] \
-				&& (address) < &abstractOpcodes[opcodeIndex]'
+	"Hardcode renaming to l_address"
+	^self cCode: '!((usqInt)(l_address) & BytesPerWord-1) \
+				&& (l_address) >= &abstractOpcodes[0] \
+				&& (l_address) < &abstractOpcodes[opcodeIndex]'
 		inSmalltalk: [(abstractOpcodes object identityIndexOf: address) between: 1 and: opcodeIndex]
 ]
 

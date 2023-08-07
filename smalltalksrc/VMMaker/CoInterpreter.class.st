@@ -90,8 +90,7 @@ Class {
 		'lastUncoggableInterpretedBlockMethod',
 		'flagInterpretedMethods',
 		'maxLiteralCountForCompile',
-		'minBackwardJumpCountForCompile',
-		'initialMemoryAddress'
+		'minBackwardJumpCountForCompile'
 	],
 	#classVars : [
 		'HasBeenReturnedFromMCPC',

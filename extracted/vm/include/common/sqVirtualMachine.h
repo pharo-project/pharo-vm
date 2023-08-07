@@ -163,7 +163,6 @@ typedef struct VirtualMachine {
 	sqInt (*failed)(void);
 	void (*fullGC)(void);
 	sqInt (*primitiveFail)(void);
-	sqInt (*showDisplayBitsLeftTopRightBottom)(sqInt aForm, sqInt l, sqInt t, sqInt r, sqInt b);
 	sqInt (*signalSemaphoreWithIndex)(sqInt semaIndex);
 	sqInt (*success)(sqInt aBoolean);
 	sqInt (*superclassOf)(sqInt classPointer);

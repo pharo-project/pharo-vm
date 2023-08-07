@@ -54,6 +54,13 @@ SlangBasicTranslationTestClass >> methodCallingMethodWithInlinePragma [
 ]
 
 { #category : #inline }
+SlangBasicTranslationTestClass >> methodDefiningConflictingVariable [
+
+	<var: 'methodWithoutReturn' type: 'char *'>
+	| methodWithoutReturn |
+]
+
+{ #category : #inline }
 SlangBasicTranslationTestClass >> methodDefiningSingleExternVariable [
 
 	<var: 'foo' type: #'extern int' >
@@ -119,6 +126,12 @@ SlangBasicTranslationTestClass >> methodUseParametersWithAnnotationsBuiltIn: pFr
 ]
 
 { #category : #inline }
+SlangBasicTranslationTestClass >> methodToBeTranslatedWithIfAndShiftRight [
+
+	self methodWithIfAndShiftRight: 2
+]
+
+{ #category : #inline }
 SlangBasicTranslationTestClass >> methodUsingSingleArrayVariable [
 
 	<var: 'foo' type: #'int[17]' >
@@ -165,6 +178,14 @@ SlangBasicTranslationTestClass >> methodWithAnOptionPragma [
 ]
 
 { #category : #inline }
+SlangBasicTranslationTestClass >> methodWithIfAndShiftRight: var [
+
+	^ (var < 0
+		ifTrue:  [ 0 ]
+		ifFalse: [ var ]) >> (var - 1 * 32)
+]
+
+{ #category : #inline }
 SlangBasicTranslationTestClass >> methodWithInlinePragma [
 
 	<inline: true>
@@ -201,6 +222,18 @@ SlangBasicTranslationTestClass >> methodWithOptionPragma [
 	<notOption: #OPTION2>
 	<option: #OPTION3>
 	
+]
+
+{ #category : #inline }
+SlangBasicTranslationTestClass >> methodWithRepeatedCFunctionName [
+
+	^ true
+]
+
+{ #category : #inline }
+SlangBasicTranslationTestClass >> methodWithRepeatedCFunctionName: arg1 [
+
+	^ true
 ]
 
 { #category : #inline }
