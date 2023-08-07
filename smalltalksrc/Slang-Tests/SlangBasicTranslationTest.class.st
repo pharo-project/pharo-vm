@@ -1155,6 +1155,163 @@ SlangBasicTranslationTest >> testGoto [
 	self assert: translation equals: 'goto lab'
 ]
 
+{ #category : #'tests-inline-builtins' }
+SlangBasicTranslationTest >> testInlineMethodSumArgumentsNoPrepare [
+	
+	| tMethod translation |
+	tMethod := (self getTMethodFrom: #methodSumParameters:to:with:).
+	generator doBasicInlining: true.
+	
+	translation := self translate: tMethod.
+	translation := translation trimBoth.
+	self
+		assert: translation
+		equals: '/* SlangBasicTranslationTestClass>>#methodSumParameters:to:with: */
+static sqInt
+methodSumParameterstowith(sqInt pFrom, sqInt pTo, sqInt anInteger)
+{
+	sqInt i;
+	sqInt pFrom1;
+	sqInt pTo1;
+
+	/* begin methodFrom:to: */
+	pFrom1 = pFrom + anInteger;
+	pTo1 = pTo + anInteger;
+	for (i = 0; i <= 5; i += 1) {
+		pTo1[i] = pFrom1[i];
+	};
+	return 0;
+}'
+]
+
+{ #category : #'tests-inline-builtins' }
+SlangBasicTranslationTest >> testInlineMethodSumArgumentsPrepared [
+	
+	| tMethod translation |
+	tMethod := (self getTMethodFrom: #methodSumParameters:to:with:).
+	generator 
+		prepareMethods;
+		doBasicInlining: true.
+	
+	translation := self translate: tMethod.
+	translation := translation trimBoth.
+	self
+		assert: translation
+		equals: '/* SlangBasicTranslationTestClass>>#methodSumParameters:to:with: */
+static sqInt
+methodSumParameterstowith(sqInt pFrom, sqInt pTo, sqInt anInteger)
+{
+	sqInt i;
+
+	/* begin methodFrom:to: */
+	for (i = 0; i <= 5; i += 1) {
+		(pTo + anInteger)[i] = pFrom + anInteger[i];
+	};
+	return 0;
+}'
+]
+
+{ #category : #'tests-inline-builtins' }
+SlangBasicTranslationTest >> testInlineMethodSumArgumentsWithAnnotationsNoPrepare [
+	| tMethod translation |
+
+	tMethod := (self getTMethodFrom: #methodSumParametersWithAnnotations:to:with:).
+	generator doBasicInlining: true.
+	
+	translation := self translate: tMethod.
+	translation := translation trimBoth.
+	self
+		assert: translation
+		equals: '/* SlangBasicTranslationTestClass>>#methodSumParametersWithAnnotations:to:with: */
+static sqInt
+methodSumParametersWithAnnotationstowith(unsigned int *pFrom, unsigned int *pTo, sqInt anInteger)
+{
+	sqInt i;
+	unsigned int *pFrom1;
+	unsigned int *pTo1;
+
+	/* begin methodFromWithAnnotations:to:len: */
+	pFrom1 = pFrom + anInteger;
+	pTo1 = pTo + anInteger;
+	for (i = 0, iLimiT = 5 - 1; i <= iLimiT; i += 1) {
+		pTo1[i] = pFrom1[i];
+	};
+	return 0;
+}'
+]
+
+{ #category : #'tests-inline-builtins' }
+SlangBasicTranslationTest >> testInlineMethodSumArgumentsWithAnnotationsPrepared [
+	| tMethod translation |
+
+	tMethod := (self getTMethodFrom: #methodSumParametersWithAnnotations:to:with:).
+	generator 
+		prepareMethods;
+		doBasicInlining: true.
+
+	translation := self translate: tMethod.
+	translation := translation trimBoth.
+	self
+		assert: translation
+		equals: '/* SlangBasicTranslationTestClass>>#methodSumParametersWithAnnotations:to:with: */
+static sqInt
+methodSumParametersWithAnnotationstowith(unsigned int *pFrom, unsigned int *pTo, sqInt anInteger)
+{
+	sqInt i;
+	sqInt pFrom1;
+	sqInt pTo1;
+
+	/* begin methodFromWithAnnotations:to:len: */
+	for (i = 0; i < 5; i += 1) {
+		(pTo + anInteger)[i] = pFrom + anInteger[i];
+	};
+	return 0;
+}'
+]
+
+{ #category : #'tests-inline-builtins' }
+SlangBasicTranslationTest >> testInlineMethodSumArgumentsWithLengthNoPrepare [
+	| translation codeGenerator inlinedMethod |
+
+	translation := self getTMethodFrom: #methodSumParameters:to:with:len:.
+	inlinedMethod := ((SlangBasicTranslationTestClass >> #methodFrom:to:len:) asTranslationMethodOfClass: TMethod).
+	
+	codeGenerator := CCodeGeneratorGlobalStructure new.
+	codeGenerator vmMaker: VMMaker new.
+	codeGenerator vmMaker vmmakerConfiguration: VMMakerConfiguration.	
+	codeGenerator 
+		addMethod: translation;
+		addMethod: inlinedMethod;
+		doInlining: true.
+
+	(translation asCASTIn: codeGenerator) asString.
+	(inlinedMethod asCASTIn: codeGenerator) asString.
+	
+	self assert: (translation locals includesAll: inlinedMethod locals)
+]
+
+{ #category : #'tests-inline-builtins' }
+SlangBasicTranslationTest >> testInlineMethodSumArgumentsWithLengthPrepared [
+	| translation codeGenerator inlinedMethod |
+
+	translation := self getTMethodFrom: #methodSumParameters:to:with:len:.
+	inlinedMethod := ((SlangBasicTranslationTestClass >> #methodFrom:to:len:) asTranslationMethodOfClass: TMethod).
+	
+	codeGenerator := CCodeGeneratorGlobalStructure new.
+	codeGenerator vmMaker: VMMaker new.
+	codeGenerator vmMaker vmmakerConfiguration: VMMakerConfiguration.	
+	codeGenerator 
+		addMethod: translation;
+		addMethod: inlinedMethod;
+		prepareMethods;
+		doInlining: true.
+
+	(translation asCASTIn: codeGenerator) asString.
+	(inlinedMethod asCASTIn: codeGenerator) asString.
+	
+	self assert: (translation locals includesAll: inlinedMethod locals)
+]
+
 { #category : #'tests-inlinenode' }
 SlangBasicTranslationTest >> testInlineNodeDoesNotInitializeReadBeforeWrittenArrayTemp [
 

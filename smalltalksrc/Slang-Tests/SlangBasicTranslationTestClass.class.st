@@ -73,6 +73,56 @@ SlangBasicTranslationTestClass >> methodDefiningSingleVariable [
 	| foo |
 ]
 
+{ #category : #'generation-targets' }
+SlangBasicTranslationTestClass >> methodFrom: pFrom to: pTo [
+
+	0 to: 5 do: [ : i | pTo at: i put: (pFrom at: i) ]
+]
+
+{ #category : #'generation-targets' }
+SlangBasicTranslationTestClass >> methodFrom: pFrom to: pTo len: sizeLen [
+
+	0 to: sizeLen - 1 do: [ : i | pTo at: i put: (pFrom at: i) ]
+]
+
+{ #category : #'generation-targets' }
+SlangBasicTranslationTestClass >> methodFromWithAnnotations: pFrom to: pTo len: len [
+	<var: #pTo type: #'unsigned int *'>
+	<var: #pFrom type: #'unsigned int *'>
+
+	0 to: len - 1 do: [ : i | pTo at: i put: (pFrom at: i) ].
+	^ 0
+]
+
+{ #category : #'generation-targets' }
+SlangBasicTranslationTestClass >> methodSumParameters: pFrom to: pTo with: anInteger [
+
+	self 
+		methodFrom: pFrom + anInteger 
+		to: pTo + anInteger
+]
+
+{ #category : #'generation-targets' }
+SlangBasicTranslationTestClass >> methodSumParameters: pFrom to: pTo with: anInteger len: sizeLen [
+
+	self 
+		methodFrom: pFrom + anInteger 
+		to: pTo + anInteger
+		len: sizeLen - 1
+]
+
+{ #category : #'generation-targets' }
+SlangBasicTranslationTestClass >> methodSumParametersWithAnnotations: pFrom to: pTo with: anInteger [
+
+	<var: #pTo type: #'unsigned int *'>
+	<var: #pFrom type: #'unsigned int *'>
+
+	^ self
+			methodFromWithAnnotations: pFrom + anInteger
+			to: pTo + anInteger
+			len: 5
+]
+
 { #category : #inline }
 SlangBasicTranslationTestClass >> methodUsingSingleArrayVariable [
 

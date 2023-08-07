@@ -1534,10 +1534,18 @@ CCodeGenerator >> generateCASTAt: tast [
 
 { #category : #'CAST translation' }
 CCodeGenerator >> generateCASTAtPut: tast [
+	" Add parentheses to lvalue to correctly generate C code for complex inlining cases. For example in:
+	
+	 '(pTo + anInteger)[i] = pFrom + anInteger[i]'
+	
+	instead of (without parentheses)
+	
+	'pTo + anInteger[i] = pFrom + anInteger[i]'
 
+	"
 	^ CAssignmentNode
 		  lvalue: (CArrayAccessNode
-				   array: (tast receiver asCASTExpressionIn: self)
+				   array: ((tast receiver asCASTExpressionIn: self) needsParentheses: true)
 				   index: (tast arguments first asCASTExpressionIn: self))
 		  operator: '='
 		  rvalue: (tast arguments last asCASTExpressionIn: self)
