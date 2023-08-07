@@ -99,7 +99,7 @@ ioLoadModule(char *pluginName)
             return moduleHandle;
     }
 
-    logWarn("Failed to load module: %s\n", pluginName);
+    logDebug("Failed to load module: %s\n", pluginName);
 
     return 0;
 }
@@ -146,7 +146,7 @@ ioFindExternalFunctionInAccessorDepthInto(char *lookupName, void *moduleHandle,
 
     	//If the primitive does not have accessor depth we generate a warning.
     	if(accessorDepthVarPtr == NULL)
-    		logWarn("Missing Accessor Depth: %s", lookupName);
+    		logDebug("Missing Accessor Depth: %s", lookupName);
     }
 
     return function;
@@ -190,12 +190,12 @@ getModuleSymbol(void *module, const char *symbol)
 		DWORD errorCode = GetLastError();
 		char* errorMessage = formatMessageFromErrorCode(errorCode);
 
-		logWarn("Looking up symbol %s: %s", symbol, errorMessage);
+		logDebug("Looking up symbol %s: %s", symbol, errorMessage);
 		free(errorMessage);	  
 	}
 
 	if(address == NULL && module == NULL){
-	  logWarn("Retrying in VM DLL");
+	  logDebug("Retrying in VM DLL");
 	  void * vmModule;
 
 	  vmModule = GetModuleHandleW(L"PharoVMCore.dll");
