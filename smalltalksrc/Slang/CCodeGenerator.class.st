@@ -2585,7 +2585,7 @@ CCodeGenerator >> generateCASTShiftLeft: tast [
 CCodeGenerator >> generateCASTShiftRight: tast [
 
 	| type rcvr |
-	rcvr := tast receiver asCASTIn: self.
+	rcvr := tast receiver asCASTExpressionIn: self.
 	(self
 		 is64BitIntegralVariable: tast receiver
 		 typeInto: [ :t | type := t ])

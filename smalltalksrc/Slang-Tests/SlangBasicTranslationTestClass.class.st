@@ -81,6 +81,12 @@ SlangBasicTranslationTestClass >> methodDefiningSingleVariable [
 ]
 
 { #category : #inline }
+SlangBasicTranslationTestClass >> methodToBeTranslatedWithIfAndShiftRight [
+
+	self methodWithIfAndShiftRight: 2
+]
+
+{ #category : #inline }
 SlangBasicTranslationTestClass >> methodUsingSingleArrayVariable [
 
 	<var: 'foo' type: #'int[17]' >
@@ -127,6 +133,14 @@ SlangBasicTranslationTestClass >> methodWithAnOptionPragma [
 ]
 
 { #category : #inline }
+SlangBasicTranslationTestClass >> methodWithIfAndShiftRight: var [
+
+	^ (var < 0
+		ifTrue:  [ 0 ]
+		ifFalse: [ var ]) >> (var - 1 * 32)
+]
+
+{ #category : #inline }
 SlangBasicTranslationTestClass >> methodWithInlinePragma [
 
 	<inline: true>
@@ -165,13 +179,13 @@ SlangBasicTranslationTestClass >> methodWithOptionPragma [
 	
 ]
 
-{ #category : #'as yet unclassified' }
+{ #category : #inline }
 SlangBasicTranslationTestClass >> methodWithRepeatedCFunctionName [
 
 	^ true
 ]
 
-{ #category : #'as yet unclassified' }
+{ #category : #inline }
 SlangBasicTranslationTestClass >> methodWithRepeatedCFunctionName: arg1 [
 
 	^ true
