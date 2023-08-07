@@ -1290,11 +1290,17 @@ SpurGenerationScavenger >> scavengeUnfiredEphemeronsOnEphemeronList [
 	"There may be ephemerons to be scavenged on the ephemeronList.
 	 Scavenge any with unfired (live) keys, removing them from the
 	 list, and answer if any with unfired keys were found."
-	| unfiredEphemeronsScavenged corpseOffset previousCorpse |
+	| unfiredEphemeronsScavenged corpseOffset previousCorpse previousList |
 	ephemeronList ifNil:
 		[^false].
 	unfiredEphemeronsScavenged := false.
 	corpseOffset := ephemeronList.
+	
+	"New ephemerons get added to a new list. We work on the previous one.
+	Finally, we concatenate both if necessary"
+	previousList := ephemeronList.
+	ephemeronList := nil.
+	
 	[corpseOffset ~= 0] whileTrue:
 		[| ephemeronCorpse ephemeron nextCorpseOffset  |
 		 ephemeronCorpse := self corpseForCorpseOffset: corpseOffset.
@@ -1303,14 +1309,20 @@ SpurGenerationScavenger >> scavengeUnfiredEphemeronsOnEphemeronList [
 		 nextCorpseOffset := self nextCorpseOffset: ephemeronCorpse.
 		 (self isScavengeSurvivor: (manager keyOfEphemeron: ephemeron))
 			ifTrue:
-				[corpseOffset = ephemeronList
-					ifTrue: [ephemeronList := nextCorpseOffset ~= 0 ifTrue: [nextCorpseOffset]]
+				[corpseOffset = previousList
+					ifTrue: [previousList := nextCorpseOffset ]
 					ifFalse: [self setCorpseOffsetOf: previousCorpse to: nextCorpseOffset].
 				 unfiredEphemeronsScavenged := true.
 				 self cCoerceSimple: (self scavengeReferentsOfFromOldSpace: ephemeron) to: #void]
-			ifFalse:
-				[previousCorpse := ephemeronCorpse].
+			ifFalse: [
+				previousCorpse := ephemeronCorpse].
 		 corpseOffset := nextCorpseOffset].
+	
+	"If we have a previous corpse, it is an ephemeron that did not yet survive.
+	Chain it to the current list that was appended from tracing the list"
+	previousCorpse ifNotNil: [
+		self setCorpseOffsetOf: previousCorpse to: (ephemeronList ifNil: 0).
+		ephemeronList := previousList].
 	^unfiredEphemeronsScavenged
 ]
 
