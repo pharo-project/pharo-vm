@@ -1176,6 +1176,36 @@ SlangBasicTranslationTest >> testGoto [
 	self assert: translation equals: 'goto lab'
 ]
 
+{ #category : #'tests-inlinemethod' }
+SlangBasicTranslationTest >> testInlineMethodIfExpressionWithShiftRight [
+
+	| translation codeGenerator inlinedMethod cast printedString |
+	translation := (self getTMethodFrom: #methodToBeTranslatedWithIfAndShiftRight).
+	inlinedMethod := ((SlangBasicTranslationTestClass >> #methodWithIfAndShiftRight:) asTranslationMethodOfClass: TMethod).
+	
+	codeGenerator := CCodeGeneratorGlobalStructure new.
+	codeGenerator 
+		addMethod: translation;
+		addMethod: inlinedMethod;
+		doInlining: true.
+	
+	cast := translation asCASTIn: codeGenerator.
+	printedString := String streamContents: [ :str | cast prettyPrintOn: str ].
+	self assert: cast isCompoundStatement.
+	self assert: printedString equals: '/* SlangBasicTranslationTestClass>>#methodToBeTranslatedWithIfAndShiftRight */
+static sqInt
+methodToBeTranslatedWithIfAndShiftRight(void)
+{
+	/* begin methodWithIfAndShiftRight: */
+	((usqInt) (((2 < 0)
+		 ? 0
+		 : 2)) ) >> ((2 - 1) * 32);
+	return 0;
+}
+'.
+
+]
+
 { #category : #'tests-inlinenode' }
 SlangBasicTranslationTest >> testInlineNodeDoesNotInitializeReadBeforeWrittenArrayTemp [
 
