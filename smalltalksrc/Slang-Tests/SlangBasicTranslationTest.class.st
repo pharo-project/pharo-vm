@@ -68,7 +68,9 @@ SlangBasicTranslationTest >> getTMethodFrom: selector [
 	"Generate a TMethod from a SlangBasicTranslationTestClass method."
 
 	generator addClass: SlangBasicTranslationTestClass.
-	generator inferTypes.
+	generator 
+		inferTypes;
+		prepareMethods.
 	^ generator methodNamed: selector
 ]
 
@@ -1176,6 +1178,74 @@ SlangBasicTranslationTest >> testGoto [
 	self assert: translation equals: 'goto lab'
 ]
 
+{ #category : #'tests-inline-builtins' }
+SlangBasicTranslationTest >> testInlineMethodSumArgumentsWithAnnotations [
+	| tMethod translation |
+
+	tMethod := (self getTMethodFrom: #methodUseParametersWithAnnotations:to:with:).
+	" Adding a method already does prepare methods "
+	generator doBasicInlining: true.
+
+	translation := self translate: tMethod.
+	translation := translation trimBoth.
+	self
+		assert: translation
+		equals: '/* SlangBasicTranslationTestClass>>#methodUseParametersWithAnnotations:to:with: */
+static sqInt
+methodUseParametersWithAnnotationstowith(unsigned int *pFrom, unsigned int *pTo, sqInt anInteger)
+{
+	sqInt i;
+	sqInt pFrom1;
+	unsigned int *pTo1;
+
+	/* begin methodFromWithAnnotations:to:len: */
+	pTo1 = ((unsigned int *) (yourself(pTo)) );
+	for (i = 0; i < 5; i += 1) {
+		pTo1[i] = pFrom + anInteger[i];
+	};
+	return 0;
+}'
+]
+
+{ #category : #'tests-inline-builtins' }
+SlangBasicTranslationTest >> testInlineMethodSumArgumentsWithAnnotationsUseBuiltIn [
+	| tMethod translation codeGenerator inlinedMethod |
+
+	tMethod := self getTMethodFrom: #methodUseParametersWithAnnotationsBuiltIn:to:with:.
+	inlinedMethod := ((SlangBasicTranslationTestClass >> #methodFromWithAnnotations:to:) asTranslationMethodOfClass: TMethod).
+	
+	codeGenerator := CCodeGeneratorGlobalStructure new.
+	codeGenerator vmMaker: VMMaker new.
+	codeGenerator vmMaker vmmakerConfiguration: VMMakerConfiguration.	
+	codeGenerator 
+		addMethod: tMethod;
+		addMethod: inlinedMethod;		
+		doInlining: true.
+	
+	self assert: (tMethod locals includesAll: inlinedMethod locals).
+
+	translation := self translate: tMethod.
+	translation := translation trimBoth.
+
+	self 
+		assert: translation
+		equals: '/* SlangBasicTranslationTestClass>>#methodUseParametersWithAnnotationsBuiltIn:to:with: */
+static sqInt
+methodUseParametersWithAnnotationsBuiltIntowith(unsigned int *pFrom, unsigned int *pTo, sqInt anInteger)
+{
+	sqInt i;
+	sqInt pFrom1;
+	sqInt pTo1;
+
+	/* begin methodFromWithAnnotations:to: */
+	pFrom1 = ((sqInt) (pFrom + anInteger) );
+	for (i = 0; i <= 10; i += 1) {
+		pTo[i] = pFrom1[i];
+	};
+	return 0;
+}'
+]
+
 { #category : #'tests-inlinemethod' }
 SlangBasicTranslationTest >> testInlineMethodIfExpressionWithShiftRight [
 
@@ -1203,7 +1273,6 @@ methodToBeTranslatedWithIfAndShiftRight(void)
 	return 0;
 }
 '.
-
 ]
 
 { #category : #'tests-inlinenode' }
