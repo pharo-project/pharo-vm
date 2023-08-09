@@ -1,5 +1,39 @@
 # Change log
 
+## v10.0.6
+
+Improvements in build environment
+* Update build environment for Pharo 10 vm branch by @guillep in https://github.com/pharo-project/pharo-vm/pull/594
+* Make tests run in parallel by @guillep in https://github.com/pharo-project/pharo-vm/pull/596
+* Update Jenkins to use Pharo 110 for building by @PalumboN in https://github.com/pharo-project/pharo-vm/pull/661
+
+Cleanups
+* Cleanups/externalize internalize by @guillep in https://github.com/pharo-project/pharo-vm/pull/583
+* Fix/warnings by @guillep in https://github.com/pharo-project/pharo-vm/pull/584
+* fixing-categorization in P10 by @tesonep in https://github.com/pharo-project/pharo-vm/pull/625
+
+Fixes
+* Fix mnuMethodOrNilFor: for method wrappers by @guillep in https://github.com/pharo-project/pharo-vm/pull/578
+* fix function signatures by @pavel-krivanek in https://github.com/pharo-project/pharo-vm/pull/582
+
+Debugging improvements
+* Gdbinit file and helpers v2 by @guillep in https://github.com/pharo-project/pharo-vm/pull/486
+* VM Debugger improvement with IR by @QDucasse in https://github.com/pharo-project/pharo-vm/pull/342
+
+VM Improvements
+* improving-permSpace by @tesonep in https://github.com/pharo-project/pharo-vm/pull/614
+* Changing the order of command-line processing and PList in OSX by @tesonep in https://github.com/pharo-project/pharo-vm/pull/609
+* Adding parsing of image parameters from PList by @tesonep in https://github.com/pharo-project/pharo-vm/pull/636
+* Change terminate handler to exit with 128+signal by @jvalteren in https://github.com/pharo-project/pharo-vm/pull/644
+* Improvements in parameters handling in OSX by @tesonep in https://github.com/pharo-project/pharo-vm/pull/639
+* Adding check to fix when the image is open with an older VM by @tesonep in https://github.com/pharo-project/pharo-vm/pull/642
+* Fix/ephemeron list by @guillep in https://github.com/pharo-project/pharo-vm/pull/668
+
+New Contributors
+* @jvalteren made their first contribution in https://github.com/pharo-project/pharo-vm/pull/644
+
+**Full Changelog**: https://github.com/pharo-project/pharo-vm/compare/v10.0.5...v10.0.6
+
 ## v10.0.5
 
 * Testing scavenger tenuring by @PalumboN in https://github.com/pharo-project/pharo-vm/pull/588
