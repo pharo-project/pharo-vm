@@ -4,6 +4,22 @@ Class {
 	#category : #'VMMakerTests-MemoryTests'
 }
 
+{ #category : #'tests-ephemerons-globals' }
+VMSpurScavengeEphemeronTest >> pushRoot: anObject [
+
+	| link |
+	link := self newArrayWithSlots: 2.
+	memory
+		storePointer: 0 "Value"
+		ofObject: link
+		withValue: anObject.
+	memory
+		storePointer: 1 "Next"
+		ofObject: link
+		withValue: self keptObjectInVMVariable1.
+	self keepObjectInVMVariable1: link.
+]
+
 { #category : #initialization }
 VMSpurScavengeEphemeronTest >> setUp [
 
@@ -30,6 +46,76 @@ VMSpurScavengeEphemeronTest >> testDequeueMournerWithOnlyOneEphemeronShouldEmpty
 	ephemeronObjectOop := memory remapObj: ephemeronObjectOop.
 	memory dequeueMourner.
 	self assert: memory dequeueMourner equals: nil
+]
+
+{ #category : #'tests-ephemerons-globals' }
+VMSpurScavengeEphemeronTest >> testEphemeronDiscoveredDuringEphemeronListIteration [
+
+	| ephemeronObjectOop1 ephemeronObjectOop2 dicoveredEphemeron nonSurvivingKey key1 key2 |
+	ephemeronObjectOop1 := self newEphemeronObject.
+	ephemeronObjectOop2 := self newEphemeronObject.
+	dicoveredEphemeron := self newEphemeronObject.
+	key1 := self newObjectWithSlots: 0.
+	key2 := self newObjectWithSlots: 0.
+	nonSurvivingKey := self newObjectWithSlots: 0.
+	memory
+		storePointer: 0
+		ofObject: ephemeronObjectOop1
+		withValue: key1.
+	memory
+		storePointer: 0
+		ofObject: ephemeronObjectOop2
+		withValue: key2.
+	memory
+		storePointer: 0
+		ofObject: dicoveredEphemeron
+		withValue: nonSurvivingKey.
+	memory
+		storePointer: 1
+		ofObject: ephemeronObjectOop1
+		withValue: dicoveredEphemeron.
+	
+	"Order is important here. The surviving key should be traced AFTER the ephemerons.
+	This way they are added to the ephemeron list to be traced later."
+	self pushRoot: key1.
+	self pushRoot: key2.
+	
+	"Both these ephemerons must survive.
+	When iterating the ephemeron list, if the head survives, the head gets rewritten and the ephemeron gets traced.
+	If, when tracing the ephemeron a new ephemeron is discovered, it gets added at the head of the list"
+	self pushRoot: ephemeronObjectOop1.
+	
+	"Then, when iterating the second ephemeron in the list, the head has changed!
+	This should be properly handled"
+	self pushRoot: ephemeronObjectOop2.
+	
+	memory doScavenge: 1 "TenureByAge".
+
+	"Weak assertion: check the heap is in correct state"
+	memory setCheckForLeaks: -1.
+	memory runLeakCheckerFor: GCModeIncremental
+]
+
+{ #category : #'tests-ephemerons-globals' }
+VMSpurScavengeEphemeronTest >> testEphemeronDiscoveredTwiceInRememberedSet [
+
+	| ephemeronObjectOop oldEphemeronObjectOop1 oldEphemeronObjectOop2 |
+	ephemeronObjectOop := self newEphemeronObject.
+	oldEphemeronObjectOop1 := self newOldEphemeronObject.
+	oldEphemeronObjectOop2 := self newOldEphemeronObject.
+	memory
+		storePointer: 0
+		ofObject: oldEphemeronObjectOop1
+		withValue: ephemeronObjectOop.
+	memory
+		storePointer: 0
+		ofObject: oldEphemeronObjectOop2
+		withValue: ephemeronObjectOop.
+
+	memory doScavenge: 1 "TenureByAge".
+
+	memory setCheckForLeaks: -1.
+	memory runLeakCheckerFor: GCModeIncremental
 ]
 
 { #category : #'tests-ephemerons-globals' }
