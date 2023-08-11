@@ -159,7 +159,9 @@ def runBuildFromSources(platformName, configuration, headless = true){
 		//We take the source code from Linux version
 		//It is extracted and will create the pharo-vm subdirectory
 		unstash name: "packages-Linux-x86_64-${configuration}"
-		shell "unzip -d . build/build/packages/PharoVM-*-Linux-x86_64-c-src.zip"
+		shell "ls"
+		def expandedCSourceFileName = sh(returnStdout: true, script: "ls build/build/packages/PharoVM-*-${archiveName}-c-src.zip").trim()		
+		shell "unzip -d . ${expandedCSourceFileName}"
 		shell "mv pharo-vm repository"
 	}
 
