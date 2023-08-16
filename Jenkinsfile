@@ -462,7 +462,7 @@ try{
 	properties([disableConcurrentBuilds()])
 
 	def parallelBuilderPlatforms = ['Linux-x86_64', 'Darwin-x86_64', 'Windows-x86_64', 'Darwin-arm64']
-	def platforms = parallelBuilderPlatforms + ['Linux-aarch64', 'Linux-armv7l']
+	def platforms = parallelBuilderPlatforms // + ['Linux-aarch64', 'Linux-armv7l']
 	def builders = [:]
 	def dockerBuilders = [:]
 	def testsOnMainBranch = [:]
@@ -519,6 +519,7 @@ try{
 		}	
 	}
 
+	/*
 	dockerBuilders['Linux-aarch64'] = {
 		buildUsingDocker('Linux-aarch64', 'ubuntu-arm64', "CoInterpreter")
 
@@ -552,12 +553,12 @@ try{
 			buildUsingDocker('Linux-armv7l', 'debian10-armv7', "CoInterpreter", false)
 		}
 	}
+	*/
 
 	parallel builders
 
 	parallel dockerBuilders
 	
-		
 	uploadPackages(platforms)
 
 	buildGTKBundle()
