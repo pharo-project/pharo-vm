@@ -1468,8 +1468,8 @@ StackInterpreter class >> isNonArgumentImplicitReceiverVariableName: aString [
 StackInterpreter class >> isObjectAccessor: selector [
 	"Answer if selector is one of fetchPointer:ofObject: storePointer:ofObject:withValue:
 	 et al."
-	^(InterpreterProxy whichCategoryIncludesSelector: selector) = #'object access'
-	 or: [(SpurMemoryManager whichCategoryIncludesSelector: selector) = #'object access']
+	^ (InterpreterProxy protocolNameOfSelector: selector) = #'object access'
+	 or: [(SpurMemoryManager protocolNameOfSelector: selector) = #'object access']
 
 	"This for checking.  The above two protocols are somewhat disjoint."
 	"(InterpreterProxy allMethodsInCategory: #'object access') copyWithoutAll: (SpurMemoryManager allMethodsInCategory: #'object access')"
@@ -1478,7 +1478,8 @@ StackInterpreter class >> isObjectAccessor: selector [
 
 { #category : #'spur compilation support' }
 StackInterpreter class >> isStackAccessor: selector [
-	^(StackInterpreter whichCategoryIncludesSelector: selector) = #'stack access'
+
+	^ (StackInterpreter protocolNameOfSelector: selector) = #'stack access'
 ]
 
 { #category : #translation }
