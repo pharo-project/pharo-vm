@@ -796,7 +796,7 @@ TMethod >> emitCFunctionPrototype: aStream generator: aCodeGen isPrototype: isPr
 					[isPrototype ifTrue:
 						[aStream nextPutAll: 'extern ']].
 			 (isPrototype or: [inline ~~ #always]) ifFalse: [aStream nextPutAll: 'inline '].
-			 aStream nextPutAll: (returnType ifNil: [#sqInt])].
+			 aStream nextPutAll: (returnType asString ifNil: [#sqInt])].
 	(functionAttributes isNil or: [returnTypeIsFunctionPointer]) ifFalse:
 		[aStream space; nextPutAll: functionAttributes].
 	isPrototype ifTrue: [aStream space] ifFalse: [aStream cr].
@@ -1860,7 +1860,7 @@ TMethod >> isFunctionalIn: aCodeGen [
 		sqInt usqInt #'sqIntptr_t' #'usqIntptr_t' sqLong usqLong
 		#'int *' #'unsigned int *' #'sqInt *' #'usqInt *' #'sqLong *' #'usqLong *' #'char *'
 		#'CogMethod *' #'AbstractInstruction *'
-		#'FILE *') includes: returnType
+		#'FILE *') includes: returnType asString 
 ]
 
 { #category : #inlining }

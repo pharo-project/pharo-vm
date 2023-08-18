@@ -299,7 +299,7 @@ CSlangPrettyPrinter >> visitFunctionDeclarator: aFunctionDeclarator [
 CSlangPrettyPrinter >> visitFunctionDefinition: aFunction [
 
 	aFunction specifiers
-		do: [ :e | stream nextPutAll: e ]
+		do: [ :e | stream nextPutAll: e asString]
 		separatedBy: [ stream space ].
 	stream cr.
 	aFunction hasRawPrototype ifFalse: [ 
@@ -532,7 +532,7 @@ CSlangPrettyPrinter >> visitTernary: aTernary [
 { #category : #generated }
 CSlangPrettyPrinter >> visitTypename: aTypename [
 
-	stream nextPutAll: aTypename symbol
+	stream nextPutAll: aTypename symbol asString
 ]
 
 { #category : #generated }

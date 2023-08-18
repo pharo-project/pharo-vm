@@ -722,6 +722,19 @@ CCodeGenerator >> cSelectorName: aSelector [
 	^ cSelector
 ]
 
+{ #category : #translation }
+CCodeGenerator >> cVarDeclaration: var [
+
+	| declarationOrType |
+	declarationOrType := self
+		                     declarationAt: var
+		                     ifAbsent: [ self defaultType , ' ' , var ].
+
+	^ declarationOrType isTType
+		  ifTrue: [ declarationOrType declarationFor: var ]
+		  ifFalse: [ declarationOrType ]
+]
+
 { #category : #inlining }
 CCodeGenerator >> cannotInline: selector [
 
@@ -1345,15 +1358,23 @@ CCodeGenerator >> exportedPrimitiveNames [
 CCodeGenerator >> extractTypeFor: aVariable fromDeclaration: aVariableDeclaration [
 	"Eliminate inessentials from aVariableDeclaration to answer a C type without the variable,
 	 or initializations etc"
+
 	| decl |
-	((aVariableDeclaration beginsWith: 'static ')
-	 or: [aVariableDeclaration beginsWith: 'extern ']) ifTrue:
-		[^self extractTypeFor: aVariable fromDeclaration: (aVariableDeclaration allButFirst: 7)].
-	decl := (aVariableDeclaration indexOf: $= ifAbsent: [])
-				ifNotNil: [:index| aVariableDeclaration copyFrom: 1 to: index - 1]
-				ifNil: [aVariableDeclaration].
-	decl := decl copyReplaceAll: aVariable with: '' tokenish: [:ch| ch = $_ or: [ch isAlphaNumeric]].
-	^self baseTypeForType: decl
+	aVariableDeclaration isTType ifTrue: [ ^ aVariableDeclaration ].
+	((aVariableDeclaration beginsWith: 'static ') or: [
+		 aVariableDeclaration beginsWith: 'extern ' ]) ifTrue: [
+		^ self
+			  extractTypeFor: aVariable
+			  fromDeclaration: (aVariableDeclaration allButFirst: 7) ].
+	decl := (aVariableDeclaration indexOf: $= ifAbsent: [  ])
+		        ifNotNil: [ :index |
+		        aVariableDeclaration copyFrom: 1 to: index - 1 ]
+		        ifNil: [ aVariableDeclaration ].
+	decl := decl
+		        copyReplaceAll: aVariable
+		        with: ''
+		        tokenish: [ :ch | ch = $_ or: [ ch isAlphaNumeric ] ].
+	^ self baseTypeForType: decl
 ]
 
 { #category : #'C code generator' }
@@ -3010,6 +3031,17 @@ CCodeGenerator >> generateDeadCode: aBool [
 	generateDeadCode := aBool
 ]
 
+{ #category : #generation }
+CCodeGenerator >> generateInferredAnd: aTSendNode [
+
+	| type |
+	type := self tTypeFor: aTSendNode receiver in: self currentMethod.
+
+	^type isBoolean
+		ifTrue: [ self generateCASTAnd: aTSendNode ]
+		ifFalse: [ self generateCASTBitAnd: aTSendNode ]
+]
+
 { #category : #public }
 CCodeGenerator >> globalsAsSet [
 	"Used by the inliner to avoid name clashes with global variables."
@@ -3132,7 +3164,7 @@ CCodeGenerator >> initializeCASTTranslationDictionary [
 	
 	castTranslationDict := Dictionary new: 200.
 	pairs := #(
-	#&				#forbiddenSelector:
+	#&				#generateInferredAnd:
 	#|				#forbiddenSelector:
 	#abs			#generateCASTAbs:
 	#and:			#generateCASTSequentialAnd:
@@ -4989,6 +5021,17 @@ CCodeGenerator >> suppressAsmLabelsWhile: aBlock [
 	oldSuppressAsmLabels := suppressAsmLabels.
 	suppressAsmLabels := true.
 	^aBlock ensure: [suppressAsmLabels := oldSuppressAsmLabels]
+]
+
+{ #category : #type }
+CCodeGenerator >> tTypeFor: aTVariableNode in: aTMethod [
+
+	| typeOrDeclaration |
+	typeOrDeclaration := self typeFor: aTVariableNode in: aTMethod.
+
+	^ typeOrDeclaration isTType
+		  ifTrue: [ typeOrDeclaration ]
+		  ifFalse: [ TType cType: typeOrDeclaration ]
 ]
 
 { #category : #utilities }
