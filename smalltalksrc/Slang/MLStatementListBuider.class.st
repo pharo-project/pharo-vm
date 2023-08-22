@@ -31,7 +31,7 @@ MLStatementListBuider >> addLinearisedStatement: expressionNode [
 		type := codeGenerator
 			        typeFor: expressionNode
 			        in: codeGenerator currentMethod.
-		declaration := type , ' ' , variable name.
+		declaration := type asString , ' ' , variable name.
 		declarations at: variable name put: declaration.
 		self addStatement: (self
 				 transformControlFlowNodeForValue: expressionNode
@@ -46,7 +46,7 @@ MLStatementListBuider >> addLinearisedStatement: expressionNode [
 	type := codeGenerator
 		        typeFor: expressionNode
 		        in: codeGenerator currentMethod.
-	declaration := type , ' ' , name.
+	declaration := type asString, ' ' , name.
 	declarations at: name put: declaration.
 
 	assignment := TAssignmentNode

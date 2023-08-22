@@ -996,7 +996,7 @@ CCodeGenerator >> declaredConstants [
 { #category : #'type inference' }
 CCodeGenerator >> defaultType [
 	
-	^ #int
+	^ TType int
 ]
 
 { #category : #'compile-time-options' }
@@ -4317,7 +4317,7 @@ CCodeGenerator >> promoteIntegerArithmeticTypes: firstType and: secondType [
 	length1 := self sizeOfIntegralCType: firstType.
 	length2 := self sizeOfIntegralCType: secondType.
 	intSize := self sizeOfIntegralCType: #int.
-	(length1 < intSize and: [length2 < intSize]) ifTrue: [^#int].	"Integer promotion"
+	(length1 < intSize and: [length2 < intSize]) ifTrue: [^TType int].	"Integer promotion"
 	length1 > length2 ifTrue: [^firstType].
 	length2 > length1 ifTrue: [^secondType].
 	firstType first = $u ifTrue: [^firstType].
@@ -4552,7 +4552,6 @@ CCodeGenerator >> returnPrefixFromVariable: aName [
 
 { #category : #'type inference' }
 CCodeGenerator >> returnTypeForSend: sendNode in: aTMethod boundTo: aCalledMethod typeIfNil: typeIfNil [
-
 	"Answer the return type for a send.  Unbound sends default to typeIfNil.
 	 Methods with types as yet unknown have a type determined either by the
 	 kernelReturnTypes or the table below, or, if they are in neither set, then nil.
@@ -4562,10 +4561,10 @@ CCodeGenerator >> returnTypeForSend: sendNode in: aTMethod boundTo: aCalledMetho
 	 be defaulted, since on a subsequent pass its type may be computable."
 
 	^ sendNode selector
-		  caseOf: { 
+		  caseOf: {
 				  ([ #integerValueOf: ] -> [ #sqInt ]).
-				  ([ #isIntegerObject: ] -> [ #int ]).
-				  ([ #negated ] -> [ 
+				  ([ #isIntegerObject: ] -> [ TType int ]).
+				  ([ #negated ] -> [
 				   self
 					   promoteArithmeticTypes:
 					   (sendNode receiver typeFrom: self in: aTMethod)
@@ -4574,18 +4573,18 @@ CCodeGenerator >> returnTypeForSend: sendNode in: aTMethod boundTo: aCalledMetho
 				  ([ #- ] -> [ self typeForArithmetic: sendNode in: aTMethod ]).
 				  ([ #* ] -> [ self typeForArithmetic: sendNode in: aTMethod ]).
 				  ([ #/ ] -> [ self typeForArithmetic: sendNode in: aTMethod ]).
-				  ([ #// ] -> [ self typeForArithmetic: sendNode in: aTMethod ]).
-				  ([ #\\ ] -> [ self typeForArithmetic: sendNode in: aTMethod ]).
+				  ([ #'//' ] -> [ self typeForArithmetic: sendNode in: aTMethod ]).
+				  ([ #'\\' ] -> [ self typeForArithmetic: sendNode in: aTMethod ]).
 				  ([ #rem: ] -> [ self typeForArithmetic: sendNode in: aTMethod ]).
 				  ([ #quo: ] -> [ self typeForArithmetic: sendNode in: aTMethod ]).
 				  "C99 Sec Bitwise shift operators ... 3 Sematics ...
 				 The integer promotions are performed on each of the operands. The type of the result is that of the promoted left operand..."
-				  ([ #>> ] -> [ sendNode receiver typeFrom: self in: aTMethod ]).
-				  ([ #<< ] -> [ sendNode receiver typeFrom: self in: aTMethod ]).
-				  ([ #addressOf: ] -> [ 
+				  ([ #'>>' ] -> [ sendNode receiver typeFrom: self in: aTMethod ]).
+				  ([ #'<<' ] -> [ sendNode receiver typeFrom: self in: aTMethod ]).
+				  ([ #addressOf: ] -> [
 				   (sendNode receiver typeFrom: self in: aTMethod)
 					   ifNil: [ #sqInt ]
-					   ifNotNil: [ :type | 
+					   ifNotNil: [ :type |
 						   type , (type last isLetter
 							    ifTrue: [ ' *' ]
 							    ifFalse: [ '*' ]) ] ]).
@@ -4599,7 +4598,7 @@ CCodeGenerator >> returnTypeForSend: sendNode in: aTMethod boundTo: aCalledMetho
 				  ([ #bitClear: ]
 				   -> [ self typeForArithmetic: sendNode in: aTMethod ]).
 				  ([ #bitInvert32 ] -> [ #'unsigned int' ]).
-				  ([ #bitInvert64 ] -> [ 
+				  ([ #bitInvert64 ] -> [
 				   self
 					   promoteArithmeticTypes:
 					   (sendNode receiver typeFrom: self in: aTMethod)
@@ -4609,13 +4608,13 @@ CCodeGenerator >> returnTypeForSend: sendNode in: aTMethod boundTo: aCalledMetho
 				  ([ #byteSwapped32IfBigEndian: ] -> [ #'unsigned int' ]).
 				  ([ #byteSwapped64IfBigEndian: ] -> [ #'unsigned long long' ]).
 				  ([ #= ] -> [ #int ]).
-				  ([ #~= ] -> [ #int ]).
-				  ([ #== ] -> [ #int ]).
-				  ([ #~~ ] -> [ #int ]).
+				  ([ #'~=' ] -> [ #int ]).
+				  ([ #'==' ] -> [ #int ]).
+				  ([ #'~~' ] -> [ #int ]).
 				  ([ #< ] -> [ #int ]).
-				  ([ #<= ] -> [ #int ]).
+				  ([ #'<=' ] -> [ #int ]).
 				  ([ #> ] -> [ #int ]).
-				  ([ #>= ] -> [ #int ]).
+				  ([ #'>=' ] -> [ #int ]).
 				  ([ #between:and: ] -> [ #int ]).
 				  ([ #anyMask: ] -> [ #int ]).
 				  ([ #allMask: ] -> [ #int ]).
@@ -4642,10 +4641,10 @@ CCodeGenerator >> returnTypeForSend: sendNode in: aTMethod boundTo: aCalledMetho
 				  ([ #signedIntToLong ] -> [ #usqInt ]). "c.f. generateSignedIntToLong:on:indent:"
 				  ([ #signedIntToShort ] -> [ #usqInt ]). "c.f. generateSignedIntToShort:on:indent:"
 				  ([ #cCoerce:to: ]
-				   -> [ 
+				   -> [
 				   self conventionalTypeForType: sendNode arguments last value ]).
 				  ([ #cCoerceSimple:to: ]
-				   -> [ 
+				   -> [
 				   self conventionalTypeForType: sendNode arguments last value ]).
 				  ([ #sizeof: ] -> [ #usqIntptr_t ]). "Technically it's a size_t but it matches on target architectures so far..."
 				  ([ #ifTrue:ifFalse: ]
@@ -4661,7 +4660,7 @@ CCodeGenerator >> returnTypeForSend: sendNode in: aTMethod boundTo: aCalledMetho
 				  ([ #caseOf: ]
 				   -> [ self typeFor: sendNode arguments first in: aTMethod ]) }
 		  otherwise: [ "If there /is/ a method for sel but its return type is as yet unknown it /mustn't/ be defaulted,
-							since on a subsequent pass its type may be computable.  Only default unbound selectors." 
+							since on a subsequent pass its type may be computable.  Only default unbound selectors."
 			  aCalledMethod ifNotNil: [ nil ] ifNil: [ typeIfNil ] ]
 ]
 
@@ -4674,18 +4673,18 @@ CCodeGenerator >> returnTypeForSend: sendNode in: aTMethod ifNil: typeIfNil [
 	 generated expessions so that inlining would not change the expression.
 	 If there is a method for sel but its return type is as yet unknown it mustn't
 	 be defaulted, since on a subsequent pass its type may be computable."
-	| sel methodOrNil |
 
+	| sel methodOrNil |
 	methodOrNil := self anyMethodNamed: (sel := sendNode selector).
 
-	(methodOrNil notNil and: [methodOrNil returnType notNil]) ifTrue:
-		[^self baseTypeForType: methodOrNil returnType].
+	(methodOrNil notNil and: [ methodOrNil returnType notNil ]) ifTrue: [
+		^ self baseTypeForType: methodOrNil returnType ].
 
 	^ self
-		returnTypeForSend: sendNode
-		in: aTMethod
-		boundTo: methodOrNil
-		typeIfNil: typeIfNil
+		  returnTypeForSend: sendNode
+		  in: aTMethod
+		  boundTo: methodOrNil
+		  typeIfNil: typeIfNil
 ]
 
 { #category : #'translation support' }
@@ -5078,7 +5077,7 @@ CCodeGenerator >> typeForArithmetic: sendNode in: aTMethod [
 		 argType notNil and: [ argType last == $* ] ]) ifTrue: [ 
 		(rcvrType isNil or: [ argType isNil ]) ifTrue: [ ^ nil ].
 		(rcvrType last == $* and: [ argType last == $* ]) ifTrue: [ 
-			sendNode selector == #- ifTrue: [ ^ #int ].
+			sendNode selector == #- ifTrue: [ ^ TType int ].
 			self error: 'invalid pointer arithmetic' ].
 		^ rcvrType last == $*
 			  ifTrue: [ rcvrType ]
@@ -5197,8 +5196,8 @@ CCodeGenerator >> unsignedTypeForIntegralType: aCTypeString [
 		ifTrue: [aCTypeString]
 		ifFalse:
 			[(aCTypeString beginsWith: 'sq')
-				ifTrue: ['u' , aCTypeString]
-				ifFalse: ['unsigned ' , aCTypeString]]
+				ifTrue: ['u' , aCTypeString asString]
+				ifFalse: ['unsigned ' , aCTypeString asString]]
 ]
 
 { #category : #'C code generator' }

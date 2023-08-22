@@ -11,9 +11,9 @@ Class {
 { #category : #accessing }
 TType class >> boolean [
 
-	^(self cType: #int)
-		isBoolean: true;
-		yourself
+	^ self int
+		  isBoolean: true;
+		  yourself
 ]
 
 { #category : #intantiation }
@@ -22,6 +22,20 @@ TType class >> cType: aString [
 	^ self new
 		  cType: aString;
 		  yourself
+]
+
+{ #category : #instatiation }
+TType class >> int [
+	^self cType: #int.
+]
+
+{ #category : #comparing }
+TType >> = other [
+
+	| matchesStructure |
+	matchesStructure := other isTType not or: [
+		                    self isBoolean = other isBoolean ].
+	^ self asString = other asString and: [ matchesStructure ]
 ]
 
 { #category : #converting }
@@ -56,10 +70,21 @@ TType >> first [
 	^cType first.
 ]
 
+{ #category : #comparing }
+TType >> hash [
+
+	^ cType hash bitXor: isBoolean hash
+]
+
 { #category : #testing }
 TType >> includes: aCharacter [
 
 	^ cType includes: aCharacter
+]
+
+{ #category : #testing }
+TType >> includesSubstring: aString [ 
+	^cType includesSubstring: aString.
 ]
 
 { #category : #accessing }
@@ -98,6 +123,13 @@ TType >> isTType [
 TType >> last [
 
 	^ cType last
+]
+
+{ #category : #comparing }
+TType >> printOn: aStream [
+
+	super printOn: aStream.
+	aStream << ': ' << cType
 ]
 
 { #category : #string }

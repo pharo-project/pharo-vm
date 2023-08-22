@@ -127,17 +127,17 @@ TConstantNode >> typeOrNilFrom: aCodeGenerator in: aTMethod [
 		value positive
 			ifTrue: [
 				hb := value highBit.
-				hb < 32 ifTrue: [ ^ #int ].
+				hb < 32 ifTrue: [ ^ TType int ].
 				hb = 32 ifTrue: [ ^ #'unsigned int' ].
 				hb = 64 ifTrue: [ ^ #'unsigned long long' ].
 				^ #'long long' ]
 			ifFalse: [
 				hb := value bitInvert highBit.
-				hb < 32 ifTrue: [ ^ #int ].
+				hb < 32 ifTrue: [ ^ TType int ].
 				^ #'long long' ] ].
 	value isFloat ifTrue: [ ^ #double ].
 	(#(true false) includes: value) ifTrue: [^TType boolean].
-	(#( nil true false ) includes: value) ifTrue: [ ^ #int ].
+	value ifNil: [ ^ TType int ].
 	(value isString and: [ value isSymbol not ]) ifTrue: [ ^ #'char *' ].
 	^ nil
 ]

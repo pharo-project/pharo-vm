@@ -309,7 +309,7 @@ MLVMCCodeGenerator >> harmonizeReturnTypesIn: aSetOfTypes [
 	usqs := aSetOfTypes select: [:t| t beginsWith: 'usq'].
 	^(sqs size + usqs size = aSetOfTypes size
 	   and: [sqs notEmpty
-	   and: [sqs allSatisfy: [:t| usqs includes: 'u', t]]])
+	   and: [sqs allSatisfy: [:t| usqs includes: 'u', t asString]]])
 		ifTrue: [sqs]
 		ifFalse: [(aSetOfTypes isEmpty and: [constantIntegers notEmpty])
 					ifTrue: [Set with: self defaultType]
