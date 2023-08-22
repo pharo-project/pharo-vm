@@ -1,7 +1,7 @@
 #ifndef INCLUDE_INTERPRETER_H_
 #define INCLUDE_INTERPRETER_H_
 
-// #include "cogmethod.h"
+//#include "cogmethod.h"
 #include "interp.h"
 
 sqInt stSizeOf(sqInt oop);
@@ -27,7 +27,7 @@ sqInt isKindOfClass(sqInt, sqInt);
 sqInt instantiateClassindexableSize(sqInt, sqInt);
 
 sqInt classExternalAddress(void);
-void *firstIndexableField(sqInt objOop);
+void * firstIndexableField(sqInt objOop);
 
 sqInt classArray(void);
 sqInt classByteArray(void);
@@ -40,24 +40,24 @@ sqInt falseObject(void);
 
 sqInt methodArgumentCount(void);
 void pushFloat(double f);
-int pushInteger(sqInt integerValue);
+sqInt pushInteger(sqInt integerValue);
 void push(sqInt object);
 
 sqInt failed(void);
 sqInt primitiveFailFor(sqInt);
 
-int forceInterruptCheck(void);
+sqInt forceInterruptCheck(void);
 sqInt doSignalSemaphoreWithIndex(sqInt semaIndex);
 sqInt getExternalSemaphoreWithIndex(sqInt index);
-void doWaitSemaphore(sqInt sema);
-void doWaitSemaphorereEnterInterpreter(sqInt sema, sqInt hasToReenter);
+void  doWaitSemaphore(sqInt sema);
+void  doWaitSemaphorereEnterInterpreter(sqInt sema, sqInt hasToReenter);
 
 sqInt fetchPointerofObject(sqInt, sqInt);
 
-sqInt stringForCString(const char *);
+sqInt stringForCString(const char*);
 
-sqInt ptEnterInterpreterFromCallback(void *);
-sqInt ptExitInterpreterToCallback(void *);
+sqInt ptEnterInterpreterFromCallback(void*);
+sqInt ptExitInterpreterToCallback(void*);
 
 int osCogStackPageHeadroom();
 

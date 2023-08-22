@@ -10,28 +10,28 @@
 /*** Function prototypes ***/
 
 /* InterpreterProxy methodsFor: 'stack access' */
-int pop(sqInt nItems);
-sqInt popthenPush(sqInt nItems, sqInt oop);
-void push(sqInt object);
-sqInt pushBool(sqInt trueOrFalse);
-void pushFloat(double f);
-int pushInteger(sqInt integerValue);
+sqInt  pop(sqInt nItems);
+sqInt  popthenPush(sqInt nItems, sqInt oop);
+void   push(sqInt object);
+sqInt  pushBool(sqInt trueOrFalse);
+void   pushFloat(double f);
+sqInt  pushInteger(sqInt integerValue);
 double stackFloatValue(sqInt offset);
-sqInt stackIntegerValue(sqInt offset);
-sqInt stackObjectValue(sqInt offset);
-sqInt stackValue(sqInt offset);
+sqInt  stackIntegerValue(sqInt offset);
+sqInt  stackObjectValue(sqInt offset);
+sqInt  stackValue(sqInt offset);
 
 /*** variables ***/
 
 /* InterpreterProxy methodsFor: 'object access' */
-sqInt argumentCountOf(sqInt methodPointer);
-void *arrayValueOf(sqInt oop);
-sqInt byteSizeOf(sqInt oop);
-void *fetchArrayofObject(sqInt fieldIndex, sqInt objectPointer);
-sqInt fetchClassOf(sqInt oop);
+sqInt  argumentCountOf(sqInt methodPointer);
+void  *arrayValueOf(sqInt oop);
+sqInt  byteSizeOf(sqInt oop);
+void  *fetchArrayofObject(sqInt fieldIndex, sqInt objectPointer);
+sqInt  fetchClassOf(sqInt oop);
 double fetchFloatofObject(sqInt fieldIndex, sqInt objectPointer);
-sqInt fetchIntegerofObject(sqInt fieldIndex, sqInt objectPointer);
-sqInt fetchPointerofObject(sqInt index, sqInt oop);
+sqInt  fetchIntegerofObject(sqInt fieldIndex, sqInt objectPointer);
+sqInt  fetchPointerofObject(sqInt index, sqInt oop);
 /* sqInt  fetchWordofObject(sqInt fieldIndex, sqInt oop);     *
  * has been rescinded as of VMMaker 3.8 and the 64bitclean VM *
  * work. To support old plugins we keep a valid function in   *
@@ -39,23 +39,24 @@ sqInt fetchPointerofObject(sqInt index, sqInt oop);
  * something utterly horrible to scare off the natives. A new *
  * equivalent but 64 bit valid function is added as           *
  * 'fetchLong32OfObject'                                      */
-sqInt obsoleteDontUseThisFetchWordofObject(sqInt index, sqInt oop);
-sqInt fetchLong32ofObject(sqInt index, sqInt oop);
-void *firstFixedField(sqInt oop);
-void *firstIndexableField(sqInt oop);
-sqInt literalofMethod(sqInt offset, sqInt methodPointer);
-sqInt literalCountOf(sqInt methodPointer);
-sqInt methodArgumentCount(void);
-sqInt methodPrimitiveIndex(void);
-sqInt primitiveMethod(void);
-sqInt primitiveIndexOf(sqInt methodPointer);
-sqInt sizeOfSTArrayFromCPrimitive(void *cPtr);
-sqInt slotSizeOf(sqInt oop);
-sqInt stObjectat(sqInt array, sqInt index);
-sqInt stObjectatput(sqInt array, sqInt index, sqInt value);
-sqInt stSizeOf(sqInt oop);
-int storeIntegerofObjectwithValue(sqInt index, sqInt oop, sqInt integer);
-sqInt storePointerofObjectwithValue(sqInt index, sqInt oop, sqInt valuePointer);
+sqInt  obsoleteDontUseThisFetchWordofObject(sqInt index, sqInt oop);
+sqInt  fetchLong32ofObject(sqInt index, sqInt oop); 
+void  *firstFixedField(sqInt oop);
+void  *firstIndexableField(sqInt oop);
+sqInt  literalofMethod(sqInt offset, sqInt methodPointer);
+sqInt  literalCountOf(sqInt methodPointer);
+sqInt  methodArgumentCount(void);
+sqInt  methodPrimitiveIndex(void);
+sqInt  primitiveMethod(void);
+sqInt  primitiveIndexOf(sqInt methodPointer);
+sqInt  sizeOfSTArrayFromCPrimitive(void *cPtr);
+sqInt  slotSizeOf(sqInt oop);
+sqInt  stObjectat(sqInt array, sqInt index);
+sqInt  stObjectatput(sqInt array, sqInt index, sqInt value);
+sqInt  stSizeOf(sqInt oop);
+sqInt  storeIntegerofObjectwithValue(sqInt index, sqInt oop, sqInt integer);
+sqInt  storePointerofObjectwithValue(sqInt index, sqInt oop, sqInt valuePointer);
+
 
 /* InterpreterProxy methodsFor: 'testing' */
 sqInt isKindOf(sqInt oop, char *aString);
@@ -82,29 +83,30 @@ sqInt isOopMutable(sqInt oop);
 sqInt isOopImmutable(sqInt oop);
 
 /* InterpreterProxy methodsFor: 'converting' */
-sqInt booleanValueOf(sqInt obj);
-sqInt checkedIntegerValueOf(sqInt intOop);
-sqInt floatObjectOf(double aFloat);
+sqInt  booleanValueOf(sqInt obj);
+sqInt  checkedIntegerValueOf(sqInt intOop);
+sqInt  floatObjectOf(double aFloat);
 double floatValueOf(sqInt oop);
-sqInt integerObjectOf(sqInt value);
-sqInt integerValueOf(sqInt oop);
-sqInt positive32BitIntegerFor(unsigned int integerValue);
-usqInt positive32BitValueOf(sqInt oop);
-sqInt signed32BitIntegerFor(sqInt integerValue);
-int signed32BitValueOf(sqInt oop);
-sqInt positive64BitIntegerFor(usqLong integerValue);
+sqInt  integerObjectOf(sqInt value);
+sqInt  integerValueOf(sqInt oop);
+sqInt  positive32BitIntegerFor(unsigned int integerValue);
+usqInt  positive32BitValueOf(sqInt oop);
+sqInt  signed32BitIntegerFor(sqInt integerValue);
+int    signed32BitValueOf(sqInt oop);
+sqInt  positive64BitIntegerFor(usqLong integerValue);
 usqLong positive64BitValueOf(sqInt oop);
-sqInt signed64BitIntegerFor(sqLong integerValue);
+sqInt  signed64BitIntegerFor(sqLong integerValue);
 sqLong signed64BitValueOf(sqInt oop);
-sqIntptr_t signedMachineIntegerValueOf(sqInt);
-sqIntptr_t stackSignedMachineIntegerValue(sqInt);
-usqIntptr_t positiveMachineIntegerValueOf(sqInt);
-usqIntptr_t stackPositiveMachineIntegerValue(sqInt);
+sqIntptr_t   signedMachineIntegerValueOf(sqInt);
+sqIntptr_t   stackSignedMachineIntegerValue(sqInt);
+usqIntptr_t  positiveMachineIntegerValueOf(sqInt);
+usqIntptr_t  stackPositiveMachineIntegerValue(sqInt);
 
 /* InterpreterProxy methodsFor: 'special objects' */
 sqInt falseObject(void);
 sqInt nilObject(void);
 sqInt trueObject(void);
+
 
 /* InterpreterProxy methodsFor: 'special classes' */
 sqInt classArray(void);
@@ -119,12 +121,14 @@ sqInt classSemaphore(void);
 sqInt classSmallInteger(void);
 sqInt classString(void);
 
+
 /* InterpreterProxy methodsFor: 'instance creation' */
 sqInt clone(sqInt oop);
 sqInt instantiateClassindexableSize(sqInt classPointer, sqInt size);
 sqInt makePointwithxValueyValue(sqInt xValue, sqInt yValue);
 sqInt popRemappableOop(void);
 sqInt pushRemappableOop(sqInt oop);
+
 
 /* InterpreterProxy methodsFor: 'other' */
 sqInt becomewith(sqInt array1, sqInt array2);
@@ -137,12 +141,12 @@ sqInt signalSemaphoreWithIndex(sqInt semaIndex);
 sqInt success(sqInt aBoolean);
 sqInt superclassOf(sqInt classPointer);
 sqInt ioMicroMSecs(void);
-unsigned volatile long long ioUTCMicroseconds(void);
-unsigned volatile long long ioUTCMicrosecondsNow(void);
-int forceInterruptCheck(void);
+unsigned volatile long long  ioUTCMicroseconds(void);
+unsigned volatile long long  ioUTCMicrosecondsNow(void);
+sqInt forceInterruptCheck(void);
 sqInt getThisSessionID(void);
-sqInt ioFilenamefromStringofLengthresolveAliases(char *aCharBuffer, char *filenameIndex, sqInt filenameLength, sqInt resolveFlag);
-sqInt vmEndianness(void);
+sqInt ioFilenamefromStringofLengthresolveAliases(char* aCharBuffer, char* filenameIndex, sqInt filenameLength, sqInt resolveFlag);
+sqInt vmEndianness(void);	
 sqInt getInterruptPending(void);
 
 /* InterpreterProxy methodsFor: 'BitBlt support' */
@@ -153,7 +157,7 @@ sqInt copyBitsFromtoat(sqInt leftX, sqInt rightX, sqInt yValue);
 /* InterpreterProxy methodsFor: 'FFI support' */
 sqInt classExternalAddress(void);
 void *ioLoadModuleOfLength(sqInt moduleNameIndex, sqInt moduleNameLength);
-void *ioLoadSymbolOfLengthFromModule(sqInt functionNameIndex, sqInt functionNameLength, void *moduleHandle);
+void *ioLoadSymbolOfLengthFromModule(sqInt functionNameIndex, sqInt functionNameLength, void* moduleHandle);
 sqInt isInMemory(sqInt address);
 
 void *startOfAlienData(sqInt);
@@ -184,18 +188,19 @@ void *ioLoadFunctionFrom(char *fnName, char *modName);
 
 void waitOnExternalSemaphoreIndex(sqInt semaphoreIndex);
 
+
 /* Proxy declarations for v1.8 */
 sqInt addGCRoot(sqInt *varLoc);
 sqInt removeGCRoot(sqInt *varLoc);
 
 /* Proxy declarations for v1.10 */
-#if VM_PROXY_MINOR > 13 /* OS Errors available in primitives; easy return forms */
-sqInt methodReturnBool(sqInt);
-sqInt methodReturnFloat(double);
-sqInt methodReturnInteger(sqInt);
-sqInt methodReturnReceiver(void);
-sqInt methodReturnString(char *);
-#else
+# if VM_PROXY_MINOR > 13 /* OS Errors available in primitives; easy return forms */
+sqInt  methodReturnBool(sqInt);
+sqInt  methodReturnFloat(double);
+sqInt  methodReturnInteger(sqInt);
+sqInt  methodReturnReceiver(void);
+sqInt  methodReturnString(char *);
+# else
 sqInt methodArg(sqInt index);
 sqInt objectArg(sqInt index);
 sqInt integerArg(sqInt index);
@@ -206,22 +211,20 @@ sqInt topRemappableOop(void);
 
 #if ASYNC_FFI_QUEUE
 
-sqInt ptExitInterpreterToCallback(void *);
-sqInt ptEnterInterpreterFromCallback(void *);
+sqInt ptExitInterpreterToCallback(void*);
+sqInt ptEnterInterpreterFromCallback(void*);
 
-#endif // ASYNC_FFI_QUEUE
+#endif //ASYNC_FFI_QUEUE
 
 sqInt isNonImmediate(sqInt oop);
 
 struct VirtualMachine *VM = NULL;
 
-static sqInt majorVersion(void)
-{
+static sqInt majorVersion(void) {
 	return VM_PROXY_MAJOR;
 }
 
-static sqInt minorVersion(void)
-{
+static sqInt minorVersion(void) {
 	return VM_PROXY_MINOR;
 }
 
@@ -242,18 +245,18 @@ void addSynchronousTickee(void (*ticker)(void), unsigned periodms, unsigned roun
 static sqInt
 interceptFetchIntegerofObject(sqInt fieldIndex, sqInt objectPointer)
 {
-	if (fieldIndex == 0 && isCharacterObject(objectPointer))
+	if (fieldIndex == 0
+	 && isCharacterObject(objectPointer))
 		return characterValueOf(objectPointer);
 
 	return fetchIntegerofObject(fieldIndex, objectPointer);
 }
 #endif
 
-sqInt fetchIntegerofObject(sqInt fieldIndex, sqInt objectPointer);
-struct VirtualMachine *sqGetInterpreterProxy(void)
+sqInt  fetchIntegerofObject(sqInt fieldIndex, sqInt objectPointer);
+struct VirtualMachine* sqGetInterpreterProxy(void)
 {
-	if (VM)
-		return VM;
+	if(VM) return VM;
 	VM = (struct VirtualMachine *)calloc(1, sizeof(VirtualMachine));
 	/* Initialize Function pointers */
 	VM->majorVersion = majorVersion;
@@ -328,7 +331,7 @@ struct VirtualMachine *sqGetInterpreterProxy(void)
 	VM->falseObject = falseObject;
 	VM->nilObject = nilObject;
 	VM->trueObject = trueObject;
-
+	
 	/* InterpreterProxy methodsFor: 'special classes' */
 	VM->classArray = classArray;
 	VM->classBitmap = classBitmap;
@@ -360,8 +363,8 @@ struct VirtualMachine *sqGetInterpreterProxy(void)
 
 #if VM_PROXY_MINOR <= 13 /* reused in 14 and above */
 
-	VM->compilerHookVector = 0;
-	VM->setCompilerInitialized = 0;
+	VM->compilerHookVector= 0;
+	VM->setCompilerInitialized= 0;
 
 #endif
 
@@ -422,24 +425,24 @@ struct VirtualMachine *sqGetInterpreterProxy(void)
 #endif
 
 #if VM_PROXY_MINOR > 8
-	VM->primitiveFailFor = primitiveFailFor;
+	VM->primitiveFailFor    = primitiveFailFor;
 	VM->isOopImmutable = isOopImmutable;
-	VM->isOopMutable = isOopMutable;
+	VM->isOopMutable   = isOopMutable;
 #endif
 
 #if VM_PROXY_MINOR > 9
-#if VM_PROXY_MINOR > 13 /* OS Errors available in primitives; easy return forms */
+# if VM_PROXY_MINOR > 13 /* OS Errors available in primitives; easy return forms */
 	VM->methodReturnBool = methodReturnBool;
 	VM->methodReturnFloat = methodReturnFloat;
 	VM->methodReturnInteger = methodReturnInteger;
 	VM->methodReturnReceiver = methodReturnReceiver;
 	VM->methodReturnString = methodReturnString;
-#else
+# else
 	VM->methodArg = methodArg;
 	VM->objectArg = objectArg;
 	VM->integerArg = integerArg;
 	VM->floatArg = floatArg;
-#endif
+# endif
 	VM->methodReturnValue = methodReturnValue;
 	VM->topRemappableOop = topRemappableOop;
 #endif
@@ -483,9 +486,10 @@ struct VirtualMachine *sqGetInterpreterProxy(void)
 #endif
 
 #if VM_PROXY_MINOR > 14 /* SmartSyntaxPlugin validation rewrite support */
-	VM->isBooleanObject = isBooleanObject;
+	VM->isBooleanObject = isBooleanObject ;
 	VM->isPositiveMachineIntegerObject = isPositiveMachineIntegerObject;
 #endif
+
 
 	VM->ptEnterInterpreterFromCallback = ptEnterInterpreterFromCallback;
 	VM->ptExitInterpreterToCallback = ptExitInterpreterToCallback;
@@ -500,14 +504,14 @@ struct VirtualMachine *sqGetInterpreterProxy(void)
 	return VM;
 }
 
-void printPhaseTime(int phase)
+void
+printPhaseTime(int phase)
 {
-	static int printTimes;
-	static usqLong lastusecs;
-	usqLong nowusecs, usecs;
+	static	int printTimes;
+	static	usqLong lastusecs;
+			usqLong nowusecs, usecs;
 
-	if (phase == 1)
-	{
+	if (phase == 1) {
 		time_t nowt;
 		struct tm nowtm;
 		printTimes = 1;
@@ -518,8 +522,7 @@ void printPhaseTime(int phase)
 		return;
 	}
 
-	if (!printTimes)
-		return;
+	if (!printTimes) return;
 
 	nowusecs = ioUTCMicrosecondsNow();
 	usecs = nowusecs - lastusecs;
@@ -528,14 +531,13 @@ void printPhaseTime(int phase)
 #define k 1000ULL
 #define ul(v) (unsigned long)(v)
 	if (phase == 2)
-		printf("loaded in %lu.%03lus\n", ul(usecs / m), ul((usecs % m + k / 2) / k));
-	if (phase == 3)
-	{
+		printf("loaded in %lu.%03lus\n", ul(usecs/m), ul((usecs % m + k/2)/k));
+	if (phase == 3) {
 		printTimes = 0; /* avoid repeated printing if error during exit */
-		if (usecs >= 1ULL << 32)
+		if (usecs >= 1ULL<<32)
 			printf("ran for a long time\n");
 		else
-			printf("ran for %lu.%03lus\n", ul(usecs / m), ul((usecs % m + k / 2) / k));
+			printf("ran for %lu.%03lus\n", ul(usecs/m), ul((usecs % m + k/2)/k));
 	}
 #undef m
 #undef k
