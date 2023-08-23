@@ -80,6 +80,57 @@ SlangBasicTranslationTestClass >> methodDefiningSingleVariable [
 	| foo |
 ]
 
+{ #category : #'generation-targets' }
+SlangBasicTranslationTestClass >> methodFrom: pFrom to: pTo len: sizeLen [
+
+	0 to: sizeLen - 1 do: [ : i | pTo at: i put: (pFrom at: i) ]
+]
+
+{ #category : #'generation-targets' }
+SlangBasicTranslationTestClass >> methodFromWithAnnotations: pFrom to: pTo [
+	<var: #pTo type: #'unsigned int *'>
+	<var: #pFrom type: #'unsigned int *'>
+
+	0 to: 10 do: [ : i | pTo at: i put: (pFrom at: i) ].
+]
+
+{ #category : #'generation-targets' }
+SlangBasicTranslationTestClass >> methodFromWithAnnotations: pFrom to: pTo len: len [
+	<var: #pTo type: #'unsigned int *'>
+	<var: #pFrom type: #'unsigned int *'>
+
+	0 to: len - 1 do: [ : i | pTo at: i put: (pFrom at: i) ].
+	^ 0
+]
+
+{ #category : #inline }
+SlangBasicTranslationTestClass >> methodToBeTranslatedWithIfAndShiftRight [
+
+	self methodWithIfAndShiftRight: 2
+]
+
+{ #category : #'generation-targets' }
+SlangBasicTranslationTestClass >> methodUseParametersWithAnnotations: pFrom to: pTo with: anInteger [
+
+	<var: #pTo type: #'unsigned int *'>
+	<var: #pFrom type: #'unsigned int *'>
+
+	^ self
+			methodFromWithAnnotations: pFrom + anInteger 
+			to: pTo yourself
+			len: 5
+]
+
+{ #category : #'generation-targets' }
+SlangBasicTranslationTestClass >> methodUseParametersWithAnnotationsBuiltIn: pFrom to: pTo with: anInteger [
+	<var: #pTo type: #'unsigned int *'>
+	<var: #pFrom type: #'unsigned int *'>
+
+	self
+		methodFromWithAnnotations: pFrom + anInteger 
+		to: pTo
+]
+
 { #category : #inline }
 SlangBasicTranslationTestClass >> methodUsingSingleArrayVariable [
 
@@ -145,6 +196,14 @@ SlangBasicTranslationTestClass >> methodWithAndIntegerReceiver [
 ]
 
 { #category : #inline }
+SlangBasicTranslationTestClass >> methodWithIfAndShiftRight: var [
+
+	^ (var < 0
+		ifTrue:  [ 0 ]
+		ifFalse: [ var ]) >> (var - 1 * 32)
+]
+
+{ #category : #inline }
 SlangBasicTranslationTestClass >> methodWithInlinePragma [
 
 	<inline: true>
@@ -183,13 +242,13 @@ SlangBasicTranslationTestClass >> methodWithOptionPragma [
 	
 ]
 
-{ #category : #'as yet unclassified' }
+{ #category : #inline }
 SlangBasicTranslationTestClass >> methodWithRepeatedCFunctionName [
 
 	^ true
 ]
 
-{ #category : #'as yet unclassified' }
+{ #category : #inline }
 SlangBasicTranslationTestClass >> methodWithRepeatedCFunctionName: arg1 [
 
 	^ true
