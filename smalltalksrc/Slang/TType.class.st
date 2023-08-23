@@ -29,6 +29,11 @@ TType class >> int [
 	^self cType: #int.
 ]
 
+{ #category : #instatiation }
+TType class >> sqInt [
+	^self cType: #sqInt.
+]
+
 { #category : #comparing }
 TType >> = other [
 
