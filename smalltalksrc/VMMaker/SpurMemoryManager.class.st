@@ -13130,7 +13130,7 @@ SpurMemoryManager >> updateFullGCStats [
 	self writeSTON: fullGCLogRecord toFile: scavenger logStream.
 	self fprintf: scavenger logStream _: '\n---\n'.
 	
-	scavenger logStream fflush
+	scavenger logStream flush
 ]
 
 { #category : #initialization }

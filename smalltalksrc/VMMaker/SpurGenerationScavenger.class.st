@@ -225,6 +225,12 @@ SpurGenerationScavenger >> allWeakSurvivorsOnWeakList [
 ]
 
 { #category : #accessing }
+SpurGenerationScavenger >> coInterpreter [
+
+	^ coInterpreter
+]
+
+{ #category : #accessing }
 SpurGenerationScavenger >> coInterpreter: aCoInterpreter [
 	coInterpreter := aCoInterpreter
 ]
@@ -1503,5 +1509,5 @@ SpurGenerationScavenger >> writeScavengeLogAsSTON [
 	scavengeLogRecord deltaUsecs: manager statSGCDeltaUsecs.
 	self writeSTON: scavengeLogRecord toFile: scavengeLog.
 	self fprintf: scavengeLog _: '\n---\n'.
-	scavengeLog fflush
+	scavengeLog flush
 ]
