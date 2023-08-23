@@ -300,8 +300,8 @@ MLVMCCodeGenerator >> harmonizeReturnTypesIn: aSetOfTypes [
 	constantIntegers := aSetOfTypes select: [:element| element isInteger].
 	aSetOfTypes removeAll: constantIntegers.
 	"N.B. Because of LP64 vs LLP64 issues do *not* rename #long to #sqInt or #'unsigned long' to #usqInt"
-	#(char short int #'long long' #'unsigned char' #'unsigned short' #'unsigned int' #'unsigned long long')
-		with: #(sqInt sqInt sqInt sqLong usqInt usqInt usqInt usqLong)
+	{#char. #short. #int. #'long long' .#'unsigned char'. #'unsigned short'. #'unsigned int'. #'unsigned long long'. TType int}
+		with: #(sqInt sqInt sqInt sqLong usqInt usqInt usqInt usqLong sqInt)
 		do: [:type :replacement|
 			(aSetOfTypes includes: type) ifTrue:
 				[aSetOfTypes remove: type; add: replacement]].
