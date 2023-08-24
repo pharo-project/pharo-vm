@@ -2166,6 +2166,24 @@ CCodeGenerator >> generateCASTIfTrueIfFalseAsArgument: tast [
 	^ self generateCASTIfElseAsArgument: tast reverseArms: false
 ]
 
+{ #category : #generation }
+CCodeGenerator >> generateCASTInferredAnd: aTSendNode [
+
+	| receiverType argumentType |
+	receiverType := self
+		                tTypeFor: aTSendNode receiver
+		                in: self currentMethod.
+	argumentType := self
+		                tTypeFor: aTSendNode arguments first
+		                in: self currentMethod.
+
+	receiverType ~= argumentType ifTrue: [ TypeError signal: 'Cannot infer & type'].
+
+	^ receiverType isBoolean
+		  ifTrue: [ self generateCASTAnd: aTSendNode ]
+		  ifFalse: [ self generateCASTBitAnd: aTSendNode ]
+]
+
 { #category : #'CAST translation' }
 CCodeGenerator >> generateCASTInlineCCode: aTSendNode [
 
@@ -3039,17 +3057,6 @@ CCodeGenerator >> generateDeadCode: aBool [
 	generateDeadCode := aBool
 ]
 
-{ #category : #generation }
-CCodeGenerator >> generateInferredAnd: aTSendNode [
-
-	| type |
-	type := self tTypeFor: aTSendNode receiver in: self currentMethod.
-
-	^type isBoolean
-		ifTrue: [ self generateCASTAnd: aTSendNode ]
-		ifFalse: [ self generateCASTBitAnd: aTSendNode ]
-]
-
 { #category : #public }
 CCodeGenerator >> globalsAsSet [
 	"Used by the inliner to avoid name clashes with global variables."
@@ -3172,7 +3179,7 @@ CCodeGenerator >> initializeCASTTranslationDictionary [
 	
 	castTranslationDict := Dictionary new: 200.
 	pairs := #(
-	#&				#generateInferredAnd:
+	#&				#generateCASTInferredAnd:
 	#|				#forbiddenSelector:
 	#abs			#generateCASTAbs:
 	#and:			#generateCASTSequentialAnd:

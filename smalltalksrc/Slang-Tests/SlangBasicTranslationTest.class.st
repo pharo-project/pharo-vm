@@ -6611,6 +6611,15 @@ SlangBasicTranslationTest >> testTypeGuidedbitAnd [
 	self assert: (translation includesSubstring: 'receiver & 1')
 ]
 
+{ #category : #'tests-send' }
+SlangBasicTranslationTest >> testTypeMismatchedAnd [
+
+	| method |
+	method := self getTMethodFrom:
+		          #methodWithAndIntegerReceiverAndBooleanArgument.
+	self should: [ self translate: method ] raise: TypeError 
+]
+
 { #category : #'tests-assignment' }
 SlangBasicTranslationTest >> testVariableAssignment [
 
