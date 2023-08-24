@@ -71,7 +71,7 @@ SlangBasicTypeInferenceTest >> testANilConstantNode [
 	tMethod := ccg methodNamed: #aNilConstantNode.
 	
 	self assert: tMethod isNotNil.
-	self assert: (ccg typeFor: tMethod statements first in: tMethod) asString equals: #sqInt
+	self assert: (ccg typeFor: tMethod statements first in: tMethod) asString equals: #int
 ]
 
 { #category : #constant }
@@ -198,7 +198,7 @@ SlangBasicTypeInferenceTest >> testReturnANilConstantNode [
 	tMethod := ccg methodNamed: #returnANilConstantNode.
 	
 	self assert: tMethod isNotNil.
-	self assert: (ccg typeFor: tMethod statements first in: tMethod) asString equals: #sqInt.
+	self assert: (ccg typeFor: tMethod statements first in: tMethod) asString equals: #int.
 	self assert: tMethod returnType equals: #sqInt
 ]
 
@@ -717,9 +717,9 @@ SlangBasicTypeInferenceTest >> testReturnTempNilConstantNode [
 	tMethod := ccg methodNamed: #returnTempNilConstantNode.
 	
 	self assert: tMethod isNotNil.
-	self assert: (ccg typeFor: tMethod statements first in: tMethod) asString equals: #sqInt. " assignementNode "
-	self assert: (ccg typeFor: tMethod statements first value in: tMethod) asString equals: #sqInt. " value, constantNode "
-	self assert: (ccg typeFor: tMethod statements first variable in: tMethod) asString equals: #sqInt. " variable, temporaryNode "
+	self assert: (ccg typeFor: tMethod statements first in: tMethod) asString equals: #int. " assignementNode "
+	self assert: (ccg typeFor: tMethod statements first value in: tMethod) asString equals: #int. " value, constantNode "
+	self assert: (ccg typeFor: tMethod statements first variable in: tMethod) asString equals: #int. " variable, temporaryNode "
 
 	self assertReturnTypeOf: tMethod equalsHarmonized: #sqInt
 ]
