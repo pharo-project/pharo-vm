@@ -1656,6 +1656,18 @@ SpurMemoryManager >> allOldMarkedWeakObjectsOnWeaklingStack [
 ]
 
 { #category : #'object enumeration' }
+SpurMemoryManager >> allOldSpaceEntities [
+
+	<doNotGenerate>
+
+	| result |
+	result := OrderedCollection new.
+	self allOldSpaceEntitiesDo: [ :entity | result add: entity ].
+	^ result
+
+]
+
+{ #category : #'object enumeration' }
 SpurMemoryManager >> allOldSpaceEntitiesDo: aBlock [
 
 	self allOldSpaceEntitiesFrom: self firstObject do: aBlock
@@ -7985,13 +7997,18 @@ SpurMemoryManager >> isValidToMoveToPermSpace: objOop [
 
 	| fmt |
 
-	(self isImmediate: objOop) 
+	((self isImmediate: objOop) or: [self isFixedKnownObject: objOop]) 
 		ifTrue: [ ^ false ].
-	
-	self assert: (self isForwarded: objOop) not.
 	
 	(self isForwarded: objOop) 
 		ifTrue: [ ^ false ].	
+
+	(self isPinned: objOop) 
+		ifTrue: [ ^ false ].	
+
+	"If it is a hidden Object of the VM"
+	((self classIndexOf: objOop) <= self classIsItselfClassIndexPun)
+		ifTrue: [ ^ false ].
 	
 	fmt := self formatOf: objOop. 
 	
@@ -8094,7 +8111,10 @@ self mournQueue = oop ifTrue: [ ^ 'mournQueue' ].
 self markStack = oop ifTrue: [ ^ 'markStack' ].
 self weaklingStack = oop ifTrue: [ ^ 'weaklingStack' ].
 self freeListsObj = oop ifTrue: [ ^ 'freeListsObj' ].
-self rememberedSetObj = oop ifTrue: [ ^ 'rememberedSetObj' ].
+self oldRememberedSetObj = oop ifTrue: [ ^ 'oldRememberedSetObj' ].
+self permToNewRememberedSetObj  = oop ifTrue: [ ^ 'permToNewRememberedSetObj' ].
+self permToOldRememberedSetObj   = oop ifTrue: [ ^ 'permToOldRememberedSetObj' ].
+
 ^ ''
 ]
 
@@ -9138,6 +9158,29 @@ SpurMemoryManager >> moveToPermSpace: objOop [
 	self doAfterMoveToPermSpace.
 
 	^ newObj
+]
+
+{ #category : #'perm - space' }
+SpurMemoryManager >> moveToPermSpaceAllOldObjects [
+
+	<inline: false>
+	"Clearing the flag for all"
+	becomeEffectsFlags := 0.
+
+	self allOldSpaceObjectsDo: [ :objOop |
+		(self isValidToMoveToPermSpace: objOop) 
+			ifTrue: [ self doMoveToPermSpace: objOop addToRememberedSet: true]		
+	].
+
+	self allPermSpaceObjectsDo: [ :permObj |
+		self followForwardedObjectFields: permObj toDepth: 0 ].
+
+	self recreateFromPermSpaceRememberedSet.
+
+	becomeEffectsFlags := BecamePointerObjectFlag + BecameActiveClassFlag
+		                      bitOr: BecameCompiledMethodFlag.
+	self doAfterMoveToPermSpace.
+
 ]
 
 { #category : #'perm - space' }
