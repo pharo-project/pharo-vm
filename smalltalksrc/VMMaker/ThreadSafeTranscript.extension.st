@@ -7,6 +7,13 @@ ThreadSafeTranscript >> closed [
 ]
 
 { #category : #'*VMMaker' }
+ThreadSafeTranscript >> fflush [
+
+	<doNotGenerate>
+	self flush
+]
+
+{ #category : #'*VMMaker' }
 ThreadSafeTranscript >> isBinary [
 	
 	^ false
