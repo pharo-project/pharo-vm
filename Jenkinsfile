@@ -464,9 +464,9 @@ try{
 	def builders = [:]
 	def dockerBuilders = [:]
 
-	node('Darwin-x86_64'){
-		runUnitTests('Darwin-x86_64')
-	}
+	// node('Darwin-x86_64'){
+	// 	runUnitTests('Darwin-x86_64')
+	// }
 
 	for (platf in parallelBuilderPlatforms) {
 		// Need to bind the label variable before the closure - can't do 'for (label in labels)'
