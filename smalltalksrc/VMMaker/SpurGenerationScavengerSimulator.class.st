@@ -45,6 +45,13 @@ SpurGenerationScavengerSimulator >> manager: aSpurNBitMMXEndianSimulator [
 ]
 
 { #category : #scavenger }
+SpurGenerationScavengerSimulator >> openScavengeLog [
+	"Avoiding logs on tests"
+
+	
+]
+
+{ #category : #scavenger }
 SpurGenerationScavengerSimulator >> recordMovements [
 	cameFrom := Dictionary new
 ]

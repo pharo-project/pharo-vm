@@ -13120,17 +13120,20 @@ SpurMemoryManager >> updateFullGCStats [
 	gcSweepEndUsecs = 0 ifFalse: [statSweepUsecs := statSweepUsecs + (gcSweepEndUsecs - compactionStartUsecs)].
 	statMarkUsecs := statMarkUsecs + (gcMarkEndUsecs - gcStartUsecs).
 	
-	fullGCLogRecord 
-		fullGCs: statFullGCs;
-		fullUsecs: statFullGCUsecs;
-		compactionUsecs: statCompactionUsecs;
-		sweepUsecs: gcSweepEndUsecs;
-		markUsecs: statMarkUsecs.
+	scavenger logStream ifNotNil: [ 
+		fullGCLogRecord 
+			fullGCs: statFullGCs;
+			fullUsecs: statFullGCUsecs;
+			compactionUsecs: statCompactionUsecs;
+			sweepUsecs: gcSweepEndUsecs;
+			markUsecs: statMarkUsecs.
+		
+		self writeSTON: fullGCLogRecord toFile: scavenger logStream.
+		self fprintf: scavenger logStream _: '\n---\n'.
+		
+		scavenger logStream fflush ]
 	
-	self writeSTON: fullGCLogRecord toFile: scavenger logStream.
-	self fprintf: scavenger logStream _: '\n---\n'.
-	
-	scavenger logStream fflush
+
 ]
 
 { #category : #initialization }
