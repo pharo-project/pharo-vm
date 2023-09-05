@@ -10,7 +10,8 @@ Class {
 		'rememberedSetArray',
 		'rememberedSetRedZone',
 		'numRememberedEphemerons',
-		'previousRememberedSetSize'
+		'previousRememberedSetSize',
+		'doFullScan'
 	],
 	#category : #VMMaker
 }
@@ -67,6 +68,18 @@ VMRememberedSet >> countNotNilObjects [
 		count := i ].
 
 	^ count
+]
+
+{ #category : #accessing }
+VMRememberedSet >> doFullScan [
+
+	^ doFullScan
+]
+
+{ #category : #accessing }
+VMRememberedSet >> doFullScan: aValue [	
+
+	doFullScan := aValue
 ]
 
 { #category : #initialization }
@@ -157,7 +170,8 @@ VMRememberedSet >> initialize [
 
 	rememberedSetSize := 0.
 	numRememberedEphemerons := 0.
-	fudge := 0
+	fudge := 0.
+	doFullScan := false
 ]
 
 { #category : #initialization }
@@ -330,11 +344,13 @@ VMRememberedSet >> rememberWithoutMarkingAsRemembered: objOop [
 	self deny: (manager getMemoryMap isYoungObject: objOop).
 
 	rememberedSetSize >= rememberedSetLimit ifTrue:
-		[self growRememberedSet].
+		[self growRememberedSet.
+		 doFullScan 
+			ifFalse: [ manager scheduleScavenge ]].
+
 	rememberedSetArray at: rememberedSetSize put: objOop.
 	self setRememberedSetSize: rememberedSetSize + 1.
-	rememberedSetSize >= rememberedSetRedZone ifTrue:
-		[manager scheduleScavenge].
+
 	^objOop
 ]
 
@@ -493,7 +509,7 @@ VMRememberedSet >> save: anOop at: index [
 VMRememberedSet >> setRememberedSetRedZone [
 
 	<inline: true>
-	self rememberedSetRedZone: (self rememberedSetLimit * 3 // 4 max: self fudge)
+	self rememberedSetRedZone: ((self rememberedSetLimit - 4) max: self fudge)
 ]
 
 { #category : #initialization }
@@ -503,6 +519,44 @@ VMRememberedSet >> setRememberedSetSize: aNewValue [
 	rememberedSetSize := aNewValue.
 	aNewValue < rememberedSetLimit ifTrue: [ rememberedSetArray at: aNewValue put: 0 ].
 
+]
+
+{ #category : #'remembered set' }
+VMRememberedSet >> shrinkRememberedSet [
+	| obj numSlots newObj base |
+
+	<inline: false>
+	<var: #base type: #'sqInt *'>
+
+	rememberedSetLimit >= 2048 ifFalse: [ ^ self ].
+	rememberedSetSize < (self rememberedSetLimit // 2) 
+		ifFalse: [ ^ self ].
+
+	obj := self objectOop.
+	numSlots := ((manager numSlotsOf: obj) // 2) max: 2048.
+
+	newObj := manager allocatePinnedSlots: numSlots.
+	newObj ifNil:
+		[newObj := manager allocatePinnedSlots: numSlots.
+		 newObj ifNil:
+			[(manager growOldSpaceByAtLeast: numSlots * manager wordSize) ifNil: [self error: 'could not shrink remembered set'].
+			 newObj := manager allocatePinnedSlots: numSlots. "cannot fail"]].
+
+	manager rememberedSet: rootIndex oop: newObj.
+	base := self rememberedSetArrayPointerFromObject: newObj.
+
+	0 to: rememberedSetSize - 1 do:
+		[:i| base at: i put: (self rememberedSetArray at: i)].
+	"if growing in the middle of a GC, need to preserve marked status."
+	(manager isMarked: obj) ifTrue:
+		[manager
+			setIsMarkedOf: newObj to: true;
+			setIsMarkedOf: obj to: false].
+	manager freeObject: obj.
+	self rememberedSetArray: base.
+	self rememberedSetLimit: (manager numSlotsOf: newObj).
+	self setRememberedSetRedZone
+	
 ]
 
 { #category : #scavenger }

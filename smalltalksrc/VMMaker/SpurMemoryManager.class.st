@@ -3875,6 +3875,8 @@ SpurMemoryManager >> cleanUpPermToOldSpaceRememeberedSet [
 
 	self getFromPermToOldSpaceRememberedSet rememberedSetWithIndexDo:[ :oop :i | 
 		self setIsMarkedOf: oop to: false ].
+
+	self getFromPermToOldSpaceRememberedSet shrinkRememberedSet.
 	
 	self assert: self allPermSpaceObjectsUnmarked.
 
@@ -6757,7 +6759,10 @@ SpurMemoryManager >> initializeObjectMemory: bytesToShift [
 	self initializeNewSpaceVariables.
 
 	fromOldSpaceRememberedSet initializeRememberedSetShouldStartEmpty: true.
+	
 	fromPermToOldSpaceRememberedSet initializeRememberedSetShouldStartEmpty: false.
+	fromPermToOldSpaceRememberedSet doFullScan: true.
+	
 	fromPermToNewSpaceRememberedSet initializeRememberedSetShouldStartEmpty: true.
 	
 	segmentManager checkSegments.
