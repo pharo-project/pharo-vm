@@ -8010,10 +8010,6 @@ SpurMemoryManager >> isValidToMoveToPermSpace: objOop [
 
 	(self isPinned: objOop) 
 		ifTrue: [ ^ false ].	
-
-	"If it is a hidden Object of the VM"
-	((self classIndexOf: objOop) <= self classIsItselfClassIndexPun)
-		ifTrue: [ ^ false ].
 	
 	fmt := self formatOf: objOop. 
 	
@@ -9173,9 +9169,11 @@ SpurMemoryManager >> moveToPermSpaceAllOldObjects [
 	becomeEffectsFlags := 0.
 
 	self allOldSpaceObjectsDo: [ :objOop |
-		(self isValidToMoveToPermSpace: objOop) 
-			ifTrue: [ self doMoveToPermSpace: objOop addToRememberedSet: true]		
-	].
+		"If it is a hidden Object of the VM, we skip it"
+		((self classIndexOf: objOop) <= self classIsItselfClassIndexPun)
+			ifFalse: [
+			(self isValidToMoveToPermSpace: objOop) 
+				ifTrue: [ self doMoveToPermSpace: objOop addToRememberedSet: true ]]].
 
 	self allPermSpaceObjectsDo: [ :permObj |
 		self followForwardedObjectFields: permObj toDepth: 0 ].
