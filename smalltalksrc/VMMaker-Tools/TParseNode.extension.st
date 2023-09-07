@@ -2,7 +2,7 @@ Extension { #name : #TParseNode }
 
 { #category : #'*VMMaker-Tools' }
 TParseNode >> inspectNode [
-	<inspectorPresentationOrder: 912 title: 'C (AST)'>
+	<inspectorPresentationOrder: 912 title: 'C (Not Expr)'>
 
 	^  SpTextPresenter new 
 		text: (String streamContents: [ : stream | 
@@ -11,13 +11,31 @@ TParseNode >> inspectNode [
 ]
 
 { #category : #'*VMMaker-Tools' }
+TParseNode >> inspectNodeContext: aContext [
+
+	aContext active: self isExpression not.
+	aContext 
+		title: 'C';
+		withoutEvaluator
+]
+
+{ #category : #'*VMMaker-Tools' }
 TParseNode >> inspectNodeExpression [
-	<inspectorPresentationOrder: 910 title: 'C (AST Expr)'>
+	<inspectorPresentationOrder: 912 title: 'C (Expression)'>
 
 	^  SpTextPresenter new 
 		text: (String streamContents: [ : stream | 
 			(self asCASTExpressionIn: self newCodeGeneratorForInspection) prettyPrintOn: stream ]);
 		yourself
+]
+
+{ #category : #'*VMMaker-Tools' }
+TParseNode >> inspectNodeExpressionContext: aContext [
+
+	aContext active: self isExpression.
+	aContext 
+		title: 'C (Expr)';
+		withoutEvaluator
 ]
 
 { #category : #'*VMMaker-Tools' }

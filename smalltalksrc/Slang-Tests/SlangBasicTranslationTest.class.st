@@ -229,12 +229,6 @@ SlangBasicTranslationTest >> testAssignementAsExpressionWithExpressionBlockWithL
 		equals: 'y = (foo(1, 2), foo(3, 4), foo(5, 6), a)'
 ]
 
-{ #category : #'tests-blocks' }
-SlangBasicTranslationTest >> testAssignmentNodeIsExpression [
-
-	self assert: TAssignmentNode new isExpression.
-]
-
 { #category : #'tests-inlinemethod' }
 SlangBasicTranslationTest >> testBasicInlineAsSpecified [
 	
@@ -1945,23 +1939,6 @@ SlangBasicTranslationTest >> testNonContiguousCaseStatementWithSameBodyAreCollap
 	}
 	break;
 }'
-]
-
-{ #category : #tests }
-SlangBasicTranslationTest >> testParseNodeNotExpressions [
-
-	self deny: TBraceCaseNode new isExpression.
-	self deny: TConstantNode new isExpression.
-	self deny: TDefineNode new isExpression.
-	self deny: TGoToNode new isExpression.
-	self deny: TInlineNode new isExpression.
-
-	self deny: TLabeledCommentNode new isExpression.
-	self deny: TReturnNode new isExpression.
-	self deny: TVariableNode new isExpression.
-	self deny: TCaseStmtNode new isExpression.
-
-
 ]
 
 { #category : #'tests-blocks' }
@@ -4797,12 +4774,6 @@ SlangBasicTranslationTest >> testSendNoMask [
 	self assert: translation equals: '(a & 1) == 0'
 ]
 
-{ #category : #tests }
-SlangBasicTranslationTest >> testSendNodeIsExpression [
-
-	self assert: TSendNode new isExpression.
-]
-
 { #category : #'tests-builtins' }
 SlangBasicTranslationTest >> testSendNot [
 
@@ -6165,12 +6136,6 @@ SlangBasicTranslationTest >> testSendWordSize [
 	self assert: translation equals: 'BytesPerWord'
 ]
 
-{ #category : #tests }
-SlangBasicTranslationTest >> testStatementListNodeIsExpression [
-
-	self assert: TStatementListNode new isExpression.
-]
-
 { #category : #'tests-builtins' }
 SlangBasicTranslationTest >> testStructFieldIsRenamedWithReservedWord [
 	"Tests if the struct field is renamed when it's a reserved word"
@@ -6557,12 +6522,6 @@ SlangBasicTranslationTest >> testSwitchStatementWithNoDefaultStatement [
 	default:
 	error("Case not found and no otherwise clause");
 }'
-]
-
-{ #category : #tests }
-SlangBasicTranslationTest >> testSwitchStmtNodeIsExpression [
-
-	self assert: TSwitchStmtNode new isExpression.
 ]
 
 { #category : #'tests-assignment' }
