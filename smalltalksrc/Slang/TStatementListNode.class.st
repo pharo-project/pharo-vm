@@ -370,6 +370,12 @@ TStatementListNode >> initialize [
 ]
 
 { #category : #testing }
+TStatementListNode >> isExpression [
+
+	^ true
+]
+
+{ #category : #testing }
 TStatementListNode >> isNilStmtListNode [
 
 	|stmt|

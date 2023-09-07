@@ -1,8 +1,8 @@
 Extension { #name : #TParseNode }
 
 { #category : #'*VMMaker-Tools' }
-TParseNode >> inspectNode: specBuilder [
-	<inspectorPresentationOrder: 910 title: 'C'>
+TParseNode >> inspectNode [
+	<inspectorPresentationOrder: 912 title: 'C (AST)'>
 
 	^  SpTextPresenter new 
 		text: (String streamContents: [ : stream | 
@@ -15,10 +15,27 @@ TParseNode >> inspectNode: specBuilder [
 					definingClass: self class;
 					yourself).
 			cg pushScope: TStatementListNode new.
-			(self respondsTo: #expression)
-				ifTrue: [ (self asCASTExpressionIn: cg) prettyPrintOn: stream ]
-				ifFalse: [ (self asCASTIn: cg) prettyPrintOn: stream ] ]);
-		yourself   
+			(self asCASTIn: cg) prettyPrintOn: stream ]);
+		yourself
+]
+
+{ #category : #'*VMMaker-Tools' }
+TParseNode >> inspectNodeExpression [
+	<inspectorPresentationOrder: 910 title: 'C (AST Expr)'>
+
+	^  SpTextPresenter new 
+		text: (String streamContents: [ : stream | 
+			| cg |
+			cg := MLVMCCodeGenerator new.
+			cg vmMaker: VMMaker new.
+			cg vmMaker vmmakerConfiguration: VMMakerConfiguration.
+			cg currentMethod: (TMethod new
+					labels: Set new;
+					definingClass: self class;
+					yourself).
+			cg pushScope: TStatementListNode new.
+			(self asCASTExpressionIn: cg) prettyPrintOn: stream ]);
+		yourself
 ]
 
 { #category : #'*VMMaker-Tools' }
