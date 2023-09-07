@@ -1178,6 +1178,35 @@ SlangBasicTranslationTest >> testGoto [
 	self assert: translation equals: 'goto lab'
 ]
 
+{ #category : #'tests-inlinemethod' }
+SlangBasicTranslationTest >> testInlineMethodIfExpressionWithShiftRight [
+
+	| translation codeGenerator inlinedMethod cast printedString |
+	translation := (self getTMethodFrom: #methodToBeTranslatedWithIfAndShiftRight).
+	inlinedMethod := ((SlangBasicTranslationTestClass >> #methodWithIfAndShiftRight:) asTranslationMethodOfClass: TMethod).
+	
+	codeGenerator := CCodeGeneratorGlobalStructure new.
+	codeGenerator 
+		addMethod: translation;
+		addMethod: inlinedMethod;
+		doInlining: true.
+	
+	cast := translation asCASTIn: codeGenerator.
+	printedString := String streamContents: [ :str | cast prettyPrintOn: str ].
+	self assert: cast isCompoundStatement.
+	self assert: printedString equals: '/* SlangBasicTranslationTestClass>>#methodToBeTranslatedWithIfAndShiftRight */
+static sqInt
+methodToBeTranslatedWithIfAndShiftRight(void)
+{
+	/* begin methodWithIfAndShiftRight: */
+	((usqInt) (((2 < 0)
+		 ? 0
+		 : 2)) ) >> ((2 - 1) * 32);
+	return 0;
+}
+'.
+]
+
 { #category : #'tests-inline-builtins' }
 SlangBasicTranslationTest >> testInlineMethodSumArgumentsWithAnnotations [
 	| tMethod translation |
@@ -1201,7 +1230,7 @@ methodUseParametersWithAnnotationstowith(unsigned int *pFrom, unsigned int *pTo,
 	/* begin methodFromWithAnnotations:to:len: */
 	pTo1 = ((unsigned int *) (yourself(pTo)) );
 	for (i = 0; i < 5; i += 1) {
-		pTo1[i] = pFrom + anInteger[i];
+		pTo1[i] = (pFrom + anInteger)[i];
 	};
 	return 0;
 }'
@@ -1244,35 +1273,6 @@ methodUseParametersWithAnnotationsBuiltIntowith(unsigned int *pFrom, unsigned in
 	};
 	return 0;
 }'
-]
-
-{ #category : #'tests-inlinemethod' }
-SlangBasicTranslationTest >> testInlineMethodIfExpressionWithShiftRight [
-
-	| translation codeGenerator inlinedMethod cast printedString |
-	translation := (self getTMethodFrom: #methodToBeTranslatedWithIfAndShiftRight).
-	inlinedMethod := ((SlangBasicTranslationTestClass >> #methodWithIfAndShiftRight:) asTranslationMethodOfClass: TMethod).
-	
-	codeGenerator := CCodeGeneratorGlobalStructure new.
-	codeGenerator 
-		addMethod: translation;
-		addMethod: inlinedMethod;
-		doInlining: true.
-	
-	cast := translation asCASTIn: codeGenerator.
-	printedString := String streamContents: [ :str | cast prettyPrintOn: str ].
-	self assert: cast isCompoundStatement.
-	self assert: printedString equals: '/* SlangBasicTranslationTestClass>>#methodToBeTranslatedWithIfAndShiftRight */
-static sqInt
-methodToBeTranslatedWithIfAndShiftRight(void)
-{
-	/* begin methodWithIfAndShiftRight: */
-	((usqInt) (((2 < 0)
-		 ? 0
-		 : 2)) ) >> ((2 - 1) * 32);
-	return 0;
-}
-'.
 ]
 
 { #category : #'tests-inlinenode' }

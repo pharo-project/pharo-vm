@@ -1530,9 +1530,17 @@ CCodeGenerator >> generateCASTAsVoidPointer: tast [
 
 { #category : #'CAST translation' }
 CCodeGenerator >> generateCASTAt: tast [
+	"Add parentheses to r-value to correctly generate C code during complex inlining cases. For instance if the AST root is #at:, with a TSendNode(#+) as child, then we should generate: 
 
+	pTo1[i] = (pFrom + anInteger)[i];
+	
+	instead of the (incorrect):
+	
+	pTo1[i] = pFrom + anInteger[i];
+
+	"
 	^ CArrayAccessNode
-		  array: (tast receiver asCASTExpressionIn: self)
+		  array: ((tast receiver asCASTExpressionIn: self) needsParentheses: true)
 		  index: (tast arguments first asCASTExpressionIn: self)
 ]
 
