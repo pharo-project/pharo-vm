@@ -103,6 +103,12 @@ SlangBasicTranslationTestClass >> methodFromWithAnnotations: pFrom to: pTo len: 
 	^ 0
 ]
 
+{ #category : #inline }
+SlangBasicTranslationTestClass >> methodToBeTranslatedWithIfAndShiftRight [
+
+	self methodWithIfAndShiftRight: 2
+]
+
 { #category : #'generation-targets' }
 SlangBasicTranslationTestClass >> methodUseParametersWithAnnotations: pFrom to: pTo with: anInteger [
 
@@ -123,12 +129,6 @@ SlangBasicTranslationTestClass >> methodUseParametersWithAnnotationsBuiltIn: pFr
 	self
 		methodFromWithAnnotations: pFrom + anInteger 
 		to: pTo
-]
-
-{ #category : #inline }
-SlangBasicTranslationTestClass >> methodToBeTranslatedWithIfAndShiftRight [
-
-	self methodWithIfAndShiftRight: 2
 ]
 
 { #category : #inline }

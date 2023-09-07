@@ -229,6 +229,12 @@ SlangBasicTranslationTest >> testAssignementAsExpressionWithExpressionBlockWithL
 		equals: 'y = (foo(1, 2), foo(3, 4), foo(5, 6), a)'
 ]
 
+{ #category : #'tests-blocks' }
+SlangBasicTranslationTest >> testAssignmentNodeIsExpression [
+
+	self assert: TAssignmentNode new isExpression.
+]
+
 { #category : #'tests-inlinemethod' }
 SlangBasicTranslationTest >> testBasicInlineAsSpecified [
 	
@@ -1178,6 +1184,35 @@ SlangBasicTranslationTest >> testGoto [
 	self assert: translation equals: 'goto lab'
 ]
 
+{ #category : #'tests-inlinemethod' }
+SlangBasicTranslationTest >> testInlineMethodIfExpressionWithShiftRight [
+
+	| translation codeGenerator inlinedMethod cast printedString |
+	translation := (self getTMethodFrom: #methodToBeTranslatedWithIfAndShiftRight).
+	inlinedMethod := ((SlangBasicTranslationTestClass >> #methodWithIfAndShiftRight:) asTranslationMethodOfClass: TMethod).
+	
+	codeGenerator := CCodeGeneratorGlobalStructure new.
+	codeGenerator 
+		addMethod: translation;
+		addMethod: inlinedMethod;
+		doInlining: true.
+	
+	cast := translation asCASTIn: codeGenerator.
+	printedString := String streamContents: [ :str | cast prettyPrintOn: str ].
+	self assert: cast isCompoundStatement.
+	self assert: printedString equals: '/* SlangBasicTranslationTestClass>>#methodToBeTranslatedWithIfAndShiftRight */
+static sqInt
+methodToBeTranslatedWithIfAndShiftRight(void)
+{
+	/* begin methodWithIfAndShiftRight: */
+	((usqInt) (((2 < 0)
+		 ? 0
+		 : 2)) ) >> ((2 - 1) * 32);
+	return 0;
+}
+'.
+]
+
 { #category : #'tests-inline-builtins' }
 SlangBasicTranslationTest >> testInlineMethodSumArgumentsWithAnnotations [
 	| tMethod translation |
@@ -1244,35 +1279,6 @@ methodUseParametersWithAnnotationsBuiltIntowith(unsigned int *pFrom, unsigned in
 	};
 	return 0;
 }'
-]
-
-{ #category : #'tests-inlinemethod' }
-SlangBasicTranslationTest >> testInlineMethodIfExpressionWithShiftRight [
-
-	| translation codeGenerator inlinedMethod cast printedString |
-	translation := (self getTMethodFrom: #methodToBeTranslatedWithIfAndShiftRight).
-	inlinedMethod := ((SlangBasicTranslationTestClass >> #methodWithIfAndShiftRight:) asTranslationMethodOfClass: TMethod).
-	
-	codeGenerator := CCodeGeneratorGlobalStructure new.
-	codeGenerator 
-		addMethod: translation;
-		addMethod: inlinedMethod;
-		doInlining: true.
-	
-	cast := translation asCASTIn: codeGenerator.
-	printedString := String streamContents: [ :str | cast prettyPrintOn: str ].
-	self assert: cast isCompoundStatement.
-	self assert: printedString equals: '/* SlangBasicTranslationTestClass>>#methodToBeTranslatedWithIfAndShiftRight */
-static sqInt
-methodToBeTranslatedWithIfAndShiftRight(void)
-{
-	/* begin methodWithIfAndShiftRight: */
-	((usqInt) (((2 < 0)
-		 ? 0
-		 : 2)) ) >> ((2 - 1) * 32);
-	return 0;
-}
-'.
 ]
 
 { #category : #'tests-inlinenode' }
@@ -1939,6 +1945,23 @@ SlangBasicTranslationTest >> testNonContiguousCaseStatementWithSameBodyAreCollap
 	}
 	break;
 }'
+]
+
+{ #category : #tests }
+SlangBasicTranslationTest >> testParseNodeNotExpressions [
+
+	self deny: TBraceCaseNode new isExpression.
+	self deny: TConstantNode new isExpression.
+	self deny: TDefineNode new isExpression.
+	self deny: TGoToNode new isExpression.
+	self deny: TInlineNode new isExpression.
+
+	self deny: TLabeledCommentNode new isExpression.
+	self deny: TReturnNode new isExpression.
+	self deny: TVariableNode new isExpression.
+	self deny: TCaseStmtNode new isExpression.
+
+
 ]
 
 { #category : #'tests-blocks' }
@@ -4774,6 +4797,12 @@ SlangBasicTranslationTest >> testSendNoMask [
 	self assert: translation equals: '(a & 1) == 0'
 ]
 
+{ #category : #tests }
+SlangBasicTranslationTest >> testSendNodeIsExpression [
+
+	self assert: TSendNode new isExpression.
+]
+
 { #category : #'tests-builtins' }
 SlangBasicTranslationTest >> testSendNot [
 
@@ -6136,6 +6165,12 @@ SlangBasicTranslationTest >> testSendWordSize [
 	self assert: translation equals: 'BytesPerWord'
 ]
 
+{ #category : #tests }
+SlangBasicTranslationTest >> testStatementListNodeIsExpression [
+
+	self assert: TStatementListNode new isExpression.
+]
+
 { #category : #'tests-builtins' }
 SlangBasicTranslationTest >> testStructFieldIsRenamedWithReservedWord [
 	"Tests if the struct field is renamed when it's a reserved word"
@@ -6522,6 +6557,12 @@ SlangBasicTranslationTest >> testSwitchStatementWithNoDefaultStatement [
 	default:
 	error("Case not found and no otherwise clause");
 }'
+]
+
+{ #category : #tests }
+SlangBasicTranslationTest >> testSwitchStmtNodeIsExpression [
+
+	self assert: TSwitchStmtNode new isExpression.
 ]
 
 { #category : #'tests-assignment' }

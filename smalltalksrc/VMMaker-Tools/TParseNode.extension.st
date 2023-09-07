@@ -6,16 +6,7 @@ TParseNode >> inspectNode [
 
 	^  SpTextPresenter new 
 		text: (String streamContents: [ : stream | 
-			| cg |
-			cg := MLVMCCodeGenerator new.
-			cg vmMaker: VMMaker new.
-			cg vmMaker vmmakerConfiguration: VMMakerConfiguration.
-			cg currentMethod: (TMethod new
-					labels: Set new;
-					definingClass: self class;
-					yourself).
-			cg pushScope: TStatementListNode new.
-			(self asCASTIn: cg) prettyPrintOn: stream ]);
+			(self asCASTIn: self newCodeGeneratorForInspection) prettyPrintOn: stream ]);
 		yourself
 ]
 
@@ -25,16 +16,7 @@ TParseNode >> inspectNodeExpression [
 
 	^  SpTextPresenter new 
 		text: (String streamContents: [ : stream | 
-			| cg |
-			cg := MLVMCCodeGenerator new.
-			cg vmMaker: VMMaker new.
-			cg vmMaker vmmakerConfiguration: VMMakerConfiguration.
-			cg currentMethod: (TMethod new
-					labels: Set new;
-					definingClass: self class;
-					yourself).
-			cg pushScope: TStatementListNode new.
-			(self asCASTExpressionIn: cg) prettyPrintOn: stream ]);
+			(self asCASTExpressionIn: self newCodeGeneratorForInspection) prettyPrintOn: stream ]);
 		yourself
 ]
 
@@ -56,4 +38,19 @@ TParseNode >> inspectionTree [
 			 ] ];
 		expandAll;
 		yourself
+]
+
+{ #category : #'*VMMaker-Tools' }
+TParseNode >> newCodeGeneratorForInspection [
+
+	| cg |
+	cg := MLVMCCodeGenerator new.
+	cg vmMaker: VMMaker new.
+	cg vmMaker vmmakerConfiguration: VMMakerConfiguration.
+	cg currentMethod: (TMethod new
+			 labels: Set new;
+			 definingClass: self class;
+			 yourself).
+	cg pushScope: TStatementListNode new.
+	^ cg
 ]
