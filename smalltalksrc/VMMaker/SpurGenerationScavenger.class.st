@@ -1145,7 +1145,7 @@ SpurGenerationScavenger >> scavengeReferentsOf: referrer additionalTestingBlock:
 	0 to: numSlots - 1 do:
 		[:i| | referent newLocation |
 		referent := manager fetchPointer: i ofMaybeForwardedObject: referrer.
-		((manager isNonImmediate: referent) and: [manager isInObjectMemory: referent ]) ifTrue:
+		(manager isNonImmediate: referent) ifTrue:
 			["a forwarding pointer could be because of become: or scavenging."
 			 (manager isForwarded: referent) ifTrue:
 				[referent := manager followForwarded: referent].
@@ -1157,12 +1157,12 @@ SpurGenerationScavenger >> scavengeReferentsOf: referrer additionalTestingBlock:
 							[newLocation := self copyAndForward: referent.
 							 (manager isYoung: newLocation) 
 								ifTrue: [foundNewReferentOrIsWeakling := true]
-								ifFalse: [additionalTestingBlock value: referrer value: newLocation]].
+								ifFalse: [additionalTestingBlock value: referrer value: newLocation value: foundNewReferentOrIsWeakling]].
 					 manager storePointerUnchecked: i ofMaybeForwardedObject: referrer withValue: newLocation]
 				ifFalse:
 					[
 					manager storePointerUnchecked: i ofMaybeForwardedObject: referrer withValue: referent.
-					additionalTestingBlock value: referrer value: referent]]].
+					additionalTestingBlock value: referrer value: referent value: foundNewReferentOrIsWeakling]]].
 	^foundNewReferentOrIsWeakling
 ]
 
@@ -1173,23 +1173,27 @@ SpurGenerationScavenger >> scavengeReferentsOfFromOldSpace: referrer [
 
 	^ self 
 		scavengeReferentsOf: referrer 
-		additionalTestingBlock: [ :aReferrer :aReferent | "Do nothing" ].
+		additionalTestingBlock: [ :aReferrer :aReferent :foundNewReferentOrIsWeakling | "Do nothing" ].
 ]
 
 { #category : #scavenger }
 SpurGenerationScavenger >> scavengeReferentsOfFromPermSpace: referrer [
 
-	<inline: #never>
+	<var: #map type: #'VMMemoryMap *'>
 	
-	| returnValue refersOldSpace |
+	| returnValue refersOldSpace map trueObjOop permSpaceMinAddress |
 	
 	refersOldSpace := false.
+	map := manager getMemoryMap.
+	trueObjOop := manager trueObject.
+	permSpaceMinAddress := map fixedPermSpaceStart.
 	
 	returnValue := self
 		  scavengeReferentsOf: referrer
-		  additionalTestingBlock: [ :aReferrer :referent | 
-			(refersOldSpace not and: [ (manager isFixedKnownObject: referent) not and: [ (manager isPermanent: referent) not ]])
-				ifTrue: [ refersOldSpace := true ]
+		  additionalTestingBlock: [ :aReferrer :referent :foundNewReferentOrIsWeakling |
+				"We do the comparison like this, because it is important for the speed of the scavenger" 
+				((referent > trueObjOop) and: [ referent < permSpaceMinAddress ])
+					ifTrue: [ refersOldSpace := true ]
 			 ].
 	
 	returnValue ifTrue: [ ^ 1 "Refers NewSpace" ].

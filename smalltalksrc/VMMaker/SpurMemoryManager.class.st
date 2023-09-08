@@ -10275,22 +10275,24 @@ SpurMemoryManager >> possibleOldObjectStoreInto: destObj [
 SpurMemoryManager >> possiblePermObjectStoreInto: destObj value: valueObj [
 
 	<inline: true>
-	
-	(self isImmediate: valueObj)
-		ifTrue: [ ^ self ].
-	
-	(self isFixedKnownObject: valueObj)
-		ifTrue: [ ^ self ].
-	
-	(self isInObjectMemory: valueObj)
-		ifFalse: [ ^ self ].
-	
 	(self isRemembered: destObj)
 		ifTrue: [ ^ self ].
-	
-	(self isPermanent: destObj) ifTrue: [ 
-		(self getMemoryMap isPermanentObject: valueObj) ifFalse: [ 
-				self getFromPermToNewSpaceRememberedSet remember: destObj ] ]
+
+	(self isImmediate: valueObj)
+		ifTrue: [ ^ self ].
+
+	(self getMemoryMap isPermanentObject: destObj) 
+		ifFalse: [ ^ self ].
+
+	(self getMemoryMap isPermanentObject: valueObj) 
+		ifFalse: [ ^ self ].
+		
+	(self isFixedKnownObject: valueObj)
+		ifTrue: [ ^ self ].
+
+	self assert: (self isInObjectMemory: valueObj).
+		
+	self getFromPermToNewSpaceRememberedSet remember: destObj.
 ]
 
 { #category : #'become implementation' }
