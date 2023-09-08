@@ -223,8 +223,6 @@ Class {
 		'directedSuperSendTrampolines',
 		'directedSuperBindingSendTrampolines',
 		'dynamicSuperSendTrampolines',
-		'outerSendTrampolines',
-		'selfSendTrampolines',
 		'firstSend',
 		'lastSend',
 		'realCEEnterCogCodePopReceiverReg',
@@ -242,13 +240,8 @@ Class {
 		'extB',
 		'numExtB',
 		'tempOop',
-		'numIRCs',
-		'indexOfIRC',
-		'theIRCs',
 		'receiverTags',
-		'implicitReceiverSendTrampolines',
 		'cogMethodSurrogateClass',
-		'cogBlockMethodSurrogateClass',
 		'CStackPointer',
 		'CFramePointer',
 		'cPICPrototype',
@@ -294,7 +287,6 @@ Class {
 		'MaxNumberOfAbstractOpcodes',
 		'MaxX2NDisplacement',
 		'NumObjRefsInRuntime',
-		'NumOopsPerNSC',
 		'NumSpecialSelectors',
 		'NumTrampolines',
 		'ProcessorClass',
@@ -494,17 +486,15 @@ Cogit class >> cogToBytecodeMethodMapping [
 Cogit class >> declareCVarsIn: aCCodeGenerator [
 
 	#( 'coInterpreter' 'objectMemory' 'methodZone' 'objectRepresentation'
-	   'cogBlockMethodSurrogateClass' 'cogMethodSurrogateClass'
+	   'cogMethodSurrogateClass'
 	   'processor' 'lastNInstructions' 'simulatedAddresses'
 	   'simulatedTrampolines' 'simulatedVariableGetters'
 	   'simulatedVariableSetters' 'printRegisters' 'printInstructions'
 	   'clickConfirm' 'singleStep' ) do: [
 		:simulationVariableNotNeededForRealVM |
 		aCCodeGenerator removeVariable: simulationVariableNotNeededForRealVM ].
-	#( 'selfSendTrampolines' 'dynamicSuperSendTrampolines'
-	   'implicitReceiverSendTrampolines'
-	   'outerSendTrampolines' 'ceEnclosingObjectTrampoline'
-	   'numIRCs' 'indexOfIRC' 'theIRCs' ) do: [
+	#( 'dynamicSuperSendTrampolines'
+	   'ceEnclosingObjectTrampoline') do: [
 		:variableNotNeededInNormalVM |
 		aCCodeGenerator removeVariable: variableNotNeededInNormalVM ].
 
@@ -2376,19 +2366,19 @@ Cogit >> MoveC32: wordConstant R: reg [
 ]
 
 { #category : #'abstract instructions' }
-Cogit >> MoveCf32: constantFloat32 Rs: register [
+Cogit >> MoveCf32: constantFloat32 Rs: reg [
 	<inline: true>
 	<var: #constantFloat32 type: #float>
 	<returnTypeC: #'AbstractInstruction *'>
-	^ backEnd genMoveCf32: constantFloat32 Rs: register
+	^ backEnd genMoveCf32: constantFloat32 Rs: reg
 ]
 
 { #category : #'abstract instructions' }
-Cogit >> MoveCf64: constantFloat64 Rd: register [
+Cogit >> MoveCf64: constantFloat64 Rd: reg [
 	<inline: true>
 	<returnTypeC: #'AbstractInstruction *'>
 	<var: #constantFloat64 type: #double>
-	^ backEnd genMoveCf64: constantFloat64 Rd: register
+	^ backEnd genMoveCf64: constantFloat64 Rd: reg
 ]
 
 { #category : #'abstract instructions' }
@@ -3140,7 +3130,8 @@ Cogit >> addressIsInCurrentCompilation: address [
 { #category : #testing }
 Cogit >> addressIsInFixups: address [
 	<var: #address type: #'BytecodeFixup *'>
-	^self cCode: '(BytecodeFixup *)address >= fixups && (BytecodeFixup *)address < (fixups + numAbstractOpcodes)'
+	"Hardcode renaming to l_address"
+	^self cCode: '(BytecodeFixup *)l_address >= fixups && (BytecodeFixup *)l_address < (fixups + numAbstractOpcodes)'
 		inSmalltalk:
 			[fixups notNil
 			 and: [(fixups object identityIndexOf: address) between: 1 and: numAbstractOpcodes]]
@@ -3149,9 +3140,10 @@ Cogit >> addressIsInFixups: address [
 { #category : #testing }
 Cogit >> addressIsInInstructions: address [
 	<var: #address type: #'AbstractInstruction *'>
-	^self cCode: '!((usqInt)(address) & BytesPerWord-1) \
-				&& (address) >= &abstractOpcodes[0] \
-				&& (address) < &abstractOpcodes[opcodeIndex]'
+	"Hardcode renaming to l_address"
+	^self cCode: '!((usqInt)(l_address) & BytesPerWord-1) \
+				&& (l_address) >= &abstractOpcodes[0] \
+				&& (l_address) < &abstractOpcodes[opcodeIndex]'
 		inSmalltalk: [(abstractOpcodes object identityIndexOf: address) between: 1 and: opcodeIndex]
 ]
 
@@ -3852,8 +3844,7 @@ Cogit >> ceCPICMiss: cPIC receiver: receiver [
 		executeCogPIC: cPIC
 		fromLinkedSendWithReceiver: receiver
 		andCacheTag: (backEnd inlineCacheTagAt: outerReturn).
-	"NOTREACHED"
-	^nil
+	self unreachable
 ]
 
 { #category : #accessing }
@@ -4116,8 +4107,7 @@ Cogit >> ceSICMiss: receiver [
 		executeCogPIC: pic
 		fromLinkedSendWithReceiver: receiver
 		andCacheTag: (backEnd inlineCacheTagAt: outerReturn).
-	"NOTREACHED"
-	^nil
+	^self unreachable
 ]
 
 { #category : #accessing }
@@ -6412,7 +6402,7 @@ Cogit >> fillInOPICHeader: pic numArgs: numArgs selector: selector [
 	pic objectHeader: 0.
 	pic blockSize: openPICSize.
 	"pic methodObject: 0.""This is also the nextOpenPIC link so don't initialize it"
-	methodZone addToOpenPICList: pic.
+	methodZone addToMegamorphicICList: pic.
 	pic methodHeader: 0.
 	pic selector: selector.
 	pic cmNumArgs: numArgs.
@@ -10318,8 +10308,7 @@ Cogit >> patchToOpenPICFor: selector numArgs: numArgs receiver: receiver [
 
 	"Jump into the oPIC at its entry"
 	coInterpreter executeCogMethod: oPIC fromLinkedSendWithReceiver: receiver.
-	"NOTREACHED"
-	^true
+	^self unreachable
 ]
 
 { #category : #accessing }
@@ -11537,7 +11526,7 @@ Cogit >> simulateEnilopmart: enilopmartAddress numArgs: n [
 	self simulateCogCodeAt: enilopmartAddress.
 	"We should either longjmp back to the interpreter or
 	 stay in machine code so control should not reach here."
-	self assert: false
+	self unreachable
 ]
 
 { #category : #accessing }
@@ -11762,15 +11751,15 @@ Cogit >> targetMethodAndSendTableFor: entryPoint annotation: annotation into: bi
 	"Evaluate binaryBlock with the targetMethod and relevant send table for a linked-send
 	 to entryPoint.  Do so based on the alignment of entryPoint."
 
-	<var: #targetMethod type: #'CogMethod *'>
-
-	self offsetAndSendTableFor: entryPoint
+	self
+		offsetAndSendTableFor: entryPoint
 		annotation: annotation
-		into: [:offset :sendTable| | targetCogCode |
-			targetCogCode := self cCoerceSimple: entryPoint - offset to: #'CogMethod *'.
-			binaryBlock
-				value: targetCogCode
-				value: sendTable]
+		into: [ :offset :sendTable |
+			| targetCogCode |
+			targetCogCode := self
+				                 cCoerceSimple: entryPoint - offset
+				                 to: #'CogMethod *'.
+			binaryBlock value: targetCogCode value: sendTable ]
 ]
 
 { #category : #debugging }

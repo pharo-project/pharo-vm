@@ -38,6 +38,27 @@ else()
   endif()
 endif()
 
+# Obtain all the parameters prefixed as VMMaker_
+# Remove the prefix 
+function (getVMMakerParameters _resultVar)
+    getListOfVarsStartingWith("VMMaker_" matchedVars)
+    set (_pharoParameterArray "")
+    foreach (_var IN LISTS matchedVars)
+        # VMMaker_ has 8 characters
+        string(SUBSTRING ${_var} 8 -1 _name)
+        set (_pharoParameterArray ${_pharoParameterArray} "'${_name}'" "'${${_var}}'")
+    endforeach()
+    set (${_resultVar} "#( ${_pharoParameterArray} )" PARENT_SCOPE)
+endfunction()
+
+function (getListOfVarsStartingWith _prefix _resultVar)
+    get_cmake_property(_vars VARIABLES)
+    string (REGEX MATCHALL "(^|;)${_prefix}[A-Za-z0-9_]*" _matchedVars "${_vars}")
+    set (${_resultVar} ${_matchedVars} PARENT_SCOPE)
+endfunction()
+
+getVMMakerParameters(VM_Parameters)
+
 set(PLUGIN_GENERATED_FILES 
 	${PHARO_CURRENT_GENERATED}/plugins/src/FilePlugin/FilePlugin.c
 	${PHARO_CURRENT_GENERATED}/plugins/src/SocketPlugin/SocketPlugin.c    
@@ -69,7 +90,7 @@ if(GENERATE_SOURCES)
             message("Defining Windows VM to download for code generation")
             set(VMMAKER_VM ${VMMAKER_DIR}/vm/PharoConsole.exe)
             set(VM_URL https://files.pharo.org/vm/pharo-spur64-headless/Windows-x86_64/PharoVM-10.0.5-2757766f-Windows-x86_64-bin.zip)
-            set(VM_URL_HASH SHA256=e7430f753ae51fbec8b6a6105f9721cd503d13d0e4ad8069f74da0f6a32c8055)
+            set(VM_URL_HASH SHA256=917dbbef15b870ecf5ecf449bd6be39437985c6e3f056620e9acda60ea58e09e)
         elseif(CMAKE_SYSTEM_NAME STREQUAL "Linux" AND (${CMAKE_SYSTEM_PROCESSOR} MATCHES "aarch64"))
             message("Defining Linux AARCH64 VM to download for code generation")
             set(VMMAKER_VM       ${VMMAKER_DIR}/vm/pharo)
@@ -145,9 +166,9 @@ if(GENERATE_SOURCES)
     #Custom command that generates the vm source code from VMMaker into the generated folder
     add_custom_command(
         OUTPUT ${VMSOURCEFILES} ${PLUGIN_GENERATED_FILES}
-        COMMAND ${VMMAKER_VM} --headless ${VMMAKER_IMAGE} --no-default-preferences eval \"PharoVMMaker generate: \#\'${FLAVOUR}\' outputDirectory: \'${CMAKE_CURRENT_BINARY_DIR_TO_OUT}\' imageFormat: \'${IMAGE_FORMAT}\'\"
+        COMMAND ${VMMAKER_VM} --headless ${VMMAKER_IMAGE} --no-default-preferences eval \"PharoVMMaker generate: \#\'${FLAVOUR}\' outputDirectory: \'${CMAKE_CURRENT_BINARY_DIR_TO_OUT}\' options: ${VM_Parameters}\"
         DEPENDS vmmaker ${VMMAKER_IMAGE} ${VMMAKER_VM}
-        COMMENT "Generating VM files for flavour: ${FLAVOUR}")
+        COMMENT "Generating VM files for flavour: ${FLAVOUR} with options: ${VM_Parameters}")
 
     add_custom_target(generate-sources DEPENDS ${VMSOURCEFILES} ${PLUGIN_GENERATED_FILES})
 

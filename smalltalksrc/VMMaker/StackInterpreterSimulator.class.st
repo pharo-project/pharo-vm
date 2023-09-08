@@ -420,14 +420,6 @@ StackInterpreterSimulator >> currentBytecode: anInteger [
 	currentBytecode := anInteger
 ]
 
-{ #category : #UI }
-StackInterpreterSimulator >> desiredDisplayExtent [
-	^(savedWindowSize
-		ifNil: [640@480]
-		ifNotNil: [savedWindowSize >> 16 @ (savedWindowSize bitAnd: 16rFFFF)])
-			min: Display extent * 2 // 3
-]
-
 { #category : #initialization }
 StackInterpreterSimulator >> desiredEdenBytes: anInteger [
 	desiredEdenBytes := anInteger
@@ -1544,11 +1536,6 @@ StackInterpreterSimulator >> runForNBytes: nBytecodes [
 		self incrementByteCount ].
 	instructionPointer := instructionPointer - 1
 	"undo the pre-increment of IP before returning"
-]
-
-{ #category : #'I/O primitives' }
-StackInterpreterSimulator >> savedWindowSize [
-	^savedWindowSize ifNil: [0]
 ]
 
 { #category : #accessing }

@@ -104,6 +104,16 @@ void f() {
 			ex resume: ex tag first ]
 ]
 
+{ #category : #'tests-declarators' }
+CASTParserTests >> assertIntDeclaration: aDeclaration [
+
+	| declarationSpecifiers |
+	declarationSpecifiers := aDeclaration specifiers.
+
+	self assert: declarationSpecifiers first value equals: 'int'.
+	self assert: aDeclaration declarators size equals: 1.
+]
+
 { #category : #helpers }
 CASTParserTests >> parseDeclaration: aStratement [
 
@@ -190,36 +200,39 @@ CASTParserTests >> testParseAdressOf [
 { #category : #'tests-declarators' }
 CASTParserTests >> testParseArrayDeclarationWithInitializer [
 
-	| declaration declarator |
+	| declaration initDeclarator smaCCToken arrayDeclarator |
 	declaration := self parseDeclaration: 'int a[] = foo()'.
-	
-	self assert: (declaration specifiers includes: 'int').
-	self assert: declaration declarators size equals: 1.
 
-	declarator := declaration declarators first.
-	self assert: declarator isInitializerDeclarator.
-	self assert: declarator initializer isFunctionCall.
+	initDeclarator := declaration declarators first.
+	smaCCToken := declaration specifiers first.
+
+	self assert: smaCCToken value equals: 'int'.
+	self assert: initDeclarator isInitializerDeclarator.
+	self assert: initDeclarator initializer isFunctionCall.
 
 	"Inside the initializer declarator is the array declarator"
-	declarator := declarator declarator.
-	self assert: declarator isArrayDeclarator.
-	self assert: declarator size equals: nil.
-	self assert: declarator declarator name equals: 'a'.
+	arrayDeclarator := initDeclarator declarator.
+	self assert: arrayDeclarator isArrayDeclarator.
+	self assert: arrayDeclarator size equals: nil.
+	self assert: arrayDeclarator declarator name equals: 'a'.
 ]
 
 { #category : #'tests-declarators' }
 CASTParserTests >> testParseArrayDeclarationWithSize [
 
-	| declaration declarator |
+	| declaration arrayDeclarator smaCCToken |
 	declaration := self parseDeclaration: 'int a[17]'.
-	
-	self assert: (declaration specifiers includes: 'int').
-	self assert: declaration declarators size equals: 1.
 
-	declarator := declaration declarators first.
-	self assert: declarator isArrayDeclarator.
-	self assert: declarator size value equals: '17'.
-	self assert: declarator declarator name equals: 'a'.
+	self assert: declaration specifiers size value equals: 1.
+		
+	arrayDeclarator := declaration declarators first.
+	smaCCToken := declaration specifiers first.
+
+	self assert: smaCCToken value equals: 'int'.
+	self assert: arrayDeclarator isArrayDeclarator.
+
+	self assert: arrayDeclarator size value equals: '17'.
+	self assert: arrayDeclarator declarator name equals: 'a'.
 ]
 
 { #category : #'tests-basic expressions' }
@@ -274,11 +287,12 @@ CASTParserTests >> testParseCallWithArguments [
 { #category : #'tests-control flow' }
 CASTParserTests >> testParseCastExpression [
 
-	| statement |
-	statement := self parseStatement: '(int)2.1'.
+	| statement typeSpecifiers |
+	statement := self parseStatement: '(int)2.1;'.
+	typeSpecifiers := statement type specifiers.
 	
 	self assert: statement isCastExpression.
-	self assert: statement type equals: 'int'
+	self assert: typeSpecifiers first value equals: 'int'
 ]
 
 { #category : #'tests-basic expressions' }
@@ -371,10 +385,8 @@ CASTParserTests >> testParseFunctionDeclarator [
 
 	| declaration declarator |
 	declaration := self parseDeclaration: 'int f(void)'.
-	
-	self assert: (declaration specifiers includes: 'int').
-	self assert: declaration declarators size equals: 1.
 
+	self assertIntDeclaration: declaration.
 	declarator := declaration declarators first.
 	self assert: declarator isFunctionDeclarator.
 	self assert: declarator declarator name equals: 'f'.
@@ -386,10 +398,8 @@ CASTParserTests >> testParseFunctionPointerDeclarator [
 
 	| declaration declarator |
 	declaration := self parseDeclaration: 'int (*pf)(void)'.
-	
-	self assert: (declaration specifiers includes: 'int').
-	self assert: declaration declarators size equals: 1.
 
+	self assertIntDeclaration: declaration.
 	declarator := declaration declarators first.
 	self assert: declarator isFunctionDeclarator.
 	self assert: declarator declarator isPointerDeclarator.
@@ -624,10 +634,9 @@ CASTParserTests >> testParseParenthesizedExpression [
 CASTParserTests >> testParsePointerDeclarator [
 
 	| declaration declarator |
+
 	declaration := self parseDeclaration: 'int *a'.
-	
-	self assert: (declaration specifiers includes: 'int').
-	self assert: declaration declarators size equals: 1.
+	self assertIntDeclaration: declaration.
 
 	declarator := declaration declarators first.
 	self assert: declarator isPointerDeclarator.
@@ -666,10 +675,11 @@ CASTParserTests >> testParseReturnWithoutExpression [
 { #category : #'tests-declarators' }
 CASTParserTests >> testParseSequenceOfDeclarators [
 
-	| declaration declarator |
+	| declaration declarator declarationSpecifiers |
 	declaration := self parseDeclaration: 'int a=1, b=2'.
-	
-	self assert: (declaration specifiers includes: 'int').
+	declarationSpecifiers := declaration specifiers.
+
+	self assert: declarationSpecifiers first value equals: 'int'.
 	self assert: declaration declarators size equals: 2.
 
 	declarator := declaration declarators first.
@@ -688,9 +698,7 @@ CASTParserTests >> testParseSimpleArrayDeclaration [
 
 	| declaration declarator |
 	declaration := self parseDeclaration: 'int a[]'.
-	
-	self assert: (declaration specifiers includes: 'int').
-	self assert: declaration declarators size equals: 1.
+	self assertIntDeclaration: declaration.
 
 	declarator := declaration declarators first.
 	self assert: declarator isArrayDeclarator.
@@ -724,16 +732,22 @@ CASTParserTests >> testParseSizeofTypeInt [
 { #category : #'tests-declarators' }
 CASTParserTests >> testParseStructDeclarator [
 
-	| declaration declarator |
+	| declaration structDeclaratorNode smaCCToken specifier structDeclarationNode declarators |
 	declaration := (CASTParser parse: 'struct C { int member; } obj;') declarations first.
 	
-	self assert: (declaration specifiers includes: 'int').
-	self assert: declaration declarators size equals: 1.
+	specifier := declaration specifiers first.
+	structDeclarationNode := specifier members first.	
+	smaCCToken := structDeclarationNode specifiers first.
+	declarators := structDeclarationNode declarators.
 
-	declarator := declaration declarators first.
-	self assert: declarator isFunctionDeclarator.
-	self assert: declarator declarator name equals: 'f'.
-	self assert: declarator parameters size equals: 1.
+	self assert: smaCCToken value equals: 'int'.
+	self assert: declarators size equals: 1.
+
+	structDeclaratorNode := declarators first.
+
+	self assert: structDeclaratorNode declarator hasValidName.
+	self assert: structDeclaratorNode declarator name equals: 'member'.
+	self assert: structDeclaratorNode declarator isIdentifier.
 ]
 
 { #category : #'tests-structures' }
@@ -809,7 +823,7 @@ CASTParserTests >> testParseSwitchWithDefaultCase [
 CASTParserTests >> testParseTernary [
 
 	| statement |
-	statement := self parseStatement: '(a ? 0 : 1)'.
+	statement := self parseStatement: '(a ? 0 : 1);'.
 	
 	self assert: statement isTernary.
 	self assert: statement then isConstant.
@@ -819,16 +833,15 @@ CASTParserTests >> testParseTernary [
 { #category : #'tests-declarators' }
 CASTParserTests >> testParseUnionDeclarator [
 
-	| declaration declarator |
+	| smaCCToken declaration  specifier declarationNode |
 	declaration := (CASTParser parse: 'union C { int member; } obj;') declarations first.
 	
-	self assert: (declaration specifiers includes: 'int').
+	specifier := declaration specifiers first.
+	declarationNode := specifier members first.
+	smaCCToken := declarationNode specifiers first.
+	self assert: smaCCToken value equals: 'int'.
 	self assert: declaration declarators size equals: 1.
 
-	declarator := declaration declarators first.
-	self assert: declarator isFunctionDeclarator.
-	self assert: declarator declarator name equals: 'f'.
-	self assert: declarator parameters size equals: 1.
 ]
 
 { #category : #'tests-numbers' }

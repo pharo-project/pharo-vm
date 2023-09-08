@@ -13,14 +13,10 @@ BaselineOfVMMaker >> baseline: spec [
 			
 			"Slang, the basics"			
 			spec
-				package: 'CAST' with: [
-					spec requires: #( 'SmaCC-GLR' )
-				];
-				package: 'Slang' with: [
-					spec requires: #( 'CAST' )
-				];
-				package: 'Slang-Tests' with: [
-					spec requires: #('Slang') ].
+				package: 'CAST' with: [ spec requires: #('SmaCC-GLR' ) ];
+				package: 'CAST-Tests' with: [ spec requires: #('CAST') ];
+				package: 'Slang' with: [ spec requires: #('CAST') ];
+				package: 'Slang-Tests' with: [ spec requires: #('Slang') ].
 			
 			"Melchor is a VM-oriented Slang"
 			spec package: 'Melchor' with: [
@@ -68,6 +64,6 @@ BaselineOfVMMaker >> baseline: spec [
 			spec group: 'plugins' with: #('FileAttributesPlugin').
 			spec group: 'core' with: #('VMMaker').
 			spec group: 'tools' with: #('VMMaker-Tools').			
-			spec group: 'tests' with: #('VMMakerTests').
+			spec group: 'tests' with: #('VMMakerTests' 'CAST-Tests').
 			spec group: 'default' with: #( 'core' 'plugins' 'tools' 'tests') ]
 ]

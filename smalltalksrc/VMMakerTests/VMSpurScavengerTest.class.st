@@ -416,10 +416,13 @@ VMSpurScavengerTest >> testPermObjectInRemeberedSetShouldBeKeptWhenTheReferenced
 
 	"Should be in the remembered set as this is clean up during the scavenge"
 	self assert: (memory isRemembered: permObjectAddress).
+	self assert: (memory getFromPermToNewSpaceRememberedSet isInRememberedSet: permObjectAddress).
 	
 	memory doScavenge: 1 "TenureByAge".
 	
-	self assert: (memory isRemembered: permObjectAddress).
+	self deny: (memory isRemembered: permObjectAddress).
+	self deny: (memory getFromPermToNewSpaceRememberedSet isInRememberedSet: permObjectAddress).
+	self assert: (memory getFromPermToOldSpaceRememberedSet isInRememberedSet: permObjectAddress).
 
 ]
 

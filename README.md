@@ -37,7 +37,7 @@ The current project could not have been possible with all their previous work.
       - [Compiling ARM32 third party dependencies](https://github.com/pharo-project/pharo-vm/wiki/Building-Linux-ARM32-Third-Party-Dependencies)
   - [Troubleshooting](https://github.com/pharo-project/pharo-vm/wiki/Troubleshooting)
 - [Continuous Integration](https://github.com/pharo-project/pharo-vm/wiki/Continuous-Integration)
-- [Developer documentation](#developer-documentation)
+- Developer documentation
   - [Source Directory Structure](https://github.com/pharo-project/pharo-vm/wiki/Source-Directory-Structure)
   - [Simulation Environment](https://github.com/pharo-project/pharo-vm/wiki/Simulation-Environment)
   - [Slang](https://github.com/pharo-project/pharo-vm/wiki/Slang)

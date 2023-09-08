@@ -112,7 +112,7 @@ VMStructType class >> fieldAccessorSourceFor: surrogateClass bytesPerWord: bytes
 VMStructType class >> fieldAccessorsForBytesPerWord: bytesPerWord [
 	| fieldSpecs |
 	fieldSpecs := OrderedCollection new.
-	self instVarNamesAndTypesForTranslationDo:
+	self instVarTypeDeclarationsDo:
 		[:ivn :typeTuple| | index replacement |
 		(index := typeTuple indexOf: #BytesPerWord ifAbsent: 0) > 0
 			ifTrue:
@@ -213,13 +213,6 @@ VMStructType class >> implicitReturnTypeFor: aSelector [
 VMStructType class >> initializationOptions [
 	
 	^ VMClass initializationOptions 
-]
-
-{ #category : #translation }
-VMStructType class >> instVarNamesAndTypesForTranslationDo: aBinaryBlock [
-	"enumerate aBinaryBlock with the names and C type strings for the inst vars to include in a struct of this type."
-
-	self subclassResponsibility
 ]
 
 { #category : #accessing }

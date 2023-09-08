@@ -337,11 +337,8 @@ Class {
 		'nextWakeupUsecs',
 		'nextPollUsecs',
 		'interruptPending',
-		'savedWindowSize',
 		'imageHeaderFlags',
-		'fullScreenFlag',
 		'extraVMMemory',
-		'interpreterProxy',
 		'primitiveTable',
 		'primitiveAccessorDepthTable',
 		'externalPrimitiveTable',
@@ -359,7 +356,6 @@ Class {
 		'classNameIndex',
 		'thisClassIndex',
 		'metaclassNumSlots',
-		'interruptCheckChain',
 		'suppressHeartbeatFlag',
 		'breakSelector',
 		'breakSelectorLength',
@@ -376,32 +372,23 @@ Class {
 		'tempOop2',
 		'metaAccessorDepth',
 		'theUnknownShort',
-		'the2ndUnknownShort',
 		'imageFloatsBigEndian',
 		'maxExtSemTabSizeSet',
 		'lastMethodCacheProbeWrite',
 		'gcSemaphoreIndex',
 		'classByteArrayCompactIndex',
 		'checkedPluginName',
-		'displayBits',
-		'displayWidth',
-		'displayHeight',
-		'displayDepth',
 		'statForceInterruptCheck',
 		'statStackOverflow',
 		'statStackPageDivorce',
 		'statCheckForEvents',
 		'statProcessSwitch',
 		'statIdleUsecs',
-		'debugCallbackPath',
-		'debugCallbackReturns',
-		'debugCallbackInvokes',
 		'printedStackFrames',
 		'maxStacksToPrint',
 		'maxStackMessagePrinted',
 		'libFFI',
 		'codeGeneratorToComputeAccessorDepth',
-		'showSurfaceFn',
 		'imageReader',
 		'imageWriter',
 		'pendingFinalizationSignals',
@@ -435,8 +422,6 @@ Class {
 		'DirEntryFound',
 		'DirNoMoreEntries',
 		'DumpStackOnLowSpace',
-		'EnclosingMixinIndex',
-		'EnclosingObjectIndex',
 		'FailImbalancedPrimitives',
 		'LongStoreBytecode',
 		'MaxExternalPrimitiveTableSize',
@@ -446,7 +431,6 @@ Class {
 		'MethodHeaderArgCountShift',
 		'MethodHeaderFlagBitPosition',
 		'MethodHeaderTempCountShift',
-		'MixinIndex',
 		'PrimitiveTable',
 		'ReturnToInterpreter',
 		'StackPageReachedButUntraced',
@@ -578,9 +562,7 @@ If ffi is put as a separate header, slang will sort the header and put it outsid
 				type: 'signed char'
 				sizeString: 'MaxPrimitiveIndex + 2 /* ', (MaxPrimitiveIndex + 2) printString, ' */'
 				array: vmClass primitiveAccessorDepthTable.
-	aCCodeGenerator
-		var: #displayBits type: #'void *'.
-	self declareC: #(displayWidth displayHeight displayDepth) as: #int in: aCCodeGenerator.
+
 	aCCodeGenerator
 		var: #primitiveFunctionPointer
 			declareC: 'void (*primitiveFunctionPointer)()';
@@ -1827,8 +1809,7 @@ StackInterpreter >> activateFailingPrimitiveMethod [
 	self assert: (self primitiveIndexOf: newMethod) ~= 0.
 	self justActivateNewMethod: true. "Frame must be interpreted"
 	self siglong: reenterInterpreter jmp: ReturnToInterpreter.
-	"NOTREACHED"
-	^nil
+	self unreachable
 ]
 
 { #category : #'control primitives' }
@@ -3698,8 +3679,7 @@ StackInterpreter >> callbackLeave: cbID [
 	cbID < 1 ifTrue:[^false].
 	"This is ugly but necessary, or otherwise the Mac will not build"
 	self long: (jmpBuf at: jmpDepth) jmp: 1.
-	"NOTREACHED"
-	^nil
+	^self unreachable
 ]
 
 { #category : #'message sending' }
@@ -4976,12 +4956,6 @@ StackInterpreter >> dispatchFunctionPointer: aFunctionPointer [
 	
 ]
 
-{ #category : #simulation }
-StackInterpreter >> displayBits [
-	<doNotGenerate>
-	^displayBits
-]
-
 { #category : #'frame access' }
 StackInterpreter >> divorceAllFrames [
 	| activeContext |
@@ -5205,12 +5179,6 @@ StackInterpreter >> doWaitSemaphore: sema reEnterInterpreter: hasToReenter [
 			self addLastLink: activeProc toList: sema.
 			self transferTo: self wakeHighestPriority from: CSWait.
 			hasToReenter ifTrue: [self forProcessPrimitiveReturnToExecutivePostContextSwitch: inInterpreter]]
-]
-
-{ #category : #initialization }
-StackInterpreter >> dummyReferToProxy [
-	<inline: false>
-	interpreterProxy := interpreterProxy
 ]
 
 { #category : #'debug support' }
@@ -6140,31 +6108,6 @@ StackInterpreter >> findSPOrNilOf: theFP on: thePage startingFrom: startFrame [
 ]
 
 { #category : #'debug support' }
-StackInterpreter >> findSelectorAndClassForMethod: meth lookupClass: startClass do: binaryBlock [
-	"Search startClass' class hierarchy searching for method and if found, evaluate aBinaryBlock
-	 with the selector and class where the method is found.  Otherwise evaluate aBinaryBlock
-	 with doesNotUnderstand: and nil."
-	| currClass classDict classDictSize methodArray i |
-	currClass := startClass.
-	[classDict := objectMemory fetchPointer: MethodDictionaryIndex ofObject: currClass.
-	 classDictSize := objectMemory numSlotsOf: classDict.
-	 classDictSize > MethodArrayIndex ifTrue:
-		[methodArray := objectMemory fetchPointer: MethodArrayIndex ofObject: classDict.
-		 i := 0.
-		 [i <= (classDictSize - SelectorStart)] whileTrue:
-			[meth = (objectMemory fetchPointer: i ofObject: methodArray) ifTrue:
-				[^binaryBlock
-					value: (objectMemory fetchPointer: i + SelectorStart ofObject: classDict)
-					value: currClass].
-				i := i + 1]].
-	 currClass := self superclassOf: currClass.
-	 currClass = objectMemory nilObject] whileFalse.
-	^binaryBlock    "method not found in superclass chain"
-		value: (objectMemory splObj: SelectorDoesNotUnderstand)
-		value: nil
-]
-
-{ #category : #'debug support' }
 StackInterpreter >> findSelectorOfMethod: meth [
 	| classObj classDict classDictSize methodArray i |
 	(objectMemory addressCouldBeObj: meth) ifFalse:
@@ -7049,11 +6992,6 @@ StackInterpreter >> getExtraVMMemory [
 	^ extraVMMemory
 ]
 
-{ #category : #'plugin primitive support' }
-StackInterpreter >> getFullScreenFlag [
-	^fullScreenFlag
-]
-
 { #category : #'object memory support' }
 StackInterpreter >> getGCMode [
 	"This is a no-op in the StackVM"
@@ -7563,13 +7501,11 @@ StackInterpreter >> initialize [
 	nextWakeupUsecs := 0.
 	tempOop := tempOop2 := theUnknownShort := 0.
 	maxStacksToPrint := 0.
-	displayBits := displayWidth := displayHeight := displayDepth := 0.
 	pendingFinalizationSignals := 0.
 	globalSessionID := 0.
 	jmpDepth := 0.
 	longRunningPrimitiveStartUsecs := longRunningPrimitiveStopUsecs := 0.
 	maxExtSemTabSizeSet := false.
-	debugCallbackInvokes := debugCallbackPath := debugCallbackReturns := 0.
 	statForceInterruptCheck := statStackOverflow := statCheckForEvents :=
 	statProcessSwitch := statStackPageDivorce :=
 	statIdleUsecs := 0.
@@ -7616,8 +7552,6 @@ StackInterpreter >> initializeGlobalSessionID [
 StackInterpreter >> initializeInterpreter: bytesToShift [
 	
 	"Initialize Interpreter state before starting execution of a new image."
-	interpreterProxy := self sqGetInterpreterProxy.
-	self dummyReferToProxy.
 	objectMemory initializeObjectMemory: bytesToShift.
 	self checkAssumedCompactClasses.
 	self initializeExtraClassInstVarIndices.
@@ -8958,7 +8892,7 @@ StackInterpreter >> lookupMethodFor: selector InDictionary: dictionary [
 
 { #category : #'message sending' }
 StackInterpreter >> lookupMethodInClass: class [
-	| currentClass dictionary found |
+	| currentClass superClass dictionary found |
 	<inline: false>
 	self assert: (self addressCouldBeClassObj: class).
 	self lookupBreakFor: class.
@@ -8967,11 +8901,14 @@ StackInterpreter >> lookupMethodInClass: class [
 		[dictionary := objectMemory followObjField: MethodDictionaryIndex ofObject: currentClass.
 		dictionary = objectMemory nilObject ifTrue:
 			["MethodDict pointer is nil (hopefully due a swapped out stub)
-				-- raise exception #cannotInterpret:."
+				-- send #cannotInterpret: from the superclass."
 			self createActualMessageTo: class.
 			messageSelector := objectMemory splObj: SelectorCannotInterpret.
 			self sendBreakpoint: messageSelector receiver: nil.
-			^self lookupMethodInClass: (self superclassOf: currentClass)].
+			superClass := self superclassOf: currentClass.
+			superClass = objectMemory nilObject ifTrue: [
+				self error: 'cannotInterpret: cannot be send without a superclass' ].
+			^self lookupMethodInClass: superClass ].
 		found := self lookupMethodInDictionary: dictionary.
 		found ifTrue: [^currentClass].
 		currentClass := self superclassOf: currentClass].
@@ -10967,22 +10904,20 @@ StackInterpreter >> primitiveExitCriticalSection [
 { #category : #'simd primitives' }
 StackInterpreter >> primitiveFloat64ArrayAdd [
 
-	<var: #rcvr type: #'double *'>
-	<var: #arg type: #'double *'>
 	| arg1 arg2 res arraySize |
 	arg1 := self stackValue: 2.
 	arg2 := self stackValue: 1.
 	res := self stackTop.
 	arraySize := objectMemory numSlotsOf: res.
 
-	(objectMemory isSixtyFourBitIndexableOop: arg1)
-		ifFalse: [ ^ self primitiveFailFor: PrimErrBadArgument ].
-	(objectMemory isSixtyFourBitIndexableOop: arg2)
-		ifFalse: [ ^ self primitiveFailFor: PrimErrBadArgument ].
-	(objectMemory isSixtyFourBitIndexableOop: res)
-		ifFalse: [ ^ self primitiveFailFor: PrimErrBadArgument ].
+	(objectMemory isSixtyFourBitIndexableOop: arg1) ifFalse: [
+		^ self primitiveFailFor: PrimErrBadArgument ].
+	(objectMemory isSixtyFourBitIndexableOop: arg2) ifFalse: [
+		^ self primitiveFailFor: PrimErrBadArgument ].
+	(objectMemory isSixtyFourBitIndexableOop: res) ifFalse: [
+		^ self primitiveFailFor: PrimErrBadArgument ].
 
-	0 to: arraySize - 1 do: [ :i | 
+	0 to: arraySize - 1 do: [ :i |
 		| tmp |
 		tmp := (objectMemory fetchFloat64: i ofObject: arg1)
 		       + (objectMemory fetchFloat64: i ofObject: arg2).
@@ -12326,9 +12261,9 @@ StackInterpreter >> printStackPage: page useCount: n [
 		[self cr; tab; print: 'baseFP '; printHexPtr: page baseFP.
 		 self "cr;" tab; print: 'headFP '; printHexPtr: page headFP.
 		 self "cr;" tab; print: 'headSP '; printHexPtr: page headSP].
-	self cr; tab; print: 'prev '; printHexPtr: (self cCode: 'page->prevPage' inSmalltalk: [page prevPage baseAddress]);
+	self cr; tab; print: 'prev '; printHexPtr: (self cCode: 'l_page->prevPage' inSmalltalk: [page prevPage baseAddress]);
 		print: ' ('; printNum: (stackPages pageIndexFor: page prevPage realStackLimit); printChar: $).
-	self tab; print: 'next '; printHexPtr: (self cCode: 'page->nextPage' inSmalltalk: [page nextPage baseAddress]);
+	self tab; print: 'next '; printHexPtr: (self cCode: 'l_page->nextPage' inSmalltalk: [page nextPage baseAddress]);
 		print: ' ('; printNum: (stackPages pageIndexFor: page nextPage realStackLimit); printChar: $).
 	self cr
 ]
@@ -12954,7 +12889,6 @@ StackInterpreter >> reapAndResetErrorCodeTo: theFP header: methodHeader [
 	 and if so, assign it through theFP into the correct temporary variable.
 	Then zero the primFailCode.  This is infrequent code, so keep it out of the common path."
 
-	<var: 'theSP' type: #'char *'>
 	<inline: #never>
 	| initialPC |
 	self assert: primFailCode ~= 0.
@@ -14061,12 +13995,6 @@ StackInterpreter >> shortReversePrintFrameAndCallers: aFramePointer [
 StackInterpreter >> shortUnconditionalJump [
 	<expandCases>
 	self jump: (currentBytecode bitAnd: 7) + 1.
-]
-
-{ #category : #'I/O primitive support' }
-StackInterpreter >> showDisplayBits: aForm Left: l Top: t Right: r Bottom: b [
-	"Repaint the portion of the Smalltalk screen bounded by the affected rectangle. Used to synchronize the screen after a Bitblt to the Smalltalk Display object."
-	self updateDisplayLeft: l Top: t Right: r Bottom: b
 ]
 
 { #category : #'send bytecodes' }
@@ -15212,8 +15140,8 @@ StackInterpreter >> transferTo: newProc from: sourceCode [
 	statProcessSwitch := statProcessSwitch + 1.
 	self push: instructionPointer.
 	self writeBackHeadFramePointers.
-	self assertValidExecutionPointe: instructionPointer r: framePointer s: stackPointer imbar: true line: #'__LINE__'.
-
+	self assertValidExecutionPointe: instructionPointer r: framePointer s: stackPointer.
+	
 	"ensureMethodIsCogged: in makeBaseFrameFor: in
 	 externalSetStackPageAndPointersForSuspendedContextOfProcess:
 	 below may do a code compaction. Nil instructionPointer to avoid it getting pushed twice."
@@ -15759,30 +15687,6 @@ StackInterpreter >> unknownInlinePrimitive [
 StackInterpreter >> unknownShortOrCodeSizeInKs [
 	"preserve whatever this value was (for images run on Cog)"
 	^theUnknownShort
-]
-
-{ #category : #'I/O primitive support' }
-StackInterpreter >> updateDisplayLeft: l Top: t Right: r Bottom: b [
-	"Repaint the portion of the Smalltalk screen bounded by the affected rectangle.
-	 Used to synchronize the screen after a Bitblt to the Smalltalk Display object."
-	| left right top bottom surfaceHandle |
-	left := l max: 0.
-	right := r min: displayWidth.
-	top := t max: 0.
-	bottom := b min: displayHeight.
-	(left <= right and: [top <= bottom]) ifFalse: [^nil].
-	(objectMemory isIntegerObject: displayBits asInteger)
-		ifTrue:
-			[surfaceHandle := objectMemory integerValueOf: displayBits asInteger.
-			 showSurfaceFn = 0 ifTrue:
-				[showSurfaceFn := self ioLoadFunction: 'ioShowSurface' From: 'SurfacePlugin'.
-				 showSurfaceFn = 0 ifTrue: [^self primitiveFailFor: PrimErrNotFound]].
-			 self show: surfaceHandle Sur: left fa: top ce: right - left Fn: bottom - top]
-		ifFalse:
-			[self assert: (objectMemory isNonImmediate: displayBits asInteger).
-			 self ioShow: displayBits asInteger
-				D: displayWidth i: displayHeight s: displayDepth
-				p: left l: right a: top y: bottom]
 ]
 
 { #category : #'image save/restore' }
