@@ -653,7 +653,7 @@ VMPermanentSpaceMemoryTest >> testPermanentObjectPointingToTrueIsNotRemembered [
 VMPermanentSpaceMemoryTest >> testPermanentObjectPointingToYoungObjectIsRemovedWhenPointingToMachineCodeMethod [
 
 	
-	| oldObject permanentObject youngObject |
+	| oldObject permanentObject youngObject fakeMachineCodeMethod |
 	oldObject := self newOldSpaceObjectWithSlots: 1.
 	youngObject := self newZeroSizedObject.
 	memory storePointer: 0 ofObject: oldObject withValue: youngObject.
@@ -662,13 +662,22 @@ VMPermanentSpaceMemoryTest >> testPermanentObjectPointingToYoungObjectIsRemovedW
 	self assert: (memory isRemembered: permanentObject).
 	self assert: (memory getFromPermToNewSpaceRememberedSet isInRememberedSet: permanentObject ).	
 	
-	memory storePointer: 0 ofObject: permanentObject withValue: 16.
+	"We allocate some memory in the codeZone. 
+	Also we set the null header for the machineCodeMethods, this is used to threat references to it as other objects.
+	For example, check the header to see if it is a forwarder, a machine code method is never a forwarder."
+	
+	fakeMachineCodeMethod := (VMMemoryMapConfiguration forWordsize: wordSize) new codeZoneInitialAddress.
+	memory memoryManager allocate: 32 desiredPosition: fakeMachineCodeMethod.
+	memory unsignedLong64At: fakeMachineCodeMethod put: memory nullHeaderForMachineCodeMethod.
+	
+	"We update the permanent object with the value as if it was a CompiledMethod with a corresponding MachineCodeMethod"	
+	memory storePointer: 0 ofObject: permanentObject withValue: fakeMachineCodeMethod.
 
 	memory doScavenge: 1.
 
 	self deny: (memory isRemembered: permanentObject).
 	self deny: (memory getFromPermToNewSpaceRememberedSet isInRememberedSet: permanentObject ).	
-
+	self assert: (memory fetchPointer: 0 ofObject: permanentObject ) equals: fakeMachineCodeMethod.
 ]
 
 { #category : #'test - moving' }

@@ -9538,6 +9538,15 @@ SpurMemoryManager >> nonIndexablePointerFormat [
 	^1
 ]
 
+{ #category : #'garbage collection' }
+SpurMemoryManager >> nullHeaderForMachineCodeMethod [
+	<api>
+	<returnTypeC: #sqLong>
+	^(self firstLongFormat << self formatShift)
+	+ (1 << self markedBitFullShift)
+	+ ClassBitmapCompactIndex
+]
+
 { #category : #'object access' }
 SpurMemoryManager >> num16BitUnitsOf: objOop [ 
 	"Answer the number of 16-bit units in the given non-immediate object.
@@ -10285,12 +10294,13 @@ SpurMemoryManager >> possiblePermObjectStoreInto: destObj value: valueObj [
 		ifFalse: [ ^ self ].
 
 	(self getMemoryMap isPermanentObject: valueObj) 
-		ifFalse: [ ^ self ].
+		ifTrue: [ ^ self ].
 		
 	(self isFixedKnownObject: valueObj)
 		ifTrue: [ ^ self ].
 
-	self assert: (self isInObjectMemory: valueObj).
+	(self isInObjectMemory: valueObj)
+		ifFalse: [ ^ self ].
 		
 	self getFromPermToNewSpaceRememberedSet remember: destObj.
 ]
