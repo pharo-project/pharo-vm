@@ -1,5 +1,12 @@
 # Change log
 
+## v10.0.7
+
+* Update README.md by @guillep in https://github.com/pharo-project/pharo-vm/pull/688
+* Fix ephemeron scanning perf by @guillep in https://github.com/pharo-project/pharo-vm/pull/691
+
+**Full Changelog**: https://github.com/pharo-project/pharo-vm/compare/v10.0.6...v10.0.7
+
 ## v10.0.6
 
 Improvements in build environment
