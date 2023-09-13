@@ -8473,20 +8473,46 @@ SpurMemoryManager >> markAllUnscannedEphemerons [
 	 The wrinkle is that doing so may add more ephemerons to the set.
 	 So we remove the first element, by overwriting it with the last element,
 	 and decrementing the top, and then markAndTrace its contents."
+
 	"self assert: (self noUnscannedEphemerons) not."
+
+	| nextOffsetToScan lastOffsetToScan |
 	self assert: self allUnscannedEphemeronsAreActive.
-	[unscannedEphemerons top > unscannedEphemerons start] whileTrue:
-		[| ephemeron key lastptr |
-		 ephemeron := self longAt: unscannedEphemerons start.
-		 lastptr := unscannedEphemerons top - self bytesPerOop.
-		 lastptr > unscannedEphemerons start ifTrue:
-			[self longAt: unscannedEphemerons start put: (self longAt: lastptr)].
-		 unscannedEphemerons top: lastptr.
-		 key := self followedKeyOfMaybeFiredEphemeron: ephemeron.
-		 self setIsMarkedOf: ephemeron to: false. "to get it to be fully scanned in markAndTrace:"
-		 self
+	nextOffsetToScan := unscannedEphemerons start.
+	lastOffsetToScan := unscannedEphemerons top.
+	[ lastOffsetToScan > nextOffsetToScan ] whileTrue: [
+		| ephemeron key lastptr |
+		ephemeron := self longAt: nextOffsetToScan.
+
+		key := self followedKeyOfMaybeFiredEphemeron: ephemeron.
+		self setIsMarkedOf: ephemeron to: false. "to get it to be fully scanned in markAndTrace:"
+		self
 			markAndTrace: key;
-			markAndTrace: ephemeron]
+			markAndTrace: ephemeron.
+
+		"Now we compact the array to ensure that all elements between start and top are valid objects.
+		We move the last element in the list to the start.
+		We could have moved a newly discovered ephemeron or an ephemeron we already had. See below"
+		lastptr := unscannedEphemerons top - self bytesPerOop.
+		lastptr > nextOffsetToScan ifTrue: [
+			self longAt: nextOffsetToScan put: (self longAt: lastptr) ].
+		
+		"New ephemerons are above the lastOffsetToScan.
+		If we find new ephemerons, we need to move the nextOffsetToScan up. Otherwise, move the lastOffsetToScan down.
+		The invariant are that:
+		 - the objects originally in the array will always be between nextOffsetToScan and lastOffsetToScan
+		 - both the differences lastOffsetToScan-nextOffsetToScan and unscannedEphemerons top - unscannedEphemerons start go down by one in each iteration."
+		unscannedEphemerons top > lastOffsetToScan
+			ifTrue: [
+				"New ephemeron was moved down, move nextOffsetToScan up"
+				nextOffsetToScan := nextOffsetToScan + self bytesPerOop ]
+			ifFalse: [
+				"Old ephemeron was moved down, move lastOffsetToScan down"
+				lastOffsetToScan := lastOffsetToScan - self bytesPerOop
+		].
+		"Then move the top of the full array down by one element"
+		unscannedEphemerons top: lastptr.
+	].
 ]
 
 { #category : #'gc - global' }
