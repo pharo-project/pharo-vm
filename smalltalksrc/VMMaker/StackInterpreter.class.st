@@ -11370,15 +11370,18 @@ StackInterpreter >> printAllStacks [
 	self
 		cr;
 		print: 'suspended processes'.
+	
+	"Semaphore or mutex classes could not be installed"
 	semaphoreClass := objectMemory classSemaphore.
 	mutexClass := objectMemory classMutex.
-	semaphoreClass := objectMemory compactIndexOfClass: semaphoreClass.
-	mutexClass := objectMemory compactIndexOfClass: mutexClass.
+	semaphoreClass := semaphoreClass = objectMemory nilObject ifFalse: [ objectMemory compactIndexOfClass: semaphoreClass ].
+	mutexClass := mutexClass = objectMemory nilObject ifFalse: [ objectMemory compactIndexOfClass: mutexClass ].
 	objectMemory allHeapEntitiesDo: [ :obj | 
 		| classIdx |
 		classIdx := objectMemory classIndexOf: obj.
-		(classIdx = semaphoreClass or: [ classIdx = mutexClass ]) ifTrue: [ 
-			self printProcsOnList: obj ] ]
+		((semaphoreClass notNil and: [ classIdx = semaphoreClass ])
+			or: [ mutexClass notNil and: [ classIdx = mutexClass ] ])
+				ifTrue: [ self printProcsOnList: obj ] ]
 ]
 
 { #category : #'debug printing' }

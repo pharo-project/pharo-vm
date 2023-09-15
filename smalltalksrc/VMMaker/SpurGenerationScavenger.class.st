@@ -439,55 +439,36 @@ SpurGenerationScavenger >> fireEphemeronsInRememberedSet [
 	 Fire them and scavenge their keys.  Leave it to scavengeLoop
 	 to remove any scavenged ephemerons that no longer have
 	 new referents."
-	| i |
 
+	| i |
 	self assert: self noUnfiredEphemeronsAtEndOfRememberedSet.
 
 	i := 0.
-	[i < manager getFromOldSpaceRememberedSet numRememberedEphemerons] whileTrue:
-		[ | ephemeron key |
-		 ephemeron := manager getFromOldSpaceRememberedSet objectAt: i.
-		 self assert: (manager isEphemeron: ephemeron).
-		 key := manager keyOfEphemeron: ephemeron.
-		 (self isScavengeSurvivor: key) ifFalse:
-			[coInterpreter fireEphemeron: ephemeron.
-			 manager
-				storePointerUnchecked: 0
-				ofObject: ephemeron
-				withValue: (self copyAndForward: key)].
-		 "Fired ephemerons should have had their format changed."
+	[ i < manager getFromOldSpaceRememberedSet numRememberedEphemerons ]
+		whileTrue: [
+			| ephemeron key |
+			ephemeron := manager getFromOldSpaceRememberedSet objectAt: i.
+			self assert: (manager isEphemeron: ephemeron).
+			key := manager keyOfEphemeron: ephemeron.
+			(manager isForwarded: key) ifTrue: [
+				key := manager followForwarded: key ].
 
-		self simulationOnly: [  
-		 self deny: ((self isScavengeSurvivor: key) and: [manager isEphemeron: ephemeron])].
+			"Two cases may happen here:
+			  - if the key did not survive, the ephemeron needs to be fired and the key copied to mark the ephemeron as surviving
+			  - if the key already survived, it means a previous ephemeron in this ephemeron made our key survive. Scavenge it as a normal object then"
+			(self isScavengeSurvivor: key) ifFalse: [
+				coInterpreter fireEphemeron: ephemeron.
+				manager
+					storePointerUnchecked: 0
+					ofObject: ephemeron
+					withValue: (self copyAndForward: key) ].
 
-		 (self scavengeReferentsOfFromOldSpace: ephemeron)
-			ifTrue: "keep in set"
-				[i := i + 1]
-			ifFalse:
-				[manager setIsRememberedOf: ephemeron to: false.
-				manager getFromOldSpaceRememberedSet removeLastEphemeronAndMoveTo: i.
-				
-				
-				"
-				""remove from set by overwriting with next-to-be scanned""
-				 numRememberedEphemerons := numRememberedEphemerons - 1.
-				 previousRememberedSetSize := previousRememberedSetSize - 1.
-				 rememberedSetSize := rememberedSetSize - 1.
-				 ""First overwrite with last firable ephemeron (could be a noop if this is the last one).
-				  Then overwrite last firable entry with next unscanned rememberedSet entry (could also be a noop).
-				  Then overwrite next unscanned entry with last unscanned rememberedSet entry (could also be a noop).""
-				 rememberedSet
-					at: i
-						put: (rememberedSet at: numRememberedEphemerons);
-					at: numRememberedEphemerons
-						put: (rememberedSet at: previousRememberedSetSize);
-					at: previousRememberedSetSize
-						put: (rememberedSet at: rememberedSetSize)
-					"	
-						
-						
-						
-						]].
+			(self scavengeReferentsOfFromOldSpace: ephemeron)
+				ifTrue: [ "keep in set" i := i + 1 ]
+				ifFalse: [
+					manager setIsRememberedOf: ephemeron to: false.
+					manager getFromOldSpaceRememberedSet
+						removeLastEphemeronAndMoveTo: i ] ].
 
 	"no more firable ephemerons in this cycle.
 	 scavengeRememberedSetStartingAt: may find new ones."
@@ -499,37 +480,38 @@ SpurGenerationScavenger >> fireEphemeronsOnEphemeronList [
 	"There are ephemerons to be fired in the remembered set.
 	 Fire them and scavenge their keys.  Be careful since copyAndForward:
 	 can remember ephemerons (ephemerons pointing to ephemerons)."
-	| ephemeron ephemeronCorpse key oldList oldCorpse | "old ones for debugging"
-	ephemeronList ifNil:
-		[^self].
+
+	| ephemeron ephemeronCorpse key oldList oldCorpse |
+	"old ones for debugging"
+	ephemeronList ifNil: [ ^ self ].
 	oldCorpse := nil.
 	ephemeronCorpse := self firstCorpse: ephemeronList.
 	"Reset the list head so that new ephemerons will get added
 	 to a new list, not concatenated on the one we are scanning."
 	oldList := ephemeronList.
 	ephemeronList := nil.
-	[ephemeronCorpse notNil] whileTrue:
-		[
-		self simulationOnly: [ 
-			self assert: ((manager isYoung: ephemeronCorpse) 
-						and: [manager isForwarded: ephemeronCorpse])].
-		
-		 ephemeron := manager followForwarded: ephemeronCorpse.
-		 key := manager keyOfMaybeFiredEphemeron: ephemeron.
-		 (self isScavengeSurvivor: key) ifFalse:
-			[coInterpreter fireEphemeron: ephemeron.
-			 manager
+	[ ephemeronCorpse notNil ] whileTrue: [
+		self assert: ((manager isYoung: ephemeronCorpse) and: [
+				 manager isForwarded: ephemeronCorpse ]).
+
+		ephemeron := manager followForwarded: ephemeronCorpse.
+		key := manager keyOfMaybeFiredEphemeron: ephemeron.
+		(self isScavengeSurvivor: key) ifFalse: [
+			coInterpreter fireEphemeron: ephemeron.
+			manager
 				storePointerUnchecked: 0
 				ofObject: ephemeron
 				withValue: (self copyAndForward: key).
 			"Fired ephemerons should have had their format changed."
-			 self deny: 
-				((self isScavengeSurvivor: key) 
-				and: [manager isEphemeron: ephemeron])].
+			self deny:
+				((self isScavengeSurvivor: key) and: [
+					 manager isEphemeron: ephemeron ]) ].
 
-		 self cCoerceSimple: (self scavengeReferentsOfFromOldSpace: ephemeron) to: #void.
-		 oldCorpse := ephemeronCorpse.
-		 ephemeronCorpse := self nextCorpseOrNil: ephemeronCorpse]
+		self
+			cCoerceSimple: (self scavengeReferentsOfFromOldSpace: ephemeron)
+			to: #void.
+		oldCorpse := ephemeronCorpse.
+		ephemeronCorpse := self nextCorpseOrNil: ephemeronCorpse ]
 ]
 
 { #category : #'weakness and ephemerality' }
@@ -1290,11 +1272,17 @@ SpurGenerationScavenger >> scavengeUnfiredEphemeronsOnEphemeronList [
 	"There may be ephemerons to be scavenged on the ephemeronList.
 	 Scavenge any with unfired (live) keys, removing them from the
 	 list, and answer if any with unfired keys were found."
-	| unfiredEphemeronsScavenged corpseOffset previousCorpse |
+	| unfiredEphemeronsScavenged corpseOffset previousCorpse previousList |
 	ephemeronList ifNil:
 		[^false].
 	unfiredEphemeronsScavenged := false.
 	corpseOffset := ephemeronList.
+	
+	"New ephemerons get added to a new list. We work on the previous one.
+	Finally, we concatenate both if necessary"
+	previousList := ephemeronList.
+	ephemeronList := nil.
+	
 	[corpseOffset ~= 0] whileTrue:
 		[| ephemeronCorpse ephemeron nextCorpseOffset  |
 		 ephemeronCorpse := self corpseForCorpseOffset: corpseOffset.
@@ -1303,14 +1291,20 @@ SpurGenerationScavenger >> scavengeUnfiredEphemeronsOnEphemeronList [
 		 nextCorpseOffset := self nextCorpseOffset: ephemeronCorpse.
 		 (self isScavengeSurvivor: (manager keyOfEphemeron: ephemeron))
 			ifTrue:
-				[corpseOffset = ephemeronList
-					ifTrue: [ephemeronList := nextCorpseOffset ~= 0 ifTrue: [nextCorpseOffset]]
+				[corpseOffset = previousList
+					ifTrue: [previousList := nextCorpseOffset ]
 					ifFalse: [self setCorpseOffsetOf: previousCorpse to: nextCorpseOffset].
 				 unfiredEphemeronsScavenged := true.
 				 self cCoerceSimple: (self scavengeReferentsOfFromOldSpace: ephemeron) to: #void]
-			ifFalse:
-				[previousCorpse := ephemeronCorpse].
+			ifFalse: [
+				previousCorpse := ephemeronCorpse].
 		 corpseOffset := nextCorpseOffset].
+	
+	"If we have a previous corpse, it is an ephemeron that did not yet survive.
+	Chain it to the current list that was appended from tracing the list"
+	previousCorpse ifNotNil: [
+		self setCorpseOffsetOf: previousCorpse to: (ephemeronList ifNil: 0).
+		ephemeronList := previousList].
 	^unfiredEphemeronsScavenged
 ]
 
