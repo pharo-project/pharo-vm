@@ -8187,7 +8187,7 @@ StackInterpreter >> isPrimitiveFunctionPointerAQuickPrimitive [
 		ifTrue: [ ^ true ].
 	primitiveFunctionPointer = #primitivePushTwo 
 		ifTrue: [ ^ true ].
-	^ true
+	^ false
 	
 ]
 
