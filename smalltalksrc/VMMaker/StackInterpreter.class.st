@@ -8174,13 +8174,13 @@ StackInterpreter >> isPrimitiveFunctionPointerAQuickPrimitive [
 	"Answer <true> if the receiver's primitive function pointer is any of the quick primitive selectors"
 
 	^ #(
-		#primitivePushTrue
-		#primitivePushFalse
-		#primitivePushNil
-		#primitivePushMinusOne
-		#primitivePushZero
-		#primitivePushOne
-		#primitivePushTwo 
+		primitivePushTrue
+		primitivePushFalse
+		primitivePushNil
+		primitivePushMinusOne
+		primitivePushZero
+		primitivePushOne
+		primitivePushTwo 
 		) includes: primitiveFunctionPointer
 	
 ]
