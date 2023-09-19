@@ -8173,15 +8173,21 @@ StackInterpreter >> isOptimizedMethodHeader: header [
 StackInterpreter >> isPrimitiveFunctionPointerAQuickPrimitive [
 	"Answer <true> if the receiver's primitive function pointer is any of the quick primitive selectors"
 
-	^ #(
-		primitivePushTrue
-		primitivePushFalse
-		primitivePushNil
-		primitivePushMinusOne
-		primitivePushZero
-		primitivePushOne
-		primitivePushTwo 
-		) includes: primitiveFunctionPointer
+	primitiveFunctionPointer = #primitivePushTrue
+		ifTrue: [ ^ true ].
+	primitiveFunctionPointer = #primitivePushFalse
+		ifTrue: [ ^ true ].
+	primitiveFunctionPointer = #primitivePushNil
+		ifTrue: [ ^ true ].
+	primitiveFunctionPointer = #primitivePushMinusOne
+		ifTrue: [ ^ true ].
+	primitiveFunctionPointer = #primitivePushZero
+		ifTrue: [ ^ true ].
+	primitiveFunctionPointer = #primitivePushOne
+		ifTrue: [ ^ true ].
+	primitiveFunctionPointer = #primitivePushTwo 
+		ifTrue: [ ^ true ].
+	^ true
 	
 ]
 
