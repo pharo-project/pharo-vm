@@ -2668,6 +2668,58 @@ StackInterpreterPrimitives >> primitivePin [
 	self pop: argumentCount + 1 thenPush: wasPinned
 ]
 
+{ #category : #'quick primitives' }
+StackInterpreterPrimitives >> primitivePushFalse [
+
+	self push: objectMemory falseObject.
+
+]
+
+{ #category : #'quick primitives' }
+StackInterpreterPrimitives >> primitivePushMinusOne [
+
+	self push: (objectMemory integerObjectOf: -1)
+]
+
+{ #category : #'quick primitives' }
+StackInterpreterPrimitives >> primitivePushNil [
+
+	self push: objectMemory nilObject.
+
+]
+
+{ #category : #'quick primitives' }
+StackInterpreterPrimitives >> primitivePushOne [
+
+	self push: (objectMemory integerObjectOf: 1) 
+]
+
+{ #category : #'quick primitives' }
+StackInterpreterPrimitives >> primitivePushSelf [
+	"do nothing"
+	
+	"self stackTopPut: self popStack."
+]
+
+{ #category : #'quick primitives' }
+StackInterpreterPrimitives >> primitivePushTrue [
+
+	self push: objectMemory trueObject.
+
+]
+
+{ #category : #'quick primitives' }
+StackInterpreterPrimitives >> primitivePushTwo [
+
+	self push: (objectMemory integerObjectOf: 2)
+]
+
+{ #category : #'quick primitives' }
+StackInterpreterPrimitives >> primitivePushZero [
+
+	self push: (objectMemory integerObjectOf: 0)
+]
+
 { #category : #ffi }
 StackInterpreterPrimitives >> primitiveSameThreadCallout [
 	"Because of Slang restrictions, making FFI optional requires cutting the primitive in two different methods. Otherwise slang will unconditionally do all local declarations which may refer to invalid types if FFI is not enabled.
