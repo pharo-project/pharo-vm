@@ -5456,6 +5456,28 @@ StackInterpreter >> executeQuickPrimitive [
 	^ true
 ]
 
+{ #category : #'primitive support' }
+StackInterpreter >> executeQuickReturn [
+	" Send a quick return.
+	 Called under the assumption that primFunctionPtr has been preloaded"
+
+	| localPrimIndex |
+
+	localPrimIndex := self
+		                  cCoerceSimple: primitiveFunctionPointer
+		                  to: #sqInt.
+	self assert: (localPrimIndex > 255 and: [ localPrimIndex < 520 ]).
+	"Quick return inst vars"
+	localPrimIndex >= 264 ifTrue: [ 
+		self stackTopPut: (objectMemory
+				 fetchPointer: localPrimIndex - 264
+				 ofObject: self stackTop).
+		^ true ].
+	"Quick return constants"
+	self stackTopPut: (objectMemory integerObjectOf: localPrimIndex - 261).
+	^ true
+]
+
 { #category : #'translation support' }
 StackInterpreter >> expandCases [
 	"For translation only; noop when running in Smalltalk.
@@ -14272,7 +14294,12 @@ StackInterpreter >> slowPrimitiveResponse [
 	self isPrimitiveFunctionPointerAQuickPrimitive 
 		ifTrue: [ 
 			self dispatchFunctionPointer: primitiveFunctionPointer.
-			^ true ].
+			^ true ]
+		ifFalse: [ 	
+				self isPrimitiveFunctionPointerAnIndex 
+					ifTrue: [ 
+						self executeQuickPrimitive.
+						^ true ] ].
 
 	self assert: objectMemory remapBufferCount = 0.
 	FailImbalancedPrimitives ifTrue:
