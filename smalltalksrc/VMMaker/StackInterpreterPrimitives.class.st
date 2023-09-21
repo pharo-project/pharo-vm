@@ -1137,10 +1137,17 @@ StackInterpreterPrimitives >> primitiveDoPrimitiveWithArgs [
 		[self push: (objectMemory fetchPointer: index - 1 ofObject: argumentArray).
 		 index := index + 1].
 
-	self isPrimitiveFunctionPointerAnIndex ifTrue:
-		[self executeQuickPrimitive.
-		 tempOop2 := 0.
-		^nil].
+	"Handle quick executions"
+	self isPrimitiveFunctionPointerAQuickPrimitive 
+		ifTrue: [ 
+			self dispatchFunctionPointer: primitiveFunctionPointer. 
+			 tempOop2 := 0.
+			^ nil ]
+		ifFalse: [ self isPrimitiveFunctionPointerAnIndex 
+			ifTrue: [ self executeQuickReturn. 
+				 tempOop2 := 0.
+				^ nil ] ].
+	
 	"We use tempOop instead of pushRemappableOop:/popRemappableOop here because in
 	 the Cogit primitiveEnterCriticalSection, primitiveSignal, primitiveResume et al longjmp back
 	 to either the interpreter or machine code, depending on the process activated.  So if we're

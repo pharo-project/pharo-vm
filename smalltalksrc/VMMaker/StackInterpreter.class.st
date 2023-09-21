@@ -5410,50 +5410,24 @@ StackInterpreter >> executePrimitiveFromInterpreter: inInterpreter ifFail: aBloc
 	 the machine code primitive, just evaluate primitiveFunctionPointer directly."
 
 	primitiveFunctionPointer ~= 0 ifTrue: [
-		| succeeded |
 		"slowPrimitiveResponse may of course context-switch. 
 		If so we must reenter the new process appropriately, returning only if we've found an interpreter frame.
 		The instructionPointer tells us from whence we came."
-		succeeded := self slowPrimitiveResponse.
-		succeeded ifTrue: [
-			self returnToExecutive: inInterpreter.
-			^ nil ] ].
+		self slowPrimitiveResponse
+			 ifTrue: [ ^ self returnToExecutive: inInterpreter ] ].
 
 	^ aBlock value
 ]
 
-{ #category : #'primitive support' }
-StackInterpreter >> executeQuickPrimitive [
+{ #category : #'message sending' }
+StackInterpreter >> executeQuick [
 
-	"Invoke a quick primitive.
-	 Called under the assumption that primFunctionPtr has been preloaded"
-
-	| localPrimIndex |
-	self assert: self isPrimitiveFunctionPointerAnIndex.
-	localPrimIndex := self
-		                  cCoerceSimple: primitiveFunctionPointer
-		                  to: #sqInt.
-	self assert: (localPrimIndex > 255 and: [ localPrimIndex < 520 ]).
-	"Quick return inst vars"
-	localPrimIndex >= 264 ifTrue: [ 
-		self stackTopPut: (objectMemory
-				 fetchPointer: localPrimIndex - 264
-				 ofObject: self stackTop).
-		^ true ].
-	"Quick return constants"
-	localPrimIndex = 256 ifTrue: [ ^ true "return self" ].
-	localPrimIndex = 257 ifTrue: [ 
-		self stackTopPut: objectMemory trueObject.
-		^ true ].
-	localPrimIndex = 258 ifTrue: [ 
-		self stackTopPut: objectMemory falseObject.
-		^ true ].
-	localPrimIndex = 259 ifTrue: [ 
-		self stackTopPut: objectMemory nilObject.
-		^ true ].
-	self stackTopPut:
-		(objectMemory integerObjectOf: localPrimIndex - 261).
-	^ true
+	"primFailCode := 0."
+	self isPrimitiveFunctionPointerAQuickPrimitive 
+		ifTrue: [ self dispatchFunctionPointer: primitiveFunctionPointer. ^ true ]
+		ifFalse: [ self isPrimitiveFunctionPointerAnIndex 
+			ifTrue: [ self executeQuickReturn. ^ true ] ].
+	^ false
 ]
 
 { #category : #'primitive support' }
@@ -14291,15 +14265,8 @@ StackInterpreter >> slowPrimitiveResponse [
 	<var: #savedStackPointer type: #'char *'>
 	"self assert: (objectMemory isOopForwarded: (self stackValue: argumentCount)) not."
 	
-	self isPrimitiveFunctionPointerAQuickPrimitive 
-		ifTrue: [ 
-			self dispatchFunctionPointer: primitiveFunctionPointer.
-			^ true ]
-		ifFalse: [ 	
-				self isPrimitiveFunctionPointerAnIndex 
-					ifTrue: [ 
-						self executeQuickPrimitive.
-						^ true ] ].
+	self executeQuick
+		ifTrue: [ ^ true ].
 
 	self assert: objectMemory remapBufferCount = 0.
 	FailImbalancedPrimitives ifTrue:
