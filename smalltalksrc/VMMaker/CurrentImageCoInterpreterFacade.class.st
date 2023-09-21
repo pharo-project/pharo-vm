@@ -948,7 +948,7 @@ CurrentImageCoInterpreterFacade >> printNum: anInteger [
 
 { #category : #printing }
 CurrentImageCoInterpreterFacade >> printStringOf: anOop [
-	Transcript nextPutAll: (self objectForOop: anOop)
+	Transcript nextPutAll: (self objectForOop: anOop); flush
 ]
 
 { #category : #testing }

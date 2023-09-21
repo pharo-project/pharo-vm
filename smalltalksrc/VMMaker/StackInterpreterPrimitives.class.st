@@ -2678,27 +2678,27 @@ StackInterpreterPrimitives >> primitivePin [
 { #category : #'quick primitives' }
 StackInterpreterPrimitives >> primitivePushFalse [
 
-	self push: objectMemory falseObject.
+	self stackTopPut: objectMemory falseObject.
 
 ]
 
 { #category : #'quick primitives' }
 StackInterpreterPrimitives >> primitivePushMinusOne [
 
-	self push: (objectMemory integerObjectOf: -1)
+	self stackTopPut: (objectMemory integerObjectOf: -1)
 ]
 
 { #category : #'quick primitives' }
 StackInterpreterPrimitives >> primitivePushNil [
 
-	self push: objectMemory nilObject.
+	self stackTopPut: objectMemory nilObject.
 
 ]
 
 { #category : #'quick primitives' }
 StackInterpreterPrimitives >> primitivePushOne [
 
-	self push: (objectMemory integerObjectOf: 1) 
+	self stackTopPut: (objectMemory integerObjectOf: 1) 
 ]
 
 { #category : #'quick primitives' }
@@ -2711,20 +2711,20 @@ StackInterpreterPrimitives >> primitivePushSelf [
 { #category : #'quick primitives' }
 StackInterpreterPrimitives >> primitivePushTrue [
 
-	self push: objectMemory trueObject.
+	self stackTopPut: objectMemory trueObject.
 
 ]
 
 { #category : #'quick primitives' }
 StackInterpreterPrimitives >> primitivePushTwo [
 
-	self push: (objectMemory integerObjectOf: 2)
+	self stackTopPut: (objectMemory integerObjectOf: 2)
 ]
 
 { #category : #'quick primitives' }
 StackInterpreterPrimitives >> primitivePushZero [
 
-	self push: (objectMemory integerObjectOf: 0)
+	self stackTopPut: (objectMemory integerObjectOf: 0)
 ]
 
 { #category : #ffi }

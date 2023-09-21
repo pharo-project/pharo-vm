@@ -27,20 +27,24 @@ VMPrimitiveTest >> assert: anOop contentEquals: oopToCompare [
 ]
 
 { #category : #'tests - quick primitives' }
-VMPrimitiveTest >> assert: aBlock pushed: anOop [
+VMPrimitiveTest >> assert: aBlock quickPushed: anOop [
 
-	| oldStackSize |
+	| oldStackSize oldFrameSize |
 
 	stackBuilder 
 		addNewFrame; 
 		buildStack.
 	oldStackSize := interpreter stackPointer.
+	oldFrameSize := stackBuilder frames size.
 	aBlock value.
 	
-	self assert: interpreter stackPointer equals: oldStackSize - memory wordSize.
+	"Check that we did not created a new frame for the quick stuff"
+	self assert: stackBuilder frames size equals: oldFrameSize.
+	"Check that the SP has the same size as before, since quicks replace the top of the stack"
+	self assert: interpreter stackPointer equals: oldStackSize.
+	"Check that the stack top now has the oop we pushed"
 	self assert: interpreter stackTop equals: anOop.
-	
-	
+
 ]
 
 { #category : #'as yet unclassified' }
@@ -194,12 +198,15 @@ VMPrimitiveTest >> testPrimitiveAddFailsWithTypeErrorPreservesStackQuick [
 	
 	string := self newString: '42'.
 	interpreter push: string. 
+	interpreter push: 0.
 	interpreter primitivePushTwo.
 	
 	interpreter primitiveAdd. 
 
+	self assert: interpreter failed.
 	self assert: interpreter stackTop equals: (memory integerObjectOf: 2).
 	self assert: (interpreter stackValue: 1) equals: string. 
+
 ]
 
 { #category : #'tests - primitiveAdd' }
@@ -3195,7 +3202,7 @@ VMPrimitiveTest >> testPrimitivePushFalse [
 
 	self 
 		assert: [ interpreter primitivePushFalse ]
-		pushed: memory falseObject
+		quickPushed: memory falseObject
 .
 ]
 
@@ -3204,7 +3211,7 @@ VMPrimitiveTest >> testPrimitivePushMinusOne [
 
 	self 
 		assert: [ interpreter primitivePushMinusOne ]
-		pushed: (memory integerObjectOf: -1)
+		quickPushed: (memory integerObjectOf: -1)
 
 ]
 
@@ -3213,7 +3220,7 @@ VMPrimitiveTest >> testPrimitivePushNil [
 
 	self 
 		assert: [ interpreter primitivePushNil ]
-		pushed: memory nilObject
+		quickPushed: memory nilObject
  	
 ]
 
@@ -3222,7 +3229,7 @@ VMPrimitiveTest >> testPrimitivePushOne [
 
 	self 
 		assert: [ interpreter primitivePushOne ]
-		pushed: (memory integerObjectOf: 1)
+		quickPushed: (memory integerObjectOf: 1)
  	
 ]
 
@@ -3233,6 +3240,7 @@ VMPrimitiveTest >> testPrimitivePushOneAndAdd [
 		addNewFrame; 
 		buildStack.
 	interpreter primitivePushOne.
+	interpreter push: 0.
 	interpreter primitivePushOne.
 	interpreter primitiveAdd.
 
@@ -3274,7 +3282,7 @@ VMPrimitiveTest >> testPrimitivePushTrue [
 
 	self 
 		assert: [ interpreter primitivePushTrue ]
-		pushed: memory trueObject
+		quickPushed: memory trueObject
 	
 ]
 
@@ -3283,7 +3291,7 @@ VMPrimitiveTest >> testPrimitivePushTwo [
 
 	self 
 		assert: [ interpreter primitivePushTwo ]
-		pushed: (memory integerObjectOf: 2)
+		quickPushed: (memory integerObjectOf: 2)
 ]
 
 { #category : #'tests - quick primitives' }
@@ -3291,7 +3299,7 @@ VMPrimitiveTest >> testPrimitivePushZero [
 
 	self 
 		assert: [ interpreter primitivePushZero ]
-		pushed: (memory integerObjectOf: 0)
+		quickPushed: (memory integerObjectOf: 0)
 
 ]
 
