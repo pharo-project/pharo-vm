@@ -1,13 +1,14 @@
 Class {
-	#name : #ExitInterpreter,
-	#superclass : #Error,
+	#name : 'ExitInterpreter',
+	#superclass : 'Error',
 	#instVars : [
 		'returnValue'
 	],
-	#category : #VMMakerTests
+	#category : 'VMMakerTests',
+	#package : 'VMMakerTests'
 }
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 ExitInterpreter >> returnValue: anInteger [ 
 	
 	returnValue := anInteger

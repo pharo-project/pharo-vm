@@ -2,30 +2,32 @@
 Provide MIDI support, if your platform provides it. 
 "
 Class {
-	#name : #MIDIPlugin,
-	#superclass : #SmartSyntaxInterpreterPlugin,
-	#category : #'VMMaker-Plugins'
+	#name : 'MIDIPlugin',
+	#superclass : 'SmartSyntaxInterpreterPlugin',
+	#category : 'VMMaker-Plugins',
+	#package : 'VMMaker',
+	#tag : 'Plugins'
 }
 
-{ #category : #translation }
+{ #category : 'translation' }
 MIDIPlugin class >> hasHeaderFile [
 	"If there is a single intrinsic header file to be associated with the plugin, here is where you want to flag"
 	^true
 ]
 
-{ #category : #translation }
+{ #category : 'translation' }
 MIDIPlugin class >> requiresPlatformFiles [
 	"this plugin requires platform specific files in order to work"
 	^true
 ]
 
-{ #category : #'initialize-release' }
+{ #category : 'initialize-release' }
 MIDIPlugin >> initialiseModule [
 	<export: true>
 	^self cCode: 'midiInit()' inSmalltalk:[true]
 ]
 
-{ #category : #primitives }
+{ #category : 'primitives' }
 MIDIPlugin >> primitiveMIDIClosePort: portNum [
 
 	self primitive: 'primitiveMIDIClosePort'
@@ -33,7 +35,7 @@ MIDIPlugin >> primitiveMIDIClosePort: portNum [
 	self sqMIDIClosePort: portNum
 ]
 
-{ #category : #primitives }
+{ #category : 'primitives' }
 MIDIPlugin >> primitiveMIDIGetClock [
 	"Return the value of the MIDI clock as a SmallInteger. The range is limited to SmallInteger maxVal / 2 to allow scheduling MIDI events into the future without overflowing a SmallInteger. The sqMIDIGetClock function is assumed to wrap at or before 16r20000000."
 
@@ -43,7 +45,7 @@ MIDIPlugin >> primitiveMIDIGetClock [
 	^clockValue asSmallIntegerObj
 ]
 
-{ #category : #primitives }
+{ #category : 'primitives' }
 MIDIPlugin >> primitiveMIDIGetPortCount [
 
 	| n |
@@ -53,7 +55,7 @@ MIDIPlugin >> primitiveMIDIGetPortCount [
 
 ]
 
-{ #category : #primitives }
+{ #category : 'primitives' }
 MIDIPlugin >> primitiveMIDIGetPortDirectionality: portNum [
 
 	|  dir |
@@ -63,7 +65,7 @@ MIDIPlugin >> primitiveMIDIGetPortDirectionality: portNum [
 	^dir asSmallIntegerObj
 ]
 
-{ #category : #primitives }
+{ #category : 'primitives' }
 MIDIPlugin >> primitiveMIDIGetPortName: portNum [
 	| portName sz nameObj |
 	<var: #portName declareC: 'char portName[256]'>
@@ -76,7 +78,7 @@ MIDIPlugin >> primitiveMIDIGetPortName: portNum [
 	^nameObj
 ]
 
-{ #category : #primitives }
+{ #category : 'primitives' }
 MIDIPlugin >> primitiveMIDIOpenPort: portNum sema: semaIndex speed: clockRate [
 
 	self primitive: 'primitiveMIDIOpenPort'
@@ -84,7 +86,7 @@ MIDIPlugin >> primitiveMIDIOpenPort: portNum sema: semaIndex speed: clockRate [
 	self cCode: 'sqMIDIOpenPort(portNum, semaIndex, clockRate)'
 ]
 
-{ #category : #primitives }
+{ #category : 'primitives' }
 MIDIPlugin >> primitiveMIDIParameterGet: whichParameter [
 
 	|  currentValue |
@@ -95,7 +97,7 @@ MIDIPlugin >> primitiveMIDIParameterGet: whichParameter [
 	^currentValue asSmallIntegerObj
 ]
 
-{ #category : #primitives }
+{ #category : 'primitives' }
 MIDIPlugin >> primitiveMIDIParameterGetOrSet [
 	"Backward compatibility"
 	<export: true>
@@ -104,7 +106,7 @@ MIDIPlugin >> primitiveMIDIParameterGetOrSet [
 		ifFalse:[^self primitiveMIDIParameterSet]
 ]
 
-{ #category : #primitives }
+{ #category : 'primitives' }
 MIDIPlugin >> primitiveMIDIParameterSet: whichParameter value: newValue [
 
 	"write parameter"
@@ -113,7 +115,7 @@ MIDIPlugin >> primitiveMIDIParameterSet: whichParameter value: newValue [
 	self cCode: 'sqMIDIParameterSet(whichParameter, newValue)'
 ]
 
-{ #category : #primitives }
+{ #category : 'primitives' }
 MIDIPlugin >> primitiveMIDIRead: portNum into: array [
 
 	| arrayLength bytesRead |
@@ -126,7 +128,7 @@ MIDIPlugin >> primitiveMIDIRead: portNum into: array [
 	^bytesRead asSmallIntegerObj
 ]
 
-{ #category : #primitives }
+{ #category : 'primitives' }
 MIDIPlugin >> primitiveMIDIWrite: portNum from: array at: time [
 
 	| arrayLength bytesWritten |
@@ -140,7 +142,7 @@ MIDIPlugin >> primitiveMIDIWrite: portNum from: array at: time [
 	^bytesWritten asSmallIntegerObj
 ]
 
-{ #category : #'initialize-release' }
+{ #category : 'initialize-release' }
 MIDIPlugin >> shutdownModule [
 	<export: true>
 	^self cCode: 'midiShutdown()' inSmalltalk:[true]

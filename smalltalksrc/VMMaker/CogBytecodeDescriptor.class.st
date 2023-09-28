@@ -2,8 +2,8 @@
 I am an entry in the Cogit's dispatch table for bytecodes.  I hold the routine to call to generate code for the partcular bytecode I represent and the number of bytes the bytecode has.  For eliminating temps in frameless blocks I maintain a stack delta for bytecodes that are valid in a frameless block.  The order of my instance variables is chosen for compact struct packing.
 "
 Class {
-	#name : #CogBytecodeDescriptor,
-	#superclass : #VMStructType,
+	#name : 'CogBytecodeDescriptor',
+	#superclass : 'VMStructType',
 	#instVars : [
 		'generator',
 		'spanFunction',
@@ -21,10 +21,12 @@ Class {
 		'is1ByteInstVarStore',
 		'hasUnsafeJump'
 	],
-	#category : #'VMMaker-JIT'
+	#category : 'VMMaker-JIT',
+	#package : 'VMMaker',
+	#tag : 'JIT'
 }
 
-{ #category : #translation }
+{ #category : 'translation' }
 CogBytecodeDescriptor class >> instVarNamesAndTypesForTranslationDo: aBinaryBlock [
 	"enumerate aBinaryBlock with the names and C type strings for the inst vars to include in a BytecodeDescriptor struct."
 	self instVarNames do:
@@ -41,214 +43,214 @@ CogBytecodeDescriptor class >> instVarNamesAndTypesForTranslationDo: aBinaryBloc
 						otherwise: [#('unsigned' ' : 1')])]
 ]
 
-{ #category : #translation }
+{ #category : 'translation' }
 CogBytecodeDescriptor class >> structTypeName [
 	^self name allButFirst: 3 "Drop initial Cog"
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 CogBytecodeDescriptor >> generator [
 	"Answer the value of generator"
 
 	^ generator
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 CogBytecodeDescriptor >> generator: anObject [
 	"Set the value of generator"
 
 	^generator := anObject
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 CogBytecodeDescriptor >> hasUnsafeJump [
 
 	^ hasUnsafeJump
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 CogBytecodeDescriptor >> hasUnsafeJump: anObject [
 
 	^hasUnsafeJump := anObject
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 CogBytecodeDescriptor >> is1ByteInstVarStore [
 	"Answer the value of is1ByteInstVarStore"
 
 	^ is1ByteInstVarStore
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 CogBytecodeDescriptor >> is1ByteInstVarStore: anObject [
 	"Set the value of is1ByteInstVarStore"
 
 	^is1ByteInstVarStore := anObject
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 CogBytecodeDescriptor >> isBranch [
 	^self spanFunction notNil
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 CogBytecodeDescriptor >> isBranchFalse [
 	"Answer the value of isBranchFalse"
 
 	^ isBranchFalse
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 CogBytecodeDescriptor >> isBranchFalse: anObject [
 	"Set the value of isBranchFalse"
 
 	^isBranchFalse := anObject
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 CogBytecodeDescriptor >> isBranchTrue [
 	"Answer the value of isBranchTrue"
 
 	^ isBranchTrue
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 CogBytecodeDescriptor >> isBranchTrue: anObject [
 	"Set the value of isBranchTrue"
 
 	^isBranchTrue := anObject
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 CogBytecodeDescriptor >> isCallPrimitive [
 
 	^generator == #genCallPrimitiveBytecode
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 CogBytecodeDescriptor >> isConditionalBranch [
 	<inline: true>
 	^isBranchTrue or: [isBranchFalse]
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 CogBytecodeDescriptor >> isExtension [
 	"Answer the value of isExtension"
 
 	^ isExtension
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 CogBytecodeDescriptor >> isExtension: anObject [
 	"Set the value of isExtension"
 
 	^isExtension := anObject
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 CogBytecodeDescriptor >> isInstVarRef [
 	"Answer the value of isInstVarRef"
 
 	^ isInstVarRef
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 CogBytecodeDescriptor >> isInstVarRef: anObject [
 	"Set the value of isInstVarRef"
 
 	^isInstVarRef := anObject
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 CogBytecodeDescriptor >> isMapped [
 	"Answer the value of isMapped.  Note we send value because this may be the binding for #IMMUTABILITY"
 	^isMapped value
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 CogBytecodeDescriptor >> isMapped: anObject [
 	"Set the value of isMapped"
 
 	^isMapped := anObject
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 CogBytecodeDescriptor >> isMappedInBlock [
 	"Answer the value of isMappedInBlock"
 
 	^isMappedInBlock
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 CogBytecodeDescriptor >> isMappedInBlock: anObject [
 	"Set the value of isMappedInBlock"
 
 	^isMappedInBlock := anObject
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 CogBytecodeDescriptor >> isReturn [
 	"Answer the value of isReturn"
 
 	^ isReturn
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 CogBytecodeDescriptor >> isReturn: anObject [
 	"Set the value of isReturn"
 
 	^isReturn := anObject
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 CogBytecodeDescriptor >> isUnconditionalBranch [
 	<inline: true>
 	^self isBranch and: [(isBranchTrue or: [isBranchFalse]) not]
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 CogBytecodeDescriptor >> needsFrameFunction [
 	"Answer the value of needsFrameFunction"
 
 	^needsFrameFunction
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 CogBytecodeDescriptor >> needsFrameFunction: aSymbol [
 	"Set the value of needsFrameFunction"
 
 	^needsFrameFunction := aSymbol
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 CogBytecodeDescriptor >> numBytes [
 	"Answer the value of numBytes"
 
 	^ numBytes
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 CogBytecodeDescriptor >> numBytes: anObject [
 	"Set the value of numBytes"
 
 	^numBytes := anObject
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 CogBytecodeDescriptor >> opcode [
 	"Answer the value of opcode"
 
 	^ opcode
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 CogBytecodeDescriptor >> opcode: anObject [
 	"Set the value of opcode"
 
 	^opcode := anObject
 ]
 
-{ #category : #translation }
+{ #category : 'translation' }
 CogBytecodeDescriptor >> printCInitializerOn: aStream in: aCCodeGenerator [
 	<doNotGenerate>
 	| first |
@@ -275,7 +277,7 @@ CogBytecodeDescriptor >> printCInitializerOn: aStream in: aCCodeGenerator [
 	aStream space; nextPut: $}
 ]
 
-{ #category : #'debug printing' }
+{ #category : 'debug printing' }
 CogBytecodeDescriptor >> printStateOn: aStream [
 	<doNotGenerate> "Smalltalk-side only"
 	generator ifNil:
@@ -288,14 +290,14 @@ CogBytecodeDescriptor >> printStateOn: aStream [
 	aStream nextPut: $)
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 CogBytecodeDescriptor >> spanFunction [
 	"Answer the value of spanFunction"
 	<returnTypeC: 'sqInt (*)(BytecodeDescriptor *,sqInt,sqInt,sqInt)'>
 	^spanFunction
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 CogBytecodeDescriptor >> spanFunction: functionPointer [
 	"Set the value of spanFunction"
 	<returnTypeC: 'sqInt (*)(BytecodeDescriptor *,sqInt,sqInt,sqInt)'>
@@ -303,14 +305,14 @@ CogBytecodeDescriptor >> spanFunction: functionPointer [
 	^spanFunction := functionPointer
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 CogBytecodeDescriptor >> stackDelta [
 	"Answer the value of stackDelta"
 
 	^stackDelta
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 CogBytecodeDescriptor >> stackDelta: anObject [
 	"Set the value of  stackDelta"
 

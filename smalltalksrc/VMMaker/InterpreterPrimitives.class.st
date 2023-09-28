@@ -61,8 +61,8 @@ secHasEnvironmentAccess
 
 "
 Class {
-	#name : #InterpreterPrimitives,
-	#superclass : #AbstractInterpreter,
+	#name : 'InterpreterPrimitives',
+	#superclass : 'AbstractInterpreter',
 	#instVars : [
 		'objectMemory',
 		'messageSelector',
@@ -90,17 +90,19 @@ Class {
 		'VMObjectIndices',
 		'VMStackFrameOffsets'
 	],
-	#category : #'VMMaker-Interpreter'
+	#category : 'VMMaker-Interpreter',
+	#package : 'VMMaker',
+	#tag : 'Interpreter'
 }
 
-{ #category : #'C translation' }
+{ #category : 'C translation' }
 InterpreterPrimitives class >> declareCVarsIn: aCCodeGen [
 	aCCodeGen
 		var: 'osErrorCode' type: #sqLong;
 		var: 'exceptionPC' type: #usqInt
 ]
 
-{ #category : #'C translation' }
+{ #category : 'C translation' }
 InterpreterPrimitives class >> defineAtCompileTime: anObject [
 	"Override to define at translation time those variables that need to
 	 be defined at compile time only in plugins, but not in the main VM,
@@ -112,7 +114,7 @@ InterpreterPrimitives class >> defineAtCompileTime: anObject [
 	^VMBasicConstants namesDefinedAtCompileTime includes: anObject
 ]
 
-{ #category : #'class initialization' }
+{ #category : 'class initialization' }
 InterpreterPrimitives class >> initializeMiscConstants [
 	"Initialize the hashMultiply constants."
 	super initializeMiscConstants.
@@ -120,19 +122,19 @@ InterpreterPrimitives class >> initializeMiscConstants [
 	HashMultiplyMask := 16rFFFFFFF "(2 raisedTo: 28) - 1"
 ]
 
-{ #category : #'primitive support' }
+{ #category : 'primitive support' }
 InterpreterPrimitives >> asUnsigned: anInteger [
 	<inline: true>
 	^self cCode: [anInteger asUnsignedInteger] inSmalltalk: [anInteger bitAnd: objectMemory maxCInteger]
 ]
 
-{ #category : #'stack access' }
+{ #category : 'stack access' }
 InterpreterPrimitives >> booleanValueOf: obj [
 
 	self subclassResponsibility
 ]
 
-{ #category : #'primitive support' }
+{ #category : 'primitive support' }
 InterpreterPrimitives >> cStringOrNullFor: oop [
 	"Answer either a malloced string with the null-terminated contents of oop if oop is a string,
 	 or the null pointer if oop is nil, or fail.  It is the client's responsibility to free the string later."
@@ -158,7 +160,7 @@ InterpreterPrimitives >> cStringOrNullFor: oop [
 	^cString
 ]
 
-{ #category : #'object access primitives' }
+{ #category : 'object access primitives' }
 InterpreterPrimitives >> canBeImmutable: oop [
 	<option: #IMMUTABILITY>
 	| scheduler processLists schedAssoc |
@@ -218,7 +220,7 @@ InterpreterPrimitives >> canBeImmutable: oop [
 	^ true
 ]
 
-{ #category : #'process primitive support' }
+{ #category : 'process primitive support' }
 InterpreterPrimitives >> doWaitSemaphore: sema [
 
 	<api>
@@ -227,7 +229,7 @@ InterpreterPrimitives >> doWaitSemaphore: sema [
 	self doWaitSemaphore: sema reEnterInterpreter: true
 ]
 
-{ #category : #'primitive support' }
+{ #category : 'primitive support' }
 InterpreterPrimitives >> failed [
 	<api>
 	<inline: true>
@@ -235,14 +237,14 @@ InterpreterPrimitives >> failed [
 	^self cCode: [primFailCode] inSmalltalk: [primFailCode ~= 0]
 ]
 
-{ #category : #'primitive support' }
+{ #category : 'primitive support' }
 InterpreterPrimitives >> floatExponentBits [
 	"Answer the number of bits in the double-precision exponent.  This is an 11-bit field."
 	<inline: true>
 	^11
 ]
 
-{ #category : #'simulation support' }
+{ #category : 'simulation support' }
 InterpreterPrimitives >> getenv: aByteStringOrByteArray [
 	<doNotGenerate>
 	"The primitiveGetenv: primitive answers nil for undefined variables.
@@ -253,7 +255,7 @@ InterpreterPrimitives >> getenv: aByteStringOrByteArray [
 	^(self primitiveGetenv: (self asString: aByteStringOrByteArray)) ifNil: [0]
 ]
 
-{ #category : #'primitive support' }
+{ #category : 'primitive support' }
 InterpreterPrimitives >> initPrimCall [
 	"Set the failure code/success flag in preparation for calling a primitve.
 	 If primFailCode is non-zero a primitive has failed.  If primFailCode is
@@ -262,14 +264,14 @@ InterpreterPrimitives >> initPrimCall [
 	primFailCode := 0
 ]
 
-{ #category : #initialization }
+{ #category : 'initialization' }
 InterpreterPrimitives >> initialize [
 
 	"Here we can initialize the variables C initializes to zero.  #initialize methods do /not/ get translated."
 	argumentCount := primFailCode := nextProfileTick := osErrorCode := exceptionPC := 0
 ]
 
-{ #category : #'simulation support' }
+{ #category : 'simulation support' }
 InterpreterPrimitives >> ioGetCurrentWorkingDirectory: aCStringHolder maxLength: maxLength [
 	<doNotGenerate>
 
@@ -287,29 +289,29 @@ InterpreterPrimitives >> ioGetCurrentWorkingDirectory: aCStringHolder maxLength:
 	^ 0
 ]
 
-{ #category : #'object access primitives' }
+{ #category : 'object access primitives' }
 InterpreterPrimitives >> isAppropriateForCopyObject: oop [
 	^objectMemory isPointersNonImm: oop
 ]
 
-{ #category : #'primitive support' }
+{ #category : 'primitive support' }
 InterpreterPrimitives >> isDirectAlien: oop [
 	^(self sizeFieldOfAlien: oop) > 0
 ]
 
-{ #category : #'primitive support' }
+{ #category : 'primitive support' }
 InterpreterPrimitives >> isFinite: aDouble [
 	<var: #aDouble type: #double>
 	<inline: true>
 	^aDouble - aDouble = 0.0
 ]
 
-{ #category : #'primitive support' }
+{ #category : 'primitive support' }
 InterpreterPrimitives >> isIndirectAlien: oop [
 	^(self sizeFieldOfAlien: oop) < 0
 ]
 
-{ #category : #'primitive support' }
+{ #category : 'primitive support' }
 InterpreterPrimitives >> isInstanceOfClassArray: oop [
 	<inline: true>
 	"N.B.  Because Slang always inlines is:instanceOf:compactClassIndex:
@@ -322,7 +324,7 @@ InterpreterPrimitives >> isInstanceOfClassArray: oop [
 		compactClassIndex: ClassArrayCompactIndex
 ]
 
-{ #category : #'primitive support' }
+{ #category : 'primitive support' }
 InterpreterPrimitives >> isInstanceOfClassBlockClosure: oop [
 	<inline: true>
 	"N.B.  Because Slang always inlines is:instanceOf:compactClassIndex:
@@ -335,7 +337,7 @@ InterpreterPrimitives >> isInstanceOfClassBlockClosure: oop [
 		compactClassIndex: ClassFullBlockClosureCompactIndex
 ]
 
-{ #category : #'primitive support' }
+{ #category : 'primitive support' }
 InterpreterPrimitives >> isInstanceOfClassByteString: oop [
 	<inline: true>
 	"N.B.  Because Slang always inlines is:instanceOf:compactClassIndex:
@@ -348,7 +350,7 @@ InterpreterPrimitives >> isInstanceOfClassByteString: oop [
 		compactClassIndex: ClassByteStringCompactIndex
 ]
 
-{ #category : #'primitive support' }
+{ #category : 'primitive support' }
 InterpreterPrimitives >> isNegativeIntegerValueOf: oop [
 	"Answer true if integer object is negative.
 	Fail if object pointed by oop i not an integer."
@@ -372,12 +374,12 @@ InterpreterPrimitives >> isNegativeIntegerValueOf: oop [
 	^false
 ]
 
-{ #category : #'primitive support' }
+{ #category : 'primitive support' }
 InterpreterPrimitives >> isPointerAlien: oop [
 	^(self sizeFieldOfAlien: oop) = 0
 ]
 
-{ #category : #'primitive support' }
+{ #category : 'primitive support' }
 InterpreterPrimitives >> isPositiveMachineIntegerObject: oop [
 	"Answer if oop is a value of an integer in address range, i.e up to the size of a machine word.
 	The object may be either a positive SmallInteger or a LargePositiveInteger of size <= word size."
@@ -395,7 +397,7 @@ InterpreterPrimitives >> isPositiveMachineIntegerObject: oop [
 	^ok and: [(objectMemory numBytesOfBytes: oop) <= (self sizeof: #'usqIntptr_t')]
 ]
 
-{ #category : #'primitive support' }
+{ #category : 'primitive support' }
 InterpreterPrimitives >> isSignedInteger: integer inRangeForBits: nBits [
 	"Answer if integer will fit within a variable of nBits, where nBits is 8, 16, 32 or 64.
 	 Signed shift right by nBits - 1 to map in-range values to either 0 or -1.
@@ -406,7 +408,7 @@ InterpreterPrimitives >> isSignedInteger: integer inRangeForBits: nBits [
 		inSmalltalk: [((integer bitShift: 1 - nBits) + 1 bitAnd: objectMemory maxCInteger) <= 1]
 ]
 
-{ #category : #'primitive support' }
+{ #category : 'primitive support' }
 InterpreterPrimitives >> magnitude64BitIntegerFor: magnitude neg: isNegative [
 
 	"Return a Large Integer object for the given integer magnitude and sign"
@@ -448,7 +450,7 @@ InterpreterPrimitives >> magnitude64BitIntegerFor: magnitude neg: isNegative [
 	^ newLargeInteger
 ]
 
-{ #category : #'primitive support' }
+{ #category : 'primitive support' }
 InterpreterPrimitives >> magnitude64BitValueOf: oop [
 	"Convert the given object into an integer value.
 	The object may be either a positive SmallInteger or an eight-byte LargeInteger."
@@ -492,7 +494,7 @@ InterpreterPrimitives >> magnitude64BitValueOf: oop [
 	^value
 ]
 
-{ #category : #'primitive support' }
+{ #category : 'primitive support' }
 InterpreterPrimitives >> maybeInlinePositive32BitValueOf: oop [
 	"Convert the given object into an integer value.
 	The object may be either a positive SmallInteger or a four-byte LargePositiveInteger."
@@ -524,13 +526,13 @@ InterpreterPrimitives >> maybeInlinePositive32BitValueOf: oop [
 			^self cCoerceSimple: (objectMemory byteSwapped32IfBigEndian: (objectMemory fetchLong32: 0 ofObject: oop)) to: #'unsigned int']
 ]
 
-{ #category : #'simulation support' }
+{ #category : 'simulation support' }
 InterpreterPrimitives >> newMethod: oop [
 	<doNotGenerate>
 	newMethod := oop
 ]
 
-{ #category : #'primitive support' }
+{ #category : 'primitive support' }
 InterpreterPrimitives >> noInlineSigned32BitValueGutsOf: oop [
 	"Convert the given object into an integer value.
 	The object may be a four-byte LargeInteger."
@@ -578,13 +580,13 @@ InterpreterPrimitives >> noInlineSigned32BitValueGutsOf: oop [
 	^value
 ]
 
-{ #category : #'stack access' }
+{ #category : 'stack access' }
 InterpreterPrimitives >> pop: nItems thenPushBool: boolean [
 
 	self subclassResponsibility
 ]
 
-{ #category : #'primitive support' }
+{ #category : 'primitive support' }
 InterpreterPrimitives >> positive32BitValueOf: oop [
 	"Convert the given object into an integer value.
 	The object may be either a positive SmallInteger or a four-byte LargePositiveInteger."
@@ -606,7 +608,7 @@ InterpreterPrimitives >> positive32BitValueOf: oop [
 			[^self maybeInlinePositive32BitValueOf: oop]
 ]
 
-{ #category : #'primitive support' }
+{ #category : 'primitive support' }
 InterpreterPrimitives >> positive64BitValueOf: oop [
 	"Convert the given object into an integer value.
 	The object may be either a positive SmallInteger or an eight-byte LargePositiveInteger."
@@ -646,7 +648,7 @@ InterpreterPrimitives >> positive64BitValueOf: oop [
 	^value
 ]
 
-{ #category : #'primitive support' }
+{ #category : 'primitive support' }
 InterpreterPrimitives >> positiveMachineIntegerValueOf: oop [
 	"Answer a value of an integer in address range, i.e up to the size of a machine word.
 	The object may be either a positive SmallInteger or a LargePositiveInteger of size <= word size."
@@ -685,13 +687,13 @@ InterpreterPrimitives >> positiveMachineIntegerValueOf: oop [
 					[^self cCoerceSimple: (objectMemory byteSwapped32IfBigEndian: (objectMemory fetchLong32: 0 ofObject: oop)) to: #'unsigned int']"]"
 ]
 
-{ #category : #'arithmetic integer primitives' }
+{ #category : 'arithmetic integer primitives' }
 InterpreterPrimitives >> primitiveAdd [
 
 	self pop2AndPushIntegerIfOK: (self stackIntegerValue: 1) + (self stackIntegerValue: 0)
 ]
 
-{ #category : #'arithmetic largeint primitives' }
+{ #category : 'arithmetic largeint primitives' }
 InterpreterPrimitives >> primitiveAddLargeIntegers [
 	"Primitive arithmetic operations for large integers in 64 bit range"
 	| a b result oopResult aIsNegative bIsNegative resultIsNegative oopArg oopRcvr |
@@ -725,7 +727,7 @@ InterpreterPrimitives >> primitiveAddLargeIntegers [
 	self successful ifTrue:[self pop: 2 thenPush: oopResult].
 ]
 
-{ #category : #'object access primitives' }
+{ #category : 'object access primitives' }
 InterpreterPrimitives >> primitiveAdoptInstance [
 	"Primitive. Change the class of the argument to make it an instance of the receiver
 	 given that the format of the receiver matches the format of the argument's class.
@@ -762,7 +764,7 @@ InterpreterPrimitives >> primitiveAdoptInstance [
 	^nil
 ]
 
-{ #category : #'object access primitives' }
+{ #category : 'object access primitives' }
 InterpreterPrimitives >> primitiveAllInstances [
 	"Answer an array of all instances of the receiver that exist
 	 when the primitive is called, excluding any that may be
@@ -779,7 +781,7 @@ InterpreterPrimitives >> primitiveAllInstances [
 	self pop: argumentCount+1 thenPush: result
 ]
 
-{ #category : #'object access primitives' }
+{ #category : 'object access primitives' }
 InterpreterPrimitives >> primitiveAllObjects [
 	"Answer an array of all objects that exist when the primitive
 	 is called, excluding those that may be garbage collected as
@@ -796,7 +798,7 @@ InterpreterPrimitives >> primitiveAllObjects [
 	self pop: argumentCount+1 thenPush: result
 ]
 
-{ #category : #'arithmetic float primitives' }
+{ #category : 'arithmetic float primitives' }
 InterpreterPrimitives >> primitiveArctan [
 	"N.B. IMO we should be able to assume the receiver is a float because this primitive is specific to floats. eem 2/13/2017"
 	| rcvr |
@@ -808,7 +810,7 @@ InterpreterPrimitives >> primitiveArctan [
 									inSmalltalk: [rcvr arcTan]))]
 ]
 
-{ #category : #'object access primitives' }
+{ #category : 'object access primitives' }
 InterpreterPrimitives >> primitiveArrayBecome [
 	"We must flush the method cache here, to eliminate stale references
 	to mutated classes and/or selectors."
@@ -822,7 +824,7 @@ InterpreterPrimitives >> primitiveArrayBecome [
 		ifFalse: [self primitiveFailFor: ec]
 ]
 
-{ #category : #'object access primitives' }
+{ #category : 'object access primitives' }
 InterpreterPrimitives >> primitiveArrayBecomeOneWay [
 	"We must flush the method cache here, to eliminate stale references
 	to mutated classes and/or selectors."
@@ -836,7 +838,7 @@ InterpreterPrimitives >> primitiveArrayBecomeOneWay [
 		ifFalse: [self primitiveFailFor: ec]
 ]
 
-{ #category : #'object access primitives' }
+{ #category : 'object access primitives' }
 InterpreterPrimitives >> primitiveArrayBecomeOneWayCopyHash [
 	"Similar to primitiveArrayBecomeOneWay but accepts a third argument deciding whether to
 	 copy the receiver's elements identity hashes over the argument's elements identity hashes."
@@ -860,7 +862,7 @@ InterpreterPrimitives >> primitiveArrayBecomeOneWayCopyHash [
 		ifFalse: [self primitiveFailFor: ec]
 ]
 
-{ #category : #'object access primitives' }
+{ #category : 'object access primitives' }
 InterpreterPrimitives >> primitiveArrayBecomeOneWayNoCopyHash [
 	"Similar to primitiveArrayBecomeOneWay but does /not/ copy the receiver's
 	 elements identity hashes over the argument's elements identity hashes."
@@ -874,7 +876,7 @@ InterpreterPrimitives >> primitiveArrayBecomeOneWayNoCopyHash [
 		ifFalse: [self primitiveFailFor: ec]
 ]
 
-{ #category : #'object access primitives' }
+{ #category : 'object access primitives' }
 InterpreterPrimitives >> primitiveAsCharacter [
 	| characterCode characterObject |
 	characterCode := self stackTop.
@@ -888,7 +890,7 @@ InterpreterPrimitives >> primitiveAsCharacter [
 	self pop: argumentCount + 1 thenPush: characterObject
 ]
 
-{ #category : #'arithmetic float primitives' }
+{ #category : 'arithmetic float primitives' }
 InterpreterPrimitives >> primitiveAsFloat [
 	"N.B. This will answer inexact results for integers with > 53 bits of magnitude."
 	| rcvr |
@@ -897,19 +899,19 @@ InterpreterPrimitives >> primitiveAsFloat [
 	self pop: 1 thenPushFloat: (objectMemory integerValueOf: rcvr) asFloat
 ]
 
-{ #category : #'indexing primitives' }
+{ #category : 'indexing primitives' }
 InterpreterPrimitives >> primitiveAt [
 	<accessorDepth: 0>
 	self commonAt: false
 ]
 
-{ #category : #'indexing primitives' }
+{ #category : 'indexing primitives' }
 InterpreterPrimitives >> primitiveAtPut [
 	<accessorDepth: 0>
 	self commonAtPut: false
 ]
 
-{ #category : #'object access primitives' }
+{ #category : 'object access primitives' }
 InterpreterPrimitives >> primitiveBehaviorHash [
 	| hashOrError |
 	self assert: ((objectMemory isNonImmediate: self stackTop)
@@ -920,7 +922,7 @@ InterpreterPrimitives >> primitiveBehaviorHash [
 		ifFalse: [self primitiveFailFor: hashOrError negated]
 ]
 
-{ #category : #'arithmetic integer primitives' }
+{ #category : 'arithmetic integer primitives' }
 InterpreterPrimitives >> primitiveBitAnd [
 	<inline: false>
 	<var: 'integerArgumentValue' type: #usqInt>
@@ -933,7 +935,7 @@ InterpreterPrimitives >> primitiveBitAnd [
 		[self pop: 2 thenPush: (self positiveMachineIntegerFor: (integerArgumentValue bitAnd: integerReceiverValue))]
 ]
 
-{ #category : #'arithmetic largeint primitives' }
+{ #category : 'arithmetic largeint primitives' }
 InterpreterPrimitives >> primitiveBitAndLargeIntegers [
 	"Primitive logical operations for large integers in 64 bit range"
 	| integerRcvr integerArg oopResult |
@@ -949,7 +951,7 @@ InterpreterPrimitives >> primitiveBitAndLargeIntegers [
 	self successful ifTrue:[self pop: 2 thenPush: oopResult]
 ]
 
-{ #category : #'arithmetic integer primitives' }
+{ #category : 'arithmetic integer primitives' }
 InterpreterPrimitives >> primitiveBitOr [
 	<inline: false>
 	<var: 'integerArgumentValue' type: #usqInt>
@@ -962,7 +964,7 @@ InterpreterPrimitives >> primitiveBitOr [
 		[self pop: 2 thenPush: (self positiveMachineIntegerFor: (integerArgumentValue bitOr: integerReceiverValue))]
 ]
 
-{ #category : #'arithmetic largeint primitives' }
+{ #category : 'arithmetic largeint primitives' }
 InterpreterPrimitives >> primitiveBitOrLargeIntegers [
 	"Primitive logical operations for large integers in 64 bit range"
 	| integerRcvr integerArg oopResult |
@@ -978,7 +980,7 @@ InterpreterPrimitives >> primitiveBitOrLargeIntegers [
 	self successful ifTrue:[self pop: 2 thenPush: oopResult]
 ]
 
-{ #category : #'arithmetic integer primitives' }
+{ #category : 'arithmetic integer primitives' }
 InterpreterPrimitives >> primitiveBitShift [
 	"Perform a bitShift.  In 32-bits deal only with non-negative 32-bit integers.
 	  In 64-bits deal with signed 64-bit quantities (max (2^63)-1)."
@@ -1021,7 +1023,7 @@ InterpreterPrimitives >> primitiveBitShift [
 		self pop: 2 thenPush: shifted]
 ]
 
-{ #category : #'arithmetic largeint primitives' }
+{ #category : 'arithmetic largeint primitives' }
 InterpreterPrimitives >> primitiveBitShiftLargeIntegers [
 	"Primitive arithmetic operations for large integers in 64 bit range"
 	| a shift result oopResult aIsNegative oopRcvr |
@@ -1051,7 +1053,7 @@ InterpreterPrimitives >> primitiveBitShiftLargeIntegers [
 	self successful ifTrue:[self pop: 2 thenPush: oopResult].
 ]
 
-{ #category : #'arithmetic integer primitives' }
+{ #category : 'arithmetic integer primitives' }
 InterpreterPrimitives >> primitiveBitXor [
 	<inline: false>
 	<var: 'integerArgumentValue' type: #usqInt>
@@ -1070,7 +1072,7 @@ InterpreterPrimitives >> primitiveBitXor [
 				[self pop: 2 thenPush: (self positiveMachineIntegerFor: (integerArgumentValue bitXor: integerReceiverValue))]]
 ]
 
-{ #category : #'arithmetic largeint primitives' }
+{ #category : 'arithmetic largeint primitives' }
 InterpreterPrimitives >> primitiveBitXorLargeIntegers [
 	"Primitive logical operations for large integers in 64 bit range"
 	| integerRcvr integerArg oopResult |
@@ -1086,7 +1088,7 @@ InterpreterPrimitives >> primitiveBitXorLargeIntegers [
 	self successful ifTrue:[self pop: 2 thenPush: oopResult]
 ]
 
-{ #category : #'memory space primitives' }
+{ #category : 'memory space primitives' }
 InterpreterPrimitives >> primitiveBytesLeft [
 
 	"Answer bytes available at this moment. For more meaningful 
@@ -1106,7 +1108,7 @@ InterpreterPrimitives >> primitiveBytesLeft [
 	^ self primitiveFail
 ]
 
-{ #category : #'plugin primitives' }
+{ #category : 'plugin primitives' }
 InterpreterPrimitives >> primitiveCalloutToFFI [
 	"Perform a function call to a foreign function.
 	Only invoked from method containing explicit external call spec.
@@ -1122,7 +1124,7 @@ InterpreterPrimitives >> primitiveCalloutToFFI [
 		ifFalse: [self perform: primitiveCallout]
 ]
 
-{ #category : #'object access primitives' }
+{ #category : 'object access primitives' }
 InterpreterPrimitives >> primitiveChangeClass [
 	"Primitive.  Change the class of the receiver into the class of the argument given that
 	 the format of the receiver matches the format of the argument's class.  Fail if the
@@ -1145,7 +1147,7 @@ InterpreterPrimitives >> primitiveChangeClass [
 	^nil
 ]
 
-{ #category : #'object access primitives' }
+{ #category : 'object access primitives' }
 InterpreterPrimitives >> primitiveClass [
 	| instance |
 	instance := self stackTop.
@@ -1157,14 +1159,14 @@ InterpreterPrimitives >> primitiveClass [
 			[self pop: argumentCount + 1 thenPush: (objectMemory fetchClassOf: instance)]
 ]
 
-{ #category : #'process primitives' }
+{ #category : 'process primitives' }
 InterpreterPrimitives >> primitiveClearVMProfile [
 	"Primitive. Void the VM profile histograms."
 	self ioClearProfile.
 	self pop: argumentCount
 ]
 
-{ #category : #'system control primitives' }
+{ #category : 'system control primitives' }
 InterpreterPrimitives >> primitiveClockLogAddresses [
 	"Take a boolean which if true turns or keeps clock logging on.  Answer an array supplying
 	 the size of the clock logs, the address of the usecs log, the index in it, the address of the
@@ -1198,7 +1200,7 @@ InterpreterPrimitives >> primitiveClockLogAddresses [
 
 ]
 
-{ #category : #'object access primitives' }
+{ #category : 'object access primitives' }
 InterpreterPrimitives >> primitiveClone [
 	"Return a shallow copy of the receiver."
 
@@ -1217,7 +1219,7 @@ InterpreterPrimitives >> primitiveClone [
 	self pop: argumentCount + 1 thenPush: newCopy
 ]
 
-{ #category : #'system control primitives' }
+{ #category : 'system control primitives' }
 InterpreterPrimitives >> primitiveCoarseLocalMicrosecondClock [
 	"Return the value of the microsecond clock in the local timezone, as updated by the heartbeat, as an integer.
 	 This is the number of microseconds since the Smalltalk epoch, 1901/1/1 12:00am.
@@ -1229,7 +1231,7 @@ InterpreterPrimitives >> primitiveCoarseLocalMicrosecondClock [
 	self pop: 1 thenPush: (self positive64BitIntegerFor: self ioLocalMicroseconds)
 ]
 
-{ #category : #'system control primitives' }
+{ #category : 'system control primitives' }
 InterpreterPrimitives >> primitiveCoarseUTCMicrosecondClock [
 	"Return the value of the microsecond clock as updated by the heartbeat as an integer.
 	 This is the number of microseconds since the Smalltalk epoch, 1901/1/1 12:00am.
@@ -1241,7 +1243,7 @@ InterpreterPrimitives >> primitiveCoarseUTCMicrosecondClock [
 	self pop: 1 thenPush: (self positive64BitIntegerFor: self ioUTCMicroseconds)
 ]
 
-{ #category : #'indexing primitives' }
+{ #category : 'indexing primitives' }
 InterpreterPrimitives >> primitiveCompareBytes [
 	"Primitive. Compare two byte-indexed objects for equality"
 	| arg1 arg2 len1 len2 |
@@ -1263,14 +1265,14 @@ InterpreterPrimitives >> primitiveCompareBytes [
 
 ]
 
-{ #category : #'sound primitives' }
+{ #category : 'sound primitives' }
 InterpreterPrimitives >> primitiveConstantFill [
 	"Fill the receiver, which must be an indexable non-pointer
 	 object, with the given integer value."
 	self primitiveConstantFillSpur
 ]
 
-{ #category : #'sound primitives' }
+{ #category : 'sound primitives' }
 InterpreterPrimitives >> primitiveConstantFillSpur [
 	"Fill the receiver, which must be an indexable non-pointer object, with the given integer value."
 	<inline: true>
@@ -1320,7 +1322,7 @@ InterpreterPrimitives >> primitiveConstantFillSpur [
 	self pop: 1
 ]
 
-{ #category : #'process primitives' }
+{ #category : 'process primitives' }
 InterpreterPrimitives >> primitiveControlVMProfiling [
 	"Primitive. Start or stop the VM profiler.  The first argument is a boolean
 	 to switch profiling on or off.  The second argument is an integer or nil.
@@ -1346,7 +1348,7 @@ InterpreterPrimitives >> primitiveControlVMProfiling [
 	self pop: 3 thenPushInteger: numSamples
 ]
 
-{ #category : #'object access primitives' }
+{ #category : 'object access primitives' }
 InterpreterPrimitives >> primitiveCopyObject [
 	"Primitive. Copy the state of the receiver from the argument. 
 		Fail if receiver and argument are of a different class.
@@ -1394,7 +1396,7 @@ InterpreterPrimitives >> primitiveCopyObject [
 	self pop: self methodArgumentCount "pop arg; answer receiver"
 ]
 
-{ #category : #'system control primitives' }
+{ #category : 'system control primitives' }
 InterpreterPrimitives >> primitiveCrashVM [
 	"Crash the VM by indirecting through a null pointer.  If the sole argument
 	 is true crash in this thread, and if it is false crash in a new thread.  If the
@@ -1414,7 +1416,7 @@ InterpreterPrimitives >> primitiveCrashVM [
 	self pop: 1
 ]
 
-{ #category : #'system control primitives' }
+{ #category : 'system control primitives' }
 InterpreterPrimitives >> primitiveDisablePowerManager [
 	"Pass in a non-negative value to disable the architectures powermanager if any, zero to enable. This is a named (not numbered) primitive in the null module (ie the VM)"
 
@@ -1426,14 +1428,14 @@ InterpreterPrimitives >> primitiveDisablePowerManager [
 		self pop: 1].  "integer; leave rcvr on stack"
 ]
 
-{ #category : #'arithmetic integer primitives' }
+{ #category : 'arithmetic integer primitives' }
 InterpreterPrimitives >> primitiveDiv [
 	| quotient |
 	quotient := self doPrimitiveDiv: (self stackValue: 1) by: (self stackTop).
 	self pop2AndPushIntegerIfOK: quotient
 ]
 
-{ #category : #'arithmetic largeint primitives' }
+{ #category : 'arithmetic largeint primitives' }
 InterpreterPrimitives >> primitiveDivLargeIntegers [
 	"Primitive arithmetic operations for large integers in 64 bit range"
 	| result oopResult a aIsNegative b bIsNegative oopArg oopRcvr rem |
@@ -1467,7 +1469,7 @@ InterpreterPrimitives >> primitiveDivLargeIntegers [
 	self successful ifTrue: [self pop: 2 thenPush: oopResult].
 ]
 
-{ #category : #'arithmetic integer primitives' }
+{ #category : 'arithmetic integer primitives' }
 InterpreterPrimitives >> primitiveDivide [
 	| integerReceiver integerArgument |
 	integerReceiver := self stackIntegerValue: 1.
@@ -1477,7 +1479,7 @@ InterpreterPrimitives >> primitiveDivide [
 		ifFalse: [self primitiveFail]
 ]
 
-{ #category : #'arithmetic largeint primitives' }
+{ #category : 'arithmetic largeint primitives' }
 InterpreterPrimitives >> primitiveDivideLargeIntegers [
 	"Primitive arithmetic operations for large integers in 64 bit range"
 	| a b result oopResult aIsNegative bIsNegative oopArg oopRcvr |
@@ -1504,7 +1506,7 @@ InterpreterPrimitives >> primitiveDivideLargeIntegers [
 
 ]
 
-{ #category : #'arithmetic integer primitives' }
+{ #category : 'arithmetic integer primitives' }
 InterpreterPrimitives >> primitiveEqual [
 	| integerReceiver integerArgument result |
 	integerArgument := self stackTop.
@@ -1523,7 +1525,7 @@ InterpreterPrimitives >> primitiveEqual [
 				[self pop: 2 thenPushBool: result]]
 ]
 
-{ #category : #'arithmetic largeint primitives' }
+{ #category : 'arithmetic largeint primitives' }
 InterpreterPrimitives >> primitiveEqualLargeIntegers [
 	"Primitive comparison operations for large integers in 64 bit range"
 	| integerRcvr integerArg |
@@ -1538,13 +1540,13 @@ InterpreterPrimitives >> primitiveEqualLargeIntegers [
 		[self pop: 2 thenPushBool: integerRcvr = integerArg]
 ]
 
-{ #category : #'system control primitives' }
+{ #category : 'system control primitives' }
 InterpreterPrimitives >> primitiveExitToDebugger [
 
 	self error: 'Exit to debugger at user request'.
 ]
 
-{ #category : #'arithmetic float primitives' }
+{ #category : 'arithmetic float primitives' }
 InterpreterPrimitives >> primitiveExp [
 	"Computes E raised to the receiver power.
 	 N.B. IMO we should be able to assume the receiver is a float because this primitive is specific to floats. eem 2/13/2017"
@@ -1557,7 +1559,7 @@ InterpreterPrimitives >> primitiveExp [
 									inSmalltalk: [rcvr exp]))]
 ]
 
-{ #category : #'arithmetic float primitives' }
+{ #category : 'arithmetic float primitives' }
 InterpreterPrimitives >> primitiveExponent [
 	"Exponent part of this float.
 	 N.B. IMO we should be able to assume the receiver is a float because this primitive is specific to floats. eem 2/13/2017"
@@ -1572,7 +1574,7 @@ InterpreterPrimitives >> primitiveExponent [
 		 self stackTopPut: (objectMemory integerObjectOf: pwr - 1)]
 ]
 
-{ #category : #'primitive support' }
+{ #category : 'primitive support' }
 InterpreterPrimitives >> primitiveFail [
 	"Set general (unspecified) primitive failure.  Don't overwrite an error code that has already been set."
 
@@ -1586,7 +1588,7 @@ InterpreterPrimitives >> primitiveFail [
 		[primFailCode := 1]
 ]
 
-{ #category : #'primitive support' }
+{ #category : 'primitive support' }
 InterpreterPrimitives >> primitiveFailFor: reasonCode [
 	"Set specific primitive failure.
 	 N.B. primitiveFailFor: PrimNoErr is expected to clear the primFailCode."
@@ -1594,7 +1596,7 @@ InterpreterPrimitives >> primitiveFailFor: reasonCode [
 	^primFailCode := reasonCode
 ]
 
-{ #category : #'primitive support' }
+{ #category : 'primitive support' }
 InterpreterPrimitives >> primitiveFailForOSError: osError [
 	<var: 'osError' type: #sqLong>
 	"Set PrimErrOSError primitive failure and associated osErrorCode."
@@ -1603,13 +1605,13 @@ InterpreterPrimitives >> primitiveFailForOSError: osError [
 	^primFailCode := PrimErrOSError
 ]
 
-{ #category : #'primitive support' }
+{ #category : 'primitive support' }
 InterpreterPrimitives >> primitiveFailureCode [
 	<api>
 	^primFailCode
 ]
 
-{ #category : #'memory space primitives' }
+{ #category : 'memory space primitives' }
 InterpreterPrimitives >> primitiveFetchNextMourner [
 	<option: #SpurObjectMemory>
 	objectMemory dequeueMourner
@@ -1617,26 +1619,26 @@ InterpreterPrimitives >> primitiveFetchNextMourner [
 		ifNotNil: [:mourner| self pop: 1 thenPush: mourner]
 ]
 
-{ #category : #'control primitives' }
+{ #category : 'control primitives' }
 InterpreterPrimitives >> primitiveFindHandlerContext [
 	"Primitive. Search up the context stack for the next method context marked
 	 for exception handling starting at the receiver. Return nil if none found"
 	self subclassResponsibility
 ]
 
-{ #category : #'control primitives' }
+{ #category : 'control primitives' }
 InterpreterPrimitives >> primitiveFindNextUnwindContext [
 	"Primitive. Search up the context stack for the next method context marked for unwind
 	 handling from the receiver up to but not including the argument. Return nil if none found."
 	self subclassResponsibility
 ]
 
-{ #category : #'arithmetic float primitives' }
+{ #category : 'arithmetic float primitives' }
 InterpreterPrimitives >> primitiveFloatAdd [
 	^ self primitiveFloatAdd: (self stackValue: 1) toArg: self stackTop
 ]
 
-{ #category : #'indexing primitives' }
+{ #category : 'indexing primitives' }
 InterpreterPrimitives >> primitiveFloatAt [
 	"Provide platform-independent access to 32-bit words comprising
 	 a Float.  Map index 1 onto the most significant word and index 2
@@ -1668,7 +1670,7 @@ InterpreterPrimitives >> primitiveFloatAt [
 
 ]
 
-{ #category : #'indexing primitives' }
+{ #category : 'indexing primitives' }
 InterpreterPrimitives >> primitiveFloatAtPut [
 	"Provide platform-independent access to 32-bit words comprising
 	 a Float.  Map index 1 onto the most significant word and index 2
@@ -1700,12 +1702,12 @@ InterpreterPrimitives >> primitiveFloatAtPut [
 							ifFalse: [PrimErrBadArgument])
 ]
 
-{ #category : #'arithmetic float primitives' }
+{ #category : 'arithmetic float primitives' }
 InterpreterPrimitives >> primitiveFloatDivide [
 	self primitiveFloatDivide: (self stackValue: 1) byArg: self stackTop
 ]
 
-{ #category : #'arithmetic float primitives' }
+{ #category : 'arithmetic float primitives' }
 InterpreterPrimitives >> primitiveFloatEqual [
 	| aBool |
 	aBool := self primitiveFloatEqual: (self stackValue: 1) toArg: self stackTop.
@@ -1713,14 +1715,14 @@ InterpreterPrimitives >> primitiveFloatEqual [
 		[self pop: 2 thenPushBool: aBool]
 ]
 
-{ #category : #'arithmetic float primitives' }
+{ #category : 'arithmetic float primitives' }
 InterpreterPrimitives >> primitiveFloatGreaterOrEqual [
 	| aBool |
 	aBool := self primitiveFloatGreaterOrEqual: (self stackValue: 1) toArg: self stackTop.
 	self successful ifTrue: [self pop: 2 thenPushBool: aBool]
 ]
 
-{ #category : #'arithmetic float primitives' }
+{ #category : 'arithmetic float primitives' }
 InterpreterPrimitives >> primitiveFloatGreaterThan [
 	| aBool |
 	aBool := self primitiveFloatGreater: (self stackValue: 1) thanArg: self stackTop.
@@ -1728,14 +1730,14 @@ InterpreterPrimitives >> primitiveFloatGreaterThan [
 		[self pop: 2 thenPushBool: aBool]
 ]
 
-{ #category : #'arithmetic float primitives' }
+{ #category : 'arithmetic float primitives' }
 InterpreterPrimitives >> primitiveFloatLessOrEqual [
 	| aBool |
 	aBool := self primitiveFloatLessOrEqual: (self stackValue: 1) toArg: self stackTop.
 	self successful ifTrue: [self pop: 2 thenPushBool: aBool]
 ]
 
-{ #category : #'arithmetic float primitives' }
+{ #category : 'arithmetic float primitives' }
 InterpreterPrimitives >> primitiveFloatLessThan [
 	| aBool |
 	aBool := self primitiveFloatLess: (self stackValue: 1) thanArg: self stackTop.
@@ -1743,12 +1745,12 @@ InterpreterPrimitives >> primitiveFloatLessThan [
 		[self pop: 2 thenPushBool: aBool]
 ]
 
-{ #category : #'arithmetic float primitives' }
+{ #category : 'arithmetic float primitives' }
 InterpreterPrimitives >> primitiveFloatMultiply [
 	self primitiveFloatMultiply: (self stackValue: 1) byArg: self stackTop
 ]
 
-{ #category : #'arithmetic float primitives' }
+{ #category : 'arithmetic float primitives' }
 InterpreterPrimitives >> primitiveFloatNotEqual [
 	| aBool |
 	aBool := self primitiveFloatEqual: (self stackValue: 1) toArg: self stackTop.
@@ -1756,25 +1758,25 @@ InterpreterPrimitives >> primitiveFloatNotEqual [
 		[self pop: 2 thenPushBool: aBool not]
 ]
 
-{ #category : #'arithmetic float primitives' }
+{ #category : 'arithmetic float primitives' }
 InterpreterPrimitives >> primitiveFloatSubtract [
 	^ self primitiveFloatSubtract: (self stackValue: 1) fromArg: self stackTop
 ]
 
-{ #category : #'system control primitives' }
+{ #category : 'system control primitives' }
 InterpreterPrimitives >> primitiveFlushCache [
 	"Clear the method lookup cache. This must be done after every programming change."
 
 	self flushMethodCache
 ]
 
-{ #category : #'plugin primitives' }
+{ #category : 'plugin primitives' }
 InterpreterPrimitives >> primitiveFlushExternalPrimitives [
 	"Primitive. Flush all the existing external primitives in the image thus forcing a reload on next invokation."
 	self flushExternalPrimitives
 ]
 
-{ #category : #'arithmetic float primitives' }
+{ #category : 'arithmetic float primitives' }
 InterpreterPrimitives >> primitiveFractionalPart [
 	"Fractional part of this float.
 	 N.B. IMO we should be able to assume the receiver is a float because this primitive is specific to floats. eem 2/13/2017"
@@ -1788,7 +1790,7 @@ InterpreterPrimitives >> primitiveFractionalPart [
 								inSmalltalk: [rcvr fractionPart]))]
 ]
 
-{ #category : #'control primitives' }
+{ #category : 'control primitives' }
 InterpreterPrimitives >> primitiveFullClosureValue [
 	<option: #SistaV1BytecodeSet>
 	| blockClosure numArgs closureMethod |
@@ -1804,7 +1806,7 @@ InterpreterPrimitives >> primitiveFullClosureValue [
 	self activateNewFullClosure: blockClosure method: closureMethod numArgs: numArgs mayContextSwitch: true
 ]
 
-{ #category : #'control primitives' }
+{ #category : 'control primitives' }
 InterpreterPrimitives >> primitiveFullClosureValueNoContextSwitch [
 	"An exact clone of primitiveFullClosureValue except that this version will not
 	 check for interrupts on stack overflow.  It may invoke the garbage collector
@@ -1824,7 +1826,7 @@ InterpreterPrimitives >> primitiveFullClosureValueNoContextSwitch [
 	self activateNewFullClosure: blockClosure method: closureMethod numArgs: numArgs mayContextSwitch: false
 ]
 
-{ #category : #'control primitives' }
+{ #category : 'control primitives' }
 InterpreterPrimitives >> primitiveFullClosureValueWithArgs [
 	<option: #SistaV1BytecodeSet>
 	| argumentArray arraySize blockClosure numArgs closureMethod index |
@@ -1857,7 +1859,7 @@ InterpreterPrimitives >> primitiveFullClosureValueWithArgs [
 	self activateNewFullClosure: blockClosure method: closureMethod numArgs: numArgs mayContextSwitch: true
 ]
 
-{ #category : #'memory space primitives' }
+{ #category : 'memory space primitives' }
 InterpreterPrimitives >> primitiveFullGC [
 
 	"Do a full garbage collection. Answer the size of the largest free chunk."
@@ -1866,7 +1868,7 @@ InterpreterPrimitives >> primitiveFullGC [
 	^ self
 ]
 
-{ #category : #'system control primitives' }
+{ #category : 'system control primitives' }
 InterpreterPrimitives >> primitiveGetAttribute [
 	"Fetch the system attribute with the given integer ID. The 
 	result is a string, which will be empty if the attribute is not 
@@ -1886,7 +1888,7 @@ InterpreterPrimitives >> primitiveGetAttribute [
 			self pop: 2 thenPush: s]
 ]
 
-{ #category : #'object access primitives' }
+{ #category : 'object access primitives' }
 InterpreterPrimitives >> primitiveGetImmutability [
 	<option: #IMMUTABILITY>
 	| rcvr |
@@ -1894,7 +1896,7 @@ InterpreterPrimitives >> primitiveGetImmutability [
 	self pop: argumentCount + 1 thenPushBool: (objectMemory isOopImmutable: rcvr)
 ]
 
-{ #category : #'I/O primitives' }
+{ #category : 'I/O primitives' }
 InterpreterPrimitives >> primitiveGetLogDirectory [
 	"Primitive. Answer the VM's current log directory"
 	| ptr sz stringOop |
@@ -1908,7 +1910,7 @@ InterpreterPrimitives >> primitiveGetLogDirectory [
 	self pop: argumentCount+1 thenPush: stringOop
 ]
 
-{ #category : #'I/O primitives' }
+{ #category : 'I/O primitives' }
 InterpreterPrimitives >> primitiveGetWindowLabel [
 	"Primitive. Answer the OS window's label"
 	| ptr sz labelOop |
@@ -1922,7 +1924,7 @@ InterpreterPrimitives >> primitiveGetWindowLabel [
 	self pop: argumentCount+1 thenPush: labelOop
 ]
 
-{ #category : #'I/O primitives' }
+{ #category : 'I/O primitives' }
 InterpreterPrimitives >> primitiveGetWindowSize [
 	"Primitive. Answer the OS window's size (extent)"
 	| w h |
@@ -1933,7 +1935,7 @@ InterpreterPrimitives >> primitiveGetWindowSize [
 	self push: (self makePointwithxValue: w yValue: h).
 ]
 
-{ #category : #'other primitives' }
+{ #category : 'other primitives' }
 InterpreterPrimitives >> primitiveGetenv [
 	"Access to environment variables via getenv.  No putenv or setenv as yet."
 	| key var result |
@@ -1955,7 +1957,7 @@ InterpreterPrimitives >> primitiveGetenv [
 	self pop: 2 thenPush: (var = 0 ifTrue: [objectMemory nilObject] ifFalse: [result])
 ]
 
-{ #category : #'simulation support' }
+{ #category : 'simulation support' }
 InterpreterPrimitives >> primitiveGetenv: aByteStringOrByteArray [
 	<doNotGenerate>
 	<primitive: 'primitiveGetenv' module: '' error: ec>
@@ -1965,7 +1967,7 @@ InterpreterPrimitives >> primitiveGetenv: aByteStringOrByteArray [
 	self primitiveFail
 ]
 
-{ #category : #'arithmetic integer primitives' }
+{ #category : 'arithmetic integer primitives' }
 InterpreterPrimitives >> primitiveGreaterOrEqual [
 	| integerReceiver integerArgument |
 	integerArgument := self stackTop.
@@ -1978,7 +1980,7 @@ InterpreterPrimitives >> primitiveGreaterOrEqual [
 		ifFalse: [self primitiveFail]
 ]
 
-{ #category : #'arithmetic largeint primitives' }
+{ #category : 'arithmetic largeint primitives' }
 InterpreterPrimitives >> primitiveGreaterOrEqualLargeIntegers [
 	"Primitive comparison operations for large integers in 64 bit range"
 	| integerRcvr integerArg |
@@ -1993,7 +1995,7 @@ InterpreterPrimitives >> primitiveGreaterOrEqualLargeIntegers [
 		[self pop: 2 thenPushBool: integerRcvr >= integerArg]
 ]
 
-{ #category : #'arithmetic integer primitives' }
+{ #category : 'arithmetic integer primitives' }
 InterpreterPrimitives >> primitiveGreaterThan [
 	| integerReceiver integerArgument |
 	integerArgument := self stackTop.
@@ -2006,7 +2008,7 @@ InterpreterPrimitives >> primitiveGreaterThan [
 		ifFalse: [self primitiveFail]
 ]
 
-{ #category : #'arithmetic largeint primitives' }
+{ #category : 'arithmetic largeint primitives' }
 InterpreterPrimitives >> primitiveGreaterThanLargeIntegers [
 	"Primitive comparison operations for large integers in 64 bit range"
 	| integerRcvr integerArg |
@@ -2021,7 +2023,7 @@ InterpreterPrimitives >> primitiveGreaterThanLargeIntegers [
 		[self pop: 2 thenPushBool: integerRcvr > integerArg]
 ]
 
-{ #category : #'memory space primitives' }
+{ #category : 'memory space primitives' }
 InterpreterPrimitives >> primitiveGrowMemoryByAtLeast [
 	<option: #SpurObjectMemory>
 	| ammount |
@@ -2033,7 +2035,7 @@ InterpreterPrimitives >> primitiveGrowMemoryByAtLeast [
 		ifNotNil: [:segSize| self pop: 2 thenPushInteger: segSize]
 ]
 
-{ #category : #'arithmetic integer primitives' }
+{ #category : 'arithmetic integer primitives' }
 InterpreterPrimitives >> primitiveHashMultiply [
 	"Implement 28-bit hashMultiply for SmallInteger and LargePositiveInteger receivers."
 	| value |
@@ -2050,7 +2052,7 @@ InterpreterPrimitives >> primitiveHashMultiply [
 		thenPush: (objectMemory integerObjectOf: (value * HashMultiplyConstant bitAnd: 16rFFFFFFF))
 ]
 
-{ #category : #'system control primitives' }
+{ #category : 'system control primitives' }
 InterpreterPrimitives >> primitiveHeartbeatFrequency [
 	"Answer the heartbeat frequency in beats per second.  If the argument is true, reset the frequency measure."
 	<export: true>
@@ -2060,7 +2062,7 @@ InterpreterPrimitives >> primitiveHeartbeatFrequency [
 		thenPush: (self positive32BitIntegerFor: (self ioHeartbeatFrequency: reset))
 ]
 
-{ #category : #'system control primitives' }
+{ #category : 'system control primitives' }
 InterpreterPrimitives >> primitiveHighResClock [
 	"Return the value of the high resolution clock if this system has any. The exact frequency of the high res clock is undefined specifically so that we can use processor dependent instructions (like RDTSC). The only use for the high res clock is for profiling where we can allocate time based on sub-msec resolution of the high res clock. If no high-resolution counter is available, the platform should return zero."
 	<export: true>
@@ -2068,7 +2070,7 @@ InterpreterPrimitives >> primitiveHighResClock [
 	self push: (self positive64BitIntegerFor: self ioHighResClock).
 ]
 
-{ #category : #'object access primitives' }
+{ #category : 'object access primitives' }
 InterpreterPrimitives >> primitiveIdentical [
 	"is the receiver/first argument the same object as the (last) argument?.
 	 pop argumentCount because this can be used as a mirror primitive."
@@ -2084,7 +2086,7 @@ InterpreterPrimitives >> primitiveIdentical [
 			[self pop: argumentCount + 1 thenPushBool: thisObject = otherObject]
 ]
 
-{ #category : #'object access primitives' }
+{ #category : 'object access primitives' }
 InterpreterPrimitives >> primitiveIdentityHash [
 	| thisReceiver |
 	thisReceiver := self stackTop.
@@ -2096,7 +2098,7 @@ InterpreterPrimitives >> primitiveIdentityHash [
 					thenPushInteger: (objectMemory hashBitsOf: thisReceiver)]
 ]
 
-{ #category : #'other primitives' }
+{ #category : 'other primitives' }
 InterpreterPrimitives >> primitiveImageFormatVersion [
 	"Answer an integer identifying the type of image. The image version number may
 	identify the format of the image (e.g. 32 or 64-bit word size) or specific requirements
@@ -2109,7 +2111,7 @@ InterpreterPrimitives >> primitiveImageFormatVersion [
 
 ]
 
-{ #category : #'other primitives' }
+{ #category : 'other primitives' }
 InterpreterPrimitives >> primitiveImageName [
 	"When called with a single string argument, record the string as the current image file name. When called with zero arguments, return a string containing the current image file name."
 
@@ -2139,7 +2141,7 @@ InterpreterPrimitives >> primitiveImageName [
 	]
 ]
 
-{ #category : #'arithmetic float primitives' }
+{ #category : 'arithmetic float primitives' }
 InterpreterPrimitives >> primitiveImmediateAsInteger [
 	"For a SmallInteger, answer itself.
 	 For a Character, answer its code as an unsigned integer.
@@ -2158,7 +2160,7 @@ InterpreterPrimitives >> primitiveImmediateAsInteger [
 	self pop: argumentCount + 1 thenPushInteger: value
 ]
 
-{ #category : #'memory space primitives' }
+{ #category : 'memory space primitives' }
 InterpreterPrimitives >> primitiveIncrementalGC [
 
 	"Do a quick, incremental garbage collection and return the number of bytes immediately available.
@@ -2168,7 +2170,7 @@ InterpreterPrimitives >> primitiveIncrementalGC [
 	self pop: 1 thenPushInteger: (objectMemory bytesLeft: false)
 ]
 
-{ #category : #'object access primitives' }
+{ #category : 'object access primitives' }
 InterpreterPrimitives >> primitiveInstVarAt [
 	| index rcvr hdr fmt totalLength fixedFields value |
 	index := self stackTop.
@@ -2188,7 +2190,7 @@ InterpreterPrimitives >> primitiveInstVarAt [
 	self pop: argumentCount + 1 thenPush: value
 ]
 
-{ #category : #'object access primitives' }
+{ #category : 'object access primitives' }
 InterpreterPrimitives >> primitiveInstVarAtPut [
 	| newValue index rcvr hdr fmt totalLength fixedFields |
 	newValue := self stackTop.
@@ -2213,7 +2215,7 @@ InterpreterPrimitives >> primitiveInstVarAtPut [
 	self pop: argumentCount + 1 thenPush: newValue
 ]
 
-{ #category : #'indexing primitives' }
+{ #category : 'indexing primitives' }
 InterpreterPrimitives >> primitiveIntegerAt [
 
 	"Answer the signed integer element of a pure bits receiver.
@@ -2293,7 +2295,7 @@ InterpreterPrimitives >> primitiveIntegerAt [
 	^self primitiveFailFor: PrimErrBadReceiver
 ]
 
-{ #category : #'indexing primitives' }
+{ #category : 'indexing primitives' }
 InterpreterPrimitives >> primitiveIntegerAtPut [
 
 	"Assign an indexable variable of a pure bits receiver with a signed integer.
@@ -2375,7 +2377,7 @@ InterpreterPrimitives >> primitiveIntegerAtPut [
 	^self primitiveFailFor: PrimErrBadReceiver
 ]
 
-{ #category : #'process primitives' }
+{ #category : 'process primitives' }
 InterpreterPrimitives >> primitiveInterruptChecksPerMSec [
 	"Primitive. Answer the number of interrupt checks per milliseconds that we execute
 	on this machine. This can be used to adjust the sub-msecs profiler to check (roughly) 
@@ -2385,7 +2387,7 @@ InterpreterPrimitives >> primitiveInterruptChecksPerMSec [
 	self pop: 1 thenPush: (objectMemory integerObjectOf: self ioHeartbeatMilliseconds).
 ]
 
-{ #category : #'control primitives' }
+{ #category : 'control primitives' }
 InterpreterPrimitives >> primitiveInvokeObjectAsMethod [
 	"Primitive. 'Invoke' an object like a function, sending the special message 
 		run: originalSelector with: arguments in: aReceiver.
@@ -2416,14 +2418,14 @@ InterpreterPrimitives >> primitiveInvokeObjectAsMethod [
 	self initPrimCall
 ]
 
-{ #category : #'other primitives' }
+{ #category : 'other primitives' }
 InterpreterPrimitives >> primitiveIsBigEnder [
 	"Answer if running on a big endian machine."
 	<export: true>
 	self pop: 1 thenPushBool: VMBIGENDIAN
 ]
 
-{ #category : #'memory space primitives' }
+{ #category : 'memory space primitives' }
 InterpreterPrimitives >> primitiveIsPinned [
 	"Answer if the receiver is pinned, i.e. immobile."
 	<option: #SpurObjectMemory>
@@ -2436,7 +2438,7 @@ InterpreterPrimitives >> primitiveIsPinned [
 		thenPushBool: (objectMemory isPinned: obj)
 ]
 
-{ #category : #'I/O primitives' }
+{ #category : 'I/O primitives' }
 InterpreterPrimitives >> primitiveIsWindowObscured [
 	"Primitive. Answer whether the OS window is currently partially or fully obscured."
 	<export: true>
@@ -2445,7 +2447,7 @@ InterpreterPrimitives >> primitiveIsWindowObscured [
 
 ]
 
-{ #category : #'arithmetic integer primitives' }
+{ #category : 'arithmetic integer primitives' }
 InterpreterPrimitives >> primitiveLessOrEqual [
 	| integerReceiver integerArgument |
 	integerArgument := self stackTop.
@@ -2458,7 +2460,7 @@ InterpreterPrimitives >> primitiveLessOrEqual [
 		ifFalse: [self primitiveFail]
 ]
 
-{ #category : #'arithmetic largeint primitives' }
+{ #category : 'arithmetic largeint primitives' }
 InterpreterPrimitives >> primitiveLessOrEqualLargeIntegers [
 	"Primitive comparison operations for large integers in 64 bit range"
 	| integerRcvr integerArg |
@@ -2473,7 +2475,7 @@ InterpreterPrimitives >> primitiveLessOrEqualLargeIntegers [
 		[self pop: 2 thenPushBool: integerRcvr <= integerArg]
 ]
 
-{ #category : #'arithmetic integer primitives' }
+{ #category : 'arithmetic integer primitives' }
 InterpreterPrimitives >> primitiveLessThan [
 	| integerReceiver integerArgument |
 	integerArgument := self stackTop.
@@ -2486,7 +2488,7 @@ InterpreterPrimitives >> primitiveLessThan [
 		ifFalse: [self primitiveFail]
 ]
 
-{ #category : #'arithmetic largeint primitives' }
+{ #category : 'arithmetic largeint primitives' }
 InterpreterPrimitives >> primitiveLessThanLargeIntegers [
 	"Primitive comparison operations for large integers in 64 bit range"
 	| integerRcvr integerArg |
@@ -2501,7 +2503,7 @@ InterpreterPrimitives >> primitiveLessThanLargeIntegers [
 		[self pop: 2 thenPushBool: integerRcvr < integerArg]
 ]
 
-{ #category : #'plugin primitives' }
+{ #category : 'plugin primitives' }
 InterpreterPrimitives >> primitiveListBuiltinModule [
 	"Primitive. Return the n-th builtin module name."
 	| moduleName index length nameOop |
@@ -2521,7 +2523,7 @@ InterpreterPrimitives >> primitiveListBuiltinModule [
 	self pop: 2 thenPush: nameOop
 ]
 
-{ #category : #'plugin primitives' }
+{ #category : 'plugin primitives' }
 InterpreterPrimitives >> primitiveListExternalModule [
 	"Primitive. Return the n-th loaded external module name."
 	| moduleName index length nameOop |
@@ -2541,7 +2543,7 @@ InterpreterPrimitives >> primitiveListExternalModule [
 	self pop: 2 thenPush: nameOop
 ]
 
-{ #category : #'system control primitives' }
+{ #category : 'system control primitives' }
 InterpreterPrimitives >> primitiveLocalMicrosecondClock [
 	"Return the value of the microsecond clock in the local timezone as an integer.
 	 This is the number of microseconds since the Smalltalk epoch, 1901/1/1 12:00am.
@@ -2552,7 +2554,7 @@ InterpreterPrimitives >> primitiveLocalMicrosecondClock [
 	self pop: 1 thenPush: (self positive64BitIntegerFor: self ioLocalMicrosecondsNow)
 ]
 
-{ #category : #'arithmetic float primitives' }
+{ #category : 'arithmetic float primitives' }
 InterpreterPrimitives >> primitiveLogN [
 	"Natural log.
 	 N.B. IMO we should be able to assume the receiver is a float because this primitive is specific to floats. eem 2/13/2017"
@@ -2565,7 +2567,7 @@ InterpreterPrimitives >> primitiveLogN [
 									inSmalltalk: [rcvr ln]))]
 ]
 
-{ #category : #'memory space primitives' }
+{ #category : 'memory space primitives' }
 InterpreterPrimitives >> primitiveLowSpaceSemaphore [
 	"Register the low-space semaphore. If the argument is not a 
 	 Semaphore, unregister the current low-space Semaphore."
@@ -2580,7 +2582,7 @@ InterpreterPrimitives >> primitiveLowSpaceSemaphore [
 			[self primitiveFailFor: PrimErrBadArgument]
 ]
 
-{ #category : #'arithmetic integer primitives' }
+{ #category : 'arithmetic integer primitives' }
 InterpreterPrimitives >> primitiveMakePoint [
 	<inline: false>
 	| rcvr arg pt |
@@ -2595,32 +2597,32 @@ InterpreterPrimitives >> primitiveMakePoint [
 	self pop: 2 thenPush: pt
 ]
 
-{ #category : #'control primitives' }
+{ #category : 'control primitives' }
 InterpreterPrimitives >> primitiveMarkHandlerMethod [
 	"Primitive. Mark the method for exception handling. The primitive must fail after marking the context so that the regular code is run."
 	<inline: false>
 	self primitiveFail
 ]
 
-{ #category : #'control primitives' }
+{ #category : 'control primitives' }
 InterpreterPrimitives >> primitiveMarkUnwindMethod [
 	"Primitive. Mark the method for exception unwinding. The primitive must fail after marking the context so that the regular code is run.  It must also *not* allow a context switch."
 	<inline: false>
 	^self primitiveFail
 ]
 
-{ #category : #'object access primitives' }
+{ #category : 'object access primitives' }
 InterpreterPrimitives >> primitiveMaxIdentityHash [
 	self pop: 1 thenPushInteger: objectMemory maxIdentityHash
 ]
 
-{ #category : #'plugin primitive support' }
+{ #category : 'plugin primitive support' }
 InterpreterPrimitives >> primitiveMethod [
 	"Return the method an external primitive was defined in"
 	^newMethod
 ]
 
-{ #category : #'system control primitives' }
+{ #category : 'system control primitives' }
 InterpreterPrimitives >> primitiveMillisecondClock [
 	"Return the value of the millisecond clock as an integer. Note that the millisecond clock wraps around periodically. On some platforms it can wrap daily. The range is limited to SmallInteger maxVal / 2 to allow delays of up to that length without overflowing a SmallInteger."
 
@@ -2628,7 +2630,7 @@ InterpreterPrimitives >> primitiveMillisecondClock [
 
 ]
 
-{ #category : #'system control primitives' }
+{ #category : 'system control primitives' }
 InterpreterPrimitives >> primitiveMillisecondClockMask [
 	"Provide access to the millisecond clock mask to support calculation
 	of durations based on the millisecond clock value."
@@ -2638,14 +2640,14 @@ InterpreterPrimitives >> primitiveMillisecondClockMask [
 
 ]
 
-{ #category : #'arithmetic integer primitives' }
+{ #category : 'arithmetic integer primitives' }
 InterpreterPrimitives >> primitiveMod [
 	| mod |
 	mod := self doPrimitiveMod: (self stackValue: 1) by: (self stackTop).
 	self pop2AndPushIntegerIfOK: mod
 ]
 
-{ #category : #'arithmetic largeint primitives' }
+{ #category : 'arithmetic largeint primitives' }
 InterpreterPrimitives >> primitiveModLargeIntegers [
 	"Primitive arithmetic operations for large integers in 64 bit range"
 	| result oopResult a aIsNegative b bIsNegative oopArg oopRcvr |
@@ -2675,7 +2677,7 @@ InterpreterPrimitives >> primitiveModLargeIntegers [
 
 ]
 
-{ #category : #'arithmetic integer primitives' }
+{ #category : 'arithmetic integer primitives' }
 InterpreterPrimitives >> primitiveMultiply [
 	| integerRcvr integerArg integerResult overflow |
 	integerRcvr := self stackIntegerValue: 1.
@@ -2695,7 +2697,7 @@ InterpreterPrimitives >> primitiveMultiply [
 				self pop: 2 thenPush: (objectMemory integerObjectOf: integerResult)]]
 ]
 
-{ #category : #'arithmetic largeint primitives' }
+{ #category : 'arithmetic largeint primitives' }
 InterpreterPrimitives >> primitiveMultiplyLargeIntegers [
 	"Primitive arithmetic operations for large integers in 64 bit range"
 	| a b result oopResult aIsNegative bIsNegative oopArg oopRcvr |
@@ -2723,7 +2725,7 @@ InterpreterPrimitives >> primitiveMultiplyLargeIntegers [
 
 ]
 
-{ #category : #'object access primitives' }
+{ #category : 'object access primitives' }
 InterpreterPrimitives >> primitiveNew [
 
 	"Allocate a new fixed-size instance.  Fail if the allocation would leave
@@ -2733,7 +2735,7 @@ InterpreterPrimitives >> primitiveNew [
 		ifNotNil: [ :obj | self pop: argumentCount + 1 thenPush: obj ]
 ]
 
-{ #category : #'compiled methods' }
+{ #category : 'compiled methods' }
 InterpreterPrimitives >> primitiveNewMethod [
 
 	| header bytecodeCount class size theMethod literalCount |
@@ -2770,7 +2772,21 @@ InterpreterPrimitives >> primitiveNewMethod [
 	self pop: 3 thenPush: theMethod
 ]
 
-{ #category : #'object access primitives' }
+{ #category : 'object access primitives' }
+InterpreterPrimitives >> primitiveNewOldSpace [
+	"Allocate a new pinned fixed-size instance.  Fail if the allocation would leave
+	less than lowSpaceThreshold bytes free. This *will not* cause a GC :-)"
+
+	(objectMemory instantiateClassInOldSpace: self stackTop)
+		ifNotNil: [ :obj | self pop: argumentCount + 1 thenPush: obj ]
+		ifNil: [
+			self primitiveFailFor:
+				((objectMemory isFixedSizePointerFormat: (objectMemory instSpecOfClass: self stackTop))
+					 ifTrue: [ PrimErrNoMemory ]
+					 ifFalse: [ PrimErrBadReceiver ]) ]
+]
+
+{ #category : 'object access primitives' }
 InterpreterPrimitives >> primitiveNewPinned [
 	
 	"Allocate a new pinned fixed-size instance.  Fail if the allocation would leave
@@ -2783,7 +2799,7 @@ InterpreterPrimitives >> primitiveNewPinned [
 
 ]
 
-{ #category : #'object access primitives' }
+{ #category : 'object access primitives' }
 InterpreterPrimitives >> primitiveNewWithArg [
 
 	"Allocate a new indexable instance. Fail if the allocation would leave less than lowSpaceThreshold bytes free. May cause a GC."
@@ -2798,7 +2814,7 @@ InterpreterPrimitives >> primitiveNewWithArg [
 		ifNotNil: [ :obj | self pop: argumentCount + 1 thenPush: obj ]
 ]
 
-{ #category : #'object access primitives' }
+{ #category : 'object access primitives' }
 InterpreterPrimitives >> primitiveNewWithArgPinned [
 	| size instSpec |
 	
@@ -2817,7 +2833,7 @@ InterpreterPrimitives >> primitiveNewWithArgPinned [
 						ifFalse: [ PrimErrBadReceiver ]) ]
 ]
 
-{ #category : #'object access primitives' }
+{ #category : 'object access primitives' }
 InterpreterPrimitives >> primitiveNextInstance [
 	| object subsequentObject |
 	object := self stackTop.
@@ -2828,7 +2844,7 @@ InterpreterPrimitives >> primitiveNextInstance [
 	self primitiveFail
 ]
 
-{ #category : #'object access primitives' }
+{ #category : 'object access primitives' }
 InterpreterPrimitives >> primitiveNextObject [
 	"Return the object following the receiver in the heap. Return the SmallInteger zero when there are no more objects."
 
@@ -2839,7 +2855,7 @@ InterpreterPrimitives >> primitiveNextObject [
 			self pop: argumentCount+1 thenPush: instance]
 ]
 
-{ #category : #'arithmetic integer primitives' }
+{ #category : 'arithmetic integer primitives' }
 InterpreterPrimitives >> primitiveNotEqual [
 	| integerReceiver integerArgument result |
 	integerArgument := self stackTop.
@@ -2858,7 +2874,7 @@ InterpreterPrimitives >> primitiveNotEqual [
 				[self pop: 2 thenPushBool: result]]
 ]
 
-{ #category : #'arithmetic largeint primitives' }
+{ #category : 'arithmetic largeint primitives' }
 InterpreterPrimitives >> primitiveNotEqualLargeIntegers [
 	"Primitive comparison operations for large integers in 64 bit range"
 	| integerRcvr integerArg |
@@ -2873,7 +2889,7 @@ InterpreterPrimitives >> primitiveNotEqualLargeIntegers [
 		[self pop: 2 thenPushBool: integerRcvr ~= integerArg]
 ]
 
-{ #category : #'object access primitives' }
+{ #category : 'object access primitives' }
 InterpreterPrimitives >> primitiveNotIdentical [
 	"is the receiver/first argument not the same object as the (last) argument?.
 	 pop argumentCount because this can be used as a mirror primitive."
@@ -2888,7 +2904,7 @@ InterpreterPrimitives >> primitiveNotIdentical [
 	self pop: argumentCount + 1 thenPushBool: thisObject ~= otherObject
 ]
 
-{ #category : #'object access primitives' }
+{ #category : 'object access primitives' }
 InterpreterPrimitives >> primitiveObjectAt [
 	"Defined for CompiledMethods only"
 	| thisReceiver index |
@@ -2901,7 +2917,7 @@ InterpreterPrimitives >> primitiveObjectAt [
 	self pop: 2 thenPush: (objectMemory fetchPointer: index - 1 ofObject: thisReceiver)
 ]
 
-{ #category : #'object access primitives' }
+{ #category : 'object access primitives' }
 InterpreterPrimitives >> primitiveObjectAtPut [
 	"Store a literal into a CompiledMethod at the given index. Defined for CompiledMethods only."
 	| thisReceiver index newValue |
@@ -2920,7 +2936,7 @@ InterpreterPrimitives >> primitiveObjectAtPut [
 	self pop: 3 thenPush: newValue
 ]
 
-{ #category : #'object access primitives' }
+{ #category : 'object access primitives' }
 InterpreterPrimitives >> primitiveObjectPointsTo [
 	| rcvr thang lastField |
 	thang := self stackTop.
@@ -2936,7 +2952,7 @@ InterpreterPrimitives >> primitiveObjectPointsTo [
 	self pop: 2 thenPushBool: false
 ]
 
-{ #category : #'other primitives' }
+{ #category : 'other primitives' }
 InterpreterPrimitives >> primitivePathToUsing [
 	"primitivePathTo: anObject using: stack <Array> followWeak: boolean
 	 Answer a path to anObject from the root that does not pass through
@@ -2958,7 +2974,7 @@ InterpreterPrimitives >> primitivePathToUsing [
 	self pop: argumentCount + 1 thenPush: path
 ]
 
-{ #category : #'control primitives' }
+{ #category : 'control primitives' }
 InterpreterPrimitives >> primitivePerformInSuperclass [
 	| lookupClass rcvr currentClass |
 	rcvr := self stackValue: 3.
@@ -2978,7 +2994,7 @@ InterpreterPrimitives >> primitivePerformInSuperclass [
 		lookedUpIn: lookupClass "a.k.a. self stackTop"
 ]
 
-{ #category : #'control primitives' }
+{ #category : 'control primitives' }
 InterpreterPrimitives >> primitivePerformWithArgs [
 	self primitiveObject: (self stackValue: 2)
 		perform: (self stackValue: 1)
@@ -2986,7 +3002,7 @@ InterpreterPrimitives >> primitivePerformWithArgs [
 		lookedUpIn: nil
 ]
 
-{ #category : #'memory space primitives' }
+{ #category : 'memory space primitives' }
 InterpreterPrimitives >> primitivePin [
 	"Pin or unpin the receiver, i.e. make it immobile or mobile, based on the argument.
 	 Answer whether the object was already pinned. N.B. pinning does *not* prevent
@@ -3018,21 +3034,21 @@ InterpreterPrimitives >> primitivePin [
 	self pop: argumentCount + 1 thenPush: wasPinned
 ]
 
-{ #category : #'process primitives' }
+{ #category : 'process primitives' }
 InterpreterPrimitives >> primitiveProcessBindToThreadId [
 	"Simulation only.  Fail."
 	<doNotGenerate>
 	self primitiveFail
 ]
 
-{ #category : #'process primitives' }
+{ #category : 'process primitives' }
 InterpreterPrimitives >> primitiveProcessBoundThreadId [
 	"Simulation only.  Fail."
 	<doNotGenerate>
 	self primitiveFail
 ]
 
-{ #category : #'process primitives' }
+{ #category : 'process primitives' }
 InterpreterPrimitives >> primitiveProfilePrimitive [
 	"Primitive. Answer the last primitive method sampled by the profiler."
 	<export: true>
@@ -3042,7 +3058,7 @@ InterpreterPrimitives >> primitiveProfilePrimitive [
 	profileMethod := objectMemory nilObject
 ]
 
-{ #category : #'process primitives' }
+{ #category : 'process primitives' }
 InterpreterPrimitives >> primitiveProfileSample [
 	"Primitive. Answer the last sample taken by the profiler, or nil if the profiler isn't active.
 	See also primitiveProfileStart."
@@ -3053,7 +3069,7 @@ InterpreterPrimitives >> primitiveProfileSample [
 	profileProcess := objectMemory nilObject
 ]
 
-{ #category : #'process primitives' }
+{ #category : 'process primitives' }
 InterpreterPrimitives >> primitiveProfileSemaphore [
 	"Primitive. Install the semaphore to be used for profiling, 
 	or nil if no semaphore should be used.
@@ -3071,7 +3087,7 @@ InterpreterPrimitives >> primitiveProfileSemaphore [
 	self pop: 1
 ]
 
-{ #category : #'process primitives' }
+{ #category : 'process primitives' }
 InterpreterPrimitives >> primitiveProfileStart [
 	"Primitive. Begin profiling execution every by using the interrupt check-counter instead of a time-based process (which is limited to timing resolution and triggers off the same signal that many of the processes being profiled trigger off leading to consistently wrong results).
 	The argument is the number of interrupt checks (method activations) to let go by before taking a sample. The sample is being stored in the profileSample iVar which can be retrieved by executing primitiveProfileSample. When a sample is taken, it signals the semaphore specified in primitiveProfileSemaphore.
@@ -3086,7 +3102,7 @@ InterpreterPrimitives >> primitiveProfileStart [
 	]
 ]
 
-{ #category : #'system control primitives' }
+{ #category : 'system control primitives' }
 InterpreterPrimitives >> primitiveQuit [
 
 	self isLogDebug 
@@ -3097,7 +3113,7 @@ InterpreterPrimitives >> primitiveQuit [
 	self ioExitWithErrorCode: (argumentCount = 1 ifTrue: [objectMemory integerValueOf: self stackTop] ifFalse: [0])
 ]
 
-{ #category : #'arithmetic integer primitives' }
+{ #category : 'arithmetic integer primitives' }
 InterpreterPrimitives >> primitiveQuo [
 	"Rounds negative results towards zero."
 	| integerRcvr integerArg integerResult |
@@ -3109,7 +3125,7 @@ InterpreterPrimitives >> primitiveQuo [
 	self pop2AndPushIntegerIfOK: integerResult
 ]
 
-{ #category : #'arithmetic largeint primitives' }
+{ #category : 'arithmetic largeint primitives' }
 InterpreterPrimitives >> primitiveQuoLargeIntegers [
 	"Primitive arithmetic operations for large integers in 64 bit range"
 	| result oopResult a aIsNegative b bIsNegative oopArg oopRcvr |
@@ -3133,7 +3149,7 @@ InterpreterPrimitives >> primitiveQuoLargeIntegers [
 	self successful ifTrue: [self pop: 2 thenPush: oopResult].
 ]
 
-{ #category : #'I/O primitives' }
+{ #category : 'I/O primitives' }
 InterpreterPrimitives >> primitiveRelinquishProcessor [
 	"Relinquish the processor for up to the given number of microseconds. The exact behavior of this primitive is platform dependent."
 
@@ -3149,7 +3165,7 @@ InterpreterPrimitives >> primitiveRelinquishProcessor [
 	]
 ]
 
-{ #category : #'arithmetic largeint primitives' }
+{ #category : 'arithmetic largeint primitives' }
 InterpreterPrimitives >> primitiveRemLargeIntegers [
 	"Primitive arithmetic operations for large integers in 64 bit range"
 	| result oopResult a aIsNegative b oopArg oopRcvr |
@@ -3172,7 +3188,7 @@ InterpreterPrimitives >> primitiveRemLargeIntegers [
 	self successful ifTrue: [self pop: 2 thenPush: oopResult].
 ]
 
-{ #category : #'I/O primitives' }
+{ #category : 'I/O primitives' }
 InterpreterPrimitives >> primitiveScreenDepth [
 	"Return a SmallInteger indicating the current depth of the OS screen. Negative values are used to imply LSB type pixel format an there is some support in the VM for handling either MSB or LSB"
 	| depth |
@@ -3182,7 +3198,7 @@ InterpreterPrimitives >> primitiveScreenDepth [
 	self pop: 1 thenPushInteger: depth.
 ]
 
-{ #category : #'I/O primitives' }
+{ #category : 'I/O primitives' }
 InterpreterPrimitives >> primitiveScreenScaleFactor [
 	"Answer a float indicating the current scale factor for pixels of the Smalltalk window."
 	| factor |
@@ -3193,14 +3209,14 @@ InterpreterPrimitives >> primitiveScreenScaleFactor [
 	self pop: 1; pushFloat: factor.
 ]
 
-{ #category : #'system control primitives' }
+{ #category : 'system control primitives' }
 InterpreterPrimitives >> primitiveSecondsClock [
 	"Return the number of seconds since January 1, 1901 as an integer."
 
 	self pop: 1 thenPush: (self positive32BitIntegerFor: self ioSecondsNow)
 ]
 
-{ #category : #'object access primitives' }
+{ #category : 'object access primitives' }
 InterpreterPrimitives >> primitiveSetIdentityHash [
 	| hash oldHash thisReceiver |
 	hash := self stackIntegerValue: 0.
@@ -3211,7 +3227,7 @@ InterpreterPrimitives >> primitiveSetIdentityHash [
 		 self pop: argumentCount + 1 thenPushInteger: oldHash]
 ]
 
-{ #category : #'object access primitives' }
+{ #category : 'object access primitives' }
 InterpreterPrimitives >> primitiveSetImmutability [
 	<option: #IMMUTABILITY>
 	| rcvr wasImmutable |
@@ -3232,7 +3248,7 @@ InterpreterPrimitives >> primitiveSetImmutability [
 	 self pop: argumentCount + 1 thenPushBool: wasImmutable
 ]
 
-{ #category : #'I/O primitives' }
+{ #category : 'I/O primitives' }
 InterpreterPrimitives >> primitiveSetLogDirectory [
 	"Primitive. Set the VM's log directory"
 	| stringOop sz |
@@ -3244,7 +3260,7 @@ InterpreterPrimitives >> primitiveSetLogDirectory [
 	self successful ifTrue:[self pop: self methodArgumentCount]
 ]
 
-{ #category : #'object access primitives' }
+{ #category : 'object access primitives' }
 InterpreterPrimitives >> primitiveSetOrHasIdentityHash [
 
 	| hash oldHash thisReceiver isReceiverAClass |
@@ -3272,7 +3288,7 @@ InterpreterPrimitives >> primitiveSetOrHasIdentityHash [
 		self pop: argumentCount + 1 thenPushInteger: oldHash ]
 ]
 
-{ #category : #'I/O primitives' }
+{ #category : 'I/O primitives' }
 InterpreterPrimitives >> primitiveSetWindowLabel [
 	"Primitive. Set the OS window's label"
 	| labelOop sz |
@@ -3284,7 +3300,7 @@ InterpreterPrimitives >> primitiveSetWindowLabel [
 	self successful ifTrue:[self pop: self methodArgumentCount]
 ]
 
-{ #category : #'I/O primitives' }
+{ #category : 'I/O primitives' }
 InterpreterPrimitives >> primitiveSetWindowSize [
 	"Primitive. Answer the OS window's size (extent)"
 	| w h |
@@ -3297,7 +3313,7 @@ InterpreterPrimitives >> primitiveSetWindowSize [
 	]
 ]
 
-{ #category : #'sound primitives' }
+{ #category : 'sound primitives' }
 InterpreterPrimitives >> primitiveShortAt [
 	"Treat the receiver, which can be indexible by either bytes or words, as
 	 an array of signed 16-bit values. Answer the contents of the given index.
@@ -3319,7 +3335,7 @@ InterpreterPrimitives >> primitiveShortAt [
 	self pop: 2 thenPushInteger: value
 ]
 
-{ #category : #'sound primitives' }
+{ #category : 'sound primitives' }
 InterpreterPrimitives >> primitiveShortAtPut [
 	"Treat the receiver, which can be indexible by either bytes or words, as an array
 	 of signed 16-bit values. Set the contents of the given index to the given value.
@@ -3345,14 +3361,14 @@ InterpreterPrimitives >> primitiveShortAtPut [
 	self pop: 3 thenPush: (objectMemory integerObjectOf: value)
 ]
 
-{ #category : #'process primitives' }
+{ #category : 'process primitives' }
 InterpreterPrimitives >> primitiveSignal [
 	"Synchronously signal the semaphore.
 	 This may change the active process as a result."
 	self synchronousSignal: self stackTop
 ]
 
-{ #category : #'memory space primitives' }
+{ #category : 'memory space primitives' }
 InterpreterPrimitives >> primitiveSignalAtBytesLeft [
 	"Set the low-water mark for free space. When the free space falls
 	 below this level, the new and new: primitives fail and system attempts
@@ -3366,7 +3382,7 @@ InterpreterPrimitives >> primitiveSignalAtBytesLeft [
 		ifFalse: [self primitiveFailFor: PrimErrBadArgument]
 ]
 
-{ #category : #'arithmetic float primitives' }
+{ #category : 'arithmetic float primitives' }
 InterpreterPrimitives >> primitiveSine [
 	"N.B. IMO we should be able to assume the receiver is a float because this primitive is specific to floats. eem 2/13/2017"
 	| rcvr |
@@ -3378,7 +3394,7 @@ InterpreterPrimitives >> primitiveSine [
 									inSmalltalk: [rcvr sin]))]
 ]
 
-{ #category : #'indexing primitives' }
+{ #category : 'indexing primitives' }
 InterpreterPrimitives >> primitiveSize [
 
 	<accessorDepth: 0>
@@ -3407,7 +3423,7 @@ InterpreterPrimitives >> primitiveSize [
 		thenPush: (objectMemory integerObjectOf: totalLength - fixedFields)
 ]
 
-{ #category : #'memory space primitives' }
+{ #category : 'memory space primitives' }
 InterpreterPrimitives >> primitiveSizeInBytes [
 	<option: #SpurObjectMemory>
 	| byteSize |
@@ -3416,7 +3432,7 @@ InterpreterPrimitives >> primitiveSizeInBytes [
 		 thenPush: (self positive64BitIntegerFor: byteSize)
 ]
 
-{ #category : #'memory space primitives' }
+{ #category : 'memory space primitives' }
 InterpreterPrimitives >> primitiveSizeInBytesOfInstance [
 	"Answer the byte size of an instance of the receiver.  If num args > 0
 	 then the last argument is a variable size and the size answered is the
@@ -3444,7 +3460,7 @@ InterpreterPrimitives >> primitiveSizeInBytesOfInstance [
 	self pop: 1 thenPushInteger: byteSize
 ]
 
-{ #category : #'object access primitives' }
+{ #category : 'object access primitives' }
 InterpreterPrimitives >> primitiveSlotAt [
 	"Answer a slot in an object.  This numbers all slots from 1, ignoring the distinction between
 	 named and indexed inst vars.  In objects with both named and indexed inst vars, the named
@@ -3505,7 +3521,7 @@ InterpreterPrimitives >> primitiveSlotAt [
 	^self primitiveFailFor: PrimErrBadReceiver
 ]
 
-{ #category : #'object access primitives' }
+{ #category : 'object access primitives' }
 InterpreterPrimitives >> primitiveSlotAtPut [
 	"Assign a slot in an object.  This numbers all slots from 1, ignoring the distinction between
 	 named and indexed inst vars.  In objects with both named and indexed inst vars, the named
@@ -3582,7 +3598,7 @@ InterpreterPrimitives >> primitiveSlotAtPut [
 	^self primitiveFailFor: PrimErrBadReceiver
 ]
 
-{ #category : #'arithmetic float primitives' }
+{ #category : 'arithmetic float primitives' }
 InterpreterPrimitives >> primitiveSmallFloatAdd [
 	<option: #Spur64BitMemoryManager>
 	| rcvr arg|
@@ -3596,7 +3612,7 @@ InterpreterPrimitives >> primitiveSmallFloatAdd [
 		ifFalse: [self primitiveFailFor: PrimErrBadArgument]
 ]
 
-{ #category : #'arithmetic float primitives' }
+{ #category : 'arithmetic float primitives' }
 InterpreterPrimitives >> primitiveSmallFloatArctan [
 	<option: #Spur64BitMemoryManager>
 	| rcvr |
@@ -3606,7 +3622,7 @@ InterpreterPrimitives >> primitiveSmallFloatArctan [
 														inSmalltalk: [rcvr arcTan]))
 ]
 
-{ #category : #'arithmetic float primitives' }
+{ #category : 'arithmetic float primitives' }
 InterpreterPrimitives >> primitiveSmallFloatDivide [
 	<option: #Spur64BitMemoryManager>
 	| rcvr arg |
@@ -3622,7 +3638,7 @@ InterpreterPrimitives >> primitiveSmallFloatDivide [
 		ifFalse: [self primitiveFailFor: PrimErrBadArgument]
 ]
 
-{ #category : #'arithmetic float primitives' }
+{ #category : 'arithmetic float primitives' }
 InterpreterPrimitives >> primitiveSmallFloatEqual [
 	<option: #Spur64BitMemoryManager>
 	| rcvr arg |
@@ -3636,7 +3652,7 @@ InterpreterPrimitives >> primitiveSmallFloatEqual [
 		ifFalse: [self primitiveFailFor: PrimErrBadArgument]
 ]
 
-{ #category : #'arithmetic float primitives' }
+{ #category : 'arithmetic float primitives' }
 InterpreterPrimitives >> primitiveSmallFloatExp [
 	"Computes E raised to the receiver power.
 	 Since SmallFloats cannot represent NaNs there's no need to special case."
@@ -3645,7 +3661,7 @@ InterpreterPrimitives >> primitiveSmallFloatExp [
 	self stackTopPut: (objectMemory floatObjectOf: (objectMemory smallFloatValueOf: self stackTop) exp)
 ]
 
-{ #category : #'arithmetic float primitives' }
+{ #category : 'arithmetic float primitives' }
 InterpreterPrimitives >> primitiveSmallFloatExponent [
 	"Answer the exponent part of this float."
 	<option: #Spur64BitMemoryManager>
@@ -3653,7 +3669,7 @@ InterpreterPrimitives >> primitiveSmallFloatExponent [
 	self stackTopPut: (objectMemory integerObjectOf: (objectMemory exponentOfSmallFloat: self stackTop) - 1)
 ]
 
-{ #category : #'arithmetic float primitives' }
+{ #category : 'arithmetic float primitives' }
 InterpreterPrimitives >> primitiveSmallFloatFractionalPart [
 	<option: #Spur64BitMemoryManager>
 	| rcvr frac trunc |
@@ -3666,7 +3682,7 @@ InterpreterPrimitives >> primitiveSmallFloatFractionalPart [
 	self stackTopPut: (objectMemory floatObjectOf: frac)
 ]
 
-{ #category : #'arithmetic float primitives' }
+{ #category : 'arithmetic float primitives' }
 InterpreterPrimitives >> primitiveSmallFloatGreaterOrEqual [
 	<option: #Spur64BitMemoryManager>
 	| rcvr arg |
@@ -3680,7 +3696,7 @@ InterpreterPrimitives >> primitiveSmallFloatGreaterOrEqual [
 	ifFalse: [self primitiveFailFor: PrimErrBadArgument]
 ]
 
-{ #category : #'arithmetic float primitives' }
+{ #category : 'arithmetic float primitives' }
 InterpreterPrimitives >> primitiveSmallFloatGreaterThan [
 	<option: #Spur64BitMemoryManager>
 	| rcvr arg |
@@ -3694,7 +3710,7 @@ InterpreterPrimitives >> primitiveSmallFloatGreaterThan [
 	ifFalse: [self primitiveFailFor: PrimErrBadArgument].
 ]
 
-{ #category : #'arithmetic float primitives' }
+{ #category : 'arithmetic float primitives' }
 InterpreterPrimitives >> primitiveSmallFloatHash [
 	"Answer the ieee 754 double precision floating point bits of the SmallFloat receiver."
 	<option: #Spur64BitMemoryManager>
@@ -3702,7 +3718,7 @@ InterpreterPrimitives >> primitiveSmallFloatHash [
 	self pop: 1 thenPush: (objectMemory positive64BitIntegerFor: (objectMemory smallFloatBitsOf: self stackTop))
 ]
 
-{ #category : #'arithmetic float primitives' }
+{ #category : 'arithmetic float primitives' }
 InterpreterPrimitives >> primitiveSmallFloatLessOrEqual [
 	<option: #Spur64BitMemoryManager>
 	| rcvr arg |
@@ -3716,7 +3732,7 @@ InterpreterPrimitives >> primitiveSmallFloatLessOrEqual [
 		ifFalse: [self primitiveFailFor: PrimErrBadArgument]
 ]
 
-{ #category : #'arithmetic float primitives' }
+{ #category : 'arithmetic float primitives' }
 InterpreterPrimitives >> primitiveSmallFloatLessThan [
 	<option: #Spur64BitMemoryManager>
 	| rcvr arg |
@@ -3729,7 +3745,7 @@ InterpreterPrimitives >> primitiveSmallFloatLessThan [
 		[self pop: 2 thenPushBool: rcvr < arg]
 ]
 
-{ #category : #'arithmetic float primitives' }
+{ #category : 'arithmetic float primitives' }
 InterpreterPrimitives >> primitiveSmallFloatLogN [
 	"Natural log."
 	<option: #Spur64BitMemoryManager>
@@ -3739,7 +3755,7 @@ InterpreterPrimitives >> primitiveSmallFloatLogN [
 	self stackTopPut: (objectMemory floatObjectOf: (self cCode: [rcvr log] inSmalltalk: [rcvr ln]))
 ]
 
-{ #category : #'arithmetic float primitives' }
+{ #category : 'arithmetic float primitives' }
 InterpreterPrimitives >> primitiveSmallFloatMultiply [
 	<option: #Spur64BitMemoryManager>
 	| rcvr arg |
@@ -3753,7 +3769,7 @@ InterpreterPrimitives >> primitiveSmallFloatMultiply [
 		ifFalse: [self primitiveFailFor: PrimErrBadArgument]
 ]
 
-{ #category : #'arithmetic float primitives' }
+{ #category : 'arithmetic float primitives' }
 InterpreterPrimitives >> primitiveSmallFloatNotEqual [
 	<option: #Spur64BitMemoryManager>
 	| rcvr arg |
@@ -3767,7 +3783,7 @@ InterpreterPrimitives >> primitiveSmallFloatNotEqual [
 		ifFalse: [self primitiveFailFor: PrimErrBadArgument]
 ]
 
-{ #category : #'arithmetic float primitives' }
+{ #category : 'arithmetic float primitives' }
 InterpreterPrimitives >> primitiveSmallFloatSine [
 	<option: #Spur64BitMemoryManager>
 	| rcvr |
@@ -3776,7 +3792,7 @@ InterpreterPrimitives >> primitiveSmallFloatSine [
 	self stackTopPut: (objectMemory floatObjectOf: rcvr sin)
 ]
 
-{ #category : #'arithmetic float primitives' }
+{ #category : 'arithmetic float primitives' }
 InterpreterPrimitives >> primitiveSmallFloatSquareRoot [
 	<option: #Spur64BitMemoryManager>
 	<var: #rcvr type: #double>
@@ -3787,7 +3803,7 @@ InterpreterPrimitives >> primitiveSmallFloatSquareRoot [
 		ifFalse: [self primitiveFail]
 ]
 
-{ #category : #'arithmetic float primitives' }
+{ #category : 'arithmetic float primitives' }
 InterpreterPrimitives >> primitiveSmallFloatSubtract [
 	<option: #Spur64BitMemoryManager>
 	| rcvr arg |
@@ -3801,7 +3817,7 @@ InterpreterPrimitives >> primitiveSmallFloatSubtract [
 		ifFalse: [self primitiveFailFor: PrimErrBadArgument].
 ]
 
-{ #category : #'arithmetic float primitives' }
+{ #category : 'arithmetic float primitives' }
 InterpreterPrimitives >> primitiveSmallFloatTimesTwoPower [
 	"Multiply the receiver by the power of the argument."
 	<option: #Spur64BitMemoryManager>
@@ -3831,7 +3847,7 @@ InterpreterPrimitives >> primitiveSmallFloatTimesTwoPower [
 	self pop: 2 thenPush: result
 ]
 
-{ #category : #'arithmetic float primitives' }
+{ #category : 'arithmetic float primitives' }
 InterpreterPrimitives >> primitiveSmallFloatTruncated [
 	<option: #Spur64BitMemoryManager>
 	| rcvr trunc |
@@ -3846,7 +3862,7 @@ InterpreterPrimitives >> primitiveSmallFloatTruncated [
 		ifFalse: [self primitiveFail]
 ]
 
-{ #category : #'system control primitives' }
+{ #category : 'system control primitives' }
 InterpreterPrimitives >> primitiveSnapshot [
 	"save a normal snapshot under the same name as it was loaded unless it has been renamed by the last primitiveImageName"
 	<inline: false>
@@ -3854,7 +3870,7 @@ InterpreterPrimitives >> primitiveSnapshot [
 
 ]
 
-{ #category : #'object access primitives' }
+{ #category : 'object access primitives' }
 InterpreterPrimitives >> primitiveSomeInstance [
 	| class instance |
 	class := self stackTop.
@@ -3864,7 +3880,7 @@ InterpreterPrimitives >> primitiveSomeInstance [
 		ifNotNil: [self pop: argumentCount+1 thenPush: instance]
 ]
 
-{ #category : #'object access primitives' }
+{ #category : 'object access primitives' }
 InterpreterPrimitives >> primitiveSomeObject [
 	"Return the first object in the heap."
 
@@ -3872,14 +3888,14 @@ InterpreterPrimitives >> primitiveSomeObject [
 	self push: objectMemory firstAccessibleObject.
 ]
 
-{ #category : #'system control primitives' }
+{ #category : 'system control primitives' }
 InterpreterPrimitives >> primitiveSpecialObjectsOop [
 	"Return the oop of the SpecialObjectsArray."
 
 	self pop: 1 thenPush: objectMemory specialObjectsOop.
 ]
 
-{ #category : #'arithmetic float primitives' }
+{ #category : 'arithmetic float primitives' }
 InterpreterPrimitives >> primitiveSquareRoot [
 	"N.B. IMO we should be able to assume the receiver is a float because this primitive is specific to floats. eem 2/13/2017"
 	| rcvr |
@@ -3890,14 +3906,14 @@ InterpreterPrimitives >> primitiveSquareRoot [
 		ifFalse: [self primitiveFail]
 ]
 
-{ #category : #'process primitives' }
+{ #category : 'process primitives' }
 InterpreterPrimitives >> primitiveStartVMProfiling [
 	"Primitive. Start the VM profiler."
 	self cCode: 'ioControlProfile(1,0,0,0,0)'.
 	self pop: argumentCount
 ]
 
-{ #category : #'process primitives' }
+{ #category : 'process primitives' }
 InterpreterPrimitives >> primitiveStopVMProfiling [
 	"Primitive. Stop the VM profiler and either copy the histogram data into the
 	 supplied arguments, if they're non-nil.  Fail if the arguments are not of the right type or size."
@@ -3935,19 +3951,19 @@ InterpreterPrimitives >> primitiveStopVMProfiling [
 	self pop: argumentCount
 ]
 
-{ #category : #'indexing primitives' }
+{ #category : 'indexing primitives' }
 InterpreterPrimitives >> primitiveStringAt [
 
 	self commonAt: true.
 ]
 
-{ #category : #'indexing primitives' }
+{ #category : 'indexing primitives' }
 InterpreterPrimitives >> primitiveStringAtPut [
 
 	self commonAtPut: true.
 ]
 
-{ #category : #'string primitives' }
+{ #category : 'string primitives' }
 InterpreterPrimitives >> primitiveStringCompareWith [
 	"<string1> primitiveCompareWith: string2 [collated: order] "
 	<export: true>
@@ -3987,7 +4003,7 @@ InterpreterPrimitives >> primitiveStringCompareWith [
 	
 ]
 
-{ #category : #'indexing primitives' }
+{ #category : 'indexing primitives' }
 InterpreterPrimitives >> primitiveStringReplace [
 
 	"<array> primReplaceFrom: start to: stop with: replacement startingAt: repStart  
@@ -4110,13 +4126,13 @@ InterpreterPrimitives >> primitiveStringReplace [
 	self pop: argumentCount "leave rcvr on stack"
 ]
 
-{ #category : #'arithmetic integer primitives' }
+{ #category : 'arithmetic integer primitives' }
 InterpreterPrimitives >> primitiveSubtract [
 
 	self pop2AndPushIntegerIfOK: (self stackIntegerValue: 1) - (self stackIntegerValue: 0)
 ]
 
-{ #category : #'arithmetic largeint primitives' }
+{ #category : 'arithmetic largeint primitives' }
 InterpreterPrimitives >> primitiveSubtractLargeIntegers [
 	"Primitive arithmetic operations for large integers in 64 bit range"
 	| a b result oopResult aIsNegative bIsNegative resultIsNegative oopArg oopRcvr |
@@ -4151,7 +4167,7 @@ InterpreterPrimitives >> primitiveSubtractLargeIntegers [
 
 ]
 
-{ #category : #'process primitives' }
+{ #category : 'process primitives' }
 InterpreterPrimitives >> primitiveTestAndSetOwnershipOfCriticalSection [
 	"Attempt to test-and-set the ownership of the critical section.  If not owned,
 	 set the owner to the current process and answer false. If owned by the
@@ -4178,7 +4194,7 @@ InterpreterPrimitives >> primitiveTestAndSetOwnershipOfCriticalSection [
 	self pop: argumentCount + 1 thenPush: objectMemory nilObject
 ]
 
-{ #category : #'object access primitives' }
+{ #category : 'object access primitives' }
 InterpreterPrimitives >> primitiveTestShortenIndexableSize [
 	"Given an object with indexable pointer fields, reduce the size of the indexable fields
 	to the requested size. Answer the number of bytes freed, or zero if the object cannot
@@ -4193,7 +4209,7 @@ InterpreterPrimitives >> primitiveTestShortenIndexableSize [
 	self pushInteger: bytesFreed
 ]
 
-{ #category : #'arithmetic float primitives' }
+{ #category : 'arithmetic float primitives' }
 InterpreterPrimitives >> primitiveTimesTwoPower [
 	"Multiply the receiver by the power of the argument."
 	| rcvr result arg |
@@ -4216,7 +4232,7 @@ InterpreterPrimitives >> primitiveTimesTwoPower [
 	self pop: 2 thenPushFloat: result
 ]
 
-{ #category : #'arithmetic float primitives' }
+{ #category : 'arithmetic float primitives' }
 InterpreterPrimitives >> primitiveTruncated [
 	"N.B. IMO we should be able to assume the receiver is a float because this primitive is specific to floats. eem 2/13/2017"
 	| rcvr trunc |
@@ -4231,7 +4247,7 @@ InterpreterPrimitives >> primitiveTruncated [
 			ifFalse: [self primitiveFail]]
 ]
 
-{ #category : #'system control primitives' }
+{ #category : 'system control primitives' }
 InterpreterPrimitives >> primitiveUTCMicrosecondClock [
 	"Return the value of the microsecond clock in UTC as an integer.
 	 This is the number of microseconds since the Smalltalk epoch, 1901/1/1 12:00am.
@@ -4242,7 +4258,7 @@ InterpreterPrimitives >> primitiveUTCMicrosecondClock [
 	self pop: 1 thenPush: (self positive64BitIntegerFor: self ioUTCMicrosecondsNow)
 ]
 
-{ #category : #'plugin primitives' }
+{ #category : 'plugin primitives' }
 InterpreterPrimitives >> primitiveUnloadModule [
 	"Primitive. Unload the module with the given name."
 	"Reloading of the module will happen *later* automatically, when a 
@@ -4258,7 +4274,7 @@ InterpreterPrimitives >> primitiveUnloadModule [
 	self pop: 1 "pop moduleName; return receiver"
 ]
 
-{ #category : #'system control primitives' }
+{ #category : 'system control primitives' }
 InterpreterPrimitives >> primitiveUpdateTimezone [
 	"Update the VMs notion of the current timezone.  The VM sets its notion
 	 of the timezone once at start-up.  If one wants the VM to keep its notion
@@ -4266,7 +4282,7 @@ InterpreterPrimitives >> primitiveUpdateTimezone [
 	self ioUpdateVMTimezone
 ]
 
-{ #category : #'system control primitives' }
+{ #category : 'system control primitives' }
 InterpreterPrimitives >> primitiveUtcAndTimezoneOffset [
 	"Answer an array with UTC microseconds since the Smalltalk epoch and the
 	current seconds offset from GMT in the local time zone. Any pointer object
@@ -4288,7 +4304,7 @@ InterpreterPrimitives >> primitiveUtcAndTimezoneOffset [
 	self pop: argumentCount + 1 thenPush: resultArray
 ]
 
-{ #category : #'system control primitives' }
+{ #category : 'system control primitives' }
 InterpreterPrimitives >> primitiveUtcWithOffset [
 	"Answer an array with UTC microseconds since the Posix epoch and the
 	current seconds offset from GMT in the local time zone. An empty two
@@ -4315,7 +4331,7 @@ InterpreterPrimitives >> primitiveUtcWithOffset [
 	self pop: argumentCount + 1 thenPush: resultArray
 ]
 
-{ #category : #'indexing primitives' }
+{ #category : 'indexing primitives' }
 InterpreterPrimitives >> primitiveV3IntegerAt [
 	"Answer the 32bit signed integer contents of a words receiver"
 	<inline: true>
@@ -4338,7 +4354,7 @@ InterpreterPrimitives >> primitiveV3IntegerAt [
 	self pop: 2 thenPush: result
 ]
 
-{ #category : #'indexing primitives' }
+{ #category : 'indexing primitives' }
 InterpreterPrimitives >> primitiveV3IntegerAtPut [
 	"Assign an indexable variable of a words receiver with a 32 bit signed integer."
 	| index rcvr sz addr value valueOop |
@@ -4362,14 +4378,14 @@ InterpreterPrimitives >> primitiveV3IntegerAtPut [
 	self pop: 3 thenPush: valueOop "pop all; return value"
 ]
 
-{ #category : #'process primitives' }
+{ #category : 'process primitives' }
 InterpreterPrimitives >> primitiveVMCurrentThreadId [
 	"Simulation only.  Fail."
 	<doNotGenerate>
 	self primitiveFail
 ]
 
-{ #category : #'system control primitives' }
+{ #category : 'system control primitives' }
 InterpreterPrimitives >> primitiveVMPath [
 	"Return a string containing the path name of VM's directory."
 
@@ -4381,7 +4397,7 @@ InterpreterPrimitives >> primitiveVMPath [
 
 ]
 
-{ #category : #'process primitives' }
+{ #category : 'process primitives' }
 InterpreterPrimitives >> primitiveVMProfileInfoInto [
 	"Primitive. Answer whether the profiler is running or not.
 	 If the argument is an Array of suitable size fill it with the following information:
@@ -4421,7 +4437,7 @@ InterpreterPrimitives >> primitiveVMProfileInfoInto [
 	self pop: 2 thenPushBool: running
 ]
 
-{ #category : #'process primitives' }
+{ #category : 'process primitives' }
 InterpreterPrimitives >> primitiveVMProfileSamplesInto [
 	"Primitive.
 	 0 args: Answer whether the VM Profiler is running or not.
@@ -4444,35 +4460,35 @@ InterpreterPrimitives >> primitiveVMProfileSamplesInto [
 	self pop: argumentCount + 1 thenPushInteger: numSamples
 ]
 
-{ #category : #'process primitives' }
+{ #category : 'process primitives' }
 InterpreterPrimitives >> primitiveWait [
 	| sema |
 	sema := self stackTop.  "rcvr"
 	self doWaitSemaphore: sema
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 InterpreterPrimitives >> profileMethod: anOop [
 
 	<doNotGenerate>
 	profileMethod := anOop
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 InterpreterPrimitives >> profileProcess: anOop [
 
 	<doNotGenerate>
 	profileProcess := anOop
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 InterpreterPrimitives >> profileSemaphore: anOop [
 
 	<doNotGenerate>
 	profileSemaphore := anOop
 ]
 
-{ #category : #'arithmetic integer primitives' }
+{ #category : 'arithmetic integer primitives' }
 InterpreterPrimitives >> quot: integerRcvr ient: integerArg [
 	"See Number>>#quo:.  Rounds results towards zero."
 	<inline: true>
@@ -4487,7 +4503,7 @@ InterpreterPrimitives >> quot: integerRcvr ient: integerArg [
 				ifFalse: [(0 - integerRcvr) // (0 - integerArg)]]
 ]
 
-{ #category : #'string primitives' }
+{ #category : 'string primitives' }
 InterpreterPrimitives >> rawCompare: string1 length: strLength1 with: string2 length: strLength2 accessBlock: accessBlock [
 	| c1 c2 min |
 
@@ -4504,7 +4520,7 @@ InterpreterPrimitives >> rawCompare: string1 length: strLength1 with: string2 le
 	
 ]
 
-{ #category : #'primitive support' }
+{ #category : 'primitive support' }
 InterpreterPrimitives >> signalNoResume: aSemaphore [
 	"Signal the given semaphore from within the interpreter.  Used to serialize callbacks."
 	| empty |
@@ -4516,7 +4532,7 @@ InterpreterPrimitives >> signalNoResume: aSemaphore [
 	^empty
 ]
 
-{ #category : #'primitive support' }
+{ #category : 'primitive support' }
 InterpreterPrimitives >> signed32BitValueOf: oop [
 	"Convert the given object into an integer value.
 	The object may be either a SmallInteger or a four-byte LargeInteger."
@@ -4540,7 +4556,7 @@ InterpreterPrimitives >> signed32BitValueOf: oop [
 			^self noInlineSigned32BitValueGutsOf: oop]
 ]
 
-{ #category : #'primitive support' }
+{ #category : 'primitive support' }
 InterpreterPrimitives >> signed64BitValueOf: oop [
 	"Convert the given object into an integer value.
 	 The object may be either a positive SmallInteger or a eight-byte LargeInteger."
@@ -4595,7 +4611,7 @@ InterpreterPrimitives >> signed64BitValueOf: oop [
 	^value
 ]
 
-{ #category : #'primitive support' }
+{ #category : 'primitive support' }
 InterpreterPrimitives >> signedMachineIntegerValueOf: oop [
 	"Answer a signed value of an integer up to the size of a machine word.
 	The object may be either a positive SmallInteger or a LargeInteger of size <= word size."
@@ -4649,20 +4665,20 @@ InterpreterPrimitives >> signedMachineIntegerValueOf: oop [
 	^value
 ]
 
-{ #category : #'primitive support' }
+{ #category : 'primitive support' }
 InterpreterPrimitives >> sizeFieldOfAlien: alienObj [
 	"Answer the first field of alienObj which is assumed to be an Alien of at least 8 bytes"
 	<inline: true>
 	^objectMemory longAt: alienObj + objectMemory baseHeaderSize
 ]
 
-{ #category : #'stack access' }
+{ #category : 'stack access' }
 InterpreterPrimitives >> stackIntegerValue: aValue [
 
 	self subclassResponsibility
 ]
 
-{ #category : #'primitive support' }
+{ #category : 'primitive support' }
 InterpreterPrimitives >> success: successBoolean [
 	"Set the state of the primitive failure code/success flag, iff successBoolean
 	 is false. If primFailCode is non-zero a primitive has failed.  If primFailCode
@@ -4679,7 +4695,7 @@ InterpreterPrimitives >> success: successBoolean [
 			[primFailCode := 1]]
 ]
 
-{ #category : #'primitive support' }
+{ #category : 'primitive support' }
 InterpreterPrimitives >> successful [
 	"Answer the state of the primitive failure code/success flag.  If
 	 primFailCode is non-zero a primitive has failed.  If primFailCode

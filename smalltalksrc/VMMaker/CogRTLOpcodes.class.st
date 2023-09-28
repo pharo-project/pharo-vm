@@ -2,8 +2,8 @@
 I am a pool for the Register-Transfer-Language to which Cog compiles.  I define unique integer values for all RTL opcodes.  See CogAbstractInstruction for instances of instructions with the opcodes that I define.
 "
 Class {
-	#name : #CogRTLOpcodes,
-	#superclass : #SharedPool,
+	#name : 'CogRTLOpcodes',
+	#superclass : 'SharedPool',
 	#classVars : [
 		'AddCqR',
 		'AddCwR',
@@ -161,10 +161,12 @@ Class {
 		'ZeroExtend32RR',
 		'ZeroExtend8RR'
 	],
-	#category : #'VMMaker-JIT'
+	#category : 'VMMaker-JIT',
+	#package : 'VMMaker',
+	#tag : 'JIT'
 }
 
-{ #category : #'class initialization' }
+{ #category : 'class initialization' }
 CogRTLOpcodes class >> initialize [
 	"Abstract opcodes are a compound of a one word operation specifier and zero or more operand type specifiers.
 	 The assembler is in Cogit protocol abstract instructions and uses `at&t' syntax, assigning to the register on the
@@ -366,7 +368,7 @@ CogRTLOpcodes class >> initialize [
 		[:cogAbstractInstruction| cogAbstractInstruction allSubclasses do: [:sc| sc initialize]]
 ]
 
-{ #category : #'debug printing' }
+{ #category : 'debug printing' }
 CogRTLOpcodes class >> nameForOpcode: opcode [ "<Integer>"
 	opcode < LastRTLCode ifTrue:
 		[classPool associations do:
@@ -378,7 +380,7 @@ CogRTLOpcodes class >> nameForOpcode: opcode [ "<Integer>"
 	^nil
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 CogRTLOpcodes class >> opcodes [
 	"CogRTLOpcodes opcodes"
 	"CogRTLOpcodes opcodes select:
@@ -394,7 +396,7 @@ CogRTLOpcodes class >> opcodes [
 		or: [#('Reg' 'Min' 'Max') anySatisfy: [:postfix| k endsWith: postfix]]]) asArray sort
 ]
 
-{ #category : #'debug printing' }
+{ #category : 'debug printing' }
 CogRTLOpcodes class >> printFormatForOpcodeName: opcodeName [
 	"Answer a sequence of $r, $f or nil for the operands in the opcode, used for printing, where
 	 r => integer register, f => floating point register, and nil => numeric or address operand."

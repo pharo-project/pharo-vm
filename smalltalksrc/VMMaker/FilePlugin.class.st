@@ -2,30 +2,32 @@
 Provide access to the host machine file system. Requires both the Cross platform support files from platforms - Cross - plugins - FilePlugin (or some suitable replacement) and the platform specific fils from platforms - {your platform} - plugins - FilePlugin.
 "
 Class {
-	#name : #FilePlugin,
-	#superclass : #InterpreterPlugin,
+	#name : 'FilePlugin',
+	#superclass : 'InterpreterPlugin',
 	#classVars : [
 		'DirBadPath',
 		'DirEntryFound',
 		'DirNoMoreEntries'
 	],
-	#category : #'VMMaker-Plugins'
+	#category : 'VMMaker-Plugins',
+	#package : 'VMMaker',
+	#tag : 'Plugins'
 }
 
-{ #category : #translation }
+{ #category : 'translation' }
 FilePlugin class >> declareCVarsIn: aCCodeGenerator [
 
 	aCCodeGenerator addHeaderFile: '"pharovm/imageAccess.h"'.
 	aCCodeGenerator addHeaderFile: '"FilePlugin.h"'
 ]
 
-{ #category : #translation }
+{ #category : 'translation' }
 FilePlugin class >> hasHeaderFile [
 	"If there is a single intrinsic header file to be associated with the plugin, here is where you want to flag"
 	^true
 ]
 
-{ #category : #'class initialization' }
+{ #category : 'class initialization' }
 FilePlugin class >> initialize [
 	"FilePlugin initialize"
 	DirEntryFound := 0.
@@ -33,24 +35,24 @@ FilePlugin class >> initialize [
 	DirBadPath := 2.
 ]
 
-{ #category : #translation }
+{ #category : 'translation' }
 FilePlugin class >> requiresCrossPlatformFiles [
 	"this plugin requires cross platform files in order to work"
 	^true
 ]
 
-{ #category : #translation }
+{ #category : 'translation' }
 FilePlugin class >> requiresPlatformFiles [
 	"this plugin requires platform specific files in order to work"
 	^true
 ]
 
-{ #category : #simulation }
+{ #category : 'simulation' }
 FilePlugin class >> simulatorClass [
 	^FilePluginSimulator
 ]
 
-{ #category : #private }
+{ #category : 'private' }
 FilePlugin >> connectToFd: fd write: writeFlag [
 	"Connect to the supplied file descriptor. Answer the file oop.
 	On POSIX platforms this translates to fdopen().
@@ -65,7 +67,7 @@ FilePlugin >> connectToFd: fd write: writeFlag [
 	^fileOop
 ]
 
-{ #category : #private }
+{ #category : 'private' }
 FilePlugin >> connectToFile: cfile write: writeFlag [
 	"Open the FILE* as file. Answer the file oop.
 	writeFlag must be compatible with the existing file access."
@@ -79,13 +81,13 @@ FilePlugin >> connectToFile: cfile write: writeFlag [
 	^fileOop
 ]
 
-{ #category : #'directory primitives' }
+{ #category : 'directory primitives' }
 FilePlugin >> dir_Delimitor [
 	<doNotGenerate>
 	^FileSystem disk delimiter asInteger
 ]
 
-{ #category : #'file primitives' }
+{ #category : 'file primitives' }
 FilePlugin >> fileOpenName: nameIndex size: nameSize write: writeFlag [
 	"Open the named file. Answer the file oop."
 	| file fileOop |
@@ -101,7 +103,7 @@ FilePlugin >> fileOpenName: nameIndex size: nameSize write: writeFlag [
 	^ fileOop
 ]
 
-{ #category : #'file primitives' }
+{ #category : 'file primitives' }
 FilePlugin >> fileOpenNewName: nameIndex size: nameSize [
 	"Open the new named file, possibly checking security. Answer the file oop."
 	| file fileOop |
@@ -121,14 +123,14 @@ FilePlugin >> fileOpenNewName: nameIndex size: nameSize [
 	^ fileOop
 ]
 
-{ #category : #'file primitives' }
+{ #category : 'file primitives' }
 FilePlugin >> fileRecordSize [
 	"Return the size of a Smalltalk file record in bytes."
 	<static: false>
 	^self sizeof: #SQFile
 ]
 
-{ #category : #'file primitives' }
+{ #category : 'file primitives' }
 FilePlugin >> fileValueOf: objectPointer [
 	"Return a pointer to the first byte of of the file record within the given Smalltalk object, or nil if objectPointer is not a file record."
 	<returnTypeC: #'SQFile *'>
@@ -139,14 +141,14 @@ FilePlugin >> fileValueOf: objectPointer [
 	^interpreterProxy firstIndexableField: objectPointer
 ]
 
-{ #category : #'initialize-release' }
+{ #category : 'initialize-release' }
 FilePlugin >> initialiseModule [
 	<export: true>
 
 	^self sqFileInit
 ]
 
-{ #category : #'directory primitives' }
+{ #category : 'directory primitives' }
 FilePlugin >> makeDirEntryName: entryName size: entryNameSize
 	createDate: createDate modDate: modifiedDate
 		isDir: dirFlag fileSize: fileSize [
@@ -185,7 +187,7 @@ FilePlugin >> makeDirEntryName: entryName size: entryNameSize
 	^results
 ]
 
-{ #category : #'directory primitives' }
+{ #category : 'directory primitives' }
 FilePlugin >> makeDirEntryName: entryName size: entryNameSize createDate: createDate modDate: modifiedDate isDir: dirFlag fileSize: fileSize posixPermissions: posixPermissions isSymlink: symlinkFlag [
 	<var: 'entryName' type: #'char *'>
 	<var: 'fileSize' type: #squeakFileOffsetType>
@@ -229,7 +231,7 @@ FilePlugin >> makeDirEntryName: entryName size: entryNameSize createDate: create
 	^results
 ]
 
-{ #category : #private }
+{ #category : 'private' }
 FilePlugin >> pointerFrom: pointerByteArray [
 	"Answer the machine address contained in anExternalAddressOop."
 
@@ -250,7 +252,7 @@ FilePlugin >> pointerFrom: pointerByteArray [
 
 ]
 
-{ #category : #'file primitives' }
+{ #category : 'file primitives' }
 FilePlugin >> primitiveConnectToFile [
 	"Connect to the file with the supplied FILE* and writeFlag.
 	FILE* must be supplied in a byte object (ByteArray) with the platform address size.
@@ -269,7 +271,7 @@ FilePlugin >> primitiveConnectToFile [
 		[interpreterProxy methodReturnValue: filePointer]
 ]
 
-{ #category : #'file primitives' }
+{ #category : 'file primitives' }
 FilePlugin >> primitiveConnectToFileDescriptor [
 	"Connect to the existing file identified by fileDescriptor.
 	fileDescriptor must be an integer.
@@ -290,7 +292,7 @@ FilePlugin >> primitiveConnectToFileDescriptor [
 		[interpreterProxy methodReturnValue: filePointer]
 ]
 
-{ #category : #'directory primitives' }
+{ #category : 'directory primitives' }
 FilePlugin >> primitiveDirectoryCreate [
 	| dirName dirNameIndex dirNameSize okToCreate |
 	<var: #dirNameIndex type: #'char *'>
@@ -307,7 +309,7 @@ FilePlugin >> primitiveDirectoryCreate [
 	interpreterProxy pop: 1
 ]
 
-{ #category : #'directory primitives' }
+{ #category : 'directory primitives' }
 FilePlugin >> primitiveDirectoryDelete [
 
 	| dirName dirNameIndex dirNameSize |
@@ -327,7 +329,7 @@ FilePlugin >> primitiveDirectoryDelete [
 	interpreterProxy pop: 1
 ]
 
-{ #category : #'directory primitives' }
+{ #category : 'directory primitives' }
 FilePlugin >> primitiveDirectoryDelimitor [
 	<export: true>
 	interpreterProxy minorVersion >= 13
@@ -339,7 +341,7 @@ FilePlugin >> primitiveDirectoryDelimitor [
 			[ interpreterProxy primitiveFail]
 ]
 
-{ #category : #'directory primitives' }
+{ #category : 'directory primitives' }
 FilePlugin >> primitiveDirectoryEntry [
 
 	"Two arguments - directory path, and simple file name;
@@ -404,7 +406,7 @@ FilePlugin >> primitiveDirectoryEntry [
 				isSymlink: symlinkFlag)
 ]
 
-{ #category : #'directory primitives' }
+{ #category : 'directory primitives' }
 FilePlugin >> primitiveDirectoryGetMacTypeAndCreator [
 
 	| creatorString typeString fileName creatorStringIndex typeStringIndex fileNameIndex fileNameSize |
@@ -436,7 +438,7 @@ FilePlugin >> primitiveDirectoryGetMacTypeAndCreator [
 	interpreterProxy pop: 3
 ]
 
-{ #category : #'directory primitives' }
+{ #category : 'directory primitives' }
 FilePlugin >> primitiveDirectoryLookup [
 
 	| index pathName pathNameIndex pathNameSize status entryName entryNameSize createDate modifiedDate dirFlag symlinkFlag posixPermissions fileSize |
@@ -501,7 +503,7 @@ FilePlugin >> primitiveDirectoryLookup [
 						fileSize: fileSize])
 ]
 
-{ #category : #'directory primitives' }
+{ #category : 'directory primitives' }
 FilePlugin >> primitiveDirectorySetMacTypeAndCreator [
 
 	| creatorString typeString fileName creatorStringIndex typeStringIndex fileNameIndex fileNameSize |
@@ -531,7 +533,7 @@ FilePlugin >> primitiveDirectorySetMacTypeAndCreator [
 	interpreterProxy pop: 3
 ]
 
-{ #category : #'file primitives' }
+{ #category : 'file primitives' }
 FilePlugin >> primitiveFileAtEnd [
 	| file atEnd |
 	<export: true>
@@ -543,7 +545,7 @@ FilePlugin >> primitiveFileAtEnd [
 		ifFalse: [interpreterProxy methodReturnBool: atEnd]
 ]
 
-{ #category : #'file primitives' }
+{ #category : 'file primitives' }
 FilePlugin >> primitiveFileClose [
 
 	| file |
@@ -554,7 +556,7 @@ FilePlugin >> primitiveFileClose [
 	interpreterProxy failed ifFalse: [ interpreterProxy pop: 1  "pop file; leave rcvr on stack" ].
 ]
 
-{ #category : #'file primitives' }
+{ #category : 'file primitives' }
 FilePlugin >> primitiveFileDelete [
 
 	| namePointer nameIndex nameSize  okToDelete |
@@ -574,7 +576,7 @@ FilePlugin >> primitiveFileDelete [
 		ifFalse: [interpreterProxy pop: 1]
 ]
 
-{ #category : #'file primitives' }
+{ #category : 'file primitives' }
 FilePlugin >> primitiveFileDescriptorType [
 	| fileType fd fdPointer |
 	"Allow to test if the standard input/output files are from a console or not
@@ -600,7 +602,7 @@ FilePlugin >> primitiveFileDescriptorType [
 	interpreterProxy methodReturnInteger: fileType
 ]
 
-{ #category : #'file primitives' }
+{ #category : 'file primitives' }
 FilePlugin >> primitiveFileFlush [
 	| file |
 	<var: 'file' type: 'SQFile *'>
@@ -610,7 +612,7 @@ FilePlugin >> primitiveFileFlush [
 	interpreterProxy failed ifFalse: [interpreterProxy pop: 1].
 ]
 
-{ #category : #'file primitives' }
+{ #category : 'file primitives' }
 FilePlugin >> primitiveFileGetPosition [
 	| file position |
 	<var: 'file' type: 'SQFile *'>
@@ -622,7 +624,7 @@ FilePlugin >> primitiveFileGetPosition [
 		interpreterProxy methodReturnValue: (interpreterProxy positive64BitIntegerFor: position)].
 ]
 
-{ #category : #'file primitives' }
+{ #category : 'file primitives' }
 FilePlugin >> primitiveFileOpen [
 	| writeFlag namePointer filePointer nameIndex nameSize |
 	<var: 'nameIndex' type: 'char *'>
@@ -640,7 +642,7 @@ FilePlugin >> primitiveFileOpen [
 
 ]
 
-{ #category : #'file primitives' }
+{ #category : 'file primitives' }
 FilePlugin >> primitiveFileOpenNew [
 	| namePointer filePointer nameIndex nameSize |
 	<var: 'nameIndex' type: 'char *'>
@@ -657,7 +659,7 @@ FilePlugin >> primitiveFileOpenNew [
 
 ]
 
-{ #category : #'file primitives' }
+{ #category : 'file primitives' }
 FilePlugin >> primitiveFileRead [
 
 	<export: true>
@@ -693,7 +695,7 @@ FilePlugin >> primitiveFileRead [
 				ifFalse: [ interpreterProxy primitiveFailFor: PrimErrBadIndex ] ] "buffer can be any indexable words or bytes object except CompiledMethod"
 ]
 
-{ #category : #'file primitives' }
+{ #category : 'file primitives' }
 FilePlugin >> primitiveFileRename [
 
 	| oldNamePointer newNamePointer oldNameIndex oldNameSize newNameIndex newNameSize  okToRename |
@@ -718,7 +720,7 @@ FilePlugin >> primitiveFileRename [
 		ifFalse: [interpreterProxy pop: 2]
 ]
 
-{ #category : #'file primitives' }
+{ #category : 'file primitives' }
 FilePlugin >> primitiveFileSetPosition [
 	| newPosition file |
 	<var: 'file' type: 'SQFile *'>
@@ -734,7 +736,7 @@ FilePlugin >> primitiveFileSetPosition [
 		[interpreterProxy pop: 2] "pop position, file; leave rcvr on stack"
 ]
 
-{ #category : #'file primitives' }
+{ #category : 'file primitives' }
 FilePlugin >> primitiveFileSize [
 	| file size |
 	<var: 'file' type: 'SQFile *'>
@@ -746,7 +748,7 @@ FilePlugin >> primitiveFileSize [
 		interpreterProxy methodReturnValue: (interpreterProxy positive64BitIntegerFor: size)].
 ]
 
-{ #category : #'file primitives' }
+{ #category : 'file primitives' }
 FilePlugin >> primitiveFileStdioHandles [
 	"Answer an Array of file handles for standard in, standard out and standard error,
 	 with nil in entries that are unvailable, e.g. because the platform does not provide
@@ -786,7 +788,7 @@ FilePlugin >> primitiveFileStdioHandles [
 	interpreterProxy methodReturnValue: result
 ]
 
-{ #category : #'file primitives' }
+{ #category : 'file primitives' }
 FilePlugin >> primitiveFileSync [
 	| file |
 	<var: 'file' type: 'SQFile *'>
@@ -796,7 +798,7 @@ FilePlugin >> primitiveFileSync [
 	interpreterProxy failed ifFalse: [interpreterProxy pop: 1].
 ]
 
-{ #category : #'file primitives' }
+{ #category : 'file primitives' }
 FilePlugin >> primitiveFileTruncate [
 "ftruncate is not an ansi function so we have a macro to point to a suitable platform implementation" 
 	| truncatePosition file |
@@ -814,7 +816,7 @@ FilePlugin >> primitiveFileTruncate [
 			[interpreterProxy pop: 2 "pop position, file; leave rcvr on stack"]
 ]
 
-{ #category : #'file primitives' }
+{ #category : 'file primitives' }
 FilePlugin >> primitiveFileWrite [
 	| count startIndex array file slotSize elementSize bytesWritten |
 	<var: 'file' type: 'SQFile *'>
@@ -850,7 +852,7 @@ FilePlugin >> primitiveFileWrite [
 		[interpreterProxy methodReturnValue: (interpreterProxy integerObjectOf: bytesWritten // elementSize)]
 ]
 
-{ #category : #'file primitives' }
+{ #category : 'file primitives' }
 FilePlugin >> primitiveWaitForDataWithSemaphore [
 	"This primitive set a semaphore passed as a semaphoreIndex to be signalled when there is data in the File / Pipe, and it will not block"
 
@@ -868,7 +870,7 @@ FilePlugin >> primitiveWaitForDataWithSemaphore [
 		[interpreterProxy pop: 2] "pop position, file; leave rcvr on stack"
 ]
 
-{ #category : #'file primitives' }
+{ #category : 'file primitives' }
 FilePlugin >> setMacFile: fileName Type: typeString AndCreator: creatorString [
 	"Exported entry point for the VM. Needed for image saving only and no-op on anything but Macs."
 	<export: true>
@@ -878,13 +880,13 @@ FilePlugin >> setMacFile: fileName Type: typeString AndCreator: creatorString [
 	^self cCode: 'dir_SetMacFileTypeAndCreator(fileName, strlen(fileName), typeString, creatorString)'.
 ]
 
-{ #category : #'initialize-release' }
+{ #category : 'initialize-release' }
 FilePlugin >> shutdownModule [
 	<export: true>
 	^self cCode: 'sqFileShutdown()' inSmalltalk:[true]
 ]
 
-{ #category : #private }
+{ #category : 'private' }
 FilePlugin >> sizeOfPointer [
 	"Return the size of a pointer (address size)"
 	<inline: #always>

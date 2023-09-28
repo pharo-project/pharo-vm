@@ -2,8 +2,8 @@
 I am a pool for the abstract register set that the Cogit uses to define its model of Smalltalk compiled to machine code.
 "
 Class {
-	#name : #CogAbstractRegisters,
-	#superclass : #SharedPool,
+	#name : 'CogAbstractRegisters',
+	#superclass : 'SharedPool',
 	#classVars : [
 		'Arg0Reg',
 		'Arg1Reg',
@@ -54,10 +54,12 @@ Class {
 		'VReg7',
 		'VarBaseReg'
 	],
-	#category : #'VMMaker-JIT'
+	#category : 'VMMaker-JIT',
+	#package : 'VMMaker',
+	#tag : 'JIT'
 }
 
-{ #category : #'class initialization' }
+{ #category : 'class initialization' }
 CogAbstractRegisters class >> initialize [
 	"Define a fixed set of abstract register names used in code generation for Smalltalk code.
 	 These are given concrete values by the currently in-use back end, which is a subclass of
@@ -135,7 +137,7 @@ CogAbstractRegisters class >> initialize [
 	NumFloatRegisters	:= #undefined.	"Number of floating-point registers (we don;t do single-precision; we don't do xmm high (yet)."
 ]
 
-{ #category : #'debug printing' }
+{ #category : 'debug printing' }
 CogAbstractRegisters class >> nameForFPRegister: reg [ "<Integer>"
 	^#(DPFPReg0 DPFPReg1 DPFPReg2 DPFPReg3 DPFPReg4 DPFPReg5 DPFPReg6 DPFPReg7
 		DPFPReg8 DPFPReg9 DPFPReg10 DPFPReg11 DPFPReg12 DPFPReg13 DPFPReg14 DPFPReg15)
@@ -143,7 +145,7 @@ CogAbstractRegisters class >> nameForFPRegister: reg [ "<Integer>"
 		ifNone: ['REG', reg printString, '?']
 ]
 
-{ #category : #'debug printing' }
+{ #category : 'debug printing' }
 CogAbstractRegisters class >> nameForRegister: reg [ "<Integer>"
 	^#(Arg0Reg Arg1Reg ClassReg FPReg ReceiverResultReg SPReg SendNumArgsReg TempReg
 		LinkReg RISCTempReg VarBaseReg PCReg

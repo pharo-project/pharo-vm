@@ -1,6 +1,6 @@
 Class {
-	#name : #CogObjectRepresentationForSpur,
-	#superclass : #CogObjectRepresentation,
+	#name : 'CogObjectRepresentationForSpur',
+	#superclass : 'CogObjectRepresentation',
 	#instVars : [
 		'ceScheduleScavengeTrampoline',
 		'ceSmallActiveContextInMethodTrampoline',
@@ -20,10 +20,12 @@ Class {
 		'VMBytecodeConstants',
 		'VMClassIndices'
 	],
-	#category : #'VMMaker-JIT'
+	#category : 'VMMaker-JIT',
+	#package : 'VMMaker',
+	#tag : 'JIT'
 }
 
-{ #category : #translation }
+{ #category : 'translation' }
 CogObjectRepresentationForSpur class >> declareCVarsIn: aCodeGen [
 	"Deal wuth the fact that the number of trampolines depends on IMMUTABILITY
 	 and that IMMUTABILITY can be defined at compile time.  Yes, this is a mess."
@@ -44,19 +46,19 @@ CogObjectRepresentationForSpur class >> declareCVarsIn: aCodeGen [
 		declareC: ('#if IMMUTABILITY\sqInt ceStoreTrampolines[', NumStoreTrampolines printString, '];\#endif') withCRs
 ]
 
-{ #category : #'class initialization' }
+{ #category : 'class initialization' }
 CogObjectRepresentationForSpur class >> initialize [
 	"Number of trampolines for the combined IMMUTABILITY/store check instance variable store.
 	 Trampolines from 0 to NumStoreTrampolines - 2 are dedicated to an inst var index, the last one is generic."
 	NumStoreTrampolines := 5
 ]
 
-{ #category : #initialization }
+{ #category : 'initialization' }
 CogObjectRepresentationForSpur class >> initializeMiscConstants [
 	CheckRememberedInTrampoline := InitializationOptions at: #CheckRememberedInTrampoline ifAbsent: [false]
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 CogObjectRepresentationForSpur class >> numTrampolines [
 	^super numTrampolines
 		 + (SistaV1BytecodeSet
@@ -70,12 +72,12 @@ CogObjectRepresentationForSpur class >> numTrampolines [
 			ifFalse: [0])
 ]
 
-{ #category : #'garbage collection' }
+{ #category : 'garbage collection' }
 CogObjectRepresentationForSpur >> allYoungObjectsAgeInFullGC [
 	^false
 ]
 
-{ #category : #'sista support' }
+{ #category : 'sista support' }
 CogObjectRepresentationForSpur >> branchIf: reg instanceOfBehavior: classObj target: targetFixUp [
 	"Generate a branch if reg is an instance of classObj, otherwise fall-
 	 through. Cannot change the value of reg (may be used afterwards)."
@@ -102,7 +104,7 @@ CogObjectRepresentationForSpur >> branchIf: reg instanceOfBehavior: classObj tar
 	^0
 ]
 
-{ #category : #'sista support' }
+{ #category : 'sista support' }
 CogObjectRepresentationForSpur >> branchIf: reg instanceOfBehaviors: arrayObj target: targetFixUp [
 	"Generate a branch if reg is an instance of any of the classes in arrayObj,
 	 otherwise fall-through. reg should not be edited."
@@ -130,7 +132,7 @@ CogObjectRepresentationForSpur >> branchIf: reg instanceOfBehaviors: arrayObj ta
 	^ self mixed: numNonImmediates branchIf: reg instanceOfBehaviors: arrayObj target: targetFixUp
 ]
 
-{ #category : #'sista support' }
+{ #category : 'sista support' }
 CogObjectRepresentationForSpur >> branchIf: reg isNotOop:  oop target: targetFixUp [
 	<var: #targetFixUp type: #'AbstractInstruction *'>
 	<inline: true>
@@ -139,7 +141,7 @@ CogObjectRepresentationForSpur >> branchIf: reg isNotOop:  oop target: targetFix
 	^0
 ]
 
-{ #category : #'sista support' }
+{ #category : 'sista support' }
 CogObjectRepresentationForSpur >> branchIf: reg isOop:  oop target: targetFixUp [
 	<var: #targetFixUp type: #'AbstractInstruction *'>
 	<inline: true>
@@ -148,7 +150,7 @@ CogObjectRepresentationForSpur >> branchIf: reg isOop:  oop target: targetFixUp 
 	^0
 ]
 
-{ #category : #'sista support' }
+{ #category : 'sista support' }
 CogObjectRepresentationForSpur >> branchIf: reg notInstanceOfBehavior: classObj target: targetFixUp [
 	"Generate a branch if reg is an instance of classObj, otherwise fall-
 	 through. Cannot change the value of reg (may be used afterwards)."
@@ -173,7 +175,7 @@ CogObjectRepresentationForSpur >> branchIf: reg notInstanceOfBehavior: classObj 
 	^0
 ]
 
-{ #category : #'sista support' }
+{ #category : 'sista support' }
 CogObjectRepresentationForSpur >> branchIf: reg notInstanceOfBehaviors: arrayObj target: targetFixUp [
 	"Generate a branch if reg is an instance of any of the classes in arrayObj,
 	 otherwise fall-through. reg should not be edited."
@@ -201,7 +203,7 @@ CogObjectRepresentationForSpur >> branchIf: reg notInstanceOfBehaviors: arrayObj
 	^ self mixed: numNonImmediates branchIf: reg notInstanceOfBehaviors: arrayObj target: targetFixUp
 ]
 
-{ #category : #'garbage collection' }
+{ #category : 'garbage collection' }
 CogObjectRepresentationForSpur >> cacheTagIsMarked: cacheTag [
 	"Answer if the cacheTag is not unmarked, i.e. answer true for compact class
 	 indices and immediates; only answer false for unmarked objects.  In Spur
@@ -209,112 +211,112 @@ CogObjectRepresentationForSpur >> cacheTagIsMarked: cacheTag [
 	^true
 ]
 
-{ #category : #'sista support' }
+{ #category : 'sista support' }
 CogObjectRepresentationForSpur >> callStoreCheckTrampoline [
 	cogit CallRT: ceStoreCheckTrampoline
 ]
 
-{ #category : #testing }
+{ #category : 'testing' }
 CogObjectRepresentationForSpur >> canPinObjects [
 	"Answer if the memory manager supports pinned objects."
 	^true
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 CogObjectRepresentationForSpur >> ceLargeActiveContextInFullBlockTrampoline [
 	<doNotGenerate>
 	^ ceLargeActiveContextInFullBlockTrampoline
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 CogObjectRepresentationForSpur >> ceLargeActiveContextInFullBlockTrampoline: anInteger [ 
 	<doNotGenerate>
 	ceLargeActiveContextInFullBlockTrampoline := anInteger
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 CogObjectRepresentationForSpur >> ceLargeActiveContextInMethodTrampoline [
 	<doNotGenerate>
 	^ ceLargeActiveContextInMethodTrampoline
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 CogObjectRepresentationForSpur >> ceLargeActiveContextInMethodTrampoline: anInteger [ 
 	<doNotGenerate>
 	ceLargeActiveContextInMethodTrampoline := anInteger
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 CogObjectRepresentationForSpur >> ceScheduleScavengeTrampoline: anAddress [
 	<doNotGenerate>
 	ceScheduleScavengeTrampoline := anAddress
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 CogObjectRepresentationForSpur >> ceSmallActiveContextInFullBlockTrampoline [
 	<doNotGenerate>
 	^ ceSmallActiveContextInFullBlockTrampoline
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 CogObjectRepresentationForSpur >> ceSmallActiveContextInFullBlockTrampoline: anInteger [ 
 	<doNotGenerate>
 	ceSmallActiveContextInFullBlockTrampoline := anInteger
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 CogObjectRepresentationForSpur >> ceSmallActiveContextInMethodTrampoline [
 	<doNotGenerate>
 	^ ceSmallActiveContextInMethodTrampoline
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 CogObjectRepresentationForSpur >> ceSmallActiveContextInMethodTrampoline: anInteger [ 
 	<doNotGenerate>
 	ceSmallActiveContextInMethodTrampoline := anInteger
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 CogObjectRepresentationForSpur >> ceStoreCheckTrampoline [
 	
 	^ ceStoreCheckTrampoline 
 ]
 
-{ #category : #'compile abstract instructions' }
+{ #category : 'compile abstract instructions' }
 CogObjectRepresentationForSpur >> ceStoreTrampolines [
 
 	^ ceStoreTrampolines
 ]
 
-{ #category : #'sista support' }
+{ #category : 'sista support' }
 CogObjectRepresentationForSpur >> checkRememberedInTrampoline [
 	<inline: true>
 	^ CheckRememberedInTrampoline
 ]
 
-{ #category : #'debug support' }
+{ #category : 'debug support' }
 CogObjectRepresentationForSpur >> checkValidDerivedObjectReference: bodyAddress [
 	^(objectMemory heapMapAtWord: (self pointerForOop: bodyAddress - objectMemory baseHeaderSize)) ~= 0
 ]
 
-{ #category : #'debug support' }
+{ #category : 'debug support' }
 CogObjectRepresentationForSpur >> checkValidOopReference: anOop [
 	^(objectMemory isImmediate: anOop)
 	   or: [(objectMemory heapMapAtWord: (self pointerForOop: anOop)) ~= 0]
 ]
 
-{ #category : #'garbage collection' }
+{ #category : 'garbage collection' }
 CogObjectRepresentationForSpur >> couldBeDerivedObject: bodyAddress [
 	^self oop: bodyAddress - objectMemory baseHeaderSize isGreaterThanOrEqualTo: objectMemory getMemoryMap startOfObjectMemory
 ]
 
-{ #category : #'garbage collection' }
+{ #category : 'garbage collection' }
 CogObjectRepresentationForSpur >> couldBeObject: literal [
 	^(objectMemory isNonImmediate: literal)
 	  and: [self oop: literal isGreaterThanOrEqualTo: objectMemory getMemoryMap startOfObjectMemory]
 ]
 
-{ #category : #'bytecode generator support' }
+{ #category : 'bytecode generator support' }
 CogObjectRepresentationForSpur >> createsArraysInline [
 	"Answer if the object representation allocates arrays inline.  By
 	 default answer false. Better code can be generated when creating
@@ -322,7 +324,7 @@ CogObjectRepresentationForSpur >> createsArraysInline [
 	^true
 ]
 
-{ #category : #'bytecode generator support' }
+{ #category : 'bytecode generator support' }
 CogObjectRepresentationForSpur >> createsClosuresInline [
 	"Answer if the object representation allocates closures inline.  By
 	 default answer false. Better code can be generated when creating
@@ -330,14 +332,14 @@ CogObjectRepresentationForSpur >> createsClosuresInline [
 	^true
 ]
 
-{ #category : #initialization }
+{ #category : 'initialization' }
 CogObjectRepresentationForSpur >> ensureNoForwardedLiteralsIn: aMethodObj [
 	"Ensure there are no forwarded literals in the argument."
 	<doNotGenerate>
 	objectMemory ensureNoForwardedLiteralsIn: aMethodObj
 ]
 
-{ #category : #'sista support' }
+{ #category : 'sista support' }
 CogObjectRepresentationForSpur >> freeCounters: theCounters [
 	<var: #theCounters type: #usqInt>
 	<inline: true>
@@ -346,7 +348,7 @@ CogObjectRepresentationForSpur >> freeCounters: theCounters [
 		[objectMemory freeObject: theCounters - objectMemory baseHeaderSize]
 ]
 
-{ #category : #initialization }
+{ #category : 'initialization' }
 CogObjectRepresentationForSpur >> genActiveContextTrampolineLarge: isLarge inBlock: isInBlock called: aString [
 	<var: #aString type: #'char *'>
 	"Create a trampoline to answer the active context that will
@@ -362,7 +364,7 @@ CogObjectRepresentationForSpur >> genActiveContextTrampolineLarge: isLarge inBlo
 	^startAddress
 ]
 
-{ #category : #'primitive generators' }
+{ #category : 'primitive generators' }
 CogObjectRepresentationForSpur >> genAllocExternalAddressValue: valueReg into: resultReg scratchReg: scratch1 scratchReg: scratch2 [
 	<returnTypeC: #'AbstractInstruction *'>
 	| allocSize newExternalAddressHeader jumpFail |
@@ -381,7 +383,7 @@ CogObjectRepresentationForSpur >> genAllocExternalAddressValue: valueReg into: r
 	^jumpFail
 ]
 
-{ #category : #'primitive generators' }
+{ #category : 'primitive generators' }
 CogObjectRepresentationForSpur >> genAllocFloatValue: dpreg into: resultReg scratchReg: scratch1 scratchReg: scratch2 [
 	<returnTypeC: #'AbstractInstruction *'>
 	| allocSize newFloatHeader jumpFail |
@@ -401,7 +403,7 @@ CogObjectRepresentationForSpur >> genAllocFloatValue: dpreg into: resultReg scra
 	^jumpFail
 ]
 
-{ #category : #'primitive generators' }
+{ #category : 'primitive generators' }
 CogObjectRepresentationForSpur >> genBoxedOrSmallFloat: floatOopReg scratchReg: scratchReg into: destReg [
 	<returnTypeC: #'AbstractInstruction *'>
 	<var: #jumpImmediate type: #'AbstractInstruction *'>
@@ -428,7 +430,7 @@ CogObjectRepresentationForSpur >> genBoxedOrSmallFloat: floatOopReg scratchReg: 
 	^ jumpFail
 ]
 
-{ #category : #'compile abstract instructions' }
+{ #category : 'compile abstract instructions' }
 CogObjectRepresentationForSpur >> genCheckRememberedBitOf: objReg scratch: scratchReg [
 	"Check the remembered bit of the object in objReg; answer the jump taken if the bit is already set.
 	 Only need to fetch the byte containing it, which reduces the size of the mask constant."
@@ -442,7 +444,7 @@ CogObjectRepresentationForSpur >> genCheckRememberedBitOf: objReg scratch: scrat
 	^cogit JumpNonZero: 0
 ]
 
-{ #category : #'in-line cacheing' }
+{ #category : 'in-line cacheing' }
 CogObjectRepresentationForSpur >> genCmpClassIndex: classIndex R: reg [
 	"It is safe to use a short comparison for the known classes; these will not
 	 change with become, etc... But it's probably not safe to assume the hash of
@@ -453,13 +455,13 @@ CogObjectRepresentationForSpur >> genCmpClassIndex: classIndex R: reg [
 		ifFalse: [cogit CmpCw: classIndex R: TempReg]
 ]
 
-{ #category : #'compile abstract instructions' }
+{ #category : 'compile abstract instructions' }
 CogObjectRepresentationForSpur >> genConvertCharacterToCodeInReg: reg [ 
 	cogit LogicalShiftRightCq: objectMemory numTagBits R: reg.
 	^0
 ]
 
-{ #category : #'compile abstract instructions' }
+{ #category : 'compile abstract instructions' }
 CogObjectRepresentationForSpur >> genConvertIntegerToCharacterInReg: reg [
 	cogit
 		LogicalShiftLeftCq: objectMemory numTagBits R: reg;
@@ -467,12 +469,12 @@ CogObjectRepresentationForSpur >> genConvertIntegerToCharacterInReg: reg [
 	^0
 ]
 
-{ #category : #'compile abstract instructions' }
+{ #category : 'compile abstract instructions' }
 CogObjectRepresentationForSpur >> genConvertSmallIntegerToCharacterInReg: reg [
 	self subclassResponsibility
 ]
 
-{ #category : #'bytecode generator support' }
+{ #category : 'bytecode generator support' }
 CogObjectRepresentationForSpur >> genCreateFullClosure: compiledBlock numArgs: numArgs numCopied: numCopied ignoreContext: ignoreContext contextNumArgs: contextNumArgs large: contextIsLarge inBlock: contextIsBlock [
 	"Create a full closure with the given values."
 	| numSlots byteSize header skip |
@@ -511,7 +513,7 @@ CogObjectRepresentationForSpur >> genCreateFullClosure: compiledBlock numArgs: n
 	^0
 ]
 
-{ #category : #'compile abstract instructions' }
+{ #category : 'compile abstract instructions' }
 CogObjectRepresentationForSpur >> genEnsureObjInRegNotForwarded: reg scratchReg: scratch [
 	"Make sure that the object in reg is not forwarded.  This routine assumes the object will
 	 never be forwarded to an immediate, as it is used to unforward  literal variables (associations). 
@@ -536,7 +538,7 @@ CogObjectRepresentationForSpur >> genEnsureObjInRegNotForwarded: reg scratchReg:
 	^0
 ]
 
-{ #category : #'compile abstract instructions' }
+{ #category : 'compile abstract instructions' }
 CogObjectRepresentationForSpur >> genEnsureOopInRegNotForwarded: reg scratchReg: scratch [
 	^ self 
 		genEnsureOopInRegNotForwarded: reg 
@@ -544,7 +546,7 @@ CogObjectRepresentationForSpur >> genEnsureOopInRegNotForwarded: reg scratchReg:
 		jumpBackTo: cogit Label "label is just before the forwarder check"
 ]
 
-{ #category : #'compile abstract instructions' }
+{ #category : 'compile abstract instructions' }
 CogObjectRepresentationForSpur >> genEnsureOopInRegNotForwarded: reg scratchReg: scratch ifForwarder: fwdJumpTarget ifNotForwarder: nonFwdJumpTargetOrZero [
 	"Make sure that the oop in reg is not forwarded.  
 	 Use the fact that isForwardedObjectClassIndexPun is a power of two to save an instruction."
@@ -569,7 +571,7 @@ CogObjectRepresentationForSpur >> genEnsureOopInRegNotForwarded: reg scratchReg:
 	^0
 ]
 
-{ #category : #'compile abstract instructions' }
+{ #category : 'compile abstract instructions' }
 CogObjectRepresentationForSpur >> genEnsureOopInRegNotForwarded: reg scratchReg: scratch jumpBackTo: instruction [
 	<var: #instruction type: #'AbstractInstruction *'>
 	<inline: true>
@@ -580,7 +582,7 @@ CogObjectRepresentationForSpur >> genEnsureOopInRegNotForwarded: reg scratchReg:
 		ifNotForwarder: 0
 ]
 
-{ #category : #'compile abstract instructions' }
+{ #category : 'compile abstract instructions' }
 CogObjectRepresentationForSpur >> genEnsureOopInRegNotForwarded: reg scratchReg: scratch updatingMw: offset r: baseReg [
 	"Make sure that the oop in reg is not forwarded, and the field reg[offset] is updated
 	 if the object in reg is forwarded.  Use the fact that isForwardedObjectClassIndexPun is
@@ -608,7 +610,7 @@ CogObjectRepresentationForSpur >> genEnsureOopInRegNotForwarded: reg scratchReg:
 	^0
 ]
 
-{ #category : #'compile abstract instructions' }
+{ #category : 'compile abstract instructions' }
 CogObjectRepresentationForSpur >> genEnsureOopInRegNotForwarded: reg scratchReg: scratch updatingSlot: index in: objReg [
 	"Make sure that the oop in reg is not forwarded, updating the slot in objReg with the value."
 	| loop imm ok |
@@ -645,13 +647,13 @@ CogObjectRepresentationForSpur >> genEnsureOopInRegNotForwarded: reg scratchReg:
 	^0
 ]
 
-{ #category : #'compile abstract instructions' }
+{ #category : 'compile abstract instructions' }
 CogObjectRepresentationForSpur >> genFetchIndexRegister: indexReg from: tableObj into: destReg [
 	"indexReg contains the 1-relative index of an element in tableObj."
 	self subclassResponsibility
 ]
 
-{ #category : #initialization }
+{ #category : 'initialization' }
 CogObjectRepresentationForSpur >> genGetActiveContextLarge: isLarge inBlock: isInBlock [
 	"Create a trampoline to answer the active context that will
 	 answer it if a frame is already married, and create it otherwise.
@@ -805,7 +807,7 @@ CogObjectRepresentationForSpur >> genGetActiveContextLarge: isLarge inBlock: isI
 	^0
 ]
 
-{ #category : #'bytecode generator support' }
+{ #category : 'bytecode generator support' }
 CogObjectRepresentationForSpur >> genGetActiveContextNumArgs: numArgs large: isLargeContext inBlock: isInBlock [
 	"Get the active context into ReceiverResultReg, creating it if necessary."
 	| routine |
@@ -822,7 +824,7 @@ CogObjectRepresentationForSpur >> genGetActiveContextNumArgs: numArgs large: isL
 	^0
 ]
 
-{ #category : #'compile abstract instructions' }
+{ #category : 'compile abstract instructions' }
 CogObjectRepresentationForSpur >> genGetBits: mask ofFormatByteOf: sourceReg into: destReg [
 	self flag: #endianness.
 	cogit MoveMb: 3 r: sourceReg R: destReg.
@@ -830,7 +832,7 @@ CogObjectRepresentationForSpur >> genGetBits: mask ofFormatByteOf: sourceReg int
 	^0
 ]
 
-{ #category : #'compile abstract instructions' }
+{ #category : 'compile abstract instructions' }
 CogObjectRepresentationForSpur >> genGetClassIndexOfNonImm: sourceReg into: destReg [
 	"Fetch the instance's class index into destReg."
 
@@ -839,7 +841,7 @@ CogObjectRepresentationForSpur >> genGetClassIndexOfNonImm: sourceReg into: dest
 	^0
 ]
 
-{ #category : #'compile abstract instructions' }
+{ #category : 'compile abstract instructions' }
 CogObjectRepresentationForSpur >> genGetClassObjectOf: instReg into: destReg scratchReg: scratchReg instRegIsReceiver: instRegIsReceiver [
 	"Fetch the instance's class into destReg.  If the instance is not the receiver and is forwarded, follow forwarding."
 	| jumpIsImm jumpNotForwarded loop |
@@ -878,7 +880,7 @@ CogObjectRepresentationForSpur >> genGetClassObjectOf: instReg into: destReg scr
 	^0
 ]
 
-{ #category : #'compile abstract instructions' }
+{ #category : 'compile abstract instructions' }
 CogObjectRepresentationForSpur >> genGetClassObjectOfClassIndex: instReg into: destReg scratchReg: scratchReg [
 	"Fetch the class object whose index is in instReg into destReg.
 	 It is non-obvious, but the Cogit assumes loading a class does not involve
@@ -904,31 +906,31 @@ CogObjectRepresentationForSpur >> genGetClassObjectOfClassIndex: instReg into: d
 	^0
 ]
 
-{ #category : #'compile abstract instructions' }
+{ #category : 'compile abstract instructions' }
 CogObjectRepresentationForSpur >> genGetClassTagOf: instReg into: destReg scratchReg: scratchReg [
 	^self genGetInlineCacheClassTagFrom: instReg into: destReg forEntry: true
 ]
 
-{ #category : #'compile abstract instructions' }
+{ #category : 'compile abstract instructions' }
 CogObjectRepresentationForSpur >> genGetCompactClassIndexNonImmOf: instReg into: destReg [
 	"Fetch the instance's class index into destReg."
 	^self genGetClassIndexOfNonImm: instReg into: destReg
 ]
 
-{ #category : #'compile abstract instructions' }
+{ #category : 'compile abstract instructions' }
 CogObjectRepresentationForSpur >> genGetDoubleValueOf: srcReg into: destFPReg [ 
 	cogit MoveM64: objectMemory baseHeaderSize r: srcReg Rd: destFPReg.
 	^0
 ]
 
-{ #category : #'compile abstract instructions' }
+{ #category : 'compile abstract instructions' }
 CogObjectRepresentationForSpur >> genGetFormatOf: srcReg into: destReg [
 	"Get the format field of the object in srcReg into destReg.
 	 srcReg may equal destReg."
 	^self genGetBits: objectMemory formatMask ofFormatByteOf: srcReg into: destReg
 ]
 
-{ #category : #'compile abstract instructions' }
+{ #category : 'compile abstract instructions' }
 CogObjectRepresentationForSpur >> genGetFormatOf: sourceReg into: destReg leastSignificantHalfOfBaseHeaderIntoScratch: scratchRegOrNone [
 	"Get the format of the object in sourceReg into destReg.  If scratchRegOrNone
 	 is not NoReg, load at least the least significant 32-bits (64-bits in 64-bits) of the
@@ -945,7 +947,7 @@ CogObjectRepresentationForSpur >> genGetFormatOf: sourceReg into: destReg leastS
 	^0
 ]
 
-{ #category : #'inline primitive support' }
+{ #category : 'inline primitive support' }
 CogObjectRepresentationForSpur >> genGetInstanceOfByteClass: classObj into: destReg initializingIf: initializeInstance numBytes: numBytes [
 	"Create an instance of classObj and assign it to destReg, initializing the instance
 	 if initializeInstance is true with 0 This is for inline primitives.
@@ -963,7 +965,7 @@ CogObjectRepresentationForSpur >> genGetInstanceOfByteClass: classObj into: dest
 	
 ]
 
-{ #category : #'inline primitive support' }
+{ #category : 'inline primitive support' }
 CogObjectRepresentationForSpur >> genGetInstanceOfPointerClass: classObj into: destReg initializingIf: initializeInstance numVariableSlots: varSlots [
 	"Create an instance of classObj and assign it to destReg, initializing the instance
 	 if initializeInstance is true with nil This is for inline primitives.
@@ -981,7 +983,7 @@ CogObjectRepresentationForSpur >> genGetInstanceOfPointerClass: classObj into: d
 	
 ]
 
-{ #category : #'compile abstract instructions' }
+{ #category : 'compile abstract instructions' }
 CogObjectRepresentationForSpur >> genGetNumBytesOf: srcReg into: destReg [
 	"Get the size in byte-sized slots of the object in srcReg into destReg.
 	 srcReg may equal destReg.
@@ -990,7 +992,7 @@ CogObjectRepresentationForSpur >> genGetNumBytesOf: srcReg into: destReg [
 	self subclassResponsibility
 ]
 
-{ #category : #'compile abstract instructions' }
+{ #category : 'compile abstract instructions' }
 CogObjectRepresentationForSpur >> genGetNumSlotsOf: srcReg into: destReg [
 	"Get the size in word-sized slots of the object in srcReg into destReg.
 	 srcReg may equal destReg."
@@ -1005,12 +1007,12 @@ CogObjectRepresentationForSpur >> genGetNumSlotsOf: srcReg into: destReg [
 	^0
 ]
 
-{ #category : #'compile abstract instructions' }
+{ #category : 'compile abstract instructions' }
 CogObjectRepresentationForSpur >> genGetOverflowSlotsOf: srcReg into: destReg [
 	self subclassResponsibility
 ]
 
-{ #category : #'compile abstract instructions' }
+{ #category : 'compile abstract instructions' }
 CogObjectRepresentationForSpur >> genGetRawSlotSizeOfNonImm: sourceReg into: destReg [
 	"The raw numSlots field is the most significant byte of the 64-bit header word.
 	 MoveMbrR zero-extends."
@@ -1020,7 +1022,7 @@ CogObjectRepresentationForSpur >> genGetRawSlotSizeOfNonImm: sourceReg into: des
 	^0
 ]
 
-{ #category : #'inline primitive support' }
+{ #category : 'inline primitive support' }
 CogObjectRepresentationForSpur >> genGetUninitializedInstanceWithClassIndex: classIndex numSlots: numSlots format: format into: destReg [
 	"Write in destReg the pointer to the object (adjusted based on header size)
 	Can deal with large header but not with with old space allocation (max allocation size)"
@@ -1048,19 +1050,19 @@ CogObjectRepresentationForSpur >> genGetUninitializedInstanceWithClassIndex: cla
 	
 ]
 
-{ #category : #'mapped inlined primitive support' }
+{ #category : 'mapped inlined primitive support' }
 CogObjectRepresentationForSpur >> genIfRequiredCheckRememberedBitOf: rr scratch: scratchReg [
 	CheckRememberedInTrampoline ifFalse: 
 		[^self genCheckRememberedBitOf: rr scratch: scratchReg]
 ]
 
-{ #category : #'compile abstract instructions' }
+{ #category : 'compile abstract instructions' }
 CogObjectRepresentationForSpur >> genInlinedIdenticalOrNotIfGuts: orNot [
 	<inline: true>
 	^ cogit genForwardersInlinedIdenticalOrNotIf: orNot
 ]
 
-{ #category : #'compile abstract instructions' }
+{ #category : 'compile abstract instructions' }
 CogObjectRepresentationForSpur >> genJumpBaseHeaderImmutable: baseHeaderReg [
 	"baseHeader holds at least the least significant 32 bits of the object"
 	<returnTypeC: #'AbstractInstruction *'>
@@ -1070,7 +1072,7 @@ CogObjectRepresentationForSpur >> genJumpBaseHeaderImmutable: baseHeaderReg [
 	^ cogit JumpNonZero: 0
 ]
 
-{ #category : #'compile abstract instructions' }
+{ #category : 'compile abstract instructions' }
 CogObjectRepresentationForSpur >> genJumpBaseHeaderMutable: baseHeaderReg [
 	"baseHeader holds at least the least significant 32 bits of the object"
 	<returnTypeC: #'AbstractInstruction *'>
@@ -1080,21 +1082,21 @@ CogObjectRepresentationForSpur >> genJumpBaseHeaderMutable: baseHeaderReg [
 	^ cogit JumpZero: 0
 ]
 
-{ #category : #'compile abstract instructions' }
+{ #category : 'compile abstract instructions' }
 CogObjectRepresentationForSpur >> genJumpCharacterInScratchReg: reg [ 
 	cogit AndCq: objectMemory tagMask R: reg.
 	cogit CmpCq: objectMemory characterTag R: reg.
 	^cogit JumpZero: 0
 ]
 
-{ #category : #'compile abstract instructions' }
+{ #category : 'compile abstract instructions' }
 CogObjectRepresentationForSpur >> genJumpImmediate: aRegister [
 	<returnTypeC: #'AbstractInstruction *'>
 	cogit TstCq: objectMemory tagMask R: aRegister.
 	^cogit JumpNonZero: 0
 ]
 
-{ #category : #'compile abstract instructions' }
+{ #category : 'compile abstract instructions' }
 CogObjectRepresentationForSpur >> genJumpImmutable: sourceReg scratchReg: scratchReg [
 	<returnTypeC: #'AbstractInstruction *'>
 	<option: #IMMUTABILITY>
@@ -1102,7 +1104,7 @@ CogObjectRepresentationForSpur >> genJumpImmutable: sourceReg scratchReg: scratc
 	^ self genJumpBaseHeaderImmutable: scratchReg
 ]
 
-{ #category : #'compile abstract instructions' }
+{ #category : 'compile abstract instructions' }
 CogObjectRepresentationForSpur >> genJumpInOldSpace: reg [
 	"Jump if reg is old."
 	<inline: true>
@@ -1111,7 +1113,7 @@ CogObjectRepresentationForSpur >> genJumpInOldSpace: reg [
 		JumpAboveOrEqual: 0
 ]
 
-{ #category : #'compile abstract instructions' }
+{ #category : 'compile abstract instructions' }
 CogObjectRepresentationForSpur >> genJumpMutable: sourceReg scratchReg: scratchReg [
 	<returnTypeC: #'AbstractInstruction *'>
 	<option: #IMMUTABILITY>
@@ -1119,21 +1121,21 @@ CogObjectRepresentationForSpur >> genJumpMutable: sourceReg scratchReg: scratchR
 	^ self genJumpBaseHeaderMutable: scratchReg
 ]
 
-{ #category : #'compile abstract instructions' }
+{ #category : 'compile abstract instructions' }
 CogObjectRepresentationForSpur >> genJumpNotCharacterInScratchReg: reg [ 
 	cogit AndCq: objectMemory tagMask R: reg.
 	cogit CmpCq: objectMemory characterTag R: reg.
 	^cogit JumpNonZero: 0
 ]
 
-{ #category : #'compile abstract instructions' }
+{ #category : 'compile abstract instructions' }
 CogObjectRepresentationForSpur >> genJumpNotImmediate: aRegister [
 	<returnTypeC: #'AbstractInstruction *'>
 	cogit TstCq: objectMemory tagMask R: aRegister.
 	^cogit JumpZero: 0
 ]
 
-{ #category : #'bytecode generator support' }
+{ #category : 'bytecode generator support' }
 CogObjectRepresentationForSpur >> genNewArrayOfSize: size initialized: initialized [
 	"Generate a call to code that allocates a new Array of size.
 	 The Array should be initialized with nils iff initialized is true.
@@ -1164,7 +1166,7 @@ CogObjectRepresentationForSpur >> genNewArrayOfSize: size initialized: initializ
 	^0
 ]
 
-{ #category : #initialization }
+{ #category : 'initialization' }
 CogObjectRepresentationForSpur >> genNewHashTrampoline: saveRegs called: name [
 	"In non sista VM this is used only from the identityHash primitive, hence only the result of the trampoline, the hash, should be in ReceiverResultReg, other registers can just be ignored.
 	In the sista VM, the inlined hash operation requires registers to be saved"
@@ -1185,7 +1187,7 @@ CogObjectRepresentationForSpur >> genNewHashTrampoline: saveRegs called: name [
 		appendOpcodes: false
 ]
 
-{ #category : #'primitive generators' }
+{ #category : 'primitive generators' }
 CogObjectRepresentationForSpur >> genPrimitiveAsCharacter [
 	| reg jumpNotInt jumpOutOfRange |
 	<var: 'jumpNotInt' type: #'AbstractInstruction *'>
@@ -1211,19 +1213,19 @@ CogObjectRepresentationForSpur >> genPrimitiveAsCharacter [
 	^CompletePrimitive
 ]
 
-{ #category : #'primitive generators' }
+{ #category : 'primitive generators' }
 CogObjectRepresentationForSpur >> genPrimitiveAt [
 	"Generate primitive 60, at: with unsigned access for pure bits classes."
 	^self genPrimitiveAtSigned: false
 ]
 
-{ #category : #'primitive generators' }
+{ #category : 'primitive generators' }
 CogObjectRepresentationForSpur >> genPrimitiveAtPut [
 	"Generate primitive 61, at:put: with unsigned access for pure bits classes."
 	^self genPrimitiveAtPutSigned: false
 ]
 
-{ #category : #'primitive generators' }
+{ #category : 'primitive generators' }
 CogObjectRepresentationForSpur >> genPrimitiveIdenticalOrNotIf: orNot [
 	| jumpCmp comp |
 	<var: #jumpCmp type: #'AbstractInstruction *'>
@@ -1247,35 +1249,35 @@ CogObjectRepresentationForSpur >> genPrimitiveIdenticalOrNotIf: orNot [
 
 ]
 
-{ #category : #'primitive generators' }
+{ #category : 'primitive generators' }
 CogObjectRepresentationForSpur >> genPrimitiveIdentityHash [
 	self subclassResponsibility
 ]
 
-{ #category : #'primitive generators' }
+{ #category : 'primitive generators' }
 CogObjectRepresentationForSpur >> genPrimitiveImmediateAsInteger [
 	self subclassResponsibility
 ]
 
-{ #category : #'primitive generators' }
+{ #category : 'primitive generators' }
 CogObjectRepresentationForSpur >> genPrimitiveIntegerAt [
 	"Generate primitive 164, at: with signed access for pure bits classes."
 	^self genPrimitiveAtSigned: true
 ]
 
-{ #category : #'primitive generators' }
+{ #category : 'primitive generators' }
 CogObjectRepresentationForSpur >> genPrimitiveIntegerAtPut [
 	"Generate primitive 165, at:put: with signed access for pure bits classes."
 	^self genPrimitiveAtPutSigned: true
 ]
 
-{ #category : #'primitive generators' }
+{ #category : 'primitive generators' }
 CogObjectRepresentationForSpur >> genPrimitiveLoad: accessedElementByteSize fromBytesWith: aBlock [
 
 	^ self genPrimitiveLoad: accessedElementByteSize fromBytesWith: aBlock needsToTrap: false
 ]
 
-{ #category : #'primitive generators' }
+{ #category : 'primitive generators' }
 CogObjectRepresentationForSpur >> genPrimitiveLoad: accessedElementByteSize fromBytesWith: aBlock needsToTrap: needsToTrap [
 
 	| nSlotsOrBytesReg jumpBadIndex formatReg jumpIsPointers jumpOutOfBounds jumpSmaller jumpImmediate |
@@ -1321,7 +1323,7 @@ CogObjectRepresentationForSpur >> genPrimitiveLoad: accessedElementByteSize from
 	^ needsToTrap ifTrue: [0] ifFalse: [CompletePrimitive]
 ]
 
-{ #category : #'primitive generators' }
+{ #category : 'primitive generators' }
 CogObjectRepresentationForSpur >> genPrimitiveLoadBoolean8FromBytes [
 	^ self genPrimitiveLoad: 1 fromBytesWith: [ :sourcePointer |
 		| trueResultJump inst |
@@ -1341,7 +1343,7 @@ CogObjectRepresentationForSpur >> genPrimitiveLoadBoolean8FromBytes [
 	].
 ]
 
-{ #category : #'primitive generators' }
+{ #category : 'primitive generators' }
 CogObjectRepresentationForSpur >> genPrimitiveLoadBoolean8FromExternalAddress [
 	^ self genPrimitiveLoadFromExternalAddressWith: [ :sourcePointer |
 		| trueResultJump inst |
@@ -1361,7 +1363,7 @@ CogObjectRepresentationForSpur >> genPrimitiveLoadBoolean8FromExternalAddress [
 	].
 ]
 
-{ #category : #'primitive generators' }
+{ #category : 'primitive generators' }
 CogObjectRepresentationForSpur >> genPrimitiveLoadChar16FromBytes [
 	^ self genPrimitiveLoad: 2 fromBytesWith: [ :sourcePointer |
 		cogit MoveM16: 0 r: sourcePointer R: ReceiverResultReg.
@@ -1372,7 +1374,7 @@ CogObjectRepresentationForSpur >> genPrimitiveLoadChar16FromBytes [
 	].
 ]
 
-{ #category : #'primitive generators' }
+{ #category : 'primitive generators' }
 CogObjectRepresentationForSpur >> genPrimitiveLoadChar16FromExternalAddress [
 	^ self genPrimitiveLoadFromExternalAddressWith: [ :sourcePointer |
 		cogit MoveM16: 0 r: sourcePointer R: ReceiverResultReg.
@@ -1383,7 +1385,7 @@ CogObjectRepresentationForSpur >> genPrimitiveLoadChar16FromExternalAddress [
 	].
 ]
 
-{ #category : #'primitive generators' }
+{ #category : 'primitive generators' }
 CogObjectRepresentationForSpur >> genPrimitiveLoadChar32FromBytes [
 	^ self genPrimitiveLoad: 4 fromBytesWith: [ :sourcePointer |
 		BytesPerWord  = 4 ifTrue: [ 
@@ -1398,7 +1400,7 @@ CogObjectRepresentationForSpur >> genPrimitiveLoadChar32FromBytes [
 	].
 ]
 
-{ #category : #'primitive generators' }
+{ #category : 'primitive generators' }
 CogObjectRepresentationForSpur >> genPrimitiveLoadChar32FromExternalAddress [
 	^ self genPrimitiveLoadFromExternalAddressWith: [ :sourcePointer |
 		BytesPerWord  = 4 ifTrue: [ 
@@ -1413,7 +1415,7 @@ CogObjectRepresentationForSpur >> genPrimitiveLoadChar32FromExternalAddress [
 	].
 ]
 
-{ #category : #'primitive generators' }
+{ #category : 'primitive generators' }
 CogObjectRepresentationForSpur >> genPrimitiveLoadChar8FromBytes [
 	^ self genPrimitiveLoad: 1 fromBytesWith: [ :sourcePointer |
 		cogit MoveMb: 0 r: sourcePointer R: ReceiverResultReg .
@@ -1426,7 +1428,7 @@ CogObjectRepresentationForSpur >> genPrimitiveLoadChar8FromBytes [
 	].
 ]
 
-{ #category : #'primitive generators' }
+{ #category : 'primitive generators' }
 CogObjectRepresentationForSpur >> genPrimitiveLoadChar8FromExternalAddress [
 	^ self genPrimitiveLoadFromExternalAddressWith: [ :sourcePointer |
 		cogit MoveMb: 0 r: sourcePointer R: ReceiverResultReg .
@@ -1439,7 +1441,7 @@ CogObjectRepresentationForSpur >> genPrimitiveLoadChar8FromExternalAddress [
 	].
 ]
 
-{ #category : #'primitive generators' }
+{ #category : 'primitive generators' }
 CogObjectRepresentationForSpur >> genPrimitiveLoadFloat32FromBytes [
 	^ self genPrimitiveLoad: 4 fromBytesWith: [ :sourcePointer |
 		| jumpFailAlloc |
@@ -1458,7 +1460,7 @@ CogObjectRepresentationForSpur >> genPrimitiveLoadFloat32FromBytes [
 	] needsToTrap: true.
 ]
 
-{ #category : #'primitive generators' }
+{ #category : 'primitive generators' }
 CogObjectRepresentationForSpur >> genPrimitiveLoadFloat32FromExternalAddress [
 	^ self genPrimitiveLoadFromExternalAddressWith: [ :sourcePointer |
 		| jumpFailAlloc |
@@ -1477,7 +1479,7 @@ CogObjectRepresentationForSpur >> genPrimitiveLoadFloat32FromExternalAddress [
 	] needsToTrap: true.
 ]
 
-{ #category : #'primitive generators' }
+{ #category : 'primitive generators' }
 CogObjectRepresentationForSpur >> genPrimitiveLoadFloat64FromBytes [
 	^ self genPrimitiveLoad: 8 fromBytesWith: [ :sourcePointer |
 		| jumpFailAlloc |
@@ -1494,7 +1496,7 @@ CogObjectRepresentationForSpur >> genPrimitiveLoadFloat64FromBytes [
 	] needsToTrap: true.
 ]
 
-{ #category : #'primitive generators' }
+{ #category : 'primitive generators' }
 CogObjectRepresentationForSpur >> genPrimitiveLoadFloat64FromExternalAddress [
 	^ self genPrimitiveLoadFromExternalAddressWith: [ :sourcePointer |
 		| jumpFailAlloc |
@@ -1511,13 +1513,13 @@ CogObjectRepresentationForSpur >> genPrimitiveLoadFloat64FromExternalAddress [
 	] needsToTrap: true.
 ]
 
-{ #category : #'primitive generators' }
+{ #category : 'primitive generators' }
 CogObjectRepresentationForSpur >> genPrimitiveLoadFromExternalAddressWith: aBlock [
 
 	^ self genPrimitiveLoadFromExternalAddressWith: aBlock needsToTrap: false
 ]
 
-{ #category : #'primitive generators' }
+{ #category : 'primitive generators' }
 CogObjectRepresentationForSpur >> genPrimitiveLoadFromExternalAddressWith: aBlock needsToTrap: needsToTrap [
 
 	| jumpBadIndex jumpImmediate jumpNonExternalAddress |
@@ -1545,7 +1547,7 @@ CogObjectRepresentationForSpur >> genPrimitiveLoadFromExternalAddressWith: aBloc
 	^ needsToTrap ifTrue: [0] ifFalse: [CompletePrimitive]
 ]
 
-{ #category : #'primitive generators' }
+{ #category : 'primitive generators' }
 CogObjectRepresentationForSpur >> genPrimitiveLoadInt16FromBytes [
 	^ self genPrimitiveLoad: 2 fromBytesWith: [ :sourcePointer |
 		cogit MoveM16: 0 r: sourcePointer R: ReceiverResultReg.
@@ -1556,7 +1558,7 @@ CogObjectRepresentationForSpur >> genPrimitiveLoadInt16FromBytes [
 	].
 ]
 
-{ #category : #'primitive generators' }
+{ #category : 'primitive generators' }
 CogObjectRepresentationForSpur >> genPrimitiveLoadInt16FromExternalAddress [
 	^ self genPrimitiveLoadFromExternalAddressWith: [ :sourcePointer |
 		cogit MoveM16: 0 r: sourcePointer R: ReceiverResultReg.
@@ -1567,7 +1569,7 @@ CogObjectRepresentationForSpur >> genPrimitiveLoadInt16FromExternalAddress [
 	].
 ]
 
-{ #category : #'primitive generators' }
+{ #category : 'primitive generators' }
 CogObjectRepresentationForSpur >> genPrimitiveLoadInt8FromBytes [
 	^ self genPrimitiveLoad: 1 fromBytesWith: [ :sourcePointer |
 		cogit MoveMb: 0 r: sourcePointer R: ReceiverResultReg.
@@ -1578,7 +1580,7 @@ CogObjectRepresentationForSpur >> genPrimitiveLoadInt8FromBytes [
 	].
 ]
 
-{ #category : #'primitive generators' }
+{ #category : 'primitive generators' }
 CogObjectRepresentationForSpur >> genPrimitiveLoadInt8FromExternalAddress [
 	^ self genPrimitiveLoadFromExternalAddressWith: [ :sourcePointer |
 		cogit MoveMb: 0 r: sourcePointer R: ReceiverResultReg.
@@ -1589,7 +1591,7 @@ CogObjectRepresentationForSpur >> genPrimitiveLoadInt8FromExternalAddress [
 	].
 ]
 
-{ #category : #'primitive generators' }
+{ #category : 'primitive generators' }
 CogObjectRepresentationForSpur >> genPrimitiveLoadPointerFromBytes [
 	^ self genPrimitiveLoad: BytesPerWord fromBytesWith: [ :sourcePointer |
 		| jumpFailAlloc |
@@ -1603,7 +1605,7 @@ CogObjectRepresentationForSpur >> genPrimitiveLoadPointerFromBytes [
 	] needsToTrap: true.
 ]
 
-{ #category : #'primitive generators' }
+{ #category : 'primitive generators' }
 CogObjectRepresentationForSpur >> genPrimitiveLoadPointerFromExternalAddress [
 	^ self genPrimitiveLoadFromExternalAddressWith: [ :sourcePointer |
 		| jumpFailAlloc |
@@ -1617,7 +1619,7 @@ CogObjectRepresentationForSpur >> genPrimitiveLoadPointerFromExternalAddress [
 	] needsToTrap: true.
 ]
 
-{ #category : #'primitive generators' }
+{ #category : 'primitive generators' }
 CogObjectRepresentationForSpur >> genPrimitiveLoadUInt16FromBytes [
 	^ self genPrimitiveLoad: 2 fromBytesWith: [ :sourcePointer |
 		cogit MoveM16: 0 r: sourcePointer R: ReceiverResultReg.
@@ -1628,7 +1630,7 @@ CogObjectRepresentationForSpur >> genPrimitiveLoadUInt16FromBytes [
 	].
 ]
 
-{ #category : #'primitive generators' }
+{ #category : 'primitive generators' }
 CogObjectRepresentationForSpur >> genPrimitiveLoadUInt16FromExternalAddress [
 	^ self genPrimitiveLoadFromExternalAddressWith: [ :sourcePointer |
 		cogit MoveM16: 0 r: sourcePointer R: ReceiverResultReg.
@@ -1639,7 +1641,7 @@ CogObjectRepresentationForSpur >> genPrimitiveLoadUInt16FromExternalAddress [
 	].
 ]
 
-{ #category : #'primitive generators' }
+{ #category : 'primitive generators' }
 CogObjectRepresentationForSpur >> genPrimitiveLoadUInt8FromBytes [
 	^ self genPrimitiveLoad: 1 fromBytesWith: [ :sourcePointer |
 		cogit MoveMb: 0 r: sourcePointer R: ReceiverResultReg .
@@ -1652,7 +1654,7 @@ CogObjectRepresentationForSpur >> genPrimitiveLoadUInt8FromBytes [
 	].
 ]
 
-{ #category : #'primitive generators' }
+{ #category : 'primitive generators' }
 CogObjectRepresentationForSpur >> genPrimitiveLoadUInt8FromExternalAddress [
 	^ self genPrimitiveLoadFromExternalAddressWith: [ :sourcePointer |
 		cogit MoveMb: 0 r: sourcePointer R: ReceiverResultReg .
@@ -1665,7 +1667,7 @@ CogObjectRepresentationForSpur >> genPrimitiveLoadUInt8FromExternalAddress [
 	].
 ]
 
-{ #category : #'primitive generators' }
+{ #category : 'primitive generators' }
 CogObjectRepresentationForSpur >> genPrimitiveObjectAt [
 	| headerReg jumpBadIndex jumpBounds jumpNotHeaderIndex |
 	<var: #jumpBounds type: #'AbstractInstruction *'>
@@ -1698,7 +1700,7 @@ CogObjectRepresentationForSpur >> genPrimitiveObjectAt [
 	^CompletePrimitive
 ]
 
-{ #category : #'primitive generators' }
+{ #category : 'primitive generators' }
 CogObjectRepresentationForSpur >> genPrimitiveSize [
 	| jumpImm jumpNotIndexable jumpIsContext |
 	"c.f. StackInterpreter>>stSizeOf: lengthOf:baseHeader:format: fixedFieldsOf:format:length:"
@@ -1719,13 +1721,13 @@ CogObjectRepresentationForSpur >> genPrimitiveSize [
 	^CompletePrimitive
 ]
 
-{ #category : #'primitive generators' }
+{ #category : 'primitive generators' }
 CogObjectRepresentationForSpur >> genPrimitiveStore: accessedElementByteSize intoBytesWith: aBlock [
 
 	^ self genPrimitiveStore: accessedElementByteSize intoBytesWith: aBlock needsToTrap: false
 ]
 
-{ #category : #'primitive generators' }
+{ #category : 'primitive generators' }
 CogObjectRepresentationForSpur >> genPrimitiveStore: accessedElementByteSize intoBytesWith: aBlock needsToTrap: needsToTrap [
 
 	| nSlotsOrBytesReg jumpBadIndex formatReg jumpIsPointers jumpOutOfBounds jumpSmaller jumpImmediate destPointerRegister |
@@ -1776,7 +1778,7 @@ CogObjectRepresentationForSpur >> genPrimitiveStore: accessedElementByteSize int
 	^ needsToTrap ifTrue: [0] ifFalse: [CompletePrimitive]
 ]
 
-{ #category : #'primitive generators' }
+{ #category : 'primitive generators' }
 CogObjectRepresentationForSpur >> genPrimitiveStoreBoolean8IntoBytes [
 	^ self genPrimitiveStore: 1 intoBytesWith: [ :destPointer :valueOop |
 		| jumpNotTrueObject jumpNotBooleanObject |
@@ -1804,7 +1806,7 @@ CogObjectRepresentationForSpur >> genPrimitiveStoreBoolean8IntoBytes [
 	].
 ]
 
-{ #category : #'primitive generators' }
+{ #category : 'primitive generators' }
 CogObjectRepresentationForSpur >> genPrimitiveStoreBoolean8IntoExternalAddress [
 	^ self genPrimitiveStoreIntoExternalAddressWith: [ :destPointer :valueOop |
 		| jumpNotTrueObject jumpNotBooleanObject |
@@ -1832,7 +1834,7 @@ CogObjectRepresentationForSpur >> genPrimitiveStoreBoolean8IntoExternalAddress [
 	].
 ]
 
-{ #category : #'primitive generators' }
+{ #category : 'primitive generators' }
 CogObjectRepresentationForSpur >> genPrimitiveStoreChar16IntoBytes [
 	^ self genPrimitiveStore: 2 intoBytesWith: [ :destPointer :valueOop |
 		| jumpNonCharacter |
@@ -1848,7 +1850,7 @@ CogObjectRepresentationForSpur >> genPrimitiveStoreChar16IntoBytes [
 	].
 ]
 
-{ #category : #'primitive generators' }
+{ #category : 'primitive generators' }
 CogObjectRepresentationForSpur >> genPrimitiveStoreChar16IntoExternalAddress [
 	^ self genPrimitiveStoreIntoExternalAddressWith: [ :destPointer :valueOop |
 		| jumpNonCharacter |
@@ -1864,7 +1866,7 @@ CogObjectRepresentationForSpur >> genPrimitiveStoreChar16IntoExternalAddress [
 	].
 ]
 
-{ #category : #'primitive generators' }
+{ #category : 'primitive generators' }
 CogObjectRepresentationForSpur >> genPrimitiveStoreChar32IntoBytes [
 	^ self genPrimitiveStore: 4 intoBytesWith: [ :destPointer :valueOop |
 		| jumpNonCharacter |
@@ -1880,7 +1882,7 @@ CogObjectRepresentationForSpur >> genPrimitiveStoreChar32IntoBytes [
 	].
 ]
 
-{ #category : #'primitive generators' }
+{ #category : 'primitive generators' }
 CogObjectRepresentationForSpur >> genPrimitiveStoreChar32IntoExternalAddress [
 	^ self genPrimitiveStoreIntoExternalAddressWith: [ :destPointer :valueOop |
 		| jumpNonCharacter |
@@ -1896,7 +1898,7 @@ CogObjectRepresentationForSpur >> genPrimitiveStoreChar32IntoExternalAddress [
 	].
 ]
 
-{ #category : #'primitive generators' }
+{ #category : 'primitive generators' }
 CogObjectRepresentationForSpur >> genPrimitiveStoreChar8IntoBytes [
 	^ self genPrimitiveStore: 1 intoBytesWith: [ :destPointer :valueOop |
 		| jumpNonCharacter |
@@ -1912,7 +1914,7 @@ CogObjectRepresentationForSpur >> genPrimitiveStoreChar8IntoBytes [
 	].
 ]
 
-{ #category : #'primitive generators' }
+{ #category : 'primitive generators' }
 CogObjectRepresentationForSpur >> genPrimitiveStoreChar8IntoExternalAddress [
 	^ self genPrimitiveStoreIntoExternalAddressWith: [ :destPointer :valueOop |
 		| jumpNonCharacter |
@@ -1928,7 +1930,7 @@ CogObjectRepresentationForSpur >> genPrimitiveStoreChar8IntoExternalAddress [
 	].
 ]
 
-{ #category : #'primitive generators' }
+{ #category : 'primitive generators' }
 CogObjectRepresentationForSpur >> genPrimitiveStoreFloat32IntoBytes [
 	^ self genPrimitiveStore: 4 intoBytesWith: [ :destPointer :valueOop |
 		| jumpNonFloat |
@@ -1943,7 +1945,7 @@ CogObjectRepresentationForSpur >> genPrimitiveStoreFloat32IntoBytes [
 	].
 ]
 
-{ #category : #'primitive generators' }
+{ #category : 'primitive generators' }
 CogObjectRepresentationForSpur >> genPrimitiveStoreFloat32IntoExternalAddress [
 	^ self genPrimitiveStoreIntoExternalAddressWith: [ :destPointer :valueOop |
 		| jumpNonFloat |
@@ -1958,7 +1960,7 @@ CogObjectRepresentationForSpur >> genPrimitiveStoreFloat32IntoExternalAddress [
 	].
 ]
 
-{ #category : #'primitive generators' }
+{ #category : 'primitive generators' }
 CogObjectRepresentationForSpur >> genPrimitiveStoreFloat64IntoBytes [
 	^ self genPrimitiveStore: 8 intoBytesWith: [ :destPointer :valueOop |
 		| jumpNonFloat |
@@ -1972,7 +1974,7 @@ CogObjectRepresentationForSpur >> genPrimitiveStoreFloat64IntoBytes [
 	].
 ]
 
-{ #category : #'primitive generators' }
+{ #category : 'primitive generators' }
 CogObjectRepresentationForSpur >> genPrimitiveStoreFloat64IntoExternalAddress [
 	^ self genPrimitiveStoreIntoExternalAddressWith: [ :destPointer :valueOop |
 		| jumpNonFloat |
@@ -1986,7 +1988,7 @@ CogObjectRepresentationForSpur >> genPrimitiveStoreFloat64IntoExternalAddress [
 	].
 ]
 
-{ #category : #'primitive generators' }
+{ #category : 'primitive generators' }
 CogObjectRepresentationForSpur >> genPrimitiveStoreInt16IntoBytes [
 	^ self genPrimitiveStore: 2 intoBytesWith: [ :destPointer :valueOop |
 		| jumpNonSmallInteger |
@@ -2001,7 +2003,7 @@ CogObjectRepresentationForSpur >> genPrimitiveStoreInt16IntoBytes [
 	].
 ]
 
-{ #category : #'primitive generators' }
+{ #category : 'primitive generators' }
 CogObjectRepresentationForSpur >> genPrimitiveStoreInt16IntoExternalAddress [
 	^ self genPrimitiveStoreIntoExternalAddressWith: [ :destPointer :valueOop |
 		| jumpNonSmallInteger |
@@ -2016,7 +2018,7 @@ CogObjectRepresentationForSpur >> genPrimitiveStoreInt16IntoExternalAddress [
 	].
 ]
 
-{ #category : #'primitive generators' }
+{ #category : 'primitive generators' }
 CogObjectRepresentationForSpur >> genPrimitiveStoreInt8IntoBytes [
 	^ self genPrimitiveStore: 1 intoBytesWith: [ :destPointer :valueOop |
 		| jumpNonSmallInteger |
@@ -2031,7 +2033,7 @@ CogObjectRepresentationForSpur >> genPrimitiveStoreInt8IntoBytes [
 	].
 ]
 
-{ #category : #'primitive generators' }
+{ #category : 'primitive generators' }
 CogObjectRepresentationForSpur >> genPrimitiveStoreInt8IntoExternalAddress [
 	^ self genPrimitiveStoreIntoExternalAddressWith: [ :destPointer :valueOop |
 		| jumpNonSmallInteger |
@@ -2046,13 +2048,13 @@ CogObjectRepresentationForSpur >> genPrimitiveStoreInt8IntoExternalAddress [
 	].
 ]
 
-{ #category : #'primitive generators' }
+{ #category : 'primitive generators' }
 CogObjectRepresentationForSpur >> genPrimitiveStoreIntoExternalAddressWith: aBlock [
 
 	^ self genPrimitiveStoreIntoExternalAddressWith: aBlock needsToTrap: false
 ]
 
-{ #category : #'primitive generators' }
+{ #category : 'primitive generators' }
 CogObjectRepresentationForSpur >> genPrimitiveStoreIntoExternalAddressWith: aBlock needsToTrap: needsToTrap [
 
 	| jumpBadIndex jumpNonExternalAddress jumpImmediate destPointerRegister |
@@ -2082,7 +2084,7 @@ CogObjectRepresentationForSpur >> genPrimitiveStoreIntoExternalAddressWith: aBlo
 	^ needsToTrap ifTrue: [0] ifFalse: [CompletePrimitive]
 ]
 
-{ #category : #'primitive generators' }
+{ #category : 'primitive generators' }
 CogObjectRepresentationForSpur >> genPrimitiveStorePointerIntoBytes [
 	^ self genPrimitiveStore: BytesPerWord intoBytesWith: [ :destPointer :valueOop |
 		| jumpImmediate jumpNonExternalAddress |
@@ -2100,7 +2102,7 @@ CogObjectRepresentationForSpur >> genPrimitiveStorePointerIntoBytes [
 	].
 ]
 
-{ #category : #'primitive generators' }
+{ #category : 'primitive generators' }
 CogObjectRepresentationForSpur >> genPrimitiveStorePointerIntoExternalAddress [
 	^ self genPrimitiveStoreIntoExternalAddressWith: [ :destPointer :valueOop |
 		| jumpImmediate jumpNonExternalAddress |
@@ -2118,7 +2120,7 @@ CogObjectRepresentationForSpur >> genPrimitiveStorePointerIntoExternalAddress [
 	].
 ]
 
-{ #category : #'primitive generators' }
+{ #category : 'primitive generators' }
 CogObjectRepresentationForSpur >> genPrimitiveStoreUInt16IntoBytes [
 	^ self genPrimitiveStore: 2 intoBytesWith: [ :destPointer :valueOop |
 		| jumpNonSmallInteger jumpNegative |
@@ -2134,7 +2136,7 @@ CogObjectRepresentationForSpur >> genPrimitiveStoreUInt16IntoBytes [
 	].
 ]
 
-{ #category : #'primitive generators' }
+{ #category : 'primitive generators' }
 CogObjectRepresentationForSpur >> genPrimitiveStoreUInt16IntoExternalAddress [
 	^ self genPrimitiveStoreIntoExternalAddressWith: [ :destPointer :valueOop |
 		| jumpNonSmallInteger jumpNegative |
@@ -2150,7 +2152,7 @@ CogObjectRepresentationForSpur >> genPrimitiveStoreUInt16IntoExternalAddress [
 	].
 ]
 
-{ #category : #'primitive generators' }
+{ #category : 'primitive generators' }
 CogObjectRepresentationForSpur >> genPrimitiveStoreUInt8IntoBytes [
 	^ self genPrimitiveStore: 1 intoBytesWith: [ :destPointer :valueOop |
 		| jumpNonSmallInteger jumpNegative |
@@ -2168,7 +2170,7 @@ CogObjectRepresentationForSpur >> genPrimitiveStoreUInt8IntoBytes [
 	].
 ]
 
-{ #category : #'primitive generators' }
+{ #category : 'primitive generators' }
 CogObjectRepresentationForSpur >> genPrimitiveStoreUInt8IntoExternalAddress [
 	^ self genPrimitiveStoreIntoExternalAddressWith: [ :destPointer :valueOop |
 		| jumpNonSmallInteger jumpNegative |
@@ -2186,7 +2188,7 @@ CogObjectRepresentationForSpur >> genPrimitiveStoreUInt8IntoExternalAddress [
 	].
 ]
 
-{ #category : #'primitive generators' }
+{ #category : 'primitive generators' }
 CogObjectRepresentationForSpur >> genPrimitiveStringCompareWith [
 	
 	| instr jump jumpAbove jumpIncorrectFormat1 jumpIncorrectFormat2 jumpIncorrectFormat3 jumpIncorrectFormat4 jumpMidFailure jumpSuccess minSizeReg string1CharOrByteSizeReg string2CharOrByteSizeReg string1Reg string2Reg |
@@ -2276,7 +2278,7 @@ CogObjectRepresentationForSpur >> genPrimitiveStringCompareWith [
 	^ CompletePrimitive
 ]
 
-{ #category : #'primitive generators' }
+{ #category : 'primitive generators' }
 CogObjectRepresentationForSpur >> genPrimitiveStringReplace [
 	"replaceFrom: start to: stop with: replacement startingAt: repStart. 
 	
@@ -2514,17 +2516,17 @@ CogObjectRepresentationForSpur >> genPrimitiveStringReplace [
 	^ CompletePrimitive
 ]
 
-{ #category : #'compile abstract instructions' }
+{ #category : 'compile abstract instructions' }
 CogObjectRepresentationForSpur >> genRemoveCharacterTagsInScratchReg: scratchReg [
 	cogit SubCq: objectMemory characterTag R: scratchReg
 ]
 
-{ #category : #'compile abstract instructions' }
+{ #category : 'compile abstract instructions' }
 CogObjectRepresentationForSpur >> genSetCharacterTagsIn: reg [
 	cogit OrCq: objectMemory characterTag R: reg
 ]
 
-{ #category : #'inline primitive support' }
+{ #category : 'inline primitive support' }
 CogObjectRepresentationForSpur >> genSetGCNeeded [
 	<inline: true>
 	cogit
@@ -2532,13 +2534,13 @@ CogObjectRepresentationForSpur >> genSetGCNeeded [
 		MoveR: TempReg Aw: objectMemory needGCFlagAddress
 ]
 
-{ #category : #'compile abstract instructions' }
+{ #category : 'compile abstract instructions' }
 CogObjectRepresentationForSpur >> genSetSmallIntegerTagsIn: scratchReg [
 	cogit OrCq: 1 R: scratchReg.
 	^0
 ]
 
-{ #category : #initialization }
+{ #category : 'initialization' }
 CogObjectRepresentationForSpur >> genStoreCheckContextReceiverTrampoline [
 	"Create a trampoline to store-check the update of the receiver in a closure's
 	 outerContext in compileBlockFrameBuild:."
@@ -2553,7 +2555,7 @@ CogObjectRepresentationForSpur >> genStoreCheckContextReceiverTrampoline [
 	^startAddress
 ]
 
-{ #category : #'compile abstract instructions' }
+{ #category : 'compile abstract instructions' }
 CogObjectRepresentationForSpur >> genStoreCheckReceiverReg: destReg valueReg: valueReg scratchReg: scratchReg inFrame: inFrame [
 	"Generate the code for a store check of valueReg into destReg."
 
@@ -2601,7 +2603,7 @@ CogObjectRepresentationForSpur >> genStoreCheckReceiverReg: destReg valueReg: va
 	^0
 ]
 
-{ #category : #initialization }
+{ #category : 'initialization' }
 CogObjectRepresentationForSpur >> genStoreCheckTrampoline [
 	| jumpSC |
 	<var: #jumpSC type: #'AbstractInstruction *'>
@@ -2627,14 +2629,14 @@ CogObjectRepresentationForSpur >> genStoreCheckTrampoline [
 		appendOpcodes: CheckRememberedInTrampoline
 ]
 
-{ #category : #initialization }
+{ #category : 'initialization' }
 CogObjectRepresentationForSpur >> genStoreHeader: header intoNewInstance: rcvrReg using: scratchReg [
 	"Generate the instructions to move the constant header into a new instance pointed to by rcvrReg."
 	<inline: true>
 	self subclassResponsibility
 ]
 
-{ #category : #'compile abstract instructions' }
+{ #category : 'compile abstract instructions' }
 CogObjectRepresentationForSpur >> genStoreSourceReg: sourceReg slotIndex: index destReg: destReg scratchReg: scratchReg inFrame: inFrame needsStoreCheck: needsStoreCheck [
 	
 	cogit genTraceStores.
@@ -2652,7 +2654,7 @@ CogObjectRepresentationForSpur >> genStoreSourceReg: sourceReg slotIndex: index 
 	^ 0
 ]
 
-{ #category : #'compile abstract instructions' }
+{ #category : 'compile abstract instructions' }
 CogObjectRepresentationForSpur >> genStoreSourceReg: sourceReg slotIndex: index intoNewObjectInDestReg: destReg [
 	"This method is used for unchecked stores in objects after their creation (typically, inlined creation of Array, closures and some temp vectors). 
 	Currently there is no need to do the immutability check here"
@@ -2662,7 +2664,7 @@ CogObjectRepresentationForSpur >> genStoreSourceReg: sourceReg slotIndex: index 
 	^0
 ]
 
-{ #category : #'compile abstract instructions' }
+{ #category : 'compile abstract instructions' }
 CogObjectRepresentationForSpur >> genStoreTrampolineCall: instVarIndex [
 	<inline: true>
 	self assert: IMMUTABILITY.
@@ -2675,7 +2677,7 @@ CogObjectRepresentationForSpur >> genStoreTrampolineCall: instVarIndex [
 	 cogit annotateBytecode: cogit Label
 ]
 
-{ #category : #initialization }
+{ #category : 'initialization' }
 CogObjectRepresentationForSpur >> genStoreTrampolineCalled: trampolineName instVarIndex: instVarIndex [
 	"Convention:
 	- RcvrResultReg holds the object mutated.
@@ -2738,7 +2740,7 @@ CogObjectRepresentationForSpur >> genStoreTrampolineCalled: trampolineName instV
 		appendOpcodes: true
 ]
 
-{ #category : #'inline primitive support' }
+{ #category : 'inline primitive support' }
 CogObjectRepresentationForSpur >> genStoreValue: value instance: destReg numSlots: numSlots [ 
 	"Store the value in the instance from field 1 to numSlots
 	 Typically used for for inlined allocations, initializing objects with 0 or nil.
@@ -2789,7 +2791,7 @@ CogObjectRepresentationForSpur >> genStoreValue: value instance: destReg numSlot
 	^0
 ]
 
-{ #category : #'compile abstract instructions' }
+{ #category : 'compile abstract instructions' }
 CogObjectRepresentationForSpur >> genStoreWithImmutabilityAndStoreCheckSourceReg: sourceReg slotIndex: index destReg: destReg scratchReg: scratchReg needRestoreRcvr: needRestoreRcvr [ 
 	"Store check code is duplicated to use a single trampoline"
 	<option: #IMMUTABILITY>
@@ -2846,7 +2848,7 @@ CogObjectRepresentationForSpur >> genStoreWithImmutabilityAndStoreCheckSourceReg
 	^ 0
 ]
 
-{ #category : #'compile abstract instructions' }
+{ #category : 'compile abstract instructions' }
 CogObjectRepresentationForSpur >> genStoreWithImmutabilityButNoStoreCheckSourceReg: sourceReg slotIndex: index destReg: destReg scratchReg: scratchReg needRestoreRcvr: needRestoreRcvr [
 	"Gen an immutability check with no store check (e.g. assigning an immediate literal)"
 	<option: #IMMUTABILITY>
@@ -2875,7 +2877,7 @@ CogObjectRepresentationForSpur >> genStoreWithImmutabilityButNoStoreCheckSourceR
 	^ 0
 ]
 
-{ #category : #'compile abstract instructions' }
+{ #category : 'compile abstract instructions' }
 CogObjectRepresentationForSpur >> genStoreWithImmutabilityCheckSourceReg: sourceReg slotIndex: index destReg: destReg scratchReg: scratchReg needsStoreCheck: needsStoreCheck needRestoreRcvr: needRestoreRcvr [
 	<option: #IMMUTABILITY>
 	"We know there is a frame as immutability check requires a frame"
@@ -2905,7 +2907,7 @@ CogObjectRepresentationForSpur >> genStoreWithImmutabilityCheckSourceReg: source
 	^ 0
 ]
 
-{ #category : #'mapped inlined primitive support' }
+{ #category : 'mapped inlined primitive support' }
 CogObjectRepresentationForSpur >> genVarIndexCallStoreTrampoline [	
 	self assert: IMMUTABILITY.
 	self cppIf: #IMMUTABILITY
@@ -2913,7 +2915,7 @@ CogObjectRepresentationForSpur >> genVarIndexCallStoreTrampoline [
 				cogit annotateBytecode: cogit Label ].
 ]
 
-{ #category : #initialization }
+{ #category : 'initialization' }
 CogObjectRepresentationForSpur >> generateObjectRepresentationTrampolines [
 	"Do the store check.  Answer the argument for the benefit of the code generator;
 	 ReceiverResultReg may be caller-saved and hence smashed by this call.  Answering
@@ -2951,14 +2953,14 @@ CogObjectRepresentationForSpur >> generateObjectRepresentationTrampolines [
 		[ceLargeActiveContextInFullBlockTrampoline := self genActiveContextTrampolineLarge: true inBlock: InFullBlock called: 'ceLargeFullBlockContext'].
 ]
 
-{ #category : #'bytecode generator support' }
+{ #category : 'bytecode generator support' }
 CogObjectRepresentationForSpur >> getActiveContextAllocatesInMachineCode [
 	"Make sure SendNumArgsReg and ClassReg are available in addition to
 	 ReceiverResultReg and TempReg in genGetActiveContextNumArgs:large:inBlock:."
 	^true
 ]
 
-{ #category : #'compile abstract instructions' }
+{ #category : 'compile abstract instructions' }
 CogObjectRepresentationForSpur >> getLiteralCountOf: methodReg plusOne: plusOne inBytes: inBytes into: litCountReg scratch: scratchReg [
 	"Get the literal count of a CompiledMethod into headerReg, plus one if requested.
 	  If inBytes is true, scale the count by the word size.  Deal with the possibility of
@@ -2966,14 +2968,14 @@ CogObjectRepresentationForSpur >> getLiteralCountOf: methodReg plusOne: plusOne 
 	self subclassResponsibility
 ]
 
-{ #category : #'garbage collection' }
+{ #category : 'garbage collection' }
 CogObjectRepresentationForSpur >> hasValidHeaderPostGC: cogMethod [
 	<var: #cogMethod type: #'CogMethod *'>
 	<inline: true>
 	^cogMethod objectHeader = objectMemory nullHeaderForMachineCodeMethod
 ]
 
-{ #category : #initialization }
+{ #category : 'initialization' }
 CogObjectRepresentationForSpur >> initialize [
 
 	<doNotGenerate>
@@ -2982,37 +2984,37 @@ CogObjectRepresentationForSpur >> initialize [
 	ceStoreTrampolines := (CArrayAccessor on: (Array new: NumStoreTrampolines))
 ]
 
-{ #category : #'garbage collection' }
+{ #category : 'garbage collection' }
 CogObjectRepresentationForSpur >> inlineCacheTagIsYoung: cacheTag [
 	"Since all cache tags in Spur are class indices none of
 	 them are young or have to be updated in a scavenge."
 	^false
 ]
 
-{ #category : #'in-line cacheing' }
+{ #category : 'in-line cacheing' }
 CogObjectRepresentationForSpur >> inlineCacheTagsMayBeObjects [
 	^false
 ]
 
-{ #category : #'object representation' }
+{ #category : 'object representation' }
 CogObjectRepresentationForSpur >> isSmallIntegerTagNonZero [
 	^true
 ]
 
-{ #category : #'compile abstract instructions' }
+{ #category : 'compile abstract instructions' }
 CogObjectRepresentationForSpur >> jumpNotCharacterUnsignedValueInRegister: reg [
 	cogit CmpCq: 1 << self numCharacterBits - 1 R: reg.
 	^cogit JumpAbove: 0
 ]
 
-{ #category : #'garbage collection' }
+{ #category : 'garbage collection' }
 CogObjectRepresentationForSpur >> markAndTraceLiteral: literal [
 	(self couldBeObject: literal) ifTrue:
 		[self assert: (objectMemory addressCouldBeObj: literal).
 		 objectMemory markAndTrace: literal]
 ]
 
-{ #category : #'garbage collection' }
+{ #category : 'garbage collection' }
 CogObjectRepresentationForSpur >> markAndTraceLiteral: literal in: cogMethod at: address [
 	"Mark and trace a literal in a sqInt variable of cogMethod."
 	<var: #cogMethod type: #'CogMethod *'>
@@ -3029,7 +3031,7 @@ CogObjectRepresentationForSpur >> markAndTraceLiteral: literal in: cogMethod at:
 	self markAndTraceUpdatedLiteral: objOop in: cogMethod
 ]
 
-{ #category : #'garbage collection' }
+{ #category : 'garbage collection' }
 CogObjectRepresentationForSpur >> markAndTraceLiteral: literal in: cogMethodOrNil atpc: address [
 	"Mark and trace a literal in a machine code instruction preceding address in cogMethodOrNil.
 	 Answer if code was modified."
@@ -3049,7 +3051,7 @@ CogObjectRepresentationForSpur >> markAndTraceLiteral: literal in: cogMethodOrNi
 	^true
 ]
 
-{ #category : #'garbage collection' }
+{ #category : 'garbage collection' }
 CogObjectRepresentationForSpur >> markAndTraceLiteralIfYoung: literal [
 	((self couldBeObject: literal)
 	 and: [objectMemory getMemoryMap isYoungObject: literal]) ifTrue:
@@ -3057,7 +3059,7 @@ CogObjectRepresentationForSpur >> markAndTraceLiteralIfYoung: literal [
 		 objectMemory markAndTrace: literal]
 ]
 
-{ #category : #'garbage collection' }
+{ #category : 'garbage collection' }
 CogObjectRepresentationForSpur >> markAndTraceUpdatedLiteral: objOop in: cogMethodOrNil [
 	"Common code to mark a literal in cogMethod and add
 	 the cogMethod to youngReferrers if the literal is young."
@@ -3069,7 +3071,7 @@ CogObjectRepresentationForSpur >> markAndTraceUpdatedLiteral: objOop in: cogMeth
 		 objectMemory markAndTrace: objOop]
 ]
 
-{ #category : #'primitive generators' }
+{ #category : 'primitive generators' }
 CogObjectRepresentationForSpur >> maybeCompileRetryOnPrimitiveFail: primIndex [
 	"If primIndex has an accessorDepth and fails, or it is external and fails with PrimErrNoMemory,
 	 call ceCheckAndMaybeRetryPrimitive if so  If ceCheck.... answers true, retry the primitive."
@@ -3101,7 +3103,7 @@ CogObjectRepresentationForSpur >> maybeCompileRetryOnPrimitiveFail: primIndex [
 	^0
 ]
 
-{ #category : #'sista support' }
+{ #category : 'sista support' }
 CogObjectRepresentationForSpur >> maybeMarkCounters: theCounters [
 	"In SIsta Spur counters are held on the heap in pinned objects which must be marked
 	 to avoid them being garbage collected.  This is the hook through which that happens."
@@ -3112,7 +3114,7 @@ CogObjectRepresentationForSpur >> maybeMarkCounters: theCounters [
 		[objectMemory markAndTrace: theCounters - objectMemory baseHeaderSize]
 ]
 
-{ #category : #compilation }
+{ #category : 'compilation' }
 CogObjectRepresentationForSpur >> maybeNoteDescriptor: descriptor blockStart: blockStart [
 	"Override to note inst var refs in blocks.  Used to avoid checking
 	 for forwarded receivers in blocks that don't refer to inst vars."
@@ -3123,7 +3125,7 @@ CogObjectRepresentationForSpur >> maybeNoteDescriptor: descriptor blockStart: bl
 		[blockStart hasInstVarRef: true]
 ]
 
-{ #category : #'method cacheing' }
+{ #category : 'method cacheing' }
 CogObjectRepresentationForSpur >> maybeShiftClassTagRegisterForMethodCacheProbe: classTagReg [
 	"Generate a shift of the register containing the class tag in a method cache probe.
 	 c.f. SpurMemoryManager>>methodCacheHashOf:with:"
@@ -3132,7 +3134,7 @@ CogObjectRepresentationForSpur >> maybeShiftClassTagRegisterForMethodCacheProbe:
 	^0
 ]
 
-{ #category : #'sista support' }
+{ #category : 'sista support' }
 CogObjectRepresentationForSpur >> mixed: numNonImmediates branchIf: reg instanceOfBehaviors: arrayObj target: targetFixUp [
 	| jmpImmediate numCases classObj index jmp |
 	<var: #jmpImmediate type: #'AbstractInstruction *'>
@@ -3173,7 +3175,7 @@ CogObjectRepresentationForSpur >> mixed: numNonImmediates branchIf: reg instance
 		
 ]
 
-{ #category : #'sista support' }
+{ #category : 'sista support' }
 CogObjectRepresentationForSpur >> mixed: numNonImmediates branchIf: reg notInstanceOfBehaviors: arrayObj target: targetFixUp [
 	| jmpImmediate jumps label numCases classObj index |
 	<var: #label type: #'AbstractInstruction *'>
@@ -3218,7 +3220,7 @@ CogObjectRepresentationForSpur >> mixed: numNonImmediates branchIf: reg notInsta
 		
 ]
 
-{ #category : #'sista support' }
+{ #category : 'sista support' }
 CogObjectRepresentationForSpur >> noneImmediateBranchIf: reg instanceOfBehaviors: arrayObj target: targetFixUp [
 	"All classes in arrayObj are not immediate"
 	| classObj jmp |
@@ -3235,7 +3237,7 @@ CogObjectRepresentationForSpur >> noneImmediateBranchIf: reg instanceOfBehaviors
 	^0
 ]
 
-{ #category : #'sista support' }
+{ #category : 'sista support' }
 CogObjectRepresentationForSpur >> noneImmediateBranchIf: reg notInstanceOfBehaviors: arrayObj target: targetFixUp [
 	"All classes in arrayObj are not immediate"
 	| label numJumps jumps classObj |
@@ -3257,12 +3259,12 @@ CogObjectRepresentationForSpur >> noneImmediateBranchIf: reg notInstanceOfBehavi
 	^0
 ]
 
-{ #category : #'primitive generators' }
+{ #category : 'primitive generators' }
 CogObjectRepresentationForSpur >> numCharacterBits [
 	^30
 ]
 
-{ #category : #'calling convention' }
+{ #category : 'calling convention' }
 CogObjectRepresentationForSpur >> numRegArgs [
 	"Define how many register arguments a StackToRegisterMappingCogit can
 	 and should use with the receiver.  The value must be 0, 1 or 2.  Note that a
@@ -3277,7 +3279,7 @@ CogObjectRepresentationForSpur >> numRegArgs [
 	^2
 ]
 
-{ #category : #'garbage collection' }
+{ #category : 'garbage collection' }
 CogObjectRepresentationForSpur >> remapObject: objOop [
 	self assert: (objectMemory addressCouldBeObj: objOop).
 	^(objectMemory shouldRemapObj: objOop)
@@ -3285,14 +3287,14 @@ CogObjectRepresentationForSpur >> remapObject: objOop [
 		ifFalse: [objOop]
 ]
 
-{ #category : #'garbage collection' }
+{ #category : 'garbage collection' }
 CogObjectRepresentationForSpur >> remapOop: objOop [
 	^(objectMemory shouldRemapOop: objOop)
 		ifTrue: [objectMemory remapObj: objOop]
 		ifFalse: [objOop]
 ]
 
-{ #category : #'sista support' }
+{ #category : 'sista support' }
 CogObjectRepresentationForSpur >> resetCountersIn: cogMethod [
 	<var: #cogMethod type: #'CogMethod *'>
 	<api>
@@ -3300,7 +3302,7 @@ CogObjectRepresentationForSpur >> resetCountersIn: cogMethod [
 	cogit fillInCounters: (self numCountersFor: cogMethod counters) atStartAddress: cogMethod counters
 ]
 
-{ #category : #initialization }
+{ #category : 'initialization' }
 CogObjectRepresentationForSpur >> setAllStoreTrampolinesWith: anAddress [ 
 	
 	<doNotGenerate>
@@ -3308,14 +3310,14 @@ CogObjectRepresentationForSpur >> setAllStoreTrampolinesWith: anAddress [
 		ceStoreTrampolines at: anIndex put: anAddress]
 ]
 
-{ #category : #'mapped inlined primitive support' }
+{ #category : 'mapped inlined primitive support' }
 CogObjectRepresentationForSpur >> setIfRequiredTargetOf: jumpRemembered toTargetOf: jmpImmediate [
 	<inline: true> "To avoid typing..."
 	CheckRememberedInTrampoline ifFalse:
 		[jumpRemembered jmpTarget: jmpImmediate getJmpTarget].
 ]
 
-{ #category : #'garbage collection' }
+{ #category : 'garbage collection' }
 CogObjectRepresentationForSpur >> shouldAnnotateObjectReference: anOop [
 	"Objects in newSpace or oldSpace except nil, true, false & classTableRootObj need to be annotated."
 	^(objectMemory isNonImmediate: anOop)
@@ -3323,17 +3325,17 @@ CogObjectRepresentationForSpur >> shouldAnnotateObjectReference: anOop [
 		or: [self oop: anOop isLessThan: objectMemory nilObject]]
 ]
 
-{ #category : #'compile abstract instructions' }
+{ #category : 'compile abstract instructions' }
 CogObjectRepresentationForSpur >> slotOffsetOfInstVarIndex: index [
 	^index * objectMemory wordSize + objectMemory baseHeaderSize
 ]
 
-{ #category : #testing }
+{ #category : 'testing' }
 CogObjectRepresentationForSpur >> smallIntegerIsOnlyImmediateType [
 	^false
 ]
 
-{ #category : #'sista support' }
+{ #category : 'sista support' }
 CogObjectRepresentationForSpur >> valueOfAssociation: associationOop [
 	| association |
 	association := associationOop.

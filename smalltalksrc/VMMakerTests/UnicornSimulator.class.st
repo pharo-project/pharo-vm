@@ -1,26 +1,28 @@
 Class {
-	#name : #UnicornSimulator,
-	#superclass : #ProcessorSimulator,
+	#name : 'UnicornSimulator',
+	#superclass : 'ProcessorSimulator',
 	#instVars : [
 		'stopReason',
 		'invalidAccessHandler'
 	],
-	#category : #'VMMakerTests-Unicorn'
+	#category : 'VMMakerTests-Unicorn',
+	#package : 'VMMakerTests',
+	#tag : 'Unicorn'
 }
 
-{ #category : #'instance creation' }
+{ #category : 'instance creation' }
 UnicornSimulator class >> supportsISA: isa [
 
 	^ #( #ARMv5 #ARMv8 #IA32 #X64 #aarch64 #riscv64 ) includes: isa
 ]
 
-{ #category : #initialization }
+{ #category : 'initialization' }
 UnicornSimulator >> createUnicorn [
 
 	self subclassResponsibility
 ]
 
-{ #category : #executing }
+{ #category : 'executing' }
 UnicornSimulator >> doStartAt: startAddress until: until timeout: timeout count: count [
 
 	| result error startTime currentTime remainingTimeout remainingCount |
@@ -71,13 +73,13 @@ UnicornSimulator >> doStartAt: startAddress until: until timeout: timeout count:
 				ifTrue: [ ^ result ]]
 ]
 
-{ #category : #'stack-access' }
+{ #category : 'stack-access' }
 UnicornSimulator >> finishMappingMemory [
 
 	"Do nothing in the case of Unicorn, is useful if the simulator used has to map memory by hand"
 ]
 
-{ #category : #'handling invalid accesses' }
+{ #category : 'handling invalid accesses' }
 UnicornSimulator >> handleInvalidAccess: invalidAccess [
 
 	| previousInstructionPointer hasToContinue |
@@ -95,7 +97,7 @@ UnicornSimulator >> handleInvalidAccess: invalidAccess [
 	^ hasToContinue
 ]
 
-{ #category : #initialization }
+{ #category : 'initialization' }
 UnicornSimulator >> initialize [
 
 	super initialize.
@@ -110,7 +112,7 @@ UnicornSimulator >> initialize [
 		true]
 ]
 
-{ #category : #initialization }
+{ #category : 'initialization' }
 UnicornSimulator >> initializeUnicorn [
 
 	simulator
@@ -126,12 +128,12 @@ UnicornSimulator >> initializeUnicorn [
 			false ]
 ]
 
-{ #category : #'handling invalid accesses' }
+{ #category : 'handling invalid accesses' }
 UnicornSimulator >> invalidAccessHandler: aFullBlockClosure [
 	invalidAccessHandler := aFullBlockClosure
 ]
 
-{ #category : #initialization }
+{ #category : 'initialization' }
 UnicornSimulator >> registerHook: aBlock atAddress: anAddress [
 
 	simulator
@@ -140,7 +142,7 @@ UnicornSimulator >> registerHook: aBlock atAddress: anAddress [
 			address = anAddress ifTrue: [ aBlock value ] ]
 ]
 
-{ #category : #executing }
+{ #category : 'executing' }
 UnicornSimulator >> startAt: begin until: until timeout: timeout count: count [
 
 	^ self doStartAt: begin until: until timeout: timeout count: count.

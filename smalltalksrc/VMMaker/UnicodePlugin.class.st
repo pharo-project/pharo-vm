@@ -3,18 +3,20 @@ This plugin measures and renders Unicode (UTF8) strings.
 
 "
 Class {
-	#name : #UnicodePlugin,
-	#superclass : #InterpreterPlugin,
-	#category : #'VMMaker-Plugins'
+	#name : 'UnicodePlugin',
+	#superclass : 'InterpreterPlugin',
+	#category : 'VMMaker-Plugins',
+	#package : 'VMMaker',
+	#tag : 'Plugins'
 }
 
-{ #category : #translation }
+{ #category : 'translation' }
 UnicodePlugin class >> hasHeaderFile [
 
 	^true
 ]
 
-{ #category : #utility }
+{ #category : 'utility' }
 UnicodePlugin >> asCString: stringOop [
 	"Return a C char * pointer into the given Squeak string object."
 	"Warning: A Squeak string is not necessarily null-terminated."
@@ -29,7 +31,7 @@ UnicodePlugin >> asCString: stringOop [
 		ifFalse: [self cCoerce: (interpreterProxy firstIndexableField: stringOop) to: #'char *']
 ]
 
-{ #category : #utility }
+{ #category : 'utility' }
 UnicodePlugin >> cWordsPtr: oop minSize: minSize [
 	"Return a C pointer to the first indexable field of oop, which must be a words object of at least the given size."
 	"Warning: the resulting pointer may become invalid after the next garbage collection and should only be using during the current primitive call."
@@ -44,7 +46,7 @@ UnicodePlugin >> cWordsPtr: oop minSize: minSize [
 		ifFalse: [self cCoerce: (interpreterProxy firstIndexableField: oop) to: #'void *']
 ]
 
-{ #category : #utility }
+{ #category : 'utility' }
 UnicodePlugin >> copyString: stringOop into: stringPtr max: maxChars [
 	"Copy the Squeak string into a temporary buffer and add a terminating null byte. Fail if there is not sufficent space in the buffer."
 
@@ -64,7 +66,7 @@ UnicodePlugin >> copyString: stringOop into: stringPtr max: maxChars [
 	^ 0
 ]
 
-{ #category : #primitives }
+{ #category : 'primitives' }
 UnicodePlugin >> primitiveClipboardGet [
 	"Read the clipboard into the given UTF16 string.."
 
@@ -86,7 +88,7 @@ UnicodePlugin >> primitiveClipboardGet [
 	^interpreterProxy methodReturnInteger: count
 ]
 
-{ #category : #primitives }
+{ #category : 'primitives' }
 UnicodePlugin >> primitiveClipboardPut [
 	"Set the clipboard to a UTF16 string.."
 
@@ -111,14 +113,14 @@ UnicodePlugin >> primitiveClipboardPut [
 	^ 0
 ]
 
-{ #category : #primitives }
+{ #category : 'primitives' }
 UnicodePlugin >> primitiveClipboardSize [
 
 	<export: true>
 	^interpreterProxy methodReturnInteger: self unicodeClipboardSize
 ]
 
-{ #category : #primitives }
+{ #category : 'primitives' }
 UnicodePlugin >> primitiveDrawString [
 
 	| utf8Oop utf8 w h bitmapOop bitmapPtr utf8Length result |
@@ -143,7 +145,7 @@ UnicodePlugin >> primitiveDrawString [
 
 ]
 
-{ #category : #primitives }
+{ #category : 'primitives' }
 UnicodePlugin >> primitiveGetFontList [
 
 
@@ -158,7 +160,7 @@ UnicodePlugin >> primitiveGetFontList [
 		 interpreterProxy methodReturnInteger: (self unicodeGetFont: str List: strLength)]
 ]
 
-{ #category : #primitives }
+{ #category : 'primitives' }
 UnicodePlugin >> primitiveGetXRanges [
 
 	| utf8Oop utf8 resultOop resultPtr utf8Length count resultLength |
@@ -180,7 +182,7 @@ UnicodePlugin >> primitiveGetXRanges [
 	^interpreterProxy methodReturnInteger: count
 ]
 
-{ #category : #primitives }
+{ #category : 'primitives' }
 UnicodePlugin >> primitiveMeasureString [
 
 	| utf8Oop utf8 utf8Length w h result |
@@ -201,7 +203,7 @@ UnicodePlugin >> primitiveMeasureString [
 
 ]
 
-{ #category : #primitives }
+{ #category : 'primitives' }
 UnicodePlugin >> primitiveSetColors [
 
 	| fgRed fgGreen fgBlue bgRed bgGreen bgBlue mapBGToTransparent |
@@ -223,7 +225,7 @@ UnicodePlugin >> primitiveSetColors [
 
 ]
 
-{ #category : #primitives }
+{ #category : 'primitives' }
 UnicodePlugin >> primitiveSetFont [
 
 	| fontName fontSize boldFlag italicFlag antiAliasFlag |

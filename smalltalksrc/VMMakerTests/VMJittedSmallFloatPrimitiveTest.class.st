@@ -1,13 +1,15 @@
 Class {
-	#name : #VMJittedSmallFloatPrimitiveTest,
-	#superclass : #VMJittedPrimitivesTest,
+	#name : 'VMJittedSmallFloatPrimitiveTest',
+	#superclass : 'VMJittedPrimitivesTest',
 	#pools : [
 		'CogRTLOpcodes'
 	],
-	#category : #'VMMakerTests-JitTests'
+	#category : 'VMMakerTests-JitTests',
+	#package : 'VMMakerTests',
+	#tag : 'JitTests'
 }
 
-{ #category : #'building suites' }
+{ #category : 'building suites' }
 VMJittedSmallFloatPrimitiveTest class >> wordSizeParameters [
 
 	"SmallFloats only exist in 64bits systems"
@@ -15,7 +17,7 @@ VMJittedSmallFloatPrimitiveTest class >> wordSizeParameters [
 	^ self wordSize64Parameters
 ]
 
-{ #category : #'tests - primitiveAdd' }
+{ #category : 'tests - primitiveAdd' }
 VMJittedSmallFloatPrimitiveTest >> testPrimitiveAddTwoSmallFloatsReturnsASmallFloat [
 	
 	cogit receiverTags: memory smallFloatTag.
@@ -29,7 +31,7 @@ VMJittedSmallFloatPrimitiveTest >> testPrimitiveAddTwoSmallFloatsReturnsASmallFl
 	self assert: machineSimulator receiverRegisterValue equals: (self memory floatObjectOf: 3.0)
 ]
 
-{ #category : #'tests - primitiveDivide' }
+{ #category : 'tests - primitiveDivide' }
 VMJittedSmallFloatPrimitiveTest >> testPrimitiveDivideTwoSmallFloatsReturnsASmallFloat [
 	
 	cogit receiverTags: memory smallFloatTag.
@@ -45,7 +47,7 @@ VMJittedSmallFloatPrimitiveTest >> testPrimitiveDivideTwoSmallFloatsReturnsASmal
 		equals: 0.5
 ]
 
-{ #category : #'tests - primitiveEquals' }
+{ #category : 'tests - primitiveEquals' }
 VMJittedSmallFloatPrimitiveTest >> testPrimitiveEqualTwoSmallFloatsReturnsFalse [
 	
 	cogit receiverTags: memory smallFloatTag.
@@ -61,7 +63,7 @@ VMJittedSmallFloatPrimitiveTest >> testPrimitiveEqualTwoSmallFloatsReturnsFalse 
 		equals: memory falseObject
 ]
 
-{ #category : #'tests - primitiveEquals' }
+{ #category : 'tests - primitiveEquals' }
 VMJittedSmallFloatPrimitiveTest >> testPrimitiveEqualTwoSmallFloatsReturnsTrue [
 	
 	cogit receiverTags: memory smallFloatTag.
@@ -77,7 +79,7 @@ VMJittedSmallFloatPrimitiveTest >> testPrimitiveEqualTwoSmallFloatsReturnsTrue [
 		equals: memory trueObject
 ]
 
-{ #category : #'tests - primitiveGreaterThan' }
+{ #category : 'tests - primitiveGreaterThan' }
 VMJittedSmallFloatPrimitiveTest >> testPrimitiveGreaterOrEqualTwoSmallFloatsReturnsFalseWhenLower [
 	
 	cogit receiverTags: memory smallFloatTag.
@@ -93,7 +95,7 @@ VMJittedSmallFloatPrimitiveTest >> testPrimitiveGreaterOrEqualTwoSmallFloatsRetu
 		equals: memory falseObject
 ]
 
-{ #category : #'tests - primitiveGreaterThan' }
+{ #category : 'tests - primitiveGreaterThan' }
 VMJittedSmallFloatPrimitiveTest >> testPrimitiveGreaterOrEqualTwoSmallFloatsReturnsTrueWhenEquals [
 	
 	cogit receiverTags: memory smallFloatTag.
@@ -109,7 +111,7 @@ VMJittedSmallFloatPrimitiveTest >> testPrimitiveGreaterOrEqualTwoSmallFloatsRetu
 		equals: memory trueObject
 ]
 
-{ #category : #'tests - primitiveGreaterThan' }
+{ #category : 'tests - primitiveGreaterThan' }
 VMJittedSmallFloatPrimitiveTest >> testPrimitiveGreaterOrEqualTwoSmallFloatsReturnsTrueWhenGreater [
 	
 	cogit receiverTags: memory smallFloatTag.
@@ -125,7 +127,7 @@ VMJittedSmallFloatPrimitiveTest >> testPrimitiveGreaterOrEqualTwoSmallFloatsRetu
 		equals: memory trueObject
 ]
 
-{ #category : #'tests - primitiveGreaterThan' }
+{ #category : 'tests - primitiveGreaterThan' }
 VMJittedSmallFloatPrimitiveTest >> testPrimitiveGreaterThanTwoSmallFloatsReturnsFalseWhenEqual [
 	
 	cogit receiverTags: memory smallFloatTag.
@@ -141,7 +143,7 @@ VMJittedSmallFloatPrimitiveTest >> testPrimitiveGreaterThanTwoSmallFloatsReturns
 		equals: memory falseObject
 ]
 
-{ #category : #'tests - primitiveGreaterThan' }
+{ #category : 'tests - primitiveGreaterThan' }
 VMJittedSmallFloatPrimitiveTest >> testPrimitiveGreaterThanTwoSmallFloatsReturnsFalseWhenLower [
 	
 	cogit receiverTags: memory smallFloatTag.
@@ -157,7 +159,7 @@ VMJittedSmallFloatPrimitiveTest >> testPrimitiveGreaterThanTwoSmallFloatsReturns
 		equals: memory falseObject
 ]
 
-{ #category : #'tests - primitiveGreaterThan' }
+{ #category : 'tests - primitiveGreaterThan' }
 VMJittedSmallFloatPrimitiveTest >> testPrimitiveGreaterThanTwoSmallFloatsReturnsTrueWhenGreater [
 	
 	cogit receiverTags: memory smallFloatTag.
@@ -173,7 +175,7 @@ VMJittedSmallFloatPrimitiveTest >> testPrimitiveGreaterThanTwoSmallFloatsReturns
 		equals: memory trueObject
 ]
 
-{ #category : #'tests - primitiveLessThan' }
+{ #category : 'tests - primitiveLessThan' }
 VMJittedSmallFloatPrimitiveTest >> testPrimitiveLessOrEqualTwoSmallFloatsReturnsFalseWhenGreater [
 	
 	cogit receiverTags: memory smallFloatTag.
@@ -189,7 +191,7 @@ VMJittedSmallFloatPrimitiveTest >> testPrimitiveLessOrEqualTwoSmallFloatsReturns
 		equals: memory falseObject
 ]
 
-{ #category : #'tests - primitiveLessThan' }
+{ #category : 'tests - primitiveLessThan' }
 VMJittedSmallFloatPrimitiveTest >> testPrimitiveLessOrEqualTwoSmallFloatsReturnsTrueWhenEquals [
 	
 	cogit receiverTags: memory smallFloatTag.
@@ -205,7 +207,7 @@ VMJittedSmallFloatPrimitiveTest >> testPrimitiveLessOrEqualTwoSmallFloatsReturns
 		equals: memory trueObject
 ]
 
-{ #category : #'tests - primitiveLessThan' }
+{ #category : 'tests - primitiveLessThan' }
 VMJittedSmallFloatPrimitiveTest >> testPrimitiveLessOrEqualTwoSmallFloatsReturnsTrueWhenLower [
 	
 	cogit receiverTags: memory smallFloatTag.
@@ -221,7 +223,7 @@ VMJittedSmallFloatPrimitiveTest >> testPrimitiveLessOrEqualTwoSmallFloatsReturns
 		equals: memory trueObject
 ]
 
-{ #category : #'tests - primitiveLessThan' }
+{ #category : 'tests - primitiveLessThan' }
 VMJittedSmallFloatPrimitiveTest >> testPrimitiveLessThanTwoSmallFloatsReturnsFalseWhenEquals [
 	
 	cogit receiverTags: memory smallFloatTag.
@@ -237,7 +239,7 @@ VMJittedSmallFloatPrimitiveTest >> testPrimitiveLessThanTwoSmallFloatsReturnsFal
 		equals: memory falseObject
 ]
 
-{ #category : #'tests - primitiveLessThan' }
+{ #category : 'tests - primitiveLessThan' }
 VMJittedSmallFloatPrimitiveTest >> testPrimitiveLessThanTwoSmallFloatsReturnsFalseWhenGreater [
 	
 	cogit receiverTags: memory smallFloatTag.
@@ -253,7 +255,7 @@ VMJittedSmallFloatPrimitiveTest >> testPrimitiveLessThanTwoSmallFloatsReturnsFal
 		equals: memory falseObject
 ]
 
-{ #category : #'tests - primitiveLessThan' }
+{ #category : 'tests - primitiveLessThan' }
 VMJittedSmallFloatPrimitiveTest >> testPrimitiveLessThanTwoSmallFloatsReturnsTrueWhenLower [
 	
 	cogit receiverTags: memory smallFloatTag.
@@ -269,7 +271,7 @@ VMJittedSmallFloatPrimitiveTest >> testPrimitiveLessThanTwoSmallFloatsReturnsTru
 		equals: memory trueObject
 ]
 
-{ #category : #'tests - primitiveMultiply' }
+{ #category : 'tests - primitiveMultiply' }
 VMJittedSmallFloatPrimitiveTest >> testPrimitiveMultiplyTwoSmallFloatsReturnsASmallFloat [
 	
 	cogit receiverTags: memory smallFloatTag.
@@ -285,7 +287,7 @@ VMJittedSmallFloatPrimitiveTest >> testPrimitiveMultiplyTwoSmallFloatsReturnsASm
 		equals: 6.0
 ]
 
-{ #category : #'tests - primitiveEquals' }
+{ #category : 'tests - primitiveEquals' }
 VMJittedSmallFloatPrimitiveTest >> testPrimitiveNotEqualTwoSmallFloatsReturnsFalse [
 	
 	cogit receiverTags: memory smallFloatTag.
@@ -301,7 +303,7 @@ VMJittedSmallFloatPrimitiveTest >> testPrimitiveNotEqualTwoSmallFloatsReturnsFal
 		equals: memory falseObject
 ]
 
-{ #category : #'tests - primitiveEquals' }
+{ #category : 'tests - primitiveEquals' }
 VMJittedSmallFloatPrimitiveTest >> testPrimitiveNotEqualTwoSmallFloatsReturnsTrue [
 	
 	cogit receiverTags: memory smallFloatTag.
@@ -317,7 +319,7 @@ VMJittedSmallFloatPrimitiveTest >> testPrimitiveNotEqualTwoSmallFloatsReturnsTru
 		equals: memory trueObject
 ]
 
-{ #category : #'tests - primitiveSquareRoot' }
+{ #category : 'tests - primitiveSquareRoot' }
 VMJittedSmallFloatPrimitiveTest >> testPrimitiveSquareRootASmallFloatsReturnsASmallFloat [
 	
 	cogit receiverTags: memory smallFloatTag.
@@ -332,7 +334,7 @@ VMJittedSmallFloatPrimitiveTest >> testPrimitiveSquareRootASmallFloatsReturnsASm
 		equals: 2.0 sqrt
 ]
 
-{ #category : #'tests - primitiveSubtract' }
+{ #category : 'tests - primitiveSubtract' }
 VMJittedSmallFloatPrimitiveTest >> testPrimitiveSubtractTwoSmallFloatsReturnsASmallFloat [
 	
 	cogit receiverTags: memory smallFloatTag.

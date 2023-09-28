@@ -112,8 +112,8 @@ useTwoPaths
 
 "
 Class {
-	#name : #StackToRegisterMappingCogit,
-	#superclass : #SimpleStackBasedCogit,
+	#name : 'StackToRegisterMappingCogit',
+	#superclass : 'SimpleStackBasedCogit',
 	#instVars : [
 		'prevBCDescriptor',
 		'numPushNilsFunction',
@@ -149,16 +149,18 @@ Class {
 		'numPushNilsFunction',
 		'pushNilSizeFunction'
 	],
-	#category : #'VMMaker-JIT'
+	#category : 'VMMaker-JIT',
+	#package : 'VMMaker',
+	#tag : 'JIT'
 }
 
-{ #category : #translation }
+{ #category : 'translation' }
 StackToRegisterMappingCogit class >> ancilliaryClasses [
 	^super ancilliaryClasses,
 	  { self basicNew simStackEntryClass. self basicNew bytecodeFixupClass. CogSSOptStatus }
 ]
 
-{ #category : #documentation }
+{ #category : 'documentation' }
 StackToRegisterMappingCogit class >> callingConvention [
 	"The Smalltalk-to-Smalltalk calling convention aims to trade simplicity of compilation against
 	 effectiveness of optimization.  Most Smalltalk methods, and certainly most performance-
@@ -213,7 +215,7 @@ StackToRegisterMappingCogit class >> callingConvention [
 		it will access its arguments in registers."
 ]
 
-{ #category : #translation }
+{ #category : 'translation' }
 StackToRegisterMappingCogit class >> declareCVarsIn: aCodeGen [
 	aCodeGen
 		var: #methodAbortTrampolines
@@ -253,7 +255,7 @@ StackToRegisterMappingCogit class >> declareCVarsIn: aCodeGen [
 				declareC: 'sqInt (* const pushNilSizeFunction)(sqInt,sqInt) = ', (aCodeGen cFunctionNameFor: self pushNilSizeFunction)].
 ]
 
-{ #category : #'class initialization' }
+{ #category : 'class initialization' }
 StackToRegisterMappingCogit class >> initializeBytecodeTableForSistaV1 [
 	"StackToRegisterMappingCogit initializeBytecodeTableForSistaV1"
 
@@ -384,7 +386,7 @@ StackToRegisterMappingCogit class >> initializeBytecodeTableForSistaV1 [
 		(3 254 255	unknownBytecode))
 ]
 
-{ #category : #'class initialization' }
+{ #category : 'class initialization' }
 StackToRegisterMappingCogit class >> initializeSimStackConstants [
 	"The simulation stack is used to delay code generation until operands are consumed by
 	 some operation, thereby avoiding pushing operands to the real stack and enabling
@@ -401,14 +403,14 @@ StackToRegisterMappingCogit class >> initializeSimStackConstants [
 	SSVectorRegister := 18.
 ]
 
-{ #category : #'class initialization' }
+{ #category : 'class initialization' }
 StackToRegisterMappingCogit class >> initializeWithOptions: optionsDictionary [
 
 	super initializeWithOptions: optionsDictionary.
 	self initializeSimStackConstants
 ]
 
-{ #category : #translation }
+{ #category : 'translation' }
 StackToRegisterMappingCogit class >> isAcceptableAncilliaryClass: aClass [
 	^(aClass includesBehavior: CogBytecodeFixup)
 		ifTrue: [aClass == self basicNew bytecodeFixupClass]
@@ -418,7 +420,7 @@ StackToRegisterMappingCogit class >> isAcceptableAncilliaryClass: aClass [
 				ifFalse: [true]]
 ]
 
-{ #category : #translation }
+{ #category : 'translation' }
 StackToRegisterMappingCogit class >> mustBeGlobal: var [
 	"Answer if a variable must be global and exported.  Used for inst vars that are accessed from VM support code."
 
@@ -428,14 +430,14 @@ StackToRegisterMappingCogit class >> mustBeGlobal: var [
 			'ceCall0ArgsPIC' 'ceCall1ArgsPIC' 'ceCall2ArgsPIC') includes: var]
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 StackToRegisterMappingCogit class >> numPushNilsFunction [
 	"Answer the value of numPushNilsFunction"
 
 	^numPushNilsFunction
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 StackToRegisterMappingCogit class >> numTrampolines [
 	^super numTrampolines + 12 "includes register args aborts"
 
@@ -443,14 +445,14 @@ StackToRegisterMappingCogit class >> numTrampolines [
 	"self instVarNames select: [:ea| ea beginsWith: 'ce']"
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 StackToRegisterMappingCogit class >> pushNilSizeFunction [
 	"Answer the value of pushNilSizeFunction"
 
 	^ pushNilSizeFunction
 ]
 
-{ #category : #translation }
+{ #category : 'translation' }
 StackToRegisterMappingCogit class >> requiredMethodNames: options [
 	^(super requiredMethodNames: options)
 		add: self numPushNilsFunction;
@@ -458,24 +460,24 @@ StackToRegisterMappingCogit class >> requiredMethodNames: options [
 		yourself
 ]
 
-{ #category : #translation }
+{ #category : 'translation' }
 StackToRegisterMappingCogit class >> shouldGenerateTypedefFor: aStructClass [
 	"Hack to work-around mutliple definitions.  Sometimes a type has been defined in an include."
 	^aStructClass ~~ CogBytecodeFixup "overridden by CogSSBytecodeFixup"
 	  and: [super shouldGenerateTypedefFor: aStructClass]
 ]
 
-{ #category : #translation }
+{ #category : 'translation' }
 StackToRegisterMappingCogit class >> simNativeStackSlots [
 	^ self basicNew simNativeStackSlots
 ]
 
-{ #category : #translation }
+{ #category : 'translation' }
 StackToRegisterMappingCogit class >> simStackSlots [
 	^ self basicNew simStackSlots
 ]
 
-{ #category : #documentation }
+{ #category : 'documentation' }
 StackToRegisterMappingCogit class >> stackToRegisterMapping [
 	"Stack to register mapping is enabled via a simulation stack { simStack. simStackPtr, simSpillBase } of
 	 operand descriptors (CogSimStackEntry) which serve
@@ -553,7 +555,7 @@ StackToRegisterMappingCogit class >> stackToRegisterMapping [
 	 and merge this status at control-flow joins."
 ]
 
-{ #category : #'primitive generators' }
+{ #category : 'primitive generators' }
 StackToRegisterMappingCogit >> adjustArgumentsForPerform: numArgs [
 	"Generate code to adjust the possibly stacked arguments immediately
 	 before jumping to a method looked up by a perform primitive."
@@ -595,7 +597,7 @@ StackToRegisterMappingCogit >> adjustArgumentsForPerform: numArgs [
 	super adjustArgumentsForPerform: numArgs
 ]
 
-{ #category : #'bytecode generator support' }
+{ #category : 'bytecode generator support' }
 StackToRegisterMappingCogit >> allocateEqualsEqualsRegistersArgNeedsReg: argNeedsReg rcvrNeedsReg: rcvrNeedsReg into: binaryBlock [
 
 	| argReg rcvrReg |
@@ -625,7 +627,7 @@ StackToRegisterMappingCogit >> allocateEqualsEqualsRegistersArgNeedsReg: argNeed
 	binaryBlock value: rcvrReg value: argReg
 ]
 
-{ #category : #'simulation stack' }
+{ #category : 'simulation stack' }
 StackToRegisterMappingCogit >> allocateFloatRegNotConflictingWith: regMask [
 	| reg |
 	"if there's a free register, use it"
@@ -635,7 +637,7 @@ StackToRegisterMappingCogit >> allocateFloatRegNotConflictingWith: regMask [
 	^ reg
 ]
 
-{ #category : #'simulation stack' }
+{ #category : 'simulation stack' }
 StackToRegisterMappingCogit >> allocateRegForStackEntryAt: index [
 	"If the stack entry is already in a register, answers it,
 	else allocate a new register for it"
@@ -644,7 +646,7 @@ StackToRegisterMappingCogit >> allocateRegForStackEntryAt: index [
 	
 ]
 
-{ #category : #'simulation stack' }
+{ #category : 'simulation stack' }
 StackToRegisterMappingCogit >> allocateRegForStackEntryAt: index notConflictingWith: regMask [
 	"If the stack entry is already in a register not conflicting with regMask, answers it,
 	else allocate a new register not conflicting with reg mask"
@@ -672,7 +674,7 @@ StackToRegisterMappingCogit >> allocateRegForStackEntryAt: index notConflictingW
 	^self allocateRegNotConflictingWith: regMask
 ]
 
-{ #category : #'simulation stack' }
+{ #category : 'simulation stack' }
 StackToRegisterMappingCogit >> allocateRegForStackTopThreeEntriesInto: trinaryBlock thirdIsReceiver: thirdIsReceiver [
 	"Answers registers for the 3 top values on stack. If the values are already in registers, answers
 	these registers, else allocate registers not conflicting with each others.
@@ -711,7 +713,7 @@ StackToRegisterMappingCogit >> allocateRegForStackTopThreeEntriesInto: trinaryBl
 	^ trinaryBlock value: rTop value: rNext value: rThird
 ]
 
-{ #category : #'simulation stack' }
+{ #category : 'simulation stack' }
 StackToRegisterMappingCogit >> allocateRegForStackTopTwoEntriesInto: binaryBlock [
 	"Answers registers for the 2 top values on stack. If the values are already in registers, answers
 	these registers, else allocate registers not conflicting with each others."
@@ -737,7 +739,7 @@ StackToRegisterMappingCogit >> allocateRegForStackTopTwoEntriesInto: binaryBlock
 	^ binaryBlock value: rTop value: rNext
 ]
 
-{ #category : #'simulation stack' }
+{ #category : 'simulation stack' }
 StackToRegisterMappingCogit >> allocateRegNotConflictingWith: regMask [
 	| reg |
 	"if there's a free register, use it"
@@ -749,7 +751,7 @@ StackToRegisterMappingCogit >> allocateRegNotConflictingWith: regMask [
 	^ reg
 ]
 
-{ #category : #'simulation stack' }
+{ #category : 'simulation stack' }
 StackToRegisterMappingCogit >> allocateVectorRegForStackEntryAt: index notConflictingWith: regMask [
 	"If the stack entry is already in a register not conflicting with regMask, answers it,
 	else allocate a new register not conflicting with reg mask"
@@ -777,7 +779,7 @@ StackToRegisterMappingCogit >> allocateVectorRegForStackEntryAt: index notConfli
 	^self allocateVectorRegNotConflictingWith: regMask
 ]
 
-{ #category : #'simulation stack' }
+{ #category : 'simulation stack' }
 StackToRegisterMappingCogit >> allocateVectorRegNotConflictingWith: regMask [
 	| reg |
 	"if there's a free register, use it"
@@ -787,7 +789,7 @@ StackToRegisterMappingCogit >> allocateVectorRegNotConflictingWith: regMask [
 	^ reg
 ]
 
-{ #category : #'bytecode generator support' }
+{ #category : 'bytecode generator support' }
 StackToRegisterMappingCogit >> annotateInstructionForBytecode [
 	"Annotate the current instruction as having a bytecode pc.  If the current instruction
 	 is already annotated, insert a nop and annotate that.  We cannot have the same instruction
@@ -798,7 +800,7 @@ StackToRegisterMappingCogit >> annotateInstructionForBytecode [
 								ifFalse: [self Label]).
 ]
 
-{ #category : #'simulation stack' }
+{ #category : 'simulation stack' }
 StackToRegisterMappingCogit >> anyReferencesToRegister: reg inAllButTopNItems: n [
 	| regMask |
 	regMask := self registerMaskFor: reg.
@@ -809,7 +811,7 @@ StackToRegisterMappingCogit >> anyReferencesToRegister: reg inAllButTopNItems: n
 	^false
 ]
 
-{ #category : #'simulation stack' }
+{ #category : 'simulation stack' }
 StackToRegisterMappingCogit >> anyReferencesToRegister: reg inTopNItems: n [
 	| regMask |
 	regMask := self registerMaskFor: reg.
@@ -820,7 +822,7 @@ StackToRegisterMappingCogit >> anyReferencesToRegister: reg inTopNItems: n [
 	^false
 ]
 
-{ #category : #'compile abstract instructions' }
+{ #category : 'compile abstract instructions' }
 StackToRegisterMappingCogit >> assertCorrectSimStackPtr [
 	<inline: true>
 	"Would like to assert simply simSpillBase > methodOrBlockNumTemps but can't because
@@ -835,25 +837,25 @@ StackToRegisterMappingCogit >> assertCorrectSimStackPtr [
 						= (self debugStackPointerFor: bytecodePC)]].
 ]
 
-{ #category : #'simulation stack' }
+{ #category : 'simulation stack' }
 StackToRegisterMappingCogit >> availableRegOrNoneNotConflictingWith: regMask [
 	<inline: true>
 	"If there's a free register, answer it, otherwise answer NoReg."
 	^backEnd availableRegisterOrNoneFor: (self liveRegisters bitOr: regMask)
 ]
 
-{ #category : #'simulation only' }
+{ #category : 'simulation only' }
 StackToRegisterMappingCogit >> bytecodeFixupClass [
 	<doNotGenerate>
 	^CogSSBytecodeFixup
 ]
 
-{ #category : #trampolines }
+{ #category : 'trampolines' }
 StackToRegisterMappingCogit >> cPICMissTrampolineFor: numArgs [
 	^picMissTrampolines at: (numArgs min: self numRegArgs + 1)
 ]
 
-{ #category : #debugging }
+{ #category : 'debugging' }
 StackToRegisterMappingCogit >> callCogCodePopReceiverArg0Regs [
 	"This is a static version of ceCallCogCodePopReceiverArg0Regs
 	 for break-pointing when debugging in C."
@@ -864,7 +866,7 @@ StackToRegisterMappingCogit >> callCogCodePopReceiverArg0Regs [
 		inSmalltalk: [self ceCallCogCodePopReceiverArg0Regs]
 ]
 
-{ #category : #debugging }
+{ #category : 'debugging' }
 StackToRegisterMappingCogit >> callCogCodePopReceiverArg1Arg0Regs [
 	"This is a static version of ceCallCogCodePopReceiverArg1Arg0Regs
 	 for break-pointing when debugging in C."
@@ -875,42 +877,42 @@ StackToRegisterMappingCogit >> callCogCodePopReceiverArg1Arg0Regs [
 		inSmalltalk: [self ceCallCogCodePopReceiverArg1Arg0Regs]
 ]
 
-{ #category : #'simulation only' }
+{ #category : 'simulation only' }
 StackToRegisterMappingCogit >> ceCall0ArgsPIC [
 	<api: 'extern void (*ceCall0ArgsPIC)()'>
 	<doNotGenerate>
 	self simulateEnilopmart: ceCall0ArgsPIC numArgs: 1
 ]
 
-{ #category : #'simulation only' }
+{ #category : 'simulation only' }
 StackToRegisterMappingCogit >> ceCall1ArgsPIC [
 	<api: 'extern void (*ceCall1ArgsPIC)()'>
 	<doNotGenerate>
 	self simulateEnilopmart: ceCall1ArgsPIC numArgs: 1
 ]
 
-{ #category : #'simulation only' }
+{ #category : 'simulation only' }
 StackToRegisterMappingCogit >> ceCall2ArgsPIC [
 	<api: 'extern void (*ceCall2ArgsPIC)()'>
 	<doNotGenerate>
 	self simulateEnilopmart: ceCall2ArgsPIC numArgs: 1
 ]
 
-{ #category : #'simulation only' }
+{ #category : 'simulation only' }
 StackToRegisterMappingCogit >> ceCallCogCodePopReceiverArg0Regs [
 	<api: 'extern void (*ceCallCogCodePopReceiverArg0Regs)()'>
 	<doNotGenerate>
 	self simulateEnilopmart: ceCallCogCodePopReceiverArg0Regs numArgs: 2
 ]
 
-{ #category : #'simulation only' }
+{ #category : 'simulation only' }
 StackToRegisterMappingCogit >> ceCallCogCodePopReceiverArg1Arg0Regs [
 	<api: 'extern void (*ceCallCogCodePopReceiverArg1Arg0Regs)()'>
 	<doNotGenerate>
 	self simulateEnilopmart: ceCallCogCodePopReceiverArg1Arg0Regs numArgs: 3
 ]
 
-{ #category : #'simulation only' }
+{ #category : 'simulation only' }
 StackToRegisterMappingCogit >> ceShortCutTraceStore: aProcessorSimulationTrap [
 	<doNotGenerate>
 	self shortcutTrampoline: aProcessorSimulationTrap
@@ -919,13 +921,13 @@ StackToRegisterMappingCogit >> ceShortCutTraceStore: aProcessorSimulationTrap [
 				into: (processor registerAt: ReceiverResultReg)]
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 StackToRegisterMappingCogit >> ceStoreCheckTrampoline [
 	<doNotGenerate>
 	^ self objectRepresentation ceStoreCheckTrampoline
 ]
 
-{ #category : #'compile abstract instructions' }
+{ #category : 'compile abstract instructions' }
 StackToRegisterMappingCogit >> compileAbstractInstructionsFrom: start through: end [
 	"Loop over bytecodes, dispatching to the generator for each bytecode, handling fixups in due course."
 	| nextOpcodeIndex descriptor nExts fixup result |
@@ -954,7 +956,7 @@ StackToRegisterMappingCogit >> compileAbstractInstructionsFrom: start through: e
 	^result
 ]
 
-{ #category : #'compile abstract instructions' }
+{ #category : 'compile abstract instructions' }
 StackToRegisterMappingCogit >> compileCogFullBlockMethod: numCopied [
 	<option: #SistaV1BytecodeSet>
 	methodOrBlockNumTemps := coInterpreter tempCountOf: methodObj.
@@ -963,7 +965,7 @@ StackToRegisterMappingCogit >> compileCogFullBlockMethod: numCopied [
 	^super compileCogFullBlockMethod: numCopied
 ]
 
-{ #category : #'compile abstract instructions' }
+{ #category : 'compile abstract instructions' }
 StackToRegisterMappingCogit >> compileCogMethod: selector [
 	methodOrBlockNumTemps := coInterpreter tempCountOf: methodObj.
 	self cCode: '' inSmalltalk:
@@ -971,14 +973,14 @@ StackToRegisterMappingCogit >> compileCogMethod: selector [
 	^super compileCogMethod: selector
 ]
 
-{ #category : #'compile abstract instructions' }
+{ #category : 'compile abstract instructions' }
 StackToRegisterMappingCogit >> compileEntireMethod [
 	"Compile the abstract instructions for the entire method, including blocks."
 	regArgsHaveBeenPushed := false.
 	^super compileEntireMethod
 ]
 
-{ #category : #'compile abstract instructions' }
+{ #category : 'compile abstract instructions' }
 StackToRegisterMappingCogit >> compileFrameBuild [
 	"Build a frame for a CogMethod activation.  See CoInterpreter class>>initializeFrameIndices.
 	 Override to push the register receiver and register arguments, if any."
@@ -997,7 +999,7 @@ StackToRegisterMappingCogit >> compileFrameBuild [
 	self initSimStackForFramefulMethod: initialPC
 ]
 
-{ #category : #'compile abstract instructions' }
+{ #category : 'compile abstract instructions' }
 StackToRegisterMappingCogit >> compileFullBlockFramelessEntry: numCopied [
 	"Make sure ReceiverResultReg holds the receiver, loaded from
 	 the closure, which is what is initially in ReceiverResultReg"
@@ -1005,7 +1007,7 @@ StackToRegisterMappingCogit >> compileFullBlockFramelessEntry: numCopied [
 	super compileFullBlockFramelessEntry: numCopied
 ]
 
-{ #category : #'compile abstract instructions' }
+{ #category : 'compile abstract instructions' }
 StackToRegisterMappingCogit >> compileFullBlockMethodFrameBuild: numCopied [
 	<option: #SistaV1BytecodeSet>
 	useTwoPaths ifTrue: 
@@ -1021,7 +1023,7 @@ StackToRegisterMappingCogit >> compileFullBlockMethodFrameBuild: numCopied [
 	self initSimStackForFramefulMethod: initialPC
 ]
 
-{ #category : #'compile abstract instructions' }
+{ #category : 'compile abstract instructions' }
 StackToRegisterMappingCogit >> compileTwoPathFrameBuild [
 	"We are in a method where the frame is needed *only* for instance variable store, typically a setter method.
 	This case has 20% overhead with Immutability compared to setter without immutability because of the stack
@@ -1048,7 +1050,7 @@ StackToRegisterMappingCogit >> compileTwoPathFrameBuild [
 	self initSimStackForFramefulMethod: initialPC
 ]
 
-{ #category : #'compile abstract instructions' }
+{ #category : 'compile abstract instructions' }
 StackToRegisterMappingCogit >> compileTwoPathFramelessInit [
 	"We are in a frameless method with at least two inst var stores. We compile two paths,
 	 one where the object is in new space, and one where it isn't. At the beginning 
@@ -1066,13 +1068,13 @@ StackToRegisterMappingCogit >> compileTwoPathFramelessInit [
 	jumpOld jmpTarget: self Label
 ]
 
-{ #category : #'simulation only' }
+{ #category : 'simulation only' }
 StackToRegisterMappingCogit >> debugStackPointerFor: bcpc [
 	<doNotGenerate>
 	^(debugStackPointers at: bcpc) + (needsFrame ifTrue: [0] ifFalse: [1])
 ]
 
-{ #category : #'bytecode generators' }
+{ #category : 'bytecode generators' }
 StackToRegisterMappingCogit >> doubleExtendedDoAnythingBytecode [
 	"Replaces the Blue Book double-extended send [132], in which the first byte was wasted on 8 bits of argument count. 
 	Here we use 3 bits for the operation sub-type (opType),  and the remaining 5 bits for argument count where needed. 
@@ -1111,7 +1113,7 @@ StackToRegisterMappingCogit >> doubleExtendedDoAnythingBytecode [
 	^0
 ]
 
-{ #category : #'bytecode generators' }
+{ #category : 'bytecode generators' }
 StackToRegisterMappingCogit >> duplicateTopBytecode [
 	| desc |
 	<var: #desc type: #SimStackEntry>
@@ -1119,13 +1121,13 @@ StackToRegisterMappingCogit >> duplicateTopBytecode [
 	^self ssPushDesc: desc
 ]
 
-{ #category : #'compile abstract instructions' }
+{ #category : 'compile abstract instructions' }
 StackToRegisterMappingCogit >> ensureFixupAt: targetPC [
 	
 	^ self ensureFixupAt: targetPC withStackPointer: simStackPtr
 ]
 
-{ #category : #'compile abstract instructions' }
+{ #category : 'compile abstract instructions' }
 StackToRegisterMappingCogit >> ensureFixupAt: targetPC withStackPointer: aStackPointer [
 	"Make sure there's a flagged fixup at the target pc in fixups.
 	 Initially a fixup's target is just a flag.  Later on it is replaced with a proper instruction."
@@ -1156,7 +1158,7 @@ StackToRegisterMappingCogit >> ensureFixupAt: targetPC withStackPointer: aStackP
 	^fixup
 ]
 
-{ #category : #'compile abstract instructions' }
+{ #category : 'compile abstract instructions' }
 StackToRegisterMappingCogit >> ensureNonMergeFixupAt: targetPC [
 	"Make sure there's a flagged fixup at the target pc in fixups.
 	 Initially a fixup's target is just a flag.  Later on it is replaced with a proper instruction."
@@ -1176,7 +1178,7 @@ StackToRegisterMappingCogit >> ensureNonMergeFixupAt: targetPC [
 	^fixup
 ]
 
-{ #category : #'bytecode generator support' }
+{ #category : 'bytecode generator support' }
 StackToRegisterMappingCogit >> ensureReceiverResultRegContainsSelf [
 	needsFrame
 		ifTrue:
@@ -1190,7 +1192,7 @@ StackToRegisterMappingCogit >> ensureReceiverResultRegContainsSelf [
 						  and: [self receiverIsInReceiverResultReg]])]
 ]
 
-{ #category : #'peephole optimizations' }
+{ #category : 'peephole optimizations' }
 StackToRegisterMappingCogit >> evaluate: descriptor at: pc [
 	<var: #descriptor type: #'BytecodeDescriptor *'>
 	byte0 := objectMemory fetchByte: pc ofObject: methodObj.
@@ -1199,7 +1201,7 @@ StackToRegisterMappingCogit >> evaluate: descriptor at: pc [
 	self perform: descriptor generator
 ]
 
-{ #category : #'peephole optimizations' }
+{ #category : 'peephole optimizations' }
 StackToRegisterMappingCogit >> eventualTargetOf: targetBytecodePC [
 	"Attempt to follow a branch to a pc.  Handle branches to unconditional jumps and
 	 branches to push: aBoolean; conditional branch pairs.  If the branch cannot be
@@ -1251,40 +1253,40 @@ StackToRegisterMappingCogit >> eventualTargetOf: targetBytecodePC [
 		repeat
 ]
 
-{ #category : #testing }
+{ #category : 'testing' }
 StackToRegisterMappingCogit >> extASpecifiesNoMustBeBoolean [
 	<inline: true>
 	^ extA anyMask: 1
 ]
 
-{ #category : #testing }
+{ #category : 'testing' }
 StackToRegisterMappingCogit >> extBSpecifiesImmCheck [ 
 	"This is a negative check"
 	<inline: true>
 	^ extB noMask: 4
 ]
 
-{ #category : #testing }
+{ #category : 'testing' }
 StackToRegisterMappingCogit >> extBSpecifiesInitializeInstance [
 	"This is a negative; do not intialize if 1 is present in extB.  This is also the no-store-check bit."
 	<inline: true>
 	^ extB noMask: 1
 ]
 
-{ #category : #testing }
+{ #category : 'testing' }
 StackToRegisterMappingCogit >> extBSpecifiesMaybeContext [
 	<inline: true>
 	^ extB anyMask: 2
 ]
 
-{ #category : #testing }
+{ #category : 'testing' }
 StackToRegisterMappingCogit >> extBSpecifiesStoreCheck [ 
 	"This is a negative check"
 	<inline: true>
 	^ extB noMask: 1
 ]
 
-{ #category : #'bytecode generator support' }
+{ #category : 'bytecode generator support' }
 StackToRegisterMappingCogit >> extractMaybeBranchDescriptorInto: fourArgBlock [
 	"Looks one instruction ahead of the current bytecodePC and answers its bytecode descriptor and its pc.
 	 If the instruction found is a branch, also answers the pc after the branch and the pc targeted by the branch.
@@ -1322,7 +1324,7 @@ StackToRegisterMappingCogit >> extractMaybeBranchDescriptorInto: fourArgBlock [
 	fourArgBlock value: branchDescriptor value: nextPC value: postBranchPC value: targetBytecodePC
 ]
 
-{ #category : #'compile abstract instructions' }
+{ #category : 'compile abstract instructions' }
 StackToRegisterMappingCogit >> fixupAtIndex: index [
 	"The fixups Array maps to bytecode pcs such that initialPC maps to index 0.
 	 fixupAt: does the conversion.  Override to add breakpointing for fixups of bytecode PCs."
@@ -1334,7 +1336,7 @@ StackToRegisterMappingCogit >> fixupAtIndex: index [
 	^self addressOf: (fixups at: index)
 ]
 
-{ #category : #'simulation stack' }
+{ #category : 'simulation stack' }
 StackToRegisterMappingCogit >> freeAnyFloatRegNotConflictingWith: regMask [
 	"Spill the closest register on stack not conflicting with regMask. 
 	Assertion Failure if regMask has already all the registers"
@@ -1348,7 +1350,7 @@ StackToRegisterMappingCogit >> freeAnyFloatRegNotConflictingWith: regMask [
 	^ reg
 ]
 
-{ #category : #'simulation stack' }
+{ #category : 'simulation stack' }
 StackToRegisterMappingCogit >> freeAnyRegNotConflictingWith: regMask [
 	"Spill the closest register on stack not conflicting with regMask. 
 	Assertion Failure if regMask has already all the registers"
@@ -1369,7 +1371,7 @@ StackToRegisterMappingCogit >> freeAnyRegNotConflictingWith: regMask [
 	^reg
 ]
 
-{ #category : #'mapped inline primitive generators - vectorial' }
+{ #category : 'mapped inline primitive generators - vectorial' }
 StackToRegisterMappingCogit >> genAddFloat32Vector [ 
 	| array1Reg array2Reg sumReg |
 
@@ -1388,7 +1390,7 @@ StackToRegisterMappingCogit >> genAddFloat32Vector [
 	^0
 ]
 
-{ #category : #'mapped inline primitive generators - vectorial' }
+{ #category : 'mapped inline primitive generators - vectorial' }
 StackToRegisterMappingCogit >> genAddFloat64Vector [ 
 	| array1Reg array2Reg sumReg |
 	
@@ -1407,7 +1409,7 @@ StackToRegisterMappingCogit >> genAddFloat64Vector [
 	^0
 ]
 
-{ #category : #'bytecode generators' }
+{ #category : 'bytecode generators' }
 StackToRegisterMappingCogit >> genBlockReturn [
 	"Return from block, assuming result already loaded into ReceiverResultReg."
 	super genBlockReturn.
@@ -1415,13 +1417,13 @@ StackToRegisterMappingCogit >> genBlockReturn [
 	^0
 ]
 
-{ #category : #'bytecode generators' }
+{ #category : 'bytecode generators' }
 StackToRegisterMappingCogit >> genCallMappedInlinedPrimitive [
 	"SistaV1:	236		11101100	iiiiiiii		callMappedInlinedPrimitive"
 	^ self genMappedInlinePrimitive: byte1
 ]
 
-{ #category : #initialization }
+{ #category : 'initialization' }
 StackToRegisterMappingCogit >> genCallPICEnilopmartNumArgs: numArgs [
 	"Generate special versions of the ceCallCogCodePopReceiverAndClassRegs
 	 enilopmart that also pop register args from the stack to undo the pushing of
@@ -1454,7 +1456,7 @@ StackToRegisterMappingCogit >> genCallPICEnilopmartNumArgs: numArgs [
 	^self cCoerceSimple: enilopmart to: #'void (*)(void)'
 ]
 
-{ #category : #'bytecode generators' }
+{ #category : 'bytecode generators' }
 StackToRegisterMappingCogit >> genCallPrimitiveBytecode [
 	"SistaV1: 248		11111000 	iiiiiiii		mjjjjjjj		Call Primitive #iiiiiiii + (jjjjjjj * 256) m=1 means inlined primitive, no hard return after execution.
 	 See EncoderForSistaV1's class comment and StackInterpreter>>#inlinePrimitiveBytecode:"
@@ -1469,7 +1471,7 @@ StackToRegisterMappingCogit >> genCallPrimitiveBytecode [
 	^EncounteredUnknownBytecode
 ]
 
-{ #category : #'bytecode generator support' }
+{ #category : 'bytecode generator support' }
 StackToRegisterMappingCogit >> genCmpArgIsConstant: argIsConstant rcvrIsConstant: rcvrIsConstant argReg: argReg rcvrReg: rcvrReg [
 	"Generates the Cmp instruction for the top two ssStack values. 
 	ssTop is called the argument and ssValue: 1 is called the receiver.
@@ -1485,7 +1487,7 @@ StackToRegisterMappingCogit >> genCmpArgIsConstant: argIsConstant rcvrIsConstant
 			ifFalse: [ self CmpR: argReg R: rcvrReg ] ].
 ]
 
-{ #category : #'bytecode generators' }
+{ #category : 'bytecode generators' }
 StackToRegisterMappingCogit >> genExtPushFullClosureBytecode [
 	"Full Block creation compilation. The block's actual code will be compiled separatedly."
 	"*	255		11111111	xxxxxxxx	siyyyyyy	push Closure Compiled block literal index xxxxxxxx (+ Extend A * 256) numCopied yyyyyy receiverOnStack: s = 1 ignoreOuterContext: i = 1"
@@ -1527,7 +1529,7 @@ StackToRegisterMappingCogit >> genExtPushFullClosureBytecode [
 	^0
 ]
 
-{ #category : #'bytecode generators' }
+{ #category : 'bytecode generators' }
 StackToRegisterMappingCogit >> genExtPushRemoteTempOrInstVarLongBytecode [
 	| index maybeContext |
 	^ (byte2 noMask: coInterpreter remoteIsInstVarAccess)
@@ -1543,7 +1545,7 @@ StackToRegisterMappingCogit >> genExtPushRemoteTempOrInstVarLongBytecode [
 				ifFalse: [ self genPushRemoteInstVar: index inObjectAt: byte2 - coInterpreter remoteIsInstVarAccess ] ]
 ]
 
-{ #category : #'bytecode generators' }
+{ #category : 'bytecode generators' }
 StackToRegisterMappingCogit >> genExtStorePopRemoteTempOrInstVarLongBytecodePopBoolean: boolean [
 	| index maybeContext needsStoreCheck needsImmCheck |
 	needsStoreCheck := self sistaNeedsStoreCheck.
@@ -1579,14 +1581,14 @@ StackToRegisterMappingCogit >> genExtStorePopRemoteTempOrInstVarLongBytecodePopB
 	^ 0
 ]
 
-{ #category : #'trampoline support' }
+{ #category : 'trampoline support' }
 StackToRegisterMappingCogit >> genExternalizePointersForPrimitiveCall [
 	" Override to push the register receiver and register arguments, if any."
 	self genPushRegisterArgs.
 	^super genExternalizePointersForPrimitiveCall
 ]
 
-{ #category : #'bytecode generators' }
+{ #category : 'bytecode generators' }
 StackToRegisterMappingCogit >> genForwardersInlinedIdenticalOrNotIf: orNot [
 
 	<var: #branchDescriptor type: #'BytecodeDescriptor *'>
@@ -1674,7 +1676,7 @@ StackToRegisterMappingCogit >> genForwardersInlinedIdenticalOrNotIf: orNot [
 	^ 0
 ]
 
-{ #category : #'bytecode generator stores' }
+{ #category : 'bytecode generator stores' }
 StackToRegisterMappingCogit >> genGenericStorePop: popBoolean MaybeContextSlotIndex: slotIndex needsStoreCheck: needsStoreCheck needsRestoreRcvr: needsRestoreReceiver needsImmutabilityCheck: needsImmCheck [
 	"Generates a store into an object that *may* be a context.
 	Multiple settings:
@@ -1718,7 +1720,7 @@ StackToRegisterMappingCogit >> genGenericStorePop: popBoolean MaybeContextSlotIn
 	^0
 ]
 
-{ #category : #'bytecode generator stores' }
+{ #category : 'bytecode generator stores' }
 StackToRegisterMappingCogit >> genGenericStorePop: popBoolean slotIndex: slotIndex destReg: destReg needsStoreCheck: needsStoreCheck needsRestoreRcvr: needsRestoreReceiver needsImmutabilityCheck: needsImmCheck [
 	"Generates a store into an object that *cannot* be a context.
 	 This code is common between multiple stores (litVar, instVar, remoteInstVar, RemoteTemp)
@@ -1758,7 +1760,7 @@ StackToRegisterMappingCogit >> genGenericStorePop: popBoolean slotIndex: slotInd
 		needsStoreCheck: needsStoreCheck
 ]
 
-{ #category : #'bytecode generator support' }
+{ #category : 'bytecode generator support' }
 StackToRegisterMappingCogit >> genIdenticalNoBranchArgIsConstant: argIsConstant rcvrIsConstant: rcvrIsConstant argReg: argReg rcvrReg: rcvrRegOrNone orNotIf: orNot [
 	"Generates the machine code for #== in the case where the instruction is not followed by a branch"
 
@@ -1798,7 +1800,7 @@ StackToRegisterMappingCogit >> genIdenticalNoBranchArgIsConstant: argIsConstant 
 	^ 0
 ]
 
-{ #category : #'bytecode generator support' }
+{ #category : 'bytecode generator support' }
 StackToRegisterMappingCogit >> genInlinedIdenticalOrNotIf: orNot [
 	"Decompose code generation for #== into a common constant-folding version,
 	 followed by a double dispatch throguh the objectRepresentation to a version
@@ -1821,14 +1823,14 @@ StackToRegisterMappingCogit >> genInlinedIdenticalOrNotIf: orNot [
 	^objectRepresentation genInlinedIdenticalOrNotIfGuts: orNot
 ]
 
-{ #category : #'bytecode generator support' }
+{ #category : 'bytecode generator support' }
 StackToRegisterMappingCogit >> genJumpBackTo: targetBytecodePC [
 	self ssFlushStack.
 	deadCode := true. "can't fall through"
 	^super genJumpBackTo: targetBytecodePC
 ]
 
-{ #category : #'bytecode generator support' }
+{ #category : 'bytecode generator support' }
 StackToRegisterMappingCogit >> genJumpIf: boolean to: targetBytecodePC [
 
 	<inline: false>
@@ -1879,7 +1881,7 @@ StackToRegisterMappingCogit >> genJumpIf: boolean to: targetBytecodePC [
 	^ 0
 ]
 
-{ #category : #'bytecode generator support' }
+{ #category : 'bytecode generator support' }
 StackToRegisterMappingCogit >> genJumpTo: targetBytecodePC [
 	| eventualTarget generator fixup |
 	eventualTarget := self eventualTargetOf: targetBytecodePC.
@@ -1905,7 +1907,7 @@ StackToRegisterMappingCogit >> genJumpTo: targetBytecodePC [
 	^0
 ]
 
-{ #category : #'primitive generators' }
+{ #category : 'primitive generators' }
 StackToRegisterMappingCogit >> genLoadArgAtDepth: n into: reg [
 	"All machine code primitives apart from perform: have only
 	 register arguments, hence no arg load code is necessary."
@@ -1913,7 +1915,7 @@ StackToRegisterMappingCogit >> genLoadArgAtDepth: n into: reg [
 	self assert: n < objectRepresentation numRegArgs
 ]
 
-{ #category : #'bytecode generator support' }
+{ #category : 'bytecode generator support' }
 StackToRegisterMappingCogit >> genLoadLiteralVariable: litVarIndex in: destReg [
 	<inline: true>
 	| association |
@@ -1924,14 +1926,14 @@ StackToRegisterMappingCogit >> genLoadLiteralVariable: litVarIndex in: destReg [
 	objectRepresentation genEnsureObjInRegNotForwarded: destReg scratchReg: TempReg.
 ]
 
-{ #category : #'bytecode generator support' }
+{ #category : 'bytecode generator support' }
 StackToRegisterMappingCogit >> genLoadTemp: objectIndex in: destReg [
 	destReg = ReceiverResultReg ifTrue: [self voidReceiverResultRegContainsSelf].
 	self ssAllocateRequiredReg: destReg. 
 	self MoveMw: (self frameOffsetOfTemporary: objectIndex) r: FPReg R: destReg.
 ]
 
-{ #category : #'mapped inline primitive generators' }
+{ #category : 'mapped inline primitive generators' }
 StackToRegisterMappingCogit >> genMappedInlinePrimitive: primIndex [
 
 	"SistaV1:	236		11101100	iiiiiiii		callMappedInlinedPrimitive"
@@ -1982,7 +1984,7 @@ StackToRegisterMappingCogit >> genMappedInlinePrimitive: primIndex [
 	^ result
 ]
 
-{ #category : #'bytecode generator support' }
+{ #category : 'bytecode generator support' }
 StackToRegisterMappingCogit >> genMarshalledSend: selectorIndex numArgs: numArgs sendTable: sendTable [
 	<inline: false>
 	<var: #sendTable type: #'sqInt *'>
@@ -2007,7 +2009,7 @@ StackToRegisterMappingCogit >> genMarshalledSend: selectorIndex numArgs: numArgs
 	^self ssPushRegister: ReceiverResultReg
 ]
 
-{ #category : #initialization }
+{ #category : 'initialization' }
 StackToRegisterMappingCogit >> genMethodAbortTrampolineFor: numArgs [
 	"Generate the abort for a method.  This abort performs either a call of ceSICMiss:
 	 to handle a single-in-line cache miss or a call of ceStackOverflow: to handle a
@@ -2054,7 +2056,7 @@ StackToRegisterMappingCogit >> genMethodAbortTrampolineFor: numArgs [
 		appendOpcodes: true
 ]
 
-{ #category : #initialization }
+{ #category : 'initialization' }
 StackToRegisterMappingCogit >> genPICAbortTrampolineFor: numArgs [
 	"Generate the abort for a PIC.  This abort performs either a call of
 	 ceInterpretMethodFromPIC:receiver: to handle invoking an uncogged
@@ -2066,7 +2068,7 @@ StackToRegisterMappingCogit >> genPICAbortTrampolineFor: numArgs [
 	^self genInnerPICAbortTrampoline: (self trampolineName: 'cePICAbort' numRegArgs: numArgs)
 ]
 
-{ #category : #initialization }
+{ #category : 'initialization' }
 StackToRegisterMappingCogit >> genPICMissTrampolineFor: numArgs [
 	<inline: false>
 	| startAddress |
@@ -2088,13 +2090,13 @@ StackToRegisterMappingCogit >> genPICMissTrampolineFor: numArgs [
 	^startAddress
 ]
 
-{ #category : #'bytecode generators' }
+{ #category : 'bytecode generators' }
 StackToRegisterMappingCogit >> genPopStackBytecode [
 	self ssPop: 1.
 	^0
 ]
 
-{ #category : #'primitive generators' }
+{ #category : 'primitive generators' }
 StackToRegisterMappingCogit >> genPrimReturn [
 	"Generate a return that cuts back the stack to remove the receiver
 	 and arguments after an invocation of a primitive with nargs arguments.
@@ -2107,7 +2109,7 @@ StackToRegisterMappingCogit >> genPrimReturn [
 		ifFalse: [super genPrimReturn]
 ]
 
-{ #category : #'primitive generators' }
+{ #category : 'primitive generators' }
 StackToRegisterMappingCogit >> genPrimitiveFullClosureValue [
 	"Override to push the register args first."
 	<option: #SistaV1BytecodeSet>
@@ -2115,7 +2117,7 @@ StackToRegisterMappingCogit >> genPrimitiveFullClosureValue [
 	^super genPrimitiveFullClosureValue
 ]
 
-{ #category : #'primitive generators' }
+{ #category : 'primitive generators' }
 StackToRegisterMappingCogit >> genPrimitivePerform [
 	"Generate an in-line perform primitive.  The lookup code requires the selector to be in Arg0Reg.
 	 adjustArgumentsForPerform: adjusts the arguments once genLookupForPerformNumArgs:
@@ -2129,7 +2131,7 @@ StackToRegisterMappingCogit >> genPrimitivePerform [
 	^self genLookupForPerformNumArgs: methodOrBlockNumArgs
 ]
 
-{ #category : #'bytecode generators' }
+{ #category : 'bytecode generators' }
 StackToRegisterMappingCogit >> genPushActiveContextBytecode [
 	self assert: needsFrame.
 	self voidReceiverResultRegContainsSelf.
@@ -2145,7 +2147,7 @@ StackToRegisterMappingCogit >> genPushActiveContextBytecode [
 	^self ssPushRegister: ReceiverResultReg
 ]
 
-{ #category : #'bytecode generator support' }
+{ #category : 'bytecode generator support' }
 StackToRegisterMappingCogit >> genPushEnclosingObjectAt: level [
 	"Uncached push enclosing object"
 	self voidReceiverResultRegContainsSelf.
@@ -2155,7 +2157,7 @@ StackToRegisterMappingCogit >> genPushEnclosingObjectAt: level [
 	^self ssPushRegister: ReceiverResultReg
 ]
 
-{ #category : #'mapped inline primitive generators - vectorial' }
+{ #category : 'mapped inline primitive generators - vectorial' }
 StackToRegisterMappingCogit >> genPushFloat32ArrayToRegister [
 
 	| arrayReg indexReg vectorReg |
@@ -2185,7 +2187,7 @@ StackToRegisterMappingCogit >> genPushFloat32ArrayToRegister [
 	^0
 ]
 
-{ #category : #'mapped inline primitive generators - vectorial' }
+{ #category : 'mapped inline primitive generators - vectorial' }
 StackToRegisterMappingCogit >> genPushFloat64ArrayToRegister [
 
 	| arrayReg indexReg vectorReg |
@@ -2215,12 +2217,12 @@ StackToRegisterMappingCogit >> genPushFloat64ArrayToRegister [
 	^0
 ]
 
-{ #category : #'bytecode generator support' }
+{ #category : 'bytecode generator support' }
 StackToRegisterMappingCogit >> genPushLiteral: literal [
 	^self ssPushConstant: literal
 ]
 
-{ #category : #'bytecode generator support' }
+{ #category : 'bytecode generator support' }
 StackToRegisterMappingCogit >> genPushLiteralIndex: literalIndex [ "<SmallInteger>"
 	"Override to avoid the BytecodeSetHasDirectedSuperSend check, which is unnecessary
 	 here given the simulation stack."
@@ -2230,7 +2232,7 @@ StackToRegisterMappingCogit >> genPushLiteralIndex: literalIndex [ "<SmallIntege
 	^self genPushLiteral: literal
 ]
 
-{ #category : #'bytecode generator support' }
+{ #category : 'bytecode generator support' }
 StackToRegisterMappingCogit >> genPushLiteralVariable: literalIndex [
 	<inline: false>
 	| association freeReg |
@@ -2262,7 +2264,7 @@ StackToRegisterMappingCogit >> genPushLiteralVariable: literalIndex [
 	^0
 ]
 
-{ #category : #'bytecode generator support' }
+{ #category : 'bytecode generator support' }
 StackToRegisterMappingCogit >> genPushMaybeContextReceiverVariable: slotIndex [ 
 	<inline: false>
 	self ssAllocateCallReg: ReceiverResultReg and: SendNumArgsReg.
@@ -2270,7 +2272,7 @@ StackToRegisterMappingCogit >> genPushMaybeContextReceiverVariable: slotIndex [
 	^ self genPushMaybeContextSlotIndex: slotIndex
 ]
 
-{ #category : #'bytecode generator support' }
+{ #category : 'bytecode generator support' }
 StackToRegisterMappingCogit >> genPushMaybeContextRemoteInstVar: slotIndex inObjectAt: index [
 	<inline: false>
 	self ssAllocateCallReg: ReceiverResultReg and: SendNumArgsReg.
@@ -2278,7 +2280,7 @@ StackToRegisterMappingCogit >> genPushMaybeContextRemoteInstVar: slotIndex inObj
 	^ self genPushMaybeContextSlotIndex: slotIndex
 ]
 
-{ #category : #'bytecode generator support' }
+{ #category : 'bytecode generator support' }
 StackToRegisterMappingCogit >> genPushMaybeContextSlotIndex: slotIndex [
 	<inline: true>
 	"This method expects ReceiverResultReg to hold the object read"
@@ -2312,7 +2314,7 @@ StackToRegisterMappingCogit >> genPushMaybeContextSlotIndex: slotIndex [
 	^self ssPushRegister: SendNumArgsReg
 ]
 
-{ #category : #'bytecode generators' }
+{ #category : 'bytecode generators' }
 StackToRegisterMappingCogit >> genPushNewArrayBytecode [
 	| size popValues |
 	self assert: needsFrame.
@@ -2338,14 +2340,14 @@ StackToRegisterMappingCogit >> genPushNewArrayBytecode [
 	^self ssPushRegister: ReceiverResultReg
 ]
 
-{ #category : #'bytecode generators' }
+{ #category : 'bytecode generators' }
 StackToRegisterMappingCogit >> genPushReceiverBytecode [
 	self receiverIsInReceiverResultReg ifTrue:
 		[^self ssPushRegister: ReceiverResultReg].
 	^self ssPushDesc: self ssSelfDescriptor
 ]
 
-{ #category : #'bytecode generator support' }
+{ #category : 'bytecode generator support' }
 StackToRegisterMappingCogit >> genPushReceiverVariable: index [
 	<inline: false>
 	self ensureReceiverResultRegContainsSelf.
@@ -2353,7 +2355,7 @@ StackToRegisterMappingCogit >> genPushReceiverVariable: index [
 			offset: (objectRepresentation slotOffsetOfInstVarIndex: index)
 ]
 
-{ #category : #'compile abstract instructions' }
+{ #category : 'compile abstract instructions' }
 StackToRegisterMappingCogit >> genPushRegisterArgs [
 	"Ensure that the register args are pushed before the retpc for methods with arity <= self numRegArgs."
 	"This won't be as clumsy on a RISC.  But putting the receiver and
@@ -2365,7 +2367,7 @@ StackToRegisterMappingCogit >> genPushRegisterArgs [
 		regArgsHaveBeenPushed := true]
 ]
 
-{ #category : #'bytecode generator support' }
+{ #category : 'bytecode generator support' }
 StackToRegisterMappingCogit >> genPushRemoteInstVar: index inObjectAt: objectIndex [
 	<inline: false>
 	| objectReg resultReg |
@@ -2381,7 +2383,7 @@ StackToRegisterMappingCogit >> genPushRemoteInstVar: index inObjectAt: objectInd
 	^self ssPushRegister: resultReg
 ]
 
-{ #category : #'bytecode generators' }
+{ #category : 'bytecode generators' }
 StackToRegisterMappingCogit >> genPushRemoteTempLongBytecode [
 	| tempVectReg remoteTempReg |
 	tempVectReg := self allocateRegNotConflictingWith: 0.
@@ -2399,7 +2401,7 @@ StackToRegisterMappingCogit >> genPushRemoteTempLongBytecode [
 	^self ssPushRegister: remoteTempReg
 ]
 
-{ #category : #'bytecode generator support' }
+{ #category : 'bytecode generator support' }
 StackToRegisterMappingCogit >> genPushTemporaryVariable: index [
 	"If a frameless method (not a block), only argument temps can be accessed.
 	 This is assured by the use of needsFrameIfMod16GENumArgs: in pushTemp."
@@ -2407,7 +2409,7 @@ StackToRegisterMappingCogit >> genPushTemporaryVariable: index [
 	^self ssPushDesc: (simStack at: index + 1)
 ]
 
-{ #category : #'bytecode generators' }
+{ #category : 'bytecode generators' }
 StackToRegisterMappingCogit >> genReturnReceiver [
 	"In a frameless method ReceiverResultReg already contains self.
 	 In a frameful method, ReceiverResultReg /may/ contain self."
@@ -2417,26 +2419,26 @@ StackToRegisterMappingCogit >> genReturnReceiver [
 	^self genUpArrowReturn
 ]
 
-{ #category : #'bytecode generators' }
+{ #category : 'bytecode generators' }
 StackToRegisterMappingCogit >> genReturnTopFromBlock [
 	self assert: inBlock > 0.
 	self ssPopTopToReg: ReceiverResultReg.
 	^self genBlockReturn
 ]
 
-{ #category : #'bytecode generators' }
+{ #category : 'bytecode generators' }
 StackToRegisterMappingCogit >> genReturnTopFromMethod [
 	self ssPopTopToReg: ReceiverResultReg.
 	^self genUpArrowReturn
 ]
 
-{ #category : #'bytecode generator support' }
+{ #category : 'bytecode generator support' }
 StackToRegisterMappingCogit >> genSend: selectorIndex numArgs: numArgs [
 	self marshallSendArguments: numArgs.
 	^self genMarshalledSend: selectorIndex numArgs: numArgs sendTable: ordinarySendTrampolines
 ]
 
-{ #category : #'bytecode generator support' }
+{ #category : 'bytecode generator support' }
 StackToRegisterMappingCogit >> genSendDirectedSuper: selectorIndex numArgs: numArgs [
 	| result |
 	self assert: self ssTop type = SSConstant.
@@ -2453,19 +2455,19 @@ StackToRegisterMappingCogit >> genSendDirectedSuper: selectorIndex numArgs: numA
 	^result
 ]
 
-{ #category : #'bytecode generator support' }
+{ #category : 'bytecode generator support' }
 StackToRegisterMappingCogit >> genSendDynamicSuper: selectorIndex numArgs: numArgs [
 	self marshallSendArguments: numArgs.
 	^self genMarshalledSend: selectorIndex numArgs: numArgs sendTable: dynamicSuperSendTrampolines
 ]
 
-{ #category : #'bytecode generator support' }
+{ #category : 'bytecode generator support' }
 StackToRegisterMappingCogit >> genSendSuper: selectorIndex numArgs: numArgs [
 	self marshallSendArguments: numArgs.
 	^self genMarshalledSend: selectorIndex numArgs: numArgs sendTable: superSendTrampolines
 ]
 
-{ #category : #initialization }
+{ #category : 'initialization' }
 StackToRegisterMappingCogit >> genSendTrampolineFor: aRoutine numArgs: numArgs called: aString arg: regOrConst0 arg: regOrConst1 arg: regOrConst2 arg: regOrConst3 [
 	"Generate a trampoline with four arguments.
 	 Hack: a negative value indicates an abstract register, a non-negative value indicates a constant."
@@ -2494,7 +2496,7 @@ StackToRegisterMappingCogit >> genSendTrampolineFor: aRoutine numArgs: numArgs c
 	^startAddress
 ]
 
-{ #category : #'bytecode generators' }
+{ #category : 'bytecode generators' }
 StackToRegisterMappingCogit >> genSistaExtStoreAndPopReceiverVariableBytecodePopBoolean: popBoolean [
 	<inline: true>
 	| index needsStoreCheck needsImmCheck maybeContext result |
@@ -2523,7 +2525,7 @@ StackToRegisterMappingCogit >> genSistaExtStoreAndPopReceiverVariableBytecodePop
 	^result
 ]
 
-{ #category : #'bytecode generators' }
+{ #category : 'bytecode generators' }
 StackToRegisterMappingCogit >> genSistaExtStoreLiteralVariableBytecodePopBoolean: boolean [
 	<inline: true>
 	| index needsStoreCheck needsImmCheck |
@@ -2538,7 +2540,7 @@ StackToRegisterMappingCogit >> genSistaExtStoreLiteralVariableBytecodePopBoolean
 		needsImmutabilityCheck: needsImmCheck
 ]
 
-{ #category : #'bytecode generators' }
+{ #category : 'bytecode generators' }
 StackToRegisterMappingCogit >> genSpecialSelectorArithmetic [
 	| primDescriptor rcvrIsConst argIsConst rcvrIsInt argIsInt rcvrInt argInt result
 	 jumpNotSmallInts jumpContinue index |
@@ -2645,7 +2647,7 @@ StackToRegisterMappingCogit >> genSpecialSelectorArithmetic [
 	^0
 ]
 
-{ #category : #'bytecode generators' }
+{ #category : 'bytecode generators' }
 StackToRegisterMappingCogit >> genSpecialSelectorClass [
 	| topReg |
 	topReg := self ssTop registerOrNone.
@@ -2662,7 +2664,7 @@ StackToRegisterMappingCogit >> genSpecialSelectorClass [
 	^self ssPushRegister: ClassReg
 ]
 
-{ #category : #'bytecode generators' }
+{ #category : 'bytecode generators' }
 StackToRegisterMappingCogit >> genSpecialSelectorComparison [
 
 	<var: #primDescriptor type: #'BytecodeDescriptor *'>
@@ -2766,7 +2768,7 @@ StackToRegisterMappingCogit >> genSpecialSelectorComparison [
 		  sendTable: ordinarySendTrampolines
 ]
 
-{ #category : #'bytecode generator support' }
+{ #category : 'bytecode generator support' }
 StackToRegisterMappingCogit >> genStaticallyResolvedSpecialSelectorComparison [
 	"Assumes both operands are ints"
 	<var: #primDescriptor type: #'BytecodeDescriptor *'>
@@ -2791,7 +2793,7 @@ StackToRegisterMappingCogit >> genStaticallyResolvedSpecialSelectorComparison [
 			ifFalse: [objectMemory falseObject])
 ]
 
-{ #category : #'mapped inline primitive generators - vectorial' }
+{ #category : 'mapped inline primitive generators - vectorial' }
 StackToRegisterMappingCogit >> genStoreFloat32RegisterIntoArray [
 	| arrayReg indexReg vectorReg |
 	
@@ -2820,7 +2822,7 @@ StackToRegisterMappingCogit >> genStoreFloat32RegisterIntoArray [
 	^0
 ]
 
-{ #category : #'mapped inline primitive generators - vectorial' }
+{ #category : 'mapped inline primitive generators - vectorial' }
 StackToRegisterMappingCogit >> genStoreFloat64RegisterIntoArray [
 	| arrayReg indexReg vectorReg |
 	
@@ -2849,7 +2851,7 @@ StackToRegisterMappingCogit >> genStoreFloat64RegisterIntoArray [
 	^0
 ]
 
-{ #category : #'bytecode generator stores' }
+{ #category : 'bytecode generator stores' }
 StackToRegisterMappingCogit >> genStorePop: popBoolean LiteralVariable: litVarIndex [
 	<inline: true>
 	^self 
@@ -2860,7 +2862,7 @@ StackToRegisterMappingCogit >> genStorePop: popBoolean LiteralVariable: litVarIn
 		
 ]
 
-{ #category : #'bytecode generator stores' }
+{ #category : 'bytecode generator stores' }
 StackToRegisterMappingCogit >> genStorePop: popBoolean LiteralVariable: litVarIndex needsStoreCheck: needsStoreCheck needsImmutabilityCheck: needsImmCheck [
 	<inline: false>
 	"We need a frame because the association has to be in ReceiverResultReg for the various trampolines
@@ -2877,7 +2879,7 @@ StackToRegisterMappingCogit >> genStorePop: popBoolean LiteralVariable: litVarIn
 		
 ]
 
-{ #category : #'bytecode generator stores' }
+{ #category : 'bytecode generator stores' }
 StackToRegisterMappingCogit >> genStorePop: popBoolean MaybeContextReceiverVariable: slotIndex [ 
 	<inline: true>
 	^self 
@@ -2887,7 +2889,7 @@ StackToRegisterMappingCogit >> genStorePop: popBoolean MaybeContextReceiverVaria
 		needsImmutabilityCheck: true "The generic store checks for IMMUTABILITY flag"
 ]
 
-{ #category : #'bytecode generator stores' }
+{ #category : 'bytecode generator stores' }
 StackToRegisterMappingCogit >> genStorePop: popBoolean MaybeContextReceiverVariable: slotIndex needsStoreCheck: needsStoreCheck needsImmutabilityCheck: needsImmCheck [
 	<inline: false>
 	"The reason we need a frame here is that assigning to an inst var of a context may
@@ -2904,7 +2906,7 @@ StackToRegisterMappingCogit >> genStorePop: popBoolean MaybeContextReceiverVaria
 		needsImmutabilityCheck: needsImmCheck
 ]
 
-{ #category : #'bytecode generator stores' }
+{ #category : 'bytecode generator stores' }
 StackToRegisterMappingCogit >> genStorePop: popBoolean MaybeContextRemoteInstVar: slotIndex ofObjectAt: objectIndex needsStoreCheck: needsStoreCheck needsImmutabilityCheck: needsImmCheck [
 	<inline: false>
 	"The reason we need a frame here is that assigning to an inst var of a context may
@@ -2920,7 +2922,7 @@ StackToRegisterMappingCogit >> genStorePop: popBoolean MaybeContextRemoteInstVar
 		needsImmutabilityCheck: needsImmCheck
 ]
 
-{ #category : #'bytecode generator stores' }
+{ #category : 'bytecode generator stores' }
 StackToRegisterMappingCogit >> genStorePop: popBoolean ReceiverVariable: slotIndex [
 	<inline: true>
 	^self 
@@ -2931,7 +2933,7 @@ StackToRegisterMappingCogit >> genStorePop: popBoolean ReceiverVariable: slotInd
 		
 ]
 
-{ #category : #'bytecode generator stores' }
+{ #category : 'bytecode generator stores' }
 StackToRegisterMappingCogit >> genStorePop: popBoolean ReceiverVariable: slotIndex needsStoreCheck: needsStoreCheck needsImmutabilityCheck: needsImmCheck [
 	<inline: false>
 	self ssFlushUpThroughReceiverVariable: slotIndex.
@@ -2947,7 +2949,7 @@ StackToRegisterMappingCogit >> genStorePop: popBoolean ReceiverVariable: slotInd
 		
 ]
 
-{ #category : #'bytecode generator stores' }
+{ #category : 'bytecode generator stores' }
 StackToRegisterMappingCogit >> genStorePop: popBoolean RemoteInstVar: slotIndex ofObjectAt: objectIndex needsStoreCheck: needsStoreCheck needsImmutabilityCheck: needsImmCheck [
 	<inline: false>
 	self assert: needsFrame.
@@ -2961,13 +2963,13 @@ StackToRegisterMappingCogit >> genStorePop: popBoolean RemoteInstVar: slotIndex 
 		needsImmutabilityCheck: needsImmCheck
 ]
 
-{ #category : #'bytecode generator stores' }
+{ #category : 'bytecode generator stores' }
 StackToRegisterMappingCogit >> genStorePop: popBoolean RemoteTemp: slotIndex At: remoteTempIndex [
 	<inline: true>
 	^ self genStorePop: popBoolean RemoteTemp: slotIndex At: remoteTempIndex needsStoreCheck: self ssTopNeedsStoreCheck
 ]
 
-{ #category : #'bytecode generator stores' }
+{ #category : 'bytecode generator stores' }
 StackToRegisterMappingCogit >> genStorePop: popBoolean RemoteTemp: slotIndex At: remoteTempIndex needsStoreCheck: needsStoreCheck [
 	<inline: false>
 	"The only reason we assert needsFrame here is that in a frameless method
@@ -2996,7 +2998,7 @@ StackToRegisterMappingCogit >> genStorePop: popBoolean RemoteTemp: slotIndex At:
 		needsImmutabilityCheck: false "never do immutability check on temp vectors"
 ]
 
-{ #category : #'bytecode generator stores' }
+{ #category : 'bytecode generator stores' }
 StackToRegisterMappingCogit >> genStorePop: popBoolean TemporaryVariable: tempIndex [
 	<inline: false>
 	| reg |
@@ -3009,7 +3011,7 @@ StackToRegisterMappingCogit >> genStorePop: popBoolean TemporaryVariable: tempIn
 	^0
 ]
 
-{ #category : #'mapped inline primitive generators - vectorial' }
+{ #category : 'mapped inline primitive generators - vectorial' }
 StackToRegisterMappingCogit >> genSubFloat64Vector [
 	| array1Reg array2Reg subReg |
 	
@@ -3030,7 +3032,7 @@ StackToRegisterMappingCogit >> genSubFloat64Vector [
 	^0
 ]
 
-{ #category : #'bytecode generator stores' }
+{ #category : 'bytecode generator stores' }
 StackToRegisterMappingCogit >> genTraceStores [
 	<inline: true>
 	traceStores > 0 ifTrue: 
@@ -3038,7 +3040,7 @@ StackToRegisterMappingCogit >> genTraceStores [
 		self CallRT: ceTraceStoreTrampoline ].
 ]
 
-{ #category : #'bytecode generators' }
+{ #category : 'bytecode generators' }
 StackToRegisterMappingCogit >> genUpArrowReturn [
 	"Generate a method return from within a method or a block.
 	 Frameless method activation looks like
@@ -3076,7 +3078,7 @@ StackToRegisterMappingCogit >> genUpArrowReturn [
 	^0
 ]
 
-{ #category : #initialization }
+{ #category : 'initialization' }
 StackToRegisterMappingCogit >> generateEnilopmarts [
 	"Enilopmarts transfer control from C into machine code (backwards trampolines).
 	 Override to add version for generic and PIC-specific entry with reg args."
@@ -3120,7 +3122,7 @@ StackToRegisterMappingCogit >> generateEnilopmarts [
 			 self assert: self numRegArgs = 2]]
 ]
 
-{ #category : #'generate machine code' }
+{ #category : 'generate machine code' }
 StackToRegisterMappingCogit >> generateInstructionsAt: eventualAbsoluteAddress [
 	"Size pc-dependent instructions and assign eventual addresses to all instructions.
 	 Answer the size of the code.
@@ -3170,7 +3172,7 @@ StackToRegisterMappingCogit >> generateInstructionsAt: eventualAbsoluteAddress [
 	^absoluteAddress - eventualAbsoluteAddress
 ]
 
-{ #category : #initialization }
+{ #category : 'initialization' }
 StackToRegisterMappingCogit >> generateMissAbortTrampolines [
 	"Generate the run-time entries for the various method and PIC entry misses and aborts.
 	 Read the class-side method trampolines for documentation on the various trampolines"
@@ -3194,7 +3196,7 @@ StackToRegisterMappingCogit >> generateMissAbortTrampolines [
 												arg: ClassReg
 ]
 
-{ #category : #initialization }
+{ #category : 'initialization' }
 StackToRegisterMappingCogit >> generateSendTrampolines [
 	"Override to generate code to push the register arg(s) for <= numRegArg arity sends."
 	0 to: NumSendTrampolines - 1 do:
@@ -3238,12 +3240,12 @@ StackToRegisterMappingCogit >> generateSendTrampolines [
 	lastSend := superSendTrampolines at: NumSendTrampolines - 1
 ]
 
-{ #category : #initialization }
+{ #category : 'initialization' }
 StackToRegisterMappingCogit >> generateSistaRuntime [
 	"No sita vm"
 ]
 
-{ #category : #initialization }
+{ #category : 'initialization' }
 StackToRegisterMappingCogit >> generateSuperSendTrampolineTo: function named: name numArgs: numArgs in: table [
 	
 	<var: #table type: #'sqInt *'>
@@ -3259,7 +3261,7 @@ StackToRegisterMappingCogit >> generateSuperSendTrampolineTo: function named: na
 	^ trampoline
 ]
 
-{ #category : #initialization }
+{ #category : 'initialization' }
 StackToRegisterMappingCogit >> generateTracingTrampolines [
 	"Generate trampolines for tracing.  In the simulator we can save a lot of time
 	 and avoid noise instructions in the lastNInstructions log by short-cutting these
@@ -3285,7 +3287,7 @@ StackToRegisterMappingCogit >> generateTracingTrampolines [
 		 ceTraceStoreTrampoline := self simulatedTrampolineFor: #ceShortCutTraceStore:]
 ]
 
-{ #category : #'simulation stack' }
+{ #category : 'simulation stack' }
 StackToRegisterMappingCogit >> initSimStackForFramefulMethod: startpc [
 	<var: #desc type: #'CogSimStackEntry *'>
 	simStackPtr := methodOrBlockNumTemps. "N.B. Includes num args"
@@ -3318,7 +3320,7 @@ StackToRegisterMappingCogit >> initSimStackForFramefulMethod: startpc [
 			bcptr: startpc]
 ]
 
-{ #category : #'simulation stack' }
+{ #category : 'simulation stack' }
 StackToRegisterMappingCogit >> initSimStackForFramelessBlock: startpc [
 	"The register receiver (the closure itself) and args are pushed by the closure value primitive(s)
 	 and hence a frameless block has all arguments and copied values pushed to the stack.  However,
@@ -3345,7 +3347,7 @@ StackToRegisterMappingCogit >> initSimStackForFramelessBlock: startpc [
 	simSpillBase := methodOrBlockNumTemps + 1.
 ]
 
-{ #category : #'simulation stack' }
+{ #category : 'simulation stack' }
 StackToRegisterMappingCogit >> initSimStackForFramelessMethod: startpc [
 	| desc |
 	<var: #desc type: #'CogSimStackEntry *'>
@@ -3387,14 +3389,14 @@ StackToRegisterMappingCogit >> initSimStackForFramelessMethod: startpc [
 	simSpillBase := methodOrBlockNumArgs + 1.
 ]
 
-{ #category : #'simulation stack' }
+{ #category : 'simulation stack' }
 StackToRegisterMappingCogit >> initSimStackPointer: wat [
 
 	simStackPtr := methodOrBlockNumTemps.
 	simSpillBase := methodOrBlockNumTemps + 1
 ]
 
-{ #category : #'compile abstract instructions' }
+{ #category : 'compile abstract instructions' }
 StackToRegisterMappingCogit >> initializeFixup: fixup [
 	"Initialize a fixup.  These are the targets of backward branches.  A backward branch fixup's
 	 simStackPtr needs to be set when generating the code for the bytecode at the targetPC.
@@ -3407,7 +3409,7 @@ StackToRegisterMappingCogit >> initializeFixup: fixup [
 		setIsBackwardBranchFixup
 ]
 
-{ #category : #'compile abstract instructions' }
+{ #category : 'compile abstract instructions' }
 StackToRegisterMappingCogit >> initializeFixupAt: targetPC [
 	"Make sure there's a flagged fixup at the targetPC in fixups.
 	 These are the targets of backward branches.  A backward branch fixup's simStackPtr
@@ -3419,7 +3421,7 @@ StackToRegisterMappingCogit >> initializeFixupAt: targetPC [
 	self initializeFixup: fixup
 ]
 
-{ #category : #'span functions' }
+{ #category : 'span functions' }
 StackToRegisterMappingCogit >> isPushNil: descriptor pc: pc nExts: nExts method: aMethodObj [
 	<inline: true>
 	<var: #descriptor type: #'BytecodeDescriptor *'>
@@ -3430,7 +3432,7 @@ StackToRegisterMappingCogit >> isPushNil: descriptor pc: pc nExts: nExts method:
 		with: aMethodObj
 ]
 
-{ #category : #'simulation stack' }
+{ #category : 'simulation stack' }
 StackToRegisterMappingCogit >> liveFloatRegisters [
 	| regsSet |
 	regsSet := 0.
@@ -3440,7 +3442,7 @@ StackToRegisterMappingCogit >> liveFloatRegisters [
 	^regsSet
 ]
 
-{ #category : #'simulation stack' }
+{ #category : 'simulation stack' }
 StackToRegisterMappingCogit >> liveRegisters [
 	| regsSet |
 	needsFrame
@@ -3458,7 +3460,7 @@ StackToRegisterMappingCogit >> liveRegisters [
 	^regsSet
 ]
 
-{ #category : #'simulation stack' }
+{ #category : 'simulation stack' }
 StackToRegisterMappingCogit >> liveVectorRegisters [
 
 	| regsSet |
@@ -3471,7 +3473,7 @@ StackToRegisterMappingCogit >> liveVectorRegisters [
 	^ regsSet
 ]
 
-{ #category : #'compile abstract instructions' }
+{ #category : 'compile abstract instructions' }
 StackToRegisterMappingCogit >> mapDeadDescriptorIfNeeded: descriptor [ 
 	"insert nops for dead code that is mapped so that bc 
 	 to mc mapping is not many to one"
@@ -3483,7 +3485,7 @@ StackToRegisterMappingCogit >> mapDeadDescriptorIfNeeded: descriptor [
 	^ 0
 ]
 
-{ #category : #'simulation stack' }
+{ #category : 'simulation stack' }
 StackToRegisterMappingCogit >> marshallSendArguments: numArgs [
 	"Spill everything on the simulated stack that needs spilling (that below receiver and arguments).
 	 Marshall receiver and arguments to stack and/or registers depending on arg count.
@@ -3536,44 +3538,44 @@ StackToRegisterMappingCogit >> marshallSendArguments: numArgs [
 			self ssPop: numArgs + 1 ]
 ]
 
-{ #category : #'compile abstract instructions' }
+{ #category : 'compile abstract instructions' }
 StackToRegisterMappingCogit >> maybeCountCounter [
 	"This is a hook for SistaCogit"
 	<inline: true>
 ]
 
-{ #category : #'compile abstract instructions' }
+{ #category : 'compile abstract instructions' }
 StackToRegisterMappingCogit >> maybeCountFixup: descriptor [
 	"This is a hook for RegisterAllocatingCogit"
 	<inline: true>
 ]
 
-{ #category : #'compile abstract instructions' }
+{ #category : 'compile abstract instructions' }
 StackToRegisterMappingCogit >> maybeCounterIndex [
 	"Hook for SistaCogit to allow it to reuse compileBlockBodies"
 	<inline: true>
 	^0
 ]
 
-{ #category : #'compile abstract instructions' }
+{ #category : 'compile abstract instructions' }
 StackToRegisterMappingCogit >> maybeInitNumCounters [
 	"This is a hook for SistaCogit"
 	<inline: true>
 ]
 
-{ #category : #'compile abstract instructions' }
+{ #category : 'compile abstract instructions' }
 StackToRegisterMappingCogit >> maybeInitNumFixups [
 	"This is a hook for RegisterAllocatingCogit"
 	<inline: true>
 ]
 
-{ #category : #'compile abstract instructions' }
+{ #category : 'compile abstract instructions' }
 StackToRegisterMappingCogit >> maybeSetCounterIndex: value [
 	"Hook for SistaCogit to allow it to reuse compileBlockBodies"
 	<inline: true>
 ]
 
-{ #category : #'simulation stack' }
+{ #category : 'simulation stack' }
 StackToRegisterMappingCogit >> mergeWithFixupIfRequired: fixup [
 	"If this bytecode has a fixup, some kind of merge needs to be done. There are 4 cases:
 		1) the bytecode has no fixup (fixup isNotAFixup)
@@ -3632,18 +3634,18 @@ StackToRegisterMappingCogit >> mergeWithFixupIfRequired: fixup [
 	^0
 ]
 
-{ #category : #trampolines }
+{ #category : 'trampolines' }
 StackToRegisterMappingCogit >> methodAbortTrampolineFor: numArgs [
 	^methodAbortTrampolines at: (numArgs min: self numRegArgs + 1)
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 StackToRegisterMappingCogit >> methodAbortTrampolines [
 	<doNotGenerate>
 	^ methodAbortTrampolines
 ]
 
-{ #category : #testing }
+{ #category : 'testing' }
 StackToRegisterMappingCogit >> methodFoundInvalidPostScan [
 	"Frameless methods with local temporaries cause problems,
 	 mostly in asserts, and yet they matter not at all for performance.
@@ -3653,12 +3655,12 @@ StackToRegisterMappingCogit >> methodFoundInvalidPostScan [
 	^super methodFoundInvalidPostScan
 ]
 
-{ #category : #'compile abstract instructions' }
+{ #category : 'compile abstract instructions' }
 StackToRegisterMappingCogit >> needsFrameIfExtBGT2: stackDelta [
 	^extB < 0 or: [extB > 2]
 ]
 
-{ #category : #'compile abstract instructions' }
+{ #category : 'compile abstract instructions' }
 StackToRegisterMappingCogit >> needsFrameIfFollowsSend: stackDelta [
 	"As of August 2013, the code generator can't deal with spills in frameless methods (the
 	 issue is to do with the stack offset to get at an argument, which is changed when there's a spill).
@@ -3671,12 +3673,12 @@ StackToRegisterMappingCogit >> needsFrameIfFollowsSend: stackDelta [
 	  or: [prevBCDescriptor generator == #genSpecialSelectorClass]
 ]
 
-{ #category : #'compile abstract instructions' }
+{ #category : 'compile abstract instructions' }
 StackToRegisterMappingCogit >> needsFrameIfMod16GENumArgs: stackDelta [
 	^byte0 \\ 16 >= methodOrBlockNumArgs
 ]
 
-{ #category : #'compile abstract instructions' }
+{ #category : 'compile abstract instructions' }
 StackToRegisterMappingCogit >> needsFrameIfStackGreaterThanOne: stackDelta [
 	"As of August 2013, the code generator can't deal with spills in frameless methods (the
 	 issue is to do with the stack offset to get at an argument, which is changed when there's a spill).
@@ -3687,7 +3689,7 @@ StackToRegisterMappingCogit >> needsFrameIfStackGreaterThanOne: stackDelta [
 	^stackDelta > 1
 ]
 
-{ #category : #'span functions' }
+{ #category : 'span functions' }
 StackToRegisterMappingCogit >> numPushNils: descriptor pc: pc nExts: nExts method: aMethodObj [
 	<inline: true>
 	<var: #descriptor type: #'BytecodeDescriptor *'>
@@ -3698,13 +3700,13 @@ StackToRegisterMappingCogit >> numPushNils: descriptor pc: pc nExts: nExts metho
 		with: aMethodObj
 ]
 
-{ #category : #'compile abstract instructions' }
+{ #category : 'compile abstract instructions' }
 StackToRegisterMappingCogit >> numRegArgs [
 	<doNotGenerate>
 	^objectRepresentation numRegArgs
 ]
 
-{ #category : #'simulation stack' }
+{ #category : 'simulation stack' }
 StackToRegisterMappingCogit >> numberOfSpillsInTopNItems: n [
 	simStackPtr to: simStackPtr - n + 1 by: -1 do:
 		[:i| (self simStackAt: i) type = SSSpill ifTrue:
@@ -3712,19 +3714,19 @@ StackToRegisterMappingCogit >> numberOfSpillsInTopNItems: n [
 	^0
 ]
 
-{ #category : #trampolines }
+{ #category : 'trampolines' }
 StackToRegisterMappingCogit >> picAbortTrampolineFor: numArgs [
 	^picAbortTrampolines at: (numArgs min: self numRegArgs + 1)
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 StackToRegisterMappingCogit >> picAbortTrampolines [
 
 	<doNotGenerate>
 	^ picAbortTrampolines
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 StackToRegisterMappingCogit >> picMissTrampolines [
 	
 	<doNotGenerate>
@@ -3732,7 +3734,7 @@ StackToRegisterMappingCogit >> picMissTrampolines [
 
 ]
 
-{ #category : #'method introspection' }
+{ #category : 'method introspection' }
 StackToRegisterMappingCogit >> populate: tuple withPICInfoFor: cPIC firstCacheTag: firstCacheTag [
 	"Populate tuple (which must be large enough) with the ClosedPIC's target method class pairs.
 	 The first entry in tuple contains the bytecode pc for the send, so skip the tuple's first field."
@@ -3761,7 +3763,7 @@ StackToRegisterMappingCogit >> populate: tuple withPICInfoFor: cPIC firstCacheTa
 		objectMemory storePointer: i * 2 ofObject: tuple withValue: value ]
 ]
 
-{ #category : #testing }
+{ #category : 'testing' }
 StackToRegisterMappingCogit >> prevInstIsPCAnnotated [
 	| prevIndex prevInst |
 	<var: #prevInst type: #'AbstractInstruction *'>
@@ -3778,7 +3780,7 @@ StackToRegisterMappingCogit >> prevInstIsPCAnnotated [
 	^false
 ]
 
-{ #category : #tests }
+{ #category : 'tests' }
 StackToRegisterMappingCogit >> printPICDataForMethods [
 	<doNotGenerate>
 	methodZone methodsDo:
@@ -3789,13 +3791,13 @@ StackToRegisterMappingCogit >> printPICDataForMethods [
 				coInterpreter printOop: thePicData]]]
 ]
 
-{ #category : #'debug printing' }
+{ #category : 'debug printing' }
 StackToRegisterMappingCogit >> printRegisterMask: registerMask [
 	<doNotGenerate>
 	^String streamContents: [:s| self printRegisterMask: registerMask on: s]
 ]
 
-{ #category : #'debug printing' }
+{ #category : 'debug printing' }
 StackToRegisterMappingCogit >> printRegisterMask: registerMask on: aStream [
 	<doNotGenerate>
 	| first |
@@ -3814,13 +3816,13 @@ StackToRegisterMappingCogit >> printRegisterMask: registerMask on: aStream [
 	aStream nextPut: $}; flush
 ]
 
-{ #category : #'simulation only' }
+{ #category : 'simulation only' }
 StackToRegisterMappingCogit >> printSimStack [
 	<doNotGenerate>
 	self printSimStack: simStack toDepth: simStackPtr spillBase: simSpillBase on: coInterpreter transcript
 ]
 
-{ #category : #'simulation only' }
+{ #category : 'simulation only' }
 StackToRegisterMappingCogit >> printSimStack: aSimStackOrFixup [
 	<doNotGenerate>
 	(aSimStackOrFixup isKindOf: CogRASSBytecodeFixup)
@@ -3830,7 +3832,7 @@ StackToRegisterMappingCogit >> printSimStack: aSimStackOrFixup [
 			[self printSimStack: aSimStackOrFixup toDepth: simStackPtr spillBase: simSpillBase on: coInterpreter transcript]
 ]
 
-{ #category : #'simulation only' }
+{ #category : 'simulation only' }
 StackToRegisterMappingCogit >> printSimStack: aSimStack toDepth: limit spillBase: spillBase on: aStream [
 	<doNotGenerate>
 	| tempNames width tabWidth |
@@ -3863,7 +3865,7 @@ StackToRegisterMappingCogit >> printSimStack: aSimStack toDepth: limit spillBase
 		[aStream nextPutAll: '(sb: '; print: simSpillBase; nextPut: $); cr; flush]
 ]
 
-{ #category : #'method introspection' }
+{ #category : 'method introspection' }
 StackToRegisterMappingCogit >> profilingDataFor: descriptor Annotation: isBackwardBranchAndAnnotation Mcpc: mcpc Bcpc: bcpc Method: cogMethodArg [
 	<var: #descriptor type: #'BytecodeDescriptor *'>
 	<var: #mcpc type: #'char *'>
@@ -3928,7 +3930,7 @@ StackToRegisterMappingCogit >> profilingDataFor: descriptor Annotation: isBackwa
 	^0
 ]
 
-{ #category : #'method introspection' }
+{ #category : 'method introspection' }
 StackToRegisterMappingCogit >> profilingDataFor: cogMethod into: arrayObj [
 
 	"Collect the branch and send data for cogMethod, storing it into arrayObj."
@@ -3952,14 +3954,14 @@ StackToRegisterMappingCogit >> profilingDataFor: cogMethod into: arrayObj [
 	^ introspectionDataIndex
 ]
 
-{ #category : #'method introspection' }
+{ #category : 'method introspection' }
 StackToRegisterMappingCogit >> profilingDataForCounter: counter at: bcpc [
 	"Undefined by now, do nothing"
 
 	^ 0
 ]
 
-{ #category : #'method introspection' }
+{ #category : 'method introspection' }
 StackToRegisterMappingCogit >> profilingDataForSendTo: cogCodeSendTarget methodClassIfSuper: methodClassOrNil at: sendMcpc bcpc: sendBcpc [
 	"Answer a tuple with the send data for a linked send to cogMethod.
 	 If the target is a CogMethod (monomorphic send) answer
@@ -4009,13 +4011,13 @@ StackToRegisterMappingCogit >> profilingDataForSendTo: cogCodeSendTarget methodC
 	^0 "to get Slang to type this method as answering sqInt"
 ]
 
-{ #category : #'span functions' }
+{ #category : 'span functions' }
 StackToRegisterMappingCogit >> pushNilSize: aMethodObj numInitialNils: numInitialNils [
 	<inline: true>
 	^self perform: pushNilSizeFunction with: aMethodObj with: numInitialNils
 ]
 
-{ #category : #'simulation only' }
+{ #category : 'simulation only' }
 StackToRegisterMappingCogit >> put: aString paddedTo: compositionWidth tabWidth: tabWidth on: aStream [
 	<doNotGenerate>
 	| fittedString size width |
@@ -4029,13 +4031,13 @@ StackToRegisterMappingCogit >> put: aString paddedTo: compositionWidth tabWidth:
 		tab: compositionWidth - width + (width \\ tabWidth) // tabWidth + 1
 ]
 
-{ #category : #'bytecode generator support' }
+{ #category : 'bytecode generator support' }
 StackToRegisterMappingCogit >> putSelfInReceiverResultReg [
 	<inline: true>
 	 self simSelf copyToReg: ReceiverResultReg
 ]
 
-{ #category : #'bytecode generator support' }
+{ #category : 'bytecode generator support' }
 StackToRegisterMappingCogit >> receiverIsInReceiverResultReg [
 	"Used to mark ReceiverResultReg as dead or not containing simSelf.
 	 Used when the simStack has already been flushed, e.g. for sends."
@@ -4043,12 +4045,12 @@ StackToRegisterMappingCogit >> receiverIsInReceiverResultReg [
 	^self simSelf liveRegister = ReceiverResultReg
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 StackToRegisterMappingCogit >> regArgsHaveBeenPushed: aBoolean [
 	regArgsHaveBeenPushed := aBoolean
 ]
 
-{ #category : #'simulation stack' }
+{ #category : 'simulation stack' }
 StackToRegisterMappingCogit >> restoreSimStackAtMergePoint: fixup [
 	<inline: true>
 	"All the execution paths reaching a merge point expect everything
@@ -4065,7 +4067,7 @@ StackToRegisterMappingCogit >> restoreSimStackAtMergePoint: fixup [
 	^ 0
 ]
 
-{ #category : #'compile abstract instructions' }
+{ #category : 'compile abstract instructions' }
 StackToRegisterMappingCogit >> scanMethod [
 	"Scan the method (and all embedded blocks) to determine
 		- what the last bytecode is; extra bytes at the end of a method are used to encode things like source pointers or temp names
@@ -4138,7 +4140,7 @@ StackToRegisterMappingCogit >> scanMethod [
 	^ 0
 ]
 
-{ #category : #initialization }
+{ #category : 'initialization' }
 StackToRegisterMappingCogit >> setInterpreter: aCoInterpreter [
 	"Initialization of the code generator in the simulator.
 	 These objects already exist in the generated C VM
@@ -4157,7 +4159,7 @@ StackToRegisterMappingCogit >> setInterpreter: aCoInterpreter [
 	pushNilSizeFunction := self class pushNilSizeFunction
 ]
 
-{ #category : #'simulation stack' }
+{ #category : 'simulation stack' }
 StackToRegisterMappingCogit >> simNativeStackSlots [
 	"Answer the number of slots toinclude in a simulated stack.
 	 This needs to be big enough to include all slots in a context
@@ -4166,33 +4168,33 @@ StackToRegisterMappingCogit >> simNativeStackSlots [
 	^((LargeContextSlots - CtxtTempFrameStart max: 64) * 11 // 10)
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 StackToRegisterMappingCogit >> simSelf [
 	<cmacro: '() simStack'>
 	<returnTypeC: #'CogSimStackEntry *'>
 	^self simStackAt: 0
 ]
 
-{ #category : #'simulation stack' }
+{ #category : 'simulation stack' }
 StackToRegisterMappingCogit >> simStackAt: index [
 	<cmacro: '(index) (simStack + (index))'>
 	<returnTypeC: #'CogSimStackEntry *'>
 	^self addressOf: (simStack at: index)
 ]
 
-{ #category : #initialization }
+{ #category : 'initialization' }
 StackToRegisterMappingCogit >> simStackEntryClass [
 	<doNotGenerate>
 	^CogSimStackEntry
 ]
 
-{ #category : #'simulation only' }
+{ #category : 'simulation only' }
 StackToRegisterMappingCogit >> simStackPrintString [
 	<doNotGenerate>
 	^String streamContents: [:s| self printSimStack: simStack toDepth: simStackPtr spillBase: simSpillBase on: s]
 ]
 
-{ #category : #'simulation stack' }
+{ #category : 'simulation stack' }
 StackToRegisterMappingCogit >> simStackSlots [
 	"Answer the number of slots to include in a simulated stack.
 	 This needs to be big enough to include all stack slots in a context
@@ -4201,7 +4203,7 @@ StackToRegisterMappingCogit >> simStackSlots [
 	^((LargeContextSlots - CtxtTempFrameStart + 1 max: 64) * 11 // 10)
 ]
 
-{ #category : #testing }
+{ #category : 'testing' }
 StackToRegisterMappingCogit >> sistaNeedsStoreCheck [
 	<inline: true>
 	"The store check can be ignored if the value assigned doesn't need it (immediate, etc)
@@ -4209,7 +4211,7 @@ StackToRegisterMappingCogit >> sistaNeedsStoreCheck [
 	^ self ssTopNeedsStoreCheck and: [ self extBSpecifiesStoreCheck ]
 ]
 
-{ #category : #'span functions' }
+{ #category : 'span functions' }
 StackToRegisterMappingCogit >> sistaV1: descriptor Num: pc Push: nExts Nils: aMethodObj [
 	<var: #descriptor type: #'BytecodeDescriptor *'>
 	<inline: true>
@@ -4218,14 +4220,14 @@ StackToRegisterMappingCogit >> sistaV1: descriptor Num: pc Push: nExts Nils: aMe
 		ifFalse: [0]
 ]
 
-{ #category : #'span functions' }
+{ #category : 'span functions' }
 StackToRegisterMappingCogit >> sistaV1PushNilSize: aMethodObj numInitialNils: numInitialNils [
 	"230		11100110	iiiiiiii		PushNClosureTemps iiiiiiii"
 	<inline: true>
 	^numInitialNils
 ]
 
-{ #category : #'simulation stack' }
+{ #category : 'simulation stack' }
 StackToRegisterMappingCogit >> ssAllocateCallReg: requiredReg [
 	"Allocate a register needed in a run-time call (i.e. flush uses of the
 	 register to the real stack).  Since the run-time can smash any and
@@ -4236,7 +4238,7 @@ StackToRegisterMappingCogit >> ssAllocateCallReg: requiredReg [
 		upThrough: simStackPtr
 ]
 
-{ #category : #'simulation stack' }
+{ #category : 'simulation stack' }
 StackToRegisterMappingCogit >> ssAllocateCallReg: requiredReg1 and: requiredReg2 [
 	"Allocate registers needed in a run-time call (i.e. flush uses of the
 	 registers to the real stack).  Since the run-time can smash any and
@@ -4248,7 +4250,7 @@ StackToRegisterMappingCogit >> ssAllocateCallReg: requiredReg1 and: requiredReg2
 		upThrough: simStackPtr
 ]
 
-{ #category : #'simulation stack' }
+{ #category : 'simulation stack' }
 StackToRegisterMappingCogit >> ssAllocateCallReg: requiredReg1 and: requiredReg2 and: requiredReg3 [
 	"Allocate registers needed in a run-time call (i.e. flush uses of the
 	 registers to the real stack).  Since the run-time can smash any and
@@ -4259,7 +4261,7 @@ StackToRegisterMappingCogit >> ssAllocateCallReg: requiredReg1 and: requiredReg2
 		upThrough: simStackPtr
 ]
 
-{ #category : #'simulation stack' }
+{ #category : 'simulation stack' }
 StackToRegisterMappingCogit >> ssAllocateCallReg: requiredReg1 and: requiredReg2 and: requiredReg3 and: requiredReg4 [
 	"Allocate registers needed in a run-time call (i.e. flush uses of the
 	 registers to the real stack).  Since the run-time can smash any and
@@ -4273,7 +4275,7 @@ StackToRegisterMappingCogit >> ssAllocateCallReg: requiredReg1 and: requiredReg2
 		upThrough: simStackPtr
 ]
 
-{ #category : #'simulation stack' }
+{ #category : 'simulation stack' }
 StackToRegisterMappingCogit >> ssAllocateCallReg: requiredReg1 and: requiredReg2 upThrough: aStackPointer [
 	"Allocate registers needed in a run-time call (i.e. flush uses of the
 	 registers to the real stack).  Since the run-time can smash any and
@@ -4285,13 +4287,13 @@ StackToRegisterMappingCogit >> ssAllocateCallReg: requiredReg1 and: requiredReg2
 		upThrough: aStackPointer
 ]
 
-{ #category : #'simulation stack' }
+{ #category : 'simulation stack' }
 StackToRegisterMappingCogit >> ssAllocateRequiredFloatReg: requiredReg [
 	self ssAllocateRequiredFloatRegMask: (self registerMaskFor: requiredReg)
 		upThrough: simStackPtr
 ]
 
-{ #category : #'simulation stack' }
+{ #category : 'simulation stack' }
 StackToRegisterMappingCogit >> ssAllocateRequiredFloatRegMask: requiredRegsMask upThrough: stackPtr [
 	| lastRequired lastRequiredNative liveRegs |
 	lastRequired := -1.
@@ -4313,14 +4315,14 @@ StackToRegisterMappingCogit >> ssAllocateRequiredFloatRegMask: requiredRegsMask 
 		self assert: (self liveFloatRegisters bitAnd: requiredRegsMask) = 0]
 ]
 
-{ #category : #'simulation stack' }
+{ #category : 'simulation stack' }
 StackToRegisterMappingCogit >> ssAllocateRequiredReg: requiredReg [
 	<inline: true>
 	self ssAllocateRequiredRegMask: (self registerMaskFor: requiredReg)
 		upThrough: simStackPtr
 ]
 
-{ #category : #'simulation stack' }
+{ #category : 'simulation stack' }
 StackToRegisterMappingCogit >> ssAllocateRequiredReg: requiredReg1 and: requiredReg2 [
 	<inline: true>
 	self ssAllocateRequiredRegMask: ((self registerMaskFor: requiredReg1)
@@ -4328,7 +4330,7 @@ StackToRegisterMappingCogit >> ssAllocateRequiredReg: requiredReg1 and: required
 		upThrough: simStackPtr
 ]
 
-{ #category : #'simulation stack' }
+{ #category : 'simulation stack' }
 StackToRegisterMappingCogit >> ssAllocateRequiredReg: requiredReg1 and: requiredReg2 upThrough: stackPointer [
 	<inline: true>
 	self ssAllocateRequiredRegMask: ((self registerMaskFor: requiredReg1)
@@ -4336,14 +4338,14 @@ StackToRegisterMappingCogit >> ssAllocateRequiredReg: requiredReg1 and: required
 		upThrough: stackPointer
 ]
 
-{ #category : #'simulation stack' }
+{ #category : 'simulation stack' }
 StackToRegisterMappingCogit >> ssAllocateRequiredReg: requiredReg upThrough: stackPtr [
 	<inline: true>
 	self ssAllocateRequiredRegMask: (self registerMaskFor: requiredReg)
 		upThrough: stackPtr
 ]
 
-{ #category : #'simulation stack' }
+{ #category : 'simulation stack' }
 StackToRegisterMappingCogit >> ssAllocateRequiredRegMask: requiredRegsMask upThrough: stackPtr [
 	| lastRequired lastRequiredNative liveRegs |
 	lastRequired := -1.
@@ -4363,19 +4365,19 @@ StackToRegisterMappingCogit >> ssAllocateRequiredRegMask: requiredRegsMask upThr
 		 self deny: (self liveRegisters anyMask: requiredRegsMask)]
 ]
 
-{ #category : #'as yet unclassified' }
+{ #category : 'as yet unclassified' }
 StackToRegisterMappingCogit >> ssFlushStack [
 	
 	self ssFlushStackExceptTop: 0
 ]
 
-{ #category : #'as yet unclassified' }
+{ #category : 'as yet unclassified' }
 StackToRegisterMappingCogit >> ssFlushStackExceptTop: n [
 	
 	self ssFlushTo: simStackPtr - n
 ]
 
-{ #category : #'simulation stack' }
+{ #category : 'simulation stack' }
 StackToRegisterMappingCogit >> ssFlushTo: index [
 	<inline: true>
 	self assert: self tempsValidAndVolatileEntriesSpilled.
@@ -4389,7 +4391,7 @@ StackToRegisterMappingCogit >> ssFlushTo: index [
 		 simSpillBase := index + 1]
 ]
 
-{ #category : #'simulation stack' }
+{ #category : 'simulation stack' }
 StackToRegisterMappingCogit >> ssFlushUpThrough: unaryBlock [
 	"Any occurrences on the stack of the value being stored (which is the top of stack)
 	 must be flushed, and hence any values colder than them stack."
@@ -4400,7 +4402,7 @@ StackToRegisterMappingCogit >> ssFlushUpThrough: unaryBlock [
 		(unaryBlock value: (self simStackAt: index)) ifTrue: [ ^ self ssFlushTo: index ] ]
 ]
 
-{ #category : #'simulation stack' }
+{ #category : 'simulation stack' }
 StackToRegisterMappingCogit >> ssFlushUpThroughReceiverVariable: slotIndex [
 	"Any occurrences on the stack of the value being stored (which is the top of stack)
 	 must be flushed, and hence any values colder than them stack."
@@ -4412,7 +4414,7 @@ StackToRegisterMappingCogit >> ssFlushUpThroughReceiverVariable: slotIndex [
 			 and: [desc offset = (objectRepresentation slotOffsetOfInstVarIndex: slotIndex) ] ] ]
 ]
 
-{ #category : #'simulation stack' }
+{ #category : 'simulation stack' }
 StackToRegisterMappingCogit >> ssFlushUpThroughRegister: reg [
 	"Any occurrences on the stack of the register must be
 	 flushed, and hence any values colder than them stack."
@@ -4420,7 +4422,7 @@ StackToRegisterMappingCogit >> ssFlushUpThroughRegister: reg [
 	self ssFlushUpThrough: [ :desc | desc type = SSRegister and: [ desc registerr = reg ] ]
 ]
 
-{ #category : #'simulation stack' }
+{ #category : 'simulation stack' }
 StackToRegisterMappingCogit >> ssFlushUpThroughTemporaryVariable: tempIndex [
 	"Any occurrences on the stack of the value being stored (which is the top of stack)
 	 must be flushed, and hence any values colder than them stack."
@@ -4435,13 +4437,13 @@ StackToRegisterMappingCogit >> ssFlushUpThroughTemporaryVariable: tempIndex [
 		 	and: [desc offset = offset ] ] ]
 ]
 
-{ #category : #'simulation stack' }
+{ #category : 'simulation stack' }
 StackToRegisterMappingCogit >> ssPop: n [
 	
 	self ssPop: n popSpilled: true
 ]
 
-{ #category : #'simulation stack' }
+{ #category : 'simulation stack' }
 StackToRegisterMappingCogit >> ssPop: popBoolean andCopyReg: reg [
 	"Store or pop the top simulated stack entry to a register.
 	N.B.: popToReg: and storeToReg: does not generate anything if 
@@ -4452,7 +4454,7 @@ StackToRegisterMappingCogit >> ssPop: popBoolean andCopyReg: reg [
 		ifFalse: [ self ssTop copyToReg: reg ]
 ]
 
-{ #category : #'simulation stack' }
+{ #category : 'simulation stack' }
 StackToRegisterMappingCogit >> ssPop: n popSpilled: popSpilled [
 	| spilledToPop |
 	self assert: (simStackPtr - n >= methodOrBlockNumTemps
@@ -4471,7 +4473,7 @@ StackToRegisterMappingCogit >> ssPop: n popSpilled: popSpilled [
 	self updateSimSpillBase
 ]
 
-{ #category : #'mapped inline primitive generators - vectorial' }
+{ #category : 'mapped inline primitive generators - vectorial' }
 StackToRegisterMappingCogit >> ssPopTopToReg: aRegister [
 	
 	"Peephole optimisation: generate always a single instruction.
@@ -4483,26 +4485,26 @@ StackToRegisterMappingCogit >> ssPopTopToReg: aRegister [
 	self ssPop: 1 popSpilled: false.
 ]
 
-{ #category : #'mapped inline primitive generators - vectorial' }
+{ #category : 'mapped inline primitive generators - vectorial' }
 StackToRegisterMappingCogit >> ssPopTopToVectorReg: aVectorRegister [
 
 	self ssTop moveToVectorReg: aVectorRegister.
 	self ssPop: 1
 ]
 
-{ #category : #'simulation stack' }
+{ #category : 'simulation stack' }
 StackToRegisterMappingCogit >> ssPush: n [ 
 	simStackPtr := simStackPtr + n
 ]
 
-{ #category : #'simulation stack' }
+{ #category : 'simulation stack' }
 StackToRegisterMappingCogit >> ssPushAnnotatedConstant: literal [
 	self ssPushConstant: literal.
 	self annotateInstructionForBytecode.
 	^0
 ]
 
-{ #category : #'simulation stack' }
+{ #category : 'simulation stack' }
 StackToRegisterMappingCogit >> ssPushBase: reg offset: offset [
 	self ssPush: 1.
 	self ssTop
@@ -4515,7 +4517,7 @@ StackToRegisterMappingCogit >> ssPushBase: reg offset: offset [
 	^0
 ]
 
-{ #category : #'simulation stack' }
+{ #category : 'simulation stack' }
 StackToRegisterMappingCogit >> ssPushConstant: literal [
 	self ssPush: 1.
 	self ssTop
@@ -4527,7 +4529,7 @@ StackToRegisterMappingCogit >> ssPushConstant: literal [
 	^0
 ]
 
-{ #category : #'simulation stack' }
+{ #category : 'simulation stack' }
 StackToRegisterMappingCogit >> ssPushDesc: simStackEntry [
 	<var: #simStackEntry type: #SimStackEntry>
 	self cCode:
@@ -4551,7 +4553,7 @@ StackToRegisterMappingCogit >> ssPushDesc: simStackEntry [
 	^0
 ]
 
-{ #category : #'simulation stack' }
+{ #category : 'simulation stack' }
 StackToRegisterMappingCogit >> ssPushRegister: reg [
 	self ssPush: 1.
 	self ssTop
@@ -4563,7 +4565,7 @@ StackToRegisterMappingCogit >> ssPushRegister: reg [
 	^0
 ]
 
-{ #category : #'simulation stack' }
+{ #category : 'simulation stack' }
 StackToRegisterMappingCogit >> ssPushVectorRegister: reg [
 	self ssPush: 1.
 	self ssTop
@@ -4576,20 +4578,20 @@ StackToRegisterMappingCogit >> ssPushVectorRegister: reg [
 	^0
 ]
 
-{ #category : #'simulation stack' }
+{ #category : 'simulation stack' }
 StackToRegisterMappingCogit >> ssSelfDescriptor [
 	<returnTypeC: #SimStackEntry>
 	<inline: true>
 	^simStack at: 0
 ]
 
-{ #category : #'simulation stack' }
+{ #category : 'simulation stack' }
 StackToRegisterMappingCogit >> ssSize [
 	
 	^ simStackPtr + 1
 ]
 
-{ #category : #'simulation stack' }
+{ #category : 'simulation stack' }
 StackToRegisterMappingCogit >> ssStoreAndReplacePop: popBoolean toReg: reg [
 	"In addition to ssStorePop:toReg:, if this is a store and not
 	a popInto I change the simulated stack to use the register 
@@ -4602,7 +4604,7 @@ StackToRegisterMappingCogit >> ssStoreAndReplacePop: popBoolean toReg: reg [
 		self ssPushRegister: reg ].
 ]
 
-{ #category : #'simulation stack' }
+{ #category : 'simulation stack' }
 StackToRegisterMappingCogit >> ssStorePop: popBoolean toPreferredReg: preferredReg [
 	"Store or pop the top simulated stack entry to a register.
 	 Use preferredReg if the entry is not itself a register.
@@ -4616,20 +4618,20 @@ StackToRegisterMappingCogit >> ssStorePop: popBoolean toPreferredReg: preferredR
 	^ actualReg
 ]
 
-{ #category : #'simulation stack' }
+{ #category : 'simulation stack' }
 StackToRegisterMappingCogit >> ssTop [
 	<returnTypeC: #'CogSimStackEntry *'>
 	^self simStackAt: simStackPtr
 ]
 
-{ #category : #'simulation stack' }
+{ #category : 'simulation stack' }
 StackToRegisterMappingCogit >> ssTopDescriptor [
 	<returnTypeC: #SimStackEntry>
 	<inline: true>
 	^simStack at: simStackPtr
 ]
 
-{ #category : #testing }
+{ #category : 'testing' }
 StackToRegisterMappingCogit >> ssTopNeedsStoreCheck [
 	<inline: true>
 	^self ssTop type ~= SSConstant
@@ -4637,13 +4639,13 @@ StackToRegisterMappingCogit >> ssTopNeedsStoreCheck [
 		and: [objectRepresentation shouldAnnotateObjectReference:  self ssTop constant]]
 ]
 
-{ #category : #'simulation stack' }
+{ #category : 'simulation stack' }
 StackToRegisterMappingCogit >> ssValue: n [
 	<returnTypeC: #'CogSimStackEntry *'>
 	^self simStackAt: simStackPtr - n
 ]
 
-{ #category : #testing }
+{ #category : 'testing' }
 StackToRegisterMappingCogit >> stackEntryIsBoolean: simStackEntry [
 	<var: #simStackEntry type: #'CogSimStackEntry *'>
 	<inline: true>
@@ -4652,13 +4654,13 @@ StackToRegisterMappingCogit >> stackEntryIsBoolean: simStackEntry [
 			or: [simStackEntry constant = objectMemory falseObject]]
 ]
 
-{ #category : #testing }
+{ #category : 'testing' }
 StackToRegisterMappingCogit >> stackTopIsBoolean [
 	<inline: true>
 	^simStackPtr >= methodOrBlockNumArgs and: [self stackEntryIsBoolean: self ssTop]
 ]
 
-{ #category : #debugging }
+{ #category : 'debugging' }
 StackToRegisterMappingCogit >> tempsValidAndVolatileEntriesSpilled [
 	"Answer if the stack is valid up to, but not including, simSpillBase."
 	| culprit |
@@ -4675,7 +4677,7 @@ StackToRegisterMappingCogit >> tempsValidAndVolatileEntriesSpilled [
 	^true
 ]
 
-{ #category : #'simulation only' }
+{ #category : 'simulation only' }
 StackToRegisterMappingCogit >> traceDescriptor: descriptor [
 	<cmacro: '(ign) 0'>
 	(compilationTrace anyMask: 2) ifTrue:
@@ -4684,7 +4686,7 @@ StackToRegisterMappingCogit >> traceDescriptor: descriptor [
 		 coInterpreter flush]
 ]
 
-{ #category : #'simulation only' }
+{ #category : 'simulation only' }
 StackToRegisterMappingCogit >> traceFixup: fixup merge: isMerge [
 	<cmacro: '(igu,ana) 0'>
 	| index |
@@ -4700,7 +4702,7 @@ StackToRegisterMappingCogit >> traceFixup: fixup merge: isMerge [
 		 coInterpreter transcript cr; flush]
 ]
 
-{ #category : #'simulation only' }
+{ #category : 'simulation only' }
 StackToRegisterMappingCogit >> traceMerge: fixup [
 	<cmacro: '(ign) 0'>
 	| index |
@@ -4714,21 +4716,21 @@ StackToRegisterMappingCogit >> traceMerge: fixup [
 			coInterpreter transcript cr; flush]
 ]
 
-{ #category : #'simulation only' }
+{ #category : 'simulation only' }
 StackToRegisterMappingCogit >> traceSimStack [
 	<cmacro: '() 0'>
 	(compilationTrace anyMask: 4) ifTrue:
 		[self printSimStack]
 ]
 
-{ #category : #'simulation only' }
+{ #category : 'simulation only' }
 StackToRegisterMappingCogit >> traceSpill: simStackEntry [
 	<cmacro: '(ign) 0'>
 	(compilationTrace anyMask: 8) ifTrue:
 		[coInterpreter transcript cr; print: bytecodePC; space; print: simStackEntry; flush]
 ]
 
-{ #category : #'peephole optimizations' }
+{ #category : 'peephole optimizations' }
 StackToRegisterMappingCogit >> tryCollapseTempVectorInitializationOfSize: slots [
 	"If the sequence of bytecodes is
 		push: (Array new: 1)
@@ -4801,7 +4803,7 @@ StackToRegisterMappingCogit >> tryCollapseTempVectorInitializationOfSize: slots 
 	^true
 ]
 
-{ #category : #'simulation stack' }
+{ #category : 'simulation stack' }
 StackToRegisterMappingCogit >> updateSimSpillBase [
 	"Something volatile has been pushed on the stack; update simSpillBase accordingly."
 	<inline: true>
@@ -4823,7 +4825,7 @@ StackToRegisterMappingCogit >> updateSimSpillBase [
 	self assert: (simSpillBase > simStackPtr or: [(self simStackAt: simSpillBase) spilled == false])
 ]
 
-{ #category : #'span functions' }
+{ #category : 'span functions' }
 StackToRegisterMappingCogit >> v4PushNilSize: aMethodObj numInitialNils: numInitialNils [
 	"77			01001101				Push false [* 1:true, 2:nil, 3:thisContext, ..., -N: pushExplicitOuter: N, N = Extend B]
 	 225		11100001	sbbbbbbb	Extend B (Ext B = Ext B prev * 256 + Ext B)"
@@ -4831,12 +4833,12 @@ StackToRegisterMappingCogit >> v4PushNilSize: aMethodObj numInitialNils: numInit
 	^3 * numInitialNils
 ]
 
-{ #category : #testing }
+{ #category : 'testing' }
 StackToRegisterMappingCogit >> violatesEnsureSpilledSpillAssert [
 	^true
 ]
 
-{ #category : #'bytecode generator support' }
+{ #category : 'bytecode generator support' }
 StackToRegisterMappingCogit >> voidReceiverOptStatus [
 	"Used to mark ReceiverResultReg as dead or not containing simSelf.
 	 Used when the simStack has already been flushed, e.g. for sends."
@@ -4844,7 +4846,7 @@ StackToRegisterMappingCogit >> voidReceiverOptStatus [
 	self simSelf liveRegister: NoReg
 ]
 
-{ #category : #'bytecode generator support' }
+{ #category : 'bytecode generator support' }
 StackToRegisterMappingCogit >> voidReceiverResultRegContainsSelf [
 	"Used when ReceiverResultReg is allocated for other than simSelf, and
 	 there may be references to ReceiverResultReg which need to be spilled."

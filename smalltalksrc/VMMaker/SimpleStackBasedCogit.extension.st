@@ -1,6 +1,6 @@
-Extension { #name : #SimpleStackBasedCogit }
+Extension { #name : 'SimpleStackBasedCogit' }
 
-{ #category : #'*VMMaker-Tests' }
+{ #category : '*VMMaker-Tests' }
 SimpleStackBasedCogit >> entryOffset: anInteger [ 
 	<doNotGenerate>
 	cmEntryOffset := anInteger

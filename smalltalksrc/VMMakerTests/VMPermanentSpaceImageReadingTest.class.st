@@ -1,10 +1,12 @@
 Class {
-	#name : #VMPermanentSpaceImageReadingTest,
-	#superclass : #VMAbstractImageFormatTest,
-	#category : #'VMMakerTests-PermSpace'
+	#name : 'VMPermanentSpaceImageReadingTest',
+	#superclass : 'VMAbstractImageFormatTest',
+	#category : 'VMMakerTests-PermSpace',
+	#package : 'VMMakerTests',
+	#tag : 'PermSpace'
 }
 
-{ #category : #utilities }
+{ #category : 'utilities' }
 VMPermanentSpaceImageReadingTest >> loadImage [
 
 	| memoryClass isa |
@@ -38,7 +40,7 @@ VMPermanentSpaceImageReadingTest >> loadImage [
 
 ]
 
-{ #category : #initialization }
+{ #category : 'initialization' }
 VMPermanentSpaceImageReadingTest >> setUp [
 
 	super setUp.
@@ -50,7 +52,7 @@ VMPermanentSpaceImageReadingTest >> setUp [
 
 ]
 
-{ #category : #tests }
+{ #category : 'tests' }
 VMPermanentSpaceImageReadingTest >> testLoadingImageHasEmptyPermSpaceWhenImageDoesNotHave [
 
 	self saveImage.	

@@ -1,10 +1,12 @@
 Class {
-	#name : #SpurImageReader,
-	#superclass : #AbstractImageAccess,
-	#category : #'VMMaker-ImageFormat'
+	#name : 'SpurImageReader',
+	#superclass : 'AbstractImageAccess',
+	#category : 'VMMaker-ImageFormat',
+	#package : 'VMMaker',
+	#tag : 'ImageFormat'
 }
 
-{ #category : #'file operations' }
+{ #category : 'file operations' }
 SpurImageReader >> getLongFromFile: aFile swap: swapFlag [
 	"Answer the next 32 or 64 bit word read from aFile, byte-swapped according to the swapFlag."
 	<var: #aFile type: #sqImageFile>
@@ -22,7 +24,7 @@ SpurImageReader >> getLongFromFile: aFile swap: swapFlag [
 		ifFalse: [w]
 ]
 
-{ #category : #'file operations' }
+{ #category : 'file operations' }
 SpurImageReader >> getShortFromFile: aFile swap: swapFlag [
 	"Answer the next 16 bit word read from aFile, byte-swapped according to the swapFlag."
 
@@ -41,7 +43,7 @@ SpurImageReader >> getShortFromFile: aFile swap: swapFlag [
 		ifFalse: [w]
 ]
 
-{ #category : #'file operations' }
+{ #category : 'file operations' }
 SpurImageReader >> getWord32FromFile: aFile swap: swapFlag [
 	"Answer the next 32 bit word read from aFile, byte-swapped according to the swapFlag."
 
@@ -60,7 +62,7 @@ SpurImageReader >> getWord32FromFile: aFile swap: swapFlag [
 		ifFalse: [w]
 ]
 
-{ #category : #reading }
+{ #category : 'reading' }
 SpurImageReader >> readHeaderFrom: f startingAt: headerStart [
 
 	<var: #f type: #sqImageFile>
@@ -112,7 +114,7 @@ SpurImageReader >> readHeaderFrom: f startingAt: headerStart [
 	^ header
 ]
 
-{ #category : #api }
+{ #category : 'api' }
 SpurImageReader >> readHeaderFromImage: anImageName [
 
 	| header |
@@ -121,7 +123,7 @@ SpurImageReader >> readHeaderFromImage: anImageName [
 	^ header
 ]
 
-{ #category : #reading }
+{ #category : 'reading' }
 SpurImageReader >> readImageFromFile: f StartingAt: headerStart [
 
 	"Read an image from the given file stream, allocating an amount of memory to its object heap.
@@ -155,7 +157,7 @@ SpurImageReader >> readImageFromFile: f StartingAt: headerStart [
 	^ header dataSize
 ]
 
-{ #category : #api }
+{ #category : 'api' }
 SpurImageReader >> readImageNamed: imageName [
 	
 	<var: #imageName declareC: 'char *imageName'>
@@ -175,13 +177,13 @@ SpurImageReader >> readImageNamed: imageName [
 	self sqImageFileClose: file
 ]
 
-{ #category : #'perm - space' }
+{ #category : 'perm - space' }
 SpurImageReader >> readPermanentSpaceFromImageFile: aZnBufferedReadStream header: aSpurImageHeaderStruct [ 
 	
 	^ 0
 ]
 
-{ #category : #segments }
+{ #category : 'segments' }
 SpurImageReader >> readSegmentsFromImageFile: f header: aHeader [
 
 	"Read numBytes of image data from f into memory at memoryBaseForImageRead.
@@ -243,7 +245,7 @@ SpurImageReader >> readSegmentsFromImageFile: f header: aHeader [
 	^ totalBytesRead
 ]
 
-{ #category : #testing }
+{ #category : 'testing' }
 SpurImageReader >> validateContent: imageFile [
 
 	<doNotGenerate>

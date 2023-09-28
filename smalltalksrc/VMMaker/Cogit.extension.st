@@ -1,6 +1,6 @@
-Extension { #name : #Cogit }
+Extension { #name : 'Cogit' }
 
-{ #category : #'*VMMaker-Tests' }
+{ #category : '*VMMaker-Tests' }
 Cogit >> methodZoneBase: anInteger [ 
 	<doNotGenerate>
 	methodZoneBase := anInteger

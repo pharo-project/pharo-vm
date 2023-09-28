@@ -1,32 +1,34 @@
 Class {
-	#name : #VMStackInterpreterTest,
-	#superclass : #TestCase,
+	#name : 'VMStackInterpreterTest',
+	#superclass : 'TestCase',
 	#instVars : [
 		'stackInterpreterClass'
 	],
-	#category : #'VMMakerTests-StackInterpreter'
+	#category : 'VMMakerTests-StackInterpreter',
+	#package : 'VMMakerTests',
+	#tag : 'StackInterpreter'
 }
 
-{ #category : #running }
+{ #category : 'running' }
 VMStackInterpreterTest >> setUp [
 
 	super setUp.
 	stackInterpreterClass := StackInterpreter.
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 VMStackInterpreterTest >> stackInterpreterClass [
 
 	^ stackInterpreterClass
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 VMStackInterpreterTest >> stackInterpreterClass: anObject [
 
 	stackInterpreterClass := anObject
 ]
 
-{ #category : #running }
+{ #category : 'running' }
 VMStackInterpreterTest >> testIsObjectAccessor [
 
 	self 
@@ -35,7 +37,7 @@ VMStackInterpreterTest >> testIsObjectAccessor [
 		assert: (self stackInterpreterClass isObjectAccessor: #fetchClassOf:)
 ]
 
-{ #category : #running }
+{ #category : 'running' }
 VMStackInterpreterTest >> testIsStackAccessor [
 
 	self 
