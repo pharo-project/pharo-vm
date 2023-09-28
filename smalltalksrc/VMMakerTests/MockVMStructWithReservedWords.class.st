@@ -1,27 +1,28 @@
 Class {
-	#name : #MockVMStructWithReservedWords,
-	#superclass : #VMStructType,
+	#name : 'MockVMStructWithReservedWords',
+	#superclass : 'VMStructType',
 	#instVars : [
 		'foo',
 		'case'
 	],
-	#category : #VMMakerTests
+	#category : 'VMMakerTests',
+	#package : 'VMMakerTests'
 }
 
-{ #category : #enumerating }
+{ #category : 'enumerating' }
 MockVMStructWithReservedWords class >> instVarNamesAndTypesForTranslationDo: aBinaryBlock [
 	
 	aBinaryBlock value: 'foo' value: 'char *'.
 	aBinaryBlock value: 'case' value: 'char *'
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 MockVMStructWithReservedWords >> case [
 
 	^ case
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 MockVMStructWithReservedWords >> case: anObject [
 
 	case := anObject
