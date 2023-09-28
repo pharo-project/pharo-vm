@@ -7007,6 +7007,13 @@ SpurMemoryManager >> instantiateClassInOldSpace: classObj [
 ]
 
 { #category : 'instantiation' }
+SpurMemoryManager >> instantiateClassInOldSpace: classObj indexableSize: nElements [
+	<api>
+
+	^ self subclassResponsibility
+]
+
+{ #category : 'instantiation' }
 SpurMemoryManager >> instantiateCompiledMethodClass: classObj indexableSize: nElements [
 	<var: #nElements type: #usqInt>
 	"Allocate an instance of a CompiledMethod class."

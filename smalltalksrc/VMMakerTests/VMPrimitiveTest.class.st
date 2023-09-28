@@ -2735,6 +2735,32 @@ VMPrimitiveTest >> testPrimitiveNewOldSpaceObjectIsNotSchedulingGC [
 	self deny: memory needGCFlag 
 ]
 
+{ #category : 'tests - primitiveNewOldSpace' }
+VMPrimitiveTest >> testPrimitiveNewOldSpaceWithArgsCreatesTheObjectInOldSpace [
+	| class |
+	class := self newClassInOldSpaceWithSlots: 0 instSpec: memory arrayFormat.
+
+	interpreter push: class.
+	interpreter push: (memory integerObjectOf: 7).
+	interpreter primitiveNewWithArgOldSpace.
+
+	self deny: interpreter failed.
+	self deny: (memory isYoung: interpreter stackTop)
+]
+
+{ #category : 'tests - primitiveNewOldSpace' }
+VMPrimitiveTest >> testPrimitiveNewOldSpaceWithArgsObjectIsNotSchedulingGC [
+	| class |
+	class := self newClassInOldSpaceWithSlots: 0 instSpec: memory arrayFormat.
+
+	interpreter push: class.
+	interpreter push: (memory integerObjectOf: 7).
+	interpreter primitiveNewWithArgOldSpace.
+
+	self deny: interpreter failed.
+	self deny: memory needGCFlag 
+]
+
 { #category : 'tests - primitiveNewPinned' }
 VMPrimitiveTest >> testPrimitiveNewPinnedCreatesTheObjectInOldSpace [
 	| class |

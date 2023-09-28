@@ -2815,6 +2815,21 @@ InterpreterPrimitives >> primitiveNewWithArg [
 ]
 
 { #category : 'object access primitives' }
+InterpreterPrimitives >> primitiveNewWithArgOldSpace [
+
+	| size instSpec |
+	size := self positiveMachineIntegerValueOf: self stackTop.
+
+	(objectMemory instantiateClassInOldSpace: (self stackValue: 1) indexableSize: size)
+		ifNotNil: [ :obj | self pop: argumentCount + 1 thenPush: obj ]
+		ifNil: [
+			instSpec := objectMemory instSpecOfClass: (self stackValue: 1).
+			self primitiveFailFor: (((objectMemory isIndexableFormat: instSpec) and: [
+					  (objectMemory isCompiledMethodFormat: instSpec) not ]) ifTrue: [ PrimErrNoMemory ]
+					 ifFalse: [ PrimErrBadReceiver ]) ]
+]
+
+{ #category : 'object access primitives' }
 InterpreterPrimitives >> primitiveNewWithArgPinned [
 	| size instSpec |
 	
