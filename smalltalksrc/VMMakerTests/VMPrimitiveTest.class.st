@@ -2745,7 +2745,8 @@ VMPrimitiveTest >> testPrimitiveNewOldSpaceWithArgsCreatesTheObjectInOldSpace [
 	interpreter primitiveNewWithArgOldSpace.
 
 	self deny: interpreter failed.
-	self deny: (memory isYoung: interpreter stackTop)
+	self deny: (memory isYoung: interpreter stackTop).
+	self assert: (memory isOld: interpreter stackTop)
 ]
 
 { #category : 'tests - primitiveNewOldSpace' }
