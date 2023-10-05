@@ -6982,6 +6982,36 @@ SpurMemoryManager >> instantiateClass: classObj isPinned: isPinned [
 ]
 
 { #category : #instantiation }
+SpurMemoryManager >> instantiateClassInOldSpace: classObj [
+	| instSpec classFormat numSlots classIndex newObj |
+	classFormat := self formatOfClassSafe: classObj.
+	classFormat == -1 ifTrue:
+		[self primitiveFailFor: PrimErrBadReceiver. "no format"
+		 ^nil].
+	instSpec := self instSpecOfClassFormat: classFormat.
+	(self isFixedSizePointerFormat: instSpec) ifFalse:
+		[self primitiveFailFor: PrimErrBadReceiver. "bad format"
+		 ^nil].
+	classIndex := self ensureBehaviorHash: classObj.
+	classIndex < 0 ifTrue:
+		[coInterpreter primitiveFailFor: classIndex negated.
+		 ^nil].
+	numSlots := self fixedFieldsOfClassFormat: classFormat.
+	newObj := self allocateSlotsInOldSpace: numSlots format: instSpec classIndex: classIndex.
+	newObj ifNotNil:
+		[self fillObj: newObj numSlots: numSlots with: nilObj]
+		ifNil: [ self primitiveFailFor: PrimErrNoMemory ].
+	^newObj
+]
+
+{ #category : #instantiation }
+SpurMemoryManager >> instantiateClassInOldSpace: classObj indexableSize: nElements [
+	<api>
+
+	^ self subclassResponsibility
+]
+
+{ #category : #instantiation }
 SpurMemoryManager >> instantiateCompiledMethodClass: classObj indexableSize: nElements [
 	<var: #nElements type: #usqInt>
 	"Allocate an instance of a CompiledMethod class."
