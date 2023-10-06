@@ -6965,6 +6965,13 @@ SpurMemoryManager >> instantiateClass: classObj indexableSize: nElements [
 SpurMemoryManager >> instantiateClass: classObj indexableSize: nElements isPinned: isPinned [
 	<api>
 
+	^ self instantiateClass: classObj indexableSize: nElements isPinned: isPinned isOldSpace: false
+]
+
+{ #category : #instantiation }
+SpurMemoryManager >> instantiateClass: classObj indexableSize: nElements isPinned: isPinned isOldSpace: isOldSpace [
+	<api>
+
 	^ self subclassResponsibility
 ]
 
@@ -6995,13 +7002,6 @@ SpurMemoryManager >> instantiateClass: classObj isPinned: isPinned isOldSpace: i
 		[self fillObj: newObj numSlots: numSlots with: nilObj]
 		ifNil: [ self primitiveFailFor: PrimErrNoMemory ].
 	^newObj
-]
-
-{ #category : #instantiation }
-SpurMemoryManager >> instantiateClassInOldSpace: classObj indexableSize: nElements [
-	<api>
-
-	^ self subclassResponsibility
 ]
 
 { #category : #instantiation }
