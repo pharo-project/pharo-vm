@@ -2775,7 +2775,7 @@ InterpreterPrimitives >> primitiveNewOldSpace [
 	"Allocate a new pinned fixed-size instance.  Fail if the allocation would leave
 	less than lowSpaceThreshold bytes free. This *will not* cause a GC :-)"
 
-	(objectMemory instantiateClassInOldSpace: self stackTop)
+	(objectMemory instantiateClass: self stackTop isPinned: false isOldSpace: true)
 		ifNotNil: [ :obj | self pop: argumentCount + 1 thenPush: obj ]
 		ifNil: [
 			self primitiveFailFor:
