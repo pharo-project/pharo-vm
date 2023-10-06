@@ -1344,7 +1344,11 @@ StackInterpreter class >> initializePrimitiveTable [
 		(574 primitiveFloat64ArrayAdd)
 
 		"Unassigned Primitives"
-		(575 597 primitiveFail)
+		(575 595 primitiveFail)
+		
+		"Allocate in old space primitive"
+		(596 primitiveNewOldSpace)
+		(597 primitiveNewWithArgOldSpace)
 
 		"Pinned object creation primitives"
 		(598 primitiveNewPinned)
