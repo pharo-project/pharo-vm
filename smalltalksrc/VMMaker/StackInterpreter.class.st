@@ -1327,7 +1327,7 @@ StackInterpreter class >> initializePrimitiveTable [
 
 		"Unassigned Primitives"
 		(575 595 primitiveFail)
-		
+
 		"Allocate in old space primitive"
 		(596 primitiveNewOldSpace)
 		(597 primitiveNewWithArgOldSpace)
