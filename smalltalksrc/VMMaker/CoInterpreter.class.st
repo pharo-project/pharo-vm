@@ -554,14 +554,14 @@ CoInterpreter >> activateNewFullClosure: blockClosure method: theMethod numArgs:
 ]
 
 { #category : #'message sending' }
-CoInterpreter >> activateNewMethod [
+CoInterpreter >> activateNewMethod: shouldCompileToMachineCode [
 
 	| methodHeader inInterpreter switched |
 	
 	"Eagerly compile it if appropriate so that doits are fast."
 	methodHeader := self rawHeaderOf: newMethod.
 	(self isCogMethodReference: methodHeader) ifFalse: [
-		(self methodWithHeaderShouldBeCogged: methodHeader)
+		(shouldCompileToMachineCode and: [(self methodWithHeaderShouldBeCogged: methodHeader)])
 			ifTrue: [
 				cogit cog: newMethod selector: objectMemory nilObject.
 				methodHeader := self rawHeaderOf: newMethod ]
@@ -569,6 +569,15 @@ CoInterpreter >> activateNewMethod [
 
 	inInterpreter := self isInstructionPointerInInterpreter:
 		                 instructionPointer.
+		
+	(self isCogMethodReference: methodHeader)
+		ifTrue:
+			[inInterpreter ifTrue:
+				[self iframeSavedIP: framePointer put: instructionPointer asInteger.
+				 instructionPointer := cogit ceReturnToInterpreterPC].
+			^ self activateCoggedNewMethod: inInterpreter].		
+
+	"We are in the interpreter"
 	methodHeader := self justActivateNewMethod: true.
 
 	"Now check for stack overflow or an event (interrupt, must scavenge, etc)."
@@ -3444,7 +3453,7 @@ CoInterpreter >> interpretMethodFromMachineCode [
 	self
 		executePrimitiveFromInterpreter: false
 		ifFail: [ "if not primitive, or primitive failed, activate the method and reenter the interpreter"
-			self activateNewMethod.
+			self activateNewMethod: false.
 			self siglong: reenterInterpreter jmp: ReturnToInterpreter.
 			"NOTREACHED"
 			^ nil ]

@@ -1880,6 +1880,14 @@ StackInterpreter >> activateNewFullClosure: blockClosure method: theMethod numAr
 { #category : #'message sending' }
 StackInterpreter >> activateNewMethod [
 
+	<inline: #always>
+
+	self activateNewMethod: true
+]
+
+{ #category : #'message sending' }
+StackInterpreter >> activateNewMethod: shouldCompileToMachineCode [
+
 	| methodHeader switched |
 	methodHeader := self justActivateNewMethod: false. "either interpreted or machine code"
 
@@ -4634,7 +4642,7 @@ StackInterpreter >> commonSendOrdinary [
 	self sendBreakpoint: messageSelector receiver: (self stackValue: argumentCount).
 	self doRecordSendTrace.
 	self findNewMethodOrdinary.
-	self executeNewMethod.
+	self executeNewMethod: false.
 	self fetchNextBytecode
 ]
 
@@ -5424,6 +5432,14 @@ StackInterpreter >> establishFrameForContextToReturnTo: contextToReturnTo [
 
 { #category : #'message sending' }
 StackInterpreter >> executeNewMethod [
+
+	<inline: #always>
+
+	self executeNewMethod: true
+]
+
+{ #category : #'message sending' }
+StackInterpreter >> executeNewMethod: shouldCompileToMachineCode [
 	"if not primitive, or primitive failed, activate the method"
 
 	| inInterpreter |
@@ -5432,7 +5448,7 @@ StackInterpreter >> executeNewMethod [
 	self
 		executePrimitiveFromInterpreter: inInterpreter
 		ifFail: [ "if not primitive, or primitive failed, activate the method"
-			self activateNewMethod ]
+			self activateNewMethod: shouldCompileToMachineCode ]
 ]
 
 { #category : #'message sending' }
@@ -9384,7 +9400,7 @@ StackInterpreter >> mappedDirectCall [
 	argumentCount := self argumentCountOfMethodHeader: methodHeader.
 	"The primitive function pointer is not cached in the interpreter, but it's called quickly in the JIT"
 	primitiveFunctionPointer := self functionPointerFor: localPrimIndex inClass: objectMemory nilObject..
-	self activateNewMethod
+	self activateNewMethod: false
 ]
 
 { #category : #'sista bytecodes' }
