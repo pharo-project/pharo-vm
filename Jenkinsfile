@@ -477,7 +477,7 @@ try{
 		
 		builders[platform] = {
 			node(platform){
-				timeout(30){
+				timeout(40){
 					runBuild(platform, "CoInterpreter")
 				}
 				// If we are not in the main branch we want to run the tests as fast as possible
@@ -490,13 +490,13 @@ try{
 					}
 				}
 				
-				timeout(30){
+				timeout(40){
 					runBuild(platform, "StackVM")
 				}
-				timeout(30){
+				timeout(40){
 					runBuild("${platform}-ComposedFormat", "CoInterpreter", true, " -DIMAGE_FORMAT=ComposedFormat ")
 				}
-				timeout(30){
+				timeout(40){
 					// Only build the Stock replacement version in the main branch
 					if(isMainBranch()){
 						runBuild(platform, "CoInterpreter", false)
