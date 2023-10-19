@@ -2608,21 +2608,29 @@ CoInterpreter >> executeFullCogBlock: cogMethod closure: closure mayContextSwitc
 
 { #category : #'message sending' }
 CoInterpreter >> executeNewMethod [
-	"if not primitive, or primitive failed, activate the method"
+	
+	"Eagerly compile method"
+	self executeNewMethod: true
+]
 
-	| inInterpreter |
+{ #category : #'message sending' }
+CoInterpreter >> executeNewMethod: eagerlyCompile [
+	"if not primitive, or primitive failed, activate the method"
+	<inline: true>
+	| inInterpreter |	
 	inInterpreter := self isInstructionPointerInInterpreter:
 		                 instructionPointer.
 	self executePrimitiveFromInterpreter: inInterpreter ifFail: [
 		| methodHeader |
-		"Eagerly compile it if appropriate so that doits are fast."
-		methodHeader := self rawHeaderOf: newMethod.
-		(self isCogMethodReference: methodHeader) ifFalse: [
-			(self methodWithHeaderShouldBeCogged: methodHeader)
-				ifTrue: [
-					cogit cog: newMethod selector: objectMemory nilObject.
-					methodHeader := self rawHeaderOf: newMethod ]
-				ifFalse: [ self maybeFlagMethodAsInterpreted: newMethod ] ].
+		eagerlyCompile ifTrue: [
+			"Eagerly compile it if appropriate so that doits are fast."
+			methodHeader := self rawHeaderOf: newMethod.
+			(self isCogMethodReference: methodHeader) ifFalse: [
+				(self methodWithHeaderShouldBeCogged: methodHeader)
+					ifTrue: [
+						cogit cog: newMethod selector: objectMemory nilObject.
+						methodHeader := self rawHeaderOf: newMethod ]
+					ifFalse: [ self maybeFlagMethodAsInterpreted: newMethod ] ]].
 		"if not primitive, or primitive failed, activate the method"
 		self activateNewMethod ]
 ]

@@ -4634,7 +4634,7 @@ StackInterpreter >> commonSendOrdinary [
 	self sendBreakpoint: messageSelector receiver: (self stackValue: argumentCount).
 	self doRecordSendTrace.
 	self findNewMethodOrdinary.
-	self executeNewMethod.
+	self executeNewMethod: false.
 	self fetchNextBytecode
 ]
 
