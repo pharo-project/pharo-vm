@@ -5424,6 +5424,13 @@ StackInterpreter >> establishFrameForContextToReturnTo: contextToReturnTo [
 
 { #category : #'message sending' }
 StackInterpreter >> executeNewMethod [
+	
+	"Eagerly compile method"
+	self executeNewMethod: true
+]
+
+{ #category : #'message sending' }
+StackInterpreter >> executeNewMethod: eagerlyCompile [
 	"if not primitive, or primitive failed, activate the method"
 
 	| inInterpreter |

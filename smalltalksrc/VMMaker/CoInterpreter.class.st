@@ -2607,13 +2607,6 @@ CoInterpreter >> executeFullCogBlock: cogMethod closure: closure mayContextSwitc
 ]
 
 { #category : #'message sending' }
-CoInterpreter >> executeNewMethod [
-	
-	"Eagerly compile method"
-	self executeNewMethod: true
-]
-
-{ #category : #'message sending' }
 CoInterpreter >> executeNewMethod: eagerlyCompile [
 	"if not primitive, or primitive failed, activate the method"
 	<inline: true>
