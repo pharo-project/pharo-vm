@@ -5435,7 +5435,7 @@ StackInterpreter >> executeNewMethod [
 
 	<inline: #always>
 
-	self executeNewMethod: true
+	self executeNewMethod: false
 ]
 
 { #category : #'message sending' }
