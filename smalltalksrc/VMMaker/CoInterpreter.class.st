@@ -554,19 +554,12 @@ CoInterpreter >> activateNewFullClosure: blockClosure method: theMethod numArgs:
 ]
 
 { #category : #'message sending' }
-CoInterpreter >> activateNewMethod: shouldCompileToMachineCode [
+CoInterpreter >> activateNewMethod [
 
 	| methodHeader inInterpreter switched |
 	
 	"Eagerly compile it if appropriate so that doits are fast."
 	methodHeader := self rawHeaderOf: newMethod.
-	(self isCogMethodReference: methodHeader) ifFalse: [
-		(shouldCompileToMachineCode and: [(self methodWithHeaderShouldBeCogged: methodHeader)])
-			ifTrue: [
-				cogit cog: newMethod selector: objectMemory nilObject.
-				methodHeader := self rawHeaderOf: newMethod ]
-			ifFalse: [ self maybeFlagMethodAsInterpreted: newMethod ] ].
-
 	inInterpreter := self isInstructionPointerInInterpreter:
 		                 instructionPointer.
 		
@@ -3453,7 +3446,7 @@ CoInterpreter >> interpretMethodFromMachineCode [
 	self
 		executePrimitiveFromInterpreter: false
 		ifFail: [ "if not primitive, or primitive failed, activate the method and reenter the interpreter"
-			self activateNewMethod: false.
+			self activateNewMethod.
 			self siglong: reenterInterpreter jmp: ReturnToInterpreter.
 			"NOTREACHED"
 			^ nil ]
