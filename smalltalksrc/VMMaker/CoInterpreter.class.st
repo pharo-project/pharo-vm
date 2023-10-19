@@ -2606,6 +2606,27 @@ CoInterpreter >> executeFullCogBlock: cogMethod closure: closure mayContextSwitc
 	"NOTREACHED"
 ]
 
+{ #category : #'message sending' }
+CoInterpreter >> executeNewMethod [
+	"if not primitive, or primitive failed, activate the method"
+
+	| inInterpreter |
+	inInterpreter := self isInstructionPointerInInterpreter:
+		                 instructionPointer.
+	self executePrimitiveFromInterpreter: inInterpreter ifFail: [
+		| methodHeader |
+		"Eagerly compile it if appropriate so that doits are fast."
+		methodHeader := self rawHeaderOf: newMethod.
+		(self isCogMethodReference: methodHeader) ifFalse: [
+			(self methodWithHeaderShouldBeCogged: methodHeader)
+				ifTrue: [
+					cogit cog: newMethod selector: objectMemory nilObject.
+					methodHeader := self rawHeaderOf: newMethod ]
+				ifFalse: [ self maybeFlagMethodAsInterpreted: newMethod ] ].
+		"if not primitive, or primitive failed, activate the method"
+		self activateNewMethod ]
+]
+
 { #category : #'return bytecodes' }
 CoInterpreter >> externalAboutToReturn: resultOop through: aContext [
 	| ourContext |
