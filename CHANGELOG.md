@@ -1,5 +1,12 @@
 # Change log
 
+## v10.0.8
+
+* Fixes #14768: File class>>primFileAttributes😷 answers corrupted result by @akgrant43 in https://github.com/pharo-project/pharo-vm/pull/697
+* Fix/speed regression by @tesonep in https://github.com/pharo-project/pharo-vm/pull/705
+
+**Full Changelog**: https://github.com/pharo-project/pharo-vm/compare/v10.0.7...v10.0.8
+
 ## v10.0.7
 
 * Update README.md by @guillep in https://github.com/pharo-project/pharo-vm/pull/688
