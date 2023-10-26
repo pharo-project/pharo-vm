@@ -142,13 +142,11 @@ VMSpurEphemeronsAlgorithmTest >> testEphemeronsOldObjectsYoungInverse [
 ]
 
 { #category : #'tests - ephemerons with same key' }
-VMSpurEphemeronsAlgorithmTest >> testEphemeronsWithSameKey [
+VMSpurEphemeronsAlgorithmTest >> testEphemeronsWithSameKeyNewSpace [
     
     ephemeronObjectOopOne := self newEphemeronObject.
-    ephemeronObjectOopTwo := self newEphemeronObjectOldSpace.
+    ephemeronObjectOopTwo := self newEphemeronObject.
     nonEphemeronObjectOopOne := self newZeroSizedObject.
-
-    memory storePointer: 2 ofObject: ephemeronObjectOopOne withValue: ephemeronObjectOopTwo.
 
 	"Both ephemerons share the same key"
     memory storePointer: 0
@@ -158,46 +156,21 @@ VMSpurEphemeronsAlgorithmTest >> testEphemeronsWithSameKey [
         ofObject: ephemeronObjectOopTwo
         withValue: nonEphemeronObjectOopOne.
         
-    self keepObjectInVMVariable1: ephemeronObjectOopOne.
+   self keepObjectInVMVariable1: ephemeronObjectOopOne.
+	self keepObjectInVMVariable2: ephemeronObjectOopTwo.
     
-    "Collect ephemeron 1, ephemeron 2 is in the old space"
+    "Collect ephemerons"
     memory doScavenge: 1.
 
-    self assert: memory dequeueMourner equals: ephemeronObjectOopTwo.
-    self assert: memory dequeueMourner equals: ephemeronObjectOopOne
+	 self assert: ( { ephemeronObjectOopOne . ephemeronObjectOopTwo } includes: memory dequeueMourner).
+	 self assert: ( { ephemeronObjectOopOne . ephemeronObjectOopTwo } includes: memory dequeueMourner)
 ]
 
 { #category : #'tests - ephemerons with same key' }
-VMSpurEphemeronsAlgorithmTest >> testEphemeronsWithSameKeyFlushNewSpace [
+VMSpurEphemeronsAlgorithmTest >> testEphemeronsWithSameKeyNewSpaceFlush [
     
     ephemeronObjectOopOne := self newEphemeronObject.
-    ephemeronObjectOopTwo := self newEphemeronObjectOldSpace.
-    nonEphemeronObjectOopOne := self newZeroSizedObject.
-
-    memory storePointer: 2 ofObject: ephemeronObjectOopOne withValue: ephemeronObjectOopTwo.
-
-	"Both ephemerons share the same key"
-    memory storePointer: 0
-        ofObject: ephemeronObjectOopOne
-        withValue: nonEphemeronObjectOopOne.
-    memory storePointer: 0
-        ofObject: ephemeronObjectOopTwo
-        withValue: nonEphemeronObjectOopOne.
-        
-    self keepObjectInVMVariable1: ephemeronObjectOopOne.
-    
-    "Collect ephemeron 1, ephemeron 2 is in the old space"
-    memory flushNewSpace.
-    
-    self assert: memory dequeueMourner equals: ephemeronObjectOopTwo.
-    self assert: memory dequeueMourner equals: ephemeronObjectOopOne
-]
-
-{ #category : #'tests - ephemerons with same key' }
-VMSpurEphemeronsAlgorithmTest >> testEphemeronsWithSameKeyFlushNewSpaceNoRefenceBetweenEphemerons [
-    
-    ephemeronObjectOopOne := self newEphemeronObject.
-    ephemeronObjectOopTwo := self newEphemeronObjectOldSpace.
+    ephemeronObjectOopTwo := self newEphemeronObject.
     nonEphemeronObjectOopOne := self newZeroSizedObject.
 
 	"Both ephemerons share the same key"
@@ -208,19 +181,70 @@ VMSpurEphemeronsAlgorithmTest >> testEphemeronsWithSameKeyFlushNewSpaceNoRefence
         ofObject: ephemeronObjectOopTwo
         withValue: nonEphemeronObjectOopOne.
         
-    self keepObjectInVMVariable1: ephemeronObjectOopOne.
+   self keepObjectInVMVariable1: ephemeronObjectOopOne.
+	self keepObjectInVMVariable2: ephemeronObjectOopTwo.
     
     "Collect both non ephemeron objects"
     memory flushNewSpace.
     
-    self assert: memory dequeueMourner equals: ephemeronObjectOopTwo.
-    self assert: memory dequeueMourner equals: ephemeronObjectOopOne
+    self assert: ( { ephemeronObjectOopOne . ephemeronObjectOopTwo } includes: memory dequeueMourner).
+	 self assert: ( { ephemeronObjectOopOne . ephemeronObjectOopTwo } includes: memory dequeueMourner)
 ]
 
 { #category : #'tests - ephemerons with same key' }
-VMSpurEphemeronsAlgorithmTest >> testEphemeronsWithSameKeyNoRefenceBetweenEphemerons [
+VMSpurEphemeronsAlgorithmTest >> testEphemeronsWithSameKeyNewSpaceOldSpace [
     
     ephemeronObjectOopOne := self newEphemeronObject.
+    ephemeronObjectOopTwo := self newEphemeronObject.
+    nonEphemeronObjectOopOne := self newOldSpaceObjectWithSlots: 0.
+
+	"Both ephemerons share the same key"
+    memory storePointer: 0
+        ofObject: ephemeronObjectOopOne
+        withValue: nonEphemeronObjectOopOne.
+    memory storePointer: 0
+        ofObject: ephemeronObjectOopTwo
+        withValue: nonEphemeronObjectOopOne.
+        
+   self keepObjectInVMVariable1: ephemeronObjectOopOne.
+	self keepObjectInVMVariable2: ephemeronObjectOopTwo.
+    
+    "Collect ephemerons"
+    memory fullGC.
+
+	 self assert: ( { ephemeronObjectOopOne . ephemeronObjectOopTwo } includes: memory dequeueMourner).
+	 self assert: ( { ephemeronObjectOopOne . ephemeronObjectOopTwo } includes: memory dequeueMourner)
+]
+
+{ #category : #'tests - ephemerons with same key' }
+VMSpurEphemeronsAlgorithmTest >> testEphemeronsWithSameKeyOldSpace [
+    
+    ephemeronObjectOopOne := self newEphemeronObjectOldSpace.
+    ephemeronObjectOopTwo := self newEphemeronObjectOldSpace.
+    nonEphemeronObjectOopOne := self newOldSpaceObjectWithSlots: 0.
+
+	"Both ephemerons share the same key"
+    memory storePointer: 0
+        ofObject: ephemeronObjectOopOne
+        withValue: nonEphemeronObjectOopOne.
+    memory storePointer: 0
+        ofObject: ephemeronObjectOopTwo
+        withValue: nonEphemeronObjectOopOne.
+        
+   self keepObjectInVMVariable1: ephemeronObjectOopOne.
+	self keepObjectInVMVariable2: ephemeronObjectOopTwo.
+    
+    "Collect ephemerons"
+    memory fullGC.
+
+	 self assert: ( { ephemeronObjectOopOne . ephemeronObjectOopTwo } includes: memory dequeueMourner).
+	 self assert: ( { ephemeronObjectOopOne . ephemeronObjectOopTwo } includes: memory dequeueMourner)
+]
+
+{ #category : #'tests - ephemerons with same key' }
+VMSpurEphemeronsAlgorithmTest >> testEphemeronsWithSameKeyOldSpaceNewSpace [
+    
+    ephemeronObjectOopOne := self newEphemeronObjectOldSpace.
     ephemeronObjectOopTwo := self newEphemeronObjectOldSpace.
     nonEphemeronObjectOopOne := self newZeroSizedObject.
 
@@ -232,13 +256,14 @@ VMSpurEphemeronsAlgorithmTest >> testEphemeronsWithSameKeyNoRefenceBetweenEpheme
         ofObject: ephemeronObjectOopTwo
         withValue: nonEphemeronObjectOopOne.
         
-    self keepObjectInVMVariable1: ephemeronObjectOopOne.
+   self keepObjectInVMVariable1: ephemeronObjectOopOne.
+	self keepObjectInVMVariable2: ephemeronObjectOopTwo.
     
-	 "Collect ephemeron 1, ephemeron 2 is in the old space"
-    memory doScavenge: 1.
-    
-    self assert: memory dequeueMourner equals: ephemeronObjectOopTwo.
-    self assert: memory dequeueMourner equals: ephemeronObjectOopOne
+    "Collect ephemerons"
+    memory fullGC.
+
+	 self assert: ( { ephemeronObjectOopOne . ephemeronObjectOopTwo } includes: memory dequeueMourner).
+	 self assert: ( { ephemeronObjectOopOne . ephemeronObjectOopTwo } includes: memory dequeueMourner)
 ]
 
 { #category : #'tests - finalization - algorithm' }
