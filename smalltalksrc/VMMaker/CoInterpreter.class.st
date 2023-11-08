@@ -1383,14 +1383,15 @@ CoInterpreter >> ceNonLocalReturn: returnValue [
 	newPage := stackPages stackPageFor: frameToReturnTo.
 	newPage ~~ stackPage ifTrue:
 		[| currentCtx thePage nextCntx |
-		self decrementProcessStackPageOverflowCount.
 		 currentCtx := self frameCallerContext: stackPage baseFP.
 		 self assert: (objectMemory isContext: currentCtx).
 		 stackPages freeStackPage: stackPage.
 		 [self assert: (objectMemory isContext: currentCtx).
 		  (self isMarriedOrWidowedContext: currentCtx)
 		   and: [(stackPages stackPageFor: (theFP := self frameOfMarriedContext: currentCtx)) = newPage]] whileFalse:
-			[(self isMarriedOrWidowedContext: currentCtx)
+			[
+					self decrementProcessStackPageOverflowCount.
+			(self isMarriedOrWidowedContext: currentCtx)
 				ifTrue:
 					[thePage := stackPages stackPageFor: theFP.
 					 currentCtx := self frameCallerContext: thePage baseFP.

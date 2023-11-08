@@ -4560,16 +4560,15 @@ StackInterpreter >> commonReturn [
 	newPage ~~ stackPage ifTrue: [
 		| currentCtx thePage nextCntx |
 		
-		self decrementProcessStackPageOverflowCount.
-		
 		currentCtx := self frameCallerContext: stackPage baseFP.
 		stackPages freeStackPage: stackPage.
 		[
 		self assert: (objectMemory isContext: currentCtx).
 		(self isMarriedOrWidowedContext: currentCtx) and: [
 			(stackPages stackPageFor:
-				 (theFP := self frameOfMarriedContext: currentCtx)) = newPage ] ]
-			whileFalse: [
+				 (theFP := self frameOfMarriedContext: currentCtx)) = newPage ] ] 
+			whileFalse: [ 
+				self decrementProcessStackPageOverflowCount.
 				(self isMarriedOrWidowedContext: currentCtx)
 					ifTrue: [
 						thePage := stackPages stackPageFor: theFP.
