@@ -2327,6 +2327,16 @@ SpurMemoryManager >> allocateSlots: numSlots format: formatField classIndex: cla
 { #category : #allocation }
 SpurMemoryManager >> allocateSlots: numSlots format: formatField classIndex: classIndex isPinned: isPinned [
 
+	^ self allocateSlots: numSlots
+		  format: formatField
+		  classIndex: classIndex
+		  isPinned: isPinned
+		  isOldSpace: false
+]
+
+{ #category : #allocation }
+SpurMemoryManager >> allocateSlots: numSlots format: formatField classIndex: classIndex isPinned: isPinned isOldSpace: isOldSpace [
+
 	"Allocate an object with numSlots space.  If there is room beneath scavengeThreshold
 	 allocate in newSpace, otherwise alocate in oldSpace.  If there is not room in newSpace
 	 and a scavenge is not already scheduled, schedule a scavenge."
@@ -2345,7 +2355,7 @@ SpurMemoryManager >> allocateSlots: numSlots format: formatField classIndex: cla
 
 	hasToScheduleScavenge := freeStart + numBytes > scavengeThreshold.
 
-	(hasToScheduleScavenge or: [ isPinned ]) ifTrue: [ 
+	(hasToScheduleScavenge or: [ isPinned or: [ isOldSpace ] ]) ifTrue: [ 
 		hasToScheduleScavenge ifTrue: [ 
 			needGCFlag ifFalse: [ self scheduleScavenge ] ].
 
@@ -6940,24 +6950,12 @@ SpurMemoryManager >> instantiateClass: classObj indexableSize: nElements isPinne
 
 { #category : #instantiation }
 SpurMemoryManager >> instantiateClass: classObj isPinned: isPinned [
-	| instSpec classFormat numSlots classIndex newObj |
-	classFormat := self formatOfClass: classObj.
-	instSpec := self instSpecOfClassFormat: classFormat.
-	(self isFixedSizePointerFormat: instSpec) ifFalse:
-		[^nil].
-	classIndex := self ensureBehaviorHash: classObj.
-	classIndex < 0 ifTrue:
-		[coInterpreter primitiveFailFor: classIndex negated.
-		 ^nil].
-	numSlots := self fixedFieldsOfClassFormat: classFormat.
-	newObj := self allocateSlots: numSlots format: instSpec classIndex: classIndex isPinned: isPinned.
-	newObj ifNotNil:
-		[self fillObj: newObj numSlots: numSlots with: nilObj].
-	^newObj
+
+	^ self instantiateClass: classObj isPinned: isPinned isOldSpace: false
 ]
 
 { #category : #instantiation }
-SpurMemoryManager >> instantiateClassInOldSpace: classObj [
+SpurMemoryManager >> instantiateClass: classObj isPinned: isPinned isOldSpace: isOldSpace [
 	| instSpec classFormat numSlots classIndex newObj |
 	classFormat := self formatOfClassSafe: classObj.
 	classFormat == -1 ifTrue:
@@ -6972,7 +6970,7 @@ SpurMemoryManager >> instantiateClassInOldSpace: classObj [
 		[coInterpreter primitiveFailFor: classIndex negated.
 		 ^nil].
 	numSlots := self fixedFieldsOfClassFormat: classFormat.
-	newObj := self allocateSlotsInOldSpace: numSlots format: instSpec classIndex: classIndex.
+	newObj := self allocateSlots: numSlots format: instSpec classIndex: classIndex isPinned: isPinned isOldSpace: isOldSpace.
 	newObj ifNotNil:
 		[self fillObj: newObj numSlots: numSlots with: nilObj]
 		ifNil: [ self primitiveFailFor: PrimErrNoMemory ].
