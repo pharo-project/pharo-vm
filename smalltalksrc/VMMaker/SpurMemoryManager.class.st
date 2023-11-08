@@ -6964,13 +6964,9 @@ SpurMemoryManager >> instantiateClass: classObj isPinned: isPinned [
 { #category : #instantiation }
 SpurMemoryManager >> instantiateClass: classObj isPinned: isPinned isOldSpace: isOldSpace [
 	| instSpec classFormat numSlots classIndex newObj |
-	classFormat := self formatOfClassSafe: classObj.
-	classFormat == -1 ifTrue:
-		[self primitiveFailFor: PrimErrBadReceiver. "no format"
-		 ^nil].
+	classFormat := self formatOfClass: classObj.
 	instSpec := self instSpecOfClassFormat: classFormat.
 	(self isFixedSizePointerFormat: instSpec) ifFalse:
-		[self primitiveFailFor: PrimErrBadReceiver. "bad format"
 		 ^nil].
 	classIndex := self ensureBehaviorHash: classObj.
 	classIndex < 0 ifTrue:
@@ -6979,8 +6975,7 @@ SpurMemoryManager >> instantiateClass: classObj isPinned: isPinned isOldSpace: i
 	numSlots := self fixedFieldsOfClassFormat: classFormat.
 	newObj := self allocateSlots: numSlots format: instSpec classIndex: classIndex isPinned: isPinned isOldSpace: isOldSpace.
 	newObj ifNotNil:
-		[self fillObj: newObj numSlots: numSlots with: nilObj]
-		ifNil: [ self primitiveFailFor: PrimErrNoMemory ].
+		[self fillObj: newObj numSlots: numSlots with: nilObj].
 	^newObj
 ]
 
