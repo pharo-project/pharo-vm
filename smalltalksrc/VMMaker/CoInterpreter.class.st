@@ -2278,12 +2278,6 @@ CoInterpreter >> convertToMachineCodeFrame: cogHomeMethod bcpc: bcpc [
 	^pc
 ]
 
-{ #category : #'stack pages' }
-CoInterpreter >> defaultNativeStackFrameSize [
-	<api>
-	^ super defaultNativeStackFrameSize
-]
-
 { #category : #'process primitive support' }
 CoInterpreter >> deferStackLimitSmashAround: functionSymbol [
 	"Defer smashes of the stackLimit around the call of functionSymbol (for assert checks)"
