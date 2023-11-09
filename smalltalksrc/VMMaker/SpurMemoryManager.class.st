@@ -6971,7 +6971,7 @@ SpurMemoryManager >> instantiateClass: classObj isPinned: isPinned isOldSpace: i
 	classIndex := self ensureBehaviorHash: classObj.
 	classIndex < 0 ifTrue:
 		[coInterpreter primitiveFailFor: classIndex negated.
-		 ^nil].
+		[^nil].
 	numSlots := self fixedFieldsOfClassFormat: classFormat.
 	newObj := self allocateSlots: numSlots format: instSpec classIndex: classIndex isPinned: isPinned isOldSpace: isOldSpace.
 	newObj ifNotNil:
