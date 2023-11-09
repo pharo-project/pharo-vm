@@ -6967,7 +6967,7 @@ SpurMemoryManager >> instantiateClass: classObj isPinned: isPinned isOldSpace: i
 	classFormat := self formatOfClass: classObj.
 	instSpec := self instSpecOfClassFormat: classFormat.
 	(self isFixedSizePointerFormat: instSpec) ifFalse:
-		 ^nil].
+		[^nil].
 	classIndex := self ensureBehaviorHash: classObj.
 	classIndex < 0 ifTrue:
 		[coInterpreter primitiveFailFor: classIndex negated.
