@@ -438,6 +438,8 @@ vm_printUsageTo(FILE *out)
 "                                       It is possible to use k(kB), M(MB) and G(GB).\n"
 "  --minPermSpaceSize=<size>[mk]        Sets the size of eden\n"
 "                                       It is possible to use k(kB), M(MB) and G(GB).\n"
+"  --stackPageSize=<size>[mk]           Sets the size of each stack page\n"
+"                                       It is possible to use k(kB), M(MB) and G(GB).\n"
 "\n"
 "Notes:\n"
 "\n"
