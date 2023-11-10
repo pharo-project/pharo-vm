@@ -731,7 +731,7 @@ Cogit class >> generatorTableFrom: anArray [
 						isInstVarRef: (tuple includes: #isInstVarRef);	"for Spur"
 						is1ByteInstVarStore: (tuple includes: #is1ByteInstVarStore);	"for Spur"
 						yourself.
-		PartialCompilation ifTrue: [
+		PartialCompilation ifFalse: [
 			"As a hack to cut down on descriptor flags, use opcode to tag unusedBytecode for scanning.
 			 Currently descriptors are exactly 16 bytes with all 8 flag bits used.
 			 As another hack to eliminate a test in scanMethod mark unknowns as extensions."
