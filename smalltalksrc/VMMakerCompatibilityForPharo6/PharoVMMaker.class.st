@@ -169,18 +169,6 @@ PharoVMMaker >> generateCoInterpreter [
 
 ]
 
-{ #category : #accessing }
-PharoVMMaker >> generatePlugins [
-
-	^ generatePlugins
-]
-
-{ #category : #accessing }
-PharoVMMaker >> generatePlugins: anObject [
-
-	generatePlugins := anObject
-]
-
 { #category : #generation }
 PharoVMMaker >> generateDruidMirrorVM [
 
@@ -194,6 +182,17 @@ PharoVMMaker >> generateDruidVM [
 		generate: CoInterpreter
 		memoryManager: Spur64BitCoMemoryManager
 		compilerClass: DruidJIT
+		options: #( PartialCompilation true )
+]
+
+{ #category : #generation }
+PharoVMMaker >> generateDruidVMFullCompilation [
+
+	self
+		generate: CoInterpreter
+		memoryManager: Spur64BitCoMemoryManager
+		compilerClass: DruidJIT
+		options: #( PartialCompilation false )
 ]
 
 { #category : #generation }
@@ -206,6 +205,18 @@ PharoVMMaker >> generateJITVM [
 PharoVMMaker >> generateJITZeroVM [
 
 	self generate: CoInterpreter memoryManager: Spur64BitCoMemoryManager compilerClass: JITZeroCogit	
+]
+
+{ #category : #accessing }
+PharoVMMaker >> generatePlugins [
+
+	^ generatePlugins
+]
+
+{ #category : #accessing }
+PharoVMMaker >> generatePlugins: anObject [
+
+	generatePlugins := anObject
 ]
 
 { #category : #generation }
