@@ -2450,7 +2450,7 @@ DruidJIT >> gen_ExtSendSuperBytecode [
 	live := live bitOr: (self registerMaskFor: t0).
 	self genMoveConstant: 1 R: t0.
 	true=BytecodeSetHasDirectedSuperSend ifTrue: [
-		| r12 r43 |
+		| r12  |
 		r12 := extB.
 		self genMoveConstant: r12 R: t0.
 		r12>=64 ifTrue: [
@@ -2458,10 +2458,10 @@ DruidJIT >> gen_ExtSendSuperBytecode [
 			r17 := extB.
 			extB := 0.
 			numExtB := 0.
-			self marshallSendArguments: byte1 & 7 + (r17 - 64 << 3).
+			self marshallSendArguments: (byte1 bitAnd: 7 + (r17 - 64 << 3)).
 			self
 				genMarshalledSend: byte1 >> 3 + (r5 << 5)
-				numArgs: byte1 & 7 + (r17 - 64 << 3)
+				numArgs: (byte1 bitAnd: 7 + (r17 - 64 << 3))
 				sendTable: (directedSendUsesBinding
 								ifTrue: [directedSuperBindingSendTrampolines]
 								ifFalse: [directedSuperSendTrampolines]).
@@ -2469,19 +2469,19 @@ DruidJIT >> gen_ExtSendSuperBytecode [
 		r43 := extB.
 		extB := 0.
 		numExtB := 0.
-		self marshallSendArguments: byte1 & 7 + (r43 << 3).
+		self marshallSendArguments: (byte1 bitAnd: (7 + (r43 << 3))).
 		self
 			genMarshalledSend: byte1 >> 3 + (r5 << 5)
-			numArgs: byte1 & 7 + (r43 << 3)
+			numArgs: (byte1 bitAnd: (7 + (r43 << 3)))
 			sendTable: superSendTrampolines.
 		^ 0 ].
 	r43 := extB.
 	extB := 0.
 	numExtB := 0.
-	self marshallSendArguments: byte1 & 7 + (r43 << 3).
+	self marshallSendArguments: (byte1 bitAnd: (7 + (r43 << 3))).
 	self
 		genMarshalledSend: byte1 >> 3 + (r5 << 5)
-		numArgs: byte1 & 7 + (r43 << 3)
+		numArgs: (byte1 bitAnd: 7 + (r43 << 3))
 		sendTable: superSendTrampolines.
 	^ 0
 ]
