@@ -424,7 +424,7 @@ DruidJIT class >> bytecodeTable [
 		  { 1. 222. 222. #unknownBytecode }.
 		  { 1. 223. 223. #unknownBytecode }.
 		  { 2. 224. 224. #gen_ExtABytecode. #extension }.
-		  { 2. 225. 225. #unknownBytecode }.
+		  { 2. 225. 225. #gen_ExtBBytecode. #extension }.
 		  { 2. 226. 226. #unknownBytecode }.
 		  { 2. 227. 227. #gen_ExtPushLiteralVariableBytecode.
 		  #needsFrameNever:. 1 }.
@@ -2347,6 +2347,16 @@ DruidJIT >> gen_ExtABytecode [
 	r1 := extA.
 	extA := r1 << 8 + byte1.
 	^ 0
+]
+
+{ #category : #generated }
+DruidJIT >> gen_ExtBBytecode [
+	"225		11100001	sbbbbbbb	Extend B (Ext B = Ext B prev * 256 + Ext B)"
+	extB := (numExtB = 0 and: [byte1 > 127])
+				ifTrue: [byte1 - 256]
+				ifFalse: [(extB bitShift: 8) + byte1].
+	numExtB := numExtB + 1.
+	^0
 ]
 
 { #category : #generated }
