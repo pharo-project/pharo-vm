@@ -573,6 +573,13 @@ DruidJIT >> cacheTagIsMarked: cacheTag [
 	^true
 ]
 
+{ #category : #accessing }
+DruidJIT >> ceStoreCheckTrampoline: anAddress [
+
+	<doNotGenerate>
+	ceStoreCheckTrampoline := anAddress
+]
+
 { #category : #'trait candidates' }
 DruidJIT >> checkValidObjectReference: anOop [
 	^(objectMemory isImmediate: anOop) not
@@ -1316,7 +1323,7 @@ DruidJIT >> genStoreCheckTrampoline [
 		arg: nil
 		regsToSave: (CallerSavedRegisterMask bitClear: (self registerMaskFor: ReceiverResultReg))
 		pushLinkReg: true
-		resultReg: self returnRegForStoreCheck
+		resultReg: ReceiverResultReg "self returnRegForStoreCheck"
 		appendOpcodes: CheckRememberedInTrampoline
 ]
 
