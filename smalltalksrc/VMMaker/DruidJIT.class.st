@@ -398,14 +398,30 @@ DruidJIT class >> bytecodeTable [
 		  #branch. #isBranchFalse. #isMapped. #v3:ShortForward:Branch:Distance: }.
 		  { 1. 199. 199. #gen_ShortConditionalJumpFalse7.
 		  #branch. #isBranchFalse. #isMapped. #v3:ShortForward:Branch:Distance: }.
-		  { 1. 200. 200. #unknownBytecode }.
-		  { 1. 201. 201. #unknownBytecode }.
-		  { 1. 202. 202. #unknownBytecode }.
-		  { 1. 203. 203. #unknownBytecode }.
-		  { 1. 204. 204. #unknownBytecode }.
-		  { 1. 205. 205. #unknownBytecode }.
-		  { 1. 206. 206. #unknownBytecode }.
-		  { 1. 207. 207. #unknownBytecode }.
+		  { 1. 200. 200. #gen_StoreAndPopReceiverVariableBytecode0.
+		  #isInstVarRef. #is1ByteInstVarStore. #isMappedIfImmutability.
+		  #needsFrameIfImmutability:.  -1 }.
+		  { 1. 201. 201. #gen_StoreAndPopReceiverVariableBytecode1.
+		  #isInstVarRef. #is1ByteInstVarStore. #isMappedIfImmutability.
+		  #needsFrameIfImmutability:.  -1 }.
+		  { 1. 202. 202. #gen_StoreAndPopReceiverVariableBytecode2.
+		  #isInstVarRef. #is1ByteInstVarStore. #isMappedIfImmutability.
+		  #needsFrameIfImmutability:.  -1 }.
+		  { 1. 203. 203. #gen_StoreAndPopReceiverVariableBytecode3.
+		  #isInstVarRef. #is1ByteInstVarStore. #isMappedIfImmutability.
+		  #needsFrameIfImmutability:.  -1 }.
+		  { 1. 204. 204. #gen_StoreAndPopReceiverVariableBytecode4.
+		  #isInstVarRef. #is1ByteInstVarStore. #isMappedIfImmutability.
+		  #needsFrameIfImmutability:.  -1 }.
+		  { 1. 205. 205. #gen_StoreAndPopReceiverVariableBytecode5.
+		  #isInstVarRef. #is1ByteInstVarStore. #isMappedIfImmutability.
+		  #needsFrameIfImmutability:.  -1 }.
+		  { 1. 206. 206. #gen_StoreAndPopReceiverVariableBytecode6.
+		  #isInstVarRef. #is1ByteInstVarStore. #isMappedIfImmutability.
+		  #needsFrameIfImmutability:.  -1 }.
+		  { 1. 207. 207. #gen_StoreAndPopReceiverVariableBytecode7.
+		  #isInstVarRef. #is1ByteInstVarStore. #isMappedIfImmutability.
+		  #needsFrameIfImmutability:.  -1 }.
 		  { 1. 208. 208. #gen_StoreAndPopTemporaryVariableBytecode0 }.
 		  { 1. 209. 209. #gen_StoreAndPopTemporaryVariableBytecode1 }.
 		  { 1. 210. 210. #gen_StoreAndPopTemporaryVariableBytecode2 }.
@@ -7380,7 +7396,9 @@ DruidJIT >> gen_StoreAndPopReceiverVariableBytecode0 [
 	self AndCq: 1 R: t2.
 	self CmpCq: 0 R: t2.
 	jump4 := self JumpNonZero: 0.
-	self CallRT: ceStoreCheckTrampoline.
+	self MoveR: t0 R: TempReg.
+	backEnd saveAndRestoreLinkRegAround: [
+		self CallRT: ceStoreCheckTrampoline ].
 	self annotateBytecode: self Label.
 	self TstCq: 7 R: t1.
 	jump1 := self JumpNonZero: 0.
@@ -7442,7 +7460,9 @@ DruidJIT >> gen_StoreAndPopReceiverVariableBytecode0 [
 	self AndCq: 16rFFFFFF0000000000 R: t2.
 	self CmpCq: 16r20000000000 R: t2.
 	jump6 := self JumpZero: 0.
-	self CallRT: ceStoreCheckTrampoline.
+	self MoveR: t0 R: TempReg.
+	backEnd saveAndRestoreLinkRegAround: [
+		self CallRT: ceStoreCheckTrampoline ].
 	self annotateBytecode: self Label.
 	currentBlock := self Label.
 	jump1 jmpTarget: currentBlock.
@@ -7534,7 +7554,9 @@ DruidJIT >> gen_StoreAndPopReceiverVariableBytecode1 [
 	self AndCq: 1 R: t2.
 	self CmpCq: 0 R: t2.
 	jump4 := self JumpNonZero: 0.
-	self CallRT: ceStoreCheckTrampoline.
+	self MoveR: t0 R: TempReg.
+	backEnd saveAndRestoreLinkRegAround: [
+		self CallRT: ceStoreCheckTrampoline ].
 	self annotateBytecode: self Label.
 	self TstCq: 7 R: t1.
 	jump1 := self JumpNonZero: 0.
@@ -7596,7 +7618,9 @@ DruidJIT >> gen_StoreAndPopReceiverVariableBytecode1 [
 	self AndCq: 16rFFFFFF0000000000 R: t2.
 	self CmpCq: 16r20000000000 R: t2.
 	jump6 := self JumpZero: 0.
-	self CallRT: ceStoreCheckTrampoline.
+	self MoveR: t0 R: TempReg.
+	backEnd saveAndRestoreLinkRegAround: [
+		self CallRT: ceStoreCheckTrampoline ].
 	self annotateBytecode: self Label.
 	currentBlock := self Label.
 	jump1 jmpTarget: currentBlock.
@@ -7688,7 +7712,9 @@ DruidJIT >> gen_StoreAndPopReceiverVariableBytecode2 [
 	self AndCq: 1 R: t2.
 	self CmpCq: 0 R: t2.
 	jump4 := self JumpNonZero: 0.
-	self CallRT: ceStoreCheckTrampoline.
+	self MoveR: t0 R: TempReg.
+	backEnd saveAndRestoreLinkRegAround: [
+		self CallRT: ceStoreCheckTrampoline ].
 	self annotateBytecode: self Label.
 	self TstCq: 7 R: t1.
 	jump1 := self JumpNonZero: 0.
@@ -7750,7 +7776,9 @@ DruidJIT >> gen_StoreAndPopReceiverVariableBytecode2 [
 	self AndCq: 16rFFFFFF0000000000 R: t2.
 	self CmpCq: 16r20000000000 R: t2.
 	jump6 := self JumpZero: 0.
-	self CallRT: ceStoreCheckTrampoline.
+	self MoveR: t0 R: TempReg.
+	backEnd saveAndRestoreLinkRegAround: [
+		self CallRT: ceStoreCheckTrampoline ].
 	self annotateBytecode: self Label.
 	currentBlock := self Label.
 	jump1 jmpTarget: currentBlock.
@@ -7842,7 +7870,9 @@ DruidJIT >> gen_StoreAndPopReceiverVariableBytecode3 [
 	self AndCq: 1 R: t2.
 	self CmpCq: 0 R: t2.
 	jump4 := self JumpNonZero: 0.
-	self CallRT: ceStoreCheckTrampoline.
+	self MoveR: t0 R: TempReg.
+	backEnd saveAndRestoreLinkRegAround: [
+		self CallRT: ceStoreCheckTrampoline ].
 	self annotateBytecode: self Label.
 	self TstCq: 7 R: t1.
 	jump1 := self JumpNonZero: 0.
@@ -7904,7 +7934,9 @@ DruidJIT >> gen_StoreAndPopReceiverVariableBytecode3 [
 	self AndCq: 16rFFFFFF0000000000 R: t2.
 	self CmpCq: 16r20000000000 R: t2.
 	jump6 := self JumpZero: 0.
-	self CallRT: ceStoreCheckTrampoline.
+	self MoveR: t0 R: TempReg.
+	backEnd saveAndRestoreLinkRegAround: [
+		self CallRT: ceStoreCheckTrampoline ].
 	self annotateBytecode: self Label.
 	currentBlock := self Label.
 	jump1 jmpTarget: currentBlock.
@@ -7996,7 +8028,9 @@ DruidJIT >> gen_StoreAndPopReceiverVariableBytecode4 [
 	self AndCq: 1 R: t2.
 	self CmpCq: 0 R: t2.
 	jump4 := self JumpNonZero: 0.
-	self CallRT: ceStoreCheckTrampoline.
+	self MoveR: t0 R: TempReg.
+	backEnd saveAndRestoreLinkRegAround: [
+		self CallRT: ceStoreCheckTrampoline ].
 	self annotateBytecode: self Label.
 	self TstCq: 7 R: t1.
 	jump1 := self JumpNonZero: 0.
@@ -8058,7 +8092,9 @@ DruidJIT >> gen_StoreAndPopReceiverVariableBytecode4 [
 	self AndCq: 16rFFFFFF0000000000 R: t2.
 	self CmpCq: 16r20000000000 R: t2.
 	jump6 := self JumpZero: 0.
-	self CallRT: ceStoreCheckTrampoline.
+	self MoveR: t0 R: TempReg.
+	backEnd saveAndRestoreLinkRegAround: [
+		self CallRT: ceStoreCheckTrampoline ].
 	self annotateBytecode: self Label.
 	currentBlock := self Label.
 	jump1 jmpTarget: currentBlock.
@@ -8150,7 +8186,9 @@ DruidJIT >> gen_StoreAndPopReceiverVariableBytecode5 [
 	self AndCq: 1 R: t2.
 	self CmpCq: 0 R: t2.
 	jump4 := self JumpNonZero: 0.
-	self CallRT: ceStoreCheckTrampoline.
+	self MoveR: t0 R: TempReg.
+	backEnd saveAndRestoreLinkRegAround: [
+		self CallRT: ceStoreCheckTrampoline ].
 	self annotateBytecode: self Label.
 	self TstCq: 7 R: t1.
 	jump1 := self JumpNonZero: 0.
@@ -8212,7 +8250,9 @@ DruidJIT >> gen_StoreAndPopReceiverVariableBytecode5 [
 	self AndCq: 16rFFFFFF0000000000 R: t2.
 	self CmpCq: 16r20000000000 R: t2.
 	jump6 := self JumpZero: 0.
-	self CallRT: ceStoreCheckTrampoline.
+	self MoveR: t0 R: TempReg.
+	backEnd saveAndRestoreLinkRegAround: [
+		self CallRT: ceStoreCheckTrampoline ].
 	self annotateBytecode: self Label.
 	currentBlock := self Label.
 	jump1 jmpTarget: currentBlock.
@@ -8304,7 +8344,9 @@ DruidJIT >> gen_StoreAndPopReceiverVariableBytecode6 [
 	self AndCq: 1 R: t2.
 	self CmpCq: 0 R: t2.
 	jump4 := self JumpNonZero: 0.
-	self CallRT: ceStoreCheckTrampoline.
+	self MoveR: t0 R: TempReg.
+	backEnd saveAndRestoreLinkRegAround: [
+		self CallRT: ceStoreCheckTrampoline ].
 	self annotateBytecode: self Label.
 	self TstCq: 7 R: t1.
 	jump1 := self JumpNonZero: 0.
@@ -8366,7 +8408,9 @@ DruidJIT >> gen_StoreAndPopReceiverVariableBytecode6 [
 	self AndCq: 16rFFFFFF0000000000 R: t2.
 	self CmpCq: 16r20000000000 R: t2.
 	jump6 := self JumpZero: 0.
-	self CallRT: ceStoreCheckTrampoline.
+	self MoveR: t0 R: TempReg.
+	backEnd saveAndRestoreLinkRegAround: [
+		self CallRT: ceStoreCheckTrampoline ].
 	self annotateBytecode: self Label.
 	currentBlock := self Label.
 	jump1 jmpTarget: currentBlock.
@@ -8458,7 +8502,9 @@ DruidJIT >> gen_StoreAndPopReceiverVariableBytecode7 [
 	self AndCq: 1 R: t2.
 	self CmpCq: 0 R: t2.
 	jump4 := self JumpNonZero: 0.
-	self CallRT: ceStoreCheckTrampoline.
+	self MoveR: t0 R: TempReg.
+	backEnd saveAndRestoreLinkRegAround: [
+		self CallRT: ceStoreCheckTrampoline ].
 	self annotateBytecode: self Label.
 	self TstCq: 7 R: t1.
 	jump1 := self JumpNonZero: 0.
@@ -8520,7 +8566,9 @@ DruidJIT >> gen_StoreAndPopReceiverVariableBytecode7 [
 	self AndCq: 16rFFFFFF0000000000 R: t2.
 	self CmpCq: 16r20000000000 R: t2.
 	jump6 := self JumpZero: 0.
-	self CallRT: ceStoreCheckTrampoline.
+	self MoveR: t0 R: TempReg.
+	backEnd saveAndRestoreLinkRegAround: [
+		self CallRT: ceStoreCheckTrampoline ].
 	self annotateBytecode: self Label.
 	currentBlock := self Label.
 	jump1 jmpTarget: currentBlock.
