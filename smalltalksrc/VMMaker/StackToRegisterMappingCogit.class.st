@@ -980,7 +980,7 @@ StackToRegisterMappingCogit >> compileAbstractInstructionsFrom: start through: e
 	 descriptor := self loadBytesAndGetDescriptor.
 	 nextOpcodeIndex := opcodeIndex.
 	 result := deadCode
-				ifTrue: [self mapDeadDescriptorIfNeeded: descriptor]
+				ifTrue: [0]
 				ifFalse: [self perform: descriptor generator].
 	 result = 0 ifTrue: [self assertExtsAreConsumed: descriptor].
 	 self traceDescriptor: descriptor; traceSimStack.
@@ -3533,18 +3533,6 @@ StackToRegisterMappingCogit >> liveVectorRegisters [
 		(ssEntry type = SSVectorRegister) ifTrue: [ 
 			regsSet := regsSet bitOr: ssEntry registerMask ] ].
 	^ regsSet
-]
-
-{ #category : #'compile abstract instructions' }
-StackToRegisterMappingCogit >> mapDeadDescriptorIfNeeded: descriptor [ 
-	"insert nops for dead code that is mapped so that bc 
-	 to mc mapping is not many to one"
-	<var: #descriptor type: #'BytecodeDescriptor *'>
-	self flag: #annotateInstruction .
-	(descriptor isMapped
-		or: [inBlock > 0 and: [descriptor isMappedInBlock]]) 
-		ifTrue: [self annotateBytecode: self Nop].
-	^ 0
 ]
 
 { #category : #'simulation stack' }

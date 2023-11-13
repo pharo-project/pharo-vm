@@ -9953,19 +9953,6 @@ Cogit >> maybeUnsafeJumpContinuation: latestContinuation at: bcpc for: descripto
 ]
 
 { #category : #'method map' }
-Cogit >> mcPCFor: bcpc startBcpc: startbcpc in: cogMethod [
-	"Answer the absolute machine code pc matching the zero-relative bytecode pc argument
-	 in cogMethod, given the start of the bytecodes for cogMethod's block or method object."
-	<var: #cogMethod type: #'CogMethod *'>
-	<returnTypeC: #usqInt>
-	^self
-		mapFor: cogMethod
-		bcpc: startbcpc
-		performUntil: #find:IsBackwardBranch:Mcpc:Bcpc:MatchingBcpc:
-		arg: bcpc asVoidPointer
-]
-
-{ #category : #'method map' }
 Cogit >> mcPCForBackwardBranch: bcpc startBcpc: startbcpc in: cogMethod [
 	"Answer the absolute machine code pc matching the zero-relative
 	 bytecode pc of a backward branch in cogMethod, given the start
@@ -11919,7 +11906,7 @@ Cogit >> trampolineName: routinePrefix numRegArgs: numArgs [
 { #category : #'bytecode generators' }
 Cogit >> unknownBytecode [
 	
-	self MoveCq: bytecodePC R: ReceiverResultReg.
+	self MoveCq: bytecodePC - (2*numExtB) R: ReceiverResultReg.
 	self CallRT: ceDeoptimiseFrameTrampoline.
 	^ 0
 ]

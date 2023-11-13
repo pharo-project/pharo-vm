@@ -424,8 +424,8 @@ DruidJIT class >> bytecodeTable [
 		  { 1. 222. 222. #unknownBytecode }.
 		  { 1. 223. 223. #unknownBytecode }.
 		  { 2. 224. 224. #gen_ExtABytecode. #extension }.
-		  { 2. 225. 225. #unknownBytecode }.
-		  { 2. 226. 226. #unknownBytecode }.
+		  "{ 2. 225. 225. #gen_ExtBBytecode. #extension }."
+		  { 2. 225. 226. #unknownBytecode }.
 		  { 2. 227. 227. #gen_ExtPushLiteralVariableBytecode.
 		  #needsFrameNever:. 1 }.
 		  { 2. 228. 228. #gen_ExtPushLiteralBytecode.
@@ -617,6 +617,38 @@ DruidJIT >> genActiveContextTrampolineLarge: isLarge inBlock: isInBlock called: 
 	self recordGeneratedRunTime: aString address: startAddress.
 	self recordRunTimeObjectReferences.
 	^startAddress
+]
+
+{ #category : #'trait candidates' }
+DruidJIT >> genCheckObjectPosition: destReg scratchReg: scratchReg valueReg: valueReg results: resultBlock [ 
+
+	| isDestYoung isOldAndOld isPermAndPerm recvIsPerm exit valueIsMachineCode| 
+
+	<inline: true>
+	<var: #recvIsPerm type: #'AbstractInstruction *'>
+	<var: #exit type: #'AbstractInstruction *'>
+
+	self CmpCq: objectMemory getMemoryMap getNewSpaceStart  R: valueReg.
+	valueIsMachineCode := self JumpBelow: 0.
+	
+	self CmpCq: objectMemory getMemoryMap fixedPermSpaceStart R: destReg.
+	recvIsPerm := self JumpAboveOrEqual: 0.
+
+	self CmpCq: objectMemory getMemoryMap getOldSpaceStart R: destReg.
+	isDestYoung := self JumpBelow: 0.
+
+	self CmpCq: objectMemory getMemoryMap getOldSpaceStart R: valueReg.
+	isOldAndOld := self JumpAboveOrEqual: 0.
+	exit := self Jump: 0.
+
+	recvIsPerm jmpTarget: (self Label).
+	self CmpCq: objectMemory getMemoryMap fixedPermSpaceStart R: valueReg.
+	isPermAndPerm := self JumpAbove: 0.
+
+	exit jmpTarget: (self Label).
+		
+	resultBlock value: isDestYoung value: isOldAndOld value: isPermAndPerm value: valueIsMachineCode.
+	^ 0 
 ]
 
 { #category : #'trait candidates' }
@@ -1268,23 +1300,32 @@ DruidJIT >> genStoreCheckContextReceiverTrampoline [
 { #category : #'trait candidates' }
 DruidJIT >> genStoreCheckReceiverReg: destReg valueReg: valueReg scratchReg: scratchReg inFrame: inFrame [
 	"Generate the code for a store check of valueReg into destReg."
-	| jmpImmediate jmpDestYoung jmpSourceOld jmpAlreadyRemembered |
+
+	| jmpImmediate jmpDestYoung jmpOldAndOld jmpPermAndPerm jmpAlreadyRemembered jmpIsMachineCode|
+
 	<var: #jmpImmediate type: #'AbstractInstruction *'>
 	<var: #jmpDestYoung type: #'AbstractInstruction *'>
-	<var: #jmpSourceOld type: #'AbstractInstruction *'>
+	<var: #jmpOldAndOld type: #'AbstractInstruction *'>
+	<var: #jmpPermAndPerm type: #'AbstractInstruction *'>
 	<var: #jmpAlreadyRemembered type: #'AbstractInstruction *'>
+	<var: #jmpIsMachineCode type: #'AbstractInstruction *'>
+
+
 	"Is value stored an immediate?  If so we're done"
 	jmpImmediate := self genJumpImmediate: valueReg.
-	"Get the old/new boundary in scratchReg"
-	self MoveCw: objectMemory storeCheckBoundary R: scratchReg.
-	"Is target young?  If so we're done"
-	self CmpR: scratchReg R: destReg. "N.B. FLAGS := destReg - scratchReg"
-	jmpDestYoung := self JumpBelow: 0.
-	"Is value stored old?  If so we're done."
-	self CmpR: scratchReg R: valueReg. "N.B. FLAGS := valueReg - scratchReg"
-	jmpSourceOld := self JumpAboveOrEqual: 0.
-	"value is young and target is old.
-	 Need to remember this only if the remembered bit is not already set."
+
+	self 
+		genCheckObjectPosition: destReg 
+		scratchReg: scratchReg 
+		valueReg: valueReg
+		results: [ :isDestYoung :isOldAndOld :isPermAndPerm :valueIsMachineCode | 
+			jmpDestYoung := isDestYoung.
+			jmpOldAndOld := isOldAndOld.
+			jmpIsMachineCode := valueIsMachineCode.
+			jmpPermAndPerm := isPermAndPerm].
+
+
+	"Need to remember this only if the remembered bit is not already set."
 	CheckRememberedInTrampoline ifFalse:
 		[jmpAlreadyRemembered := self genCheckRememberedBitOf: destReg scratch: scratchReg].
 	"Remembered bit is not set.  Call store check to insert dest into remembered table."
@@ -1294,10 +1335,13 @@ DruidJIT >> genStoreCheckReceiverReg: destReg valueReg: valueReg scratchReg: scr
 		protectLinkRegIfNot: inFrame.
 	jmpImmediate jmpTarget:
 	(jmpDestYoung jmpTarget:
-	(jmpSourceOld jmpTarget:
-		self Label)).
+	(jmpIsMachineCode jmpTarget:
+	(jmpOldAndOld jmpTarget: 
+	(jmpPermAndPerm jmpTarget:
+		self Label)))).
+
 	CheckRememberedInTrampoline ifFalse:
-		[jmpAlreadyRemembered jmpTarget: jmpSourceOld getJmpTarget].
+		[jmpAlreadyRemembered jmpTarget: jmpOldAndOld getJmpTarget].
 	^0
 ]
 
@@ -1307,14 +1351,14 @@ DruidJIT >> genStoreCheckTrampoline [
 	<var: #jumpSC type: #'AbstractInstruction *'>
 	<inline: true>
 	CheckRememberedInTrampoline ifTrue:
-		[ self zeroOpcodeIndex.
+		[self zeroOpcodeIndex.
 		 jumpSC := self genCheckRememberedBitOf: ReceiverResultReg scratch: self backEnd cResultRegister.
 		 self assert: jumpSC opcode = JumpNonZero.
 		 jumpSC opcode: JumpZero.
 		 self RetN: 0.
 		 jumpSC jmpTarget: self Label].
-	^ self
-		genTrampolineFor: #remember:
+	^self
+		genTrampolineFor: #rememberObjInCorrectRememberedSet:
 		called: 'ceStoreCheckTrampoline'
 		numArgs: 1
 		arg: ReceiverResultReg
@@ -1420,7 +1464,7 @@ DruidJIT >> genStoreTrampolineCalled: trampolineName instVarIndex: instVarIndex 
 	<inline: false>
 	self zeroOpcodeIndex.
 	"SendNumArgsReg is mutated but we don't care as register are not live across the trampoline.
-	 There is no reason why registers cannot be saved over the remember: call, but since the
+	 There is no reason why registers cannot be saved over the rememberObjInCorrectRememberedSet: call, but since the
 	 immutability check is a suspension point, registers cannot remain live."
 	jumpSC := self genJumpMutable: ReceiverResultReg scratchReg: SendNumArgsReg.
 	self
@@ -1451,7 +1495,7 @@ DruidJIT >> genStoreTrampolineCalled: trampolineName instVarIndex: instVarIndex 
 				 jumpRC opcode: JumpZero.
 				 self RetN: 0].
 		 jumpRC jmpTarget: self Label].
-	^ self genTrampolineFor: #remember:
+	^ self genTrampolineFor: #rememberObjInCorrectRememberedSet:
 		called: trampolineName
 		numArgs: 1
 		arg: ReceiverResultReg
@@ -1468,12 +1512,14 @@ DruidJIT >> genStoreTrampolineCalled: trampolineName instVarIndex: instVarIndex 
 DruidJIT >> genStoreWithImmutabilityAndStoreCheckSourceReg: sourceReg slotIndex: index destReg: destReg scratchReg: scratchReg needRestoreRcvr: needRestoreRcvr [ 
 	"Store check code is duplicated to use a single trampoline"
 	<option: #IMMUTABILITY>
-	| immutableJump jmpImmediate jmpDestYoung jmpSourceOld jmpAlreadyRemembered |
+	| immutableJump jmpImmediate jmpDestYoung jmpOldAndOld jmpPermAndPerm jmpAlreadyRemembered jmpIsMachineCode|
 	<var: #immutableJump type: #'AbstractInstruction *'>
 	<var: #jmpImmediate type: #'AbstractInstruction *'>
 	<var: #jmpDestYoung type: #'AbstractInstruction *'>
-	<var: #jmpSourceOld type: #'AbstractInstruction *'>
+	<var: #jmpOldAndOld type: #'AbstractInstruction *'>
+	<var: #jmpPermAndPerm type: #'AbstractInstruction *'>
 	<var: #jmpAlreadyRemembered type: #'AbstractInstruction *'>
+	<var: #jmpIsMachineCode type: #'AbstractInstruction *'>
 
 	immutableJump := self genJumpImmutable: destReg scratchReg: scratchReg.
 	
@@ -1483,19 +1529,21 @@ DruidJIT >> genStoreWithImmutabilityAndStoreCheckSourceReg: sourceReg slotIndex:
 	self MoveR: sourceReg
 		   Mw: index * objectMemory wordSize + objectMemory baseHeaderSize
 		   r: destReg.
-	
+
 	"store check"
 	jmpImmediate := self genJumpImmediate: sourceReg.
-	"Get the old/new boundary in scratchReg"
-	self MoveCw: objectMemory storeCheckBoundary R: scratchReg.
-	"Is target young?  If so we're done"
-	self CmpR: scratchReg R: destReg. "N.B. FLAGS := destReg - scratchReg"
-	jmpDestYoung := self JumpBelow: 0.
-	"Is value stored old?  If so we're done."
-	self CmpR: scratchReg R: sourceReg. "N.B. FLAGS := valueReg - scratchReg"
-	jmpSourceOld := self JumpAboveOrEqual: 0.
-	"value is young and target is old.
-	 Need to remember this only if the remembered bit is not already set."
+
+	self 
+		genCheckObjectPosition: destReg 
+		scratchReg: scratchReg 
+		valueReg: sourceReg
+		results: [ :isDestYoung :isOldAndOld :isPermAndPerm :valueIsMachineCode| 
+			jmpDestYoung := isDestYoung.
+			jmpOldAndOld := isOldAndOld.
+			jmpIsMachineCode := valueIsMachineCode.			
+			jmpPermAndPerm := isPermAndPerm].
+
+	"Need to remember this only if the remembered bit is not already set."
 	CheckRememberedInTrampoline ifFalse:
 		[jmpAlreadyRemembered := self genCheckRememberedBitOf: destReg scratch: scratchReg].
 	"Set the inst var index for the benefit of the immutability check. The trampoline will
@@ -1508,10 +1556,12 @@ DruidJIT >> genStoreWithImmutabilityAndStoreCheckSourceReg: sourceReg slotIndex:
 
 	jmpImmediate jmpTarget:
 	(jmpDestYoung jmpTarget:
-	(jmpSourceOld jmpTarget:
-		self Label)).
+	(jmpOldAndOld jmpTarget:
+	(jmpIsMachineCode jmpTarget:
+	(jmpPermAndPerm jmpTarget:
+		self Label)))).
 	CheckRememberedInTrampoline ifFalse:
-		[jmpAlreadyRemembered jmpTarget: jmpSourceOld getJmpTarget].
+		[jmpAlreadyRemembered jmpTarget: jmpOldAndOld getJmpTarget].
 	^ 0
 ]
 
@@ -2357,6 +2407,16 @@ DruidJIT >> gen_ExtABytecode [
 ]
 
 { #category : #generated }
+DruidJIT >> gen_ExtBBytecode [
+	"225		11100001	sbbbbbbb	Extend B (Ext B = Ext B prev * 256 + Ext B)"
+	extB := (numExtB = 0 and: [byte1 > 127])
+				ifTrue: [byte1 - 256]
+				ifFalse: [(extB bitShift: 8) + byte1].
+	numExtB := numExtB + 1.
+	^0
+]
+
+{ #category : #generated }
 DruidJIT >> gen_ExtJumpIfFalse [
 	"AutoGenerated by Druid"
 
@@ -2738,20 +2798,22 @@ DruidJIT >> gen_PopStackBytecode [
 DruidJIT >> gen_PrimitiveAdd [
 	"AutoGenerated by Druid"
 
-	| jump1 jump2 currentBlock |
-	self mclassIsSmallInteger ifFalse: [ ^ UnimplementedPrimitive ].
+	| jump1 jump2 jump3 currentBlock |
 	self TstCq: 1 R: Arg0Reg.
 	jump1 := self JumpZero: 0.
+	self TstCq: 1 R: ReceiverResultReg.
+	jump2 := self JumpZero: 0.
 	self MoveR: Arg0Reg R: TempReg.
 	self AddCq:  -1 R: TempReg.
 	self MoveR: ReceiverResultReg R: ClassReg.
 	self AddR: ClassReg R: TempReg.
-	jump2 := self JumpOverflow: 0.
+	jump3 := self JumpOverflow: 0.
 	self MoveR: TempReg R: ReceiverResultReg.
 	self genPrimReturn.
 	currentBlock := self Label.
 	jump1 jmpTarget: currentBlock.
 	jump2 jmpTarget: currentBlock.
+	jump3 jmpTarget: currentBlock.
 	^ CompletePrimitive
 ]
 
@@ -7385,11 +7447,9 @@ DruidJIT >> generateObjectRepresentationTrampolines [
 	 remembered set and setting its isRemembered bit."
 	self 
 		cppIf: IMMUTABILITY
-		ifTrue: [
-			self 
-				cCode: [] 
-				inSmalltalk: [ ceStoreTrampolines := CArrayAccessor on: (Array new: NumStoreTrampolines) ].
-				
+		ifTrue: 
+			[self cCode: [] inSmalltalk:
+				[ceStoreTrampolines := CArrayAccessor on: (Array new: NumStoreTrampolines)].
 			 0 to: NumStoreTrampolines - 1 do:
 				[:instVarIndex |
 				 ceStoreTrampolines
@@ -7511,7 +7571,8 @@ DruidJIT >> markAndTraceLiteral: literal in: cogMethodOrNil atpc: address [
 		[objectMemory markAndTrace: literal.
 		 ^false].
 	objOop := objectMemory followForwarded: literal.
-	self backEnd storeLiteral: objOop beforeFollowingAddress: address.
+	
+	self storeLiteral: objOop atAnnotatedAddress: address.
 	self markAndTraceUpdatedLiteral: objOop in: cogMethodOrNil.
 	^true
 ]
