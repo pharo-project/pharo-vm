@@ -1930,6 +1930,7 @@ SpurMemoryManager >> allocateMemoryOfSize: memoryBytes newSpaceSize: newSpaceByt
 		ifTrue: [ coInterpreter movePrimTraceLogToMemoryAt: (memoryManager allocate: primitiveLogSize)].
 
 	memoryMap 		
+		memoryManager: memoryManager;
 		allocationReserve: coInterpreter interpreterAllocationReserveBytes;
 		initialOldSpaceSize: memoryBytes;
 		initialNewSpaceSize: newSpaceBytes;
