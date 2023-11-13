@@ -1407,11 +1407,6 @@ SimpleStackBasedCogit >> genExtStoreAndPopReceiverVariableBytecode [
 ]
 
 { #category : #'bytecode generators' }
-SimpleStackBasedCogit >> genExtStoreAndPopRemoteTempOrInstVarLongBytecode [
-	^ self genExtStorePopRemoteTempOrInstVarLongBytecodePopBoolean: true
-]
-
-{ #category : #'bytecode generators' }
 SimpleStackBasedCogit >> genExtStoreLiteralVariableBytecode [
 	"233		11101001	i i i i i i i i	Store Literal Variable #iiiiiiii (+ Extend A * 256)"
 	| index |
@@ -1453,11 +1448,6 @@ SimpleStackBasedCogit >> genExtStoreReceiverVariableBytecode [
 	^(coInterpreter isWriteMediatedContextInstVarIndex: index)
 		ifTrue: [self genStorePop: false MaybeContextReceiverVariable: index]
 		ifFalse: [self genStorePop: false ReceiverVariable: index]
-]
-
-{ #category : #'bytecode generators' }
-SimpleStackBasedCogit >> genExtStoreRemoteTempOrInstVarLongBytecode [
-	^ self genExtStorePopRemoteTempOrInstVarLongBytecodePopBoolean: false
 ]
 
 { #category : #'bytecode generators' }
@@ -2452,48 +2442,6 @@ SimpleStackBasedCogit >> genShortUnconditionalJump [
 		            inMethod: methodObj.
 	target := distance + 1 + bytecodePC.
 	^ self genJumpTo: target
-]
-
-{ #category : #'bytecode generators' }
-SimpleStackBasedCogit >> genSistaExtStoreAndPopLiteralVariableBytecode [
-	^ self genSistaExtStoreLiteralVariableBytecodePopBoolean: true
-]
-
-{ #category : #'bytecode generators' }
-SimpleStackBasedCogit >> genSistaExtStoreAndPopReceiverVariableBytecode [
-	^ self genSistaExtStoreAndPopReceiverVariableBytecodePopBoolean: true
-]
-
-{ #category : #'bytecode generators' }
-SimpleStackBasedCogit >> genSistaExtStoreAndPopReceiverVariableBytecodePopBoolean: boolean [
-	| index |
-	extB := 0. "Simple cogit don't use the extra flags"
-	numExtB := 0.
-	index := byte1 + (extA << 8).
-	extA := 0.
-	^(coInterpreter isWriteMediatedContextInstVarIndex: index)
-		ifTrue: [self genStorePop: boolean MaybeContextReceiverVariable: index ]
-		ifFalse: [self genStorePop: boolean ReceiverVariable: index ]
-]
-
-{ #category : #'bytecode generators' }
-SimpleStackBasedCogit >> genSistaExtStoreLiteralVariableBytecode [
-	^ self genSistaExtStoreLiteralVariableBytecodePopBoolean: false
-]
-
-{ #category : #'bytecode generators' }
-SimpleStackBasedCogit >> genSistaExtStoreLiteralVariableBytecodePopBoolean: boolean [
-	| index |
-	extB := 0. "SimpleCogit don't use the extra flags"
-	numExtB := 0.
-	index := byte1 + (extA << 8).
-	extA := 0.
-	^ self genStorePop: boolean LiteralVariable: index
-]
-
-{ #category : #'bytecode generators' }
-SimpleStackBasedCogit >> genSistaExtStoreReceiverVariableBytecode [
-	^ self genSistaExtStoreAndPopReceiverVariableBytecodePopBoolean: false
 ]
 
 { #category : #'bytecode generators' }

@@ -1302,33 +1302,6 @@ StackToRegisterMappingCogit >> extASpecifiesNoMustBeBoolean [
 	^ extA anyMask: 1
 ]
 
-{ #category : #testing }
-StackToRegisterMappingCogit >> extBSpecifiesImmCheck [ 
-	"This is a negative check"
-	<inline: true>
-	^ extB noMask: 4
-]
-
-{ #category : #testing }
-StackToRegisterMappingCogit >> extBSpecifiesInitializeInstance [
-	"This is a negative; do not intialize if 1 is present in extB.  This is also the no-store-check bit."
-	<inline: true>
-	^ extB noMask: 1
-]
-
-{ #category : #testing }
-StackToRegisterMappingCogit >> extBSpecifiesMaybeContext [
-	<inline: true>
-	^ extB anyMask: 2
-]
-
-{ #category : #testing }
-StackToRegisterMappingCogit >> extBSpecifiesStoreCheck [ 
-	"This is a negative check"
-	<inline: true>
-	^ extB noMask: 1
-]
-
 { #category : #'bytecode generator support' }
 StackToRegisterMappingCogit >> extractMaybeBranchDescriptorInto: fourArgBlock [
 	"Looks one instruction ahead of the current bytecodePC and answers its bytecode descriptor and its pc.
@@ -1570,58 +1543,6 @@ StackToRegisterMappingCogit >> genExtPushFullClosureBytecode [
 			intoNewObjectInDestReg: ReceiverResultReg.
 	self ssPushRegister: ReceiverResultReg.
 	^0
-]
-
-{ #category : #'bytecode generators' }
-StackToRegisterMappingCogit >> genExtPushRemoteTempOrInstVarLongBytecode [
-	| index maybeContext |
-	^ (byte2 noMask: coInterpreter remoteIsInstVarAccess)
-		ifTrue: [ self genPushRemoteTempLongBytecode ]
-		ifFalse: 
-			[ maybeContext := self extBSpecifiesMaybeContext.
-			index := byte1 + (extA << 8).
-			extA := 0.
-			extB := 0.
-			numExtB := 0.
-			((coInterpreter isReadMediatedContextInstVarIndex: index) and: [ maybeContext ])
-				ifTrue: [ self genPushMaybeContextRemoteInstVar: index inObjectAt: byte2 - coInterpreter remoteIsInstVarAccess ]
-				ifFalse: [ self genPushRemoteInstVar: index inObjectAt: byte2 - coInterpreter remoteIsInstVarAccess ] ]
-]
-
-{ #category : #'bytecode generators' }
-StackToRegisterMappingCogit >> genExtStorePopRemoteTempOrInstVarLongBytecodePopBoolean: boolean [
-	| index maybeContext needsStoreCheck needsImmCheck |
-	needsStoreCheck := self sistaNeedsStoreCheck.
-	maybeContext := self extBSpecifiesMaybeContext.
-	needsImmCheck := self extBSpecifiesImmCheck.
-	extB := 0.
-	numExtB := 0.
-	(byte2 noMask: coInterpreter remoteIsInstVarAccess)
-		ifTrue: 
-			[ self 
-				genStorePop: boolean 
-				RemoteTemp: byte1 
-				At: byte2 
-				needsStoreCheck: needsStoreCheck.
-			self cppIf: IMMUTABILITY ifTrue: [ self annotateBytecode: self Label ] ]
-		ifFalse: 
-			[index := byte1 + (extA << 8).
-			 extA := 0.
-			 ((coInterpreter isWriteMediatedContextInstVarIndex: index) and: [ maybeContext ])
-				ifTrue: [self 
-						genStorePop: boolean 
-						MaybeContextRemoteInstVar: index 
-						ofObjectAt: byte2 - coInterpreter remoteIsInstVarAccess 
-						needsStoreCheck: needsStoreCheck
-						needsImmutabilityCheck: needsImmCheck ]
-				ifFalse: [self 
-						genStorePop: boolean 
-						RemoteInstVar: index 
-						ofObjectAt: byte2 - coInterpreter remoteIsInstVarAccess 
-						needsStoreCheck: needsStoreCheck
-						needsImmutabilityCheck: needsImmCheck ].
-			self cppIf: IMMUTABILITY ifTrue: [ needsImmCheck ifFalse: [self annotateBytecode: self Label ] ] ].
-	^ 0
 ]
 
 { #category : #'trampoline support' }
@@ -2556,50 +2477,6 @@ StackToRegisterMappingCogit >> genSendTrampolineFor: aRoutine numArgs: numArgs c
 		resultReg: NoReg
 		appendOpcodes: true.
 	^startAddress
-]
-
-{ #category : #'bytecode generators' }
-StackToRegisterMappingCogit >> genSistaExtStoreAndPopReceiverVariableBytecodePopBoolean: popBoolean [
-	<inline: true>
-	| index needsStoreCheck needsImmCheck maybeContext result |
-	needsStoreCheck := self sistaNeedsStoreCheck.
-	needsImmCheck := self extBSpecifiesImmCheck.
-	"Long form and short form exist for popInto. Only the long form exists for store.
-	Store have an explicit flag to mark context accessing, while popInto context accessing are done through the long form,
-	hence generate the context form if the flag is set or if this is a popInto."
-	maybeContext := popBoolean or: [self extBSpecifiesMaybeContext].
-	extB := 0.
-	numExtB := 0.
-	index := byte1 + (extA << 8).
-	extA := 0.
-	result := ((coInterpreter isWriteMediatedContextInstVarIndex: index) and: [maybeContext])
-		ifTrue: [self 
-				genStorePop: popBoolean 
-				MaybeContextReceiverVariable: index 
-				needsStoreCheck: needsStoreCheck 
-				needsImmutabilityCheck: needsImmCheck]
-		ifFalse: [self 
-				 genStorePop: popBoolean 
-				 ReceiverVariable: index 
-				 needsStoreCheck: needsStoreCheck 
-				 needsImmutabilityCheck: needsImmCheck].
-	self cppIf: IMMUTABILITY ifTrue: [ needsImmCheck ifFalse: [self annotateBytecode: self Label ] ].
-	^result
-]
-
-{ #category : #'bytecode generators' }
-StackToRegisterMappingCogit >> genSistaExtStoreLiteralVariableBytecodePopBoolean: boolean [
-	<inline: true>
-	| index needsStoreCheck needsImmCheck |
-	needsStoreCheck := self sistaNeedsStoreCheck.
-	needsImmCheck := self extBSpecifiesImmCheck.
-	index := byte1 + (extA << 8).
-	extA := numExtB := extB := 0.
-	^self 
-		genStorePop: boolean 
-		LiteralVariable: index 
-		needsStoreCheck: needsStoreCheck 
-		needsImmutabilityCheck: needsImmCheck
 ]
 
 { #category : #'bytecode generators' }
@@ -3712,11 +3589,6 @@ StackToRegisterMappingCogit >> methodOrBlockNumTemps [
 ]
 
 { #category : #'compile abstract instructions' }
-StackToRegisterMappingCogit >> needsFrameIfExtBGT2: stackDelta [
-	^extB < 0 or: [extB > 2]
-]
-
-{ #category : #'compile abstract instructions' }
 StackToRegisterMappingCogit >> needsFrameIfFollowsSend: stackDelta [
 	"As of August 2013, the code generator can't deal with spills in frameless methods (the
 	 issue is to do with the stack offset to get at an argument, which is changed when there's a spill).
@@ -4274,14 +4146,6 @@ StackToRegisterMappingCogit >> simStackTempAt: tempIndex [
 	| index |
 	index := tempIndex + 1 "Receiver".
 	^self simStackAt: index
-]
-
-{ #category : #testing }
-StackToRegisterMappingCogit >> sistaNeedsStoreCheck [
-	<inline: true>
-	"The store check can be ignored if the value assigned doesn't need it (immediate, etc)
-	In addition, the extB low bit is marked by the optimizer if the store check is not required"
-	^ self ssTopNeedsStoreCheck and: [ self extBSpecifiesStoreCheck ]
 ]
 
 { #category : #'span functions' }
