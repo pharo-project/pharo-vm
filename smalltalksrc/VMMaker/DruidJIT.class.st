@@ -613,6 +613,38 @@ DruidJIT >> genActiveContextTrampolineLarge: isLarge inBlock: isInBlock called: 
 ]
 
 { #category : #'trait candidates' }
+DruidJIT >> genCheckObjectPosition: destReg scratchReg: scratchReg valueReg: valueReg results: resultBlock [ 
+
+	| isDestYoung isOldAndOld isPermAndPerm recvIsPerm exit valueIsMachineCode| 
+
+	<inline: true>
+	<var: #recvIsPerm type: #'AbstractInstruction *'>
+	<var: #exit type: #'AbstractInstruction *'>
+
+	self CmpCq: objectMemory getMemoryMap getNewSpaceStart  R: valueReg.
+	valueIsMachineCode := self JumpBelow: 0.
+	
+	self CmpCq: objectMemory getMemoryMap fixedPermSpaceStart R: destReg.
+	recvIsPerm := self JumpAboveOrEqual: 0.
+
+	self CmpCq: objectMemory getMemoryMap getOldSpaceStart R: destReg.
+	isDestYoung := self JumpBelow: 0.
+
+	self CmpCq: objectMemory getMemoryMap getOldSpaceStart R: valueReg.
+	isOldAndOld := self JumpAboveOrEqual: 0.
+	exit := self Jump: 0.
+
+	recvIsPerm jmpTarget: (self Label).
+	self CmpCq: objectMemory getMemoryMap fixedPermSpaceStart R: valueReg.
+	isPermAndPerm := self JumpAbove: 0.
+
+	exit jmpTarget: (self Label).
+		
+	resultBlock value: isDestYoung value: isOldAndOld value: isPermAndPerm value: valueIsMachineCode.
+	^ 0 
+]
+
+{ #category : #'trait candidates' }
 DruidJIT >> genCheckRememberedBitOf: objReg scratch: scratchReg [
 	"Check the remembered bit of the object in objReg; answer the jump taken if the bit is already set.
 	 Only need to fetch the byte containing it, which reduces the size of the mask constant."
