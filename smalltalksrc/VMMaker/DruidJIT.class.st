@@ -2436,7 +2436,8 @@ DruidJIT >> gen_ExtJumpIfFalse [
 	jump3 := self Jump: 0.
 	currentBlock := self Label.
 	jump1 jmpTarget: currentBlock.
-	self Jump: (self ensureFixupAt: bytecodePC + 1 + (byte1 + (r3 << 8)) + 1).
+	self Jump:
+		(self ensureFixupAt: bytecodePC + 1 + (byte1 + (r3 << 8)) + 1).
 	deadCode := false.
 	currentBlock := self Label.
 	jump2 jmpTarget: currentBlock.
@@ -2467,13 +2468,14 @@ DruidJIT >> gen_ExtJumpIfTrue [
 	jump2 := self JumpZero: 0.
 	self MoveR: t0 R: TempReg.
 	self CallRT: ceSendMustBeBooleanTrampoline.
+	self annotateBytecode: self Label.
 	jump3 := self Jump: 0.
 	currentBlock := self Label.
 	jump1 jmpTarget: currentBlock.
-	self Jump: (self ensureFixupAt: bytecodePC + 1 + (byte1 + (r3 << 8)) + 1).
+	self Jump:
+		(self ensureFixupAt: bytecodePC + 1 + (byte1 + (r3 << 8)) + 1).
 	deadCode := false.
 	currentBlock := self Label.
-	self annotateBytecode: currentBlock.
 	jump2 jmpTarget: currentBlock.
 	jump3 jmpTarget: currentBlock.
 	^ 0
