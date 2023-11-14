@@ -1366,6 +1366,7 @@ DruidJIT >> genStoreCheckTrampoline [
 	| jumpSC |
 	<var: #jumpSC type: #'AbstractInstruction *'>
 	<inline: true>
+	
 	CheckRememberedInTrampoline ifTrue:
 		[self zeroOpcodeIndex.
 		 jumpSC := self genCheckRememberedBitOf: ReceiverResultReg scratch: self backEnd cResultRegister.
@@ -1383,7 +1384,7 @@ DruidJIT >> genStoreCheckTrampoline [
 		arg: nil
 		regsToSave: (CallerSavedRegisterMask bitClear: (self registerMaskFor: ReceiverResultReg))
 		pushLinkReg: true
-		resultReg: ReceiverResultReg "self returnRegForStoreCheck"
+		resultReg: self returnRegForStoreCheck
 		appendOpcodes: CheckRememberedInTrampoline
 ]
 
