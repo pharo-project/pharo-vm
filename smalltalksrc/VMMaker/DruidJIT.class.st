@@ -2467,13 +2467,13 @@ DruidJIT >> gen_ExtJumpIfTrue [
 	jump2 := self JumpZero: 0.
 	self MoveR: t0 R: TempReg.
 	self CallRT: ceSendMustBeBooleanTrampoline.
-	self annotateBytecode: self Label.
 	jump3 := self Jump: 0.
 	currentBlock := self Label.
 	jump1 jmpTarget: currentBlock.
 	self genJumpTo: bytecodePC + 1 + (byte1 + (r3 << 8)) + 1.
 	deadCode := false.
 	currentBlock := self Label.
+	self annotateBytecode: currentBlock.
 	jump2 jmpTarget: currentBlock.
 	jump3 jmpTarget: currentBlock.
 	^ 0
@@ -2679,11 +2679,11 @@ DruidJIT >> gen_ExtUnconditionalJump [
 		      allocateRegNotConflictingWith: live
 		      ifNone: [ ^ self unknownBytecode ].
 	live := live bitOr: (self registerMaskFor: t0).
-	self genMoveConstant: (byte1 + (r3 << 8)) R: t0.
+	self MoveCq: (byte1 + (r3 << 8)) R: t0.
 	(byte1 + (r3 << 8))<0 ifTrue: [
-		| r11 jump1 jump2 t1 |
+		| r11 |
 		r11 := numExtB.
-		self genMoveConstant: (r11 * 2) R: t0.
+		self MoveCq: (r11 * 2) R: t0.
 		extB := 0.
 		numExtB := 0.
 		self AddCq: (byte1 + (r3 << 8)) R: t0.
@@ -2697,7 +2697,7 @@ DruidJIT >> gen_ExtUnconditionalJump [
 		live := live bitOr: (self registerMaskFor: t1).
 		self MoveAw: coInterpreter stackLimitAddress R: t1.
 		self CmpR: t1 R: t0.
-		jump2 := self JumpGreaterOrEqual: 0.
+		jump2 := self JumpAboveOrEqual: 0.
 		self CallRT: ceCheckForInterruptTrampoline.
 		self annotateBytecode: self Label.
 		currentBlock := self Label.
@@ -2705,7 +2705,7 @@ DruidJIT >> gen_ExtUnconditionalJump [
 		jump2 jmpTarget: currentBlock.
 		self genJumpTo: bytecodePC + 1 + (byte1 + (r3 << 8)) + 1.
 		^ 0 ].
-	self genMoveConstant: 0 R: t0.
+	self MoveCq: 0 R: t0.
 	extB := 0.
 	numExtB := 0.
 	self AddCq: (byte1 + (r3 << 8)) R: t0.
@@ -2719,7 +2719,7 @@ DruidJIT >> gen_ExtUnconditionalJump [
 	live := live bitOr: (self registerMaskFor: t1).
 	self MoveAw: coInterpreter stackLimitAddress R: t1.
 	self CmpR: t1 R: t0.
-	jump1 := self JumpGreaterOrEqual: 0.
+	jump1 := self JumpAboveOrEqual: 0.
 	self CallRT: ceCheckForInterruptTrampoline.
 	self annotateBytecode: self Label.
 	currentBlock := self Label.
