@@ -2567,7 +2567,7 @@ DruidJIT >> gen_ExtPushLiteralVariableBytecode [
 	self AndCq: 7 R: t1.
 	self CmpCq: 0 R: t1.
 	jump1 := self JumpZero: 0.
-	self genMoveConstant: 0 R: t1.
+	self MoveCq: 0 R: t1.
 	jump3 := self Jump: 0.
 	currentBlock := self Label.
 	jump1 jmpTarget: currentBlock.
@@ -2575,10 +2575,10 @@ DruidJIT >> gen_ExtPushLiteralVariableBytecode [
 	self AndCq: 16r3FFFF7 R: t1.
 	self CmpCq: 0 R: t1.
 	jumpTrue := self JumpZero: 0.
-	self genMoveConstant: 0 R: t1.
+	self MoveCq: 0 R: t1.
 	jumpNext := self Jump: 0.
 	jumpTrue jmpTarget: self Label.
-	self genMoveConstant: 1 R: t1.
+	self MoveCq: 1 R: t1.
 	jumpNext jmpTarget: self Label.
 	currentBlock := self Label.
 	jump3 jmpTarget: currentBlock.
