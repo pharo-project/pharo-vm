@@ -2703,7 +2703,7 @@ DruidJIT >> gen_ExtUnconditionalJump [
 		currentBlock := self Label.
 		jump1 jmpTarget: currentBlock.
 		jump2 jmpTarget: currentBlock.
-		self genJumpTo: bytecodePC + 1 + (byte1 + (r3 << 8)) + 1.
+		self Jump: (self ensureFixupAt: bytecodePC + 1 + (byte1 + (r3 << 8)) + 1).
 		^ 0 ].
 	self MoveCq: 0 R: t0.
 	extB := 0.
@@ -2725,7 +2725,7 @@ DruidJIT >> gen_ExtUnconditionalJump [
 	currentBlock := self Label.
 	jump2 jmpTarget: currentBlock.
 	jump1 jmpTarget: currentBlock.
-	self genJumpTo: bytecodePC + 1 + (byte1 + (r3 << 8)) + 1.
+	self Jump: (self ensureFixupAt: bytecodePC + 1 + (byte1 + (r3 << 8)) + 1).
 	^ 0
 ]
 
