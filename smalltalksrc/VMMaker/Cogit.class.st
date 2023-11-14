@@ -6183,7 +6183,7 @@ Cogit >> entryPointTagIsSelector: entryPoint [
 { #category : #accessing }
 Cogit >> estimateOfAbstractOpcodesPerBytecodes [
 	<inline: true>
-	^ 15
+	^ 100
 ]
 
 { #category : #'simulation only' }
