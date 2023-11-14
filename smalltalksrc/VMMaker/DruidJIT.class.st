@@ -4427,7 +4427,7 @@ DruidJIT >> gen_PushLiteralVariable16CasesBytecode0 [
 	self AndCq: 7 R: t1.
 	self CmpCq: 0 R: t1.
 	jump1 := self JumpZero: 0.
-	self genMoveConstant: 0 R: t1.
+	self MoveCq: 0 R: t1.
 	jump3 := self Jump: 0.
 	currentBlock := self Label.
 	jump1 jmpTarget: currentBlock.
@@ -4435,10 +4435,10 @@ DruidJIT >> gen_PushLiteralVariable16CasesBytecode0 [
 	self AndCq: 16r3FFFF7 R: t1.
 	self CmpCq: 0 R: t1.
 	jumpTrue := self JumpZero: 0.
-	self genMoveConstant: 0 R: t1.
+	self MoveCq: 0 R: t1.
 	jumpNext := self Jump: 0.
 	jumpTrue jmpTarget: self Label.
-	self genMoveConstant: 1 R: t1.
+	self MoveCq: 1 R: t1.
 	jumpNext jmpTarget: self Label.
 	currentBlock := self Label.
 	jump3 jmpTarget: currentBlock.
@@ -4490,7 +4490,7 @@ DruidJIT >> gen_PushLiteralVariable16CasesBytecode1 [
 	self AndCq: 7 R: t1.
 	self CmpCq: 0 R: t1.
 	jump1 := self JumpZero: 0.
-	self genMoveConstant: 0 R: t1.
+	self MoveCq: 0 R: t1.
 	jump3 := self Jump: 0.
 	currentBlock := self Label.
 	jump1 jmpTarget: currentBlock.
@@ -4498,10 +4498,10 @@ DruidJIT >> gen_PushLiteralVariable16CasesBytecode1 [
 	self AndCq: 16r3FFFF7 R: t1.
 	self CmpCq: 0 R: t1.
 	jumpTrue := self JumpZero: 0.
-	self genMoveConstant: 0 R: t1.
+	self MoveCq: 0 R: t1.
 	jumpNext := self Jump: 0.
 	jumpTrue jmpTarget: self Label.
-	self genMoveConstant: 1 R: t1.
+	self MoveCq: 1 R: t1.
 	jumpNext jmpTarget: self Label.
 	currentBlock := self Label.
 	jump3 jmpTarget: currentBlock.
@@ -4553,7 +4553,7 @@ DruidJIT >> gen_PushLiteralVariable16CasesBytecode10 [
 	self AndCq: 7 R: t1.
 	self CmpCq: 0 R: t1.
 	jump1 := self JumpZero: 0.
-	self genMoveConstant: 0 R: t1.
+	self MoveCq: 0 R: t1.
 	jump3 := self Jump: 0.
 	currentBlock := self Label.
 	jump1 jmpTarget: currentBlock.
@@ -4561,10 +4561,10 @@ DruidJIT >> gen_PushLiteralVariable16CasesBytecode10 [
 	self AndCq: 16r3FFFF7 R: t1.
 	self CmpCq: 0 R: t1.
 	jumpTrue := self JumpZero: 0.
-	self genMoveConstant: 0 R: t1.
+	self MoveCq: 0 R: t1.
 	jumpNext := self Jump: 0.
 	jumpTrue jmpTarget: self Label.
-	self genMoveConstant: 1 R: t1.
+	self MoveCq: 1 R: t1.
 	jumpNext jmpTarget: self Label.
 	currentBlock := self Label.
 	jump3 jmpTarget: currentBlock.
@@ -4616,7 +4616,7 @@ DruidJIT >> gen_PushLiteralVariable16CasesBytecode11 [
 	self AndCq: 7 R: t1.
 	self CmpCq: 0 R: t1.
 	jump1 := self JumpZero: 0.
-	self genMoveConstant: 0 R: t1.
+	self MoveCq: 0 R: t1.
 	jump3 := self Jump: 0.
 	currentBlock := self Label.
 	jump1 jmpTarget: currentBlock.
@@ -4624,10 +4624,10 @@ DruidJIT >> gen_PushLiteralVariable16CasesBytecode11 [
 	self AndCq: 16r3FFFF7 R: t1.
 	self CmpCq: 0 R: t1.
 	jumpTrue := self JumpZero: 0.
-	self genMoveConstant: 0 R: t1.
+	self MoveCq: 0 R: t1.
 	jumpNext := self Jump: 0.
 	jumpTrue jmpTarget: self Label.
-	self genMoveConstant: 1 R: t1.
+	self MoveCq: 1 R: t1.
 	jumpNext jmpTarget: self Label.
 	currentBlock := self Label.
 	jump3 jmpTarget: currentBlock.
@@ -4679,7 +4679,7 @@ DruidJIT >> gen_PushLiteralVariable16CasesBytecode12 [
 	self AndCq: 7 R: t1.
 	self CmpCq: 0 R: t1.
 	jump1 := self JumpZero: 0.
-	self genMoveConstant: 0 R: t1.
+	self MoveCq: 0 R: t1.
 	jump3 := self Jump: 0.
 	currentBlock := self Label.
 	jump1 jmpTarget: currentBlock.
@@ -4687,10 +4687,10 @@ DruidJIT >> gen_PushLiteralVariable16CasesBytecode12 [
 	self AndCq: 16r3FFFF7 R: t1.
 	self CmpCq: 0 R: t1.
 	jumpTrue := self JumpZero: 0.
-	self genMoveConstant: 0 R: t1.
+	self MoveCq: 0 R: t1.
 	jumpNext := self Jump: 0.
 	jumpTrue jmpTarget: self Label.
-	self genMoveConstant: 1 R: t1.
+	self MoveCq: 1 R: t1.
 	jumpNext jmpTarget: self Label.
 	currentBlock := self Label.
 	jump3 jmpTarget: currentBlock.
@@ -4742,7 +4742,7 @@ DruidJIT >> gen_PushLiteralVariable16CasesBytecode13 [
 	self AndCq: 7 R: t1.
 	self CmpCq: 0 R: t1.
 	jump1 := self JumpZero: 0.
-	self genMoveConstant: 0 R: t1.
+	self MoveCq: 0 R: t1.
 	jump3 := self Jump: 0.
 	currentBlock := self Label.
 	jump1 jmpTarget: currentBlock.
@@ -4750,10 +4750,10 @@ DruidJIT >> gen_PushLiteralVariable16CasesBytecode13 [
 	self AndCq: 16r3FFFF7 R: t1.
 	self CmpCq: 0 R: t1.
 	jumpTrue := self JumpZero: 0.
-	self genMoveConstant: 0 R: t1.
+	self MoveCq: 0 R: t1.
 	jumpNext := self Jump: 0.
 	jumpTrue jmpTarget: self Label.
-	self genMoveConstant: 1 R: t1.
+	self MoveCq: 1 R: t1.
 	jumpNext jmpTarget: self Label.
 	currentBlock := self Label.
 	jump3 jmpTarget: currentBlock.
@@ -4805,7 +4805,7 @@ DruidJIT >> gen_PushLiteralVariable16CasesBytecode14 [
 	self AndCq: 7 R: t1.
 	self CmpCq: 0 R: t1.
 	jump1 := self JumpZero: 0.
-	self genMoveConstant: 0 R: t1.
+	self MoveCq: 0 R: t1.
 	jump3 := self Jump: 0.
 	currentBlock := self Label.
 	jump1 jmpTarget: currentBlock.
@@ -4813,10 +4813,10 @@ DruidJIT >> gen_PushLiteralVariable16CasesBytecode14 [
 	self AndCq: 16r3FFFF7 R: t1.
 	self CmpCq: 0 R: t1.
 	jumpTrue := self JumpZero: 0.
-	self genMoveConstant: 0 R: t1.
+	self MoveCq: 0 R: t1.
 	jumpNext := self Jump: 0.
 	jumpTrue jmpTarget: self Label.
-	self genMoveConstant: 1 R: t1.
+	self MoveCq: 1 R: t1.
 	jumpNext jmpTarget: self Label.
 	currentBlock := self Label.
 	jump3 jmpTarget: currentBlock.
@@ -4868,7 +4868,7 @@ DruidJIT >> gen_PushLiteralVariable16CasesBytecode15 [
 	self AndCq: 7 R: t1.
 	self CmpCq: 0 R: t1.
 	jump1 := self JumpZero: 0.
-	self genMoveConstant: 0 R: t1.
+	self MoveCq: 0 R: t1.
 	jump3 := self Jump: 0.
 	currentBlock := self Label.
 	jump1 jmpTarget: currentBlock.
@@ -4876,10 +4876,10 @@ DruidJIT >> gen_PushLiteralVariable16CasesBytecode15 [
 	self AndCq: 16r3FFFF7 R: t1.
 	self CmpCq: 0 R: t1.
 	jumpTrue := self JumpZero: 0.
-	self genMoveConstant: 0 R: t1.
+	self MoveCq: 0 R: t1.
 	jumpNext := self Jump: 0.
 	jumpTrue jmpTarget: self Label.
-	self genMoveConstant: 1 R: t1.
+	self MoveCq: 1 R: t1.
 	jumpNext jmpTarget: self Label.
 	currentBlock := self Label.
 	jump3 jmpTarget: currentBlock.
@@ -4931,7 +4931,7 @@ DruidJIT >> gen_PushLiteralVariable16CasesBytecode2 [
 	self AndCq: 7 R: t1.
 	self CmpCq: 0 R: t1.
 	jump1 := self JumpZero: 0.
-	self genMoveConstant: 0 R: t1.
+	self MoveCq: 0 R: t1.
 	jump3 := self Jump: 0.
 	currentBlock := self Label.
 	jump1 jmpTarget: currentBlock.
@@ -4939,10 +4939,10 @@ DruidJIT >> gen_PushLiteralVariable16CasesBytecode2 [
 	self AndCq: 16r3FFFF7 R: t1.
 	self CmpCq: 0 R: t1.
 	jumpTrue := self JumpZero: 0.
-	self genMoveConstant: 0 R: t1.
+	self MoveCq: 0 R: t1.
 	jumpNext := self Jump: 0.
 	jumpTrue jmpTarget: self Label.
-	self genMoveConstant: 1 R: t1.
+	self MoveCq: 1 R: t1.
 	jumpNext jmpTarget: self Label.
 	currentBlock := self Label.
 	jump3 jmpTarget: currentBlock.
@@ -4994,7 +4994,7 @@ DruidJIT >> gen_PushLiteralVariable16CasesBytecode3 [
 	self AndCq: 7 R: t1.
 	self CmpCq: 0 R: t1.
 	jump1 := self JumpZero: 0.
-	self genMoveConstant: 0 R: t1.
+	self MoveCq: 0 R: t1.
 	jump3 := self Jump: 0.
 	currentBlock := self Label.
 	jump1 jmpTarget: currentBlock.
@@ -5002,10 +5002,10 @@ DruidJIT >> gen_PushLiteralVariable16CasesBytecode3 [
 	self AndCq: 16r3FFFF7 R: t1.
 	self CmpCq: 0 R: t1.
 	jumpTrue := self JumpZero: 0.
-	self genMoveConstant: 0 R: t1.
+	self MoveCq: 0 R: t1.
 	jumpNext := self Jump: 0.
 	jumpTrue jmpTarget: self Label.
-	self genMoveConstant: 1 R: t1.
+	self MoveCq: 1 R: t1.
 	jumpNext jmpTarget: self Label.
 	currentBlock := self Label.
 	jump3 jmpTarget: currentBlock.
@@ -5057,7 +5057,7 @@ DruidJIT >> gen_PushLiteralVariable16CasesBytecode4 [
 	self AndCq: 7 R: t1.
 	self CmpCq: 0 R: t1.
 	jump1 := self JumpZero: 0.
-	self genMoveConstant: 0 R: t1.
+	self MoveCq: 0 R: t1.
 	jump3 := self Jump: 0.
 	currentBlock := self Label.
 	jump1 jmpTarget: currentBlock.
@@ -5065,10 +5065,10 @@ DruidJIT >> gen_PushLiteralVariable16CasesBytecode4 [
 	self AndCq: 16r3FFFF7 R: t1.
 	self CmpCq: 0 R: t1.
 	jumpTrue := self JumpZero: 0.
-	self genMoveConstant: 0 R: t1.
+	self MoveCq: 0 R: t1.
 	jumpNext := self Jump: 0.
 	jumpTrue jmpTarget: self Label.
-	self genMoveConstant: 1 R: t1.
+	self MoveCq: 1 R: t1.
 	jumpNext jmpTarget: self Label.
 	currentBlock := self Label.
 	jump3 jmpTarget: currentBlock.
@@ -5120,7 +5120,7 @@ DruidJIT >> gen_PushLiteralVariable16CasesBytecode5 [
 	self AndCq: 7 R: t1.
 	self CmpCq: 0 R: t1.
 	jump1 := self JumpZero: 0.
-	self genMoveConstant: 0 R: t1.
+	self MoveCq: 0 R: t1.
 	jump3 := self Jump: 0.
 	currentBlock := self Label.
 	jump1 jmpTarget: currentBlock.
@@ -5128,10 +5128,10 @@ DruidJIT >> gen_PushLiteralVariable16CasesBytecode5 [
 	self AndCq: 16r3FFFF7 R: t1.
 	self CmpCq: 0 R: t1.
 	jumpTrue := self JumpZero: 0.
-	self genMoveConstant: 0 R: t1.
+	self MoveCq: 0 R: t1.
 	jumpNext := self Jump: 0.
 	jumpTrue jmpTarget: self Label.
-	self genMoveConstant: 1 R: t1.
+	self MoveCq: 1 R: t1.
 	jumpNext jmpTarget: self Label.
 	currentBlock := self Label.
 	jump3 jmpTarget: currentBlock.
@@ -5183,7 +5183,7 @@ DruidJIT >> gen_PushLiteralVariable16CasesBytecode6 [
 	self AndCq: 7 R: t1.
 	self CmpCq: 0 R: t1.
 	jump1 := self JumpZero: 0.
-	self genMoveConstant: 0 R: t1.
+	self MoveCq: 0 R: t1.
 	jump3 := self Jump: 0.
 	currentBlock := self Label.
 	jump1 jmpTarget: currentBlock.
@@ -5191,10 +5191,10 @@ DruidJIT >> gen_PushLiteralVariable16CasesBytecode6 [
 	self AndCq: 16r3FFFF7 R: t1.
 	self CmpCq: 0 R: t1.
 	jumpTrue := self JumpZero: 0.
-	self genMoveConstant: 0 R: t1.
+	self MoveCq: 0 R: t1.
 	jumpNext := self Jump: 0.
 	jumpTrue jmpTarget: self Label.
-	self genMoveConstant: 1 R: t1.
+	self MoveCq: 1 R: t1.
 	jumpNext jmpTarget: self Label.
 	currentBlock := self Label.
 	jump3 jmpTarget: currentBlock.
@@ -5246,7 +5246,7 @@ DruidJIT >> gen_PushLiteralVariable16CasesBytecode7 [
 	self AndCq: 7 R: t1.
 	self CmpCq: 0 R: t1.
 	jump1 := self JumpZero: 0.
-	self genMoveConstant: 0 R: t1.
+	self MoveCq: 0 R: t1.
 	jump3 := self Jump: 0.
 	currentBlock := self Label.
 	jump1 jmpTarget: currentBlock.
@@ -5254,10 +5254,10 @@ DruidJIT >> gen_PushLiteralVariable16CasesBytecode7 [
 	self AndCq: 16r3FFFF7 R: t1.
 	self CmpCq: 0 R: t1.
 	jumpTrue := self JumpZero: 0.
-	self genMoveConstant: 0 R: t1.
+	self MoveCq: 0 R: t1.
 	jumpNext := self Jump: 0.
 	jumpTrue jmpTarget: self Label.
-	self genMoveConstant: 1 R: t1.
+	self MoveCq: 1 R: t1.
 	jumpNext jmpTarget: self Label.
 	currentBlock := self Label.
 	jump3 jmpTarget: currentBlock.
@@ -5309,7 +5309,7 @@ DruidJIT >> gen_PushLiteralVariable16CasesBytecode8 [
 	self AndCq: 7 R: t1.
 	self CmpCq: 0 R: t1.
 	jump1 := self JumpZero: 0.
-	self genMoveConstant: 0 R: t1.
+	self MoveCq: 0 R: t1.
 	jump3 := self Jump: 0.
 	currentBlock := self Label.
 	jump1 jmpTarget: currentBlock.
@@ -5317,10 +5317,10 @@ DruidJIT >> gen_PushLiteralVariable16CasesBytecode8 [
 	self AndCq: 16r3FFFF7 R: t1.
 	self CmpCq: 0 R: t1.
 	jumpTrue := self JumpZero: 0.
-	self genMoveConstant: 0 R: t1.
+	self MoveCq: 0 R: t1.
 	jumpNext := self Jump: 0.
 	jumpTrue jmpTarget: self Label.
-	self genMoveConstant: 1 R: t1.
+	self MoveCq: 1 R: t1.
 	jumpNext jmpTarget: self Label.
 	currentBlock := self Label.
 	jump3 jmpTarget: currentBlock.
@@ -5372,7 +5372,7 @@ DruidJIT >> gen_PushLiteralVariable16CasesBytecode9 [
 	self AndCq: 7 R: t1.
 	self CmpCq: 0 R: t1.
 	jump1 := self JumpZero: 0.
-	self genMoveConstant: 0 R: t1.
+	self MoveCq: 0 R: t1.
 	jump3 := self Jump: 0.
 	currentBlock := self Label.
 	jump1 jmpTarget: currentBlock.
@@ -5380,10 +5380,10 @@ DruidJIT >> gen_PushLiteralVariable16CasesBytecode9 [
 	self AndCq: 16r3FFFF7 R: t1.
 	self CmpCq: 0 R: t1.
 	jumpTrue := self JumpZero: 0.
-	self genMoveConstant: 0 R: t1.
+	self MoveCq: 0 R: t1.
 	jumpNext := self Jump: 0.
 	jumpTrue jmpTarget: self Label.
-	self genMoveConstant: 1 R: t1.
+	self MoveCq: 1 R: t1.
 	jumpNext jmpTarget: self Label.
 	currentBlock := self Label.
 	jump3 jmpTarget: currentBlock.
