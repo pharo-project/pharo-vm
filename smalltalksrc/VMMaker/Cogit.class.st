@@ -11905,9 +11905,16 @@ Cogit >> trampolineName: routinePrefix numRegArgs: numArgs [
 
 { #category : #'bytecode generators' }
 Cogit >> unknownBytecode [
-	
-	self MoveCq: bytecodePC - (2*numExtB) R: ReceiverResultReg.
+
+	self
+		MoveCq: bytecodePC - (2 * numExtB) - (extA > 0
+				 ifTrue: [ 2 ]
+				 ifFalse: [ 0 ])
+		R: ReceiverResultReg.
 	self CallRT: ceDeoptimiseFrameTrampoline.
+
+	numExtB := extA := extB := 0.
+
 	^ 0
 ]
 
