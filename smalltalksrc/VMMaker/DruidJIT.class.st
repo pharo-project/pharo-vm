@@ -438,7 +438,7 @@ DruidJIT class >> bytecodeTable [
 		  { 2. 233. 233. #gen_ExtPushCharacterBytecode.
 		  #needsFrameNever:. 1 }.
 		  { 2. 234. 234. #gen_ExtSendBytecode. #isMapped }.
-		  { 2. 235. 235. #gen_ExtSendSuperBytecode. #isMapped }.
+		  { 2. 235. 235. #unknownBytecode }.
 		  { 2. 236. 236. #unknownBytecode }.
 		  { 2. 237. 237. #gen_ExtUnconditionalJump. #branch. #isMapped.
 		  #v4:Long:Branch:Distance: }.
@@ -448,16 +448,16 @@ DruidJIT class >> bytecodeTable [
 		  #isMapped. #v4:Long:Branch:Distance: }.
 		  { 2. 240. 240. #unknownBytecode }.
 		  { 2. 241. 241. #unknownBytecode }.
-		  { 2. 242. 242. #gen_LongStoreAndPopTemporaryVariableBytecode }.
+		  { 2. 242. 242. #unknownBytecode }.
 		  { 2. 243. 243. #unknownBytecode }.
 		  { 2. 244. 244. #unknownBytecode }.
-		  { 2. 245. 245. #gen_LongStoreTemporaryVariableBytecode }.
+		  { 2. 245. 245. #unknownBytecode }.
 		  { 2. 246. 246. #unknownBytecode }.
 		  { 2. 247. 247. #unknownBytecode }.
 		  { 3. 248. 248. #unknownBytecode }.
 		  { 3. 249. 249. #unknownBytecode }.
 		  { 3. 250. 250. #unknownBytecode }.
-		  { 3. 251. 251. #gen_PushRemoteTempLongBytecode }.
+		  { 3. 251. 251. #unknownBytecode }.
 		  { 3. 252. 252. #unknownBytecode }.
 		  { 3. 253. 253. #unknownBytecode }.
 		  { 3. 254. 254. #unknownBytecode }.
@@ -2683,7 +2683,7 @@ DruidJIT >> gen_ExtUnconditionalJump [
 	live := live bitOr: (self registerMaskFor: t0).
 	self MoveCq: (byte1 + (r3 << 8)) R: t0.
 	(byte1 + (r3 << 8))<0 ifTrue: [
-		| r11 |
+		| r11 jump1 jump2 t1 |
 		r11 := numExtB.
 		self MoveCq: (r11 * 2) R: t0.
 		extB := 0.
@@ -2705,7 +2705,8 @@ DruidJIT >> gen_ExtUnconditionalJump [
 		currentBlock := self Label.
 		jump1 jmpTarget: currentBlock.
 		jump2 jmpTarget: currentBlock.
-		self Jump: (self ensureFixupAt: bytecodePC + 1 + (byte1 + (r3 << 8)) + 1).
+		self Jump:
+			(self ensureFixupAt: bytecodePC + 1 + (byte1 + (r3 << 8)) + 1).
 		^ 0 ].
 	self MoveCq: 0 R: t0.
 	extB := 0.
@@ -2727,7 +2728,8 @@ DruidJIT >> gen_ExtUnconditionalJump [
 	currentBlock := self Label.
 	jump2 jmpTarget: currentBlock.
 	jump1 jmpTarget: currentBlock.
-	self Jump: (self ensureFixupAt: bytecodePC + 1 + (byte1 + (r3 << 8)) + 1).
+	self Jump:
+		(self ensureFixupAt: bytecodePC + 1 + (byte1 + (r3 << 8)) + 1).
 	^ 0
 ]
 

@@ -3479,7 +3479,7 @@ CCodeGenerator >> isGeneratingPluginCode [
 	^false
 ]
 
-{ #category : #inlining }
+{ #category : #'type inference' }
 CCodeGenerator >> isIntegralCType: aCType [ "<String>"
 	^(#('sqLong' 'usqLong' 'sqInt' 'usqInt' 'sqIntptr_t' 'usqIntptr_t'
 		'long' 'long long' 'int' 'short' 'short int' 'char' 'signed char'
