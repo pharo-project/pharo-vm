@@ -10205,6 +10205,13 @@ Cogit >> numArgsOrSendNumArgsReg: numArgs [
 ]
 
 { #category : #accessing }
+Cogit >> numExtB [
+
+	<doNotGenerate>
+	^ numExtB
+]
+
+{ #category : #accessing }
 Cogit >> objectMemory [
 	<doNotGenerate>
 	^objectMemory
