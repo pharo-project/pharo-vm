@@ -4758,8 +4758,9 @@ StackToRegisterMappingCogit >> tryCollapseTempVectorInitializationOfSize: slots 
 { #category : #'bytecode generators' }
 StackToRegisterMappingCogit >> unknownBytecode [
 
-	deadCode := true.
-	self ssFlushStack.
+	PartialCompilation ifTrue: [
+		deadCode := true.
+		self ssFlushStack ].
 	^ super unknownBytecode
 ]
 

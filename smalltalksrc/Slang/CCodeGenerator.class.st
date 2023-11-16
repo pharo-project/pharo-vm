@@ -233,6 +233,7 @@ CCodeGenerator >> addMethodFor: aClass selector: selector [
 
 	| method tmethod |
 	method := aClass compiledMethodAt: selector.
+	(method pragmaAt: #halt) ifNotNil: [ 1halt ].
 	(method pragmaAt: #doNotGenerate) ifNotNil:
 		["only remove a previous method if this one overrides it, i.e. this is a subclass method.
 		 If the existing method is in a different hierarchy this method must be merely a redeirect."
