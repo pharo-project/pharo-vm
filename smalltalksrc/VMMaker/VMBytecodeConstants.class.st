@@ -12,6 +12,7 @@ Class {
 		'CtxtTempFrameStart',
 		'LargeContextBit',
 		'LargeContextSlots',
+		'PartialCompilation',
 		'SistaV1BytecodeSet',
 		'SmallContextSlots'
 	],
