@@ -6186,7 +6186,7 @@ Cogit >> entryPointTagIsSelector: entryPoint [
 { #category : #accessing }
 Cogit >> estimateOfAbstractOpcodesPerBytecodes [
 	<inline: true>
-	^ 15
+	^ 100
 ]
 
 { #category : #'simulation only' }
@@ -9956,19 +9956,6 @@ Cogit >> maybeUnsafeJumpContinuation: latestContinuation at: bcpc for: descripto
 ]
 
 { #category : #'method map' }
-Cogit >> mcPCFor: bcpc startBcpc: startbcpc in: cogMethod [
-	"Answer the absolute machine code pc matching the zero-relative bytecode pc argument
-	 in cogMethod, given the start of the bytecodes for cogMethod's block or method object."
-	<var: #cogMethod type: #'CogMethod *'>
-	<returnTypeC: #usqInt>
-	^self
-		mapFor: cogMethod
-		bcpc: startbcpc
-		performUntil: #find:IsBackwardBranch:Mcpc:Bcpc:MatchingBcpc:
-		arg: bcpc asVoidPointer
-]
-
-{ #category : #'method map' }
 Cogit >> mcPCForBackwardBranch: bcpc startBcpc: startbcpc in: cogMethod [
 	"Answer the absolute machine code pc matching the zero-relative
 	 bytecode pc of a backward branch in cogMethod, given the start
@@ -11923,10 +11910,14 @@ Cogit >> trampolineName: routinePrefix numRegArgs: numArgs [
 Cogit >> unknownBytecode [
 
 	PartialCompilation ifTrue: [
-		self MoveCq: bytecodePC R: ReceiverResultReg.
-		self CallRT: ceDeoptimiseFrameTrampoline.
-		^ 0 ].
-
+    self
+  		MoveCq: bytecodePC - (2 * numExtB) - (extA > 0
+	  			 ifTrue: [ 2 ]
+		  		 ifFalse: [ 0 ])
+  		R: ReceiverResultReg.
+	  self CallRT: ceDeoptimiseFrameTrampoline.
+  	numExtB := extA := extB := 0.
+    ^ 0 ].
 	^ EncounteredUnknownBytecode
 ]
 

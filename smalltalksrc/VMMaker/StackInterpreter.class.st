@@ -4307,14 +4307,19 @@ StackInterpreter >> commonReturn: value [
 { #category : #'send bytecodes' }
 StackInterpreter >> commonSendOrdinary [
 	"Send a message, starting lookup with the receiver's class."
+
 	"Assume: messageSelector and argumentCount have been set, and that 
 	the receiver and arguments have been pushed onto the stack,"
+
 	"Note: This method is inlined into the interpreter dispatch loop."
+
 	<sharedCodeInCase: #extSendBytecode>
-	self sendBreakpoint: messageSelector receiver: (self stackValue: argumentCount).
+	self
+		sendBreakpoint: messageSelector
+		receiver: (self stackValue: argumentCount).
 	self doRecordSendTrace.
 	self findNewMethodOrdinary.
-	self executeNewMethod.
+	self executeNewMethod: false.
 	self fetchNextBytecode
 ]
 
@@ -5114,8 +5119,15 @@ StackInterpreter >> establishFrameForContextToReturnTo: contextToReturnTo [
 	^thePage baseFP
 ]
 
-{ #category : #'message sending' }
+{ #category : #'send bytecodes' }
 StackInterpreter >> executeNewMethod [
+	"Eagerly compile method"
+
+	self executeNewMethod: true
+]
+
+{ #category : #'send bytecodes' }
+StackInterpreter >> executeNewMethod: eagerlyCompile [
 	"if not primitive, or primitive failed, activate the method"
 
 	| inInterpreter |

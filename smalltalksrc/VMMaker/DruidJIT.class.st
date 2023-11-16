@@ -398,14 +398,30 @@ DruidJIT class >> bytecodeTable [
 		  #branch. #isBranchFalse. #isMapped. #v3:ShortForward:Branch:Distance: }.
 		  { 1. 199. 199. #gen_ShortConditionalJumpFalse7.
 		  #branch. #isBranchFalse. #isMapped. #v3:ShortForward:Branch:Distance: }.
-		  { 1. 200. 200. #unknownBytecode }.
-		  { 1. 201. 201. #unknownBytecode }.
-		  { 1. 202. 202. #unknownBytecode }.
-		  { 1. 203. 203. #unknownBytecode }.
-		  { 1. 204. 204. #unknownBytecode }.
-		  { 1. 205. 205. #unknownBytecode }.
-		  { 1. 206. 206. #unknownBytecode }.
-		  { 1. 207. 207. #unknownBytecode }.
+		  { 1. 200. 200. #gen_StoreAndPopReceiverVariableBytecode0.
+		  #isInstVarRef. #is1ByteInstVarStore. #isMappedIfImmutability.
+		  #needsFrameIfImmutability:.  -1 }.
+		  { 1. 201. 201. #gen_StoreAndPopReceiverVariableBytecode1.
+		  #isInstVarRef. #is1ByteInstVarStore. #isMappedIfImmutability.
+		  #needsFrameIfImmutability:.  -1 }.
+		  { 1. 202. 202. #gen_StoreAndPopReceiverVariableBytecode2.
+		  #isInstVarRef. #is1ByteInstVarStore. #isMappedIfImmutability.
+		  #needsFrameIfImmutability:.  -1 }.
+		  { 1. 203. 203. #gen_StoreAndPopReceiverVariableBytecode3.
+		  #isInstVarRef. #is1ByteInstVarStore. #isMappedIfImmutability.
+		  #needsFrameIfImmutability:.  -1 }.
+		  { 1. 204. 204. #gen_StoreAndPopReceiverVariableBytecode4.
+		  #isInstVarRef. #is1ByteInstVarStore. #isMappedIfImmutability.
+		  #needsFrameIfImmutability:.  -1 }.
+		  { 1. 205. 205. #gen_StoreAndPopReceiverVariableBytecode5.
+		  #isInstVarRef. #is1ByteInstVarStore. #isMappedIfImmutability.
+		  #needsFrameIfImmutability:.  -1 }.
+		  { 1. 206. 206. #gen_StoreAndPopReceiverVariableBytecode6.
+		  #isInstVarRef. #is1ByteInstVarStore. #isMappedIfImmutability.
+		  #needsFrameIfImmutability:.  -1 }.
+		  { 1. 207. 207. #gen_StoreAndPopReceiverVariableBytecode7.
+		  #isInstVarRef. #is1ByteInstVarStore. #isMappedIfImmutability.
+		  #needsFrameIfImmutability:.  -1 }.
 		  { 1. 208. 208. #gen_StoreAndPopTemporaryVariableBytecode0 }.
 		  { 1. 209. 209. #gen_StoreAndPopTemporaryVariableBytecode1 }.
 		  { 1. 210. 210. #gen_StoreAndPopTemporaryVariableBytecode2 }.
@@ -438,7 +454,7 @@ DruidJIT class >> bytecodeTable [
 		  { 2. 233. 233. #gen_ExtPushCharacterBytecode.
 		  #needsFrameNever:. 1 }.
 		  { 2. 234. 234. #gen_ExtSendBytecode. #isMapped }.
-		  { 2. 235. 235. #gen_ExtSendSuperBytecode. #isMapped }.
+		  { 2. 235. 235. #unknownBytecode }.
 		  { 2. 236. 236. #unknownBytecode }.
 		  { 2. 237. 237. #gen_ExtUnconditionalJump. #branch. #isMapped.
 		  #v4:Long:Branch:Distance: }.
@@ -457,7 +473,7 @@ DruidJIT class >> bytecodeTable [
 		  { 3. 248. 248. #unknownBytecode }.
 		  { 3. 249. 249. #unknownBytecode }.
 		  { 3. 250. 250. #unknownBytecode }.
-		  { 3. 251. 251. #gen_PushRemoteTempLongBytecode }.
+		  { 3. 251. 251. #unknownBytecode }.
 		  { 3. 252. 252. #unknownBytecode }.
 		  { 3. 253. 253. #unknownBytecode }.
 		  { 3. 254. 254. #unknownBytecode }.
@@ -573,6 +589,13 @@ DruidJIT >> cacheTagIsMarked: cacheTag [
 	^true
 ]
 
+{ #category : #accessing }
+DruidJIT >> ceStoreCheckTrampoline: anAddress [
+
+	<doNotGenerate>
+	ceStoreCheckTrampoline := anAddress
+]
+
 { #category : #'trait candidates' }
 DruidJIT >> checkValidObjectReference: anOop [
 	^(objectMemory isImmediate: anOop) not
@@ -610,6 +633,38 @@ DruidJIT >> genActiveContextTrampolineLarge: isLarge inBlock: isInBlock called: 
 	self recordGeneratedRunTime: aString address: startAddress.
 	self recordRunTimeObjectReferences.
 	^startAddress
+]
+
+{ #category : #'trait candidates' }
+DruidJIT >> genCheckObjectPosition: destReg scratchReg: scratchReg valueReg: valueReg results: resultBlock [ 
+
+	| isDestYoung isOldAndOld isPermAndPerm recvIsPerm exit valueIsMachineCode| 
+
+	<inline: true>
+	<var: #recvIsPerm type: #'AbstractInstruction *'>
+	<var: #exit type: #'AbstractInstruction *'>
+
+	self CmpCq: objectMemory getMemoryMap getNewSpaceStart  R: valueReg.
+	valueIsMachineCode := self JumpBelow: 0.
+	
+	self CmpCq: objectMemory getMemoryMap fixedPermSpaceStart R: destReg.
+	recvIsPerm := self JumpAboveOrEqual: 0.
+
+	self CmpCq: objectMemory getMemoryMap getOldSpaceStart R: destReg.
+	isDestYoung := self JumpBelow: 0.
+
+	self CmpCq: objectMemory getMemoryMap getOldSpaceStart R: valueReg.
+	isOldAndOld := self JumpAboveOrEqual: 0.
+	exit := self Jump: 0.
+
+	recvIsPerm jmpTarget: (self Label).
+	self CmpCq: objectMemory getMemoryMap fixedPermSpaceStart R: valueReg.
+	isPermAndPerm := self JumpAbove: 0.
+
+	exit jmpTarget: (self Label).
+		
+	resultBlock value: isDestYoung value: isOldAndOld value: isPermAndPerm value: valueIsMachineCode.
+	^ 0 
 ]
 
 { #category : #'trait candidates' }
@@ -1261,23 +1316,32 @@ DruidJIT >> genStoreCheckContextReceiverTrampoline [
 { #category : #'trait candidates' }
 DruidJIT >> genStoreCheckReceiverReg: destReg valueReg: valueReg scratchReg: scratchReg inFrame: inFrame [
 	"Generate the code for a store check of valueReg into destReg."
-	| jmpImmediate jmpDestYoung jmpSourceOld jmpAlreadyRemembered |
+
+	| jmpImmediate jmpDestYoung jmpOldAndOld jmpPermAndPerm jmpAlreadyRemembered jmpIsMachineCode|
+
 	<var: #jmpImmediate type: #'AbstractInstruction *'>
 	<var: #jmpDestYoung type: #'AbstractInstruction *'>
-	<var: #jmpSourceOld type: #'AbstractInstruction *'>
+	<var: #jmpOldAndOld type: #'AbstractInstruction *'>
+	<var: #jmpPermAndPerm type: #'AbstractInstruction *'>
 	<var: #jmpAlreadyRemembered type: #'AbstractInstruction *'>
+	<var: #jmpIsMachineCode type: #'AbstractInstruction *'>
+
+
 	"Is value stored an immediate?  If so we're done"
 	jmpImmediate := self genJumpImmediate: valueReg.
-	"Get the old/new boundary in scratchReg"
-	self MoveCw: objectMemory storeCheckBoundary R: scratchReg.
-	"Is target young?  If so we're done"
-	self CmpR: scratchReg R: destReg. "N.B. FLAGS := destReg - scratchReg"
-	jmpDestYoung := self JumpBelow: 0.
-	"Is value stored old?  If so we're done."
-	self CmpR: scratchReg R: valueReg. "N.B. FLAGS := valueReg - scratchReg"
-	jmpSourceOld := self JumpAboveOrEqual: 0.
-	"value is young and target is old.
-	 Need to remember this only if the remembered bit is not already set."
+
+	self 
+		genCheckObjectPosition: destReg 
+		scratchReg: scratchReg 
+		valueReg: valueReg
+		results: [ :isDestYoung :isOldAndOld :isPermAndPerm :valueIsMachineCode | 
+			jmpDestYoung := isDestYoung.
+			jmpOldAndOld := isOldAndOld.
+			jmpIsMachineCode := valueIsMachineCode.
+			jmpPermAndPerm := isPermAndPerm].
+
+
+	"Need to remember this only if the remembered bit is not already set."
 	CheckRememberedInTrampoline ifFalse:
 		[jmpAlreadyRemembered := self genCheckRememberedBitOf: destReg scratch: scratchReg].
 	"Remembered bit is not set.  Call store check to insert dest into remembered table."
@@ -1287,10 +1351,13 @@ DruidJIT >> genStoreCheckReceiverReg: destReg valueReg: valueReg scratchReg: scr
 		protectLinkRegIfNot: inFrame.
 	jmpImmediate jmpTarget:
 	(jmpDestYoung jmpTarget:
-	(jmpSourceOld jmpTarget:
-		self Label)).
+	(jmpIsMachineCode jmpTarget:
+	(jmpOldAndOld jmpTarget: 
+	(jmpPermAndPerm jmpTarget:
+		self Label)))).
+
 	CheckRememberedInTrampoline ifFalse:
-		[jmpAlreadyRemembered jmpTarget: jmpSourceOld getJmpTarget].
+		[jmpAlreadyRemembered jmpTarget: jmpOldAndOld getJmpTarget].
 	^0
 ]
 
@@ -1299,15 +1366,16 @@ DruidJIT >> genStoreCheckTrampoline [
 	| jumpSC |
 	<var: #jumpSC type: #'AbstractInstruction *'>
 	<inline: true>
+	
 	CheckRememberedInTrampoline ifTrue:
-		[ self zeroOpcodeIndex.
+		[self zeroOpcodeIndex.
 		 jumpSC := self genCheckRememberedBitOf: ReceiverResultReg scratch: self backEnd cResultRegister.
 		 self assert: jumpSC opcode = JumpNonZero.
 		 jumpSC opcode: JumpZero.
 		 self RetN: 0.
 		 jumpSC jmpTarget: self Label].
-	^ self
-		genTrampolineFor: #remember:
+	^self
+		genTrampolineFor: #rememberObjInCorrectRememberedSet:
 		called: 'ceStoreCheckTrampoline'
 		numArgs: 1
 		arg: ReceiverResultReg
@@ -1413,7 +1481,7 @@ DruidJIT >> genStoreTrampolineCalled: trampolineName instVarIndex: instVarIndex 
 	<inline: false>
 	self zeroOpcodeIndex.
 	"SendNumArgsReg is mutated but we don't care as register are not live across the trampoline.
-	 There is no reason why registers cannot be saved over the remember: call, but since the
+	 There is no reason why registers cannot be saved over the rememberObjInCorrectRememberedSet: call, but since the
 	 immutability check is a suspension point, registers cannot remain live."
 	jumpSC := self genJumpMutable: ReceiverResultReg scratchReg: SendNumArgsReg.
 	self
@@ -1444,7 +1512,7 @@ DruidJIT >> genStoreTrampolineCalled: trampolineName instVarIndex: instVarIndex 
 				 jumpRC opcode: JumpZero.
 				 self RetN: 0].
 		 jumpRC jmpTarget: self Label].
-	^ self genTrampolineFor: #remember:
+	^ self genTrampolineFor: #rememberObjInCorrectRememberedSet:
 		called: trampolineName
 		numArgs: 1
 		arg: ReceiverResultReg
@@ -1461,12 +1529,14 @@ DruidJIT >> genStoreTrampolineCalled: trampolineName instVarIndex: instVarIndex 
 DruidJIT >> genStoreWithImmutabilityAndStoreCheckSourceReg: sourceReg slotIndex: index destReg: destReg scratchReg: scratchReg needRestoreRcvr: needRestoreRcvr [ 
 	"Store check code is duplicated to use a single trampoline"
 	<option: #IMMUTABILITY>
-	| immutableJump jmpImmediate jmpDestYoung jmpSourceOld jmpAlreadyRemembered |
+	| immutableJump jmpImmediate jmpDestYoung jmpOldAndOld jmpPermAndPerm jmpAlreadyRemembered jmpIsMachineCode|
 	<var: #immutableJump type: #'AbstractInstruction *'>
 	<var: #jmpImmediate type: #'AbstractInstruction *'>
 	<var: #jmpDestYoung type: #'AbstractInstruction *'>
-	<var: #jmpSourceOld type: #'AbstractInstruction *'>
+	<var: #jmpOldAndOld type: #'AbstractInstruction *'>
+	<var: #jmpPermAndPerm type: #'AbstractInstruction *'>
 	<var: #jmpAlreadyRemembered type: #'AbstractInstruction *'>
+	<var: #jmpIsMachineCode type: #'AbstractInstruction *'>
 
 	immutableJump := self genJumpImmutable: destReg scratchReg: scratchReg.
 	
@@ -1476,19 +1546,21 @@ DruidJIT >> genStoreWithImmutabilityAndStoreCheckSourceReg: sourceReg slotIndex:
 	self MoveR: sourceReg
 		   Mw: index * objectMemory wordSize + objectMemory baseHeaderSize
 		   r: destReg.
-	
+
 	"store check"
 	jmpImmediate := self genJumpImmediate: sourceReg.
-	"Get the old/new boundary in scratchReg"
-	self MoveCw: objectMemory storeCheckBoundary R: scratchReg.
-	"Is target young?  If so we're done"
-	self CmpR: scratchReg R: destReg. "N.B. FLAGS := destReg - scratchReg"
-	jmpDestYoung := self JumpBelow: 0.
-	"Is value stored old?  If so we're done."
-	self CmpR: scratchReg R: sourceReg. "N.B. FLAGS := valueReg - scratchReg"
-	jmpSourceOld := self JumpAboveOrEqual: 0.
-	"value is young and target is old.
-	 Need to remember this only if the remembered bit is not already set."
+
+	self 
+		genCheckObjectPosition: destReg 
+		scratchReg: scratchReg 
+		valueReg: sourceReg
+		results: [ :isDestYoung :isOldAndOld :isPermAndPerm :valueIsMachineCode| 
+			jmpDestYoung := isDestYoung.
+			jmpOldAndOld := isOldAndOld.
+			jmpIsMachineCode := valueIsMachineCode.			
+			jmpPermAndPerm := isPermAndPerm].
+
+	"Need to remember this only if the remembered bit is not already set."
 	CheckRememberedInTrampoline ifFalse:
 		[jmpAlreadyRemembered := self genCheckRememberedBitOf: destReg scratch: scratchReg].
 	"Set the inst var index for the benefit of the immutability check. The trampoline will
@@ -1501,10 +1573,12 @@ DruidJIT >> genStoreWithImmutabilityAndStoreCheckSourceReg: sourceReg slotIndex:
 
 	jmpImmediate jmpTarget:
 	(jmpDestYoung jmpTarget:
-	(jmpSourceOld jmpTarget:
-		self Label)).
+	(jmpOldAndOld jmpTarget:
+	(jmpIsMachineCode jmpTarget:
+	(jmpPermAndPerm jmpTarget:
+		self Label)))).
 	CheckRememberedInTrampoline ifFalse:
-		[jmpAlreadyRemembered jmpTarget: jmpSourceOld getJmpTarget].
+		[jmpAlreadyRemembered jmpTarget: jmpOldAndOld getJmpTarget].
 	^ 0
 ]
 
@@ -2350,6 +2424,16 @@ DruidJIT >> gen_ExtABytecode [
 ]
 
 { #category : #generated }
+DruidJIT >> gen_ExtBBytecode [
+	"225		11100001	sbbbbbbb	Extend B (Ext B = Ext B prev * 256 + Ext B)"
+	extB := (numExtB = 0 and: [byte1 > 127])
+				ifTrue: [byte1 - 256]
+				ifFalse: [(extB bitShift: 8) + byte1].
+	numExtB := numExtB + 1.
+	^0
+]
+
+{ #category : #generated }
 DruidJIT >> gen_ExtJumpIfFalse [
 	"AutoGenerated by Druid"
 
@@ -2731,20 +2815,22 @@ DruidJIT >> gen_PopStackBytecode [
 DruidJIT >> gen_PrimitiveAdd [
 	"AutoGenerated by Druid"
 
-	| jump1 jump2 currentBlock |
-	self mclassIsSmallInteger ifFalse: [ ^ UnimplementedPrimitive ].
+	| jump1 jump2 jump3 currentBlock |
 	self TstCq: 1 R: Arg0Reg.
 	jump1 := self JumpZero: 0.
+	self TstCq: 1 R: ReceiverResultReg.
+	jump2 := self JumpZero: 0.
 	self MoveR: Arg0Reg R: TempReg.
 	self AddCq:  -1 R: TempReg.
 	self MoveR: ReceiverResultReg R: ClassReg.
 	self AddR: ClassReg R: TempReg.
-	jump2 := self JumpOverflow: 0.
+	jump3 := self JumpOverflow: 0.
 	self MoveR: TempReg R: ReceiverResultReg.
 	self genPrimReturn.
 	currentBlock := self Label.
 	jump1 jmpTarget: currentBlock.
 	jump2 jmpTarget: currentBlock.
+	jump3 jmpTarget: currentBlock.
 	^ CompletePrimitive
 ]
 
@@ -7234,6 +7320,1270 @@ DruidJIT >> gen_ShortUnconditionalJump7 [
 ]
 
 { #category : #generated }
+DruidJIT >> gen_StoreAndPopReceiverVariableBytecode0 [
+	"AutoGenerated by Druid"
+
+	| jump1 jump7 jumpNext t1 jump6 jump3 currentBlock t0 jump5 jumpTrue jump2 live t2 jump4 |
+	live := 0.
+	self ensureReceiverResultRegContainsSelf.
+	t0 := self
+		      allocateRegNotConflictingWith: live
+		      ifNone: [ ^ self unknownBytecode ].
+	live := live bitOr: (self registerMaskFor: t0).
+	self MoveR: ReceiverResultReg R: t0.
+	t1 := self
+		      allocateRegNotConflictingWith: live
+		      ifNone: [ ^ self unknownBytecode ].
+	live := live bitOr: (self registerMaskFor: t1).
+	(self ssValue: 0) copyToReg: t1.
+	self ssPop: 1.
+	t2 := self
+		      allocateRegNotConflictingWith: live
+		      ifNone: [ ^ self unknownBytecode ].
+	live := live bitOr: (self registerMaskFor: t2).
+	self MoveR: t0 R: t2.
+	self AndCq: 7 R: t2.
+	self CmpCq: 0 R: t2.
+	jump1 := self JumpZero: 0.
+	self genMoveConstant: 0 R: t2.
+	jump2 := self Jump: 0.
+	currentBlock := self Label.
+	jump1 jmpTarget: currentBlock.
+	self MoveR: t0 R: t2.
+	self AndCq: 16rFFFFFF0000000000 R: t2.
+	self CmpCq: 16r10000000000 R: t2.
+	jumpTrue := self JumpZero: 0.
+	self genMoveConstant: 0 R: t2.
+	jumpNext := self Jump: 0.
+	jumpTrue jmpTarget: self Label.
+	self genMoveConstant: 1 R: t2.
+	jumpNext jmpTarget: self Label.
+	currentBlock := self Label.
+	jump2 jmpTarget: currentBlock.
+	self ssFlushStack.
+	self CmpCq: 1 R: t2.
+	jump2 := self JumpNonZero: 0.
+	self MoveR: t1 R: t2.
+	self AndCq: 7 R: t2.
+	self CmpCq: 0 R: t2.
+	jump1 := self JumpZero: 0.
+	self genMoveConstant: 0 R: t2.
+	jump3 := self Jump: 0.
+	currentBlock := self Label.
+	jump1 jmpTarget: currentBlock.
+	self MoveR: t1 R: t2.
+	self AndCq: 16rFFFFFF0000000000 R: t2.
+	self CmpCq: 0 R: t2.
+	jump1 := self JumpZero: 0.
+	self genMoveConstant: 0 R: t2.
+	jump4 := self Jump: 0.
+	currentBlock := self Label.
+	jump1 jmpTarget: currentBlock.
+	self CmpCq: 0 R: t1.
+	jumpTrue := self JumpGreaterOrEqual: 0.
+	self genMoveConstant: 0 R: t2.
+	jumpNext := self Jump: 0.
+	jumpTrue jmpTarget: self Label.
+	self genMoveConstant: 1 R: t2.
+	jumpNext jmpTarget: self Label.
+	currentBlock := self Label.
+	jump4 jmpTarget: currentBlock.
+	currentBlock := self Label.
+	jump3 jmpTarget: currentBlock.
+	self CmpCq: 1 R: t2.
+	jump3 := self JumpNonZero: 0.
+	self MoveM64: 0 r: t0 R: t2.
+	self ArithmeticShiftRightCq: 29 R: t2.
+	self AndCq: 1 R: t2.
+	self CmpCq: 0 R: t2.
+	jump4 := self JumpNonZero: 0.
+	self MoveR: t0 R: TempReg.
+	backEnd saveAndRestoreLinkRegAround: [
+		self CallRT: ceStoreCheckTrampoline ].
+	self annotateBytecode: self Label.
+	self TstCq: 7 R: t1.
+	jump1 := self JumpNonZero: 0.
+	jump5 := self JumpZero: 0.
+	currentBlock := self Label.
+	jump2 jmpTarget: currentBlock.
+	jump3 jmpTarget: currentBlock.
+	jump4 jmpTarget: currentBlock.
+	self TstCq: 7 R: t1.
+	jump4 := self JumpNonZero: 0.
+	currentBlock := self Label.
+	jump5 jmpTarget: currentBlock.
+	self CmpCq: objectMemory nilObject R: t1.
+	jump5 := self JumpGreaterOrEqual: 0.
+	self genMoveConstant: 0 R: t2.
+	jump3 := self Jump: 0.
+	currentBlock := self Label.
+	jump5 jmpTarget: currentBlock.
+	self CmpCq: objectMemory trueObject R: t1.
+	jumpTrue := self JumpLessOrEqual: 0.
+	self genMoveConstant: 0 R: t2.
+	jumpNext := self Jump: 0.
+	jumpTrue jmpTarget: self Label.
+	self genMoveConstant: 1 R: t2.
+	jumpNext jmpTarget: self Label.
+	currentBlock := self Label.
+	jump3 jmpTarget: currentBlock.
+	self CmpCq: 1 R: t2.
+	jump3 := self JumpZero: 0.
+	self CmpCq: 0 R: t1.
+	jump5 := self JumpLess: 0.
+	self MoveM64: 0 r: t0 R: t2.
+	self ArithmeticShiftRightCq: 29 R: t2.
+	self AndCq: 1 R: t2.
+	self CmpCq: 0 R: t2.
+	jump2 := self JumpNonZero: 0.
+	self MoveR: t0 R: t2.
+	self AndCq: 7 R: t2.
+	self CmpCq: 0 R: t2.
+	jump6 := self JumpZero: 0.
+	self genMoveConstant: 0 R: t2.
+	jump7 := self Jump: 0.
+	currentBlock := self Label.
+	jump6 jmpTarget: currentBlock.
+	self MoveR: t0 R: t2.
+	self AndCq: 16rFFFFFF0000000000 R: t2.
+	self CmpCq: 16r20000000000 R: t2.
+	jumpTrue := self JumpZero: 0.
+	self genMoveConstant: 0 R: t2.
+	jumpNext := self Jump: 0.
+	jumpTrue jmpTarget: self Label.
+	self genMoveConstant: 1 R: t2.
+	jumpNext jmpTarget: self Label.
+	currentBlock := self Label.
+	jump7 jmpTarget: currentBlock.
+	self CmpCq: 1 R: t2.
+	jump7 := self JumpNonZero: 0.
+	self MoveR: t1 R: t2.
+	self AndCq: 16rFFFFFF0000000000 R: t2.
+	self CmpCq: 16r20000000000 R: t2.
+	jump6 := self JumpZero: 0.
+	self MoveR: t0 R: TempReg.
+	backEnd saveAndRestoreLinkRegAround: [
+		self CallRT: ceStoreCheckTrampoline ].
+	self annotateBytecode: self Label.
+	currentBlock := self Label.
+	jump1 jmpTarget: currentBlock.
+	jump4 jmpTarget: currentBlock.
+	jump3 jmpTarget: currentBlock.
+	jump5 jmpTarget: currentBlock.
+	jump2 jmpTarget: currentBlock.
+	jump7 jmpTarget: currentBlock.
+	jump6 jmpTarget: currentBlock.
+	self MoveR: t1 M64: 8 r: t0.
+	^ 0
+]
+
+{ #category : #generated }
+DruidJIT >> gen_StoreAndPopReceiverVariableBytecode1 [
+	"AutoGenerated by Druid"
+
+	| jump1 jump7 jumpNext t1 jump6 jump3 currentBlock t0 jump5 jumpTrue jump2 live t2 jump4 |
+	live := 0.
+	self ensureReceiverResultRegContainsSelf.
+	t0 := self
+		      allocateRegNotConflictingWith: live
+		      ifNone: [ ^ self unknownBytecode ].
+	live := live bitOr: (self registerMaskFor: t0).
+	self MoveR: ReceiverResultReg R: t0.
+	t1 := self
+		      allocateRegNotConflictingWith: live
+		      ifNone: [ ^ self unknownBytecode ].
+	live := live bitOr: (self registerMaskFor: t1).
+	(self ssValue: 0) copyToReg: t1.
+	self ssPop: 1.
+	t2 := self
+		      allocateRegNotConflictingWith: live
+		      ifNone: [ ^ self unknownBytecode ].
+	live := live bitOr: (self registerMaskFor: t2).
+	self MoveR: t0 R: t2.
+	self AndCq: 7 R: t2.
+	self CmpCq: 0 R: t2.
+	jump1 := self JumpZero: 0.
+	self genMoveConstant: 0 R: t2.
+	jump2 := self Jump: 0.
+	currentBlock := self Label.
+	jump1 jmpTarget: currentBlock.
+	self MoveR: t0 R: t2.
+	self AndCq: 16rFFFFFF0000000000 R: t2.
+	self CmpCq: 16r10000000000 R: t2.
+	jumpTrue := self JumpZero: 0.
+	self genMoveConstant: 0 R: t2.
+	jumpNext := self Jump: 0.
+	jumpTrue jmpTarget: self Label.
+	self genMoveConstant: 1 R: t2.
+	jumpNext jmpTarget: self Label.
+	currentBlock := self Label.
+	jump2 jmpTarget: currentBlock.
+	self ssFlushStack.
+	self CmpCq: 1 R: t2.
+	jump2 := self JumpNonZero: 0.
+	self MoveR: t1 R: t2.
+	self AndCq: 7 R: t2.
+	self CmpCq: 0 R: t2.
+	jump1 := self JumpZero: 0.
+	self genMoveConstant: 0 R: t2.
+	jump3 := self Jump: 0.
+	currentBlock := self Label.
+	jump1 jmpTarget: currentBlock.
+	self MoveR: t1 R: t2.
+	self AndCq: 16rFFFFFF0000000000 R: t2.
+	self CmpCq: 0 R: t2.
+	jump1 := self JumpZero: 0.
+	self genMoveConstant: 0 R: t2.
+	jump4 := self Jump: 0.
+	currentBlock := self Label.
+	jump1 jmpTarget: currentBlock.
+	self CmpCq: 0 R: t1.
+	jumpTrue := self JumpGreaterOrEqual: 0.
+	self genMoveConstant: 0 R: t2.
+	jumpNext := self Jump: 0.
+	jumpTrue jmpTarget: self Label.
+	self genMoveConstant: 1 R: t2.
+	jumpNext jmpTarget: self Label.
+	currentBlock := self Label.
+	jump4 jmpTarget: currentBlock.
+	currentBlock := self Label.
+	jump3 jmpTarget: currentBlock.
+	self CmpCq: 1 R: t2.
+	jump3 := self JumpNonZero: 0.
+	self MoveM64: 0 r: t0 R: t2.
+	self ArithmeticShiftRightCq: 29 R: t2.
+	self AndCq: 1 R: t2.
+	self CmpCq: 0 R: t2.
+	jump4 := self JumpNonZero: 0.
+	self MoveR: t0 R: TempReg.
+	backEnd saveAndRestoreLinkRegAround: [
+		self CallRT: ceStoreCheckTrampoline ].
+	self annotateBytecode: self Label.
+	self TstCq: 7 R: t1.
+	jump1 := self JumpNonZero: 0.
+	jump5 := self JumpZero: 0.
+	currentBlock := self Label.
+	jump2 jmpTarget: currentBlock.
+	jump3 jmpTarget: currentBlock.
+	jump4 jmpTarget: currentBlock.
+	self TstCq: 7 R: t1.
+	jump4 := self JumpNonZero: 0.
+	currentBlock := self Label.
+	jump5 jmpTarget: currentBlock.
+	self CmpCq: objectMemory nilObject R: t1.
+	jump5 := self JumpGreaterOrEqual: 0.
+	self genMoveConstant: 0 R: t2.
+	jump3 := self Jump: 0.
+	currentBlock := self Label.
+	jump5 jmpTarget: currentBlock.
+	self CmpCq: objectMemory trueObject R: t1.
+	jumpTrue := self JumpLessOrEqual: 0.
+	self genMoveConstant: 0 R: t2.
+	jumpNext := self Jump: 0.
+	jumpTrue jmpTarget: self Label.
+	self genMoveConstant: 1 R: t2.
+	jumpNext jmpTarget: self Label.
+	currentBlock := self Label.
+	jump3 jmpTarget: currentBlock.
+	self CmpCq: 1 R: t2.
+	jump3 := self JumpZero: 0.
+	self CmpCq: 0 R: t1.
+	jump5 := self JumpLess: 0.
+	self MoveM64: 0 r: t0 R: t2.
+	self ArithmeticShiftRightCq: 29 R: t2.
+	self AndCq: 1 R: t2.
+	self CmpCq: 0 R: t2.
+	jump2 := self JumpNonZero: 0.
+	self MoveR: t0 R: t2.
+	self AndCq: 7 R: t2.
+	self CmpCq: 0 R: t2.
+	jump6 := self JumpZero: 0.
+	self genMoveConstant: 0 R: t2.
+	jump7 := self Jump: 0.
+	currentBlock := self Label.
+	jump6 jmpTarget: currentBlock.
+	self MoveR: t0 R: t2.
+	self AndCq: 16rFFFFFF0000000000 R: t2.
+	self CmpCq: 16r20000000000 R: t2.
+	jumpTrue := self JumpZero: 0.
+	self genMoveConstant: 0 R: t2.
+	jumpNext := self Jump: 0.
+	jumpTrue jmpTarget: self Label.
+	self genMoveConstant: 1 R: t2.
+	jumpNext jmpTarget: self Label.
+	currentBlock := self Label.
+	jump7 jmpTarget: currentBlock.
+	self CmpCq: 1 R: t2.
+	jump7 := self JumpNonZero: 0.
+	self MoveR: t1 R: t2.
+	self AndCq: 16rFFFFFF0000000000 R: t2.
+	self CmpCq: 16r20000000000 R: t2.
+	jump6 := self JumpZero: 0.
+	self MoveR: t0 R: TempReg.
+	backEnd saveAndRestoreLinkRegAround: [
+		self CallRT: ceStoreCheckTrampoline ].
+	self annotateBytecode: self Label.
+	currentBlock := self Label.
+	jump1 jmpTarget: currentBlock.
+	jump4 jmpTarget: currentBlock.
+	jump3 jmpTarget: currentBlock.
+	jump5 jmpTarget: currentBlock.
+	jump2 jmpTarget: currentBlock.
+	jump7 jmpTarget: currentBlock.
+	jump6 jmpTarget: currentBlock.
+	self MoveR: t1 M64: 16 r: t0.
+	^ 0
+]
+
+{ #category : #generated }
+DruidJIT >> gen_StoreAndPopReceiverVariableBytecode2 [
+	"AutoGenerated by Druid"
+
+	| jump1 jump7 jumpNext t1 jump6 jump3 currentBlock t0 jump5 jumpTrue jump2 live t2 jump4 |
+	live := 0.
+	self ensureReceiverResultRegContainsSelf.
+	t0 := self
+		      allocateRegNotConflictingWith: live
+		      ifNone: [ ^ self unknownBytecode ].
+	live := live bitOr: (self registerMaskFor: t0).
+	self MoveR: ReceiverResultReg R: t0.
+	t1 := self
+		      allocateRegNotConflictingWith: live
+		      ifNone: [ ^ self unknownBytecode ].
+	live := live bitOr: (self registerMaskFor: t1).
+	(self ssValue: 0) copyToReg: t1.
+	self ssPop: 1.
+	t2 := self
+		      allocateRegNotConflictingWith: live
+		      ifNone: [ ^ self unknownBytecode ].
+	live := live bitOr: (self registerMaskFor: t2).
+	self MoveR: t0 R: t2.
+	self AndCq: 7 R: t2.
+	self CmpCq: 0 R: t2.
+	jump1 := self JumpZero: 0.
+	self genMoveConstant: 0 R: t2.
+	jump2 := self Jump: 0.
+	currentBlock := self Label.
+	jump1 jmpTarget: currentBlock.
+	self MoveR: t0 R: t2.
+	self AndCq: 16rFFFFFF0000000000 R: t2.
+	self CmpCq: 16r10000000000 R: t2.
+	jumpTrue := self JumpZero: 0.
+	self genMoveConstant: 0 R: t2.
+	jumpNext := self Jump: 0.
+	jumpTrue jmpTarget: self Label.
+	self genMoveConstant: 1 R: t2.
+	jumpNext jmpTarget: self Label.
+	currentBlock := self Label.
+	jump2 jmpTarget: currentBlock.
+	self ssFlushStack.
+	self CmpCq: 1 R: t2.
+	jump2 := self JumpNonZero: 0.
+	self MoveR: t1 R: t2.
+	self AndCq: 7 R: t2.
+	self CmpCq: 0 R: t2.
+	jump1 := self JumpZero: 0.
+	self genMoveConstant: 0 R: t2.
+	jump3 := self Jump: 0.
+	currentBlock := self Label.
+	jump1 jmpTarget: currentBlock.
+	self MoveR: t1 R: t2.
+	self AndCq: 16rFFFFFF0000000000 R: t2.
+	self CmpCq: 0 R: t2.
+	jump1 := self JumpZero: 0.
+	self genMoveConstant: 0 R: t2.
+	jump4 := self Jump: 0.
+	currentBlock := self Label.
+	jump1 jmpTarget: currentBlock.
+	self CmpCq: 0 R: t1.
+	jumpTrue := self JumpGreaterOrEqual: 0.
+	self genMoveConstant: 0 R: t2.
+	jumpNext := self Jump: 0.
+	jumpTrue jmpTarget: self Label.
+	self genMoveConstant: 1 R: t2.
+	jumpNext jmpTarget: self Label.
+	currentBlock := self Label.
+	jump4 jmpTarget: currentBlock.
+	currentBlock := self Label.
+	jump3 jmpTarget: currentBlock.
+	self CmpCq: 1 R: t2.
+	jump3 := self JumpNonZero: 0.
+	self MoveM64: 0 r: t0 R: t2.
+	self ArithmeticShiftRightCq: 29 R: t2.
+	self AndCq: 1 R: t2.
+	self CmpCq: 0 R: t2.
+	jump4 := self JumpNonZero: 0.
+	self MoveR: t0 R: TempReg.
+	backEnd saveAndRestoreLinkRegAround: [
+		self CallRT: ceStoreCheckTrampoline ].
+	self annotateBytecode: self Label.
+	self TstCq: 7 R: t1.
+	jump1 := self JumpNonZero: 0.
+	jump5 := self JumpZero: 0.
+	currentBlock := self Label.
+	jump2 jmpTarget: currentBlock.
+	jump3 jmpTarget: currentBlock.
+	jump4 jmpTarget: currentBlock.
+	self TstCq: 7 R: t1.
+	jump4 := self JumpNonZero: 0.
+	currentBlock := self Label.
+	jump5 jmpTarget: currentBlock.
+	self CmpCq: objectMemory nilObject R: t1.
+	jump5 := self JumpGreaterOrEqual: 0.
+	self genMoveConstant: 0 R: t2.
+	jump3 := self Jump: 0.
+	currentBlock := self Label.
+	jump5 jmpTarget: currentBlock.
+	self CmpCq: objectMemory trueObject R: t1.
+	jumpTrue := self JumpLessOrEqual: 0.
+	self genMoveConstant: 0 R: t2.
+	jumpNext := self Jump: 0.
+	jumpTrue jmpTarget: self Label.
+	self genMoveConstant: 1 R: t2.
+	jumpNext jmpTarget: self Label.
+	currentBlock := self Label.
+	jump3 jmpTarget: currentBlock.
+	self CmpCq: 1 R: t2.
+	jump3 := self JumpZero: 0.
+	self CmpCq: 0 R: t1.
+	jump5 := self JumpLess: 0.
+	self MoveM64: 0 r: t0 R: t2.
+	self ArithmeticShiftRightCq: 29 R: t2.
+	self AndCq: 1 R: t2.
+	self CmpCq: 0 R: t2.
+	jump2 := self JumpNonZero: 0.
+	self MoveR: t0 R: t2.
+	self AndCq: 7 R: t2.
+	self CmpCq: 0 R: t2.
+	jump6 := self JumpZero: 0.
+	self genMoveConstant: 0 R: t2.
+	jump7 := self Jump: 0.
+	currentBlock := self Label.
+	jump6 jmpTarget: currentBlock.
+	self MoveR: t0 R: t2.
+	self AndCq: 16rFFFFFF0000000000 R: t2.
+	self CmpCq: 16r20000000000 R: t2.
+	jumpTrue := self JumpZero: 0.
+	self genMoveConstant: 0 R: t2.
+	jumpNext := self Jump: 0.
+	jumpTrue jmpTarget: self Label.
+	self genMoveConstant: 1 R: t2.
+	jumpNext jmpTarget: self Label.
+	currentBlock := self Label.
+	jump7 jmpTarget: currentBlock.
+	self CmpCq: 1 R: t2.
+	jump7 := self JumpNonZero: 0.
+	self MoveR: t1 R: t2.
+	self AndCq: 16rFFFFFF0000000000 R: t2.
+	self CmpCq: 16r20000000000 R: t2.
+	jump6 := self JumpZero: 0.
+	self MoveR: t0 R: TempReg.
+	backEnd saveAndRestoreLinkRegAround: [
+		self CallRT: ceStoreCheckTrampoline ].
+	self annotateBytecode: self Label.
+	currentBlock := self Label.
+	jump1 jmpTarget: currentBlock.
+	jump4 jmpTarget: currentBlock.
+	jump3 jmpTarget: currentBlock.
+	jump5 jmpTarget: currentBlock.
+	jump2 jmpTarget: currentBlock.
+	jump7 jmpTarget: currentBlock.
+	jump6 jmpTarget: currentBlock.
+	self MoveR: t1 M64: 24 r: t0.
+	^ 0
+]
+
+{ #category : #generated }
+DruidJIT >> gen_StoreAndPopReceiverVariableBytecode3 [
+	"AutoGenerated by Druid"
+
+	| jump1 jump7 jumpNext t1 jump6 jump3 currentBlock t0 jump5 jumpTrue jump2 live t2 jump4 |
+	live := 0.
+	self ensureReceiverResultRegContainsSelf.
+	t0 := self
+		      allocateRegNotConflictingWith: live
+		      ifNone: [ ^ self unknownBytecode ].
+	live := live bitOr: (self registerMaskFor: t0).
+	self MoveR: ReceiverResultReg R: t0.
+	t1 := self
+		      allocateRegNotConflictingWith: live
+		      ifNone: [ ^ self unknownBytecode ].
+	live := live bitOr: (self registerMaskFor: t1).
+	(self ssValue: 0) copyToReg: t1.
+	self ssPop: 1.
+	t2 := self
+		      allocateRegNotConflictingWith: live
+		      ifNone: [ ^ self unknownBytecode ].
+	live := live bitOr: (self registerMaskFor: t2).
+	self MoveR: t0 R: t2.
+	self AndCq: 7 R: t2.
+	self CmpCq: 0 R: t2.
+	jump1 := self JumpZero: 0.
+	self genMoveConstant: 0 R: t2.
+	jump2 := self Jump: 0.
+	currentBlock := self Label.
+	jump1 jmpTarget: currentBlock.
+	self MoveR: t0 R: t2.
+	self AndCq: 16rFFFFFF0000000000 R: t2.
+	self CmpCq: 16r10000000000 R: t2.
+	jumpTrue := self JumpZero: 0.
+	self genMoveConstant: 0 R: t2.
+	jumpNext := self Jump: 0.
+	jumpTrue jmpTarget: self Label.
+	self genMoveConstant: 1 R: t2.
+	jumpNext jmpTarget: self Label.
+	currentBlock := self Label.
+	jump2 jmpTarget: currentBlock.
+	self ssFlushStack.
+	self CmpCq: 1 R: t2.
+	jump2 := self JumpNonZero: 0.
+	self MoveR: t1 R: t2.
+	self AndCq: 7 R: t2.
+	self CmpCq: 0 R: t2.
+	jump1 := self JumpZero: 0.
+	self genMoveConstant: 0 R: t2.
+	jump3 := self Jump: 0.
+	currentBlock := self Label.
+	jump1 jmpTarget: currentBlock.
+	self MoveR: t1 R: t2.
+	self AndCq: 16rFFFFFF0000000000 R: t2.
+	self CmpCq: 0 R: t2.
+	jump1 := self JumpZero: 0.
+	self genMoveConstant: 0 R: t2.
+	jump4 := self Jump: 0.
+	currentBlock := self Label.
+	jump1 jmpTarget: currentBlock.
+	self CmpCq: 0 R: t1.
+	jumpTrue := self JumpGreaterOrEqual: 0.
+	self genMoveConstant: 0 R: t2.
+	jumpNext := self Jump: 0.
+	jumpTrue jmpTarget: self Label.
+	self genMoveConstant: 1 R: t2.
+	jumpNext jmpTarget: self Label.
+	currentBlock := self Label.
+	jump4 jmpTarget: currentBlock.
+	currentBlock := self Label.
+	jump3 jmpTarget: currentBlock.
+	self CmpCq: 1 R: t2.
+	jump3 := self JumpNonZero: 0.
+	self MoveM64: 0 r: t0 R: t2.
+	self ArithmeticShiftRightCq: 29 R: t2.
+	self AndCq: 1 R: t2.
+	self CmpCq: 0 R: t2.
+	jump4 := self JumpNonZero: 0.
+	self MoveR: t0 R: TempReg.
+	backEnd saveAndRestoreLinkRegAround: [
+		self CallRT: ceStoreCheckTrampoline ].
+	self annotateBytecode: self Label.
+	self TstCq: 7 R: t1.
+	jump1 := self JumpNonZero: 0.
+	jump5 := self JumpZero: 0.
+	currentBlock := self Label.
+	jump2 jmpTarget: currentBlock.
+	jump3 jmpTarget: currentBlock.
+	jump4 jmpTarget: currentBlock.
+	self TstCq: 7 R: t1.
+	jump4 := self JumpNonZero: 0.
+	currentBlock := self Label.
+	jump5 jmpTarget: currentBlock.
+	self CmpCq: objectMemory nilObject R: t1.
+	jump5 := self JumpGreaterOrEqual: 0.
+	self genMoveConstant: 0 R: t2.
+	jump3 := self Jump: 0.
+	currentBlock := self Label.
+	jump5 jmpTarget: currentBlock.
+	self CmpCq: objectMemory trueObject R: t1.
+	jumpTrue := self JumpLessOrEqual: 0.
+	self genMoveConstant: 0 R: t2.
+	jumpNext := self Jump: 0.
+	jumpTrue jmpTarget: self Label.
+	self genMoveConstant: 1 R: t2.
+	jumpNext jmpTarget: self Label.
+	currentBlock := self Label.
+	jump3 jmpTarget: currentBlock.
+	self CmpCq: 1 R: t2.
+	jump3 := self JumpZero: 0.
+	self CmpCq: 0 R: t1.
+	jump5 := self JumpLess: 0.
+	self MoveM64: 0 r: t0 R: t2.
+	self ArithmeticShiftRightCq: 29 R: t2.
+	self AndCq: 1 R: t2.
+	self CmpCq: 0 R: t2.
+	jump2 := self JumpNonZero: 0.
+	self MoveR: t0 R: t2.
+	self AndCq: 7 R: t2.
+	self CmpCq: 0 R: t2.
+	jump6 := self JumpZero: 0.
+	self genMoveConstant: 0 R: t2.
+	jump7 := self Jump: 0.
+	currentBlock := self Label.
+	jump6 jmpTarget: currentBlock.
+	self MoveR: t0 R: t2.
+	self AndCq: 16rFFFFFF0000000000 R: t2.
+	self CmpCq: 16r20000000000 R: t2.
+	jumpTrue := self JumpZero: 0.
+	self genMoveConstant: 0 R: t2.
+	jumpNext := self Jump: 0.
+	jumpTrue jmpTarget: self Label.
+	self genMoveConstant: 1 R: t2.
+	jumpNext jmpTarget: self Label.
+	currentBlock := self Label.
+	jump7 jmpTarget: currentBlock.
+	self CmpCq: 1 R: t2.
+	jump7 := self JumpNonZero: 0.
+	self MoveR: t1 R: t2.
+	self AndCq: 16rFFFFFF0000000000 R: t2.
+	self CmpCq: 16r20000000000 R: t2.
+	jump6 := self JumpZero: 0.
+	self MoveR: t0 R: TempReg.
+	backEnd saveAndRestoreLinkRegAround: [
+		self CallRT: ceStoreCheckTrampoline ].
+	self annotateBytecode: self Label.
+	currentBlock := self Label.
+	jump1 jmpTarget: currentBlock.
+	jump4 jmpTarget: currentBlock.
+	jump3 jmpTarget: currentBlock.
+	jump5 jmpTarget: currentBlock.
+	jump2 jmpTarget: currentBlock.
+	jump7 jmpTarget: currentBlock.
+	jump6 jmpTarget: currentBlock.
+	self MoveR: t1 M64: 32 r: t0.
+	^ 0
+]
+
+{ #category : #generated }
+DruidJIT >> gen_StoreAndPopReceiverVariableBytecode4 [
+	"AutoGenerated by Druid"
+
+	| jump1 jump7 jumpNext t1 jump6 jump3 currentBlock t0 jump5 jumpTrue jump2 live t2 jump4 |
+	live := 0.
+	self ensureReceiverResultRegContainsSelf.
+	t0 := self
+		      allocateRegNotConflictingWith: live
+		      ifNone: [ ^ self unknownBytecode ].
+	live := live bitOr: (self registerMaskFor: t0).
+	self MoveR: ReceiverResultReg R: t0.
+	t1 := self
+		      allocateRegNotConflictingWith: live
+		      ifNone: [ ^ self unknownBytecode ].
+	live := live bitOr: (self registerMaskFor: t1).
+	(self ssValue: 0) copyToReg: t1.
+	self ssPop: 1.
+	t2 := self
+		      allocateRegNotConflictingWith: live
+		      ifNone: [ ^ self unknownBytecode ].
+	live := live bitOr: (self registerMaskFor: t2).
+	self MoveR: t0 R: t2.
+	self AndCq: 7 R: t2.
+	self CmpCq: 0 R: t2.
+	jump1 := self JumpZero: 0.
+	self genMoveConstant: 0 R: t2.
+	jump2 := self Jump: 0.
+	currentBlock := self Label.
+	jump1 jmpTarget: currentBlock.
+	self MoveR: t0 R: t2.
+	self AndCq: 16rFFFFFF0000000000 R: t2.
+	self CmpCq: 16r10000000000 R: t2.
+	jumpTrue := self JumpZero: 0.
+	self genMoveConstant: 0 R: t2.
+	jumpNext := self Jump: 0.
+	jumpTrue jmpTarget: self Label.
+	self genMoveConstant: 1 R: t2.
+	jumpNext jmpTarget: self Label.
+	currentBlock := self Label.
+	jump2 jmpTarget: currentBlock.
+	self ssFlushStack.
+	self CmpCq: 1 R: t2.
+	jump2 := self JumpNonZero: 0.
+	self MoveR: t1 R: t2.
+	self AndCq: 7 R: t2.
+	self CmpCq: 0 R: t2.
+	jump1 := self JumpZero: 0.
+	self genMoveConstant: 0 R: t2.
+	jump3 := self Jump: 0.
+	currentBlock := self Label.
+	jump1 jmpTarget: currentBlock.
+	self MoveR: t1 R: t2.
+	self AndCq: 16rFFFFFF0000000000 R: t2.
+	self CmpCq: 0 R: t2.
+	jump1 := self JumpZero: 0.
+	self genMoveConstant: 0 R: t2.
+	jump4 := self Jump: 0.
+	currentBlock := self Label.
+	jump1 jmpTarget: currentBlock.
+	self CmpCq: 0 R: t1.
+	jumpTrue := self JumpGreaterOrEqual: 0.
+	self genMoveConstant: 0 R: t2.
+	jumpNext := self Jump: 0.
+	jumpTrue jmpTarget: self Label.
+	self genMoveConstant: 1 R: t2.
+	jumpNext jmpTarget: self Label.
+	currentBlock := self Label.
+	jump4 jmpTarget: currentBlock.
+	currentBlock := self Label.
+	jump3 jmpTarget: currentBlock.
+	self CmpCq: 1 R: t2.
+	jump3 := self JumpNonZero: 0.
+	self MoveM64: 0 r: t0 R: t2.
+	self ArithmeticShiftRightCq: 29 R: t2.
+	self AndCq: 1 R: t2.
+	self CmpCq: 0 R: t2.
+	jump4 := self JumpNonZero: 0.
+	self MoveR: t0 R: TempReg.
+	backEnd saveAndRestoreLinkRegAround: [
+		self CallRT: ceStoreCheckTrampoline ].
+	self annotateBytecode: self Label.
+	self TstCq: 7 R: t1.
+	jump1 := self JumpNonZero: 0.
+	jump5 := self JumpZero: 0.
+	currentBlock := self Label.
+	jump2 jmpTarget: currentBlock.
+	jump3 jmpTarget: currentBlock.
+	jump4 jmpTarget: currentBlock.
+	self TstCq: 7 R: t1.
+	jump4 := self JumpNonZero: 0.
+	currentBlock := self Label.
+	jump5 jmpTarget: currentBlock.
+	self CmpCq: objectMemory nilObject R: t1.
+	jump5 := self JumpGreaterOrEqual: 0.
+	self genMoveConstant: 0 R: t2.
+	jump3 := self Jump: 0.
+	currentBlock := self Label.
+	jump5 jmpTarget: currentBlock.
+	self CmpCq: objectMemory trueObject R: t1.
+	jumpTrue := self JumpLessOrEqual: 0.
+	self genMoveConstant: 0 R: t2.
+	jumpNext := self Jump: 0.
+	jumpTrue jmpTarget: self Label.
+	self genMoveConstant: 1 R: t2.
+	jumpNext jmpTarget: self Label.
+	currentBlock := self Label.
+	jump3 jmpTarget: currentBlock.
+	self CmpCq: 1 R: t2.
+	jump3 := self JumpZero: 0.
+	self CmpCq: 0 R: t1.
+	jump5 := self JumpLess: 0.
+	self MoveM64: 0 r: t0 R: t2.
+	self ArithmeticShiftRightCq: 29 R: t2.
+	self AndCq: 1 R: t2.
+	self CmpCq: 0 R: t2.
+	jump2 := self JumpNonZero: 0.
+	self MoveR: t0 R: t2.
+	self AndCq: 7 R: t2.
+	self CmpCq: 0 R: t2.
+	jump6 := self JumpZero: 0.
+	self genMoveConstant: 0 R: t2.
+	jump7 := self Jump: 0.
+	currentBlock := self Label.
+	jump6 jmpTarget: currentBlock.
+	self MoveR: t0 R: t2.
+	self AndCq: 16rFFFFFF0000000000 R: t2.
+	self CmpCq: 16r20000000000 R: t2.
+	jumpTrue := self JumpZero: 0.
+	self genMoveConstant: 0 R: t2.
+	jumpNext := self Jump: 0.
+	jumpTrue jmpTarget: self Label.
+	self genMoveConstant: 1 R: t2.
+	jumpNext jmpTarget: self Label.
+	currentBlock := self Label.
+	jump7 jmpTarget: currentBlock.
+	self CmpCq: 1 R: t2.
+	jump7 := self JumpNonZero: 0.
+	self MoveR: t1 R: t2.
+	self AndCq: 16rFFFFFF0000000000 R: t2.
+	self CmpCq: 16r20000000000 R: t2.
+	jump6 := self JumpZero: 0.
+	self MoveR: t0 R: TempReg.
+	backEnd saveAndRestoreLinkRegAround: [
+		self CallRT: ceStoreCheckTrampoline ].
+	self annotateBytecode: self Label.
+	currentBlock := self Label.
+	jump1 jmpTarget: currentBlock.
+	jump4 jmpTarget: currentBlock.
+	jump3 jmpTarget: currentBlock.
+	jump5 jmpTarget: currentBlock.
+	jump2 jmpTarget: currentBlock.
+	jump7 jmpTarget: currentBlock.
+	jump6 jmpTarget: currentBlock.
+	self MoveR: t1 M64: 40 r: t0.
+	^ 0
+]
+
+{ #category : #generated }
+DruidJIT >> gen_StoreAndPopReceiverVariableBytecode5 [
+	"AutoGenerated by Druid"
+
+	| jump1 jump7 jumpNext t1 jump6 jump3 currentBlock t0 jump5 jumpTrue jump2 live t2 jump4 |
+	live := 0.
+	self ensureReceiverResultRegContainsSelf.
+	t0 := self
+		      allocateRegNotConflictingWith: live
+		      ifNone: [ ^ self unknownBytecode ].
+	live := live bitOr: (self registerMaskFor: t0).
+	self MoveR: ReceiverResultReg R: t0.
+	t1 := self
+		      allocateRegNotConflictingWith: live
+		      ifNone: [ ^ self unknownBytecode ].
+	live := live bitOr: (self registerMaskFor: t1).
+	(self ssValue: 0) copyToReg: t1.
+	self ssPop: 1.
+	t2 := self
+		      allocateRegNotConflictingWith: live
+		      ifNone: [ ^ self unknownBytecode ].
+	live := live bitOr: (self registerMaskFor: t2).
+	self MoveR: t0 R: t2.
+	self AndCq: 7 R: t2.
+	self CmpCq: 0 R: t2.
+	jump1 := self JumpZero: 0.
+	self genMoveConstant: 0 R: t2.
+	jump2 := self Jump: 0.
+	currentBlock := self Label.
+	jump1 jmpTarget: currentBlock.
+	self MoveR: t0 R: t2.
+	self AndCq: 16rFFFFFF0000000000 R: t2.
+	self CmpCq: 16r10000000000 R: t2.
+	jumpTrue := self JumpZero: 0.
+	self genMoveConstant: 0 R: t2.
+	jumpNext := self Jump: 0.
+	jumpTrue jmpTarget: self Label.
+	self genMoveConstant: 1 R: t2.
+	jumpNext jmpTarget: self Label.
+	currentBlock := self Label.
+	jump2 jmpTarget: currentBlock.
+	self ssFlushStack.
+	self CmpCq: 1 R: t2.
+	jump2 := self JumpNonZero: 0.
+	self MoveR: t1 R: t2.
+	self AndCq: 7 R: t2.
+	self CmpCq: 0 R: t2.
+	jump1 := self JumpZero: 0.
+	self genMoveConstant: 0 R: t2.
+	jump3 := self Jump: 0.
+	currentBlock := self Label.
+	jump1 jmpTarget: currentBlock.
+	self MoveR: t1 R: t2.
+	self AndCq: 16rFFFFFF0000000000 R: t2.
+	self CmpCq: 0 R: t2.
+	jump1 := self JumpZero: 0.
+	self genMoveConstant: 0 R: t2.
+	jump4 := self Jump: 0.
+	currentBlock := self Label.
+	jump1 jmpTarget: currentBlock.
+	self CmpCq: 0 R: t1.
+	jumpTrue := self JumpGreaterOrEqual: 0.
+	self genMoveConstant: 0 R: t2.
+	jumpNext := self Jump: 0.
+	jumpTrue jmpTarget: self Label.
+	self genMoveConstant: 1 R: t2.
+	jumpNext jmpTarget: self Label.
+	currentBlock := self Label.
+	jump4 jmpTarget: currentBlock.
+	currentBlock := self Label.
+	jump3 jmpTarget: currentBlock.
+	self CmpCq: 1 R: t2.
+	jump3 := self JumpNonZero: 0.
+	self MoveM64: 0 r: t0 R: t2.
+	self ArithmeticShiftRightCq: 29 R: t2.
+	self AndCq: 1 R: t2.
+	self CmpCq: 0 R: t2.
+	jump4 := self JumpNonZero: 0.
+	self MoveR: t0 R: TempReg.
+	backEnd saveAndRestoreLinkRegAround: [
+		self CallRT: ceStoreCheckTrampoline ].
+	self annotateBytecode: self Label.
+	self TstCq: 7 R: t1.
+	jump1 := self JumpNonZero: 0.
+	jump5 := self JumpZero: 0.
+	currentBlock := self Label.
+	jump2 jmpTarget: currentBlock.
+	jump3 jmpTarget: currentBlock.
+	jump4 jmpTarget: currentBlock.
+	self TstCq: 7 R: t1.
+	jump4 := self JumpNonZero: 0.
+	currentBlock := self Label.
+	jump5 jmpTarget: currentBlock.
+	self CmpCq: objectMemory nilObject R: t1.
+	jump5 := self JumpGreaterOrEqual: 0.
+	self genMoveConstant: 0 R: t2.
+	jump3 := self Jump: 0.
+	currentBlock := self Label.
+	jump5 jmpTarget: currentBlock.
+	self CmpCq: objectMemory trueObject R: t1.
+	jumpTrue := self JumpLessOrEqual: 0.
+	self genMoveConstant: 0 R: t2.
+	jumpNext := self Jump: 0.
+	jumpTrue jmpTarget: self Label.
+	self genMoveConstant: 1 R: t2.
+	jumpNext jmpTarget: self Label.
+	currentBlock := self Label.
+	jump3 jmpTarget: currentBlock.
+	self CmpCq: 1 R: t2.
+	jump3 := self JumpZero: 0.
+	self CmpCq: 0 R: t1.
+	jump5 := self JumpLess: 0.
+	self MoveM64: 0 r: t0 R: t2.
+	self ArithmeticShiftRightCq: 29 R: t2.
+	self AndCq: 1 R: t2.
+	self CmpCq: 0 R: t2.
+	jump2 := self JumpNonZero: 0.
+	self MoveR: t0 R: t2.
+	self AndCq: 7 R: t2.
+	self CmpCq: 0 R: t2.
+	jump6 := self JumpZero: 0.
+	self genMoveConstant: 0 R: t2.
+	jump7 := self Jump: 0.
+	currentBlock := self Label.
+	jump6 jmpTarget: currentBlock.
+	self MoveR: t0 R: t2.
+	self AndCq: 16rFFFFFF0000000000 R: t2.
+	self CmpCq: 16r20000000000 R: t2.
+	jumpTrue := self JumpZero: 0.
+	self genMoveConstant: 0 R: t2.
+	jumpNext := self Jump: 0.
+	jumpTrue jmpTarget: self Label.
+	self genMoveConstant: 1 R: t2.
+	jumpNext jmpTarget: self Label.
+	currentBlock := self Label.
+	jump7 jmpTarget: currentBlock.
+	self CmpCq: 1 R: t2.
+	jump7 := self JumpNonZero: 0.
+	self MoveR: t1 R: t2.
+	self AndCq: 16rFFFFFF0000000000 R: t2.
+	self CmpCq: 16r20000000000 R: t2.
+	jump6 := self JumpZero: 0.
+	self MoveR: t0 R: TempReg.
+	backEnd saveAndRestoreLinkRegAround: [
+		self CallRT: ceStoreCheckTrampoline ].
+	self annotateBytecode: self Label.
+	currentBlock := self Label.
+	jump1 jmpTarget: currentBlock.
+	jump4 jmpTarget: currentBlock.
+	jump3 jmpTarget: currentBlock.
+	jump5 jmpTarget: currentBlock.
+	jump2 jmpTarget: currentBlock.
+	jump7 jmpTarget: currentBlock.
+	jump6 jmpTarget: currentBlock.
+	self MoveR: t1 M64: 48 r: t0.
+	^ 0
+]
+
+{ #category : #generated }
+DruidJIT >> gen_StoreAndPopReceiverVariableBytecode6 [
+	"AutoGenerated by Druid"
+
+	| jump1 jump7 jumpNext t1 jump6 jump3 currentBlock t0 jump5 jumpTrue jump2 live t2 jump4 |
+	live := 0.
+	self ensureReceiverResultRegContainsSelf.
+	t0 := self
+		      allocateRegNotConflictingWith: live
+		      ifNone: [ ^ self unknownBytecode ].
+	live := live bitOr: (self registerMaskFor: t0).
+	self MoveR: ReceiverResultReg R: t0.
+	t1 := self
+		      allocateRegNotConflictingWith: live
+		      ifNone: [ ^ self unknownBytecode ].
+	live := live bitOr: (self registerMaskFor: t1).
+	(self ssValue: 0) copyToReg: t1.
+	self ssPop: 1.
+	t2 := self
+		      allocateRegNotConflictingWith: live
+		      ifNone: [ ^ self unknownBytecode ].
+	live := live bitOr: (self registerMaskFor: t2).
+	self MoveR: t0 R: t2.
+	self AndCq: 7 R: t2.
+	self CmpCq: 0 R: t2.
+	jump1 := self JumpZero: 0.
+	self genMoveConstant: 0 R: t2.
+	jump2 := self Jump: 0.
+	currentBlock := self Label.
+	jump1 jmpTarget: currentBlock.
+	self MoveR: t0 R: t2.
+	self AndCq: 16rFFFFFF0000000000 R: t2.
+	self CmpCq: 16r10000000000 R: t2.
+	jumpTrue := self JumpZero: 0.
+	self genMoveConstant: 0 R: t2.
+	jumpNext := self Jump: 0.
+	jumpTrue jmpTarget: self Label.
+	self genMoveConstant: 1 R: t2.
+	jumpNext jmpTarget: self Label.
+	currentBlock := self Label.
+	jump2 jmpTarget: currentBlock.
+	self ssFlushStack.
+	self CmpCq: 1 R: t2.
+	jump2 := self JumpNonZero: 0.
+	self MoveR: t1 R: t2.
+	self AndCq: 7 R: t2.
+	self CmpCq: 0 R: t2.
+	jump1 := self JumpZero: 0.
+	self genMoveConstant: 0 R: t2.
+	jump3 := self Jump: 0.
+	currentBlock := self Label.
+	jump1 jmpTarget: currentBlock.
+	self MoveR: t1 R: t2.
+	self AndCq: 16rFFFFFF0000000000 R: t2.
+	self CmpCq: 0 R: t2.
+	jump1 := self JumpZero: 0.
+	self genMoveConstant: 0 R: t2.
+	jump4 := self Jump: 0.
+	currentBlock := self Label.
+	jump1 jmpTarget: currentBlock.
+	self CmpCq: 0 R: t1.
+	jumpTrue := self JumpGreaterOrEqual: 0.
+	self genMoveConstant: 0 R: t2.
+	jumpNext := self Jump: 0.
+	jumpTrue jmpTarget: self Label.
+	self genMoveConstant: 1 R: t2.
+	jumpNext jmpTarget: self Label.
+	currentBlock := self Label.
+	jump4 jmpTarget: currentBlock.
+	currentBlock := self Label.
+	jump3 jmpTarget: currentBlock.
+	self CmpCq: 1 R: t2.
+	jump3 := self JumpNonZero: 0.
+	self MoveM64: 0 r: t0 R: t2.
+	self ArithmeticShiftRightCq: 29 R: t2.
+	self AndCq: 1 R: t2.
+	self CmpCq: 0 R: t2.
+	jump4 := self JumpNonZero: 0.
+	self MoveR: t0 R: TempReg.
+	backEnd saveAndRestoreLinkRegAround: [
+		self CallRT: ceStoreCheckTrampoline ].
+	self annotateBytecode: self Label.
+	self TstCq: 7 R: t1.
+	jump1 := self JumpNonZero: 0.
+	jump5 := self JumpZero: 0.
+	currentBlock := self Label.
+	jump2 jmpTarget: currentBlock.
+	jump3 jmpTarget: currentBlock.
+	jump4 jmpTarget: currentBlock.
+	self TstCq: 7 R: t1.
+	jump4 := self JumpNonZero: 0.
+	currentBlock := self Label.
+	jump5 jmpTarget: currentBlock.
+	self CmpCq: objectMemory nilObject R: t1.
+	jump5 := self JumpGreaterOrEqual: 0.
+	self genMoveConstant: 0 R: t2.
+	jump3 := self Jump: 0.
+	currentBlock := self Label.
+	jump5 jmpTarget: currentBlock.
+	self CmpCq: objectMemory trueObject R: t1.
+	jumpTrue := self JumpLessOrEqual: 0.
+	self genMoveConstant: 0 R: t2.
+	jumpNext := self Jump: 0.
+	jumpTrue jmpTarget: self Label.
+	self genMoveConstant: 1 R: t2.
+	jumpNext jmpTarget: self Label.
+	currentBlock := self Label.
+	jump3 jmpTarget: currentBlock.
+	self CmpCq: 1 R: t2.
+	jump3 := self JumpZero: 0.
+	self CmpCq: 0 R: t1.
+	jump5 := self JumpLess: 0.
+	self MoveM64: 0 r: t0 R: t2.
+	self ArithmeticShiftRightCq: 29 R: t2.
+	self AndCq: 1 R: t2.
+	self CmpCq: 0 R: t2.
+	jump2 := self JumpNonZero: 0.
+	self MoveR: t0 R: t2.
+	self AndCq: 7 R: t2.
+	self CmpCq: 0 R: t2.
+	jump6 := self JumpZero: 0.
+	self genMoveConstant: 0 R: t2.
+	jump7 := self Jump: 0.
+	currentBlock := self Label.
+	jump6 jmpTarget: currentBlock.
+	self MoveR: t0 R: t2.
+	self AndCq: 16rFFFFFF0000000000 R: t2.
+	self CmpCq: 16r20000000000 R: t2.
+	jumpTrue := self JumpZero: 0.
+	self genMoveConstant: 0 R: t2.
+	jumpNext := self Jump: 0.
+	jumpTrue jmpTarget: self Label.
+	self genMoveConstant: 1 R: t2.
+	jumpNext jmpTarget: self Label.
+	currentBlock := self Label.
+	jump7 jmpTarget: currentBlock.
+	self CmpCq: 1 R: t2.
+	jump7 := self JumpNonZero: 0.
+	self MoveR: t1 R: t2.
+	self AndCq: 16rFFFFFF0000000000 R: t2.
+	self CmpCq: 16r20000000000 R: t2.
+	jump6 := self JumpZero: 0.
+	self MoveR: t0 R: TempReg.
+	backEnd saveAndRestoreLinkRegAround: [
+		self CallRT: ceStoreCheckTrampoline ].
+	self annotateBytecode: self Label.
+	currentBlock := self Label.
+	jump1 jmpTarget: currentBlock.
+	jump4 jmpTarget: currentBlock.
+	jump3 jmpTarget: currentBlock.
+	jump5 jmpTarget: currentBlock.
+	jump2 jmpTarget: currentBlock.
+	jump7 jmpTarget: currentBlock.
+	jump6 jmpTarget: currentBlock.
+	self MoveR: t1 M64: 56 r: t0.
+	^ 0
+]
+
+{ #category : #generated }
+DruidJIT >> gen_StoreAndPopReceiverVariableBytecode7 [
+	"AutoGenerated by Druid"
+
+	| jump1 jump7 jumpNext t1 jump6 jump3 currentBlock t0 jump5 jumpTrue jump2 live t2 jump4 |
+	live := 0.
+	self ensureReceiverResultRegContainsSelf.
+	t0 := self
+		      allocateRegNotConflictingWith: live
+		      ifNone: [ ^ self unknownBytecode ].
+	live := live bitOr: (self registerMaskFor: t0).
+	self MoveR: ReceiverResultReg R: t0.
+	t1 := self
+		      allocateRegNotConflictingWith: live
+		      ifNone: [ ^ self unknownBytecode ].
+	live := live bitOr: (self registerMaskFor: t1).
+	(self ssValue: 0) copyToReg: t1.
+	self ssPop: 1.
+	t2 := self
+		      allocateRegNotConflictingWith: live
+		      ifNone: [ ^ self unknownBytecode ].
+	live := live bitOr: (self registerMaskFor: t2).
+	self MoveR: t0 R: t2.
+	self AndCq: 7 R: t2.
+	self CmpCq: 0 R: t2.
+	jump1 := self JumpZero: 0.
+	self genMoveConstant: 0 R: t2.
+	jump2 := self Jump: 0.
+	currentBlock := self Label.
+	jump1 jmpTarget: currentBlock.
+	self MoveR: t0 R: t2.
+	self AndCq: 16rFFFFFF0000000000 R: t2.
+	self CmpCq: 16r10000000000 R: t2.
+	jumpTrue := self JumpZero: 0.
+	self genMoveConstant: 0 R: t2.
+	jumpNext := self Jump: 0.
+	jumpTrue jmpTarget: self Label.
+	self genMoveConstant: 1 R: t2.
+	jumpNext jmpTarget: self Label.
+	currentBlock := self Label.
+	jump2 jmpTarget: currentBlock.
+	self ssFlushStack.
+	self CmpCq: 1 R: t2.
+	jump2 := self JumpNonZero: 0.
+	self MoveR: t1 R: t2.
+	self AndCq: 7 R: t2.
+	self CmpCq: 0 R: t2.
+	jump1 := self JumpZero: 0.
+	self genMoveConstant: 0 R: t2.
+	jump3 := self Jump: 0.
+	currentBlock := self Label.
+	jump1 jmpTarget: currentBlock.
+	self MoveR: t1 R: t2.
+	self AndCq: 16rFFFFFF0000000000 R: t2.
+	self CmpCq: 0 R: t2.
+	jump1 := self JumpZero: 0.
+	self genMoveConstant: 0 R: t2.
+	jump4 := self Jump: 0.
+	currentBlock := self Label.
+	jump1 jmpTarget: currentBlock.
+	self CmpCq: 0 R: t1.
+	jumpTrue := self JumpGreaterOrEqual: 0.
+	self genMoveConstant: 0 R: t2.
+	jumpNext := self Jump: 0.
+	jumpTrue jmpTarget: self Label.
+	self genMoveConstant: 1 R: t2.
+	jumpNext jmpTarget: self Label.
+	currentBlock := self Label.
+	jump4 jmpTarget: currentBlock.
+	currentBlock := self Label.
+	jump3 jmpTarget: currentBlock.
+	self CmpCq: 1 R: t2.
+	jump3 := self JumpNonZero: 0.
+	self MoveM64: 0 r: t0 R: t2.
+	self ArithmeticShiftRightCq: 29 R: t2.
+	self AndCq: 1 R: t2.
+	self CmpCq: 0 R: t2.
+	jump4 := self JumpNonZero: 0.
+	self MoveR: t0 R: TempReg.
+	backEnd saveAndRestoreLinkRegAround: [
+		self CallRT: ceStoreCheckTrampoline ].
+	self annotateBytecode: self Label.
+	self TstCq: 7 R: t1.
+	jump1 := self JumpNonZero: 0.
+	jump5 := self JumpZero: 0.
+	currentBlock := self Label.
+	jump2 jmpTarget: currentBlock.
+	jump3 jmpTarget: currentBlock.
+	jump4 jmpTarget: currentBlock.
+	self TstCq: 7 R: t1.
+	jump4 := self JumpNonZero: 0.
+	currentBlock := self Label.
+	jump5 jmpTarget: currentBlock.
+	self CmpCq: objectMemory nilObject R: t1.
+	jump5 := self JumpGreaterOrEqual: 0.
+	self genMoveConstant: 0 R: t2.
+	jump3 := self Jump: 0.
+	currentBlock := self Label.
+	jump5 jmpTarget: currentBlock.
+	self CmpCq: objectMemory trueObject R: t1.
+	jumpTrue := self JumpLessOrEqual: 0.
+	self genMoveConstant: 0 R: t2.
+	jumpNext := self Jump: 0.
+	jumpTrue jmpTarget: self Label.
+	self genMoveConstant: 1 R: t2.
+	jumpNext jmpTarget: self Label.
+	currentBlock := self Label.
+	jump3 jmpTarget: currentBlock.
+	self CmpCq: 1 R: t2.
+	jump3 := self JumpZero: 0.
+	self CmpCq: 0 R: t1.
+	jump5 := self JumpLess: 0.
+	self MoveM64: 0 r: t0 R: t2.
+	self ArithmeticShiftRightCq: 29 R: t2.
+	self AndCq: 1 R: t2.
+	self CmpCq: 0 R: t2.
+	jump2 := self JumpNonZero: 0.
+	self MoveR: t0 R: t2.
+	self AndCq: 7 R: t2.
+	self CmpCq: 0 R: t2.
+	jump6 := self JumpZero: 0.
+	self genMoveConstant: 0 R: t2.
+	jump7 := self Jump: 0.
+	currentBlock := self Label.
+	jump6 jmpTarget: currentBlock.
+	self MoveR: t0 R: t2.
+	self AndCq: 16rFFFFFF0000000000 R: t2.
+	self CmpCq: 16r20000000000 R: t2.
+	jumpTrue := self JumpZero: 0.
+	self genMoveConstant: 0 R: t2.
+	jumpNext := self Jump: 0.
+	jumpTrue jmpTarget: self Label.
+	self genMoveConstant: 1 R: t2.
+	jumpNext jmpTarget: self Label.
+	currentBlock := self Label.
+	jump7 jmpTarget: currentBlock.
+	self CmpCq: 1 R: t2.
+	jump7 := self JumpNonZero: 0.
+	self MoveR: t1 R: t2.
+	self AndCq: 16rFFFFFF0000000000 R: t2.
+	self CmpCq: 16r20000000000 R: t2.
+	jump6 := self JumpZero: 0.
+	self MoveR: t0 R: TempReg.
+	backEnd saveAndRestoreLinkRegAround: [
+		self CallRT: ceStoreCheckTrampoline ].
+	self annotateBytecode: self Label.
+	currentBlock := self Label.
+	jump1 jmpTarget: currentBlock.
+	jump4 jmpTarget: currentBlock.
+	jump3 jmpTarget: currentBlock.
+	jump5 jmpTarget: currentBlock.
+	jump2 jmpTarget: currentBlock.
+	jump7 jmpTarget: currentBlock.
+	jump6 jmpTarget: currentBlock.
+	self MoveR: t1 M64: 64 r: t0.
+	^ 0
+]
+
+{ #category : #generated }
 DruidJIT >> gen_StoreAndPopTemporaryVariableBytecode0 [
 	"AutoGenerated by Druid"
 
@@ -7378,11 +8728,9 @@ DruidJIT >> generateObjectRepresentationTrampolines [
 	 remembered set and setting its isRemembered bit."
 	self 
 		cppIf: IMMUTABILITY
-		ifTrue: [
-			self 
-				cCode: [] 
-				inSmalltalk: [ ceStoreTrampolines := CArrayAccessor on: (Array new: NumStoreTrampolines) ].
-				
+		ifTrue: 
+			[self cCode: [] inSmalltalk:
+				[ceStoreTrampolines := CArrayAccessor on: (Array new: NumStoreTrampolines)].
 			 0 to: NumStoreTrampolines - 1 do:
 				[:instVarIndex |
 				 ceStoreTrampolines
@@ -7504,7 +8852,8 @@ DruidJIT >> markAndTraceLiteral: literal in: cogMethodOrNil atpc: address [
 		[objectMemory markAndTrace: literal.
 		 ^false].
 	objOop := objectMemory followForwarded: literal.
-	self backEnd storeLiteral: objOop beforeFollowingAddress: address.
+	
+	self storeLiteral: objOop atAnnotatedAddress: address.
 	self markAndTraceUpdatedLiteral: objOop in: cogMethodOrNil.
 	^true
 ]
