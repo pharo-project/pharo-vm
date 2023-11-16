@@ -7393,23 +7393,23 @@ DruidJIT >> gen_StoreAndPopReceiverVariableBytecode0 [
 	self CmpCq: 0 R: t2.
 	jump1 := self JumpNonZero: 0.
 	self MoveR: t0 R: t2.
-	self AndCq: objectMemory getMemoryMap spaceMaskToUse R: t2.
-	self CmpCq: objectMemory getMemoryMap oldSpaceMask R: t2.
+	self AndCq: objectMemory getMemoryMap getSpaceMaskToUse R: t2.
+	self CmpCq: objectMemory getMemoryMap getOldSpaceMask R: t2.
 	jump2 := self JumpNonZero: 0.
 	self MoveR: t1 R: t2.
 	self AndCq: 7 R: t2.
 	self CmpCq: 0 R: t2.
 	jump3 := self JumpNonZero: 0.
 	self MoveR: t1 R: t2.
-	self AndCq: objectMemory getMemoryMap spaceMaskToUse R: t2.
-	self CmpCq: objectMemory getMemoryMap newSpaceMask R: t2.
+	self AndCq: objectMemory getMemoryMap getSpaceMaskToUse R: t2.
+	self CmpCq: objectMemory getMemoryMap getNewSpaceMask R: t2.
 	jump4 := self JumpZero: 0.
 	self MoveCq: 0 R: t2.
 	jump5 := self Jump: 0.
 	currentBlock := self Label.
 	jump4 jmpTarget: currentBlock.
 	self MoveR: t1 R: t2.
-	self CmpCq: objectMemory getMemoryMap newSpaceStart R: t2.
+	self CmpCq: objectMemory getMemoryMap getNewSpaceStart R: t2.
 	jumpTrue := self JumpGreaterOrEqual: 0.
 	self MoveCq: 0 R: t2.
 	jumpNext := self Jump: 0.
@@ -7463,7 +7463,7 @@ DruidJIT >> gen_StoreAndPopReceiverVariableBytecode0 [
 	jump5 jmpTarget: currentBlock.
 	self CmpCq: 1 R: t2.
 	jump5 := self JumpZero: 0.
-	self CmpCq: objectMemory getMemoryMap newSpaceStart R: t1.
+	self CmpCq: objectMemory getMemoryMap getNewSpaceStart R: t1.
 	jump7 := self JumpLess: 0.
 	self MoveM64: 0 r: t0 R: t2.
 	self ArithmeticShiftRightCq: 29 R: t2.
@@ -7479,8 +7479,8 @@ DruidJIT >> gen_StoreAndPopReceiverVariableBytecode0 [
 	currentBlock := self Label.
 	jump2 jmpTarget: currentBlock.
 	self MoveR: t0 R: t2.
-	self AndCq: objectMemory getMemoryMap spaceMaskToUse R: t2.
-	self CmpCq: objectMemory getMemoryMap permSpaceMask R: t2.
+	self AndCq: objectMemory getMemoryMap getSpaceMaskToUse R: t2.
+	self CmpCq: objectMemory getMemoryMap getPermSpaceMask R: t2.
 	jumpTrue := self JumpZero: 0.
 	self MoveCq: 0 R: t2.
 	jumpNext := self Jump: 0.
@@ -7492,8 +7492,8 @@ DruidJIT >> gen_StoreAndPopReceiverVariableBytecode0 [
 	self CmpCq: 1 R: t2.
 	jump1 := self JumpNonZero: 0.
 	self MoveR: t1 R: t2.
-	self AndCq: objectMemory getMemoryMap spaceMaskToUse R: t2.
-	self CmpCq: objectMemory getMemoryMap permSpaceMask R: t2.
+	self AndCq: objectMemory getMemoryMap getSpaceMaskToUse R: t2.
+	self CmpCq: objectMemory getMemoryMap getPermSpaceMask R: t2.
 	jump2 := self JumpZero: 0.
 	self MoveR: t0 R: TempReg.
 	backEnd saveAndRestoreLinkRegAround: [
@@ -7539,23 +7539,23 @@ DruidJIT >> gen_StoreAndPopReceiverVariableBytecode1 [
 	self CmpCq: 0 R: t2.
 	jump1 := self JumpNonZero: 0.
 	self MoveR: t0 R: t2.
-	self AndCq: objectMemory getMemoryMap spaceMaskToUse R: t2.
-	self CmpCq: objectMemory getMemoryMap oldSpaceMask R: t2.
+	self AndCq: objectMemory getMemoryMap getSpaceMaskToUse R: t2.
+	self CmpCq: objectMemory getMemoryMap getOldSpaceMask R: t2.
 	jump2 := self JumpNonZero: 0.
 	self MoveR: t1 R: t2.
 	self AndCq: 7 R: t2.
 	self CmpCq: 0 R: t2.
 	jump3 := self JumpNonZero: 0.
 	self MoveR: t1 R: t2.
-	self AndCq: objectMemory getMemoryMap spaceMaskToUse R: t2.
-	self CmpCq: objectMemory getMemoryMap newSpaceMask R: t2.
+	self AndCq: objectMemory getMemoryMap getSpaceMaskToUse R: t2.
+	self CmpCq: objectMemory getMemoryMap getNewSpaceMask R: t2.
 	jump4 := self JumpZero: 0.
 	self MoveCq: 0 R: t2.
 	jump5 := self Jump: 0.
 	currentBlock := self Label.
 	jump4 jmpTarget: currentBlock.
 	self MoveR: t1 R: t2.
-	self CmpCq: objectMemory getMemoryMap newSpaceStart R: t2.
+	self CmpCq: objectMemory getMemoryMap getNewSpaceStart R: t2.
 	jumpTrue := self JumpGreaterOrEqual: 0.
 	self MoveCq: 0 R: t2.
 	jumpNext := self Jump: 0.
@@ -7609,7 +7609,7 @@ DruidJIT >> gen_StoreAndPopReceiverVariableBytecode1 [
 	jump5 jmpTarget: currentBlock.
 	self CmpCq: 1 R: t2.
 	jump5 := self JumpZero: 0.
-	self CmpCq: objectMemory getMemoryMap newSpaceStart R: t1.
+	self CmpCq: objectMemory getMemoryMap getNewSpaceStart R: t1.
 	jump7 := self JumpLess: 0.
 	self MoveM64: 0 r: t0 R: t2.
 	self ArithmeticShiftRightCq: 29 R: t2.
@@ -7625,8 +7625,8 @@ DruidJIT >> gen_StoreAndPopReceiverVariableBytecode1 [
 	currentBlock := self Label.
 	jump2 jmpTarget: currentBlock.
 	self MoveR: t0 R: t2.
-	self AndCq: objectMemory getMemoryMap spaceMaskToUse R: t2.
-	self CmpCq: objectMemory getMemoryMap permSpaceMask R: t2.
+	self AndCq: objectMemory getMemoryMap getSpaceMaskToUse R: t2.
+	self CmpCq: objectMemory getMemoryMap getPermSpaceMask R: t2.
 	jumpTrue := self JumpZero: 0.
 	self MoveCq: 0 R: t2.
 	jumpNext := self Jump: 0.
@@ -7638,8 +7638,8 @@ DruidJIT >> gen_StoreAndPopReceiverVariableBytecode1 [
 	self CmpCq: 1 R: t2.
 	jump1 := self JumpNonZero: 0.
 	self MoveR: t1 R: t2.
-	self AndCq: objectMemory getMemoryMap spaceMaskToUse R: t2.
-	self CmpCq: objectMemory getMemoryMap permSpaceMask R: t2.
+	self AndCq: objectMemory getMemoryMap getSpaceMaskToUse R: t2.
+	self CmpCq: objectMemory getMemoryMap getPermSpaceMask R: t2.
 	jump2 := self JumpZero: 0.
 	self MoveR: t0 R: TempReg.
 	backEnd saveAndRestoreLinkRegAround: [
@@ -7685,23 +7685,23 @@ DruidJIT >> gen_StoreAndPopReceiverVariableBytecode2 [
 	self CmpCq: 0 R: t2.
 	jump1 := self JumpNonZero: 0.
 	self MoveR: t0 R: t2.
-	self AndCq: objectMemory getMemoryMap spaceMaskToUse R: t2.
-	self CmpCq: objectMemory getMemoryMap oldSpaceMask R: t2.
+	self AndCq: objectMemory getMemoryMap getSpaceMaskToUse R: t2.
+	self CmpCq: objectMemory getMemoryMap getOldSpaceMask R: t2.
 	jump2 := self JumpNonZero: 0.
 	self MoveR: t1 R: t2.
 	self AndCq: 7 R: t2.
 	self CmpCq: 0 R: t2.
 	jump3 := self JumpNonZero: 0.
 	self MoveR: t1 R: t2.
-	self AndCq: objectMemory getMemoryMap spaceMaskToUse R: t2.
-	self CmpCq: objectMemory getMemoryMap newSpaceMask R: t2.
+	self AndCq: objectMemory getMemoryMap getSpaceMaskToUse R: t2.
+	self CmpCq: objectMemory getMemoryMap getNewSpaceMask R: t2.
 	jump4 := self JumpZero: 0.
 	self MoveCq: 0 R: t2.
 	jump5 := self Jump: 0.
 	currentBlock := self Label.
 	jump4 jmpTarget: currentBlock.
 	self MoveR: t1 R: t2.
-	self CmpCq: objectMemory getMemoryMap newSpaceStart R: t2.
+	self CmpCq: objectMemory getMemoryMap getNewSpaceStart R: t2.
 	jumpTrue := self JumpGreaterOrEqual: 0.
 	self MoveCq: 0 R: t2.
 	jumpNext := self Jump: 0.
@@ -7755,7 +7755,7 @@ DruidJIT >> gen_StoreAndPopReceiverVariableBytecode2 [
 	jump5 jmpTarget: currentBlock.
 	self CmpCq: 1 R: t2.
 	jump5 := self JumpZero: 0.
-	self CmpCq: objectMemory getMemoryMap newSpaceStart R: t1.
+	self CmpCq: objectMemory getMemoryMap getNewSpaceStart R: t1.
 	jump7 := self JumpLess: 0.
 	self MoveM64: 0 r: t0 R: t2.
 	self ArithmeticShiftRightCq: 29 R: t2.
@@ -7771,8 +7771,8 @@ DruidJIT >> gen_StoreAndPopReceiverVariableBytecode2 [
 	currentBlock := self Label.
 	jump2 jmpTarget: currentBlock.
 	self MoveR: t0 R: t2.
-	self AndCq: objectMemory getMemoryMap spaceMaskToUse R: t2.
-	self CmpCq: objectMemory getMemoryMap permSpaceMask R: t2.
+	self AndCq: objectMemory getMemoryMap getSpaceMaskToUse R: t2.
+	self CmpCq: objectMemory getMemoryMap getPermSpaceMask R: t2.
 	jumpTrue := self JumpZero: 0.
 	self MoveCq: 0 R: t2.
 	jumpNext := self Jump: 0.
@@ -7784,8 +7784,8 @@ DruidJIT >> gen_StoreAndPopReceiverVariableBytecode2 [
 	self CmpCq: 1 R: t2.
 	jump1 := self JumpNonZero: 0.
 	self MoveR: t1 R: t2.
-	self AndCq: objectMemory getMemoryMap spaceMaskToUse R: t2.
-	self CmpCq: objectMemory getMemoryMap permSpaceMask R: t2.
+	self AndCq: objectMemory getMemoryMap getSpaceMaskToUse R: t2.
+	self CmpCq: objectMemory getMemoryMap getPermSpaceMask R: t2.
 	jump2 := self JumpZero: 0.
 	self MoveR: t0 R: TempReg.
 	backEnd saveAndRestoreLinkRegAround: [
@@ -7831,23 +7831,23 @@ DruidJIT >> gen_StoreAndPopReceiverVariableBytecode3 [
 	self CmpCq: 0 R: t2.
 	jump1 := self JumpNonZero: 0.
 	self MoveR: t0 R: t2.
-	self AndCq: objectMemory getMemoryMap spaceMaskToUse R: t2.
-	self CmpCq: objectMemory getMemoryMap oldSpaceMask R: t2.
+	self AndCq: objectMemory getMemoryMap getSpaceMaskToUse R: t2.
+	self CmpCq: objectMemory getMemoryMap getOldSpaceMask R: t2.
 	jump2 := self JumpNonZero: 0.
 	self MoveR: t1 R: t2.
 	self AndCq: 7 R: t2.
 	self CmpCq: 0 R: t2.
 	jump3 := self JumpNonZero: 0.
 	self MoveR: t1 R: t2.
-	self AndCq: objectMemory getMemoryMap spaceMaskToUse R: t2.
-	self CmpCq: objectMemory getMemoryMap newSpaceMask R: t2.
+	self AndCq: objectMemory getMemoryMap getSpaceMaskToUse R: t2.
+	self CmpCq: objectMemory getMemoryMap getNewSpaceMask R: t2.
 	jump4 := self JumpZero: 0.
 	self MoveCq: 0 R: t2.
 	jump5 := self Jump: 0.
 	currentBlock := self Label.
 	jump4 jmpTarget: currentBlock.
 	self MoveR: t1 R: t2.
-	self CmpCq: objectMemory getMemoryMap newSpaceStart R: t2.
+	self CmpCq: objectMemory getMemoryMap getNewSpaceStart R: t2.
 	jumpTrue := self JumpGreaterOrEqual: 0.
 	self MoveCq: 0 R: t2.
 	jumpNext := self Jump: 0.
@@ -7901,7 +7901,7 @@ DruidJIT >> gen_StoreAndPopReceiverVariableBytecode3 [
 	jump5 jmpTarget: currentBlock.
 	self CmpCq: 1 R: t2.
 	jump5 := self JumpZero: 0.
-	self CmpCq: objectMemory getMemoryMap newSpaceStart R: t1.
+	self CmpCq: objectMemory getMemoryMap getNewSpaceStart R: t1.
 	jump7 := self JumpLess: 0.
 	self MoveM64: 0 r: t0 R: t2.
 	self ArithmeticShiftRightCq: 29 R: t2.
@@ -7917,8 +7917,8 @@ DruidJIT >> gen_StoreAndPopReceiverVariableBytecode3 [
 	currentBlock := self Label.
 	jump2 jmpTarget: currentBlock.
 	self MoveR: t0 R: t2.
-	self AndCq: objectMemory getMemoryMap spaceMaskToUse R: t2.
-	self CmpCq: objectMemory getMemoryMap permSpaceMask R: t2.
+	self AndCq: objectMemory getMemoryMap getSpaceMaskToUse R: t2.
+	self CmpCq: objectMemory getMemoryMap getPermSpaceMask R: t2.
 	jumpTrue := self JumpZero: 0.
 	self MoveCq: 0 R: t2.
 	jumpNext := self Jump: 0.
@@ -7930,8 +7930,8 @@ DruidJIT >> gen_StoreAndPopReceiverVariableBytecode3 [
 	self CmpCq: 1 R: t2.
 	jump1 := self JumpNonZero: 0.
 	self MoveR: t1 R: t2.
-	self AndCq: objectMemory getMemoryMap spaceMaskToUse R: t2.
-	self CmpCq: objectMemory getMemoryMap permSpaceMask R: t2.
+	self AndCq: objectMemory getMemoryMap getSpaceMaskToUse R: t2.
+	self CmpCq: objectMemory getMemoryMap getPermSpaceMask R: t2.
 	jump2 := self JumpZero: 0.
 	self MoveR: t0 R: TempReg.
 	backEnd saveAndRestoreLinkRegAround: [
@@ -7977,23 +7977,23 @@ DruidJIT >> gen_StoreAndPopReceiverVariableBytecode4 [
 	self CmpCq: 0 R: t2.
 	jump1 := self JumpNonZero: 0.
 	self MoveR: t0 R: t2.
-	self AndCq: objectMemory getMemoryMap spaceMaskToUse R: t2.
-	self CmpCq: objectMemory getMemoryMap oldSpaceMask R: t2.
+	self AndCq: objectMemory getMemoryMap getSpaceMaskToUse R: t2.
+	self CmpCq: objectMemory getMemoryMap getOldSpaceMask R: t2.
 	jump2 := self JumpNonZero: 0.
 	self MoveR: t1 R: t2.
 	self AndCq: 7 R: t2.
 	self CmpCq: 0 R: t2.
 	jump3 := self JumpNonZero: 0.
 	self MoveR: t1 R: t2.
-	self AndCq: objectMemory getMemoryMap spaceMaskToUse R: t2.
-	self CmpCq: objectMemory getMemoryMap newSpaceMask R: t2.
+	self AndCq: objectMemory getMemoryMap getSpaceMaskToUse R: t2.
+	self CmpCq: objectMemory getMemoryMap getNewSpaceMask R: t2.
 	jump4 := self JumpZero: 0.
 	self MoveCq: 0 R: t2.
 	jump5 := self Jump: 0.
 	currentBlock := self Label.
 	jump4 jmpTarget: currentBlock.
 	self MoveR: t1 R: t2.
-	self CmpCq: objectMemory getMemoryMap newSpaceStart R: t2.
+	self CmpCq: objectMemory getMemoryMap getNewSpaceStart R: t2.
 	jumpTrue := self JumpGreaterOrEqual: 0.
 	self MoveCq: 0 R: t2.
 	jumpNext := self Jump: 0.
@@ -8047,7 +8047,7 @@ DruidJIT >> gen_StoreAndPopReceiverVariableBytecode4 [
 	jump5 jmpTarget: currentBlock.
 	self CmpCq: 1 R: t2.
 	jump5 := self JumpZero: 0.
-	self CmpCq: objectMemory getMemoryMap newSpaceStart R: t1.
+	self CmpCq: objectMemory getMemoryMap getNewSpaceStart R: t1.
 	jump7 := self JumpLess: 0.
 	self MoveM64: 0 r: t0 R: t2.
 	self ArithmeticShiftRightCq: 29 R: t2.
@@ -8063,8 +8063,8 @@ DruidJIT >> gen_StoreAndPopReceiverVariableBytecode4 [
 	currentBlock := self Label.
 	jump2 jmpTarget: currentBlock.
 	self MoveR: t0 R: t2.
-	self AndCq: objectMemory getMemoryMap spaceMaskToUse R: t2.
-	self CmpCq: objectMemory getMemoryMap permSpaceMask R: t2.
+	self AndCq: objectMemory getMemoryMap getSpaceMaskToUse R: t2.
+	self CmpCq: objectMemory getMemoryMap getPermSpaceMask R: t2.
 	jumpTrue := self JumpZero: 0.
 	self MoveCq: 0 R: t2.
 	jumpNext := self Jump: 0.
@@ -8076,8 +8076,8 @@ DruidJIT >> gen_StoreAndPopReceiverVariableBytecode4 [
 	self CmpCq: 1 R: t2.
 	jump1 := self JumpNonZero: 0.
 	self MoveR: t1 R: t2.
-	self AndCq: objectMemory getMemoryMap spaceMaskToUse R: t2.
-	self CmpCq: objectMemory getMemoryMap permSpaceMask R: t2.
+	self AndCq: objectMemory getMemoryMap getSpaceMaskToUse R: t2.
+	self CmpCq: objectMemory getMemoryMap getPermSpaceMask R: t2.
 	jump2 := self JumpZero: 0.
 	self MoveR: t0 R: TempReg.
 	backEnd saveAndRestoreLinkRegAround: [
@@ -8123,23 +8123,23 @@ DruidJIT >> gen_StoreAndPopReceiverVariableBytecode5 [
 	self CmpCq: 0 R: t2.
 	jump1 := self JumpNonZero: 0.
 	self MoveR: t0 R: t2.
-	self AndCq: objectMemory getMemoryMap spaceMaskToUse R: t2.
-	self CmpCq: objectMemory getMemoryMap oldSpaceMask R: t2.
+	self AndCq: objectMemory getMemoryMap getSpaceMaskToUse R: t2.
+	self CmpCq: objectMemory getMemoryMap getOldSpaceMask R: t2.
 	jump2 := self JumpNonZero: 0.
 	self MoveR: t1 R: t2.
 	self AndCq: 7 R: t2.
 	self CmpCq: 0 R: t2.
 	jump3 := self JumpNonZero: 0.
 	self MoveR: t1 R: t2.
-	self AndCq: objectMemory getMemoryMap spaceMaskToUse R: t2.
-	self CmpCq: objectMemory getMemoryMap newSpaceMask R: t2.
+	self AndCq: objectMemory getMemoryMap getSpaceMaskToUse R: t2.
+	self CmpCq: objectMemory getMemoryMap getNewSpaceMask R: t2.
 	jump4 := self JumpZero: 0.
 	self MoveCq: 0 R: t2.
 	jump5 := self Jump: 0.
 	currentBlock := self Label.
 	jump4 jmpTarget: currentBlock.
 	self MoveR: t1 R: t2.
-	self CmpCq: objectMemory getMemoryMap newSpaceStart R: t2.
+	self CmpCq: objectMemory getMemoryMap getNewSpaceStart R: t2.
 	jumpTrue := self JumpGreaterOrEqual: 0.
 	self MoveCq: 0 R: t2.
 	jumpNext := self Jump: 0.
@@ -8193,7 +8193,7 @@ DruidJIT >> gen_StoreAndPopReceiverVariableBytecode5 [
 	jump5 jmpTarget: currentBlock.
 	self CmpCq: 1 R: t2.
 	jump5 := self JumpZero: 0.
-	self CmpCq: objectMemory getMemoryMap newSpaceStart R: t1.
+	self CmpCq: objectMemory getMemoryMap getNewSpaceStart R: t1.
 	jump7 := self JumpLess: 0.
 	self MoveM64: 0 r: t0 R: t2.
 	self ArithmeticShiftRightCq: 29 R: t2.
@@ -8209,8 +8209,8 @@ DruidJIT >> gen_StoreAndPopReceiverVariableBytecode5 [
 	currentBlock := self Label.
 	jump2 jmpTarget: currentBlock.
 	self MoveR: t0 R: t2.
-	self AndCq: objectMemory getMemoryMap spaceMaskToUse R: t2.
-	self CmpCq: objectMemory getMemoryMap permSpaceMask R: t2.
+	self AndCq: objectMemory getMemoryMap getSpaceMaskToUse R: t2.
+	self CmpCq: objectMemory getMemoryMap getPermSpaceMask R: t2.
 	jumpTrue := self JumpZero: 0.
 	self MoveCq: 0 R: t2.
 	jumpNext := self Jump: 0.
@@ -8222,8 +8222,8 @@ DruidJIT >> gen_StoreAndPopReceiverVariableBytecode5 [
 	self CmpCq: 1 R: t2.
 	jump1 := self JumpNonZero: 0.
 	self MoveR: t1 R: t2.
-	self AndCq: objectMemory getMemoryMap spaceMaskToUse R: t2.
-	self CmpCq: objectMemory getMemoryMap permSpaceMask R: t2.
+	self AndCq: objectMemory getMemoryMap getSpaceMaskToUse R: t2.
+	self CmpCq: objectMemory getMemoryMap getPermSpaceMask R: t2.
 	jump2 := self JumpZero: 0.
 	self MoveR: t0 R: TempReg.
 	backEnd saveAndRestoreLinkRegAround: [
@@ -8269,23 +8269,23 @@ DruidJIT >> gen_StoreAndPopReceiverVariableBytecode6 [
 	self CmpCq: 0 R: t2.
 	jump1 := self JumpNonZero: 0.
 	self MoveR: t0 R: t2.
-	self AndCq: objectMemory getMemoryMap spaceMaskToUse R: t2.
-	self CmpCq: objectMemory getMemoryMap oldSpaceMask R: t2.
+	self AndCq: objectMemory getMemoryMap getSpaceMaskToUse R: t2.
+	self CmpCq: objectMemory getMemoryMap getOldSpaceMask R: t2.
 	jump2 := self JumpNonZero: 0.
 	self MoveR: t1 R: t2.
 	self AndCq: 7 R: t2.
 	self CmpCq: 0 R: t2.
 	jump3 := self JumpNonZero: 0.
 	self MoveR: t1 R: t2.
-	self AndCq: objectMemory getMemoryMap spaceMaskToUse R: t2.
-	self CmpCq: objectMemory getMemoryMap newSpaceMask R: t2.
+	self AndCq: objectMemory getMemoryMap getSpaceMaskToUse R: t2.
+	self CmpCq: objectMemory getMemoryMap getNewSpaceMask R: t2.
 	jump4 := self JumpZero: 0.
 	self MoveCq: 0 R: t2.
 	jump5 := self Jump: 0.
 	currentBlock := self Label.
 	jump4 jmpTarget: currentBlock.
 	self MoveR: t1 R: t2.
-	self CmpCq: objectMemory getMemoryMap newSpaceStart R: t2.
+	self CmpCq: objectMemory getMemoryMap getNewSpaceStart R: t2.
 	jumpTrue := self JumpGreaterOrEqual: 0.
 	self MoveCq: 0 R: t2.
 	jumpNext := self Jump: 0.
@@ -8339,7 +8339,7 @@ DruidJIT >> gen_StoreAndPopReceiverVariableBytecode6 [
 	jump5 jmpTarget: currentBlock.
 	self CmpCq: 1 R: t2.
 	jump5 := self JumpZero: 0.
-	self CmpCq: objectMemory getMemoryMap newSpaceStart R: t1.
+	self CmpCq: objectMemory getMemoryMap getNewSpaceStart R: t1.
 	jump7 := self JumpLess: 0.
 	self MoveM64: 0 r: t0 R: t2.
 	self ArithmeticShiftRightCq: 29 R: t2.
@@ -8355,8 +8355,8 @@ DruidJIT >> gen_StoreAndPopReceiverVariableBytecode6 [
 	currentBlock := self Label.
 	jump2 jmpTarget: currentBlock.
 	self MoveR: t0 R: t2.
-	self AndCq: objectMemory getMemoryMap spaceMaskToUse R: t2.
-	self CmpCq: objectMemory getMemoryMap permSpaceMask R: t2.
+	self AndCq: objectMemory getMemoryMap getSpaceMaskToUse R: t2.
+	self CmpCq: objectMemory getMemoryMap getPermSpaceMask R: t2.
 	jumpTrue := self JumpZero: 0.
 	self MoveCq: 0 R: t2.
 	jumpNext := self Jump: 0.
@@ -8368,8 +8368,8 @@ DruidJIT >> gen_StoreAndPopReceiverVariableBytecode6 [
 	self CmpCq: 1 R: t2.
 	jump1 := self JumpNonZero: 0.
 	self MoveR: t1 R: t2.
-	self AndCq: objectMemory getMemoryMap spaceMaskToUse R: t2.
-	self CmpCq: objectMemory getMemoryMap permSpaceMask R: t2.
+	self AndCq: objectMemory getMemoryMap getSpaceMaskToUse R: t2.
+	self CmpCq: objectMemory getMemoryMap getPermSpaceMask R: t2.
 	jump2 := self JumpZero: 0.
 	self MoveR: t0 R: TempReg.
 	backEnd saveAndRestoreLinkRegAround: [
@@ -8415,23 +8415,23 @@ DruidJIT >> gen_StoreAndPopReceiverVariableBytecode7 [
 	self CmpCq: 0 R: t2.
 	jump1 := self JumpNonZero: 0.
 	self MoveR: t0 R: t2.
-	self AndCq: objectMemory getMemoryMap spaceMaskToUse R: t2.
-	self CmpCq: objectMemory getMemoryMap oldSpaceMask R: t2.
+	self AndCq: objectMemory getMemoryMap getSpaceMaskToUse R: t2.
+	self CmpCq: objectMemory getMemoryMap getOldSpaceMask R: t2.
 	jump2 := self JumpNonZero: 0.
 	self MoveR: t1 R: t2.
 	self AndCq: 7 R: t2.
 	self CmpCq: 0 R: t2.
 	jump3 := self JumpNonZero: 0.
 	self MoveR: t1 R: t2.
-	self AndCq: objectMemory getMemoryMap spaceMaskToUse R: t2.
-	self CmpCq: objectMemory getMemoryMap newSpaceMask R: t2.
+	self AndCq: objectMemory getMemoryMap getSpaceMaskToUse R: t2.
+	self CmpCq: objectMemory getMemoryMap getNewSpaceMask R: t2.
 	jump4 := self JumpZero: 0.
 	self MoveCq: 0 R: t2.
 	jump5 := self Jump: 0.
 	currentBlock := self Label.
 	jump4 jmpTarget: currentBlock.
 	self MoveR: t1 R: t2.
-	self CmpCq: objectMemory getMemoryMap newSpaceStart R: t2.
+	self CmpCq: objectMemory getMemoryMap getNewSpaceStart R: t2.
 	jumpTrue := self JumpGreaterOrEqual: 0.
 	self MoveCq: 0 R: t2.
 	jumpNext := self Jump: 0.
@@ -8485,7 +8485,7 @@ DruidJIT >> gen_StoreAndPopReceiverVariableBytecode7 [
 	jump5 jmpTarget: currentBlock.
 	self CmpCq: 1 R: t2.
 	jump5 := self JumpZero: 0.
-	self CmpCq: objectMemory getMemoryMap newSpaceStart R: t1.
+	self CmpCq: objectMemory getMemoryMap getNewSpaceStart R: t1.
 	jump7 := self JumpLess: 0.
 	self MoveM64: 0 r: t0 R: t2.
 	self ArithmeticShiftRightCq: 29 R: t2.
@@ -8501,8 +8501,8 @@ DruidJIT >> gen_StoreAndPopReceiverVariableBytecode7 [
 	currentBlock := self Label.
 	jump2 jmpTarget: currentBlock.
 	self MoveR: t0 R: t2.
-	self AndCq: objectMemory getMemoryMap spaceMaskToUse R: t2.
-	self CmpCq: objectMemory getMemoryMap permSpaceMask R: t2.
+	self AndCq: objectMemory getMemoryMap getSpaceMaskToUse R: t2.
+	self CmpCq: objectMemory getMemoryMap getPermSpaceMask R: t2.
 	jumpTrue := self JumpZero: 0.
 	self MoveCq: 0 R: t2.
 	jumpNext := self Jump: 0.
@@ -8514,8 +8514,8 @@ DruidJIT >> gen_StoreAndPopReceiverVariableBytecode7 [
 	self CmpCq: 1 R: t2.
 	jump1 := self JumpNonZero: 0.
 	self MoveR: t1 R: t2.
-	self AndCq: objectMemory getMemoryMap spaceMaskToUse R: t2.
-	self CmpCq: objectMemory getMemoryMap permSpaceMask R: t2.
+	self AndCq: objectMemory getMemoryMap getSpaceMaskToUse R: t2.
+	self CmpCq: objectMemory getMemoryMap getPermSpaceMask R: t2.
 	jump2 := self JumpZero: 0.
 	self MoveR: t0 R: TempReg.
 	backEnd saveAndRestoreLinkRegAround: [
