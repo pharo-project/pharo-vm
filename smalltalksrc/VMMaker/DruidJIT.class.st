@@ -261,8 +261,8 @@ DruidJIT class >> bytecodeTable [
 		  { 1. 221. 221. #unknownBytecode }.
 		  { 1. 222. 222. #unknownBytecode }.
 		  { 1. 223. 223. #unknownBytecode }.
-		  { 2. 224. 224. #unknownBytecode }.
-		  { 2. 225. 225. #unknownBytecode }.
+		  { 2. 224. 224. #gen_ExtABytecode. #extension }.
+		  { 2. 225. 225. #gen_ExtBBytecode. #extension }.
 		  { 2. 226. 226. #unknownBytecode }.
 		  { 2. 227. 227. #unknownBytecode }.
 		  { 2. 228. 228. #unknownBytecode }.
@@ -285,7 +285,7 @@ DruidJIT class >> bytecodeTable [
 		  { 2. 245. 245. #unknownBytecode }.
 		  { 2. 246. 246. #unknownBytecode }.
 		  { 2. 247. 247. #unknownBytecode }.
-		  { 3. 248. 248. #unknownBytecode }.
+		  { 3. 248. 248. #genCallPrimitiveBytecode }.
 		  { 3. 249. 249. #unknownBytecode }.
 		  { 3. 250. 250. #unknownBytecode }.
 		  { 3. 251. 251. #unknownBytecode }.
@@ -2295,6 +2295,7 @@ DruidJIT >> gen_ExtJumpIfFalse [
 	jump1 jmpTarget: currentBlock.
 	self Jump:
 		(self ensureFixupAt: bytecodePC + 1 + (byte1 + (r3 << 8)) + 1).
+	deadCode := true.
 	deadCode := false.
 	currentBlock := self Label.
 	jump2 jmpTarget: currentBlock.
@@ -2331,6 +2332,7 @@ DruidJIT >> gen_ExtJumpIfTrue [
 	jump1 jmpTarget: currentBlock.
 	self Jump:
 		(self ensureFixupAt: bytecodePC + 1 + (byte1 + (r3 << 8)) + 1).
+	deadCode := true.
 	deadCode := false.
 	currentBlock := self Label.
 	jump2 jmpTarget: currentBlock.
@@ -2425,7 +2427,11 @@ DruidJIT >> gen_ExtPushLiteralVariableBytecode [
 	self MoveR: t0 R: t1.
 	self AndCq: 7 R: t1.
 	self CmpCq: 0 R: t1.
-	jump1 := self JumpNonZero: 0.
+	jump1 := self JumpZero: 0.
+	self MoveCq: 0 R: t1.
+	jump3 := self Jump: 0.
+	currentBlock := self Label.
+	jump1 jmpTarget: currentBlock.
 	self MoveM64: 0 r: t0 R: t1.
 	self AndCq: 16r3FFFF7 R: t1.
 	t2 := self
@@ -2435,10 +2441,10 @@ DruidJIT >> gen_ExtPushLiteralVariableBytecode [
 	self MoveR: t1 R: t2.
 	self CmpCq: 0 R: t2.
 	jumpTrue := self JumpZero: 0.
-	self MoveCq: 0 R: t2.
+	self MoveCq: 0 R: t1.
 	jumpNext := self Jump: 0.
 	jumpTrue jmpTarget: self Label.
-	self MoveCq: 1 R: t2.
+	self MoveCq: 1 R: t1.
 	jumpNext jmpTarget: self Label.
 	self CmpCq: 0 R: t1.
 	jump3 := self JumpZero: 0.
@@ -2565,6 +2571,7 @@ DruidJIT >> gen_ExtUnconditionalJump [
 		jump2 jmpTarget: currentBlock.
 		self Jump:
 			(self ensureFixupAt: bytecodePC + 1 + (byte1 + (r3 << 8)) + 1).
+		deadCode := true.
 		^ 0 ].
 	self MoveCq: 0 R: t0.
 	extB := 0.
@@ -2588,6 +2595,7 @@ DruidJIT >> gen_ExtUnconditionalJump [
 	jump1 jmpTarget: currentBlock.
 	self Jump:
 		(self ensureFixupAt: bytecodePC + 1 + (byte1 + (r3 << 8)) + 1).
+	deadCode := true.
 	^ 0
 ]
 
@@ -4286,7 +4294,11 @@ DruidJIT >> gen_PushLiteralVariable16CasesBytecode0 [
 	self MoveR: t0 R: t1.
 	self AndCq: 7 R: t1.
 	self CmpCq: 0 R: t1.
-	jump1 := self JumpNonZero: 0.
+	jump1 := self JumpZero: 0.
+	self MoveCq: 0 R: t1.
+	jump3 := self Jump: 0.
+	currentBlock := self Label.
+	jump1 jmpTarget: currentBlock.
 	self MoveM64: 0 r: t0 R: t1.
 	self AndCq: 16r3FFFF7 R: t1.
 	t2 := self
@@ -4296,10 +4308,10 @@ DruidJIT >> gen_PushLiteralVariable16CasesBytecode0 [
 	self MoveR: t1 R: t2.
 	self CmpCq: 0 R: t2.
 	jumpTrue := self JumpZero: 0.
-	self MoveCq: 0 R: t2.
+	self MoveCq: 0 R: t1.
 	jumpNext := self Jump: 0.
 	jumpTrue jmpTarget: self Label.
-	self MoveCq: 1 R: t2.
+	self MoveCq: 1 R: t1.
 	jumpNext jmpTarget: self Label.
 	self CmpCq: 0 R: t1.
 	jump3 := self JumpZero: 0.
@@ -4350,7 +4362,11 @@ DruidJIT >> gen_PushLiteralVariable16CasesBytecode1 [
 	self MoveR: t0 R: t1.
 	self AndCq: 7 R: t1.
 	self CmpCq: 0 R: t1.
-	jump1 := self JumpNonZero: 0.
+	jump1 := self JumpZero: 0.
+	self MoveCq: 0 R: t1.
+	jump3 := self Jump: 0.
+	currentBlock := self Label.
+	jump1 jmpTarget: currentBlock.
 	self MoveM64: 0 r: t0 R: t1.
 	self AndCq: 16r3FFFF7 R: t1.
 	t2 := self
@@ -4360,10 +4376,10 @@ DruidJIT >> gen_PushLiteralVariable16CasesBytecode1 [
 	self MoveR: t1 R: t2.
 	self CmpCq: 0 R: t2.
 	jumpTrue := self JumpZero: 0.
-	self MoveCq: 0 R: t2.
+	self MoveCq: 0 R: t1.
 	jumpNext := self Jump: 0.
 	jumpTrue jmpTarget: self Label.
-	self MoveCq: 1 R: t2.
+	self MoveCq: 1 R: t1.
 	jumpNext jmpTarget: self Label.
 	self CmpCq: 0 R: t1.
 	jump3 := self JumpZero: 0.
@@ -4414,7 +4430,11 @@ DruidJIT >> gen_PushLiteralVariable16CasesBytecode10 [
 	self MoveR: t0 R: t1.
 	self AndCq: 7 R: t1.
 	self CmpCq: 0 R: t1.
-	jump1 := self JumpNonZero: 0.
+	jump1 := self JumpZero: 0.
+	self MoveCq: 0 R: t1.
+	jump3 := self Jump: 0.
+	currentBlock := self Label.
+	jump1 jmpTarget: currentBlock.
 	self MoveM64: 0 r: t0 R: t1.
 	self AndCq: 16r3FFFF7 R: t1.
 	t2 := self
@@ -4424,10 +4444,10 @@ DruidJIT >> gen_PushLiteralVariable16CasesBytecode10 [
 	self MoveR: t1 R: t2.
 	self CmpCq: 0 R: t2.
 	jumpTrue := self JumpZero: 0.
-	self MoveCq: 0 R: t2.
+	self MoveCq: 0 R: t1.
 	jumpNext := self Jump: 0.
 	jumpTrue jmpTarget: self Label.
-	self MoveCq: 1 R: t2.
+	self MoveCq: 1 R: t1.
 	jumpNext jmpTarget: self Label.
 	self CmpCq: 0 R: t1.
 	jump3 := self JumpZero: 0.
@@ -4478,7 +4498,11 @@ DruidJIT >> gen_PushLiteralVariable16CasesBytecode11 [
 	self MoveR: t0 R: t1.
 	self AndCq: 7 R: t1.
 	self CmpCq: 0 R: t1.
-	jump1 := self JumpNonZero: 0.
+	jump1 := self JumpZero: 0.
+	self MoveCq: 0 R: t1.
+	jump3 := self Jump: 0.
+	currentBlock := self Label.
+	jump1 jmpTarget: currentBlock.
 	self MoveM64: 0 r: t0 R: t1.
 	self AndCq: 16r3FFFF7 R: t1.
 	t2 := self
@@ -4488,10 +4512,10 @@ DruidJIT >> gen_PushLiteralVariable16CasesBytecode11 [
 	self MoveR: t1 R: t2.
 	self CmpCq: 0 R: t2.
 	jumpTrue := self JumpZero: 0.
-	self MoveCq: 0 R: t2.
+	self MoveCq: 0 R: t1.
 	jumpNext := self Jump: 0.
 	jumpTrue jmpTarget: self Label.
-	self MoveCq: 1 R: t2.
+	self MoveCq: 1 R: t1.
 	jumpNext jmpTarget: self Label.
 	self CmpCq: 0 R: t1.
 	jump3 := self JumpZero: 0.
@@ -4542,7 +4566,11 @@ DruidJIT >> gen_PushLiteralVariable16CasesBytecode12 [
 	self MoveR: t0 R: t1.
 	self AndCq: 7 R: t1.
 	self CmpCq: 0 R: t1.
-	jump1 := self JumpNonZero: 0.
+	jump1 := self JumpZero: 0.
+	self MoveCq: 0 R: t1.
+	jump3 := self Jump: 0.
+	currentBlock := self Label.
+	jump1 jmpTarget: currentBlock.
 	self MoveM64: 0 r: t0 R: t1.
 	self AndCq: 16r3FFFF7 R: t1.
 	t2 := self
@@ -4552,10 +4580,10 @@ DruidJIT >> gen_PushLiteralVariable16CasesBytecode12 [
 	self MoveR: t1 R: t2.
 	self CmpCq: 0 R: t2.
 	jumpTrue := self JumpZero: 0.
-	self MoveCq: 0 R: t2.
+	self MoveCq: 0 R: t1.
 	jumpNext := self Jump: 0.
 	jumpTrue jmpTarget: self Label.
-	self MoveCq: 1 R: t2.
+	self MoveCq: 1 R: t1.
 	jumpNext jmpTarget: self Label.
 	self CmpCq: 0 R: t1.
 	jump3 := self JumpZero: 0.
@@ -4606,7 +4634,11 @@ DruidJIT >> gen_PushLiteralVariable16CasesBytecode13 [
 	self MoveR: t0 R: t1.
 	self AndCq: 7 R: t1.
 	self CmpCq: 0 R: t1.
-	jump1 := self JumpNonZero: 0.
+	jump1 := self JumpZero: 0.
+	self MoveCq: 0 R: t1.
+	jump3 := self Jump: 0.
+	currentBlock := self Label.
+	jump1 jmpTarget: currentBlock.
 	self MoveM64: 0 r: t0 R: t1.
 	self AndCq: 16r3FFFF7 R: t1.
 	t2 := self
@@ -4616,10 +4648,10 @@ DruidJIT >> gen_PushLiteralVariable16CasesBytecode13 [
 	self MoveR: t1 R: t2.
 	self CmpCq: 0 R: t2.
 	jumpTrue := self JumpZero: 0.
-	self MoveCq: 0 R: t2.
+	self MoveCq: 0 R: t1.
 	jumpNext := self Jump: 0.
 	jumpTrue jmpTarget: self Label.
-	self MoveCq: 1 R: t2.
+	self MoveCq: 1 R: t1.
 	jumpNext jmpTarget: self Label.
 	self CmpCq: 0 R: t1.
 	jump3 := self JumpZero: 0.
@@ -4670,7 +4702,11 @@ DruidJIT >> gen_PushLiteralVariable16CasesBytecode14 [
 	self MoveR: t0 R: t1.
 	self AndCq: 7 R: t1.
 	self CmpCq: 0 R: t1.
-	jump1 := self JumpNonZero: 0.
+	jump1 := self JumpZero: 0.
+	self MoveCq: 0 R: t1.
+	jump3 := self Jump: 0.
+	currentBlock := self Label.
+	jump1 jmpTarget: currentBlock.
 	self MoveM64: 0 r: t0 R: t1.
 	self AndCq: 16r3FFFF7 R: t1.
 	t2 := self
@@ -4680,10 +4716,10 @@ DruidJIT >> gen_PushLiteralVariable16CasesBytecode14 [
 	self MoveR: t1 R: t2.
 	self CmpCq: 0 R: t2.
 	jumpTrue := self JumpZero: 0.
-	self MoveCq: 0 R: t2.
+	self MoveCq: 0 R: t1.
 	jumpNext := self Jump: 0.
 	jumpTrue jmpTarget: self Label.
-	self MoveCq: 1 R: t2.
+	self MoveCq: 1 R: t1.
 	jumpNext jmpTarget: self Label.
 	self CmpCq: 0 R: t1.
 	jump3 := self JumpZero: 0.
@@ -4734,7 +4770,11 @@ DruidJIT >> gen_PushLiteralVariable16CasesBytecode15 [
 	self MoveR: t0 R: t1.
 	self AndCq: 7 R: t1.
 	self CmpCq: 0 R: t1.
-	jump1 := self JumpNonZero: 0.
+	jump1 := self JumpZero: 0.
+	self MoveCq: 0 R: t1.
+	jump3 := self Jump: 0.
+	currentBlock := self Label.
+	jump1 jmpTarget: currentBlock.
 	self MoveM64: 0 r: t0 R: t1.
 	self AndCq: 16r3FFFF7 R: t1.
 	t2 := self
@@ -4744,10 +4784,10 @@ DruidJIT >> gen_PushLiteralVariable16CasesBytecode15 [
 	self MoveR: t1 R: t2.
 	self CmpCq: 0 R: t2.
 	jumpTrue := self JumpZero: 0.
-	self MoveCq: 0 R: t2.
+	self MoveCq: 0 R: t1.
 	jumpNext := self Jump: 0.
 	jumpTrue jmpTarget: self Label.
-	self MoveCq: 1 R: t2.
+	self MoveCq: 1 R: t1.
 	jumpNext jmpTarget: self Label.
 	self CmpCq: 0 R: t1.
 	jump3 := self JumpZero: 0.
@@ -4798,7 +4838,11 @@ DruidJIT >> gen_PushLiteralVariable16CasesBytecode2 [
 	self MoveR: t0 R: t1.
 	self AndCq: 7 R: t1.
 	self CmpCq: 0 R: t1.
-	jump1 := self JumpNonZero: 0.
+	jump1 := self JumpZero: 0.
+	self MoveCq: 0 R: t1.
+	jump3 := self Jump: 0.
+	currentBlock := self Label.
+	jump1 jmpTarget: currentBlock.
 	self MoveM64: 0 r: t0 R: t1.
 	self AndCq: 16r3FFFF7 R: t1.
 	t2 := self
@@ -4808,10 +4852,10 @@ DruidJIT >> gen_PushLiteralVariable16CasesBytecode2 [
 	self MoveR: t1 R: t2.
 	self CmpCq: 0 R: t2.
 	jumpTrue := self JumpZero: 0.
-	self MoveCq: 0 R: t2.
+	self MoveCq: 0 R: t1.
 	jumpNext := self Jump: 0.
 	jumpTrue jmpTarget: self Label.
-	self MoveCq: 1 R: t2.
+	self MoveCq: 1 R: t1.
 	jumpNext jmpTarget: self Label.
 	self CmpCq: 0 R: t1.
 	jump3 := self JumpZero: 0.
@@ -4862,7 +4906,11 @@ DruidJIT >> gen_PushLiteralVariable16CasesBytecode3 [
 	self MoveR: t0 R: t1.
 	self AndCq: 7 R: t1.
 	self CmpCq: 0 R: t1.
-	jump1 := self JumpNonZero: 0.
+	jump1 := self JumpZero: 0.
+	self MoveCq: 0 R: t1.
+	jump3 := self Jump: 0.
+	currentBlock := self Label.
+	jump1 jmpTarget: currentBlock.
 	self MoveM64: 0 r: t0 R: t1.
 	self AndCq: 16r3FFFF7 R: t1.
 	t2 := self
@@ -4872,10 +4920,10 @@ DruidJIT >> gen_PushLiteralVariable16CasesBytecode3 [
 	self MoveR: t1 R: t2.
 	self CmpCq: 0 R: t2.
 	jumpTrue := self JumpZero: 0.
-	self MoveCq: 0 R: t2.
+	self MoveCq: 0 R: t1.
 	jumpNext := self Jump: 0.
 	jumpTrue jmpTarget: self Label.
-	self MoveCq: 1 R: t2.
+	self MoveCq: 1 R: t1.
 	jumpNext jmpTarget: self Label.
 	self CmpCq: 0 R: t1.
 	jump3 := self JumpZero: 0.
@@ -4926,7 +4974,11 @@ DruidJIT >> gen_PushLiteralVariable16CasesBytecode4 [
 	self MoveR: t0 R: t1.
 	self AndCq: 7 R: t1.
 	self CmpCq: 0 R: t1.
-	jump1 := self JumpNonZero: 0.
+	jump1 := self JumpZero: 0.
+	self MoveCq: 0 R: t1.
+	jump3 := self Jump: 0.
+	currentBlock := self Label.
+	jump1 jmpTarget: currentBlock.
 	self MoveM64: 0 r: t0 R: t1.
 	self AndCq: 16r3FFFF7 R: t1.
 	t2 := self
@@ -4936,10 +4988,10 @@ DruidJIT >> gen_PushLiteralVariable16CasesBytecode4 [
 	self MoveR: t1 R: t2.
 	self CmpCq: 0 R: t2.
 	jumpTrue := self JumpZero: 0.
-	self MoveCq: 0 R: t2.
+	self MoveCq: 0 R: t1.
 	jumpNext := self Jump: 0.
 	jumpTrue jmpTarget: self Label.
-	self MoveCq: 1 R: t2.
+	self MoveCq: 1 R: t1.
 	jumpNext jmpTarget: self Label.
 	self CmpCq: 0 R: t1.
 	jump3 := self JumpZero: 0.
@@ -4990,20 +5042,19 @@ DruidJIT >> gen_PushLiteralVariable16CasesBytecode5 [
 	self MoveR: t0 R: t1.
 	self AndCq: 7 R: t1.
 	self CmpCq: 0 R: t1.
-	jump1 := self JumpNonZero: 0.
+	jump1 := self JumpZero: 0.
+	self MoveCq: 0 R: t1.
+	jump3 := self Jump: 0.
+	currentBlock := self Label.
+	jump1 jmpTarget: currentBlock.
 	self MoveM64: 0 r: t0 R: t1.
 	self AndCq: 16r3FFFF7 R: t1.
-	t2 := self
-		      allocateRegNotConflictingWith: live
-		      ifNone: [ ^ self unknownBytecode ].
-	live := live bitOr: (self registerMaskFor: t2).
-	self MoveR: t1 R: t2.
-	self CmpCq: 0 R: t2.
+	self CmpCq: 0 R: t1.
 	jumpTrue := self JumpZero: 0.
-	self MoveCq: 0 R: t2.
+	self MoveCq: 0 R: t1.
 	jumpNext := self Jump: 0.
 	jumpTrue jmpTarget: self Label.
-	self MoveCq: 1 R: t2.
+	self MoveCq: 1 R: t1.
 	jumpNext jmpTarget: self Label.
 	self CmpCq: 0 R: t1.
 	jump3 := self JumpZero: 0.
@@ -5054,7 +5105,11 @@ DruidJIT >> gen_PushLiteralVariable16CasesBytecode6 [
 	self MoveR: t0 R: t1.
 	self AndCq: 7 R: t1.
 	self CmpCq: 0 R: t1.
-	jump1 := self JumpNonZero: 0.
+	jump1 := self JumpZero: 0.
+	self MoveCq: 0 R: t1.
+	jump3 := self Jump: 0.
+	currentBlock := self Label.
+	jump1 jmpTarget: currentBlock.
 	self MoveM64: 0 r: t0 R: t1.
 	self AndCq: 16r3FFFF7 R: t1.
 	t2 := self
@@ -5064,10 +5119,10 @@ DruidJIT >> gen_PushLiteralVariable16CasesBytecode6 [
 	self MoveR: t1 R: t2.
 	self CmpCq: 0 R: t2.
 	jumpTrue := self JumpZero: 0.
-	self MoveCq: 0 R: t2.
+	self MoveCq: 0 R: t1.
 	jumpNext := self Jump: 0.
 	jumpTrue jmpTarget: self Label.
-	self MoveCq: 1 R: t2.
+	self MoveCq: 1 R: t1.
 	jumpNext jmpTarget: self Label.
 	self CmpCq: 0 R: t1.
 	jump3 := self JumpZero: 0.
@@ -5118,7 +5173,11 @@ DruidJIT >> gen_PushLiteralVariable16CasesBytecode7 [
 	self MoveR: t0 R: t1.
 	self AndCq: 7 R: t1.
 	self CmpCq: 0 R: t1.
-	jump1 := self JumpNonZero: 0.
+	jump1 := self JumpZero: 0.
+	self MoveCq: 0 R: t1.
+	jump3 := self Jump: 0.
+	currentBlock := self Label.
+	jump1 jmpTarget: currentBlock.
 	self MoveM64: 0 r: t0 R: t1.
 	self AndCq: 16r3FFFF7 R: t1.
 	t2 := self
@@ -5128,10 +5187,10 @@ DruidJIT >> gen_PushLiteralVariable16CasesBytecode7 [
 	self MoveR: t1 R: t2.
 	self CmpCq: 0 R: t2.
 	jumpTrue := self JumpZero: 0.
-	self MoveCq: 0 R: t2.
+	self MoveCq: 0 R: t1.
 	jumpNext := self Jump: 0.
 	jumpTrue jmpTarget: self Label.
-	self MoveCq: 1 R: t2.
+	self MoveCq: 1 R: t1.
 	jumpNext jmpTarget: self Label.
 	self CmpCq: 0 R: t1.
 	jump3 := self JumpZero: 0.
@@ -5182,7 +5241,11 @@ DruidJIT >> gen_PushLiteralVariable16CasesBytecode8 [
 	self MoveR: t0 R: t1.
 	self AndCq: 7 R: t1.
 	self CmpCq: 0 R: t1.
-	jump1 := self JumpNonZero: 0.
+	jump1 := self JumpZero: 0.
+	self MoveCq: 0 R: t1.
+	jump3 := self Jump: 0.
+	currentBlock := self Label.
+	jump1 jmpTarget: currentBlock.
 	self MoveM64: 0 r: t0 R: t1.
 	self AndCq: 16r3FFFF7 R: t1.
 	t2 := self
@@ -5192,10 +5255,10 @@ DruidJIT >> gen_PushLiteralVariable16CasesBytecode8 [
 	self MoveR: t1 R: t2.
 	self CmpCq: 0 R: t2.
 	jumpTrue := self JumpZero: 0.
-	self MoveCq: 0 R: t2.
+	self MoveCq: 0 R: t1.
 	jumpNext := self Jump: 0.
 	jumpTrue jmpTarget: self Label.
-	self MoveCq: 1 R: t2.
+	self MoveCq: 1 R: t1.
 	jumpNext jmpTarget: self Label.
 	self CmpCq: 0 R: t1.
 	jump3 := self JumpZero: 0.
@@ -5246,7 +5309,11 @@ DruidJIT >> gen_PushLiteralVariable16CasesBytecode9 [
 	self MoveR: t0 R: t1.
 	self AndCq: 7 R: t1.
 	self CmpCq: 0 R: t1.
-	jump1 := self JumpNonZero: 0.
+	jump1 := self JumpZero: 0.
+	self MoveCq: 0 R: t1.
+	jump3 := self Jump: 0.
+	currentBlock := self Label.
+	jump1 jmpTarget: currentBlock.
 	self MoveM64: 0 r: t0 R: t1.
 	self AndCq: 16r3FFFF7 R: t1.
 	t2 := self
@@ -5256,10 +5323,10 @@ DruidJIT >> gen_PushLiteralVariable16CasesBytecode9 [
 	self MoveR: t1 R: t2.
 	self CmpCq: 0 R: t2.
 	jumpTrue := self JumpZero: 0.
-	self MoveCq: 0 R: t2.
+	self MoveCq: 0 R: t1.
 	jumpNext := self Jump: 0.
 	jumpTrue jmpTarget: self Label.
-	self MoveCq: 1 R: t2.
+	self MoveCq: 1 R: t1.
 	jumpNext jmpTarget: self Label.
 	self CmpCq: 0 R: t1.
 	jump3 := self JumpZero: 0.
@@ -6612,6 +6679,7 @@ DruidJIT >> gen_ShortConditionalJumpFalse0 [
 	currentBlock := self Label.
 	jump1 jmpTarget: currentBlock.
 	self Jump: (self ensureFixupAt: bytecodePC + 0 + 1 + 1).
+	deadCode := true.
 	deadCode := false.
 	currentBlock := self Label.
 	jump2 jmpTarget: currentBlock.
@@ -6643,6 +6711,7 @@ DruidJIT >> gen_ShortConditionalJumpFalse1 [
 	currentBlock := self Label.
 	jump1 jmpTarget: currentBlock.
 	self Jump: (self ensureFixupAt: bytecodePC + 0 + 2 + 1).
+	deadCode := true.
 	deadCode := false.
 	currentBlock := self Label.
 	jump2 jmpTarget: currentBlock.
@@ -6674,6 +6743,7 @@ DruidJIT >> gen_ShortConditionalJumpFalse2 [
 	currentBlock := self Label.
 	jump1 jmpTarget: currentBlock.
 	self Jump: (self ensureFixupAt: bytecodePC + 0 + 3 + 1).
+	deadCode := true.
 	deadCode := false.
 	currentBlock := self Label.
 	jump2 jmpTarget: currentBlock.
@@ -6705,6 +6775,7 @@ DruidJIT >> gen_ShortConditionalJumpFalse3 [
 	currentBlock := self Label.
 	jump1 jmpTarget: currentBlock.
 	self Jump: (self ensureFixupAt: bytecodePC + 0 + 4 + 1).
+	deadCode := true.
 	deadCode := false.
 	currentBlock := self Label.
 	jump2 jmpTarget: currentBlock.
@@ -6736,6 +6807,7 @@ DruidJIT >> gen_ShortConditionalJumpFalse4 [
 	currentBlock := self Label.
 	jump1 jmpTarget: currentBlock.
 	self Jump: (self ensureFixupAt: bytecodePC + 0 + 5 + 1).
+	deadCode := true.
 	deadCode := false.
 	currentBlock := self Label.
 	jump2 jmpTarget: currentBlock.
@@ -6767,6 +6839,7 @@ DruidJIT >> gen_ShortConditionalJumpFalse5 [
 	currentBlock := self Label.
 	jump1 jmpTarget: currentBlock.
 	self Jump: (self ensureFixupAt: bytecodePC + 0 + 6 + 1).
+	deadCode := true.
 	deadCode := false.
 	currentBlock := self Label.
 	jump2 jmpTarget: currentBlock.
@@ -6798,6 +6871,7 @@ DruidJIT >> gen_ShortConditionalJumpFalse6 [
 	currentBlock := self Label.
 	jump1 jmpTarget: currentBlock.
 	self Jump: (self ensureFixupAt: bytecodePC + 0 + 7 + 1).
+	deadCode := true.
 	deadCode := false.
 	currentBlock := self Label.
 	jump2 jmpTarget: currentBlock.
@@ -6829,6 +6903,7 @@ DruidJIT >> gen_ShortConditionalJumpFalse7 [
 	currentBlock := self Label.
 	jump1 jmpTarget: currentBlock.
 	self Jump: (self ensureFixupAt: bytecodePC + 0 + 8 + 1).
+	deadCode := true.
 	deadCode := false.
 	currentBlock := self Label.
 	jump2 jmpTarget: currentBlock.
@@ -6860,6 +6935,7 @@ DruidJIT >> gen_ShortConditionalJumpTrue0 [
 	currentBlock := self Label.
 	jump1 jmpTarget: currentBlock.
 	self Jump: (self ensureFixupAt: bytecodePC + 0 + 1 + 1).
+	deadCode := true.
 	deadCode := false.
 	currentBlock := self Label.
 	jump2 jmpTarget: currentBlock.
@@ -6891,6 +6967,7 @@ DruidJIT >> gen_ShortConditionalJumpTrue1 [
 	currentBlock := self Label.
 	jump1 jmpTarget: currentBlock.
 	self Jump: (self ensureFixupAt: bytecodePC + 0 + 2 + 1).
+	deadCode := true.
 	deadCode := false.
 	currentBlock := self Label.
 	jump2 jmpTarget: currentBlock.
@@ -6922,6 +6999,7 @@ DruidJIT >> gen_ShortConditionalJumpTrue2 [
 	currentBlock := self Label.
 	jump1 jmpTarget: currentBlock.
 	self Jump: (self ensureFixupAt: bytecodePC + 0 + 3 + 1).
+	deadCode := true.
 	deadCode := false.
 	currentBlock := self Label.
 	jump2 jmpTarget: currentBlock.
@@ -6953,6 +7031,7 @@ DruidJIT >> gen_ShortConditionalJumpTrue3 [
 	currentBlock := self Label.
 	jump1 jmpTarget: currentBlock.
 	self Jump: (self ensureFixupAt: bytecodePC + 0 + 4 + 1).
+	deadCode := true.
 	deadCode := false.
 	currentBlock := self Label.
 	jump2 jmpTarget: currentBlock.
@@ -6984,6 +7063,7 @@ DruidJIT >> gen_ShortConditionalJumpTrue4 [
 	currentBlock := self Label.
 	jump1 jmpTarget: currentBlock.
 	self Jump: (self ensureFixupAt: bytecodePC + 0 + 5 + 1).
+	deadCode := true.
 	deadCode := false.
 	currentBlock := self Label.
 	jump2 jmpTarget: currentBlock.
@@ -7015,6 +7095,7 @@ DruidJIT >> gen_ShortConditionalJumpTrue5 [
 	currentBlock := self Label.
 	jump1 jmpTarget: currentBlock.
 	self Jump: (self ensureFixupAt: bytecodePC + 0 + 6 + 1).
+	deadCode := true.
 	deadCode := false.
 	currentBlock := self Label.
 	jump2 jmpTarget: currentBlock.
@@ -7046,6 +7127,7 @@ DruidJIT >> gen_ShortConditionalJumpTrue6 [
 	currentBlock := self Label.
 	jump1 jmpTarget: currentBlock.
 	self Jump: (self ensureFixupAt: bytecodePC + 0 + 7 + 1).
+	deadCode := true.
 	deadCode := false.
 	currentBlock := self Label.
 	jump2 jmpTarget: currentBlock.
@@ -7077,6 +7159,7 @@ DruidJIT >> gen_ShortConditionalJumpTrue7 [
 	currentBlock := self Label.
 	jump1 jmpTarget: currentBlock.
 	self Jump: (self ensureFixupAt: bytecodePC + 0 + 8 + 1).
+	deadCode := true.
 	deadCode := false.
 	currentBlock := self Label.
 	jump2 jmpTarget: currentBlock.
@@ -7092,6 +7175,7 @@ DruidJIT >> gen_ShortUnconditionalJump0 [
 	live := 0.
 	self ssFlushStack.
 	self Jump: (self ensureFixupAt: bytecodePC + 0 + 1 + 1).
+	deadCode := true.
 	^ 0
 ]
 
@@ -7103,6 +7187,7 @@ DruidJIT >> gen_ShortUnconditionalJump1 [
 	live := 0.
 	self ssFlushStack.
 	self Jump: (self ensureFixupAt: bytecodePC + 0 + 2 + 1).
+	deadCode := true.
 	^ 0
 ]
 
@@ -7114,6 +7199,7 @@ DruidJIT >> gen_ShortUnconditionalJump2 [
 	live := 0.
 	self ssFlushStack.
 	self Jump: (self ensureFixupAt: bytecodePC + 0 + 3 + 1).
+	deadCode := true.
 	^ 0
 ]
 
@@ -7125,6 +7211,7 @@ DruidJIT >> gen_ShortUnconditionalJump3 [
 	live := 0.
 	self ssFlushStack.
 	self Jump: (self ensureFixupAt: bytecodePC + 0 + 4 + 1).
+	deadCode := true.
 	^ 0
 ]
 
@@ -7136,6 +7223,7 @@ DruidJIT >> gen_ShortUnconditionalJump4 [
 	live := 0.
 	self ssFlushStack.
 	self Jump: (self ensureFixupAt: bytecodePC + 0 + 5 + 1).
+	deadCode := true.
 	^ 0
 ]
 
@@ -7147,6 +7235,7 @@ DruidJIT >> gen_ShortUnconditionalJump5 [
 	live := 0.
 	self ssFlushStack.
 	self Jump: (self ensureFixupAt: bytecodePC + 0 + 6 + 1).
+	deadCode := true.
 	^ 0
 ]
 
@@ -7158,6 +7247,7 @@ DruidJIT >> gen_ShortUnconditionalJump6 [
 	live := 0.
 	self ssFlushStack.
 	self Jump: (self ensureFixupAt: bytecodePC + 0 + 7 + 1).
+	deadCode := true.
 	^ 0
 ]
 
@@ -7169,6 +7259,7 @@ DruidJIT >> gen_ShortUnconditionalJump7 [
 	live := 0.
 	self ssFlushStack.
 	self Jump: (self ensureFixupAt: bytecodePC + 0 + 8 + 1).
+	deadCode := true.
 	^ 0
 ]
 
@@ -7198,26 +7289,44 @@ DruidJIT >> gen_StoreAndPopReceiverVariableBytecode0 [
 	self AndCq: 7 R: t2.
 	self ssFlushStack.
 	self CmpCq: 0 R: t2.
-	jump1 := self JumpNonZero: 0.
+	jump1 := self JumpZero: 0.
+	self MoveCq: 0 R: t2.
+	jump2 := self Jump: 0.
+	currentBlock := self Label.
+	jump1 jmpTarget: currentBlock.
 	self MoveR: t0 R: t2.
-	self AndCq: objectMemory getMemoryMap getSpaceMaskToUse R: t2.
-	self CmpCq: objectMemory getMemoryMap getOldSpaceMask R: t2.
+	self AndCq: 16rFFFFFF0000000000 R: t2.
+	self CmpCq: 16r10000000000 R: t2.
+	jumpTrue := self JumpZero: 0.
+	self MoveCq: 0 R: t2.
+	jumpNext := self Jump: 0.
+	jumpTrue jmpTarget: self Label.
+	self MoveCq: 1 R: t2.
+	jumpNext jmpTarget: self Label.
+	currentBlock := self Label.
+	jump2 jmpTarget: currentBlock.
+	self ssFlushStack.
+	self CmpCq: 1 R: t2.
 	jump2 := self JumpNonZero: 0.
 	self MoveR: t1 R: t2.
 	self AndCq: 7 R: t2.
 	self CmpCq: 0 R: t2.
-	jump3 := self JumpNonZero: 0.
-	self MoveR: t1 R: t2.
-	self AndCq: objectMemory getMemoryMap getSpaceMaskToUse R: t2.
-	self CmpCq: objectMemory getMemoryMap getNewSpaceMask R: t2.
-	jump4 := self JumpZero: 0.
+	jump1 := self JumpZero: 0.
 	self MoveCq: 0 R: t2.
-	jump5 := self Jump: 0.
+	jump3 := self Jump: 0.
 	currentBlock := self Label.
-	jump4 jmpTarget: currentBlock.
+	jump1 jmpTarget: currentBlock.
 	self MoveR: t1 R: t2.
-	self CmpCq: objectMemory getMemoryMap getNewSpaceStart R: t2.
-	jumpTrue := self JumpGreaterOrEqual: 0.
+	self AndCq: 16rFFFFFF0000000000 R: t2.
+	self CmpCq: 0 R: t2.
+	jump1 := self JumpZero: 0.
+	self MoveCq: 0 R: t2.
+	jump4 := self Jump: 0.
+	currentBlock := self Label.
+	jump1 jmpTarget: currentBlock.
+	self MoveR: t1 R: t2.
+	self CmpCq: 0 R: t2.
+	jumpTrue := self JumpAboveOrEqual: 0.
 	self MoveCq: 0 R: t2.
 	jumpNext := self Jump: 0.
 	jumpTrue jmpTarget: self Label.
@@ -7253,11 +7362,11 @@ DruidJIT >> gen_StoreAndPopReceiverVariableBytecode0 [
 	currentBlock := self Label.
 	jump7 jmpTarget: currentBlock.
 	self CmpCq: objectMemory nilObject R: t1.
-	jump7 := self JumpAboveOrEqual: 0.
+	jump5 := self JumpAboveOrEqual: 0.
 	self MoveCq: 0 R: t2.
-	jump5 := self Jump: 0.
+	jump3 := self Jump: 0.
 	currentBlock := self Label.
-	jump7 jmpTarget: currentBlock.
+	jump5 jmpTarget: currentBlock.
 	self MoveR: t1 R: t2.
 	self CmpCq: objectMemory trueObject R: t2.
 	jumpTrue := self JumpLessOrEqual: 0.
@@ -7269,9 +7378,9 @@ DruidJIT >> gen_StoreAndPopReceiverVariableBytecode0 [
 	currentBlock := self Label.
 	jump5 jmpTarget: currentBlock.
 	self CmpCq: 1 R: t2.
-	jump5 := self JumpZero: 0.
-	self CmpCq: objectMemory getMemoryMap getNewSpaceStart R: t1.
-	jump7 := self JumpLess: 0.
+	jump3 := self JumpZero: 0.
+	self CmpCq: 0 R: t1.
+	jump5 := self JumpBelow: 0.
 	self MoveM64: 0 r: t0 R: t2.
 	self ArithmeticShiftRightCq: 29 R: t2.
 	self AndCq: 1 R: t2.
@@ -7280,9 +7389,9 @@ DruidJIT >> gen_StoreAndPopReceiverVariableBytecode0 [
 	self MoveR: t0 R: t2.
 	self AndCq: 7 R: t2.
 	self CmpCq: 0 R: t2.
-	jump2 := self JumpZero: 0.
+	jump6 := self JumpZero: 0.
 	self MoveCq: 0 R: t2.
-	jump1 := self Jump: 0.
+	jump7 := self Jump: 0.
 	currentBlock := self Label.
 	jump2 jmpTarget: currentBlock.
 	self MoveR: t0 R: t2.
@@ -7344,26 +7453,44 @@ DruidJIT >> gen_StoreAndPopReceiverVariableBytecode1 [
 	self AndCq: 7 R: t2.
 	self ssFlushStack.
 	self CmpCq: 0 R: t2.
-	jump1 := self JumpNonZero: 0.
+	jump1 := self JumpZero: 0.
+	self MoveCq: 0 R: t2.
+	jump2 := self Jump: 0.
+	currentBlock := self Label.
+	jump1 jmpTarget: currentBlock.
 	self MoveR: t0 R: t2.
-	self AndCq: objectMemory getMemoryMap getSpaceMaskToUse R: t2.
-	self CmpCq: objectMemory getMemoryMap getOldSpaceMask R: t2.
+	self AndCq: 16rFFFFFF0000000000 R: t2.
+	self CmpCq: 16r10000000000 R: t2.
+	jumpTrue := self JumpZero: 0.
+	self MoveCq: 0 R: t2.
+	jumpNext := self Jump: 0.
+	jumpTrue jmpTarget: self Label.
+	self MoveCq: 1 R: t2.
+	jumpNext jmpTarget: self Label.
+	currentBlock := self Label.
+	jump2 jmpTarget: currentBlock.
+	self ssFlushStack.
+	self CmpCq: 1 R: t2.
 	jump2 := self JumpNonZero: 0.
 	self MoveR: t1 R: t2.
 	self AndCq: 7 R: t2.
 	self CmpCq: 0 R: t2.
-	jump3 := self JumpNonZero: 0.
-	self MoveR: t1 R: t2.
-	self AndCq: objectMemory getMemoryMap getSpaceMaskToUse R: t2.
-	self CmpCq: objectMemory getMemoryMap getNewSpaceMask R: t2.
-	jump4 := self JumpZero: 0.
+	jump1 := self JumpZero: 0.
 	self MoveCq: 0 R: t2.
-	jump5 := self Jump: 0.
+	jump3 := self Jump: 0.
 	currentBlock := self Label.
-	jump4 jmpTarget: currentBlock.
+	jump1 jmpTarget: currentBlock.
 	self MoveR: t1 R: t2.
-	self CmpCq: objectMemory getMemoryMap getNewSpaceStart R: t2.
-	jumpTrue := self JumpGreaterOrEqual: 0.
+	self AndCq: 16rFFFFFF0000000000 R: t2.
+	self CmpCq: 0 R: t2.
+	jump1 := self JumpZero: 0.
+	self MoveCq: 0 R: t2.
+	jump4 := self Jump: 0.
+	currentBlock := self Label.
+	jump1 jmpTarget: currentBlock.
+	self MoveR: t1 R: t2.
+	self CmpCq: 0 R: t2.
+	jumpTrue := self JumpAboveOrEqual: 0.
 	self MoveCq: 0 R: t2.
 	jumpNext := self Jump: 0.
 	jumpTrue jmpTarget: self Label.
@@ -7399,11 +7526,11 @@ DruidJIT >> gen_StoreAndPopReceiverVariableBytecode1 [
 	currentBlock := self Label.
 	jump7 jmpTarget: currentBlock.
 	self CmpCq: objectMemory nilObject R: t1.
-	jump7 := self JumpAboveOrEqual: 0.
+	jump5 := self JumpAboveOrEqual: 0.
 	self MoveCq: 0 R: t2.
-	jump5 := self Jump: 0.
+	jump3 := self Jump: 0.
 	currentBlock := self Label.
-	jump7 jmpTarget: currentBlock.
+	jump5 jmpTarget: currentBlock.
 	self MoveR: t1 R: t2.
 	self CmpCq: objectMemory trueObject R: t2.
 	jumpTrue := self JumpLessOrEqual: 0.
@@ -7415,9 +7542,9 @@ DruidJIT >> gen_StoreAndPopReceiverVariableBytecode1 [
 	currentBlock := self Label.
 	jump5 jmpTarget: currentBlock.
 	self CmpCq: 1 R: t2.
-	jump5 := self JumpZero: 0.
-	self CmpCq: objectMemory getMemoryMap getNewSpaceStart R: t1.
-	jump7 := self JumpLess: 0.
+	jump3 := self JumpZero: 0.
+	self CmpCq: 0 R: t1.
+	jump5 := self JumpBelow: 0.
 	self MoveM64: 0 r: t0 R: t2.
 	self ArithmeticShiftRightCq: 29 R: t2.
 	self AndCq: 1 R: t2.
@@ -7426,9 +7553,9 @@ DruidJIT >> gen_StoreAndPopReceiverVariableBytecode1 [
 	self MoveR: t0 R: t2.
 	self AndCq: 7 R: t2.
 	self CmpCq: 0 R: t2.
-	jump2 := self JumpZero: 0.
+	jump6 := self JumpZero: 0.
 	self MoveCq: 0 R: t2.
-	jump1 := self Jump: 0.
+	jump7 := self Jump: 0.
 	currentBlock := self Label.
 	jump2 jmpTarget: currentBlock.
 	self MoveR: t0 R: t2.
@@ -7490,26 +7617,44 @@ DruidJIT >> gen_StoreAndPopReceiverVariableBytecode2 [
 	self AndCq: 7 R: t2.
 	self ssFlushStack.
 	self CmpCq: 0 R: t2.
-	jump1 := self JumpNonZero: 0.
+	jump1 := self JumpZero: 0.
+	self MoveCq: 0 R: t2.
+	jump2 := self Jump: 0.
+	currentBlock := self Label.
+	jump1 jmpTarget: currentBlock.
 	self MoveR: t0 R: t2.
-	self AndCq: objectMemory getMemoryMap getSpaceMaskToUse R: t2.
-	self CmpCq: objectMemory getMemoryMap getOldSpaceMask R: t2.
+	self AndCq: 16rFFFFFF0000000000 R: t2.
+	self CmpCq: 16r10000000000 R: t2.
+	jumpTrue := self JumpZero: 0.
+	self MoveCq: 0 R: t2.
+	jumpNext := self Jump: 0.
+	jumpTrue jmpTarget: self Label.
+	self MoveCq: 1 R: t2.
+	jumpNext jmpTarget: self Label.
+	currentBlock := self Label.
+	jump2 jmpTarget: currentBlock.
+	self ssFlushStack.
+	self CmpCq: 1 R: t2.
 	jump2 := self JumpNonZero: 0.
 	self MoveR: t1 R: t2.
 	self AndCq: 7 R: t2.
 	self CmpCq: 0 R: t2.
-	jump3 := self JumpNonZero: 0.
-	self MoveR: t1 R: t2.
-	self AndCq: objectMemory getMemoryMap getSpaceMaskToUse R: t2.
-	self CmpCq: objectMemory getMemoryMap getNewSpaceMask R: t2.
-	jump4 := self JumpZero: 0.
+	jump1 := self JumpZero: 0.
 	self MoveCq: 0 R: t2.
-	jump5 := self Jump: 0.
+	jump3 := self Jump: 0.
 	currentBlock := self Label.
-	jump4 jmpTarget: currentBlock.
+	jump1 jmpTarget: currentBlock.
 	self MoveR: t1 R: t2.
-	self CmpCq: objectMemory getMemoryMap getNewSpaceStart R: t2.
-	jumpTrue := self JumpGreaterOrEqual: 0.
+	self AndCq: 16rFFFFFF0000000000 R: t2.
+	self CmpCq: 0 R: t2.
+	jump1 := self JumpZero: 0.
+	self MoveCq: 0 R: t2.
+	jump4 := self Jump: 0.
+	currentBlock := self Label.
+	jump1 jmpTarget: currentBlock.
+	self MoveR: t1 R: t2.
+	self CmpCq: 0 R: t2.
+	jumpTrue := self JumpAboveOrEqual: 0.
 	self MoveCq: 0 R: t2.
 	jumpNext := self Jump: 0.
 	jumpTrue jmpTarget: self Label.
@@ -7545,11 +7690,11 @@ DruidJIT >> gen_StoreAndPopReceiverVariableBytecode2 [
 	currentBlock := self Label.
 	jump7 jmpTarget: currentBlock.
 	self CmpCq: objectMemory nilObject R: t1.
-	jump7 := self JumpAboveOrEqual: 0.
+	jump5 := self JumpAboveOrEqual: 0.
 	self MoveCq: 0 R: t2.
-	jump5 := self Jump: 0.
+	jump3 := self Jump: 0.
 	currentBlock := self Label.
-	jump7 jmpTarget: currentBlock.
+	jump5 jmpTarget: currentBlock.
 	self MoveR: t1 R: t2.
 	self CmpCq: objectMemory trueObject R: t2.
 	jumpTrue := self JumpLessOrEqual: 0.
@@ -7561,9 +7706,9 @@ DruidJIT >> gen_StoreAndPopReceiverVariableBytecode2 [
 	currentBlock := self Label.
 	jump5 jmpTarget: currentBlock.
 	self CmpCq: 1 R: t2.
-	jump5 := self JumpZero: 0.
-	self CmpCq: objectMemory getMemoryMap getNewSpaceStart R: t1.
-	jump7 := self JumpLess: 0.
+	jump3 := self JumpZero: 0.
+	self CmpCq: 0 R: t1.
+	jump5 := self JumpBelow: 0.
 	self MoveM64: 0 r: t0 R: t2.
 	self ArithmeticShiftRightCq: 29 R: t2.
 	self AndCq: 1 R: t2.
@@ -7572,9 +7717,9 @@ DruidJIT >> gen_StoreAndPopReceiverVariableBytecode2 [
 	self MoveR: t0 R: t2.
 	self AndCq: 7 R: t2.
 	self CmpCq: 0 R: t2.
-	jump2 := self JumpZero: 0.
+	jump6 := self JumpZero: 0.
 	self MoveCq: 0 R: t2.
-	jump1 := self Jump: 0.
+	jump7 := self Jump: 0.
 	currentBlock := self Label.
 	jump2 jmpTarget: currentBlock.
 	self MoveR: t0 R: t2.
@@ -7636,26 +7781,44 @@ DruidJIT >> gen_StoreAndPopReceiverVariableBytecode3 [
 	self AndCq: 7 R: t2.
 	self ssFlushStack.
 	self CmpCq: 0 R: t2.
-	jump1 := self JumpNonZero: 0.
+	jump1 := self JumpZero: 0.
+	self MoveCq: 0 R: t2.
+	jump2 := self Jump: 0.
+	currentBlock := self Label.
+	jump1 jmpTarget: currentBlock.
 	self MoveR: t0 R: t2.
-	self AndCq: objectMemory getMemoryMap getSpaceMaskToUse R: t2.
-	self CmpCq: objectMemory getMemoryMap getOldSpaceMask R: t2.
+	self AndCq: 16rFFFFFF0000000000 R: t2.
+	self CmpCq: 16r10000000000 R: t2.
+	jumpTrue := self JumpZero: 0.
+	self MoveCq: 0 R: t2.
+	jumpNext := self Jump: 0.
+	jumpTrue jmpTarget: self Label.
+	self MoveCq: 1 R: t2.
+	jumpNext jmpTarget: self Label.
+	currentBlock := self Label.
+	jump2 jmpTarget: currentBlock.
+	self ssFlushStack.
+	self CmpCq: 1 R: t2.
 	jump2 := self JumpNonZero: 0.
 	self MoveR: t1 R: t2.
 	self AndCq: 7 R: t2.
 	self CmpCq: 0 R: t2.
-	jump3 := self JumpNonZero: 0.
-	self MoveR: t1 R: t2.
-	self AndCq: objectMemory getMemoryMap getSpaceMaskToUse R: t2.
-	self CmpCq: objectMemory getMemoryMap getNewSpaceMask R: t2.
-	jump4 := self JumpZero: 0.
+	jump1 := self JumpZero: 0.
 	self MoveCq: 0 R: t2.
-	jump5 := self Jump: 0.
+	jump3 := self Jump: 0.
 	currentBlock := self Label.
-	jump4 jmpTarget: currentBlock.
+	jump1 jmpTarget: currentBlock.
 	self MoveR: t1 R: t2.
-	self CmpCq: objectMemory getMemoryMap getNewSpaceStart R: t2.
-	jumpTrue := self JumpGreaterOrEqual: 0.
+	self AndCq: 16rFFFFFF0000000000 R: t2.
+	self CmpCq: 0 R: t2.
+	jump1 := self JumpZero: 0.
+	self MoveCq: 0 R: t2.
+	jump4 := self Jump: 0.
+	currentBlock := self Label.
+	jump1 jmpTarget: currentBlock.
+	self MoveR: t1 R: t2.
+	self CmpCq: 0 R: t2.
+	jumpTrue := self JumpAboveOrEqual: 0.
 	self MoveCq: 0 R: t2.
 	jumpNext := self Jump: 0.
 	jumpTrue jmpTarget: self Label.
@@ -7691,11 +7854,11 @@ DruidJIT >> gen_StoreAndPopReceiverVariableBytecode3 [
 	currentBlock := self Label.
 	jump7 jmpTarget: currentBlock.
 	self CmpCq: objectMemory nilObject R: t1.
-	jump7 := self JumpAboveOrEqual: 0.
+	jump5 := self JumpAboveOrEqual: 0.
 	self MoveCq: 0 R: t2.
-	jump5 := self Jump: 0.
+	jump3 := self Jump: 0.
 	currentBlock := self Label.
-	jump7 jmpTarget: currentBlock.
+	jump5 jmpTarget: currentBlock.
 	self MoveR: t1 R: t2.
 	self CmpCq: objectMemory trueObject R: t2.
 	jumpTrue := self JumpLessOrEqual: 0.
@@ -7707,9 +7870,9 @@ DruidJIT >> gen_StoreAndPopReceiverVariableBytecode3 [
 	currentBlock := self Label.
 	jump5 jmpTarget: currentBlock.
 	self CmpCq: 1 R: t2.
-	jump5 := self JumpZero: 0.
-	self CmpCq: objectMemory getMemoryMap getNewSpaceStart R: t1.
-	jump7 := self JumpLess: 0.
+	jump3 := self JumpZero: 0.
+	self CmpCq: 0 R: t1.
+	jump5 := self JumpBelow: 0.
 	self MoveM64: 0 r: t0 R: t2.
 	self ArithmeticShiftRightCq: 29 R: t2.
 	self AndCq: 1 R: t2.
@@ -7718,9 +7881,9 @@ DruidJIT >> gen_StoreAndPopReceiverVariableBytecode3 [
 	self MoveR: t0 R: t2.
 	self AndCq: 7 R: t2.
 	self CmpCq: 0 R: t2.
-	jump2 := self JumpZero: 0.
+	jump6 := self JumpZero: 0.
 	self MoveCq: 0 R: t2.
-	jump1 := self Jump: 0.
+	jump7 := self Jump: 0.
 	currentBlock := self Label.
 	jump2 jmpTarget: currentBlock.
 	self MoveR: t0 R: t2.
@@ -7782,26 +7945,44 @@ DruidJIT >> gen_StoreAndPopReceiverVariableBytecode4 [
 	self AndCq: 7 R: t2.
 	self ssFlushStack.
 	self CmpCq: 0 R: t2.
-	jump1 := self JumpNonZero: 0.
+	jump1 := self JumpZero: 0.
+	self MoveCq: 0 R: t2.
+	jump2 := self Jump: 0.
+	currentBlock := self Label.
+	jump1 jmpTarget: currentBlock.
 	self MoveR: t0 R: t2.
-	self AndCq: objectMemory getMemoryMap getSpaceMaskToUse R: t2.
-	self CmpCq: objectMemory getMemoryMap getOldSpaceMask R: t2.
+	self AndCq: 16rFFFFFF0000000000 R: t2.
+	self CmpCq: 16r10000000000 R: t2.
+	jumpTrue := self JumpZero: 0.
+	self MoveCq: 0 R: t2.
+	jumpNext := self Jump: 0.
+	jumpTrue jmpTarget: self Label.
+	self MoveCq: 1 R: t2.
+	jumpNext jmpTarget: self Label.
+	currentBlock := self Label.
+	jump2 jmpTarget: currentBlock.
+	self ssFlushStack.
+	self CmpCq: 1 R: t2.
 	jump2 := self JumpNonZero: 0.
 	self MoveR: t1 R: t2.
 	self AndCq: 7 R: t2.
 	self CmpCq: 0 R: t2.
-	jump3 := self JumpNonZero: 0.
-	self MoveR: t1 R: t2.
-	self AndCq: objectMemory getMemoryMap getSpaceMaskToUse R: t2.
-	self CmpCq: objectMemory getMemoryMap getNewSpaceMask R: t2.
-	jump4 := self JumpZero: 0.
+	jump1 := self JumpZero: 0.
 	self MoveCq: 0 R: t2.
-	jump5 := self Jump: 0.
+	jump3 := self Jump: 0.
 	currentBlock := self Label.
-	jump4 jmpTarget: currentBlock.
+	jump1 jmpTarget: currentBlock.
 	self MoveR: t1 R: t2.
-	self CmpCq: objectMemory getMemoryMap getNewSpaceStart R: t2.
-	jumpTrue := self JumpGreaterOrEqual: 0.
+	self AndCq: 16rFFFFFF0000000000 R: t2.
+	self CmpCq: 0 R: t2.
+	jump1 := self JumpZero: 0.
+	self MoveCq: 0 R: t2.
+	jump4 := self Jump: 0.
+	currentBlock := self Label.
+	jump1 jmpTarget: currentBlock.
+	self MoveR: t1 R: t2.
+	self CmpCq: 0 R: t2.
+	jumpTrue := self JumpAboveOrEqual: 0.
 	self MoveCq: 0 R: t2.
 	jumpNext := self Jump: 0.
 	jumpTrue jmpTarget: self Label.
@@ -7837,11 +8018,11 @@ DruidJIT >> gen_StoreAndPopReceiverVariableBytecode4 [
 	currentBlock := self Label.
 	jump7 jmpTarget: currentBlock.
 	self CmpCq: objectMemory nilObject R: t1.
-	jump7 := self JumpAboveOrEqual: 0.
+	jump5 := self JumpAboveOrEqual: 0.
 	self MoveCq: 0 R: t2.
-	jump5 := self Jump: 0.
+	jump3 := self Jump: 0.
 	currentBlock := self Label.
-	jump7 jmpTarget: currentBlock.
+	jump5 jmpTarget: currentBlock.
 	self MoveR: t1 R: t2.
 	self CmpCq: objectMemory trueObject R: t2.
 	jumpTrue := self JumpLessOrEqual: 0.
@@ -7853,9 +8034,9 @@ DruidJIT >> gen_StoreAndPopReceiverVariableBytecode4 [
 	currentBlock := self Label.
 	jump5 jmpTarget: currentBlock.
 	self CmpCq: 1 R: t2.
-	jump5 := self JumpZero: 0.
-	self CmpCq: objectMemory getMemoryMap getNewSpaceStart R: t1.
-	jump7 := self JumpLess: 0.
+	jump3 := self JumpZero: 0.
+	self CmpCq: 0 R: t1.
+	jump5 := self JumpBelow: 0.
 	self MoveM64: 0 r: t0 R: t2.
 	self ArithmeticShiftRightCq: 29 R: t2.
 	self AndCq: 1 R: t2.
@@ -7864,9 +8045,9 @@ DruidJIT >> gen_StoreAndPopReceiverVariableBytecode4 [
 	self MoveR: t0 R: t2.
 	self AndCq: 7 R: t2.
 	self CmpCq: 0 R: t2.
-	jump2 := self JumpZero: 0.
+	jump6 := self JumpZero: 0.
 	self MoveCq: 0 R: t2.
-	jump1 := self Jump: 0.
+	jump7 := self Jump: 0.
 	currentBlock := self Label.
 	jump2 jmpTarget: currentBlock.
 	self MoveR: t0 R: t2.
@@ -7928,26 +8109,44 @@ DruidJIT >> gen_StoreAndPopReceiverVariableBytecode5 [
 	self AndCq: 7 R: t2.
 	self ssFlushStack.
 	self CmpCq: 0 R: t2.
-	jump1 := self JumpNonZero: 0.
+	jump1 := self JumpZero: 0.
+	self MoveCq: 0 R: t2.
+	jump2 := self Jump: 0.
+	currentBlock := self Label.
+	jump1 jmpTarget: currentBlock.
 	self MoveR: t0 R: t2.
-	self AndCq: objectMemory getMemoryMap getSpaceMaskToUse R: t2.
-	self CmpCq: objectMemory getMemoryMap getOldSpaceMask R: t2.
+	self AndCq: 16rFFFFFF0000000000 R: t2.
+	self CmpCq: 16r10000000000 R: t2.
+	jumpTrue := self JumpZero: 0.
+	self MoveCq: 0 R: t2.
+	jumpNext := self Jump: 0.
+	jumpTrue jmpTarget: self Label.
+	self MoveCq: 1 R: t2.
+	jumpNext jmpTarget: self Label.
+	currentBlock := self Label.
+	jump2 jmpTarget: currentBlock.
+	self ssFlushStack.
+	self CmpCq: 1 R: t2.
 	jump2 := self JumpNonZero: 0.
 	self MoveR: t1 R: t2.
 	self AndCq: 7 R: t2.
 	self CmpCq: 0 R: t2.
-	jump3 := self JumpNonZero: 0.
-	self MoveR: t1 R: t2.
-	self AndCq: objectMemory getMemoryMap getSpaceMaskToUse R: t2.
-	self CmpCq: objectMemory getMemoryMap getNewSpaceMask R: t2.
-	jump4 := self JumpZero: 0.
+	jump1 := self JumpZero: 0.
 	self MoveCq: 0 R: t2.
-	jump5 := self Jump: 0.
+	jump3 := self Jump: 0.
 	currentBlock := self Label.
-	jump4 jmpTarget: currentBlock.
+	jump1 jmpTarget: currentBlock.
 	self MoveR: t1 R: t2.
-	self CmpCq: objectMemory getMemoryMap getNewSpaceStart R: t2.
-	jumpTrue := self JumpGreaterOrEqual: 0.
+	self AndCq: 16rFFFFFF0000000000 R: t2.
+	self CmpCq: 0 R: t2.
+	jump1 := self JumpZero: 0.
+	self MoveCq: 0 R: t2.
+	jump4 := self Jump: 0.
+	currentBlock := self Label.
+	jump1 jmpTarget: currentBlock.
+	self MoveR: t1 R: t2.
+	self CmpCq: 0 R: t2.
+	jumpTrue := self JumpAboveOrEqual: 0.
 	self MoveCq: 0 R: t2.
 	jumpNext := self Jump: 0.
 	jumpTrue jmpTarget: self Label.
@@ -7983,11 +8182,11 @@ DruidJIT >> gen_StoreAndPopReceiverVariableBytecode5 [
 	currentBlock := self Label.
 	jump7 jmpTarget: currentBlock.
 	self CmpCq: objectMemory nilObject R: t1.
-	jump7 := self JumpAboveOrEqual: 0.
+	jump5 := self JumpAboveOrEqual: 0.
 	self MoveCq: 0 R: t2.
-	jump5 := self Jump: 0.
+	jump3 := self Jump: 0.
 	currentBlock := self Label.
-	jump7 jmpTarget: currentBlock.
+	jump5 jmpTarget: currentBlock.
 	self MoveR: t1 R: t2.
 	self CmpCq: objectMemory trueObject R: t2.
 	jumpTrue := self JumpLessOrEqual: 0.
@@ -7999,9 +8198,9 @@ DruidJIT >> gen_StoreAndPopReceiverVariableBytecode5 [
 	currentBlock := self Label.
 	jump5 jmpTarget: currentBlock.
 	self CmpCq: 1 R: t2.
-	jump5 := self JumpZero: 0.
-	self CmpCq: objectMemory getMemoryMap getNewSpaceStart R: t1.
-	jump7 := self JumpLess: 0.
+	jump3 := self JumpZero: 0.
+	self CmpCq: 0 R: t1.
+	jump5 := self JumpBelow: 0.
 	self MoveM64: 0 r: t0 R: t2.
 	self ArithmeticShiftRightCq: 29 R: t2.
 	self AndCq: 1 R: t2.
@@ -8010,9 +8209,9 @@ DruidJIT >> gen_StoreAndPopReceiverVariableBytecode5 [
 	self MoveR: t0 R: t2.
 	self AndCq: 7 R: t2.
 	self CmpCq: 0 R: t2.
-	jump2 := self JumpZero: 0.
+	jump6 := self JumpZero: 0.
 	self MoveCq: 0 R: t2.
-	jump1 := self Jump: 0.
+	jump7 := self Jump: 0.
 	currentBlock := self Label.
 	jump2 jmpTarget: currentBlock.
 	self MoveR: t0 R: t2.
@@ -8074,26 +8273,44 @@ DruidJIT >> gen_StoreAndPopReceiverVariableBytecode6 [
 	self AndCq: 7 R: t2.
 	self ssFlushStack.
 	self CmpCq: 0 R: t2.
-	jump1 := self JumpNonZero: 0.
+	jump1 := self JumpZero: 0.
+	self MoveCq: 0 R: t2.
+	jump2 := self Jump: 0.
+	currentBlock := self Label.
+	jump1 jmpTarget: currentBlock.
 	self MoveR: t0 R: t2.
-	self AndCq: objectMemory getMemoryMap getSpaceMaskToUse R: t2.
-	self CmpCq: objectMemory getMemoryMap getOldSpaceMask R: t2.
+	self AndCq: 16rFFFFFF0000000000 R: t2.
+	self CmpCq: 16r10000000000 R: t2.
+	jumpTrue := self JumpZero: 0.
+	self MoveCq: 0 R: t2.
+	jumpNext := self Jump: 0.
+	jumpTrue jmpTarget: self Label.
+	self MoveCq: 1 R: t2.
+	jumpNext jmpTarget: self Label.
+	currentBlock := self Label.
+	jump2 jmpTarget: currentBlock.
+	self ssFlushStack.
+	self CmpCq: 1 R: t2.
 	jump2 := self JumpNonZero: 0.
 	self MoveR: t1 R: t2.
 	self AndCq: 7 R: t2.
 	self CmpCq: 0 R: t2.
-	jump3 := self JumpNonZero: 0.
-	self MoveR: t1 R: t2.
-	self AndCq: objectMemory getMemoryMap getSpaceMaskToUse R: t2.
-	self CmpCq: objectMemory getMemoryMap getNewSpaceMask R: t2.
-	jump4 := self JumpZero: 0.
+	jump1 := self JumpZero: 0.
 	self MoveCq: 0 R: t2.
-	jump5 := self Jump: 0.
+	jump3 := self Jump: 0.
 	currentBlock := self Label.
-	jump4 jmpTarget: currentBlock.
+	jump1 jmpTarget: currentBlock.
 	self MoveR: t1 R: t2.
-	self CmpCq: objectMemory getMemoryMap getNewSpaceStart R: t2.
-	jumpTrue := self JumpGreaterOrEqual: 0.
+	self AndCq: 16rFFFFFF0000000000 R: t2.
+	self CmpCq: 0 R: t2.
+	jump1 := self JumpZero: 0.
+	self MoveCq: 0 R: t2.
+	jump4 := self Jump: 0.
+	currentBlock := self Label.
+	jump1 jmpTarget: currentBlock.
+	self MoveR: t1 R: t2.
+	self CmpCq: 0 R: t2.
+	jumpTrue := self JumpAboveOrEqual: 0.
 	self MoveCq: 0 R: t2.
 	jumpNext := self Jump: 0.
 	jumpTrue jmpTarget: self Label.
@@ -8129,11 +8346,11 @@ DruidJIT >> gen_StoreAndPopReceiverVariableBytecode6 [
 	currentBlock := self Label.
 	jump7 jmpTarget: currentBlock.
 	self CmpCq: objectMemory nilObject R: t1.
-	jump7 := self JumpAboveOrEqual: 0.
+	jump5 := self JumpAboveOrEqual: 0.
 	self MoveCq: 0 R: t2.
-	jump5 := self Jump: 0.
+	jump3 := self Jump: 0.
 	currentBlock := self Label.
-	jump7 jmpTarget: currentBlock.
+	jump5 jmpTarget: currentBlock.
 	self MoveR: t1 R: t2.
 	self CmpCq: objectMemory trueObject R: t2.
 	jumpTrue := self JumpLessOrEqual: 0.
@@ -8145,9 +8362,9 @@ DruidJIT >> gen_StoreAndPopReceiverVariableBytecode6 [
 	currentBlock := self Label.
 	jump5 jmpTarget: currentBlock.
 	self CmpCq: 1 R: t2.
-	jump5 := self JumpZero: 0.
-	self CmpCq: objectMemory getMemoryMap getNewSpaceStart R: t1.
-	jump7 := self JumpLess: 0.
+	jump3 := self JumpZero: 0.
+	self CmpCq: 0 R: t1.
+	jump5 := self JumpBelow: 0.
 	self MoveM64: 0 r: t0 R: t2.
 	self ArithmeticShiftRightCq: 29 R: t2.
 	self AndCq: 1 R: t2.
@@ -8156,9 +8373,9 @@ DruidJIT >> gen_StoreAndPopReceiverVariableBytecode6 [
 	self MoveR: t0 R: t2.
 	self AndCq: 7 R: t2.
 	self CmpCq: 0 R: t2.
-	jump2 := self JumpZero: 0.
+	jump6 := self JumpZero: 0.
 	self MoveCq: 0 R: t2.
-	jump1 := self Jump: 0.
+	jump7 := self Jump: 0.
 	currentBlock := self Label.
 	jump2 jmpTarget: currentBlock.
 	self MoveR: t0 R: t2.
@@ -8220,26 +8437,44 @@ DruidJIT >> gen_StoreAndPopReceiverVariableBytecode7 [
 	self AndCq: 7 R: t2.
 	self ssFlushStack.
 	self CmpCq: 0 R: t2.
-	jump1 := self JumpNonZero: 0.
+	jump1 := self JumpZero: 0.
+	self MoveCq: 0 R: t2.
+	jump2 := self Jump: 0.
+	currentBlock := self Label.
+	jump1 jmpTarget: currentBlock.
 	self MoveR: t0 R: t2.
-	self AndCq: objectMemory getMemoryMap getSpaceMaskToUse R: t2.
-	self CmpCq: objectMemory getMemoryMap getOldSpaceMask R: t2.
+	self AndCq: 16rFFFFFF0000000000 R: t2.
+	self CmpCq: 16r10000000000 R: t2.
+	jumpTrue := self JumpZero: 0.
+	self MoveCq: 0 R: t2.
+	jumpNext := self Jump: 0.
+	jumpTrue jmpTarget: self Label.
+	self MoveCq: 1 R: t2.
+	jumpNext jmpTarget: self Label.
+	currentBlock := self Label.
+	jump2 jmpTarget: currentBlock.
+	self ssFlushStack.
+	self CmpCq: 1 R: t2.
 	jump2 := self JumpNonZero: 0.
 	self MoveR: t1 R: t2.
 	self AndCq: 7 R: t2.
 	self CmpCq: 0 R: t2.
-	jump3 := self JumpNonZero: 0.
-	self MoveR: t1 R: t2.
-	self AndCq: objectMemory getMemoryMap getSpaceMaskToUse R: t2.
-	self CmpCq: objectMemory getMemoryMap getNewSpaceMask R: t2.
-	jump4 := self JumpZero: 0.
+	jump1 := self JumpZero: 0.
 	self MoveCq: 0 R: t2.
-	jump5 := self Jump: 0.
+	jump3 := self Jump: 0.
 	currentBlock := self Label.
-	jump4 jmpTarget: currentBlock.
+	jump1 jmpTarget: currentBlock.
 	self MoveR: t1 R: t2.
-	self CmpCq: objectMemory getMemoryMap getNewSpaceStart R: t2.
-	jumpTrue := self JumpGreaterOrEqual: 0.
+	self AndCq: 16rFFFFFF0000000000 R: t2.
+	self CmpCq: 0 R: t2.
+	jump1 := self JumpZero: 0.
+	self MoveCq: 0 R: t2.
+	jump4 := self Jump: 0.
+	currentBlock := self Label.
+	jump1 jmpTarget: currentBlock.
+	self MoveR: t1 R: t2.
+	self CmpCq: 0 R: t2.
+	jumpTrue := self JumpAboveOrEqual: 0.
 	self MoveCq: 0 R: t2.
 	jumpNext := self Jump: 0.
 	jumpTrue jmpTarget: self Label.
@@ -8275,11 +8510,11 @@ DruidJIT >> gen_StoreAndPopReceiverVariableBytecode7 [
 	currentBlock := self Label.
 	jump7 jmpTarget: currentBlock.
 	self CmpCq: objectMemory nilObject R: t1.
-	jump7 := self JumpAboveOrEqual: 0.
+	jump5 := self JumpAboveOrEqual: 0.
 	self MoveCq: 0 R: t2.
-	jump5 := self Jump: 0.
+	jump3 := self Jump: 0.
 	currentBlock := self Label.
-	jump7 jmpTarget: currentBlock.
+	jump5 jmpTarget: currentBlock.
 	self MoveR: t1 R: t2.
 	self CmpCq: objectMemory trueObject R: t2.
 	jumpTrue := self JumpLessOrEqual: 0.
@@ -8291,9 +8526,9 @@ DruidJIT >> gen_StoreAndPopReceiverVariableBytecode7 [
 	currentBlock := self Label.
 	jump5 jmpTarget: currentBlock.
 	self CmpCq: 1 R: t2.
-	jump5 := self JumpZero: 0.
-	self CmpCq: objectMemory getMemoryMap getNewSpaceStart R: t1.
-	jump7 := self JumpLess: 0.
+	jump3 := self JumpZero: 0.
+	self CmpCq: 0 R: t1.
+	jump5 := self JumpBelow: 0.
 	self MoveM64: 0 r: t0 R: t2.
 	self ArithmeticShiftRightCq: 29 R: t2.
 	self AndCq: 1 R: t2.
@@ -8302,9 +8537,9 @@ DruidJIT >> gen_StoreAndPopReceiverVariableBytecode7 [
 	self MoveR: t0 R: t2.
 	self AndCq: 7 R: t2.
 	self CmpCq: 0 R: t2.
-	jump2 := self JumpZero: 0.
+	jump6 := self JumpZero: 0.
 	self MoveCq: 0 R: t2.
-	jump1 := self Jump: 0.
+	jump7 := self Jump: 0.
 	currentBlock := self Label.
 	jump2 jmpTarget: currentBlock.
 	self MoveR: t0 R: t2.

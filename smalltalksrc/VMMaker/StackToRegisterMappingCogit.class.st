@@ -1174,31 +1174,33 @@ StackToRegisterMappingCogit >> ensureFixupAt: targetPC [
 StackToRegisterMappingCogit >> ensureFixupAt: targetPC withStackPointer: aStackPointer [
 	"Make sure there's a flagged fixup at the target pc in fixups.
 	 Initially a fixup's target is just a flag.  Later on it is replaced with a proper instruction."
+
 	<returnTypeC: #'BytecodeFixup *'>
-	| fixup |
 	<var: #fixup type: #'BytecodeFixup *'>
-	fixup := self fixupAt:  targetPC.
+	| fixup |
+	fixup := self fixupAt: targetPC.
+	deadCode ifTrue: [ ^ fixup ].
+
 	self traceFixup: fixup merge: true.
-	self cCode: '' inSmalltalk:
-		[self assert: aStackPointer = (self debugStackPointerFor: targetPC).
-		 (fixup isMergeFixupOrIsFixedUp
-		  and: [fixup isBackwardBranchFixup not]) ifTrue: "ignore backward branch targets"
-			[self assert: fixup simStackPtr = aStackPointer]].
-	
+	self cCode: '' inSmalltalk: [
+		self assert: aStackPointer = (self debugStackPointerFor: targetPC).
+		(fixup isMergeFixupOrIsFixedUp and: [
+			 fixup isBackwardBranchFixup not ]) ifTrue: [ "ignore backward branch targets"
+			self assert: fixup simStackPtr = aStackPointer ] ].
+
 
 	fixup isNonMergeFixupOrNotAFixup
-		ifTrue: "convert a non-merge into a merge"
-			[fixup becomeMergeFixup.
-			 fixup simStackPtr: aStackPointer ]
-		ifFalse:
-			[fixup isBackwardBranchFixup
-				ifTrue: "this is the target of a backward branch and
+		ifTrue: [ "convert a non-merge into a merge"
+			fixup becomeMergeFixup.
+			fixup simStackPtr: aStackPointer ]
+		ifFalse: [
+			fixup isBackwardBranchFixup
+				ifTrue: [ "this is the target of a backward branch and
 						 so doesn't have a simStackPtr assigned yet."
-					[fixup simStackPtr: aStackPointer ]
-				ifFalse:
-					[self assert: fixup simStackPtr = aStackPointer ]].
+					fixup simStackPtr: aStackPointer ]
+				ifFalse: [ self assert: fixup simStackPtr = aStackPointer ] ].
 	fixup recordBcpc: bytecodePC.
-	^fixup
+	^ fixup
 ]
 
 { #category : #'compile abstract instructions' }
@@ -1946,31 +1948,6 @@ StackToRegisterMappingCogit >> genJumpTo: targetBytecodePC [
 			[self ssFlushStack.
 			fixup := self ensureFixupAt: eventualTarget].
 	deadCode := true. "can't fall through"
-	self Jump: fixup.
-	^0
-]
-
-{ #category : #'bytecode generator support' }
-StackToRegisterMappingCogit >> genJumpTo: targetBytecodePC followDeadCode: followDeadCode [
-	| eventualTarget generator fixup |
-	eventualTarget := self eventualTargetOf: targetBytecodePC.
-	(eventualTarget > bytecodePC
-	 and: [self stackTopIsBoolean
-	 and: [(generator := self generatorForPC: eventualTarget) isConditionalBranch]])
-		ifTrue:
-			[eventualTarget := eventualTarget
-							  + generator numBytes
-							  + (generator isBranchTrue == (self ssTop constant = objectMemory trueObject)
-									ifTrue: [self spanFor: generator at: eventualTarget exts: 0 in: methodObj]
-									ifFalse: [0]).
-			self ssPop: 1.
-			self ssFlushTo: simStackPtr.
-			fixup := self ensureFixupAt: eventualTarget.
-			self ssPop: -1]
-		ifFalse:
-			[self ssFlushTo: simStackPtr.
-			fixup := self ensureFixupAt: eventualTarget].
-	deadCode := followDeadCode.
 	self Jump: fixup.
 	^0
 ]
@@ -4894,8 +4871,9 @@ StackToRegisterMappingCogit >> tryCollapseTempVectorInitializationOfSize: slots 
 { #category : #'bytecode generators' }
 StackToRegisterMappingCogit >> unknownBytecode [
 
-	deadCode := true.
-	self ssFlushStack.
+	PartialCompilation ifTrue: [
+		deadCode := true.
+		self ssFlushStack ].
 	^ super unknownBytecode
 ]
 
