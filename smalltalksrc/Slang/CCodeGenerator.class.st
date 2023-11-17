@@ -233,6 +233,8 @@ CCodeGenerator >> addMethodFor: aClass selector: selector [
 
 	| method tmethod |
 	method := aClass compiledMethodAt: selector.
+	(method pragmaAt: #slangHalt) ifNotNil: [ self halt ].
+	
 	(method pragmaAt: #doNotGenerate) ifNotNil:
 		["only remove a previous method if this one overrides it, i.e. this is a subclass method.
 		 If the existing method is in a different hierarchy this method must be merely a redeirect."
@@ -479,6 +481,20 @@ CCodeGenerator >> arrayInitializerCalled: varName for: array sizeString: sizeStr
 							ifTrue: [newLine value]
 							ifFalse: [s space]].
 				 s crtab; nextPut: $}]]
+]
+
+{ #category : #converting }
+CCodeGenerator >> asPolymorphicCall: aSendNode withDescriptor: descriptor [
+
+	| variableToTest possibleClasses |
+	variableToTest := descriptor first.
+	possibleClasses := descriptor allButFirst.
+
+	^ TCaseStmtNode
+		  newWithExpression: (TVariableNode named: variableToTest)
+		  selectors: (possibleClasses collect: [ :class |
+				   class staticallyResolvePolymorphicSelector: aSendNode selector ])
+		  arguments: aSendNode arguments
 ]
 
 { #category : #utilities }
@@ -3051,14 +3067,24 @@ CCodeGenerator >> ifStaticallyResolvedPolymorphicReceiverThenUpdateSelectorIn: a
 	 prefixed with a given string to disambiguate. This hack allows us to use two different
 	 compaction algorithms with the same API at the same time; the selection being done
 	 by a class which holds the flag stating which algorithm is in effect at the current time."
-	| class |
-	staticallyResolvedPolymorphicReceivers ifNil: [^self].
-	aSendNode receiver isVariable ifFalse:
-		[^self].
-	class := staticallyResolvedPolymorphicReceivers
-				at: aSendNode receiver name
-				ifAbsent: [^self].
-	aSendNode selector: (class staticallyResolvePolymorphicSelector: aSendNode selector)
+
+	| staticallyClassOrPolymorphicDescriptor |
+	staticallyResolvedPolymorphicReceivers ifNil: [ ^ aSendNode ].
+	aSendNode receiver isVariable ifFalse: [ ^ aSendNode ].
+
+	staticallyClassOrPolymorphicDescriptor := staticallyResolvedPolymorphicReceivers
+		                                          at:
+		                                          aSendNode receiver name
+		                                          ifAbsent: [ ^ aSendNode ].
+
+	^ staticallyClassOrPolymorphicDescriptor isCollection
+		  ifTrue: [ "Transform into a switch-case"
+			  self
+				  asPolymorphicCall: aSendNode
+				  withDescriptor: staticallyClassOrPolymorphicDescriptor ]
+		  ifFalse: [
+			  aSendNode selector: (staticallyClassOrPolymorphicDescriptor
+					   staticallyResolvePolymorphicSelector: aSendNode selector) ]
 ]
 
 { #category : #'type inference' }
@@ -4521,6 +4547,14 @@ CCodeGenerator >> reservedWords [
 	^ self class reservedWords
 ]
 
+{ #category : #public }
+CCodeGenerator >> resolvePolymorphicReceiver: polymorphicVariable usingAsVariableType: typeVariable to: classes [
+
+	self staticallyResolvedPolymorphicReceivers
+		at: polymorphicVariable
+		put: { typeVariable } , classes
+]
+
 { #category : #inlining }
 CCodeGenerator >> retainMethods: aListOfSelectorsToKeep [
 	"add aListOfSelectorsToKeep to requiredSelectors so that they will not be pruned"
@@ -4861,12 +4895,11 @@ CCodeGenerator >> staticallyResolveMethodNamed: selector forClass: aClass to: st
 	 prefixed with a given string to disambiguate. This hack allows us to use two different
 	 compaction algorithms with the same API at the same time; the selection being done
 	 by a class which holds the flag stating which algorithm is in effect at the current time."
+
 	| method |
-	method := methods
-					removeKey: selector
-					ifAbsent:
-						[self logger cr; nextPutAll: 'warning: did not find ', selector, ' to be able to map to ', staticallyResolvedSelector.
-						^self].
+	method := methods removeKey: selector ifAbsent: [
+		          self error: 'warning: did not find ' , selector , ' to be able to map to ' , staticallyResolvedSelector ].
+
 	method selector: staticallyResolvedSelector.
 	methods at: staticallyResolvedSelector put: method
 ]
@@ -4877,9 +4910,16 @@ CCodeGenerator >> staticallyResolvedPolymorphicReceiver: variableName to: aClass
 	 prefixed with a given string to disambiguate. This hack allows us to use two different
 	 compaction algorithms with the same API at the same time; the selection being done
 	 by a class which holds the flag stating which algorithm is in effect at the current time."
-	(staticallyResolvedPolymorphicReceivers ifNil: [staticallyResolvedPolymorphicReceivers := Dictionary new])
+
+	self staticallyResolvedPolymorphicReceivers
 		at: variableName
 		put: aClass
+]
+
+{ #category : #accessing }
+CCodeGenerator >> staticallyResolvedPolymorphicReceivers [
+
+	^ staticallyResolvedPolymorphicReceivers ifNil: [staticallyResolvedPolymorphicReceivers := Dictionary new]
 ]
 
 { #category : #'C translation support' }

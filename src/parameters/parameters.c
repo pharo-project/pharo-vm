@@ -76,6 +76,7 @@ static VMErrorCode processMaxCodeSpaceSizeOption(const char *argument, VMParamet
 static VMErrorCode processEdenSizeOption(const char *argument, VMParameters * params);
 static VMErrorCode processWorkerOption(const char *argument, VMParameters * params);
 static VMErrorCode processMinPermSpaceSizeOption(const char *argument, VMParameters * params);
+static VMErrorCode processGarbageCollectorOption(const char *argument, VMParameters *params);
 
 static const VMParameterSpec vm_parameters_spec[] =
 {
@@ -94,6 +95,7 @@ static const VMParameterSpec vm_parameters_spec[] =
   {.name = "codeSize", .hasArgument = true, .function = processMaxCodeSpaceSizeOption},
   {.name = "edenSize", .hasArgument = true, .function = processEdenSizeOption},
   {.name = "minPermSpaceSize", .hasArgument = true, .function = processMinPermSpaceSizeOption},
+  {.name = "garbageCollector", .hasArgument = true, .function = processGarbageCollectorOption},
 #ifdef __APPLE__
   // This parameter is passed by the XCode debugger.
   {.name = "NSDocumentRevisionsDebugMode", .hasArgument = false, .function = NULL},
@@ -269,16 +271,16 @@ findImageNameIndex(int argc, const char** argv)
 
 static VMErrorCode
 fillUpImageName(int argc, const char** argv, VMParameters* parameters){
-	
+
 	VMErrorCode error;
-		
+
 	int imageNameIndex = findImageNameIndex(argc, argv);
 
 	// We get the image file name
 	if(imageNameIndex != argc && strcmp("--", argv[imageNameIndex]) != 0) {
 		parameters->imageFileName = strdup(argv[imageNameIndex]);
 		parameters->isDefaultImage = false;
-		parameters->isInteractiveSession = false;		
+		parameters->isInteractiveSession = false;
 	}
 
 	return VM_SUCCESS;
@@ -296,9 +298,9 @@ splitVMAndImageParameters(int argc, const char** argv, VMParameters* parameters)
 	if(parameters->imageFileName == NULL){
 		error = vm_find_startup_image(argv[0], parameters);
 		if(error) return error;
-		
+
 		// Is this an interactive environment?
-		parameters->isInteractiveSession = !isInConsole() && parameters->isDefaultImage;		
+		parameters->isInteractiveSession = !isInConsole() && parameters->isDefaultImage;
 	}
 
 	if(numberOfImageParameters < 0)
@@ -314,8 +316,7 @@ splitVMAndImageParameters(int argc, const char** argv, VMParameters* parameters)
 
 	// Copy the VM parameters.
 	error = vm_parameter_vector_insert_from(&parameters->vmParameters, numberOfVMParameters, argv);
-	if(error)
-	{
+	if(error) {
 		vm_parameters_destroy(parameters);
 		return error;
 	}
@@ -407,41 +408,46 @@ vm_parameters_ensure_interactive_image_parameter(VMParameters* parameters)
 }
 
 void
-vm_printUsageTo(FILE *out)
-{
-	fprintf(out,
-"Usage: " VM_NAME " [<option>...] [<imageName> [<argument>...]]\n"
-"       " VM_NAME " [<option>...] -- [<argument>...]\n"
-"\n"
-"Common <option>s:\n"
-"  --help                               Print this help message, then exit\n"
-#if ALWAYS_INTERACTIVE
-"  --headless                           Run in headless (no window) mode (default: false)\n"
-#else
-"  --headless                           Run in headless (no window) mode (default: true)\n"
-#endif
-#ifdef PHARO_VM_IN_WORKER_THREAD
-"  --worker                             Run in worker thread (default: false)\n"
-#endif
-"  --logLevel=<level>                   Sets the log level number (ERROR(1), WARN(2), INFO(3), DEBUG(4), TRACE(5))\n"
-"  --version                            Print version information, then exit\n"
-"  --maxFramesToLog=<cant>              Sets the max numbers of Smalltalk frames to log\n"
-"  --maxOldSpaceSize=<bytes>            Sets the max size of the old space. As the other\n"
-"                                       spaces are fixed (or calculated from this) with\n"
-"                                       this parameter is possible to set the total size.\n"
-"                                       It is possible to use k(kB), M(MB) and G(GB).\n"
-"  --codeSize=<size>[mk]                Sets the max size of code zone.\n"
-"                                       It is possible to use k(kB), M(MB) and G(GB).\n"
-"  --edenSize=<size>[mk]                Sets the size of eden\n"
-"                                       It is possible to use k(kB), M(MB) and G(GB).\n"
-"  --minPermSpaceSize=<size>[mk]        Sets the size of eden\n"
-"                                       It is possible to use k(kB), M(MB) and G(GB).\n"
-"\n"
-"Notes:\n"
-"\n"
-"  <imageName> defaults to `Pharo.image'.\n"
-"  <argument>s are ignored, but are processed by the Pharo image.\n"
-"  Precede <arguments> by `--' to use default image.\n");
+vm_printUsageTo(FILE* out) {
+    fprintf(out,
+            "Usage: " VM_NAME " [<option>...] [<imageName> [<argument>...]]\n"
+            "       " VM_NAME " [<option>...] -- [<argument>...]\n"
+            "\n"
+            "Common <option>s:\n"
+            "  --help                               Print this help message, then exit\n"
+            #if ALWAYS_INTERACTIVE
+            "  --headless                           Run in headless (no window) mode (default: false)\n"
+            #else
+            "  --headless                           Run in headless (no window) mode (default: true)\n"
+            #endif
+            #ifdef PHARO_VM_IN_WORKER_THREAD
+            "  --worker                             Run in worker thread (default: false)\n"
+            #endif
+            "  --logLevel=<level>                   Sets the log level number (ERROR(1), WARN(2), INFO(3), DEBUG(4), TRACE(5))\n"
+            "  --version                            Print version information, then exit\n"
+            "  --maxFramesToLog=<cant>              Sets the max numbers of Smalltalk frames to log\n"
+            "  --maxOldSpaceSize=<bytes>            Sets the max size of the old space. As the other\n"
+            "                                       spaces are fixed (or calculated from this) with\n"
+            "                                       this parameter is possible to set the total size.\n"
+            "                                       It is possible to use k(kB), M(MB) and G(GB).\n"
+            "  --codeSize=<size>[mk]                Sets the max size of code zone.\n"
+            "                                       It is possible to use k(kB), M(MB) and G(GB).\n"
+            "  --edenSize=<size>[mk]                Sets the size of eden\n"
+            "                                       It is possible to use k(kB), M(MB) and G(GB).\n"
+            "  --minPermSpaceSize=<size>[mk]        Sets the size of eden\n"
+            "                                       It is possible to use k(kB), M(MB) and G(GB).\n"
+            "  --garbageCollector=<GC>              Sets the garbage collector used in this runtime.\n"
+            "                                       Possible values:\n"
+            "                                           PLANNING_COMPACTOR (default)\n"
+            "                                           HYBRID_COMPACTOR\n"
+            "                                           SWEEP_COMPACTOR\n"
+            "                                           SELECTIVE_COMPACTOR\n"
+            "\n"
+            "Notes:\n"
+            "\n"
+            "  <imageName> defaults to `Pharo.image'.\n"
+            "  <argument>s are ignored, but are processed by the Pharo image.\n"
+            "  Precede <arguments> by `--' to use default image.\n");
 }
 
 static VMErrorCode
@@ -533,9 +539,28 @@ processMinPermSpaceSizeOption(const char* originalArgument, VMParameters * param
 }
 
 static VMErrorCode
-processEdenSizeOption(const char* originalArgument, VMParameters * params)
-{
-	long long intValue = parseByteSize(originalArgument);
+processGarbageCollectorOption(const char* originalArgument, VMParameters* params) {
+
+    if (strcmp(originalArgument, "PLANNING_COMPACTOR") == 0) {
+        params->garbageCollector = PLANNING_COMPACTOR;
+    } else if (strcmp(originalArgument, "HYBRID_COMPACTOR") == 0) {
+        params->garbageCollector = HYBRID_COMPACTOR;
+    } else if (strcmp(originalArgument, "SWEEP_COMPACTOR") == 0) {
+        params->garbageCollector = SWEEP_COMPACTOR;
+    } else if (strcmp(originalArgument, "SELECTIVE_COMPACTOR") == 0) {
+        params->garbageCollector = SELECTIVE_COMPACTOR;
+    } else {
+        logError("Invalid option for garbage collector: %s\n", originalArgument);
+        vm_printUsageTo(stderr);
+        return VM_ERROR_INVALID_PARAMETER_VALUE;
+    }
+
+    return VM_SUCCESS;
+}
+
+static VMErrorCode
+processEdenSizeOption(const char* originalArgument, VMParameters* params) {
+    long long intValue = parseByteSize(originalArgument);
 
 	if(intValue < 0)
 	{
@@ -668,19 +693,19 @@ vm_parameters_parse(int argc, const char** argv, VMParameters* parameters)
 
 	//We read the arguments from the command line, and override whatever is set before
 	VMErrorCode error = fillUpImageName(argc, argv, parameters);
-	if(error) return error;	
+	if(error) return error;
 
 	// Split the argument vector in two separate vectors (If there is no Image, it gives a default one).
 	error = splitVMAndImageParameters(argc, argv, parameters);
 	if(error) return error;
 
-	// I get the VM location from the argv[0]
-	char *fullPathBuffer = (char*)calloc(1, FILENAME_MAX);
-	if(!fullPathBuffer)
-	{
-		vm_parameters_destroy(parameters);
-		return VM_ERROR_OUT_OF_MEMORY;
-	}
+
+    // I get the VM location from the argv[0]
+    char* fullPathBuffer = (char*) calloc(1, FILENAME_MAX);
+    if (!fullPathBuffer) {
+        vm_parameters_destroy(parameters);
+        return VM_ERROR_OUT_OF_MEMORY;
+    }
 
 #if _WIN32
 	WCHAR pathString[MAX_PATH];
@@ -726,5 +751,7 @@ vm_parameters_init(VMParameters *parameters){
 
 	parameters->isWorker = false;
 
-	return VM_SUCCESS;
+    parameters->garbageCollector = PLANNING_COMPACTOR;
+
+    return VM_SUCCESS;
 }
