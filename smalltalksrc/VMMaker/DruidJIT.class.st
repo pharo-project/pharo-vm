@@ -464,13 +464,13 @@ DruidJIT class >> bytecodeTable [
 		  #isMapped. #v4:Long:Branch:Distance: }.
 		  { 2. 240. 240. #unknownBytecode }.
 		  { 2. 241. 241. #unknownBytecode }.
-		  { 2. 242. 242. #unknownBytecode }.
+		  { 2. 242. 242. #gen_LongStoreAndPopTemporaryVariableBytecode }.
 		  { 2. 243. 243. #unknownBytecode }.
 		  { 2. 244. 244. #unknownBytecode }.
-		  { 2. 245. 245. #unknownBytecode }.
+		  { 2. 245. 245. #gen_LongStoreTemporaryVariableBytecode }.
 		  { 2. 246. 246. #unknownBytecode }.
 		  { 2. 247. 247. #unknownBytecode }.
-		  { 3. 248. 248. #unknownBytecode }.
+		  { 3. 248. 248. #genCallPrimitiveBytecode }.
 		  { 3. 249. 249. #unknownBytecode }.
 		  { 3. 250. 250. #unknownBytecode }.
 		  { 3. 251. 251. #unknownBytecode }.
