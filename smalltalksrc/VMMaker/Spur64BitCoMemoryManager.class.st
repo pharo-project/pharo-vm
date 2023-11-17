@@ -206,15 +206,6 @@ Spur64BitCoMemoryManager >> needGCFlagAddress [
 		inSmalltalk: [cogit simulatedReadWriteVariableAddress: #needGCFlag in: self]
 ]
 
-{ #category : #'garbage collection' }
-Spur64BitCoMemoryManager >> nullHeaderForMachineCodeMethod [
-	<api>
-	<returnTypeC: #sqLong>
-	^(self firstLongFormat << self formatShift)
-	+ (1 << self markedBitFullShift)
-	+ ClassBitmapCompactIndex
-]
-
 { #category : #'object enumeration' }
 Spur64BitCoMemoryManager >> objectBytesForSlots: numSlots [
 	"Answer the total number of bytes in an object with the given

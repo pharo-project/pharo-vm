@@ -1656,6 +1656,18 @@ SpurMemoryManager >> allOldMarkedWeakObjectsOnWeaklingStack [
 ]
 
 { #category : #'object enumeration' }
+SpurMemoryManager >> allOldSpaceEntities [
+
+	<doNotGenerate>
+
+	| result |
+	result := OrderedCollection new.
+	self allOldSpaceEntitiesDo: [ :entity | result add: entity ].
+	^ result
+
+]
+
+{ #category : #'object enumeration' }
 SpurMemoryManager >> allOldSpaceEntitiesDo: aBlock [
 
 	self allOldSpaceEntitiesFrom: self firstObject do: aBlock
@@ -3863,6 +3875,8 @@ SpurMemoryManager >> cleanUpPermToOldSpaceRememeberedSet [
 
 	self getFromPermToOldSpaceRememberedSet rememberedSetWithIndexDo:[ :oop :i | 
 		self setIsMarkedOf: oop to: false ].
+
+	self getFromPermToOldSpaceRememberedSet shrinkRememberedSet.
 	
 	self assert: self allPermSpaceObjectsUnmarked.
 
@@ -6745,7 +6759,10 @@ SpurMemoryManager >> initializeObjectMemory: bytesToShift [
 	self initializeNewSpaceVariables.
 
 	fromOldSpaceRememberedSet initializeRememberedSetShouldStartEmpty: true.
+	
 	fromPermToOldSpaceRememberedSet initializeRememberedSetShouldStartEmpty: false.
+	fromPermToOldSpaceRememberedSet doFullScan: true.
+	
 	fromPermToNewSpaceRememberedSet initializeRememberedSetShouldStartEmpty: true.
 	
 	segmentManager checkSegments.
@@ -7985,12 +8002,13 @@ SpurMemoryManager >> isValidToMoveToPermSpace: objOop [
 
 	| fmt |
 
-	(self isImmediate: objOop) 
+	((self isImmediate: objOop) or: [self isFixedKnownObject: objOop]) 
 		ifTrue: [ ^ false ].
 	
-	self assert: (self isForwarded: objOop) not.
-	
 	(self isForwarded: objOop) 
+		ifTrue: [ ^ false ].	
+
+	(self isPinned: objOop) 
 		ifTrue: [ ^ false ].	
 	
 	fmt := self formatOf: objOop. 
@@ -8094,7 +8112,10 @@ self mournQueue = oop ifTrue: [ ^ 'mournQueue' ].
 self markStack = oop ifTrue: [ ^ 'markStack' ].
 self weaklingStack = oop ifTrue: [ ^ 'weaklingStack' ].
 self freeListsObj = oop ifTrue: [ ^ 'freeListsObj' ].
-self rememberedSetObj = oop ifTrue: [ ^ 'rememberedSetObj' ].
+self oldRememberedSetObj = oop ifTrue: [ ^ 'oldRememberedSetObj' ].
+self permToNewRememberedSetObj  = oop ifTrue: [ ^ 'permToNewRememberedSetObj' ].
+self permToOldRememberedSetObj   = oop ifTrue: [ ^ 'permToOldRememberedSetObj' ].
+
 ^ ''
 ]
 
@@ -9167,6 +9188,31 @@ SpurMemoryManager >> moveToPermSpace: objOop [
 ]
 
 { #category : #'perm - space' }
+SpurMemoryManager >> moveToPermSpaceAllOldObjects [
+
+	<inline: false>
+	"Clearing the flag for all"
+	becomeEffectsFlags := 0.
+
+	self allOldSpaceObjectsDo: [ :objOop |
+		"If it is a hidden Object of the VM, we skip it"
+		((self classIndexOf: objOop) <= self classIsItselfClassIndexPun)
+			ifFalse: [
+			(self isValidToMoveToPermSpace: objOop) 
+				ifTrue: [ self doMoveToPermSpace: objOop addToRememberedSet: true ]]].
+
+	self allPermSpaceObjectsDo: [ :permObj |
+		self followForwardedObjectFields: permObj toDepth: 0 ].
+
+	self recreateFromPermSpaceRememberedSet.
+
+	becomeEffectsFlags := BecamePointerObjectFlag + BecameActiveClassFlag
+		                      bitOr: BecameCompiledMethodFlag.
+	self doAfterMoveToPermSpace.
+
+]
+
+{ #category : #'perm - space' }
 SpurMemoryManager >> moveToPermSpaceInBulk: anArrayOop [
 
 	<inline: false>
@@ -9516,6 +9562,15 @@ SpurMemoryManager >> noUnscannedEphemerons [
 SpurMemoryManager >> nonIndexablePointerFormat [
 	<api>
 	^1
+]
+
+{ #category : #'garbage collection' }
+SpurMemoryManager >> nullHeaderForMachineCodeMethod [
+	<api>
+	<returnTypeC: #sqLong>
+	^(self firstLongFormat << self formatShift)
+	+ (1 << self markedBitFullShift)
+	+ ClassBitmapCompactIndex
 ]
 
 { #category : #'object access' }
@@ -10255,22 +10310,25 @@ SpurMemoryManager >> possibleOldObjectStoreInto: destObj [
 SpurMemoryManager >> possiblePermObjectStoreInto: destObj value: valueObj [
 
 	<inline: true>
-	
-	(self isImmediate: valueObj)
-		ifTrue: [ ^ self ].
-	
-	(self isFixedKnownObject: valueObj)
-		ifTrue: [ ^ self ].
-	
-	(self isInObjectMemory: valueObj)
-		ifFalse: [ ^ self ].
-	
 	(self isRemembered: destObj)
 		ifTrue: [ ^ self ].
-	
-	(self isPermanent: destObj) ifTrue: [ 
-		(self getMemoryMap isPermanentObject: valueObj) ifFalse: [ 
-				self getFromPermToNewSpaceRememberedSet remember: destObj ] ]
+
+	(self isImmediate: valueObj)
+		ifTrue: [ ^ self ].
+
+	(self getMemoryMap isPermanentObject: destObj) 
+		ifFalse: [ ^ self ].
+
+	(self getMemoryMap isPermanentObject: valueObj) 
+		ifTrue: [ ^ self ].
+		
+	(self isFixedKnownObject: valueObj)
+		ifTrue: [ ^ self ].
+
+	(self isInObjectMemory: valueObj)
+		ifFalse: [ ^ self ].
+		
+	self getFromPermToNewSpaceRememberedSet remember: destObj.
 ]
 
 { #category : #'become implementation' }
