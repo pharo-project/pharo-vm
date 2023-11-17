@@ -560,15 +560,17 @@ CoInterpreter >> activateNewMethod [
 	
 	"Eagerly compile it if appropriate so that doits are fast."
 	methodHeader := self rawHeaderOf: newMethod.
-	(self isCogMethodReference: methodHeader) ifFalse: [
-		(self methodWithHeaderShouldBeCogged: methodHeader)
-			ifTrue: [
-				cogit cog: newMethod selector: objectMemory nilObject.
-				methodHeader := self rawHeaderOf: newMethod ]
-			ifFalse: [ self maybeFlagMethodAsInterpreted: newMethod ] ].
-
 	inInterpreter := self isInstructionPointerInInterpreter:
 		                 instructionPointer.
+		
+	(self isCogMethodReference: methodHeader)
+		ifTrue:
+			[inInterpreter ifTrue:
+				[self iframeSavedIP: framePointer put: instructionPointer asInteger.
+				 instructionPointer := cogit ceReturnToInterpreterPC].
+			^ self activateCoggedNewMethod: inInterpreter].		
+
+	"We are in the interpreter"
 	methodHeader := self justActivateNewMethod: true.
 
 	"Now check for stack overflow or an event (interrupt, must scavenge, etc)."
@@ -2602,6 +2604,28 @@ CoInterpreter >> executeFullCogBlock: cogMethod closure: closure mayContextSwitc
 	self push: closure.
 	self callEnilopmart: #ceCallCogCodePopReceiverReg
 	"NOTREACHED"
+]
+
+{ #category : #'message sending' }
+CoInterpreter >> executeNewMethod: eagerlyCompile [
+	"if not primitive, or primitive failed, activate the method"
+	<inline: true>
+	| inInterpreter |	
+	inInterpreter := self isInstructionPointerInInterpreter:
+		                 instructionPointer.
+	self executePrimitiveFromInterpreter: inInterpreter ifFail: [
+		| methodHeader |
+		eagerlyCompile ifTrue: [
+			"Eagerly compile it if appropriate so that doits are fast."
+			methodHeader := self rawHeaderOf: newMethod.
+			(self isCogMethodReference: methodHeader) ifFalse: [
+				(self methodWithHeaderShouldBeCogged: methodHeader)
+					ifTrue: [
+						cogit cog: newMethod selector: objectMemory nilObject.
+						methodHeader := self rawHeaderOf: newMethod ]
+					ifFalse: [ self maybeFlagMethodAsInterpreted: newMethod ] ]].
+		"if not primitive, or primitive failed, activate the method"
+		self activateNewMethod ]
 ]
 
 { #category : #'return bytecodes' }
