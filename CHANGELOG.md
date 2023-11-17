@@ -1,5 +1,11 @@
 # Change log
 
+## v10.0.9
+
+* Improves in PermSpace by @tesonep in https://github.com/pharo-project/pharo-vm/pull/684
+
+**Full Changelog**: https://github.com/pharo-project/pharo-vm/compare/v10.0.8...v10.0.9
+
 ## v10.0.8
 
 * Fixes #14768: File class>>primFileAttributes😷 answers corrupted result by @akgrant43 in https://github.com/pharo-project/pharo-vm/pull/697
