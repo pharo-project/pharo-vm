@@ -4904,6 +4904,12 @@ StackInterpreter >> doWaitSemaphore: sema reEnterInterpreter: hasToReenter [
 			hasToReenter ifTrue: [self forProcessPrimitiveReturnToExecutivePostContextSwitch: inInterpreter]]
 ]
 
+{ #category : #'miscellaneous bytecodes' }
+StackInterpreter >> druidForceIntepretation [
+	"Tell the compiler we should execute the code below this point compiled but interpreted"
+	"Ignore in the interpreter"
+]
+
 { #category : #initialization }
 StackInterpreter >> dummyReferToProxy [
 	<inline: false>
@@ -5402,6 +5408,7 @@ StackInterpreter >> extSendSuperBytecode [
 	extA := 0.
 	BytecodeSetHasDirectedSuperSend ifTrue: [
 		extB >= 64 ifTrue: [
+			self druidForceIntepretation.
 			numArgs := (byte bitAnd: 7) + (extB - 64 << 3).
 			extB := 0.
 			numExtB := 0.

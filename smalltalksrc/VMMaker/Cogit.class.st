@@ -3954,6 +3954,18 @@ Cogit >> ceCheckForInterruptTrampoline: anInteger [
 	ceCheckForInterruptTrampoline := anInteger
 ]
 
+{ #category : #accessing }
+Cogit >> ceDeoptimiseFrameTrampoline [
+
+	^ ceDeoptimiseFrameTrampoline
+]
+
+{ #category : #accessing }
+Cogit >> ceDeoptimiseFrameTrampoline: anObject [
+
+	ceDeoptimiseFrameTrampoline := anObject
+]
+
 { #category : #'as yet unclassified' }
 Cogit >> ceDereferenceSelectorIndex [
 	
@@ -5949,6 +5961,19 @@ Cogit >> deltaToSkipPrimAndErrorStoreIn: aMethodObj header: aMethodHeader [
 		ifTrue: [(coInterpreter sizeOfCallPrimitiveBytecode: aMethodHeader)
 			  + (coInterpreter sizeOfLongStoreTempBytecode: aMethodHeader)]
 		ifFalse: [0]
+]
+
+{ #category : #'bytecode generators' }
+Cogit >> deoptimize [
+
+	self
+		MoveCq: bytecodePC - (2 * numExtB) - (extA > 0
+				 ifTrue: [ 2 ]
+				 ifFalse: [ 0 ])
+		R: ReceiverResultReg.
+	self CallRT: ceDeoptimiseFrameTrampoline.
+	numExtB := extA := extB := 0.
+	^ 0
 ]
 
 { #category : #'code generation' }
@@ -11917,14 +11942,8 @@ Cogit >> trampolineName: routinePrefix numRegArgs: numArgs [
 Cogit >> unknownBytecode [
 
 	PartialCompilation ifTrue: [
-    self
-  		MoveCq: bytecodePC - (2 * numExtB) - (extA > 0
-	  			 ifTrue: [ 2 ]
-		  		 ifFalse: [ 0 ])
-  		R: ReceiverResultReg.
-	  self CallRT: ceDeoptimiseFrameTrampoline.
-  	numExtB := extA := extB := 0.
-    ^ 0 ].
+		self deoptimize.
+		^ 0 ].
 	^ EncounteredUnknownBytecode
 ]
 
