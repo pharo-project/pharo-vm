@@ -1105,6 +1105,11 @@ StackToRegisterMappingCogit >> compileTwoPathFramelessInit [
 	jumpOld jmpTarget: self Label
 ]
 
+{ #category : #accessing }
+StackToRegisterMappingCogit >> deadCode: aBoolean [ 
+	deadCode := aBoolean
+]
+
 { #category : #'simulation only' }
 StackToRegisterMappingCogit >> debugStackPointerFor: bcpc [
 	<doNotGenerate>
@@ -1115,6 +1120,14 @@ StackToRegisterMappingCogit >> debugStackPointerFor: bcpc [
 StackToRegisterMappingCogit >> debugStackPointers: aCArrayAccessor [ 
 	
 	debugStackPointers := aCArrayAccessor
+]
+
+{ #category : #'bytecode generators' }
+StackToRegisterMappingCogit >> deoptimize [
+
+	deadCode := true.
+	self ssFlushStack.
+	super deoptimize
 ]
 
 { #category : #'bytecode generators' }
@@ -4866,15 +4879,6 @@ StackToRegisterMappingCogit >> tryCollapseTempVectorInitializationOfSize: slots 
 					+ pushValueDesc numBytes
 					+ storeValueDesc numBytes.
 	^true
-]
-
-{ #category : #'bytecode generators' }
-StackToRegisterMappingCogit >> unknownBytecode [
-
-	PartialCompilation ifTrue: [
-		deadCode := true.
-		self ssFlushStack ].
-	^ super unknownBytecode
 ]
 
 { #category : #'simulation stack' }

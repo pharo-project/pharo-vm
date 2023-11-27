@@ -205,7 +205,8 @@ VMSimpleStackBasedCogitAbstractTest >> compileWithoutOutput: aBlockClosure bytec
 	cogit zeroOpcodeIndex.
 	cogit maxLitIndex: -1.
 	cogit methodLabel address: cogit methodZone freeStart.
-	
+	cogit deadCode: false.
+
 	^ aBlockClosure value
 ]
 
