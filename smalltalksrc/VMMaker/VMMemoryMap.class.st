@@ -386,6 +386,14 @@ VMMemoryMap >> fixedPermSpaceStart [
 ]
 
 { #category : #accessing }
+VMMemoryMap >> getNewSpaceMask [
+
+	<api>
+	
+	^ self newSpaceMask 
+]
+
+{ #category : #accessing }
 VMMemoryMap >> getNewSpaceStart [
 
 	<api>
@@ -394,11 +402,35 @@ VMMemoryMap >> getNewSpaceStart [
 ]
 
 { #category : #accessing }
+VMMemoryMap >> getOldSpaceMask [
+
+	<api>
+	
+	^ self oldSpaceMask 
+]
+
+{ #category : #accessing }
 VMMemoryMap >> getOldSpaceStart [
 
 	<api>
 	
 	^ self oldSpaceStart 
+]
+
+{ #category : #accessing }
+VMMemoryMap >> getPermSpaceMask [
+
+	<api>
+	
+	^ self permSpaceMask 
+]
+
+{ #category : #accessing }
+VMMemoryMap >> getSpaceMaskToUse [
+
+	<api>
+	
+	^ self spaceMaskToUse 
 ]
 
 { #category : #simulation }
