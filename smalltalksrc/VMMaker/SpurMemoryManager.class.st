@@ -12454,10 +12454,11 @@ SpurMemoryManager >> storePointerImmutabilityCheck: fieldIndex ofObject: objOop 
 	"Must be inlined for the normal send in cannotAssign:to:withIndex:"
 
 	<inline: true>
-	self druidIgnore: [
-		self cppIf: IMMUTABILITY ifTrue: [
-			self deny: (self isImmediate: objOop).
-			(self isImmutable: objOop) ifTrue: [
+	self cppIf: IMMUTABILITY ifTrue: [
+		self deny: (self isImmediate: objOop).
+		(self isImmutable: objOop) ifTrue: [
+			self druidForceIntepretation.
+			self druidIgnore: [
 				^ coInterpreter cannotAssign: valuePointer to: objOop withIndex: fieldIndex ] ] ].
 
 	self storePointer: fieldIndex ofObject: objOop withValue: valuePointer

@@ -7401,6 +7401,14 @@ DruidJIT >> gen_StoreAndPopReceiverVariableBytecode0 [
 		      allocateRegNotConflictingWith: live
 		      ifNone: [ ^ self unknownBytecode ].
 	live := live bitOr: (self registerMaskFor: t2).
+	self MoveM64: 0 r: t0 R: t2.
+	self ArithmeticShiftRightCq: 23 R: t2.
+	self AndCq: 1 R: t2.
+	self CmpCq: 0 R: t2.
+	jump1 := self JumpZero: 0.
+	self deoptimize.
+	currentBlock := self Label.
+	jump1 jmpTarget: currentBlock.
 	self MoveR: t0 R: t2.
 	self AndCq: 7 R: t2.
 	self ssFlushStack.
@@ -7546,6 +7554,14 @@ DruidJIT >> gen_StoreAndPopReceiverVariableBytecode1 [
 		      allocateRegNotConflictingWith: live
 		      ifNone: [ ^ self unknownBytecode ].
 	live := live bitOr: (self registerMaskFor: t2).
+	self MoveM64: 0 r: t0 R: t2.
+	self ArithmeticShiftRightCq: 23 R: t2.
+	self AndCq: 1 R: t2.
+	self CmpCq: 0 R: t2.
+	jump1 := self JumpZero: 0.
+	self deoptimize.
+	currentBlock := self Label.
+	jump1 jmpTarget: currentBlock.
 	self MoveR: t0 R: t2.
 	self AndCq: 7 R: t2.
 	self ssFlushStack.
@@ -7691,6 +7707,14 @@ DruidJIT >> gen_StoreAndPopReceiverVariableBytecode2 [
 		      allocateRegNotConflictingWith: live
 		      ifNone: [ ^ self unknownBytecode ].
 	live := live bitOr: (self registerMaskFor: t2).
+	self MoveM64: 0 r: t0 R: t2.
+	self ArithmeticShiftRightCq: 23 R: t2.
+	self AndCq: 1 R: t2.
+	self CmpCq: 0 R: t2.
+	jump1 := self JumpZero: 0.
+	self deoptimize.
+	currentBlock := self Label.
+	jump1 jmpTarget: currentBlock.
 	self MoveR: t0 R: t2.
 	self AndCq: 7 R: t2.
 	self ssFlushStack.
@@ -7836,6 +7860,14 @@ DruidJIT >> gen_StoreAndPopReceiverVariableBytecode3 [
 		      allocateRegNotConflictingWith: live
 		      ifNone: [ ^ self unknownBytecode ].
 	live := live bitOr: (self registerMaskFor: t2).
+	self MoveM64: 0 r: t0 R: t2.
+	self ArithmeticShiftRightCq: 23 R: t2.
+	self AndCq: 1 R: t2.
+	self CmpCq: 0 R: t2.
+	jump1 := self JumpZero: 0.
+	self deoptimize.
+	currentBlock := self Label.
+	jump1 jmpTarget: currentBlock.
 	self MoveR: t0 R: t2.
 	self AndCq: 7 R: t2.
 	self ssFlushStack.
@@ -7981,6 +8013,14 @@ DruidJIT >> gen_StoreAndPopReceiverVariableBytecode4 [
 		      allocateRegNotConflictingWith: live
 		      ifNone: [ ^ self unknownBytecode ].
 	live := live bitOr: (self registerMaskFor: t2).
+	self MoveM64: 0 r: t0 R: t2.
+	self ArithmeticShiftRightCq: 23 R: t2.
+	self AndCq: 1 R: t2.
+	self CmpCq: 0 R: t2.
+	jump1 := self JumpZero: 0.
+	self deoptimize.
+	currentBlock := self Label.
+	jump1 jmpTarget: currentBlock.
 	self MoveR: t0 R: t2.
 	self AndCq: 7 R: t2.
 	self ssFlushStack.
@@ -8126,6 +8166,14 @@ DruidJIT >> gen_StoreAndPopReceiverVariableBytecode5 [
 		      allocateRegNotConflictingWith: live
 		      ifNone: [ ^ self unknownBytecode ].
 	live := live bitOr: (self registerMaskFor: t2).
+	self MoveM64: 0 r: t0 R: t2.
+	self ArithmeticShiftRightCq: 23 R: t2.
+	self AndCq: 1 R: t2.
+	self CmpCq: 0 R: t2.
+	jump1 := self JumpZero: 0.
+	self deoptimize.
+	currentBlock := self Label.
+	jump1 jmpTarget: currentBlock.
 	self MoveR: t0 R: t2.
 	self AndCq: 7 R: t2.
 	self ssFlushStack.
@@ -8271,6 +8319,14 @@ DruidJIT >> gen_StoreAndPopReceiverVariableBytecode6 [
 		      allocateRegNotConflictingWith: live
 		      ifNone: [ ^ self unknownBytecode ].
 	live := live bitOr: (self registerMaskFor: t2).
+	self MoveM64: 0 r: t0 R: t2.
+	self ArithmeticShiftRightCq: 23 R: t2.
+	self AndCq: 1 R: t2.
+	self CmpCq: 0 R: t2.
+	jump1 := self JumpZero: 0.
+	self deoptimize.
+	currentBlock := self Label.
+	jump1 jmpTarget: currentBlock.
 	self MoveR: t0 R: t2.
 	self AndCq: 7 R: t2.
 	self ssFlushStack.
@@ -8416,6 +8472,14 @@ DruidJIT >> gen_StoreAndPopReceiverVariableBytecode7 [
 		      allocateRegNotConflictingWith: live
 		      ifNone: [ ^ self unknownBytecode ].
 	live := live bitOr: (self registerMaskFor: t2).
+	self MoveM64: 0 r: t0 R: t2.
+	self ArithmeticShiftRightCq: 23 R: t2.
+	self AndCq: 1 R: t2.
+	self CmpCq: 0 R: t2.
+	jump1 := self JumpZero: 0.
+	self deoptimize.
+	currentBlock := self Label.
+	jump1 jmpTarget: currentBlock.
 	self MoveR: t0 R: t2.
 	self AndCq: 7 R: t2.
 	self ssFlushStack.
