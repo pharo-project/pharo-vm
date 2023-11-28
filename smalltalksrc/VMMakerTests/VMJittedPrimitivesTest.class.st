@@ -59,8 +59,6 @@ VMJittedPrimitivesTest >> executePrimitiveWithReceiver: receiverOop withArgument
 		arguments: (aCollection collect: [ :arg | self twoComplementFor: arg ])
 		method: 0.
 
-
-
 	self runUntilReturn
 ]
 

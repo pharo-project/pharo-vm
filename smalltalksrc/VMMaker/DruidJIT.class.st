@@ -454,7 +454,7 @@ DruidJIT class >> bytecodeTable [
 		  { 2. 233. 233. #gen_ExtPushCharacterBytecode.
 		  #needsFrameNever:. 1 }.
 		  { 2. 234. 234. #gen_ExtSendBytecode. #isMapped }.
-		  { 2. 235. 235. #gen_ExtSendSuperBytecode. #isMapped }.
+		  { 2. 235. 235. #unknownBytecode }.
 		  { 2. 236. 236. #unknownBytecode }.
 		  { 2. 237. 237. #gen_ExtUnconditionalJump. #branch. #isMapped.
 		  #v4:Long:Branch:Distance: }.
@@ -2456,6 +2456,7 @@ DruidJIT >> gen_ExtJumpIfFalse [
 
 	| t0 jump3 jump1 currentBlock r3 live jump2 |
 	live := 0.
+	self annotateBytecode: self Label.
 	r3 := extB.
 	extA := 0.
 	extB := 0.
@@ -2473,7 +2474,6 @@ DruidJIT >> gen_ExtJumpIfFalse [
 	jump2 := self JumpZero: 0.
 	self MoveR: t0 R: TempReg.
 	self CallRT: ceSendMustBeBooleanTrampoline.
-	self annotateBytecode: self Label.
 	jump3 := self Jump: 0.
 	currentBlock := self Label.
 	jump1 jmpTarget: currentBlock.
@@ -2493,6 +2493,7 @@ DruidJIT >> gen_ExtJumpIfTrue [
 
 	| t0 jump3 jump1 currentBlock r3 live jump2 |
 	live := 0.
+	self annotateBytecode: self Label.
 	r3 := extB.
 	extA := 0.
 	extB := 0.
@@ -2510,7 +2511,6 @@ DruidJIT >> gen_ExtJumpIfTrue [
 	jump2 := self JumpZero: 0.
 	self MoveR: t0 R: TempReg.
 	self CallRT: ceSendMustBeBooleanTrampoline.
-	self annotateBytecode: self Label.
 	jump3 := self Jump: 0.
 	currentBlock := self Label.
 	jump1 jmpTarget: currentBlock.
@@ -2714,6 +2714,7 @@ DruidJIT >> gen_ExtUnconditionalJump [
 
 	| t0 jump1 t1 currentBlock r3 live |
 	live := 0.
+	self annotateBytecode: self Label.
 	r3 := extB.
 	self ssFlushStack.
 	(byte1 + (r3 << 8))<0 ifTrue: [
@@ -2739,7 +2740,6 @@ DruidJIT >> gen_ExtUnconditionalJump [
 		self CmpR: t1 R: t0.
 		jump1 := self JumpAboveOrEqual: 0.
 		self CallRT: ceCheckForInterruptTrampoline.
-		self annotateBytecode: self Label.
 		currentBlock := self Label.
 		jump1 jmpTarget: currentBlock.
 		self Jump:
@@ -2766,7 +2766,6 @@ DruidJIT >> gen_ExtUnconditionalJump [
 	self CmpR: t1 R: t0.
 	jump1 := self JumpAboveOrEqual: 0.
 	self CallRT: ceCheckForInterruptTrampoline.
-	self annotateBytecode: self Label.
 	currentBlock := self Label.
 	jump1 jmpTarget: currentBlock.
 	self Jump:
@@ -6777,6 +6776,7 @@ DruidJIT >> gen_ShortConditionalJumpFalse0 [
 
 	| t0 jump3 jump1 currentBlock jump2 live |
 	live := 0.
+	self annotateBytecode: self Label.
 	t0 := self
 		      allocateRegNotConflictingWith: live
 		      ifNone: [ ^ self unknownBytecode ].
@@ -6790,7 +6790,6 @@ DruidJIT >> gen_ShortConditionalJumpFalse0 [
 	jump2 := self JumpZero: 0.
 	self MoveR: t0 R: TempReg.
 	self CallRT: ceSendMustBeBooleanTrampoline.
-	self annotateBytecode: self Label.
 	jump3 := self Jump: 0.
 	currentBlock := self Label.
 	jump1 jmpTarget: currentBlock.
@@ -6809,6 +6808,7 @@ DruidJIT >> gen_ShortConditionalJumpFalse1 [
 
 	| t0 jump3 jump1 currentBlock jump2 live |
 	live := 0.
+	self annotateBytecode: self Label.
 	t0 := self
 		      allocateRegNotConflictingWith: live
 		      ifNone: [ ^ self unknownBytecode ].
@@ -6822,7 +6822,6 @@ DruidJIT >> gen_ShortConditionalJumpFalse1 [
 	jump2 := self JumpZero: 0.
 	self MoveR: t0 R: TempReg.
 	self CallRT: ceSendMustBeBooleanTrampoline.
-	self annotateBytecode: self Label.
 	jump3 := self Jump: 0.
 	currentBlock := self Label.
 	jump1 jmpTarget: currentBlock.
@@ -6841,6 +6840,7 @@ DruidJIT >> gen_ShortConditionalJumpFalse2 [
 
 	| t0 jump3 jump1 currentBlock jump2 live |
 	live := 0.
+	self annotateBytecode: self Label.
 	t0 := self
 		      allocateRegNotConflictingWith: live
 		      ifNone: [ ^ self unknownBytecode ].
@@ -6854,7 +6854,6 @@ DruidJIT >> gen_ShortConditionalJumpFalse2 [
 	jump2 := self JumpZero: 0.
 	self MoveR: t0 R: TempReg.
 	self CallRT: ceSendMustBeBooleanTrampoline.
-	self annotateBytecode: self Label.
 	jump3 := self Jump: 0.
 	currentBlock := self Label.
 	jump1 jmpTarget: currentBlock.
@@ -6873,6 +6872,7 @@ DruidJIT >> gen_ShortConditionalJumpFalse3 [
 
 	| t0 jump3 jump1 currentBlock jump2 live |
 	live := 0.
+	self annotateBytecode: self Label.
 	t0 := self
 		      allocateRegNotConflictingWith: live
 		      ifNone: [ ^ self unknownBytecode ].
@@ -6886,7 +6886,6 @@ DruidJIT >> gen_ShortConditionalJumpFalse3 [
 	jump2 := self JumpZero: 0.
 	self MoveR: t0 R: TempReg.
 	self CallRT: ceSendMustBeBooleanTrampoline.
-	self annotateBytecode: self Label.
 	jump3 := self Jump: 0.
 	currentBlock := self Label.
 	jump1 jmpTarget: currentBlock.
@@ -6905,6 +6904,7 @@ DruidJIT >> gen_ShortConditionalJumpFalse4 [
 
 	| t0 jump3 jump1 currentBlock jump2 live |
 	live := 0.
+	self annotateBytecode: self Label.
 	t0 := self
 		      allocateRegNotConflictingWith: live
 		      ifNone: [ ^ self unknownBytecode ].
@@ -6918,7 +6918,6 @@ DruidJIT >> gen_ShortConditionalJumpFalse4 [
 	jump2 := self JumpZero: 0.
 	self MoveR: t0 R: TempReg.
 	self CallRT: ceSendMustBeBooleanTrampoline.
-	self annotateBytecode: self Label.
 	jump3 := self Jump: 0.
 	currentBlock := self Label.
 	jump1 jmpTarget: currentBlock.
@@ -6937,6 +6936,7 @@ DruidJIT >> gen_ShortConditionalJumpFalse5 [
 
 	| t0 jump3 jump1 currentBlock jump2 live |
 	live := 0.
+	self annotateBytecode: self Label.
 	t0 := self
 		      allocateRegNotConflictingWith: live
 		      ifNone: [ ^ self unknownBytecode ].
@@ -6950,7 +6950,6 @@ DruidJIT >> gen_ShortConditionalJumpFalse5 [
 	jump2 := self JumpZero: 0.
 	self MoveR: t0 R: TempReg.
 	self CallRT: ceSendMustBeBooleanTrampoline.
-	self annotateBytecode: self Label.
 	jump3 := self Jump: 0.
 	currentBlock := self Label.
 	jump1 jmpTarget: currentBlock.
@@ -6969,6 +6968,7 @@ DruidJIT >> gen_ShortConditionalJumpFalse6 [
 
 	| t0 jump3 jump1 currentBlock jump2 live |
 	live := 0.
+	self annotateBytecode: self Label.
 	t0 := self
 		      allocateRegNotConflictingWith: live
 		      ifNone: [ ^ self unknownBytecode ].
@@ -6982,7 +6982,6 @@ DruidJIT >> gen_ShortConditionalJumpFalse6 [
 	jump2 := self JumpZero: 0.
 	self MoveR: t0 R: TempReg.
 	self CallRT: ceSendMustBeBooleanTrampoline.
-	self annotateBytecode: self Label.
 	jump3 := self Jump: 0.
 	currentBlock := self Label.
 	jump1 jmpTarget: currentBlock.
@@ -7001,6 +7000,7 @@ DruidJIT >> gen_ShortConditionalJumpFalse7 [
 
 	| t0 jump3 jump1 currentBlock jump2 live |
 	live := 0.
+	self annotateBytecode: self Label.
 	t0 := self
 		      allocateRegNotConflictingWith: live
 		      ifNone: [ ^ self unknownBytecode ].
@@ -7014,7 +7014,6 @@ DruidJIT >> gen_ShortConditionalJumpFalse7 [
 	jump2 := self JumpZero: 0.
 	self MoveR: t0 R: TempReg.
 	self CallRT: ceSendMustBeBooleanTrampoline.
-	self annotateBytecode: self Label.
 	jump3 := self Jump: 0.
 	currentBlock := self Label.
 	jump1 jmpTarget: currentBlock.
@@ -7033,6 +7032,7 @@ DruidJIT >> gen_ShortConditionalJumpTrue0 [
 
 	| t0 jump3 jump1 currentBlock jump2 live |
 	live := 0.
+	self annotateBytecode: self Label.
 	t0 := self
 		      allocateRegNotConflictingWith: live
 		      ifNone: [ ^ self unknownBytecode ].
@@ -7046,7 +7046,6 @@ DruidJIT >> gen_ShortConditionalJumpTrue0 [
 	jump2 := self JumpZero: 0.
 	self MoveR: t0 R: TempReg.
 	self CallRT: ceSendMustBeBooleanTrampoline.
-	self annotateBytecode: self Label.
 	jump3 := self Jump: 0.
 	currentBlock := self Label.
 	jump1 jmpTarget: currentBlock.
@@ -7065,6 +7064,7 @@ DruidJIT >> gen_ShortConditionalJumpTrue1 [
 
 	| t0 jump3 jump1 currentBlock jump2 live |
 	live := 0.
+	self annotateBytecode: self Label.
 	t0 := self
 		      allocateRegNotConflictingWith: live
 		      ifNone: [ ^ self unknownBytecode ].
@@ -7078,7 +7078,6 @@ DruidJIT >> gen_ShortConditionalJumpTrue1 [
 	jump2 := self JumpZero: 0.
 	self MoveR: t0 R: TempReg.
 	self CallRT: ceSendMustBeBooleanTrampoline.
-	self annotateBytecode: self Label.
 	jump3 := self Jump: 0.
 	currentBlock := self Label.
 	jump1 jmpTarget: currentBlock.
@@ -7097,6 +7096,7 @@ DruidJIT >> gen_ShortConditionalJumpTrue2 [
 
 	| t0 jump3 jump1 currentBlock jump2 live |
 	live := 0.
+	self annotateBytecode: self Label.
 	t0 := self
 		      allocateRegNotConflictingWith: live
 		      ifNone: [ ^ self unknownBytecode ].
@@ -7110,7 +7110,6 @@ DruidJIT >> gen_ShortConditionalJumpTrue2 [
 	jump2 := self JumpZero: 0.
 	self MoveR: t0 R: TempReg.
 	self CallRT: ceSendMustBeBooleanTrampoline.
-	self annotateBytecode: self Label.
 	jump3 := self Jump: 0.
 	currentBlock := self Label.
 	jump1 jmpTarget: currentBlock.
@@ -7129,6 +7128,7 @@ DruidJIT >> gen_ShortConditionalJumpTrue3 [
 
 	| t0 jump3 jump1 currentBlock jump2 live |
 	live := 0.
+	self annotateBytecode: self Label.
 	t0 := self
 		      allocateRegNotConflictingWith: live
 		      ifNone: [ ^ self unknownBytecode ].
@@ -7142,7 +7142,6 @@ DruidJIT >> gen_ShortConditionalJumpTrue3 [
 	jump2 := self JumpZero: 0.
 	self MoveR: t0 R: TempReg.
 	self CallRT: ceSendMustBeBooleanTrampoline.
-	self annotateBytecode: self Label.
 	jump3 := self Jump: 0.
 	currentBlock := self Label.
 	jump1 jmpTarget: currentBlock.
@@ -7161,6 +7160,7 @@ DruidJIT >> gen_ShortConditionalJumpTrue4 [
 
 	| t0 jump3 jump1 currentBlock jump2 live |
 	live := 0.
+	self annotateBytecode: self Label.
 	t0 := self
 		      allocateRegNotConflictingWith: live
 		      ifNone: [ ^ self unknownBytecode ].
@@ -7174,7 +7174,6 @@ DruidJIT >> gen_ShortConditionalJumpTrue4 [
 	jump2 := self JumpZero: 0.
 	self MoveR: t0 R: TempReg.
 	self CallRT: ceSendMustBeBooleanTrampoline.
-	self annotateBytecode: self Label.
 	jump3 := self Jump: 0.
 	currentBlock := self Label.
 	jump1 jmpTarget: currentBlock.
@@ -7193,6 +7192,7 @@ DruidJIT >> gen_ShortConditionalJumpTrue5 [
 
 	| t0 jump3 jump1 currentBlock jump2 live |
 	live := 0.
+	self annotateBytecode: self Label.
 	t0 := self
 		      allocateRegNotConflictingWith: live
 		      ifNone: [ ^ self unknownBytecode ].
@@ -7206,7 +7206,6 @@ DruidJIT >> gen_ShortConditionalJumpTrue5 [
 	jump2 := self JumpZero: 0.
 	self MoveR: t0 R: TempReg.
 	self CallRT: ceSendMustBeBooleanTrampoline.
-	self annotateBytecode: self Label.
 	jump3 := self Jump: 0.
 	currentBlock := self Label.
 	jump1 jmpTarget: currentBlock.
@@ -7225,6 +7224,7 @@ DruidJIT >> gen_ShortConditionalJumpTrue6 [
 
 	| t0 jump3 jump1 currentBlock jump2 live |
 	live := 0.
+	self annotateBytecode: self Label.
 	t0 := self
 		      allocateRegNotConflictingWith: live
 		      ifNone: [ ^ self unknownBytecode ].
@@ -7238,7 +7238,6 @@ DruidJIT >> gen_ShortConditionalJumpTrue6 [
 	jump2 := self JumpZero: 0.
 	self MoveR: t0 R: TempReg.
 	self CallRT: ceSendMustBeBooleanTrampoline.
-	self annotateBytecode: self Label.
 	jump3 := self Jump: 0.
 	currentBlock := self Label.
 	jump1 jmpTarget: currentBlock.
@@ -7257,6 +7256,7 @@ DruidJIT >> gen_ShortConditionalJumpTrue7 [
 
 	| t0 jump3 jump1 currentBlock jump2 live |
 	live := 0.
+	self annotateBytecode: self Label.
 	t0 := self
 		      allocateRegNotConflictingWith: live
 		      ifNone: [ ^ self unknownBytecode ].
@@ -7270,7 +7270,6 @@ DruidJIT >> gen_ShortConditionalJumpTrue7 [
 	jump2 := self JumpZero: 0.
 	self MoveR: t0 R: TempReg.
 	self CallRT: ceSendMustBeBooleanTrampoline.
-	self annotateBytecode: self Label.
 	jump3 := self Jump: 0.
 	currentBlock := self Label.
 	jump1 jmpTarget: currentBlock.
@@ -7385,6 +7384,7 @@ DruidJIT >> gen_StoreAndPopReceiverVariableBytecode0 [
 
 	| jump1 jump7 jumpNext t1 jump6 jump3 currentBlock t0 jump5 jump2 jumpTrue live t2 jump4 |
 	live := 0.
+	self annotateBytecode: self Label.
 	self ensureReceiverResultRegContainsSelf.
 	t0 := self
 		      allocateRegNotConflictingWith: live
@@ -7445,7 +7445,6 @@ DruidJIT >> gen_StoreAndPopReceiverVariableBytecode0 [
 	self MoveR: t0 R: TempReg.
 	backEnd saveAndRestoreLinkRegAround: [
 		self CallRT: ceStoreCheckTrampoline ].
-	self annotateBytecode: self Label.
 	self TstCq: 7 R: t1.
 	jump6 := self JumpNonZero: 0.
 	jump7 := self JumpZero: 0.
@@ -7512,7 +7511,6 @@ DruidJIT >> gen_StoreAndPopReceiverVariableBytecode0 [
 	self MoveR: t0 R: TempReg.
 	backEnd saveAndRestoreLinkRegAround: [
 		self CallRT: ceStoreCheckTrampoline ].
-	self annotateBytecode: self Label.
 	currentBlock := self Label.
 	jump6 jmpTarget: currentBlock.
 	jump4 jmpTarget: currentBlock.
@@ -7531,6 +7529,7 @@ DruidJIT >> gen_StoreAndPopReceiverVariableBytecode1 [
 
 	| jump1 jump7 jumpNext t1 jump6 jump3 currentBlock t0 jump5 jump2 jumpTrue live t2 jump4 |
 	live := 0.
+	self annotateBytecode: self Label.
 	self ensureReceiverResultRegContainsSelf.
 	t0 := self
 		      allocateRegNotConflictingWith: live
@@ -7591,7 +7590,6 @@ DruidJIT >> gen_StoreAndPopReceiverVariableBytecode1 [
 	self MoveR: t0 R: TempReg.
 	backEnd saveAndRestoreLinkRegAround: [
 		self CallRT: ceStoreCheckTrampoline ].
-	self annotateBytecode: self Label.
 	self TstCq: 7 R: t1.
 	jump6 := self JumpNonZero: 0.
 	jump7 := self JumpZero: 0.
@@ -7658,7 +7656,6 @@ DruidJIT >> gen_StoreAndPopReceiverVariableBytecode1 [
 	self MoveR: t0 R: TempReg.
 	backEnd saveAndRestoreLinkRegAround: [
 		self CallRT: ceStoreCheckTrampoline ].
-	self annotateBytecode: self Label.
 	currentBlock := self Label.
 	jump6 jmpTarget: currentBlock.
 	jump4 jmpTarget: currentBlock.
@@ -7677,6 +7674,7 @@ DruidJIT >> gen_StoreAndPopReceiverVariableBytecode2 [
 
 	| jump1 jump7 jumpNext t1 jump6 jump3 currentBlock t0 jump5 jump2 jumpTrue live t2 jump4 |
 	live := 0.
+	self annotateBytecode: self Label.
 	self ensureReceiverResultRegContainsSelf.
 	t0 := self
 		      allocateRegNotConflictingWith: live
@@ -7737,7 +7735,6 @@ DruidJIT >> gen_StoreAndPopReceiverVariableBytecode2 [
 	self MoveR: t0 R: TempReg.
 	backEnd saveAndRestoreLinkRegAround: [
 		self CallRT: ceStoreCheckTrampoline ].
-	self annotateBytecode: self Label.
 	self TstCq: 7 R: t1.
 	jump6 := self JumpNonZero: 0.
 	jump7 := self JumpZero: 0.
@@ -7804,7 +7801,6 @@ DruidJIT >> gen_StoreAndPopReceiverVariableBytecode2 [
 	self MoveR: t0 R: TempReg.
 	backEnd saveAndRestoreLinkRegAround: [
 		self CallRT: ceStoreCheckTrampoline ].
-	self annotateBytecode: self Label.
 	currentBlock := self Label.
 	jump6 jmpTarget: currentBlock.
 	jump4 jmpTarget: currentBlock.
@@ -7823,6 +7819,7 @@ DruidJIT >> gen_StoreAndPopReceiverVariableBytecode3 [
 
 	| jump1 jump7 jumpNext t1 jump6 jump3 currentBlock t0 jump5 jump2 jumpTrue live t2 jump4 |
 	live := 0.
+	self annotateBytecode: self Label.
 	self ensureReceiverResultRegContainsSelf.
 	t0 := self
 		      allocateRegNotConflictingWith: live
@@ -7883,7 +7880,6 @@ DruidJIT >> gen_StoreAndPopReceiverVariableBytecode3 [
 	self MoveR: t0 R: TempReg.
 	backEnd saveAndRestoreLinkRegAround: [
 		self CallRT: ceStoreCheckTrampoline ].
-	self annotateBytecode: self Label.
 	self TstCq: 7 R: t1.
 	jump6 := self JumpNonZero: 0.
 	jump7 := self JumpZero: 0.
@@ -7950,7 +7946,6 @@ DruidJIT >> gen_StoreAndPopReceiverVariableBytecode3 [
 	self MoveR: t0 R: TempReg.
 	backEnd saveAndRestoreLinkRegAround: [
 		self CallRT: ceStoreCheckTrampoline ].
-	self annotateBytecode: self Label.
 	currentBlock := self Label.
 	jump6 jmpTarget: currentBlock.
 	jump4 jmpTarget: currentBlock.
@@ -7969,6 +7964,7 @@ DruidJIT >> gen_StoreAndPopReceiverVariableBytecode4 [
 
 	| jump1 jump7 jumpNext t1 jump6 jump3 currentBlock t0 jump5 jump2 jumpTrue live t2 jump4 |
 	live := 0.
+	self annotateBytecode: self Label.
 	self ensureReceiverResultRegContainsSelf.
 	t0 := self
 		      allocateRegNotConflictingWith: live
@@ -8029,7 +8025,6 @@ DruidJIT >> gen_StoreAndPopReceiverVariableBytecode4 [
 	self MoveR: t0 R: TempReg.
 	backEnd saveAndRestoreLinkRegAround: [
 		self CallRT: ceStoreCheckTrampoline ].
-	self annotateBytecode: self Label.
 	self TstCq: 7 R: t1.
 	jump6 := self JumpNonZero: 0.
 	jump7 := self JumpZero: 0.
@@ -8096,7 +8091,6 @@ DruidJIT >> gen_StoreAndPopReceiverVariableBytecode4 [
 	self MoveR: t0 R: TempReg.
 	backEnd saveAndRestoreLinkRegAround: [
 		self CallRT: ceStoreCheckTrampoline ].
-	self annotateBytecode: self Label.
 	currentBlock := self Label.
 	jump6 jmpTarget: currentBlock.
 	jump4 jmpTarget: currentBlock.
@@ -8115,6 +8109,7 @@ DruidJIT >> gen_StoreAndPopReceiverVariableBytecode5 [
 
 	| jump1 jump7 jumpNext t1 jump6 jump3 currentBlock t0 jump5 jump2 jumpTrue live t2 jump4 |
 	live := 0.
+	self annotateBytecode: self Label.
 	self ensureReceiverResultRegContainsSelf.
 	t0 := self
 		      allocateRegNotConflictingWith: live
@@ -8175,7 +8170,6 @@ DruidJIT >> gen_StoreAndPopReceiverVariableBytecode5 [
 	self MoveR: t0 R: TempReg.
 	backEnd saveAndRestoreLinkRegAround: [
 		self CallRT: ceStoreCheckTrampoline ].
-	self annotateBytecode: self Label.
 	self TstCq: 7 R: t1.
 	jump6 := self JumpNonZero: 0.
 	jump7 := self JumpZero: 0.
@@ -8242,7 +8236,6 @@ DruidJIT >> gen_StoreAndPopReceiverVariableBytecode5 [
 	self MoveR: t0 R: TempReg.
 	backEnd saveAndRestoreLinkRegAround: [
 		self CallRT: ceStoreCheckTrampoline ].
-	self annotateBytecode: self Label.
 	currentBlock := self Label.
 	jump6 jmpTarget: currentBlock.
 	jump4 jmpTarget: currentBlock.
@@ -8261,6 +8254,7 @@ DruidJIT >> gen_StoreAndPopReceiverVariableBytecode6 [
 
 	| jump1 jump7 jumpNext t1 jump6 jump3 currentBlock t0 jump5 jump2 jumpTrue live t2 jump4 |
 	live := 0.
+	self annotateBytecode: self Label.
 	self ensureReceiverResultRegContainsSelf.
 	t0 := self
 		      allocateRegNotConflictingWith: live
@@ -8321,7 +8315,6 @@ DruidJIT >> gen_StoreAndPopReceiverVariableBytecode6 [
 	self MoveR: t0 R: TempReg.
 	backEnd saveAndRestoreLinkRegAround: [
 		self CallRT: ceStoreCheckTrampoline ].
-	self annotateBytecode: self Label.
 	self TstCq: 7 R: t1.
 	jump6 := self JumpNonZero: 0.
 	jump7 := self JumpZero: 0.
@@ -8388,7 +8381,6 @@ DruidJIT >> gen_StoreAndPopReceiverVariableBytecode6 [
 	self MoveR: t0 R: TempReg.
 	backEnd saveAndRestoreLinkRegAround: [
 		self CallRT: ceStoreCheckTrampoline ].
-	self annotateBytecode: self Label.
 	currentBlock := self Label.
 	jump6 jmpTarget: currentBlock.
 	jump4 jmpTarget: currentBlock.
@@ -8407,6 +8399,7 @@ DruidJIT >> gen_StoreAndPopReceiverVariableBytecode7 [
 
 	| jump1 jump7 jumpNext t1 jump6 jump3 currentBlock t0 jump5 jump2 jumpTrue live t2 jump4 |
 	live := 0.
+	self annotateBytecode: self Label.
 	self ensureReceiverResultRegContainsSelf.
 	t0 := self
 		      allocateRegNotConflictingWith: live
@@ -8467,7 +8460,6 @@ DruidJIT >> gen_StoreAndPopReceiverVariableBytecode7 [
 	self MoveR: t0 R: TempReg.
 	backEnd saveAndRestoreLinkRegAround: [
 		self CallRT: ceStoreCheckTrampoline ].
-	self annotateBytecode: self Label.
 	self TstCq: 7 R: t1.
 	jump6 := self JumpNonZero: 0.
 	jump7 := self JumpZero: 0.
@@ -8534,7 +8526,6 @@ DruidJIT >> gen_StoreAndPopReceiverVariableBytecode7 [
 	self MoveR: t0 R: TempReg.
 	backEnd saveAndRestoreLinkRegAround: [
 		self CallRT: ceStoreCheckTrampoline ].
-	self annotateBytecode: self Label.
 	currentBlock := self Label.
 	jump6 jmpTarget: currentBlock.
 	jump4 jmpTarget: currentBlock.

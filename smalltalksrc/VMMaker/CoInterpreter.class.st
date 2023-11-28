@@ -901,6 +901,8 @@ CoInterpreter >> bytecodePrimAt [
 	"Override to eliminate the atCache, something of little benefit to the JIT."
 
 	<compilationInfo: #isMapped>
+	<druidInfo: #hasSend>
+	
 	self normalSendSpecialSelector: 16 argumentCount: 1
 ]
 
@@ -908,6 +910,7 @@ CoInterpreter >> bytecodePrimAt [
 CoInterpreter >> bytecodePrimAtPut [
 	"Override to eliminate the atCache, something of little benefit to the JIT."
 	<compilationInfo: #isMapped>
+	<druidInfo: #hasSend>
 
 	self normalSendSpecialSelector: 17 argumentCount: 2
 ]
