@@ -3442,6 +3442,7 @@ StackToRegisterMappingCogit >> initializeFixup: fixup [
 	 Initially a fixup's target is just a flag.  Later on it is replaced with a proper instruction."
 	<var: #fixup type: #'BytecodeFixup *'>
 	<inline: true>
+
 	fixup
 		simStackPtr: simStackPtr;
 		becomeMergeFixup;
