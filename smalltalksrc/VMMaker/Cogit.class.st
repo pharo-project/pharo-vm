@@ -8214,6 +8214,13 @@ Cogit >> getCStackPointer [
 ]
 
 { #category : #'method map' }
+Cogit >> getIsBytecodePCReference [
+
+	<cmacro>
+	^ HasBytecodePC
+]
+
+{ #category : #'method map' }
 Cogit >> getIsObjectReference [
 	<cmacro>
 	^IsObjectReference
