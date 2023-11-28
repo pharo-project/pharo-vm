@@ -2685,6 +2685,8 @@ StackInterpreter >> booleanValueOf: obj [
 StackInterpreter >> bytecodePrimAdd [
 
 	<compilationInfo: #isMapped>
+	<druidInfo: #hasSend>
+	
 	| rcvr arg |
 	rcvr := self stackValue: 1.
 	arg := self stackValue: 0.
@@ -2748,6 +2750,8 @@ StackInterpreter >> bytecodePrimAt [
 StackInterpreter >> bytecodePrimAtEnd [
 
 	<compilationInfo: #isMapped>
+	<druidInfo: #hasSend>
+	
 	self normalSendSpecialSelector: 21 argumentCount: 0
 ]
 
@@ -2797,6 +2801,8 @@ StackInterpreter >> bytecodePrimAtPut [
 StackInterpreter >> bytecodePrimBitAnd [
 
 	<compilationInfo: #isMapped>
+	<druidInfo: #hasSend>
+	
 	self druidIgnore: [
 		self initPrimCall.
 		self primitiveBitAnd.
@@ -2810,6 +2816,8 @@ StackInterpreter >> bytecodePrimBitAnd [
 StackInterpreter >> bytecodePrimBitOr [
 
 	<compilationInfo: #isMapped>
+	<druidInfo: #hasSend>
+	
 	self druidIgnore: [
 		self initPrimCall.
 		self primitiveBitOr.
@@ -2823,6 +2831,8 @@ StackInterpreter >> bytecodePrimBitOr [
 StackInterpreter >> bytecodePrimBitShift [
 
 	<compilationInfo: #isMapped>
+	<druidInfo: #hasSend>
+	
 	self druidIgnore: [
 		self initPrimCall.
 		self primitiveBitShift.
@@ -2846,6 +2856,8 @@ StackInterpreter >> bytecodePrimClass [
 StackInterpreter >> bytecodePrimDiv [
 
 	<compilationInfo: #isMapped>
+	<druidInfo: #hasSend>
+	
 	self druidIgnore: [
 		| quotient |
 		self initPrimCall.
@@ -2863,6 +2875,8 @@ StackInterpreter >> bytecodePrimDiv [
 StackInterpreter >> bytecodePrimDivide [
 
 	<compilationInfo: #isMapped>
+	<druidInfo: #hasSend>
+	
 	self druidIgnore: [
 		| rcvr arg result |
 		rcvr := self stackValue: 1.
@@ -2889,6 +2903,8 @@ StackInterpreter >> bytecodePrimDivide [
 StackInterpreter >> bytecodePrimDo [
 
 	<compilationInfo: #isMapped>
+	<druidInfo: #hasSend>
+	
 	self normalSendSpecialSelector: 27 argumentCount: 1
 ]
 
@@ -2896,6 +2912,7 @@ StackInterpreter >> bytecodePrimDo [
 StackInterpreter >> bytecodePrimEqualSistaV1 [
 
 	<compilationInfo: #isMapped>
+	<druidInfo: #hasSend>
 	
 	self druidIgnore: [
 		| rcvr arg aBool |
@@ -2915,6 +2932,8 @@ StackInterpreter >> bytecodePrimEqualSistaV1 [
 StackInterpreter >> bytecodePrimGreaterOrEqualSistaV1 [
 
 	<compilationInfo: #isMapped>
+	<druidInfo: #hasSend>
+	
 	self druidIgnore: [
 		| rcvr arg aBool |
 		rcvr := self stackValue: 1.
@@ -2938,6 +2957,8 @@ StackInterpreter >> bytecodePrimGreaterOrEqualSistaV1 [
 StackInterpreter >> bytecodePrimGreaterThanSistaV1 [
 
 	<compilationInfo: #isMapped>
+	<druidInfo: #hasSend>
+	
 	self druidIgnore: [
 		| rcvr arg aBool |
 		rcvr := self stackValue: 1.
@@ -2961,6 +2982,8 @@ StackInterpreter >> bytecodePrimGreaterThanSistaV1 [
 StackInterpreter >> bytecodePrimIdenticalSistaV1 [
 	<compilationInfo: #notMapped>
 	<needsFrameNever: -1>
+	<druidInfo: #hasSend>
+	
 	| rcvr arg |
 	rcvr := self stackValue: 1.
 	arg := self stackValue: 0.
@@ -2975,6 +2998,8 @@ StackInterpreter >> bytecodePrimIdenticalSistaV1 [
 StackInterpreter >> bytecodePrimLessOrEqualSistaV1 [
 
 	<compilationInfo: #isMapped>
+	<druidInfo: #hasSend>
+	
 	self druidIgnore: [
 		| rcvr arg aBool |
 		rcvr := self stackValue: 1.
@@ -2998,6 +3023,8 @@ StackInterpreter >> bytecodePrimLessOrEqualSistaV1 [
 StackInterpreter >> bytecodePrimLessThanSistaV1 [
 
 	<compilationInfo: #isMapped>
+	<druidInfo: #hasSend>
+	
 	self druidIgnore: [
 		| rcvr arg aBool |
 		rcvr := self stackValue: 1.
@@ -3021,6 +3048,8 @@ StackInterpreter >> bytecodePrimLessThanSistaV1 [
 StackInterpreter >> bytecodePrimMakePoint [
 
 	<compilationInfo: #isMapped>
+	<druidInfo: #hasSend>
+	
 	self druidIgnore: [ "Inline primitiveMakePoint for the benefit of the interpreter. Externalizing the
 	 sp & fp, then internalizing and testign for primitive failure add much overhead.
 	 So simply inline the relatively small ammount of code directly."
@@ -3045,6 +3074,8 @@ StackInterpreter >> bytecodePrimMakePoint [
 StackInterpreter >> bytecodePrimMod [
 
 	<compilationInfo: #isMapped>
+	<druidInfo: #hasSend>
+	
 	self druidIgnore: [
 		| mod |
 		self initPrimCall.
@@ -3062,6 +3093,8 @@ StackInterpreter >> bytecodePrimMod [
 StackInterpreter >> bytecodePrimMultiply [
 
 	<compilationInfo: #isMapped>
+	<druidInfo: #hasSend>
+	
 	self druidIgnore: [
 		| rcvr arg result overflow oop |
 		rcvr := self stackValue: 1.
@@ -3094,6 +3127,8 @@ StackInterpreter >> bytecodePrimMultiply [
 StackInterpreter >> bytecodePrimNew [
 
 	<compilationInfo: #isMapped>
+	<druidInfo: #hasSend>
+	
 	self normalSendSpecialSelector: 28 argumentCount: 0
 ]
 
@@ -3101,6 +3136,8 @@ StackInterpreter >> bytecodePrimNew [
 StackInterpreter >> bytecodePrimNewWithArg [
 
 	<compilationInfo: #isMapped>
+	<druidInfo: #hasSend>
+	
 	self normalSendSpecialSelector: 29 argumentCount: 1
 ]
 
@@ -3108,6 +3145,8 @@ StackInterpreter >> bytecodePrimNewWithArg [
 StackInterpreter >> bytecodePrimNext [
 
 	<compilationInfo: #isMapped>
+	<druidInfo: #hasSend>
+	
 	self normalSendSpecialSelector: 19 argumentCount: 0
 ]
 
@@ -3115,6 +3154,8 @@ StackInterpreter >> bytecodePrimNext [
 StackInterpreter >> bytecodePrimNextPut [
 
 	<compilationInfo: #isMapped>
+	<druidInfo: #hasSend>
+	
 	self normalSendSpecialSelector: 20 argumentCount: 1
 ]
 
@@ -3122,6 +3163,8 @@ StackInterpreter >> bytecodePrimNextPut [
 StackInterpreter >> bytecodePrimNotEqualSistaV1 [
 
 	<compilationInfo: #isMapped>
+	<druidInfo: #hasSend>
+	
 	self druidIgnore: [
 		| rcvr arg aBool |
 		rcvr := self stackValue: 1.
@@ -3141,6 +3184,8 @@ StackInterpreter >> bytecodePrimNotIdenticalSistaV1 [
 
 	<compilationInfo: #notMapped>
 	<needsFrameNever: -1>
+	<druidInfo: #hasSend>
+	
 	| rcvr arg |
 	rcvr := self stackValue: 1.
 	arg := self stackValue: 0.
@@ -3155,6 +3200,8 @@ StackInterpreter >> bytecodePrimNotIdenticalSistaV1 [
 StackInterpreter >> bytecodePrimPointX [
 
 	<compilationInfo: #isMapped>
+	<druidInfo: #hasSend>
+	
 	self druidIgnore: [
 		| rcvr |
 		self initPrimCall.
@@ -3173,6 +3220,8 @@ StackInterpreter >> bytecodePrimPointX [
 StackInterpreter >> bytecodePrimPointY [
 
 	<compilationInfo: #isMapped>
+	<druidInfo: #hasSend>
+	
 	self druidIgnore: [
 		| rcvr |
 		self initPrimCall.
@@ -3191,6 +3240,8 @@ StackInterpreter >> bytecodePrimPointY [
 StackInterpreter >> bytecodePrimSize [
 
 	<compilationInfo: #isMapped>
+	<druidInfo: #hasSend>
+	
 	self druidIgnore: [
 		| rcvr sz isString isArray |
 		self initPrimCall.
@@ -3225,6 +3276,8 @@ StackInterpreter >> bytecodePrimSpecialSelector24 [
 StackInterpreter >> bytecodePrimSubtract [
 
 	<compilationInfo: #isMapped>
+	<druidInfo: #hasSend>
+	
 	self druidIgnore: [
 		| rcvr arg result |
 		rcvr := self stackValue: 1.
@@ -3247,6 +3300,8 @@ StackInterpreter >> bytecodePrimSubtract [
 StackInterpreter >> bytecodePrimValue [
 
 	<compilationInfo: #isMapped>
+	<druidInfo: #hasSend>
+	
 	self druidIgnore: [
 		| rcvr isBlock |
 		rcvr := self stackTop.
@@ -3265,6 +3320,8 @@ StackInterpreter >> bytecodePrimValue [
 StackInterpreter >> bytecodePrimValueWithArg [
 
 	<compilationInfo: #isMapped>
+	<druidInfo: #hasSend>
+	
 	self druidIgnore: [
 		| rcvr isBlock |
 		rcvr := self stackValue: 1.
@@ -5376,6 +5433,8 @@ StackInterpreter >> extSendBytecode [
 	"238		11101110	i i i i i j j j	Send Literal Selector #iiiii (+ Extend A * 32) with jjj (+ Extend B * 8) Arguments"
 
 	<compilationInfo: #isMapped>
+	<druidInfo: #hasSend>
+	
 	| byte messageSelectorIndex messageArgumentCount |
 	byte := self fetchByte.
 	messageSelectorIndex := byte >> 3 + (extA << 5).
@@ -5395,6 +5454,7 @@ StackInterpreter >> extSendSuperBytecode [
 			ifTrue: [Send To Superclass Literal Selector #iiiii (+ Extend A * 32) with jjj (+ Extend B * 8) Arguments]
 			ifFalse: [Send To Superclass of Stacked Class Literal Selector #iiiii (+ Extend A * 32) with jjj (+ (Extend B bitAnd: 63) * 8) Arguments]"
 	<compilationInfo: #isMapped>
+	<druidInfo: #hasSend>
 
 	| byte selectorIndex numArgs |
 	byte := self fetchByte.
@@ -13266,6 +13326,8 @@ StackInterpreter >> sendLiteralSelector0ArgsBytecode [
 	"Can use any of the first 16 literals for the selector."
 
 	<compilationInfo: #isMapped>
+	<druidInfo: #hasSend>
+	
 	self
 		normalLiteralSelectorAt: (currentBytecode bitAnd: 16rF)
 		argumentCount: 0
@@ -13276,6 +13338,8 @@ StackInterpreter >> sendLiteralSelector1ArgBytecode [
 	"Can use any of the first 16 literals for the selector."
 
 	<compilationInfo: #isMapped>
+	<druidInfo: #hasSend>
+	
 	self
 		normalLiteralSelectorAt: (currentBytecode bitAnd: 16rF)
 		argumentCount: 1
@@ -13286,6 +13350,8 @@ StackInterpreter >> sendLiteralSelector2ArgsBytecode [
 	"Can use any of the first 16 literals for the selector."
 
 	<compilationInfo: #isMapped>
+	<druidInfo: #hasSend>
+	
 	self
 		normalLiteralSelectorAt: (currentBytecode bitAnd: 16rF)
 		argumentCount: 2
