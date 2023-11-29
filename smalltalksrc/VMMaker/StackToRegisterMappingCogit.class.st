@@ -1125,7 +1125,6 @@ StackToRegisterMappingCogit >> debugStackPointers: aCArrayAccessor [
 { #category : #'bytecode generators' }
 StackToRegisterMappingCogit >> deoptimize [
 
-	deadCode := true.
 	self ssFlushStack.
 	super deoptimize
 ]
