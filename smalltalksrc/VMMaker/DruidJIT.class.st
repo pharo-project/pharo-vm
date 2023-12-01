@@ -2319,7 +2319,7 @@ DruidJIT >> gen_ExtPushFullClosureBytecode [
 			self MoveR: t2 M64: FullClosureReceiverIndex << 3 + 8 r: t0.
 			self ssPushRegister: t0 ]
 		ifFalse: [
-			self simSelf copyTo: t2.
+			self simSelf copyToReg: t2.
 			self MoveR: t2 M64: FullClosureReceiverIndex << 3 + 8 r: t0.
 			self ssPushRegister: t0 ].
 
