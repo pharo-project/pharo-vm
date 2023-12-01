@@ -2980,18 +2980,19 @@ StackInterpreter >> bytecodePrimGreaterThanSistaV1 [
 
 { #category : #'common selector sends' }
 StackInterpreter >> bytecodePrimIdenticalSistaV1 [
-	<compilationInfo: #notMapped>
-	<needsFrameNever: -1>
 	<druidInfo: #hasSend>
 	
+	<compilationInfo: #isMapped>
 	| rcvr arg |
-	rcvr := self stackValue: 1.
-	arg := self stackValue: 0.
-	(objectMemory isOopForwarded: rcvr) ifTrue:
-		[rcvr := self handleSpecialSelectorSendFaultFor: rcvr].
-	(objectMemory isOopForwarded: arg) ifTrue:
-		[arg := self handleSpecialSelectorSendFaultFor: arg].
-	self booleanCheatSistaV1: rcvr = arg
+	self druidIgnore: [
+		rcvr := self stackValue: 1.
+		arg := self stackValue: 0.
+		(objectMemory isOopForwarded: rcvr) ifTrue: [
+			rcvr := self handleSpecialSelectorSendFaultFor: rcvr ].
+		(objectMemory isOopForwarded: arg) ifTrue: [
+			arg := self handleSpecialSelectorSendFaultFor: arg ].
+		^ self booleanCheatSistaV1: rcvr = arg ].
+	self normalSendSpecialSelector: 22 argumentCount: 1
 ]
 
 { #category : #'common selector sends' }
@@ -3182,18 +3183,18 @@ StackInterpreter >> bytecodePrimNotEqualSistaV1 [
 { #category : #'common selector sends' }
 StackInterpreter >> bytecodePrimNotIdenticalSistaV1 [
 
-	<compilationInfo: #notMapped>
-	<needsFrameNever: -1>
 	<druidInfo: #hasSend>
-	
-	| rcvr arg |
-	rcvr := self stackValue: 1.
-	arg := self stackValue: 0.
-	(objectMemory isOopForwarded: rcvr) ifTrue: [
-		rcvr := self handleSpecialSelectorSendFaultFor: rcvr ].
-	(objectMemory isOopForwarded: arg) ifTrue: [
-		arg := self handleSpecialSelectorSendFaultFor: arg ].
-	self booleanCheatSistaV1: rcvr ~= arg
+	<compilationInfo: #isMapped>
+	self druidIgnore: [
+		| rcvr arg |
+		rcvr := self stackValue: 1.
+		arg := self stackValue: 0.
+		(objectMemory isOopForwarded: rcvr) ifTrue: [
+			rcvr := self handleSpecialSelectorSendFaultFor: rcvr ].
+		(objectMemory isOopForwarded: arg) ifTrue: [
+			arg := self handleSpecialSelectorSendFaultFor: arg ].
+		^ self booleanCheatSistaV1: rcvr ~= arg ].
+	^ self normalSendSpecialSelector: 24 argumentCount: 1
 ]
 
 { #category : #'common selector sends' }
@@ -3369,40 +3370,44 @@ StackInterpreter >> callPrimitiveBytecode [
 	"V4:			249		11111001	i i i i i i i i	jjjjjjjj		Call Primitive #iiiiiiii + (jjjjjjjj * 256)
 	 SistaV1:	248		11111000 	iiiiiiii		mjjjjjjj		Call Primitive #iiiiiiii + (jjjjjjj * 256) m=1 means inlined primitive, no hard return after execution.
 	 V3/Spur:	139		10001011	i i i i i i i i	jjjjjjjj		Call Primitive #iiiiiiii + (jjjjjjjj * 256)"
+
 	"Note that we simply skip a callPrimitiveBytecode at the start of a method
 	 that contains a primitive.  This because methods like Context(Part)>>reset
 	 have to be updated to skip the callPrimtiive bytecode otherwise."
-	SistaVM
-		ifTrue:
-			[| byte1 byte2 prim primSet header |
-			 byte1 := self fetchByte.
-			 byte2 := self fetchByte.
-			 self fetchNextBytecode.
-			 byte2 < 128 ifTrue:
-				[header := objectMemory methodHeaderOf: method.
-				 ((self methodHeaderHasPrimitive: header)
-				  and: [instructionPointer asUnsignedInteger
-						= (self initialIPForHeader: header method: method) + (self sizeOfCallPrimitiveBytecode: header)]) ifTrue:
-					[^self].
-				 instructionPointer := instructionPointer - 3.
-				 ^self respondToUnknownBytecode].
-			 prim := byte2 - 128 << 8 + byte1.
-			 primSet := prim >> 13 bitAnd: 3.
-			 prim := prim bitAnd: 8191.
-			 primSet = 0 ifTrue: [^self sistaInlinePrimitive: prim].
-		
+
+	| header |
+	self druidIgnore: [
+		SistaVM ifTrue: [
+			| byte1 byte2 prim primSet |
+			byte1 := self fetchByte.
+			byte2 := self fetchByte.
+			self fetchNextBytecode.
+			byte2 < 128 ifTrue: [
+				header := objectMemory methodHeaderOf: method.
+				((self methodHeaderHasPrimitive: header) and: [
+					 instructionPointer asUnsignedInteger
+					 = (self initialIPForHeader: header method: method)
+					 + (self sizeOfCallPrimitiveBytecode: header) ]) ifTrue: [
+					^ self ].
+				instructionPointer := instructionPointer - 3.
+				^ self respondToUnknownBytecode ].
+			prim := byte2 - 128 << 8 + byte1.
+			primSet := prim >> 13 bitAnd: 3.
+			prim := prim bitAnd: 8191.
+			primSet = 0 ifTrue: [ ^ self sistaInlinePrimitive: prim ].
+
 			instructionPointer := instructionPointer - 3.
-			^self respondToUnknownBytecode]
-		ifFalse:
-			[| header |
-			 header := objectMemory methodHeaderOf: method.
-			 ((self methodHeaderHasPrimitive: header)
-			  and: [instructionPointer asInteger = (self initialIPForHeader: header method: method)])
-				ifTrue:
-					[instructionPointer := instructionPointer + (self sizeOfCallPrimitiveBytecode: header) - 1.
-					 ^self fetchNextBytecode]
-				ifFalse:
-					[^self respondToUnknownBytecode]]
+			^ self respondToUnknownBytecode ].
+
+		header := objectMemory methodHeaderOf: method.
+		((self methodHeaderHasPrimitive: header) and: [
+			 instructionPointer asInteger
+			 = (self initialIPForHeader: header method: method) ]) ifTrue: [
+			instructionPointer := instructionPointer
+			                      + (self sizeOfCallPrimitiveBytecode: header)
+			                      - 1.
+			^ self fetchNextBytecode ].
+		self respondToUnknownBytecode ]
 ]
 
 { #category : #'callback support' }
@@ -12602,13 +12607,16 @@ StackInterpreter >> pushMaybeContext: obj receiverVariable: fieldIndex [
 	 of married contexts are correctly initialized so they don't
 	 need special treatment on read.  Only sender, instruction
 	 pointer and stack pointer need to be intercepted on reads."
+
 	<inline: true>
-	((self isReadMediatedContextInstVarIndex: fieldIndex)
-	and: [objectMemory isContextNonImm: obj])
-		ifTrue:
-			[self push: (self instVar: fieldIndex ofContext: obj)]
-		ifFalse:
-			[self push: (objectMemory fetchPointer: fieldIndex ofObject: obj)]
+	((self isReadMediatedContextInstVarIndex: fieldIndex) and: [
+		 objectMemory isContextNonImm: obj ])
+		ifTrue: [
+			self druidForceIntepretation.
+			self druidIgnore: [
+				self push: (self instVar: fieldIndex ofContext: obj) ] ]
+		ifFalse: [
+		self push: (objectMemory fetchPointer: fieldIndex ofObject: obj) ]
 ]
 
 { #category : #'stack bytecodes' }
