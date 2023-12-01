@@ -195,7 +195,7 @@ CogObjectRepresentation >> genCreateClosureAt: bcpc numArgs: numArgs numCopied: 
 ]
 
 { #category : #'bytecode generator support' }
-CogObjectRepresentation >> genCreateFullClosure: compiledBlock numArgs: numArgs numCopied: numCopied ignoreContext: ignoreContext contextNumArgs: contextNumArgs large: contextIsLarge inBlock: contextIsBlock [
+CogObjectRepresentation >> genCreateFullClosureInLiteral: index numCopied: numCopied ignoreContext: ignoreContext contextNumArgs: contextNumArgs large: contextIsLarge inBlock: contextIsBlock intoRegister: anObject [
 	"Create a full closure"
 	self subclassResponsibility
 ]
