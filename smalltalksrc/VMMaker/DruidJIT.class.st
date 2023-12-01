@@ -690,29 +690,38 @@ DruidJIT >> genConvertIntegerToSmallIntegerInReg: reg [
 ]
 
 { #category : #'trait candidates' }
-DruidJIT >> genCreateFullClosure: compiledBlock numArgs: numArgs numCopied: numCopied ignoreContext: ignoreContext contextNumArgs: contextNumArgs large: contextIsLarge inBlock: contextIsBlock [
+DruidJIT >> genCreateFullClosureInIndex: anIndex numCopied: numCopied ignoreContext: ignoreContext contextNumArgs: contextNumArgs large: contextIsLarge inBlock: contextIsBlock intoRegister: destinationRegister [
 	"Create a full closure with the given values."
-	| numSlots byteSize header skip |
-	<var: #skip type: #'AbstractInstruction *'>
 
-	"First get thisContext into ReceiverResultReg and thence in ClassReg."
+	<var: #skip type: #'AbstractInstruction *'>
+	| numSlots byteSize header skip numArgs compiledBlock |
+	compiledBlock := self getLiteral: anIndex.
+	numArgs := coInterpreter argumentCountOf: compiledBlock.
+
+	"First get thisContext into destinationRegister and thence in ClassReg."
 	ignoreContext
 		ifTrue: [ self genMoveNilR: ClassReg ]
-		ifFalse: 
-			[self genGetActiveContextNumArgs: contextNumArgs large: contextIsLarge inBlock: contextIsBlock.
-			self MoveR: ReceiverResultReg R: ClassReg ].
-	
+		ifFalse: [
+			self
+				genGetActiveContextNumArgs: contextNumArgs
+				large: contextIsLarge
+				inBlock: contextIsBlock.
+			self MoveR: destinationRegister R: ClassReg ].
+
 	numSlots := FullClosureFirstCopiedValueIndex + numCopied.
 	byteSize := objectMemory smallObjectBytesForSlots: numSlots.
 	self assert: ClassFullBlockClosureCompactIndex ~= 0.
 	header := objectMemory
-					headerForSlots: numSlots
-					format: objectMemory indexablePointersFormat
-					classIndex: ClassFullBlockClosureCompactIndex.
-	self MoveAw: objectMemory freeStartAddress R: ReceiverResultReg.
-	self genStoreHeader: header intoNewInstance: ReceiverResultReg using: TempReg.
+		          headerForSlots: numSlots
+		          format: objectMemory indexablePointersFormat
+		          classIndex: ClassFullBlockClosureCompactIndex.
+	self MoveAw: objectMemory freeStartAddress R: destinationRegister.
 	self
-		LoadEffectiveAddressMw: byteSize r: ReceiverResultReg R: TempReg;
+		genStoreHeader: header
+		intoNewInstance: destinationRegister
+		using: TempReg.
+	self
+		LoadEffectiveAddressMw: byteSize r: destinationRegister R: TempReg;
 		MoveR: TempReg Aw: objectMemory freeStartAddress;
 		CmpCq: objectMemory getScavengeThreshold R: TempReg.
 	skip := self JumpBelow: 0.
@@ -720,12 +729,21 @@ DruidJIT >> genCreateFullClosure: compiledBlock numArgs: numArgs numCopied: numC
 	skip jmpTarget: self Label.
 
 	self
-		MoveR: ClassReg Mw: FullClosureOuterContextIndex * objectMemory bytesPerOop + objectMemory baseHeaderSize r: ReceiverResultReg;
+		MoveR: ClassReg
+		Mw: FullClosureOuterContextIndex * objectMemory bytesPerOop
+			+ objectMemory baseHeaderSize
+		r: destinationRegister;
 		genMoveConstant: compiledBlock R: TempReg;
-		MoveR: TempReg Mw: FullClosureCompiledBlockIndex * objectMemory bytesPerOop + objectMemory baseHeaderSize r: ReceiverResultReg;
+		MoveR: TempReg
+		Mw: FullClosureCompiledBlockIndex * objectMemory bytesPerOop
+			+ objectMemory baseHeaderSize
+		r: destinationRegister;
 		MoveCq: (objectMemory integerObjectOf: numArgs) R: TempReg;
-		MoveR: TempReg Mw: FullClosureNumArgsIndex * objectMemory bytesPerOop + objectMemory baseHeaderSize r: ReceiverResultReg.
-	^0
+		MoveR: TempReg
+		Mw: FullClosureNumArgsIndex * objectMemory bytesPerOop
+			+ objectMemory baseHeaderSize
+		r: destinationRegister.
+	^ 0
 ]
 
 { #category : #'trait candidates' }

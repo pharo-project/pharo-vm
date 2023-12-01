@@ -120,12 +120,6 @@ CogBytecodeDescriptor >> isBranchTrue: anObject [
 ]
 
 { #category : #accessing }
-CogBytecodeDescriptor >> isCallPrimitive [
-
-	^generator == #genCallPrimitiveBytecode
-]
-
-{ #category : #accessing }
 CogBytecodeDescriptor >> isConditionalBranch [
 	<inline: true>
 	^isBranchTrue or: [isBranchFalse]

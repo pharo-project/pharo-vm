@@ -1547,43 +1547,44 @@ StackToRegisterMappingCogit >> genCmpArgIsConstant: argIsConstant rcvrIsConstant
 { #category : #'bytecode generators' }
 StackToRegisterMappingCogit >> genExtPushFullClosureBytecode [
 	"Full Block creation compilation. The block's actual code will be compiled separatedly."
+
 	"*	255		11111111	xxxxxxxx	siyyyyyy	push Closure Compiled block literal index xxxxxxxx (+ Extend A * 256) numCopied yyyyyy receiverOnStack: s = 1 ignoreOuterContext: i = 1"
-	| numCopied ignoreContext receiverIsOnStack compiledBlock reg |
+
+	| numCopied ignoreContext receiverIsOnStack reg |
 	self assert: needsFrame.
-	compiledBlock := self getLiteral: byte1 + (extA << 8).
 	extA := 0.
-	numCopied := byte2 bitAnd: 1<< 6 - 1.
+	numCopied := byte2 bitAnd: 1 << 6 - 1.
 	receiverIsOnStack := byte2 anyMask: 1 << 7.
 	ignoreContext := byte2 anyMask: 1 << 6.
 	self voidReceiverResultRegContainsSelf.
-	self ssAllocateCallReg: ReceiverResultReg
+	self
+		ssAllocateCallReg: ReceiverResultReg
 		and: SendNumArgsReg
 		and: ClassReg.
 	objectRepresentation
-		genCreateFullClosure: compiledBlock
-		numArgs: (coInterpreter argumentCountOf: compiledBlock)
+		genCreateFullClosureInIndex: byte1 + (extA << 8)
 		numCopied: numCopied
 		ignoreContext: ignoreContext
 		contextNumArgs: methodOrBlockNumArgs
 		large: (coInterpreter methodNeedsLargeContext: methodObj)
-		inBlock: inBlock.
+		inBlock: inBlock
+		intoRegister: ReceiverResultReg.
 	"Closure in ReceiverResultReg"
-	1 to: numCopied do:
-		[:i| 
+	1 to: numCopied do: [ :i |
 		reg := self ssStorePop: true toPreferredReg: TempReg.
-		 objectRepresentation
+		objectRepresentation
 			genStoreSourceReg: reg
 			slotIndex: FullClosureFirstCopiedValueIndex + numCopied - i
-			intoNewObjectInDestReg: ReceiverResultReg].
+			intoNewObjectInDestReg: ReceiverResultReg ].
 	receiverIsOnStack
-		ifTrue: [reg := self ssStorePop: true toPreferredReg: TempReg]
-		ifFalse: [self simSelf copyToReg: (reg := TempReg)].
+		ifTrue: [ reg := self ssStorePop: true toPreferredReg: TempReg ]
+		ifFalse: [ self simSelf copyToReg: (reg := TempReg) ].
 	objectRepresentation
-			genStoreSourceReg: reg
-			slotIndex: FullClosureReceiverIndex
-			intoNewObjectInDestReg: ReceiverResultReg.
+		genStoreSourceReg: reg
+		slotIndex: FullClosureReceiverIndex
+		intoNewObjectInDestReg: ReceiverResultReg.
 	self ssPushRegister: ReceiverResultReg.
-	^0
+	^ 0
 ]
 
 { #category : #'bytecode generators' }

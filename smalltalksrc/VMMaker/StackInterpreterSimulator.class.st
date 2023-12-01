@@ -1380,12 +1380,6 @@ StackInterpreterSimulator >> profileSends: nBytecodes [
 	self close
 ]
 
-{ #category : #'debugging traps' }
-StackInterpreterSimulator >> pushMaybeContextReceiverVariable: index [
-	"(index = SenderIndex or: [index = ClosureIndex]) ifTrue: [self halt]."
-	^super pushMaybeContextReceiverVariable: index
-]
-
 { #category : #'I/O primitives support' }
 StackInterpreterSimulator >> queueForwardedEvent: event [
 	eventQueue ifNil:
