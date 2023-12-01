@@ -4662,7 +4662,7 @@ StackInterpreter >> createActualMessageTo: lookupClass [
 ]
 
 { #category : #'stack bytecodes' }
-StackInterpreter >> createFullClosureInIndex: compiledBlockLiteralIndex numCopied: numCopied ignoreContext: ignoreContext receiverIsOnStack: receiverIsOnStack [
+StackInterpreter >> createFullClosureInIndex: compiledBlockLiteralIndex numCopied: numCopied ignoreContext: ignoreContext [
 	"The compiler has pushed the values to be copied, if any. The receiver has been pushed on stack before if specified. 
 	 Create a Closure with space for the copiedValues and pop numCopied values off the stack into the closure.
 	 Sets outerContext, compiledBlock, numArgs and receiver as specified.."
@@ -5392,8 +5392,7 @@ StackInterpreter >> extPushFullClosureBytecode [
 	newClosure := self
 		              createFullClosureInIndex: compiledBlockLiteralIndex
 		              numCopied: numCopied
-		              ignoreContext: ignoreContext
-		              receiverIsOnStack: receiverIsOnStack.
+		              ignoreContext: ignoreContext.
 
 	self druidIgnore: [ self maybeTraceBlockCreation: newClosure ].
 
