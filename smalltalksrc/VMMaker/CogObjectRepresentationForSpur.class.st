@@ -486,11 +486,12 @@ CogObjectRepresentationForSpur >> genCreateFullClosureInIndex: anIndex numCopied
 	ignoreContext
 		ifTrue: [ cogit genMoveNilR: ClassReg ]
 		ifFalse: [
+			cogit voidReceiverResultRegContainsSelf.
 			self
 				genGetActiveContextNumArgs: contextNumArgs
 				large: contextIsLarge
 				inBlock: contextIsBlock.
-			cogit MoveR: destinationRegister R: ClassReg ].
+			cogit MoveR: ReceiverResultReg R: ClassReg ].
 
 	numSlots := FullClosureFirstCopiedValueIndex + numCopied.
 	byteSize := objectMemory smallObjectBytesForSlots: numSlots.
