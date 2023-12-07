@@ -12602,13 +12602,14 @@ StackInterpreter >> pushMaybeContext: obj receiverVariable: fieldIndex [
 	 of married contexts are correctly initialized so they don't
 	 need special treatment on read.  Only sender, instruction
 	 pointer and stack pointer need to be intercepted on reads."
+
 	<inline: true>
-	((self isReadMediatedContextInstVarIndex: fieldIndex)
-	and: [objectMemory isContextNonImm: obj])
-		ifTrue:
-			[self push: (self instVar: fieldIndex ofContext: obj)]
-		ifFalse:
-			[self push: (objectMemory fetchPointer: fieldIndex ofObject: obj)]
+	((self isReadMediatedContextInstVarIndex: fieldIndex) and: [
+		 objectMemory isContextNonImm: obj ])
+		ifTrue: [
+			self druidForceIntepretation.
+			self druidIgnore: [ self push: (self instVar: fieldIndex ofContext: obj) ] ]
+		ifFalse: [ self push: (objectMemory fetchPointer: fieldIndex ofObject: obj) ]
 ]
 
 { #category : #'stack bytecodes' }
