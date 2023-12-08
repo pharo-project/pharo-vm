@@ -2980,18 +2980,20 @@ StackInterpreter >> bytecodePrimGreaterThanSistaV1 [
 
 { #category : #'common selector sends' }
 StackInterpreter >> bytecodePrimIdenticalSistaV1 [
-	<compilationInfo: #notMapped>
-	<needsFrameNever: -1>
+
+	<compilationInfo: #isMapped>
 	<druidInfo: #hasSend>
-	
 	| rcvr arg |
-	rcvr := self stackValue: 1.
-	arg := self stackValue: 0.
-	(objectMemory isOopForwarded: rcvr) ifTrue:
-		[rcvr := self handleSpecialSelectorSendFaultFor: rcvr].
-	(objectMemory isOopForwarded: arg) ifTrue:
-		[arg := self handleSpecialSelectorSendFaultFor: arg].
-	self booleanCheatSistaV1: rcvr = arg
+	self druidIgnore: [
+		rcvr := self stackValue: 1.
+		arg := self stackValue: 0.
+		(objectMemory isOopForwarded: rcvr) ifTrue: [
+			rcvr := self handleSpecialSelectorSendFaultFor: rcvr ].
+		(objectMemory isOopForwarded: arg) ifTrue: [
+			arg := self handleSpecialSelectorSendFaultFor: arg ].
+		self booleanCheatSistaV1: rcvr = arg ].
+
+	self normalSendSpecialSelector: 22 argumentCount: 1
 ]
 
 { #category : #'common selector sends' }
@@ -3182,18 +3184,19 @@ StackInterpreter >> bytecodePrimNotEqualSistaV1 [
 { #category : #'common selector sends' }
 StackInterpreter >> bytecodePrimNotIdenticalSistaV1 [
 
-	<compilationInfo: #notMapped>
-	<needsFrameNever: -1>
+	<compilationInfo: #isMapped>
 	<druidInfo: #hasSend>
-	
 	| rcvr arg |
-	rcvr := self stackValue: 1.
-	arg := self stackValue: 0.
-	(objectMemory isOopForwarded: rcvr) ifTrue: [
-		rcvr := self handleSpecialSelectorSendFaultFor: rcvr ].
-	(objectMemory isOopForwarded: arg) ifTrue: [
-		arg := self handleSpecialSelectorSendFaultFor: arg ].
-	self booleanCheatSistaV1: rcvr ~= arg
+	self druidIgnore: [
+		rcvr := self stackValue: 1.
+		arg := self stackValue: 0.
+		(objectMemory isOopForwarded: rcvr) ifTrue: [
+			rcvr := self handleSpecialSelectorSendFaultFor: rcvr ].
+		(objectMemory isOopForwarded: arg) ifTrue: [
+			arg := self handleSpecialSelectorSendFaultFor: arg ].
+		self booleanCheatSistaV1: rcvr ~= arg ].
+
+	self normalSendSpecialSelector: 24 argumentCount: 1
 ]
 
 { #category : #'common selector sends' }
