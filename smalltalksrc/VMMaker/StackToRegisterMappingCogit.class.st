@@ -1130,45 +1130,6 @@ StackToRegisterMappingCogit >> deoptimize [
 ]
 
 { #category : #'bytecode generators' }
-StackToRegisterMappingCogit >> doubleExtendedDoAnythingBytecode [
-	"Replaces the Blue Book double-extended send [132], in which the first byte was wasted on 8 bits of argument count. 
-	Here we use 3 bits for the operation sub-type (opType),  and the remaining 5 bits for argument count where needed. 
-	The last byte give access to 256 instVars or literals. 
-	See also secondExtendedSendBytecode"
-	| opType |
-	opType := byte1 >> 5.
-	opType = 0 ifTrue:
-		[^self genSend: byte2 numArgs: (byte1 bitAnd: 31)].
-	opType = 1 ifTrue:
-		[^self genSendSuper: byte2 numArgs: (byte1 bitAnd: 31)].
-	"We need a map entry for this bytecode for correct parsing.
-	 The sends will get an IsSend entry anyway.  The other cases need a fake one."
-	opType caseOf: {
-			[2]	->	[(coInterpreter isReadMediatedContextInstVarIndex: byte2)
-						ifTrue: [self genPushMaybeContextReceiverVariable: byte2]
-						ifFalse: [self genPushReceiverVariable: byte2.
-								self annotateInstructionForBytecode.
-								^0]].
-			[3]	->	[self genPushLiteralIndex: byte2.
-					 self annotateInstructionForBytecode.
-					 ^0].
-			[4]	->	[self genPushLiteralVariable: byte2.].
-			[7]	->	[self genStorePop: false LiteralVariable: byte2.
-					self cppIf: IMMUTABILITY ifTrue: [ "genStorePop:LiteralVariable: annotates; don't annotate twice" ^0 ] ] }
-		otherwise: "5 & 6"
-			[(coInterpreter isWriteMediatedContextInstVarIndex: byte2)
-				ifTrue: [self genStorePop: opType = 6 MaybeContextReceiverVariable: byte2]
-				ifFalse: [self genStorePop: opType = 6 ReceiverVariable: byte2].
-			self cppIf: IMMUTABILITY ifTrue: [ "genStorePop:...ReceiverVariable: annotate; don't annotate twice" ^0 ]].
-	"We need a map entry for this bytecode for correct parsing (if the method builds a frame)."
-	self assert: needsFrame.
-	"genPushMaybeContextInstVar, pushLitVar, store & storePop all generate code"
-	self assert: self prevInstIsPCAnnotated not.
-	self annotateBytecode: self Label.
-	^0
-]
-
-{ #category : #'bytecode generators' }
 StackToRegisterMappingCogit >> duplicateTopBytecode [
 	| desc |
 	<var: #desc type: #SimStackEntry>
@@ -1328,12 +1289,6 @@ StackToRegisterMappingCogit >> extBSpecifiesInitializeInstance [
 	"This is a negative; do not intialize if 1 is present in extB.  This is also the no-store-check bit."
 	<inline: true>
 	^ extB noMask: 1
-]
-
-{ #category : #testing }
-StackToRegisterMappingCogit >> extBSpecifiesMaybeContext [
-	<inline: true>
-	^ extB anyMask: 2
 ]
 
 { #category : #testing }
@@ -1588,23 +1543,8 @@ StackToRegisterMappingCogit >> genExtPushFullClosureBytecode [
 ]
 
 { #category : #'bytecode generators' }
-StackToRegisterMappingCogit >> genExtPushRemoteTempOrInstVarLongBytecode [
-	| index maybeContext |
-	^ (byte2 noMask: coInterpreter remoteIsInstVarAccess)
-		ifTrue: [ self genPushRemoteTempLongBytecode ]
-		ifFalse: 
-			[ maybeContext := self extBSpecifiesMaybeContext.
-			index := byte1 + (extA << 8).
-			extA := 0.
-			extB := 0.
-			numExtB := 0.
-			((coInterpreter isReadMediatedContextInstVarIndex: index) and: [ maybeContext ])
-				ifTrue: [ self genPushMaybeContextRemoteInstVar: index inObjectAt: byte2 - coInterpreter remoteIsInstVarAccess ]
-				ifFalse: [ self genPushRemoteInstVar: index inObjectAt: byte2 - coInterpreter remoteIsInstVarAccess ] ]
-]
-
-{ #category : #'bytecode generators' }
 StackToRegisterMappingCogit >> genExtStorePopRemoteTempOrInstVarLongBytecodePopBoolean: boolean [
+
 	| index maybeContext needsStoreCheck needsImmCheck |
 	needsStoreCheck := self sistaNeedsStoreCheck.
 	maybeContext := self extBSpecifiesMaybeContext.
@@ -1612,30 +1552,38 @@ StackToRegisterMappingCogit >> genExtStorePopRemoteTempOrInstVarLongBytecodePopB
 	extB := 0.
 	numExtB := 0.
 	(byte2 noMask: coInterpreter remoteIsInstVarAccess)
-		ifTrue: 
-			[ self 
-				genStorePop: boolean 
-				RemoteTemp: byte1 
-				At: byte2 
+		ifTrue: [
+			self
+				genStorePop: boolean
+				RemoteTemp: byte1
+				At: byte2
 				needsStoreCheck: needsStoreCheck.
-			self cppIf: IMMUTABILITY ifTrue: [ self annotateBytecode: self Label ] ]
-		ifFalse: 
-			[index := byte1 + (extA << 8).
-			 extA := 0.
-			 ((coInterpreter isWriteMediatedContextInstVarIndex: index) and: [ maybeContext ])
-				ifTrue: [self 
-						genStorePop: boolean 
-						MaybeContextRemoteInstVar: index 
-						ofObjectAt: byte2 - coInterpreter remoteIsInstVarAccess 
+			self
+				cppIf: IMMUTABILITY
+				ifTrue: [ self annotateBytecode: self Label ] ]
+		ifFalse: [
+			index := byte1 + (extA << 8).
+			extA := 0.
+			((coInterpreter isWriteMediatedContextInstVarIndex: index) and: [
+				 maybeContext ])
+				ifTrue: [
+					self
+						genStorePop: boolean
+						MaybeContextRemoteInstVar: index
+						ofObjectAt: byte2 - coInterpreter remoteIsInstVarAccess
 						needsStoreCheck: needsStoreCheck
 						needsImmutabilityCheck: needsImmCheck ]
-				ifFalse: [self 
-						genStorePop: boolean 
-						RemoteInstVar: index 
-						ofObjectAt: byte2 - coInterpreter remoteIsInstVarAccess 
+				ifFalse: [
+					self
+						genStorePop: boolean
+						RemoteInstVar: index
+						ofObjectAt: byte2 - coInterpreter remoteIsInstVarAccess
 						needsStoreCheck: needsStoreCheck
 						needsImmutabilityCheck: needsImmCheck ].
-			self cppIf: IMMUTABILITY ifTrue: [ needsImmCheck ifFalse: [self annotateBytecode: self Label ] ] ].
+			self
+				cppIf: IMMUTABILITY
+				ifTrue: [
+				needsImmCheck ifFalse: [ self annotateBytecode: self Label ] ] ].
 	^ 0
 ]
 
@@ -2546,50 +2494,6 @@ StackToRegisterMappingCogit >> genSendTrampolineFor: aRoutine numArgs: numArgs c
 		resultReg: NoReg
 		appendOpcodes: true.
 	^startAddress
-]
-
-{ #category : #'bytecode generators' }
-StackToRegisterMappingCogit >> genSistaExtStoreAndPopReceiverVariableBytecodePopBoolean: popBoolean [
-	<inline: true>
-	| index needsStoreCheck needsImmCheck maybeContext result |
-	needsStoreCheck := self sistaNeedsStoreCheck.
-	needsImmCheck := self extBSpecifiesImmCheck.
-	"Long form and short form exist for popInto. Only the long form exists for store.
-	Store have an explicit flag to mark context accessing, while popInto context accessing are done through the long form,
-	hence generate the context form if the flag is set or if this is a popInto."
-	maybeContext := popBoolean or: [self extBSpecifiesMaybeContext].
-	extB := 0.
-	numExtB := 0.
-	index := byte1 + (extA << 8).
-	extA := 0.
-	result := ((coInterpreter isWriteMediatedContextInstVarIndex: index) and: [maybeContext])
-		ifTrue: [self 
-				genStorePop: popBoolean 
-				MaybeContextReceiverVariable: index 
-				needsStoreCheck: needsStoreCheck 
-				needsImmutabilityCheck: needsImmCheck]
-		ifFalse: [self 
-				 genStorePop: popBoolean 
-				 ReceiverVariable: index 
-				 needsStoreCheck: needsStoreCheck 
-				 needsImmutabilityCheck: needsImmCheck].
-	self cppIf: IMMUTABILITY ifTrue: [ needsImmCheck ifFalse: [self annotateBytecode: self Label ] ].
-	^result
-]
-
-{ #category : #'bytecode generators' }
-StackToRegisterMappingCogit >> genSistaExtStoreLiteralVariableBytecodePopBoolean: boolean [
-	<inline: true>
-	| index needsStoreCheck needsImmCheck |
-	needsStoreCheck := self sistaNeedsStoreCheck.
-	needsImmCheck := self extBSpecifiesImmCheck.
-	index := byte1 + (extA << 8).
-	extA := numExtB := extB := 0.
-	^self 
-		genStorePop: boolean 
-		LiteralVariable: index 
-		needsStoreCheck: needsStoreCheck 
-		needsImmutabilityCheck: needsImmCheck
 ]
 
 { #category : #'bytecode generators' }

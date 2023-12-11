@@ -89,11 +89,11 @@ SimpleStackBasedCogit class >> initializeBytecodeTableForSistaV1 [
 	self generatorTableFrom: #(
 		"1 byte bytecodes"
 		"pushes"
-		(1    0   15 genPushReceiverVariableBytecode isInstVarRef		needsFrameNever: 1)
+		(1    0   15 genPushReceiverVariableBytecode isInstVarRef 1)
 		(1  16   31 genPushLiteralVariable16CasesBytecode			needsFrameNever: 1)
 		(1  32   63 genPushLiteralConstantBytecode					needsFrameNever: 1)
-		(1  64   75 genPushTemporaryVariableBytecode				needsFrameIfMod16GENumArgs: 1)
-		(1  76   76 genPushReceiverBytecode							needsFrameNever: 1)
+		(1  64   75 genPushTemporaryVariableBytecode				)
+		(1  76   76 genPushReceiverBytecode							1)
 		(1  77   77 genPushConstantTrueBytecode						needsFrameNever: 1)
 		(1  78   78 genPushConstantFalseBytecode					needsFrameNever: 1)
 		(1  79   79 genPushConstantNilBytecode						needsFrameNever: 1)
@@ -1007,19 +1007,25 @@ SimpleStackBasedCogit >> doubleExtendedDoAnythingBytecode [
 	opType caseOf: {
 			[2]	->	[(coInterpreter isReadMediatedContextInstVarIndex: byte2)
 						ifTrue: [self genPushMaybeContextReceiverVariable: byte2]
-						ifFalse: [self genPushReceiverVariable: byte2]].
-			[3]	->	[self genPushLiteralIndex: byte2].
-			[4]	->	[self genPushLiteralVariable: byte2].
+						ifFalse: [self genPushReceiverVariable: byte2.
+								self annotateInstructionForBytecode.
+								^0]].
+			[3]	->	[self genPushLiteralIndex: byte2.
+					 self annotateInstructionForBytecode.
+					 ^0].
+			[4]	->	[self genPushLiteralVariable: byte2.].
 			[7]	->	[self genStorePop: false LiteralVariable: byte2.
-					 self cppIf: IMMUTABILITY ifTrue: ["genStorePop:LiteralVariable: annotates; don't annotate twice" ^0]] }
+					self cppIf: IMMUTABILITY ifTrue: [ "genStorePop:LiteralVariable: annotates; don't annotate twice" ^0 ] ] }
 		otherwise: "5 & 6"
 			[(coInterpreter isWriteMediatedContextInstVarIndex: byte2)
 				ifTrue: [self genStorePop: opType = 6 MaybeContextReceiverVariable: byte2]
 				ifFalse: [self genStorePop: opType = 6 ReceiverVariable: byte2].
-			 self cppIf: IMMUTABILITY ifTrue: ["genStorePop:...ReceiverVariable: annotate; don't annotate twice" ^0]].
+			self cppIf: IMMUTABILITY ifTrue: [ "genStorePop:...ReceiverVariable: annotate; don't annotate twice" ^0 ]].
 	"We need a map entry for this bytecode for correct parsing (if the method builds a frame)."
-	needsFrame ifTrue:
-		[self annotateBytecode: self Label].
+	self assert: needsFrame.
+	"genPushMaybeContextInstVar, pushLitVar, store & storePop all generate code"
+	self assert: self prevInstIsPCAnnotated not.
+	self annotateBytecode: self Label.
 	^0
 ]
 
@@ -1050,6 +1056,12 @@ SimpleStackBasedCogit >> evaluateTrampolineCallBlock: block protectLinkRegIfNot:
 			[ backEnd saveAndRestoreLinkRegAround: [ block value ] ]
 		ifTrue:
 			[ block value ].
+]
+
+{ #category : #'bytecode generators' }
+SimpleStackBasedCogit >> extBSpecifiesMaybeContext [
+	<inline: true>
+	^ extB anyMask: 2
 ]
 
 { #category : #'bytecode generators' }
@@ -1217,11 +1229,13 @@ SimpleStackBasedCogit >> genExtPushCharacterBytecode [
 { #category : #'bytecode generators' }
 SimpleStackBasedCogit >> genExtPushFullClosureBytecode [
 	"Full Block creation compilation. The block's actual code will be compiled separatedly."
+
 	"*	255		11111111	xxxxxxxx	siyyyyyy	push Closure Compiled block literal index xxxxxxxx (+ Extend A * 256) numCopied yyyyyy receiverOnStack: s = 1 ignoreOuterContext: i = 1"
+
 	| numCopied ignoreContext receiverIsOnStack |
 	self assert: needsFrame.
 	extA := 0.
-	numCopied := byte2 bitAnd: 1<< 6 - 1.
+	numCopied := byte2 bitAnd: 1 << 6 - 1.
 	receiverIsOnStack := byte2 anyMask: 1 << 7.
 	ignoreContext := byte2 anyMask: 1 << 6.
 	objectRepresentation
@@ -1233,22 +1247,21 @@ SimpleStackBasedCogit >> genExtPushFullClosureBytecode [
 		inBlock: inBlock
 		intoRegister: ReceiverResultReg.
 	"Closure in ReceiverResultReg"
-	1 to: numCopied do:
-		[:i|
-		self
-			PopR: TempReg;
-			MoveR: TempReg
-				Mw: numCopied - i + FullClosureFirstCopiedValueIndex * objectMemory bytesPerOop + objectMemory baseHeaderSize
-					r: ReceiverResultReg].
+	1 to: numCopied do: [ :i |
+		self PopR: TempReg.
+		objectRepresentation
+			genStoreSourceReg: TempReg
+			slotIndex: FullClosureFirstCopiedValueIndex + numCopied - i
+			intoNewObjectInDestReg: ReceiverResultReg ].
 	receiverIsOnStack
-		ifTrue: [self PopR: TempReg]
-		ifFalse: [ self MoveMw: FoxMFReceiver r: FPReg R: TempReg].
-	self
-		MoveR: TempReg
-		Mw: FullClosureReceiverIndex * objectMemory bytesPerOop + objectMemory baseHeaderSize
-		r: ReceiverResultReg.
+		ifTrue: [ self PopR: TempReg ]
+		ifFalse: [ self MoveMw: FoxMFReceiver r: FPReg R: TempReg ].
+	objectRepresentation
+		genStoreSourceReg: TempReg
+		slotIndex: FullClosureReceiverIndex
+		intoNewObjectInDestReg: ReceiverResultReg.
 	self PushR: ReceiverResultReg.
-	^0
+	^ 0
 ]
 
 { #category : #'bytecode generators' }
@@ -1329,21 +1342,26 @@ SimpleStackBasedCogit >> genExtPushReceiverVariableBytecode [
 
 { #category : #'bytecode generators' }
 SimpleStackBasedCogit >> genExtPushRemoteTempOrInstVarLongBytecode [
-	| index |
+
+	| index maybeContext |
 	^ (byte2 noMask: coInterpreter remoteIsInstVarAccess)
-		ifTrue: [ self genPushRemoteTempLongBytecode ]
-		ifFalse: 
-			[ index := byte1 + (extA << 8).
-			extA := 0.
-			extB := 0. "don't use flags in the simple cogit"
-			numExtB := 0.
-			(coInterpreter isReadMediatedContextInstVarIndex: index)
-				ifTrue: [self 
-							genPushMaybeContextRemoteInstVar: index 
-							inObjectAt: byte2 - coInterpreter remoteIsInstVarAccess]
-				ifFalse: [self 
-							genPushRemoteInstVar: index 
-							inObjectAt: byte2 - coInterpreter remoteIsInstVarAccess]]
+		  ifTrue: [ self genPushRemoteTempLongBytecode ]
+		  ifFalse: [
+			  maybeContext := self extBSpecifiesMaybeContext.
+			  index := byte1 + (extA << 8).
+			  extA := 0.
+			  extB := 0.
+			  numExtB := 0.
+			  ((coInterpreter isReadMediatedContextInstVarIndex: index) and: [
+				   maybeContext ])
+				  ifTrue: [
+					  self
+						  genPushMaybeContextRemoteInstVar: index
+						  inObjectAt: byte2 - coInterpreter remoteIsInstVarAccess ]
+				  ifFalse: [
+					  self
+						  genPushRemoteInstVar: index
+						  inObjectAt: byte2 - coInterpreter remoteIsInstVarAccess ] ]
 ]
 
 { #category : #'bytecode generators' }
@@ -1422,25 +1440,30 @@ SimpleStackBasedCogit >> genExtStoreLiteralVariableBytecode [
 
 { #category : #'bytecode generators' }
 SimpleStackBasedCogit >> genExtStorePopRemoteTempOrInstVarLongBytecodePopBoolean: popBoolean [
+
 	| index |
 	extB := 0. "simple cogit don't use the extra flag"
 	numExtB := 0.
 	(byte2 noMask: coInterpreter remoteIsInstVarAccess)
-		ifTrue: 
-			[ self genStorePop: popBoolean RemoteTemp: byte1 At: byte2.
-			self cppIf: IMMUTABILITY ifTrue: [ self annotateBytecode: self Label ] ]
-		ifFalse: 
-			[ index := byte1 + (extA << 8).
+		ifTrue: [
+			self genStorePop: popBoolean RemoteTemp: byte1 At: byte2.
+			self
+				cppIf: IMMUTABILITY
+				ifTrue: [ self annotateBytecode: self Label ] ]
+		ifFalse: [
+			index := byte1 + (extA << 8).
 			extA := 0.
 			(coInterpreter isWriteMediatedContextInstVarIndex: index)
-				ifTrue: [ self 
-						genStorePop: popBoolean 
-						MaybeContextRemoteInstVar: index 
+				ifTrue: [
+					self
+						genStorePop: popBoolean
+						MaybeContextRemoteInstVar: index
 						ofObjectAt: byte2 - coInterpreter remoteIsInstVarAccess ]
-				ifFalse: [ self 
-						genStorePop: popBoolean 
-						RemoteInstVar: index 
-						ofObjectAt: byte2 - coInterpreter remoteIsInstVarAccess  ] ].
+				ifFalse: [
+					self
+						genStorePop: popBoolean
+						RemoteInstVar: index
+						ofObjectAt: byte2 - coInterpreter remoteIsInstVarAccess ] ].
 	^ 0
 ]
 
@@ -1539,8 +1562,7 @@ SimpleStackBasedCogit >> genInlinedIdenticalOrNotIf: orNot [
 		scratchReg: TempReg.
 	self CmpR: Arg0Reg R: ClassReg.
 	jumpNotEqual := self genConditionalBranch: (orNot ifTrue: [JumpZero] ifFalse: [JumpNonZero]) operand: 0.
-	self annotate: (self genMoveTrueR: Arg0Reg)
-		objRef: objectMemory trueObject.
+	self genMoveTrueR: Arg0Reg.
 	jumpPush := self Jump: 0.
 	jumpNotEqual jmpTarget: (self genMoveFalseR: Arg0Reg).
 	jumpPush jmpTarget: (self MoveR: Arg0Reg Mw: 0 r: SPReg).
@@ -2452,48 +2474,6 @@ SimpleStackBasedCogit >> genShortUnconditionalJump [
 		            inMethod: methodObj.
 	target := distance + 1 + bytecodePC.
 	^ self genJumpTo: target
-]
-
-{ #category : #'bytecode generators' }
-SimpleStackBasedCogit >> genSistaExtStoreAndPopLiteralVariableBytecode [
-	^ self genSistaExtStoreLiteralVariableBytecodePopBoolean: true
-]
-
-{ #category : #'bytecode generators' }
-SimpleStackBasedCogit >> genSistaExtStoreAndPopReceiverVariableBytecode [
-	^ self genSistaExtStoreAndPopReceiverVariableBytecodePopBoolean: true
-]
-
-{ #category : #'bytecode generators' }
-SimpleStackBasedCogit >> genSistaExtStoreAndPopReceiverVariableBytecodePopBoolean: boolean [
-	| index |
-	extB := 0. "Simple cogit don't use the extra flags"
-	numExtB := 0.
-	index := byte1 + (extA << 8).
-	extA := 0.
-	^(coInterpreter isWriteMediatedContextInstVarIndex: index)
-		ifTrue: [self genStorePop: boolean MaybeContextReceiverVariable: index ]
-		ifFalse: [self genStorePop: boolean ReceiverVariable: index ]
-]
-
-{ #category : #'bytecode generators' }
-SimpleStackBasedCogit >> genSistaExtStoreLiteralVariableBytecode [
-	^ self genSistaExtStoreLiteralVariableBytecodePopBoolean: false
-]
-
-{ #category : #'bytecode generators' }
-SimpleStackBasedCogit >> genSistaExtStoreLiteralVariableBytecodePopBoolean: boolean [
-	| index |
-	extB := 0. "SimpleCogit don't use the extra flags"
-	numExtB := 0.
-	index := byte1 + (extA << 8).
-	extA := 0.
-	^ self genStorePop: boolean LiteralVariable: index
-]
-
-{ #category : #'bytecode generators' }
-SimpleStackBasedCogit >> genSistaExtStoreReceiverVariableBytecode [
-	^ self genSistaExtStoreAndPopReceiverVariableBytecodePopBoolean: false
 ]
 
 { #category : #'bytecode generators' }
