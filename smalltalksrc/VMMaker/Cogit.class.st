@@ -7309,6 +7309,31 @@ Cogit >> genReturnTrampolineFor: aRoutine  called: aString arg: regOrConst0 [
 		appendOpcodes: false
 ]
 
+{ #category : #initialization }
+Cogit >> genSendTrampolineFor: aRoutine called: aString arg: regOrConst0 arg: regOrConst1 arg: regOrConst2 arg: regOrConst3 [
+	"Generate a trampoline with four arguments.
+	 Hack: a negative value indicates an abstract register, a non-negative value indicates a constant."
+
+	<var: #aRoutine type: #'void *'>
+	<var: #aString type: #'char *'>
+	| startAddress |
+	startAddress := methodZoneBase.
+	self zeroOpcodeIndex.
+	objectRepresentation selectorIndexDereferenceRoutine ifNotNil: [
+		:routine |
+		backEnd hasLinkRegister ifTrue: [ self PushR: LinkReg ].
+		self Call: routine.
+		backEnd hasLinkRegister ifTrue: [ self PopR: LinkReg ] ].
+	self
+		genTrampolineFor: aRoutine
+		called: aString
+		arg: regOrConst0
+		arg: regOrConst1
+		arg: regOrConst2
+		arg: regOrConst3.
+	^ startAddress
+]
+
 { #category : #'trampoline support' }
 Cogit >> genSmalltalkToCStackSwitch: pushLinkReg [
 	"If the client requires, then on an ARM-like RISC processor, the return address needs to
@@ -8091,48 +8116,46 @@ Cogit >> generateRunTimeTrampolines [
 
 { #category : #initialization }
 Cogit >> generateSendTrampolines [
-	0 to: NumSendTrampolines - 1 do:
-		[:numArgs|
-		ordinarySendTrampolines
-			at: numArgs
-			put: (self genTrampolineFor: #ceSend:super:to:numArgs:
-					  called: (self trampolineName: 'ceSend' numArgs: numArgs)
-					  arg: ClassReg
-					  arg: (self trampolineArgConstant: false)
-					  arg: ReceiverResultReg
-					  arg: (self numArgsOrSendNumArgsReg: numArgs))].
+
+	0 to: NumSendTrampolines - 1 do: [ :numArgs |
+		ordinarySendTrampolines at: numArgs put: (self
+				 genSendTrampolineFor: #ceSend:super:to:numArgs:
+				 called: (self trampolineName: 'ceSend' numArgs: numArgs)
+				 arg: ClassReg
+				 arg: (self trampolineArgConstant: false)
+				 arg: ReceiverResultReg
+				 arg: (self numArgsOrSendNumArgsReg: numArgs)) ].
 
 	"Generate these in the middle so they are within [firstSend, lastSend]."
-	BytecodeSetHasDirectedSuperSend ifTrue:
-		[0 to: NumSendTrampolines - 1 do:
-			[:numArgs|
-			directedSuperSendTrampolines
-				at: numArgs
-				put: (self genTrampolineFor: #ceSend:above:to:numArgs:
-						  called: (self trampolineName: 'ceDirectedSuperSend' numArgs: numArgs)
-						  arg: ClassReg
-						  arg: TempReg
-						  arg: ReceiverResultReg
-						  arg: (self numArgsOrSendNumArgsReg: numArgs)).
-			directedSuperBindingSendTrampolines
-				at: numArgs
-				put: (self genTrampolineFor: #ceSend:aboveClassBinding:to:numArgs:
-						  called: (self trampolineName: 'ceDirectedSuperBindingSend' numArgs: numArgs)
-						  arg: ClassReg
-						  arg: TempReg
-						  arg: ReceiverResultReg
-						  arg: (self numArgsOrSendNumArgsReg: numArgs))]].
+	BytecodeSetHasDirectedSuperSend ifTrue: [
+		0 to: NumSendTrampolines - 1 do: [ :numArgs |
+			directedSuperSendTrampolines at: numArgs put: (self
+					 genTrampolineFor: #ceSend:above:to:numArgs:
+					 called:
+					 (self trampolineName: 'ceDirectedSuperSend' numArgs: numArgs)
+					 arg: ClassReg
+					 arg: TempReg
+					 arg: ReceiverResultReg
+					 arg: (self numArgsOrSendNumArgsReg: numArgs)).
+			directedSuperBindingSendTrampolines at: numArgs put: (self
+					 genTrampolineFor: #ceSend:aboveClassBinding:to:numArgs:
+					 called:
+					 (self
+						  trampolineName: 'ceDirectedSuperBindingSend'
+						  numArgs: numArgs)
+					 arg: ClassReg
+					 arg: TempReg
+					 arg: ReceiverResultReg
+					 arg: (self numArgsOrSendNumArgsReg: numArgs)) ] ].
 
-	0 to: NumSendTrampolines - 1 do:
-		[:numArgs|
-		superSendTrampolines
-			at: numArgs
-			put: (self genTrampolineFor: #ceSend:super:to:numArgs:
-					  called: (self trampolineName: 'ceSuperSend' numArgs: numArgs)
-					  arg: ClassReg
-					  arg: (self trampolineArgConstant: true)
-					  arg: ReceiverResultReg
-					  arg: (self numArgsOrSendNumArgsReg: numArgs))].
+	0 to: NumSendTrampolines - 1 do: [ :numArgs |
+		superSendTrampolines at: numArgs put: (self
+				 genSendTrampolineFor: #ceSend:super:to:numArgs:
+				 called: (self trampolineName: 'ceSuperSend' numArgs: numArgs)
+				 arg: ClassReg
+				 arg: (self trampolineArgConstant: true)
+				 arg: ReceiverResultReg
+				 arg: (self numArgsOrSendNumArgsReg: numArgs)) ].
 	firstSend := ordinarySendTrampolines at: 0.
 	lastSend := superSendTrampolines at: NumSendTrampolines - 1
 ]
