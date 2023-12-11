@@ -401,29 +401,29 @@ DruidJIT class >> bytecodeTable [
 		  { 1. 199. 199. #gen_ShortConditionalJumpFalse7.
 		  #branch. #isBranchFalse. #isMapped. #v3:ShortForward:Branch:Distance: }.
 		  { 1. 200. 200. #gen_StoreAndPopReceiverVariableBytecode0.
-		  #isInstVarRef. #is1ByteInstVarStore. #isMappedIfImmutability.
-		  #needsFrameIfImmutability:.  -1 }.
+		  #isInstVarRef. #isMappedIfImmutability. #needsFrameIfImmutability:.
+		   -1 }.
 		  { 1. 201. 201. #gen_StoreAndPopReceiverVariableBytecode1.
-		  #isInstVarRef. #is1ByteInstVarStore. #isMappedIfImmutability.
-		  #needsFrameIfImmutability:.  -1 }.
+		  #isInstVarRef. #isMappedIfImmutability. #needsFrameIfImmutability:.
+		   -1 }.
 		  { 1. 202. 202. #gen_StoreAndPopReceiverVariableBytecode2.
-		  #isInstVarRef. #is1ByteInstVarStore. #isMappedIfImmutability.
-		  #needsFrameIfImmutability:.  -1 }.
+		  #isInstVarRef. #isMappedIfImmutability. #needsFrameIfImmutability:.
+		   -1 }.
 		  { 1. 203. 203. #gen_StoreAndPopReceiverVariableBytecode3.
-		  #isInstVarRef. #is1ByteInstVarStore. #isMappedIfImmutability.
-		  #needsFrameIfImmutability:.  -1 }.
+		  #isInstVarRef. #isMappedIfImmutability. #needsFrameIfImmutability:.
+		   -1 }.
 		  { 1. 204. 204. #gen_StoreAndPopReceiverVariableBytecode4.
-		  #isInstVarRef. #is1ByteInstVarStore. #isMappedIfImmutability.
-		  #needsFrameIfImmutability:.  -1 }.
+		  #isInstVarRef. #isMappedIfImmutability. #needsFrameIfImmutability:.
+		   -1 }.
 		  { 1. 205. 205. #gen_StoreAndPopReceiverVariableBytecode5.
-		  #isInstVarRef. #is1ByteInstVarStore. #isMappedIfImmutability.
-		  #needsFrameIfImmutability:.  -1 }.
+		  #isInstVarRef. #isMappedIfImmutability. #needsFrameIfImmutability:.
+		   -1 }.
 		  { 1. 206. 206. #gen_StoreAndPopReceiverVariableBytecode6.
-		  #isInstVarRef. #is1ByteInstVarStore. #isMappedIfImmutability.
-		  #needsFrameIfImmutability:.  -1 }.
+		  #isInstVarRef. #isMappedIfImmutability. #needsFrameIfImmutability:.
+		   -1 }.
 		  { 1. 207. 207. #gen_StoreAndPopReceiverVariableBytecode7.
-		  #isInstVarRef. #is1ByteInstVarStore. #isMappedIfImmutability.
-		  #needsFrameIfImmutability:.  -1 }.
+		  #isInstVarRef. #isMappedIfImmutability. #needsFrameIfImmutability:.
+		   -1 }.
 		  { 1. 208. 208. #gen_StoreAndPopTemporaryVariableBytecode0 }.
 		  { 1. 209. 209. #gen_StoreAndPopTemporaryVariableBytecode1 }.
 		  { 1. 210. 210. #gen_StoreAndPopTemporaryVariableBytecode2 }.
@@ -7107,7 +7107,6 @@ DruidJIT >> gen_StoreAndPopReceiverVariableBytecode0 [
 		      ifNone: [ ^ self unknownBytecode ].
 	live := live bitOr: (self registerMaskFor: t1).
 	(self ssValue: 0) copyToReg: t1.
-	self ssPop: 1.
 	t2 := self
 		      allocateRegNotConflictingWith: live
 		      ifNone: [ ^ self unknownBytecode ].
@@ -7122,6 +7121,7 @@ DruidJIT >> gen_StoreAndPopReceiverVariableBytecode0 [
 	deadCode := false.
 	currentBlock := self Label.
 	jump1 jmpTarget: currentBlock.
+	self ssPop: 1.
 	self MoveR: t0 R: t2.
 	self AndCq: 7 R: t2.
 	self ssFlushStack.
@@ -7259,7 +7259,6 @@ DruidJIT >> gen_StoreAndPopReceiverVariableBytecode1 [
 		      ifNone: [ ^ self unknownBytecode ].
 	live := live bitOr: (self registerMaskFor: t1).
 	(self ssValue: 0) copyToReg: t1.
-	self ssPop: 1.
 	t2 := self
 		      allocateRegNotConflictingWith: live
 		      ifNone: [ ^ self unknownBytecode ].
@@ -7274,6 +7273,7 @@ DruidJIT >> gen_StoreAndPopReceiverVariableBytecode1 [
 	deadCode := false.
 	currentBlock := self Label.
 	jump1 jmpTarget: currentBlock.
+	self ssPop: 1.
 	self MoveR: t0 R: t2.
 	self AndCq: 7 R: t2.
 	self ssFlushStack.
@@ -7411,7 +7411,6 @@ DruidJIT >> gen_StoreAndPopReceiverVariableBytecode2 [
 		      ifNone: [ ^ self unknownBytecode ].
 	live := live bitOr: (self registerMaskFor: t1).
 	(self ssValue: 0) copyToReg: t1.
-	self ssPop: 1.
 	t2 := self
 		      allocateRegNotConflictingWith: live
 		      ifNone: [ ^ self unknownBytecode ].
@@ -7426,6 +7425,7 @@ DruidJIT >> gen_StoreAndPopReceiverVariableBytecode2 [
 	deadCode := false.
 	currentBlock := self Label.
 	jump1 jmpTarget: currentBlock.
+	self ssPop: 1.
 	self MoveR: t0 R: t2.
 	self AndCq: 7 R: t2.
 	self ssFlushStack.
@@ -7563,7 +7563,6 @@ DruidJIT >> gen_StoreAndPopReceiverVariableBytecode3 [
 		      ifNone: [ ^ self unknownBytecode ].
 	live := live bitOr: (self registerMaskFor: t1).
 	(self ssValue: 0) copyToReg: t1.
-	self ssPop: 1.
 	t2 := self
 		      allocateRegNotConflictingWith: live
 		      ifNone: [ ^ self unknownBytecode ].
@@ -7578,6 +7577,7 @@ DruidJIT >> gen_StoreAndPopReceiverVariableBytecode3 [
 	deadCode := false.
 	currentBlock := self Label.
 	jump1 jmpTarget: currentBlock.
+	self ssPop: 1.
 	self MoveR: t0 R: t2.
 	self AndCq: 7 R: t2.
 	self ssFlushStack.
@@ -7715,7 +7715,6 @@ DruidJIT >> gen_StoreAndPopReceiverVariableBytecode4 [
 		      ifNone: [ ^ self unknownBytecode ].
 	live := live bitOr: (self registerMaskFor: t1).
 	(self ssValue: 0) copyToReg: t1.
-	self ssPop: 1.
 	t2 := self
 		      allocateRegNotConflictingWith: live
 		      ifNone: [ ^ self unknownBytecode ].
@@ -7730,6 +7729,7 @@ DruidJIT >> gen_StoreAndPopReceiverVariableBytecode4 [
 	deadCode := false.
 	currentBlock := self Label.
 	jump1 jmpTarget: currentBlock.
+	self ssPop: 1.
 	self MoveR: t0 R: t2.
 	self AndCq: 7 R: t2.
 	self ssFlushStack.
@@ -7867,7 +7867,6 @@ DruidJIT >> gen_StoreAndPopReceiverVariableBytecode5 [
 		      ifNone: [ ^ self unknownBytecode ].
 	live := live bitOr: (self registerMaskFor: t1).
 	(self ssValue: 0) copyToReg: t1.
-	self ssPop: 1.
 	t2 := self
 		      allocateRegNotConflictingWith: live
 		      ifNone: [ ^ self unknownBytecode ].
@@ -7882,6 +7881,7 @@ DruidJIT >> gen_StoreAndPopReceiverVariableBytecode5 [
 	deadCode := false.
 	currentBlock := self Label.
 	jump1 jmpTarget: currentBlock.
+	self ssPop: 1.
 	self MoveR: t0 R: t2.
 	self AndCq: 7 R: t2.
 	self ssFlushStack.
@@ -8019,7 +8019,6 @@ DruidJIT >> gen_StoreAndPopReceiverVariableBytecode6 [
 		      ifNone: [ ^ self unknownBytecode ].
 	live := live bitOr: (self registerMaskFor: t1).
 	(self ssValue: 0) copyToReg: t1.
-	self ssPop: 1.
 	t2 := self
 		      allocateRegNotConflictingWith: live
 		      ifNone: [ ^ self unknownBytecode ].
@@ -8034,6 +8033,7 @@ DruidJIT >> gen_StoreAndPopReceiverVariableBytecode6 [
 	deadCode := false.
 	currentBlock := self Label.
 	jump1 jmpTarget: currentBlock.
+	self ssPop: 1.
 	self MoveR: t0 R: t2.
 	self AndCq: 7 R: t2.
 	self ssFlushStack.
@@ -8171,7 +8171,6 @@ DruidJIT >> gen_StoreAndPopReceiverVariableBytecode7 [
 		      ifNone: [ ^ self unknownBytecode ].
 	live := live bitOr: (self registerMaskFor: t1).
 	(self ssValue: 0) copyToReg: t1.
-	self ssPop: 1.
 	t2 := self
 		      allocateRegNotConflictingWith: live
 		      ifNone: [ ^ self unknownBytecode ].
@@ -8186,6 +8185,7 @@ DruidJIT >> gen_StoreAndPopReceiverVariableBytecode7 [
 	deadCode := false.
 	currentBlock := self Label.
 	jump1 jmpTarget: currentBlock.
+	self ssPop: 1.
 	self MoveR: t0 R: t2.
 	self AndCq: 7 R: t2.
 	self ssFlushStack.

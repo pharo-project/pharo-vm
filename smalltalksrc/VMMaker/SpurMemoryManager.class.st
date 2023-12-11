@@ -12489,6 +12489,28 @@ SpurMemoryManager >> storePointerUnchecked: fieldIndex ofObject: objOop withValu
 ]
 
 { #category : #'object access' }
+SpurMemoryManager >> storePopPointerImmutabilityCheck: fieldIndex ofObject: objOop withValue: valuePointer [
+	"Note must check here for stores of young objects into old ones."
+
+	"Must be inlined for the normal send in cannotAssign:to:withIndex:"
+
+	<inline: true>
+	
+	self cppIf: IMMUTABILITY ifTrue: [
+		self deny: (self isImmediate: objOop).
+		(self isImmutable: objOop) ifTrue: [
+			self druidForceIntepretation.
+			self druidIgnore: [
+				self pop: 1.
+				^ coInterpreter cannotAssign: valuePointer to: objOop withIndex: fieldIndex ] ] ].
+
+	self pop: 1.
+	self storePointer: fieldIndex ofObject: objOop withValue: valuePointer.
+
+	
+]
+
+{ #category : #'object access' }
 SpurMemoryManager >> storeShort16: shortIndex ofObject: objOop withValue: value [
 	^self
 		shortAt: objOop + self baseHeaderSize + (shortIndex << 1)

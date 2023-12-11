@@ -14672,15 +14672,18 @@ StackInterpreter >> storeAndPopReceiverVariableBytecode [
 
 	| rcvr top instVarIndex |
 	<compilationInfo: #isInstVarRef>
-	<compilationInfo: #is1ByteInstVarStore>
 	<compilationInfo: #isMappedIfImmutability>
 	<needsFrameIfImmutability: -1>
+	
+	"Avoid this annotation for now.
+	It governs the two path compilation"
+	"<compilationInfo: #is1ByteInstVarStore>"
+	
 	rcvr := self receiver.
 	top := self stackTop.
 	instVarIndex := currentBytecode bitAnd: 7.
-	self pop: 1.
 	objectMemory
-		storePointerImmutabilityCheck: instVarIndex
+		storePopPointerImmutabilityCheck: instVarIndex
 		ofObject: rcvr
 		withValue: top.
 	self fetchNextBytecode
