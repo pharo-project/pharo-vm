@@ -331,8 +331,9 @@ StackToRegisterMappingCogit class >> initializeBytecodeTableForSistaV1 [
 													v3:ShortForward:Branch:Distance:)
 		(1 192 199 genShortJumpIfFalse			branch isBranchFalse isMapped "because of mustBeBoolean"
 													v3:ShortForward:Branch:Distance:)
+
+		"stores"
 		(1 200 207 genStoreAndPopReceiverVariableBytecode isInstVarRef is1ByteInstVarStore isMappedIfImmutability needsFrameIfImmutability: -1)
-		
 		(1 208 215 genStoreAndPopTemporaryVariableBytecode)
 
 		(1 216 216 genPopStackBytecode needsFrameNever: -1)

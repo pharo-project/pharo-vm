@@ -7324,13 +7324,17 @@ Cogit >> genSendTrampolineFor: aRoutine called: aString arg: regOrConst0 arg: re
 		backEnd hasLinkRegister ifTrue: [ self PushR: LinkReg ].
 		self Call: routine.
 		backEnd hasLinkRegister ifTrue: [ self PopR: LinkReg ] ].
-	self
-		genTrampolineFor: aRoutine
+	self genTrampolineFor: aRoutine
 		called: aString
+		numArgs: 4
 		arg: regOrConst0
 		arg: regOrConst1
 		arg: regOrConst2
-		arg: regOrConst3.
+		arg: regOrConst3
+		regsToSave: self emptyRegisterMask
+		pushLinkReg: true
+		resultReg: NoReg
+		appendOpcodes: true.
 	^ startAddress
 ]
 
@@ -8130,7 +8134,7 @@ Cogit >> generateSendTrampolines [
 	BytecodeSetHasDirectedSuperSend ifTrue: [
 		0 to: NumSendTrampolines - 1 do: [ :numArgs |
 			directedSuperSendTrampolines at: numArgs put: (self
-					 genTrampolineFor: #ceSend:above:to:numArgs:
+					 genSendTrampolineFor: #ceSend:above:to:numArgs:
 					 called:
 					 (self trampolineName: 'ceDirectedSuperSend' numArgs: numArgs)
 					 arg: ClassReg
@@ -8138,7 +8142,7 @@ Cogit >> generateSendTrampolines [
 					 arg: ReceiverResultReg
 					 arg: (self numArgsOrSendNumArgsReg: numArgs)).
 			directedSuperBindingSendTrampolines at: numArgs put: (self
-					 genTrampolineFor: #ceSend:aboveClassBinding:to:numArgs:
+					 genSendTrampolineFor: #ceSend:aboveClassBinding:to:numArgs:
 					 called:
 					 (self
 						  trampolineName: 'ceDirectedSuperBindingSend'

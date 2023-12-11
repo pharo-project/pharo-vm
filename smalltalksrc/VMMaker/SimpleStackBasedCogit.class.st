@@ -76,7 +76,7 @@ SimpleStackBasedCogit class >> initializeBytecodeTableForSistaV1 [
 	"SimpleStackBasedCogit initializeBytecodeTableForSistaV1"
 
 	BytecodeSetHasDirectedSuperSend := true.
-	BytecodeSetHasExtensions := true.	
+	BytecodeSetHasExtensions := true.
 	FirstSpecialSelector := 96.
 	NumSpecialSelectors := 32.
 	self flag:
@@ -89,18 +89,18 @@ SimpleStackBasedCogit class >> initializeBytecodeTableForSistaV1 [
 	self generatorTableFrom: #(
 		"1 byte bytecodes"
 		"pushes"
-		(1   0   15 genPushReceiverVariableBytecode isInstVarRef)
-		(1  16   31 genPushLiteralVariable16CasesBytecode	needsFrameNever: 1)
-		(1  32   63 genPushLiteralConstantBytecode			needsFrameNever: 1)
-		(1  64   75 genPushTemporaryVariableBytecode)
-		(1  76   76 genPushReceiverBytecode)
-		(1  77   77 genPushConstantTrueBytecode				needsFrameNever: 1)
-		(1  78   78 genPushConstantFalseBytecode			needsFrameNever: 1)
-		(1  79   79 genPushConstantNilBytecode				needsFrameNever: 1)
-		(1  80   80 genPushConstantZeroBytecode				needsFrameNever: 1)
-		(1  81   81 genPushConstantOneBytecode				needsFrameNever: 1)
+		(1    0   15 genPushReceiverVariableBytecode isInstVarRef		needsFrameNever: 1)
+		(1  16   31 genPushLiteralVariable16CasesBytecode			needsFrameNever: 1)
+		(1  32   63 genPushLiteralConstantBytecode					needsFrameNever: 1)
+		(1  64   75 genPushTemporaryVariableBytecode				needsFrameIfMod16GENumArgs: 1)
+		(1  76   76 genPushReceiverBytecode							needsFrameNever: 1)
+		(1  77   77 genPushConstantTrueBytecode						needsFrameNever: 1)
+		(1  78   78 genPushConstantFalseBytecode					needsFrameNever: 1)
+		(1  79   79 genPushConstantNilBytecode						needsFrameNever: 1)
+		(1  80   80 genPushConstantZeroBytecode						needsFrameNever: 1)
+		(1  81   81 genPushConstantOneBytecode						needsFrameNever: 1)
 		(1  82   82 genExtPushPseudoVariable)
-		(1  83   83 duplicateTopBytecode						needsFrameNever: 1)
+		(1  83   83 duplicateTopBytecode								needsFrameNever: 1)
 
 		(1  84   87 unknownBytecode)
 
@@ -117,7 +117,7 @@ SimpleStackBasedCogit class >> initializeBytecodeTableForSistaV1 [
 		"sends"
 		(1  96 117 genSpecialSelectorSend isMapped) "#+ #- #< #> #<= #>= #= #~= #* #/ #\\ #@ #bitShift: #// #bitAnd: #bitOr: #at: #at:put: #size #next #nextPut: #atEnd"
 		(1 118 118 genSpecialSelectorEqualsEquals needsFrameNever: notMapped -1) "not mapped because it is directly inlined (for now)"
-		(1 119 119 genSpecialSelectorClass needsFrameNever: notMapped 0) "not mapped because it is directly inlined (for now)"
+		(1 119 119 genSpecialSelectorClass needsFrameIfStackGreaterThanOne: notMapped 0) "not mapped because it is directly inlined (for now)"
 		(1 120 120 genSpecialSelectorNotEqualsEquals needsFrameNever: notMapped -1) "not mapped because it is directly inlined (for now)"
 		(1 121 127 genSpecialSelectorSend isMapped) "#value #value: #do: #new #new: #x #y"
 
@@ -133,7 +133,7 @@ SimpleStackBasedCogit class >> initializeBytecodeTableForSistaV1 [
 													v3:ShortForward:Branch:Distance:)
 
 		"stores"
-		(1 200 207 genStoreAndPopReceiverVariableBytecode isInstVarRef isMappedIfImmutability needsFrameIfImmutability: -1)
+		(1 200 207 genStoreAndPopReceiverVariableBytecode isInstVarRef is1ByteInstVarStore isMappedIfImmutability needsFrameIfImmutability: -1)
 		(1 208 215 genStoreAndPopTemporaryVariableBytecode)
 
 		(1 216 216 genPopStackBytecode needsFrameNever: -1)
@@ -148,7 +148,7 @@ SimpleStackBasedCogit class >> initializeBytecodeTableForSistaV1 [
 
 		"pushes"
 		(2 226 226 genExtPushReceiverVariableBytecode isInstVarRef)		"Needs a frame for context inst var access"
-		(2 227 227 genExtPushLiteralVariableBytecode		needsFrameNever: 1)
+		(2 227 227 genExtPushLiteralVariableBytecode			needsFrameNever: 1)
 		(2 228 228 genExtPushLiteralBytecode					needsFrameNever: 1)
 		(2 229 229 genLongPushTemporaryVariableBytecode)
 		(2 230 230 unknownBytecode)
@@ -177,7 +177,7 @@ SimpleStackBasedCogit class >> initializeBytecodeTableForSistaV1 [
 		(2 244 244 genExtStoreLiteralVariableBytecode isMappedIfImmutability)
 		(2 245 245 genLongStoreTemporaryVariableBytecode)
 
-		(2 246 247 unknownBytecode)
+		(2 246 247	unknownBytecode)
 
 		"3 byte bytecodes"
 		(3 248 248 genCallPrimitiveBytecode)
