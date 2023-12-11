@@ -3324,3 +3324,9 @@ SimpleStackBasedCogit >> voidReceiverOptStatus [
 	"No op in this cogit. Provided for compatibility with the cleverer subclasses."
 	<inline: true>
 ]
+
+{ #category : #'bytecode generator support' }
+SimpleStackBasedCogit >> voidReceiverResultRegContainsSelf [
+
+	"Nothing. Just compatibility with subclasses"
+]
