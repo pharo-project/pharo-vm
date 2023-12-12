@@ -89,11 +89,11 @@ SimpleStackBasedCogit class >> initializeBytecodeTableForSistaV1 [
 	self generatorTableFrom: #(
 		"1 byte bytecodes"
 		"pushes"
-		(1    0   15 genPushReceiverVariableBytecode isInstVarRef 1)
+		(1    0   15 genPushReceiverVariableBytecode isInstVarRef)
 		(1  16   31 genPushLiteralVariable16CasesBytecode			needsFrameNever: 1)
 		(1  32   63 genPushLiteralConstantBytecode					needsFrameNever: 1)
 		(1  64   75 genPushTemporaryVariableBytecode				)
-		(1  76   76 genPushReceiverBytecode							1)
+		(1  76   76 genPushReceiverBytecode							)
 		(1  77   77 genPushConstantTrueBytecode						needsFrameNever: 1)
 		(1  78   78 genPushConstantFalseBytecode					needsFrameNever: 1)
 		(1  79   79 genPushConstantNilBytecode						needsFrameNever: 1)
@@ -147,7 +147,7 @@ SimpleStackBasedCogit class >> initializeBytecodeTableForSistaV1 [
 		(2 225 225 extBBytecode extension)
 
 		"pushes"
-		(2 226 226 genExtPushReceiverVariableBytecode isInstVarRef)		"Needs a frame for context inst var access"
+		(2 226 226 genExtPushReceiverVariableBytecode isInstVarRef isMappedIfImmutability)		"Needs a frame for context inst var access"
 		(2 227 227 genExtPushLiteralVariableBytecode			needsFrameNever: 1)
 		(2 228 228 genExtPushLiteralBytecode					needsFrameNever: 1)
 		(2 229 229 genLongPushTemporaryVariableBytecode)
@@ -184,8 +184,8 @@ SimpleStackBasedCogit class >> initializeBytecodeTableForSistaV1 [
 		(3 249 249 genExtPushFullClosureBytecode) 
 		(3 250 250 unknownBytecode) "was genExtPushClosureBytecode"
 		(3 251 251 genPushRemoteTempLongBytecode)
-		(3 252 252 genStoreRemoteTempLongBytecode)
-		(3 253 253 genStoreAndPopRemoteTempLongBytecode)
+		(3 252 252 genStoreRemoteTempLongBytecode isMappedIfImmutability needsFrameIfImmutability: 0)
+		(3 253 253 genStoreAndPopRemoteTempLongBytecode isMappedIfImmutability needsFrameIfImmutability: -1)
 
 		(3 254 255	unknownBytecode))
 ]
@@ -1044,23 +1044,6 @@ SimpleStackBasedCogit >> extendedPushBytecode [
 	variableType = 2 ifTrue:
 		[^self genPushLiteralIndex: variableIndex].
 	^self genPushLiteralVariable: variableIndex
-]
-
-{ #category : #'bytecode generators' }
-SimpleStackBasedCogit >> extendedStoreAndPopBytecode [
-	| variableType variableIndex |
-	variableType := byte1 >> 6 bitAnd: 3.
-	variableIndex := byte1 bitAnd: 63.
-	variableType = 0 ifTrue:
-		[^self genStorePop: true ReceiverVariable: variableIndex].
-	variableType = 1 ifTrue:
-		[self genStorePop: true TemporaryVariable: variableIndex.
-		"needs a fake map entry if Immutability is ON..."
-		self cppIf: IMMUTABILITY ifTrue: [ self annotateBytecode: self Label. ].
-		^ 0].
-	variableType = 3 ifTrue:
-		[^self genStorePop: true LiteralVariable: variableIndex].
-	^EncounteredUnknownBytecode
 ]
 
 { #category : #'bytecode generator support' }
@@ -2395,7 +2378,7 @@ SimpleStackBasedCogit >> genStorePop: popBoolean LiteralVariable: litVarIndex [
 	popBoolean
 		ifTrue: [self PopR: ClassReg]
 		ifFalse: [self MoveMw: 0 r: SPReg R: ClassReg].
-	self
+	objectRepresentation
 		genStoreSourceReg: ClassReg 
 		slotIndex: ValueIndex 
 		destReg: ReceiverResultReg 
@@ -2452,32 +2435,6 @@ SimpleStackBasedCogit >> genStorePop: popBoolean ReceiverVariable: slotIndex [
 		scratchReg: TempReg 
 		inFrame: needsFrame.
 	^0
-]
-
-{ #category : #'bytecode generator support' }
-SimpleStackBasedCogit >> genStorePop: popBoolean RemoteInstVar: slotIndex ofObjectAt: objectIndex [
-	<inline: false>
-	"The only reason we assert needsFrame here is that in a frameless method
-	 ReceiverResultReg must and does contain only self, but the ceStoreCheck
-	 trampoline expects the target of the store to be in ReceiverResultReg.  So
-	 in a frameless method we would have a conflict between the receiver and
-	 the temote temp store, unless we we smart enough to realise that
-	 ReceiverResultReg was unused after the literal variable store, unlikely given
-	 that methods return self by default."
-	self assert: needsFrame.
-	popBoolean
-		ifTrue: [self PopR: ClassReg]
-		ifFalse: [self MoveMw: 0 r: SPReg R: ClassReg].
-	self MoveMw: (self frameOffsetOfTemporary: objectIndex) r: FPReg R: ReceiverResultReg.
-	objectRepresentation 
-		genEnsureOopInRegNotForwarded: ReceiverResultReg 
-		scratchReg: TempReg.
-	^objectRepresentation
-		genStoreSourceReg: ClassReg
-		slotIndex: slotIndex
-		destReg: ReceiverResultReg
-		scratchReg: TempReg
-		inFrame: needsFrame
 ]
 
 { #category : #'bytecode generator support' }

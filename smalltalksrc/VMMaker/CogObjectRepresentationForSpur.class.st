@@ -3132,17 +3132,6 @@ CogObjectRepresentationForSpur >> maybeMarkCounters: theCounters [
 		[objectMemory markAndTrace: theCounters - objectMemory baseHeaderSize]
 ]
 
-{ #category : #compilation }
-CogObjectRepresentationForSpur >> maybeNoteDescriptor: descriptor blockStart: blockStart [
-	"Override to note inst var refs in blocks.  Used to avoid checking
-	 for forwarded receivers in blocks that don't refer to inst vars."
-	<var: #blockStart type: #'BlockStart *'>
-	<var: #descriptor type: #'BytecodeDescriptor *'>
-	<inline: true>
-	descriptor isInstVarRef ifTrue:
-		[blockStart hasInstVarRef: true]
-]
-
 { #category : #'method cacheing' }
 CogObjectRepresentationForSpur >> maybeShiftClassTagRegisterForMethodCacheProbe: classTagReg [
 	"Generate a shift of the register containing the class tag in a method cache probe.

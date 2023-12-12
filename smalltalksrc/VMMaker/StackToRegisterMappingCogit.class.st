@@ -3147,43 +3147,41 @@ StackToRegisterMappingCogit >> generateMissAbortTrampolines [
 { #category : #initialization }
 StackToRegisterMappingCogit >> generateSendTrampolines [
 	"Override to generate code to push the register arg(s) for <= numRegArg arity sends."
-	0 to: NumSendTrampolines - 1 do:
-		[:numArgs|
-		ordinarySendTrampolines
-			at: numArgs
-			put: (self genSendTrampolineFor: #ceSend:super:to:numArgs:
-					  numArgs: numArgs
-					  called: (self trampolineName: 'ceSend' numArgs: numArgs)
-					  arg: ClassReg
-					  arg: (self trampolineArgConstant: false)
-					  arg: ReceiverResultReg
-					  arg: (self numArgsOrSendNumArgsReg: numArgs))].
+
+	0 to: NumSendTrampolines - 1 do: [ :numArgs |
+		ordinarySendTrampolines at: numArgs put: (self
+				 genSendTrampolineFor: #ceSend:super:to:numArgs:
+				 numArgs: numArgs
+				 called: (self trampolineName: 'ceSend' numArgs: numArgs)
+				 arg: ClassReg
+				 arg: (self trampolineArgConstant: false)
+				 arg: ReceiverResultReg
+				 arg: (self numArgsOrSendNumArgsReg: numArgs)) ].
 
 	"Generate these in the middle so they are within [firstSend, lastSend]."
 	BytecodeSetHasDirectedSuperSend ifTrue: [
-		0 to: NumSendTrampolines - 1 do: [:numArgs|
+		0 to: NumSendTrampolines - 1 do: [ :numArgs |
 			self
 				generateSuperSendTrampolineTo: #ceSend:above:to:numArgs:
 				named: 'ceDirectedSuperSend'
 				numArgs: numArgs
 				in: directedSuperSendTrampolines.
 			self
-				generateSuperSendTrampolineTo: #ceSend:aboveClassBinding:to:numArgs:
+				generateSuperSendTrampolineTo:
+				#ceSend:aboveClassBinding:to:numArgs:
 				named: 'ceDirectedSuperBindingSend'
 				numArgs: numArgs
 				in: directedSuperBindingSendTrampolines ] ].
 
-	0 to: NumSendTrampolines - 1 do:
-		[:numArgs|
-		superSendTrampolines
-			at: numArgs
-			put: (self genSendTrampolineFor: #ceSend:super:to:numArgs:
-					  numArgs: numArgs
-					  called: (self trampolineName: 'ceSuperSend' numArgs: numArgs)
-					  arg: ClassReg
-					  arg: (self trampolineArgConstant: true)
-					  arg: ReceiverResultReg
-					  arg: (self numArgsOrSendNumArgsReg: numArgs))].
+	0 to: NumSendTrampolines - 1 do: [ :numArgs |
+		superSendTrampolines at: numArgs put: (self
+				 genSendTrampolineFor: #ceSend:super:to:numArgs:
+				 numArgs: numArgs
+				 called: (self trampolineName: 'ceSuperSend' numArgs: numArgs)
+				 arg: ClassReg
+				 arg: (self trampolineArgConstant: true)
+				 arg: ReceiverResultReg
+				 arg: (self numArgsOrSendNumArgsReg: numArgs)) ].
 	firstSend := ordinarySendTrampolines at: 0.
 	lastSend := superSendTrampolines at: NumSendTrampolines - 1
 ]
@@ -3603,19 +3601,6 @@ StackToRegisterMappingCogit >> needsFrameIfExtBGT2: stackDelta [
 	^extB < 0 or: [extB > 2]
 ]
 
-{ #category : #'compile abstract instructions' }
-StackToRegisterMappingCogit >> needsFrameIfFollowsSend: stackDelta [
-	"As of August 2013, the code generator can't deal with spills in frameless methods (the
-	 issue is to do with the stack offset to get at an argument, which is changed when there's a spill).
-	 The only context in a spill is needed in a frameless method that I can think of is sends
-	 following sends as in e.g. TextColor>>#dominates: other ^other class == self class.
-	 Only need to check for the frameless sends since all other sends will force a frame."
-
-	self assert: (prevBCDescriptor notNil and: [prevBCDescriptor needsFrameFunction notNil]).
-	^prevBCDescriptor generator == #genSpecialSelectorEqualsEquals
-	  or: [prevBCDescriptor generator == #genSpecialSelectorClass]
-]
-
 { #category : #'span functions' }
 StackToRegisterMappingCogit >> numPushNils: descriptor pc: pc nExts: nExts method: aMethodObj [
 	<inline: true>
@@ -3825,69 +3810,84 @@ StackToRegisterMappingCogit >> scanMethod [
 		- what the last bytecode is; extra bytes at the end of a method are used to encode things like source pointers or temp names
 		- if the method needs a frame or not
 		- what are the targets of any backward branches"
-	| latestContinuation nExts descriptor pc distance targetPC framelessStackDelta seenInstVarStore |
+
 	<var: #descriptor type: #'BytecodeDescriptor *'>
+	| latestContinuation nExts descriptor pc distance targetPC framelessStackDelta seenInstVarStore |
 	needsFrame := useTwoPaths := seenInstVarStore := false.
 	self maybeInitNumFixups.
 	self maybeInitNumCounters.
-	prevBCDescriptor := nil.
-	(primitiveIndex > 0
-	 and: [coInterpreter isQuickPrimitiveIndex: primitiveIndex]) ifTrue:
-		[^0].
+	(primitiveIndex > 0 and: [
+		 coInterpreter isQuickPrimitiveIndex: primitiveIndex ]) ifTrue: [
+		^ 0 ].
 	pc := latestContinuation := initialPC.
 	framelessStackDelta := nExts := extA := numExtB := extB := 0.
-	[pc <= endPC] whileTrue:
-		[byte0 := objectMemory fetchByte: pc ofObject: methodObj.
-		 descriptor := self generatorAt: byte0.
-		 descriptor isExtension ifTrue:
-			[descriptor opcode = Nop ifTrue: "unknown bytecode tag; see Cogit class>>#generatorTableFrom:"
-				[^EncounteredUnknownBytecode].
-			 self loadSubsequentBytesForDescriptor: descriptor at: pc.
-			 self perform: descriptor generator].
-		 (descriptor isReturn
-		  and: [pc >= latestContinuation]) ifTrue:
-			[endPC := pc].
-		
-		  needsFrame ifFalse:
-			[(descriptor needsFrameFunction isNil
-			  or: [self perform: descriptor needsFrameFunction with: framelessStackDelta])
-					ifTrue:
-						["With immutability we win simply by avoiding a frame build if the receiver is young and not immutable."
-						 self cppIf: IMMUTABILITY
-							ifTrue: [descriptor is1ByteInstVarStore
-									ifTrue: [useTwoPaths := true]
-									ifFalse: [needsFrame := true. useTwoPaths := false]]
-							ifFalse: [needsFrame := true. useTwoPaths := false]]
-					ifFalse:
-						[framelessStackDelta := framelessStackDelta + descriptor stackDelta.
-						 "Without immutability we win if there are two or more stores and the receiver is new."
-						 self cppIf: IMMUTABILITY
-							ifTrue: []
-							ifFalse:
-								[descriptor is1ByteInstVarStore ifTrue:
-									[seenInstVarStore
-										ifTrue: [useTwoPaths := true]
-										ifFalse: [seenInstVarStore := true]]]]].
+	[ pc <= endPC ] whileTrue: [
+		byte0 := objectMemory fetchByte: pc ofObject: methodObj.
+		descriptor := self generatorAt: byte0.
+		descriptor isExtension ifTrue: [
+			descriptor opcode = Nop ifTrue: [ "unknown bytecode tag; see Cogit class>>#generatorTableFrom:"
+				^ EncounteredUnknownBytecode ].
+			self loadSubsequentBytesForDescriptor: descriptor at: pc.
+			self perform: descriptor generator ].
+		(descriptor isReturn and: [ pc >= latestContinuation ]) ifTrue: [
+			endPC := pc ].
 
-		 descriptor isBranch ifTrue:
-			[distance := self spanFor: descriptor at: pc exts: nExts in: methodObj.
-			 targetPC := pc + descriptor numBytes + distance.
-			 self maybeCountFixup: descriptor.
-			 (self isBackwardBranch: descriptor at: pc exts: nExts in: methodObj)
-				ifTrue: [self initializeFixupAt: targetPC]
-				ifFalse:
-					[latestContinuation := latestContinuation max: targetPC.
-					 self maybeCountCounter]].
-			
-		 latestContinuation := self 
-			maybeDealWithUnsafeJumpForDescriptor: descriptor 
-			pc: pc 
-			latestContinuation: latestContinuation.
+		needsFrame ifFalse: [
+			(descriptor needsFrameFunction isNil or: [
+				 self
+					 perform: descriptor needsFrameFunction
+					 with: framelessStackDelta ])
+				ifTrue: [ "With immutability we win simply by avoiding a frame build if the receiver is young and not immutable."
+					self
+						cppIf: IMMUTABILITY
+						ifTrue: [
+							descriptor is1ByteInstVarStore
+								ifTrue: [ useTwoPaths := true ]
+								ifFalse: [
+									needsFrame := true.
+									useTwoPaths := false ] ]
+						ifFalse: [
+							needsFrame := true.
+							useTwoPaths := false ] ]
+				ifFalse: [
+					framelessStackDelta := framelessStackDelta
+					                       + descriptor stackDelta.
+					"Without immutability we win if there are two or more stores and the receiver is new."
+					self cppIf: IMMUTABILITY ifTrue: [  ] ifFalse: [
+						descriptor is1ByteInstVarStore ifTrue: [
+							seenInstVarStore
+								ifTrue: [ useTwoPaths := true ]
+								ifFalse: [ seenInstVarStore := true ] ] ] ] ].
 
-		 pc := pc + descriptor numBytes.
-		 nExts := descriptor isExtension ifTrue: [nExts + 1] ifFalse: [extA := numExtB := extB := 0].
-		 prevBCDescriptor := descriptor].
-	
+		descriptor isBranch ifTrue: [
+			distance := self
+				            spanFor: descriptor
+				            at: pc
+				            exts: nExts
+				            in: methodObj.
+			targetPC := pc + descriptor numBytes + distance.
+			self maybeCountFixup: descriptor.
+			(self
+				 isBackwardBranch: descriptor
+				 at: pc
+				 exts: nExts
+				 in: methodObj)
+				ifTrue: [ self initializeFixupAt: targetPC ]
+				ifFalse: [
+					latestContinuation := latestContinuation max: targetPC.
+					self maybeCountCounter ] ].
+
+		latestContinuation := self
+			                      maybeDealWithUnsafeJumpForDescriptor:
+			                      descriptor
+			                      pc: pc
+			                      latestContinuation: latestContinuation.
+
+		pc := pc + descriptor numBytes.
+		nExts := descriptor isExtension
+			         ifTrue: [ nExts + 1 ]
+			         ifFalse: [ extA := numExtB := extB := 0 ] ].
+
 	"ok"
 	^ 0
 ]
