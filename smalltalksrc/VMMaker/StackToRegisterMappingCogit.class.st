@@ -2271,14 +2271,6 @@ StackToRegisterMappingCogit >> genPushLiteralVariable: literalIndex [
 ]
 
 { #category : #'bytecode generator support' }
-StackToRegisterMappingCogit >> genPushMaybeContextReceiverVariable: slotIndex [ 
-	<inline: false>
-	self ssAllocateCallReg: ReceiverResultReg and: SendNumArgsReg.
-	self ensureReceiverResultRegContainsSelf.
-	^ self genPushMaybeContextSlotIndex: slotIndex
-]
-
-{ #category : #'bytecode generator support' }
 StackToRegisterMappingCogit >> genPushMaybeContextRemoteInstVar: slotIndex inObjectAt: index [
 	<inline: false>
 	self ssAllocateCallReg: ReceiverResultReg and: SendNumArgsReg.
