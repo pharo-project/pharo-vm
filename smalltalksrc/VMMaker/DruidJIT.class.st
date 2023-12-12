@@ -2431,6 +2431,7 @@ DruidJIT >> gen_ExtPushReceiverVariableBytecode [
 		self AndCq: 16r3FFFFF R: t1.
 		self CmpCq: ClassMethodContextCompactIndex R: t1.
 		jump1 := self JumpNonZero: 0.
+		self ssFlushStack.
 		self deoptimize.
 		jump2 := self Jump: 0.
 		deadCode := false.
@@ -2475,6 +2476,7 @@ DruidJIT >> gen_ExtSendSuperBytecode [
 		| r12 r46 |
 		r12 := extB.
 		r12>=64 ifTrue: [
+			self ssFlushStack.
 			self deoptimize.
 			deadCode := false.
 			^ 0 ].
@@ -7114,6 +7116,7 @@ DruidJIT >> gen_StoreAndPopReceiverVariableBytecode0 [
 	self MoveM64: 0 r: t0 R: t2.
 	self ArithmeticShiftRightCq: 23 R: t2.
 	self AndCq: 1 R: t2.
+	self ssFlushStack.
 	self CmpCq: 0 R: t2.
 	jump1 := self JumpZero: 0.
 	self deoptimize.
@@ -7124,7 +7127,6 @@ DruidJIT >> gen_StoreAndPopReceiverVariableBytecode0 [
 	self ssPop: 1.
 	self MoveR: t0 R: t2.
 	self AndCq: 7 R: t2.
-	self ssFlushStack.
 	self CmpCq: 0 R: t2.
 	jump1 := self JumpNonZero: 0.
 	self MoveR: t0 R: t2.
@@ -7266,6 +7268,7 @@ DruidJIT >> gen_StoreAndPopReceiverVariableBytecode1 [
 	self MoveM64: 0 r: t0 R: t2.
 	self ArithmeticShiftRightCq: 23 R: t2.
 	self AndCq: 1 R: t2.
+	self ssFlushStack.
 	self CmpCq: 0 R: t2.
 	jump1 := self JumpZero: 0.
 	self deoptimize.
@@ -7276,7 +7279,6 @@ DruidJIT >> gen_StoreAndPopReceiverVariableBytecode1 [
 	self ssPop: 1.
 	self MoveR: t0 R: t2.
 	self AndCq: 7 R: t2.
-	self ssFlushStack.
 	self CmpCq: 0 R: t2.
 	jump1 := self JumpNonZero: 0.
 	self MoveR: t0 R: t2.
@@ -7418,6 +7420,7 @@ DruidJIT >> gen_StoreAndPopReceiverVariableBytecode2 [
 	self MoveM64: 0 r: t0 R: t2.
 	self ArithmeticShiftRightCq: 23 R: t2.
 	self AndCq: 1 R: t2.
+	self ssFlushStack.
 	self CmpCq: 0 R: t2.
 	jump1 := self JumpZero: 0.
 	self deoptimize.
@@ -7428,7 +7431,6 @@ DruidJIT >> gen_StoreAndPopReceiverVariableBytecode2 [
 	self ssPop: 1.
 	self MoveR: t0 R: t2.
 	self AndCq: 7 R: t2.
-	self ssFlushStack.
 	self CmpCq: 0 R: t2.
 	jump1 := self JumpNonZero: 0.
 	self MoveR: t0 R: t2.
@@ -7570,6 +7572,7 @@ DruidJIT >> gen_StoreAndPopReceiverVariableBytecode3 [
 	self MoveM64: 0 r: t0 R: t2.
 	self ArithmeticShiftRightCq: 23 R: t2.
 	self AndCq: 1 R: t2.
+	self ssFlushStack.
 	self CmpCq: 0 R: t2.
 	jump1 := self JumpZero: 0.
 	self deoptimize.
@@ -7580,7 +7583,6 @@ DruidJIT >> gen_StoreAndPopReceiverVariableBytecode3 [
 	self ssPop: 1.
 	self MoveR: t0 R: t2.
 	self AndCq: 7 R: t2.
-	self ssFlushStack.
 	self CmpCq: 0 R: t2.
 	jump1 := self JumpNonZero: 0.
 	self MoveR: t0 R: t2.
@@ -7722,6 +7724,7 @@ DruidJIT >> gen_StoreAndPopReceiverVariableBytecode4 [
 	self MoveM64: 0 r: t0 R: t2.
 	self ArithmeticShiftRightCq: 23 R: t2.
 	self AndCq: 1 R: t2.
+	self ssFlushStack.
 	self CmpCq: 0 R: t2.
 	jump1 := self JumpZero: 0.
 	self deoptimize.
@@ -7732,7 +7735,6 @@ DruidJIT >> gen_StoreAndPopReceiverVariableBytecode4 [
 	self ssPop: 1.
 	self MoveR: t0 R: t2.
 	self AndCq: 7 R: t2.
-	self ssFlushStack.
 	self CmpCq: 0 R: t2.
 	jump1 := self JumpNonZero: 0.
 	self MoveR: t0 R: t2.
@@ -7874,6 +7876,7 @@ DruidJIT >> gen_StoreAndPopReceiverVariableBytecode5 [
 	self MoveM64: 0 r: t0 R: t2.
 	self ArithmeticShiftRightCq: 23 R: t2.
 	self AndCq: 1 R: t2.
+	self ssFlushStack.
 	self CmpCq: 0 R: t2.
 	jump1 := self JumpZero: 0.
 	self deoptimize.
@@ -7884,7 +7887,6 @@ DruidJIT >> gen_StoreAndPopReceiverVariableBytecode5 [
 	self ssPop: 1.
 	self MoveR: t0 R: t2.
 	self AndCq: 7 R: t2.
-	self ssFlushStack.
 	self CmpCq: 0 R: t2.
 	jump1 := self JumpNonZero: 0.
 	self MoveR: t0 R: t2.
@@ -8026,6 +8028,7 @@ DruidJIT >> gen_StoreAndPopReceiverVariableBytecode6 [
 	self MoveM64: 0 r: t0 R: t2.
 	self ArithmeticShiftRightCq: 23 R: t2.
 	self AndCq: 1 R: t2.
+	self ssFlushStack.
 	self CmpCq: 0 R: t2.
 	jump1 := self JumpZero: 0.
 	self deoptimize.
@@ -8036,7 +8039,6 @@ DruidJIT >> gen_StoreAndPopReceiverVariableBytecode6 [
 	self ssPop: 1.
 	self MoveR: t0 R: t2.
 	self AndCq: 7 R: t2.
-	self ssFlushStack.
 	self CmpCq: 0 R: t2.
 	jump1 := self JumpNonZero: 0.
 	self MoveR: t0 R: t2.
@@ -8178,6 +8180,7 @@ DruidJIT >> gen_StoreAndPopReceiverVariableBytecode7 [
 	self MoveM64: 0 r: t0 R: t2.
 	self ArithmeticShiftRightCq: 23 R: t2.
 	self AndCq: 1 R: t2.
+	self ssFlushStack.
 	self CmpCq: 0 R: t2.
 	jump1 := self JumpZero: 0.
 	self deoptimize.
@@ -8188,7 +8191,6 @@ DruidJIT >> gen_StoreAndPopReceiverVariableBytecode7 [
 	self ssPop: 1.
 	self MoveR: t0 R: t2.
 	self AndCq: 7 R: t2.
-	self ssFlushStack.
 	self CmpCq: 0 R: t2.
 	jump1 := self JumpNonZero: 0.
 	self MoveR: t0 R: t2.
