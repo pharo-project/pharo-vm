@@ -2213,11 +2213,13 @@ SimpleDruidJIT >> gen_ExtPushReceiverVariableBytecode [
 		jump2 := self Jump: 0.
 		currentBlock := self Label.
 		jump1 jmpTarget: currentBlock.
-		self PushM64: TempReg r: byte1 + (r2 << 8) << 3 + 8.
+		self MoveM64: byte1 + (r2 << 8) << 3 + 8 r: TempReg R: ClassReg.
+		self PushR: ClassReg.
 		currentBlock := self Label.
 		jump2 jmpTarget: currentBlock.
 		^ 0 ].
-	self PushM64: TempReg r: byte1 + (r2 << 8) << 3 + 8.
+	self MoveM64: byte1 + (r2 << 8) << 3 + 8 r: TempReg R: ClassReg.
+	self PushR: ClassReg.
 	^ 0
 ]
 
@@ -4557,7 +4559,8 @@ SimpleDruidJIT >> gen_PushReceiverVariableBytecode0 [
 	needsFrame ifTrue:
 		[self putSelfInReceiverResultReg]..
 	self MoveR: ReceiverResultReg R: TempReg.
-	self PushM64: TempReg r: 8.
+	self MoveM64: 8 r: TempReg R: TempReg.
+	self PushR: TempReg.
 	^ 0
 ]
 
@@ -4569,7 +4572,8 @@ SimpleDruidJIT >> gen_PushReceiverVariableBytecode1 [
 	needsFrame ifTrue:
 		[self putSelfInReceiverResultReg]..
 	self MoveR: ReceiverResultReg R: TempReg.
-	self PushM64: TempReg r: 16.
+	self MoveM64: 16 r: TempReg R: TempReg.
+	self PushR: TempReg.
 	^ 0
 ]
 
@@ -4581,7 +4585,8 @@ SimpleDruidJIT >> gen_PushReceiverVariableBytecode10 [
 	needsFrame ifTrue:
 		[self putSelfInReceiverResultReg]..
 	self MoveR: ReceiverResultReg R: TempReg.
-	self PushM64: TempReg r: 88.
+	self MoveM64: 88 r: TempReg R: TempReg.
+	self PushR: TempReg.
 	^ 0
 ]
 
@@ -4593,7 +4598,8 @@ SimpleDruidJIT >> gen_PushReceiverVariableBytecode11 [
 	needsFrame ifTrue:
 		[self putSelfInReceiverResultReg]..
 	self MoveR: ReceiverResultReg R: TempReg.
-	self PushM64: TempReg r: 96.
+	self MoveM64: 96 r: TempReg R: TempReg.
+	self PushR: TempReg.
 	^ 0
 ]
 
@@ -4605,7 +4611,8 @@ SimpleDruidJIT >> gen_PushReceiverVariableBytecode12 [
 	needsFrame ifTrue:
 		[self putSelfInReceiverResultReg]..
 	self MoveR: ReceiverResultReg R: TempReg.
-	self PushM64: TempReg r: 104.
+	self MoveM64: 104 r: TempReg R: TempReg.
+	self PushR: TempReg.
 	^ 0
 ]
 
@@ -4617,7 +4624,8 @@ SimpleDruidJIT >> gen_PushReceiverVariableBytecode13 [
 	needsFrame ifTrue:
 		[self putSelfInReceiverResultReg]..
 	self MoveR: ReceiverResultReg R: TempReg.
-	self PushM64: TempReg r: 112.
+	self MoveM64: 112 r: TempReg R: TempReg.
+	self PushR: TempReg.
 	^ 0
 ]
 
@@ -4629,7 +4637,8 @@ SimpleDruidJIT >> gen_PushReceiverVariableBytecode14 [
 	needsFrame ifTrue:
 		[self putSelfInReceiverResultReg]..
 	self MoveR: ReceiverResultReg R: TempReg.
-	self PushM64: TempReg r: 120.
+	self MoveM64: 120 r: TempReg R: TempReg.
+	self PushR: TempReg.
 	^ 0
 ]
 
@@ -4641,7 +4650,8 @@ SimpleDruidJIT >> gen_PushReceiverVariableBytecode15 [
 	needsFrame ifTrue:
 		[self putSelfInReceiverResultReg]..
 	self MoveR: ReceiverResultReg R: TempReg.
-	self PushM64: TempReg r: 128.
+	self MoveM64: 128 r: TempReg R: TempReg.
+	self PushR: TempReg.
 	^ 0
 ]
 
@@ -4653,7 +4663,8 @@ SimpleDruidJIT >> gen_PushReceiverVariableBytecode2 [
 	needsFrame ifTrue:
 		[self putSelfInReceiverResultReg]..
 	self MoveR: ReceiverResultReg R: TempReg.
-	self PushM64: TempReg r: 24.
+	self MoveM64: 24 r: TempReg R: TempReg.
+	self PushR: TempReg.
 	^ 0
 ]
 
@@ -4665,7 +4676,8 @@ SimpleDruidJIT >> gen_PushReceiverVariableBytecode3 [
 	needsFrame ifTrue:
 		[self putSelfInReceiverResultReg]..
 	self MoveR: ReceiverResultReg R: TempReg.
-	self PushM64: TempReg r: 32.
+	self MoveM64: 32 r: TempReg R: TempReg.
+	self PushR: TempReg.
 	^ 0
 ]
 
@@ -4677,7 +4689,8 @@ SimpleDruidJIT >> gen_PushReceiverVariableBytecode4 [
 	needsFrame ifTrue:
 		[self putSelfInReceiverResultReg]..
 	self MoveR: ReceiverResultReg R: TempReg.
-	self PushM64: TempReg r: 40.
+	self MoveM64: 40 r: TempReg R: TempReg.
+	self PushR: TempReg.
 	^ 0
 ]
 
@@ -4689,7 +4702,8 @@ SimpleDruidJIT >> gen_PushReceiverVariableBytecode5 [
 	needsFrame ifTrue:
 		[self putSelfInReceiverResultReg]..
 	self MoveR: ReceiverResultReg R: TempReg.
-	self PushM64: TempReg r: 48.
+	self MoveM64: 48 r: TempReg R: TempReg.
+	self PushR: TempReg.
 	^ 0
 ]
 
@@ -4701,7 +4715,8 @@ SimpleDruidJIT >> gen_PushReceiverVariableBytecode6 [
 	needsFrame ifTrue:
 		[self putSelfInReceiverResultReg]..
 	self MoveR: ReceiverResultReg R: TempReg.
-	self PushM64: TempReg r: 56.
+	self MoveM64: 56 r: TempReg R: TempReg.
+	self PushR: TempReg.
 	^ 0
 ]
 
@@ -4713,7 +4728,8 @@ SimpleDruidJIT >> gen_PushReceiverVariableBytecode7 [
 	needsFrame ifTrue:
 		[self putSelfInReceiverResultReg]..
 	self MoveR: ReceiverResultReg R: TempReg.
-	self PushM64: TempReg r: 64.
+	self MoveM64: 64 r: TempReg R: TempReg.
+	self PushR: TempReg.
 	^ 0
 ]
 
@@ -4725,7 +4741,8 @@ SimpleDruidJIT >> gen_PushReceiverVariableBytecode8 [
 	needsFrame ifTrue:
 		[self putSelfInReceiverResultReg]..
 	self MoveR: ReceiverResultReg R: TempReg.
-	self PushM64: TempReg r: 72.
+	self MoveM64: 72 r: TempReg R: TempReg.
+	self PushR: TempReg.
 	^ 0
 ]
 
@@ -4737,7 +4754,8 @@ SimpleDruidJIT >> gen_PushReceiverVariableBytecode9 [
 	needsFrame ifTrue:
 		[self putSelfInReceiverResultReg]..
 	self MoveR: ReceiverResultReg R: TempReg.
-	self PushM64: TempReg r: 80.
+	self MoveM64: 80 r: TempReg R: TempReg.
+	self PushR: TempReg.
 	^ 0
 ]
 
