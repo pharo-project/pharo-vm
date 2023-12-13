@@ -2980,9 +2980,9 @@ StackInterpreter >> bytecodePrimGreaterThanSistaV1 [
 
 { #category : #'common selector sends' }
 StackInterpreter >> bytecodePrimIdenticalSistaV1 [
-	<druidInfo: #hasSend>
-	
+
 	<compilationInfo: #isMapped>
+	<druidInfo: #hasSend>
 	| rcvr arg |
 	self druidIgnore: [
 		rcvr := self stackValue: 1.
@@ -2992,7 +2992,8 @@ StackInterpreter >> bytecodePrimIdenticalSistaV1 [
 		(objectMemory isOopForwarded: arg) ifTrue: [
 			arg := self handleSpecialSelectorSendFaultFor: arg ].
 		^ self booleanCheatSistaV1: rcvr = arg ].
-	self normalSendSpecialSelector: 22 argumentCount: 1
+
+  self normalSendSpecialSelector: 22 argumentCount: 1
 ]
 
 { #category : #'common selector sends' }
@@ -3194,7 +3195,8 @@ StackInterpreter >> bytecodePrimNotIdenticalSistaV1 [
 		(objectMemory isOopForwarded: arg) ifTrue: [
 			arg := self handleSpecialSelectorSendFaultFor: arg ].
 		^ self booleanCheatSistaV1: rcvr ~= arg ].
-	^ self normalSendSpecialSelector: 24 argumentCount: 1
+
+  ^ self normalSendSpecialSelector: 24 argumentCount: 1
 ]
 
 { #category : #'common selector sends' }
@@ -12615,7 +12617,7 @@ StackInterpreter >> pushMaybeContext: obj receiverVariable: fieldIndex [
 			self druidIgnore: [
 				self push: (self instVar: fieldIndex ofContext: obj) ] ]
 		ifFalse: [
-		self push: (objectMemory fetchPointer: fieldIndex ofObject: obj) ]
+		  self push: (objectMemory fetchPointer: fieldIndex ofObject: obj) ]
 ]
 
 { #category : #'stack bytecodes' }
@@ -14675,15 +14677,18 @@ StackInterpreter >> storeAndPopReceiverVariableBytecode [
 
 	| rcvr top instVarIndex |
 	<compilationInfo: #isInstVarRef>
-	<compilationInfo: #is1ByteInstVarStore>
 	<compilationInfo: #isMappedIfImmutability>
 	<needsFrameIfImmutability: -1>
+	
+	"Avoid this annotation for now.
+	It governs the two path compilation"
+	"<compilationInfo: #is1ByteInstVarStore>"
+	
 	rcvr := self receiver.
 	top := self stackTop.
 	instVarIndex := currentBytecode bitAnd: 7.
-	self pop: 1.
 	objectMemory
-		storePointerImmutabilityCheck: instVarIndex
+		storePopPointerImmutabilityCheck: instVarIndex
 		ofObject: rcvr
 		withValue: top.
 	self fetchNextBytecode
