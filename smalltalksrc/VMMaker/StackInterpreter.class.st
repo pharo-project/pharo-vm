@@ -2980,18 +2980,21 @@ StackInterpreter >> bytecodePrimGreaterThanSistaV1 [
 
 { #category : #'common selector sends' }
 StackInterpreter >> bytecodePrimIdenticalSistaV1 [
-	<compilationInfo: #notMapped>
-	<needsFrameNever: -1>
+
+	<compilationInfo: #isMapped>
 	<druidInfo: #hasSend>
-	
 	| rcvr arg |
-	rcvr := self stackValue: 1.
-	arg := self stackValue: 0.
-	(objectMemory isOopForwarded: rcvr) ifTrue:
-		[rcvr := self handleSpecialSelectorSendFaultFor: rcvr].
-	(objectMemory isOopForwarded: arg) ifTrue:
-		[arg := self handleSpecialSelectorSendFaultFor: arg].
-	self booleanCheatSistaV1: rcvr = arg
+	self druidIgnore: [
+		rcvr := self stackValue: 1.
+		arg := self stackValue: 0.
+		(objectMemory isOopForwarded: rcvr) ifTrue: [
+			rcvr := self handleSpecialSelectorSendFaultFor: rcvr ].
+		(objectMemory isOopForwarded: arg) ifTrue: [
+			arg := self handleSpecialSelectorSendFaultFor: arg ].
+		self booleanCheatSistaV1: rcvr = arg.
+		^ self ].
+
+	self normalSendSpecialSelector: 22 argumentCount: 1
 ]
 
 { #category : #'common selector sends' }
@@ -3182,18 +3185,20 @@ StackInterpreter >> bytecodePrimNotEqualSistaV1 [
 { #category : #'common selector sends' }
 StackInterpreter >> bytecodePrimNotIdenticalSistaV1 [
 
-	<compilationInfo: #notMapped>
-	<needsFrameNever: -1>
+	<compilationInfo: #isMapped>
 	<druidInfo: #hasSend>
-	
 	| rcvr arg |
-	rcvr := self stackValue: 1.
-	arg := self stackValue: 0.
-	(objectMemory isOopForwarded: rcvr) ifTrue: [
-		rcvr := self handleSpecialSelectorSendFaultFor: rcvr ].
-	(objectMemory isOopForwarded: arg) ifTrue: [
-		arg := self handleSpecialSelectorSendFaultFor: arg ].
-	self booleanCheatSistaV1: rcvr ~= arg
+	self druidIgnore: [
+		rcvr := self stackValue: 1.
+		arg := self stackValue: 0.
+		(objectMemory isOopForwarded: rcvr) ifTrue: [
+			rcvr := self handleSpecialSelectorSendFaultFor: rcvr ].
+		(objectMemory isOopForwarded: arg) ifTrue: [
+			arg := self handleSpecialSelectorSendFaultFor: arg ].
+		self booleanCheatSistaV1: rcvr ~= arg.
+		^ self ].
+
+	self normalSendSpecialSelector: 24 argumentCount: 1
 ]
 
 { #category : #'common selector sends' }
@@ -12602,13 +12607,14 @@ StackInterpreter >> pushMaybeContext: obj receiverVariable: fieldIndex [
 	 of married contexts are correctly initialized so they don't
 	 need special treatment on read.  Only sender, instruction
 	 pointer and stack pointer need to be intercepted on reads."
+
 	<inline: true>
-	((self isReadMediatedContextInstVarIndex: fieldIndex)
-	and: [objectMemory isContextNonImm: obj])
-		ifTrue:
-			[self push: (self instVar: fieldIndex ofContext: obj)]
-		ifFalse:
-			[self push: (objectMemory fetchPointer: fieldIndex ofObject: obj)]
+	((self isReadMediatedContextInstVarIndex: fieldIndex) and: [
+		 objectMemory isContextNonImm: obj ])
+		ifTrue: [
+			self druidForceIntepretation.
+			self druidIgnore: [ self push: (self instVar: fieldIndex ofContext: obj) ] ]
+		ifFalse: [ self push: (objectMemory fetchPointer: fieldIndex ofObject: obj) ]
 ]
 
 { #category : #'stack bytecodes' }
@@ -14668,15 +14674,18 @@ StackInterpreter >> storeAndPopReceiverVariableBytecode [
 
 	| rcvr top instVarIndex |
 	<compilationInfo: #isInstVarRef>
-	<compilationInfo: #is1ByteInstVarStore>
 	<compilationInfo: #isMappedIfImmutability>
 	<needsFrameIfImmutability: -1>
+	
+	"Avoid this annotation for now.
+	It governs the two path compilation"
+	"<compilationInfo: #is1ByteInstVarStore>"
+	
 	rcvr := self receiver.
 	top := self stackTop.
 	instVarIndex := currentBytecode bitAnd: 7.
-	self pop: 1.
 	objectMemory
-		storePointerImmutabilityCheck: instVarIndex
+		storePopPointerImmutabilityCheck: instVarIndex
 		ofObject: rcvr
 		withValue: top.
 	self fetchNextBytecode
