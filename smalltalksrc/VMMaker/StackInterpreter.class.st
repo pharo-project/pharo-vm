@@ -2991,7 +2991,8 @@ StackInterpreter >> bytecodePrimIdenticalSistaV1 [
 			rcvr := self handleSpecialSelectorSendFaultFor: rcvr ].
 		(objectMemory isOopForwarded: arg) ifTrue: [
 			arg := self handleSpecialSelectorSendFaultFor: arg ].
-		self booleanCheatSistaV1: rcvr = arg ].
+		self booleanCheatSistaV1: rcvr = arg.
+		^ self ].
 
 	self normalSendSpecialSelector: 22 argumentCount: 1
 ]
