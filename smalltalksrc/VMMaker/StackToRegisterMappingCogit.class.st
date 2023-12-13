@@ -1125,7 +1125,8 @@ StackToRegisterMappingCogit >> debugStackPointers: aCArrayAccessor [
 { #category : #'bytecode generators' }
 StackToRegisterMappingCogit >> deoptimize [
 
-	self ssFlushStack.
+	"Where to flush the stack is calculated for each bytecode"
+	"self ssFlushStack."
 	super deoptimize
 ]
 
