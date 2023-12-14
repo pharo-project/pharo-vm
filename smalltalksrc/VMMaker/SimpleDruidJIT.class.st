@@ -27,37 +27,37 @@ SimpleDruidJIT class >> bytecodeTable [
 	<generated>
 	^ {
 		  { 1. 0. 0. #gen_PushReceiverVariableBytecode0.
-		  #isInstVarRef. #needsFrameNever:. 1 }.
+		  #isInstVarRef }.
 		  { 1. 1. 1. #gen_PushReceiverVariableBytecode1.
-		  #isInstVarRef. #needsFrameNever:. 1 }.
+		  #isInstVarRef }.
 		  { 1. 2. 2. #gen_PushReceiverVariableBytecode2.
-		  #isInstVarRef. #needsFrameNever:. 1 }.
+		  #isInstVarRef }.
 		  { 1. 3. 3. #gen_PushReceiverVariableBytecode3.
-		  #isInstVarRef. #needsFrameNever:. 1 }.
+		  #isInstVarRef }.
 		  { 1. 4. 4. #gen_PushReceiverVariableBytecode4.
-		  #isInstVarRef. #needsFrameNever:. 1 }.
+		  #isInstVarRef }.
 		  { 1. 5. 5. #gen_PushReceiverVariableBytecode5.
-		  #isInstVarRef. #needsFrameNever:. 1 }.
+		  #isInstVarRef }.
 		  { 1. 6. 6. #gen_PushReceiverVariableBytecode6.
-		  #isInstVarRef. #needsFrameNever:. 1 }.
+		  #isInstVarRef }.
 		  { 1. 7. 7. #gen_PushReceiverVariableBytecode7.
-		  #isInstVarRef. #needsFrameNever:. 1 }.
+		  #isInstVarRef }.
 		  { 1. 8. 8. #gen_PushReceiverVariableBytecode8.
-		  #isInstVarRef. #needsFrameNever:. 1 }.
+		  #isInstVarRef }.
 		  { 1. 9. 9. #gen_PushReceiverVariableBytecode9.
-		  #isInstVarRef. #needsFrameNever:. 1 }.
+		  #isInstVarRef }.
 		  { 1. 10. 10. #gen_PushReceiverVariableBytecode10.
-		  #isInstVarRef. #needsFrameNever:. 1 }.
+		  #isInstVarRef }.
 		  { 1. 11. 11. #gen_PushReceiverVariableBytecode11.
-		  #isInstVarRef. #needsFrameNever:. 1 }.
+		  #isInstVarRef }.
 		  { 1. 12. 12. #gen_PushReceiverVariableBytecode12.
-		  #isInstVarRef. #needsFrameNever:. 1 }.
+		  #isInstVarRef }.
 		  { 1. 13. 13. #gen_PushReceiverVariableBytecode13.
-		  #isInstVarRef. #needsFrameNever:. 1 }.
+		  #isInstVarRef }.
 		  { 1. 14. 14. #gen_PushReceiverVariableBytecode14.
-		  #isInstVarRef. #needsFrameNever:. 1 }.
+		  #isInstVarRef }.
 		  { 1. 15. 15. #gen_PushReceiverVariableBytecode15.
-		  #isInstVarRef. #needsFrameNever:. 1 }.
+		  #isInstVarRef }.
 		  { 1. 16. 16. #gen_PushLiteralVariable16CasesBytecode0.
 		  #needsFrameNever:. 1 }.
 		  { 1. 17. 17. #gen_PushLiteralVariable16CasesBytecode1.
@@ -154,32 +154,19 @@ SimpleDruidJIT class >> bytecodeTable [
 		  #needsFrameNever:. 1 }.
 		  { 1. 63. 63. #gen_PushLiteralConstantBytecode31.
 		  #needsFrameNever:. 1 }.
-		  { 1. 64. 64. #gen_PushTemporaryVariableBytecode0.
-		  #needsFrameIfMod16GENumArgs:. 1 }.
-		  { 1. 65. 65. #gen_PushTemporaryVariableBytecode1.
-		  #needsFrameIfMod16GENumArgs:. 1 }.
-		  { 1. 66. 66. #gen_PushTemporaryVariableBytecode2.
-		  #needsFrameIfMod16GENumArgs:. 1 }.
-		  { 1. 67. 67. #gen_PushTemporaryVariableBytecode3.
-		  #needsFrameIfMod16GENumArgs:. 1 }.
-		  { 1. 68. 68. #gen_PushTemporaryVariableBytecode4.
-		  #needsFrameIfMod16GENumArgs:. 1 }.
-		  { 1. 69. 69. #gen_PushTemporaryVariableBytecode5.
-		  #needsFrameIfMod16GENumArgs:. 1 }.
-		  { 1. 70. 70. #gen_PushTemporaryVariableBytecode6.
-		  #needsFrameIfMod16GENumArgs:. 1 }.
-		  { 1. 71. 71. #gen_PushTemporaryVariableBytecode7.
-		  #needsFrameIfMod16GENumArgs:. 1 }.
-		  { 1. 72. 72. #gen_PushTemporaryVariableBytecode8.
-		  #needsFrameIfMod16GENumArgs:. 1 }.
-		  { 1. 73. 73. #gen_PushTemporaryVariableBytecode9.
-		  #needsFrameIfMod16GENumArgs:. 1 }.
-		  { 1. 74. 74. #gen_PushTemporaryVariableBytecode10.
-		  #needsFrameIfMod16GENumArgs:. 1 }.
-		  { 1. 75. 75. #gen_PushTemporaryVariableBytecode11.
-		  #needsFrameIfMod16GENumArgs:. 1 }.
-		  { 1. 76. 76. #gen_PushReceiverBytecode. #needsFrameNever:.
-		  1 }.
+		  { 1. 64. 64. #gen_PushTemporaryVariableBytecode0 }.
+		  { 1. 65. 65. #gen_PushTemporaryVariableBytecode1 }.
+		  { 1. 66. 66. #gen_PushTemporaryVariableBytecode2 }.
+		  { 1. 67. 67. #gen_PushTemporaryVariableBytecode3 }.
+		  { 1. 68. 68. #gen_PushTemporaryVariableBytecode4 }.
+		  { 1. 69. 69. #gen_PushTemporaryVariableBytecode5 }.
+		  { 1. 70. 70. #gen_PushTemporaryVariableBytecode6 }.
+		  { 1. 71. 71. #gen_PushTemporaryVariableBytecode7 }.
+		  { 1. 72. 72. #gen_PushTemporaryVariableBytecode8 }.
+		  { 1. 73. 73. #gen_PushTemporaryVariableBytecode9 }.
+		  { 1. 74. 74. #gen_PushTemporaryVariableBytecode10 }.
+		  { 1. 75. 75. #gen_PushTemporaryVariableBytecode11 }.
+		  { 1. 76. 76. #gen_PushReceiverBytecode }.
 		  { 1. 77. 77. #gen_PushConstantTrueBytecode.
 		  #needsFrameNever:. 1 }.
 		  { 1. 78. 78. #gen_PushConstantFalseBytecode.
@@ -444,7 +431,7 @@ SimpleDruidJIT class >> bytecodeTable [
 		  { 2. 224. 224. #gen_ExtABytecode. #extension }.
 		  { 2. 225. 225. #gen_ExtBBytecode. #extension }.
 		  { 2. 226. 226. #gen_ExtPushReceiverVariableBytecode.
-		  #isInstVarRef }.
+		  #isInstVarRef. #isMappedIfImmutability }.
 		  { 2. 227. 227. #gen_ExtPushLiteralVariableBytecode.
 		  #needsFrameNever:. 1 }.
 		  { 2. 228. 228. #gen_ExtPushLiteralBytecode.
@@ -618,6 +605,12 @@ SimpleDruidJIT >> classForInlineCacheTag: classIndex [
 SimpleDruidJIT >> couldBeObject: literal [
 	^(objectMemory isNonImmediate: literal)
 	  and: [self oop: literal isGreaterThanOrEqualTo: objectMemory getMemoryMap startOfObjectMemory]
+]
+
+{ #category : #accessing }
+SimpleDruidJIT >> deadCode: aBoolean [ 
+	
+	"Nothing, compatibility with Stack to register based cogit"
 ]
 
 { #category : #'trait candidates' }
@@ -2048,7 +2041,7 @@ SimpleDruidJIT >> gen_ExtPushCharacterBytecode [
 
 	| r2 currentBlock |
 	r2 := extB.
-	self PushCq: (((byte1 + (r2 << 8)) << 3) + 2).
+	self genPushConstant: (((byte1 + (r2 << 8)) << 3) + 2).
 	extB := 0.
 	numExtB := 0.
 	^ 0
@@ -2062,7 +2055,7 @@ SimpleDruidJIT >> gen_ExtPushIntegerBytecode [
 	r2 := extB.
 	extB := 0.
 	numExtB := 0.
-	self PushCq: (((byte1 + (r2 << 8)) << 3) + 1).
+	self genPushConstant: (((byte1 + (r2 << 8)) << 3) + 1).
 	^ 0
 ]
 
@@ -2074,7 +2067,7 @@ SimpleDruidJIT >> gen_ExtPushLiteralBytecode [
 	r2 := extA.
 	extA := 0.
 	self MoveCq: methodObj R: TempReg.
-	self PushCq:
+	self genPushConstant:
 		(coInterpreter int64AtPointer:  ((methodObj + 8) + (((byte1 + (r2 << 8)) + LiteralStart) << 3))).
 	^ 0
 ]
@@ -2117,10 +2110,10 @@ SimpleDruidJIT >> gen_ExtPushLiteralVariableBytecode [
 			currentBlock := self Label.
 			jump1 jmpTarget: currentBlock.
 			jump2 jmpTarget: currentBlock.
-			self PushCq:
+			self genPushConstant:
 				(coInterpreter int64AtPointer:  (((coInterpreter int64AtPointer:  ((methodObj + 8) + (((byte1 + (r2 << 8)) + LiteralStart) << 3))) + 8) + (ValueIndex << 3))).
 			^ 0 ].
-	self PushCq:
+	self genPushConstant:
 		(coInterpreter int64AtPointer:  (((coInterpreter int64AtPointer:  ((methodObj + 8) + (((byte1 + (r2 << 8)) + LiteralStart) << 3))) + 8) + (ValueIndex << 3))).
 	^ 0
 ]
@@ -2130,6 +2123,7 @@ SimpleDruidJIT >> gen_ExtPushReceiverVariableBytecode [
 	"AutoGenerated by Druid"
 
 	| r2 currentBlock |
+	self annotateBytecode: self Label.
 	r2 := extA.
 	extA := 0.
 	needsFrame ifTrue:
@@ -2299,14 +2293,14 @@ SimpleDruidJIT >> gen_PrimitiveAdd [
 
 	| jump1 jump2 currentBlock |
 	self mclassIsSmallInteger ifFalse: [ ^ UnimplementedPrimitive ].
-	self TstCq: 1 R: Arg0Reg.
+	self MoveR: ReceiverResultReg R: TempReg.
+	self genLoadArgAtDepth: 0 into: ClassReg.
+	self TstCq: 1 R: ClassReg.
 	jump1 := self JumpZero: 0.
-	self MoveR: Arg0Reg R: TempReg.
-	self AddCq:  -1 R: TempReg.
-	self MoveR: ReceiverResultReg R: ClassReg.
-	self AddR: ClassReg R: TempReg.
+	self AddCq:  -1 R: ClassReg.
+	self AddR: TempReg R: ClassReg.
 	jump2 := self JumpOverflow: 0.
-	self MoveR: TempReg R: ReceiverResultReg.
+	self MoveR: ClassReg R: ReceiverResultReg.
 	self genPrimReturn.
 	currentBlock := self Label.
 	jump1 jmpTarget: currentBlock.
@@ -2653,13 +2647,13 @@ SimpleDruidJIT >> gen_PrimitiveEqual [
 	"AutoGenerated by Druid"
 
 	| jump1 jump2 jump3 currentBlock |
-	self MoveR: Arg0Reg R: TempReg.
-	self MoveR: ReceiverResultReg R: ClassReg.
-	self AndR: ClassReg R: TempReg.
-	self TstCq: 1 R: TempReg.
+	self MoveR: ReceiverResultReg R: TempReg.
+	self genLoadArgAtDepth: 0 into: ClassReg.
+	self MoveR: TempReg R: SendNumArgsReg.
+	self AndR: ClassReg R: SendNumArgsReg.
+	self TstCq: 1 R: SendNumArgsReg.
 	jump1 := self JumpZero: 0.
-	self MoveR: ReceiverResultReg R: ClassReg.
-	self CmpR: Arg0Reg R: ClassReg.
+	self CmpR: ClassReg R: TempReg.
 	jump2 := self JumpNonZero: 0.
 	self MoveCq: objectMemory trueObject R: ReceiverResultReg.
 	jump3 := self Jump: 0.
@@ -2679,13 +2673,13 @@ SimpleDruidJIT >> gen_PrimitiveGreaterOrEqual [
 	"AutoGenerated by Druid"
 
 	| jump1 jump2 jump3 currentBlock |
-	self MoveR: Arg0Reg R: TempReg.
-	self MoveR: ReceiverResultReg R: ClassReg.
-	self AndR: ClassReg R: TempReg.
-	self TstCq: 1 R: TempReg.
+	self MoveR: ReceiverResultReg R: TempReg.
+	self genLoadArgAtDepth: 0 into: ClassReg.
+	self MoveR: TempReg R: SendNumArgsReg.
+	self AndR: ClassReg R: SendNumArgsReg.
+	self TstCq: 1 R: SendNumArgsReg.
 	jump1 := self JumpZero: 0.
-	self MoveR: ReceiverResultReg R: ClassReg.
-	self CmpR: Arg0Reg R: ClassReg.
+	self CmpR: ClassReg R: TempReg.
 	jump2 := self JumpLess: 0.
 	self MoveCq: objectMemory trueObject R: ReceiverResultReg.
 	jump3 := self Jump: 0.
@@ -2705,13 +2699,13 @@ SimpleDruidJIT >> gen_PrimitiveGreaterThan [
 	"AutoGenerated by Druid"
 
 	| jump1 jump2 jump3 currentBlock |
-	self MoveR: Arg0Reg R: TempReg.
-	self MoveR: ReceiverResultReg R: ClassReg.
-	self AndR: ClassReg R: TempReg.
-	self TstCq: 1 R: TempReg.
+	self MoveR: ReceiverResultReg R: TempReg.
+	self genLoadArgAtDepth: 0 into: ClassReg.
+	self MoveR: TempReg R: SendNumArgsReg.
+	self AndR: ClassReg R: SendNumArgsReg.
+	self TstCq: 1 R: SendNumArgsReg.
 	jump1 := self JumpZero: 0.
-	self MoveR: ReceiverResultReg R: ClassReg.
-	self CmpR: Arg0Reg R: ClassReg.
+	self CmpR: ClassReg R: TempReg.
 	jump2 := self JumpLessOrEqual: 0.
 	self MoveCq: objectMemory trueObject R: ReceiverResultReg.
 	jump3 := self Jump: 0.
@@ -2731,13 +2725,13 @@ SimpleDruidJIT >> gen_PrimitiveLessOrEqual [
 	"AutoGenerated by Druid"
 
 	| jump1 jump2 jump3 currentBlock |
-	self MoveR: Arg0Reg R: TempReg.
-	self MoveR: ReceiverResultReg R: ClassReg.
-	self AndR: ClassReg R: TempReg.
-	self TstCq: 1 R: TempReg.
+	self MoveR: ReceiverResultReg R: TempReg.
+	self genLoadArgAtDepth: 0 into: ClassReg.
+	self MoveR: TempReg R: SendNumArgsReg.
+	self AndR: ClassReg R: SendNumArgsReg.
+	self TstCq: 1 R: SendNumArgsReg.
 	jump1 := self JumpZero: 0.
-	self MoveR: ReceiverResultReg R: ClassReg.
-	self CmpR: Arg0Reg R: ClassReg.
+	self CmpR: ClassReg R: TempReg.
 	jump2 := self JumpGreater: 0.
 	self MoveCq: objectMemory trueObject R: ReceiverResultReg.
 	jump3 := self Jump: 0.
@@ -2757,13 +2751,13 @@ SimpleDruidJIT >> gen_PrimitiveLessThan [
 	"AutoGenerated by Druid"
 
 	| jump1 jump2 jump3 currentBlock |
-	self MoveR: Arg0Reg R: TempReg.
-	self MoveR: ReceiverResultReg R: ClassReg.
-	self AndR: ClassReg R: TempReg.
-	self TstCq: 1 R: TempReg.
+	self MoveR: ReceiverResultReg R: TempReg.
+	self genLoadArgAtDepth: 0 into: ClassReg.
+	self MoveR: TempReg R: SendNumArgsReg.
+	self AndR: ClassReg R: SendNumArgsReg.
+	self TstCq: 1 R: SendNumArgsReg.
 	jump1 := self JumpZero: 0.
-	self MoveR: ReceiverResultReg R: ClassReg.
-	self CmpR: Arg0Reg R: ClassReg.
+	self CmpR: ClassReg R: TempReg.
 	jump2 := self JumpGreaterOrEqual: 0.
 	self MoveCq: objectMemory trueObject R: ReceiverResultReg.
 	jump3 := self Jump: 0.
@@ -2783,13 +2777,13 @@ SimpleDruidJIT >> gen_PrimitiveMultiply [
 	"AutoGenerated by Druid"
 
 	| jump1 jump2 jump3 currentBlock |
-	self TstCq: 1 R: ReceiverResultReg.
-	jump1 := self JumpZero: 0.
-	self TstCq: 1 R: Arg0Reg.
-	jump2 := self JumpZero: 0.
 	self MoveR: ReceiverResultReg R: TempReg.
+	self genLoadArgAtDepth: 0 into: ClassReg.
+	self TstCq: 1 R: TempReg.
+	jump1 := self JumpZero: 0.
+	self TstCq: 1 R: ClassReg.
+	jump2 := self JumpZero: 0.
 	self ArithmeticShiftRightCq: 3 R: TempReg.
-	self MoveR: Arg0Reg R: ClassReg.
 	self SubCq: 1 R: ClassReg.
 	self MulR: ClassReg R: TempReg.
 	jump3 := self JumpMultiplyOverflow: 0.
@@ -3341,16 +3335,16 @@ SimpleDruidJIT >> gen_PrimitiveSubtract [
 	"AutoGenerated by Druid"
 
 	| jump1 jump2 jump3 currentBlock |
-	self TstCq: 1 R: ReceiverResultReg.
+	self MoveR: ReceiverResultReg R: TempReg.
+	self genLoadArgAtDepth: 0 into: ClassReg.
+	self TstCq: 1 R: TempReg.
 	jump1 := self JumpZero: 0.
-	self TstCq: 1 R: Arg0Reg.
+	self TstCq: 1 R: ClassReg.
 	jump2 := self JumpZero: 0.
-	self MoveR: Arg0Reg R: TempReg.
-	self AddCq:  -1 R: TempReg.
-	self MoveR: ReceiverResultReg R: ClassReg.
-	self SubR: TempReg R: ClassReg.
+	self AddCq:  -1 R: ClassReg.
+	self SubR: ClassReg R: TempReg.
 	jump3 := self JumpOverflow: 0.
-	self MoveR: ClassReg R: ReceiverResultReg.
+	self MoveR: TempReg R: ReceiverResultReg.
 	self genPrimReturn.
 	currentBlock := self Label.
 	jump1 jmpTarget: currentBlock.
@@ -3364,7 +3358,7 @@ SimpleDruidJIT >> gen_PushConstantFalseBytecode [
 	"AutoGenerated by Druid"
 
 	| currentBlock |
-	self PushCq: objectMemory falseObject.
+	self genPushConstant: objectMemory falseObject.
 	^ 0
 ]
 
@@ -3373,7 +3367,7 @@ SimpleDruidJIT >> gen_PushConstantNilBytecode [
 	"AutoGenerated by Druid"
 
 	| currentBlock |
-	self PushCq: objectMemory nilObject.
+	self genPushConstant: objectMemory nilObject.
 	^ 0
 ]
 
@@ -3382,7 +3376,7 @@ SimpleDruidJIT >> gen_PushConstantOneBytecode [
 	"AutoGenerated by Druid"
 
 	| currentBlock |
-	self PushCq: ConstOne.
+	self genPushConstant: ConstOne.
 	^ 0
 ]
 
@@ -3391,7 +3385,7 @@ SimpleDruidJIT >> gen_PushConstantTrueBytecode [
 	"AutoGenerated by Druid"
 
 	| currentBlock |
-	self PushCq: objectMemory trueObject.
+	self genPushConstant: objectMemory trueObject.
 	^ 0
 ]
 
@@ -3400,7 +3394,7 @@ SimpleDruidJIT >> gen_PushConstantZeroBytecode [
 	"AutoGenerated by Druid"
 
 	| currentBlock |
-	self PushCq: ConstZero.
+	self genPushConstant: ConstZero.
 	^ 0
 ]
 
@@ -3421,7 +3415,7 @@ SimpleDruidJIT >> gen_PushLiteralConstantBytecode0 [
 
 	| currentBlock |
 	self MoveCq: methodObj R: TempReg.
-	self PushCq:
+	self genPushConstant:
 		(coInterpreter int64AtPointer:  ((methodObj + 8) + ((0 + LiteralStart) << 3))).
 	^ 0
 ]
@@ -3432,7 +3426,7 @@ SimpleDruidJIT >> gen_PushLiteralConstantBytecode1 [
 
 	| currentBlock |
 	self MoveCq: methodObj R: TempReg.
-	self PushCq:
+	self genPushConstant:
 		(coInterpreter int64AtPointer:  ((methodObj + 8) + ((1 + LiteralStart) << 3))).
 	^ 0
 ]
@@ -3443,7 +3437,7 @@ SimpleDruidJIT >> gen_PushLiteralConstantBytecode10 [
 
 	| currentBlock |
 	self MoveCq: methodObj R: TempReg.
-	self PushCq:
+	self genPushConstant:
 		(coInterpreter int64AtPointer:  ((methodObj + 8) + ((10 + LiteralStart) << 3))).
 	^ 0
 ]
@@ -3454,7 +3448,7 @@ SimpleDruidJIT >> gen_PushLiteralConstantBytecode11 [
 
 	| currentBlock |
 	self MoveCq: methodObj R: TempReg.
-	self PushCq:
+	self genPushConstant:
 		(coInterpreter int64AtPointer:  ((methodObj + 8) + ((11 + LiteralStart) << 3))).
 	^ 0
 ]
@@ -3465,7 +3459,7 @@ SimpleDruidJIT >> gen_PushLiteralConstantBytecode12 [
 
 	| currentBlock |
 	self MoveCq: methodObj R: TempReg.
-	self PushCq:
+	self genPushConstant:
 		(coInterpreter int64AtPointer:  ((methodObj + 8) + ((12 + LiteralStart) << 3))).
 	^ 0
 ]
@@ -3476,7 +3470,7 @@ SimpleDruidJIT >> gen_PushLiteralConstantBytecode13 [
 
 	| currentBlock |
 	self MoveCq: methodObj R: TempReg.
-	self PushCq:
+	self genPushConstant:
 		(coInterpreter int64AtPointer:  ((methodObj + 8) + ((13 + LiteralStart) << 3))).
 	^ 0
 ]
@@ -3487,7 +3481,7 @@ SimpleDruidJIT >> gen_PushLiteralConstantBytecode14 [
 
 	| currentBlock |
 	self MoveCq: methodObj R: TempReg.
-	self PushCq:
+	self genPushConstant:
 		(coInterpreter int64AtPointer:  ((methodObj + 8) + ((14 + LiteralStart) << 3))).
 	^ 0
 ]
@@ -3498,7 +3492,7 @@ SimpleDruidJIT >> gen_PushLiteralConstantBytecode15 [
 
 	| currentBlock |
 	self MoveCq: methodObj R: TempReg.
-	self PushCq:
+	self genPushConstant:
 		(coInterpreter int64AtPointer:  ((methodObj + 8) + ((15 + LiteralStart) << 3))).
 	^ 0
 ]
@@ -3509,7 +3503,7 @@ SimpleDruidJIT >> gen_PushLiteralConstantBytecode16 [
 
 	| currentBlock |
 	self MoveCq: methodObj R: TempReg.
-	self PushCq:
+	self genPushConstant:
 		(coInterpreter int64AtPointer:  ((methodObj + 8) + ((16 + LiteralStart) << 3))).
 	^ 0
 ]
@@ -3520,7 +3514,7 @@ SimpleDruidJIT >> gen_PushLiteralConstantBytecode17 [
 
 	| currentBlock |
 	self MoveCq: methodObj R: TempReg.
-	self PushCq:
+	self genPushConstant:
 		(coInterpreter int64AtPointer:  ((methodObj + 8) + ((17 + LiteralStart) << 3))).
 	^ 0
 ]
@@ -3531,7 +3525,7 @@ SimpleDruidJIT >> gen_PushLiteralConstantBytecode18 [
 
 	| currentBlock |
 	self MoveCq: methodObj R: TempReg.
-	self PushCq:
+	self genPushConstant:
 		(coInterpreter int64AtPointer:  ((methodObj + 8) + ((18 + LiteralStart) << 3))).
 	^ 0
 ]
@@ -3542,7 +3536,7 @@ SimpleDruidJIT >> gen_PushLiteralConstantBytecode19 [
 
 	| currentBlock |
 	self MoveCq: methodObj R: TempReg.
-	self PushCq:
+	self genPushConstant:
 		(coInterpreter int64AtPointer:  ((methodObj + 8) + ((19 + LiteralStart) << 3))).
 	^ 0
 ]
@@ -3553,7 +3547,7 @@ SimpleDruidJIT >> gen_PushLiteralConstantBytecode2 [
 
 	| currentBlock |
 	self MoveCq: methodObj R: TempReg.
-	self PushCq:
+	self genPushConstant:
 		(coInterpreter int64AtPointer:  ((methodObj + 8) + ((2 + LiteralStart) << 3))).
 	^ 0
 ]
@@ -3564,7 +3558,7 @@ SimpleDruidJIT >> gen_PushLiteralConstantBytecode20 [
 
 	| currentBlock |
 	self MoveCq: methodObj R: TempReg.
-	self PushCq:
+	self genPushConstant:
 		(coInterpreter int64AtPointer:  ((methodObj + 8) + ((20 + LiteralStart) << 3))).
 	^ 0
 ]
@@ -3575,7 +3569,7 @@ SimpleDruidJIT >> gen_PushLiteralConstantBytecode21 [
 
 	| currentBlock |
 	self MoveCq: methodObj R: TempReg.
-	self PushCq:
+	self genPushConstant:
 		(coInterpreter int64AtPointer:  ((methodObj + 8) + ((21 + LiteralStart) << 3))).
 	^ 0
 ]
@@ -3586,7 +3580,7 @@ SimpleDruidJIT >> gen_PushLiteralConstantBytecode22 [
 
 	| currentBlock |
 	self MoveCq: methodObj R: TempReg.
-	self PushCq:
+	self genPushConstant:
 		(coInterpreter int64AtPointer:  ((methodObj + 8) + ((22 + LiteralStart) << 3))).
 	^ 0
 ]
@@ -3597,7 +3591,7 @@ SimpleDruidJIT >> gen_PushLiteralConstantBytecode23 [
 
 	| currentBlock |
 	self MoveCq: methodObj R: TempReg.
-	self PushCq:
+	self genPushConstant:
 		(coInterpreter int64AtPointer:  ((methodObj + 8) + ((23 + LiteralStart) << 3))).
 	^ 0
 ]
@@ -3608,7 +3602,7 @@ SimpleDruidJIT >> gen_PushLiteralConstantBytecode24 [
 
 	| currentBlock |
 	self MoveCq: methodObj R: TempReg.
-	self PushCq:
+	self genPushConstant:
 		(coInterpreter int64AtPointer:  ((methodObj + 8) + ((24 + LiteralStart) << 3))).
 	^ 0
 ]
@@ -3619,7 +3613,7 @@ SimpleDruidJIT >> gen_PushLiteralConstantBytecode25 [
 
 	| currentBlock |
 	self MoveCq: methodObj R: TempReg.
-	self PushCq:
+	self genPushConstant:
 		(coInterpreter int64AtPointer:  ((methodObj + 8) + ((25 + LiteralStart) << 3))).
 	^ 0
 ]
@@ -3630,7 +3624,7 @@ SimpleDruidJIT >> gen_PushLiteralConstantBytecode26 [
 
 	| currentBlock |
 	self MoveCq: methodObj R: TempReg.
-	self PushCq:
+	self genPushConstant:
 		(coInterpreter int64AtPointer:  ((methodObj + 8) + ((26 + LiteralStart) << 3))).
 	^ 0
 ]
@@ -3641,7 +3635,7 @@ SimpleDruidJIT >> gen_PushLiteralConstantBytecode27 [
 
 	| currentBlock |
 	self MoveCq: methodObj R: TempReg.
-	self PushCq:
+	self genPushConstant:
 		(coInterpreter int64AtPointer:  ((methodObj + 8) + ((27 + LiteralStart) << 3))).
 	^ 0
 ]
@@ -3652,7 +3646,7 @@ SimpleDruidJIT >> gen_PushLiteralConstantBytecode28 [
 
 	| currentBlock |
 	self MoveCq: methodObj R: TempReg.
-	self PushCq:
+	self genPushConstant:
 		(coInterpreter int64AtPointer:  ((methodObj + 8) + ((28 + LiteralStart) << 3))).
 	^ 0
 ]
@@ -3663,7 +3657,7 @@ SimpleDruidJIT >> gen_PushLiteralConstantBytecode29 [
 
 	| currentBlock |
 	self MoveCq: methodObj R: TempReg.
-	self PushCq:
+	self genPushConstant:
 		(coInterpreter int64AtPointer:  ((methodObj + 8) + ((29 + LiteralStart) << 3))).
 	^ 0
 ]
@@ -3674,7 +3668,7 @@ SimpleDruidJIT >> gen_PushLiteralConstantBytecode3 [
 
 	| currentBlock |
 	self MoveCq: methodObj R: TempReg.
-	self PushCq:
+	self genPushConstant:
 		(coInterpreter int64AtPointer:  ((methodObj + 8) + ((3 + LiteralStart) << 3))).
 	^ 0
 ]
@@ -3685,7 +3679,7 @@ SimpleDruidJIT >> gen_PushLiteralConstantBytecode30 [
 
 	| currentBlock |
 	self MoveCq: methodObj R: TempReg.
-	self PushCq:
+	self genPushConstant:
 		(coInterpreter int64AtPointer:  ((methodObj + 8) + ((30 + LiteralStart) << 3))).
 	^ 0
 ]
@@ -3696,7 +3690,7 @@ SimpleDruidJIT >> gen_PushLiteralConstantBytecode31 [
 
 	| currentBlock |
 	self MoveCq: methodObj R: TempReg.
-	self PushCq:
+	self genPushConstant:
 		(coInterpreter int64AtPointer:  ((methodObj + 8) + ((31 + LiteralStart) << 3))).
 	^ 0
 ]
@@ -3707,7 +3701,7 @@ SimpleDruidJIT >> gen_PushLiteralConstantBytecode4 [
 
 	| currentBlock |
 	self MoveCq: methodObj R: TempReg.
-	self PushCq:
+	self genPushConstant:
 		(coInterpreter int64AtPointer:  ((methodObj + 8) + ((4 + LiteralStart) << 3))).
 	^ 0
 ]
@@ -3718,7 +3712,7 @@ SimpleDruidJIT >> gen_PushLiteralConstantBytecode5 [
 
 	| currentBlock |
 	self MoveCq: methodObj R: TempReg.
-	self PushCq:
+	self genPushConstant:
 		(coInterpreter int64AtPointer:  ((methodObj + 8) + ((5 + LiteralStart) << 3))).
 	^ 0
 ]
@@ -3729,7 +3723,7 @@ SimpleDruidJIT >> gen_PushLiteralConstantBytecode6 [
 
 	| currentBlock |
 	self MoveCq: methodObj R: TempReg.
-	self PushCq:
+	self genPushConstant:
 		(coInterpreter int64AtPointer:  ((methodObj + 8) + ((6 + LiteralStart) << 3))).
 	^ 0
 ]
@@ -3740,7 +3734,7 @@ SimpleDruidJIT >> gen_PushLiteralConstantBytecode7 [
 
 	| currentBlock |
 	self MoveCq: methodObj R: TempReg.
-	self PushCq:
+	self genPushConstant:
 		(coInterpreter int64AtPointer:  ((methodObj + 8) + ((7 + LiteralStart) << 3))).
 	^ 0
 ]
@@ -3751,7 +3745,7 @@ SimpleDruidJIT >> gen_PushLiteralConstantBytecode8 [
 
 	| currentBlock |
 	self MoveCq: methodObj R: TempReg.
-	self PushCq:
+	self genPushConstant:
 		(coInterpreter int64AtPointer:  ((methodObj + 8) + ((8 + LiteralStart) << 3))).
 	^ 0
 ]
@@ -3762,7 +3756,7 @@ SimpleDruidJIT >> gen_PushLiteralConstantBytecode9 [
 
 	| currentBlock |
 	self MoveCq: methodObj R: TempReg.
-	self PushCq:
+	self genPushConstant:
 		(coInterpreter int64AtPointer:  ((methodObj + 8) + ((9 + LiteralStart) << 3))).
 	^ 0
 ]
@@ -3803,10 +3797,10 @@ SimpleDruidJIT >> gen_PushLiteralVariable16CasesBytecode0 [
 			currentBlock := self Label.
 			jump1 jmpTarget: currentBlock.
 			jump2 jmpTarget: currentBlock.
-			self PushCq:
+			self genPushConstant:
 				(coInterpreter int64AtPointer:  (((coInterpreter int64AtPointer:  ((methodObj + 8) + ((0 + LiteralStart) << 3))) + 8) + (ValueIndex << 3))).
 			^ 0 ].
-	self PushCq:
+	self genPushConstant:
 		(coInterpreter int64AtPointer:  (((coInterpreter int64AtPointer:  ((methodObj + 8) + ((0 + LiteralStart) << 3))) + 8) + (ValueIndex << 3))).
 	^ 0
 ]
@@ -3847,10 +3841,10 @@ SimpleDruidJIT >> gen_PushLiteralVariable16CasesBytecode1 [
 			currentBlock := self Label.
 			jump1 jmpTarget: currentBlock.
 			jump2 jmpTarget: currentBlock.
-			self PushCq:
+			self genPushConstant:
 				(coInterpreter int64AtPointer:  (((coInterpreter int64AtPointer:  ((methodObj + 8) + ((1 + LiteralStart) << 3))) + 8) + (ValueIndex << 3))).
 			^ 0 ].
-	self PushCq:
+	self genPushConstant:
 		(coInterpreter int64AtPointer:  (((coInterpreter int64AtPointer:  ((methodObj + 8) + ((1 + LiteralStart) << 3))) + 8) + (ValueIndex << 3))).
 	^ 0
 ]
@@ -3891,10 +3885,10 @@ SimpleDruidJIT >> gen_PushLiteralVariable16CasesBytecode10 [
 			currentBlock := self Label.
 			jump1 jmpTarget: currentBlock.
 			jump2 jmpTarget: currentBlock.
-			self PushCq:
+			self genPushConstant:
 				(coInterpreter int64AtPointer:  (((coInterpreter int64AtPointer:  ((methodObj + 8) + ((10 + LiteralStart) << 3))) + 8) + (ValueIndex << 3))).
 			^ 0 ].
-	self PushCq:
+	self genPushConstant:
 		(coInterpreter int64AtPointer:  (((coInterpreter int64AtPointer:  ((methodObj + 8) + ((10 + LiteralStart) << 3))) + 8) + (ValueIndex << 3))).
 	^ 0
 ]
@@ -3935,10 +3929,10 @@ SimpleDruidJIT >> gen_PushLiteralVariable16CasesBytecode11 [
 			currentBlock := self Label.
 			jump1 jmpTarget: currentBlock.
 			jump2 jmpTarget: currentBlock.
-			self PushCq:
+			self genPushConstant:
 				(coInterpreter int64AtPointer:  (((coInterpreter int64AtPointer:  ((methodObj + 8) + ((11 + LiteralStart) << 3))) + 8) + (ValueIndex << 3))).
 			^ 0 ].
-	self PushCq:
+	self genPushConstant:
 		(coInterpreter int64AtPointer:  (((coInterpreter int64AtPointer:  ((methodObj + 8) + ((11 + LiteralStart) << 3))) + 8) + (ValueIndex << 3))).
 	^ 0
 ]
@@ -3979,10 +3973,10 @@ SimpleDruidJIT >> gen_PushLiteralVariable16CasesBytecode12 [
 			currentBlock := self Label.
 			jump1 jmpTarget: currentBlock.
 			jump2 jmpTarget: currentBlock.
-			self PushCq:
+			self genPushConstant:
 				(coInterpreter int64AtPointer:  (((coInterpreter int64AtPointer:  ((methodObj + 8) + ((12 + LiteralStart) << 3))) + 8) + (ValueIndex << 3))).
 			^ 0 ].
-	self PushCq:
+	self genPushConstant:
 		(coInterpreter int64AtPointer:  (((coInterpreter int64AtPointer:  ((methodObj + 8) + ((12 + LiteralStart) << 3))) + 8) + (ValueIndex << 3))).
 	^ 0
 ]
@@ -4023,10 +4017,10 @@ SimpleDruidJIT >> gen_PushLiteralVariable16CasesBytecode13 [
 			currentBlock := self Label.
 			jump1 jmpTarget: currentBlock.
 			jump2 jmpTarget: currentBlock.
-			self PushCq:
+			self genPushConstant:
 				(coInterpreter int64AtPointer:  (((coInterpreter int64AtPointer:  ((methodObj + 8) + ((13 + LiteralStart) << 3))) + 8) + (ValueIndex << 3))).
 			^ 0 ].
-	self PushCq:
+	self genPushConstant:
 		(coInterpreter int64AtPointer:  (((coInterpreter int64AtPointer:  ((methodObj + 8) + ((13 + LiteralStart) << 3))) + 8) + (ValueIndex << 3))).
 	^ 0
 ]
@@ -4067,10 +4061,10 @@ SimpleDruidJIT >> gen_PushLiteralVariable16CasesBytecode14 [
 			currentBlock := self Label.
 			jump1 jmpTarget: currentBlock.
 			jump2 jmpTarget: currentBlock.
-			self PushCq:
+			self genPushConstant:
 				(coInterpreter int64AtPointer:  (((coInterpreter int64AtPointer:  ((methodObj + 8) + ((14 + LiteralStart) << 3))) + 8) + (ValueIndex << 3))).
 			^ 0 ].
-	self PushCq:
+	self genPushConstant:
 		(coInterpreter int64AtPointer:  (((coInterpreter int64AtPointer:  ((methodObj + 8) + ((14 + LiteralStart) << 3))) + 8) + (ValueIndex << 3))).
 	^ 0
 ]
@@ -4111,10 +4105,10 @@ SimpleDruidJIT >> gen_PushLiteralVariable16CasesBytecode15 [
 			currentBlock := self Label.
 			jump1 jmpTarget: currentBlock.
 			jump2 jmpTarget: currentBlock.
-			self PushCq:
+			self genPushConstant:
 				(coInterpreter int64AtPointer:  (((coInterpreter int64AtPointer:  ((methodObj + 8) + ((15 + LiteralStart) << 3))) + 8) + (ValueIndex << 3))).
 			^ 0 ].
-	self PushCq:
+	self genPushConstant:
 		(coInterpreter int64AtPointer:  (((coInterpreter int64AtPointer:  ((methodObj + 8) + ((15 + LiteralStart) << 3))) + 8) + (ValueIndex << 3))).
 	^ 0
 ]
@@ -4155,10 +4149,10 @@ SimpleDruidJIT >> gen_PushLiteralVariable16CasesBytecode2 [
 			currentBlock := self Label.
 			jump1 jmpTarget: currentBlock.
 			jump2 jmpTarget: currentBlock.
-			self PushCq:
+			self genPushConstant:
 				(coInterpreter int64AtPointer:  (((coInterpreter int64AtPointer:  ((methodObj + 8) + ((2 + LiteralStart) << 3))) + 8) + (ValueIndex << 3))).
 			^ 0 ].
-	self PushCq:
+	self genPushConstant:
 		(coInterpreter int64AtPointer:  (((coInterpreter int64AtPointer:  ((methodObj + 8) + ((2 + LiteralStart) << 3))) + 8) + (ValueIndex << 3))).
 	^ 0
 ]
@@ -4199,10 +4193,10 @@ SimpleDruidJIT >> gen_PushLiteralVariable16CasesBytecode3 [
 			currentBlock := self Label.
 			jump1 jmpTarget: currentBlock.
 			jump2 jmpTarget: currentBlock.
-			self PushCq:
+			self genPushConstant:
 				(coInterpreter int64AtPointer:  (((coInterpreter int64AtPointer:  ((methodObj + 8) + ((3 + LiteralStart) << 3))) + 8) + (ValueIndex << 3))).
 			^ 0 ].
-	self PushCq:
+	self genPushConstant:
 		(coInterpreter int64AtPointer:  (((coInterpreter int64AtPointer:  ((methodObj + 8) + ((3 + LiteralStart) << 3))) + 8) + (ValueIndex << 3))).
 	^ 0
 ]
@@ -4243,10 +4237,10 @@ SimpleDruidJIT >> gen_PushLiteralVariable16CasesBytecode4 [
 			currentBlock := self Label.
 			jump1 jmpTarget: currentBlock.
 			jump2 jmpTarget: currentBlock.
-			self PushCq:
+			self genPushConstant:
 				(coInterpreter int64AtPointer:  (((coInterpreter int64AtPointer:  ((methodObj + 8) + ((4 + LiteralStart) << 3))) + 8) + (ValueIndex << 3))).
 			^ 0 ].
-	self PushCq:
+	self genPushConstant:
 		(coInterpreter int64AtPointer:  (((coInterpreter int64AtPointer:  ((methodObj + 8) + ((4 + LiteralStart) << 3))) + 8) + (ValueIndex << 3))).
 	^ 0
 ]
@@ -4287,10 +4281,10 @@ SimpleDruidJIT >> gen_PushLiteralVariable16CasesBytecode5 [
 			currentBlock := self Label.
 			jump1 jmpTarget: currentBlock.
 			jump2 jmpTarget: currentBlock.
-			self PushCq:
+			self genPushConstant:
 				(coInterpreter int64AtPointer:  (((coInterpreter int64AtPointer:  ((methodObj + 8) + ((5 + LiteralStart) << 3))) + 8) + (ValueIndex << 3))).
 			^ 0 ].
-	self PushCq:
+	self genPushConstant:
 		(coInterpreter int64AtPointer:  (((coInterpreter int64AtPointer:  ((methodObj + 8) + ((5 + LiteralStart) << 3))) + 8) + (ValueIndex << 3))).
 	^ 0
 ]
@@ -4331,10 +4325,10 @@ SimpleDruidJIT >> gen_PushLiteralVariable16CasesBytecode6 [
 			currentBlock := self Label.
 			jump1 jmpTarget: currentBlock.
 			jump2 jmpTarget: currentBlock.
-			self PushCq:
+			self genPushConstant:
 				(coInterpreter int64AtPointer:  (((coInterpreter int64AtPointer:  ((methodObj + 8) + ((6 + LiteralStart) << 3))) + 8) + (ValueIndex << 3))).
 			^ 0 ].
-	self PushCq:
+	self genPushConstant:
 		(coInterpreter int64AtPointer:  (((coInterpreter int64AtPointer:  ((methodObj + 8) + ((6 + LiteralStart) << 3))) + 8) + (ValueIndex << 3))).
 	^ 0
 ]
@@ -4375,10 +4369,10 @@ SimpleDruidJIT >> gen_PushLiteralVariable16CasesBytecode7 [
 			currentBlock := self Label.
 			jump1 jmpTarget: currentBlock.
 			jump2 jmpTarget: currentBlock.
-			self PushCq:
+			self genPushConstant:
 				(coInterpreter int64AtPointer:  (((coInterpreter int64AtPointer:  ((methodObj + 8) + ((7 + LiteralStart) << 3))) + 8) + (ValueIndex << 3))).
 			^ 0 ].
-	self PushCq:
+	self genPushConstant:
 		(coInterpreter int64AtPointer:  (((coInterpreter int64AtPointer:  ((methodObj + 8) + ((7 + LiteralStart) << 3))) + 8) + (ValueIndex << 3))).
 	^ 0
 ]
@@ -4419,10 +4413,10 @@ SimpleDruidJIT >> gen_PushLiteralVariable16CasesBytecode8 [
 			currentBlock := self Label.
 			jump1 jmpTarget: currentBlock.
 			jump2 jmpTarget: currentBlock.
-			self PushCq:
+			self genPushConstant:
 				(coInterpreter int64AtPointer:  (((coInterpreter int64AtPointer:  ((methodObj + 8) + ((8 + LiteralStart) << 3))) + 8) + (ValueIndex << 3))).
 			^ 0 ].
-	self PushCq:
+	self genPushConstant:
 		(coInterpreter int64AtPointer:  (((coInterpreter int64AtPointer:  ((methodObj + 8) + ((8 + LiteralStart) << 3))) + 8) + (ValueIndex << 3))).
 	^ 0
 ]
@@ -4463,10 +4457,10 @@ SimpleDruidJIT >> gen_PushLiteralVariable16CasesBytecode9 [
 			currentBlock := self Label.
 			jump1 jmpTarget: currentBlock.
 			jump2 jmpTarget: currentBlock.
-			self PushCq:
+			self genPushConstant:
 				(coInterpreter int64AtPointer:  (((coInterpreter int64AtPointer:  ((methodObj + 8) + ((9 + LiteralStart) << 3))) + 8) + (ValueIndex << 3))).
 			^ 0 ].
-	self PushCq:
+	self genPushConstant:
 		(coInterpreter int64AtPointer:  (((coInterpreter int64AtPointer:  ((methodObj + 8) + ((9 + LiteralStart) << 3))) + 8) + (ValueIndex << 3))).
 	^ 0
 ]
