@@ -2278,8 +2278,9 @@ DruidJIT >> gen_ExtPushFullClosureBytecode [
 		contextNumArgs: methodOrBlockNumArgs
 		large: (coInterpreter methodNeedsLargeContext: methodObj)
 		inBlock: inBlock
-		intoRegister: t0.
+		intoRegister: ReceiverResultReg.
 		
+	self MoveR: ReceiverResultReg R: t0.
 
 
 	r42 := 1.
