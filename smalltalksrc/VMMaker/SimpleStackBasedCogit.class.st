@@ -218,6 +218,13 @@ SimpleStackBasedCogit class >> table: primArray from: specArray [
 				primMayCallBack: false]]
 ]
 
+{ #category : #'bytecode generators' }
+SimpleStackBasedCogit >> PopN: n [
+
+	self AddCq: n * objectMemory wordSize R: SPReg.
+	^ 0
+]
+
 { #category : #'primitive generators' }
 SimpleStackBasedCogit >> adjustArgumentsForPerform: numArgs [
 	"e.g.	Receiver				Receiver	or	Receiver				Receiver	(RISC)
@@ -1643,8 +1650,9 @@ SimpleStackBasedCogit >> genMustBeBooleanTrampolineFor: boolean called: trampoli
 
 { #category : #'bytecode generators' }
 SimpleStackBasedCogit >> genPopStackBytecode [
-	self AddCq: objectMemory wordSize R: SPReg.
-	^0
+
+	self PopN: 1.
+	^ 0
 ]
 
 { #category : #'primitive generators' }

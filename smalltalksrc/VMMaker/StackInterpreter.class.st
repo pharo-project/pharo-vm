@@ -5472,6 +5472,7 @@ StackInterpreter >> extPushReceiverVariableBytecode [
 	"226		11100010	i i i i i i i i	Push Receiver Variable #iiiiiiii (+ Extend A * 256)"
 	| index |
 	<compilationInfo: #isInstVarRef>
+	<compilationInfo: #isMappedIfImmutability>
 	index := self fetchByte + (extA << 8).
 	self fetchNextBytecode.
 	extA := 0.
@@ -12664,7 +12665,7 @@ StackInterpreter >> pushNewArrayBytecode [
 
 { #category : #'stack bytecodes' }
 StackInterpreter >> pushReceiverBytecode [
-	<needsFrameNever: 1>
+	"<needsFrameNever: 1>"
 
 	self fetchNextBytecode.
 	self push: self receiver.
@@ -12681,7 +12682,7 @@ StackInterpreter >> pushReceiverVariable: fieldIndex [
 StackInterpreter >> pushReceiverVariableBytecode [
 	<expandCases>
 	<compilationInfo: #isInstVarRef>
-	<needsFrameNever: 1>
+	"<needsFrameNever: 1>"
 	self
 		cCode: "this bytecode will be expanded so that refs to currentBytecode below will be constant"
 			[self fetchNextBytecode.
@@ -12723,7 +12724,7 @@ StackInterpreter >> pushTemporaryVariable: temporaryIndex [
 { #category : #'stack bytecodes' }
 StackInterpreter >> pushTemporaryVariableBytecode [
 	<expandCases>
-	<needsFrameIfMod16GENumArgs: 1>
+	"<needsFrameIfMod16GENumArgs: 1>"
 	self
 		cCode: "this bytecode will be expanded so that refs to currentBytecode below will be constant"
 			[self fetchNextBytecode.

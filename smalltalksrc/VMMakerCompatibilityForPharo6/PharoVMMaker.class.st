@@ -214,6 +214,15 @@ PharoVMMaker >> generateSimple [
 ]
 
 { #category : #generation }
+PharoVMMaker >> generateSimpleDruid [
+
+	self
+		generate: CoInterpreter
+		memoryManager: Spur64BitCoMemoryManager
+		compilerClass: SimpleDruidJIT
+]
+
+{ #category : #generation }
 PharoVMMaker >> generateStackVM [
 
 	self generates64Bits ifTrue: [self generate: StackInterpreter memoryManager: Spur64BitMemoryManager].
