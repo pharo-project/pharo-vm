@@ -2275,7 +2275,7 @@ DruidJIT >> gen_ExtPushFullClosureBytecode [
 		genCreateFullClosureInIndex: (byte1 + (r2 << 8))
 		numCopied: (byte2 bitAnd: 63)
 		ignoreContext: (byte2 anyMask: 64)
-		contextNumArgs: methodOrBlockNumArgs
+		contextNumArgs: (byte2 anyMask: 128)
 		large: (coInterpreter methodNeedsLargeContext: methodObj)
 		inBlock: inBlock
 		intoRegister: ReceiverResultReg.
