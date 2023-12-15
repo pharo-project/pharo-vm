@@ -486,11 +486,12 @@ CogObjectRepresentationForSpur >> genCreateFullClosureInIndex: anIndex numCopied
 	ignoreContext
 		ifTrue: [ cogit genMoveNilR: ClassReg ]
 		ifFalse: [
+			cogit voidReceiverResultRegContainsSelf.
 			self
 				genGetActiveContextNumArgs: contextNumArgs
 				large: contextIsLarge
 				inBlock: contextIsBlock.
-			cogit MoveR: destinationRegister R: ClassReg ].
+			cogit MoveR: ReceiverResultReg R: ClassReg ].
 
 	numSlots := FullClosureFirstCopiedValueIndex + numCopied.
 	byteSize := objectMemory smallObjectBytesForSlots: numSlots.
@@ -3129,17 +3130,6 @@ CogObjectRepresentationForSpur >> maybeMarkCounters: theCounters [
 	<inline: true>
 	theCounters ~= 0 ifTrue:
 		[objectMemory markAndTrace: theCounters - objectMemory baseHeaderSize]
-]
-
-{ #category : #compilation }
-CogObjectRepresentationForSpur >> maybeNoteDescriptor: descriptor blockStart: blockStart [
-	"Override to note inst var refs in blocks.  Used to avoid checking
-	 for forwarded receivers in blocks that don't refer to inst vars."
-	<var: #blockStart type: #'BlockStart *'>
-	<var: #descriptor type: #'BytecodeDescriptor *'>
-	<inline: true>
-	descriptor isInstVarRef ifTrue:
-		[blockStart hasInstVarRef: true]
 ]
 
 { #category : #'method cacheing' }

@@ -138,8 +138,7 @@ Class {
 		'deadCode',
 		'useTwoPaths',
 		'currentCallCleanUpSize',
-		'compilationPass',
-		'counterIndex'
+		'compilationPass'
 	],
 	#classVars : [
 		'NeedsMergeFixupFlag',
@@ -332,8 +331,9 @@ StackToRegisterMappingCogit class >> initializeBytecodeTableForSistaV1 [
 													v3:ShortForward:Branch:Distance:)
 		(1 192 199 genShortJumpIfFalse			branch isBranchFalse isMapped "because of mustBeBoolean"
 													v3:ShortForward:Branch:Distance:)
+
+		"stores"
 		(1 200 207 genStoreAndPopReceiverVariableBytecode isInstVarRef is1ByteInstVarStore isMappedIfImmutability needsFrameIfImmutability: -1)
-		
 		(1 208 215 genStoreAndPopTemporaryVariableBytecode)
 
 		(1 216 216 genPopStackBytecode needsFrameNever: -1)
@@ -1131,45 +1131,6 @@ StackToRegisterMappingCogit >> deoptimize [
 ]
 
 { #category : #'bytecode generators' }
-StackToRegisterMappingCogit >> doubleExtendedDoAnythingBytecode [
-	"Replaces the Blue Book double-extended send [132], in which the first byte was wasted on 8 bits of argument count. 
-	Here we use 3 bits for the operation sub-type (opType),  and the remaining 5 bits for argument count where needed. 
-	The last byte give access to 256 instVars or literals. 
-	See also secondExtendedSendBytecode"
-	| opType |
-	opType := byte1 >> 5.
-	opType = 0 ifTrue:
-		[^self genSend: byte2 numArgs: (byte1 bitAnd: 31)].
-	opType = 1 ifTrue:
-		[^self genSendSuper: byte2 numArgs: (byte1 bitAnd: 31)].
-	"We need a map entry for this bytecode for correct parsing.
-	 The sends will get an IsSend entry anyway.  The other cases need a fake one."
-	opType caseOf: {
-			[2]	->	[(coInterpreter isReadMediatedContextInstVarIndex: byte2)
-						ifTrue: [self genPushMaybeContextReceiverVariable: byte2]
-						ifFalse: [self genPushReceiverVariable: byte2.
-								self annotateInstructionForBytecode.
-								^0]].
-			[3]	->	[self genPushLiteralIndex: byte2.
-					 self annotateInstructionForBytecode.
-					 ^0].
-			[4]	->	[self genPushLiteralVariable: byte2.].
-			[7]	->	[self genStorePop: false LiteralVariable: byte2.
-					self cppIf: IMMUTABILITY ifTrue: [ "genStorePop:LiteralVariable: annotates; don't annotate twice" ^0 ] ] }
-		otherwise: "5 & 6"
-			[(coInterpreter isWriteMediatedContextInstVarIndex: byte2)
-				ifTrue: [self genStorePop: opType = 6 MaybeContextReceiverVariable: byte2]
-				ifFalse: [self genStorePop: opType = 6 ReceiverVariable: byte2].
-			self cppIf: IMMUTABILITY ifTrue: [ "genStorePop:...ReceiverVariable: annotate; don't annotate twice" ^0 ]].
-	"We need a map entry for this bytecode for correct parsing (if the method builds a frame)."
-	self assert: needsFrame.
-	"genPushMaybeContextInstVar, pushLitVar, store & storePop all generate code"
-	self assert: self prevInstIsPCAnnotated not.
-	self annotateBytecode: self Label.
-	^0
-]
-
-{ #category : #'bytecode generators' }
 StackToRegisterMappingCogit >> duplicateTopBytecode [
 	| desc |
 	<var: #desc type: #SimStackEntry>
@@ -1329,12 +1290,6 @@ StackToRegisterMappingCogit >> extBSpecifiesInitializeInstance [
 	"This is a negative; do not intialize if 1 is present in extB.  This is also the no-store-check bit."
 	<inline: true>
 	^ extB noMask: 1
-]
-
-{ #category : #testing }
-StackToRegisterMappingCogit >> extBSpecifiesMaybeContext [
-	<inline: true>
-	^ extB anyMask: 2
 ]
 
 { #category : #testing }
@@ -1589,23 +1544,8 @@ StackToRegisterMappingCogit >> genExtPushFullClosureBytecode [
 ]
 
 { #category : #'bytecode generators' }
-StackToRegisterMappingCogit >> genExtPushRemoteTempOrInstVarLongBytecode [
-	| index maybeContext |
-	^ (byte2 noMask: coInterpreter remoteIsInstVarAccess)
-		ifTrue: [ self genPushRemoteTempLongBytecode ]
-		ifFalse: 
-			[ maybeContext := self extBSpecifiesMaybeContext.
-			index := byte1 + (extA << 8).
-			extA := 0.
-			extB := 0.
-			numExtB := 0.
-			((coInterpreter isReadMediatedContextInstVarIndex: index) and: [ maybeContext ])
-				ifTrue: [ self genPushMaybeContextRemoteInstVar: index inObjectAt: byte2 - coInterpreter remoteIsInstVarAccess ]
-				ifFalse: [ self genPushRemoteInstVar: index inObjectAt: byte2 - coInterpreter remoteIsInstVarAccess ] ]
-]
-
-{ #category : #'bytecode generators' }
 StackToRegisterMappingCogit >> genExtStorePopRemoteTempOrInstVarLongBytecodePopBoolean: boolean [
+
 	| index maybeContext needsStoreCheck needsImmCheck |
 	needsStoreCheck := self sistaNeedsStoreCheck.
 	maybeContext := self extBSpecifiesMaybeContext.
@@ -1613,30 +1553,38 @@ StackToRegisterMappingCogit >> genExtStorePopRemoteTempOrInstVarLongBytecodePopB
 	extB := 0.
 	numExtB := 0.
 	(byte2 noMask: coInterpreter remoteIsInstVarAccess)
-		ifTrue: 
-			[ self 
-				genStorePop: boolean 
-				RemoteTemp: byte1 
-				At: byte2 
+		ifTrue: [
+			self
+				genStorePop: boolean
+				RemoteTemp: byte1
+				At: byte2
 				needsStoreCheck: needsStoreCheck.
-			self cppIf: IMMUTABILITY ifTrue: [ self annotateBytecode: self Label ] ]
-		ifFalse: 
-			[index := byte1 + (extA << 8).
-			 extA := 0.
-			 ((coInterpreter isWriteMediatedContextInstVarIndex: index) and: [ maybeContext ])
-				ifTrue: [self 
-						genStorePop: boolean 
-						MaybeContextRemoteInstVar: index 
-						ofObjectAt: byte2 - coInterpreter remoteIsInstVarAccess 
+			self
+				cppIf: IMMUTABILITY
+				ifTrue: [ self annotateBytecode: self Label ] ]
+		ifFalse: [
+			index := byte1 + (extA << 8).
+			extA := 0.
+			((coInterpreter isWriteMediatedContextInstVarIndex: index) and: [
+				 maybeContext ])
+				ifTrue: [
+					self
+						genStorePop: boolean
+						MaybeContextRemoteInstVar: index
+						ofObjectAt: byte2 - coInterpreter remoteIsInstVarAccess
 						needsStoreCheck: needsStoreCheck
 						needsImmutabilityCheck: needsImmCheck ]
-				ifFalse: [self 
-						genStorePop: boolean 
-						RemoteInstVar: index 
-						ofObjectAt: byte2 - coInterpreter remoteIsInstVarAccess 
+				ifFalse: [
+					self
+						genStorePop: boolean
+						RemoteInstVar: index
+						ofObjectAt: byte2 - coInterpreter remoteIsInstVarAccess
 						needsStoreCheck: needsStoreCheck
 						needsImmutabilityCheck: needsImmCheck ].
-			self cppIf: IMMUTABILITY ifTrue: [ needsImmCheck ifFalse: [self annotateBytecode: self Label ] ] ].
+			self
+				cppIf: IMMUTABILITY
+				ifTrue: [
+				needsImmCheck ifFalse: [ self annotateBytecode: self Label ] ] ].
 	^ 0
 ]
 
@@ -2324,14 +2272,6 @@ StackToRegisterMappingCogit >> genPushLiteralVariable: literalIndex [
 ]
 
 { #category : #'bytecode generator support' }
-StackToRegisterMappingCogit >> genPushMaybeContextReceiverVariable: slotIndex [ 
-	<inline: false>
-	self ssAllocateCallReg: ReceiverResultReg and: SendNumArgsReg.
-	self ensureReceiverResultRegContainsSelf.
-	^ self genPushMaybeContextSlotIndex: slotIndex
-]
-
-{ #category : #'bytecode generator support' }
 StackToRegisterMappingCogit >> genPushMaybeContextRemoteInstVar: slotIndex inObjectAt: index [
 	<inline: false>
 	self ssAllocateCallReg: ReceiverResultReg and: SendNumArgsReg.
@@ -2547,50 +2487,6 @@ StackToRegisterMappingCogit >> genSendTrampolineFor: aRoutine numArgs: numArgs c
 		resultReg: NoReg
 		appendOpcodes: true.
 	^startAddress
-]
-
-{ #category : #'bytecode generators' }
-StackToRegisterMappingCogit >> genSistaExtStoreAndPopReceiverVariableBytecodePopBoolean: popBoolean [
-	<inline: true>
-	| index needsStoreCheck needsImmCheck maybeContext result |
-	needsStoreCheck := self sistaNeedsStoreCheck.
-	needsImmCheck := self extBSpecifiesImmCheck.
-	"Long form and short form exist for popInto. Only the long form exists for store.
-	Store have an explicit flag to mark context accessing, while popInto context accessing are done through the long form,
-	hence generate the context form if the flag is set or if this is a popInto."
-	maybeContext := popBoolean or: [self extBSpecifiesMaybeContext].
-	extB := 0.
-	numExtB := 0.
-	index := byte1 + (extA << 8).
-	extA := 0.
-	result := ((coInterpreter isWriteMediatedContextInstVarIndex: index) and: [maybeContext])
-		ifTrue: [self 
-				genStorePop: popBoolean 
-				MaybeContextReceiverVariable: index 
-				needsStoreCheck: needsStoreCheck 
-				needsImmutabilityCheck: needsImmCheck]
-		ifFalse: [self 
-				 genStorePop: popBoolean 
-				 ReceiverVariable: index 
-				 needsStoreCheck: needsStoreCheck 
-				 needsImmutabilityCheck: needsImmCheck].
-	self cppIf: IMMUTABILITY ifTrue: [ needsImmCheck ifFalse: [self annotateBytecode: self Label ] ].
-	^result
-]
-
-{ #category : #'bytecode generators' }
-StackToRegisterMappingCogit >> genSistaExtStoreLiteralVariableBytecodePopBoolean: boolean [
-	<inline: true>
-	| index needsStoreCheck needsImmCheck |
-	needsStoreCheck := self sistaNeedsStoreCheck.
-	needsImmCheck := self extBSpecifiesImmCheck.
-	index := byte1 + (extA << 8).
-	extA := numExtB := extB := 0.
-	^self 
-		genStorePop: boolean 
-		LiteralVariable: index 
-		needsStoreCheck: needsStoreCheck 
-		needsImmutabilityCheck: needsImmCheck
 ]
 
 { #category : #'bytecode generators' }
@@ -3252,43 +3148,41 @@ StackToRegisterMappingCogit >> generateMissAbortTrampolines [
 { #category : #initialization }
 StackToRegisterMappingCogit >> generateSendTrampolines [
 	"Override to generate code to push the register arg(s) for <= numRegArg arity sends."
-	0 to: NumSendTrampolines - 1 do:
-		[:numArgs|
-		ordinarySendTrampolines
-			at: numArgs
-			put: (self genSendTrampolineFor: #ceSend:super:to:numArgs:
-					  numArgs: numArgs
-					  called: (self trampolineName: 'ceSend' numArgs: numArgs)
-					  arg: ClassReg
-					  arg: (self trampolineArgConstant: false)
-					  arg: ReceiverResultReg
-					  arg: (self numArgsOrSendNumArgsReg: numArgs))].
+
+	0 to: NumSendTrampolines - 1 do: [ :numArgs |
+		ordinarySendTrampolines at: numArgs put: (self
+				 genSendTrampolineFor: #ceSend:super:to:numArgs:
+				 numArgs: numArgs
+				 called: (self trampolineName: 'ceSend' numArgs: numArgs)
+				 arg: ClassReg
+				 arg: (self trampolineArgConstant: false)
+				 arg: ReceiverResultReg
+				 arg: (self numArgsOrSendNumArgsReg: numArgs)) ].
 
 	"Generate these in the middle so they are within [firstSend, lastSend]."
 	BytecodeSetHasDirectedSuperSend ifTrue: [
-		0 to: NumSendTrampolines - 1 do: [:numArgs|
+		0 to: NumSendTrampolines - 1 do: [ :numArgs |
 			self
 				generateSuperSendTrampolineTo: #ceSend:above:to:numArgs:
 				named: 'ceDirectedSuperSend'
 				numArgs: numArgs
 				in: directedSuperSendTrampolines.
 			self
-				generateSuperSendTrampolineTo: #ceSend:aboveClassBinding:to:numArgs:
+				generateSuperSendTrampolineTo:
+				#ceSend:aboveClassBinding:to:numArgs:
 				named: 'ceDirectedSuperBindingSend'
 				numArgs: numArgs
 				in: directedSuperBindingSendTrampolines ] ].
 
-	0 to: NumSendTrampolines - 1 do:
-		[:numArgs|
-		superSendTrampolines
-			at: numArgs
-			put: (self genSendTrampolineFor: #ceSend:super:to:numArgs:
-					  numArgs: numArgs
-					  called: (self trampolineName: 'ceSuperSend' numArgs: numArgs)
-					  arg: ClassReg
-					  arg: (self trampolineArgConstant: true)
-					  arg: ReceiverResultReg
-					  arg: (self numArgsOrSendNumArgsReg: numArgs))].
+	0 to: NumSendTrampolines - 1 do: [ :numArgs |
+		superSendTrampolines at: numArgs put: (self
+				 genSendTrampolineFor: #ceSend:super:to:numArgs:
+				 numArgs: numArgs
+				 called: (self trampolineName: 'ceSuperSend' numArgs: numArgs)
+				 arg: ClassReg
+				 arg: (self trampolineArgConstant: true)
+				 arg: ReceiverResultReg
+				 arg: (self numArgsOrSendNumArgsReg: numArgs)) ].
 	firstSend := ordinarySendTrampolines at: 0.
 	lastSend := superSendTrampolines at: NumSendTrampolines - 1
 ]
@@ -3708,37 +3602,6 @@ StackToRegisterMappingCogit >> needsFrameIfExtBGT2: stackDelta [
 	^extB < 0 or: [extB > 2]
 ]
 
-{ #category : #'compile abstract instructions' }
-StackToRegisterMappingCogit >> needsFrameIfFollowsSend: stackDelta [
-	"As of August 2013, the code generator can't deal with spills in frameless methods (the
-	 issue is to do with the stack offset to get at an argument, which is changed when there's a spill).
-	 The only context in a spill is needed in a frameless method that I can think of is sends
-	 following sends as in e.g. TextColor>>#dominates: other ^other class == self class.
-	 Only need to check for the frameless sends since all other sends will force a frame."
-
-	self assert: (prevBCDescriptor notNil and: [prevBCDescriptor needsFrameFunction notNil]).
-	^prevBCDescriptor generator == #genSpecialSelectorEqualsEquals
-	  or: [prevBCDescriptor generator == #genSpecialSelectorClass]
-]
-
-{ #category : #'compile abstract instructions' }
-StackToRegisterMappingCogit >> needsFrameIfMod16GENumArgs: stackDelta [
-	"We need a frame if it is accessing to a temporal variable (not an argument)"
-
-	^ byte0 \\ 16 >= methodOrBlockNumArgs
-]
-
-{ #category : #'compile abstract instructions' }
-StackToRegisterMappingCogit >> needsFrameIfStackGreaterThanOne: stackDelta [
-	"As of August 2013, the code generator can't deal with spills in frameless methods (the
-	 issue is to do with the stack offset to get at an argument, which is changed when there's a spill).
-	 In e.g. TextColor>>#dominates: other ^other class == self class the second send of class
-	 needs also rto allocate a register that the first one used, but the first one's register can't be
-	 spilled.  So avoid this by only allowing class to be sent if the stack contains a single element."
-
-	^stackDelta > 1
-]
-
 { #category : #'span functions' }
 StackToRegisterMappingCogit >> numPushNils: descriptor pc: pc nExts: nExts method: aMethodObj [
 	<inline: true>
@@ -3782,35 +3645,6 @@ StackToRegisterMappingCogit >> picMissTrampolines [
 	<doNotGenerate>
 	^ picMissTrampolines 	
 
-]
-
-{ #category : #'method introspection' }
-StackToRegisterMappingCogit >> populate: tuple withPICInfoFor: cPIC firstCacheTag: firstCacheTag [
-	"Populate tuple (which must be large enough) with the ClosedPIC's target method class pairs.
-	 The first entry in tuple contains the bytecode pc for the send, so skip the tuple's first field."
-	<var: #cPIC type: #'CogMethod *'>
-	| picCaseMachineCodePC cacheTag classOop entryPoint targetMethod value |
-	<var: #targetMethod type: #'CogMethod *'>
-
-	1 to: cPIC cPICNumCases do: [:i|
-		picCaseMachineCodePC := self addressOfEndOfCase: i inCPIC: cPIC.
-		cacheTag := i = 1
-						ifTrue: [firstCacheTag]
-						ifFalse: [backEnd literalBeforeFollowingAddress: picCaseMachineCodePC - backEnd jumpLongConditionalByteSize].
-		
-		classOop := objectRepresentation classForInlineCacheTag: cacheTag.
-		objectMemory storePointer: i * 2 - 1 ofObject: tuple withValue: classOop.
-		entryPoint := i = 1
-						ifTrue: [backEnd jumpLongTargetBeforeFollowingAddress: picCaseMachineCodePC]
-						ifFalse: [backEnd jumpLongConditionalTargetBeforeFollowingAddress: picCaseMachineCodePC].
-		"Find target from jump.  A jump to the MNU entry-point should collect #doesNotUnderstand:"
-		(cPIC containsAddress: entryPoint)
-			ifTrue: [ value := objectMemory splObj: SelectorDoesNotUnderstand ]
-			ifFalse: [
-				targetMethod := self cCoerceSimple: entryPoint - cmNoCheckEntryOffset to: #'CogMethod *'.
-				self assert: targetMethod cmType = CMMethod.
-				value := targetMethod methodObject ].
-		objectMemory storePointer: i * 2 ofObject: tuple withValue: value ]
 ]
 
 { #category : #testing }
@@ -3915,152 +3749,6 @@ StackToRegisterMappingCogit >> printSimStack: aSimStack toDepth: limit spillBase
 		[aStream nextPutAll: '(sb: '; print: simSpillBase; nextPut: $); cr; flush]
 ]
 
-{ #category : #'method introspection' }
-StackToRegisterMappingCogit >> profilingDataFor: descriptor Annotation: isBackwardBranchAndAnnotation Mcpc: mcpc Bcpc: bcpc Method: cogMethodArg [
-	<var: #descriptor type: #'BytecodeDescriptor *'>
-	<var: #mcpc type: #'char *'>
-	<var: #cogMethodArg type: #'void *'>
-	<var: #methodClassIfSuper type: #'sqInt'>
-	| annotation entryPoint tuple counter |
-	"N.B. Counters are always 32-bits, having two 16-bit halves for the reached and taken counts."
-	<var: #counter type: #'unsigned int'>
-
-	descriptor ifNil:
-		[^0].
-	descriptor isBranch ifTrue:
-		["it's a branch; conditional?"
-		 (descriptor isBranchTrue or: [descriptor isBranchFalse]) ifTrue: [ | counters | 
-			counters := self
-							cCoerce: ((self
-											cCoerceSimple: cogMethodArg
-											to: #'CogMethod *') counters)
-							to: #'usqInt *'.
-			"If no counters are available, do not record counters"
-			counters = 0 ifTrue: [ ^ 0 ].
-			
-			counter := counters at: counterIndex.
-			tuple := self profilingDataForCounter: counter at: bcpc + 1.
-			tuple = 0 ifTrue: [^PrimErrNoMemory].
-			objectMemory
-				storePointer: introspectionDataIndex
-				ofObject: introspectionData
-				withValue: tuple.
-			introspectionDataIndex := introspectionDataIndex + 1.
-			counterIndex := counterIndex + 1].
-		 ^0].
-
-	annotation := isBackwardBranchAndAnnotation >> 1.
-	((self isPureSendAnnotation: annotation)
-	 and: [entryPoint := backEnd callTargetFromReturnAddress: mcpc asUnsignedInteger.
-		 entryPoint > methodZoneBase]) ifFalse: "send is not linked, or is not a send"
-		[^0].
-
-	"It's a linked send; find which kind."
-	self targetMethodAndSendTableFor: entryPoint
-		annotation: annotation
-		into: [:targetCogCode :sendTable| | methodClassIfSuper association |
-			methodClassIfSuper := nil.
-			sendTable = superSendTrampolines ifTrue: [
-				methodClassIfSuper := coInterpreter methodClassOf: (self cCoerceSimple: cogMethodArg to: #'CogMethod *') methodObject.
-			].
-			sendTable = directedSuperSendTrampolines ifTrue: [
-				association := backEnd literalBeforeInlineCacheTagAt: mcpc asUnsignedInteger.
-				methodClassIfSuper := objectRepresentation valueOfAssociation: association ].
-			tuple := self profilingDataForSendTo: targetCogCode
-						methodClassIfSuper: methodClassIfSuper
-						at: mcpc
-						bcpc: bcpc + 1].
-
-	tuple = 0 ifTrue: [^PrimErrNoMemory].
-	objectMemory
-		storePointer: introspectionDataIndex
-		ofObject: introspectionData
-		withValue: tuple.
-	introspectionDataIndex := introspectionDataIndex + 1.
-	^0
-]
-
-{ #category : #'method introspection' }
-StackToRegisterMappingCogit >> profilingDataFor: cogMethod into: arrayObj [
-
-	"Collect the branch and send data for cogMethod, storing it into arrayObj."
-
-	<api>
-	<var: #cogMethod type: #'CogMethod *'>
-	| errCode |
-	"If the method is frameless, it has no message sends. No need to continue."
-	cogMethod stackCheckOffset = 0 ifTrue: [ ^ 0 ].
-
-	introspectionDataIndex := counterIndex := 0.
-	introspectionData := arrayObj.
-	errCode := self
-		           mapFor: (self cCoerceSimple: cogMethod to: #'CogMethod *')
-		           bcpc: (coInterpreter startPCOfMethod: cogMethod methodObject)
-		           performUntil: #profilingDataFor:Annotation:Mcpc:Bcpc:Method:
-		           arg: cogMethod asVoidPointer.
-	errCode ~= 0 ifTrue: [ 
-		self assert: errCode = PrimErrNoMemory.
-		^ -1 ].
-	^ introspectionDataIndex
-]
-
-{ #category : #'method introspection' }
-StackToRegisterMappingCogit >> profilingDataForCounter: counter at: bcpc [
-	"Undefined by now, do nothing"
-
-	^ 0
-]
-
-{ #category : #'method introspection' }
-StackToRegisterMappingCogit >> profilingDataForSendTo: cogCodeSendTarget methodClassIfSuper: methodClassOrNil at: sendMcpc bcpc: sendBcpc [
-	"Answer a tuple with the send data for a linked send to cogMethod.
-	 If the target is a CogMethod (monomorphic send) answer
-		{ bytecode pc, inline cache class, target method }
-	 If the target is an open PIC (megamorphic send) answer
-		{ bytecode pc, nil, send selector }
-	If the target is a closed PIC (polymorphic send) answer
-		{ bytecode pc, first class, target method, second class, second target method, ... }"
-	<var: #cogCodeSendTarget type: #'CogMethod *'>
-	<var: #sendMcpc type: #'char *'>
-	| tuple class |
-	tuple := objectMemory
-					eeInstantiateClassIndex: ClassArrayCompactIndex
-					format: objectMemory arrayFormat
-					numSlots: (cogCodeSendTarget cmType = CMPolymorphicIC
-								ifTrue: [2 * cogCodeSendTarget cPICNumCases + 1]
-								ifFalse: [3]).
-	tuple = 0 ifTrue:
-		[^0].
-
-	objectMemory storePointerUnchecked: 0 ofObject: tuple withValue: (objectMemory integerObjectOf: sendBcpc).
-	
-	"Monomorphic - linked against a single method"
-	cogCodeSendTarget cmType = CMMethod ifTrue: [
-		"If it is not a super send, we don't have a class, let's extract it from the call site"
-		class := methodClassOrNil ifNil: [
-			objectRepresentation classForInlineCacheTag: (backEnd inlineCacheTagAt: sendMcpc asUnsignedInteger)].
-		 objectMemory
-			storePointer: 1 ofObject: tuple withValue: class;
-			storePointer: 2 ofObject: tuple withValue: cogCodeSendTarget methodObject.
-		^tuple ].
-
-	cogCodeSendTarget cmType = CMPolymorphicIC ifTrue: [
-		self
-			populate: tuple
-			withPICInfoFor: cogCodeSendTarget
-			firstCacheTag: (backEnd inlineCacheTagAt: sendMcpc asUnsignedInteger).
-		^tuple ].
-
-	cogCodeSendTarget cmType = CMMegamorphicIC ifTrue: [
-		objectMemory
-			storePointerUnchecked: 1 ofObject: tuple withValue: objectMemory nilObject;
-			storePointer: 2 ofObject: tuple withValue: cogCodeSendTarget selector.
-		^tuple ].
-
-	self error: 'invalid method type'.
-	^0 "to get Slang to type this method as answering sqInt"
-]
-
 { #category : #'span functions' }
 StackToRegisterMappingCogit >> pushNilSize: aMethodObj numInitialNils: numInitialNils [
 	<inline: true>
@@ -4123,69 +3811,84 @@ StackToRegisterMappingCogit >> scanMethod [
 		- what the last bytecode is; extra bytes at the end of a method are used to encode things like source pointers or temp names
 		- if the method needs a frame or not
 		- what are the targets of any backward branches"
-	| latestContinuation nExts descriptor pc distance targetPC framelessStackDelta seenInstVarStore |
+
 	<var: #descriptor type: #'BytecodeDescriptor *'>
+	| latestContinuation nExts descriptor pc distance targetPC framelessStackDelta seenInstVarStore |
 	needsFrame := useTwoPaths := seenInstVarStore := false.
 	self maybeInitNumFixups.
 	self maybeInitNumCounters.
-	prevBCDescriptor := nil.
-	(primitiveIndex > 0
-	 and: [coInterpreter isQuickPrimitiveIndex: primitiveIndex]) ifTrue:
-		[^0].
+	(primitiveIndex > 0 and: [
+		 coInterpreter isQuickPrimitiveIndex: primitiveIndex ]) ifTrue: [
+		^ 0 ].
 	pc := latestContinuation := initialPC.
 	framelessStackDelta := nExts := extA := numExtB := extB := 0.
-	[pc <= endPC] whileTrue:
-		[byte0 := objectMemory fetchByte: pc ofObject: methodObj.
-		 descriptor := self generatorAt: byte0.
-		 descriptor isExtension ifTrue:
-			[descriptor opcode = Nop ifTrue: "unknown bytecode tag; see Cogit class>>#generatorTableFrom:"
-				[^EncounteredUnknownBytecode].
-			 self loadSubsequentBytesForDescriptor: descriptor at: pc.
-			 self perform: descriptor generator].
-		 (descriptor isReturn
-		  and: [pc >= latestContinuation]) ifTrue:
-			[endPC := pc].
-		
-		  needsFrame ifFalse:
-			[(descriptor needsFrameFunction isNil
-			  or: [self perform: descriptor needsFrameFunction with: framelessStackDelta])
-					ifTrue:
-						["With immutability we win simply by avoiding a frame build if the receiver is young and not immutable."
-						 self cppIf: IMMUTABILITY
-							ifTrue: [descriptor is1ByteInstVarStore
-									ifTrue: [useTwoPaths := true]
-									ifFalse: [needsFrame := true. useTwoPaths := false]]
-							ifFalse: [needsFrame := true. useTwoPaths := false]]
-					ifFalse:
-						[framelessStackDelta := framelessStackDelta + descriptor stackDelta.
-						 "Without immutability we win if there are two or more stores and the receiver is new."
-						 self cppIf: IMMUTABILITY
-							ifTrue: []
-							ifFalse:
-								[descriptor is1ByteInstVarStore ifTrue:
-									[seenInstVarStore
-										ifTrue: [useTwoPaths := true]
-										ifFalse: [seenInstVarStore := true]]]]].
+	[ pc <= endPC ] whileTrue: [
+		byte0 := objectMemory fetchByte: pc ofObject: methodObj.
+		descriptor := self generatorAt: byte0.
+		descriptor isExtension ifTrue: [
+			descriptor opcode = Nop ifTrue: [ "unknown bytecode tag; see Cogit class>>#generatorTableFrom:"
+				^ EncounteredUnknownBytecode ].
+			self loadSubsequentBytesForDescriptor: descriptor at: pc.
+			self perform: descriptor generator ].
+		(descriptor isReturn and: [ pc >= latestContinuation ]) ifTrue: [
+			endPC := pc ].
 
-		 descriptor isBranch ifTrue:
-			[distance := self spanFor: descriptor at: pc exts: nExts in: methodObj.
-			 targetPC := pc + descriptor numBytes + distance.
-			 self maybeCountFixup: descriptor.
-			 (self isBackwardBranch: descriptor at: pc exts: nExts in: methodObj)
-				ifTrue: [self initializeFixupAt: targetPC]
-				ifFalse:
-					[latestContinuation := latestContinuation max: targetPC.
-					 self maybeCountCounter]].
-			
-		 latestContinuation := self 
-			maybeDealWithUnsafeJumpForDescriptor: descriptor 
-			pc: pc 
-			latestContinuation: latestContinuation.
+		needsFrame ifFalse: [
+			(descriptor needsFrameFunction isNil or: [
+				 self
+					 perform: descriptor needsFrameFunction
+					 with: framelessStackDelta ])
+				ifTrue: [ "With immutability we win simply by avoiding a frame build if the receiver is young and not immutable."
+					self
+						cppIf: IMMUTABILITY
+						ifTrue: [
+							descriptor is1ByteInstVarStore
+								ifTrue: [ useTwoPaths := true ]
+								ifFalse: [
+									needsFrame := true.
+									useTwoPaths := false ] ]
+						ifFalse: [
+							needsFrame := true.
+							useTwoPaths := false ] ]
+				ifFalse: [
+					framelessStackDelta := framelessStackDelta
+					                       + descriptor stackDelta.
+					"Without immutability we win if there are two or more stores and the receiver is new."
+					self cppIf: IMMUTABILITY ifTrue: [  ] ifFalse: [
+						descriptor is1ByteInstVarStore ifTrue: [
+							seenInstVarStore
+								ifTrue: [ useTwoPaths := true ]
+								ifFalse: [ seenInstVarStore := true ] ] ] ] ].
 
-		 pc := pc + descriptor numBytes.
-		 nExts := descriptor isExtension ifTrue: [nExts + 1] ifFalse: [extA := numExtB := extB := 0].
-		 prevBCDescriptor := descriptor].
-	
+		descriptor isBranch ifTrue: [
+			distance := self
+				            spanFor: descriptor
+				            at: pc
+				            exts: nExts
+				            in: methodObj.
+			targetPC := pc + descriptor numBytes + distance.
+			self maybeCountFixup: descriptor.
+			(self
+				 isBackwardBranch: descriptor
+				 at: pc
+				 exts: nExts
+				 in: methodObj)
+				ifTrue: [ self initializeFixupAt: targetPC ]
+				ifFalse: [
+					latestContinuation := latestContinuation max: targetPC.
+					self maybeCountCounter ] ].
+
+		latestContinuation := self
+			                      maybeDealWithUnsafeJumpForDescriptor:
+			                      descriptor
+			                      pc: pc
+			                      latestContinuation: latestContinuation.
+
+		pc := pc + descriptor numBytes.
+		nExts := descriptor isExtension
+			         ifTrue: [ nExts + 1 ]
+			         ifFalse: [ extA := numExtB := extB := 0 ] ].
+
 	"ok"
 	^ 0
 ]

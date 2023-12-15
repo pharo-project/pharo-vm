@@ -2991,9 +2991,9 @@ StackInterpreter >> bytecodePrimIdenticalSistaV1 [
 			rcvr := self handleSpecialSelectorSendFaultFor: rcvr ].
 		(objectMemory isOopForwarded: arg) ifTrue: [
 			arg := self handleSpecialSelectorSendFaultFor: arg ].
-		self booleanCheatSistaV1: rcvr = arg ].
+		^ self booleanCheatSistaV1: rcvr = arg ].
 
-	self normalSendSpecialSelector: 22 argumentCount: 1
+  self normalSendSpecialSelector: 22 argumentCount: 1
 ]
 
 { #category : #'common selector sends' }
@@ -3184,19 +3184,19 @@ StackInterpreter >> bytecodePrimNotEqualSistaV1 [
 { #category : #'common selector sends' }
 StackInterpreter >> bytecodePrimNotIdenticalSistaV1 [
 
-	<compilationInfo: #isMapped>
 	<druidInfo: #hasSend>
-	| rcvr arg |
+	<compilationInfo: #isMapped>
 	self druidIgnore: [
+		| rcvr arg |
 		rcvr := self stackValue: 1.
 		arg := self stackValue: 0.
 		(objectMemory isOopForwarded: rcvr) ifTrue: [
 			rcvr := self handleSpecialSelectorSendFaultFor: rcvr ].
 		(objectMemory isOopForwarded: arg) ifTrue: [
 			arg := self handleSpecialSelectorSendFaultFor: arg ].
-		self booleanCheatSistaV1: rcvr ~= arg ].
+		^ self booleanCheatSistaV1: rcvr ~= arg ].
 
-	self normalSendSpecialSelector: 24 argumentCount: 1
+  ^ self normalSendSpecialSelector: 24 argumentCount: 1
 ]
 
 { #category : #'common selector sends' }
@@ -3372,40 +3372,44 @@ StackInterpreter >> callPrimitiveBytecode [
 	"V4:			249		11111001	i i i i i i i i	jjjjjjjj		Call Primitive #iiiiiiii + (jjjjjjjj * 256)
 	 SistaV1:	248		11111000 	iiiiiiii		mjjjjjjj		Call Primitive #iiiiiiii + (jjjjjjj * 256) m=1 means inlined primitive, no hard return after execution.
 	 V3/Spur:	139		10001011	i i i i i i i i	jjjjjjjj		Call Primitive #iiiiiiii + (jjjjjjjj * 256)"
+
 	"Note that we simply skip a callPrimitiveBytecode at the start of a method
 	 that contains a primitive.  This because methods like Context(Part)>>reset
 	 have to be updated to skip the callPrimtiive bytecode otherwise."
-	SistaVM
-		ifTrue:
-			[| byte1 byte2 prim primSet header |
-			 byte1 := self fetchByte.
-			 byte2 := self fetchByte.
-			 self fetchNextBytecode.
-			 byte2 < 128 ifTrue:
-				[header := objectMemory methodHeaderOf: method.
-				 ((self methodHeaderHasPrimitive: header)
-				  and: [instructionPointer asUnsignedInteger
-						= (self initialIPForHeader: header method: method) + (self sizeOfCallPrimitiveBytecode: header)]) ifTrue:
-					[^self].
-				 instructionPointer := instructionPointer - 3.
-				 ^self respondToUnknownBytecode].
-			 prim := byte2 - 128 << 8 + byte1.
-			 primSet := prim >> 13 bitAnd: 3.
-			 prim := prim bitAnd: 8191.
-			 primSet = 0 ifTrue: [^self sistaInlinePrimitive: prim].
-		
+
+	| header |
+	self druidIgnore: [
+		SistaVM ifTrue: [
+			| byte1 byte2 prim primSet |
+			byte1 := self fetchByte.
+			byte2 := self fetchByte.
+			self fetchNextBytecode.
+			byte2 < 128 ifTrue: [
+				header := objectMemory methodHeaderOf: method.
+				((self methodHeaderHasPrimitive: header) and: [
+					 instructionPointer asUnsignedInteger
+					 = (self initialIPForHeader: header method: method)
+					 + (self sizeOfCallPrimitiveBytecode: header) ]) ifTrue: [
+					^ self ].
+				instructionPointer := instructionPointer - 3.
+				^ self respondToUnknownBytecode ].
+			prim := byte2 - 128 << 8 + byte1.
+			primSet := prim >> 13 bitAnd: 3.
+			prim := prim bitAnd: 8191.
+			primSet = 0 ifTrue: [ ^ self sistaInlinePrimitive: prim ].
+
 			instructionPointer := instructionPointer - 3.
-			^self respondToUnknownBytecode]
-		ifFalse:
-			[| header |
-			 header := objectMemory methodHeaderOf: method.
-			 ((self methodHeaderHasPrimitive: header)
-			  and: [instructionPointer asInteger = (self initialIPForHeader: header method: method)])
-				ifTrue:
-					[instructionPointer := instructionPointer + (self sizeOfCallPrimitiveBytecode: header) - 1.
-					 ^self fetchNextBytecode]
-				ifFalse:
-					[^self respondToUnknownBytecode]]
+			^ self respondToUnknownBytecode ].
+
+		header := objectMemory methodHeaderOf: method.
+		((self methodHeaderHasPrimitive: header) and: [
+			 instructionPointer asInteger
+			 = (self initialIPForHeader: header method: method) ]) ifTrue: [
+			instructionPointer := instructionPointer
+			                      + (self sizeOfCallPrimitiveBytecode: header)
+			                      - 1.
+			^ self fetchNextBytecode ].
+		self respondToUnknownBytecode ]
 ]
 
 { #category : #'callback support' }
@@ -4660,7 +4664,7 @@ StackInterpreter >> createActualMessageTo: lookupClass [
 ]
 
 { #category : #'stack bytecodes' }
-StackInterpreter >> createFullClosureInIndex: compiledBlockLiteralIndex numCopied: numCopied ignoreContext: ignoreContext receiverIsOnStack: receiverIsOnStack [
+StackInterpreter >> createFullClosureInIndex: compiledBlockLiteralIndex numCopied: numCopied ignoreContext: ignoreContext [
 	"The compiler has pushed the values to be copied, if any. The receiver has been pushed on stack before if specified. 
 	 Create a Closure with space for the copiedValues and pop numCopied values off the stack into the closure.
 	 Sets outerContext, compiledBlock, numArgs and receiver as specified.."
@@ -5390,8 +5394,7 @@ StackInterpreter >> extPushFullClosureBytecode [
 	newClosure := self
 		              createFullClosureInIndex: compiledBlockLiteralIndex
 		              numCopied: numCopied
-		              ignoreContext: ignoreContext
-		              receiverIsOnStack: receiverIsOnStack.
+		              ignoreContext: ignoreContext.
 
 	self druidIgnore: [ self maybeTraceBlockCreation: newClosure ].
 
@@ -5469,6 +5472,7 @@ StackInterpreter >> extPushReceiverVariableBytecode [
 	"226		11100010	i i i i i i i i	Push Receiver Variable #iiiiiiii (+ Extend A * 256)"
 	| index |
 	<compilationInfo: #isInstVarRef>
+	<compilationInfo: #isMappedIfImmutability>
 	index := self fetchByte + (extA << 8).
 	self fetchNextBytecode.
 	extA := 0.
@@ -12611,8 +12615,10 @@ StackInterpreter >> pushMaybeContext: obj receiverVariable: fieldIndex [
 		 objectMemory isContextNonImm: obj ])
 		ifTrue: [
 			self druidForceIntepretation.
-			self druidIgnore: [ self push: (self instVar: fieldIndex ofContext: obj) ] ]
-		ifFalse: [ self push: (objectMemory fetchPointer: fieldIndex ofObject: obj) ]
+			self druidIgnore: [
+				self push: (self instVar: fieldIndex ofContext: obj) ] ]
+		ifFalse: [
+		  self push: (objectMemory fetchPointer: fieldIndex ofObject: obj) ]
 ]
 
 { #category : #'stack bytecodes' }
@@ -12659,7 +12665,7 @@ StackInterpreter >> pushNewArrayBytecode [
 
 { #category : #'stack bytecodes' }
 StackInterpreter >> pushReceiverBytecode [
-	<needsFrameNever: 1>
+	"<needsFrameNever: 1>"
 
 	self fetchNextBytecode.
 	self push: self receiver.
@@ -12676,7 +12682,7 @@ StackInterpreter >> pushReceiverVariable: fieldIndex [
 StackInterpreter >> pushReceiverVariableBytecode [
 	<expandCases>
 	<compilationInfo: #isInstVarRef>
-	<needsFrameNever: 1>
+	"<needsFrameNever: 1>"
 	self
 		cCode: "this bytecode will be expanded so that refs to currentBytecode below will be constant"
 			[self fetchNextBytecode.
@@ -12718,7 +12724,7 @@ StackInterpreter >> pushTemporaryVariable: temporaryIndex [
 { #category : #'stack bytecodes' }
 StackInterpreter >> pushTemporaryVariableBytecode [
 	<expandCases>
-	<needsFrameIfMod16GENumArgs: 1>
+	"<needsFrameIfMod16GENumArgs: 1>"
 	self
 		cCode: "this bytecode will be expanded so that refs to currentBytecode below will be constant"
 			[self fetchNextBytecode.
