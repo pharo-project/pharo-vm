@@ -2267,7 +2267,7 @@ DruidJIT >> gen_ExtPushFullClosureBytecode [
 		genCreateFullClosureInIndex: (byte1 + (r2 << 8))
 		numCopied: (byte2 bitAnd: 63)
 		ignoreContext: (byte2 anyMask: 64)
-		contextNumArgs: (byte2 anyMask: 128)
+		contextNumArgs: methodOrBlockNumArgs
 		large: (coInterpreter methodNeedsLargeContext: methodObj)
 		inBlock: inBlock
 		intoRegister: ReceiverResultReg.
@@ -2297,17 +2297,17 @@ DruidJIT >> gen_ExtPushFullClosureBytecode [
 		self MoveR: t1 M64: 8 r: t2.
 		r42 := r42 + 1 ].
 
-	(byte2 anyMask: 128)=true ifTrue: [
+	(byte2 anyMask: 128) ifTrue: [
 		(self ssValue: 0) copyToReg: t1.
 		self ssPop: 1.
 		self MoveR: t1 R: t2.
 		self MoveR: t2 M64: FullClosureReceiverIndex << 3 + 8 r: ReceiverResultReg.
 		self ssPushRegister: ReceiverResultReg.
 		^ 0 ].
-	self ensureReceiverResultRegContainsSelf.
 	self MoveR: ReceiverResultReg R: t1.
-	self MoveR: t1 M64: FullClosureReceiverIndex << 3 + 8 r: ReceiverResultReg.
-	self ssPushRegister: ReceiverResultReg.
+	self ensureReceiverResultRegContainsSelf.
+	self MoveR: ReceiverResultReg M64: FullClosureReceiverIndex << 3 + 8 r: t1.
+	self ssPushRegister: t1.
 	^ 0
 ]
 
