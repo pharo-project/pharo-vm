@@ -163,21 +163,23 @@ PharoVMMaker >> generateDruidMirrorVM [
 { #category : #generation }
 PharoVMMaker >> generateDruidVM [
 
+	options := #( PartialCompilation true ).
+
 	self
 		generate: CoInterpreter
 		memoryManager: Spur64BitCoMemoryManager
 		compilerClass: DruidJIT
-		options: #( PartialCompilation true )
 ]
 
 { #category : #generation }
 PharoVMMaker >> generateDruidVMFullCompilation [
 
+	options := #( PartialCompilation false ).
+
 	self
 		generate: CoInterpreter
 		memoryManager: Spur64BitCoMemoryManager
 		compilerClass: DruidJIT
-		options: #( PartialCompilation false )
 ]
 
 { #category : #generation }
