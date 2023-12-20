@@ -5596,10 +5596,10 @@ StackInterpreter >> extStoreReceiverVariableBytecode [
 	<needsFrameIfImmutability: 0>
 
 	variableIndex := self fetchByte + (extA << 8).
-	extA := 0.
 	self
 		storeMaybeContextReceiverVariable: variableIndex
 		withValue: self stackTop.
+	extA := 0.
 	self fetchNextBytecode
 ]
 
