@@ -5593,6 +5593,8 @@ StackInterpreter >> extStoreReceiverVariableBytecode [
 	| variableIndex |
 	<compilationInfo: #isInstVarRef>
 	<compilationInfo: #isMappedIfImmutability>
+	<needsFrameIfImmutability: 0>
+
 	variableIndex := self fetchByte + (extA << 8).
 	extA := 0.
 	self
