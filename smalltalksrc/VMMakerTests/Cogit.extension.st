@@ -17,12 +17,6 @@ Cogit >> methodOrBlockNumArgs: anInteger [
 ]
 
 { #category : #'*VMMakerTests' }
-Cogit >> needsFrame [ 
-
-	^ true
-]
-
-{ #category : #'*VMMakerTests' }
 Cogit >> needsFrame: aFalse [ 
 	needsFrame := aFalse
 ]
