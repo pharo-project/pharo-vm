@@ -200,165 +200,165 @@ DruidJIT class >> bytecodeTable [
 		   -1 }.
 		  { 1. 95. 95. #gen_ExtNopBytecode. #needsFrameNever:.
 		  0 }.
-		  { 1. 96. 96. #gen_BytecodePrimAdd. #isMapped. #needsFrame.
+		  { 1. 96. 96. #gen_BytecodePrimAdd. #isMapped. #needsFrameAlways:.
 		  0 }.
-		  { 1. 97. 97. #gen_BytecodePrimSubtract. #isMapped. #needsFrame.
+		  { 1. 97. 97. #gen_BytecodePrimSubtract. #isMapped. #needsFrameAlways:.
 		  0 }.
 		  { 1. 98. 98. #gen_BytecodePrimLessThanSistaV1.
-		  #isMapped. #needsFrame. 0 }.
+		  #isMapped. #needsFrameAlways:. 0 }.
 		  { 1. 99. 99. #gen_BytecodePrimGreaterThanSistaV1.
-		  #isMapped. #needsFrame. 0 }.
+		  #isMapped. #needsFrameAlways:. 0 }.
 		  { 1. 100. 100. #gen_BytecodePrimLessOrEqualSistaV1.
-		  #isMapped. #needsFrame. 0 }.
+		  #isMapped. #needsFrameAlways:. 0 }.
 		  { 1. 101. 101. #gen_BytecodePrimGreaterOrEqualSistaV1.
-		  #isMapped. #needsFrame. 0 }.
+		  #isMapped. #needsFrameAlways:. 0 }.
 		  { 1. 102. 102. #gen_BytecodePrimEqualSistaV1.
-		  #isMapped. #needsFrame. 0 }.
+		  #isMapped. #needsFrameAlways:. 0 }.
 		  { 1. 103. 103. #gen_BytecodePrimNotEqualSistaV1.
-		  #isMapped. #needsFrame. 0 }.
-		  { 1. 104. 104. #gen_BytecodePrimMultiply. #isMapped. #needsFrame.
+		  #isMapped. #needsFrameAlways:. 0 }.
+		  { 1. 104. 104. #gen_BytecodePrimMultiply. #isMapped. #needsFrameAlways:.
 		  0 }.
-		  { 1. 105. 105. #gen_BytecodePrimDivide. #isMapped. #needsFrame.
+		  { 1. 105. 105. #gen_BytecodePrimDivide. #isMapped. #needsFrameAlways:.
 		  0 }.
-		  { 1. 106. 106. #gen_BytecodePrimMod. #isMapped. #needsFrame.
+		  { 1. 106. 106. #gen_BytecodePrimMod. #isMapped. #needsFrameAlways:.
 		  0 }.
 		  { 1. 107. 107. #gen_BytecodePrimMakePoint.
-		  #isMapped. #needsFrame. 0 }.
-		  { 1. 108. 108. #gen_BytecodePrimBitShift. #isMapped. #needsFrame.
+		  #isMapped. #needsFrameAlways:. 0 }.
+		  { 1. 108. 108. #gen_BytecodePrimBitShift. #isMapped. #needsFrameAlways:.
 		  0 }.
-		  { 1. 109. 109. #gen_BytecodePrimDiv. #isMapped. #needsFrame.
+		  { 1. 109. 109. #gen_BytecodePrimDiv. #isMapped. #needsFrameAlways:.
 		  0 }.
-		  { 1. 110. 110. #gen_BytecodePrimBitAnd. #isMapped. #needsFrame.
+		  { 1. 110. 110. #gen_BytecodePrimBitAnd. #isMapped. #needsFrameAlways:.
 		  0 }.
-		  { 1. 111. 111. #gen_BytecodePrimBitOr. #isMapped. #needsFrame.
+		  { 1. 111. 111. #gen_BytecodePrimBitOr. #isMapped. #needsFrameAlways:.
 		  0 }.
-		  { 1. 112. 112. #gen_BytecodePrimAt. #isMapped. #needsFrame.
+		  { 1. 112. 112. #gen_BytecodePrimAt. #isMapped. #needsFrameAlways:.
 		  0 }.
-		  { 1. 113. 113. #gen_BytecodePrimAtPut. #isMapped. #needsFrame.
+		  { 1. 113. 113. #gen_BytecodePrimAtPut. #isMapped. #needsFrameAlways:.
 		  0 }.
-		  { 1. 114. 114. #gen_BytecodePrimSize. #isMapped. #needsFrame.
+		  { 1. 114. 114. #gen_BytecodePrimSize. #isMapped. #needsFrameAlways:.
 		  0 }.
-		  { 1. 115. 115. #gen_BytecodePrimNext. #isMapped. #needsFrame.
+		  { 1. 115. 115. #gen_BytecodePrimNext. #isMapped. #needsFrameAlways:.
 		  0 }.
-		  { 1. 116. 116. #gen_BytecodePrimNextPut. #isMapped. #needsFrame.
+		  { 1. 116. 116. #gen_BytecodePrimNextPut. #isMapped. #needsFrameAlways:.
 		  0 }.
-		  { 1. 117. 117. #gen_BytecodePrimAtEnd. #isMapped. #needsFrame.
+		  { 1. 117. 117. #gen_BytecodePrimAtEnd. #isMapped. #needsFrameAlways:.
 		  0 }.
 		  { 1. 118. 118. #gen_BytecodePrimIdenticalSistaV1.
-		  #isMapped. #needsFrame. 0 }.
+		  #isMapped. #needsFrameAlways:. 0 }.
 		  { 1. 119. 119. #unknownBytecode }.
 		  { 1. 120. 120. #gen_BytecodePrimNotIdenticalSistaV1.
-		  #isMapped. #needsFrame. 0 }.
-		  { 1. 121. 121. #gen_BytecodePrimValue. #isMapped. #needsFrame.
+		  #isMapped. #needsFrameAlways:. 0 }.
+		  { 1. 121. 121. #gen_BytecodePrimValue. #isMapped. #needsFrameAlways:.
 		  0 }.
 		  { 1. 122. 122. #gen_BytecodePrimValueWithArg.
-		  #isMapped. #needsFrame. 0 }.
-		  { 1. 123. 123. #gen_BytecodePrimDo. #isMapped. #needsFrame.
+		  #isMapped. #needsFrameAlways:. 0 }.
+		  { 1. 123. 123. #gen_BytecodePrimDo. #isMapped. #needsFrameAlways:.
 		  0 }.
-		  { 1. 124. 124. #gen_BytecodePrimNew. #isMapped. #needsFrame.
+		  { 1. 124. 124. #gen_BytecodePrimNew. #isMapped. #needsFrameAlways:.
 		  0 }.
 		  { 1. 125. 125. #gen_BytecodePrimNewWithArg.
-		  #isMapped. #needsFrame. 0 }.
-		  { 1. 126. 126. #gen_BytecodePrimPointX. #isMapped. #needsFrame.
+		  #isMapped. #needsFrameAlways:. 0 }.
+		  { 1. 126. 126. #gen_BytecodePrimPointX. #isMapped. #needsFrameAlways:.
 		  0 }.
-		  { 1. 127. 127. #gen_BytecodePrimPointY. #isMapped. #needsFrame.
+		  { 1. 127. 127. #gen_BytecodePrimPointY. #isMapped. #needsFrameAlways:.
 		  0 }.
 		  { 1. 128. 128. #gen_SendLiteralSelector0ArgsBytecode0.
-		  #isMapped. #needsFrame. 0 }.
+		  #isMapped. #needsFrameAlways:. 0 }.
 		  { 1. 129. 129. #gen_SendLiteralSelector0ArgsBytecode1.
-		  #isMapped. #needsFrame. 0 }.
+		  #isMapped. #needsFrameAlways:. 0 }.
 		  { 1. 130. 130. #gen_SendLiteralSelector0ArgsBytecode2.
-		  #isMapped. #needsFrame. 0 }.
+		  #isMapped. #needsFrameAlways:. 0 }.
 		  { 1. 131. 131. #gen_SendLiteralSelector0ArgsBytecode3.
-		  #isMapped. #needsFrame. 0 }.
+		  #isMapped. #needsFrameAlways:. 0 }.
 		  { 1. 132. 132. #gen_SendLiteralSelector0ArgsBytecode4.
-		  #isMapped. #needsFrame. 0 }.
+		  #isMapped. #needsFrameAlways:. 0 }.
 		  { 1. 133. 133. #gen_SendLiteralSelector0ArgsBytecode5.
-		  #isMapped. #needsFrame. 0 }.
+		  #isMapped. #needsFrameAlways:. 0 }.
 		  { 1. 134. 134. #gen_SendLiteralSelector0ArgsBytecode6.
-		  #isMapped. #needsFrame. 0 }.
+		  #isMapped. #needsFrameAlways:. 0 }.
 		  { 1. 135. 135. #gen_SendLiteralSelector0ArgsBytecode7.
-		  #isMapped. #needsFrame. 0 }.
+		  #isMapped. #needsFrameAlways:. 0 }.
 		  { 1. 136. 136. #gen_SendLiteralSelector0ArgsBytecode8.
-		  #isMapped. #needsFrame. 0 }.
+		  #isMapped. #needsFrameAlways:. 0 }.
 		  { 1. 137. 137. #gen_SendLiteralSelector0ArgsBytecode9.
-		  #isMapped. #needsFrame. 0 }.
+		  #isMapped. #needsFrameAlways:. 0 }.
 		  { 1. 138. 138. #gen_SendLiteralSelector0ArgsBytecode10.
-		  #isMapped. #needsFrame. 0 }.
+		  #isMapped. #needsFrameAlways:. 0 }.
 		  { 1. 139. 139. #gen_SendLiteralSelector0ArgsBytecode11.
-		  #isMapped. #needsFrame. 0 }.
+		  #isMapped. #needsFrameAlways:. 0 }.
 		  { 1. 140. 140. #gen_SendLiteralSelector0ArgsBytecode12.
-		  #isMapped. #needsFrame. 0 }.
+		  #isMapped. #needsFrameAlways:. 0 }.
 		  { 1. 141. 141. #gen_SendLiteralSelector0ArgsBytecode13.
-		  #isMapped. #needsFrame. 0 }.
+		  #isMapped. #needsFrameAlways:. 0 }.
 		  { 1. 142. 142. #gen_SendLiteralSelector0ArgsBytecode14.
-		  #isMapped. #needsFrame. 0 }.
+		  #isMapped. #needsFrameAlways:. 0 }.
 		  { 1. 143. 143. #gen_SendLiteralSelector0ArgsBytecode15.
-		  #isMapped. #needsFrame. 0 }.
+		  #isMapped. #needsFrameAlways:. 0 }.
 		  { 1. 144. 144. #gen_SendLiteralSelector1ArgBytecode0.
-		  #isMapped. #needsFrame. 0 }.
+		  #isMapped. #needsFrameAlways:. 0 }.
 		  { 1. 145. 145. #gen_SendLiteralSelector1ArgBytecode1.
-		  #isMapped. #needsFrame. 0 }.
+		  #isMapped. #needsFrameAlways:. 0 }.
 		  { 1. 146. 146. #gen_SendLiteralSelector1ArgBytecode2.
-		  #isMapped. #needsFrame. 0 }.
+		  #isMapped. #needsFrameAlways:. 0 }.
 		  { 1. 147. 147. #gen_SendLiteralSelector1ArgBytecode3.
-		  #isMapped. #needsFrame. 0 }.
+		  #isMapped. #needsFrameAlways:. 0 }.
 		  { 1. 148. 148. #gen_SendLiteralSelector1ArgBytecode4.
-		  #isMapped. #needsFrame. 0 }.
+		  #isMapped. #needsFrameAlways:. 0 }.
 		  { 1. 149. 149. #gen_SendLiteralSelector1ArgBytecode5.
-		  #isMapped. #needsFrame. 0 }.
+		  #isMapped. #needsFrameAlways:. 0 }.
 		  { 1. 150. 150. #gen_SendLiteralSelector1ArgBytecode6.
-		  #isMapped. #needsFrame. 0 }.
+		  #isMapped. #needsFrameAlways:. 0 }.
 		  { 1. 151. 151. #gen_SendLiteralSelector1ArgBytecode7.
-		  #isMapped. #needsFrame. 0 }.
+		  #isMapped. #needsFrameAlways:. 0 }.
 		  { 1. 152. 152. #gen_SendLiteralSelector1ArgBytecode8.
-		  #isMapped. #needsFrame. 0 }.
+		  #isMapped. #needsFrameAlways:. 0 }.
 		  { 1. 153. 153. #gen_SendLiteralSelector1ArgBytecode9.
-		  #isMapped. #needsFrame. 0 }.
+		  #isMapped. #needsFrameAlways:. 0 }.
 		  { 1. 154. 154. #gen_SendLiteralSelector1ArgBytecode10.
-		  #isMapped. #needsFrame. 0 }.
+		  #isMapped. #needsFrameAlways:. 0 }.
 		  { 1. 155. 155. #gen_SendLiteralSelector1ArgBytecode11.
-		  #isMapped. #needsFrame. 0 }.
+		  #isMapped. #needsFrameAlways:. 0 }.
 		  { 1. 156. 156. #gen_SendLiteralSelector1ArgBytecode12.
-		  #isMapped. #needsFrame. 0 }.
+		  #isMapped. #needsFrameAlways:. 0 }.
 		  { 1. 157. 157. #gen_SendLiteralSelector1ArgBytecode13.
-		  #isMapped. #needsFrame. 0 }.
+		  #isMapped. #needsFrameAlways:. 0 }.
 		  { 1. 158. 158. #gen_SendLiteralSelector1ArgBytecode14.
-		  #isMapped. #needsFrame. 0 }.
+		  #isMapped. #needsFrameAlways:. 0 }.
 		  { 1. 159. 159. #gen_SendLiteralSelector1ArgBytecode15.
-		  #isMapped. #needsFrame. 0 }.
+		  #isMapped. #needsFrameAlways:. 0 }.
 		  { 1. 160. 160. #gen_SendLiteralSelector2ArgsBytecode0.
-		  #isMapped. #needsFrame. 0 }.
+		  #isMapped. #needsFrameAlways:. 0 }.
 		  { 1. 161. 161. #gen_SendLiteralSelector2ArgsBytecode1.
-		  #isMapped. #needsFrame. 0 }.
+		  #isMapped. #needsFrameAlways:. 0 }.
 		  { 1. 162. 162. #gen_SendLiteralSelector2ArgsBytecode2.
-		  #isMapped. #needsFrame. 0 }.
+		  #isMapped. #needsFrameAlways:. 0 }.
 		  { 1. 163. 163. #gen_SendLiteralSelector2ArgsBytecode3.
-		  #isMapped. #needsFrame. 0 }.
+		  #isMapped. #needsFrameAlways:. 0 }.
 		  { 1. 164. 164. #gen_SendLiteralSelector2ArgsBytecode4.
-		  #isMapped. #needsFrame. 0 }.
+		  #isMapped. #needsFrameAlways:. 0 }.
 		  { 1. 165. 165. #gen_SendLiteralSelector2ArgsBytecode5.
-		  #isMapped. #needsFrame. 0 }.
+		  #isMapped. #needsFrameAlways:. 0 }.
 		  { 1. 166. 166. #gen_SendLiteralSelector2ArgsBytecode6.
-		  #isMapped. #needsFrame. 0 }.
+		  #isMapped. #needsFrameAlways:. 0 }.
 		  { 1. 167. 167. #gen_SendLiteralSelector2ArgsBytecode7.
-		  #isMapped. #needsFrame. 0 }.
+		  #isMapped. #needsFrameAlways:. 0 }.
 		  { 1. 168. 168. #gen_SendLiteralSelector2ArgsBytecode8.
-		  #isMapped. #needsFrame. 0 }.
+		  #isMapped. #needsFrameAlways:. 0 }.
 		  { 1. 169. 169. #gen_SendLiteralSelector2ArgsBytecode9.
-		  #isMapped. #needsFrame. 0 }.
+		  #isMapped. #needsFrameAlways:. 0 }.
 		  { 1. 170. 170. #gen_SendLiteralSelector2ArgsBytecode10.
-		  #isMapped. #needsFrame. 0 }.
+		  #isMapped. #needsFrameAlways:. 0 }.
 		  { 1. 171. 171. #gen_SendLiteralSelector2ArgsBytecode11.
-		  #isMapped. #needsFrame. 0 }.
+		  #isMapped. #needsFrameAlways:. 0 }.
 		  { 1. 172. 172. #gen_SendLiteralSelector2ArgsBytecode12.
-		  #isMapped. #needsFrame. 0 }.
+		  #isMapped. #needsFrameAlways:. 0 }.
 		  { 1. 173. 173. #gen_SendLiteralSelector2ArgsBytecode13.
-		  #isMapped. #needsFrame. 0 }.
+		  #isMapped. #needsFrameAlways:. 0 }.
 		  { 1. 174. 174. #gen_SendLiteralSelector2ArgsBytecode14.
-		  #isMapped. #needsFrame. 0 }.
+		  #isMapped. #needsFrameAlways:. 0 }.
 		  { 1. 175. 175. #gen_SendLiteralSelector2ArgsBytecode15.
-		  #isMapped. #needsFrame. 0 }.
+		  #isMapped. #needsFrameAlways:. 0 }.
 		  { 1. 176. 176. #gen_ShortUnconditionalJump0.
 		  #branch. #v3:ShortForward:Branch:Distance: }.
 		  { 1. 177. 177. #gen_ShortUnconditionalJump1.
@@ -463,9 +463,9 @@ DruidJIT class >> bytecodeTable [
 		  #needsFrameNever:. 1 }.
 		  { 2. 233. 233. #gen_ExtPushCharacterBytecode.
 		  #needsFrameNever:. 1 }.
-		  { 2. 234. 234. #gen_ExtSendBytecode. #isMapped. #needsFrame.
+		  { 2. 234. 234. #gen_ExtSendBytecode. #isMapped. #needsFrameAlways:.
 		  0 }.
-		  { 2. 235. 235. #gen_ExtSendSuperBytecode. #isMapped. #needsFrame.
+		  { 2. 235. 235. #gen_ExtSendSuperBytecode. #isMapped. #needsFrameAlways:.
 		  0 }.
 		  { 2. 236. 236. #unknownBytecode }.
 		  { 2. 237. 237. #gen_ExtUnconditionalJump. #branch. #isMapped.

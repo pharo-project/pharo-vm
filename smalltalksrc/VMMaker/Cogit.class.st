@@ -10164,9 +10164,8 @@ Cogit >> mnuOffset [
 ]
 
 { #category : #'compile abstract instructions' }
-Cogit >> needsFrame [ 
-
-	^ true
+Cogit >> needsFrameAlways: stackDelta [
+	^true
 ]
 
 { #category : #'compile abstract instructions' }
