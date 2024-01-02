@@ -10164,6 +10164,11 @@ Cogit >> mnuOffset [
 ]
 
 { #category : #'compile abstract instructions' }
+Cogit >> needsFrameAlways: stackDelta [
+	^true
+]
+
+{ #category : #'compile abstract instructions' }
 Cogit >> needsFrameIfImmutability: stackDelta [
 	^ IMMUTABILITY
 ]

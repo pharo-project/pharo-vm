@@ -27,37 +27,37 @@ DruidJIT class >> bytecodeTable [
 	<generated>
 	^ {
 		  { 1. 0. 0. #gen_PushReceiverVariableBytecode0.
-		  #isInstVarRef. #needsFrameNever:. 1 }.
+		  #isInstVarRef }.
 		  { 1. 1. 1. #gen_PushReceiverVariableBytecode1.
-		  #isInstVarRef. #needsFrameNever:. 1 }.
+		  #isInstVarRef }.
 		  { 1. 2. 2. #gen_PushReceiverVariableBytecode2.
-		  #isInstVarRef. #needsFrameNever:. 1 }.
+		  #isInstVarRef }.
 		  { 1. 3. 3. #gen_PushReceiverVariableBytecode3.
-		  #isInstVarRef. #needsFrameNever:. 1 }.
+		  #isInstVarRef }.
 		  { 1. 4. 4. #gen_PushReceiverVariableBytecode4.
-		  #isInstVarRef. #needsFrameNever:. 1 }.
+		  #isInstVarRef }.
 		  { 1. 5. 5. #gen_PushReceiverVariableBytecode5.
-		  #isInstVarRef. #needsFrameNever:. 1 }.
+		  #isInstVarRef }.
 		  { 1. 6. 6. #gen_PushReceiverVariableBytecode6.
-		  #isInstVarRef. #needsFrameNever:. 1 }.
+		  #isInstVarRef }.
 		  { 1. 7. 7. #gen_PushReceiverVariableBytecode7.
-		  #isInstVarRef. #needsFrameNever:. 1 }.
+		  #isInstVarRef }.
 		  { 1. 8. 8. #gen_PushReceiverVariableBytecode8.
-		  #isInstVarRef. #needsFrameNever:. 1 }.
+		  #isInstVarRef }.
 		  { 1. 9. 9. #gen_PushReceiverVariableBytecode9.
-		  #isInstVarRef. #needsFrameNever:. 1 }.
+		  #isInstVarRef }.
 		  { 1. 10. 10. #gen_PushReceiverVariableBytecode10.
-		  #isInstVarRef. #needsFrameNever:. 1 }.
+		  #isInstVarRef }.
 		  { 1. 11. 11. #gen_PushReceiverVariableBytecode11.
-		  #isInstVarRef. #needsFrameNever:. 1 }.
+		  #isInstVarRef }.
 		  { 1. 12. 12. #gen_PushReceiverVariableBytecode12.
-		  #isInstVarRef. #needsFrameNever:. 1 }.
+		  #isInstVarRef }.
 		  { 1. 13. 13. #gen_PushReceiverVariableBytecode13.
-		  #isInstVarRef. #needsFrameNever:. 1 }.
+		  #isInstVarRef }.
 		  { 1. 14. 14. #gen_PushReceiverVariableBytecode14.
-		  #isInstVarRef. #needsFrameNever:. 1 }.
+		  #isInstVarRef }.
 		  { 1. 15. 15. #gen_PushReceiverVariableBytecode15.
-		  #isInstVarRef. #needsFrameNever:. 1 }.
+		  #isInstVarRef }.
 		  { 1. 16. 16. #gen_PushLiteralVariable16CasesBytecode0.
 		  #needsFrameNever:. 1 }.
 		  { 1. 17. 17. #gen_PushLiteralVariable16CasesBytecode1.
@@ -154,32 +154,19 @@ DruidJIT class >> bytecodeTable [
 		  #needsFrameNever:. 1 }.
 		  { 1. 63. 63. #gen_PushLiteralConstantBytecode31.
 		  #needsFrameNever:. 1 }.
-		  { 1. 64. 64. #gen_PushTemporaryVariableBytecode0.
-		  #needsFrameIfMod16GENumArgs:. 1 }.
-		  { 1. 65. 65. #gen_PushTemporaryVariableBytecode1.
-		  #needsFrameIfMod16GENumArgs:. 1 }.
-		  { 1. 66. 66. #gen_PushTemporaryVariableBytecode2.
-		  #needsFrameIfMod16GENumArgs:. 1 }.
-		  { 1. 67. 67. #gen_PushTemporaryVariableBytecode3.
-		  #needsFrameIfMod16GENumArgs:. 1 }.
-		  { 1. 68. 68. #gen_PushTemporaryVariableBytecode4.
-		  #needsFrameIfMod16GENumArgs:. 1 }.
-		  { 1. 69. 69. #gen_PushTemporaryVariableBytecode5.
-		  #needsFrameIfMod16GENumArgs:. 1 }.
-		  { 1. 70. 70. #gen_PushTemporaryVariableBytecode6.
-		  #needsFrameIfMod16GENumArgs:. 1 }.
-		  { 1. 71. 71. #gen_PushTemporaryVariableBytecode7.
-		  #needsFrameIfMod16GENumArgs:. 1 }.
-		  { 1. 72. 72. #gen_PushTemporaryVariableBytecode8.
-		  #needsFrameIfMod16GENumArgs:. 1 }.
-		  { 1. 73. 73. #gen_PushTemporaryVariableBytecode9.
-		  #needsFrameIfMod16GENumArgs:. 1 }.
-		  { 1. 74. 74. #gen_PushTemporaryVariableBytecode10.
-		  #needsFrameIfMod16GENumArgs:. 1 }.
-		  { 1. 75. 75. #gen_PushTemporaryVariableBytecode11.
-		  #needsFrameIfMod16GENumArgs:. 1 }.
-		  { 1. 76. 76. #gen_PushReceiverBytecode. #needsFrameNever:.
-		  1 }.
+		  { 1. 64. 64. #gen_PushTemporaryVariableBytecode0 }.
+		  { 1. 65. 65. #gen_PushTemporaryVariableBytecode1 }.
+		  { 1. 66. 66. #gen_PushTemporaryVariableBytecode2 }.
+		  { 1. 67. 67. #gen_PushTemporaryVariableBytecode3 }.
+		  { 1. 68. 68. #gen_PushTemporaryVariableBytecode4 }.
+		  { 1. 69. 69. #gen_PushTemporaryVariableBytecode5 }.
+		  { 1. 70. 70. #gen_PushTemporaryVariableBytecode6 }.
+		  { 1. 71. 71. #gen_PushTemporaryVariableBytecode7 }.
+		  { 1. 72. 72. #gen_PushTemporaryVariableBytecode8 }.
+		  { 1. 73. 73. #gen_PushTemporaryVariableBytecode9 }.
+		  { 1. 74. 74. #gen_PushTemporaryVariableBytecode10 }.
+		  { 1. 75. 75. #gen_PushTemporaryVariableBytecode11 }.
+		  { 1. 76. 76. #gen_PushReceiverBytecode }.
 		  { 1. 77. 77. #gen_PushConstantTrueBytecode.
 		  #needsFrameNever:. 1 }.
 		  { 1. 78. 78. #gen_PushConstantFalseBytecode.
@@ -444,7 +431,7 @@ DruidJIT class >> bytecodeTable [
 		  { 2. 224. 224. #gen_ExtABytecode. #extension }.
 		  { 2. 225. 225. #gen_ExtBBytecode. #extension }.
 		  { 2. 226. 226. #gen_ExtPushReceiverVariableBytecode.
-		  #isInstVarRef }.
+		  #isInstVarRef. #isMappedIfImmutability }.
 		  { 2. 227. 227. #gen_ExtPushLiteralVariableBytecode.
 		  #needsFrameNever:. 1 }.
 		  { 2. 228. 228. #gen_ExtPushLiteralBytecode.
@@ -468,15 +455,17 @@ DruidJIT class >> bytecodeTable [
 		  { 2. 240. 240. #unknownBytecode }.
 		  { 2. 241. 241. #unknownBytecode }.
 		  { 2. 242. 242. #unknownBytecode }.
-		  { 2. 243. 243. #unknownBytecode }.
+		  { 2. 243. 243. #gen_ExtStoreReceiverVariableBytecode.
+		  #isInstVarRef. #isMappedIfImmutability. #needsFrameIfImmutability:.
+		  0 }.
 		  { 2. 244. 244. #unknownBytecode }.
 		  { 2. 245. 245. #gen_LongStoreTemporaryVariableBytecode }.
 		  { 2. 246. 246. #unknownBytecode }.
 		  { 2. 247. 247. #unknownBytecode }.
 		  { 3. 248. 248. #gen_CallPrimitiveBytecode }.
-		  { 3. 249. 249. #unknownBytecode }.
+		  { 3. 249. 249. #gen_ExtPushFullClosureBytecode }.
 		  { 3. 250. 250. #unknownBytecode }.
-		  { 3. 251. 251. #unknownBytecode }.
+		  { 3. 251. 251. #gen_PushRemoteTempLongBytecode }.
 		  { 3. 252. 252. #unknownBytecode }.
 		  { 3. 253. 253. #unknownBytecode }.
 		  { 3. 254. 254. #unknownBytecode }.
@@ -2407,6 +2396,7 @@ DruidJIT >> gen_ExtPushReceiverVariableBytecode [
 
 	| t0 r2 t1 currentBlock live |
 	live := 0.
+	self annotateBytecode: self Label.
 	r2 := extA.
 	extA := 0.
 	self ensureReceiverResultRegContainsSelf.
@@ -2491,6 +2481,838 @@ DruidJIT >> gen_ExtSendSuperBytecode [
 		genMarshalledSend: ((byte1 >> 3) + (r5 << 5))
 		numArgs: ((byte1 bitAnd: 7) + (r46 << 3))
 		sendTable: superSendTrampolines.
+	^ 0
+]
+
+{ #category : #generated }
+DruidJIT >> gen_ExtStoreReceiverVariableBytecode [
+	"AutoGenerated by Druid"
+
+	| t2 jump4 jumpNext jump1 t1 jump6 jump3 jump9 currentBlock t0 jump8 jump2 r2 jumpTrue jump5 live jump7 jump10 |
+	live := 0.
+	self annotateBytecode: self Label.
+	r2 := extA.
+	t0 := self
+		      allocateRegNotConflictingWith: live
+		      ifNone: [ ^ self unknownBytecode ].
+	live := live bitOr: (self registerMaskFor: t0).
+	(self ssValue: 0) copyToReg: t0.
+	self ensureReceiverResultRegContainsSelf.
+	t1 := self
+		      allocateRegNotConflictingWith: live
+		      ifNone: [ ^ self unknownBytecode ].
+	live := live bitOr: (self registerMaskFor: t1).
+	self MoveR: ReceiverResultReg R: t1.
+	t2 := self
+		      allocateRegNotConflictingWith: live
+		      ifNone: [ ^ self unknownBytecode ].
+	live := live bitOr: (self registerMaskFor: t2).
+	(byte1 + (r2 << 8))<=ReceiverIndex ifTrue: [
+		| jump1 jump10 jumpNext jump9 jump6 jump3 jump8 jump5 jumpTrue jump2 jump7 jump4 |
+		self MoveM64: 0 r: t1 R: t2.
+		self AndCq: 16r3FFFFF R: t2.
+		self CmpCq: ClassMethodContextCompactIndex R: t2.
+		jumpTrue := self JumpZero: 0.
+		self MoveCq: 0 R: t2.
+		jumpNext := self Jump: 0.
+		jumpTrue jmpTarget: self Label.
+		self MoveCq: 1 R: t2.
+		jumpNext jmpTarget: self Label.
+		self ssFlushStack.
+		self CmpCq: 1 R: t2.
+		jump1 := self JumpNonZero: 0.
+		self deoptimize.
+		jump2 := self Jump: 0.
+		deadCode := false.
+		currentBlock := self Label.
+		jump1 jmpTarget: currentBlock.
+		self MoveM64: 0 r: t1 R: t2.
+		self ArithmeticShiftRightCq: 23 R: t2.
+		self AndCq: 1 R: t2.
+		self CmpCq: 0 R: t2.
+		jump1 := self JumpZero: 0.
+		self deoptimize.
+		jump3 := self Jump: 0.
+		deadCode := false.
+		currentBlock := self Label.
+		jump1 jmpTarget: currentBlock.
+		self MoveR: t1 R: t2.
+		self AndCq: 7 R: t2.
+		self CmpCq: 0 R: t2.
+		jump1 := self JumpNonZero: 0.
+		self MoveR: t1 R: t2.
+		self AndCq: objectMemory getMemoryMap getSpaceMaskToUse R: t2.
+		self CmpCq: objectMemory getMemoryMap getOldSpaceMask R: t2.
+		jump4 := self JumpNonZero: 0.
+		self MoveR: t0 R: t2.
+		self AndCq: 7 R: t2.
+		self CmpCq: 0 R: t2.
+		jump5 := self JumpNonZero: 0.
+		self MoveR: t0 R: t2.
+		self AndCq: objectMemory getMemoryMap getSpaceMaskToUse R: t2.
+		self CmpCq: objectMemory getMemoryMap getNewSpaceMask R: t2.
+		jump6 := self JumpNonZero: 0.
+		self MoveR: t0 R: t2.
+		self CmpCq: objectMemory getMemoryMap getNewSpaceStart R: t2.
+		jumpTrue := self JumpAboveOrEqual: 0.
+		self MoveCq: 0 R: t2.
+		jumpNext := self Jump: 0.
+		jumpTrue jmpTarget: self Label.
+		self MoveCq: 1 R: t2.
+		jumpNext jmpTarget: self Label.
+		self CmpCq: objectMemory getMemoryMap getNewSpaceStart R: t0.
+		jump7 := self JumpBelow: 0.
+		self MoveM64: 0 r: t1 R: t2.
+		self ArithmeticShiftRightCq: 29 R: t2.
+		self AndCq: 1 R: t2.
+		self CmpCq: 0 R: t2.
+		jump8 := self JumpNonZero: 0.
+		self MoveR: t1 R: TempReg.
+		backEnd saveAndRestoreLinkRegAround: [
+			self CallRT: ceStoreCheckTrampoline ].
+		currentBlock := self Label.
+		jump5 jmpTarget: currentBlock.
+		jump6 jmpTarget: currentBlock.
+		jump7 jmpTarget: currentBlock.
+		jump8 jmpTarget: currentBlock.
+		self MoveR: t1 R: t2.
+		self TstCq: 7 R: t0.
+		jump8 := self JumpZero: 0.
+		jump7 := self Jump: 0.
+		currentBlock := self Label.
+		jump8 jmpTarget: currentBlock.
+		jump8 := self Jump: 0.
+		currentBlock := self Label.
+		jump1 jmpTarget: currentBlock.
+		jump4 jmpTarget: currentBlock.
+		self TstCq: 7 R: t0.
+		jump4 := self JumpZero: 0.
+		self MoveR: t1 R: t2.
+		currentBlock := self Label.
+		jump7 jmpTarget: currentBlock.
+		self AddCq: ((byte1 + (r2 << 8)) << 3) R: t2.
+		self MoveR: t0 M64: 8 r: t2.
+		jump7 := self Jump: 0.
+		currentBlock := self Label.
+		jump4 jmpTarget: currentBlock.
+		self MoveR: t1 R: t2.
+		currentBlock := self Label.
+		jump8 jmpTarget: currentBlock.
+		self CmpCq: objectMemory nilObject R: t0.
+		jump8 := self JumpBelow: 0.
+		self MoveR: t0 R: t1.
+		self CmpCq: objectMemory trueObject R: t1.
+		jumpTrue := self JumpBelowOrEqual: 0.
+		self MoveCq: 0 R: t1.
+		jumpNext := self Jump: 0.
+		jumpTrue jmpTarget: self Label.
+		self MoveCq: 1 R: t1.
+		jumpNext jmpTarget: self Label.
+		jump4 := self Jump: 0.
+		currentBlock := self Label.
+		jump8 jmpTarget: currentBlock.
+		self MoveCq: 0 R: t1.
+		currentBlock := self Label.
+		jump4 jmpTarget: currentBlock.
+		self CmpCq: 1 R: t1.
+		jump4 := self JumpNonZero: 0.
+		self AddCq: ((byte1 + (r2 << 8)) << 3) R: t2.
+		self MoveR: t0 M64: 8 r: t2.
+		jump8 := self Jump: 0.
+		currentBlock := self Label.
+		jump4 jmpTarget: currentBlock.
+		self CmpCq: objectMemory getMemoryMap getNewSpaceStart R: t0.
+		jump4 := self JumpBelow: 0.
+		self MoveM64: 0 r: t2 R: t1.
+		self ArithmeticShiftRightCq: 29 R: t1.
+		self AndCq: 1 R: t1.
+		self CmpCq: 0 R: t1.
+		jump1 := self JumpZero: 0.
+		self AddCq: ((byte1 + (r2 << 8)) << 3) R: t2.
+		self MoveR: t0 M64: 8 r: t2.
+		jump6 := self Jump: 0.
+		currentBlock := self Label.
+		jump1 jmpTarget: currentBlock.
+		self MoveR: t2 R: t1.
+		self AndCq: 7 R: t1.
+		self CmpCq: 0 R: t1.
+		jump1 := self JumpNonZero: 0.
+		self MoveR: t2 R: t1.
+		self AndCq: objectMemory getMemoryMap getSpaceMaskToUse R: t1.
+		self CmpCq: objectMemory getMemoryMap getPermSpaceMask R: t1.
+		jumpTrue := self JumpZero: 0.
+		self MoveCq: 0 R: t1.
+		jumpNext := self Jump: 0.
+		jumpTrue jmpTarget: self Label.
+		self MoveCq: 1 R: t1.
+		jumpNext jmpTarget: self Label.
+		self CmpCq: 1 R: t1.
+		jump5 := self JumpNonZero: 0.
+		self MoveR: t0 R: t1.
+		self AndCq: objectMemory getMemoryMap getSpaceMaskToUse R: t1.
+		self CmpCq: objectMemory getMemoryMap getPermSpaceMask R: t1.
+		jump9 := self JumpZero: 0.
+		self MoveR: t2 R: TempReg.
+		backEnd saveAndRestoreLinkRegAround: [
+			self CallRT: ceStoreCheckTrampoline ].
+		jump10 := self Jump: 0.
+		currentBlock := self Label.
+		jump1 jmpTarget: currentBlock.
+		self MoveCq: 0 R: t1.
+		currentBlock := self Label.
+		jump5 jmpTarget: currentBlock.
+		currentBlock := self Label.
+		jump9 jmpTarget: currentBlock.
+		jump10 jmpTarget: currentBlock.
+		self AddCq: ((byte1 + (r2 << 8)) << 3) R: t2.
+		self MoveR: t0 M64: 8 r: t2.
+		jump10 := self Jump: 0.
+		currentBlock := self Label.
+		jump4 jmpTarget: currentBlock.
+		self AddCq: ((byte1 + (r2 << 8)) << 3) R: t2.
+		self MoveR: t0 M64: 8 r: t2.
+		currentBlock := self Label.
+		jump2 jmpTarget: currentBlock.
+		jump3 jmpTarget: currentBlock.
+		jump7 jmpTarget: currentBlock.
+		jump8 jmpTarget: currentBlock.
+		jump6 jmpTarget: currentBlock.
+		jump10 jmpTarget: currentBlock.
+		extA := 0.
+		^ 0 ].
+	self MoveCq: 0 R: t2.
+	self ssFlushStack.
+	self CmpCq: 1 R: t2.
+	jump10 := self JumpNonZero: 0.
+	self deoptimize.
+	jump6 := self Jump: 0.
+	deadCode := false.
+	currentBlock := self Label.
+	jump10 jmpTarget: currentBlock.
+	self MoveM64: 0 r: t1 R: t2.
+	self ArithmeticShiftRightCq: 23 R: t2.
+	self AndCq: 1 R: t2.
+	self CmpCq: 0 R: t2.
+	jump10 := self JumpZero: 0.
+	self deoptimize.
+	jump8 := self Jump: 0.
+	deadCode := false.
+	currentBlock := self Label.
+	jump10 jmpTarget: currentBlock.
+	self MoveR: t1 R: t2.
+	self AndCq: 7 R: t2.
+	self CmpCq: 0 R: t2.
+	jump10 := self JumpNonZero: 0.
+	self MoveR: t1 R: t2.
+	self AndCq: objectMemory getMemoryMap getSpaceMaskToUse R: t2.
+	self CmpCq: objectMemory getMemoryMap getOldSpaceMask R: t2.
+	jump7 := self JumpNonZero: 0.
+	self MoveR: t0 R: t2.
+	self AndCq: 7 R: t2.
+	self CmpCq: 0 R: t2.
+	jump3 := self JumpNonZero: 0.
+	self MoveR: t0 R: t2.
+	self AndCq: objectMemory getMemoryMap getSpaceMaskToUse R: t2.
+	self CmpCq: objectMemory getMemoryMap getNewSpaceMask R: t2.
+	jump2 := self JumpNonZero: 0.
+	self MoveR: t0 R: t2.
+	self CmpCq: objectMemory getMemoryMap getNewSpaceStart R: t2.
+	jumpTrue := self JumpAboveOrEqual: 0.
+	self MoveCq: 0 R: t2.
+	jumpNext := self Jump: 0.
+	jumpTrue jmpTarget: self Label.
+	self MoveCq: 1 R: t2.
+	jumpNext jmpTarget: self Label.
+	self CmpCq: objectMemory getMemoryMap getNewSpaceStart R: t0.
+	jump4 := self JumpBelow: 0.
+	self MoveM64: 0 r: t1 R: t2.
+	self ArithmeticShiftRightCq: 29 R: t2.
+	self AndCq: 1 R: t2.
+	self CmpCq: 0 R: t2.
+	jump9 := self JumpNonZero: 0.
+	self MoveR: t1 R: TempReg.
+	backEnd saveAndRestoreLinkRegAround: [
+		self CallRT: ceStoreCheckTrampoline ].
+	currentBlock := self Label.
+	jump3 jmpTarget: currentBlock.
+	jump2 jmpTarget: currentBlock.
+	jump4 jmpTarget: currentBlock.
+	jump9 jmpTarget: currentBlock.
+	self MoveR: t1 R: t2.
+	self TstCq: 7 R: t0.
+	jump9 := self JumpZero: 0.
+	jump4 := self Jump: 0.
+	currentBlock := self Label.
+	jump9 jmpTarget: currentBlock.
+	jump9 := self Jump: 0.
+	currentBlock := self Label.
+	jump10 jmpTarget: currentBlock.
+	jump7 jmpTarget: currentBlock.
+	self TstCq: 7 R: t0.
+	jump7 := self JumpZero: 0.
+	self MoveR: t1 R: t2.
+	currentBlock := self Label.
+	jump4 jmpTarget: currentBlock.
+	self AddCq: ((byte1 + (r2 << 8)) << 3) R: t2.
+	self MoveR: t0 M64: 8 r: t2.
+	jump4 := self Jump: 0.
+	currentBlock := self Label.
+	jump7 jmpTarget: currentBlock.
+	self MoveR: t1 R: t2.
+	currentBlock := self Label.
+	jump9 jmpTarget: currentBlock.
+	self CmpCq: objectMemory nilObject R: t0.
+	jump9 := self JumpBelow: 0.
+	self MoveR: t0 R: t1.
+	self CmpCq: objectMemory trueObject R: t1.
+	jumpTrue := self JumpBelowOrEqual: 0.
+	self MoveCq: 0 R: t1.
+	jumpNext := self Jump: 0.
+	jumpTrue jmpTarget: self Label.
+	self MoveCq: 1 R: t1.
+	jumpNext jmpTarget: self Label.
+	jump7 := self Jump: 0.
+	currentBlock := self Label.
+	jump9 jmpTarget: currentBlock.
+	self MoveCq: 0 R: t1.
+	currentBlock := self Label.
+	jump7 jmpTarget: currentBlock.
+	self CmpCq: 1 R: t1.
+	jump7 := self JumpNonZero: 0.
+	self AddCq: ((byte1 + (r2 << 8)) << 3) R: t2.
+	self MoveR: t0 M64: 8 r: t2.
+	jump9 := self Jump: 0.
+	currentBlock := self Label.
+	jump7 jmpTarget: currentBlock.
+	self CmpCq: objectMemory getMemoryMap getNewSpaceStart R: t0.
+	jump7 := self JumpBelow: 0.
+	self MoveM64: 0 r: t2 R: t1.
+	self ArithmeticShiftRightCq: 29 R: t1.
+	self AndCq: 1 R: t1.
+	self CmpCq: 0 R: t1.
+	jump10 := self JumpZero: 0.
+	self AddCq: ((byte1 + (r2 << 8)) << 3) R: t2.
+	self MoveR: t0 M64: 8 r: t2.
+	jump2 := self Jump: 0.
+	currentBlock := self Label.
+	jump10 jmpTarget: currentBlock.
+	self MoveR: t2 R: t1.
+	self AndCq: 7 R: t1.
+	self CmpCq: 0 R: t1.
+	jump10 := self JumpNonZero: 0.
+	self MoveR: t2 R: t1.
+	self AndCq: objectMemory getMemoryMap getSpaceMaskToUse R: t1.
+	self CmpCq: objectMemory getMemoryMap getPermSpaceMask R: t1.
+	jumpTrue := self JumpZero: 0.
+	self MoveCq: 0 R: t1.
+	jumpNext := self Jump: 0.
+	jumpTrue jmpTarget: self Label.
+	self MoveCq: 1 R: t1.
+	jumpNext jmpTarget: self Label.
+	self CmpCq: 1 R: t1.
+	jump3 := self JumpNonZero: 0.
+	self MoveR: t0 R: t1.
+	self AndCq: objectMemory getMemoryMap getSpaceMaskToUse R: t1.
+	self CmpCq: objectMemory getMemoryMap getPermSpaceMask R: t1.
+	jump5 := self JumpZero: 0.
+	self MoveR: t2 R: TempReg.
+	backEnd saveAndRestoreLinkRegAround: [
+		self CallRT: ceStoreCheckTrampoline ].
+	jump1 := self Jump: 0.
+	currentBlock := self Label.
+	jump10 jmpTarget: currentBlock.
+	self MoveCq: 0 R: t1.
+	currentBlock := self Label.
+	jump3 jmpTarget: currentBlock.
+	currentBlock := self Label.
+	jump5 jmpTarget: currentBlock.
+	jump1 jmpTarget: currentBlock.
+	self AddCq: ((byte1 + (r2 << 8)) << 3) R: t2.
+	self MoveR: t0 M64: 8 r: t2.
+	jump1 := self Jump: 0.
+	currentBlock := self Label.
+	jump7 jmpTarget: currentBlock.
+	self AddCq: ((byte1 + (r2 << 8)) << 3) R: t2.
+	self MoveR: t0 M64: 8 r: t2.
+	currentBlock := self Label.
+	jump6 jmpTarget: currentBlock.
+	jump8 jmpTarget: currentBlock.
+	jump4 jmpTarget: currentBlock.
+	jump9 jmpTarget: currentBlock.
+	jump2 jmpTarget: currentBlock.
+	jump1 jmpTarget: currentBlock.
+	extA := 0.
+	^ 0
+]
+
+{ #category : #generated }
+DruidJIT >> gen_ExtStoreReceiverVariableBytecodeCommented [
+	"AutoGenerated by Druid"
+
+	| jump5 jump10 jump3 t3 jump8 jump1 tReceiver currentBlock jumpNext jump6 r2 live jump4 jumpTrue jump9 jump2 t2 jump7 tValue |
+	live := 0.
+	self annotateBytecode: self Label.
+	r2 := extA.
+	tValue := self
+		      allocateRegNotConflictingWith: live
+		      ifNone: [ ^ self unknownBytecode ].
+	live := live bitOr: (self registerMaskFor: tValue).
+	(self ssValue: 0) copyToReg: tValue.
+	self ensureReceiverResultRegContainsSelf.
+	tReceiver := self
+		      allocateRegNotConflictingWith: live
+		      ifNone: [ ^ self unknownBytecode ].
+	live := live bitOr: (self registerMaskFor: tReceiver).
+	self MoveR: ReceiverResultReg R: tReceiver.
+	t2 := self
+		      allocateRegNotConflictingWith: live
+		      ifNone: [ ^ self unknownBytecode ].
+	live := live bitOr: (self registerMaskFor: t2).
+	t3 := self
+		      allocateRegNotConflictingWith: live
+		      ifNone: [ ^ self unknownBytecode ].
+	live := live bitOr: (self registerMaskFor: t3).
+	
+	(byte1 + (r2 << 8))<=ReceiverIndex ifTrue: [
+		"Receiver is (not) context?"
+		self MoveM64: 0 r: tReceiver R: t2.
+		self AndCq: 16r3FFFFF R: t2.
+		self CmpCq: ClassMethodContextCompactIndex R: t2.
+		jumpTrue := self JumpZero: 0.
+		self MoveCq: 0 R: t2.
+		jumpNext := self Jump: 0.
+		jumpTrue jmpTarget: self Label.
+		self MoveCq: 1 R: t2.
+		jumpNext jmpTarget: self Label.
+		"----->"			self ssFlushStack.
+		self CmpCq: 1 R: t2.
+		jump1 := self JumpNonZero: 0.
+		
+		"Context deoptimisation"
+		self deoptimize.		
+		jump2 := self Jump: 0.
+		deadCode := false.
+
+		currentBlock := self Label.
+		jump1 jmpTarget: currentBlock.
+		
+		"Receiver is immutable?"
+		self MoveM64: 0 r: tReceiver R: t2.
+		self ArithmeticShiftRightCq: 23 R: t2.
+		self AndCq: 1 R: t2.
+		self CmpCq: 0 R: t2.
+		
+		"Immutability deoptimisation"
+		jump1 := self JumpZero: 0.
+		self deoptimize.
+		jump3 := self Jump: 0.
+		deadCode := false.
+		currentBlock := self Label.
+		jump1 jmpTarget: currentBlock.
+		
+		"Receiver is immediate"
+		self MoveR: tReceiver R: t2.
+		self AndCq: 7 R: t2.
+		self CmpCq: 0 R: t2.
+		jump1 := self JumpNonZero: 0.
+		
+		
+		
+		
+		
+		"Receiver is (not) old"
+		self MoveR: tReceiver R: t2.
+		self AndCq: objectMemory getMemoryMap getSpaceMaskToUse R: t2.
+		self CmpCq: objectMemory getMemoryMap getOldSpaceMask R: t2.
+		jump4 := self JumpNonZero: 0.
+		
+		"Value is immediate"
+		self MoveR: tValue R: t2.
+		self AndCq: 7 R: t2.
+		self CmpCq: 0 R: t2.
+		jump5 := self JumpNonZero: 0.
+		
+		"Value is (not) old"
+		self MoveR: tValue R: t2.
+		self AndCq: objectMemory getMemoryMap getSpaceMaskToUse R: t2.
+		self CmpCq: objectMemory getMemoryMap getNewSpaceMask R: t2.
+		jump6 := self JumpNonZero: 0.
+		
+		"Useless code?"
+		self MoveR: tValue R: t2.
+		self CmpCq: objectMemory getMemoryMap getNewSpaceStart R: t2.
+		jumpTrue := self JumpAboveOrEqual: 0.
+		self MoveCq: 0 R: t2.
+		jumpNext := self Jump: 0.
+		jumpTrue jmpTarget: self Label.
+		self MoveCq: 1 R: t2.
+		jumpNext jmpTarget: self Label.
+
+		"Value is new"
+		self CmpCq: objectMemory getMemoryMap getNewSpaceStart R: tValue.
+		jump7 := self JumpBelow: 0.
+		
+		"Receiver is (not) remembered"
+		self MoveCq: (byte1 + (r2 << 8)) R: t2.
+		self MoveM64: 0 r: tReceiver R: t3.
+		self ArithmeticShiftRightCq: 29 R: t3.
+		self AndCq: 1 R: t3.
+		self CmpCq: 0 R: t3.
+		jump8 := self JumpZero: 0.
+		
+		jump9 := self Jump: 0.
+		currentBlock := self Label.
+		jump8 jmpTarget: currentBlock.
+		
+		"REMEMBER"
+		self MoveR: tReceiver R: TempReg.
+		backEnd saveAndRestoreLinkRegAround: [
+			self CallRT: ceStoreCheckTrampoline ].
+		self MoveR: t2 R: t3.
+		self MoveR: tValue R: t2.
+		jump8 := self Jump: 0.
+
+		"Value is immediate (again)"
+		currentBlock := self Label.
+		jump5 jmpTarget: currentBlock.
+		jump6 jmpTarget: currentBlock.
+		jump7 jmpTarget: currentBlock.
+		self MoveCq: (byte1 + (r2 << 8)) R: t2.
+		self MoveR: t2 R: t3.
+		self MoveR: tValue R: t2.
+		currentBlock := self Label.
+		jump9 jmpTarget: currentBlock.
+		jump8 jmpTarget: currentBlock.
+		self TstCq: 7 R: t2.
+		jump8 := self JumpZero: 0.
+		
+		jump9 := self Jump: 0.
+		currentBlock := self Label.
+		jump8 jmpTarget: currentBlock.
+		jump8 := self Jump: 0.
+
+		"Value is (not) immediate"
+		currentBlock := self Label.
+		jump1 jmpTarget: currentBlock.
+		jump4 jmpTarget: currentBlock.
+		self MoveCq: (byte1 + (r2 << 8)) R: t2.
+		self TstCq: 7 R: tValue.
+		jump4 := self JumpZero: 0.
+		
+		"STORE"
+		self MoveR: t2 R: t3.
+		self MoveR: tValue R: t2.
+		currentBlock := self Label.
+		jump9 jmpTarget: currentBlock.
+		self LogicalShiftLeftCq: 3 R: t3.
+		self AddR: t3 R: tReceiver.
+		self MoveR: t2 M64: 8 r: tReceiver.
+		jump9 := self Jump: 0.
+
+		"Below nil"
+		currentBlock := self Label.
+		jump4 jmpTarget: currentBlock.
+		self MoveR: t2 R: t3.
+		self MoveR: tValue R: t2.
+		currentBlock := self Label.
+		jump8 jmpTarget: currentBlock.
+		self CmpCq: objectMemory nilObject R: t2.
+		jump8 := self JumpBelow: 0.
+		
+		"Below or equal true"
+		self MoveR: t2 R: tValue.
+		self CmpCq: objectMemory trueObject R: tValue.
+		jumpTrue := self JumpBelowOrEqual: 0.
+		self MoveCq: 0 R: tValue.
+		jumpNext := self Jump: 0.
+		jumpTrue jmpTarget: self Label.
+		self MoveCq: 1 R: tValue.
+		jumpNext jmpTarget: self Label.
+		jump4 := self Jump: 0.
+
+		currentBlock := self Label.
+		jump8 jmpTarget: currentBlock.
+		self MoveCq: 0 R: tValue.
+
+		"(not) isFixedKnownObject:"
+		currentBlock := self Label.
+		jump4 jmpTarget: currentBlock.
+		self CmpCq: 1 R: tValue.
+		jump4 := self JumpNonZero: 0.
+		
+		"STORE"
+		self LogicalShiftLeftCq: 3 R: t3.
+		self AddR: t3 R: tReceiver.
+		self MoveR: t2 M64: 8 r: tReceiver.
+		jump8 := self Jump: 0.
+		
+		"Is compiled code"
+		currentBlock := self Label.
+		jump4 jmpTarget: currentBlock.
+		self CmpCq: objectMemory getMemoryMap getNewSpaceStart R: t2.
+		jump4 := self JumpBelow: 0.
+		
+		"Receiver is (not) remembered"
+		self MoveM64: 0 r: tReceiver R: tValue.
+		self ArithmeticShiftRightCq: 29 R: tValue.
+		self AndCq: 1 R: tValue.
+		self CmpCq: 0 R: tValue.
+		jump1 := self JumpZero: 0.
+		
+		"STORE"
+		self LogicalShiftLeftCq: 3 R: t3.
+		self AddR: t3 R: tReceiver.
+		self MoveR: t2 M64: 8 r: tReceiver.
+		jump7 := self Jump: 0.
+		
+		"Receiver is immediate"
+		currentBlock := self Label.
+		jump1 jmpTarget: currentBlock.
+		self MoveR: tReceiver R: tValue.
+		self AndCq: 7 R: tValue.
+		self CmpCq: 0 R: tValue.
+		jump1 := self JumpNonZero: 0.
+		
+		"Receiver is permanent"
+		self MoveR: tReceiver R: tValue.
+		self AndCq: objectMemory getMemoryMap getSpaceMaskToUse R: tValue.
+		self CmpCq: objectMemory getMemoryMap getPermSpaceMask R: tValue.
+		jumpTrue := self JumpZero: 0.
+		self MoveCq: 0 R: tValue.
+		jumpNext := self Jump: 0.
+		jumpTrue jmpTarget: self Label.
+		self MoveCq: 1 R: tValue.
+		jumpNext jmpTarget: self Label.
+		self CmpCq: 1 R: tValue.
+		jump6 := self JumpNonZero: 0.
+		
+		"Value is permanent"
+		self MoveR: t2 R: tValue.
+		self AndCq: objectMemory getMemoryMap getSpaceMaskToUse R: tValue.
+		self CmpCq: objectMemory getMemoryMap getPermSpaceMask R: tValue.
+		jump5 := self JumpZero: 0.
+		
+		"REMEMBER"
+		self MoveR: tReceiver R: TempReg.
+		backEnd saveAndRestoreLinkRegAround: [
+			self CallRT: ceStoreCheckTrampoline ].
+		jump10 := self Jump: 0.
+		
+		"STORE"
+		currentBlock := self Label.
+		jump1 jmpTarget: currentBlock.
+		self MoveCq: 0 R: tValue.
+		currentBlock := self Label.
+		jump6 jmpTarget: currentBlock.
+		currentBlock := self Label.
+		jump5 jmpTarget: currentBlock.
+		jump10 jmpTarget: currentBlock.
+		self LogicalShiftLeftCq: 3 R: t3.
+		self AddR: t3 R: tReceiver.
+		self MoveR: t2 M64: 8 r: tReceiver.
+		jump10 := self Jump: 0.
+		
+		"STORE"
+		currentBlock := self Label.
+		jump4 jmpTarget: currentBlock.
+		self LogicalShiftLeftCq: 3 R: t3.
+		self AddR: t3 R: tReceiver.
+		self MoveR: t2 M64: 8 r: tReceiver.
+		currentBlock := self Label.
+		jump2 jmpTarget: currentBlock.
+		jump3 jmpTarget: currentBlock.
+		jump9 jmpTarget: currentBlock.
+		jump8 jmpTarget: currentBlock.
+		jump7 jmpTarget: currentBlock.
+		jump10 jmpTarget: currentBlock.
+		extA := 0.
+		^ 0 ].
+	
+	
+	
+	
+	
+	self MoveCq: 0 R: t2.
+	self ssFlushStack.
+	self CmpCq: 1 R: t2.
+	jump10 := self JumpNonZero: 0.
+	self deoptimize.
+	jump7 := self Jump: 0.
+	deadCode := false.
+	currentBlock := self Label.
+	jump10 jmpTarget: currentBlock.
+	self MoveM64: 0 r: tReceiver R: t2.
+	self ArithmeticShiftRightCq: 23 R: t2.
+	self AndCq: 1 R: t2.
+	self CmpCq: 0 R: t2.
+	jump10 := self JumpZero: 0.
+	self deoptimize.
+	jump8 := self Jump: 0.
+	deadCode := false.
+	currentBlock := self Label.
+	jump10 jmpTarget: currentBlock.
+	self MoveR: tReceiver R: t2.
+	self AndCq: 7 R: t2.
+	self CmpCq: 0 R: t2.
+	jump10 := self JumpNonZero: 0.
+	self MoveR: tReceiver R: t2.
+	self AndCq: objectMemory getMemoryMap getSpaceMaskToUse R: t2.
+	self CmpCq: objectMemory getMemoryMap getOldSpaceMask R: t2.
+	jump9 := self JumpNonZero: 0.
+	self MoveR: tValue R: t2.
+	self AndCq: 7 R: t2.
+	self CmpCq: 0 R: t2.
+	jump3 := self JumpNonZero: 0.
+	self MoveR: tValue R: t2.
+	self AndCq: objectMemory getMemoryMap getSpaceMaskToUse R: t2.
+	self CmpCq: objectMemory getMemoryMap getNewSpaceMask R: t2.
+	jump2 := self JumpNonZero: 0.
+	self MoveR: tValue R: t2.
+	self CmpCq: objectMemory getMemoryMap getNewSpaceStart R: t2.
+	jumpTrue := self JumpAboveOrEqual: 0.
+	self MoveCq: 0 R: t2.
+	jumpNext := self Jump: 0.
+	jumpTrue jmpTarget: self Label.
+	self MoveCq: 1 R: t2.
+	jumpNext jmpTarget: self Label.
+	self CmpCq: objectMemory getMemoryMap getNewSpaceStart R: tValue.
+	jump4 := self JumpBelow: 0.
+	self MoveCq: (byte1 + (r2 << 8)) R: t2.
+	self MoveM64: 0 r: tReceiver R: t3.
+	self ArithmeticShiftRightCq: 29 R: t3.
+	self AndCq: 1 R: t3.
+	self CmpCq: 0 R: t3.
+	jump5 := self JumpZero: 0.
+	jump6 := self Jump: 0.
+	currentBlock := self Label.
+	jump5 jmpTarget: currentBlock.
+	self MoveR: tReceiver R: TempReg.
+	backEnd saveAndRestoreLinkRegAround: [
+		self CallRT: ceStoreCheckTrampoline ].
+	self MoveR: t2 R: t3.
+	self MoveR: tValue R: t2.
+	jump5 := self Jump: 0.
+	currentBlock := self Label.
+	jump3 jmpTarget: currentBlock.
+	jump2 jmpTarget: currentBlock.
+	jump4 jmpTarget: currentBlock.
+	self MoveCq: (byte1 + (r2 << 8)) R: t2.
+	self MoveR: t2 R: t3.
+	self MoveR: tValue R: t2.
+	currentBlock := self Label.
+	jump6 jmpTarget: currentBlock.
+	jump5 jmpTarget: currentBlock.
+	self TstCq: 7 R: t2.
+	jump5 := self JumpZero: 0.
+	jump6 := self Jump: 0.
+	currentBlock := self Label.
+	jump5 jmpTarget: currentBlock.
+	jump5 := self Jump: 0.
+	currentBlock := self Label.
+	jump10 jmpTarget: currentBlock.
+	jump9 jmpTarget: currentBlock.
+	self MoveCq: (byte1 + (r2 << 8)) R: t2.
+	self TstCq: 7 R: tValue.
+	jump9 := self JumpZero: 0.
+	self MoveR: t2 R: t3.
+	self MoveR: tValue R: t2.
+	currentBlock := self Label.
+	jump6 jmpTarget: currentBlock.
+	self LogicalShiftLeftCq: 3 R: t3.
+	self AddR: t3 R: tReceiver.
+	self MoveR: t2 M64: 8 r: tReceiver.
+	jump6 := self Jump: 0.
+	currentBlock := self Label.
+	jump9 jmpTarget: currentBlock.
+	self MoveR: t2 R: t3.
+	self MoveR: tValue R: t2.
+	currentBlock := self Label.
+	jump5 jmpTarget: currentBlock.
+	self CmpCq: objectMemory nilObject R: t2.
+	jump5 := self JumpBelow: 0.
+	self MoveR: t2 R: tValue.
+	self CmpCq: objectMemory trueObject R: tValue.
+	jumpTrue := self JumpBelowOrEqual: 0.
+	self MoveCq: 0 R: tValue.
+	jumpNext := self Jump: 0.
+	jumpTrue jmpTarget: self Label.
+	self MoveCq: 1 R: tValue.
+	jumpNext jmpTarget: self Label.
+	jump9 := self Jump: 0.
+	currentBlock := self Label.
+	jump5 jmpTarget: currentBlock.
+	self MoveCq: 0 R: tValue.
+	currentBlock := self Label.
+	jump9 jmpTarget: currentBlock.
+	self CmpCq: 1 R: tValue.
+	jump9 := self JumpNonZero: 0.
+	self LogicalShiftLeftCq: 3 R: t3.
+	self AddR: t3 R: tReceiver.
+	self MoveR: t2 M64: 8 r: tReceiver.
+	jump5 := self Jump: 0.
+	currentBlock := self Label.
+	jump9 jmpTarget: currentBlock.
+	self CmpCq: objectMemory getMemoryMap getNewSpaceStart R: t2.
+	jump9 := self JumpBelow: 0.
+	self MoveM64: 0 r: tReceiver R: tValue.
+	self ArithmeticShiftRightCq: 29 R: tValue.
+	self AndCq: 1 R: tValue.
+	self CmpCq: 0 R: tValue.
+	jump10 := self JumpZero: 0.
+	self LogicalShiftLeftCq: 3 R: t3.
+	self AddR: t3 R: tReceiver.
+	self MoveR: t2 M64: 8 r: tReceiver.
+	jump4 := self Jump: 0.
+	currentBlock := self Label.
+	jump10 jmpTarget: currentBlock.
+	self MoveR: tReceiver R: tValue.
+	self AndCq: 7 R: tValue.
+	self CmpCq: 0 R: tValue.
+	jump10 := self JumpNonZero: 0.
+	self MoveR: tReceiver R: tValue.
+	self AndCq: objectMemory getMemoryMap getSpaceMaskToUse R: tValue.
+	self CmpCq: objectMemory getMemoryMap getPermSpaceMask R: tValue.
+	jumpTrue := self JumpZero: 0.
+	self MoveCq: 0 R: tValue.
+	jumpNext := self Jump: 0.
+	jumpTrue jmpTarget: self Label.
+	self MoveCq: 1 R: tValue.
+	jumpNext jmpTarget: self Label.
+	self CmpCq: 1 R: tValue.
+	jump2 := self JumpNonZero: 0.
+	self MoveR: t2 R: tValue.
+	self AndCq: objectMemory getMemoryMap getSpaceMaskToUse R: tValue.
+	self CmpCq: objectMemory getMemoryMap getPermSpaceMask R: tValue.
+	jump3 := self JumpZero: 0.
+	self MoveR: tReceiver R: TempReg.
+	backEnd saveAndRestoreLinkRegAround: [
+		self CallRT: ceStoreCheckTrampoline ].
+	jump1 := self Jump: 0.
+	currentBlock := self Label.
+	jump10 jmpTarget: currentBlock.
+	self MoveCq: 0 R: tValue.
+	currentBlock := self Label.
+	jump2 jmpTarget: currentBlock.
+	currentBlock := self Label.
+	jump3 jmpTarget: currentBlock.
+	jump1 jmpTarget: currentBlock.
+	self LogicalShiftLeftCq: 3 R: t3.
+	self AddR: t3 R: tReceiver.
+	self MoveR: t2 M64: 8 r: tReceiver.
+	jump1 := self Jump: 0.
+	currentBlock := self Label.
+	jump9 jmpTarget: currentBlock.
+	self LogicalShiftLeftCq: 3 R: t3.
+	self AddR: t3 R: tReceiver.
+	self MoveR: t2 M64: 8 r: tReceiver.
+	currentBlock := self Label.
+	jump7 jmpTarget: currentBlock.
+	jump8 jmpTarget: currentBlock.
+	jump6 jmpTarget: currentBlock.
+	jump5 jmpTarget: currentBlock.
+	jump4 jmpTarget: currentBlock.
+	jump1 jmpTarget: currentBlock.
+	extA := 0.
 	^ 0
 ]
 
@@ -2616,14 +3438,14 @@ DruidJIT >> gen_PrimitiveAdd [
 
 	| jump1 jump2 currentBlock |
 	self mclassIsSmallInteger ifFalse: [ ^ UnimplementedPrimitive ].
-	self TstCq: 1 R: Arg0Reg.
+	self MoveR: ReceiverResultReg R: TempReg.
+	self MoveR: Arg0Reg R: ClassReg.
+	self TstCq: 1 R: ClassReg.
 	jump1 := self JumpZero: 0.
-	self MoveR: Arg0Reg R: TempReg.
-	self AddCq:  -1 R: TempReg.
-	self MoveR: ReceiverResultReg R: ClassReg.
-	self AddR: ClassReg R: TempReg.
+	self AddCq:  -1 R: ClassReg.
+	self AddR: TempReg R: ClassReg.
 	jump2 := self JumpOverflow: 0.
-	self MoveR: TempReg R: ReceiverResultReg.
+	self MoveR: ClassReg R: ReceiverResultReg.
 	self genPrimReturn.
 	currentBlock := self Label.
 	jump1 jmpTarget: currentBlock.
@@ -2970,13 +3792,13 @@ DruidJIT >> gen_PrimitiveEqual [
 	"AutoGenerated by Druid"
 
 	| jump1 jump2 jump3 currentBlock |
-	self MoveR: Arg0Reg R: TempReg.
-	self MoveR: ReceiverResultReg R: ClassReg.
-	self AndR: ClassReg R: TempReg.
-	self TstCq: 1 R: TempReg.
+	self MoveR: ReceiverResultReg R: TempReg.
+	self MoveR: Arg0Reg R: ClassReg.
+	self MoveR: TempReg R: SendNumArgsReg.
+	self AndR: ClassReg R: SendNumArgsReg.
+	self TstCq: 1 R: SendNumArgsReg.
 	jump1 := self JumpZero: 0.
-	self MoveR: ReceiverResultReg R: ClassReg.
-	self CmpR: Arg0Reg R: ClassReg.
+	self CmpR: ClassReg R: TempReg.
 	jump2 := self JumpNonZero: 0.
 	self MoveCq: objectMemory trueObject R: ReceiverResultReg.
 	jump3 := self Jump: 0.
@@ -2996,13 +3818,13 @@ DruidJIT >> gen_PrimitiveGreaterOrEqual [
 	"AutoGenerated by Druid"
 
 	| jump1 jump2 jump3 currentBlock |
-	self MoveR: Arg0Reg R: TempReg.
-	self MoveR: ReceiverResultReg R: ClassReg.
-	self AndR: ClassReg R: TempReg.
-	self TstCq: 1 R: TempReg.
+	self MoveR: ReceiverResultReg R: TempReg.
+	self MoveR: Arg0Reg R: ClassReg.
+	self MoveR: TempReg R: SendNumArgsReg.
+	self AndR: ClassReg R: SendNumArgsReg.
+	self TstCq: 1 R: SendNumArgsReg.
 	jump1 := self JumpZero: 0.
-	self MoveR: ReceiverResultReg R: ClassReg.
-	self CmpR: Arg0Reg R: ClassReg.
+	self CmpR: ClassReg R: TempReg.
 	jump2 := self JumpLess: 0.
 	self MoveCq: objectMemory trueObject R: ReceiverResultReg.
 	jump3 := self Jump: 0.
@@ -3022,13 +3844,13 @@ DruidJIT >> gen_PrimitiveGreaterThan [
 	"AutoGenerated by Druid"
 
 	| jump1 jump2 jump3 currentBlock |
-	self MoveR: Arg0Reg R: TempReg.
-	self MoveR: ReceiverResultReg R: ClassReg.
-	self AndR: ClassReg R: TempReg.
-	self TstCq: 1 R: TempReg.
+	self MoveR: ReceiverResultReg R: TempReg.
+	self MoveR: Arg0Reg R: ClassReg.
+	self MoveR: TempReg R: SendNumArgsReg.
+	self AndR: ClassReg R: SendNumArgsReg.
+	self TstCq: 1 R: SendNumArgsReg.
 	jump1 := self JumpZero: 0.
-	self MoveR: ReceiverResultReg R: ClassReg.
-	self CmpR: Arg0Reg R: ClassReg.
+	self CmpR: ClassReg R: TempReg.
 	jump2 := self JumpLessOrEqual: 0.
 	self MoveCq: objectMemory trueObject R: ReceiverResultReg.
 	jump3 := self Jump: 0.
@@ -3048,13 +3870,13 @@ DruidJIT >> gen_PrimitiveLessOrEqual [
 	"AutoGenerated by Druid"
 
 	| jump1 jump2 jump3 currentBlock |
-	self MoveR: Arg0Reg R: TempReg.
-	self MoveR: ReceiverResultReg R: ClassReg.
-	self AndR: ClassReg R: TempReg.
-	self TstCq: 1 R: TempReg.
+	self MoveR: ReceiverResultReg R: TempReg.
+	self MoveR: Arg0Reg R: ClassReg.
+	self MoveR: TempReg R: SendNumArgsReg.
+	self AndR: ClassReg R: SendNumArgsReg.
+	self TstCq: 1 R: SendNumArgsReg.
 	jump1 := self JumpZero: 0.
-	self MoveR: ReceiverResultReg R: ClassReg.
-	self CmpR: Arg0Reg R: ClassReg.
+	self CmpR: ClassReg R: TempReg.
 	jump2 := self JumpGreater: 0.
 	self MoveCq: objectMemory trueObject R: ReceiverResultReg.
 	jump3 := self Jump: 0.
@@ -3074,13 +3896,13 @@ DruidJIT >> gen_PrimitiveLessThan [
 	"AutoGenerated by Druid"
 
 	| jump1 jump2 jump3 currentBlock |
-	self MoveR: Arg0Reg R: TempReg.
-	self MoveR: ReceiverResultReg R: ClassReg.
-	self AndR: ClassReg R: TempReg.
-	self TstCq: 1 R: TempReg.
+	self MoveR: ReceiverResultReg R: TempReg.
+	self MoveR: Arg0Reg R: ClassReg.
+	self MoveR: TempReg R: SendNumArgsReg.
+	self AndR: ClassReg R: SendNumArgsReg.
+	self TstCq: 1 R: SendNumArgsReg.
 	jump1 := self JumpZero: 0.
-	self MoveR: ReceiverResultReg R: ClassReg.
-	self CmpR: Arg0Reg R: ClassReg.
+	self CmpR: ClassReg R: TempReg.
 	jump2 := self JumpGreaterOrEqual: 0.
 	self MoveCq: objectMemory trueObject R: ReceiverResultReg.
 	jump3 := self Jump: 0.
@@ -3100,13 +3922,13 @@ DruidJIT >> gen_PrimitiveMultiply [
 	"AutoGenerated by Druid"
 
 	| jump1 jump2 jump3 currentBlock |
-	self TstCq: 1 R: ReceiverResultReg.
-	jump1 := self JumpZero: 0.
-	self TstCq: 1 R: Arg0Reg.
-	jump2 := self JumpZero: 0.
 	self MoveR: ReceiverResultReg R: TempReg.
-	self ArithmeticShiftRightCq: 3 R: TempReg.
 	self MoveR: Arg0Reg R: ClassReg.
+	self TstCq: 1 R: TempReg.
+	jump1 := self JumpZero: 0.
+	self TstCq: 1 R: ClassReg.
+	jump2 := self JumpZero: 0.
+	self ArithmeticShiftRightCq: 3 R: TempReg.
 	self SubCq: 1 R: ClassReg.
 	self MulR: ClassReg R: TempReg.
 	jump3 := self JumpMultiplyOverflow: 0.
@@ -3658,16 +4480,16 @@ DruidJIT >> gen_PrimitiveSubtract [
 	"AutoGenerated by Druid"
 
 	| jump1 jump2 jump3 currentBlock |
-	self TstCq: 1 R: ReceiverResultReg.
+	self MoveR: ReceiverResultReg R: TempReg.
+	self MoveR: Arg0Reg R: ClassReg.
+	self TstCq: 1 R: TempReg.
 	jump1 := self JumpZero: 0.
-	self TstCq: 1 R: Arg0Reg.
+	self TstCq: 1 R: ClassReg.
 	jump2 := self JumpZero: 0.
-	self MoveR: Arg0Reg R: TempReg.
-	self AddCq:  -1 R: TempReg.
-	self MoveR: ReceiverResultReg R: ClassReg.
-	self SubR: TempReg R: ClassReg.
+	self AddCq:  -1 R: ClassReg.
+	self SubR: ClassReg R: TempReg.
 	jump3 := self JumpOverflow: 0.
-	self MoveR: ClassReg R: ReceiverResultReg.
+	self MoveR: TempReg R: ReceiverResultReg.
 	self genPrimReturn.
 	currentBlock := self Label.
 	jump1 jmpTarget: currentBlock.
@@ -5437,35 +6259,39 @@ DruidJIT >> gen_PushReceiverVariableBytecode9 [
 DruidJIT >> gen_PushRemoteTempLongBytecode [
 	"AutoGenerated by Druid"
 
-	| live t1 currentBlock t0 |
+	| t0 t1 currentBlock r182 live t2 |
 	live := 0.
+	r182 := byte1.
 	t0 := self
 		      allocateRegNotConflictingWith: live
 		      ifNone: [ ^ self unknownBytecode ].
 	live := live bitOr: (self registerMaskFor: t0).
 	(self simStackTempAt: byte2) copyToReg: t0.
-	TempVectReadBarrier=true ifTrue: [
-		| jumpTrue jumpNext jump1 jump3 b201 t1 jump4 jump2 t2 |
-		t1 := self
-			      allocateRegNotConflictingWith: live
-			      ifNone: [ ^ self unknownBytecode ].
-		live := live bitOr: (self registerMaskFor: t1).
+	t1 := self
+		      allocateRegNotConflictingWith: live
+		      ifNone: [ ^ self unknownBytecode ].
+	live := live bitOr: (self registerMaskFor: t1).
+	t2 := self
+		      allocateRegNotConflictingWith: live
+		      ifNone: [ ^ self unknownBytecode ].
+	live := live bitOr: (self registerMaskFor: t2).
+	TempVectReadBarrier ifTrue: [
+		| b200 jumpTrue jumpNext jump1 jump3 r182 jump4 jump2 r483 |
 		self MoveM64: 0 r: t0 R: t1.
 		self AndCq: 16r3FFFF7 R: t1.
 		self CmpCq: 0 R: t1.
 		jump1 := self JumpNonZero: 0.
 		self MoveM64: 8 r: t0 R: t1.
-		b201 := self Label.
+		b200 := self Label.
+		r182 := r182.
+		r483 := r182.
+		r483 := r483 := r182.
 		self MoveR: t1 R: t0.
 		self AndCq: 7 R: t0.
 		self CmpCq: 0 R: t0.
 		jump2 := self JumpNonZero: 0.
 		self MoveM64: 0 r: t1 R: t0.
 		self AndCq: 16r3FFFF7 R: t0.
-		t2 := self
-			      allocateRegNotConflictingWith: live
-			      ifNone: [ ^ self unknownBytecode ].
-		live := live bitOr: (self registerMaskFor: t2).
 		self MoveR: t0 R: t2.
 		self CmpCq: 0 R: t2.
 		jumpTrue := self JumpZero: 0.
@@ -5474,13 +6300,18 @@ DruidJIT >> gen_PushRemoteTempLongBytecode [
 		jumpTrue jmpTarget: self Label.
 		self MoveCq: 1 R: t2.
 		jumpNext jmpTarget: self Label.
+		r483 := r483.
+		r182 := r483.
 		self CmpCq: 0 R: t0.
 		jump3 := self JumpNonZero: 0.
 		self MoveM64: 8 r: t1 R: t2.
 		self MoveR: t2 R: t1.
-		jump4 := self Jump: b201.
+		jump4 := self Jump: b200.
 		currentBlock := self Label.
 		jump2 jmpTarget: currentBlock.
+		r483 := r483.
+		r182 := r483.
+		currentBlock := self Label.
 		jump3 jmpTarget: currentBlock.
 		self MoveR: t1 R: t2.
 		jump3 := self Jump: 0.
@@ -5489,16 +6320,10 @@ DruidJIT >> gen_PushRemoteTempLongBytecode [
 		self MoveR: t0 R: t2.
 		currentBlock := self Label.
 		jump3 jmpTarget: currentBlock.
-		self AddCq: (byte1 << 3) R: t2.
-		self ssPushBase: t2 offset: 8.
+		self ssPushBase: t2 offset: byte1 << 3 + 8.
 		^ 0 ].
-	t1 := self
-		      allocateRegNotConflictingWith: live
-		      ifNone: [ ^ self unknownBytecode ].
-	live := live bitOr: (self registerMaskFor: t1).
-	self MoveR: t0 R: t1.
-	self AddCq: (byte1 << 3) R: t1.
-	self ssPushBase: t1 offset: 8.
+	self MoveR: t0 R: t2.
+	self ssPushBase: t2 offset: byte1 << 3 + 8.
 	^ 0
 ]
 
@@ -7129,7 +7954,7 @@ DruidJIT >> gen_StoreAndPopReceiverVariableBytecode0 [
 	jump5 := self JumpNonZero: 0.
 	self MoveR: t1 R: t2.
 	self CmpCq: objectMemory getMemoryMap getNewSpaceStart R: t2.
-	jumpTrue := self JumpGreaterOrEqual: 0.
+	jumpTrue := self JumpAboveOrEqual: 0.
 	self MoveCq: 0 R: t2.
 	jumpNext := self Jump: 0.
 	jumpTrue jmpTarget: self Label.
@@ -7166,7 +7991,7 @@ DruidJIT >> gen_StoreAndPopReceiverVariableBytecode0 [
 	jump9 := self JumpBelow: 0.
 	self MoveR: t1 R: t2.
 	self CmpCq: objectMemory trueObject R: t2.
-	jumpTrue := self JumpLessOrEqual: 0.
+	jumpTrue := self JumpBelowOrEqual: 0.
 	self MoveCq: 0 R: t2.
 	jumpNext := self Jump: 0.
 	jumpTrue jmpTarget: self Label.
@@ -7181,7 +8006,7 @@ DruidJIT >> gen_StoreAndPopReceiverVariableBytecode0 [
 	self CmpCq: 1 R: t2.
 	jump4 := self JumpZero: 0.
 	self CmpCq: objectMemory getMemoryMap getNewSpaceStart R: t1.
-	jump9 := self JumpLess: 0.
+	jump9 := self JumpBelow: 0.
 	self MoveM64: 0 r: t0 R: t2.
 	self ArithmeticShiftRightCq: 29 R: t2.
 	self AndCq: 1 R: t2.
@@ -7281,7 +8106,7 @@ DruidJIT >> gen_StoreAndPopReceiverVariableBytecode1 [
 	jump5 := self JumpNonZero: 0.
 	self MoveR: t1 R: t2.
 	self CmpCq: objectMemory getMemoryMap getNewSpaceStart R: t2.
-	jumpTrue := self JumpGreaterOrEqual: 0.
+	jumpTrue := self JumpAboveOrEqual: 0.
 	self MoveCq: 0 R: t2.
 	jumpNext := self Jump: 0.
 	jumpTrue jmpTarget: self Label.
@@ -7318,7 +8143,7 @@ DruidJIT >> gen_StoreAndPopReceiverVariableBytecode1 [
 	jump9 := self JumpBelow: 0.
 	self MoveR: t1 R: t2.
 	self CmpCq: objectMemory trueObject R: t2.
-	jumpTrue := self JumpLessOrEqual: 0.
+	jumpTrue := self JumpBelowOrEqual: 0.
 	self MoveCq: 0 R: t2.
 	jumpNext := self Jump: 0.
 	jumpTrue jmpTarget: self Label.
@@ -7333,7 +8158,7 @@ DruidJIT >> gen_StoreAndPopReceiverVariableBytecode1 [
 	self CmpCq: 1 R: t2.
 	jump4 := self JumpZero: 0.
 	self CmpCq: objectMemory getMemoryMap getNewSpaceStart R: t1.
-	jump9 := self JumpLess: 0.
+	jump9 := self JumpBelow: 0.
 	self MoveM64: 0 r: t0 R: t2.
 	self ArithmeticShiftRightCq: 29 R: t2.
 	self AndCq: 1 R: t2.
@@ -7433,7 +8258,7 @@ DruidJIT >> gen_StoreAndPopReceiverVariableBytecode2 [
 	jump5 := self JumpNonZero: 0.
 	self MoveR: t1 R: t2.
 	self CmpCq: objectMemory getMemoryMap getNewSpaceStart R: t2.
-	jumpTrue := self JumpGreaterOrEqual: 0.
+	jumpTrue := self JumpAboveOrEqual: 0.
 	self MoveCq: 0 R: t2.
 	jumpNext := self Jump: 0.
 	jumpTrue jmpTarget: self Label.
@@ -7470,7 +8295,7 @@ DruidJIT >> gen_StoreAndPopReceiverVariableBytecode2 [
 	jump9 := self JumpBelow: 0.
 	self MoveR: t1 R: t2.
 	self CmpCq: objectMemory trueObject R: t2.
-	jumpTrue := self JumpLessOrEqual: 0.
+	jumpTrue := self JumpBelowOrEqual: 0.
 	self MoveCq: 0 R: t2.
 	jumpNext := self Jump: 0.
 	jumpTrue jmpTarget: self Label.
@@ -7485,7 +8310,7 @@ DruidJIT >> gen_StoreAndPopReceiverVariableBytecode2 [
 	self CmpCq: 1 R: t2.
 	jump4 := self JumpZero: 0.
 	self CmpCq: objectMemory getMemoryMap getNewSpaceStart R: t1.
-	jump9 := self JumpLess: 0.
+	jump9 := self JumpBelow: 0.
 	self MoveM64: 0 r: t0 R: t2.
 	self ArithmeticShiftRightCq: 29 R: t2.
 	self AndCq: 1 R: t2.
@@ -7585,7 +8410,7 @@ DruidJIT >> gen_StoreAndPopReceiverVariableBytecode3 [
 	jump5 := self JumpNonZero: 0.
 	self MoveR: t1 R: t2.
 	self CmpCq: objectMemory getMemoryMap getNewSpaceStart R: t2.
-	jumpTrue := self JumpGreaterOrEqual: 0.
+	jumpTrue := self JumpAboveOrEqual: 0.
 	self MoveCq: 0 R: t2.
 	jumpNext := self Jump: 0.
 	jumpTrue jmpTarget: self Label.
@@ -7622,7 +8447,7 @@ DruidJIT >> gen_StoreAndPopReceiverVariableBytecode3 [
 	jump9 := self JumpBelow: 0.
 	self MoveR: t1 R: t2.
 	self CmpCq: objectMemory trueObject R: t2.
-	jumpTrue := self JumpLessOrEqual: 0.
+	jumpTrue := self JumpBelowOrEqual: 0.
 	self MoveCq: 0 R: t2.
 	jumpNext := self Jump: 0.
 	jumpTrue jmpTarget: self Label.
@@ -7637,7 +8462,7 @@ DruidJIT >> gen_StoreAndPopReceiverVariableBytecode3 [
 	self CmpCq: 1 R: t2.
 	jump4 := self JumpZero: 0.
 	self CmpCq: objectMemory getMemoryMap getNewSpaceStart R: t1.
-	jump9 := self JumpLess: 0.
+	jump9 := self JumpBelow: 0.
 	self MoveM64: 0 r: t0 R: t2.
 	self ArithmeticShiftRightCq: 29 R: t2.
 	self AndCq: 1 R: t2.
@@ -7737,7 +8562,7 @@ DruidJIT >> gen_StoreAndPopReceiverVariableBytecode4 [
 	jump5 := self JumpNonZero: 0.
 	self MoveR: t1 R: t2.
 	self CmpCq: objectMemory getMemoryMap getNewSpaceStart R: t2.
-	jumpTrue := self JumpGreaterOrEqual: 0.
+	jumpTrue := self JumpAboveOrEqual: 0.
 	self MoveCq: 0 R: t2.
 	jumpNext := self Jump: 0.
 	jumpTrue jmpTarget: self Label.
@@ -7774,7 +8599,7 @@ DruidJIT >> gen_StoreAndPopReceiverVariableBytecode4 [
 	jump9 := self JumpBelow: 0.
 	self MoveR: t1 R: t2.
 	self CmpCq: objectMemory trueObject R: t2.
-	jumpTrue := self JumpLessOrEqual: 0.
+	jumpTrue := self JumpBelowOrEqual: 0.
 	self MoveCq: 0 R: t2.
 	jumpNext := self Jump: 0.
 	jumpTrue jmpTarget: self Label.
@@ -7789,7 +8614,7 @@ DruidJIT >> gen_StoreAndPopReceiverVariableBytecode4 [
 	self CmpCq: 1 R: t2.
 	jump4 := self JumpZero: 0.
 	self CmpCq: objectMemory getMemoryMap getNewSpaceStart R: t1.
-	jump9 := self JumpLess: 0.
+	jump9 := self JumpBelow: 0.
 	self MoveM64: 0 r: t0 R: t2.
 	self ArithmeticShiftRightCq: 29 R: t2.
 	self AndCq: 1 R: t2.
@@ -7889,7 +8714,7 @@ DruidJIT >> gen_StoreAndPopReceiverVariableBytecode5 [
 	jump5 := self JumpNonZero: 0.
 	self MoveR: t1 R: t2.
 	self CmpCq: objectMemory getMemoryMap getNewSpaceStart R: t2.
-	jumpTrue := self JumpGreaterOrEqual: 0.
+	jumpTrue := self JumpAboveOrEqual: 0.
 	self MoveCq: 0 R: t2.
 	jumpNext := self Jump: 0.
 	jumpTrue jmpTarget: self Label.
@@ -7926,7 +8751,7 @@ DruidJIT >> gen_StoreAndPopReceiverVariableBytecode5 [
 	jump9 := self JumpBelow: 0.
 	self MoveR: t1 R: t2.
 	self CmpCq: objectMemory trueObject R: t2.
-	jumpTrue := self JumpLessOrEqual: 0.
+	jumpTrue := self JumpBelowOrEqual: 0.
 	self MoveCq: 0 R: t2.
 	jumpNext := self Jump: 0.
 	jumpTrue jmpTarget: self Label.
@@ -7941,7 +8766,7 @@ DruidJIT >> gen_StoreAndPopReceiverVariableBytecode5 [
 	self CmpCq: 1 R: t2.
 	jump4 := self JumpZero: 0.
 	self CmpCq: objectMemory getMemoryMap getNewSpaceStart R: t1.
-	jump9 := self JumpLess: 0.
+	jump9 := self JumpBelow: 0.
 	self MoveM64: 0 r: t0 R: t2.
 	self ArithmeticShiftRightCq: 29 R: t2.
 	self AndCq: 1 R: t2.
@@ -8041,7 +8866,7 @@ DruidJIT >> gen_StoreAndPopReceiverVariableBytecode6 [
 	jump5 := self JumpNonZero: 0.
 	self MoveR: t1 R: t2.
 	self CmpCq: objectMemory getMemoryMap getNewSpaceStart R: t2.
-	jumpTrue := self JumpGreaterOrEqual: 0.
+	jumpTrue := self JumpAboveOrEqual: 0.
 	self MoveCq: 0 R: t2.
 	jumpNext := self Jump: 0.
 	jumpTrue jmpTarget: self Label.
@@ -8078,7 +8903,7 @@ DruidJIT >> gen_StoreAndPopReceiverVariableBytecode6 [
 	jump9 := self JumpBelow: 0.
 	self MoveR: t1 R: t2.
 	self CmpCq: objectMemory trueObject R: t2.
-	jumpTrue := self JumpLessOrEqual: 0.
+	jumpTrue := self JumpBelowOrEqual: 0.
 	self MoveCq: 0 R: t2.
 	jumpNext := self Jump: 0.
 	jumpTrue jmpTarget: self Label.
@@ -8093,7 +8918,7 @@ DruidJIT >> gen_StoreAndPopReceiverVariableBytecode6 [
 	self CmpCq: 1 R: t2.
 	jump4 := self JumpZero: 0.
 	self CmpCq: objectMemory getMemoryMap getNewSpaceStart R: t1.
-	jump9 := self JumpLess: 0.
+	jump9 := self JumpBelow: 0.
 	self MoveM64: 0 r: t0 R: t2.
 	self ArithmeticShiftRightCq: 29 R: t2.
 	self AndCq: 1 R: t2.
@@ -8193,7 +9018,7 @@ DruidJIT >> gen_StoreAndPopReceiverVariableBytecode7 [
 	jump5 := self JumpNonZero: 0.
 	self MoveR: t1 R: t2.
 	self CmpCq: objectMemory getMemoryMap getNewSpaceStart R: t2.
-	jumpTrue := self JumpGreaterOrEqual: 0.
+	jumpTrue := self JumpAboveOrEqual: 0.
 	self MoveCq: 0 R: t2.
 	jumpNext := self Jump: 0.
 	jumpTrue jmpTarget: self Label.
@@ -8230,7 +9055,7 @@ DruidJIT >> gen_StoreAndPopReceiverVariableBytecode7 [
 	jump9 := self JumpBelow: 0.
 	self MoveR: t1 R: t2.
 	self CmpCq: objectMemory trueObject R: t2.
-	jumpTrue := self JumpLessOrEqual: 0.
+	jumpTrue := self JumpBelowOrEqual: 0.
 	self MoveCq: 0 R: t2.
 	jumpNext := self Jump: 0.
 	jumpTrue jmpTarget: self Label.
@@ -8245,7 +9070,7 @@ DruidJIT >> gen_StoreAndPopReceiverVariableBytecode7 [
 	self CmpCq: 1 R: t2.
 	jump4 := self JumpZero: 0.
 	self CmpCq: objectMemory getMemoryMap getNewSpaceStart R: t1.
-	jump9 := self JumpLess: 0.
+	jump9 := self JumpBelow: 0.
 	self MoveM64: 0 r: t0 R: t2.
 	self ArithmeticShiftRightCq: 29 R: t2.
 	self AndCq: 1 R: t2.
