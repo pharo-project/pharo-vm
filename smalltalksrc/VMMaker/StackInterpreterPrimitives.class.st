@@ -967,6 +967,7 @@ StackInterpreterPrimitives >> primitiveContextSize [
 	 Written to be varargs for use from mirror primitives."
 	| rcvr sz hdr fmt totalLength fixedFields |
 	<inline: false>
+	<druidExitPoint>
 	rcvr := self stackTop.
 	hdr := objectMemory baseHeader: rcvr.
 	fmt := objectMemory formatOfHeader: hdr.
