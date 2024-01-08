@@ -1473,6 +1473,13 @@ CCodeGenerator >> generateCASTAsLong: tast [
 ]
 
 { #category : #'CAST translation' }
+CCodeGenerator >> generateCASTAsObjectReference: aTSendNode [ 
+	
+	"Just ignore the object reference cast, it's a hint for the JIT compiler"
+	^ aTSendNode receiver asCASTExpressionIn: self
+]
+
+{ #category : #'CAST translation' }
 CCodeGenerator >> generateCASTAsSymbol: tast [
 
 	^ CIdentifierNode name:
@@ -3185,6 +3192,7 @@ CCodeGenerator >> initializeCASTTranslationDictionary [
 	#basicAt:		#generateCASTAt:
 	#basicAt:put:	#generateCASTAtPut:
 
+	#asObjectReference 	#generateCASTAsObjectReference:
 	#integerValueOf:			#generateCASTIntegerValueOf:
 	#integerObjectOf:			#generateCASTIntegerObjectOf:
 	#isIntegerObject: 			#generateCASTIsIntegerObject:
