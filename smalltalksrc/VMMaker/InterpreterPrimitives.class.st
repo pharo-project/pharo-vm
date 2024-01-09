@@ -615,6 +615,7 @@ InterpreterPrimitives >> positive32BitValueOf: oop [
 	"Convert the given object into an integer value.
 	The object may be either a positive SmallInteger or a four-byte LargePositiveInteger."
 	<api>
+	<druidExitPoint>
 	<returnTypeC: #'unsigned int'>
 	objectMemory hasSixtyFourBitImmediates
 		ifTrue:
