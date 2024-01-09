@@ -1230,7 +1230,8 @@ InterpreterPrimitives >> primitiveChangeClass [
 
 { #category : #'object access primitives' }
 InterpreterPrimitives >> primitiveClass [
-	<numberOfArguments: 1>
+	<numberOfArguments: 0>
+	<checkArgumentCount>
 	| instance |
 	instance := self stackTop.
 	(argumentCount > 0
