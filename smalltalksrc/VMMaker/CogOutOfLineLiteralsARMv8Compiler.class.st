@@ -532,13 +532,15 @@ CogOutOfLineLiteralsARMv8Compiler >> usesOutOfLineLiteral [
 				 quickConstant := operands at: 0.
 				 ^ (quickConstant < 0 and: [
 					    (self isShiftable16bitImmediate: quickConstant negated - 1)
-						    not ]) or: [ self isShiftable16bitImmediate: quickConstant ] ]).
+						    not ]) or: [
+					   (self isShiftable16bitImmediate: quickConstant) not ] ]).
 				([ MoveC32R ] -> [
 				 | quickConstant |
 				 quickConstant := operands at: 0.
 				 ^ (quickConstant < 0 and: [
 					    (self isShiftable16bitImmediate: quickConstant negated - 1)
-						    not ]) or: [ self isShiftable16bitImmediate: quickConstant ] ]).
+						    not ]) or: [
+					   (self isShiftable16bitImmediate: quickConstant) not ] ]).
 
 				([ MoveCwR ]
 				 -> [ ^ (self inCurrentCompilation: (operands at: 0)) not ]).
