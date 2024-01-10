@@ -1881,6 +1881,18 @@ InterpreterPrimitives >> primitiveFlushExternalPrimitives [
 	self flushExternalPrimitives
 ]
 
+{ #category : #'object access primitives' }
+InterpreterPrimitives >> primitiveFormat [
+
+	| receiver header format |
+	receiver := self stackTop.
+	header := objectMemory baseHeader: receiver.
+	format := objectMemory formatOfHeader: header.
+	self
+		pop: argumentCount + 1
+		thenPush: (objectMemory integerObjectOf: format)
+]
+
 { #category : #'arithmetic float primitives' }
 InterpreterPrimitives >> primitiveFractionalPart [
 	"Fractional part of this float.
