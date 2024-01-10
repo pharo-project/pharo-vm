@@ -1836,6 +1836,24 @@ VMPrimitiveTest >> testPrimitiveFloat64ArrayAdd [
 	self assert: (memory fetchFloat64: 1 ofObject: result) equals: 22.0.
 ]
 
+{ #category : #'tests - primitiveAtPut' }
+VMPrimitiveTest >> testPrimitiveFormat [
+
+	| object |
+	object := self
+		          newObjectWithSlots: 0
+		          format: memory ephemeronFormat
+		          classIndex: memory arrayClassIndexPun.
+
+	interpreter push: object.
+	interpreter primitiveFormat.
+
+	self deny: interpreter failed.
+	self
+		assert: interpreter stackTop
+		equals: (memory integerObjectOf: memory ephemeronFormat)
+]
+
 { #category : #'tests - primitiveImmutability' }
 VMPrimitiveTest >> testPrimitiveGetImmutabilityOfImmediateReturnsTrue [
 
