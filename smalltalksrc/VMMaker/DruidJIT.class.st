@@ -3338,7 +3338,8 @@ DruidJIT >> gen_PrimitiveClass [
 	self LogicalShiftLeftCq: 3 R: ClassReg.
 	self
 		MoveM64:
-		(coInterpreter int64AtPointer: objectMemory hiddenRootsObject) + 8
+		(coInterpreter int64AtPointer: objectMemory hiddenRootsObject + 8)
+		+ 8
 		r: ClassReg
 		R: ClassReg.
 	self MoveR: ClassReg R: ReceiverResultReg.
