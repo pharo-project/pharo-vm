@@ -1253,9 +1253,10 @@ StackInterpreter class >> initializePrimitiveTable [
 		(223 229 primitiveFail)	"reserved for Cog primitives (see 228 & 229 in CoInterpreterMT"
 
 		(230 primitiveRelinquishProcessor)
-		(231 primitiveSize)
+		(231 primitiveFormat)
 
 		(232 239 primitiveFail)
+
 		(240 primitiveUTCMicrosecondClock)
 		(241 primitiveLocalMicrosecondClock)
 		(242 primitiveSignalAtUTCMicroseconds)
