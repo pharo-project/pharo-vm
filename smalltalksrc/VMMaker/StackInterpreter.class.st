@@ -5565,9 +5565,8 @@ StackInterpreter >> extStoreAndPopReceiverVariableBytecode [
 	variableIndex := self fetchByte + (extA << 8).
 	extA := 0.
 	value := self stackTop.
-	self pop: 1.
 	self
-		storeMaybeContextReceiverVariable: variableIndex
+		storePopMaybeContextReceiverVariable: variableIndex
 		withValue: value.
 	self fetchNextBytecode
 ]
@@ -6799,6 +6798,13 @@ StackInterpreter >> functionPointerFor: primIdx inClass: theClass [
 	<api>
 	<returnTypeC: 'void (*functionPointerForinClass(sqInt primIdx,sqInt theClass))(void)'>
 	^primIdx > MaxPrimitiveIndex ifTrue: [0] ifFalse: [primitiveTable at: primIdx]
+]
+
+{ #category : #'stack bytecodes' }
+StackInterpreter >> genStoreAndPopRemoteTempLongBytecode [
+
+	self storeRemoteTempLongBytecode.
+	self pop: 1
 ]
 
 { #category : #'internal interpreter access' }
@@ -14700,9 +14706,6 @@ StackInterpreter >> storeAndPopReceiverVariableBytecode [
 { #category : #'stack bytecodes' }
 StackInterpreter >> storeAndPopRemoteTempLongBytecode [
 
-	<compilationInfo: #isMappedIfImmutability>
-	<needsFrameIfImmutability: -1>
-
 	self storeRemoteTempLongBytecode.
 	self pop: 1
 ]
@@ -14805,6 +14808,36 @@ StackInterpreter >> storeMaybeContextReceiverVariable: fieldIndex withValue: anO
 	 But don't want to check on all inst var accesses.  This
 	 method is only used by the long-form bytecodes, evading the cost."
 	self storeMaybeContext: self receiver receiverVariable: fieldIndex withValue: anObject
+
+]
+
+{ #category : #'stack bytecodes' }
+StackInterpreter >> storePopMaybeContext: obj receiverVariable: fieldIndex withValue: anOop [
+	"Must trap accesses to married and widowed contexts.
+	 But don't want to check on all inst var accesses.  This
+	 method is only used by the long-form bytecodes, evading the cost."
+
+	<inline: true>
+	((self isWriteMediatedContextInstVarIndex: fieldIndex) and: [
+		 objectMemory isContextNonImm: obj ]) 
+	ifTrue: [
+		self druidForceIntepretation.
+		self druidIgnore: [
+			self pop: 1.
+			((self isMarriedOrWidowedContext: obj) or: [
+				 self is: fieldIndex methodAssignmentToContextWithMachineCodePC: anOop ]) 
+			ifTrue: [
+				^ self instVar: fieldIndex ofContext: obj put: anOop ] ] ].
+	self pop: 1.
+	objectMemory storePointerImmutabilityCheck: fieldIndex ofObject: obj withValue: anOop
+]
+
+{ #category : #'stack bytecodes' }
+StackInterpreter >> storePopMaybeContextReceiverVariable: fieldIndex withValue: anObject [
+	"Must trap accesses to married and widowed contexts.
+	 But don't want to check on all inst var accesses.  This
+	 method is only used by the long-form bytecodes, evading the cost."
+	self storePopMaybeContext: self receiver receiverVariable: fieldIndex withValue: anObject
 
 ]
 
