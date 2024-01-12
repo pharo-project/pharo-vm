@@ -14699,6 +14699,10 @@ StackInterpreter >> storeAndPopReceiverVariableBytecode [
 
 { #category : #'stack bytecodes' }
 StackInterpreter >> storeAndPopRemoteTempLongBytecode [
+
+	<compilationInfo: #isMappedIfImmutability>
+	<needsFrameIfImmutability: -1>
+
 	self storeRemoteTempLongBytecode.
 	self pop: 1
 ]
@@ -14823,6 +14827,10 @@ StackInterpreter >> storeRemoteTemp: index inVectorAt: tempVectorIndex [
 
 { #category : #'stack bytecodes' }
 StackInterpreter >> storeRemoteTempLongBytecode [
+
+	<compilationInfo: #isMappedIfImmutability>
+	<needsFrameIfImmutability: 0>
+
 	| remoteTempIndex tempVectorIndex |
 	remoteTempIndex := self fetchByte.
 	tempVectorIndex := self fetchByte.

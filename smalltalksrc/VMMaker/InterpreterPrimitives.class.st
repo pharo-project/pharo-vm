@@ -2190,13 +2190,12 @@ InterpreterPrimitives >> primitiveIdentical [
 	| thisObject otherObject |
 	otherObject := self stackValue: 1.
 	thisObject := self stackTop.
-	((objectMemory isOopForwarded: otherObject)
-	 or: [argumentCount > 1
-		 and: [objectMemory isOopForwarded: thisObject]])
-		ifTrue:
-			[self primitiveFailFor: PrimErrBadArgument]
-		ifFalse:
-			[self pop: argumentCount + 1 thenPushBool: thisObject = otherObject]
+	(objectMemory isOopForwarded: otherObject) ifTrue:
+		[self assert: argumentCount > 1.
+		 otherObject := objectMemory followForwarded: otherObject].
+	(objectMemory isOopForwarded: thisObject) ifTrue:
+		[thisObject := objectMemory followForwarded: thisObject].
+	self pop: argumentCount + 1 thenPushBool: thisObject = otherObject
 ]
 
 { #category : #'object access primitives' }
@@ -3047,7 +3046,7 @@ InterpreterPrimitives >> primitiveNotIdentical [
 	thisObject := self stackTop.
 	(objectMemory isOopForwarded: otherObject) ifTrue:
 		[self assert: argumentCount > 1.
-		 otherObject := objectMemory followForwarded: thisObject].
+		 otherObject := objectMemory followForwarded: otherObject].
 	(objectMemory isOopForwarded: thisObject) ifTrue:
 		[thisObject := objectMemory followForwarded: thisObject].
 	self pop: argumentCount + 1 thenPushBool: thisObject ~= otherObject
