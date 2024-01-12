@@ -2340,6 +2340,7 @@ SpurMemoryManager >> allocateSlots: numSlots format: formatField classIndex: cla
 	 and are multiples of 8 bytes in length."
 	numSlots >= self numSlotsMask
 		ifTrue: [ 
+			self druidExitPoint.
 			numSlots >> 56 > 0 ifTrue: [ ^ nil ]. "overflow size must fit in 56-bits"
 			numBytes := self largeObjectBytesForSlots: numSlots ]
 		ifFalse: [ numBytes := self smallObjectBytesForSlots: numSlots ].
