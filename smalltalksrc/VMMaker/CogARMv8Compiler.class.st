@@ -4585,6 +4585,15 @@ CogARMv8Compiler >> isPCRelativeValueLoad: instr [
 	^ (instr bitAnd: 2r10011111 << 24) = (1 << 28)
 ]
 
+{ #category : #testing }
+CogARMv8Compiler >> isShiftable16bitImmediate: constant [
+
+	^ self
+		  shiftable16bitImmediate: constant
+		  ifTrue: [ :s :v | true ]
+		  ifFalse: [ false ]
+]
+
 { #category : #'private-bit-manipulation' }
 CogARMv8Compiler >> isShiftedMask: aMask [
 
