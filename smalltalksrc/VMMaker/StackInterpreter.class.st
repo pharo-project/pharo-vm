@@ -6800,13 +6800,6 @@ StackInterpreter >> functionPointerFor: primIdx inClass: theClass [
 	^primIdx > MaxPrimitiveIndex ifTrue: [0] ifFalse: [primitiveTable at: primIdx]
 ]
 
-{ #category : #'stack bytecodes' }
-StackInterpreter >> genStoreAndPopRemoteTempLongBytecode [
-
-	self storeRemoteTempLongBytecode.
-	self pop: 1
-]
-
 { #category : #'internal interpreter access' }
 StackInterpreter >> getBlockCompilationCount [
 	"This is nil in the StackVM"
@@ -14823,10 +14816,10 @@ StackInterpreter >> storePopMaybeContext: obj receiverVariable: fieldIndex withV
 	ifTrue: [
 		self druidForceIntepretation.
 		self druidIgnore: [
-			self pop: 1.
 			((self isMarriedOrWidowedContext: obj) or: [
 				 self is: fieldIndex methodAssignmentToContextWithMachineCodePC: anOop ]) 
 			ifTrue: [
+				self pop: 1.
 				^ self instVar: fieldIndex ofContext: obj put: anOop ] ] ].
 	self pop: 1.
 	objectMemory storePointerImmutabilityCheck: fieldIndex ofObject: obj withValue: anOop
