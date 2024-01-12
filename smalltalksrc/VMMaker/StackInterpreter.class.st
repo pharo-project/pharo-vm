@@ -12650,12 +12650,12 @@ StackInterpreter >> pushNewArrayBytecode [
 		         numSlots: size.
 	popValues
 		ifTrue: [
-			0 to: size - 1 do: [ :i | "Assume: have just allocated a new Array; it must be young. Thus, can use unchecked stores."
+			0 to: size - 1 do: [ :i | "Assume: have just allocated a new Array; it must be young.
+				Thus, can use unchecked stores."
 				objectMemory
-					storePointerUnchecked: i
+					storePointerUnchecked: size - i - 1
 					ofObject: array
-					withValue: (self stackValue: size - i - 1) ].
-			self pop: size ]
+					withValue: self popStack ] ]
 		ifFalse: [
 			0 to: size - 1 do: [ :i |
 				objectMemory
