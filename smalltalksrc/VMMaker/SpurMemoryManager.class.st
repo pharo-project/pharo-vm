@@ -6687,10 +6687,12 @@ SpurMemoryManager >> initializeHeaderOfStartAddress: startAddress numSlots: numS
 	
 	numSlots >= self numSlotsMask
 		ifTrue: "for header parsing we put a saturated slot count in the prepended overflow size word"
-			[self flag: #endianness.
+			[self druidExitPoint.
+			self druidIgnore: [ 
+			 self flag: #endianness.
 			 self uint64At: startAddress put: self numSlotsMask << self numSlotsFullShift + numSlots.
 			 self uint64At: startAddress + self baseHeaderSize put: ((self headerForSlots: self numSlotsMask format: formatField classIndex: classIndex) bitOr: pinFlag << self pinnedBitShift).				
-			 ^ startAddress + self baseHeaderSize.
+			 ^ startAddress + self baseHeaderSize ]
 			] ifFalse:[ 
 				self uint64At: startAddress put: ((self headerForSlots: numSlots format: formatField classIndex: classIndex) bitOr: pinFlag << self pinnedBitShift).
 				^ startAddress].
