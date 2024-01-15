@@ -3025,6 +3025,7 @@ InterpreterPrimitives >> primitiveNotEqual [
 		ifTrue: [
 		self pop: 2 thenPushBool: integerReceiver ~= integerArgument ]
 		ifFalse: [
+			self druidExitPoint.
 			self druidIgnore: [
 				result := objectMemory hasSixtyFourBitImmediates
 					          ifTrue: [
