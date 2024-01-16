@@ -5568,9 +5568,8 @@ StackInterpreter >> extStoreAndPopReceiverVariableBytecode [
 	variableIndex := self fetchByte + (extA << 8).
 	extA := 0.
 	value := self stackTop.
-	self pop: 1.
 	self
-		storeMaybeContextReceiverVariable: variableIndex
+		storePopMaybeContextReceiverVariable: variableIndex
 		withValue: value.
 	self fetchNextBytecode
 ]
@@ -12648,12 +12647,12 @@ StackInterpreter >> pushNewArrayBytecode [
 		         numSlots: size.
 	popValues
 		ifTrue: [
-			0 to: size - 1 do: [ :i | "Assume: have just allocated a new Array; it must be young. Thus, can use unchecked stores."
+			0 to: size - 1 do: [ :i | "Assume: have just allocated a new Array; it must be young.
+				Thus, can use unchecked stores."
 				objectMemory
-					storePointerUnchecked: i
+					storePointerUnchecked: size - i - 1
 					ofObject: array
-					withValue: (self stackValue: size - i - 1) ].
-			self pop: size ]
+					withValue: self popStack ] ]
 		ifFalse: [
 			0 to: size - 1 do: [ :i |
 				objectMemory
@@ -14697,6 +14696,7 @@ StackInterpreter >> storeAndPopReceiverVariableBytecode [
 
 { #category : #'stack bytecodes' }
 StackInterpreter >> storeAndPopRemoteTempLongBytecode [
+
 	self storeRemoteTempLongBytecode.
 	self pop: 1
 ]
@@ -14803,6 +14803,36 @@ StackInterpreter >> storeMaybeContextReceiverVariable: fieldIndex withValue: anO
 ]
 
 { #category : #'stack bytecodes' }
+StackInterpreter >> storePopMaybeContext: obj receiverVariable: fieldIndex withValue: anOop [
+	"Must trap accesses to married and widowed contexts.
+	 But don't want to check on all inst var accesses.  This
+	 method is only used by the long-form bytecodes, evading the cost."
+
+	<inline: true>
+	((self isWriteMediatedContextInstVarIndex: fieldIndex) and: [
+		 objectMemory isContextNonImm: obj ]) 
+	ifTrue: [
+		self druidForceIntepretation.
+		self druidIgnore: [
+			((self isMarriedOrWidowedContext: obj) or: [
+				 self is: fieldIndex methodAssignmentToContextWithMachineCodePC: anOop ]) 
+			ifTrue: [
+				self pop: 1.
+				^ self instVar: fieldIndex ofContext: obj put: anOop ] ] ].
+	self pop: 1.
+	objectMemory storePointerImmutabilityCheck: fieldIndex ofObject: obj withValue: anOop
+]
+
+{ #category : #'stack bytecodes' }
+StackInterpreter >> storePopMaybeContextReceiverVariable: fieldIndex withValue: anObject [
+	"Must trap accesses to married and widowed contexts.
+	 But don't want to check on all inst var accesses.  This
+	 method is only used by the long-form bytecodes, evading the cost."
+	self storePopMaybeContext: self receiver receiverVariable: fieldIndex withValue: anObject
+
+]
+
+{ #category : #'stack bytecodes' }
 StackInterpreter >> storeRemoteTemp: index inVectorAt: tempVectorIndex [
 
 	| tempVector |
@@ -14821,6 +14851,10 @@ StackInterpreter >> storeRemoteTemp: index inVectorAt: tempVectorIndex [
 
 { #category : #'stack bytecodes' }
 StackInterpreter >> storeRemoteTempLongBytecode [
+
+	<compilationInfo: #isMappedIfImmutability>
+	<needsFrameIfImmutability: 0>
+
 	| remoteTempIndex tempVectorIndex |
 	remoteTempIndex := self fetchByte.
 	tempVectorIndex := self fetchByte.
