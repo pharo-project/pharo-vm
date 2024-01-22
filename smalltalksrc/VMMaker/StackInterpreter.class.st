@@ -1253,7 +1253,10 @@ StackInterpreter class >> initializePrimitiveTable [
 		(223 229 primitiveFail)	"reserved for Cog primitives (see 228 & 229 in CoInterpreterMT"
 
 		(230 primitiveRelinquishProcessor)
-		(231 239 primitiveFail)
+		(231 primitiveFormat)
+
+		(232 239 primitiveFail)
+
 		(240 primitiveUTCMicrosecondClock)
 		(241 primitiveLocalMicrosecondClock)
 		(242 primitiveSignalAtUTCMicroseconds)
@@ -10592,14 +10595,9 @@ StackInterpreter >> pop: nItems thenPushFloat: f [
 
 { #category : #'internal interpreter access' }
 StackInterpreter >> pop: nItems thenPushInteger: integerVal [
-	"lots of places pop a few items off the stack and then push an integer. Make it convenient.
-	 In the StackInterpreter stacks grow down."
-	| sp |
-	<var: #sp type: #'char *'>
-	stackPages
-		unsignedLongAt: (sp := stackPointer + ((nItems - 1) * objectMemory wordSize))
-		put: (objectMemory integerObjectOf: integerVal).
-	stackPointer := sp
+	"lots of places pop a few items off the stack and then push an integer. Make it convenient."
+
+	self pop: nItems thenPush: (objectMemory integerObjectOf: integerVal)
 ]
 
 { #category : #'primitive support' }

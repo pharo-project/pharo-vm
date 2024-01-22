@@ -615,6 +615,7 @@ InterpreterPrimitives >> positive32BitValueOf: oop [
 	"Convert the given object into an integer value.
 	The object may be either a positive SmallInteger or a four-byte LargePositiveInteger."
 	<api>
+	<druidExitPoint>
 	<returnTypeC: #'unsigned int'>
 	objectMemory hasSixtyFourBitImmediates
 		ifTrue:
@@ -1229,6 +1230,8 @@ InterpreterPrimitives >> primitiveChangeClass [
 
 { #category : #'object access primitives' }
 InterpreterPrimitives >> primitiveClass [
+	<numberOfArguments: 0>
+	<checkArgumentCount>
 	| instance |
 	instance := self stackTop.
 	(argumentCount > 0
@@ -1878,6 +1881,18 @@ InterpreterPrimitives >> primitiveFlushExternalPrimitives [
 	self flushExternalPrimitives
 ]
 
+{ #category : #'object access primitives' }
+InterpreterPrimitives >> primitiveFormat [
+
+	| receiver header format |
+	receiver := self stackTop.
+	header := objectMemory baseHeader: receiver.
+	format := objectMemory formatOfHeader: header.
+	self
+		pop: argumentCount + 1
+		thenPush: (objectMemory integerObjectOf: format)
+]
+
 { #category : #'arithmetic float primitives' }
 InterpreterPrimitives >> primitiveFractionalPart [
 	"Fractional part of this float.
@@ -2185,6 +2200,7 @@ InterpreterPrimitives >> primitiveHighResClock [
 
 { #category : #'object access primitives' }
 InterpreterPrimitives >> primitiveIdentical [
+	<numberOfArguments: 1>
 	"is the receiver/first argument the same object as the (last) argument?.
 	 pop argumentCount because this can be used as a mirror primitive."
 	| thisObject otherObject |
@@ -3008,6 +3024,7 @@ InterpreterPrimitives >> primitiveNotEqual [
 		ifTrue: [
 		self pop: 2 thenPushBool: integerReceiver ~= integerArgument ]
 		ifFalse: [
+			self druidExitPoint.
 			self druidIgnore: [
 				result := objectMemory hasSixtyFourBitImmediates
 					          ifTrue: [
@@ -3039,6 +3056,7 @@ InterpreterPrimitives >> primitiveNotEqualLargeIntegers [
 
 { #category : #'object access primitives' }
 InterpreterPrimitives >> primitiveNotIdentical [
+	<numberOfArguments: 1>
 	"is the receiver/first argument not the same object as the (last) argument?.
 	 pop argumentCount because this can be used as a mirror primitive."
 	| thisObject otherObject |

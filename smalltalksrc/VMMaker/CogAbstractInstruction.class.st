@@ -1076,7 +1076,7 @@ CogAbstractInstruction >> getOperandsWithFormat: format [
 						ifTrue: [ (operand > 16 and: [ opcode ~= Label ]) 
 							ifTrue: [ 
 								(operand allMask: 16r80000000) 
-									ifTrue: [ strOperands add: operand, '/', operand signedIntFromLong ].
+									ifTrue: [ strOperands add: operand asString, '/', operand signedIntFromLong asString].
 									strOperands add: operand asString, '/', (operand hex)]
 							ifFalse: [ 
 								strOperands add: operand.
