@@ -4625,7 +4625,9 @@ Cogit >> cog: aMethodObj selector: aSelectorOop [
 	receiverTags := objectMemory receiverTagBitsForMethod: methodObj.
 	cogMethod := self compileCogMethod: aSelectorOop.
 	(cogMethod asInteger between: MaxNegativeErrorCode and: -1) ifTrue:
-		[cogMethod asInteger = InsufficientCodeSpace ifTrue:
+		[
+		coInterpreter maybeFlagMethodAsInterpreted: aMethodObj.
+		cogMethod asInteger = InsufficientCodeSpace ifTrue:
 			[coInterpreter callForCogCompiledCodeCompaction].
 		 self maybeFreeCounters.
 		 "Right now no errors should be reported, so nothing more to do."

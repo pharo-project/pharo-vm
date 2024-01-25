@@ -4305,6 +4305,7 @@ CoInterpreter >> maybeFlagMethodAsInterpreted: aMethod [
 	 from the image header flags."
 
 	| rawHeader realHeader |
+	<api>
 	rawHeader := self rawHeaderOf: aMethod.
 	realHeader := (self isCogMethodReference: rawHeader)
 		              ifTrue: [
