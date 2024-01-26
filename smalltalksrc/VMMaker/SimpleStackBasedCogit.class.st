@@ -1995,7 +1995,7 @@ SimpleStackBasedCogit >> genPushLiteralVariableBytecode [
 SimpleStackBasedCogit >> genPushMaybeContextReceiverVariable: slotIndex [
 
 	<inline: false>
-	<var: #jmpSingle type: #'AbstractInstruction '>
+	<var: #jmpSingle type: #'AbstractInstruction'>
 	<var: #jmpDone type: #AbstractInstruction>
 	| jmpSingle jmpDone |
 	self assert: needsFrame.
