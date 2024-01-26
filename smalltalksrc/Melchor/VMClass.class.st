@@ -557,6 +557,12 @@ VMClass >> druidFail [
 	self error
 ]
 
+{ #category : #'miscellaneous bytecodes' }
+VMClass >> druidForceIntepretation [
+	"Tell the compiler we should execute the code below this point compiled but interpreted"
+	"Ignore in the interpreter"
+]
+
 { #category : #'druid support' }
 VMClass >> druidIgnore: aBlock [
 

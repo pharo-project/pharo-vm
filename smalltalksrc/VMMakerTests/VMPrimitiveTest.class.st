@@ -98,26 +98,30 @@ VMPrimitiveTest >> setUp [
 
 { #category : #'tests - primitiveIdentical' }
 VMPrimitiveTest >> setUpForwardedObjects [
+
 	| class1 class2 object1 object2 array1 array2 |
-	
-	class1 := self newClassInOldSpaceWithSlots: 1 instSpec: memory nonIndexablePointerFormat.
-	class2 := self newClassInOldSpaceWithSlots: 2 instSpec: memory nonIndexablePointerFormat.
-	
+	class1 := self
+		          newClassInOldSpaceWithSlots: 1
+		          instSpec: memory nonIndexablePointerFormat.
+	class2 := self
+		          newClassInOldSpaceWithSlots: 2
+		          instSpec: memory nonIndexablePointerFormat.
+
 	object1 := memory instantiateClass: class1.
 	object2 := memory instantiateClass: class2.
-	
+
 	array1 := self newArrayWith: { object1 }.
 	array2 := self newArrayWith: { object2 }.
-	
+
 	interpreter push: array1.
-	interpreter push: array2. 
-	
+	interpreter push: array2.
+
 	interpreter primitiveArrayBecome.
-	
+
 	self assert: (memory isForwarded: object1) equals: true.
 	self assert: (memory isForwarded: object2) equals: true.
-	
-	^ object1. 
+
+	^ object1
 ]
 
 { #category : #running }
@@ -1910,38 +1914,37 @@ VMPrimitiveTest >> testPrimitiveIdenticalDoesntFailForForwardedOopOnOtherObjectW
 ]
 
 { #category : #'tests - primitiveIdentical' }
-VMPrimitiveTest >> testPrimitiveIdenticalFailsForForwardedOopOnOtherObject [
+VMPrimitiveTest >> testPrimitiveIdenticalFailsNonIdenticalObjectsWithForwarderArgument [
 	|object1|
 	"Tests the case where objectArg > 1 and: isOopFowarded: stackTop"
 	
 	object1 := self setUpForwardedObjects.
 	
-	interpreter argumentCount: 3.
+	interpreter argumentCount: 2.
 	
 	interpreter push: (memory integerObjectOf: 16). 
 	interpreter push: object1.
 	 
 	interpreter primitiveIdentical. 
 
-	self assert: interpreter failed. 
-	self assert: interpreter primFailCode equals: PrimErrBadArgument.
-	
+	self deny: (memory booleanValueOf: interpreter popStack)
 ]
 
 { #category : #'tests - primitiveIdentical' }
-VMPrimitiveTest >> testPrimitiveIdenticalFailsForForwardedOopOnReceiver [
+VMPrimitiveTest >> testPrimitiveIdenticalFailsNonIdenticalObjectsWithForwarderReceiver [
 	|object1|
+	"Tests the case where objectArg > 1 and: isOopFowarded: stackTop"
 	
-	object1 := self setUpForwardedObjects. 
+	object1 := self setUpForwardedObjects.
 	
-	interpreter push: object1. 
+	interpreter argumentCount: 2.
+	
+	interpreter push: object1.
 	interpreter push: (memory integerObjectOf: 16). 
-	
+	 
 	interpreter primitiveIdentical. 
 
-	self assert: interpreter failed. 
-	self assert: interpreter primFailCode equals: PrimErrBadArgument.
-	
+	self deny: (memory booleanValueOf: interpreter popStack)
 ]
 
 { #category : #'tests - primitiveIdentical' }
@@ -2019,6 +2022,57 @@ VMPrimitiveTest >> testPrimitiveIdenticalReturnsTrueForImmediateObjectsWithSameV
 
 	self assert: interpreter stackTop equals: memory trueObject. 
 	
+]
+
+{ #category : #'tests - primitiveIdentical' }
+VMPrimitiveTest >> testPrimitiveIdenticalSuccessIdenticalObjectsWithForwarderArgument [
+	|object1|
+	"Tests the case where objectArg > 1 and: isOopFowarded: stackTop"
+	
+	object1 := self setUpForwardedObjects.
+	
+	interpreter argumentCount: 2.
+	
+	interpreter push: (memory followForwarded: object1).
+	interpreter push: object1.
+	 
+	interpreter primitiveIdentical. 
+
+	self assert: (memory booleanValueOf: interpreter popStack)
+]
+
+{ #category : #'tests - primitiveIdentical' }
+VMPrimitiveTest >> testPrimitiveIdenticalSuccessIdenticalObjectsWithForwarderBothOperands [
+	|object1|
+	"Tests the case where objectArg > 1 and: isOopFowarded: stackTop"
+	
+	object1 := self setUpForwardedObjects.
+	
+	interpreter argumentCount: 2.
+	
+	interpreter push: object1.
+	interpreter push: object1.
+	 
+	interpreter primitiveIdentical. 
+
+	self assert: (memory booleanValueOf: interpreter popStack)
+]
+
+{ #category : #'tests - primitiveIdentical' }
+VMPrimitiveTest >> testPrimitiveIdenticalSuccessIdenticalObjectsWithForwarderReceiver [
+	|object1|
+	"Tests the case where objectArg > 1 and: isOopFowarded: stackTop"
+	
+	object1 := self setUpForwardedObjects.
+	
+	interpreter argumentCount: 2.
+	
+	interpreter push: object1.
+	interpreter push: (memory followForwarded: object1).
+	 
+	interpreter primitiveIdentical. 
+
+	self assert: (memory booleanValueOf: interpreter popStack)
 ]
 
 { #category : #'tests - primitiveImmediateAsInteger' }

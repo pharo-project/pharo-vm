@@ -618,12 +618,6 @@ SimpleDruidJIT >> couldBeObject: literal [
 	  and: [self oop: literal isGreaterThanOrEqualTo: objectMemory getMemoryMap startOfObjectMemory]
 ]
 
-{ #category : #accessing }
-SimpleDruidJIT >> deadCode: aBoolean [ 
-	
-	"Nothing, compatibility with Stack to register based cogit"
-]
-
 { #category : #'trait candidates' }
 SimpleDruidJIT >> genActiveContextTrampolineLarge: isLarge inBlock: isInBlock called: aString [
 	<var: #aString type: #'char *'>

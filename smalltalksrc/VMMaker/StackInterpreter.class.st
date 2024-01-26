@@ -5001,12 +5001,6 @@ StackInterpreter >> doWaitSemaphore: sema reEnterInterpreter: hasToReenter [
 			hasToReenter ifTrue: [self forProcessPrimitiveReturnToExecutivePostContextSwitch: inInterpreter]]
 ]
 
-{ #category : #'miscellaneous bytecodes' }
-StackInterpreter >> druidForceIntepretation [
-	"Tell the compiler we should execute the code below this point compiled but interpreted"
-	"Ignore in the interpreter"
-]
-
 { #category : #initialization }
 StackInterpreter >> dummyReferToProxy [
 	<inline: false>
