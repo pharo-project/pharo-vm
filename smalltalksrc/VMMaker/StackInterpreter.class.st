@@ -1112,9 +1112,9 @@ StackInterpreter class >> initializePrimitiveTable [
 		(90 primitiveMoveToPermSpace)
 		(91 primitiveMoveToPermSpaceInBulk)
 		(92 primitiveIsInPermSpace)
+		(93 primitiveMoveToPermSpaceAllOldObjects)
 
-		"Input/Output Primitives (93-109)"
-		(93 primitiveFail)
+		"Input/Output Primitives (94-109)"
 		(94 primitiveFail)
 		(95 primitiveFail)
 		(96 primitiveFail)
@@ -5218,12 +5218,12 @@ StackInterpreter >> establishFrameForContextToReturnTo: contextToReturnTo [
 
 { #category : #'send bytecodes' }
 StackInterpreter >> executeNewMethod [
+	
 	"Eagerly compile method"
-
 	self executeNewMethod: true
 ]
 
-{ #category : #'send bytecodes' }
+{ #category : #'message sending' }
 StackInterpreter >> executeNewMethod: eagerlyCompile [
 	"if not primitive, or primitive failed, activate the method"
 
@@ -11314,15 +11314,18 @@ StackInterpreter >> printAllStacks [
 	self
 		cr;
 		print: 'suspended processes'.
+	
+	"Semaphore or mutex classes could not be installed"
 	semaphoreClass := objectMemory classSemaphore.
 	mutexClass := objectMemory classMutex.
-	semaphoreClass := objectMemory compactIndexOfClass: semaphoreClass.
-	mutexClass := objectMemory compactIndexOfClass: mutexClass.
+	semaphoreClass := semaphoreClass = objectMemory nilObject ifFalse: [ objectMemory compactIndexOfClass: semaphoreClass ].
+	mutexClass := mutexClass = objectMemory nilObject ifFalse: [ objectMemory compactIndexOfClass: mutexClass ].
 	objectMemory allHeapEntitiesDo: [ :obj | 
 		| classIdx |
 		classIdx := objectMemory classIndexOf: obj.
-		(classIdx = semaphoreClass or: [ classIdx = mutexClass ]) ifTrue: [ 
-			self printProcsOnList: obj ] ]
+		((semaphoreClass notNil and: [ classIdx = semaphoreClass ])
+			or: [ mutexClass notNil and: [ classIdx = mutexClass ] ])
+				ifTrue: [ self printProcsOnList: obj ] ]
 ]
 
 { #category : #'debug printing' }

@@ -2528,6 +2528,12 @@ StackInterpreterPrimitives >> primitiveMoveToPermSpace [
 ]
 
 { #category : #'perm - space' }
+StackInterpreterPrimitives >> primitiveMoveToPermSpaceAllOldObjects [
+	
+	objectMemory moveToPermSpaceAllOldObjects
+]
+
+{ #category : #'perm - space' }
 StackInterpreterPrimitives >> primitiveMoveToPermSpaceInBulk [
 
 	| rcvr |

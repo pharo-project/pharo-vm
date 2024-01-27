@@ -536,8 +536,7 @@ VMMemoryMap >> isPermanentObject: anOop [
 
 	<api>
 
-	^ (anOop bitAnd: spaceMaskToUse) = permSpaceMask
-
+	^ anOop >= self fixedPermSpaceStart 
 ]
 
 { #category : #'testing objects' }
