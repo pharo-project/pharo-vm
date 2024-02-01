@@ -984,6 +984,12 @@ SimpleStackBasedCogit >> compilePrimitive [
 ]
 
 { #category : #accessing }
+SimpleStackBasedCogit >> deadCode: aBoolean [ 
+	
+	"Nothing, compatibility with Stack to register based cogit"
+]
+
+{ #category : #accessing }
 SimpleStackBasedCogit >> directedBindingSuperSendTrampolineAt: anAddress put: aTrampolineAddress [
 	
 	directedSuperBindingSendTrampolines at: anAddress put: aTrampolineAddress
