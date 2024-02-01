@@ -4532,6 +4532,15 @@ CogARMv8Compiler >> isPCRelativeValueLoad: instr [
 	^ (instr bitAnd: 2r10011111 << 24) = (1 << 28)
 ]
 
+{ #category : #testing }
+CogARMv8Compiler >> isShiftable16bitImmediate: constant [
+
+	^ self
+		  shiftable16bitImmediate: constant
+		  ifTrue: [ :s :v | true ]
+		  ifFalse: [ false ]
+]
+
 { #category : #'private-bit-manipulation' }
 CogARMv8Compiler >> isShiftedMask: aMask [
 
@@ -5866,7 +5875,7 @@ CogARMv8Compiler >> shiftable16bitImmediate: constant ifTrue: trueAlternativeBlo
 	
 	(constant bitAnd: 16rFFFF) = constant ifTrue:
 		[^trueAlternativeBlock value: 0 value: constant].
-	0 to: 2 do: [:i | | shiftedValue shiftMagnitude |
+	0 to: 1 do: [:i | | shiftedValue shiftMagnitude |
 		shiftMagnitude := (1 << i) * 16.
 		shiftedValue := constant >> shiftMagnitude.
 		(shiftedValue << shiftMagnitude = constant and: [ (shiftedValue bitAnd: 16rFFFF) = shiftedValue ])
