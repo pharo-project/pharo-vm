@@ -452,8 +452,7 @@ DruidJIT class >> bytecodeTable [
 		  #isMapped. #v4:Long:Branch:Distance: }.
 		  { 2. 239. 239. #gen_ExtJumpIfFalse. #branch. #isBranchFalse.
 		  #isMapped. #v4:Long:Branch:Distance: }.
-		  { 2. 240. 240. #gen_ExtStoreAndPopReceiverVariableBytecode.
-		  #isInstVarRef. #isMappedIfImmutability }.
+		  { 2. 240. 240. #unknownBytecode }.
 		  { 2. 241. 241. #gen_ExtStoreAndPopLiteralVariableBytecode.
 		  #isMappedIfImmutability }.
 		  { 2. 242. 242. #gen_LongStoreAndPopTemporaryVariableBytecode }.
@@ -472,7 +471,7 @@ DruidJIT class >> bytecodeTable [
 		  { 3. 252. 252. #gen_StoreRemoteTempLongBytecode.
 		  #isMappedIfImmutability. #needsFrameIfImmutability:.
 		  0 }.
-		  { 3. 253. 253. #gen_StoreAndPopRemoteTempLongBytecode }.
+		  { 3. 253. 253. #unknownBytecode }.
 		  { 3. 254. 254. #unknownBytecode }.
 		  { 3. 255. 255. #unknownBytecode } }
 ]
@@ -4330,25 +4329,25 @@ DruidJIT >> gen_PrimitiveDivide [
 	self
 		DivR: SendNumArgsReg
 		R: ClassReg
-		Quo: Extra0Reg
-		Rem: Extra1Reg.
-	self CmpCq: 0 R: Extra1Reg.
+		Quo: Extra1Reg
+		Rem: Extra0Reg.
+	self CmpCq: 0 R: Extra0Reg.
 	jump4 := self JumpNonZero: 0.
 	self
 		DivR: SendNumArgsReg
 		R: ClassReg
-		Quo: Extra0Reg
-		Rem: Extra1Reg.
-	self MoveR: Extra0Reg R: Extra1Reg.
-	self ArithmeticShiftRightCq: 60 R: Extra1Reg.
-	self AddCq: 1 R: Extra1Reg.
-	self AndCq: 15 R: Extra1Reg.
-	self CmpCq: 1 R: Extra1Reg.
+		Quo: Extra1Reg
+		Rem: Extra0Reg.
+	self MoveR: Extra1Reg R: Extra0Reg.
+	self ArithmeticShiftRightCq: 60 R: Extra0Reg.
+	self AddCq: 1 R: Extra0Reg.
+	self AndCq: 15 R: Extra0Reg.
+	self CmpCq: 1 R: Extra0Reg.
 	jump5 := self JumpGreater: 0.
-	self MoveR: Extra0Reg R: Extra1Reg.
-	self LogicalShiftLeftCq: 3 R: Extra1Reg.
-	self AddCq: 1 R: Extra1Reg.
-	self MoveR: Extra1Reg R: ReceiverResultReg.
+	self MoveR: Extra1Reg R: Extra0Reg.
+	self LogicalShiftLeftCq: 3 R: Extra0Reg.
+	self AddCq: 1 R: Extra0Reg.
+	self MoveR: Extra0Reg R: ReceiverResultReg.
 	self genPrimReturn.
 	currentBlock := self Label.
 	jump1 jmpTarget: currentBlock.
@@ -4697,31 +4696,27 @@ DruidJIT >> gen_PrimitiveMod [
 	self
 		DivR: SendNumArgsReg
 		R: ClassReg
-		Quo: ClassReg
-		Rem: Extra0Reg.
+		Quo: Extra0Reg
+		Rem: ClassReg.
 	self CmpCq: 0 R: SendNumArgsReg.
 	jump3 := self JumpGreaterOrEqual: 0.
-	self CmpCq: 0 R: Extra0Reg.
+	self CmpCq: 0 R: ClassReg.
 	jump4 := self JumpLessOrEqual: 0.
-	self AddR: SendNumArgsReg R: Extra0Reg.
-	self MoveR: Extra0Reg R: ClassReg.
+	self AddR: SendNumArgsReg R: ClassReg.
 	jump5 := self Jump: 0.
 	currentBlock := self Label.
 	jump4 jmpTarget: currentBlock.
-	self MoveR: Extra0Reg R: ClassReg.
 	currentBlock := self Label.
 	jump5 jmpTarget: currentBlock.
 	jump5 := self Jump: 0.
 	currentBlock := self Label.
 	jump3 jmpTarget: currentBlock.
-	self CmpCq: 0 R: Extra0Reg.
+	self CmpCq: 0 R: ClassReg.
 	jump3 := self JumpGreaterOrEqual: 0.
-	self AddR: SendNumArgsReg R: Extra0Reg.
-	self MoveR: Extra0Reg R: ClassReg.
+	self AddR: SendNumArgsReg R: ClassReg.
 	jump4 := self Jump: 0.
 	currentBlock := self Label.
 	jump3 jmpTarget: currentBlock.
-	self MoveR: Extra0Reg R: ClassReg.
 	currentBlock := self Label.
 	jump4 jmpTarget: currentBlock.
 	currentBlock := self Label.
@@ -5046,27 +5041,27 @@ DruidJIT >> gen_PrimitiveNewWithArg [
 	self
 		DivR: ClassReg
 		R: Extra0Reg
-		Quo: ClassReg
-		Rem: Extra0Reg.
+		Quo: Extra0Reg
+		Rem: ClassReg.
 	s90 := 4.
-	self MoveCq: s90 R: Extra0Reg.
-	self SubR: SendNumArgsReg R: Extra0Reg.
-	self AndCq: 3 R: Extra0Reg.
-	self AddR: Extra0Reg R: Extra1Reg.
-	self MoveR: ClassReg R: SendNumArgsReg.
+	self MoveCq: s90 R: ClassReg.
+	self SubR: SendNumArgsReg R: ClassReg.
+	self AndCq: 3 R: ClassReg.
+	self AddR: ClassReg R: Extra1Reg.
+	self MoveR: Extra0Reg R: SendNumArgsReg.
 	self MoveCq: s14 R: Extra0Reg.
 	jump8 := self Jump: 0.
 	currentBlock := self Label.
 	jump3 jmpTarget: currentBlock.
 	self CmpCq: 16 R: Extra1Reg.
 	jump3 := self JumpNonZero: 0.
-	self MoveR: SendNumArgsReg R: Extra0Reg.
-	self AddCq: 7 R: Extra0Reg.
+	self MoveR: SendNumArgsReg R: ClassReg.
+	self AddCq: 7 R: ClassReg.
 	s102 := 8.
-	self MoveCq: s102 R: ClassReg.
+	self MoveCq: s102 R: Extra0Reg.
 	self
-		DivR: ClassReg
-		R: Extra0Reg
+		DivR: Extra0Reg
+		R: ClassReg
 		Quo: ClassReg
 		Rem: Extra0Reg.
 	s105 := 8.
