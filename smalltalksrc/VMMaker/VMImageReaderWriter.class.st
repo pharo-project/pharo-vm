@@ -6,7 +6,14 @@ Class {
 		'spurImageWriter',
 		'composedImageReader',
 		'composedImageWriter',
-		'useComposedAsDefault'
+		'formatToUse'
+	],
+	#classVars : [
+		'AutodetectFormat',
+		'ComposedFormatDetected',
+		'ComposedFormatForced',
+		'SpurFormatDetected',
+		'SpurFormatForced'
 	],
 	#category : #'VMMaker-ImageFormat'
 }
@@ -34,6 +41,16 @@ VMImageReaderWriter class >> declareCVarsIn: aCCodeGenerator [
 		staticallyResolvedPolymorphicReceiver: #composedImageWriter to: ComposedImageWriter.
 ]
 
+{ #category : #initialization }
+VMImageReaderWriter class >> initialize [
+
+	AutodetectFormat := 0.
+	ComposedFormatDetected := 1.
+	SpurFormatDetected := 2. 
+	ComposedFormatForced := 3.
+	SpurFormatForced := 4.
+]
+
 { #category : #'instance creation' }
 VMImageReaderWriter class >> newWithMemory: memory andInterpreter: anInterpreter [
 
@@ -43,10 +60,33 @@ VMImageReaderWriter class >> newWithMemory: memory andInterpreter: anInterpreter
 		yourself
 ]
 
+{ #category : #format }
+VMImageReaderWriter >> autodetectFormat: aFileName [
+
+	formatToUse = AutodetectFormat 
+		ifTrue: [ 
+			(self sqImageIsDirectory: aFileName)
+				ifTrue: [ 
+					self logDebug: 'Composed Image Format detected'.
+					formatToUse := ComposedFormatDetected  ]
+				ifFalse: [ 
+					self logDebug: 'Spur Image Format detected'.
+					formatToUse := SpurFormatDetected  ] ]
+]
+
+{ #category : #format }
+VMImageReaderWriter >> hasToUseComposedFormat [
+
+	formatToUse = AutodetectFormat 
+		ifTrue: [ self error: 'I couldn''t detect the format before using it' ].
+		
+	^ formatToUse = ComposedFormatDetected or: [ formatToUse = ComposedFormatForced ] 
+]
+
 { #category : #initialization }
 VMImageReaderWriter >> initWithMemory: memory andInterpreter: anInterpreter [
 
-	useComposedAsDefault := false.
+	formatToUse := AutodetectFormat.
 	
 	spurImageReader := SpurImageReader newWithMemory: memory andInterpreter: anInterpreter.
 	spurImageWriter := SpurImageWriter newWithMemory: memory andInterpreter: anInterpreter.
@@ -58,7 +98,7 @@ VMImageReaderWriter >> initWithMemory: memory andInterpreter: anInterpreter [
 { #category : #api }
 VMImageReaderWriter >> loadImageFromFile: aFile withHeader: aSpurImageHeaderStruct [
 
-	^ useComposedAsDefault
+	^ self hasToUseComposedFormat
 		ifTrue: [
 			composedImageReader
 				doLoadImageFromFile: aFile
@@ -69,27 +109,46 @@ VMImageReaderWriter >> loadImageFromFile: aFile withHeader: aSpurImageHeaderStru
 				withHeader: aSpurImageHeaderStruct ]
 ]
 
+{ #category : #format }
+VMImageReaderWriter >> logDebug: anString [
+
+	<doNotGenerate>
+	anString traceCr.
+]
+
 { #category : #api }
 VMImageReaderWriter >> readImageNamed: imageName [
 
 	<var: #imageName declareC: 'char *imageName'>
 	<api>
 
-	useComposedAsDefault
+	self autodetectFormat: imageName.
+
+	self hasToUseComposedFormat
 		ifTrue: [ composedImageReader readImageNamed: imageName ]
 		ifFalse: [ spurImageReader readImageNamed: imageName ]
+]
+
+{ #category : #format }
+VMImageReaderWriter >> sqImageIsDirectory: aFileName [
+
+	<doNotGenerate>
+	
+	^ aFileName asFileReference isDirectory 
 ]
 
 { #category : #accessing }
 VMImageReaderWriter >> useComposedImageFormatAsDefault: aBoolean [ 
 	
-	useComposedAsDefault := aBoolean
+	formatToUse := aBoolean ifTrue: [ ComposedFormatForced ] ifFalse: [ SpurFormatForced ]
 ]
 
 { #category : #testing }
 VMImageReaderWriter >> validateImage: aString [
 
-	^ useComposedAsDefault
+	<doNotGenerate>
+
+	^ self hasToUseComposedFormat
 		ifTrue: [ composedImageReader validateImage: aString ]
 		ifFalse: [ spurImageReader validateImage: aString ]
 ]
@@ -101,7 +160,7 @@ VMImageReaderWriter >> writeImageFile: imageFileName fromHeader: header [
 	<var: #header type: #SpurImageHeaderStruct>
 
 
-	useComposedAsDefault
+	self hasToUseComposedFormat
 		  ifTrue: [
 			  ^ composedImageWriter
 				  writeImageFile: imageFileName
