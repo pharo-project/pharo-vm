@@ -66,3 +66,34 @@ SpurMemoryManager >> inspectorHiddenRootsIn: composite [
 		addColumn: (SpStringTableColumn title: 'Address' evaluated: [ :hiddenRoot | hiddenRoot oop ])
 
 ]
+
+{ #category : #'*VMMaker-Tools' }
+SpurMemoryManager >> inspectorOldSpaceEntities: composite [
+
+	<inspectorPresentationOrder: 3 title: 'Old Space Entities'>
+
+	| entities unscannedEphemeronList |
+	entities := self allOldSpaceEntities collect: [ :oop | self asVMOop: oop ].
+	unscannedEphemeronList := #().
+	unscannedEphemerons start ifNotNil: [ unscannedEphemeronList := (unscannedEphemerons start to: unscannedEphemerons top - self bytesPerOop by: self bytesPerOop) collect: [ :p | self longAt: p] ].
+
+	^ SpTreeTablePresenter new
+"		alternateRowsColor;"
+		enableSearch;
+		items: entities;
+		children: [ :oop | oop pointers ];
+		addColumn: (SpStringTableColumn title: 'Oop' evaluated: [ :oop | oop oop ]);
+		addColumn: (SpStringTableColumn title: 'Oop(hex)' evaluated: [ :oop | oop oop hex ]);
+		addColumn: (SpStringTableColumn title: 'Label' evaluated: [ :oop | oop label ]);
+		addColumn: (SpStringTableColumn title: 'Type' evaluated: [ :oop | oop type ]);
+		addColumn: (SpStringTableColumn title: 'classIndex' evaluated: [ :oop | oop classIndex ]);
+		addColumn: (SpStringTableColumn title: 'rawNumSlots' evaluated: [ :oop | oop rawNumSlots ]);
+		addColumn: (SpStringTableColumn title: 'numSlots' evaluated: [ :oop | oop numSlots ]);
+		addColumn: (SpStringTableColumn title: 'bytes' evaluated: [ :oop | oop bytes ]);
+		addColumn: (SpStringTableColumn title: '1st pointer' evaluated: [ :oop | oop pointer: 0 ]);
+		addColumn: (SpStringTableColumn title: 'Format' evaluated: [ :oop | oop format ]);
+		addColumn: (SpStringTableColumn title: 'Flags&Misc' evaluated: [ :oop | oop flags,
+			 ((unscannedEphemeronList includes: oop oop) ifTrue: ['U'] ifFalse: ['.'])]);
+		yourself
+
+]

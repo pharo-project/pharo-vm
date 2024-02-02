@@ -1661,6 +1661,18 @@ SpurMemoryManager >> allOldMarkedWeakObjectsOnWeaklingStack [
 ]
 
 { #category : #'object enumeration' }
+SpurMemoryManager >> allOldSpaceEntities [
+
+	<doNotGenerate>
+
+	| result |
+	result := OrderedCollection new.
+	self allOldSpaceEntitiesDo: [ :entity | result add: entity ].
+	^ result
+
+]
+
+{ #category : #'object enumeration' }
 SpurMemoryManager >> allOldSpaceEntitiesDo: aBlock [
 
 	self allOldSpaceEntitiesFrom: self firstObject do: aBlock
@@ -3878,6 +3890,8 @@ SpurMemoryManager >> cleanUpPermToOldSpaceRememeberedSet [
 
 	self getFromPermToOldSpaceRememberedSet rememberedSetWithIndexDo:[ :oop :i | 
 		self setIsMarkedOf: oop to: false ].
+
+	self getFromPermToOldSpaceRememberedSet shrinkRememberedSet.
 	
 	self assert: self allPermSpaceObjectsUnmarked.
 
@@ -6775,7 +6789,10 @@ SpurMemoryManager >> initializeObjectMemory: bytesToShift [
 	self initializeNewSpaceVariables.
 
 	fromOldSpaceRememberedSet initializeRememberedSetShouldStartEmpty: true.
+	
 	fromPermToOldSpaceRememberedSet initializeRememberedSetShouldStartEmpty: false.
+	fromPermToOldSpaceRememberedSet doFullScan: true.
+	
 	fromPermToNewSpaceRememberedSet initializeRememberedSetShouldStartEmpty: true.
 	
 	segmentManager checkSegments.
@@ -8033,12 +8050,13 @@ SpurMemoryManager >> isValidToMoveToPermSpace: objOop [
 
 	| fmt |
 
-	(self isImmediate: objOop) 
+	((self isImmediate: objOop) or: [self isFixedKnownObject: objOop]) 
 		ifTrue: [ ^ false ].
 	
-	self assert: (self isForwarded: objOop) not.
-	
 	(self isForwarded: objOop) 
+		ifTrue: [ ^ false ].	
+
+	(self isPinned: objOop) 
 		ifTrue: [ ^ false ].	
 	
 	fmt := self formatOf: objOop. 
@@ -8142,7 +8160,10 @@ self mournQueue = oop ifTrue: [ ^ 'mournQueue' ].
 self markStack = oop ifTrue: [ ^ 'markStack' ].
 self weaklingStack = oop ifTrue: [ ^ 'weaklingStack' ].
 self freeListsObj = oop ifTrue: [ ^ 'freeListsObj' ].
-self rememberedSetObj = oop ifTrue: [ ^ 'rememberedSetObj' ].
+self oldRememberedSetObj = oop ifTrue: [ ^ 'oldRememberedSetObj' ].
+self permToNewRememberedSetObj  = oop ifTrue: [ ^ 'permToNewRememberedSetObj' ].
+self permToOldRememberedSetObj   = oop ifTrue: [ ^ 'permToOldRememberedSetObj' ].
+
 ^ ''
 ]
 
@@ -8521,20 +8542,46 @@ SpurMemoryManager >> markAllUnscannedEphemerons [
 	 The wrinkle is that doing so may add more ephemerons to the set.
 	 So we remove the first element, by overwriting it with the last element,
 	 and decrementing the top, and then markAndTrace its contents."
+
 	"self assert: (self noUnscannedEphemerons) not."
+
+	| nextOffsetToScan lastOffsetToScan |
 	self assert: self allUnscannedEphemeronsAreActive.
-	[unscannedEphemerons top > unscannedEphemerons start] whileTrue:
-		[| ephemeron key lastptr |
-		 ephemeron := self longAt: unscannedEphemerons start.
-		 lastptr := unscannedEphemerons top - self bytesPerOop.
-		 lastptr > unscannedEphemerons start ifTrue:
-			[self longAt: unscannedEphemerons start put: (self longAt: lastptr)].
-		 unscannedEphemerons top: lastptr.
-		 key := self followedKeyOfMaybeFiredEphemeron: ephemeron.
-		 self setIsMarkedOf: ephemeron to: false. "to get it to be fully scanned in markAndTrace:"
-		 self
+	nextOffsetToScan := unscannedEphemerons start.
+	lastOffsetToScan := unscannedEphemerons top.
+	[ lastOffsetToScan > nextOffsetToScan ] whileTrue: [
+		| ephemeron key lastptr |
+		ephemeron := self longAt: nextOffsetToScan.
+
+		key := self followedKeyOfMaybeFiredEphemeron: ephemeron.
+		self setIsMarkedOf: ephemeron to: false. "to get it to be fully scanned in markAndTrace:"
+		self
 			markAndTrace: key;
-			markAndTrace: ephemeron]
+			markAndTrace: ephemeron.
+
+		"Now we compact the array to ensure that all elements between start and top are valid objects.
+		We move the last element in the list to the start.
+		We could have moved a newly discovered ephemeron or an ephemeron we already had. See below"
+		lastptr := unscannedEphemerons top - self bytesPerOop.
+		lastptr > nextOffsetToScan ifTrue: [
+			self longAt: nextOffsetToScan put: (self longAt: lastptr) ].
+		
+		"New ephemerons are above the lastOffsetToScan.
+		If we find new ephemerons, we need to move the nextOffsetToScan up. Otherwise, move the lastOffsetToScan down.
+		The invariant are that:
+		 - the objects originally in the array will always be between nextOffsetToScan and lastOffsetToScan
+		 - both the differences lastOffsetToScan-nextOffsetToScan and unscannedEphemerons top - unscannedEphemerons start go down by one in each iteration."
+		unscannedEphemerons top > lastOffsetToScan
+			ifTrue: [
+				"New ephemeron was moved down, move nextOffsetToScan up"
+				nextOffsetToScan := nextOffsetToScan + self bytesPerOop ]
+			ifFalse: [
+				"Old ephemeron was moved down, move lastOffsetToScan down"
+				lastOffsetToScan := lastOffsetToScan - self bytesPerOop
+		].
+		"Then move the top of the full array down by one element"
+		unscannedEphemerons top: lastptr.
+	].
 ]
 
 { #category : #'gc - global' }
@@ -9189,6 +9236,31 @@ SpurMemoryManager >> moveToPermSpace: objOop [
 ]
 
 { #category : #'perm - space' }
+SpurMemoryManager >> moveToPermSpaceAllOldObjects [
+
+	<inline: false>
+	"Clearing the flag for all"
+	becomeEffectsFlags := 0.
+
+	self allOldSpaceObjectsDo: [ :objOop |
+		"If it is a hidden Object of the VM, we skip it"
+		((self classIndexOf: objOop) <= self classIsItselfClassIndexPun)
+			ifFalse: [
+			(self isValidToMoveToPermSpace: objOop) 
+				ifTrue: [ self doMoveToPermSpace: objOop addToRememberedSet: true ]]].
+
+	self allPermSpaceObjectsDo: [ :permObj |
+		self followForwardedObjectFields: permObj toDepth: 0 ].
+
+	self recreateFromPermSpaceRememberedSet.
+
+	becomeEffectsFlags := BecamePointerObjectFlag + BecameActiveClassFlag
+		                      bitOr: BecameCompiledMethodFlag.
+	self doAfterMoveToPermSpace.
+
+]
+
+{ #category : #'perm - space' }
 SpurMemoryManager >> moveToPermSpaceInBulk: anArrayOop [
 
 	<inline: false>
@@ -9538,6 +9610,15 @@ SpurMemoryManager >> noUnscannedEphemerons [
 SpurMemoryManager >> nonIndexablePointerFormat [
 	<api>
 	^1
+]
+
+{ #category : #'garbage collection' }
+SpurMemoryManager >> nullHeaderForMachineCodeMethod [
+	<api>
+	<returnTypeC: #sqLong>
+	^(self firstLongFormat << self formatShift)
+	+ (1 << self markedBitFullShift)
+	+ ClassBitmapCompactIndex
 ]
 
 { #category : #'object access' }
@@ -10277,22 +10358,25 @@ SpurMemoryManager >> possibleOldObjectStoreInto: destObj [
 SpurMemoryManager >> possiblePermObjectStoreInto: destObj value: valueObj [
 
 	<inline: true>
-	
-	(self isImmediate: valueObj)
-		ifTrue: [ ^ self ].
-	
-	(self isFixedKnownObject: valueObj)
-		ifTrue: [ ^ self ].
-	
-	(self isInObjectMemory: valueObj)
-		ifFalse: [ ^ self ].
-	
 	(self isRemembered: destObj)
 		ifTrue: [ ^ self ].
-	
-	(self isPermanent: destObj) ifTrue: [ 
-		(self getMemoryMap isPermanentObject: valueObj) ifFalse: [ 
-				self getFromPermToNewSpaceRememberedSet remember: destObj ] ]
+
+	(self isImmediate: valueObj)
+		ifTrue: [ ^ self ].
+
+	(self getMemoryMap isPermanentObject: destObj) 
+		ifFalse: [ ^ self ].
+
+	(self getMemoryMap isPermanentObject: valueObj) 
+		ifTrue: [ ^ self ].
+		
+	(self isFixedKnownObject: valueObj)
+		ifTrue: [ ^ self ].
+
+	(self isInObjectMemory: valueObj)
+		ifFalse: [ ^ self ].
+		
+	self getFromPermToNewSpaceRememberedSet remember: destObj.
 ]
 
 { #category : #'become implementation' }
