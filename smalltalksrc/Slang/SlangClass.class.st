@@ -40,6 +40,12 @@ SlangClass class >> prepareToBeAddedToCodeGenerator: aCCodeGenerator [
 	 superclass's methods by deleting them before it adds its own."
 ]
 
+{ #category : #'as yet unclassified' }
+SlangClass class >> renameSelectorIfStaticallyResolved: aString [ 
+
+	^ aString
+]
+
 { #category : #translation }
 SlangClass class >> requiredMethodNames: options [
 	"Answer a list of method names that should be retained for export or other

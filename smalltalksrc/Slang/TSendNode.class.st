@@ -584,7 +584,7 @@ TSendNode >> shouldExcludeReceiverAsFirstArgument: aCodeGen [
 	| m |
 	(aCodeGen isAssertSelector: selector) ifTrue:
 		[^true].
-
+	
 	(receiver isSend
 	 and: [(receiver shouldExcludeReceiverAsFirstArgument: aCodeGen)
 		or: [receiver receiver isVariable
