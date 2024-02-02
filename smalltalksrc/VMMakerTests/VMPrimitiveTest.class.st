@@ -4590,7 +4590,7 @@ VMPrimitiveTest >> testPrimitiveSnapshotCreateImage [
 	interpreter setImageHeaderFlagsFrom: 0.
 	interpreter primitiveSnapshot.
 
-	interpreter imageReader validateImage: imageName 
+	interpreter imageReaderWriter validateImage: imageName 
 ]
 
 { #category : #'tests - snapshot' }

@@ -16,7 +16,8 @@ Class {
 		'methodCacheSize',
 		'newSpaceSize',
 		'permSpaceSize',
-		'allocateMemory'
+		'allocateMemory',
+		'useComposedImageFormatAsDefault'
 	],
 	#category : #'VMMakerTests-Builders'
 }
@@ -97,6 +98,8 @@ VMSimulatedEnvironmentBuilder >> doBuildSimulator [
 	interpreter := interpreterClass basicNew
 		  objectMemory: objectMemory;
 		  basicInitialize.
+		
+	interpreter imageReaderWriter useComposedImageFormatAsDefault: useComposedImageFormatAsDefault
 
 ]
 
@@ -192,6 +195,12 @@ VMSimulatedEnvironmentBuilder >> rumpCStackSize [
 { #category : #accessing }
 VMSimulatedEnvironmentBuilder >> stackSpaceSize [
 	^ stackSpaceSize
+]
+
+{ #category : #accessing }
+VMSimulatedEnvironmentBuilder >> useComposedImageFormatAsDefault: aBoolean [
+
+	useComposedImageFormatAsDefault := aBoolean
 ]
 
 { #category : #accessing }

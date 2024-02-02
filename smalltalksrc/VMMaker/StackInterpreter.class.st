@@ -359,7 +359,6 @@ Class {
 		'classNameIndex',
 		'thisClassIndex',
 		'metaclassNumSlots',
-		'interruptCheckChain',
 		'suppressHeartbeatFlag',
 		'breakSelector',
 		'breakSelectorLength',
@@ -376,7 +375,6 @@ Class {
 		'tempOop2',
 		'metaAccessorDepth',
 		'theUnknownShort',
-		'the2ndUnknownShort',
 		'imageFloatsBigEndian',
 		'maxExtSemTabSizeSet',
 		'lastMethodCacheProbeWrite',
@@ -402,8 +400,7 @@ Class {
 		'libFFI',
 		'codeGeneratorToComputeAccessorDepth',
 		'showSurfaceFn',
-		'imageReader',
-		'imageWriter',
+		'imageReaderWriter',
 		'pendingFinalizationSignals',
 		'imageVersionNumber'
 	],
@@ -435,7 +432,6 @@ Class {
 		'DirEntryFound',
 		'DirNoMoreEntries',
 		'DumpStackOnLowSpace',
-		'EnclosingMixinIndex',
 		'EnclosingObjectIndex',
 		'FailImbalancedPrimitives',
 		'LongStoreBytecode',
@@ -446,7 +442,6 @@ Class {
 		'MethodHeaderArgCountShift',
 		'MethodHeaderFlagBitPosition',
 		'MethodHeaderTempCountShift',
-		'MixinIndex',
 		'PrimitiveTable',
 		'ReturnToInterpreter',
 		'StackPageReachedButUntraced',
@@ -495,10 +490,7 @@ StackInterpreter class >> ancilliaryClasses [
 		SpurImageHeaderStruct.
 		ComposedMetadataStruct.
 		"I am putting the abstract superclasses... because I cannot make it work else"
-		AbstractImageAccess.
-		AbstractComposedImageAccess.
-		self imageReaderClass.
-		self imageWriterClass}
+		VMImageReaderWriter} , VMImageReaderWriter ancilliaryClasses
 ]
 
 { #category : #constants }
@@ -507,7 +499,7 @@ StackInterpreter class >> bytecodeTable [
 	^ BytecodeTable
 ]
 
-{ #category : #translation }
+{ #category : #'C translation' }
 StackInterpreter class >> declareCVarsIn: aCCodeGenerator [
 	| vmClass |
 	self class == thisContext methodClass ifFalse: [^self]. "Don't duplicate decls in subclasses"
@@ -616,29 +608,7 @@ If ffi is put as a separate header, slang will sort the header and put it outsid
 	aCCodeGenerator removeVariable: #'libFFI'.
 	LibFFIConstants classVariables do: [ :e | aCCodeGenerator removeConstant: e name ].
 	
-	aCCodeGenerator 
-		"this variable is not used in the exported code, so it has to be removed.
-		If it is changed, it should be marked with type implicit"
-		removeVariable: 'imageReader'; 
-		var: #imageWriter type: #implicit.
-"		removeVariable: 'imageWriter'.
-"
-]
-
-{ #category : #accessing }
-StackInterpreter class >> imageReaderClass [
-
-	^Smalltalk at: (InitializationOptions
-					at: #ImageReader
-					ifAbsent: [ #SpurImageReader ])
-]
-
-{ #category : #accessing }
-StackInterpreter class >> imageWriterClass [
-
-	^Smalltalk at: (InitializationOptions
-					at: #ImageWriter
-					ifAbsent: [ #SpurImageWriter ])
+	aCCodeGenerator removeVariable: #imageReaderWriter.
 ]
 
 { #category : #translation }
@@ -1478,7 +1448,8 @@ StackInterpreter class >> isInterpreterClass [
 
 { #category : #translation }
 StackInterpreter class >> isNonArgumentImplicitReceiverVariableName: aString [
-	^(#('self' 'stackPages' 'interpreter' 'coInterpreter' 'objectMemory') includes: aString)
+
+	^(#('self' 'stackPages' 'coInterpreter' 'objectMemory' 'imageReaderWriter') includes: aString)
 	  or: [self objectMemoryClass isNonArgumentImplicitReceiverVariableName: aString]
 ]
 
@@ -2081,7 +2052,7 @@ StackInterpreter >> allocateMemoryForImage: f withHeader: header [
 	<var: #header type: #SpurImageHeaderStruct>
 	self allocateMemoryForImageHeader: header.
 
-	imageReader loadImageFromFile: f withHeader: header
+	imageReaderWriter loadImageFromFile: f withHeader: header
 ]
 
 { #category : #'image save/restore' }
@@ -7429,9 +7400,9 @@ StackInterpreter >> imageFormatVersion [
 ]
 
 { #category : #accessing }
-StackInterpreter >> imageReader [
+StackInterpreter >> imageReaderWriter [
 	<doNotGenerate>
-	^ imageReader
+	^ imageReaderWriter
 ]
 
 { #category : #'plugin primitive support' }
@@ -16073,7 +16044,7 @@ StackInterpreter >> writeImageFileIO [
 	
 	"The image name is defined as a extern char[] variable"
 	self simulationOnly: [ imageName := self imageName ].
-	imageWriter writeImageFile: imageName fromHeader: self newHeader
+	imageReaderWriter writeImageFile: imageName fromHeader: self newHeader
 
 ]
 

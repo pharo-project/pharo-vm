@@ -1,6 +1,8 @@
 Class {
 	#name : #ComposedImageReader,
 	#superclass : #AbstractComposedImageAccess,
+	#traits : 'TImageReader',
+	#classTraits : 'TImageReader classTrait',
 	#category : #'VMMaker-ImageFormat'
 }
 
@@ -110,7 +112,7 @@ ComposedImageReader >> readHeaderFromImage: imageFileName [
 			self logError: 'Could not open header file: %s' 
 				_: buffer.
 	
-			interpreter ioExitWithErrorCode: 1 ].
+			coInterpreter ioExitWithErrorCode: 1 ].
 	
 	headerPtr := self addressOf: header.
 	self readSTONFrom: file into: headerPtr.
@@ -127,7 +129,6 @@ ComposedImageReader >> readImageNamed: imageName [
 	
 	<var: #imageName declareC: 'char *imageName'>
 	<var: #aHeader type: #'SpurImageHeaderStruct'>
-	<api>
 
 	| aHeader |
 
@@ -136,7 +137,7 @@ ComposedImageReader >> readImageNamed: imageName [
 	aHeader := self readHeaderFromImage: imageName.
 
 	self loadHeaderToMemory: aHeader.
-	interpreter allocateMemoryForImage: imageName withHeader: aHeader.
+	coInterpreter allocateMemoryForImage: imageName withHeader: aHeader.
 	
 	^ 0 "Must return sqInt"
 ]
@@ -197,12 +198,12 @@ ComposedImageReader >> readPermanentSpaceFromImageFile: imageFileName header: aH
 	dataSize := permSpaceMetadata dataSize.
 
 	(objectMemory getMemoryMap ensureAtLeastPermSpaceOf: dataSize)
-		ifFalse: [ interpreter error: 'Could not allocate PermSpace' ].
+		ifFalse: [ coInterpreter error: 'Could not allocate PermSpace' ].
 
 	newBase := objectMemory getMemoryMap permSpaceStart.
 	newBase ~= oldBase ifTrue: [ 
 		self logError: 'Expecting Base %p Got %p' _: oldBase _: newBase.		
-		interpreter unableToReadImageError ].
+		coInterpreter unableToReadImageError ].
 
 	bytesRead := self
 		             readPermanentSpaceDataFromImage: imageFileName
@@ -214,7 +215,7 @@ ComposedImageReader >> readPermanentSpaceFromImageFile: imageFileName header: aH
 	"Check bytes read"
 	bytesRead ~= dataSize ifTrue: [ 
 		self logError: 'Expecting %lld Got %lld' _: dataSize _: bytesRead.		
-		interpreter unableToReadImageError ].
+		coInterpreter unableToReadImageError ].
 
 	^ bytesRead
 ]
@@ -290,7 +291,7 @@ ComposedImageReader >> readSegmentsFromImageFile: imageFileName header: aHeader 
 	"Check segment bytes read"
 	bytesRead ~= segmentSize ifTrue: [ 
 		self logError: 'Expecting %lld Got %lld' _: segmentSize _: bytesRead.
-		interpreter unableToReadImageError ].
+		coInterpreter unableToReadImageError ].
 
 	"The next segment will override the bridge of this segment"
 	newBase := newBase + segmentSize - objectMemory bridgeSize.
