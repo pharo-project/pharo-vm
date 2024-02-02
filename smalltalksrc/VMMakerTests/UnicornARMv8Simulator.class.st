@@ -221,7 +221,7 @@ UnicornARMv8Simulator >> receiverRegister [
 { #category : #accessing }
 UnicornARMv8Simulator >> registerList [
 
-	^ #(lr pc sp fp x28 x0 x1 x2 x3 x4 x5 x6 x7 x8 x9 x10 x11 x12 x16 x19 x20 x21 x22 x23 x24 x25 x26 zero negative carry overflow v0 v1 v2)
+	^ #(lr pc sp fp x28 x0 x1 x2 x3 x4 x5 x6 x7 x8 x9 x10 x11 x12 x16 x19 x20 x21 x22 x23 x24 x25 x26 x27 zero negative carry overflow v0 v1 v2)
 
 ]
 
@@ -565,6 +565,18 @@ UnicornARMv8Simulator >> x26 [
 UnicornARMv8Simulator >> x26: anInteger [
 
 	self writeRegister: UcARM64Registers x26 value: anInteger
+]
+
+{ #category : #'accessing-registers-physical' }
+UnicornARMv8Simulator >> x27 [
+
+	^ self readRegister: UcARM64Registers x27
+]
+
+{ #category : #'accessing-registers-physical' }
+UnicornARMv8Simulator >> x27: anInteger [
+
+	self writeRegister: UcARM64Registers x27 value: anInteger
 ]
 
 { #category : #'accessing-registers-physical' }
