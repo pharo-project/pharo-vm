@@ -1152,7 +1152,6 @@ StackToRegisterMappingCogit >> ensureFixupAt: targetPC withStackPointer: aStackP
 	<var: #fixup type: #'BytecodeFixup *'>
 	| fixup |
 	fixup := self fixupAt: targetPC.
-	deadCode ifTrue: [ ^ fixup ].
 
 	self traceFixup: fixup merge: true.
 	self cCode: '' inSmalltalk: [
