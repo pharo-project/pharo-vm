@@ -140,6 +140,7 @@ VMImageReaderWriter >> sqImageIsDirectory: aFileName [
 { #category : #accessing }
 VMImageReaderWriter >> useComposedImageFormatAsDefault: aBoolean [ 
 	
+	aBoolean ifNil: [ ^ self ].
 	formatToUse := aBoolean ifTrue: [ ComposedFormatForced ] ifFalse: [ SpurFormatForced ]
 ]
 

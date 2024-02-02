@@ -53,6 +53,7 @@ VMSpurImageToComposedImageMigrationProcess >> createSimulator [
 { #category : #migrate }
 VMSpurImageToComposedImageMigrationProcess >> loadImage: originalImage [
 
+	interpreter imageReaderWriter useComposedImageFormatAsDefault: false.
 	interpreter openOn: originalImage extraMemory: 0.
 
 
@@ -73,6 +74,7 @@ VMSpurImageToComposedImageMigrationProcess >> migrate: originalImage to: newImag
 { #category : #migrate }
 VMSpurImageToComposedImageMigrationProcess >> saveImage: newImage [
 
+	interpreter imageReaderWriter useComposedImageFormatAsDefault: true.
 	interpreter imageName: newImage.
 	interpreter writeImageFileIO
 ]
