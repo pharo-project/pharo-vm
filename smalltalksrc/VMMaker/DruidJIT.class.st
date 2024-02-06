@@ -3878,7 +3878,7 @@ DruidJIT >> gen_PrimitiveAdd [
 	currentBlock := self Label.
 	jump1 jmpTarget: currentBlock.
 	jump2 jmpTarget: currentBlock.
-	^ CompletePrimitive
+	^ 0
 ]
 
 { #category : #generated }
@@ -4196,7 +4196,7 @@ DruidJIT >> gen_PrimitiveAt [
 	jump7 jmpTarget: currentBlock.
 	jump4 jmpTarget: currentBlock.
 	self AddCq: 24 R: SPReg.
-	^ CompletePrimitive
+	^ 0
 ]
 
 { #category : #generated }
@@ -4228,7 +4228,7 @@ DruidJIT >> gen_PrimitiveClass [
 
 	| s27 jump5 jump3 jump1 s2 currentBlock jump4 jump2 s3 |
 	s2 := self methodNumArgs.
-	s2 > 0 ifTrue: [ ^ CompletePrimitive ].
+	s2 > 0 ifTrue: [ ^ 0 ].
 	self MoveR: ReceiverResultReg R: ClassReg.
 	self MoveR: ClassReg R: SendNumArgsReg.
 	self AndCq: 7 R: SendNumArgsReg.
@@ -4286,7 +4286,7 @@ DruidJIT >> gen_PrimitiveClass [
 	currentBlock := self Label.
 	jump2 jmpTarget: currentBlock.
 	self genPrimReturn.
-	^ CompletePrimitive
+	^ 0
 ]
 
 { #category : #generated }
@@ -4307,9 +4307,9 @@ DruidJIT >> gen_PrimitiveDivide [
 	self
 		DivR: SendNumArgsReg
 		R: ClassReg
-		Quo: Extra0Reg
-		Rem: Extra1Reg.
-	self CmpCq: 0 R: Extra1Reg.
+		Quo: Extra1Reg
+		Rem: Extra0Reg.
+	self CmpCq: 0 R: Extra0Reg.
 	jump4 := self JumpNonZero: 0.
 	self
 		DivR: SendNumArgsReg
@@ -4333,7 +4333,7 @@ DruidJIT >> gen_PrimitiveDivide [
 	jump3 jmpTarget: currentBlock.
 	jump4 jmpTarget: currentBlock.
 	jump5 jmpTarget: currentBlock.
-	^ CompletePrimitive
+	^ 0
 ]
 
 { #category : #generated }
@@ -4361,7 +4361,7 @@ DruidJIT >> gen_PrimitiveEqual [
 	self genPrimReturn.
 	currentBlock := self Label.
 	jump1 jmpTarget: currentBlock.
-	^ CompletePrimitive
+	^ 0
 ]
 
 { #category : #generated }
@@ -4425,7 +4425,7 @@ DruidJIT >> gen_PrimitiveGreaterOrEqual [
 	self genPrimReturn.
 	currentBlock := self Label.
 	jump1 jmpTarget: currentBlock.
-	^ CompletePrimitive
+	^ 0
 ]
 
 { #category : #generated }
@@ -4453,7 +4453,7 @@ DruidJIT >> gen_PrimitiveGreaterThan [
 	self genPrimReturn.
 	currentBlock := self Label.
 	jump1 jmpTarget: currentBlock.
-	^ CompletePrimitive
+	^ 0
 ]
 
 { #category : #generated }
@@ -4563,7 +4563,7 @@ DruidJIT >> gen_PrimitiveIdentical [
 	currentBlock := self Label.
 	jump2 jmpTarget: currentBlock.
 	self genPrimReturn.
-	^ CompletePrimitive
+	^ 0
 ]
 
 { #category : #generated }
@@ -4625,7 +4625,7 @@ DruidJIT >> gen_PrimitiveLessOrEqual [
 	self genPrimReturn.
 	currentBlock := self Label.
 	jump1 jmpTarget: currentBlock.
-	^ CompletePrimitive
+	^ 0
 ]
 
 { #category : #generated }
@@ -4653,7 +4653,7 @@ DruidJIT >> gen_PrimitiveLessThan [
 	self genPrimReturn.
 	currentBlock := self Label.
 	jump1 jmpTarget: currentBlock.
-	^ CompletePrimitive
+	^ 0
 ]
 
 { #category : #generated }
@@ -4722,7 +4722,7 @@ DruidJIT >> gen_PrimitiveMod [
 	jump1 jmpTarget: currentBlock.
 	jump2 jmpTarget: currentBlock.
 	jump4 jmpTarget: currentBlock.
-	^ CompletePrimitive
+	^ 0
 ]
 
 { #category : #generated }
@@ -4747,7 +4747,7 @@ DruidJIT >> gen_PrimitiveMultiply [
 	jump1 jmpTarget: currentBlock.
 	jump2 jmpTarget: currentBlock.
 	jump3 jmpTarget: currentBlock.
-	^ CompletePrimitive
+	^ 0
 ]
 
 { #category : #generated }
@@ -4899,7 +4899,7 @@ DruidJIT >> gen_PrimitiveNew [
 	jump7 jmpTarget: currentBlock.
 	jump2 jmpTarget: currentBlock.
 	self AddCq: 16 R: SPReg.
-	^ CompletePrimitive
+	^ 0
 ]
 
 { #category : #generated }
@@ -4972,12 +4972,11 @@ DruidJIT >> gen_PrimitiveNewWithArg [
 	self
 		DivR: Extra0Reg
 		R: ClassReg
-		Quo: Extra0Reg
-		Rem: ClassReg.
+		Quo: ClassReg
+		Rem: Extra0Reg.
 	self AndCq: 1 R: SendNumArgsReg.
 	self AddR: SendNumArgsReg R: Extra1Reg.
 	s52 := 0.
-	self MoveR: Extra0Reg R: ClassReg.
 	s55 := s52.
 	jump10 := self Jump: 0.
 	currentBlock := self Label.
@@ -5286,7 +5285,7 @@ DruidJIT >> gen_PrimitiveNewWithArg [
 	jump5 jmpTarget: currentBlock.
 	jump4 jmpTarget: currentBlock.
 	self AddCq: 32 R: SPReg.
-	^ CompletePrimitive
+	^ 0
 ]
 
 { #category : #generated }
@@ -5314,7 +5313,7 @@ DruidJIT >> gen_PrimitiveNotEqual [
 	self genPrimReturn.
 	currentBlock := self Label.
 	jump1 jmpTarget: currentBlock.
-	^ CompletePrimitive
+	^ 0
 ]
 
 { #category : #generated }
@@ -5545,7 +5544,7 @@ DruidJIT >> gen_PrimitiveSize [
 	currentBlock := self Label.
 	jump2 jmpTarget: currentBlock.
 	jump1 jmpTarget: currentBlock.
-	^ CompletePrimitive
+	^ 0
 ]
 
 { #category : #generated }
@@ -5568,7 +5567,7 @@ DruidJIT >> gen_PrimitiveSubtract [
 	jump1 jmpTarget: currentBlock.
 	jump2 jmpTarget: currentBlock.
 	jump3 jmpTarget: currentBlock.
-	^ CompletePrimitive
+	^ 0
 ]
 
 { #category : #generated }
