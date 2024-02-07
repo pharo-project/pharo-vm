@@ -6214,7 +6214,8 @@ Cogit >> entryPointTagIsSelector: entryPoint [
 { #category : #accessing }
 Cogit >> estimateOfAbstractOpcodesPerBytecodes [
 	<inline: true>
-	^ 15
+	"Bump number of estimated bytecodes for Druid compilation"
+	^ 47
 ]
 
 { #category : #'simulation only' }
