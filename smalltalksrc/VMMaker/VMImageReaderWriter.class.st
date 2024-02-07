@@ -130,6 +130,12 @@ VMImageReaderWriter >> readImageNamed: imageName [
 ]
 
 { #category : #format }
+VMImageReaderWriter >> setFormatToUse: aValue [
+
+	formatToUse := aValue
+]
+
+{ #category : #format }
 VMImageReaderWriter >> sqImageIsDirectory: aFileName [
 
 	<doNotGenerate>

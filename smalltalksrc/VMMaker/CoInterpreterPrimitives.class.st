@@ -512,7 +512,7 @@ CoInterpreterPrimitives >> primitiveSnapshot [
 
 	 Override to jump to the interpreter because the machine code zone is now void."
 	<inline: false>
-	self snapshot: false.
+	self snapshot.
 	(self iframeMethod: framePointer) = newMethod ifTrue:
 		["snapshot: has reached the end and built a frame.
 		 In the JIT we need to back-up the pc before reentering the interpreter."

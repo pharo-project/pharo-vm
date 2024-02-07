@@ -14329,14 +14329,24 @@ StackInterpreter >> slowPrimitiveResponse [
 ]
 
 { #category : #'image save/restore' }
-StackInterpreter >> snapshot: embedded [ 
+StackInterpreter >> snapshot [ 
 	"update state of active context"
-	| activeContext activeProc rcvr stackIndex |
+	| activeContext activeProc rcvr stackIndex newFormatToUse stackModified |
 
-	"For now the stack munging below doesn't deal with more than one argument.
-	 It can, and should."
-	argumentCount ~= 0 ifTrue:
-		[^self primitiveFailFor: PrimErrBadNumArgs].
+	argumentCount > 1 ifTrue:
+		[self primitiveFailFor: PrimErrBadNumArgs.
+		 ^ self justActivateNewMethod: false].
+	
+	argumentCount = 1 ifTrue: [ 
+		"Fetching the format to use, should be 3 -> ComposedFormatForced or 4 -> SpurFormatForced See VMImageReadedWriter"
+		newFormatToUse := self stackIntegerValue: 0.
+		(newFormatToUse between: 3 and: 4)
+			ifTrue: [ imageReaderWriter setFormatToUse: newFormatToUse ]
+			ifFalse: [ 
+				self primitiveFailFor: PrimErrBadArgument.
+				^ self justActivateNewMethod: false ]].
+
+	stackModified := false.
 
 	"Need to convert all frames into contexts since the snapshot file only holds objects."
 	self push: instructionPointer.
@@ -14358,18 +14368,29 @@ StackInterpreter >> snapshot: embedded [
 	activeContext := tempOop.
 	tempOop := 0.
 
-
 	self successful ifTrue:
 		["Without contexts or stacks simulate
+			arg := self popStack. ""If we have to...""
 			rcvr := self popStack. ''pop rcvr''
 			self push: trueObj.
 		  to arrange that the snapshot resumes with true.  N.B. stackIndex is one-relative."
 		stackIndex := self quickFetchInteger: StackPointerIndex ofObject: activeContext.
+
+		argumentCount = 1 ifTrue: [ 
+			"Pop Argument"
+			stackIndex := stackIndex - 1.
+			self storeInteger: StackPointerIndex ofObject: activeContext  withValue: stackIndex.
+		].
+		
 		rcvr := objectMemory fetchPointer: stackIndex + CtxtTempFrameStart - 1 ofObject: activeContext.
+
 		objectMemory
 			storePointerUnchecked: stackIndex + CtxtTempFrameStart - 1
 			ofObject: activeContext
 			withValue: objectMemory trueObject.
+
+		stackModified := true.
+
 		"now attempt to write the snapshot file"		
 		self writeImageFileIO.
 		"Without contexts or stacks simulate
@@ -14381,10 +14402,14 @@ StackInterpreter >> snapshot: embedded [
 
 	objectMemory postSnapshot.
 	self marryContextInNewStackPageAndInitializeInterpreterRegisters: activeContext.
+
 	self successful
 		ifTrue: [self push: objectMemory falseObject]
 		ifFalse:
-			[self push: rcvr.
+			[
+			stackModified ifTrue: [ 
+				self push: rcvr.
+				argumentCount = 1 ifTrue: [ self pushInteger: newFormatToUse  ]].
 			 self justActivateNewMethod: true] "no point checking for machine code; there isn't any at this point"
 ]
 

@@ -134,7 +134,7 @@ SpurImageWriter >> writeImageFile: imageFileName fromHeader: header [
 	imageHeaderSize := header imageHeaderSize.
 
 	objectMemory totalBytesInPermanentSpace = 0 
-		ifFalse: [ ^ self primitiveFail].
+		ifFalse: [ ^ coInterpreter primitiveFailFor: PrimErrUnsupported ].
 
 	self logDebug: 'Writing snapshot file %s' _: imageFileName.
 
