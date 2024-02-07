@@ -430,8 +430,8 @@ DruidJIT class >> bytecodeTable [
 		  { 1. 223. 223. #unknownBytecode }.
 		  { 2. 224. 224. #gen_ExtABytecode. #extension }.
 		  { 2. 225. 225. #gen_ExtBBytecode. #extension }.
-		  { 2. 226. 226. #gen_ExtPushReceiverVariableBytecode.
-		  #isInstVarRef. #isMappedIfImmutability }.
+		  { 2. 226. 226. #unknownBytecode" #gen_ExtPushReceiverVariableBytecode.
+		  #isInstVarRef. #isMappedIfImmutability" }.
 		  { 2. 227. 227. #gen_ExtPushLiteralVariableBytecode.
 		  #needsFrameNever:. 1 }.
 		  { 2. 228. 228. #gen_ExtPushLiteralBytecode.

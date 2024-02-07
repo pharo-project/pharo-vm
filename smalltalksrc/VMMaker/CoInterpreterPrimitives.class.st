@@ -345,8 +345,8 @@ CoInterpreterPrimitives >> primitiveMethodXray [
 	<maycallback>
 	<var: #cogMethod type: #'CogMethod *'>
 	| alreadyCogged flags cogMethod |
-	(self methodWithHeaderShouldBeCogged:
-		 (objectMemory methodHeaderOf: self stackTop))
+	(self methodShouldBeCogged:
+		 ( self stackTop))
 		ifTrue: [ 
 			alreadyCogged := self maybeMethodHasCogMethod: self stackTop.
 			flags := 1.
