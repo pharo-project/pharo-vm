@@ -70,7 +70,6 @@ SlangTyper >> codeGenerator: aCCodeGenerator [
 
 { #category : #'type inference' }
 SlangTyper >> inferReturnTypeFromReturnsOf: aMethod [
-
 	"Attempt to infer the return type of the receiver from returns in the parse tree."
 
 	"this for determining which returns have which return types:"
@@ -86,13 +85,11 @@ SlangTyper >> inferReturnTypeFromReturnsOf: aMethod [
 
 	codeGenerator maybeBreakForTestToInline: aMethod selector in: aMethod.
 	aMethod returnType ifNotNil: [ ^ self ].
-	codeGenerator
-		pushScope: aMethod
-		while:
-			[| hasReturn returnTypes |
-			 hasReturn := false.
-			 returnTypes := Set new.
-			 "Debug:
+	codeGenerator pushScope: aMethod while: [
+		| hasReturn returnTypes |
+		hasReturn := false.
+		returnTypes := Set new.
+		"Debug:
 			 (| rettypes |
 			  rettypes := Dictionary new.
 			  parseTree nodesDo:
@@ -102,8 +99,8 @@ SlangTyper >> inferReturnTypeFromReturnsOf: aMethod [
 					 self addTypesFor: node expression to: (types := Set new) in: aCodeGen.
 					 rettypes at: node expression put: types]].
 			  rettypes)"
-		aMethod parseTree nodesDo: [ :node | 
-			node isReturn ifTrue: [ 
+		aMethod parseTree nodesDo: [ :node |
+			node isReturn ifTrue: [
 				hasReturn := true.
 				"If we encounter a send of an as-yet-untyped method then abort,
 					  retrying and computing the type when that method is fully typed."
@@ -114,13 +111,13 @@ SlangTyper >> inferReturnTypeFromReturnsOf: aMethod [
 		returnTypes remove: #implicit ifAbsent: [  ].
 		returnTypes := codeGenerator harmonizeReturnTypesIn: returnTypes.
 		hasReturn
-			ifTrue: [ 
-				returnTypes size > 1 ifTrue: [ 
+			ifTrue: [
+				returnTypes size > 1 ifTrue: [
 					| message |
-					message := String streamContents: [ :s | 
+					message := String streamContents: [ :s |
 						           s nextPutAll: 'conflicting return types '.
 						           returnTypes
-							           do: [ :t | s nextPutAll: t ]
+							           do: [ :t | s nextPutAll: t asString ]
 							           separatedBy: [ s nextPutAll: ', ' ].
 						           s
 							           nextPutAll: ' in ';
@@ -132,9 +129,9 @@ SlangTyper >> inferReturnTypeFromReturnsOf: aMethod [
 					codeGenerator logger
 						newLine;
 						show: message ].
-				returnTypes size = 1 ifTrue: [ 
-					aMethod returnType: returnTypes anyOne ] ]
-			ifFalse: [ 
+				returnTypes size = 1 ifTrue: [
+					aMethod returnType: returnTypes anyOne asString ] ]
+			ifFalse: [
 				aMethod returnType:
 					(codeGenerator implicitReturnTypeFor: aMethod selector) ] ]
 ]
@@ -211,7 +208,6 @@ SlangTyper >> inferTypesForImplicitlyTypedVariablesAndMethods [
 
 { #category : #'type inference' }
 SlangTyper >> inferTypesForImplicitlyTypedVariablesIn: aMethod [
-
 	" Infer types for untyped variables from assignments and arithmetic uses "
 
 	| alreadyExplicitlyTypedOrNotToBeTyped asYetUntyped mustBeSigned newDeclarations |
@@ -223,23 +219,22 @@ SlangTyper >> inferTypesForImplicitlyTypedVariablesIn: aMethod [
 		                alreadyExplicitlyTypedOrNotToBeTyped.
 	mustBeSigned := Set new.
 	newDeclarations := Dictionary new.
-
-	aMethod parseTree nodesDo: [ :node | 
+	aMethod parseTree nodesDo: [ :node |
 		| type var |
 		"If there is something of the form i >= 0, then i should be signed, not unsigned."
-		(node isSend and: [ 
-			 (aMethod allLocals includes: (var := node receiver variableNameOrNil)) 
-				 and: [ 
-					 (#( <= < >= > ) includes: node selector) and: [ 
-						 node arguments first isConstant and: [ 
-							 node arguments first value = 0 ] ] ] ]) ifTrue: [ 
+		(node isSend and: [
+			 (aMethod allLocals includes:
+				  (var := node receiver variableNameOrNil)) and: [
+				 (#( <= < >= > ) includes: node selector) and: [
+					 node arguments first isConstant and: [
+						 node arguments first value = 0 ] ] ] ]) ifTrue: [
 			mustBeSigned add: var ].
 
 		"if an assignment to an untyped local of a known type, set the local's type to that type.
 		 Only observe known sends (methods in the current set) and typed local variables."
-		(node isAssignment and: [ 
-			 (aMethod allLocals includes: (var := node variable name)) and: [ 
-				 (alreadyExplicitlyTypedOrNotToBeTyped includes: var) not ] ]) 
+		(node isAssignment and: [
+			 (aMethod allLocals includes: (var := node variable name)) and: [
+				 (alreadyExplicitlyTypedOrNotToBeTyped includes: var) not ] ])
 			ifTrue: [ "don't be fooled by previously inferred types"
 				type := self
 					        tryExtractTypeFromAssignmentNode: node
@@ -247,16 +242,18 @@ SlangTyper >> inferTypesForImplicitlyTypedVariablesIn: aMethod [
 				type
 					ifNil: [ "Further, if the type derives from an as-yet-untyped method, we must defer."
 						alreadyExplicitlyTypedOrNotToBeTyped add: var.
-						(node expression isSend and: [ 
-							 (codeGenerator methodNamed: node expression selector) notNil ]) 
+						(node expression isSend and: [
+							 (codeGenerator methodNamed: node expression selector) notNil ])
 							ifTrue: [ newDeclarations removeKey: var ifAbsent: nil ] ]
 					ifNotNil: [ "Merge simple types (but *don't* merge untyped vars); complex types must be defined by the programmer.""If untyped, then cannot type the variable yet. A subsequent assignment may assign a subtype of what this type ends up being"
-						(codeGenerator isSimpleType: type) ifTrue: [ 
+						(codeGenerator isSimpleType: type) ifTrue: [
 							(asYetUntyped includes: var)
-								ifTrue: [ 
-									newDeclarations at: var put: type , ' ' , var.
+								ifTrue: [
+									newDeclarations at: var put: (type isTType
+											 ifTrue: [ type ]
+											 ifFalse: [ type , ' ' , var ]).
 									asYetUntyped remove: var ]
-								ifFalse: [ 
+								ifFalse: [
 									self
 										mergeTypeOf: var
 										in: newDeclarations
@@ -264,15 +261,15 @@ SlangTyper >> inferTypesForImplicitlyTypedVariablesIn: aMethod [
 										method: aMethod ] ] ] ] ].
 
 
-	mustBeSigned do: [ :var | 
-		(newDeclarations at: var ifAbsent: nil) ifNotNil: [ :decl | 
+	mustBeSigned do: [ :var |
+		(newDeclarations at: var ifAbsent: nil) ifNotNil: [ :decl |
 			| type |
 			type := codeGenerator extractTypeFor: var fromDeclaration: decl.
-			type first == $u ifTrue: [ 
+			type first == $u ifTrue: [
 				newDeclarations
 					at: var
-					put: (self signedTypeForIntegralType: type) , ' ' , var ] ] ].
-	newDeclarations keysAndValuesDo: [ :var :decl | 
+					put: (self signedTypeForIntegralType: type asString) , ' ' , var ] ] ].
+	newDeclarations keysAndValuesDo: [ :var :decl |
 		aMethod declarations at: var put: decl ]
 ]
 
@@ -282,23 +279,33 @@ SlangTyper >> mergeTypeOf: var in: aDictionary with: newType method: tMethod [
 	 Either assign its type, if it is as yet untyped, or merge newType with its existing type.
 	 N.B. We refuse to promote a variable that already has integral type to a floating point
 	 type.  The existing plugins depend on this; one can always use an explicit type in future."
+
 	| existingType mergedType |
 	existingType := codeGenerator
-						extractTypeFor: var
-						fromDeclaration: (aDictionary at: var ifAbsentPut: [newType, ' ', var]).
-	existingType ~= newType ifTrue:
-		[((codeGenerator isPointerCType: existingType)
-		  or: [codeGenerator isPointerCType: newType])
-			ifTrue:
-				[existingType = #'void *' ifTrue: [^newType].
-				 newType = #'void *' ifTrue: [^existingType].
-				 codeGenerator logger show: 'conflicting types ', existingType, ' ', newType, ' for ', var, ' in ', tMethod selector.
-				 ^existingType]
-			ifFalse:
-				[((codeGenerator isIntegralCType: existingType)
-				  and: [codeGenerator isFloatingPointCType: newType]) ifFalse:
-					[mergedType := codeGenerator promoteArithmeticTypes: existingType and: newType.
-					 aDictionary at: var put: mergedType, ' ', var]]]
+		                extractTypeFor: var
+		                fromDeclaration:
+		                (aDictionary
+			                 at: var
+			                 ifAbsentPut: [ TType cType: newType ]).
+	existingType ~= newType ifTrue: [
+		((codeGenerator isPointerCType: existingType) or: [
+			 codeGenerator isPointerCType: newType ])
+			ifTrue: [
+				existingType = #'void *' ifTrue: [ ^ newType ].
+				newType = #'void *' ifTrue: [ ^ existingType ].
+				codeGenerator logger show:
+					'conflicting types ' , existingType , ' ' , newType , ' for '
+					, var , ' in ' , tMethod selector.
+				^ existingType ]
+			ifFalse: [
+				((codeGenerator isIntegralCType: existingType) and: [
+					 codeGenerator isFloatingPointCType: newType ]) ifFalse: [
+					mergedType := codeGenerator
+						              promoteArithmeticTypes: existingType
+						              and: newType.
+					aDictionary at: var put: (mergedType isTType
+							 ifTrue: [ mergedType ]
+							 ifFalse: [ mergedType , ' ' , var ]) ] ] ]
 ]
 
 { #category : #'type inference' }

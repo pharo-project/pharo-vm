@@ -14,5 +14,5 @@ SlangAbstractTestCase >> assertReturnTypeOf: aMethod equalsHarmonized: expectedT
 	| harmonizedTypes |
 	harmonizedTypes := ccg harmonizeReturnTypesIn: { expectedType } asSet.
 	self assert: harmonizedTypes size = 1 description: 'There seems to be a type conflict'.
-	self assert: aMethod returnType equals: harmonizedTypes anyOne.
+	self assert: aMethod returnType asString equals: harmonizedTypes anyOne.
 ]

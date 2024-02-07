@@ -177,6 +177,33 @@ SlangBasicTranslationTestClass >> methodWithAnOptionPragma [
 	
 ]
 
+{ #category : #'as yet unclassified' }
+SlangBasicTranslationTestClass >> methodWithAndBooleanReceiver [
+
+	| receiver result |
+	
+	receiver := true.
+	result := receiver & true
+]
+
+{ #category : #'as yet unclassified' }
+SlangBasicTranslationTestClass >> methodWithAndIntegerReceiver [
+
+	| receiver result |
+	
+	receiver := 1000.
+	result := receiver & 1
+]
+
+{ #category : #'as yet unclassified' }
+SlangBasicTranslationTestClass >> methodWithAndIntegerReceiverAndBooleanArgument [
+
+	| receiver result |
+	
+	receiver := 1000.
+	result := receiver & false
+]
+
 { #category : #inline }
 SlangBasicTranslationTestClass >> methodWithIfAndShiftRight: var [
 

@@ -309,7 +309,7 @@ TMethod >> asCASTFunctionPrototypeIn: aCodeGen isPrototype: isPrototype [
 				                               (aCodeGen cFunctionNameFor:
 					                                selector) ] ].
 	export
-		ifTrue: [ specifiers add: 'EXPORT(' , returnType , ')' ]
+		ifTrue: [ specifiers add: 'EXPORT(' , returnType asString , ')' ]
 		ifFalse: [ 
 			self isStatic
 				ifTrue: [ specifiers add: 'static' ]
@@ -788,7 +788,7 @@ TMethod >> emitCFunctionPrototype: aStream generator: aCodeGen isPrototype: isPr
 								
 	export 
 		ifTrue:
-			[aStream nextPutAll: 'EXPORT('; nextPutAll: returnType; nextPut: $)]
+			[aStream nextPutAll: 'EXPORT('; nextPutAll: returnType asString; nextPut: $)]
 		ifFalse:
 			[self isStatic
 				ifTrue: [aStream nextPutAll: 'static ']
@@ -796,7 +796,7 @@ TMethod >> emitCFunctionPrototype: aStream generator: aCodeGen isPrototype: isPr
 					[isPrototype ifTrue:
 						[aStream nextPutAll: 'extern ']].
 			 (isPrototype or: [inline ~~ #always]) ifFalse: [aStream nextPutAll: 'inline '].
-			 aStream nextPutAll: (returnType ifNil: [#sqInt])].
+			 aStream nextPutAll: (returnType asString ifNil: [#sqInt])].
 	(functionAttributes isNil or: [returnTypeIsFunctionPointer]) ifFalse:
 		[aStream space; nextPutAll: functionAttributes].
 	isPrototype ifTrue: [aStream space] ifFalse: [aStream cr].
@@ -1665,8 +1665,8 @@ TMethod >> inlineSend: aSendNode directReturn: directReturn exitVar: exitVar in:
 			 ifTrue: [
 				type ~= #sqInt ifTrue: [ 
 					meth declarationAt: formal put: (type last = $*
-							 ifTrue: [ type , formal ]
-							 ifFalse: [ type , ' ' , formal ]) ] ] ] ].
+							 ifTrue: [ type asString , formal ]
+							 ifFalse: [ type asString , ' ' , formal ]) ] ] ] ].
 
 	meth renameVarsForInliningInto: self except: elidedArgs in: aCodeGen.
 	meth renameLabelsForInliningInto: self.
@@ -1860,7 +1860,7 @@ TMethod >> isFunctionalIn: aCodeGen [
 		sqInt usqInt #'sqIntptr_t' #'usqIntptr_t' sqLong usqLong
 		#'int *' #'unsigned int *' #'sqInt *' #'usqInt *' #'sqLong *' #'usqLong *' #'char *'
 		#'CogMethod *' #'AbstractInstruction *'
-		#'FILE *') includes: returnType
+		#'FILE *') includes: returnType asString 
 ]
 
 { #category : #inlining }
@@ -2663,7 +2663,6 @@ TMethod >> renameLabelsUsing: aDictionary [
 
 { #category : #'inlining support' }
 TMethod >> renameVariablesUsing: aDictionary [
-
 	"Rename all variables according to old->new mappings of the given dictionary."
 
 	| newDecls newProperties |
@@ -2679,40 +2678,41 @@ TMethod >> renameVariablesUsing: aDictionary [
 	"map declarations"
 	newDecls := declarations species new.
 
-	declarations
-		keysAndValuesDo: [ :oldName :decl | 
-			(aDictionary at: oldName ifAbsent: nil)
-				ifNotNil: [ :newName | 
-					| index |
-					index := decl findLastOccurrenceOfString: oldName startingAt: 1.
-					newDecls
-						at: newName
-						put:
-							(index ~= 0
-								ifTrue: [ decl
-										copyReplaceFrom: index
-										to: index + oldName size - 1
-										with: newName ]
-								ifFalse: [ decl ]) ]
-				ifNil: [ newDecls at: oldName put: decl ] ].
+	declarations keysAndValuesDo: [ :oldName :decl |
+		(aDictionary at: oldName ifAbsent: nil)
+			ifNotNil: [ :newName |
+				| index |
+				index := decl isTType
+					         ifTrue: [ 0 ]
+					         ifFalse: [
+					         decl findLastOccurrenceOfString: oldName startingAt: 1 ].
+				newDecls at: newName put: (index ~= 0
+						 ifTrue: [
+							 decl
+								 copyReplaceFrom: index
+								 to: index + oldName size - 1
+								 with: newName ]
+						 ifFalse: [ decl ]) ]
+			ifNil: [ newDecls at: oldName put: decl ] ].
+
 	self newDeclarations: newDecls.
 	newProperties := properties copy.
-	newProperties pragmas do: [ :pragma | 
+	newProperties pragmas do: [ :pragma |
 		| mappedArgs |
-		mappedArgs := pragma arguments collect: [ :arg | 
+		mappedArgs := pragma arguments collect: [ :arg |
 			              arg isString
 				              ifTrue: [ aDictionary at: arg ifAbsent: arg ]
 				              ifFalse: [ arg ] ].
-		mappedArgs ~= pragma arguments ifTrue: [ 
+		mappedArgs ~= pragma arguments ifTrue: [
 			pragma arguments: mappedArgs ] ].
 	self properties: newProperties.
 
 	"map variable names in parse tree"
-	parseTree nodesDo: [ :node | 
-		(node isVariable and: [ aDictionary includesKey: node name ]) 
+	parseTree nodesDo: [ :node |
+		(node isVariable and: [ aDictionary includesKey: node name ])
 			ifTrue: [ node setName: (aDictionary at: node name) ].
-		(node isStatementList and: [ node arguments size > 0 ]) ifTrue: [ 
-			node setArguments: (node arguments collect: [ :arg | 
+		(node isStatementList and: [ node arguments size > 0 ]) ifTrue: [
+			node setArguments: (node arguments collect: [ :arg |
 					 aDictionary at: arg ifAbsent: [ arg ] ]) ] ]
 ]
 

@@ -2188,19 +2188,6 @@ SlangBasicTranslationTest >> testSendAllMask [
 ]
 
 { #category : #'tests-builtins' }
-SlangBasicTranslationTest >> testSendAnd [
-
-	| send |
-
-	send := TSendNode new
-					setSelector: #&
-					receiver: (TConstantNode value: false)
-					arguments: { TConstantNode value: true }.
-	self should: [ self translate: send ] raise: TranslationError.
-
-]
-
-{ #category : #'tests-builtins' }
 SlangBasicTranslationTest >> testSendAsFloat [
 
 	| translation send |
@@ -6602,6 +6589,35 @@ SlangBasicTranslationTest >> testTranslateNormalVariable [
 	translation := self translate: (TVariableNode new setName: 'someVar').
 
 	self assert: translation equals: 'someVar'
+]
+
+{ #category : #'tests-send' }
+SlangBasicTranslationTest >> testTypeGuidedAnd [
+
+	| tMethod translation |
+	tMethod := self getTMethodFrom: #methodWithAndBooleanReceiver.
+	translation := self translate: tMethod.
+
+	self assert: (translation includesSubstring: 'receiver && 1')
+]
+
+{ #category : #'tests-send' }
+SlangBasicTranslationTest >> testTypeGuidedbitAnd [
+
+	| tMethod translation |
+	tMethod := self getTMethodFrom: #methodWithAndIntegerReceiver.
+	translation := self translate: tMethod.
+
+	self assert: (translation includesSubstring: 'receiver & 1')
+]
+
+{ #category : #'tests-send' }
+SlangBasicTranslationTest >> testTypeMismatchedAnd [
+
+	| method |
+	method := self getTMethodFrom:
+		          #methodWithAndIntegerReceiverAndBooleanArgument.
+	self should: [ self translate: method ] raise: TypeError 
 ]
 
 { #category : #'tests-assignment' }

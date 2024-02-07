@@ -66,6 +66,27 @@ PharoVMMaker class >> generate: anInterpreterClass outputDirectory: aDirectory [
 ]
 
 { #category : #generation }
+PharoVMMaker class >> generate: anInterpreterClass outputDirectory: aDirectory imageFormat: imageFormatName [
+
+    Transcript
+        nextPutAll: 'Generating ';
+        nextPutAll: anInterpreterClass printString;
+        nextPutAll: ' in ';
+        nextPutAll: aDirectory printString;
+        nextPutAll: ' with ';
+        nextPutAll: imageFormatName;
+        nextPutAll: '...';
+        newLine;
+        flush.
+
+    self new
+        imageFormatName: imageFormatName;
+        outputDirectory: aDirectory;
+        perform: #generate , anInterpreterClass asSymbol
+
+]
+
+{ #category : #generation }
 PharoVMMaker class >> generate: anInterpreterClass outputDirectory: aDirectory options: options [
 
 	self new

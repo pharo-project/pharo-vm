@@ -216,9 +216,7 @@ TStatementListNode >> asCASTIn: aBuilder prependToEnd: aNodeOrNil [
 					  ifFalse: [ 'DECL_MAYBE_SQ_GLOBAL_STRUCT' ])) ].
 
 	(aBuilder sortStrings: self locals asSet) do: [ :var | | declaration |
-		declaration := aBuilder
-		  declarationAt: var
-		  ifAbsent: [ aBuilder defaultType, ' ' , var ].
+		declaration := aBuilder cVarDeclaration: var.
 
 		self flag: #TODO.
 		"Avoid implicit variables.
@@ -303,14 +301,27 @@ TStatementListNode >> children [
 ]
 
 { #category : #transformations }
-TStatementListNode >> copyWithoutReturn [
+TStatementListNode >> copyStatementsWithoutReturn [
+
 	self assert: self endsWithReturn.
-	statements size = 1 ifTrue:
-		[^statements last expression].
-	^self class new
-		setArguments: arguments
-			statements: statements allButLast, {statements last copyWithoutReturn};
-		yourself
+	^ self class new
+		  setArguments: arguments statements: (statements size = 1
+				   ifTrue: [ statements last expression ]
+				   ifFalse: [
+					   statements allButLast , { statements last copyWithoutReturn } ]);
+		  yourself
+]
+
+{ #category : #transformations }
+TStatementListNode >> copyWithoutReturn [
+
+	self assert: self endsWithReturn.
+	statements size = 1 ifTrue: [ ^ statements last expression ].
+	^ self class new
+		  setArguments: arguments
+		  statements:
+			  statements allButLast , { statements last copyWithoutReturn };
+		  yourself
 ]
 
 { #category : #declarations }
