@@ -10640,14 +10640,16 @@ StackInterpreter >> positive32BitIntegerFor: integerValue [
 	"integerValue is interpreted as POSITIVE, e.g. as the result of Bitmap>at:.
 	 N.B.  Returning in each arm separately enables Slang inlining.
 	 /Don't/ return the ifTrue:ifFalse: unless Slang inlining of conditionals is fixed."
+
 	<api>
 	<inline: true>
+	<druidExitPoint>
 	<var: 'integerValue' type: #'unsigned int'>
 	objectMemory hasSixtyFourBitImmediates
-		ifTrue:
-			[^objectMemory integerObjectOf: (integerValue asUnsignedInteger bitAnd: 16rFFFFFFFF)]
-		ifFalse:
-			[^self maybeInlinePositive32BitIntegerFor: integerValue]
+		ifTrue: [
+			^ objectMemory integerObjectOf:
+				  (integerValue asUnsignedInteger bitAnd: 16rFFFFFFFF) ]
+		ifFalse: [ ^ self maybeInlinePositive32BitIntegerFor: integerValue ]
 ]
 
 { #category : #'primitive support' }
@@ -14375,7 +14377,6 @@ StackInterpreter >> stObject: array at: index [
 StackInterpreter >> stObject: array at: index format: format fixedFields: fixedFields size: stSize [
 
 	<inline: true>
-	<druidDeferredInline>
 
 	(self oop: index 
 			isGreaterThanOrEqualTo: (objectMemory firstValidIndexOfIndexableObject: array withFormat: format)
@@ -14966,7 +14967,7 @@ StackInterpreter >> subscript: array with: index format: fmt [
 { #category : #'indexing primitive support' }
 StackInterpreter >> subscript: array with: index storing: oopToStore format: fmt [ 
 	"Note: This method assumes that the index is within bounds!"
-	| signedValueToStore unsignedValueToStore |
+	| signedValueToStore unsignedValueToStore unsigned64BitValueToStore |
 	<inline: true>
 	fmt <= objectMemory lastPointerFormat ifTrue:
 		[objectMemory storePointer: index - 1 ofObject: array withValue: oopToStore.
@@ -14992,7 +14993,7 @@ StackInterpreter >> subscript: array with: index storing: oopToStore format: fmt
 			 objectMemory storeShort16: index - 1 ofObject: array withValue: signedValueToStore.
 			 ^self].
 		 fmt = objectMemory sixtyFourBitIndexableFormat ifTrue:
-			[| unsigned64BitValueToStore |
+			[
 			 unsigned64BitValueToStore := self positive64BitValueOf: oopToStore.
 			 self successful ifTrue:
 				[objectMemory storeLong64: index - 1 ofObject: array withValue: unsigned64BitValueToStore].

@@ -638,6 +638,7 @@ InterpreterPrimitives >> positive64BitValueOf: oop [
 	"Convert the given object into an integer value.
 	The object may be either a positive SmallInteger or an eight-byte LargePositiveInteger."
 	<api>
+	<druidExitPoint>
 	<returnTypeC: #usqLong>
 	| sz value ok |
 	<var: #value type: #usqLong>
