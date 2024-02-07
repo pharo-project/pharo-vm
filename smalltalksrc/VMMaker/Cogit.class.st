@@ -4623,9 +4623,12 @@ Cogit >> cog: aMethodObj selector: aSelectorOop [
 	methodObj := aMethodObj.
 	methodHeader := objectMemory methodHeaderOf: aMethodObj.
 	receiverTags := objectMemory receiverTagBitsForMethod: methodObj.
+
 	cogMethod := self compileCogMethod: aSelectorOop.
 	(cogMethod asInteger between: MaxNegativeErrorCode and: -1) ifTrue:
-		[cogMethod asInteger = InsufficientCodeSpace ifTrue:
+		[
+		coInterpreter maybeFlagMethodAsInterpreted: aMethodObj.
+		cogMethod asInteger = InsufficientCodeSpace ifTrue:
 			[coInterpreter callForCogCompiledCodeCompaction].
 		 self maybeFreeCounters.
 		 "Right now no errors should be reported, so nothing more to do."
@@ -6211,7 +6214,8 @@ Cogit >> entryPointTagIsSelector: entryPoint [
 { #category : #accessing }
 Cogit >> estimateOfAbstractOpcodesPerBytecodes [
 	<inline: true>
-	^ 100
+	"Bump number of estimated bytecodes for Druid compilation"
+	^ 47
 ]
 
 { #category : #'simulation only' }

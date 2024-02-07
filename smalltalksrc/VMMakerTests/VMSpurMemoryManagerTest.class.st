@@ -579,6 +579,17 @@ VMSpurMemoryManagerTest >> newOldByteObjectOfSize: byteSize [
 	^ oop
 ]
 
+{ #category : #helpers }
+VMSpurMemoryManagerTest >> newOldEphemeronObject [
+
+	"In pharo Ephemerons have 3 slots"
+	
+	^ self
+		newOldSpaceObjectWithSlots: 3
+		format: memory ephemeronFormat
+		classIndex: (memory ensureBehaviorHash: ourEphemeronClass)
+]
+
 { #category : #'helpers - objects' }
 VMSpurMemoryManagerTest >> newOldSpaceArrayWithSlots: slots [
 

@@ -115,7 +115,6 @@ Class {
 	#name : #StackToRegisterMappingCogit,
 	#superclass : #SimpleStackBasedCogit,
 	#instVars : [
-		'prevBCDescriptor',
 		'numPushNilsFunction',
 		'pushNilSizeFunction',
 		'methodOrBlockNumTemps',
@@ -980,7 +979,7 @@ StackToRegisterMappingCogit >> compileAbstractInstructionsFrom: start through: e
 	 descriptor := self loadBytesAndGetDescriptor.
 	 nextOpcodeIndex := opcodeIndex.
 	 result := deadCode
-				ifTrue: [0]
+				ifTrue: [self mapDeadDescriptorIfNeeded: descriptor]
 				ifFalse: [self perform: descriptor generator].
 	 result = 0 ifTrue: [self assertExtsAreConsumed: descriptor].
 	 self traceDescriptor: descriptor; traceSimStack.
@@ -1153,7 +1152,6 @@ StackToRegisterMappingCogit >> ensureFixupAt: targetPC withStackPointer: aStackP
 	<var: #fixup type: #'BytecodeFixup *'>
 	| fixup |
 	fixup := self fixupAt: targetPC.
-	deadCode ifTrue: [ ^ fixup ].
 
 	self traceFixup: fixup merge: true.
 	self cCode: '' inSmalltalk: [
@@ -2269,6 +2267,15 @@ StackToRegisterMappingCogit >> genPushLiteralVariable: literalIndex [
 		destReg: freeReg.
 	self ssPushRegister: freeReg.
 	^0
+]
+
+{ #category : #'bytecode generator support' }
+StackToRegisterMappingCogit >> genPushMaybeContextReceiverVariable: slotIndex [
+
+	<inline: false>
+	self ssAllocateCallReg: ReceiverResultReg and: SendNumArgsReg.
+	self ensureReceiverResultRegContainsSelf.
+	^ self genPushMaybeContextSlotIndex: slotIndex
 ]
 
 { #category : #'bytecode generator support' }
@@ -3419,6 +3426,19 @@ StackToRegisterMappingCogit >> liveVectorRegisters [
 		(ssEntry type = SSVectorRegister) ifTrue: [ 
 			regsSet := regsSet bitOr: ssEntry registerMask ] ].
 	^ regsSet
+]
+
+{ #category : #'bytecode generator support' }
+StackToRegisterMappingCogit >> mapDeadDescriptorIfNeeded: descriptor [
+	"insert nops for dead code that is mapped so that bc 
+	 to mc mapping is not many to one"
+
+	<var: #descriptor type: #'BytecodeDescriptor *'>
+	self flag: #annotateInstruction.
+	(descriptor isMapped or: [
+		 inBlock > 0 and: [ descriptor isMappedInBlock ] ]) ifTrue: [
+		self annotateBytecode: self Nop ].
+	^ 0
 ]
 
 { #category : #'simulation stack' }

@@ -984,6 +984,12 @@ SimpleStackBasedCogit >> compilePrimitive [
 ]
 
 { #category : #accessing }
+SimpleStackBasedCogit >> deadCode: aBoolean [ 
+	
+	"Nothing, compatibility with Stack to register based cogit"
+]
+
+{ #category : #accessing }
 SimpleStackBasedCogit >> directedBindingSuperSendTrampolineAt: anAddress put: aTrampolineAddress [
 	
 	directedSuperBindingSendTrampolines at: anAddress put: aTrampolineAddress
@@ -1992,26 +1998,28 @@ SimpleStackBasedCogit >> genPushLiteralVariableBytecode [
 ]
 
 { #category : #'bytecode generator support' }
-SimpleStackBasedCogit >> genPushMaybeContextReceiverVariable: slotIndex [ 
+SimpleStackBasedCogit >> genPushMaybeContextReceiverVariable: slotIndex [
+
 	<inline: false>
+	<var: #jmpSingle type: #'AbstractInstruction'>
+	<var: #jmpDone type: #AbstractInstruction>
 	| jmpSingle jmpDone |
-	<var: #jmpSingle type: #'AbstractInstruction *'>
-	<var: #jmpDone type: #'AbstractInstruction *'>
 	self assert: needsFrame.
 	"See CoInterpreter>>contextInstructionPointer:frame: for an explanation
-	 of the instruction pointer slot handling."
-	slotIndex = InstructionPointerIndex ifTrue:
-		[self putSelfInReceiverResultReg.
-		 self MoveCq: slotIndex R: SendNumArgsReg.
-		 self CallRT: ceFetchContextInstVarTrampoline.
-		 self PushR: SendNumArgsReg.
-		 ^0].
+     of the instruction pointer slot handling."
+	slotIndex = InstructionPointerIndex ifTrue: [
+		self putSelfInReceiverResultReg.
+		self MoveCq: slotIndex R: SendNumArgsReg.
+		self CallRT: ceFetchContextInstVarTrampoline.
+		self PushR: SendNumArgsReg.
+		^ 0 ].
 	self MoveMw: FoxMFReceiver r: FPReg R: ReceiverResultReg.
 	objectRepresentation
 		genLoadSlot: SenderIndex
 		sourceReg: ReceiverResultReg
 		destReg: TempReg.
-	jmpSingle := objectRepresentation genJumpNotSmallIntegerInScratchReg: TempReg.
+	jmpSingle := objectRepresentation
+		             genJumpNotSmallIntegerInScratchReg: TempReg.
 	self MoveCq: slotIndex R: SendNumArgsReg.
 	self CallRT: ceFetchContextInstVarTrampoline.
 	jmpDone := self Jump: 0.
@@ -2021,7 +2029,7 @@ SimpleStackBasedCogit >> genPushMaybeContextReceiverVariable: slotIndex [
 		sourceReg: ReceiverResultReg
 		destReg: SendNumArgsReg.
 	jmpDone jmpTarget: (self PushR: SendNumArgsReg).
-	^0
+	^ 0
 ]
 
 { #category : #'bytecode generators' }

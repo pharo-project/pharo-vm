@@ -545,7 +545,7 @@ CoInterpreter >> activateNewFullClosure: blockClosure method: theMethod numArgs:
 	 compile if this is the same one.  But we can thrash trying to compile an uncoggable
 	 method unless we try and remember which ones can't be cogged.  So also record
 	 the last block method we failed to compile and avoid recompiling it."
-	(self methodWithHeaderShouldBeCogged: methodHeader)
+	(self methodShouldBeCogged: theMethod)
 		ifTrue:
 			[((self isInstructionPointerInInterpreter: instructionPointer) not "If from machine code (via value primitive) attempt jitting"
 			  or: [theMethod = lastCoggableInterpretedBlockMethod]) "If from interpreter and repeat block, attempt jitting"
@@ -589,11 +589,15 @@ CoInterpreter >> activateNewMethod [
 	methodHeader := self rawHeaderOf: newMethod.
 	inInterpreter := self isInstructionPointerInInterpreter:
 		                 instructionPointer.
-	(self isCogMethodReference: methodHeader) ifTrue: [
-		inInterpreter ifTrue: [
-			self iframeSavedIP: framePointer put: instructionPointer asInteger.
-			instructionPointer := cogit ceReturnToInterpreterPC ].
-		^ self activateCoggedNewMethod: inInterpreter ].
+		
+	(self isCogMethodReference: methodHeader)
+		ifTrue:
+			[inInterpreter ifTrue:
+				[self iframeSavedIP: framePointer put: instructionPointer asInteger.
+				 instructionPointer := cogit ceReturnToInterpreterPC].
+			^ self activateCoggedNewMethod: inInterpreter].		
+
+	"We are in the interpreter"
 	methodHeader := self justActivateNewMethod: true.
 
 	"Now check for stack overflow or an event (interrupt, must scavenge, etc)."
@@ -2738,11 +2742,33 @@ CoInterpreter >> executeNewMethod: eagerlyCompile [
 		eagerlyCompile ifTrue: [ "Eagerly compile it if appropriate so that doits are fast."
 			methodHeader := self rawHeaderOf: newMethod.
 			(self isCogMethodReference: methodHeader) ifFalse: [
-				(self methodWithHeaderShouldBeCogged: methodHeader)
+				(self methodShouldBeCogged: newMethod)
 					ifTrue: [
 						cogit cog: newMethod selector: objectMemory nilObject.
 						methodHeader := self rawHeaderOf: newMethod ]
 					ifFalse: [ self maybeFlagMethodAsInterpreted: newMethod ] ] ].
+		"if not primitive, or primitive failed, activate the method"
+		self activateNewMethod ]
+]
+
+{ #category : #'message sending' }
+CoInterpreter >> executeNewMethod: eagerlyCompile [
+	"if not primitive, or primitive failed, activate the method"
+	<inline: true>
+	| inInterpreter |	
+	inInterpreter := self isInstructionPointerInInterpreter:
+		                 instructionPointer.
+	self executePrimitiveFromInterpreter: inInterpreter ifFail: [
+		| methodHeader |
+		eagerlyCompile ifTrue: [
+			"Eagerly compile it if appropriate so that doits are fast."
+			methodHeader := self rawHeaderOf: newMethod.
+			(self isCogMethodReference: methodHeader) ifFalse: [
+				(self methodWithHeaderShouldBeCogged: methodHeader)
+					ifTrue: [
+						cogit cog: newMethod selector: objectMemory nilObject.
+						methodHeader := self rawHeaderOf: newMethod ]
+					ifFalse: [ self maybeFlagMethodAsInterpreted: newMethod ] ]].
 		"if not primitive, or primitive failed, activate the method"
 		self activateNewMethod ]
 ]
@@ -3316,7 +3342,7 @@ CoInterpreter >> ifAppropriateCompileToNativeCode: aMethodObj selector: selector
 			 cogMethod selector = objectMemory nilObject ifTrue:
 				[cogit setSelectorOf: cogMethod to: selector]]
 		ifFalse:
-			[(self methodWithHeaderShouldBeCogged: methodHeader)
+			[(self methodShouldBeCogged: aMethodObj)
 				ifTrue: [cogit cog: aMethodObj selector: selector]
 				ifFalse: [self maybeFlagMethodAsInterpreted: aMethodObj]]
 ]
@@ -3342,8 +3368,8 @@ CoInterpreter >> ifBackwardsCheckForEvents: offsetToJumpBytecode [
 		backwardJumpCountByte := self iframeBackwardBranchByte: framePointer.
 		(backwardJumpCountByte := backwardJumpCountByte - 2) = 1
 			ifTrue: [
-				(self methodWithHeaderShouldBeCogged:
-					 (objectMemory methodHeaderOf: method)) ifTrue: [
+				(self methodShouldBeCogged:
+					 ( method)) ifTrue: [
 					self attemptToSwitchToMachineCode:
 						(self oopForPointer: instructionPointer) - offsetToJumpBytecode
 						- method - objectMemory baseHeaderSize - 1
@@ -3668,6 +3694,15 @@ CoInterpreter >> isMachineCodeFrame: theFP [
 { #category : #'debug support' }
 CoInterpreter >> isMachineCodeIP: anInstrPointer [
 	^anInstrPointer asUnsignedInteger < objectMemory getMemoryMap startOfObjectMemory
+]
+
+{ #category : #'compiled methods' }
+CoInterpreter >> isMaybeFlagMethodAsInterpreted: aMethodHeader [
+	"The flag bit can be used to flag methods that are interpreted, if it has been requested
+	 from the image header flags."
+
+	^ (objectMemory integerValueOf: aMethodHeader)
+	  >> MethodHeaderFlagBitPosition anyMask: 1
 ]
 
 { #category : #'message sending' }
@@ -4294,16 +4329,27 @@ CoInterpreter >> maybeFixClonedCompiledMethod: objOop [
 CoInterpreter >> maybeFlagMethodAsInterpreted: aMethod [
 	"The flag bit can be used to flag methods that are interpreted, if it has been requested
 	 from the image header flags."
-	flagInterpretedMethods ifTrue:
-		[| rawHeader realHeader |
-		 rawHeader := self rawHeaderOf: aMethod.
-		 realHeader := (self isCogMethodReference: rawHeader)
-						ifTrue: [(self cCoerceSimple: rawHeader to: #'CogMethod *') methodHeader]
-						ifFalse: [rawHeader].
-		 realHeader := realHeader bitOr: (objectMemory integerObjectOf: 1 << MethodHeaderFlagBitPosition).
-		 (self isCogMethodReference: rawHeader)
-			ifTrue: [(self cCoerceSimple: rawHeader to: #'CogMethod *') methodHeader: realHeader]
-			ifFalse: [objectMemory storePointerUnchecked: 0 ofObject: aMethod withValue: realHeader]]
+
+	| rawHeader realHeader |
+	<api>
+	rawHeader := self rawHeaderOf: aMethod.
+	realHeader := (self isCogMethodReference: rawHeader)
+		              ifTrue: [
+		              (self cCoerceSimple: rawHeader to: #'CogMethod *')
+			              methodHeader ]
+		              ifFalse: [ rawHeader ].
+	realHeader := realHeader bitOr:
+		              (objectMemory integerObjectOf:
+			               1 << MethodHeaderFlagBitPosition).
+	(self isCogMethodReference: rawHeader)
+		ifTrue: [
+			(self cCoerceSimple: rawHeader to: #'CogMethod *') methodHeader:
+				realHeader ]
+		ifFalse: [
+			objectMemory
+				storePointerUnchecked: 0
+				ofObject: aMethod
+				withValue: realHeader ]
 ]
 
 { #category : #'compiled methods' }
@@ -4404,10 +4450,17 @@ CoInterpreter >> methodWithHeaderShouldBeCogged: methodHeader [
 				50->2 51->1 53->1 55->1 56->1
 				87->1 108->1 171->1)
 	 literalCountOfHeader: does not include the header word."
-	^SistaVM
-		ifTrue: [(self isOptimizedMethodHeader: methodHeader)
-				or: [(objectMemory literalCountOfMethodHeader: methodHeader) <= maxLiteralCountForCompile]]
-		ifFalse: [(objectMemory literalCountOfMethodHeader: methodHeader) <= maxLiteralCountForCompile]
+
+	(self isMaybeFlagMethodAsInterpreted: methodHeader) ifTrue: [
+		^ false ].
+	^ SistaVM
+		  ifTrue: [
+			  (self isOptimizedMethodHeader: methodHeader) or: [
+				  (objectMemory literalCountOfMethodHeader: methodHeader)
+				  <= maxLiteralCountForCompile ] ]
+		  ifFalse: [
+			  (objectMemory literalCountOfMethodHeader: methodHeader)
+			  <= maxLiteralCountForCompile ]
 ]
 
 { #category : #'frame access' }
@@ -4544,7 +4597,7 @@ CoInterpreter >> mnuMethodOrNilFor: rcvr [
 				 objectMemory isCompiledMethod: mnuMethod ] ]) ifTrue: [
 			methodHeader := self rawHeaderOf: mnuMethod.
 			((self isCogMethodReference: methodHeader) not and: [
-				 self methodWithHeaderShouldBeCogged: methodHeader ]) ifTrue: [
+				 self methodShouldBeCogged: mnuMethod ]) ifTrue: [
 				cogit cog: mnuMethod selector: mnuSelector ].
 			^ mnuMethod ].
 		currentClass := self superclassOf: currentClass ].

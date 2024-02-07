@@ -5932,7 +5932,7 @@ CogARMv8Compiler >> shiftable16bitImmediate: constant ifTrue: trueAlternativeBlo
 	
 	(constant bitAnd: 16rFFFF) = constant ifTrue:
 		[^trueAlternativeBlock value: 0 value: constant].
-	0 to: 2 do: [:i | | shiftedValue shiftMagnitude |
+	0 to: 1 do: [:i | | shiftedValue shiftMagnitude |
 		shiftMagnitude := (1 << i) * 16.
 		shiftedValue := constant >> shiftMagnitude.
 		(shiftedValue << shiftMagnitude = constant and: [ (shiftedValue bitAnd: 16rFFFF) = shiftedValue ])
