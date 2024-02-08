@@ -98,25 +98,6 @@ VMJittedPrimitivesTest >> new64BitIndexableOfSize: aSize [
 ]
 
 { #category : #helpers }
-VMJittedPrimitivesTest >> new8BitIndexableOfSize: aSize [
-
-	^ self newBitIndexableOfSize: aSize bytesPerSlot: 1 format: memory firstByteFormat
-]
-
-{ #category : #helpers }
-VMJittedPrimitivesTest >> newBitIndexableOfSize: aSize bytesPerSlot: bytesPerSlot format: format [
-
-	| padding numberOfWordSizeSlots desiredByteSize |
-	desiredByteSize := aSize * bytesPerSlot roundUpTo: self wordSize.
-	numberOfWordSizeSlots := desiredByteSize / self wordSize.
-	padding := desiredByteSize / bytesPerSlot - aSize.
-	^ memory
-		  allocateNewSpaceSlots: numberOfWordSizeSlots
-		  format: format + padding
-		  classIndex: self nextOrdinaryClassIndex
-]
-
-{ #category : #helpers }
 VMJittedPrimitivesTest >> setUp [
 
 	super setUp.
