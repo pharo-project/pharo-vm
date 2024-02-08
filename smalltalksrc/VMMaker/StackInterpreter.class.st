@@ -2628,27 +2628,31 @@ StackInterpreter >> booleanCheatFalseSistaV1 [
 	self druidIgnore: [
 		| bytecode offset |
 		bytecode := self fetchByte. "assume next bytecode is jumpIfFalse (99%)"
-		self pop: 2.
 		(bytecode < 199 and: [ bytecode > 191 ]) ifTrue: [ "short jumpIfFalse"
-			^ self jump: bytecode - 191 ].
+			self jump: bytecode - 191.
+			^ nil ].
 
 		bytecode = 239 ifTrue: [ "long jumpIfFalse"
 			offset := self fetchByte.
-			^ self jump: offset ].
+			self jump: offset.
+			^ nil ].
 
 		"not followed by a jumpIfFalse; (un)do instruction fetch and push boolean result"
 		currentBytecode := bytecode ].
-	self push: objectMemory falseObject
+	^ objectMemory falseObject
 ]
 
 { #category : #utilities }
 StackInterpreter >> booleanCheatSistaV1: cond [
 	"cheat the interpreter out of the pleasure of handling the next bytecode IFF it is a jump-on-boolean. Which it is, often enough when the current bytecode is something like bytecodePrimEqual"
-	<inline: true>
 
-	cond
-		ifTrue: [self booleanCheatTrueSistaV1]
-		ifFalse: [self booleanCheatFalseSistaV1]
+	<inline: true>
+	| resultBoolean |
+	self pop: 2.
+	resultBoolean := cond
+		ifTrue: [ self booleanCheatTrueSistaV1 ]
+		ifFalse: [ self booleanCheatFalseSistaV1 ].
+	resultBoolean ifNotNil: [ self push: resultBoolean ]
 ]
 
 { #category : #utilities }
@@ -2656,23 +2660,25 @@ StackInterpreter >> booleanCheatTrueSistaV1 [
 	"cheat the interpreter out of the pleasure of handling the next bytecode IFF it is a jump-on-boolean. Which it is, often enough when the current bytecode is something like bytecodePrimEqual"
 
 	<sharedCodeInCase: #bytecodePrimLessThanSistaV1>
-	self pop: 2.
 	self druidIgnore: [
 		| bytecode offset |
 		bytecode := self fetchByte. "assume next bytecode is jumpIfFalse (99%)"
 		bytecode >= 192 ifTrue: [
 			bytecode <= 199 ifTrue: [ "short jumpIfFalse 192 - 199"
-				^ self fetchNextBytecode ].
+				self fetchNextBytecode.
+				^ nil ].
 			bytecode = 239 ifTrue: [ "long jumpIfFalse"
 				self fetchByte.
-				^ self fetchNextBytecode ].
+				self fetchNextBytecode.
+				^ nil ].
 			bytecode = 238 ifTrue: [ "long jumpIfTrue 238"
 				offset := self fetchByte.
-				^ self jump: offset ] ].
+				self jump: offset.
+				^ nil ] ].
 
 		"not followed by a jumpIfFalse; (un)do instruction fetch and push boolean result"
 		currentBytecode := bytecode ].
-	self push: objectMemory trueObject
+	^ objectMemory trueObject
 ]
 
 { #category : #utilities }
@@ -2984,19 +2990,14 @@ StackInterpreter >> bytecodePrimGreaterThanSistaV1 [
 { #category : #'common selector sends' }
 StackInterpreter >> bytecodePrimIdenticalSistaV1 [
 
-	<compilationInfo: #isMapped>
-	<druidInfo: #hasSend>
 	| rcvr arg |
-	self druidIgnore: [
-		rcvr := self stackValue: 1.
-		arg := self stackValue: 0.
-		(objectMemory isOopForwarded: rcvr) ifTrue: [
-			rcvr := self handleSpecialSelectorSendFaultFor: rcvr ].
-		(objectMemory isOopForwarded: arg) ifTrue: [
-			arg := self handleSpecialSelectorSendFaultFor: arg ].
-		^ self booleanCheatSistaV1: rcvr = arg ].
-
-  self normalSendSpecialSelector: 22 argumentCount: 1
+	rcvr := self stackValue: 1.
+	arg := self stackValue: 0.
+	(objectMemory isOopForwarded: rcvr) ifTrue: [
+		rcvr := self handleSpecialSelectorSendFaultFor: rcvr ].
+	(objectMemory isOopForwarded: arg) ifTrue: [
+		arg := self handleSpecialSelectorSendFaultFor: arg ].
+	^ self booleanCheatSistaV1: rcvr = arg
 ]
 
 { #category : #'common selector sends' }
@@ -3187,19 +3188,14 @@ StackInterpreter >> bytecodePrimNotEqualSistaV1 [
 { #category : #'common selector sends' }
 StackInterpreter >> bytecodePrimNotIdenticalSistaV1 [
 
-	<druidInfo: #hasSend>
-	<compilationInfo: #isMapped>
-	self druidIgnore: [
-		| rcvr arg |
-		rcvr := self stackValue: 1.
-		arg := self stackValue: 0.
-		(objectMemory isOopForwarded: rcvr) ifTrue: [
-			rcvr := self handleSpecialSelectorSendFaultFor: rcvr ].
-		(objectMemory isOopForwarded: arg) ifTrue: [
-			arg := self handleSpecialSelectorSendFaultFor: arg ].
-		^ self booleanCheatSistaV1: rcvr ~= arg ].
-
-  ^ self normalSendSpecialSelector: 24 argumentCount: 1
+	| rcvr arg |
+	rcvr := self stackValue: 1.
+	arg := self stackValue: 0.
+	(objectMemory isOopForwarded: rcvr) ifTrue: [
+		rcvr := self handleSpecialSelectorSendFaultFor: rcvr ].
+	(objectMemory isOopForwarded: arg) ifTrue: [
+		arg := self handleSpecialSelectorSendFaultFor: arg ].
+	^ self booleanCheatSistaV1: rcvr ~= arg
 ]
 
 { #category : #'common selector sends' }
