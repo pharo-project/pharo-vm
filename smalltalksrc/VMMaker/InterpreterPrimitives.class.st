@@ -3168,6 +3168,60 @@ InterpreterPrimitives >> primitiveQuoLargeIntegers [
 	self successful ifTrue: [self pop: 2 thenPush: oopResult].
 ]
 
+{ #category : #'as yet unclassified' }
+InterpreterPrimitives >> primitiveRandom [
+
+	<export: true>
+	<var: #intermediateValue64Bits type: #uint64_t>
+	<var: #count type: #uint32_t>
+	<var: #returnValue type: #uint32_t>
+	| stateArray count returnValue intermediateValue64Bits |
+	stateArray := self stackValue: 0.
+	((objectMemory isSixtyFourBitIndexableOop: stateArray) and:
+		 (objectMemory byteSizeOf: stateArray) = 8) ifFalse: [
+		^ self primitiveFail ].
+
+	intermediateValue64Bits := objectMemory
+		                           fetchLong64: 0
+		                           ofObject: stateArray.
+	count := intermediateValue64Bits >> 59.
+	self "Updating state"
+		cCode: [ 
+			objectMemory
+				storeLong64: 0
+				ofObject: stateArray
+				withValue:
+				intermediateValue64Bits * 6364136223846793005
+				+ 1442695040888963407 ]
+		inSmalltalk: [ "Simulate 64 bits overflow"
+			objectMemory
+				storeLong64: 0
+				ofObject: stateArray
+				withValue:
+					(intermediateValue64Bits * 6364136223846793005
+					 + 1442695040888963407 bitAnd: 16rFFFFFFFFFFFFFFFF) ].
+
+	intermediateValue64Bits := intermediateValue64Bits >> 18 bitXor:
+		                           intermediateValue64Bits.
+
+	"Rotation on 32 bits"
+	self
+		cCode: [
+			returnValue := intermediateValue64Bits >> 27.
+			returnValue := returnValue >> count bitOr:
+				               returnValue << (count negated bitAnd: 31) ]
+		inSmalltalk: [ "Simulate 32 bits overflow"
+			returnValue := intermediateValue64Bits >> 27 bitAnd: 16rFFFFFFFF.
+			returnValue := (returnValue >> count bitOr:
+				                returnValue << (count negated bitAnd: 31))
+				               bitAnd: 16rFFFFFFFF ].
+
+	self
+		pop: 2
+		thenPush:
+		(objectMemory integerObjectOf: (returnValue bitAnd: 16r7FFFFFFF))
+]
+
 { #category : #'I/O primitives' }
 InterpreterPrimitives >> primitiveRelinquishProcessor [
 	"Relinquish the processor for up to the given number of microseconds. The exact behavior of this primitive is platform dependent."
