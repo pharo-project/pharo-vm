@@ -1279,14 +1279,14 @@ StackInterpreter class >> initializePrimitiveTable [
 		(255 primitiveFail)
 
 		"Quick Push Const Methods"
-		(256 nil) "primitivePushSelf"
-		(257 nil) "primitivePushTrue"
-		(258 nil) "primitivePushFalse"
-		(259 nil) "primitivePushNil"
-		(260 nil) "primitivePushMinusOne"
-		(261 nil) "primitivePushZero"
-		(262 nil) "primitivePushOne"
-		(263 nil) "primitivePushTwo"
+		(256 primitivePushSelf)
+		(257 primitivePushTrue)
+		(258 primitivePushFalse)
+		(259 primitivePushNil)
+		(260 primitivePushMinusOne)
+		(261 primitivePushZero)
+		(262 primitivePushOne)
+		(263 primitivePushTwo)
 
 		"Quick Push Inst Var Methods"
 		(264 519 nil) "primitiveLoadInstVar"
@@ -5421,30 +5421,33 @@ StackInterpreter >> executePrimitiveFromInterpreter: inInterpreter ifFail: aBloc
 	 the machine code primitive, just evaluate primitiveFunctionPointer directly."
 
 	primitiveFunctionPointer ~= 0 ifTrue: [
-		| succeeded |
-		self isPrimitiveFunctionPointerAnIndex ifTrue: [
-			self executeQuickPrimitive.
-			self returnToExecutive: inInterpreter.
-			^ nil ].
 		"slowPrimitiveResponse may of course context-switch. 
 		If so we must reenter the new process appropriately, returning only if we've found an interpreter frame.
 		The instructionPointer tells us from whence we came."
-		succeeded := self slowPrimitiveResponse.
-		succeeded ifTrue: [
-			self returnToExecutive: inInterpreter.
-			^ nil ] ].
+		self slowPrimitiveResponse
+			 ifTrue: [ ^ self returnToExecutive: inInterpreter ] ].
 
 	^ aBlock value
 ]
 
-{ #category : #'primitive support' }
-StackInterpreter >> executeQuickPrimitive [
+{ #category : #'message sending' }
+StackInterpreter >> executeQuick [
 
-	"Invoke a quick primitive.
+	"primFailCode := 0."
+	self isPrimitiveFunctionPointerAQuickPrimitive 
+		ifTrue: [ self dispatchFunctionPointer: primitiveFunctionPointer. ^ true ]
+		ifFalse: [ self isPrimitiveFunctionPointerAnIndex 
+			ifTrue: [ self executeQuickReturn. ^ true ] ].
+	^ false
+]
+
+{ #category : #'primitive support' }
+StackInterpreter >> executeQuickReturn [
+	" Send a quick return.
 	 Called under the assumption that primFunctionPtr has been preloaded"
 
 	| localPrimIndex |
-	self assert: self isPrimitiveFunctionPointerAnIndex.
+
 	localPrimIndex := self
 		                  cCoerceSimple: primitiveFunctionPointer
 		                  to: #sqInt.
@@ -5456,18 +5459,7 @@ StackInterpreter >> executeQuickPrimitive [
 				 ofObject: self stackTop).
 		^ true ].
 	"Quick return constants"
-	localPrimIndex = 256 ifTrue: [ ^ true "return self" ].
-	localPrimIndex = 257 ifTrue: [ 
-		self stackTopPut: objectMemory trueObject.
-		^ true ].
-	localPrimIndex = 258 ifTrue: [ 
-		self stackTopPut: objectMemory falseObject.
-		^ true ].
-	localPrimIndex = 259 ifTrue: [ 
-		self stackTopPut: objectMemory nilObject.
-		^ true ].
-	self stackTopPut:
-		(objectMemory integerObjectOf: localPrimIndex - 261).
+	self stackTopPut: (objectMemory integerObjectOf: localPrimIndex - 261).
 	^ true
 ]
 
@@ -8182,6 +8174,28 @@ StackInterpreter >> isOptimizedMethod: methodObj [
 StackInterpreter >> isOptimizedMethodHeader: header [
 	<option: #SistaVM>
 	^header anyMask: AlternateHeaderIsOptimizedFlag
+]
+
+{ #category : #'message sending' }
+StackInterpreter >> isPrimitiveFunctionPointerAQuickPrimitive [
+	"Answer <true> if the receiver's primitive function pointer is any of the quick primitive selectors"
+
+	primitiveFunctionPointer = #primitivePushTrue
+		ifTrue: [ ^ true ].
+	primitiveFunctionPointer = #primitivePushFalse
+		ifTrue: [ ^ true ].
+	primitiveFunctionPointer = #primitivePushNil
+		ifTrue: [ ^ true ].
+	primitiveFunctionPointer = #primitivePushMinusOne
+		ifTrue: [ ^ true ].
+	primitiveFunctionPointer = #primitivePushZero
+		ifTrue: [ ^ true ].
+	primitiveFunctionPointer = #primitivePushOne
+		ifTrue: [ ^ true ].
+	primitiveFunctionPointer = #primitivePushTwo 
+		ifTrue: [ ^ true ].
+	^ false
+	
 ]
 
 { #category : #'primitive support' }
@@ -14254,15 +14268,20 @@ StackInterpreter >> sizeOfSTArrayFromCPrimitive: cPtr [
 
 ]
 
-{ #category : #'primitive support' }
-StackInterpreter >> slowPrimitiveResponse [
-	"Invoke a normal (non-quick) primitive.
+{ #category : #'message sending' }
+StackInterpreter >> slowPrimitiveResponse [ 
+	"Invoke a primitive.
 	 Called under the assumption that primFunctionPointer has been preloaded."
+
 	| nArgs savedFramePointer savedStackPointer |
 	<inline: true>
 	<var: #savedFramePointer type: #'char *'>
 	<var: #savedStackPointer type: #'char *'>
 	"self assert: (objectMemory isOopForwarded: (self stackValue: argumentCount)) not."
+	
+	self executeQuick
+		ifTrue: [ ^ true ].
+
 	self assert: objectMemory remapBufferCount = 0.
 	FailImbalancedPrimitives ifTrue:
 		[nArgs := argumentCount.

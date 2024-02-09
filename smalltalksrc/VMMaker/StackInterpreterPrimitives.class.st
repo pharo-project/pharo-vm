@@ -1137,10 +1137,17 @@ StackInterpreterPrimitives >> primitiveDoPrimitiveWithArgs [
 		[self push: (objectMemory fetchPointer: index - 1 ofObject: argumentArray).
 		 index := index + 1].
 
-	self isPrimitiveFunctionPointerAnIndex ifTrue:
-		[self executeQuickPrimitive.
-		 tempOop2 := 0.
-		^nil].
+	"Handle quick executions"
+	self isPrimitiveFunctionPointerAQuickPrimitive 
+		ifTrue: [ 
+			self dispatchFunctionPointer: primitiveFunctionPointer. 
+			 tempOop2 := 0.
+			^ nil ]
+		ifFalse: [ self isPrimitiveFunctionPointerAnIndex 
+			ifTrue: [ self executeQuickReturn. 
+				 tempOop2 := 0.
+				^ nil ] ].
+	
 	"We use tempOop instead of pushRemappableOop:/popRemappableOop here because in
 	 the Cogit primitiveEnterCriticalSection, primitiveSignal, primitiveResume et al longjmp back
 	 to either the interpreter or machine code, depending on the process activated.  So if we're
@@ -2672,6 +2679,58 @@ StackInterpreterPrimitives >> primitivePin [
 					[^self primitiveFailFor: PrimErrNoMemory]]].
 	
 	self pop: argumentCount + 1 thenPush: wasPinned
+]
+
+{ #category : #'quick primitives' }
+StackInterpreterPrimitives >> primitivePushFalse [
+
+	self stackTopPut: objectMemory falseObject.
+
+]
+
+{ #category : #'quick primitives' }
+StackInterpreterPrimitives >> primitivePushMinusOne [
+
+	self stackTopPut: (objectMemory integerObjectOf: -1)
+]
+
+{ #category : #'quick primitives' }
+StackInterpreterPrimitives >> primitivePushNil [
+
+	self stackTopPut: objectMemory nilObject.
+
+]
+
+{ #category : #'quick primitives' }
+StackInterpreterPrimitives >> primitivePushOne [
+
+	self stackTopPut: (objectMemory integerObjectOf: 1) 
+]
+
+{ #category : #'quick primitives' }
+StackInterpreterPrimitives >> primitivePushSelf [
+	"do nothing"
+	
+	"self stackTopPut: self popStack."
+]
+
+{ #category : #'quick primitives' }
+StackInterpreterPrimitives >> primitivePushTrue [
+
+	self stackTopPut: objectMemory trueObject.
+
+]
+
+{ #category : #'quick primitives' }
+StackInterpreterPrimitives >> primitivePushTwo [
+
+	self stackTopPut: (objectMemory integerObjectOf: 2)
+]
+
+{ #category : #'quick primitives' }
+StackInterpreterPrimitives >> primitivePushZero [
+
+	self stackTopPut: (objectMemory integerObjectOf: 0)
 ]
 
 { #category : #ffi }

@@ -26,6 +26,27 @@ VMPrimitiveTest >> assert: anOop contentEquals: oopToCompare [
 	
 ]
 
+{ #category : #'tests - quick primitives' }
+VMPrimitiveTest >> assert: aBlock quickPushed: anOop [
+
+	| oldStackSize oldFrameSize |
+
+	stackBuilder 
+		addNewFrame; 
+		buildStack.
+	oldStackSize := interpreter stackPointer.
+	oldFrameSize := stackBuilder frames size.
+	aBlock value.
+	
+	"Check that we did not created a new frame for the quick stuff"
+	self assert: stackBuilder frames size equals: oldFrameSize.
+	"Check that the SP has the same size as before, since quicks replace the top of the stack"
+	self assert: interpreter stackPointer equals: oldStackSize.
+	"Check that the stack top now has the oop we pushed"
+	self assert: interpreter stackTop equals: anOop.
+
+]
+
 { #category : #'as yet unclassified' }
 VMPrimitiveTest >> fillNewSpace [
 
@@ -120,6 +141,17 @@ VMPrimitiveTest >> testPrimitiveAddFailsWithTypeErrorOnFirstOperand [
 	
 ]
 
+{ #category : #'tests - quick primitives' }
+VMPrimitiveTest >> testPrimitiveAddFailsWithTypeErrorOnFirstOperandQuick [
+
+	interpreter primitivePushTrue.
+	interpreter primitivePushTwo.
+	
+	interpreter primitiveAdd. 
+
+	self assert: interpreter failed.
+]
+
 { #category : #'tests - primitiveAdd' }
 VMPrimitiveTest >> testPrimitiveAddFailsWithTypeErrorOnSecondOperand [
 
@@ -131,6 +163,17 @@ VMPrimitiveTest >> testPrimitiveAddFailsWithTypeErrorOnSecondOperand [
 	self assert: interpreter failed.
 	
 	
+]
+
+{ #category : #'tests - quick primitives' }
+VMPrimitiveTest >> testPrimitiveAddFailsWithTypeErrorOnSecondOperandQuick [
+
+	interpreter primitivePushTwo.
+	interpreter primitivePushTrue.
+	
+	interpreter primitiveAdd. 
+
+	self assert: interpreter failed.
 ]
 
 { #category : #'tests - primitiveAdd' }
@@ -147,6 +190,23 @@ VMPrimitiveTest >> testPrimitiveAddFailsWithTypeErrorPreservesStack [
 	self assert: (interpreter stackValue: 1) equals: string. 
 	
 	
+]
+
+{ #category : #'tests - quick primitives' }
+VMPrimitiveTest >> testPrimitiveAddFailsWithTypeErrorPreservesStackQuick [
+	| string |
+	
+	string := self newString: '42'.
+	interpreter push: string. 
+	interpreter push: 0.
+	interpreter primitivePushTwo.
+	
+	interpreter primitiveAdd. 
+
+	self assert: interpreter failed.
+	self assert: interpreter stackTop equals: (memory integerObjectOf: 2).
+	self assert: (interpreter stackValue: 1) equals: string. 
+
 ]
 
 { #category : #'tests - primitiveAdd' }
@@ -177,6 +237,24 @@ VMPrimitiveTest >> testPrimitiveAddWithNoOverflowPopsOperands [
 	"The previous lines pop the result of primiviteAdd (1 2) for us to check that 1 and 2 were popped from the stack by checking that the next value is our marker, for instance 42"
 	
 	self assert: interpreter stackTop equals: (memory integerObjectOf: 42). 
+	
+	
+]
+
+{ #category : #'tests - quick primitives' }
+VMPrimitiveTest >> testPrimitiveAddWithNoOverflowPopsOperandsQuick [
+
+	interpreter push: (memory integerObjectOf: 16rC0FFEE). "Marker"
+	interpreter primitivePushOne.
+	interpreter primitivePushTwo.
+	
+	interpreter primitiveAdd. 
+
+	"Pop the result of primiviteAdd (1 2)"
+	interpreter popStack. 
+
+	"Check that the next value is our marker"
+	self assert: interpreter stackTop equals: (memory integerObjectOf: 16rC0FFEE). 
 	
 	
 ]
@@ -3187,6 +3265,134 @@ VMPrimitiveTest >> testPrimitivePinReturnsBoolean [
 	
 ]
 
+{ #category : #'tests - quick primitives' }
+VMPrimitiveTest >> testPrimitivePushFalse [
+
+	self 
+		assert: [ interpreter primitivePushFalse ]
+		quickPushed: memory falseObject
+.
+]
+
+{ #category : #'tests - quick primitives' }
+VMPrimitiveTest >> testPrimitivePushMinusOne [
+
+	self 
+		assert: [ interpreter primitivePushMinusOne ]
+		quickPushed: (memory integerObjectOf: -1)
+
+]
+
+{ #category : #'tests - quick primitives' }
+VMPrimitiveTest >> testPrimitivePushNil [
+
+	self 
+		assert: [ interpreter primitivePushNil ]
+		quickPushed: memory nilObject
+ 	
+]
+
+{ #category : #'tests - quick primitives' }
+VMPrimitiveTest >> testPrimitivePushOne [
+
+	self 
+		assert: [ interpreter primitivePushOne ]
+		quickPushed: (memory integerObjectOf: 1)
+ 	
+]
+
+{ #category : #'tests - quick primitives' }
+VMPrimitiveTest >> testPrimitivePushOneAndAdd [
+
+	stackBuilder 
+		addNewFrame; 
+		buildStack.
+	interpreter primitivePushOne.
+	interpreter push: 0.
+	interpreter primitivePushOne.
+	interpreter primitiveAdd.
+
+	self deny: interpreter failed.
+	self assert: interpreter stackTop equals: (memory integerObjectOf: 2). 
+	
+	
+]
+
+{ #category : #'tests - quick primitives' }
+VMPrimitiveTest >> testPrimitivePushOnePreservesStackState [
+
+	stackBuilder 
+		addNewFrame; 
+		buildStack.
+
+	"Add markers"
+	interpreter push: 16rC0FFEE.
+	self 
+		assert: interpreter stackTop 
+		equals: 16rC0FFEE.
+		
+	interpreter push: 16rFAFAFA.
+	self 
+		assert: interpreter stackTop 
+		equals: 16rFAFAFA.
+
+	"Quick primitive operation"
+	interpreter primitivePushOne.
+	
+	"Check markers are still present after the quick operation"
+   self assert: (interpreter stackValue: 1) equals: 16rFAFAFA.
+   self assert: (interpreter stackValue: 2) equals: 16rC0FFEE
+
+]
+
+{ #category : #'tests - quick primitives' }
+VMPrimitiveTest >> testPrimitivePushTrue [
+
+	self 
+		assert: [ interpreter primitivePushTrue ]
+		quickPushed: memory trueObject
+	
+]
+
+{ #category : #'tests - quick primitives' }
+VMPrimitiveTest >> testPrimitivePushTwo [
+
+	self 
+		assert: [ interpreter primitivePushTwo ]
+		quickPushed: (memory integerObjectOf: 2)
+]
+
+{ #category : #'tests - quick primitives' }
+VMPrimitiveTest >> testPrimitivePushZero [
+
+	self 
+		assert: [ interpreter primitivePushZero ]
+		quickPushed: (memory integerObjectOf: 0)
+
+]
+
+{ #category : #'tests - quick primitives' }
+VMPrimitiveTest >> testPrimitivePushZeroPreservesStackState [
+
+	stackBuilder 
+		addNewFrame; 
+		buildStack.
+
+	"Add markers"
+	interpreter push: 16rC0FFEE.
+	interpreter push: 16rFAFAFA.
+	"Quick primitive operation"
+	interpreter primitivePushZero.
+	
+	"Check markers are still present after the quick operation"
+	self 
+		assert: interpreter stackTop 
+		equals: (memory integerObjectOf: 0).
+
+   self assert: (interpreter stackValue: 1) equals: 16rFAFAFA.
+   self assert: (interpreter stackValue: 2) equals: 16rC0FFEE
+]
+
 { #category : #'tests - primitiveQuo' }
 VMPrimitiveTest >> testPrimitiveQuo [
 
@@ -3266,11 +3472,33 @@ VMPrimitiveTest >> testPrimitiveQuoWith0DivisionOnFirstOperand [
 	self assert: (interpreter stackTop) equals: (memory integerObjectOf: 0). 
 ]
 
+{ #category : #'tests - quick primitives' }
+VMPrimitiveTest >> testPrimitiveQuoWith0DivisionOnFirstOperandQuick [
+
+	interpreter primitivePushZero.
+	interpreter push: (memory integerObjectOf: 4).
+	
+	interpreter primitiveQuo. 
+	
+	self assert: (interpreter stackTop) equals: (memory integerObjectOf: 0). 
+]
+
 { #category : #'tests - primitiveQuo' }
 VMPrimitiveTest >> testPrimitiveQuoWith0DivisionOnSecondOperand [
 	
 	interpreter push: (memory integerObjectOf: 4).
 	interpreter push: (memory integerObjectOf: 0).
+	
+	interpreter primitiveQuo. 
+	
+	self assert: (interpreter stackTop) equals: (memory integerObjectOf: 0). 
+]
+
+{ #category : #'tests - quick primitives' }
+VMPrimitiveTest >> testPrimitiveQuoWith0DivisionOnSecondOperandQuick [
+	
+	interpreter push: (memory integerObjectOf: 4).
+	interpreter primitivePushZero.
 	
 	interpreter primitiveQuo. 
 	
@@ -3305,6 +3533,21 @@ VMPrimitiveTest >> testPrimitiveQuoWithNoErrorPopsOperands [
 	interpreter push: (memory integerObjectOf: 42). "Marker"
 	interpreter push: (memory integerObjectOf: 1).
 	interpreter push: (memory integerObjectOf: 2).
+	
+	interpreter primitiveQuo. 
+	
+	interpreter popStack. 
+	"The previous lines pop the result of primiviteAdd (1 2) for us to check that 1 and 2 were poped from the Stack by checking that the next value is our marker, for instance 42"
+	
+	self assert: interpreter stackTop equals: (memory integerObjectOf: 42). 
+]
+
+{ #category : #'tests - quick primitives' }
+VMPrimitiveTest >> testPrimitiveQuoWithNoErrorPopsOperandsQuick [
+	
+	interpreter push: (memory integerObjectOf: 42). "Marker"
+	interpreter primitivePushOne.
+	interpreter primitivePushTwo.
 	
 	interpreter primitiveQuo. 
 	
@@ -5187,6 +5430,35 @@ VMPrimitiveTest >> testPrimitiveSubtractWithOverflowPreservesStack [
 	self assert: (interpreter stackValue: 1) equals: minSmallInt.
 	
 	
+]
+
+{ #category : #'tests - quick primitives' }
+VMPrimitiveTest >> testPrimitiveSubtractWithOverflowPreservesStackQuick [
+
+	| minSmallInt |
+	
+	minSmallInt:= (memory integerObjectOf: memory minSmallInteger). 
+	
+	interpreter push: minSmallInt. 
+	interpreter primitivePushTwo.
+	
+	interpreter primitiveSubtract. 
+	
+	self assert: interpreter stackTop equals: (memory integerObjectOf: 2). 
+	self assert: (interpreter stackValue: 1) equals: minSmallInt.
+	
+	
+]
+
+{ #category : #'tests - quick primitives' }
+VMPrimitiveTest >> testPrimitiveSubtractWithOverflowQuick [
+
+	interpreter push: (memory integerObjectOf: memory minSmallInteger).
+	interpreter primitivePushTwo.
+	
+	interpreter primitiveSubtract. 
+	
+	self assert: interpreter failed.
 ]
 
 { #category : #'tests - primitiveVMParameter' }
