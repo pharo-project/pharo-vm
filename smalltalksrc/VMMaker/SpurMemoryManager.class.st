@@ -873,7 +873,7 @@ SpurMemoryManager class >> initializeSpecialObjectIndices [
 	SelectorCannotReturn := 21.
 	ProcessSignalingLowSpace := 22.	"was TheInputSemaphore"
 	SpecialSelectors := 23.
-	"24. was an array of 255 characters"
+	SelectorStackOverflow := 24.
 	SelectorMustBeBoolean := 25.
 	ClassByteArray := 26.
 	"ClassProcess := 27. unused"

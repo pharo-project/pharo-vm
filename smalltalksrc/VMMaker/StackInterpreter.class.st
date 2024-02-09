@@ -392,7 +392,8 @@ Class {
 		'imageReader',
 		'imageWriter',
 		'pendingFinalizationSignals',
-		'imageVersionNumber'
+		'imageVersionNumber',
+		'desiredStackPageBytes'
 	],
 	#classVars : [
 		'AlternateHeaderHasPrimFlag',
@@ -1417,7 +1418,8 @@ StackInterpreter class >> initializeSchedulerIndices [
 	"Class Process"
 	SuspendedContextIndex := 1.
 	PriorityIndex := 2.
-	MyListIndex := 3
+	MyListIndex := 3.
+	ProcessShouldOverflowIndex := 9
 ]
 
 { #category : #initialization }
@@ -4559,14 +4561,15 @@ StackInterpreter >> commonReturn [
 	newPage := stackPages stackPageFor: frameToReturnTo.
 	newPage ~~ stackPage ifTrue: [
 		| currentCtx thePage nextCntx |
+		
 		currentCtx := self frameCallerContext: stackPage baseFP.
 		stackPages freeStackPage: stackPage.
-		[
+		[ 
 		self assert: (objectMemory isContext: currentCtx).
 		(self isMarriedOrWidowedContext: currentCtx) and: [
 			(stackPages stackPageFor:
-				 (theFP := self frameOfMarriedContext: currentCtx)) = newPage ] ]
-			whileFalse: [
+				 (theFP := self frameOfMarriedContext: currentCtx)) = newPage ] ] 
+			whileFalse: [ 
 				(self isMarriedOrWidowedContext: currentCtx)
 					ifTrue: [
 						thePage := stackPages stackPageFor: theFP.
@@ -4577,7 +4580,7 @@ StackInterpreter >> commonReturn [
 								toPage: stackPages newStackPage ].
 						currentCtx := self frameCallerContext: thePage baseFP.
 						stackPages freeStackPage: thePage ]
-					ifFalse: [
+					ifFalse: [ 
 						nextCntx := objectMemory
 							            fetchPointer: SenderIndex
 							            ofObject: currentCtx.
@@ -7130,7 +7133,7 @@ StackInterpreter >> handleStackOverflow [
 	"Check for stack overflow, moving frames to another stack if so.
 	 This should *only* be sent from checkForStackOverflow."
 	<inline: #never>
-	| newPage theFP callerFP overflowLimitAddress overflowCount |
+	| newPage theFP callerFP overflowLimitAddress overflowCount ourContext lookupClassTag shouldOverflowIndex |
 	<var: #newPage type: #'StackPage *'>
 	<var: #theFP type: #'char *'>
 	<var: #callerFP type: #'char *'>
@@ -7175,7 +7178,24 @@ StackInterpreter >> handleStackOverflow [
 			[self assert: (self validInstructionPointer: instructionPointer + 1
 							inFrame: framePointer).
 			 self assert: ((self frameHasContext: framePointer) not
-						or: [objectMemory isContext: (self frameContext: framePointer)])]
+						or: [objectMemory isContext: (self frameContext: framePointer)])].
+	
+	"Send the #stackOverflow message to the current context.
+	If the image does not support stack overflow callbacks, just skip it"
+	(objectMemory numSlotsOf: self activeProcess) < ProcessShouldOverflowIndex
+		ifTrue: [ ^ self ].
+	shouldOverflowIndex := objectMemory fetchPointer: ProcessShouldOverflowIndex ofObject: self activeProcess.
+	shouldOverflowIndex ~= objectMemory trueObject ifTrue: [ ^ self ].
+	
+	messageSelector := objectMemory splObj: SelectorStackOverflow.
+	messageSelector = objectMemory nilObject ifTrue: [ ^ self ].
+
+	ourContext := self ensureFrameIsMarried: framePointer SP: stackPointer.
+	self push: ourContext.
+	argumentCount := 0.
+	lookupClassTag := objectMemory fetchClassTagOf: ourContext.
+	self findNewMethodInClassTag: lookupClassTag.
+	self executeNewMethod
 ]
 
 { #category : #'message sending' }
@@ -7185,11 +7205,16 @@ StackInterpreter >> handleStackOverflowOrEventAllowContextSwitch: mayContextSwit
 	 Check for stackOverflow and  interrupts anddeal with each appropriately.
 	 Answer if a context switch occurred."
 	<inline: false>
+	
+	| isInterrupt |
+	isInterrupt := stackLimit ~= stackPage realStackLimit.
+	isInterrupt ifTrue: [ self restoreStackLimit ].
+	
 	self checkForStackOverflow.
+	
 	"If the stackLimit differs from the realStackLimit then the stackLimit
 	 has been set to indicate an event or interrupt that needs servicing."
-	stackLimit = stackPage realStackLimit ifTrue:
-		[^false].
+	isInterrupt ifFalse: [ ^ false ].
 	^self checkForEventsMayContextSwitch: mayContextSwitch
 ]
 
@@ -13510,6 +13535,22 @@ StackInterpreter >> setDesiredEdenBytes: bytes [
 	^0
 ]
 
+{ #category : #initialization }
+StackInterpreter >> setDesiredStackPageBytes: desiredBytes [
+	"Set the number of bytes desired for a stack page.
+	This setting governs a compromise between overflow rate and latency in divorcing a page.
+	Using this page size, we will accomodates a number of frames inside the page.
+	The minimum frame size is 7 slots in the StackInterpreter, and 6 slots in the CoInterpreter.
+	The maximum size is 56 + 7 slots in the StackInterpreter and 56 + 8 slots in the CoInterpreter.
+
+	For example, 
+	 - 4069 byte pages gives 256 slots in 64-bits
+	 =>allowing between 4 to 32 frames in the CoInterpreter."
+	<api>
+	<inline: true>
+	desiredStackPageBytes := desiredBytes
+]
+
 { #category : #accessing }
 StackInterpreter >> setExtraVMMemory: anInteger [ 
 
@@ -13641,6 +13682,9 @@ StackInterpreter >> setNumStackPages: requestedNumPages [
 
 	desiredNumStackPages := requestedNumPages.
 
+	
+	desiredStackPageBytes = 0 ifTrue: [
+		self setDesiredStackPageBytes: 256 * objectMemory wordSize ].
 ]
 
 { #category : #'process primitive support' }
@@ -14535,10 +14579,10 @@ StackInterpreter >> stackPageFrameBytes [
 	"Answer a byte size that accomodates a useful number of frames.  The minimum frame size is
 	 7 slots in the StackInterpreter, and 6 slots in the CoInterpreter, and the maximum size is 56 + 7
 	 slots in the StackInterpreter and 56 + 8 slots in the CoInterpreter. 256 slots gives from 4 to 36
-	 frames in the StackInterpreter and from 4 to 42 in the CoInterpreter. Hence 2048 bytes in 32-bits
+	 frames in the StackInterpreter and from 4 to 32 in the CoInterpreter. Hence 2048 bytes in 32-bits
 	 and 4096 bytes in 64-bits; a compromise between overflow rate and latency in divorcing a page."
 	<inline: true>
-	^256 * objectMemory wordSize
+	^desiredStackPageBytes
 ]
 
 { #category : #'stack pages' }
