@@ -145,6 +145,7 @@ if(GENERATE_SOURCES)
     add_custom_command(
         OUTPUT ${VMSOURCEFILES} ${PLUGIN_GENERATED_FILES}
         COMMAND ${VMMAKER_VM} --headless ${VMMAKER_IMAGE} --no-default-preferences perform PharoVMMaker generate:outputDirectory:imageFormat: ${FLAVOUR} ${CMAKE_CURRENT_BINARY_DIR_TO_OUT} ${IMAGE_FORMAT}
+        VERBATIM
         DEPENDS vmmaker ${VMMAKER_IMAGE} ${VMMAKER_VM}
         COMMENT "Generating VM files for flavour: ${FLAVOUR}")
 
