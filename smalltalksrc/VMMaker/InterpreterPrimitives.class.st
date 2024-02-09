@@ -900,7 +900,7 @@ InterpreterPrimitives >> primitiveAsFloat [
 { #category : #'indexing primitives' }
 InterpreterPrimitives >> primitiveAt [
 	<accessorDepth: 0>
-	self commonAt: false
+	self commonAt
 ]
 
 { #category : #'indexing primitives' }
@@ -3973,7 +3973,7 @@ InterpreterPrimitives >> primitiveStopVMProfiling [
 { #category : #'indexing primitives' }
 InterpreterPrimitives >> primitiveStringAt [
 
-	self commonAt: true.
+	self stringArrayAt
 ]
 
 { #category : #'indexing primitives' }
