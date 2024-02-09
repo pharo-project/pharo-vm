@@ -903,6 +903,23 @@ InterpreterPrimitives >> primitiveAt [
 	self commonAt: false
 ]
 
+{ #category : #'as yet unclassified' }
+InterpreterPrimitives >> primitiveAtByteArray [
+
+	<accessorDepth: 0>
+	<numberOfArguments: 1>
+	self commonAtWith: [ :array :index | self stByteArray: array at: index ]
+]
+
+{ #category : #'as yet unclassified' }
+InterpreterPrimitives >> primitiveAtPointerArray [
+
+	<accessorDepth: 0>
+	<numberOfArguments: 1>
+	self commonAtWith: [ :array :index |
+		self stPointerArray: array at: index ]
+]
+
 { #category : #'indexing primitives' }
 InterpreterPrimitives >> primitiveAtPut [
 	<accessorDepth: 0>
