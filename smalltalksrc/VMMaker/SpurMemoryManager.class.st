@@ -618,7 +618,10 @@ Class {
 		'permSpaceFreeStart',
 		'fromOldSpaceRememberedSet',
 		'fromPermToOldSpaceRememberedSet',
-		'fromPermToNewSpaceRememberedSet'
+		'fromPermToNewSpaceRememberedSet',
+		'incrementalGCRunning',
+		'incrementalGCMarkingState',
+		'incrementalGCInterruptible'
 	],
 	#classVars : [
 		'BitsPerByte',
@@ -5045,6 +5048,12 @@ SpurMemoryManager >> findStringBeginningWith: aCString [
 				[coInterpreter printHex: obj; space; printNum: (self lengthOf: obj); space; printOopShort: obj; cr]]
 ]
 
+{ #category : #'gc - incremental' }
+SpurMemoryManager >> finishIncrementalFullGCWithoutInterruption [
+	incrementalGCInterruptible := false.
+	^ self incrementalFullGC
+]
+
 { #category : #'weakness and ephemerality' }
 SpurMemoryManager >> fireAllUnscannedEphemerons [
 	self assert: (self noUnscannedEphemerons) not.
@@ -5897,22 +5906,13 @@ SpurMemoryManager >> fromOldSpaceRememberedSet [
 	^ fromOldSpaceRememberedSet
 ]
 
-{ #category : #'gc - global' }
+{ #category : #'gc - incremental' }
 SpurMemoryManager >> fullGC [
 	"Perform a full eager compacting GC.  Answer the size of the largest free chunk."
 	<returnTypeC: #usqLong>
 	<inline: #never> "for profiling"
-	needGCFlag := false.
-	gcStartUsecs := coInterpreter ioUTCMicrosecondsNow.
-	statMarkCount := 0.
-	coInterpreter preGCAction: GCModeFull.
-	self globalGarbageCollect.
-	coInterpreter postGCAction: GCModeFull.
-	statGCEndUsecs := coInterpreter ioUTCMicrosecondsNow.
-	self updateFullGCStats.
-	^(freeLists at: 0) ~= 0
-		ifTrue: [self bytesInObject: self findLargestFreeChunk]
-		ifFalse: [0]
+	^ self finishIncrementalFullGCWithoutInterruption.
+
 ]
 
 { #category : #'gc - global' }
@@ -6455,6 +6455,113 @@ SpurMemoryManager >> increaseFreeOldSpaceBy: bytes [
 
 ]
 
+{ #category : #'gc - incremental' }
+SpurMemoryManager >> incrementalFullGC [
+	"Perform a full eager compacting GC.  Answer the size of the largest free chunk."
+	"for profiling"
+
+	<returnTypeC: #usqLong>
+	<inline: #never>
+	
+	incrementalGCRunning ifFalse: [
+		incrementalGCRunning := true.
+		needGCFlag := false.
+		gcStartUsecs := coInterpreter ioUTCMicrosecondsNow.
+		statMarkCount := 0.
+		coInterpreter preGCAction: GCModeFull ].
+	self incrementalGlobalGarbageCollect.
+	coInterpreter postGCAction: GCModeFull.
+	statGCEndUsecs := coInterpreter ioUTCMicrosecondsNow.
+	self updateFullGCStats.
+	^ (freeLists at: 0) ~= 0
+		  ifTrue: [ self bytesInObject: self findLargestFreeChunk ]
+		  ifFalse: [ 0 ]
+]
+
+{ #category : #'gc - incremental' }
+SpurMemoryManager >> incrementalGlobalGarbageCollect [
+	"inline into fullGC"
+	<inline: true>
+	self assert: self validObjStacks.
+	self assert: (self isEmptyObjStack: markStack).
+	self assert: (self isEmptyObjStack: weaklingStack).
+
+	"Mark objects /before/ scavenging, to empty the rememberedTable of unmarked roots."
+	self incrementalMarkObjects: true.
+	marking ifFalse: [
+		incrementalGCRunning := false.
+		gcMarkEndUsecs := coInterpreter ioUTCMicrosecondsNow.
+
+		scavenger forgetUnmarkedRememberedObjectsFromOldSpace.
+		self doScavenge: MarkOnTenure.
+
+		"Mid-way the leak check must be more lenient.  Unmarked classes will have been
+	 expunged from the table, but unmarked instances will not yet have been reclaimed."
+		self
+			runLeakCheckerFor: GCModeFull
+			excludeUnmarkedObjs: true
+			classIndicesShouldBeValid: true.
+
+		compactionStartUsecs := coInterpreter ioUTCMicrosecondsNow.
+		segmentManager prepareForGlobalSweep. "for notePinned:"
+		compactor compact.
+		self attemptToShrink.
+		self setHeapSizeAtPreviousGC.
+
+		self assert: self validObjStacks.
+		self assert: (self isEmptyObjStack: markStack).
+		self assert: (self isEmptyObjStack: weaklingStack).
+		self assert: self allObjectsUnmarked.
+		self runLeakCheckerFor: GCModeFull ]
+]
+
+{ #category : #'gc - incremental' }
+SpurMemoryManager >> incrementalMarkObjects: objectsShouldBeUnmarkedAndUnmarkedClassesShouldBeExpunged [
+	"for profiling"
+
+	"Mark all accessible objects.  objectsShouldBeUnmarkedAndUnmarkedClassesShouldBeExpunged
+	 is true if all objects are unmarked and/or if unmarked classes shoud be removed from the class table."
+
+	"If the incremental collector is running mark bits may be set; stop it and clear them if necessary."
+
+	<inline: #never>
+	self cCode: '' inSmalltalk: [
+		coInterpreter transcript
+			nextPutAll: 'marking...';
+			flush ].
+	self runLeakCheckerFor: GCModeFull.
+
+	marking ifFalse: [
+		self shutDownIncrementalGC: objectsShouldBeUnmarkedAndUnmarkedClassesShouldBeExpunged.
+		self initializeUnscannedEphemerons.
+		self initializeMarkStack.
+		self initializeWeaklingStack.
+		self initializeMournQueue.
+		incrementalGCMarkingState := 0.
+		marking := true.
+		incrementalGCInterruptible := true ].
+
+	incrementalGCMarkingState = 0 ifTrue: [
+		self markAccessibleObjectsAndFireEphemerons.
+		incrementalGCMarkingState := 1.		
+		incrementalGCInterruptible ifTrue: [ ^ self ] ].
+
+	incrementalGCMarkingState = 1 ifTrue: [
+		self expungeDuplicateAndUnmarkedClasses:
+			objectsShouldBeUnmarkedAndUnmarkedClassesShouldBeExpunged.
+		incrementalGCMarkingState := 2.
+		incrementalGCInterruptible ifTrue: [ ^ self ] ].
+
+	incrementalGCMarkingState = 2 ifTrue: [
+		self nilUnmarkedWeaklingSlots.
+		incrementalGCMarkingState := 3.
+		incrementalGCInterruptible ifTrue: [ ^ self ] ].
+
+	incrementalGCMarkingState = 3 ifTrue: [
+		self freeUnscannedEphemerons.
+		marking := false ]
+]
+
 { #category : #'debug support' }
 SpurMemoryManager >> indexOf: anElement in: anObject [
 	<api>
@@ -6585,7 +6692,7 @@ SpurMemoryManager >> initialize [
 	remapBufferCount := extraRootCount := 0. "see below"
 	freeListsMask := totalFreeOldSpace := lowSpaceThreshold := 0.
 	checkForLeaks := 0.
-	needGCFlag := signalLowSpace := marking := false.
+	needGCFlag := signalLowSpace := marking := incrementalGCRunning := false.
 	becomeEffectsFlags := gcPhaseInProgress := 0.
 	statScavenges := statFullGCs := 0.
 	statMaxAllocSegmentTime := 0.
@@ -12621,8 +12728,9 @@ SpurMemoryManager >> sufficientSpaceAfterGC: numBytes [
 	self assert: numBytes = 0.
 	self scavengingGCTenuringIf: TenureByAge.
 	heapSizePostGC := segmentManager totalOldSpaceCapacity - totalFreeOldSpace.
+	self incrementalFullGC.
 	(heapSizePostGC - heapSizeAtPreviousGC) asFloat / heapSizeAtPreviousGC >= heapGrowthToSizeGCRatio ifTrue:
-		[self fullGC].
+		[	self finishIncrementalFullGCWithoutInterruption ].
 	[totalFreeOldSpace < growHeadroom
 	 and: [(self growOldSpaceByAtLeast: 0) notNil]] whileTrue:
 		[totalFreeOldSpace >= growHeadroom ifTrue:
