@@ -571,6 +571,10 @@ add_subdirectory(ffiTestLibrary ${CMAKE_CURRENT_BINARY_DIR}/build/ffiTestLibrary
 # Handling Third party dependencies
 add_third_party_dependencies_per_platform()
 
+if (UNIX)
+    addIndependentLibraryWithRPATH(tty ${CMAKE_CURRENT_SOURCE_DIR}/tty/tty.c)
+endif()
+
 # Packaging Setup
 include(cmake/packaging.cmake)
 
