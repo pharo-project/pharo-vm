@@ -367,8 +367,9 @@ CoInterpreter class >> interpreterVersion [
 
 { #category : #translation }
 CoInterpreter class >> isNonArgumentImplicitReceiverVariableName: aString [
-	^(#('self' 'stackPages' 'cogit' 'coInterpreter' 'cogMethodZone' 'interpreter' 'objectMemory') includes: aString)
-	  or: [self objectMemoryClass isNonArgumentImplicitReceiverVariableName: aString]
+
+	^ (#( 'cogit' 'cogMethodZone' ) includes: aString) or: [
+		  super isNonArgumentImplicitReceiverVariableName: aString ]
 ]
 
 { #category : #translation }

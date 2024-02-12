@@ -11,9 +11,7 @@ Class {
 		'rumpCStackSize',
 		'wordSize',
 		'methodBuilder',
-		'edenSize',
-		'imageReaderClass',
-		'imageWriterClass',
+		'useComposedImageFormat',
 		'environmentBuilder',
 		'ourEphemeronClass',
 		'ourWeakClass'
@@ -31,8 +29,8 @@ Class {
 VMSpurMemoryManagerTest class >> imageFormatParameters [ 
 
 	^ { 
-		{ #imageReaderClass -> ComposedImageReader. #imageWriterClass -> ComposedImageWriter }.
-		{ #imageReaderClass -> SpurImageReader. #imageWriterClass -> SpurImageWriter }.
+		{ #useComposedImageFormat -> true }.
+		{ #useComposedImageFormat -> false }.
 	}
 ]
 
@@ -59,7 +57,8 @@ VMSpurMemoryManagerTest >> configureEnvironmentBuilder [
 		initializationOptions: self initializationOptions;
 		wordSize: self wordSize;
 		initialCodeSize: self initialCodeSize;
-		primitiveTraceLogSize: self primitiveTraceLogSize
+		primitiveTraceLogSize: self primitiveTraceLogSize;
+		useComposedImageFormatAsDefault: useComposedImageFormat
 ]
 
 { #category : #helpers }
@@ -162,30 +161,6 @@ VMSpurMemoryManagerTest >> emptyObjectSize [
 ]
 
 { #category : #accessing }
-VMSpurMemoryManagerTest >> imageReaderClass [
-
-	^ imageReaderClass
-]
-
-{ #category : #accessing }
-VMSpurMemoryManagerTest >> imageReaderClass: anObject [
-
-	imageReaderClass := anObject
-]
-
-{ #category : #accessing }
-VMSpurMemoryManagerTest >> imageWriterClass [
-
-	^ imageWriterClass
-]
-
-{ #category : #accessing }
-VMSpurMemoryManagerTest >> imageWriterClass: anObject [
-
-	imageWriterClass := anObject
-]
-
-{ #category : #accessing }
 VMSpurMemoryManagerTest >> initialCodeSize [
 	^ 0
 ]
@@ -193,15 +168,11 @@ VMSpurMemoryManagerTest >> initialCodeSize [
 { #category : #helpers }
 VMSpurMemoryManagerTest >> initializationOptions [
 
-	^ { 
+	^ {
 		  #BytesPerWord.
 		  self wordSize.
 		  #ObjectMemory.
-		  self memoryClass name.
-		  #ImageReader.
-		  imageReaderClass name.
-		  #ImageWriter.
-		  imageWriterClass name }
+		  self memoryClass name }
 ]
 
 { #category : #helpers }
@@ -904,6 +875,11 @@ VMSpurMemoryManagerTest >> setUpUsingImage [
 VMSpurMemoryManagerTest >> sizeOfObjectWithSlots: slots [
 
 	^ self objectHeaderSize + ((slots min: 1 "at least one for the forwarder pointer") * memory wordSize "bytes")
+]
+
+{ #category : #accessing }
+VMSpurMemoryManagerTest >> useComposedImageFormat: aBoolean [ 
+	useComposedImageFormat := aBoolean
 ]
 
 { #category : #accessing }
