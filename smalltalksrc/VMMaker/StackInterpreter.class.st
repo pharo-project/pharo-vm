@@ -14691,6 +14691,9 @@ StackInterpreter >> storeAndPopReceiverVariableBytecode [
 { #category : #'stack bytecodes' }
 StackInterpreter >> storeAndPopRemoteTempLongBytecode [
 
+	<compilationInfo: #isMappedIfImmutability>
+	<needsFrameIfImmutability: -1>
+
 	self storeRemoteTempLongBytecode.
 	self pop: 1
 ]
