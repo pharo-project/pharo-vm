@@ -5556,11 +5556,11 @@ StackInterpreter >> extStoreAndPopReceiverVariableBytecode [
 	<compilationInfo: #isInstVarRef>
 	<compilationInfo: #isMappedIfImmutability>
 	variableIndex := self fetchByte + (extA << 8).
-	extA := 0.
 	value := self stackTop.
 	self
 		storePopMaybeContextReceiverVariable: variableIndex
 		withValue: value.
+	extA := 0.
 	self fetchNextBytecode
 ]
 
@@ -14690,6 +14690,9 @@ StackInterpreter >> storeAndPopReceiverVariableBytecode [
 
 { #category : #'stack bytecodes' }
 StackInterpreter >> storeAndPopRemoteTempLongBytecode [
+
+	<compilationInfo: #isMappedIfImmutability>
+	<needsFrameIfImmutability: -1>
 
 	self storeRemoteTempLongBytecode.
 	self pop: 1
