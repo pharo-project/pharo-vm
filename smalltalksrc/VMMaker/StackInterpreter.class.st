@@ -5556,11 +5556,11 @@ StackInterpreter >> extStoreAndPopReceiverVariableBytecode [
 	<compilationInfo: #isInstVarRef>
 	<compilationInfo: #isMappedIfImmutability>
 	variableIndex := self fetchByte + (extA << 8).
-	extA := 0.
 	value := self stackTop.
 	self
 		storePopMaybeContextReceiverVariable: variableIndex
 		withValue: value.
+	extA := 0.
 	self fetchNextBytecode
 ]
 
