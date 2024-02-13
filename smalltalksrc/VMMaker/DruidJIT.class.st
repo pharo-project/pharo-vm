@@ -450,12 +450,13 @@ DruidJIT class >> bytecodeTable [
 		  #isMapped. #v4:Long:Branch:Distance: }.
 		  { 2. 239. 239. #gen_ExtJumpIfFalse. #branch. #isBranchFalse.
 		  #isMapped. #v4:Long:Branch:Distance: }.
-		  { 2. 240. 240. #gen_ExtStoreAndPopReceiverVariableBytecode.
-		  #isInstVarRef. #isMappedIfImmutability }.
+		  { 2. 240. 240. #unknownBytecode }.
 		  { 2. 241. 241. #gen_ExtStoreAndPopLiteralVariableBytecode.
 		  #isMappedIfImmutability }.
 		  { 2. 242. 242. #gen_LongStoreAndPopTemporaryVariableBytecode }.
-		  { 2. 243. 243. #unknownBytecode }.
+		  { 2. 243. 243. #gen_ExtStoreReceiverVariableBytecode.
+		  #isInstVarRef. #isMappedIfImmutability. #needsFrameIfImmutability:.
+		  0 }.
 		  { 2. 244. 244. #gen_ExtStoreLiteralVariableBytecode.
 		  #isMappedIfImmutability }.
 		  { 2. 245. 245. #gen_LongStoreTemporaryVariableBytecode }.
@@ -5105,14 +5106,14 @@ DruidJIT >> gen_PrimitiveNewWithArg [
 	self
 		DivR: Extra0Reg
 		R: ClassReg
-		Quo: ClassReg
-		Rem: Extra0Reg.
+		Quo: Extra0Reg
+		Rem: ClassReg.
 	s105 := 8.
-	self MoveCq: s105 R: Extra0Reg.
-	self SubR: SendNumArgsReg R: Extra0Reg.
-	self AndCq: 7 R: Extra0Reg.
-	self AddR: Extra0Reg R: Extra1Reg.
-	self MoveR: ClassReg R: SendNumArgsReg.
+	self MoveCq: s105 R: ClassReg.
+	self SubR: SendNumArgsReg R: ClassReg.
+	self AndCq: 7 R: ClassReg.
+	self AddR: ClassReg R: Extra1Reg.
+	self MoveR: Extra0Reg R: SendNumArgsReg.
 	self MoveCq: s14 R: Extra0Reg.
 	jump12 := self Jump: 0.
 	currentBlock := self Label.
