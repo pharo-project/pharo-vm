@@ -8,8 +8,7 @@ Class {
 		'outputDirectory',
 		'stopOnErrors',
 		'generatePlugins',
-		'wordSizesToGenerate',
-		'imageFormatName'
+		'wordSizesToGenerate'
 	],
 	#category : #'VMMakerCompatibilityForPharo6-CommandLine'
 }
@@ -24,12 +23,6 @@ PharoVMMaker class >> default32BitsMemoryManagerClass [
 PharoVMMaker class >> default64BitsMemoryManagerClass [
 
 	^ Spur64BitCoMemoryManager
-]
-
-{ #category : #defaults }
-PharoVMMaker class >> defaultImageFormatName [
-
-	^ 'SpurFormat'
 ]
 
 { #category : #defaults }
@@ -61,25 +54,16 @@ PharoVMMaker class >> generate: anInterpreterClass [
 { #category : #generation }
 PharoVMMaker class >> generate: anInterpreterClass outputDirectory: aDirectory [
 
-	^ self generate: anInterpreterClass outputDirectory: aDirectory imageFormat: self defaultImageFormatName
-]
-
-{ #category : #generation }
-PharoVMMaker class >> generate: anInterpreterClass outputDirectory: aDirectory imageFormat: imageFormatName [
-
 	Transcript
 		nextPutAll: 'Generating ';
 		nextPutAll: anInterpreterClass printString;
 		nextPutAll: ' in ';
 		nextPutAll: aDirectory printString;
-		nextPutAll: ' with ';
-		nextPutAll: imageFormatName;
 		nextPutAll: '...';
 		newLine;
 		flush.
 
 	self new
-		imageFormatName: imageFormatName;
 		outputDirectory: aDirectory;
 		perform: #generate , anInterpreterClass asSymbol
 ]
@@ -121,17 +105,8 @@ PharoVMMaker >> generate: interpreterClass memoryManager: memoryManager compiler
 { #category : #generation }
 PharoVMMaker >> generate: interpreterClass memoryManager: memoryManager compilerClass: compilerClass options: options [
 
-	| platformDirectory vmmaker imageReaderClassName imageWriterClassName |
-	
-	(#(SpurFormat ComposedFormat) includes: imageFormatName)
-		ifFalse:[ self error: 'Invalid Image Format'].
-	
-	imageFormatName = 'ComposedFormat' 
-		ifTrue: [imageReaderClassName 	:= ComposedImageReader name.
-					imageWriterClassName 	:= ComposedImageWriter name]
-		ifFalse: [imageReaderClassName := SpurImageReader name.
-					imageWriterClassName 	:= SpurImageWriter name].
-	
+	| platformDirectory vmmaker |
+		
 	
 	Author useAuthor: 'vmMaker' during: [
 	
@@ -145,9 +120,8 @@ PharoVMMaker >> generate: interpreterClass memoryManager: memoryManager compiler
 			makerFor: interpreterClass
 			and: compilerClass
 			with: {#ObjectMemory. memoryManager name.
-					 #bytecodeTableInitializer. #initializeBytecodeTableForSistaV1.
-					 #ImageReader. imageReaderClassName.
-		  			 #ImageWriter. imageWriterClassName} , options
+					 #bytecodeTableInitializer. #initializeBytecodeTableForSistaV1} 
+					, options
 			to: platformDirectory
 			platformDir:platformDirectory
 			including: #()
@@ -222,19 +196,13 @@ PharoVMMaker >> generates64Bits [
 	^ wordSizesToGenerate includes: 8
 ]
 
-{ #category : #accessing }
-PharoVMMaker >> imageFormatName: aString [ 
-	
-	imageFormatName := aString
-]
-
 { #category : #initialization }
 PharoVMMaker >> initialize [
 	super initialize.
 	stopOnErrors := false.
 	generatePlugins := true.
 	wordSizesToGenerate := #(4 8).
-	imageFormatName := self class defaultImageFormatName
+
 ]
 
 { #category : #initialization }

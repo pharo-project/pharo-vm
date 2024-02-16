@@ -22,7 +22,7 @@ TVMSimulator >> openOn: fileName extraMemory: extraBytes [
 		at: 2 put: nil.
 
 	self simulationOnly: [ self setImageName: fileName  ].
-	^ self imageReader readImageNamed: fileName 
+	^ self imageReaderWriter readImageNamed: fileName 
 
 ]
 
