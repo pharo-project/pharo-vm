@@ -494,9 +494,6 @@ try{
 					runBuild(platform, "StackVM")
 				}
 				timeout(40){
-					runBuild("${platform}-ComposedFormat", "CoInterpreter", true, " -DIMAGE_FORMAT=ComposedFormat ")
-				}
-				timeout(40){
 					// Only build the Stock replacement version in the main branch
 					if(isMainBranch()){
 						runBuild(platform, "CoInterpreter", false)

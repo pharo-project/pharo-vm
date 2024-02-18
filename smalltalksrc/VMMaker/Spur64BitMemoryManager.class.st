@@ -420,7 +420,7 @@ Spur64BitMemoryManager >> initSegmentBridgeWithBytes: numBytes at: address [
 ]
 
 { #category : #instantiation }
-Spur64BitMemoryManager >> instantiateClass: classObj indexableSize: nElements isPinned: isPinned [
+Spur64BitMemoryManager >> instantiateClass: classObj indexableSize: nElements isPinned: isPinned isOldSpace: isOldSpace [
 	<api>
 	<var: #nElements type: #usqInt>
 	"Allocate an instance of a variable class, excepting CompiledMethod."
@@ -468,7 +468,7 @@ Spur64BitMemoryManager >> instantiateClass: classObj indexableSize: nElements is
 		 classIndex < 0 ifTrue:
 			[coInterpreter primitiveFailFor: classIndex negated.
 			 ^nil]].
-	(numSlots > self maxSlotsForNewSpaceAlloc or: [isPinned])
+	(numSlots > self maxSlotsForNewSpaceAlloc or: [isPinned or: [isOldSpace]])
 		ifTrue:
 			[numSlots > self maxSlotsForAlloc ifTrue:
 				[coInterpreter primitiveFailFor: PrimErrUnsupported.

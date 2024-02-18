@@ -1,9 +1,6 @@
 Class {
 	#name : #VMPrimitiveTest,
 	#superclass : #VMInterpreterTests,
-	#instVars : [
-		'imageName'
-	],
 	#pools : [
 		'VMBasicConstants',
 		'VMBytecodeConstants',
@@ -71,9 +68,7 @@ VMPrimitiveTest >> setUp [
 
 	page := interpreter makeBaseFrameFor: ctx.
 	interpreter setStackPointersFromPage: page.
-	interpreter setStackPageAndLimit: page.
-
-	imageName := VMPrimitiveTest name
+	interpreter setStackPageAndLimit: page
 ]
 
 { #category : #'tests - primitiveIdentical' }
@@ -98,13 +93,6 @@ VMPrimitiveTest >> setUpForwardedObjects [
 	self assert: (memory isForwarded: object2) equals: true.
 	
 	^ object1. 
-]
-
-{ #category : #running }
-VMPrimitiveTest >> tearDown [
-
-	imageName ifNotNil: [ imageName asFileReference ensureDeleteAll ].
-	super tearDown
 ]
 
 { #category : #'tests - primitiveAdd' }
@@ -2692,6 +2680,74 @@ VMPrimitiveTest >> testPrimitiveNewIsNotPinned [
 	self deny: (memory isPinned: interpreter stackTop)
 ]
 
+{ #category : #'tests - primitiveNewOldSpace' }
+VMPrimitiveTest >> testPrimitiveNewOldCreatesTheObjectInOldSpace [
+	| class |
+	class := self newClassInOldSpaceWithSlots: 0 instSpec: memory nonIndexablePointerFormat.
+
+	interpreter push: class.
+	interpreter primitiveNewOldSpace.
+
+	self deny: interpreter failed.
+	self deny: (memory isYoung: interpreter stackTop).
+	self assert: (memory isOld: interpreter stackTop)
+]
+
+{ #category : #'tests - primitiveNewOldSpace' }
+VMPrimitiveTest >> testPrimitiveNewOldSpaceObjectInFullNewSpaceIsSchedulingGC [
+	| class |
+	class := self newClassInOldSpaceWithSlots: 3 instSpec: memory nonIndexablePointerFormat.
+
+	self fillNewSpace.
+
+	self deny: memory needGCFlag.
+	
+	interpreter push: class.
+	interpreter primitiveNewOldSpace.
+
+	self deny: interpreter failed.
+	self assert: memory needGCFlag 
+]
+
+{ #category : #'tests - primitiveNewOldSpace' }
+VMPrimitiveTest >> testPrimitiveNewOldSpaceObjectIsNotSchedulingGC [
+	| class |
+	class := self newClassInOldSpaceWithSlots: 0 instSpec: memory nonIndexablePointerFormat.
+
+	interpreter push: class.
+	interpreter primitiveNewOldSpace.
+
+	self deny: interpreter failed.
+	self deny: memory needGCFlag 
+]
+
+{ #category : #'tests - primitiveNewOldSpace' }
+VMPrimitiveTest >> testPrimitiveNewOldSpaceWithArgsCreatesTheObjectInOldSpace [
+	| class |
+	class := self newClassInOldSpaceWithSlots: 0 instSpec: memory arrayFormat.
+
+	interpreter push: class.
+	interpreter push: (memory integerObjectOf: 7).
+	interpreter primitiveNewWithArgOldSpace.
+
+	self deny: interpreter failed.
+	self deny: (memory isYoung: interpreter stackTop).
+	self assert: (memory isOld: interpreter stackTop)
+]
+
+{ #category : #'tests - primitiveNewOldSpace' }
+VMPrimitiveTest >> testPrimitiveNewOldSpaceWithArgsObjectIsNotSchedulingGC [
+	| class |
+	class := self newClassInOldSpaceWithSlots: 0 instSpec: memory arrayFormat.
+
+	interpreter push: class.
+	interpreter push: (memory integerObjectOf: 7).
+	interpreter primitiveNewWithArgOldSpace.
+
+	self deny: interpreter failed.
+	self deny: memory needGCFlag 
+]
+
 { #category : #'tests - primitiveNewPinned' }
 VMPrimitiveTest >> testPrimitiveNewPinnedCreatesTheObjectInOldSpace [
 	| class |
@@ -4536,88 +4592,6 @@ VMPrimitiveTest >> testPrimitiveSmallFloatSubtractPopsOperands [
 	
 	self deny: interpreter failed.
 	self assert: (interpreter stackTop) equals: (memory integerObjectOf: 42).
-]
-
-{ #category : #'tests - snapshot' }
-VMPrimitiveTest >> testPrimitiveSnapshotContextsShouldBeTenured [
-
-	| method frame contextOop contextIdentityHash suspendedContext |
-	interpreter pluginList: #(  ).
-	self setUpScheduler.
-	self initializeOldSpaceForFullGC.
-	self setContextClassIntoClassTable.
-	method := methodBuilder newMethod buildMethod.
-	frame := stackBuilder addNewFrame
-		         method: method;
-		         yourself.
-	stackBuilder buildStack.
-
-	contextOop := interpreter
-		              ensureFrameIsMarried: frame framePointer
-		              SP: frame stackPointer.
-	contextIdentityHash := memory hashBitsOf: contextOop.
-
-	interpreter instructionPointer: method + 17.
-	interpreter imageName: imageName.
-	interpreter setImageHeaderFlagsFrom: 0.
-
-	interpreter primitiveSnapshot.
-
-	suspendedContext := memory
-		                    fetchPointer: SuspendedContextIndex
-		                    ofObject: memory memoryActiveProcess.
-	self
-		assert: (memory hashBitsOf: suspendedContext)
-		equals: contextIdentityHash
-]
-
-{ #category : #'tests - snapshot' }
-VMPrimitiveTest >> testPrimitiveSnapshotCreateImage [
-
-	| method |
-	interpreter pluginList: #(  ).
-	self setUpScheduler.
-	self initializeOldSpaceForFullGC.
-	self setContextClassIntoClassTable.
-	method := methodBuilder newMethod buildMethod.
-
-	stackBuilder addNewFrame method: method.
-	stackBuilder buildStack.
-
-	interpreter instructionPointer: method + (1 + 8 + 8).
-
-	interpreter imageName: imageName.
-	interpreter setImageHeaderFlagsFrom: 0.
-	interpreter primitiveSnapshot.
-
-	interpreter imageReader validateImage: imageName 
-]
-
-{ #category : #'tests - snapshot' }
-VMPrimitiveTest >> testPrimitiveSnapshotNewKeptObjectShouldBeTenured [
-
-	| method object objectHash |
-	interpreter pluginList: #(  ).
-	self setUpScheduler.
-	self initializeOldSpaceForFullGC.
-	self setContextClassIntoClassTable.
-
-	method := methodBuilder newMethod buildMethod.
-	stackBuilder addNewFrame method: method.
-	stackBuilder buildStack.
-	interpreter instructionPointer: method + 17.
-	interpreter imageName: imageName.
-	interpreter setImageHeaderFlagsFrom: 0.
-
-	object := self newObjectWithSlots: 0.
-	self keepObjectInVMVariable1: object.
-	objectHash := memory hashBitsOf: object.
-
-	interpreter primitiveSnapshot.
-
-	self
-		assert: (memory hashBitsOf: self keptObjectInVMVariable1)
-		equals: objectHash
 ]
 
 { #category : #'tests - primitiveFloat64' }

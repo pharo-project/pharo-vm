@@ -288,6 +288,14 @@ VMClass class >> objectRepresentationClass [
 ]
 
 { #category : #translation }
+VMClass class >> renameSelectorIfStaticallyResolved: aString [
+
+	^ (self staticallyResolvedSelectors includes: aString)
+		  ifTrue: [ self staticallyResolvePolymorphicSelector: aString ]
+		  ifFalse: [ ^ aString ]
+]
+
+{ #category : #translation }
 VMClass class >> shouldGenerateTypedefFor: aStructClass [
 	"Hack to work-around multiple definitions.  Sometimes a type has been defined in an include."
 	^aStructClass shouldBeGenerated
@@ -329,6 +337,12 @@ VMClass class >> specialValueForConstant: constantName default: defaultValue [
 { #category : #translation }
 VMClass class >> staticallyResolvePolymorphicSelector: aSelectorSymbol [
 	^((self name select: [:ea| ea isUppercase]), '_', aSelectorSymbol) asSymbol
+]
+
+{ #category : #translation }
+VMClass class >> staticallyResolvedSelectors [
+
+	^ #()
 ]
 
 { #category : #translation }

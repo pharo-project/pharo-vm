@@ -704,43 +704,51 @@ CCodeGenerator >> checkClassForNameConflicts: aClass [
 	 those of previously added classes. Raise an error if a conflict is found, otherwise just return."
 
 	"check for constant name collisions in class pools"
-	aClass classPool associationsDo:
-		[:assoc |
-		(constants includesKey: assoc key) ifTrue:
-			[self error: 'Constant ', assoc key, ' was defined in a previously added class']].
+
+	| tmeth renamedSelector |
+	aClass classPool associationsDo: [ :assoc |
+		(constants includesKey: assoc key) ifTrue: [
+			self error:
+				'Constant ' , assoc key
+				, ' was defined in a previously added class' ] ].
 
 	"and in shared pools"
-	(aClass sharedPools reject: [:pool| pools includes: pool]) do:
-		[:pool |
-		pool bindingsDo:
-			[:assoc |
-			(constants includesKey: assoc key) ifTrue:
-				[self error: 'Constant ', assoc key, ' was defined in a previously added class']]].
+	(aClass sharedPools reject: [ :pool | pools includes: pool ]) do: [
+		:pool |
+		pool bindingsDo: [ :assoc |
+			(constants includesKey: assoc key) ifTrue: [
+				self error:
+					'Constant ' , assoc key
+					, ' was defined in a previously added class' ] ] ].
 
 	"check for instance variable name collisions"
-	(aClass inheritsFrom: SlangStructType) ifFalse:
-		[(self instVarNamesForClass: aClass) do:
-			[:varName |
-			(variables includes: varName) ifTrue:
-				[self error: 'Instance variable ', varName, ' was defined in a previously added class']]].
+	(aClass inheritsFrom: SlangStructType) ifFalse: [
+		(self instVarNamesForClass: aClass) do: [ :varName |
+			(variables includes: varName) ifTrue: [
+				self error: 'Instance variable ' , varName
+					, ' was defined in a previously added class' ] ] ].
 
 	"check for method name collisions"
-	aClass selectors do:
-		[:sel | | tmeth meth |
-		((self shouldIncludeMethodFor: aClass selector: sel)
-		and: [(tmeth := methods at: sel ifAbsent: nil) notNil
-		and: [(aClass isStructClass and: [(aClass isAccessor: sel)
-				and: [(methods at: sel) isStructAccessor]]) not
-		and: [(meth := aClass >> sel) isSubclassResponsibility not
-		and: [(aClass includesBehavior: tmeth definingClass) not]]]]) ifTrue:
-			[((aClass >>sel) pragmaAt: #option:)
-				ifNil: [self error: 'Method ', sel, ' was defined in a previously added class.']
-				ifNotNil:
-					[logger
+	aClass selectors do: [ :sel |
+		renamedSelector := aClass renameSelectorIfStaticallyResolved: sel.
+		(self
+			 isDuplicatedSelector: sel
+			 translatedName: renamedSelector
+			 fromClass: aClass) ifTrue: [
+			(aClass >> renamedSelector pragmaAt: #option:)
+				ifNil: [
+					self error: 'Method ' , renamedSelector
+						, ' was defined in a previously added class.' ]
+				ifNotNil: [
+					tmeth := methods at: renamedSelector.
+
+					logger
 						newLine;
-						show: 'warning, method ', aClass name, '>>', sel storeString,
-								' overrides ', tmeth definingClass, '>>', sel storeString;
-						cr]]]
+						show:
+							'warning, method ' , aClass name , '>>'
+							, renamedSelector storeString , ' overrides '
+							, tmeth definingClass , '>>' , renamedSelector storeString;
+						cr ] ] ]
 ]
 
 { #category : #utilities }
@@ -2990,19 +2998,24 @@ CCodeGenerator >> harmonizeReturnTypesIn: aSetOfTypes [
 ]
 
 { #category : #public }
-CCodeGenerator >> ifStaticallyResolvedPolymorphicReceiverThenUpdateSelectorIn: aSendNode [
+CCodeGenerator >> ifStaticallyResolvedPolymorphicReceiverThenUpdateSelectorIn: aSendNode inMethod: aTMethod [
 	"We allow a limited amount of polymorphism; if a class chooses, its selectoers can be
 	 prefixed with a given string to disambiguate. This hack allows us to use two different
 	 compaction algorithms with the same API at the same time; the selection being done
 	 by a class which holds the flag stating which algorithm is in effect at the current time."
+
 	| class |
-	staticallyResolvedPolymorphicReceivers ifNil: [^self].
-	aSendNode receiver isVariable ifFalse:
-		[^self].
-	class := staticallyResolvedPolymorphicReceivers
-				at: aSendNode receiver name
-				ifAbsent: [^self].
-	aSendNode selector: (class staticallyResolvePolymorphicSelector: aSendNode selector)
+	staticallyResolvedPolymorphicReceivers ifNil: [ ^ self ].
+	aSendNode receiver isVariable ifFalse: [ ^ self ].
+
+	class := (aSendNode isSelfReference: aSendNode receiver in: self)
+		ifTrue: [ aTMethod definingClass ] 
+		ifFalse: [ staticallyResolvedPolymorphicReceivers
+		         at: aSendNode receiver name
+		         ifAbsent: [ ^ self ] ].
+	
+	aSendNode selector:
+		(class renameSelectorIfStaticallyResolved: aSendNode selector)
 ]
 
 { #category : #'type inference' }
@@ -3425,6 +3438,27 @@ CCodeGenerator >> isControlFlowNode: aNode [
 	
 	^ aNode isSend and: [ 
 		#(ifTrue: ifTrue:ifFalse: ifFalse: ifFalse:ifTrue: and: or:) includes: aNode selector ]
+]
+
+{ #category : #testing }
+CCodeGenerator >> isDuplicatedSelector: sel translatedName: translatedSelector fromClass: aClass [
+
+	| tmeth meth |
+	(self shouldIncludeMethodFor: aClass selector: sel) ifFalse: [
+		^ false ].
+
+	"I have to search in the included methods with the translated selector, as this is the one that is added"
+	tmeth := methods at: translatedSelector ifAbsent: [ ^ false ].
+
+	(aClass isStructClass and: [
+		 (aClass isAccessor: sel) and: [ (methods at: sel) isStructAccessor ] ])
+		ifTrue: [ ^ false ].
+
+	(meth := aClass >> sel) isSubclassResponsibility ifTrue: [ ^ false ].
+	(aClass includesBehavior: tmeth definingClass) ifTrue: [ ^ false ].
+
+
+	^ true
 ]
 
 { #category : #utilities }
@@ -4731,12 +4765,11 @@ CCodeGenerator >> staticallyResolveMethodNamed: selector forClass: aClass to: st
 	 prefixed with a given string to disambiguate. This hack allows us to use two different
 	 compaction algorithms with the same API at the same time; the selection being done
 	 by a class which holds the flag stating which algorithm is in effect at the current time."
+
 	| method |
-	method := methods
-					removeKey: selector
-					ifAbsent:
-						[self logger cr; nextPutAll: 'warning: did not find ', selector, ' to be able to map to ', staticallyResolvedSelector.
-						^self].
+
+1halt.
+
 	method selector: staticallyResolvedSelector.
 	methods at: staticallyResolvedSelector put: method
 ]
@@ -4749,7 +4782,11 @@ CCodeGenerator >> staticallyResolvedPolymorphicReceiver: variableName to: aClass
 	 by a class which holds the flag stating which algorithm is in effect at the current time."
 	(staticallyResolvedPolymorphicReceivers ifNil: [staticallyResolvedPolymorphicReceivers := Dictionary new])
 		at: variableName
-		put: aClass
+		put: aClass.
+	
+	"When the variable is statically defined it should be implicit"
+	self declareVar: variableName type: #implicit
+
 ]
 
 { #category : #'C translation support' }

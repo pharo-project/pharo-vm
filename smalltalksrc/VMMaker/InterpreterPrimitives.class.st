@@ -2777,6 +2777,20 @@ InterpreterPrimitives >> primitiveNewMethod [
 ]
 
 { #category : #'object access primitives' }
+InterpreterPrimitives >> primitiveNewOldSpace [
+	"Allocate a new pinned fixed-size instance.  Fail if the allocation would leave
+	less than lowSpaceThreshold bytes free. This *will not* cause a GC :-)"
+
+	(objectMemory instantiateClass: self stackTop isPinned: false isOldSpace: true)
+		ifNotNil: [ :obj | self pop: argumentCount + 1 thenPush: obj ]
+		ifNil: [
+			self primitiveFailFor:
+				((objectMemory isFixedSizePointerFormat: (objectMemory instSpecOfClass: self stackTop))
+					 ifTrue: [ PrimErrNoMemory ]
+					 ifFalse: [ PrimErrBadReceiver ]) ]
+]
+
+{ #category : #'object access primitives' }
 InterpreterPrimitives >> primitiveNewPinned [
 	
 	"Allocate a new pinned fixed-size instance.  Fail if the allocation would leave
@@ -2809,6 +2823,27 @@ InterpreterPrimitives >> primitiveNewWithArg [
 					  (objectMemory isCompiledMethodFormat: instSpec) not ])
 					 ifTrue: [ PrimErrNoMemory ]
 					 ifFalse: [ PrimErrBadReceiver ]) ]
+]
+
+{ #category : #'object access primitives' }
+InterpreterPrimitives >> primitiveNewWithArgOldSpace [
+
+	| size instSpec |
+	
+	size := self positiveMachineIntegerValueOf: self stackTop.
+
+	(objectMemory
+		instantiateClass: (self stackValue: 1)
+		indexableSize: size
+		isPinned: false
+		isOldSpace: true)
+			ifNotNil: [ :obj | self pop: argumentCount + 1 thenPush: obj ]
+			ifNil: [ instSpec := objectMemory instSpecOfClass: (self stackValue: 1).
+			self primitiveFailFor:
+					(((objectMemory isIndexableFormat: instSpec)
+						and: [ (objectMemory isCompiledMethodFormat: instSpec) not ])
+						ifTrue: [ PrimErrNoMemory ]
+						ifFalse: [ PrimErrBadReceiver ]) ]
 ]
 
 { #category : #'object access primitives' }
@@ -3863,7 +3898,7 @@ InterpreterPrimitives >> primitiveSmallFloatTruncated [
 InterpreterPrimitives >> primitiveSnapshot [
 	"save a normal snapshot under the same name as it was loaded unless it has been renamed by the last primitiveImageName"
 	<inline: false>
-	self snapshot: false
+	self snapshot
 
 ]
 

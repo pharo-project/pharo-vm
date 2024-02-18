@@ -35,6 +35,7 @@ VMAbstractImageFormatTest >> saveImage [
 { #category : #running }
 VMAbstractImageFormatTest >> setUp [
 
+	| imageReaderClass |
 	super setUp.
 	
 	"Objects should be registerd in Special Object Array, as they are validated while loading"
@@ -47,6 +48,7 @@ VMAbstractImageFormatTest >> setUp [
 	interpreter preemptionYields: false.
 	interpreter setImageHeaderFlagsFrom: 0.
 	
+	imageReaderClass := useComposedImageFormat ifTrue: [ ComposedImageReader ] ifFalse: [ SpurImageReader ].
 	imageReader := imageReaderClass newWithMemory: memory andInterpreter: interpreter.
 	
 	"ByteArrayClass is asserted while loading image"
