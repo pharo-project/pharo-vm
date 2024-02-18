@@ -10,18 +10,19 @@
 #include <stdio.h>
 #include <sys/ioctl.h>
 
+#define STATUS_ERROR 127
 #define CHECK_NULL(exp) \
     if ((exp) == NULL) { \
-        exit(1); \
+        exit(STATUS_ERROR); \
     }
 #define CHECK_ERROR(exp) \
     if ((exp) == -1) { \
-        exit(1); \
+        exit(STATUS_ERROR); \
     }
 #define CHECK_ERROR_PRINT(exp) \
     if ((exp) == -1) { \
         printf("Error in %s at %s: %s\n", __func__, #exp, strerror(errno)); \
-        exit(1); \
+        exit(STATUS_ERROR); \
     }
 
 pid_t tty_spawn(int fdm, const char *path, char *const argv[], char *const envp[])
@@ -35,9 +36,9 @@ pid_t tty_spawn(int fdm, const char *path, char *const argv[], char *const envp[
         should be given as expected by 'execve'. The process ID of the
         new process is returned, or -1 if one could not be created. If
         the process is created but fails to open the slave device, or
-        set up the standard file descriptors, it exits with status 1.
+        set up the standard file descriptors, it exits with status 127.
         If it fails to create the session, set the controlling
-        terminal or execute the file, it exits with status 1 after
+        terminal or execute the file, it exits with status 127 after
         printing an error message on the terminal that indicates the
         call that failed.
         
