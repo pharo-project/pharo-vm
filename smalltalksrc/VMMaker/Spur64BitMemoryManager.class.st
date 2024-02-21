@@ -894,7 +894,17 @@ Spur64BitMemoryManager >> rawOverflowSlotsOf: objOop put: numSlots [
 
 { #category : #'interpreter access' }
 Spur64BitMemoryManager >> rotateLeft: anInteger [
-	^(anInteger >> 63 bitAnd: 1) + ((self cCode: [anInteger] inSmalltalk: [anInteger bitAnd: 16r7FFFFFFFFFFFFFFF]) << 1)
+
+	^ self rotateLeft: anInteger by: 1
+]
+
+{ #category : #'interpreter access' }
+Spur64BitMemoryManager >> rotateLeft: anInteger by: anOffset [
+
+	^ (anInteger >> (64 - anOffset) bitAnd: anOffset) + ((self
+		    cCode: [ anInteger ]
+		    inSmalltalk: [ anInteger bitAnd: 16r7FFFFFFFFFFFFFFF ])
+	   << anOffset)
 ]
 
 { #category : #'interpreter access' }
