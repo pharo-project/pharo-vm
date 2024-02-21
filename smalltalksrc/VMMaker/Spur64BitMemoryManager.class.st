@@ -325,6 +325,29 @@ Spur64BitMemoryManager >> fillObj: objOop numSlots: numSlots with: fillValue [
 ]
 
 { #category : #'interpreter access' }
+Spur64BitMemoryManager >> floatFromRawBits: bits [
+	"Answer the C double precision floating point value of the argument"
+
+	<returnTypeC: #double>
+	<var: #value type: #double>
+	<var: #bits type: #usqLong>
+	| value |
+	self
+		cCode: [ "TODO!!!"
+			self
+				memcpy: (self addressOf: value)
+				_: (self addressOf: bits)
+				_: (self sizeof: value).
+			^ value
+			"^ bits float64FromRawBits" ]
+		inSmalltalk: [
+			^ (Float new: 2)
+				  at: 1 put: bits >> 32;
+				  at: 2 put: (bits bitAnd: 16rFFFFFFFF);
+				  * 1.0 "reduce to SmallFloat64 if possible" ]
+]
+
+{ #category : #'interpreter access' }
 Spur64BitMemoryManager >> floatObjectOf: aFloat [
 	<inline: false>
 	<var: #aFloat type: #double>
@@ -1197,22 +1220,12 @@ Spur64BitMemoryManager >> smallFloatValueOf: oop [
 	 shift away tags:		[ 000 ][8expsubset][52mantissa][1s] 
 	 add exponent offset:	[     11 exponent     ][52mantissa][1s] 
 	 rot sign:				[1s][     11 exponent     ][52mantissa]"
-	| bits value |
+
 	<returnTypeC: #double>
-	<var: #value type: #double>
 	<var: #bits type: #usqLong>
+	| bits |
 	bits := self smallFloatBitsOf: oop.
-	self cCode:
-			[
-			"TODO!!!"
-			self memcpy: (self addressOf: value) _: (self addressOf: bits) _: (self sizeof: value).
-			^ value
-			"^ bits float64FromRawBits"]
-		inSmalltalk:
-			[^(Float new: 2)
-				at: 1 put: bits >> 32;
-				at: 2 put: (bits bitAnd: 16rFFFFFFFF);
-				* 1.0 "reduce to SmallFloat64 if possible"]
+	^ self floatFromRawBits: bits
 ]
 
 { #category : #allocation }
