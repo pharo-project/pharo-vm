@@ -4436,6 +4436,9 @@ DruidJIT >> gen_PrimitiveFullClosureValue [
 	| jump3 jump1 s2 currentBlock jump4 jump2 s3 |
 	s2 := self methodNumArgs.
 	s2 > 0 ifTrue: [ ^ 0 ].
+	
+	self genPushRegisterArgs.
+	
 	self MoveR: ReceiverResultReg R: ClassReg.
 	self MoveM64: 24 r: ClassReg R: SendNumArgsReg.
 	self ArithmeticShiftRightCq: 3 R: SendNumArgsReg.
