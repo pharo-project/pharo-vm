@@ -519,7 +519,7 @@ DruidJIT class >> initializeBytecodeTableForSistaV1 [
 DruidJIT class >> initializePrimitiveTable [
 
 	<generated>
-	MaxCompiledPrimitiveIndex := 216.
+	MaxCompiledPrimitiveIndex := 550.
 	primitiveTable := CArrayAccessor on:
 		                  (Array new: MaxCompiledPrimitiveIndex + 1).
 	self table: primitiveTable from: self primitiveTableArray.
@@ -558,8 +558,15 @@ DruidJIT class >> primitiveTableArray [
 		  { 62. #gen_PrimitiveSize. 0 }.
 		  { 70. #gen_PrimitiveNew. 0 }.
 		  { 71. #gen_PrimitiveNewWithArg. 1 }.
+		  { 73. #genNonImplementedPrimitive.  -1. #maycallback }.
 		  { 110. #gen_PrimitiveIdentical. 1 }.
 		  { 111. #gen_PrimitiveClass. 0 }.
+		  { 117. #genNonImplementedPrimitive.  -1. #maycallback }.
+		  { 120. #genNonImplementedPrimitive.  -1. #maycallback }.
+		  { 148. #genNonImplementedPrimitive.  -1. #maycallback }.
+		  { 160. #genNonImplementedPrimitive.  -1. #maycallback }.
+		  { 173. #genNonImplementedPrimitive.  -1. #maycallback }.
+		  { 216. #genNonImplementedPrimitive.  -1. #maycallback }.
 		  { 541. #gen_PrimitiveSmallFloatAdd. 1 }.
 		  { 542. #gen_PrimitiveSmallFloatSubtract.
 		  1 }.
@@ -577,14 +584,7 @@ DruidJIT class >> primitiveTableArray [
 		  { 549. #gen_PrimitiveSmallFloatMultiply.
 		  1 }.
 		  { 550. #gen_PrimitiveSmallFloatDivide.
-		  1 }.
-		  { 73. #genNonImplementedPrimitive.  -1. #maycallback }.
-		  { 117. #genNonImplementedPrimitive.  -1. #maycallback }.
-		  { 120. #genNonImplementedPrimitive.  -1. #maycallback }.
-		  { 148. #genNonImplementedPrimitive.  -1. #maycallback }.
-		  { 160. #genNonImplementedPrimitive.  -1. #maycallback }.
-		  { 173. #genNonImplementedPrimitive.  -1. #maycallback }.
-		  { 216. #genNonImplementedPrimitive.  -1. #maycallback } }
+		  1 } }
 ]
 
 { #category : #'trait candidates' }
@@ -4488,18 +4488,18 @@ DruidJIT >> gen_PrimitiveDivide [
 	self
 		DivR: SendNumArgsReg
 		R: ClassReg
-		Quo: Extra1Reg
-		Rem: Extra0Reg.
-	self MoveR: Extra1Reg R: Extra0Reg.
-	self LogicalShiftRightCq: 60 R: Extra0Reg.
-	self AddCq: 1 R: Extra0Reg.
-	self AndCq: 15 R: Extra0Reg.
-	self CmpCq: 1 R: Extra0Reg.
+		Quo: Extra0Reg
+		Rem: Extra1Reg.
+	self MoveR: Extra0Reg R: Extra1Reg.
+	self LogicalShiftRightCq: 60 R: Extra1Reg.
+	self AddCq: 1 R: Extra1Reg.
+	self AndCq: 15 R: Extra1Reg.
+	self CmpCq: 1 R: Extra1Reg.
 	jump5 := self JumpAbove: 0.
-	self MoveR: Extra1Reg R: Extra0Reg.
-	self LogicalShiftLeftCq: 3 R: Extra0Reg.
-	self AddCq: 1 R: Extra0Reg.
-	self MoveR: Extra0Reg R: ReceiverResultReg.
+	self MoveR: Extra0Reg R: Extra1Reg.
+	self LogicalShiftLeftCq: 3 R: Extra1Reg.
+	self AddCq: 1 R: Extra1Reg.
+	self MoveR: Extra1Reg R: ReceiverResultReg.
 	self genPrimReturn.
 	currentBlock := self Label.
 	jump1 jmpTarget: currentBlock.
@@ -5146,11 +5146,12 @@ DruidJIT >> gen_PrimitiveNewWithArg [
 	self
 		DivR: Extra0Reg
 		R: ClassReg
-		Quo: ClassReg
-		Rem: Extra0Reg.
+		Quo: Extra0Reg
+		Rem: ClassReg.
 	self AndCq: 1 R: SendNumArgsReg.
 	self AddR: SendNumArgsReg R: Extra1Reg.
 	s52 := 0.
+	self MoveR: Extra0Reg R: ClassReg.
 	self MoveCq: s52 R: Extra0Reg.
 	jump10 := self Jump: 0.
 	currentBlock := self Label.
@@ -5212,14 +5213,14 @@ DruidJIT >> gen_PrimitiveNewWithArg [
 	self
 		DivR: Extra0Reg
 		R: ClassReg
-		Quo: ClassReg
-		Rem: Extra0Reg.
+		Quo: Extra0Reg
+		Rem: ClassReg.
 	s105 := 8.
-	self MoveCq: s105 R: Extra0Reg.
-	self SubR: SendNumArgsReg R: Extra0Reg.
-	self AndCq: 7 R: Extra0Reg.
-	self AddR: Extra0Reg R: Extra1Reg.
-	self MoveR: ClassReg R: SendNumArgsReg.
+	self MoveCq: s105 R: ClassReg.
+	self SubR: SendNumArgsReg R: ClassReg.
+	self AndCq: 7 R: ClassReg.
+	self AddR: ClassReg R: Extra1Reg.
+	self MoveR: Extra0Reg R: SendNumArgsReg.
 	self MoveCq: s14 R: Extra0Reg.
 	jump12 := self Jump: 0.
 	currentBlock := self Label.
