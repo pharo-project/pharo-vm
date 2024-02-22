@@ -519,7 +519,7 @@ DruidJIT class >> initializeBytecodeTableForSistaV1 [
 DruidJIT class >> initializePrimitiveTable [
 
 	<generated>
-	MaxCompiledPrimitiveIndex := 550.
+	MaxCompiledPrimitiveIndex := 549.
 	primitiveTable := CArrayAccessor on:
 		                  (Array new: MaxCompiledPrimitiveIndex + 1).
 	self table: primitiveTable from: self primitiveTableArray.
@@ -582,8 +582,6 @@ DruidJIT class >> primitiveTableArray [
 		  { 548. #gen_PrimitiveSmallFloatNotEqual.
 		  1 }.
 		  { 549. #gen_PrimitiveSmallFloatMultiply.
-		  1 }.
-		  { 550. #gen_PrimitiveSmallFloatDivide.
 		  1 } }
 ]
 
