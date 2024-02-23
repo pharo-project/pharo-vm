@@ -1069,7 +1069,7 @@ InterpreterPrimitives >> primitiveBitShift [
 		ifTrue:
 			[integerReceiver := self positive32BitValueOf: integerReceiver]
 		ifFalse:
-			[integerReceiver := self signed64BitValueOf: integerReceiver].
+			[integerReceiver := objectMemory integerValueOf: integerReceiver].
 	self successful ifTrue:
 		[(integerArgument := objectMemory integerValueOf: integerArgument) >= 0
 			ifTrue: "Left shift -- must fail bits would be lost"
@@ -3781,6 +3781,8 @@ InterpreterPrimitives >> primitiveSlotAtPut [
 { #category : #'arithmetic float primitives' }
 InterpreterPrimitives >> primitiveSmallFloatAdd [
 	<option: #Spur64BitMemoryManager>
+	<numberOfArguments: 1>
+	<specialisation: #smallFloat>
 	| rcvr arg|
 	<var: #rcvr type: #double>
 	<var: #arg type: #double>
@@ -3805,6 +3807,8 @@ InterpreterPrimitives >> primitiveSmallFloatArctan [
 { #category : #'arithmetic float primitives' }
 InterpreterPrimitives >> primitiveSmallFloatDivide [
 	<option: #Spur64BitMemoryManager>
+	<numberOfArguments: 1>
+	<specialisation: #smallFloat>
 	| rcvr arg |
 	<var: #rcvr type: #double>
 	<var: #arg type: #double>
@@ -3821,6 +3825,8 @@ InterpreterPrimitives >> primitiveSmallFloatDivide [
 { #category : #'arithmetic float primitives' }
 InterpreterPrimitives >> primitiveSmallFloatEqual [
 	<option: #Spur64BitMemoryManager>
+	<numberOfArguments: 1>
+	<specialisation: #smallFloat>
 	| rcvr arg |
 	<var: #rcvr type: #double>
 	<var: #arg type: #double>
@@ -3865,6 +3871,8 @@ InterpreterPrimitives >> primitiveSmallFloatFractionalPart [
 { #category : #'arithmetic float primitives' }
 InterpreterPrimitives >> primitiveSmallFloatGreaterOrEqual [
 	<option: #Spur64BitMemoryManager>
+	<numberOfArguments: 1>
+	<specialisation: #smallFloat>
 	| rcvr arg |
 	<var: #rcvr type: #double>
 	<var: #arg type: #double>
@@ -3879,6 +3887,8 @@ InterpreterPrimitives >> primitiveSmallFloatGreaterOrEqual [
 { #category : #'arithmetic float primitives' }
 InterpreterPrimitives >> primitiveSmallFloatGreaterThan [
 	<option: #Spur64BitMemoryManager>
+	<numberOfArguments: 1>
+	<specialisation: #smallFloat>
 	| rcvr arg |
 	<var: #rcvr type: #double>
 	<var: #arg type: #double>
@@ -3901,6 +3911,8 @@ InterpreterPrimitives >> primitiveSmallFloatHash [
 { #category : #'arithmetic float primitives' }
 InterpreterPrimitives >> primitiveSmallFloatLessOrEqual [
 	<option: #Spur64BitMemoryManager>
+	<numberOfArguments: 1>
+	<specialisation: #smallFloat>
 	| rcvr arg |
 	<var: #rcvr type: #double>
 	<var: #arg type: #double>
@@ -3915,6 +3927,8 @@ InterpreterPrimitives >> primitiveSmallFloatLessOrEqual [
 { #category : #'arithmetic float primitives' }
 InterpreterPrimitives >> primitiveSmallFloatLessThan [
 	<option: #Spur64BitMemoryManager>
+	<numberOfArguments: 1>
+	<specialisation: #smallFloat>
 	| rcvr arg |
 	<var: #rcvr type: #double>
 	<var: #arg type: #double>
@@ -3938,6 +3952,8 @@ InterpreterPrimitives >> primitiveSmallFloatLogN [
 { #category : #'arithmetic float primitives' }
 InterpreterPrimitives >> primitiveSmallFloatMultiply [
 	<option: #Spur64BitMemoryManager>
+	<numberOfArguments: 1>
+	<specialisation: #smallFloat>
 	| rcvr arg |
 	<var: #rcvr type: #double>
 	<var: #arg type: #double>
@@ -3952,6 +3968,8 @@ InterpreterPrimitives >> primitiveSmallFloatMultiply [
 { #category : #'arithmetic float primitives' }
 InterpreterPrimitives >> primitiveSmallFloatNotEqual [
 	<option: #Spur64BitMemoryManager>
+	<numberOfArguments: 1>
+	<specialisation: #smallFloat>
 	| rcvr arg |
 	<var: #rcvr type: #double>
 	<var: #arg type: #double>
@@ -3986,6 +4004,8 @@ InterpreterPrimitives >> primitiveSmallFloatSquareRoot [
 { #category : #'arithmetic float primitives' }
 InterpreterPrimitives >> primitiveSmallFloatSubtract [
 	<option: #Spur64BitMemoryManager>
+	<numberOfArguments: 1>
+	<specialisation: #smallFloat>
 	| rcvr arg |
 	<var: #rcvr type: #double>
 	<var: #arg type: #double>
