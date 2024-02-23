@@ -1928,7 +1928,6 @@ InterpreterPrimitives >> primitiveFullClosureValue [
 	<numberOfArguments: 0>
 	<checkArgumentCount>
 	| blockClosure numArgs closureMethod |
-	self interpreterIgnore: [ self forcePushRegisterCallingConvention ].
 
 	blockClosure := self stackValue: argumentCount.
 	numArgs := self argumentCountOfClosure: blockClosure.
