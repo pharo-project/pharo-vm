@@ -2162,8 +2162,15 @@ CogARMv8Compiler >> concretizeLogicalShiftRightCqR [
 { #category : #'generate machine code - concretize' }
 CogARMv8Compiler >> concretizeLogicalShiftRightRR [
 
-	self notYetImplemented.
-	^ 0
+	self 
+		machineCodeAt: 0 
+		put: (self
+			 logicalShiftRightSize: 1
+			 sourceRegister: (operands at: 1)
+			 shiftRegister: (operands at: 0)
+			 destinationRegister: (operands at: 1)).
+
+	^ machineCodeSize := 4
 ]
 
 { #category : #'generate machine code - concretize' }
@@ -5142,6 +5149,24 @@ CogARMv8Compiler >> logicalShiftLeftSize: is64Bits sourceRegister: sourceRegiste
 		imms: base - 1 - shiftValue
 		sourceRegister: sourceRegister
 		destinationRegister: destinationRegister
+]
+
+{ #category : #assembler }
+CogARMv8Compiler >> logicalShiftRightSize: is64bits sourceRegister: sourceRegister shiftRegister: shiftRegister destinationRegister: destinationRegister [ 
+	
+	"C6.2.180 LSR (register)
+	
+	Logical Shift Right (register) shifts a register value right by a variable number of bits, shifting in zeros, and writes the result to the destination register. The remainder obtained by dividing the second source register by the data size defines the number of bits by which the first source register is right-shifted.
+	
+	LSR <Xd>, <Xn>, <Xm>"
+	
+	^ is64bits << 31
+		bitOr: (2r0011010110 << 21
+		bitOr: ((shiftRegister bitAnd: 16r1f) << 16
+		bitOr: (2r001001 << 10
+		bitOr: ((sourceRegister bitAnd: 16r1f) << 5
+		bitOr: (destinationRegister bitAnd: 16r1f)))))
+	
 ]
 
 { #category : #'as yet unclassified' }

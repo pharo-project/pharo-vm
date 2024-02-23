@@ -7,11 +7,19 @@ Class {
 { #category : #'class initialization' }
 DruidMirrorCogit class >> bytecodeTable [
 
-	^ DruidJIT bytecodeTable collect: [ :entry | "Replace just the bytecode's name"
-		  entry copyReplaceAt: 4 with: [ :e | | selector |
-			selector := (e copyReplaceAll: '_' with: '') asSymbol.
-			selector last isDigit ifTrue: [ selector := selector allButLast ].
-			selector  ] ]
+	| found |
+	^ StackToRegisterMappingCogit bytecodeTable flatCollect: [ :e |
+		  (e second to: e third) collect: [ :bindex |
+			  found := DruidJIT bytecodeTable detect: [ :dbytecode |
+				           dbytecode second = bindex ].
+			  found fourth = #unknownBytecode
+				  ifTrue: [ found ]
+				  ifFalse: [
+					  | copy |
+					  copy := e copy.
+					  copy at: 2 put: bindex.
+					  copy at: 3 put: bindex.
+					  copy ] ] ]
 ]
 
 { #category : #initialization }
