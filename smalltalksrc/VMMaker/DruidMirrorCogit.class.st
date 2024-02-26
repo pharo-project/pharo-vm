@@ -48,5 +48,8 @@ DruidMirrorCogit class >> initializePrimitiveTable [
 DruidMirrorCogit class >> primitiveTableArray [
 
 	^ DruidJIT primitiveTableArray collect: [ :entry | "Replace just the primitive's name"
-		   entry copyReplaceAt: 2 with: [ :e | (e copyReplaceAll: '_' with: '') asSymbol ]  ]
+		   entry copyReplaceAt: 2 with: [ :e | | handwrittenGenSelector |
+			handwrittenGenSelector := (e copyReplaceAll: '_' with: '') asSymbol.
+			self assert: (StackToRegisterMappingCogit objectRepresentationClass lookupSelector: handwrittenGenSelector) isNotNil.
+			handwrittenGenSelector ]  ]
 ]
