@@ -243,6 +243,17 @@ InterpreterPrimitives >> floatExponentBits [
 	^11
 ]
 
+{ #category : #'control primitives' }
+InterpreterPrimitives >> forcePushRegisterCallingConvention [
+
+	argumentCount <= 2 ifTrue: [
+		self push: (self stackValue: argumentCount).
+		argumentCount > 0 ifTrue: [
+			self push: (self stackValue: argumentCount - 1).
+			argumentCount > 1 ifTrue: [
+				self push: (self stackValue: argumentCount - 2) ] ] ]
+]
+
 { #category : #'simulation support' }
 InterpreterPrimitives >> getenv: aByteStringOrByteArray [
 	<doNotGenerate>
@@ -1912,19 +1923,27 @@ InterpreterPrimitives >> primitiveFractionalPart [
 
 { #category : #'control primitives' }
 InterpreterPrimitives >> primitiveFullClosureValue [
+
 	<option: #SistaV1BytecodeSet>
 	<numberOfArguments: 0>
+	<checkArgumentCount>
 	| blockClosure numArgs closureMethod |
+
 	blockClosure := self stackValue: argumentCount.
 	numArgs := self argumentCountOfClosure: blockClosure.
-	argumentCount = numArgs ifFalse:
-		[^self primitiveFail].
+	argumentCount = numArgs ifFalse: [ ^ self primitiveFail ].
 
-	closureMethod := objectMemory fetchPointer: FullClosureCompiledBlockIndex ofObject: blockClosure.
-	(objectMemory isOopCompiledMethod: closureMethod) ifFalse:
-		[^self primitiveFail].
+	closureMethod := objectMemory
+		                 fetchPointer: FullClosureCompiledBlockIndex
+		                 ofObject: blockClosure.
+	(objectMemory isOopCompiledMethod: closureMethod) ifFalse: [
+		^ self primitiveFail ].
 
-	self activateNewFullClosure: blockClosure method: closureMethod numArgs: numArgs mayContextSwitch: true
+	self
+		activateNewFullClosure: blockClosure
+		method: closureMethod
+		numArgs: numArgs
+		mayContextSwitch: true
 ]
 
 { #category : #'control primitives' }
