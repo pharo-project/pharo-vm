@@ -8503,12 +8503,6 @@ Cogit >> handleWriteSimulationTrap: aProcessorSimulationTrap [
 ]
 
 { #category : #testing }
-Cogit >> hasLinkRegister [
-
-	^ backEnd hasLinkRegister 
-]
-
-{ #category : #testing }
 Cogit >> hasMachineCodeMethodForwardedLiterals: aCogMethod [ 
 	
 	<doNotGenerate>
