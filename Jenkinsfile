@@ -139,9 +139,9 @@ def runBuild(platformName, configuration, headless = true, someAdditionalParamet
 				dir("${buildDirectory}"){
 					shell "VERBOSE=1 make sign install package"
 			}
+			shell "mkdir -p artifacts-${platformName} && cp -a ${buildDirectory}/build/packages/* artifacts-${platformName}/"
 		}		
 		
-		shell "mkdir -p artifacts-${platformName} && cp -a ${buildDirectory}/build/packages/* artifacts-${platformName}/"
 	}
 	
 		stash excludes: '_CPack_Packages', includes: "${buildDirectory}/build/packages/*", name: "packages-${platform}-${configuration}"
