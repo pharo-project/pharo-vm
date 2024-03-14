@@ -699,32 +699,35 @@ InterpreterPrimitives >> positiveMachineIntegerValueOf: oop [
 
 	"If not a small integer, exit druid compilation"
 	self druidExitPoint.
+	self druidIgnore: [ 
+		(objectMemory isNonIntegerImmediate: oop) ifTrue:
+			[self primitiveFail.
+			 ^0].
 
-	(objectMemory isNonIntegerImmediate: oop) ifTrue:
-		[self primitiveFail.
-		 ^0].
+		ok := objectMemory
+				isClassOfNonImm: oop
+				equalTo: (objectMemory splObj: ClassLargePositiveInteger)
+				compactClassIndex: ClassLargePositiveIntegerCompactIndex.
+		ok ifFalse:
+			[self primitiveFail.
+			 ^0].
+		bs := objectMemory numBytesOfBytes: oop.
+		bs > (self sizeof: #'usqIntptr_t') ifTrue:
+			[self primitiveFail.
+			 ^0].
 
-	ok := objectMemory
-			isClassOfNonImm: oop
-			equalTo: (objectMemory splObj: ClassLargePositiveInteger)
-			compactClassIndex: ClassLargePositiveIntegerCompactIndex.
-	ok ifFalse:
-		[self primitiveFail.
-		 ^0].
-	bs := objectMemory numBytesOfBytes: oop.
-	bs > (self sizeof: #'usqIntptr_t') ifTrue:
-		[self primitiveFail.
-		 ^0].
+		"self cppIf: SPURVM
+			ifTrue: [""Memory is 8 byte aligned in Spur and oversized bytes are set to zero, so we can safely fetch 8 bytes""
+				^objectMemory byteSwapped64IfBigEndian: (objectMemory fetchLong64: 0 ofObject: oop)]
+			ifFalse: ["((self sizeof: #'usqIntptr_t') = 8
+				and: [bs > 4])
+					ifTrue:
+						[^objectMemory byteSwapped64IfBigEndian: (objectMemory fetchLong64: 0 ofObject: oop)]
+					ifFalse:
+						[^self cCoerceSimple: (objectMemory byteSwapped32IfBigEndian: (objectMemory fetchLong32: 0 ofObject: oop)) to: #'unsigned int']"]"
+	].
 
-	"self cppIf: SPURVM
-		ifTrue: [""Memory is 8 byte aligned in Spur and oversized bytes are set to zero, so we can safely fetch 8 bytes""
-			^objectMemory byteSwapped64IfBigEndian: (objectMemory fetchLong64: 0 ofObject: oop)]
-		ifFalse: ["((self sizeof: #'usqIntptr_t') = 8
-			and: [bs > 4])
-				ifTrue:
-					[^objectMemory byteSwapped64IfBigEndian: (objectMemory fetchLong64: 0 ofObject: oop)]
-				ifFalse:
-					[^self cCoerceSimple: (objectMemory byteSwapped32IfBigEndian: (objectMemory fetchLong32: 0 ofObject: oop)) to: #'unsigned int']"]"
+
 ]
 
 { #category : #'arithmetic integer primitives' }
@@ -951,7 +954,8 @@ InterpreterPrimitives >> primitiveArrayBecomeOneWayNoCopyHash [
 { #category : #'object access primitives' }
 InterpreterPrimitives >> primitiveAsCharacter [
 	<numberOfArguments: 0>
-
+	<checkArgumentCount>
+	
 	| characterCode characterObject |
 	characterCode := self stackTop.
 	((objectMemory isIntegerObject: characterCode)
@@ -2297,6 +2301,8 @@ InterpreterPrimitives >> primitiveImmediateAsInteger [
 	 For a Character, answer its code as an unsigned integer.
 	 For a SmallFloat, answer the signed, but unadjusted bit pattern (so as to keep the result a SmallInteger).
 	 This is a good value for an immediate's hash."
+	<numberOfArguments: 0>
+	<checkArgumentCount>
 	<option: #SpurObjectMemory>
 	| oop value |
 	oop := self stackTop.
@@ -2656,6 +2662,7 @@ InterpreterPrimitives >> primitiveLessThan [
 InterpreterPrimitives >> primitiveLessThanLargeIntegers [
 	"Primitive comparison operations for large integers in 64 bit range"
 	| integerRcvr integerArg |
+	<numberOfArguments: 1>
 	<export: true>
 	<var: 'integerRcvr' type: 'sqLong'>
 	<var: 'integerArg' type: 'sqLong'>
@@ -4230,7 +4237,7 @@ InterpreterPrimitives >> primitiveStringReplace [
 
 	"<array> primReplaceFrom: start to: stop with: replacement startingAt: repStart  
 		<primitive: 105>"
-
+	<numberOfArguments: 4>
 	<inline: true>
 	| array start stop repl replStart arrayFmt arrayLength arrayInstSize replFmt replLength replInstSize srcDelta |
 	array := self stackValue: 4.
