@@ -1,5 +1,5 @@
 #ifndef _XOPEN_SOURCE
-#define _XOPEN_SOURCE 500
+#define _XOPEN_SOURCE 700
 #endif
 
 #include <errno.h>
@@ -13,16 +13,16 @@
 #define STATUS_ERROR 127
 #define CHECK_NULL(exp) \
     if ((exp) == NULL) { \
-        exit(STATUS_ERROR); \
+        _exit(STATUS_ERROR); \
     }
 #define CHECK_ERROR(exp) \
     if ((exp) == -1) { \
-        exit(STATUS_ERROR); \
+        _exit(STATUS_ERROR); \
     }
 #define CHECK_ERROR_PRINT(exp) \
     if ((exp) == -1) { \
-        printf("Error in %s at %s: %s\n", __func__, #exp, strerror(errno)); \
-        exit(STATUS_ERROR); \
+        dprintf(2, "Error in %s at %s: %s\n", __func__, #exp, strerror(errno)); \
+        _exit(STATUS_ERROR); \
     }
 
 pid_t tty_spawn(int fdm, const char *path, char *const argv[], char *const envp[])
