@@ -13,7 +13,8 @@ Class {
 		'tRefCountToShrinkRT',
 		'eSurvivorBytes',
 		'eRememberedSetSize',
-		'eStatTenures'
+		'eStatTenures',
+		'deltaUsecs'
 	],
 	#category : #'VMMaker-SpurMemoryManager'
 }
@@ -24,6 +25,24 @@ SpurScavengeLogRecord class >> instVarNamesAndTypesForTranslationDo: aBinaryBloc
 		[:ivn|
 		(SpurMemoryManager isNonArgumentImplicitReceiverVariableName: ivn) ifFalse:
 			[aBinaryBlock value: ivn value: #usqInt]]
+]
+
+{ #category : #accessing }
+SpurScavengeLogRecord >> deltaTenured [
+
+	^ eStatTenures - sStatTenures 
+]
+
+{ #category : #accessing }
+SpurScavengeLogRecord >> deltaUsecs [
+
+	^ deltaUsecs
+]
+
+{ #category : #accessing }
+SpurScavengeLogRecord >> deltaUsecs: anObject [
+
+	deltaUsecs := anObject
 ]
 
 { #category : #accessing }

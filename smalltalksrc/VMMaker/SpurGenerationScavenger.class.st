@@ -225,6 +225,13 @@ SpurGenerationScavenger >> allWeakSurvivorsOnWeakList [
 ]
 
 { #category : #accessing }
+SpurGenerationScavenger >> coInterpreter [
+
+	<doNotGenerate>
+	^ coInterpreter
+]
+
+{ #category : #accessing }
 SpurGenerationScavenger >> coInterpreter: aCoInterpreter [
 	coInterpreter := aCoInterpreter
 ]
@@ -600,7 +607,7 @@ SpurGenerationScavenger >> initialize [
 	eden := SpurNewSpaceSpace new.
 	tenureThreshold := 0.
 	statSurvivorCount := statTenures := 0.
-	scavengeLogRecord := SpurScavengeLogRecord new.
+	scavengeLogRecord := SpurScavengeLogRecord new
 ]
 
 { #category : #'weakness and ephemerality' }
@@ -674,7 +681,7 @@ SpurGenerationScavenger >> logEndScavenge [
 SpurGenerationScavenger >> logScavenge [
 	<inline: #always>
 	scavengeLog ifNotNil:
-		[self writeScavengeLog]
+		[self writeScavengeLogAsSTON]
 ]
 
 { #category : #logging }
@@ -785,7 +792,9 @@ SpurGenerationScavenger >> newSpaceStart: startAddress newSpaceBytes: totalBytes
 	self initFutureSpaceStart.
 	manager initSpaceForAllocationCheck: (self addressOf: eden) limit: eden limit.
 
-	tenuringProportion := 0.9
+	tenuringProportion := 0.9.
+	
+	self openScavengeLog
 ]
 
 { #category : #'weakness and ephemerality' }
@@ -1489,5 +1498,15 @@ SpurGenerationScavenger >> writeScavengeLog [
 				scavengeLogRecord eRememberedSetSize.
 				scavengeLogRecord eStatTenures - scavengeLogRecord sStatTenures.
 				manager statSGCDeltaUsecs}.
+	scavengeLog fflush
+]
+
+{ #category : #logging }
+SpurGenerationScavenger >> writeScavengeLogAsSTON [
+
+	<inline: #never>
+	scavengeLogRecord deltaUsecs: manager statSGCDeltaUsecs.
+	self writeSTON: scavengeLogRecord toFile: scavengeLog.
+	self fprintf: scavengeLog _: '\n---\n'.
 	scavengeLog fflush
 ]

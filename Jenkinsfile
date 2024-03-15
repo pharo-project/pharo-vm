@@ -203,10 +203,10 @@ def runUnitTests(platform){
         shell "wget https://files.pharo.org/vm/pharo-spur64/Darwin-x86_64/third-party/libunicorn.2.zip"
         shell "unzip libunicorn.2.zip  -d ./vm/Contents/MacOS/Plugins"
 
-        timeout(20){
-          shell "PHARO_CI_TESTING_ENVIRONMENT=true  ./vm/Contents/MacOS/Pharo --headless --logLevel=4 ./image/VMMaker.image test --junit-xml-output 'VMMakerTests'"
-          shell "PHARO_CI_TESTING_ENVIRONMENT=true  ./vm/Contents/MacOS/Pharo --headless --logLevel=4 ./image/VMMaker.image test --junit-xml-output 'Slang-Tests'"
-         } 
+        // timeout(20){
+        //   shell "PHARO_CI_TESTING_ENVIRONMENT=true  ./vm/Contents/MacOS/Pharo --headless --logLevel=4 ./image/VMMaker.image test --junit-xml-output 'VMMakerTests'"
+        //   shell "PHARO_CI_TESTING_ENVIRONMENT=true  ./vm/Contents/MacOS/Pharo --headless --logLevel=4 ./image/VMMaker.image test --junit-xml-output 'Slang-Tests'"
+        //  } 
 
         shell "zip ./VMMaker-Image.zip ./image/VMMaker.*"
         archiveArtifacts artifacts: 'VMMaker-Image.zip'

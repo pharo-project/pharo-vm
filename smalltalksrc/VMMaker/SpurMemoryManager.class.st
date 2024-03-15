@@ -618,7 +618,8 @@ Class {
 		'permSpaceFreeStart',
 		'fromOldSpaceRememberedSet',
 		'fromPermToOldSpaceRememberedSet',
-		'fromPermToNewSpaceRememberedSet'
+		'fromPermToNewSpaceRememberedSet',
+		'fullGCLogRecord'
 	],
 	#classVars : [
 		'BitsPerByte',
@@ -655,7 +656,7 @@ Class {
 { #category : #translation }
 SpurMemoryManager class >> ancilliaryClasses [
 	"Answer any extra classes to be included in the translation."
-	^{	SpurGenerationScavenger. SpurScavengeLogRecord. SpurSegmentManager. SpurSegmentInfo. VMMemoryMap. 
+	^{	SpurGenerationScavenger. SpurScavengeLogRecord. SpurFullGCLogRecord. SpurSegmentManager. SpurSegmentInfo. VMMemoryMap. 
 		VMMemoryMapConfiguration. VMMemoryMapConfiguration forWordsize: self objectMemoryClass wordSize.
 		VMRememberedSet }, 
 		self compactorClass classesForTranslation,
@@ -741,7 +742,8 @@ SpurMemoryManager class >> declareCVarsIn: aCCodeGenerator [
 		var: #memoryMap type: #'VMMemoryMap *';
 		var: #fromOldSpaceRememberedSet type: #'VMRememberedSet *';
 		var: #fromPermToOldSpaceRememberedSet type: #'VMRememberedSet *';
-		var: #fromPermToNewSpaceRememberedSet type: #'VMRememberedSet *'
+		var: #fromPermToNewSpaceRememberedSet type: #'VMRememberedSet *';
+		var: #fullGCLogRecord type: #SpurFullGCLogRecord
 ]
 
 { #category : #translation }
@@ -6594,6 +6596,8 @@ SpurMemoryManager >> initialize [
 	maxOldSpaceSize := self class initializationOptions
 							ifNotNil: [:initOpts| initOpts at: #maxOldSpaceSize ifAbsent: [0]]
 							ifNil: [0].
+							
+	fullGCLogRecord := SpurFullGCLogRecord new.
 
 ]
 
@@ -13222,6 +13226,21 @@ SpurMemoryManager >> updateFullGCStats [
 	statCompactionUsecs := statCompactionUsecs + (statGCEndUsecs - compactionStartUsecs).
 	gcSweepEndUsecs = 0 ifFalse: [statSweepUsecs := statSweepUsecs + (gcSweepEndUsecs - compactionStartUsecs)].
 	statMarkUsecs := statMarkUsecs + (gcMarkEndUsecs - gcStartUsecs).
+	
+	scavenger logStream ifNotNil: [ 
+		fullGCLogRecord 
+			fullGCs: statFullGCs;
+			fullUsecs: statFullGCUsecs;
+			compactionUsecs: statCompactionUsecs;
+			sweepUsecs: gcSweepEndUsecs;
+			markUsecs: statMarkUsecs.
+		
+		self writeSTON: fullGCLogRecord toFile: scavenger logStream.
+		self fprintf: scavenger logStream _: '\n---\n'.
+		
+		scavenger logStream fflush ]
+	
+
 ]
 
 { #category : #initialization }

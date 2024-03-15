@@ -43,14 +43,6 @@ AbstractComposedImageAccess >> existSegment: segmentIndex inImage: imageFileName
 
 ]
 
-{ #category : #formats }
-AbstractComposedImageAccess >> fieldFormat [
-
-	<cmacro: '() "\t#%s : %" PRIdSQINT'>
-
-	^ '\t#%s : %' , PRIdSQINT.
-]
-
 { #category : #'file operations' }
 AbstractComposedImageAccess >> fileExists: fileName [
 
@@ -91,13 +83,6 @@ AbstractComposedImageAccess >> fscanf: file _: format _: varHolder1 _: varHolder
 			  file position: file position - 1. "Not consume '\n' "
 			  (line last = $,) ifTrue: [ file position: file position - 1 ] "Not consume ',' " ];
 		  yourself
-]
-
-{ #category : #formats }
-AbstractComposedImageAccess >> headFormat [
-	
-	<inline: true>
-	^ '%s {\n'.
 ]
 
 { #category : #'file operations' }
