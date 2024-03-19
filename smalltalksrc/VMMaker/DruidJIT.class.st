@@ -1328,7 +1328,7 @@ DruidJIT >> genNewHashTrampoline: saveRegs called: name [
 	In the sista VM, the inlined hash operation requires registers to be saved"
 	<inline: true>
 	^ self
-		genTrampolineFor: #ceNewHashOf:
+		genTrampolineFor: #newHashBitsOf:
 		called: name
 		numArgs: 1
 		arg: TempReg 
