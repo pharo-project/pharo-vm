@@ -1404,7 +1404,7 @@ DruidJIT >> genStoreCheckTrampoline [
 	
 	CheckRememberedInTrampoline ifTrue:
 		[self zeroOpcodeIndex.
-		 jumpSC := self genCheckRememberedBitOf: ReceiverResultReg scratch: self backEnd cResultRegister.
+		 jumpSC := self genCheckRememberedBitOf: TempReg scratch: self backEnd cResultRegister.
 		 self assert: jumpSC opcode = JumpNonZero.
 		 jumpSC opcode: JumpZero.
 		 self RetN: 0.
@@ -1413,11 +1413,11 @@ DruidJIT >> genStoreCheckTrampoline [
 		genTrampolineFor: #rememberObjInCorrectRememberedSet:
 		called: 'ceStoreCheckTrampoline'
 		numArgs: 1
-		arg: ReceiverResultReg
+		arg: TempReg
 		arg: nil
 		arg: nil
 		arg: nil
-		regsToSave: (CallerSavedRegisterMask bitClear: (self registerMaskFor: ReceiverResultReg))
+		regsToSave: (CallerSavedRegisterMask bitClear: (self registerMaskFor: TempReg))
 		pushLinkReg: true
 		resultReg: self returnRegForStoreCheck
 		appendOpcodes: CheckRememberedInTrampoline
