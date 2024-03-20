@@ -1898,6 +1898,7 @@ InterpreterPrimitives >> primitiveFormat [
 
 	| receiver header format |
 	receiver := self stackTop.
+	(objectMemory isImmediate: receiver) ifTrue: [ ^ self primitiveFail ].
 	header := objectMemory baseHeader: receiver.
 	format := objectMemory formatOfHeader: header.
 	self

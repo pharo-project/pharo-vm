@@ -1673,6 +1673,109 @@ VMPrimitiveTest >> testPrimitiveFormat [
 		equals: (memory integerObjectOf: memory ephemeronFormat)
 ]
 
+{ #category : #'tests - primitiveAtPut' }
+VMPrimitiveTest >> testPrimitiveFormatShouldFail [
+
+	| object |
+	object := 42.
+
+	"primitiveFloat doesn't support immediates as receiver, so this should fail:"
+	interpreter push: object.
+	interpreter primitiveFormat.
+
+	self assert: interpreter failed
+]
+
+{ #category : #'tests - primitiveAtPut' }
+VMPrimitiveTest >> testPrimitiveFormatWithArray [
+
+	| object |
+	object := self
+		          newObjectWithSlots: 0
+		          format: memory arrayFormat
+		          classIndex: memory arrayClassIndexPun.
+
+	interpreter push: object.
+	interpreter primitiveFormat.
+
+	self deny: interpreter failed.
+	self
+		assert: interpreter stackTop
+		equals: (memory integerObjectOf: memory arrayFormat)
+]
+
+{ #category : #'tests - primitiveAtPut' }
+VMPrimitiveTest >> testPrimitiveFormatWithByteFormat [
+
+	| object |
+	object := self
+		          newObjectWithSlots: 0
+		          format: memory firstByteFormat
+		          classIndex: memory arrayClassIndexPun.
+
+	interpreter push: object.
+	interpreter primitiveFormat.
+
+	self deny: interpreter failed.
+	self
+		assert: interpreter stackTop
+		equals: (memory integerObjectOf: memory firstByteFormat)
+]
+
+{ #category : #'tests - primitiveAtPut' }
+VMPrimitiveTest >> testPrimitiveFormatWithCompiledMethod [
+
+	| object |
+	object := self
+		          newObjectWithSlots: 0
+		          format: memory firstCompiledMethodFormat
+		          classIndex: memory arrayClassIndexPun.
+
+	interpreter push: object.
+	interpreter primitiveFormat.
+
+	self deny: interpreter failed.
+	self
+		assert: interpreter stackTop
+		equals: (memory integerObjectOf: memory firstCompiledMethodFormat)
+]
+
+{ #category : #'tests - primitiveAtPut' }
+VMPrimitiveTest >> testPrimitiveFormatWithEphemeron [
+
+	| object |
+	object := self
+		          newObjectWithSlots: 0
+		          format: memory ephemeronFormat
+		          classIndex: memory arrayClassIndexPun.
+
+	interpreter push: object.
+	interpreter primitiveFormat.
+
+	self deny: interpreter failed.
+	self
+		assert: interpreter stackTop
+		equals: (memory integerObjectOf: memory ephemeronFormat)
+]
+
+{ #category : #'tests - primitiveAtPut' }
+VMPrimitiveTest >> testPrimitiveFormatWithWeakArray [
+
+	| object |
+	object := self
+		          newObjectWithSlots: 0
+		          format: memory weakArrayFormat
+		          classIndex: memory arrayClassIndexPun.
+
+	interpreter push: object.
+	interpreter primitiveFormat.
+
+	self deny: interpreter failed.
+	self
+		assert: interpreter stackTop
+		equals: (memory integerObjectOf: memory weakArrayFormat)
+]
+
 { #category : #'tests - primitiveImmutability' }
 VMPrimitiveTest >> testPrimitiveGetImmutabilityOfImmediateReturnsTrue [
 
