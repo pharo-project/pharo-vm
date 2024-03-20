@@ -1345,6 +1345,23 @@ VMJittedGeneralPrimitiveTest >> testPrimitiveEqualReturnsABooleanWhenNegativeNum
 	self assert: self machineSimulator receiverRegisterValue equals: (memory falseObject).
 ]
 
+{ #category : #'tests - primitiveAdd' }
+VMJittedGeneralPrimitiveTest >> testPrimitiveFormat [
+	
+	| endInstruction primitiveAddress |
+		
+	primitiveAddress := self compile: [ 
+		cogit objectRepresentation genPrimitiveFormat.
+		"If the primitive fails it continues, so we need to have an instruction to detect the end"
+		endInstruction := cogit Stop ].
+
+	self prepareStackForSendReceiver: (memory integerObjectOf: 42).
+
+	"Assert it reaches the Stop and that it does not destroy the value inside the ReceiverResultReg "
+	self runFrom: primitiveAddress until: endInstruction address.
+	self assert: self machineSimulator receiverRegisterValue equals: (memory integerObjectOf: 42).
+]
+
 { #category : #'tests - primitiveGreaterOrEqual' }
 VMJittedGeneralPrimitiveTest >> testPrimitiveGreaterOrEqualDoesNotCompileIfReceiverTagIsNotSmallInteger [
 	

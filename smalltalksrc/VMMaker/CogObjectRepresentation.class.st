@@ -868,30 +868,36 @@ CogObjectRepresentation >> genPrimitiveFloatSubtract [
 
 { #category : #'primitive generators' }
 CogObjectRepresentation >> genPrimitiveFormat [
-	| jumpIsImm |
+
+	| jumpIsImm primitiveFailure |
 	"For now only with receiver"
-	cogit methodNumArgs > 0 ifTrue:
-			[^UnimplementedPrimitive].
-		
-	"Immediates don't have format"
-	cogit AndCq: objectMemory tagMask R: ReceiverResultReg.
-	jumpIsImm := cogit JumpNonZero: 0.
-	
+	cogit methodNumArgs > 0 ifTrue: [ ^ UnimplementedPrimitive ].
+
 	cogit MoveR: ReceiverResultReg R: TempReg.
-	
+
+	"Immediates don't have format"
+	cogit AndCq: objectMemory tagMask R: TempReg.
+	jumpIsImm := cogit JumpNonZero: 0.
+
 	"We obtain the header of the receiver, and then from the header we obtain the format:"
 	"Get least significant half of header word in destReg"
-	cogit MoveMw: 0 r: TempReg R: ReceiverResultReg.
+	cogit MoveMw: 0 r: ReceiverResultReg R: TempReg.
 	"mask off format"
-	cogit LogicalShiftRightCq: objectMemory formatShift R: ReceiverResultReg.
-	cogit AndCq: objectMemory formatMask R: ReceiverResultReg.		
-			
-			
-	jumpIsImm jmpTarget: [^UnimplementedPrimitive].
-			
-			
+	cogit LogicalShiftRightCq: objectMemory formatShift R: TempReg.
+	cogit AndCq: objectMemory formatMask R: TempReg.
+
+	cogit
+		LogicalShiftLeftCq: objectMemory numSmallIntegerTagBits
+		R: TempReg.
+
+	cogit AddCq: 1 R: TempReg.
+	cogit MoveR: TempReg R: ReceiverResultReg.
 	cogit genPrimReturn.
-	^UnfailingPrimitive
+
+	primitiveFailure := cogit Label.
+	jumpIsImm jmpTarget: primitiveFailure.
+
+	^ CompletePrimitive
 ]
 
 { #category : #'primitive generators' }
