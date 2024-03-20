@@ -873,6 +873,34 @@ CogObjectRepresentation >> genPrimitiveFloatSubtract [
 ]
 
 { #category : #'primitive generators' }
+CogObjectRepresentation >> genPrimitiveFormat [
+	| jumpIsImm |
+	"For now only with receiver"
+	cogit methodNumArgs > 0 ifTrue:
+			[^UnimplementedPrimitive].
+		
+	"Immediates don't have format"
+	cogit AndCq: objectMemory tagMask R: ReceiverResultReg.
+	jumpIsImm := cogit JumpNonZero: 0.
+	
+	cogit MoveR: ReceiverResultReg R: TempReg.
+	
+	"We obtain the header of the receiver, and then from the header we obtain the format:"
+	"Get least significant half of header word in destReg"
+	cogit MoveMw: 0 r: TempReg R: ReceiverResultReg.
+	"mask off format"
+	cogit LogicalShiftRightCq: objectMemory formatShift R: ReceiverResultReg.
+	cogit AndCq: objectMemory formatMask R: ReceiverResultReg.		
+			
+			
+	jumpIsImm jmpTarget: [^UnimplementedPrimitive].
+			
+			
+	cogit genPrimReturn.
+	^UnfailingPrimitive
+]
+
+{ #category : #'primitive generators' }
 CogObjectRepresentation >> genPrimitiveFullClosureValue [
 	"Defer to the cogit for this one, to match the split for genPrimitiveClosureValue."
 	<doNotGenerate>
