@@ -1656,7 +1656,7 @@ VMPrimitiveTest >> testPrimitiveFloat64ArrayAdd [
 ]
 
 { #category : #'tests - primitiveAtPut' }
-VMPrimitiveTest >> testPrimitiveFormat [
+VMPrimitiveTest >> testPrimitiveFormatFailsWhenReceiverIsImmediate [
 
 	| object |
 	object := self

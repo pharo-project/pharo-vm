@@ -870,7 +870,7 @@ CogObjectRepresentation >> genPrimitiveFloatSubtract [
 CogObjectRepresentation >> genPrimitiveFormat [
 
 	| jumpIsImm primitiveFailure |
-	"For now only with receiver"
+	"Only works for the receiver for now"
 	cogit methodNumArgs > 0 ifTrue: [ ^ UnimplementedPrimitive ].
 
 	cogit MoveR: ReceiverResultReg R: TempReg.
@@ -880,17 +880,20 @@ CogObjectRepresentation >> genPrimitiveFormat [
 	jumpIsImm := cogit JumpNonZero: 0.
 
 	"We obtain the header of the receiver, and then from the header we obtain the format:"
-	"Get least significant half of header word in destReg"
+	"Get the entire word with the in destReg"
 	cogit MoveMw: 0 r: ReceiverResultReg R: TempReg.
-	"mask off format"
+	"Mask off format"
 	cogit LogicalShiftRightCq: objectMemory formatShift R: TempReg.
 	cogit AndCq: objectMemory formatMask R: TempReg.
 
+	"Now in TempReg we have the 5 bits representing the format of the instance.
+	We have to convert that value to a Pharo Number Object (SmallInteger)"
 	cogit
 		LogicalShiftLeftCq: objectMemory numSmallIntegerTagBits
 		R: TempReg.
-
+	"To do that, we shift left 3 for the tag and then tag it as 001, which is the tag for SmallInteger"
 	cogit AddCq: 1 R: TempReg.
+	"Now in TempReg we have the SmallInteger representing the format, we return it through the ReceiverResultReg"
 	cogit MoveR: TempReg R: ReceiverResultReg.
 	cogit genPrimReturn.
 
