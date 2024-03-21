@@ -1150,7 +1150,7 @@ Cogit class >> initializePrimitiveTable [
 		"(221 genPrimitiveClosureValue	0)" "valueNoContextSwitch"
 		"(222 genPrimitiveClosureValue	1)" "valueNoContextSwitch:"
 			
-		(231 genPrimitiveFormat 0)                                                                     "AVERRRRRRRRRRRRRRRR"
+		(231 genPrimitiveFormat 0)                                                                    
 
 		"SmallFloat primitives (540-559)"
 		(541 genPrimitiveSmallFloatAdd				1)
