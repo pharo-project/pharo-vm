@@ -870,31 +870,32 @@ CogObjectRepresentation >> genPrimitiveFloatSubtract [
 CogObjectRepresentation >> genPrimitiveFormat [
 
 	| jumpIsImm primitiveFailure |
-	"Only works for the receiver for now"
+	"Only works if the instance is not forwarded (it's been already resolved)'"
 	cogit methodNumArgs > 0 ifTrue: [ ^ UnimplementedPrimitive ].
 
-	cogit MoveR: ReceiverResultReg R: TempReg.
-
 	"Immediates don't have format"
-	cogit AndCq: objectMemory tagMask R: TempReg.
+	cogit TstCq: objectMemory tagMask R: ReceiverResultReg.
 	jumpIsImm := cogit JumpNonZero: 0.
 
-	"We obtain the header of the receiver, and then from the header we obtain the format:"
-	"Get the entire word with the in destReg"
-	cogit MoveMw: 0 r: ReceiverResultReg R: TempReg.
-	"Mask off format"
-	cogit LogicalShiftRightCq: objectMemory formatShift R: TempReg.
-	cogit AndCq: objectMemory formatMask R: TempReg.
 
-	"Now in TempReg we have the 5 bits representing the format of the instance.
+	"We obtain the header of the receiver, and then from the header we obtain the format:"
+	"Get the entire word with the header in ReceiverResultReg"
+	cogit MoveMw: 0 r: ReceiverResultReg R: ReceiverResultReg.
+	"Mask off format"
+	cogit
+		LogicalShiftRightCq: objectMemory formatShift
+		R: ReceiverResultReg.
+	cogit AndCq: objectMemory formatMask R: ReceiverResultReg.
+
+	"Now in ReceiverResultReg we have the 5 bits representing the format of the instance.
 	We have to convert that value to a Pharo Number Object (SmallInteger)"
 	cogit
 		LogicalShiftLeftCq: objectMemory numSmallIntegerTagBits
-		R: TempReg.
+		R: ReceiverResultReg.
 	"To do that, we shift left 3 for the tag and then tag it as 001, which is the tag for SmallInteger"
-	cogit AddCq: 1 R: TempReg.
-	"Now in TempReg we have the SmallInteger representing the format, we return it through the ReceiverResultReg"
-	cogit MoveR: TempReg R: ReceiverResultReg.
+	cogit AddCq: 1 R: ReceiverResultReg.
+	"In ReceiverResultReg we have the SmallInteger representing the format. We are done. "
+
 	cogit genPrimReturn.
 
 	primitiveFailure := cogit Label.
