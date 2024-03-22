@@ -13,7 +13,7 @@ UnicornARMv8Simulator >> arg0Register [
 { #category : #'accessing-registers-abstract' }
 UnicornARMv8Simulator >> arg1Register [
 	
-	^ UcARM64Registers x1
+	^ UcARM64Registers x4
 ]
 
 { #category : #'accessing-registers-abstract' }
