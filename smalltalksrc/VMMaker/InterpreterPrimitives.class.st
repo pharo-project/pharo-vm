@@ -1250,7 +1250,7 @@ InterpreterPrimitives >> primitiveCompareBytes [
 	argumentCount = 1 ifFalse:[self primitiveFail. ^self].
 	arg1 := self stackValue: 1.
 	arg2 := self stackValue: 0.
-	((objectMemory isBytes: arg1) and:[objectMemory isBytes: arg2]) 
+	((objectMemory isWordsOrBytes: arg1) and:[objectMemory isWordsOrBytes: arg2]) 
 		ifFalse:[self primitiveFail. ^self].
 	"Quick identity test"
 	(arg1 = arg2) ifTrue:[^self pop: 2 thenPush: objectMemory trueObject].
@@ -1275,7 +1275,7 @@ InterpreterPrimitives >> primitiveCompareBytes2 [
 		^ self ].
 	arg1 := self stackValue: 1.
 	arg2 := self stackValue: 0.
-	((objectMemory isBytes: arg1) and: [ objectMemory isBytes: arg2 ])
+	((objectMemory isWordsOrBytes: arg1) and: [ objectMemory isWordsOrBytes: arg2 ])
 		ifFalse: [
 			self primitiveFail.
 			^ self ].

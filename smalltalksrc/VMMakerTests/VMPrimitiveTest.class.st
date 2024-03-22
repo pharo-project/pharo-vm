@@ -1254,7 +1254,7 @@ VMPrimitiveTest >> testPrimitiveClassReturnsAClass [
 	
 ]
 
-{ #category : #'tests - primitiveDivide' }
+{ #category : #'tests - primitiveCompareBytes' }
 VMPrimitiveTest >> testPrimitiveCompareBytes2 [
 
 	| array1 array2 |
@@ -1270,7 +1270,7 @@ VMPrimitiveTest >> testPrimitiveCompareBytes2 [
 	self assert: interpreter stackTop equals: memory trueObject
 ]
 
-{ #category : #'tests - primitiveDivide' }
+{ #category : #'tests - primitiveCompareBytes' }
 VMPrimitiveTest >> testPrimitiveCompareBytesEmpty [
 
 	| array1 array2 |
@@ -1286,7 +1286,7 @@ VMPrimitiveTest >> testPrimitiveCompareBytesEmpty [
 	self assert: interpreter stackTop equals: memory trueObject
 ]
 
-{ #category : #'tests - primitiveDivide' }
+{ #category : #'tests - primitiveCompareBytes' }
 VMPrimitiveTest >> testPrimitiveCompareBytesWithDifferentSize1 [
 
 	| array1 array2 size |
@@ -1309,7 +1309,7 @@ VMPrimitiveTest >> testPrimitiveCompareBytesWithDifferentSize1 [
 	self assert: interpreter stackTop equals: memory falseObject
 ]
 
-{ #category : #'tests - primitiveDivide' }
+{ #category : #'tests - primitiveCompareBytes' }
 VMPrimitiveTest >> testPrimitiveCompareBytesWithDifferentSize2 [
 
 	| array1 array2 size |
@@ -1332,7 +1332,7 @@ VMPrimitiveTest >> testPrimitiveCompareBytesWithDifferentSize2 [
 	self assert: interpreter stackTop equals: memory falseObject
 ]
 
-{ #category : #'tests - primitiveDivide' }
+{ #category : #'tests - primitiveCompareBytes' }
 VMPrimitiveTest >> testPrimitiveCompareBytesWithDifferentValues [
 
 	| array1 array2 size |
@@ -1353,7 +1353,7 @@ VMPrimitiveTest >> testPrimitiveCompareBytesWithDifferentValues [
 	self assert: interpreter stackTop equals: memory falseObject
 ]
 
-{ #category : #'tests - primitiveDivide' }
+{ #category : #'tests - primitiveCompareBytes' }
 VMPrimitiveTest >> testPrimitiveCompareBytesWithLastDifferentValue [
 
 	| array1 array2 size |
@@ -1375,7 +1375,7 @@ VMPrimitiveTest >> testPrimitiveCompareBytesWithLastDifferentValue [
 	self assert: interpreter stackTop equals: memory falseObject
 ]
 
-{ #category : #'tests - primitiveDivide' }
+{ #category : #'tests - primitiveCompareBytes' }
 VMPrimitiveTest >> testPrimitiveCompareBytesWithNonByteArgument [
 
 	| array1 size |
@@ -1394,7 +1394,7 @@ VMPrimitiveTest >> testPrimitiveCompareBytesWithNonByteArgument [
 	self assert: interpreter failed 
 ]
 
-{ #category : #'tests - primitiveDivide' }
+{ #category : #'tests - primitiveCompareBytes' }
 VMPrimitiveTest >> testPrimitiveCompareBytesWithNonByteReceiver [
 
 	| array1 size |
@@ -1413,7 +1413,7 @@ VMPrimitiveTest >> testPrimitiveCompareBytesWithNonByteReceiver [
 	self assert: interpreter failed 
 ]
 
-{ #category : #'tests - primitiveDivide' }
+{ #category : #'tests - primitiveCompareBytes' }
 VMPrimitiveTest >> testPrimitiveCompareBytesWithNonByteReceiverShouldLeaveTheSameStack [
 
 	| array1 size |
@@ -1433,7 +1433,7 @@ VMPrimitiveTest >> testPrimitiveCompareBytesWithNonByteReceiverShouldLeaveTheSam
 	self assert: (interpreter stackValue: 1) equals: memory nilObject
 ]
 
-{ #category : #'tests - primitiveDivide' }
+{ #category : #'tests - primitiveCompareBytes' }
 VMPrimitiveTest >> testPrimitiveCompareBytesWithSize [
 
 	| array1 array2 size |
