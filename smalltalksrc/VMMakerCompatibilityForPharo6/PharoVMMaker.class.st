@@ -28,6 +28,12 @@ PharoVMMaker class >> default64BitsMemoryManagerClass [
 ]
 
 { #category : #defaults }
+PharoVMMaker class >> defaultImageFormatName [
+
+	^ #SpurFormat
+]
+
+{ #category : #defaults }
 PharoVMMaker class >> defaultInterpreterClass [
 
 	^ CoInterpreter
