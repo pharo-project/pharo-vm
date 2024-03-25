@@ -246,6 +246,9 @@ InterpreterPrimitives >> floatExponentBits [
 { #category : #'control primitives' }
 InterpreterPrimitives >> forcePushRegisterCallingConvention [
 
+	"This method is not used in the interpreter.
+	This code is only analysed by Druid's meta-compiler."
+
 	argumentCount <= 2 ifTrue: [
 		self push: (self stackValue: argumentCount).
 		argumentCount > 0 ifTrue: [
@@ -1929,8 +1932,8 @@ InterpreterPrimitives >> primitiveFractionalPart [
 InterpreterPrimitives >> primitiveFullClosureValue [
 
 	<option: #SistaV1BytecodeSet>
-	<numberOfArguments: 0>
-	<checkArgumentCount>
+	<numberOfArguments: #(0 1 2)>
+	"<checkArgumentCount>"
 	| blockClosure numArgs closureMethod |
 
 	blockClosure := self stackValue: argumentCount.
