@@ -1271,6 +1271,24 @@ VMPrimitiveTest >> testPrimitiveCompareBytes2 [
 ]
 
 { #category : #'tests - primitiveCompareBytes' }
+VMPrimitiveTest >> testPrimitiveCompareBytesArgCountLessThanOne [
+
+	| array1 size |
+	size := 1.
+	array1 := self new8BitIndexableOfSize: size.
+
+	1 to: size do: [ :i |
+	memory storeByte: i - 1 ofObject: array1 withValue: 0 ].
+
+	interpreter push: array1.
+
+	interpreter argumentCount: 0.
+	interpreter primitiveCompareBytes.
+
+	self assert: interpreter failed
+]
+
+{ #category : #'tests - primitiveCompareBytes' }
 VMPrimitiveTest >> testPrimitiveCompareBytesEmpty [
 
 	| array1 array2 |
@@ -1281,6 +1299,26 @@ VMPrimitiveTest >> testPrimitiveCompareBytesEmpty [
 	interpreter push: array2.
 
 	interpreter argumentCount: 1.
+	interpreter primitiveCompareBytes.
+
+	self assert: interpreter stackTop equals: memory trueObject
+]
+
+{ #category : #'tests - primitiveCompareBytes' }
+VMPrimitiveTest >> testPrimitiveCompareBytesIdentity [
+
+	| array1 size |
+	size := 1.
+	array1 := self new8BitIndexableOfSize: size.
+
+	1 to: size do: [ :i |
+	memory storeByte: i - 1 ofObject: array1 withValue: 0 ].
+
+	interpreter push: array1.
+	interpreter push: array1.
+
+	interpreter argumentCount: 1.
+
 	interpreter primitiveCompareBytes.
 
 	self assert: interpreter stackTop equals: memory trueObject

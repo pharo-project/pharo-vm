@@ -1204,7 +1204,7 @@ StackInterpreter class >> initializePrimitiveTable [
 		"Were File Primitives (150-169) - NO LONGER INDEXED"
 		(150 155 primitiveFail)
 		(156 primitiveCompareBytes)
-		(157 primitiveCompareBytes2)
+		(157 primitiveFail)
 		(158 primitiveStringCompareWith)
 		(159 primitiveHashMultiply)
 		(160 primitiveAdoptInstance)
@@ -10892,6 +10892,58 @@ StackInterpreter >> primitiveAccessorDepthForExternalPrimitiveMethod: methodObj 
 		(objectMemory
 			fetchPointer: 2
 			ofObject: (self literal: 0 ofMethod: methodObj))
+]
+
+{ #category : #'indexing primitives' }
+StackInterpreter >> primitiveCompareBytes [
+	"Primitive. Compare two word or byte indexed objects for equality.
+	This version uses memcmp for comparison.
+	It is specialized for equality and thus it performs an unordered comparison, not caring about element order.
+	This can be used for:
+	 - ByteArray
+	 - ByteString
+	 - FloatArray
+	 ..."
+
+	<export: true>
+	| arg1 arg2 len1 len2 result boolean |
+
+	argumentCount < 1 ifTrue: [ ^ self primitiveFail ].
+
+	arg1 := self stackValue: 1.
+	arg2 := self stackValue: 0.
+
+	"Quick identity test to avoid checking object contents when they are the same one\"
+	arg1 = arg2 ifTrue: [
+		^ self pop: 2 thenPush: objectMemory trueObject ].
+	
+	"This primitive only works for bytes and words objects.
+	The check below does not even let pass forwarders.
+	Below, we assume that the two compared objects are indexable and can be compared."
+	((objectMemory isWordsOrBytes: arg1) and: [
+		 objectMemory isWordsOrBytes: arg2 ]) ifFalse: [
+		^ self primitiveFail ].
+
+	"Two arrays of different lenght can never be equal"
+	len1 := objectMemory byteSizeOf: arg1.
+	len2 := objectMemory byteSizeOf: arg2.
+	len1 = len2 ifFalse: [
+		^ self pop: 2 thenPush: objectMemory falseObject ].
+
+	"Use memcmp to compare the array contents.
+	Our benchmarks showed that 
+	 - it is 3x faster than doing it directly in Pharo when the compared bytes are few
+	 - it is hundreds of times faster when comparing thousands of bytes.
+	The alternative word-by-word comparison implemented purely in slang is also better than the baseline but it is 10x slower than memcmp for large comparisons"
+	result := self
+		          memcmp: (objectMemory firstIndexableField: arg1)
+		          _: (objectMemory firstIndexableField: arg2)
+		          _: len1.
+
+	boolean := result = 0
+		           ifTrue: [ objectMemory trueObject ]
+		           ifFalse: [ objectMemory falseObject ].
+	self pop: 2 thenPush: boolean
 ]
 
 { #category : #'process primitives' }
