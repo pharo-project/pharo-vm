@@ -3,20 +3,11 @@ Class {
 	#superclass : #VMClass,
 	#instVars : [
 		'objectMemory',
-		'interpreter',
-		'segmentManager'
+		'segmentManager',
+		'coInterpreter'
 	],
 	#category : #'VMMaker-ImageFormat'
 }
-
-{ #category : #translation }
-AbstractImageAccess class >> declareCVarsIn: aCCodeGenerator [
-
-	aCCodeGenerator
-		removeVariable: 'objectMemory';
-		removeVariable: 'interpreter';
-		removeVariable: 'segmentManager'
-]
 
 { #category : #translation }
 AbstractImageAccess class >> implicitReturnTypeFor: aSelector [
@@ -118,14 +109,14 @@ AbstractImageAccess >> initializeInterpreterFromHeader: header withBytes: bytesR
 
 	bytesRead ~= header dataSize ifTrue: [ 
 		self logError: 'Expecting %lld Got %lld' _: header dataSize _: bytesRead.		
-		interpreter unableToReadImageError ].
+		coInterpreter unableToReadImageError ].
 
-	interpreter ensureImageFormatIsUpToDate: header swapBytes.
+	coInterpreter ensureImageFormatIsUpToDate: header swapBytes.
 
 	"compute difference between old and new memory base addresses"
 	bytesToShift := objectMemory getMemoryMap oldSpaceStart - header oldBaseAddr.
 	
-	interpreter initializeInterpreter: bytesToShift "adjusts all oops to new location"
+	coInterpreter initializeInterpreter: bytesToShift "adjusts all oops to new location"
 ]
 
 { #category : #accessing }
@@ -133,7 +124,7 @@ AbstractImageAccess >> interpreter [
 
 	<doNotGenerate>
 
-	^ interpreter
+	^ coInterpreter
 ]
 
 { #category : #accessing }
@@ -141,46 +132,30 @@ AbstractImageAccess >> interpreter: anObject [
 
 	<doNotGenerate>
 
-	interpreter := anObject
+	coInterpreter := anObject
 ]
 
 { #category : #reading }
 AbstractImageAccess >> loadHeaderToMemory: header [
+
+	<var: #header type: #'SpurImageHeaderStruct'>
 
 	objectMemory ensureMemoryMap.
 
 	objectMemory specialObjectsOop: header initialSpecialObjectsOop.
 	objectMemory lastHash: header hdrLastHash.
 	
-	interpreter setImageVersion: header imageVersion.
+	coInterpreter setImageVersion: header imageVersion.
 	
-	interpreter setImageHeaderFlagsFrom: header headerFlags.
-	interpreter setExtraVMMemory: header extraVMMemory.
+	coInterpreter setImageHeaderFlagsFrom: header headerFlags.
+	coInterpreter setExtraVMMemory: header extraVMMemory.
 
-	interpreter setNumStackPages: header hdrNumStackPages.
+	coInterpreter setNumStackPages: header hdrNumStackPages.
 
-	interpreter initializeObjectMemoryWithEdenBytes: header hdrEdenBytes.
+	coInterpreter initializeObjectMemoryWithEdenBytes: header hdrEdenBytes.
 
 	header hdrMaxExtSemTabSize ~= 0 ifTrue: [ 
-		interpreter setMaxExtSemSizeTo: header hdrMaxExtSemTabSize ].
-
-]
-
-{ #category : #api }
-AbstractImageAccess >> loadImageFromFile: imageFile withHeader: header [
-
-	"read in the image in bulk, then swap the bytes if necessary"
-
-	<var: #header type: #SpurImageHeaderStruct>
-	| bytesRead oldSpaceBytesRead permSpaceBytesRead |
-
-	oldSpaceBytesRead := self readSegmentsFromImageFile: imageFile header: header.
-
-	permSpaceBytesRead := self readPermanentSpaceFromImageFile: imageFile header: header. 
-	
-	bytesRead := oldSpaceBytesRead + permSpaceBytesRead.
-
-	self initializeInterpreterFromHeader: header withBytes: bytesRead
+		coInterpreter setMaxExtSemSizeTo: header hdrMaxExtSemTabSize ].
 
 ]
 

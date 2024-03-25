@@ -24,10 +24,9 @@ VMPermanentSpaceImageReadingTest >> loadImage [
 	 	initializationOptions: { 
 			#BytesPerWord. self wordSize.
 			#ObjectMemory. memoryClass name.
-		  	#ImageReader. imageReaderClass name.
-		  	#ImageWriter. imageWriterClass name.
 			#ISA. isa };
-		wordSize: self wordSize.
+		wordSize: self wordSize;
+		useComposedImageFormatAsDefault: useComposedImageFormat.
 
 	environmentBuilder doBuildSimulator.
 

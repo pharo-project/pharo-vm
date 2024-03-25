@@ -189,6 +189,16 @@ void basicImageReportProgress(size_t totalSize, size_t currentSize){
 	fflush(stdout);
 }
 
+int basicImageIsDirectory(const char* aPath){
+
+	struct stat buffer;
+
+	if(stat(aPath, &buffer) != 0)
+		return 0;
+
+	return S_ISDIR(buffer.st_mode);
+}
+
 FileAccessHandler defaultFileAccessHandler = {
 		basicImageFileClose,
 		basicImageFileOpen,
@@ -198,7 +208,8 @@ FileAccessHandler defaultFileAccessHandler = {
 		basicImageFileSeekEnd,
 		basicImageFileWrite,
 		basicImageFileExists,
-		basicImageReportProgress
+		basicImageReportProgress,
+		basicImageIsDirectory
 };
 
 FileAccessHandler* fileAccessHandler = &defaultFileAccessHandler;

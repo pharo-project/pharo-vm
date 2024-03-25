@@ -1,6 +1,8 @@
 Class {
 	#name : #SpurImageWriter,
 	#superclass : #AbstractImageAccess,
+	#traits : 'TImageWriter',
+	#classTraits : 'TImageWriter classTrait',
 	#category : #'VMMaker-ImageFormat'
 }
 
@@ -33,7 +35,7 @@ SpurImageWriter >> putLong: aLong toFile: aFile [
 								[aFile nextPut: (value bitAnd: 16rFF).
 								 value := value >> 8].
 							 1].
-	interpreter success: objectsWritten = 1
+	coInterpreter success: objectsWritten = 1
 ]
 
 { #category : #writing }
@@ -53,7 +55,7 @@ SpurImageWriter >> putShort: aShort toFile: aFile [
 								nextPut: (aShort bitAnd: 16rFF);
 								nextPut: (aShort >> 8 bitAnd: 16rFF).
 							 1].
-	interpreter success: objectsWritten = 1
+	coInterpreter success: objectsWritten = 1
 ]
 
 { #category : #writing }
@@ -75,7 +77,7 @@ SpurImageWriter >> putWord32: aWord32 toFile: aFile [
 								[aFile nextPut: (value bitAnd: 16rFF).
 								 value := value >> 8].
 							 1].
-	interpreter success: objectsWritten = 1
+	coInterpreter success: objectsWritten = 1
 ]
 
 { #category : #'accessing - files' }
@@ -118,6 +120,8 @@ SpurImageWriter >> writeImageFile: imageFileName fromHeader: header [
 	"Write the image header and heap contents to imageFile for snapshot. c.f. writeImageFileIOSimulation.
 	 The game below is to maintain 64-bit alignment for all putLong:toFile: occurrences."
 
+	<inline: false>
+
 	<var: #headerStart type: #squeakFileOffsetType>
 	<var: #imageFileName declareC: 'char *imageFileName'>
 	<var: #f type: #sqImageFile>
@@ -130,7 +134,7 @@ SpurImageWriter >> writeImageFile: imageFileName fromHeader: header [
 	imageHeaderSize := header imageHeaderSize.
 
 	objectMemory totalBytesInPermanentSpace = 0 
-		ifFalse: [ ^ self primitiveFail].
+		ifFalse: [ ^ coInterpreter primitiveFailFor: PrimErrUnsupported ].
 
 	self logDebug: 'Writing snapshot file %s' _: imageFileName.
 
@@ -160,14 +164,14 @@ SpurImageWriter >> writeImageFile: imageFileName fromHeader: header [
 		headerStart + imageHeaderSize = (self sqImageFilePosition: f).
 	self sqImageFile: f Seek: headerStart + imageHeaderSize.
 
-	interpreter successful ifFalse: [ "file write or seek failure"
+	coInterpreter successful ifFalse: [ "file write or seek failure"
 		self sqImageFileClose: f.
 		^ nil ].
 
 	"write the image data"
 	bytesWritten := self writeImageSegmentsToFile: f.
 
-	interpreter success: bytesWritten = imageBytes.
+	coInterpreter success: bytesWritten = imageBytes.
 	self sqImageFileClose: f.
 
 	self logDebug: 'Snapshot file %s done' _: imageFileName
