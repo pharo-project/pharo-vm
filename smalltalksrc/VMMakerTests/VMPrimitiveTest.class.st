@@ -1242,6 +1242,228 @@ VMPrimitiveTest >> testPrimitiveClassReturnsAClass [
 	
 ]
 
+{ #category : #'tests - primitiveCompareBytes' }
+VMPrimitiveTest >> testPrimitiveCompareBytesArgCountLessThanOne [
+
+	| array1 size |
+	size := 1.
+	array1 := self new8BitIndexableOfSize: size.
+
+	1 to: size do: [ :i |
+	memory storeByte: i - 1 ofObject: array1 withValue: 0 ].
+
+	interpreter push: array1.
+
+	interpreter argumentCount: 0.
+	interpreter primitiveCompareBytes.
+
+	self assert: interpreter failed
+]
+
+{ #category : #'tests - primitiveCompareBytes' }
+VMPrimitiveTest >> testPrimitiveCompareBytesEmpty [
+
+	| array1 array2 |
+	array1 := self new8BitIndexableOfSize: 0.
+	array2 := self new8BitIndexableOfSize: 0.
+
+	interpreter push: array1.
+	interpreter push: array2.
+
+	interpreter argumentCount: 1.
+	interpreter primitiveCompareBytes.
+
+	self assert: interpreter stackTop equals: memory trueObject
+]
+
+{ #category : #'tests - primitiveCompareBytes' }
+VMPrimitiveTest >> testPrimitiveCompareBytesIdentity [
+
+	| array1 size |
+	size := 1.
+	array1 := self new8BitIndexableOfSize: size.
+
+	1 to: size do: [ :i |
+	memory storeByte: i - 1 ofObject: array1 withValue: 0 ].
+
+	interpreter push: array1.
+	interpreter push: array1.
+
+	interpreter argumentCount: 1.
+
+	interpreter primitiveCompareBytes.
+
+	self assert: interpreter stackTop equals: memory trueObject
+]
+
+{ #category : #'tests - primitiveCompareBytes' }
+VMPrimitiveTest >> testPrimitiveCompareBytesWithDifferentSize1 [
+
+	| array1 array2 size |
+	size := 1.
+	array1 := self new8BitIndexableOfSize: size.
+	array2 := self new8BitIndexableOfSize: size + 1.
+
+	1 to: size do: [ :i |
+		memory storeByte: i - 1 ofObject: array1 withValue: 0.
+		memory storeByte: i - 1 ofObject: array2 withValue: 0 ].
+	memory storeByte: size - 1 ofObject: array2 withValue: 0.
+
+	"Arg > Receiver"
+	interpreter push: array1.
+	interpreter push: array2.
+
+	interpreter argumentCount: 1.
+	interpreter primitiveCompareBytes.
+
+	self assert: interpreter stackTop equals: memory falseObject
+]
+
+{ #category : #'tests - primitiveCompareBytes' }
+VMPrimitiveTest >> testPrimitiveCompareBytesWithDifferentSize2 [
+
+	| array1 array2 size |
+	size := 1.
+	array1 := self new8BitIndexableOfSize: size.
+	array2 := self new8BitIndexableOfSize: size + 1.
+
+	1 to: size do: [ :i |
+		memory storeByte: i - 1 ofObject: array1 withValue: 0.
+		memory storeByte: i - 1 ofObject: array2 withValue: 0 ].
+	memory storeByte: size - 1 ofObject: array2 withValue: 0.
+
+	"Receiver > Arg"
+	interpreter push: array2.
+	interpreter push: array1.
+
+	interpreter argumentCount: 1.
+	interpreter primitiveCompareBytes.
+
+	self assert: interpreter stackTop equals: memory falseObject
+]
+
+{ #category : #'tests - primitiveCompareBytes' }
+VMPrimitiveTest >> testPrimitiveCompareBytesWithDifferentValues [
+
+	| array1 array2 size |
+	size := 2.
+	array1 := self new8BitIndexableOfSize: size.
+	array2 := self new8BitIndexableOfSize: size.
+
+	1 to: size do: [ :i |
+		memory storeByte: i - 1 ofObject: array1 withValue: 0.
+		memory storeByte: i - 1 ofObject: array2 withValue: 1 ].
+
+	interpreter push: array1.
+	interpreter push: array2.
+
+	interpreter argumentCount: 1.
+	interpreter primitiveCompareBytes.
+
+	self assert: interpreter stackTop equals: memory falseObject
+]
+
+{ #category : #'tests - primitiveCompareBytes' }
+VMPrimitiveTest >> testPrimitiveCompareBytesWithLastDifferentValue [
+
+	| array1 array2 size |
+	size := 2.
+	array1 := self new8BitIndexableOfSize: size.
+	array2 := self new8BitIndexableOfSize: size.
+
+	1 to: size do: [ :i |
+		memory storeByte: i - 1 ofObject: array1 withValue: 0.
+		memory storeByte: i - 1 ofObject: array2 withValue: 0 ].
+	memory storeByte: size - 1 ofObject: array2 withValue: 1.
+
+	interpreter push: array1.
+	interpreter push: array2.
+
+	interpreter argumentCount: 1.
+	interpreter primitiveCompareBytes.
+
+	self assert: interpreter stackTop equals: memory falseObject
+]
+
+{ #category : #'tests - primitiveCompareBytes' }
+VMPrimitiveTest >> testPrimitiveCompareBytesWithNonByteArgument [
+
+	| array1 size |
+	size := 2.
+	array1 := self new8BitIndexableOfSize: size.
+
+	1 to: size do: [ :i |
+	memory storeByte: i - 1 ofObject: array1 withValue: 0 ].
+
+	interpreter push: array1.
+	interpreter push: memory nilObject.
+
+	interpreter argumentCount: 1.
+	interpreter primitiveCompareBytes.
+
+	self assert: interpreter failed 
+]
+
+{ #category : #'tests - primitiveCompareBytes' }
+VMPrimitiveTest >> testPrimitiveCompareBytesWithNonByteReceiver [
+
+	| array1 size |
+	size := 2.
+	array1 := self new8BitIndexableOfSize: size.
+
+	1 to: size do: [ :i |
+	memory storeByte: i - 1 ofObject: array1 withValue: 0 ].
+
+	interpreter push: memory nilObject.
+	interpreter push: array1.
+
+	interpreter argumentCount: 1.
+	interpreter primitiveCompareBytes.
+
+	self assert: interpreter failed 
+]
+
+{ #category : #'tests - primitiveCompareBytes' }
+VMPrimitiveTest >> testPrimitiveCompareBytesWithNonByteReceiverShouldLeaveTheSameStack [
+
+	| array1 size |
+	size := 2.
+	array1 := self new8BitIndexableOfSize: size.
+
+	1 to: size do: [ :i |
+	memory storeByte: i - 1 ofObject: array1 withValue: 0 ].
+
+	interpreter push: memory nilObject.
+	interpreter push: array1.
+
+	interpreter argumentCount: 1.
+	interpreter primitiveCompareBytes.
+
+	self assert: (interpreter stackValue: 0) equals: array1.
+	self assert: (interpreter stackValue: 1) equals: memory nilObject
+]
+
+{ #category : #'tests - primitiveCompareBytes' }
+VMPrimitiveTest >> testPrimitiveCompareBytesWithSize [
+
+	| array1 array2 size |
+	size := 1.
+	array1 := self new8BitIndexableOfSize: size.
+	array2 := self new8BitIndexableOfSize: size.
+
+	1 to: size do: [ :i |
+		memory storeByte: i - 1 ofObject: array1 withValue: 0.
+		memory storeByte: i - 1 ofObject: array2 withValue: 0 ].
+
+	interpreter push: array1.
+	interpreter push: array2.
+
+	interpreter argumentCount: 1.
+	interpreter primitiveCompareBytes.
+
+	self assert: interpreter stackTop equals: memory trueObject
+]
+
 { #category : #'tests - primitiveDiv' }
 VMPrimitiveTest >> testPrimitiveDiv [
 

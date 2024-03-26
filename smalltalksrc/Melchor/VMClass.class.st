@@ -823,6 +823,15 @@ VMClass >> malloc: size [
 ]
 
 { #category : #'C library simulation' }
+VMClass >> memcmp: array1 _: array2 _: length [
+
+	<doNotGenerate>
+	0 to: length - 1 do: [ :i |
+	(array1 at: i) = (array2 at: i) ifFalse: [ ^ 999 "Not 0" ] ].
+	^ 0
+]
+
+{ #category : #'C library simulation' }
 VMClass >> memcpy: dest _: src _: bytes [
 	<doNotGenerate>
 	"implementation of memcpy(3). N.B. If ranges overlap, must use memmove."
