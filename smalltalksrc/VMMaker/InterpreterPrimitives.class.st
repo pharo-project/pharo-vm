@@ -1084,7 +1084,7 @@ InterpreterPrimitives >> primitiveBitShift [
 		ifTrue:
 			[integerReceiver := self positive32BitValueOf: integerReceiver]
 		ifFalse:
-			[integerReceiver := objectMemory integerValueOf: integerReceiver].
+			[integerReceiver := objectMemory signed64BitValueOf: integerReceiver].
 	self successful ifTrue:
 		[(integerArgument := objectMemory integerValueOf: integerArgument) >= 0
 			ifTrue: "Left shift -- must fail bits would be lost"
