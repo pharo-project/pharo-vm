@@ -589,6 +589,13 @@ SimpleDruidJIT >> cacheTagIsMarked: cacheTag [
 ]
 
 { #category : #accessing }
+SimpleDruidJIT >> ceNewHashTrampoline: anInteger [
+
+	<doNotGenerate>
+	ceNewHashTrampoline := anInteger
+]
+
+{ #category : #accessing }
 SimpleDruidJIT >> ceStoreCheckTrampoline: anAddress [
 
 	<doNotGenerate>
