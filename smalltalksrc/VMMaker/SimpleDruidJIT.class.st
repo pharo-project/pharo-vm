@@ -1267,18 +1267,18 @@ SimpleDruidJIT >> genNewHashTrampoline: saveRegs called: name [
 	In the sista VM, the inlined hash operation requires registers to be saved"
 	<inline: true>
 	^ self
-		genTrampolineFor: #ceNewHashOf:
+		genTrampolineFor: #newHashBitsOf:
 		called: name
 		numArgs: 1
-		arg: ReceiverResultReg
+		arg: TempReg 
 		arg: nil
 		arg: nil
 		arg: nil
 		regsToSave: (saveRegs
-						ifTrue: [CallerSavedRegisterMask bitClear: (self registerMaskFor: ReceiverResultReg)]
+						ifTrue: [CallerSavedRegisterMask bitClear: (self registerMaskFor: TempReg)]
 						ifFalse: [self emptyRegisterMask])
 		pushLinkReg: true
-		resultReg: ReceiverResultReg
+		resultReg: TempReg
 		appendOpcodes: false
 ]
 
@@ -1366,7 +1366,7 @@ SimpleDruidJIT >> genStoreCheckTrampoline [
 	
 	CheckRememberedInTrampoline ifTrue:
 		[self zeroOpcodeIndex.
-		 jumpSC := self genCheckRememberedBitOf: ReceiverResultReg scratch: self backEnd cResultRegister.
+		 jumpSC := self genCheckRememberedBitOf: TempReg scratch: self backEnd cResultRegister.
 		 self assert: jumpSC opcode = JumpNonZero.
 		 jumpSC opcode: JumpZero.
 		 self RetN: 0.
@@ -1375,11 +1375,11 @@ SimpleDruidJIT >> genStoreCheckTrampoline [
 		genTrampolineFor: #rememberObjInCorrectRememberedSet:
 		called: 'ceStoreCheckTrampoline'
 		numArgs: 1
-		arg: ReceiverResultReg
+		arg: TempReg
 		arg: nil
 		arg: nil
 		arg: nil
-		regsToSave: (CallerSavedRegisterMask bitClear: (self registerMaskFor: ReceiverResultReg))
+		regsToSave: (CallerSavedRegisterMask bitClear: (self registerMaskFor: TempReg))
 		pushLinkReg: true
 		resultReg: self returnRegForStoreCheck
 		appendOpcodes: CheckRememberedInTrampoline
