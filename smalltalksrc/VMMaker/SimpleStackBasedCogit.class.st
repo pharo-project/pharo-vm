@@ -1784,7 +1784,6 @@ SimpleStackBasedCogit >> genPrimReturnEnterCogCodeEnilopmart: profiling [
 
 { #category : #'primitive generators' }
 SimpleStackBasedCogit >> genPrimitiveFullClosureValue [
-
 	"Check the argument count.  Fail if wrong.
 	 Get the method from the outerContext and see if it is cogged.  If so, jump to the
 	 block entry or the no-context-switch entry, as appropriate, and we're done.  If not,
@@ -1836,11 +1835,13 @@ SimpleStackBasedCogit >> genPrimitiveFullClosureValue [
 	jumpBCMethod jmpTarget:
 		(jumpFailImmediateMethod jmpTarget:
 			 (jumpFail4 jmpTarget: self Label)).
+
 	(result := self
 		           compileInterpreterPrimitive: primitiveRoutine
 		           flags: (self
 				            primitivePropertyFlags: primitiveIndex
-				            primitiveDescriptor: self primitiveDescriptor)) < 0 ifTrue: [ ^ result ].
+				            primitiveDescriptor: self primitiveDescriptor)) < 0
+		ifTrue: [ ^ result ].
 	jumpFailNArgs jmpTarget: self Label.
 	^ CompletePrimitive
 ]

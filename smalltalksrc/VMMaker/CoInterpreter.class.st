@@ -2718,14 +2718,27 @@ CoInterpreter >> executeFullCogBlock: cogMethod closure: closure mayContextSwitc
 	 register arguments to blocks. Instead, the machine code block value primitives
 	 push the reg args if necessary before dispatching to the block.  Hence here, only
 	 the receiver gets pushed. See genPrimitiveClosureValue"
+
 	<var: #cogMethod type: #'CogMethod *'>
 	cogit assertCStackWellAligned.
-	self assertValidExecutionPointe: instructionPointer r: framePointer s: stackPointer.
+	self
+		assertValidExecutionPointe: instructionPointer
+		r: framePointer
+		s: stackPointer.
 	self ensurePushedInstructionPointer.
-	self push: cogMethod asInteger 
-		+ (mayContextSwitch
-				ifTrue: [cogit fullBlockEntryOffset]
-				ifFalse: [cogit fullBlockNoContextSwitchEntryOffset]).
+
+	cogit numRegArgs > 0 ifTrue: [ "dont use and: so as to get Slang to inline cogit numRegArgs > 0"
+		cogMethod cmNumArgs <= cogit numRegArgs ifTrue: [
+			self
+				callRegisterArgCogMethod: cogMethod
+				at: (mayContextSwitch
+						 ifTrue: [ cogit fullBlockEntryOffset ]
+						 ifFalse: [ cogit fullBlockNoContextSwitchEntryOffset ])
+				receiver: closure ] ].
+
+	self push: cogMethod asInteger + (mayContextSwitch
+			 ifTrue: [ cogit fullBlockEntryOffset ]
+			 ifFalse: [ cogit fullBlockNoContextSwitchEntryOffset ]).
 	self push: closure.
 	self callEnilopmart: #ceCallCogCodePopReceiverReg.
 	self unreachable
