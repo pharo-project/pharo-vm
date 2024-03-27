@@ -51,8 +51,8 @@ include(cmake/versionExtraction.cmake)
 extractVCSInformation(GIT_COMMIT_HASH GIT_DESCRIBE GIT_COMMIT_DATE)
 
 set(VERSION_MAJOR 10)
-set(VERSION_MINOR 0)
-set(VERSION_PATCH_NUMBER 9)
+set(VERSION_MINOR 1)
+set(VERSION_PATCH_NUMBER 1)
 
 if(BUILD_IS_RELEASE)
 	set(VERSION_PATCH "${VERSION_PATCH_NUMBER}")
@@ -569,6 +569,13 @@ add_subdirectory(ffiTestLibrary ${CMAKE_CURRENT_BINARY_DIR}/build/ffiTestLibrary
 
 # Handling Third party dependencies
 add_third_party_dependencies_per_platform()
+
+if (UNIX)
+    addIndependentLibraryWithRPATH(tty ${CMAKE_CURRENT_SOURCE_DIR}/tty/tty.c)
+endif()
+
+# Signing Setup
+include(cmake/sign.cmake)
 
 # Packaging Setup
 include(cmake/packaging.cmake)

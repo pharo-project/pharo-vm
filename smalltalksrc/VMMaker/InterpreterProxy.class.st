@@ -28,6 +28,12 @@ InterpreterProxy class >> implicitReturnTypeFor: aSelector [
 	^#sqInt
 ]
 
+{ #category : #translation }
+InterpreterProxy class >> renameSelectorIfStaticallyResolved: aString [ 
+
+	^ aString
+]
+
 { #category : #private }
 InterpreterProxy class >> validateProxyImplementation: anInterpreter [ 
 	"InterpreterProxy validateProxyImplementation: Interpreter"
