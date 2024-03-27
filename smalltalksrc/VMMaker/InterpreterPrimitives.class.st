@@ -956,8 +956,7 @@ InterpreterPrimitives >> primitiveArrayBecomeOneWayNoCopyHash [
 
 { #category : #'object access primitives' }
 InterpreterPrimitives >> primitiveAsCharacter [
-	<numberOfArguments: 0>
-	<checkArgumentCount>
+	<numberOfArguments: #(0 1)>
 	
 	| characterCode characterObject |
 	characterCode := self stackTop.
@@ -1249,8 +1248,8 @@ InterpreterPrimitives >> primitiveChangeClass [
 
 { #category : #'object access primitives' }
 InterpreterPrimitives >> primitiveClass [
-	<numberOfArguments: 0>
-	<checkArgumentCount>
+	<numberOfArguments: #(0 1)>
+
 	| instance |
 	instance := self stackTop.
 	(argumentCount > 0
@@ -2304,8 +2303,7 @@ InterpreterPrimitives >> primitiveImmediateAsInteger [
 	 For a Character, answer its code as an unsigned integer.
 	 For a SmallFloat, answer the signed, but unadjusted bit pattern (so as to keep the result a SmallInteger).
 	 This is a good value for an immediate's hash."
-	<numberOfArguments: 0>
-	<checkArgumentCount>
+	<numberOfArguments: #(0 1)>
 	<option: #SpurObjectMemory>
 	| oop value |
 	oop := self stackTop.
