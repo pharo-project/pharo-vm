@@ -3465,11 +3465,16 @@ CogX64Compiler >> dispatchConcretize [
 		[LoadEffectiveAddressMwrR]	-> [^self concretizeLoadEffectiveAddressMwrR].
 		[RotateLeftCqR]				-> [^self concretizeShiftCqRegOpcode: 0].
 		[RotateRightCqR]				-> [^self concretizeShiftCqRegOpcode: 1].
+		
 		[ArithmeticShiftRightCqR]		-> [^self concretizeShiftCqRegOpcode: 7].
-		[LogicalShiftRightCqR]			-> [^self concretizeShiftCqRegOpcode: 5].
-		[LogicalShiftLeftCqR]			-> [^self concretizeShiftCqRegOpcode: 4].
 		[ArithmeticShiftRightRR]			-> [^self concretizeShiftRegRegOpcode: 7].
+		
+		[LogicalShiftRightCqR]			-> [^self concretizeShiftCqRegOpcode: 5].
+		[LogicalShiftRightRR]			-> [^self concretizeShiftRegRegOpcode: 5].
+		
+		[LogicalShiftLeftCqR]			-> [^self concretizeShiftCqRegOpcode: 4].
 		[LogicalShiftLeftRR]				-> [^self concretizeShiftRegRegOpcode: 4].
+		
 		"Data Movement"
 		[MoveCqR]			-> [^self concretizeMoveCqR].
 		[MoveCwR]			-> [^self concretizeMoveCwR].

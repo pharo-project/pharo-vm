@@ -1,5 +1,24 @@
 # Change log
 
+## v10.1.1
+* Change custom command in ‘vmmaker.cmake’ to take into account that the ‘CMAKE_CURRENT_BINARY_DIR_TO_OUT’ can contain other characters besides spaces that require escaping by @Rinzwind in https://github.com/pharo-project/pharo-vm/pull/741
+* Backporting PR for allocating in the old space by @jordanmontt in https://github.com/pharo-project/pharo-vm/pull/709
+* Fixing memory map in OSX by @tesonep in https://github.com/pharo-project/pharo-vm/pull/751
+* Adding generation of signature files by @tesonep in https://github.com/pharo-project/pharo-vm/pull/749
+
+**Full Changelog**: https://github.com/pharo-project/pharo-vm/compare/v10.1.0...v10.1.1
+
+## v10.1.0
+* Fixing undefined behaviors that Clang 15 removes by @tesonep in https://github.com/pharo-project/pharo-vm/pull/731
+* Fix ‘doReport’ to take into account that ‘fopen’ can return NULL by @Rinzwind in https://github.com/pharo-project/pharo-vm/pull/739
+* Change custom command in ‘vmmaker.cmake’ to take into account that the ‘CMAKE_CURRENT_BINARY_DIR_TO_OUT’ can contain spaces by @Rinzwind in https://github.com/pharo-project/pharo-vm/pull/738
+* Integrating new format by @tesonep in https://github.com/pharo-project/pharo-vm/pull/734
+
+ New Contributors
+* @Rinzwind made their first contribution in https://github.com/pharo-project/pharo-vm/pull/739
+
+**Full Changelog**: https://github.com/pharo-project/pharo-vm/compare/v10.0.9...v10.1.0
+
 ## v10.0.9
 
 * Improves in PermSpace by @tesonep in https://github.com/pharo-project/pharo-vm/pull/684

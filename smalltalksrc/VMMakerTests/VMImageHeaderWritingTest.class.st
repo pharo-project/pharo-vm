@@ -23,7 +23,7 @@ VMImageHeaderWritingTest >> testImageHeaderWithPermanentObjects [
 
 	| header permanentObject |
 
-	imageWriterClass ~= ComposedImageWriter ifTrue: [ ^ self skip ].
+	useComposedImageFormat ifFalse: [ ^ self skip ].
 	
 	permanentObject := self newPermanentByteObjectOfSize: 14.
 
@@ -192,7 +192,7 @@ VMImageHeaderWritingTest >> testWritingSTONHeader [
 
 	| header readHeader |
 
-	imageWriterClass ~= ComposedImageWriter ifTrue: [ ^ self skip ].
+	useComposedImageFormat ifFalse: [ ^ self skip ].
 
 	header := interpreter newHeader.
 
@@ -206,7 +206,7 @@ VMImageHeaderWritingTest >> testWritingSTONPermSpace [
 
 	| writtenMetadata expectedPermSpaceMetadata |
 
-	imageWriterClass ~= ComposedImageWriter ifTrue: [ ^ self skip ].
+	useComposedImageFormat ifFalse: [ ^ self skip ].
 
 	self newPermanentByteObjectOfSize: 14.
 
@@ -227,7 +227,7 @@ VMImageHeaderWritingTest >> testWritingSTONPermSpaceOnEmptySpace [
 
 	| writtenMetadata |
 
-	imageWriterClass ~= ComposedImageWriter ifTrue: [ ^ self skip ].
+	useComposedImageFormat ifFalse: [ ^ self skip ].
 
 	self saveImage.
 
@@ -241,7 +241,7 @@ VMImageHeaderWritingTest >> testWritingSTONSegment [
 
 	| header writtenHeader segmentMetadata |
 
-	imageWriterClass ~= ComposedImageWriter ifTrue: [ ^ self skip ].
+	useComposedImageFormat ifFalse: [ ^ self skip ].
 
 	header := interpreter newHeader.
 

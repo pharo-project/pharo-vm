@@ -58,12 +58,16 @@ void doReport(char* fault, ucontext_t *uap){
 	crashdumpFileName[0] = 0;
 	getCrashDumpFilenameInto(crashdumpFileName);
 	crashDumpFile = fopen(crashdumpFileName, "a+");
-	vm_setVMOutputStream(crashDumpFile);
-
-	reportStackState(fault, ctimebuf, 1, uap, crashDumpFile);
+	if (crashDumpFile != NULL) {
+		vm_setVMOutputStream(crashDumpFile);
+	
+		reportStackState(fault, ctimebuf, 1, uap, crashDumpFile);
+	}
 
 	vm_setVMOutputStream(stderr);
-	fclose(crashDumpFile);
+	if (crashDumpFile != NULL) {
+		fclose(crashDumpFile);
+	}
 
 	reportStackState(fault, ctimebuf, 1, uap, stderr);
 
