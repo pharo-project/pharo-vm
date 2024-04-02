@@ -3461,15 +3461,16 @@ CogX64Compiler >> dispatchConcretize [
 		[XorRR]						-> [^self concretizeOpRR: 16r33].
 		[XorRdRd]						-> [^self concretizeXorRdRd].
 		[XorRsRs]						-> [^self concretizeXorRsRs].
-		[NegateR]					-> [^self concretizeNegateR].
 		[LoadEffectiveAddressMwrR]	-> [^self concretizeLoadEffectiveAddressMwrR].
+		[NegateR]					-> [^self concretizeNegateR].
+		[ArithmeticShiftRightCqR]		-> [^self concretizeShiftCqRegOpcode: 7].
+		[ArithmeticShiftRightRR]			-> [^self concretizeShiftRegRegOpcode: 7].
+		[LogicalShiftRightCqR]			-> [^self concretizeShiftCqRegOpcode: 5].
+		[LogicalShiftRightRR]			-> [^self concretizeShiftRegRegOpcode: 5].
+		[LogicalShiftLeftCqR]			-> [^self concretizeShiftCqRegOpcode: 4].
+		[LogicalShiftLeftRR]				-> [^self concretizeShiftRegRegOpcode: 4].
 		[RotateLeftCqR]				-> [^self concretizeShiftCqRegOpcode: 0].
 		[RotateRightCqR]				-> [^self concretizeShiftCqRegOpcode: 1].
-		[ArithmeticShiftRightCqR]		-> [^self concretizeShiftCqRegOpcode: 7].
-		[LogicalShiftRightCqR]			-> [^self concretizeShiftCqRegOpcode: 5].
-		[LogicalShiftLeftCqR]			-> [^self concretizeShiftCqRegOpcode: 4].
-		[ArithmeticShiftRightRR]			-> [^self concretizeShiftRegRegOpcode: 7].
-		[LogicalShiftLeftRR]				-> [^self concretizeShiftRegRegOpcode: 4].
 		"Data Movement"
 		[MoveCqR]			-> [^self concretizeMoveCqR].
 		[MoveCwR]			-> [^self concretizeMoveCwR].
