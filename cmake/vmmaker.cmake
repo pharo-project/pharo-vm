@@ -108,8 +108,8 @@ if(GENERATE_SOURCES)
         elseif(CMAKE_SYSTEM_NAME STREQUAL "Darwin" AND (${CMAKE_SYSTEM_PROCESSOR} MATCHES "arm64"))
             message("Defining arm64 OSX VM to download for code generation")
             set(VMMAKER_VM       ${VMMAKER_DIR}/vm/Contents/MacOS/Pharo)
-            set(VM_URL https://files.pharo.org/vm/pharo-spur64-headless/Darwin-arm64/PharoVM-10.0.5-2757766f-Darwin-arm64-bin.zip)
-            set(VM_URL_HASH      SHA256=414ecf82b71a4ed94a95af0fb6e04c0ab09cc7ab3011fcc207af6c1322d0b47b)
+            set(VM_URL https://files.pharo.org/vm/pharo-spur64-headless/Darwin-arm64/PharoVM-10.1.1-32b2be55-Darwin-arm64-bin.zip)
+            set(VM_URL_HASH      SHA256=485d98f740396fd0bc7ca74a3a71bc2a332414b4e41301d7c79ba7ae3685dbe5)
         elseif(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
             message("Defining OSX VM to download for code generation")
             set(VMMAKER_VM       ${VMMAKER_DIR}/vm/Contents/MacOS/Pharo)
@@ -165,7 +165,8 @@ if(GENERATE_SOURCES)
     #Custom command that generates the vm source code from VMMaker into the generated folder
     add_custom_command(
         OUTPUT ${VMSOURCEFILES} ${PLUGIN_GENERATED_FILES}
-        COMMAND ${VMMAKER_VM} --headless ${VMMAKER_IMAGE} --no-default-preferences eval \"PharoVMMaker generate: \#\'${FLAVOUR}\' outputDirectory: \'${CMAKE_CURRENT_BINARY_DIR_TO_OUT}\' options: ${VM_Parameters}\"
+        COMMAND ${VMMAKER_VM} --headless ${VMMAKER_IMAGE} --no-default-preferences perform PharoVMMaker generate:outputDirectory:options: ${FLAVOUR} ${CMAKE_CURRENT_BINARY_DIR_TO_OUT} ${VM_Parameters}
+        VERBATIM
         DEPENDS vmmaker ${VMMAKER_IMAGE} ${VMMAKER_VM}
         COMMENT "Generating VM files for flavour: ${FLAVOUR} with options: ${VM_Parameters}")
 

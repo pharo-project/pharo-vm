@@ -19,6 +19,7 @@ typedef struct {
 	size_t (*imageFileWrite)(void* ptr, size_t sz, size_t count, sqImageFile f);
 	int (*imageFileExists)(const char* aPath);
 	void (*imageReportProgress)(size_t totalSize, size_t currentSize);
+	int (*imageIsDirectory)(const char* aPath);
 } _FileAccessHandler;
 
 typedef _FileAccessHandler FileAccessHandler;
@@ -37,6 +38,8 @@ EXPORT(void) setFileAccessHandler(FileAccessHandler* aFileAccessHandler);
 #define sqImageFileWrite(ptr, sz, count, f)	currentFileAccessHandler()->imageFileWrite(ptr, sz, count, f)
 
 #define sqImageFileExists(aPath)			currentFileAccessHandler()->imageFileExists(aPath)
+
+#define sqImageIsDirectory(aPath)			currentFileAccessHandler()->imageIsDirectory(aPath)
 
 #define sqImageFileStartLocation(fileRef, fileName, size)  0
 #define sqImageReportProgress(totalSize, currentSize)	currentFileAccessHandler()->imageReportProgress(totalSize, currentSize)

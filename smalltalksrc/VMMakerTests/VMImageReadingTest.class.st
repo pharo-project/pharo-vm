@@ -29,7 +29,8 @@ VMImageReadingTest >> loadImage [
 		interpreterClass: self interpreterClass;
 		objectMemoryClass: self memoryClass;
 	 	initializationOptions: self initializationOptions;
-		wordSize: self wordSize.
+		wordSize: self wordSize;
+		useComposedImageFormatAsDefault: useComposedImageFormat.
 
 	environmentBuilder doBuildSimulator.
 
@@ -146,7 +147,7 @@ VMImageReadingTest >> testSavedImageSavesObjectFromOldSpace [
 VMImageReadingTest >> testSavedImageSavesObjectFromPermanentSpace [
 
 	"Only valid in the new format"
-	imageWriterClass = SpurImageWriter ifTrue: [ ^ self skip ].
+	useComposedImageFormat ifFalse: [ ^ self skip ].
 	
 	permanentObject := self newPermanentByteObjectOfSize: 14.
 	originalPermanentObjectIdentityHash := memory hashBitsOf: permanentObject.	

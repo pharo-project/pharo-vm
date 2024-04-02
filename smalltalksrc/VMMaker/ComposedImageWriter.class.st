@@ -1,6 +1,8 @@
 Class {
 	#name : #ComposedImageWriter,
 	#superclass : #AbstractComposedImageAccess,
+	#traits : 'TImageWriter',
+	#classTraits : 'TImageWriter classTrait',
 	#category : #'VMMaker-ImageFormat'
 }
 
@@ -15,12 +17,12 @@ ComposedImageWriter >> ensureDeleteSegments: imageFileName [
 			r := self unlink: (self segmentMetadataFile: segmentIndex inImage: imageFileName). 
 			r ~= 0 ifTrue: [ 
 					self logError: 'Error deleting %s' _: (self segmentMetadataFile: segmentIndex inImage: imageFileName).
-					^ interpreter primitiveFail. ].
+					^ coInterpreter primitiveFail. ].
 			
 			r := self unlink: (self segmentDataFile: segmentIndex inImage: imageFileName). 
 			r ~= 0 ifTrue: [ 
 					self logError: 'Error deleting %s' _: (self segmentDataFile: segmentIndex inImage: imageFileName).
-					^ interpreter primitiveFail. ].
+					^ coInterpreter primitiveFail. ].
 			segmentIndex := segmentIndex + 1 ]
 ]
 
@@ -95,6 +97,8 @@ ComposedImageWriter >> writeImageFile: imageFileName fromHeader: header [
 
 	"Write one image header file + many segments files (metadata & data per segment)"
 
+	<inline: false>
+
 	<var: #imageFileName declareC: 'char *imageFileName'>
 	<var: #oldSpaceBytesWritten type:#'size_t'>
 	<var: #permanentSpaceBytesWritten type:#'size_t'>
@@ -117,7 +121,7 @@ ComposedImageWriter >> writeImageFile: imageFileName fromHeader: header [
 
 	bytesWritten := oldSpaceBytesWritten + permanentSpaceBytesWritten.
 
-	interpreter success: bytesWritten = header dataSize 
+	coInterpreter success: bytesWritten = header dataSize 
 ]
 
 { #category : #'perm - space' }
@@ -139,7 +143,7 @@ ComposedImageWriter >> writeImageSegments: imageFileName [
 	self beginWriteImageSegments.
 	self ensureDeleteSegments: imageFileName.
 	
-	interpreter failed ifTrue: [ ^ 0 ].
+	coInterpreter failed ifTrue: [ ^ 0 ].
 
 	^ segmentManager withNonEmptySegmentsDo: [ :aSegment :segmentIndex | 
 		self

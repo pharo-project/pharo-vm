@@ -1,6 +1,8 @@
 Class {
 	#name : #SpurImageReader,
 	#superclass : #AbstractImageAccess,
+	#traits : 'TImageReader',
+	#classTraits : 'TImageReader classTrait',
 	#category : #'VMMaker-ImageFormat'
 }
 
@@ -115,6 +117,7 @@ SpurImageReader >> readHeaderFrom: f startingAt: headerStart [
 { #category : #api }
 SpurImageReader >> readHeaderFromImage: anImageName [
 
+	<doNotGenerate>
 	| header |
 	header := anImageName asFileReference binaryReadStreamDo: [ :f | 
 		          self readHeaderFrom: f startingAt: 0 ].
@@ -150,7 +153,7 @@ SpurImageReader >> readImageFromFile: f StartingAt: headerStart [
 
 	self loadHeaderToMemory: header.
 
-	interpreter allocateMemoryForImage: f withHeader: header.
+	coInterpreter allocateMemoryForImage: f withHeader: header.
 
 	^ header dataSize
 ]
@@ -159,7 +162,6 @@ SpurImageReader >> readImageFromFile: f StartingAt: headerStart [
 SpurImageReader >> readImageNamed: imageName [
 	
 	<var: #imageName declareC: 'char *imageName'>
-	<api>
 	
 	| file |
 	
@@ -224,7 +226,7 @@ SpurImageReader >> readSegmentsFromImageFile: f header: aHeader [
 	bytesRead > 0 ifTrue: [ totalBytesRead := totalBytesRead + bytesRead ].
 
 	bytesRead ~= nextSegmentSize ifTrue: [ 
-		interpreter unableToReadImageError ].
+		coInterpreter unableToReadImageError ].
 
 	bridge := bridgehead + objectMemory baseHeaderSize.
 	bridgeSpan := (objectMemory rawNumSlotsOf: bridgehead) = 0

@@ -16,9 +16,7 @@ VMSimulationTest >> testSetUpJITSimulationReadsImage [
 	    #ObjectMemory -> #Spur64BitCoMemoryManager.
 	    #ISA -> #aarch64.
 	    #BytesPerWord -> 8.
-	    #bytecodeTableInitializer -> #initializeBytecodeTableForSistaV1.
-	    #ImageWriter -> #SpurImageWriter.
-	    #ImageReader -> #SpurImageReader.
+	    #bytecodeTableInitializer -> #initializeBytecodeTableForSistaV1
 	} asDictionary.
 
 	c := CogVMSimulator newWithOptions: options.
@@ -38,9 +36,7 @@ VMSimulationTest >> testSetUpNonJITSimulationReadsImage [
 	options := {
 	    #ObjectMemory -> #Spur64BitMemoryManager.
 	    #BytesPerWord -> 8.
-	    #bytecodeTableInitializer -> #initializeBytecodeTableForSistaV1.
-	    #ImageWriter -> #SpurImageWriter.
-	    #ImageReader -> #SpurImageReader.
+	    #bytecodeTableInitializer -> #initializeBytecodeTableForSistaV1
 	} asDictionary.
 
 	c := StackInterpreterSimulator newWithOptions: options.
