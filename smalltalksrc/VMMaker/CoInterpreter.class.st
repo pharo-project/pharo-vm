@@ -2734,7 +2734,8 @@ CoInterpreter >> executeFullCogBlock: cogMethod closure: closure mayContextSwitc
 				at: (mayContextSwitch
 						 ifTrue: [ cogit fullBlockEntryOffset ]
 						 ifFalse: [ cogit fullBlockNoContextSwitchEntryOffset ])
-				receiver: closure ] ].
+				receiver: closure.
+			self unreachable ] ].
 
 	self push: cogMethod asInteger + (mayContextSwitch
 			 ifTrue: [ cogit fullBlockEntryOffset ]
