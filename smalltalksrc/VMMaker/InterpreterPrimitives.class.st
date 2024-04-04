@@ -1932,7 +1932,6 @@ InterpreterPrimitives >> primitiveFullClosureValue [
 
 	<option: #SistaV1BytecodeSet>
 	<numberOfArguments: #(0 1 2)>
-	"<checkArgumentCount>"
 	| blockClosure numArgs closureMethod |
 
 	blockClosure := self stackValue: argumentCount.
