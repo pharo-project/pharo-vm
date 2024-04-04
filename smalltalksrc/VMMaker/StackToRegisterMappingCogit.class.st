@@ -1016,6 +1016,14 @@ StackToRegisterMappingCogit >> compileCogMethod: selector [
 ]
 
 { #category : #'compile abstract instructions' }
+StackToRegisterMappingCogit >> compileEntireFullBlockMethod: numCopied [
+
+	"Initialize regArgsHaveBeenPushed so each compilation is clean"
+	regArgsHaveBeenPushed := false.
+	^ super compileEntireFullBlockMethod: numCopied
+]
+
+{ #category : #'compile abstract instructions' }
 StackToRegisterMappingCogit >> compileEntireMethod [
 	"Compile the abstract instructions for the entire method, including blocks."
 	regArgsHaveBeenPushed := false.
@@ -1052,6 +1060,8 @@ StackToRegisterMappingCogit >> compileFullBlockFramelessEntry: numCopied [
 { #category : #'compile abstract instructions' }
 StackToRegisterMappingCogit >> compileFullBlockMethodFrameBuild: numCopied [
 	<option: #SistaV1BytecodeSet>
+	"We push the call arguments (receiver and arguments) to the stack, regardless of it being a frameful or frameless method"
+	self genPushRegisterArgs.
 	useTwoPaths ifTrue: 
 		[ "method with only inst var store, we compile only slow path for now" 
 		 useTwoPaths := false.
@@ -2121,14 +2131,6 @@ StackToRegisterMappingCogit >> genPrimReturn [
 ]
 
 { #category : #'primitive generators' }
-StackToRegisterMappingCogit >> genPrimitiveFullClosureValue [
-	"Override to push the register args first."
-	<option: #SistaV1BytecodeSet>
-	self genPushRegisterArgs.
-	^super genPrimitiveFullClosureValue
-]
-
-{ #category : #'primitive generators' }
 StackToRegisterMappingCogit >> genPrimitivePerform [
 	"Generate an in-line perform primitive.  The lookup code requires the selector to be in Arg0Reg.
 	 adjustArgumentsForPerform: adjusts the arguments once genLookupForPerformNumArgs:
@@ -2370,13 +2372,17 @@ StackToRegisterMappingCogit >> genPushReceiverVariable: index [
 { #category : #'compile abstract instructions' }
 StackToRegisterMappingCogit >> genPushRegisterArgs [
 	"Ensure that the register args are pushed before the retpc for methods with arity <= self numRegArgs."
+
 	"This won't be as clumsy on a RISC.  But putting the receiver and
 	 args above the return address means the CoInterpreter has a
 	 single machine-code frame format which saves us a lot of work."
-	(regArgsHaveBeenPushed
-	 or: [methodOrBlockNumArgs > self numRegArgs]) ifFalse:
-		[backEnd genPushRegisterArgsForNumArgs: methodOrBlockNumArgs scratchReg: SendNumArgsReg.
-		regArgsHaveBeenPushed := true]
+
+	(regArgsHaveBeenPushed or: [ methodOrBlockNumArgs > self numRegArgs ])
+		ifFalse: [
+			backEnd
+				genPushRegisterArgsForNumArgs: methodOrBlockNumArgs
+				scratchReg: SendNumArgsReg.
+			regArgsHaveBeenPushed := true ]
 ]
 
 { #category : #'bytecode generator support' }
