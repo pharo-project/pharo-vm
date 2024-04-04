@@ -1490,6 +1490,12 @@ SimpleStackBasedCogit >> genJumpTo: targetBytecodePC [
 ]
 
 { #category : #'primitive generators' }
+SimpleStackBasedCogit >> genLoadArg: n into: reg [
+
+	self genLoadArgAtDepth: (methodOrBlockNumArgs - n - 1) into: reg
+]
+
+{ #category : #'primitive generators' }
 SimpleStackBasedCogit >> genLoadArgAtDepth: n into: reg [
 	"Load an argument at depth from top-of-stack (0 relative) into a register.
 	 The actual offset depends on whether there's a link register or not."

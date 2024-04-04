@@ -246,6 +246,9 @@ InterpreterPrimitives >> floatExponentBits [
 { #category : #'control primitives' }
 InterpreterPrimitives >> forcePushRegisterCallingConvention [
 
+	"This method is not used in the interpreter.
+	This code is only analysed by Druid's meta-compiler."
+
 	argumentCount <= 2 ifTrue: [
 		self push: (self stackValue: argumentCount).
 		argumentCount > 0 ifTrue: [
@@ -953,8 +956,7 @@ InterpreterPrimitives >> primitiveArrayBecomeOneWayNoCopyHash [
 
 { #category : #'object access primitives' }
 InterpreterPrimitives >> primitiveAsCharacter [
-	<numberOfArguments: 0>
-	<checkArgumentCount>
+	<numberOfArguments: #(0 1)>
 	
 	| characterCode characterObject |
 	characterCode := self stackTop.
@@ -1084,7 +1086,7 @@ InterpreterPrimitives >> primitiveBitShift [
 		ifTrue:
 			[integerReceiver := self positive32BitValueOf: integerReceiver]
 		ifFalse:
-			[integerReceiver := objectMemory signed64BitValueOf: integerReceiver].
+			[integerReceiver := self signed64BitValueOf: integerReceiver].
 	self successful ifTrue:
 		[(integerArgument := objectMemory integerValueOf: integerArgument) >= 0
 			ifTrue: "Left shift -- must fail bits would be lost"
@@ -1246,8 +1248,8 @@ InterpreterPrimitives >> primitiveChangeClass [
 
 { #category : #'object access primitives' }
 InterpreterPrimitives >> primitiveClass [
-	<numberOfArguments: 0>
-	<checkArgumentCount>
+	<numberOfArguments: #(0 1)>
+
 	| instance |
 	instance := self stackTop.
 	(argumentCount > 0
@@ -1929,8 +1931,7 @@ InterpreterPrimitives >> primitiveFractionalPart [
 InterpreterPrimitives >> primitiveFullClosureValue [
 
 	<option: #SistaV1BytecodeSet>
-	<numberOfArguments: 0>
-	<checkArgumentCount>
+	<numberOfArguments: #(0 1 2)>
 	| blockClosure numArgs closureMethod |
 
 	blockClosure := self stackValue: argumentCount.
@@ -2301,8 +2302,7 @@ InterpreterPrimitives >> primitiveImmediateAsInteger [
 	 For a Character, answer its code as an unsigned integer.
 	 For a SmallFloat, answer the signed, but unadjusted bit pattern (so as to keep the result a SmallInteger).
 	 This is a good value for an immediate's hash."
-	<numberOfArguments: 0>
-	<checkArgumentCount>
+	<numberOfArguments: #(0 1)>
 	<option: #SpurObjectMemory>
 	| oop value |
 	oop := self stackTop.
