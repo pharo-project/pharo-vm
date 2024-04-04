@@ -1018,6 +1018,7 @@ StackToRegisterMappingCogit >> compileCogMethod: selector [
 { #category : #'compile abstract instructions' }
 StackToRegisterMappingCogit >> compileEntireFullBlockMethod: numCopied [
 
+	"Initialize regArgsHaveBeenPushed so each compilation is clean"
 	regArgsHaveBeenPushed := false.
 	^ super compileEntireFullBlockMethod: numCopied
 ]
