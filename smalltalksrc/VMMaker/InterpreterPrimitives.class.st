@@ -3843,7 +3843,7 @@ InterpreterPrimitives >> primitiveSlotAtPut [
 InterpreterPrimitives >> primitiveSmallFloatAdd [
 	<option: #Spur64BitMemoryManager>
 	<numberOfArguments: 1>
-	<specialisation: #smallFloat>
+	<customisedReceiverFor: #smallFloat>
 	| rcvr arg|
 	<var: #rcvr type: #double>
 	<var: #arg type: #double>
@@ -3869,7 +3869,7 @@ InterpreterPrimitives >> primitiveSmallFloatArctan [
 InterpreterPrimitives >> primitiveSmallFloatDivide [
 	<option: #Spur64BitMemoryManager>
 	<numberOfArguments: 1>
-	<specialisation: #smallFloat>
+	<customisedReceiverFor: #smallFloat>
 	| rcvr arg |
 	<var: #rcvr type: #double>
 	<var: #arg type: #double>
@@ -3887,7 +3887,7 @@ InterpreterPrimitives >> primitiveSmallFloatDivide [
 InterpreterPrimitives >> primitiveSmallFloatEqual [
 	<option: #Spur64BitMemoryManager>
 	<numberOfArguments: 1>
-	<specialisation: #smallFloat>
+	<customisedReceiverFor: #smallFloat>
 	| rcvr arg |
 	<var: #rcvr type: #double>
 	<var: #arg type: #double>
@@ -3933,7 +3933,7 @@ InterpreterPrimitives >> primitiveSmallFloatFractionalPart [
 InterpreterPrimitives >> primitiveSmallFloatGreaterOrEqual [
 	<option: #Spur64BitMemoryManager>
 	<numberOfArguments: 1>
-	<specialisation: #smallFloat>
+	<customisedReceiverFor: #smallFloat>
 	| rcvr arg |
 	<var: #rcvr type: #double>
 	<var: #arg type: #double>
@@ -3949,7 +3949,7 @@ InterpreterPrimitives >> primitiveSmallFloatGreaterOrEqual [
 InterpreterPrimitives >> primitiveSmallFloatGreaterThan [
 	<option: #Spur64BitMemoryManager>
 	<numberOfArguments: 1>
-	<specialisation: #smallFloat>
+	<customisedReceiverFor: #smallFloat>
 	| rcvr arg |
 	<var: #rcvr type: #double>
 	<var: #arg type: #double>
@@ -3973,7 +3973,7 @@ InterpreterPrimitives >> primitiveSmallFloatHash [
 InterpreterPrimitives >> primitiveSmallFloatLessOrEqual [
 	<option: #Spur64BitMemoryManager>
 	<numberOfArguments: 1>
-	<specialisation: #smallFloat>
+	<customisedReceiverFor: #smallFloat>
 	| rcvr arg |
 	<var: #rcvr type: #double>
 	<var: #arg type: #double>
@@ -3989,7 +3989,7 @@ InterpreterPrimitives >> primitiveSmallFloatLessOrEqual [
 InterpreterPrimitives >> primitiveSmallFloatLessThan [
 	<option: #Spur64BitMemoryManager>
 	<numberOfArguments: 1>
-	<specialisation: #smallFloat>
+	<customisedReceiverFor: #smallFloat>
 	| rcvr arg |
 	<var: #rcvr type: #double>
 	<var: #arg type: #double>
@@ -4014,7 +4014,7 @@ InterpreterPrimitives >> primitiveSmallFloatLogN [
 InterpreterPrimitives >> primitiveSmallFloatMultiply [
 	<option: #Spur64BitMemoryManager>
 	<numberOfArguments: 1>
-	<specialisation: #smallFloat>
+	<customisedReceiverFor: #smallFloat>
 	| rcvr arg |
 	<var: #rcvr type: #double>
 	<var: #arg type: #double>
@@ -4030,7 +4030,7 @@ InterpreterPrimitives >> primitiveSmallFloatMultiply [
 InterpreterPrimitives >> primitiveSmallFloatNotEqual [
 	<option: #Spur64BitMemoryManager>
 	<numberOfArguments: 1>
-	<specialisation: #smallFloat>
+	<customisedReceiverFor: #smallFloat>
 	| rcvr arg |
 	<var: #rcvr type: #double>
 	<var: #arg type: #double>
@@ -4066,7 +4066,7 @@ InterpreterPrimitives >> primitiveSmallFloatSquareRoot [
 InterpreterPrimitives >> primitiveSmallFloatSubtract [
 	<option: #Spur64BitMemoryManager>
 	<numberOfArguments: 1>
-	<specialisation: #smallFloat>
+	<customisedReceiverFor: #smallFloat>
 	| rcvr arg |
 	<var: #rcvr type: #double>
 	<var: #arg type: #double>
