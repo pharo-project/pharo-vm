@@ -10034,6 +10034,11 @@ Cogit >> mcPCForBackwardBranch: bcpc startBcpc: startbcpc in: cogMethod [
 ]
 
 { #category : #initialization }
+Cogit >> mclassIsSmallFloat [
+	^objectMemory isImmediateFloat: receiverTags
+]
+
+{ #category : #initialization }
 Cogit >> mclassIsSmallInteger [
 	^objectMemory isIntegerObject: receiverTags
 ]
