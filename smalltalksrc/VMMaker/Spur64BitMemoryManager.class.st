@@ -603,7 +603,7 @@ Spur64BitMemoryManager >> isImmediateCharacter: oop [
 
 { #category : #'interpreter access' }
 Spur64BitMemoryManager >> isImmediateFloat: oop [
-	<export: true>
+	<api>
 	<inline: true>
 	^oop anyMask: self smallFloatTag
 ]
