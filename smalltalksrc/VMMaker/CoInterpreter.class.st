@@ -519,7 +519,6 @@ CoInterpreter >> activateNewFullClosure: blockClosure method: theMethod numArgs:
 
 	methodHeader := self rawHeaderOf: theMethod.
 	(self isCogMethodReference: methodHeader) ifTrue: [
-		self interpreterIgnore: [ self forcePushRegisterCallingConvention ].
 		^ self
 			  executeFullCogBlock: (self cogMethodOf: theMethod)
 			  closure: blockClosure

@@ -243,20 +243,6 @@ InterpreterPrimitives >> floatExponentBits [
 	^11
 ]
 
-{ #category : #'control primitives' }
-InterpreterPrimitives >> forcePushRegisterCallingConvention [
-
-	"This method is not used in the interpreter.
-	This code is only analysed by Druid's meta-compiler."
-
-	argumentCount <= 2 ifTrue: [
-		self push: (self stackValue: argumentCount).
-		argumentCount > 0 ifTrue: [
-			self push: (self stackValue: argumentCount - 1).
-			argumentCount > 1 ifTrue: [
-				self push: (self stackValue: argumentCount - 2) ] ] ]
-]
-
 { #category : #'simulation support' }
 InterpreterPrimitives >> getenv: aByteStringOrByteArray [
 	<doNotGenerate>
