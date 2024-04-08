@@ -736,7 +736,6 @@ InterpreterPrimitives >> positiveMachineIntegerValueOf: oop [
 { #category : #'arithmetic integer primitives' }
 InterpreterPrimitives >> primitiveAdd [
 	<numberOfArguments: 1>
-	<specialisation: #smallInteger>
 	<customisedReceiverFor: #smallInteger>
 	
 	| maybeSmallInteger maybeSmallInteger2 result |
@@ -1077,6 +1076,7 @@ InterpreterPrimitives >> primitiveBitShift [
 	  In 64-bits deal with signed 64-bit quantities (max (2^63)-1)."
 	| integerReceiver integerArgument shifted |
 	<numberOfArguments: 1>
+	<customisedReceiverFor: #smallInteger>
 	<var: #integerReceiver type: #sqInt>
 	integerArgument := self stackTop.
 	(objectMemory isIntegerObject: integerArgument) ifFalse:
@@ -4867,55 +4867,68 @@ InterpreterPrimitives >> signed32BitValueOf: oop [
 InterpreterPrimitives >> signed64BitValueOf: oop [
 	"Convert the given object into an integer value.
 	 The object may be either a positive SmallInteger or a eight-byte LargeInteger."
-	| sz value negative ok magnitude |
+
 	<api>
 	<inline: false>
 	<returnTypeC: #sqLong>
 	<var: #value type: #sqLong>
 	<var: #magnitude type: #usqLong>
-	(objectMemory isIntegerObject: oop) ifTrue:
-		[^self cCoerce: (objectMemory integerValueOf: oop) to: #sqLong].
+	| sz value negative ok magnitude |
+	(objectMemory isIntegerObject: oop) ifTrue: [
+		^ self cCoerce: (objectMemory integerValueOf: oop) to: #sqLong ].
 
-	(objectMemory isNonIntegerImmediate: oop) ifTrue:
-		[self primitiveFail.
-		 ^0].
+	self druidExitPoint.
+	self druidIgnore: [
+		(objectMemory isNonIntegerImmediate: oop) ifTrue: [
+			self primitiveFail.
+			^ 0 ].
 
-	ok := objectMemory isClassOfNonImm: oop
-					equalTo: (objectMemory splObj: ClassLargePositiveInteger)
-					compactClassIndex: ClassLargePositiveIntegerCompactIndex.
-	ok
-		ifTrue: [negative := false]
-		ifFalse:
-			[negative := true.
-			 ok := objectMemory isClassOfNonImm: oop
-							equalTo: (objectMemory splObj: ClassLargeNegativeInteger)
-							compactClassIndex: ClassLargeNegativeIntegerCompactIndex.
-			ok ifFalse:
-				[self primitiveFail.
-				 ^0]].
-	sz := objectMemory numBytesOfBytes: oop.
-	sz > (self sizeof: #sqLong) ifTrue:
-		[self primitiveFail.
-		 ^0].
+		ok := objectMemory
+			      isClassOfNonImm: oop
+			      equalTo: (objectMemory splObj: ClassLargePositiveInteger)
+			      compactClassIndex: ClassLargePositiveIntegerCompactIndex.
+		ok
+			ifTrue: [ negative := false ]
+			ifFalse: [
+				negative := true.
+				ok := objectMemory
+					      isClassOfNonImm: oop
+					      equalTo: (objectMemory splObj: ClassLargeNegativeInteger)
+					      compactClassIndex: ClassLargeNegativeIntegerCompactIndex.
+				ok ifFalse: [
+					self primitiveFail.
+					^ 0 ] ].
+		sz := objectMemory numBytesOfBytes: oop.
+		sz > (self sizeof: #sqLong) ifTrue: [
+			self primitiveFail.
+			^ 0 ].
 
-	"self cppIf: SPURVM
+		"self cppIf: SPURVM
 		ifTrue:
 			[""Memory is 8 byte aligned in Spur and oversized bytes are set to zero, so we can safely fetch 8 bytes""
 			magnitude := objectMemory byteSwapped64IfBigEndian: (objectMemory fetchLong64: 0 ofObject: oop)]
 		ifFalse:
-			["sz > 4
-				ifTrue: [magnitude := objectMemory byteSwapped64IfBigEndian: (objectMemory fetchLong64: 0 ofObject: oop)]
-				ifFalse: [magnitude := self cCoerceSimple: (objectMemory byteSwapped32IfBigEndian: (objectMemory fetchLong32: 0 ofObject: oop)) to: #'unsigned int']"]".
+			["
+		sz > 4
+			ifTrue: [
+				magnitude := objectMemory byteSwapped64IfBigEndian:
+					             (objectMemory fetchLong64: 0 ofObject: oop) ]
+			ifFalse: [ "]"
+				magnitude := self
+					             cCoerceSimple:
+						             (objectMemory byteSwapped32IfBigEndian:
+							              (objectMemory fetchLong32: 0 ofObject: oop))
+					             to: #'unsigned int' ].
 
-	(negative
-		ifTrue: [magnitude > 16r8000000000000000]
-		ifFalse: [magnitude >= 16r8000000000000000])
-			ifTrue: [self primitiveFail.
-				^0].
-	negative
-		ifTrue: [value := 0 - magnitude]
-		ifFalse: [value := magnitude].
-	^value
+		(negative
+			 ifTrue: [ magnitude > 16r8000000000000000 ]
+			 ifFalse: [ magnitude >= 16r8000000000000000 ]) ifTrue: [
+			self primitiveFail.
+			^ 0 ].
+		negative
+			ifTrue: [ value := 0 - magnitude ]
+			ifFalse: [ value := magnitude ].
+		^ value ]
 ]
 
 { #category : #'primitive support' }
