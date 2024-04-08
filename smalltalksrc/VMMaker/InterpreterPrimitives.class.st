@@ -4204,7 +4204,8 @@ InterpreterPrimitives >> primitiveStopVMProfiling [
 { #category : #'indexing primitives' }
 InterpreterPrimitives >> primitiveStringAt [
 
-	self commonAt: true.
+	<numberOfArguments: 1>
+	self commonAt: true
 ]
 
 { #category : #'indexing primitives' }
