@@ -601,9 +601,9 @@ Spur64BitMemoryManager >> isImmediateCharacter: oop [
 	^oop anyMask: self characterTag
 ]
 
-{ #category : #'object testing' }
+{ #category : #'interpreter access' }
 Spur64BitMemoryManager >> isImmediateFloat: oop [
-	<inline: true>
+
 	^oop anyMask: self smallFloatTag
 ]
 
