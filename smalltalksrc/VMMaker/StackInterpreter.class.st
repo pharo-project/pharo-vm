@@ -14379,15 +14379,15 @@ StackInterpreter >> stObject: array at: index [
 StackInterpreter >> stObject: array at: index format: format fixedFields: fixedFields size: stSize [
 
 	<inline: true>
-
-	(self oop: index 
-			isGreaterThanOrEqualTo: (objectMemory firstValidIndexOfIndexableObject: array withFormat: format)
-	 		andLessThanOrEqualTo: stSize) ifTrue: [
-				^self subscript: array with: (index + fixedFields) format: format ].
-
+	index >= 0 ifTrue: [
+		index <= stSize ifTrue: [
+			^ self subscript: array with: index + fixedFields format: format ] ].
 	self druidExitPoint.
-	self primitiveFailFor: (format <= 1 ifTrue: [PrimErrBadReceiver] ifFalse: [PrimErrBadIndex]).
-	^0
+	self druidIgnore: [
+		self primitiveFailFor: (format <= 1
+				 ifTrue: [ PrimErrBadReceiver ]
+				 ifFalse: [ PrimErrBadIndex ]) ].
+	^ 0
 ]
 
 { #category : #'indexing primitive support' }
