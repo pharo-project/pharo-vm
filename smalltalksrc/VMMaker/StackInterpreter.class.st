@@ -10627,7 +10627,10 @@ StackInterpreter >> positive64BitIntegerFor: integerValue [
 	| newLargeInteger highWord sz |
 	objectMemory hasSixtyFourBitImmediates
 		ifTrue: [
-			(objectMemory isIntegerValue: integerValue) ifTrue: [
+			(self
+				 cCode: [ integerValue ]
+				 inSmalltalk: [ integerValue bitAnd: 1 << 64 - 1 ])
+			<= objectMemory maxSmallInteger ifTrue: [
 				^ objectMemory integerObjectOf: integerValue ].
 			sz := 8 ]
 		ifFalse: [
