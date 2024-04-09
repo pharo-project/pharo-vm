@@ -1,5 +1,13 @@
 # Change log
 
+## v10.2.0
+* Add library with function to spawn a process connected to a pseudo-terminal by @Rinzwind in https://github.com/pharo-project/pharo-vm/pull/742
+* Fix VM build in MacOS sonoma by @guillep in https://github.com/pharo-project/pharo-vm/pull/758
+* Primitive to compare bytes by @doste in https://github.com/pharo-project/pharo-vm/pull/759
+* Translate documentation picture to Englitsh by @Inao0 in https://github.com/pharo-project/pharo-vm/pull/764
+
+**Full Changelog**: https://github.com/pharo-project/pharo-vm/compare/v10.1.1...v10.2.0
+
 ## v10.1.1
 * Change custom command in ‘vmmaker.cmake’ to take into account that the ‘CMAKE_CURRENT_BINARY_DIR_TO_OUT’ can contain other characters besides spaces that require escaping by @Rinzwind in https://github.com/pharo-project/pharo-vm/pull/741
 * Backporting PR for allocating in the old space by @jordanmontt in https://github.com/pharo-project/pharo-vm/pull/709
