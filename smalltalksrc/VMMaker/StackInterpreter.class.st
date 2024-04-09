@@ -14968,23 +14968,25 @@ StackInterpreter >> subscript: array with: index storing: oopToStore format: fmt
 	fmt <= objectMemory lastPointerFormat ifTrue:
 		[objectMemory storePointer: index - 1 ofObject: array withValue: oopToStore.
 		 ^self].
+	
 	fmt >= objectMemory firstByteFormat ifTrue:
 		[(objectMemory isIntegerObject: oopToStore) ifFalse:
-			[primFailCode := PrimErrBadArgument.
+			[self primitiveFailFor: PrimErrBadArgument.
 			 ^self].
 		 signedValueToStore := objectMemory integerValueOf: oopToStore.
 		 (signedValueToStore >= 0 and: [signedValueToStore <= 255]) ifFalse:
-			[primFailCode := PrimErrBadArgument.
+			[self primitiveFailFor: PrimErrBadArgument.
 			 ^self].
 		 objectMemory storeByte: index - 1 ofObject: array withValue: signedValueToStore.
 		 ^self].
+	
 	fmt >= objectMemory firstShortFormat ifTrue: [
 		(objectMemory isIntegerObject: oopToStore) ifFalse:
-				[primFailCode := PrimErrBadArgument.
+				[self primitiveFailFor:  PrimErrBadArgument.
 				 ^self].
 			 signedValueToStore := objectMemory integerValueOf: oopToStore.
 			 (signedValueToStore >= 0 and: [signedValueToStore <= 65535]) ifFalse:
-				[primFailCode := PrimErrBadArgument.
+				[self primitiveFailFor: PrimErrBadArgument.
 				 ^self].
 			 objectMemory storeShort16: index - 1 ofObject: array withValue: signedValueToStore.
 			 ^self].
