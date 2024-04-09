@@ -994,16 +994,23 @@ InterpreterPrimitives >> primitiveBehaviorHash [
 
 { #category : #'arithmetic integer primitives' }
 InterpreterPrimitives >> primitiveBitAnd [
+
 	<numberOfArguments: 1>
 	<inline: false>
 	<var: 'integerArgumentValue' type: #usqInt>
 	<var: 'integerReceiverValue' type: #usqInt>
-	| integerArgumentValue integerReceiverValue |
-	"Note no short-cut for SmallIntegers.  Either the inline interpreter bytecode or the JIT primitive will handle this case."
-	integerArgumentValue := self positiveMachineIntegerValueOf: self stackTop.
-	integerReceiverValue := self positiveMachineIntegerValueOf: (self stackValue: 1).
-	self successful ifTrue:
-		[self pop: 2 thenPush: (self positiveMachineIntegerFor: (integerArgumentValue bitAnd: integerReceiverValue))]
+	(objectMemory areIntegers: self stackTop and: (self stackValue: 1))
+		ifTrue: [
+			self pop: 2 thenPush: (self stackTop bitAnd: (self stackValue: 1)) ]
+		ifFalse: [ | integerReceiverValue integerArgumentValue |
+			self druidExitPoint.
+			integerArgumentValue := self positiveMachineIntegerValueOf:
+				                        self stackTop.
+			integerReceiverValue := self positiveMachineIntegerValueOf:
+				                        (self stackValue: 1).
+			self successful ifTrue: [
+				self pop: 2 thenPush: (self positiveMachineIntegerFor:
+						 (integerArgumentValue bitAnd: integerReceiverValue)) ] ]
 ]
 
 { #category : #'arithmetic largeint primitives' }
@@ -1030,12 +1037,18 @@ InterpreterPrimitives >> primitiveBitOr [
 	<inline: false>
 	<var: 'integerArgumentValue' type: #usqInt>
 	<var: 'integerReceiverValue' type: #usqInt>
-	| integerArgumentValue integerReceiverValue |
-	"Note no short-cut for SmallIntegers.  Either the inline interpreter bytecode or the JIT primitive will handle this case."
-	integerArgumentValue := self positiveMachineIntegerValueOf: self stackTop.
-	integerReceiverValue := self positiveMachineIntegerValueOf: (self stackValue: 1).
-	self successful ifTrue:
-		[self pop: 2 thenPush: (self positiveMachineIntegerFor: (integerArgumentValue bitOr: integerReceiverValue))]
+	(objectMemory areIntegers: self stackTop and: (self stackValue: 1))
+		ifTrue: [
+			self pop: 2 thenPush: (self stackTop bitOr: (self stackValue: 1)) ]
+		ifFalse: [ | integerReceiverValue integerArgumentValue |
+			self druidExitPoint.
+			integerArgumentValue := self positiveMachineIntegerValueOf:
+				                        self stackTop.
+			integerReceiverValue := self positiveMachineIntegerValueOf:
+				                        (self stackValue: 1).
+			self successful ifTrue: [
+				self pop: 2 thenPush: (self positiveMachineIntegerFor:
+						 (integerArgumentValue bitOr: integerReceiverValue)) ] ]
 ]
 
 { #category : #'arithmetic largeint primitives' }
