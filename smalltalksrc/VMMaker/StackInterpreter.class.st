@@ -10619,33 +10619,42 @@ StackInterpreter >> positive32BitIntegerFor: integerValue [
 
 { #category : #'primitive support' }
 StackInterpreter >> positive64BitIntegerFor: integerValue [
+	"Answer a Large Positive Integer object for the given integer value.  N.B. will *not* cause a GC."
+
 	<api>
 	<var: 'integerValue' type: #usqLong>
-	<druidExitPoint>
 	<var: 'highWord' type: #'unsigned int'>
-	"Answer a Large Positive Integer object for the given integer value.  N.B. will *not* cause a GC."
 	| newLargeInteger highWord sz |
 	objectMemory hasSixtyFourBitImmediates
-		ifTrue:
-			[(self cCode: [integerValue] inSmalltalk: [integerValue bitAnd: 1 << 64 - 1]) <= objectMemory maxSmallInteger ifTrue:
-				[^objectMemory integerObjectOf: integerValue].
-			 sz := 8]
-		ifFalse:
-			[(highWord := integerValue >> 32) = 0 ifTrue:
-				[^self positive32BitIntegerFor: integerValue].
-			 sz := 5.
-			 (highWord := highWord >> 8) = 0 ifFalse:
-				[sz := sz + 1.
-				 (highWord := highWord >> 8) = 0 ifFalse:
-					[sz := sz + 1.
-					 (highWord := highWord >> 8) = 0 ifFalse:[sz := sz + 1]]]].
-	newLargeInteger := objectMemory
-							eeInstantiateSmallClassIndex: ClassLargePositiveIntegerCompactIndex
-							format: (objectMemory byteFormatForNumBytes: sz)
-							numSlots: 8 / objectMemory bytesPerOop.
-	objectMemory storeLong64: 0 ofObject: newLargeInteger withValue: (objectMemory byteSwapped64IfBigEndian: integerValue).
-	^newLargeInteger
+		ifTrue: [
+			(self
+				 cCode: [ integerValue ]
+				 inSmalltalk: [ integerValue bitAnd: 1 << 64 - 1 ])
+			<= objectMemory maxSmallInteger ifTrue: [
+				^ objectMemory integerObjectOf: integerValue ].
+			sz := 8 ]
+		ifFalse: [
+			(highWord := integerValue >> 32) = 0 ifTrue: [
+				^ self positive32BitIntegerFor: integerValue ].
+			sz := 5.
+			(highWord := highWord >> 8) = 0 ifFalse: [
+				sz := sz + 1.
+				(highWord := highWord >> 8) = 0 ifFalse: [
+					sz := sz + 1.
+					(highWord := highWord >> 8) = 0 ifFalse: [ sz := sz + 1 ] ] ] ].
 
+	self druidExitPoint.
+	self druidIgnore: [
+		newLargeInteger := objectMemory
+			                   eeInstantiateSmallClassIndex:
+			                   ClassLargePositiveIntegerCompactIndex
+			                   format: (objectMemory byteFormatForNumBytes: sz)
+			                   numSlots: 8 / objectMemory bytesPerOop.
+		objectMemory
+			storeLong64: 0
+			ofObject: newLargeInteger
+			withValue: (objectMemory byteSwapped64IfBigEndian: integerValue) ].
+	^ newLargeInteger
 ]
 
 { #category : #'callback support' }
@@ -14370,15 +14379,20 @@ StackInterpreter >> stObject: array at: index [
 StackInterpreter >> stObject: array at: index format: format fixedFields: fixedFields size: stSize [
 
 	<inline: true>
-
-	(self oop: index 
-			isGreaterThanOrEqualTo: (objectMemory firstValidIndexOfIndexableObject: array withFormat: format)
-	 		andLessThanOrEqualTo: stSize) ifTrue: [
-				^self subscript: array with: (index + fixedFields) format: format ].
+	(self
+		 oop: index
+		 isGreaterThanOrEqualTo: (objectMemory
+				  firstValidIndexOfIndexableObject: array
+				  withFormat: format)
+		 andLessThanOrEqualTo: stSize) ifTrue: [
+		^ self subscript: array with: index + fixedFields format: format ].
 
 	self druidExitPoint.
-	self primitiveFailFor: (format <= 1 ifTrue: [PrimErrBadReceiver] ifFalse: [PrimErrBadIndex]).
-	^0
+	self druidIgnore: [
+		self primitiveFailFor: (format <= 1
+				 ifTrue: [ PrimErrBadReceiver ]
+				 ifFalse: [ PrimErrBadIndex ]) ].
+	^ 0
 ]
 
 { #category : #'indexing primitive support' }

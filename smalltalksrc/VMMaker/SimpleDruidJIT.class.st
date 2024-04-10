@@ -26,401 +26,223 @@ SimpleDruidJIT class >> bytecodeTable [
 
 	<generated>
 	^ {
-		  { 1. 0. 0. #gen_PushReceiverVariableBytecode0.
-		  #isInstVarRef }.
-		  { 1. 1. 1. #gen_PushReceiverVariableBytecode1.
-		  #isInstVarRef }.
-		  { 1. 2. 2. #gen_PushReceiverVariableBytecode2.
-		  #isInstVarRef }.
-		  { 1. 3. 3. #gen_PushReceiverVariableBytecode3.
-		  #isInstVarRef }.
-		  { 1. 4. 4. #gen_PushReceiverVariableBytecode4.
-		  #isInstVarRef }.
-		  { 1. 5. 5. #gen_PushReceiverVariableBytecode5.
-		  #isInstVarRef }.
-		  { 1. 6. 6. #gen_PushReceiverVariableBytecode6.
-		  #isInstVarRef }.
-		  { 1. 7. 7. #gen_PushReceiverVariableBytecode7.
-		  #isInstVarRef }.
-		  { 1. 8. 8. #gen_PushReceiverVariableBytecode8.
-		  #isInstVarRef }.
-		  { 1. 9. 9. #gen_PushReceiverVariableBytecode9.
-		  #isInstVarRef }.
-		  { 1. 10. 10. #gen_PushReceiverVariableBytecode10.
-		  #isInstVarRef }.
-		  { 1. 11. 11. #gen_PushReceiverVariableBytecode11.
-		  #isInstVarRef }.
-		  { 1. 12. 12. #gen_PushReceiverVariableBytecode12.
-		  #isInstVarRef }.
-		  { 1. 13. 13. #gen_PushReceiverVariableBytecode13.
-		  #isInstVarRef }.
-		  { 1. 14. 14. #gen_PushReceiverVariableBytecode14.
-		  #isInstVarRef }.
-		  { 1. 15. 15. #gen_PushReceiverVariableBytecode15.
-		  #isInstVarRef }.
-		  { 1. 16. 16. #gen_PushLiteralVariable16CasesBytecode0.
-		  #needsFrameNever:. 1 }.
-		  { 1. 17. 17. #gen_PushLiteralVariable16CasesBytecode1.
-		  #needsFrameNever:. 1 }.
-		  { 1. 18. 18. #gen_PushLiteralVariable16CasesBytecode2.
-		  #needsFrameNever:. 1 }.
-		  { 1. 19. 19. #gen_PushLiteralVariable16CasesBytecode3.
-		  #needsFrameNever:. 1 }.
-		  { 1. 20. 20. #gen_PushLiteralVariable16CasesBytecode4.
-		  #needsFrameNever:. 1 }.
-		  { 1. 21. 21. #gen_PushLiteralVariable16CasesBytecode5.
-		  #needsFrameNever:. 1 }.
-		  { 1. 22. 22. #gen_PushLiteralVariable16CasesBytecode6.
-		  #needsFrameNever:. 1 }.
-		  { 1. 23. 23. #gen_PushLiteralVariable16CasesBytecode7.
-		  #needsFrameNever:. 1 }.
-		  { 1. 24. 24. #gen_PushLiteralVariable16CasesBytecode8.
-		  #needsFrameNever:. 1 }.
-		  { 1. 25. 25. #gen_PushLiteralVariable16CasesBytecode9.
-		  #needsFrameNever:. 1 }.
-		  { 1. 26. 26. #gen_PushLiteralVariable16CasesBytecode10.
-		  #needsFrameNever:. 1 }.
-		  { 1. 27. 27. #gen_PushLiteralVariable16CasesBytecode11.
-		  #needsFrameNever:. 1 }.
-		  { 1. 28. 28. #gen_PushLiteralVariable16CasesBytecode12.
-		  #needsFrameNever:. 1 }.
-		  { 1. 29. 29. #gen_PushLiteralVariable16CasesBytecode13.
-		  #needsFrameNever:. 1 }.
-		  { 1. 30. 30. #gen_PushLiteralVariable16CasesBytecode14.
-		  #needsFrameNever:. 1 }.
-		  { 1. 31. 31. #gen_PushLiteralVariable16CasesBytecode15.
-		  #needsFrameNever:. 1 }.
-		  { 1. 32. 32. #gen_PushLiteralConstantBytecode0.
-		  #needsFrameNever:. 1 }.
-		  { 1. 33. 33. #gen_PushLiteralConstantBytecode1.
-		  #needsFrameNever:. 1 }.
-		  { 1. 34. 34. #gen_PushLiteralConstantBytecode2.
-		  #needsFrameNever:. 1 }.
-		  { 1. 35. 35. #gen_PushLiteralConstantBytecode3.
-		  #needsFrameNever:. 1 }.
-		  { 1. 36. 36. #gen_PushLiteralConstantBytecode4.
-		  #needsFrameNever:. 1 }.
-		  { 1. 37. 37. #gen_PushLiteralConstantBytecode5.
-		  #needsFrameNever:. 1 }.
-		  { 1. 38. 38. #gen_PushLiteralConstantBytecode6.
-		  #needsFrameNever:. 1 }.
-		  { 1. 39. 39. #gen_PushLiteralConstantBytecode7.
-		  #needsFrameNever:. 1 }.
-		  { 1. 40. 40. #gen_PushLiteralConstantBytecode8.
-		  #needsFrameNever:. 1 }.
-		  { 1. 41. 41. #gen_PushLiteralConstantBytecode9.
-		  #needsFrameNever:. 1 }.
-		  { 1. 42. 42. #gen_PushLiteralConstantBytecode10.
-		  #needsFrameNever:. 1 }.
-		  { 1. 43. 43. #gen_PushLiteralConstantBytecode11.
-		  #needsFrameNever:. 1 }.
-		  { 1. 44. 44. #gen_PushLiteralConstantBytecode12.
-		  #needsFrameNever:. 1 }.
-		  { 1. 45. 45. #gen_PushLiteralConstantBytecode13.
-		  #needsFrameNever:. 1 }.
-		  { 1. 46. 46. #gen_PushLiteralConstantBytecode14.
-		  #needsFrameNever:. 1 }.
-		  { 1. 47. 47. #gen_PushLiteralConstantBytecode15.
-		  #needsFrameNever:. 1 }.
-		  { 1. 48. 48. #gen_PushLiteralConstantBytecode16.
-		  #needsFrameNever:. 1 }.
-		  { 1. 49. 49. #gen_PushLiteralConstantBytecode17.
-		  #needsFrameNever:. 1 }.
-		  { 1. 50. 50. #gen_PushLiteralConstantBytecode18.
-		  #needsFrameNever:. 1 }.
-		  { 1. 51. 51. #gen_PushLiteralConstantBytecode19.
-		  #needsFrameNever:. 1 }.
-		  { 1. 52. 52. #gen_PushLiteralConstantBytecode20.
-		  #needsFrameNever:. 1 }.
-		  { 1. 53. 53. #gen_PushLiteralConstantBytecode21.
-		  #needsFrameNever:. 1 }.
-		  { 1. 54. 54. #gen_PushLiteralConstantBytecode22.
-		  #needsFrameNever:. 1 }.
-		  { 1. 55. 55. #gen_PushLiteralConstantBytecode23.
-		  #needsFrameNever:. 1 }.
-		  { 1. 56. 56. #gen_PushLiteralConstantBytecode24.
-		  #needsFrameNever:. 1 }.
-		  { 1. 57. 57. #gen_PushLiteralConstantBytecode25.
-		  #needsFrameNever:. 1 }.
-		  { 1. 58. 58. #gen_PushLiteralConstantBytecode26.
-		  #needsFrameNever:. 1 }.
-		  { 1. 59. 59. #gen_PushLiteralConstantBytecode27.
-		  #needsFrameNever:. 1 }.
-		  { 1. 60. 60. #gen_PushLiteralConstantBytecode28.
-		  #needsFrameNever:. 1 }.
-		  { 1. 61. 61. #gen_PushLiteralConstantBytecode29.
-		  #needsFrameNever:. 1 }.
-		  { 1. 62. 62. #gen_PushLiteralConstantBytecode30.
-		  #needsFrameNever:. 1 }.
-		  { 1. 63. 63. #gen_PushLiteralConstantBytecode31.
-		  #needsFrameNever:. 1 }.
-		  { 1. 64. 64. #gen_PushTemporaryVariableBytecode0 }.
-		  { 1. 65. 65. #gen_PushTemporaryVariableBytecode1 }.
-		  { 1. 66. 66. #gen_PushTemporaryVariableBytecode2 }.
-		  { 1. 67. 67. #gen_PushTemporaryVariableBytecode3 }.
-		  { 1. 68. 68. #gen_PushTemporaryVariableBytecode4 }.
-		  { 1. 69. 69. #gen_PushTemporaryVariableBytecode5 }.
-		  { 1. 70. 70. #gen_PushTemporaryVariableBytecode6 }.
-		  { 1. 71. 71. #gen_PushTemporaryVariableBytecode7 }.
-		  { 1. 72. 72. #gen_PushTemporaryVariableBytecode8 }.
-		  { 1. 73. 73. #gen_PushTemporaryVariableBytecode9 }.
-		  { 1. 74. 74. #gen_PushTemporaryVariableBytecode10 }.
-		  { 1. 75. 75. #gen_PushTemporaryVariableBytecode11 }.
-		  { 1. 76. 76. #gen_PushReceiverBytecode }.
-		  { 1. 77. 77. #gen_PushConstantTrueBytecode.
-		  #needsFrameNever:. 1 }.
-		  { 1. 78. 78. #gen_PushConstantFalseBytecode.
-		  #needsFrameNever:. 1 }.
-		  { 1. 79. 79. #gen_PushConstantNilBytecode.
-		  #needsFrameNever:. 1 }.
-		  { 1. 80. 80. #gen_PushConstantZeroBytecode.
-		  #needsFrameNever:. 1 }.
-		  { 1. 81. 81. #gen_PushConstantOneBytecode.
-		  #needsFrameNever:. 1 }.
+		  { 1. 0. 0. #unknownBytecode }.
+		  { 1. 1. 1. #unknownBytecode }.
+		  { 1. 2. 2. #unknownBytecode }.
+		  { 1. 3. 3. #unknownBytecode }.
+		  { 1. 4. 4. #unknownBytecode }.
+		  { 1. 5. 5. #unknownBytecode }.
+		  { 1. 6. 6. #unknownBytecode }.
+		  { 1. 7. 7. #unknownBytecode }.
+		  { 1. 8. 8. #unknownBytecode }.
+		  { 1. 9. 9. #unknownBytecode }.
+		  { 1. 10. 10. #unknownBytecode }.
+		  { 1. 11. 11. #unknownBytecode }.
+		  { 1. 12. 12. #unknownBytecode }.
+		  { 1. 13. 13. #unknownBytecode }.
+		  { 1. 14. 14. #unknownBytecode }.
+		  { 1. 15. 15. #unknownBytecode }.
+		  { 1. 16. 16. #unknownBytecode }.
+		  { 1. 17. 17. #unknownBytecode }.
+		  { 1. 18. 18. #unknownBytecode }.
+		  { 1. 19. 19. #unknownBytecode }.
+		  { 1. 20. 20. #unknownBytecode }.
+		  { 1. 21. 21. #unknownBytecode }.
+		  { 1. 22. 22. #unknownBytecode }.
+		  { 1. 23. 23. #unknownBytecode }.
+		  { 1. 24. 24. #unknownBytecode }.
+		  { 1. 25. 25. #unknownBytecode }.
+		  { 1. 26. 26. #unknownBytecode }.
+		  { 1. 27. 27. #unknownBytecode }.
+		  { 1. 28. 28. #unknownBytecode }.
+		  { 1. 29. 29. #unknownBytecode }.
+		  { 1. 30. 30. #unknownBytecode }.
+		  { 1. 31. 31. #unknownBytecode }.
+		  { 1. 32. 32. #unknownBytecode }.
+		  { 1. 33. 33. #unknownBytecode }.
+		  { 1. 34. 34. #unknownBytecode }.
+		  { 1. 35. 35. #unknownBytecode }.
+		  { 1. 36. 36. #unknownBytecode }.
+		  { 1. 37. 37. #unknownBytecode }.
+		  { 1. 38. 38. #unknownBytecode }.
+		  { 1. 39. 39. #unknownBytecode }.
+		  { 1. 40. 40. #unknownBytecode }.
+		  { 1. 41. 41. #unknownBytecode }.
+		  { 1. 42. 42. #unknownBytecode }.
+		  { 1. 43. 43. #unknownBytecode }.
+		  { 1. 44. 44. #unknownBytecode }.
+		  { 1. 45. 45. #unknownBytecode }.
+		  { 1. 46. 46. #unknownBytecode }.
+		  { 1. 47. 47. #unknownBytecode }.
+		  { 1. 48. 48. #unknownBytecode }.
+		  { 1. 49. 49. #unknownBytecode }.
+		  { 1. 50. 50. #unknownBytecode }.
+		  { 1. 51. 51. #unknownBytecode }.
+		  { 1. 52. 52. #unknownBytecode }.
+		  { 1. 53. 53. #unknownBytecode }.
+		  { 1. 54. 54. #unknownBytecode }.
+		  { 1. 55. 55. #unknownBytecode }.
+		  { 1. 56. 56. #unknownBytecode }.
+		  { 1. 57. 57. #unknownBytecode }.
+		  { 1. 58. 58. #unknownBytecode }.
+		  { 1. 59. 59. #unknownBytecode }.
+		  { 1. 60. 60. #unknownBytecode }.
+		  { 1. 61. 61. #unknownBytecode }.
+		  { 1. 62. 62. #unknownBytecode }.
+		  { 1. 63. 63. #unknownBytecode }.
+		  { 1. 64. 64. #unknownBytecode }.
+		  { 1. 65. 65. #unknownBytecode }.
+		  { 1. 66. 66. #unknownBytecode }.
+		  { 1. 67. 67. #unknownBytecode }.
+		  { 1. 68. 68. #unknownBytecode }.
+		  { 1. 69. 69. #unknownBytecode }.
+		  { 1. 70. 70. #unknownBytecode }.
+		  { 1. 71. 71. #unknownBytecode }.
+		  { 1. 72. 72. #unknownBytecode }.
+		  { 1. 73. 73. #unknownBytecode }.
+		  { 1. 74. 74. #unknownBytecode }.
+		  { 1. 75. 75. #unknownBytecode }.
+		  { 1. 76. 76. #unknownBytecode }.
+		  { 1. 77. 77. #unknownBytecode }.
+		  { 1. 78. 78. #unknownBytecode }.
+		  { 1. 79. 79. #unknownBytecode }.
+		  { 1. 80. 80. #unknownBytecode }.
+		  { 1. 81. 81. #unknownBytecode }.
 		  { 1. 82. 82. #unknownBytecode }.
-		  { 1. 83. 83. #gen_DuplicateTopBytecode. #needsFrameNever:.
-		  1 }.
+		  { 1. 83. 83. #unknownBytecode }.
 		  { 1. 84. 84. #unknownBytecode }.
 		  { 1. 85. 85. #unknownBytecode }.
 		  { 1. 86. 86. #unknownBytecode }.
 		  { 1. 87. 87. #unknownBytecode }.
-		  { 1. 88. 88. #gen_ReturnReceiver. #return. #isMappedInBlock.
-		  #needsFrameIfInBlock:. 0 }.
-		  { 1. 89. 89. #gen_ReturnTrue. #return. #isMappedInBlock.
-		  #needsFrameIfInBlock:. 0 }.
-		  { 1. 90. 90. #gen_ReturnFalse. #return. #isMappedInBlock.
-		  #needsFrameIfInBlock:. 0 }.
-		  { 1. 91. 91. #gen_ReturnNil. #return. #isMappedInBlock.
-		  #needsFrameIfInBlock:. 0 }.
-		  { 1. 92. 92. #gen_ReturnTopFromMethod. #return. #isMappedInBlock.
-		  #needsFrameIfInBlock:.  -1 }.
-		  { 1. 93. 93. #gen_ReturnNilFromBlock. #return. #needsFrameNever:.
-		   -1 }.
-		  { 1. 94. 94. #gen_ReturnTopFromBlock. #return. #needsFrameNever:.
-		   -1 }.
-		  { 1. 95. 95. #gen_ExtNopBytecode. #needsFrameNever:.
-		  0 }.
-		  { 1. 96. 96. #gen_BytecodePrimAdd. #isMapped }.
-		  { 1. 97. 97. #gen_BytecodePrimSubtract. #isMapped }.
-		  { 1. 98. 98. #gen_BytecodePrimLessThanSistaV1.
-		  #isMapped }.
-		  { 1. 99. 99. #gen_BytecodePrimGreaterThanSistaV1.
-		  #isMapped }.
-		  { 1. 100. 100. #gen_BytecodePrimLessOrEqualSistaV1.
-		  #isMapped }.
-		  { 1. 101. 101. #gen_BytecodePrimGreaterOrEqualSistaV1.
-		  #isMapped }.
-		  { 1. 102. 102. #gen_BytecodePrimEqualSistaV1.
-		  #isMapped }.
-		  { 1. 103. 103. #gen_BytecodePrimNotEqualSistaV1.
-		  #isMapped }.
-		  { 1. 104. 104. #gen_BytecodePrimMultiply. #isMapped }.
-		  { 1. 105. 105. #gen_BytecodePrimDivide. #isMapped }.
-		  { 1. 106. 106. #gen_BytecodePrimMod. #isMapped }.
-		  { 1. 107. 107. #gen_BytecodePrimMakePoint.
-		  #isMapped }.
-		  { 1. 108. 108. #gen_BytecodePrimBitShift. #isMapped }.
-		  { 1. 109. 109. #gen_BytecodePrimDiv. #isMapped }.
-		  { 1. 110. 110. #gen_BytecodePrimBitAnd. #isMapped }.
-		  { 1. 111. 111. #gen_BytecodePrimBitOr. #isMapped }.
-		  { 1. 112. 112. #gen_BytecodePrimAt. #isMapped }.
-		  { 1. 113. 113. #gen_BytecodePrimAtPut. #isMapped }.
-		  { 1. 114. 114. #gen_BytecodePrimSize. #isMapped }.
-		  { 1. 115. 115. #gen_BytecodePrimNext. #isMapped }.
-		  { 1. 116. 116. #gen_BytecodePrimNextPut. #isMapped }.
-		  { 1. 117. 117. #gen_BytecodePrimAtEnd. #isMapped }.
-		  { 1. 118. 118. #gen_BytecodePrimIdenticalSistaV1.
-		  #isMapped }.
+		  { 1. 88. 88. #unknownBytecode }.
+		  { 1. 89. 89. #unknownBytecode }.
+		  { 1. 90. 90. #unknownBytecode }.
+		  { 1. 91. 91. #unknownBytecode }.
+		  { 1. 92. 92. #unknownBytecode }.
+		  { 1. 93. 93. #unknownBytecode }.
+		  { 1. 94. 94. #unknownBytecode }.
+		  { 1. 95. 95. #unknownBytecode }.
+		  { 1. 96. 96. #unknownBytecode }.
+		  { 1. 97. 97. #unknownBytecode }.
+		  { 1. 98. 98. #unknownBytecode }.
+		  { 1. 99. 99. #unknownBytecode }.
+		  { 1. 100. 100. #unknownBytecode }.
+		  { 1. 101. 101. #unknownBytecode }.
+		  { 1. 102. 102. #unknownBytecode }.
+		  { 1. 103. 103. #unknownBytecode }.
+		  { 1. 104. 104. #unknownBytecode }.
+		  { 1. 105. 105. #unknownBytecode }.
+		  { 1. 106. 106. #unknownBytecode }.
+		  { 1. 107. 107. #unknownBytecode }.
+		  { 1. 108. 108. #unknownBytecode }.
+		  { 1. 109. 109. #unknownBytecode }.
+		  { 1. 110. 110. #unknownBytecode }.
+		  { 1. 111. 111. #unknownBytecode }.
+		  { 1. 112. 112. #unknownBytecode }.
+		  { 1. 113. 113. #unknownBytecode }.
+		  { 1. 114. 114. #unknownBytecode }.
+		  { 1. 115. 115. #unknownBytecode }.
+		  { 1. 116. 116. #unknownBytecode }.
+		  { 1. 117. 117. #unknownBytecode }.
+		  { 1. 118. 118. #unknownBytecode }.
 		  { 1. 119. 119. #unknownBytecode }.
-		  { 1. 120. 120. #gen_BytecodePrimNotIdenticalSistaV1.
-		  #isMapped }.
-		  { 1. 121. 121. #gen_BytecodePrimValue. #isMapped }.
-		  { 1. 122. 122. #gen_BytecodePrimValueWithArg.
-		  #isMapped }.
-		  { 1. 123. 123. #gen_BytecodePrimDo. #isMapped }.
-		  { 1. 124. 124. #gen_BytecodePrimNew. #isMapped }.
-		  { 1. 125. 125. #gen_BytecodePrimNewWithArg.
-		  #isMapped }.
-		  { 1. 126. 126. #gen_BytecodePrimPointX. #isMapped }.
-		  { 1. 127. 127. #gen_BytecodePrimPointY. #isMapped }.
-		  { 1. 128. 128. #gen_SendLiteralSelector0ArgsBytecode0.
-		  #isMapped }.
-		  { 1. 129. 129. #gen_SendLiteralSelector0ArgsBytecode1.
-		  #isMapped }.
-		  { 1. 130. 130. #gen_SendLiteralSelector0ArgsBytecode2.
-		  #isMapped }.
-		  { 1. 131. 131. #gen_SendLiteralSelector0ArgsBytecode3.
-		  #isMapped }.
-		  { 1. 132. 132. #gen_SendLiteralSelector0ArgsBytecode4.
-		  #isMapped }.
-		  { 1. 133. 133. #gen_SendLiteralSelector0ArgsBytecode5.
-		  #isMapped }.
-		  { 1. 134. 134. #gen_SendLiteralSelector0ArgsBytecode6.
-		  #isMapped }.
-		  { 1. 135. 135. #gen_SendLiteralSelector0ArgsBytecode7.
-		  #isMapped }.
-		  { 1. 136. 136. #gen_SendLiteralSelector0ArgsBytecode8.
-		  #isMapped }.
-		  { 1. 137. 137. #gen_SendLiteralSelector0ArgsBytecode9.
-		  #isMapped }.
-		  { 1. 138. 138. #gen_SendLiteralSelector0ArgsBytecode10.
-		  #isMapped }.
-		  { 1. 139. 139. #gen_SendLiteralSelector0ArgsBytecode11.
-		  #isMapped }.
-		  { 1. 140. 140. #gen_SendLiteralSelector0ArgsBytecode12.
-		  #isMapped }.
-		  { 1. 141. 141. #gen_SendLiteralSelector0ArgsBytecode13.
-		  #isMapped }.
-		  { 1. 142. 142. #gen_SendLiteralSelector0ArgsBytecode14.
-		  #isMapped }.
-		  { 1. 143. 143. #gen_SendLiteralSelector0ArgsBytecode15.
-		  #isMapped }.
-		  { 1. 144. 144. #gen_SendLiteralSelector1ArgBytecode0.
-		  #isMapped }.
-		  { 1. 145. 145. #gen_SendLiteralSelector1ArgBytecode1.
-		  #isMapped }.
-		  { 1. 146. 146. #gen_SendLiteralSelector1ArgBytecode2.
-		  #isMapped }.
-		  { 1. 147. 147. #gen_SendLiteralSelector1ArgBytecode3.
-		  #isMapped }.
-		  { 1. 148. 148. #gen_SendLiteralSelector1ArgBytecode4.
-		  #isMapped }.
-		  { 1. 149. 149. #gen_SendLiteralSelector1ArgBytecode5.
-		  #isMapped }.
-		  { 1. 150. 150. #gen_SendLiteralSelector1ArgBytecode6.
-		  #isMapped }.
-		  { 1. 151. 151. #gen_SendLiteralSelector1ArgBytecode7.
-		  #isMapped }.
-		  { 1. 152. 152. #gen_SendLiteralSelector1ArgBytecode8.
-		  #isMapped }.
-		  { 1. 153. 153. #gen_SendLiteralSelector1ArgBytecode9.
-		  #isMapped }.
-		  { 1. 154. 154. #gen_SendLiteralSelector1ArgBytecode10.
-		  #isMapped }.
-		  { 1. 155. 155. #gen_SendLiteralSelector1ArgBytecode11.
-		  #isMapped }.
-		  { 1. 156. 156. #gen_SendLiteralSelector1ArgBytecode12.
-		  #isMapped }.
-		  { 1. 157. 157. #gen_SendLiteralSelector1ArgBytecode13.
-		  #isMapped }.
-		  { 1. 158. 158. #gen_SendLiteralSelector1ArgBytecode14.
-		  #isMapped }.
-		  { 1. 159. 159. #gen_SendLiteralSelector1ArgBytecode15.
-		  #isMapped }.
-		  { 1. 160. 160. #gen_SendLiteralSelector2ArgsBytecode0.
-		  #isMapped }.
-		  { 1. 161. 161. #gen_SendLiteralSelector2ArgsBytecode1.
-		  #isMapped }.
-		  { 1. 162. 162. #gen_SendLiteralSelector2ArgsBytecode2.
-		  #isMapped }.
-		  { 1. 163. 163. #gen_SendLiteralSelector2ArgsBytecode3.
-		  #isMapped }.
-		  { 1. 164. 164. #gen_SendLiteralSelector2ArgsBytecode4.
-		  #isMapped }.
-		  { 1. 165. 165. #gen_SendLiteralSelector2ArgsBytecode5.
-		  #isMapped }.
-		  { 1. 166. 166. #gen_SendLiteralSelector2ArgsBytecode6.
-		  #isMapped }.
-		  { 1. 167. 167. #gen_SendLiteralSelector2ArgsBytecode7.
-		  #isMapped }.
-		  { 1. 168. 168. #gen_SendLiteralSelector2ArgsBytecode8.
-		  #isMapped }.
-		  { 1. 169. 169. #gen_SendLiteralSelector2ArgsBytecode9.
-		  #isMapped }.
-		  { 1. 170. 170. #gen_SendLiteralSelector2ArgsBytecode10.
-		  #isMapped }.
-		  { 1. 171. 171. #gen_SendLiteralSelector2ArgsBytecode11.
-		  #isMapped }.
-		  { 1. 172. 172. #gen_SendLiteralSelector2ArgsBytecode12.
-		  #isMapped }.
-		  { 1. 173. 173. #gen_SendLiteralSelector2ArgsBytecode13.
-		  #isMapped }.
-		  { 1. 174. 174. #gen_SendLiteralSelector2ArgsBytecode14.
-		  #isMapped }.
-		  { 1. 175. 175. #gen_SendLiteralSelector2ArgsBytecode15.
-		  #isMapped }.
-		  { 1. 176. 176. #gen_ShortUnconditionalJump0.
-		  #branch. #v3:ShortForward:Branch:Distance: }.
-		  { 1. 177. 177. #gen_ShortUnconditionalJump1.
-		  #branch. #v3:ShortForward:Branch:Distance: }.
-		  { 1. 178. 178. #gen_ShortUnconditionalJump2.
-		  #branch. #v3:ShortForward:Branch:Distance: }.
-		  { 1. 179. 179. #gen_ShortUnconditionalJump3.
-		  #branch. #v3:ShortForward:Branch:Distance: }.
-		  { 1. 180. 180. #gen_ShortUnconditionalJump4.
-		  #branch. #v3:ShortForward:Branch:Distance: }.
-		  { 1. 181. 181. #gen_ShortUnconditionalJump5.
-		  #branch. #v3:ShortForward:Branch:Distance: }.
-		  { 1. 182. 182. #gen_ShortUnconditionalJump6.
-		  #branch. #v3:ShortForward:Branch:Distance: }.
-		  { 1. 183. 183. #gen_ShortUnconditionalJump7.
-		  #branch. #v3:ShortForward:Branch:Distance: }.
-		  { 1. 184. 184. #gen_ShortConditionalJumpTrue0.
-		  #branch. #isBranchTrue. #isMapped. #v3:ShortForward:Branch:Distance: }.
-		  { 1. 185. 185. #gen_ShortConditionalJumpTrue1.
-		  #branch. #isBranchTrue. #isMapped. #v3:ShortForward:Branch:Distance: }.
-		  { 1. 186. 186. #gen_ShortConditionalJumpTrue2.
-		  #branch. #isBranchTrue. #isMapped. #v3:ShortForward:Branch:Distance: }.
-		  { 1. 187. 187. #gen_ShortConditionalJumpTrue3.
-		  #branch. #isBranchTrue. #isMapped. #v3:ShortForward:Branch:Distance: }.
-		  { 1. 188. 188. #gen_ShortConditionalJumpTrue4.
-		  #branch. #isBranchTrue. #isMapped. #v3:ShortForward:Branch:Distance: }.
-		  { 1. 189. 189. #gen_ShortConditionalJumpTrue5.
-		  #branch. #isBranchTrue. #isMapped. #v3:ShortForward:Branch:Distance: }.
-		  { 1. 190. 190. #gen_ShortConditionalJumpTrue6.
-		  #branch. #isBranchTrue. #isMapped. #v3:ShortForward:Branch:Distance: }.
-		  { 1. 191. 191. #gen_ShortConditionalJumpTrue7.
-		  #branch. #isBranchTrue. #isMapped. #v3:ShortForward:Branch:Distance: }.
-		  { 1. 192. 192. #gen_ShortConditionalJumpFalse0.
-		  #branch. #isBranchFalse. #isMapped. #v3:ShortForward:Branch:Distance: }.
-		  { 1. 193. 193. #gen_ShortConditionalJumpFalse1.
-		  #branch. #isBranchFalse. #isMapped. #v3:ShortForward:Branch:Distance: }.
-		  { 1. 194. 194. #gen_ShortConditionalJumpFalse2.
-		  #branch. #isBranchFalse. #isMapped. #v3:ShortForward:Branch:Distance: }.
-		  { 1. 195. 195. #gen_ShortConditionalJumpFalse3.
-		  #branch. #isBranchFalse. #isMapped. #v3:ShortForward:Branch:Distance: }.
-		  { 1. 196. 196. #gen_ShortConditionalJumpFalse4.
-		  #branch. #isBranchFalse. #isMapped. #v3:ShortForward:Branch:Distance: }.
-		  { 1. 197. 197. #gen_ShortConditionalJumpFalse5.
-		  #branch. #isBranchFalse. #isMapped. #v3:ShortForward:Branch:Distance: }.
-		  { 1. 198. 198. #gen_ShortConditionalJumpFalse6.
-		  #branch. #isBranchFalse. #isMapped. #v3:ShortForward:Branch:Distance: }.
-		  { 1. 199. 199. #gen_ShortConditionalJumpFalse7.
-		  #branch. #isBranchFalse. #isMapped. #v3:ShortForward:Branch:Distance: }.
-		  { 1. 200. 200. #gen_StoreAndPopReceiverVariableBytecode0.
-		  #isInstVarRef. #isMappedIfImmutability. #needsFrameIfImmutability:.
-		   -1 }.
-		  { 1. 201. 201. #gen_StoreAndPopReceiverVariableBytecode1.
-		  #isInstVarRef. #isMappedIfImmutability. #needsFrameIfImmutability:.
-		   -1 }.
-		  { 1. 202. 202. #gen_StoreAndPopReceiverVariableBytecode2.
-		  #isInstVarRef. #isMappedIfImmutability. #needsFrameIfImmutability:.
-		   -1 }.
-		  { 1. 203. 203. #gen_StoreAndPopReceiverVariableBytecode3.
-		  #isInstVarRef. #isMappedIfImmutability. #needsFrameIfImmutability:.
-		   -1 }.
-		  { 1. 204. 204. #gen_StoreAndPopReceiverVariableBytecode4.
-		  #isInstVarRef. #isMappedIfImmutability. #needsFrameIfImmutability:.
-		   -1 }.
-		  { 1. 205. 205. #gen_StoreAndPopReceiverVariableBytecode5.
-		  #isInstVarRef. #isMappedIfImmutability. #needsFrameIfImmutability:.
-		   -1 }.
-		  { 1. 206. 206. #gen_StoreAndPopReceiverVariableBytecode6.
-		  #isInstVarRef. #isMappedIfImmutability. #needsFrameIfImmutability:.
-		   -1 }.
-		  { 1. 207. 207. #gen_StoreAndPopReceiverVariableBytecode7.
-		  #isInstVarRef. #isMappedIfImmutability. #needsFrameIfImmutability:.
-		   -1 }.
-		  { 1. 208. 208. #gen_StoreAndPopTemporaryVariableBytecode0 }.
-		  { 1. 209. 209. #gen_StoreAndPopTemporaryVariableBytecode1 }.
-		  { 1. 210. 210. #gen_StoreAndPopTemporaryVariableBytecode2 }.
-		  { 1. 211. 211. #gen_StoreAndPopTemporaryVariableBytecode3 }.
-		  { 1. 212. 212. #gen_StoreAndPopTemporaryVariableBytecode4 }.
-		  { 1. 213. 213. #gen_StoreAndPopTemporaryVariableBytecode5 }.
-		  { 1. 214. 214. #gen_StoreAndPopTemporaryVariableBytecode6 }.
-		  { 1. 215. 215. #gen_StoreAndPopTemporaryVariableBytecode7 }.
-		  { 1. 216. 216. #gen_PopStackBytecode. #needsFrameNever:.
-		   -1 }.
+		  { 1. 120. 120. #unknownBytecode }.
+		  { 1. 121. 121. #unknownBytecode }.
+		  { 1. 122. 122. #unknownBytecode }.
+		  { 1. 123. 123. #unknownBytecode }.
+		  { 1. 124. 124. #unknownBytecode }.
+		  { 1. 125. 125. #unknownBytecode }.
+		  { 1. 126. 126. #unknownBytecode }.
+		  { 1. 127. 127. #unknownBytecode }.
+		  { 1. 128. 128. #unknownBytecode }.
+		  { 1. 129. 129. #unknownBytecode }.
+		  { 1. 130. 130. #unknownBytecode }.
+		  { 1. 131. 131. #unknownBytecode }.
+		  { 1. 132. 132. #unknownBytecode }.
+		  { 1. 133. 133. #unknownBytecode }.
+		  { 1. 134. 134. #unknownBytecode }.
+		  { 1. 135. 135. #unknownBytecode }.
+		  { 1. 136. 136. #unknownBytecode }.
+		  { 1. 137. 137. #unknownBytecode }.
+		  { 1. 138. 138. #unknownBytecode }.
+		  { 1. 139. 139. #unknownBytecode }.
+		  { 1. 140. 140. #unknownBytecode }.
+		  { 1. 141. 141. #unknownBytecode }.
+		  { 1. 142. 142. #unknownBytecode }.
+		  { 1. 143. 143. #unknownBytecode }.
+		  { 1. 144. 144. #unknownBytecode }.
+		  { 1. 145. 145. #unknownBytecode }.
+		  { 1. 146. 146. #unknownBytecode }.
+		  { 1. 147. 147. #unknownBytecode }.
+		  { 1. 148. 148. #unknownBytecode }.
+		  { 1. 149. 149. #unknownBytecode }.
+		  { 1. 150. 150. #unknownBytecode }.
+		  { 1. 151. 151. #unknownBytecode }.
+		  { 1. 152. 152. #unknownBytecode }.
+		  { 1. 153. 153. #unknownBytecode }.
+		  { 1. 154. 154. #unknownBytecode }.
+		  { 1. 155. 155. #unknownBytecode }.
+		  { 1. 156. 156. #unknownBytecode }.
+		  { 1. 157. 157. #unknownBytecode }.
+		  { 1. 158. 158. #unknownBytecode }.
+		  { 1. 159. 159. #unknownBytecode }.
+		  { 1. 160. 160. #unknownBytecode }.
+		  { 1. 161. 161. #unknownBytecode }.
+		  { 1. 162. 162. #unknownBytecode }.
+		  { 1. 163. 163. #unknownBytecode }.
+		  { 1. 164. 164. #unknownBytecode }.
+		  { 1. 165. 165. #unknownBytecode }.
+		  { 1. 166. 166. #unknownBytecode }.
+		  { 1. 167. 167. #unknownBytecode }.
+		  { 1. 168. 168. #unknownBytecode }.
+		  { 1. 169. 169. #unknownBytecode }.
+		  { 1. 170. 170. #unknownBytecode }.
+		  { 1. 171. 171. #unknownBytecode }.
+		  { 1. 172. 172. #unknownBytecode }.
+		  { 1. 173. 173. #unknownBytecode }.
+		  { 1. 174. 174. #unknownBytecode }.
+		  { 1. 175. 175. #unknownBytecode }.
+		  { 1. 176. 176. #unknownBytecode }.
+		  { 1. 177. 177. #unknownBytecode }.
+		  { 1. 178. 178. #unknownBytecode }.
+		  { 1. 179. 179. #unknownBytecode }.
+		  { 1. 180. 180. #unknownBytecode }.
+		  { 1. 181. 181. #unknownBytecode }.
+		  { 1. 182. 182. #unknownBytecode }.
+		  { 1. 183. 183. #unknownBytecode }.
+		  { 1. 184. 184. #unknownBytecode }.
+		  { 1. 185. 185. #unknownBytecode }.
+		  { 1. 186. 186. #unknownBytecode }.
+		  { 1. 187. 187. #unknownBytecode }.
+		  { 1. 188. 188. #unknownBytecode }.
+		  { 1. 189. 189. #unknownBytecode }.
+		  { 1. 190. 190. #unknownBytecode }.
+		  { 1. 191. 191. #unknownBytecode }.
+		  { 1. 192. 192. #unknownBytecode }.
+		  { 1. 193. 193. #unknownBytecode }.
+		  { 1. 194. 194. #unknownBytecode }.
+		  { 1. 195. 195. #unknownBytecode }.
+		  { 1. 196. 196. #unknownBytecode }.
+		  { 1. 197. 197. #unknownBytecode }.
+		  { 1. 198. 198. #unknownBytecode }.
+		  { 1. 199. 199. #unknownBytecode }.
+		  { 1. 200. 200. #unknownBytecode }.
+		  { 1. 201. 201. #unknownBytecode }.
+		  { 1. 202. 202. #unknownBytecode }.
+		  { 1. 203. 203. #unknownBytecode }.
+		  { 1. 204. 204. #unknownBytecode }.
+		  { 1. 205. 205. #unknownBytecode }.
+		  { 1. 206. 206. #unknownBytecode }.
+		  { 1. 207. 207. #unknownBytecode }.
+		  { 1. 208. 208. #unknownBytecode }.
+		  { 1. 209. 209. #unknownBytecode }.
+		  { 1. 210. 210. #unknownBytecode }.
+		  { 1. 211. 211. #unknownBytecode }.
+		  { 1. 212. 212. #unknownBytecode }.
+		  { 1. 213. 213. #unknownBytecode }.
+		  { 1. 214. 214. #unknownBytecode }.
+		  { 1. 215. 215. #unknownBytecode }.
+		  { 1. 216. 216. #unknownBytecode }.
 		  { 1. 217. 217. #unknownBytecode }.
 		  { 1. 218. 218. #unknownBytecode }.
 		  { 1. 219. 219. #unknownBytecode }.
@@ -428,53 +250,36 @@ SimpleDruidJIT class >> bytecodeTable [
 		  { 1. 221. 221. #unknownBytecode }.
 		  { 1. 222. 222. #unknownBytecode }.
 		  { 1. 223. 223. #unknownBytecode }.
-		  { 2. 224. 224. #gen_ExtABytecode. #extension }.
-		  { 2. 225. 225. #gen_ExtBBytecode. #extension }.
-		  { 2. 226. 226. #gen_ExtPushReceiverVariableBytecode.
-		  #isInstVarRef. #isMappedIfImmutability }.
-		  { 2. 227. 227. #gen_ExtPushLiteralVariableBytecode.
-		  #needsFrameNever:. 1 }.
-		  { 2. 228. 228. #gen_ExtPushLiteralBytecode.
-		  #needsFrameNever:. 1 }.
-		  { 2. 229. 229. #gen_LongPushTemporaryVariableBytecode }.
+		  { 2. 224. 224. #unknownBytecode }.
+		  { 2. 225. 225. #unknownBytecode }.
+		  { 2. 226. 226. #unknownBytecode }.
+		  { 2. 227. 227. #unknownBytecode }.
+		  { 2. 228. 228. #unknownBytecode }.
+		  { 2. 229. 229. #unknownBytecode }.
 		  { 2. 230. 230. #unknownBytecode }.
-		  { 2. 231. 231. #gen_PushNewArrayBytecode }.
-		  { 2. 232. 232. #gen_ExtPushIntegerBytecode.
-		  #needsFrameNever:. 1 }.
-		  { 2. 233. 233. #gen_ExtPushCharacterBytecode.
-		  #needsFrameNever:. 1 }.
-		  { 2. 234. 234. #gen_ExtSendBytecode. #isMapped }.
-		  { 2. 235. 235. #gen_ExtSendSuperBytecode. #isMapped }.
+		  { 2. 231. 231. #unknownBytecode }.
+		  { 2. 232. 232. #unknownBytecode }.
+		  { 2. 233. 233. #unknownBytecode }.
+		  { 2. 234. 234. #unknownBytecode }.
+		  { 2. 235. 235. #unknownBytecode }.
 		  { 2. 236. 236. #unknownBytecode }.
-		  { 2. 237. 237. #gen_ExtUnconditionalJump. #branch. #isMapped.
-		  #v4:Long:Branch:Distance: }.
-		  { 2. 238. 238. #gen_ExtJumpIfTrue. #branch. #isBranchTrue.
-		  #isMapped. #v4:Long:Branch:Distance: }.
-		  { 2. 239. 239. #gen_ExtJumpIfFalse. #branch. #isBranchFalse.
-		  #isMapped. #v4:Long:Branch:Distance: }.
-		  { 2. 240. 240. #gen_ExtStoreAndPopReceiverVariableBytecode.
-		  #isInstVarRef. #isMappedIfImmutability }.
-		  { 2. 241. 241. #gen_ExtStoreAndPopLiteralVariableBytecode.
-		  #isMappedIfImmutability }.
-		  { 2. 242. 242. #gen_LongStoreAndPopTemporaryVariableBytecode }.
-		  { 2. 243. 243. #gen_ExtStoreReceiverVariableBytecode.
-		  #isInstVarRef. #isMappedIfImmutability. #needsFrameIfImmutability:.
-		  0 }.
-		  { 2. 244. 244. #gen_ExtStoreLiteralVariableBytecode.
-		  #isMappedIfImmutability }.
-		  { 2. 245. 245. #gen_LongStoreTemporaryVariableBytecode }.
+		  { 2. 237. 237. #unknownBytecode }.
+		  { 2. 238. 238. #unknownBytecode }.
+		  { 2. 239. 239. #unknownBytecode }.
+		  { 2. 240. 240. #unknownBytecode }.
+		  { 2. 241. 241. #unknownBytecode }.
+		  { 2. 242. 242. #unknownBytecode }.
+		  { 2. 243. 243. #unknownBytecode }.
+		  { 2. 244. 244. #unknownBytecode }.
+		  { 2. 245. 245. #unknownBytecode }.
 		  { 2. 246. 246. #unknownBytecode }.
 		  { 2. 247. 247. #unknownBytecode }.
-		  { 3. 248. 248. #gen_CallPrimitiveBytecode }.
-		  { 3. 249. 249. #gen_ExtPushFullClosureBytecode }.
+		  { 3. 248. 248. #unknownBytecode }.
+		  { 3. 249. 249. #unknownBytecode }.
 		  { 3. 250. 250. #unknownBytecode }.
-		  { 3. 251. 251. #gen_PushRemoteTempLongBytecode }.
-		  { 3. 252. 252. #gen_StoreRemoteTempLongBytecode.
-		  #isMappedIfImmutability. #needsFrameIfImmutability:.
-		  0 }.
-		  { 3. 253. 253. #gen_StoreAndPopRemoteTempLongBytecode.
-		  #isMappedIfImmutability. #needsFrameIfImmutability:.
-		   -1 }.
+		  { 3. 251. 251. #unknownBytecode }.
+		  { 3. 252. 252. #unknownBytecode }.
+		  { 3. 253. 253. #unknownBytecode }.
 		  { 3. 254. 254. #unknownBytecode }.
 		  { 3. 255. 255. #unknownBytecode } }
 ]
@@ -524,7 +329,7 @@ SimpleDruidJIT class >> initializeBytecodeTableForSistaV1 [
 SimpleDruidJIT class >> initializePrimitiveTable [
 
 	<generated>
-	MaxCompiledPrimitiveIndex := 15.
+	MaxCompiledPrimitiveIndex := 216.
 	primitiveTable := CArrayAccessor on:
 		                  (Array new: MaxCompiledPrimitiveIndex + 1).
 	self table: primitiveTable from: self primitiveTableArray.
@@ -547,14 +352,7 @@ SimpleDruidJIT class >> primitiveTableArray [
 
 	<generated>
 	^ {
-		  { 1. #gen_PrimitiveAdd. 1 }.
-		  { 2. #gen_PrimitiveSubtract. 1 }.
-		  { 3. #gen_PrimitiveLessThan. 1 }.
-		  { 4. #gen_PrimitiveGreaterThan. 1 }.
-		  { 5. #gen_PrimitiveLessOrEqual. 1 }.
-		  { 6. #gen_PrimitiveGreaterOrEqual. 1 }.
-		  { 7. #gen_PrimitiveEqual. 1 }.
-		  { 9. #gen_PrimitiveMultiply. 1 }.
+		  { 14. #gen_PrimitiveBitAnd. 1 }.
 		  { 73. #genNonImplementedPrimitive.  -1. #maycallback }.
 		  { 117. #genNonImplementedPrimitive.  -1. #maycallback }.
 		  { 120. #genNonImplementedPrimitive.  -1. #maycallback }.
@@ -3833,6 +3631,39 @@ SimpleDruidJIT >> gen_PrimitiveAt [
 	jump6 jmpTarget: currentBlock.
 	jump9 jmpTarget: currentBlock.
 	^ CompletePrimitive
+]
+
+{ #category : #generated }
+SimpleDruidJIT >> gen_PrimitiveBitAnd [
+	"AutoGenerated by Druid"
+
+	| jump5 jump3 jump1 currentBlock jump4 jump2 |
+	self MoveR: ReceiverResultReg R: ClassReg.
+	self genLoadArg: 0 into: SendNumArgsReg.
+	self TstCq: 1 R: SendNumArgsReg.
+	jump1 := self JumpZero: 0.
+	self ArithmeticShiftRightCq: 3 R: SendNumArgsReg.
+	self CmpCq: 0 R: SendNumArgsReg.
+	jump2 := self JumpLess: 0.
+	self TstCq: 1 R: ClassReg.
+	jump3 := self JumpZero: 0.
+	self ArithmeticShiftRightCq: 3 R: ClassReg.
+	self CmpCq: 0 R: ClassReg.
+	jump4 := self JumpLess: 0.
+	self AndR: ClassReg R: SendNumArgsReg.
+	self CmpCq: 16rFFFFFFFFFFFFFFF R: SendNumArgsReg.
+	jump5 := self JumpAbove: 0.
+	self LogicalShiftLeftCq: 3 R: SendNumArgsReg.
+	self AddCq: 1 R: SendNumArgsReg.
+	self MoveR: SendNumArgsReg R: ReceiverResultReg.
+	self genPrimReturn.
+	currentBlock := self Label.
+	jump1 jmpTarget: currentBlock.
+	jump2 jmpTarget: currentBlock.
+	jump3 jmpTarget: currentBlock.
+	jump4 jmpTarget: currentBlock.
+	jump5 jmpTarget: currentBlock.
+	^ 0
 ]
 
 { #category : #generated }

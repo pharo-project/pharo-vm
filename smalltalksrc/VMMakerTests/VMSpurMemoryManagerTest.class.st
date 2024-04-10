@@ -428,6 +428,7 @@ VMSpurMemoryManagerTest >> newBitIndexableOfSize: aSize bytesPerSlot: bytesPerSl
 	desiredByteSize := aSize * bytesPerSlot roundUpTo: self wordSize.
 	numberOfWordSizeSlots := desiredByteSize / self wordSize.
 	padding := desiredByteSize / bytesPerSlot - aSize.
+
 	^ memory
 		  allocateNewSpaceSlots: numberOfWordSizeSlots
 		  format: format + padding
