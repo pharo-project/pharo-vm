@@ -14379,9 +14379,14 @@ StackInterpreter >> stObject: array at: index [
 StackInterpreter >> stObject: array at: index format: format fixedFields: fixedFields size: stSize [
 
 	<inline: true>
-	index >= 0 ifTrue: [
-		index <= stSize ifTrue: [
-			^ self subscript: array with: index + fixedFields format: format ] ].
+	(self
+		 oop: index
+		 isGreaterThanOrEqualTo: (objectMemory
+				  firstValidIndexOfIndexableObject: array
+				  withFormat: format)
+		 andLessThanOrEqualTo: stSize) ifTrue: [
+		^ self subscript: array with: index + fixedFields format: format ].
+
 	self druidExitPoint.
 	self druidIgnore: [
 		self primitiveFailFor: (format <= 1
