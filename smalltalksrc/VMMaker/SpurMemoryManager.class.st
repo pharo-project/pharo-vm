@@ -9364,6 +9364,21 @@ SpurMemoryManager >> newArrayWith: aCollection [
 	^ array
 ]
 
+{ #category : #'as yet unclassified' }
+SpurMemoryManager >> newByteArrayWith: aCollection [
+	<doNotGenerate>
+	| array |
+
+	array := self
+		         newObjectWithSlots: aCollection size
+		         format: self firstByteFormat
+		         classIndex: self arrayClassIndexPun.
+
+	aCollection withIndexDo: [ :item :index | 
+		self storeByte: index - 1 ofObject: array withValue: item ].
+	^ array
+]
+
 { #category : #'ffi - helpers' }
 SpurMemoryManager >> newExternalAddressWithValue: aPointer [
 	| ptr oop |

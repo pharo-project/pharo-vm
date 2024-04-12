@@ -4224,6 +4224,7 @@ InterpreterPrimitives >> primitiveStringAt [
 { #category : #'indexing primitives' }
 InterpreterPrimitives >> primitiveStringAtPut [
 
+	<numberOfArguments: 2>
 	self commonAtPut: true.
 ]
 

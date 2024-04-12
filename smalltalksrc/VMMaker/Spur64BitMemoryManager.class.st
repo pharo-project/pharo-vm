@@ -653,10 +653,8 @@ Spur64BitMemoryManager >> isSmallFloatValue: aFloat [
 	<var: #rawFloat type: #usqLong>
 	<var: #aFloat type: #double>
 	| exponent rawFloat |
-	self
-		cCode: [ rawFloat := self rawFloatBitsOf: aFloat ]
-		inSmalltalk: [ rawFloat := (aFloat at: 1) << 32 + (aFloat at: 2) ].
-		
+	rawFloat := self rawFloatBitsOf: aFloat.
+
 	exponent := rawFloat >> self smallFloatMantissaBits bitAnd: 16r7FF.
 	^ exponent > self smallFloatExponentOffset
 		  ifTrue: [ exponent <= (255 + self smallFloatExponentOffset) ]
@@ -887,13 +885,16 @@ Spur64BitMemoryManager >> positiveSmallFloatZero [
 { #category : #'interpreter access' }
 Spur64BitMemoryManager >> rawFloatBitsOf: aFloat [
 
-	| rawFloat |
 	<var: #rawFloat type: #usqLong>
 	<inline: true>
+	| rawFloat |
 	self
-		memcpy: (self addressOf: rawFloat)
-		_: (self addressOf: aFloat)
-		_: (self sizeof: rawFloat).
+		cCode: [
+			self
+				memcpy: (self addressOf: rawFloat)
+				_: (self addressOf: aFloat)
+				_: (self sizeof: rawFloat) ]
+		inSmalltalk: [ rawFloat := (aFloat at: 1) << 32 + (aFloat at: 2) ].
 	^ rawFloat
 ]
 
@@ -1181,22 +1182,27 @@ Spur64BitMemoryManager >> smallFloatObjectOf: aFloat [
 	 sub exponent offset:	[ 000 ][8expsubset][52 mantissa][1s] 
 	 shift:					[8expsubset][52 mantissa][1s][ 000 ] 
 	 or/add tags:			[8expsubset][52mantissa][1s][3tags]"
+
 	<inline: true>
 	<returnTypeC: #sqInt>
 	<var: #aFloat type: #double>
-	| rawFloat rot |
 	<var: #rawFloat type: #usqLong>
 	<var: #rot type: #usqLong>
+	| rawFloat rot |
 	self assert: (self isSmallFloatValue: aFloat).
-	self
-		cCode: [ rawFloat := self rawFloatBitsOf: aFloat ]
-		inSmalltalk: [rawFloat := (aFloat at: 1) << 32 + (aFloat at: 2)].
+	rawFloat := self rawFloatBitsOf: aFloat.
 	rot := self rotateLeft: rawFloat.
-	rot > 1 ifTrue: "a.k.a. ~= +/-0.0"
-		[rot := rot - (self smallFloatExponentOffset << (self smallFloatMantissaBits + 1)).
-		 self assert: rot > 0].
-	^self cCode: [rot << self numTagBits + self smallFloatTag]
-		inSmalltalk: [((rot << self numTagBits) bitAnd: 16rFFFFFFFFFFFFFFFF) + self smallFloatTag]
+	rot > 1 ifTrue: [ "a.k.a. ~= +/-0.0"
+		rot := rot
+		       -
+		       (self smallFloatExponentOffset
+		        << (self smallFloatMantissaBits + 1)).
+		self assert: rot > 0 ].
+	^ self
+		  cCode: [ rot << self numTagBits + self smallFloatTag ]
+		  inSmalltalk: [
+			  (rot << self numTagBits bitAnd: 16rFFFFFFFFFFFFFFFF)
+			  + self smallFloatTag ]
 ]
 
 { #category : #'interpreter access' }
