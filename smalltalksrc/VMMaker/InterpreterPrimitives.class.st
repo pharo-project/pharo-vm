@@ -1957,6 +1957,7 @@ InterpreterPrimitives >> primitiveFullClosureValueNoContextSwitch [
 	 but will not switch processes.  See checkForInterruptsMayContextSwitch:"
 	<api>
 	<option: #SistaV1BytecodeSet>
+	<numberOfArguments: #(0 1 2)>
 	| blockClosure numArgs closureMethod |
 	blockClosure := self stackValue: argumentCount.
 	numArgs := self argumentCountOfClosure: blockClosure.
