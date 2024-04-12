@@ -470,7 +470,7 @@ DruidJIT class >> bytecodeTable [
 		  { 3. 252. 252. #gen_StoreRemoteTempLongBytecode.
 		  #isMappedIfImmutability. #needsFrameIfImmutability:.
 		  0 }.
-		  { 3. 253. 253. #gen_storeAndPopRemoteTempLongBytecode.
+		  { 3. 253. 253. #gen_StoreAndPopRemoteTempLongBytecode.
 			#isMappedIfImmutability. -1 }.
 		  { 3. 254. 254. #unknownBytecode }.
 		  { 3. 255. 255. #unknownBytecode } }
