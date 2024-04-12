@@ -886,6 +886,7 @@ Spur64BitMemoryManager >> positiveSmallFloatZero [
 Spur64BitMemoryManager >> rawFloatBitsOf: aFloat [
 
 	<var: #rawFloat type: #usqLong>
+	<api>
 	<inline: true>
 	| rawFloat |
 	self
