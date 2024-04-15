@@ -877,7 +877,6 @@ CogObjectRepresentation >> genPrimitiveFullClosureValue [
 { #category : #'primitive generators' }
 CogObjectRepresentation >> genPrimitiveFullClosureValueNoContextSwitch [
 	"Defer to the cogit for this one, to match the split for genPrimitiveClosureValue."
-	<doNotGenerate>
 	<option: #SistaV1BytecodeSet>
 	^self genPrimitiveFullClosureValue
 ]
