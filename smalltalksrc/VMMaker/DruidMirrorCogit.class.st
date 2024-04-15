@@ -39,7 +39,7 @@ DruidMirrorCogit class >> initializeBytecodeTableForSistaV1 [
 DruidMirrorCogit class >> initializePrimitiveTable [
 
 	<generated>
-	MaxCompiledPrimitiveIndex := self primitiveTableArray size.
+	MaxCompiledPrimitiveIndex := self primitiveTableArray last first.
 	primitiveTable := CArrayAccessor on: (Array new: MaxCompiledPrimitiveIndex + 1).
 	self table: primitiveTable from: self primitiveTableArray
 ]
