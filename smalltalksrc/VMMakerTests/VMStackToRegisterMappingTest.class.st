@@ -248,3 +248,115 @@ VMStackToRegisterMappingTest >> testTopOfEmptyIsSimSelf [
 	self assert: cogit ssSize equals: 1.
 	self assert: cogit ssTop equals: cogit simSelf
 ]
+
+{ #category : #tests }
+VMStackToRegisterMappingTest >> testUnspillManySlots [
+
+	cogit ssPushRegister: TempReg.
+	cogit ssPushRegister: ReceiverResultReg.
+	cogit ssFlushStack.
+	cogit ssUnspillTopStackSlots: 2.
+
+	self deny: (cogit ssValue: 1) spilled
+]
+
+{ #category : #tests }
+VMStackToRegisterMappingTest >> testUnspillMiddleOfStackFails [
+
+	cogit ssPushRegister: TempReg.
+	cogit ssPushRegister: ReceiverResultReg.
+	cogit ssFlushStack.
+
+	[
+	cogit ssUnspillStackSlots: 1 startingAt: 1.
+	self fail ]
+		on: Error
+		do: [ :err | self assert: err messageText equals: 'Cannot unspill slots if slots above are spilled' ]
+]
+
+{ #category : #tests }
+VMStackToRegisterMappingTest >> testUnspillSpilled [
+
+	cogit ssPushRegister: TempReg.
+	cogit ssFlushStack.
+	cogit ssUnspillTopStackSlots: 1.
+
+	self deny: (cogit ssValue: 0) spilled
+]
+
+{ #category : #tests }
+VMStackToRegisterMappingTest >> testUnspillSpilledGeneratesPop [
+
+	sendAddress := self compile: [
+		"Push two, spill stack, unspill 1"
+		cogit ssPushConstant: 1.
+		cogit ssPushRegister: TempReg.
+		cogit ssFlushStack.
+		cogit ssUnspillTopStackSlots: 1.
+
+		"Pop without spilling, now both stacks have one element"
+		cogit ssPop: 1 popSpilled: false.
+
+		"This should return the constant 1"
+		cogit ssPopTopToReg: ReceiverResultReg.
+		cogit RetN: 0
+	].
+
+	self executePrimitiveWithReceiver: 17.
+	
+	self assert: machineSimulator receiverRegisterValue equals: 1
+]
+
+{ #category : #tests }
+VMStackToRegisterMappingTest >> testUnspillUnspilled [
+
+	cogit ssPushRegister: TempReg.
+	cogit ssUnspillTopStackSlots: 1.
+
+	self deny: (cogit ssValue: 0) spilled
+]
+
+{ #category : #tests }
+VMStackToRegisterMappingTest >> testUnspillUnspilledDoesNotGeneratePop [
+
+	sendAddress := self compile: [
+		"Push two, spill stack, unspill 1"
+		cogit ssPushConstant: 1.
+		cogit ssPushRegister: TempReg.
+		cogit ssUnspillTopStackSlots: 1.
+
+		"Pop without spilling, now both stacks have one element"
+		cogit ssPop: 1 popSpilled: false.
+
+		"This should return the constant 1"
+		cogit ssPopTopToReg: ReceiverResultReg.
+		cogit RetN: 0
+	].
+
+	self executePrimitiveWithReceiver: 17.
+	
+	self assert: machineSimulator receiverRegisterValue equals: 1
+]
+
+{ #category : #tests }
+VMStackToRegisterMappingTest >> testUnspillUnspilledGeneratesPop [
+
+	sendAddress := self compile: [
+		"Push two, spill stack, unspill 1"
+		cogit ssPushConstant: 1.
+		cogit ssPushRegister: TempReg.
+		cogit ssFlushStack.
+		cogit ssUnspillTopStackSlots: 1.
+
+		"Pop without spilling, now both stacks have one element"
+		cogit ssPop: 1 popSpilled: false.
+
+		"This should return the constant 1"
+		cogit ssPopTopToReg: ReceiverResultReg.
+		cogit RetN: 0
+	].
+
+	self executePrimitiveWithReceiver: 17.
+	
+	self assert: machineSimulator receiverRegisterValue equals: 1
+]

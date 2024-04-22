@@ -410,6 +410,70 @@ VMSimpleStackBasedCogitAbstractTest >> disassembleFrom: anIndex opcodes: numberO
 		pc: 0
 ]
 
+{ #category : #helpers }
+VMSimpleStackBasedCogitAbstractTest >> executeMethodWithReceiver: receiverOop withArguments: aCollection [
+	"Simulate a primitive execution having an object as receiver and a single argument
+	  - the receiver goes to the receiver register
+	  - the argument should be pushed to the stack
+	If we are in a system without a link register, we need to push the caller IP to the stack to simulate a call"
+
+	self
+		prepareStackForSendReceiver: (self twoComplementFor: receiverOop)
+		arguments: (aCollection collect: [ :arg | self twoComplementFor: arg ]).
+
+	self runUntilReturn
+]
+
+{ #category : #helpers }
+VMSimpleStackBasedCogitAbstractTest >> executePrimitiveWithReceiver: receiverOop [
+	
+	^ self executePrimitiveWithReceiver: receiverOop withArguments: { }
+]
+
+{ #category : #helpers }
+VMSimpleStackBasedCogitAbstractTest >> executePrimitiveWithReceiver: receiverOop withArgument: argumentOop [
+	
+	^ self executePrimitiveWithReceiver: receiverOop withArguments: { argumentOop }
+]
+
+{ #category : #helpers }
+VMSimpleStackBasedCogitAbstractTest >> executePrimitiveWithReceiver: receiverOop withArgument: firstArgumentOop and: secondArgumentOop [ 
+
+	^ self executePrimitiveWithReceiver: receiverOop withArguments:  { firstArgumentOop. secondArgumentOop }.
+]
+
+{ #category : #helpers }
+VMSimpleStackBasedCogitAbstractTest >> executePrimitiveWithReceiver: receiverOop withArguments: aCollection [
+	"Simulate a primitive execution having an object as receiver and a single argument
+	  - the receiver goes to the receiver register
+	  - the argument should be pushed to the stack
+	If we are in a system without a link register, we need to push the caller IP to the stack to simulate a call"
+
+	self
+		prepareStackForPrimitiveReceiver: (self twoComplementFor: receiverOop)
+		arguments: (aCollection collect: [ :arg | self twoComplementFor: arg ])
+		method: 0.
+
+"self openMachineDebugger . 1halt."
+
+	self runUntilReturn
+]
+
+{ #category : #helpers }
+VMSimpleStackBasedCogitAbstractTest >> executePrimitiveWithReceiver: receiverOop withArguments: aCollection method: aMethod [
+
+	"Simulate a primitive execution having an object as receiver and a single argument
+	  - the receiver goes to the receiver register
+	  - the argument should be pushed to the stack
+	If we are in a system without a link register, we need to push the caller IP to the stack to simulate a call"
+	self
+		prepareStackForPrimitiveReceiver: (self twoComplementFor: receiverOop)
+		arguments: (aCollection collect: [ :arg | self twoComplementFor: arg ])
+		method: aMethod.
+
+	self runUntilReturn
+]
+
 { #category : #'helpers - registers' }
 VMSimpleStackBasedCogitAbstractTest >> framePointerRegisterValue [
 
@@ -987,6 +1051,12 @@ VMSimpleStackBasedCogitAbstractTest >> top [
 VMSimpleStackBasedCogitAbstractTest >> topAddress [
 	
 	^ self top integerAt: 1 size: self wordSize signed: false
+]
+
+{ #category : #helpers }
+VMSimpleStackBasedCogitAbstractTest >> twoComplementFor: aNumber [
+
+	^ aNumber twoComplementOfBitSize: self wordSize * 8
 ]
 
 { #category : #'helpers - registers' }
