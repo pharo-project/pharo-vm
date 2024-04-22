@@ -424,14 +424,17 @@ VMSpurMemoryManagerTest >> newArrayWithSlots: slots classIndex: anIndex [
 { #category : #helpers }
 VMSpurMemoryManagerTest >> newBitIndexableOfSize: aSize bytesPerSlot: bytesPerSlot format: format [
 
-	| padding numberOfWordSizeSlots desiredByteSize |
+	| padding numberOfWordSizeSlots desiredByteSize theClass classIndex |
+	theClass := self newClassInOldSpaceWithSlots: 0 instSpec: format.
+	classIndex := memory ensureBehaviorHash: theClass.
+
 	desiredByteSize := aSize * bytesPerSlot roundUpTo: self wordSize.
 	numberOfWordSizeSlots := desiredByteSize / self wordSize.
 	padding := desiredByteSize / bytesPerSlot - aSize.
 	^ memory
 		  allocateNewSpaceSlots: numberOfWordSizeSlots
 		  format: format + padding
-		  classIndex: self nextOrdinaryClassIndex
+		  classIndex: classIndex
 ]
 
 { #category : #asd }
