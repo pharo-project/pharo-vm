@@ -1388,9 +1388,11 @@ VMPrimitiveTest >> testPrimitiveCompareBytesWithLastDifferentValue [
 { #category : #'tests - primitiveCompareBytes' }
 VMPrimitiveTest >> testPrimitiveCompareBytesWithNonByteArgument [
 
-	| array1 size |
+	| array1 size nilClass |
 	size := 2.
 	array1 := self new8BitIndexableOfSize: size.
+	nilClass := self newClassInOldSpaceWithSlots: 0 instSpec: memory zeroSlotsNonIndexablePointerFormat.
+	memory setClassIndexOf: memory nilObject to: (memory ensureBehaviorHash: nilClass).
 
 	1 to: size do: [ :i |
 	memory storeByte: i - 1 ofObject: array1 withValue: 0 ].
@@ -1407,9 +1409,12 @@ VMPrimitiveTest >> testPrimitiveCompareBytesWithNonByteArgument [
 { #category : #'tests - primitiveCompareBytes' }
 VMPrimitiveTest >> testPrimitiveCompareBytesWithNonByteReceiver [
 
-	| array1 size |
+	| array1 size nilClass |
 	size := 2.
 	array1 := self new8BitIndexableOfSize: size.
+	nilClass := self newClassInOldSpaceWithSlots: 0 instSpec: memory zeroSlotsNonIndexablePointerFormat.
+	memory setClassIndexOf: memory nilObject to: (memory ensureBehaviorHash: nilClass).
+
 
 	1 to: size do: [ :i |
 	memory storeByte: i - 1 ofObject: array1 withValue: 0 ].
@@ -1426,9 +1431,12 @@ VMPrimitiveTest >> testPrimitiveCompareBytesWithNonByteReceiver [
 { #category : #'tests - primitiveCompareBytes' }
 VMPrimitiveTest >> testPrimitiveCompareBytesWithNonByteReceiverShouldLeaveTheSameStack [
 
-	| array1 size |
+	| array1 size nilClass |
 	size := 2.
 	array1 := self new8BitIndexableOfSize: size.
+	nilClass := self newClassInOldSpaceWithSlots: 0 instSpec: memory zeroSlotsNonIndexablePointerFormat.
+	memory setClassIndexOf: memory nilObject to: (memory ensureBehaviorHash: nilClass).
+
 
 	1 to: size do: [ :i |
 	memory storeByte: i - 1 ofObject: array1 withValue: 0 ].
@@ -1454,6 +1462,41 @@ VMPrimitiveTest >> testPrimitiveCompareBytesWithSize [
 	1 to: size do: [ :i |
 		memory storeByte: i - 1 ofObject: array1 withValue: 0.
 		memory storeByte: i - 1 ofObject: array2 withValue: 0 ].
+
+	interpreter push: array1.
+	interpreter push: array2.
+
+	interpreter argumentCount: 1.
+	interpreter primitiveCompareBytes.
+
+	self assert: interpreter stackTop equals: memory trueObject
+]
+
+{ #category : #'tests - primitiveCompareBytes' }
+VMPrimitiveTest >> testPrimitiveCompareBytesWithWordArgument [
+
+	| array1 array2 size |
+	size := 1.
+	"Both will be 8 bytes long"
+	array1 := self new8BitIndexableOfSize: size * 8.
+	array2 := self new64BitIndexableOfSize: size.
+
+	interpreter push: array1.
+	interpreter push: array2.
+
+	interpreter argumentCount: 1.
+	interpreter primitiveCompareBytes.
+
+	"Should fail because they don't have the same type"
+	self assert: interpreter failed
+]
+
+{ #category : #'tests - primitiveCompareBytes' }
+VMPrimitiveTest >> testPrimitiveCompareWordsEmpty [
+
+	| array1 array2 |
+	array1 := self new64BitIndexableOfSize: 0.
+	array2 := self new64BitIndexableOfSize: 0.
 
 	interpreter push: array1.
 	interpreter push: array2.

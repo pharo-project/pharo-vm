@@ -10889,7 +10889,6 @@ StackInterpreter >> primitiveCompareBytes [
 
 	<export: true>
 	| arg1 arg2 len1 len2 result boolean |
-
 	argumentCount < 1 ifTrue: [ ^ self primitiveFail ].
 
 	arg1 := self stackValue: 1.
@@ -10898,13 +10897,18 @@ StackInterpreter >> primitiveCompareBytes [
 	"Quick identity test to avoid checking object contents when they are the same one\"
 	arg1 = arg2 ifTrue: [
 		^ self pop: 2 thenPush: objectMemory trueObject ].
-	
+
+	"This primitive only works for objects of the same type e.g., both byte indexable.
+	This prevents comparison of byte arrays with word arrays"
+	(objectMemory instSpecOfClass: (objectMemory fetchClassOf: arg1)) ~= (objectMemory instSpecOfClass: (objectMemory fetchClassOf: arg2))
+		ifTrue: [
+			self primitiveFail.
+			^ self ].
+
 	"This primitive only works for bytes and words objects.
 	The check below does not even let pass forwarders.
-	Below, we assume that the two compared objects are indexable and can be compared."
-	((objectMemory isWordsOrBytes: arg1) and: [
-		 objectMemory isWordsOrBytes: arg2 ]) ifFalse: [
-		^ self primitiveFail ].
+	Since we know by the check before that both arguments are of the same type, we only need to check one of them here"
+	(objectMemory isWordsOrBytes: arg1) ifFalse: [ ^ self primitiveFail ].
 
 	"Two arrays of different lenght can never be equal"
 	len1 := objectMemory byteSizeOf: arg1.
