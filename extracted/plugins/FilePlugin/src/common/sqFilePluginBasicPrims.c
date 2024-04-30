@@ -410,7 +410,7 @@ sqFileOpen(SQFile *f, char *sqFileName, sqInt sqFileNameSize, sqInt writeFlag) {
 }
 
 sqInt
-sqFileOpenNew(SQFile *f, char *sqFileName, sqInt sqFileNameSize, sqInt *exists) {
+sqFileOpenNew(SQFile *f, char *sqFileName, sqInt sqFileNameSize, int *exists) {
 	/* Opens the given file for writing and if possible reading
 	   if it does not already exist using the supplied sqFile
 	   structure to record its state.

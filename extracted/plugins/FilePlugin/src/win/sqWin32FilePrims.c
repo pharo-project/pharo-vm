@@ -212,7 +212,7 @@ sqInt sqFileOpen(SQFile *f, char* fileNameIndex, sqInt fileNameSize, sqInt write
   return 1;
 }
 
-sqInt sqFileOpenNew(SQFile *f, char* fileNameIndex, sqInt fileNameSize, sqInt* exists) {
+sqInt sqFileOpenNew(SQFile *f, char* fileNameIndex, sqInt fileNameSize, int* exists) {
   HANDLE h;
   WCHAR *win32Path = NULL;
 
