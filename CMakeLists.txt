@@ -334,7 +334,6 @@ add_compile_options(
     -Wno-return-type
     -Wno-unused-local-typedef
     -Wno-incompatible-pointer-types
-    -Wno-shift-negative-value
     -Wno-unknown-warning-option
 )
 
