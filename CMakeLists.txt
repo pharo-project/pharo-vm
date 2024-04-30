@@ -318,7 +318,6 @@ add_compile_options(
     -Wno-unused-but-set-variable
     -Wno-int-conversion
     -Wno-unused-value
-    -Wno-absolute-value
     -Wno-unused-function
     -Wno-non-literal-null-conversion
     -Wno-pointer-integer-compare
