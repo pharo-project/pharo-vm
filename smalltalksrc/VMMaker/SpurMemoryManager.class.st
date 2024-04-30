@@ -6355,12 +6355,12 @@ SpurMemoryManager >> inLineRunLeakCheckerFor: gcModes excludeUnmarkedObjs: exclu
 	<inline: true>
 	(gcModes anyMask: checkForLeaks) ifTrue: [ 
 		self clearLeakMapAndMapAccessibleObjects.
-		self asserta: (self
+		self assert: (self
 				 checkHeapIntegrity: excludeUnmarkedObjs
 				 classIndicesShouldBeValid: classIndicesShouldBeValid).
-		self asserta: coInterpreter checkInterpreterIntegrity = 0.
-		self asserta: coInterpreter checkStackIntegrity.
-		self asserta: (coInterpreter checkCodeIntegrity: gcModes) ]
+		self assert: coInterpreter checkInterpreterIntegrity = 0.
+		self assert: coInterpreter checkStackIntegrity.
+		self assert: (coInterpreter checkCodeIntegrity: gcModes) ]
 ]
 
 { #category : #'debug printing' }
@@ -11517,7 +11517,7 @@ SpurMemoryManager >> runLeakCheckerForFreeSpace: gcModes [
 	<inline: false>
 	(gcModes anyMask: GCModeFreeSpace) ifTrue: [
 		 self clearLeakMapAndMapAccessibleFreeSpace.
-		 self asserta: self checkHeapFreeSpaceIntegrity]
+		 self assert: self checkHeapFreeSpaceIntegrity]
 ]
 
 { #category : #'debug support' }

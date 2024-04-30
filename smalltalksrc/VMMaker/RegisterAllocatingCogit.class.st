@@ -981,7 +981,7 @@ RegisterAllocatingCogit >> genSpecialSelectorClass [
 	destReg := self allocateRegNotConflictingWith: (self registerMaskFor: topReg).
 	scratchReg := self allocateRegNotConflictingWith: (self registerMaskFor: topReg and: destReg).
 	self ssTop moveToReg: topReg.
-	self asserta: (objectRepresentation
+	self assert: (objectRepresentation
 					genGetClassObjectOf: topReg
 					into: destReg
 					scratchReg: scratchReg
