@@ -2306,11 +2306,11 @@ socketRecordSize(void)
 static SocketPtr
 socketValueOf(sqInt socketOop)
 {
-	return ((isBytes(socketOop))
-	 && ((byteSizeOf(socketOop)) == (sizeof(SQSocket)))
-		? ((SocketPtr) (firstIndexableField(socketOop)))
-		: (primitiveFailFor(PrimErrBadArgument),
-			null));
+	if ((isBytes(socketOop)) && ((byteSizeOf(socketOop)) == (sizeof(SQSocket)))) {
+		return (SocketPtr) (firstIndexableField(socketOop));
+	}
+	primitiveFailFor(PrimErrBadArgument);
+	return null;
 }
 
 	/* SmartSyntaxInterpreterPlugin>>#sqAssert: */

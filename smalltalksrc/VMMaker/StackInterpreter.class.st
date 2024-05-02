@@ -14736,6 +14736,7 @@ StackInterpreter >> stackPointerIndexForFrame: theFP [
 	<var: #theFP type: #'char *'>
 	<var: #thePage type: #'StackPage *'>
 	<var: #theSP type: #'char *'>
+	<returnTypeC: #sqInt>
 	thePage := stackPages stackPageFor: theFP.
 	theSP := self findSPOf: theFP on: thePage.
 	^self stackPointerIndexForFrame: theFP WithSP: theSP

@@ -1048,8 +1048,9 @@ SocketPlugin >> socketValueOf: socketOop [
 	"Answer a pointer to the first byte of of the socket record within the  
 	 given Smalltalk object, or nil if socketOop is not a socket record."
 	<returnTypeC: #SocketPtr>
-	^((interpreterProxy isBytes: socketOop)
+	((interpreterProxy isBytes: socketOop)
 	   and: [(interpreterProxy byteSizeOf: socketOop) = self socketRecordSize])
-		ifTrue: [self cCoerce: (interpreterProxy firstIndexableField: socketOop) to: #SocketPtr]
-		ifFalse: [interpreterProxy primitiveFailFor: PrimErrBadArgument. nil]
+			ifFalse: [interpreterProxy primitiveFailFor: PrimErrBadArgument. ^ nil].
+		
+	^ self cCoerce: (interpreterProxy firstIndexableField: socketOop) to: #SocketPtr
 ]
