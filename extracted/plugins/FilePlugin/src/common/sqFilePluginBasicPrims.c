@@ -536,7 +536,7 @@ sqConnectToFile(SQFile *sqFile, void *file, sqInt writeFlag)
  * 4  - stderr available
  */
 sqInt
-sqFileStdioHandlesInto(SQFile files[])
+sqFileStdioHandlesInto(SQFile files[3])
 {
 	/* streams connected to a terminal are supposed to be line-buffered anyway.
 	 * And for some reason this has no effect on e.g. Mac OS X.  So use
@@ -843,6 +843,8 @@ waitForDataonSemaphoreIndex(SQFile *file, sqInt semaphoreIndex){
 	aioEnable(fileno(getFile(file)), (void*) semaphoreIndex, AIO_EXT);
 	typedef void (*aioHandler)(int fd, void *clientData, int flag);
 	aioHandle(fileno(getFile(file)), signalOnDataArrival, AIO_R);
+
+	return interpreterProxy->success(true);
 }
 
 #endif /* NO_STD_FILE_SUPPORT */
