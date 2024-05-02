@@ -324,8 +324,11 @@ add_compile_options(
     -Wno-pointer-integer-compare
     -Wno-unknown-pragmas
     -Wno-pointer-sign
+<<<<<<< HEAD
     -Wno-constant-conversion
     -Wno-tautological-pointer-compare
+=======
+>>>>>>> 66015f0470 (Re-enable warnings)
     -Wno-deprecated-declarations
     -Wno-pointer-to-int-cast
     -Wno-compare-distinct-pointer-types
