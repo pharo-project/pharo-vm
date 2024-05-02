@@ -329,7 +329,6 @@ add_compile_options(
     -Wno-compare-distinct-pointer-types
     -Wno-conditional-type-mismatch
     -Wno-unused-local-typedef
-    -Wno-shift-negative-value
     -Wno-unknown-warning-option
 )
 
