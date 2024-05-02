@@ -1,5 +1,11 @@
 # Change log
 
+## v10.2.1
+* Adding the missing tty.c file in the packaging. by @tesonep in https://github.com/pharo-project/pharo-vm/pull/771
+* Do not allow comparing objects of different types by @guillep in https://github.com/pharo-project/pharo-vm/pull/772
+
+**Full Changelog**: https://github.com/pharo-project/pharo-vm/compare/v10.2.0...v10.2.1
+
 ## v10.2.0
 * Add library with function to spawn a process connected to a pseudo-terminal by @Rinzwind in https://github.com/pharo-project/pharo-vm/pull/742
 * Fix VM build in MacOS sonoma by @guillep in https://github.com/pharo-project/pharo-vm/pull/758

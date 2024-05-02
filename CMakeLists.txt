@@ -321,16 +321,10 @@ add_compile_options(
     -Wno-pointer-integer-compare
     -Wno-unknown-pragmas
     -Wno-pointer-sign
-    -Wno-constant-conversion
     -Wno-deprecated-declarations
     -Wno-pointer-to-int-cast
     -Wno-compare-distinct-pointer-types
-    -Wno-conditional-type-mismatch
-    -Wno-incompatible-function-pointer-types
-    -Wno-return-type
     -Wno-unused-local-typedef
-    -Wno-incompatible-pointer-types
-    -Wno-shift-negative-value
     -Wno-unknown-warning-option
 )
 

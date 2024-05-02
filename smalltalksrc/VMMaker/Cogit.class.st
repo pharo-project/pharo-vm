@@ -12150,12 +12150,6 @@ Cogit >> voidCogCompiledCode [
 	methodZone clearCogCompiledCode
 ]
 
-{ #category : #'in-line cacheing' }
-Cogit >> voidNSSendCache: nsSendCache [
-	<inline: true>
-	nsSendCache classTag: objectRepresentation illegalClassTag; enclosingObject: 0; target: 0
-]
-
 { #category : #'debug printing' }
 Cogit >> warnMultiple: cogMethod selectors: aSelectorOop [
 	<inline: true>

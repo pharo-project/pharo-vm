@@ -2004,7 +2004,7 @@ SpurMemoryManager >> allocateNewSpaceSlots: numSlots format: formatField classIn
 		ifTrue: "for header parsing we put a saturated slot count in the prepended overflow size word"
 			[self flag: #endianness.
 			 self long32At: freeStart put: numSlots.
-			 self long32At: freeStart + 4 put: self numSlotsMask << self numSlotsHalfShift.
+			 self long32At: freeStart + 4 put: (self cCoerceSimple: (self numSlotsMask << self numSlotsHalfShift) to: #int).
 			 self long64At: newObj put: (self headerForSlots: self numSlotsMask format: formatField classIndex: classIndex)]
 		ifFalse:
 			[self long64At: newObj put: (self headerForSlots: numSlots format: formatField classIndex: classIndex)].
