@@ -336,7 +336,6 @@ Class {
 		'reenterInterpreter',
 		'nextWakeupUsecs',
 		'nextPollUsecs',
-		'interruptPending',
 		'savedWindowSize',
 		'imageHeaderFlags',
 		'fullScreenFlag',
@@ -3899,14 +3898,6 @@ StackInterpreter >> checkForEventsMayContextSwitch: mayContextSwitch [
 		 nextPollUsecs := now + 20000
 		 "Note that strictly speaking we might need to update 'now' at this point since
 		 ioProcessEvents could take a very long time on some platforms" ].
-
-	interruptPending ifTrue:
-		[interruptPending := false.
-		 "reset interrupt flag"
-		 sema := objectMemory splObj: TheInterruptSemaphore.
-		 (sema ~= objectMemory nilObject
-		  and: [self synchronousSignal: sema]) ifTrue:
-			[switched := true]].
 
 	nextWakeupUsecs ~= 0 ifTrue:
 		[now >= nextWakeupUsecs ifTrue:
