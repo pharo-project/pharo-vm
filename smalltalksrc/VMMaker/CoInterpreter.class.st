@@ -2120,7 +2120,7 @@ CoInterpreter >> commenceCogCompiledCodeCompaction [
 
 	objectMemory checkForLeaks ~= 0 ifTrue:
 		[objectMemory clearLeakMapAndMapAccessibleObjects.
-		 self asserta: (self checkCodeIntegrity: false)]
+		 self assert: (self checkCodeIntegrity: false)]
 ]
 
 { #category : #'debug support' }
