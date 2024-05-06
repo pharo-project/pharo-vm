@@ -41,6 +41,7 @@ set(APPNAME			"Pharo"         CACHE STRING                 "VM Application name"
 set(FLAVOUR			"CoInterpreter" CACHE STRING                 "The kind of VM to generate. Possible values: StackVM, CoInterpreter")
 set(PHARO_LIBRARY_PATH		"@executable_path/Plugins" CACHE STRING      "The RPATH to use in the build")
 set(ICEBERG_DEFAULT_REMOTE	"scpUrl"        CACHE STRING                 "If Iceberg uses HTTPS (httpsUrl) or tries first with SSH (scpUrl)")
+set(CMAKE_OSX_DEPLOYMENT_TARGET "11.0")
 
 if(VERBOSE_BUILD)
     set(CMAKE_VERBOSE_MAKEFILE TRUE)
@@ -259,7 +260,6 @@ elseif(UNIX)
         set(OSX 1)
         set(OS_TYPE "Mac OS")
         set(VM_TARGET_OS "1000") # Used to recognise OS X
-        set(COMMON_FLAGS "-stdlib=libc++ -mmacosx-version-min=10.7 ${COMMON_FLAGS}")
     elseif(${CMAKE_SYSTEM_NAME} MATCHES "Linux")
         set(VM_TARGET_OS "linux-gnu")
     elseif(${CMAKE_SYSTEM_NAME} MATCHES "OpenBSD")
