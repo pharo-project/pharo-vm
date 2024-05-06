@@ -2676,7 +2676,7 @@ StackInterpreter >> bytecodePrimAdd [
 	arg := self stackValue: 0.
 	(objectMemory areIntegers: rcvr and: arg)
 		ifTrue: [
-			self druidIgnore: [
+			self druidIf: #staticTypePrediction do: [
 				self
 					sumSmallInteger: rcvr
 					withSmallInteger: arg

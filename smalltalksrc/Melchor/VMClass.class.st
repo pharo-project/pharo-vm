@@ -287,19 +287,19 @@ VMClass class >> objectRepresentationClass [
 	^self objectMemoryClass objectRepresentationClass
 ]
 
-{ #category : #accessing }
-VMClass class >> resetInitializationOptions [
-
-	self release.
-	InitializationOptions := nil
-]
-
 { #category : #translation }
 VMClass class >> renameSelectorIfStaticallyResolved: aString [
 
 	^ (self staticallyResolvedSelectors includes: aString)
 		  ifTrue: [ self staticallyResolvePolymorphicSelector: aString ]
 		  ifFalse: [ ^ aString ]
+]
+
+{ #category : #accessing }
+VMClass class >> resetInitializationOptions [
+
+	self release.
+	InitializationOptions := nil
 ]
 
 { #category : #translation }
@@ -575,6 +575,14 @@ VMClass >> druidFail [
 VMClass >> druidForceIntepretation [
 	"Tell the compiler we should execute the code below this point compiled but interpreted"
 	"Ignore in the interpreter"
+]
+
+{ #category : #'druid support' }
+VMClass >> druidIf: conditionToCompile do: aBlock [
+
+	"Execute the block during interpretation, ignore it during compilation unless the compile option is given.
+	Should be used only to avoid extra fast-cases during compilation"
+	^ aBlock value
 ]
 
 { #category : #'druid support' }
