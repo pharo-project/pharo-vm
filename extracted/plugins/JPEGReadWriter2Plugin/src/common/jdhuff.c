@@ -440,7 +440,7 @@ jpeg_huff_decode (bitread_working_state * state,
 
 #ifdef AVOID_TABLES
 
-#define HUFF_EXTEND(x,s)  ((x) < (1<<((s)-1)) ? (x) + (((-1)<<(s)) + 1) : (x))
+#define HUFF_EXTEND(x,s)  ((x) < (1<<((s)-1)) ? (x) + ((((unsigned int)(-1))<<(s)) + 1) : (x))
 
 #else
 
@@ -451,10 +451,10 @@ static const int extend_test[16] =   /* entry n is 2**(n-1) */
     0x0100, 0x0200, 0x0400, 0x0800, 0x1000, 0x2000, 0x4000 };
 
 static const int extend_offset[16] = /* entry n is (-1 << n) + 1 */
-  { 0, ((-1)<<1) + 1, ((-1)<<2) + 1, ((-1)<<3) + 1, ((-1)<<4) + 1,
-    ((-1)<<5) + 1, ((-1)<<6) + 1, ((-1)<<7) + 1, ((-1)<<8) + 1,
-    ((-1)<<9) + 1, ((-1)<<10) + 1, ((-1)<<11) + 1, ((-1)<<12) + 1,
-    ((-1)<<13) + 1, ((-1)<<14) + 1, ((-1)<<15) + 1 };
+  { 0, (((unsigned int)(-1))<<1) + 1, (((unsigned int)(-1))<<2) + 1, (((unsigned int)(-1))<<3) + 1, (((unsigned int)(-1))<<4) + 1,
+    (((unsigned int)(-1))<<5) + 1, (((unsigned int)(-1))<<6) + 1, (((unsigned int)(-1))<<7) + 1, (((unsigned int)(-1))<<8) + 1,
+    (((unsigned int)(-1))<<9) + 1, (((unsigned int)(-1))<<10) + 1, (((unsigned int)(-1))<<11) + 1, (((unsigned int)(-1))<<12) + 1,
+    (((unsigned int)(-1))<<13) + 1, (((unsigned int)(-1))<<14) + 1, (((unsigned int)(-1))<<15) + 1 };
 
 #endif /* AVOID_TABLES */
 
