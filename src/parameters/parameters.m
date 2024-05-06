@@ -122,7 +122,7 @@ EXPORT(void) fillParametersFromPList(VMParameters* parameters){
 				char* valueString = calloc(1, 255+1);
 				
 				CFStringGetCString(value, valueString, 255 + 1, kCFStringEncodingUTF8);
-				vm_parameter_vector_insert_from(&parameters->imageParameters, 1, &valueString);
+				vm_parameter_vector_insert_from(&parameters->imageParameters, 1, (const char**) &valueString);
 			}
 			
 		}

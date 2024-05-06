@@ -939,18 +939,14 @@ forkAndExecInDirectory(sqInt useSignalHandler)
 		_exit(-1);
 	}
 	/* begin restoreDefaultSignalHandlers */
-	if (!(semaIndices == null)) {
-
-		/* nil if in interpreter simulation */
-		sigNum = 1;
-		while (sigNum <= (signalArraySize())) {
-			if ((semaIndices[sigNum]) > 0) {
-				setSignalNumberhandler(sigNum, (originalSignalHandlers())[sigNum]);
-			}
-			sigNum += 1;
+	sigNum = 1;
+	while (sigNum <= (signalArraySize())) {
+		if ((semaIndices[sigNum]) > 0) {
+			setSignalNumberhandler(sigNum, (originalSignalHandlers())[sigNum]);
 		}
+		sigNum += 1;
 	}
-	execve(progNamePtr, args, env);
+    execve(progNamePtr, args, env);
 	logErrorFromErrno(progNamePtr);
 	_exit(-1);
 	return 0;
@@ -1050,9 +1046,6 @@ forwardSignaltoSemaphoreAt(sqInt sigNum, sqInt semaphoreIndex)
 {
     void *oldHandler;
 
-	if (semaIndices == null) {
-		return null;
-	}
 	if (semaphoreIndex == 0) {
 
 		/* Disable the handler */
@@ -3014,14 +3007,7 @@ primitiveSemaIndexFor(void)
     sqInt sigNum;
 
 	sigNum = stackIntegerValue(0);
-	if (semaIndices == null) {
-
-		/* interpreter simulation */
-		index = 0;
-	}
-	else {
-		index = semaIndices[sigNum];
-	}
+	index = semaIndices[sigNum];
 	pop(2);
 	pushInteger(index);
 	return 0;
@@ -4323,16 +4309,13 @@ restoreDefaultSignalHandlers(void)
 {
     sqInt sigNum;
 
-	if (!(semaIndices == null)) {
-
-		/* nil if in interpreter simulation */
-		sigNum = 1;
-		while (sigNum <= (signalArraySize())) {
-			if ((semaIndices[sigNum]) > 0) {
-				setSignalNumberhandler(sigNum, (originalSignalHandlers())[sigNum]);
-			}
-			sigNum += 1;
+    /* nil if in interpreter simulation */
+	sigNum = 1;
+	while (sigNum <= (signalArraySize())) {
+		if ((semaIndices[sigNum]) > 0) {
+			setSignalNumberhandler(sigNum, (originalSignalHandlers())[sigNum]);
 		}
+		sigNum += 1;
 	}
 }
 
@@ -4557,17 +4540,12 @@ shutdownModule(void)
 {
     sqInt sigNum;
 
-	/* begin restoreDefaultSignalHandlers */
-	if (!(semaIndices == null)) {
-
-		/* nil if in interpreter simulation */
-		sigNum = 1;
-		while (sigNum <= (signalArraySize())) {
-			if ((semaIndices[sigNum]) > 0) {
-				setSignalNumberhandler(sigNum, (originalSignalHandlers())[sigNum]);
-			}
-			sigNum += 1;
+	sigNum = 1;
+	while (sigNum <= (signalArraySize())) {
+		if ((semaIndices[sigNum]) > 0) {
+			setSignalNumberhandler(sigNum, (originalSignalHandlers())[sigNum]);
 		}
+		sigNum += 1;
 	}
 	return 0;
 }
