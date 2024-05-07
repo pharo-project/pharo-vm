@@ -290,12 +290,12 @@ CogAbstractInstruction class >> registerMaskFor: reg1 and: reg2 and: reg3 and: r
 
 { #category : #translation }
 CogAbstractInstruction class >> requiredMethodNames: options [
-	^self selectors reject:
+	^ super requiredMethodNames: options"self selectors reject:
 		[:s| | m |
 		(self isAccessor: s)
 		or: [((m := self compiledMethodAt: s) isQuick and: [m pragmas isEmpty])
 		or: [(m pragmaAt: #doNotGenerate) notNil
-		or: [(m pragmaAt: #inline:) notNil and: [(m pragmaAt: #inline:) arguments first == true]]]]]
+		or: [(m pragmaAt: #inline:) notNil and: [(m pragmaAt: #inline:) arguments first == true]]]]]"
 ]
 
 { #category : #verification }
