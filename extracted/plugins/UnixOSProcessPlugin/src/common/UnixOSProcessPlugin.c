@@ -281,7 +281,7 @@ static sqInt (*popthenPush)(sqInt nItems, sqInt oop);
 static sqInt (*popRemappableOop)(void);
 static sqInt (*primitiveFail)(void);
 static sqInt (*primitiveFailFor)(sqInt reasonCode);
-static sqInt (*push)(sqInt object);
+static  (*push)(sqInt object);
 static sqInt (*pushInteger)(sqInt integerValue);
 static sqInt (*pushRemappableOop)(sqInt oop);
 static sqInt (*signalSemaphoreWithIndex)(sqInt semaIndex);
