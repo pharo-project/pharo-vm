@@ -4521,6 +4521,7 @@ StackToRegisterMappingCogit >> ssUnspillStackSlots: n startingAt: start [
 		stackSlot := self ssValue: stackIndex.
 		stackSlot spilled ifTrue: [
 			numberOfSpilledSlots := numberOfSpilledSlots + 1.
+			stackSlot type: SSBaseOffset.
 			stackSlot spilled: false ] ].
 
 	"Check how many elements to pop from the stack have been spilled.

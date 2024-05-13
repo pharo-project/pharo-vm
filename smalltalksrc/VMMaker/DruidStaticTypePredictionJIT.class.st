@@ -1,28 +1,11 @@
 Class {
-	#name : #DruidJIT,
-	#superclass : #StackToRegisterMappingCogit,
-	#instVars : [
-		'ceDereferenceSelectorIndex',
-		'ceStoreTrampolines',
-		'ceNewHashTrampoline',
-		'ceInlineNewHashTrampoline',
-		'ceStoreCheckTrampoline',
-		'ceStoreCheckContextReceiverTrampoline',
-		'ceScheduleScavengeTrampoline',
-		'ceSmallActiveContextInMethodTrampoline',
-		'ceSmallActiveContextInFullBlockTrampoline',
-		'ceLargeActiveContextInMethodTrampoline',
-		'ceLargeActiveContextInFullBlockTrampoline'
-	],
-	#classVars : [
-		'CheckRememberedInTrampoline',
-		'NumStoreTrampolines'
-	],
+	#name : #DruidStaticTypePredictionJIT,
+	#superclass : #DruidJIT,
 	#category : #'VMMaker-JIT'
 }
 
 { #category : #'class initialization' }
-DruidJIT class >> bytecodeTable [
+DruidStaticTypePredictionJIT class >> bytecodeTable [
 
 	<generated>
 	^ {
@@ -477,36 +460,8 @@ DruidJIT class >> bytecodeTable [
 		  { 3. 255. 255. #unknownBytecode } }
 ]
 
-{ #category : #translation }
-DruidJIT class >> declareCVarsIn: aCodeGen [
-	"Deal wuth the fact that the number of trampolines depends on IMMUTABILITY
-	 and that IMMUTABILITY can be defined at compile time.  Yes, this is a mess."
-	| current values |
-	current := InitializationOptions at: #IMMUTABILITY ifAbsent: nil.
-	values := #(true false) collect:
-				[:bool|
-				 InitializationOptions at: #IMMUTABILITY put: bool.
-				 self initializeNumTrampolines.
-				 (Cogit classPool at: #NumTrampolines) printString].
-	current
-		ifNil: [InitializationOptions removeKey: #IMMUTABILITY]
-		ifNotNil: [InitializationOptions at: #IMMUTABILITY put: current].
-	values first ~= values last ifTrue:
-		[aCodeGen addConstantForBinding: #NumTrampolines -> ('(IMMUTABILITY ? ' , values first , ' : ' , values last , ')')].
-
-	aCodeGen
-		var: #ceStoreTrampolines
-		declareC: ('#if IMMUTABILITY\sqInt ceStoreTrampolines[', NumStoreTrampolines printString, '];\#endif') withCRs
-]
-
-{ #category : #initialization }
-DruidJIT class >> initialize [
-	
-	NumStoreTrampolines := 5
-]
-
 { #category : #'class initialization' }
-DruidJIT class >> initializeBytecodeTableForSistaV1 [
+DruidStaticTypePredictionJIT class >> initializeBytecodeTableForSistaV1 [
 
 	<generated>
 	numPushNilsFunction := #sistaV1:Num:Push:Nils:.
@@ -519,7 +474,7 @@ DruidJIT class >> initializeBytecodeTableForSistaV1 [
 ]
 
 { #category : #'class initialization' }
-DruidJIT class >> initializePrimitiveTable [
+DruidStaticTypePredictionJIT class >> initializePrimitiveTable [
 
 	<generated>
 	MaxCompiledPrimitiveIndex := 550.
@@ -529,19 +484,8 @@ DruidJIT class >> initializePrimitiveTable [
 	^ primitiveTable
 ]
 
-{ #category : #translation }
-DruidJIT class >> objectRepresentationAncilliaryClasses [
-
-	^ Array empty
-]
-
-{ #category : #'accessing class hierarchy' }
-DruidJIT class >> objectRepresentationClass [
-
-]
-
 { #category : #'class initialization' }
-DruidJIT class >> primitiveTableArray [
+DruidStaticTypePredictionJIT class >> primitiveTableArray [
 
 	<generated>
 	^ {
@@ -617,1114 +561,55 @@ DruidJIT class >> primitiveTableArray [
 		  1 } }
 ]
 
-{ #category : #'trait candidates' }
-DruidJIT >> allYoungObjectsAgeInFullGC [
-	^false
-]
-
-{ #category : #'trait candidates' }
-DruidJIT >> bitAndByteOffsetOfIsFullBlockBitInto: aBlock [
-
-	"This supplies the bitmask for the isFullBlock bit, and the offset of the byte containing
-	 that bit in a CogMethod header to aBlock.  We don't have named variables holding this
-	 offset.  The following assert tests whether the values are correct by creating a surrogate
-	 on an empty ByteArray, setting the bit, and checking that the expected values are set
-	 in the ByteArray."
-	aBlock value: 16 value: objectMemory baseHeaderSize + 1 "zero-relative"
-]
-
-{ #category : #'trait candidates' }
-DruidJIT >> cacheTagIsMarked: cacheTag [
-	"Answer if the cacheTag is not unmarked, i.e. answer true for compact class
-	 indices and immediates; only answer false for unmarked objects.  In Spur
-	 linked send cache tags are class indices so effectively they're always marked."
-	^true
-]
-
-{ #category : #accessing }
-DruidJIT >> ceNewHashTrampoline: anInteger [
-
-	<doNotGenerate>
-	ceNewHashTrampoline := anInteger
-]
-
-{ #category : #accessing }
-DruidJIT >> ceStoreCheckTrampoline: anAddress [
-
-	<doNotGenerate>
-	ceStoreCheckTrampoline := anAddress
-]
-
-{ #category : #'trait candidates' }
-DruidJIT >> checkValidObjectReference: anOop [
-	^(objectMemory isImmediate: anOop) not
-	   and: [(objectMemory heapMapAtWord: (self pointerForOop: anOop)) ~= 0]
-]
-
-{ #category : #'trait candidates' }
-DruidJIT >> checkValidOopReference: anOop [
-	^(objectMemory isImmediate: anOop)
-	   or: [(objectMemory heapMapAtWord: (self pointerForOop: anOop)) ~= 0]
-]
-
-{ #category : #'trait candidates' }
-DruidJIT >> classForInlineCacheTag: classIndex [
-	^objectMemory classOrNilAtIndex: classIndex
-]
-
-{ #category : #'trait candidates' }
-DruidJIT >> couldBeObject: literal [
-	^(objectMemory isNonImmediate: literal)
-	  and: [self oop: literal isGreaterThanOrEqualTo: objectMemory getMemoryMap startOfObjectMemory]
-]
-
-{ #category : #'trait candidates' }
-DruidJIT >> genActiveContextTrampolineLarge: isLarge inBlock: isInBlock called: aString [
-	<var: #aString type: #'char *'>
-	"Create a trampoline to answer the active context that will
-	 answer it if a frame is already married, and create it otherwise.
-	 Assume numArgs is in SendNumArgsReg and ClassReg is free."
-	| startAddress |
-	startAddress := self methodZoneBase.
-	self zeroOpcodeIndex.
-	self genGetActiveContextLarge: isLarge inBlock: isInBlock.
-	self outputInstructionsForGeneratedRuntimeAt: startAddress.
-	self recordGeneratedRunTime: aString address: startAddress.
-	self recordRunTimeObjectReferences.
-	^startAddress
-]
-
-{ #category : #'trait candidates' }
-DruidJIT >> genCheckObjectPosition: destReg scratchReg: scratchReg valueReg: valueReg results: resultBlock [ 
-
-	| isDestYoung isOldAndOld isPermAndPerm recvIsPerm exit valueIsMachineCode| 
-
-	<inline: true>
-	<var: #recvIsPerm type: #'AbstractInstruction *'>
-	<var: #exit type: #'AbstractInstruction *'>
-
-	self CmpCq: objectMemory getMemoryMap getNewSpaceStart  R: valueReg.
-	valueIsMachineCode := self JumpBelow: 0.
-	
-	self CmpCq: objectMemory getMemoryMap fixedPermSpaceStart R: destReg.
-	recvIsPerm := self JumpAboveOrEqual: 0.
-
-	self CmpCq: objectMemory getMemoryMap getOldSpaceStart R: destReg.
-	isDestYoung := self JumpBelow: 0.
-
-	self CmpCq: objectMemory getMemoryMap getOldSpaceStart R: valueReg.
-	isOldAndOld := self JumpAboveOrEqual: 0.
-	exit := self Jump: 0.
-
-	recvIsPerm jmpTarget: (self Label).
-	self CmpCq: objectMemory getMemoryMap fixedPermSpaceStart R: valueReg.
-	isPermAndPerm := self JumpAbove: 0.
-
-	exit jmpTarget: (self Label).
-		
-	resultBlock value: isDestYoung value: isOldAndOld value: isPermAndPerm value: valueIsMachineCode.
-	^ 0 
-]
-
-{ #category : #'trait candidates' }
-DruidJIT >> genCheckRememberedBitOf: objReg scratch: scratchReg [
-	"Check the remembered bit of the object in objReg; answer the jump taken if the bit is already set.
-	 Only need to fetch the byte containing it, which reduces the size of the mask constant."
-	| rememberedBitByteOffset mask |
-	rememberedBitByteOffset := self backEnd isBigEndian
-									ifTrue: [objectMemory baseHeaderSize - 1 - (objectMemory rememberedBitShift // 8)]
-									ifFalse:[objectMemory rememberedBitShift // 8].
-	mask := 1 << (objectMemory rememberedBitShift \\ 8).
-	self MoveMb: rememberedBitByteOffset r: objReg R: scratchReg.
-	self TstCq: mask R: scratchReg.
-	^self JumpNonZero: 0
-]
-
-{ #category : #'trait candidates' }
-DruidJIT >> genConvertIntegerToSmallIntegerInReg: reg [
-
-	self LogicalShiftLeftCq: objectMemory numTagBits R: reg.
-	self AddCq: 1 R: reg.
-	^0
-]
-
-{ #category : #'trait candidates' }
-DruidJIT >> genCreateFullClosureInIndex: anIndex numCopied: numCopied ignoreContext: ignoreContext contextNumArgs: contextNumArgs large: contextIsLarge inBlock: contextIsBlock intoRegister: destinationRegister [
-	"Create a full closure with the given values."
-
-	<var: #skip type: #'AbstractInstruction *'>
-	| numSlots byteSize header skip numArgs compiledBlock |
-	compiledBlock := self getLiteral: anIndex.
-	numArgs := coInterpreter argumentCountOf: compiledBlock.
-
-	"First get thisContext into destinationRegister and thence in ClassReg."
-	ignoreContext
-		ifTrue: [ self genMoveNilR: ClassReg ]
-		ifFalse: [
-			self voidReceiverResultRegContainsSelf.
-			self
-				genGetActiveContextNumArgs: contextNumArgs
-				large: contextIsLarge
-				inBlock: contextIsBlock.
-			self MoveR: ReceiverResultReg R: ClassReg ].
-
-	numSlots := FullClosureFirstCopiedValueIndex + numCopied.
-	byteSize := objectMemory smallObjectBytesForSlots: numSlots.
-	self assert: ClassFullBlockClosureCompactIndex ~= 0.
-	header := objectMemory
-		          headerForSlots: numSlots
-		          format: objectMemory indexablePointersFormat
-		          classIndex: ClassFullBlockClosureCompactIndex.
-	self MoveAw: objectMemory freeStartAddress R: destinationRegister.
-	self
-		genStoreHeader: header
-		intoNewInstance: destinationRegister
-		using: TempReg.
-	self
-		LoadEffectiveAddressMw: byteSize r: destinationRegister R: TempReg;
-		MoveR: TempReg Aw: objectMemory freeStartAddress;
-		CmpCq: objectMemory getScavengeThreshold R: TempReg.
-	skip := self JumpBelow: 0.
-	self CallRT: ceScheduleScavengeTrampoline.
-	skip jmpTarget: self Label.
-
-	self
-		MoveR: ClassReg
-		Mw: FullClosureOuterContextIndex * objectMemory bytesPerOop
-			+ objectMemory baseHeaderSize
-		r: destinationRegister;
-		genMoveConstant: compiledBlock R: TempReg;
-		MoveR: TempReg
-		Mw: FullClosureCompiledBlockIndex * objectMemory bytesPerOop
-			+ objectMemory baseHeaderSize
-		r: destinationRegister;
-		MoveCq: (objectMemory integerObjectOf: numArgs) R: TempReg;
-		MoveR: TempReg
-		Mw: FullClosureNumArgsIndex * objectMemory bytesPerOop
-			+ objectMemory baseHeaderSize
-		r: destinationRegister.
-	^ 0
-]
-
-{ #category : #'trait candidates' }
-DruidJIT >> genEnsureObjInRegNotForwarded: reg scratchReg: scratch [
-	"Make sure that the object in reg is not forwarded.  This routine assumes the object will
-	 never be forwarded to an immediate, as it is used to unforward  literal variables (associations). 
-	 Use the fact that isForwardedObjectClassIndexPun is a power of two to save an instruction."
-	| loop ok |
-	<var: #ok type: #'AbstractInstruction *'>
-	<var: #loop type: #'AbstractInstruction *'>
-	self assert: reg ~= scratch.
-	loop := self Label.
-	"notionally
-		self genGetClassIndexOfNonImm: reg into: scratch.
-		cogit CmpCq: objectMemory isForwardedObjectClassIndexPun R: TempReg.
-	 but the following is an instruction shorter:"
-	self MoveMw: 0 r: reg R: scratch.
-	self
-		AndCq: objectMemory classIndexMask - objectMemory isForwardedObjectClassIndexPun
-		R: scratch.
-	ok := self JumpNonZero:  0.
-	self genLoadSlot: 0 sourceReg: reg destReg: reg.
-	self Jump: loop.
-	ok jmpTarget: self Label.
-	^0
-]
-
-{ #category : #'trait candidates' }
-DruidJIT >> genEnsureOopInRegNotForwarded: reg scratchReg: scratch [
-	^ self 
-		genEnsureOopInRegNotForwarded: reg 
-		scratchReg: scratch 
-		jumpBackTo: self Label "label is just before the forwarder check"
-]
-
-{ #category : #'trait candidates' }
-DruidJIT >> genEnsureOopInRegNotForwarded: reg scratchReg: scratch ifForwarder: fwdJumpTarget ifNotForwarder: nonFwdJumpTargetOrZero [
-	"Make sure that the oop in reg is not forwarded.  
-	 Use the fact that isForwardedObjectClassIndexPun is a power of two to save an instruction."
-	| imm ok finished |
-	self assert: reg ~= scratch.
-	imm := self genJumpImmediate: reg.
-	"notionally
-		self genGetClassIndexOfNonImm: reg into: scratch.
-		cogit CmpCq: objectMemory isForwardedObjectClassIndexPun R: TempReg.
-	 but the following is an instruction shorter:"
-	self MoveMw: 0 r: reg R: scratch.
-	self
-		AndCq: objectMemory classIndexMask - objectMemory isForwardedObjectClassIndexPun
-		R: scratch.
-	ok := self JumpNonZero: 0.
-	self genLoadSlot: 0 sourceReg: reg destReg: reg.
-	self Jump: fwdJumpTarget.
-	finished := nonFwdJumpTargetOrZero asUnsignedInteger = 0
-					ifTrue: [self Label]
-					ifFalse: [nonFwdJumpTargetOrZero].
-	imm jmpTarget: (ok jmpTarget: finished).
-	^0
-]
-
-{ #category : #'trait candidates' }
-DruidJIT >> genEnsureOopInRegNotForwarded: reg scratchReg: scratch jumpBackTo: instruction [
-	<var: #instruction type: #'AbstractInstruction *'>
-	<inline: true>
-	^ self 
-		genEnsureOopInRegNotForwarded: reg 
-		scratchReg: scratch 
-		ifForwarder: instruction
-		ifNotForwarder: 0
-]
-
-{ #category : #'trait candidates' }
-DruidJIT >> genEnsureOopInRegNotForwarded: reg scratchReg: scratch updatingSlot: index in: objReg [
-	"Make sure that the oop in reg is not forwarded, updating the slot in objReg with the value."
-	| loop imm ok |
-	<var: #ok type: #'AbstractInstruction *'>
-	<var: #imm type: #'AbstractInstruction *'>
-	<var: #loop type: #'AbstractInstruction *'>
-	"Open-code
-		self genEnsureOopInRegNotForwarded: reg
-			scratchReg: scratch
-			updatingMw: index * objectMemory wordSize + objectMemory baseHeaderSize
-			r: objReg.
-	 to avoid calling the store check unless the receiver is forwarded."
-	self assert: (reg ~= scratch and: [objReg ~= scratch]).
-	loop := self Label.
-	imm := self genJumpImmediate: reg.
-	"notionally
-		self genGetClassIndexOfNonImm: reg into: scratch.
-		cogit CmpCq: objectMemory isForwardedObjectClassIndexPun R: TempReg.
-	 but the following is an instruction shorter:"
-	self MoveMw: 0 r: reg R: scratch.
-	self
-		AndCq: objectMemory classIndexMask - objectMemory isForwardedObjectClassIndexPun
-		R: scratch.
-	ok := self JumpNonZero:  0.
-	self genLoadSlot: 0 sourceReg: reg destReg: reg.
-	self MoveR: reg Mw: index * objectMemory wordSize + objectMemory baseHeaderSize r: objReg.
-
-	"Check that we're meeting the contract of ceStoreCheckContextReceiverTrampoline."
-	self assert: (reg = Arg0Reg and: [scratch = TempReg and: [objReg = ReceiverResultReg]]).
-	self CallRT: ceStoreCheckContextReceiverTrampoline.
-
-	self Jump: loop.
-	ok jmpTarget: (imm jmpTarget: self Label).
-	^0
-]
-
-{ #category : #'trait candidates' }
-DruidJIT >> genGetActiveContextLarge: isLarge inBlock: isInBlock [
-	"Create a trampoline to answer the active context that will
-	 answer it if a frame is already married, and create it otherwise.
-	 Assume numArgs is in SendNumArgsReg and ClassReg is free."
-	| header slotSize jumpSingle loopHead jumpNeedScavenge continuation exit |
-	<var: #jumpNeedScavenge type: #'AbstractInstruction *'>
-	<var: #continuation type: #'AbstractInstruction *'>
-	<var: #jumpSingle type: #'AbstractInstruction *'>
-	<var: #loopHead type: #'AbstractInstruction *'>
-	<var: #exit type: #'AbstractInstruction *'>
-	self "load the flag; stash it in both TempReg & ClassReg; do the compare (a prime candidated for use of AndCq:R:R:)"
-		MoveMw: FoxMethod r: FPReg R: ClassReg;
-		AndCq: MFMethodFlagHasContextFlag R: ClassReg R: TempReg.
-	jumpSingle := self JumpZero: 0. "jump if flag bit not set"
-	self "since the flag bit was set, get the context in the receiver reg and return"
-		MoveMw: FoxThisContext r: FPReg R: ReceiverResultReg;
-		RetN: 0.
-	jumpSingle jmpTarget: self Label.
-
-	"OK, it doesn't exist; instantiate and initialize it"
-	"set the hasContext flag; See CoInterpreter class>>initializeFrameIndices"
-	self
-		OrCq: MFMethodFlagHasContextFlag R: ClassReg;
-		MoveR: ClassReg Mw: FoxMethod r: FPReg.
-	"now get the home CogMethod into ClassReg and save for post-instantiation."
-	isInBlock caseOf: {
-	[InFullBlock]	-> [self SubCq: 3 R: ClassReg]. "-3 is -(hasContext+isBlock) flags"
-	[0]				-> [self SubCq: 1 R: ClassReg]. "-1 is hasContext flag" }.
-
-	"instantiate the context..."
-	slotSize := isLarge ifTrue: [LargeContextSlots] ifFalse: [SmallContextSlots].
-	header := objectMemory
-					headerForSlots: slotSize
-					format: objectMemory indexablePointersFormat
-					classIndex: ClassMethodContextCompactIndex.
-	self flag: #endianness.
-	self MoveAw: objectMemory freeStartAddress R: ReceiverResultReg.
-	self genStoreHeader: header intoNewInstance: ReceiverResultReg using: TempReg.
-	self
-		MoveR: ReceiverResultReg R: TempReg;
-		AddCq: (objectMemory smallObjectBytesForSlots: slotSize) R: TempReg;
-		MoveR: TempReg Aw: objectMemory freeStartAddress;
-		CmpCq: objectMemory getScavengeThreshold R: TempReg.
-	jumpNeedScavenge := self JumpAboveOrEqual: 0.
-
-	"Now initialize the fields of the context.  See CoInterpreter>>marryFrame:SP:copyTemps:"
-	"sender gets frame pointer as a SmallInteger"
-	continuation :=
-	self MoveR: FPReg R: TempReg.
-	self genSetSmallIntegerTagsIn: TempReg.
-	self MoveR: TempReg Mw: objectMemory baseHeaderSize + (SenderIndex * objectMemory bytesPerOop) r: ReceiverResultReg.
-
-	"pc gets frame caller as a SmallInteger"
-	self MoveMw: FoxSavedFP r: FPReg R: TempReg.
-	self genSetSmallIntegerTagsIn: TempReg.
-	self MoveR: TempReg Mw: objectMemory baseHeaderSize + (InstructionPointerIndex * objectMemory bytesPerOop) r: ReceiverResultReg.
-
-	"Set the method field, freeing up ClassReg again, and frame's context field,"
-	self
-		MoveMw: (self offset: CogMethod of: #methodObject) r: ClassReg R: TempReg;
-		MoveR: TempReg Mw: objectMemory baseHeaderSize + (MethodIndex * objectMemory wordSize) r: ReceiverResultReg;
-		MoveR: ReceiverResultReg Mw: FoxThisContext r: FPReg.
-
-	"Now compute stack pointer; this is stackPointer (- 1 for return pc if a CISC) - framePointer - wordSize (1 each for saved pc, method, context, receiver) + 1 (1-relative) + numArgs"
-	"TPR note - the code here is actually doing
-	context stackPointer := ((((fp - sp) / wordSize) - [3|4]) + num args) asSmallInteger"
-	self
-		MoveR: FPReg R: TempReg;
-		SubR: SPReg R: TempReg;
-		LogicalShiftRightCq: self log2BytesPerWord R: TempReg;
-		SubCq: (self backEnd hasLinkRegister ifTrue: [3] ifFalse: [4]) R: TempReg;
-		AddR: SendNumArgsReg R: TempReg.
-	self genConvertIntegerToSmallIntegerInReg: TempReg.
-	self MoveR: TempReg Mw: objectMemory baseHeaderSize + (StackPointerIndex * objectMemory bytesPerOop) r: ReceiverResultReg.
-
-	"Set closureOrNil to either the stacked receiver or nil"
-	isInBlock > 0
-		ifTrue:
-			[self
-				MoveR: SendNumArgsReg R: TempReg;
-				AddCq: 2 R: TempReg; "+2 for saved fp and saved pc"
-				MoveXwr: TempReg R: FPReg R: TempReg]
-		ifFalse:
-			[self genMoveNilR: TempReg].
-	self MoveR: TempReg Mw: objectMemory baseHeaderSize + (ClosureIndex * objectMemory bytesPerOop) r: ReceiverResultReg.
-
-	"Set the receiver"
-	self
-		MoveMw: FoxMFReceiver r: FPReg R: TempReg;
-		MoveR: TempReg Mw: objectMemory baseHeaderSize + (ReceiverIndex * objectMemory bytesPerOop) r: ReceiverResultReg.
-
-	"Now copy the arguments.  This is tricky because of the shortage of registers,.  ClassReg ranges
-	 from 1 to numArgs (SendNumArgsReg), and from ReceiverIndex + 1 to ReceiverIndex + numArgs.
-	 1 to: numArgs do:
-		[:i|
-		temp := longAt(FPReg + ((SendNumArgs - i + 2) * wordSize)). +2 for saved pc and savedfp
-		longAtput(FPReg + FoxMFReceiver + (i * wordSize), temp)]"
-	"TPR note: this is a prime candidate for passing off to the backend to do at least faintly optimal code"
-	self MoveCq: 1 R: ClassReg.
-	loopHead := self CmpR: SendNumArgsReg R: ClassReg.
-	exit := self JumpGreater: 0.
-	self
-		MoveR: SendNumArgsReg R: TempReg;
-		SubR: ClassReg R: TempReg;
-		AddCq: 2 R: TempReg; "+2 for saved fp and saved pc"
-		MoveXwr: TempReg R: FPReg R: TempReg;
-		AddCq: ReceiverIndex + (objectMemory baseHeaderSize / objectMemory wordSize) R: ClassReg; "Now convert ClassReg from frame index to context index"
-		MoveR: TempReg Xwr: ClassReg R: ReceiverResultReg;
-		SubCq: ReceiverIndex + (objectMemory baseHeaderSize / objectMemory wordSize) - 1 R: ClassReg; "convert back adding 1 ;-)"
-		Jump: loopHead.
-	exit jmpTarget: self Label.
-
-	"Finally nil or copy the non-argument temps.
-	 ClassReg := FPReg + FoxMFReceiver.
-	 SendNumArgsReg := SendNumArgsReg+ReceiverIndex.
-	 [ClassReg := ClassReg - wordSize.
-	  backEnd hasLinkRegister
-			ifTrue: [ClassReg > SPReg]
-			ifFalse: [ClassReg >= SPReg]] whileTrue:
-		[receiver[SendNumArgsReg] := *ClassReg.
-		 SendNumArgsReg := SendNumArgsReg + 1]]"
-	coInterpreter marryFrameCopiesTemps ifFalse:
-		[self MoveCq: objectMemory nilObject R: TempReg].
-	self
-		MoveR: FPReg R: ClassReg;
-		AddCq: FoxMFReceiver R: ClassReg;
-		AddCq: ReceiverIndex + 1 + (objectMemory baseHeaderSize / objectMemory wordSize) R: SendNumArgsReg.
-	loopHead :=
-	self SubCq: objectMemory wordSize R: ClassReg.
-	self CmpR: SPReg R: ClassReg.
-	"If on a CISC there's a retpc for the trampoline call on top of stack; if on a RISC there isn't."
-	exit := self backEnd hasLinkRegister
-				ifTrue: [self JumpBelow: 0]
-				ifFalse: [self JumpBelowOrEqual: 0].
-	coInterpreter marryFrameCopiesTemps ifTrue:
-		[self MoveMw: 0 r: ClassReg R: TempReg].
-	self
-		MoveR: TempReg Xwr: SendNumArgsReg R: ReceiverResultReg;
-		AddCq: 1 R: SendNumArgsReg;
-		Jump: loopHead.
-	exit jmpTarget: self Label.
-
-	self RetN: 0.
-	
-	jumpNeedScavenge jmpTarget: self Label.
-	self backEnd saveAndRestoreLinkRegAround:
-		[self
-			CallRT: ceScheduleScavengeTrampoline
-			registersToBeSavedMask: (self registerMaskFor: ReceiverResultReg and: SendNumArgsReg and: ClassReg)].
-	self Jump: continuation.
-	^0
-]
-
-{ #category : #'trait candidates' }
-DruidJIT >> genGetActiveContextNumArgs: numArgs large: isLargeContext inBlock: isInBlock [
-	"Get the active context into ReceiverResultReg, creating it if necessary."
-	| routine |
-	routine := isLargeContext
-				ifFalse: [isInBlock caseOf: {
-						[0]				-> [ceSmallActiveContextInMethodTrampoline].
-						[InFullBlock]	-> [ceSmallActiveContextInFullBlockTrampoline] }]
-				ifTrue: [isInBlock caseOf: {
-						[0]				-> [ceLargeActiveContextInMethodTrampoline].
-						[InFullBlock]	-> [ceLargeActiveContextInFullBlockTrampoline] }].
-	self
-		MoveCq: numArgs R: SendNumArgsReg;
-		CallRT: routine.
-	^0
-]
-
-{ #category : #'trait candidates' }
-DruidJIT >> genGetClassObjectOf: instReg into: destReg scratchReg: scratchReg instRegIsReceiver: instRegIsReceiver [
-	"Fetch the instance's class into destReg.  If the instance is not the receiver and is forwarded, follow forwarding."
-	| jumpIsImm jumpNotForwarded loop |
-	<var: #jumpIsImm type: #'AbstractInstruction *'>
-	<var: #jumpNotForwarded type: #'AbstractInstruction *'>
-	<var: #loop type: #'AbstractInstruction *'>
-	(instReg = destReg or: [instReg = scratchReg or: [destReg = scratchReg]]) ifTrue:
-		[^BadRegisterSet].
-	loop := self MoveR: instReg R: scratchReg.
-	self AndCq: objectMemory tagMask R: scratchReg.
-	jumpIsImm := self JumpNonZero: 0.
-	self flag: #endianness.
-	"Get least significant half of header word in destReg"
-	self MoveMw: 0 r: instReg R: scratchReg.
-	"mask off class index"
-	self AndCq: objectMemory classIndexMask R: scratchReg.
-	instRegIsReceiver ifFalse:
-		["if it is forwarded..."
-		self CmpCq: objectMemory isForwardedObjectClassIndexPun R: scratchReg.
-		jumpNotForwarded := self JumpNonZero: 0.
-		"...follow the forwarding pointer and loop to fetch its classIndex"
-		self MoveMw: objectMemory baseHeaderSize r: instReg R: instReg.
-		self Jump: loop.
-		jumpNotForwarded jmpTarget: self Label].
-	jumpIsImm jmpTarget:
-	(self MoveR: scratchReg R: destReg).
-	scratchReg = TempReg
-		ifTrue:
-			[self PushR: instReg.
-			 self genGetClassObjectOfClassIndex: destReg into: instReg scratchReg: TempReg.
-			 self MoveR: instReg R: destReg.
-			 self PopR: instReg]
-		ifFalse:
-			[self genGetClassObjectOfClassIndex: destReg into: scratchReg scratchReg: TempReg.
-			 self MoveR: scratchReg R: destReg].
-	^0
-]
-
-{ #category : #'trait candidates' }
-DruidJIT >> genGetClassObjectOfClassIndex: instReg into: destReg scratchReg: scratchReg [
-	"Fetch the class object whose index is in instReg into destReg.
-	 It is non-obvious, but the Cogit assumes loading a class does not involve
-	 a runtime call, so do not call classAtIndex:"
-	self assert: instReg ~= destReg.
-	self assert: instReg ~= scratchReg.
-	self assert: destReg ~= scratchReg.
-	self
-		MoveR: instReg R: scratchReg;
-		LogicalShiftRightCq: objectMemory classTableMajorIndexShift R: scratchReg;
-		LogicalShiftLeftCq: objectMemory shiftForWord R: scratchReg.
-	self assert: (self shouldAnnotateObjectReference: objectMemory classTableRootObj) not.
-	(self backEnd isWithinMwOffsetRange: objectMemory classTableRootObj + objectMemory baseHeaderSize)
-		ifTrue: [self MoveMw: objectMemory classTableRootObj + objectMemory baseHeaderSize r: scratchReg R: destReg]
-		ifFalse: [self
-					AddCq: objectMemory classTableRootObj R: scratchReg;
-					MoveMw: objectMemory baseHeaderSize r: scratchReg R: destReg].
-	self
-		MoveR: instReg R: scratchReg;
-		AndCq: objectMemory classTableMinorIndexMask R: scratchReg;
-		AddCq: objectMemory baseHeaderSize >> objectMemory shiftForWord R: scratchReg;
-		MoveXwr: scratchReg R: destReg R: destReg.
-	^0
-]
-
-{ #category : #'trait candidates' }
-DruidJIT >> genGetClassTagOf: instReg into: destReg scratchReg: scratchReg [
-	^self genGetInlineCacheClassTagFrom: instReg into: destReg forEntry: true
-]
-
-{ #category : #'trait candidates' }
-DruidJIT >> genGetInlineCacheClassTagFrom: sourceReg into: destReg forEntry: forEntry [
-	"Extract the inline cache tag for the object in sourceReg into destReg. The inline
-	 cache tag for a given object is the value loaded in inline caches to distinguish
-	 objects of different classes.  In Spur this is either the tags for immediates, or
-	 the receiver's classIndex.  Answer the label for the start of the sequence."
-	| jumpImm entryLabel |
-	<var: #jumpImm type: #'AbstractInstruction *'>
-	<var: #entryLabel type: #'AbstractInstruction *'>
-	forEntry ifTrue:
-		[ self AlignmentNops: objectMemory wordSize].
-	entryLabel := self Label.
-	self AndCq: objectMemory tagMask R: sourceReg R: destReg.
-	jumpImm := self JumpNonZero: 0.
-	"Get least significant half of header word in destReg"
-	self flag: #endianness.
-	self MoveMw: 0 r: sourceReg R: destReg.
-	self AndCq: objectMemory classIndexMask R: destReg.
-
-	"The entry and the noCheckEntry (that will generated after) need to be aligned differently.
-	We do that by forcing some odd number of extra Nop operations here.
-	One Nop is not enough because that causes x86-64 entries to have the same allignment.
-	
-	In ARM64 all instructions are 4 byte long, thus 3 Nops make 
-	   - the entry to be aligned to 8 bytes and
-	   - the no check entry aligned to 4 bytes.
-	
-	In x86-64 instruction size is variable, and 3 Nops take 3 bytes."
-	forEntry ifTrue: [ 
-		self Nop.
-		self Nop.
-		self Nop.
-	].
-
-	jumpImm jmpTarget: self Label.
-	^entryLabel
-]
-
-{ #category : #'trait candidates' }
-DruidJIT >> genInlinedIdenticalOrNotIfGuts: orNot [
-	<inline: true>
-
-	^ self genForwardersInlinedIdenticalOrNotIf: orNot
-]
-
-{ #category : #'trait candidates' }
-DruidJIT >> genJumpBaseHeaderImmutable: baseHeaderReg [
-	"baseHeader holds at least the least significant 32 bits of the object"
-	<returnTypeC: #'AbstractInstruction *'>
-	<option: #IMMUTABILITY>
-	<inline: true>
-	
-	self  TstCq: objectMemory immutableBitMask R: baseHeaderReg.
-	^ self JumpNonZero: 0
-]
-
-{ #category : #'trait candidates' }
-DruidJIT >> genJumpBaseHeaderMutable: baseHeaderReg [
-	"baseHeader holds at least the least significant 32 bits of the object"
-	<returnTypeC: #'AbstractInstruction *'>
-	<option: #IMMUTABILITY>
-	<inline: true>
-	self TstCq: objectMemory immutableBitMask R: baseHeaderReg.
-	^ self JumpZero: 0
-]
-
-{ #category : #'trait candidates' }
-DruidJIT >> genJumpImmediate: aRegister [
-	<returnTypeC: #'AbstractInstruction *'>
-
-	self TstCq: objectMemory tagMask R: aRegister.
-	^ self JumpNonZero: 0
-]
-
-{ #category : #'trait candidates' }
-DruidJIT >> genJumpImmutable: sourceReg scratchReg: scratchReg [
-	<returnTypeC: #'AbstractInstruction *'>
-	<option: #IMMUTABILITY>
-	self MoveMw: 0 r: sourceReg R: scratchReg. 
-	^ self genJumpBaseHeaderImmutable: scratchReg
-]
-
-{ #category : #'trait candidates' }
-DruidJIT >> genJumpInOldSpace: reg [
-	"Jump if reg is old."
-	<inline: true>
-	^ self
-		CmpCq: objectMemory storeCheckBoundary R: reg; "N.B. FLAGS := destReg - scratchReg"
-		JumpAboveOrEqual: 0
-]
-
-{ #category : #'trait candidates' }
-DruidJIT >> genJumpMutable: sourceReg scratchReg: scratchReg [
-	<returnTypeC: #'AbstractInstruction *'>
-	<option: #IMMUTABILITY>
-
-	self MoveMw: 0 r: sourceReg R: scratchReg. 
-	^ self genJumpBaseHeaderMutable: scratchReg
-]
-
-{ #category : #'trait candidates' }
-DruidJIT >> genJumpNotSmallInteger: reg [
-	"Generate a compare and branch to test if aRegister contains other than a SmallInteger."
-	^ self
-		TstCq: objectMemory smallIntegerTag R: reg;
-		JumpZero: 0
-]
-
-{ #category : #'trait candidates' }
-DruidJIT >> genJumpNotSmallIntegerInScratchReg: aRegister [
-	<inline: true>
-	^self genJumpNotSmallInteger: aRegister
-]
-
-{ #category : #'trait candidates' }
-DruidJIT >> genJumpNotSmallIntegersIn: aRegister and: bRegister scratch: scratchRegister [
-	"Generate a compare and branch to test if aRegister and bRegister contains other than SmallIntegers,
-	 i.e. don't branch if both aRegister and bRegister contain SmallIntegers.
-	 Answer the jump.  Destroy scratchRegister if required."
-	<returnTypeC: #'AbstractInstruction *'>
-	<inline: true>
-	self
-		MoveR: aRegister R: scratchRegister;
-		AndR: bRegister R: scratchRegister.
-	^self genJumpNotSmallIntegerInScratchReg: scratchRegister
-]
-
-{ #category : #'trait candidates' }
-DruidJIT >> genJumpTo: targetBytecodePC [
-
-	deadCode := true. "can't fall through"
-	self ssFlushStack.
-	self Jump: (self ensureFixupAt: targetBytecodePC).
-	^ 0
-]
-
-{ #category : #'trait candidates' }
-DruidJIT >> genLoadSlot: index sourceReg: sourceReg destReg: destReg [
-	
-	self
-		MoveMw: index * objectMemory wordSize + objectMemory baseHeaderSize
-		r: sourceReg
-		R: destReg.
-	^0
-]
-
-{ #category : #'trait candidates' }
-DruidJIT >> genNewArrayOfSize: size initialized: initialized [
-	"Generate a call to code that allocates a new Array of size.
-	 The Array should be initialized with nils iff initialized is true.
-	 The size arg is passed in SendNumArgsReg, the result
-	 must come back in ReceiverResultReg."
-	| header skip |
-	<var: #skip type: #'AbstractInstruction *'>
-	self assert: size < objectMemory numSlotsMask.
-	header := objectMemory
-					headerForSlots: size
-					format: objectMemory arrayFormat
-					classIndex: ClassArrayCompactIndex.
-	self MoveAw: objectMemory freeStartAddress R: ReceiverResultReg.
-	self genStoreHeader: header intoNewInstance: ReceiverResultReg using: TempReg.
-	(initialized and: [size > 0]) ifTrue:
-		[self genMoveConstant: objectMemory nilObject R: TempReg.
-		 0 to: size - 1 do:
-			[:i| self MoveR: TempReg
-					Mw: i * objectMemory wordSize + objectMemory baseHeaderSize
-					r: ReceiverResultReg]].
-	self
-		LoadEffectiveAddressMw: (objectMemory smallObjectBytesForSlots: size) r: ReceiverResultReg R: TempReg;
-		MoveR: TempReg Aw: objectMemory freeStartAddress;
-		CmpCq: objectMemory getScavengeThreshold R: TempReg.
-	skip := self JumpBelow: 0.
-	self CallRT: ceScheduleScavengeTrampoline.
-	skip jmpTarget: self Label.
-	^0
-]
-
-{ #category : #'trait candidates' }
-DruidJIT >> genNewHashTrampoline: saveRegs called: name [
-	"In non sista VM this is used only from the identityHash primitive, hence only the result of the trampoline, the hash, should be in ReceiverResultReg, other registers can just be ignored.
-	In the sista VM, the inlined hash operation requires registers to be saved"
-	<inline: true>
-	^ self
-		genTrampolineFor: #newHashBitsOf:
-		called: name
-		numArgs: 1
-		arg: TempReg 
-		arg: nil
-		arg: nil
-		arg: nil
-		regsToSave: (saveRegs
-						ifTrue: [CallerSavedRegisterMask bitClear: (self registerMaskFor: TempReg)]
-						ifFalse: [self emptyRegisterMask])
-		pushLinkReg: true
-		resultReg: TempReg
-		appendOpcodes: false
-]
-
-{ #category : #'trait candidates' }
-DruidJIT >> genRemoveSmallIntegerTagsInScratchReg: scratchReg [
-
-	self SubCq: 1 R: scratchReg.
-	^0
-]
-
-{ #category : #'trait candidates' }
-DruidJIT >> genSetSmallIntegerTagsIn: scratchReg [
-	self OrCq: 1 R: scratchReg.
-	^0
-]
-
-{ #category : #'trait candidates' }
-DruidJIT >> genStoreCheckContextReceiverTrampoline [
-	"Create a trampoline to store-check the update of the receiver in a closure's
-	 outerContext in compileBlockFrameBuild:."
-	| startAddress |
-	startAddress := self methodZoneBase.
-	self zeroOpcodeIndex.
-	self genStoreCheckReceiverReg: ReceiverResultReg valueReg: Arg0Reg scratchReg: TempReg inFrame: false.
-	self RetN: 0.
-	self outputInstructionsForGeneratedRuntimeAt: startAddress.
-	self recordGeneratedRunTime: 'ceStoreCheckContextReceiver' address: startAddress.
-	self recordRunTimeObjectReferences.
-	^startAddress
-]
-
-{ #category : #'trait candidates' }
-DruidJIT >> genStoreCheckReceiverReg: destReg valueReg: valueReg scratchReg: scratchReg inFrame: inFrame [
-	"Generate the code for a store check of valueReg into destReg."
-
-	| jmpImmediate jmpDestYoung jmpOldAndOld jmpPermAndPerm jmpAlreadyRemembered jmpIsMachineCode|
-
-	<var: #jmpImmediate type: #'AbstractInstruction *'>
-	<var: #jmpDestYoung type: #'AbstractInstruction *'>
-	<var: #jmpOldAndOld type: #'AbstractInstruction *'>
-	<var: #jmpPermAndPerm type: #'AbstractInstruction *'>
-	<var: #jmpAlreadyRemembered type: #'AbstractInstruction *'>
-	<var: #jmpIsMachineCode type: #'AbstractInstruction *'>
-
-
-	"Is value stored an immediate?  If so we're done"
-	jmpImmediate := self genJumpImmediate: valueReg.
-
-	self 
-		genCheckObjectPosition: destReg 
-		scratchReg: scratchReg 
-		valueReg: valueReg
-		results: [ :isDestYoung :isOldAndOld :isPermAndPerm :valueIsMachineCode | 
-			jmpDestYoung := isDestYoung.
-			jmpOldAndOld := isOldAndOld.
-			jmpIsMachineCode := valueIsMachineCode.
-			jmpPermAndPerm := isPermAndPerm].
-
-
-	"Need to remember this only if the remembered bit is not already set."
-	CheckRememberedInTrampoline ifFalse:
-		[jmpAlreadyRemembered := self genCheckRememberedBitOf: destReg scratch: scratchReg].
-	"Remembered bit is not set.  Call store check to insert dest into remembered table."
-	self assert: destReg = ReceiverResultReg.
-	self 
-		evaluateTrampolineCallBlock: [self CallRT: ceStoreCheckTrampoline]
-		protectLinkRegIfNot: inFrame.
-	jmpImmediate jmpTarget:
-	(jmpDestYoung jmpTarget:
-	(jmpIsMachineCode jmpTarget:
-	(jmpOldAndOld jmpTarget: 
-	(jmpPermAndPerm jmpTarget:
-		self Label)))).
-
-	CheckRememberedInTrampoline ifFalse:
-		[jmpAlreadyRemembered jmpTarget: jmpOldAndOld getJmpTarget].
-	^0
-]
-
-{ #category : #'trait candidates' }
-DruidJIT >> genStoreCheckTrampoline [
-	| jumpSC |
-	<var: #jumpSC type: #'AbstractInstruction *'>
-	<inline: true>
-	
-	CheckRememberedInTrampoline ifTrue:
-		[self zeroOpcodeIndex.
-		 jumpSC := self genCheckRememberedBitOf: TempReg scratch: self backEnd cResultRegister.
-		 self assert: jumpSC opcode = JumpNonZero.
-		 jumpSC opcode: JumpZero.
-		 self RetN: 0.
-		 jumpSC jmpTarget: self Label].
-	^self
-		genTrampolineFor: #rememberObjInCorrectRememberedSet:
-		called: 'ceStoreCheckTrampoline'
-		numArgs: 1
-		arg: TempReg
-		arg: nil
-		arg: nil
-		arg: nil
-		regsToSave: (CallerSavedRegisterMask bitClear: (self registerMaskFor: TempReg))
-		pushLinkReg: true
-		resultReg: self returnRegForStoreCheck
-		appendOpcodes: CheckRememberedInTrampoline
-]
-
-{ #category : #'trait candidates' }
-DruidJIT >> genStoreHeader: header intoNewInstance: rcvrReg using: scratchReg [
-	"Generate the instructions to move the constant header into a new instance pointed to by rcvrReg."
-	<inline: true>
-	self
-		MoveCq: header R: scratchReg;
-		MoveR: scratchReg Mw: 0 r: rcvrReg
-]
-
-{ #category : #'trait candidates' }
-DruidJIT >> genStoreSourceReg: sourceReg slotIndex: index destReg: destReg scratchReg: scratchReg inFrame: inFrame [
-	<inline: true>
-	self 
-		cppIf: IMMUTABILITY
-		ifTrue:
-			[ ^ self 
-				genStoreWithImmutabilityCheckSourceReg: sourceReg 
-				slotIndex: index 
-				destReg: destReg 
-				scratchReg: scratchReg 
-				needsStoreCheck: true 
-				needRestoreRcvr: false "RcvrResultReg doesn't need to be live across the instructions" ]
-		ifFalse: 
-			[ ^ self 
-				genStoreSourceReg: sourceReg 
-				slotIndex: index 
-				destReg: destReg 
-				scratchReg: scratchReg 
-				inFrame: inFrame 
-				needsStoreCheck: true ]
-]
-
-{ #category : #'trait candidates' }
-DruidJIT >> genStoreSourceReg: sourceReg slotIndex: index destReg: destReg scratchReg: scratchReg inFrame: inFrame needsStoreCheck: needsStoreCheck [
-	
-	self genTraceStores.
-	"do the store"
-	self MoveR: sourceReg
-		   Mw: index * objectMemory wordSize + objectMemory baseHeaderSize
-		   r: destReg.
-	"now the check. needStoreCheck is false if the JIT has figured out that the value stored does not need the check (immediate, nil, true, false)"
-	needsStoreCheck ifTrue: 
-		[ ^ self 
-			genStoreCheckReceiverReg: destReg 
-			valueReg: sourceReg 
-			scratchReg: scratchReg 
-			inFrame: inFrame ].
-	^ 0
-]
-
-{ #category : #'trait candidates' }
-DruidJIT >> genStoreSourceReg: sourceReg slotIndex: index intoNewObjectInDestReg: destReg [
-	"This method is used for unchecked stores in objects after their creation (typically, inlined creation of Array, closures and some temp vectors). 
-	Currently there is no need to do the immutability check here"
-
-	self MoveR: sourceReg
-		   Mw: index * objectMemory wordSize + objectMemory baseHeaderSize
-		   r: destReg.
-	^ 0
-]
-
-{ #category : #'trait candidates' }
-DruidJIT >> genStoreTrampolineCall: instVarIndex [
-	<inline: true>
-	self assert: IMMUTABILITY.
-	instVarIndex >= (NumStoreTrampolines - 1)
-		ifTrue: 
-			[ self MoveCq: instVarIndex R: TempReg.
-			  self CallRT: (ceStoreTrampolines at: NumStoreTrampolines - 1) ]
-		ifFalse: 
-			[ self CallRT: (ceStoreTrampolines at: instVarIndex) ].
-	 self annotateBytecode: self Label
-]
-
-{ #category : #'trait candidates' }
-DruidJIT >> genStoreTrampolineCalled: trampolineName instVarIndex: instVarIndex [
-	"Convention:
-	- RcvrResultReg holds the object mutated.
-	If immutability failure:
-	- TempReg holds the instance variable index mutated 
-		if instVarIndex > numDedicatedStoreTrampoline
-	- ClassReg holds the value to store
-	Registers are not lived across this trampoline as the 
-	immutability failure may need new stack frames."
-	
-	| jumpSC jumpRC |
-	<option: #IMMUTABILITY>
-	<var: #trampolineName type: #'char *'>
-	<var: #jumpSC type: #'AbstractInstruction *'>
-	<var: #jumpRC type: #'AbstractInstruction *'>
-	<inline: false>
-	self zeroOpcodeIndex.
-	"SendNumArgsReg is mutated but we don't care as register are not live across the trampoline.
-	 There is no reason why registers cannot be saved over the rememberObjInCorrectRememberedSet: call, but since the
-	 immutability check is a suspension point, registers cannot remain live."
-	jumpSC := self genJumpMutable: ReceiverResultReg scratchReg: SendNumArgsReg.
-	self
-		compileTrampolineFor: #ceCannotAssignTo:withIndex:valueToAssign:
-		numArgs: 3
-		arg: ReceiverResultReg
-		arg: (instVarIndex < (NumStoreTrampolines - 1)
-				ifTrue: [self trampolineArgConstant: instVarIndex]
-				ifFalse: [TempReg])
-		arg: ClassReg
-		arg: nil
-		regsToSave: self emptyRegisterMask
-		pushLinkReg: true
-		resultReg: NoReg.
-		
-	"Store check"
-	jumpSC jmpTarget: self Label.
-	"If on 64-bits and doing the remembered bit test here, we can combine the tests to fetch the header once."
-	CheckRememberedInTrampoline ifTrue:
-		[objectMemory wordSize = 8
-			ifTrue:
-				[self TstCq: 1 << objectMemory rememberedBitShift R: SendNumArgsReg.
-				 jumpRC := self JumpZero: 0.
-				 self RetN: 0]
-			ifFalse:
-				[jumpRC := self genCheckRememberedBitOf: ReceiverResultReg scratch: SendNumArgsReg.
-				 self assert: jumpRC opcode = JumpNonZero.
-				 jumpRC opcode: JumpZero.
-				 self RetN: 0].
-		 jumpRC jmpTarget: self Label].
-	^ self genTrampolineFor: #rememberObjInCorrectRememberedSet:
-		called: trampolineName
-		numArgs: 1
-		arg: ReceiverResultReg
-		arg: nil
-		arg: nil
-		arg: nil
-		regsToSave: self emptyRegisterMask
-		pushLinkReg: true
-		resultReg: NoReg
-		appendOpcodes: true
-]
-
-{ #category : #'trait candidates' }
-DruidJIT >> genStoreWithImmutabilityAndStoreCheckSourceReg: sourceReg slotIndex: index destReg: destReg scratchReg: scratchReg needRestoreRcvr: needRestoreRcvr [ 
-	"Store check code is duplicated to use a single trampoline"
-	<option: #IMMUTABILITY>
-	| immutableJump jmpImmediate jmpDestYoung jmpOldAndOld jmpPermAndPerm jmpAlreadyRemembered jmpIsMachineCode|
-	<var: #immutableJump type: #'AbstractInstruction *'>
-	<var: #jmpImmediate type: #'AbstractInstruction *'>
-	<var: #jmpDestYoung type: #'AbstractInstruction *'>
-	<var: #jmpOldAndOld type: #'AbstractInstruction *'>
-	<var: #jmpPermAndPerm type: #'AbstractInstruction *'>
-	<var: #jmpAlreadyRemembered type: #'AbstractInstruction *'>
-	<var: #jmpIsMachineCode type: #'AbstractInstruction *'>
-
-	immutableJump := self genJumpImmutable: destReg scratchReg: scratchReg.
-	
-	self genTraceStores.
-	
-	"do the store"
-	self MoveR: sourceReg
-		   Mw: index * objectMemory wordSize + objectMemory baseHeaderSize
-		   r: destReg.
-
-	"store check"
-	jmpImmediate := self genJumpImmediate: sourceReg.
-
-	self 
-		genCheckObjectPosition: destReg 
-		scratchReg: scratchReg 
-		valueReg: sourceReg
-		results: [ :isDestYoung :isOldAndOld :isPermAndPerm :valueIsMachineCode| 
-			jmpDestYoung := isDestYoung.
-			jmpOldAndOld := isOldAndOld.
-			jmpIsMachineCode := valueIsMachineCode.			
-			jmpPermAndPerm := isPermAndPerm].
-
-	"Need to remember this only if the remembered bit is not already set."
-	CheckRememberedInTrampoline ifFalse:
-		[jmpAlreadyRemembered := self genCheckRememberedBitOf: destReg scratch: scratchReg].
-	"Set the inst var index for the benefit of the immutability check. The trampoline will
-	 repeat the check to choose between the immutbality violation and the store check."
-	immutableJump jmpTarget: self Label.
-	self genStoreTrampolineCall: index.
-	self voidReceiverOptStatus.
-	needRestoreRcvr ifTrue:
-		[self putSelfInReceiverResultReg].
-
-	jmpImmediate jmpTarget:
-	(jmpDestYoung jmpTarget:
-	(jmpOldAndOld jmpTarget:
-	(jmpIsMachineCode jmpTarget:
-	(jmpPermAndPerm jmpTarget:
-		self Label)))).
-	CheckRememberedInTrampoline ifFalse:
-		[jmpAlreadyRemembered jmpTarget: jmpOldAndOld getJmpTarget].
-	^ 0
-]
-
-{ #category : #'trait candidates' }
-DruidJIT >> genStoreWithImmutabilityButNoStoreCheckSourceReg: sourceReg slotIndex: index destReg: destReg scratchReg: scratchReg needRestoreRcvr: needRestoreRcvr [
-	"Gen an immutability check with no store check (e.g. assigning an immediate literal)"
-	<option: #IMMUTABILITY>
-	<var: #mutableJump type: #'AbstractInstruction *'>
-	<var: #immutabilityFailure type: #'AbstractInstruction *'>
-	| immutabilityFailure mutableJump |
-	
-	"imm check has its own trampoline"
-	mutableJump := self genJumpMutable: destReg scratchReg: scratchReg.
-	self genStoreTrampolineCall: index.
-	self voidReceiverOptStatus.
-	needRestoreRcvr ifTrue:
-		[self putSelfInReceiverResultReg].
-	immutabilityFailure := self Jump: 0.
-	mutableJump jmpTarget: self Label.
-
-	self genTraceStores.
-	
-	"do the store"
-	self MoveR: sourceReg
-		   Mw: index * objectMemory wordSize + objectMemory baseHeaderSize
-		   r: destReg.
-		
-	immutabilityFailure jmpTarget: self Label.
-
-	^ 0
-]
-
-{ #category : #'trait candidates' }
-DruidJIT >> genStoreWithImmutabilityCheckSourceReg: sourceReg slotIndex: index destReg: destReg scratchReg: scratchReg needsStoreCheck: needsStoreCheck needRestoreRcvr: needRestoreRcvr [
-	<option: #IMMUTABILITY>
-	"We know there is a frame as immutability check requires a frame"
-	"needRestoreRcvr has to be true to keep RcvrResultReg live with the receiver in it across the trampoline"
-	
-	"Trampoline convention..."
-	self assert: destReg == ReceiverResultReg.
-	self assert: scratchReg == TempReg.
-  	self assert: sourceReg == ClassReg.
-	
-	"The two paths are very different as the trampoline is shared in 1 case so we split here"
-	needsStoreCheck
-		ifTrue: 
-			[ self 
-				genStoreWithImmutabilityAndStoreCheckSourceReg: sourceReg 
-				slotIndex: index 
-				destReg: destReg 
-				scratchReg: scratchReg 
-				needRestoreRcvr: needRestoreRcvr ]
-		ifFalse: 
-			[ self 
-				genStoreWithImmutabilityButNoStoreCheckSourceReg: sourceReg 
-				slotIndex: index 
-				destReg: destReg 
-				scratchReg: scratchReg 
-				needRestoreRcvr: needRestoreRcvr ].
-	^ 0
-]
-
 { #category : #generated }
-DruidJIT >> gen_BytecodePrimAdd [
+DruidStaticTypePredictionJIT >> gen_BytecodePrimAdd [
 	"AutoGenerated by Druid"
 
-	| live currentBlock |
+	| t0 jump3 jump1 t1 currentBlock jump2 live t2 |
 	live := 0.
+	t0 := self
+		      allocateRegNotConflictingWith: live
+		      ifNone: [ ^ self unknownBytecode ].
+	live := live bitOr: (self registerMaskFor: t0).
+	(self ssValue: 1) copyToReg: t0.
+	t1 := self
+		      allocateRegNotConflictingWith: live
+		      ifNone: [ ^ self unknownBytecode ].
+	live := live bitOr: (self registerMaskFor: t1).
+	(self ssValue: 0) copyToReg: t1.
+	t2 := self
+		      allocateRegNotConflictingWith: live
+		      ifNone: [ ^ self unknownBytecode ].
+	live := live bitOr: (self registerMaskFor: t2).
+	self MoveR: t0 R: t2.
+	self AndR: t1 R: t2.
+	self TstCq: 1 R: t2.
+	jump1 := self JumpZero: 0.
+	self AddCq:  -1 R: t0.
+	self AddR: t1 R: t0.
+	jump2 := self JumpOverflow: 0.
+	self ssUnspillStackSlotAt: 0.
+	self ssUnspillStackSlotAt: 1.
+	self MoveR: t0 R: t2.
+	jump3 := self Jump: 0.
+	currentBlock := self Label.
+	jump1 jmpTarget: currentBlock.
+	jump2 jmpTarget: currentBlock.
 	self marshallSendArguments: 1.
 	self
 		genMarshalledSendNoPush: -1
 		numArgs: 1
 		sendTable: ordinarySendTrampolines.
+	self MoveR: ReceiverResultReg R: t2.
+	currentBlock := self Label.
+	jump3 jmpTarget: currentBlock.
 	self ssPop: 2 popSpilled: false.
-	self ssPushConstant: ReceiverResultReg.
+	self ssPushRegister: t2.
 	^ 0
 ]
 
 { #category : #generated }
-DruidJIT >> gen_BytecodePrimAt [
+DruidStaticTypePredictionJIT >> gen_BytecodePrimAt [
 	"AutoGenerated by Druid"
 
 	| live currentBlock |
@@ -1740,7 +625,7 @@ DruidJIT >> gen_BytecodePrimAt [
 ]
 
 { #category : #generated }
-DruidJIT >> gen_BytecodePrimAtEnd [
+DruidStaticTypePredictionJIT >> gen_BytecodePrimAtEnd [
 	"AutoGenerated by Druid"
 
 	| live currentBlock |
@@ -1756,7 +641,7 @@ DruidJIT >> gen_BytecodePrimAtEnd [
 ]
 
 { #category : #generated }
-DruidJIT >> gen_BytecodePrimAtPut [
+DruidStaticTypePredictionJIT >> gen_BytecodePrimAtPut [
 	"AutoGenerated by Druid"
 
 	| live currentBlock |
@@ -1772,39 +657,95 @@ DruidJIT >> gen_BytecodePrimAtPut [
 ]
 
 { #category : #generated }
-DruidJIT >> gen_BytecodePrimBitAnd [
+DruidStaticTypePredictionJIT >> gen_BytecodePrimBitAnd [
 	"AutoGenerated by Druid"
 
-	| live currentBlock |
+	| t0 jump1 t1 currentBlock jump2 live t2 |
 	live := 0.
+	t0 := self
+		      allocateRegNotConflictingWith: live
+		      ifNone: [ ^ self unknownBytecode ].
+	live := live bitOr: (self registerMaskFor: t0).
+	(self ssValue: 1) copyToReg: t0.
+	t1 := self
+		      allocateRegNotConflictingWith: live
+		      ifNone: [ ^ self unknownBytecode ].
+	live := live bitOr: (self registerMaskFor: t1).
+	(self ssValue: 0) copyToReg: t1.
+	t2 := self
+		      allocateRegNotConflictingWith: live
+		      ifNone: [ ^ self unknownBytecode ].
+	live := live bitOr: (self registerMaskFor: t2).
+	self MoveR: t0 R: t2.
+	self AndR: t1 R: t2.
+	self TstCq: 1 R: t2.
+	jump1 := self JumpZero: 0.
+	self AndR: t1 R: t0.
+	self ssUnspillStackSlotAt: 0.
+	self ssUnspillStackSlotAt: 1.
+	self MoveR: t0 R: t2.
+	jump2 := self Jump: 0.
+	currentBlock := self Label.
+	jump1 jmpTarget: currentBlock.
 	self marshallSendArguments: 1.
 	self
 		genMarshalledSendNoPush: -15
 		numArgs: 1
 		sendTable: ordinarySendTrampolines.
+	self MoveR: ReceiverResultReg R: t2.
+	currentBlock := self Label.
+	jump2 jmpTarget: currentBlock.
 	self ssPop: 2 popSpilled: false.
-	self ssPushConstant: ReceiverResultReg.
+	self ssPushRegister: t2.
 	^ 0
 ]
 
 { #category : #generated }
-DruidJIT >> gen_BytecodePrimBitOr [
+DruidStaticTypePredictionJIT >> gen_BytecodePrimBitOr [
 	"AutoGenerated by Druid"
 
-	| live currentBlock |
+	| t0 jump1 t1 currentBlock jump2 live t2 |
 	live := 0.
+	t0 := self
+		      allocateRegNotConflictingWith: live
+		      ifNone: [ ^ self unknownBytecode ].
+	live := live bitOr: (self registerMaskFor: t0).
+	(self ssValue: 1) copyToReg: t0.
+	t1 := self
+		      allocateRegNotConflictingWith: live
+		      ifNone: [ ^ self unknownBytecode ].
+	live := live bitOr: (self registerMaskFor: t1).
+	(self ssValue: 0) copyToReg: t1.
+	t2 := self
+		      allocateRegNotConflictingWith: live
+		      ifNone: [ ^ self unknownBytecode ].
+	live := live bitOr: (self registerMaskFor: t2).
+	self MoveR: t0 R: t2.
+	self AndR: t1 R: t2.
+	self TstCq: 1 R: t2.
+	jump1 := self JumpZero: 0.
+	self OrR: t1 R: t0.
+	self ssUnspillStackSlotAt: 0.
+	self ssUnspillStackSlotAt: 1.
+	self MoveR: t0 R: t2.
+	jump2 := self Jump: 0.
+	currentBlock := self Label.
+	jump1 jmpTarget: currentBlock.
 	self marshallSendArguments: 1.
 	self
 		genMarshalledSendNoPush: -16
 		numArgs: 1
 		sendTable: ordinarySendTrampolines.
+	self MoveR: ReceiverResultReg R: t2.
+	currentBlock := self Label.
+	jump2 jmpTarget: currentBlock.
 	self ssPop: 2 popSpilled: false.
-	self ssPushConstant: ReceiverResultReg.
+	self ssPushRegister: t2.
 	^ 0
 ]
 
 { #category : #generated }
-DruidJIT >> gen_BytecodePrimBitShift [
+DruidStaticTypePredictionJIT >> gen_BytecodePrimBitShift [
 	"AutoGenerated by Druid"
 
 	| live currentBlock |
@@ -1820,7 +761,7 @@ DruidJIT >> gen_BytecodePrimBitShift [
 ]
 
 { #category : #generated }
-DruidJIT >> gen_BytecodePrimDiv [
+DruidStaticTypePredictionJIT >> gen_BytecodePrimDiv [
 	"AutoGenerated by Druid"
 
 	| live currentBlock |
@@ -1836,7 +777,7 @@ DruidJIT >> gen_BytecodePrimDiv [
 ]
 
 { #category : #generated }
-DruidJIT >> gen_BytecodePrimDivide [
+DruidStaticTypePredictionJIT >> gen_BytecodePrimDivide [
 	"AutoGenerated by Druid"
 
 	| live currentBlock |
@@ -1852,7 +793,7 @@ DruidJIT >> gen_BytecodePrimDivide [
 ]
 
 { #category : #generated }
-DruidJIT >> gen_BytecodePrimDo [
+DruidStaticTypePredictionJIT >> gen_BytecodePrimDo [
 	"AutoGenerated by Druid"
 
 	| live currentBlock |
@@ -1868,7 +809,7 @@ DruidJIT >> gen_BytecodePrimDo [
 ]
 
 { #category : #generated }
-DruidJIT >> gen_BytecodePrimEqualSistaV1 [
+DruidStaticTypePredictionJIT >> gen_BytecodePrimEqualSistaV1 [
 	"AutoGenerated by Druid"
 
 	| live currentBlock |
@@ -1884,7 +825,7 @@ DruidJIT >> gen_BytecodePrimEqualSistaV1 [
 ]
 
 { #category : #generated }
-DruidJIT >> gen_BytecodePrimGreaterOrEqualSistaV1 [
+DruidStaticTypePredictionJIT >> gen_BytecodePrimGreaterOrEqualSistaV1 [
 	"AutoGenerated by Druid"
 
 	| live currentBlock |
@@ -1900,7 +841,7 @@ DruidJIT >> gen_BytecodePrimGreaterOrEqualSistaV1 [
 ]
 
 { #category : #generated }
-DruidJIT >> gen_BytecodePrimGreaterThanSistaV1 [
+DruidStaticTypePredictionJIT >> gen_BytecodePrimGreaterThanSistaV1 [
 	"AutoGenerated by Druid"
 
 	| live currentBlock |
@@ -1916,7 +857,7 @@ DruidJIT >> gen_BytecodePrimGreaterThanSistaV1 [
 ]
 
 { #category : #generated }
-DruidJIT >> gen_BytecodePrimIdenticalSistaV1 [
+DruidStaticTypePredictionJIT >> gen_BytecodePrimIdenticalSistaV1 [
 	"AutoGenerated by Druid"
 
 	| jump1 s57 s54 t1 jump6 jump3 currentBlock t3 t0 jump5 jump2 b498 b502 live t2 jump4 |
@@ -2026,7 +967,7 @@ DruidJIT >> gen_BytecodePrimIdenticalSistaV1 [
 ]
 
 { #category : #generated }
-DruidJIT >> gen_BytecodePrimLessOrEqualSistaV1 [
+DruidStaticTypePredictionJIT >> gen_BytecodePrimLessOrEqualSistaV1 [
 	"AutoGenerated by Druid"
 
 	| live currentBlock |
@@ -2042,7 +983,7 @@ DruidJIT >> gen_BytecodePrimLessOrEqualSistaV1 [
 ]
 
 { #category : #generated }
-DruidJIT >> gen_BytecodePrimLessThanSistaV1 [
+DruidStaticTypePredictionJIT >> gen_BytecodePrimLessThanSistaV1 [
 	"AutoGenerated by Druid"
 
 	| live currentBlock |
@@ -2058,7 +999,7 @@ DruidJIT >> gen_BytecodePrimLessThanSistaV1 [
 ]
 
 { #category : #generated }
-DruidJIT >> gen_BytecodePrimMakePoint [
+DruidStaticTypePredictionJIT >> gen_BytecodePrimMakePoint [
 	"AutoGenerated by Druid"
 
 	| live currentBlock |
@@ -2074,7 +1015,7 @@ DruidJIT >> gen_BytecodePrimMakePoint [
 ]
 
 { #category : #generated }
-DruidJIT >> gen_BytecodePrimMod [
+DruidStaticTypePredictionJIT >> gen_BytecodePrimMod [
 	"AutoGenerated by Druid"
 
 	| live currentBlock |
@@ -2090,7 +1031,7 @@ DruidJIT >> gen_BytecodePrimMod [
 ]
 
 { #category : #generated }
-DruidJIT >> gen_BytecodePrimMultiply [
+DruidStaticTypePredictionJIT >> gen_BytecodePrimMultiply [
 	"AutoGenerated by Druid"
 
 	| live currentBlock |
@@ -2106,7 +1047,7 @@ DruidJIT >> gen_BytecodePrimMultiply [
 ]
 
 { #category : #generated }
-DruidJIT >> gen_BytecodePrimNew [
+DruidStaticTypePredictionJIT >> gen_BytecodePrimNew [
 	"AutoGenerated by Druid"
 
 	| live currentBlock |
@@ -2122,7 +1063,7 @@ DruidJIT >> gen_BytecodePrimNew [
 ]
 
 { #category : #generated }
-DruidJIT >> gen_BytecodePrimNewWithArg [
+DruidStaticTypePredictionJIT >> gen_BytecodePrimNewWithArg [
 	"AutoGenerated by Druid"
 
 	| live currentBlock |
@@ -2138,7 +1079,7 @@ DruidJIT >> gen_BytecodePrimNewWithArg [
 ]
 
 { #category : #generated }
-DruidJIT >> gen_BytecodePrimNext [
+DruidStaticTypePredictionJIT >> gen_BytecodePrimNext [
 	"AutoGenerated by Druid"
 
 	| live currentBlock |
@@ -2154,7 +1095,7 @@ DruidJIT >> gen_BytecodePrimNext [
 ]
 
 { #category : #generated }
-DruidJIT >> gen_BytecodePrimNextPut [
+DruidStaticTypePredictionJIT >> gen_BytecodePrimNextPut [
 	"AutoGenerated by Druid"
 
 	| live currentBlock |
@@ -2170,7 +1111,7 @@ DruidJIT >> gen_BytecodePrimNextPut [
 ]
 
 { #category : #generated }
-DruidJIT >> gen_BytecodePrimNotEqualSistaV1 [
+DruidStaticTypePredictionJIT >> gen_BytecodePrimNotEqualSistaV1 [
 	"AutoGenerated by Druid"
 
 	| live currentBlock |
@@ -2186,7 +1127,7 @@ DruidJIT >> gen_BytecodePrimNotEqualSistaV1 [
 ]
 
 { #category : #generated }
-DruidJIT >> gen_BytecodePrimNotIdenticalSistaV1 [
+DruidStaticTypePredictionJIT >> gen_BytecodePrimNotIdenticalSistaV1 [
 	"AutoGenerated by Druid"
 
 	| jump1 s57 s54 t1 jump6 jump3 currentBlock t3 t0 jump5 jump2 b498 b502 live t2 jump4 |
@@ -2296,7 +1237,7 @@ DruidJIT >> gen_BytecodePrimNotIdenticalSistaV1 [
 ]
 
 { #category : #generated }
-DruidJIT >> gen_BytecodePrimPointX [
+DruidStaticTypePredictionJIT >> gen_BytecodePrimPointX [
 	"AutoGenerated by Druid"
 
 	| live currentBlock |
@@ -2312,7 +1253,7 @@ DruidJIT >> gen_BytecodePrimPointX [
 ]
 
 { #category : #generated }
-DruidJIT >> gen_BytecodePrimPointY [
+DruidStaticTypePredictionJIT >> gen_BytecodePrimPointY [
 	"AutoGenerated by Druid"
 
 	| live currentBlock |
@@ -2328,7 +1269,7 @@ DruidJIT >> gen_BytecodePrimPointY [
 ]
 
 { #category : #generated }
-DruidJIT >> gen_BytecodePrimSize [
+DruidStaticTypePredictionJIT >> gen_BytecodePrimSize [
 	"AutoGenerated by Druid"
 
 	| live currentBlock |
@@ -2344,23 +1285,63 @@ DruidJIT >> gen_BytecodePrimSize [
 ]
 
 { #category : #generated }
-DruidJIT >> gen_BytecodePrimSubtract [
+DruidStaticTypePredictionJIT >> gen_BytecodePrimSubtract [
 	"AutoGenerated by Druid"
 
-	| live currentBlock |
+	| t0 jump3 jump1 t1 currentBlock jump2 live t2 |
 	live := 0.
+	t0 := self
+		      allocateRegNotConflictingWith: live
+		      ifNone: [ ^ self unknownBytecode ].
+	live := live bitOr: (self registerMaskFor: t0).
+	(self ssValue: 1) copyToReg: t0.
+	t1 := self
+		      allocateRegNotConflictingWith: live
+		      ifNone: [ ^ self unknownBytecode ].
+	live := live bitOr: (self registerMaskFor: t1).
+	(self ssValue: 0) copyToReg: t1.
+	t2 := self
+		      allocateRegNotConflictingWith: live
+		      ifNone: [ ^ self unknownBytecode ].
+	live := live bitOr: (self registerMaskFor: t2).
+	self MoveR: t0 R: t2.
+	self AndR: t1 R: t2.
+	self TstCq: 1 R: t2.
+	jump1 := self JumpZero: 0.
+	self ArithmeticShiftRightCq: 3 R: t0.
+	self MoveR: t1 R: t2.
+	self ArithmeticShiftRightCq: 3 R: t2.
+	self SubR: t2 R: t0.
+	self MoveR: t0 R: t2.
+	self LogicalShiftRightCq: 60 R: t2.
+	self AddCq: 1 R: t2.
+	self AndCq: 15 R: t2.
+	self CmpCq: 1 R: t2.
+	jump2 := self JumpAbove: 0.
+	self MoveR: t0 R: t2.
+	self LogicalShiftLeftCq: 3 R: t2.
+	self AddCq: 1 R: t2.
+	self ssUnspillStackSlotAt: 0.
+	self ssUnspillStackSlotAt: 1.
+	jump3 := self Jump: 0.
+	currentBlock := self Label.
+	jump1 jmpTarget: currentBlock.
+	jump2 jmpTarget: currentBlock.
 	self marshallSendArguments: 1.
 	self
 		genMarshalledSendNoPush: -2
 		numArgs: 1
 		sendTable: ordinarySendTrampolines.
+	self MoveR: ReceiverResultReg R: t2.
+	currentBlock := self Label.
+	jump3 jmpTarget: currentBlock.
 	self ssPop: 2 popSpilled: false.
-	self ssPushConstant: ReceiverResultReg.
+	self ssPushRegister: t2.
 	^ 0
 ]
 
 { #category : #generated }
-DruidJIT >> gen_BytecodePrimValue [
+DruidStaticTypePredictionJIT >> gen_BytecodePrimValue [
 	"AutoGenerated by Druid"
 
 	| live currentBlock |
@@ -2376,7 +1357,7 @@ DruidJIT >> gen_BytecodePrimValue [
 ]
 
 { #category : #generated }
-DruidJIT >> gen_BytecodePrimValueWithArg [
+DruidStaticTypePredictionJIT >> gen_BytecodePrimValueWithArg [
 	"AutoGenerated by Druid"
 
 	| live currentBlock |
@@ -2392,7 +1373,7 @@ DruidJIT >> gen_BytecodePrimValueWithArg [
 ]
 
 { #category : #generated }
-DruidJIT >> gen_CallPrimitiveBytecode [
+DruidStaticTypePredictionJIT >> gen_CallPrimitiveBytecode [
 	"AutoGenerated by Druid"
 
 	| live currentBlock |
@@ -2401,7 +1382,7 @@ DruidJIT >> gen_CallPrimitiveBytecode [
 ]
 
 { #category : #generated }
-DruidJIT >> gen_DuplicateTopBytecode [
+DruidStaticTypePredictionJIT >> gen_DuplicateTopBytecode [
 	"AutoGenerated by Druid"
 
 	| live currentBlock t0 |
@@ -2416,7 +1397,7 @@ DruidJIT >> gen_DuplicateTopBytecode [
 ]
 
 { #category : #generated }
-DruidJIT >> gen_ExtABytecode [
+DruidStaticTypePredictionJIT >> gen_ExtABytecode [
 	"AutoGenerated by Druid"
 
 	| s5 s4 s2 currentBlock live s3 |
@@ -2430,7 +1411,7 @@ DruidJIT >> gen_ExtABytecode [
 ]
 
 { #category : #generated }
-DruidJIT >> gen_ExtBBytecode [
+DruidStaticTypePredictionJIT >> gen_ExtBBytecode [
 	"AutoGenerated by Druid"
 
 	| s6 s24 s16 s4 s22 s14 s9 s2 s20 currentBlock s12 s25 s17 live s5 s3 s21 s13 s8 |
@@ -2464,7 +1445,7 @@ DruidJIT >> gen_ExtBBytecode [
 ]
 
 { #category : #generated }
-DruidJIT >> gen_ExtJumpIfFalse [
+DruidStaticTypePredictionJIT >> gen_ExtJumpIfFalse [
 	"AutoGenerated by Druid"
 
 	| s6 s3 jump1 s16 jump3 s5 s2 s18 s15 currentBlock s12 t0 jump2 s4 s17 live s20 |
@@ -2511,7 +1492,7 @@ DruidJIT >> gen_ExtJumpIfFalse [
 ]
 
 { #category : #generated }
-DruidJIT >> gen_ExtJumpIfTrue [
+DruidStaticTypePredictionJIT >> gen_ExtJumpIfTrue [
 	"AutoGenerated by Druid"
 
 	| s6 s3 jump1 s16 jump3 s5 s2 s18 s15 currentBlock s12 t0 jump2 s4 s17 live s20 |
@@ -2558,7 +1539,7 @@ DruidJIT >> gen_ExtJumpIfTrue [
 ]
 
 { #category : #generated }
-DruidJIT >> gen_ExtNopBytecode [
+DruidStaticTypePredictionJIT >> gen_ExtNopBytecode [
 	"AutoGenerated by Druid"
 
 	| live currentBlock |
@@ -2570,7 +1551,7 @@ DruidJIT >> gen_ExtNopBytecode [
 ]
 
 { #category : #generated }
-DruidJIT >> gen_ExtPushCharacterBytecode [
+DruidStaticTypePredictionJIT >> gen_ExtPushCharacterBytecode [
 	"AutoGenerated by Druid"
 
 	| s5 s6 s4 s2 currentBlock s7 live s3 |
@@ -2588,7 +1569,7 @@ DruidJIT >> gen_ExtPushCharacterBytecode [
 ]
 
 { #category : #generated }
-DruidJIT >> gen_ExtPushFullClosureBytecode [
+DruidStaticTypePredictionJIT >> gen_ExtPushFullClosureBytecode [
 	"AutoGenerated by Druid"
 
 	| b4 s24 s4 t3 s9 s2 s20 currentBlock s27 s19 s12 s7 s36 t1 s17 live s5 s15 s3 s37 t2 s8 t0 s18 s11 |
@@ -2672,7 +1653,7 @@ DruidJIT >> gen_ExtPushFullClosureBytecode [
 ]
 
 { #category : #generated }
-DruidJIT >> gen_ExtPushIntegerBytecode [
+DruidStaticTypePredictionJIT >> gen_ExtPushIntegerBytecode [
 	"AutoGenerated by Druid"
 
 	| s5 s8 s4 s2 currentBlock s9 s10 live s3 |
@@ -2691,7 +1672,7 @@ DruidJIT >> gen_ExtPushIntegerBytecode [
 ]
 
 { #category : #generated }
-DruidJIT >> gen_ExtPushLiteralBytecode [
+DruidStaticTypePredictionJIT >> gen_ExtPushLiteralBytecode [
 	"AutoGenerated by Druid"
 
 	| s3 s10 s8 s5 s2 currentBlock t0 s4 live s9 |
@@ -2715,7 +1696,7 @@ DruidJIT >> gen_ExtPushLiteralBytecode [
 ]
 
 { #category : #generated }
-DruidJIT >> gen_ExtPushLiteralVariableBytecode [
+DruidStaticTypePredictionJIT >> gen_ExtPushLiteralVariableBytecode [
 	"AutoGenerated by Druid"
 
 	| s34 s3 jump1 jump4 s10 t1 s8 s5 s2 jump3 currentBlock t0 s35 s4 jump2 b233 live s9 |
@@ -2773,7 +1754,7 @@ DruidJIT >> gen_ExtPushLiteralVariableBytecode [
 ]
 
 { #category : #generated }
-DruidJIT >> gen_ExtPushReceiverVariableBytecode [
+DruidStaticTypePredictionJIT >> gen_ExtPushReceiverVariableBytecode [
 	"AutoGenerated by Druid"
 
 	| s6 s3 s13 s10 t1 s5 s2 s18 currentBlock t0 s4 live s9 |
@@ -2821,7 +1802,7 @@ DruidJIT >> gen_ExtPushReceiverVariableBytecode [
 ]
 
 { #category : #generated }
-DruidJIT >> gen_ExtSendBytecode [
+DruidStaticTypePredictionJIT >> gen_ExtSendBytecode [
 	"AutoGenerated by Druid"
 
 	| s6 s3 s10 s8 s5 s2 currentBlock s4 live s11 s9 |
@@ -2848,7 +1829,7 @@ DruidJIT >> gen_ExtSendBytecode [
 ]
 
 { #category : #generated }
-DruidJIT >> gen_ExtSendSuperBytecode [
+DruidStaticTypePredictionJIT >> gen_ExtSendSuperBytecode [
 	"AutoGenerated by Druid"
 
 	| s6 s3 s16 s10 s8 s5 s2 s18 currentBlock s15 s4 s17 live s11 s9 |
@@ -2895,7 +1876,7 @@ DruidJIT >> gen_ExtSendSuperBytecode [
 ]
 
 { #category : #generated }
-DruidJIT >> gen_ExtStoreAndPopLiteralVariableBytecode [
+DruidStaticTypePredictionJIT >> gen_ExtStoreAndPopLiteralVariableBytecode [
 	"AutoGenerated by Druid"
 
 	| jump6 t2 s56 jump7 s95 jump8 s83 s104 jump9 s97 s59 s2 jumpTrue s108 s3 s4 s89 s48 live s5 s61 s6 s37 b623 s78 s11 s112 s12 jump1 s51 s13 jump2 jump3 jump4 t0 currentBlock jump5 t1 jumpNext s101 |
@@ -3088,7 +2069,7 @@ DruidJIT >> gen_ExtStoreAndPopLiteralVariableBytecode [
 ]
 
 { #category : #generated }
-DruidJIT >> gen_ExtStoreAndPopReceiverVariableBytecode [
+DruidStaticTypePredictionJIT >> gen_ExtStoreAndPopReceiverVariableBytecode [
 	"AutoGenerated by Druid"
 
 	| s6 jump5 s46 s4 s38 s103 jump3 s69 s14 s2 s9 currentBlock s49 t1 s51 s90 jump1 jump6 live s5 jump4 s93 s63 s3 s76 s85 t2 s98 jump9 jump7 jump2 t0 s83 s41 s11 |
@@ -3390,7 +2371,7 @@ DruidJIT >> gen_ExtStoreAndPopReceiverVariableBytecode [
 ]
 
 { #category : #generated }
-DruidJIT >> gen_ExtStoreLiteralVariableBytecode [
+DruidStaticTypePredictionJIT >> gen_ExtStoreLiteralVariableBytecode [
 	"AutoGenerated by Druid"
 
 	| jump6 t2 s94 jump7 s82 s103 jump8 s96 s58 jump9 s107 s2 jumpTrue s3 s88 s47 s4 s60 s5 live s36 s6 b623 s77 s10 s111 s11 s50 s12 jump1 jump2 jump3 jump4 t0 currentBlock s100 jump5 t1 jumpNext s55 |
@@ -3582,7 +2563,7 @@ DruidJIT >> gen_ExtStoreLiteralVariableBytecode [
 ]
 
 { #category : #generated }
-DruidJIT >> gen_ExtStoreReceiverVariableBytecode [
+DruidStaticTypePredictionJIT >> gen_ExtStoreReceiverVariableBytecode [
 	"AutoGenerated by Druid"
 
 	| s6 jump5 s88 s81 s4 jump3 s44 s14 s9 s2 s36 currentBlock s49 s101 s67 t1 jump1 jump6 s47 live s5 s39 jump4 jump9 s3 t2 jump2 s91 s61 jump7 s74 s83 t0 s96 s11 |
@@ -3882,7 +2863,7 @@ DruidJIT >> gen_ExtStoreReceiverVariableBytecode [
 ]
 
 { #category : #generated }
-DruidJIT >> gen_ExtUnconditionalJump [
+DruidStaticTypePredictionJIT >> gen_ExtUnconditionalJump [
 	"AutoGenerated by Druid"
 
 	| s6 s24 s33 s4 s22 s31 s38 jump3 s9 s2 s20 currentBlock s36 s42 s12 s7 t1 jump1 s10 s5 s23 live s32 s3 s21 s37 jump2 s43 s8 t0 s18 s41 |
@@ -4002,7 +2983,7 @@ DruidJIT >> gen_ExtUnconditionalJump [
 ]
 
 { #category : #generated }
-DruidJIT >> gen_LongPushTemporaryVariableBytecode [
+DruidStaticTypePredictionJIT >> gen_LongPushTemporaryVariableBytecode [
 	"AutoGenerated by Druid"
 
 	| live currentBlock t0 |
@@ -4017,7 +2998,7 @@ DruidJIT >> gen_LongPushTemporaryVariableBytecode [
 ]
 
 { #category : #generated }
-DruidJIT >> gen_LongStoreAndPopTemporaryVariableBytecode [
+DruidStaticTypePredictionJIT >> gen_LongStoreAndPopTemporaryVariableBytecode [
 	"AutoGenerated by Druid"
 
 	| live currentBlock t0 |
@@ -4034,7 +3015,7 @@ DruidJIT >> gen_LongStoreAndPopTemporaryVariableBytecode [
 ]
 
 { #category : #generated }
-DruidJIT >> gen_LongStoreTemporaryVariableBytecode [
+DruidStaticTypePredictionJIT >> gen_LongStoreTemporaryVariableBytecode [
 	"AutoGenerated by Druid"
 
 	| live currentBlock t0 |
@@ -4045,13 +3026,12 @@ DruidJIT >> gen_LongStoreTemporaryVariableBytecode [
 	live := live bitOr: (self registerMaskFor: t0).
 	(self ssValue: 0) copyToReg: t0.
 	self ssFlushUpThroughTemporaryVariable: byte1.
-	self ssFlushUpThroughTemporaryVariable: byte1.
 	self MoveR: t0 Mw: (self frameOffsetOfTemporary: byte1) r: FPReg.
 	^ 0
 ]
 
 { #category : #generated }
-DruidJIT >> gen_PopStackBytecode [
+DruidStaticTypePredictionJIT >> gen_PopStackBytecode [
 	"AutoGenerated by Druid"
 
 	| live currentBlock |
@@ -4061,7 +3041,7 @@ DruidJIT >> gen_PopStackBytecode [
 ]
 
 { #category : #generated }
-DruidJIT >> gen_PrimitiveAdd [
+DruidStaticTypePredictionJIT >> gen_PrimitiveAdd [
 	"AutoGenerated by Druid"
 
 	| jump1 jump2 currentBlock |
@@ -4083,7 +3063,7 @@ DruidJIT >> gen_PrimitiveAdd [
 ]
 
 { #category : #generated }
-DruidJIT >> gen_PrimitiveAsCharacter [
+DruidStaticTypePredictionJIT >> gen_PrimitiveAsCharacter [
 	"AutoGenerated by Druid"
 
 	| s16 s2 currentBlock s17 s3 |
@@ -4135,7 +3115,7 @@ DruidJIT >> gen_PrimitiveAsCharacter [
 ]
 
 { #category : #generated }
-DruidJIT >> gen_PrimitiveAsFloat [
+DruidStaticTypePredictionJIT >> gen_PrimitiveAsFloat [
 	"AutoGenerated by Druid"
 
 	| jump5 s30 jump1 jump3 s33 currentBlock jump2 jump4 |
@@ -4206,7 +3186,7 @@ DruidJIT >> gen_PrimitiveAsFloat [
 ]
 
 { #category : #generated }
-DruidJIT >> gen_PrimitiveAt [
+DruidStaticTypePredictionJIT >> gen_PrimitiveAt [
 	"AutoGenerated by Druid"
 
 	| jump1 s72 s54 s92 jump6 jump3 currentBlock jump8 jump5 jump2 jump7 jump4 |
@@ -4314,12 +3294,13 @@ DruidJIT >> gen_PrimitiveAt [
 	currentBlock := self Label.
 	jump5 jmpTarget: currentBlock.
 	s72 := 0.
-	self MoveCq: s72 R: Extra2Reg.
+	self MoveCq: s72 R: SendNumArgsReg.
 	jump5 := self Jump: 0.
 	currentBlock := self Label.
 	jump8 jmpTarget: currentBlock.
 	self CmpCq: 2 R: Extra1Reg.
 	jump8 := self JumpAboveOrEqual: 0.
+	self MoveR: Extra2Reg R: SendNumArgsReg.
 	self MoveR: Extra2Reg R: ClassReg.
 	jump6 := self Jump: 0.
 	currentBlock := self Label.
@@ -4369,8 +3350,8 @@ DruidJIT >> gen_PrimitiveAt [
 	self MoveM64: 24 r: ClassReg R: Extra0Reg.
 	self ArithmeticShiftRightCq: 3 R: Extra0Reg.
 	self AndCq: 16rFFFF R: Extra0Reg.
+	self MoveR: Extra0Reg R: SendNumArgsReg.
 	self MoveR: Extra2Reg R: ClassReg.
-	self MoveR: Extra0Reg R: Extra2Reg.
 	currentBlock := self Label.
 	jump5 jmpTarget: currentBlock.
 	jump6 jmpTarget: currentBlock.
@@ -4386,7 +3367,7 @@ DruidJIT >> gen_PrimitiveAt [
 	currentBlock := self Label.
 	jump6 jmpTarget: currentBlock.
 	jump5 jmpTarget: currentBlock.
-	self SubR: Extra2Reg R: ClassReg.
+	self SubR: SendNumArgsReg R: ClassReg.
 	self CmpCq: 24 R: Extra1Reg.
 	jump5 := self JumpBelow: 0.
 	currentBlock := self Label.
@@ -4403,7 +3384,7 @@ DruidJIT >> gen_PrimitiveAt [
 	self CmpR: ClassReg R: Extra3Reg.
 	jump3 := self JumpAbove: 0.
 	self MoveMw: 8 r: SPReg R: Extra3Reg.
-	self AddR: Extra2Reg R: Extra3Reg.
+	self AddR: SendNumArgsReg R: Extra3Reg.
 	self MoveR: Extra3Reg Mw: 8 r: SPReg.
 	self CmpCq: 5 R: Extra1Reg.
 	jump2 := self JumpAbove: 0.
@@ -4499,7 +3480,7 @@ DruidJIT >> gen_PrimitiveAt [
 ]
 
 { #category : #generated }
-DruidJIT >> gen_PrimitiveAtPut [
+DruidStaticTypePredictionJIT >> gen_PrimitiveAtPut [
 	"AutoGenerated by Druid"
 
 	| s6 s140 jump5 s169 jump10 s145 jump3 s119 s167 jump15 s92 s14 s143 jump1 currentBlock s220 jump8 s67 s132 s187 jump6 jumpNext jump11 jump13 jump4 s23 s191 jumpTrue jump16 s135 jump2 jump9 jump14 jump7 s74 jump12 |
@@ -4954,30 +3935,7 @@ DruidJIT >> gen_PrimitiveAtPut [
 ]
 
 { #category : #generated }
-DruidJIT >> gen_PrimitiveBehaviorHash [
-	"AutoGenerated by Druid"
-
-	| jump1 jump2 currentBlock |
-	self MoveR: ReceiverResultReg R: TempReg.
-	self MoveM32: 4 r: TempReg R: TempReg.
-	self AndCq: 16rFFFFFFFF R: TempReg.
-	self AndCq: 16r3FFFFF R: TempReg.
-	self CmpCq: 0 R: TempReg.
-	jump1 := self JumpZero: 0.
-	self CmpCq: 0 R: TempReg.
-	jump2 := self JumpBelow: 0.
-	self LogicalShiftLeftCq: 3 R: TempReg.
-	self AddCq: 1 R: TempReg.
-	self MoveR: TempReg R: ReceiverResultReg.
-	self genPrimReturn.
-	currentBlock := self Label.
-	jump1 jmpTarget: currentBlock.
-	jump2 jmpTarget: currentBlock.
-	^ CompletePrimitive
-]
-
-{ #category : #generated }
-DruidJIT >> gen_PrimitiveBitAnd [
+DruidStaticTypePredictionJIT >> gen_PrimitiveBitAnd [
 	"AutoGenerated by Druid"
 
 	| jump1 currentBlock |
@@ -4996,7 +3954,7 @@ DruidJIT >> gen_PrimitiveBitAnd [
 ]
 
 { #category : #generated }
-DruidJIT >> gen_PrimitiveBitOr [
+DruidStaticTypePredictionJIT >> gen_PrimitiveBitOr [
 	"AutoGenerated by Druid"
 
 	| jump1 currentBlock |
@@ -5015,7 +3973,7 @@ DruidJIT >> gen_PrimitiveBitOr [
 ]
 
 { #category : #generated }
-DruidJIT >> gen_PrimitiveBitShift [
+DruidStaticTypePredictionJIT >> gen_PrimitiveBitShift [
 	"AutoGenerated by Druid"
 
 	| jump1 s43 jump9 jump6 jump3 s42 s18 currentBlock jump8 jump5 s64 jump2 s55 jump7 jump4 |
@@ -5126,7 +4084,7 @@ DruidJIT >> gen_PrimitiveBitShift [
 ]
 
 { #category : #generated }
-DruidJIT >> gen_PrimitiveBitXor [
+DruidStaticTypePredictionJIT >> gen_PrimitiveBitXor [
 	"AutoGenerated by Druid"
 
 	| jump1 jump2 currentBlock |
@@ -5153,7 +4111,7 @@ DruidJIT >> gen_PrimitiveBitXor [
 ]
 
 { #category : #generated }
-DruidJIT >> gen_PrimitiveClass [
+DruidStaticTypePredictionJIT >> gen_PrimitiveClass [
 	"AutoGenerated by Druid"
 
 	| s25 s71 s40 s2 currentBlock s41 s3 |
@@ -5282,7 +4240,7 @@ DruidJIT >> gen_PrimitiveClass [
 ]
 
 { #category : #generated }
-DruidJIT >> gen_PrimitiveDiv [
+DruidStaticTypePredictionJIT >> gen_PrimitiveDiv [
 	"AutoGenerated by Druid"
 
 	| jump1 s31 s16 s39 s77 jump3 currentBlock jump5 jump2 s44 s70 s23 jump4 |
@@ -5319,13 +4277,15 @@ DruidJIT >> gen_PrimitiveDiv [
 	self
 		DivR: Extra1Reg
 		R: SendNumArgsReg
-		Quo: Extra1Reg
-		Rem: SendNumArgsReg.
+		Quo: SendNumArgsReg
+		Rem: Extra1Reg.
 	s23 := 0.
-	self MoveCq: s23 R: SendNumArgsReg.
-	self SubR: Extra1Reg R: SendNumArgsReg.
+	self MoveCq: s23 R: Extra1Reg.
+	self SubR: SendNumArgsReg R: Extra1Reg.
+	self MoveR: Extra1Reg R: SendNumArgsReg.
 	currentBlock := self Label.
 	jump5 jmpTarget: currentBlock.
+	self MoveR: SendNumArgsReg R: Extra1Reg.
 	jump5 := self Jump: 0.
 	currentBlock := self Label.
 	jump3 jmpTarget: currentBlock.
@@ -5340,11 +4300,11 @@ DruidJIT >> gen_PrimitiveDiv [
 	self
 		DivR: SendNumArgsReg
 		R: Extra0Reg
-		Quo: Extra1Reg
-		Rem: Extra0Reg.
+		Quo: Extra0Reg
+		Rem: Extra1Reg.
 	s39 := 0.
-	self MoveCq: s39 R: Extra0Reg.
-	self SubR: Extra1Reg R: Extra0Reg.
+	self MoveCq: s39 R: Extra1Reg.
+	self SubR: Extra0Reg R: Extra1Reg.
 	jump4 := self Jump: 0.
 	currentBlock := self Label.
 	jump3 jmpTarget: currentBlock.
@@ -5356,39 +4316,39 @@ DruidJIT >> gen_PrimitiveDiv [
 		R: Extra1Reg
 		Quo: Extra0Reg
 		Rem: Extra1Reg.
+	self MoveR: Extra0Reg R: Extra1Reg.
 	currentBlock := self Label.
 	jump4 jmpTarget: currentBlock.
-	self MoveR: Extra0Reg R: SendNumArgsReg.
 	currentBlock := self Label.
 	jump5 jmpTarget: currentBlock.
-	self MoveR: SendNumArgsReg R: Extra1Reg.
-	self LogicalShiftRightCq: 60 R: Extra1Reg.
-	self AddCq: 1 R: Extra1Reg.
-	self AndCq: 15 R: Extra1Reg.
-	self CmpCq: 1 R: Extra1Reg.
+	self MoveR: Extra1Reg R: Extra0Reg.
+	self LogicalShiftRightCq: 60 R: Extra0Reg.
+	self AddCq: 1 R: Extra0Reg.
+	self AndCq: 15 R: Extra0Reg.
+	self CmpCq: 1 R: Extra0Reg.
 	jump5 := self JumpAbove: 0.
-	self MoveR: SendNumArgsReg R: Extra1Reg.
-	self LogicalShiftRightCq: 60 R: Extra1Reg.
-	self AddCq: 1 R: Extra1Reg.
-	self AndCq: 15 R: Extra1Reg.
-	self CmpCq: 1 R: Extra1Reg.
+	self MoveR: Extra1Reg R: Extra0Reg.
+	self LogicalShiftRightCq: 60 R: Extra0Reg.
+	self AddCq: 1 R: Extra0Reg.
+	self AndCq: 15 R: Extra0Reg.
+	self CmpCq: 1 R: Extra0Reg.
 	jump4 := self JumpAbove: 0.
-	self MoveR: SendNumArgsReg R: Extra1Reg.
-	self LogicalShiftLeftCq: 3 R: Extra1Reg.
-	self AddCq: 1 R: Extra1Reg.
+	self MoveR: Extra1Reg R: Extra0Reg.
+	self LogicalShiftLeftCq: 3 R: Extra0Reg.
+	self AddCq: 1 R: Extra0Reg.
 	s70 := 0.
-	self MoveCq: s70 R: SendNumArgsReg.
+	self MoveCq: s70 R: Extra1Reg.
 	jump3 := self Jump: 0.
 	currentBlock := self Label.
 	jump4 jmpTarget: currentBlock.
-	self MoveR: ClassReg R: SendNumArgsReg.
+	self MoveR: ClassReg R: Extra1Reg.
 	s77 := 1.
-	self MoveR: SendNumArgsReg R: Extra1Reg.
-	self MoveCq: s77 R: SendNumArgsReg.
+	self MoveR: Extra1Reg R: Extra0Reg.
+	self MoveCq: s77 R: Extra1Reg.
 	currentBlock := self Label.
 	jump3 jmpTarget: currentBlock.
-	self MoveR: Extra1Reg R: ReceiverResultReg.
-	self CmpCq: 0 R: SendNumArgsReg.
+	self MoveR: Extra0Reg R: ReceiverResultReg.
+	self CmpCq: 0 R: Extra1Reg.
 	jump3 := self JumpNonZero: 0.
 	self genPrimReturn.
 	currentBlock := self Label.
@@ -5406,7 +4366,7 @@ DruidJIT >> gen_PrimitiveDiv [
 ]
 
 { #category : #generated }
-DruidJIT >> gen_PrimitiveDivide [
+DruidStaticTypePredictionJIT >> gen_PrimitiveDivide [
 	"AutoGenerated by Druid"
 
 	| jump5 jump3 jump1 currentBlock jump4 jump2 |
@@ -5430,18 +4390,18 @@ DruidJIT >> gen_PrimitiveDivide [
 	self
 		DivR: SendNumArgsReg
 		R: ClassReg
-		Quo: Extra0Reg
-		Rem: Extra1Reg.
-	self MoveR: Extra0Reg R: Extra1Reg.
-	self LogicalShiftRightCq: 60 R: Extra1Reg.
-	self AddCq: 1 R: Extra1Reg.
-	self AndCq: 15 R: Extra1Reg.
-	self CmpCq: 1 R: Extra1Reg.
+		Quo: Extra1Reg
+		Rem: Extra0Reg.
+	self MoveR: Extra1Reg R: Extra0Reg.
+	self LogicalShiftRightCq: 60 R: Extra0Reg.
+	self AddCq: 1 R: Extra0Reg.
+	self AndCq: 15 R: Extra0Reg.
+	self CmpCq: 1 R: Extra0Reg.
 	jump5 := self JumpAbove: 0.
-	self MoveR: Extra0Reg R: Extra1Reg.
-	self LogicalShiftLeftCq: 3 R: Extra1Reg.
-	self AddCq: 1 R: Extra1Reg.
-	self MoveR: Extra1Reg R: ReceiverResultReg.
+	self MoveR: Extra1Reg R: Extra0Reg.
+	self LogicalShiftLeftCq: 3 R: Extra0Reg.
+	self AddCq: 1 R: Extra0Reg.
+	self MoveR: Extra0Reg R: ReceiverResultReg.
 	self genPrimReturn.
 	currentBlock := self Label.
 	jump5 jmpTarget: currentBlock.
@@ -5456,7 +4416,7 @@ DruidJIT >> gen_PrimitiveDivide [
 ]
 
 { #category : #generated }
-DruidJIT >> gen_PrimitiveEqual [
+DruidStaticTypePredictionJIT >> gen_PrimitiveEqual [
 	"AutoGenerated by Druid"
 
 	| s11 s8 jump1 currentBlock jump2 |
@@ -5482,7 +4442,7 @@ DruidJIT >> gen_PrimitiveEqual [
 ]
 
 { #category : #generated }
-DruidJIT >> gen_PrimitiveFloatAdd [
+DruidStaticTypePredictionJIT >> gen_PrimitiveFloatAdd [
 	"AutoGenerated by Druid"
 
 	| jump1 s123 jumpNext s98 s126 jump9 jump6 jump3 jump10 currentBlock s91 jump5 jump2 jump8 jumpTrue jump11 jump7 jump4 |
@@ -5671,7 +4631,7 @@ DruidJIT >> gen_PrimitiveFloatAdd [
 ]
 
 { #category : #generated }
-DruidJIT >> gen_PrimitiveFloatEqual [
+DruidStaticTypePredictionJIT >> gen_PrimitiveFloatEqual [
 	"AutoGenerated by Druid"
 
 	| jump1 s86 s83 jump6 jump3 currentBlock jump8 jump5 jump2 jump7 jump4 |
@@ -5791,7 +4751,7 @@ DruidJIT >> gen_PrimitiveFloatEqual [
 ]
 
 { #category : #generated }
-DruidJIT >> gen_PrimitiveFloatGreaterOrEqual [
+DruidStaticTypePredictionJIT >> gen_PrimitiveFloatGreaterOrEqual [
 	"AutoGenerated by Druid"
 
 	| jump1 s86 s83 jump6 jump3 currentBlock jump8 jump5 jump2 jump7 jump4 |
@@ -5911,7 +4871,7 @@ DruidJIT >> gen_PrimitiveFloatGreaterOrEqual [
 ]
 
 { #category : #generated }
-DruidJIT >> gen_PrimitiveFloatGreaterThan [
+DruidStaticTypePredictionJIT >> gen_PrimitiveFloatGreaterThan [
 	"AutoGenerated by Druid"
 
 	| jump1 s86 s83 jump6 jump3 currentBlock jump8 jump5 jump2 jump7 jump4 |
@@ -6031,7 +4991,7 @@ DruidJIT >> gen_PrimitiveFloatGreaterThan [
 ]
 
 { #category : #generated }
-DruidJIT >> gen_PrimitiveFloatLessOrEqual [
+DruidStaticTypePredictionJIT >> gen_PrimitiveFloatLessOrEqual [
 	"AutoGenerated by Druid"
 
 	| jump1 s86 s83 jump6 jump3 currentBlock jump8 jump5 jump2 jump7 jump4 |
@@ -6151,7 +5111,7 @@ DruidJIT >> gen_PrimitiveFloatLessOrEqual [
 ]
 
 { #category : #generated }
-DruidJIT >> gen_PrimitiveFloatLessThan [
+DruidStaticTypePredictionJIT >> gen_PrimitiveFloatLessThan [
 	"AutoGenerated by Druid"
 
 	| jump1 s86 s83 jump6 jump3 currentBlock jump8 jump5 jump2 jump7 jump4 |
@@ -6271,7 +5231,7 @@ DruidJIT >> gen_PrimitiveFloatLessThan [
 ]
 
 { #category : #generated }
-DruidJIT >> gen_PrimitiveFloatMultiply [
+DruidStaticTypePredictionJIT >> gen_PrimitiveFloatMultiply [
 	"AutoGenerated by Druid"
 
 	| jump1 s123 jumpNext s98 s126 jump9 jump6 jump3 jump10 currentBlock s91 jump5 jump2 jump8 jumpTrue jump11 jump7 jump4 |
@@ -6460,7 +5420,7 @@ DruidJIT >> gen_PrimitiveFloatMultiply [
 ]
 
 { #category : #generated }
-DruidJIT >> gen_PrimitiveFloatNotEqual [
+DruidStaticTypePredictionJIT >> gen_PrimitiveFloatNotEqual [
 	"AutoGenerated by Druid"
 
 	| jump1 s86 s83 jump6 jump3 currentBlock jump8 jump5 jump2 jump7 jump4 |
@@ -6580,7 +5540,7 @@ DruidJIT >> gen_PrimitiveFloatNotEqual [
 ]
 
 { #category : #generated }
-DruidJIT >> gen_PrimitiveFloatSubtract [
+DruidStaticTypePredictionJIT >> gen_PrimitiveFloatSubtract [
 	"AutoGenerated by Druid"
 
 	| jump1 s123 jumpNext s98 s126 jump9 jump6 jump3 jump10 currentBlock s91 jump5 jump2 jump8 jumpTrue jump11 jump7 jump4 |
@@ -6769,7 +5729,7 @@ DruidJIT >> gen_PrimitiveFloatSubtract [
 ]
 
 { #category : #generated }
-DruidJIT >> gen_PrimitiveFullClosureValue [
+DruidStaticTypePredictionJIT >> gen_PrimitiveFullClosureValue [
 	"AutoGenerated by Druid"
 
 	| s27 s51 s26 currentBlock s2 s52 s3 |
@@ -6885,7 +5845,7 @@ DruidJIT >> gen_PrimitiveFullClosureValue [
 ]
 
 { #category : #generated }
-DruidJIT >> gen_PrimitiveFullClosureValueNoContextSwitch [
+DruidStaticTypePredictionJIT >> gen_PrimitiveFullClosureValueNoContextSwitch [
 	"AutoGenerated by Druid"
 
 	| s27 s51 s26 currentBlock s2 s52 s3 |
@@ -7001,7 +5961,7 @@ DruidJIT >> gen_PrimitiveFullClosureValueNoContextSwitch [
 ]
 
 { #category : #generated }
-DruidJIT >> gen_PrimitiveGreaterOrEqual [
+DruidStaticTypePredictionJIT >> gen_PrimitiveGreaterOrEqual [
 	"AutoGenerated by Druid"
 
 	| s11 s8 jump1 currentBlock jump2 |
@@ -7027,7 +5987,7 @@ DruidJIT >> gen_PrimitiveGreaterOrEqual [
 ]
 
 { #category : #generated }
-DruidJIT >> gen_PrimitiveGreaterThan [
+DruidStaticTypePredictionJIT >> gen_PrimitiveGreaterThan [
 	"AutoGenerated by Druid"
 
 	| s11 s8 jump1 currentBlock jump2 |
@@ -7053,7 +6013,7 @@ DruidJIT >> gen_PrimitiveGreaterThan [
 ]
 
 { #category : #generated }
-DruidJIT >> gen_PrimitiveIdentical [
+DruidStaticTypePredictionJIT >> gen_PrimitiveIdentical [
 	"AutoGenerated by Druid"
 
 	| jump1 jump6 jump3 b450 s56 s53 b446 jump5 currentBlock jump2 jump4 |
@@ -7135,7 +6095,7 @@ DruidJIT >> gen_PrimitiveIdentical [
 ]
 
 { #category : #generated }
-DruidJIT >> gen_PrimitiveIdentityHash [
+DruidStaticTypePredictionJIT >> gen_PrimitiveIdentityHash [
 	"AutoGenerated by Druid"
 
 	| jump1 jump2 currentBlock |
@@ -7167,7 +6127,7 @@ DruidJIT >> gen_PrimitiveIdentityHash [
 ]
 
 { #category : #generated }
-DruidJIT >> gen_PrimitiveImmediateAsInteger [
+DruidStaticTypePredictionJIT >> gen_PrimitiveImmediateAsInteger [
 	"AutoGenerated by Druid"
 
 	| s27 s39 s60 s2 s24 currentBlock s63 s38 s3 |
@@ -7267,7 +6227,7 @@ DruidJIT >> gen_PrimitiveImmediateAsInteger [
 ]
 
 { #category : #generated }
-DruidJIT >> gen_PrimitiveLessOrEqual [
+DruidStaticTypePredictionJIT >> gen_PrimitiveLessOrEqual [
 	"AutoGenerated by Druid"
 
 	| s11 s8 jump1 currentBlock jump2 |
@@ -7293,7 +6253,7 @@ DruidJIT >> gen_PrimitiveLessOrEqual [
 ]
 
 { #category : #generated }
-DruidJIT >> gen_PrimitiveLessThan [
+DruidStaticTypePredictionJIT >> gen_PrimitiveLessThan [
 	"AutoGenerated by Druid"
 
 	| s11 s8 jump1 currentBlock jump2 |
@@ -7319,7 +6279,7 @@ DruidJIT >> gen_PrimitiveLessThan [
 ]
 
 { #category : #generated }
-DruidJIT >> gen_PrimitiveMod [
+DruidStaticTypePredictionJIT >> gen_PrimitiveMod [
 	"AutoGenerated by Druid"
 
 	| s48 s55 jump3 jump1 jump5 currentBlock jump4 jump2 |
@@ -7337,27 +6297,31 @@ DruidJIT >> gen_PrimitiveMod [
 	self
 		DivR: SendNumArgsReg
 		R: Extra0Reg
-		Quo: Extra0Reg
-		Rem: Extra1Reg.
+		Quo: Extra1Reg
+		Rem: Extra0Reg.
 	self CmpCq: 0 R: SendNumArgsReg.
 	jump3 := self JumpGreaterOrEqual: 0.
-	self CmpCq: 0 R: Extra1Reg.
+	self CmpCq: 0 R: Extra0Reg.
 	jump4 := self JumpLessOrEqual: 0.
-	self AddR: SendNumArgsReg R: Extra1Reg.
+	self AddR: SendNumArgsReg R: Extra0Reg.
+	self MoveR: Extra0Reg R: Extra1Reg.
 	jump5 := self Jump: 0.
 	currentBlock := self Label.
 	jump4 jmpTarget: currentBlock.
+	self MoveR: Extra0Reg R: Extra1Reg.
 	currentBlock := self Label.
 	jump5 jmpTarget: currentBlock.
 	jump5 := self Jump: 0.
 	currentBlock := self Label.
 	jump3 jmpTarget: currentBlock.
-	self CmpCq: 0 R: Extra1Reg.
+	self CmpCq: 0 R: Extra0Reg.
 	jump3 := self JumpGreaterOrEqual: 0.
-	self AddR: SendNumArgsReg R: Extra1Reg.
+	self AddR: SendNumArgsReg R: Extra0Reg.
+	self MoveR: Extra0Reg R: Extra1Reg.
 	jump4 := self Jump: 0.
 	currentBlock := self Label.
 	jump3 jmpTarget: currentBlock.
+	self MoveR: Extra0Reg R: Extra1Reg.
 	currentBlock := self Label.
 	jump4 jmpTarget: currentBlock.
 	currentBlock := self Label.
@@ -7407,7 +6371,7 @@ DruidJIT >> gen_PrimitiveMod [
 ]
 
 { #category : #generated }
-DruidJIT >> gen_PrimitiveMultiply [
+DruidStaticTypePredictionJIT >> gen_PrimitiveMultiply [
 	"AutoGenerated by Druid"
 
 	| jump1 jump2 jump3 currentBlock |
@@ -7434,7 +6398,7 @@ DruidJIT >> gen_PrimitiveMultiply [
 ]
 
 { #category : #generated }
-DruidJIT >> gen_PrimitiveNew [
+DruidStaticTypePredictionJIT >> gen_PrimitiveNew [
 	"AutoGenerated by Druid"
 
 	| s34 jump1 jump6 jump3 b349 currentBlock jump8 jump5 jump2 s23 jump7 jump4 |
@@ -7555,11 +6519,11 @@ DruidJIT >> gen_PrimitiveNew [
 ]
 
 { #category : #generated }
-DruidJIT >> gen_PrimitiveNewWithArg [
+DruidStaticTypePredictionJIT >> gen_PrimitiveNewWithArg [
 	"AutoGenerated by Druid"
 
 	| jump5 s169 s81 s55 jump10 s184 jump3 s86 b690 s173 jump1 jump8 currentBlock s49 s195 s90 s7 s141 s106 s233 jump6 s40 jump11 jump4 jump13 s93 s63 jump2 s109 s102 jump9 jump14 jump7 jump12 s66 |
-	self SubCq: 32 R: SPReg.
+	self SubCq: 24 R: SPReg.
 	self MoveR: ReceiverResultReg R: Extra3Reg.
 	self MoveR: Extra3Reg Mw: 0 r: SPReg.
 	self MoveR: Arg0Reg R: SendNumArgsReg.
@@ -7580,12 +6544,9 @@ DruidJIT >> gen_PrimitiveNewWithArg [
 	self LogicalShiftRightCq: 16 R: Extra1Reg.
 	self AndCq: 31 R: Extra1Reg.
 	self MoveMw: 0 r: SPReg R: Extra3Reg.
-	self MoveM32: 4 r: Extra3Reg R: Extra3Reg.
-	self AndCq: 16rFFFFFFFF R: Extra3Reg.
-	self MoveR: Extra3Reg Mw: 8 r: SPReg.
-	self MoveMw: 8 r: SPReg R: Extra3Reg.
-	self AndCq: 16r3FFFFF R: Extra3Reg.
-	self MoveR: Extra3Reg Mw: 8 r: SPReg.
+	self MoveM32: 4 r: Extra3Reg R: Extra2Reg.
+	self AndCq: 16rFFFFFFFF R: Extra2Reg.
+	self AndCq: 16r3FFFFF R: Extra2Reg.
 	self CmpCq: 2 R: Extra1Reg.
 	jump2 := self JumpNonZero: 0.
 	self genMoveConstant: objectMemory nilObject R: Extra0Reg.
@@ -7620,8 +6581,7 @@ DruidJIT >> gen_PrimitiveNewWithArg [
 	jump2 jmpTarget: currentBlock.
 	self CmpCq: 10 R: Extra1Reg.
 	jump2 := self JumpNonZero: 0.
-	self MoveMw: 8 r: SPReg R: Extra3Reg.
-	self CmpCq: 34 R: Extra3Reg.
+	self CmpCq: 34 R: Extra2Reg.
 	jump8 := self JumpNonZero: 0.
 	self CmpCq: 2 R: SendNumArgsReg.
 	jump9 := self JumpZero: 0.
@@ -7654,17 +6614,17 @@ DruidJIT >> gen_PrimitiveNewWithArg [
 	self
 		DivR: Extra0Reg
 		R: ClassReg
-		Quo: ClassReg
-		Rem: Extra0Reg.
+		Quo: Extra0Reg
+		Rem: ClassReg.
 	self AndCq: 1 R: SendNumArgsReg.
 	self AddR: SendNumArgsReg R: Extra1Reg.
-	self MoveMw: 8 r: SPReg R: Extra3Reg.
-	self CmpCq: 0 R: Extra3Reg.
+	self CmpCq: 0 R: Extra2Reg.
 	jump8 := self JumpNonZero: 0.
-	self MoveCq: s63 R: Extra0Reg.
+	self MoveCq: s63 R: ClassReg.
 	jump11 := self Jump: 0.
 	currentBlock := self Label.
 	jump8 jmpTarget: currentBlock.
+	self MoveR: Extra0Reg R: ClassReg.
 	currentBlock := self Label.
 	jump9 jmpTarget: currentBlock.
 	s81 := 0.
@@ -7704,15 +6664,15 @@ DruidJIT >> gen_PrimitiveNewWithArg [
 	self
 		DivR: Extra0Reg
 		R: ClassReg
-		Quo: Extra2Reg
-		Rem: Extra0Reg.
+		Quo: Extra0Reg
+		Rem: ClassReg.
 	s109 := 8.
-	self MoveCq: s109 R: Extra0Reg.
-	self SubR: SendNumArgsReg R: Extra0Reg.
-	self AndCq: 7 R: Extra0Reg.
-	self AddR: Extra0Reg R: Extra1Reg.
+	self MoveCq: s109 R: ClassReg.
+	self SubR: SendNumArgsReg R: ClassReg.
+	self AndCq: 7 R: ClassReg.
+	self AddR: ClassReg R: Extra1Reg.
 	self MoveCq: s102 R: ClassReg.
-	self MoveR: Extra2Reg R: SendNumArgsReg.
+	self MoveR: Extra0Reg R: SendNumArgsReg.
 	jump12 := self Jump: 0.
 	currentBlock := self Label.
 	jump2 jmpTarget: currentBlock.
@@ -7721,8 +6681,7 @@ DruidJIT >> gen_PrimitiveNewWithArg [
 	self CmpCq: 5 R: Extra1Reg.
 	jump13 := self JumpAbove: 0.
 	self AndCq: 16rFFFF R: Extra0Reg.
-	self genMoveConstant: objectMemory nilObject R: Extra2Reg.
-	self MoveR: Extra2Reg R: ClassReg.
+	self genMoveConstant: objectMemory nilObject R: ClassReg.
 	self MoveR: Extra0Reg R: SendNumArgsReg.
 	currentBlock := self Label.
 	jump4 jmpTarget: currentBlock.
@@ -7731,11 +6690,9 @@ DruidJIT >> gen_PrimitiveNewWithArg [
 	jump7 jmpTarget: currentBlock.
 	jump8 jmpTarget: currentBlock.
 	jump12 jmpTarget: currentBlock.
-	self MoveMw: 8 r: SPReg R: Extra3Reg.
-	self CmpCq: 0 R: Extra3Reg.
+	self CmpCq: 0 R: Extra2Reg.
 	jump12 := self JumpNonZero: 0.
-	self MoveR: ClassReg R: Extra0Reg.
-	self MoveR: SendNumArgsReg R: ClassReg.
+	self MoveR: SendNumArgsReg R: Extra0Reg.
 	currentBlock := self Label.
 	jump11 jmpTarget: currentBlock.
 	self MoveMw: 0 r: SPReg R: Extra3Reg.
@@ -7753,10 +6710,10 @@ DruidJIT >> gen_PrimitiveNewWithArg [
 	jump7 := self Jump: 0.
 	currentBlock := self Label.
 	jump8 jmpTarget: currentBlock.
+	self MoveR: ClassReg R: Extra3Reg.
+	self MoveR: Extra3Reg Mw: 8 r: SPReg.
 	self MoveR: Extra0Reg R: Extra3Reg.
 	self MoveR: Extra3Reg Mw: 16 r: SPReg.
-	self MoveR: ClassReg R: Extra3Reg.
-	self MoveR: Extra3Reg Mw: 24 r: SPReg.
 	jump8 := self Jump: 0.
 	currentBlock := self Label.
 	jump12 jmpTarget: currentBlock.
@@ -7765,17 +6722,15 @@ DruidJIT >> gen_PrimitiveNewWithArg [
 	currentBlock := self Label.
 	jump9 jmpTarget: currentBlock.
 	self MoveR: Extra0Reg R: Extra3Reg.
-	self MoveR: Extra3Reg Mw: 16 r: SPReg.
+	self MoveR: Extra3Reg Mw: 8 r: SPReg.
 	self MoveR: ClassReg R: Extra3Reg.
-	self MoveR: Extra3Reg Mw: 24 r: SPReg.
-	self MoveMw: 8 r: SPReg R: Extra3Reg.
-	self MoveR: Extra3Reg R: Extra2Reg.
+	self MoveR: Extra3Reg Mw: 16 r: SPReg.
 	currentBlock := self Label.
 	jump8 jmpTarget: currentBlock.
-	self MoveMw: 24 r: SPReg R: Extra3Reg.
+	self MoveMw: 16 r: SPReg R: Extra3Reg.
 	self CmpCq: 16rFFFF R: Extra3Reg.
 	jump8 := self JumpBelowOrEqual: 0.
-	self MoveMw: 24 r: SPReg R: Extra3Reg.
+	self MoveMw: 16 r: SPReg R: Extra3Reg.
 	self CmpCq: 16r10000000000 R: Extra3Reg.
 	jump9 := self JumpBelowOrEqual: 0.
 	s169 := 1.
@@ -7792,7 +6747,7 @@ DruidJIT >> gen_PrimitiveNewWithArg [
 	jump9 := self Jump: 0.
 	currentBlock := self Label.
 	jump8 jmpTarget: currentBlock.
-	self MoveMw: 24 r: SPReg R: Extra3Reg.
+	self MoveMw: 16 r: SPReg R: Extra3Reg.
 	self CmpCq: 255 R: Extra3Reg.
 	jump8 := self JumpBelow: 0.
 	self MoveMw: 0 r: SPReg R: Extra3Reg.
@@ -7801,71 +6756,70 @@ DruidJIT >> gen_PrimitiveNewWithArg [
 	jump6 := self Jump: 0.
 	currentBlock := self Label.
 	jump8 jmpTarget: currentBlock.
-	self MoveMw: 24 r: SPReg R: Extra3Reg.
+	self MoveMw: 16 r: SPReg R: Extra3Reg.
 	self CmpCq: 1 R: Extra3Reg.
 	jump8 := self JumpAboveOrEqual: 0.
 	s184 := 8.
-	self MoveCq: s184 R: SendNumArgsReg.
+	self MoveCq: s184 R: ClassReg.
 	jump5 := self Jump: 0.
 	currentBlock := self Label.
 	jump8 jmpTarget: currentBlock.
-	self MoveMw: 24 r: SPReg R: Extra3Reg.
-	self MoveR: Extra3Reg R: SendNumArgsReg.
-	self LogicalShiftLeftCq: 3 R: SendNumArgsReg.
+	self MoveMw: 16 r: SPReg R: Extra3Reg.
+	self MoveR: Extra3Reg R: ClassReg.
+	self LogicalShiftLeftCq: 3 R: ClassReg.
 	currentBlock := self Label.
 	jump5 jmpTarget: currentBlock.
-	self AddCq: 8 R: SendNumArgsReg.
-	self MoveAw: objectMemory freeStartAddress R: Extra0Reg.
-	self AddR: SendNumArgsReg R: Extra0Reg.
+	self AddCq: 8 R: ClassReg.
+	self MoveAw: objectMemory freeStartAddress R: SendNumArgsReg.
+	self AddR: ClassReg R: SendNumArgsReg.
 	s195 := objectMemory getScavengeThreshold.
-	self CmpCq: s195 R: Extra0Reg.
+	self CmpCq: s195 R: SendNumArgsReg.
 	jump5 := self JumpBelowOrEqual: 0.
-	self CmpCq: s195 R: Extra0Reg.
+	self CmpCq: s195 R: SendNumArgsReg.
 	jump8 := self JumpBelowOrEqual: 0.
 	jump4 := self Jump: 0.
 	currentBlock := self Label.
 	jump5 jmpTarget: currentBlock.
 	jump8 jmpTarget: currentBlock.
-	self MoveAw: objectMemory freeStartAddress R: Extra0Reg.
-	self MoveMw: 24 r: SPReg R: Extra3Reg.
-	self MoveR: Extra3Reg R: ClassReg.
-	self LogicalShiftLeftCq: 56 R: ClassReg.
+	self MoveAw: objectMemory freeStartAddress R: SendNumArgsReg.
+	self MoveMw: 16 r: SPReg R: Extra3Reg.
+	self MoveR: Extra3Reg R: Extra0Reg.
+	self LogicalShiftLeftCq: 56 R: Extra0Reg.
 	self LogicalShiftLeftCq: 24 R: Extra1Reg.
-	self AddR: Extra1Reg R: ClassReg.
-	self AddR: Extra2Reg R: ClassReg.
-	self OrCq: 0 R: ClassReg.
-	self MoveR: ClassReg M64: 0 r: Extra0Reg.
-	self MoveAw: objectMemory freeStartAddress R: ClassReg.
-	self AddR: SendNumArgsReg R: ClassReg.
-	self MoveR: ClassReg Aw: objectMemory freeStartAddress.
-	self CmpCq: 0 R: Extra0Reg.
+	self AddR: Extra1Reg R: Extra0Reg.
+	self AddR: Extra2Reg R: Extra0Reg.
+	self OrCq: 0 R: Extra0Reg.
+	self MoveR: Extra0Reg M64: 0 r: SendNumArgsReg.
+	self MoveAw: objectMemory freeStartAddress R: Extra0Reg.
+	self AddR: ClassReg R: Extra0Reg.
+	self MoveR: Extra0Reg Aw: objectMemory freeStartAddress.
+	self CmpCq: 0 R: SendNumArgsReg.
 	jump8 := self JumpNonZero: 0.
 	jump5 := self Jump: 0.
 	currentBlock := self Label.
 	jump8 jmpTarget: currentBlock.
-	self MoveR: Extra0Reg R: ClassReg.
-	self AddCq: 8 R: ClassReg.
-	self MoveMw: 24 r: SPReg R: Extra3Reg.
-	self LogicalShiftLeftCq: 3 R: Extra3Reg.
-	self MoveR: Extra3Reg Mw: 24 r: SPReg.
-	self MoveR: Extra0Reg R: SendNumArgsReg.
-	self MoveMw: 24 r: SPReg R: Extra3Reg.
-	self AddR: Extra3Reg R: SendNumArgsReg.
-	self AddCq: 8 R: SendNumArgsReg.
-	self SubCq: 1 R: SendNumArgsReg.
-	b690 := self Label.
-	self CmpR: ClassReg R: SendNumArgsReg.
-	jump8 := self JumpLess: 0.
+	self MoveR: SendNumArgsReg R: Extra0Reg.
+	self AddCq: 8 R: Extra0Reg.
 	self MoveMw: 16 r: SPReg R: Extra3Reg.
-	self MoveR: Extra3Reg M64: 0 r: ClassReg.
-	self MoveR: ClassReg R: Extra2Reg.
+	self LogicalShiftLeftCq: 3 R: Extra3Reg.
+	self MoveR: Extra3Reg Mw: 16 r: SPReg.
+	self MoveR: SendNumArgsReg R: ClassReg.
+	self MoveMw: 16 r: SPReg R: Extra3Reg.
+	self AddR: Extra3Reg R: ClassReg.
+	self AddCq: 8 R: ClassReg.
+	self SubCq: 1 R: ClassReg.
+	b690 := self Label.
+	self CmpR: Extra0Reg R: ClassReg.
+	jump8 := self JumpLess: 0.
+	self MoveMw: 8 r: SPReg R: Extra3Reg.
+	self MoveR: Extra3Reg M64: 0 r: Extra0Reg.
+	self MoveR: Extra0Reg R: Extra2Reg.
 	self AddCq: 8 R: Extra2Reg.
-	self MoveR: Extra2Reg R: ClassReg.
+	self MoveR: Extra2Reg R: Extra0Reg.
 	jump14 := self Jump: b690.
 	currentBlock := self Label.
 	jump8 jmpTarget: currentBlock.
 	s233 := 0.
-	self MoveR: Extra0Reg R: SendNumArgsReg.
 	self MoveCq: s233 R: ClassReg.
 	currentBlock := self Label.
 	jump3 jmpTarget: currentBlock.
@@ -7876,7 +6830,7 @@ DruidJIT >> gen_PrimitiveNewWithArg [
 	self MoveR: SendNumArgsReg R: ReceiverResultReg.
 	self CmpCq: 0 R: ClassReg.
 	jump9 := self JumpNonZero: 0.
-	self AddCq: 32 R: SPReg.
+	self AddCq: 24 R: SPReg.
 	self genPrimReturn.
 	currentBlock := self Label.
 	jump6 jmpTarget: currentBlock.
@@ -7891,12 +6845,12 @@ DruidJIT >> gen_PrimitiveNewWithArg [
 	jump2 jmpTarget: currentBlock.
 	jump13 jmpTarget: currentBlock.
 	jump5 jmpTarget: currentBlock.
-	self AddCq: 32 R: SPReg.
+	self AddCq: 24 R: SPReg.
 	^ 0
 ]
 
 { #category : #generated }
-DruidJIT >> gen_PrimitiveNotEqual [
+DruidStaticTypePredictionJIT >> gen_PrimitiveNotEqual [
 	"AutoGenerated by Druid"
 
 	| s11 s8 jump1 currentBlock jump2 |
@@ -7922,7 +6876,7 @@ DruidJIT >> gen_PrimitiveNotEqual [
 ]
 
 { #category : #generated }
-DruidJIT >> gen_PrimitiveNotIdentical [
+DruidStaticTypePredictionJIT >> gen_PrimitiveNotIdentical [
 	"AutoGenerated by Druid"
 
 	| jump1 jump6 jump3 b450 s56 s53 b446 jump5 currentBlock jump2 jump4 |
@@ -8004,7 +6958,7 @@ DruidJIT >> gen_PrimitiveNotIdentical [
 ]
 
 { #category : #generated }
-DruidJIT >> gen_PrimitiveQuo [
+DruidStaticTypePredictionJIT >> gen_PrimitiveQuo [
 	"AutoGenerated by Druid"
 
 	| jump1 s31 s39 s36 jump3 jump6 s18 currentBlock s27 jump5 jump2 s14 jump4 |
@@ -8037,15 +6991,15 @@ DruidJIT >> gen_PrimitiveQuo [
 	self
 		DivR: Extra0Reg
 		R: ClassReg
-		Quo: SendNumArgsReg
-		Rem: Extra0Reg.
+		Quo: Extra0Reg
+		Rem: SendNumArgsReg.
 	s18 := 0.
-	self MoveCq: s18 R: Extra0Reg.
-	self SubR: SendNumArgsReg R: Extra0Reg.
-	self MoveR: Extra0Reg R: ClassReg.
+	self MoveCq: s18 R: SendNumArgsReg.
+	self SubR: Extra0Reg R: SendNumArgsReg.
+	self MoveR: SendNumArgsReg R: ClassReg.
 	currentBlock := self Label.
 	jump6 jmpTarget: currentBlock.
-	self MoveR: ClassReg R: Extra0Reg.
+	self MoveR: ClassReg R: SendNumArgsReg.
 	jump6 := self Jump: 0.
 	currentBlock := self Label.
 	jump4 jmpTarget: currentBlock.
@@ -8079,19 +7033,18 @@ DruidJIT >> gen_PrimitiveQuo [
 	self MoveR: ClassReg R: SendNumArgsReg.
 	currentBlock := self Label.
 	jump5 jmpTarget: currentBlock.
-	self MoveR: SendNumArgsReg R: Extra0Reg.
 	currentBlock := self Label.
 	jump6 jmpTarget: currentBlock.
-	self MoveR: Extra0Reg R: ClassReg.
-	self LogicalShiftRightCq: 60 R: ClassReg.
-	self AddCq: 1 R: ClassReg.
-	self AndCq: 15 R: ClassReg.
-	self CmpCq: 1 R: ClassReg.
+	self MoveR: SendNumArgsReg R: Extra0Reg.
+	self LogicalShiftRightCq: 60 R: Extra0Reg.
+	self AddCq: 1 R: Extra0Reg.
+	self AndCq: 15 R: Extra0Reg.
+	self CmpCq: 1 R: Extra0Reg.
 	jump6 := self JumpAbove: 0.
-	self MoveR: Extra0Reg R: ClassReg.
-	self LogicalShiftLeftCq: 3 R: ClassReg.
-	self AddCq: 1 R: ClassReg.
-	self MoveR: ClassReg R: ReceiverResultReg.
+	self MoveR: SendNumArgsReg R: Extra0Reg.
+	self LogicalShiftLeftCq: 3 R: Extra0Reg.
+	self AddCq: 1 R: Extra0Reg.
+	self MoveR: Extra0Reg R: ReceiverResultReg.
 	self genPrimReturn.
 	currentBlock := self Label.
 	jump6 jmpTarget: currentBlock.
@@ -8105,7 +7058,7 @@ DruidJIT >> gen_PrimitiveQuo [
 ]
 
 { #category : #generated }
-DruidJIT >> gen_PrimitiveSize [
+DruidStaticTypePredictionJIT >> gen_PrimitiveSize [
 	"AutoGenerated by Druid"
 
 	| jump1 jumpNext jump6 jump3 s108 currentBlock jump8 jump5 jumpTrue jump2 s159 s14 jump7 jump4 |
@@ -8342,7 +7295,7 @@ DruidJIT >> gen_PrimitiveSize [
 ]
 
 { #category : #generated }
-DruidJIT >> gen_PrimitiveSmallFloatAdd [
+DruidStaticTypePredictionJIT >> gen_PrimitiveSmallFloatAdd [
 	"AutoGenerated by Druid"
 
 	| jump1 s123 jumpNext s98 s126 jump9 jump6 jump3 jump10 currentBlock s91 jump5 jump2 jump8 jumpTrue jump11 jump7 jump4 |
@@ -8532,7 +7485,7 @@ DruidJIT >> gen_PrimitiveSmallFloatAdd [
 ]
 
 { #category : #generated }
-DruidJIT >> gen_PrimitiveSmallFloatDivide [
+DruidStaticTypePredictionJIT >> gen_PrimitiveSmallFloatDivide [
 	"AutoGenerated by Druid"
 
 	| jump1 jump10 s100 jumpNext jump9 jump6 jump3 s128 s125 currentBlock jump5 jump2 jump8 jumpTrue s96 jump7 jump4 |
@@ -8727,7 +7680,7 @@ DruidJIT >> gen_PrimitiveSmallFloatDivide [
 ]
 
 { #category : #generated }
-DruidJIT >> gen_PrimitiveSmallFloatEqual [
+DruidStaticTypePredictionJIT >> gen_PrimitiveSmallFloatEqual [
 	"AutoGenerated by Druid"
 
 	| jump1 s86 s83 jump6 jump3 currentBlock jump8 jump5 jump2 jump7 jump4 |
@@ -8848,7 +7801,7 @@ DruidJIT >> gen_PrimitiveSmallFloatEqual [
 ]
 
 { #category : #generated }
-DruidJIT >> gen_PrimitiveSmallFloatGreaterOrEqual [
+DruidStaticTypePredictionJIT >> gen_PrimitiveSmallFloatGreaterOrEqual [
 	"AutoGenerated by Druid"
 
 	| jump1 s86 s83 jump6 jump3 currentBlock jump8 jump5 jump2 jump7 jump4 |
@@ -8969,7 +7922,7 @@ DruidJIT >> gen_PrimitiveSmallFloatGreaterOrEqual [
 ]
 
 { #category : #generated }
-DruidJIT >> gen_PrimitiveSmallFloatGreaterThan [
+DruidStaticTypePredictionJIT >> gen_PrimitiveSmallFloatGreaterThan [
 	"AutoGenerated by Druid"
 
 	| jump1 s86 s83 jump6 jump3 currentBlock jump8 jump5 jump2 jump7 jump4 |
@@ -9090,7 +8043,7 @@ DruidJIT >> gen_PrimitiveSmallFloatGreaterThan [
 ]
 
 { #category : #generated }
-DruidJIT >> gen_PrimitiveSmallFloatLessOrEqual [
+DruidStaticTypePredictionJIT >> gen_PrimitiveSmallFloatLessOrEqual [
 	"AutoGenerated by Druid"
 
 	| jump1 s86 s83 jump6 jump3 currentBlock jump8 jump5 jump2 jump7 jump4 |
@@ -9211,7 +8164,7 @@ DruidJIT >> gen_PrimitiveSmallFloatLessOrEqual [
 ]
 
 { #category : #generated }
-DruidJIT >> gen_PrimitiveSmallFloatLessThan [
+DruidStaticTypePredictionJIT >> gen_PrimitiveSmallFloatLessThan [
 	"AutoGenerated by Druid"
 
 	| jump1 s86 s83 jump6 jump3 currentBlock jump8 jump5 jump2 jump7 jump4 |
@@ -9332,7 +8285,7 @@ DruidJIT >> gen_PrimitiveSmallFloatLessThan [
 ]
 
 { #category : #generated }
-DruidJIT >> gen_PrimitiveSmallFloatMultiply [
+DruidStaticTypePredictionJIT >> gen_PrimitiveSmallFloatMultiply [
 	"AutoGenerated by Druid"
 
 	| jump1 s123 jumpNext s98 s126 jump9 jump6 jump3 jump10 currentBlock s91 jump5 jump2 jump8 jumpTrue jump11 jump7 jump4 |
@@ -9522,7 +8475,7 @@ DruidJIT >> gen_PrimitiveSmallFloatMultiply [
 ]
 
 { #category : #generated }
-DruidJIT >> gen_PrimitiveSmallFloatNotEqual [
+DruidStaticTypePredictionJIT >> gen_PrimitiveSmallFloatNotEqual [
 	"AutoGenerated by Druid"
 
 	| jump1 s86 s83 jump6 jump3 currentBlock jump8 jump5 jump2 jump7 jump4 |
@@ -9643,7 +8596,7 @@ DruidJIT >> gen_PrimitiveSmallFloatNotEqual [
 ]
 
 { #category : #generated }
-DruidJIT >> gen_PrimitiveSmallFloatSubtract [
+DruidStaticTypePredictionJIT >> gen_PrimitiveSmallFloatSubtract [
 	"AutoGenerated by Druid"
 
 	| jump1 s123 jumpNext s98 s126 jump9 jump6 jump3 jump10 currentBlock s91 jump5 jump2 jump8 jumpTrue jump11 jump7 jump4 |
@@ -9833,7 +8786,7 @@ DruidJIT >> gen_PrimitiveSmallFloatSubtract [
 ]
 
 { #category : #generated }
-DruidJIT >> gen_PrimitiveStringAt [
+DruidStaticTypePredictionJIT >> gen_PrimitiveStringAt [
 	"AutoGenerated by Druid"
 
 	| jump1 jump6 jump3 s71 s56 currentBlock s91 jump5 jump2 jump8 jump7 jump4 |
@@ -10144,7 +9097,7 @@ DruidJIT >> gen_PrimitiveStringAt [
 ]
 
 { #category : #generated }
-DruidJIT >> gen_PrimitiveStringAtPut [
+DruidStaticTypePredictionJIT >> gen_PrimitiveStringAtPut [
 	"AutoGenerated by Druid"
 
 	| jump5 s192 jump10 jump3 jump15 jump8 jump1 s143 currentBlock jump13 jumpNext jump6 s148 jump11 jump4 s146 s185 jumpTrue s135 jump2 s76 jump9 jump14 s61 jump7 jump12 s96 s138 |
@@ -10658,7 +9611,7 @@ DruidJIT >> gen_PrimitiveStringAtPut [
 ]
 
 { #category : #generated }
-DruidJIT >> gen_PrimitiveSubtract [
+DruidStaticTypePredictionJIT >> gen_PrimitiveSubtract [
 	"AutoGenerated by Druid"
 
 	| jump1 jump2 jump3 currentBlock |
@@ -10683,7 +9636,7 @@ DruidJIT >> gen_PrimitiveSubtract [
 ]
 
 { #category : #generated }
-DruidJIT >> gen_PushConstantFalseBytecode [
+DruidStaticTypePredictionJIT >> gen_PushConstantFalseBytecode [
 	"AutoGenerated by Druid"
 
 	| live currentBlock s2 |
@@ -10694,7 +9647,7 @@ DruidJIT >> gen_PushConstantFalseBytecode [
 ]
 
 { #category : #generated }
-DruidJIT >> gen_PushConstantNilBytecode [
+DruidStaticTypePredictionJIT >> gen_PushConstantNilBytecode [
 	"AutoGenerated by Druid"
 
 	| live currentBlock t0 |
@@ -10709,7 +9662,7 @@ DruidJIT >> gen_PushConstantNilBytecode [
 ]
 
 { #category : #generated }
-DruidJIT >> gen_PushConstantOneBytecode [
+DruidStaticTypePredictionJIT >> gen_PushConstantOneBytecode [
 	"AutoGenerated by Druid"
 
 	| live currentBlock s2 |
@@ -10720,7 +9673,7 @@ DruidJIT >> gen_PushConstantOneBytecode [
 ]
 
 { #category : #generated }
-DruidJIT >> gen_PushConstantTrueBytecode [
+DruidStaticTypePredictionJIT >> gen_PushConstantTrueBytecode [
 	"AutoGenerated by Druid"
 
 	| live currentBlock s2 |
@@ -10731,7 +9684,7 @@ DruidJIT >> gen_PushConstantTrueBytecode [
 ]
 
 { #category : #generated }
-DruidJIT >> gen_PushConstantZeroBytecode [
+DruidStaticTypePredictionJIT >> gen_PushConstantZeroBytecode [
 	"AutoGenerated by Druid"
 
 	| live currentBlock s2 |
@@ -10742,18 +9695,7 @@ DruidJIT >> gen_PushConstantZeroBytecode [
 ]
 
 { #category : #generated }
-DruidJIT >> gen_PushLiteralConstantBytecode [
-	"AutoGenerated by Druid"
-
-	| currentBlock |
-	self MoveCq: ((methodObj + 8) + ((0 + LiteralStart) << 3)) R: TempReg.
-	self MoveM64: 0 r: TempReg R: TempReg.
-	self ssPushRegister: TempReg.
-	^ 0
-]
-
-{ #category : #generated }
-DruidJIT >> gen_PushLiteralConstantBytecode0 [
+DruidStaticTypePredictionJIT >> gen_PushLiteralConstantBytecode0 [
 	"AutoGenerated by Druid"
 
 	| t0 s4 currentBlock live s3 |
@@ -10771,7 +9713,7 @@ DruidJIT >> gen_PushLiteralConstantBytecode0 [
 ]
 
 { #category : #generated }
-DruidJIT >> gen_PushLiteralConstantBytecode1 [
+DruidStaticTypePredictionJIT >> gen_PushLiteralConstantBytecode1 [
 	"AutoGenerated by Druid"
 
 	| s3 t0 s4 currentBlock live s5 |
@@ -10790,7 +9732,7 @@ DruidJIT >> gen_PushLiteralConstantBytecode1 [
 ]
 
 { #category : #generated }
-DruidJIT >> gen_PushLiteralConstantBytecode10 [
+DruidStaticTypePredictionJIT >> gen_PushLiteralConstantBytecode10 [
 	"AutoGenerated by Druid"
 
 	| s3 t0 s4 currentBlock live s5 |
@@ -10809,7 +9751,7 @@ DruidJIT >> gen_PushLiteralConstantBytecode10 [
 ]
 
 { #category : #generated }
-DruidJIT >> gen_PushLiteralConstantBytecode11 [
+DruidStaticTypePredictionJIT >> gen_PushLiteralConstantBytecode11 [
 	"AutoGenerated by Druid"
 
 	| s3 t0 s4 currentBlock live s5 |
@@ -10828,7 +9770,7 @@ DruidJIT >> gen_PushLiteralConstantBytecode11 [
 ]
 
 { #category : #generated }
-DruidJIT >> gen_PushLiteralConstantBytecode12 [
+DruidStaticTypePredictionJIT >> gen_PushLiteralConstantBytecode12 [
 	"AutoGenerated by Druid"
 
 	| s3 t0 s4 currentBlock live s5 |
@@ -10847,7 +9789,7 @@ DruidJIT >> gen_PushLiteralConstantBytecode12 [
 ]
 
 { #category : #generated }
-DruidJIT >> gen_PushLiteralConstantBytecode13 [
+DruidStaticTypePredictionJIT >> gen_PushLiteralConstantBytecode13 [
 	"AutoGenerated by Druid"
 
 	| s3 t0 s4 currentBlock live s5 |
@@ -10866,7 +9808,7 @@ DruidJIT >> gen_PushLiteralConstantBytecode13 [
 ]
 
 { #category : #generated }
-DruidJIT >> gen_PushLiteralConstantBytecode14 [
+DruidStaticTypePredictionJIT >> gen_PushLiteralConstantBytecode14 [
 	"AutoGenerated by Druid"
 
 	| s3 t0 s4 currentBlock live s5 |
@@ -10885,7 +9827,7 @@ DruidJIT >> gen_PushLiteralConstantBytecode14 [
 ]
 
 { #category : #generated }
-DruidJIT >> gen_PushLiteralConstantBytecode15 [
+DruidStaticTypePredictionJIT >> gen_PushLiteralConstantBytecode15 [
 	"AutoGenerated by Druid"
 
 	| s3 t0 s4 currentBlock live s5 |
@@ -10904,7 +9846,7 @@ DruidJIT >> gen_PushLiteralConstantBytecode15 [
 ]
 
 { #category : #generated }
-DruidJIT >> gen_PushLiteralConstantBytecode16 [
+DruidStaticTypePredictionJIT >> gen_PushLiteralConstantBytecode16 [
 	"AutoGenerated by Druid"
 
 	| s3 t0 s4 currentBlock live s5 |
@@ -10923,7 +9865,7 @@ DruidJIT >> gen_PushLiteralConstantBytecode16 [
 ]
 
 { #category : #generated }
-DruidJIT >> gen_PushLiteralConstantBytecode17 [
+DruidStaticTypePredictionJIT >> gen_PushLiteralConstantBytecode17 [
 	"AutoGenerated by Druid"
 
 	| s3 t0 s4 currentBlock live s5 |
@@ -10942,7 +9884,7 @@ DruidJIT >> gen_PushLiteralConstantBytecode17 [
 ]
 
 { #category : #generated }
-DruidJIT >> gen_PushLiteralConstantBytecode18 [
+DruidStaticTypePredictionJIT >> gen_PushLiteralConstantBytecode18 [
 	"AutoGenerated by Druid"
 
 	| s3 t0 s4 currentBlock live s5 |
@@ -10961,7 +9903,7 @@ DruidJIT >> gen_PushLiteralConstantBytecode18 [
 ]
 
 { #category : #generated }
-DruidJIT >> gen_PushLiteralConstantBytecode19 [
+DruidStaticTypePredictionJIT >> gen_PushLiteralConstantBytecode19 [
 	"AutoGenerated by Druid"
 
 	| s3 t0 s4 currentBlock live s5 |
@@ -10980,7 +9922,7 @@ DruidJIT >> gen_PushLiteralConstantBytecode19 [
 ]
 
 { #category : #generated }
-DruidJIT >> gen_PushLiteralConstantBytecode2 [
+DruidStaticTypePredictionJIT >> gen_PushLiteralConstantBytecode2 [
 	"AutoGenerated by Druid"
 
 	| s3 t0 s4 currentBlock live s5 |
@@ -10999,7 +9941,7 @@ DruidJIT >> gen_PushLiteralConstantBytecode2 [
 ]
 
 { #category : #generated }
-DruidJIT >> gen_PushLiteralConstantBytecode20 [
+DruidStaticTypePredictionJIT >> gen_PushLiteralConstantBytecode20 [
 	"AutoGenerated by Druid"
 
 	| s3 t0 s4 currentBlock live s5 |
@@ -11018,7 +9960,7 @@ DruidJIT >> gen_PushLiteralConstantBytecode20 [
 ]
 
 { #category : #generated }
-DruidJIT >> gen_PushLiteralConstantBytecode21 [
+DruidStaticTypePredictionJIT >> gen_PushLiteralConstantBytecode21 [
 	"AutoGenerated by Druid"
 
 	| s3 t0 s4 currentBlock live s5 |
@@ -11037,7 +9979,7 @@ DruidJIT >> gen_PushLiteralConstantBytecode21 [
 ]
 
 { #category : #generated }
-DruidJIT >> gen_PushLiteralConstantBytecode22 [
+DruidStaticTypePredictionJIT >> gen_PushLiteralConstantBytecode22 [
 	"AutoGenerated by Druid"
 
 	| s3 t0 s4 currentBlock live s5 |
@@ -11056,7 +9998,7 @@ DruidJIT >> gen_PushLiteralConstantBytecode22 [
 ]
 
 { #category : #generated }
-DruidJIT >> gen_PushLiteralConstantBytecode23 [
+DruidStaticTypePredictionJIT >> gen_PushLiteralConstantBytecode23 [
 	"AutoGenerated by Druid"
 
 	| s3 t0 s4 currentBlock live s5 |
@@ -11075,7 +10017,7 @@ DruidJIT >> gen_PushLiteralConstantBytecode23 [
 ]
 
 { #category : #generated }
-DruidJIT >> gen_PushLiteralConstantBytecode24 [
+DruidStaticTypePredictionJIT >> gen_PushLiteralConstantBytecode24 [
 	"AutoGenerated by Druid"
 
 	| s3 t0 s4 currentBlock live s5 |
@@ -11094,7 +10036,7 @@ DruidJIT >> gen_PushLiteralConstantBytecode24 [
 ]
 
 { #category : #generated }
-DruidJIT >> gen_PushLiteralConstantBytecode25 [
+DruidStaticTypePredictionJIT >> gen_PushLiteralConstantBytecode25 [
 	"AutoGenerated by Druid"
 
 	| s3 t0 s4 currentBlock live s5 |
@@ -11113,7 +10055,7 @@ DruidJIT >> gen_PushLiteralConstantBytecode25 [
 ]
 
 { #category : #generated }
-DruidJIT >> gen_PushLiteralConstantBytecode26 [
+DruidStaticTypePredictionJIT >> gen_PushLiteralConstantBytecode26 [
 	"AutoGenerated by Druid"
 
 	| s3 t0 s4 currentBlock live s5 |
@@ -11132,7 +10074,7 @@ DruidJIT >> gen_PushLiteralConstantBytecode26 [
 ]
 
 { #category : #generated }
-DruidJIT >> gen_PushLiteralConstantBytecode27 [
+DruidStaticTypePredictionJIT >> gen_PushLiteralConstantBytecode27 [
 	"AutoGenerated by Druid"
 
 	| s3 t0 s4 currentBlock live s5 |
@@ -11151,7 +10093,7 @@ DruidJIT >> gen_PushLiteralConstantBytecode27 [
 ]
 
 { #category : #generated }
-DruidJIT >> gen_PushLiteralConstantBytecode28 [
+DruidStaticTypePredictionJIT >> gen_PushLiteralConstantBytecode28 [
 	"AutoGenerated by Druid"
 
 	| s3 t0 s4 currentBlock live s5 |
@@ -11170,7 +10112,7 @@ DruidJIT >> gen_PushLiteralConstantBytecode28 [
 ]
 
 { #category : #generated }
-DruidJIT >> gen_PushLiteralConstantBytecode29 [
+DruidStaticTypePredictionJIT >> gen_PushLiteralConstantBytecode29 [
 	"AutoGenerated by Druid"
 
 	| s3 t0 s4 currentBlock live s5 |
@@ -11189,7 +10131,7 @@ DruidJIT >> gen_PushLiteralConstantBytecode29 [
 ]
 
 { #category : #generated }
-DruidJIT >> gen_PushLiteralConstantBytecode3 [
+DruidStaticTypePredictionJIT >> gen_PushLiteralConstantBytecode3 [
 	"AutoGenerated by Druid"
 
 	| s3 t0 s4 currentBlock live s5 |
@@ -11208,7 +10150,7 @@ DruidJIT >> gen_PushLiteralConstantBytecode3 [
 ]
 
 { #category : #generated }
-DruidJIT >> gen_PushLiteralConstantBytecode30 [
+DruidStaticTypePredictionJIT >> gen_PushLiteralConstantBytecode30 [
 	"AutoGenerated by Druid"
 
 	| s3 t0 s4 currentBlock live s5 |
@@ -11227,7 +10169,7 @@ DruidJIT >> gen_PushLiteralConstantBytecode30 [
 ]
 
 { #category : #generated }
-DruidJIT >> gen_PushLiteralConstantBytecode31 [
+DruidStaticTypePredictionJIT >> gen_PushLiteralConstantBytecode31 [
 	"AutoGenerated by Druid"
 
 	| s3 t0 s4 currentBlock live s5 |
@@ -11246,7 +10188,7 @@ DruidJIT >> gen_PushLiteralConstantBytecode31 [
 ]
 
 { #category : #generated }
-DruidJIT >> gen_PushLiteralConstantBytecode4 [
+DruidStaticTypePredictionJIT >> gen_PushLiteralConstantBytecode4 [
 	"AutoGenerated by Druid"
 
 	| s3 t0 s4 currentBlock live s5 |
@@ -11265,7 +10207,7 @@ DruidJIT >> gen_PushLiteralConstantBytecode4 [
 ]
 
 { #category : #generated }
-DruidJIT >> gen_PushLiteralConstantBytecode5 [
+DruidStaticTypePredictionJIT >> gen_PushLiteralConstantBytecode5 [
 	"AutoGenerated by Druid"
 
 	| s3 t0 s4 currentBlock live s5 |
@@ -11284,7 +10226,7 @@ DruidJIT >> gen_PushLiteralConstantBytecode5 [
 ]
 
 { #category : #generated }
-DruidJIT >> gen_PushLiteralConstantBytecode6 [
+DruidStaticTypePredictionJIT >> gen_PushLiteralConstantBytecode6 [
 	"AutoGenerated by Druid"
 
 	| s3 t0 s4 currentBlock live s5 |
@@ -11303,7 +10245,7 @@ DruidJIT >> gen_PushLiteralConstantBytecode6 [
 ]
 
 { #category : #generated }
-DruidJIT >> gen_PushLiteralConstantBytecode7 [
+DruidStaticTypePredictionJIT >> gen_PushLiteralConstantBytecode7 [
 	"AutoGenerated by Druid"
 
 	| s3 t0 s4 currentBlock live s5 |
@@ -11322,7 +10264,7 @@ DruidJIT >> gen_PushLiteralConstantBytecode7 [
 ]
 
 { #category : #generated }
-DruidJIT >> gen_PushLiteralConstantBytecode8 [
+DruidStaticTypePredictionJIT >> gen_PushLiteralConstantBytecode8 [
 	"AutoGenerated by Druid"
 
 	| s3 t0 s4 currentBlock live s5 |
@@ -11341,7 +10283,7 @@ DruidJIT >> gen_PushLiteralConstantBytecode8 [
 ]
 
 { #category : #generated }
-DruidJIT >> gen_PushLiteralConstantBytecode9 [
+DruidStaticTypePredictionJIT >> gen_PushLiteralConstantBytecode9 [
 	"AutoGenerated by Druid"
 
 	| s3 t0 s4 currentBlock live s5 |
@@ -11360,7 +10302,7 @@ DruidJIT >> gen_PushLiteralConstantBytecode9 [
 ]
 
 { #category : #generated }
-DruidJIT >> gen_PushLiteralVariable16CasesBytecode0 [
+DruidStaticTypePredictionJIT >> gen_PushLiteralVariable16CasesBytecode0 [
 	"AutoGenerated by Druid"
 
 	| jump1 s3 s28 t1 jump3 currentBlock t0 jump2 s4 s29 b233 live jump4 |
@@ -11412,7 +10354,7 @@ DruidJIT >> gen_PushLiteralVariable16CasesBytecode0 [
 ]
 
 { #category : #generated }
-DruidJIT >> gen_PushLiteralVariable16CasesBytecode1 [
+DruidStaticTypePredictionJIT >> gen_PushLiteralVariable16CasesBytecode1 [
 	"AutoGenerated by Druid"
 
 	| jump1 s3 t1 jump3 s5 s30 currentBlock t0 jump2 s4 s29 b233 live jump4 |
@@ -11465,7 +10407,7 @@ DruidJIT >> gen_PushLiteralVariable16CasesBytecode1 [
 ]
 
 { #category : #generated }
-DruidJIT >> gen_PushLiteralVariable16CasesBytecode10 [
+DruidStaticTypePredictionJIT >> gen_PushLiteralVariable16CasesBytecode10 [
 	"AutoGenerated by Druid"
 
 	| jump1 s3 t1 jump3 s5 s30 currentBlock t0 jump2 s4 s29 b233 live jump4 |
@@ -11518,7 +10460,7 @@ DruidJIT >> gen_PushLiteralVariable16CasesBytecode10 [
 ]
 
 { #category : #generated }
-DruidJIT >> gen_PushLiteralVariable16CasesBytecode11 [
+DruidStaticTypePredictionJIT >> gen_PushLiteralVariable16CasesBytecode11 [
 	"AutoGenerated by Druid"
 
 	| jump1 s3 t1 jump3 s5 s30 currentBlock t0 jump2 s4 s29 b233 live jump4 |
@@ -11571,7 +10513,7 @@ DruidJIT >> gen_PushLiteralVariable16CasesBytecode11 [
 ]
 
 { #category : #generated }
-DruidJIT >> gen_PushLiteralVariable16CasesBytecode12 [
+DruidStaticTypePredictionJIT >> gen_PushLiteralVariable16CasesBytecode12 [
 	"AutoGenerated by Druid"
 
 	| jump1 s3 t1 jump3 s5 s30 currentBlock t0 jump2 s4 s29 b233 live jump4 |
@@ -11624,7 +10566,7 @@ DruidJIT >> gen_PushLiteralVariable16CasesBytecode12 [
 ]
 
 { #category : #generated }
-DruidJIT >> gen_PushLiteralVariable16CasesBytecode13 [
+DruidStaticTypePredictionJIT >> gen_PushLiteralVariable16CasesBytecode13 [
 	"AutoGenerated by Druid"
 
 	| jump1 s3 t1 jump3 s5 s30 currentBlock t0 jump2 s4 s29 b233 live jump4 |
@@ -11677,7 +10619,7 @@ DruidJIT >> gen_PushLiteralVariable16CasesBytecode13 [
 ]
 
 { #category : #generated }
-DruidJIT >> gen_PushLiteralVariable16CasesBytecode14 [
+DruidStaticTypePredictionJIT >> gen_PushLiteralVariable16CasesBytecode14 [
 	"AutoGenerated by Druid"
 
 	| jump1 s3 t1 jump3 s5 s30 currentBlock t0 jump2 s4 s29 b233 live jump4 |
@@ -11730,7 +10672,7 @@ DruidJIT >> gen_PushLiteralVariable16CasesBytecode14 [
 ]
 
 { #category : #generated }
-DruidJIT >> gen_PushLiteralVariable16CasesBytecode15 [
+DruidStaticTypePredictionJIT >> gen_PushLiteralVariable16CasesBytecode15 [
 	"AutoGenerated by Druid"
 
 	| jump1 s3 t1 jump3 s5 s30 currentBlock t0 jump2 s4 s29 b233 live jump4 |
@@ -11783,7 +10725,7 @@ DruidJIT >> gen_PushLiteralVariable16CasesBytecode15 [
 ]
 
 { #category : #generated }
-DruidJIT >> gen_PushLiteralVariable16CasesBytecode2 [
+DruidStaticTypePredictionJIT >> gen_PushLiteralVariable16CasesBytecode2 [
 	"AutoGenerated by Druid"
 
 	| jump1 s3 t1 jump3 s5 s30 currentBlock t0 jump2 s4 s29 b233 live jump4 |
@@ -11836,7 +10778,7 @@ DruidJIT >> gen_PushLiteralVariable16CasesBytecode2 [
 ]
 
 { #category : #generated }
-DruidJIT >> gen_PushLiteralVariable16CasesBytecode3 [
+DruidStaticTypePredictionJIT >> gen_PushLiteralVariable16CasesBytecode3 [
 	"AutoGenerated by Druid"
 
 	| jump1 s3 t1 jump3 s5 s30 currentBlock t0 jump2 s4 s29 b233 live jump4 |
@@ -11889,7 +10831,7 @@ DruidJIT >> gen_PushLiteralVariable16CasesBytecode3 [
 ]
 
 { #category : #generated }
-DruidJIT >> gen_PushLiteralVariable16CasesBytecode4 [
+DruidStaticTypePredictionJIT >> gen_PushLiteralVariable16CasesBytecode4 [
 	"AutoGenerated by Druid"
 
 	| jump1 s3 t1 jump3 s5 s30 currentBlock t0 jump2 s4 s29 b233 live jump4 |
@@ -11942,7 +10884,7 @@ DruidJIT >> gen_PushLiteralVariable16CasesBytecode4 [
 ]
 
 { #category : #generated }
-DruidJIT >> gen_PushLiteralVariable16CasesBytecode5 [
+DruidStaticTypePredictionJIT >> gen_PushLiteralVariable16CasesBytecode5 [
 	"AutoGenerated by Druid"
 
 	| jump1 s3 t1 jump3 s5 s30 currentBlock t0 jump2 s4 s29 b233 live jump4 |
@@ -11995,7 +10937,7 @@ DruidJIT >> gen_PushLiteralVariable16CasesBytecode5 [
 ]
 
 { #category : #generated }
-DruidJIT >> gen_PushLiteralVariable16CasesBytecode6 [
+DruidStaticTypePredictionJIT >> gen_PushLiteralVariable16CasesBytecode6 [
 	"AutoGenerated by Druid"
 
 	| jump1 s3 t1 jump3 s5 s30 currentBlock t0 jump2 s4 s29 b233 live jump4 |
@@ -12048,7 +10990,7 @@ DruidJIT >> gen_PushLiteralVariable16CasesBytecode6 [
 ]
 
 { #category : #generated }
-DruidJIT >> gen_PushLiteralVariable16CasesBytecode7 [
+DruidStaticTypePredictionJIT >> gen_PushLiteralVariable16CasesBytecode7 [
 	"AutoGenerated by Druid"
 
 	| jump1 s3 t1 jump3 s5 s30 currentBlock t0 jump2 s4 s29 b233 live jump4 |
@@ -12101,7 +11043,7 @@ DruidJIT >> gen_PushLiteralVariable16CasesBytecode7 [
 ]
 
 { #category : #generated }
-DruidJIT >> gen_PushLiteralVariable16CasesBytecode8 [
+DruidStaticTypePredictionJIT >> gen_PushLiteralVariable16CasesBytecode8 [
 	"AutoGenerated by Druid"
 
 	| jump1 s3 t1 jump3 s5 s30 currentBlock t0 jump2 s4 s29 b233 live jump4 |
@@ -12154,7 +11096,7 @@ DruidJIT >> gen_PushLiteralVariable16CasesBytecode8 [
 ]
 
 { #category : #generated }
-DruidJIT >> gen_PushLiteralVariable16CasesBytecode9 [
+DruidStaticTypePredictionJIT >> gen_PushLiteralVariable16CasesBytecode9 [
 	"AutoGenerated by Druid"
 
 	| jump1 s3 t1 jump3 s5 s30 currentBlock t0 jump2 s4 s29 b233 live jump4 |
@@ -12207,7 +11149,7 @@ DruidJIT >> gen_PushLiteralVariable16CasesBytecode9 [
 ]
 
 { #category : #generated }
-DruidJIT >> gen_PushNewArrayBytecode [
+DruidStaticTypePredictionJIT >> gen_PushNewArrayBytecode [
 	"AutoGenerated by Druid"
 
 	| s6 s50 s46 s4 s22 s31 s29 s38 b109 s2 s20 currentBlock s36 s42 t1 s7 jump1 s34 s47 s17 s10 live s56 s45 s3 s28 s30 s21 t2 s52 s8 jump2 s35 t0 s11 |
@@ -12338,7 +11280,7 @@ DruidJIT >> gen_PushNewArrayBytecode [
 ]
 
 { #category : #generated }
-DruidJIT >> gen_PushReceiverBytecode [
+DruidStaticTypePredictionJIT >> gen_PushReceiverBytecode [
 	"AutoGenerated by Druid"
 
 	| live currentBlock t0 |
@@ -12354,7 +11296,7 @@ DruidJIT >> gen_PushReceiverBytecode [
 ]
 
 { #category : #generated }
-DruidJIT >> gen_PushReceiverVariableBytecode0 [
+DruidStaticTypePredictionJIT >> gen_PushReceiverVariableBytecode0 [
 	"AutoGenerated by Druid"
 
 	| live currentBlock t0 |
@@ -12370,7 +11312,7 @@ DruidJIT >> gen_PushReceiverVariableBytecode0 [
 ]
 
 { #category : #generated }
-DruidJIT >> gen_PushReceiverVariableBytecode1 [
+DruidStaticTypePredictionJIT >> gen_PushReceiverVariableBytecode1 [
 	"AutoGenerated by Druid"
 
 	| live currentBlock t0 |
@@ -12386,7 +11328,7 @@ DruidJIT >> gen_PushReceiverVariableBytecode1 [
 ]
 
 { #category : #generated }
-DruidJIT >> gen_PushReceiverVariableBytecode10 [
+DruidStaticTypePredictionJIT >> gen_PushReceiverVariableBytecode10 [
 	"AutoGenerated by Druid"
 
 	| live currentBlock t0 |
@@ -12402,7 +11344,7 @@ DruidJIT >> gen_PushReceiverVariableBytecode10 [
 ]
 
 { #category : #generated }
-DruidJIT >> gen_PushReceiverVariableBytecode11 [
+DruidStaticTypePredictionJIT >> gen_PushReceiverVariableBytecode11 [
 	"AutoGenerated by Druid"
 
 	| live currentBlock t0 |
@@ -12418,7 +11360,7 @@ DruidJIT >> gen_PushReceiverVariableBytecode11 [
 ]
 
 { #category : #generated }
-DruidJIT >> gen_PushReceiverVariableBytecode12 [
+DruidStaticTypePredictionJIT >> gen_PushReceiverVariableBytecode12 [
 	"AutoGenerated by Druid"
 
 	| live currentBlock t0 |
@@ -12434,7 +11376,7 @@ DruidJIT >> gen_PushReceiverVariableBytecode12 [
 ]
 
 { #category : #generated }
-DruidJIT >> gen_PushReceiverVariableBytecode13 [
+DruidStaticTypePredictionJIT >> gen_PushReceiverVariableBytecode13 [
 	"AutoGenerated by Druid"
 
 	| live currentBlock t0 |
@@ -12450,7 +11392,7 @@ DruidJIT >> gen_PushReceiverVariableBytecode13 [
 ]
 
 { #category : #generated }
-DruidJIT >> gen_PushReceiverVariableBytecode14 [
+DruidStaticTypePredictionJIT >> gen_PushReceiverVariableBytecode14 [
 	"AutoGenerated by Druid"
 
 	| live currentBlock t0 |
@@ -12466,7 +11408,7 @@ DruidJIT >> gen_PushReceiverVariableBytecode14 [
 ]
 
 { #category : #generated }
-DruidJIT >> gen_PushReceiverVariableBytecode15 [
+DruidStaticTypePredictionJIT >> gen_PushReceiverVariableBytecode15 [
 	"AutoGenerated by Druid"
 
 	| live currentBlock t0 |
@@ -12482,7 +11424,7 @@ DruidJIT >> gen_PushReceiverVariableBytecode15 [
 ]
 
 { #category : #generated }
-DruidJIT >> gen_PushReceiverVariableBytecode2 [
+DruidStaticTypePredictionJIT >> gen_PushReceiverVariableBytecode2 [
 	"AutoGenerated by Druid"
 
 	| live currentBlock t0 |
@@ -12498,7 +11440,7 @@ DruidJIT >> gen_PushReceiverVariableBytecode2 [
 ]
 
 { #category : #generated }
-DruidJIT >> gen_PushReceiverVariableBytecode3 [
+DruidStaticTypePredictionJIT >> gen_PushReceiverVariableBytecode3 [
 	"AutoGenerated by Druid"
 
 	| live currentBlock t0 |
@@ -12514,7 +11456,7 @@ DruidJIT >> gen_PushReceiverVariableBytecode3 [
 ]
 
 { #category : #generated }
-DruidJIT >> gen_PushReceiverVariableBytecode4 [
+DruidStaticTypePredictionJIT >> gen_PushReceiverVariableBytecode4 [
 	"AutoGenerated by Druid"
 
 	| live currentBlock t0 |
@@ -12530,7 +11472,7 @@ DruidJIT >> gen_PushReceiverVariableBytecode4 [
 ]
 
 { #category : #generated }
-DruidJIT >> gen_PushReceiverVariableBytecode5 [
+DruidStaticTypePredictionJIT >> gen_PushReceiverVariableBytecode5 [
 	"AutoGenerated by Druid"
 
 	| live currentBlock t0 |
@@ -12546,7 +11488,7 @@ DruidJIT >> gen_PushReceiverVariableBytecode5 [
 ]
 
 { #category : #generated }
-DruidJIT >> gen_PushReceiverVariableBytecode6 [
+DruidStaticTypePredictionJIT >> gen_PushReceiverVariableBytecode6 [
 	"AutoGenerated by Druid"
 
 	| live currentBlock t0 |
@@ -12562,7 +11504,7 @@ DruidJIT >> gen_PushReceiverVariableBytecode6 [
 ]
 
 { #category : #generated }
-DruidJIT >> gen_PushReceiverVariableBytecode7 [
+DruidStaticTypePredictionJIT >> gen_PushReceiverVariableBytecode7 [
 	"AutoGenerated by Druid"
 
 	| live currentBlock t0 |
@@ -12578,7 +11520,7 @@ DruidJIT >> gen_PushReceiverVariableBytecode7 [
 ]
 
 { #category : #generated }
-DruidJIT >> gen_PushReceiverVariableBytecode8 [
+DruidStaticTypePredictionJIT >> gen_PushReceiverVariableBytecode8 [
 	"AutoGenerated by Druid"
 
 	| live currentBlock t0 |
@@ -12594,7 +11536,7 @@ DruidJIT >> gen_PushReceiverVariableBytecode8 [
 ]
 
 { #category : #generated }
-DruidJIT >> gen_PushReceiverVariableBytecode9 [
+DruidStaticTypePredictionJIT >> gen_PushReceiverVariableBytecode9 [
 	"AutoGenerated by Druid"
 
 	| live currentBlock t0 |
@@ -12610,7 +11552,7 @@ DruidJIT >> gen_PushReceiverVariableBytecode9 [
 ]
 
 { #category : #generated }
-DruidJIT >> gen_PushRemoteTempLongBytecode [
+DruidStaticTypePredictionJIT >> gen_PushRemoteTempLongBytecode [
 	"AutoGenerated by Druid"
 
 	| t0 s32 s4 s2 currentBlock t1 live s5 |
@@ -12665,7 +11607,7 @@ DruidJIT >> gen_PushRemoteTempLongBytecode [
 ]
 
 { #category : #generated }
-DruidJIT >> gen_PushTemporaryVariableBytecode0 [
+DruidStaticTypePredictionJIT >> gen_PushTemporaryVariableBytecode0 [
 	"AutoGenerated by Druid"
 
 	| live currentBlock t0 |
@@ -12680,7 +11622,7 @@ DruidJIT >> gen_PushTemporaryVariableBytecode0 [
 ]
 
 { #category : #generated }
-DruidJIT >> gen_PushTemporaryVariableBytecode1 [
+DruidStaticTypePredictionJIT >> gen_PushTemporaryVariableBytecode1 [
 	"AutoGenerated by Druid"
 
 	| live currentBlock t0 |
@@ -12695,7 +11637,7 @@ DruidJIT >> gen_PushTemporaryVariableBytecode1 [
 ]
 
 { #category : #generated }
-DruidJIT >> gen_PushTemporaryVariableBytecode10 [
+DruidStaticTypePredictionJIT >> gen_PushTemporaryVariableBytecode10 [
 	"AutoGenerated by Druid"
 
 	| live currentBlock t0 |
@@ -12710,7 +11652,7 @@ DruidJIT >> gen_PushTemporaryVariableBytecode10 [
 ]
 
 { #category : #generated }
-DruidJIT >> gen_PushTemporaryVariableBytecode11 [
+DruidStaticTypePredictionJIT >> gen_PushTemporaryVariableBytecode11 [
 	"AutoGenerated by Druid"
 
 	| live currentBlock t0 |
@@ -12725,7 +11667,7 @@ DruidJIT >> gen_PushTemporaryVariableBytecode11 [
 ]
 
 { #category : #generated }
-DruidJIT >> gen_PushTemporaryVariableBytecode2 [
+DruidStaticTypePredictionJIT >> gen_PushTemporaryVariableBytecode2 [
 	"AutoGenerated by Druid"
 
 	| live currentBlock t0 |
@@ -12740,7 +11682,7 @@ DruidJIT >> gen_PushTemporaryVariableBytecode2 [
 ]
 
 { #category : #generated }
-DruidJIT >> gen_PushTemporaryVariableBytecode3 [
+DruidStaticTypePredictionJIT >> gen_PushTemporaryVariableBytecode3 [
 	"AutoGenerated by Druid"
 
 	| live currentBlock t0 |
@@ -12755,7 +11697,7 @@ DruidJIT >> gen_PushTemporaryVariableBytecode3 [
 ]
 
 { #category : #generated }
-DruidJIT >> gen_PushTemporaryVariableBytecode4 [
+DruidStaticTypePredictionJIT >> gen_PushTemporaryVariableBytecode4 [
 	"AutoGenerated by Druid"
 
 	| live currentBlock t0 |
@@ -12770,7 +11712,7 @@ DruidJIT >> gen_PushTemporaryVariableBytecode4 [
 ]
 
 { #category : #generated }
-DruidJIT >> gen_PushTemporaryVariableBytecode5 [
+DruidStaticTypePredictionJIT >> gen_PushTemporaryVariableBytecode5 [
 	"AutoGenerated by Druid"
 
 	| live currentBlock t0 |
@@ -12785,7 +11727,7 @@ DruidJIT >> gen_PushTemporaryVariableBytecode5 [
 ]
 
 { #category : #generated }
-DruidJIT >> gen_PushTemporaryVariableBytecode6 [
+DruidStaticTypePredictionJIT >> gen_PushTemporaryVariableBytecode6 [
 	"AutoGenerated by Druid"
 
 	| live currentBlock t0 |
@@ -12800,7 +11742,7 @@ DruidJIT >> gen_PushTemporaryVariableBytecode6 [
 ]
 
 { #category : #generated }
-DruidJIT >> gen_PushTemporaryVariableBytecode7 [
+DruidStaticTypePredictionJIT >> gen_PushTemporaryVariableBytecode7 [
 	"AutoGenerated by Druid"
 
 	| live currentBlock t0 |
@@ -12815,7 +11757,7 @@ DruidJIT >> gen_PushTemporaryVariableBytecode7 [
 ]
 
 { #category : #generated }
-DruidJIT >> gen_PushTemporaryVariableBytecode8 [
+DruidStaticTypePredictionJIT >> gen_PushTemporaryVariableBytecode8 [
 	"AutoGenerated by Druid"
 
 	| live currentBlock t0 |
@@ -12830,7 +11772,7 @@ DruidJIT >> gen_PushTemporaryVariableBytecode8 [
 ]
 
 { #category : #generated }
-DruidJIT >> gen_PushTemporaryVariableBytecode9 [
+DruidStaticTypePredictionJIT >> gen_PushTemporaryVariableBytecode9 [
 	"AutoGenerated by Druid"
 
 	| live currentBlock t0 |
@@ -12845,7 +11787,7 @@ DruidJIT >> gen_PushTemporaryVariableBytecode9 [
 ]
 
 { #category : #generated }
-DruidJIT >> gen_ReturnFalse [
+DruidStaticTypePredictionJIT >> gen_ReturnFalse [
 	"AutoGenerated by Druid"
 
 	| live currentBlock s2 |
@@ -12857,7 +11799,7 @@ DruidJIT >> gen_ReturnFalse [
 ]
 
 { #category : #generated }
-DruidJIT >> gen_ReturnNil [
+DruidStaticTypePredictionJIT >> gen_ReturnNil [
 	"AutoGenerated by Druid"
 
 	| live currentBlock t0 |
@@ -12873,7 +11815,7 @@ DruidJIT >> gen_ReturnNil [
 ]
 
 { #category : #generated }
-DruidJIT >> gen_ReturnNilFromBlock [
+DruidStaticTypePredictionJIT >> gen_ReturnNilFromBlock [
 	"AutoGenerated by Druid"
 
 	| live currentBlock t0 |
@@ -12889,7 +11831,7 @@ DruidJIT >> gen_ReturnNilFromBlock [
 ]
 
 { #category : #generated }
-DruidJIT >> gen_ReturnReceiver [
+DruidStaticTypePredictionJIT >> gen_ReturnReceiver [
 	"AutoGenerated by Druid"
 
 	| live currentBlock t0 |
@@ -12906,7 +11848,7 @@ DruidJIT >> gen_ReturnReceiver [
 ]
 
 { #category : #generated }
-DruidJIT >> gen_ReturnTopFromBlock [
+DruidStaticTypePredictionJIT >> gen_ReturnTopFromBlock [
 	"AutoGenerated by Druid"
 
 	| live currentBlock t0 |
@@ -12923,7 +11865,7 @@ DruidJIT >> gen_ReturnTopFromBlock [
 ]
 
 { #category : #generated }
-DruidJIT >> gen_ReturnTopFromMethod [
+DruidStaticTypePredictionJIT >> gen_ReturnTopFromMethod [
 	"AutoGenerated by Druid"
 
 	| live currentBlock t0 |
@@ -12940,7 +11882,7 @@ DruidJIT >> gen_ReturnTopFromMethod [
 ]
 
 { #category : #generated }
-DruidJIT >> gen_ReturnTrue [
+DruidStaticTypePredictionJIT >> gen_ReturnTrue [
 	"AutoGenerated by Druid"
 
 	| live currentBlock s2 |
@@ -12952,7 +11894,7 @@ DruidJIT >> gen_ReturnTrue [
 ]
 
 { #category : #generated }
-DruidJIT >> gen_SendLiteralSelector0ArgsBytecode0 [
+DruidStaticTypePredictionJIT >> gen_SendLiteralSelector0ArgsBytecode0 [
 	"AutoGenerated by Druid"
 
 	| live currentBlock |
@@ -12968,7 +11910,7 @@ DruidJIT >> gen_SendLiteralSelector0ArgsBytecode0 [
 ]
 
 { #category : #generated }
-DruidJIT >> gen_SendLiteralSelector0ArgsBytecode1 [
+DruidStaticTypePredictionJIT >> gen_SendLiteralSelector0ArgsBytecode1 [
 	"AutoGenerated by Druid"
 
 	| live currentBlock |
@@ -12984,7 +11926,7 @@ DruidJIT >> gen_SendLiteralSelector0ArgsBytecode1 [
 ]
 
 { #category : #generated }
-DruidJIT >> gen_SendLiteralSelector0ArgsBytecode10 [
+DruidStaticTypePredictionJIT >> gen_SendLiteralSelector0ArgsBytecode10 [
 	"AutoGenerated by Druid"
 
 	| live currentBlock |
@@ -13000,7 +11942,7 @@ DruidJIT >> gen_SendLiteralSelector0ArgsBytecode10 [
 ]
 
 { #category : #generated }
-DruidJIT >> gen_SendLiteralSelector0ArgsBytecode11 [
+DruidStaticTypePredictionJIT >> gen_SendLiteralSelector0ArgsBytecode11 [
 	"AutoGenerated by Druid"
 
 	| live currentBlock |
@@ -13016,7 +11958,7 @@ DruidJIT >> gen_SendLiteralSelector0ArgsBytecode11 [
 ]
 
 { #category : #generated }
-DruidJIT >> gen_SendLiteralSelector0ArgsBytecode12 [
+DruidStaticTypePredictionJIT >> gen_SendLiteralSelector0ArgsBytecode12 [
 	"AutoGenerated by Druid"
 
 	| live currentBlock |
@@ -13032,7 +11974,7 @@ DruidJIT >> gen_SendLiteralSelector0ArgsBytecode12 [
 ]
 
 { #category : #generated }
-DruidJIT >> gen_SendLiteralSelector0ArgsBytecode13 [
+DruidStaticTypePredictionJIT >> gen_SendLiteralSelector0ArgsBytecode13 [
 	"AutoGenerated by Druid"
 
 	| live currentBlock |
@@ -13048,7 +11990,7 @@ DruidJIT >> gen_SendLiteralSelector0ArgsBytecode13 [
 ]
 
 { #category : #generated }
-DruidJIT >> gen_SendLiteralSelector0ArgsBytecode14 [
+DruidStaticTypePredictionJIT >> gen_SendLiteralSelector0ArgsBytecode14 [
 	"AutoGenerated by Druid"
 
 	| live currentBlock |
@@ -13064,7 +12006,7 @@ DruidJIT >> gen_SendLiteralSelector0ArgsBytecode14 [
 ]
 
 { #category : #generated }
-DruidJIT >> gen_SendLiteralSelector0ArgsBytecode15 [
+DruidStaticTypePredictionJIT >> gen_SendLiteralSelector0ArgsBytecode15 [
 	"AutoGenerated by Druid"
 
 	| live currentBlock |
@@ -13080,7 +12022,7 @@ DruidJIT >> gen_SendLiteralSelector0ArgsBytecode15 [
 ]
 
 { #category : #generated }
-DruidJIT >> gen_SendLiteralSelector0ArgsBytecode2 [
+DruidStaticTypePredictionJIT >> gen_SendLiteralSelector0ArgsBytecode2 [
 	"AutoGenerated by Druid"
 
 	| live currentBlock |
@@ -13096,7 +12038,7 @@ DruidJIT >> gen_SendLiteralSelector0ArgsBytecode2 [
 ]
 
 { #category : #generated }
-DruidJIT >> gen_SendLiteralSelector0ArgsBytecode3 [
+DruidStaticTypePredictionJIT >> gen_SendLiteralSelector0ArgsBytecode3 [
 	"AutoGenerated by Druid"
 
 	| live currentBlock |
@@ -13112,7 +12054,7 @@ DruidJIT >> gen_SendLiteralSelector0ArgsBytecode3 [
 ]
 
 { #category : #generated }
-DruidJIT >> gen_SendLiteralSelector0ArgsBytecode4 [
+DruidStaticTypePredictionJIT >> gen_SendLiteralSelector0ArgsBytecode4 [
 	"AutoGenerated by Druid"
 
 	| live currentBlock |
@@ -13128,7 +12070,7 @@ DruidJIT >> gen_SendLiteralSelector0ArgsBytecode4 [
 ]
 
 { #category : #generated }
-DruidJIT >> gen_SendLiteralSelector0ArgsBytecode5 [
+DruidStaticTypePredictionJIT >> gen_SendLiteralSelector0ArgsBytecode5 [
 	"AutoGenerated by Druid"
 
 	| live currentBlock |
@@ -13144,7 +12086,7 @@ DruidJIT >> gen_SendLiteralSelector0ArgsBytecode5 [
 ]
 
 { #category : #generated }
-DruidJIT >> gen_SendLiteralSelector0ArgsBytecode6 [
+DruidStaticTypePredictionJIT >> gen_SendLiteralSelector0ArgsBytecode6 [
 	"AutoGenerated by Druid"
 
 	| live currentBlock |
@@ -13160,7 +12102,7 @@ DruidJIT >> gen_SendLiteralSelector0ArgsBytecode6 [
 ]
 
 { #category : #generated }
-DruidJIT >> gen_SendLiteralSelector0ArgsBytecode7 [
+DruidStaticTypePredictionJIT >> gen_SendLiteralSelector0ArgsBytecode7 [
 	"AutoGenerated by Druid"
 
 	| live currentBlock |
@@ -13176,7 +12118,7 @@ DruidJIT >> gen_SendLiteralSelector0ArgsBytecode7 [
 ]
 
 { #category : #generated }
-DruidJIT >> gen_SendLiteralSelector0ArgsBytecode8 [
+DruidStaticTypePredictionJIT >> gen_SendLiteralSelector0ArgsBytecode8 [
 	"AutoGenerated by Druid"
 
 	| live currentBlock |
@@ -13192,7 +12134,7 @@ DruidJIT >> gen_SendLiteralSelector0ArgsBytecode8 [
 ]
 
 { #category : #generated }
-DruidJIT >> gen_SendLiteralSelector0ArgsBytecode9 [
+DruidStaticTypePredictionJIT >> gen_SendLiteralSelector0ArgsBytecode9 [
 	"AutoGenerated by Druid"
 
 	| live currentBlock |
@@ -13208,7 +12150,7 @@ DruidJIT >> gen_SendLiteralSelector0ArgsBytecode9 [
 ]
 
 { #category : #generated }
-DruidJIT >> gen_SendLiteralSelector1ArgBytecode0 [
+DruidStaticTypePredictionJIT >> gen_SendLiteralSelector1ArgBytecode0 [
 	"AutoGenerated by Druid"
 
 	| live currentBlock |
@@ -13224,7 +12166,7 @@ DruidJIT >> gen_SendLiteralSelector1ArgBytecode0 [
 ]
 
 { #category : #generated }
-DruidJIT >> gen_SendLiteralSelector1ArgBytecode1 [
+DruidStaticTypePredictionJIT >> gen_SendLiteralSelector1ArgBytecode1 [
 	"AutoGenerated by Druid"
 
 	| live currentBlock |
@@ -13240,7 +12182,7 @@ DruidJIT >> gen_SendLiteralSelector1ArgBytecode1 [
 ]
 
 { #category : #generated }
-DruidJIT >> gen_SendLiteralSelector1ArgBytecode10 [
+DruidStaticTypePredictionJIT >> gen_SendLiteralSelector1ArgBytecode10 [
 	"AutoGenerated by Druid"
 
 	| live currentBlock |
@@ -13256,7 +12198,7 @@ DruidJIT >> gen_SendLiteralSelector1ArgBytecode10 [
 ]
 
 { #category : #generated }
-DruidJIT >> gen_SendLiteralSelector1ArgBytecode11 [
+DruidStaticTypePredictionJIT >> gen_SendLiteralSelector1ArgBytecode11 [
 	"AutoGenerated by Druid"
 
 	| live currentBlock |
@@ -13272,7 +12214,7 @@ DruidJIT >> gen_SendLiteralSelector1ArgBytecode11 [
 ]
 
 { #category : #generated }
-DruidJIT >> gen_SendLiteralSelector1ArgBytecode12 [
+DruidStaticTypePredictionJIT >> gen_SendLiteralSelector1ArgBytecode12 [
 	"AutoGenerated by Druid"
 
 	| live currentBlock |
@@ -13288,7 +12230,7 @@ DruidJIT >> gen_SendLiteralSelector1ArgBytecode12 [
 ]
 
 { #category : #generated }
-DruidJIT >> gen_SendLiteralSelector1ArgBytecode13 [
+DruidStaticTypePredictionJIT >> gen_SendLiteralSelector1ArgBytecode13 [
 	"AutoGenerated by Druid"
 
 	| live currentBlock |
@@ -13304,7 +12246,7 @@ DruidJIT >> gen_SendLiteralSelector1ArgBytecode13 [
 ]
 
 { #category : #generated }
-DruidJIT >> gen_SendLiteralSelector1ArgBytecode14 [
+DruidStaticTypePredictionJIT >> gen_SendLiteralSelector1ArgBytecode14 [
 	"AutoGenerated by Druid"
 
 	| live currentBlock |
@@ -13320,7 +12262,7 @@ DruidJIT >> gen_SendLiteralSelector1ArgBytecode14 [
 ]
 
 { #category : #generated }
-DruidJIT >> gen_SendLiteralSelector1ArgBytecode15 [
+DruidStaticTypePredictionJIT >> gen_SendLiteralSelector1ArgBytecode15 [
 	"AutoGenerated by Druid"
 
 	| live currentBlock |
@@ -13336,7 +12278,7 @@ DruidJIT >> gen_SendLiteralSelector1ArgBytecode15 [
 ]
 
 { #category : #generated }
-DruidJIT >> gen_SendLiteralSelector1ArgBytecode2 [
+DruidStaticTypePredictionJIT >> gen_SendLiteralSelector1ArgBytecode2 [
 	"AutoGenerated by Druid"
 
 	| live currentBlock |
@@ -13352,7 +12294,7 @@ DruidJIT >> gen_SendLiteralSelector1ArgBytecode2 [
 ]
 
 { #category : #generated }
-DruidJIT >> gen_SendLiteralSelector1ArgBytecode3 [
+DruidStaticTypePredictionJIT >> gen_SendLiteralSelector1ArgBytecode3 [
 	"AutoGenerated by Druid"
 
 	| live currentBlock |
@@ -13368,7 +12310,7 @@ DruidJIT >> gen_SendLiteralSelector1ArgBytecode3 [
 ]
 
 { #category : #generated }
-DruidJIT >> gen_SendLiteralSelector1ArgBytecode4 [
+DruidStaticTypePredictionJIT >> gen_SendLiteralSelector1ArgBytecode4 [
 	"AutoGenerated by Druid"
 
 	| live currentBlock |
@@ -13384,7 +12326,7 @@ DruidJIT >> gen_SendLiteralSelector1ArgBytecode4 [
 ]
 
 { #category : #generated }
-DruidJIT >> gen_SendLiteralSelector1ArgBytecode5 [
+DruidStaticTypePredictionJIT >> gen_SendLiteralSelector1ArgBytecode5 [
 	"AutoGenerated by Druid"
 
 	| live currentBlock |
@@ -13400,7 +12342,7 @@ DruidJIT >> gen_SendLiteralSelector1ArgBytecode5 [
 ]
 
 { #category : #generated }
-DruidJIT >> gen_SendLiteralSelector1ArgBytecode6 [
+DruidStaticTypePredictionJIT >> gen_SendLiteralSelector1ArgBytecode6 [
 	"AutoGenerated by Druid"
 
 	| live currentBlock |
@@ -13416,7 +12358,7 @@ DruidJIT >> gen_SendLiteralSelector1ArgBytecode6 [
 ]
 
 { #category : #generated }
-DruidJIT >> gen_SendLiteralSelector1ArgBytecode7 [
+DruidStaticTypePredictionJIT >> gen_SendLiteralSelector1ArgBytecode7 [
 	"AutoGenerated by Druid"
 
 	| live currentBlock |
@@ -13432,7 +12374,7 @@ DruidJIT >> gen_SendLiteralSelector1ArgBytecode7 [
 ]
 
 { #category : #generated }
-DruidJIT >> gen_SendLiteralSelector1ArgBytecode8 [
+DruidStaticTypePredictionJIT >> gen_SendLiteralSelector1ArgBytecode8 [
 	"AutoGenerated by Druid"
 
 	| live currentBlock |
@@ -13448,7 +12390,7 @@ DruidJIT >> gen_SendLiteralSelector1ArgBytecode8 [
 ]
 
 { #category : #generated }
-DruidJIT >> gen_SendLiteralSelector1ArgBytecode9 [
+DruidStaticTypePredictionJIT >> gen_SendLiteralSelector1ArgBytecode9 [
 	"AutoGenerated by Druid"
 
 	| live currentBlock |
@@ -13464,7 +12406,7 @@ DruidJIT >> gen_SendLiteralSelector1ArgBytecode9 [
 ]
 
 { #category : #generated }
-DruidJIT >> gen_SendLiteralSelector2ArgsBytecode0 [
+DruidStaticTypePredictionJIT >> gen_SendLiteralSelector2ArgsBytecode0 [
 	"AutoGenerated by Druid"
 
 	| live currentBlock |
@@ -13480,7 +12422,7 @@ DruidJIT >> gen_SendLiteralSelector2ArgsBytecode0 [
 ]
 
 { #category : #generated }
-DruidJIT >> gen_SendLiteralSelector2ArgsBytecode1 [
+DruidStaticTypePredictionJIT >> gen_SendLiteralSelector2ArgsBytecode1 [
 	"AutoGenerated by Druid"
 
 	| live currentBlock |
@@ -13496,7 +12438,7 @@ DruidJIT >> gen_SendLiteralSelector2ArgsBytecode1 [
 ]
 
 { #category : #generated }
-DruidJIT >> gen_SendLiteralSelector2ArgsBytecode10 [
+DruidStaticTypePredictionJIT >> gen_SendLiteralSelector2ArgsBytecode10 [
 	"AutoGenerated by Druid"
 
 	| live currentBlock |
@@ -13512,7 +12454,7 @@ DruidJIT >> gen_SendLiteralSelector2ArgsBytecode10 [
 ]
 
 { #category : #generated }
-DruidJIT >> gen_SendLiteralSelector2ArgsBytecode11 [
+DruidStaticTypePredictionJIT >> gen_SendLiteralSelector2ArgsBytecode11 [
 	"AutoGenerated by Druid"
 
 	| live currentBlock |
@@ -13528,7 +12470,7 @@ DruidJIT >> gen_SendLiteralSelector2ArgsBytecode11 [
 ]
 
 { #category : #generated }
-DruidJIT >> gen_SendLiteralSelector2ArgsBytecode12 [
+DruidStaticTypePredictionJIT >> gen_SendLiteralSelector2ArgsBytecode12 [
 	"AutoGenerated by Druid"
 
 	| live currentBlock |
@@ -13544,7 +12486,7 @@ DruidJIT >> gen_SendLiteralSelector2ArgsBytecode12 [
 ]
 
 { #category : #generated }
-DruidJIT >> gen_SendLiteralSelector2ArgsBytecode13 [
+DruidStaticTypePredictionJIT >> gen_SendLiteralSelector2ArgsBytecode13 [
 	"AutoGenerated by Druid"
 
 	| live currentBlock |
@@ -13560,7 +12502,7 @@ DruidJIT >> gen_SendLiteralSelector2ArgsBytecode13 [
 ]
 
 { #category : #generated }
-DruidJIT >> gen_SendLiteralSelector2ArgsBytecode14 [
+DruidStaticTypePredictionJIT >> gen_SendLiteralSelector2ArgsBytecode14 [
 	"AutoGenerated by Druid"
 
 	| live currentBlock |
@@ -13576,7 +12518,7 @@ DruidJIT >> gen_SendLiteralSelector2ArgsBytecode14 [
 ]
 
 { #category : #generated }
-DruidJIT >> gen_SendLiteralSelector2ArgsBytecode15 [
+DruidStaticTypePredictionJIT >> gen_SendLiteralSelector2ArgsBytecode15 [
 	"AutoGenerated by Druid"
 
 	| live currentBlock |
@@ -13592,7 +12534,7 @@ DruidJIT >> gen_SendLiteralSelector2ArgsBytecode15 [
 ]
 
 { #category : #generated }
-DruidJIT >> gen_SendLiteralSelector2ArgsBytecode2 [
+DruidStaticTypePredictionJIT >> gen_SendLiteralSelector2ArgsBytecode2 [
 	"AutoGenerated by Druid"
 
 	| live currentBlock |
@@ -13608,7 +12550,7 @@ DruidJIT >> gen_SendLiteralSelector2ArgsBytecode2 [
 ]
 
 { #category : #generated }
-DruidJIT >> gen_SendLiteralSelector2ArgsBytecode3 [
+DruidStaticTypePredictionJIT >> gen_SendLiteralSelector2ArgsBytecode3 [
 	"AutoGenerated by Druid"
 
 	| live currentBlock |
@@ -13624,7 +12566,7 @@ DruidJIT >> gen_SendLiteralSelector2ArgsBytecode3 [
 ]
 
 { #category : #generated }
-DruidJIT >> gen_SendLiteralSelector2ArgsBytecode4 [
+DruidStaticTypePredictionJIT >> gen_SendLiteralSelector2ArgsBytecode4 [
 	"AutoGenerated by Druid"
 
 	| live currentBlock |
@@ -13640,7 +12582,7 @@ DruidJIT >> gen_SendLiteralSelector2ArgsBytecode4 [
 ]
 
 { #category : #generated }
-DruidJIT >> gen_SendLiteralSelector2ArgsBytecode5 [
+DruidStaticTypePredictionJIT >> gen_SendLiteralSelector2ArgsBytecode5 [
 	"AutoGenerated by Druid"
 
 	| live currentBlock |
@@ -13656,7 +12598,7 @@ DruidJIT >> gen_SendLiteralSelector2ArgsBytecode5 [
 ]
 
 { #category : #generated }
-DruidJIT >> gen_SendLiteralSelector2ArgsBytecode6 [
+DruidStaticTypePredictionJIT >> gen_SendLiteralSelector2ArgsBytecode6 [
 	"AutoGenerated by Druid"
 
 	| live currentBlock |
@@ -13672,7 +12614,7 @@ DruidJIT >> gen_SendLiteralSelector2ArgsBytecode6 [
 ]
 
 { #category : #generated }
-DruidJIT >> gen_SendLiteralSelector2ArgsBytecode7 [
+DruidStaticTypePredictionJIT >> gen_SendLiteralSelector2ArgsBytecode7 [
 	"AutoGenerated by Druid"
 
 	| live currentBlock |
@@ -13688,7 +12630,7 @@ DruidJIT >> gen_SendLiteralSelector2ArgsBytecode7 [
 ]
 
 { #category : #generated }
-DruidJIT >> gen_SendLiteralSelector2ArgsBytecode8 [
+DruidStaticTypePredictionJIT >> gen_SendLiteralSelector2ArgsBytecode8 [
 	"AutoGenerated by Druid"
 
 	| live currentBlock |
@@ -13704,7 +12646,7 @@ DruidJIT >> gen_SendLiteralSelector2ArgsBytecode8 [
 ]
 
 { #category : #generated }
-DruidJIT >> gen_SendLiteralSelector2ArgsBytecode9 [
+DruidStaticTypePredictionJIT >> gen_SendLiteralSelector2ArgsBytecode9 [
 	"AutoGenerated by Druid"
 
 	| live currentBlock |
@@ -13720,7 +12662,7 @@ DruidJIT >> gen_SendLiteralSelector2ArgsBytecode9 [
 ]
 
 { #category : #generated }
-DruidJIT >> gen_ShortConditionalJumpFalse0 [
+DruidStaticTypePredictionJIT >> gen_ShortConditionalJumpFalse0 [
 	"AutoGenerated by Druid"
 
 	| jump1 s10 s8 s5 s2 jump3 currentBlock s12 t0 jump2 live s9 |
@@ -13759,7 +12701,7 @@ DruidJIT >> gen_ShortConditionalJumpFalse0 [
 ]
 
 { #category : #generated }
-DruidJIT >> gen_ShortConditionalJumpFalse1 [
+DruidStaticTypePredictionJIT >> gen_ShortConditionalJumpFalse1 [
 	"AutoGenerated by Druid"
 
 	| jump1 s10 s8 s5 s2 jump3 currentBlock s12 t0 jump2 live s9 |
@@ -13798,7 +12740,7 @@ DruidJIT >> gen_ShortConditionalJumpFalse1 [
 ]
 
 { #category : #generated }
-DruidJIT >> gen_ShortConditionalJumpFalse2 [
+DruidStaticTypePredictionJIT >> gen_ShortConditionalJumpFalse2 [
 	"AutoGenerated by Druid"
 
 	| jump1 s10 s8 s5 s2 jump3 currentBlock s12 t0 jump2 live s9 |
@@ -13837,7 +12779,7 @@ DruidJIT >> gen_ShortConditionalJumpFalse2 [
 ]
 
 { #category : #generated }
-DruidJIT >> gen_ShortConditionalJumpFalse3 [
+DruidStaticTypePredictionJIT >> gen_ShortConditionalJumpFalse3 [
 	"AutoGenerated by Druid"
 
 	| jump1 s10 s8 s5 s2 jump3 currentBlock s12 t0 jump2 live s9 |
@@ -13876,7 +12818,7 @@ DruidJIT >> gen_ShortConditionalJumpFalse3 [
 ]
 
 { #category : #generated }
-DruidJIT >> gen_ShortConditionalJumpFalse4 [
+DruidStaticTypePredictionJIT >> gen_ShortConditionalJumpFalse4 [
 	"AutoGenerated by Druid"
 
 	| jump1 s10 s8 s5 s2 jump3 currentBlock s12 t0 jump2 live s9 |
@@ -13915,7 +12857,7 @@ DruidJIT >> gen_ShortConditionalJumpFalse4 [
 ]
 
 { #category : #generated }
-DruidJIT >> gen_ShortConditionalJumpFalse5 [
+DruidStaticTypePredictionJIT >> gen_ShortConditionalJumpFalse5 [
 	"AutoGenerated by Druid"
 
 	| jump1 s10 s8 s5 s2 jump3 currentBlock s12 t0 jump2 live s9 |
@@ -13954,7 +12896,7 @@ DruidJIT >> gen_ShortConditionalJumpFalse5 [
 ]
 
 { #category : #generated }
-DruidJIT >> gen_ShortConditionalJumpFalse6 [
+DruidStaticTypePredictionJIT >> gen_ShortConditionalJumpFalse6 [
 	"AutoGenerated by Druid"
 
 	| jump1 s10 s8 s5 s2 jump3 currentBlock s12 t0 jump2 live s9 |
@@ -13993,7 +12935,7 @@ DruidJIT >> gen_ShortConditionalJumpFalse6 [
 ]
 
 { #category : #generated }
-DruidJIT >> gen_ShortConditionalJumpFalse7 [
+DruidStaticTypePredictionJIT >> gen_ShortConditionalJumpFalse7 [
 	"AutoGenerated by Druid"
 
 	| jump1 s10 s8 s5 s2 jump3 currentBlock s12 t0 jump2 live s9 |
@@ -14032,7 +12974,7 @@ DruidJIT >> gen_ShortConditionalJumpFalse7 [
 ]
 
 { #category : #generated }
-DruidJIT >> gen_ShortConditionalJumpTrue0 [
+DruidStaticTypePredictionJIT >> gen_ShortConditionalJumpTrue0 [
 	"AutoGenerated by Druid"
 
 	| jump1 s10 s8 s5 s2 jump3 currentBlock s12 t0 jump2 live s9 |
@@ -14071,7 +13013,7 @@ DruidJIT >> gen_ShortConditionalJumpTrue0 [
 ]
 
 { #category : #generated }
-DruidJIT >> gen_ShortConditionalJumpTrue1 [
+DruidStaticTypePredictionJIT >> gen_ShortConditionalJumpTrue1 [
 	"AutoGenerated by Druid"
 
 	| jump1 s10 s8 s5 s2 jump3 currentBlock s12 t0 jump2 live s9 |
@@ -14110,7 +13052,7 @@ DruidJIT >> gen_ShortConditionalJumpTrue1 [
 ]
 
 { #category : #generated }
-DruidJIT >> gen_ShortConditionalJumpTrue2 [
+DruidStaticTypePredictionJIT >> gen_ShortConditionalJumpTrue2 [
 	"AutoGenerated by Druid"
 
 	| jump1 s10 s8 s5 s2 jump3 currentBlock s12 t0 jump2 live s9 |
@@ -14149,7 +13091,7 @@ DruidJIT >> gen_ShortConditionalJumpTrue2 [
 ]
 
 { #category : #generated }
-DruidJIT >> gen_ShortConditionalJumpTrue3 [
+DruidStaticTypePredictionJIT >> gen_ShortConditionalJumpTrue3 [
 	"AutoGenerated by Druid"
 
 	| jump1 s10 s8 s5 s2 jump3 currentBlock s12 t0 jump2 live s9 |
@@ -14188,7 +13130,7 @@ DruidJIT >> gen_ShortConditionalJumpTrue3 [
 ]
 
 { #category : #generated }
-DruidJIT >> gen_ShortConditionalJumpTrue4 [
+DruidStaticTypePredictionJIT >> gen_ShortConditionalJumpTrue4 [
 	"AutoGenerated by Druid"
 
 	| jump1 s10 s8 s5 s2 jump3 currentBlock s12 t0 jump2 live s9 |
@@ -14227,7 +13169,7 @@ DruidJIT >> gen_ShortConditionalJumpTrue4 [
 ]
 
 { #category : #generated }
-DruidJIT >> gen_ShortConditionalJumpTrue5 [
+DruidStaticTypePredictionJIT >> gen_ShortConditionalJumpTrue5 [
 	"AutoGenerated by Druid"
 
 	| jump1 s10 s8 s5 s2 jump3 currentBlock s12 t0 jump2 live s9 |
@@ -14266,7 +13208,7 @@ DruidJIT >> gen_ShortConditionalJumpTrue5 [
 ]
 
 { #category : #generated }
-DruidJIT >> gen_ShortConditionalJumpTrue6 [
+DruidStaticTypePredictionJIT >> gen_ShortConditionalJumpTrue6 [
 	"AutoGenerated by Druid"
 
 	| jump1 s10 s8 s5 s2 jump3 currentBlock s12 t0 jump2 live s9 |
@@ -14305,7 +13247,7 @@ DruidJIT >> gen_ShortConditionalJumpTrue6 [
 ]
 
 { #category : #generated }
-DruidJIT >> gen_ShortConditionalJumpTrue7 [
+DruidStaticTypePredictionJIT >> gen_ShortConditionalJumpTrue7 [
 	"AutoGenerated by Druid"
 
 	| jump1 s10 s8 s5 s2 jump3 currentBlock s12 t0 jump2 live s9 |
@@ -14344,7 +13286,7 @@ DruidJIT >> gen_ShortConditionalJumpTrue7 [
 ]
 
 { #category : #generated }
-DruidJIT >> gen_ShortUnconditionalJump0 [
+DruidStaticTypePredictionJIT >> gen_ShortUnconditionalJump0 [
 	"AutoGenerated by Druid"
 
 	| s5 s2 currentBlock live s3 |
@@ -14358,7 +13300,7 @@ DruidJIT >> gen_ShortUnconditionalJump0 [
 ]
 
 { #category : #generated }
-DruidJIT >> gen_ShortUnconditionalJump1 [
+DruidStaticTypePredictionJIT >> gen_ShortUnconditionalJump1 [
 	"AutoGenerated by Druid"
 
 	| s5 s2 currentBlock live s3 |
@@ -14372,7 +13314,7 @@ DruidJIT >> gen_ShortUnconditionalJump1 [
 ]
 
 { #category : #generated }
-DruidJIT >> gen_ShortUnconditionalJump2 [
+DruidStaticTypePredictionJIT >> gen_ShortUnconditionalJump2 [
 	"AutoGenerated by Druid"
 
 	| s5 s2 currentBlock live s3 |
@@ -14386,7 +13328,7 @@ DruidJIT >> gen_ShortUnconditionalJump2 [
 ]
 
 { #category : #generated }
-DruidJIT >> gen_ShortUnconditionalJump3 [
+DruidStaticTypePredictionJIT >> gen_ShortUnconditionalJump3 [
 	"AutoGenerated by Druid"
 
 	| s5 s2 currentBlock live s3 |
@@ -14400,7 +13342,7 @@ DruidJIT >> gen_ShortUnconditionalJump3 [
 ]
 
 { #category : #generated }
-DruidJIT >> gen_ShortUnconditionalJump4 [
+DruidStaticTypePredictionJIT >> gen_ShortUnconditionalJump4 [
 	"AutoGenerated by Druid"
 
 	| s5 s2 currentBlock live s3 |
@@ -14414,7 +13356,7 @@ DruidJIT >> gen_ShortUnconditionalJump4 [
 ]
 
 { #category : #generated }
-DruidJIT >> gen_ShortUnconditionalJump5 [
+DruidStaticTypePredictionJIT >> gen_ShortUnconditionalJump5 [
 	"AutoGenerated by Druid"
 
 	| s5 s2 currentBlock live s3 |
@@ -14428,7 +13370,7 @@ DruidJIT >> gen_ShortUnconditionalJump5 [
 ]
 
 { #category : #generated }
-DruidJIT >> gen_ShortUnconditionalJump6 [
+DruidStaticTypePredictionJIT >> gen_ShortUnconditionalJump6 [
 	"AutoGenerated by Druid"
 
 	| s5 s2 currentBlock live s3 |
@@ -14442,7 +13384,7 @@ DruidJIT >> gen_ShortUnconditionalJump6 [
 ]
 
 { #category : #generated }
-DruidJIT >> gen_ShortUnconditionalJump7 [
+DruidStaticTypePredictionJIT >> gen_ShortUnconditionalJump7 [
 	"AutoGenerated by Druid"
 
 	| s5 s2 currentBlock live s3 |
@@ -14456,7 +13398,7 @@ DruidJIT >> gen_ShortUnconditionalJump7 [
 ]
 
 { #category : #generated }
-DruidJIT >> gen_StoreAndPopReceiverVariableBytecode0 [
+DruidStaticTypePredictionJIT >> gen_StoreAndPopReceiverVariableBytecode0 [
 	"AutoGenerated by Druid"
 
 	| jump5 s24 s16 jump3 s29 jump8 jump1 t1 s2 currentBlock s19 s27 jump6 s56 live jump4 jump2 t2 s52 jump7 t0 |
@@ -14588,7 +13530,7 @@ DruidJIT >> gen_StoreAndPopReceiverVariableBytecode0 [
 ]
 
 { #category : #generated }
-DruidJIT >> gen_StoreAndPopReceiverVariableBytecode1 [
+DruidStaticTypePredictionJIT >> gen_StoreAndPopReceiverVariableBytecode1 [
 	"AutoGenerated by Druid"
 
 	| jump5 s24 s16 jump3 s29 jump8 jump1 t1 s2 currentBlock s19 s27 jump6 s56 live jump4 jump2 t2 s52 jump7 t0 |
@@ -14720,7 +13662,7 @@ DruidJIT >> gen_StoreAndPopReceiverVariableBytecode1 [
 ]
 
 { #category : #generated }
-DruidJIT >> gen_StoreAndPopReceiverVariableBytecode2 [
+DruidStaticTypePredictionJIT >> gen_StoreAndPopReceiverVariableBytecode2 [
 	"AutoGenerated by Druid"
 
 	| jump5 s24 s16 jump3 s29 jump8 jump1 t1 s2 currentBlock s19 s27 jump6 s56 live jump4 jump2 t2 s52 jump7 t0 |
@@ -14852,7 +13794,7 @@ DruidJIT >> gen_StoreAndPopReceiverVariableBytecode2 [
 ]
 
 { #category : #generated }
-DruidJIT >> gen_StoreAndPopReceiverVariableBytecode3 [
+DruidStaticTypePredictionJIT >> gen_StoreAndPopReceiverVariableBytecode3 [
 	"AutoGenerated by Druid"
 
 	| jump5 s24 s16 jump3 s29 jump8 jump1 t1 s2 currentBlock s19 s27 jump6 s56 live jump4 jump2 t2 s52 jump7 t0 |
@@ -14984,7 +13926,7 @@ DruidJIT >> gen_StoreAndPopReceiverVariableBytecode3 [
 ]
 
 { #category : #generated }
-DruidJIT >> gen_StoreAndPopReceiverVariableBytecode4 [
+DruidStaticTypePredictionJIT >> gen_StoreAndPopReceiverVariableBytecode4 [
 	"AutoGenerated by Druid"
 
 	| jump5 s24 s16 jump3 s29 jump8 jump1 t1 s2 currentBlock s19 s27 jump6 s56 live jump4 jump2 t2 s52 jump7 t0 |
@@ -15116,7 +14058,7 @@ DruidJIT >> gen_StoreAndPopReceiverVariableBytecode4 [
 ]
 
 { #category : #generated }
-DruidJIT >> gen_StoreAndPopReceiverVariableBytecode5 [
+DruidStaticTypePredictionJIT >> gen_StoreAndPopReceiverVariableBytecode5 [
 	"AutoGenerated by Druid"
 
 	| jump5 s24 s16 jump3 s29 jump8 jump1 t1 s2 currentBlock s19 s27 jump6 s56 live jump4 jump2 t2 s52 jump7 t0 |
@@ -15248,7 +14190,7 @@ DruidJIT >> gen_StoreAndPopReceiverVariableBytecode5 [
 ]
 
 { #category : #generated }
-DruidJIT >> gen_StoreAndPopReceiverVariableBytecode6 [
+DruidStaticTypePredictionJIT >> gen_StoreAndPopReceiverVariableBytecode6 [
 	"AutoGenerated by Druid"
 
 	| jump5 s24 s16 jump3 s29 jump8 jump1 t1 s2 currentBlock s19 s27 jump6 s56 live jump4 jump2 t2 s52 jump7 t0 |
@@ -15380,7 +14322,7 @@ DruidJIT >> gen_StoreAndPopReceiverVariableBytecode6 [
 ]
 
 { #category : #generated }
-DruidJIT >> gen_StoreAndPopReceiverVariableBytecode7 [
+DruidStaticTypePredictionJIT >> gen_StoreAndPopReceiverVariableBytecode7 [
 	"AutoGenerated by Druid"
 
 	| jump5 s24 s16 jump3 s29 jump8 jump1 t1 s2 currentBlock s19 s27 jump6 s56 live jump4 jump2 t2 s52 jump7 t0 |
@@ -15512,7 +14454,7 @@ DruidJIT >> gen_StoreAndPopReceiverVariableBytecode7 [
 ]
 
 { #category : #generated }
-DruidJIT >> gen_StoreAndPopRemoteTempLongBytecode [
+DruidStaticTypePredictionJIT >> gen_StoreAndPopRemoteTempLongBytecode [
 	"AutoGenerated by Druid"
 
 	| s6 jump5 s4 jump3 jump8 jump1 t1 s2 currentBlock s42 jumpNext s7 jump6 s47 live s39 s80 jumpTrue s3 s76 t2 jump2 s52 jump7 s74 t0 s50 |
@@ -15741,7 +14683,7 @@ DruidJIT >> gen_StoreAndPopRemoteTempLongBytecode [
 ]
 
 { #category : #generated }
-DruidJIT >> gen_StoreAndPopTemporaryVariableBytecode0 [
+DruidStaticTypePredictionJIT >> gen_StoreAndPopTemporaryVariableBytecode0 [
 	"AutoGenerated by Druid"
 
 	| live currentBlock t0 |
@@ -15758,7 +14700,7 @@ DruidJIT >> gen_StoreAndPopTemporaryVariableBytecode0 [
 ]
 
 { #category : #generated }
-DruidJIT >> gen_StoreAndPopTemporaryVariableBytecode1 [
+DruidStaticTypePredictionJIT >> gen_StoreAndPopTemporaryVariableBytecode1 [
 	"AutoGenerated by Druid"
 
 	| live currentBlock t0 |
@@ -15775,7 +14717,7 @@ DruidJIT >> gen_StoreAndPopTemporaryVariableBytecode1 [
 ]
 
 { #category : #generated }
-DruidJIT >> gen_StoreAndPopTemporaryVariableBytecode2 [
+DruidStaticTypePredictionJIT >> gen_StoreAndPopTemporaryVariableBytecode2 [
 	"AutoGenerated by Druid"
 
 	| live currentBlock t0 |
@@ -15792,7 +14734,7 @@ DruidJIT >> gen_StoreAndPopTemporaryVariableBytecode2 [
 ]
 
 { #category : #generated }
-DruidJIT >> gen_StoreAndPopTemporaryVariableBytecode3 [
+DruidStaticTypePredictionJIT >> gen_StoreAndPopTemporaryVariableBytecode3 [
 	"AutoGenerated by Druid"
 
 	| live currentBlock t0 |
@@ -15809,7 +14751,7 @@ DruidJIT >> gen_StoreAndPopTemporaryVariableBytecode3 [
 ]
 
 { #category : #generated }
-DruidJIT >> gen_StoreAndPopTemporaryVariableBytecode4 [
+DruidStaticTypePredictionJIT >> gen_StoreAndPopTemporaryVariableBytecode4 [
 	"AutoGenerated by Druid"
 
 	| live currentBlock t0 |
@@ -15826,7 +14768,7 @@ DruidJIT >> gen_StoreAndPopTemporaryVariableBytecode4 [
 ]
 
 { #category : #generated }
-DruidJIT >> gen_StoreAndPopTemporaryVariableBytecode5 [
+DruidStaticTypePredictionJIT >> gen_StoreAndPopTemporaryVariableBytecode5 [
 	"AutoGenerated by Druid"
 
 	| live currentBlock t0 |
@@ -15843,7 +14785,7 @@ DruidJIT >> gen_StoreAndPopTemporaryVariableBytecode5 [
 ]
 
 { #category : #generated }
-DruidJIT >> gen_StoreAndPopTemporaryVariableBytecode6 [
+DruidStaticTypePredictionJIT >> gen_StoreAndPopTemporaryVariableBytecode6 [
 	"AutoGenerated by Druid"
 
 	| live currentBlock t0 |
@@ -15860,7 +14802,7 @@ DruidJIT >> gen_StoreAndPopTemporaryVariableBytecode6 [
 ]
 
 { #category : #generated }
-DruidJIT >> gen_StoreAndPopTemporaryVariableBytecode7 [
+DruidStaticTypePredictionJIT >> gen_StoreAndPopTemporaryVariableBytecode7 [
 	"AutoGenerated by Druid"
 
 	| live currentBlock t0 |
@@ -15877,7 +14819,7 @@ DruidJIT >> gen_StoreAndPopTemporaryVariableBytecode7 [
 ]
 
 { #category : #generated }
-DruidJIT >> gen_StoreRemoteTempLongBytecode [
+DruidStaticTypePredictionJIT >> gen_StoreRemoteTempLongBytecode [
 	"AutoGenerated by Druid"
 
 	| s6 s79 jump5 s46 s94 jump3 s38 jump8 s2 t1 currentBlock s49 jump1 s51 jumpNext jump6 s73 live s5 s87 jumpTrue s3 t2 s85 s102 s98 s68 s91 jump2 t0 jump7 s41 |
@@ -16170,319 +15112,4 @@ DruidJIT >> gen_StoreRemoteTempLongBytecode [
 	jump5 jmpTarget: currentBlock.
 	jump3 jmpTarget: currentBlock.
 	^ 0
-]
-
-{ #category : #'trait candidates' }
-DruidJIT >> generateObjectRepresentationTrampolines [
-	"Do the store check.  Answer the argument for the benefit of the code generator;
-	 ReceiverResultReg may be caller-saved and hence smashed by this call.  Answering
-	 it allows the code generator to reload ReceiverResultReg cheaply.
-	 In Spur the only thing we leave to the run-time is adding the receiver to the
-	 remembered set and setting its isRemembered bit."
-	self 
-		cppIf: IMMUTABILITY
-		ifTrue: 
-			[self cCode: [] inSmalltalk:
-				[ceStoreTrampolines := CArrayAccessor on: (Array new: NumStoreTrampolines)].
-			 0 to: NumStoreTrampolines - 1 do:
-				[:instVarIndex |
-				 ceStoreTrampolines
-					at: instVarIndex
-					put: (self 
-							genStoreTrampolineCalled: (self 
-															trampolineName: 'ceStoreTrampoline' 
-															numArgs: instVarIndex 
-															limit: NumStoreTrampolines - 2) 
-							instVarIndex: instVarIndex)]].
-	ceNewHashTrampoline := self genNewHashTrampoline: false called: 'ceNewHash'.
-	SistaVM ifTrue: [ceInlineNewHashTrampoline := self genNewHashTrampoline: true  called: 'ceInlineNewHash'].
-	ceStoreCheckTrampoline := self genStoreCheckTrampoline.
-	ceStoreCheckContextReceiverTrampoline := self genStoreCheckContextReceiverTrampoline.
-	ceScheduleScavengeTrampoline := self
-											genTrampolineFor: #ceScheduleScavenge
-											called: 'ceScheduleScavengeTrampoline'
-											regsToSave: CallerSavedRegisterMask.
-	ceSmallActiveContextInMethodTrampoline := self genActiveContextTrampolineLarge: false inBlock: 0 called: 'ceSmallMethodContext'.
-	SistaV1BytecodeSet ifTrue:
-		[ceSmallActiveContextInFullBlockTrampoline := self genActiveContextTrampolineLarge: false inBlock: InFullBlock called: 'ceSmallFullBlockContext'].
-	ceLargeActiveContextInMethodTrampoline := self genActiveContextTrampolineLarge: true inBlock: 0 called: 'ceLargeMethodContext'.
-	SistaV1BytecodeSet ifTrue:
-		[ceLargeActiveContextInFullBlockTrampoline := self genActiveContextTrampolineLarge: true inBlock: InFullBlock called: 'ceLargeFullBlockContext'].
-]
-
-{ #category : #'trait candidates' }
-DruidJIT >> getActiveContextAllocatesInMachineCode [
-	"Make sure SendNumArgsReg and ClassReg are available in addition to
-	 ReceiverResultReg and TempReg in genGetActiveContextNumArgs:large:inBlock:."
-	^true
-]
-
-{ #category : #'trait candidates' }
-DruidJIT >> hasValidHeaderPostGC: cogMethod [
-	<var: #cogMethod type: #'CogMethod *'>
-	<inline: true>
-	^cogMethod objectHeader = objectMemory nullHeaderForMachineCodeMethod
-]
-
-{ #category : #'trait candidates' }
-DruidJIT >> initialize [
-
-	<doNotGenerate>
-	super initialize.
-	
-	ceStoreTrampolines := (CArrayAccessor on: (Array new: NumStoreTrampolines))
-]
-
-{ #category : #'trait candidates' }
-DruidJIT >> inlineCacheTagForInstance: oop [
-	"Answer the relevant inline cache tag for an instance.
-	 c.f. getInlineCacheClassTagFrom:into: & inlineCacheTagForClass:"
-	^(objectMemory isImmediate: oop)
-		ifTrue: [oop bitAnd: objectMemory tagMask]
-		ifFalse: [objectMemory classIndexOf: oop]
-]
-
-{ #category : #'trait candidates' }
-DruidJIT >> inlineCacheTagIsYoung: cacheTag [
-	"Since all cache tags in Spur are class indices none of
-	 them are young or have to be updated in a scavenge."
-	^false
-]
-
-{ #category : #'trait candidates' }
-DruidJIT >> isUnannotatableConstant: simStackEntry [
-	<inline: true>
-	<var: 'simStackEntry' type: #'CogSimStackEntry *'>
-	^simStackEntry type = SSConstant
-	  and: [(objectMemory isImmediate: simStackEntry constant)
-		or: [(self shouldAnnotateObjectReference: simStackEntry constant) not]]
-]
-
-{ #category : #'trait candidates' }
-DruidJIT >> log2BytesPerWord [
-	^3
-]
-
-{ #category : #'trait candidates' }
-DruidJIT >> markAndTraceCacheTagLiteral: literal in: cogMethodOrNil atpc: address [
-	"Mark and trace a literal in an inline cache preceding address in cogMethodOrNil.
-	 Answer if code was modified.  In 64-bit Spur, cache tags are either selector
-	 indices or class indices and so this is a noop."
-	<var: #cogMethodOrNil type: #'CogMethod *'>
-	<var: #address type: #usqInt>
-	<inline: true>
-	^false
-]
-
-{ #category : #'trait candidates' }
-DruidJIT >> markAndTraceLiteral: literal in: cogMethod at: address [
-	"Mark and trace a literal in a sqInt variable of cogMethod."
-	<var: #cogMethod type: #'CogMethod *'>
-	<var: #address type: #'sqInt *'>
-	| objOop |
-	(self couldBeObject: literal) ifFalse:
-		[^self].
-	self assert: (objectMemory addressCouldBeObj: literal).
-	(objectMemory isForwarded: literal) ifFalse:
-		[objectMemory markAndTrace: literal.
-		 ^self].
-	objOop := objectMemory followForwarded: literal.
-	address at: 0 put: objOop.
-	self markAndTraceUpdatedLiteral: objOop in: cogMethod
-]
-
-{ #category : #'trait candidates' }
-DruidJIT >> markAndTraceLiteral: literal in: cogMethodOrNil atpc: address [
-	"Mark and trace a literal in a machine code instruction preceding address in cogMethodOrNil.
-	 Answer if code was modified."
-	<var: #cogMethodOrNil type: #'CogMethod *'>
-	<var: #address type: #usqInt>
-	| objOop |
-	(self couldBeObject: literal) ifFalse:
-		[^false].
-	self assert: (objectMemory addressCouldBeObj: literal).
-	(objectMemory isForwarded: literal) ifFalse:
-		[objectMemory markAndTrace: literal.
-		 ^false].
-	objOop := objectMemory followForwarded: literal.
-	
-	self storeLiteral: objOop atAnnotatedAddress: address.
-	self markAndTraceUpdatedLiteral: objOop in: cogMethodOrNil.
-	^true
-]
-
-{ #category : #'trait candidates' }
-DruidJIT >> markAndTraceUpdatedLiteral: objOop in: cogMethodOrNil [
-	"Common code to mark a literal in cogMethod and add
-	 the cogMethod to youngReferrers if the literal is young."
-	<var: #cogMethodOrNil type: #'CogMethod *'>
-	(objectMemory isNonImmediate: objOop) ifTrue:
-		[(cogMethodOrNil notNil
-		  and: [objectMemory getMemoryMap isYoungObject: objOop]) ifTrue:
-			[methodZone ensureInYoungReferrers: cogMethodOrNil].
-		 objectMemory markAndTrace: objOop]
-]
-
-{ #category : #'trait candidates' }
-DruidJIT >> maybeCompileRetryOnPrimitiveFail: primIndex [
-	"If primIndex has an accessorDepth and fails, or it is external and fails with PrimErrNoMemory,
-	 call ceCheckAndMaybeRetryPrimitive if so  If ceCheck.... answers true, retry the primitive."
-	| jmp |
-	<var: #jmp type: #'AbstractInstruction *'>
-	(coInterpreter accessorDepthForPrimitiveIndex: primIndex) >= 0
-		ifTrue:
-			[jmp := self
-				MoveAw: coInterpreter primFailCodeAddress R: TempReg;
-				CmpCq: 0 R: TempReg;
-				JumpZero: 0]
-		ifFalse:
-			[coInterpreter primNumberExternalCall ~= primIndex ifTrue:
-				[^0].
-			 jmp := self
-				MoveAw: coInterpreter primFailCodeAddress R: TempReg;
-				CmpCq: PrimErrNoMemory R: TempReg;
-				JumpNonZero: 0].
-	self
-		compileCallFor: #ceCheckAndMaybeRetryPrimitive:
-		numArgs: 1
-		arg: (self trampolineArgConstant: primIndex)
-		arg: nil
-		arg: nil
-		arg: nil
-		resultReg: TempReg
-		regsToSave: self emptyRegisterMask.
-	jmp jmpTarget: self Label.
-	^0
-]
-
-{ #category : #'trait candidates' }
-DruidJIT >> maybeGenerateSelectorIndexDereferenceRoutine [
-	"Generate the routine that converts selector indices into selector objects.
-	 It is called from the send trampolines.
-	 If the selector index is negative, convert it into a positive index into the
-	 special selectors array and index that.  Otherwise, index the current method.
-	 The routine uses Extra0Reg & Extra1Reg, which are available, since they
-	 are not live at point of send."
-	| jumpNegative jumpNotBlock jumpFullBlock |
-	<var: 'jumpNegative' type: #'AbstractInstruction *'>
-	<var: 'jumpNotBlock' type: #'AbstractInstruction *'>
-	<var: 'jumpFullBlock' type: #'AbstractInstruction *'>
-	self zeroOpcodeIndex.
-	self CmpCq: 0 R: ClassReg.
-	jumpNegative := self JumpLess: 0.
-	self
-		MoveMw: FoxMethod r: FPReg R: Extra0Reg;
-		AddCq: 2 R: ClassReg; "Change selector index to 1-relative, skipping the method header"
-		TstCq: MFMethodFlagIsBlockFlag R: Extra0Reg.
-	jumpNotBlock := self JumpZero: 0.
-	"If in a block, need to find the home method...  If using full blocks, need to test the cpicHasMNUCaseOrCMIsFullBlock bit"
-	self AndCq: methodZone zoneAlignment negated R: Extra0Reg.
-	SistaV1BytecodeSet ifTrue:
-		[self bitAndByteOffsetOfIsFullBlockBitInto:
-			[:bitmask :byteOffset|
-			jumpFullBlock := self
-				MoveMb: byteOffset r: Extra0Reg R: Extra1Reg;
-				TstCq: bitmask R: Extra1Reg;
-				JumpNonZero: 0]].
-	self 
-		MoveM16: 0 r: Extra0Reg R: Extra1Reg;
-		SubR: Extra1Reg R: Extra0Reg.
-	jumpNotBlock jmpTarget: self Label.
-	SistaV1BytecodeSet ifTrue:
-		[jumpFullBlock jmpTarget: jumpNotBlock getJmpTarget].
-	self "Now fetch the method object and index with the literal index to retrieve the selector"
-		AndCq: methodZone zoneAlignment negated R: Extra0Reg;
-		MoveMw: (self offset: CogMethod of: #methodObject) r: Extra0Reg R: Extra1Reg;
-		MoveXwr: ClassReg R: Extra1Reg R: ClassReg;
-		RetN: 0.
-	jumpNegative jmpTarget: self Label.
-	self
-		NegateR: ClassReg;
-		LogicalShiftLeftCq: 1 R: ClassReg;
-		MoveAw: objectMemory specialObjectsArrayAddress R: Extra0Reg;
-		SubCq: 1 R: ClassReg;
-		MoveMw: SpecialSelectors + 1 * objectMemory wordSize r: Extra0Reg R: Extra1Reg; "Index, including header size"
-		MoveXwr: ClassReg R: Extra1Reg R: ClassReg;
-		RetN: 0.
-	ceDereferenceSelectorIndex := self methodZoneBase.
-	self
-		outputInstructionsForGeneratedRuntimeAt: ceDereferenceSelectorIndex;
-		recordGeneratedRunTime: 'ceDereferenceSelectorIndex' address: ceDereferenceSelectorIndex;
-		recordRunTimeObjectReferences
-]
-
-{ #category : #'trait candidates' }
-DruidJIT >> maybeShiftClassTagRegisterForMethodCacheProbe: classTagReg [
-	"Generate a shift of the register containing the class tag in a method cache probe.
-	 c.f. SpurMemoryManager>>methodCacheHashOf:with:"
-
-	self LogicalShiftLeftCq: 2 R: classTagReg.
-	^0
-]
-
-{ #category : #'trait candidates' }
-DruidJIT >> numRegArgs [
-	"Define how many register arguments a StackToRegisterMappingCogit can
-	 and should use with the receiver.  The value must be 0, 1 or 2.  Note that a
-	 SimpleStackBasedCogit always has 0 register args (although the receiver is
-	 passed in a register).  The Spur object representation is simple enough that
-	 implementing at:put: is straight-forward and hence 2 register args are worth
-	 while.  The method must be inlined in CoInterpreter, and dead code eliminated
-	 so that the register-popping enilopmarts such as enterRegisterArgCogMethod:-
-	 at:receiver: do not have to be implemented in SimpleStackBasedCogit."
-	<api>
-	<option: #StackToRegisterMappingCogit>
-	^2
-]
-
-{ #category : #'trait candidates' }
-DruidJIT >> remapObject: objOop [
-	self assert: (objectMemory addressCouldBeObj: objOop).
-	^(objectMemory shouldRemapObj: objOop)
-		ifTrue: [objectMemory remapObj: objOop]
-		ifFalse: [objOop]
-]
-
-{ #category : #'trait candidates' }
-DruidJIT >> remapOop: objOop [
-	^(objectMemory shouldRemapOop: objOop)
-		ifTrue: [objectMemory remapObj: objOop]
-		ifFalse: [objOop]
-]
-
-{ #category : #'trait candidates' }
-DruidJIT >> selectorIndexDereferenceRoutine [
-	"If the object representation is 64-bits, selectors must be accessed via indices in the inline caches.
-	 Answer the routine that will map from indices to selector objects if so, otherwise nil."
-	^ceDereferenceSelectorIndex
-]
-
-{ #category : #'trait candidates' }
-DruidJIT >> shouldAnnotateObjectReference: anOop [
-	"Objects in newSpace or oldSpace except nil, true, false & classTableRootObj need to be annotated."
-	^(objectMemory isNonImmediate: anOop)
-	  and: [(self oop: anOop isGreaterThan: objectMemory classTableRootObj)
-		or: [self oop: anOop isLessThan: objectMemory nilObject]]
-]
-
-{ #category : #'trait candidates' }
-DruidJIT >> slotOffsetOfInstVarIndex: index [
-	^index * objectMemory wordSize + objectMemory baseHeaderSize
-]
-
-{ #category : #'trait candidates' }
-DruidJIT >> validInlineCacheTag: classIndexOrTagPattern [
-	"The three valid tag patterns are 1 (SmallInteger), 2 (Character) and 3 (SmallFloat64)."
-	^(classIndexOrTagPattern >= 1
-	  and: [classIndexOrTagPattern <= 3])
-	  or: [(objectMemory classAtIndex: classIndexOrTagPattern) notNil]
-]
-
-{ #category : #'trait candidates' }
-DruidJIT >> valueOfAssociation: associationOop [
-	| association |
-	association := associationOop.
-	(objectMemory isForwarded: association) ifTrue:
-		[association := objectMemory followForwarded: association].
-	^objectMemory fetchPointer: ValueIndex ofObject: association
 ]

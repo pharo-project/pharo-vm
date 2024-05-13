@@ -2786,12 +2786,13 @@ StackInterpreter >> bytecodePrimBitAnd [
 
 	<compilationInfo: #isMapped>
 	<druidInfo: #hasSend>
-	
-	self druidIgnore: [
-		self initPrimCall.
-		self primitiveBitAnd.
-		self successful ifTrue:
-			[^self fetchNextBytecode "success"] ].
+	| rcvr arg |
+	rcvr := self stackValue: 1.
+	arg := self stackValue: 0.
+	self druidIf: #staticTypePrediction do: [
+		(objectMemory areIntegers: rcvr and: arg) ifTrue: [
+			self pop: 2 thenPush: (rcvr bitAnd: arg).
+			^ self fetchNextBytecode ] ].
 
 	self normalSendSpecialSelector: 14 argumentCount: 1
 ]
@@ -2802,11 +2803,13 @@ StackInterpreter >> bytecodePrimBitOr [
 	<compilationInfo: #isMapped>
 	<druidInfo: #hasSend>
 	
-	self druidIgnore: [
-		self initPrimCall.
-		self primitiveBitOr.
-		self successful ifTrue:
-			[^self fetchNextBytecode "success"] ].
+	| rcvr arg |
+	rcvr := self stackValue: 1.
+	arg := self stackValue: 0.
+	self druidIf: #staticTypePrediction do: [
+		(objectMemory areIntegers: rcvr and: arg) ifTrue: [
+			self pop: 2 thenPush: (rcvr bitOr: arg).
+			^ self fetchNextBytecode ] ].
 
 	self normalSendSpecialSelector: 15 argumentCount: 1
 ]
@@ -3254,21 +3257,22 @@ StackInterpreter >> bytecodePrimSubtract [
 
 	<compilationInfo: #isMapped>
 	<druidInfo: #hasSend>
-	
-	self druidIgnore: [
+	self druidIf: #staticTypePrediction do: [
 		| rcvr arg result |
 		rcvr := self stackValue: 1.
 		arg := self stackValue: 0.
 		(objectMemory areIntegers: rcvr and: arg)
 			ifTrue: [
-				result := (objectMemory integerValueOf: rcvr) - (objectMemory integerValueOf: arg).
+				result := (objectMemory integerValueOf: rcvr)
+				          - (objectMemory integerValueOf: arg).
 				(objectMemory isIntegerValue: result) ifTrue: [
 					self pop: 2 thenPush: (objectMemory integerObjectOf: result).
 					^ self fetchNextBytecode "success" ] ]
 			ifFalse: [
-				self initPrimCall.
-				self primitiveFloatSubtract: rcvr fromArg: arg.
-				self successful ifTrue: [ ^ self fetchNextBytecode "success" ] ] ].
+				self druidIgnore: [
+					self initPrimCall.
+					self primitiveFloatSubtract: rcvr fromArg: arg.
+					self successful ifTrue: [ ^ self fetchNextBytecode "success" ] ] ] ].
 
 	self normalSendSpecialSelector: 1 argumentCount: 1
 ]
