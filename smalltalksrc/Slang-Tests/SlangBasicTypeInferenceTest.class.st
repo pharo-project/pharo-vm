@@ -213,6 +213,48 @@ SlangBasicTypeInferenceTest >> testReturnANilMessageSend [
 	self assert: tMethod returnType equals: #sqInt.
 ]
 
+{ #category : #'experiment-return-signed' }
+SlangBasicTypeInferenceTest >> testReturnASignIntFromAnUnsigneNotWorking [
+	"the type here  is wrong, we get an unsigned int instead of an int"
+	| tMethod |
+	tMethod := ccg methodNamed: #returnASignIntFromAnUnsignedNotWorking:.
+	
+	self assert: tMethod isNotNil.
+	self assert: (ccg typeFor: tMethod statements first in: tMethod) equals: #'unsigned int'.
+	self assert: tMethod returnType equals: #usqInt
+]
+
+{ #category : #'experiment-return-signed' }
+SlangBasicTypeInferenceTest >> testReturnASignIntFromAnUnsigned [
+	| tMethod |
+	tMethod := ccg methodNamed: #returnASignIntFromAnUnsigned.
+	
+	self assert: tMethod isNotNil.
+	self assert: (ccg typeFor: tMethod statements first in: tMethod) equals: #int.
+	self assert: tMethod returnType equals: #sqInt
+]
+
+{ #category : #'experiment-return-signed' }
+SlangBasicTypeInferenceTest >> testReturnASignIntFromAnUnsignedShouldNotWork [
+	"the type here  is wrong, we get an unsigned int instead of an int"
+	| tMethod |
+	tMethod := ccg methodNamed: #returnASignIntFromAnUnsignedShouldNotWork:.
+	
+	self assert: tMethod isNotNil.
+	self assert: (ccg typeFor: tMethod statements first in: tMethod) equals: #'unsigned int'.
+	self assert: tMethod returnType equals: #usqInt
+]
+
+{ #category : #'experiment-return-signed' }
+SlangBasicTypeInferenceTest >> testReturnASignIntFromAnUnsignedWork [
+	| tMethod |
+	tMethod := ccg methodNamed: #returnASignIntFromAnUnsigned:.
+	
+	self assert: tMethod isNotNil.
+	self assert: (ccg typeFor: tMethod statements first in: tMethod) equals: #int.
+	self assert: tMethod returnType equals: #sqInt
+]
+
 { #category : #'return-constant' }
 SlangBasicTypeInferenceTest >> testReturnASmallNegativeIntegerConstantNode [
 	| tMethod |
@@ -545,6 +587,102 @@ SlangBasicTypeInferenceTest >> testReturnFloatConstantNode [
 	self assert: (ccg typeFor: tMethod statements first in: tMethod) equals: #double.
 	self assert: tMethod returnType equals: #double
 	
+]
+
+{ #category : #'experiment-return-long-int' }
+SlangBasicTypeInferenceTest >> testReturnLongIntInVariable [
+	| tMethod |
+	tMethod := ccg methodNamed: #returnLongIntInVariable.
+	
+	self assert: tMethod isNotNil.
+	self assert: tMethod returnType equals: #'usqInt'
+]
+
+{ #category : #'experiment-return-long-int' }
+SlangBasicTypeInferenceTest >> testReturnLongIntIsntWorking [
+	| tMethod |
+	tMethod := ccg methodNamed: #returnLongInt.
+	
+	self assert: tMethod isNotNil.
+	self assert: tMethod returnType equals: #'sqInt'
+]
+
+{ #category : #'experiment-return-long-int' }
+SlangBasicTypeInferenceTest >> testReturnMultipleLongInt [
+	| tMethod |
+	tMethod := ccg methodNamed: #returnMultipleLongInt.
+	
+	self assert: tMethod isNotNil.
+	self assert: tMethod returnType equals: #'usqInt'
+]
+
+{ #category : #'experiment-return-long-int' }
+SlangBasicTypeInferenceTest >> testReturnMultipleLongIntAnnotation [
+	| tMethod |
+	tMethod := ccg methodNamed: #returnMultipleLongIntAnnotation:.
+	
+	self assert: tMethod isNotNil.
+	self assert: tMethod returnType equals: #'usqInt'
+]
+
+{ #category : #'experiment-return-long-int' }
+SlangBasicTypeInferenceTest >> testReturnMultipleLongIntNotWorking [
+	"should have return a long int"
+	| tMethod |
+	tMethod := ccg methodNamed: #returnMultipleLongIntNotWorking.
+	
+	self assert: tMethod isNotNil.
+	self assert: tMethod returnType equals: #'sqInt'
+]
+
+{ #category : #'experiment-return-multiple-type' }
+SlangBasicTypeInferenceTest >> testReturnStringAndIntIfTrue1 [
+	"only one type is returned and 'char *' seems to be always chosen"
+	| tMethod |
+	tMethod := ccg methodNamed: #returnStringAndIntInIfTrue1.
+	
+	self assert: tMethod isNotNil.
+	self assert: tMethod returnType equals: #'char *'
+]
+
+{ #category : #'experiment-return-multiple-type' }
+SlangBasicTypeInferenceTest >> testReturnStringAndIntIfTrue2 [
+	"only one type is returned and 'char *' seems to be always chosen"
+	| tMethod |
+	tMethod := ccg methodNamed: #returnStringAndIntInIfTrue2.
+	
+	self assert: tMethod isNotNil.
+	self assert: tMethod returnType equals: #'char *'
+]
+
+{ #category : #'experiment-return-multiple-type' }
+SlangBasicTypeInferenceTest >> testReturnStringAndIntInIfTrueifFalse1 [
+	"only one type is returned and 'char *' seems to be always chosen"
+	| tMethod |
+	tMethod := ccg methodNamed: #returnStringAndIntInIfTrueifFalse1.
+	
+	self assert: tMethod isNotNil.
+	self assert: tMethod returnType equals: #'char *'
+]
+
+{ #category : #'experiment-return-multiple-type' }
+SlangBasicTypeInferenceTest >> testReturnStringAndIntInIfTrueifFalse2 [
+	"only one type is returned and 'char *' seems to be always chosen"
+	| tMethod |
+	tMethod := ccg methodNamed: #returnStringAndIntInIfTrueifFalse2.
+	
+	self assert: tMethod isNotNil.
+	self assert: tMethod returnType equals: #'char *'
+]
+
+{ #category : #'experiment-return-multiple-type' }
+SlangBasicTypeInferenceTest >> testReturnStringAndIntInIfTrueifFalse3 [
+	"in this case, the type obtained is int"
+	| tMethod |
+	tMethod := ccg methodNamed: #returnStringAndIntInIfTrueifFalse3.
+	
+	self assert: tMethod isNotNil.
+	self assert: tMethod returnType equals: #sqInt
 ]
 
 { #category : #'return-temp-assigned-const' }
