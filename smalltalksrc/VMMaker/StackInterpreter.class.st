@@ -1869,7 +1869,7 @@ StackInterpreter >> activateNewMethod [
 StackInterpreter >> activeProcess [
 	"Answer the current activeProcess."
 	<api> "useful for VM debugging"
-	^objectMemory memoryActiveProcess
+	^objectMemory memoryActiveProcess 
 ]
 
 { #category : #'process primitive support' }
@@ -2598,7 +2598,7 @@ StackInterpreter >> booleanCheatFalse [
 		^ self jump: offset ].
 
 	"not followed by a jumpIfFalse; (un)do instruction fetch and push boolean result"
-	currentBytecode := bytecode.
+	self currentBytecode: bytecode.
 	self push: objectMemory falseObject
 ]
 
@@ -2619,7 +2619,7 @@ StackInterpreter >> booleanCheatFalseSistaV1 [
 		^ self jump: offset ].
 
 	"not followed by a jumpIfFalse; (un)do instruction fetch and push boolean result"
-	currentBytecode := bytecode.
+	self currentBytecode: bytecode.
 	self push: objectMemory falseObject
 ]
 
@@ -2640,7 +2640,7 @@ StackInterpreter >> booleanCheatFalseV4 [
 		^ self jump: offset ].
 
 	"not followed by a jumpIfFalse; (un)do instruction fetch and push boolean result"
-	currentBytecode := bytecode.
+	self currentBytecode: bytecode.
 	self push: objectMemory falseObject
 ]
 
@@ -2674,7 +2674,7 @@ StackInterpreter >> booleanCheatTrue [
 			^ self jump: offset ] ].
 
 	"not followed by a jumpIfFalse; (un)do instruction fetch and push boolean result"
-	currentBytecode := bytecode.
+	self currentBytecode: bytecode.
 	self push: objectMemory trueObject
 ]
 
@@ -2698,7 +2698,7 @@ StackInterpreter >> booleanCheatTrueSistaV1 [
 			^ self jump: offset ] ].
 
 	"not followed by a jumpIfFalse; (un)do instruction fetch and push boolean result"
-	currentBytecode := bytecode.
+	self currentBytecode: bytecode.
 	self push: objectMemory trueObject
 ]
 
@@ -2722,7 +2722,7 @@ StackInterpreter >> booleanCheatTrueV4 [
 			^ self jump: offset ] ].
 
 	"not followed by a jumpIfFalse; (un)do instruction fetch and push boolean result"
-	currentBytecode := bytecode.
+	self currentBytecode: bytecode.
 	self push: objectMemory trueObject
 ]
 
@@ -4886,6 +4886,17 @@ StackInterpreter >> currentBytecode [
 	^ currentBytecode
 ]
 
+{ #category : #accessing }
+StackInterpreter >> currentBytecode: anInteger [
+	"Use this setter to change the current bytecode, so we can profile."
+
+	<inline: true>
+	currentBytecode := anInteger.
+
+	self printNum: currentBytecode.
+	self cr
+]
+
 { #category : #initialization }
 StackInterpreter >> defaultNumStackPages [
 	"Return the default number of stack pages allocate at startup.
@@ -5793,7 +5804,7 @@ StackInterpreter >> fetchNextBytecode [
 
 	"This method fetches the next instruction (bytecode). Each bytecode method is responsible for fetching the next bytecode, preferably as early as possible to allow the memory system time to process the request before the next dispatch."
 
-	currentBytecode := self fetchByte
+	self currentBytecode: self fetchByte
 ]
 
 { #category : #'frame access' }
@@ -8387,7 +8398,7 @@ StackInterpreter >> itemporary: offset in: theFP put: valueOop [
 StackInterpreter >> jump: offset [
 
 	instructionPointer := instructionPointer + offset + 1.
-	currentBytecode := objectMemory byteAtPointer: instructionPointer
+	self currentBytecode: (objectMemory byteAtPointer: instructionPointer)
 ]
 
 { #category : #'sista bytecodes' }
