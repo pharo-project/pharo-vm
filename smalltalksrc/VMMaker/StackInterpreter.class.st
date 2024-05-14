@@ -4892,9 +4892,9 @@ StackInterpreter >> currentBytecode: anInteger [
 
 	<inline: true>
 	currentBytecode := anInteger.
+	
+	self profileCurrentBytecode
 
-	self printNum: currentBytecode.
-	self cr
 ]
 
 { #category : #initialization }
@@ -12538,6 +12538,15 @@ StackInterpreter >> processesInProcessListDo: aBlock [
 					        withInitialValue: ctxt ].
 			(self isLiveContext: ctxt) ifTrue: [ aBlock value: proc ].
 			proc := objectMemory fetchPointer: NextLinkIndex ofObject: proc ] ]
+]
+
+{ #category : #accessing }
+StackInterpreter >> profileCurrentBytecode [
+
+	<inline: true>
+	self cppIf: #PROFILE_CURRENT_BYTECODE ifTrue: [
+		self printNum: currentBytecode.
+		self cr ]
 ]
 
 { #category : #'as yet unclassified' }
