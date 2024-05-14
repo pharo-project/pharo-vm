@@ -39,6 +39,7 @@ option(BUILD_WITH_GRAPHVIZ              "Generate dependency graphs" ON)
 
 set(APPNAME			"Pharo"         CACHE STRING                 "VM Application name")
 set(FLAVOUR			"CoInterpreter" CACHE STRING                 "The kind of VM to generate. Possible values: StackVM, CoInterpreter")
+set(PROFILE			"None" CACHE STRING                 "What do you want to profile? Possible values: None, Bytecode")
 set(PHARO_LIBRARY_PATH		"@executable_path/Plugins" CACHE STRING      "The RPATH to use in the build")
 set(ICEBERG_DEFAULT_REMOTE	"scpUrl"        CACHE STRING                 "If Iceberg uses HTTPS (httpsUrl) or tries first with SSH (scpUrl)")
 set(CMAKE_OSX_DEPLOYMENT_TARGET "11.0")
@@ -308,6 +309,12 @@ else()
 	set(DEBUGVM 0)
 endif()
 
+if (PROFILE MATCHES "Bytecode")
+	set(PROFILEBYTECODEVM 1)
+else()
+	set(PROFILEBYTECODEVM 0)
+endif()
+
 add_compile_options(
 	${OPTIMIZATION_LEVEL}
     -Wno-sometimes-uninitialized
@@ -332,6 +339,7 @@ add_compile_options(
 
 add_compile_definitions(
     IMMUTABILITY=1
+    PROFILE_CURRENT_BYTECODE=${PROFILEBYTECODEVM}
     COGMTVM=0
     PharoVM=1
     DEBUGVM=${DEBUGVM}
