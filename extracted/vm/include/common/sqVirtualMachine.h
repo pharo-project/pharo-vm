@@ -6,6 +6,7 @@
  */
 #include "interp.h"
 
+
 #if SPURVM
 # define VM_VERSION "5.0"
 #else
@@ -62,9 +63,9 @@ typedef struct VirtualMachine {
 
 	sqInt  (*pop)(sqInt nItems);
 	sqInt  (*popthenPush)(sqInt nItems, sqInt oop);
-	sqInt  (*push)(sqInt object);
+	void  (*push)(sqInt object);
 	sqInt  (*pushBool)(sqInt trueOrFalse);
-	sqInt  (*pushFloat)(double f);
+	void  (*pushFloat)(double f);
 	sqInt  (*pushInteger)(sqInt integerValue);
 	double (*stackFloatValue)(sqInt offset);
 	sqInt  (*stackIntegerValue)(sqInt offset);
@@ -171,7 +172,7 @@ typedef struct VirtualMachine {
 # if VM_PROXY_MINOR > 13
 	/* Reuse these now that Cog provides a production JIT. */
 	sqInt (*statNumGCs)(void);
-	sqInt (*stringForCString)(char *nullTerminatedCString);
+	sqInt (*stringForCString)(const char *nullTerminatedCString);
 # else
 	/* InterpreterProxy methodsFor: 'compiler' */
 
@@ -201,7 +202,7 @@ typedef struct VirtualMachine {
 
 	sqInt (*classExternalAddress)(void);
 	void *(*ioLoadModuleOfLength)(sqInt modIndex, sqInt modLength);
-	void *(*ioLoadSymbolOfLengthFromModule)(sqInt fnIndex, sqInt fnLength, sqInt handle);
+	void *(*ioLoadSymbolOfLengthFromModule)(sqInt fnIndex, sqInt fnLength, void* handle);
 	sqInt (*isInMemory)(sqInt address);
 
 #endif
@@ -234,7 +235,7 @@ typedef struct VirtualMachine {
 
 #if VM_PROXY_MINOR > 5
 	sqInt (*isArray)(sqInt oop);
-	void (*forceInterruptCheck)(void);
+	sqInt (*forceInterruptCheck)(void);
 #endif
 
 #if VM_PROXY_MINOR > 6
@@ -291,7 +292,7 @@ typedef struct VirtualMachine {
 #if VM_PROXY_MINOR > 10
   void  (*addHighPriorityTickee)(void (*ticker)(void), unsigned periodms);
   void  (*addSynchronousTickee)(void (*ticker)(void), unsigned periodms, unsigned roundms);
-  volatile usqLong (*utcMicroseconds)(void);
+  volatile unsigned long long (*utcMicroseconds)(void);
   void (*tenuringIncrementalGC)(void);
   sqInt (*isYoung) (sqInt anOop);
   sqInt (*isKindOfClass)(sqInt oop, sqInt aClass);
@@ -338,7 +339,7 @@ typedef struct VirtualMachine {
 
   sqInt (*scheduleInMainThread)(sqInt (*closure)());
 
-  sqInt (*waitOnExternalSemaphoreIndex)(sqInt semaphoreIndex);
+  void (*waitOnExternalSemaphoreIndex)(sqInt semaphoreIndex);
 
 } VirtualMachine;
 

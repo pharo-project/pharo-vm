@@ -13643,6 +13643,7 @@ stepToNextWideBezierInat(sqInt bezier, sqInt yValue)
 		updateData[GBUpdateY] = lastY;
 		updateData[GBUpdateDX] = fwDx;
 		updateData[GBUpdateDY] = fwDy;
+		((signed)lastX >> 8);
 	}
 	else {
 
@@ -13672,6 +13673,7 @@ stepToNextWideBezierInat(sqInt bezier, sqInt yValue)
 	updateData1[GBUpdateY] = lastY1;
 	updateData1[GBUpdateDX] = fwDx1;
 	updateData1[GBUpdateDY] = fwDy1;
+	((signed)lastX1 >> 8);
 	computeFinalWideBezierValueswidth(bezier, lineWidth);
 	return 0;
 }
