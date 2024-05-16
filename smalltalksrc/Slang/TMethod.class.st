@@ -565,6 +565,22 @@ TMethod >> checkSuccessExpr [
 		varName: ''
 ]
 
+{ #category : #transformations }
+TMethod >> checkTypeDeclarationOfNoExistingVariables: arg notifyIn: aCCodeGen [
+
+	| message |
+	(self allLocals includes: arg) ifTrue: [ ^ self ].
+	message := String streamContents: [ :s |
+		           s nextPutAll: 'incorrect annotation : '.
+		           s
+			           nextPutAll: arg;
+			           cr ].
+	Notification signal: message.
+	aCCodeGen logger
+		newLine;
+		show: message
+]
+
 { #category : #accessing }
 TMethod >> children [
 	
@@ -2476,14 +2492,16 @@ TMethod >> recordDeclarationsIn: aCCodeGen [
 		self var: #foo declareC: 'float foo'
 		self var: #foo type:'float'.
 	 and remove the declarations from the method body."
-	properties pragmas do: [ :pragma | 
+	properties pragmas do: [ :pragma |
 		pragma selector == #var:declareC: ifTrue: [ 
+			self checkTypeDeclarationOfNoExistingVariables: pragma arguments first asString notifyIn: aCCodeGen.
 			self
 				declarationAt: pragma arguments first asString
 				put: pragma arguments last ].
 		pragma selector == #var:type: ifTrue: [ 
 			| varName varType |
 			varName := pragma arguments first asString.
+			self checkTypeDeclarationOfNoExistingVariables: varName notifyIn: aCCodeGen.
 			varType := aCCodeGen conventionalTypeForType:
 				           pragma arguments last.
 			varType last == $* ifFalse: [ varType := varType , ' ' ].
@@ -2491,7 +2509,8 @@ TMethod >> recordDeclarationsIn: aCCodeGen [
 				declarationAt: varName
 				put: varType , varName ].
 		pragma selector = #returnTypeC: ifTrue: [ 
-			self returnType: pragma arguments last ] ]
+			self returnType: pragma arguments last ]. 
+		]
 ]
 
 { #category : #accessing }
