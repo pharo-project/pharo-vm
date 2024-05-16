@@ -595,7 +595,7 @@ DruidStaticTypePredictionJIT >> gen_BytecodePrimAdd [
 	currentBlock := self Label.
 	jump1 jmpTarget: currentBlock.
 	jump2 jmpTarget: currentBlock.
-	self marshallSendArguments: 1.
+	self marshallSendArgumentsNoPush: 1.
 	self
 		genMarshalledSendNoPush: -1
 		numArgs: 1
@@ -614,7 +614,7 @@ DruidStaticTypePredictionJIT >> gen_BytecodePrimAt [
 
 	| live currentBlock |
 	live := 0.
-	self marshallSendArguments: 1.
+	self marshallSendArgumentsNoPush: 1.
 	self
 		genMarshalledSendNoPush: -17
 		numArgs: 1
@@ -630,7 +630,7 @@ DruidStaticTypePredictionJIT >> gen_BytecodePrimAtEnd [
 
 	| live currentBlock |
 	live := 0.
-	self marshallSendArguments: 0.
+	self marshallSendArgumentsNoPush: 0.
 	self
 		genMarshalledSendNoPush: -22
 		numArgs: 0
@@ -646,7 +646,7 @@ DruidStaticTypePredictionJIT >> gen_BytecodePrimAtPut [
 
 	| live currentBlock |
 	live := 0.
-	self marshallSendArguments: 2.
+	self marshallSendArgumentsNoPush: 2.
 	self
 		genMarshalledSendNoPush: -18
 		numArgs: 2
@@ -687,7 +687,7 @@ DruidStaticTypePredictionJIT >> gen_BytecodePrimBitAnd [
 	jump2 := self Jump: 0.
 	currentBlock := self Label.
 	jump1 jmpTarget: currentBlock.
-	self marshallSendArguments: 1.
+	self marshallSendArgumentsNoPush: 1.
 	self
 		genMarshalledSendNoPush: -15
 		numArgs: 1
@@ -731,7 +731,7 @@ DruidStaticTypePredictionJIT >> gen_BytecodePrimBitOr [
 	jump2 := self Jump: 0.
 	currentBlock := self Label.
 	jump1 jmpTarget: currentBlock.
-	self marshallSendArguments: 1.
+	self marshallSendArgumentsNoPush: 1.
 	self
 		genMarshalledSendNoPush: -16
 		numArgs: 1
@@ -750,7 +750,7 @@ DruidStaticTypePredictionJIT >> gen_BytecodePrimBitShift [
 
 	| live currentBlock |
 	live := 0.
-	self marshallSendArguments: 1.
+	self marshallSendArgumentsNoPush: 1.
 	self
 		genMarshalledSendNoPush: -13
 		numArgs: 1
@@ -766,7 +766,7 @@ DruidStaticTypePredictionJIT >> gen_BytecodePrimDiv [
 
 	| live currentBlock |
 	live := 0.
-	self marshallSendArguments: 1.
+	self marshallSendArgumentsNoPush: 1.
 	self
 		genMarshalledSendNoPush: -14
 		numArgs: 1
@@ -782,7 +782,7 @@ DruidStaticTypePredictionJIT >> gen_BytecodePrimDivide [
 
 	| live currentBlock |
 	live := 0.
-	self marshallSendArguments: 1.
+	self marshallSendArgumentsNoPush: 1.
 	self
 		genMarshalledSendNoPush: -10
 		numArgs: 1
@@ -798,7 +798,7 @@ DruidStaticTypePredictionJIT >> gen_BytecodePrimDo [
 
 	| live currentBlock |
 	live := 0.
-	self marshallSendArguments: 1.
+	self marshallSendArgumentsNoPush: 1.
 	self
 		genMarshalledSendNoPush: -28
 		numArgs: 1
@@ -814,7 +814,7 @@ DruidStaticTypePredictionJIT >> gen_BytecodePrimEqualSistaV1 [
 
 	| live currentBlock |
 	live := 0.
-	self marshallSendArguments: 1.
+	self marshallSendArgumentsNoPush: 1.
 	self
 		genMarshalledSendNoPush: -7
 		numArgs: 1
@@ -830,7 +830,7 @@ DruidStaticTypePredictionJIT >> gen_BytecodePrimGreaterOrEqualSistaV1 [
 
 	| live currentBlock |
 	live := 0.
-	self marshallSendArguments: 1.
+	self marshallSendArgumentsNoPush: 1.
 	self
 		genMarshalledSendNoPush: -6
 		numArgs: 1
@@ -846,7 +846,7 @@ DruidStaticTypePredictionJIT >> gen_BytecodePrimGreaterThanSistaV1 [
 
 	| live currentBlock |
 	live := 0.
-	self marshallSendArguments: 1.
+	self marshallSendArgumentsNoPush: 1.
 	self
 		genMarshalledSendNoPush: -4
 		numArgs: 1
@@ -972,7 +972,7 @@ DruidStaticTypePredictionJIT >> gen_BytecodePrimLessOrEqualSistaV1 [
 
 	| live currentBlock |
 	live := 0.
-	self marshallSendArguments: 1.
+	self marshallSendArgumentsNoPush: 1.
 	self
 		genMarshalledSendNoPush: -5
 		numArgs: 1
@@ -988,7 +988,7 @@ DruidStaticTypePredictionJIT >> gen_BytecodePrimLessThanSistaV1 [
 
 	| live currentBlock |
 	live := 0.
-	self marshallSendArguments: 1.
+	self marshallSendArgumentsNoPush: 1.
 	self
 		genMarshalledSendNoPush: -3
 		numArgs: 1
@@ -1004,7 +1004,7 @@ DruidStaticTypePredictionJIT >> gen_BytecodePrimMakePoint [
 
 	| live currentBlock |
 	live := 0.
-	self marshallSendArguments: 1.
+	self marshallSendArgumentsNoPush: 1.
 	self
 		genMarshalledSendNoPush: -12
 		numArgs: 1
@@ -1020,7 +1020,7 @@ DruidStaticTypePredictionJIT >> gen_BytecodePrimMod [
 
 	| live currentBlock |
 	live := 0.
-	self marshallSendArguments: 1.
+	self marshallSendArgumentsNoPush: 1.
 	self
 		genMarshalledSendNoPush: -11
 		numArgs: 1
@@ -1036,7 +1036,7 @@ DruidStaticTypePredictionJIT >> gen_BytecodePrimMultiply [
 
 	| live currentBlock |
 	live := 0.
-	self marshallSendArguments: 1.
+	self marshallSendArgumentsNoPush: 1.
 	self
 		genMarshalledSendNoPush: -9
 		numArgs: 1
@@ -1052,7 +1052,7 @@ DruidStaticTypePredictionJIT >> gen_BytecodePrimNew [
 
 	| live currentBlock |
 	live := 0.
-	self marshallSendArguments: 0.
+	self marshallSendArgumentsNoPush: 0.
 	self
 		genMarshalledSendNoPush: -29
 		numArgs: 0
@@ -1068,7 +1068,7 @@ DruidStaticTypePredictionJIT >> gen_BytecodePrimNewWithArg [
 
 	| live currentBlock |
 	live := 0.
-	self marshallSendArguments: 1.
+	self marshallSendArgumentsNoPush: 1.
 	self
 		genMarshalledSendNoPush: -30
 		numArgs: 1
@@ -1084,7 +1084,7 @@ DruidStaticTypePredictionJIT >> gen_BytecodePrimNext [
 
 	| live currentBlock |
 	live := 0.
-	self marshallSendArguments: 0.
+	self marshallSendArgumentsNoPush: 0.
 	self
 		genMarshalledSendNoPush: -20
 		numArgs: 0
@@ -1100,7 +1100,7 @@ DruidStaticTypePredictionJIT >> gen_BytecodePrimNextPut [
 
 	| live currentBlock |
 	live := 0.
-	self marshallSendArguments: 1.
+	self marshallSendArgumentsNoPush: 1.
 	self
 		genMarshalledSendNoPush: -21
 		numArgs: 1
@@ -1116,7 +1116,7 @@ DruidStaticTypePredictionJIT >> gen_BytecodePrimNotEqualSistaV1 [
 
 	| live currentBlock |
 	live := 0.
-	self marshallSendArguments: 1.
+	self marshallSendArgumentsNoPush: 1.
 	self
 		genMarshalledSendNoPush: -8
 		numArgs: 1
@@ -1242,7 +1242,7 @@ DruidStaticTypePredictionJIT >> gen_BytecodePrimPointX [
 
 	| live currentBlock |
 	live := 0.
-	self marshallSendArguments: 0.
+	self marshallSendArgumentsNoPush: 0.
 	self
 		genMarshalledSendNoPush: -31
 		numArgs: 0
@@ -1258,7 +1258,7 @@ DruidStaticTypePredictionJIT >> gen_BytecodePrimPointY [
 
 	| live currentBlock |
 	live := 0.
-	self marshallSendArguments: 0.
+	self marshallSendArgumentsNoPush: 0.
 	self
 		genMarshalledSendNoPush: -32
 		numArgs: 0
@@ -1274,7 +1274,7 @@ DruidStaticTypePredictionJIT >> gen_BytecodePrimSize [
 
 	| live currentBlock |
 	live := 0.
-	self marshallSendArguments: 0.
+	self marshallSendArgumentsNoPush: 0.
 	self
 		genMarshalledSendNoPush: -19
 		numArgs: 0
@@ -1327,7 +1327,7 @@ DruidStaticTypePredictionJIT >> gen_BytecodePrimSubtract [
 	currentBlock := self Label.
 	jump1 jmpTarget: currentBlock.
 	jump2 jmpTarget: currentBlock.
-	self marshallSendArguments: 1.
+	self marshallSendArgumentsNoPush: 1.
 	self
 		genMarshalledSendNoPush: -2
 		numArgs: 1
@@ -1346,7 +1346,7 @@ DruidStaticTypePredictionJIT >> gen_BytecodePrimValue [
 
 	| live currentBlock |
 	live := 0.
-	self marshallSendArguments: 0.
+	self marshallSendArgumentsNoPush: 0.
 	self
 		genMarshalledSendNoPush: -26
 		numArgs: 0
@@ -1362,7 +1362,7 @@ DruidStaticTypePredictionJIT >> gen_BytecodePrimValueWithArg [
 
 	| live currentBlock |
 	live := 0.
-	self marshallSendArguments: 1.
+	self marshallSendArgumentsNoPush: 1.
 	self
 		genMarshalledSendNoPush: -27
 		numArgs: 1
@@ -1819,7 +1819,7 @@ DruidStaticTypePredictionJIT >> gen_ExtSendBytecode [
 	s11 := s8 + s10.
 	extB := 0.
 	numExtB := 0.
-	self marshallSendArgumentsNoPush: s11.
+	self marshallSendArguments: s11.
 	self
 		genMarshalledSendNoPush: s6
 		numArgs: s11
@@ -1853,7 +1853,7 @@ DruidStaticTypePredictionJIT >> gen_ExtSendSuperBytecode [
 		s18 := s15 + s17.
 		extB := 0.
 		numExtB := 0.
-		self marshallSendArgumentsNoPush: s18.
+		self marshallSendArguments: s18.
 		self
 			genMarshalledSendNoPush: s6
 			numArgs: s18
@@ -1866,7 +1866,7 @@ DruidStaticTypePredictionJIT >> gen_ExtSendSuperBytecode [
 	s18 := s15 + s17.
 	extB := 0.
 	numExtB := 0.
-	self marshallSendArgumentsNoPush: s18.
+	self marshallSendArguments: s18.
 	self
 		genMarshalledSendNoPush: s6
 		numArgs: s18
@@ -4262,9 +4262,8 @@ DruidStaticTypePredictionJIT >> gen_PrimitiveDiv [
 	self
 		DivR: SendNumArgsReg
 		R: Extra0Reg
-		Quo: Extra0Reg
-		Rem: SendNumArgsReg.
-	self MoveR: Extra0Reg R: SendNumArgsReg.
+		Quo: SendNumArgsReg
+		Rem: Extra0Reg.
 	jump5 := self Jump: 0.
 	currentBlock := self Label.
 	jump4 jmpTarget: currentBlock.
@@ -4277,15 +4276,13 @@ DruidStaticTypePredictionJIT >> gen_PrimitiveDiv [
 	self
 		DivR: Extra1Reg
 		R: SendNumArgsReg
-		Quo: SendNumArgsReg
-		Rem: Extra1Reg.
+		Quo: Extra1Reg
+		Rem: SendNumArgsReg.
 	s23 := 0.
-	self MoveCq: s23 R: Extra1Reg.
-	self SubR: SendNumArgsReg R: Extra1Reg.
-	self MoveR: Extra1Reg R: SendNumArgsReg.
+	self MoveCq: s23 R: SendNumArgsReg.
+	self SubR: Extra1Reg R: SendNumArgsReg.
 	currentBlock := self Label.
 	jump5 jmpTarget: currentBlock.
-	self MoveR: SendNumArgsReg R: Extra1Reg.
 	jump5 := self Jump: 0.
 	currentBlock := self Label.
 	jump3 jmpTarget: currentBlock.
@@ -4300,11 +4297,11 @@ DruidStaticTypePredictionJIT >> gen_PrimitiveDiv [
 	self
 		DivR: SendNumArgsReg
 		R: Extra0Reg
-		Quo: Extra0Reg
-		Rem: Extra1Reg.
+		Quo: Extra1Reg
+		Rem: Extra0Reg.
 	s39 := 0.
-	self MoveCq: s39 R: Extra1Reg.
-	self SubR: Extra0Reg R: Extra1Reg.
+	self MoveCq: s39 R: Extra0Reg.
+	self SubR: Extra1Reg R: Extra0Reg.
 	jump4 := self Jump: 0.
 	currentBlock := self Label.
 	jump3 jmpTarget: currentBlock.
@@ -4314,41 +4311,42 @@ DruidStaticTypePredictionJIT >> gen_PrimitiveDiv [
 	self
 		DivR: Extra0Reg
 		R: Extra1Reg
-		Quo: Extra0Reg
-		Rem: Extra1Reg.
-	self MoveR: Extra0Reg R: Extra1Reg.
+		Quo: Extra1Reg
+		Rem: Extra0Reg.
+	self MoveR: Extra1Reg R: Extra0Reg.
 	currentBlock := self Label.
 	jump4 jmpTarget: currentBlock.
+	self MoveR: Extra0Reg R: SendNumArgsReg.
 	currentBlock := self Label.
 	jump5 jmpTarget: currentBlock.
-	self MoveR: Extra1Reg R: Extra0Reg.
-	self LogicalShiftRightCq: 60 R: Extra0Reg.
-	self AddCq: 1 R: Extra0Reg.
-	self AndCq: 15 R: Extra0Reg.
-	self CmpCq: 1 R: Extra0Reg.
+	self MoveR: SendNumArgsReg R: Extra1Reg.
+	self LogicalShiftRightCq: 60 R: Extra1Reg.
+	self AddCq: 1 R: Extra1Reg.
+	self AndCq: 15 R: Extra1Reg.
+	self CmpCq: 1 R: Extra1Reg.
 	jump5 := self JumpAbove: 0.
-	self MoveR: Extra1Reg R: Extra0Reg.
-	self LogicalShiftRightCq: 60 R: Extra0Reg.
-	self AddCq: 1 R: Extra0Reg.
-	self AndCq: 15 R: Extra0Reg.
-	self CmpCq: 1 R: Extra0Reg.
+	self MoveR: SendNumArgsReg R: Extra1Reg.
+	self LogicalShiftRightCq: 60 R: Extra1Reg.
+	self AddCq: 1 R: Extra1Reg.
+	self AndCq: 15 R: Extra1Reg.
+	self CmpCq: 1 R: Extra1Reg.
 	jump4 := self JumpAbove: 0.
-	self MoveR: Extra1Reg R: Extra0Reg.
-	self LogicalShiftLeftCq: 3 R: Extra0Reg.
-	self AddCq: 1 R: Extra0Reg.
+	self MoveR: SendNumArgsReg R: Extra1Reg.
+	self LogicalShiftLeftCq: 3 R: Extra1Reg.
+	self AddCq: 1 R: Extra1Reg.
 	s70 := 0.
-	self MoveCq: s70 R: Extra1Reg.
+	self MoveCq: s70 R: SendNumArgsReg.
 	jump3 := self Jump: 0.
 	currentBlock := self Label.
 	jump4 jmpTarget: currentBlock.
-	self MoveR: ClassReg R: Extra1Reg.
+	self MoveR: ClassReg R: SendNumArgsReg.
 	s77 := 1.
-	self MoveR: Extra1Reg R: Extra0Reg.
-	self MoveCq: s77 R: Extra1Reg.
+	self MoveR: SendNumArgsReg R: Extra1Reg.
+	self MoveCq: s77 R: SendNumArgsReg.
 	currentBlock := self Label.
 	jump3 jmpTarget: currentBlock.
-	self MoveR: Extra0Reg R: ReceiverResultReg.
-	self CmpCq: 0 R: Extra1Reg.
+	self MoveR: Extra1Reg R: ReceiverResultReg.
+	self CmpCq: 0 R: SendNumArgsReg.
 	jump3 := self JumpNonZero: 0.
 	self genPrimReturn.
 	currentBlock := self Label.
@@ -4383,25 +4381,25 @@ DruidStaticTypePredictionJIT >> gen_PrimitiveDivide [
 	self
 		DivR: SendNumArgsReg
 		R: ClassReg
-		Quo: Extra1Reg
-		Rem: Extra0Reg.
-	self CmpCq: 0 R: Extra0Reg.
+		Quo: Extra0Reg
+		Rem: Extra1Reg.
+	self CmpCq: 0 R: Extra1Reg.
 	jump4 := self JumpNonZero: 0.
 	self
 		DivR: SendNumArgsReg
 		R: ClassReg
-		Quo: Extra1Reg
-		Rem: Extra0Reg.
-	self MoveR: Extra1Reg R: Extra0Reg.
-	self LogicalShiftRightCq: 60 R: Extra0Reg.
-	self AddCq: 1 R: Extra0Reg.
-	self AndCq: 15 R: Extra0Reg.
-	self CmpCq: 1 R: Extra0Reg.
+		Quo: Extra0Reg
+		Rem: Extra1Reg.
+	self MoveR: Extra0Reg R: Extra1Reg.
+	self LogicalShiftRightCq: 60 R: Extra1Reg.
+	self AddCq: 1 R: Extra1Reg.
+	self AndCq: 15 R: Extra1Reg.
+	self CmpCq: 1 R: Extra1Reg.
 	jump5 := self JumpAbove: 0.
-	self MoveR: Extra1Reg R: Extra0Reg.
-	self LogicalShiftLeftCq: 3 R: Extra0Reg.
-	self AddCq: 1 R: Extra0Reg.
-	self MoveR: Extra0Reg R: ReceiverResultReg.
+	self MoveR: Extra0Reg R: Extra1Reg.
+	self LogicalShiftLeftCq: 3 R: Extra1Reg.
+	self AddCq: 1 R: Extra1Reg.
+	self MoveR: Extra1Reg R: ReceiverResultReg.
 	self genPrimReturn.
 	currentBlock := self Label.
 	jump5 jmpTarget: currentBlock.
@@ -6523,7 +6521,7 @@ DruidStaticTypePredictionJIT >> gen_PrimitiveNewWithArg [
 	"AutoGenerated by Druid"
 
 	| jump5 s169 s81 s55 jump10 s184 jump3 s86 b690 s173 jump1 jump8 currentBlock s49 s195 s90 s7 s141 s106 s233 jump6 s40 jump11 jump4 jump13 s93 s63 jump2 s109 s102 jump9 jump14 jump7 jump12 s66 |
-	self SubCq: 24 R: SPReg.
+	self SubCq: 32 R: SPReg.
 	self MoveR: ReceiverResultReg R: Extra3Reg.
 	self MoveR: Extra3Reg Mw: 0 r: SPReg.
 	self MoveR: Arg0Reg R: SendNumArgsReg.
@@ -6544,9 +6542,12 @@ DruidStaticTypePredictionJIT >> gen_PrimitiveNewWithArg [
 	self LogicalShiftRightCq: 16 R: Extra1Reg.
 	self AndCq: 31 R: Extra1Reg.
 	self MoveMw: 0 r: SPReg R: Extra3Reg.
-	self MoveM32: 4 r: Extra3Reg R: Extra2Reg.
-	self AndCq: 16rFFFFFFFF R: Extra2Reg.
-	self AndCq: 16r3FFFFF R: Extra2Reg.
+	self MoveM32: 4 r: Extra3Reg R: Extra3Reg.
+	self AndCq: 16rFFFFFFFF R: Extra3Reg.
+	self MoveR: Extra3Reg Mw: 8 r: SPReg.
+	self MoveMw: 8 r: SPReg R: Extra3Reg.
+	self AndCq: 16r3FFFFF R: Extra3Reg.
+	self MoveR: Extra3Reg Mw: 8 r: SPReg.
 	self CmpCq: 2 R: Extra1Reg.
 	jump2 := self JumpNonZero: 0.
 	self genMoveConstant: objectMemory nilObject R: Extra0Reg.
@@ -6581,7 +6582,8 @@ DruidStaticTypePredictionJIT >> gen_PrimitiveNewWithArg [
 	jump2 jmpTarget: currentBlock.
 	self CmpCq: 10 R: Extra1Reg.
 	jump2 := self JumpNonZero: 0.
-	self CmpCq: 34 R: Extra2Reg.
+	self MoveMw: 8 r: SPReg R: Extra3Reg.
+	self CmpCq: 34 R: Extra3Reg.
 	jump8 := self JumpNonZero: 0.
 	self CmpCq: 2 R: SendNumArgsReg.
 	jump9 := self JumpZero: 0.
@@ -6599,10 +6601,11 @@ DruidStaticTypePredictionJIT >> gen_PrimitiveNewWithArg [
 	self
 		DivR: Extra0Reg
 		R: ClassReg
-		Quo: ClassReg
-		Rem: Extra0Reg.
+		Quo: Extra0Reg
+		Rem: ClassReg.
 	self AndCq: 1 R: SendNumArgsReg.
 	self AddR: SendNumArgsReg R: Extra1Reg.
+	self MoveR: Extra0Reg R: ClassReg.
 	jump9 := self Jump: 0.
 	currentBlock := self Label.
 	jump8 jmpTarget: currentBlock.
@@ -6614,17 +6617,17 @@ DruidStaticTypePredictionJIT >> gen_PrimitiveNewWithArg [
 	self
 		DivR: Extra0Reg
 		R: ClassReg
-		Quo: Extra0Reg
-		Rem: ClassReg.
+		Quo: ClassReg
+		Rem: Extra0Reg.
 	self AndCq: 1 R: SendNumArgsReg.
 	self AddR: SendNumArgsReg R: Extra1Reg.
-	self CmpCq: 0 R: Extra2Reg.
+	self MoveMw: 8 r: SPReg R: Extra3Reg.
+	self CmpCq: 0 R: Extra3Reg.
 	jump8 := self JumpNonZero: 0.
-	self MoveCq: s63 R: ClassReg.
+	self MoveCq: s63 R: Extra0Reg.
 	jump11 := self Jump: 0.
 	currentBlock := self Label.
 	jump8 jmpTarget: currentBlock.
-	self MoveR: Extra0Reg R: ClassReg.
 	currentBlock := self Label.
 	jump9 jmpTarget: currentBlock.
 	s81 := 0.
@@ -6664,15 +6667,15 @@ DruidStaticTypePredictionJIT >> gen_PrimitiveNewWithArg [
 	self
 		DivR: Extra0Reg
 		R: ClassReg
-		Quo: Extra0Reg
-		Rem: ClassReg.
+		Quo: Extra2Reg
+		Rem: Extra0Reg.
 	s109 := 8.
-	self MoveCq: s109 R: ClassReg.
-	self SubR: SendNumArgsReg R: ClassReg.
-	self AndCq: 7 R: ClassReg.
-	self AddR: ClassReg R: Extra1Reg.
+	self MoveCq: s109 R: Extra0Reg.
+	self SubR: SendNumArgsReg R: Extra0Reg.
+	self AndCq: 7 R: Extra0Reg.
+	self AddR: Extra0Reg R: Extra1Reg.
 	self MoveCq: s102 R: ClassReg.
-	self MoveR: Extra0Reg R: SendNumArgsReg.
+	self MoveR: Extra2Reg R: SendNumArgsReg.
 	jump12 := self Jump: 0.
 	currentBlock := self Label.
 	jump2 jmpTarget: currentBlock.
@@ -6681,7 +6684,8 @@ DruidStaticTypePredictionJIT >> gen_PrimitiveNewWithArg [
 	self CmpCq: 5 R: Extra1Reg.
 	jump13 := self JumpAbove: 0.
 	self AndCq: 16rFFFF R: Extra0Reg.
-	self genMoveConstant: objectMemory nilObject R: ClassReg.
+	self genMoveConstant: objectMemory nilObject R: Extra2Reg.
+	self MoveR: Extra2Reg R: ClassReg.
 	self MoveR: Extra0Reg R: SendNumArgsReg.
 	currentBlock := self Label.
 	jump4 jmpTarget: currentBlock.
@@ -6690,9 +6694,11 @@ DruidStaticTypePredictionJIT >> gen_PrimitiveNewWithArg [
 	jump7 jmpTarget: currentBlock.
 	jump8 jmpTarget: currentBlock.
 	jump12 jmpTarget: currentBlock.
-	self CmpCq: 0 R: Extra2Reg.
+	self MoveMw: 8 r: SPReg R: Extra3Reg.
+	self CmpCq: 0 R: Extra3Reg.
 	jump12 := self JumpNonZero: 0.
-	self MoveR: SendNumArgsReg R: Extra0Reg.
+	self MoveR: ClassReg R: Extra0Reg.
+	self MoveR: SendNumArgsReg R: ClassReg.
 	currentBlock := self Label.
 	jump11 jmpTarget: currentBlock.
 	self MoveMw: 0 r: SPReg R: Extra3Reg.
@@ -6710,10 +6716,10 @@ DruidStaticTypePredictionJIT >> gen_PrimitiveNewWithArg [
 	jump7 := self Jump: 0.
 	currentBlock := self Label.
 	jump8 jmpTarget: currentBlock.
-	self MoveR: ClassReg R: Extra3Reg.
-	self MoveR: Extra3Reg Mw: 8 r: SPReg.
 	self MoveR: Extra0Reg R: Extra3Reg.
 	self MoveR: Extra3Reg Mw: 16 r: SPReg.
+	self MoveR: ClassReg R: Extra3Reg.
+	self MoveR: Extra3Reg Mw: 24 r: SPReg.
 	jump8 := self Jump: 0.
 	currentBlock := self Label.
 	jump12 jmpTarget: currentBlock.
@@ -6722,15 +6728,17 @@ DruidStaticTypePredictionJIT >> gen_PrimitiveNewWithArg [
 	currentBlock := self Label.
 	jump9 jmpTarget: currentBlock.
 	self MoveR: Extra0Reg R: Extra3Reg.
-	self MoveR: Extra3Reg Mw: 8 r: SPReg.
-	self MoveR: ClassReg R: Extra3Reg.
 	self MoveR: Extra3Reg Mw: 16 r: SPReg.
+	self MoveR: ClassReg R: Extra3Reg.
+	self MoveR: Extra3Reg Mw: 24 r: SPReg.
+	self MoveMw: 8 r: SPReg R: Extra3Reg.
+	self MoveR: Extra3Reg R: Extra2Reg.
 	currentBlock := self Label.
 	jump8 jmpTarget: currentBlock.
-	self MoveMw: 16 r: SPReg R: Extra3Reg.
+	self MoveMw: 24 r: SPReg R: Extra3Reg.
 	self CmpCq: 16rFFFF R: Extra3Reg.
 	jump8 := self JumpBelowOrEqual: 0.
-	self MoveMw: 16 r: SPReg R: Extra3Reg.
+	self MoveMw: 24 r: SPReg R: Extra3Reg.
 	self CmpCq: 16r10000000000 R: Extra3Reg.
 	jump9 := self JumpBelowOrEqual: 0.
 	s169 := 1.
@@ -6747,7 +6755,7 @@ DruidStaticTypePredictionJIT >> gen_PrimitiveNewWithArg [
 	jump9 := self Jump: 0.
 	currentBlock := self Label.
 	jump8 jmpTarget: currentBlock.
-	self MoveMw: 16 r: SPReg R: Extra3Reg.
+	self MoveMw: 24 r: SPReg R: Extra3Reg.
 	self CmpCq: 255 R: Extra3Reg.
 	jump8 := self JumpBelow: 0.
 	self MoveMw: 0 r: SPReg R: Extra3Reg.
@@ -6756,70 +6764,71 @@ DruidStaticTypePredictionJIT >> gen_PrimitiveNewWithArg [
 	jump6 := self Jump: 0.
 	currentBlock := self Label.
 	jump8 jmpTarget: currentBlock.
-	self MoveMw: 16 r: SPReg R: Extra3Reg.
+	self MoveMw: 24 r: SPReg R: Extra3Reg.
 	self CmpCq: 1 R: Extra3Reg.
 	jump8 := self JumpAboveOrEqual: 0.
 	s184 := 8.
-	self MoveCq: s184 R: ClassReg.
+	self MoveCq: s184 R: SendNumArgsReg.
 	jump5 := self Jump: 0.
 	currentBlock := self Label.
 	jump8 jmpTarget: currentBlock.
-	self MoveMw: 16 r: SPReg R: Extra3Reg.
-	self MoveR: Extra3Reg R: ClassReg.
-	self LogicalShiftLeftCq: 3 R: ClassReg.
+	self MoveMw: 24 r: SPReg R: Extra3Reg.
+	self MoveR: Extra3Reg R: SendNumArgsReg.
+	self LogicalShiftLeftCq: 3 R: SendNumArgsReg.
 	currentBlock := self Label.
 	jump5 jmpTarget: currentBlock.
-	self AddCq: 8 R: ClassReg.
-	self MoveAw: objectMemory freeStartAddress R: SendNumArgsReg.
-	self AddR: ClassReg R: SendNumArgsReg.
+	self AddCq: 8 R: SendNumArgsReg.
+	self MoveAw: objectMemory freeStartAddress R: Extra0Reg.
+	self AddR: SendNumArgsReg R: Extra0Reg.
 	s195 := objectMemory getScavengeThreshold.
-	self CmpCq: s195 R: SendNumArgsReg.
+	self CmpCq: s195 R: Extra0Reg.
 	jump5 := self JumpBelowOrEqual: 0.
-	self CmpCq: s195 R: SendNumArgsReg.
+	self CmpCq: s195 R: Extra0Reg.
 	jump8 := self JumpBelowOrEqual: 0.
 	jump4 := self Jump: 0.
 	currentBlock := self Label.
 	jump5 jmpTarget: currentBlock.
 	jump8 jmpTarget: currentBlock.
-	self MoveAw: objectMemory freeStartAddress R: SendNumArgsReg.
-	self MoveMw: 16 r: SPReg R: Extra3Reg.
-	self MoveR: Extra3Reg R: Extra0Reg.
-	self LogicalShiftLeftCq: 56 R: Extra0Reg.
-	self LogicalShiftLeftCq: 24 R: Extra1Reg.
-	self AddR: Extra1Reg R: Extra0Reg.
-	self AddR: Extra2Reg R: Extra0Reg.
-	self OrCq: 0 R: Extra0Reg.
-	self MoveR: Extra0Reg M64: 0 r: SendNumArgsReg.
 	self MoveAw: objectMemory freeStartAddress R: Extra0Reg.
-	self AddR: ClassReg R: Extra0Reg.
-	self MoveR: Extra0Reg Aw: objectMemory freeStartAddress.
-	self CmpCq: 0 R: SendNumArgsReg.
+	self MoveMw: 24 r: SPReg R: Extra3Reg.
+	self MoveR: Extra3Reg R: ClassReg.
+	self LogicalShiftLeftCq: 56 R: ClassReg.
+	self LogicalShiftLeftCq: 24 R: Extra1Reg.
+	self AddR: Extra1Reg R: ClassReg.
+	self AddR: Extra2Reg R: ClassReg.
+	self OrCq: 0 R: ClassReg.
+	self MoveR: ClassReg M64: 0 r: Extra0Reg.
+	self MoveAw: objectMemory freeStartAddress R: ClassReg.
+	self AddR: SendNumArgsReg R: ClassReg.
+	self MoveR: ClassReg Aw: objectMemory freeStartAddress.
+	self CmpCq: 0 R: Extra0Reg.
 	jump8 := self JumpNonZero: 0.
 	jump5 := self Jump: 0.
 	currentBlock := self Label.
 	jump8 jmpTarget: currentBlock.
-	self MoveR: SendNumArgsReg R: Extra0Reg.
-	self AddCq: 8 R: Extra0Reg.
-	self MoveMw: 16 r: SPReg R: Extra3Reg.
-	self LogicalShiftLeftCq: 3 R: Extra3Reg.
-	self MoveR: Extra3Reg Mw: 16 r: SPReg.
-	self MoveR: SendNumArgsReg R: ClassReg.
-	self MoveMw: 16 r: SPReg R: Extra3Reg.
-	self AddR: Extra3Reg R: ClassReg.
+	self MoveR: Extra0Reg R: ClassReg.
 	self AddCq: 8 R: ClassReg.
-	self SubCq: 1 R: ClassReg.
+	self MoveMw: 24 r: SPReg R: Extra3Reg.
+	self LogicalShiftLeftCq: 3 R: Extra3Reg.
+	self MoveR: Extra3Reg Mw: 24 r: SPReg.
+	self MoveR: Extra0Reg R: SendNumArgsReg.
+	self MoveMw: 24 r: SPReg R: Extra3Reg.
+	self AddR: Extra3Reg R: SendNumArgsReg.
+	self AddCq: 8 R: SendNumArgsReg.
+	self SubCq: 1 R: SendNumArgsReg.
 	b690 := self Label.
-	self CmpR: Extra0Reg R: ClassReg.
+	self CmpR: ClassReg R: SendNumArgsReg.
 	jump8 := self JumpLess: 0.
-	self MoveMw: 8 r: SPReg R: Extra3Reg.
-	self MoveR: Extra3Reg M64: 0 r: Extra0Reg.
-	self MoveR: Extra0Reg R: Extra2Reg.
+	self MoveMw: 16 r: SPReg R: Extra3Reg.
+	self MoveR: Extra3Reg M64: 0 r: ClassReg.
+	self MoveR: ClassReg R: Extra2Reg.
 	self AddCq: 8 R: Extra2Reg.
-	self MoveR: Extra2Reg R: Extra0Reg.
+	self MoveR: Extra2Reg R: ClassReg.
 	jump14 := self Jump: b690.
 	currentBlock := self Label.
 	jump8 jmpTarget: currentBlock.
 	s233 := 0.
+	self MoveR: Extra0Reg R: SendNumArgsReg.
 	self MoveCq: s233 R: ClassReg.
 	currentBlock := self Label.
 	jump3 jmpTarget: currentBlock.
@@ -6830,7 +6839,7 @@ DruidStaticTypePredictionJIT >> gen_PrimitiveNewWithArg [
 	self MoveR: SendNumArgsReg R: ReceiverResultReg.
 	self CmpCq: 0 R: ClassReg.
 	jump9 := self JumpNonZero: 0.
-	self AddCq: 24 R: SPReg.
+	self AddCq: 32 R: SPReg.
 	self genPrimReturn.
 	currentBlock := self Label.
 	jump6 jmpTarget: currentBlock.
@@ -6845,7 +6854,7 @@ DruidStaticTypePredictionJIT >> gen_PrimitiveNewWithArg [
 	jump2 jmpTarget: currentBlock.
 	jump13 jmpTarget: currentBlock.
 	jump5 jmpTarget: currentBlock.
-	self AddCq: 24 R: SPReg.
+	self AddCq: 32 R: SPReg.
 	^ 0
 ]
 
@@ -6979,9 +6988,8 @@ DruidStaticTypePredictionJIT >> gen_PrimitiveQuo [
 	self
 		DivR: SendNumArgsReg
 		R: ClassReg
-		Quo: SendNumArgsReg
-		Rem: ClassReg.
-	self MoveR: SendNumArgsReg R: ClassReg.
+		Quo: ClassReg
+		Rem: SendNumArgsReg.
 	jump6 := self Jump: 0.
 	currentBlock := self Label.
 	jump5 jmpTarget: currentBlock.
@@ -6991,15 +6999,15 @@ DruidStaticTypePredictionJIT >> gen_PrimitiveQuo [
 	self
 		DivR: Extra0Reg
 		R: ClassReg
-		Quo: Extra0Reg
-		Rem: SendNumArgsReg.
+		Quo: SendNumArgsReg
+		Rem: Extra0Reg.
 	s18 := 0.
-	self MoveCq: s18 R: SendNumArgsReg.
-	self SubR: Extra0Reg R: SendNumArgsReg.
-	self MoveR: SendNumArgsReg R: ClassReg.
+	self MoveCq: s18 R: Extra0Reg.
+	self SubR: SendNumArgsReg R: Extra0Reg.
+	self MoveR: Extra0Reg R: ClassReg.
 	currentBlock := self Label.
 	jump6 jmpTarget: currentBlock.
-	self MoveR: ClassReg R: SendNumArgsReg.
+	self MoveR: ClassReg R: Extra0Reg.
 	jump6 := self Jump: 0.
 	currentBlock := self Label.
 	jump4 jmpTarget: currentBlock.
@@ -7011,11 +7019,11 @@ DruidStaticTypePredictionJIT >> gen_PrimitiveQuo [
 	self
 		DivR: SendNumArgsReg
 		R: Extra0Reg
-		Quo: Extra0Reg
-		Rem: SendNumArgsReg.
+		Quo: SendNumArgsReg
+		Rem: Extra0Reg.
 	s31 := 0.
-	self MoveCq: s31 R: SendNumArgsReg.
-	self SubR: Extra0Reg R: SendNumArgsReg.
+	self MoveCq: s31 R: Extra0Reg.
+	self SubR: SendNumArgsReg R: Extra0Reg.
 	jump5 := self Jump: 0.
 	currentBlock := self Label.
 	jump4 jmpTarget: currentBlock.
@@ -7028,23 +7036,22 @@ DruidStaticTypePredictionJIT >> gen_PrimitiveQuo [
 	self
 		DivR: ClassReg
 		R: Extra0Reg
-		Quo: ClassReg
-		Rem: Extra0Reg.
-	self MoveR: ClassReg R: SendNumArgsReg.
+		Quo: Extra0Reg
+		Rem: ClassReg.
 	currentBlock := self Label.
 	jump5 jmpTarget: currentBlock.
 	currentBlock := self Label.
 	jump6 jmpTarget: currentBlock.
-	self MoveR: SendNumArgsReg R: Extra0Reg.
-	self LogicalShiftRightCq: 60 R: Extra0Reg.
-	self AddCq: 1 R: Extra0Reg.
-	self AndCq: 15 R: Extra0Reg.
-	self CmpCq: 1 R: Extra0Reg.
+	self MoveR: Extra0Reg R: ClassReg.
+	self LogicalShiftRightCq: 60 R: ClassReg.
+	self AddCq: 1 R: ClassReg.
+	self AndCq: 15 R: ClassReg.
+	self CmpCq: 1 R: ClassReg.
 	jump6 := self JumpAbove: 0.
-	self MoveR: SendNumArgsReg R: Extra0Reg.
-	self LogicalShiftLeftCq: 3 R: Extra0Reg.
-	self AddCq: 1 R: Extra0Reg.
-	self MoveR: Extra0Reg R: ReceiverResultReg.
+	self MoveR: Extra0Reg R: ClassReg.
+	self LogicalShiftLeftCq: 3 R: ClassReg.
+	self AddCq: 1 R: ClassReg.
+	self MoveR: ClassReg R: ReceiverResultReg.
 	self genPrimReturn.
 	currentBlock := self Label.
 	jump6 jmpTarget: currentBlock.
@@ -11899,7 +11906,7 @@ DruidStaticTypePredictionJIT >> gen_SendLiteralSelector0ArgsBytecode0 [
 
 	| live currentBlock |
 	live := 0.
-	self marshallSendArguments: 0.
+	self marshallSendArgumentsNoPush: 0.
 	self
 		genMarshalledSendNoPush: 0
 		numArgs: 0
@@ -11915,7 +11922,7 @@ DruidStaticTypePredictionJIT >> gen_SendLiteralSelector0ArgsBytecode1 [
 
 	| live currentBlock |
 	live := 0.
-	self marshallSendArguments: 0.
+	self marshallSendArgumentsNoPush: 0.
 	self
 		genMarshalledSendNoPush: 1
 		numArgs: 0
@@ -11931,7 +11938,7 @@ DruidStaticTypePredictionJIT >> gen_SendLiteralSelector0ArgsBytecode10 [
 
 	| live currentBlock |
 	live := 0.
-	self marshallSendArguments: 0.
+	self marshallSendArgumentsNoPush: 0.
 	self
 		genMarshalledSendNoPush: 10
 		numArgs: 0
@@ -11947,7 +11954,7 @@ DruidStaticTypePredictionJIT >> gen_SendLiteralSelector0ArgsBytecode11 [
 
 	| live currentBlock |
 	live := 0.
-	self marshallSendArguments: 0.
+	self marshallSendArgumentsNoPush: 0.
 	self
 		genMarshalledSendNoPush: 11
 		numArgs: 0
@@ -11963,7 +11970,7 @@ DruidStaticTypePredictionJIT >> gen_SendLiteralSelector0ArgsBytecode12 [
 
 	| live currentBlock |
 	live := 0.
-	self marshallSendArguments: 0.
+	self marshallSendArgumentsNoPush: 0.
 	self
 		genMarshalledSendNoPush: 12
 		numArgs: 0
@@ -11979,7 +11986,7 @@ DruidStaticTypePredictionJIT >> gen_SendLiteralSelector0ArgsBytecode13 [
 
 	| live currentBlock |
 	live := 0.
-	self marshallSendArguments: 0.
+	self marshallSendArgumentsNoPush: 0.
 	self
 		genMarshalledSendNoPush: 13
 		numArgs: 0
@@ -11995,7 +12002,7 @@ DruidStaticTypePredictionJIT >> gen_SendLiteralSelector0ArgsBytecode14 [
 
 	| live currentBlock |
 	live := 0.
-	self marshallSendArguments: 0.
+	self marshallSendArgumentsNoPush: 0.
 	self
 		genMarshalledSendNoPush: 14
 		numArgs: 0
@@ -12011,7 +12018,7 @@ DruidStaticTypePredictionJIT >> gen_SendLiteralSelector0ArgsBytecode15 [
 
 	| live currentBlock |
 	live := 0.
-	self marshallSendArguments: 0.
+	self marshallSendArgumentsNoPush: 0.
 	self
 		genMarshalledSendNoPush: 15
 		numArgs: 0
@@ -12027,7 +12034,7 @@ DruidStaticTypePredictionJIT >> gen_SendLiteralSelector0ArgsBytecode2 [
 
 	| live currentBlock |
 	live := 0.
-	self marshallSendArguments: 0.
+	self marshallSendArgumentsNoPush: 0.
 	self
 		genMarshalledSendNoPush: 2
 		numArgs: 0
@@ -12043,7 +12050,7 @@ DruidStaticTypePredictionJIT >> gen_SendLiteralSelector0ArgsBytecode3 [
 
 	| live currentBlock |
 	live := 0.
-	self marshallSendArguments: 0.
+	self marshallSendArgumentsNoPush: 0.
 	self
 		genMarshalledSendNoPush: 3
 		numArgs: 0
@@ -12059,7 +12066,7 @@ DruidStaticTypePredictionJIT >> gen_SendLiteralSelector0ArgsBytecode4 [
 
 	| live currentBlock |
 	live := 0.
-	self marshallSendArguments: 0.
+	self marshallSendArgumentsNoPush: 0.
 	self
 		genMarshalledSendNoPush: 4
 		numArgs: 0
@@ -12075,7 +12082,7 @@ DruidStaticTypePredictionJIT >> gen_SendLiteralSelector0ArgsBytecode5 [
 
 	| live currentBlock |
 	live := 0.
-	self marshallSendArguments: 0.
+	self marshallSendArgumentsNoPush: 0.
 	self
 		genMarshalledSendNoPush: 5
 		numArgs: 0
@@ -12091,7 +12098,7 @@ DruidStaticTypePredictionJIT >> gen_SendLiteralSelector0ArgsBytecode6 [
 
 	| live currentBlock |
 	live := 0.
-	self marshallSendArguments: 0.
+	self marshallSendArgumentsNoPush: 0.
 	self
 		genMarshalledSendNoPush: 6
 		numArgs: 0
@@ -12107,7 +12114,7 @@ DruidStaticTypePredictionJIT >> gen_SendLiteralSelector0ArgsBytecode7 [
 
 	| live currentBlock |
 	live := 0.
-	self marshallSendArguments: 0.
+	self marshallSendArgumentsNoPush: 0.
 	self
 		genMarshalledSendNoPush: 7
 		numArgs: 0
@@ -12123,7 +12130,7 @@ DruidStaticTypePredictionJIT >> gen_SendLiteralSelector0ArgsBytecode8 [
 
 	| live currentBlock |
 	live := 0.
-	self marshallSendArguments: 0.
+	self marshallSendArgumentsNoPush: 0.
 	self
 		genMarshalledSendNoPush: 8
 		numArgs: 0
@@ -12139,7 +12146,7 @@ DruidStaticTypePredictionJIT >> gen_SendLiteralSelector0ArgsBytecode9 [
 
 	| live currentBlock |
 	live := 0.
-	self marshallSendArguments: 0.
+	self marshallSendArgumentsNoPush: 0.
 	self
 		genMarshalledSendNoPush: 9
 		numArgs: 0
@@ -12155,7 +12162,7 @@ DruidStaticTypePredictionJIT >> gen_SendLiteralSelector1ArgBytecode0 [
 
 	| live currentBlock |
 	live := 0.
-	self marshallSendArguments: 1.
+	self marshallSendArgumentsNoPush: 1.
 	self
 		genMarshalledSendNoPush: 0
 		numArgs: 1
@@ -12171,7 +12178,7 @@ DruidStaticTypePredictionJIT >> gen_SendLiteralSelector1ArgBytecode1 [
 
 	| live currentBlock |
 	live := 0.
-	self marshallSendArguments: 1.
+	self marshallSendArgumentsNoPush: 1.
 	self
 		genMarshalledSendNoPush: 1
 		numArgs: 1
@@ -12187,7 +12194,7 @@ DruidStaticTypePredictionJIT >> gen_SendLiteralSelector1ArgBytecode10 [
 
 	| live currentBlock |
 	live := 0.
-	self marshallSendArguments: 1.
+	self marshallSendArgumentsNoPush: 1.
 	self
 		genMarshalledSendNoPush: 10
 		numArgs: 1
@@ -12203,7 +12210,7 @@ DruidStaticTypePredictionJIT >> gen_SendLiteralSelector1ArgBytecode11 [
 
 	| live currentBlock |
 	live := 0.
-	self marshallSendArguments: 1.
+	self marshallSendArgumentsNoPush: 1.
 	self
 		genMarshalledSendNoPush: 11
 		numArgs: 1
@@ -12219,7 +12226,7 @@ DruidStaticTypePredictionJIT >> gen_SendLiteralSelector1ArgBytecode12 [
 
 	| live currentBlock |
 	live := 0.
-	self marshallSendArguments: 1.
+	self marshallSendArgumentsNoPush: 1.
 	self
 		genMarshalledSendNoPush: 12
 		numArgs: 1
@@ -12235,7 +12242,7 @@ DruidStaticTypePredictionJIT >> gen_SendLiteralSelector1ArgBytecode13 [
 
 	| live currentBlock |
 	live := 0.
-	self marshallSendArguments: 1.
+	self marshallSendArgumentsNoPush: 1.
 	self
 		genMarshalledSendNoPush: 13
 		numArgs: 1
@@ -12251,7 +12258,7 @@ DruidStaticTypePredictionJIT >> gen_SendLiteralSelector1ArgBytecode14 [
 
 	| live currentBlock |
 	live := 0.
-	self marshallSendArguments: 1.
+	self marshallSendArgumentsNoPush: 1.
 	self
 		genMarshalledSendNoPush: 14
 		numArgs: 1
@@ -12267,7 +12274,7 @@ DruidStaticTypePredictionJIT >> gen_SendLiteralSelector1ArgBytecode15 [
 
 	| live currentBlock |
 	live := 0.
-	self marshallSendArguments: 1.
+	self marshallSendArgumentsNoPush: 1.
 	self
 		genMarshalledSendNoPush: 15
 		numArgs: 1
@@ -12283,7 +12290,7 @@ DruidStaticTypePredictionJIT >> gen_SendLiteralSelector1ArgBytecode2 [
 
 	| live currentBlock |
 	live := 0.
-	self marshallSendArguments: 1.
+	self marshallSendArgumentsNoPush: 1.
 	self
 		genMarshalledSendNoPush: 2
 		numArgs: 1
@@ -12299,7 +12306,7 @@ DruidStaticTypePredictionJIT >> gen_SendLiteralSelector1ArgBytecode3 [
 
 	| live currentBlock |
 	live := 0.
-	self marshallSendArguments: 1.
+	self marshallSendArgumentsNoPush: 1.
 	self
 		genMarshalledSendNoPush: 3
 		numArgs: 1
@@ -12315,7 +12322,7 @@ DruidStaticTypePredictionJIT >> gen_SendLiteralSelector1ArgBytecode4 [
 
 	| live currentBlock |
 	live := 0.
-	self marshallSendArguments: 1.
+	self marshallSendArgumentsNoPush: 1.
 	self
 		genMarshalledSendNoPush: 4
 		numArgs: 1
@@ -12331,7 +12338,7 @@ DruidStaticTypePredictionJIT >> gen_SendLiteralSelector1ArgBytecode5 [
 
 	| live currentBlock |
 	live := 0.
-	self marshallSendArguments: 1.
+	self marshallSendArgumentsNoPush: 1.
 	self
 		genMarshalledSendNoPush: 5
 		numArgs: 1
@@ -12347,7 +12354,7 @@ DruidStaticTypePredictionJIT >> gen_SendLiteralSelector1ArgBytecode6 [
 
 	| live currentBlock |
 	live := 0.
-	self marshallSendArguments: 1.
+	self marshallSendArgumentsNoPush: 1.
 	self
 		genMarshalledSendNoPush: 6
 		numArgs: 1
@@ -12363,7 +12370,7 @@ DruidStaticTypePredictionJIT >> gen_SendLiteralSelector1ArgBytecode7 [
 
 	| live currentBlock |
 	live := 0.
-	self marshallSendArguments: 1.
+	self marshallSendArgumentsNoPush: 1.
 	self
 		genMarshalledSendNoPush: 7
 		numArgs: 1
@@ -12379,7 +12386,7 @@ DruidStaticTypePredictionJIT >> gen_SendLiteralSelector1ArgBytecode8 [
 
 	| live currentBlock |
 	live := 0.
-	self marshallSendArguments: 1.
+	self marshallSendArgumentsNoPush: 1.
 	self
 		genMarshalledSendNoPush: 8
 		numArgs: 1
@@ -12395,7 +12402,7 @@ DruidStaticTypePredictionJIT >> gen_SendLiteralSelector1ArgBytecode9 [
 
 	| live currentBlock |
 	live := 0.
-	self marshallSendArguments: 1.
+	self marshallSendArgumentsNoPush: 1.
 	self
 		genMarshalledSendNoPush: 9
 		numArgs: 1
@@ -12411,7 +12418,7 @@ DruidStaticTypePredictionJIT >> gen_SendLiteralSelector2ArgsBytecode0 [
 
 	| live currentBlock |
 	live := 0.
-	self marshallSendArguments: 2.
+	self marshallSendArgumentsNoPush: 2.
 	self
 		genMarshalledSendNoPush: 0
 		numArgs: 2
@@ -12427,7 +12434,7 @@ DruidStaticTypePredictionJIT >> gen_SendLiteralSelector2ArgsBytecode1 [
 
 	| live currentBlock |
 	live := 0.
-	self marshallSendArguments: 2.
+	self marshallSendArgumentsNoPush: 2.
 	self
 		genMarshalledSendNoPush: 1
 		numArgs: 2
@@ -12443,7 +12450,7 @@ DruidStaticTypePredictionJIT >> gen_SendLiteralSelector2ArgsBytecode10 [
 
 	| live currentBlock |
 	live := 0.
-	self marshallSendArguments: 2.
+	self marshallSendArgumentsNoPush: 2.
 	self
 		genMarshalledSendNoPush: 10
 		numArgs: 2
@@ -12459,7 +12466,7 @@ DruidStaticTypePredictionJIT >> gen_SendLiteralSelector2ArgsBytecode11 [
 
 	| live currentBlock |
 	live := 0.
-	self marshallSendArguments: 2.
+	self marshallSendArgumentsNoPush: 2.
 	self
 		genMarshalledSendNoPush: 11
 		numArgs: 2
@@ -12475,7 +12482,7 @@ DruidStaticTypePredictionJIT >> gen_SendLiteralSelector2ArgsBytecode12 [
 
 	| live currentBlock |
 	live := 0.
-	self marshallSendArguments: 2.
+	self marshallSendArgumentsNoPush: 2.
 	self
 		genMarshalledSendNoPush: 12
 		numArgs: 2
@@ -12491,7 +12498,7 @@ DruidStaticTypePredictionJIT >> gen_SendLiteralSelector2ArgsBytecode13 [
 
 	| live currentBlock |
 	live := 0.
-	self marshallSendArguments: 2.
+	self marshallSendArgumentsNoPush: 2.
 	self
 		genMarshalledSendNoPush: 13
 		numArgs: 2
@@ -12507,7 +12514,7 @@ DruidStaticTypePredictionJIT >> gen_SendLiteralSelector2ArgsBytecode14 [
 
 	| live currentBlock |
 	live := 0.
-	self marshallSendArguments: 2.
+	self marshallSendArgumentsNoPush: 2.
 	self
 		genMarshalledSendNoPush: 14
 		numArgs: 2
@@ -12523,7 +12530,7 @@ DruidStaticTypePredictionJIT >> gen_SendLiteralSelector2ArgsBytecode15 [
 
 	| live currentBlock |
 	live := 0.
-	self marshallSendArguments: 2.
+	self marshallSendArgumentsNoPush: 2.
 	self
 		genMarshalledSendNoPush: 15
 		numArgs: 2
@@ -12539,7 +12546,7 @@ DruidStaticTypePredictionJIT >> gen_SendLiteralSelector2ArgsBytecode2 [
 
 	| live currentBlock |
 	live := 0.
-	self marshallSendArguments: 2.
+	self marshallSendArgumentsNoPush: 2.
 	self
 		genMarshalledSendNoPush: 2
 		numArgs: 2
@@ -12555,7 +12562,7 @@ DruidStaticTypePredictionJIT >> gen_SendLiteralSelector2ArgsBytecode3 [
 
 	| live currentBlock |
 	live := 0.
-	self marshallSendArguments: 2.
+	self marshallSendArgumentsNoPush: 2.
 	self
 		genMarshalledSendNoPush: 3
 		numArgs: 2
@@ -12571,7 +12578,7 @@ DruidStaticTypePredictionJIT >> gen_SendLiteralSelector2ArgsBytecode4 [
 
 	| live currentBlock |
 	live := 0.
-	self marshallSendArguments: 2.
+	self marshallSendArgumentsNoPush: 2.
 	self
 		genMarshalledSendNoPush: 4
 		numArgs: 2
@@ -12587,7 +12594,7 @@ DruidStaticTypePredictionJIT >> gen_SendLiteralSelector2ArgsBytecode5 [
 
 	| live currentBlock |
 	live := 0.
-	self marshallSendArguments: 2.
+	self marshallSendArgumentsNoPush: 2.
 	self
 		genMarshalledSendNoPush: 5
 		numArgs: 2
@@ -12603,7 +12610,7 @@ DruidStaticTypePredictionJIT >> gen_SendLiteralSelector2ArgsBytecode6 [
 
 	| live currentBlock |
 	live := 0.
-	self marshallSendArguments: 2.
+	self marshallSendArgumentsNoPush: 2.
 	self
 		genMarshalledSendNoPush: 6
 		numArgs: 2
@@ -12619,7 +12626,7 @@ DruidStaticTypePredictionJIT >> gen_SendLiteralSelector2ArgsBytecode7 [
 
 	| live currentBlock |
 	live := 0.
-	self marshallSendArguments: 2.
+	self marshallSendArgumentsNoPush: 2.
 	self
 		genMarshalledSendNoPush: 7
 		numArgs: 2
@@ -12635,7 +12642,7 @@ DruidStaticTypePredictionJIT >> gen_SendLiteralSelector2ArgsBytecode8 [
 
 	| live currentBlock |
 	live := 0.
-	self marshallSendArguments: 2.
+	self marshallSendArgumentsNoPush: 2.
 	self
 		genMarshalledSendNoPush: 8
 		numArgs: 2
@@ -12651,7 +12658,7 @@ DruidStaticTypePredictionJIT >> gen_SendLiteralSelector2ArgsBytecode9 [
 
 	| live currentBlock |
 	live := 0.
-	self marshallSendArguments: 2.
+	self marshallSendArgumentsNoPush: 2.
 	self
 		genMarshalledSendNoPush: 9
 		numArgs: 2
