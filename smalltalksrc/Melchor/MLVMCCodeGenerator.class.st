@@ -293,12 +293,30 @@ MLVMCCodeGenerator >> emitGlobalCVariablesOn: aStream [
 ]
 
 { #category : #'C code generator' }
+MLVMCCodeGenerator >> harmonizeInteger: constantIntegers in: aSetOfTypes [
+	"decide if the element in constantIntegers will be treated as signed or unsigned"
+	(constantIntegers anySatisfy: [ :e | e >= 0]) 
+	ifTrue: [ 
+	 		aSetOfTypes add: #'unsigned int'.
+		].
+	(constantIntegers anySatisfy: [ :e | e < 0 ])
+	ifTrue: [ 
+		aSetOfTypes add: #int.
+	].
+]
+
+{ #category : #'C code generator' }
 MLVMCCodeGenerator >> harmonizeReturnTypesIn: aSetOfTypes [
 	"Eliminate signed/unsigned conflicts in aSetOfTypes. Non-negative integers can be either
 	 signed or unsigned. Ignore them unless there are no types, in which case default to sqInt."
 	| constantIntegers sqs usqs |
 	constantIntegers := aSetOfTypes select: [:element| element isInteger].
-	aSetOfTypes removeAll: constantIntegers.
+	constantIntegers notEmpty 
+	ifTrue: [ 
+		aSetOfTypes removeAll: constantIntegers.
+		self harmonizeInteger: constantIntegers in: aSetOfTypes.
+	].
+
 	"N.B. Because of LP64 vs LLP64 issues do *not* rename #long to #sqInt or #'unsigned long' to #usqInt"
 	#(char short int #'long long' #'unsigned char' #'unsigned short' #'unsigned int' #'unsigned long long')
 		with: #(sqInt sqInt sqInt sqLong usqInt usqInt usqInt usqLong)
@@ -311,9 +329,7 @@ MLVMCCodeGenerator >> harmonizeReturnTypesIn: aSetOfTypes [
 	   and: [sqs notEmpty
 	   and: [sqs allSatisfy: [:t| usqs includes: 'u', t]]])
 		ifTrue: [sqs]
-		ifFalse: [(aSetOfTypes isEmpty and: [constantIntegers notEmpty])
-					ifTrue: [Set with: self defaultType]
-					ifFalse: [aSetOfTypes]]
+		ifFalse: [aSetOfTypes]
 ]
 
 { #category : #'C code generator' }

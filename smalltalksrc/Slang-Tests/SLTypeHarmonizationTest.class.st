@@ -243,42 +243,42 @@ SLTypeHarmonizationTest >> testHarmonizedLonglongPtr [
 	
 ]
 
-{ #category : #harmonizeOneType }
-SLTypeHarmonizationTest >> testHarmonizedNumber [
-	| result |
-	types add: 7.
-	result := ccg harmonizeReturnTypesIn: types.
-	self assert: result equals: (Set new add: #sqInt ; yourself ).
-	
-	
-]
-
 { #category : #harmonizeTwoType }
-SLTypeHarmonizationTest >> testHarmonizedNumberAndAnythingNotWorking [
+SLTypeHarmonizationTest >> testHarmonizedNumberAndAnythingChanged [
 	"return anything"
 	| result |
 	types add: 7.
 	types add: #anything.
 	result := ccg harmonizeReturnTypesIn: types.
-	self assert: result equals: (Set new add: #anything ; yourself ).
+	self assert: result equals: (Set new add: #anything ; add: #usqInt ; yourself ).
+	
+	
+]
+
+{ #category : #harmonizeOneType }
+SLTypeHarmonizationTest >> testHarmonizedNumberChanged [
+	| result |
+	types add: 7.
+	result := ccg harmonizeReturnTypesIn: types.
+	self assert: result equals: (Set new add: #usqInt ; yourself ).
 	
 	
 ]
 
 { #category : #harmonizeTwoType }
-SLTypeHarmonizationTest >> testHarmonizedNumbers [
+SLTypeHarmonizationTest >> testHarmonizedNumbersChanged [
 	| result |
 	types add: 7.
 	types add: 8.
 	result := ccg harmonizeReturnTypesIn: types.
-	self assert: result equals: (Set new add: #sqInt ; yourself ).
+	self assert: result equals: (Set new add: #usqInt ; yourself ).
 	
 	
 ]
 
 { #category : #harmonizeTwoType }
 SLTypeHarmonizationTest >> testHarmonizedNumbersNotWorking [
-	"the type always default to int"
+	"the type default to int in unsigned int and int conflict"
 	| result |
 	types add: 7.
 	types add: -2147483648.

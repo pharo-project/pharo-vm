@@ -590,21 +590,21 @@ SlangBasicTypeInferenceTest >> testReturnFloatConstantNode [
 ]
 
 { #category : #'experiment-return-long-int' }
+SlangBasicTypeInferenceTest >> testReturnLongIntChanged [
+	| tMethod |
+	tMethod := ccg methodNamed: #returnLongInt.
+	
+	self assert: tMethod isNotNil.
+	self assert: tMethod returnType equals: #usqInt
+]
+
+{ #category : #'experiment-return-long-int' }
 SlangBasicTypeInferenceTest >> testReturnLongIntInVariable [
 	| tMethod |
 	tMethod := ccg methodNamed: #returnLongIntInVariable.
 	
 	self assert: tMethod isNotNil.
 	self assert: tMethod returnType equals: #'usqInt'
-]
-
-{ #category : #'experiment-return-long-int' }
-SlangBasicTypeInferenceTest >> testReturnLongIntIsntWorking [
-	| tMethod |
-	tMethod := ccg methodNamed: #returnLongInt.
-	
-	self assert: tMethod isNotNil.
-	self assert: tMethod returnType equals: #'sqInt'
 ]
 
 { #category : #'experiment-return-long-int' }
@@ -626,53 +626,53 @@ SlangBasicTypeInferenceTest >> testReturnMultipleLongIntAnnotation [
 ]
 
 { #category : #'experiment-return-long-int' }
-SlangBasicTypeInferenceTest >> testReturnMultipleLongIntNotWorking [
+SlangBasicTypeInferenceTest >> testReturnMultipleLongIntChanged [
 	"should have return a long int"
 	| tMethod |
 	tMethod := ccg methodNamed: #returnMultipleLongIntNotWorking.
 	
 	self assert: tMethod isNotNil.
-	self assert: tMethod returnType equals: #'sqInt'
+	self assert: tMethod returnType equals: #usqInt
 ]
 
 { #category : #'experiment-return-multiple-type' }
-SlangBasicTypeInferenceTest >> testReturnStringAndIntIfTrue1 [
-	"only one type is returned and 'char *' seems to be always chosen"
+SlangBasicTypeInferenceTest >> testReturnStringAndIntIfTrue1Changed [
+	"conflict so default to sqInt"
 	| tMethod |
 	tMethod := ccg methodNamed: #returnStringAndIntInIfTrue1.
 	
 	self assert: tMethod isNotNil.
-	self assert: tMethod returnType equals: #'char *'
+	self assert: tMethod returnType equals: #sqInt
 ]
 
 { #category : #'experiment-return-multiple-type' }
-SlangBasicTypeInferenceTest >> testReturnStringAndIntIfTrue2 [
+SlangBasicTypeInferenceTest >> testReturnStringAndIntIfTrue2Changed [
 	"only one type is returned and 'char *' seems to be always chosen"
 	| tMethod |
 	tMethod := ccg methodNamed: #returnStringAndIntInIfTrue2.
 	
 	self assert: tMethod isNotNil.
-	self assert: tMethod returnType equals: #'char *'
+	self assert: tMethod returnType equals: #sqInt
 ]
 
 { #category : #'experiment-return-multiple-type' }
-SlangBasicTypeInferenceTest >> testReturnStringAndIntInIfTrueifFalse1 [
-	"only one type is returned and 'char *' seems to be always chosen"
+SlangBasicTypeInferenceTest >> testReturnStringAndIntInIfTrueifFalse1Changed [
+	"conflict so default to sqInt"
 	| tMethod |
 	tMethod := ccg methodNamed: #returnStringAndIntInIfTrueifFalse1.
 	
 	self assert: tMethod isNotNil.
-	self assert: tMethod returnType equals: #'char *'
+	self assert: tMethod returnType equals: #sqInt
 ]
 
 { #category : #'experiment-return-multiple-type' }
-SlangBasicTypeInferenceTest >> testReturnStringAndIntInIfTrueifFalse2 [
-	"only one type is returned and 'char *' seems to be always chosen"
+SlangBasicTypeInferenceTest >> testReturnStringAndIntInIfTrueifFalse2Changed [
+	"conflict so default to sqInt"
 	| tMethod |
 	tMethod := ccg methodNamed: #returnStringAndIntInIfTrueifFalse2.
 	
 	self assert: tMethod isNotNil.
-	self assert: tMethod returnType equals: #'char *'
+	self assert: tMethod returnType equals: #sqInt
 ]
 
 { #category : #'experiment-return-multiple-type' }
