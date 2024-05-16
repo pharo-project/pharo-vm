@@ -284,6 +284,136 @@ VMSpurOldSpaceGarbageCollectorTest >> testArrayOfPermanentObjectsPointingToOldOb
 ]
 
 { #category : #ephemerons }
+VMSpurOldSpaceGarbageCollectorTest >> testChainOfFirableEphemerons [
+
+	"This test creates a set of ephemerons on the old space that should be fired because their key is not referenced.
+	However, the only strong reference to an ephemeron is in another ephemeron.
+	Since all ephemerons depend on different keys, all should be fired at the same time."
+
+	| mourned previousEphemeron ephemerons |
+	self createEphemeronClass.
+	previousEphemeron := memory nilObject.
+	ephemerons := 3.
+	1 to: ephemerons do: [ :i | | ephemeronKey ephemeronObjectOop |
+		ephemeronKey := self newZeroSizedObject.
+		"An ephemeron with 3 slots"
+		ephemeronObjectOop := self newOldEphemeronObject.
+		memory
+			storePointer: 0 "key"
+			ofObject: ephemeronObjectOop
+			withValue: ephemeronKey.
+		memory
+			storePointer: 1 "value"
+			ofObject: ephemeronObjectOop
+			withValue: previousEphemeron.
+		previousEphemeron := ephemeronObjectOop.
+	].
+	
+	"Force the first ephemeron in the chain to not be collected by putting it in an intepreter register"
+	self keepObjectInVMVariable1: previousEphemeron.
+
+	self assert: memory validObjStacks.
+	memory unscannedEphemeronsQueueInitialSize: ephemerons.
+	memory fullGC.
+
+	mourned := 0.
+	[ memory dequeueMourner notNil ] whileTrue: [ mourned := mourned + 1 ].
+	self
+		assert: mourned
+		equals: ephemerons
+]
+
+{ #category : #ephemerons }
+VMSpurOldSpaceGarbageCollectorTest >> testChainOfFirableEphemeronsWithNonFirableHead [
+
+	"This test creates a set of ephemerons on the old space that should be fired because their key is not referenced.
+	The only strong reference to an ephemeron is in another ephemeron.
+	
+	However, the head of the list is an ephemeron with a referenced key!
+	Since all other ephemerons depend on different keys, all should be fired at the same time."
+
+	| mourned previousEphemeron nonFirableEphemeron |
+	self createEphemeronClass.
+	previousEphemeron := memory nilObject.
+	1 to: 5 do: [ :i | | ephemeronKey ephemeronObjectOop |
+		ephemeronKey := self newZeroSizedObject.
+		ephemeronObjectOop := self newOldEphemeronObject.
+		memory
+			storePointer: 0 "key"
+			ofObject: ephemeronObjectOop
+			withValue: ephemeronKey.
+		memory
+			storePointer: 1 "value"
+			ofObject: ephemeronObjectOop
+			withValue: previousEphemeron.
+		previousEphemeron := ephemeronObjectOop.
+	].
+
+	nonFirableEphemeron := self newOldEphemeronObject.
+	memory
+			storePointer: 0 "key"
+			ofObject: nonFirableEphemeron
+			withValue: memory nilObject.
+		memory
+			storePointer: 1 "value"
+			ofObject: nonFirableEphemeron
+			withValue: previousEphemeron.
+	
+	"Force the first ephemeron in the chain to not be collected by putting it in an intepreter register"
+	self keepObjectInVMVariable1: nonFirableEphemeron.
+
+	self assert: memory validObjStacks.
+	memory unscannedEphemeronsQueueInitialSize: 5.
+	memory fullGC.
+
+	mourned := 0.
+	[ memory dequeueMourner notNil ] whileTrue: [ mourned := mourned + 1 ].
+	self
+		assert: mourned
+		equals: 5
+]
+
+{ #category : #ephemerons }
+VMSpurOldSpaceGarbageCollectorTest >> testChainOfFirableEphemeronsWithOldKeys [
+
+	"This test creates a set of ephemerons on the old space that should be fired because their key is not referenced.
+	However, the only strong reference to an ephemeron is in another ephemeron.
+	Since all ephemerons depend on different keys, all should be fired at the same time."
+
+	| mourned previousEphemeron ephemerons |
+	self createEphemeronClass.
+	previousEphemeron := memory nilObject.
+	ephemerons := 3.
+	1 to: ephemerons do: [ :i | | ephemeronKey ephemeronObjectOop |
+		ephemeronKey := self newOldSpaceObjectWithSlots: 0.
+		"An ephemeron with 3 slots"
+		ephemeronObjectOop := self newOldEphemeronObject.
+		memory
+			storePointer: 0 "key"
+			ofObject: ephemeronObjectOop
+			withValue: ephemeronKey.
+		memory
+			storePointer: 1 "value"
+			ofObject: ephemeronObjectOop
+			withValue: previousEphemeron.
+		previousEphemeron := ephemeronObjectOop.
+	].
+	
+	"Force the first ephemeron in the chain to not be collected by putting it in an intepreter register"
+	self keepObjectInVMVariable1: previousEphemeron.
+
+	self assert: memory validObjStacks.
+	memory unscannedEphemeronsQueueInitialSize: ephemerons.
+	memory fullGC.
+
+	mourned := 0.
+	[ memory dequeueMourner notNil ] whileTrue: [ mourned := mourned + 1 ].
+	self
+		assert: mourned
+		equals: ephemerons
+]
+
+{ #category : #ephemerons }
 VMSpurOldSpaceGarbageCollectorTest >> testCompactEphemeronQueuePass1 [
 
 	| ephemeron |

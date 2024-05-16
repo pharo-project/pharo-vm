@@ -462,116 +462,209 @@ CogOutOfLineLiteralsARMv8Compiler >> usesOutOfLineLiteral [
 	"Answer if the receiver uses an out-of-line literal.  Needs only
 	 to work for the opcodes created with gen:literal:operand: et al."
 
-	| offset |
-	
 	<var: #offset type: 'sqInt'>
-
+	| offset |
 	opcode
 		caseOf: {
-		[CallFull]		-> [^true].
-		[JumpFull]		-> [^true].
-		"Arithmetic"
-		[AddCqR]		-> [ | constant |
-			constant := operands at: 0.
-			^ (constant abs bitAnd: 16rfff) ~= constant abs].
-		[AndCqR]		-> [^ self
-				encodeLogicalImmediate: (operands at: 0)
-				registerSize: 64
-				ifPossible: [ :value | false ]
-				ifNotPossible: [ true ] ].
-		[AndCqRR]		-> [^ self
-				encodeLogicalImmediate: (operands at: 0)
-				registerSize: 64
-				ifPossible: [ :value | false ]
-				ifNotPossible: [ true ]].
-		[CmpCqR]		-> [ 
-				((operands at: 0) abs bitAnd: 16rFFF) = (operands at: 0) abs ifTrue: [ ^ false ].
-				((operands at: 0) abs << 12 >> 12 bitAnd: 16rFFF) = (operands at: 0) abs ifTrue: [ ^ false ].
-				^ true].
-		[CmpC32R]		-> [^self rotateable8bitSignedImmediate: (operands at: 0) ifTrue: [:r :i :n| false] ifFalse: [true]].
-		[OrCqR]			-> [^self
-				encodeLogicalImmediate: (operands at: 0)
-				registerSize: 64
-				ifPossible: [ :v | false ]
-				ifNotPossible: [ true ]].
-				
-		[SubCqR]		-> [ | constant |
-			constant := operands at: 0.
-			^ (constant bitAnd: 16rfff) ~= constant ].
-		[TstCqR]		-> [ ^self
-				encodeLogicalImmediate: (operands at: 0)
-				registerSize: 64
-				ifPossible: [ :v | false ]
-				ifNotPossible: [ true ] ].
-		[XorCqR]		-> [^self rotateable8bitBitwiseImmediate: (operands at: 0) ifTrue: [:r :i :n| false] ifFalse: [true]].
-		[AddCwR]		-> [^true].
-		[AndCwR]		-> [^true].
-		[CmpCwR]		-> [^true].
-		[OrCwR]		-> [^true].
-		[SubCwR]		-> [^true].
-		[XorCwR]		-> [^true].
-		[LoadEffectiveAddressMwrR]
-						-> [^self rotateable8bitImmediate: (operands at: 0) ifTrue: [:r :i| false] ifFalse: [true]].
-		"Data Movement"						
-		[MoveCqR]		-> [^ self shiftable16bitImmediate: (operands at: 0) abs
-								ifTrue: [ :s :v | false ] ifFalse: [ true ]].
-		[MoveC32R]  -> [ ^ self shiftable16bitImmediate: (operands at: 0) abs
-			ifTrue: [ :s :v | false ] ifFalse: [ true ] ].
+				([ CallFull ] -> [ ^ true ]).
+				([ JumpFull ] -> [ ^ true ]).
+				"Arithmetic"
+				([ AddCqR ] -> [
+				 | constant |
+				 constant := operands at: 0.
+				 ^ (constant abs bitAnd: 16rfff) ~= constant abs ]).
+				([ AndCqR ] -> [
+				 ^ self
+					   encodeLogicalImmediate: (operands at: 0)
+					   registerSize: 64
+					   ifPossible: [ :value | false ]
+					   ifNotPossible: [ true ] ]).
+				([ AndCqRR ] -> [
+				 ^ self
+					   encodeLogicalImmediate: (operands at: 0)
+					   registerSize: 64
+					   ifPossible: [ :value | false ]
+					   ifNotPossible: [ true ] ]).
+				([ CmpCqR ] -> [
+				 ((operands at: 0) abs bitAnd: 16rFFF) = (operands at: 0) abs
+					 ifTrue: [ ^ false ].
+				 ((operands at: 0) abs << 12 >> 12 bitAnd: 16rFFF)
+				 = (operands at: 0) abs ifTrue: [ ^ false ].
+				 ^ true ]).
+				([ CmpC32R ] -> [
+				 ^ self
+					   rotateable8bitSignedImmediate: (operands at: 0)
+					   ifTrue: [ :r :i :n | false ]
+					   ifFalse: [ true ] ]).
+				([ OrCqR ] -> [
+				 ^ self
+					   encodeLogicalImmediate: (operands at: 0)
+					   registerSize: 64
+					   ifPossible: [ :v | false ]
+					   ifNotPossible: [ true ] ]).
 
-		[MoveCwR]		-> [^(self inCurrentCompilation: (operands at: 0)) not].
-		[MoveAwR]		-> [^(self isAddressRelativeToVarBase: (operands at: 0)) ifTrue: [false] ifFalse: [true]].
-		[MoveRAw]		-> [^(self isAddressRelativeToVarBase: (operands at: 1)) ifTrue: [false] ifFalse: [true]].
-		[MoveAbR]		-> [^(self isAddressRelativeToVarBase: (operands at: 0)) ifTrue: [false] ifFalse: [true]].
-		[MoveRAb]		-> [^(self isAddressRelativeToVarBase: (operands at: 1)) ifTrue: [false] ifFalse: [true]].
-	
+				([ SubCqR ] -> [
+				 | constant |
+				 constant := operands at: 0.
+				 ^ (constant bitAnd: 16rfff) ~= constant ]).
+				([ TstCqR ] -> [
+				 ^ self
+					   encodeLogicalImmediate: (operands at: 0)
+					   registerSize: 64
+					   ifPossible: [ :v | false ]
+					   ifNotPossible: [ true ] ]).
+				([ XorCqR ] -> [
+				 ^ self
+					   rotateable8bitBitwiseImmediate: (operands at: 0)
+					   ifTrue: [ :r :i :n | false ]
+					   ifFalse: [ true ] ]).
+				([ AddCwR ] -> [ ^ true ]).
+				([ AndCwR ] -> [ ^ true ]).
+				([ CmpCwR ] -> [ ^ true ]).
+				([ OrCwR ] -> [ ^ true ]).
+				([ SubCwR ] -> [ ^ true ]).
+				([ XorCwR ] -> [ ^ true ]).
+				([ LoadEffectiveAddressMwrR ] -> [
+				 ^ self
+					   rotateable8bitImmediate: (operands at: 0)
+					   ifTrue: [ :r :i | false ]
+					   ifFalse: [ true ] ]).
+				"Data Movement"
+				([ MoveCqR ] -> [
+				 | quickConstant |
+				 quickConstant := operands at: 0.
+				 ^ (quickConstant < 0 and: [
+					    (self isShiftable16bitImmediate: quickConstant negated - 1)
+						    not ]) or: [
+					   (self isShiftable16bitImmediate: quickConstant) not ] ]).
+				([ MoveC32R ] -> [
+				 | quickConstant |
+				 quickConstant := operands at: 0.
+				 ^ (quickConstant < 0 and: [
+					    (self isShiftable16bitImmediate: quickConstant negated - 1)
+						    not ]) or: [
+					   (self isShiftable16bitImmediate: quickConstant) not ] ]).
 
-		[MoveRM32r]	-> [self is9BitValue: (operands at: 1)
-										ifTrue: [ :value | ^  false ]
-										ifFalse: [ self shiftable16bitImmediate: (operands at: 1) 
-														ifTrue: [ :value :shift | ^ false ] 
-														ifFalse: [ ^ true ] ]].
+				([ MoveCwR ]
+				 -> [ ^ (self inCurrentCompilation: (operands at: 0)) not ]).
+				([ MoveAwR ] -> [
+				 ^ (self isAddressRelativeToVarBase: (operands at: 0))
+					   ifTrue: [ false ]
+					   ifFalse: [ true ] ]).
+				([ MoveRAw ] -> [
+				 ^ (self isAddressRelativeToVarBase: (operands at: 1))
+					   ifTrue: [ false ]
+					   ifFalse: [ true ] ]).
+				([ MoveAbR ] -> [
+				 ^ (self isAddressRelativeToVarBase: (operands at: 0))
+					   ifTrue: [ false ]
+					   ifFalse: [ true ] ]).
+				([ MoveRAb ] -> [
+				 ^ (self isAddressRelativeToVarBase: (operands at: 1))
+					   ifTrue: [ false ]
+					   ifFalse: [ true ] ]).
 
-		[MoveRMwr]	-> [self is9BitValue: (operands at: 1)
-										ifTrue: [ :value | ^  false ]
-										ifFalse: [ self shiftable16bitImmediate: (operands at: 1) 
-														ifTrue: [ :value :shift | ^ false ] 
-														ifFalse: [ ^ true ] ]].
 
-		[MoveRsM32r]	-> [^self is12BitValue: (operands at: 1) ifTrue: [:s :v| false] ifFalse: [true]]. 												
-		[MoveRdM64r]	-> [^self is12BitValue: (operands at: 1) ifTrue: [:s :v| false] ifFalse: [true]]. 
-		[MoveMbrR]	-> [^self is9BitValue: (operands at: 0) ifTrue: [:v| false] ifFalse: [true]].
-		[MoveRMbr]	-> [^self is12BitValue: (operands at: 1) ifTrue: [:s :v| false] ifFalse: [true]].
-		[MoveRM8r]	-> [^self is12BitValue: (operands at: 1) ifTrue: [:s :v| false] ifFalse: [true]].
-		[MoveM16rR]	-> [^self rotateable8bitImmediate: (operands at: 0) ifTrue: [:r :i| false] ifFalse: [true]].
-		[MoveRM16r]	-> [^self is12BitValue: (operands at: 1) ifTrue: [:s :v| false] ifFalse: [true]].
-		[MoveM32rRs]	-> [^self is12BitValue: (operands at: 0) ifTrue: [:s :v| false] ifFalse: [true]].
-		[MoveM64rRd]	-> [^self is12BitValue: (operands at: 0) ifTrue: [:s :v| false] ifFalse: [true]].
-			
-		[MoveM32rR] -> [ offset := (operands at: 0).
-			(offset >= 0 and: [ (offset bitAnd: 16rFFF) = offset ]) 
-				ifTrue: [ ^ false ]
-				ifFalse: [ 	self
-									is9BitValue: offset
-										ifTrue: [ :v | ^ false ] 
-										ifFalse: [^ true ] ] ].
+				([ MoveRM32r ] -> [
+				 self
+					 is9BitValue: (operands at: 1)
+					 ifTrue: [ :value | ^ false ]
+					 ifFalse: [
+						 self
+							 shiftable16bitImmediate: (operands at: 1)
+							 ifTrue: [ :value :shift | ^ false ]
+							 ifFalse: [ ^ true ] ] ]).
 
-		[MoveMwrR]	-> [
-			offset := (operands at: 0).
-			(offset >= 0 and: [ (offset bitAnd: 16rFFF) = offset ]) 
-				ifTrue: [ ^ false ]
-				ifFalse: [ 	self
-									is9BitValue: offset
-										ifTrue: [ :v | ^ false ] 
-										ifFalse: [^ true ] ]].
-								
-		[PushCw]		-> [^(self inCurrentCompilation: (operands at: 0)) not].
-		[PushCq]		-> [^self shiftable16bitImmediate: (operands at: 0) ifTrue: [:r :i| false] ifFalse: [true]].
-		[PrefetchAw] 	-> [^(self isAddressRelativeToVarBase: (operands at: 0)) ifTrue: [false] ifFalse: [true]].
+				([ MoveRMwr ] -> [
+				 self
+					 is9BitValue: (operands at: 1)
+					 ifTrue: [ :value | ^ false ]
+					 ifFalse: [
+						 self
+							 shiftable16bitImmediate: (operands at: 1)
+							 ifTrue: [ :value :shift | ^ false ]
+							 ifFalse: [ ^ true ] ] ]).
 
-		"Patcheable instruction. Moves a literal. Uses out of line literal."
-		[MovePatcheableC32R] -> [ ^ true ]
-		}
-		otherwise: [self error: 'We should not be here!!!'].
-	^false "to keep C compiler quiet"
+				([ MoveRsM32r ] -> [
+				 ^ self
+					   is12BitValue: (operands at: 1)
+					   ifTrue: [ :s :v | false ]
+					   ifFalse: [ true ] ]).
+				([ MoveRdM64r ] -> [
+				 ^ self
+					   is12BitValue: (operands at: 1)
+					   ifTrue: [ :s :v | false ]
+					   ifFalse: [ true ] ]).
+				([ MoveMbrR ] -> [
+				 ^ self
+					   is9BitValue: (operands at: 0)
+					   ifTrue: [ :v | false ]
+					   ifFalse: [ true ] ]).
+				([ MoveRMbr ] -> [
+				 ^ self
+					   is12BitValue: (operands at: 1)
+					   ifTrue: [ :s :v | false ]
+					   ifFalse: [ true ] ]).
+				([ MoveRM8r ] -> [
+				 ^ self
+					   is12BitValue: (operands at: 1)
+					   ifTrue: [ :s :v | false ]
+					   ifFalse: [ true ] ]).
+				([ MoveM16rR ] -> [
+				 ^ self
+					   rotateable8bitImmediate: (operands at: 0)
+					   ifTrue: [ :r :i | false ]
+					   ifFalse: [ true ] ]).
+				([ MoveRM16r ] -> [
+				 ^ self
+					   is12BitValue: (operands at: 1)
+					   ifTrue: [ :s :v | false ]
+					   ifFalse: [ true ] ]).
+				([ MoveM32rRs ] -> [
+				 ^ self
+					   is12BitValue: (operands at: 0)
+					   ifTrue: [ :s :v | false ]
+					   ifFalse: [ true ] ]).
+				([ MoveM64rRd ] -> [
+				 ^ self
+					   is12BitValue: (operands at: 0)
+					   ifTrue: [ :s :v | false ]
+					   ifFalse: [ true ] ]).
 
+				([ MoveM32rR ] -> [
+				 offset := operands at: 0.
+				 (offset >= 0 and: [ (offset bitAnd: 16rFFF) = offset ])
+					 ifTrue: [ ^ false ]
+					 ifFalse: [
+						 self
+							 is9BitValue: offset
+							 ifTrue: [ :v | ^ false ]
+							 ifFalse: [ ^ true ] ] ]).
+
+				([ MoveMwrR ] -> [
+				 offset := operands at: 0.
+				 (offset >= 0 and: [ (offset bitAnd: 16rFFF) = offset ])
+					 ifTrue: [ ^ false ]
+					 ifFalse: [
+						 self
+							 is9BitValue: offset
+							 ifTrue: [ :v | ^ false ]
+							 ifFalse: [ ^ true ] ] ]).
+
+				([ PushCw ]
+				 -> [ ^ (self inCurrentCompilation: (operands at: 0)) not ]).
+				([ PushCq ] -> [
+				 ^ self
+					   shiftable16bitImmediate: (operands at: 0)
+					   ifTrue: [ :r :i | false ]
+					   ifFalse: [ true ] ]).
+				([ PrefetchAw ] -> [
+				 ^ (self isAddressRelativeToVarBase: (operands at: 0))
+					   ifTrue: [ false ]
+					   ifFalse: [ true ] ]).
+
+				"Patcheable instruction. Moves a literal. Uses out of line literal."
+				([ MovePatcheableC32R ] -> [ ^ true ]) }
+		otherwise: [ self error: 'We should not be here!!!' ].
+	^ false "to keep C compiler quiet"
 ]

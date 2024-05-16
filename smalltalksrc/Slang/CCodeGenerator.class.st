@@ -1045,6 +1045,10 @@ CCodeGenerator >> emitCCodeOn: aStream doInlining: inlineFlag doAssertions: asse
 		logger cr ].
 	assertionFlag ifFalse: [ self removeAssertions ].
 
+	self renameConflictingMethods.
+	self renameKeywordsConflicts.
+	self renameConflictingLocals.
+
 	self doInlining: inlineFlag.
 
 	SLAutomaticLocalization new
@@ -1052,8 +1056,6 @@ CCodeGenerator >> emitCCodeOn: aStream doInlining: inlineFlag doAssertions: asse
 		applyMethodNamed: #interpret.
 
 	"code generation"
-
-	self renameKeywordsConflicts.
 
 	"If we're outputting the VM put the main interpreter loop first for two reasons.
 	 1, so that the dispdbg.h header included at the bytecode dispatch can define
@@ -1072,6 +1074,8 @@ CCodeGenerator >> emitCCodeOn: aStream doInlining: inlineFlag doAssertions: asse
 			checkForGlobalUsage: (m removeUnusedTempsAndNilIfRequiredIn: self)
 			in: m ].
 	self localizeGlobalVariables.
+
+
 
 	self emitCHeaderOn: aStream.
 	self emitCConstantsOn: aStream.
@@ -1526,18 +1530,34 @@ CCodeGenerator >> generateCASTAsVoidPointer: tast [
 
 { #category : #'CAST translation' }
 CCodeGenerator >> generateCASTAt: tast [
+	"Add parentheses to r-value to correctly generate C code during complex inlining cases. For instance if the AST root is #at:, with a TSendNode(#+) as child, then we should generate: 
 
+	pTo1[i] = (pFrom + anInteger)[i];
+	
+	instead of the (incorrect):
+	
+	pTo1[i] = pFrom + anInteger[i];
+
+	"
 	^ CArrayAccessNode
-		  array: (tast receiver asCASTExpressionIn: self)
+		  array: ((tast receiver asCASTExpressionIn: self) needsParentheses: true)
 		  index: (tast arguments first asCASTExpressionIn: self)
 ]
 
 { #category : #'CAST translation' }
 CCodeGenerator >> generateCASTAtPut: tast [
+	" Add parentheses to lvalue to correctly generate C code for complex inlining cases. For example in:
+	
+	 '(pTo + anInteger)[i] = pFrom + anInteger[i]'
+	
+	instead of (without parentheses)
+	
+	'pTo + anInteger[i] = pFrom + anInteger[i]'
 
+	"
 	^ CAssignmentNode
 		  lvalue: (CArrayAccessNode
-				   array: (tast receiver asCASTExpressionIn: self)
+				   array: ((tast receiver asCASTExpressionIn: self) needsParentheses: true)
 				   index: (tast arguments first asCASTExpressionIn: self))
 		  operator: '='
 		  rvalue: (tast arguments last asCASTExpressionIn: self)
@@ -2581,7 +2601,7 @@ CCodeGenerator >> generateCASTShiftLeft: tast [
 CCodeGenerator >> generateCASTShiftRight: tast [
 
 	| type rcvr |
-	rcvr := tast receiver asCASTIn: self.
+	rcvr := tast receiver asCASTExpressionIn: self.
 	(self
 		 is64BitIntegralVariable: tast receiver
 		 typeInto: [ :t | type := t ])
@@ -4415,7 +4435,55 @@ CCodeGenerator >> removeVariable: aName ifAbsent: ifAbsentBlock [
 	^variables remove: aName ifAbsent: ifAbsentBlock
 ]
 
-{ #category : #translating }
+{ #category : #renaming }
+CCodeGenerator >> renameConflictingLocals [
+	"renames locals that would conflict with a declared function"
+
+	| allFunctions |
+	allFunctions := methods values collect: [ :method |
+		                self cFunctionNameFor: method selector ].
+
+	methods do: [ :method |
+		| renames |
+		renames := Dictionary new.
+		method allLocals
+			select: [ :local | allFunctions includes: local ]
+			thenDo: [ :local | renames at: local put: 'l_' , local ].
+
+		method renameVariablesUsing: renames ]
+]
+
+{ #category : #renaming }
+CCodeGenerator >> renameConflictingMethods [
+
+	| cFunctionNames toRename |
+	cFunctionNames := IdentityDictionary new.
+
+	methods reject: [ :m | m isStructAccessor ] thenDo: [ :m |
+		| functionName conflicts |
+		functionName := self cFunctionNameFor: m selector.
+
+		conflicts := cFunctionNames at: functionName ifAbsent: [ #(  ) ].
+
+		cFunctionNames at: functionName put: (conflicts copyWith: m) ].
+
+	toRename := cFunctionNames select: [ :conflicts | conflicts size > 1 ].
+
+	toRename keysAndValuesDo: [ :key :conflictingMethods |
+		(conflictingMethods select: [ :m | m isAPIMethod ]) size > 1
+			ifTrue: [ "api methods cannot be renamed"
+				TranslationError signal:
+					'Conflicting API methods would be translated to "' , key , '"' ].
+
+		conflictingMethods
+			reject: [ :m | m isAPIMethod ]
+			thenDo: [ :m |
+				self
+					addSelectorTranslation: m selector
+					to: key , m args size asString ] ]
+]
+
+{ #category : #renaming }
 CCodeGenerator >> renameKeywordsConflicts [
 
 	methods do: [ :method |
@@ -4432,7 +4500,7 @@ CCodeGenerator >> renameKeywordsConflicts [
 			method renameVariablesUsing: localRewording ].
 
 		"translate selector"
-		cSelector := self cSelectorName: method selector.
+		cSelector := self cFunctionNameFor: method selector.
 
 		(self reservedWords includes: cSelector) ifTrue: [
 			self

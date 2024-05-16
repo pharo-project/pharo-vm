@@ -39,6 +39,17 @@ SlangBasicTranslationTest >> defineAtCompileTime: aString [
 	^ #(#OPTION1 #OPTION3 #OPTION) includes: aString
 ]
 
+{ #category : #helpers }
+SlangBasicTranslationTest >> functionIdentifier: aMethodTranslation [
+	| prototype matchIdentifier |
+	
+	prototype := aMethodTranslation lineNumber: 3.
+	
+	matchIdentifier := '([a-zA-Z0-9_])+\(' asRegex.
+	
+	^((matchIdentifier matchesIn: prototype) first) copyWithout: $(
+]
+
 { #category : #accessing }
 SlangBasicTranslationTest >> generator [
 
@@ -57,7 +68,9 @@ SlangBasicTranslationTest >> getTMethodFrom: selector [
 	"Generate a TMethod from a SlangBasicTranslationTestClass method."
 
 	generator addClass: SlangBasicTranslationTestClass.
-	generator inferTypes.
+	generator 
+		inferTypes;
+		prepareMethods.
 	^ generator methodNamed: selector
 ]
 
@@ -92,6 +105,16 @@ SlangBasicTranslationTest >> shouldGenerateDeadCode [
 	
 	"Compatibility method to make the test look like a VM translatable class"
 	^ true
+]
+
+{ #category : #'tests-method' }
+SlangBasicTranslationTest >> testApiMethodsWithConflictingName [
+	
+	generator addClass: SlangConflictingApiTestClass.
+	
+	self should: [generator renameConflictingMethods] raise: TranslationError.
+	
+	
 ]
 
 { #category : #'tests-blocks' }
@@ -1155,6 +1178,103 @@ SlangBasicTranslationTest >> testGoto [
 	self assert: translation equals: 'goto lab'
 ]
 
+{ #category : #'tests-inlinemethod' }
+SlangBasicTranslationTest >> testInlineMethodIfExpressionWithShiftRight [
+
+	| translation codeGenerator inlinedMethod cast printedString |
+	translation := (self getTMethodFrom: #methodToBeTranslatedWithIfAndShiftRight).
+	inlinedMethod := ((SlangBasicTranslationTestClass >> #methodWithIfAndShiftRight:) asTranslationMethodOfClass: TMethod).
+	
+	codeGenerator := CCodeGeneratorGlobalStructure new.
+	codeGenerator 
+		addMethod: translation;
+		addMethod: inlinedMethod;
+		doInlining: true.
+	
+	cast := translation asCASTIn: codeGenerator.
+	printedString := String streamContents: [ :str | cast prettyPrintOn: str ].
+	self assert: cast isCompoundStatement.
+	self assert: printedString equals: '/* SlangBasicTranslationTestClass>>#methodToBeTranslatedWithIfAndShiftRight */
+static sqInt
+methodToBeTranslatedWithIfAndShiftRight(void)
+{
+	/* begin methodWithIfAndShiftRight: */
+	((usqInt) (((2 < 0)
+		 ? 0
+		 : 2)) ) >> ((2 - 1) * 32);
+	return 0;
+}
+'.
+]
+
+{ #category : #'tests-inline-builtins' }
+SlangBasicTranslationTest >> testInlineMethodSumArgumentsWithAnnotations [
+	| tMethod translation |
+
+	tMethod := (self getTMethodFrom: #methodUseParametersWithAnnotations:to:with:).
+	" Adding a method already does prepare methods "
+	generator doBasicInlining: true.
+
+	translation := self translate: tMethod.
+	translation := translation trimBoth.
+	self
+		assert: translation
+		equals: '/* SlangBasicTranslationTestClass>>#methodUseParametersWithAnnotations:to:with: */
+static sqInt
+methodUseParametersWithAnnotationstowith(unsigned int *pFrom, unsigned int *pTo, sqInt anInteger)
+{
+	sqInt i;
+	sqInt pFrom1;
+	unsigned int *pTo1;
+
+	/* begin methodFromWithAnnotations:to:len: */
+	pTo1 = ((unsigned int *) (yourself(pTo)) );
+	for (i = 0; i < 5; i += 1) {
+		pTo1[i] = (pFrom + anInteger)[i];
+	};
+	return 0;
+}'
+]
+
+{ #category : #'tests-inline-builtins' }
+SlangBasicTranslationTest >> testInlineMethodSumArgumentsWithAnnotationsUseBuiltIn [
+	| tMethod translation codeGenerator inlinedMethod |
+
+	tMethod := self getTMethodFrom: #methodUseParametersWithAnnotationsBuiltIn:to:with:.
+	inlinedMethod := ((SlangBasicTranslationTestClass >> #methodFromWithAnnotations:to:) asTranslationMethodOfClass: TMethod).
+	
+	codeGenerator := CCodeGeneratorGlobalStructure new.
+	codeGenerator vmMaker: VMMaker new.
+	codeGenerator vmMaker vmmakerConfiguration: VMMakerConfiguration.	
+	codeGenerator 
+		addMethod: tMethod;
+		addMethod: inlinedMethod;		
+		doInlining: true.
+	
+	self assert: (tMethod locals includesAll: inlinedMethod locals).
+
+	translation := self translate: tMethod.
+	translation := translation trimBoth.
+
+	self 
+		assert: translation
+		equals: '/* SlangBasicTranslationTestClass>>#methodUseParametersWithAnnotationsBuiltIn:to:with: */
+static sqInt
+methodUseParametersWithAnnotationsBuiltIntowith(unsigned int *pFrom, unsigned int *pTo, sqInt anInteger)
+{
+	sqInt i;
+	sqInt pFrom1;
+	sqInt pTo1;
+
+	/* begin methodFromWithAnnotations:to: */
+	pFrom1 = ((sqInt) (pFrom + anInteger) );
+	for (i = 0; i <= 10; i += 1) {
+		pTo[i] = pFrom1[i];
+	};
+	return 0;
+}'
+]
+
 { #category : #'tests-inlinenode' }
 SlangBasicTranslationTest >> testInlineNodeDoesNotInitializeReadBeforeWrittenArrayTemp [
 
@@ -1777,6 +1897,23 @@ methodWithoutReturn(void)
 {
 	return 0;
 }'
+]
+
+{ #category : #'tests-method' }
+SlangBasicTranslationTest >> testMethodsWithConflictingName [
+
+	| translation1 translation2 tMethod1 tMethod2 |
+	tMethod1 := self getTMethodFrom: #methodWithRepeatedCFunctionName.
+	tMethod2 := generator methods at: #methodWithRepeatedCFunctionName:.
+
+	generator renameConflictingMethods.
+
+	translation1 := self translate: tMethod1.
+	translation2 := self translate: tMethod2.
+
+	self
+		deny: (self functionIdentifier: translation1)
+		equals: (self functionIdentifier: translation2)
 ]
 
 { #category : #'tests-case' }
@@ -6555,6 +6692,21 @@ SlangBasicTranslationTest >> testVariableUpdateAssignmentPlus [
 			expression: expression).
 
 	self assert: translation equals: 'var += 7'
+]
+
+{ #category : #'tests-variables' }
+SlangBasicTranslationTest >> testVariableWithConflictingNameShouldBeRenamed [
+	"tests if a local that would conflict with a function name is renamed"
+
+	| method translation |
+	method := self getTMethodFrom: #methodDefiningConflictingVariable.
+
+	generator renameConflictingLocals.
+
+	translation := self translate: method.
+
+
+	self assert: (translation includesSubstring: 'char *l_methodWithoutReturn').
 ]
 
 { #category : #'tests-variables' }

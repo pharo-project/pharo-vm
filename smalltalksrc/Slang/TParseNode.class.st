@@ -241,6 +241,12 @@ TParseNode >> isDefine [
 ]
 
 { #category : #testing }
+TParseNode >> isExpression [
+
+	^ false
+]
+
+{ #category : #testing }
 TParseNode >> isGoTo [
 
 	^false

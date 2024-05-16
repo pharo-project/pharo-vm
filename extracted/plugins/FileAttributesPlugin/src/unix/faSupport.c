@@ -478,8 +478,10 @@ char		targetFile[FA_PATH_MAX];
 		if (S_ISLNK(statBuf.st_mode)) {
 			/* This is a symbolic link, provide the target filename */
 			status = readlink(faGetPlatPath(aFaPath), targetFile, FA_PATH_MAX);
-			if (status >= 0)
-				targetOop = pathNameToOop(targetFile); } }
+			if (status >= 0) {
+				targetFile[status] = 0;
+				targetOop = pathNameToOop(targetFile); } } }
+			
 	else {
 		status = stat(faGetPlatPath(aFaPath), &statBuf);
 		if (status)

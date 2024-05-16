@@ -209,7 +209,7 @@ loadPharoImage(const char* fileName)
     struct stat sb;
 
     /* Check image exists */
-    if (stat(fileName, &sb) == -1) {
+    if (!sqImageFileExists(fileName)) {
         logErrorFromErrno("Image file not found");
         return false;
     }

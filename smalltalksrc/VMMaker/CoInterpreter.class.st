@@ -90,8 +90,7 @@ Class {
 		'lastUncoggableInterpretedBlockMethod',
 		'flagInterpretedMethods',
 		'maxLiteralCountForCompile',
-		'minBackwardJumpCountForCompile',
-		'initialMemoryAddress'
+		'minBackwardJumpCountForCompile'
 	],
 	#classVars : [
 		'HasBeenReturnedFromMCPC',
@@ -553,13 +552,6 @@ CoInterpreter >> activateNewMethod [
 	| methodHeader inInterpreter switched |
 	"Eagerly compile it if appropriate so that doits are fast."
 	methodHeader := self rawHeaderOf: newMethod.
-	(self isCogMethodReference: methodHeader) ifFalse: [
-		(self methodWithHeaderShouldBeCogged: methodHeader)
-			ifTrue: [
-				cogit cog: newMethod selector: objectMemory nilObject.
-				methodHeader := self rawHeaderOf: newMethod ]
-			ifFalse: [ self maybeFlagMethodAsInterpreted: newMethod ] ].
-
 	inInterpreter := self isInstructionPointerInInterpreter:
 		                 instructionPointer.
 
@@ -2513,6 +2505,28 @@ CoInterpreter >> executeFullCogBlock: cogMethod closure: closure mayContextSwitc
 	self push: closure.
 	self callEnilopmart: #ceCallCogCodePopReceiverReg.
 	self unreachable
+]
+
+{ #category : #'message sending' }
+CoInterpreter >> executeNewMethod: eagerlyCompile [
+	"if not primitive, or primitive failed, activate the method"
+	<inline: true>
+	| inInterpreter |	
+	inInterpreter := self isInstructionPointerInInterpreter:
+		                 instructionPointer.
+	self executePrimitiveFromInterpreter: inInterpreter ifFail: [
+		| methodHeader |
+		eagerlyCompile ifTrue: [
+			"Eagerly compile it if appropriate so that doits are fast."
+			methodHeader := self rawHeaderOf: newMethod.
+			(self isCogMethodReference: methodHeader) ifFalse: [
+				(self methodWithHeaderShouldBeCogged: methodHeader)
+					ifTrue: [
+						cogit cog: newMethod selector: objectMemory nilObject.
+						methodHeader := self rawHeaderOf: newMethod ]
+					ifFalse: [ self maybeFlagMethodAsInterpreted: newMethod ] ]].
+		"if not primitive, or primitive failed, activate the method"
+		self activateNewMethod ]
 ]
 
 { #category : #'return bytecodes' }
