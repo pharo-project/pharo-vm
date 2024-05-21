@@ -2032,6 +2032,7 @@ SimpleStackBasedCogit >> genPushEnclosingObjectAt: level [
 
 { #category : #'bytecode generator support' }
 SimpleStackBasedCogit >> genPushLiteral: literal [
+	<returnTypeC: #sqInt>
 	self genPushConstant: literal.
 	^0
 ]
