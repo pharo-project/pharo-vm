@@ -3033,6 +3033,7 @@ StackToRegisterMappingCogit >> genUpArrowReturn [
 				ret pc in LR.
 	 A fully framed activation is described in CoInterpreter class>initializeFrameIndices.
 	 Return pops receiver and arguments off the stack.  Callee pushes the result."
+	<returnTypeC: #sqInt>
 	deadCode := true. "can't fall through"
 	inBlock > 0 ifTrue:
 		[self assert: needsFrame.

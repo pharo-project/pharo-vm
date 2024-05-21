@@ -1566,6 +1566,7 @@ SimpleStackBasedCogit >> genJumpIf: boolean to: targetBytecodePC [
 
 { #category : #'bytecode generator support' }
 SimpleStackBasedCogit >> genJumpTo: targetBytecodePC [
+	<returnTypeC: #sqInt>
 	self Jump: (self ensureFixupAt: targetBytecodePC).
 	^0
 ]
