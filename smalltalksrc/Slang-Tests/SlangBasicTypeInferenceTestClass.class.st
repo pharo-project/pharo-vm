@@ -85,6 +85,11 @@ SlangBasicTypeInferenceTestClass >> returnAFalseMessageSend [
 	^ self returnAFalseConstantNode
 ]
 
+{ #category : #'experiment-return-float' }
+SlangBasicTypeInferenceTestClass >> returnAFloat [ 
+	^ 1.1
+]
+
 { #category : #'return-constant' }
 SlangBasicTypeInferenceTestClass >> returnAFloatConstantNode [
 	^ 1.0
@@ -93,6 +98,11 @@ SlangBasicTypeInferenceTestClass >> returnAFloatConstantNode [
 { #category : #'return-message-send' }
 SlangBasicTypeInferenceTestClass >> returnAFloatMessageSend [
 	^ self returnAFloatConstantNode
+]
+
+{ #category : #'experiment-return-signed' }
+SlangBasicTypeInferenceTestClass >> returnANegativeNumber [
+	^ -1
 ]
 
 { #category : #'return-constant' }

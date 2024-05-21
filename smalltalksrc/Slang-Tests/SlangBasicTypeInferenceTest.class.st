@@ -181,6 +181,16 @@ SlangBasicTypeInferenceTest >> testReturnAFalseMessageSend [
 	self assert: tMethod returnType equals: #sqInt.
 ]
 
+{ #category : #'experiment-return-float' }
+SlangBasicTypeInferenceTest >> testReturnAFloat [
+	| tMethod |
+	tMethod := ccg methodNamed: #returnAFloat.
+	
+	self assert: tMethod isNotNil.
+	self assert: (ccg typeFor: tMethod statements first in: tMethod) equals: #double.
+	self assert: tMethod returnType equals: #double
+]
+
 { #category : #'return-message-send' }
 SlangBasicTypeInferenceTest >> testReturnAFloatMessageSend [
 	| tMethod |
@@ -190,6 +200,16 @@ SlangBasicTypeInferenceTest >> testReturnAFloatMessageSend [
 	self assert: (ccg typeFor: tMethod statements first in: tMethod) equals: #double.
 	self assert: (ccg typeFor: tMethod statements first expression in: tMethod) equals: #double.
 	self assert: tMethod returnType equals: #double.
+]
+
+{ #category : #'experiment-return-signed' }
+SlangBasicTypeInferenceTest >> testReturnANegativeNumber [
+	| tMethod |
+	tMethod := ccg methodNamed: #returnANegativeNumber.
+	
+	self assert: tMethod isNotNil.
+	self assert: (ccg typeFor: tMethod statements first in: tMethod) equals: #int.
+	self assert: tMethod returnType equals: #sqInt
 ]
 
 { #category : #'return-constant' }
