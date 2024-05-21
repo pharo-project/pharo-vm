@@ -1816,6 +1816,7 @@ StackToRegisterMappingCogit >> genJumpBackTo: targetBytecodePC [
 { #category : #'bytecode generator support' }
 StackToRegisterMappingCogit >> genJumpIf: boolean to: targetBytecodePC [
 	<inline: false>
+	<returnTypeC: #sqInt>
 	| desc fixup ok eventualTarget |
 	<var: #desc type: #'CogSimStackEntry *'>
 	<var: #fixup type: #'BytecodeFixup *'>
@@ -2974,6 +2975,7 @@ StackToRegisterMappingCogit >> genStorePop: popBoolean RemoteTemp: slotIndex At:
 { #category : #'bytecode generator stores' }
 StackToRegisterMappingCogit >> genStorePop: popBoolean TemporaryVariable: tempIndex [
 	<inline: false>
+	<returntypeC: #sqInt>
 	| reg |
 	self ssFlushUpThroughTemporaryVariable: tempIndex.
 	reg := self ssStorePop: popBoolean toPreferredReg: TempReg.

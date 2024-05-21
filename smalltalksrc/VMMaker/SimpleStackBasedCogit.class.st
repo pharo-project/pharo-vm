@@ -2653,6 +2653,7 @@ SimpleStackBasedCogit >> genStorePop: popBoolean MaybeContextRemoteInstVar: slot
 { #category : #'bytecode generator support' }
 SimpleStackBasedCogit >> genStorePop: popBoolean ReceiverVariable: slotIndex [
 	<inline: false>
+	<returnTypeC: #sqInt>
 	needsFrame ifTrue:
 		[self putSelfInReceiverResultReg].
 	popBoolean
