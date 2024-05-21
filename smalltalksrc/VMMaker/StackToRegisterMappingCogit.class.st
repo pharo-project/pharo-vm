@@ -2394,6 +2394,7 @@ StackToRegisterMappingCogit >> genPushRemoteTempLongBytecode [
 
 { #category : #'bytecode generator support' }
 StackToRegisterMappingCogit >> genPushTemporaryVariable: index [
+	<returnTypeC: #sqInt>
 	"If a frameless method (not a block), only argument temps can be accessed.
 	 This is assured by the use of needsFrameIfMod16GENumArgs: in pushTemp."
 	self assert: (inBlock > 0 or: [needsFrame or: [index < methodOrBlockNumArgs]]).
@@ -4514,6 +4515,7 @@ StackToRegisterMappingCogit >> ssPushBase: reg offset: offset [
 
 { #category : #'simulation stack' }
 StackToRegisterMappingCogit >> ssPushConstant: literal [
+	<returnTypeC: #sqInt>
 	self ssPush: 1.
 	self ssTop
 		type: SSConstant;
@@ -4527,6 +4529,7 @@ StackToRegisterMappingCogit >> ssPushConstant: literal [
 { #category : #'simulation stack' }
 StackToRegisterMappingCogit >> ssPushDesc: simStackEntry [
 	<var: #simStackEntry type: #SimStackEntry>
+	<returnTypeC: #sqInt>
 	self cCode:
 			[simStackEntry type = SSSpill ifTrue:
 				[simStackEntry type: SSBaseOffset].
@@ -4550,6 +4553,7 @@ StackToRegisterMappingCogit >> ssPushDesc: simStackEntry [
 
 { #category : #'simulation stack' }
 StackToRegisterMappingCogit >> ssPushRegister: reg [
+	<returnTypeC: #sqInt>
 	self ssPush: 1.
 	self ssTop
 		type: SSRegister;
