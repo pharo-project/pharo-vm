@@ -2201,6 +2201,7 @@ SimpleStackBasedCogit >> genPushReceiverBytecode [
 { #category : #'bytecode generator support' }
 SimpleStackBasedCogit >> genPushReceiverVariable: index [
 	<inline: false>
+	<returnTypeC: #sqInt>
 	| maybeErr |
 	needsFrame ifTrue:
 		[self putSelfInReceiverResultReg].
@@ -2213,6 +2214,7 @@ SimpleStackBasedCogit >> genPushReceiverVariable: index [
 
 { #category : #'bytecode generators' }
 SimpleStackBasedCogit >> genPushReceiverVariableBytecode [
+	<returnTypeC: #sqInt>
 	^self genPushReceiverVariable: (byte0 bitAnd: 15)
 ]
 

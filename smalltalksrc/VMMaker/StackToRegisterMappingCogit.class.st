@@ -2339,6 +2339,7 @@ StackToRegisterMappingCogit >> genPushReceiverBytecode [
 { #category : #'bytecode generator support' }
 StackToRegisterMappingCogit >> genPushReceiverVariable: index [
 	<inline: false>
+	<returnTypeC: #sqInt>
 	self ensureReceiverResultRegContainsSelf.
 	^self ssPushBase: ReceiverResultReg
 			offset: (objectRepresentation slotOffsetOfInstVarIndex: index)
