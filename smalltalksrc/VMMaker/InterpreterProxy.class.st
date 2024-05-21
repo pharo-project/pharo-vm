@@ -723,6 +723,7 @@ InterpreterProxy >> methodReturnFloat: aFloat [
 { #category : #'stack access' }
 InterpreterProxy >> methodReturnInteger: integer [
 	"Sets the return value for a method"
+	<returnTypeC: #sqInt>
 	self pop: argumentCount+1 thenPushInteger: integer.
 	^0
 ]
