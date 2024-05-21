@@ -1996,11 +1996,13 @@ SimpleStackBasedCogit >> genPushConstant: constant [
 
 { #category : #'bytecode generators' }
 SimpleStackBasedCogit >> genPushConstantFalseBytecode [
+	<returnTypeC: #sqInt>
 	^self genPushLiteral: objectMemory falseObject
 ]
 
 { #category : #'bytecode generators' }
 SimpleStackBasedCogit >> genPushConstantNilBytecode [
+	<returnTypeC: #sqInt>
 	^self genPushLiteral: objectMemory nilObject
 ]
 
@@ -2012,12 +2014,14 @@ SimpleStackBasedCogit >> genPushConstantOneBytecode [
 
 { #category : #'bytecode generators' }
 SimpleStackBasedCogit >> genPushConstantTrueBytecode [
+	<returnTypeC: #sqInt>
 	^self genPushLiteral: objectMemory trueObject
 ]
 
 { #category : #'bytecode generators' }
 SimpleStackBasedCogit >> genPushConstantZeroBytecode [
 	"78			01001110		Push 0"
+	<returnTypeC: #sqInt>
 	^self genPushLiteral: (objectMemory integerObjectOf: 0)
 ]
 
@@ -2038,6 +2042,7 @@ SimpleStackBasedCogit >> genPushLiteral: literal [
 
 { #category : #'bytecode generators' }
 SimpleStackBasedCogit >> genPushLiteralConstantBytecode [
+	<returnTypeC: #sqInt>
 	^self genPushLiteralIndex: (byte0 bitAnd: 31)
 ]
 
@@ -2058,6 +2063,7 @@ SimpleStackBasedCogit >> genPushLiteralIndex: literalIndex [ "<SmallInteger>"
 { #category : #'bytecode generators' }
 SimpleStackBasedCogit >> genPushLiteralVariable16CasesBytecode [
 	"16-31		0001 i i i i		Push Literal Variable #iiii"
+	<returnTypeC: #sqInt>
 	^self genPushLiteralVariable: (byte0 bitAnd: 15)
 ]
 
@@ -2189,6 +2195,7 @@ SimpleStackBasedCogit >> genPushQuickIntegerConstantBytecode [
 
 { #category : #'bytecode generators' }
 SimpleStackBasedCogit >> genPushReceiverBytecode [
+	<returnTypeC: #sqInt>
 	needsFrame
 		ifTrue:
 			[self MoveMw: FoxMFReceiver r: FPReg R: TempReg.
@@ -2256,6 +2263,7 @@ SimpleStackBasedCogit >> genPushTemporaryVariable: index [
 
 { #category : #'bytecode generators' }
 SimpleStackBasedCogit >> genPushTemporaryVariableBytecode [
+	<returnTypeC: #sqInt>
 	^self genPushTemporaryVariable: (byte0 bitAnd: 15)
 ]
 
