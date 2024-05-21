@@ -1544,6 +1544,7 @@ SimpleStackBasedCogit >> genJumpBackTo: targetBytecodePC [
 { #category : #'bytecode generator support' }
 SimpleStackBasedCogit >> genJumpIf: boolean to: targetBytecodePC [
 	<inline: false>
+	<returnTypeC: #sqInt>
 	"Cunning trick by LPD.  If true and false are contiguous subtract the smaller.
 	 Correct result is either 0 or the distance between them.  If result is not 0 or
 	 their distance send mustBeBoolean."

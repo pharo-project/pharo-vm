@@ -2590,7 +2590,7 @@ CogObjectRepresentationForSpur >> genStoreCheckReceiverReg: destReg valueReg: va
 	<var: #jmpPermAndPerm type: #'AbstractInstruction *'>
 	<var: #jmpAlreadyRemembered type: #'AbstractInstruction *'>
 	<var: #jmpIsMachineCode type: #'AbstractInstruction *'>
-
+	<returnTypeC: #sqInt>
 
 	"Is value stored an immediate?  If so we're done"
 	jmpImmediate := self genJumpImmediate: valueReg.
@@ -2903,6 +2903,7 @@ CogObjectRepresentationForSpur >> genStoreWithImmutabilityButNoStoreCheckSourceR
 { #category : #'compile abstract instructions' }
 CogObjectRepresentationForSpur >> genStoreWithImmutabilityCheckSourceReg: sourceReg slotIndex: index destReg: destReg scratchReg: scratchReg needsStoreCheck: needsStoreCheck needRestoreRcvr: needRestoreRcvr [
 	<option: #IMMUTABILITY>
+	<returnTypeC: #sqInt>
 	"We know there is a frame as immutability check requires a frame"
 	"needRestoreRcvr has to be true to keep RcvrResultReg live with the receiver in it across the trampoline"
 	
