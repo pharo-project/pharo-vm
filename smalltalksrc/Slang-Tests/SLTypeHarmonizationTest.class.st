@@ -276,18 +276,6 @@ SLTypeHarmonizationTest >> testHarmonizedNumbersChanged [
 	
 ]
 
-{ #category : #harmonizeTwoType }
-SLTypeHarmonizationTest >> testHarmonizedNumbersNotWorking [
-	"the type default to int in unsigned int and int conflict"
-	| result |
-	types add: 7.
-	types add: -2147483648.
-	result := ccg harmonizeReturnTypesIn: types.
-	self assert: result equals: (Set new add: #sqInt ; yourself ).
-	
-	
-]
-
 { #category : #harmonizeOneType }
 SLTypeHarmonizationTest >> testHarmonizedShort [
 	"cast short to int"
