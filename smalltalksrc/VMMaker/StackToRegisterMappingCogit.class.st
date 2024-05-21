@@ -2225,6 +2225,7 @@ StackToRegisterMappingCogit >> genPushLiteralIndex: literalIndex [ "<SmallIntege
 { #category : #'bytecode generator support' }
 StackToRegisterMappingCogit >> genPushLiteralVariable: literalIndex [
 	<inline: false>
+	<returnTypeC: #sqInt>
 	| association freeReg |
 	association := self getLiteral: literalIndex.
 	"If followed by a directed super send bytecode, avoid generating any code yet.
