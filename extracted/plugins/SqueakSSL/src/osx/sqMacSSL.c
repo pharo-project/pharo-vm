@@ -24,6 +24,7 @@ typedef struct sqSSL {
     char* certName;
     char* peerName;
     char* serverName;
+    char* certPass;
 
     SSLContextRef ctx;
     CFArrayRef certs;
@@ -204,6 +205,62 @@ OSStatus sqSetupSSL(sqSSL* ssl, int isServer)
             logStatus(status, "SSLSetPeerDomainName failed");
             return status;
         }
+    }
+
+    if (ssl->certName) {
+        size_t size = 128 * 1024;
+        char *buffer = malloc(size);
+        FILE *stream;
+        stream = fopen(ssl->certName, "rb");
+        if (buffer == NULL || stream == NULL)
+            return SQSSL_GENERIC_ERROR;
+        size_t length = fread(buffer, sizeof(char), size, stream);
+        int error = !feof(stream) || ferror(stream);
+        fclose(stream);
+        if (error) {
+            free(buffer);
+            return SQSSL_GENERIC_ERROR;
+        }
+        CFDataRef data = CFDataCreate(kCFAllocatorDefault, (UInt8 *)buffer, length);
+        free(buffer);
+        if (data == NULL)
+            return SQSSL_GENERIC_ERROR;
+
+        CFMutableDictionaryRef options = CFDictionaryCreateMutable(kCFAllocatorDefault, 0, &kCFTypeDictionaryKeyCallBacks, &kCFTypeDictionaryValueCallBacks);
+        if (options == NULL)
+            return SQSSL_GENERIC_ERROR;
+        if (ssl->certPass != NULL) {
+            const CFStringRef password = CFStringCreateWithCString(kCFAllocatorDefault, ssl->certPass, kCFStringEncodingASCII);
+            if (password == NULL) {
+                CFRelease(options);
+                return SQSSL_GENERIC_ERROR;
+            }
+            CFDictionarySetValue(options, kSecImportExportPassphrase, password);
+            CFRelease(password);
+        }
+        
+        CFArrayRef items;
+        status = SecPKCS12Import(data, options, &items);
+        CFRelease(data);
+        CFRelease(options);
+        if (status != noErr) {
+            logStatus(status, "SecPKCS12Import failed");
+            return status;
+        }
+        if (!(CFArrayGetCount(items) >= 1))
+            return SQSSL_GENERIC_ERROR;
+        CFDictionaryRef item = CFArrayGetValueAtIndex(items, 0);
+        SecIdentityRef identity = (SecIdentityRef)CFDictionaryGetValue(item, kSecImportItemIdentity);
+        if (identity == NULL)
+            return SQSSL_GENERIC_ERROR;
+        CFArrayRef certs = CFArrayCreate(kCFAllocatorDefault, (const void **)&identity, 1, &kCFTypeArrayCallBacks);
+        
+        SSLSetCertificate(ssl->ctx, certs);
+        CFRelease(certs);
+        if (status != noErr) {
+            logStatus(status, "SSLSetCertificate failed");
+            return status;
+        }        
     }
 
     return status;
@@ -479,6 +536,10 @@ sqInt sqDestroySSL(sqInt handle)
         free(ssl->serverName);
         ssl->serverName = NULL;
     }
+    if (ssl->certPass) {
+        free(ssl->certPass);
+        ssl->certName = NULL;
+    }
 
     free(ssl);
     handleBuf[handle] = NULL;
@@ -729,6 +790,7 @@ char* sqGetStringPropertySSL(sqInt handle, int propID)
     case SQSSL_PROP_PEERNAME:	return ssl->peerName ? ssl->peerName : emptyString;
     case SQSSL_PROP_CERTNAME:   return ssl->certName;
     case SQSSL_PROP_SERVERNAME: return ssl->serverName;
+    case SQSSL_PROP_CERTPASS:   return ssl->certPass;
     default:
         logTrace("sqGetStringPropertySSL: Unknown property ID %d\n", propID);
         return NULL;
@@ -773,6 +835,12 @@ sqInt sqSetStringPropertySSL(sqInt handle, int propID, char* propName,
             free(ssl->serverName);
         }
         ssl->serverName = property;
+        break;
+    case SQSSL_PROP_CERTPASS:
+        if (ssl->certPass) {
+            free(ssl->certPass);
+        }
+        ssl->certPass = property;
         break;
     default:
         if (property) {
