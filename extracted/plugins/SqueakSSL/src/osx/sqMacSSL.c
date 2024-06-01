@@ -626,7 +626,7 @@ sqInt sqAcceptSSL(sqInt handle, char* srcBuf, sqInt srcLen, char* dstBuf,
     }
     /* We are connected. Verify the cert. */
     ssl->state = SQSSL_CONNECTED;
-        return SQSSL_OK;
+    return ssl->outLen;
 }
 
 /* sqEncryptSSL: Encrypt data for SSL transmission.
