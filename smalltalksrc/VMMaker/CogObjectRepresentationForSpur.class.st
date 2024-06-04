@@ -848,9 +848,16 @@ CogObjectRepresentationForSpur >> genGetClassObjectOf: instReg into: destReg scr
 	<var: #loop type: #'AbstractInstruction *'>
 	(instReg = destReg or: [instReg = scratchReg or: [destReg = scratchReg]]) ifTrue:
 		[^BadRegisterSet].
+	
+	"In instReg comes the receiver (or arg1) that we want to extract the class from. We move it to scratchReg, so we can operate on it (potentially modify it)"
 	loop := cogit MoveR: instReg R: scratchReg.
+	"In instReg what we receive is actually a Oop, and as such this can be a Reference (an address) or a Value (an immediate)."
+	"Here we check if we have an inmmediate:"
 	cogit AndCq: objectMemory tagMask R: scratchReg.
 	jumpIsImm := cogit JumpNonZero: 0.
+	
+	"If we are here, then in instReg (and scratchReg) we have a reference."
+	
 	self flag: #endianness.
 	"Get least significant half of header word in destReg"
 	cogit MoveMw: 0 r: instReg R: scratchReg.
@@ -864,8 +871,11 @@ CogObjectRepresentationForSpur >> genGetClassObjectOf: instReg into: destReg scr
 		cogit MoveMw: objectMemory baseHeaderSize r: instReg R: instReg.
 		cogit Jump: loop.
 		jumpNotForwarded jmpTarget: cogit Label].
+
+	"At this point, regardless of which path we took, in scratchReg we have the ClassIndex."
 	jumpIsImm jmpTarget:
 	(cogit MoveR: scratchReg R: destReg).
+
 	scratchReg = TempReg
 		ifTrue:
 			[cogit PushR: instReg.
@@ -879,28 +889,49 @@ CogObjectRepresentationForSpur >> genGetClassObjectOf: instReg into: destReg scr
 ]
 
 { #category : #'compile abstract instructions' }
-CogObjectRepresentationForSpur >> genGetClassObjectOfClassIndex: instReg into: destReg scratchReg: scratchReg [
+CogObjectRepresentationForSpur >> genGetClassObjectOfClassIndex: classIndexRegister into: destReg scratchReg: scratchReg [
 	"Fetch the class object whose index is in instReg into destReg.
 	 It is non-obvious, but the Cogit assumes loading a class does not involve
 	 a runtime call, so do not call classAtIndex:"
-	self assert: instReg ~= destReg.
-	self assert: instReg ~= scratchReg.
+	self assert: classIndexRegister ~= destReg.
+	self assert: classIndexRegister ~= scratchReg.
 	self assert: destReg ~= scratchReg.
+	
+	""
 	cogit
-		MoveR: instReg R: scratchReg;
+		MoveR: classIndexRegister R: scratchReg;
+		"The ClassIndex is 22 bits: <12><10> . 12 bits for storing the page index. 10 bits for storing the index of the class in the page.
+		So, to access the upper 12 bits, we shift the index 10 bits to the right: "
 		LogicalShiftRightCq: objectMemory classTableMajorIndexShift R: scratchReg;
+		"Now in scratchReg we have the page (the second level table). 
+		Each entry in these pages is 1 word (in 64bits this would be 64, so 8 bytes). We have the ClassIndex, but this is a number corresponding to one of the entries, we need to 
+		convert it to a valid offset within the table, to do that we multiply by 8 (LeftShift by 3) . Now in scratchReg we have the ClassIndex but seen as bytes.
+		For example if our ClassIndex was 3, now in scratchReg instead of 3 we'd have 24."
 		LogicalShiftLeftCq: objectMemory shiftForWord R: scratchReg.
+	
 	self assert: (self shouldAnnotateObjectReference: objectMemory classTableRootObj) not.
+	
+	"classTableRootObj is the level one table. There is only one of this, and in particular this table is a object too! As such it has a header. So to access all the entries we need to skip the header."
 	(cogit backEnd isWithinMwOffsetRange: objectMemory classTableRootObj + objectMemory baseHeaderSize)
+		"Here we basically do a load from memory to a register. The method MoveMw:r:R: corresponds to an instruction which reads from memory, at base: the arg1, offset: the arg2 and puts the result on arg3.
+		In this case we add the base given by the start of the table (skipping the header) to the offset given by the scratchReg which has the ClassIndex (in bytes) to access to the entry in the table. This entry would have 
+		in turn a reference to the second level table. This new index will be loaded on destReg."
 		ifTrue: [cogit MoveMw: objectMemory classTableRootObj + objectMemory baseHeaderSize r: scratchReg R: destReg]
 		ifFalse: [cogit
 					AddCq: objectMemory classTableRootObj R: scratchReg;
 					MoveMw: objectMemory baseHeaderSize r: scratchReg R: destReg].
+				
+	"At this point we have in destReg the index in the second level table, so to access to the ClassIndex given as argument we need to access in this new table by using the 10 other bits of the ClassIndex."
 	cogit
-		MoveR: instReg R: scratchReg;
+		MoveR: classIndexRegister R: scratchReg;
 		AndCq: objectMemory classTableMinorIndexMask R: scratchReg;
 		AddCq: objectMemory baseHeaderSize >> objectMemory shiftForWord R: scratchReg;
+		"Here in scratchReg we have the base (skipping the header) of the second table. We acccess the entry referencing the Class we are interested in by using the index stored in destReg."
 		MoveXwr: scratchReg R: destReg R: destReg.
+		"Xwr - memory word whose address is r * word size away from an address in a register [From CogRTLOpcodes >> initilize ]
+		So here it uses destReg as base, scratchReg as offset and store the result in destReg.
+		"
+		
 	^0
 ]
 
