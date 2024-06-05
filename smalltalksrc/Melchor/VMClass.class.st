@@ -593,6 +593,14 @@ VMClass >> druidIgnore: aBlock [
 	^ aBlock value
 ]
 
+{ #category : #'druid support' }
+VMClass >> druidStageable: aBlock [
+
+	"Execute the block during interpretation, stage it during compilation.
+	Should be used only with expressions that are known to be constant at JIT-compile time"
+	^ aBlock value
+]
+
 { #category : #'memory access' }
 VMClass >> fetchSingleFloatAtPointer: pointer into: aFloat [
 	"This gets implemented by Macros in C, where its types will also be checked.

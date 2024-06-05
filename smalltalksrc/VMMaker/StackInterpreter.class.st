@@ -8513,9 +8513,12 @@ StackInterpreter >> literal: offset [
 
 { #category : #'compiled methods' }
 StackInterpreter >> literal: offset ofMethod: methodPointer [
-	<api>
-	^objectMemory fetchPointer: offset + LiteralStart ofObject: methodPointer
 
+	<api>
+	^ "self druidStageable: ["
+		  objectMemory
+			  fetchPointer: offset + LiteralStart
+			  ofObject: methodPointer "]"
 ]
 
 { #category : #'compiled methods' }

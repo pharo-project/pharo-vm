@@ -603,7 +603,7 @@ DruidStaticTypePredictionJIT >> gen_BytecodePrimAdd [
 	self MoveR: ReceiverResultReg R: t2.
 	currentBlock := self Label.
 	jump3 jmpTarget: currentBlock.
-	self ssPop: 2 popSpilled: false.
+	self ssPop: 2 popSpilled: true.
 	self ssPushRegister: t2.
 	^ 0
 ]
@@ -619,7 +619,7 @@ DruidStaticTypePredictionJIT >> gen_BytecodePrimAt [
 		genMarshalledSendNoPush: -17
 		numArgs: 1
 		sendTable: ordinarySendTrampolines.
-	self ssPop: 2 popSpilled: false.
+	self ssPop: 2 popSpilled: true.
 	self ssPushConstant: ReceiverResultReg.
 	^ 0
 ]
@@ -635,7 +635,7 @@ DruidStaticTypePredictionJIT >> gen_BytecodePrimAtEnd [
 		genMarshalledSendNoPush: -22
 		numArgs: 0
 		sendTable: ordinarySendTrampolines.
-	self ssPop: 1 popSpilled: false.
+	self ssPop: 1 popSpilled: true.
 	self ssPushConstant: ReceiverResultReg.
 	^ 0
 ]
@@ -651,7 +651,7 @@ DruidStaticTypePredictionJIT >> gen_BytecodePrimAtPut [
 		genMarshalledSendNoPush: -18
 		numArgs: 2
 		sendTable: ordinarySendTrampolines.
-	self ssPop: 3 popSpilled: false.
+	self ssPop: 3 popSpilled: true.
 	self ssPushConstant: ReceiverResultReg.
 	^ 0
 ]
@@ -695,7 +695,7 @@ DruidStaticTypePredictionJIT >> gen_BytecodePrimBitAnd [
 	self MoveR: ReceiverResultReg R: t2.
 	currentBlock := self Label.
 	jump2 jmpTarget: currentBlock.
-	self ssPop: 2 popSpilled: false.
+	self ssPop: 2 popSpilled: true.
 	self ssPushRegister: t2.
 	^ 0
 ]
@@ -739,7 +739,7 @@ DruidStaticTypePredictionJIT >> gen_BytecodePrimBitOr [
 	self MoveR: ReceiverResultReg R: t2.
 	currentBlock := self Label.
 	jump2 jmpTarget: currentBlock.
-	self ssPop: 2 popSpilled: false.
+	self ssPop: 2 popSpilled: true.
 	self ssPushRegister: t2.
 	^ 0
 ]
@@ -755,7 +755,7 @@ DruidStaticTypePredictionJIT >> gen_BytecodePrimBitShift [
 		genMarshalledSendNoPush: -13
 		numArgs: 1
 		sendTable: ordinarySendTrampolines.
-	self ssPop: 2 popSpilled: false.
+	self ssPop: 2 popSpilled: true.
 	self ssPushConstant: ReceiverResultReg.
 	^ 0
 ]
@@ -771,7 +771,7 @@ DruidStaticTypePredictionJIT >> gen_BytecodePrimDiv [
 		genMarshalledSendNoPush: -14
 		numArgs: 1
 		sendTable: ordinarySendTrampolines.
-	self ssPop: 2 popSpilled: false.
+	self ssPop: 2 popSpilled: true.
 	self ssPushConstant: ReceiverResultReg.
 	^ 0
 ]
@@ -787,7 +787,7 @@ DruidStaticTypePredictionJIT >> gen_BytecodePrimDivide [
 		genMarshalledSendNoPush: -10
 		numArgs: 1
 		sendTable: ordinarySendTrampolines.
-	self ssPop: 2 popSpilled: false.
+	self ssPop: 2 popSpilled: true.
 	self ssPushConstant: ReceiverResultReg.
 	^ 0
 ]
@@ -803,7 +803,7 @@ DruidStaticTypePredictionJIT >> gen_BytecodePrimDo [
 		genMarshalledSendNoPush: -28
 		numArgs: 1
 		sendTable: ordinarySendTrampolines.
-	self ssPop: 2 popSpilled: false.
+	self ssPop: 2 popSpilled: true.
 	self ssPushConstant: ReceiverResultReg.
 	^ 0
 ]
@@ -819,7 +819,7 @@ DruidStaticTypePredictionJIT >> gen_BytecodePrimEqualSistaV1 [
 		genMarshalledSendNoPush: -7
 		numArgs: 1
 		sendTable: ordinarySendTrampolines.
-	self ssPop: 2 popSpilled: false.
+	self ssPop: 2 popSpilled: true.
 	self ssPushConstant: ReceiverResultReg.
 	^ 0
 ]
@@ -835,7 +835,7 @@ DruidStaticTypePredictionJIT >> gen_BytecodePrimGreaterOrEqualSistaV1 [
 		genMarshalledSendNoPush: -6
 		numArgs: 1
 		sendTable: ordinarySendTrampolines.
-	self ssPop: 2 popSpilled: false.
+	self ssPop: 2 popSpilled: true.
 	self ssPushConstant: ReceiverResultReg.
 	^ 0
 ]
@@ -851,7 +851,7 @@ DruidStaticTypePredictionJIT >> gen_BytecodePrimGreaterThanSistaV1 [
 		genMarshalledSendNoPush: -4
 		numArgs: 1
 		sendTable: ordinarySendTrampolines.
-	self ssPop: 2 popSpilled: false.
+	self ssPop: 2 popSpilled: true.
 	self ssPushConstant: ReceiverResultReg.
 	^ 0
 ]
@@ -943,7 +943,7 @@ DruidStaticTypePredictionJIT >> gen_BytecodePrimIdenticalSistaV1 [
 	self MoveR: t1 R: t3.
 	currentBlock := self Label.
 	jump3 jmpTarget: currentBlock.
-	self ssPop: 2 popSpilled: true.
+	self ssPop: 2 popSpilled: false.
 	self CmpR: t3 R: t0.
 	jump3 := self JumpNonZero: 0.
 	s54 := objectMemory trueObject.
@@ -977,7 +977,7 @@ DruidStaticTypePredictionJIT >> gen_BytecodePrimLessOrEqualSistaV1 [
 		genMarshalledSendNoPush: -5
 		numArgs: 1
 		sendTable: ordinarySendTrampolines.
-	self ssPop: 2 popSpilled: false.
+	self ssPop: 2 popSpilled: true.
 	self ssPushConstant: ReceiverResultReg.
 	^ 0
 ]
@@ -993,7 +993,7 @@ DruidStaticTypePredictionJIT >> gen_BytecodePrimLessThanSistaV1 [
 		genMarshalledSendNoPush: -3
 		numArgs: 1
 		sendTable: ordinarySendTrampolines.
-	self ssPop: 2 popSpilled: false.
+	self ssPop: 2 popSpilled: true.
 	self ssPushConstant: ReceiverResultReg.
 	^ 0
 ]
@@ -1009,7 +1009,7 @@ DruidStaticTypePredictionJIT >> gen_BytecodePrimMakePoint [
 		genMarshalledSendNoPush: -12
 		numArgs: 1
 		sendTable: ordinarySendTrampolines.
-	self ssPop: 2 popSpilled: false.
+	self ssPop: 2 popSpilled: true.
 	self ssPushConstant: ReceiverResultReg.
 	^ 0
 ]
@@ -1025,7 +1025,7 @@ DruidStaticTypePredictionJIT >> gen_BytecodePrimMod [
 		genMarshalledSendNoPush: -11
 		numArgs: 1
 		sendTable: ordinarySendTrampolines.
-	self ssPop: 2 popSpilled: false.
+	self ssPop: 2 popSpilled: true.
 	self ssPushConstant: ReceiverResultReg.
 	^ 0
 ]
@@ -1041,7 +1041,7 @@ DruidStaticTypePredictionJIT >> gen_BytecodePrimMultiply [
 		genMarshalledSendNoPush: -9
 		numArgs: 1
 		sendTable: ordinarySendTrampolines.
-	self ssPop: 2 popSpilled: false.
+	self ssPop: 2 popSpilled: true.
 	self ssPushConstant: ReceiverResultReg.
 	^ 0
 ]
@@ -1057,7 +1057,7 @@ DruidStaticTypePredictionJIT >> gen_BytecodePrimNew [
 		genMarshalledSendNoPush: -29
 		numArgs: 0
 		sendTable: ordinarySendTrampolines.
-	self ssPop: 1 popSpilled: false.
+	self ssPop: 1 popSpilled: true.
 	self ssPushConstant: ReceiverResultReg.
 	^ 0
 ]
@@ -1073,7 +1073,7 @@ DruidStaticTypePredictionJIT >> gen_BytecodePrimNewWithArg [
 		genMarshalledSendNoPush: -30
 		numArgs: 1
 		sendTable: ordinarySendTrampolines.
-	self ssPop: 2 popSpilled: false.
+	self ssPop: 2 popSpilled: true.
 	self ssPushConstant: ReceiverResultReg.
 	^ 0
 ]
@@ -1089,7 +1089,7 @@ DruidStaticTypePredictionJIT >> gen_BytecodePrimNext [
 		genMarshalledSendNoPush: -20
 		numArgs: 0
 		sendTable: ordinarySendTrampolines.
-	self ssPop: 1 popSpilled: false.
+	self ssPop: 1 popSpilled: true.
 	self ssPushConstant: ReceiverResultReg.
 	^ 0
 ]
@@ -1105,7 +1105,7 @@ DruidStaticTypePredictionJIT >> gen_BytecodePrimNextPut [
 		genMarshalledSendNoPush: -21
 		numArgs: 1
 		sendTable: ordinarySendTrampolines.
-	self ssPop: 2 popSpilled: false.
+	self ssPop: 2 popSpilled: true.
 	self ssPushConstant: ReceiverResultReg.
 	^ 0
 ]
@@ -1121,7 +1121,7 @@ DruidStaticTypePredictionJIT >> gen_BytecodePrimNotEqualSistaV1 [
 		genMarshalledSendNoPush: -8
 		numArgs: 1
 		sendTable: ordinarySendTrampolines.
-	self ssPop: 2 popSpilled: false.
+	self ssPop: 2 popSpilled: true.
 	self ssPushConstant: ReceiverResultReg.
 	^ 0
 ]
@@ -1213,7 +1213,7 @@ DruidStaticTypePredictionJIT >> gen_BytecodePrimNotIdenticalSistaV1 [
 	self MoveR: t1 R: t3.
 	currentBlock := self Label.
 	jump3 jmpTarget: currentBlock.
-	self ssPop: 2 popSpilled: true.
+	self ssPop: 2 popSpilled: false.
 	self CmpR: t3 R: t0.
 	jump3 := self JumpZero: 0.
 	s54 := objectMemory trueObject.
@@ -1247,7 +1247,7 @@ DruidStaticTypePredictionJIT >> gen_BytecodePrimPointX [
 		genMarshalledSendNoPush: -31
 		numArgs: 0
 		sendTable: ordinarySendTrampolines.
-	self ssPop: 1 popSpilled: false.
+	self ssPop: 1 popSpilled: true.
 	self ssPushConstant: ReceiverResultReg.
 	^ 0
 ]
@@ -1263,7 +1263,7 @@ DruidStaticTypePredictionJIT >> gen_BytecodePrimPointY [
 		genMarshalledSendNoPush: -32
 		numArgs: 0
 		sendTable: ordinarySendTrampolines.
-	self ssPop: 1 popSpilled: false.
+	self ssPop: 1 popSpilled: true.
 	self ssPushConstant: ReceiverResultReg.
 	^ 0
 ]
@@ -1279,7 +1279,7 @@ DruidStaticTypePredictionJIT >> gen_BytecodePrimSize [
 		genMarshalledSendNoPush: -19
 		numArgs: 0
 		sendTable: ordinarySendTrampolines.
-	self ssPop: 1 popSpilled: false.
+	self ssPop: 1 popSpilled: true.
 	self ssPushConstant: ReceiverResultReg.
 	^ 0
 ]
@@ -1335,7 +1335,7 @@ DruidStaticTypePredictionJIT >> gen_BytecodePrimSubtract [
 	self MoveR: ReceiverResultReg R: t2.
 	currentBlock := self Label.
 	jump3 jmpTarget: currentBlock.
-	self ssPop: 2 popSpilled: false.
+	self ssPop: 2 popSpilled: true.
 	self ssPushRegister: t2.
 	^ 0
 ]
@@ -1351,7 +1351,7 @@ DruidStaticTypePredictionJIT >> gen_BytecodePrimValue [
 		genMarshalledSendNoPush: -26
 		numArgs: 0
 		sendTable: ordinarySendTrampolines.
-	self ssPop: 1 popSpilled: false.
+	self ssPop: 1 popSpilled: true.
 	self ssPushConstant: ReceiverResultReg.
 	^ 0
 ]
@@ -1367,7 +1367,7 @@ DruidStaticTypePredictionJIT >> gen_BytecodePrimValueWithArg [
 		genMarshalledSendNoPush: -27
 		numArgs: 1
 		sendTable: ordinarySendTrampolines.
-	self ssPop: 2 popSpilled: false.
+	self ssPop: 2 popSpilled: true.
 	self ssPushConstant: ReceiverResultReg.
 	^ 0
 ]
@@ -1463,7 +1463,7 @@ DruidStaticTypePredictionJIT >> gen_ExtJumpIfFalse [
 		      ifNone: [ ^ self unknownBytecode ].
 	live := live bitOr: (self registerMaskFor: t0).
 	(self ssValue: 0) copyToReg: t0.
-	self ssPop: 1 popSpilled: true.
+	self ssPop: 1 popSpilled: false.
 	s12 := objectMemory falseObject.
 	self ssFlushStack.
 	self CmpCq: s12 R: t0.
@@ -1510,7 +1510,7 @@ DruidStaticTypePredictionJIT >> gen_ExtJumpIfTrue [
 		      ifNone: [ ^ self unknownBytecode ].
 	live := live bitOr: (self registerMaskFor: t0).
 	(self ssValue: 0) copyToReg: t0.
-	self ssPop: 1 popSpilled: true.
+	self ssPop: 1 popSpilled: false.
 	s12 := objectMemory trueObject.
 	self ssFlushStack.
 	self CmpCq: s12 R: t0.
@@ -1632,7 +1632,7 @@ DruidStaticTypePredictionJIT >> gen_ExtPushFullClosureBytecode [
 	(s7 anyMask: 128) ifTrue: [
 		(self ssValue: 0) copyToReg: t3.
 		self MoveR: t3 R: t2.
-		self ssPop: 1 popSpilled: true.
+		self ssPop: 1 popSpilled: false.
 		s36 := FullClosureReceiverIndex.
 		s37 := s36 << 3.
 		self MoveR: t0 R: t1.
@@ -1642,7 +1642,7 @@ DruidStaticTypePredictionJIT >> gen_ExtPushFullClosureBytecode [
 		^ 0 ].
 	self ensureReceiverResultRegContainsSelf.
 	self MoveR: ReceiverResultReg R: t2.
-	self ssPop: 1 popSpilled: true.
+	self ssPop: 1 popSpilled: false.
 	s36 := FullClosureReceiverIndex.
 	s37 := s36 << 3.
 	self MoveR: t0 R: t1.
@@ -1891,7 +1891,7 @@ DruidStaticTypePredictionJIT >> gen_ExtStoreAndPopLiteralVariableBytecode [
 		      ifNone: [ ^ self unknownBytecode ].
 	live := live bitOr: (self registerMaskFor: t0).
 	(self ssValue: 0) copyToReg: t0.
-	self ssPop: 1 popSpilled: true.
+	self ssPop: 1 popSpilled: false.
 	extA := 0.
 	t1 := self
 		      allocateRegNotConflictingWith: live
@@ -2109,7 +2109,7 @@ DruidStaticTypePredictionJIT >> gen_ExtStoreAndPopReceiverVariableBytecode [
 		deadCode := false.
 		currentBlock := self Label.
 		jump1 jmpTarget: currentBlock.
-		self ssPop: 1 popSpilled: true.
+		self ssPop: 1 popSpilled: false.
 		self MoveM64: 0 r: t1 R: t2.
 		self LogicalShiftRightCq: 23 R: t2.
 		self AndCq: 1 R: t2.
@@ -2239,7 +2239,7 @@ DruidStaticTypePredictionJIT >> gen_ExtStoreAndPopReceiverVariableBytecode [
 		jump5 jmpTarget: currentBlock.
 		jump1 jmpTarget: currentBlock.
 		^ 0 ].
-	self ssPop: 1 popSpilled: true.
+	self ssPop: 1 popSpilled: false.
 	self MoveM64: 0 r: t1 R: t2.
 	self LogicalShiftRightCq: 23 R: t2.
 	self AndCq: 1 R: t2.
@@ -3010,7 +3010,7 @@ DruidStaticTypePredictionJIT >> gen_LongStoreAndPopTemporaryVariableBytecode [
 	(self ssValue: 0) copyToReg: t0.
 	self ssFlushUpThroughTemporaryVariable: byte1.
 	self MoveR: t0 Mw: (self frameOffsetOfTemporary: byte1) r: FPReg.
-	self ssPop: 1 popSpilled: true.
+	self ssPop: 1 popSpilled: false.
 	^ 0
 ]
 
@@ -3036,7 +3036,7 @@ DruidStaticTypePredictionJIT >> gen_PopStackBytecode [
 
 	| live currentBlock |
 	live := 0.
-	self ssPop: 1 popSpilled: true.
+	self ssPop: 1 popSpilled: false.
 	^ 0
 ]
 
@@ -3294,13 +3294,12 @@ DruidStaticTypePredictionJIT >> gen_PrimitiveAt [
 	currentBlock := self Label.
 	jump5 jmpTarget: currentBlock.
 	s72 := 0.
-	self MoveCq: s72 R: SendNumArgsReg.
+	self MoveCq: s72 R: Extra2Reg.
 	jump5 := self Jump: 0.
 	currentBlock := self Label.
 	jump8 jmpTarget: currentBlock.
 	self CmpCq: 2 R: Extra1Reg.
 	jump8 := self JumpAboveOrEqual: 0.
-	self MoveR: Extra2Reg R: SendNumArgsReg.
 	self MoveR: Extra2Reg R: ClassReg.
 	jump6 := self Jump: 0.
 	currentBlock := self Label.
@@ -3350,8 +3349,8 @@ DruidStaticTypePredictionJIT >> gen_PrimitiveAt [
 	self MoveM64: 24 r: ClassReg R: Extra0Reg.
 	self ArithmeticShiftRightCq: 3 R: Extra0Reg.
 	self AndCq: 16rFFFF R: Extra0Reg.
-	self MoveR: Extra0Reg R: SendNumArgsReg.
 	self MoveR: Extra2Reg R: ClassReg.
+	self MoveR: Extra0Reg R: Extra2Reg.
 	currentBlock := self Label.
 	jump5 jmpTarget: currentBlock.
 	jump6 jmpTarget: currentBlock.
@@ -3367,7 +3366,7 @@ DruidStaticTypePredictionJIT >> gen_PrimitiveAt [
 	currentBlock := self Label.
 	jump6 jmpTarget: currentBlock.
 	jump5 jmpTarget: currentBlock.
-	self SubR: SendNumArgsReg R: ClassReg.
+	self SubR: Extra2Reg R: ClassReg.
 	self CmpCq: 24 R: Extra1Reg.
 	jump5 := self JumpBelow: 0.
 	currentBlock := self Label.
@@ -3384,7 +3383,7 @@ DruidStaticTypePredictionJIT >> gen_PrimitiveAt [
 	self CmpR: ClassReg R: Extra3Reg.
 	jump3 := self JumpAbove: 0.
 	self MoveMw: 8 r: SPReg R: Extra3Reg.
-	self AddR: SendNumArgsReg R: Extra3Reg.
+	self AddR: Extra2Reg R: Extra3Reg.
 	self MoveR: Extra3Reg Mw: 8 r: SPReg.
 	self CmpCq: 5 R: Extra1Reg.
 	jump2 := self JumpAbove: 0.
@@ -4311,9 +4310,8 @@ DruidStaticTypePredictionJIT >> gen_PrimitiveDiv [
 	self
 		DivR: Extra0Reg
 		R: Extra1Reg
-		Quo: Extra1Reg
-		Rem: Extra0Reg.
-	self MoveR: Extra1Reg R: Extra0Reg.
+		Quo: Extra0Reg
+		Rem: Extra1Reg.
 	currentBlock := self Label.
 	jump4 jmpTarget: currentBlock.
 	self MoveR: Extra0Reg R: SendNumArgsReg.
@@ -6521,7 +6519,7 @@ DruidStaticTypePredictionJIT >> gen_PrimitiveNewWithArg [
 	"AutoGenerated by Druid"
 
 	| jump5 s169 s81 s55 jump10 s184 jump3 s86 b690 s173 jump1 jump8 currentBlock s49 s195 s90 s7 s141 s106 s233 jump6 s40 jump11 jump4 jump13 s93 s63 jump2 s109 s102 jump9 jump14 jump7 jump12 s66 |
-	self SubCq: 32 R: SPReg.
+	self SubCq: 24 R: SPReg.
 	self MoveR: ReceiverResultReg R: Extra3Reg.
 	self MoveR: Extra3Reg Mw: 0 r: SPReg.
 	self MoveR: Arg0Reg R: SendNumArgsReg.
@@ -6542,12 +6540,9 @@ DruidStaticTypePredictionJIT >> gen_PrimitiveNewWithArg [
 	self LogicalShiftRightCq: 16 R: Extra1Reg.
 	self AndCq: 31 R: Extra1Reg.
 	self MoveMw: 0 r: SPReg R: Extra3Reg.
-	self MoveM32: 4 r: Extra3Reg R: Extra3Reg.
-	self AndCq: 16rFFFFFFFF R: Extra3Reg.
-	self MoveR: Extra3Reg Mw: 8 r: SPReg.
-	self MoveMw: 8 r: SPReg R: Extra3Reg.
-	self AndCq: 16r3FFFFF R: Extra3Reg.
-	self MoveR: Extra3Reg Mw: 8 r: SPReg.
+	self MoveM32: 4 r: Extra3Reg R: Extra2Reg.
+	self AndCq: 16rFFFFFFFF R: Extra2Reg.
+	self AndCq: 16r3FFFFF R: Extra2Reg.
 	self CmpCq: 2 R: Extra1Reg.
 	jump2 := self JumpNonZero: 0.
 	self genMoveConstant: objectMemory nilObject R: Extra0Reg.
@@ -6582,8 +6577,7 @@ DruidStaticTypePredictionJIT >> gen_PrimitiveNewWithArg [
 	jump2 jmpTarget: currentBlock.
 	self CmpCq: 10 R: Extra1Reg.
 	jump2 := self JumpNonZero: 0.
-	self MoveMw: 8 r: SPReg R: Extra3Reg.
-	self CmpCq: 34 R: Extra3Reg.
+	self CmpCq: 34 R: Extra2Reg.
 	jump8 := self JumpNonZero: 0.
 	self CmpCq: 2 R: SendNumArgsReg.
 	jump9 := self JumpZero: 0.
@@ -6617,17 +6611,17 @@ DruidStaticTypePredictionJIT >> gen_PrimitiveNewWithArg [
 	self
 		DivR: Extra0Reg
 		R: ClassReg
-		Quo: ClassReg
-		Rem: Extra0Reg.
+		Quo: Extra0Reg
+		Rem: ClassReg.
 	self AndCq: 1 R: SendNumArgsReg.
 	self AddR: SendNumArgsReg R: Extra1Reg.
-	self MoveMw: 8 r: SPReg R: Extra3Reg.
-	self CmpCq: 0 R: Extra3Reg.
+	self CmpCq: 0 R: Extra2Reg.
 	jump8 := self JumpNonZero: 0.
-	self MoveCq: s63 R: Extra0Reg.
+	self MoveCq: s63 R: ClassReg.
 	jump11 := self Jump: 0.
 	currentBlock := self Label.
 	jump8 jmpTarget: currentBlock.
+	self MoveR: Extra0Reg R: ClassReg.
 	currentBlock := self Label.
 	jump9 jmpTarget: currentBlock.
 	s81 := 0.
@@ -6667,15 +6661,15 @@ DruidStaticTypePredictionJIT >> gen_PrimitiveNewWithArg [
 	self
 		DivR: Extra0Reg
 		R: ClassReg
-		Quo: Extra2Reg
-		Rem: Extra0Reg.
+		Quo: Extra0Reg
+		Rem: ClassReg.
 	s109 := 8.
-	self MoveCq: s109 R: Extra0Reg.
-	self SubR: SendNumArgsReg R: Extra0Reg.
-	self AndCq: 7 R: Extra0Reg.
-	self AddR: Extra0Reg R: Extra1Reg.
+	self MoveCq: s109 R: ClassReg.
+	self SubR: SendNumArgsReg R: ClassReg.
+	self AndCq: 7 R: ClassReg.
+	self AddR: ClassReg R: Extra1Reg.
 	self MoveCq: s102 R: ClassReg.
-	self MoveR: Extra2Reg R: SendNumArgsReg.
+	self MoveR: Extra0Reg R: SendNumArgsReg.
 	jump12 := self Jump: 0.
 	currentBlock := self Label.
 	jump2 jmpTarget: currentBlock.
@@ -6684,8 +6678,7 @@ DruidStaticTypePredictionJIT >> gen_PrimitiveNewWithArg [
 	self CmpCq: 5 R: Extra1Reg.
 	jump13 := self JumpAbove: 0.
 	self AndCq: 16rFFFF R: Extra0Reg.
-	self genMoveConstant: objectMemory nilObject R: Extra2Reg.
-	self MoveR: Extra2Reg R: ClassReg.
+	self genMoveConstant: objectMemory nilObject R: ClassReg.
 	self MoveR: Extra0Reg R: SendNumArgsReg.
 	currentBlock := self Label.
 	jump4 jmpTarget: currentBlock.
@@ -6694,11 +6687,9 @@ DruidStaticTypePredictionJIT >> gen_PrimitiveNewWithArg [
 	jump7 jmpTarget: currentBlock.
 	jump8 jmpTarget: currentBlock.
 	jump12 jmpTarget: currentBlock.
-	self MoveMw: 8 r: SPReg R: Extra3Reg.
-	self CmpCq: 0 R: Extra3Reg.
+	self CmpCq: 0 R: Extra2Reg.
 	jump12 := self JumpNonZero: 0.
-	self MoveR: ClassReg R: Extra0Reg.
-	self MoveR: SendNumArgsReg R: ClassReg.
+	self MoveR: SendNumArgsReg R: Extra0Reg.
 	currentBlock := self Label.
 	jump11 jmpTarget: currentBlock.
 	self MoveMw: 0 r: SPReg R: Extra3Reg.
@@ -6716,10 +6707,10 @@ DruidStaticTypePredictionJIT >> gen_PrimitiveNewWithArg [
 	jump7 := self Jump: 0.
 	currentBlock := self Label.
 	jump8 jmpTarget: currentBlock.
+	self MoveR: ClassReg R: Extra3Reg.
+	self MoveR: Extra3Reg Mw: 8 r: SPReg.
 	self MoveR: Extra0Reg R: Extra3Reg.
 	self MoveR: Extra3Reg Mw: 16 r: SPReg.
-	self MoveR: ClassReg R: Extra3Reg.
-	self MoveR: Extra3Reg Mw: 24 r: SPReg.
 	jump8 := self Jump: 0.
 	currentBlock := self Label.
 	jump12 jmpTarget: currentBlock.
@@ -6728,17 +6719,15 @@ DruidStaticTypePredictionJIT >> gen_PrimitiveNewWithArg [
 	currentBlock := self Label.
 	jump9 jmpTarget: currentBlock.
 	self MoveR: Extra0Reg R: Extra3Reg.
-	self MoveR: Extra3Reg Mw: 16 r: SPReg.
+	self MoveR: Extra3Reg Mw: 8 r: SPReg.
 	self MoveR: ClassReg R: Extra3Reg.
-	self MoveR: Extra3Reg Mw: 24 r: SPReg.
-	self MoveMw: 8 r: SPReg R: Extra3Reg.
-	self MoveR: Extra3Reg R: Extra2Reg.
+	self MoveR: Extra3Reg Mw: 16 r: SPReg.
 	currentBlock := self Label.
 	jump8 jmpTarget: currentBlock.
-	self MoveMw: 24 r: SPReg R: Extra3Reg.
+	self MoveMw: 16 r: SPReg R: Extra3Reg.
 	self CmpCq: 16rFFFF R: Extra3Reg.
 	jump8 := self JumpBelowOrEqual: 0.
-	self MoveMw: 24 r: SPReg R: Extra3Reg.
+	self MoveMw: 16 r: SPReg R: Extra3Reg.
 	self CmpCq: 16r10000000000 R: Extra3Reg.
 	jump9 := self JumpBelowOrEqual: 0.
 	s169 := 1.
@@ -6755,7 +6744,7 @@ DruidStaticTypePredictionJIT >> gen_PrimitiveNewWithArg [
 	jump9 := self Jump: 0.
 	currentBlock := self Label.
 	jump8 jmpTarget: currentBlock.
-	self MoveMw: 24 r: SPReg R: Extra3Reg.
+	self MoveMw: 16 r: SPReg R: Extra3Reg.
 	self CmpCq: 255 R: Extra3Reg.
 	jump8 := self JumpBelow: 0.
 	self MoveMw: 0 r: SPReg R: Extra3Reg.
@@ -6764,71 +6753,70 @@ DruidStaticTypePredictionJIT >> gen_PrimitiveNewWithArg [
 	jump6 := self Jump: 0.
 	currentBlock := self Label.
 	jump8 jmpTarget: currentBlock.
-	self MoveMw: 24 r: SPReg R: Extra3Reg.
+	self MoveMw: 16 r: SPReg R: Extra3Reg.
 	self CmpCq: 1 R: Extra3Reg.
 	jump8 := self JumpAboveOrEqual: 0.
 	s184 := 8.
-	self MoveCq: s184 R: SendNumArgsReg.
+	self MoveCq: s184 R: ClassReg.
 	jump5 := self Jump: 0.
 	currentBlock := self Label.
 	jump8 jmpTarget: currentBlock.
-	self MoveMw: 24 r: SPReg R: Extra3Reg.
-	self MoveR: Extra3Reg R: SendNumArgsReg.
-	self LogicalShiftLeftCq: 3 R: SendNumArgsReg.
+	self MoveMw: 16 r: SPReg R: Extra3Reg.
+	self MoveR: Extra3Reg R: ClassReg.
+	self LogicalShiftLeftCq: 3 R: ClassReg.
 	currentBlock := self Label.
 	jump5 jmpTarget: currentBlock.
-	self AddCq: 8 R: SendNumArgsReg.
-	self MoveAw: objectMemory freeStartAddress R: Extra0Reg.
-	self AddR: SendNumArgsReg R: Extra0Reg.
+	self AddCq: 8 R: ClassReg.
+	self MoveAw: objectMemory freeStartAddress R: SendNumArgsReg.
+	self AddR: ClassReg R: SendNumArgsReg.
 	s195 := objectMemory getScavengeThreshold.
-	self CmpCq: s195 R: Extra0Reg.
+	self CmpCq: s195 R: SendNumArgsReg.
 	jump5 := self JumpBelowOrEqual: 0.
-	self CmpCq: s195 R: Extra0Reg.
+	self CmpCq: s195 R: SendNumArgsReg.
 	jump8 := self JumpBelowOrEqual: 0.
 	jump4 := self Jump: 0.
 	currentBlock := self Label.
 	jump5 jmpTarget: currentBlock.
 	jump8 jmpTarget: currentBlock.
-	self MoveAw: objectMemory freeStartAddress R: Extra0Reg.
-	self MoveMw: 24 r: SPReg R: Extra3Reg.
-	self MoveR: Extra3Reg R: ClassReg.
-	self LogicalShiftLeftCq: 56 R: ClassReg.
+	self MoveAw: objectMemory freeStartAddress R: SendNumArgsReg.
+	self MoveMw: 16 r: SPReg R: Extra3Reg.
+	self MoveR: Extra3Reg R: Extra0Reg.
+	self LogicalShiftLeftCq: 56 R: Extra0Reg.
 	self LogicalShiftLeftCq: 24 R: Extra1Reg.
-	self AddR: Extra1Reg R: ClassReg.
-	self AddR: Extra2Reg R: ClassReg.
-	self OrCq: 0 R: ClassReg.
-	self MoveR: ClassReg M64: 0 r: Extra0Reg.
-	self MoveAw: objectMemory freeStartAddress R: ClassReg.
-	self AddR: SendNumArgsReg R: ClassReg.
-	self MoveR: ClassReg Aw: objectMemory freeStartAddress.
-	self CmpCq: 0 R: Extra0Reg.
+	self AddR: Extra1Reg R: Extra0Reg.
+	self AddR: Extra2Reg R: Extra0Reg.
+	self OrCq: 0 R: Extra0Reg.
+	self MoveR: Extra0Reg M64: 0 r: SendNumArgsReg.
+	self MoveAw: objectMemory freeStartAddress R: Extra0Reg.
+	self AddR: ClassReg R: Extra0Reg.
+	self MoveR: Extra0Reg Aw: objectMemory freeStartAddress.
+	self CmpCq: 0 R: SendNumArgsReg.
 	jump8 := self JumpNonZero: 0.
 	jump5 := self Jump: 0.
 	currentBlock := self Label.
 	jump8 jmpTarget: currentBlock.
-	self MoveR: Extra0Reg R: ClassReg.
-	self AddCq: 8 R: ClassReg.
-	self MoveMw: 24 r: SPReg R: Extra3Reg.
-	self LogicalShiftLeftCq: 3 R: Extra3Reg.
-	self MoveR: Extra3Reg Mw: 24 r: SPReg.
-	self MoveR: Extra0Reg R: SendNumArgsReg.
-	self MoveMw: 24 r: SPReg R: Extra3Reg.
-	self AddR: Extra3Reg R: SendNumArgsReg.
-	self AddCq: 8 R: SendNumArgsReg.
-	self SubCq: 1 R: SendNumArgsReg.
-	b690 := self Label.
-	self CmpR: ClassReg R: SendNumArgsReg.
-	jump8 := self JumpLess: 0.
+	self MoveR: SendNumArgsReg R: Extra0Reg.
+	self AddCq: 8 R: Extra0Reg.
 	self MoveMw: 16 r: SPReg R: Extra3Reg.
-	self MoveR: Extra3Reg M64: 0 r: ClassReg.
-	self MoveR: ClassReg R: Extra2Reg.
+	self LogicalShiftLeftCq: 3 R: Extra3Reg.
+	self MoveR: Extra3Reg Mw: 16 r: SPReg.
+	self MoveR: SendNumArgsReg R: ClassReg.
+	self MoveMw: 16 r: SPReg R: Extra3Reg.
+	self AddR: Extra3Reg R: ClassReg.
+	self AddCq: 8 R: ClassReg.
+	self SubCq: 1 R: ClassReg.
+	b690 := self Label.
+	self CmpR: Extra0Reg R: ClassReg.
+	jump8 := self JumpLess: 0.
+	self MoveMw: 8 r: SPReg R: Extra3Reg.
+	self MoveR: Extra3Reg M64: 0 r: Extra0Reg.
+	self MoveR: Extra0Reg R: Extra2Reg.
 	self AddCq: 8 R: Extra2Reg.
-	self MoveR: Extra2Reg R: ClassReg.
+	self MoveR: Extra2Reg R: Extra0Reg.
 	jump14 := self Jump: b690.
 	currentBlock := self Label.
 	jump8 jmpTarget: currentBlock.
 	s233 := 0.
-	self MoveR: Extra0Reg R: SendNumArgsReg.
 	self MoveCq: s233 R: ClassReg.
 	currentBlock := self Label.
 	jump3 jmpTarget: currentBlock.
@@ -6839,7 +6827,7 @@ DruidStaticTypePredictionJIT >> gen_PrimitiveNewWithArg [
 	self MoveR: SendNumArgsReg R: ReceiverResultReg.
 	self CmpCq: 0 R: ClassReg.
 	jump9 := self JumpNonZero: 0.
-	self AddCq: 32 R: SPReg.
+	self AddCq: 24 R: SPReg.
 	self genPrimReturn.
 	currentBlock := self Label.
 	jump6 jmpTarget: currentBlock.
@@ -6854,7 +6842,7 @@ DruidStaticTypePredictionJIT >> gen_PrimitiveNewWithArg [
 	jump2 jmpTarget: currentBlock.
 	jump13 jmpTarget: currentBlock.
 	jump5 jmpTarget: currentBlock.
-	self AddCq: 32 R: SPReg.
+	self AddCq: 24 R: SPReg.
 	^ 0
 ]
 
@@ -6988,8 +6976,9 @@ DruidStaticTypePredictionJIT >> gen_PrimitiveQuo [
 	self
 		DivR: SendNumArgsReg
 		R: ClassReg
-		Quo: ClassReg
-		Rem: SendNumArgsReg.
+		Quo: SendNumArgsReg
+		Rem: ClassReg.
+	self MoveR: SendNumArgsReg R: ClassReg.
 	jump6 := self Jump: 0.
 	currentBlock := self Label.
 	jump5 jmpTarget: currentBlock.
@@ -7019,11 +7008,11 @@ DruidStaticTypePredictionJIT >> gen_PrimitiveQuo [
 	self
 		DivR: SendNumArgsReg
 		R: Extra0Reg
-		Quo: SendNumArgsReg
-		Rem: Extra0Reg.
+		Quo: Extra0Reg
+		Rem: SendNumArgsReg.
 	s31 := 0.
-	self MoveCq: s31 R: Extra0Reg.
-	self SubR: SendNumArgsReg R: Extra0Reg.
+	self MoveCq: s31 R: SendNumArgsReg.
+	self SubR: Extra0Reg R: SendNumArgsReg.
 	jump5 := self Jump: 0.
 	currentBlock := self Label.
 	jump4 jmpTarget: currentBlock.
@@ -7036,10 +7025,12 @@ DruidStaticTypePredictionJIT >> gen_PrimitiveQuo [
 	self
 		DivR: ClassReg
 		R: Extra0Reg
-		Quo: Extra0Reg
-		Rem: ClassReg.
+		Quo: ClassReg
+		Rem: Extra0Reg.
+	self MoveR: ClassReg R: SendNumArgsReg.
 	currentBlock := self Label.
 	jump5 jmpTarget: currentBlock.
+	self MoveR: SendNumArgsReg R: Extra0Reg.
 	currentBlock := self Label.
 	jump6 jmpTarget: currentBlock.
 	self MoveR: Extra0Reg R: ClassReg.
@@ -11865,7 +11856,7 @@ DruidStaticTypePredictionJIT >> gen_ReturnTopFromBlock [
 		      ifNone: [ ^ self unknownBytecode ].
 	live := live bitOr: (self registerMaskFor: t0).
 	(self ssValue: 0) copyToReg: t0.
-	self ssPop: 1 popSpilled: true.
+	self ssPop: 1 popSpilled: false.
 	self MoveR: t0 R: ReceiverResultReg.
 	self genBlockReturn.
 	^ 0
@@ -11882,7 +11873,7 @@ DruidStaticTypePredictionJIT >> gen_ReturnTopFromMethod [
 		      ifNone: [ ^ self unknownBytecode ].
 	live := live bitOr: (self registerMaskFor: t0).
 	(self ssValue: 0) copyToReg: t0.
-	self ssPop: 1 popSpilled: true.
+	self ssPop: 1 popSpilled: false.
 	self MoveR: t0 R: ReceiverResultReg.
 	self genUpArrowReturn.
 	^ 0
@@ -11911,7 +11902,7 @@ DruidStaticTypePredictionJIT >> gen_SendLiteralSelector0ArgsBytecode0 [
 		genMarshalledSendNoPush: 0
 		numArgs: 0
 		sendTable: ordinarySendTrampolines.
-	self ssPop: 1 popSpilled: false.
+	self ssPop: 1 popSpilled: true.
 	self ssPushConstant: ReceiverResultReg.
 	^ 0
 ]
@@ -11927,7 +11918,7 @@ DruidStaticTypePredictionJIT >> gen_SendLiteralSelector0ArgsBytecode1 [
 		genMarshalledSendNoPush: 1
 		numArgs: 0
 		sendTable: ordinarySendTrampolines.
-	self ssPop: 1 popSpilled: false.
+	self ssPop: 1 popSpilled: true.
 	self ssPushConstant: ReceiverResultReg.
 	^ 0
 ]
@@ -11943,7 +11934,7 @@ DruidStaticTypePredictionJIT >> gen_SendLiteralSelector0ArgsBytecode10 [
 		genMarshalledSendNoPush: 10
 		numArgs: 0
 		sendTable: ordinarySendTrampolines.
-	self ssPop: 1 popSpilled: false.
+	self ssPop: 1 popSpilled: true.
 	self ssPushConstant: ReceiverResultReg.
 	^ 0
 ]
@@ -11959,7 +11950,7 @@ DruidStaticTypePredictionJIT >> gen_SendLiteralSelector0ArgsBytecode11 [
 		genMarshalledSendNoPush: 11
 		numArgs: 0
 		sendTable: ordinarySendTrampolines.
-	self ssPop: 1 popSpilled: false.
+	self ssPop: 1 popSpilled: true.
 	self ssPushConstant: ReceiverResultReg.
 	^ 0
 ]
@@ -11975,7 +11966,7 @@ DruidStaticTypePredictionJIT >> gen_SendLiteralSelector0ArgsBytecode12 [
 		genMarshalledSendNoPush: 12
 		numArgs: 0
 		sendTable: ordinarySendTrampolines.
-	self ssPop: 1 popSpilled: false.
+	self ssPop: 1 popSpilled: true.
 	self ssPushConstant: ReceiverResultReg.
 	^ 0
 ]
@@ -11991,7 +11982,7 @@ DruidStaticTypePredictionJIT >> gen_SendLiteralSelector0ArgsBytecode13 [
 		genMarshalledSendNoPush: 13
 		numArgs: 0
 		sendTable: ordinarySendTrampolines.
-	self ssPop: 1 popSpilled: false.
+	self ssPop: 1 popSpilled: true.
 	self ssPushConstant: ReceiverResultReg.
 	^ 0
 ]
@@ -12007,7 +11998,7 @@ DruidStaticTypePredictionJIT >> gen_SendLiteralSelector0ArgsBytecode14 [
 		genMarshalledSendNoPush: 14
 		numArgs: 0
 		sendTable: ordinarySendTrampolines.
-	self ssPop: 1 popSpilled: false.
+	self ssPop: 1 popSpilled: true.
 	self ssPushConstant: ReceiverResultReg.
 	^ 0
 ]
@@ -12023,7 +12014,7 @@ DruidStaticTypePredictionJIT >> gen_SendLiteralSelector0ArgsBytecode15 [
 		genMarshalledSendNoPush: 15
 		numArgs: 0
 		sendTable: ordinarySendTrampolines.
-	self ssPop: 1 popSpilled: false.
+	self ssPop: 1 popSpilled: true.
 	self ssPushConstant: ReceiverResultReg.
 	^ 0
 ]
@@ -12039,7 +12030,7 @@ DruidStaticTypePredictionJIT >> gen_SendLiteralSelector0ArgsBytecode2 [
 		genMarshalledSendNoPush: 2
 		numArgs: 0
 		sendTable: ordinarySendTrampolines.
-	self ssPop: 1 popSpilled: false.
+	self ssPop: 1 popSpilled: true.
 	self ssPushConstant: ReceiverResultReg.
 	^ 0
 ]
@@ -12055,7 +12046,7 @@ DruidStaticTypePredictionJIT >> gen_SendLiteralSelector0ArgsBytecode3 [
 		genMarshalledSendNoPush: 3
 		numArgs: 0
 		sendTable: ordinarySendTrampolines.
-	self ssPop: 1 popSpilled: false.
+	self ssPop: 1 popSpilled: true.
 	self ssPushConstant: ReceiverResultReg.
 	^ 0
 ]
@@ -12071,7 +12062,7 @@ DruidStaticTypePredictionJIT >> gen_SendLiteralSelector0ArgsBytecode4 [
 		genMarshalledSendNoPush: 4
 		numArgs: 0
 		sendTable: ordinarySendTrampolines.
-	self ssPop: 1 popSpilled: false.
+	self ssPop: 1 popSpilled: true.
 	self ssPushConstant: ReceiverResultReg.
 	^ 0
 ]
@@ -12087,7 +12078,7 @@ DruidStaticTypePredictionJIT >> gen_SendLiteralSelector0ArgsBytecode5 [
 		genMarshalledSendNoPush: 5
 		numArgs: 0
 		sendTable: ordinarySendTrampolines.
-	self ssPop: 1 popSpilled: false.
+	self ssPop: 1 popSpilled: true.
 	self ssPushConstant: ReceiverResultReg.
 	^ 0
 ]
@@ -12103,7 +12094,7 @@ DruidStaticTypePredictionJIT >> gen_SendLiteralSelector0ArgsBytecode6 [
 		genMarshalledSendNoPush: 6
 		numArgs: 0
 		sendTable: ordinarySendTrampolines.
-	self ssPop: 1 popSpilled: false.
+	self ssPop: 1 popSpilled: true.
 	self ssPushConstant: ReceiverResultReg.
 	^ 0
 ]
@@ -12119,7 +12110,7 @@ DruidStaticTypePredictionJIT >> gen_SendLiteralSelector0ArgsBytecode7 [
 		genMarshalledSendNoPush: 7
 		numArgs: 0
 		sendTable: ordinarySendTrampolines.
-	self ssPop: 1 popSpilled: false.
+	self ssPop: 1 popSpilled: true.
 	self ssPushConstant: ReceiverResultReg.
 	^ 0
 ]
@@ -12135,7 +12126,7 @@ DruidStaticTypePredictionJIT >> gen_SendLiteralSelector0ArgsBytecode8 [
 		genMarshalledSendNoPush: 8
 		numArgs: 0
 		sendTable: ordinarySendTrampolines.
-	self ssPop: 1 popSpilled: false.
+	self ssPop: 1 popSpilled: true.
 	self ssPushConstant: ReceiverResultReg.
 	^ 0
 ]
@@ -12151,7 +12142,7 @@ DruidStaticTypePredictionJIT >> gen_SendLiteralSelector0ArgsBytecode9 [
 		genMarshalledSendNoPush: 9
 		numArgs: 0
 		sendTable: ordinarySendTrampolines.
-	self ssPop: 1 popSpilled: false.
+	self ssPop: 1 popSpilled: true.
 	self ssPushConstant: ReceiverResultReg.
 	^ 0
 ]
@@ -12167,7 +12158,7 @@ DruidStaticTypePredictionJIT >> gen_SendLiteralSelector1ArgBytecode0 [
 		genMarshalledSendNoPush: 0
 		numArgs: 1
 		sendTable: ordinarySendTrampolines.
-	self ssPop: 2 popSpilled: false.
+	self ssPop: 2 popSpilled: true.
 	self ssPushConstant: ReceiverResultReg.
 	^ 0
 ]
@@ -12183,7 +12174,7 @@ DruidStaticTypePredictionJIT >> gen_SendLiteralSelector1ArgBytecode1 [
 		genMarshalledSendNoPush: 1
 		numArgs: 1
 		sendTable: ordinarySendTrampolines.
-	self ssPop: 2 popSpilled: false.
+	self ssPop: 2 popSpilled: true.
 	self ssPushConstant: ReceiverResultReg.
 	^ 0
 ]
@@ -12199,7 +12190,7 @@ DruidStaticTypePredictionJIT >> gen_SendLiteralSelector1ArgBytecode10 [
 		genMarshalledSendNoPush: 10
 		numArgs: 1
 		sendTable: ordinarySendTrampolines.
-	self ssPop: 2 popSpilled: false.
+	self ssPop: 2 popSpilled: true.
 	self ssPushConstant: ReceiverResultReg.
 	^ 0
 ]
@@ -12215,7 +12206,7 @@ DruidStaticTypePredictionJIT >> gen_SendLiteralSelector1ArgBytecode11 [
 		genMarshalledSendNoPush: 11
 		numArgs: 1
 		sendTable: ordinarySendTrampolines.
-	self ssPop: 2 popSpilled: false.
+	self ssPop: 2 popSpilled: true.
 	self ssPushConstant: ReceiverResultReg.
 	^ 0
 ]
@@ -12231,7 +12222,7 @@ DruidStaticTypePredictionJIT >> gen_SendLiteralSelector1ArgBytecode12 [
 		genMarshalledSendNoPush: 12
 		numArgs: 1
 		sendTable: ordinarySendTrampolines.
-	self ssPop: 2 popSpilled: false.
+	self ssPop: 2 popSpilled: true.
 	self ssPushConstant: ReceiverResultReg.
 	^ 0
 ]
@@ -12247,7 +12238,7 @@ DruidStaticTypePredictionJIT >> gen_SendLiteralSelector1ArgBytecode13 [
 		genMarshalledSendNoPush: 13
 		numArgs: 1
 		sendTable: ordinarySendTrampolines.
-	self ssPop: 2 popSpilled: false.
+	self ssPop: 2 popSpilled: true.
 	self ssPushConstant: ReceiverResultReg.
 	^ 0
 ]
@@ -12263,7 +12254,7 @@ DruidStaticTypePredictionJIT >> gen_SendLiteralSelector1ArgBytecode14 [
 		genMarshalledSendNoPush: 14
 		numArgs: 1
 		sendTable: ordinarySendTrampolines.
-	self ssPop: 2 popSpilled: false.
+	self ssPop: 2 popSpilled: true.
 	self ssPushConstant: ReceiverResultReg.
 	^ 0
 ]
@@ -12279,7 +12270,7 @@ DruidStaticTypePredictionJIT >> gen_SendLiteralSelector1ArgBytecode15 [
 		genMarshalledSendNoPush: 15
 		numArgs: 1
 		sendTable: ordinarySendTrampolines.
-	self ssPop: 2 popSpilled: false.
+	self ssPop: 2 popSpilled: true.
 	self ssPushConstant: ReceiverResultReg.
 	^ 0
 ]
@@ -12295,7 +12286,7 @@ DruidStaticTypePredictionJIT >> gen_SendLiteralSelector1ArgBytecode2 [
 		genMarshalledSendNoPush: 2
 		numArgs: 1
 		sendTable: ordinarySendTrampolines.
-	self ssPop: 2 popSpilled: false.
+	self ssPop: 2 popSpilled: true.
 	self ssPushConstant: ReceiverResultReg.
 	^ 0
 ]
@@ -12311,7 +12302,7 @@ DruidStaticTypePredictionJIT >> gen_SendLiteralSelector1ArgBytecode3 [
 		genMarshalledSendNoPush: 3
 		numArgs: 1
 		sendTable: ordinarySendTrampolines.
-	self ssPop: 2 popSpilled: false.
+	self ssPop: 2 popSpilled: true.
 	self ssPushConstant: ReceiverResultReg.
 	^ 0
 ]
@@ -12327,7 +12318,7 @@ DruidStaticTypePredictionJIT >> gen_SendLiteralSelector1ArgBytecode4 [
 		genMarshalledSendNoPush: 4
 		numArgs: 1
 		sendTable: ordinarySendTrampolines.
-	self ssPop: 2 popSpilled: false.
+	self ssPop: 2 popSpilled: true.
 	self ssPushConstant: ReceiverResultReg.
 	^ 0
 ]
@@ -12343,7 +12334,7 @@ DruidStaticTypePredictionJIT >> gen_SendLiteralSelector1ArgBytecode5 [
 		genMarshalledSendNoPush: 5
 		numArgs: 1
 		sendTable: ordinarySendTrampolines.
-	self ssPop: 2 popSpilled: false.
+	self ssPop: 2 popSpilled: true.
 	self ssPushConstant: ReceiverResultReg.
 	^ 0
 ]
@@ -12359,7 +12350,7 @@ DruidStaticTypePredictionJIT >> gen_SendLiteralSelector1ArgBytecode6 [
 		genMarshalledSendNoPush: 6
 		numArgs: 1
 		sendTable: ordinarySendTrampolines.
-	self ssPop: 2 popSpilled: false.
+	self ssPop: 2 popSpilled: true.
 	self ssPushConstant: ReceiverResultReg.
 	^ 0
 ]
@@ -12375,7 +12366,7 @@ DruidStaticTypePredictionJIT >> gen_SendLiteralSelector1ArgBytecode7 [
 		genMarshalledSendNoPush: 7
 		numArgs: 1
 		sendTable: ordinarySendTrampolines.
-	self ssPop: 2 popSpilled: false.
+	self ssPop: 2 popSpilled: true.
 	self ssPushConstant: ReceiverResultReg.
 	^ 0
 ]
@@ -12391,7 +12382,7 @@ DruidStaticTypePredictionJIT >> gen_SendLiteralSelector1ArgBytecode8 [
 		genMarshalledSendNoPush: 8
 		numArgs: 1
 		sendTable: ordinarySendTrampolines.
-	self ssPop: 2 popSpilled: false.
+	self ssPop: 2 popSpilled: true.
 	self ssPushConstant: ReceiverResultReg.
 	^ 0
 ]
@@ -12407,7 +12398,7 @@ DruidStaticTypePredictionJIT >> gen_SendLiteralSelector1ArgBytecode9 [
 		genMarshalledSendNoPush: 9
 		numArgs: 1
 		sendTable: ordinarySendTrampolines.
-	self ssPop: 2 popSpilled: false.
+	self ssPop: 2 popSpilled: true.
 	self ssPushConstant: ReceiverResultReg.
 	^ 0
 ]
@@ -12423,7 +12414,7 @@ DruidStaticTypePredictionJIT >> gen_SendLiteralSelector2ArgsBytecode0 [
 		genMarshalledSendNoPush: 0
 		numArgs: 2
 		sendTable: ordinarySendTrampolines.
-	self ssPop: 3 popSpilled: false.
+	self ssPop: 3 popSpilled: true.
 	self ssPushConstant: ReceiverResultReg.
 	^ 0
 ]
@@ -12439,7 +12430,7 @@ DruidStaticTypePredictionJIT >> gen_SendLiteralSelector2ArgsBytecode1 [
 		genMarshalledSendNoPush: 1
 		numArgs: 2
 		sendTable: ordinarySendTrampolines.
-	self ssPop: 3 popSpilled: false.
+	self ssPop: 3 popSpilled: true.
 	self ssPushConstant: ReceiverResultReg.
 	^ 0
 ]
@@ -12455,7 +12446,7 @@ DruidStaticTypePredictionJIT >> gen_SendLiteralSelector2ArgsBytecode10 [
 		genMarshalledSendNoPush: 10
 		numArgs: 2
 		sendTable: ordinarySendTrampolines.
-	self ssPop: 3 popSpilled: false.
+	self ssPop: 3 popSpilled: true.
 	self ssPushConstant: ReceiverResultReg.
 	^ 0
 ]
@@ -12471,7 +12462,7 @@ DruidStaticTypePredictionJIT >> gen_SendLiteralSelector2ArgsBytecode11 [
 		genMarshalledSendNoPush: 11
 		numArgs: 2
 		sendTable: ordinarySendTrampolines.
-	self ssPop: 3 popSpilled: false.
+	self ssPop: 3 popSpilled: true.
 	self ssPushConstant: ReceiverResultReg.
 	^ 0
 ]
@@ -12487,7 +12478,7 @@ DruidStaticTypePredictionJIT >> gen_SendLiteralSelector2ArgsBytecode12 [
 		genMarshalledSendNoPush: 12
 		numArgs: 2
 		sendTable: ordinarySendTrampolines.
-	self ssPop: 3 popSpilled: false.
+	self ssPop: 3 popSpilled: true.
 	self ssPushConstant: ReceiverResultReg.
 	^ 0
 ]
@@ -12503,7 +12494,7 @@ DruidStaticTypePredictionJIT >> gen_SendLiteralSelector2ArgsBytecode13 [
 		genMarshalledSendNoPush: 13
 		numArgs: 2
 		sendTable: ordinarySendTrampolines.
-	self ssPop: 3 popSpilled: false.
+	self ssPop: 3 popSpilled: true.
 	self ssPushConstant: ReceiverResultReg.
 	^ 0
 ]
@@ -12519,7 +12510,7 @@ DruidStaticTypePredictionJIT >> gen_SendLiteralSelector2ArgsBytecode14 [
 		genMarshalledSendNoPush: 14
 		numArgs: 2
 		sendTable: ordinarySendTrampolines.
-	self ssPop: 3 popSpilled: false.
+	self ssPop: 3 popSpilled: true.
 	self ssPushConstant: ReceiverResultReg.
 	^ 0
 ]
@@ -12535,7 +12526,7 @@ DruidStaticTypePredictionJIT >> gen_SendLiteralSelector2ArgsBytecode15 [
 		genMarshalledSendNoPush: 15
 		numArgs: 2
 		sendTable: ordinarySendTrampolines.
-	self ssPop: 3 popSpilled: false.
+	self ssPop: 3 popSpilled: true.
 	self ssPushConstant: ReceiverResultReg.
 	^ 0
 ]
@@ -12551,7 +12542,7 @@ DruidStaticTypePredictionJIT >> gen_SendLiteralSelector2ArgsBytecode2 [
 		genMarshalledSendNoPush: 2
 		numArgs: 2
 		sendTable: ordinarySendTrampolines.
-	self ssPop: 3 popSpilled: false.
+	self ssPop: 3 popSpilled: true.
 	self ssPushConstant: ReceiverResultReg.
 	^ 0
 ]
@@ -12567,7 +12558,7 @@ DruidStaticTypePredictionJIT >> gen_SendLiteralSelector2ArgsBytecode3 [
 		genMarshalledSendNoPush: 3
 		numArgs: 2
 		sendTable: ordinarySendTrampolines.
-	self ssPop: 3 popSpilled: false.
+	self ssPop: 3 popSpilled: true.
 	self ssPushConstant: ReceiverResultReg.
 	^ 0
 ]
@@ -12583,7 +12574,7 @@ DruidStaticTypePredictionJIT >> gen_SendLiteralSelector2ArgsBytecode4 [
 		genMarshalledSendNoPush: 4
 		numArgs: 2
 		sendTable: ordinarySendTrampolines.
-	self ssPop: 3 popSpilled: false.
+	self ssPop: 3 popSpilled: true.
 	self ssPushConstant: ReceiverResultReg.
 	^ 0
 ]
@@ -12599,7 +12590,7 @@ DruidStaticTypePredictionJIT >> gen_SendLiteralSelector2ArgsBytecode5 [
 		genMarshalledSendNoPush: 5
 		numArgs: 2
 		sendTable: ordinarySendTrampolines.
-	self ssPop: 3 popSpilled: false.
+	self ssPop: 3 popSpilled: true.
 	self ssPushConstant: ReceiverResultReg.
 	^ 0
 ]
@@ -12615,7 +12606,7 @@ DruidStaticTypePredictionJIT >> gen_SendLiteralSelector2ArgsBytecode6 [
 		genMarshalledSendNoPush: 6
 		numArgs: 2
 		sendTable: ordinarySendTrampolines.
-	self ssPop: 3 popSpilled: false.
+	self ssPop: 3 popSpilled: true.
 	self ssPushConstant: ReceiverResultReg.
 	^ 0
 ]
@@ -12631,7 +12622,7 @@ DruidStaticTypePredictionJIT >> gen_SendLiteralSelector2ArgsBytecode7 [
 		genMarshalledSendNoPush: 7
 		numArgs: 2
 		sendTable: ordinarySendTrampolines.
-	self ssPop: 3 popSpilled: false.
+	self ssPop: 3 popSpilled: true.
 	self ssPushConstant: ReceiverResultReg.
 	^ 0
 ]
@@ -12647,7 +12638,7 @@ DruidStaticTypePredictionJIT >> gen_SendLiteralSelector2ArgsBytecode8 [
 		genMarshalledSendNoPush: 8
 		numArgs: 2
 		sendTable: ordinarySendTrampolines.
-	self ssPop: 3 popSpilled: false.
+	self ssPop: 3 popSpilled: true.
 	self ssPushConstant: ReceiverResultReg.
 	^ 0
 ]
@@ -12663,7 +12654,7 @@ DruidStaticTypePredictionJIT >> gen_SendLiteralSelector2ArgsBytecode9 [
 		genMarshalledSendNoPush: 9
 		numArgs: 2
 		sendTable: ordinarySendTrampolines.
-	self ssPop: 3 popSpilled: false.
+	self ssPop: 3 popSpilled: true.
 	self ssPushConstant: ReceiverResultReg.
 	^ 0
 ]
@@ -12680,7 +12671,7 @@ DruidStaticTypePredictionJIT >> gen_ShortConditionalJumpFalse0 [
 		      ifNone: [ ^ self unknownBytecode ].
 	live := live bitOr: (self registerMaskFor: t0).
 	(self ssValue: 0) copyToReg: t0.
-	self ssPop: 1 popSpilled: true.
+	self ssPop: 1 popSpilled: false.
 	s5 := objectMemory falseObject.
 	self ssFlushStack.
 	self CmpCq: s5 R: t0.
@@ -12719,7 +12710,7 @@ DruidStaticTypePredictionJIT >> gen_ShortConditionalJumpFalse1 [
 		      ifNone: [ ^ self unknownBytecode ].
 	live := live bitOr: (self registerMaskFor: t0).
 	(self ssValue: 0) copyToReg: t0.
-	self ssPop: 1 popSpilled: true.
+	self ssPop: 1 popSpilled: false.
 	s5 := objectMemory falseObject.
 	self ssFlushStack.
 	self CmpCq: s5 R: t0.
@@ -12758,7 +12749,7 @@ DruidStaticTypePredictionJIT >> gen_ShortConditionalJumpFalse2 [
 		      ifNone: [ ^ self unknownBytecode ].
 	live := live bitOr: (self registerMaskFor: t0).
 	(self ssValue: 0) copyToReg: t0.
-	self ssPop: 1 popSpilled: true.
+	self ssPop: 1 popSpilled: false.
 	s5 := objectMemory falseObject.
 	self ssFlushStack.
 	self CmpCq: s5 R: t0.
@@ -12797,7 +12788,7 @@ DruidStaticTypePredictionJIT >> gen_ShortConditionalJumpFalse3 [
 		      ifNone: [ ^ self unknownBytecode ].
 	live := live bitOr: (self registerMaskFor: t0).
 	(self ssValue: 0) copyToReg: t0.
-	self ssPop: 1 popSpilled: true.
+	self ssPop: 1 popSpilled: false.
 	s5 := objectMemory falseObject.
 	self ssFlushStack.
 	self CmpCq: s5 R: t0.
@@ -12836,7 +12827,7 @@ DruidStaticTypePredictionJIT >> gen_ShortConditionalJumpFalse4 [
 		      ifNone: [ ^ self unknownBytecode ].
 	live := live bitOr: (self registerMaskFor: t0).
 	(self ssValue: 0) copyToReg: t0.
-	self ssPop: 1 popSpilled: true.
+	self ssPop: 1 popSpilled: false.
 	s5 := objectMemory falseObject.
 	self ssFlushStack.
 	self CmpCq: s5 R: t0.
@@ -12875,7 +12866,7 @@ DruidStaticTypePredictionJIT >> gen_ShortConditionalJumpFalse5 [
 		      ifNone: [ ^ self unknownBytecode ].
 	live := live bitOr: (self registerMaskFor: t0).
 	(self ssValue: 0) copyToReg: t0.
-	self ssPop: 1 popSpilled: true.
+	self ssPop: 1 popSpilled: false.
 	s5 := objectMemory falseObject.
 	self ssFlushStack.
 	self CmpCq: s5 R: t0.
@@ -12914,7 +12905,7 @@ DruidStaticTypePredictionJIT >> gen_ShortConditionalJumpFalse6 [
 		      ifNone: [ ^ self unknownBytecode ].
 	live := live bitOr: (self registerMaskFor: t0).
 	(self ssValue: 0) copyToReg: t0.
-	self ssPop: 1 popSpilled: true.
+	self ssPop: 1 popSpilled: false.
 	s5 := objectMemory falseObject.
 	self ssFlushStack.
 	self CmpCq: s5 R: t0.
@@ -12953,7 +12944,7 @@ DruidStaticTypePredictionJIT >> gen_ShortConditionalJumpFalse7 [
 		      ifNone: [ ^ self unknownBytecode ].
 	live := live bitOr: (self registerMaskFor: t0).
 	(self ssValue: 0) copyToReg: t0.
-	self ssPop: 1 popSpilled: true.
+	self ssPop: 1 popSpilled: false.
 	s5 := objectMemory falseObject.
 	self ssFlushStack.
 	self CmpCq: s5 R: t0.
@@ -12992,7 +12983,7 @@ DruidStaticTypePredictionJIT >> gen_ShortConditionalJumpTrue0 [
 		      ifNone: [ ^ self unknownBytecode ].
 	live := live bitOr: (self registerMaskFor: t0).
 	(self ssValue: 0) copyToReg: t0.
-	self ssPop: 1 popSpilled: true.
+	self ssPop: 1 popSpilled: false.
 	s5 := objectMemory trueObject.
 	self ssFlushStack.
 	self CmpCq: s5 R: t0.
@@ -13031,7 +13022,7 @@ DruidStaticTypePredictionJIT >> gen_ShortConditionalJumpTrue1 [
 		      ifNone: [ ^ self unknownBytecode ].
 	live := live bitOr: (self registerMaskFor: t0).
 	(self ssValue: 0) copyToReg: t0.
-	self ssPop: 1 popSpilled: true.
+	self ssPop: 1 popSpilled: false.
 	s5 := objectMemory trueObject.
 	self ssFlushStack.
 	self CmpCq: s5 R: t0.
@@ -13070,7 +13061,7 @@ DruidStaticTypePredictionJIT >> gen_ShortConditionalJumpTrue2 [
 		      ifNone: [ ^ self unknownBytecode ].
 	live := live bitOr: (self registerMaskFor: t0).
 	(self ssValue: 0) copyToReg: t0.
-	self ssPop: 1 popSpilled: true.
+	self ssPop: 1 popSpilled: false.
 	s5 := objectMemory trueObject.
 	self ssFlushStack.
 	self CmpCq: s5 R: t0.
@@ -13109,7 +13100,7 @@ DruidStaticTypePredictionJIT >> gen_ShortConditionalJumpTrue3 [
 		      ifNone: [ ^ self unknownBytecode ].
 	live := live bitOr: (self registerMaskFor: t0).
 	(self ssValue: 0) copyToReg: t0.
-	self ssPop: 1 popSpilled: true.
+	self ssPop: 1 popSpilled: false.
 	s5 := objectMemory trueObject.
 	self ssFlushStack.
 	self CmpCq: s5 R: t0.
@@ -13148,7 +13139,7 @@ DruidStaticTypePredictionJIT >> gen_ShortConditionalJumpTrue4 [
 		      ifNone: [ ^ self unknownBytecode ].
 	live := live bitOr: (self registerMaskFor: t0).
 	(self ssValue: 0) copyToReg: t0.
-	self ssPop: 1 popSpilled: true.
+	self ssPop: 1 popSpilled: false.
 	s5 := objectMemory trueObject.
 	self ssFlushStack.
 	self CmpCq: s5 R: t0.
@@ -13187,7 +13178,7 @@ DruidStaticTypePredictionJIT >> gen_ShortConditionalJumpTrue5 [
 		      ifNone: [ ^ self unknownBytecode ].
 	live := live bitOr: (self registerMaskFor: t0).
 	(self ssValue: 0) copyToReg: t0.
-	self ssPop: 1 popSpilled: true.
+	self ssPop: 1 popSpilled: false.
 	s5 := objectMemory trueObject.
 	self ssFlushStack.
 	self CmpCq: s5 R: t0.
@@ -13226,7 +13217,7 @@ DruidStaticTypePredictionJIT >> gen_ShortConditionalJumpTrue6 [
 		      ifNone: [ ^ self unknownBytecode ].
 	live := live bitOr: (self registerMaskFor: t0).
 	(self ssValue: 0) copyToReg: t0.
-	self ssPop: 1 popSpilled: true.
+	self ssPop: 1 popSpilled: false.
 	s5 := objectMemory trueObject.
 	self ssFlushStack.
 	self CmpCq: s5 R: t0.
@@ -13265,7 +13256,7 @@ DruidStaticTypePredictionJIT >> gen_ShortConditionalJumpTrue7 [
 		      ifNone: [ ^ self unknownBytecode ].
 	live := live bitOr: (self registerMaskFor: t0).
 	(self ssValue: 0) copyToReg: t0.
-	self ssPop: 1 popSpilled: true.
+	self ssPop: 1 popSpilled: false.
 	s5 := objectMemory trueObject.
 	self ssFlushStack.
 	self CmpCq: s5 R: t0.
@@ -13437,7 +13428,7 @@ DruidStaticTypePredictionJIT >> gen_StoreAndPopReceiverVariableBytecode0 [
 	deadCode := false.
 	currentBlock := self Label.
 	jump1 jmpTarget: currentBlock.
-	self ssPop: 1 popSpilled: true.
+	self ssPop: 1 popSpilled: false.
 	self MoveR: t0 R: t2.
 	self AndCq: 7 R: t2.
 	self CmpCq: 0 R: t2.
@@ -13569,7 +13560,7 @@ DruidStaticTypePredictionJIT >> gen_StoreAndPopReceiverVariableBytecode1 [
 	deadCode := false.
 	currentBlock := self Label.
 	jump1 jmpTarget: currentBlock.
-	self ssPop: 1 popSpilled: true.
+	self ssPop: 1 popSpilled: false.
 	self MoveR: t0 R: t2.
 	self AndCq: 7 R: t2.
 	self CmpCq: 0 R: t2.
@@ -13701,7 +13692,7 @@ DruidStaticTypePredictionJIT >> gen_StoreAndPopReceiverVariableBytecode2 [
 	deadCode := false.
 	currentBlock := self Label.
 	jump1 jmpTarget: currentBlock.
-	self ssPop: 1 popSpilled: true.
+	self ssPop: 1 popSpilled: false.
 	self MoveR: t0 R: t2.
 	self AndCq: 7 R: t2.
 	self CmpCq: 0 R: t2.
@@ -13833,7 +13824,7 @@ DruidStaticTypePredictionJIT >> gen_StoreAndPopReceiverVariableBytecode3 [
 	deadCode := false.
 	currentBlock := self Label.
 	jump1 jmpTarget: currentBlock.
-	self ssPop: 1 popSpilled: true.
+	self ssPop: 1 popSpilled: false.
 	self MoveR: t0 R: t2.
 	self AndCq: 7 R: t2.
 	self CmpCq: 0 R: t2.
@@ -13965,7 +13956,7 @@ DruidStaticTypePredictionJIT >> gen_StoreAndPopReceiverVariableBytecode4 [
 	deadCode := false.
 	currentBlock := self Label.
 	jump1 jmpTarget: currentBlock.
-	self ssPop: 1 popSpilled: true.
+	self ssPop: 1 popSpilled: false.
 	self MoveR: t0 R: t2.
 	self AndCq: 7 R: t2.
 	self CmpCq: 0 R: t2.
@@ -14097,7 +14088,7 @@ DruidStaticTypePredictionJIT >> gen_StoreAndPopReceiverVariableBytecode5 [
 	deadCode := false.
 	currentBlock := self Label.
 	jump1 jmpTarget: currentBlock.
-	self ssPop: 1 popSpilled: true.
+	self ssPop: 1 popSpilled: false.
 	self MoveR: t0 R: t2.
 	self AndCq: 7 R: t2.
 	self CmpCq: 0 R: t2.
@@ -14229,7 +14220,7 @@ DruidStaticTypePredictionJIT >> gen_StoreAndPopReceiverVariableBytecode6 [
 	deadCode := false.
 	currentBlock := self Label.
 	jump1 jmpTarget: currentBlock.
-	self ssPop: 1 popSpilled: true.
+	self ssPop: 1 popSpilled: false.
 	self MoveR: t0 R: t2.
 	self AndCq: 7 R: t2.
 	self CmpCq: 0 R: t2.
@@ -14361,7 +14352,7 @@ DruidStaticTypePredictionJIT >> gen_StoreAndPopReceiverVariableBytecode7 [
 	deadCode := false.
 	currentBlock := self Label.
 	jump1 jmpTarget: currentBlock.
-	self ssPop: 1 popSpilled: true.
+	self ssPop: 1 popSpilled: false.
 	self MoveR: t0 R: t2.
 	self AndCq: 7 R: t2.
 	self CmpCq: 0 R: t2.
@@ -14597,7 +14588,7 @@ DruidStaticTypePredictionJIT >> gen_StoreAndPopRemoteTempLongBytecode [
 		s80 := s4 << 3.
 		self AddCq: s80 R: t0.
 		self MoveR: t1 M64: 8 r: t0.
-		self ssPop: 1 popSpilled: true.
+		self ssPop: 1 popSpilled: false.
 		^ 0 ].
 	(self ssValue: 0) copyToReg: t1.
 	self MoveR: t0 R: t2.
@@ -14685,7 +14676,7 @@ DruidStaticTypePredictionJIT >> gen_StoreAndPopRemoteTempLongBytecode [
 	s80 := s4 << 3.
 	self AddCq: s80 R: t0.
 	self MoveR: t1 M64: 8 r: t0.
-	self ssPop: 1 popSpilled: true.
+	self ssPop: 1 popSpilled: false.
 	^ 0
 ]
 
@@ -14702,7 +14693,7 @@ DruidStaticTypePredictionJIT >> gen_StoreAndPopTemporaryVariableBytecode0 [
 	(self ssValue: 0) copyToReg: t0.
 	self ssFlushUpThroughTemporaryVariable: 0.
 	self MoveR: t0 Mw: (self frameOffsetOfTemporary: 0) r: FPReg.
-	self ssPop: 1 popSpilled: true.
+	self ssPop: 1 popSpilled: false.
 	^ 0
 ]
 
@@ -14719,7 +14710,7 @@ DruidStaticTypePredictionJIT >> gen_StoreAndPopTemporaryVariableBytecode1 [
 	(self ssValue: 0) copyToReg: t0.
 	self ssFlushUpThroughTemporaryVariable: 1.
 	self MoveR: t0 Mw: (self frameOffsetOfTemporary: 1) r: FPReg.
-	self ssPop: 1 popSpilled: true.
+	self ssPop: 1 popSpilled: false.
 	^ 0
 ]
 
@@ -14736,7 +14727,7 @@ DruidStaticTypePredictionJIT >> gen_StoreAndPopTemporaryVariableBytecode2 [
 	(self ssValue: 0) copyToReg: t0.
 	self ssFlushUpThroughTemporaryVariable: 2.
 	self MoveR: t0 Mw: (self frameOffsetOfTemporary: 2) r: FPReg.
-	self ssPop: 1 popSpilled: true.
+	self ssPop: 1 popSpilled: false.
 	^ 0
 ]
 
@@ -14753,7 +14744,7 @@ DruidStaticTypePredictionJIT >> gen_StoreAndPopTemporaryVariableBytecode3 [
 	(self ssValue: 0) copyToReg: t0.
 	self ssFlushUpThroughTemporaryVariable: 3.
 	self MoveR: t0 Mw: (self frameOffsetOfTemporary: 3) r: FPReg.
-	self ssPop: 1 popSpilled: true.
+	self ssPop: 1 popSpilled: false.
 	^ 0
 ]
 
@@ -14770,7 +14761,7 @@ DruidStaticTypePredictionJIT >> gen_StoreAndPopTemporaryVariableBytecode4 [
 	(self ssValue: 0) copyToReg: t0.
 	self ssFlushUpThroughTemporaryVariable: 4.
 	self MoveR: t0 Mw: (self frameOffsetOfTemporary: 4) r: FPReg.
-	self ssPop: 1 popSpilled: true.
+	self ssPop: 1 popSpilled: false.
 	^ 0
 ]
 
@@ -14787,7 +14778,7 @@ DruidStaticTypePredictionJIT >> gen_StoreAndPopTemporaryVariableBytecode5 [
 	(self ssValue: 0) copyToReg: t0.
 	self ssFlushUpThroughTemporaryVariable: 5.
 	self MoveR: t0 Mw: (self frameOffsetOfTemporary: 5) r: FPReg.
-	self ssPop: 1 popSpilled: true.
+	self ssPop: 1 popSpilled: false.
 	^ 0
 ]
 
@@ -14804,7 +14795,7 @@ DruidStaticTypePredictionJIT >> gen_StoreAndPopTemporaryVariableBytecode6 [
 	(self ssValue: 0) copyToReg: t0.
 	self ssFlushUpThroughTemporaryVariable: 6.
 	self MoveR: t0 Mw: (self frameOffsetOfTemporary: 6) r: FPReg.
-	self ssPop: 1 popSpilled: true.
+	self ssPop: 1 popSpilled: false.
 	^ 0
 ]
 
@@ -14821,7 +14812,7 @@ DruidStaticTypePredictionJIT >> gen_StoreAndPopTemporaryVariableBytecode7 [
 	(self ssValue: 0) copyToReg: t0.
 	self ssFlushUpThroughTemporaryVariable: 7.
 	self MoveR: t0 Mw: (self frameOffsetOfTemporary: 7) r: FPReg.
-	self ssPop: 1 popSpilled: true.
+	self ssPop: 1 popSpilled: false.
 	^ 0
 ]
 
