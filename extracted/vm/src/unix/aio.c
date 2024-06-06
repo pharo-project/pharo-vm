@@ -81,11 +81,6 @@ void AioUnixDescriptor_remove(int fd);
 void AioUnixDescriptor_removeAll();
 
 /*
- * This is descriptor epoll uses in the poll of the events.
- */
-int epollDescriptor = -1;
-
-/*
  * This is important, the AIO poll should only do a long pause if there is no pending signals for semaphores.
  * Check ExternalSemaphores to understand this function.
  */
@@ -114,7 +109,6 @@ void
 aioInit(void)
 {
 	int arg;
-	struct epoll_event ev;
 	
 	interruptFIFOMutex = platform_semaphore_new(1);
 
@@ -133,20 +127,6 @@ aioInit(void)
 	if (fcntl(signal_pipe_fd[1], F_SETFL, arg | O_NONBLOCK | O_ASYNC | O_APPEND) < 0)
 		logErrorFromErrno("fcntl(F_SETFL, O_ASYNC)");
 
-	epollDescriptor = epoll_create1(0);
-	if (epollDescriptor == -1) {
-		logErrorFromErrno("epoll_create1");
-		exit(-1);
-	}
-
-	ev.events = EPOLLIN;
-	ev.data.ptr = NULL;
-	
-	if (epoll_ctl(epollDescriptor, EPOLL_CTL_ADD, signal_pipe_fd[0], &ev) == -1) {
-		logErrorFromErrno("epoll_ctl: signal_pipe_fd[0]");
-		exit(-1);
-	}
-
 	signal(SIGIO, sigIOHandler);
 }
 
@@ -154,12 +134,7 @@ aioInit(void)
 
 void 
 aioFini(void)
-{
-	if(epollDescriptor != -1){
-		close(epollDescriptor);
-		epollDescriptor = -1;
-	}
-	
+{	
 	AioUnixDescriptor_removeAll();
 	signal(SIGIO, SIG_DFL);
 }
@@ -234,6 +209,96 @@ aioPoll(long microSeconds){
 	return aio_handle_events(timeout);
 }
 
+static int addFDToEPoll(int epollDescriptor, int fd, int events, void* userData){
+	struct epoll_event ev;
+	ev.events = events;
+	ev.data.ptr = userData;
+	
+	if (epoll_ctl(epollDescriptor, EPOLL_CTL_ADD, fd, &ev) == -1) {
+		logError("Error adding FD %d to Epoll", fd);
+		logErrorFromErrno("epoll_ctl");
+		return -1;
+	}
+
+	return 0;
+}
+
+static int fillEPollDescriptor(){
+
+	int epollDescriptor = epoll_create1(0);
+
+	if (epollDescriptor == -1) {
+		logErrorFromErrno("epoll_create1");
+		return -1;
+	}
+
+	if(addFDToEPoll(epollDescriptor, signal_pipe_fd[0], EPOLLIN, NULL) == -1){
+		logError("Error adding Pipe FD");
+
+		if(epollDescriptor != -1){
+			close(epollDescriptor);
+			epollDescriptor = -1;
+		}
+		return -1;
+	}
+
+	AioUnixDescriptor* descriptor = descriptorList;
+
+	while(descriptor){
+		int hasRead = (descriptor->mask & AIO_R) == AIO_R;
+		int hasWrite = (descriptor->mask & AIO_W) == AIO_W;
+		int hasExceptions = (descriptor->mask & AIO_X) == AIO_X;
+
+		int events = 0;
+		events |= hasRead ? (EPOLLIN | EPOLLRDHUP) : 0;
+		events |= hasWrite ? (EPOLLOUT | EPOLLRDHUP) : 0;
+		events |= hasExceptions ? (EPOLLERR | EPOLLRDHUP) : 0;
+
+		if(addFDToEPoll(epollDescriptor, descriptor->fd, events, descriptor) == -1){
+			if(epollDescriptor != -1){
+				close(epollDescriptor);
+				epollDescriptor = -1;
+			}
+
+			return -1;
+		}
+
+		descriptor = descriptor->next;
+	}
+
+	return epollDescriptor;
+}
+
+EXPORT(int) aioFDWritable(int fd){
+
+	int epollDescriptor;
+	int isWritable = 0;
+	int epollReturn = 0;
+	struct epoll_event incomingEvents[1];
+
+
+	epollDescriptor = epoll_create1(0);
+	if (epollDescriptor == -1) {
+		logErrorFromErrno("epoll_create1");
+		return isWritable;
+	}
+
+	if(addFDToEPoll(epollDescriptor, fd, EPOLLOUT, NULL) == -1){
+		if(epollDescriptor != -1){
+			close(epollDescriptor);
+		}
+		return isWritable;
+	}
+
+	epollReturn = epoll_wait(epollDescriptor, incomingEvents, 1, 0);
+
+	if(epollDescriptor != -1){
+		close(epollDescriptor);
+	}
+
+	return (incomingEvents[0].events & EPOLLOUT) == EPOLLOUT;
+}
+
 static int
 aio_handle_events(long microSecondsTimeout){
 
@@ -241,6 +306,8 @@ aio_handle_events(long microSecondsTimeout){
 	int epollReturn;
 	int withError = 0;
 	AioUnixDescriptor* triggeredDescriptor;
+
+	int epollDescriptor = -1;
 
 	long milliSecondsTimeout = microSecondsTimeout / 1000;
 
@@ -250,7 +317,14 @@ aio_handle_events(long microSecondsTimeout){
 	sqLowLevelMFence();
 	isPooling = 1;
 
+	epollDescriptor = fillEPollDescriptor();
+		
 	epollReturn = epoll_wait(epollDescriptor, incomingEvents, INCOMING_EVENTS_SIZE, milliSecondsTimeout);
+
+	if(epollDescriptor != -1){
+		close(epollDescriptor);
+		epollDescriptor = -1;
+	}
 
 	sqLowLevelMFence();
 	isPooling = 0;
@@ -279,13 +353,8 @@ aio_handle_events(long microSecondsTimeout){
 		if(incomingEvents[index].data.ptr != NULL){
 			triggeredDescriptor = (AioUnixDescriptor*) incomingEvents[index].data.ptr;
 
-			// Clearing the mask, and removing the signaled descriptor from the list, aioHandle will re add it
+			// Clearing the mask aioHandle will re add it
 			triggeredDescriptor->mask = 0;
-			logTrace("Removing events of FD: %d", (int) triggeredDescriptor->fd);
-			if (epoll_ctl(epollDescriptor, EPOLL_CTL_DEL, triggeredDescriptor->fd, NULL) == -1) {
-				logError("Error removing FD: %d", (int) triggeredDescriptor->fd);
-				logErrorFromErrno("epoll_ctl");
-			}
 			
 			if((incomingEvents[index].events & EPOLLERR) == EPOLLERR){
 				withError = AIO_X;
@@ -401,36 +470,18 @@ void
 aioHandle(int fd, aioHandler handlerFn, int mask)
 {
 	AioUnixDescriptor *descriptor = AioUnixDescriptor_find(fd);
-	int previousMask;
 
 	if(descriptor == NULL){
 		logWarn("Enabling a FD that is not present: %d - IGNORING", fd);
 		return;
 	}
 
-	struct epoll_event ev;
 	int hasRead = (mask & AIO_R) == AIO_R;
 	int hasWrite = (mask & AIO_W) == AIO_W;
-	int hasExceptions = (mask & AIO_X) == AIO_X;
 
 	descriptor->readHandlerFn = hasRead ? handlerFn : NULL;
 	descriptor->writeHandlerFn = hasWrite ? handlerFn : NULL;
-	previousMask = descriptor->mask;
 	descriptor->mask = mask;
-	
-	ev.data.ptr = descriptor;
-	ev.events = 0;
-	ev.events |= hasRead ? (EPOLLIN | EPOLLRDHUP) : 0;
-	ev.events |= hasWrite ? (EPOLLOUT | EPOLLRDHUP) : 0;
-	ev.events |= hasExceptions ? (EPOLLERR | EPOLLRDHUP) : 0;
-
-	logTrace("Handling FD: %d mask: %d events: %d", (int) descriptor->fd, (int) descriptor->mask, (int) ev.events);
-	
-	// If we already have it in the epoll, we just update it
-	if (epoll_ctl(epollDescriptor, previousMask == 0 ? EPOLL_CTL_ADD: EPOLL_CTL_MOD, descriptor->fd, &ev) == -1) {
-		logError("Error adding FD: %d", (int) descriptor->fd);
-		logErrorFromErrno("epoll_ctl: add");
-	}	
 }
 
 
@@ -451,7 +502,6 @@ aioSuspend(int fd, int maskToSuspend)
 		return;
 	}
 	
-	struct epoll_event ev;
 	int hasRead = (maskToSuspend & AIO_R) == AIO_R;
 	int hasWrite = (maskToSuspend & AIO_W) == AIO_W;
 	int hasExceptions = (maskToSuspend & AIO_X) == AIO_X;
@@ -469,27 +519,6 @@ aioSuspend(int fd, int maskToSuspend)
 	if(hasExceptions){
 		descriptor->mask &= ~AIO_X;
 	}
-	
-	ev.data.ptr = descriptor;
-	ev.events = 0;
-	ev.events |= (descriptor->mask & AIO_R) == AIO_R ? (EPOLLIN | EPOLLRDHUP) : 0;
-	ev.events |= (descriptor->mask & AIO_W) == AIO_W ? (EPOLLOUT | EPOLLRDHUP) : 0;
-	ev.events |= (descriptor->mask & AIO_X) == AIO_X ? (EPOLLERR | EPOLLRDHUP) : 0;
-	
-	logTrace("Suspending FD: %d mask: %d events: %d", (int) descriptor->fd, (int) descriptor->mask, (int) ev.events);
-	
-	if(ev.events == 0){
-		if (epoll_ctl(epollDescriptor, EPOLL_CTL_DEL, descriptor->fd, NULL) == -1) {
-			logError("Error removing all suspended FD: %d", (int) descriptor->fd);
-			logErrorFromErrno("epoll_ctl: del");
-		}
-		return;
-	}
-	
-	if (epoll_ctl(epollDescriptor, EPOLL_CTL_MOD, descriptor->fd, &ev) == -1) {
-		logError("Error modifying FD: %d", (int) descriptor->fd);
-		logErrorFromErrno("epoll_ctl: mod");
-	}	
 }
 
 
@@ -498,13 +527,6 @@ aioSuspend(int fd, int maskToSuspend)
 void 
 aioDisable(int fd)
 {
-	if (epoll_ctl(epollDescriptor, EPOLL_CTL_DEL, fd, NULL) == -1) {
-		// The FD maybe does not exist anymore, so we are ignoring this issue
-		if(errno != EBADF){
-			logError("Error removing all suspended FD: %d", fd);
-			logErrorFromErrno("epoll_ctl: del");
-		}
-	}
 	AioUnixDescriptor_remove(fd);
 }
 

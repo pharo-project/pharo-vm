@@ -446,13 +446,7 @@ static int socketReadable(int s, int type)
 
 static int socketWritable(int s)
 {
-  struct timeval tv= { 0, 0 };
-  fd_set fds;
-  
-  FD_ZERO(&fds);
-  FD_SET(s, &fds);
-
-  return select(s+1, 0, &fds, 0, &tv) > 0;
+	return aioFDWritable(s);
 }
 
 /* answer the error condition on the given socket */

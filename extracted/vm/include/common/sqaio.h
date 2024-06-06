@@ -101,6 +101,8 @@ EXPORT(void) aioInterruptPoll();
  */
 EXPORT(void) aioWaitIfInPoll();
 
+EXPORT(int) aioFDWritable(int s);
+
 
 /* debugging stuff. */
 #ifdef AIO_DEBUG
