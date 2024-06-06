@@ -544,7 +544,7 @@ EXPORT(int) aioFDWritable(int fd){
 		return 0;
 	}
 
-	WSAEventSelect(fd, hEvent[0], FD_WRITE);
+	WSAEventSelect(fd, event, FD_WRITE);
 
 	returnValue = WaitForSingleObject(event, 0);
 	WSACloseEvent(event);
