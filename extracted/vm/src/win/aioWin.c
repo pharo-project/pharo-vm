@@ -532,3 +532,22 @@ EXPORT(void) aioInterruptPoll(){
 	SetEvent(interruptEvent);
 }
 
+EXPORT(int) aioFDWritable(int fd){
+	HANDLE event;
+	DWORD returnValue;
+
+	event = WSACreateEvent();
+
+	if(event == WSA_INVALID_EVENT){
+		int lastError = WSAGetLastError();
+		logError("Error WSACreateEvent READ: %ld", lastError);
+		return 0;
+	}
+
+	WSAEventSelect(fd, hEvent[0], FD_WRITE);
+
+	returnValue = WaitForSingleObject(event, 0);
+	WSACloseEvent(event);
+
+	return returnValue == WAIT_OBJECT_0;
+}

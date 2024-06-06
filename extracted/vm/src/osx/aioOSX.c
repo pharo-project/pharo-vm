@@ -445,3 +445,27 @@ void AioOSXDescriptor_remove(int fd){
 	}
 
 }
+
+EXPORT(int) aioFDWritable(int fd){
+	struct kevent incomingEvents[1];
+	int keventReturn;
+	struct timespec timeout;
+	int kFD;
+	struct kevent change;
+
+	if((kFD = kqueue()) < 0) {
+		logErrorFromErrno("kqueue");
+		return 0;
+	}
+
+	EV_SET(&change, fd, EVFILT_WRITE, EV_ADD | EV_ONESHOT, 0, 0, NULL);
+
+	timeout.tv_nsec = 0;
+	timeout.tv_sec = 0;
+	keventReturn = kevent(kFD, &change, 1, incomingEvents, 1, &timeout);
+
+	if(kFD != -1)
+		close(kFD);
+
+	return keventReturn == 1;
+}
