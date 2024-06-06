@@ -764,7 +764,7 @@ static sqInt (*makePointwithxValueyValue)(sqInt xValue, sqInt yValue);
 static sqInt (*methodArgumentCount)(void);
 static sqInt (*nilObject)(void);
 static sqInt (*pop)(sqInt nItems);
-static sqInt (*popthenPush)(sqInt nItems, sqInt oop);
+static void (*popthenPush)(sqInt nItems, sqInt oop);
 static sqInt (*popRemappableOop)(void);
 static sqInt (*positive32BitIntegerFor)(unsigned int integerValue);
 static usqInt (*positive32BitValueOf)(sqInt oop);
@@ -772,7 +772,7 @@ static sqInt (*primitiveFail)(void);
 static sqInt (*primitiveFailFor)(sqInt reasonCode);
 static sqInt (*pushBool)(sqInt trueOrFalse);
 static sqInt (*pushInteger)(sqInt integerValue);
-static sqInt (*pushRemappableOop)(sqInt oop);
+static void (*pushRemappableOop)(sqInt oop);
 static sqInt (*slotSizeOf)(sqInt oop);
 static sqInt (*stackIntegerValue)(sqInt offset);
 static sqInt (*stackObjectValue)(sqInt offset);
@@ -813,7 +813,7 @@ extern sqInt makePointwithxValueyValue(sqInt xValue, sqInt yValue);
 extern sqInt methodArgumentCount(void);
 extern sqInt nilObject(void);
 extern sqInt pop(sqInt nItems);
-extern sqInt popthenPush(sqInt nItems, sqInt oop);
+extern void popthenPush(sqInt nItems, sqInt oop);
 extern sqInt popRemappableOop(void);
 extern sqInt positive32BitIntegerFor(unsigned int integerValue);
 extern usqInt positive32BitValueOf(sqInt oop);
@@ -821,7 +821,7 @@ extern sqInt primitiveFail(void);
 extern sqInt primitiveFailFor(sqInt reasonCode);
 extern sqInt pushBool(sqInt trueOrFalse);
 extern sqInt pushInteger(sqInt integerValue);
-extern sqInt pushRemappableOop(sqInt oop);
+extern void pushRemappableOop(sqInt oop);
 extern sqInt slotSizeOf(sqInt oop);
 extern sqInt stackIntegerValue(sqInt offset);
 extern sqInt stackObjectValue(sqInt offset);
@@ -13643,6 +13643,7 @@ stepToNextWideBezierInat(sqInt bezier, sqInt yValue)
 		updateData[GBUpdateY] = lastY;
 		updateData[GBUpdateDX] = fwDx;
 		updateData[GBUpdateDY] = fwDy;
+		((signed)lastX >> 8);
 	}
 	else {
 
@@ -13672,6 +13673,7 @@ stepToNextWideBezierInat(sqInt bezier, sqInt yValue)
 	updateData1[GBUpdateY] = lastY1;
 	updateData1[GBUpdateDX] = fwDx1;
 	updateData1[GBUpdateDY] = fwDy1;
+	((signed)lastX1 >> 8);
 	computeFinalWideBezierValueswidth(bezier, lineWidth);
 	return 0;
 }

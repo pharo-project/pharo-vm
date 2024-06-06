@@ -277,13 +277,13 @@ static sqInt (*methodArgumentCount)(void);
 static sqInt (*methodReturnValue)(sqInt oop);
 static sqInt (*nilObject)(void);
 static sqInt (*pop)(sqInt nItems);
-static sqInt (*popthenPush)(sqInt nItems, sqInt oop);
+static void (*popthenPush)(sqInt nItems, sqInt oop);
 static sqInt (*popRemappableOop)(void);
 static sqInt (*primitiveFail)(void);
 static sqInt (*primitiveFailFor)(sqInt reasonCode);
-static sqInt (*push)(sqInt object);
+static void (*push)(sqInt object);
 static sqInt (*pushInteger)(sqInt integerValue);
-static sqInt (*pushRemappableOop)(sqInt oop);
+static void (*pushRemappableOop)(sqInt oop);
 static sqInt (*signalSemaphoreWithIndex)(sqInt semaIndex);
 static sqInt (*sizeOfSTArrayFromCPrimitive)(void *cPtr);
 static sqInt (*stObjectatput)(sqInt array, sqInt index, sqInt value);
@@ -315,13 +315,13 @@ extern sqInt methodArgumentCount(void);
 extern sqInt methodReturnValue(sqInt oop);
 extern sqInt nilObject(void);
 extern sqInt pop(sqInt nItems);
-extern sqInt popthenPush(sqInt nItems, sqInt oop);
+extern void popthenPush(sqInt nItems, sqInt oop);
 extern sqInt popRemappableOop(void);
 extern sqInt primitiveFail(void);
 extern sqInt primitiveFailFor(sqInt reasonCode);
-extern sqInt push(sqInt object);
+extern void push(sqInt object);
 extern sqInt pushInteger(sqInt integerValue);
-extern sqInt pushRemappableOop(sqInt oop);
+extern void pushRemappableOop(sqInt oop);
 extern sqInt signalSemaphoreWithIndex(sqInt semaIndex);
 extern sqInt sizeOfSTArrayFromCPrimitive(void *cPtr);
 extern sqInt stObjectatput(sqInt array, sqInt index, sqInt value);
@@ -1187,7 +1187,9 @@ getStdHandle(sqInt n)
 		return primitiveFailFor(PrimErrNoMemory);
 	}
 	memcpy(firstIndexableField(fileOop), &fileRecords[n], sizeof(SQFile));
-	return popthenPush(1, fileOop);
+	popthenPush(1, fileOop);
+
+	return fileOop;
 }
 
 	/* OSProcessPlugin>>#getThisSessionIdentifier */
@@ -4287,7 +4289,6 @@ reapChildProcess(int sigNum)
 	}
 }
 
-
 /*	Signal sigNum has been caught by a thread other than the pthread in which
 	the interpreter is executing. Rather than handling it in this thread,
 	resend it to the interpreter thread. */
@@ -4431,6 +4432,14 @@ setInterpreter(struct VirtualMachine *anInterpreter)
 	return ok;
 }
 
+#  if defined(SA_NOCLDSTOP)
+/* This wrapper is used to handle the new signature of the function */
+
+static void 
+reapChildProcessWrapper(int sigNum, struct __siginfo * sigInfo, void * userData){
+	reapChildProcess(sigNum);
+}
+# endif
 
 /*	Set the SIGCHLD signal handler in the virtual machine. */
 
@@ -4442,7 +4451,7 @@ setSigChldHandler(void)
 
 	
 #  if defined(SA_NOCLDSTOP)
-	sigchldHandlerAction.sa_sigaction = reapChildProcess;
+	sigchldHandlerAction.sa_sigaction = reapChildProcessWrapper;
 	sigchldHandlerAction.sa_flags = SA_NODEFER | SA_NOCLDSTOP;
 	if (needSigaltstack()) {
 		sigchldHandlerAction.sa_flags |= SA_ONSTACK;
