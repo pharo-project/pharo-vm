@@ -3693,10 +3693,10 @@ StackToRegisterMappingCogit >> numRegArgs [
 
 { #category : #'simulation stack' }
 StackToRegisterMappingCogit >> numberOfSpillsInTopNItems: n [
-	simStackPtr to: simStackPtr - n by: -1 do:
-		[:i| (self simStackAt: i) spilled ifTrue:
-			[^n - (simStackPtr - i)]].
-	^0
+
+	simStackPtr to: simStackPtr - n + 1 by: -1 do: [ :i |
+		(self simStackAt: i) spilled ifTrue: [ ^ n - (simStackPtr - i) ] ].
+	^ 0
 ]
 
 { #category : #trampolines }
