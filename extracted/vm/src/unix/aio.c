@@ -269,11 +269,6 @@ static int fillEPollDescriptor(){
 	return epollDescriptor;
 }
 
-EXPORT(int) aioFDWritable(int fd){
-	// We can assume we can always write. If there is a problem the send/sendto will return EAWOULDBLOCK and we will use the event mechanism.
-	return 1;
-}
-
 static int
 aio_handle_events(long microSecondsTimeout){
 

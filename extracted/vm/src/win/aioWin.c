@@ -531,12 +531,3 @@ EXPORT(long) aioPoll(long microSeconds){
 EXPORT(void) aioInterruptPoll(){
 	SetEvent(interruptEvent);
 }
-
-EXPORT(int) aioFDWritable(int fd){
-
-/*
-	In Windows, we should assume the socket are always writable and then handle the issue with WSAEWOULDBLOCK error.
-	Once the write fails, it is registered and the socket will be written when it will not block.
-*/
-	return 1;
-}
