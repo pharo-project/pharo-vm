@@ -4510,13 +4510,14 @@ StackToRegisterMappingCogit >> ssUnspillStackSlots: n startingAt: start [
 		self error: 'Cannot unspill slots if slots above are spilled' ].
 
 	numberOfSpilledSlots := 0.
-	start to: n - 1 do: [ :stackIndex |
+	start to: start + n - 1 do: [ :stackIndex |
 		| stackSlot |
 		stackSlot := self ssValue: stackIndex.
 		stackSlot spilled ifTrue: [
 			numberOfSpilledSlots := numberOfSpilledSlots + 1.
 			stackSlot type: SSBaseOffset.
-			stackSlot spilled: false ] ].
+			stackSlot spilled: false.
+			simSpillBase := simStackPtr - stackIndex ] ].
 
 	"Check how many elements to pop from the stack have been spilled.
 	If no stack slot is spilled, do not generate a pop instruction."

@@ -250,6 +250,35 @@ VMStackToRegisterMappingTest >> testTopOfEmptyIsSimSelf [
 ]
 
 { #category : #tests }
+VMStackToRegisterMappingTest >> testUnspillAtNextToTop [
+
+	cogit ssPushRegister: TempReg.
+	cogit ssPushRegister: ReceiverResultReg.
+	cogit ssFlushStack.
+
+	[
+	cogit ssUnspillStackSlotAt: 1.
+	self fail ]
+		on: Error
+		do: [ :e |
+			self
+				assert: e messageText
+				equals: 'Cannot unspill slots if slots above are spilled' ]
+]
+
+{ #category : #tests }
+VMStackToRegisterMappingTest >> testUnspillAtTop [
+
+	cogit ssPushRegister: TempReg.
+	cogit ssPushRegister: ReceiverResultReg.
+	cogit ssFlushStack.
+	
+	cogit ssUnspillStackSlotAt: 0.
+
+	self deny: (cogit ssValue: 0) spilled
+]
+
+{ #category : #tests }
 VMStackToRegisterMappingTest >> testUnspillManySlots [
 
 	cogit ssPushRegister: TempReg.
@@ -305,6 +334,19 @@ VMStackToRegisterMappingTest >> testUnspillSpilledGeneratesPop [
 	self executePrimitiveWithReceiver: 17.
 	
 	self assert: machineSimulator receiverRegisterValue equals: 1
+]
+
+{ #category : #tests }
+VMStackToRegisterMappingTest >> testUnspillTwoByIndex [
+
+	cogit ssPushRegister: TempReg.
+	cogit ssPushRegister: ReceiverResultReg.
+	cogit ssFlushStack.
+	
+	cogit ssUnspillStackSlotAt: 0.
+	cogit ssUnspillStackSlotAt: 1.
+
+	self deny: (cogit ssValue: 1) spilled
 ]
 
 { #category : #tests }
