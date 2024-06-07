@@ -533,21 +533,10 @@ EXPORT(void) aioInterruptPoll(){
 }
 
 EXPORT(int) aioFDWritable(int fd){
-	HANDLE event;
-	DWORD returnValue;
 
-	event = WSACreateEvent();
-
-	if(event == WSA_INVALID_EVENT){
-		int lastError = WSAGetLastError();
-		logError("Error WSACreateEvent READ: %ld", lastError);
-		return 0;
-	}
-
-	WSAEventSelect(fd, event, FD_WRITE);
-
-	returnValue = WaitForSingleObject(event, 0);
-	WSACloseEvent(event);
-
-	return returnValue == WAIT_OBJECT_0;
+/*
+	In Windows, we should assume the socket are always writable and then handle the issue with WSAEWOULDBLOCK error.
+	Once the write fails, it is registered and the socket will be written when it will not block.
+*/
+	return 1;
 }
