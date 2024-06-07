@@ -270,33 +270,8 @@ static int fillEPollDescriptor(){
 }
 
 EXPORT(int) aioFDWritable(int fd){
-
-	int epollDescriptor;
-	int isWritable = 0;
-	int epollReturn = 0;
-	struct epoll_event incomingEvents[1];
-
-
-	epollDescriptor = epoll_create1(0);
-	if (epollDescriptor == -1) {
-		logErrorFromErrno("epoll_create1");
-		return isWritable;
-	}
-
-	if(addFDToEPoll(epollDescriptor, fd, EPOLLOUT, NULL) == -1){
-		if(epollDescriptor != -1){
-			close(epollDescriptor);
-		}
-		return isWritable;
-	}
-
-	epollReturn = epoll_wait(epollDescriptor, incomingEvents, 1, 0);
-
-	if(epollDescriptor != -1){
-		close(epollDescriptor);
-	}
-
-	return (incomingEvents[0].events & EPOLLOUT) == EPOLLOUT;
+	// We can assume we can always write. If there is a problem the send/sendto will return EAWOULDBLOCK and we will use the event mechanism.
+	return 1;
 }
 
 static int
