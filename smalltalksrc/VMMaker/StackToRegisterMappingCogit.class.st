@@ -3474,16 +3474,10 @@ StackToRegisterMappingCogit >> marshallSendArguments: numArgs [
 	 the receiver to ReceiverResultReg."
 
 	self marshallSendArgumentsNoPush: numArgs.
-	numArgs > self numRegArgs
-		ifTrue: [ "Pop from the stack, so that subsequent compilation in this unit make as if they were popped.
-			However, but do not discard the entries in the runtime stack (do not generate pops).
-			It's the callee responsibility of popping them."
-			^ self ssPop: numArgs + 1 popSpilled: false ]
-		ifFalse: [ "Pop from the stack, so that subsequent compilation in this unit make as if they were popped.
-			Here, DO discard the entries in the runtime stack.
-			The calling convention dictates that in this case all receiver/args pass through registers and no stack is involved.
-			If we don't pop from the runtime stack, it will get desynchronised"
-			self ssPop: numArgs + 1 ]
+
+	"Pop from the abstract stack, so that subsequent compilation in this unit make as if they were popped.
+	The previous line already discarded the entries in the runtime stack if necesary."
+	self ssPop: numArgs + 1 popSpilled: false
 ]
 
 { #category : #'simulation stack' }
