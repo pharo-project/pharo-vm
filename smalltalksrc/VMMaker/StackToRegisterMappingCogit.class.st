@@ -3537,7 +3537,8 @@ StackToRegisterMappingCogit >> marshallSendArgumentsNoPush: numArgs [
 				ReceiverResultReg.
 
 			"Pop the spilled stack slots at runtime. Do not touch the abstract stack, it will be managed by the caller"
-			self AddCq: numSpilled * objectMemory wordSize R: SPReg ]
+			numSpilled > 0 ifTrue: [
+				self AddCq: numSpilled * objectMemory wordSize R: SPReg ] ]
 ]
 
 { #category : #'compile abstract instructions' }
