@@ -4506,9 +4506,9 @@ StackToRegisterMappingCogit >> ssUnspillStackSlots: n startingAt: start [
 	self assert: (simStackPtr - n >= methodOrBlockNumTemps or: [
 			 needsFrame not and: [ simStackPtr - n >= 0 ] ]).
 
-	simSpillBase - 1 > (simStackPtr - start) ifTrue: [
+"	simSpillBase - 1 > (simStackPtr - start) ifTrue: [
 		self error: 'Cannot unspill slots if slots above are spilled' ].
-
+"
 	numberOfSpilledSlots := 0.
 	start to: start + n - 1 do: [ :stackIndex |
 		| stackSlot |
