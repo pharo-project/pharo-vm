@@ -2870,7 +2870,6 @@ SpurMemoryManager >> byteFormatMask [
 { #category : #'object access' }
 SpurMemoryManager >> byteSizeOf: oop [
 	<api>
-	<returnTypeC: #sqInt>
 	(self isImmediate: oop) ifTrue: [^0].
 	^self numBytesOf: oop
 ]
@@ -12119,7 +12118,6 @@ SpurMemoryManager >> slidingCompactionShouldRemapObj: objOop [
 
 { #category : #'object access' }
 SpurMemoryManager >> slotSizeOf: oop [
-	<returnTypeC: #sqInt>
 	"*DO NOT CONFUSE THIS WITH numSlotsOf:.
 	 This is an ObjectMemory compatibility method with questionable semantics.
 	 Answers the number of slots in the receiver.

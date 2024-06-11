@@ -39,7 +39,6 @@ VMPluginCodeGenerator >> collectAndCheckInterpreterProxyInterfaceFor: selectors 
 	objectMemoryClass := self referenceObjectMemoryClass.
 	^selectors collect:
 		[:selector| | reference actual |
-		self haltIf: [ selector = #byteSizeOf: ].
 		reference := self compileToTMethodSelector: selector
 						in: ((interpreterClass whichClassIncludesSelector: selector) ifNil:
 							[(objectMemoryClass whichClassIncludesSelector: selector) ifNil:
