@@ -3497,7 +3497,6 @@ StackToRegisterMappingCogit >> marshallSendArgumentsNoPush: numArgs [
 
 	| numSpilled |
 	self ssFlushStackExceptTop: numArgs + 1.
-	numSpilled := self numberOfSpillsInTopNItems: numArgs + 1.
 	numArgs > self numRegArgs
 		ifTrue: [ "If there are no spills and no references to ReceiverResultReg
 			 the fetch of ReceiverResultReg from the stack can be avoided
@@ -3506,6 +3505,7 @@ StackToRegisterMappingCogit >> marshallSendArgumentsNoPush: numArgs [
 			anyRefs := self
 				           anyReferencesToRegister: ReceiverResultReg
 				           inTopNItems: numArgs + 1.
+			numSpilled := self numberOfSpillsInTopNItems: numArgs + 1.
 			(numSpilled > 0 or: [ anyRefs ])
 				ifTrue: [
 					self ssFlushStack.
@@ -3527,7 +3527,8 @@ StackToRegisterMappingCogit >> marshallSendArgumentsNoPush: numArgs [
 						self ssAllocateRequiredReg: Arg1Reg upThrough: simStackPtr - 1 ]
 					ifFalse: [
 					self ssAllocateRequiredReg: Arg0Reg upThrough: simStackPtr - 1 ] ].
-
+			"Must compute spill items here, because the previous ssAllocateReg could spill more elements"
+			numSpilled := self numberOfSpillsInTopNItems: numArgs + 1.
 			(self numRegArgs > 1 and: [ numArgs > 1 ]) ifTrue: [
 				(self simStackAt: simStackPtr) copyToReg: Arg1Reg ].
 
@@ -4523,6 +4524,7 @@ StackToRegisterMappingCogit >> ssUnspillStackSlots: n startingAt: start [
 	"Check how many elements to pop from the stack have been spilled.
 	If no stack slot is spilled, do not generate a pop instruction."
 	numberOfSpilledSlots > 0 ifTrue: [
+		1halt.
 		self AddCq: numberOfSpilledSlots * objectMemory wordSize R: SPReg ].
 	self updateSimSpillBase
 ]
