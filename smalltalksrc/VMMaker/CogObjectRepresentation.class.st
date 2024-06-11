@@ -873,6 +873,25 @@ CogObjectRepresentation >> genPrimitiveFloatSubtract [
 ]
 
 { #category : #'primitive generators' }
+CogObjectRepresentation >> genPrimitiveFormat [
+
+	| jumpIsImm primitiveFailure |
+	"Only works for the receiver for now"
+	cogit methodNumArgs > 0 ifTrue: [ ^ UnimplementedPrimitive ].
+
+	jumpIsImm := self genJumpImmediate: ReceiverResultReg.
+	
+	"Now the primitive cannot fail we can directly work on the ReceiverResultReg"
+	self genGetFormatOf: ReceiverResultReg into: ReceiverResultReg.
+	self genConvertIntegerToSmallIntegerInReg: ReceiverResultReg.
+	cogit genPrimReturn.
+	
+	primitiveFailure := cogit Label.
+	jumpIsImm jmpTarget: primitiveFailure.
+	^CompletePrimitive 
+]
+
+{ #category : #'primitive generators' }
 CogObjectRepresentation >> genPrimitiveFullClosureValue [
 	"Defer to the cogit for this one, to match the split for genPrimitiveClosureValue."
 	<doNotGenerate>
