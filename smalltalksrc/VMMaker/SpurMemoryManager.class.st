@@ -2870,6 +2870,7 @@ SpurMemoryManager >> byteFormatMask [
 { #category : #'object access' }
 SpurMemoryManager >> byteSizeOf: oop [
 	<api>
+	<returnTypeC: #sqInt>
 	(self isImmediate: oop) ifTrue: [^0].
 	^self numBytesOf: oop
 ]
@@ -12123,6 +12124,7 @@ SpurMemoryManager >> slotSizeOf: oop [
 	 Answers the number of slots in the receiver.
 	 If the receiver is a byte object, return the number of bytes.
 	 Otherwise return the number of words."
+	<returnTypeC: #sqInt>
 	(self isImmediate: oop) ifTrue: [^0].
 	^self lengthOf: oop
 ]
