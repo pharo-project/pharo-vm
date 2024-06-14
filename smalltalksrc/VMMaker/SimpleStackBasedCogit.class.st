@@ -1183,6 +1183,7 @@ SimpleStackBasedCogit >> genExtJumpIfTrue [
 { #category : #'bytecode generators' }
 SimpleStackBasedCogit >> genExtNopBytecode [
 	"SistaV1:		 91		01011011'		Nop"
+	<returnTypeC: #sqInt>
 	extA := numExtB := extB := 0.
 	^0
 ]
