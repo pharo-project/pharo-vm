@@ -1,6 +1,7 @@
 # Change log
 
-## What's Changed
+## v10.2.1
+
 * Adding the missing tty.c file in the packaging. by @tesonep in https://github.com/pharo-project/pharo-vm/pull/771
 * Do not allow comparing objects of different types by @guillep in https://github.com/pharo-project/pharo-vm/pull/772
 * Prepare release 10.2.1 by @guillep in https://github.com/pharo-project/pharo-vm/pull/773
