@@ -1863,6 +1863,7 @@ StackToRegisterMappingCogit >> genJumpIf: boolean to: targetBytecodePC [
 
 { #category : #'bytecode generator support' }
 StackToRegisterMappingCogit >> genJumpTo: targetBytecodePC [
+	<returnTypeC: #sqInt>
 	| eventualTarget generator fixup |
 	eventualTarget := self eventualTargetOf: targetBytecodePC.
 	(eventualTarget > bytecodePC
