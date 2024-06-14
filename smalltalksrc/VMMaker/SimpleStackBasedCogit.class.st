@@ -1102,6 +1102,7 @@ SimpleStackBasedCogit >> fullBlockNoContextSwitchEntryOffset [
 { #category : #'bytecode generators' }
 SimpleStackBasedCogit >> genBlockReturn [
 	"Return from block, assuming result already loaded into ReceiverResultReg."
+	<returnTypeC: #sqInt>
 	needsFrame ifTrue:
 		[self MoveR: FPReg R: SPReg.
 		 self PopR: FPReg.
