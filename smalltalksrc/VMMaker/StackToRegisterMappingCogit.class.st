@@ -2072,6 +2072,7 @@ StackToRegisterMappingCogit >> genPICMissTrampolineFor: numArgs [
 
 { #category : #'bytecode generators' }
 StackToRegisterMappingCogit >> genPopStackBytecode [
+	<returnTypeC: #sqInt>
 	self ssTop spilled ifTrue:
 		[self AddCq: objectMemory wordSize R: SPReg].
 	self ssPop: 1.
@@ -2976,7 +2977,7 @@ StackToRegisterMappingCogit >> genStorePop: popBoolean RemoteTemp: slotIndex At:
 { #category : #'bytecode generator stores' }
 StackToRegisterMappingCogit >> genStorePop: popBoolean TemporaryVariable: tempIndex [
 	<inline: false>
-	<returntypeC: #sqInt>
+	<returnTypeC: #sqInt>
 	| reg |
 	self ssFlushUpThroughTemporaryVariable: tempIndex.
 	reg := self ssStorePop: popBoolean toPreferredReg: TempReg.
