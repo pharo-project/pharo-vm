@@ -6291,6 +6291,7 @@ Cogit >> expectedClosedPICPrototype: cPIC [
 
 { #category : #'bytecode generators' }
 Cogit >> extABytecode [
+	<returnTypec: #sqInt>
 	"224		11100000	aaaaaaaa	Extend A (Ext A = Ext A prev * 256 + Ext A)"
 	extA := (extA bitShift: 8) + byte1.
 	^0
@@ -6298,6 +6299,7 @@ Cogit >> extABytecode [
 
 { #category : #'bytecode generators' }
 Cogit >> extBBytecode [
+	<returnTypeC: #sqInt>
 	"225		11100001	sbbbbbbb	Extend B (Ext B = Ext B prev * 256 + Ext B)"
 	extB := (numExtB = 0 and: [byte1 > 127])
 				ifTrue: [byte1 - 256]
