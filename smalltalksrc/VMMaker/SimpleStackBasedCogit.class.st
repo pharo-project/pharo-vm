@@ -2726,6 +2726,7 @@ SimpleStackBasedCogit >> genStorePop: popBoolean RemoteTemp: slotIndex At: remot
 { #category : #'bytecode generator support' }
 SimpleStackBasedCogit >> genStorePop: popBoolean TemporaryVariable: tempIndex [
 	<inline: false>
+	<returnTypeC: #sqInt>
 	popBoolean
 		ifTrue: [self PopR: TempReg]
 		ifFalse: [self MoveMw: 0 r: SPReg R: TempReg].
