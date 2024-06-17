@@ -2465,8 +2465,15 @@ StackToRegisterMappingCogit >> genReturnTopFromMethod [
 
 { #category : #'bytecode generator support' }
 StackToRegisterMappingCogit >> genSend: selectorIndex numArgs: numArgs [
-	self marshallSendArguments: numArgs.
-	^self genMarshalledSend: selectorIndex numArgs: numArgs sendTable: ordinarySendTrampolines
+
+	self marshallSendArgumentsNoPush: numArgs. "Pop from the abstract stack, so that subsequent compilation in this unit make as if they were popped.
+	The previous line already discarded the entries in the runtime stack if necesary."
+	self ssPop: numArgs + 1 popSpilled: false.
+	self
+		genMarshalledSendNoPush: selectorIndex
+		numArgs: numArgs
+		sendTable: ordinarySendTrampolines.
+	^ self ssPushRegister: ReceiverResultReg
 ]
 
 { #category : #'bytecode generator support' }
