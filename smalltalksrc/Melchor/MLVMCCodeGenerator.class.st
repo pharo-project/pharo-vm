@@ -296,7 +296,7 @@ MLVMCCodeGenerator >> emitGlobalCVariablesOn: aStream [
 MLVMCCodeGenerator >> harmonizeInteger: constantIntegers in: aSetOfTypes [
 	"decide if the element in constantIntegers will be treated as signed or unsigned"
 
-	aSetOfTypes add: #usqInt
+	aSetOfTypes add: #sqInt
 ]
 
 { #category : #'C code generator' }
