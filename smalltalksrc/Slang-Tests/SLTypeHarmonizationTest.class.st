@@ -243,35 +243,35 @@ SLTypeHarmonizationTest >> testHarmonizedLonglongPtr [
 	
 ]
 
+{ #category : #harmonizeOneType }
+SLTypeHarmonizationTest >> testHarmonizedNumber [
+	| result |
+	types add: 7.
+	result := ccg harmonizeReturnTypesIn: types.
+	self assert: result equals: (Set new add: #sqInt ; yourself ).
+	
+	
+]
+
 { #category : #harmonizeTwoType }
-SLTypeHarmonizationTest >> testHarmonizedNumberAndAnythingChanged [
-	"return anything"
+SLTypeHarmonizationTest >> testHarmonizedNumberAndAnything [
+	"doesn't harmonize and produce a notification"
 	| result |
 	types add: 7.
 	types add: #anything.
 	result := ccg harmonizeReturnTypesIn: types.
-	self assert: result equals: (Set new add: #anything ; add: #usqInt ; yourself ).
-	
-	
-]
-
-{ #category : #harmonizeOneType }
-SLTypeHarmonizationTest >> testHarmonizedNumberChanged [
-	| result |
-	types add: 7.
-	result := ccg harmonizeReturnTypesIn: types.
-	self assert: result equals: (Set new add: #usqInt ; yourself ).
+	self assert: result equals: (Set new add: #anything ; add: #sqInt ; yourself ).
 	
 	
 ]
 
 { #category : #harmonizeTwoType }
-SLTypeHarmonizationTest >> testHarmonizedNumbersChanged [
+SLTypeHarmonizationTest >> testHarmonizedNumbers [
 	| result |
 	types add: 7.
 	types add: 8.
 	result := ccg harmonizeReturnTypesIn: types.
-	self assert: result equals: (Set new add: #usqInt ; yourself ).
+	self assert: result equals: (Set new add: #sqInt ; yourself ).
 	
 	
 ]
