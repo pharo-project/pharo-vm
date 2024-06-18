@@ -11,7 +11,7 @@
 
 /* InterpreterProxy methodsFor: 'stack access' */
 sqInt  pop(sqInt nItems);
-sqInt  popthenPush(sqInt nItems, sqInt oop);
+void  popthenPush(sqInt nItems, sqInt oop);
 void   push(sqInt object);
 sqInt  pushBool(sqInt trueOrFalse);
 void   pushFloat(double f);
@@ -127,7 +127,7 @@ sqInt clone(sqInt oop);
 sqInt instantiateClassindexableSize(sqInt classPointer, sqInt size);
 sqInt makePointwithxValueyValue(sqInt xValue, sqInt yValue);
 sqInt popRemappableOop(void);
-sqInt pushRemappableOop(sqInt oop);
+void pushRemappableOop(sqInt oop);
 
 
 /* InterpreterProxy methodsFor: 'other' */
@@ -168,7 +168,7 @@ sqInt signalNoResume(sqInt);
 sqInt isImmediate(sqInt oop);
 sqInt isCharacterObject(sqInt oop);
 sqInt isCharacterValue(int charCode);
-sqInt characterObjectOf(int charCode);
+sqInt characterObjectOf(sqInt charCode);
 sqInt characterValueOf(sqInt oop);
 sqInt isPinned(sqInt objOop);
 sqInt pinObject(sqInt objOop);

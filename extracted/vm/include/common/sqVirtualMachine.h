@@ -30,6 +30,8 @@
 
 #include "sqMemoryAccess.h"
 
+#include "pharovm/semaphores/pSemaphore.h"
+
 #if VM_PROXY_MINOR > 8
 # define PrimNoErr 0
 # define PrimErrGenericFailure 1
@@ -47,8 +49,6 @@
 # define PrimErrNamedInternal 13
 # define PrimErrObjectMayMove 14
 
-/* VMCallbackContext opaque type avoids all including setjmp.h & vmCallback.h */
-typedef struct _VMCallbackContext *vmccp;
 #endif
 
 typedef sqInt (*CompilerHook)();
@@ -62,7 +62,7 @@ typedef struct VirtualMachine {
 	/* InterpreterProxy methodsFor: 'stack access' */
 
 	sqInt  (*pop)(sqInt nItems);
-	sqInt  (*popthenPush)(sqInt nItems, sqInt oop);
+	void  (*popthenPush)(sqInt nItems, sqInt oop);
 	void  (*push)(sqInt object);
 	sqInt  (*pushBool)(sqInt trueOrFalse);
 	void  (*pushFloat)(double f);
@@ -155,7 +155,7 @@ typedef struct VirtualMachine {
 	sqInt (*instantiateClassindexableSize)(sqInt classPointer, sqInt size);
 	sqInt (*makePointwithxValueyValue)(sqInt xValue, sqInt yValue);
 	sqInt (*popRemappableOop)(void);
-	sqInt (*pushRemappableOop)(sqInt oop);
+	void (*pushRemappableOop)(sqInt oop);
 
 	/* InterpreterProxy methodsFor: 'other' */
 
@@ -312,7 +312,7 @@ typedef struct VirtualMachine {
 
 #if VM_PROXY_MINOR > 12 /* Spur */
   sqInt (*isImmediate)(sqInt objOop);
-  sqInt (*characterObjectOf)(int charCode);
+  sqInt (*characterObjectOf)(sqInt charCode);
   sqInt (*characterValueOf)(sqInt objOop);
   sqInt (*isCharacterObject)(sqInt objOop);
   sqInt (*isCharacterValue)(int charCode);
@@ -331,11 +331,11 @@ typedef struct VirtualMachine {
   sqInt  (*isPositiveMachineIntegerObject)(sqInt);
 #endif
 
-  sqInt (*ptEnterInterpreterFromCallback)(vmccp);
-  sqInt (*ptExitInterpreterToCallback)(vmccp);
+  sqInt (*ptEnterInterpreterFromCallback)(void *);
+  sqInt (*ptExitInterpreterToCallback)(void *);
   sqInt (*isNonImmediate)(sqInt oop);
 
-  sqInt (*platformSemaphoreNew)(int initialValue);
+  Semaphore* (*platformSemaphoreNew)(int initialValue);
 
   sqInt (*scheduleInMainThread)(sqInt (*closure)());
 
