@@ -34,7 +34,7 @@ EXPORT(int) reentringCallback(SIMPLE_CALLBACK fun, int base){
 static int value = 0;
 
 #if FEATURE_THREADED_FFI
-void otherThread(void* aFunction){
+void* otherThread(void* aFunction){
 	SIMPLE_CALLBACK f = (SIMPLE_CALLBACK) aFunction;
 	
 #ifdef _WIN32

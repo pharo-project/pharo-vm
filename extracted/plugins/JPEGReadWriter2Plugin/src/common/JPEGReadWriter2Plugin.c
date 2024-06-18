@@ -72,7 +72,7 @@ static sqInt (*isBytes)(sqInt oop);
 static sqInt (*isIntegerObject)(sqInt objectPointer);
 static sqInt (*isWordsOrBytes)(sqInt oop);
 static sqInt (*pop)(sqInt nItems);
-static sqInt (*popthenPush)(sqInt nItems, sqInt oop);
+static void (*popthenPush)(sqInt nItems, sqInt oop);
 static sqInt (*primitiveFail)(void);
 static sqInt (*primitiveFailFor)(sqInt reasonCode);
 static sqInt (*stSizeOf)(sqInt oop);
@@ -101,7 +101,7 @@ extern sqInt isIntegerObject(sqInt objectPointer);
 #endif
 extern sqInt isWordsOrBytes(sqInt oop);
 extern sqInt pop(sqInt nItems);
-extern sqInt popthenPush(sqInt nItems, sqInt oop);
+extern void popthenPush(sqInt nItems, sqInt oop);
 extern sqInt primitiveFail(void);
 extern sqInt primitiveFailFor(sqInt reasonCode);
 extern sqInt stSizeOf(sqInt oop);
