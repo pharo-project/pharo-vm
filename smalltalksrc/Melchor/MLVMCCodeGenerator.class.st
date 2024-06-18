@@ -331,7 +331,9 @@ MLVMCCodeGenerator >> harmonizeReturnTypesIn: aSetOfTypes [
 		   sqs notEmpty and: [
 			   sqs allSatisfy: [ :t | usqs includes: 'u' , t ] ] ])
 		  ifTrue: [
-		  hasConstantIntegersAndUsqIntAlreadyHere ifFalse: [ sqs ] ]
+			  hasConstantIntegersAndUsqIntAlreadyHere
+				  ifFalse: [ sqs ]
+				  ifTrue: [ aSetOfTypes ] ]
 		  ifFalse: [ aSetOfTypes ]
 ]
 
