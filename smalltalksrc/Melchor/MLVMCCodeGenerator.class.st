@@ -313,7 +313,7 @@ MLVMCCodeGenerator >> harmonizeReturnTypesIn: aSetOfTypes [
 	"Eliminate signed/unsigned conflicts in aSetOfTypes. Non-negative integers can be either
 	 signed or unsigned. Ignore them unless there are no types, in which case default to sqInt."
 
-	| sqs usqs hasConstantInregersAndUsqIntAlreadyHere |
+	| sqs usqs hasConstantIntegersAndUsqIntAlreadyHere |
 	"N.B. Because of LP64 vs LLP64 issues do *not* rename #long to #sqInt or #'unsigned long' to #usqInt"
 	#( char short int #'long long' #'unsigned char' #'unsigned short'
 	   #'unsigned int' #'unsigned long long' )
@@ -323,7 +323,7 @@ MLVMCCodeGenerator >> harmonizeReturnTypesIn: aSetOfTypes [
 				aSetOfTypes
 					remove: type;
 					add: replacement ] ].
-	hasConstantInregersAndUsqIntAlreadyHere := self harmonizeIntegerIn:
+	hasConstantIntegersAndUsqIntAlreadyHere := self harmonizeIntegerIn:
 		                                           aSetOfTypes.
 	sqs := aSetOfTypes select: [ :t | t beginsWith: 'sq' ].
 	usqs := aSetOfTypes select: [ :t | t beginsWith: 'usq' ].
@@ -331,7 +331,7 @@ MLVMCCodeGenerator >> harmonizeReturnTypesIn: aSetOfTypes [
 		   sqs notEmpty and: [
 			   sqs allSatisfy: [ :t | usqs includes: 'u' , t ] ] ])
 		  ifTrue: [
-		  hasConstantInregersAndUsqIntAlreadyHere not ifTrue: [ sqs ] ]
+		  hasConstantIntegersAndUsqIntAlreadyHere ifFalse: [ sqs ] ]
 		  ifFalse: [ aSetOfTypes ]
 ]
 
