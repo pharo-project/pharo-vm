@@ -560,7 +560,7 @@ SlangBasicTypeInferenceTest >> testReturnLongIntInVariable [
 	tMethod := ccg methodNamed: #returnLongIntInVariable.
 	
 	self assert: tMethod isNotNil.
-	self assert: tMethod returnType equals: #'usqInt'
+	self assert: tMethod returnType equals: #usqInt
 ]
 
 { #category : #'return-long-int' }
@@ -574,23 +574,21 @@ SlangBasicTypeInferenceTest >> testReturnLongIntNotWorking [
 ]
 
 { #category : #'return-long-int' }
-SlangBasicTypeInferenceTest >> testReturnMultipleLongIntAnnotation [
-	"in this case the method would need a return type annotation to produce the correct result due to how Slang resolve signed/unsigned conflict"
-	| tMethod |
-	tMethod := ccg methodNamed: #returnMultipleLongIntAnnotation:.
-	
-	self assert: tMethod isNotNil.
-	self assert: tMethod returnType equals: #'sqInt'
-]
-
-{ #category : #'return-long-int' }
-SlangBasicTypeInferenceTest >> testReturnMultipleLongIntInferenceNotWorking [
-	"in this case the method would need a return type annotation to produce the correct result due to how Slang resolve signed/unsigned conflict"
+SlangBasicTypeInferenceTest >> testReturnMultipleLongInt [
 	| tMethod |
 	tMethod := ccg methodNamed: #returnMultipleLongInt.
 	
 	self assert: tMethod isNotNil.
-	self assert: tMethod returnType equals: #'sqInt'
+	self assert: tMethod returnType equals: #usqInt
+]
+
+{ #category : #'return-long-int' }
+SlangBasicTypeInferenceTest >> testReturnMultipleLongIntAnnotation [
+	| tMethod |
+	tMethod := ccg methodNamed: #returnMultipleLongIntAnnotation:.
+	
+	self assert: tMethod isNotNil.
+	self assert: tMethod returnType equals: #usqInt
 ]
 
 { #category : #'return-long-int' }
