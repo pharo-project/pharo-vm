@@ -292,7 +292,7 @@ MLVMCCodeGenerator >> emitGlobalCVariablesOn: aStream [
 	aStream newLine
 ]
 
-{ #category : #'C code generator' }
+{ #category : #'type inference' }
 MLVMCCodeGenerator >> harmonizeIntegerIn: aSetOfTypes [
 	"help to decide if the element in a SetOfTypes will be treated as signed or unsigned.
 	only add sqInt to the types if an usqInt isn't here to prevent signing method returning usqInt."
@@ -305,10 +305,10 @@ MLVMCCodeGenerator >> harmonizeIntegerIn: aSetOfTypes [
 	aSetOfTypes add: #sqInt
 ]
 
-{ #category : #'C code generator' }
+{ #category : #'type inference' }
 MLVMCCodeGenerator >> harmonizeReturnTypesIn: aSetOfTypes [
 	"Eliminate signed/unsigned conflicts in aSetOfTypes. Non-negative integers can be either
-	 signed or unsigned. Ignore them unless there are no types, in which case default to sqInt."
+	 signed or unsigned. if possible the type will default to the signed part"
 
 	| sqs usqs |
 	"N.B. Because of LP64 vs LLP64 issues do *not* rename #long to #sqInt or #'unsigned long' to #usqInt"
@@ -327,48 +327,6 @@ MLVMCCodeGenerator >> harmonizeReturnTypesIn: aSetOfTypes [
 		   sqs notEmpty and: [
 			   sqs allSatisfy: [ :t | usqs includes: 'u' , t ] ] ])
 		  ifTrue: [ sqs ]
-		  ifFalse: [ aSetOfTypes ]
-]
-
-{ #category : #'C code generator' }
-MLVMCCodeGenerator >> harmonizeReturnTypesIn: aSetOfTypes method: aMethod [
-	"Eliminate signed/unsigned conflicts in aSetOfTypes. Non-negative integers can be either
-	 signed or unsigned. Ignore them unless there are no types, in which case default to sqInt."
-
-	| sqs usqs |
-	"N.B. Because of LP64 vs LLP64 issues do *not* rename #long to #sqInt or #'unsigned long' to #usqInt"
-	#( char short int #'long long' #'unsigned char' #'unsigned short'
-	   #'unsigned int' #'unsigned long long' )
-		with: #( sqInt sqInt sqInt sqLong usqInt usqInt usqInt usqLong )
-		do: [ :type :replacement |
-			(aSetOfTypes includes: type) ifTrue: [
-				aSetOfTypes
-					remove: type;
-					add: replacement ] ].
-	self harmonizeIntegerIn: aSetOfTypes.
-	sqs := aSetOfTypes select: [ :t | t beginsWith: 'sq' ].
-	usqs := aSetOfTypes select: [ :t | t beginsWith: 'usq' ].
-	^ (sqs size + usqs size = aSetOfTypes size and: [
-		   sqs notEmpty and: [
-			   sqs allSatisfy: [ :t | usqs includes: 'u' , t ] ] ])
-		  ifTrue: [ 
-			| message |
-					message := String streamContents: [ :s | 
-						           s nextPutAll: 'signed/unsigned '.
-						           aSetOfTypes 
-							           do: [ :t | s nextPutAll: t ]
-							           separatedBy: [ s nextPutAll: ', ' ].
-						           s
-							           nextPutAll: ' in ';
-							           nextPutAll: aMethod definingClass name;
-							           nextPutAll: ' >> ';
-							           nextPutAll: aMethod selector;
-							           cr ].
-					Notification signal: message.
-					self logger
-						newLine;
-						show: message.
-			sqs ]
 		  ifFalse: [ aSetOfTypes ]
 ]
 
