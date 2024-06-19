@@ -292,28 +292,42 @@ MLVMCCodeGenerator >> emitGlobalCVariablesOn: aStream [
 	aStream newLine
 ]
 
-{ #category : #'C code generator' }
+{ #category : #'type inference' }
+MLVMCCodeGenerator >> harmonizeIntegerIn: aSetOfTypes [
+	"help to decide if the element in a SetOfTypes will be treated as signed or unsigned.
+	only add sqInt to the types if an usqInt isn't here to prevent signing method returning usqInt."
+	| constantIntegers |
+	constantIntegers := aSetOfTypes select: [ :element |
+		                    element isInteger ].
+	constantIntegers notEmpty ifFalse: [ ^ self ].
+	aSetOfTypes removeAll: constantIntegers.
+	(aSetOfTypes includes: #usqInt) ifTrue: [ ^ self ].
+	aSetOfTypes add: #sqInt
+]
+
+{ #category : #'type inference' }
 MLVMCCodeGenerator >> harmonizeReturnTypesIn: aSetOfTypes [
 	"Eliminate signed/unsigned conflicts in aSetOfTypes. Non-negative integers can be either
-	 signed or unsigned. Ignore them unless there are no types, in which case default to sqInt."
-	| constantIntegers sqs usqs |
-	constantIntegers := aSetOfTypes select: [:element| element isInteger].
-	aSetOfTypes removeAll: constantIntegers.
+	 signed or unsigned. if possible the type will default to the signed part"
+
+	| sqs usqs |
 	"N.B. Because of LP64 vs LLP64 issues do *not* rename #long to #sqInt or #'unsigned long' to #usqInt"
-	#(char short int #'long long' #'unsigned char' #'unsigned short' #'unsigned int' #'unsigned long long')
-		with: #(sqInt sqInt sqInt sqLong usqInt usqInt usqInt usqLong)
-		do: [:type :replacement|
-			(aSetOfTypes includes: type) ifTrue:
-				[aSetOfTypes remove: type; add: replacement]].
-	sqs := aSetOfTypes select: [:t| t beginsWith: 'sq'].
-	usqs := aSetOfTypes select: [:t| t beginsWith: 'usq'].
-	^(sqs size + usqs size = aSetOfTypes size
-	   and: [sqs notEmpty
-	   and: [sqs allSatisfy: [:t| usqs includes: 'u', t]]])
-		ifTrue: [sqs]
-		ifFalse: [(aSetOfTypes isEmpty and: [constantIntegers notEmpty])
-					ifTrue: [Set with: self defaultType]
-					ifFalse: [aSetOfTypes]]
+	#( char short int #'long long' #'unsigned char' #'unsigned short'
+	   #'unsigned int' #'unsigned long long' )
+		with: #( sqInt sqInt sqInt sqLong usqInt usqInt usqInt usqLong )
+		do: [ :type :replacement |
+			(aSetOfTypes includes: type) ifTrue: [
+				aSetOfTypes
+					remove: type;
+					add: replacement ] ].
+	self harmonizeIntegerIn: aSetOfTypes.
+	sqs := aSetOfTypes select: [ :t | t beginsWith: 'sq' ].
+	usqs := aSetOfTypes select: [ :t | t beginsWith: 'usq' ].
+	^ (sqs size + usqs size = aSetOfTypes size and: [
+		   sqs notEmpty and: [
+			   sqs allSatisfy: [ :t | usqs includes: 'u' , t ] ] ])
+		  ifTrue: [ sqs ]
+		  ifFalse: [ aSetOfTypes ]
 ]
 
 { #category : #'C code generator' }

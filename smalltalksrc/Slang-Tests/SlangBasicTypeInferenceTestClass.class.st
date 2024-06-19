@@ -85,6 +85,11 @@ SlangBasicTypeInferenceTestClass >> returnAFalseMessageSend [
 	^ self returnAFalseConstantNode
 ]
 
+{ #category : #'return-float' }
+SlangBasicTypeInferenceTestClass >> returnAFloat [ 
+	^ 1.1
+]
+
 { #category : #'return-constant' }
 SlangBasicTypeInferenceTestClass >> returnAFloatConstantNode [
 	^ 1.0
@@ -93,6 +98,11 @@ SlangBasicTypeInferenceTestClass >> returnAFloatConstantNode [
 { #category : #'return-message-send' }
 SlangBasicTypeInferenceTestClass >> returnAFloatMessageSend [
 	^ self returnAFloatConstantNode
+]
+
+{ #category : #'return-signed' }
+SlangBasicTypeInferenceTestClass >> returnANegativeNumber [
+	^ -1
 ]
 
 { #category : #'return-constant' }
@@ -105,37 +115,15 @@ SlangBasicTypeInferenceTestClass >> returnANilMessageSend [
 	^ self returnANilConstantNode
 ]
 
-{ #category : #'experiment-return-signed' }
-SlangBasicTypeInferenceTestClass >> returnASignIntFromAnUnsigned [
-
-	"<var: #i type: #'unsigned int'>"
+{ #category : #'return-signed' }
+SlangBasicTypeInferenceTestClass >> returnASignIntFromAnUnsigned: j [
 	| i |
 	i := 2.
-	i < 1 whileTrue: [ i := i + 1 ].
+	i > 0 whileTrue: [ i := i - 1 ].
 	^ i
 ]
 
-{ #category : #'experiment-return-signed' }
-SlangBasicTypeInferenceTestClass >> returnASignIntFromAnUnsigned: j [
-
-	<var: #j type: #'unsigned int'>
-	| i |
-	i := j.
-	i < 0 whileTrue: [ i := i + 1 ].
-	^ i
-]
-
-{ #category : #'experiment-return-signed' }
-SlangBasicTypeInferenceTestClass >> returnASignIntFromAnUnsignedNotWorking: j [
-
-	<var: #j type: #'unsigned int'>
-	| i |
-	i := j.
-	i < 1 whileTrue: [ i := i + 1 ].
-	^ i
-]
-
-{ #category : #'experiment-return-signed' }
+{ #category : #'return-signed' }
 SlangBasicTypeInferenceTestClass >> returnASignIntFromAnUnsignedShouldNotWork: j [
 
 	<var: #j type: #'unsigned int'>
@@ -322,14 +310,14 @@ SlangBasicTypeInferenceTestClass >> returnExplicitTempUnsignedLongLong [
 	^ t
 ]
 
-{ #category : #'experiment-return-long-int' }
+{ #category : #'return-long-int' }
 SlangBasicTypeInferenceTestClass >> returnLongInt [
 	^ 2147483648
 	
 
 ]
 
-{ #category : #'experiment-return-long-int' }
+{ #category : #'return-long-int' }
 SlangBasicTypeInferenceTestClass >> returnLongIntInVariable [
 	| i |
 	i := 2147483648.
@@ -338,7 +326,7 @@ SlangBasicTypeInferenceTestClass >> returnLongIntInVariable [
 
 ]
 
-{ #category : #'experiment-return-long-int' }
+{ #category : #'return-long-int' }
 SlangBasicTypeInferenceTestClass >> returnMultipleLongInt [
 	| i |
 	i := 2147483648.
@@ -353,7 +341,7 @@ SlangBasicTypeInferenceTestClass >> returnMultipleLongInt [
 
 ]
 
-{ #category : #'experiment-return-long-int' }
+{ #category : #'return-long-int' }
 SlangBasicTypeInferenceTestClass >> returnMultipleLongIntAnnotation [
 	| i |
 	i := 2147483648.
@@ -368,7 +356,7 @@ SlangBasicTypeInferenceTestClass >> returnMultipleLongIntAnnotation [
 
 ]
 
-{ #category : #'experiment-return-long-int' }
+{ #category : #'return-long-int' }
 SlangBasicTypeInferenceTestClass >> returnMultipleLongIntAnnotation: i [
 	<var: #i type: #'unsigned int'>
 	i = 6
@@ -382,7 +370,7 @@ SlangBasicTypeInferenceTestClass >> returnMultipleLongIntAnnotation: i [
 
 ]
 
-{ #category : #'experiment-return-long-int' }
+{ #category : #'return-long-int' }
 SlangBasicTypeInferenceTestClass >> returnMultipleLongIntNotWorking [
 	| i |
 	i := 2147483648.
@@ -397,7 +385,7 @@ SlangBasicTypeInferenceTestClass >> returnMultipleLongIntNotWorking [
 
 ]
 
-{ #category : #'experiment-return-multiple-type' }
+{ #category : #'return-multiple-type' }
 SlangBasicTypeInferenceTestClass >> returnStringAndIntInIfTrue1 [ 
 	| i |
 	i := 3.
@@ -408,7 +396,7 @@ SlangBasicTypeInferenceTestClass >> returnStringAndIntInIfTrue1 [
 	^ 'aa'
 ]
 
-{ #category : #'experiment-return-multiple-type' }
+{ #category : #'return-multiple-type' }
 SlangBasicTypeInferenceTestClass >> returnStringAndIntInIfTrue2 [
 	| i |
 	i := 3.
@@ -419,7 +407,7 @@ SlangBasicTypeInferenceTestClass >> returnStringAndIntInIfTrue2 [
 	^ 5
 ]
 
-{ #category : #'experiment-return-multiple-type' }
+{ #category : #'return-multiple-type' }
 SlangBasicTypeInferenceTestClass >> returnStringAndIntInIfTrueifFalse1 [ 
 	| i |
 	i := 3.
@@ -434,7 +422,7 @@ SlangBasicTypeInferenceTestClass >> returnStringAndIntInIfTrueifFalse1 [
 
 ]
 
-{ #category : #'experiment-return-multiple-type' }
+{ #category : #'return-multiple-type' }
 SlangBasicTypeInferenceTestClass >> returnStringAndIntInIfTrueifFalse2 [
 	| i |
 	i := 3.
@@ -449,7 +437,7 @@ SlangBasicTypeInferenceTestClass >> returnStringAndIntInIfTrueifFalse2 [
 
 ]
 
-{ #category : #'experiment-return-multiple-type' }
+{ #category : #'return-multiple-type' }
 SlangBasicTypeInferenceTestClass >> returnStringAndIntInIfTrueifFalse3 [
 	| i |
 	i := 3.
@@ -622,4 +610,21 @@ SlangBasicTypeInferenceTestClass >> returnTempTrueMessageNode [
 	| t |
 	t := self returnATrueConstantNode.
 	^ t
+]
+
+{ #category : #'return-signed' }
+SlangBasicTypeInferenceTestClass >> unsignedIntInASignedOperation [
+	| i |
+	i := 2147483648.
+	i > 0 whileTrue: [ i := i - 1 ].
+	^ i
+]
+
+{ #category : #'return-signed' }
+SlangBasicTypeInferenceTestClass >> unsignedIntInASignedOperationNotWorking [
+	<var: #i type: #'unsigned int'>
+	| i |
+	i := 2.
+	i > -2 whileTrue: [ i := i - 1 ].
+	^ i
 ]
