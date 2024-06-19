@@ -351,7 +351,24 @@ MLVMCCodeGenerator >> harmonizeReturnTypesIn: aSetOfTypes method: aMethod [
 	^ (sqs size + usqs size = aSetOfTypes size and: [
 		   sqs notEmpty and: [
 			   sqs allSatisfy: [ :t | usqs includes: 'u' , t ] ] ])
-		  ifTrue: [ sqs ]
+		  ifTrue: [ 
+			| message |
+					message := String streamContents: [ :s | 
+						           s nextPutAll: 'signed/unsigned '.
+						           aSetOfTypes 
+							           do: [ :t | s nextPutAll: t ]
+							           separatedBy: [ s nextPutAll: ', ' ].
+						           s
+							           nextPutAll: ' in ';
+							           nextPutAll: aMethod definingClass name;
+							           nextPutAll: ' >> ';
+							           nextPutAll: aMethod selector;
+							           cr ].
+					Notification signal: message.
+					self logger
+						newLine;
+						show: message.
+			sqs ]
 		  ifFalse: [ aSetOfTypes ]
 ]
 
