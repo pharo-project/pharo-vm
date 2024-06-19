@@ -4101,9 +4101,10 @@ StackInterpreterPrimitives >> ptEnterInterpreterFromCallback: aPointer [
 	   => we suspend the active process and store it for further resuming
 	Then we enter the interpreter."
 	<api>
+	<returnTypeC: #sqInt>
 	<var: #aPointer type: #'void *'>
 	<var: #vmCallbackContext type: #'VMCallbackContext *'>
-
+	
 	| vmCallbackContext suspendedProcess |
 	
 	vmCallbackContext := self 
@@ -4133,6 +4134,7 @@ StackInterpreterPrimitives >> ptEnterInterpreterFromCallback: aPointer [
 { #category : #ffi }
 StackInterpreterPrimitives >> ptExitInterpreterToCallback: aPointer [
 	<api>
+	<returnTypeC: #sqInt>
 	<var: #aPointer type: #'void *'>
 	<var: #vmCallbackContext type: #'VMCallbackContext *'>
 

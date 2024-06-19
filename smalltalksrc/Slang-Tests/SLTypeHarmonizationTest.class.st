@@ -254,13 +254,13 @@ SLTypeHarmonizationTest >> testHarmonizedNumber [
 ]
 
 { #category : #harmonizeTwoType }
-SLTypeHarmonizationTest >> testHarmonizedNumberAndAnythingNotWorking [
-	"return anything"
+SLTypeHarmonizationTest >> testHarmonizedNumberAndAnything [
+	"doesn't harmonize and produce a notification"
 	| result |
 	types add: 7.
 	types add: #anything.
 	result := ccg harmonizeReturnTypesIn: types.
-	self assert: result equals: (Set new add: #anything ; yourself ).
+	self assert: result equals: (Set new add: #anything ; add: #sqInt ; yourself ).
 	
 	
 ]
@@ -270,18 +270,6 @@ SLTypeHarmonizationTest >> testHarmonizedNumbers [
 	| result |
 	types add: 7.
 	types add: 8.
-	result := ccg harmonizeReturnTypesIn: types.
-	self assert: result equals: (Set new add: #sqInt ; yourself ).
-	
-	
-]
-
-{ #category : #harmonizeTwoType }
-SLTypeHarmonizationTest >> testHarmonizedNumbersNotWorking [
-	"the type always default to int"
-	| result |
-	types add: 7.
-	types add: -2147483648.
 	result := ccg harmonizeReturnTypesIn: types.
 	self assert: result equals: (Set new add: #sqInt ; yourself ).
 	

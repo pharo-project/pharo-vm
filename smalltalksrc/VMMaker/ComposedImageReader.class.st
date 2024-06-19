@@ -187,6 +187,7 @@ ComposedImageReader >> readPermanentSpaceFromImageFile: imageFileName header: aH
 	<var: #dataSize type: #'size_t'>
 	<var: #oldBase type: #'void*'>
 	<var: #newBase type: #'void*'>
+	<returnTypeC: #size_t>
 
 	| newBase permSpaceMetadata oldBase dataSize bytesRead |
 
