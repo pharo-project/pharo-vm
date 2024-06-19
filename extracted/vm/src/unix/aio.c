@@ -308,7 +308,7 @@ aio_handle_events(long microSecondsTimeout){
 	aio_flush_pipe(signal_pipe_fd[0]);
 
 	if(epollReturn == -1){
-		if(errno != EINTR){
+		if(errno != EINTR && errno != EAGAIN){
 			logErrorFromErrno("epoll_wait");
 		}
 		return 0;
