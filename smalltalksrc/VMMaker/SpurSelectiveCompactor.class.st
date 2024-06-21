@@ -208,7 +208,7 @@ SpurSelectiveCompactor >> findOrAllocateSegmentToFill [
 	self findAndSetSegmentToFill.
 	segmentToFill ifNotNil: [^0].
 	"No empty segment. We need to allocate a new one"
-	(manager growOldSpaceByAtLeast: manager growHeadroom) ifNil: ["failed to allocate"^0].
+	(manager growOldSpaceByAtLeast: manager growHeadroom) = 0 ifTrue: ["failed to allocate"^0].
 	"We don't know which segment it is that we've just allocated... So we look for it... This is a bit dumb."
 	segIndex := self findAndSetSegmentToFill.
 	"Lilliputian performance hack management... Last lilliputian of new segment is same as prev because no lilliputian in new segment"

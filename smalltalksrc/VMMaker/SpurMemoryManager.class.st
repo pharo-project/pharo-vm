@@ -6041,11 +6041,13 @@ SpurMemoryManager >> growHeadroom: aValue [
 { #category : #'growing/shrinking memory' }
 SpurMemoryManager >> growOldSpaceByAtLeast: minAmmount [
 	"Attempt to grow memory by at least minAmmount bytes.
-	 Answer the size of the new segment in bytes, or nil if the attempt failed."
-	| ammount headroom total start interval |
+	 Answer the size of the new segment in bytes, or 0 if the attempt failed."
+
 	<var: #segInfo type: #'SpurSegmentInfo *'>
-	"statGrowMemory counts attempts, not successes."
-	statGrowMemory := statGrowMemory + 1."we need to include overhead for a new object header plus the segment bridge."
+	<returnTypeC: #size_t>
+	| ammount headroom total start interval |
+	statGrowMemory := statGrowMemory + 1.
+	"statGrowMemory counts attempts, not successes." "we need to include overhead for a new object header plus the segment bridge."
 	ammount := minAmmount + (self baseHeaderSize * 2 + self bridgeSize).
 	"round up to the nearest power of two."
 	ammount := 1 << (ammount - 1) highBit.
@@ -6053,34 +6055,44 @@ SpurMemoryManager >> growOldSpaceByAtLeast: minAmmount [
 	ammount := ammount max: growHeadroom.
 
 	"Now apply the maxOldSpaceSize limit, if one is in effect."
-	maxOldSpaceSize > 0 ifTrue:
-		[total := segmentManager totalBytesInSegments.
-		 total >= maxOldSpaceSize ifTrue:[
-			self logError: 'Could not allocate more memory. MaxOldSpaceSize reached.'.
-			^nil].
-		 headroom := maxOldSpaceSize - total.
-		 headroom < ammount ifTrue:
-			[headroom < (minAmmount + (self baseHeaderSize * 2 + self bridgeSize)) ifTrue:
-				[
-				self logError: 'Required space is bigger than the headroom. Could not allocate'.
-				^nil].
-			 ammount := headroom]].
-		 
+	maxOldSpaceSize > 0 ifTrue: [
+		total := segmentManager totalBytesInSegments.
+		total >= maxOldSpaceSize ifTrue: [
+			self logError:
+				'Could not allocate more memory. MaxOldSpaceSize reached.'.
+			^ 0 ].
+		headroom := maxOldSpaceSize - total.
+		headroom < ammount ifTrue: [
+			headroom
+			< (minAmmount + (self baseHeaderSize * 2 + self bridgeSize))
+				ifTrue: [
+					self logError:
+						'Required space is bigger than the headroom. Could not allocate'.
+					^ 0 ].
+			ammount := headroom ] ].
+
 	start := coInterpreter ioUTCMicrosecondsNow.
-	^(segmentManager addSegmentOfSize: ammount) ifNotNil:
-		[:segInfo|
-		| freeChunk |
-		 self assimilateNewSegment: segInfo.
-		 "and add the new free chunk to the free list; done here
+	(segmentManager addSegmentOfSize: ammount)
+		ifNil: [ ^ 0 ]
+		ifNotNil: [ :segInfo |
+			| freeChunk |
+			self assimilateNewSegment: segInfo.
+			"and add the new free chunk to the free list; done here
 		  instead of in assimilateNewSegment: for the assert"
-		 freeChunk := self addFreeChunkWithBytes: segInfo segSize - self bridgeSize at: segInfo segStart.
-		 self assert: freeChunk = (self objectStartingAt: segInfo segStart).
-		 self assert: (self addressAfter: freeChunk) = (segInfo segLimit - self bridgeSize).
-		 self checkFreeSpace: GCModeFreeSpace.
-		 segmentManager checkSegments.
-		 interval := coInterpreter ioUTCMicrosecondsNow - start.
-		 interval > statMaxAllocSegmentTime ifTrue: [statMaxAllocSegmentTime := interval].
-		 segInfo segSize]
+			freeChunk := self
+				             addFreeChunkWithBytes:
+				             segInfo segSize - self bridgeSize
+				             at: segInfo segStart.
+			self assert: freeChunk = (self objectStartingAt: segInfo segStart).
+			self assert:
+				(self addressAfter: freeChunk)
+				= (segInfo segLimit - self bridgeSize).
+			self checkFreeSpace: GCModeFreeSpace.
+			segmentManager checkSegments.
+			interval := coInterpreter ioUTCMicrosecondsNow - start.
+			interval > statMaxAllocSegmentTime ifTrue: [
+				statMaxAllocSegmentTime := interval ].
+			^ segInfo segSize ]
 ]
 
 { #category : #'growing/shrinking memory' }
@@ -12607,7 +12619,7 @@ SpurMemoryManager >> sufficientSpaceAfterGC: numBytes [
 	(heapSizePostGC - heapSizeAtPreviousGC) asFloat / heapSizeAtPreviousGC >= heapGrowthToSizeGCRatio ifTrue:
 		[self fullGC].
 	[totalFreeOldSpace < growHeadroom
-	 and: [(self growOldSpaceByAtLeast: 0) notNil]] whileTrue:
+	 and: [(self growOldSpaceByAtLeast: 0) ~= 0]] whileTrue:
 		[totalFreeOldSpace >= growHeadroom ifTrue:
 			[^true]].
 	lowSpaceThreshold > totalFreeOldSpace ifTrue: "space is low"
