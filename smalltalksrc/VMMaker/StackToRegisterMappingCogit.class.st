@@ -2466,6 +2466,7 @@ StackToRegisterMappingCogit >> genReturnTopFromMethod [
 { #category : #'bytecode generator support' }
 StackToRegisterMappingCogit >> genSend: selectorIndex numArgs: numArgs [
 
+	self ssFlushStackExceptTop: numArgs + 1.
 	self marshallSendArgumentsNoPush: numArgs. "Pop from the abstract stack, so that subsequent compilation in this unit make as if they were popped.
 	The previous line already discarded the entries in the runtime stack if necesary."
 	self ssPop: numArgs + 1 popSpilled: false.
@@ -3480,6 +3481,7 @@ StackToRegisterMappingCogit >> marshallSendArguments: numArgs [
 	 If the args don't fit in registers push receiver and args (spill everything), but still assign
 	 the receiver to ReceiverResultReg."
 
+	self ssFlushStackExceptTop: numArgs + 1.
 	self marshallSendArgumentsNoPush: numArgs.
 
 	"Pop from the abstract stack, so that subsequent compilation in this unit make as if they were popped.
@@ -3503,7 +3505,7 @@ StackToRegisterMappingCogit >> marshallSendArgumentsNoPush: numArgs [
 	"
 
 	| numSpilled |
-	self ssFlushStackExceptTop: numArgs + 1.
+	"self ssFlushStackExceptTop: numArgs + 1."
 	numArgs > self numRegArgs
 		ifTrue: [ "If there are no spills and no references to ReceiverResultReg
 			 the fetch of ReceiverResultReg from the stack can be avoided
