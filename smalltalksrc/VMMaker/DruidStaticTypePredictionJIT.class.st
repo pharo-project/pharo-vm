@@ -583,6 +583,7 @@ DruidStaticTypePredictionJIT >> gen_BytecodePrimAdd [
 	(self ssValue: 0) copyToReg: t1.
 	self MoveR: t0 R: t2.
 	self AndR: t1 R: t2.
+	self ssFlushStack.
 	self TstCq: 1 R: t2.
 	jump1 := self JumpZero: 0.
 	self AddCq:  -1 R: t0.
