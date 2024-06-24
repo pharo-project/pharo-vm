@@ -4287,6 +4287,7 @@ StackInterpreter >> checkStackPointerIndexForFrame: theFP [
 	<var: #theFP type: #'char *'>
 	<var: #thePage type: #'StackPage *'>
 	<var: #theSP type: #'char *'>
+	<returnTypeC: #sqInt>
 	theFP = framePointer ifTrue:
 		[^self stackPointerIndexForFrame: theFP WithSP: stackPointer].
 	thePage := stackPages stackPageFor: theFP.
