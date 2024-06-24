@@ -28,14 +28,25 @@ There is only one possible type by node, no ambiguities.
 Class {
 	#name : #SlangBasicTypeInferenceTest,
 	#superclass : #SlangAbstractTestCase,
+	#instVars : [
+		'conflictException'
+	],
 	#category : #'Slang-Tests'
 }
+
+{ #category : #helpers }
+SlangBasicTypeInferenceTest >> inferTypes [
+	conflictException := OrderedCollection new.
+	[ ccg inferTypes ]
+		on: SlangReturnTypeConflictException
+		do: [ :ex | conflictException add: ex ]
+]
 
 { #category : #running }
 SlangBasicTypeInferenceTest >> setUp [
 	super setUp.
 	ccg addClass: SlangBasicTypeInferenceTestClass.
-	ccg inferTypes.
+	self inferTypes.
 ]
 
 { #category : #constant }
@@ -603,52 +614,84 @@ SlangBasicTypeInferenceTest >> testReturnMultipleLongIntNotWorking [
 
 { #category : #'return-multiple-type' }
 SlangBasicTypeInferenceTest >> testReturnStringAndIntIfTrue1 [
-	"conflict so default to sqInt"
-	| tMethod |
+	"a conflict appear, the type are not harmonized"
+
+	| tMethod expectedConflict |
 	tMethod := ccg methodNamed: #returnStringAndIntInIfTrue1.
-	
-	self assert: tMethod isNotNil.
-	self assert: tMethod returnType equals: #sqInt
+	expectedConflict := Set new.
+	expectedConflict
+		add: #'char *';
+		add: #sqInt.
+	self
+		assert: (ccg slangTyper conflictRecord at: tMethod)
+		equals: expectedConflict.
+	self assert: tMethod isNotNil
 ]
 
 { #category : #'return-multiple-type' }
 SlangBasicTypeInferenceTest >> testReturnStringAndIntIfTrue2 [
-	"conflict so default to sqInt"
-	| tMethod |
+	"a conflict appear, the type are not harmonized"
+
+	| tMethod expectedConflict |
 	tMethod := ccg methodNamed: #returnStringAndIntInIfTrue2.
-	
-	self assert: tMethod isNotNil.
-	self assert: tMethod returnType equals: #sqInt
+	expectedConflict := Set new.
+	expectedConflict
+		add: #'char *';
+		add: #sqInt.
+	self
+		assert: (ccg slangTyper conflictRecord at: tMethod)
+		equals: expectedConflict.
+	self assert: tMethod isNotNil
 ]
 
 { #category : #'return-multiple-type' }
 SlangBasicTypeInferenceTest >> testReturnStringAndIntInIfTrueifFalse1 [
-	"conflict so default to sqInt"
-	| tMethod |
+	"a conflict appear, the type are not harmonized"
+
+	| tMethod expectedConflict |
 	tMethod := ccg methodNamed: #returnStringAndIntInIfTrueifFalse1.
-	
-	self assert: tMethod isNotNil.
-	self assert: tMethod returnType equals: #sqInt
+	expectedConflict := Set new.
+	expectedConflict
+		add: #'char *';
+		add: #sqInt.
+	self
+		assert: (ccg slangTyper conflictRecord at: tMethod)
+		equals: expectedConflict.
+	self assert: tMethod isNotNil
 ]
 
 { #category : #'return-multiple-type' }
 SlangBasicTypeInferenceTest >> testReturnStringAndIntInIfTrueifFalse2 [
-	"conflict so default to sqInt"
-	| tMethod |
+	"a conflict appear, the type are not harmonized"
+
+	| tMethod expectedConflict |
 	tMethod := ccg methodNamed: #returnStringAndIntInIfTrueifFalse2.
-	
-	self assert: tMethod isNotNil.
-	self assert: tMethod returnType equals: #sqInt
+	expectedConflict := Set new.
+	expectedConflict
+		add: #'char *';
+		add: #sqInt.
+	self
+		assert: (ccg slangTyper conflictRecord at: tMethod)
+		equals: expectedConflict.
+
+	self assert: tMethod isNotNil
 ]
 
 { #category : #'return-multiple-type' }
 SlangBasicTypeInferenceTest >> testReturnStringAndIntInIfTrueifFalse3 [
-	"conflict so default to sqInt"
-	| tMethod |
+	"a conflict appear, the type are not harmonized"
+
+	| tMethod expectedConflict |
 	tMethod := ccg methodNamed: #returnStringAndIntInIfTrueifFalse3.
-	
-	self assert: tMethod isNotNil.
-	self assert: tMethod returnType equals: #sqInt
+	expectedConflict := Set new.
+	expectedConflict
+		add: #'char *';
+		add: #sqInt.
+	self
+		assert: (ccg slangTyper conflictRecord at: tMethod)
+		equals: expectedConflict.
+
+	self assert: tMethod isNotNil
 ]
 
 { #category : #'return-temp-assigned-const' }
@@ -928,14 +971,17 @@ SlangBasicTypeInferenceTest >> testUnsignedIntInASignedExpressionNotWorking [
 { #category : #'return-signed' }
 SlangBasicTypeInferenceTest >> testUnsignedIntInASignedOperation [
 	"Slang will try to signed a variable if it is present in an iteration with a comparator (>,<,>=,<=) in its expression, here i is first automatically typed as unsigned int but change its type to int eventually"
+
 	| tMethod ccg2 |
-	ccg2 := MLVMCCodeGenerator new.
+	ccg2 := MLVMCCodeGeneratorConflictMock new.
 	ccg2 vmMaker: VMMaker new.
 	ccg2 vmMaker vmmakerConfiguration: VMMakerConfiguration.
 	ccg2 addClass: SlangBasicTypeInferenceTestClass.
 	tMethod := ccg2 methodNamed: #unsignedIntInASignedOperation.
 	self assert: tMethod isNotNil.
-	self assert: (ccg2 typeFor: tMethod statements first in: tMethod) equals: #'unsigned int'.
+	self
+		assert: (ccg2 typeFor: tMethod statements first in: tMethod)
+		equals: #'unsigned int'.
 	ccg2 inferTypes.
 	self assert: tMethod returnType equals: #sqInt
 ]
