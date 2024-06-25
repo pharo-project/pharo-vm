@@ -916,6 +916,15 @@ TMethod >> ensureConditionalAssignmentsAreTransformedIn: aCodeGen [
 		
 ]
 
+{ #category : #inlining }
+TMethod >> ensureIsValidMethodAfterInlining [
+	"inlining can cause some issues in the AST that will produce incorrect code, modify the AST if needed to produce a cleaner one "
+	| isLeafInAnAssignementNodeOrASendNode |
+	isLeafInAnAssignementNodeOrASendNode := false.
+	self iterateThrought: self parseTree
+	
+]
+
 { #category : #transformations }
 TMethod >> ensureToByDoLoopLimitIsSafeAndEfficient: node in: aCodeGen [
 
@@ -2027,6 +2036,15 @@ TMethod >> isTMethod [
 TMethod >> isVolatile [
 	
 	^ self hasProperties and: [properties includesKey: #volatile]
+]
+
+{ #category : #inlining }
+TMethod >> iterateThrought: aNode [
+	"iterate throuht an AST and supress unused variables and constants, since we don't do anything when meeting a send,assignment or return node the only variables and constants we come accross are alone in their lines"
+
+	aNode isStatement ifTrue: [
+		aNode childrenDo: [ :subNode | self iterateThrought: subNode ] ].
+	aNode isLeaf ifTrue: [ aNode parent children remove: self ]
 ]
 
 { #category : #accessing }
@@ -3217,7 +3235,9 @@ TMethod >> tryToInlineMethodsIn: aCodeGen [
 	didSomething := (self tryToInlineMethodExpressionsIn: aCodeGen) or: [didSomething].
 
 	didSomething ifTrue:
-		[writtenToGlobalVarsCache := nil].
+		[writtenToGlobalVarsCache := nil.
+		self ensureIsValidMethodAfterInlining
+		].
 
 	complete ifFalse:
 		[self checkForCompletenessIn: aCodeGen.
