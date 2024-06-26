@@ -13550,9 +13550,13 @@ StackInterpreter >> sendStaticLiteralMethodBytecode [
 		1st Byte: opcode
 		2nd Byte: literal offset of the method"
 
-	| methodLiteralOffset |
+	| methodLiteralOffset rcvr |
 	methodLiteralOffset := self fetchByte.
 	newMethod := self literal: methodLiteralOffset.
+
+	argumentCount := self argumentCountOf: newMethod.
+	rcvr := self stackValue: argumentCount.
+	lkupClassTag := objectMemory fetchClassTagOf: rcvr.
 
 	self executeNewMethod: true.
 	self fetchNextBytecode
