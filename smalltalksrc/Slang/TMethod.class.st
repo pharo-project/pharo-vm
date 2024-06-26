@@ -571,6 +571,23 @@ TMethod >> children [
 	^ { parseTree }
 ]
 
+{ #category : #'inlining support' }
+TMethod >> cleanASTOf: aNode [
+		"supressing an unused variable in a conditional statement can leave it empty, leaving only a goto and its associated label. We can supress the conditional branch if we encounter such cases"
+		| possibleGoToToRemove |
+		possibleGoToToRemove := Set new.
+		aNode parent children remove: aNode.
+		(aNode parent children size = 1 and: [ aNode parent children anyOne isGoTo])
+		ifTrue: [ 
+			| goTo |
+			goTo := aNode parent children anyOne.
+			aNode parent children remove: goTo.
+			possibleGoToToRemove add: goTo
+			 ].
+		aNode parent children isEmpty ifTrue: [ possibleGoToToRemove addAll: (self cleanASTOf: aNode parent) ].
+		^ possibleGoToToRemove
+]
+
 { #category : #accessing }
 TMethod >> clearReferencesToGlobalStruct [
 	globalStructureBuildMethodHasFoo := false
@@ -919,9 +936,7 @@ TMethod >> ensureConditionalAssignmentsAreTransformedIn: aCodeGen [
 { #category : #inlining }
 TMethod >> ensureIsValidMethodAfterInlining [
 	"inlining can cause some issues in the AST that will produce incorrect code, modify the AST if needed to produce a cleaner one "
-	| isLeafInAnAssignementNodeOrASendNode |
-	isLeafInAnAssignementNodeOrASendNode := false.
-	self iterateThrought: self parseTree
+	self iterateThrought: self parseTree nodeToSupress: Set new
 	
 ]
 
@@ -2038,13 +2053,19 @@ TMethod >> isVolatile [
 	^ self hasProperties and: [properties includesKey: #volatile]
 ]
 
-{ #category : #inlining }
-TMethod >> iterateThrought: aNode [
-	"iterate throuht an AST and supress unused variables and constants, since we don't do anything when meeting a send,assignment or return node the only variables and constants we come accross are alone in their lines"
+{ #category : #'inlining support' }
+TMethod >> iterateThrought: aNode nodeToSupress: aSetOfNodeAndLabel [
+	"iterate throuht an AST and supress unused variables and constants, since we don't do anything when meeting a send (except in a conditional expression),assignment or return node the only variables and constants we come accross are alone in their lines"
 
-	aNode isStatement ifTrue: [
-		aNode childrenDo: [ :subNode | self iterateThrought: subNode ] ].
-	aNode isLeaf ifTrue: [ aNode parent children remove: self ]
+	aNode isStatementList ifTrue: [
+		aNode children do: [ :subNode |
+			subNode ifNotNil: [ self iterateThrought: subNode nodeToSupress: aSetOfNodeAndLabel ] ] ].
+	(aNode isSend and: [
+		 aNode isConditionalSend ]) ifTrue: [
+		aNode arguments do: [ :subNode | self iterateThrought: subNode nodeToSupress: aSetOfNodeAndLabel ] ].
+	(aNode isVariable or: [ aNode isConstant ]) ifTrue: [
+		aSetOfNodeAndLabel addAll: (self cleanASTOf: aNode).
+		]
 ]
 
 { #category : #accessing }
