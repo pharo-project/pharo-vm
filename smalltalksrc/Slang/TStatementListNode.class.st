@@ -486,6 +486,12 @@ TStatementListNode >> printStatementsOn: aStream level: level [
 ]
 
 { #category : #transformations }
+TStatementListNode >> remove: aChild [
+	"this method should be only called when cleaning an AST tree after an unused variable was found, remove an unused variable from the list of statements"
+	statements remove: aChild ifAbsent: [  ]
+]
+
+{ #category : #transformations }
 TStatementListNode >> removeAssertions [
 	| newStatements |
 	newStatements := OrderedCollection new: statements size.

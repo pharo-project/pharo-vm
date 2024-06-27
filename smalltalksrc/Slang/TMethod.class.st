@@ -576,12 +576,12 @@ TMethod >> cleanASTOf: aNode [
 		"supressing an unused variable in a conditional statement can leave it empty, leaving only a goto and its associated label. We can supress the conditional branch if we encounter such cases"
 		| possibleGoToToRemove |
 		possibleGoToToRemove := Set new.
-		aNode parent children remove: aNode.
+		aNode parent remove: aNode.
 		(aNode parent children size = 1 and: [ aNode parent children anyOne isGoTo])
 		ifTrue: [ 
 			| goTo |
 			goTo := aNode parent children anyOne.
-			aNode parent children remove: goTo.
+			aNode parent remove: goTo.
 			possibleGoToToRemove add: goTo
 			 ].
 		aNode parent children isEmpty ifTrue: [ possibleGoToToRemove addAll: (self cleanASTOf: aNode parent) ].

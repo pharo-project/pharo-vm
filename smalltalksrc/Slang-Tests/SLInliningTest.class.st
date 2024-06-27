@@ -60,9 +60,6 @@ static sqInt
 methodCalledMethodWithUnusedVariableReturnConstantInIf(void)
 {
 	/* begin methodReturnConstantInIf */
-	if (1) {
-		goto l1;
-	}
 	l1:
 	;
 	return 0;

@@ -266,7 +266,8 @@ TSendNode >> bindVariablesIn: aDictionary unless: cautionaryBlock [
 
 { #category : #accessing }
 TSendNode >> children [
-	
+	"receiver can become null in a deleting process"
+	receiver ifNil: [ ^ arguments  ].
 	^ { receiver }, arguments
 ]
 
@@ -515,6 +516,14 @@ TSendNode >> receiver: aNode [
 
 	receiver := aNode.
 	aNode parent: self
+]
+
+{ #category : #transformations }
+TSendNode >> remove: aChild [ 
+	"this method should be only called when cleaning an AST tree after an unused variable was found.only remove in the argument but delete the receiver if the arguments number changed to zero (meaning the method is in a deleting process), it makes children size reach 0, the method should be then deleted"
+	self halt.
+	arguments := arguments select: [ :e | e ~= aChild ].
+	receiver := nil
 ]
 
 { #category : #transformations }

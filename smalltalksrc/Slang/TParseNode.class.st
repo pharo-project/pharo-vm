@@ -129,6 +129,12 @@ TParseNode >> bindVariablesIn: aDictionary unless: cautionaryBlock [
 	^self
 ]
 
+{ #category : #accessing }
+TParseNode >> children [
+
+	self subclassResponsibility
+]
+
 { #category : #enumerating }
 TParseNode >> collect: aBlock [
 	| nodes |
@@ -432,6 +438,12 @@ TParseNode >> printOn: aStream level: anInteger [
 	"Typically overridden. If control actually gets here, avoid recursion loop by sending to super."
 
 	super printOn: aStream.
+]
+
+{ #category : #transformations }
+TParseNode >> remove: aChild [
+	"this method should be only called when cleaning an AST tree after an unused variable was found"
+	self children remove: aChild 
 ]
 
 { #category : #transformations }
