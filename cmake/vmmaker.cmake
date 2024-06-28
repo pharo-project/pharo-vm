@@ -121,7 +121,7 @@ if(GENERATE_SOURCES)
             vmmaker
 
             URL https://files.pharo.org/image/120/Pharo12.0-SNAPSHOT.build.1519.sha.aa50f9c.arch.64bit.zip
-            URL_HASH SHA256=c050ddcedce70ec92c22a3244aa5ebbc655dcaffcb42ac80fbf1f6e795c7010d
+            URL_HASH SHA256=b12270631ffc0c6adcb0b6449565b9abfd8e88a863a894a7320f660c05a0af1e
             BUILD_COMMAND ${VMMAKER_VM} --headless ${VMMAKER_DIR}/image/Pharo12.0-SNAPSHOT-64bit-aa50f9c.image --no-default-preferences save VMMaker
 	    COMMAND ${VMMAKER_VM} --headless ${VMMAKER_IMAGE} --no-default-preferences --save --quit "${CMAKE_CURRENT_SOURCE_DIR_TO_OUT}/scripts/installVMMaker.st" "${CMAKE_CURRENT_SOURCE_DIR_TO_OUT}" "${ICEBERG_DEFAULT_REMOTE}"
             UPDATE_COMMAND      ""
