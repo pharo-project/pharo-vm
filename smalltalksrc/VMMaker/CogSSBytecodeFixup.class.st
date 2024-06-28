@@ -12,8 +12,8 @@ isTargetOfBackwardBranch:
 	- if true the fixup is the target of some backward branch
 "
 Class {
-	#name : #CogSSBytecodeFixup,
-	#superclass : #CogBytecodeFixup,
+	#name : 'CogSSBytecodeFixup',
+	#superclass : 'CogBytecodeFixup',
 	#instVars : [
 		'simStackPtr',
 		'isTargetOfBackwardBranch',
@@ -24,10 +24,12 @@ Class {
 		'NeedsMergeFixupFlag',
 		'NeedsNonMergeFixupFlag'
 	],
-	#category : #'VMMaker-JIT'
+	#category : 'VMMaker-JIT',
+	#package : 'VMMaker',
+	#tag : 'JIT'
 }
 
-{ #category : #'simulation only' }
+{ #category : 'simulation only' }
 CogSSBytecodeFixup class >> byteSizeForSimulator: aVMClass [
 	"Answer an approximation of the byte size of an AbstractInstruction struct.
 	 This is for estimating the alloca in allocateOpcodes:bytecodes:ifFail:
@@ -35,7 +37,7 @@ CogSSBytecodeFixup class >> byteSizeForSimulator: aVMClass [
 	^(self instSize - 2) * (aVMClass sizeof: #'void *')
 ]
 
-{ #category : #translation }
+{ #category : 'translation' }
 CogSSBytecodeFixup class >> filteredInstVarNames [
 	"Override to add ifdef LowcodeVM around the native stack info, and to put
 	 char vars before short vars.
@@ -50,7 +52,7 @@ CogSSBytecodeFixup class >> filteredInstVarNames [
 	^vars
 ]
 
-{ #category : #'class initialization' }
+{ #category : 'class initialization' }
 CogSSBytecodeFixup class >> initialize [
 	"Initialize the fixup flags.  In this class we have two states.  A fixup is a bytecode
 	 being targeted by a branch, and a jump can target the fixup before the byetcode
@@ -67,95 +69,95 @@ CogSSBytecodeFixup class >> initialize [
 	self assert: NeedsNonMergeFixupFlag < NeedsMergeFixupFlag
 ]
 
-{ #category : #'simulation support' }
+{ #category : 'simulation support' }
 CogSSBytecodeFixup >> asIntegerPtr [
 	<doNotGenerate>
 	^self
 ]
 
-{ #category : #'simulation support' }
+{ #category : 'simulation support' }
 CogSSBytecodeFixup >> asUnsignedInteger [
 	<doNotGenerate>
 	^self
 ]
 
-{ #category : #'simulation support' }
+{ #category : 'simulation support' }
 CogSSBytecodeFixup >> asUnsignedIntegerPtr [
 	<doNotGenerate>
 	^self
 ]
 
-{ #category : #converting }
+{ #category : 'converting' }
 CogSSBytecodeFixup >> becomeMergeFixup [
 	<inline: true>
 	targetInstruction := self cCoerceSimple: NeedsMergeFixupFlag to: #'AbstractInstruction *'
 ]
 
-{ #category : #converting }
+{ #category : 'converting' }
 CogSSBytecodeFixup >> becomeNonMergeFixup [
 	<inline: true>
 	targetInstruction := self cCoerceSimple: NeedsNonMergeFixupFlag to: #'AbstractInstruction *'
 ]
 
-{ #category : #'instance initialization' }
+{ #category : 'instance initialization' }
 CogSSBytecodeFixup >> initialize [
 	targetInstruction := 0.
 	isTargetOfBackwardBranch := false
 ]
 
-{ #category : #testing }
+{ #category : 'testing' }
 CogSSBytecodeFixup >> isBackwardBranchFixup [
 	^isTargetOfBackwardBranch
 ]
 
-{ #category : #testing }
+{ #category : 'testing' }
 CogSSBytecodeFixup >> isMergeFixup [
 	<inline: true>
 	^ targetInstruction asUnsignedInteger = NeedsMergeFixupFlag
 ]
 
-{ #category : #testing }
+{ #category : 'testing' }
 CogSSBytecodeFixup >> isMergeFixupOrIsFixedUp [
 	<inline: true>
 	^ targetInstruction asUnsignedInteger >= NeedsMergeFixupFlag
 ]
 
-{ #category : #testing }
+{ #category : 'testing' }
 CogSSBytecodeFixup >> isNonMergeFixup [
 	<inline: true>
 	^ targetInstruction asUnsignedInteger = NeedsNonMergeFixupFlag
 ]
 
-{ #category : #testing }
+{ #category : 'testing' }
 CogSSBytecodeFixup >> isNonMergeFixupOrNotAFixup [
 	<inline: true>
 	^ targetInstruction asUnsignedInteger <= NeedsNonMergeFixupFlag
 ]
 
-{ #category : #testing }
+{ #category : 'testing' }
 CogSSBytecodeFixup >> isTargetOfBackwardBranch [
 	^isTargetOfBackwardBranch
 ]
 
-{ #category : #testing }
+{ #category : 'testing' }
 CogSSBytecodeFixup >> needsFixup [
 	<inline: true>
 	^ targetInstruction asUnsignedInteger between: NeedsNonMergeFixupFlag and: NeedsMergeFixupFlag
 ]
 
-{ #category : #testing }
+{ #category : 'testing' }
 CogSSBytecodeFixup >> needsFixupOrIsFixedUp [
 	<inline: true>
 	^ targetInstruction asUnsignedInteger > 0
 ]
 
-{ #category : #testing }
+{ #category : 'testing' }
 CogSSBytecodeFixup >> notYetFixedUp [
 	<inline: true>
 	^ targetInstruction asUnsignedInteger <= NeedsMergeFixupFlag
 ]
 
-{ #category : #'debug printing' }
+{ #category : 'debug printing' }
 CogSSBytecodeFixup >> printStateOn: aStream [
 	<doNotGenerate>
 	(targetInstruction isNil and: [simStackPtr isNil]) ifTrue:
@@ -170,40 +172,40 @@ CogSSBytecodeFixup >> printStateOn: aStream [
 	aStream nextPut: $)
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 CogSSBytecodeFixup >> reinitialize [
 	<inline: true>
 	targetInstruction := simStackPtr := 0.
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 CogSSBytecodeFixup >> setIsBackwardBranchFixup [
 	<inline: true>
 	isTargetOfBackwardBranch := true
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 CogSSBytecodeFixup >> simNativeStackSize [
 	"Answer the value of simStackPtr"
 
 	^ simNativeStackSize
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 CogSSBytecodeFixup >> simNativeStackSize: anObject [
 	"Set the value of simStackPtr"
 
 	^simNativeStackSize := anObject
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 CogSSBytecodeFixup >> simStackPtr [
 	"Answer the value of simStackPtr"
 
 	^ simStackPtr
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 CogSSBytecodeFixup >> simStackPtr: anObject [
 	"Set the value of simStackPtr"
 

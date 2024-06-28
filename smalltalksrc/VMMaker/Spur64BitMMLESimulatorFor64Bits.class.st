@@ -1,10 +1,12 @@
 Class {
-	#name : #Spur64BitMMLESimulatorFor64Bits,
-	#superclass : #Spur64BitMMLESimulator,
-	#category : #'VMMaker-SpurMemoryManagerSimulation'
+	#name : 'Spur64BitMMLESimulatorFor64Bits',
+	#superclass : 'Spur64BitMMLESimulator',
+	#category : 'VMMaker-SpurMemoryManagerSimulation',
+	#package : 'VMMaker',
+	#tag : 'SpurMemoryManagerSimulation'
 }
 
-{ #category : #'memory access' }
+{ #category : 'memory access' }
 Spur64BitMMLESimulatorFor64Bits >> byteAt: byteAddress [
 	| lowBits long64 |
 	lowBits := byteAddress bitAnd: 7.
@@ -12,7 +14,7 @@ Spur64BitMMLESimulatorFor64Bits >> byteAt: byteAddress [
 	^(long64 bitShift: -8 * lowBits) bitAnd: 16rFF
 ]
 
-{ #category : #'memory access' }
+{ #category : 'memory access' }
 Spur64BitMMLESimulatorFor64Bits >> byteAt: byteAddress put: byte [
 	| lowBits long64 longAddress mask value |
 	lowBits := byteAddress bitAnd: 7.
@@ -24,7 +26,7 @@ Spur64BitMMLESimulatorFor64Bits >> byteAt: byteAddress put: byte [
 	^byte
 ]
 
-{ #category : #'memory access' }
+{ #category : 'memory access' }
 Spur64BitMMLESimulatorFor64Bits >> long32At: byteAddress [
 	"Answer the 32-bit word at byteAddress which must be a multiple of four."
 	| lowBits long |
@@ -35,7 +37,7 @@ Spur64BitMMLESimulatorFor64Bits >> long32At: byteAddress [
 		ifFalse: [long bitAnd: 16rFFFFFFFF]
 ]
 
-{ #category : #'memory access' }
+{ #category : 'memory access' }
 Spur64BitMMLESimulatorFor64Bits >> long32At: byteAddress put: a32BitValue [
  	"Store the 32-bit word at byteAddress which must be a multiple of four."
 	| lowBits long longAddress |
@@ -56,7 +58,7 @@ Spur64BitMMLESimulatorFor64Bits >> long32At: byteAddress put: a32BitValue [
 	^a32BitValue
 ]
 
-{ #category : #simulation }
+{ #category : 'simulation' }
 Spur64BitMMLESimulatorFor64Bits >> memoryClass [
 	"Answer the class to use for the memory inst var in simulation.
 	 Answer nil if a suitable class isn't available.  This version uses a 64-bit element class if available."
@@ -64,7 +66,7 @@ Spur64BitMMLESimulatorFor64Bits >> memoryClass [
 	^Smalltalk classNamed: #DoubleWordArray
 ]
 
-{ #category : #'memory access' }
+{ #category : 'memory access' }
 Spur64BitMMLESimulatorFor64Bits >> shortAt: byteAddress [
 	| lowBits long64 |
 	lowBits := byteAddress bitAnd: 6.
@@ -72,7 +74,7 @@ Spur64BitMMLESimulatorFor64Bits >> shortAt: byteAddress [
 	^(long64 bitShift: -8 * lowBits) bitAnd: 16rFFFF
 ]
 
-{ #category : #'memory access' }
+{ #category : 'memory access' }
 Spur64BitMMLESimulatorFor64Bits >> shortAt: byteAddress put: short [
 	| lowBits long64 longAddress mask value |
 	lowBits := byteAddress bitAnd: 6.

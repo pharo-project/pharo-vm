@@ -1,20 +1,22 @@
 Class {
-	#name : #CurrentImageCoInterpreterFacadeFor64BitSpurObjectRepresentation,
-	#superclass : #CurrentImageCoInterpreterFacadeForSpurObjectRepresentation,
-	#category : #'VMMaker-Support'
+	#name : 'CurrentImageCoInterpreterFacadeFor64BitSpurObjectRepresentation',
+	#superclass : 'CurrentImageCoInterpreterFacadeForSpurObjectRepresentation',
+	#category : 'VMMaker-Support',
+	#package : 'VMMaker',
+	#tag : 'Support'
 }
 
-{ #category : #'accessing class hierarchy' }
+{ #category : 'accessing class hierarchy' }
 CurrentImageCoInterpreterFacadeFor64BitSpurObjectRepresentation class >> objectMemoryClass [
 	^Spur64BitCoMemoryManager
 ]
 
-{ #category : #'accessing class hierarchy' }
+{ #category : 'accessing class hierarchy' }
 CurrentImageCoInterpreterFacadeFor64BitSpurObjectRepresentation class >> objectRepresentationClass [
 	^CogObjectRepresentationFor64BitSpur
 ]
 
-{ #category : #'private-cacheing' }
+{ #category : 'private-cacheing' }
 CurrentImageCoInterpreterFacadeFor64BitSpurObjectRepresentation >> objectForOop: anOop [
 	"This is a keyAtValue: search and so needs speeding up either by a reverse map or a simple cache."
 	^(anOop bitAnd: 7) caseOf: {
@@ -28,7 +30,7 @@ CurrentImageCoInterpreterFacadeFor64BitSpurObjectRepresentation >> objectForOop:
 		[4] -> [objectMemory smallFloatValueOf: anOop] }
 ]
 
-{ #category : #'object map' }
+{ #category : 'object map' }
 CurrentImageCoInterpreterFacadeFor64BitSpurObjectRepresentation >> oopForObject: o [
 	o isNumber
 		ifTrue:
@@ -46,22 +48,22 @@ CurrentImageCoInterpreterFacadeFor64BitSpurObjectRepresentation >> oopForObject:
 	^objectMap at: o ifAbsentPut: [objectMap size * 8 + (1024 * 1024 * 1024 * 4)]
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 CurrentImageCoInterpreterFacadeFor64BitSpurObjectRepresentation >> smallFloatExponentOffset [
 	^objectMemory smallFloatExponentOffset
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 CurrentImageCoInterpreterFacadeFor64BitSpurObjectRepresentation >> smallFloatMantissaBits [
 	^objectMemory smallFloatMantissaBits
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 CurrentImageCoInterpreterFacadeFor64BitSpurObjectRepresentation >> smallFloatTag [
 	^objectMemory smallFloatTag
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 CurrentImageCoInterpreterFacadeFor64BitSpurObjectRepresentation >> specialObjectsArrayAddress [
 	^self addressForLabel: #specialObjectsOop
 ]

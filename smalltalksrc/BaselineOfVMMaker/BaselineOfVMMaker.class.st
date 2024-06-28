@@ -1,10 +1,11 @@
 Class {
-	#name : #BaselineOfVMMaker,
-	#superclass : #BaselineOf,
-	#category : #BaselineOfVMMaker
+	#name : 'BaselineOfVMMaker',
+	#superclass : 'BaselineOf',
+	#category : 'BaselineOfVMMaker',
+	#package : 'BaselineOfVMMaker'
 }
 
-{ #category : #baselines }
+{ #category : 'baselines' }
 BaselineOfVMMaker >> baseline: spec [
 	<baseline>
 	spec
@@ -37,7 +38,7 @@ BaselineOfVMMaker >> baseline: spec [
 			spec baseline: 'LLVMDisassembler' with: [ 
 				spec repository: 'github://pharo-project/pharo-llvmDisassembler' ].
 			spec baseline: 'OpalSimdBytecode' with: [ 
-				spec repository: 'github://nrainhart/pharo-opal-simd-bytecode:main' ].
+				spec repository: 'github://evref-inria/pharo-opal-simd-bytecode:main' ].
 
 			"Tests"			
 			spec

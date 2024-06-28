@@ -1,11 +1,11 @@
-Extension { #name : #Array }
+Extension { #name : 'Array' }
 
-{ #category : #'*VMMaker-interpreter simulator' }
+{ #category : '*VMMaker-interpreter simulator' }
 Array >> addBreakpoint: address [
 	^self, {address}
 ]
 
-{ #category : #'*VMMaker-plugin generation' }
+{ #category : '*VMMaker-plugin generation' }
 Array class >> ccg: cg prolog: aBlock expr: aString index: anInteger [
 
 	^cg 
@@ -15,31 +15,31 @@ Array class >> ccg: cg prolog: aBlock expr: aString index: anInteger [
 		andThen: (cg ccgValBlock: 'isIndexable')
 ]
 
-{ #category : #'*VMMaker-plugin generation' }
+{ #category : '*VMMaker-plugin generation' }
 Array class >> ccgDeclareCForVar: aSymbolOrString [
 
 	^'sqInt *', aSymbolOrString
 ]
 
-{ #category : #'*VMMaker-interpreter simulator' }
+{ #category : '*VMMaker-interpreter simulator' }
 Array >> coerceTo: cTypeString sim: interpreterSimulator [
 
 	^ self
 ]
 
-{ #category : #'*VMMaker-interpreter simulator' }
+{ #category : '*VMMaker-interpreter simulator' }
 Array >> isActiveBreakpoint [
 	^self size > 0
 ]
 
-{ #category : #'*VMMaker-interpreter simulator' }
+{ #category : '*VMMaker-interpreter simulator' }
 Array >> isBreakpointFor: address [
 	1 to: self size do:
 		[:i| (self at: i) = address ifTrue: [^true]].
 	^false
 ]
 
-{ #category : #'*VMMaker-interpreter simulator' }
+{ #category : '*VMMaker-interpreter simulator' }
 Array >> menuPrompt [
 	^String streamContents:
 		[:s|
@@ -49,12 +49,12 @@ Array >> menuPrompt [
 		s nextPut: $)]
 ]
 
-{ #category : #'*VMMaker-interpreter simulator' }
+{ #category : '*VMMaker-interpreter simulator' }
 Array >> removeBreakpoint: address [
 	^(self copyWithout: address) ifEmpty: nil
 ]
 
-{ #category : #'*VMMaker-interpreter simulator' }
+{ #category : '*VMMaker-interpreter simulator' }
 Array >> singleStepRequiredToTriggerIn: aCogit [
 	^self anySatisfy: [:address| address between: aCogit cogCodeBase and: aCogit methodZone limitZony]
 ]

@@ -1,12 +1,14 @@
 Class {
-	#name : #ComposedImageWriter,
-	#superclass : #AbstractComposedImageAccess,
+	#name : 'ComposedImageWriter',
+	#superclass : 'AbstractComposedImageAccess',
 	#traits : 'TImageWriter',
 	#classTraits : 'TImageWriter classTrait',
-	#category : #'VMMaker-ImageFormat'
+	#category : 'VMMaker-ImageFormat',
+	#package : 'VMMaker',
+	#tag : 'ImageFormat'
 }
 
-{ #category : #writing }
+{ #category : 'writing' }
 ComposedImageWriter >> ensureDeleteSegments: imageFileName [ 
 	
 	| segmentIndex r |
@@ -26,7 +28,7 @@ ComposedImageWriter >> ensureDeleteSegments: imageFileName [
 			segmentIndex := segmentIndex + 1 ]
 ]
 
-{ #category : #writing }
+{ #category : 'writing' }
 ComposedImageWriter >> unlink: aFileName [
 
 	<doNotGenerate>
@@ -39,7 +41,7 @@ ComposedImageWriter >> unlink: aFileName [
 	^ 0
 ]
 
-{ #category : #writing }
+{ #category : 'writing' }
 ComposedImageWriter >> writeDataStatingAt: start withSize: size inFileName: fullFileName [
 
 	<var: #dataFile type: #sqImageFile>
@@ -65,7 +67,7 @@ ComposedImageWriter >> writeDataStatingAt: start withSize: size inFileName: full
 	^ nWritten
 ]
 
-{ #category : #writing }
+{ #category : 'writing' }
 ComposedImageWriter >> writeHeaderFile: imageFileName fromHeader: header [
 
 	<inline: true>
@@ -86,13 +88,13 @@ ComposedImageWriter >> writeHeaderFile: imageFileName fromHeader: header [
 
 ]
 
-{ #category : #writing }
+{ #category : 'writing' }
 ComposedImageWriter >> writeHeaderSTON: header toFile: f [ 
 
 	self writeSTON: header toFile: f
 ]
 
-{ #category : #api }
+{ #category : 'api' }
 ComposedImageWriter >> writeImageFile: imageFileName fromHeader: header [
 
 	"Write one image header file + many segments files (metadata & data per segment)"
@@ -124,7 +126,7 @@ ComposedImageWriter >> writeImageFile: imageFileName fromHeader: header [
 	coInterpreter success: bytesWritten = header dataSize 
 ]
 
-{ #category : #'perm - space' }
+{ #category : 'perm - space' }
 ComposedImageWriter >> writeImagePermanentSpace: imageFileName [
 
 	<returnTypeC: #'size_t'>
@@ -134,7 +136,7 @@ ComposedImageWriter >> writeImagePermanentSpace: imageFileName [
 	^ self writePermanentSpaceData: imageFileName
 ]
 
-{ #category : #segments }
+{ #category : 'segments' }
 ComposedImageWriter >> writeImageSegments: imageFileName [
 
 	<var: 'aSegment' type:#'SpurSegmentInfo *'>
@@ -154,7 +156,7 @@ ComposedImageWriter >> writeImageSegments: imageFileName [
 
 ]
 
-{ #category : #writing }
+{ #category : 'writing' }
 ComposedImageWriter >> writeMetadata: metadata inFileName: fullFileName [
 
 	<var: #metadataFile type: #sqImageFile>
@@ -173,7 +175,7 @@ ComposedImageWriter >> writeMetadata: metadata inFileName: fullFileName [
 
 ]
 
-{ #category : #'perm - space' }
+{ #category : 'perm - space' }
 ComposedImageWriter >> writePermanentSpaceData: imageFileName [
 
 	<returnTypeC: #'size_t'>
@@ -184,7 +186,7 @@ ComposedImageWriter >> writePermanentSpaceData: imageFileName [
 		  inFileName: (self permSpaceDataFileInImage: imageFileName)
 ]
 
-{ #category : #'perm - space' }
+{ #category : 'perm - space' }
 ComposedImageWriter >> writePermanentSpaceMetadata: imageFileName [
 
 	<var: #metadata type: #ComposedMetadataStruct>
@@ -198,7 +200,7 @@ ComposedImageWriter >> writePermanentSpaceMetadata: imageFileName [
 		inFileName: (self permSpaceMetadataFileNameInImage: imageFileName)
 ]
 
-{ #category : #writing }
+{ #category : 'writing' }
 ComposedImageWriter >> writeSTON: struct toFile: f [
 
 	<inline: true>
@@ -210,7 +212,7 @@ ComposedImageWriter >> writeSTON: struct toFile: f [
 	self fprintf: f _: '\n}'. 
 ]
 
-{ #category : #segments }
+{ #category : 'segments' }
 ComposedImageWriter >> writeSegment: segment nextIndex: segmentIndex inImage: imageFileName [
 
 	<inline: false>
@@ -226,7 +228,7 @@ ComposedImageWriter >> writeSegment: segment nextIndex: segmentIndex inImage: im
 	^ self writeSegmentData: segment nextIndex: segmentIndex inImage: imageFileName.
 ]
 
-{ #category : #segments }
+{ #category : 'segments' }
 ComposedImageWriter >> writeSegmentData: segment nextIndex: segmentIndex inImage: imageFileName [
 
 	<returnTypeC: #'size_t'>
@@ -237,7 +239,7 @@ ComposedImageWriter >> writeSegmentData: segment nextIndex: segmentIndex inImage
 		  inFileName: (self segmentDataFile: segmentIndex inImage: imageFileName)
 ]
 
-{ #category : #segments }
+{ #category : 'segments' }
 ComposedImageWriter >> writeSegmentMetadata: segment nextIndex: segmentIndex inImage: imageFileName [
 
 	<var: #metadata type: #ComposedMetadataStruct>
@@ -252,7 +254,7 @@ ComposedImageWriter >> writeSegmentMetadata: segment nextIndex: segmentIndex inI
 		inFileName: (self segmentMetadataFile: segmentIndex inImage: imageFileName)
 ]
 
-{ #category : #writing }
+{ #category : 'writing' }
 ComposedImageWriter >> writeSegmentSTON: segmentMetadata toFile: f [ 
 
 	<var: #f type: #sqImageFile>

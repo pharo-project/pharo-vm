@@ -44,8 +44,8 @@ totalHeapSizeIncludingBridges
 	- the total size of all segments, used to compute heap usage
 "
 Class {
-	#name : #SpurSegmentManager,
-	#superclass : #VMClass,
+	#name : 'SpurSegmentManager',
+	#superclass : 'VMClass',
 	#instVars : [
 		'manager',
 		'numSegments',
@@ -57,28 +57,30 @@ Class {
 		'preferredPinningSegment',
 		'totalHeapSizeIncludingBridges'
 	],
-	#category : #'VMMaker-SpurMemoryManager'
+	#category : 'VMMaker-SpurMemoryManager',
+	#package : 'VMMaker',
+	#tag : 'SpurMemoryManager'
 }
 
-{ #category : #translation }
+{ #category : 'translation' }
 SpurSegmentManager class >> declareCVarsIn: aCCodeGenerator [
 	aCCodeGenerator
 		var: #segments type: #'SpurSegmentInfo *';
 		var: #totalHeapSizeIncludingBridges type: #usqInt
 ]
 
-{ #category : #translation }
+{ #category : 'translation' }
 SpurSegmentManager class >> implicitReturnTypeFor: aSelector [
 	"Answer the return type for methods that don't have an explicit return."
 	^#void
 ]
 
-{ #category : #translation }
+{ #category : 'translation' }
 SpurSegmentManager class >> isNonArgumentImplicitReceiverVariableName: instVarName [
 	^instVarName = 'manager'
 ]
 
-{ #category : #'growing/shrinking memory' }
+{ #category : 'growing/shrinking memory' }
 SpurSegmentManager >> addSegmentOfSize: ammount [
 	<returnTypeC: #'SpurSegmentInfo *'>
 	<inline: false>
@@ -123,7 +125,7 @@ SpurSegmentManager >> addSegmentOfSize: ammount [
 	^nil
 ]
 
-{ #category : #'debug support' }
+{ #category : 'debug support' }
 SpurSegmentManager >> allBridgesMarked [
 	0 to: numSegments - 1 do:
 		[:i| | bridgeObj |
@@ -141,7 +143,7 @@ SpurSegmentManager >> allBridgesMarked [
 		 manager isMarked: bridgeObj]"
 ]
 
-{ #category : #private }
+{ #category : 'private' }
 SpurSegmentManager >> allocateOrExtendSegmentInfos [
 	"Increase the number of allocated segInfos by 16."
 	| newNumSegs |
@@ -166,25 +168,25 @@ SpurSegmentManager >> allocateOrExtendSegmentInfos [
 	numSegInfos := newNumSegs
 ]
 
-{ #category : #asserting }
+{ #category : 'asserting' }
 SpurSegmentManager >> assertBridge [
 
 	self assert: (manager isSegmentBridge: (self bridgeAt: 0)).
 	self assert: (manager numSlotsOfAny: (self bridgeAt: 0)) = 0
 ]
 
-{ #category : #bridges }
+{ #category : 'bridges' }
 SpurSegmentManager >> bridgeAt: segIndex [
 	^self bridgeFor: (self addressOf: (segments at: segIndex))
 ]
 
-{ #category : #bridges }
+{ #category : 'bridges' }
 SpurSegmentManager >> bridgeFor: aSegment [
 	<var: 'aSegment' type: #'SpurSegmentInfo *'>
 	^manager objectStartingAt: aSegment segLimit - manager bridgeSize
 ]
 
-{ #category : #'growing/shrinking memory' }
+{ #category : 'growing/shrinking memory' }
 SpurSegmentManager >> bridgeFrom: aSegment to: nextSegmentOrNil [
 	"Create a bridge from aSegment to the next segment,
 	 or create a terminating bridge if there is no next segment."
@@ -206,7 +208,7 @@ SpurSegmentManager >> bridgeFrom: aSegment to: nextSegmentOrNil [
 
 ]
 
-{ #category : #'debug support' }
+{ #category : 'debug support' }
 SpurSegmentManager >> checkSegments [
 	self assert: numSegments >= 1.
 	0 to: numSegments - 1 do:
@@ -216,13 +218,13 @@ SpurSegmentManager >> checkSegments [
 	self assert: (segments at: numSegments - 1) segLimit - manager bridgeSize = manager getMemoryMap oldSpaceEnd 
 ]
 
-{ #category : #loading }
+{ #category : 'loading' }
 SpurSegmentManager >> clearSegments [
 	
 	numSegments := 0
 ]
 
-{ #category : #snapshot }
+{ #category : 'snapshot' }
 SpurSegmentManager >> collapseSegmentsPostSwizzle [
 	"The image has been loaded, old segments reconstructed, and the heap
 	 swizzled into a single contiguous segment.  Collapse the segments into one."
@@ -243,12 +245,12 @@ SpurSegmentManager >> collapseSegmentsPostSwizzle [
 
 ]
 
-{ #category : #'simulation only' }
+{ #category : 'simulation only' }
 SpurSegmentManager >> computeTotalHeapSizeIncludingBridges [
 	totalHeapSizeIncludingBridges := manager getMemoryMap oldSpaceEnd - manager getMemoryMap oldSpaceStart
 ]
 
-{ #category : #'growing/shrinking memory' }
+{ #category : 'growing/shrinking memory' }
 SpurSegmentManager >> findEmptySegNearestInSizeTo: size [
 	| seg best delta |
 	<var: #seg type: #'SpurSegmentInfo *'>
@@ -268,7 +270,7 @@ SpurSegmentManager >> findEmptySegNearestInSizeTo: size [
 	^best
 ]
 
-{ #category : #'growing/shrinking memory' }
+{ #category : 'growing/shrinking memory' }
 SpurSegmentManager >> firstGapOfSizeAtLeast: size [
 	"Answer the segment limit of the first segment followed by a gap of at least size bytes."
 	0 to: numSegments - 2 do:
@@ -279,12 +281,12 @@ SpurSegmentManager >> firstGapOfSizeAtLeast: size [
 	^(segments at: numSegments - 1) segLimit asVoidPointer
 ]
 
-{ #category : #snapshot }
+{ #category : 'snapshot' }
 SpurSegmentManager >> firstSegmentBytes [
 	^(segments at: 0) segSize
 ]
 
-{ #category : #'growing/shrinking memory' }
+{ #category : 'growing/shrinking memory' }
 SpurSegmentManager >> indexOfSegment: seg [
 	<var: #seg type: #'SpurSegmentInfo *'>
 	0 to: numSegments - 1 do:
@@ -294,13 +296,13 @@ SpurSegmentManager >> indexOfSegment: seg [
 	self error: 'segment not found'
 ]
 
-{ #category : #'spur bootstrap' }
+{ #category : 'spur bootstrap' }
 SpurSegmentManager >> initForBootstrap [
 	numSegInfos = 0 ifTrue:
 		[self allocateOrExtendSegmentInfos]
 ]
 
-{ #category : #'simulation only' }
+{ #category : 'simulation only' }
 SpurSegmentManager >> initSegmentForInImageCompilationFrom: base to: limit [
 	<doNotGenerate>
 	| bridge |
@@ -314,13 +316,13 @@ SpurSegmentManager >> initSegmentForInImageCompilationFrom: base to: limit [
 	segments := CArrayAccessor on: segments
 ]
 
-{ #category : #initialization }
+{ #category : 'initialization' }
 SpurSegmentManager >> initialize [
 	numSegments := numSegInfos := sweepIndex := totalHeapSizeIncludingBridges := 0.
 	canSwizzle := false
 ]
 
-{ #category : #'simulation only' }
+{ #category : 'simulation only' }
 SpurSegmentManager >> initializeFromFreeChunks: freeChunks [
 	<doNotGenerate>
 	"For testing, create a set of segments using the freeChunks as bridges."
@@ -349,7 +351,7 @@ SpurSegmentManager >> initializeFromFreeChunks: freeChunks [
 		self assert: bridge = (self bridgeFor: segment)]
 ]
 
-{ #category : #'growing/shrinking memory' }
+{ #category : 'growing/shrinking memory' }
 SpurSegmentManager >> insertSegmentFor: segAddress [
 	"Reserve a new segInfo for segAddress.  If segAddress
 	 is in the middle of the existing segments, shuffle them
@@ -370,7 +372,7 @@ SpurSegmentManager >> insertSegmentFor: segAddress [
 		repeat
 ]
 
-{ #category : #'growing/shrinking memory' }
+{ #category : 'growing/shrinking memory' }
 SpurSegmentManager >> isEmptySegment: seg [
 	<var: #seg type: #'SpurSegmentInfo *'>
 	| firstObj |
@@ -379,7 +381,7 @@ SpurSegmentManager >> isEmptySegment: seg [
 	  and: [(manager addressAfter: firstObj) = (seg segLimit - manager bridgeSize)]
 ]
 
-{ #category : #testing }
+{ #category : 'testing' }
 SpurSegmentManager >> isInSegments: address [
 	<var: #address type: #usqInt>
 	0 to: numSegments - 1 do:
@@ -391,7 +393,7 @@ SpurSegmentManager >> isInSegments: address [
 	^false
 ]
 
-{ #category : #testing }
+{ #category : 'testing' }
 SpurSegmentManager >> isValidSegmentBridge: objOop [
 	"bridges bridge the gaps between segments. They are the last object in each segment."
 	^((manager addressCouldBeObj: objOop) or: [objOop = manager getMemoryMap oldSpaceEnd])
@@ -400,22 +402,22 @@ SpurSegmentManager >> isValidSegmentBridge: objOop [
 		or: [(manager numSlotsOfAny: objOop) = 0]]]
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 SpurSegmentManager >> lastBridge [
 	^self bridgeAt: numSegments - 1
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 SpurSegmentManager >> lastSegment [
 	^segments at: numSegments - 1
 ]
 
-{ #category : #initialization }
+{ #category : 'initialization' }
 SpurSegmentManager >> manager: aSpurMemoryManager [
 	manager := aSpurMemoryManager
 ]
 
-{ #category : #snapshot }
+{ #category : 'snapshot' }
 SpurSegmentManager >> nextNonEmptySegmentAfter: i [
 	"Answer the the next non-empty segment or nil. The size of a segment includes
 	 that of its bridge. A segment containing just a free object and a bridge will still
@@ -429,7 +431,7 @@ SpurSegmentManager >> nextNonEmptySegmentAfter: i [
 		[^self addressOf: (segments at: nextx)]] repeat
 ]
 
-{ #category : #pinning }
+{ #category : 'pinning' }
 SpurSegmentManager >> notePinned: objOop [
 	"Let the segmentManager mark which segments contain pinned objects"
 	self assert: (manager isPinned: objOop).
@@ -442,13 +444,13 @@ SpurSegmentManager >> notePinned: objOop [
 			 (segments at: sweepIndex) containsPinned: true]
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 SpurSegmentManager >> numSegments [
 	<cmacro: '() GIV(numSegments)'>
 	^numSegments
 ]
 
-{ #category : #bootstrapping }
+{ #category : 'bootstrapping' }
 SpurSegmentManager >> plantBridgeAtTheEndOfMemory [
 
 	self assert: manager getMemoryMap oldSpaceEnd = (segments at: 0) segLimit.
@@ -457,7 +459,7 @@ SpurSegmentManager >> plantBridgeAtTheEndOfMemory [
 		at: manager getMemoryMap oldSpaceEnd - manager bridgeSize
 ]
 
-{ #category : #snapshot }
+{ #category : 'snapshot' }
 SpurSegmentManager >> postSnapshot [
 	"Restore all shortened segments to their proper size, re-freeing the trailing space."
 	<inline: false>
@@ -485,7 +487,7 @@ SpurSegmentManager >> postSnapshot [
 	manager checkFreeSpace: GCModeFull
 ]
 
-{ #category : #pinning }
+{ #category : 'pinning' }
 SpurSegmentManager >> prepareForGlobalSweep [
 	"Let the segmentManager mark which segments contain pinned objects via notePinned:.
 	 For coallesceFreeChunk:, ensure that the last bridge is marked."
@@ -497,7 +499,7 @@ SpurSegmentManager >> prepareForGlobalSweep [
 		to: true
 ]
 
-{ #category : #snapshot }
+{ #category : 'snapshot' }
 SpurSegmentManager >> prepareForSnapshot [
 	"shorten all segments by any trailing free space."
 	<inline: #never>
@@ -544,7 +546,7 @@ SpurSegmentManager >> prepareForSnapshot [
 	manager setEndOfMemory: (segments at: numSegments - 1) segLimit - manager bridgeSize
 ]
 
-{ #category : #'simulation only' }
+{ #category : 'simulation only' }
 SpurSegmentManager >> printSegmentAddresses [
 	<doNotGenerate>
 	"Convenient when debugging segment overlap"
@@ -559,7 +561,7 @@ SpurSegmentManager >> printSegmentAddresses [
 			Transcript cr.
 ]
 
-{ #category : #'growing/shrinking memory' }
+{ #category : 'growing/shrinking memory' }
 SpurSegmentManager >> removeSegment: emptySeg [
 	<var: #emptySeg type: #'SpurSegmentInfo *'>
 	| i |
@@ -580,7 +582,7 @@ SpurSegmentManager >> removeSegment: emptySeg [
 	manager setLastSegment: (self addressOf: (segments at: numSegments - 1))
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 SpurSegmentManager >> segmentContainingObj: objOop [
 	<export: true>
 	<returnTypeC: #'SpurSegmentInfo *'>
@@ -591,7 +593,7 @@ SpurSegmentManager >> segmentContainingObj: objOop [
 	^nil
 ]
 
-{ #category : #'growing/shrinking memory' }
+{ #category : 'growing/shrinking memory' }
 SpurSegmentManager >> segmentOverlap [
 	"Answers true if a segment overlaps with another one."
 	0 to: numSegments - 1 do:
@@ -615,19 +617,19 @@ SpurSegmentManager >> segmentOverlap [
 	^false
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 SpurSegmentManager >> segments [
 	<cmacro: '() GIV(segments)'>
 	^segments
 ]
 
-{ #category : #snapshot }
+{ #category : 'snapshot' }
 SpurSegmentManager >> setCanSwizzle: aValue [
 
 	canSwizzle := aValue
 ]
 
-{ #category : #'growing/shrinking memory' }
+{ #category : 'growing/shrinking memory' }
 SpurSegmentManager >> shrinkObjectMemory: delta [
 	"Answer if any shrinkage was achieved."
 	<inline: false>
@@ -648,14 +650,14 @@ SpurSegmentManager >> shrinkObjectMemory: delta [
 	 self removeSegment: emptySeg] repeat
 ]
 
-{ #category : #pinning }
+{ #category : 'pinning' }
 SpurSegmentManager >> someSegmentContainsPinned [
 	0 to: numSegments - 1 do:
 		[:i| (segments at: i) containsPinned ifTrue: [^true]].
 	^false
 ]
 
-{ #category : #snapshot }
+{ #category : 'snapshot' }
 SpurSegmentManager >> swizzleObj: objOop [
 	<inline: false>
 	self assert: canSwizzle.
@@ -666,7 +668,7 @@ SpurSegmentManager >> swizzleObj: objOop [
 	^objOop + (segments at: 0) swizzle
 ]
 
-{ #category : #snapshot }
+{ #category : 'snapshot' }
 SpurSegmentManager >> totalBytesInNonEmptySegments [
 
 	<var: #total type: #'size_t'>
@@ -681,7 +683,7 @@ SpurSegmentManager >> totalBytesInNonEmptySegments [
 	^total
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 SpurSegmentManager >> totalBytesInSegments [
 	| total |
 	<var: #total type: #usqInt>
@@ -693,12 +695,12 @@ SpurSegmentManager >> totalBytesInSegments [
 	^total
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 SpurSegmentManager >> totalOldSpaceCapacity [
 	^totalHeapSizeIncludingBridges - (numSegments * manager bridgeSize)
 ]
 
-{ #category : #loading }
+{ #category : 'loading' }
 SpurSegmentManager >> withNewSegmentDo: aClosure [ 
 	
 	| segInfo |
@@ -714,7 +716,7 @@ SpurSegmentManager >> withNewSegmentDo: aClosure [
 
 ]
 
-{ #category : #snapshot }
+{ #category : 'snapshot' }
 SpurSegmentManager >> withNonEmptySegmentsDo: aBlockClosure [
 
 	| total |

@@ -2,28 +2,30 @@
 File plugin simulation for the VM simulator
 "
 Class {
-	#name : #FilePluginSimulator,
-	#superclass : #FilePlugin,
+	#name : 'FilePluginSimulator',
+	#superclass : 'FilePlugin',
 	#instVars : [
 		'openFiles',
 		'states',
 		'maxOpenFiles'
 	],
-	#category : #'VMMaker-InterpreterSimulation'
+	#category : 'VMMaker-InterpreterSimulation',
+	#package : 'VMMaker',
+	#tag : 'InterpreterSimulation'
 }
 
-{ #category : #translation }
+{ #category : 'translation' }
 FilePluginSimulator class >> shouldBeTranslated [
 "This class should not be translated"
 	^false
 ]
 
-{ #category : #'initialize-release' }
+{ #category : 'initialize-release' }
 FilePluginSimulator >> close [  "close any files that ST may have opened"
 	openFiles do: [:f | f close]
 ]
 
-{ #category : #simulation }
+{ #category : 'simulation' }
 FilePluginSimulator >> dir_EntryLookup: pathString _: pathStringLength _: entryNameString _: entryNameStringLength _: name _: nameLength _: creationDate _: modificationDate _: isDirectory _: sizeIfFile _: posixPermissions _: isSymlink [
 	"sqInt dir_EntryLookup(char *pathString, sqInt pathStringLength, char *nameString, sqInt nameStringLength,
 		/* outputs: */		char *name, sqInt *nameLength, sqInt *creationDate, sqInt *modificationDate,
@@ -48,7 +50,7 @@ FilePluginSimulator >> dir_EntryLookup: pathString _: pathStringLength _: entryN
 	^DirEntryFound
 ]
 
-{ #category : #simulation }
+{ #category : 'simulation' }
 FilePluginSimulator >> dir_Lookup: pathString _: pathStringLength _: index _: name _: nameLength _: creationDate _: modificationDate _: isDirectory _: sizeIfFile _: posixPermissions _: isSymlink [
 	"sqInt dir_Lookup(	char *pathString, sqInt pathStringLength, sqInt index,
 		/* outputs: */	char *name, sqInt *nameLength, sqInt *creationDate, sqInt *modificationDate,
@@ -72,7 +74,7 @@ FilePluginSimulator >> dir_Lookup: pathString _: pathStringLength _: index _: na
 	^DirEntryFound
 ]
 
-{ #category : #simulation }
+{ #category : 'simulation' }
 FilePluginSimulator >> fileValueOf: objectPointer [
 	| index file |
 	index := (interpreterProxy isIntegerObject: objectPointer)
@@ -94,55 +96,55 @@ FilePluginSimulator >> fileValueOf: objectPointer [
 	^file
 ]
 
-{ #category : #'file security' }
+{ #category : 'file security' }
 FilePluginSimulator >> ioCanCreatePath: dirNameIndex OfSize: dirNameSize [
 	"Return true if we're allowed to create a directory with the given name"
 	^true
 ]
 
-{ #category : #'file security' }
+{ #category : 'file security' }
 FilePluginSimulator >> ioCanDeleteFile: nameIndex OfSize: nameSize [
 	"Return true if we're allowed to delete the file with the given name"
 	^true
 ]
 
-{ #category : #'file security' }
+{ #category : 'file security' }
 FilePluginSimulator >> ioCanDeletePath: dirNameIndex OfSize: dirNameSize [
 	"Return true if we're allowed to delete the directory with the given name"
 	^true
 ]
 
-{ #category : #'file security' }
+{ #category : 'file security' }
 FilePluginSimulator >> ioCanGetFileType: fileNameIndex OfSize: fileNameSize [
 	"Return true if we're allowed to retrieve the (mac) file type of the given file."
 	^true
 ]
 
-{ #category : #'file security' }
+{ #category : 'file security' }
 FilePluginSimulator >> ioCanListPath: pathNameIndex OfSize: pathNameSize [
 	"Return true if we're allowed to list the contents of the given directory"
 	^true
 ]
 
-{ #category : #'file security' }
+{ #category : 'file security' }
 FilePluginSimulator >> ioCanOpenFile: nameIndex OfSize: nameSize Writable: writeFlag [
 	"Return true if we're allowed to open the given file (possibly in write mode)"
 	^true
 ]
 
-{ #category : #'file security' }
+{ #category : 'file security' }
 FilePluginSimulator >> ioCanRenameFile: oldNameIndex OfSize: oldNameSize [
 	"Return true if we're allowed to rename the given file"
 	^true
 ]
 
-{ #category : #'file security' }
+{ #category : 'file security' }
 FilePluginSimulator >> ioCanSetFileType: fileNameIndex OfSize: fileNameSize [
 	"Return true if we're allowed to set the (mac) file type and creator on the given file"
 	^true
 ]
 
-{ #category : #simulation }
+{ #category : 'simulation' }
 FilePluginSimulator >> primLookupEntryIn: fullPath index: index [
 	"Look up the index-th entry of the directory with the given fully-qualified path (i.e., starting from the root of the file hierarchy) and return an array containing:
 
@@ -161,7 +163,7 @@ FilePluginSimulator >> primLookupEntryIn: fullPath index: index [
 				ifAbsent: [Smalltalk primitiveErrorTable size + 1]]
 ]
 
-{ #category : #simulation }
+{ #category : 'simulation' }
 FilePluginSimulator >> primLookupEntryIn: fullPath name: fName [
 	"Look up <fName> (a simple file name) in the directory identified by <fullPath>
  	 and return an array containing:
@@ -182,14 +184,14 @@ FilePluginSimulator >> primLookupEntryIn: fullPath name: fName [
 				ifAbsent: [Smalltalk primitiveErrorTable size + 1]]
 ]
 
-{ #category : #'file primitives' }
+{ #category : 'file primitives' }
 FilePluginSimulator >> primitiveFileGetPosition [
 	super primitiveFileGetPosition.
 	interpreterProxy failed ifTrue:
 		[self halt]
 ]
 
-{ #category : #simulation }
+{ #category : 'simulation' }
 FilePluginSimulator >> recordStateOf: file [
 	([file position]
 			on: Error
@@ -198,7 +200,7 @@ FilePluginSimulator >> recordStateOf: file [
 		states at: file put: {position. file isBinary}]
 ]
 
-{ #category : #simulation }
+{ #category : 'simulation' }
 FilePluginSimulator >> sqFile: file Read: countArg Into: byteArrayIndexArg At: startIndex [
 	| byteArrayIndex count |
 	count := file isFakeStdinStream
@@ -220,19 +222,19 @@ FilePluginSimulator >> sqFile: file Read: countArg Into: byteArrayIndexArg At: s
 	^count
 ]
 
-{ #category : #simulation }
+{ #category : 'simulation' }
 FilePluginSimulator >> sqFile: file SetPosition: newPosition [
 	file position: newPosition.
 	self recordStateOf: file
 ]
 
-{ #category : #simulation }
+{ #category : 'simulation' }
 FilePluginSimulator >> sqFile: file Truncate: truncatePosition [
 	file truncate: truncatePosition.
 	self recordStateOf: file
 ]
 
-{ #category : #simulation }
+{ #category : 'simulation' }
 FilePluginSimulator >> sqFile: file Write: count From: byteArrayIndexArg At: startIndex [
 	| byteArrayIndex |
 	byteArrayIndex := byteArrayIndexArg asInteger. "Coerces CArray et al correctly"
@@ -249,12 +251,12 @@ FilePluginSimulator >> sqFile: file Write: count From: byteArrayIndexArg At: sta
 	^count
 ]
 
-{ #category : #simulation }
+{ #category : 'simulation' }
 FilePluginSimulator >> sqFileAtEnd: file [
 	^file atEnd
 ]
 
-{ #category : #simulation }
+{ #category : 'simulation' }
 FilePluginSimulator >> sqFileClose: file [
 	| index |
 	index := openFiles keyAtValue: file.
@@ -263,17 +265,17 @@ FilePluginSimulator >> sqFileClose: file [
 	file close
 ]
 
-{ #category : #simulation }
+{ #category : 'simulation' }
 FilePluginSimulator >> sqFileFlush: file [
 	^file flush
 ]
 
-{ #category : #simulation }
+{ #category : 'simulation' }
 FilePluginSimulator >> sqFileGetPosition: file [
 	^file position
 ]
 
-{ #category : #'initialize-release' }
+{ #category : 'initialize-release' }
 FilePluginSimulator >> sqFileInit [
 	"See FilePluginSimulator>>sqFileStdioHandlesInto:"
 	(openFiles := Dictionary new)
@@ -285,12 +287,12 @@ FilePluginSimulator >> sqFileInit [
 	^true
 ]
 
-{ #category : #simulation }
+{ #category : 'simulation' }
 FilePluginSimulator >> sqFileSize: file [
 	^file stream size
 ]
 
-{ #category : #simulation }
+{ #category : 'simulation' }
 FilePluginSimulator >> sqFileStdioHandlesInto: anArray [
 	"See FilePluginSimulator>>initialiseModule"
 	anArray
@@ -300,7 +302,7 @@ FilePluginSimulator >> sqFileStdioHandlesInto: anArray [
 	^7
 ]
 
-{ #category : #simulation }
+{ #category : 'simulation' }
 FilePluginSimulator >> sqFileSync: file [
 	^file sync
 ]

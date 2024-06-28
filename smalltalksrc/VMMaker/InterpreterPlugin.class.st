@@ -2,8 +2,8 @@
 This class provides the basic framework for creating VM plugins. Most of the useful methods are on the class side; particularly take note of the messages like #shouldBeTranslated and #requiresPlatformFiles.
 "
 Class {
-	#name : #InterpreterPlugin,
-	#superclass : #VMClass,
+	#name : 'InterpreterPlugin',
+	#superclass : 'VMClass',
 	#instVars : [
 		'interpreterProxy',
 		'moduleName',
@@ -12,10 +12,12 @@ Class {
 	#pools : [
 		'VMBasicConstants'
 	],
-	#category : #'VMMaker-Plugins'
+	#category : 'VMMaker-Plugins',
+	#package : 'VMMaker',
+	#tag : 'Plugins'
 }
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 InterpreterPlugin class >> allCallsOn [
 	"Answer a SortedCollection of all the methods that refer to me. Most classes simply defer to SystemDictionary>allCallsOn: but some have special requirements - plugins may have a module name that does not match the class name"
 
@@ -24,7 +26,7 @@ InterpreterPlugin class >> allCallsOn [
 		ifFalse:[^super allCallsOn]
 ]
 
-{ #category : #translation }
+{ #category : 'translation' }
 InterpreterPlugin class >> allCodeOlderThan: modificationTime [
 	^((self pluginClassesUpToRoot) allSatisfy:
 			[:aPluginClass| aPluginClass timeStamp < modificationTime])
@@ -37,7 +39,7 @@ InterpreterPlugin class >> allCodeOlderThan: modificationTime [
 			stamp asSeconds < modificationTime]]
 ]
 
-{ #category : #'translated primitives' }
+{ #category : 'translated primitives' }
 InterpreterPlugin class >> browseTranslatedPrimitives [
 	"InterpreterPlugin browseTranslatedPrimitives"
 	| methodRefs |
@@ -52,7 +54,7 @@ InterpreterPlugin class >> browseTranslatedPrimitives [
 		name: 'Translated primitives'
 ]
 
-{ #category : #translation }
+{ #category : 'translation' }
 InterpreterPlugin class >> buildCodeGenerator [
 	"Build a CCodeGenerator for the plugin"
 	| cg pluginClasses |
@@ -69,7 +71,7 @@ InterpreterPlugin class >> buildCodeGenerator [
 	^cg
 ]
 
-{ #category : #translation }
+{ #category : 'translation' }
 InterpreterPlugin class >> buildCodeGeneratorForVMClass: aVMClass [
 	"Build a CCodeGenerator for the plugin"
 	| cg pluginClasses |
@@ -86,21 +88,21 @@ InterpreterPlugin class >> buildCodeGeneratorForVMClass: aVMClass [
 	^cg
 ]
 
-{ #category : #translation }
+{ #category : 'translation' }
 InterpreterPlugin class >> buildCodeGeneratorUpTo: aPluginClass [
 	"Build a CCodeGenerator for the plugin - Deprecated and here only in case old plugin code tries to use it"
 	self deprecated.
 	^self buildCodeGenerator
 ]
 
-{ #category : #private }
+{ #category : 'private' }
 InterpreterPlugin class >> codeGeneratorClass [
 	"return the appropriate class of code generator for this kind ofplugin"
 
 	^VMPluginCodeGenerator
 ]
 
-{ #category : #translation }
+{ #category : 'translation' }
 InterpreterPlugin class >> declareCVarsIn: aCCodeGenerator [
 	"Note: This method must be implemented by all subclasses to declare variables."
 
@@ -110,13 +112,13 @@ InterpreterPlugin class >> declareCVarsIn: aCCodeGenerator [
 	self declareHeaderFilesIn: aCCodeGenerator
 ]
 
-{ #category : #translation }
+{ #category : 'translation' }
 InterpreterPlugin class >> declareHeaderFilesIn: aCCodeGenerator [
 	self hasHeaderFile ifTrue:[
 		aCCodeGenerator addHeaderFile: '"', self moduleName,'.h"'].
 ]
 
-{ #category : #'instance creation' }
+{ #category : 'instance creation' }
 InterpreterPlugin class >> doPrimitive: primitiveName [ 
 	| proxy plugin |
 	proxy := InterpreterProxy new.
@@ -128,36 +130,36 @@ InterpreterPlugin class >> doPrimitive: primitiveName [
 	^ proxy stackValue: 0
 ]
 
-{ #category : #translation }
+{ #category : 'translation' }
 InterpreterPlugin class >> exportBuildInfoOrNil [
 	"A hook for classes to emit some descriptive build string.
 	 See CCodeGenerator>>fileHeaderVersionStampForSourceClass:"
 	^nil
 ]
 
-{ #category : #translation }
+{ #category : 'translation' }
 InterpreterPlugin class >> hasHeaderFile [
 	"If there is a single intrinsic header file to be associated with the plugin, here is where you want to flag"
 	^false
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 InterpreterPlugin class >> isCPP [
 	^ false
 ]
 
-{ #category : #translation }
+{ #category : 'translation' }
 InterpreterPlugin class >> isPluginClass [
 	^true
 ]
 
-{ #category : #translation }
+{ #category : 'translation' }
 InterpreterPlugin class >> isStructType: typeName [ "<String>"
 	"Subclasses should override to answer trye for struct types they use."
 	^false
 ]
 
-{ #category : #'translated primitives' }
+{ #category : 'translated primitives' }
 InterpreterPlugin class >> methodForTranslatedPrimitiveTuple: tuple [
 	| class |
 	class := Smalltalk classNamed: tuple first.
@@ -170,7 +172,7 @@ InterpreterPlugin class >> methodForTranslatedPrimitiveTuple: tuple [
 							[ByteString compiledMethodAt: #findSubstring:in:startingAt:matchTable:]]]
 ]
 
-{ #category : #'translated primitives' }
+{ #category : 'translated primitives' }
 InterpreterPlugin class >> methodOrNilForTranslatedPrimitiveSelector: selector [
 	self translatedPrimitives do:
 		[:tuple| | method |
@@ -182,14 +184,14 @@ InterpreterPlugin class >> methodOrNilForTranslatedPrimitiveSelector: selector [
 	^nil
 ]
 
-{ #category : #translation }
+{ #category : 'translation' }
 InterpreterPlugin class >> methodsToBePruned [
 	"Since sharing between plugins means that normal pruning
 	 can't be done, allow plugins that want to prune specific methods."
 	^#()
 ]
 
-{ #category : #translation }
+{ #category : 'translation' }
 InterpreterPlugin class >> moduleExportsName [
 	"Answer the name to include in receiver's internal plugin exports.
 	 This is the value of the module: argument in named primitives.
@@ -198,33 +200,33 @@ InterpreterPlugin class >> moduleExportsName [
 	^self moduleName
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 InterpreterPlugin class >> moduleExtension [
 	^ self isCPP ifTrue: ['.cpp'] ifFalse: ['.c']
 ]
 
-{ #category : #translation }
+{ #category : 'translation' }
 InterpreterPlugin class >> moduleFileName [
 	"Answer the receiver's module name that is used for the plugin's C code."
 
 	^ self moduleName, self moduleExtension
 ]
 
-{ #category : #translation }
+{ #category : 'translation' }
 InterpreterPlugin class >> moduleName [
 	"Answer the receiver's module name that is used for the plugin's C code."
 
 	^ self name asString
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 InterpreterPlugin class >> moduleNameAndVersion [
 	"Answer the receiver's module name and version info that is used for the plugin's C code. The default is to append the code generation date, but any useful text is ok (keep it short)"
 
 	^ self moduleName
 ]
 
-{ #category : #translation }
+{ #category : 'translation' }
 InterpreterPlugin class >> pluginClassesUpToRoot [
 	"Answer the classes to include for translation of aPluginClass, superclasses first, and the root (VMClass in general, possibly Object)  last."
 	| theClass classes |
@@ -238,13 +240,13 @@ InterpreterPlugin class >> pluginClassesUpToRoot [
 	^classes reverse
 ]
 
-{ #category : #translation }
+{ #category : 'translation' }
 InterpreterPlugin class >> preambleCCode [
 	"Defining this method to answer a string dumps that string in VMPluginCodeGenerator>>emitCHeaderOn:"
 	^nil
 ]
 
-{ #category : #translation }
+{ #category : 'translation' }
 InterpreterPlugin class >> pruneUnusedInterpreterPluginMethodsIn: aCodeGen [
 	aCodeGen unreachableMethods do:
 		[:m|
@@ -252,19 +254,19 @@ InterpreterPlugin class >> pruneUnusedInterpreterPluginMethodsIn: aCodeGen [
 			[aCodeGen removeMethodForSelector: m selector]]
 ]
 
-{ #category : #translation }
+{ #category : 'translation' }
 InterpreterPlugin class >> requiresCrossPlatformFiles [
 	"default is ok for most, any plugin needing cross platform files aside from a normal header must say so. See SoundCodecPlugin for example"
 	^self hasHeaderFile
 ]
 
-{ #category : #translation }
+{ #category : 'translation' }
 InterpreterPlugin class >> requiresPlatformFiles [
 	"default is ok for most, any plugin needing platform specific files must say so"
 	^false
 ]
 
-{ #category : #translation }
+{ #category : 'translation' }
 InterpreterPlugin class >> shouldBeTranslated [
 "is this class intended to be translated as a plugin? Most subclasses should answer true, but some such as:-
 	TestInterpreterPlugin
@@ -274,7 +276,7 @@ InterpreterPlugin class >> shouldBeTranslated [
 	^true
 ]
 
-{ #category : #translation }
+{ #category : 'translation' }
 InterpreterPlugin class >> shouldBeTranslatedFor: platformName [
 	"Is this class intended to be translated as a plugin, perhaps specific to a platform?
 	 Most subclasses should answer true, but some such as simulation-only versions
@@ -282,7 +284,7 @@ InterpreterPlugin class >> shouldBeTranslatedFor: platformName [
 	^self shouldBeTranslated
 ]
 
-{ #category : #translation }
+{ #category : 'translation' }
 InterpreterPlugin class >> shouldGenerateDeadCode [
 	"Answer if the code generator should generate dead code, e.g. in false ifTrue: [dead] ifFalse: [live].
 	 Since plugin source is shared between different VM builds it is unsafe to assume any code is dead."
@@ -290,14 +292,14 @@ InterpreterPlugin class >> shouldGenerateDeadCode [
 	^true
 ]
 
-{ #category : #simulation }
+{ #category : 'simulation' }
 InterpreterPlugin class >> simulatorClass [
 	"For running from Smalltalk - answer a class that can be used to simulate the receiver, or nil if you want the primitives in this module to always fail, causing simulation to fall through to the Smalltalk code.  By default every non-TestInterpreterPlugin can simulate itself."
 
 	^ self
 ]
 
-{ #category : #simulation }
+{ #category : 'simulation' }
 InterpreterPlugin class >> simulatorForInterpreterInterface: objectMemoryOrInterpreterProxy [
 	"Answer an uninitialized (in the sense that the plugin has been sent initialize, but not initialiseModule)
 	 simulator for the receiver, or nil, if the receiver answers nil to simulatorClass.  Overridden by
@@ -311,7 +313,7 @@ InterpreterPlugin class >> simulatorForInterpreterInterface: objectMemoryOrInter
 			yourself]
 ]
 
-{ #category : #translation }
+{ #category : 'translation' }
 InterpreterPlugin class >> storeString: s onFileNamed: fileName [
 	"Store the given string in a file of the given name."
 
@@ -321,7 +323,7 @@ InterpreterPlugin class >> storeString: s onFileNamed: fileName [
 	f close.
 ]
 
-{ #category : #translation }
+{ #category : 'translation' }
 InterpreterPlugin class >> translateInDirectory: directory doInlining: inlineFlag [
 "This is the default method for writing out sources for a plugin. Several classes need special handling, so look at all implementors of this message"
 	| cg fname |
@@ -344,7 +346,7 @@ InterpreterPlugin class >> translateInDirectory: directory doInlining: inlineFla
 	^cg exportedPrimitiveNames asArray
 ]
 
-{ #category : #translation }
+{ #category : 'translation' }
 InterpreterPlugin class >> translatedPrimitives [
 	"Answer an Array of Class, selector pair Arrays for any primitives to
 	 be translated from Smalltalk methods elsewhere in the system.
@@ -352,7 +354,7 @@ InterpreterPlugin class >> translatedPrimitives [
 	^#()
 ]
 
-{ #category : #simulation }
+{ #category : 'simulation' }
 InterpreterPlugin >> cCoerce: value to: cTypeString [
 	<doNotGenerate>
 	"Type coercion for translation only; just return the value when running in Smalltalk.
@@ -364,20 +366,20 @@ InterpreterPlugin >> cCoerce: value to: cTypeString [
 		ifFalse: [value]
 ]
 
-{ #category : #simulation }
+{ #category : 'simulation' }
 InterpreterPlugin >> cCoerceSimple: value to: cType [
 	<doNotGenerate>
 	"Coercion without type mapping.  Don't even bother to check for valid types..."
 	^value
 ]
 
-{ #category : #'simulation support' }
+{ #category : 'simulation support' }
 InterpreterPlugin >> close [
 	"Simulation subclasses needing some specific close action override as required."
 	<doNotGenerate>
 ]
 
-{ #category : #'simulation support' }
+{ #category : 'simulation support' }
 InterpreterPlugin >> doesNotUnderstand: aMessage [
 	<doNotGenerate>
 	"Override doesNotUnderstand: to iuntercept sends of translated primitive selectors.
@@ -422,7 +424,7 @@ InterpreterPlugin >> doesNotUnderstand: aMessage [
 					flush]]
 ]
 
-{ #category : #simulation }
+{ #category : 'simulation' }
 InterpreterPlugin >> evaluateIfFailed: aBlock [
 	"Evaluate aBlock, catching primtiive failure, and failing if so.
 	 Answer if evaluating aBlock caused primitive failure."
@@ -438,7 +440,7 @@ InterpreterPlugin >> evaluateIfFailed: aBlock [
 	^false
 ]
 
-{ #category : #'simulation support' }
+{ #category : 'simulation support' }
 InterpreterPlugin >> executeTranslatedPrimitiveMethod: method arguments: args subsidiaries: subsidiaryMethods [
 	<doNotGenerate>
 	"Execute the method within a doesNotUnderstand: handler that will
@@ -460,14 +462,14 @@ InterpreterPlugin >> executeTranslatedPrimitiveMethod: method arguments: args su
 			ex pass]
 ]
 
-{ #category : #initialize }
+{ #category : 'initialize' }
 InterpreterPlugin >> expandDereferenceInterpreterProxyFunctionTable [
 	"This is a dummy function that the VMPluginCodeGenerator expands into a
 	 sequence of assignments from interpreterProxy funcitons to local function pointers."
 	<doNotGenerate>
 ]
 
-{ #category : #initialize }
+{ #category : 'initialize' }
 InterpreterPlugin >> getInterpreter [
 	"Note: This is coded so that plugins can be run from Squeak."
 
@@ -475,7 +477,7 @@ InterpreterPlugin >> getInterpreter [
 	^interpreterProxy
 ]
 
-{ #category : #initialize }
+{ #category : 'initialize' }
 InterpreterPlugin >> getModuleName [
 	"Note: This is hardcoded so it can be run from Squeak.
 	The module name is used for validating a module *after*
@@ -488,33 +490,33 @@ InterpreterPlugin >> getModuleName [
 			[self class codeGeneratorClass new pluginClass: self class]
 ]
 
-{ #category : #debugging }
+{ #category : 'debugging' }
 InterpreterPlugin >> halt [
 	self cCode: '' inSmalltalk: [^super halt "avoid the ^0 below"].
 	^0
 ]
 
-{ #category : #testing }
+{ #category : 'testing' }
 InterpreterPlugin >> isInterpreterPlugin [
 	<doNotGenerate>
 	"Simulation only"
 	^true
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 InterpreterPlugin >> isSmartSyntaxPluginSimulator [
 	<doNotGenerate>
 	^false
 ]
 
-{ #category : #'simulation support' }
+{ #category : 'simulation support' }
 InterpreterPlugin >> majorVersion [
 	"This is implemented in sqVirtualMachine.c, so this form is for simulation only."
 	<doNotGenerate>
 	^1
 ]
 
-{ #category : #'simulation support' }
+{ #category : 'simulation support' }
 InterpreterPlugin >> memcpy: dest _: src _: bytes [
 	<doNotGenerate>
 	"implementation of memcpy(3). N.B. If ranges overlap, must use memmove."
@@ -523,7 +525,7 @@ InterpreterPlugin >> memcpy: dest _: src _: bytes [
 
 ]
 
-{ #category : #'simulation support' }
+{ #category : 'simulation support' }
 InterpreterPlugin >> memmove: destAddress _: sourceAddress _: bytes [
 	<doNotGenerate>
 	"implementation of memcpy(3). N.B. If ranges overlap, must use memmove."
@@ -531,7 +533,7 @@ InterpreterPlugin >> memmove: destAddress _: sourceAddress _: bytes [
 	^interpreterProxy memmove: destAddress _: sourceAddress _: bytes
 ]
 
-{ #category : #simulation }
+{ #category : 'simulation' }
 InterpreterPlugin >> methodAndTypesOrNilForTranslatedPrimitiveSelector: selector [
 	<doNotGenerate>
 	"If selector maps to a simulateable translated primitive method, then
@@ -545,7 +547,7 @@ InterpreterPlugin >> methodAndTypesOrNilForTranslatedPrimitiveSelector: selector
 		ifAbsentPut: [self tupleOrNilForTranslatedPrimitiveSelector: selector]
 ]
 
-{ #category : #simulation }
+{ #category : 'simulation' }
 InterpreterPlugin >> methodWithoutPrimitive: method [
 	"Answer either aMethod or a copy of aMehtod, such that the result does /not/ have a primitive."
 	<doNotGenerate>
@@ -565,21 +567,21 @@ InterpreterPlugin >> methodWithoutPrimitive: method [
 		generate: method trailer using: method class
 ]
 
-{ #category : #'simulation support' }
+{ #category : 'simulation support' }
 InterpreterPlugin >> minorVersion [
 	"This is implemented in sqVirtualMachine.c, so this form is for simulation only."
 	<doNotGenerate>
 	^8
 ]
 
-{ #category : #debugging }
+{ #category : 'debugging' }
 InterpreterPlugin >> msg: s [ 
 	<var: #s type: 'char *'>
 	self cCode: 'fprintf(stderr, "\n%s: %s", moduleName, s)' inSmalltalk: [Transcript cr; show: self class moduleName , ': ' , s; endEntry].
 	^0
 ]
 
-{ #category : #'API access' }
+{ #category : 'API access' }
 InterpreterPlugin >> positiveMachineIntegerFor: value [
 	<var: #value type: #'usqIntptr_t'>
 	<inline: #always>
@@ -588,7 +590,7 @@ InterpreterPlugin >> positiveMachineIntegerFor: value [
 		ifFalse: [interpreterProxy positive32BitIntegerFor: value]
 ]
 
-{ #category : #simulation }
+{ #category : 'simulation' }
 InterpreterPlugin >> remapOop: oopOrList in: aBlock [
 
 	"Call remapOop: for the variable oopOrList (or all of the variables in oopOrList) before evaluating
@@ -599,7 +601,7 @@ InterpreterPlugin >> remapOop: oopOrList in: aBlock [
 	^ aBlock value
 ]
 
-{ #category : #initialize }
+{ #category : 'initialize' }
 InterpreterPlugin >> setInterpreter: anInterpreter [ 
 	"Note: This is coded so that it can be run in Squeak."
 
@@ -614,7 +616,7 @@ InterpreterPlugin >> setInterpreter: anInterpreter [
 	^ok
 ]
 
-{ #category : #'API access' }
+{ #category : 'API access' }
 InterpreterPlugin >> signedMachineIntegerFor: value [
 	<var: #value type: #'sqIntptr_t'>
 	<inline: #always>
@@ -623,7 +625,7 @@ InterpreterPlugin >> signedMachineIntegerFor: value [
 		ifFalse: [interpreterProxy signed32BitIntegerFor: value]
 ]
 
-{ #category : #'simulation support' }
+{ #category : 'simulation support' }
 InterpreterPlugin >> sizeof: objectSymbolOrClass [
 	<doNotGenerate>
 	objectSymbolOrClass isInteger ifTrue:
@@ -651,19 +653,19 @@ InterpreterPlugin >> sizeof: objectSymbolOrClass [
 	^super sizeof: objectSymbolOrClass
 ]
 
-{ #category : #'simulation support' }
+{ #category : 'simulation support' }
 InterpreterPlugin >> strlen: aCString [
 	<doNotGenerate>
 	^interpreterProxy strlen: aCString
 ]
 
-{ #category : #'simulation support' }
+{ #category : 'simulation support' }
 InterpreterPlugin >> strncpy: aString _: bString _: n [
 	<doNotGenerate>
 	^interpreterProxy strncpy: aString _: bString _: n
 ]
 
-{ #category : #simulation }
+{ #category : 'simulation' }
 InterpreterPlugin >> translatedPrimitiveArgument: index ofType: cTypeString using: aCCodeGenerator [
 	<doNotGenerate>
 	| oop unitSize |
@@ -687,7 +689,7 @@ InterpreterPlugin >> translatedPrimitiveArgument: index ofType: cTypeString usin
 	self halt
 ]
 
-{ #category : #simulation }
+{ #category : 'simulation' }
 InterpreterPlugin >> tryToRunTranslatedPrimitive: method types: types subsidiaries: subsidiaryMethods [
 	"Evaluate a translated primitive method using the receiver as its receiver.
 	 Supply integers or proxies for the arguments as necessary."
@@ -712,7 +714,7 @@ InterpreterPlugin >> tryToRunTranslatedPrimitive: method types: types subsidiari
 					ifFalse: [self halt]]]
 ]
 
-{ #category : #simulation }
+{ #category : 'simulation' }
 InterpreterPlugin >> tupleOrNilForTranslatedPrimitiveSelector: selector [
 	"Answer a tuple of {simulation method, types, subsidiary methods, original method}
 	 for the selector of a translated primitive.  If the method cannot be simulated, for

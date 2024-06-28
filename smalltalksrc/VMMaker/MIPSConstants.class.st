@@ -2,8 +2,8 @@
 MIPS opcodes and register names.
 "
 Class {
-	#name : #MIPSConstants,
-	#superclass : #SharedPool,
+	#name : 'MIPSConstants',
+	#superclass : 'SharedPool',
 	#classVars : [
 		'A0',
 		'A1',
@@ -120,10 +120,12 @@ Class {
 		'XORI',
 		'ZR'
 	],
-	#category : #'VMMaker-JIT'
+	#category : 'VMMaker-JIT',
+	#package : 'VMMaker',
+	#tag : 'JIT'
 }
 
-{ #category : #'as yet unclassified' }
+{ #category : 'as yet unclassified' }
 MIPSConstants class >> initialize [
 	super initialize.
 	
@@ -139,7 +141,7 @@ MIPSConstants class >> initialize [
 	self initializeRegImmRts.
 ]
 
-{ #category : #'as yet unclassified' }
+{ #category : 'as yet unclassified' }
 MIPSConstants class >> initializeOpcodes [
 	SPECIAL := 0.
 	REGIMM := 1.
@@ -167,13 +169,13 @@ MIPSConstants class >> initializeOpcodes [
 	PREF := 51.
 ]
 
-{ #category : #'as yet unclassified' }
+{ #category : 'as yet unclassified' }
 MIPSConstants class >> initializeRegImmRts [
 	BLTZ := 0.
 	BGEZ := 1.
 ]
 
-{ #category : #'as yet unclassified' }
+{ #category : 'as yet unclassified' }
 MIPSConstants class >> initializeRegisters [
 	self flag: #OABI.
 	R0 := ZR := 0. "Hardwired zero"
@@ -212,7 +214,7 @@ MIPSConstants class >> initializeRegisters [
 	
 ]
 
-{ #category : #'as yet unclassified' }
+{ #category : 'as yet unclassified' }
 MIPSConstants class >> initializeSpecialFunctions [
 	SLL := 0.
 	SRL := 2.
@@ -236,7 +238,7 @@ MIPSConstants class >> initializeSpecialFunctions [
 	SLTU := 43.
 ]
 
-{ #category : #'as yet unclassified' }
+{ #category : 'as yet unclassified' }
 MIPSConstants class >> nameForRegister: registerNumber [
 	^#(zr at v0 v1 a0 a1 a2 a3
 		t0 t1 t2 t3 t4 t5 t6 t7

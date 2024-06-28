@@ -1,6 +1,6 @@
 Class {
-	#name : #VMImageReaderWriter,
-	#superclass : #VMClass,
+	#name : 'VMImageReaderWriter',
+	#superclass : 'VMClass',
 	#instVars : [
 		'spurImageReader',
 		'spurImageWriter',
@@ -15,10 +15,12 @@ Class {
 		'SpurFormatDetected',
 		'SpurFormatForced'
 	],
-	#category : #'VMMaker-ImageFormat'
+	#category : 'VMMaker-ImageFormat',
+	#package : 'VMMaker',
+	#tag : 'ImageFormat'
 }
 
-{ #category : #translation }
+{ #category : 'translation' }
 VMImageReaderWriter class >> ancilliaryClasses [ 
 
 	^ { 
@@ -26,7 +28,7 @@ VMImageReaderWriter class >> ancilliaryClasses [
 	SpurImageReader. SpurImageWriter. ComposedImageReader. ComposedImageWriter }
 ]
 
-{ #category : #translation }
+{ #category : 'translation' }
 VMImageReaderWriter class >> declareCVarsIn: aCCodeGenerator [
 
 	aCCodeGenerator
@@ -41,7 +43,7 @@ VMImageReaderWriter class >> declareCVarsIn: aCCodeGenerator [
 		staticallyResolvedPolymorphicReceiver: #composedImageWriter to: ComposedImageWriter.
 ]
 
-{ #category : #initialization }
+{ #category : 'initialization' }
 VMImageReaderWriter class >> initialize [
 
 	AutodetectFormat := 0.
@@ -51,7 +53,7 @@ VMImageReaderWriter class >> initialize [
 	SpurFormatForced := 4.
 ]
 
-{ #category : #'instance creation' }
+{ #category : 'instance creation' }
 VMImageReaderWriter class >> newWithMemory: memory andInterpreter: anInterpreter [
 
 	^ self 
@@ -60,7 +62,7 @@ VMImageReaderWriter class >> newWithMemory: memory andInterpreter: anInterpreter
 		yourself
 ]
 
-{ #category : #format }
+{ #category : 'format' }
 VMImageReaderWriter >> autodetectFormat: aFileName [
 
 	formatToUse = AutodetectFormat 
@@ -74,7 +76,7 @@ VMImageReaderWriter >> autodetectFormat: aFileName [
 					formatToUse := SpurFormatDetected  ] ]
 ]
 
-{ #category : #format }
+{ #category : 'format' }
 VMImageReaderWriter >> hasToUseComposedFormat [
 
 	formatToUse = AutodetectFormat 
@@ -83,7 +85,7 @@ VMImageReaderWriter >> hasToUseComposedFormat [
 	^ formatToUse = ComposedFormatDetected or: [ formatToUse = ComposedFormatForced ] 
 ]
 
-{ #category : #initialization }
+{ #category : 'initialization' }
 VMImageReaderWriter >> initWithMemory: memory andInterpreter: anInterpreter [
 
 	formatToUse := AutodetectFormat.
@@ -95,7 +97,7 @@ VMImageReaderWriter >> initWithMemory: memory andInterpreter: anInterpreter [
 	composedImageWriter := ComposedImageWriter newWithMemory: memory andInterpreter: anInterpreter.	
 ]
 
-{ #category : #api }
+{ #category : 'api' }
 VMImageReaderWriter >> loadImageFromFile: aFile withHeader: aSpurImageHeaderStruct [
 
 	^ self hasToUseComposedFormat
@@ -109,14 +111,14 @@ VMImageReaderWriter >> loadImageFromFile: aFile withHeader: aSpurImageHeaderStru
 				withHeader: aSpurImageHeaderStruct ]
 ]
 
-{ #category : #format }
+{ #category : 'format' }
 VMImageReaderWriter >> logDebug: anString [
 
 	<doNotGenerate>
 	anString traceCr.
 ]
 
-{ #category : #api }
+{ #category : 'api' }
 VMImageReaderWriter >> readImageNamed: imageName [
 
 	<var: #imageName declareC: 'char *imageName'>
@@ -129,13 +131,13 @@ VMImageReaderWriter >> readImageNamed: imageName [
 		ifFalse: [ spurImageReader readImageNamed: imageName ]
 ]
 
-{ #category : #format }
+{ #category : 'format' }
 VMImageReaderWriter >> setFormatToUse: aValue [
 
 	formatToUse := aValue
 ]
 
-{ #category : #format }
+{ #category : 'format' }
 VMImageReaderWriter >> sqImageIsDirectory: aFileName [
 
 	<doNotGenerate>
@@ -143,14 +145,14 @@ VMImageReaderWriter >> sqImageIsDirectory: aFileName [
 	^ aFileName asFileReference isDirectory 
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 VMImageReaderWriter >> useComposedImageFormatAsDefault: aBoolean [ 
 	
 	aBoolean ifNil: [ ^ self ].
 	formatToUse := aBoolean ifTrue: [ ComposedFormatForced ] ifFalse: [ SpurFormatForced ]
 ]
 
-{ #category : #testing }
+{ #category : 'testing' }
 VMImageReaderWriter >> validateImage: aString [
 
 	<doNotGenerate>
@@ -160,7 +162,7 @@ VMImageReaderWriter >> validateImage: aString [
 		ifFalse: [ spurImageReader validateImage: aString ]
 ]
 
-{ #category : #writing }
+{ #category : 'writing' }
 VMImageReaderWriter >> writeImageFile: imageFileName fromHeader: header [
 
 	<var: #imageFileName declareC: 'char *imageFileName'>

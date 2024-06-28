@@ -1,6 +1,6 @@
-Extension { #name : #AbstractFileReference }
+Extension { #name : 'AbstractFileReference' }
 
-{ #category : #'*VMMaker' }
+{ #category : '*VMMaker' }
 AbstractFileReference >> hasChildrenMatching: patterns [
 
 	^ (self childrenMatching: patterns) isNotEmpty

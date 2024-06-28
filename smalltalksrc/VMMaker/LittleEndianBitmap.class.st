@@ -1,11 +1,13 @@
 Class {
-	#name : #LittleEndianBitmap,
-	#superclass : #Bitmap,
-	#type : #words,
-	#category : #'VMMaker-JITSimulation'
+	#name : 'LittleEndianBitmap',
+	#superclass : 'Bitmap',
+	#type : 'words',
+	#category : 'VMMaker-JITSimulation',
+	#package : 'VMMaker',
+	#tag : 'JITSimulation'
 }
 
-{ #category : #converting }
+{ #category : 'converting' }
 LittleEndianBitmap >> asByteArray [
 	"Faster way to make a byte array from me.
 	copyFromByteArray: makes equal Bitmap."
@@ -33,7 +35,7 @@ LittleEndianBitmap >> asByteArray [
 	[v asByteArray] bench '977,000 per second. 1.02 microseconds per run.'"
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 LittleEndianBitmap >> byteAt: byteAddress [
 	"Extract a byte from a Bitmap (little-endian version)"
 	| lowBits |
@@ -43,7 +45,7 @@ LittleEndianBitmap >> byteAt: byteAddress [
 		bitAnd: 16rFF
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 LittleEndianBitmap >> byteAt: byteAddress put: byte [
 	"Insert a byte into a Bitmap (little-endian version).  N.B. Signedness will be lost since byteAt: answers non-negative values.
 	 We can add a signedByteAt: if needed."
@@ -66,7 +68,7 @@ LittleEndianBitmap >> byteAt: byteAddress put: byte [
 	^byte
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 LittleEndianBitmap >> long64At: byteAddress [
 	| lowBits hiWord loWord midWord mask wordIndex result signBit |
 	wordIndex := byteAddress - 1 // 4 + 1.
@@ -92,7 +94,7 @@ LittleEndianBitmap >> long64At: byteAddress [
 	^result
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 LittleEndianBitmap >> long64At: byteIndex put: aValue [
 	| lowBits mask wordIndex |
 	(lowBits := byteIndex - 1 \\ 4) = 0 ifTrue:
@@ -116,12 +118,12 @@ LittleEndianBitmap >> long64At: byteIndex put: aValue [
 	^aValue
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 LittleEndianBitmap >> longAt: byteIndex [
 	^self longAt: byteIndex bigEndian: false
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 LittleEndianBitmap >> longAt: byteIndex bigEndian: bigEndian [
 	"Compatibility with the ByteArray method of the same name."
 	| lowBits wordIndex value word0 word1 |
@@ -158,7 +160,7 @@ LittleEndianBitmap >> longAt: byteIndex bigEndian: bigEndian [
 			[:i| { i. (bm longAt: i bigEndian: false) hex. (ba longAt: i bigEndian: false) hex}])"
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 LittleEndianBitmap >> longAt: byteIndex put: aValue [
 	"Compatibility with the ByteArray method of the same name."
 	| lowBits wordIndex mask |
@@ -188,7 +190,7 @@ LittleEndianBitmap >> longAt: byteIndex put: aValue [
 		{ (bm at: 1) hex. (bm at: 2) hex }]"
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 LittleEndianBitmap >> longAt: byteIndex put: aValue bigEndian: bigEndian [
 	"Compatibility with the ByteArray method of the same name."
 	| lowBits wordIndex value mask |
@@ -229,7 +231,7 @@ LittleEndianBitmap >> longAt: byteIndex put: aValue bigEndian: bigEndian [
 		{ (bm at: 1) hex. (bm at: 2) hex }]"
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 LittleEndianBitmap >> unsignedByteAt: byteAddress [
 	"Extract a byte from a Bitmap (little-endian version)"
 	| lowBits |
@@ -239,7 +241,7 @@ LittleEndianBitmap >> unsignedByteAt: byteAddress [
 		bitAnd: 16rFF
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 LittleEndianBitmap >> unsignedByteAt: byteAddress put: byte [
 	"Insert a byte into a Bitmap (little-endian version)"
 	| longWord shift lowBits longAddr |
@@ -254,7 +256,7 @@ LittleEndianBitmap >> unsignedByteAt: byteAddress put: byte [
 	^byte
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 LittleEndianBitmap >> unsignedLong64At: byteAddress [
 	"memory is a Bitmap, a 32-bit indexable array of bits"
 	| lowBits hiWord loWord midWord mask wordIndex result |
@@ -278,7 +280,7 @@ LittleEndianBitmap >> unsignedLong64At: byteAddress [
 	^result
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 LittleEndianBitmap >> unsignedLong64At: byteIndex put: aValue [
 	| lowBits mask wordIndex |
 	(lowBits := byteIndex - 1 \\ 4) = 0 ifTrue:
@@ -297,7 +299,7 @@ LittleEndianBitmap >> unsignedLong64At: byteIndex put: aValue [
 	^aValue
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 LittleEndianBitmap >> unsignedLongAt: byteIndex [
 	"Compatiblity with the ByteArray & Alien methods of the same name."
 	^(byteIndex - 1 bitAnd: 3) = 0
@@ -305,7 +307,7 @@ LittleEndianBitmap >> unsignedLongAt: byteIndex [
 		ifFalse: [self unsignedLongAt: byteIndex bigEndian: false]
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 LittleEndianBitmap >> unsignedLongAt: byteIndex bigEndian: bigEndian [
 	"Compatiblity with the ByteArray method of the same name."
 	| lowBits wordIndex value word0 word1 |
@@ -340,7 +342,7 @@ LittleEndianBitmap >> unsignedLongAt: byteIndex bigEndian: bigEndian [
 			[:i| { i. (bm unsignedLongAt: i bigEndian: false) hex. (ba unsignedLongAt: i bigEndian: false) hex}])"
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 LittleEndianBitmap >> unsignedLongAt: byteIndex put: aValue [
 	"Compatiblity with the ByteArray & Alien methods of the same name."
 	| lowBits mask wordIndex |
@@ -355,7 +357,7 @@ LittleEndianBitmap >> unsignedLongAt: byteIndex put: aValue [
 	^aValue
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 LittleEndianBitmap >> unsignedShortAt: byteIndex [
 	"Compatiblity with the ByteArray & Alien methods of the same name."
 	| zi |
@@ -366,7 +368,7 @@ LittleEndianBitmap >> unsignedShortAt: byteIndex [
 		ifFalse: [(self unsignedLongAt: byteIndex bigEndian: false) bitAnd: 16rFFFF]
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 LittleEndianBitmap >> unsignedShortAt: byteIndex put: aValue [
 	"Compatiblity with the ByteArray & Alien methods of the same name."
 	| zi |

@@ -1,38 +1,40 @@
 Class {
-	#name : #RelativeDetailedInstructionPrinter,
-	#superclass : #RelativeInstructionPrinter,
+	#name : 'RelativeDetailedInstructionPrinter',
+	#superclass : 'RelativeInstructionPrinter',
 	#instVars : [
 		'stackHeightComputer',
 		'saveLabel'
 	],
-	#category : #'VMMaker-Support'
+	#category : 'VMMaker-Support',
+	#package : 'VMMaker',
+	#tag : 'Support'
 }
 
-{ #category : #'instance creation' }
+{ #category : 'instance creation' }
 RelativeDetailedInstructionPrinter class >> on: method [ 
 	"Answer an instance of me on the argument, method."
 
 	^self new method: method pc: method initialPC
 ]
 
-{ #category : #printing }
+{ #category : 'printing' }
 RelativeDetailedInstructionPrinter >> emitLabelIfAnyFor: pc on: aStream [
 	saveLabel := String streamContents: [:s| super emitLabelIfAnyFor: pc on: s]
 ]
 
-{ #category : #'initialize-release' }
+{ #category : 'initialize-release' }
 RelativeDetailedInstructionPrinter >> method: aMethod [
 	super method: aMethod.
 	stackHeightComputer := StackDepthFinder new method: aMethod pc: nil
 ]
 
-{ #category : #'initialize-release' }
+{ #category : 'initialize-release' }
 RelativeDetailedInstructionPrinter >> method: aMethod pc: pc [
 	super method: aMethod.
 	stackHeightComputer := StackDepthFinder new method: aMethod pc: pc
 ]
 
-{ #category : #printing }
+{ #category : 'printing' }
 RelativeDetailedInstructionPrinter >> print: instruction [
 	| current next |
 	super print: instruction.
