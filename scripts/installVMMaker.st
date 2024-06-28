@@ -1,4 +1,5 @@
 Author useAuthor: 'installVMMaker' during: [
+	| path defaultRemoteType |
 	path := CommandLineArguments default commandLineArguments nextToLast.
 	defaultRemoteType := CommandLineArguments default commandLineArguments last asSymbol.
 
