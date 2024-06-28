@@ -1693,34 +1693,28 @@ StackToRegisterMappingCogit >> genGenericStorePop: popBoolean MaybeContextSlotIn
 	 involve wholesale reorganization of stack pages, and the only way to preserve the
 	 execution state of an activation in that case is if it has a frame."
 	self assert: needsFrame.
+	
+	self ssAllocateRequiredReg: ClassReg upThrough: simStackPtr - 1. "If already classReg don't spill it"
+	"we replace the top value for the flush"
+	self ssStoreAndReplacePop: popBoolean toReg: ClassReg.
+	self ssFlushTo: simStackPtr.
+	
 	self cppIf: IMMUTABILITY ifTrue: [ 
 		needsImmCheck ifTrue: [ 
 			mutableJump := objectRepresentation
 				               genJumpMutable: ReceiverResultReg
-				               scratchReg: TempReg.
-				
-			"Make sure the assigned value, top of the stack, is in the class register before the call to the trampoline."
-			self ssAllocateRequiredReg: ClassReg upThrough: simStackPtr - 1. "If already classReg don't spill it"
-			"we replace the top value for the flush"
-			self ssStoreAndReplacePop: false toReg: ClassReg.
-			self ssFlushTo: simStackPtr.			
+				               scratchReg: TempReg.				
 			objectRepresentation genStoreTrampolineCall: slotIndex.
 
 			needsRestoreReceiver ifTrue: [ self putSelfInReceiverResultReg ].
 			immutabilityFailure := self Jump: 0.
 			mutableJump jmpTarget: self Label ] ].
 
-	self ssPop: 1.
-	self ssAllocateCallReg: ClassReg and: SendNumArgsReg. "for ceStoreContextInstVarTrampoline"
-	self ssPush: 1.
-
 	objectRepresentation
 		genLoadSlot: SenderIndex
 		sourceReg: ReceiverResultReg
 		destReg: TempReg.
 
-	self ssStoreAndReplacePop: popBoolean toReg: ClassReg.
-	self ssFlushTo: simStackPtr.
 	self MoveCq: slotIndex R: SendNumArgsReg.
 	self CallRT: ceStoreContextInstVarTrampoline.
 
