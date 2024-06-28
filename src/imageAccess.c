@@ -10,6 +10,19 @@
 #endif
 
 /*
+ * Windows does not provide this macro for testing 
+ *
+ */
+#ifdef _WIN32
+    #ifndef _S_ISTYPE
+        #define _S_ISTYPE(mode, mask)  (((mode) & _S_IFMT) == (mask))
+        #define S_ISREG(mode) _S_ISTYPE((mode), _S_IFREG)
+        #define S_ISDIR(mode) _S_ISTYPE((mode), _S_IFDIR)
+    #endif
+#endif
+
+
+/*
  * The read and write function uses a 128kb chunk size.
  * It is based in the analysis of how cp, cat and other tools access the disk
  * Check https://eklitzke.org/efficient-file-copying-on-linux
@@ -88,7 +101,7 @@ size_t basicImageFileRead(void * initialPtr, size_t sz, size_t count, sqImageFil
 
 		lastReadBytes = fread(currentPtr, 1, chunkToRead, (FILE*)f);
 
-		if(lastReadBytes < 0){
+		if(lastReadBytes < chunkToRead){
 			logErrorFromErrno("fread");
 			return lastReadBytes;
 		}
@@ -189,6 +202,16 @@ void basicImageReportProgress(size_t totalSize, size_t currentSize){
 	fflush(stdout);
 }
 
+int basicImageIsDirectory(const char* aPath){
+
+	struct stat buffer;
+
+	if(stat(aPath, &buffer) != 0)
+		return 0;
+
+	return S_ISDIR(buffer.st_mode);
+}
+
 FileAccessHandler defaultFileAccessHandler = {
 		basicImageFileClose,
 		basicImageFileOpen,
@@ -198,7 +221,8 @@ FileAccessHandler defaultFileAccessHandler = {
 		basicImageFileSeekEnd,
 		basicImageFileWrite,
 		basicImageFileExists,
-		basicImageReportProgress
+		basicImageReportProgress,
+		basicImageIsDirectory
 };
 
 FileAccessHandler* fileAccessHandler = &defaultFileAccessHandler;

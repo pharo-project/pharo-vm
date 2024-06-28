@@ -1,14 +1,16 @@
 Class {
-	#name : #StackInterpreterPrimitives,
-	#superclass : #StackInterpreter,
+	#name : 'StackInterpreterPrimitives',
+	#superclass : 'StackInterpreter',
 	#pools : [
 		'LibFFIConstants',
 		'VMBasicConstants'
 	],
-	#category : #'VMMaker-Interpreter'
+	#category : 'VMMaker-Interpreter',
+	#package : 'VMMaker',
+	#tag : 'Interpreter'
 }
 
-{ #category : #initialization }
+{ #category : 'initialization' }
 StackInterpreterPrimitives >> allocateParameters: anInteger using: allocationBlock [
 	<inline: #always>
 
@@ -19,10 +21,11 @@ StackInterpreterPrimitives >> allocateParameters: anInteger using: allocationBlo
 		inSmalltalk: [ CArrayAccessor on: (Array new: anInteger) ]
 ]
 
-{ #category : #'primitive support' }
+{ #category : 'primitive support' }
 StackInterpreterPrimitives >> cloneContext: aContext [ 
 	| sz cloned spouseFP sp |
 	<var: #spouseFP type: #'char *'>
+	<var: #sp type: #'sqInt'>
 	sz := objectMemory numSlotsOf: aContext.
 	cloned := objectMemory eeInstantiateMethodContextSlots: sz.
 	cloned ~= 0 ifTrue:
@@ -31,7 +34,7 @@ StackInterpreterPrimitives >> cloneContext: aContext [
 			objectMemory
 				storePointerUnchecked: i
 				ofObject: cloned
-				withValue: (self externalInstVar: i ofContext: aContext)].
+				withValue: (self instVar: i ofContext: aContext)].
 		MethodIndex to: ReceiverIndex do:
 			[:i|
 			objectMemory
@@ -59,7 +62,7 @@ StackInterpreterPrimitives >> cloneContext: aContext [
 	^cloned
 ]
 
-{ #category : #ffi }
+{ #category : 'ffi' }
 StackInterpreterPrimitives >> doPrimitiveSameThreadCallout [
 	"Actual primitive implementation of primitiveSameThreadCallout.
 	Because of Slang restrictions, making FFI optional requires cutting the primitive in two different methods. Otherwise slang will unconditionally do all local declarations which may refer to invalid types if FFI is not enabled.
@@ -142,7 +145,7 @@ StackInterpreterPrimitives >> doPrimitiveSameThreadCallout [
 	self marshallAndPushReturnValueFrom: returnHolder ofType: cif returnType poping: 3.	
 ]
 
-{ #category : #ffi }
+{ #category : 'ffi' }
 StackInterpreterPrimitives >> doPrimitiveWorkerCallout [
 	"Actual primitive implementation of primitiveWorkerCallout.
 	Because of Slang restrictions, making FFI optional requires cutting the primitive in two different methods. Otherwise slang will unconditionally do all local declarations which may refer to invalid types if FFI is not enabled.
@@ -231,7 +234,7 @@ StackInterpreterPrimitives >> doPrimitiveWorkerCallout [
 	self pop: 4 thenPush: (objectMemory newExternalAddressWithValue: (self cCoerce: task asInteger to: 'void*'))
 ]
 
-{ #category : #ffi }
+{ #category : 'ffi' }
 StackInterpreterPrimitives >> doPrimitiveWorkerExtractReturnValue [
 	"Actual primitive implementation of primitiveWorkerExtractReturnValue.
 	Because of Slang restrictions, making FFI optional requires cutting the primitive in two different methods. Otherwise slang will unconditionally do all local declarations which may refer to invalid types if FFI is not enabled.
@@ -272,14 +275,14 @@ StackInterpreterPrimitives >> doPrimitiveWorkerExtractReturnValue [
 	task freeTask.
 ]
 
-{ #category : #'ffi - helpers' }
+{ #category : 'ffi - helpers' }
 StackInterpreterPrimitives >> ffi_call: aCif _: externalFunctionAddress _: returnHolder _: parameters [
 
 	<doNotGenerate>
 	libFFI ffiCall: aCif _: externalFunctionAddress _: returnHolder _: parameters
 ]
 
-{ #category : #'object access primitives' }
+{ #category : 'object access primitives' }
 StackInterpreterPrimitives >> field: index ofFrame: theFP [
 	"Arrange to answer naked frame pointers for unmarried
 	 senders to avoid reifying contexts in the search."
@@ -308,7 +311,7 @@ StackInterpreterPrimitives >> field: index ofFrame: theFP [
 			 self temporary: index - CtxtTempFrameStart in: theFP]
 ]
 
-{ #category : #'object access primitives' }
+{ #category : 'object access primitives' }
 StackInterpreterPrimitives >> fieldOrSenderFP: index ofContext: contextObj [
 	"Arrange to answer naked frame pointers for unmarried
 	 senders to avoid reifying contexts in the search."
@@ -326,18 +329,18 @@ StackInterpreterPrimitives >> fieldOrSenderFP: index ofContext: contextObj [
 	^self field: index ofFrame: spouseFP
 ]
 
-{ #category : #'object access primitives' }
+{ #category : 'object access primitives' }
 StackInterpreterPrimitives >> fieldsInFrame: theFP [
 	<var: #theFP type: #'char *'>
 	^CtxtTempFrameStart + (self stackPointerIndexForFrame: theFP)
 ]
 
-{ #category : #'object access primitives' }
+{ #category : 'object access primitives' }
 StackInterpreterPrimitives >> frameIsMarked: theFPInt [
-	^((stackPages longAt: theFPInt + FoxFrameFlags) bitAnd: 2) ~= 0
+	^((stackPages unsignedLongAt: theFPInt + FoxFrameFlags) bitAnd: 2) ~= 0
 ]
 
-{ #category : #'ffi - helpers' }
+{ #category : 'ffi - helpers' }
 StackInterpreterPrimitives >> freeArgumentsArray: arguments count: count [
 
 	0 to: count - 1 do: [ :i |  
@@ -349,7 +352,7 @@ StackInterpreterPrimitives >> freeArgumentsArray: arguments count: count [
 	
 ]
 
-{ #category : #'ffi - helpers' }
+{ #category : 'ffi - helpers' }
 StackInterpreterPrimitives >> getHandler: anOop [ 
 
 	<api>
@@ -362,7 +365,7 @@ StackInterpreterPrimitives >> getHandler: anOop [
 
 ]
 
-{ #category : #'ffi - helpers' }
+{ #category : 'ffi - helpers' }
 StackInterpreterPrimitives >> getHandlerAsCif: anOop [
 
 	^ self
@@ -370,7 +373,7 @@ StackInterpreterPrimitives >> getHandlerAsCif: anOop [
 		inSmalltalk: [ libFFI cifAtAddress: (self getHandler: anOop)]
 ]
 
-{ #category : #'ffi - helpers' }
+{ #category : 'ffi - helpers' }
 StackInterpreterPrimitives >> getTaskFromAddress: anInteger [
 
 	^ self
@@ -378,7 +381,7 @@ StackInterpreterPrimitives >> getTaskFromAddress: anInteger [
 		  inSmalltalk: [ libFFI testWorker tasks detect: [ :e | e asInteger = anInteger ] ]
 ]
 
-{ #category : #'ffi - helpers' }
+{ #category : 'ffi - helpers' }
 StackInterpreterPrimitives >> getWorkerFromAddress: anInteger [
 
 	^ self
@@ -388,21 +391,21 @@ StackInterpreterPrimitives >> getWorkerFromAddress: anInteger [
 			libFFI testWorker ]
 ]
 
-{ #category : #'ffi - helpers' }
+{ #category : 'ffi - helpers' }
 StackInterpreterPrimitives >> ioLoadModule: moduleNameString OfLength: moduleNameStringSize [
 
 	<doNotGenerate>
 	^0
 ]
 
-{ #category : #'ffi - helpers' }
+{ #category : 'ffi - helpers' }
 StackInterpreterPrimitives >> ioLoadSymbol: functionNameIndex OfLength: functionLength FromModule: moduleHandle [
 
 	<doNotGenerate>
 	^0
 ]
 
-{ #category : #'object access primitives' }
+{ #category : 'object access primitives' }
 StackInterpreterPrimitives >> isAppropriateForCopyObject: oop [
 	(objectMemory isPointersNonImm: oop) ifFalse:
 		[^false].
@@ -416,7 +419,7 @@ StackInterpreterPrimitives >> isAppropriateForCopyObject: oop [
 	^true
 ]
 
-{ #category : #ffi }
+{ #category : 'ffi' }
 StackInterpreterPrimitives >> loadModuleByName: moduleNameOop [
 
 	<returnTypeC: #'void*'>
@@ -429,7 +432,7 @@ StackInterpreterPrimitives >> loadModuleByName: moduleNameOop [
 	^ self ioLoadModule: moduleNameString OfLength: moduleNameStringSize
 ]
 
-{ #category : #logging }
+{ #category : 'logging' }
 StackInterpreterPrimitives >> logDebug: aString [
 
 	<doNotGenerate>
@@ -437,14 +440,14 @@ StackInterpreterPrimitives >> logDebug: aString [
 	aString traceCr.
 ]
 
-{ #category : #'object access primitives' }
+{ #category : 'object access primitives' }
 StackInterpreterPrimitives >> markFrame: theFPInt [
 	stackPages
-		longAt: theFPInt + FoxFrameFlags
-		put: ((stackPages longAt: theFPInt + FoxFrameFlags) bitOr: 2)
+		unsignedLongAt: theFPInt + FoxFrameFlags
+		put: ((stackPages unsignedLongAt: theFPInt + FoxFrameFlags) bitOr: 2)
 ]
 
-{ #category : #'ffi - helpers' }
+{ #category : 'ffi - helpers' }
 StackInterpreterPrimitives >> marshallAndPushReturnValueFrom: returnHolder ofType: ffiType poping: argumentsAndReceiverCount [
 
 	<option: #FEATURE_FFI>
@@ -481,7 +484,7 @@ StackInterpreterPrimitives >> marshallAndPushReturnValueFrom: returnHolder ofTyp
 
 ]
 
-{ #category : #'ffi - helpers' }
+{ #category : 'ffi - helpers' }
 StackInterpreterPrimitives >> marshallArgumentFrom: argumentsArrayOop atIndex: i into: argHolder ofType: argType withSize: argTypeSize [
 
 	<option: #FEATURE_FFI>
@@ -514,7 +517,7 @@ StackInterpreterPrimitives >> marshallArgumentFrom: argumentsArrayOop atIndex: i
 		otherwise: [ self primitiveFailFor: PrimErrBadArgument ]
 ]
 
-{ #category : #'ffi - helpers' }
+{ #category : 'ffi - helpers' }
 StackInterpreterPrimitives >> marshallDoubleFrom: argumentArrayOop at: index into: holder [ 
 
 	| doubleHolder |
@@ -524,7 +527,7 @@ StackInterpreterPrimitives >> marshallDoubleFrom: argumentArrayOop at: index int
 
 ]
 
-{ #category : #'ffi - helpers' }
+{ #category : 'ffi - helpers' }
 StackInterpreterPrimitives >> marshallFloatFrom: argumentArrayOop at: index into: holder [ 
 	
 	| floatHolder |
@@ -534,7 +537,7 @@ StackInterpreterPrimitives >> marshallFloatFrom: argumentArrayOop at: index into
 	
 ]
 
-{ #category : #'ffi - helpers' }
+{ #category : 'ffi - helpers' }
 StackInterpreterPrimitives >> marshallPointerFrom: argumentArrayOop at: index into: holder [ 
 	
 	| pointerHolder externalAddress |
@@ -544,7 +547,7 @@ StackInterpreterPrimitives >> marshallPointerFrom: argumentArrayOop at: index in
 	
 ]
 
-{ #category : #'ffi - helpers' }
+{ #category : 'ffi - helpers' }
 StackInterpreterPrimitives >> marshallSInt16From: argumentArrayOop at: index into: holder [
 
 	| intHolder value |
@@ -558,7 +561,7 @@ StackInterpreterPrimitives >> marshallSInt16From: argumentArrayOop at: index int
 		
 ]
 
-{ #category : #'ffi - helpers' }
+{ #category : 'ffi - helpers' }
 StackInterpreterPrimitives >> marshallSInt32From: argumentArrayOop at: index into: holder [
 
 	| intHolder value |
@@ -572,7 +575,7 @@ StackInterpreterPrimitives >> marshallSInt32From: argumentArrayOop at: index int
 		
 ]
 
-{ #category : #'ffi - helpers' }
+{ #category : 'ffi - helpers' }
 StackInterpreterPrimitives >> marshallSInt64From: argumentArrayOop at: index into: holder [
 
 	| intHolder value |
@@ -586,7 +589,7 @@ StackInterpreterPrimitives >> marshallSInt64From: argumentArrayOop at: index int
 		
 ]
 
-{ #category : #'ffi - helpers' }
+{ #category : 'ffi - helpers' }
 StackInterpreterPrimitives >> marshallSInt8From: argumentArrayOop at: index into: holder [
 
 	| intHolder value |
@@ -600,7 +603,7 @@ StackInterpreterPrimitives >> marshallSInt8From: argumentArrayOop at: index into
 		
 ]
 
-{ #category : #'ffi - helpers' }
+{ #category : 'ffi - helpers' }
 StackInterpreterPrimitives >> marshallStructFrom: argumentsArrayOop at: index into: holder withSize: typeSize [ 
 
 
@@ -627,7 +630,7 @@ StackInterpreterPrimitives >> marshallStructFrom: argumentsArrayOop at: index in
 				with: (objectMemory cCoerce: srcPtr to: 'char *') startingAt: 0]
 ]
 
-{ #category : #'ffi - helpers' }
+{ #category : 'ffi - helpers' }
 StackInterpreterPrimitives >> marshallUInt16From: argumentArrayOop at: index into: holder [
 
 	| intHolder value |
@@ -641,7 +644,7 @@ StackInterpreterPrimitives >> marshallUInt16From: argumentArrayOop at: index int
 		
 ]
 
-{ #category : #'ffi - helpers' }
+{ #category : 'ffi - helpers' }
 StackInterpreterPrimitives >> marshallUInt32From: argumentArrayOop at: index into: holder [
 
 	| intHolder value |
@@ -655,7 +658,7 @@ StackInterpreterPrimitives >> marshallUInt32From: argumentArrayOop at: index int
 		
 ]
 
-{ #category : #'ffi - helpers' }
+{ #category : 'ffi - helpers' }
 StackInterpreterPrimitives >> marshallUInt64From: argumentArrayOop at: index into: holder [
 
 	| intHolder value |
@@ -670,7 +673,7 @@ StackInterpreterPrimitives >> marshallUInt64From: argumentArrayOop at: index int
 		
 ]
 
-{ #category : #'ffi - helpers' }
+{ #category : 'ffi - helpers' }
 StackInterpreterPrimitives >> marshallUInt8From: argumentArrayOop at: index into: holder [
 
 	| intHolder value oop |
@@ -688,7 +691,7 @@ StackInterpreterPrimitives >> marshallUInt8From: argumentArrayOop at: index into
 		
 ]
 
-{ #category : #'ffi - helpers' }
+{ #category : 'ffi - helpers' }
 StackInterpreterPrimitives >> maybeExternalAddressOf: rcvr startingAt: byteOffset size: byteSize [
 
 "Return an int of the address of the byteSize slot (byte, short, int, whatever) at byteOffset in rcvr.
@@ -716,7 +719,7 @@ If the rcvr is an ExternalAddress the initial address is its contents. If the re
 	^ addr
 ]
 
-{ #category : #'ffi - helpers' }
+{ #category : 'ffi - helpers' }
 StackInterpreterPrimitives >> newByteArrayWithStructContent: aPointer size: sizeToCopy [ 
 	
 	| oop targetPointer |
@@ -726,13 +729,13 @@ StackInterpreterPrimitives >> newByteArrayWithStructContent: aPointer size: size
 	^ oop
 ]
 
-{ #category : #'primitive support' }
+{ #category : 'primitive support' }
 StackInterpreterPrimitives >> noInlineLoadFloatOrIntFrom: floatOrInt [
 	<inline: #never>
 	^objectMemory loadFloatOrIntFrom: floatOrInt
 ]
 
-{ #category : #'object access primitives' }
+{ #category : 'object access primitives' }
 StackInterpreterPrimitives >> pathTo: goal using: anArray followWeak: followWeak [
 	"Trace objects and frames from the root, marking visited objects, pushing the current path on stack, until goal is found.
 	 If found, unmark, leaving path in stack, and answer 0.  Otherwise answer an error:
@@ -815,7 +818,7 @@ StackInterpreterPrimitives >> pathTo: goal using: anArray followWeak: followWeak
 		 stackp := stackp - 2] repeat
 ]
 
-{ #category : #'ffi - helpers' }
+{ #category : 'ffi - helpers' }
 StackInterpreterPrimitives >> popSameThreadCalloutSuspendedProcess [
 	
 	| aProcess |
@@ -833,107 +836,29 @@ StackInterpreterPrimitives >> popSameThreadCalloutSuspendedProcess [
 	^ aProcess
 ]
 
-{ #category : #'system control primitives' }
+{ #category : 'system control primitives' }
 StackInterpreterPrimitives >> primitiveAllVMParameters: paramsArraySize [
+
 	"See primitiveVMParameter method comment"
 
 	| result |
-	result := objectMemory instantiateClass: (objectMemory splObj: ClassArray) indexableSize: paramsArraySize.
-	objectMemory storePointerUnchecked: 0	ofObject: result withValue: (self positiveMachineIntegerFor: objectMemory oldSpaceSize).
-	objectMemory storePointerUnchecked: 1	ofObject: result withValue: (objectMemory integerObjectOf: objectMemory newSpaceSize).
-	objectMemory storePointerUnchecked: 2	ofObject: result withValue: (self positiveMachineIntegerFor: objectMemory totalMemorySize).
-	"objectMemory storePointerUnchecked: 3	ofObject: result withValue: objectMemory nilObject was allocationCount".
-	"objectMemory storePointerUnchecked: 4	ofObject: result withValue: objectMemory nilObject allocationsBetweenGCs".
-	objectMemory storePointerUnchecked: 5	ofObject: result withValue: (objectMemory integerObjectOf: objectMemory tenuringThreshold).
-	objectMemory storePointerUnchecked: 6	ofObject: result withValue: (objectMemory integerObjectOf: objectMemory statFullGCs).
-	objectMemory storePointerUnchecked: 7	ofObject: result withValue: (objectMemory integerObjectOf: objectMemory statFullGCUsecs + 500 // 1000).
-	objectMemory
-		storePointerUnchecked: 8
-		ofObject: result
-		withValue: (objectMemory integerObjectOf: objectMemory statScavenges).
-	objectMemory
-		storePointerUnchecked: 9
-		ofObject: result
-		withValue: (objectMemory integerObjectOf: objectMemory statScavengeGCUsecs + 500 // 1000).
-	objectMemory storePointerUnchecked: 10	ofObject: result withValue: (objectMemory integerObjectOf: objectMemory statTenures).
-	"JITTER VM info unused; 11 - 14/12 - 15 available for reuse"
-	11 to: 18 do:
-		[:i | objectMemory storePointerUnchecked: i ofObject: result withValue: ConstZero].
-	objectMemory storePointerUnchecked: 15 ofObject: result withValue: (objectMemory positive64BitIntegerFor: statIdleUsecs).
-	(SistaVM and: [self isCog]) ifTrue:
-		[objectMemory storePointerUnchecked: 16 ofObject: result withValue: (objectMemory floatObjectOf: self getCogCodeZoneThreshold)].
-	objectMemory
-			storePointerUnchecked: 17	ofObject: result withValue: (objectMemory integerObjectOf: objectMemory statCompactionUsecs + 500 // 1000);
-			storePointerUnchecked: 18	ofObject: result withValue: (objectMemory integerObjectOf: objectMemory scavengeThresholdAsExtent).
-	objectMemory storePointerUnchecked: 19	ofObject: result withValue: (objectMemory positive64BitIntegerFor: self ioUTCStartMicroseconds).
-	objectMemory storePointerUnchecked: 20	ofObject: result withValue: (objectMemory integerObjectOf: objectMemory rootTableCount).
-	objectMemory storePointerUnchecked: 21	ofObject: result withValue: (objectMemory integerObjectOf: objectMemory statRootTableOverflows).
-	objectMemory storePointerUnchecked: 22	ofObject: result withValue: (objectMemory integerObjectOf: extraVMMemory).
-	objectMemory storePointerUnchecked: 23	ofObject: result withValue: (objectMemory integerObjectOf: objectMemory shrinkThreshold).
-	objectMemory storePointerUnchecked: 24	ofObject: result withValue: (objectMemory integerObjectOf: objectMemory growHeadroom).
-	objectMemory storePointerUnchecked: 25	ofObject: result withValue: (objectMemory integerObjectOf: self ioHeartbeatMilliseconds).
-	objectMemory storePointerUnchecked: 26	ofObject: result withValue: (objectMemory integerObjectOf: objectMemory statMarkCount).
-	objectMemory storePointerUnchecked: 27	ofObject: result withValue: (objectMemory integerObjectOf: objectMemory statSweepCount).
-	objectMemory storePointerUnchecked: 28	ofObject: result withValue: (objectMemory integerObjectOf: objectMemory statMkFwdCount).
-	objectMemory storePointerUnchecked: 29	ofObject: result withValue: (objectMemory integerObjectOf: objectMemory statCompMoveCount).
-	objectMemory storePointerUnchecked: 30	ofObject: result withValue: (objectMemory integerObjectOf: objectMemory statGrowMemory).
-	objectMemory storePointerUnchecked: 31	ofObject: result withValue: (objectMemory integerObjectOf: objectMemory statShrinkMemory).
-	objectMemory storePointerUnchecked: 32	ofObject: result withValue: (objectMemory integerObjectOf: objectMemory statRootTableCount).
-	objectMemory storePointerUnchecked: 33	ofObject: result withValue: (objectMemory positive64BitIntegerFor: objectMemory currentAllocatedBytes).
-	objectMemory storePointerUnchecked: 34	ofObject: result withValue: (objectMemory integerObjectOf: objectMemory statSurvivorCount).
-	objectMemory storePointerUnchecked: 35	ofObject: result withValue: (objectMemory integerObjectOf: (self microsecondsToMilliseconds: objectMemory statGCEndUsecs)).
-	objectMemory storePointerUnchecked: 36	ofObject: result withValue: (objectMemory integerObjectOf: objectMemory statSpecialMarkCount).
-	objectMemory storePointerUnchecked: 37	ofObject: result withValue: (objectMemory integerObjectOf: objectMemory statIGCDeltaUsecs + 500 // 1000).
-	objectMemory storePointerUnchecked: 38	ofObject: result withValue: (objectMemory integerObjectOf: statPendingFinalizationSignals).
-	objectMemory storePointerUnchecked: 39	ofObject: result withValue: (objectMemory integerObjectOf: objectMemory wordSize).
-	objectMemory storePointerUnchecked: 40	ofObject: result withValue: (objectMemory integerObjectOf: self imageFormatVersion).
-	objectMemory storePointerUnchecked: 41	ofObject: result withValue: (objectMemory integerObjectOf: numStackPages).
-	objectMemory storePointerUnchecked: 42	ofObject: result withValue: (objectMemory integerObjectOf: desiredNumStackPages).
-	objectMemory storePointerUnchecked: 43	ofObject: result withValue: (objectMemory integerObjectOf: objectMemory edenBytes).
-	objectMemory storePointerUnchecked: 44	ofObject: result withValue: (objectMemory integerObjectOf: desiredEdenBytes).
-	objectMemory storePointerUnchecked: 45	ofObject: result withValue: self getCogCodeSize.
-	objectMemory storePointerUnchecked: 46	ofObject: result withValue: self getDesiredCogCodeSize.
-	objectMemory storePointerUnchecked: 47	ofObject: result withValue: self getCogVMFlags.
-	objectMemory storePointerUnchecked: 48	ofObject: result withValue: (objectMemory integerObjectOf: self ioGetMaxExtSemTableSize).
-	"50 & 51 (49 & 50) reserved for parameters that persist in the image"
-	objectMemory storePointerUnchecked: 51	ofObject: result withValue: (objectMemory integerObjectOf: objectMemory rootTableCapacity).
-	objectMemory
-			storePointerUnchecked: 52 ofObject: result withValue: (objectMemory integerObjectOf: objectMemory numSegments);
-			storePointerUnchecked: 53 ofObject: result withValue: (objectMemory integerObjectOf: objectMemory freeSize);
-			storePointerUnchecked: 54 ofObject: result withValue: (objectMemory floatObjectOf: objectMemory getHeapGrowthToSizeGCRatio).
-	objectMemory storePointerUnchecked: 55	ofObject: result withValue: (self positive64BitIntegerFor: statProcessSwitch).
-	objectMemory storePointerUnchecked: 56	ofObject: result withValue: (self positive64BitIntegerFor: statIOProcessEvents).
-	objectMemory storePointerUnchecked: 57	ofObject: result withValue: (self positive64BitIntegerFor: statForceInterruptCheck).
-	objectMemory storePointerUnchecked: 58	ofObject: result withValue: (self positive64BitIntegerFor: statCheckForEvents).
-	objectMemory storePointerUnchecked: 59	ofObject: result withValue: (self positive64BitIntegerFor: statStackOverflow).
-	objectMemory storePointerUnchecked: 60	ofObject: result withValue: (self positive64BitIntegerFor: statStackPageDivorce).
-	objectMemory storePointerUnchecked: 61	ofObject: result withValue: self getCodeCompactionCount.
-	objectMemory storePointerUnchecked: 62	ofObject: result withValue: self getCodeCompactionMSecs.
-	objectMemory storePointerUnchecked: 63	ofObject: result withValue: self getCogMethodCount.
-	objectMemory storePointerUnchecked: 64	ofObject: result withValue: self getCogVMFeatureFlags.
-	objectMemory storePointerUnchecked: 65	ofObject: result withValue: (objectMemory integerObjectOf: self stackPageByteSize).
-	objectMemory
-			storePointerUnchecked: 66 ofObject: result withValue: (objectMemory integerObjectOf: objectMemory maxOldSpaceSize).
-	objectMemory storePointerUnchecked: 67 ofObject: result withValue: (objectMemory floatObjectOf: stackPages statAverageLivePagesWhenMapping).
-	objectMemory storePointerUnchecked: 68 ofObject: result withValue: (objectMemory integerObjectOf: stackPages statMaxPageCountWhenMapping).
-	objectMemory
-		storePointerUnchecked: 69
-		ofObject: result
-		withValue: (objectMemory integerObjectOf: (self cCode: 'VM_PROXY_MAJOR' inSmalltalk: [self class vmProxyMajorVersion])).
-	objectMemory
-		storePointerUnchecked: 70
-		ofObject: result
-		withValue: (objectMemory integerObjectOf: (self cCode: 'VM_PROXY_MINOR' inSmalltalk: [self class vmProxyMinorVersion])).	
-	objectMemory storePointerUnchecked: 71	ofObject: result withValue: (objectMemory integerObjectOf: objectMemory statMarkUsecs + 500 // 1000).
-	objectMemory storePointerUnchecked: 72	ofObject: result withValue: (objectMemory integerObjectOf: objectMemory statSweepUsecs + 500 // 1000).
-	objectMemory
-			storePointerUnchecked: 73	ofObject: result withValue: (objectMemory integerObjectOf: objectMemory statMaxAllocSegmentTime + 500 // 1000).
+	result := objectMemory
+		          eeInstantiateClassIndex: objectMemory arrayClassIndexPun
+		          format: objectMemory arrayFormat
+		          numSlots: paramsArraySize.
+
+	1 to: paramsArraySize do: [ :index | 
+		objectMemory
+			storePointerUnchecked: index - 1
+			ofObject: result
+			withValue: ((self primitiveGetVMParameter: index) ifNil: [ 
+					 objectMemory nilObject ]) ].
 
 	objectMemory beRootIfOld: result.
 	self methodReturnValue: result
 ]
 
-{ #category : #'object access primitives' }
+{ #category : 'object access primitives' }
 StackInterpreterPrimitives >> primitiveClone [
 	"Return a shallow copy of the receiver.
 	 Special-case non-single contexts (because of context-to-stack mapping).
@@ -958,7 +883,7 @@ StackInterpreterPrimitives >> primitiveClone [
 	self pop: argumentCount + 1 thenPush: newCopy
 ]
 
-{ #category : #'indexing primitives' }
+{ #category : 'indexing primitives' }
 StackInterpreterPrimitives >> primitiveContextAt [
 	"Special version of primitiveAt for accessing contexts.
 	 Written to be varargs for use from mirror primitives."
@@ -978,7 +903,7 @@ StackInterpreterPrimitives >> primitiveContextAt [
 		 self successful ifTrue:
 			[self pop: argumentCount + 1 thenPush: value].
 		 ^self].
-	self externalWriteBackHeadFramePointers.
+	self writeBackHeadFramePointers.
 	(self isStillMarriedContext: aContext) ifFalse:
 		[fmt := objectMemory formatOfHeader: hdr.
 		 totalLength := objectMemory lengthOf: aContext format: fmt.
@@ -998,7 +923,7 @@ StackInterpreterPrimitives >> primitiveContextAt [
 	self pop: argumentCount + 1 thenPush: value
 ]
 
-{ #category : #'indexing primitives' }
+{ #category : 'indexing primitives' }
 StackInterpreterPrimitives >> primitiveContextAtPut [
 	"Special version of primitiveAtPut for accessing contexts.
 	 Written to be varargs for use from mirror primitives."
@@ -1016,7 +941,7 @@ StackInterpreterPrimitives >> primitiveContextAtPut [
 	index := objectMemory integerValueOf: index.
 	(objectMemory isContextHeader: hdr) ifFalse: "might be an instance of a subclass"
 		[^self primitiveFailFor: PrimErrBadReceiver ].
-	self externalWriteBackHeadFramePointers.
+	self writeBackHeadFramePointers.
 	(self isStillMarriedContext: aContext) ifFalse:
 		[fmt := objectMemory formatOfHeader: hdr.
 		 totalLength := objectMemory lengthOf: aContext format: fmt.
@@ -1036,7 +961,7 @@ StackInterpreterPrimitives >> primitiveContextAtPut [
 	self pop: argumentCount + 1 thenPush: value
 ]
 
-{ #category : #'indexing primitives' }
+{ #category : 'indexing primitives' }
 StackInterpreterPrimitives >> primitiveContextSize [
 	"Special version of primitiveSize for accessing contexts.
 	 Written to be varargs for use from mirror primitives."
@@ -1049,13 +974,13 @@ StackInterpreterPrimitives >> primitiveContextSize [
 	fixedFields := objectMemory fixedFieldsOf: rcvr format: fmt length: totalLength.
 	(objectMemory isContextHeader: hdr)
 		ifTrue:
-			[self externalWriteBackHeadFramePointers.
+			[self writeBackHeadFramePointers.
 			sz := self stackPointerForMaybeMarriedContext: rcvr]
 		ifFalse: [sz := totalLength - fixedFields].
 	self pop: argumentCount + 1 thenPush: (objectMemory integerObjectOf: sz)
 ]
 
-{ #category : #'indexing primitives' }
+{ #category : 'indexing primitives' }
 StackInterpreterPrimitives >> primitiveContextXray [
 	"Lift the veil from a context and answer an integer describing its interior state.
 	 Used for e.g. VM tests so they can verify they're testing what they think they're testing.
@@ -1077,7 +1002,7 @@ StackInterpreterPrimitives >> primitiveContextXray [
 	self pop: 1 thenPush: (objectMemory integerObjectOf: flags)
 ]
 
-{ #category : #'plugin primitives' }
+{ #category : 'plugin primitives' }
 StackInterpreterPrimitives >> primitiveDoNamedPrimitiveWithArgs [
 
 	"Simulate an primitiveExternalCall invocation (e.g. for the Debugger).  Do not cache anything.
@@ -1172,7 +1097,7 @@ StackInterpreterPrimitives >> primitiveDoNamedPrimitiveWithArgs [
 		primFailCode = 1 ifTrue: [ primFailCode := -1 ] ]
 ]
 
-{ #category : #'control primitives' }
+{ #category : 'control primitives' }
 StackInterpreterPrimitives >> primitiveDoPrimitiveWithArgs [
 	"Implement either ProtoObject>>tryPrimitive: primIndex withArgs: argArray
 	 or Context>>receiver: anObject tryPrimitive: primIndex withArgs: argArray.
@@ -1215,7 +1140,7 @@ StackInterpreterPrimitives >> primitiveDoPrimitiveWithArgs [
 		 index := index + 1].
 
 	self isPrimitiveFunctionPointerAnIndex ifTrue:
-		[self externalQuickPrimitiveResponse.
+		[self executeQuickPrimitive.
 		 tempOop2 := 0.
 		^nil].
 	"We use tempOop instead of pushRemappableOop:/popRemappableOop here because in
@@ -1245,7 +1170,7 @@ StackInterpreterPrimitives >> primitiveDoPrimitiveWithArgs [
 	tempOop := tempOop2 := 0
 ]
 
-{ #category : #'control primitives' }
+{ #category : 'control primitives' }
 StackInterpreterPrimitives >> primitiveExecuteMethod [
 	"receiver, args, then method are on top of stack. Execute method against receiver and args.
 	 Set primitiveFunctionPointer because no cache lookup has been done for the method, and
@@ -1265,7 +1190,7 @@ StackInterpreterPrimitives >> primitiveExecuteMethod [
 	self initPrimCall
 ]
 
-{ #category : #'control primitives' }
+{ #category : 'control primitives' }
 StackInterpreterPrimitives >> primitiveExecuteMethodArgsArray [
 	"receiver, argsArray, then method are on top of stack.  Execute method against
 	 receiver and args.  Allow for up to two extra arguments (e.g. for mirror primitives).
@@ -1302,7 +1227,7 @@ StackInterpreterPrimitives >> primitiveExecuteMethodArgsArray [
 	self initPrimCall
 ]
 
-{ #category : #'plugin primitives' }
+{ #category : 'plugin primitives' }
 StackInterpreterPrimitives >> primitiveExternalCall [
 
 	"Call an external primitive. External primitive methods first literals are an array of
@@ -1421,7 +1346,7 @@ StackInterpreterPrimitives >> primitiveExternalCall [
 			self primitiveFailFor: PrimErrNotFound ]
 ]
 
-{ #category : #ffi }
+{ #category : 'ffi' }
 StackInterpreterPrimitives >> primitiveFFIAllocate [
 	"Primitive. Allocate an object on the external heap."
 	| byteSize addr oop |
@@ -1440,7 +1365,7 @@ StackInterpreterPrimitives >> primitiveFFIAllocate [
 	^ self methodReturnValue: oop
 ]
 
-{ #category : #ffi }
+{ #category : 'ffi' }
 StackInterpreterPrimitives >> primitiveFFIFree [
 	"Primitive. Free the object pointed to on the external heap."
 	| addr oop |
@@ -1463,7 +1388,7 @@ StackInterpreterPrimitives >> primitiveFFIFree [
 	^ self methodReturnValue: oop
 ]
 
-{ #category : #ffi }
+{ #category : 'ffi' }
 StackInterpreterPrimitives >> primitiveFFIIntegerAt [
 	"Answer a (signed or unsigned) n byte integer from the given byte offset
 	 in the receiver, using the platform's endianness."
@@ -1521,7 +1446,7 @@ StackInterpreterPrimitives >> primitiveFFIIntegerAt [
 	^ objectMemory methodReturnValue: valueOop
 ]
 
-{ #category : #ffi }
+{ #category : 'ffi' }
 StackInterpreterPrimitives >> primitiveFFIIntegerAtPut [
 	"Store a (signed or unsigned) n byte integer at the given byte offset
 	 in the receiver, using the platform's endianness."
@@ -1573,12 +1498,12 @@ StackInterpreterPrimitives >> primitiveFFIIntegerAtPut [
 	^ self methodReturnValue: valueOop
 ]
 
-{ #category : #'control primitives' }
+{ #category : 'control primitives' }
 StackInterpreterPrimitives >> primitiveFindHandlerContext [
 	"Primitive. Search up the context stack for the next method context marked
 	 for exception handling starting at the receiver. Return nil if none found"
 	| handlerOrNilOrZero |
-	self externalWriteBackHeadFramePointers.
+	self writeBackHeadFramePointers.
 	handlerOrNilOrZero := self
 							findMethodWithPrimitive: 199
 							FromContext: self stackTop
@@ -1588,7 +1513,7 @@ StackInterpreterPrimitives >> primitiveFindHandlerContext [
 	self pop: 1 thenPush: handlerOrNilOrZero
 ]
 
-{ #category : #'control primitives' }
+{ #category : 'control primitives' }
 StackInterpreterPrimitives >> primitiveFindNextUnwindContext [
 	"Primitive. Search up the context stack for the next method context marked for unwind
 	 handling from the receiver up to but not including the argument. Return nil if none found."
@@ -1601,7 +1526,7 @@ StackInterpreterPrimitives >> primitiveFindNextUnwindContext [
 	"The following should never be true, but developing full blocks, early in September
 	 2016 we were seeing invalid invocations of this primitive..  Hence the assert:"
 	self assert: stopContext ~= calleeContext.
-	self externalWriteBackHeadFramePointers.
+	self writeBackHeadFramePointers.
 	(self isStillMarriedContext: calleeContext)
 		ifTrue:
 			[| theFP |
@@ -1630,13 +1555,13 @@ StackInterpreterPrimitives >> primitiveFindNextUnwindContext [
 	self pop: 2 thenPush: handlerOrNilOrZero
 ]
 
-{ #category : #'system control primitives' }
+{ #category : 'system control primitives' }
 StackInterpreterPrimitives >> primitiveFlushCacheByMethod [
 	"The receiver is a compiledMethod.  Clear all entries in the method lookup cache that refer to this method, presumably because it has been redefined, overridden or removed."
 	self flushMethodCacheForMethod: self stackTop
 ]
 
-{ #category : #'system control primitives' }
+{ #category : 'system control primitives' }
 StackInterpreterPrimitives >> primitiveFlushCacheBySelector [
 	"The receiver is a message selector.  Clear all entries in the method lookup cache
 	 with this selector, presumably because an associated method has been redefined."
@@ -1652,17 +1577,17 @@ StackInterpreterPrimitives >> primitiveFlushCacheBySelector [
 		[self flushAtCache]
 ]
 
-{ #category : #'memory space primitives' }
+{ #category : 'memory space primitives' }
 StackInterpreterPrimitives >> primitiveFullGC [
 	"Do a full garbage collection.  In SqueakV3ObjectMemory, answer the number
 	 of bytes available (including swap space if dynamic memory management is
 	 supported).  In Spur, answer the size of the largest free chunk."
 
-	self externalWriteBackHeadFramePointers.
+	self writeBackHeadFramePointers.
 	super primitiveFullGC
 ]
 
-{ #category : #'I/O primitives' }
+{ #category : 'I/O primitives' }
 StackInterpreterPrimitives >> primitiveGetCurrentWorkingDirectory [
 	
 	<export: true>
@@ -1678,11 +1603,12 @@ StackInterpreterPrimitives >> primitiveGetCurrentWorkingDirectory [
 	self pop: argumentCount+1 thenPush: (objectMemory stringForCString: aCString).
 ]
 
-{ #category : #'system control primitives' }
-StackInterpreterPrimitives >> primitiveGetVMParameter: arg [ 
+{ #category : 'system control primitives' }
+StackInterpreterPrimitives >> primitiveGetVMParameter: index [ 
 	"See primitiveVMParameter method comment.
-	 N.B. written as a returning case to avoid branch limits in the V3 bytecode set."
-	arg caseOf: {
+		Return an OOP if success.
+		Return nil if no argument is available for the index"
+	index caseOf: {
 			[1]  ->	[^self positiveMachineIntegerFor: objectMemory oldSpaceSize].
 			[2]  ->	[^objectMemory integerObjectOf: objectMemory newSpaceSize].
 			[3]  ->	[^self positiveMachineIntegerFor: objectMemory totalMemorySize].
@@ -1721,7 +1647,7 @@ StackInterpreterPrimitives >> primitiveGetVMParameter: arg [
 			[36] ->	[^objectMemory integerObjectOf: (self microsecondsToMilliseconds: objectMemory statGCEndUsecs)].
 			[37] ->	[^objectMemory integerObjectOf: objectMemory statSpecialMarkCount].
 			[38] ->	[^objectMemory integerObjectOf: objectMemory statIGCDeltaUsecs + 500 // 1000].
-			[39] ->	[^objectMemory integerObjectOf: statPendingFinalizationSignals].
+			[39] ->	[^ConstZero]. "free"
 			[40] ->	[^objectMemory integerObjectOf: objectMemory wordSize].
 			[41] ->	[^objectMemory integerObjectOf: self imageFormatVersion].
 			[42] ->	[^objectMemory integerObjectOf: numStackPages].
@@ -1737,7 +1663,7 @@ StackInterpreterPrimitives >> primitiveGetVMParameter: arg [
 			[54] ->	[^objectMemory integerObjectOf: objectMemory freeSize].
 			[55] ->	[^objectMemory floatObjectOf: objectMemory getHeapGrowthToSizeGCRatio].
 			[56] ->	[^self positive64BitIntegerFor: statProcessSwitch].
-			[57] ->	[^self positive64BitIntegerFor: statIOProcessEvents].
+			[57] ->	[^ConstZero "free"].
 			[58] ->	[^self positive64BitIntegerFor: statForceInterruptCheck].
 			[59] ->	[^self positive64BitIntegerFor: statCheckForEvents].
 			[60] ->	[^self positive64BitIntegerFor: statStackOverflow].
@@ -1750,28 +1676,41 @@ StackInterpreterPrimitives >> primitiveGetVMParameter: arg [
 			[67] ->	[^objectMemory integerObjectOf: objectMemory maxOldSpaceSize].
 			[68] ->	[^objectMemory floatObjectOf: stackPages statAverageLivePagesWhenMapping].
 			[69] ->	[^objectMemory integerObjectOf: stackPages statMaxPageCountWhenMapping].
-			[70] ->	[^self integerObjectOf: (self cCode: 'VM_PROXY_MAJOR' inSmalltalk: [self class vmProxyMajorVersion])].
-			[71] ->	[^self integerObjectOf: (self cCode: 'VM_PROXY_MINOR' inSmalltalk: [self class vmProxyMinorVersion])].
+			[70] ->	[^objectMemory integerObjectOf: (self cCode: 'VM_PROXY_MAJOR' inSmalltalk: [self class vmProxyMajorVersion])].
+			[71] ->	[^objectMemory integerObjectOf: (self cCode: 'VM_PROXY_MINOR' inSmalltalk: [self class vmProxyMinorVersion])].
 			[72] ->	[^objectMemory integerObjectOf: objectMemory statMarkUsecs + 500 // 1000].
 			[73] ->	[^objectMemory integerObjectOf: objectMemory statSweepUsecs + 500 // 1000].
 			[74] ->	[^objectMemory integerObjectOf: objectMemory statMaxAllocSegmentTime + 500 // 1000].
 			[75] ->	[^self getMethodCompilationCount]. 
 			[76] ->	[^self getMethodCompilationMSecs]. 
 			[77] ->	[^self getBlockCompilationCount]. 
-			[78] ->	[^self getBlockCompilationMSecs] }
+			[78] ->	[^self getBlockCompilationMSecs].
+			[79] ->  [^objectMemory integerObjectOf: self getImageVersion ].
+			[80] ->  [^objectMemory integerObjectOf: 
+								objectMemory getFromOldSpaceRememberedSet rememberedSetSize].
+			[81] ->  [^objectMemory integerObjectOf: 
+								objectMemory getFromOldSpaceRememberedSet rememberedSetLimit].
+			[82] ->  [^objectMemory integerObjectOf: 
+								objectMemory getFromPermToOldSpaceRememberedSet rememberedSetSize].
+			[83] ->  [^objectMemory integerObjectOf: 
+								objectMemory getFromPermToOldSpaceRememberedSet rememberedSetLimit].
+			[84] ->  [^objectMemory integerObjectOf: 
+								objectMemory getFromPermToNewSpaceRememberedSet rememberedSetSize].
+			[85] ->  [^objectMemory integerObjectOf: 
+								objectMemory getFromPermToNewSpaceRememberedSet rememberedSetLimit]}
 		otherwise: [^nil]
 ]
 
-{ #category : #'memory space primitives' }
+{ #category : 'memory space primitives' }
 StackInterpreterPrimitives >> primitiveIncrementalGC [
 	"Do a quick, incremental garbage collection and return the number of bytes immediately available.
 	 (Note: more space may be made available by doing a full garbage collection."
 
-	self externalWriteBackHeadFramePointers.
+	self writeBackHeadFramePointers.
 	super primitiveIncrementalGC
 ]
 
-{ #category : #'object access primitives' }
+{ #category : 'object access primitives' }
 StackInterpreterPrimitives >> primitiveInstVarAt [
 	| index rcvr hdr fmt totalLength fixedFields value |
 	index := self stackTop.
@@ -1790,12 +1729,12 @@ StackInterpreterPrimitives >> primitiveInstVarAt [
 		[^self primitiveFailFor: PrimErrBadIndex].
 	(fmt = objectMemory indexablePointersFormat
 	 and: [objectMemory isContextHeader: hdr])
-		ifTrue: [value := self externalInstVar: index - 1 ofContext: rcvr]
+		ifTrue: [value := self instVar: index - 1 ofContext: rcvr]
 		ifFalse: [value := self subscript: rcvr with: index format: fmt].
 	self pop: argumentCount + 1 thenPush: value
 ]
 
-{ #category : #'object access primitives' }
+{ #category : 'object access primitives' }
 StackInterpreterPrimitives >> primitiveInstVarAtPut [
 	| newValue index rcvr hdr fmt totalLength fixedFields |
 	newValue := self stackTop.
@@ -1818,12 +1757,21 @@ StackInterpreterPrimitives >> primitiveInstVarAtPut [
 		[^self primitiveFailFor: PrimErrBadIndex].
 	(fmt = objectMemory indexablePointersFormat
 	 and: [objectMemory isContextHeader: hdr])
-		ifTrue: [self externalInstVar: index - 1 ofContext: rcvr put: newValue]
+		ifTrue: [self instVar: index - 1 ofContext: rcvr put: newValue]
 		ifFalse: [self subscript: rcvr with: index storing: newValue format: fmt].
 	self pop: argumentCount + 1 thenPush: newValue
 ]
 
-{ #category : #'ffi - memory accessor primitives' }
+{ #category : 'perm - space' }
+StackInterpreterPrimitives >> primitiveIsInPermSpace [
+
+	| rcvr |
+
+	rcvr := self stackTop.		
+	self pop: argumentCount + 1 thenPushBool: (objectMemory isPermanent: rcvr).
+]
+
+{ #category : 'ffi - memory accessor primitives' }
 StackInterpreterPrimitives >> primitiveLoadBoolean8FromBytes [
 	<var: #bytes type: #'char*' >
 	
@@ -1846,7 +1794,7 @@ StackInterpreterPrimitives >> primitiveLoadBoolean8FromBytes [
 	
 ]
 
-{ #category : #'ffi - memory accessor primitives' }
+{ #category : 'ffi - memory accessor primitives' }
 StackInterpreterPrimitives >> primitiveLoadBoolean8FromExternalAddress [
 	<var: #bytes type: #'char*' >
 	
@@ -1865,7 +1813,7 @@ StackInterpreterPrimitives >> primitiveLoadBoolean8FromExternalAddress [
 	
 ]
 
-{ #category : #'ffi - memory accessor primitives' }
+{ #category : 'ffi - memory accessor primitives' }
 StackInterpreterPrimitives >> primitiveLoadChar16FromBytes [
 	<var: #bytes type: #'char*' >
 	
@@ -1888,7 +1836,7 @@ StackInterpreterPrimitives >> primitiveLoadChar16FromBytes [
 	
 ]
 
-{ #category : #'ffi - memory accessor primitives' }
+{ #category : 'ffi - memory accessor primitives' }
 StackInterpreterPrimitives >> primitiveLoadChar16FromExternalAddress [
 	<var: #bytes type: #'char*' >
 	
@@ -1907,7 +1855,7 @@ StackInterpreterPrimitives >> primitiveLoadChar16FromExternalAddress [
 	
 ]
 
-{ #category : #'ffi - memory accessor primitives' }
+{ #category : 'ffi - memory accessor primitives' }
 StackInterpreterPrimitives >> primitiveLoadChar32FromBytes [
 	<var: #bytes type: #'char*' >
 	
@@ -1930,7 +1878,7 @@ StackInterpreterPrimitives >> primitiveLoadChar32FromBytes [
 	
 ]
 
-{ #category : #'ffi - memory accessor primitives' }
+{ #category : 'ffi - memory accessor primitives' }
 StackInterpreterPrimitives >> primitiveLoadChar32FromExternalAddress [
 	<var: #bytes type: #'char*' >
 	
@@ -1949,7 +1897,7 @@ StackInterpreterPrimitives >> primitiveLoadChar32FromExternalAddress [
 	
 ]
 
-{ #category : #'ffi - memory accessor primitives' }
+{ #category : 'ffi - memory accessor primitives' }
 StackInterpreterPrimitives >> primitiveLoadChar8FromBytes [
 	<var: #bytes type: #'char*' >
 	
@@ -1972,7 +1920,7 @@ StackInterpreterPrimitives >> primitiveLoadChar8FromBytes [
 	
 ]
 
-{ #category : #'ffi - memory accessor primitives' }
+{ #category : 'ffi - memory accessor primitives' }
 StackInterpreterPrimitives >> primitiveLoadChar8FromExternalAddress [
 	<var: #bytes type: #'char*' >
 	
@@ -1991,7 +1939,7 @@ StackInterpreterPrimitives >> primitiveLoadChar8FromExternalAddress [
 	
 ]
 
-{ #category : #'ffi - memory accessor primitives' }
+{ #category : 'ffi - memory accessor primitives' }
 StackInterpreterPrimitives >> primitiveLoadFloat32FromBytes [
 	<var: #bytes type: #'char*' >
 	<var: #value type: #float >
@@ -2015,7 +1963,7 @@ StackInterpreterPrimitives >> primitiveLoadFloat32FromBytes [
 	
 ]
 
-{ #category : #'ffi - memory accessor primitives' }
+{ #category : 'ffi - memory accessor primitives' }
 StackInterpreterPrimitives >> primitiveLoadFloat32FromExternalAddress [
 	<var: #bytes type: #'char*' >
 	<var: #value type: #float >
@@ -2035,7 +1983,7 @@ StackInterpreterPrimitives >> primitiveLoadFloat32FromExternalAddress [
 	
 ]
 
-{ #category : #'ffi - memory accessor primitives' }
+{ #category : 'ffi - memory accessor primitives' }
 StackInterpreterPrimitives >> primitiveLoadFloat64FromBytes [
 	<var: #bytes type: #'char*' >
 	<var: #value type: #double >
@@ -2059,7 +2007,7 @@ StackInterpreterPrimitives >> primitiveLoadFloat64FromBytes [
 	
 ]
 
-{ #category : #'ffi - memory accessor primitives' }
+{ #category : 'ffi - memory accessor primitives' }
 StackInterpreterPrimitives >> primitiveLoadFloat64FromExternalAddress [
 	<var: #bytes type: #'char*' >
 	<var: #value type: #double >
@@ -2079,7 +2027,7 @@ StackInterpreterPrimitives >> primitiveLoadFloat64FromExternalAddress [
 	
 ]
 
-{ #category : #'ffi - memory accessor primitives' }
+{ #category : 'ffi - memory accessor primitives' }
 StackInterpreterPrimitives >> primitiveLoadInt16FromBytes [
 	<var: #bytes type: #'char*' >
 	
@@ -2102,7 +2050,7 @@ StackInterpreterPrimitives >> primitiveLoadInt16FromBytes [
 	
 ]
 
-{ #category : #'ffi - memory accessor primitives' }
+{ #category : 'ffi - memory accessor primitives' }
 StackInterpreterPrimitives >> primitiveLoadInt16FromExternalAddress [
 	<var: #bytes type: #'char*' >
 	
@@ -2121,7 +2069,7 @@ StackInterpreterPrimitives >> primitiveLoadInt16FromExternalAddress [
 	
 ]
 
-{ #category : #'ffi - memory accessor primitives' }
+{ #category : 'ffi - memory accessor primitives' }
 StackInterpreterPrimitives >> primitiveLoadInt32FromBytes [
 	<var: #bytes type: #'char*' >
 	
@@ -2144,7 +2092,7 @@ StackInterpreterPrimitives >> primitiveLoadInt32FromBytes [
 	
 ]
 
-{ #category : #'ffi - memory accessor primitives' }
+{ #category : 'ffi - memory accessor primitives' }
 StackInterpreterPrimitives >> primitiveLoadInt32FromExternalAddress [
 	<var: #bytes type: #'char*' >
 	
@@ -2163,7 +2111,7 @@ StackInterpreterPrimitives >> primitiveLoadInt32FromExternalAddress [
 	
 ]
 
-{ #category : #'ffi - memory accessor primitives' }
+{ #category : 'ffi - memory accessor primitives' }
 StackInterpreterPrimitives >> primitiveLoadInt64FromBytes [
 	<var: #bytes type: #'char*' >
 	<var: #value type: #sqLong >
@@ -2187,7 +2135,7 @@ StackInterpreterPrimitives >> primitiveLoadInt64FromBytes [
 	
 ]
 
-{ #category : #'ffi - memory accessor primitives' }
+{ #category : 'ffi - memory accessor primitives' }
 StackInterpreterPrimitives >> primitiveLoadInt64FromExternalAddress [
 	<var: #bytes type: #'char*' >
 	<var: #value type: #sqLong >
@@ -2207,7 +2155,7 @@ StackInterpreterPrimitives >> primitiveLoadInt64FromExternalAddress [
 	
 ]
 
-{ #category : #'ffi - memory accessor primitives' }
+{ #category : 'ffi - memory accessor primitives' }
 StackInterpreterPrimitives >> primitiveLoadInt8FromBytes [
 	<var: #bytes type: #'char*' >
 	
@@ -2230,7 +2178,7 @@ StackInterpreterPrimitives >> primitiveLoadInt8FromBytes [
 	
 ]
 
-{ #category : #'ffi - memory accessor primitives' }
+{ #category : 'ffi - memory accessor primitives' }
 StackInterpreterPrimitives >> primitiveLoadInt8FromExternalAddress [
 	<var: #bytes type: #'char*' >
 	
@@ -2249,7 +2197,7 @@ StackInterpreterPrimitives >> primitiveLoadInt8FromExternalAddress [
 	
 ]
 
-{ #category : #'ffi - memory accessor primitives' }
+{ #category : 'ffi - memory accessor primitives' }
 StackInterpreterPrimitives >> primitiveLoadPointerFromBytes [
 	<var: #bytes type: #'char*' >
 	<var: #value type: #'char*' >
@@ -2275,7 +2223,7 @@ StackInterpreterPrimitives >> primitiveLoadPointerFromBytes [
 	self pop: argumentCount + 1 thenPush: object
 ]
 
-{ #category : #'ffi - memory accessor primitives' }
+{ #category : 'ffi - memory accessor primitives' }
 StackInterpreterPrimitives >> primitiveLoadPointerFromExternalAddress [
 	<var: #bytes type: #'char*' >
 	<var: #value type: #'char*' >
@@ -2297,7 +2245,7 @@ StackInterpreterPrimitives >> primitiveLoadPointerFromExternalAddress [
 	self pop: argumentCount + 1 thenPush: object
 ]
 
-{ #category : #ffi }
+{ #category : 'ffi' }
 StackInterpreterPrimitives >> primitiveLoadSymbolFromModule [
 	"Attempt to find the address of a symbol in a loaded library."
 
@@ -2340,7 +2288,7 @@ StackInterpreterPrimitives >> primitiveLoadSymbolFromModule [
 	^self methodReturnValue: oop
 ]
 
-{ #category : #'ffi - memory accessor primitives' }
+{ #category : 'ffi - memory accessor primitives' }
 StackInterpreterPrimitives >> primitiveLoadUInt16FromBytes [
 	<var: #bytes type: #'char*' >
 	
@@ -2363,7 +2311,7 @@ StackInterpreterPrimitives >> primitiveLoadUInt16FromBytes [
 	
 ]
 
-{ #category : #'ffi - memory accessor primitives' }
+{ #category : 'ffi - memory accessor primitives' }
 StackInterpreterPrimitives >> primitiveLoadUInt16FromExternalAddress [
 	<var: #bytes type: #'char*' >
 	
@@ -2382,7 +2330,7 @@ StackInterpreterPrimitives >> primitiveLoadUInt16FromExternalAddress [
 	
 ]
 
-{ #category : #'ffi - memory accessor primitives' }
+{ #category : 'ffi - memory accessor primitives' }
 StackInterpreterPrimitives >> primitiveLoadUInt32FromBytes [
 	<var: #bytes type: #'char*' >
 	
@@ -2405,7 +2353,7 @@ StackInterpreterPrimitives >> primitiveLoadUInt32FromBytes [
 	
 ]
 
-{ #category : #'ffi - memory accessor primitives' }
+{ #category : 'ffi - memory accessor primitives' }
 StackInterpreterPrimitives >> primitiveLoadUInt32FromExternalAddress [
 	<var: #bytes type: #'char*' >
 	
@@ -2424,7 +2372,7 @@ StackInterpreterPrimitives >> primitiveLoadUInt32FromExternalAddress [
 	
 ]
 
-{ #category : #'ffi - memory accessor primitives' }
+{ #category : 'ffi - memory accessor primitives' }
 StackInterpreterPrimitives >> primitiveLoadUInt64FromBytes [
 	<var: #bytes type: #'char*' >
 	<var: #value type: #usqLong >
@@ -2448,7 +2396,7 @@ StackInterpreterPrimitives >> primitiveLoadUInt64FromBytes [
 	
 ]
 
-{ #category : #'ffi - memory accessor primitives' }
+{ #category : 'ffi - memory accessor primitives' }
 StackInterpreterPrimitives >> primitiveLoadUInt64FromExternalAddress [
 	<var: #bytes type: #'char*' >
 	<var: #value type: #usqLong >
@@ -2468,7 +2416,7 @@ StackInterpreterPrimitives >> primitiveLoadUInt64FromExternalAddress [
 	
 ]
 
-{ #category : #'ffi - memory accessor primitives' }
+{ #category : 'ffi - memory accessor primitives' }
 StackInterpreterPrimitives >> primitiveLoadUInt8FromBytes [
 	<var: #bytes type: #'char*' >
 	
@@ -2491,7 +2439,7 @@ StackInterpreterPrimitives >> primitiveLoadUInt8FromBytes [
 	
 ]
 
-{ #category : #'ffi - memory accessor primitives' }
+{ #category : 'ffi - memory accessor primitives' }
 StackInterpreterPrimitives >> primitiveLoadUInt8FromExternalAddress [
 	<var: #bytes type: #'char*' >
 	
@@ -2510,7 +2458,7 @@ StackInterpreterPrimitives >> primitiveLoadUInt8FromExternalAddress [
 	
 ]
 
-{ #category : #'process primitives' }
+{ #category : 'process primitives' }
 StackInterpreterPrimitives >> primitiveLongRunningPrimitive [
 	"Primitive. Answer an Array with the current long-running primitive method identified by
 	 the heartbeat, the minimum number of milliseconds it was active for, and the milliseconds
@@ -2538,7 +2486,7 @@ StackInterpreterPrimitives >> primitiveLongRunningPrimitive [
 	self voidLongRunningPrimitive: 'get'
 ]
 
-{ #category : #'process primitives' }
+{ #category : 'process primitives' }
 StackInterpreterPrimitives >> primitiveLongRunningPrimitiveSemaphore [
 	"Primitive. Install the semaphore to be used for collecting long-running primitives, 
 	 or nil if no semaphore should be used."
@@ -2559,7 +2507,45 @@ StackInterpreterPrimitives >> primitiveLongRunningPrimitiveSemaphore [
 	self pop: 1
 ]
 
-{ #category : #'object access primitives' }
+{ #category : 'perm - space' }
+StackInterpreterPrimitives >> primitiveMoveToPermSpace [
+
+	| rcvr permObject |
+	rcvr := self stackTop.
+	
+	(objectMemory getMemoryMap isPermanentObject: rcvr)
+		ifTrue: [ ^ self ].
+	
+	permObject := objectMemory moveToPermSpace: rcvr.	
+	self successful ifFalse: [ ^ self ].
+	
+	self pop: argumentCount + 1 thenPush: permObject.
+]
+
+{ #category : 'perm - space' }
+StackInterpreterPrimitives >> primitiveMoveToPermSpaceAllOldObjects [
+	
+	objectMemory moveToPermSpaceAllOldObjects
+]
+
+{ #category : 'perm - space' }
+StackInterpreterPrimitives >> primitiveMoveToPermSpaceInBulk [
+
+	| rcvr |
+	rcvr := self stackTop.
+	
+	(objectMemory isArrayNonImm: rcvr)
+		ifFalse: [ 
+			self primitiveFailFor: PrimErrBadReceiver. 
+			^ nil].
+	
+	objectMemory moveToPermSpaceInBulk: rcvr.	
+	self successful ifFalse: [ ^ self ].
+	
+	self pop: argumentCount + 1 thenPush: rcvr.
+]
+
+{ #category : 'object access primitives' }
 StackInterpreterPrimitives >> primitiveObjectPointsTo [
 	"This primitive is assumed to be fast (see e.g. MethodDictionary>>includesKey:) so make it so.
 	 N.B.  Works forrectly for cogged methods too."
@@ -2578,7 +2564,7 @@ StackInterpreterPrimitives >> primitiveObjectPointsTo [
 			  and: [objectMemory isContextHeader: header]) 
 				ifTrue:
 	 				[(self isMarriedOrWidowedContext: rcvr) ifTrue:
-						[self externalWriteBackHeadFramePointers.
+						[self writeBackHeadFramePointers.
 						 (self isStillMarriedContext: rcvr) ifTrue:
 							[^self pop: 2
 									thenPushBool: (self marriedContext: rcvr
@@ -2606,7 +2592,7 @@ StackInterpreterPrimitives >> primitiveObjectPointsTo [
 	self pop: 2 thenPushBool: false
 ]
 
-{ #category : #'control primitives' }
+{ #category : 'control primitives' }
 StackInterpreterPrimitives >> primitivePerform [
 
 	<returnTypeC: #void>
@@ -2622,9 +2608,8 @@ StackInterpreterPrimitives >> primitivePerform [
 	argumentCount := argumentCount - 1.
 	argumentCount to: 1 by: -1 do: [ :i | 
 		stackPages
-			longAt: stackPointer + (i * objectMemory wordSize)
-			put:
-			(stackPages longAt: stackPointer + (i - 1 * objectMemory wordSize)) ].
+			unsignedLongAt: stackPointer + (i * objectMemory wordSize)
+			put: (stackPages unsignedLongAt: stackPointer + ((i - 1) * objectMemory wordSize))].
 	self pop: 1.
 	lookupClassTag := objectMemory fetchClassTagOf: newReceiver.
 	self sendBreakpoint: messageSelector receiver: newReceiver.
@@ -2641,11 +2626,11 @@ StackInterpreterPrimitives >> primitivePerform [
 		self unPop: 1.
 		1 to: argumentCount by: 1 do: [ :i | 
 			stackPages
-				longAt: stackPointer + (i - 1 * objectMemory wordSize)
+				unsignedLongAt: stackPointer + (i - 1 * objectMemory wordSize)
 				put:
-				(stackPages longAt: stackPointer + (i * objectMemory wordSize)) ].
+				(stackPages unsignedLongAt: stackPointer + (i * objectMemory wordSize)) ].
 		stackPages
-			longAt: stackPointer + (argumentCount * objectMemory wordSize)
+			unsignedLongAt: stackPointer + (argumentCount * objectMemory wordSize)
 			put: messageSelector.
 		argumentCount := argumentCount + 1.
 		newMethod := performMethod.
@@ -2658,7 +2643,7 @@ StackInterpreterPrimitives >> primitivePerform [
 	self initPrimCall
 ]
 
-{ #category : #'memory space primitives' }
+{ #category : 'memory space primitives' }
 StackInterpreterPrimitives >> primitivePin [
 	"Pin or unpin the receiver, i.e. make it immobile or mobile, based on the argument.
 	 Answer whether the object was already pinned. N.B. pinning does *not* prevent
@@ -2691,7 +2676,7 @@ StackInterpreterPrimitives >> primitivePin [
 	self pop: argumentCount + 1 thenPush: wasPinned
 ]
 
-{ #category : #ffi }
+{ #category : 'ffi' }
 StackInterpreterPrimitives >> primitiveSameThreadCallout [
 	"Because of Slang restrictions, making FFI optional requires cutting the primitive in two different methods. Otherwise slang will unconditionally do all local declarations which may refer to invalid types if FFI is not enabled.
 	
@@ -2704,7 +2689,7 @@ StackInterpreterPrimitives >> primitiveSameThreadCallout [
 		self primitiveFailFor: PrimErrUnsupported ]
 ]
 
-{ #category : #'memory space primitives' }
+{ #category : 'memory space primitives' }
 StackInterpreterPrimitives >> primitiveSetGCSemaphore [
 	"Primitive. Indicate the semaphore to be signalled for upon garbage collection"
 	| index |
@@ -2716,7 +2701,7 @@ StackInterpreterPrimitives >> primitiveSetGCSemaphore [
 	]
 ]
 
-{ #category : #'system control primitives' }
+{ #category : 'system control primitives' }
 StackInterpreterPrimitives >> primitiveSetVMParameter: index arg: argOop [
 	"See primitiveVMParameter method comment"
 	| arg result |
@@ -2803,7 +2788,11 @@ StackInterpreterPrimitives >> primitiveSetVMParameter: index arg: argOop [
 			arg >= 0 ifTrue: [
 				result := objectMemory integerObjectOf: objectMemory statMaxAllocSegmentTime + 500 // 1000.
 				stackPages statMaxAllocSegmentTime: arg. "usually 0"
-				self initPrimCall ]] }
+				self initPrimCall ]].
+		[79] -> [ (arg between: 0 and: 65535) ifTrue:
+					[result := objectMemory integerObjectOf: self getImageVersion.
+					 self setImageVersion: arg.
+					 self initPrimCall] ] }
 		otherwise: [].
 
 	self successful
@@ -2811,7 +2800,7 @@ StackInterpreterPrimitives >> primitiveSetVMParameter: index arg: argOop [
 		ifFalse: [self primitiveFailFor: PrimErrInappropriate] "attempting to write a read-only or non-existent parameter"
 ]
 
-{ #category : #'system control primitives' }
+{ #category : 'system control primitives' }
 StackInterpreterPrimitives >> primitiveSignalAtMilliseconds [
 	"Cause the time semaphore, if one has been registered, to be
 	 signalled when the microsecond clock is greater than or equal to
@@ -2841,7 +2830,7 @@ StackInterpreterPrimitives >> primitiveSignalAtMilliseconds [
 	self primitiveFailFor: PrimErrBadArgument
 ]
 
-{ #category : #'system control primitives' }
+{ #category : 'system control primitives' }
 StackInterpreterPrimitives >> primitiveSignalAtUTCMicroseconds [
 	"Cause the time semaphore, if one has been registered, to be
 	 signalled when the microsecond clock is greater than or equal to
@@ -2866,7 +2855,7 @@ StackInterpreterPrimitives >> primitiveSignalAtUTCMicroseconds [
 	self primitiveFailFor: PrimErrBadArgument
 ]
 
-{ #category : #'object access primitives' }
+{ #category : 'object access primitives' }
 StackInterpreterPrimitives >> primitiveSlotAt [
 	"Answer a slot in an object.  This numbers all slots from 1, ignoring the distinction between
 	 named and indexed inst vars.  In objects with both named and indexed inst vars, the named
@@ -2889,10 +2878,10 @@ StackInterpreterPrimitives >> primitiveSlotAt [
 			[| value numLiveSlots |
 			 (objectMemory isContextNonImm: rcvr)
 				ifTrue:
-					[self externalWriteBackHeadFramePointers.
+					[self writeBackHeadFramePointers.
 					 numLiveSlots := (self stackPointerForMaybeMarriedContext: rcvr) + CtxtTempFrameStart.
 					 value := (self asUnsigned: index) < numLiveSlots
-								ifTrue: [self externalInstVar: index ofContext: rcvr]
+								ifTrue: [self instVar: index ofContext: rcvr]
 								ifFalse: [objectMemory nilObject]]
 				ifFalse:
 					[value := objectMemory fetchPointer: index ofObject: rcvr].
@@ -2935,7 +2924,7 @@ StackInterpreterPrimitives >> primitiveSlotAt [
 	^self primitiveFailFor: PrimErrBadReceiver
 ]
 
-{ #category : #'object access primitives' }
+{ #category : 'object access primitives' }
 StackInterpreterPrimitives >> primitiveSlotAtPut [
 
 	"Assign a slot in an object.  This numbers all slots from 1, ignoring the distinction between
@@ -2962,7 +2951,7 @@ StackInterpreterPrimitives >> primitiveSlotAtPut [
 		(self asUnsigned: index) < numSlots ifTrue: [ 
 			(objectMemory isContextNonImm: rcvr)
 				ifTrue: [ 
-				self externalInstVar: index ofContext: rcvr put: newValue ]
+				self instVar: index ofContext: rcvr put: newValue ]
 				ifFalse: [ 
 				objectMemory
 					storePointer: index
@@ -3022,7 +3011,7 @@ StackInterpreterPrimitives >> primitiveSlotAtPut [
 	^ self primitiveFailFor: PrimErrBadReceiver
 ]
 
-{ #category : #'ffi - memory accessor primitives' }
+{ #category : 'ffi - memory accessor primitives' }
 StackInterpreterPrimitives >> primitiveStoreBoolean8IntoBytes [
 	<var: #bytes type: #'char*' >
 	
@@ -3054,7 +3043,7 @@ StackInterpreterPrimitives >> primitiveStoreBoolean8IntoBytes [
 	
 ]
 
-{ #category : #'ffi - memory accessor primitives' }
+{ #category : 'ffi - memory accessor primitives' }
 StackInterpreterPrimitives >> primitiveStoreBoolean8IntoExternalAddress [
 	<var: #bytes type: #'char*' >
 	
@@ -3082,7 +3071,7 @@ StackInterpreterPrimitives >> primitiveStoreBoolean8IntoExternalAddress [
 	
 ]
 
-{ #category : #'ffi - memory accessor primitives' }
+{ #category : 'ffi - memory accessor primitives' }
 StackInterpreterPrimitives >> primitiveStoreChar16IntoBytes [
 	<var: #bytes type: #'char*' >
 	
@@ -3108,7 +3097,7 @@ StackInterpreterPrimitives >> primitiveStoreChar16IntoBytes [
 	
 ]
 
-{ #category : #'ffi - memory accessor primitives' }
+{ #category : 'ffi - memory accessor primitives' }
 StackInterpreterPrimitives >> primitiveStoreChar16IntoExternalAddress [
 	<var: #bytes type: #'char*' >
 	
@@ -3130,7 +3119,7 @@ StackInterpreterPrimitives >> primitiveStoreChar16IntoExternalAddress [
 	
 ]
 
-{ #category : #'ffi - memory accessor primitives' }
+{ #category : 'ffi - memory accessor primitives' }
 StackInterpreterPrimitives >> primitiveStoreChar32IntoBytes [
 	<var: #bytes type: #'char*' >
 	
@@ -3156,7 +3145,7 @@ StackInterpreterPrimitives >> primitiveStoreChar32IntoBytes [
 	
 ]
 
-{ #category : #'ffi - memory accessor primitives' }
+{ #category : 'ffi - memory accessor primitives' }
 StackInterpreterPrimitives >> primitiveStoreChar32IntoExternalAddress [
 	<var: #bytes type: #'char*' >
 	
@@ -3178,7 +3167,7 @@ StackInterpreterPrimitives >> primitiveStoreChar32IntoExternalAddress [
 	
 ]
 
-{ #category : #'ffi - memory accessor primitives' }
+{ #category : 'ffi - memory accessor primitives' }
 StackInterpreterPrimitives >> primitiveStoreChar8IntoBytes [
 	<var: #bytes type: #'char*' >
 	
@@ -3204,7 +3193,7 @@ StackInterpreterPrimitives >> primitiveStoreChar8IntoBytes [
 	
 ]
 
-{ #category : #'ffi - memory accessor primitives' }
+{ #category : 'ffi - memory accessor primitives' }
 StackInterpreterPrimitives >> primitiveStoreChar8IntoExternalAddress [
 	<var: #bytes type: #'char*' >
 	
@@ -3226,7 +3215,7 @@ StackInterpreterPrimitives >> primitiveStoreChar8IntoExternalAddress [
 	
 ]
 
-{ #category : #'ffi - memory accessor primitives' }
+{ #category : 'ffi - memory accessor primitives' }
 StackInterpreterPrimitives >> primitiveStoreFloat32IntoBytes [
 	<var: #bytes type: #'char*' >
 	<var: #value type: #double >
@@ -3253,7 +3242,7 @@ StackInterpreterPrimitives >> primitiveStoreFloat32IntoBytes [
 	
 ]
 
-{ #category : #'ffi - memory accessor primitives' }
+{ #category : 'ffi - memory accessor primitives' }
 StackInterpreterPrimitives >> primitiveStoreFloat32IntoExternalAddress [
 	<var: #bytes type: #'char*' >
 	<var: #value type: #double >
@@ -3276,7 +3265,7 @@ StackInterpreterPrimitives >> primitiveStoreFloat32IntoExternalAddress [
 	
 ]
 
-{ #category : #'ffi - memory accessor primitives' }
+{ #category : 'ffi - memory accessor primitives' }
 StackInterpreterPrimitives >> primitiveStoreFloat64IntoBytes [
 	<var: #bytes type: #'char*' >
 	<var: #value type: #double >
@@ -3303,7 +3292,7 @@ StackInterpreterPrimitives >> primitiveStoreFloat64IntoBytes [
 	
 ]
 
-{ #category : #'ffi - memory accessor primitives' }
+{ #category : 'ffi - memory accessor primitives' }
 StackInterpreterPrimitives >> primitiveStoreFloat64IntoExternalAddress [
 	<var: #bytes type: #'char*' >
 	<var: #value type: #double >
@@ -3326,7 +3315,7 @@ StackInterpreterPrimitives >> primitiveStoreFloat64IntoExternalAddress [
 	
 ]
 
-{ #category : #'ffi - memory accessor primitives' }
+{ #category : 'ffi - memory accessor primitives' }
 StackInterpreterPrimitives >> primitiveStoreInt16IntoBytes [
 	<var: #bytes type: #'char*' >
 	
@@ -3352,7 +3341,7 @@ StackInterpreterPrimitives >> primitiveStoreInt16IntoBytes [
 	
 ]
 
-{ #category : #'ffi - memory accessor primitives' }
+{ #category : 'ffi - memory accessor primitives' }
 StackInterpreterPrimitives >> primitiveStoreInt16IntoExternalAddress [
 	<var: #bytes type: #'char*' >
 	
@@ -3374,7 +3363,7 @@ StackInterpreterPrimitives >> primitiveStoreInt16IntoExternalAddress [
 	
 ]
 
-{ #category : #'ffi - memory accessor primitives' }
+{ #category : 'ffi - memory accessor primitives' }
 StackInterpreterPrimitives >> primitiveStoreInt32IntoBytes [
 	<var: #bytes type: #'char*' >
 	
@@ -3402,7 +3391,7 @@ StackInterpreterPrimitives >> primitiveStoreInt32IntoBytes [
 	
 ]
 
-{ #category : #'ffi - memory accessor primitives' }
+{ #category : 'ffi - memory accessor primitives' }
 StackInterpreterPrimitives >> primitiveStoreInt32IntoExternalAddress [
 	<var: #bytes type: #'char*' >
 	
@@ -3426,7 +3415,7 @@ StackInterpreterPrimitives >> primitiveStoreInt32IntoExternalAddress [
 	
 ]
 
-{ #category : #'ffi - memory accessor primitives' }
+{ #category : 'ffi - memory accessor primitives' }
 StackInterpreterPrimitives >> primitiveStoreInt64IntoBytes [
 	<var: #bytes type: #'char*' >
 	
@@ -3454,7 +3443,7 @@ StackInterpreterPrimitives >> primitiveStoreInt64IntoBytes [
 	
 ]
 
-{ #category : #'ffi - memory accessor primitives' }
+{ #category : 'ffi - memory accessor primitives' }
 StackInterpreterPrimitives >> primitiveStoreInt64IntoExternalAddress [
 	<var: #bytes type: #'char*' >
 	
@@ -3478,7 +3467,7 @@ StackInterpreterPrimitives >> primitiveStoreInt64IntoExternalAddress [
 	
 ]
 
-{ #category : #'ffi - memory accessor primitives' }
+{ #category : 'ffi - memory accessor primitives' }
 StackInterpreterPrimitives >> primitiveStoreInt8IntoBytes [
 	<var: #bytes type: #'char*' >
 	
@@ -3504,7 +3493,7 @@ StackInterpreterPrimitives >> primitiveStoreInt8IntoBytes [
 	
 ]
 
-{ #category : #'ffi - memory accessor primitives' }
+{ #category : 'ffi - memory accessor primitives' }
 StackInterpreterPrimitives >> primitiveStoreInt8IntoExternalAddress [
 	<var: #bytes type: #'char*' >
 	
@@ -3526,7 +3515,7 @@ StackInterpreterPrimitives >> primitiveStoreInt8IntoExternalAddress [
 	
 ]
 
-{ #category : #'ffi - memory accessor primitives' }
+{ #category : 'ffi - memory accessor primitives' }
 StackInterpreterPrimitives >> primitiveStorePointerIntoBytes [
 	<var: #bytes type: #'char*' >
 	<var: #valueBytes type: #'char*' >
@@ -3554,7 +3543,7 @@ StackInterpreterPrimitives >> primitiveStorePointerIntoBytes [
 	
 ]
 
-{ #category : #'ffi - memory accessor primitives' }
+{ #category : 'ffi - memory accessor primitives' }
 StackInterpreterPrimitives >> primitiveStorePointerIntoExternalAddress [
 	<var: #bytes type: #'char*' >
 	<var: #valueBytes type: #'char*' >
@@ -3578,7 +3567,7 @@ StackInterpreterPrimitives >> primitiveStorePointerIntoExternalAddress [
 	
 ]
 
-{ #category : #'object access primitives' }
+{ #category : 'object access primitives' }
 StackInterpreterPrimitives >> primitiveStoreStackp [
 	"Atomic store into context stackPointer. 
 	Also ensures that any newly accessible cells are initialized to nil "
@@ -3590,14 +3579,14 @@ StackInterpreterPrimitives >> primitiveStoreStackp [
 	(self successful
 	 and: [newStackp between: 0 and: (objectMemory numSlotsOf: ctxt) - CtxtTempFrameStart]) ifFalse:
 		[^self primitiveFail].
-	self externalWriteBackHeadFramePointers.
+	self writeBackHeadFramePointers.
 	(self isStillMarriedContext: ctxt) ifTrue:
 		[theFP := self frameOfMarriedContext: ctxt.
 		 thePage := stackPages stackPageFor: theFP.
 		 ((onCurrentPage := thePage = stackPage)
 		 and: [theFP = framePointer]) ifTrue:
 			[^self primitiveFail]. "Probably easy to do this right here right now (just move stackPointer).  But fail for now."
-		 self externalDivorceFrame: theFP andContext: ctxt.
+		 self divorceFrame: theFP andContext: ctxt.
 		 onCurrentPage
 			ifTrue:
 				[self setStackPointersFromPage: stackPage]
@@ -3613,7 +3602,7 @@ StackInterpreterPrimitives >> primitiveStoreStackp [
 	self pop: 1
 ]
 
-{ #category : #'ffi - memory accessor primitives' }
+{ #category : 'ffi - memory accessor primitives' }
 StackInterpreterPrimitives >> primitiveStoreUInt16IntoBytes [
 	<var: #bytes type: #'char*' >
 	
@@ -3641,7 +3630,7 @@ StackInterpreterPrimitives >> primitiveStoreUInt16IntoBytes [
 	
 ]
 
-{ #category : #'ffi - memory accessor primitives' }
+{ #category : 'ffi - memory accessor primitives' }
 StackInterpreterPrimitives >> primitiveStoreUInt16IntoExternalAddress [
 	<var: #bytes type: #'char*' >
 	
@@ -3665,7 +3654,7 @@ StackInterpreterPrimitives >> primitiveStoreUInt16IntoExternalAddress [
 	
 ]
 
-{ #category : #'ffi - memory accessor primitives' }
+{ #category : 'ffi - memory accessor primitives' }
 StackInterpreterPrimitives >> primitiveStoreUInt32IntoBytes [
 	<var: #bytes type: #'char*' >
 	
@@ -3693,7 +3682,7 @@ StackInterpreterPrimitives >> primitiveStoreUInt32IntoBytes [
 	
 ]
 
-{ #category : #'ffi - memory accessor primitives' }
+{ #category : 'ffi - memory accessor primitives' }
 StackInterpreterPrimitives >> primitiveStoreUInt32IntoExternalAddress [
 	<var: #bytes type: #'char*' >
 	
@@ -3717,7 +3706,7 @@ StackInterpreterPrimitives >> primitiveStoreUInt32IntoExternalAddress [
 	
 ]
 
-{ #category : #'ffi - memory accessor primitives' }
+{ #category : 'ffi - memory accessor primitives' }
 StackInterpreterPrimitives >> primitiveStoreUInt64IntoBytes [
 	<var: #bytes type: #'char*' >
 	
@@ -3745,7 +3734,7 @@ StackInterpreterPrimitives >> primitiveStoreUInt64IntoBytes [
 	
 ]
 
-{ #category : #'ffi - memory accessor primitives' }
+{ #category : 'ffi - memory accessor primitives' }
 StackInterpreterPrimitives >> primitiveStoreUInt64IntoExternalAddress [
 	<var: #bytes type: #'char*' >
 	
@@ -3769,7 +3758,7 @@ StackInterpreterPrimitives >> primitiveStoreUInt64IntoExternalAddress [
 	
 ]
 
-{ #category : #'ffi - memory accessor primitives' }
+{ #category : 'ffi - memory accessor primitives' }
 StackInterpreterPrimitives >> primitiveStoreUInt8IntoBytes [
 	<var: #bytes type: #'char*' >
 	
@@ -3797,7 +3786,7 @@ StackInterpreterPrimitives >> primitiveStoreUInt8IntoBytes [
 	
 ]
 
-{ #category : #'ffi - memory accessor primitives' }
+{ #category : 'ffi - memory accessor primitives' }
 StackInterpreterPrimitives >> primitiveStoreUInt8IntoExternalAddress [
 	<var: #bytes type: #'char*' >
 	
@@ -3821,7 +3810,7 @@ StackInterpreterPrimitives >> primitiveStoreUInt8IntoExternalAddress [
 	
 ]
 
-{ #category : #'control primitives' }
+{ #category : 'control primitives' }
 StackInterpreterPrimitives >> primitiveTerminateTo [
 	"Primitive. Terminate up the context stack from the receiver up to but not including
 	 the argument, if previousContext is on my Context stack. Make previousContext my
@@ -3847,7 +3836,7 @@ StackInterpreterPrimitives >> primitiveTerminateTo [
 		[^self primitiveFail].		
 
 	"All stackPages need to have current head pointers to avoid confusion."
-	self externalWriteBackHeadFramePointers.
+	self writeBackHeadFramePointers.
 
 	"If we're searching for aContextOrNil it might be on a stack page.  Helps to know
 	 if we can free a whole page or not, or if we can short-cut the termination."
@@ -3875,9 +3864,9 @@ StackInterpreterPrimitives >> primitiveTerminateTo [
 						by: objectMemory wordSize negated
 						do: [:source|
 							newSP := newSP - objectMemory wordSize.
-							stackPages longAt: newSP put: (stackPages longAt: source)].
-					 stackPages longAt: newFP + FoxSavedFP put: contextsFP.
-					 stackPages longAt: newFP + FoxCallerSavedIP put: contextsIP.
+							stackPages unsignedLongAt: newSP put: (stackPages unsignedLongAt: source)].
+					 stackPages unsignedLongAt: newFP + FoxSavedFP put: contextsFP.
+					 stackPages unsignedLongAt: newFP + FoxCallerSavedIP put: contextsIP.
 					 self assert: (objectMemory isContext: thisCtx).
 					 objectMemory storePointerUnchecked: SenderIndex
 						ofObject: thisCtx
@@ -3890,7 +3879,7 @@ StackInterpreterPrimitives >> primitiveTerminateTo [
 				self pop: 1.
 				self assert: stackPage = stackPages mostRecentlyUsedPage.
 				^nil].
-			 theFP := self externalEnsureIsBaseFrame: theFP. "May cause a GC!!"
+			 theFP := self ensureIsBaseFrame: theFP. "May cause a GC!!"
 			 currentCtx := self frameCallerContext: theFP.
 			 "May also reclaim aContextOrNil's page, hence..."
 			 (aContextOrNil ~= objectMemory nilObject and: [self isStillMarriedContext: aContextOrNil])
@@ -3945,7 +3934,7 @@ StackInterpreterPrimitives >> primitiveTerminateTo [
 						ifTrue:
 							[frameAbove := self findFrameAbove: theFP inPage: thePage.
 							self assert: frameAbove ~= 0.
-							frameAbove := self externalEnsureIsBaseFrame: frameAbove. "May cause a GC!! May also reclaim aContextOrNil's page, hence..."
+							frameAbove := self ensureIsBaseFrame: frameAbove. "May cause a GC!! May also reclaim aContextOrNil's page, hence..."
 							(aContextOrNil ~= objectMemory nilObject and: [self isStillMarriedContext: aContextOrNil])
 								ifTrue: [contextsFP := self frameOfMarriedContext: aContextOrNil.
 										pageToStopOn := stackPages stackPageFor: contextsFP]
@@ -3959,7 +3948,7 @@ StackInterpreterPrimitives >> primitiveTerminateTo [
 									 frameAbove := self findFrameAbove: contextsFP inPage: thePage.
 									 frameAbove ~= 0 ifTrue:
 										[contextsSP := (self frameCallerSP: frameAbove) - objectMemory wordSize.
-										 stackPages longAt: contextsSP put: (self frameCallerSavedIP: frameAbove).
+										 stackPages unsignedLongAt: contextsSP put: (self frameCallerSavedIP: frameAbove).
 										 self setHeadFP: contextsFP andSP: contextsSP inPage: thePage].
 									 currentCtx := aContextOrNil]
 								ifFalse:
@@ -3983,92 +3972,19 @@ StackInterpreterPrimitives >> primitiveTerminateTo [
 	self assert: stackPage = stackPages mostRecentlyUsedPage
 ]
 
-{ #category : #'system control primitives' }
+{ #category : 'system control primitives' }
 StackInterpreterPrimitives >> primitiveVMParameter [
 	"Behaviour depends on argument count:
 		0 args:	return an Array of VM parameter values;
-		1 arg:	return the indicated VM parameter;
+		1 arg:	   return the indicated VM parameter;
 		2 args:	set the VM indicated parameter.
-	VM parameters are numbered as follows:
-		1	end (v3)/size(Spur) of old-space (0-based, read-only)
-		2	end (v3)/size(Spur) of young/new-space (read-only)
-		3	end (v3)/size(Spur) of heap (read-only)
-		4	nil (was allocationCount (read-only))
-		5	nil (was allocations between GCs (read-write)
-		6	survivor count tenuring threshold (read-write)
-		7	full GCs since startup (read-only)
-		8	total milliseconds in full GCs since startup (read-only)
-		9	incremental GCs (SqueakV3) or scavenges (Spur) since startup (read-only)
-		10	total milliseconds in incremental GCs (SqueakV3) or scavenges (Spur) since startup (read-only)
-		11	tenures of surving objects since startup or reset (read-write)
-		12-20 were specific to ikp's JITTER VM, now 12-15 are open for use
-		16	total microseconds at idle since start-up (if non-zero)
-		17	fraction of the code zone to use (Sista only; used to control code zone use to preserve sendAndBranchData on counter tripped callback)
-		18	total milliseconds in compaction phase of full GC since start-up (Spur only)
-		19	scavenge threshold, the effective size of eden.  When eden fills to the threshold a scavenge is scheduled. Newer Spur VMs only.
-		20	utc microseconds at VM start-up (actually at time initialization, which precedes image load).
-		21	root/remembered table size (occupancy) (read-only)
-		22	root table overflows since startup (read-only)
-		23	bytes of extra memory to reserve for VM buffers, plugins, etc (stored in image file header).
-		24	memory threshold above which shrinking object memory (rw)
-		25	memory headroom when growing object memory (rw)
-		26	interruptChecksEveryNms - force an ioProcessEvents every N milliseconds (rw)
-		27	number of times mark loop iterated for current IGC/FGC (read-only) includes ALL marking
-		28	number of times sweep loop iterated for current IGC/FGC (read-only)
-		29	number of times make forward loop iterated for current IGC/FGC (read-only)
-		30	number of times compact move loop iterated for current IGC/FGC (read-only)
-		31	number of grow memory requests (read-only)
-		32	number of shrink memory requests (read-only)
-		33	number of root table entries used for current IGC/FGC (read-only)
-		34	Spur: bytes allocated in total since start-up or reset (read-write) (Used to be number of allocations done before current IGC/FGC (read-only))
-		35	number of survivor objects after current IGC/FGC (read-only)
-		36	millisecond clock when current IGC/FGC completed (read-only)
-		37	number of marked objects for Roots of the world, not including Root Table entries for current IGC/FGC (read-only)
-		38	milliseconds taken by current IGC (read-only)
-		39	Number of finalization signals for Weak Objects pending when current IGC/FGC completed (read-only)
-		40	BytesPerOop for this image
-		41	imageFormatVersion for the VM
-		42	number of stack pages in use
-		43	desired number of stack pages (stored in image file header, max 65535)
-		44	size of eden, in bytes
-		45	desired size of eden, in bytes (stored in image file header)
-		46	machine code zone size, in bytes (Cog only; otherwise nil)
-		47	desired machine code zone size (stored in image file header; Cog only; otherwise nil)
-		48	various header flags.  See getCogVMFlags.
-		49	max size the image promises to grow the external semaphore table to (0 sets to default, which is 256 as of writing)
-		50-51 nil; reserved for VM parameters that persist in the image (such as eden above)
-		52	root/remembered table capacity
-		53	number of segments (Spur only; otherwise nil)
-		54	total size of free old space (Spur only, otherwise nil)
-		55	ratio of growth and image size at or above which a GC will be performed post scavenge
-		56	number of process switches since startup (read-only)
-		57	number of ioProcessEvents calls since startup (read-only)
-		58	number of ForceInterruptCheck calls since startup (read-only)
-		59	number of check event calls since startup (read-only)
-		60	number of stack page overflows since startup (read-only)
-		61	number of stack page divorces since startup (read-only)
-		62	compiled code compactions since startup (read-only; Cog only; otherwise nil)
-		63	total milliseconds in compiled code compactions since startup (read-only; Cog only; otherwise nil)
-		64	the number of methods that currently have jitted machine-code
-		65	whether the VM supports a certain feature, MULTIPLE_BYTECODE_SETS is bit 0, IMMUTABILITY is bit 1
-		66	the byte size of a stack page
-		67	the max allowed size of old space (Spur only; nil otherwise; 0 implies no limit except that of the underlying platform)
-		68	the average number of live stack pages when scanned by GC (at scavenge/gc/become et al) (read-write)
-		69	the maximum number of live stack pages when scanned by GC (at scavenge/gc/become et al) (read-write)
-		70	the vmProxyMajorVersion (the interpreterProxy VM_MAJOR_VERSION)
-		71	the vmProxyMinorVersion (the interpreterProxy VM_MINOR_VERSION)
-		72 total milliseconds in full GCs Mark phase since startup (read-only)
-		73 total milliseconds in full GCs Sweep phase since startup (read-only, can be 0 depending on compactors)
-		74 maximum pause time due to segment allocation
-		75 number of JIT compiled methods since startup (read-only)
-		76 total milliseconds spent on JIT compiled methods since startup (read-only)
-		77 number of JIT compiled block since startup (read-only)
-		78 total milliseconds spent on JIT compiled block since startup (read-only)
-		
-	Note: Thanks to Ian Piumarta for this primitive."
+
+	The description of each parameter is available in the Image (`VirtualMachine>>#parameterLabels`)
+	Do not forget to update it when new parameters are added.
+	Otherwise the *real* list is in the code: `StackInterpreterPrimitives>>#primitiveGetVMParameter:`"
 
 	| paramsArraySize index |
-	paramsArraySize := 78.
+	paramsArraySize := 85.
 	argumentCount = 0 ifTrue: [^self primitiveAllVMParameters: paramsArraySize].
 	argumentCount > 2 ifTrue: [^self primitiveFailFor: PrimErrBadNumArgs].
 	
@@ -4087,7 +4003,7 @@ StackInterpreterPrimitives >> primitiveVMParameter [
 	self primitiveSetVMParameter: index arg: self stackTop
 ]
 
-{ #category : #'system control primitives' }
+{ #category : 'system control primitives' }
 StackInterpreterPrimitives >> primitiveVoidReceiver [
 	"Potentially crash the VM by voiding the receiver.  A subsequent inst var
 	 access in the caller's frame should indirect through a null pointer."
@@ -4095,7 +4011,7 @@ StackInterpreterPrimitives >> primitiveVoidReceiver [
 	stackPages longAtPointer: (self frameReceiverLocation: framePointer) put: 0
 ]
 
-{ #category : #'system control primitives' }
+{ #category : 'system control primitives' }
 StackInterpreterPrimitives >> primitiveVoidVMState [
 	"Void all internal VM state in the stack and machine code zones"
 	| activeContext |
@@ -4104,7 +4020,7 @@ StackInterpreterPrimitives >> primitiveVoidVMState [
 	self marryContextInNewStackPageAndInitializeInterpreterRegisters: activeContext
 ]
 
-{ #category : #ffi }
+{ #category : 'ffi' }
 StackInterpreterPrimitives >> primitiveWorkerCallout [
 	"Because of Slang restrictions, making FFI optional requires cutting the primitive in two different methods. Otherwise slang will unconditionally do all local declarations which may refer to invalid types if FFI is not enabled.
 	
@@ -4117,7 +4033,7 @@ StackInterpreterPrimitives >> primitiveWorkerCallout [
 		self primitiveFailFor: PrimErrUnsupported ]
 ]
 
-{ #category : #ffi }
+{ #category : 'ffi' }
 StackInterpreterPrimitives >> primitiveWorkerExtractReturnValue [
 	"Because of Slang restrictions, making FFI optional requires cutting the primitive in two different methods. Otherwise slang will unconditionally do all local declarations which may refer to invalid types if FFI is not enabled.
 	
@@ -4130,7 +4046,7 @@ StackInterpreterPrimitives >> primitiveWorkerExtractReturnValue [
 		self primitiveFailFor: PrimErrUnsupported ]
 ]
 
-{ #category : #'object access primitives' }
+{ #category : 'object access primitives' }
 StackInterpreterPrimitives >> pruneStack: anArray stackp: stackp [
 	"Prune the stack to contain only the path, removing stacked indices
 	 and mapping frame pointers to contexts  The  issue here is that a
@@ -4177,7 +4093,7 @@ StackInterpreterPrimitives >> pruneStack: anArray stackp: stackp [
 	objectMemory popRemappableOop
 ]
 
-{ #category : #ffi }
+{ #category : 'ffi' }
 StackInterpreterPrimitives >> ptEnterInterpreterFromCallback: aPointer [
 
 	" Enter the interpreter from a callback in the VM thread.
@@ -4187,9 +4103,10 @@ StackInterpreterPrimitives >> ptEnterInterpreterFromCallback: aPointer [
 	   => we suspend the active process and store it for further resuming
 	Then we enter the interpreter."
 	<api>
+	<returnTypeC: #sqInt>
 	<var: #aPointer type: #'void *'>
 	<var: #vmCallbackContext type: #'VMCallbackContext *'>
-
+	
 	| vmCallbackContext suspendedProcess |
 	
 	vmCallbackContext := self 
@@ -4216,9 +4133,10 @@ StackInterpreterPrimitives >> ptEnterInterpreterFromCallback: aPointer [
 	^ 1
 ]
 
-{ #category : #ffi }
+{ #category : 'ffi' }
 StackInterpreterPrimitives >> ptExitInterpreterToCallback: aPointer [
 	<api>
+	<returnTypeC: #sqInt>
 	<var: #aPointer type: #'void *'>
 	<var: #vmCallbackContext type: #'VMCallbackContext *'>
 
@@ -4230,7 +4148,7 @@ StackInterpreterPrimitives >> ptExitInterpreterToCallback: aPointer [
 	
 	suspendedProcess := self popSameThreadCalloutSuspendedProcess.
 	self putToSleep: self activeProcess yieldingIf: preemptionYields.
-	self transferTo: suspendedProcess.
+	self transferTo: suspendedProcess from: CSCallbackLeave.
 	
 	newMethod := self popStack.
 	
@@ -4244,7 +4162,7 @@ StackInterpreterPrimitives >> ptExitInterpreterToCallback: aPointer [
 
 ]
 
-{ #category : #'ffi - helpers' }
+{ #category : 'ffi - helpers' }
 StackInterpreterPrimitives >> pushSameThreadCalloutSuspendedProcess: aSuspendedProcess [
 
 	objectMemory
@@ -4255,7 +4173,7 @@ StackInterpreterPrimitives >> pushSameThreadCalloutSuspendedProcess: aSuspendedP
 	objectMemory splObj: SuspendedProcessInCallout put: aSuspendedProcess
 ]
 
-{ #category : #'ffi - helpers' }
+{ #category : 'ffi - helpers' }
 StackInterpreterPrimitives >> readAddress: anOop [ 
 
 	<api>
@@ -4267,14 +4185,14 @@ StackInterpreterPrimitives >> readAddress: anOop [
 	^ objectMemory fetchPointer: 0 ofObject: anOop.
 ]
 
-{ #category : #'object access primitives' }
+{ #category : 'object access primitives' }
 StackInterpreterPrimitives >> unmarkAfterPathTo [
 	<inline: false>
 	self unmarkAllFrames.
 	objectMemory unmarkAllObjects
 ]
 
-{ #category : #'object access primitives' }
+{ #category : 'object access primitives' }
 StackInterpreterPrimitives >> unmarkAllFrames [
 	| thePage theFP flags |
 	<var: #thePage type: #'StackPage *'>
@@ -4291,7 +4209,7 @@ StackInterpreterPrimitives >> unmarkAllFrames [
 			  (theFP := self frameCallerFP: theFP) ~= 0] whileTrue]]
 ]
 
-{ #category : #'ffi - helpers' }
+{ #category : 'ffi - helpers' }
 StackInterpreterPrimitives >> worker_dispatch_callout: worker _: task [ 
 	
 	<doNotGenerate>
@@ -4299,7 +4217,7 @@ StackInterpreterPrimitives >> worker_dispatch_callout: worker _: task [
 
 ]
 
-{ #category : #'ffi - helpers' }
+{ #category : 'ffi - helpers' }
 StackInterpreterPrimitives >> worker_task_new: externalFunction _: cif _: parameters _: returnHolder _: semaphoreIndex [
 	<doNotGenerate>
 	
@@ -4315,7 +4233,7 @@ StackInterpreterPrimitives >> worker_task_new: externalFunction _: cif _: parame
 	
 ]
 
-{ #category : #'ffi - helpers' }
+{ #category : 'ffi - helpers' }
 StackInterpreterPrimitives >> writeAddress: anOop to: aValue [
 
 	<api>

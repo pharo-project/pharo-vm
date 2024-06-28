@@ -5,25 +5,25 @@ self ensureClassPool.
 	self classPool declare: k from: ObjectMemory classPool]
 "
 Class {
-	#name : #VMBytecodeConstants,
-	#superclass : #SharedPool,
+	#name : 'VMBytecodeConstants',
+	#superclass : 'SharedPool',
 	#classVars : [
 		'BytecodeSetHasDirectedSuperSend',
 		'CtxtTempFrameStart',
 		'LargeContextBit',
-		'LargeContextSize',
 		'LargeContextSlots',
 		'SistaV1BytecodeSet',
-		'SmallContextSize',
 		'SmallContextSlots'
 	],
 	#pools : [
 		'VMBasicConstants'
 	],
-	#category : #'VMMaker-Interpreter'
+	#category : 'VMMaker-Interpreter',
+	#package : 'VMMaker',
+	#tag : 'Interpreter'
 }
 
-{ #category : #'simulator initialization' }
+{ #category : 'simulator initialization' }
 VMBytecodeConstants class >> falsifyBytecodeSetFlags: initializationOptions [
 	SistaV1BytecodeSet.
 	classPool keys do:

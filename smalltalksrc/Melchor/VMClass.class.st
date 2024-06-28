@@ -288,6 +288,14 @@ VMClass class >> objectRepresentationClass [
 ]
 
 { #category : #translation }
+VMClass class >> renameSelectorIfStaticallyResolved: aString [
+
+	^ (self staticallyResolvedSelectors includes: aString)
+		  ifTrue: [ self staticallyResolvePolymorphicSelector: aString ]
+		  ifFalse: [ ^ aString ]
+]
+
+{ #category : #translation }
 VMClass class >> shouldGenerateTypedefFor: aStructClass [
 	"Hack to work-around multiple definitions.  Sometimes a type has been defined in an include."
 	^aStructClass shouldBeGenerated
@@ -329,6 +337,12 @@ VMClass class >> specialValueForConstant: constantName default: defaultValue [
 { #category : #translation }
 VMClass class >> staticallyResolvePolymorphicSelector: aSelectorSymbol [
 	^((self name select: [:ea| ea isUppercase]), '_', aSelectorSymbol) asSymbol
+]
+
+{ #category : #translation }
+VMClass class >> staticallyResolvedSelectors [
+
+	^ #()
 ]
 
 { #category : #translation }
@@ -471,11 +485,49 @@ VMClass >> cCoerce: value to: cTypeString [
 		ifNotNil: [value coerceTo: cTypeString sim: self]
 ]
 
+{ #category : #'translation support' }
+VMClass >> cCoerceSimple: value to: cTypeString [
+	<doNotGenerate>
+	"Type coercion for translation and simulation.
+	 For simulation answer a suitable surrogate for the struct types"
+	^cTypeString caseOf:
+	   {	[#'unsigned long']							->	[value].
+		[#'unsigned int']							->	[value].
+		[#'unsigned short']							->	[value].
+		[#sqInt]									->	[value].
+		[#'sqIntptr_t']								->	[value].
+		[#'usqIntptr_t']								->	[value].
+		[#usqInt]									->	[value].
+		[#sqLong]									->	[value].
+		[#usqLong]								->	[value].
+		[#'AbstractInstruction *']					->	[value].
+		[#'SpurSegmentInfo *']						->	[value].
+		[#'BytecodeFixup *']						->	[value].
+		[#'CogMethod *']							->	[value].
+		[#'char *']									->	[value].
+		[#'sqInt *']									->	[value].
+		[#'void *']									->	[value].
+		[#void]										->	[value].
+		[#'void (*)()']								->	[value].
+		[#'void (*)(void)']							->	[value].
+		[#'unsigned long (*)(void)']					->	[value].
+		[#'void (*)(unsigned long,unsigned long)']	->	[value].
+		[#'usqIntptr_t (*)(void)']					->	[value] }
+]
+
 { #category : #'C library simulation' }
 VMClass >> calloc: num _: size [ 
 
 	<doNotGenerate>
 	^ self malloc: num * size
+]
+
+{ #category : #'translation support' }
+VMClass >> contentsOf: valueHolder [
+
+	<cmacro: '(value) value'>
+
+	^ valueHolder contents
 ]
 
 { #category : #'translation support' }
@@ -500,6 +552,22 @@ VMClass >> defined: aSymbol [
 ]
 
 { #category : #'memory access' }
+VMClass >> fetchSingleFloatAtPointer: pointer into: aFloat [
+	"This gets implemented by Macros in C, where its types will also be checked.
+	 pointer is a raw address, and aFloat is a 32-bit single precision float."
+	<doNotGenerate>
+
+	^self fetchSingleFloatAt: pointer into: aFloat
+]
+
+{ #category : #'file primitives' }
+VMClass >> fgetc: file [ 
+
+	<doNotGenerate>
+	^ file next
+]
+
+{ #category : #'memory access' }
 VMClass >> floatAtPointer: pointer [
 
 	<doNotGenerate>
@@ -511,6 +579,41 @@ VMClass >> floatAtPointer: pointer put: value [
 
 	<doNotGenerate>
 	self notYetImplemented
+]
+
+{ #category : #'file primitives' }
+VMClass >> fprintf: aStream _: format [ 
+
+	<doNotGenerate>
+	^ self fprintf: aStream format: format arguments: { }
+]
+
+{ #category : #'file primitives' }
+VMClass >> fprintf: aStream _: format _: aValue [ 
+
+	<doNotGenerate>
+	^ self fprintf: aStream format: format arguments: { aValue }
+]
+
+{ #category : #'file primitives' }
+VMClass >> fprintf: aStream _: format _: aValue _: otherValue [
+
+	<doNotGenerate>
+	^ self fprintf: aStream format: format arguments: { aValue. otherValue }
+]
+
+{ #category : #'file primitives' }
+VMClass >> fprintf: aStream format: aFormat arguments: arguments [
+
+	<doNotGenerate>
+	| printf |
+	printf := PrintfFormatString new setFormat: aFormat.
+	
+	(ZnNewLineWriterStream on: aStream)	
+		nextPutAll: (printf
+			 printf: arguments;
+			 string);
+		flush
 ]
 
 { #category : #'C library simulation' }
@@ -708,12 +811,24 @@ VMClass >> majorVersion [
 VMClass >> malloc: size [
 	<doNotGenerate>
 	| address region |
+	
+	size = 0 ifTrue: [ ^ nil ].
+	
 	address := memoryManager allocate: size.
 	region := memoryManager regionAtAddress: address.
 	^ CNewArrayAccessor new
 		setObject: region;
 		address: address;
 		yourself
+]
+
+{ #category : #'C library simulation' }
+VMClass >> memcmp: array1 _: array2 _: length [
+
+	<doNotGenerate>
+	0 to: length - 1 do: [ :i |
+	(array1 at: i) = (array2 at: i) ifFalse: [ ^ 999 "Not 0" ] ].
+	^ 0
 ]
 
 { #category : #'C library simulation' }
@@ -1184,6 +1299,20 @@ VMClass >> unalignedAccessError [
 VMClass >> unreachable [
 	<inline: true>
 	self error: 'UNREACHABLE'
+]
+
+{ #category : #'memory access' }
+VMClass >> unsignedLong32At: anInteger [
+	
+	<inline: #always>
+	^ self uint32AtPointer: anInteger
+]
+
+{ #category : #'memory access' }
+VMClass >> unsignedLong32At: anInteger put: aValue [
+	
+	<inline: #always>
+	^ self uint32AtPointer: anInteger put: aValue
 ]
 
 { #category : #'memory access' }

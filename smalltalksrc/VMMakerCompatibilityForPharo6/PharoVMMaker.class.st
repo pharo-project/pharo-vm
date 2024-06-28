@@ -6,7 +6,9 @@ Class {
 	#superclass : #Object,
 	#instVars : [
 		'outputDirectory',
-		'stopOnErrors'
+		'stopOnErrors',
+		'generatePlugins',
+		'wordSizesToGenerate'
 	],
 	#category : #'VMMakerCompatibilityForPharo6-CommandLine'
 }
@@ -103,7 +105,8 @@ PharoVMMaker >> generate: interpreterClass memoryManager: memoryManager compiler
 { #category : #generation }
 PharoVMMaker >> generate: interpreterClass memoryManager: memoryManager compilerClass: compilerClass options: options [
 
-	| platformDirectory |
+	| platformDirectory vmmaker |
+		
 	
 	Author useAuthor: 'vmMaker' during: [
 	
@@ -113,57 +116,93 @@ PharoVMMaker >> generate: interpreterClass memoryManager: memoryManager compiler
 
 		[ 
 		
-		(VMMaker
+		vmmaker := VMMaker
 			makerFor: interpreterClass
 			and: compilerClass
 			with: {#ObjectMemory. memoryManager name.
-					 #bytecodeTableInitializer. #initializeBytecodeTableForSistaV1} , options
+					 #bytecodeTableInitializer. #initializeBytecodeTableForSistaV1} 
+					, options
 			to: platformDirectory
 			platformDir:platformDirectory
 			including: #()
-			configuration: VMMakerConfiguration)
+			configuration: VMMakerConfiguration.
+
+		vmmaker
 				stopOnErrors: stopOnErrors;
 				internal: #() external: #(FilePlugin SurfacePlugin FloatArrayPlugin);
 				generateInterpreterFile;
-				generateCogitFiles;
-				generateExternalPlugins] valueSupplyingAnswer:true.]
+				generateCogitFiles.
+		generatePlugins ifTrue: [ vmmaker generateExternalPlugins ]] valueSupplyingAnswer:true.]
 ]
 
 { #category : #generation }
 PharoVMMaker >> generateCoInterpreter [
 
-	self generate: CoInterpreter memoryManager: Spur64BitCoMemoryManager.
-	self generate: CoInterpreter memoryManager: Spur32BitCoMemoryManager.	
+	self generates64Bits ifTrue: [self generate: CoInterpreter memoryManager: Spur64BitCoMemoryManager].
+	self generates32Bits ifTrue: [ self generate: CoInterpreter memoryManager: Spur32BitCoMemoryManager ].
+
+]
+
+{ #category : #accessing }
+PharoVMMaker >> generatePlugins [
+
+	^ generatePlugins
+]
+
+{ #category : #accessing }
+PharoVMMaker >> generatePlugins: anObject [
+
+	generatePlugins := anObject
 ]
 
 { #category : #generation }
 PharoVMMaker >> generateSistaVM [
 
-	self
-		generate: CoInterpreter
-		memoryManager: Spur64BitCoMemoryManager
-		compilerClass: SistaCogit
-		options: #( SistaVM true ).
-	self
-		generate: CoInterpreter
-		memoryManager: Spur32BitCoMemoryManager
-		compilerClass: SistaCogit
-		options: #( SistaVM true )
+	self generates64Bits ifTrue: [	
+			self
+				generate: CoInterpreter
+				memoryManager: Spur64BitCoMemoryManager
+				compilerClass: SistaCogit
+				options: #( SistaVM true )].
+	
+	
+	self generates32Bits ifTrue: [
+			self
+				generate: CoInterpreter
+				memoryManager: Spur32BitCoMemoryManager
+				compilerClass: SistaCogit
+				options: #( SistaVM true )].
+
+
 ]
 
 { #category : #generation }
 PharoVMMaker >> generateStackVM [
 
-	self generate: StackInterpreter memoryManager: Spur64BitMemoryManager.
-	self generate: StackInterpreter memoryManager: Spur32BitMemoryManager.
+	self generates64Bits ifTrue: [self generate: StackInterpreter memoryManager: Spur64BitMemoryManager].
+	self generates32Bits ifTrue: [ self generate: StackInterpreter memoryManager: Spur32BitMemoryManager ].
 
+]
 
+{ #category : #testing }
+PharoVMMaker >> generates32Bits [
+
+	^ wordSizesToGenerate includes: 4
+]
+
+{ #category : #testing }
+PharoVMMaker >> generates64Bits [
+	
+	^ wordSizesToGenerate includes: 8
 ]
 
 { #category : #initialization }
 PharoVMMaker >> initialize [
 	super initialize.
-	stopOnErrors := false
+	stopOnErrors := false.
+	generatePlugins := true.
+	wordSizesToGenerate := #(4 8).
+
 ]
 
 { #category : #initialization }
@@ -211,27 +250,30 @@ PharoVMMaker >> vmMakerWith: interpreterClass memoryManager: memoryManager [
 
 	| platformDirectory |
 	VMMakerConfiguration initializeForPharo.
-	(interpreterClass bindingOf: #COGMTVM) value: false.
-
 	platformDirectory := self platformDirectoryFor: memoryManager.
-
 
 	^ (VMMaker
 		   makerFor: interpreterClass
 		   and: StackToRegisterMappingCogit
-		   with: { 
-				   #COGMTVM.
-				   false.
-				   #ObjectMemory.
-				   memoryManager name.
-				   #MULTIPLEBYTECODESETS.
-				   true.
-				   #bytecodeTableInitializer.
-				   #initializeBytecodeTableForSqueakV3PlusClosuresSistaV1Hybrid }
+		   with: {
+				   #ObjectMemory . memoryManager name .
+				   #MULTIPLEBYTECODESETS . true }
 		   to: platformDirectory
 		   platformDir: platformDirectory
 		   including: #(  )
 		   configuration: VMMakerConfiguration)
 		  stopOnErrors: stopOnErrors;
 		  yourself
+]
+
+{ #category : #accessing }
+PharoVMMaker >> wordSizesToGenerate [
+
+	^ wordSizesToGenerate
+]
+
+{ #category : #accessing }
+PharoVMMaker >> wordSizesToGenerate: anObject [
+
+	wordSizesToGenerate := anObject
 ]

@@ -181,6 +181,16 @@ SlangBasicTypeInferenceTest >> testReturnAFalseMessageSend [
 	self assert: tMethod returnType equals: #sqInt.
 ]
 
+{ #category : #'return-float' }
+SlangBasicTypeInferenceTest >> testReturnAFloat [
+	| tMethod |
+	tMethod := ccg methodNamed: #returnAFloat.
+	
+	self assert: tMethod isNotNil.
+	self assert: (ccg typeFor: tMethod statements first in: tMethod) equals: #double.
+	self assert: tMethod returnType equals: #double
+]
+
 { #category : #'return-message-send' }
 SlangBasicTypeInferenceTest >> testReturnAFloatMessageSend [
 	| tMethod |
@@ -190,6 +200,16 @@ SlangBasicTypeInferenceTest >> testReturnAFloatMessageSend [
 	self assert: (ccg typeFor: tMethod statements first in: tMethod) equals: #double.
 	self assert: (ccg typeFor: tMethod statements first expression in: tMethod) equals: #double.
 	self assert: tMethod returnType equals: #double.
+]
+
+{ #category : #'return-signed' }
+SlangBasicTypeInferenceTest >> testReturnANegativeNumber [
+	| tMethod |
+	tMethod := ccg methodNamed: #returnANegativeNumber.
+	
+	self assert: tMethod isNotNil.
+	self assert: (ccg typeFor: tMethod statements first in: tMethod) equals: #int.
+	self assert: tMethod returnType equals: #sqInt
 ]
 
 { #category : #'return-constant' }
@@ -284,9 +304,7 @@ SlangBasicTypeInferenceTest >> testReturnAnIntEqual32ConstantNode [
 	self assert: tMethod isNotNil.
 	self assert: (ccg typeFor: tMethod statements first in: tMethod) equals: #'unsigned int'.
 	self assert: tMethod returnType equals: #sqInt
-	"returning an integer constants is the same as returning nothing"
-	"this therefore return a sqInt"
-	"see start of the CCodeGenerator >> harmonizeReturnTypesIn: method"
+
 ]
 
 { #category : #'return-message-send' }
@@ -298,7 +316,6 @@ SlangBasicTypeInferenceTest >> testReturnAnIntEqual32MessageSend [
 	self assert: (ccg typeFor: tMethod statements first in: tMethod) equals: #sqInt.
 	self assert: (ccg typeFor: tMethod statements first expression in: tMethod) equals: #sqInt.
 	self assert: tMethod returnType equals: #sqInt.
-	"the method return type is sqint, so it's coherent, see testReturnAnIntEqual32MessageSend"
 ]
 
 { #category : #'return-constant' }
@@ -309,9 +326,6 @@ SlangBasicTypeInferenceTest >> testReturnAnIntEqual64ConstantNode [
 	self assert: tMethod isNotNil.
 	self assert: (ccg typeFor: tMethod statements first in: tMethod) equals: #'unsigned long long'.
 	self assert: tMethod returnType equals: #sqInt
-	"returning an integer constants is the same as returning nothing"
-	"this therefore return a sqInt"
-	"see start of the CCodeGenerator >> harmonizeReturnTypesIn: method"
 ]
 
 { #category : #'return-message-send' }
@@ -323,7 +337,6 @@ SlangBasicTypeInferenceTest >> testReturnAnIntEqual64MessageSend [
 	self assert: (ccg typeFor: tMethod statements first in: tMethod) equals: #sqInt.
 	self assert: (ccg typeFor: tMethod statements first expression in: tMethod) equals: #sqInt.
 	self assert: tMethod returnType equals: #sqInt.
-	"the method return type is sqint, so it's coherent, see testReturnAnIntEqual64MessageSend"
 ]
 
 { #category : #'return-constant' }
@@ -334,9 +347,6 @@ SlangBasicTypeInferenceTest >> testReturnAnIntGreater64ConstantNode [
 	self assert: tMethod isNotNil.
 	self assert: (ccg typeFor: tMethod statements first in: tMethod) equals: #'long long'.
 	self assert: tMethod returnType equals: #sqInt
-	"returning an integer constants is the same as returning nothing"
-	"this therefore return a sqInt"
-	"see start of the CCodeGenerator >> harmonizeReturnTypesIn: method"
 ]
 
 { #category : #'return-message-send' }
@@ -348,7 +358,6 @@ SlangBasicTypeInferenceTest >> testReturnAnIntGreater64MessageSend [
 	self assert: (ccg typeFor: tMethod statements first in: tMethod) equals: #sqInt.
 	self assert: (ccg typeFor: tMethod statements first expression in: tMethod) equals: #sqInt.
 	self assert: tMethod returnType equals: #sqInt.
-	"the method return type is sqint, so it's coherent, see testReturnAnIntGreater64MessageSend"
 ]
 
 { #category : #'return-constant' }
@@ -359,9 +368,7 @@ SlangBasicTypeInferenceTest >> testReturnAnIntLess32ConstantNode [
 	self assert: tMethod isNotNil.
 	self assert: (ccg typeFor: tMethod statements first in: tMethod) equals: #int.
 	self assert: tMethod returnType equals: #sqInt
-	"returning constants is the same as returning nothing"
-	"this therefore return a sqInt"
-	"see start of the CCodeGenerator >> harmonizeReturnTypesIn: method"
+
 ]
 
 { #category : #'return-message-send' }
@@ -373,7 +380,6 @@ SlangBasicTypeInferenceTest >> testReturnAnIntLesser32MessageSend [
 	self assert: (ccg typeFor: tMethod statements first in: tMethod) equals: #sqInt.
 	self assert: (ccg typeFor: tMethod statements first expression in: tMethod) equals: #sqInt.
 	self assert: tMethod returnType equals: #sqInt.
-	"the method return type is sqint, so it's coherent, see testReturnAnIntLesser64MessageSend"
 ]
 
 { #category : #'return-explicit-arg' }
@@ -547,6 +553,104 @@ SlangBasicTypeInferenceTest >> testReturnFloatConstantNode [
 	
 ]
 
+{ #category : #'return-long-int' }
+SlangBasicTypeInferenceTest >> testReturnLongIntInVariable [
+	"the type is automatically determined, no need to annotate"
+	| tMethod |
+	tMethod := ccg methodNamed: #returnLongIntInVariable.
+	
+	self assert: tMethod isNotNil.
+	self assert: tMethod returnType equals: #usqInt
+]
+
+{ #category : #'return-long-int' }
+SlangBasicTypeInferenceTest >> testReturnLongIntNotWorking [
+	"doesn't check for type limit"
+	| tMethod |
+	tMethod := ccg methodNamed: #returnLongInt.
+	
+	self assert: tMethod isNotNil.
+	self assert: tMethod returnType equals: #sqInt
+]
+
+{ #category : #'return-long-int' }
+SlangBasicTypeInferenceTest >> testReturnMultipleLongInt [
+	| tMethod |
+	tMethod := ccg methodNamed: #returnMultipleLongInt.
+	
+	self assert: tMethod isNotNil.
+	self assert: tMethod returnType equals: #usqInt
+]
+
+{ #category : #'return-long-int' }
+SlangBasicTypeInferenceTest >> testReturnMultipleLongIntAnnotation [
+	| tMethod |
+	tMethod := ccg methodNamed: #returnMultipleLongIntAnnotation:.
+	
+	self assert: tMethod isNotNil.
+	self assert: tMethod returnType equals: #usqInt
+]
+
+{ #category : #'return-long-int' }
+SlangBasicTypeInferenceTest >> testReturnMultipleLongIntNotWorking [
+	"doesn't check for type limit"
+	| tMethod |
+	tMethod := ccg methodNamed: #returnMultipleLongIntNotWorking.
+	
+	self assert: tMethod isNotNil.
+	self assert: tMethod returnType equals: #sqInt
+]
+
+{ #category : #'return-multiple-type' }
+SlangBasicTypeInferenceTest >> testReturnStringAndIntIfTrue1 [
+	"conflict so default to sqInt"
+	| tMethod |
+	tMethod := ccg methodNamed: #returnStringAndIntInIfTrue1.
+	
+	self assert: tMethod isNotNil.
+	self assert: tMethod returnType equals: #sqInt
+]
+
+{ #category : #'return-multiple-type' }
+SlangBasicTypeInferenceTest >> testReturnStringAndIntIfTrue2 [
+	"conflict so default to sqInt"
+	| tMethod |
+	tMethod := ccg methodNamed: #returnStringAndIntInIfTrue2.
+	
+	self assert: tMethod isNotNil.
+	self assert: tMethod returnType equals: #sqInt
+]
+
+{ #category : #'return-multiple-type' }
+SlangBasicTypeInferenceTest >> testReturnStringAndIntInIfTrueifFalse1 [
+	"conflict so default to sqInt"
+	| tMethod |
+	tMethod := ccg methodNamed: #returnStringAndIntInIfTrueifFalse1.
+	
+	self assert: tMethod isNotNil.
+	self assert: tMethod returnType equals: #sqInt
+]
+
+{ #category : #'return-multiple-type' }
+SlangBasicTypeInferenceTest >> testReturnStringAndIntInIfTrueifFalse2 [
+	"conflict so default to sqInt"
+	| tMethod |
+	tMethod := ccg methodNamed: #returnStringAndIntInIfTrueifFalse2.
+	
+	self assert: tMethod isNotNil.
+	self assert: tMethod returnType equals: #sqInt
+]
+
+{ #category : #'return-multiple-type' }
+SlangBasicTypeInferenceTest >> testReturnStringAndIntInIfTrueifFalse3 [
+	"conflict so default to sqInt"
+	| tMethod |
+	tMethod := ccg methodNamed: #returnStringAndIntInIfTrueifFalse3.
+	
+	self assert: tMethod isNotNil.
+	self assert: tMethod returnType equals: #sqInt
+]
+
 { #category : #'return-temp-assigned-const' }
 SlangBasicTypeInferenceTest >> testReturnTempBigNegativeIntegerConstantNode [
 	| tMethod |
@@ -632,6 +736,7 @@ SlangBasicTypeInferenceTest >> testReturnTempIntEqual32ConstantNode [
 
 { #category : #'return-temp-assigned-message' }
 SlangBasicTypeInferenceTest >> testReturnTempIntEqual32MessageNode [
+	"now return an usqInt"
 	| tMethod |
 	tMethod := ccg methodNamed: #returnTempIntEqual32MessageNode.
 	
@@ -655,6 +760,7 @@ SlangBasicTypeInferenceTest >> testReturnTempIntEqual64ConstantNode [
 
 { #category : #'return-temp-assigned-message' }
 SlangBasicTypeInferenceTest >> testReturnTempIntEqual64MessageNode [
+	"now return an usqInt"
 	| tMethod |
 	tMethod := ccg methodNamed: #returnTempIntEqual64MessageNode.
 	
@@ -678,6 +784,7 @@ SlangBasicTypeInferenceTest >> testReturnTempIntGreater64ConstantNode [
 
 { #category : #'return-temp-assigned-message' }
 SlangBasicTypeInferenceTest >> testReturnTempIntGreater64MessageNode [
+	"now return an usqInt"
 	| tMethod |
 	tMethod := ccg methodNamed: #returnTempIntGreater64MessageNode.
 	
@@ -702,6 +809,7 @@ SlangBasicTypeInferenceTest >> testReturnTempIntLesser32ConstantNode [
 
 { #category : #'return-temp-assigned-message' }
 SlangBasicTypeInferenceTest >> testReturnTempIntLesser32MessageNode [
+	"now return an usqInt"
 	| tMethod |
 	tMethod := ccg methodNamed: #returnTempIntLesser32MessageNode.
 	
@@ -804,4 +912,30 @@ SlangBasicTypeInferenceTest >> testReturnTempTrueMessageNode [
 	self assert: (ccg typeFor: tMethod statements first in: tMethod) equals: #sqInt.
 	self assert: (ccg typeFor: tMethod statements first variable in: tMethod) equals: #sqInt.
 	self assert: tMethod returnType equals: #sqInt.
+]
+
+{ #category : #'return-signed' }
+SlangBasicTypeInferenceTest >> testUnsignedIntInASignedExpressionNotWorking [
+	"Slang will try to signed a variable if it is present in an iteration with a comparator (>,<,>=,<=) in its expression, here it does not work"
+	| tMethod |
+	tMethod := ccg methodNamed: #unsignedIntInASignedOperationNotWorking.
+	
+	self assert: tMethod isNotNil.
+	self assert: (ccg typeFor: tMethod statements first in: tMethod) equals: #'unsigned int'.
+	self assert: tMethod returnType equals: #usqInt
+]
+
+{ #category : #'return-signed' }
+SlangBasicTypeInferenceTest >> testUnsignedIntInASignedOperation [
+	"Slang will try to signed a variable if it is present in an iteration with a comparator (>,<,>=,<=) in its expression, here i is first automatically typed as unsigned int but change its type to int eventually"
+	| tMethod ccg2 |
+	ccg2 := MLVMCCodeGenerator new.
+	ccg2 vmMaker: VMMaker new.
+	ccg2 vmMaker vmmakerConfiguration: VMMakerConfiguration.
+	ccg2 addClass: SlangBasicTypeInferenceTestClass.
+	tMethod := ccg2 methodNamed: #unsignedIntInASignedOperation.
+	self assert: tMethod isNotNil.
+	self assert: (ccg2 typeFor: tMethod statements first in: tMethod) equals: #'unsigned int'.
+	ccg2 inferTypes.
+	self assert: tMethod returnType equals: #sqInt
 ]

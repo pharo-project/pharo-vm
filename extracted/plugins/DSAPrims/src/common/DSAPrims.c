@@ -38,10 +38,7 @@ static char __buildInfo[] = "DSAPlugin CryptographyPlugins-eem.14 uuid: 54292ff0
 
 
 /*** Function Prototypes ***/
-static sqInt addBackDivisorDigitShift(sqInt digitShift);
-static sqInt bigDivideLoop(void);
 EXPORT(const char*) getModuleName(void);
-static unsigned int leftRotateby(unsigned int anInteger, sqInt bits);
 EXPORT(sqInt) primitiveBigDivide(void);
 EXPORT(sqInt) primitiveBigMultiply(void);
 EXPORT(sqInt) primitiveExpandBlock(void);
@@ -49,7 +46,6 @@ EXPORT(sqInt) primitiveHashBlock(void);
 EXPORT(sqInt) primitiveHasSecureHashPrimitive(void);
 EXPORT(sqInt) primitiveHighestNonZeroDigitIndex(void);
 EXPORT(sqInt) setInterpreter(struct VirtualMachine *anInterpreter);
-static sqInt subtractDivisorMultipliedByDigitdigitShift(sqInt digit, sqInt digitShift);
 
 
 /*** Variables ***/
@@ -101,29 +97,6 @@ static sqInt remainderDigitCount;
 	correct value.
  */
 
-	/* DSAPlugin>>#addBackDivisorDigitShift: */
-static sqInt
-addBackDivisorDigitShift(sqInt digitShift)
-{
-    sqInt carry;
-    sqInt i;
-    sqInt rIndex;
-    sqInt sum;
-
-	carry = 0;
-	rIndex = digitShift + 1;
-	for (i = 1; i <= divisorDigitCount; i += 1) {
-		sum = ((dsaRemainder[rIndex]) + (dsaDivisor[i])) + carry;
-		dsaRemainder[rIndex] = (sum & 0xFF);
-		carry = ((usqInt) sum >> 8);
-		rIndex += 1;
-	}
-	sum = (dsaRemainder[rIndex]) + carry;
-	dsaRemainder[rIndex] = (sum & 0xFF);
-	return 0;
-}
-
-
 /*	This is the core of the divide algorithm. This loop steps through the
 	digit positions of the quotient, each time estimating the right quotient
 	digit, subtracting from the remainder the divisor times the quotient digit
@@ -138,109 +111,6 @@ addBackDivisorDigitShift(sqInt digitShift)
 	See Knuth, volume 2 ('Semi-Numerical Algorithms') 2nd edition, pp. 257-260
  */
 /*	extract the top two digits of the divisor */
-
-	/* DSAPlugin>>#bigDivideLoop */
-static sqInt
-bigDivideLoop(void)
-{
-    sqInt borrow;
-    sqInt carry;
-    unsigned char d1;
-    unsigned char d2;
-    sqInt digitShift;
-    unsigned char firstDigit;
-    sqInt firstTwoDigits;
-    sqInt i;
-    sqInt i1;
-    sqInt j;
-    sqInt prod;
-    sqInt q;
-    sqInt qTooBig;
-    sqInt resultDigit;
-    sqInt rIndex;
-    sqInt rIndex1;
-    sqInt sum;
-    unsigned char thirdDigit;
-
-	d1 = dsaDivisor[divisorDigitCount];
-	d2 = dsaDivisor[divisorDigitCount - 1];
-	for (j = remainderDigitCount; j >= (divisorDigitCount + 1); j += -1) {
-
-		/* extract the top several digits of remainder. */
-		firstDigit = dsaRemainder[j];
-		firstTwoDigits = (((usqInt) firstDigit << 8)) + (dsaRemainder[j - 1]);
-
-		/* estimate q, the next digit of the quotient */
-		thirdDigit = dsaRemainder[j - 2];
-		if (firstDigit == d1) {
-			q = 0xFF;
-		}
-		else {
-			q = firstTwoDigits / d1;
-		}
-		if ((d2 * q) > ((((usqInt) (firstTwoDigits - (q * d1)) << 8)) + thirdDigit)) {
-			q -= 1;
-			if ((d2 * q) > ((((usqInt) (firstTwoDigits - (q * d1)) << 8)) + thirdDigit)) {
-				q -= 1;
-			}
-		}
-		digitShift = (j - divisorDigitCount) - 1;
-		if (q > 0) {
-			/* begin subtractDivisorMultipliedByDigit:digitShift: */
-			borrow = 0;
-			rIndex1 = digitShift + 1;
-			for (i1 = 1; i1 <= divisorDigitCount; i1 += 1) {
-				prod = ((dsaDivisor[i1]) * q) + borrow;
-				borrow = ((usqInt) prod >> 8);
-				resultDigit = (dsaRemainder[rIndex1]) - (prod & 0xFF);
-				if (resultDigit < 0) {
-
-					/* borrow from the next digit */
-					resultDigit += 256;
-					borrow += 1;
-				}
-				dsaRemainder[rIndex1] = resultDigit;
-				rIndex1 += 1;
-			}
-			if (borrow == 0) {
-				qTooBig = 0;
-				goto l1;
-			}
-			resultDigit = (dsaRemainder[rIndex1]) - borrow;
-			if (resultDigit < 0) {
-
-				/* digit was too large (this case is quite rare) */
-				dsaRemainder[rIndex1] = (resultDigit + 256);
-				qTooBig = 1;
-				goto l1;
-			}
-			else {
-				dsaRemainder[rIndex1] = resultDigit;
-				qTooBig = 0;
-				goto l1;
-			}
-	l1:	/* end subtractDivisorMultipliedByDigit:digitShift: */;
-			if (qTooBig) {
-
-				/* this case is extremely rare */
-				/* begin addBackDivisorDigitShift: */
-				carry = 0;
-				rIndex = digitShift + 1;
-				for (i = 1; i <= divisorDigitCount; i += 1) {
-					sum = ((dsaRemainder[rIndex]) + (dsaDivisor[i])) + carry;
-					dsaRemainder[rIndex] = (sum & 0xFF);
-					carry = ((usqInt) sum >> 8);
-					rIndex += 1;
-				}
-				sum = (dsaRemainder[rIndex]) + carry;
-				dsaRemainder[rIndex] = (sum & 0xFF);
-				q -= 1;
-			}
-		}
-		dsaQuotient[digitShift + 1] = q;
-	}
-	return 0;
-}
 
 
 /*	Note: This is hardcoded so it can be run from Squeak.
@@ -259,13 +129,6 @@ getModuleName(void)
 /*	Rotate the given 32-bit integer left by the given number of bits and
 	answer the result.
  */
-
-	/* DSAPlugin>>#leftRotate:by: */
-static unsigned int
-leftRotateby(unsigned int anInteger, sqInt bits)
-{
-	return (((usqInt)(anInteger) << bits)) | (((usqInt) anInteger) >> (32 - bits));
-}
 
 
 /*	Called with three LargePositiveInteger arguments, rem, div, quo. Divide
@@ -669,48 +532,6 @@ setInterpreter(struct VirtualMachine *anInterpreter)
 	the current remainder. Answer true if there is an excess borrow,
 	indicating that digit was one too large. (This case is quite rare.)
  */
-
-	/* DSAPlugin>>#subtractDivisorMultipliedByDigit:digitShift: */
-static sqInt
-subtractDivisorMultipliedByDigitdigitShift(sqInt digit, sqInt digitShift)
-{
-    sqInt borrow;
-    sqInt i;
-    sqInt prod;
-    sqInt resultDigit;
-    sqInt rIndex;
-
-	borrow = 0;
-	rIndex = digitShift + 1;
-	for (i = 1; i <= divisorDigitCount; i += 1) {
-		prod = ((dsaDivisor[i]) * digit) + borrow;
-		borrow = ((usqInt) prod >> 8);
-		resultDigit = (dsaRemainder[rIndex]) - (prod & 0xFF);
-		if (resultDigit < 0) {
-
-			/* borrow from the next digit */
-			resultDigit += 256;
-			borrow += 1;
-		}
-		dsaRemainder[rIndex] = resultDigit;
-		rIndex += 1;
-	}
-	if (borrow == 0) {
-		return 0;
-	}
-	resultDigit = (dsaRemainder[rIndex]) - borrow;
-	if (resultDigit < 0) {
-
-		/* digit was too large (this case is quite rare) */
-		dsaRemainder[rIndex] = (resultDigit + 256);
-		return 1;
-	}
-	else {
-		dsaRemainder[rIndex] = resultDigit;
-		return 0;
-	}
-}
-
 
 #ifdef SQUEAK_BUILTIN_PLUGIN
 

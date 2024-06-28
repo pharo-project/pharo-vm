@@ -38,7 +38,7 @@ RBMethodNode >> asTranslationMethodOfClass: aTMethodClass [
 { #category : #'*VMMakerCompatibilityForPharo6-C translation' }
 RBMethodNode >> asTranslationMethodOfClass: aTMethodClass forCodeGenerator: aCodeGenerator [
  	"Answer a TMethod (or subclass) derived from the receiver."
-	| additionalMethodState comment |
+	| additionalMethodState comment renamedSelector |
 	additionalMethodState := AdditionalMethodState forMethod: nil selector: selector.
 	pragmas ifNotNil:
 		[pragmas do:
@@ -54,8 +54,10 @@ RBMethodNode >> asTranslationMethodOfClass: aTMethodClass forCodeGenerator: aCod
 			ifNotNil: [ comment, self body commentOrNil ].
 	].
 
+	renamedSelector := self methodClass renameSelectorIfStaticallyResolved: selector.
+
 	^aTMethodClass new
-		setSelector: selector
+		setSelector: renamedSelector
 		definingClass: compilationContext getClass
 		args: arguments
 		locals: ((self allDefinedVariables copyWithoutAll: (arguments collect: #name)) collect: [:string| string -> string])

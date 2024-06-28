@@ -1,6 +1,6 @@
-Extension { #name : #VMClass }
+Extension { #name : 'VMClass' }
 
-{ #category : #'*VMMaker' }
+{ #category : '*VMMaker' }
 VMClass class >> initializeForPlugins: optionsDictionaryOrArray [
 	"Do a default initialization, suitable for generating plugin sources."
 	StackInterpreterSimulator
@@ -8,7 +8,7 @@ VMClass class >> initializeForPlugins: optionsDictionaryOrArray [
 
 ]
 
-{ #category : #'*VMMaker' }
+{ #category : '*VMMaker' }
 VMClass class >> initializeMiscConstants [
 
 	"Falsify the `what type of VM is this?' flags that are defined in the various interp.h files.
@@ -39,9 +39,6 @@ VMClass class >> initializeMiscConstants [
 	FEATURE_THREADED_FFI := InitializationOptions
 		                        at: #FEATURE_THREADED_FFI
 		                        ifAbsentPut: [ false ].
-	FEATURE_MESSAGE_COUNT := InitializationOptions
-		                         at: #FEATURE_MESSAGE_COUNT
-		                         ifAbsentPut: [ false ].
 
 	SistaVM := InitializationOptions at: #SistaVM ifAbsentPut: [ false ].
 	TempVectReadBarrier := InitializationOptions
@@ -72,5 +69,17 @@ VMClass class >> initializeMiscConstants [
 	"And not these; they're compile-time"
 	IMMUTABILITY := InitializationOptions
 		                at: #IMMUTABILITY
-		                ifAbsent: [ true ]
+		                ifAbsent: [ true ].
+	WIN32 := InitializationOptions at: #WIN32 ifAbsent: [false].
+	PRIdSQINT := InitializationOptions at: #FormatSqInt ifAbsent: [ 'ld' ]
+]
+
+{ #category : '*VMMaker' }
+VMClass >> isEndOfLine: aCharacter [
+
+	<inline: true>
+	
+	^ self 
+		cCode: [ aCharacter = 13 or: [ aCharacter = 10 ] ] 
+		inSmalltalk: [ Character cr = aCharacter or: [ Character lf = aCharacter ] ]
 ]

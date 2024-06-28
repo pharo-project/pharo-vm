@@ -1,6 +1,7 @@
 #import <Foundation/Foundation.h>
 #include "pharovm/pharo.h"
 #include "pharovm/parameters/parameters.h"
+#include "pharovm/parameters/parameterVector.h"
 #include "pharovm/debug.h"
 #include "pharovm/pathUtilities.h"
 
@@ -28,7 +29,7 @@ EXPORT(void) fillParametersFromPList(VMParameters* parameters){
 	CFNumberRef		maxOldSpaceSizeRef;
 	CFNumberRef		edenSizeRef;
 	CFNumberRef		codeSizeRef;
-	
+	CFArrayRef		argumentsRef;
 
 
 	mainBundle = CFBundleGetMainBundle();
@@ -84,7 +85,6 @@ EXPORT(void) fillParametersFromPList(VMParameters* parameters){
 		parameters->isWorker = !CFBooleanGetValue(workerRef);
 	}
 
-
 	maxFramesToLogRef = CFBundleGetValueForInfoDictionaryKey(mainBundle, CFSTR("PharoMaxFramesToLog"));
 
 	if(maxFramesToLogRef != NULL){
@@ -107,6 +107,25 @@ EXPORT(void) fillParametersFromPList(VMParameters* parameters){
 
 	if(codeSizeRef != NULL){
 		CFNumberGetValue(codeSizeRef, kCFNumberSInt64Type, &parameters->maxCodeSize);
+	}
+
+
+	argumentsRef = CFBundleGetValueForInfoDictionaryKey(mainBundle, CFSTR("PharoImageParameters"));
+
+	if(argumentsRef != NULL){
+		CFIndex count = CFArrayGetCount(argumentsRef);
+
+		for(CFIndex i=0; i < count; i++){
+			CFStringRef value = CFArrayGetValueAtIndex(argumentsRef, i);
+
+			if(value != NULL){
+				char* valueString = calloc(1, 255+1);
+				
+				CFStringGetCString(value, valueString, 255 + 1, kCFStringEncodingUTF8);
+				vm_parameter_vector_insert_from(&parameters->imageParameters, 1, (const char**) &valueString);
+			}
+			
+		}
 	}
 
 }

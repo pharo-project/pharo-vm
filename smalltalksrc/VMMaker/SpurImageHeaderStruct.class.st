@@ -1,6 +1,6 @@
 Class {
-	#name : #SpurImageHeaderStruct,
-	#superclass : #VMStructType,
+	#name : 'SpurImageHeaderStruct',
+	#superclass : 'VMStructType',
 	#instVars : [
 		'dataSize',
 		'oldBaseAddr',
@@ -16,13 +16,15 @@ Class {
 		'swapBytes',
 		'hdrLastHash',
 		'imageFormat',
-		'screenSize',
-		'imageHeaderSize'
+		'imageHeaderSize',
+		'imageVersion'
 	],
-	#category : #'VMMaker-ImageFormat'
+	#category : 'VMMaker-ImageFormat',
+	#package : 'VMMaker',
+	#tag : 'ImageFormat'
 }
 
-{ #category : #'simulation only' }
+{ #category : 'simulation only' }
 SpurImageHeaderStruct class >> byteSizeForSimulator: aCogit [
 
 	"Answer an approximation of the byte size of an AbstractInstruction struct.
@@ -30,12 +32,12 @@ SpurImageHeaderStruct class >> byteSizeForSimulator: aCogit [
 	^self instSize * (aCogit sizeof: #'void *')
 ]
 
-{ #category : #translation }
+{ #category : 'translation' }
 SpurImageHeaderStruct class >> instVarNamesAndTypesForTranslationDo: aBinaryBlock [
 	"enumerate aBinaryBlock with the names and C type strings for the inst vars to include in a struct of this type."
 
 	<var: #dataSize type: #size_t>
-	<var: #desiredHeapSize type: #usqInt>
+	<var: #desiredHeapSize type: #size_t>
 	<var: #headerStart type: #squeakFileOffsetType>
 
 	self filteredInstVarNames do:
@@ -44,198 +46,207 @@ SpurImageHeaderStruct class >> instVarNamesAndTypesForTranslationDo: aBinaryBloc
 			value: ivn
 			value: (ivn caseOf: {
 						['dataSize']				-> [#'size_t'].
-						['desiredHeapSize']	-> [#'usqInt'].
+						['desiredHeapSize']	-> [#'size_t'].
 						['headerStart']			-> [#'squeakFileOffsetType'].
 				} otherwise: [ #'sqInt' ])]
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 SpurImageHeaderStruct >> dataSize [
 
 	^ dataSize
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 SpurImageHeaderStruct >> dataSize: anObject [
 
 	dataSize := anObject
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 SpurImageHeaderStruct >> extraVMMemory [
 
 	^ extraVMMemory
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 SpurImageHeaderStruct >> extraVMMemory: anObject [
 
 	extraVMMemory := anObject
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 SpurImageHeaderStruct >> firstSegSize [
 
 	^ firstSegSize
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 SpurImageHeaderStruct >> firstSegSize: anObject [
 
 	firstSegSize := anObject
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 SpurImageHeaderStruct >> freeOldSpaceInImage [
 
 	^ freeOldSpaceInImage
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 SpurImageHeaderStruct >> freeOldSpaceInImage: anObject [
 
 	freeOldSpaceInImage := anObject
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 SpurImageHeaderStruct >> hdrCogCodeSize [
 
 	^ hdrCogCodeSize
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 SpurImageHeaderStruct >> hdrCogCodeSize: anObject [
 
 	hdrCogCodeSize := anObject
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 SpurImageHeaderStruct >> hdrEdenBytes [
 
 	^ hdrEdenBytes
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 SpurImageHeaderStruct >> hdrEdenBytes: anObject [
 
 	hdrEdenBytes := anObject
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 SpurImageHeaderStruct >> hdrLastHash [
 
 	^ hdrLastHash
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 SpurImageHeaderStruct >> hdrLastHash: anObject [
 
 	hdrLastHash := anObject
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 SpurImageHeaderStruct >> hdrMaxExtSemTabSize [
 
 	^ hdrMaxExtSemTabSize
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 SpurImageHeaderStruct >> hdrMaxExtSemTabSize: anObject [
 
 	hdrMaxExtSemTabSize := anObject
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 SpurImageHeaderStruct >> hdrNumStackPages [
 
 	^ hdrNumStackPages
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 SpurImageHeaderStruct >> hdrNumStackPages: anObject [
 
 	hdrNumStackPages := anObject
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 SpurImageHeaderStruct >> headerFlags [
 
 	^ headerFlags
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 SpurImageHeaderStruct >> headerFlags: anObject [
 
 	headerFlags := anObject
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 SpurImageHeaderStruct >> imageFormat [
 
 	^ imageFormat
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 SpurImageHeaderStruct >> imageFormat: anObject [
 
 	imageFormat := anObject
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 SpurImageHeaderStruct >> imageHeaderSize [
 
 	^ imageHeaderSize
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 SpurImageHeaderStruct >> imageHeaderSize: anObject [
 
 	imageHeaderSize := anObject
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
+SpurImageHeaderStruct >> imageVersion [
+
+	^ imageVersion
+]
+
+{ #category : 'accessing' }
+SpurImageHeaderStruct >> imageVersion: anObject [
+
+	imageVersion := anObject
+]
+
+{ #category : 'accessing' }
 SpurImageHeaderStruct >> initialSpecialObjectsOop [
 
 	^ initialSpecialObjectsOop
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 SpurImageHeaderStruct >> initialSpecialObjectsOop: anObject [
 
 	initialSpecialObjectsOop := anObject
 ]
 
-{ #category : #accessing }
+{ #category : 'initialization' }
+SpurImageHeaderStruct >> initialize [ 
+	
+	<doNotGenerate>
+	
+	super initialize.
+	swapBytes := 0
+]
+
+{ #category : 'accessing' }
 SpurImageHeaderStruct >> oldBaseAddr [
 
 	^ oldBaseAddr
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 SpurImageHeaderStruct >> oldBaseAddr: anObject [
 
 	oldBaseAddr := anObject
 ]
 
-{ #category : #accessing }
-SpurImageHeaderStruct >> screenSize [
-
-	^ screenSize
-]
-
-{ #category : #accessing }
-SpurImageHeaderStruct >> screenSize: anObject [
-
-	screenSize := anObject
-]
-
-{ #category : #accessing }
+{ #category : 'accessing' }
 SpurImageHeaderStruct >> swapBytes [
 
 	^ swapBytes
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 SpurImageHeaderStruct >> swapBytes: anObject [
 
 	swapBytes := anObject

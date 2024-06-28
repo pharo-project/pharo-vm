@@ -56,6 +56,15 @@ VMAbstractPrimitiveTest >> newArrayWith: aCollection [
 	
 ]
 
+{ #category : #'as yet unclassified' }
+VMAbstractPrimitiveTest >> newMethodWithBytecodes: aCollection [
+
+	^ methodBuilder
+		  newMethod;
+		  bytecodes: aCollection;
+		  buildMethod
+]
+
 { #category : #'helpers - frames' }
 VMAbstractPrimitiveTest >> newSmallContextReceiver: anOop method: aMethodOop arguments: aCollectionOfArgumentsOop temporaries: aCollectionOfTemporariesOop ip: anIp [
 
@@ -109,7 +118,7 @@ VMAbstractPrimitiveTest >> newSmallContextReceiver: anOop method: aMethodOop arg
 VMAbstractPrimitiveTest >> setUp [
 	
 	"taken from VMSimpleStackBasedCogitBytecodeTest >> #setup"
-	| newMethod ctx page classFloat classLargeInteger classLargeNegativeInteger |
+	| newMethod ctx page classFloat |
 	super setUp.
 	
 	memory nilObject: (self newObjectWithSlots: 0).
@@ -135,8 +144,6 @@ VMAbstractPrimitiveTest >> setUp [
 	page := interpreter makeBaseFrameFor: ctx.
 	interpreter setStackPageAndLimit: page.
 	interpreter setStackPointersFromPage: page.
-	interpreter libFFI: LibFFI new.
-	interpreter libFFI interpreter: interpreter.
 
 	self createActiveProcess.	
 	
@@ -160,20 +167,5 @@ VMAbstractPrimitiveTest >> setUp [
 		ofObject: memory classTableFirstPage
 		withValue: classFloat.
 
-
-	classLargeInteger := self newClassInOldSpaceWithSlots: 0 instSpec: memory firstByteFormat.
-	
-	memory setHashBitsOf: classLargeInteger to: ClassLargePositiveIntegerCompactIndex.
-	memory
-		storePointer: ClassLargePositiveIntegerCompactIndex
-		ofObject: memory classTableFirstPage
-		withValue: classLargeInteger.
-
-	classLargeNegativeInteger := self newClassInOldSpaceWithSlots: 0 instSpec: memory firstByteFormat.
-	
-	memory setHashBitsOf: classLargeNegativeInteger to: ClassLargeNegativeIntegerCompactIndex.
-	memory
-		storePointer: ClassLargeNegativeIntegerCompactIndex
-		ofObject: memory classTableFirstPage
-		withValue: classLargeNegativeInteger.
+	self createLargeIntegerClasses.	
 ]

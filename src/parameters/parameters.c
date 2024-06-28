@@ -75,6 +75,7 @@ static VMErrorCode processMaxOldSpaceSizeOption(const char *argument, VMParamete
 static VMErrorCode processMaxCodeSpaceSizeOption(const char *argument, VMParameters * params);
 static VMErrorCode processEdenSizeOption(const char *argument, VMParameters * params);
 static VMErrorCode processWorkerOption(const char *argument, VMParameters * params);
+static VMErrorCode processMinPermSpaceSizeOption(const char *argument, VMParameters * params);
 
 static const VMParameterSpec vm_parameters_spec[] =
 {
@@ -92,6 +93,7 @@ static const VMParameterSpec vm_parameters_spec[] =
   {.name = "maxOldSpaceSize", .hasArgument = true, .function = processMaxOldSpaceSizeOption},
   {.name = "codeSize", .hasArgument = true, .function = processMaxCodeSpaceSizeOption},
   {.name = "edenSize", .hasArgument = true, .function = processEdenSizeOption},
+  {.name = "minPermSpaceSize", .hasArgument = true, .function = processMinPermSpaceSizeOption},
 #ifdef __APPLE__
   // This parameter is passed by the XCode debugger.
   {.name = "NSDocumentRevisionsDebugMode", .hasArgument = false, .function = NULL},
@@ -266,6 +268,23 @@ findImageNameIndex(int argc, const char** argv)
 }
 
 static VMErrorCode
+fillUpImageName(int argc, const char** argv, VMParameters* parameters){
+	
+	VMErrorCode error;
+		
+	int imageNameIndex = findImageNameIndex(argc, argv);
+
+	// We get the image file name
+	if(imageNameIndex != argc && strcmp("--", argv[imageNameIndex]) != 0) {
+		parameters->imageFileName = strdup(argv[imageNameIndex]);
+		parameters->isDefaultImage = false;
+		parameters->isInteractiveSession = false;		
+	}
+
+	return VM_SUCCESS;
+}
+
+static VMErrorCode
 splitVMAndImageParameters(int argc, const char** argv, VMParameters* parameters)
 {
 	VMErrorCode error;
@@ -273,27 +292,17 @@ splitVMAndImageParameters(int argc, const char** argv, VMParameters* parameters)
 	int numberOfVMParameters = imageNameIndex;
 	int numberOfImageParameters = argc - imageNameIndex - 1;
 
+	//If we still have an empty image file, we try the default
+	if(parameters->imageFileName == NULL){
+		error = vm_find_startup_image(argv[0], parameters);
+		if(error) return error;
+		
+		// Is this an interactive environment?
+		parameters->isInteractiveSession = !isInConsole() && parameters->isDefaultImage;		
+	}
+
 	if(numberOfImageParameters < 0)
 		numberOfImageParameters = 0;
-
-	if(parameters->imageFileName == NULL){
-		// We get the image file name
-		if(imageNameIndex == argc || strcmp("--", argv[imageNameIndex]) == 0) {
-			error = vm_find_startup_image(argv[0], parameters);
-			if(error)
-			{
-				return error;
-			}
-		}
-		else
-		{
-			parameters->imageFileName = strdup(argv[imageNameIndex]);
-			parameters->isDefaultImage = false;
-		}
-
-		// Is this an interactive environment?
-		parameters->isInteractiveSession = !isInConsole() && parameters->isDefaultImage;
-	}
 
 	// Copy image parameters.
 	error = vm_parameter_vector_insert_from(&parameters->imageParameters, numberOfImageParameters, &argv[imageNameIndex + 1]);
@@ -405,26 +414,28 @@ vm_printUsageTo(FILE *out)
 "       " VM_NAME " [<option>...] -- [<argument>...]\n"
 "\n"
 "Common <option>s:\n"
-"  --help                       Print this help message, then exit\n"
+"  --help                               Print this help message, then exit\n"
 #if ALWAYS_INTERACTIVE
-"  --headless                   Run in headless (no window) mode (default: false)\n"
+"  --headless                           Run in headless (no window) mode (default: false)\n"
 #else
-"  --headless                   Run in headless (no window) mode (default: true)\n"
+"  --headless                           Run in headless (no window) mode (default: true)\n"
 #endif
 #ifdef PHARO_VM_IN_WORKER_THREAD
-"  --worker                     Run in worker thread (default: false)\n"
+"  --worker                             Run in worker thread (default: false)\n"
 #endif
-"  --logLevel=<level>           Sets the log level number (ERROR(1), WARN(2), INFO(3), DEBUG(4), TRACE(5))\n"
-"  --version                    Print version information, then exit\n"
-"  --maxFramesToLog=<cant>      Sets the max numbers of Smalltalk frames to log\n"
-"  --maxOldSpaceSize=<bytes>    Sets the max size of the old space. As the other\n"
-"                               spaces are fixed (or calculated from this) with\n"
-"                               this parameter is possible to set the total size.\n"
-"                               It is possible to use k(kB), M(MB) and G(GB).\n"
-"  --codeSize=<size>[mk]        Sets the max size of code zone.\n"
-"                               It is possible to use k(kB), M(MB) and G(GB).\n"
-"  --edenSize=<size>[mk]        Sets the size of eden\n"
-"                               It is possible to use k(kB), M(MB) and G(GB).\n"
+"  --logLevel=<level>                   Sets the log level number (ERROR(1), WARN(2), INFO(3), DEBUG(4), TRACE(5))\n"
+"  --version                            Print version information, then exit\n"
+"  --maxFramesToLog=<cant>              Sets the max numbers of Smalltalk frames to log\n"
+"  --maxOldSpaceSize=<bytes>            Sets the max size of the old space. As the other\n"
+"                                       spaces are fixed (or calculated from this) with\n"
+"                                       this parameter is possible to set the total size.\n"
+"                                       It is possible to use k(kB), M(MB) and G(GB).\n"
+"  --codeSize=<size>[mk]                Sets the max size of code zone.\n"
+"                                       It is possible to use k(kB), M(MB) and G(GB).\n"
+"  --edenSize=<size>[mk]                Sets the size of eden\n"
+"                                       It is possible to use k(kB), M(MB) and G(GB).\n"
+"  --minPermSpaceSize=<size>[mk]        Sets the size of eden\n"
+"                                       It is possible to use k(kB), M(MB) and G(GB).\n"
 "\n"
 "Notes:\n"
 "\n"
@@ -500,6 +511,23 @@ processMaxCodeSpaceSizeOption(const char* originalArgument, VMParameters * param
 	}
 
 	params->maxCodeSize = intValue;
+
+	return VM_SUCCESS;
+}
+
+static VMErrorCode
+processMinPermSpaceSizeOption(const char* originalArgument, VMParameters * params)
+{
+	long long intValue = parseByteSize(originalArgument);
+
+	if(intValue < 0)
+	{
+		logError("Invalid option for min perm space size: %s\n", originalArgument);
+		vm_printUsageTo(stderr);
+		return VM_ERROR_INVALID_PARAMETER_VALUE;
+	}
+
+	params->minPermSpaceSize = intValue;
 
 	return VM_SUCCESS;
 }
@@ -638,8 +666,12 @@ vm_parameters_parse(int argc, const char** argv, VMParameters* parameters)
 	fillParametersFromPList(parameters);
 #endif
 
-	// Split the argument vector in two separate vectors.
-	VMErrorCode error = splitVMAndImageParameters(argc, argv, parameters);
+	//We read the arguments from the command line, and override whatever is set before
+	VMErrorCode error = fillUpImageName(argc, argv, parameters);
+	if(error) return error;	
+
+	// Split the argument vector in two separate vectors (If there is no Image, it gives a default one).
+	error = splitVMAndImageParameters(argc, argv, parameters);
 	if(error) return error;
 
 	// I get the VM location from the argv[0]
@@ -686,6 +718,7 @@ vm_parameters_init(VMParameters *parameters){
 	parameters->maxCodeSize = 0;
 	parameters->maxOldSpaceSize = 0;
 	parameters->edenSize = 0;
+	parameters->minPermSpaceSize = 0;
 	parameters->imageFileName = NULL;
 	parameters->isDefaultImage = false;
 	parameters->defaultImageFound = false;

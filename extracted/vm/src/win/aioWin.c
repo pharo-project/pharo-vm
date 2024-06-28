@@ -372,38 +372,29 @@ struct sliceData {
 DWORD WINAPI waitHandlesThreadFunction(struct sliceData* sliceData ){
 
 	DWORD returnValue;
-	HANDLE* handles;
-	int size;
-	long microSeconds;
 
-	// I copy the data just in case.
+	returnValue = WaitForMultipleObjectsEx(sliceData->size, sliceData->handles, FALSE, sliceData->microSeconds / 1000, FALSE);
 
-	size = sliceData->size;
-	microSeconds = sliceData->microSeconds;
-
-	handles = malloc(sizeof(HANDLE) * size);
-	for(int i = 0; i < size; i++){
-		handles[i] = sliceData->handles[i];
-	}
-
+	free(sliceData->handles);
 	free(sliceData);
-
-	returnValue = WaitForMultipleObjectsEx(size, handles, FALSE, microSeconds / 1000, FALSE);
-
-	free(handles);
 	return 0;
 }
 
 static HANDLE sliceWaitForMultipleObjects(HANDLE* allHandles, int initialIndex, int sizeToProcess, long microSeconds){
 
 	HANDLE r;
+	HANDLE* handles;
 	struct sliceData* sliceData = malloc(sizeof(struct sliceData));
 
 	sliceData->handles = &(allHandles[initialIndex]);
 	sliceData->size = sizeToProcess;
 	sliceData->microSeconds = microSeconds;
-
-//	logTrace("Launching slice from %d size %d", initialIndex, sizeToProcess);
+	
+	handles = malloc(sizeof(HANDLE) * sizeToProcess);
+	for(int i = 0; i < sizeToProcess; i++){
+		handles[i] = sliceData->handles[i];
+	}
+	sliceData->handles = handles;
 
 	r = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE) waitHandlesThreadFunction, sliceData, 0, NULL);
 
@@ -506,16 +497,6 @@ EXPORT(long) aioPoll(long microSeconds){
 		CloseHandle(waitingHandles[i]);
 	}
 
-
-	if(returnValue == WAIT_TIMEOUT){
-		heartbeat_poll_exit(microSeconds);
-
-		free(waitingHandles);
-		free(allHandles);
-
-		return hasEvents;
-	}
-
 	if(returnValue == WAIT_FAILED){
 		int lastError = GetLastError();
 
@@ -535,15 +516,12 @@ EXPORT(long) aioPoll(long microSeconds){
 	heartbeat_poll_exit(microSeconds);
 
 	/*
-	 * If it is the first is the interrupt event that we use to break the poll.
-	 * If it is interrupted we need to clear the interrupt event
+	 * If interruptEvent was signalled (to interrupt the timeout) we need to clear it.
 	 */
-
 	if(returnValue == WAIT_OBJECT_0){
 		ResetEvent(interruptEvent);
-	}else{
-		hasEvents = checkEventsInHandles(allHandles, size);
 	}
+	hasEvents = checkEventsInHandles(allHandles, size);
 
 	free(waitingHandles);
 	free(allHandles);
@@ -553,4 +531,3 @@ EXPORT(long) aioPoll(long microSeconds){
 EXPORT(void) aioInterruptPoll(){
 	SetEvent(interruptEvent);
 }
-

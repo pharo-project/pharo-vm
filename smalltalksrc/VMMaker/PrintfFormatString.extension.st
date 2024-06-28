@@ -1,6 +1,6 @@
-Extension { #name : #PrintfFormatString }
+Extension { #name : 'PrintfFormatString' }
 
-{ #category : #'*VMMaker-C code generation' }
+{ #category : '*VMMaker-C code generation' }
 PrintfFormatString >> transformForVMMaker [
 	[outputStream nextPutAll: string next. 
 	 format atEnd] whileFalse:

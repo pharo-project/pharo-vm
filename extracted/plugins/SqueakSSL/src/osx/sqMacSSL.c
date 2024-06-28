@@ -14,6 +14,7 @@
 #include <stdarg.h>
 
 #import <Security/Security.h>
+#import <Security/SecureTransport.h>
 
 typedef struct sqSSL {
     int state;
@@ -201,6 +202,40 @@ OSStatus sqSetupSSL(sqSSL* ssl, int isServer)
 #endif // MAC_OS_X_VERSION_MAX_ALLOWED >= 1070
         if (status != noErr) {
             logStatus(status, "SSLSetPeerDomainName failed");
+            return status;
+        }
+    }
+
+    if (ssl->certName) {
+        CFStringRef certName = CFStringCreateWithCString(kCFAllocatorDefault, ssl->certName, kCFStringEncodingASCII);
+        if (certName == NULL)
+            return SQSSL_GENERIC_ERROR;
+        CFMutableDictionaryRef query = CFDictionaryCreateMutable(kCFAllocatorDefault, 0, &kCFTypeDictionaryKeyCallBacks, &kCFTypeDictionaryValueCallBacks);
+        if (query == NULL) {
+            CFRelease(certName);
+            return SQSSL_GENERIC_ERROR;
+        }
+        CFDictionarySetValue(query, kSecMatchLimit, kSecMatchLimitOne);
+        CFDictionarySetValue(query, kSecReturnRef, kCFBooleanTrue);
+        CFDictionarySetValue(query, kSecClass, kSecClassIdentity);
+        CFDictionarySetValue(query, kSecMatchSubjectWholeString, certName);
+        CFDictionarySetValue(query, kSecMatchValidOnDate, kCFNull);
+        CFRelease(certName);
+        SecIdentityRef identity;
+        status = SecItemCopyMatching(query, (CFTypeRef*) &identity);
+        CFRelease(query);
+        if (status != noErr) {
+            logStatus(status, status == errSecItemNotFound ? "SecItemCopyMatching had no results" : "SecItemCopyMatching failed");
+            return status;
+        }
+        CFArrayRef certs = CFArrayCreate(kCFAllocatorDefault, (const void **)&identity, 1, &kCFTypeArrayCallBacks);
+        CFRelease(identity);
+        if (certs == NULL)
+            return SQSSL_GENERIC_ERROR;
+        status = SSLSetCertificate(ssl->ctx, certs);
+        CFRelease(certs);
+        if (status != noErr) {
+            logStatus(status, "SSLSetCertificate failed");
             return status;
         }
     }
@@ -625,7 +660,7 @@ sqInt sqAcceptSSL(sqInt handle, char* srcBuf, sqInt srcLen, char* dstBuf,
     }
     /* We are connected. Verify the cert. */
     ssl->state = SQSSL_CONNECTED;
-        return SQSSL_OK;
+    return ssl->outLen;
 }
 
 /* sqEncryptSSL: Encrypt data for SSL transmission.

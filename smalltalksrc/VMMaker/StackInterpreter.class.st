@@ -311,8 +311,8 @@ thisClassIndex
 	- the index in a Metaclass of thisClass (the instance of the metaclass) used in debug printing
 "
 Class {
-	#name : #StackInterpreter,
-	#superclass : #InterpreterPrimitives,
+	#name : 'StackInterpreter',
+	#superclass : 'InterpreterPrimitives',
 	#instVars : [
 		'currentBytecode',
 		'stackLimit',
@@ -336,13 +336,9 @@ Class {
 		'reenterInterpreter',
 		'nextWakeupUsecs',
 		'nextPollUsecs',
-		'inIOProcessEvents',
-		'interruptPending',
 		'savedWindowSize',
 		'imageHeaderFlags',
 		'fullScreenFlag',
-		'sendWheelEvents',
-		'pendingFinalizationSignals',
 		'extraVMMemory',
 		'interpreterProxy',
 		'primitiveTable',
@@ -362,7 +358,6 @@ Class {
 		'classNameIndex',
 		'thisClassIndex',
 		'metaclassNumSlots',
-		'interruptCheckChain',
 		'suppressHeartbeatFlag',
 		'breakSelector',
 		'breakSelectorLength',
@@ -379,7 +374,6 @@ Class {
 		'tempOop2',
 		'metaAccessorDepth',
 		'theUnknownShort',
-		'the2ndUnknownShort',
 		'imageFloatsBigEndian',
 		'maxExtSemTabSizeSet',
 		'lastMethodCacheProbeWrite',
@@ -395,8 +389,6 @@ Class {
 		'statStackPageDivorce',
 		'statCheckForEvents',
 		'statProcessSwitch',
-		'statIOProcessEvents',
-		'statPendingFinalizationSignals',
 		'statIdleUsecs',
 		'debugCallbackPath',
 		'debugCallbackReturns',
@@ -407,16 +399,11 @@ Class {
 		'libFFI',
 		'codeGeneratorToComputeAccessorDepth',
 		'showSurfaceFn',
-		'messageCount',
-		'imageReader',
-		'imageWriter'
+		'imageReaderWriter',
+		'pendingFinalizationSignals',
+		'imageVersionNumber'
 	],
 	#classVars : [
-		'AccessModifierPrivate',
-		'AccessModifierProtected',
-		'AccessModifierPublic',
-		'AltBytecodeEncoderClassName',
-		'AltLongStoreBytecode',
 		'AlternateHeaderHasPrimFlag',
 		'AlternateHeaderIsOptimizedFlag',
 		'AlternateHeaderNumLiteralsMask',
@@ -429,14 +416,22 @@ Class {
 		'AtPutBase',
 		'BytecodeEncoderClassName',
 		'BytecodeTable',
+		'CSCallbackEnter',
+		'CSCallbackLeave',
+		'CSCheckEvents',
+		'CSEnterCriticalSection',
+		'CSExitCriticalSection',
+		'CSResume',
+		'CSSignal',
+		'CSSuspend',
+		'CSWait',
+		'CSYield',
 		'CacheProbeMax',
 		'DirBadPath',
 		'DirEntryFound',
 		'DirNoMoreEntries',
 		'DumpStackOnLowSpace',
-		'EnclosingMixinIndex',
 		'EnclosingObjectIndex',
-		'EnforceAccessControl',
 		'FailImbalancedPrimitives',
 		'LongStoreBytecode',
 		'MaxExternalPrimitiveTableSize',
@@ -446,7 +441,6 @@ Class {
 		'MethodHeaderArgCountShift',
 		'MethodHeaderFlagBitPosition',
 		'MethodHeaderTempCountShift',
-		'MixinIndex',
 		'PrimitiveTable',
 		'ReturnToInterpreter',
 		'StackPageReachedButUntraced',
@@ -464,44 +458,49 @@ Class {
 		'VMStackFrameOffsets',
 		'VMWellKnownPrimitivesConstants'
 	],
-	#category : #'VMMaker-Interpreter'
+	#category : 'VMMaker-Interpreter',
+	#package : 'VMMaker',
+	#tag : 'Interpreter'
 }
 
-{ #category : #translation }
+{ #category : 'translation' }
 StackInterpreter class >> additionalHeadersDo: aBinaryBlock [
 	"Evaluate aBinaryBlock with the names and contents of
 	 any additional header files that need to be generated."
 	aBinaryBlock
 		value: 'vmCallback.h'
-		value: self vmCallbackHeader
+		value: self vmCallbackHeader.
+	
+	VMMemoryMap generateHeader: aBinaryBlock.
+	VMRememberedSet generateHeader: aBinaryBlock.	
 ]
 
-{ #category : #translation }
+{ #category : 'translation' }
 StackInterpreter class >> additionalSelectorTables [
 	^{ self primitiveTable }
 ]
 
-{ #category : #translation }
+{ #category : 'translation' }
 StackInterpreter class >> ancilliaryClasses [
 	"Answer any extra classes to be included in the translation."
 	^{	self objectMemoryClass.
 		VMCallbackContext.
-		CogStackPages.
-		InterpreterStackPages.
+		VMStackPages.
 		LibFFI.
-		CogStackPage.
+		VMStackPage.
 		SpurImageHeaderStruct.
-		SpurImageReader.
-		SpurImageWriter}
+		ComposedMetadataStruct.
+		"I am putting the abstract superclasses... because I cannot make it work else"
+		VMImageReaderWriter} , VMImageReaderWriter ancilliaryClasses
 ]
 
-{ #category : #constants }
+{ #category : 'constants' }
 StackInterpreter class >> bytecodeTable [
 
 	^ BytecodeTable
 ]
 
-{ #category : #translation }
+{ #category : 'C translation' }
 StackInterpreter class >> declareCVarsIn: aCCodeGenerator [
 	| vmClass |
 	self class == thisContext methodClass ifFalse: [^self]. "Don't duplicate decls in subclasses"
@@ -514,6 +513,8 @@ StackInterpreter class >> declareCVarsIn: aCCodeGenerator [
 		addHeaderFile:'"vmCallback.h"';
 		addHeaderFile:'"sqMemoryFence.h"';
 		addHeaderFile:'"dispdbg.h"';
+		addHeaderFile:'"vmMemoryMap.h"';	
+		addHeaderFile:'"vmRememberedSet.h"';	
 
 "This cannot be properly expressed in slang.
 If ffi is put as a separate header, slang will sort the header and put it outside the #ifdef"
@@ -592,7 +593,7 @@ If ffi is put as a separate header, slang will sort the header and put it outsid
 	self declareCAsUSqLong: #(nextPollUsecs nextWakeupUsecs longRunningPrimitiveGCUsecs
 								longRunningPrimitiveStartUsecs longRunningPrimitiveStopUsecs
 								"these are high-frequency enough that they're overflowing quite quickly on modern hardware"
-								statProcessSwitch statIOProcessEvents statForceInterruptCheck
+								statProcessSwitch statForceInterruptCheck
 								statCheckForEvents statStackOverflow statStackPageDivorce
 								statIdleUsecs)
 		in: aCCodeGenerator.
@@ -608,26 +609,22 @@ If ffi is put as a separate header, slang will sort the header and put it outsid
 	aCCodeGenerator removeVariable: #'libFFI'.
 	LibFFIConstants classVariables do: [ :e | aCCodeGenerator removeConstant: e name ].
 	
-	aCCodeGenerator 
-		"this variable is not used in the exported code, so it has to be removed.
-		If it is changed, it should be marked with type implicit"
-		removeVariable: 'imageReader'; 
-		var: 'imageWriter' type: #implicit. 
+	aCCodeGenerator removeVariable: #imageReaderWriter.
 ]
 
-{ #category : #translation }
+{ #category : 'translation' }
 StackInterpreter class >> implicitReturnTypeFor: aSelector [
 	"Answer the return type for methods that don't have an explicit return."
 	^#void
 ]
 
-{ #category : #initialization }
+{ #category : 'initialization' }
 StackInterpreter class >> initializeAssociationIndex [
 	KeyIndex := 0.
 	ValueIndex := 1
 ]
 
-{ #category : #initialization }
+{ #category : 'initialization' }
 StackInterpreter class >> initializeBytecodeTable [
 
 	"StackInterpreter initializeBytecodeTable"
@@ -635,13 +632,10 @@ StackInterpreter class >> initializeBytecodeTable [
 	VMBytecodeConstants falsifyBytecodeSetFlags: InitializationOptions.
 	BytecodeSetHasDirectedSuperSend := false.
 
-	(InitializationOptions at: #bytecodeTableInitializer ifAbsent: nil) 
-		ifNotNil: [ :initalizer | ^ self perform: initalizer ].
-
 	^ self initializeBytecodeTableForSistaV1
 ]
 
-{ #category : #initialization }
+{ #category : 'initialization' }
 StackInterpreter class >> initializeBytecodeTableForSistaV1 [
 	"See e.g. the cass comment for EncoderForSistaV1"
 	"StackInterpreter initializeBytecodeTableForSistaV1"
@@ -773,7 +767,7 @@ StackInterpreter class >> initializeBytecodeTableForSistaV1 [
 	)
 ]
 
-{ #category : #initialization }
+{ #category : 'initialization' }
 StackInterpreter class >> initializeCaches [
 
 	| atCacheEntries atCacheEntrySize |
@@ -798,19 +792,19 @@ StackInterpreter class >> initializeCaches [
 	AtCacheTotalSize := atCacheEntries * atCacheEntrySize * 2.
 ]
 
-{ #category : #initialization }
+{ #category : 'initialization' }
 StackInterpreter class >> initializeCharacterIndex [
 	CharacterValueIndex := 0
 ]
 
-{ #category : #initialization }
+{ #category : 'initialization' }
 StackInterpreter class >> initializeCharacterScannerIndices [
 	CrossedX := 258.
 	EndOfRun := 257
 
 ]
 
-{ #category : #initialization }
+{ #category : 'initialization' }
 StackInterpreter class >> initializeClassIndices [
 	"Class Class"
 	SuperclassIndex := 0.
@@ -822,7 +816,7 @@ StackInterpreter class >> initializeClassIndices [
 
 ]
 
-{ #category : #initialization }
+{ #category : 'initialization' }
 StackInterpreter class >> initializeContextIndices [
 	"Class MethodContext"
 	SenderIndex := 0.
@@ -836,11 +830,6 @@ StackInterpreter class >> initializeContextIndices [
 	SmallContextSlots := CtxtTempFrameStart + 16.  "16 indexable fields"
 	"Large contexts have 56 indexable fields.  Max with single header word of ObjectMemory [but not SpurMemoryManager ;-)]."
 	LargeContextSlots := CtxtTempFrameStart + 56.
-	
-	"Including the header size in these sizes is problematic for multiple memory managers,
-	 so we don't use them.  Set to #bogus for error checking."
-	SmallContextSize := #bogus.
-	LargeContextSize := #bogus.
 
 	"Class BlockClosure"
 	FullClosureOuterContextIndex := 0.
@@ -850,7 +839,7 @@ StackInterpreter class >> initializeContextIndices [
 	FullClosureFirstCopiedValueIndex := 4.
 ]
 
-{ #category : #initialization }
+{ #category : 'initialization' }
 StackInterpreter class >> initializeDirectoryLookupResultCodes [
 
 	DirEntryFound := 0.
@@ -858,7 +847,7 @@ StackInterpreter class >> initializeDirectoryLookupResultCodes [
 	DirBadPath := 2.
 ]
 
-{ #category : #initialization }
+{ #category : 'initialization' }
 StackInterpreter class >> initializeFrameIndices [
 	"Format of a stack frame.  Word-sized indices relative to the frame pointer.
 	 Terminology
@@ -919,14 +908,14 @@ StackInterpreter class >> initializeFrameIndices [
 	FoxMFReceiver := #undefined
 ]
 
-{ #category : #initialization }
+{ #category : 'initialization' }
 StackInterpreter class >> initializeMessageIndices [
 	MessageSelectorIndex := 0.
 	MessageArgumentsIndex := 1.
 	MessageLookupClassIndex := 2.
 ]
 
-{ #category : #initialization }
+{ #category : 'initialization' }
 StackInterpreter class >> initializeMethodIndices [
 	| tagBits |
 	"Class CompiledMethod"
@@ -943,12 +932,9 @@ StackInterpreter class >> initializeMethodIndices [
 	"The position of the unused flag bit in the method header, not including tag bit(s).
 	 Bits 28 & 29 are free for use as flag bits."
 	MethodHeaderFlagBitPosition := 28 + tagBits.
-	AccessModifierPublic := 2r00.
-	AccessModifierPrivate := 2r01.
-	AccessModifierProtected := 2r10.
 ]
 
-{ #category : #initialization }
+{ #category : 'initialization' }
 StackInterpreter class >> initializeMiscConstants [
 
 	super initializeMiscConstants.
@@ -968,6 +954,17 @@ StackInterpreter class >> initializeMiscConstants [
 	StackPageUnreached := 0.
 	StackPageReachedButUntraced := 1.
 	StackPageTraced := 2.
+	
+	CSCallbackEnter := 3.
+	CSCallbackLeave := 4.
+	CSEnterCriticalSection := 5.
+	CSExitCriticalSection := 6.
+	CSResume := 7.
+	CSSignal := 8.
+	CSSuspend := 9.
+	CSWait := 10.
+	CSYield := 11.
+	CSCheckEvents := 12.
 
 	DumpStackOnLowSpace := 0.
 	MillisecondClockMask := 16r1FFFFFFF.
@@ -976,19 +973,18 @@ StackInterpreter class >> initializeMiscConstants [
 
 	MaxJumpBuf := 32. "max. callback depth"
 	FailImbalancedPrimitives := InitializationOptions at: #FailImbalancedPrimitives ifAbsentPut: [true].
-	EnforceAccessControl := InitializationOptions at: #EnforceAccessControl ifAbsent: [true].
 
 	ReturnToInterpreter := 1. "setjmp/longjmp code."
 
 ]
 
-{ #category : #initialization }
+{ #category : 'initialization' }
 StackInterpreter class >> initializePointIndices [
 	XIndex := 0.
 	YIndex := 1
 ]
 
-{ #category : #initialization }
+{ #category : 'initialization' }
 StackInterpreter class >> initializePrimitiveTable [
 	"This table generates a C function address table used in slowPrimitiveResponse along with dispatchFunctionPointerOn:in:"
 	"self initializePrimitiveTable"
@@ -1106,11 +1102,13 @@ StackInterpreter class >> initializePrimitiveTable [
 		(88 primitiveSuspend)
 		(89 primitiveFlushCache)
 
-		"Input/Output Primitives (90-109)"
-		(90 primitiveFail)
-		(91 primitiveFail)
-		(92 primitiveFail)
-		(93 primitiveFail)
+		"Perm Space primitives"
+		(90 primitiveMoveToPermSpace)
+		(91 primitiveMoveToPermSpaceInBulk)
+		(92 primitiveIsInPermSpace)
+		(93 primitiveMoveToPermSpaceAllOldObjects)
+
+		"Input/Output Primitives (94-109)"
 		(94 primitiveFail)
 		(95 primitiveFail)
 		(96 primitiveFail)
@@ -1175,8 +1173,10 @@ StackInterpreter class >> initializePrimitiveTable [
 		(149 primitiveGetAttribute)
 
 		"Were File Primitives (150-169) - NO LONGER INDEXED"
-		(150 157 primitiveFail)
-		(158 primitiveCompareWith)
+		(150 155 primitiveFail)
+		(156 primitiveCompareBytes)
+		(157 primitiveFail)
+		(158 primitiveStringCompareWith)
 		(159 primitiveHashMultiply)
 		(160 primitiveAdoptInstance)
 		(161 primitiveSetOrHasIdentityHash)
@@ -1249,7 +1249,10 @@ StackInterpreter class >> initializePrimitiveTable [
 		(223 229 primitiveFail)	"reserved for Cog primitives (see 228 & 229 in CoInterpreterMT"
 
 		(230 primitiveRelinquishProcessor)
-		(231 239 primitiveFail)
+		(231 primitiveFormat)
+
+		(232 239 primitiveFail)
+
 		(240 primitiveUTCMicrosecondClock)
 		(241 primitiveLocalMicrosecondClock)
 		(242 primitiveSignalAtUTCMicroseconds)
@@ -1317,7 +1320,11 @@ StackInterpreter class >> initializePrimitiveTable [
 		(574 primitiveFloat64ArrayAdd)
 
 		"Unassigned Primitives"
-		(575 597 primitiveFail)
+		(575 595 primitiveFail)
+
+		"Allocate in old space primitive"
+		(596 primitiveNewOldSpace)
+		(597 primitiveNewWithArgOldSpace)
 
 		"Pinned object creation primitives"
 		(598 primitiveNewPinned)
@@ -1389,7 +1396,7 @@ StackInterpreter class >> initializePrimitiveTable [
 		)
 ]
 
-{ #category : #initialization }
+{ #category : 'initialization' }
 StackInterpreter class >> initializeSchedulerIndices [
 	"Class ProcessorScheduler"
 	ProcessListsIndex := 0.
@@ -1407,7 +1414,7 @@ StackInterpreter class >> initializeSchedulerIndices [
 	MyListIndex := 3
 ]
 
-{ #category : #initialization }
+{ #category : 'initialization' }
 StackInterpreter class >> initializeSmallIntegers [
 	"SmallIntegers"
 	ConstMinusOne := self objectMemoryClass basicNew integerObjectOf: -1.
@@ -1416,15 +1423,7 @@ StackInterpreter class >> initializeSmallIntegers [
 	ConstTwo := self objectMemoryClass basicNew integerObjectOf: 2
 ]
 
-{ #category : #initialization }
-StackInterpreter class >> initializeStreamIndices [
-	StreamArrayIndex := 0.
-	StreamIndexIndex := 1.
-	StreamReadLimitIndex := 2.
-	StreamWriteLimitIndex := 3.
-]
-
-{ #category : #initialization }
+{ #category : 'initialization' }
 StackInterpreter class >> initializeWithOptions: optionsDictionary [
 	"StackInterpreter initializeWithOptions: Dictionary new"
 
@@ -1445,43 +1444,40 @@ StackInterpreter class >> initializeWithOptions: optionsDictionary [
 	self initializePrimitiveTable.
 	self initializeSchedulerIndices.
 	self initializeSmallIntegers.
-	self initializeStreamIndices
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 StackInterpreter class >> interpreterVersion [ 
 	^ 'Stack'
 ]
 
-{ #category : #translation }
+{ #category : 'translation' }
 StackInterpreter class >> isInterpreterClass [
 	^true
 ]
 
-{ #category : #translation }
+{ #category : 'translation' }
 StackInterpreter class >> isNonArgumentImplicitReceiverVariableName: aString [
-	^(#('self' 'stackPages' 'interpreter' 'coInterpreter' 'objectMemory') includes: aString)
+
+	^(#('self' 'stackPages' 'coInterpreter' 'objectMemory' 'imageReaderWriter') includes: aString)
 	  or: [self objectMemoryClass isNonArgumentImplicitReceiverVariableName: aString]
 ]
 
-{ #category : #'spur compilation support' }
+{ #category : 'spur compilation support' }
 StackInterpreter class >> isObjectAccessor: selector [
 	"Answer if selector is one of fetchPointer:ofObject: storePointer:ofObject:withValue:
 	 et al."
 	^(InterpreterProxy whichCategoryIncludesSelector: selector) = #'object access'
 	 or: [(SpurMemoryManager whichCategoryIncludesSelector: selector) = #'object access']
 
-	"This for checking.  The above two protocols are somewhat disjoint."
-	"(InterpreterProxy allMethodsInCategory: #'object access') copyWithoutAll: (SpurMemoryManager allMethodsInCategory: #'object access')"
-	"(SpurMemoryManager allMethodsInCategory: #'object access') copyWithoutAll: (InterpreterProxy allMethodsInCategory: #'object access')"
 ]
 
-{ #category : #'spur compilation support' }
+{ #category : 'spur compilation support' }
 StackInterpreter class >> isStackAccessor: selector [
 	^(StackInterpreter whichCategoryIncludesSelector: selector) = #'stack access'
 ]
 
-{ #category : #translation }
+{ #category : 'translation' }
 StackInterpreter class >> mustBeGlobal: var [
 
 	"Answer if a variable must be global and exported.  Used for inst vars that are accessed from VM support code."
@@ -1499,17 +1495,17 @@ StackInterpreter class >> mustBeGlobal: var [
 			     'debugCallbackPath' 'debugCallbackReturns' ) includes: var ] ]
 ]
 
-{ #category : #translation }
+{ #category : 'translation' }
 StackInterpreter class >> namesOfVariablesToLocalize [
 	^#(currentBytecode localReturnValue)
 ]
 
-{ #category : #translation }
+{ #category : 'translation' }
 StackInterpreter class >> needsCogit [
 	^false
 ]
 
-{ #category : #translation }
+{ #category : 'translation' }
 StackInterpreter class >> preGenerationHook: aCCodeGen [
 	"Perform any last-minute changes to the code generator immediately
 	 before it performs code analysis and generation.  In this case, make
@@ -1528,7 +1524,7 @@ StackInterpreter class >> preGenerationHook: aCCodeGen [
 			[m static: false]]
 ]
 
-{ #category : #translation }
+{ #category : 'translation' }
 StackInterpreter class >> preambleCCode [
 	^	
 '/* Disable Intel compiler inlining of warning which is used for breakpoints */
@@ -1566,13 +1562,13 @@ invalidCompactClassError(char *s) { /* Print a (compact) class index error messa
 '
 ]
 
-{ #category : #translation }
+{ #category : 'translation' }
 StackInterpreter class >> prepareToBeAddedToCodeGenerator: aCodeGen [
 	"It is either this or scan cmacro methods for selectors."
 	aCodeGen retainMethods: #(enterSmalltalkExecutiveImplementation)
 ]
 
-{ #category : #constants }
+{ #category : 'constants' }
 StackInterpreter class >> primitiveAccessorDepthTable [
 	| cg |
 	cg := MLVMCCodeGenerator new.
@@ -1590,7 +1586,7 @@ StackInterpreter class >> primitiveAccessorDepthTable [
 				 cg accessorDepthCalculator accessorDepthForMethod: method]]
 ]
 
-{ #category : #constants }
+{ #category : 'constants' }
 StackInterpreter class >> primitiveTable [
 	| cg |
 	cg := MLVMCCodeGenerator new.
@@ -1610,13 +1606,13 @@ StackInterpreter class >> primitiveTable [
 							ifFalse: [#primitiveFail]]]]
 ]
 
-{ #category : #initialization }
+{ #category : 'initialization' }
 StackInterpreter class >> primitiveTableString [
 	"StackInterpreter initializePrimitiveTable primitiveTableString"
 	^self primitiveTableStringFor: self primitiveTable
 ]
 
-{ #category : #initialization }
+{ #category : 'initialization' }
 StackInterpreter class >> primitiveTableStringFor: table [
 	"StackInterpreter initializePrimitiveTable primitiveTableString"
 	^String streamContents:
@@ -1638,12 +1634,12 @@ StackInterpreter class >> primitiveTableStringFor: table [
 			s cr; nextPutAll: ' 0 }']
 ]
 
-{ #category : #'accessing class hierarchy' }
+{ #category : 'accessing class hierarchy' }
 StackInterpreter class >> primitivesClass [
 	^StackInterpreterPrimitives
 ]
 
-{ #category : #miscellaneous }
+{ #category : 'miscellaneous' }
 StackInterpreter class >> reorganizeAsISeeFit [
 	"StackInterpreter reorganizeAsISeeFit"
 	"CoInterpreter reorganizeAsISeeFit"
@@ -1667,45 +1663,47 @@ StackInterpreter class >> reorganizeAsISeeFit [
 	self organization categories: initializations sort, bytecodes sort, remainder sort, privates sort
 ]
 
-{ #category : #translation }
+{ #category : 'translation' }
 StackInterpreter class >> requiredMethodNames: options [
+
 	"Answer the list of method names that should be retained for export or other support reasons"
+
 	| requiredList |
 	"A number of methods required by VM support code, specific platforms, etc"
-	requiredList := #(
-		assertValidExecutionPointe:r:s:
-		characterForAscii:
-		findClassOfMethod:forReceiver: findSelectorOfMethod:
-			forceInterruptCheck forceInterruptCheckFromHeartbeat fullDisplayUpdate
-		getCurrentBytecode getFullScreenFlag getInterruptPending
-			getSavedWindowSize getThisSessionID
-		interpret
-		loadInitialContext
-		primitiveFail primitiveFailFor: primitiveFlushExternalPrimitives printAllStacks printCallStack printContext:
-			printExternalHeadFrame printFramesInPage: printFrame: printHeadFrame printMemory printOop:
-				printStackPages printStackPageList printStackPagesInUse printStackPageListInUse
-		setFullScreenFlag: setInterruptKeycode: setInterruptPending: setInterruptCheckChain:
-			setSavedWindowSize: success:
-		validInstructionPointer:inMethod:framePointer:) asSet.
+	requiredList := #( #assertValidExecutionPointe:r:s:
+	                   characterForAscii: #findClassOfMethod:forReceiver:
+	                   findSelectorOfMethod: forceInterruptCheck
+	                   forceInterruptCheckFromHeartbeat
+	                   getCurrentBytecode getThisSessionID
+	                   interpret loadInitialContext primitiveFail
+	                   primitiveFailFor: primitiveFlushExternalPrimitives
+	                   printAllStacks printCallStack printContext:
+	                   printExternalHeadFrame printFramesInPage:
+	                   printFrame: printHeadFrame printMemory printOop:
+	                   printStackPages printStackPageList
+	                   printStackPagesInUse printStackPageListInUse
+	                   success: #validInstructionPointer:inMethod:framePointer: )
+		                asSet.
 
 	"Nice to actually have all the primitives available"
-	requiredList addAll: (self primitiveTable select: [:each| each isSymbol]).
+	requiredList addAll:
+		(self primitiveTable select: [ :each | each isSymbol ]).
 
 	"InterpreterProxy is the internal analogue of sqVirtualMachine.c, so make sure to keep all those"
-	InterpreterProxy organization categories do:
-		[:cat |
-		((cat ~= 'initialize') and: [cat ~= 'private']) ifTrue:
-			[requiredList addAll: (InterpreterProxy organization listAtCategoryNamed: cat)]].
+	InterpreterProxy organization categories do: [ :cat | 
+		(cat ~= 'initialize' and: [ cat ~= 'private' ]) ifTrue: [ 
+			requiredList addAll:
+				(InterpreterProxy organization listAtCategoryNamed: cat) ] ].
 
-	^requiredList
+	^ requiredList
 ]
 
-{ #category : #translation }
+{ #category : 'translation' }
 StackInterpreter class >> sourceFileName [
 	^'interp.c'
 ]
 
-{ #category : #translation }
+{ #category : 'translation' }
 StackInterpreter class >> translationClass [
 	"Return te class to use as the interpreterCLass when translating.  For the all-in-one
 	 VMs that inherit from ObjectMemory this is the receiver.  But for the separate VMs
@@ -1713,7 +1711,7 @@ StackInterpreter class >> translationClass [
 	^self subclasses detect: [:s| s name = (self name, 'Primitives')] ifNone: [self]
 ]
 
-{ #category : #translation }
+{ #category : 'translation' }
 StackInterpreter class >> vmCallbackHeader [
 	^String streamContents:
 		[:s|
@@ -1722,14 +1720,14 @@ StackInterpreter class >> vmCallbackHeader [
 		s cr]
 ]
 
-{ #category : #'api version' }
+{ #category : 'api version' }
 StackInterpreter class >> vmProxyMajorVersion [
 	"Define the  VM_PROXY_MAJOR version for this VM as used to
 	 define the api in platforms/Cross/vm/sqVirtualMachine.[ch]"
 	^1
 ]
 
-{ #category : #'api version' }
+{ #category : 'api version' }
 StackInterpreter class >> vmProxyMinorVersion [
 	"Define the  VM_PROXY_MINOR version for this VM as used to
 	 define the api in platforms/Cross/vm/sqVirtualMachine.[ch]"
@@ -1737,7 +1735,7 @@ StackInterpreter class >> vmProxyMinorVersion [
 	^15 "isBooleanObject isPositiveMachineIntegerObject added"
 ]
 
-{ #category : #translation }
+{ #category : 'translation' }
 StackInterpreter class >> wantsLabels [
 	"Only label the VM, not plugins (internal or external).  This to cut down the scope
 	 of problems with labels being duplicated by C compiler optimizer inlining and
@@ -1746,7 +1744,7 @@ StackInterpreter class >> wantsLabels [
 	^true
 ]
 
-{ #category : #translation }
+{ #category : 'translation' }
 StackInterpreter class >> writeVMHeaderTo: aStream bytesPerWord: bytesPerWord generator: aCCodeGenerator [
 	super writeVMHeaderTo: aStream bytesPerWord: bytesPerWord generator: aCCodeGenerator.
 	SistaVM ifTrue:
@@ -1757,7 +1755,7 @@ StackInterpreter class >> writeVMHeaderTo: aStream bytesPerWord: bytesPerWord ge
 			as: 1
 			comment: 'Allow this to be overridden on the compiler command line'
 			on: aStream].
-	SistaVM | IMMUTABILITY ifTrue:
+	(SistaVM or: [ IMMUTABILITY ]) ifTrue:
 		[aStream cr].
 	aCCodeGenerator putDefineOf: #STACKVM as: 1 on: aStream.
 	(InitializationOptions at: #SpurObjectMemory ifAbsent: false) ifTrue:
@@ -1765,7 +1763,7 @@ StackInterpreter class >> writeVMHeaderTo: aStream bytesPerWord: bytesPerWord ge
 
 ]
 
-{ #category : #simulation }
+{ #category : 'simulation' }
 StackInterpreter >> ISA [
 	<doNotGenerate>
 	^self class initializationOptions
@@ -1775,7 +1773,7 @@ StackInterpreter >> ISA [
 					ifFalse: [#IA32]]
 ]
 
-{ #category : #'debug support' }
+{ #category : 'debug support' }
 StackInterpreter >> abstractDetailedSymbolicMethod: aMethod [
 	<doNotGenerate>
 	| ts prim |
@@ -1796,7 +1794,7 @@ StackInterpreter >> abstractDetailedSymbolicMethod: aMethod [
 	ts flush
 ]
 
-{ #category : #'primitive support' }
+{ #category : 'primitive support' }
 StackInterpreter >> activateFailingPrimitiveMethod [
 	"Assuming the primFailCode (and any other relevant failure state) has been set,
 	 switch the VM to the interpreter if necessary (if in the CoInterpreter executing machine code),
@@ -1811,12 +1809,15 @@ StackInterpreter >> activateFailingPrimitiveMethod [
 	^nil
 ]
 
-{ #category : #'control primitives' }
+{ #category : 'control primitives' }
 StackInterpreter >> activateNewFullClosure: blockClosure method: theMethod numArgs: numArgs mayContextSwitch: mayContextSwitch [
 	"Similar to activateNewMethod but for Closure and newMethod."
-	| numCopied methodHeader numTemps |
+	| numCopied methodHeader numTemps inInterpreter switched |
 	<inline: true>
 	self assert: theMethod = (objectMemory fetchPointer: FullClosureCompiledBlockIndex ofObject: blockClosure).
+	
+	inInterpreter := self isInstructionPointerInInterpreter: instructionPointer.
+	
 	numCopied := self copiedValueCountOfFullClosure: blockClosure.
 	self push: instructionPointer.
 	self push: framePointer.
@@ -1824,6 +1825,7 @@ StackInterpreter >> activateNewFullClosure: blockClosure method: theMethod numAr
 	self push: theMethod.
 	self push: objectMemory nilObject. "FxThisContext field"
 	self push: (self encodeFrameFieldHasContext: false isBlock: true numArgs: numArgs).
+	COGVM ifTrue: [ self push: 0. "FoxIFSavedIP" ].
 	"Because inst var access is not checked, we must follow the receiver in Spur to ensure it is valid."
 	self push: (objectMemory followField: FullClosureReceiverIndex ofObject: blockClosure).
 
@@ -1847,28 +1849,35 @@ StackInterpreter >> activateNewFullClosure: blockClosure method: theMethod numAr
 	self setMethod: theMethod.
 
 	"Now check for stack overflow or an event (interrupt, must scavenge, etc)"
+	switched := false.
 	stackPointer < stackLimit ifTrue:
-		[self handleStackOverflowOrEventAllowContextSwitch: mayContextSwitch]
+		[switched := self handleStackOverflowOrEventAllowContextSwitch: mayContextSwitch].
+	self returnToExecutive: inInterpreter postContextSwitch: switched
 ]
 
-{ #category : #'message sending' }
+{ #category : 'message sending' }
 StackInterpreter >> activateNewMethod [
-	| methodHeader |
+
+	| methodHeader switched |
 	methodHeader := self justActivateNewMethod: false. "either interpreted or machine code"
 
 	"Now check for stack overflow or an event (interrupt, must scavenge, etc)."
-	stackPointer < stackLimit ifTrue:
-		[self handleStackOverflowOrEventAllowContextSwitch: (self canContextSwitchIfActivating: newMethod header: methodHeader)]
+	stackPointer < stackLimit ifTrue: [
+		switched := self handleStackOverflowOrEventAllowContextSwitch:
+			            (self
+				             canContextSwitchIfActivating: newMethod
+				             header: methodHeader).
+		self returnToExecutive: true postContextSwitch: switched ]
 ]
 
-{ #category : #'process primitive support' }
+{ #category : 'process primitive support' }
 StackInterpreter >> activeProcess [
 	"Answer the current activeProcess."
 	<api> "useful for VM debugging"
 	^objectMemory memoryActiveProcess
 ]
 
-{ #category : #'process primitive support' }
+{ #category : 'process primitive support' }
 StackInterpreter >> addFirstLink: proc toList: aList [ 
 	"Add the given process to the front of the given linked list
 	 and set the backpointer of process to its new list."
@@ -1884,7 +1893,7 @@ StackInterpreter >> addFirstLink: proc toList: aList [
 	objectMemory storePointer: MyListIndex ofObject: proc withValue: aList
 ]
 
-{ #category : #'simd bytecodes' }
+{ #category : 'simd bytecodes' }
 StackInterpreter >> addFloat32VectorBytecode [
 
 	<var: #tmp type: #float>
@@ -1913,7 +1922,7 @@ StackInterpreter >> addFloat32VectorBytecode [
 	self pop: 2 thenPush: res
 ]
 
-{ #category : #'simd bytecodes' }
+{ #category : 'simd bytecodes' }
 StackInterpreter >> addFloat64VectorBytecode [
 
 	<var: #tmp type: #double>
@@ -1934,7 +1943,7 @@ StackInterpreter >> addFloat64VectorBytecode [
 	self pop: 2 thenPush: res
 ]
 
-{ #category : #'primitive support' }
+{ #category : 'primitive support' }
 StackInterpreter >> addIdleUsecs: idleUsecs [
 	"The various poll/select calls in the VM should attempt to tally the ammount
 	 of time spent at idle here, so as to render the uptime value meaningful."
@@ -1942,7 +1951,7 @@ StackInterpreter >> addIdleUsecs: idleUsecs [
 	statIdleUsecs := statIdleUsecs + idleUsecs
 ]
 
-{ #category : #'process primitive support' }
+{ #category : 'process primitive support' }
 StackInterpreter >> addLastLink: proc toList: aList [ 
 	"Add the given process to the end of the given linked list
 	 and set the backpointer of process to its new list."
@@ -1960,7 +1969,7 @@ StackInterpreter >> addLastLink: proc toList: aList [
 	objectMemory storePointer: MyListIndex ofObject: proc withValue: aList
 ]
 
-{ #category : #'method lookup cache' }
+{ #category : 'method lookup cache' }
 StackInterpreter >> addNewMethodToCache: classObj [
 	"Add the given entry to the method cache.
 	The policy is as follows:
@@ -2009,7 +2018,7 @@ StackInterpreter >> addNewMethodToCache: classObj [
 		methodCache at: probe + MethodCacheSelector put: 0]
 ]
 
-{ #category : #'plugin support' }
+{ #category : 'plugin support' }
 StackInterpreter >> addToExternalPrimitiveTable: functionAddress [
 	"Add the given function address to the external primitive table and return the index where it's stored. This function doesn't need to be fast since it is only called when an external primitive has been looked up (which takes quite a bit of time itself). So there's nothing specifically complicated here.
 	Note: Return index will be one-based (ST convention)"
@@ -2025,7 +2034,7 @@ StackInterpreter >> addToExternalPrimitiveTable: functionAddress [
 	^0
 ]
 
-{ #category : #'debug support' }
+{ #category : 'debug support' }
 StackInterpreter >> addressCouldBeClassObj: maybeClassObj [
 	"Answer if maybeClassObj looks like a class object"
 	<inline: false>
@@ -2033,7 +2042,7 @@ StackInterpreter >> addressCouldBeClassObj: maybeClassObj [
 	  and: [self objCouldBeClassObj: maybeClassObj]
 ]
 
-{ #category : #'stack pages' }
+{ #category : 'stack pages' }
 StackInterpreter >> allOnesAsCharStar [
 	<inline: true>
 	^(self
@@ -2043,144 +2052,77 @@ StackInterpreter >> allOnesAsCharStar [
 		to: #'char *')
 ]
 
-{ #category : #'image save/restore' }
-StackInterpreter >> allocateHeapMemoryForImage: f withHeader: header desiredStartingAddress: desiredPositionOfHeap [ 
-
-	<var: #f type: #sqImageFile>
-	<var: #header type: #'SpurImageHeaderStruct'>
-
-	| allocationReserve headroom heapSize minimumMemory |
-	
-	allocationReserve := self interpreterAllocationReserveBytes.
-
-	headroom := objectMemory
-		            initialHeadroom: extraVMMemory
-		            givenFreeOldSpaceInImage: header freeOldSpaceInImage.
-	heapSize := objectMemory roundUpHeapSize:
-		            header dataSize + headroom + objectMemory newSpaceBytes
-		            + (headroom > allocationReserve
-				             ifTrue: [ 0 ]
-				             ifFalse: [ allocationReserve ]).
-
-	minimumMemory := header dataSize + objectMemory newSpaceBytes
-	                 + allocationReserve.
-
-	"allocate a contiguous block of memory for the heap"
-	objectMemory memory: (self
-			 allocateMemory: heapSize
-			 minimum: minimumMemory
-			 imageFile: f
-			 headerSize: header imageHeaderSize
-			 desiredPosition: desiredPositionOfHeap) asUnsignedInteger.
-			
-	objectMemory memory ifNil: [ self insufficientMemoryAvailableError ].
-
-	^ objectMemory
-		setHeapBase: objectMemory memory
-		memoryLimit: objectMemory memory + heapSize
-		endOfMemory: objectMemory memory + header dataSize.
-
-]
-
-{ #category : #'image save/restore' }
-StackInterpreter >> allocateJITMemory: desiredSize desiredPosition: desiredPosition [
-	
-	<inline: true>
-	<returnTypeC: #'char *'>
-	
-	^self pointerForOop: (self allocateJITMemory: desiredSize _: desiredPosition)
-]
-
-{ #category : #allocating }
-StackInterpreter >> allocateMemory: desiredSize Minimum: minimumSize ImageFile: imageFile HeaderSize: headerSize BaseAddress: baseAddress [ 
-	
-	<doNotGenerate>
-	^ memoryManager allocate: desiredSize desiredPosition: baseAddress
-]
-
-{ #category : #'image save/restore' }
-StackInterpreter >> allocateMemory: heapSize minimum: minimumMemory imageFile: fileStream headerSize: headerSize [
-	"Translate to C function call with (case sensitive) camelCase. The purpose of this
-	 method is to document the translation.
-	 The default implementation is sqAllocateMemory(minimumMemory, heapSize). This may
-	 be redefined to make use of the image file and header size parameters for efficient
-	 implementation with mmap().
-	 See CCodeGenerator>>writeDefaultMacrosOn: which specifies a default implementation."
-
-	<inline: true>
-	<returnTypeC: #'char *'>
-	<var: #fileStream type: #sqImageFile>
-	^self pointerForOop: (self
-							allocateMemory: heapSize
-							Minimum: minimumMemory
-							ImageFile: fileStream
-							HeaderSize: headerSize)
-]
-
-{ #category : #'image save/restore' }
-StackInterpreter >> allocateMemory: heapSize minimum: minimumMemory imageFile: fileStream headerSize: headerSize desiredPosition: desiredBaseAddress [
-	"Translate to C function call with (case sensitive) camelCase. The purpose of this
-	 method is to document the translation.
-	 The default implementation is sqAllocateMemory(minimumMemory, heapSize). This may
-	 be redefined to make use of the image file and header size parameters for efficient
-	 implementation with mmap().
-	 See CCodeGenerator>>writeDefaultMacrosOn: which specifies a default implementation."
-
-	<inline: true>
-	<returnTypeC: #'char *'>
-	<var: #fileStream type: #sqImageFile>
-	^self pointerForOop: (self
-							allocateMemory: heapSize
-							Minimum: minimumMemory
-							ImageFile: fileStream
-							HeaderSize: headerSize
-							BaseAddress: desiredBaseAddress)
-]
-
-{ #category : #'image save/restore' }
+{ #category : 'image save/restore' }
 StackInterpreter >> allocateMemoryForImage: f withHeader: header [
 
 	<var: #f type: #sqImageFile>
-	<var: #header type: #'SpurImageHeaderStruct'>
+	<var: #header type: #SpurImageHeaderStruct>
+	self allocateMemoryForImageHeader: header.
 
-	self allocateHeapMemoryForImage: f withHeader: header desiredStartingAddress: header oldBaseAddr.
-	
-	imageReader loadImageFromFile: f withHeader: header 
+	imageReaderWriter loadImageFromFile: f withHeader: header
 ]
 
-{ #category : #'compiled methods' }
+{ #category : 'image save/restore' }
+StackInterpreter >> allocateMemoryForImageHeader: header [
+
+	<var: #header type: #SpurImageHeaderStruct>
+
+	objectMemory getMemoryMap 
+		allocationReserve: self interpreterAllocationReserveBytes;
+		initialOldSpaceSize: header dataSize;
+		initialNewSpaceSize: objectMemory newSpaceBytes;
+		initialHeadroom: (objectMemory initialHeadroom: extraVMMemory givenFreeOldSpaceInImage: header freeOldSpaceInImage);
+		allocateHeap.
+		
+	^ objectMemory initializeFromMemoryMap.
+
+]
+
+{ #category : 'compiled methods' }
 StackInterpreter >> alternateHeaderHasPrimitiveFlag: methodHeader [
 	<inline: true>
 	^methodHeader anyMask: AlternateHeaderHasPrimFlag
 ]
 
-{ #category : #'compiled methods' }
+{ #category : 'compiled methods' }
 StackInterpreter >> alternateHeaderNumLiteralsMask [
 	<api>
 	<cmacro>
 	^AlternateHeaderNumLiteralsMask
 ]
 
-{ #category : #'compiled methods' }
+{ #category : 'cog jit support' }
+StackInterpreter >> argumentCount [
+	<doNotGenerate>
+	^argumentCount
+]
+
+{ #category : 'cog jit support' }
+StackInterpreter >> argumentCount: numArgs [
+	<doNotGenerate>
+	argumentCount := numArgs
+]
+
+{ #category : 'compiled methods' }
 StackInterpreter >> argumentCountOf: methodPointer [
 	<api>
 	^self argumentCountOfMethodHeader: (objectMemory methodHeaderOf: methodPointer)
 ]
 
-{ #category : #'internal interpreter access' }
+{ #category : 'internal interpreter access' }
 StackInterpreter >> argumentCountOfClosure: closurePointer [
 	<api> "for Cogit"
 	<inline: true>
 	^self quickFetchInteger: FullClosureNumArgsIndex ofObject: closurePointer
 ]
 
-{ #category : #'compiled methods' }
+{ #category : 'compiled methods' }
 StackInterpreter >> argumentCountOfMethodHeader: header [
 	<api>
 	^header >> MethodHeaderArgCountShift bitAnd: 16rF
 ]
 
-{ #category : #utilities }
+{ #category : 'utilities' }
 StackInterpreter >> arrayValueOf: arrayOop [
 	"Return the address of first indexable field of resulting array object, or fail if
 	 the instance variable does not contain an indexable bytes or words object."
@@ -2192,7 +2134,7 @@ StackInterpreter >> arrayValueOf: arrayOop [
 	self primitiveFail
 ]
 
-{ #category : #'indexing primitive support' }
+{ #category : 'indexing primitive support' }
 StackInterpreter >> asciiOfCharacter: characterObj [  "Returns an integer object"
 
 	<inline: false>
@@ -2202,7 +2144,7 @@ StackInterpreter >> asciiOfCharacter: characterObj [  "Returns an integer object
 	^ConstZero  "in case some code needs an int"
 ]
 
-{ #category : #utilities }
+{ #category : 'utilities' }
 StackInterpreter >> assertClassOf: oop is: classOop [
 	"Succeed if oop is an instance of the given class. Fail if the object is an integer."
 	| ok |
@@ -2213,7 +2155,7 @@ StackInterpreter >> assertClassOf: oop is: classOop [
 	self success: ok
 ]
 
-{ #category : #'debug support' }
+{ #category : 'debug support' }
 StackInterpreter >> assertValidExecutionPointe: lip r: lifp s: lisp [
 	<inline: true>
 	<var: #lip type: #'usqInt'>
@@ -2222,33 +2164,33 @@ StackInterpreter >> assertValidExecutionPointe: lip r: lifp s: lisp [
 	self assertValidExecutionPointe: lip r: lifp s: lisp imbar: (self isMachineCodeFrame: lifp) not line: #'__LINE__'
 ]
 
-{ #category : #'debug support' }
-StackInterpreter >> assertValidExecutionPointe: lip r: lfp s: lsp imbar: inInterpreter line: ln [
+{ #category : 'debug support' }
+StackInterpreter >> assertValidExecutionPointe: lip r: lifp s: lisp imbar: inInterpreter line: ln [
 	<var: #lip type: #usqInt>
-	<var: #lfp type: #'char *'>
-	<var: #lsp type: #'char *'>
+	<var: #lifp type: #'char *'>
+	<var: #lisp type: #'char *'>
 	self assert: inInterpreter l: ln.
 	self assert: stackPage = stackPages mostRecentlyUsedPage l: ln.
 	self assertValidStackLimits: ln.
-	self assert: (stackPage addressIsInPage: lfp) l: ln.
-	self assert: lsp < lfp l: ln.
-	self assert: lfp > lsp l: ln.
-	self assert: lsp >= (stackPage realStackLimit - self stackLimitOffset) l: ln.
-	self assert: (lfp - lsp) / objectMemory bytesPerOop < LargeContextSlots l: ln.
-	self assert: (self validInstructionPointer: lip inFrame: lfp) l: ln.
-	self assert: ((self frameIsBlockActivation: lfp)
-				or: [(self pushedReceiverOrClosureOfFrame: lfp) = (self frameReceiver: lfp)])
+	self assert: (stackPage addressIsInPage: lifp) l: ln.
+	self assert: lisp < lifp l: ln.
+	self assert: lifp > lisp l: ln.
+	self assert: lisp >= (stackPage realStackLimit - self stackLimitOffset) l: ln.
+	self assert: (lifp - lisp) / objectMemory bytesPerOop < LargeContextSlots l: ln.
+	self assert: (self validInstructionPointer: lip inFrame: lifp) l: ln.
+	self assert: ((self frameIsBlockActivation: lifp)
+				or: [(self pushedReceiverOrClosureOfFrame: lifp) = (self frameReceiver: lifp)])
 		l: ln.
-	self assert: method = (self frameMethod: lfp) l: ln
+	self assert: method = (self iframeMethod: lifp) l: ln
 ]
 
-{ #category : #'debug support' }
+{ #category : 'debug support' }
 StackInterpreter >> assertValidExecutionPointers [
 	<doNotGenerate> "simulator only"
 	self assertValidExecutionPointe: instructionPointer r: framePointer s: stackPointer
 ]
 
-{ #category : #'process primitive support' }
+{ #category : 'process primitive support' }
 StackInterpreter >> assertValidStackLimits: ln [
 	<returnTypeC: #void>
 	"Order in the stackLimit checks is important because stackLimit is smashed by
@@ -2261,62 +2203,81 @@ StackInterpreter >> assertValidStackLimits: ln [
 		l: ln
 ]
 
-{ #category : #'return bytecodes' }
-StackInterpreter >> baseFrameReturn [
+{ #category : 'return bytecodes' }
+StackInterpreter >> baseFrameCannotReturnTo: contextToReturnTo [
 
-	"Return from a baseFrame (the bottom frame in a stackPage).  The context to
-	 return to (which may be married) is stored in the saved instruction pointer slot."
+	^ self sendCannotReturn: localReturnValue
+]
+
+{ #category : 'return bytecodes' }
+StackInterpreter >> baseFrameReturn [
+	"Return from a baseFrame (the bottom frame in a stackPage).
+	The context to return to may be married"
 
 	<inline: true>
 	<var: #theFP type: #'char *'>
 	<var: #theSP type: #'char *'>
 	<var: #thePage type: #'StackPage *'>
+	<var: #newPage type: #'StackPage *'>
 	<var: #frameAbove type: #'char *'>
-	| contextToReturnTo isAContext theFP theSP thePage frameAbove |
+	<returnTypeC: #void>
+	| contextToReturnTo retToContext theFP theSP thePage newPage frameAbove |
 	contextToReturnTo := self frameCallerContext: framePointer.
-	isAContext := objectMemory isContext: contextToReturnTo.
-	(isAContext and: [ self isStillMarriedContext: contextToReturnTo ])
-		ifTrue: [ 
+
+	"The stack page is effectively free now, so free it.  We must free it to be
+	 correct in determining if contextToReturnTo is still married, and in case
+	 makeBaseFrameFor: cogs a method, which may cause a code compaction,
+	 in which case the frame must be free to avoid the relocation machinery
+	 tracing the dead frame.  Since freeing now temporarily violates the page-list
+	 ordering invariant, use the assert-free version."
+	stackPages freeStackPageNoAssert: stackPage.
+	retToContext := objectMemory isContext: contextToReturnTo.
+	(retToContext and: [ self isStillMarriedContext: contextToReturnTo ])
+		ifTrue: [
 			theFP := self frameOfMarriedContext: contextToReturnTo.
 			thePage := stackPages stackPageFor: theFP.
 			theFP = thePage headFP
-				ifTrue: [ 
-					theSP := thePage headSP.
-					stackPages freeStackPageNoAssert: stackPage "for a short time invariant is violated; assert follows" ]
+				ifTrue: [ theSP := thePage headSP ]
 				ifFalse: [ "Returning to some interior frame, presumably because of a sender assignment.
 					  Move the frames above to another page (they may be in use, e.g. via coroutining).
 					  Make the interior frame the top frame."
 					frameAbove := self findFrameAbove: theFP inPage: thePage.
-					"Reuse the page we're exiting, which avoids allocating a new page and
-					  manipulating the page list to mark the page we're entering as least recently
-					  used (to avoid it being deallocated when allocating a new page)."
-					self moveFramesIn: thePage through: frameAbove toPage: stackPage.
+					"Since we've just deallocated a page we know that newStackPage won't deallocate an existing one."
+					newPage := stackPages newStackPage.
+					self assert: newPage = stackPage.
+					self moveFramesIn: thePage through: frameAbove toPage: newPage.
+					stackPages markStackPageMostRecentlyUsed: newPage.
 					theFP := thePage headFP.
 					theSP := thePage headSP ] ]
-		ifFalse: [ 
-			(isAContext and: [ 
+		ifFalse: [
+			(retToContext and: [
 				 objectMemory isIntegerObject: (objectMemory
 						  fetchPointer: InstructionPointerIndex
-						  ofObject: contextToReturnTo) ]) ifFalse: [ 
-				^ self internalCannotReturn: localReturnValue ].
+						  ofObject: contextToReturnTo) ]) ifFalse: [
+				^ self baseFrameCannotReturnTo: contextToReturnTo ].
+			"We must void the instructionPointer to stop it being updated if makeBaseFrameFor:
+			  cogs a method, which may cause a code compaction."
+			instructionPointer := 0.
 			thePage := self makeBaseFrameFor: contextToReturnTo.
 			theFP := thePage headFP.
-			theSP := thePage headSP.
-			stackPages freeStackPageNoAssert: stackPage "for a short time invariant is violated; assert follows" ].
+			theSP := thePage headSP ].
 	self setStackPageAndLimit: thePage.
 	self assert: (stackPages stackPageFor: theFP) = stackPage.
+
 	stackPointer := theSP.
 	framePointer := theFP.
-	self setMethod: (self frameMethod: framePointer).
 	instructionPointer := self pointerForOop: self stackTop.
-	self stackTopPut: localReturnValue.
+	self maybeReturnToMachineCodeFrame.
+
 	self assert: (self
 			 checkIsStillMarriedContext: contextToReturnTo
 			 currentFP: framePointer).
+	self setMethod: (self iframeMethod: framePointer).
+	self stackTopPut: localReturnValue.
 	^ self fetchNextBytecode
 ]
 
-{ #category : #'frame access' }
+{ #category : 'frame access' }
 StackInterpreter >> bereaveAllMarriedContextsForSnapshotFlushingExternalPrimitivesIf: flushExtPrims [
 	"Enumerate all contexts and convert married contexts to widowed contexts so
 	 that the snapshot contains only single contexts.  This allows the test for being
@@ -2334,7 +2295,7 @@ StackInterpreter >> bereaveAllMarriedContextsForSnapshotFlushingExternalPrimitiv
 			[self flushExternalPrimitiveOf: obj]]
 ]
 
-{ #category : #'sista inline primitives - binary' }
+{ #category : 'sista inline primitives - binary' }
 StackInterpreter >> binaryAtInlinePrimitive: primIndex [
 
 	<option: #SistaVM>
@@ -2357,9 +2318,7 @@ StackInterpreter >> binaryAtInlinePrimitive: primIndex [
 			 ((objectMemory isContextNonImm: rec) and: [ 
 				  self isMarriedOrWidowedContext: rec ])
 				 ifTrue: [ 
-					 self externalizeIPandSP.
-					 result := self externalInstVar: argIntAdjusted ofContext: rec.
-					 self internalizeIPandSP ]
+					 result := self instVar: argIntAdjusted ofContext: rec. ]
 				 ifFalse: [ 
 				 result := objectMemory fetchPointer: argIntAdjusted ofObject: rec ] ]).
 			"2066	byteAt:
@@ -2399,7 +2358,7 @@ StackInterpreter >> binaryAtInlinePrimitive: primIndex [
 		stackTopPut: result
 ]
 
-{ #category : #'sista inline primitives - binary' }
+{ #category : 'sista inline primitives - binary' }
 StackInterpreter >> binaryCompInlinePrimitive: primIndex [
 
 	<option: #SistaVM>
@@ -2417,7 +2376,7 @@ StackInterpreter >> binaryCompInlinePrimitive: primIndex [
 		stackTopPut: (objectMemory booleanObjectOf: result)
 ]
 
-{ #category : #'sista inline primitives - binary' }
+{ #category : 'sista inline primitives - binary' }
 StackInterpreter >> binaryInlinePrimitive: primIndex [
 	<option: #SistaVM>
 	"Bulk comments: each sub-method has its own comment with the specific case.
@@ -2490,7 +2449,7 @@ StackInterpreter >> binaryInlinePrimitive: primIndex [
 	self unknownInlinePrimitive
 ]
 
-{ #category : #'sista inline primitives - binary' }
+{ #category : 'sista inline primitives - binary' }
 StackInterpreter >> binaryNewInlinePrimitive: primIndex [
 
 	"2048	rawNew:
@@ -2514,7 +2473,7 @@ StackInterpreter >> binaryNewInlinePrimitive: primIndex [
 		stackTopPut: result
 ]
 
-{ #category : #'sista inline primitives - binary' }
+{ #category : 'sista inline primitives - binary' }
 StackInterpreter >> binarySmiArithmeticInlinePrimitive: primIndex [
 	<option: #SistaVM>
 	| result recInt argInt rcvr top |
@@ -2551,7 +2510,7 @@ StackInterpreter >> binarySmiArithmeticInlinePrimitive: primIndex [
 	self pop: 1; stackTopPutIntegerObjectOf: result
 ]
 
-{ #category : #'sista inline primitives - binary' }
+{ #category : 'sista inline primitives - binary' }
 StackInterpreter >> binarySmiBitInlinePrimitive: primIndex [
 	<option: #SistaVM>
 	| result recInt argInt rcvr top |
@@ -2585,7 +2544,7 @@ StackInterpreter >> binarySmiBitInlinePrimitive: primIndex [
 	self pop: 1; stackTopPutIntegerObjectOf: result
 ]
 
-{ #category : #'sista inline primitives - binary' }
+{ #category : 'sista inline primitives - binary' }
 StackInterpreter >> binarySmiCompInlinePrimitive: primIndex [
 	<option: #SistaVM>
 	| result top rcvr |
@@ -2617,7 +2576,7 @@ StackInterpreter >> binarySmiCompInlinePrimitive: primIndex [
 	self pop: 1; stackTopPut: (objectMemory booleanObjectOf: result)
 ]
 
-{ #category : #utilities }
+{ #category : 'utilities' }
 StackInterpreter >> booleanCheat: cond [
 	"cheat the interpreter out of the pleasure of handling the next bytecode IFF it is a jump-on-boolean. Which it is, often enough when the current bytecode is something like bytecodePrimEqual"
 	<inline: true>
@@ -2627,7 +2586,7 @@ StackInterpreter >> booleanCheat: cond [
 		ifFalse: [self booleanCheatFalse]
 ]
 
-{ #category : #utilities }
+{ #category : 'utilities' }
 StackInterpreter >> booleanCheatFalse [
 
 	"cheat the interpreter out of the pleasure of handling the next bytecode IFF it is a jump-on-boolean. Which it is, often enough when the current bytecode is something like bytecodePrimEqual"
@@ -2648,7 +2607,7 @@ StackInterpreter >> booleanCheatFalse [
 	self push: objectMemory falseObject
 ]
 
-{ #category : #utilities }
+{ #category : 'utilities' }
 StackInterpreter >> booleanCheatFalseSistaV1 [
 
 	"cheat the interpreter out of the pleasure of handling the next bytecode IFF it is a jump-on-boolean. Which it is, often enough when the current bytecode is something like bytecodePrimEqual"
@@ -2669,7 +2628,7 @@ StackInterpreter >> booleanCheatFalseSistaV1 [
 	self push: objectMemory falseObject
 ]
 
-{ #category : #utilities }
+{ #category : 'utilities' }
 StackInterpreter >> booleanCheatFalseV4 [
 
 	"cheat the interpreter out of the pleasure of handling the next bytecode IFF it is a jump-on-boolean. Which it is, often enough when the current bytecode is something like bytecodePrimEqual"
@@ -2690,7 +2649,7 @@ StackInterpreter >> booleanCheatFalseV4 [
 	self push: objectMemory falseObject
 ]
 
-{ #category : #utilities }
+{ #category : 'utilities' }
 StackInterpreter >> booleanCheatSistaV1: cond [
 	"cheat the interpreter out of the pleasure of handling the next bytecode IFF it is a jump-on-boolean. Which it is, often enough when the current bytecode is something like bytecodePrimEqual"
 	<inline: true>
@@ -2700,7 +2659,7 @@ StackInterpreter >> booleanCheatSistaV1: cond [
 		ifFalse: [self booleanCheatFalseSistaV1]
 ]
 
-{ #category : #utilities }
+{ #category : 'utilities' }
 StackInterpreter >> booleanCheatTrue [
 
 	"cheat the interpreter out of the pleasure of handling the next bytecode IFF it is a jump-on-boolean. Which it is, often enough when the current bytecode is something like bytecodePrimEqual"
@@ -2724,7 +2683,7 @@ StackInterpreter >> booleanCheatTrue [
 	self push: objectMemory trueObject
 ]
 
-{ #category : #utilities }
+{ #category : 'utilities' }
 StackInterpreter >> booleanCheatTrueSistaV1 [
 
 	"cheat the interpreter out of the pleasure of handling the next bytecode IFF it is a jump-on-boolean. Which it is, often enough when the current bytecode is something like bytecodePrimEqual"
@@ -2748,7 +2707,7 @@ StackInterpreter >> booleanCheatTrueSistaV1 [
 	self push: objectMemory trueObject
 ]
 
-{ #category : #utilities }
+{ #category : 'utilities' }
 StackInterpreter >> booleanCheatTrueV4 [
 
 	"cheat the interpreter out of the pleasure of handling the next bytecode IFF it is a jump-on-boolean. Which it is, often enough when the current bytecode is something like bytecodePrimEqual"
@@ -2772,7 +2731,7 @@ StackInterpreter >> booleanCheatTrueV4 [
 	self push: objectMemory trueObject
 ]
 
-{ #category : #utilities }
+{ #category : 'utilities' }
 StackInterpreter >> booleanCheatV4: cond [
 	"cheat the interpreter out of the pleasure of handling the next bytecode IFF it is a jump-on-boolean. Which it is, often enough when the current bytecode is something like bytecodePrimEqual"
 	<inline: true>
@@ -2782,7 +2741,7 @@ StackInterpreter >> booleanCheatV4: cond [
 		ifFalse: [self booleanCheatFalseV4]
 ]
 
-{ #category : #utilities }
+{ #category : 'utilities' }
 StackInterpreter >> booleanValueOf: obj [
 "convert true and false (Smalltalk) to true or false(C)"
 	obj = objectMemory trueObject ifTrue: [ ^ true ].
@@ -2791,7 +2750,7 @@ StackInterpreter >> booleanValueOf: obj [
 	^ nil
 ]
 
-{ #category : #'common selector sends' }
+{ #category : 'common selector sends' }
 StackInterpreter >> bytecodePrimAdd [
 	| rcvr arg result |
 	rcvr := self stackValue: 1.
@@ -2802,9 +2761,7 @@ StackInterpreter >> bytecodePrimAdd [
 					[self pop: 2 thenPush: (objectMemory integerObjectOf: result).
 					^ self fetchNextBytecode "success"]]
 		ifFalse: [self initPrimCall.
-				self externalizeIPandSP.
 				self primitiveFloatAdd: rcvr toArg: arg.
-				self internalizeIPandSP.
 				self successful ifTrue: [^ self fetchNextBytecode "success"]].
 
 	messageSelector := self specialSelector: 0.
@@ -2812,7 +2769,7 @@ StackInterpreter >> bytecodePrimAdd [
 	self normalSend
 ]
 
-{ #category : #'common selector sends' }
+{ #category : 'common selector sends' }
 StackInterpreter >> bytecodePrimAt [
 	"BytecodePrimAt will only succeed if the receiver is in the atCache.
 	 Otherwise it will fail so that the more general primitiveAt will put it in the
@@ -2852,14 +2809,14 @@ StackInterpreter >> bytecodePrimAt [
 	self normalSend
 ]
 
-{ #category : #'common selector sends' }
+{ #category : 'common selector sends' }
 StackInterpreter >> bytecodePrimAtEnd [
 	messageSelector := self specialSelector: 21.
 	argumentCount := self specialSelectorNumArgs: 21.
 	self normalSend.
 ]
 
-{ #category : #'common selector sends' }
+{ #category : 'common selector sends' }
 StackInterpreter >> bytecodePrimAtPut [
 	"BytecodePrimAtPut will only succeed if the receiver is in the atCache.
 	Otherwise it will fail so that the more general primitiveAtPut will put it in the
@@ -2903,7 +2860,7 @@ StackInterpreter >> bytecodePrimAtPut [
 	self normalSend
 ]
 
-{ #category : #'common selector sends' }
+{ #category : 'common selector sends' }
 StackInterpreter >> bytecodePrimBitAnd [
 	| rcvr arg |
 	arg := self stackTop.
@@ -2914,9 +2871,7 @@ StackInterpreter >> bytecodePrimBitAnd [
 		 ^self fetchNextBytecode "success"].
 
 	self initPrimCall.
-	self externalizeIPandSP.
 	self primitiveBitAnd.
-	self internalizeIPandSP.
 	self successful ifTrue:
 		[^self fetchNextBytecode "success"].
 
@@ -2925,7 +2880,7 @@ StackInterpreter >> bytecodePrimBitAnd [
 	self normalSend
 ]
 
-{ #category : #'common selector sends' }
+{ #category : 'common selector sends' }
 StackInterpreter >> bytecodePrimBitOr [
 	| rcvr arg |
 	arg := self stackTop.
@@ -2936,9 +2891,7 @@ StackInterpreter >> bytecodePrimBitOr [
 		 ^self fetchNextBytecode "success"].
 
 	self initPrimCall.
-	self externalizeIPandSP.
 	self primitiveBitOr.
-	self internalizeIPandSP.
 	self successful ifTrue:
 		[^self fetchNextBytecode "success"].
 
@@ -2947,13 +2900,11 @@ StackInterpreter >> bytecodePrimBitOr [
 	self normalSend
 ]
 
-{ #category : #'common selector sends' }
+{ #category : 'common selector sends' }
 StackInterpreter >> bytecodePrimBitShift [
 
 	self initPrimCall.
-	self externalizeIPandSP.
 	self primitiveBitShift.
-	self internalizeIPandSP.
 	self successful ifTrue: [^ self fetchNextBytecode "success"].
 
 	messageSelector := self specialSelector: 12.
@@ -2961,7 +2912,7 @@ StackInterpreter >> bytecodePrimBitShift [
 	self normalSend
 ]
 
-{ #category : #'common selector sends' }
+{ #category : 'common selector sends' }
 StackInterpreter >> bytecodePrimClass [
 
 	| rcvr |
@@ -2972,7 +2923,7 @@ StackInterpreter >> bytecodePrimClass [
 	self fetchNextBytecode
 ]
 
-{ #category : #'common selector sends' }
+{ #category : 'common selector sends' }
 StackInterpreter >> bytecodePrimDiv [
 	| quotient |
 	self initPrimCall.
@@ -2985,7 +2936,7 @@ StackInterpreter >> bytecodePrimDiv [
 	self normalSend
 ]
 
-{ #category : #'common selector sends' }
+{ #category : 'common selector sends' }
 StackInterpreter >> bytecodePrimDivide [
 	| rcvr arg result |
 	rcvr := self stackValue: 1.
@@ -3000,9 +2951,7 @@ StackInterpreter >> bytecodePrimDivide [
 						ifTrue: [self pop: 2 thenPush: (objectMemory integerObjectOf: result).
 							^ self fetchNextBytecode"success"]]]
 		ifFalse: [self initPrimCall.
-			self externalizeIPandSP.
 			self primitiveFloatDivide: rcvr byArg: arg.
-			self internalizeIPandSP.
 			self successful ifTrue: [^ self fetchNextBytecode"success"]].
 
 	messageSelector := self specialSelector: 9.
@@ -3010,7 +2959,7 @@ StackInterpreter >> bytecodePrimDivide [
 	self normalSend
 ]
 
-{ #category : #'common selector sends' }
+{ #category : 'common selector sends' }
 StackInterpreter >> bytecodePrimDo [
 
 	messageSelector := self specialSelector: 27.
@@ -3019,7 +2968,7 @@ StackInterpreter >> bytecodePrimDo [
 
 ]
 
-{ #category : #'common selector sends' }
+{ #category : 'common selector sends' }
 StackInterpreter >> bytecodePrimEqual [
 	| rcvr arg aBool |
 	rcvr := self stackValue: 1.
@@ -3035,7 +2984,7 @@ StackInterpreter >> bytecodePrimEqual [
 	self normalSend
 ]
 
-{ #category : #'common selector sends' }
+{ #category : 'common selector sends' }
 StackInterpreter >> bytecodePrimEqualSistaV1 [
 	| rcvr arg aBool |
 	rcvr := self stackValue: 1.
@@ -3051,7 +3000,7 @@ StackInterpreter >> bytecodePrimEqualSistaV1 [
 	self normalSend
 ]
 
-{ #category : #'common selector sends' }
+{ #category : 'common selector sends' }
 StackInterpreter >> bytecodePrimEqualV4 [
 	| rcvr arg aBool |
 	rcvr := self stackValue: 1.
@@ -3067,7 +3016,7 @@ StackInterpreter >> bytecodePrimEqualV4 [
 	self normalSend
 ]
 
-{ #category : #'common selector sends' }
+{ #category : 'common selector sends' }
 StackInterpreter >> bytecodePrimGreaterOrEqual [
 	| rcvr arg aBool |
 	rcvr := self stackValue: 1.
@@ -3087,7 +3036,7 @@ StackInterpreter >> bytecodePrimGreaterOrEqual [
 	self normalSend
 ]
 
-{ #category : #'common selector sends' }
+{ #category : 'common selector sends' }
 StackInterpreter >> bytecodePrimGreaterOrEqualSistaV1 [
 	| rcvr arg aBool |
 	rcvr := self stackValue: 1.
@@ -3107,7 +3056,7 @@ StackInterpreter >> bytecodePrimGreaterOrEqualSistaV1 [
 	self normalSend
 ]
 
-{ #category : #'common selector sends' }
+{ #category : 'common selector sends' }
 StackInterpreter >> bytecodePrimGreaterOrEqualV4 [
 	| rcvr arg aBool |
 	rcvr := self stackValue: 1.
@@ -3127,7 +3076,7 @@ StackInterpreter >> bytecodePrimGreaterOrEqualV4 [
 	self normalSend
 ]
 
-{ #category : #'common selector sends' }
+{ #category : 'common selector sends' }
 StackInterpreter >> bytecodePrimGreaterThan [
 	| rcvr arg aBool |
 	rcvr := self stackValue: 1.
@@ -3147,7 +3096,7 @@ StackInterpreter >> bytecodePrimGreaterThan [
 	self normalSend
 ]
 
-{ #category : #'common selector sends' }
+{ #category : 'common selector sends' }
 StackInterpreter >> bytecodePrimGreaterThanSistaV1 [
 	| rcvr arg aBool |
 	rcvr := self stackValue: 1.
@@ -3167,7 +3116,7 @@ StackInterpreter >> bytecodePrimGreaterThanSistaV1 [
 	self normalSend
 ]
 
-{ #category : #'common selector sends' }
+{ #category : 'common selector sends' }
 StackInterpreter >> bytecodePrimGreaterThanV4 [
 	| rcvr arg aBool |
 	rcvr := self stackValue: 1.
@@ -3187,7 +3136,7 @@ StackInterpreter >> bytecodePrimGreaterThanV4 [
 	self normalSend
 ]
 
-{ #category : #'common selector sends' }
+{ #category : 'common selector sends' }
 StackInterpreter >> bytecodePrimIdentical [
 	| rcvr arg |
 	rcvr := self stackValue: 1.
@@ -3199,7 +3148,7 @@ StackInterpreter >> bytecodePrimIdentical [
 	self booleanCheat: rcvr = arg
 ]
 
-{ #category : #'common selector sends' }
+{ #category : 'common selector sends' }
 StackInterpreter >> bytecodePrimIdenticalSistaV1 [
 	| rcvr arg |
 	rcvr := self stackValue: 1.
@@ -3211,7 +3160,7 @@ StackInterpreter >> bytecodePrimIdenticalSistaV1 [
 	self booleanCheatSistaV1: rcvr = arg
 ]
 
-{ #category : #'common selector sends' }
+{ #category : 'common selector sends' }
 StackInterpreter >> bytecodePrimIdenticalV4 [
 	| rcvr arg |
 	rcvr := self stackValue: 1.
@@ -3223,7 +3172,7 @@ StackInterpreter >> bytecodePrimIdenticalV4 [
 	self booleanCheatV4: rcvr = arg
 ]
 
-{ #category : #'common selector sends' }
+{ #category : 'common selector sends' }
 StackInterpreter >> bytecodePrimLessOrEqual [
 	| rcvr arg aBool |
 	rcvr := self stackValue: 1.
@@ -3243,7 +3192,7 @@ StackInterpreter >> bytecodePrimLessOrEqual [
 	self normalSend
 ]
 
-{ #category : #'common selector sends' }
+{ #category : 'common selector sends' }
 StackInterpreter >> bytecodePrimLessOrEqualSistaV1 [
 	| rcvr arg aBool |
 	rcvr := self stackValue: 1.
@@ -3263,7 +3212,7 @@ StackInterpreter >> bytecodePrimLessOrEqualSistaV1 [
 	self normalSend
 ]
 
-{ #category : #'common selector sends' }
+{ #category : 'common selector sends' }
 StackInterpreter >> bytecodePrimLessOrEqualV4 [
 	| rcvr arg aBool |
 	rcvr := self stackValue: 1.
@@ -3283,7 +3232,7 @@ StackInterpreter >> bytecodePrimLessOrEqualV4 [
 	self normalSend
 ]
 
-{ #category : #'common selector sends' }
+{ #category : 'common selector sends' }
 StackInterpreter >> bytecodePrimLessThan [
 	| rcvr arg aBool |
 	rcvr := self stackValue: 1.
@@ -3303,7 +3252,7 @@ StackInterpreter >> bytecodePrimLessThan [
 	self normalSend
 ]
 
-{ #category : #'common selector sends' }
+{ #category : 'common selector sends' }
 StackInterpreter >> bytecodePrimLessThanSistaV1 [
 	| rcvr arg aBool |
 	rcvr := self stackValue: 1.
@@ -3323,7 +3272,7 @@ StackInterpreter >> bytecodePrimLessThanSistaV1 [
 	self normalSend
 ]
 
-{ #category : #'common selector sends' }
+{ #category : 'common selector sends' }
 StackInterpreter >> bytecodePrimLessThanV4 [
 	| rcvr arg aBool |
 	rcvr := self stackValue: 1.
@@ -3343,7 +3292,7 @@ StackInterpreter >> bytecodePrimLessThanV4 [
 	self normalSend
 ]
 
-{ #category : #'common selector sends' }
+{ #category : 'common selector sends' }
 StackInterpreter >> bytecodePrimMakePoint [
 	"Inline primitiveMakePoint for the benefit of the interpreter. Externalizing the
 	 sp & fp, then internalizing and testign for primitive failure add much overhead.
@@ -3365,7 +3314,7 @@ StackInterpreter >> bytecodePrimMakePoint [
 	self normalSend
 ]
 
-{ #category : #'common selector sends' }
+{ #category : 'common selector sends' }
 StackInterpreter >> bytecodePrimMod [
 	| mod |
 	self initPrimCall.
@@ -3379,7 +3328,7 @@ StackInterpreter >> bytecodePrimMod [
 	self normalSend
 ]
 
-{ #category : #'common selector sends' }
+{ #category : 'common selector sends' }
 StackInterpreter >> bytecodePrimMultiply [
 	| rcvr arg result overflow oop |
 	rcvr := self stackValue: 1.
@@ -3401,9 +3350,7 @@ StackInterpreter >> bytecodePrimMultiply [
       					self pop: 2 thenPush: oop.
 						^self fetchNextBytecode "success"]]
 		ifFalse: [self initPrimCall.
-				self externalizeIPandSP.
 				self primitiveFloatMultiply: rcvr byArg: arg.
-				self internalizeIPandSP.
 				self successful ifTrue: [^ self fetchNextBytecode "success"]].
 
 	messageSelector := self specialSelector: 8.
@@ -3411,7 +3358,7 @@ StackInterpreter >> bytecodePrimMultiply [
 	self normalSend
 ]
 
-{ #category : #'common selector sends' }
+{ #category : 'common selector sends' }
 StackInterpreter >> bytecodePrimNew [
 
 	messageSelector := self specialSelector: 28.
@@ -3420,7 +3367,7 @@ StackInterpreter >> bytecodePrimNew [
 
 ]
 
-{ #category : #'common selector sends' }
+{ #category : 'common selector sends' }
 StackInterpreter >> bytecodePrimNewWithArg [
 
 	messageSelector := self specialSelector: 29.
@@ -3429,21 +3376,21 @@ StackInterpreter >> bytecodePrimNewWithArg [
 
 ]
 
-{ #category : #'common selector sends' }
+{ #category : 'common selector sends' }
 StackInterpreter >> bytecodePrimNext [
 	messageSelector := self specialSelector: 19.
 	argumentCount := self specialSelectorNumArgs: 19.
 	self normalSend.
 ]
 
-{ #category : #'common selector sends' }
+{ #category : 'common selector sends' }
 StackInterpreter >> bytecodePrimNextPut [
 	messageSelector := self specialSelector: 20.
 	argumentCount := self specialSelectorNumArgs: 20.
 	self normalSend.
 ]
 
-{ #category : #'common selector sends' }
+{ #category : 'common selector sends' }
 StackInterpreter >> bytecodePrimNotEqual [
 	| rcvr arg aBool |
 	rcvr := self stackValue: 1.
@@ -3459,7 +3406,7 @@ StackInterpreter >> bytecodePrimNotEqual [
 	self normalSend
 ]
 
-{ #category : #'common selector sends' }
+{ #category : 'common selector sends' }
 StackInterpreter >> bytecodePrimNotEqualSistaV1 [
 	| rcvr arg aBool |
 	rcvr := self stackValue: 1.
@@ -3475,7 +3422,7 @@ StackInterpreter >> bytecodePrimNotEqualSistaV1 [
 	self normalSend
 ]
 
-{ #category : #'common selector sends' }
+{ #category : 'common selector sends' }
 StackInterpreter >> bytecodePrimNotEqualV4 [
 	| rcvr arg aBool |
 	rcvr := self stackValue: 1.
@@ -3491,7 +3438,7 @@ StackInterpreter >> bytecodePrimNotEqualV4 [
 	self normalSend
 ]
 
-{ #category : #'common selector sends' }
+{ #category : 'common selector sends' }
 StackInterpreter >> bytecodePrimNotIdentical [
 	| rcvr arg |
 	rcvr := self stackValue: 1.
@@ -3503,7 +3450,7 @@ StackInterpreter >> bytecodePrimNotIdentical [
 	self booleanCheat: rcvr ~= arg
 ]
 
-{ #category : #'common selector sends' }
+{ #category : 'common selector sends' }
 StackInterpreter >> bytecodePrimNotIdenticalSistaV1 [
 	| rcvr arg |
 	rcvr := self stackValue: 1.
@@ -3515,7 +3462,7 @@ StackInterpreter >> bytecodePrimNotIdenticalSistaV1 [
 	self booleanCheatSistaV1: rcvr ~= arg
 ]
 
-{ #category : #'common selector sends' }
+{ #category : 'common selector sends' }
 StackInterpreter >> bytecodePrimNotIdenticalV4 [
 	| rcvr arg |
 	rcvr := self stackValue: 1.
@@ -3527,7 +3474,7 @@ StackInterpreter >> bytecodePrimNotIdenticalV4 [
 	self booleanCheatV4: rcvr ~= arg
 ]
 
-{ #category : #'common selector sends' }
+{ #category : 'common selector sends' }
 StackInterpreter >> bytecodePrimPointX [
 
 	| rcvr |
@@ -3544,7 +3491,7 @@ StackInterpreter >> bytecodePrimPointX [
 	self normalSend
 ]
 
-{ #category : #'common selector sends' }
+{ #category : 'common selector sends' }
 StackInterpreter >> bytecodePrimPointY [
 
 	| rcvr |
@@ -3561,7 +3508,7 @@ StackInterpreter >> bytecodePrimPointY [
 	self normalSend
 ]
 
-{ #category : #'common selector sends' }
+{ #category : 'common selector sends' }
 StackInterpreter >> bytecodePrimSize [
 
 	| rcvr sz isString isArray |
@@ -3587,7 +3534,7 @@ StackInterpreter >> bytecodePrimSize [
 	self normalSend
 ]
 
-{ #category : #'common selector sends' }
+{ #category : 'common selector sends' }
 StackInterpreter >> bytecodePrimSpecialSelector24 [
 
 	messageSelector := self specialSelector: 24.
@@ -3595,7 +3542,7 @@ StackInterpreter >> bytecodePrimSpecialSelector24 [
 	self normalSend
 ]
 
-{ #category : #'common selector sends' }
+{ #category : 'common selector sends' }
 StackInterpreter >> bytecodePrimSubtract [
 	| rcvr arg result |
 	rcvr := self stackValue: 1.
@@ -3606,9 +3553,7 @@ StackInterpreter >> bytecodePrimSubtract [
 					[self pop: 2 thenPush: (objectMemory integerObjectOf: result).
 					^self fetchNextBytecode "success"]]
 		ifFalse: [self initPrimCall.
-				self externalizeIPandSP.
 				self primitiveFloatSubtract: rcvr fromArg: arg.
-				self internalizeIPandSP.
 				self successful ifTrue: [^self fetchNextBytecode "success"]].
 
 	messageSelector := self specialSelector: 1.
@@ -3616,7 +3561,7 @@ StackInterpreter >> bytecodePrimSubtract [
 	self normalSend
 ]
 
-{ #category : #'common selector sends' }
+{ #category : 'common selector sends' }
 StackInterpreter >> bytecodePrimValue [
 
 	| rcvr isBlock |
@@ -3624,35 +3569,31 @@ StackInterpreter >> bytecodePrimValue [
 	argumentCount := 0.
 	isBlock := self isInstanceOfClassBlockClosure: rcvr.
 	isBlock ifTrue: [ 
-		self externalizeIPandSP.
 		self initPrimCall.
 		self primitiveFullClosureValue.
-		self internalizeIPandSP.
 		self successful ifTrue: [ ^ self fetchNextBytecode ].
 		primFailCode := 0 ].
 	messageSelector := self specialSelector: 25.
 	self normalSend
 ]
 
-{ #category : #'common selector sends' }
+{ #category : 'common selector sends' }
 StackInterpreter >> bytecodePrimValueWithArg [
+
 	| rcvr isBlock |
 	rcvr := self stackValue: 1.
 	argumentCount := 1.
 	isBlock := self isInstanceOfClassBlockClosure: rcvr.
-	isBlock ifTrue:
-		[self externalizeIPandSP.
+	isBlock ifTrue: [
 		self initPrimCall.
 		self primitiveFullClosureValue.
-		self internalizeIPandSP.
-		self successful ifTrue:
-			[^self fetchNextBytecode].
-		primFailCode := 0].
+		self successful ifTrue: [ ^ self fetchNextBytecode ].
+		primFailCode := 0 ].
 	messageSelector := self specialSelector: 26.
 	self normalSend
 ]
 
-{ #category : #'plugin primitive support' }
+{ #category : 'plugin primitive support' }
 StackInterpreter >> callExternalPrimitive: functionID [
 
 	"Call the external plugin function identified. In the VM this is an address;
@@ -3667,7 +3608,7 @@ StackInterpreter >> callExternalPrimitive: functionID [
 	self maybeFailForLastObjectOverwrite
 ]
 
-{ #category : #'sista bytecodes' }
+{ #category : 'sista bytecodes' }
 StackInterpreter >> callMappedInlinedPrimitive [
 	"SistaV1:	236		11101100	iiiiiiii		callMappedInlinedPrimitive"
 	| primIndex |
@@ -3680,7 +3621,7 @@ StackInterpreter >> callMappedInlinedPrimitive [
 			[self mappedInlinePrimitive: primIndex].
 ]
 
-{ #category : #'miscellaneous bytecodes' }
+{ #category : 'miscellaneous bytecodes' }
 StackInterpreter >> callPrimitiveBytecode [
 	"V4:			249		11111001	i i i i i i i i	jjjjjjjj		Call Primitive #iiiiiiii + (jjjjjjjj * 256)
 	 SistaV1:	248		11111000 	iiiiiiii		mjjjjjjj		Call Primitive #iiiiiiii + (jjjjjjj * 256) m=1 means inlined primitive, no hard return after execution.
@@ -3721,71 +3662,7 @@ StackInterpreter >> callPrimitiveBytecode [
 					[^self respondToUnknownBytecode]]
 ]
 
-{ #category : #'callback support' }
-StackInterpreter >> callbackEnter: callbackID [
-	"Re-enter the interpreter to execute a (non-ALien,non-FFI) callback (as used by the Python bridge)."
-	<volatile>
-	<export: true>
-	<var: #callbackID type: #'sqInt *'>
-	| savedReenterInterpreter |
-	<var: #savedReenterInterpreter type: #'jmp_buf'>
-
-	"For now, do not allow a callback unless we're in a primitiveResponse"
-	(self asserta: primitiveFunctionPointer ~= 0) ifFalse:
-		[^false].
-
-	self assert: primFailCode = 0.
-
-	"Check if we've exceeded the callback depth"
-	(self asserta: jmpDepth < MaxJumpBuf) ifFalse:
-		[^false].
-	jmpDepth := jmpDepth + 1.
-
-	"Suspend the currently active process"
-	suspendedCallbacks at: jmpDepth put: self activeProcess.
-	"We need to preserve newMethod explicitly since it is not activated yet
-	and therefore no context has been created for it. If the caller primitive
-	for any reason decides to fail we need to make sure we execute the correct
-	method and not the one 'last used' in the call back"
-	suspendedMethods at: jmpDepth put: newMethod.
-	"Signal external semaphores since a signalSemaphoreWithIndex: request may
-	 have been issued immediately prior to this callback before the VM has any
-	 chance to do a signalExternalSemaphores in checkForEventsMayContextSwitch:"
-	self signalExternalSemaphores.
-	"If no process is awakened by signalExternalSemaphores then transfer
-	 to the highest priority runnable one."
-	(suspendedCallbacks at: jmpDepth) = self activeProcess ifTrue:
-		[self transferTo: self wakeHighestPriority].
-
-	"Typically, invoking the callback means that some semaphore has been 
-	signaled to indicate the callback. Force an interrupt check as soon as possible."
-	self forceInterruptCheck.
-
-	"Save the previous interpreter entry jmp_buf."
-	self memcpy: savedReenterInterpreter asVoidPointer
-		_: reenterInterpreter
-		_: (self sizeof: #'jmp_buf').
-	(self setjmp: (jmpBuf at: jmpDepth)) = 0 ifTrue: "Fill in callbackID"
-		[callbackID at: 0 put: jmpDepth.
-		 self enterSmalltalkExecutive.
-		 self assert: false "NOTREACHED"].
-
-	"Restore the previous interpreter entry jmp_buf."
-	self memcpy: reenterInterpreter
-		_: (self cCoerceSimple: savedReenterInterpreter to: #'void *')
-		_: (self sizeof: #'jmp_buf').
-
-	"Transfer back to the previous process so that caller can push result"
-	self putToSleep: self activeProcess yieldingIf: preemptionYields.
-	self transferTo: (suspendedCallbacks at: jmpDepth).
-	newMethod := suspendedMethods at: jmpDepth.	"see comment above"
-	argumentCount := self argumentCountOf: newMethod.
-	self assert: primFailCode = 0.
-	jmpDepth := jmpDepth - 1.
-	^true
-]
-
-{ #category : #'callback support' }
+{ #category : 'callback support' }
 StackInterpreter >> callbackLeave: cbID [
 	"Leave from a previous callback"
 	<export: true>
@@ -3803,7 +3680,7 @@ StackInterpreter >> callbackLeave: cbID [
 	^nil
 ]
 
-{ #category : #'message sending' }
+{ #category : 'message sending' }
 StackInterpreter >> canContextSwitchIfActivating: theMethod header: methodHeader [
 	"Context switch should not be allowed on every method activation.  In particular
 	 the implementation of ensure: and ifCurtailed: depends on there being no
@@ -3827,7 +3704,7 @@ StackInterpreter >> canContextSwitchIfActivating: theMethod header: methodHeader
 			  or: [primitiveIndex = 167]]] "primitiveYield"
 ]
 
-{ #category : #'stack bytecodes' }
+{ #category : 'stack bytecodes' }
 StackInterpreter >> cannotAssign: resultObj to: targetObj withIndex: index [
 	<option: #IMMUTABILITY>
 	<inline: true> "because of use of normalSend..."
@@ -3839,19 +3716,13 @@ StackInterpreter >> cannotAssign: resultObj to: targetObj withIndex: index [
 	^ self normalSend
 ]
 
-{ #category : #'debug support' }
-StackInterpreter >> capturePendingFinalizationSignals [
-	statPendingFinalizationSignals := pendingFinalizationSignals.
-
-]
-
-{ #category : #'indexing primitive support' }
+{ #category : 'indexing primitive support' }
 StackInterpreter >> characterForAscii: ascii [  "Above ObjectMemory, arg must lie in range 0-255!"
 	<inline: true>
 	^ objectMemory characterObjectOf: ascii
 ]
 
-{ #category : #'debug support' }
+{ #category : 'debug support' }
 StackInterpreter >> charsOfLong: long [
 	"N.B. This will need to be overridden in big-endian simulator subclasses."
 	<doNotGenerate>
@@ -3867,18 +3738,20 @@ StackInterpreter >> charsOfLong: long [
 			ifFalse: [$?]] as: Array
 ]
 
-{ #category : #'debug support' }
+{ #category : 'debug support' }
 StackInterpreter >> checkAllAccessibleObjectsOkay [
+
 	"Ensure that all accessible objects in the heap are okay."
+
 	<api>
 	| ok |
 	ok := true.
-	objectMemory allObjectsDo:
-		[:oop| ok := ok & (self checkOkayFields: oop)].
-	^ok
+	objectMemory allObjectsDo: [ :oop | 
+		ok := ok and: [ self checkOkayFields: oop ] ].
+	^ ok
 ]
 
-{ #category : #'primitive support' }
+{ #category : 'primitive support' }
 StackInterpreter >> checkAllocFiller [
 	"If allocCheckFiller is true, words in newSpace from freeStart to scavengeThreshold
 	 are filled with their address, and after each call of a plugin primitive, the VM checks
@@ -3888,7 +3761,7 @@ StackInterpreter >> checkAllocFiller [
 	^checkAllocFiller
 ]
 
-{ #category : #initialization }
+{ #category : 'initialization' }
 StackInterpreter >> checkAssumedCompactClasses [
 	"Check that the classes the VM assumes are compact have the right indices."
 	objectMemory checkCompactIndex: ClassArrayCompactIndex isClass: ClassArray named: 'Array'.
@@ -3899,18 +3772,18 @@ StackInterpreter >> checkAssumedCompactClasses [
 	classByteArrayCompactIndex := objectMemory compactIndexOfClass: (objectMemory splObj: ClassByteArray)
 ]
 
-{ #category : #'object memory support' }
+{ #category : 'object memory support' }
 StackInterpreter >> checkCodeIntegrity: fullGCFlag [
 	"This is a no-op in the StackVM"
 	^true
 ]
 
-{ #category : #'process primitive support' }
+{ #category : 'process primitive support' }
 StackInterpreter >> checkCogCompiledCodeCompactionCalledFor [
 	"This is a no-op in the StackVM"
 ]
 
-{ #category : #'primitive support' }
+{ #category : 'primitive support' }
 StackInterpreter >> checkDeliveryOfLongRunningPrimitiveSignal [
 	"Check for a hit of the longRunningPrimitive probe and if so attempt to signal the
 	 longRunningPrimitiveCheckSemaphore.  Answer if a process switch occurred as a result."
@@ -3928,17 +3801,23 @@ StackInterpreter >> checkDeliveryOfLongRunningPrimitiveSignal [
 	^false
 ]
 
-{ #category : #'primitive support' }
+{ #category : 'primitive support' }
 StackInterpreter >> checkForAndFollowForwardedPrimitiveState [
 	"In Spur a primitive may fail due to encountering a forwarder. On failure,
 	 check the accessorDepth for the primitive and if non-negative scan the
 	 args to the depth, following any forwarders.  Answer if any are found so
 	 the prim can be retried.  The primitive index is derived from newMethod."
+
 	<option: #SpurObjectMemory>
-	| primIndex accessorDepth |
+	| primIndex |
 	self assert: self failed.
 	primIndex := self primitiveIndexOf: newMethod.
-	self assert: (argumentCount = (self argumentCountOf: newMethod) or: [self isMetaPrimitiveIndex: primIndex]).
+	self assert: (argumentCount = (self argumentCountOf: newMethod) or: [ self isMetaPrimitiveIndex: primIndex ]).
+	^ self checkForAndFollowForwardedPrimitiveState: primIndex
+]
+
+{ #category : 'primitive support' }
+StackInterpreter >> checkForAndFollowForwardedPrimitiveState: primitiveIndex [
 	"If the primitive is one of the meta primitives PrimNumberDoPrimitive or
 	 PrimNumberDoExternalCall, then metaAccessorDepth will have been set
 	 to nil at the start of the primitive, and to the accessor depth of the called
@@ -3949,20 +3828,19 @@ StackInterpreter >> checkForAndFollowForwardedPrimitiveState [
 	 primitive is primitiveExternalCall then the accessor depth is that of
 	 primitiveExternalCall until primitiveFunctionPointer is assigned, at which
 	 point the accessor depth is taken from the slot in newMethod's first literal."
-	accessorDepth := ((self isMetaPrimitiveIndex: primIndex)
-						 and: [metaAccessorDepth > -2])
-							ifTrue: [metaAccessorDepth]
-							ifFalse:
-								[(primIndex = PrimNumberExternalCall
-								  and: [primitiveFunctionPointer ~~ #primitiveExternalCall])
-									ifTrue: [self primitiveAccessorDepthForExternalPrimitiveMethod: newMethod]
-									ifFalse: [primitiveAccessorDepthTable at: primIndex]].
-	self assert: (self saneFunctionPointerForFailureOfPrimIndex: primIndex).
-	^self followForwardedForAccessorDepth: accessorDepth
 
+	| accessorDepth |
+	accessorDepth := ((self isMetaPrimitiveIndex: primitiveIndex) and: [ metaAccessorDepth > -2 ])
+		                 ifTrue: [ metaAccessorDepth ]
+		                 ifFalse: [
+			                 (primitiveIndex = PrimNumberExternalCall and: [ primitiveFunctionPointer ~~ #primitiveExternalCall ])
+				                 ifTrue: [ self primitiveAccessorDepthForExternalPrimitiveMethod: newMethod ]
+				                 ifFalse: [ primitiveAccessorDepthTable at: primitiveIndex ] ].
+	self assert: (self saneFunctionPointerForFailureOfPrimIndex: primitiveIndex).
+	^ self followForwardedForAccessorDepth: accessorDepth
 ]
 
-{ #category : #'process primitive support' }
+{ #category : 'process primitive support' }
 StackInterpreter >> checkForEventsMayContextSwitch: mayContextSwitch [
 	"Check for possible interrupts and handle one if necessary.
 	 Answer if a context switch has occurred."
@@ -3973,7 +3851,7 @@ StackInterpreter >> checkForEventsMayContextSwitch: mayContextSwitch [
 
 	"restore the stackLimit if it has been smashed."
 	self restoreStackLimit.
-	self externalWriteBackHeadFramePointers.
+	self writeBackHeadFramePointers.
 	self assert: stackPage = stackPages mostRecentlyUsedPage.
 
 	"Allow the platform to do anything it needs to do synchronously."
@@ -4018,35 +3896,13 @@ StackInterpreter >> checkForEventsMayContextSwitch: mayContextSwitch [
 	"inIOProcessEvents prevents reentrancy into ioProcessEvents and allows disabling
 	 ioProcessEvents e.g. for native GUIs.  We would like to manage that here but can't
 	 since the platform code may choose to call ioProcessEvents itself in various places."
-	false
-		ifTrue:
-			[((now := self ioUTCMicroseconds) >= nextPollUsecs
-			 and: [inIOProcessEvents = 0]) ifTrue:
-				[statIOProcessEvents := statIOProcessEvents + 1.
-				 inIOProcessEvents := inIOProcessEvents + 1.
-				 self ioProcessEvents. "sets interruptPending if interrupt key pressed; may callback"
-				 inIOProcessEvents > 0 ifTrue:
-					[inIOProcessEvents := inIOProcessEvents - 1].
-				 nextPollUsecs := now + 20000
-				 "msecs to wait before next call to ioProcessEvents.  Note that strictly
-				  speaking we might need to update 'now' at this point since
-				  ioProcessEvents could take a very long time on some platforms"]]
-		ifFalse:
-			[(now := self ioUTCMicroseconds) >= nextPollUsecs ifTrue:
-				[statIOProcessEvents := statIOProcessEvents + 1.
-				 self ioProcessEvents. "sets interruptPending if interrupt key pressed; may callback"
-				 nextPollUsecs := now + 20000
-				 "msecs to wait before next call to ioProcessEvents.  Note that strictly
-				  speaking we might need to update 'now' at this point since
-				  ioProcessEvents could take a very long time on some platforms"]].
-
-	interruptPending ifTrue:
-		[interruptPending := false.
-		 "reset interrupt flag"
-		 sema := objectMemory splObj: TheInterruptSemaphore.
-		 (sema ~= objectMemory nilObject
-		  and: [self synchronousSignal: sema]) ifTrue:
-			[switched := true]].
+	
+	(now := self ioUTCMicroseconds) >= nextPollUsecs ifTrue: [
+		self ioProcessEvents. "sets interruptPending if interrupt key pressed; may callback"
+		"msecs to wait before next call to ioProcessEvents."
+		 nextPollUsecs := now + 20000
+		 "Note that strictly speaking we might need to update 'now' at this point since
+		 ioProcessEvents could take a very long time on some platforms" ].
 
 	nextWakeupUsecs ~= 0 ifTrue:
 		[now >= nextWakeupUsecs ifTrue:
@@ -4072,7 +3928,7 @@ StackInterpreter >> checkForEventsMayContextSwitch: mayContextSwitch [
 	^switched
 ]
 
-{ #category : #simulation }
+{ #category : 'simulation' }
 StackInterpreter >> checkForLastObjectOverwrite [
 	<doNotGenerate>
 	| freeStart |
@@ -4081,7 +3937,7 @@ StackInterpreter >> checkForLastObjectOverwrite [
 					  or: [(objectMemory longAt: freeStart) = freeStart])]
 ]
 
-{ #category : #'primitive support' }
+{ #category : 'primitive support' }
 StackInterpreter >> checkForLongRunningPrimitive [
 	"Called from forceInterruptCheckFromHeartbeat.  If the system has been running
 	 the same primitive on two successive heartbeats then signal profileMethod."
@@ -4102,18 +3958,18 @@ StackInterpreter >> checkForLongRunningPrimitive [
 		 self sqLowLevelMFence]
 ]
 
-{ #category : #'message sending' }
+{ #category : 'message sending' }
 StackInterpreter >> checkForStackOverflow [
 	"Check for stack overflow, moving frames to another stack if so.  Since event checking
 	 piggy-backs off the stackLimit by setting it to all ones, the check for overflow must be
 	 against the real stack limit to find out if overflow has actually occurred."
 	<inline: true>
-	self externalWriteBackHeadFramePointers.
+	self writeBackHeadFramePointers.
 	stackPointer < stackPage realStackLimit ifTrue:
 		[self handleStackOverflow]
 ]
 
-{ #category : #'object memory support' }
+{ #category : 'object memory support' }
 StackInterpreter >> checkInterpreterIntegrity [
 	"Perform an integrity/leak check using the heapMap.  Assume
 	 clearLeakMapAndMapAccessibleObjects has set a bit at each
@@ -4159,7 +4015,7 @@ StackInterpreter >> checkInterpreterIntegrity [
 	^flags
 ]
 
-{ #category : #'frame access' }
+{ #category : 'frame access' }
 StackInterpreter >> checkIsStillMarriedContext: aContext currentFP: currentFP [
 
 	"Another version of isWidowedContext: for debugging.
@@ -4198,13 +4054,13 @@ StackInterpreter >> checkIsStillMarriedContext: aContext currentFP: currentFP [
 	^ maybeFrameCtxt = aContext
 ]
 
-{ #category : #'object memory support' }
+{ #category : 'object memory support' }
 StackInterpreter >> checkLogIntegrity [
 	"This is a no-op in the StackInterpreter"
 	^true
 ]
 
-{ #category : #'debug support' }
+{ #category : 'debug support' }
 StackInterpreter >> checkOkayFields: oop [
 	"Check if the argument is an ok object.
 	 If this is a pointers object, check that its fields are all okay oops."
@@ -4235,34 +4091,34 @@ StackInterpreter >> checkOkayFields: oop [
 	^true
 ]
 
-{ #category : #'debug support' }
+{ #category : 'debug support' }
 StackInterpreter >> checkOkayInterpreterObjects: writeBack [
 	<api>
 	| ok oopOrZero oop |
 	ok := true.
-	ok := ok & (self checkOkayFields: objectMemory nilObject).
-	ok := ok & (self checkOkayFields: objectMemory falseObject).
-	ok := ok & (self checkOkayFields: objectMemory trueObject).
-	ok := ok & (self checkOkayFields: objectMemory specialObjectsOop).
-	ok := ok & (self checkOkayFields: messageSelector).
-	ok := ok & (self checkOkayFields: newMethod).
-	ok := ok & (self checkOkayFields: lkupClass).
+	ok := ok and: [ (self checkOkayFields: objectMemory nilObject) ].
+	ok := ok and: [ (self checkOkayFields: objectMemory falseObject) ].
+	ok := ok and: [ (self checkOkayFields: objectMemory trueObject) ].
+	ok := ok and: [ (self checkOkayFields: objectMemory specialObjectsOop) ].
+	ok := ok and: [ (self checkOkayFields: messageSelector) ].
+	ok := ok and: [ (self checkOkayFields: newMethod) ].
+	ok := ok and: [ (self checkOkayFields: lkupClass) ].
 	0 to: MethodCacheEntries - 1 by: MethodCacheEntrySize do:
 		[ :i |
 		oopOrZero := methodCache at: i + MethodCacheSelector.
 		oopOrZero = 0 ifFalse:
-			[ok := ok & (self checkOkayFields: (methodCache at: i + MethodCacheSelector)).
-			ok := ok & (self checkOkayFields: (methodCache at: i + MethodCacheMethod))]].
+			[ok := ok and: [ (self checkOkayFields: (methodCache at: i + MethodCacheSelector)) ].
+			ok := ok and: [ (self checkOkayFields: (methodCache at: i + MethodCacheMethod))]] ].
 	1 to: objectMemory remapBufferCount do:
 		[ :i |
 		oop := objectMemory remapBuffer at: i.
 		(objectMemory isImmediate: oop) ifFalse:
-			[ok := ok & (self checkOkayFields: oop)]].
-	ok := ok & (self checkOkayStackZone: writeBack).
+			[ok := ok and: [ (self checkOkayFields: oop)]] ].
+	ok := ok and: [ (self checkOkayStackZone: writeBack) ].
 	^ok
 ]
 
-{ #category : #'debug support' }
+{ #category : 'debug support' }
 StackInterpreter >> checkOkayStackPage: thePage [
 	| theSP theFP ok frameRcvrOffset callerFP oop |
 	<var: #thePage type: #'StackPage *'>
@@ -4279,14 +4135,14 @@ StackInterpreter >> checkOkayStackPage: thePage [
 		[theSP := theSP + objectMemory wordSize].
 	[frameRcvrOffset := self frameReceiverLocation: theFP.
 	 [theSP <= frameRcvrOffset] whileTrue:
-		[oop := stackPages longAt: theSP.
+		[oop := stackPages unsignedLongAt: theSP.
 		 (objectMemory isIntegerObject: oop) ifFalse:
-			[ok := ok & (self checkOkayFields: oop)].
+			[ok := ok and: [ (self checkOkayFields: oop)] ].
 		 theSP := theSP + objectMemory wordSize].
 	(self frameHasContext: theFP) ifTrue:
 		[self assert: (objectMemory isContext: (self frameContext: theFP)).
-		 ok := ok & (self checkOkayFields: (self frameContext: theFP))].
-	ok := ok & (self checkOkayFields: (self frameMethodObject: theFP)).
+		 ok := ok and: [ (self checkOkayFields: (self frameContext: theFP))] ].
+	ok := ok and: [ (self checkOkayFields: (self frameMethodObject: theFP)) ].
 	(callerFP := self frameCallerFP: theFP) ~= 0] whileTrue:
 		[theSP := theFP + FoxCallerSavedIP + objectMemory wordSize.
 		 theFP := callerFP].
@@ -4294,33 +4150,33 @@ StackInterpreter >> checkOkayStackPage: thePage [
 				ifTrue: [theFP + FoxCallerSavedIP + objectMemory wordSize] "caller ip is ceBaseReturnPC"
 				ifFalse: [theFP + FoxCallerSavedIP]. "caller ip is frameCallerContext in a base frame"
 	[theSP <= thePage baseAddress] whileTrue:
-		[oop := stackPages longAt: theSP.
+		[oop := stackPages unsignedLongAt: theSP.
 		 (objectMemory isIntegerObject: oop) ifFalse:
-			[ok := ok & (self checkOkayFields: oop)].
+			[ok := ok and: [ (self checkOkayFields: oop)] ].
 		 theSP := theSP + objectMemory wordSize].
 	^ok
 ]
 
-{ #category : #'debug support' }
+{ #category : 'debug support' }
 StackInterpreter >> checkOkayStackZone: writeBack [
 	"Check that all objects in the stack zone are okay"
 	| ok thePage |
 	<var: #thePage type: #'StackPage *'>
 	<inline: false>
 	writeBack ifTrue:
-		[self externalWriteBackHeadFramePointers].
+		[self writeBackHeadFramePointers].
 	ok := true.
 
 	0 to: numStackPages - 1 do:
 		[:i|
 		thePage := stackPages stackPageAt: i.
 		(stackPages isFree: thePage) ifFalse:
-			[ok := ok & (self checkOkayStackPage: thePage)]].
+			[ok := ok and: [ (self checkOkayStackPage: thePage)]] ].
 
 	^ok
 ]
 
-{ #category : #'process primitive support' }
+{ #category : 'process primitive support' }
 StackInterpreter >> checkProfileTick: aPrimitiveMethod [
 	"Check if the profile timer has expired and if so take a sample.
 	 If the primitive has failed sample the profileMethod as nil."
@@ -4334,7 +4190,7 @@ StackInterpreter >> checkProfileTick: aPrimitiveMethod [
 		 nextProfileTick := 0]
 ]
 
-{ #category : #'object memory support' }
+{ #category : 'object memory support' }
 StackInterpreter >> checkStackIntegrity [
 	"Perform an integrity/leak check using the heapMap.  Assume
 	 clearLeakMapAndMapAccesibleObjects has set a bit at each
@@ -4363,7 +4219,7 @@ StackInterpreter >> checkStackIntegrity [
 			 thePage = stackPage ifFalse:
 				[theSP := theSP + objectMemory wordSize].
 			 [[theSP <= (theFP + FoxReceiver)] whileTrue:
-				[oop := stackPages longAt: theSP.
+				[oop := stackPages unsignedLongAt: theSP.
 				 ((objectMemory isNonImmediate: oop) 
 				   and: [(objectMemory heapMapAtWord: (self pointerForOop: oop)) = 0]) ifTrue:
 					[self printFrameThing: 'object leak in frame temp' andFrame: theFP at: theSP.
@@ -4386,7 +4242,7 @@ StackInterpreter >> checkStackIntegrity [
 				  and: [(self frameOfMarriedContext: oop) = theFP]]) ifFalse:
 					[self printFrameThing: 'frame ctxt should be married to this frame ' andFrame: theFP at: theFP + FoxThisContext.
 					 ok := false]].
-			 oop := self frameMethod: theFP.
+			 oop := self iframeMethod: theFP.
 			 ((objectMemory isImmediate: oop) 
 			   or: [(objectMemory heapMapAtWord: (self pointerForOop: oop)) = 0]) ifTrue:
 				[self printFrameThing: 'object leak in frame mthd' andFrame: theFP at: theFP + FoxMethod.
@@ -4396,7 +4252,7 @@ StackInterpreter >> checkStackIntegrity [
 				 theFP := callerFP].
 			 theSP := theFP + FoxCallerSavedIP + objectMemory wordSize.
 			 [theSP <= thePage baseAddress] whileTrue:
-				[oop := stackPages longAt: theSP.
+				[oop := stackPages unsignedLongAt: theSP.
 				 ((objectMemory isNonImmediate: oop) 
 				   and: [(objectMemory heapMapAtWord: (self pointerForOop: oop)) = 0]) ifTrue:
 					[self printFrameThing: 'object leak in frame arg' andFrame: theFP at: theSP.
@@ -4405,7 +4261,7 @@ StackInterpreter >> checkStackIntegrity [
 	^ok
 ]
 
-{ #category : #'internal interpreter access' }
+{ #category : 'internal interpreter access' }
 StackInterpreter >> checkStackPointerForMaybeMarriedContext: aContext [
 	"Version of stackPointerForMaybeMarriedContext: with no side-effects (does not widow).
 	 Used for assertion checking. Safe only in external primitives (framePointer valid).
@@ -4421,7 +4277,7 @@ StackInterpreter >> checkStackPointerForMaybeMarriedContext: aContext [
 	^self fetchStackPointerOf: aContext
 ]
 
-{ #category : #'frame access' }
+{ #category : 'frame access' }
 StackInterpreter >> checkStackPointerIndexForFrame: theFP [
 	"Version of stackPointerIndexForFrame: that does not depend on writing back head frame pointers.
 	 Used for assertion checking. Safe only in external primitives (framePointer valid).
@@ -4443,7 +4299,7 @@ StackInterpreter >> checkStackPointerIndexForFrame: theFP [
 	^self stackPointerIndexForFrame: theFP WithSP: theSP
 ]
 
-{ #category : #utilities }
+{ #category : 'utilities' }
 StackInterpreter >> checkedIntegerValueOf: intOop [
 	"Note: May be called by translated primitive code."
 
@@ -4452,13 +4308,13 @@ StackInterpreter >> checkedIntegerValueOf: intOop [
 		ifFalse: [ self primitiveFail. ^ 0 ]
 ]
 
-{ #category : #simulation }
+{ #category : 'simulation' }
 StackInterpreter >> classNameIndex [
 	<doNotGenerate>
 	^classNameIndex
 ]
 
-{ #category : #'plugin primitive support' }
+{ #category : 'plugin primitive support' }
 StackInterpreter >> classNameOf: aClass Is: className [ 
 	"Check if aClass's name is className"
 	| srcName name length |
@@ -4476,47 +4332,48 @@ StackInterpreter >> classNameOf: aClass Is: className [
 	^(className at: length) = 0
 ]
 
-{ #category : #'message sending' }
+{ #category : 'message sending' }
 StackInterpreter >> cloneOSErrorObj: errObj numSlots: numSlots [
 	"If errObj is a pointer object with at least two slots, then answer a clone
 	  of the error object with the second slot set to the value of osErrorCode,
 	  and if an PrimErrFFIException, then the third slow with the exceptionPC."
-	| clone |
+
 	<inline: true>
+	| clone |
 	clone := objectMemory
-							eeInstantiateSmallClassIndex: (objectMemory classIndexOf: errObj)
-							format: objectMemory nonIndexablePointerFormat
-							numSlots: numSlots.
-	0 to: numSlots - 1 do:
-		[:i| objectMemory
-				storePointerUnchecked: i
-				ofObject: clone
-				withValue: (objectMemory fetchPointer: i ofObject: errObj)].
-	(numSlots > 2
-	 and: [primFailCode = PrimErrFFIException])
-		ifTrue:
-			[objectMemory
+		         eeInstantiateSmallClass:
+		         (objectMemory fetchClassOfNonImm: errObj)
+		         numSlots: numSlots.
+	0 to: numSlots - 1 do: [ :i |
+		objectMemory
+			storePointerUnchecked: i
+			ofObject: clone
+			withValue: (objectMemory fetchPointer: i ofObject: errObj) ].
+	(numSlots > 2 and: [ primFailCode = PrimErrFFIException ])
+		ifTrue: [
+			objectMemory
 				storePointerUnchecked: 1
-					ofObject: clone
-						withValue: (self positive64BitIntegerFor: (self cCoerceSimple: osErrorCode to: #usqLong));
+				ofObject: clone
+				withValue: (self positive64BitIntegerFor:
+							 (self cCoerceSimple: osErrorCode to: #usqLong));
 				storePointerUnchecked: 2
-					ofObject: clone
-						withValue: (self positiveMachineIntegerFor: exceptionPC)]
-		ifFalse:
-			[objectMemory
+				ofObject: clone
+				withValue: (self positiveMachineIntegerFor: exceptionPC) ]
+		ifFalse: [
+			objectMemory
 				storePointerUnchecked: 1
 				ofObject: clone
-				withValue: (self signed64BitIntegerFor: osErrorCode)].
-	^clone
+				withValue: (self signed64BitIntegerFor: osErrorCode) ].
+	^ clone
 ]
 
-{ #category : #'as yet unclassified' }
+{ #category : 'as yet unclassified' }
 StackInterpreter >> codeGeneratorToComputeAccessorDepth: aCCodeGenerator [ 
 	<doNotGenerate>
 	codeGeneratorToComputeAccessorDepth := aCCodeGenerator
 ]
 
-{ #category : #'indexing primitive support' }
+{ #category : 'indexing primitive support' }
 StackInterpreter >> commonAt: stringy [
 	"This code is called if the receiver responds primitively to at:.
 	 N.B. this does *not* use the at cache, instead inlining stObject:at:.
@@ -4545,7 +4402,7 @@ StackInterpreter >> commonAt: stringy [
 		 self pop: argumentCount+1 thenPush: result]
 ]
 
-{ #category : #'indexing primitive support' }
+{ #category : 'indexing primitive support' }
 StackInterpreter >> commonAtPut: stringy [
 	"This code is called if the receiver responds primitively to at:Put:.
 	 N.B. this does *not* use the at cache, instead inlining stObject:at:put:.
@@ -4581,7 +4438,7 @@ StackInterpreter >> commonAtPut: stringy [
 		ifTrue: [ self pop: argumentCount + 1 thenPush: value ]
 ]
 
-{ #category : #'return bytecodes' }
+{ #category : 'return bytecodes' }
 StackInterpreter >> commonCallerReturn [
 
 	"Return to the previous context/frame (sender for method activations, caller for block activations)."
@@ -4598,14 +4455,14 @@ StackInterpreter >> commonCallerReturn [
 	stackPointer := framePointer
 	                + (self frameStackedReceiverOffset: framePointer).
 	framePointer := callersFPOrNull.
-	self setMethod: (self frameMethod: framePointer).
+	self maybeReturnToMachineCodeFrame.
+	self setMethod: (self iframeMethod: framePointer).
 	self fetchNextBytecode.
 	self stackTopPut: localReturnValue
 ]
 
-{ #category : #'return bytecodes' }
+{ #category : 'return bytecodes' }
 StackInterpreter >> commonReturn [
-
 	"Do an ^-return (return from method), checking for unwinds if this is a block activation.
 	 Note: Assumed to be inlined into the dispatch loop."
 
@@ -4616,7 +4473,7 @@ StackInterpreter >> commonReturn [
 	<var: #newPage type: #'StackPage *'>
 	<var: #thePage type: #'StackPage *'>
 	| closure home unwindContextOrNilOrZero frameToReturnTo contextToReturnTo theFP callerFP newPage |
-	(self iframeIsBlockActivation: framePointer) ifFalse: [ 
+	(self iframeIsBlockActivation: framePointer) ifFalse: [
 		^ self commonCallerReturn ].
 
 	"If this is a method simply return to the  sender/caller."
@@ -4624,28 +4481,27 @@ StackInterpreter >> commonReturn [
 	"Update the current page's headFrame pointers to enable the search for unwind protects below
 	 to identify widowed contexts correctly."
 	self writeBackHeadFramePointers.
-	self externalizeIPandSP.
 
 	"Since this is a block activation the closure is on the stack above any args and the frame."
 	closure := self pushedReceiverOrClosureOfFrame: framePointer.
 	home := nil. "avoid compiler warning"
 	"Walk the closure's lexical chain to find the context or frame to return from (home).
 	 If home is missing (Sista closures) then throw cannotReturn rather than crash."
-	[ closure ~= objectMemory nilObject ] whileTrue: [ 
+	[ closure ~= objectMemory nilObject ] whileTrue: [
 		home := objectMemory
 			        followField: FullClosureOuterContextIndex
 			        ofObject: closure.
-		(objectMemory isContext: home) ifFalse: [ 
-			^ self internalCannotReturn: localReturnValue ].
+		(objectMemory isContext: home) ifFalse: [
+			^ self sendCannotReturn: localReturnValue ].
 		closure := objectMemory followField: ClosureIndex ofObject: home ].
 	"home is to be returned from provided there is no unwind-protect activation between
 	 this frame and home's sender.  Search for an unwind.  findUnwindThroughContext:
 	 will answer either the context for an unwind-protect activation or nilObj if the sender
 	 cannot be found or 0 if no unwind is found but the sender is."
 	unwindContextOrNilOrZero := self findUnwindThroughContext: home.
-	unwindContextOrNilOrZero = objectMemory nilObject ifTrue: [ "error: can't find home on chain; cannot return" 
-		^ self internalCannotReturn: localReturnValue ].
-	unwindContextOrNilOrZero ~= 0 ifTrue: [ 
+	unwindContextOrNilOrZero = objectMemory nilObject ifTrue: [ "error: can't find home on chain; cannot return"
+		^ self sendCannotReturn: localReturnValue ].
+	unwindContextOrNilOrZero ~= 0 ifTrue: [
 		^ self
 			  internalAboutToReturn: localReturnValue
 			  through: unwindContextOrNilOrZero ].
@@ -4654,19 +4510,19 @@ StackInterpreter >> commonReturn [
 	 We could be returning to either a context or a frame.  Find out which."
 	contextToReturnTo := nil.
 	(self isMarriedOrWidowedContext: home)
-		ifTrue: [ 
+		ifTrue: [
 			self assert:
 				(self checkIsStillMarriedContext: home currentFP: framePointer).
 			theFP := self frameOfMarriedContext: home.
 			(self isBaseFrame: theFP)
 				ifTrue: [ contextToReturnTo := self frameCallerContext: theFP ]
 				ifFalse: [ frameToReturnTo := self frameCallerFP: theFP ] ]
-		ifFalse: [ 
+		ifFalse: [
 			contextToReturnTo := objectMemory
 				                     fetchPointer: SenderIndex
 				                     ofObject: home.
-			((objectMemory isContext: contextToReturnTo) and: [ 
-				 self isMarriedOrWidowedContext: contextToReturnTo ]) ifTrue: [ 
+			((objectMemory isContext: contextToReturnTo) and: [
+				 self isMarriedOrWidowedContext: contextToReturnTo ]) ifTrue: [
 				self assert: (self
 						 checkIsStillMarriedContext: contextToReturnTo
 						 currentFP: framePointer).
@@ -4674,11 +4530,11 @@ StackInterpreter >> commonReturn [
 				contextToReturnTo := nil ] ].
 
 	"If returning to a context we must make a frame for it unless it is dead."
-	contextToReturnTo ~= nil ifTrue: [ 
+	contextToReturnTo ~= nil ifTrue: [
 		frameToReturnTo := self establishFrameForContextToReturnTo:
 			                   contextToReturnTo.
-		frameToReturnTo = 0 ifTrue: [ "error: home's sender is dead; cannot return" 
-			^ self internalCannotReturn: localReturnValue ] ].
+		frameToReturnTo = 0 ifTrue: [ "error: home's sender is dead; cannot return"
+			^ self sendCannotReturn: localReturnValue ] ].
 
 	"Now we have a frame to return to.  If it is on a different page we must free intervening pages and
 	 nil out intervening contexts.  We must free intervening stack pages because if we leave the pages
@@ -4687,18 +4543,18 @@ StackInterpreter >> commonReturn [
 	 frame linked to because these may be in use, e.g. via co-routining (see baseFrameReturn)."
 	self assert: stackPages pageListIsWellFormed.
 	newPage := stackPages stackPageFor: frameToReturnTo.
-	newPage ~~ stackPage ifTrue: [ 
+	newPage ~~ stackPage ifTrue: [
 		| currentCtx thePage nextCntx |
 		currentCtx := self frameCallerContext: stackPage baseFP.
 		stackPages freeStackPage: stackPage.
-		[ 
+		[
 		self assert: (objectMemory isContext: currentCtx).
-		(self isMarriedOrWidowedContext: currentCtx) and: [ 
+		(self isMarriedOrWidowedContext: currentCtx) and: [
 			(stackPages stackPageFor:
-				 (theFP := self frameOfMarriedContext: currentCtx)) = newPage ] ] 
-			whileFalse: [ 
+				 (theFP := self frameOfMarriedContext: currentCtx)) = newPage ] ]
+			whileFalse: [
 				(self isMarriedOrWidowedContext: currentCtx)
-					ifTrue: [ 
+					ifTrue: [
 						thePage := stackPages stackPageFor: theFP.
 						theFP ~= thePage headFP ifTrue: [ "Since we've just deallocated a page we know that newStackPage won't deallocate an existing one."
 							self
@@ -4707,7 +4563,7 @@ StackInterpreter >> commonReturn [
 								toPage: stackPages newStackPage ].
 						currentCtx := self frameCallerContext: thePage baseFP.
 						stackPages freeStackPage: thePage ]
-					ifFalse: [ 
+					ifFalse: [
 						nextCntx := objectMemory
 							            fetchPointer: SenderIndex
 							            ofObject: currentCtx.
@@ -4722,10 +4578,10 @@ StackInterpreter >> commonReturn [
 	 in the caller frame. We need to peel back any frames on the page until we get to the correct frame."
 
 	framePointer = frameToReturnTo
-		ifTrue: [ "pop the saved IP, push the return value and continue." 
+		ifTrue: [ "pop the saved IP, push the return value and continue."
 			instructionPointer := self pointerForOop: self stackTop ]
-		ifFalse: [ 
-			[ 
+		ifFalse: [
+			[
 			callerFP := framePointer.
 			framePointer := self frameCallerFP: framePointer.
 			framePointer ~~ frameToReturnTo ] whileTrue.
@@ -4733,12 +4589,12 @@ StackInterpreter >> commonReturn [
 			stackPointer := (self frameCallerSP: callerFP)
 			                - objectMemory wordSize ].
 	self maybeReturnToMachineCodeFrame.
-	self setMethod: (self frameMethod: framePointer).
+	self setMethod: (self iframeMethod: framePointer).
 	self fetchNextBytecode.
 	self stackTopPut: localReturnValue
 ]
 
-{ #category : #'send bytecodes' }
+{ #category : 'send bytecodes' }
 StackInterpreter >> commonSendOrdinary [
 	"Send a message, starting lookup with the receiver's class."
 	"Assume: messageSelector and argumentCount have been set, and that 
@@ -4746,15 +4602,13 @@ StackInterpreter >> commonSendOrdinary [
 	"Note: This method is inlined into the interpreter dispatch loop."
 	<sharedCodeInCase: #extSendBytecode>
 	self sendBreakpoint: messageSelector receiver: (self stackValue: argumentCount).
-	self printSends ifTrue:
-		[self printActivationNameForSelector: messageSelector startClass: (objectMemory classForClassTag: lkupClassTag); cr].
-	messageCount := messageCount + 1.
-	self internalFindNewMethodOrdinary.
-	self internalExecuteNewMethod.
+	self doRecordSendTrace.
+	self findNewMethodOrdinary.
+	self executeNewMethod: false.
 	self fetchNextBytecode
 ]
 
-{ #category : #'indexing primitive support' }
+{ #category : 'indexing primitive support' }
 StackInterpreter >> commonVariable: rcvr at: index cacheIndex: atIx [ 
 	"This code assumes the receiver has been identified at location atIx in the atCache."
 	| stSize fmt fixedFields result |
@@ -4796,7 +4650,7 @@ StackInterpreter >> commonVariable: rcvr at: index cacheIndex: atIx [
 								ifTrue: [PrimErrBadIndex])
 ]
 
-{ #category : #'indexing primitive support' }
+{ #category : 'indexing primitive support' }
 StackInterpreter >> commonVariable: rcvr at: index put: value cacheIndex: atIx [
 	"This code assumes the receiver has been identified at location atIx in the atCache."
 	<returnTypeC: #void>
@@ -4856,16 +4710,16 @@ StackInterpreter >> commonVariable: rcvr at: index put: value cacheIndex: atIx [
 								ifTrue: [PrimErrBadIndex])
 ]
 
-{ #category : #initialization }
+{ #category : 'initialization' }
 StackInterpreter >> computeStackZoneSize [
 	self cCode: [] inSmalltalk:
 		[stackPages ifNil:
 			[stackPages := self stackPagesClass new setInterpreter: self]].
-	^numStackPages * ((self sizeof: CogStackPage) + self stackPageByteSize)
+	^numStackPages * ((self sizeof: VMStackPage) + self stackPageByteSize)
 	 + stackPages extraStackBytes
 ]
 
-{ #category : #'internal interpreter access' }
+{ #category : 'internal interpreter access' }
 StackInterpreter >> context: thisCntx hasSender: aContext [ 
 	"Does thisCntx have aContext in its sender chain?
 	 Cheapo implementation above extant machinery."
@@ -4878,7 +4732,7 @@ StackInterpreter >> context: thisCntx hasSender: aContext [
 	^handlerOrNilOrZero = 0
 ]
 
-{ #category : #'debug support' }
+{ #category : 'debug support' }
 StackInterpreter >> context: aContext hasValidInversePCMappingOf: theIP in: theFP [
 
 	"For asserts.  Check that theIP maps back correctly to the context's pc.
@@ -4903,14 +4757,14 @@ StackInterpreter >> context: aContext hasValidInversePCMappingOf: theIP in: theF
 			  = (self sizeOfCallPrimitiveBytecode: methodHeader) ] ]
 ]
 
-{ #category : #'frame access' }
+{ #category : 'frame access' }
 StackInterpreter >> contextInstructionPointer: theIP frame: theFP [
 	<var: #theFP type: #'char *'>
 	self assert: (self validInstructionPointer: theIP + 1 inFrame: theFP).
 	^objectMemory integerObjectOf: theIP - (self iframeMethod: theFP) - objectMemory baseHeaderSize + 2
 ]
 
-{ #category : #'image save/restore' }
+{ #category : 'image save/restore' }
 StackInterpreter >> convertFloatsToPlatformOrder [
 	"Byte-swap the words of all bytes objects in a range of the 
 	 image, including Strings, ByteArrays, and CompiledMethods.
@@ -4929,13 +4783,13 @@ StackInterpreter >> convertFloatsToPlatformOrder [
 			 objectMemory uint32AtPointer: obj + objectMemory baseHeaderSize + 4 put: temp]]
 ]
 
-{ #category : #'internal interpreter access' }
+{ #category : 'internal interpreter access' }
 StackInterpreter >> copiedValueCountOfFullClosure: closurePointer [
 	<api> "for Cogit"
 	^(objectMemory numSlotsOf: closurePointer) - FullClosureFirstCopiedValueIndex
 ]
 
-{ #category : #'bitblt support' }
+{ #category : 'bitblt support' }
 StackInterpreter >> copyBits [
 	"This entry point needs to be implemented for the interpreter proxy.
 	Since BitBlt is now a plugin we need to look up BitBltPlugin:=copyBits
@@ -4950,7 +4804,7 @@ StackInterpreter >> copyBits [
 	^self cCode: '((sqInt (*)(void))fn)()'
 ]
 
-{ #category : #'bitblt support' }
+{ #category : 'bitblt support' }
 StackInterpreter >> copyBitsFrom: x0 to: x1 at: y [
 	"This entry point needs to be implemented for the interpreter proxy.
 	Since BitBlt is now a plugin we need to look up BitBltPlugin:=copyBitsFrom:to:at:
@@ -4965,7 +4819,7 @@ StackInterpreter >> copyBitsFrom: x0 to: x1 at: y [
 	^self cCode: '((sqInt (*)(sqInt, sqInt, sqInt))fn)(x0, x1, y)'
 ]
 
-{ #category : #'debug support' }
+{ #category : 'debug support' }
 StackInterpreter >> couldBeProcess: oop [
 	<inline: #never>
 	^(objectMemory addressCouldBeObj: oop)
@@ -4977,7 +4831,7 @@ StackInterpreter >> couldBeProcess: oop [
 										ofObject: oop)]]]]
 ]
 
-{ #category : #'debug printing' }
+{ #category : 'debug printing' }
 StackInterpreter >> cr [
 	"For testing in Smalltalk, this method should be overridden in a subclass."
 	<inline: true>
@@ -4985,7 +4839,7 @@ StackInterpreter >> cr [
 	^ 1.
 ]
 
-{ #category : #'message sending' }
+{ #category : 'message sending' }
 StackInterpreter >> createActualMessageTo: lookupClass [
 
 	"Bundle up the selector, arguments and lookupClass into a Message object. 
@@ -5030,20 +4884,14 @@ StackInterpreter >> createActualMessageTo: lookupClass [
 	argumentCount := 1
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 StackInterpreter >> currentBytecode [
 
 	<doNotGenerate>
 	^ currentBytecode
 ]
 
-{ #category : #'stack pages' }
-StackInterpreter >> defaultNativeStackFrameSize [
-	"default native stack frame size"
-	^ 256
-]
-
-{ #category : #initialization }
+{ #category : 'initialization' }
 StackInterpreter >> defaultNumStackPages [
 	"Return the default number of stack pages allocate at startup.
 	 The Spur default reflects tuning for GC performance ast Cadence.
@@ -5052,7 +4900,7 @@ StackInterpreter >> defaultNumStackPages [
 	^50
 ]
 
-{ #category : #'send bytecodes' }
+{ #category : 'send bytecodes' }
 StackInterpreter >> directedSuperclassSend [
 	"Send a message to self, starting lookup with the superclass of the class on top of stack."
 	"Assume: messageSelector and argumentCount have been set, and that
@@ -5076,13 +4924,13 @@ StackInterpreter >> directedSuperclassSend [
 	self commonSendOrdinary
 ]
 
-{ #category : #'interpreter shell' }
+{ #category : 'interpreter shell' }
 StackInterpreter >> dispatchCurrentBytecode [
 	self dispatchOn: currentBytecode in: BytecodeTable
 
 ]
 
-{ #category : #'message sending' }
+{ #category : 'message sending' }
 StackInterpreter >> dispatchFunctionPointer: aFunctionPointer [
 	"In C aFunctionPointer is void (*aFunctionPointer)()"
 	
@@ -5098,19 +4946,19 @@ StackInterpreter >> dispatchFunctionPointer: aFunctionPointer [
 	
 ]
 
-{ #category : #simulation }
+{ #category : 'simulation' }
 StackInterpreter >> displayBits [
 	<doNotGenerate>
 	^displayBits
 ]
 
-{ #category : #'frame access' }
+{ #category : 'frame access' }
 StackInterpreter >> divorceAllFrames [
 	| activeContext |
 	<inline: false>
 	<var: #aPage type: #'StackPage *'>
 	stackPage ~= 0 ifTrue:
-		[self externalWriteBackHeadFramePointers].
+		[self writeBackHeadFramePointers].
 	activeContext := self
 						ensureFrameIsMarried: framePointer
 						SP: stackPointer + objectMemory wordSize.
@@ -5123,7 +4971,58 @@ StackInterpreter >> divorceAllFrames [
 	^activeContext
 ]
 
-{ #category : #'frame access' }
+{ #category : 'frame access' }
+StackInterpreter >> divorceFrame: theFP andContext: ctxt [
+	"Divorce a single frame and its context.  If it is not the top frame of a stack this means splitting its stack."
+	| thePage onCurrent theSP callerCtx newPage frameAbove callerFP callerSP callerIP theIP |
+	<inline: false>
+	<var: #theFP type: #'char *'>
+	<var: #thePage type: #'StackPage *'>
+	<var: #theSP type: #'char *'>
+	<var: #newPage type: #'StackPage *'>
+	<var: #frameAbove type: #'char *'>
+	<var: #callerFP type: #'char *'>
+	<var: #callerSP type: #'char *'>
+	"stackPage needs to have current head pointers to avoid confusion."
+	self assert: (stackPage = 0 or: [stackPage = stackPages mostRecentlyUsedPage]).
+	thePage := stackPages stackPageFor: theFP.
+	(onCurrent := thePage = stackPage) ifFalse:
+		[stackPages markStackPageNextMostRecentlyUsed: thePage].
+	theSP := self findSPOf: theFP on: thePage.
+	self updateStateOfSpouseContextForFrame: theFP WithSP: theSP.
+	callerCtx := self ensureCallerContext: theFP.
+	(frameAbove := self findFrameAbove: theFP inPage: thePage) = 0
+		ifTrue: "If we're divorcing the top frame we can simply peel it off."
+			[theIP := stackPages unsignedLongAt: thePage headSP]
+		ifFalse: "othewise move all frames above to a new stack and then peel the frame off."
+			[newPage := stackPages newStackPage.
+			 theIP := self oopForPointer: (self frameCallerSavedIP: frameAbove).
+			 frameAbove := self moveFramesIn: thePage through: frameAbove toPage: newPage.
+			 onCurrent
+				ifTrue:
+					[self setStackPageAndLimit: newPage.
+					 self setStackPointersFromPage: newPage]
+				ifFalse:
+					[stackPages markStackPageMostRecentlyUsed: newPage].
+			 self assert: (self frameCallerContext: frameAbove) = ctxt].
+	objectMemory storePointerUnchecked: InstructionPointerIndex
+		ofObject: ctxt
+		withValue: (self contextInstructionPointer: theIP frame: theFP).
+	objectMemory storePointer: SenderIndex
+		ofObject: ctxt
+		withValue: callerCtx.
+	callerFP := self frameCallerFP: theFP.
+	callerFP = 0 "theFP is a base frame; it is now alone; free the entire page"
+		ifTrue: [stackPages freeStackPage: thePage]
+		ifFalse:
+			[callerIP := self oopForPointer: (self frameCallerSavedIP: theFP).
+			 callerSP := (self frameCallerSP: theFP) - objectMemory wordSize.
+			 stackPages unsignedLongAt: callerSP put: callerIP.
+			 self setHeadFP: callerFP andSP: callerSP inPage: thePage]
+	
+]
+
+{ #category : 'frame access' }
 StackInterpreter >> divorceFramesIn: aStackPage [
 	| theFP calleeFP theSP theIP calleeContext theContext |
 	<inline: false>
@@ -5136,7 +5035,7 @@ StackInterpreter >> divorceFramesIn: aStackPage [
 
 	theFP := aStackPage headFP.
 	theSP := aStackPage headSP.
-	theIP := stackPages longAt: theSP.
+	theIP := stackPages unsignedLongAt: theSP.
 	theSP := theSP + objectMemory wordSize. "theSP points at hottest item on frame's stack"
 	calleeContext := nil.
 
@@ -5167,21 +5066,21 @@ StackInterpreter >> divorceFramesIn: aStackPage [
 	aStackPage baseFP: 0
 ]
 
-{ #category : #simulation }
+{ #category : 'simulation' }
 StackInterpreter >> doItContext [
 	"This is for the bottom-right-hand pane in the simulator window."
 	<doNotGenerate>
 	^nil
 ]
 
-{ #category : #simulation }
+{ #category : 'simulation' }
 StackInterpreter >> doItReceiver [
 	"This is for the bottom-right-hand pane in the simulator window."
 	<doNotGenerate>
 	^self
 ]
 
-{ #category : #'arithmetic primitive support' }
+{ #category : 'arithmetic primitive support' }
 StackInterpreter >> doPrimitiveDiv: rcvr by: arg [
 	"Rounds negative results towards negative infinity, rather than zero."
 	| result posArg posRcvr integerRcvr integerArg |
@@ -5208,7 +5107,7 @@ StackInterpreter >> doPrimitiveDiv: rcvr by: arg [
 	^ result
 ]
 
-{ #category : #'arithmetic primitive support' }
+{ #category : 'arithmetic primitive support' }
 StackInterpreter >> doPrimitiveMod: rcvr by: arg [
 	| integerResult integerRcvr integerArg |
 	(objectMemory areIntegers: rcvr and: arg)
@@ -5230,7 +5129,17 @@ StackInterpreter >> doPrimitiveMod: rcvr by: arg [
 	^ integerResult
 ]
 
-{ #category : #'process primitive support' }
+{ #category : 'send bytecodes' }
+StackInterpreter >> doRecordSendTrace [
+	<inline: true>
+	self printSends ifTrue: [
+		self
+			printActivationNameForSelector: messageSelector
+			startClass: (objectMemory classForClassTag: lkupClassTag);
+			cr ]
+]
+
+{ #category : 'process primitive support' }
 StackInterpreter >> doSignalSemaphoreWithIndex: index [
 	"Signal the external semaphore with the given index.  Answer if a context switch
 	 occurs as a result.  Do not bounds check.  This has been done in the caller."
@@ -5243,27 +5152,52 @@ StackInterpreter >> doSignalSemaphoreWithIndex: index [
 	  and: [self synchronousSignal: sema]
 ]
 
-{ #category : #initialization }
+{ #category : 'process primitive support' }
+StackInterpreter >> doWaitSemaphore: sema reEnterInterpreter: hasToReenter [
+	| excessSignals activeProc inInterpreter |
+	<api>
+	<returnTypeC: #void>	
+
+	excessSignals := self fetchInteger: ExcessSignalsIndex ofObject: sema.
+	excessSignals > 0
+		ifTrue:
+			[self storeInteger: ExcessSignalsIndex
+				ofObject: sema
+				withValue: excessSignals - 1]
+		ifFalse:
+			["We're going to switch process, either to an interpreted frame or a machine
+			  code frame. To know whether to return or enter machine code we have to
+			  know from whence we came.  We could have come from the interpreter,
+			  either directly or via a machine code primitive.  We could have come from
+			  machine code.  The instructionPointer tells us where from:"
+			inInterpreter := self isInstructionPointerInInterpreter: instructionPointer.
+			activeProc := self activeProcess.
+			self addLastLink: activeProc toList: sema.
+			self transferTo: self wakeHighestPriority from: CSWait.
+			hasToReenter ifTrue: [self forProcessPrimitiveReturnToExecutivePostContextSwitch: inInterpreter]]
+]
+
+{ #category : 'initialization' }
 StackInterpreter >> dummyReferToProxy [
 	<inline: false>
 	interpreterProxy := interpreterProxy
 ]
 
-{ #category : #'debug support' }
+{ #category : 'debug support' }
 StackInterpreter >> dumpPrimTraceLog [
 	"Dummy definition to allow the StackInterpreter to link against the Cog run-time."
 
 	<api>
 ]
 
-{ #category : #'stack bytecodes' }
+{ #category : 'stack bytecodes' }
 StackInterpreter >> duplicateTopBytecode [
 
 	self fetchNextBytecode.
 	self push: self stackTop
 ]
 
-{ #category : #instantiation }
+{ #category : 'instantiation' }
 StackInterpreter >> eeInstantiateFloat32Register [
 
 	^ objectMemory
@@ -5272,7 +5206,7 @@ StackInterpreter >> eeInstantiateFloat32Register [
 		  numSlots: 32 / BytesPerWord "The number of slots depends on the architecture, as we always want 4 32bit slots (or 16 bytes in total)"
 ]
 
-{ #category : #instantiation }
+{ #category : 'instantiation' }
 StackInterpreter >> eeInstantiateFloat64Register [
 
 	^ objectMemory
@@ -5281,12 +5215,12 @@ StackInterpreter >> eeInstantiateFloat64Register [
 		  numSlots: 16 / BytesPerWord "The number of slots depends on the architecture, as we always want 2 64bit slots (or 16 bytes in total)"
 ]
 
-{ #category : #'debug printing' }
+{ #category : 'debug printing' }
 StackInterpreter >> elementsPerPrintOopLine [
 	^5
 ]
 
-{ #category : #'frame access' }
+{ #category : 'frame access' }
 StackInterpreter >> encodeFrameFieldHasContext: hasContext "<Boolean>" isBlock: isBlock "<Boolean>" numArgs: numArgs [
 	"For ``fast'' temporary access (ok, to mitigate slower temp access) we need
 	 fast access to a method's numArgs.  Could have a variable set on save and return.
@@ -5307,14 +5241,14 @@ StackInterpreter >> encodeFrameFieldHasContext: hasContext "<Boolean>" isBlock: 
 				+  (isBlock ifTrue: [1 << 24] ifFalse: [0])]
 ]
 
-{ #category : #simulation }
+{ #category : 'simulation' }
 StackInterpreter >> encoderClassForHeader: headerInteger [
 
 	<doNotGenerate>
 	^ Smalltalk classNamed: BytecodeEncoderClassName
 ]
 
-{ #category : #'frame access' }
+{ #category : 'frame access' }
 StackInterpreter >> ensureCallerContext: theFP [
 	"Answerr the caller context for a frame.  If the frame has a caller
 	 frame that doesn't have a context, then marry the caller frame."
@@ -5328,19 +5262,19 @@ StackInterpreter >> ensureCallerContext: theFP [
 	^self ensureFrameIsMarried: callerFP SP: (self frameCallerStackPointer: theFP)
 ]
 
-{ #category : #'frame access' }
+{ #category : 'frame access' }
 StackInterpreter >> ensureContextHasBytecodePC: aContext [
 	"Make sure the context has a byetcode pc.  Can only be used on single contexts.
 	 This is a nop in the StackInterpreter."
 ]
 
-{ #category : #'frame access' }
+{ #category : 'frame access' }
 StackInterpreter >> ensureContextIsExecutionSafeAfterAssignToStackPointer: aContext [
 	"Safety to give the JIT lattitude in calling convention.  A noop in the interpreter.
 	 See subclass implementation(s) for explanation."
 ]
 
-{ #category : #'frame access' }
+{ #category : 'frame access' }
 StackInterpreter >> ensureFrameIsMarried: theFP SP: theSP [
 	<inline: true>
 	<var: #theFP type: #'char *'>
@@ -5352,7 +5286,7 @@ StackInterpreter >> ensureFrameIsMarried: theFP SP: theSP [
 	^self marryFrame: theFP SP: theSP
 ]
 
-{ #category : #'image save/restore' }
+{ #category : 'image save/restore' }
 StackInterpreter >> ensureImageFormatIsUpToDate: swapBytes [
 	"Ensure the image data has been updated to suit the current VM."
 	<inline: false>
@@ -5361,451 +5295,8 @@ StackInterpreter >> ensureImageFormatIsUpToDate: swapBytes [
 		ifFalse: [self convertFloatsToPlatformOrder]
 ]
 
-{ #category : #'send bytecodes' }
-StackInterpreter >> ensureReceiverUnforwarded [
-	"To maintain the invariant that all receivers are unforwarded we need an explicit
-	 read barrier in the super send cases."
-	(objectMemory isOopForwarded: (self stackValue: argumentCount)) ifTrue:
-		[self stackValue: argumentCount
-			put: (objectMemory followForwarded: (self stackValue: argumentCount))]
-]
-
-{ #category : #initialization }
-StackInterpreter >> enterSmalltalkExecutive [
-	"Main entry-point into the interpreter at each execution level, where an
-	 execution level is either the start of execution or reentry for a callback."
-	<cmacro: '() enterSmalltalkExecutiveImplementation()'>
-	"Simulation of the setjmp in enterSmalltalkExecutiveImplementation for reentry into interpreter."
-	[([self enterSmalltalkExecutiveImplementation]
-		on: ReenterInterpreter
-		do: [:ex| ex return: ex returnValue]) = ReturnToInterpreter] whileTrue
-]
-
-{ #category : #'callback support' }
-StackInterpreter >> enterSmalltalkExecutiveFromCallback [
-	<inline: true>
-	self enterSmalltalkExecutive
-]
-
-{ #category : #initialization }
-StackInterpreter >> enterSmalltalkExecutiveImplementation [
-	"Main entry-point into the interpreter at each execution level, where an execution
-	 level is either the start of execution or reentry for a callback.
-	 This is the actual implementation, separated from enterSmalltalkExecutive so the
-	 simulator can wrap it in an exception handler and hence simulate the setjmp/longjmp."
-	<inline: false>
-	"Setjmp for reentry into interpreter from elsewhere, e.g. FFI exception primitive failure."
-	self sigset: reenterInterpreter jmp: 0.
-	self setMethod: (self frameMethod: framePointer).
-	self assertValidExecutionPointe: instructionPointer r: framePointer s: stackPointer imbar: true line: #'__LINE__'.
-	self interpret.
-	^0
-]
-
-{ #category : #'frame access' }
-StackInterpreter >> establishFrameForContextToReturnTo: contextToReturnTo [
-	| thePage |
-	<var: #thePage type: #'StackPage *'>
-	<returnTypeC: 'char *'>
-	(objectMemory isContext: contextToReturnTo) ifFalse:
-		[^0].
-	(self isMarriedOrWidowedContext: contextToReturnTo) ifTrue:
-		[(self isWidowedContext: contextToReturnTo) ifTrue:
-			["error: home's sender is dead; cannot return"
-			 ^0].
-		 ^self frameOfMarriedContext: contextToReturnTo].
-	(objectMemory isIntegerObject: (objectMemory fetchPointer: InstructionPointerIndex ofObject: contextToReturnTo)) ifFalse:
-		[^0].
-	thePage := self makeBaseFrameFor: contextToReturnTo.
-	stackPages markStackPageMostRecentlyUsed: thePage.
-	^thePage baseFP
-]
-
-{ #category : #'message sending' }
-StackInterpreter >> executeNewMethod [
-	"Execute newMethod - either primitiveFunctionPointer must be set directly
-	 (i.e. from primitiveExecuteMethod et al), or it would have been set probing
-	 the method cache (i.e. primitivePerform et al)."
-	primitiveFunctionPointer ~= 0 ifTrue:
-		[self isPrimitiveFunctionPointerAnIndex ifTrue:
-			[self externalQuickPrimitiveResponse.
-			 ^nil].
-		 self slowPrimitiveResponse.
-		 self successful ifTrue: [^nil]].
-	"if not primitive, or primitive failed, activate the method"
-	self activateNewMethod
-]
-
-{ #category : #'translation support' }
-StackInterpreter >> expandCases [
-	"For translation only; noop when running in Smalltalk.
-	 Must not be inlined otherwise the directive will disappear!"
-	<inline: false>
-]
-
-{ #category : #'miscellaneous bytecodes' }
-StackInterpreter >> extABytecode [
-	"224		11100000	aaaaaaaa	Extend A (Ext A = Ext A prev * 256 + Ext A)"
-	extA := (extA bitShift: 8) + self fetchByte.
-	self fetchNextBytecode
-]
-
-{ #category : #'miscellaneous bytecodes' }
-StackInterpreter >> extBBytecode [
-	"225		11100001	sbbbbbbb	Extend B (Ext B = Ext B prev * 256 + Ext B)"
-	| byte |
-	byte := self fetchByte.
-	self fetchNextBytecode.
-	extB := (numExtB = 0 and: [byte > 127])
-				ifTrue: [byte - 256]
-				ifFalse: [(extB bitShift: 8) + byte].
-	numExtB := numExtB + 1
-]
-
-{ #category : #'jump bytecodes' }
-StackInterpreter >> extJumpIfFalse [
-	"244		11110100	i i i i i i i i	Pop and Jump 0n False i i i i i i i i (+ Extend B * 256, where Extend B >= 0)"
-	| byte offset |
-	byte := self fetchByte.
-	offset := byte + (extB << 8).
-	numExtB := extB := extA := 0.
-	self jumplfFalseBy: offset
-]
-
-{ #category : #'jump bytecodes' }
-StackInterpreter >> extJumpIfTrue [
-	"243		11110011	i i i i i i i i	Pop and Jump 0n True i i i i i i i i (+ Extend B * 256, where Extend B >= 0)"
-	| byte offset |
-	byte := self fetchByte.
-	offset := byte + (extB << 8).
-	numExtB := extB := extA := 0.
-	self jumplfTrueBy: offset
-]
-
-{ #category : #'miscellaneous bytecodes' }
-StackInterpreter >> extNopBytecode [
-	"SistaV1		94		01011111		Nop"
-	self fetchNextBytecode.
-	numExtB := extA := extB := 0
-]
-
-{ #category : #'stack bytecodes' }
-StackInterpreter >> extPushCharacterBytecode [
-	"SistaV1:	*	233		11101001	iiiiiiii		Push Character #iiiiiiii (+ Extend B * 256)"
-	| value |
-	value := self fetchByte + (extB << 8).
-	self fetchNextBytecode.
-	self push: (objectMemory characterObjectOf: value).
-	numExtB := extB := 0
-]
-
-{ #category : #'stack bytecodes' }
-StackInterpreter >> extPushFullClosureBytecode [
-	"255		11111111	xxxxxxxx	siyyyyyy	
-		push Closure Compiled block literal index xxxxxxxx (+ Extend A * 256) 
-		numCopied yyyyyy 
-		receiverOnStack: s = 1 
-		ignoreOuterContext: i = 1
-	 The compiler has pushed the values to be copied, if any. The receiver has been pushed on stack before if specified. 
-	 Create a Closure with space for the copiedValues and pop numCopied values off the stack into the closure.
-	 Sets outerContext, compiledBlock, numArgs and receiver as specified.."
-	| compiledBlockLiteralIndex compiledBlock byte numArgs numCopied receiverIsOnStack ignoreContext |
-	compiledBlockLiteralIndex := self fetchByte + (extA << 8).
-	extA := 0.
-	compiledBlock := self literal: compiledBlockLiteralIndex.
-	self assert: (objectMemory isOopCompiledMethod: compiledBlock).
-	numArgs := self argumentCountOf: compiledBlock.
-	byte := self fetchByte.
-	numCopied := byte bitAnd: 1<< 6 - 1.
-	receiverIsOnStack := byte anyMask: 1 << 7.
-	ignoreContext := byte anyMask: 1 << 6.
-	self pushFullClosureNumArgs: numArgs copiedValues: numCopied compiledBlock: compiledBlock receiverIsOnStack: receiverIsOnStack ignoreContext: ignoreContext
-]
-
-{ #category : #'stack bytecodes' }
-StackInterpreter >> extPushIntegerBytecode [
-	"229		11100101	i i i i i i i i	Push Integer #iiiiiiii (+ Extend B * 256, where bbbbbbbb = sddddddd, e.g. -32768 = i=0, a=0, s=1)"
-	| value |
-	value := self fetchByte + (extB << 8).
-	self fetchNextBytecode.
-	extB := 0.
-	numExtB := 0.
-	self push: (objectMemory integerObjectOf: value)
-]
-
-{ #category : #'stack bytecodes' }
-StackInterpreter >> extPushLiteralBytecode [
-	"228		11100100	i i i i i i i i	Push Literal #iiiiiiii (+ Extend A * 256)"
-	| index |
-	index := self fetchByte + (extA << 8).
-	self fetchNextBytecode.
-	extA := 0.
-	self pushLiteralConstant: index
-]
-
-{ #category : #'stack bytecodes' }
-StackInterpreter >> extPushLiteralVariableBytecode [
-	"227		11100011	i i i i i i i i	Push Literal Variable #iiiiiiii (+ Extend A * 256)"
-	| index |
-	index := self fetchByte + (extA << 8).
-	self fetchNextBytecode.
-	extA := 0.
-	self pushLiteralVariable: index
-]
-
-{ #category : #'stack bytecodes' }
-StackInterpreter >> extPushPseudoVariable [
-	"SistaV1:	*	82			01010010			Push thisContext, (then e.g. Extend B 1 = push thisProcess)"
-	| theThingToPush |
-	extB
-		caseOf: {
-			[0]	->	[theThingToPush := self ensureFrameIsMarried: framePointer SP: stackPointer].
-			[1]	->	[theThingToPush := self activeProcess] }
-		otherwise:
-			[self respondToUnknownBytecode].
-	self fetchNextBytecode.
-	self push: theThingToPush.
-	extB := 0.
-	numExtB := 0.
-]
-
-{ #category : #'stack bytecodes' }
-StackInterpreter >> extPushReceiverVariableBytecode [
-	"226		11100010	i i i i i i i i	Push Receiver Variable #iiiiiiii (+ Extend A * 256)"
-	| index |
-	index := self fetchByte + (extA << 8).
-	self fetchNextBytecode.
-	extA := 0.
-	self pushMaybeContextReceiverVariable: index
-]
-
-{ #category : #'return bytecodes' }
-StackInterpreter >> extReturnTopFromBlock [
-
-	"218		11011010		Return Stack Top From Block [* return from enclosing block N, N = Extend A]
-	 If extA is zero, return to the caller of the current block activation.
-	 If extA is non-zero return to the caller of the Nth enclosing block activation."
-
-	extA = 0 ifTrue: [ 
-		localReturnValue := self stackTop.
-		^ self commonCallerReturn ].
-	self shouldBeImplemented.
-	extA := 0
-]
-
-{ #category : #'send bytecodes' }
-StackInterpreter >> extSendBytecode [
-	"238		11101110	i i i i i j j j	Send Literal Selector #iiiii (+ Extend A * 32) with jjj (+ Extend B * 8) Arguments"
-	| byte |
-	byte := self fetchByte.
-	messageSelector := self literal: (byte >> 3) + (extA << 5).
-	extA := 0.
-	argumentCount := (byte bitAnd: 7) + (extB << 3).
-	extB := 0.
-	numExtB := 0.
-	self normalSend
-]
-
-{ #category : #'send bytecodes' }
-StackInterpreter >> extSendSuperBytecode [
-	"239		11101111	i i i i i j j j
-		ExtendB < 64
-			ifTrue: [Send To Superclass Literal Selector #iiiii (+ Extend A * 32) with jjj (+ Extend B * 8) Arguments]
-			ifFalse: [Send To Superclass of Stacked Class Literal Selector #iiiii (+ Extend A * 32) with jjj (+ (Extend B bitAnd: 63) * 8) Arguments]"
-	| byte |
-	byte := self fetchByte.
-	messageSelector := self literal: (byte >> 3) + (extA << 5).
-	extA := 0.
-	BytecodeSetHasDirectedSuperSend ifTrue:
-		[extB >= 64 ifTrue:
-			[argumentCount := (byte bitAnd: 7) + (extB - 64 << 3).
-			 extB := 0.
-			 numExtB := 0.
-			 ^self directedSuperclassSend]].
-	argumentCount := (byte bitAnd: 7) + (extB << 3).
-	extB := 0.
-	numExtB := 0.
-	self superclassSend
-]
-
-{ #category : #'stack bytecodes' }
-StackInterpreter >> extStoreAndPopLiteralVariableBytecode [
-
-	"236		11101100	i i i i i i i i	Pop and Store Literal Variable #iiiiiiii (+ Extend A * 256)"
-
-	| variableIndex value |
-	variableIndex := self fetchByte + (extA << 8).
-	value := self stackTop.
-	self pop: 1.
-	extA := 0.
-	self storeLiteralVariable: variableIndex withValue: value.
-	self fetchNextBytecode
-]
-
-{ #category : #'stack bytecodes' }
-StackInterpreter >> extStoreAndPopReceiverVariableBytecode [
-
-	"235		11101011	i i i i i i i i	Pop and Store Receiver Variable #iiiiiii (+ Extend A * 256)"
-
-	| variableIndex value |
-	variableIndex := self fetchByte + (extA << 8).
-	extA := 0.
-	value := self stackTop.
-	self pop: 1.
-	self
-		storeMaybeContextReceiverVariable: variableIndex
-		withValue: value.
-	self fetchNextBytecode
-]
-
-{ #category : #'stack bytecodes' }
-StackInterpreter >> extStoreLiteralVariableBytecode [
-
-	"233		11101001	i i i i i i i i	Store Literal Variable #iiiiiiii (+ Extend A * 256)"
-
-	| variableIndex |
-	variableIndex := self fetchByte + (extA << 8).
-	extA := 0.
-	self storeLiteralVariable: variableIndex withValue: self stackTop.
-	self fetchNextBytecode
-]
-
-{ #category : #'stack bytecodes' }
-StackInterpreter >> extStoreReceiverVariableBytecode [
-
-	"232		11101000	i i i i i i i i	Store Receiver Variable #iiiiiii (+ Extend A * 256)"
-
-	| variableIndex |
-	variableIndex := self fetchByte + (extA << 8).
-	extA := 0.
-	self
-		storeMaybeContextReceiverVariable: variableIndex
-		withValue: self stackTop.
-	self fetchNextBytecode
-]
-
-{ #category : #'jump bytecodes' }
-StackInterpreter >> extUnconditionalJump [
-	"242		11110010	i i i i i i i i	Jump i i i i i i i i (+ Extend B * 256, where bbbbbbbb = sddddddd, e.g. -32768 = i=0, a=0, s=1)"
-	| byte offset bcpcDelta |
-	byte := self fetchByte.
-	offset := byte + (extB << 8).
-	bcpcDelta := offset < 0 ifTrue: [numExtB * 2] ifFalse: [0].
-	extB := 0.
-	numExtB := 0.
-	instructionPointer := instructionPointer + offset.
-	self ifBackwardsCheckForEvents: offset + bcpcDelta.
-	self fetchNextBytecode
-]
-
-{ #category : #'stack bytecodes' }
-StackInterpreter >> extendedPushBytecode [
-
-	| descriptor variableType variableIndex |
-	descriptor := self fetchByte.
-	self fetchNextBytecode.
-	variableType := (descriptor >> 6) bitAnd: 16r3.
-	variableIndex := descriptor bitAnd: 16r3F.
-	variableType=0 ifTrue: [^self pushReceiverVariable: variableIndex].
-	variableType=1 ifTrue: [^self pushTemporaryVariable: variableIndex].
-	variableType=2 ifTrue: [^self pushLiteralConstant: variableIndex].
-	variableType=3 ifTrue: [^self pushLiteralVariable: variableIndex].
-
-]
-
-{ #category : #'stack bytecodes' }
-StackInterpreter >> extendedStoreAndPopBytecode [
-	<inline: true>
-	self extendedStoreBytecodePop: true
-	"may not be reached (immutable receiver)"
-]
-
-{ #category : #'stack bytecodes' }
-StackInterpreter >> extendedStoreBytecode [
-	<inline: true>
-	self extendedStoreBytecodePop: false
-	"may not be reached (immutable receiver)"
-]
-
-{ #category : #'stack bytecodes' }
-StackInterpreter >> extendedStoreBytecodePop: popBoolean [
-
-	<inline: true>
-	| descriptor variableType variableIndex value |
-	descriptor := self fetchByte.
-	variableType := descriptor >> 6 bitAnd: 3.
-	variableIndex := descriptor bitAnd: 63.
-	value := self stackTop.
-	popBoolean ifTrue: [ self pop: 1 ].
-	variableType = 0 ifTrue: [ 
-		objectMemory
-			storePointerImmutabilityCheck: variableIndex
-			ofObject: self receiver
-			withValue: value.
-		^ self fetchNextBytecode ].
-	variableType = 1 ifTrue: [ 
-		self fetchNextBytecode.
-		self temporary: variableIndex in: framePointer put: value.
-		^ self "keep slang happy" ].
-	variableType = 3 ifTrue: [ 
-		self storeLiteralVariable: variableIndex withValue: value.
-		^ self fetchNextBytecode ].
-	self error: 'illegal store'
-]
-
-{ #category : #'frame access' }
-StackInterpreter >> externalDivorceFrame: theFP andContext: ctxt [
-	"Divorce a single frame and its context.  If it is not the top frame of a stack this means splitting its stack."
-	| thePage onCurrent theSP callerCtx newPage frameAbove callerFP callerSP callerIP theIP |
-	<inline: false>
-	<var: #theFP type: #'char *'>
-	<var: #thePage type: #'StackPage *'>
-	<var: #theSP type: #'char *'>
-	<var: #newPage type: #'StackPage *'>
-	<var: #frameAbove type: #'char *'>
-	<var: #callerFP type: #'char *'>
-	<var: #callerSP type: #'char *'>
-	"stackPage needs to have current head pointers to avoid confusion."
-	self assert: (stackPage = 0 or: [stackPage = stackPages mostRecentlyUsedPage]).
-	thePage := stackPages stackPageFor: theFP.
-	(onCurrent := thePage = stackPage) ifFalse:
-		[stackPages markStackPageNextMostRecentlyUsed: thePage].
-	theSP := self findSPOf: theFP on: thePage.
-	self updateStateOfSpouseContextForFrame: theFP WithSP: theSP.
-	callerCtx := self ensureCallerContext: theFP.
-	(frameAbove := self findFrameAbove: theFP inPage: thePage) = 0
-		ifTrue: "If we're divorcing the top frame we can simply peel it off."
-			[theIP := stackPages longAt: thePage headSP]
-		ifFalse: "othewise move all frames above to a new stack and then peel the frame off."
-			[newPage := stackPages newStackPage.
-			 theIP := self oopForPointer: (self frameCallerSavedIP: frameAbove).
-			 frameAbove := self moveFramesIn: thePage through: frameAbove toPage: newPage.
-			 onCurrent
-				ifTrue:
-					[self setStackPageAndLimit: newPage.
-					 self setStackPointersFromPage: newPage]
-				ifFalse:
-					[stackPages markStackPageMostRecentlyUsed: newPage].
-			 self assert: (self frameCallerContext: frameAbove) = ctxt].
-	objectMemory storePointerUnchecked: InstructionPointerIndex
-		ofObject: ctxt
-		withValue: (self contextInstructionPointer: theIP frame: theFP).
-	objectMemory storePointer: SenderIndex
-		ofObject: ctxt
-		withValue: callerCtx.
-	callerFP := self frameCallerFP: theFP.
-	callerFP = 0 "theFP is a base frame; it is now alone; free the entire page"
-		ifTrue: [stackPages freeStackPage: thePage]
-		ifFalse:
-			[callerIP := self oopForPointer: (self frameCallerSavedIP: theFP).
-			 callerSP := (self frameCallerSP: theFP) - objectMemory wordSize.
-			 stackPages longAt: callerSP put: callerIP.
-			 self setHeadFP: callerFP andSP: callerSP inPage: thePage]
-	
-]
-
-{ #category : #'frame access' }
-StackInterpreter >> externalEnsureIsBaseFrame: aFramePtr [
+{ #category : 'frame access' }
+StackInterpreter >> ensureIsBaseFrame: aFramePtr [
 	"Ensure aFramePtr is a base frame.  Then we can assign its sender.
 	 Answer the possibly moved location of the frame."
 	| theFP thePage onCurrent |
@@ -5834,156 +5325,435 @@ StackInterpreter >> externalEnsureIsBaseFrame: aFramePtr [
 	^theFP
 ]
 
-{ #category : #'frame access' }
-StackInterpreter >> externalInstVar: offset ofContext: aContext [
-	"Fetch an instance variable from a maybe married context.
-	 If the context is still married compute the value of the
-	 relevant inst var from the spouse frame's state."
+{ #category : 'send bytecodes' }
+StackInterpreter >> ensureReceiverUnforwarded [
+	"To maintain the invariant that all receivers are unforwarded we need an explicit
+	 read barrier in the super send cases."
+	(objectMemory isOopForwarded: (self stackValue: argumentCount)) ifTrue:
+		[self stackValue: argumentCount
+			put: (objectMemory followForwarded: (self stackValue: argumentCount))]
+]
+
+{ #category : 'initialization' }
+StackInterpreter >> enterSmalltalkExecutive [
+	"Main entry-point into the interpreter at each execution level, where an
+	 execution level is either the start of execution or reentry for a callback."
+	<cmacro: '() enterSmalltalkExecutiveImplementation()'>
+	"Simulation of the setjmp in enterSmalltalkExecutiveImplementation for reentry into interpreter."
+	[([self enterSmalltalkExecutiveImplementation]
+		on: ReenterInterpreter
+		do: [:ex| ex return: ex returnValue]) = ReturnToInterpreter] whileTrue
+]
+
+{ #category : 'callback support' }
+StackInterpreter >> enterSmalltalkExecutiveFromCallback [
+	<inline: true>
+	self enterSmalltalkExecutive
+]
+
+{ #category : 'initialization' }
+StackInterpreter >> enterSmalltalkExecutiveImplementation [
+	"Main entry-point into the interpreter at each execution level, where an execution
+	 level is either the start of execution or reentry for a callback.
+	 This is the actual implementation, separated from enterSmalltalkExecutive so the
+	 simulator can wrap it in an exception handler and hence simulate the setjmp/longjmp."
 	<inline: false>
-
-	self assert: (objectMemory isContext: aContext).
-	self assert: offset <= (ReceiverIndex + (self checkStackPointerForMaybeMarriedContext: aContext)).
-	"method, closureOrNil & receiver need no special handling; only
-	 sender, pc & stackp have to be computed for married contexts."
-	(self isReadMediatedContextInstVarIndex: offset) ifTrue:
-		[self externalWriteBackHeadFramePointers.
-		 (self isStillMarriedContext: aContext) ifTrue:
-			[^self fetchPointer: offset ofMarriedContext: aContext]].
-	
-	^objectMemory fetchPointer: offset ofObject: aContext
+	"Setjmp for reentry into interpreter from elsewhere, e.g. FFI exception primitive failure."
+	self sigset: reenterInterpreter jmp: 0.
+	self setMethod: (self iframeMethod: framePointer).
+	self assertValidExecutionPointe: instructionPointer r: framePointer s: stackPointer imbar: true line: #'__LINE__'.
+	self interpret.
+	^0
 ]
 
-{ #category : #'frame access' }
-StackInterpreter >> externalInstVar: index ofContext: maybeMarriedContext put: anOop [
-	| theFP thePage onCurrentPage |
-	<var: #theFP type: #'char *'>
+{ #category : 'cog jit support' }
+StackInterpreter >> error: aString [
+	<api: 'extern void error(char *s)'>
+	<doNotGenerate>
+	super error: aString
+]
+
+{ #category : 'frame access' }
+StackInterpreter >> establishFrameForContextToReturnTo: contextToReturnTo [
+	| thePage |
 	<var: #thePage type: #'StackPage *'>
-	self assert: (objectMemory isContext: maybeMarriedContext).
-	self externalWriteBackHeadFramePointers.
-	"Assign the field of a married context."
-	self deny: (objectMemory isObjImmutable: maybeMarriedContext).
-	(self isStillMarriedContext: maybeMarriedContext) ifFalse:
-		[objectMemory storePointer: index ofObject: maybeMarriedContext withValue: anOop.
-		 index = StackPointerIndex ifTrue:
-			[self ensureContextIsExecutionSafeAfterAssignToStackPointer: maybeMarriedContext].
-		 ^nil].
-	theFP := self frameOfMarriedContext: maybeMarriedContext.
-	thePage := stackPages stackPageFor: theFP.
-	self assert: stackPage = stackPages mostRecentlyUsedPage.
-	onCurrentPage := thePage = stackPage.
-	index = SenderIndex
-		ifTrue:
-			[self storeSenderOfFrame: theFP withValue: anOop]
-		ifFalse:
-			[self externalDivorceFrame: theFP andContext: maybeMarriedContext.
-			 (self is: index methodAssignmentToContextWithMachineCodePC: maybeMarriedContext) ifTrue:
-				[self ensureContextHasBytecodePC: maybeMarriedContext].
-			 objectMemory storePointer: index ofObject: maybeMarriedContext withValue: anOop.
-			 index = StackPointerIndex ifTrue:
-				[self ensureContextIsExecutionSafeAfterAssignToStackPointer: maybeMarriedContext]].
-	onCurrentPage
-		ifTrue:
-			[self setStackPointersFromPage: stackPage]
-		ifFalse:
-			[stackPages markStackPageMostRecentlyUsed: stackPage].
-	stackPages assert: stackPage = stackPages mostRecentlyUsedPage.
-	stackPages assert: stackPages pageListIsWellFormed.
-	stackPages assert: self validStackPageBaseFrames
+	<returnTypeC: 'char *'>
+	(objectMemory isContext: contextToReturnTo) ifFalse:
+		[^0].
+	(self isMarriedOrWidowedContext: contextToReturnTo) ifTrue:
+		[(self isWidowedContext: contextToReturnTo) ifTrue:
+			["error: home's sender is dead; cannot return"
+			 ^0].
+		 ^self frameOfMarriedContext: contextToReturnTo].
+	(objectMemory isIntegerObject: (objectMemory fetchPointer: InstructionPointerIndex ofObject: contextToReturnTo)) ifFalse:
+		[^0].
+	thePage := self makeBaseFrameFor: contextToReturnTo.
+	stackPages markStackPageMostRecentlyUsed: thePage.
+	^thePage baseFP
 ]
 
-{ #category : #'primitive support' }
-StackInterpreter >> externalQuickPrimitiveResponse [
+{ #category : 'message sending' }
+StackInterpreter >> executeNewMethod [
+	
+	"Eagerly compile method"
+	self executeNewMethod: true
+]
+
+{ #category : 'message sending' }
+StackInterpreter >> executeNewMethod: eagerlyCompile [
+	"if not primitive, or primitive failed, activate the method"
+
+	| inInterpreter |
+	inInterpreter := self isInstructionPointerInInterpreter:
+		                 instructionPointer.
+	self
+		executePrimitiveFromInterpreter: inInterpreter
+		ifFail: [ "if not primitive, or primitive failed, activate the method"
+			self activateNewMethod ]
+]
+
+{ #category : 'message sending' }
+StackInterpreter >> executePrimitiveFromInterpreter: inInterpreter ifFail: aBlock [
+	"For interpreter performance and to ease the objectAsMethod implementation eagerly
+	 evaluate the primtiive, i.e. if the method is cogged and has a primitive /do not/ evaluate
+	 the machine code primitive, just evaluate primitiveFunctionPointer directly."
+
+	primitiveFunctionPointer ~= 0 ifTrue: [
+		| succeeded |
+		self isPrimitiveFunctionPointerAnIndex ifTrue: [
+			self executeQuickPrimitive.
+			self returnToExecutive: inInterpreter.
+			^ nil ].
+		"slowPrimitiveResponse may of course context-switch. 
+		If so we must reenter the new process appropriately, returning only if we've found an interpreter frame.
+		The instructionPointer tells us from whence we came."
+		succeeded := self slowPrimitiveResponse.
+		succeeded ifTrue: [
+			self returnToExecutive: inInterpreter.
+			^ nil ] ].
+
+	^ aBlock value
+]
+
+{ #category : 'primitive support' }
+StackInterpreter >> executeQuickPrimitive [
+
 	"Invoke a quick primitive.
 	 Called under the assumption that primFunctionPtr has been preloaded"
-	
+
 	| localPrimIndex |
 	self assert: self isPrimitiveFunctionPointerAnIndex.
-	localPrimIndex := self cCoerceSimple: primitiveFunctionPointer to: #sqInt.
-	self assert: (localPrimIndex > 255 and: [localPrimIndex < 520]).
+	localPrimIndex := self
+		                  cCoerceSimple: primitiveFunctionPointer
+		                  to: #sqInt.
+	self assert: (localPrimIndex > 255 and: [ localPrimIndex < 520 ]).
 	"Quick return inst vars"
-	localPrimIndex >= 264 ifTrue:
-		[self pop: 1 thenPush: (objectMemory fetchPointer: localPrimIndex - 264 ofObject: self stackTop).
-		 ^true].
+	localPrimIndex >= 264 ifTrue: [ 
+		self stackTopPut: (objectMemory
+				 fetchPointer: localPrimIndex - 264
+				 ofObject: self stackTop).
+		^ true ].
 	"Quick return constants"
-	localPrimIndex = 256 ifTrue: [^true "return self"].
-	localPrimIndex = 257 ifTrue: [self pop: 1 thenPush: objectMemory trueObject. ^true].
-	localPrimIndex = 258 ifTrue: [self pop: 1 thenPush: objectMemory falseObject. ^true].
-	localPrimIndex = 259 ifTrue: [self pop: 1 thenPush: objectMemory nilObject. ^true].
-	self pop: 1 thenPush: (objectMemory integerObjectOf: localPrimIndex - 261).
-	^true
+	localPrimIndex = 256 ifTrue: [ ^ true "return self" ].
+	localPrimIndex = 257 ifTrue: [ 
+		self stackTopPut: objectMemory trueObject.
+		^ true ].
+	localPrimIndex = 258 ifTrue: [ 
+		self stackTopPut: objectMemory falseObject.
+		^ true ].
+	localPrimIndex = 259 ifTrue: [ 
+		self stackTopPut: objectMemory nilObject.
+		^ true ].
+	self stackTopPut:
+		(objectMemory integerObjectOf: localPrimIndex - 261).
+	^ true
 ]
 
-{ #category : #'frame access' }
-StackInterpreter >> externalSetStackPageAndPointersForSuspendedContextOfProcess: aProcess [
-	"Set stackPage, instructionPointer, framePointer and stackPointer for the suspendedContext of
-	 aProcess, marrying the context if necessary, and niling the suspendedContext slot.  This is used
-	 on process switch to ensure a context has a stack frame and so can continue execution."
-	| newContext theFrame thePage newPage |
-	<inline: true>
-	<var: #theFrame type: #'char *'>
-	<var: #thePage type: #'StackPage *'>
-	<var: #newPage type: #'StackPage *'>
-	
-	newContext := objectMemory fetchPointer: SuspendedContextIndex ofObject: aProcess.
-	self assert: (objectMemory isContext: newContext).
-	(self isMarriedOrWidowedContext: newContext) ifTrue:
-		[self assert: (self checkIsStillMarriedContext: newContext currentFP: framePointer)].
-	objectMemory
-		storePointerUnchecked: SuspendedContextIndex
-		ofObject: aProcess
-		withValue: objectMemory nilObject.
-	(self isStillMarriedContext: newContext)
-		ifTrue:
-			[theFrame := self frameOfMarriedContext: newContext.
-			 thePage := stackPages stackPageFor: theFrame.
-			 theFrame ~= thePage headFP ifTrue:
-				["explicit assignment of suspendedContext can cause switch to interior frame."
-				 newPage := stackPages newStackPage.
-				 self moveFramesIn: thePage
-					through: (self findFrameAbove: theFrame inPage: thePage)
-					toPage: newPage.
-				  stackPages markStackPageLeastMostRecentlyUsed: newPage].
-			 self assert: thePage headFP = theFrame]
-		ifFalse:
-			[thePage := self makeBaseFrameFor: newContext.
-			 theFrame := thePage baseFP].
-	self setStackPageAndLimit: thePage.
-	self setStackPointersFromPage: thePage.
-	(self isMachineCodeFrame: framePointer) ifFalse:
-		[self setMethod: (self iframeMethod: framePointer)].
-	instructionPointer := self popStack.
-	self assertValidExecutionPointe: instructionPointer r: framePointer s: stackPointer
+{ #category : 'translation support' }
+StackInterpreter >> expandCases [
+	"For translation only; noop when running in Smalltalk.
+	 Must not be inlined otherwise the directive will disappear!"
+	<inline: false>
 ]
 
-{ #category : #'stack pages' }
-StackInterpreter >> externalWriteBackHeadFramePointers [
-	self assert:  (framePointer - stackPointer) < (LargeContextSlots * objectMemory bytesPerOop).
-	self assert: stackPage = stackPages mostRecentlyUsedPage.
-	self deny: stackPage isFree.
-	self setHeadFP: framePointer andSP: stackPointer inPage: stackPage.
-	self assert: stackPages pageListIsWellFormed
+{ #category : 'miscellaneous bytecodes' }
+StackInterpreter >> extABytecode [
+	"224		11100000	aaaaaaaa	Extend A (Ext A = Ext A prev * 256 + Ext A)"
+	extA := (extA bitShift: 8) + self fetchByte.
+	self fetchNextBytecode
 ]
 
-{ #category : #utilities }
-StackInterpreter >> externalizeFPandSP [
-	"Copy the frame and stack pointers to global variables for use in primitives and other functions outside the interpret loop."
-	self assert: (stackPointer < stackPage baseAddress
-				and: [stackPointer > (stackPage realStackLimit - (LargeContextSlots * objectMemory bytesPerOop))]).
+{ #category : 'miscellaneous bytecodes' }
+StackInterpreter >> extBBytecode [
+	"225		11100001	sbbbbbbb	Extend B (Ext B = Ext B prev * 256 + Ext B)"
+	| byte |
+	byte := self fetchByte.
+	self fetchNextBytecode.
+	extB := (numExtB = 0 and: [byte > 127])
+				ifTrue: [byte - 256]
+				ifFalse: [(extB bitShift: 8) + byte].
+	numExtB := numExtB + 1
 ]
 
-{ #category : #utilities }
-StackInterpreter >> externalizeIPandSP [
-	"Copy the local instruction, stack and frame pointers to global variables for use in primitives and other functions outside the interpret loop."
+{ #category : 'jump bytecodes' }
+StackInterpreter >> extJumpIfFalse [
+	"244		11110100	i i i i i i i i	Pop and Jump 0n False i i i i i i i i (+ Extend B * 256, where Extend B >= 0)"
+	| byte offset |
+	byte := self fetchByte.
+	offset := byte + (extB << 8).
+	numExtB := extB := extA := 0.
+	self jumplfFalseBy: offset
 ]
 
-{ #category : #'primitive support' }
+{ #category : 'jump bytecodes' }
+StackInterpreter >> extJumpIfTrue [
+	"243		11110011	i i i i i i i i	Pop and Jump 0n True i i i i i i i i (+ Extend B * 256, where Extend B >= 0)"
+	| byte offset |
+	byte := self fetchByte.
+	offset := byte + (extB << 8).
+	numExtB := extB := extA := 0.
+	self jumplfTrueBy: offset
+]
+
+{ #category : 'miscellaneous bytecodes' }
+StackInterpreter >> extNopBytecode [
+	"SistaV1		94		01011111		Nop"
+	self fetchNextBytecode.
+	numExtB := extA := extB := 0
+]
+
+{ #category : 'stack bytecodes' }
+StackInterpreter >> extPushCharacterBytecode [
+	"SistaV1:	*	233		11101001	iiiiiiii		Push Character #iiiiiiii (+ Extend B * 256)"
+	| value |
+	value := self fetchByte + (extB << 8).
+	self fetchNextBytecode.
+	self push: (objectMemory characterObjectOf: value).
+	numExtB := extB := 0
+]
+
+{ #category : 'stack bytecodes' }
+StackInterpreter >> extPushFullClosureBytecode [
+	"255		11111111	xxxxxxxx	siyyyyyy	
+		push Closure Compiled block literal index xxxxxxxx (+ Extend A * 256) 
+		numCopied yyyyyy 
+		receiverOnStack: s = 1 
+		ignoreOuterContext: i = 1
+	 The compiler has pushed the values to be copied, if any. The receiver has been pushed on stack before if specified. 
+	 Create a Closure with space for the copiedValues and pop numCopied values off the stack into the closure.
+	 Sets outerContext, compiledBlock, numArgs and receiver as specified.."
+	| compiledBlockLiteralIndex compiledBlock byte numArgs numCopied receiverIsOnStack ignoreContext |
+	compiledBlockLiteralIndex := self fetchByte + (extA << 8).
+	extA := 0.
+	compiledBlock := self literalMaybeForwarder: compiledBlockLiteralIndex.
+	self assert: (objectMemory isOopCompiledMethod: compiledBlock).
+	numArgs := self argumentCountOf: compiledBlock.
+	byte := self fetchByte.
+	numCopied := byte bitAnd: 1<< 6 - 1.
+	receiverIsOnStack := byte anyMask: 1 << 7.
+	ignoreContext := byte anyMask: 1 << 6.
+	self pushFullClosureNumArgs: numArgs copiedValues: numCopied compiledBlock: compiledBlock receiverIsOnStack: receiverIsOnStack ignoreContext: ignoreContext
+]
+
+{ #category : 'stack bytecodes' }
+StackInterpreter >> extPushIntegerBytecode [
+	"229		11100101	i i i i i i i i	Push Integer #iiiiiiii (+ Extend B * 256, where bbbbbbbb = sddddddd, e.g. -32768 = i=0, a=0, s=1)"
+	| value |
+	value := self fetchByte + (extB << 8).
+	self fetchNextBytecode.
+	extB := 0.
+	numExtB := 0.
+	self push: (objectMemory integerObjectOf: value)
+]
+
+{ #category : 'stack bytecodes' }
+StackInterpreter >> extPushLiteralBytecode [
+	"228		11100100	i i i i i i i i	Push Literal #iiiiiiii (+ Extend A * 256)"
+	| index |
+	index := self fetchByte + (extA << 8).
+	self fetchNextBytecode.
+	extA := 0.
+	self pushLiteralConstant: index
+]
+
+{ #category : 'stack bytecodes' }
+StackInterpreter >> extPushLiteralVariableBytecode [
+	"227		11100011	i i i i i i i i	Push Literal Variable #iiiiiiii (+ Extend A * 256)"
+	| index |
+	index := self fetchByte + (extA << 8).
+	self fetchNextBytecode.
+	extA := 0.
+	self pushLiteralVariable: index
+]
+
+{ #category : 'stack bytecodes' }
+StackInterpreter >> extPushPseudoVariable [
+	"SistaV1:	*	82			01010010			Push thisContext, (then e.g. Extend B 1 = push thisProcess)"
+	| theThingToPush |
+	extB
+		caseOf: {
+			[0]	->	[theThingToPush := self ensureFrameIsMarried: framePointer SP: stackPointer].
+			[1]	->	[theThingToPush := self activeProcess] }
+		otherwise:
+			[self respondToUnknownBytecode].
+	self fetchNextBytecode.
+	self push: theThingToPush.
+	extB := 0.
+	numExtB := 0.
+]
+
+{ #category : 'stack bytecodes' }
+StackInterpreter >> extPushReceiverVariableBytecode [
+	"226		11100010	i i i i i i i i	Push Receiver Variable #iiiiiiii (+ Extend A * 256)"
+	| index |
+	index := self fetchByte + (extA << 8).
+	self fetchNextBytecode.
+	extA := 0.
+	self pushMaybeContextReceiverVariable: index
+]
+
+{ #category : 'return bytecodes' }
+StackInterpreter >> extReturnTopFromBlock [
+
+	"218		11011010		Return Stack Top From Block [* return from enclosing block N, N = Extend A]
+	 If extA is zero, return to the caller of the current block activation.
+	 If extA is non-zero return to the caller of the Nth enclosing block activation."
+
+	extA = 0 ifTrue: [ 
+		localReturnValue := self stackTop.
+		^ self commonCallerReturn ].
+	self shouldBeImplemented.
+	extA := 0
+]
+
+{ #category : 'send bytecodes' }
+StackInterpreter >> extSendBytecode [
+	"238		11101110	i i i i i j j j	Send Literal Selector #iiiii (+ Extend A * 32) with jjj (+ Extend B * 8) Arguments"
+	| byte |
+	byte := self fetchByte.
+	messageSelector := self literal: (byte >> 3) + (extA << 5).
+	extA := 0.
+	argumentCount := (byte bitAnd: 7) + (extB << 3).
+	extB := 0.
+	numExtB := 0.
+	self normalSend
+]
+
+{ #category : 'send bytecodes' }
+StackInterpreter >> extSendSuperBytecode [
+	"239		11101111	i i i i i j j j
+		ExtendB < 64
+			ifTrue: [Send To Superclass Literal Selector #iiiii (+ Extend A * 32) with jjj (+ Extend B * 8) Arguments]
+			ifFalse: [Send To Superclass of Stacked Class Literal Selector #iiiii (+ Extend A * 32) with jjj (+ (Extend B bitAnd: 63) * 8) Arguments]"
+	| byte |
+	byte := self fetchByte.
+	messageSelector := self literal: (byte >> 3) + (extA << 5).
+	extA := 0.
+	BytecodeSetHasDirectedSuperSend ifTrue:
+		[extB >= 64 ifTrue:
+			[argumentCount := (byte bitAnd: 7) + (extB - 64 << 3).
+			 extB := 0.
+			 numExtB := 0.
+			 ^self directedSuperclassSend]].
+	argumentCount := (byte bitAnd: 7) + (extB << 3).
+	extB := 0.
+	numExtB := 0.
+	self superclassSend
+]
+
+{ #category : 'stack bytecodes' }
+StackInterpreter >> extStoreAndPopLiteralVariableBytecode [
+
+	"236		11101100	i i i i i i i i	Pop and Store Literal Variable #iiiiiiii (+ Extend A * 256)"
+
+	| variableIndex value |
+	variableIndex := self fetchByte + (extA << 8).
+	value := self stackTop.
+	self pop: 1.
+	extA := 0.
+	self storeLiteralVariable: variableIndex withValue: value.
+	self fetchNextBytecode
+]
+
+{ #category : 'stack bytecodes' }
+StackInterpreter >> extStoreAndPopReceiverVariableBytecode [
+
+	"235		11101011	i i i i i i i i	Pop and Store Receiver Variable #iiiiiii (+ Extend A * 256)"
+
+	| variableIndex value |
+	variableIndex := self fetchByte + (extA << 8).
+	extA := 0.
+	value := self stackTop.
+	self pop: 1.
+	self
+		storeMaybeContextReceiverVariable: variableIndex
+		withValue: value.
+	self fetchNextBytecode
+]
+
+{ #category : 'stack bytecodes' }
+StackInterpreter >> extStoreLiteralVariableBytecode [
+
+	"233		11101001	i i i i i i i i	Store Literal Variable #iiiiiiii (+ Extend A * 256)"
+
+	| variableIndex |
+	variableIndex := self fetchByte + (extA << 8).
+	extA := 0.
+	self storeLiteralVariable: variableIndex withValue: self stackTop.
+	self fetchNextBytecode
+]
+
+{ #category : 'stack bytecodes' }
+StackInterpreter >> extStoreReceiverVariableBytecode [
+
+	"232		11101000	i i i i i i i i	Store Receiver Variable #iiiiiii (+ Extend A * 256)"
+
+	| variableIndex |
+	variableIndex := self fetchByte + (extA << 8).
+	extA := 0.
+	self
+		storeMaybeContextReceiverVariable: variableIndex
+		withValue: self stackTop.
+	self fetchNextBytecode
+]
+
+{ #category : 'jump bytecodes' }
+StackInterpreter >> extUnconditionalJump [
+	"242		11110010	i i i i i i i i	Jump i i i i i i i i (+ Extend B * 256, where bbbbbbbb = sddddddd, e.g. -32768 = i=0, a=0, s=1)"
+	| byte offset bcpcDelta |
+	byte := self fetchByte.
+	offset := byte + (extB << 8).
+	bcpcDelta := offset < 0 ifTrue: [numExtB * 2] ifFalse: [0].
+	extB := 0.
+	numExtB := 0.
+	instructionPointer := instructionPointer + offset.
+	self ifBackwardsCheckForEvents: offset + bcpcDelta.
+	self fetchNextBytecode
+]
+
+{ #category : 'stack bytecodes' }
+StackInterpreter >> extendedPushBytecode [
+
+	| descriptor variableType variableIndex |
+	descriptor := self fetchByte.
+	self fetchNextBytecode.
+	variableType := (descriptor >> 6) bitAnd: 16r3.
+	variableIndex := descriptor bitAnd: 16r3F.
+	variableType=0 ifTrue: [^self pushReceiverVariable: variableIndex].
+	variableType=1 ifTrue: [^self pushTemporaryVariable: variableIndex].
+	variableType=2 ifTrue: [^self pushLiteralConstant: variableIndex].
+	variableType=3 ifTrue: [^self pushLiteralVariable: variableIndex].
+
+]
+
+{ #category : 'primitive support' }
 StackInterpreter >> failUnbalancedPrimitive [
 	"not inlined for breakpoint value..."
 	<inline: false>
 	self primitiveFailFor: PrimErrBadNumArgs
 ]
 
-{ #category : #utilities }
+{ #category : 'utilities' }
 StackInterpreter >> fetchArray: fieldIndex ofObject: objectPointer [
 	"Fetch the instance variable at the given index of the given object. Return the address of first indexable field of resulting array object, or fail if the instance variable does not contain an indexable bytes or words object."
 	"Note: May be called by translated primitive code."
@@ -5995,14 +5765,14 @@ StackInterpreter >> fetchArray: fieldIndex ofObject: objectPointer [
 
 ]
 
-{ #category : #'interpreter shell' }
+{ #category : 'interpreter shell' }
 StackInterpreter >> fetchByte [
 	"This method uses the preIncrement builtin function which has no Smalltalk equivalent. Thus, it must be overridden in the simulator."
 
 	^objectMemory byteAtPointer: instructionPointer preIncrement
 ]
 
-{ #category : #utilities }
+{ #category : 'utilities' }
 StackInterpreter >> fetchFloat: fieldIndex ofObject: objectPointer [
 	"Fetch the instance variable at the given index of the given object. Return the C double precision floating point value of that instance variable, or fail if it is not a Float."
 	"Note: May be called by translated primitive code."
@@ -6013,7 +5783,7 @@ StackInterpreter >> fetchFloat: fieldIndex ofObject: objectPointer [
 	^objectMemory floatValueOf: floatOop
 ]
 
-{ #category : #utilities }
+{ #category : 'utilities' }
 StackInterpreter >> fetchInteger: fieldIndex ofObject: objectPointer [
 	"Note: May be called by translated primitive code."
 
@@ -6023,7 +5793,7 @@ StackInterpreter >> fetchInteger: fieldIndex ofObject: objectPointer [
 	^self checkedIntegerValueOf: intOop
 ]
 
-{ #category : #'interpreter shell' }
+{ #category : 'interpreter shell' }
 StackInterpreter >> fetchNextBytecode [
 
 	"This method fetches the next instruction (bytecode). Each bytecode method is responsible for fetching the next bytecode, preferably as early as possible to allow the memory system time to process the request before the next dispatch."
@@ -6031,7 +5801,7 @@ StackInterpreter >> fetchNextBytecode [
 	currentBytecode := self fetchByte
 ]
 
-{ #category : #'frame access' }
+{ #category : 'frame access' }
 StackInterpreter >> fetchPointer: offset ofMarriedContext: aContext [
 	"Fetch a slot from a married context.  Compute the value
 	 of the relevant inst var from the spouse frame's state.
@@ -6065,7 +5835,7 @@ StackInterpreter >> fetchPointer: offset ofMarriedContext: aContext [
 		ifFalse: [objectMemory nilObject]
 ]
 
-{ #category : #'internal interpreter access' }
+{ #category : 'internal interpreter access' }
 StackInterpreter >> fetchStackPointerOf: aContext [
 	"Return the stackPointer of a Context or BlockContext.
 	 Does not deal with married contexts.  Use only for debug
@@ -6079,7 +5849,7 @@ StackInterpreter >> fetchStackPointerOf: aContext [
 	^objectMemory integerValueOf: sp
 ]
 
-{ #category : #'debug support' }
+{ #category : 'debug support' }
 StackInterpreter >> findClassContainingMethod: meth startingAt: classObj [
 	| currClass classDict classDictSize methodArray i |
 	(objectMemory isOopForwarded: classObj)
@@ -6104,7 +5874,7 @@ StackInterpreter >> findClassContainingMethod: meth startingAt: classObj [
 	^currClass		"method not found in superclass chain"
 ]
 
-{ #category : #'debug support' }
+{ #category : 'debug support' }
 StackInterpreter >> findClassForSelector: aSelector lookupClass: startClass do: unaryBlock [
 	"Search startClass' class hierarchy looking for aSelector and if found, evaluate unaryBlock
 	 with the class where the selector is found.  Otherwise evaluate unaryBlock with nil."
@@ -6123,7 +5893,7 @@ StackInterpreter >> findClassForSelector: aSelector lookupClass: startClass do: 
 		
 ]
 
-{ #category : #'debug support' }
+{ #category : 'debug support' }
 StackInterpreter >> findClassOfMethod: meth forReceiver: rcvr [
 	((objectMemory addressCouldBeOop: rcvr)
 	and: [(objectMemory isOopForwarded: rcvr) not]) ifTrue:
@@ -6141,7 +5911,7 @@ StackInterpreter >> findClassOfMethod: meth forReceiver: rcvr [
 		startingAt: (self safeMethodClassOf: meth)
 ]
 
-{ #category : #'frame access' }
+{ #category : 'frame access' }
 StackInterpreter >> findFrameAbove: theFP inPage: thePage [
 	"Answer the frame above theFP (adjacent frame nearest head end).
 	 If theFP is the head frame answer 0."
@@ -6162,7 +5932,7 @@ StackInterpreter >> findFrameAbove: theFP inPage: thePage [
 	^0
 ]
 
-{ #category : #'debug printing' }
+{ #category : 'debug printing' }
 StackInterpreter >> findHomeForContext: aContext [
 	| closureOrNil |
 	<inline: false>
@@ -6177,7 +5947,7 @@ StackInterpreter >> findHomeForContext: aContext [
 	^self findHomeForContext: (objectMemory fetchPointer: FullClosureOuterContextIndex ofObject: closureOrNil)
 ]
 
-{ #category : #'handler search' }
+{ #category : 'handler search' }
 StackInterpreter >> findMethodWithPrimitive: primitive FromContext: senderContext UpToContext: homeContext [
 	"See findUnwindThroughContext:.  Alas this is mutually recursive with
 	 findMethodWithPrimitive:FromFP:SP:ThroughContext: instead of iterative.
@@ -6206,7 +5976,7 @@ StackInterpreter >> findMethodWithPrimitive: primitive FromContext: senderContex
 		UpToContext: homeContext
 ]
 
-{ #category : #'handler search' }
+{ #category : 'handler search' }
 StackInterpreter >> findMethodWithPrimitive: primitive FromFP: startFP UpToContext: homeContext [
 	"See findUnwindThroughContext:.  Alas this is mutually recursive with
 	 findMethodWithPrimitive:FromContext:ThroughContext: instead of iterative.
@@ -6242,31 +6012,64 @@ StackInterpreter >> findMethodWithPrimitive: primitive FromFP: startFP UpToConte
 		UpToContext: homeContext
 ]
 
-{ #category : #'message sending' }
+{ #category : 'message sending' }
 StackInterpreter >> findNewMethodInClassTag: classTagArg [
-	"Find the compiled method to be run when the current 
-	messageSelector is sent to the given class, setting the values 
-	of 'newMethod' and 'primitiveIndex'."
-	| ok classTag |
+	"Find the compiled method to be run when the current messageSelector is
+	 sent to the given classTag, setting the values of newMethod and primitiveIndex."
+
 	<inline: false>
-	ok := self lookupInMethodCacheSel: messageSelector classTag: classTagArg.
-	ok ifFalse: "entry was not found in the cache; look it up the hard way "
-		[classTag := classTagArg.
-		 ((objectMemory isOopForwarded: messageSelector)
-		  or: [objectMemory isForwardedClassTag: classTag]) ifTrue:
-			[(objectMemory isOopForwarded: messageSelector) ifTrue:
-				[messageSelector := self handleForwardedSelectorFaultFor: messageSelector].
-			 (objectMemory isForwardedClassTag: classTag) ifTrue:
-				[classTag := self handleForwardedSendFaultForTag: classTag].
-			ok := self lookupInMethodCacheSel: messageSelector classTag: classTag.
-			ok ifTrue:
-				[^nil]].
- 		 lkupClass := objectMemory classForClassTag: classTag.
-		 self lookupMethodInClass: lkupClass.
-		 self addNewMethodToCache: lkupClass]
+	self findNewMethodInClassTag: classTagArg ifFound: [ nil ]
 ]
 
-{ #category : #'frame access' }
+{ #category : 'message sending' }
+StackInterpreter >> findNewMethodInClassTag: classTagArg ifFound: aBlock [
+	"Find the compiled method to be run when the current messageSelector is
+	 sent to the given classTag, setting the values of newMethod and primitiveIndex."
+
+	<inline: true>
+	| classTag |
+	classTag := classTagArg.
+	(self inlineLookupInMethodCacheSel: messageSelector classTag: classTag)
+		ifFalse: [
+			"Entry was not found in the cache; perhaps something was forwarded.
+			Resolve forwarders and retry"
+			((objectMemory isOopForwarded: messageSelector) or: [
+				 objectMemory isForwardedClassTag: classTag ]) ifTrue: [
+				(objectMemory isOopForwarded: messageSelector) ifTrue: [
+					messageSelector := self handleForwardedSelectorFaultFor:
+						                   messageSelector ].
+				(objectMemory isForwardedClassTag: classTag) ifTrue: [
+					classTag := self handleForwardedSendFaultForTag: classTag ].
+				(self lookupInMethodCacheSel: messageSelector classTag: classTag)
+					ifTrue: [ ^ aBlock value ] ].
+
+			"Entry was not found in the cache; look it up the hard way "
+			lkupClass := objectMemory classForClassTag: classTag.
+			(objectMemory isOopForwarded: lkupClass) ifTrue: [
+				lkupClass := objectMemory followForwarded: lkupClass ].
+			self lookupMethodInClass: lkupClass.
+			self addNewMethodToCache: lkupClass ]
+		ifTrue: [ aBlock value ]
+]
+
+{ #category : 'message sending' }
+StackInterpreter >> findNewMethodOrdinary [
+	"Find the compiled method to be run when the current messageSelector is sent to the class 'lkupClass', setting the values of 'newMethod' and 'primitiveIndex'."
+
+	<inline: true>
+	^ self findNewMethodOrdinaryIfFound: [ nil ]
+]
+
+{ #category : 'message sending' }
+StackInterpreter >> findNewMethodOrdinaryIfFound: aBlock [
+	"Find the compiled method to be run when the current messageSelector is sent to the class 'lkupClass', setting the values of 'newMethod' and 'primitiveIndex'."
+
+	| classTag |
+	classTag := lkupClassTag.
+	^ self findNewMethodInClassTag: lkupClassTag ifFound: aBlock
+]
+
+{ #category : 'frame access' }
 StackInterpreter >> findSPOf: theFP on: thePage [
 	"Search for the stack pointer for theFP.  This points to the hottest item on the frame's stack.
 	 DO NOT CALL THIS WITH theFP == localFP OR theFP == framePointer!"
@@ -6284,7 +6087,7 @@ StackInterpreter >> findSPOf: theFP on: thePage [
 	^0
 ]
 
-{ #category : #'frame access' }
+{ #category : 'frame access' }
 StackInterpreter >> findSPOrNilOf: theFP on: thePage startingFrom: startFrame [
 	"Search for the stack pointer for theFP.  This points to the hottest item on the frame's stack.
 	 DO NOT CALL THIS WITH theFP == localFP OR theFP == framePointer!"
@@ -6313,7 +6116,7 @@ StackInterpreter >> findSPOrNilOf: theFP on: thePage startingFrom: startFrame [
 	^nil
 ]
 
-{ #category : #'debug support' }
+{ #category : 'debug support' }
 StackInterpreter >> findSelectorAndClassForMethod: meth lookupClass: startClass do: binaryBlock [
 	"Search startClass' class hierarchy searching for method and if found, evaluate aBinaryBlock
 	 with the selector and class where the method is found.  Otherwise evaluate aBinaryBlock
@@ -6338,7 +6141,7 @@ StackInterpreter >> findSelectorAndClassForMethod: meth lookupClass: startClass 
 		value: nil
 ]
 
-{ #category : #'debug support' }
+{ #category : 'debug support' }
 StackInterpreter >> findSelectorOfMethod: meth [
 	| classObj classDict classDictSize methodArray i |
 	(objectMemory addressCouldBeObj: meth) ifFalse:
@@ -6363,7 +6166,7 @@ StackInterpreter >> findSelectorOfMethod: meth [
 	^objectMemory nilObject
 ]
 
-{ #category : #'return bytecodes' }
+{ #category : 'return bytecodes' }
 StackInterpreter >> findUnwindThroughContext: homeContext [
 	"Search for either an unwind-protect (activation of method with primitive 198)
 	 or homeContext along the sender chain, which ever is found first.  Return values:
@@ -6395,7 +6198,7 @@ StackInterpreter >> findUnwindThroughContext: homeContext [
 	^ctxtOrNilOrZero
 ]
 
-{ #category : #finalization }
+{ #category : 'finalization' }
 StackInterpreter >> fireEphemeron: ephemeron [
 	<option: #SpurObjectMemory>
 	objectMemory
@@ -6404,29 +6207,21 @@ StackInterpreter >> fireEphemeron: ephemeron [
 	self signalFinalization: ephemeron
 ]
 
-{ #category : #finalization }
-StackInterpreter >> fireFinalization: weakling [
-	<option: #SpurObjectMemory>
-	newFinalization ifTrue:
-		[objectMemory queueMourner: weakling].
-	self signalFinalization: weakling
-]
-
-{ #category : #'compiled methods' }
+{ #category : 'compiled methods' }
 StackInterpreter >> firstByteIndexOfMethod: methodObj [
 	"Answer the one-relative index of the first bytecode in methodObj.
 	 Used for safer bounds-checking on methods."
 	^(objectMemory literalCountOf: methodObj) + LiteralStart * objectMemory bytesPerOop + 1
 ]
 
-{ #category : #'compiled methods' }
+{ #category : 'compiled methods' }
 StackInterpreter >> firstBytecodeOfAlternateHeader: methodHeader method: theMethod [
 	^theMethod
 	 + ((LiteralStart + (self literalCountOfAlternateHeader: methodHeader)) * objectMemory bytesPerOop)
 	 + objectMemory baseHeaderSize
 ]
 
-{ #category : #'plugin primitive support' }
+{ #category : 'plugin primitive support' }
 StackInterpreter >> floatArg: index [
 	"Like #stackFloatValue: but access method arguments left-to-right"
 	<returnTypeC: #double>
@@ -6438,32 +6233,32 @@ StackInterpreter >> floatArg: index [
 	^objectMemory floatValueOf: oop
 ]
 
-{ #category : #'memory access' }
+{ #category : 'memory access' }
 StackInterpreter >> floatAtPointer: anOop [
 
 	^ objectMemory float64At: anOop
 ]
 
-{ #category : #'memory access' }
+{ #category : 'memory access' }
 StackInterpreter >> floatAtPointer: anOop put: value [
 
 	objectMemory float64At: anOop put: value
 ]
 
-{ #category : #'debug printing' }
+{ #category : 'debug printing' }
 StackInterpreter >> flush [
 	<api>
 	<cmacro: '() fflush(stdout)'>
 ]
 
-{ #category : #'method lookup cache' }
+{ #category : 'method lookup cache' }
 StackInterpreter >> flushAtCache [
 	"Flush the at cache. The method cache is flushed on every programming change and garbage collect."
 
 	1 to: AtCacheTotalSize do: [ :i | atCache at: i put: 0 ]
 ]
 
-{ #category : #'object memory support' }
+{ #category : 'object memory support' }
 StackInterpreter >> flushBecommedClassesInMethodCache [
 	"Flush any entries in the cache which refer to a forwarded (becommed) class."
 	0 to: MethodCacheSize - 1 by: MethodCacheEntrySize do:
@@ -6478,12 +6273,12 @@ StackInterpreter >> flushBecommedClassesInMethodCache [
 	self flushAtCache
 ]
 
-{ #category : #'object memory support' }
+{ #category : 'object memory support' }
 StackInterpreter >> flushBecommedClassesInMethodZone [
 	"This is just a stub for the CoInterpreter"
 ]
 
-{ #category : #'plugin primitive support' }
+{ #category : 'plugin primitive support' }
 StackInterpreter >> flushExternalPrimitiveOf: methodObj [
 	"methodObj is a CompiledMethod. If it contains an external primitive,
 	 flush the function address and session ID of the CM.  Answer the prim
@@ -6502,7 +6297,7 @@ StackInterpreter >> flushExternalPrimitiveOf: methodObj [
 	^primIdx
 ]
 
-{ #category : #'plugin primitive support' }
+{ #category : 'plugin primitive support' }
 StackInterpreter >> flushExternalPrimitiveTable [
 	"Flush the external primitive table"
 	0 to: MaxExternalPrimitiveTableSize-1 do:[:i|
@@ -6510,7 +6305,7 @@ StackInterpreter >> flushExternalPrimitiveTable [
 	externalPrimitiveTableFirstFreeIndex := 0
 ]
 
-{ #category : #'plugin primitive support' }
+{ #category : 'plugin primitive support' }
 StackInterpreter >> flushExternalPrimitives [
 	"Flush the references to external functions from plugin primitives.
 	 This will force a reload of those primitives when accessed next. 
@@ -6524,7 +6319,7 @@ StackInterpreter >> flushExternalPrimitives [
 	self flushExternalPrimitiveTable
 ]
 
-{ #category : #'method lookup cache' }
+{ #category : 'method lookup cache' }
 StackInterpreter >> flushMethodCache [
 	"Flush the method cache. The method cache is flushed on every programming change and garbage collect."
 
@@ -6533,7 +6328,7 @@ StackInterpreter >> flushMethodCache [
 	self flushAtCache
 ]
 
-{ #category : #'method lookup cache' }
+{ #category : 'method lookup cache' }
 StackInterpreter >> flushMethodCacheForMethod: oldMethod [
 	"Flush the method caches of references to oldMethod."
 	| probe |
@@ -6547,7 +6342,7 @@ StackInterpreter >> flushMethodCacheForMethod: oldMethod [
 	self flushAtCache
 ]
 
-{ #category : #'method lookup cache' }
+{ #category : 'method lookup cache' }
 StackInterpreter >> flushMethodCacheFrom: memStart to: memEnd [ 
 	"Flush entries in the method cache only if the oop address is within the given memory range. 
 	This reduces over-aggressive cache clearing. Note the AtCache is fully flushed, 70% of the time 
@@ -6568,7 +6363,7 @@ StackInterpreter >> flushMethodCacheFrom: memStart to: memEnd [
 	self flushAtCache
 ]
 
-{ #category : #'message sending' }
+{ #category : 'message sending' }
 StackInterpreter >> followForwardedFieldsInCurrentMethod [
 	<inline: true>
 	objectMemory
@@ -6576,7 +6371,7 @@ StackInterpreter >> followForwardedFieldsInCurrentMethod [
 		toDepth: 0
 ]
 
-{ #category : #'as yet unclassified' }
+{ #category : 'as yet unclassified' }
 StackInterpreter >> followForwardedForAccessorDepth: accessorDepth [
 
 	| scannedStackFrame found |
@@ -6607,7 +6402,7 @@ StackInterpreter >> followForwardedForAccessorDepth: accessorDepth [
 	^ found
 ]
 
-{ #category : #'lazy become' }
+{ #category : 'lazy become' }
 StackInterpreter >> followForwardedFrameContents: theFP stackPointer: theSP [
 	"follow pointers in the current stack frame up to theSP."
 	<var: #theFP type: #'char *'>
@@ -6619,29 +6414,29 @@ StackInterpreter >> followForwardedFrameContents: theFP stackPointer: theSP [
 		to: (self frameReceiverLocation: theFP)
 		by: objectMemory wordSize
 		do: [:ptr|
-			oop := stackPages longAt: ptr.
+			oop := stackPages unsignedLongAt: ptr.
 			((objectMemory isNonImmediate: oop)
 			 and: [objectMemory isForwarded: oop]) ifTrue:
-				[stackPages longAt: ptr put: (objectMemory followForwarded: oop)]].
+				[stackPages unsignedLongAt: ptr put: (objectMemory followForwarded: oop)]].
 	theFP + FoxCallerSavedIP + objectMemory wordSize
 		to: theFP + (self frameStackedReceiverOffset: theFP)
 		by: objectMemory wordSize
 		do: [:ptr|
-			oop := stackPages longAt: ptr.
+			oop := stackPages unsignedLongAt: ptr.
 			((objectMemory isNonImmediate: oop)
 			 and: [objectMemory isForwarded: oop]) ifTrue:
 				[oop := objectMemory followForwarded: oop.
-				 stackPages longAt: ptr put: oop]].
+				 stackPages unsignedLongAt: ptr put: oop]].
 	"If we're in a block then also follow fields in the stacked closure as it may be activated again."
 	(self frameIsBlockActivation: theFP) ifTrue:
-		[self assert: oop = (stackPages longAt: theFP + (self frameStackedReceiverOffset: theFP)).
+		[self assert: oop = (stackPages unsignedLongAt: theFP + (self frameStackedReceiverOffset: theFP)).
 		 objectMemory followForwardedObjectFields: oop toDepth: 0].
 	self assert: (objectMemory isForwarded: (self frameMethodObject: theFP)) not.
 	(self frameHasContext: theFP) ifTrue:
 		[self assert: (objectMemory isForwarded: (self frameContext: theFP)) not]
 ]
 
-{ #category : #'object memory support' }
+{ #category : 'object memory support' }
 StackInterpreter >> followForwardedMethodsInMethodCache [
 	0 to: MethodCacheSize - 1 by: MethodCacheEntrySize do:
 		[:i | | c s m |
@@ -6654,12 +6449,12 @@ StackInterpreter >> followForwardedMethodsInMethodCache [
 			 methodCache at: i + MethodCacheMethod put: m]]
 ]
 
-{ #category : #'object memory support' }
+{ #category : 'object memory support' }
 StackInterpreter >> followForwardedMethodsInMethodZone [
 	"This is just a stub for the CoInterpreter"
 ]
 
-{ #category : #'object memory support' }
+{ #category : 'object memory support' }
 StackInterpreter >> followForwardingPointersInProfileState [
 	(objectMemory isForwarded: profileProcess) ifTrue:
 		[profileProcess := objectMemory followForwarded: profileProcess].
@@ -6669,10 +6464,13 @@ StackInterpreter >> followForwardingPointersInProfileState [
 		[profileSemaphore := objectMemory followForwarded: profileSemaphore].
 ]
 
-{ #category : #'object memory support' }
+{ #category : 'object memory support' }
 StackInterpreter >> followForwardingPointersInScheduler [
 	| schedAssoc sched procLists |
 	schedAssoc := objectMemory splObj: SchedulerAssociation.
+	
+	schedAssoc = objectMemory nilObject ifTrue: [ ^self ].
+	
 	"the GC follows pointers in the special objects array for us."
 	self assert: (objectMemory isForwarded: schedAssoc) not.
 
@@ -6697,7 +6495,7 @@ StackInterpreter >> followForwardingPointersInScheduler [
 
 ]
 
-{ #category : #'object memory support' }
+{ #category : 'object memory support' }
 StackInterpreter >> followForwardingPointersInSpecialObjectsArray [
 	"Various semaphores in the specialObjectsArray are signalled in checkForEventsMayContextSwitch:.
 	 These must be followed post become to avoid a read barrier in checkForEventsMayContextSwitch:,
@@ -6720,7 +6518,7 @@ StackInterpreter >> followForwardingPointersInSpecialObjectsArray [
 		self followSemaphoreIn: xArray at: i]
 ]
 
-{ #category : #'object memory support' }
+{ #category : 'object memory support' }
 StackInterpreter >> followForwardingPointersInStackZone: theBecomeEffectsFlags [
 	"Spur's become: is lazy, turning the becommed object into a forwarding object to the other.
 	 The read-barrier is minimised by arranging that forwarding pointers will fail a method cache
@@ -6743,7 +6541,7 @@ StackInterpreter >> followForwardingPointersInStackZone: theBecomeEffectsFlags [
 		 self cCode: [] inSmalltalk: [stackPages allPagesFree].
 		 ^self].
 
-	self externalWriteBackHeadFramePointers.
+	self writeBackHeadFramePointers.
 
 	(theBecomeEffectsFlags anyMask: BecameCompiledMethodFlag) ifTrue:
 		[(objectMemory isForwarded: method) ifTrue:
@@ -6764,34 +6562,34 @@ StackInterpreter >> followForwardingPointersInStackZone: theBecomeEffectsFlags [
 			 theIPPtr := thePage = stackPage ifTrue: [0] ifFalse: [thePage headSP asUnsignedInteger].
 			 [self assert: (thePage addressIsInPage: theFP).
 			  self assert: (theIPPtr = 0 or: [thePage addressIsInPage: theIPPtr asVoidPointer]).
-			  oop := stackPages longAt: theFP + FoxReceiver.
+			  oop := stackPages unsignedLongAt: theFP + FoxReceiver.
 			  (objectMemory isOopForwarded: oop) ifTrue:
 				[stackPages
-					longAt: theFP + FoxReceiver
+					unsignedLongAt: theFP + FoxReceiver
 					put: (objectMemory followForwarded: oop)].
 			  ((self frameHasContext: theFP)
 			   and: [(objectMemory isForwarded: (self frameContext: theFP))]) ifTrue:
 				[stackPages
-					longAt: theFP + FoxThisContext
+					unsignedLongAt: theFP + FoxThisContext
 					put: (objectMemory followForwarded: (self frameContext: theFP))].
-			  oop := self frameMethod: theFP.
+			  oop := self iframeMethod: theFP.
 			  (objectMemory isForwarded: oop) ifTrue:
 				[| newOop delta |
 				 newOop := objectMemory followForwarded: oop.
 				 theIPPtr ~= 0 ifTrue:
-					[self assert: (stackPages longAt: theIPPtr) > (self frameMethod: theFP).
+					[self assert: (stackPages unsignedLongAt: theIPPtr) > (self iframeMethod: theFP).
 					 delta := newOop - oop.
 					 stackPages
-						longAt: theIPPtr
-						put: (stackPages longAt: theIPPtr) + delta].
+						unsignedLongAt: theIPPtr
+						put: (stackPages unsignedLongAt: theIPPtr) + delta].
 				stackPages
-					longAt: theFP + FoxMethod
+					unsignedLongAt: theFP + FoxMethod
 					put: (oop := newOop)].
 			  offset := self frameStackedReceiverOffset: theFP.
-			  oop := stackPages longAt: theFP + offset.
+			  oop := stackPages unsignedLongAt: theFP + offset.
 			  (objectMemory isOopForwarded: oop) ifTrue:
 				[stackPages
-					longAt: theFP + offset
+					unsignedLongAt: theFP + offset
 					put: (objectMemory followForwarded: oop)].
 			  (callerFP := self frameCallerFP: theFP) ~= 0] whileTrue:
 				[theIPPtr := (theFP + FoxCallerSavedIP) asUnsignedInteger.
@@ -6803,13 +6601,13 @@ StackInterpreter >> followForwardingPointersInStackZone: theBecomeEffectsFlags [
 				[self frameCallerContext: theFP put: (objectMemory followForwarded: oop)]]]
 ]
 
-{ #category : #'compiled methods' }
+{ #category : 'compiled methods' }
 StackInterpreter >> followLiteral: offset ofMethod: methodPointer [
 	^objectMemory followField: offset + LiteralStart ofObject: methodPointer
 
 ]
 
-{ #category : #'object memory support' }
+{ #category : 'object memory support' }
 StackInterpreter >> followSemaphoreIn: anArray at: index [
 	"Only follow the reference to the semaphore.  synchronousSignal
 	 checks the chain to the suspendedContext."
@@ -6821,15 +6619,25 @@ StackInterpreter >> followSemaphoreIn: anArray at: index [
 		 objectMemory storePointer: index ofObject: anArray withValue: obj]
 ]
 
-{ #category : #'process primitive support' }
+{ #category : 'process primitive support' }
+StackInterpreter >> forProcessPrimitiveReturnToExecutivePostContextSwitch: inInterpreter [
+	"Do a returnToExecutive: inInterpreter postContextSwitch: true for a process primtive
+	 being sure to sample the profile clock before making the switch."
+	<inline: true>
+	"If we are profiling, take accurate primitive measures"
+	nextProfileTick > 0 ifTrue:
+		[self checkProfileTick: newMethod].
+	^self returnToExecutive: inInterpreter postContextSwitch: true
+]
+
+{ #category : 'process primitive support' }
 StackInterpreter >> forceInterruptCheck [
 	"Force an interrupt check ASAP.
 	 Must set the stack page's limit before stackLimit to avoid
 	 a race condition if this is called from an interrupt handler."
-	| thePage iccFunc |
+	| thePage |
 	<inline: false>
 	<var: #thePage type: #'StackPage *'>
-	<var: #iccFunc declareC: 'void (*iccFunc)()'>
 	"Do _not_ set stackLimit until the stack system has been initialized.
 	 stackLimit is the initialization flag for the stack system."
 	stackLimit = 0 ifTrue:
@@ -6839,16 +6647,10 @@ StackInterpreter >> forceInterruptCheck [
 		[thePage stackLimit: self allOnesAsCharStar].
 	stackLimit := self allOnesAsCharStar.
 	self sqLowLevelMFence.
-	"There is a race condition if we test the function and then dereference
-	 it a second time to call it.  This is called from interrupt code but at the
-	 same time other code could be clearing the interruptCheckChain via
-	 setInterruptCheckChain:."
-	(iccFunc := interruptCheckChain) notNil ifTrue:
-		[self perform: iccFunc].
 	statForceInterruptCheck := statForceInterruptCheck + 1
 ]
 
-{ #category : #'process primitive support' }
+{ #category : 'process primitive support' }
 StackInterpreter >> forceInterruptCheckFromHeartbeat [
 	"Force an interrupt check ASAP. This version is the
 	 entry-point to forceInterruptCheck for the heartbeat
@@ -6858,14 +6660,14 @@ StackInterpreter >> forceInterruptCheckFromHeartbeat [
 		 self forceInterruptCheck]
 ]
 
-{ #category : #'frame access' }
+{ #category : 'frame access' }
 StackInterpreter >> frameCallerContext: theFP [
 	<inline: true>
 	<var: #theFP type: #'char *'>
-	^stackPages longAt: theFP + FoxCallerContext "a.k.a. FoxCallerSavedIP"
+	^stackPages unsignedLongAt: theFP + FoxCallerContext "a.k.a. FoxCallerSavedIP"
 ]
 
-{ #category : #'frame access' }
+{ #category : 'frame access' }
 StackInterpreter >> frameCallerContext: theFP put: aValue [
 	<var: #theFP type: #'char *'>
 	<inline: true>
@@ -6875,15 +6677,15 @@ StackInterpreter >> frameCallerContext: theFP put: aValue [
 		put: aValue
 ]
 
-{ #category : #'frame access' }
+{ #category : 'frame access' }
 StackInterpreter >> frameCallerFP: theFP [
 	<inline: true>
 	<var: #theFP type: #'char *'>
 	<returnTypeC: 'char *'>
-	^self pointerForOop: (stackPages longAt: theFP + FoxSavedFP)
+	^self pointerForOop: (stackPages unsignedLongAt: theFP + FoxSavedFP)
 ]
 
-{ #category : #'frame access' }
+{ #category : 'frame access' }
 StackInterpreter >> frameCallerSP: theFP [
 	"Answer the SP of the caller provided theFP is not a base frame.
 	 This points to the hottest item on the caller frame's stack."
@@ -6893,15 +6695,15 @@ StackInterpreter >> frameCallerSP: theFP [
 	^theFP + (self frameStackedReceiverOffset: theFP) + objectMemory wordSize
 ]
 
-{ #category : #'frame access' }
+{ #category : 'frame access' }
 StackInterpreter >> frameCallerSavedIP: theFP [
 	<inline: true>
 	<returnTypeC: #'char *'>
 	<var: #theFP type: #'char *'>
-	^self pointerForOop: (stackPages longAt: theFP + FoxCallerSavedIP) "a.k.a. FoxCallerSavedIP"
+	^self pointerForOop: (stackPages unsignedLongAt: theFP + FoxCallerSavedIP) "a.k.a. FoxCallerSavedIP"
 ]
 
-{ #category : #'frame access' }
+{ #category : 'frame access' }
 StackInterpreter >> frameCallerStackPointer: theFP [
 	"Answer the stack pointer of the caller frame."
 	<var: #theFP type: #'char *'>
@@ -6911,14 +6713,14 @@ StackInterpreter >> frameCallerStackPointer: theFP [
 	^theFP + (self frameStackedReceiverOffset: theFP) + objectMemory wordSize
 ]
 
-{ #category : #'frame access' }
+{ #category : 'frame access' }
 StackInterpreter >> frameContext: theFP [
 	<inline: true>
 	<var: #theFP type: #'char *'>
-	^stackPages longAt: theFP + FoxThisContext
+	^stackPages unsignedLongAt: theFP + FoxThisContext
 ]
 
-{ #category : #'frame access' }
+{ #category : 'frame access' }
 StackInterpreter >> frameHasContext: theFP [
 	"See encodeFrameFieldHasContext:numArgs:"
 	<inline: true>
@@ -6926,14 +6728,14 @@ StackInterpreter >> frameHasContext: theFP [
 	^(stackPages byteAt: theFP + FoxFrameFlags + 2) ~= 0
 ]
 
-{ #category : #'frame access' }
+{ #category : 'frame access' }
 StackInterpreter >> frameIsBlockActivation: theFP [ "<Integer>"
 	<inline: true>
 	<var: #theFP type: #'char *'>
 	^(stackPages byteAt: theFP + FoxFrameFlags + 3) ~= 0
 ]
 
-{ #category : #'frame access' }
+{ #category : 'frame access' }
 StackInterpreter >> frameLastArgumentOffset [
 	"Answer the offset in bytes from the frame pointer to the last argument,
 	 which is simply the address of the word above the saved ip.  See the
@@ -6942,22 +6744,23 @@ StackInterpreter >> frameLastArgumentOffset [
 	^FoxCallerSavedIP + objectMemory wordSize
 ]
 
-{ #category : #'frame access' }
-StackInterpreter >> frameMethod: theFP [
+{ #category : 'frame access' }
+StackInterpreter >> frameMethodField: theFP [
 	<inline: true>
 	<var: #theFP type: #'char *'>
-	^stackPages longAt: theFP + FoxMethod
+
+	^stackPages unsignedLongAt: theFP + FoxMethod
 ]
 
-{ #category : #'frame access' }
+{ #category : 'frame access' }
 StackInterpreter >> frameMethodObject: theFP [
 	"Homonym of frameMethod: for compatibility with CoInterpreter"
 	<inline: true>
 	<var: #theFP type: #'char *'>
-	^stackPages longAt: theFP + FoxMethod
+	^stackPages unsignedLongAt: theFP + FoxMethod
 ]
 
-{ #category : #'frame access' }
+{ #category : 'frame access' }
 StackInterpreter >> frameNumArgs: theFP [
 	"See encodeFrameFieldHasContext:numArgs:"
 	<inline: true>
@@ -6965,7 +6768,7 @@ StackInterpreter >> frameNumArgs: theFP [
 	^stackPages byteAt: theFP + FoxFrameFlags + 1
 ]
 
-{ #category : #'frame access' }
+{ #category : 'frame access' }
 StackInterpreter >> frameOfMarriedContext: aContext [ 
 	| senderOop |
 	<inline: true>
@@ -6974,28 +6777,28 @@ StackInterpreter >> frameOfMarriedContext: aContext [
 	^self withoutSmallIntegerTags: senderOop
 ]
 
-{ #category : #'cog jit support' }
+{ #category : 'cog jit support' }
 StackInterpreter >> framePointer: theFP [
 	"Simulation only"
 	<doNotGenerate>
 	framePointer := theFP
 ]
 
-{ #category : #'frame access' }
+{ #category : 'frame access' }
 StackInterpreter >> frameReceiver: theFP [
 	<inline: true>
 	<var: #theFP type: #'char *'>
-	^stackPages longAt: theFP + FoxReceiver
+	^stackPages unsignedLongAt: theFP + FoxReceiver
 ]
 
-{ #category : #'frame access' }
+{ #category : 'frame access' }
 StackInterpreter >> frameReceiverLocation: theFP [
 	<inline: true>
 	<var: #theFP type: #'char *'>
 	^theFP + FoxReceiver
 ]
 
-{ #category : #'frame access' }
+{ #category : 'frame access' }
 StackInterpreter >> frameStackedReceiver: theFP numArgs: numArgs [
 	"Answer the stacked receiver given the frame's argument count.
 	 The receiver of a message send or the closure of a block activation is
@@ -7003,10 +6806,10 @@ StackInterpreter >> frameStackedReceiver: theFP numArgs: numArgs [
 	 diagram in StackInterpreter class>>initializeFrameIndices."
 	<inline: true>
 	<var: #theFP type: #'char *'>
-	^stackPages longAt: theFP + (self frameStackedReceiverOffsetNumArgs: numArgs)
+	^stackPages unsignedLongAt: theFP + (self frameStackedReceiverOffsetNumArgs: numArgs)
 ]
 
-{ #category : #'frame access' }
+{ #category : 'frame access' }
 StackInterpreter >> frameStackedReceiverOffset: theFP [
 	"Answer the offset in bytes from the the frame pointer to its stacked receiver.
 	 The receiver of a message send or the closure of a block activation is
@@ -7017,7 +6820,7 @@ StackInterpreter >> frameStackedReceiverOffset: theFP [
 	^self frameStackedReceiverOffsetNumArgs: (self frameNumArgs: theFP)
 ]
 
-{ #category : #'frame access' }
+{ #category : 'frame access' }
 StackInterpreter >> frameStackedReceiverOffsetNumArgs: numArgs [
 	"Answer the offset in bytes from the a frame pointer to its stacked receiver,
 	 given the argument count.  The receiver of a message send or the closure of
@@ -7027,12 +6830,12 @@ StackInterpreter >> frameStackedReceiverOffsetNumArgs: numArgs [
 	^FoxCallerSavedIP + objectMemory wordSize + (numArgs << objectMemory shiftForWord)
 ]
 
-{ #category : #'object memory support' }
+{ #category : 'object memory support' }
 StackInterpreter >> freeUnmarkedMachineCode [
 	"This is a no-op in the StackInterpreter"
 ]
 
-{ #category : #'object memory support' }
+{ #category : 'object memory support' }
 StackInterpreter >> freeUntracedStackPages [
 	"Free any untraced stack pages."
 	<var: #thePage type: #'StackPage *'>
@@ -7048,7 +6851,7 @@ StackInterpreter >> freeUntracedStackPages [
 		self assert: (thePage trace: StackPageTraceInvalid) ~= 0] "Invalidate the trace state for assertion checks"
 ]
 
-{ #category : #'control primitives' }
+{ #category : 'control primitives' }
 StackInterpreter >> fullClosureIn: context numArgs: numArgs numCopiedValues: numCopied compiledBlock: compiledBlock [ 
 	| newClosure |
 	<inline: true>
@@ -7070,7 +6873,7 @@ StackInterpreter >> fullClosureIn: context numArgs: numArgs numCopiedValues: num
 	^newClosure
 ]
 
-{ #category : #'plugin primitive support' }
+{ #category : 'plugin primitive support' }
 StackInterpreter >> functionForPrimitiveCallout [
 	"Answer the function primitiveCallout from the FFI plugin or nil if it can't
 	 be found.  Cache it for performance.  We use this circumlocution so that
@@ -7085,7 +6888,7 @@ StackInterpreter >> functionForPrimitiveCallout [
 	^self cCoerceSimple: function to: #'void (*)(void)'
 ]
 
-{ #category : #'method lookup cache' }
+{ #category : 'method lookup cache' }
 StackInterpreter >> functionPointerFor: primIdx inClass: theClass [
 	"Find an actual function pointer for this primitiveIndex.  This is an
 	opportunity to specialise the prim for the relevant class (format for
@@ -7095,43 +6898,43 @@ StackInterpreter >> functionPointerFor: primIdx inClass: theClass [
 	^primIdx > MaxPrimitiveIndex ifTrue: [0] ifFalse: [primitiveTable at: primIdx]
 ]
 
-{ #category : #'internal interpreter access' }
+{ #category : 'internal interpreter access' }
 StackInterpreter >> getBlockCompilationCount [
 	"This is nil in the StackVM"
 	^objectMemory nilObject
 ]
 
-{ #category : #'internal interpreter access' }
+{ #category : 'internal interpreter access' }
 StackInterpreter >> getBlockCompilationMSecs [
 	"This is nil in the StackVM"
 	^objectMemory nilObject
 ]
 
-{ #category : #'internal interpreter access' }
+{ #category : 'internal interpreter access' }
 StackInterpreter >> getCodeCompactionCount [
 	"This is nil in the StackVM"
 	^objectMemory nilObject
 ]
 
-{ #category : #'internal interpreter access' }
+{ #category : 'internal interpreter access' }
 StackInterpreter >> getCodeCompactionMSecs [
 	"This is nil in the StackVM"
 	^objectMemory nilObject
 ]
 
-{ #category : #'internal interpreter access' }
+{ #category : 'internal interpreter access' }
 StackInterpreter >> getCogCodeSize [
-	"This is nil in the StackVM"
-	^objectMemory nilObject
+	
+	^ objectMemory integerObjectOf: 0
 ]
 
-{ #category : #'internal interpreter access' }
+{ #category : 'internal interpreter access' }
 StackInterpreter >> getCogMethodCount [
 	"This is 0 in the StackVM"
 	^ConstZero
 ]
 
-{ #category : #'internal interpreter access' }
+{ #category : 'internal interpreter access' }
 StackInterpreter >> getCogVMFeatureFlags [
 
 	"Answer an array of flags indicating various optional features of the Cog VM.
@@ -7145,7 +6948,7 @@ StackInterpreter >> getCogVMFeatureFlags [
 		  + (self cppIf: #ITIMER_HEARTBEAT ifTrue: [ 4 ] ifFalse: [ 0 ])
 ]
 
-{ #category : #'internal interpreter access' }
+{ #category : 'internal interpreter access' }
 StackInterpreter >> getCogVMFlags [
 	"Answer an array of flags indicating various properties of the Cog VM.
 	 These are the same as the image header flags shifted right two bits (excluding float order and full screen flags).
@@ -7156,37 +6959,35 @@ StackInterpreter >> getCogVMFlags [
 	 Bit 4: if set, implies the new finalization scheme where WeakArrays are queued
 	 Bit 5: if set, implies wheel events will be delivered as such and not mapped to arrow key events"
 	^objectMemory integerObjectOf: (preemptionYields ifTrue: [0] ifFalse: [4])
-									+ (newFinalization ifTrue: [16] ifFalse: [0])
-									+ (sendWheelEvents ifTrue: [32] ifFalse: [0])
 									+ (imageHeaderFlags >> 2 bitClear: 4 + 16 + 32)
 ]
 
-{ #category : #'interpreter shell' }
+{ #category : 'interpreter shell' }
 StackInterpreter >> getCurrentBytecode [
 	"currentBytecode will be private to the main dispatch loop in the generated code. This method allows the currentBytecode to be retrieved from global variables."
 
 	^objectMemory byteAt: instructionPointer
 ]
 
-{ #category : #'internal interpreter access' }
+{ #category : 'internal interpreter access' }
 StackInterpreter >> getDesiredCogCodeSize [
 	"This is nil in the StackVM"
 	^objectMemory nilObject
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 StackInterpreter >> getDesiredEdenBytes [
 
 	^ desiredEdenBytes
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 StackInterpreter >> getDesiredNumStackPages [
 	
 	^ desiredNumStackPages
 ]
 
-{ #category : #'message sending' }
+{ #category : 'message sending' }
 StackInterpreter >> getErrorObjectFromPrimFailCode [
 	"Answer the errorCode object to supply to a failing primitive method that accepts one.
 	 If there is a primitive error table and the primFailCode is a valid index there-in answer
@@ -7206,7 +7007,7 @@ StackInterpreter >> getErrorObjectFromPrimFailCode [
 	^objectMemory integerObjectOf: primFailCode
 ]
 
-{ #category : #'process primitive support' }
+{ #category : 'process primitive support' }
 StackInterpreter >> getExternalSemaphoreWithIndex: index [
 	<api>
 	| xArray sema |
@@ -7219,70 +7020,63 @@ StackInterpreter >> getExternalSemaphoreWithIndex: index [
 	^ sema
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 StackInterpreter >> getExtraVMMemory [
 
 	^ extraVMMemory
 ]
 
-{ #category : #'plugin primitive support' }
+{ #category : 'plugin primitive support' }
 StackInterpreter >> getFullScreenFlag [
 	^fullScreenFlag
 ]
 
-{ #category : #'object memory support' }
+{ #category : 'object memory support' }
 StackInterpreter >> getGCMode [
 	"This is a no-op in the StackVM"
 	^0
 ]
 
-{ #category : #'image save/restore' }
+{ #category : 'image save/restore' }
 StackInterpreter >> getImageHeaderFlags [
 	"Answer the flags that are contained in the 7th long of the image header."
-	^fullScreenFlag "0 or 1"
-	+ (VMBIGENDIAN ifTrue: [0] ifFalse: [2]) "this is the imageFloatsLittleEndian flag"
+	^(VMBIGENDIAN ifTrue: [0] ifFalse: [2]) "this is the imageFloatsLittleEndian flag"
 	+ (preemptionYields ifTrue: [0] ifFalse: [16r10])
-	+ (newFinalization ifTrue: [16r40] ifFalse: [0])
-	+ (sendWheelEvents ifTrue: [16r80] ifFalse: [0])
 	+ (imageHeaderFlags bitClear: 16rD3) "these are any flags we do not recognize"
 ]
 
-{ #category : #'plugin primitive support' }
-StackInterpreter >> getInterruptPending [
-	^interruptPending
+{ #category : 'accessing' }
+StackInterpreter >> getImageVersion [
+
+	^ imageVersionNumber
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 StackInterpreter >> getMaxExtSemTabSizeSet [
 	
 	^ maxExtSemTabSizeSet
 ]
 
-{ #category : #'internal interpreter access' }
+{ #category : 'internal interpreter access' }
 StackInterpreter >> getMethodCompilationCount [
 	"This is nil in the StackVM"
 	^objectMemory nilObject
 ]
 
-{ #category : #'internal interpreter access' }
+{ #category : 'internal interpreter access' }
 StackInterpreter >> getMethodCompilationMSecs [
 	"This is nil in the StackVM"
 	^objectMemory nilObject
 ]
 
-{ #category : #'plugin primitive support' }
+{ #category : 'plugin primitive support' }
 StackInterpreter >> getNextWakeupUsecs [
 	<api>
 	<returnTypeC: #usqLong>
 	^nextWakeupUsecs
 ]
 
-{ #category : #'plugin primitive support' }
-StackInterpreter >> getSavedWindowSize [
-	^savedWindowSize
-]
-
-{ #category : #'primitive support' }
+{ #category : 'primitive support' }
 StackInterpreter >> getStackPointer [
 	"For Alien FFI"
 	<api>
@@ -7290,14 +7084,14 @@ StackInterpreter >> getStackPointer [
 	^self cCoerceSimple: stackPointer to: #'sqInt *'
 ]
 
-{ #category : #'plugin support' }
+{ #category : 'plugin support' }
 StackInterpreter >> getThisSessionID [
 	"return the global session ID value"
 	<inline: false>
 	^globalSessionID
 ]
 
-{ #category : #'message sending' }
+{ #category : 'message sending' }
 StackInterpreter >> handleForwardedSelectorFaultFor: selectorOop [
 	"Handle a send fault that is due to a send using a forwarded selector.
 	 Unforward the selector and follow the current method and special
@@ -7306,13 +7100,11 @@ StackInterpreter >> handleForwardedSelectorFaultFor: selectorOop [
 	<inline: false>
 	self assert: (objectMemory isOopForwarded: selectorOop).
 	self followForwardedFieldsInCurrentMethod.
-	objectMemory
-		followForwardedObjectFields: (objectMemory splObj: SpecialSelectors)
-		toDepth: 0.
+	objectMemory followSpecialSelectors.
 	^objectMemory followForwarded: selectorOop
 ]
 
-{ #category : #'message sending' }
+{ #category : 'message sending' }
 StackInterpreter >> handleForwardedSendFaultForTag: classTag [
 	"Handle a send fault that may be due to a send to a forwarded object.
 	 Unforward the receiver on the stack and answer its actual class."
@@ -7335,14 +7127,14 @@ StackInterpreter >> handleForwardedSendFaultForTag: classTag [
 	^objectMemory fetchClassTagOf: rcvr
 ]
 
-{ #category : #'message sending' }
+{ #category : 'message sending' }
 StackInterpreter >> handleSpecialSelectorSendFaultFor: obj [
 	<inline: true>
 	<option: #SpurObjectMemory>
 	^self handleSpecialSelectorSendFaultFor: obj fp: framePointer sp: stackPointer
 ]
 
-{ #category : #'message sending' }
+{ #category : 'message sending' }
 StackInterpreter >> handleSpecialSelectorSendFaultFor: obj fp: theFP sp: theSP [
 	"Handle a special send fault that may be due to a special selector
 	 send accessing a forwarded object.  obj is forwarded.
@@ -7361,7 +7153,7 @@ StackInterpreter >> handleSpecialSelectorSendFaultFor: obj fp: theFP sp: theSP [
 	^objectMemory followForwarded: obj
 ]
 
-{ #category : #'message sending' }
+{ #category : 'message sending' }
 StackInterpreter >> handleStackOverflow [
 	"Check for stack overflow, moving frames to another stack if so.
 	 This should *only* be sent from checkForStackOverflow."
@@ -7414,7 +7206,7 @@ StackInterpreter >> handleStackOverflow [
 						or: [objectMemory isContext: (self frameContext: framePointer)])]
 ]
 
-{ #category : #'message sending' }
+{ #category : 'message sending' }
 StackInterpreter >> handleStackOverflowOrEventAllowContextSwitch: mayContextSwitch [
 	"The stackPointer is below the stackLimit.  This is either because of a
 	 stack overflow or the setting of stackLimit to indicate a possible interrupt.
@@ -7429,7 +7221,7 @@ StackInterpreter >> handleStackOverflowOrEventAllowContextSwitch: mayContextSwit
 	^self checkForEventsMayContextSwitch: mayContextSwitch
 ]
 
-{ #category : #'primitive support' }
+{ #category : 'primitive support' }
 StackInterpreter >> hasCheckAllocFiller [
 
 	<api>
@@ -7437,7 +7229,7 @@ StackInterpreter >> hasCheckAllocFiller [
 	^ self checkAllocFiller 
 ]
 
-{ #category : #profiling }
+{ #category : 'profiling' }
 StackInterpreter >> hasProfileSemaphore [
 
 	<api>
@@ -7445,7 +7237,7 @@ StackInterpreter >> hasProfileSemaphore [
 	^ profileSemaphore ~= objectMemory nilObject
 ]
 
-{ #category : #'stack pages' }
+{ #category : 'stack pages' }
 StackInterpreter >> highBit: anUnsignedValue [ 
 	"This is a C implementation needed by ioSetMaxExtSemTableSize
 	 and e.g. stackPageByteSize."
@@ -7480,7 +7272,7 @@ StackInterpreter >> highBit: anUnsignedValue [
 	^bitNo + shifted
 ]
 
-{ #category : #'process primitive support' }
+{ #category : 'process primitive support' }
 StackInterpreter >> highestPriorityProcess [
 	"Answer the highest priority process that is ready to run, but
 	 unlike wakeHighestPriority do not remove it from the list.
@@ -7506,23 +7298,21 @@ StackInterpreter >> highestPriorityProcess [
 	^processOrNil
 ]
 
-{ #category : #'message sending' }
+{ #category : 'message sending' }
 StackInterpreter >> ifAppropriateCompileToNativeCode: aMethodObj selector: selector [
 	"Convenient  noop in the StackInterpreter e.g. for sendInvokeCallbackContext:"
 ]
 
-{ #category : #'jump bytecodes' }
+{ #category : 'jump bytecodes' }
 StackInterpreter >> ifBackwardsCheckForEvents: offset [
 	"Backward jump means we're in a loop; check for possible interrupts."
+
 	<inline: true>
-	(offset < 0
-	 and: [stackPointer < stackLimit]) ifTrue:
-		[self externalizeIPandSP.
-		 self checkForEventsMayContextSwitch: true.
-		 self internalizeIPandSP]
+	(offset < 0 and: [ stackPointer < stackLimit ]) ifTrue: [
+		self checkForEventsMayContextSwitch: true ]
 ]
 
-{ #category : #'stack pages' }
+{ #category : 'stack pages' }
 StackInterpreter >> ifCurrentStackPageHasValidHeadPointers: thePage [
 	"If thePage is the stackPage and the stackPointer and/or the framePointer are pointing within it,
 	 answer if thePage's heapSP and headFP are equal to the stackPointer and framePointer respectively."
@@ -7537,7 +7327,7 @@ StackInterpreter >> ifCurrentStackPageHasValidHeadPointers: thePage [
 	^true
 ]
 
-{ #category : #'frame access' }
+{ #category : 'frame access' }
 StackInterpreter >> ifSoAssertValidIPAssign: index ofContext: maybeMarriedContext with: anOop [
 	self assert: (index ~= InstructionPointerIndex
 				or: [(objectMemory isContextNonImm: maybeMarriedContext) not
@@ -7550,7 +7340,7 @@ StackInterpreter >> ifSoAssertValidIPAssign: index ofContext: maybeMarriedContex
 								and: (objectMemory numBytesOf: mo)]])]])
 ]
 
-{ #category : #'debug support' }
+{ #category : 'debug support' }
 StackInterpreter >> ifValidWriteBackStack: theCFP Pointers: theCSP Save: savedFPP To: savedSPP [
 	"This is for low-level error reporting.  If either of the C stack pointers are
 	 pointing into the stack zone then write them back to framePointer and/or
@@ -7566,7 +7356,7 @@ StackInterpreter >> ifValidWriteBackStack: theCFP Pointers: theCSP Save: savedFP
 	<returnTypeC: #void>
 ]
 
-{ #category : #'frame access' }
+{ #category : 'frame access' }
 StackInterpreter >> iframeInstructionPointerForIndex: ip method: aMethod [
 	"Answer the instruction pointer for use in an interpreter frame (a pointer to a bytecode)."
 	self assert: (ip between: (((LiteralStart + (objectMemory literalCountOf: aMethod)) * objectMemory bytesPerOop)) + 1
@@ -7574,26 +7364,47 @@ StackInterpreter >> iframeInstructionPointerForIndex: ip method: aMethod [
 	^aMethod + ip + objectMemory baseHeaderSize - 2
 ]
 
-{ #category : #'frame access' }
+{ #category : 'frame access' }
 StackInterpreter >> iframeIsBlockActivation: theFP [ "<Integer>"
 	^self frameIsBlockActivation: theFP
 ]
 
-{ #category : #'frame access' }
+{ #category : 'frame access' }
 StackInterpreter >> iframeMethod: theFP [
 	<inline: true>
 	<var: #theFP type: #'char *'>
 	<returnTypeC: #usqInt>
-	^stackPages longAt: theFP + FoxMethod
+	^stackPages unsignedLongAt: theFP + FoxMethod
 ]
 
-{ #category : #'image save/restore' }
+{ #category : 'frame access' }
+StackInterpreter >> iframeNumArgs: theFP [
+	"See encodeFrameFieldHasContext:numArgs:"
+	<inline: true>
+	<var: #theFP type: #'char *'>
+	^self frameNumArgs: theFP
+]
+
+{ #category : 'internal interpreter access' }
+StackInterpreter >> iframeReceiverLocation: theFP [
+	<inline: true>
+	<var: #theFP type: #'char *'>
+	^theFP + FoxReceiver
+]
+
+{ #category : 'image save/restore' }
 StackInterpreter >> imageFormatVersion [
 	<doNotGenerate>
 	^objectMemory imageFormatVersion
 ]
 
-{ #category : #'plugin primitive support' }
+{ #category : 'accessing' }
+StackInterpreter >> imageReaderWriter [
+	<doNotGenerate>
+	^ imageReaderWriter
+]
+
+{ #category : 'plugin primitive support' }
 StackInterpreter >> includesBehavior: aClass ThatOf: aSuperclass [
 	"Return the equivalent of 
 		aClass includesBehavior: aSuperclass.
@@ -7610,13 +7421,13 @@ StackInterpreter >> includesBehavior: aClass ThatOf: aSuperclass [
 	^false
 ]
 
-{ #category : #'simulation support' }
+{ #category : 'simulation support' }
 StackInterpreter >> initExtensions [
 	<inline: true>
 	BytecodeSetHasExtensions ifTrue: [extA := numExtB := extB := 0]
 ]
 
-{ #category : #'object memory support' }
+{ #category : 'object memory support' }
 StackInterpreter >> initStackPageGC [
 	"GC of pages.  Throwing away all stack pages on full GC is simple but dangerous
 	 because it causes us to allocate lots of contexts immediately before a GC.
@@ -7634,7 +7445,7 @@ StackInterpreter >> initStackPageGC [
 	<inline: true>
 	"Need to write back the frame pointers unless all pages are free (as in snapshot)"
 	stackPage ~= 0 ifTrue:
-		[self externalWriteBackHeadFramePointers].
+		[self writeBackHeadFramePointers].
 
 	0 to: numStackPages - 1 do:
 		[:i| | thePage |
@@ -7642,7 +7453,7 @@ StackInterpreter >> initStackPageGC [
 		thePage trace: StackPageUnreached]
 ]
 
-{ #category : #initialization }
+{ #category : 'initialization' }
 StackInterpreter >> initStackPages [
 
 	"Initialize the stack pages. Use alloca'ed memory so that when
@@ -7655,13 +7466,12 @@ StackInterpreter >> initStackPages [
 	| stackPageBytes stackPagesBytes theStackMemory |
 	stackPageBytes := self stackPageByteSize.
 	stackPagesBytes := self computeStackZoneSize.
-	theStackMemory := self
-		                  cCode: [ self alloca: stackPagesBytes ]
-		                  inSmalltalk: [ 
-		                  stackPages
-			                  initializeWithByteSize: stackPagesBytes
-			                  for: self ].
-	self cCode: [ self me: theStackMemory ms: 0 et: stackPagesBytes ].
+
+	theStackMemory :=  stackPages
+									initializeWithByteSize: stackPagesBytes
+									inMemoryMap: objectMemory getMemoryMap
+									for: self.
+			
 	stackPages
 		initializeStack: theStackMemory
 		numSlots: stackPagesBytes / objectMemory wordSize
@@ -7673,7 +7483,7 @@ StackInterpreter >> initStackPages [
 		pageSize: stackPageBytes
 ]
 
-{ #category : #initialization }
+{ #category : 'initialization' }
 StackInterpreter >> initStackPagesAndInterpret [
 
 	self initStackPages.
@@ -7686,7 +7496,7 @@ StackInterpreter >> initStackPagesAndInterpret [
 	^nil
 ]
 
-{ #category : #initialization }
+{ #category : 'initialization' }
 StackInterpreter >> initialCleanup [
 	"This used to cope with issues with images written by VMs earlier than 3.6/3.7.
 	 Since we won't be loading such images (being a closure only VM) we only have to
@@ -7697,7 +7507,7 @@ StackInterpreter >> initialCleanup [
 	self flushExternalPrimitiveTable
 ]
 
-{ #category : #initialization }
+{ #category : 'initialization' }
 StackInterpreter >> initialEnterSmalltalkExecutive [
 	"Main entry-point into the interpreter at system start-up.
 	 In the non-threaded VM this is identical to enterSmalltalkExecutive"
@@ -7708,7 +7518,7 @@ StackInterpreter >> initialEnterSmalltalkExecutive [
 		do: [:ex| ex return: ex returnValue]) = ReturnToInterpreter] whileTrue
 ]
 
-{ #category : #'compiled methods' }
+{ #category : 'compiled methods' }
 StackInterpreter >> initialIPForHeader: methodHeader method: theMethod [
 	"Answer a pointer to the initial byte for a method; used only in methods that build a frame."
 	<inline: true>
@@ -7717,7 +7527,7 @@ StackInterpreter >> initialIPForHeader: methodHeader method: theMethod [
 	+ objectMemory baseHeaderSize
 ]
 
-{ #category : #initialization }
+{ #category : 'initialization' }
 StackInterpreter >> initialize [
 	"Here we can initialize the variables C initializes to zero.  #initialize methods do /not/ get translated."
 	super initialize.
@@ -7729,25 +7539,21 @@ StackInterpreter >> initialize [
 	nextPollUsecs := 0.
 	nextWakeupUsecs := 0.
 	tempOop := tempOop2 := theUnknownShort := 0.
-	interruptPending := false.
 	maxStacksToPrint := 0.
-	inIOProcessEvents := 0.
-	fullScreenFlag := 0.
-	sendWheelEvents := false.
 	displayBits := displayWidth := displayHeight := displayDepth := 0.
-	pendingFinalizationSignals := statPendingFinalizationSignals := 0.
+	pendingFinalizationSignals := 0.
 	globalSessionID := 0.
 	jmpDepth := 0.
 	longRunningPrimitiveStartUsecs := longRunningPrimitiveStopUsecs := 0.
 	maxExtSemTabSizeSet := false.
 	debugCallbackInvokes := debugCallbackPath := debugCallbackReturns := 0.
 	statForceInterruptCheck := statStackOverflow := statCheckForEvents :=
-	statProcessSwitch := statIOProcessEvents := statStackPageDivorce :=
+	statProcessSwitch := statStackPageDivorce :=
 	statIdleUsecs := 0.
-	messageCount := 0.
+	imageVersionNumber := 0.
 ]
 
-{ #category : #initialization }
+{ #category : 'initialization' }
 StackInterpreter >> initializeExtraClassInstVarIndices [
 	"Initialize metaclassNumSlots and thisClassIndex which are used in debug printing, and
 	 classNameIndex which is used not only for debug printing but for is:KindOf: & is:MemberOf:
@@ -7771,7 +7577,7 @@ StackInterpreter >> initializeExtraClassInstVarIndices [
 			[classNameIndex := i - 1]]
 ]
 
-{ #category : #initialization }
+{ #category : 'initialization' }
 StackInterpreter >> initializeGlobalSessionID [
 	"Initialize the globalSessionID.
 	To ensure compatibility with old plugins, keep the value to a postive signed 32 bit integer"
@@ -7783,7 +7589,7 @@ StackInterpreter >> initializeGlobalSessionID [
 
 ]
 
-{ #category : #initialization }
+{ #category : 'initialization' }
 StackInterpreter >> initializeInterpreter: bytesToShift [
 	
 	"Initialize Interpreter state before starting execution of a new image."
@@ -7804,7 +7610,7 @@ StackInterpreter >> initializeInterpreter: bytesToShift [
 
 ]
 
-{ #category : #initialization }
+{ #category : 'initialization' }
 StackInterpreter >> initializeObjectMemoryWithEdenBytes: requestedEdenBytes [
 
 	"The edenBytes can be overrided using the desiredEdenBytes instance variable"
@@ -7822,13 +7628,13 @@ StackInterpreter >> initializeObjectMemoryWithEdenBytes: requestedEdenBytes [
 
 ]
 
-{ #category : #'stack pages' }
+{ #category : 'stack pages' }
 StackInterpreter >> initializePageTraceToInvalid: aPage [
 	<var: #aPage type: #'StackPage *'>
 	aPage trace: StackPageTraceInvalid "for assert checking of the page tracing flags"
 ]
 
-{ #category : #'method lookup cache' }
+{ #category : 'method lookup cache' }
 StackInterpreter >> inlineLookupInMethodCacheSel: selector classTag: classTag [
 	"This method implements a simple method lookup cache.  If an entry for the given selector and classTag is
 	 found in the cache, set the values of 'newMethod' and 'primitiveFunctionPointer' and answer true. Otherwise,
@@ -7872,79 +7678,84 @@ StackInterpreter >> inlineLookupInMethodCacheSel: selector classTag: classTag [
 	^false
 ]
 
-{ #category : #'frame access' }
+{ #category : 'frame access' }
 StackInterpreter >> instVar: offset ofContext: aContext [
 	"Fetch an instance variable from a maybe married context.
 	 If the context is still married compute the value of the
 	 relevant inst var from the spouse frame's state."
-	| spouseFP |
-	<var: #spouseFP type: #'char *'>
-	<inline: true>
-	self assert: offset < MethodIndex.
+	"Fetch an instance variable from a maybe married context.
+	 If the context is still married compute the value of the
+	 relevant inst var from the spouse frame's state."
+	<inline: false>
+
 	self assert: (objectMemory isContext: aContext).
-	(self isMarriedOrWidowedContext: aContext) ifFalse:
-		[^objectMemory fetchPointer: offset ofObject: aContext].
+	self assert: offset <= (ReceiverIndex + (self checkStackPointerForMaybeMarriedContext: aContext)).
 
-	self writeBackHeadFramePointers.
-	(self isWidowedContext: aContext) ifTrue:
-		[^objectMemory fetchPointer: offset ofObject: aContext].
-
-	spouseFP := self frameOfMarriedContext: aContext.
-	offset = SenderIndex ifTrue:
-		[^self ensureCallerContext: spouseFP].
-	offset = StackPointerIndex ifTrue:
-		[self assert: ReceiverIndex + (self stackPointerIndexForFrame: spouseFP) < (objectMemory lengthOf: aContext).
-		^objectMemory integerObjectOf: (self stackPointerIndexForFrame: spouseFP)].
-	offset = InstructionPointerIndex ifTrue:
-		[^self instructionPointerForFrame: spouseFP currentFP: framePointer currentIP: (self oopForPointer: instructionPointer)].
-	self error: 'bad index'.
-	^0
+	"method, closureOrNil & receiver need no special handling; only
+	 sender, pc & stackp have to be computed for married contexts."
+	(self isReadMediatedContextInstVarIndex: offset) ifTrue:
+		[self writeBackHeadFramePointers.
+		 (self isStillMarriedContext: aContext) ifTrue:
+			[^self fetchPointer: offset ofMarriedContext: aContext]].
+	
+	^objectMemory fetchPointer: offset ofObject: aContext
 ]
 
-{ #category : #'frame access' }
+{ #category : 'frame access' }
 StackInterpreter >> instVar: index ofContext: aMarriedContext put: anOop [
+
+	<inline: true>
 	| theFP |
 	"Assign the field of a married context.  The important case to optimize is
 	 assigning the sender.  We could also consider optimizing assigning the IP but
 	 typically that is followed by an assignment to the stack pointer and we can't
 	 efficiently assign the stack pointer because it involves moving frames around."
-	<inline: true>
 	self assert: (self isMarriedOrWidowedContext: aMarriedContext).
 	self deny: (objectMemory isObjImmutable: aMarriedContext).
 	self writeBackHeadFramePointers.
-	(self isStillMarriedContext: aMarriedContext) ifFalse:
-		[objectMemory storePointer: index ofObject: aMarriedContext withValue: anOop.
-		 index = StackPointerIndex ifTrue:
-			[self ensureContextIsExecutionSafeAfterAssignToStackPointer: aMarriedContext].
-		 ^nil].
+	(self isStillMarriedContext: aMarriedContext) ifFalse: [
+		objectMemory
+			storePointer: index
+			ofObject: aMarriedContext
+			withValue: anOop.
+		index = StackPointerIndex ifTrue: [
+			self ensureContextIsExecutionSafeAfterAssignToStackPointer:
+				aMarriedContext ].
+		^ nil ].
 	theFP := self frameOfMarriedContext: aMarriedContext.
-	index = SenderIndex ifTrue:
-		[| thePage onCurrentPage |
-		 thePage := stackPages stackPageFor: theFP.
-		 self assert: stackPage = stackPages mostRecentlyUsedPage.
-		 onCurrentPage := thePage = stackPage.
-		 self storeSenderOfFrame: theFP withValue: anOop.
-		 onCurrentPage
-			ifTrue:
-				[framePointer := stackPage headFP.
-				 stackPointer := stackPage headSP]
-			ifFalse:
-				[stackPages markStackPageMostRecentlyUsed: stackPage].
-		 ^nil].
-	self externalizeIPandSP.
-	self externalDivorceFrame: theFP andContext: aMarriedContext.
-	(self is: index methodAssignmentToContextWithMachineCodePC: aMarriedContext) ifTrue:
-		[self ensureContextHasBytecodePC: aMarriedContext].
-	objectMemory storePointer: index ofObject: aMarriedContext withValue: anOop.
-	index = StackPointerIndex ifTrue:
-		[self ensureContextIsExecutionSafeAfterAssignToStackPointer: aMarriedContext].
-	self internalizeIPandSP.
+	index = SenderIndex ifTrue: [
+		| thePage onCurrentPage |
+		thePage := stackPages stackPageFor: theFP.
+		self assert: stackPage = stackPages mostRecentlyUsedPage.
+		onCurrentPage := thePage = stackPage.
+		self storeSenderOfFrame: theFP withValue: anOop.
+		onCurrentPage
+			ifTrue: [ self setStackPointersFromPage: stackPage ]
+			ifFalse: [ stackPages markStackPageMostRecentlyUsed: stackPage ].
+		^ nil ].
+	self divorceFrame: theFP andContext: aMarriedContext.
+	(self
+		 is: index
+		 methodAssignmentToContextWithMachineCodePC: aMarriedContext)
+		ifTrue: [ self ensureContextHasBytecodePC: aMarriedContext ].
+	objectMemory
+		storePointer: index
+		ofObject: aMarriedContext
+		withValue: anOop.
+	index = StackPointerIndex ifTrue: [
+		self ensureContextIsExecutionSafeAfterAssignToStackPointer:
+			aMarriedContext ].
 	"Assigning various fields can force a divorce which can change the stackPage."
 	stackPages markStackPageMostRecentlyUsed: stackPage.
-	self assertValidExecutionPointe: instructionPointer asUnsignedInteger r: framePointer s: stackPointer imbar: true line: #'__LINE__'
+	self
+		assertValidExecutionPointe: instructionPointer asUnsignedInteger
+		r: framePointer
+		s: stackPointer
+		imbar: true
+		line: #__LINE__
 ]
 
-{ #category : #'indexing primitive support' }
+{ #category : 'indexing primitive support' }
 StackInterpreter >> install: rcvr inAtCache: cache at: atIx string: stringy [
 	"Attempt to install the oop of this object in the given cache (at or atPut),
 	 along with its size, format and fixedSize. Answer if this was successful."
@@ -7977,19 +7788,19 @@ StackInterpreter >> install: rcvr inAtCache: cache at: atIx string: stringy [
 	^true
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 StackInterpreter >> instructionPointer [
 	<doNotGenerate>
 	^ instructionPointer
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 StackInterpreter >> instructionPointer: anInteger [
 	<doNotGenerate>
 	instructionPointer := anInteger
 ]
 
-{ #category : #'frame access' }
+{ #category : 'frame access' }
 StackInterpreter >> instructionPointerForFrame: spouseFP currentFP: currentFP currentIP: instrPtr [
 	"Answer the bytecode pc object (i.e. SmallInteger) for an active frame.  The bytecode
 	 pc is derived from the frame's pc.  If the frame is the top frame on the current stack
@@ -8008,12 +7819,12 @@ StackInterpreter >> instructionPointerForFrame: spouseFP currentFP: currentFP cu
 			[thePage := stackPages stackPageFor: spouseFP.
 			 theFPAbove := self findFrameAbove: spouseFP inPage: thePage.
 			 theIP := theFPAbove = 0
-						ifTrue: [stackPages longAt: thePage headSP]
+						ifTrue: [stackPages unsignedLongAt: thePage headSP]
 						ifFalse:[self oopForPointer: (self frameCallerSavedIP: theFPAbove)]].
 	^self contextInstructionPointer: theIP frame: spouseFP
 ]
 
-{ #category : #'plugin primitive support' }
+{ #category : 'plugin primitive support' }
 StackInterpreter >> integerArg: index [
 	"Like #stackIntegerValue: but access method arguments left-to-right"
 	<doNotGenerate> "Obsolete; was never used; replaced with methodReturnInteger: in the VirtualMachine struct."
@@ -8024,7 +7835,7 @@ StackInterpreter >> integerArg: index [
 	^self checkedIntegerValueOf: oop
 ]
 
-{ #category : #'return bytecodes' }
+{ #category : 'return bytecodes' }
 StackInterpreter >> internalAboutToReturn: resultOop through: aContext [
 	| ourContext |
 	<inline: true>
@@ -8037,111 +7848,7 @@ StackInterpreter >> internalAboutToReturn: resultOop through: aContext [
 	^self normalSend
 ]
 
-{ #category : #'message sending' }
-StackInterpreter >> internalActivateNewMethod [
-
-	<inline: true>
-	| methodHeader numTemps rcvr |
-	methodHeader := objectMemory methodHeaderOf: newMethod.
-	numTemps := self temporaryCountOfMethodHeader: methodHeader.
-	self assert:
-		argumentCount = (self argumentCountOfMethodHeader: methodHeader).
-	rcvr := self stackValue: argumentCount. "could new rcvr be set at point of send?"
-	self assert: (objectMemory isOopForwarded: rcvr) not.
-
-	self push: instructionPointer.
-	self push: framePointer.
-	framePointer := stackPointer.
-	self push: newMethod.
-	self setMethod: newMethod methodHeader: methodHeader.
-	self push: objectMemory nilObject. "FxThisContext field"
-	self push: (self
-			 encodeFrameFieldHasContext: false
-			 isBlock: false
-			 numArgs: (self argumentCountOfMethodHeader: methodHeader)).
-	self push: rcvr.
-
-	"Initialize temps..."
-	argumentCount + 1 to: numTemps do: [ :i | 
-	self push: objectMemory nilObject ].
-
-	"-1 to account for pre-increment in fetchNextBytecode"
-	instructionPointer := self pointerForOop:
-		           (self initialIPForHeader: methodHeader method: newMethod)
-		           - 1.
-
-	(self methodHeaderHasPrimitive: methodHeader) ifTrue: [ "Skip the CallPrimitive bytecode, if it's there, and store the error code if the method starts
-		  with a long store temp.  Strictly no need to skip the store because it's effectively a noop."
-		 instructionPointer := instructionPointer + (self sizeOfCallPrimitiveBytecode: methodHeader).
-		 primFailCode ~= 0 ifTrue: [ | shouldSkipStoreBytecode |
-			shouldSkipStoreBytecode := self reapAndResetErrorCodeTo: framePointer header: methodHeader.
-			shouldSkipStoreBytecode ifTrue: [ 
-				instructionPointer := instructionPointer + (self sizeOfLongStoreTempBytecode: methodHeader)  ] ] ].
-
-	self assert: (self frameNumArgs: framePointer) = argumentCount.
-	self assert: (self frameIsBlockActivation: framePointer) not.
-	self assert: (self frameHasContext: framePointer) not.
-
-	"Now check for stack overflow or an event (interrupt, must scavenge, etc)."
-	stackPointer < stackLimit ifTrue: [ 
-		self externalizeIPandSP.
-		self handleStackOverflowOrEventAllowContextSwitch:
-			(self canContextSwitchIfActivating: newMethod header: methodHeader).
-		self internalizeIPandSP ]
-]
-
-{ #category : #'return bytecodes' }
-StackInterpreter >> internalCannotReturn: resultOop [
-	| ourContext |
-	<inline: true>
-	ourContext := self ensureFrameIsMarried: framePointer SP: stackPointer.
-	self push: ourContext.
-	self push: resultOop.
-	messageSelector := objectMemory splObj: SelectorCannotReturn.
-	argumentCount := 1.
-	^self normalSend
-]
-
-{ #category : #'message sending' }
-StackInterpreter >> internalExecuteNewMethod [
-
-	<inline: true>
-	| succeeded |
-	primitiveFunctionPointer ~= 0 ifTrue: [ 
-		self isPrimitiveFunctionPointerAnIndex ifTrue: [ 
-			self internalQuickPrimitiveResponse.
-			^ self "keep slang happy" ].
-		self externalizeIPandSP.
-		succeeded := self slowPrimitiveResponse.
-		self internalizeIPandSP.
-		succeeded ifTrue: [ ^ self ] ].
-	"if not primitive, or primitive failed, activate the method"
-	^ self internalActivateNewMethod
-]
-
-{ #category : #'message sending' }
-StackInterpreter >> internalFindNewMethodOrdinary [
-	"Find the compiled method to be run when the current messageSelector is sent to the class 'lkupClass', setting the values of 'newMethod' and 'primitiveIndex'."
-	<inline: true>
-	(self inlineLookupInMethodCacheSel: messageSelector classTag: lkupClassTag) ifFalse:
-		["entry was not found in the cache; look it up the hard way"
-		 self externalizeIPandSP.
-		 ((objectMemory isOopForwarded: messageSelector)
-		  or: [objectMemory isForwardedClassTag: lkupClassTag]) ifTrue:
-			[(objectMemory isOopForwarded: messageSelector) ifTrue:
-				[messageSelector := self handleForwardedSelectorFaultFor: messageSelector].
-			 (objectMemory isForwardedClassTag: lkupClassTag) ifTrue:
-				[lkupClassTag := self handleForwardedSendFaultForTag: lkupClassTag].
-			(self lookupInMethodCacheSel: messageSelector classTag: lkupClassTag) ifTrue:
-				[^nil]].
-		 lkupClass := objectMemory classForClassTag: lkupClassTag.
-		 self lookupMethodInClass: lkupClass.
-		 self internalizeIPandSP.
-		 self addNewMethodToCache: lkupClass].
-
-]
-
-{ #category : #'return bytecodes' }
+{ #category : 'return bytecodes' }
 StackInterpreter >> internalMustBeBoolean [
 	<inline: true>
 	messageSelector := objectMemory splObj: SelectorMustBeBoolean.
@@ -8149,47 +7856,7 @@ StackInterpreter >> internalMustBeBoolean [
 	self normalSend
 ]
 
-{ #category : #'primitive support' }
-StackInterpreter >> internalQuickPrimitiveResponse [
-
-	"Invoke a quick primitive.
-	 Called under the assumption that primFunctionPtr has been preloaded"
-
-	| localPrimIndex |
-	self assert: self isPrimitiveFunctionPointerAnIndex.
-	localPrimIndex := self
-		                  cCoerceSimple: primitiveFunctionPointer
-		                  to: #sqInt.
-	self assert: (localPrimIndex > 255 and: [ localPrimIndex < 520 ]).
-	"Quick return inst vars"
-	localPrimIndex >= 264 ifTrue: [ 
-		self stackTopPut: (objectMemory
-				 fetchPointer: localPrimIndex - 264
-				 ofObject: self stackTop).
-		^ true ].
-	"Quick return constants"
-	localPrimIndex = 256 ifTrue: [ ^ true "return self" ].
-	localPrimIndex = 257 ifTrue: [ 
-		self stackTopPut: objectMemory trueObject.
-		^ true ].
-	localPrimIndex = 258 ifTrue: [ 
-		self stackTopPut: objectMemory falseObject.
-		^ true ].
-	localPrimIndex = 259 ifTrue: [ 
-		self stackTopPut: objectMemory nilObject.
-		^ true ].
-	self stackTopPut:
-		(objectMemory integerObjectOf: localPrimIndex - 261).
-	^ true
-]
-
-{ #category : #utilities }
-StackInterpreter >> internalizeIPandSP [
-	"Copy the instruction, stack and frame pointers to local variables for rapid access within the interpret loop."
-	stackPointer := self pointerForOop: stackPointer
-]
-
-{ #category : #'interpreter shell' }
+{ #category : 'interpreter shell' }
 StackInterpreter >> interpret [
 	"This is the main interpreter loop. It normally loops forever, fetching and executing bytecodes. When running in the context of a browser plugin VM, however, it must return control to the browser periodically. This should done only when the state of the currently running Squeak thread is safely stored in the object heap. Since this is the case at the moment that a check for interrupts is performed, that is when we return to the browser if it is time to do so. Interrupt checks happen quite frequently."
 
@@ -8201,37 +7868,34 @@ StackInterpreter >> interpret [
 	stackLimit = 0 ifTrue:
 		[^self initStackPagesAndInterpret].
 
-	self internalizeIPandSP.
 	self initExtensions.
 	self fetchNextBytecode.
 	[true] whileTrue: [self dispatchOn: currentBytecode in: BytecodeTable].
 	instructionPointer := instructionPointer - 1.  "undo the pre-increment of IP before returning"
-	self externalizeIPandSP.
 	^nil
 
 ]
 
-{ #category : #'as yet unclassified' }
+{ #category : 'as yet unclassified' }
 StackInterpreter >> interpretUntilReturn [
 	<doNotGenerate>
 	self interpretWhile: [ currentBytecode ~= 92 ]."TODO extract condition"
 ]
 
-{ #category : #'as yet unclassified' }
+{ #category : 'as yet unclassified' }
 StackInterpreter >> interpretWhile: aFullBlockClosure [ 
 	<doNotGenerate>
 	
-	self internalizeIPandSP.
 	self fetchNextBytecode.
 	[aFullBlockClosure value] whileTrue:
 		[self dispatchCurrentBytecode.
 		 self incrementByteCount].
-	instructionPointer := instructionPointer - 1.
 	"undo the pre-increment of IP before returning"
-	self externalizeIPandSP
+	instructionPointer := instructionPointer - 1.
+
 ]
 
-{ #category : #'stack pages' }
+{ #category : 'stack pages' }
 StackInterpreter >> interpreterAllocationReserveBytes [
 	"At a rough approximation we may need to allocate up to a couple
 	 of page's worth of contexts when switching stack pages, assigning
@@ -8245,7 +7909,7 @@ StackInterpreter >> interpreterAllocationReserveBytes [
 	^maxFramesPerPage * LargeContextSlots * objectMemory bytesPerOop * numStackPages
 ]
 
-{ #category : #'plugin support' }
+{ #category : 'plugin support' }
 StackInterpreter >> ioFilename: aCharBuffer fromString: aFilenameString ofLength: filenameLength resolveAliases: aBoolean [
 "the vm has to convert aFilenameString via any canonicalization and char-mapping and put the result in aCharBuffer.
 Note the resolveAliases flag - this is an awful artefact of OSX and Apples demented alias handling. When opening a file, the flag must be  true, when closing or renaming it must be false. Sigh."
@@ -8256,7 +7920,7 @@ Note the resolveAliases flag - this is an awful artefact of OSX and Apples demen
 			aCharBuffer replaceFrom:1 to: filenameLength with: aFilenameString]
 ]
 
-{ #category : #'primitive support' }
+{ #category : 'primitive support' }
 StackInterpreter >> ioLoadExternalFunction: functionName OfLength: functionLength FromModule: moduleName OfLength: moduleLength [
 	"Load and return the requested function from a module.
 	 N.B. The actual code lives in platforms/Cross/vm/sqNamedPrims.h"
@@ -8269,7 +7933,7 @@ StackInterpreter >> ioLoadExternalFunction: functionName OfLength: functionLengt
 	^self ioLoadFunction: functionString From: pluginString
 ]
 
-{ #category : #'primitive support' }
+{ #category : 'primitive support' }
 StackInterpreter >> ioLoadExternalFunction: functionName OfLength: functionLength FromModule: moduleName OfLength: moduleLength AccessorDepthInto: accessorDepthPtr [
 	"Load and return the requested function from a module.  Assign the accessor depth through accessorDepthPtr.
 	 N.B. The actual code lives in platforms/Cross/vm/sqNamedPrims.h"
@@ -8285,73 +7949,73 @@ StackInterpreter >> ioLoadExternalFunction: functionName OfLength: functionLengt
 	^self ioLoadFunction: functionString From: pluginString AccessorDepthInto: accessorDepthPtr
 ]
 
-{ #category : #'primitive support' }
+{ #category : 'primitive support' }
 StackInterpreter >> ioLocalMicroseconds [
 	<doNotGenerate>
 	^self ioUTCMicroseconds + (1000000 * DateAndTime localOffset asSeconds)
 ]
 
-{ #category : #'primitive support' }
+{ #category : 'primitive support' }
 StackInterpreter >> ioLocalMicrosecondsNow [
 	<doNotGenerate>
 	^self ioUTCMicrosecondsNow + (1000000 * DateAndTime localOffset asSeconds)
 ]
 
-{ #category : #'primitive support' }
+{ #category : 'primitive support' }
 StackInterpreter >> ioLocalSecondsOffset [
 	"simulation-only implementation"
 	<doNotGenerate>
 	^DateAndTime localOffset asSeconds
 ]
 
-{ #category : #'I/O primitive support' }
+{ #category : 'I/O primitive support' }
 StackInterpreter >> ioNoteDisplayChanged: bitsOrHandle width: width height: height depth: depth [
 	"The real platform may want to note the location of the display and respond to the fact of
 	 its installation."
 	<doNotGenerate>
 ]
 
-{ #category : #'primitive support' }
+{ #category : 'primitive support' }
 StackInterpreter >> ioSeconds [
 	"simulation-only implementation"
 	<doNotGenerate>
 	^self ioLocalMicroseconds // 1000000
 ]
 
-{ #category : #'primitive support' }
+{ #category : 'primitive support' }
 StackInterpreter >> ioSecondsNow [
 	"simulation-only implementation"
 	<doNotGenerate>
 	^self ioLocalMicrosecondsNow // 1000000
 ]
 
-{ #category : #'primitive support' }
+{ #category : 'primitive support' }
 StackInterpreter >> ioSetHeartbeatMilliseconds: ignored [
 	"simulation-only implementation"
 	<doNotGenerate>
 ]
 
-{ #category : #'primitive support' }
+{ #category : 'primitive support' }
 StackInterpreter >> ioUTCMicrosecondsNow [
 	"simulation-only implementation"
 	<doNotGenerate>
 	^self ioUTCMicroseconds
 ]
 
-{ #category : #'debug support' }
+{ #category : 'debug support' }
 StackInterpreter >> ioUnloadModule: moduleName OfLength: moduleNameLength [
 	"Fake forgiving stub.  The actual code is in platforms/Cross/vm/sqNamedPrims.c"
 	<doNotGenerate>
 	^true
 ]
 
-{ #category : #'system control primitives' }
+{ #category : 'system control primitives' }
 StackInterpreter >> ioUpdateVMTimezone [
 	"A noop in the simulator"
 	<doNotGenerate>
 ]
 
-{ #category : #'plugin primitive support' }
+{ #category : 'plugin primitive support' }
 StackInterpreter >> is: oop KindOf: className [
 	"Support for external primitives."
 	| oopClass |
@@ -8363,7 +8027,7 @@ StackInterpreter >> is: oop KindOf: className [
 	^false
 ]
 
-{ #category : #'plugin primitive support' }
+{ #category : 'plugin primitive support' }
 StackInterpreter >> is: oop KindOfClass: aClass [
 	"Support for external primitives."
 	<api>
@@ -8375,7 +8039,7 @@ StackInterpreter >> is: oop KindOfClass: aClass [
 	^false
 ]
 
-{ #category : #'plugin primitive support' }
+{ #category : 'plugin primitive support' }
 StackInterpreter >> is: oop MemberOf: className [
 	"Support for external primitives"
 	| oopClass |
@@ -8384,52 +8048,52 @@ StackInterpreter >> is: oop MemberOf: className [
 	^(self classNameOf: oopClass Is: className)
 ]
 
-{ #category : #'internal interpreter access' }
+{ #category : 'internal interpreter access' }
 StackInterpreter >> is: fieldIndex methodAssignmentToContextWithMachineCodePC: anOop [
 	"This is a hook for the CoInterpreter.  It is a noop in the StackInterpreter."
 	<inline: true>
 	^false
 ]
 
-{ #category : #'frame access' }
+{ #category : 'frame access' }
 StackInterpreter >> isBaseFrame: theFP [
 	"A base frame (first frame in a stack page) is so marked by having a null saved fp."
 	<inline: true>
 	<var: #theFP type: #'char *'>
-	^(stackPages longAt: theFP + FoxSavedFP) = 0
+	^(stackPages unsignedLongAt: theFP + FoxSavedFP) = 0
 ]
 
-{ #category : #'plugin primitive support' }
+{ #category : 'plugin primitive support' }
 StackInterpreter >> isBooleanObject: oop [
 	^oop = objectMemory trueObject or: [oop = objectMemory falseObject]
 ]
 
-{ #category : #'internal interpreter access' }
+{ #category : 'internal interpreter access' }
 StackInterpreter >> isCog [
 	^false
 ]
 
-{ #category : #'process primitive support' }
+{ #category : 'process primitive support' }
 StackInterpreter >> isEmptyList: aLinkedList [
 	self assert: (objectMemory isForwarded: aLinkedList) not.
 	^ (objectMemory fetchPointer: FirstLinkIndex ofObject: aLinkedList) = objectMemory nilObject
 ]
 
-{ #category : #'compiled methods' }
+{ #category : 'compiled methods' }
 StackInterpreter >> isExternalPrimitiveCall: aMethodObj [
 	"Answer if the method is an external primtiive call (prim 117)."
 	<inline: true>
 	^(self primitiveIndexOf: aMethodObj) = PrimNumberExternalCall
 ]
 
-{ #category : #'internal interpreter access' }
+{ #category : 'internal interpreter access' }
 StackInterpreter >> isFloatObject: oop [
 	<api>
 	<inline: true>
 	^objectMemory isFloatInstance: oop
 ]
 
-{ #category : #'frame access' }
+{ #category : 'frame access' }
 StackInterpreter >> isFrame: aFrame onPage: aPage [
 	<var: #aFrame type: #'char *'>
 	<var: #aPage type: #'StackPage *'>
@@ -8449,7 +8113,13 @@ StackInterpreter >> isFrame: aFrame onPage: aPage [
 	^false
 ]
 
-{ #category : #'internal interpreter access' }
+{ #category : 'message sending' }
+StackInterpreter >> isInstructionPointerInInterpreter: anInstructionPointer [
+
+	^ true
+]
+
+{ #category : 'internal interpreter access' }
 StackInterpreter >> isKindOfInteger: oop [
 	"Answer true if the oop is kind of Integer (Small or Large)."
 	<api>
@@ -8458,28 +8128,28 @@ StackInterpreter >> isKindOfInteger: oop [
 		or: [objectMemory isLargeIntegerInstance: oop]
 ]
 
-{ #category : #'internal interpreter access' }
+{ #category : 'internal interpreter access' }
 StackInterpreter >> isLargeIntegerObject: oop [
 	<api>
 	<inline: true>
 	^objectMemory isLargeIntegerInstance: oop
 ]
 
-{ #category : #'internal interpreter access' }
+{ #category : 'internal interpreter access' }
 StackInterpreter >> isLargeNegativeIntegerObject: oop [
 	<api>
 	<inline: true>
 	^objectMemory isInstanceOfClassLargeNegativeInteger: oop
 ]
 
-{ #category : #'internal interpreter access' }
+{ #category : 'internal interpreter access' }
 StackInterpreter >> isLargePositiveIntegerObject: oop [
 	<api>
 	<inline: true>
 	^objectMemory isInstanceOfClassLargePositiveInteger: oop
 ]
 
-{ #category : #'frame access' }
+{ #category : 'frame access' }
 StackInterpreter >> isLiveContext: oop [
 	"Answer if the argument, which can be any object, is a live context."
 	self deny: (objectMemory isOopForwarded: oop).
@@ -8490,7 +8160,7 @@ StackInterpreter >> isLiveContext: oop [
 	^(self isWidowedContext: oop) not
 ]
 
-{ #category : #'frame access' }
+{ #category : 'frame access' }
 StackInterpreter >> isMachineCodeFrame: theFP [
 	"For compatibility with CoInterpreter.  Needed to avoid slowPrimitiveResponse
 	 failing within ceSend:to:numArgs: et al with an unbalanced stack."
@@ -8499,12 +8169,12 @@ StackInterpreter >> isMachineCodeFrame: theFP [
 	^false
 ]
 
-{ #category : #'frame access' }
+{ #category : 'frame access' }
 StackInterpreter >> isMarriedOrWidowedContext: aContext [
 	^objectMemory isIntegerObject: (objectMemory fetchPointer: SenderIndex ofObject: aContext)
 ]
 
-{ #category : #'primitive support' }
+{ #category : 'primitive support' }
 StackInterpreter >> isMetaPrimitiveIndex: primIndex [
 	"This virtual machine provides two primitives that executes arbitrary primitives, one
 	 for indexed primitivces and one for named primitives.  These meta primitives are used
@@ -8517,7 +8187,7 @@ StackInterpreter >> isMetaPrimitiveIndex: primIndex [
 	  or: [primIndex = PrimNumberDoExternalCall]
 ]
 
-{ #category : #'compiled methods' }
+{ #category : 'compiled methods' }
 StackInterpreter >> isNullExternalPrimitiveCall: aMethodObj [
 	"Answer if the method is an external primtiive call (prim 117) with a null external primtiive.
 	 This is just for an assert in the CoInterpreter."
@@ -8533,20 +8203,20 @@ StackInterpreter >> isNullExternalPrimitiveCall: aMethodObj [
 			or: [(objectMemory fetchPointer: 3 ofObject: lit) = ConstMinusOne]]]
 ]
 
-{ #category : #'compiled methods' }
+{ #category : 'compiled methods' }
 StackInterpreter >> isOptimizedMethod: methodObj [
 	<api>
 	<option: #SistaVM>
 	^self isOptimizedMethodHeader: (objectMemory methodHeaderOf: methodObj)
 ]
 
-{ #category : #'compiled methods' }
+{ #category : 'compiled methods' }
 StackInterpreter >> isOptimizedMethodHeader: header [
 	<option: #SistaVM>
 	^header anyMask: AlternateHeaderIsOptimizedFlag
 ]
 
-{ #category : #'primitive support' }
+{ #category : 'primitive support' }
 StackInterpreter >> isPrimitiveFunctionPointerAnIndex [
 	"We save slots in the method cache by using the primitiveFunctionPointer
 	 to hold either a function pointer or the index of a quick primitive. Since
@@ -8555,13 +8225,13 @@ StackInterpreter >> isPrimitiveFunctionPointerAnIndex [
 	^(self cCoerce: primitiveFunctionPointer to: #'usqIntptr_t') <= MaxQuickPrimitiveIndex
 ]
 
-{ #category : #'compiled methods' }
+{ #category : 'compiled methods' }
 StackInterpreter >> isQuickPrimitiveIndex: anInteger [
 	<api>
 	^anInteger between: 256 and: 519
 ]
 
-{ #category : #'frame access' }
+{ #category : 'frame access' }
 StackInterpreter >> isReadMediatedContextInstVarIndex: index [
 	"Reading the sender, instructionPointer and stackPointer inst vars of a context must take
 	 account of potentially married contexts and fetch the state from the frame. method,
@@ -8571,12 +8241,12 @@ StackInterpreter >> isReadMediatedContextInstVarIndex: index [
 	^index <= StackPointerIndex
 ]
 
-{ #category : #'frame access' }
+{ #category : 'frame access' }
 StackInterpreter >> isSingleContext: aContext [
 	^objectMemory isNonImmediate: (objectMemory fetchPointer: SenderIndex ofObject: aContext)
 ]
 
-{ #category : #'frame access' }
+{ #category : 'frame access' }
 StackInterpreter >> isStillMarriedContext: aContext [
 	"Answer if aContext is married or widowed and still married.
 	 If a context is widowed then turn it into a single dead context."
@@ -8584,7 +8254,7 @@ StackInterpreter >> isStillMarriedContext: aContext [
 	    and: [(self isWidowedContext: aContext) not]
 ]
 
-{ #category : #'frame access' }
+{ #category : 'frame access' }
 StackInterpreter >> isStillMarriedContextDuringGC: aContext [
 	"Answer if aContext is married or widowed and still married.
 	 If a context is widowed then turn it into a single dead context.
@@ -8599,7 +8269,7 @@ StackInterpreter >> isStillMarriedContextDuringGC: aContext [
 	    and: [(self isWidowedContextDuringGC: aContext) not]
 ]
 
-{ #category : #'frame access' }
+{ #category : 'frame access' }
 StackInterpreter >> isWidowedContext: aOnceMarriedContext [
 	"See if the argument is married to a live frame or not.
 	 If it is not, turn it into a bereaved single context. This version is safe for use
@@ -8635,7 +8305,7 @@ StackInterpreter >> isWidowedContext: aOnceMarriedContext [
 	^true
 ]
 
-{ #category : #'frame access' }
+{ #category : 'frame access' }
 StackInterpreter >> isWidowedContextDuringGC: aOnceMarriedContext [
 	"See if the argument is married to a live frame or not.  i.e. see if there is a matching
 	 frame whose frameContext field is aOnceMarriedContext, or a forwarder to it.
@@ -8681,7 +8351,7 @@ StackInterpreter >> isWidowedContextDuringGC: aOnceMarriedContext [
 	^true
 ]
 
-{ #category : #'frame access' }
+{ #category : 'frame access' }
 StackInterpreter >> isWriteMediatedContextInstVarIndex: index [
 	"Wrining any inst vars of a context must take account of potentially married contexts
 	 and set the state in the frame. Inst vars in subclasses don't need mediation; subclasses
@@ -8691,14 +8361,41 @@ StackInterpreter >> isWriteMediatedContextInstVarIndex: index [
 	^index <= ReceiverIndex
 ]
 
-{ #category : #'jump bytecodes' }
+{ #category : 'internal interpreter access' }
+StackInterpreter >> itemporary: offset in: theFP [
+
+	<inline: true>
+	<var: #theFP type: #'char *'>
+	| frameNumArgs |
+	^ offset < (frameNumArgs := self iframeNumArgs: theFP)
+		  ifTrue: [
+			  stackPages unsignedLongAt: theFP + FoxCallerSavedIP
+				  + (frameNumArgs - offset * objectMemory wordSize) ]
+		  ifFalse: [
+			  stackPages unsignedLongAt:
+				  (self iframeReceiverLocation: theFP) - objectMemory wordSize
+				  + (frameNumArgs - offset * objectMemory wordSize) ]
+]
+
+{ #category : 'internal interpreter access' }
+StackInterpreter >> itemporary: offset in: theFP put: valueOop [
+	"See StackInterpreter class>>initializeFrameIndices"
+	| frameNumArgs |
+	<inline: true>
+	<var: #theFP type: #'char *'>
+	^offset < (frameNumArgs := self iframeNumArgs: theFP)
+		ifTrue: [stackPages unsignedLongAt: theFP + FoxCallerSavedIP + ((frameNumArgs - offset) * objectMemory wordSize) put: valueOop]
+		ifFalse: [stackPages unsignedLongAt: (self iframeReceiverLocation: theFP) - objectMemory wordSize + ((frameNumArgs - offset) * objectMemory wordSize) put: valueOop]
+]
+
+{ #category : 'jump bytecodes' }
 StackInterpreter >> jump: offset [
 
 	instructionPointer := instructionPointer + offset + 1.
 	currentBytecode := objectMemory byteAtPointer: instructionPointer
 ]
 
-{ #category : #'sista bytecodes' }
+{ #category : 'sista bytecodes' }
 StackInterpreter >> jumpBinaryInlinePrimitive: primIndex [
 
 	<option: #SistaVM>
@@ -8726,14 +8423,14 @@ StackInterpreter >> jumpBinaryInlinePrimitive: primIndex [
 			([ 18 ] -> [ 
 			 self deny: (objectMemory isOopForwarded: test).
 			 self deny: (objectMemory isImmediate: test).
-			 (objectMemory isYoungObject: test) ifTrue: [ 
+			 (objectMemory getMemoryMap isYoungObject: test) ifTrue: [ 
 				 instructionPointer := instructionPointer + offset ] ]).
 			"7019	jumpIfOld:
 		 Not a forwarder, literal which is a Smi"
 			([ 19 ] -> [ 
 			 self deny: (objectMemory isOopForwarded: test).
 			 self deny: (objectMemory isImmediate: test).
-			 (objectMemory isYoungObject: test) ifFalse: [ 
+			 (objectMemory getMemoryMap isYoungObject: test) ifFalse: [ 
 				 instructionPointer := instructionPointer + offset ] ]) }.
 	"7016	jumpIfWritable:
 		 Not a forwarder, literal which is a Smi"
@@ -8742,7 +8439,7 @@ StackInterpreter >> jumpBinaryInlinePrimitive: primIndex [
 	self pop: 2
 ]
 
-{ #category : #'sista bytecodes' }
+{ #category : 'sista bytecodes' }
 StackInterpreter >> jumpTrinaryInlinePrimitive: primIndex [
 
 	"Note: those tests work with forwarders (wrong class index)"
@@ -8793,7 +8490,7 @@ StackInterpreter >> jumpTrinaryInlinePrimitive: primIndex [
 	self pop: 3
 ]
 
-{ #category : #'sista bytecodes' }
+{ #category : 'sista bytecodes' }
 StackInterpreter >> jumpUnaryInlinePrimitive: primIndex [
 
 	"6000	backjumpNoInterrupt
@@ -8813,7 +8510,7 @@ StackInterpreter >> jumpUnaryInlinePrimitive: primIndex [
 	^ self unknownInlinePrimitive
 ]
 
-{ #category : #'jump bytecodes' }
+{ #category : 'jump bytecodes' }
 StackInterpreter >> jumplfFalseBy: offset [
 
 	| boolean |
@@ -8827,7 +8524,7 @@ StackInterpreter >> jumplfFalseBy: offset [
 	self pop: 1
 ]
 
-{ #category : #'jump bytecodes' }
+{ #category : 'jump bytecodes' }
 StackInterpreter >> jumplfTrueBy: offset [
 
 	| boolean |
@@ -8841,12 +8538,13 @@ StackInterpreter >> jumplfTrueBy: offset [
 	self pop: 1
 ]
 
-{ #category : #'message sending' }
+{ #category : 'message sending' }
 StackInterpreter >> justActivateNewMethod: mustBeInterpreterFrame [
-	| methodHeader numArgs numTemps rcvr |
+
 	<inline: true>
-	"Create the frame for the method activation"
+	| methodHeader numArgs numTemps rcvr |
 	methodHeader := objectMemory methodHeaderOf: newMethod.
+	"Create the frame for the method activation"
 	numTemps := self temporaryCountOfMethodHeader: methodHeader.
 	numArgs := self argumentCountOfMethodHeader: methodHeader.
 
@@ -8859,28 +8557,47 @@ StackInterpreter >> justActivateNewMethod: mustBeInterpreterFrame [
 	self push: newMethod.
 	self setMethod: newMethod methodHeader: methodHeader.
 	self push: objectMemory nilObject. "FxThisContext field"
-	self push: (self encodeFrameFieldHasContext: false isBlock: false numArgs: numArgs).
+	self push: (self
+			 encodeFrameFieldHasContext: false
+			 isBlock: false
+			 numArgs: numArgs).
 	self push: rcvr.
 
-	"clear remaining temps to nil"
-	numArgs+1 to: numTemps do:
-		[:i | self push: objectMemory nilObject].
+	"Initialize temps to nil"
+	numArgs + 1 to: numTemps do: [ :i |
+		self push: objectMemory nilObject ].
 
-	instructionPointer := (self initialIPForHeader: methodHeader method: newMethod) - 1.
+	"-1 to account for pre-increment in fetchNextBytecode"
+	instructionPointer := self pointerForOop:
+		                      (self
+			                       initialIPForHeader: methodHeader
+			                       method: newMethod) - 1.
 
-	(self methodHeaderHasPrimitive: methodHeader) ifTrue:
-		["Skip the CallPrimitive bytecode, if it's there, and store the error code if the method starts
+	(self methodHeaderHasPrimitive: methodHeader) ifTrue: [ "Skip the CallPrimitive bytecode, if it's there, and store the error code if the method starts
 		  with a long store temp.  Strictly no need to skip the store because it's effectively a noop."
-		 instructionPointer := instructionPointer + (self sizeOfCallPrimitiveBytecode: methodHeader).
-		 primFailCode ~= 0 ifTrue: [ | shouldSkipStoreBytecode |
-			shouldSkipStoreBytecode := self reapAndResetErrorCodeTo: framePointer header: methodHeader.
-			shouldSkipStoreBytecode ifTrue: [ 
-				instructionPointer := instructionPointer + (self sizeOfLongStoreTempBytecode: methodHeader)  ] ] ].
+		instructionPointer := instructionPointer
+		                      +
+		                      (self sizeOfCallPrimitiveBytecode:
+			                       methodHeader).
+		primFailCode ~= 0 ifTrue: [
+			| shouldSkipStoreBytecode |
+			shouldSkipStoreBytecode := self
+				                           reapAndResetErrorCodeTo: framePointer
+				                           header: methodHeader.
+			shouldSkipStoreBytecode ifTrue: [
+				instructionPointer := instructionPointer
+				                      +
+				                      (self sizeOfLongStoreTempBytecode:
+					                       methodHeader) ] ] ].
 
-	^methodHeader
+	self assert: (self frameNumArgs: framePointer) = argumentCount.
+	self assert: (self frameIsBlockActivation: framePointer) not.
+	self assert: (self frameHasContext: framePointer) not.
+
+	^ methodHeader
 ]
 
-{ #category : #'debug printing' }
+{ #category : 'debug printing' }
 StackInterpreter >> lengthOfNameOfClass: classOop [
 	<inline: false>
 	| numSlots |
@@ -8892,32 +8609,32 @@ StackInterpreter >> lengthOfNameOfClass: classOop [
 	^objectMemory lengthOf: (objectMemory fetchPointer: classNameIndex ofObject: classOop)
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 StackInterpreter >> libFFI [
 	<doNotGenerate>
 	^ libFFI
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 StackInterpreter >> libFFI: aLibFFI [ 
 	<doNotGenerate>
 	libFFI := aLibFFI
 ]
 
-{ #category : #'compiled methods' }
+{ #category : 'compiled methods' }
 StackInterpreter >> literal: offset [
 	self assert: method = (self iframeMethod: framePointer).
 	^self literal: offset ofMethod: method
 ]
 
-{ #category : #'compiled methods' }
+{ #category : 'compiled methods' }
 StackInterpreter >> literal: offset ofMethod: methodPointer [
 	<api>
 	^objectMemory fetchPointer: offset + LiteralStart ofObject: methodPointer
 
 ]
 
-{ #category : #'compiled methods' }
+{ #category : 'compiled methods' }
 StackInterpreter >> literal: offset ofMethod: methodPointer put: oop [
 	<option: #SpurMemoryManager>
 	<inline: true>
@@ -8925,19 +8642,29 @@ StackInterpreter >> literal: offset ofMethod: methodPointer put: oop [
 
 ]
 
-{ #category : #'compiled methods' }
+{ #category : 'compiled methods' }
 StackInterpreter >> literalCountOfAlternateHeader: headerPointer [
 	<inline: true>
 	^(objectMemory integerValueOf: headerPointer) bitAnd: AlternateHeaderNumLiteralsMask
 ]
 
-{ #category : #'compiled methods' }
+{ #category : 'compiled methods' }
 StackInterpreter >> literalCountOfOriginalHeader: headerPointer [
 	<inline: true>
 	^(headerPointer >> 10) bitAnd: 16rFF
 ]
 
-{ #category : #'bitblt support' }
+{ #category : 'compiled methods' }
+StackInterpreter >> literalMaybeForwarder: offset [
+
+	| literal |
+	literal := self literal: offset.
+	(objectMemory isForwarded: literal) ifTrue: [ 
+		literal := self unfollow: literal atIndex: offset ].
+	^ literal
+]
+
+{ #category : 'bitblt support' }
 StackInterpreter >> loadBitBltFrom: bb [
 	"This entry point needs to be implemented for the interpreter proxy.
 	Since BitBlt is now a plugin we need to look up BitBltPlugin:=loadBitBltFrom
@@ -8951,7 +8678,7 @@ StackInterpreter >> loadBitBltFrom: bb [
 	^self cCode: '((sqInt (*)(sqInt))fn)(bb)'
 ]
 
-{ #category : #initialization }
+{ #category : 'initialization' }
 StackInterpreter >> loadInitialContext [
 	<inline: false>
 	| activeProc activeContext |
@@ -8962,14 +8689,14 @@ StackInterpreter >> loadInitialContext [
 	self marryContextInNewStackPageAndInitializeInterpreterRegisters: activeContext
 ]
 
-{ #category : #'debug printing' }
+{ #category : 'debug printing' }
 StackInterpreter >> log10: n [
 	"compat with C library."
 	<doNotGenerate>
 	^n log: 10
 ]
 
-{ #category : #simulation }
+{ #category : 'simulation' }
 StackInterpreter >> long: aJumpBuf jmp: returnValue [
 	"Hack simulation of setjmp/longjmp.
 	 Signal the exception that simulates a longjmp back to the interpreter." 
@@ -8979,19 +8706,19 @@ StackInterpreter >> long: aJumpBuf jmp: returnValue [
 	aJumpBuf returnValue: returnValue; signal
 ]
 
-{ #category : #'jump bytecodes' }
+{ #category : 'jump bytecodes' }
 StackInterpreter >> longJumpIfFalse [
 
 	self jumplfFalseBy: ((currentBytecode bitAnd: 3) * 256) + self fetchByte.
 ]
 
-{ #category : #'jump bytecodes' }
+{ #category : 'jump bytecodes' }
 StackInterpreter >> longJumpIfTrue [
 
 	self jumplfTrueBy: ((currentBytecode bitAnd: 3) * 256) + self fetchByte.
 ]
 
-{ #category : #'debug printing' }
+{ #category : 'debug printing' }
 StackInterpreter >> longPrintOop: oop [
 	<api>
 	| fmt lastIndex startIP bytecodesPerLine column |
@@ -9084,23 +8811,23 @@ StackInterpreter >> longPrintOop: oop [
 				[self cr]].
 ]
 
-{ #category : #'stack bytecodes' }
+{ #category : 'stack bytecodes' }
 StackInterpreter >> longPushTemporaryVariableBytecode [
 	"230		11100110	i i i i i i i i	Push Temporary Variable #iiiiiiii"
 	| index |
 	index := self fetchByte.
 	self fetchNextBytecode.
-	self push: (self temporary: index in: framePointer)
+	self push: (self itemporary: index in: framePointer)
 ]
 
-{ #category : #'stack bytecodes' }
+{ #category : 'stack bytecodes' }
 StackInterpreter >> longStoreAndPopTemporaryVariableBytecode [
 	"237		11101101	i i i i i i i i	Pop and Store Temporary Variable #iiiiiiii"
 	self longStoreTemporaryVariableBytecode.
 	self pop: 1
 ]
 
-{ #category : #'compiled methods' }
+{ #category : 'compiled methods' }
 StackInterpreter >> longStoreBytecodeForHeader: methodHeader [
 
 	"Answer the relevant long store temp bytecode, which indicates it has a primitive error code.
@@ -9112,7 +8839,7 @@ StackInterpreter >> longStoreBytecodeForHeader: methodHeader [
 	^ LongStoreBytecode
 ]
 
-{ #category : #'stack bytecodes' }
+{ #category : 'stack bytecodes' }
 StackInterpreter >> longStoreTemporaryVariableBytecode [
 
 	"234		11101010	i i i i i i i i	Store Temporary Variable #iiiiiiii"
@@ -9120,10 +8847,10 @@ StackInterpreter >> longStoreTemporaryVariableBytecode [
 	| index |
 	index := self fetchByte.
 	self fetchNextBytecode.
-	self temporary: index in: framePointer put: self stackTop
+	self itemporary: index in: framePointer put: self stackTop
 ]
 
-{ #category : #'jump bytecodes' }
+{ #category : 'jump bytecodes' }
 StackInterpreter >> longUnconditionalJump [
 	| offset |
 	offset := (((currentBytecode bitAnd: 7) - 4) * 256) + self fetchByte.
@@ -9132,7 +8859,7 @@ StackInterpreter >> longUnconditionalJump [
 	self fetchNextBytecode
 ]
 
-{ #category : #'debug support' }
+{ #category : 'debug support' }
 StackInterpreter >> lookupBreakFor: lookupClass [
 	<inline: true>
 	(objectMemory shouldBreakForLookupIn: lookupClass given: breakLookupClassTag) ifTrue:
@@ -9141,7 +8868,7 @@ StackInterpreter >> lookupBreakFor: lookupClass [
 			inSmalltalk: [self halt: 'Lookup in class ', lookupClass hex]]
 ]
 
-{ #category : #'method lookup cache' }
+{ #category : 'method lookup cache' }
 StackInterpreter >> lookupInMethodCacheSel: selector classTag: classTag [
 	"This method implements a simple method lookup cache.  If an entry for the given
 	 selector and classTag is found in the cache, set the values of 'newMethod' and
@@ -9150,7 +8877,7 @@ StackInterpreter >> lookupInMethodCacheSel: selector classTag: classTag [
 	^self inlineLookupInMethodCacheSel: selector classTag: classTag
 ]
 
-{ #category : #'message sending' }
+{ #category : 'message sending' }
 StackInterpreter >> lookupMNUInClass: class [
 	"Lookup messageSelector in class.  Answer 0 on success. Answer the splObj: index
 	 for the error selector to use on failure rather than performing MNU processing etc."
@@ -9170,7 +8897,7 @@ StackInterpreter >> lookupMNUInClass: class [
 	^SelectorDoesNotUnderstand
 ]
 
-{ #category : #'message sending' }
+{ #category : 'message sending' }
 StackInterpreter >> lookupMethodFor: selector InDictionary: dictionary [
 	"Lookup the argument selector in aDictionary and answer either the
 	 method or nil, if not found.
@@ -9206,7 +8933,7 @@ StackInterpreter >> lookupMethodFor: selector InDictionary: dictionary [
 	^nil "for Slang"
 ]
 
-{ #category : #'message sending' }
+{ #category : 'message sending' }
 StackInterpreter >> lookupMethodInClass: class [
 	| currentClass dictionary found |
 	<inline: false>
@@ -9227,6 +8954,7 @@ StackInterpreter >> lookupMethodInClass: class [
 		currentClass := self superclassOf: currentClass].
 
 	"Could not find #doesNotUnderstand: -- unrecoverable error."
+
 	messageSelector = (objectMemory splObj: SelectorDoesNotUnderstand) ifTrue:
 		[self error: 'Recursive not understood error encountered'].
 
@@ -9239,7 +8967,7 @@ StackInterpreter >> lookupMethodInClass: class [
 	^self lookupMethodInClass: class
 ]
 
-{ #category : #'message sending' }
+{ #category : 'message sending' }
 StackInterpreter >> lookupMethodInDictionary: dictionary [ 
 	"This method lookup tolerates integers as Dictionary keys to support
 	 execution of images in which Symbols have been compacted out."
@@ -9254,12 +8982,7 @@ StackInterpreter >> lookupMethodInDictionary: dictionary [
 	mask <= methodDictLinearSearchLimit ifTrue:
 		[index := 0.
 		 [index <= mask] whileTrue:
-			[nextSelector := objectMemory fetchPointer: index + SelectorStart ofObject: dictionary.
-			 (objectMemory isOopForwarded: nextSelector) ifTrue:
-				[nextSelector := objectMemory
-									fixFollowedField: index + SelectorStart
-									ofObject: dictionary
-									withInitialValue: nextSelector].
+			[nextSelector := objectMemory followField: index + SelectorStart ofObject: dictionary.
 			 nextSelector = messageSelector ifTrue:
 				[methodArray := objectMemory followObjField: MethodArrayIndex ofObject: dictionary.
 				 newMethod := objectMemory followField: index ofObject: methodArray.
@@ -9273,13 +8996,8 @@ StackInterpreter >> lookupMethodInDictionary: dictionary [
 	 will be detected the second time the loop gets to the end of the table."
 	wrapAround := false.
 	[true] whileTrue:
-		[nextSelector := objectMemory fetchPointer: index ofObject: dictionary.
+		[nextSelector := objectMemory followField: index ofObject: dictionary.
 		 nextSelector = objectMemory nilObject ifTrue: [^false].
-		 (objectMemory isOopForwarded: nextSelector) ifTrue:
-			[nextSelector := objectMemory
-								fixFollowedField: index + SelectorStart
-								ofObject: dictionary
-								withInitialValue: nextSelector].
 		 nextSelector = messageSelector ifTrue:
 			[methodArray := objectMemory followObjField: MethodArrayIndex ofObject: dictionary.
 			 newMethod := objectMemory followField: index - SelectorStart ofObject: methodArray.
@@ -9293,7 +9011,7 @@ StackInterpreter >> lookupMethodInDictionary: dictionary [
 	^false "for Slang"
 ]
 
-{ #category : #'message sending' }
+{ #category : 'message sending' }
 StackInterpreter >> lookupOrdinaryNoMNUEtcInClass: class [
 	"Lookup messageSelector in class.  Answer 0 on success. Answer the splObj: index
 	 for the error selector to use on failure rather than performing MNU processing etc."
@@ -9313,7 +9031,7 @@ StackInterpreter >> lookupOrdinaryNoMNUEtcInClass: class [
 	^SelectorDoesNotUnderstand
 ]
 
-{ #category : #'debug support' }
+{ #category : 'debug support' }
 StackInterpreter >> lookupSelector: selector inClass: class [
 	"Lookup selector in class.  Answer the method or nil.  This is a debugging routine.
 	 It does /not/ side-effect lookupClass or newMethod."
@@ -9331,7 +9049,7 @@ StackInterpreter >> lookupSelector: selector inClass: class [
 	^nil
 ]
 
-{ #category : #'frame access' }
+{ #category : 'frame access' }
 StackInterpreter >> makeBaseFrameFor: aContext [ "<Integer>"
 	"Marry aContext with the base frame of a new stack page.  Build the base
 	 frame to reflect the context's state.  Answer the new page."
@@ -9369,38 +9087,38 @@ StackInterpreter >> makeBaseFrameFor: aContext [ "<Integer>"
 			 ((self methodHeaderHasPrimitive: header)
 			  and: [theIP = (1 + (self startPCOfMethodHeader: header))]) ifTrue:
 				[theIP := theIP + (self sizeOfCallPrimitiveBytecode: header)].
-			 stackPages longAt: pointer put: rcvr].
+			 stackPages unsignedLongAt: pointer put: rcvr].
 	"Put the arguments on the stack"
 	1 to: numArgs do:
 		[:i|
 		stackPages
-			longAt: (pointer := pointer - objectMemory wordSize)
+			unsignedLongAt: (pointer := pointer - objectMemory wordSize)
 			put: (objectMemory fetchPointer: ReceiverIndex + i ofObject: aContext).
 		"nil the slot in the context so that it doesn't inadvertently hang onto some collectable object.
 		 Thanks to Ryan Macnak for identifying this bug"
 		objectMemory storePointerUnchecked: ReceiverIndex + i ofObject: aContext withValue: objectMemory nilObject].
 	"saved caller ip is sender context in base frame"
 	stackPages
-		longAt: (pointer := pointer - objectMemory wordSize)
+		unsignedLongAt: (pointer := pointer - objectMemory wordSize)
 		put: (objectMemory followObjField: SenderIndex ofObject: aContext).
 	"base frame's saved fp is null"
 	stackPages
-		longAt: (pointer := pointer - objectMemory wordSize)
+		unsignedLongAt: (pointer := pointer - objectMemory wordSize)
 		put: 0.
 	page baseFP: pointer; headFP: pointer.
 	stackPages
-		longAt: (pointer := pointer - objectMemory wordSize)
+		unsignedLongAt: (pointer := pointer - objectMemory wordSize)
 		put: theMethod.
 	stackPages
-		longAt: (pointer := pointer - objectMemory wordSize)
+		unsignedLongAt: (pointer := pointer - objectMemory wordSize)
 		put: aContext.
 	stackPages
-		longAt: (pointer := pointer - objectMemory wordSize)
+		unsignedLongAt: (pointer := pointer - objectMemory wordSize)
 		put: (self encodeFrameFieldHasContext: true isBlock: maybeClosure ~= objectMemory nilObject numArgs: numArgs).
 	self assert: (self frameHasContext: page baseFP).
 	self assert: (self frameNumArgs: page baseFP) == numArgs.
 	stackPages
-		longAt: (pointer := pointer - objectMemory wordSize)
+		unsignedLongAt: (pointer := pointer - objectMemory wordSize)
 		put: rcvr.
 	stackPtrIndex := self quickFetchInteger: StackPointerIndex ofObject: aContext.
 	self assert: ReceiverIndex + stackPtrIndex < (objectMemory lengthOf: aContext).
@@ -9411,7 +9129,7 @@ StackInterpreter >> makeBaseFrameFor: aContext [ "<Integer>"
 			put: (objectMemory fetchPointer: ReceiverIndex + i ofObject: aContext)].
 	"top of stack is the instruction pointer"
 	theIP := self iframeInstructionPointerForIndex: theIP method: theMethod.
-	stackPages longAt: (pointer := pointer - objectMemory wordSize) put: theIP.
+	stackPages unsignedLongAt: (pointer := pointer - objectMemory wordSize) put: theIP.
 	page headSP: pointer.
 	self assert: (self context: aContext hasValidInversePCMappingOf: theIP in: page baseFP).
 
@@ -9430,7 +9148,7 @@ StackInterpreter >> makeBaseFrameFor: aContext [ "<Integer>"
 	^page
 ]
 
-{ #category : #'frame access' }
+{ #category : 'frame access' }
 StackInterpreter >> makeContextSnapshotSafe: ctxt [
 	"Convert married contexts to widowed contexts, and in the CoInterpreter,
 	 map any machine code pcs to bytecode pcs, and then nil all slots beyond
@@ -9451,7 +9169,7 @@ StackInterpreter >> makeContextSnapshotSafe: ctxt [
 				withValue: objectMemory nilObject]
 ]
 
-{ #category : #utilities }
+{ #category : 'utilities' }
 StackInterpreter >> makePointwithxValue: xValue yValue: yValue [
 	"make a Point xValue@yValue.
 	 We know both will be integers so no value nor root checking is needed"
@@ -9462,7 +9180,7 @@ StackInterpreter >> makePointwithxValue: xValue yValue: yValue [
 	^pointResult
 ]
 
-{ #category : #'object memory support' }
+{ #category : 'object memory support' }
 StackInterpreter >> mapInterpreterOops [
 	"Map all oops in the interpreter's state to their new values 
 	 during garbage collection or a become: operation."
@@ -9482,13 +9200,13 @@ StackInterpreter >> mapInterpreterOops [
 		[tempOop2 := objectMemory remapObj: tempOop2]
 ]
 
-{ #category : #'object memory support' }
+{ #category : 'object memory support' }
 StackInterpreter >> mapMachineCode: theGCMode [
 	<inline: true>
 	"This is a no-op in the StackVM"
 ]
 
-{ #category : #'object memory support' }
+{ #category : 'object memory support' }
 StackInterpreter >> mapProfileState [
 	(objectMemory shouldRemapObj: profileProcess) ifTrue:
 		[profileProcess := objectMemory remapObj: profileProcess].
@@ -9514,74 +9232,92 @@ StackInterpreter >> mapProfileState [
 			[longRunningPrimitiveCheckSemaphore := objectMemory remapObj: longRunningPrimitiveCheckSemaphore]]
 ]
 
-{ #category : #'object memory support' }
+{ #category : 'object memory support' }
 StackInterpreter >> mapStackPages [
+
 	<inline: #never>
 	<var: #thePage type: #'StackPage *'>
 	<var: #theSP type: #'char *'>
 	<var: #theFP type: #'char *'>
+	<var: #frameRcvrOffset type: #'char *'>
 	<var: #callerFP type: #'char *'>
 	<var: #theIPPtr type: #'char *'>
 	| numLivePages |
 	numLivePages := 0.
-	0 to: numStackPages - 1 do:
-		[:i| | thePage theSP theFP callerFP theIPPtr theIP oop |
+	0 to: numStackPages - 1 do: [ :i |
+		| thePage theSP theFP frameRcvrOffset callerFP theIPPtr theIP oop |
 		thePage := stackPages stackPageAt: i.
-		thePage isFree ifFalse:
-			[self assert: (self ifCurrentStackPageHasValidHeadPointers: thePage).
-			 numLivePages := numLivePages + 1.
-			 theSP := thePage headSP.
-			 theFP := thePage  headFP.
-			 "Skip the instruction pointer on top of stack of inactive pages."
-			 thePage = stackPage
-				ifTrue: [theIPPtr := 0]
-				ifFalse:
-					[theIPPtr := theSP.
-					 theSP := theSP + objectMemory wordSize].
-			[self assert: (thePage addressIsInPage: theFP).
-			 self assert: (thePage addressIsInPage: theSP).
-			 self assert: (theIPPtr = 0 or: [thePage addressIsInPage: theIPPtr]).
-			 [theSP <= (theFP + FoxReceiver)] whileTrue:
-				[oop := stackPages longAt: theSP.
-				 (objectMemory shouldRemapOop: oop) ifTrue:
-					[stackPages longAt: theSP put: (objectMemory remapObj: oop)].
-				 theSP := theSP + objectMemory wordSize].
-			 (self frameHasContext: theFP) ifTrue:
-				[(objectMemory shouldRemapObj: (self frameContext: theFP)) ifTrue:
-					[stackPages
-						longAt: theFP + FoxThisContext
-						put: (objectMemory remapObj: (self frameContext: theFP))].
-				 "With SpurPlanningCompactor can't assert since object body is yet to move."
-				 (objectMemory slidingCompactionInProgress not) ifTrue:
-					[self assert: ((self isMarriedOrWidowedContext: (self frameContext: theFP))
-								  and: [(self frameOfMarriedContext: (self frameContext: theFP)) = theFP])]].
-			 (objectMemory shouldRemapObj: (self frameMethod: theFP)) ifTrue:
-				[theIPPtr ~= 0 ifTrue:
-					[self assert: (stackPages longAt: theIPPtr) > (self frameMethod: theFP).
-					 theIP := (stackPages longAt: theIPPtr) - (self frameMethod: theFP)].
-				 stackPages
-					longAt: theFP + FoxMethod
-					put: (objectMemory remapObj: (self frameMethod: theFP)).
-				 theIPPtr ~= 0 ifTrue:
-					[stackPages longAt: theIPPtr put: theIP + (self frameMethod: theFP)]].
-			 (callerFP := self frameCallerFP: theFP) ~= 0] whileTrue:
-				[theSP := (theIPPtr := theFP + FoxCallerSavedIP) + objectMemory wordSize.
-				 theFP := callerFP].
-			 theSP := theFP + FoxCallerContext. "a.k.a. FoxCallerSavedIP"
-			 [theSP <= thePage baseAddress] whileTrue:
-				[oop := stackPages longAt: theSP.
-				 (objectMemory shouldRemapOop: oop) ifTrue:
-					[stackPages longAt: theSP put: (objectMemory remapObj: oop)].
-				 theSP := theSP + objectMemory wordSize]]].
+		thePage isFree ifFalse: [
+			self assert: (self ifCurrentStackPageHasValidHeadPointers: thePage).
+			numLivePages := numLivePages + 1.
+			theSP := thePage headSP.
+			theFP := thePage headFP.
+			"Skip the instruction pointer on top of stack of inactive pages."
+			thePage = stackPage
+				ifTrue: [ theIPPtr := 0 ]
+				ifFalse: [
+					theIPPtr := theSP.
+					theSP := theSP + objectMemory wordSize ].
+			[
+			self assert: (thePage addressIsInPage: theFP).
+			self assert: (thePage addressIsInPage: theSP).
+			self assert:
+				(theIPPtr = 0 or: [ thePage addressIsInPage: theIPPtr ]).
+			frameRcvrOffset := self frameReceiverLocation: theFP.
+			[ theSP <= frameRcvrOffset ] whileTrue: [
+				oop := stackPages unsignedLongAt: theSP.
+				(objectMemory shouldRemapOop: oop) ifTrue: [
+					stackPages
+						unsignedLongAt: theSP
+						put: (objectMemory remapObj: oop) ].
+				theSP := theSP + objectMemory wordSize ].
+			(self frameHasContext: theFP) ifTrue: [
+				(objectMemory shouldRemapObj: (self frameContext: theFP)) ifTrue: [
+					stackPages
+						unsignedLongAt: theFP + FoxThisContext
+						put: (objectMemory remapObj: (self frameContext: theFP)) ].
+				"With SpurPlanningCompactor can't assert since object body is yet to move."
+				objectMemory slidingCompactionInProgress not ifTrue: [
+					self assert:
+						((self isMarriedOrWidowedContext: (self frameContext: theFP))
+							 and: [
+							 (self frameOfMarriedContext: (self frameContext: theFP))
+							 = theFP ]) ] ].
+			(objectMemory shouldRemapObj: (self iframeMethod: theFP)) ifTrue: [
+				theIPPtr ~= 0 ifTrue: [
+					self assert:
+						(stackPages unsignedLongAt: theIPPtr)
+						> (self iframeMethod: theFP).
+					theIP := (stackPages unsignedLongAt: theIPPtr)
+					         - (self iframeMethod: theFP) ].
+				stackPages
+					unsignedLongAt: theFP + FoxMethod
+					put: (objectMemory remapObj: (self iframeMethod: theFP)).
+				theIPPtr ~= 0 ifTrue: [
+					stackPages
+						unsignedLongAt: theIPPtr
+						put: theIP + (self iframeMethod: theFP) ] ].
+			(callerFP := self frameCallerFP: theFP) ~= 0 ] whileTrue: [
+				theSP := (theIPPtr := theFP + FoxCallerSavedIP)
+				         + objectMemory wordSize.
+				theFP := callerFP ].
+			theSP := theFP + FoxCallerContext. "a.k.a. FoxCallerSavedIP"
+			[ theSP <= thePage baseAddress ] whileTrue: [
+				oop := stackPages unsignedLongAt: theSP.
+				(objectMemory shouldRemapOop: oop) ifTrue: [
+					stackPages
+						unsignedLongAt: theSP
+						put: (objectMemory remapObj: oop) ].
+				theSP := theSP + objectMemory wordSize ] ] ].
 	stackPages recordLivePagesOnMapping: numLivePages
 ]
 
-{ #category : #'object memory support' }
+{ #category : 'object memory support' }
 StackInterpreter >> mapTraceLogs [
 	"This is a no-op in the StackVM"
 ]
 
-{ #category : #'object memory support' }
+{ #category : 'object memory support' }
 StackInterpreter >> mapVMRegisters [
 	"Map the oops in the interpreter's vm ``registers'' to their new values 
 	during garbage collection or a become: operation."
@@ -9597,7 +9333,7 @@ StackInterpreter >> mapVMRegisters [
 		[newMethod := objectMemory remapObj: newMethod]
 ]
 
-{ #category : #'sista bytecodes' }
+{ #category : 'sista bytecodes' }
 StackInterpreter >> mappedBackjumpAlwaysInterrupt [
 
 	| top offset |
@@ -9612,7 +9348,7 @@ StackInterpreter >> mappedBackjumpAlwaysInterrupt [
 	self fetchNextBytecode
 ]
 
-{ #category : #'sista bytecodes' }
+{ #category : 'sista bytecodes' }
 StackInterpreter >> mappedDirectCall [
 	"250	directCall
 	literal index of the method to call on top of stack =>  (variable number of parameters)"
@@ -9625,12 +9361,11 @@ StackInterpreter >> mappedDirectCall [
 	argumentCount := self argumentCountOfMethodHeader: methodHeader.
 	"The primitive function pointer is not cached in the interpreter, but it's called quickly in the JIT"
 	primitiveFunctionPointer := self functionPointerFor: localPrimIndex inClass: objectMemory nilObject..
-	self internalActivateNewMethod
+	self activateNewMethod
 ]
 
-{ #category : #'sista bytecodes' }
+{ #category : 'sista bytecodes' }
 StackInterpreter >> mappedEnsureEnoughWords [
-
 	"50	EnsureEnoughWords
 	 literal which is a Smi => ret value is receiver"
 
@@ -9640,13 +9375,10 @@ StackInterpreter >> mappedEnsureEnoughWords [
 	slots := objectMemory integerValueOf: top.
 	self assert: slots >= 0.
 	ok := objectMemory checkForAvailableSlots: slots.
-	ok ifFalse: [ 
-		self externalizeIPandSP.
-		self checkForEventsMayContextSwitch: true.
-		self internalizeIPandSP ]
+	ok ifFalse: [ self checkForEventsMayContextSwitch: true ]
 ]
 
-{ #category : #'sista bytecodes' }
+{ #category : 'sista bytecodes' }
 StackInterpreter >> mappedImmcheckDataAtPut: primIndex [
 
 	<option: #SistaVM>
@@ -9707,9 +9439,8 @@ StackInterpreter >> mappedImmcheckDataAtPut: primIndex [
 		byte object, Smi, 8 bits unsigned Smi => arg2 (1-based, optimised if arg1 is a constant)"
 ]
 
-{ #category : #'sista bytecodes' }
+{ #category : 'sista bytecodes' }
 StackInterpreter >> mappedImmcheckMaybeContextStoreCheckPointerAtPut [
-
 	"153	immCheckMaybeContextStoreCheckPointerAt:put:
 	 pointer object (Fixed sized or not), Smi, Anything => arg2 (1-based, optimised if arg1 is a constant)"
 
@@ -9722,18 +9453,16 @@ StackInterpreter >> mappedImmcheckMaybeContextStoreCheckPointerAtPut [
 	self pop: 3.
 	self push: result.
 	(self isWriteMediatedContextInstVarIndex: argIntAdjusted)
-		ifFalse: [ 
+		ifFalse: [
 			objectMemory
 				storePointerImmutabilityCheck: argIntAdjusted
 				ofObject: rec
 				withValue: result ]
-		ifTrue: [ 
-			self externalizeIPandSP.
-			self externalInstVar: argIntAdjusted ofContext: rec put: result.
-			self internalizeIPandSP ]
+		ifTrue: [
+		self instVar: argIntAdjusted ofContext: rec put: result ]
 ]
 
-{ #category : #'sista bytecodes' }
+{ #category : 'sista bytecodes' }
 StackInterpreter >> mappedImmcheckStoreCheckPointerAtPut [
 
 	"151	immCheckStoreCheckPointerAt:put:
@@ -9756,7 +9485,7 @@ StackInterpreter >> mappedImmcheckStoreCheckPointerAtPut [
 		withValue: result
 ]
 
-{ #category : #'extension bytecodes' }
+{ #category : 'extension bytecodes' }
 StackInterpreter >> mappedInlinePrimitive: primIndex [
 	"SistaV1:	236		11101100	iiiiiiii		callMappedInlinedPrimitive"
 	"Number of arguments:
@@ -9779,7 +9508,7 @@ StackInterpreter >> mappedInlinePrimitive: primIndex [
 
 ]
 
-{ #category : #'object memory support' }
+{ #category : 'object memory support' }
 StackInterpreter >> markAndTraceAndMaybeFreeStackPages: fullGCFlag [
 	"Read markAndTraceStackPages:'s comment.  Finish tracing to-be-traced pages.
 	 Then free any untraced pages."
@@ -9796,7 +9525,7 @@ StackInterpreter >> markAndTraceAndMaybeFreeStackPages: fullGCFlag [
 	self freeUntracedStackPages
 ]
 
-{ #category : #'object memory support' }
+{ #category : 'object memory support' }
 StackInterpreter >> markAndTraceInterpreterOops: fullGCFlag [
 	"Mark and trace all oops in the interpreter's state."
 	"Assume: All traced variables contain valid oops.
@@ -9833,22 +9562,22 @@ StackInterpreter >> markAndTraceInterpreterOops: fullGCFlag [
 		(objectMemory isImmediate: oop) ifFalse:[objectMemory markAndTrace: oop]]
 ]
 
-{ #category : #'object memory support' }
+{ #category : 'object memory support' }
 StackInterpreter >> markAndTraceMachineCodeOfMarkedMethods [
 	"This is a no-op in the StackVM"
 ]
 
-{ #category : #'object memory support' }
+{ #category : 'object memory support' }
 StackInterpreter >> markAndTraceOrFreeMachineCode: fullGCFlag [
 	"This is a no-op in the StackVM"
 ]
 
-{ #category : #'object memory support' }
+{ #category : 'object memory support' }
 StackInterpreter >> markAndTracePrimTraceLog [
 	"This is a no-op in the StackVM"
 ]
 
-{ #category : #'object memory support' }
+{ #category : 'object memory support' }
 StackInterpreter >> markAndTraceStackPage: thePage [
 	| theSP theFP frameRcvrOffset callerFP oop |
 	<var: #thePage type: #'StackPage *'>
@@ -9870,10 +9599,10 @@ StackInterpreter >> markAndTraceStackPage: thePage [
 		[theSP := theSP + objectMemory wordSize].
 	[frameRcvrOffset := self frameReceiverLocation: theFP.
 	 [theSP <= frameRcvrOffset] whileTrue:
-		[oop := stackPages longAt: theSP.
+		[oop := stackPages unsignedLongAt: theSP.
 		 (objectMemory isOopForwarded: oop) ifTrue:
 			[oop := objectMemory followForwarded: oop.
-			 stackPages longAt: theSP put: oop].
+			 stackPages unsignedLongAt: theSP put: oop].
 		 (objectMemory isImmediate: oop) ifFalse:
 			[objectMemory markAndTrace: oop].
 		 theSP := theSP + objectMemory wordSize].
@@ -9886,16 +9615,16 @@ StackInterpreter >> markAndTraceStackPage: thePage [
 		 theFP := callerFP].
 	theSP := theFP + FoxCallerSavedIP. "caller ip is frameCallerContext in a base frame"
 	[theSP <= thePage baseAddress] whileTrue:
-		[oop := stackPages longAt: theSP.
+		[oop := stackPages unsignedLongAt: theSP.
 		 (objectMemory isOopForwarded: oop) ifTrue:
 			[oop := objectMemory followForwarded: oop.
-			 stackPages longAt: theSP put: oop].
+			 stackPages unsignedLongAt: theSP put: oop].
 		 (objectMemory isImmediate: oop) ifFalse:
 			[objectMemory markAndTrace: oop].
 		 theSP := theSP + objectMemory wordSize]
 ]
 
-{ #category : #'object memory support' }
+{ #category : 'object memory support' }
 StackInterpreter >> markAndTraceStackPages: fullGCFlag [
 	"GC of pages.  Throwing away all stack pages on full GC is simple but dangerous
 	 because it causes us to allocate lots of contexts immediately before a GC.
@@ -9936,12 +9665,12 @@ StackInterpreter >> markAndTraceStackPages: fullGCFlag [
 	 thePage trace < StackPageTraced] whileTrue
 ]
 
-{ #category : #'object memory support' }
+{ #category : 'object memory support' }
 StackInterpreter >> markAndTraceTraceLog [
 	"This is a no-op in the StackVM"
 ]
 
-{ #category : #'object memory support' }
+{ #category : 'object memory support' }
 StackInterpreter >> markAndTraceUntracedReachableStackPages [
 	"Trace any untraced pages"
 	| thePage foundToBeTracedPage |
@@ -9959,7 +9688,7 @@ StackInterpreter >> markAndTraceUntracedReachableStackPages [
 	foundToBeTracedPage] whileTrue
 ]
 
-{ #category : #'frame access' }
+{ #category : 'frame access' }
 StackInterpreter >> markContextAsDead: oop [
 	"Mark the argument, which must be a context, married, widowed or single, as dead.
 	 For married or widowed contexts this breaks any link to the spouse and makes the context single.
@@ -9971,7 +9700,7 @@ StackInterpreter >> markContextAsDead: oop [
 		storePointerUnchecked: InstructionPointerIndex ofObject: oop withValue: objectMemory nilObject
 ]
 
-{ #category : #'frame access' }
+{ #category : 'frame access' }
 StackInterpreter >> marriedContext: spouseContext pointsTo: anOop stackDeltaForCurrentFrame: stackDeltaForCurrentFrame [
 	"This is a helper for primitiveObjectPointsTo so it *does not* check the frameContext field because that is an implicit self-reference not present in the state ."
 	| theFP thePage theSP rcvrOffset |
@@ -9989,7 +9718,7 @@ StackInterpreter >> marriedContext: spouseContext pointsTo: anOop stackDeltaForC
 	(objectMemory isIntegerObject: anOop)
 		ifTrue: "Check stack and instruction pointer fields."
 			[(anOop = (objectMemory integerObjectOf: (self stackPointerIndexForFrame: theFP WithSP: theSP))
-			or: [anOop = (self externalInstVar: InstructionPointerIndex ofContext: spouseContext)]) ifTrue:
+			or: [anOop = (self instVar: InstructionPointerIndex ofContext: spouseContext)]) ifTrue:
 				[^true]]
 		ifFalse: "Check method and sender fields, avoiding unnecessarily reifying sender context."
 			[anOop = (self frameMethodObject: theFP) ifTrue:
@@ -10003,20 +9732,20 @@ StackInterpreter >> marriedContext: spouseContext pointsTo: anOop stackDeltaForC
 	"Now check receiver, temps and stack contents"
 	rcvrOffset := self frameReceiverLocation: theFP.
 	 [theSP <= rcvrOffset] whileTrue:
-		[anOop = (stackPages longAt: theSP) ifTrue:
+		[anOop = (stackPages unsignedLongAt: theSP) ifTrue:
 			[^true].
 		 theSP := theSP + objectMemory wordSize].
 	"Finally check stacked receiver (closure field or duplicate of receiver) and arguments"
 	theSP := theFP + FoxCallerSavedIP + objectMemory wordSize.
 	rcvrOffset := theFP + (self frameStackedReceiverOffset: theFP).
 	 [theSP <= rcvrOffset] whileTrue:
-		[anOop = (stackPages longAt: theSP) ifTrue:
+		[anOop = (stackPages unsignedLongAt: theSP) ifTrue:
 			[^true].
 		 theSP := theSP + objectMemory wordSize].
 	^false
 ]
 
-{ #category : #'frame access' }
+{ #category : 'frame access' }
 StackInterpreter >> marryContextInNewStackPageAndInitializeInterpreterRegisters: aContext [
 	"Establish aContext at the base of a new stackPage, make the stackPage the
 	 active one and set-up the interreter registers.  This is used to boot the system
@@ -10032,7 +9761,7 @@ StackInterpreter >> marryContextInNewStackPageAndInitializeInterpreterRegisters:
 	instructionPointer := self popStack
 ]
 
-{ #category : #'frame access' }
+{ #category : 'frame access' }
 StackInterpreter >> marryFrame: theFP SP: theSP [
 	"Marry an unmarried frame.  This means creating a spouse context
 	 initialized with a subset of the frame's state (state through the last argument)
@@ -10043,22 +9772,36 @@ StackInterpreter >> marryFrame: theFP SP: theSP [
 	^self marryFrame: theFP SP: theSP copyTemps: false
 ]
 
-{ #category : #'frame access' }
+{ #category : 'frame access' }
 StackInterpreter >> marryFrame: theFP SP: theSP copyTemps: copyTemps [
-	"Marry an unmarried frame.  This means creating a spouse context
-	 initialized with a subset of the frame's state that references the frame.
-	 For the default closure implementation we do not need to copy temps.
-	 Different closure implementations may require temps to be copied."
-	| theContext methodHeader numSlots numArgs numStack closureOrNil numTemps |
+	"Marry an unmarried frame. This means creating a spouse context
+	initialized with a subset of the frame's state that references the frame.
+	For the default closure implementation we do not need to copy temps.
+	Different closure implementations may require temps to be copied.
+	 
+	Set the ``has context'' flag appropriately for both machine code and interpreter frames"
+
 	<inline: true>
 	<var: #theFP type: #'char *'>
 	<var: #theSP type: #'char *'>
+	| theContext methodHeader closureOrNil numSlots numArgs numStack numTemps |
+
 	self assert: (self frameHasContext: theFP) not.
 
-	"The SP is expected to be pointing at the last oop on the stack, not at the pc"
-	self assert: (objectMemory addressCouldBeOop: (stackPages longAt: theSP)).
+	(self isMachineCodeFrame: theFP)
+		ifTrue: [ | methodFieldOrObj |
+			"base frames must aready be married for cannotReturn: processing"
+			self assert: (self isBaseFrame: theFP) not.
+			methodFieldOrObj := self frameMethodField: theFP.
+			stackPages
+				longAt: theFP + FoxMethod
+				put: methodFieldOrObj + MFMethodFlagHasContextFlag ]
+		ifFalse: [ self setIFrameHasContext: theFP ].
 
-	methodHeader := objectMemory methodHeaderOf: (self frameMethod: theFP).
+	"The SP is expected to be pointing at the last oop on the stack, not at the pc"
+	self assert: (objectMemory addressCouldBeOop: (objectMemory longAt: theSP)).
+
+	methodHeader := objectMemory methodHeaderOf: (self frameMethodObject: theFP).
 	"Decide how much of the stack to preserve in widowed contexts.  Preserving too much
 	 state will potentially hold onto garbage.  Holding onto too little may mean that a dead
 	 context isn't informative enough in a debugging situation.  If copyTemps is false (as it
@@ -10066,17 +9809,19 @@ StackInterpreter >> marryFrame: theFP SP: theSP copyTemps: copyTemps [
 	 no temporaries.  Note that we still set the stack pointer to its current value, but stack
 	 contents other than the arguments are nil."
 	numArgs := self frameNumArgs: theFP.
-	numStack := self stackPointerIndexForFrame: theFP WithSP: theSP.
 
 	closureOrNil := (self frameIsBlockActivation: theFP)
-						ifTrue: [self pushedReceiverOrClosureOfFrame: theFP]
-						ifFalse: [objectMemory nilObject].
+						ifTrue: [ self pushedReceiverOrClosureOfFrame: theFP ]
+						ifFalse: [ objectMemory nilObject ].
 
 	numSlots := (self methodHeaderIndicatesLargeFrame: methodHeader)
 					ifTrue: [LargeContextSlots]
 					ifFalse: [SmallContextSlots].
+
+	numStack := self stackPointerIndexForFrame: theFP WithSP: theSP.
 	theContext := objectMemory eeInstantiateMethodContextSlots: numSlots.
-	self assert: numStack + ReceiverIndex <= numSlots. 
+	self setFrameContext: theFP to: theContext.
+	self assert: numStack + ReceiverIndex <= numSlots.
 	"Mark context as married by setting its sender to the frame pointer plus SmallInteger
 	 tags and the InstructionPointer to the saved fp (which ensures correct alignment
 	 w.r.t. the frame when we check for validity)"
@@ -10091,67 +9836,59 @@ StackInterpreter >> marryFrame: theFP SP: theSP copyTemps: copyTemps [
 		withValue: (objectMemory integerObjectOf: numStack).
 	objectMemory storePointerUnchecked: MethodIndex
 		ofObject: theContext
-		withValue: (self frameMethod: theFP).
-	objectMemory storePointerUnchecked: ClosureIndex ofObject: theContext withValue: closureOrNil.
+		withValue: (self frameMethodObject: theFP).
+	objectMemory storePointerUnchecked: ClosureIndex
+		ofObject: theContext
+		withValue: closureOrNil.
 	objectMemory storePointerUnchecked: ReceiverIndex
 		ofObject: theContext
 		withValue: (self frameReceiver: theFP).
 	"If copyTemps is false, store just the arguments.  If the frame is divorced the context
 	 will have valid arguments but all temporaries will be nil."
-	1 to: numArgs do:
-		[:i|
-		objectMemory storePointerUnchecked: ReceiverIndex + i
-			ofObject: theContext "inline self temporary: i - 1 in:theFP" 
-			withValue: (stackPages longAt: theFP
-										+ FoxCallerSavedIP
-										+ ((numArgs - i + 1) * objectMemory wordSize))].
-	copyTemps ifTrue:
-		[numTemps := self frameNumTemps: theFP.
-		 1 to: numTemps do:
-			[:i|
-			objectMemory storePointerUnchecked: ReceiverIndex + i + numArgs
-				ofObject: theContext
-				withValue: (self temporary: i - 1 in: theFP)].
-		 numArgs := numArgs + numTemps].
-
-	numArgs + 1 to: numStack do:
-		[:i|
+	1 to: numArgs do: [ :i |
 		objectMemory storePointerUnchecked: ReceiverIndex + i
 			ofObject: theContext
-			withValue: objectMemory nilObject].
+			withValue: (self temporary: i - 1 in: theFP) ].
+	copyTemps ifTrue: [
+		numTemps := self frameNumTemps: theFP.
+		1 to: numTemps do: [ :i |
+			objectMemory storePointerUnchecked: ReceiverIndex + i + numArgs
+				ofObject: theContext
+				withValue: (self temporary: i - 1 in: theFP) ].
+		numArgs := numArgs + numTemps ].
 
-	self setFrameContext: theFP to: theContext.
-	self setFrameHasContext: theFP.
+	numArgs + 1 to: numStack do: [ :i |
+		objectMemory storePointerUnchecked: ReceiverIndex + i
+			ofObject: theContext
+			withValue: objectMemory nilObject ].
 
 	self assert: (self frameHasContext: theFP).
 	self assert: (self frameOfMarriedContext: theContext) = theFP.
 	self assert: numStack + ReceiverIndex < (objectMemory lengthOf: theContext).
 
-	^theContext
-
+	^ theContext
 ]
 
-{ #category : #'primitive support' }
+{ #category : 'primitive support' }
 StackInterpreter >> maybeFailForLastObjectOverwrite [
 	<inline: true>
 	checkAllocFiller ifTrue: 
 		[(objectMemory freeStart < objectMemory scavengeThreshold
-		  and: [(objectMemory longAt: objectMemory freeStart) ~= objectMemory freeStart]) ifTrue:
+		  and: [(objectMemory unsignedLongAt: objectMemory freeStart) ~= objectMemory freeStart]) ifTrue:
 			[self primitiveFailFor: PrimErrWritePastObject]]
 ]
 
-{ #category : #'cog jit support' }
+{ #category : 'cog jit support' }
 StackInterpreter >> maybeFixClonedCompiledMethod: objOop [
 	"This is a noop in the Stack VM"
-	<inline: true>
 ]
 
-{ #category : #'compiled methods' }
+{ #category : 'compiled methods' }
 StackInterpreter >> maybeFlagMethodAsInterpreted: aMethod [
 	"Convenient  noop in the StackInterpreter e.g. for sendInvokeCallbackContext:"
 ]
 
-{ #category : #'primitive support' }
+{ #category : 'primitive support' }
 StackInterpreter >> maybeInlinePositive32BitIntegerFor: integerValue [
 
 	"N.B. will *not* cause a GC.
@@ -10181,7 +9918,7 @@ StackInterpreter >> maybeInlinePositive32BitIntegerFor: integerValue [
 	^ newLargeInteger
 ]
 
-{ #category : #'debug support' }
+{ #category : 'debug support' }
 StackInterpreter >> maybeLeakCheckExternalPrimCall: aMethodObj [
 	"Assert-only check for leaks after external prim calls if checkForLeaks includes the GCCheckPrimCall flag.
 	 This is ionly really useful from a low-level C debugger, hence no accessors for checkedPluginName."
@@ -10192,7 +9929,7 @@ StackInterpreter >> maybeLeakCheckExternalPrimCall: aMethodObj [
 	^true
 ]
 
-{ #category : #'primitive support' }
+{ #category : 'primitive support' }
 StackInterpreter >> maybeMapPrimitiveFunctionPointerBackToSomethingEvaluable [
 	"In the real VM primitiveFunctionPointer is either an index (for quick primitives)
 	 or a proper function pointer to a primitive.  In the simulator it may be a small
@@ -10217,7 +9954,7 @@ StackInterpreter >> maybeMapPrimitiveFunctionPointerBackToSomethingEvaluable [
 		 primitiveFunctionPointer := externalIndex ]
 ]
 
-{ #category : #'primitive support' }
+{ #category : 'primitive support' }
 StackInterpreter >> maybeRetryPrimitiveOnFailure [
 
 	"In Spur two cases of pirmitive failure are handled specially.  A primitive may fail due to validation
@@ -10232,13 +9969,13 @@ StackInterpreter >> maybeRetryPrimitiveOnFailure [
 	self failed ifTrue: [ self retryPrimitiveOnFailure ]
 ]
 
-{ #category : #'return bytecodes' }
+{ #category : 'return bytecodes' }
 StackInterpreter >> maybeReturnToMachineCodeFrame [
 	"Hook for the CoInterpreter to return to machine-code or
 	 load the saved IP.  This is a nop in the StackInterpreter."
 ]
 
-{ #category : #'debug support' }
+{ #category : 'debug support' }
 StackInterpreter >> maybeSelectorOfMethod: methodObj [
 	"Answer the selector of a method, assuming its penultimate literal is either
 	 a symbol or a pointer object whose first slot references the method and
@@ -10268,37 +10005,49 @@ StackInterpreter >> maybeSelectorOfMethod: methodObj [
 		[maybeSelector]
 ]
 
-{ #category : #'debug support' }
+{ #category : 'stack bytecodes' }
+StackInterpreter >> maybeTraceBlockCreation: aBlock [
+
+	"Noop in the interpreter"
+]
+
+{ #category : 'debug support' }
 StackInterpreter >> maybeTraceStackOverflow [
 	"nop in the stack interpreter"
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 StackInterpreter >> messageSelector [
 	<doNotGenerate>
 	^ messageSelector
 ]
 
-{ #category : #simulation }
+{ #category : 'spur bootstrap' }
+StackInterpreter >> messageSelector: s [
+	<doNotGenerate>
+	messageSelector := s
+]
+
+{ #category : 'simulation' }
 StackInterpreter >> metaclassNumSlots [
 	<doNotGenerate>
 	^metaclassNumSlots
 ]
 
-{ #category : #'as yet unclassified' }
+{ #category : 'as yet unclassified' }
 StackInterpreter >> method [
 
 	<doNotGenerate>
 	^ method
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 StackInterpreter >> method: oop [
 	<doNotGenerate>
 	method := oop
 ]
 
-{ #category : #'plugin primitive support' }
+{ #category : 'plugin primitive support' }
 StackInterpreter >> methodArg: index [
 	"Like #stackValue: but access method arguments left-to-right"
 	<doNotGenerate> "Obsolete; was never used; replaced with methodReturnBool: in the VirtualMachine struct."
@@ -10311,18 +10060,18 @@ StackInterpreter >> methodArg: index [
 	^self stackValue: argumentCount - index
 ]
 
-{ #category : #'plugin primitive support' }
+{ #category : 'plugin primitive support' }
 StackInterpreter >> methodArgumentCount [
 	^argumentCount
 ]
 
-{ #category : #'compiled methods' }
+{ #category : 'compiled methods' }
 StackInterpreter >> methodClassAssociationOf: methodPointer [
 	<api>
 	^self literal: (objectMemory literalCountOf: methodPointer) - 1 ofMethod: methodPointer
 ]
 
-{ #category : #'compiled methods' }
+{ #category : 'compiled methods' }
 StackInterpreter >> methodClassOf: methodPointer [
 	<api>
 	"Answer the method class of a method which is the value of an Association in the last literal,
@@ -10339,13 +10088,13 @@ StackInterpreter >> methodClassOf: methodPointer [
 			ifFalse: [objectMemory nilObject]
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 StackInterpreter >> methodDictLinearSearchLimit: anInteger [ 
 <doNotGenerate>
 	methodDictLinearSearchLimit := anInteger
 ]
 
-{ #category : #'compiled methods' }
+{ #category : 'compiled methods' }
 StackInterpreter >> methodHeaderHasPrimitive: methodHeader [
 
 	"Note: We now have 10 bits of primitive index, but they are in two places
@@ -10355,13 +10104,13 @@ StackInterpreter >> methodHeaderHasPrimitive: methodHeader [
 	^ self alternateHeaderHasPrimitiveFlag: methodHeader
 ]
 
-{ #category : #'frame access' }
+{ #category : 'frame access' }
 StackInterpreter >> methodHeaderIndicatesLargeFrame: methodHeader [
 	<inline: true>
 	^(methodHeader bitAnd: LargeContextBit) ~= 0
 ]
 
-{ #category : #'plugin primitive support' }
+{ #category : 'plugin primitive support' }
 StackInterpreter >> methodPrimitiveIndex [
 	<api>
 	((objectMemory addressCouldBeObj: newMethod)
@@ -10370,7 +10119,7 @@ StackInterpreter >> methodPrimitiveIndex [
 	^self primitiveIndexOf: newMethod
 ]
 
-{ #category : #'plugin primitive support' }
+{ #category : 'plugin primitive support' }
 StackInterpreter >> methodReturnBool: boolean [
 	"Sets the return value for a method.  In the CoInterpreter we replace the cumbersome
 	 primResult machinery."
@@ -10378,7 +10127,7 @@ StackInterpreter >> methodReturnBool: boolean [
 	^0
 ]
 
-{ #category : #'plugin primitive support' }
+{ #category : 'plugin primitive support' }
 StackInterpreter >> methodReturnFloat: aFloat [
 	"Sets the return value for a method."
 	<var: 'aFloat' type: #double>
@@ -10386,7 +10135,7 @@ StackInterpreter >> methodReturnFloat: aFloat [
 	^0
 ]
 
-{ #category : #'plugin primitive support' }
+{ #category : 'plugin primitive support' }
 StackInterpreter >> methodReturnInteger: integer [
 	"Sets the return value for a method.  In the CoInterpreter we replace the cumbersome
 	 primResult machinery."
@@ -10394,14 +10143,14 @@ StackInterpreter >> methodReturnInteger: integer [
 	^0
 ]
 
-{ #category : #'plugin primitive support' }
+{ #category : 'plugin primitive support' }
 StackInterpreter >> methodReturnReceiver [
 	"Sets the return value for a method"
 	self pop: argumentCount.
 	^0
 ]
 
-{ #category : #'plugin primitive support' }
+{ #category : 'plugin primitive support' }
 StackInterpreter >> methodReturnString: aCString [
 	"Sets the return value for a method."
 	<var: 'aCString' type: #'char *'>
@@ -10409,7 +10158,7 @@ StackInterpreter >> methodReturnString: aCString [
 	^0
 ]
 
-{ #category : #'plugin primitive support' }
+{ #category : 'plugin primitive support' }
 StackInterpreter >> methodReturnValue: oop [
 	"Sets the return value for a method.  In the CoInterpreter we replace the cumbersome
 	 primResult machinery."
@@ -10417,7 +10166,7 @@ StackInterpreter >> methodReturnValue: oop [
 	^0
 ]
 
-{ #category : #'primitive support' }
+{ #category : 'primitive support' }
 StackInterpreter >> methodUsesPrimitiveErrorCode: aMethodObj [
 	"Answer if aMethodObj contains a primitive and uses the primitive error code."
 	<inline: true>
@@ -10430,18 +10179,13 @@ StackInterpreter >> methodUsesPrimitiveErrorCode: aMethodObj [
 				ofObject: aMethodObj)]
 ]
 
-{ #category : #'frame access' }
-StackInterpreter >> mframeCogMethod: theFP [
-	self shouldNotImplement
-]
-
-{ #category : #'primitive support' }
+{ #category : 'primitive support' }
 StackInterpreter >> microsecondsToMilliseconds: microseconds [
 	<var: #microseconds type: #usqLong>
 	^microseconds // 1000 bitAnd: MillisecondClockMask
 ]
 
-{ #category : #'debug support' }
+{ #category : 'debug support' }
 StackInterpreter >> mnuBreak: selectorString point: selectorLength receiver: receiverOrNil [
 	<doNotGenerate> "C version is in platforms/Cross/vm/dispdbg.h"
 	"self shortPrintFrameAndCallers: localFP"
@@ -10460,7 +10204,7 @@ StackInterpreter >> mnuBreak: selectorString point: selectorLength receiver: rec
 				ifFalse: [i := 0]]]
 ]
 
-{ #category : #'debug support' }
+{ #category : 'debug support' }
 StackInterpreter >> mnuBreakpoint: selector receiver: rcvr [
 	<inline: true>
 	self mnuBreak: (objectMemory firstFixedFieldOfMaybeImmediate: selector)
@@ -10468,7 +10212,7 @@ StackInterpreter >> mnuBreakpoint: selector receiver: rcvr [
 		receiver: rcvr
 ]
 
-{ #category : #initialization }
+{ #category : 'initialization' }
 StackInterpreter >> moduleUnloaded: aModuleName [ 
 	"The module with the given name was just unloaded. 
 	Make sure we have no dangling references."
@@ -10476,7 +10220,7 @@ StackInterpreter >> moduleUnloaded: aModuleName [
 	<var: #aModuleName type: 'char *'>
 ]
 
-{ #category : #'frame access' }
+{ #category : 'frame access' }
 StackInterpreter >> moveFramesIn: oldPage through: theFP toPage: newPage [
 	"Move frames from the hot end of oldPage through to theFP to newPage.
 	 This has the effect of making theFP a base frame which can be stored into.
@@ -10492,10 +10236,16 @@ StackInterpreter >> moveFramesIn: oldPage through: theFP toPage: newPage [
 	<var: #fpInNewPage type: #'char *'>
 	<var: #offsetCallerFP type: #'char *'>
 	<var: #source type: #'char *'>
-	<returnTypeC: 'char *'>
+	<returnTypeC: #'char *'>
+	"A base frame must have a context for cannotReturn: processing."
+	self assert: (self isBaseFrame: theFP) not.
+	self assert: self validStackPageBaseFrames.
+	callerFP := self frameCallerFP: theFP.
+	self assert: (self frameHasContext: callerFP).
+	self assert: (objectMemory isContext: (self frameContext: callerFP)).
 	newSP := newPage baseAddress + objectMemory wordSize.
 	stackedReceiverOffset := self frameStackedReceiverOffset: theFP.
-	"First move the data.  We will fix up frame pointers later."
+	"First move the data, leaving room for the caller and base frame contexts.  We will fix up frame pointers later."
 	theFP + stackedReceiverOffset
 		to: oldPage headSP
 		by: objectMemory wordSize negated
@@ -10507,9 +10257,6 @@ StackInterpreter >> moveFramesIn: oldPage through: theFP toPage: newPage [
 	newFP := newPage baseAddress - stackedReceiverOffset.
 	self setHeadFP: oldPage headFP + delta andSP: newSP inPage: newPage.
 	newPage baseFP: newFP.
-	callerFP := self frameCallerFP: theFP.
-	self assert: (self isBaseFrame: theFP) not.
-	self assert: (self frameHasContext: callerFP).
 	callerIP := self oopForPointer: (self frameCallerSavedIP: theFP).
 	stackPages longAt: theFP + stackedReceiverOffset put: callerIP.
 	self assert: (callerFP < oldPage baseAddress
@@ -10518,8 +10265,9 @@ StackInterpreter >> moveFramesIn: oldPage through: theFP toPage: newPage [
 		headFP: callerFP;
 		headSP: theFP + stackedReceiverOffset.
 	"Mark the new base frame in the new page (FoxCallerContext a.k.a. FoxCallerSavedIP)"
-	stackPages longAt: newFP + FoxCallerContext put:  (self frameContext: callerFP).
-	stackPages longAt: newFP + FoxSavedFP put: 0.
+	self frameCallerContext: newFP put: (self frameContext: callerFP).
+	stackPages
+		longAt: newFP + FoxSavedFP put: 0.
 	"Now relocate frame pointers, updating married contexts to refer to their moved spouse frames."
 	fpInNewPage := newPage headFP.
 	[offsetCallerFP := self frameCallerFP: fpInNewPage.
@@ -10536,10 +10284,11 @@ StackInterpreter >> moveFramesIn: oldPage through: theFP toPage: newPage [
 			withValue: (self withSmallIntegerTags: offsetCallerFP)].
 	 fpInNewPage := offsetCallerFP.
 	 fpInNewPage ~= 0] whileTrue.
+	self assert: self validStackPageBaseFrames.
 	^newFP
 ]
 
-{ #category : #'internal interpreter access' }
+{ #category : 'internal interpreter access' }
 StackInterpreter >> nacFetchStackPointerOf: aContext [
 	"A version of fetchStackPointerOf: for use when objects may be forwarded.
 	 Does not do an assert-check of the stack pointer being in bounds."
@@ -10550,7 +10299,7 @@ StackInterpreter >> nacFetchStackPointerOf: aContext [
 	^objectMemory integerValueOf: sp
 ]
 
-{ #category : #'debug printing' }
+{ #category : 'debug printing' }
 StackInterpreter >> nameOfClass: classOop [
 	"Brain-damaged nameOfClass: for C VM.  Does *not* answer Foo class for metaclasses.
 	 Use e.g. classIsMeta: to avoid being fooled."
@@ -10570,19 +10319,20 @@ StackInterpreter >> nameOfClass: classOop [
 	^objectMemory firstIndexableField: maybeNameOop
 ]
 
-{ #category : #'stack pages' }
+{ #category : 'stack pages' }
 StackInterpreter >> nativeStackSize [
 	"4 MB native stack size"
 	^ 4 *1024 * 1024
 ]
 
-{ #category : #'image save/restore' }
+{ #category : 'image save/restore' }
 StackInterpreter >> newHeader [
 
 	| header sizeToWrite |
 
 	<var: #header type: #'SpurImageHeaderStruct'>
-	<returnTypeC: #SpurImageHeaderStruct>	
+	<returnTypeC: #SpurImageHeaderStruct>
+	<var: #sizeToWrite type: #'size_t'>
 
 	self simulationOnly: [ header := SpurImageHeaderStruct new ].
 
@@ -10594,15 +10344,15 @@ StackInterpreter >> newHeader [
 	sizeToWrite := objectMemory imageSizeToWrite.
 	header dataSize: sizeToWrite.
 
-	header oldBaseAddr: objectMemory oldSpaceStart.
+	header oldBaseAddr: objectMemory getMemoryMap oldSpaceStart.
 	header initialSpecialObjectsOop: objectMemory specialObjectsOop.
 	header hdrLastHash: objectMemory lastHash.
-	header screenSize: 0.
 	header headerFlags: self getImageHeaderFlags.
 	header extraVMMemory: (self getExtraVMMemory ifNil: [ 0 ]).
 	header hdrNumStackPages: self getDesiredNumStackPages.
 	header hdrCogCodeSize: self unknownShortOrCodeSizeInKs.
 	header hdrEdenBytes: self getDesiredEdenBytes.
+	header imageVersion: self getImageVersion.
 
 	header hdrMaxExtSemTabSize: (
 		self getMaxExtSemTabSizeSet
@@ -10616,14 +10366,14 @@ StackInterpreter >> newHeader [
 	^header
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 StackInterpreter >> newMethod [
 	<doNotGenerate>
 
 	^ newMethod
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 StackInterpreter >> nextProfileTick: anInteger [ 
 	
 	<doNotGenerate>
@@ -10631,19 +10381,19 @@ StackInterpreter >> nextProfileTick: anInteger [
 
 ]
 
-{ #category : #'compiled methods' }
+{ #category : 'compiled methods' }
 StackInterpreter >> noAssertHeaderOf: methodPointer [
 	^objectMemory fetchPointer: HeaderIndex ofObject: methodPointer
 ]
 
-{ #category : #'message sending' }
+{ #category : 'message sending' }
 StackInterpreter >> noFixupSuperclassOf: classPointer [
 	"No fixup version of superclassOf: that should not create heisenbugs"
 	<inline: true>
 	^objectMemory noFixupFollowField: SuperclassIndex ofObject: classPointer
 ]
 
-{ #category : #'primitive support' }
+{ #category : 'primitive support' }
 StackInterpreter >> noInlineSigned32BitIntegerGutsFor: integerValue [
 
 	"Answer a full 32 bit integer object for the given integer value which
@@ -10676,21 +10426,21 @@ StackInterpreter >> noInlineSigned32BitIntegerGutsFor: integerValue [
 	^ newLargeInteger
 ]
 
-{ #category : #'internal interpreter access' }
+{ #category : 'internal interpreter access' }
 StackInterpreter >> noInlineTemporary: offset in: theFP [
 	<var: #theFP type: #'char *'>
 	<inline: false>
 	^self temporary: offset in: theFP
 ]
 
-{ #category : #'internal interpreter access' }
+{ #category : 'internal interpreter access' }
 StackInterpreter >> noInlineTemporary: offset in: theFP put: valueOop [
 	<var: #theFP type: #'char *'>
 	<inline: false>
 	^self temporary: offset in: theFP put: valueOop
 ]
 
-{ #category : #'object memory support' }
+{ #category : 'object memory support' }
 StackInterpreter >> noMarkedContextsOnPage: thePage [
 	"Answer true if there are no marked contexts on thePage."
 	| theFP |
@@ -10707,7 +10457,7 @@ StackInterpreter >> noMarkedContextsOnPage: thePage [
 	^true
 ]
 
-{ #category : #'send bytecodes' }
+{ #category : 'send bytecodes' }
 StackInterpreter >> normalSend [
 	"Send a message, starting lookup with the receiver's class."
 	"Assume: messageSelector and argumentCount have been set, and that 
@@ -10721,13 +10471,13 @@ StackInterpreter >> normalSend [
 	self commonSendOrdinary
 ]
 
-{ #category : #'sista bytecodes' }
+{ #category : 'sista bytecodes' }
 StackInterpreter >> nullaryInlinePrimitive: primIndex [
 	<option: #SistaVM>
 	self unknownInlinePrimitive
 ]
 
-{ #category : #'internal interpreter access' }
+{ #category : 'internal interpreter access' }
 StackInterpreter >> numSlotsOfMarriedContext: aContext [
 	"Answer the number of effective pointer fields in the given context."
 	<inline: true>
@@ -10736,19 +10486,19 @@ StackInterpreter >> numSlotsOfMarriedContext: aContext [
 	^CtxtTempFrameStart + contextSize
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 StackInterpreter >> numStackPages: anInteger [ 
 	<doNotGenerate>
 	numStackPages := anInteger
 ]
 
-{ #category : #'stack pages' }
+{ #category : 'stack pages' }
 StackInterpreter >> numStkPages [
 	<inline: true>
 	^numStackPages
 ]
 
-{ #category : #'debug support' }
+{ #category : 'debug support' }
 StackInterpreter >> objCouldBeClassObj: objOop [
 	"Answer if objOop looks like a class object.  WIth Spur be lenient if the object doesn't
 	 yet have a hash (i.e. is not yet in the classTable), and accept forwarding pointers."
@@ -10770,7 +10520,7 @@ StackInterpreter >> objCouldBeClassObj: objOop [
 	  and: [(objectMemory isIntegerObject: (objectMemory fetchPointer: InstanceSpecificationIndex ofObject: objOop))]]]]
 ]
 
-{ #category : #'plugin primitive support' }
+{ #category : 'plugin primitive support' }
 StackInterpreter >> objectArg: index [
 	"Like #stackObjectValue: but access method arguments left-to-right"
 	<doNotGenerate> "Obsolete; was never used; replaced with methodReturnFloat: in the VirtualMachine struct."
@@ -10782,19 +10532,19 @@ StackInterpreter >> objectArg: index [
 	^oop
 ]
 
-{ #category : #'simulation support' }
+{ #category : 'simulation support' }
 StackInterpreter >> objectMemory [
 	<doNotGenerate>
 	^objectMemory
 ]
 
-{ #category : #initialization }
+{ #category : 'initialization' }
 StackInterpreter >> objectMemory: anObjectMemory [
 	<doNotGenerate>
 	objectMemory := anObjectMemory
 ]
 
-{ #category : #'debug support' }
+{ #category : 'debug support' }
 StackInterpreter >> okayFields: oop [
 	"Check if the argument is an ok object.
 	 If this is a pointers object, check that its fields are all okay oops."
@@ -10823,7 +10573,7 @@ StackInterpreter >> okayFields: oop [
 	^true
 ]
 
-{ #category : #'debug support' }
+{ #category : 'debug support' }
 StackInterpreter >> okayInterpreterObjects [
 
 	| oopOrZero oop |
@@ -10851,40 +10601,33 @@ StackInterpreter >> okayInterpreterObjects [
 	self okayStackZone.
 ]
 
-{ #category : #'simulation support' }
-StackInterpreter >> openImageFileNamed: fileName [
-	"Attempt to open fileName or fileName, '.image'"
-	<doNotGenerate>
-	self setImageName: fileName.
-	^ fileName asFileReference binaryReadStream
-]
-
-{ #category : #simulation }
+{ #category : 'simulation' }
 StackInterpreter >> openOn: fileName [
 	"(StackInterpreterSimulator new openOn: 'clonex.image') openAsMorph; run"
 	<doNotGenerate>
 	self openOn: fileName extraMemory: 2500000
 ]
 
-{ #category : #'as yet unclassified' }
+{ #category : 'as yet unclassified' }
 StackInterpreter >> page: aCogStackPage [ 
 	self shouldBeImplemented.
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 StackInterpreter >> pendingFinalizationSignals [
+
 	<doNotGenerate>
 	^ pendingFinalizationSignals
 ]
 
-{ #category : #'debug printing' }
+{ #category : 'debug printing' }
 StackInterpreter >> penultimateLiteralOf: aMethodOop [
 	<api>
 	self assert: (objectMemory isOopCompiledMethod: aMethodOop).
 	^self literal: (objectMemory literalCountOf: aMethodOop) - 2 ofMethod: aMethodOop
 ]
 
-{ #category : #'internal interpreter access' }
+{ #category : 'internal interpreter access' }
 StackInterpreter >> pop2AndPushIntegerIfOK: integerResult [
 
 	self successful ifTrue:
@@ -10893,7 +10636,7 @@ StackInterpreter >> pop2AndPushIntegerIfOK: integerResult [
 			ifFalse: [self success: false]]
 ]
 
-{ #category : #'internal interpreter access' }
+{ #category : 'internal interpreter access' }
 StackInterpreter >> pop: nItems [
 	<inline: true>
 	"In the StackInterpreter stacks grow down."
@@ -10901,30 +10644,30 @@ StackInterpreter >> pop: nItems [
 	^nil
 ]
 
-{ #category : #'internal interpreter access' }
+{ #category : 'internal interpreter access' }
 StackInterpreter >> pop: nItems thenPush: oop [
 	"In the StackInterpreter stacks grow down."
 	| sp |
 	<inline: true>
 	<returnTypeC: #void>
 	<var: #sp type: #'char *'>
-	stackPages longAt: (sp := stackPointer + ((nItems - 1) * objectMemory wordSize)) put: oop.
+	stackPages unsignedLongAt: (sp := stackPointer + ((nItems - 1) * objectMemory wordSize)) put: oop.
 	stackPointer := sp
 ]
 
-{ #category : #'internal interpreter access' }
+{ #category : 'internal interpreter access' }
 StackInterpreter >> pop: nItems thenPushBool: trueOrFalse [
 	"In the StackInterpreter stacks grow down."
 	| sp |
 	<inline: true>
 	<var: #sp type: #'char *'>
 	stackPages
-		longAt: (sp := stackPointer + ((nItems - 1) * objectMemory wordSize))
+		unsignedLongAt: (sp := stackPointer + ((nItems - 1) * objectMemory wordSize))
 		put: (objectMemory booleanObjectOf: trueOrFalse).
 	stackPointer := sp
 ]
 
-{ #category : #'internal interpreter access' }
+{ #category : 'internal interpreter access' }
 StackInterpreter >> pop: nItems thenPushFloat: f [
 	"In the StackInterpreter stacks grow down."
 	| sp |
@@ -10932,30 +10675,30 @@ StackInterpreter >> pop: nItems thenPushFloat: f [
 	<var: #f type: #double>
 	<var: #sp type: #'char *'>
 	stackPages
-		longAt: (sp := stackPointer + ((nItems - 1) * objectMemory wordSize))
+		unsignedLongAt: (sp := stackPointer + ((nItems - 1) * objectMemory wordSize))
 		put: (objectMemory floatObjectOf: f).
 	stackPointer := sp
 ]
 
-{ #category : #'internal interpreter access' }
+{ #category : 'internal interpreter access' }
 StackInterpreter >> pop: nItems thenPushInteger: integerVal [
 	"lots of places pop a few items off the stack and then push an integer. Make it convenient.
 	 In the StackInterpreter stacks grow down."
 	| sp |
 	<var: #sp type: #'char *'>
 	stackPages
-		longAt: (sp := stackPointer + ((nItems - 1) * objectMemory wordSize))
+		unsignedLongAt: (sp := stackPointer + ((nItems - 1) * objectMemory wordSize))
 		put: (objectMemory integerObjectOf: integerVal).
 	stackPointer := sp
 ]
 
-{ #category : #'primitive support' }
+{ #category : 'primitive support' }
 StackInterpreter >> popFloat [
 	<returnTypeC: #double>
 	^objectMemory floatValueOf: self popStack
 ]
 
-{ #category : #'internal interpreter access' }
+{ #category : 'internal interpreter access' }
 StackInterpreter >> popPos32BitInteger [
 	"May set successFlag, and return false if not valid"
 
@@ -10964,18 +10707,18 @@ StackInterpreter >> popPos32BitInteger [
 	^ self positive32BitValueOf: top
 ]
 
-{ #category : #'internal interpreter access' }
+{ #category : 'internal interpreter access' }
 StackInterpreter >> popStack [
 	"In the StackInterpreter stacks grow down."
 	<api>
 	| top |
 	<inline: true>
-	top := stackPages longAt: stackPointer.
+	top := stackPages unsignedLongAt: stackPointer.
 	stackPointer := stackPointer + objectMemory wordSize.
 	^top
 ]
 
-{ #category : #'stack bytecodes' }
+{ #category : 'stack bytecodes' }
 StackInterpreter >> popStackBytecode [
 
 	self fetchNextBytecode.
@@ -10983,11 +10726,12 @@ StackInterpreter >> popStackBytecode [
 
 ]
 
-{ #category : #'primitive support' }
+{ #category : 'primitive support' }
 StackInterpreter >> positive32BitIntegerFor: integerValue [
 	"integerValue is interpreted as POSITIVE, e.g. as the result of Bitmap>at:.
 	 N.B.  Returning in each arm separately enables Slang inlining.
 	 /Don't/ return the ifTrue:ifFalse: unless Slang inlining of conditionals is fixed."
+	<api>
 	<inline: true>
 	<var: 'integerValue' type: #'unsigned int'>
 	objectMemory hasSixtyFourBitImmediates
@@ -10997,7 +10741,7 @@ StackInterpreter >> positive32BitIntegerFor: integerValue [
 			[^self maybeInlinePositive32BitIntegerFor: integerValue]
 ]
 
-{ #category : #'primitive support' }
+{ #category : 'primitive support' }
 StackInterpreter >> positive64BitIntegerFor: integerValue [
 	<api>
 	<var: 'integerValue' type: #usqLong>
@@ -11027,7 +10771,7 @@ StackInterpreter >> positive64BitIntegerFor: integerValue [
 
 ]
 
-{ #category : #'callback support' }
+{ #category : 'callback support' }
 StackInterpreter >> positiveMachineIntegerFor: value [
 	<var: #value type: #'usqIntptr_t'>
 	<inline: false>
@@ -11038,7 +10782,7 @@ StackInterpreter >> positiveMachineIntegerFor: value [
 	^resultObj
 ]
 
-{ #category : #'object memory support' }
+{ #category : 'object memory support' }
 StackInterpreter >> postBecomeAction: theBecomeEffectsFlags [
 	"Insulate the stack zone from the effects of a become.
 	 All receivers must be unfollowed for two reasons:
@@ -11074,53 +10818,53 @@ StackInterpreter >> postBecomeAction: theBecomeEffectsFlags [
 	self followForwardingPointersInStackZone: theBecomeEffectsFlags
 ]
 
-{ #category : #'object memory support' }
+{ #category : 'object memory support' }
 StackInterpreter >> postGCAction: gcModeArg [
 	"Signal the gc semaphore, and inform the display subsystem if the display bitmap has moved."
 
 	self signalSemaphoreWithIndex: gcSemaphoreIndex
 ]
 
-{ #category : #'object memory support' }
+{ #category : 'object memory support' }
 StackInterpreter >> preBecomeAction [
 	"Need to write back the frame pointers unless all pages are free (as in snapshot)"
 	stackPage ~= 0 ifTrue:
-		[self externalWriteBackHeadFramePointers]
+		[self writeBackHeadFramePointers]
 ]
 
-{ #category : #'object memory support' }
+{ #category : 'object memory support' }
 StackInterpreter >> preGCAction: gcModeArg [
 
 	"Need to write back the frame pointers unless all pages are free (as in snapshot)"
 
-	stackPage ~= 0 ifTrue: [ self externalWriteBackHeadFramePointers ].
+	stackPage ~= 0 ifTrue: [ self writeBackHeadFramePointers ].
 	gcModeArg = GCModeFull ifTrue: [ self flushMethodCache ]
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 StackInterpreter >> preemptionYields [
 	
 	^ preemptionYields
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 StackInterpreter >> preemptionYields: aValue [ 
 	preemptionYields := aValue
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 StackInterpreter >> primFailCode [
 	<doNotGenerate>
 	^ primFailCode 
 ]
 
-{ #category : #'cog jit support' }
+{ #category : 'cog jit support' }
 StackInterpreter >> primFailCode: anInteger [
 	<doNotGenerate>
 	primFailCode := anInteger
 ]
 
-{ #category : #'primitive support' }
+{ #category : 'primitive support' }
 StackInterpreter >> primitiveAccessorDepthForExternalPrimitiveMethod: methodObj [
 	^objectMemory integerValueOf:
 		(objectMemory
@@ -11128,30 +10872,132 @@ StackInterpreter >> primitiveAccessorDepthForExternalPrimitiveMethod: methodObj 
 			ofObject: (self literal: 0 ofMethod: methodObj))
 ]
 
-{ #category : #'I/O primitives' }
-StackInterpreter >> primitiveEventProcessingControl [
-	"With 0 args answers whether ioProcessEvents is enabled and being called.
-	 With 1 arg expects a boolean which will enable ioProcessEvents if true and
-	 disable it if false, answering its previous state."
+{ #category : 'indexing primitives' }
+StackInterpreter >> primitiveCompareBytes [
+	"Primitive. Compare two word or byte indexed objects for equality.
+	This version uses memcmp for comparison.
+	It is specialized for equality and thus it performs an unordered comparison, not caring about element order.
+	This can be used for:
+	 - ByteArray
+	 - ByteString
+	 - FloatArray
+	 ..."
+
 	<export: true>
-	| enabled |
-	enabled := inIOProcessEvents >= 0.
-	argumentCount = 0 ifTrue:
-		[^self pop: 1 thenPushBool: enabled].
-	argumentCount = 1 ifTrue:
-		[self stackTop = objectMemory trueObject
-			ifTrue: [inIOProcessEvents < 0 ifTrue:
-					[inIOProcessEvents := 0]]
-			ifFalse:
-				[self stackTop = objectMemory falseObject
-					ifTrue: [inIOProcessEvents := -1]
-					ifFalse: [self primitiveFailFor: PrimErrBadArgument.
-							^self]].
-		 ^self pop: 2 thenPushBool: enabled].
-	self primitiveFailFor: PrimErrBadNumArgs
+	| arg1 arg2 len1 len2 result boolean |
+	argumentCount < 1 ifTrue: [ ^ self primitiveFail ].
+
+	arg1 := self stackValue: 1.
+	arg2 := self stackValue: 0.
+
+	"Quick identity test to avoid checking object contents when they are the same one\"
+	arg1 = arg2 ifTrue: [
+		^ self pop: 2 thenPush: objectMemory trueObject ].
+
+	"This primitive only works for objects of the same type e.g., both byte indexable.
+	This prevents comparison of byte arrays with word arrays"
+	(objectMemory instSpecOfClass: (objectMemory fetchClassOf: arg1)) ~= (objectMemory instSpecOfClass: (objectMemory fetchClassOf: arg2))
+		ifTrue: [
+			self primitiveFail.
+			^ self ].
+
+	"This primitive only works for bytes and words objects.
+	The check below does not even let pass forwarders.
+	Since we know by the check before that both arguments are of the same type, we only need to check one of them here"
+	(objectMemory isWordsOrBytes: arg1) ifFalse: [ ^ self primitiveFail ].
+
+	"Two arrays of different lenght can never be equal"
+	len1 := objectMemory byteSizeOf: arg1.
+	len2 := objectMemory byteSizeOf: arg2.
+	len1 = len2 ifFalse: [
+		^ self pop: 2 thenPush: objectMemory falseObject ].
+
+	"Use memcmp to compare the array contents.
+	Our benchmarks showed that 
+	 - it is 3x faster than doing it directly in Pharo when the compared bytes are few
+	 - it is hundreds of times faster when comparing thousands of bytes.
+	The alternative word-by-word comparison implemented purely in slang is also better than the baseline but it is 10x slower than memcmp for large comparisons"
+	result := self
+		          memcmp: (objectMemory firstIndexableField: arg1)
+		          _: (objectMemory firstIndexableField: arg2)
+		          _: len1.
+
+	boolean := result = 0
+		           ifTrue: [ objectMemory trueObject ]
+		           ifFalse: [ objectMemory falseObject ].
+	self pop: 2 thenPush: boolean
 ]
 
-{ #category : #'simd primitives' }
+{ #category : 'process primitives' }
+StackInterpreter >> primitiveEnterCriticalSection [
+	"Attempt to enter a CriticalSection/Mutex.  If not owned, set the owner to the current
+	 process and answer false. If owned by the current process  answer true.   Otherwise
+	 suspend the process.  Answer if the receiver is owned by the current process."
+	| criticalSection owningProcessIndex owningProcess activeProc inInterpreter |
+	argumentCount > 0
+		ifTrue:
+			[criticalSection := self stackValue: 1.  "rcvr"
+			 activeProc := self stackTop]
+		ifFalse:
+			[criticalSection := self stackTop.  "rcvr"
+			 activeProc := self activeProcess].
+	owningProcessIndex := ExcessSignalsIndex. "CriticalSections are laid out like Semaphores"
+	owningProcess := objectMemory fetchPointer: owningProcessIndex ofObject: criticalSection.
+	owningProcess = objectMemory nilObject ifTrue:
+		[objectMemory storePointer: owningProcessIndex
+			ofObject: criticalSection
+			withValue: activeProc.
+		 ^self pop: argumentCount + 1 thenPush: objectMemory falseObject].
+	owningProcess = activeProc ifTrue:
+		[^self pop: argumentCount + 1 thenPush: objectMemory trueObject].
+	"Arrange to answer false (unowned) when the process is resumed."
+	self pop: argumentCount + 1 thenPush: objectMemory falseObject.
+	"We're going to switch process, either to an interpreted frame or a machine
+	 code frame. To know whether to return or enter machine code we have to
+	 know from whence we came.  We could have come from the interpreter,
+	 either directly or via a machine code primitive.  We could have come from
+	 machine code.  The instructionPointer tells us where from:"
+	inInterpreter := self isInstructionPointerInInterpreter: instructionPointer.
+	self addLastLink: activeProc toList: criticalSection.
+	self transferTo: self wakeHighestPriority from: CSEnterCriticalSection.
+	self forProcessPrimitiveReturnToExecutivePostContextSwitch: inInterpreter
+]
+
+{ #category : 'process primitives' }
+StackInterpreter >> primitiveExitCriticalSection [
+	"Exit the critical section.
+	 This may change the active process as a result."
+	| criticalSection owningProcessIndex inInterpreter owningProcess |
+	criticalSection := self stackTop.  "rcvr"
+	owningProcessIndex := ExcessSignalsIndex. "CriticalSections are laid out like Semaphores"
+	(self isEmptyList: criticalSection)
+		ifTrue:
+			[objectMemory storePointerUnchecked: owningProcessIndex
+				ofObject: criticalSection
+				withValue: objectMemory nilObject]
+		ifFalse:
+			["We're going to switch process, either to an interpreted frame or a machine
+			  code frame. To know whether to return or enter machine code we have to
+			  know from whence we came.  We could have come from the interpreter,
+			  either directly or via a machine code primitive.  We could have come from
+			  machine code.  The instructionPointer tells us where from:"
+			 inInterpreter := self isInstructionPointerInInterpreter: instructionPointer.
+			 owningProcess := self removeFirstLinkOfList: criticalSection.
+			 "store check unnecessary because aSemaphore referred to owningProcess
+			  via its FirstLinkIndex slot before owningProcess was removed."
+			 objectMemory storePointerUnchecked: owningProcessIndex
+				ofObject: criticalSection
+				withValue: owningProcess.
+			 "Note that resume: isn't fair; it won't suspend the active process.
+			  For fairness we must do the equivalent of a primitiveYield, but that
+			  may break old code, so we stick with unfair resume:."
+			 (self resume: owningProcess
+				preemptedYieldingIf: preemptionYields
+				from: CSExitCriticalSection) ifTrue:
+						[self forProcessPrimitiveReturnToExecutivePostContextSwitch: inInterpreter]]
+]
+
+{ #category : 'simd primitives' }
 StackInterpreter >> primitiveFloat64ArrayAdd [
 
 	<var: #rcvr type: #'double *'>
@@ -11180,7 +11026,7 @@ StackInterpreter >> primitiveFloat64ArrayAdd [
 		ifFalse: [ self primitiveFailFor: PrimErrBadArgument ]
 ]
 
-{ #category : #'arithmetic float primitives' }
+{ #category : 'arithmetic float primitives' }
 StackInterpreter >> primitiveFloatAdd: rcvrOop toArg: argOop [
 	| rcvr arg |
 	<var: #rcvr type: #double>
@@ -11192,7 +11038,7 @@ StackInterpreter >> primitiveFloatAdd: rcvrOop toArg: argOop [
 		[self pop: 2 thenPushFloat: rcvr + arg]
 ]
 
-{ #category : #'arithmetic float primitives' }
+{ #category : 'arithmetic float primitives' }
 StackInterpreter >> primitiveFloatDivide: rcvrOop byArg: argOop [
 	| rcvr arg |
 	<var: #rcvr type: #double>
@@ -11205,7 +11051,7 @@ StackInterpreter >> primitiveFloatDivide: rcvrOop byArg: argOop [
 		[self pop: 2 thenPushFloat: rcvr / arg]
 ]
 
-{ #category : #'comparison float primitives' }
+{ #category : 'comparison float primitives' }
 StackInterpreter >> primitiveFloatEqual: rcvrOop toArg: argOop [
 	| rcvr arg |
 	<var: #rcvr type: #double>
@@ -11216,7 +11062,7 @@ StackInterpreter >> primitiveFloatEqual: rcvrOop toArg: argOop [
 	^rcvr = arg
 ]
 
-{ #category : #'comparison float primitives' }
+{ #category : 'comparison float primitives' }
 StackInterpreter >> primitiveFloatGreater: rcvrOop thanArg: argOop [
 	| rcvr arg |
 	<var: #rcvr type: #double>
@@ -11227,7 +11073,7 @@ StackInterpreter >> primitiveFloatGreater: rcvrOop thanArg: argOop [
 	^rcvr > arg
 ]
 
-{ #category : #'comparison float primitives' }
+{ #category : 'comparison float primitives' }
 StackInterpreter >> primitiveFloatGreaterOrEqual: rcvrOop toArg: argOop [
 	| rcvr arg |
 	<var: #rcvr type: #double>
@@ -11238,7 +11084,7 @@ StackInterpreter >> primitiveFloatGreaterOrEqual: rcvrOop toArg: argOop [
 	^rcvr >= arg
 ]
 
-{ #category : #'comparison float primitives' }
+{ #category : 'comparison float primitives' }
 StackInterpreter >> primitiveFloatLess: rcvrOop thanArg: argOop [
 	| rcvr arg |
 	<var: #rcvr type: #double>
@@ -11249,7 +11095,7 @@ StackInterpreter >> primitiveFloatLess: rcvrOop thanArg: argOop [
 	^rcvr < arg
 ]
 
-{ #category : #'comparison float primitives' }
+{ #category : 'comparison float primitives' }
 StackInterpreter >> primitiveFloatLessOrEqual: rcvrOop toArg: argOop [
 	| rcvr arg |
 	<var: #rcvr type: #double>
@@ -11260,7 +11106,7 @@ StackInterpreter >> primitiveFloatLessOrEqual: rcvrOop toArg: argOop [
 	^rcvr <= arg
 ]
 
-{ #category : #'arithmetic float primitives' }
+{ #category : 'arithmetic float primitives' }
 StackInterpreter >> primitiveFloatMultiply: rcvrOop byArg: argOop [
 	| rcvr arg |
 	<var: #rcvr type: #double>
@@ -11272,7 +11118,7 @@ StackInterpreter >> primitiveFloatMultiply: rcvrOop byArg: argOop [
 		[self pop: 2 thenPushFloat: rcvr * arg]
 ]
 
-{ #category : #'arithmetic float primitives' }
+{ #category : 'arithmetic float primitives' }
 StackInterpreter >> primitiveFloatSubtract: rcvrOop fromArg: argOop [
 	| rcvr arg |
 	<var: #rcvr type: #double>
@@ -11284,18 +11130,18 @@ StackInterpreter >> primitiveFloatSubtract: rcvrOop fromArg: argOop [
 		[self pop: 2 thenPushFloat: rcvr - arg]
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 StackInterpreter >> primitiveFunctionPointer [
 	^ primitiveFunctionPointer
 ]
 
-{ #category : #'compiled methods' }
+{ #category : 'compiled methods' }
 StackInterpreter >> primitiveIndexOf: methodPointer [
 	<api>
 	^self primitiveIndexOfMethod: methodPointer header: (objectMemory methodHeaderOf: methodPointer)
 ]
 
-{ #category : #'compiled methods' }
+{ #category : 'compiled methods' }
 StackInterpreter >> primitiveIndexOfMethod: theMethod header: methodHeader [
 
 	"Note: With the Squeak V3 format we now have 10 bits of primitive index, but they are
@@ -11316,7 +11162,7 @@ StackInterpreter >> primitiveIndexOfMethod: theMethod header: methodHeader [
 		  ifFalse: [ 0 ]
 ]
 
-{ #category : #'control primitives' }
+{ #category : 'control primitives' }
 StackInterpreter >> primitiveObject: actualReceiver perform: selector withArguments: argumentArray lookedUpIn: lookupClassOrNil [
 	"Common routine used by perform:withArgs:, perform:withArgs:inSuperclass:,
 	 object:perform:withArgs:inClass: et al.  Answer nil on success.
@@ -11336,8 +11182,7 @@ StackInterpreter >> primitiveObject: actualReceiver perform: selector withArgume
 	(objectMemory isArray: argumentArray) ifFalse:
 		[^self primitiveFailFor: PrimErrBadArgument].
 
-	"Check if number of arguments is reasonable; MaxNumArgs isn't available
-	 so just use LargeContextSize"
+	"Check if number of arguments is reasonable"
 	arraySize := objectMemory numSlotsOf: argumentArray.
 	arraySize > (LargeContextSlots - CtxtTempFrameStart) ifTrue:
 		[^self primitiveFailFor: PrimErrBadNumArgs].
@@ -11390,39 +11235,114 @@ StackInterpreter >> primitiveObject: actualReceiver perform: selector withArgume
 	argumentCount * objectMemory wordSize to: 0 by: objectMemory wordSize negated do:
 		[:offset|
 		stackPages
-			longAt: stackPointer + offset + delta
-			put: (stackPages longAt: stackPointer + offset)].
+			unsignedLongAt: stackPointer + offset + delta
+			put: (stackPages unsignedLongAt: stackPointer + offset)].
 	self pop: performArgCount + 2.
 	self executeNewMethod.
 	self initPrimCall.  "Recursive xeq affects primErrorCode"
 	^nil
 ]
 
-{ #category : #'primitives message counting' }
-StackInterpreter >> primitiveStartProfiling [
+{ #category : 'process primitives' }
+StackInterpreter >> primitiveResume [
+	"Put this process on the scheduler's lists thus allowing it to proceed next time there is
+	 a chance for processes of it's priority level.  It must go to the back of its run queue so
+	 as not to preempt any already running processes at this level.  If the process's priority
+	 is higher than the current process, preempt the current process."
 
-	self cppIf: FEATURE_MESSAGE_COUNT 
-		ifTrue: [ messageCount := 0 ] 
-		ifFalse: [ self primitiveFailFor: PrimErrUnsupported ]
-
+	| proc inInterpreter |
+	proc := self stackTop. "rcvr"
+	(objectMemory isContext:
+		 (objectMemory followField: SuspendedContextIndex ofObject: proc))
+		ifFalse: [ ^ self primitiveFail ].
+	"We're about to switch process, either to an interpreted frame or a
+	 machine code frame. To know whether to return or enter machine code
+	 we have to know from whence we came.  We could have come from the
+	 interpreter, either directly or via a machine code primitive.  We could have
+	 come from machine code.  The instructionPointer tells us where from:"
+	inInterpreter := self isInstructionPointerInInterpreter:
+		                 instructionPointer.
+	(self
+		 resume: proc
+		 preemptedYieldingIf: preemptionYields
+		 from: CSResume) ifTrue: [
+		self forProcessPrimitiveReturnToExecutivePostContextSwitch:
+			inInterpreter ]
 ]
 
-{ #category : #'primitives message counting' }
-StackInterpreter >> primitiveStopProfiling [
-
-	self cppIf: FEATURE_MESSAGE_COUNT 
-		ifTrue: [ self pop: 1 thenPushInteger: messageCount ] 
-		ifFalse: [ self primitiveFailFor: PrimErrUnsupported ]
-	
+{ #category : 'process primitives' }
+StackInterpreter >> primitiveSuspend [
+	"Primitive. Suspend the receiver, aProcess such that it can be executed again
+	by sending #resume. If the given process is not currently running, take it off
+	its corresponding list. The primitive returns the list the receiver was previously on."
+	| process myList |
+	process := self stackTop.
+	process = self activeProcess ifTrue:
+		[| inInterpreter |
+		"We're going to switch process, either to an interpreted frame or a machine
+		 code frame. To know whether to return or enter machine code we have to
+		 know from whence we came.  We could have come from the interpreter,
+		 either directly or via a machine code primitive.  We could have come from
+		 machine code.  The instructionPointer tells us where from:"
+		self pop: 1 thenPush: objectMemory nilObject.
+		inInterpreter := self isInstructionPointerInInterpreter: instructionPointer.
+		self transferTo: self wakeHighestPriority from: CSSuspend.
+		^self forProcessPrimitiveReturnToExecutivePostContextSwitch: inInterpreter].
+	myList := objectMemory fetchPointer: MyListIndex ofObject: process.
+	"XXXX Fixme. We should really check whether myList is a kind of LinkedList or not
+	but we can't easily so just do a quick check for nil which is the most common case."
+	myList = objectMemory nilObject ifTrue:
+		[^self primitiveFailFor: PrimErrBadReceiver].
+	"Alas in Spur we need a read barrier"
+	(objectMemory isForwarded: myList) ifTrue:
+		[myList := objectMemory followForwarded: myList.
+		 objectMemory storePointer: MyListIndex ofObject: process withValue: myList].
+	self removeProcess: process fromList: myList.
+	self successful ifTrue:
+		[objectMemory storePointer: MyListIndex ofObject: process withValue: objectMemory nilObject.
+		 self pop: 1 thenPush: myList]
 ]
 
-{ #category : #'as yet unclassified' }
+{ #category : 'as yet unclassified' }
 StackInterpreter >> primitiveTable [
 	<doNotGenerate>
 	^ primitiveTable
 ]
 
-{ #category : #'debug printing' }
+{ #category : 'process primitives' }
+StackInterpreter >> primitiveYield [
+	"primitively do the equivalent of Process>>yield"
+
+	| scheduler activeProc priority processLists processList inInterpreter |
+	scheduler := self schedulerPointer.
+	activeProc := objectMemory
+		              fetchPointer: ActiveProcessIndex
+		              ofObject: scheduler.
+	priority := self
+		            quickFetchInteger: PriorityIndex
+		            ofObject: activeProc.
+	processLists := objectMemory
+		                fetchPointer: ProcessListsIndex
+		                ofObject: scheduler.
+	processList := objectMemory
+		               fetchPointer: priority - 1
+		               ofObject: processLists.
+
+	(self isEmptyList: processList) ifTrue: [ ^ nil ].
+	"We're going to switch process, either to an interpreted frame or a machine
+	 code frame. To know whether to return or enter machine code we have to
+	 know from whence we came.  We could have come from the interpreter,
+	 either directly or via a machine code primitive.  We could have come from
+	 machine code.  The instructionPointer tells us where from:"
+	inInterpreter := self isInstructionPointerInInterpreter:
+		                 instructionPointer.
+	self addLastLink: activeProc toList: processList.
+	self transferTo: self wakeHighestPriority from: CSYield.
+	self forProcessPrimitiveReturnToExecutivePostContextSwitch:
+		inInterpreter
+]
+
+{ #category : 'debug printing' }
 StackInterpreter >> print: s [
 	"For testing in Smalltalk, this method should be overridden in a subclass."
 
@@ -11433,7 +11353,7 @@ StackInterpreter >> print: s [
 		inSmalltalk: [ self subclassResponsibility ]
 ]
 
-{ #category : #'debug printing' }
+{ #category : 'debug printing' }
 StackInterpreter >> printActivationNameFor: aMethod receiver: anObject isBlock: isBlock firstTemporary: maybeMessage [
 	| methClass methodSel classObj |
 	<inline: false>
@@ -11471,7 +11391,7 @@ StackInterpreter >> printActivationNameFor: aMethod receiver: anObject isBlock: 
 		self printStringOf: methodSel]
 ]
 
-{ #category : #'debug printing' }
+{ #category : 'debug printing' }
 StackInterpreter >> printActivationNameForSelector: aSelector startClass: startClass [
 	| methClass |
 	<inline: false>
@@ -11502,7 +11422,17 @@ StackInterpreter >> printActivationNameForSelector: aSelector startClass: startC
 		ifFalse: [self print: 'INVALID SELECTOR']
 ]
 
-{ #category : #'debug printing' }
+{ #category : 'debug printing' }
+StackInterpreter >> printAllPermanentObjects [
+	<api>
+	
+	self print: 'Permanent Objects'; cr.
+	self print: '-----------------'; cr; cr.
+	
+	objectMemory allPermSpaceObjectsDo: [ :anOop | self longPrintOop: anOop; cr ].
+]
+
+{ #category : 'debug printing' }
 StackInterpreter >> printAllStacks [
 
 	"Print all the stacks of all running processes, including those that are currently suspended."
@@ -11538,18 +11468,21 @@ StackInterpreter >> printAllStacks [
 	self
 		cr;
 		print: 'suspended processes'.
+	
+	"Semaphore or mutex classes could not be installed"
 	semaphoreClass := objectMemory classSemaphore.
 	mutexClass := objectMemory classMutex.
-	semaphoreClass := objectMemory compactIndexOfClass: semaphoreClass.
-	mutexClass := objectMemory compactIndexOfClass: mutexClass.
+	semaphoreClass := semaphoreClass = objectMemory nilObject ifFalse: [ objectMemory compactIndexOfClass: semaphoreClass ].
+	mutexClass := mutexClass = objectMemory nilObject ifFalse: [ objectMemory compactIndexOfClass: mutexClass ].
 	objectMemory allHeapEntitiesDo: [ :obj | 
 		| classIdx |
 		classIdx := objectMemory classIndexOf: obj.
-		(classIdx = semaphoreClass or: [ classIdx = mutexClass ]) ifTrue: [ 
-			self printProcsOnList: obj ] ]
+		((semaphoreClass notNil and: [ classIdx = semaphoreClass ])
+			or: [ mutexClass notNil and: [ classIdx = mutexClass ] ])
+				ifTrue: [ self printProcsOnList: obj ] ]
 ]
 
-{ #category : #'debug printing' }
+{ #category : 'debug printing' }
 StackInterpreter >> printAtCache [
 	0 to: AtCacheTotalSize - 1 by: 4 do:
 		[:i | | obj sz fmt fixed |
@@ -11564,7 +11497,7 @@ StackInterpreter >> printAtCache [
 				shortPrintOop: obj]]
 ]
 
-{ #category : #'debug printing' }
+{ #category : 'debug printing' }
 StackInterpreter >> printCallStack [
 	<inline: false>
 	
@@ -11574,7 +11507,7 @@ StackInterpreter >> printCallStack [
 		ifFalse: [self printCallStackFP: framePointer]
 ]
 
-{ #category : #'debug printing' }
+{ #category : 'debug printing' }
 StackInterpreter >> printCallStackFP: theFP [
 	| context |
 	<inline: false>
@@ -11593,7 +11526,7 @@ StackInterpreter >> printCallStackFP: theFP [
 				[context := self printContextCallStackOf: context]]
 ]
 
-{ #category : #'debug printing' }
+{ #category : 'debug printing' }
 StackInterpreter >> printCallStackOf: aContextOrProcessOrFrame [
 	<api>
 	| context |
@@ -11619,7 +11552,7 @@ StackInterpreter >> printCallStackOf: aContextOrProcessOrFrame [
 				[context := self printContextCallStackOf: context]]
 ]
 
-{ #category : #'debug printing' }
+{ #category : 'debug printing' }
 StackInterpreter >> printCallStackOf: aContext currentFP: currFP [
 	| ctxt theFP thePage |
 	<inline: false>
@@ -11651,14 +11584,14 @@ StackInterpreter >> printCallStackOf: aContext currentFP: currFP [
 							^nil]]]
 ]
 
-{ #category : #'debug printing' }
+{ #category : 'debug printing' }
 StackInterpreter >> printChar: aByte [
 	<api>
 	"For testing in Smalltalk, this method should be overridden in a subclass."
 	self cCode: 'vm_printf("%c", aByte)' inSmalltalk: [self putchar: aByte].
 ]
 
-{ #category : #'debug printing' }
+{ #category : 'debug printing' }
 StackInterpreter >> printContext: aContext [
 	| sender ip sp |
 	<inline: false>
@@ -11692,7 +11625,7 @@ StackInterpreter >> printContext: aContext [
 		self print: '       '; printNum: i; space; shortPrintOop: (objectMemory fetchPointer: ReceiverIndex + i ofObject: aContext)]
 ]
 
-{ #category : #'debug printing' }
+{ #category : 'debug printing' }
 StackInterpreter >> printContextCallStackOf: aContext [
 	"Print the call stack of aContext until it links to a frame."
 	| ctxt |
@@ -11704,7 +11637,7 @@ StackInterpreter >> printContextCallStackOf: aContext [
 	^ctxt
 ]
 
-{ #category : #printing }
+{ #category : 'printing' }
 StackInterpreter >> printDecodeMethodHeaderOop: methodHeaderOop [
 	self printOopShort: methodHeaderOop.
 	(self methodHeaderHasPrimitive: methodHeaderOop) ifTrue:
@@ -11719,20 +11652,20 @@ StackInterpreter >> printDecodeMethodHeaderOop: methodHeaderOop [
 		print: ' nTemps '; printNum: (self temporaryCountOfMethodHeader: methodHeaderOop)
 ]
 
-{ #category : #'debug printing' }
+{ #category : 'debug printing' }
 StackInterpreter >> printExternalHeadFrame [
 	<inline: false>
 	self printFrame: framePointer WithSP: stackPointer
 ]
 
-{ #category : #'debug printing' }
+{ #category : 'debug printing' }
 StackInterpreter >> printFloat: f [
 	"For testing in Smalltalk, this method should be overridden in a subclass."
 	<cmacro: '(f) vm_printf("%g", f)'>
 	self print: f
 ]
 
-{ #category : #'debug printing' }
+{ #category : 'debug printing' }
 StackInterpreter >> printFrame: theFP [
 	| thePage frameAbove theSP |
 	<inline: false>
@@ -11778,7 +11711,7 @@ StackInterpreter >> printFrame: theFP [
 		[self printFrameThing: 'frame pc' at: frameAbove + FoxCallerSavedIP]
 ]
 
-{ #category : #'debug printing' }
+{ #category : 'debug printing' }
 StackInterpreter >> printFrame: theFP WithSP: theSP [
 	<api>
 	| theMethod numArgs topThing |
@@ -11790,7 +11723,7 @@ StackInterpreter >> printFrame: theFP WithSP: theSP [
 	(stackPages couldBeFramePointer: theFP) ifFalse:
 		[self printHexPtr: theFP; print: ' is not in the stack zone?!'; cr.
 		 ^nil].
-	theMethod := self frameMethod: theFP.
+	theMethod := self iframeMethod: theFP.
 	numArgs := self frameNumArgs: theFP.
 	self shortPrintFrame: theFP.
 	self printFrameOop: 'rcvr/clsr'
@@ -11803,7 +11736,7 @@ StackInterpreter >> printFrame: theFP WithSP: theSP [
 	self printFrameFlagsForFP: theFP.
 	self printFrameThing: 'context' at: theFP + FoxThisContext.
 	self printFrameOop: 'receiver' at: theFP + FoxReceiver.
-	topThing := stackPages longAt: theSP.
+	topThing := stackPages unsignedLongAt: theSP.
 	(topThing >= theMethod
 	 and: [topThing <= (theMethod + (objectMemory sizeBitsOfSafe: theMethod))])
 		ifTrue:
@@ -11817,12 +11750,12 @@ StackInterpreter >> printFrame: theFP WithSP: theSP [
 				self printFrameOop: 'temp/stck' at: addr]]
 ]
 
-{ #category : #'debug printing' }
+{ #category : 'debug printing' }
 StackInterpreter >> printFrameAndCallers: theFP SP: theSP [
 	self printFrameAndCallers: theFP SP: theSP short: false
 ]
 
-{ #category : #'debug printing' }
+{ #category : 'debug printing' }
 StackInterpreter >> printFrameAndCallers: theFP SP: theSP short: printShort [
 	<inline: false>
 	<var: #theFP type: #'char *'>
@@ -11839,14 +11772,14 @@ StackInterpreter >> printFrameAndCallers: theFP SP: theSP short: printShort [
 	self printFrame: theFP WithSP: theSP
 ]
 
-{ #category : #'debug printing' }
+{ #category : 'debug printing' }
 StackInterpreter >> printFrameFlagsForFP: theFP [
 	| address it |
 	<inline: false>
 	<var: #theFP type: #'char *'>
 	<var: #address type: #'char *'>
 	address := theFP + FoxFrameFlags.
-	it := stackPages longAt: address.
+	it := stackPages unsignedLongAt: address.
 	self printHexPtr: address;
 		print: ':       flags: ';
 		printHex: it.
@@ -11858,13 +11791,13 @@ StackInterpreter >> printFrameFlagsForFP: theFP [
 		cr
 ]
 
-{ #category : #'debug printing' }
+{ #category : 'debug printing' }
 StackInterpreter >> printFrameOop: name at: address [
 	| it |
 	<inline: false>
 	<var: #name type: #'char *'>
 	<var: #address type: #'char *'>
-	it := stackPages longAt: address.
+	it := stackPages unsignedLongAt: address.
 	self printHexPtr: address;
 		printChar: $:.
 	1 to: 12 - (self strlen: name) do: [:i| self printChar: $ ].
@@ -11877,13 +11810,13 @@ StackInterpreter >> printFrameOop: name at: address [
 		cr
 ]
 
-{ #category : #'debug printing' }
+{ #category : 'debug printing' }
 StackInterpreter >> printFrameOop: name index: idx at: address [
 	| it |
 	<inline: false>
 	<var: #name type: #'char *'>
 	<var: #address type: #'char *'>
-	it := stackPages longAt: address.
+	it := stackPages unsignedLongAt: address.
 	self printHexPtr: address;
 		printChar: $:.
 	1	to: 11 - (self strlen: name) - (self log10: (idx max: 1)) floor
@@ -11898,14 +11831,14 @@ StackInterpreter >> printFrameOop: name index: idx at: address [
 		cr
 ]
 
-{ #category : #'debug printing' }
+{ #category : 'debug printing' }
 StackInterpreter >> printFrameThing: name andFrame: theFP at: address [
 	<var: #theFP type: #'char *'>
 	| it len |
 	<inline: false>
 	<var: #name type: #'char *'>
 	<var: #address type: #'char *'>
-	it := stackPages longAt: address.
+	it := stackPages unsignedLongAt: address.
 	self printHexPtr: address;
 		printChar: $:.
 	len := self strlen: name.
@@ -11922,13 +11855,13 @@ StackInterpreter >> printFrameThing: name andFrame: theFP at: address [
 	self print: ' frame: '; printHexPtr: theFP; cr
 ]
 
-{ #category : #'debug printing' }
+{ #category : 'debug printing' }
 StackInterpreter >> printFrameThing: name at: address [
 	| it len |
 	<inline: false>
 	<var: #name type: #'char *'>
 	<var: #address type: #'char *'>
-	it := stackPages longAt: address.
+	it := stackPages unsignedLongAt: address.
 	self printHexPtr: address;
 		printChar: $:.
 	len := self strlen: name.
@@ -11945,7 +11878,7 @@ StackInterpreter >> printFrameThing: name at: address [
 	self cr
 ]
 
-{ #category : #'debug printing' }
+{ #category : 'debug printing' }
 StackInterpreter >> printFramesInPage: thePage [
 	<export: true> "use export: not api, so it won't be written to cointerp.h. cogit.c is unaware of StackPage"
 	<inline: false>
@@ -11953,7 +11886,7 @@ StackInterpreter >> printFramesInPage: thePage [
 	self printFrameAndCallers: thePage headFP SP: thePage headSP short: false
 ]
 
-{ #category : #'debug printing' }
+{ #category : 'debug printing' }
 StackInterpreter >> printFramesOnStackPageListInUse [
 	<export: true>
 	| page |
@@ -11967,7 +11900,7 @@ StackInterpreter >> printFramesOnStackPageListInUse [
 	 (page := page prevPage) ~= stackPages mostRecentlyUsedPage] whileTrue
 ]
 
-{ #category : #'debug printing' }
+{ #category : 'debug printing' }
 StackInterpreter >> printHeadFrame [
 	<doNotGenerate>
 	"Prints the head frame from within the interpreter.
@@ -11978,7 +11911,7 @@ StackInterpreter >> printHeadFrame [
 	self printFrame: framePointer WithSP: stackPointer
 ]
 
-{ #category : #'debug printing' }
+{ #category : 'debug printing' }
 StackInterpreter >> printHex: n [
 	"Print n in hex,  in the form '    0x1234', padded to a width of 10 characters
 	 in 32-bits ('0x' + 8 nibbles) or 18 characters in 64-bits ('0x' + 16 nibbles)"
@@ -11992,7 +11925,7 @@ StackInterpreter >> printHex: n [
 	len touch: buf
 ]
 
-{ #category : #'debug printing' }
+{ #category : 'debug printing' }
 StackInterpreter >> printHexPtr: p [
 	"Print p in hex, padded to 10 characters in the form '    0x1234'"
 	<inline: true>
@@ -12000,7 +11933,7 @@ StackInterpreter >> printHexPtr: p [
 	self printHex: (self oopForPointer: p)
 ]
 
-{ #category : #'debug printing' }
+{ #category : 'debug printing' }
 StackInterpreter >> printHexPtrnp: p [
 	"Print p in hex, unpadded, in the form '0x1234'"
 	<inline: true>
@@ -12008,7 +11941,7 @@ StackInterpreter >> printHexPtrnp: p [
 	self printHexnp: (self oopForPointer: p)
 ]
 
-{ #category : #'debug printing' }
+{ #category : 'debug printing' }
 StackInterpreter >> printHexnp: n [
 	<api>
 	<var: #n type: #usqInt>
@@ -12016,7 +11949,7 @@ StackInterpreter >> printHexnp: n [
 	^ self cCode: 'vm_printf("0x%lx", n)'inSmalltalk: ['0x%lx' printf: n]
 ]
 
-{ #category : #'debug printing' }
+{ #category : 'debug printing' }
 StackInterpreter >> printHexnpnp: n [
 	<var: #n type: #usqInt>
 	"Print n in hex, in the form '1234', unpadded"
@@ -12024,7 +11957,7 @@ StackInterpreter >> printHexnpnp: n [
 	
 ]
 
-{ #category : #'debug printing' }
+{ #category : 'debug printing' }
 StackInterpreter >> printLikelyImplementorsOfSelector: selector [
 	"Print all methods whose penultimate literal is either selector,
 	 or an object whose first inst var is the method and whose
@@ -12045,13 +11978,13 @@ StackInterpreter >> printLikelyImplementorsOfSelector: selector [
 				cr]]
 ]
 
-{ #category : #'debug printing' }
+{ #category : 'debug printing' }
 StackInterpreter >> printMethodCache [
 	<api>
 	self printMethodCacheFor: -1
 ]
 
-{ #category : #'debug printing' }
+{ #category : 'debug printing' }
 StackInterpreter >> printMethodCacheFor: thing [
 	<api>
 	| n |
@@ -12089,7 +12022,7 @@ StackInterpreter >> printMethodCacheFor: thing [
 		[self printNum: n; cr]
 ]
 
-{ #category : #'debug printing' }
+{ #category : 'debug printing' }
 StackInterpreter >> printMethodDictionary: dictionary [
 	<api>
 	| methodArray |
@@ -12111,26 +12044,26 @@ StackInterpreter >> printMethodDictionary: dictionary [
 				cr]]
 ]
 
-{ #category : #'debug printing' }
+{ #category : 'debug printing' }
 StackInterpreter >> printMethodDictionaryOf: behavior [
 	<api>
 	self printMethodDictionary: (objectMemory fetchPointer: MethodDictionaryIndex ofObject: behavior)
 ]
 
-{ #category : #'debug printing' }
+{ #category : 'debug printing' }
 StackInterpreter >> printMethodFieldForPrintContext: aContext [
 	<inline: true>
 	self shortPrintOop: (objectMemory fetchPointer: MethodIndex ofObject: aContext)
 ]
 
-{ #category : #'debug printing' }
+{ #category : 'debug printing' }
 StackInterpreter >> printMethodHeaderOop: anOop [
 	"Override hook for CoInterpreter"
 	<inline: true>
 	^self printDecodeMethodHeaderOop: anOop
 ]
 
-{ #category : #'debug printing' }
+{ #category : 'debug printing' }
 StackInterpreter >> printNameOfClass: classOop count: cnt [
 	"Details: The count argument is used to avoid a possible infinite recursion if classOop is a corrupted object."
 	<inline: false>
@@ -12153,14 +12086,14 @@ StackInterpreter >> printNameOfClass: classOop count: cnt [
 					[self printStringOf: (objectMemory fetchPointer: classNameIndex ofObject: classOop)]]
 ]
 
-{ #category : #'debug printing' }
+{ #category : 'debug printing' }
 StackInterpreter >> printNum: n [
 	"For testing in Smalltalk, this method should be overridden in a subclass."
 
 	self cCode: 'vm_printf("%ld", (long) n)'.
 ]
 
-{ #category : #'debug printing' }
+{ #category : 'debug printing' }
 StackInterpreter >> printOop: oop [
 	| cls fmt lastIndex startIP bytecodesPerLine column |
 	<inline: false>
@@ -12244,14 +12177,14 @@ StackInterpreter >> printOop: oop [
 				[self cr]]
 ]
 
-{ #category : #'debug printing' }
+{ #category : 'debug printing' }
 StackInterpreter >> printOopShort: oop [
 	<inline: false>
 	self printOopShortInner: oop.
 	self flush
 ]
 
-{ #category : #'debug printing' }
+{ #category : 'debug printing' }
 StackInterpreter >> printOopShortInner: oop [
 	| classOop name nameLen |
 	<var: #name type: #'char *'>
@@ -12329,13 +12262,13 @@ StackInterpreter >> printOopShortInner: oop [
 				printHexnp: (objectMemory fetchPointer: ValueIndex ofObject: oop)]]
 ]
 
-{ #category : #'debug printing' }
+{ #category : 'debug printing' }
 StackInterpreter >> printPageHeadFrame [
 	<inline: false>
 	self printFrame: stackPage headFP WithSP: stackPage headSP
 ]
 
-{ #category : #'debug printing' }
+{ #category : 'debug printing' }
 StackInterpreter >> printProcessStack: aProcess [
 	<api>
 	<inline: false>
@@ -12347,7 +12280,7 @@ StackInterpreter >> printProcessStack: aProcess [
 		[self printCallStackOf: ctx currentFP: framePointer]
 ]
 
-{ #category : #'debug printing' }
+{ #category : 'debug printing' }
 StackInterpreter >> printProcsOnList: procList [
 	<api>
 	<inline: false>
@@ -12361,18 +12294,18 @@ StackInterpreter >> printProcsOnList: procList [
 			 ^nil]]
 ]
 
-{ #category : #'debug printing' }
+{ #category : 'debug printing' }
 StackInterpreter >> printSends [
 	^false
 ]
 
-{ #category : #'debug printing' }
+{ #category : 'debug printing' }
 StackInterpreter >> printStackCallStack [
 	<doNotGenerate>
 	self printStackCallStackOf: (framePointer ifNil: [framePointer])
 ]
 
-{ #category : #'debug printing' }
+{ #category : 'debug printing' }
 StackInterpreter >> printStackCallStackOf: aContextOrProcessOrFrame [
 	<api>
 	| theFP context |
@@ -12398,14 +12331,14 @@ StackInterpreter >> printStackCallStackOf: aContextOrProcessOrFrame [
 			[^nil]] repeat
 ]
 
-{ #category : #'debug printing' }
+{ #category : 'debug printing' }
 StackInterpreter >> printStackPage: page [
 	<inline: true>
 	<var: #page type: #'StackPage *'>
 	self printStackPage: page useCount: -1
 ]
 
-{ #category : #'debug printing' }
+{ #category : 'debug printing' }
 StackInterpreter >> printStackPage: page useCount: n [
 	<inline: false>
 	<var: #page type: #'StackPage *'>
@@ -12436,7 +12369,7 @@ StackInterpreter >> printStackPage: page useCount: n [
 	self cr
 ]
 
-{ #category : #'debug printing' }
+{ #category : 'debug printing' }
 StackInterpreter >> printStackPageList [
 	| page |
 	<inline: false>
@@ -12447,7 +12380,7 @@ StackInterpreter >> printStackPageList [
 	 (page := page prevPage) ~= stackPages mostRecentlyUsedPage] whileTrue
 ]
 
-{ #category : #'debug printing' }
+{ #category : 'debug printing' }
 StackInterpreter >> printStackPageListInUse [
 	| page n |
 	<inline: false>
@@ -12459,7 +12392,7 @@ StackInterpreter >> printStackPageListInUse [
 	 (page := page prevPage) ~= stackPages mostRecentlyUsedPage] whileTrue
 ]
 
-{ #category : #'debug printing' }
+{ #category : 'debug printing' }
 StackInterpreter >> printStackPages [
 	0 to: numStackPages - 1 do:
 		[:i|
@@ -12467,7 +12400,7 @@ StackInterpreter >> printStackPages [
 		self cr]
 ]
 
-{ #category : #'debug printing' }
+{ #category : 'debug printing' }
 StackInterpreter >> printStackPagesInUse [
 	| n |
 	n := 0.
@@ -12477,7 +12410,7 @@ StackInterpreter >> printStackPagesInUse [
 			[self printStackPage: (stackPages stackPageAt: i) useCount: (n := n + 1); cr]]
 ]
 
-{ #category : #'object memory support' }
+{ #category : 'object memory support' }
 StackInterpreter >> printStackReferencesTo: oop [
 	<api>
 	<var: #thePage type: #'StackPage *'>
@@ -12494,13 +12427,13 @@ StackInterpreter >> printStackReferencesTo: oop [
 			 thePage = stackPage ifFalse:
 				[theSP := theSP + objectMemory wordSize].
 			 [[theSP <= (self frameReceiverLocation: theFP)] whileTrue:
-				[oop = (stackPages longAt: theSP) ifTrue:
+				[oop = (stackPages unsignedLongAt: theSP) ifTrue:
 					[self print: 'FP: '; printHexnp: theFP; print: ' @ '; printHexnp: theSP; cr].
 				 theSP := theSP + objectMemory wordSize].
 			  (self frameHasContext: theFP) ifTrue:
 				[oop = (self frameContext: theFP) ifTrue:
 					[self print: 'FP: '; printHexnp: theFP; print: ' CTXT'; cr]].
-			  oop = (self frameMethod: theFP) ifTrue:
+			  oop = (self iframeMethod: theFP) ifTrue:
 				[self print: 'FP: '; printHexnp: theFP; print: ' MTHD'; cr].
 			  (callerFP := self frameCallerFP: theFP) ~= 0]
 				whileTrue:
@@ -12508,14 +12441,15 @@ StackInterpreter >> printStackReferencesTo: oop [
 					 theFP := callerFP].
 			 theSP := theFP + FoxCallerSavedIP. "a.k.a. FoxCallerContext"
 			 [theSP <= thePage baseAddress] whileTrue:
-				[oop = (stackPages longAt: theSP) ifTrue:
+				[oop = (stackPages unsignedLongAt: theSP) ifTrue:
 					[self print: 'FP: '; printHexnp: theFP; print: ' @ '; printHexnp: theSP; cr].
 				 theSP := theSP + objectMemory wordSize]]]
 ]
 
-{ #category : #'debug printing' }
+{ #category : 'debug printing' }
 StackInterpreter >> printStringOf: oop [
 	| fmt len cnt max i |
+	<api>
 	<inline: false>
 	(objectMemory isImmediate: oop) ifTrue:
 		[^self].
@@ -12550,7 +12484,7 @@ StackInterpreter >> printStringOf: oop [
 	self flush
 ]
 
-{ #category : #'debug printing' }
+{ #category : 'debug printing' }
 StackInterpreter >> printUnbalancedStack: primIdx [
 	<inline: false>
 	self print: 'Stack unbalanced after '.
@@ -12562,7 +12496,7 @@ StackInterpreter >> printUnbalancedStack: primIdx [
 		
 ]
 
-{ #category : #'process primitive support' }
+{ #category : 'process primitive support' }
 StackInterpreter >> processesInProcessListDo: aBlock [
 
 	"Return the highest priority process that is ready to run.
@@ -12573,7 +12507,7 @@ StackInterpreter >> processesInProcessListDo: aBlock [
 	 Note: It is a fatal VM error if there is no runnable process."
 
 	| schedLists p processList proc ctxt |
-	self externalWriteBackHeadFramePointers.
+	self writeBackHeadFramePointers.
 	schedLists := objectMemory
 		              fetchPointer: ProcessListsIndex
 		              ofObject: self schedulerPointer.
@@ -12600,29 +12534,30 @@ StackInterpreter >> processesInProcessListDo: aBlock [
 			proc := objectMemory fetchPointer: NextLinkIndex ofObject: proc ] ]
 ]
 
-{ #category : #'as yet unclassified' }
+{ #category : 'as yet unclassified' }
 StackInterpreter >> profileMethod [
 	<doNotGenerate>
 	^ profileMethod
 ]
 
-{ #category : #profiling }
+{ #category : 'profiling' }
 StackInterpreter >> profileSemaphore [
 	<doNotGenerate>
 	^ profileSemaphore
 ]
 
-{ #category : #'internal interpreter access' }
+{ #category : 'internal interpreter access' }
 StackInterpreter >> push: object [
 	"In the StackInterpreter stacks grow down."
 	| sp |
 	<inline: true>
 	<var: #sp type: #'char *'>
-	stackPages longAt: (sp := stackPointer - objectMemory wordSize) put: object.
+
+	stackPages unsignedLongAt: (sp := stackPointer - objectMemory wordSize) put: object.
 	stackPointer := sp
 ]
 
-{ #category : #'stack bytecodes' }
+{ #category : 'stack bytecodes' }
 StackInterpreter >> pushActiveContextBytecode [
 	| ourContext |
 	ourContext := self ensureFrameIsMarried: framePointer SP: stackPointer.
@@ -12630,7 +12565,7 @@ StackInterpreter >> pushActiveContextBytecode [
 	self push: ourContext
 ]
 
-{ #category : #'internal interpreter access' }
+{ #category : 'internal interpreter access' }
 StackInterpreter >> pushBool: trueOrFalse [
 
 	<inline: true>
@@ -12638,7 +12573,7 @@ StackInterpreter >> pushBool: trueOrFalse [
 	self push: (objectMemory booleanObjectOf: trueOrFalse)
 ]
 
-{ #category : #'stack bytecodes' }
+{ #category : 'stack bytecodes' }
 StackInterpreter >> pushConstantFalseBytecode [
 
 	self fetchNextBytecode.
@@ -12646,7 +12581,7 @@ StackInterpreter >> pushConstantFalseBytecode [
 
 ]
 
-{ #category : #'stack bytecodes' }
+{ #category : 'stack bytecodes' }
 StackInterpreter >> pushConstantMinusOneBytecode [
 
 	self fetchNextBytecode.
@@ -12654,7 +12589,7 @@ StackInterpreter >> pushConstantMinusOneBytecode [
 
 ]
 
-{ #category : #'stack bytecodes' }
+{ #category : 'stack bytecodes' }
 StackInterpreter >> pushConstantNilBytecode [
 
 	self fetchNextBytecode.
@@ -12662,7 +12597,7 @@ StackInterpreter >> pushConstantNilBytecode [
 
 ]
 
-{ #category : #'stack bytecodes' }
+{ #category : 'stack bytecodes' }
 StackInterpreter >> pushConstantOneBytecode [
 
 	self fetchNextBytecode.
@@ -12670,7 +12605,7 @@ StackInterpreter >> pushConstantOneBytecode [
 
 ]
 
-{ #category : #'stack bytecodes' }
+{ #category : 'stack bytecodes' }
 StackInterpreter >> pushConstantTrueBytecode [
 
 	self fetchNextBytecode.
@@ -12678,7 +12613,7 @@ StackInterpreter >> pushConstantTrueBytecode [
 
 ]
 
-{ #category : #'stack bytecodes' }
+{ #category : 'stack bytecodes' }
 StackInterpreter >> pushConstantTwoBytecode [
 
 	self fetchNextBytecode.
@@ -12686,7 +12621,7 @@ StackInterpreter >> pushConstantTwoBytecode [
 
 ]
 
-{ #category : #'stack bytecodes' }
+{ #category : 'stack bytecodes' }
 StackInterpreter >> pushConstantZeroBytecode [
 
 	self fetchNextBytecode.
@@ -12694,7 +12629,7 @@ StackInterpreter >> pushConstantZeroBytecode [
 
 ]
 
-{ #category : #'simd bytecodes' }
+{ #category : 'simd bytecodes' }
 StackInterpreter >> pushFloat32ArrayToRegisterBytecode [
 
 	| array index reg |
@@ -12723,7 +12658,7 @@ StackInterpreter >> pushFloat32ArrayToRegisterBytecode [
 	self pop: 2 thenPush: reg
 ]
 
-{ #category : #'simd bytecodes' }
+{ #category : 'simd bytecodes' }
 StackInterpreter >> pushFloat64ArrayToRegisterBytecode [
 
 	| array index reg |
@@ -12744,65 +12679,72 @@ StackInterpreter >> pushFloat64ArrayToRegisterBytecode [
 	self pop: 2 thenPush: reg
 ]
 
-{ #category : #'primitive support' }
+{ #category : 'primitive support' }
 StackInterpreter >> pushFloat: f [
 
 	<var: #f type: #double>
 	self push: (objectMemory floatObjectOf: f).
 ]
 
-{ #category : #'stack bytecodes' }
+{ #category : 'stack bytecodes' }
 StackInterpreter >> pushFullClosureNumArgs: numArgs copiedValues: numCopiedArg compiledBlock: compiledBlock receiverIsOnStack: receiverIsOnStack ignoreContext: ignoreContext [
 	"The compiler has pushed the values to be copied, if any. The receiver has been pushed on stack before if specified. 
 	 Create a Closure with space for the copiedValues and pop numCopied values off the stack into the closure.
 	 Sets outerContext, compiledBlock, numArgs and receiver as specified.."
+
 	<inline: true>
 	| numCopied newClosure context startIndex |
 	"No need to record the pushed copied values in the outerContext."
 	context := ignoreContext
-		ifTrue: [objectMemory nilObject ]
-		ifFalse: [self ensureFrameIsMarried: framePointer SP: stackPointer + (numCopiedArg * objectMemory bytesPerOop)].
+		           ifTrue: [ objectMemory nilObject ]
+		           ifFalse: [
+			           self
+				           ensureFrameIsMarried: framePointer
+				           SP:
+				           stackPointer
+				           + (numCopiedArg * objectMemory bytesPerOop) ].
 	newClosure := self
-					fullClosureIn: context 
-					numArgs: numArgs 
-					numCopiedValues: numCopiedArg 
-					compiledBlock: compiledBlock.
+		              fullClosureIn: context
+		              numArgs: numArgs
+		              numCopiedValues: numCopiedArg
+		              compiledBlock: compiledBlock.
+	self maybeTraceBlockCreation: newClosure.
 	receiverIsOnStack
-		ifFalse: 
-			[ startIndex := FullClosureFirstCopiedValueIndex.
-			   objectMemory storePointerUnchecked: FullClosureReceiverIndex
+		ifFalse: [
+			startIndex := FullClosureFirstCopiedValueIndex.
+			objectMemory
+				storePointerUnchecked: FullClosureReceiverIndex
 				ofObject: newClosure
 				withValue: self receiver.
 			numCopied := numCopiedArg ]
-		ifTrue:
-			[ startIndex := FullClosureReceiverIndex.
+		ifTrue: [
+			startIndex := FullClosureReceiverIndex.
 			numCopied := numCopiedArg + 1 ].
-	numCopied > 0 ifTrue:
-		[0 to: numCopied - 1 do:
-			[ :i |
-			"Assume: have just allocated a new BlockClosure; it must be young.
+	numCopied > 0 ifTrue: [
+		0 to: numCopied - 1 do: [ :i | "Assume: have just allocated a new BlockClosure; it must be young.
 			 Thus, can use unchecked stores."
-			 objectMemory storePointerUnchecked: i + startIndex
+			objectMemory
+				storePointerUnchecked: i + startIndex
 				ofObject: newClosure
-				withValue: (self stackValue: numCopied - i - 1)].
-		 self pop: numCopied].
+				withValue: (self stackValue: numCopied - i - 1) ].
+		self pop: numCopied ].
 	self fetchNextBytecode.
 	self push: newClosure
 ]
 
-{ #category : #'internal interpreter access' }
+{ #category : 'internal interpreter access' }
 StackInterpreter >> pushInteger: integerValue [
 	self push: (objectMemory integerObjectOf: integerValue).
 	^nil
 ]
 
-{ #category : #'stack bytecodes' }
+{ #category : 'stack bytecodes' }
 StackInterpreter >> pushLiteralConstant: literalIndex [
 
 	self push: (self literal: literalIndex).
 ]
 
-{ #category : #'stack bytecodes' }
+{ #category : 'stack bytecodes' }
 StackInterpreter >> pushLiteralConstantBytecode [
 	<expandCases>
 	self
@@ -12814,7 +12756,7 @@ StackInterpreter >> pushLiteralConstantBytecode [
 			 self fetchNextBytecode]
 ]
 
-{ #category : #'stack bytecodes' }
+{ #category : 'stack bytecodes' }
 StackInterpreter >> pushLiteralVariable16CasesBytecode [
 	<expandCases>
 	self
@@ -12826,7 +12768,7 @@ StackInterpreter >> pushLiteralVariable16CasesBytecode [
 			 self fetchNextBytecode]
 ]
 
-{ #category : #'stack bytecodes' }
+{ #category : 'stack bytecodes' }
 StackInterpreter >> pushLiteralVariable: literalIndex [
 
 	| litVar |
@@ -12840,7 +12782,7 @@ StackInterpreter >> pushLiteralVariable: literalIndex [
 	self push: (objectMemory fetchPointer: ValueIndex ofObject: litVar)
 ]
 
-{ #category : #'stack bytecodes' }
+{ #category : 'stack bytecodes' }
 StackInterpreter >> pushLiteralVariableBytecode [
 	<expandCases>
 	self
@@ -12852,7 +12794,7 @@ StackInterpreter >> pushLiteralVariableBytecode [
 			 self fetchNextBytecode]
 ]
 
-{ #category : #'stack bytecodes' }
+{ #category : 'stack bytecodes' }
 StackInterpreter >> pushMaybeContext: obj receiverVariable: fieldIndex [
 	"Must trap accesses to married and widowed contexts.
 	 But don't want to check on all inst var accesses.  This
@@ -12870,7 +12812,7 @@ StackInterpreter >> pushMaybeContext: obj receiverVariable: fieldIndex [
 			[self push: (objectMemory fetchPointer: fieldIndex ofObject: obj)]
 ]
 
-{ #category : #'stack bytecodes' }
+{ #category : 'stack bytecodes' }
 StackInterpreter >> pushMaybeContextReceiverVariable: fieldIndex [
 	"Must trap accesses to married and widowed contexts.
 	 But don't want to check on all inst var accesses.  This
@@ -12883,33 +12825,36 @@ StackInterpreter >> pushMaybeContextReceiverVariable: fieldIndex [
 	self pushMaybeContext: self receiver receiverVariable: fieldIndex
 ]
 
-{ #category : #'stack bytecodes' }
+{ #category : 'stack bytecodes' }
 StackInterpreter >> pushNewArrayBytecode [
+
 	| size popValues array |
 	size := self fetchByte.
 	popValues := size > 127.
 	size := size bitAnd: 127.
 	self fetchNextBytecode.
-	self externalizeIPandSP. "in case of abort"
 	array := objectMemory
-		eeInstantiateSmallClassIndex: ClassArrayCompactIndex
-		format: objectMemory arrayFormat
-		numSlots: size.
+		         eeInstantiateSmallClassIndex: ClassArrayCompactIndex
+		         format: objectMemory arrayFormat
+		         numSlots: size.
 	popValues
-		ifTrue:
-			[0 to: size - 1 do:
-				[:i|
-				"Assume: have just allocated a new Array; it must be young. Thus, can use unchecked stores."
-				objectMemory storePointerUnchecked: i ofObject: array withValue: (self stackValue: size - i - 1)].
-			 self pop: size]
-		ifFalse:
-			[0 to: size - 1 do:
-				[:i|
-				objectMemory storePointerUnchecked: i ofObject: array withValue: objectMemory nilObject]].
+		ifTrue: [
+			0 to: size - 1 do: [ :i | "Assume: have just allocated a new Array; it must be young. Thus, can use unchecked stores."
+				objectMemory
+					storePointerUnchecked: i
+					ofObject: array
+					withValue: (self stackValue: size - i - 1) ].
+			self pop: size ]
+		ifFalse: [
+			0 to: size - 1 do: [ :i |
+				objectMemory
+					storePointerUnchecked: i
+					ofObject: array
+					withValue: objectMemory nilObject ] ].
 	self push: array
 ]
 
-{ #category : #'stack bytecodes' }
+{ #category : 'stack bytecodes' }
 StackInterpreter >> pushReceiverBytecode [
 
 	self fetchNextBytecode.
@@ -12917,13 +12862,13 @@ StackInterpreter >> pushReceiverBytecode [
 
 ]
 
-{ #category : #'stack bytecodes' }
+{ #category : 'stack bytecodes' }
 StackInterpreter >> pushReceiverVariable: fieldIndex [
 
 	self push: (objectMemory fetchPointer: fieldIndex ofObject: self receiver).
 ]
 
-{ #category : #'stack bytecodes' }
+{ #category : 'stack bytecodes' }
 StackInterpreter >> pushReceiverVariableBytecode [
 	<expandCases>
 	self
@@ -12935,10 +12880,10 @@ StackInterpreter >> pushReceiverVariableBytecode [
 			 self fetchNextBytecode]
 ]
 
-{ #category : #'stack bytecodes' }
+{ #category : 'stack bytecodes' }
 StackInterpreter >> pushRemoteTemp: index inVectorAt: tempVectorIndex [
 	| tempVector |
-	tempVector := self temporary: tempVectorIndex in: framePointer.
+	tempVector := self itemporary: tempVectorIndex in: framePointer.
 	TempVectReadBarrier
 		ifTrue: 
 			[(objectMemory isForwarded: tempVector) ifTrue:
@@ -12946,7 +12891,7 @@ StackInterpreter >> pushRemoteTemp: index inVectorAt: tempVectorIndex [
 	self push: (objectMemory fetchPointer: index ofObject: tempVector)
 ]
 
-{ #category : #'stack bytecodes' }
+{ #category : 'stack bytecodes' }
 StackInterpreter >> pushRemoteTempLongBytecode [
 	| remoteTempIndex tempVectorIndex |
 	remoteTempIndex := self fetchByte.
@@ -12955,13 +12900,13 @@ StackInterpreter >> pushRemoteTempLongBytecode [
 	self pushRemoteTemp: remoteTempIndex inVectorAt: tempVectorIndex
 ]
 
-{ #category : #'stack bytecodes' }
+{ #category : 'stack bytecodes' }
 StackInterpreter >> pushTemporaryVariable: temporaryIndex [
 
-	self push: (self temporary: temporaryIndex in: framePointer).
+	self push: (self itemporary: temporaryIndex in: framePointer).
 ]
 
-{ #category : #'stack bytecodes' }
+{ #category : 'stack bytecodes' }
 StackInterpreter >> pushTemporaryVariableBytecode [
 	<expandCases>
 	self
@@ -12973,17 +12918,17 @@ StackInterpreter >> pushTemporaryVariableBytecode [
 			 self fetchNextBytecode]
 ]
 
-{ #category : #'frame access' }
+{ #category : 'frame access' }
 StackInterpreter >> pushedReceiverOrClosureOfFrame: theFP [
 	"The receiver of a message send or the closure of a block activation is
 	 always on the stack above any arguments and the frame itself.  See the
 	 diagram in StackInterpreter class>>initializeFrameIndices."
 	<inline: true>
 	<var: #theFP type: #'char *'>
-	^stackPages longAt: theFP + (self frameStackedReceiverOffset: theFP)
+	^stackPages unsignedLongAt: theFP + (self frameStackedReceiverOffset: theFP)
 ]
 
-{ #category : #'process primitive support' }
+{ #category : 'process primitive support' }
 StackInterpreter >> putToSleep: aProcess yieldingIf: yieldImplicitly [
 	"Save the given process on the scheduler process list for its priority,
 	 adding to the back if yieldImplicitly or to the front if not yieldImplicitly."
@@ -13001,13 +12946,13 @@ StackInterpreter >> putToSleep: aProcess yieldingIf: yieldImplicitly [
 		ifFalse: [self addFirstLink: aProcess toList: processList]
 ]
 
-{ #category : #'sista bytecodes' }
+{ #category : 'sista bytecodes' }
 StackInterpreter >> quaternaryInlinePrimitive: primIndex [
 	<option: #SistaVM>
 	self unknownInlinePrimitive
 ]
 
-{ #category : #utilities }
+{ #category : 'utilities' }
 StackInterpreter >> quickFetchInteger: fieldIndex ofObject: objectPointer [
 	"Return the integer value of the field without verifying that it is an integer value! For use in time-critical places where the integer-ness of the field can be guaranteed."
 
@@ -13017,7 +12962,7 @@ StackInterpreter >> quickFetchInteger: fieldIndex ofObject: objectPointer [
 	^objectMemory integerValueOf: oop
 ]
 
-{ #category : #'sista bytecodes' }
+{ #category : 'sista bytecodes' }
 StackInterpreter >> quinaryInlinePrimitive: primIndex [
 	| src srcIndex dest destIndex destLimit oop |
 	<option: #SistaVM>
@@ -13030,7 +12975,7 @@ StackInterpreter >> quinaryInlinePrimitive: primIndex [
 		srcIndex := (objectMemory integerValueOf: (self stackValue: 0)) - 1.
 		self pop: 4.
 		destLimit < destIndex ifTrue: [^self].
-		(objectMemory isYoung: dest) ifFalse: [objectMemory possibleRootStoreInto: dest].
+		(objectMemory isYoung: dest) ifFalse: [objectMemory possibleOldObjectStoreInto: dest].
 		0 to: destLimit - destIndex do: 
 			[:i| oop := objectMemory fetchPointer: srcIndex + i ofObject: src.
 			    objectMemory storePointerUnchecked: destIndex + i ofObject: dest withValue: oop].
@@ -13038,7 +12983,7 @@ StackInterpreter >> quinaryInlinePrimitive: primIndex [
 	self unknownInlinePrimitive
 ]
 
-{ #category : #'primitive support' }
+{ #category : 'primitive support' }
 StackInterpreter >> reapAndResetErrorCodeTo: theFP header: methodHeader [
 
 	"Assuming the primFailCode is non-zero, check if the method consumes the error code
@@ -13064,13 +13009,19 @@ StackInterpreter >> reapAndResetErrorCodeTo: theFP header: methodHeader [
 	^ false
 ]
 
-{ #category : #'internal interpreter access' }
+{ #category : 'internal interpreter access' }
 StackInterpreter >> receiver [
 	<inline: true>
-	^stackPages longAt: framePointer + FoxReceiver
+	^stackPages unsignedLongAt: framePointer + FoxReceiver
 ]
 
-{ #category : #'callback support' }
+{ #category : 'process primitive support' }
+StackInterpreter >> recordContextSwitchFrom: oldProc in: sourceCode [
+	
+	"Noop in pure interpreter"
+]
+
+{ #category : 'callback support' }
 StackInterpreter >> reestablishContextPriorToCallback: callbackContext [
 	"callbackContext is an activation of invokeCallback:[stack:registers:jmpbuf:].
 	 Its sender is the VM's state prior to the callback.  Reestablish that state,
@@ -13082,12 +13033,12 @@ StackInterpreter >> reestablishContextPriorToCallback: callbackContext [
 	self flag: #obsolete.
 	(self isLiveContext: callbackContext) ifFalse:
 		[^false].
-	calloutContext := self externalInstVar: SenderIndex ofContext: callbackContext.
+	calloutContext := self instVar: SenderIndex ofContext: callbackContext.
 	(self isLiveContext: calloutContext) ifFalse:
 		[^false].
 	"We're about to leave this stack page; must save the current frame's instructionPointer."
 	self push: instructionPointer.
-	self externalWriteBackHeadFramePointers.
+	self writeBackHeadFramePointers.
 	"Mark callbackContext as dead; the common case is that it is the current frame.
 	 We go the extra mile for the debugger."
 	(self isSingleContext: callbackContext)
@@ -13104,7 +13055,7 @@ StackInterpreter >> reestablishContextPriorToCallback: callbackContext [
 							 framePointer := self frameCallerFP: framePointer.
 							 ^true]]
 				ifFalse:
-					[self externalDivorceFrame: theFP andContext: callbackContext.
+					[self divorceFrame: theFP andContext: callbackContext.
 					 self markContextAsDead: callbackContext]].
 	"Make the calloutContext the active frame.  The case where calloutContext
 	 is immediately below callbackContext on the same page is handled above."
@@ -13126,7 +13077,7 @@ StackInterpreter >> reestablishContextPriorToCallback: callbackContext [
 	^true
 ]
 
-{ #category : #'object memory support' }
+{ #category : 'object memory support' }
 StackInterpreter >> remapCallbackState [
 	"Callback support - trace suspended callback list"
 	1 to: jmpDepth do:
@@ -13139,7 +13090,7 @@ StackInterpreter >> remapCallbackState [
 			[suspendedMethods at: i put: (objectMemory remapObj: oop)]]
 ]
 
-{ #category : #'stack bytecodes' }
+{ #category : 'stack bytecodes' }
 StackInterpreter >> remoteIsInstVarAccess [
 	"If this byte is set in the second byte (zero-based) of the instruction, 
 	the remote temp instruction is in fact a remote inst var access"
@@ -13148,7 +13099,7 @@ StackInterpreter >> remoteIsInstVarAccess [
 	^ 128 "1 << 7"
 ]
 
-{ #category : #'process primitive support' }
+{ #category : 'process primitive support' }
 StackInterpreter >> removeFirstLinkOfList: aList [ 
 	"Remove the first process from the given linked list."
 	| first last next |
@@ -13169,7 +13120,7 @@ StackInterpreter >> removeFirstLinkOfList: aList [
 	^first
 ]
 
-{ #category : #'process primitive support' }
+{ #category : 'process primitive support' }
 StackInterpreter >> removeProcess: aProcess fromList: aList [ 
 	"Remove a given process from a linked list. May fail if aProcess is not on the list."
 	| firstLink lastLink nextLink tempLink |
@@ -13201,13 +13152,13 @@ StackInterpreter >> removeProcess: aProcess fromList: aList [
 	objectMemory storePointer: NextLinkIndex ofObject: aProcess withValue: objectMemory nilObject
 ]
 
-{ #category : #'debug printing' }
+{ #category : 'debug printing' }
 StackInterpreter >> resetStackPrintedCount [
 
 	printedStackFrames := maxStackMessagePrinted := 0
 ]
 
-{ #category : #'sista bytecodes' }
+{ #category : 'sista bytecodes' }
 StackInterpreter >> respondToSistaTrap [
 	| ourContext |
 	<sharedCodeInCase: #unconditionnalTrapBytecode>
@@ -13218,7 +13169,7 @@ StackInterpreter >> respondToSistaTrap [
 	self normalSend
 ]
 
-{ #category : #'miscellaneous bytecodes' }
+{ #category : 'miscellaneous bytecodes' }
 StackInterpreter >> respondToUnknownBytecode [
 	"If an error selector is available then send it to the activeContext, otherwise abort."
 	<sharedCodeInCase: #unknownBytecode>
@@ -13235,7 +13186,7 @@ StackInterpreter >> respondToUnknownBytecode [
 	self normalSend
 ]
 
-{ #category : #'callback support' }
+{ #category : 'callback support' }
 StackInterpreter >> restoreCStackStateForCallbackContext: vmCallbackContext [
 	<var: #vmCallbackContext type: #'VMCallbackContext *'>
 		
@@ -13248,7 +13199,7 @@ StackInterpreter >> restoreCStackStateForCallbackContext: vmCallbackContext [
 	
 ]
 
-{ #category : #'stack pages' }
+{ #category : 'stack pages' }
 StackInterpreter >> restoreStackLimit [
 	"restore the stackLimit if it has been smashed."
 	<inline: true>
@@ -13256,26 +13207,16 @@ StackInterpreter >> restoreStackLimit [
 	stackLimit := stackPage stackLimit
 ]
 
-{ #category : #'process primitive support' }
-StackInterpreter >> resume: aProcess [
-	"Replaced by resume:preemptedYieldingIf:"
-	"Make aProcess runnable and if its priority is higher than
-	 that of the current process, preempt the current process.
-	 Answer if the current process was preempted.  Override
-	 to add tracing info (see resume:from:)."
-	<doNotGenerate>
-	self shouldNotImplement
-]
-
-{ #category : #'process primitive support' }
-StackInterpreter >> resume: aProcess preemptedYieldingIf: yieldImplicitly [
+{ #category : 'process primitive support' }
+StackInterpreter >> resume: aProcess preemptedYieldingIf: yieldImplicitly from: sourceCode [
 	"Make aProcess runnable and if its priority is higher than  that of the
 	 current process, preempt the current process.   Answer if the current
 	 process was preempted.  If the current process was preempted then if
 	 yieldImplicitly add the current process to the back of its run queue,
-	 causing an implicit yiled to other processes on the run queue,  otherwise
+	 causing an implicit yeild to other processes on the run queue,  otherwise
 	 add the current process to the front of its run queue, hence not yielding.
-	 Blue book behaviour is to yield implicitly but is arguably incorrect."
+	 Blue book behaviour is to yield implicitly but is arguably incorrect.
+	 Override to add tracing info."
 	| activeProc activePriority newPriority |
 	<inline: false>
 	activeProc := self activeProcess.
@@ -13285,11 +13226,11 @@ StackInterpreter >> resume: aProcess preemptedYieldingIf: yieldImplicitly [
 		[self putToSleep: aProcess yieldingIf: true.
 		 ^false].
 	self putToSleep: activeProc yieldingIf: yieldImplicitly.
-	self transferTo: aProcess.
+	self transferTo: aProcess from: sourceCode.
 	^true
 ]
 
-{ #category : #'primitive support' }
+{ #category : 'primitive support' }
 StackInterpreter >> retryPrimitiveOnFailure [
 	"In Spur two cases of primitive failure are handled specially.  A primitive may fail due to validation
 	 encountering a forwarder. On failure, check the accessorDepth for the primitive and if non-negative
@@ -13328,32 +13269,51 @@ StackInterpreter >> retryPrimitiveOnFailure [
 	^retried
 ]
 
-{ #category : #'return bytecodes' }
+{ #category : 'message sending' }
+StackInterpreter >> return: returnValue toExecutive: inInterpreter [
+
+	"Do nothing in the interpreter"
+]
+
+{ #category : 'return bytecodes' }
 StackInterpreter >> returnFalse [
 	localReturnValue := objectMemory falseObject.
 	self commonReturn
 ]
 
-{ #category : #'return bytecodes' }
+{ #category : 'return bytecodes' }
 StackInterpreter >> returnNil [
 	localReturnValue := objectMemory nilObject.
 	self commonReturn
 ]
 
-{ #category : #'return bytecodes' }
+{ #category : 'return bytecodes' }
 StackInterpreter >> returnNilFromBlock [
 	"Return nil to the caller of the current block activation."
 	localReturnValue := objectMemory nilObject.
 	self commonCallerReturn
 ]
 
-{ #category : #'return bytecodes' }
+{ #category : 'return bytecodes' }
 StackInterpreter >> returnReceiver [
 	localReturnValue := self receiver.
 	self commonReturn
 ]
 
-{ #category : #'return bytecodes' }
+{ #category : 'message sending' }
+StackInterpreter >> returnToExecutive: inInterpreter [
+	"Noop in the non jitted vm"
+
+	^ nil
+]
+
+{ #category : 'message sending' }
+StackInterpreter >> returnToExecutive: inInterpreter postContextSwitch: switchedContext [
+
+	"Noop in pure interpreter"
+]
+
+{ #category : 'return bytecodes' }
 StackInterpreter >> returnTopFromBlock [
 
 	"Return top-of-stack to the caller of the current block activation."
@@ -13362,20 +13322,20 @@ StackInterpreter >> returnTopFromBlock [
 	self commonCallerReturn
 ]
 
-{ #category : #'return bytecodes' }
+{ #category : 'return bytecodes' }
 StackInterpreter >> returnTopFromMethod [
 
 	localReturnValue := self stackTop.
 	self commonReturn
 ]
 
-{ #category : #'return bytecodes' }
+{ #category : 'return bytecodes' }
 StackInterpreter >> returnTrue [
 	localReturnValue := objectMemory trueObject.
 	self commonReturn
 ]
 
-{ #category : #'image save/restore' }
+{ #category : 'image save/restore' }
 StackInterpreter >> reverseBytesInImage [
 	"Byte-swap all words in memory after reading in the entire image file with bulk read. Contributed by Tim Rowledge."
 
@@ -13387,7 +13347,7 @@ StackInterpreter >> reverseBytesInImage [
 	self updateObjectsPostByteSwap
 ]
 
-{ #category : #'method lookup cache' }
+{ #category : 'method lookup cache' }
 StackInterpreter >> rewriteMethodCacheEntryForExternalPrimitiveToFunction: localPrimAddress [
 	"Rewrite an existing entry in the method cache with a new primitive function address.
 	 Used by primitiveExternalCall to make direct calls to found external prims, or quickly
@@ -13400,26 +13360,18 @@ StackInterpreter >> rewriteMethodCacheEntryForExternalPrimitiveToFunction: local
 			put: (self cCoerce: localPrimAddress to: #'sqIntptr_t')]
 ]
 
-{ #category : #'primitive support' }
+{ #category : 'primitive support' }
 StackInterpreter >> roomToPushNArgs: n [
 	"Answer if there is room to push n arguments onto the current stack.  We assume
 	 this is called by primitives that check there is enough room in any new context, and
 	 won't actually push the arguments in the current context if the primitive fails.  With
 	 this assumption it is safe to answer based on the maximum argument count, /not/
 	 the ammount of space in the current frame were it converted to a context.."
-	false
-		ifTrue: "old code that checked size of context..."
-			[| cntxSize |
-			 self assert: method = (stackPages longAt: framePointer + FoxMethod).
-			 cntxSize := (self methodHeaderIndicatesLargeFrame: (objectMemory methodHeaderOf: method))
-							ifTrue: [LargeContextSlots - CtxtTempFrameStart]
-							ifFalse: [SmallContextSlots - CtxtTempFrameStart].
-			 ^self stackPointerIndex + n <= cntxSize]
-		ifFalse: "simpler code that simply insists args are <= max arg count"
-			[^n <= (LargeContextSlots - CtxtTempFrameStart)]
+
+	^ n <= (LargeContextSlots - CtxtTempFrameStart)
 ]
 
-{ #category : #simulation }
+{ #category : 'simulation' }
 StackInterpreter >> runLeakChecker [
 	<doNotGenerate>
 	| oldCheckForLeaks |
@@ -13430,7 +13382,7 @@ StackInterpreter >> runLeakChecker [
 			[objectMemory setCheckForLeaks: oldCheckForLeaks]
 ]
 
-{ #category : #'frame access' }
+{ #category : 'frame access' }
 StackInterpreter >> safeFindFrameAbove: theFP on: thePage startingFrom: startFrame [
 	"Search for the previous frame to theFP (the frame that theFP calls).
 	 DO NOT CALL THIS WITH theFP == localFP OR theFP == framePointer!"
@@ -13454,7 +13406,7 @@ StackInterpreter >> safeFindFrameAbove: theFP on: thePage startingFrom: startFra
 	^nil
 ]
 
-{ #category : #'compiled methods' }
+{ #category : 'compiled methods' }
 StackInterpreter >> safeMethodClassOf: methodPointer [
 	"Safe version of methodClassOf: that deals with malformed compiled methods,
 	 etc, and does not fixup forwarding pointers.."
@@ -13470,7 +13422,7 @@ StackInterpreter >> safeMethodClassOf: methodPointer [
 	^maybeClass
 ]
 
-{ #category : #'primitive support' }
+{ #category : 'primitive support' }
 StackInterpreter >> saneFunctionPointerForFailureOfPrimIndex: primIndex [
 	| basePrimitive |
 	<var: 'basePrimitive' declareC: 'void (*basePrimitive)(void)'>
@@ -13480,7 +13432,7 @@ StackInterpreter >> saneFunctionPointerForFailureOfPrimIndex: primIndex [
 	  or: [(self isMetaPrimitiveIndex: primIndex) and: [metaAccessorDepth > -2]]]
 ]
 
-{ #category : #'compiled methods' }
+{ #category : 'compiled methods' }
 StackInterpreter >> saneMethodClassAssociationIn: methodObj numLiterals: numLiterals [
 	| shouldBeAssoc |
 	shouldBeAssoc := self literal: numLiterals - 1 ofMethod: methodObj.
@@ -13491,7 +13443,7 @@ StackInterpreter >> saneMethodClassAssociationIn: methodObj numLiterals: numLite
 	 and: [self addressCouldBeClassObj: (objectMemory noFixupFollowField: ValueIndex ofObject: shouldBeAssoc)]]
 ]
 
-{ #category : #'callback support' }
+{ #category : 'callback support' }
 StackInterpreter >> saveCStackStateForCallbackContext: vmCallbackContext [
 	<var: #vmCallbackContext type: #'VMCallbackContext *'>
 		
@@ -13504,20 +13456,20 @@ StackInterpreter >> saveCStackStateForCallbackContext: vmCallbackContext [
 	
 ]
 
-{ #category : #'process primitive support' }
+{ #category : 'process primitive support' }
 StackInterpreter >> schedulerPointer [
 
 	^ objectMemory fetchPointer: ValueIndex ofObject: (objectMemory splObj: SchedulerAssociation)
 ]
 
-{ #category : #'debug printing' }
+{ #category : 'debug printing' }
 StackInterpreter >> selectorOfContext: aContext [
 	(objectMemory isContext: aContext) ifFalse:
 		[^nil].
 	^self findSelectorOfMethod: (objectMemory fetchPointer: MethodIndex ofObject: aContext)
 ]
 
-{ #category : #'debug support' }
+{ #category : 'debug support' }
 StackInterpreter >> sendBreak: selectorString point: selectorLength receiver: receiverOrNil [
 	<doNotGenerate> "C version is in platforms/Cross/vm/dispdbg.h"
 	"self shortPrintFrameAndCallers: localFP"
@@ -13536,7 +13488,7 @@ StackInterpreter >> sendBreak: selectorString point: selectorLength receiver: re
 				ifFalse: [i := 0]]]
 ]
 
-{ #category : #'debug support' }
+{ #category : 'debug support' }
 StackInterpreter >> sendBreakpoint: selector receiver: rcvr [
 	<inline: true>
 	self sendBreak: (objectMemory firstFixedFieldOfMaybeImmediate: selector)
@@ -13544,7 +13496,19 @@ StackInterpreter >> sendBreakpoint: selector receiver: rcvr [
 		receiver: rcvr
 ]
 
-{ #category : #'send bytecodes' }
+{ #category : 'return bytecodes' }
+StackInterpreter >> sendCannotReturn: resultOop [
+	| ourContext |
+	<inline: true>
+	ourContext := self ensureFrameIsMarried: framePointer SP: stackPointer.
+	self push: ourContext.
+	self push: resultOop.
+	messageSelector := objectMemory splObj: SelectorCannotReturn.
+	argumentCount := 1.
+	^self normalSend
+]
+
+{ #category : 'send bytecodes' }
 StackInterpreter >> sendLiteralSelector0ArgsBytecode [
 	"Can use any of the first 16 literals for the selector."
 	| rcvr |
@@ -13556,7 +13520,7 @@ StackInterpreter >> sendLiteralSelector0ArgsBytecode [
 	self commonSendOrdinary
 ]
 
-{ #category : #'send bytecodes' }
+{ #category : 'send bytecodes' }
 StackInterpreter >> sendLiteralSelector1ArgBytecode [
 	"Can use any of the first 16 literals for the selector."
 	| rcvr |
@@ -13568,7 +13532,7 @@ StackInterpreter >> sendLiteralSelector1ArgBytecode [
 	self commonSendOrdinary
 ]
 
-{ #category : #'send bytecodes' }
+{ #category : 'send bytecodes' }
 StackInterpreter >> sendLiteralSelector2ArgsBytecode [
 	"Can use any of the first 16 literals for the selector."
 	| rcvr |
@@ -13580,7 +13544,7 @@ StackInterpreter >> sendLiteralSelector2ArgsBytecode [
 	self commonSendOrdinary
 ]
 
-{ #category : #'debug support' }
+{ #category : 'debug support' }
 StackInterpreter >> setBreakMNUSelector: aString [
 	<api>
 	<var: #aString type: #'char *'>
@@ -13589,7 +13553,7 @@ StackInterpreter >> setBreakMNUSelector: aString [
 		ifNotNil: [breakSelectorLength := (self strlen: aString) negated]
 ]
 
-{ #category : #'debug support' }
+{ #category : 'debug support' }
 StackInterpreter >> setBreakSelector: aString [
 	<api>
 	<var: #aString type: #'char *'>
@@ -13598,7 +13562,7 @@ StackInterpreter >> setBreakSelector: aString [
 		ifNotNil: [breakSelectorLength := self strlen: aString]
 ]
 
-{ #category : #'primitive support' }
+{ #category : 'primitive support' }
 StackInterpreter >> setCheckAllocFiller: aBool [
 	"If allocCheckFiller is true, words in newSpace from freeStart to scavengeThreshold
 	 are filled with their address, and after each call of a plugin primitive, the VM checks
@@ -13607,30 +13571,26 @@ StackInterpreter >> setCheckAllocFiller: aBool [
 	checkAllocFiller := aBool
 ]
 
-{ #category : #'internal interpreter access' }
+{ #category : 'internal interpreter access' }
 StackInterpreter >> setCogVMFlags: flags [
 	"Set an array of flags indicating various properties of the Cog VM.
 	 Bit 2: if set, implies preempting a process does not put it to the back of its run queue
-	 Bit 4: if set, implies the new finalization scheme where WeakArrays are queued
 	 Bit 5: if set, implies wheel events will be delivered as such and not mapped to arrow key events"
 	flags asUnsignedInteger > 63 ifTrue:
 		[^self primitiveFailFor: PrimErrUnsupported].
 	"processHasThreadId := flags anyMask: 1. specific to CoInterpreterMT"
 	"flagInterpretedMethods := flags anyMask: 2. specific to CoInterpreter"
 	preemptionYields := flags noMask: 4.
-	"noThreadingOfGUIThread := flags anyMask: 8.. specific to CoInterpreterMT"
-	newFinalization := flags anyMask: 16.
-	sendWheelEvents := flags anyMask: 32
 ]
 
-{ #category : #'internal interpreter access' }
+{ #category : 'internal interpreter access' }
 StackInterpreter >> setDesiredCogCodeSize: dccs [
 	<inline: true>
 	"This should perhaps be a no-op in the StackVM, but we implement it for the convenience of bootstrap scripts etc."
 	theUnknownShort := dccs
 ]
 
-{ #category : #'image save/restore' }
+{ #category : 'image save/restore' }
 StackInterpreter >> setDesiredEdenBytes: bytes [
 	<api>
 	<var: #bytes type: #usqLong>
@@ -13638,39 +13598,26 @@ StackInterpreter >> setDesiredEdenBytes: bytes [
 	^0
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 StackInterpreter >> setExtraVMMemory: anInteger [ 
 
 	extraVMMemory := anInteger
 ]
 
-{ #category : #'frame access' }
+{ #category : 'frame access' }
 StackInterpreter >> setFrameContext: theFP to: aContext [
 	<inline: true>
 	<var: #theFP type: #'char *'>
-	stackPages longAt: theFP + FoxThisContext put: aContext
+	stackPages unsignedLongAt: theFP + FoxThisContext put: aContext
 ]
 
-{ #category : #'frame access' }
-StackInterpreter >> setFrameHasContext: theFP [
-	"See encodeFrameFieldHasContext:numArgs:"
-	<inline: true>
-	<var: #theFP type: #'char *'>
-	stackPages byteAt: theFP + FoxFrameFlags + 2 put: 1
-]
-
-{ #category : #'plugin primitive support' }
-StackInterpreter >> setFullScreenFlag: value [
-	fullScreenFlag := value
-]
-
-{ #category : #'object memory support' }
+{ #category : 'object memory support' }
 StackInterpreter >> setGCMode: mode [
 	"This is a no-op in the StackVM"
 	^0
 ]
 
-{ #category : #'stack pages' }
+{ #category : 'stack pages' }
 StackInterpreter >> setHeadFP: theFP andSP: theSP inPage: thePage [
 	<inline: true>
 	<var: #theFP type: #'char *'>
@@ -13684,58 +13631,51 @@ StackInterpreter >> setHeadFP: theFP andSP: theSP inPage: thePage [
 	thePage headFP: theFP; headSP: theSP
 ]
 
-{ #category : #'image save/restore' }
+{ #category : 'frame access' }
+StackInterpreter >> setIFrameHasContext: theFP [
+	<inline: true>
+	<var: #theFP type: #'char *'>
+	stackPages byteAt: theFP + FoxFrameFlags + 2 put: 1
+]
+
+{ #category : 'image save/restore' }
 StackInterpreter >> setImageHeaderFlagsFrom: headerFlags [
 	"Set the flags that are contained in the 7th long of the image header."
 	imageHeaderFlags := headerFlags. "so as to preserve unrecognised flags."
-	fullScreenFlag := headerFlags bitAnd: 1.
 	imageFloatsBigEndian := (headerFlags noMask: 2) ifTrue: [1] ifFalse: [0].
 	"processHasThreadId := headerFlags anyMask: 4. specific to CoInterpreterMT"
 	"flagInterpretedMethods := headerFlags anyMask: 8. specific to CoInterpreter"
 	preemptionYields := headerFlags noMask: 16.
 	"noThreadingOfGUIThread := headerFlags anyMask: 32. specific to CoInterpreterMT"
-	newFinalization := headerFlags anyMask: 64.
-	sendWheelEvents := headerFlags anyMask: 128
 ]
 
-{ #category : #'simulation support' }
+{ #category : 'simulation support' }
 StackInterpreter >> setImageName: aString [ 
 	<doNotGenerate>
 	"Simulation support for when running it with an image"
 	self shouldNotImplement 
 ]
 
-{ #category : #'primitive support' }
-StackInterpreter >> setInterruptCheckChain: aFunction [
-	<var: #aFunction declareC: 'void (*aFunction)()'>
-	<var: #prevFunction declareC: 'void (*prevFunction)()'>
-	<returnTypeC: 'void (*setInterruptCheckChain(void (*aFunction)(void)))()'>
-	<export: true>
-	| prevFunction |
-	prevFunction := interruptCheckChain.
-	interruptCheckChain := aFunction.
-	^prevFunction
+{ #category : 'accessing' }
+StackInterpreter >> setImageVersion: aValue [
+
+	"It is a short value"
+	imageVersionNumber := aValue bitAnd: 16rFFFF
 ]
 
-{ #category : #'plugin primitive support' }
-StackInterpreter >> setInterruptPending: value [
-	self forceInterruptCheck.
-	interruptPending := value
-]
-
-{ #category : #'process primitive support' }
+{ #category : 'process primitive support' }
 StackInterpreter >> setMaxExtSemSizeTo: maxExtSemTabSize [
 	maxExtSemTabSizeSet := true.
 	self ioSetMaxExtSemTableSize: maxExtSemTabSize
 ]
 
-{ #category : #'debug printing' }
+{ #category : 'debug printing' }
 StackInterpreter >> setMaxStacksToPrint: anInteger [
 	<api>
 	maxStacksToPrint := anInteger
 ]
 
-{ #category : #'internal interpreter access' }
+{ #category : 'internal interpreter access' }
 StackInterpreter >> setMethod: aMethodObj [
 
 	"Set the method and determine the bytecode set based on the method header's sign."
@@ -13745,7 +13685,7 @@ StackInterpreter >> setMethod: aMethodObj [
 	self assert: (objectMemory isOopCompiledMethod: method)
 ]
 
-{ #category : #'internal interpreter access' }
+{ #category : 'internal interpreter access' }
 StackInterpreter >> setMethod: aMethodObj methodHeader: methodHeader [
 
 	"Set the method and determine the bytecode set based on the method header's sign."
@@ -13755,7 +13695,7 @@ StackInterpreter >> setMethod: aMethodObj methodHeader: methodHeader [
 	self assert: (objectMemory methodHeaderOf: method) = methodHeader
 ]
 
-{ #category : #'compiled methods' }
+{ #category : 'compiled methods' }
 StackInterpreter >> setMethodClassAssociationOf: methodPointer to: anObject [
 	objectMemory
 		storePointer: (objectMemory literalCountOf: methodPointer) + LiteralStart - 1
@@ -13763,14 +13703,14 @@ StackInterpreter >> setMethodClassAssociationOf: methodPointer to: anObject [
 		withValue: anObject
 ]
 
-{ #category : #'plugin primitive support' }
+{ #category : 'plugin primitive support' }
 StackInterpreter >> setNextWakeupUsecs: value [
 	<api>
 	<var: #value type: #usqLong>
 	nextWakeupUsecs := value
 ]
 
-{ #category : #'stack pages' }
+{ #category : 'stack pages' }
 StackInterpreter >> setNumStackPages: requestedNumPages [
 
 	"4 stack pages is small.  Should be able to run with as few as
@@ -13791,12 +13731,7 @@ StackInterpreter >> setNumStackPages: requestedNumPages [
 
 ]
 
-{ #category : #'plugin primitive support' }
-StackInterpreter >> setSavedWindowSize: value [
-	savedWindowSize := value
-]
-
-{ #category : #'process primitive support' }
+{ #category : 'process primitive support' }
 StackInterpreter >> setSignalLowSpaceFlagAndSaveProcess [
 	"The low space semaphore is about to be signaled. Set the signalLowSpace flag,
 	 and force an interrupt check.  Save the currently active process in the special
@@ -13818,7 +13753,7 @@ StackInterpreter >> setSignalLowSpaceFlagAndSaveProcess [
 	self forceInterruptCheck
 ]
 
-{ #category : #'stack pages' }
+{ #category : 'stack pages' }
 StackInterpreter >> setStackPageAndLimit: thePage [
 	"Set stackPage to a different page.  Set stackLimit unless it has
 	 been smashed.  Make the stackPage the most recently used"
@@ -13831,7 +13766,49 @@ StackInterpreter >> setStackPageAndLimit: thePage [
 	stackPages markStackPageMostRecentlyUsed: thePage
 ]
 
-{ #category : #'stack pages' }
+{ #category : 'frame access' }
+StackInterpreter >> setStackPageAndPointersForSuspendedContextOfProcess: aProcess [
+	"Set stackPage, instructionPointer, framePointer and stackPointer for the suspendedContext of
+	 aProcess, marrying the context if necessary, and niling the suspendedContext slot.  This is used
+	 on process switch to ensure a context has a stack frame and so can continue execution."
+	| newContext theFrame thePage newPage |
+	<inline: true>
+	<var: #theFrame type: #'char *'>
+	<var: #thePage type: #'StackPage *'>
+	<var: #newPage type: #'StackPage *'>
+	
+	newContext := objectMemory fetchPointer: SuspendedContextIndex ofObject: aProcess.
+	self assert: (objectMemory isContext: newContext).
+	(self isMarriedOrWidowedContext: newContext) ifTrue:
+		[self assert: (self checkIsStillMarriedContext: newContext currentFP: framePointer)].
+	objectMemory
+		storePointerUnchecked: SuspendedContextIndex
+		ofObject: aProcess
+		withValue: objectMemory nilObject.
+	(self isStillMarriedContext: newContext)
+		ifTrue:
+			[theFrame := self frameOfMarriedContext: newContext.
+			 thePage := stackPages stackPageFor: theFrame.
+			 theFrame ~= thePage headFP ifTrue:
+				["explicit assignment of suspendedContext can cause switch to interior frame."
+				 newPage := stackPages newStackPage.
+				 self moveFramesIn: thePage
+					through: (self findFrameAbove: theFrame inPage: thePage)
+					toPage: newPage.
+				  stackPages markStackPageLeastMostRecentlyUsed: newPage].
+			 self assert: thePage headFP = theFrame]
+		ifFalse:
+			[thePage := self makeBaseFrameFor: newContext.
+			 theFrame := thePage baseFP].
+	self setStackPageAndLimit: thePage.
+	self setStackPointersFromPage: thePage.
+	(self isMachineCodeFrame: framePointer) ifFalse:
+		[self setMethod: (self iframeMethod: framePointer)].
+	instructionPointer := self popStack.
+	self assertValidExecutionPointe: instructionPointer r: framePointer s: stackPointer
+]
+
+{ #category : 'stack pages' }
 StackInterpreter >> setStackPointersFromPage: thePage [
 	<var: #thePage type: #'StackPage *'>
 	<inline: true>
@@ -13839,7 +13816,7 @@ StackInterpreter >> setStackPointersFromPage: thePage [
 	framePointer := thePage headFP
 ]
 
-{ #category : #'object memory support' }
+{ #category : 'object memory support' }
 StackInterpreter >> setTraceFlagOnContextsFramesPageIfNeeded: aContext [
 	| thePage |
 	<inline: false>
@@ -13851,25 +13828,25 @@ StackInterpreter >> setTraceFlagOnContextsFramesPageIfNeeded: aContext [
 			[thePage trace: StackPageReachedButUntraced]]
 ]
 
-{ #category : #'stack pages' }
+{ #category : 'stack pages' }
 StackInterpreter >> shadowCallStackSize [
 	"1 MB shadow call stack size"
 	^ 1 *1024 * 1024
 ]
 
-{ #category : #'jump bytecodes' }
+{ #category : 'jump bytecodes' }
 StackInterpreter >> shortConditionalJumpFalse [
 
 	self jumplfFalseBy: (currentBytecode bitAnd: 7) + 1
 ]
 
-{ #category : #'jump bytecodes' }
+{ #category : 'jump bytecodes' }
 StackInterpreter >> shortConditionalJumpTrue [
 
 	self jumplfTrueBy: (currentBytecode bitAnd: 7) + 1
 ]
 
-{ #category : #simulation }
+{ #category : 'simulation' }
 StackInterpreter >> shortPrint: oop [
 	<doNotGenerate>
 	| name classOop key |
@@ -13944,7 +13921,7 @@ StackInterpreter >> shortPrint: oop [
 	^(('AEIOU' includes: name first) ifTrue: ['an '] ifFalse: ['a ']), name
 ]
 
-{ #category : #'debug printing' }
+{ #category : 'debug printing' }
 StackInterpreter >> shortPrintContext: aContext [
 	| theFP |
 	<inline: false>
@@ -13988,7 +13965,7 @@ StackInterpreter >> shortPrintContext: aContext [
 	self cr
 ]
 
-{ #category : #'debug printing' }
+{ #category : 'debug printing' }
 StackInterpreter >> shortPrintFrame: theFP [
 	<inline: false>
 	<var: #theFP type: #'char *'>
@@ -14008,7 +13985,7 @@ StackInterpreter >> shortPrintFrame: theFP [
 	rcvr := self frameReceiver: theFP.
 	self printHexPtr: theFP.
 	self space.
-	self printActivationNameFor: (self frameMethod: theFP)
+	self printActivationNameFor: (self iframeMethod: theFP)
 		receiver: rcvr
 		isBlock: (self frameIsBlockActivation: theFP)
 		firstTemporary: (self temporary: 0 in: theFP).
@@ -14016,7 +13993,7 @@ StackInterpreter >> shortPrintFrame: theFP [
 	self shortPrintOop: rcvr "shortPrintOop: adds a cr"
 ]
 
-{ #category : #'debug printing' }
+{ #category : 'debug printing' }
 StackInterpreter >> shortPrintFrame: theFP AndNCallers: n [
 	<api>
 	<inline: false>
@@ -14027,7 +14004,7 @@ StackInterpreter >> shortPrintFrame: theFP AndNCallers: n [
 		 self shortPrintFrame: (self frameCallerFP: theFP) AndNCallers: n - 1]
 ]
 
-{ #category : #'debug printing' }
+{ #category : 'debug printing' }
 StackInterpreter >> shortPrintFrameAndCallers: theFP [
 	<inline: false>
 	<var: #theFP type: #'char *'>
@@ -14037,14 +14014,14 @@ StackInterpreter >> shortPrintFrameAndCallers: theFP [
 		[self shortPrintFrameAndCallers: (self frameCallerFP: theFP)]
 ]
 
-{ #category : #'debug printing' }
+{ #category : 'debug printing' }
 StackInterpreter >> shortPrintFramesInCurrentPage [
 	<inline: false>
 	self resetStackPrintedCount.
 	self shortPrintFrameAndCallers: framePointer
 ]
 
-{ #category : #'debug printing' }
+{ #category : 'debug printing' }
 StackInterpreter >> shortPrintFramesInPage: thePage [
 	<export: true> "use export: not api, so it won't be written to cointerp.h. cogit.c is unaware of StackPage"
 	<inline: false>
@@ -14052,7 +14029,7 @@ StackInterpreter >> shortPrintFramesInPage: thePage [
 	self printFrameAndCallers: thePage headFP SP: thePage headSP short: true
 ]
 
-{ #category : #'debug printing' }
+{ #category : 'debug printing' }
 StackInterpreter >> shortPrintFramesOnStackPageListInUse [
 	<export: true>
 	| page |
@@ -14066,7 +14043,7 @@ StackInterpreter >> shortPrintFramesOnStackPageListInUse [
 	 (page := page prevPage) ~= stackPages mostRecentlyUsedPage] whileTrue
 ]
 
-{ #category : #'debug printing' }
+{ #category : 'debug printing' }
 StackInterpreter >> shortPrintOop: oop [
 	<inline: false>
 	self printHexnp: oop.
@@ -14096,7 +14073,7 @@ StackInterpreter >> shortPrintOop: oop [
 	self cr
 ]
 
-{ #category : #'debug printing' }
+{ #category : 'debug printing' }
 StackInterpreter >> shortReversePrintFrameAndCallers: aFramePointer [
 	| theFP callerFP caller |
 	<inline: false>
@@ -14116,19 +14093,19 @@ StackInterpreter >> shortReversePrintFrameAndCallers: aFramePointer [
 	^caller
 ]
 
-{ #category : #'jump bytecodes' }
+{ #category : 'jump bytecodes' }
 StackInterpreter >> shortUnconditionalJump [
 	<expandCases>
 	self jump: (currentBytecode bitAnd: 7) + 1.
 ]
 
-{ #category : #'I/O primitive support' }
+{ #category : 'I/O primitive support' }
 StackInterpreter >> showDisplayBits: aForm Left: l Top: t Right: r Bottom: b [
 	"Repaint the portion of the Smalltalk screen bounded by the affected rectangle. Used to synchronize the screen after a Bitblt to the Smalltalk Display object."
 	self updateDisplayLeft: l Top: t Right: r Bottom: b
 ]
 
-{ #category : #'send bytecodes' }
+{ #category : 'send bytecodes' }
 StackInterpreter >> shuffleArgumentsAndStoreAbsentReceiver: theReceiver [
 	"For the absent receiver sends move the arguments up the stack and store the supplied receiver."
 	<inline: true>
@@ -14140,12 +14117,13 @@ StackInterpreter >> shuffleArgumentsAndStoreAbsentReceiver: theReceiver [
 	self stackValue: argumentCount put: theReceiver
 ]
 
-{ #category : #'primitive support' }
+{ #category : 'primitive support' }
 StackInterpreter >> siglong: aJumpBuf jmp: returnValue [
+	<doNotGenerate>
 	^self long: aJumpBuf jmp: returnValue
 ]
 
-{ #category : #utilities }
+{ #category : 'utilities' }
 StackInterpreter >> signExtend16: int16 [
 	"Convert a signed 16-bit integer into a signed 32-bit integer value. The integer bit is not added here."
 
@@ -14154,7 +14132,7 @@ StackInterpreter >> signExtend16: int16 [
 		ifFalse: [ ^ int16 - 16r10000 ].
 ]
 
-{ #category : #'process primitive support' }
+{ #category : 'process primitive support' }
 StackInterpreter >> signalExternalSemaphores [
 	"Signal all requested semaphores.  Answer if a context switch has occurred."
 	| xArray |
@@ -14162,7 +14140,7 @@ StackInterpreter >> signalExternalSemaphores [
 	^self doSignalExternalSemaphores: (objectMemory numSlotsOf: xArray)
 ]
 
-{ #category : #'process primitive support' }
+{ #category : 'finalization' }
 StackInterpreter >> signalFinalization: weakReferenceOop [
 	"Record the fact that there is at least one object to finalize
 	 and cause the VM to check for interrupts at the earliest
@@ -14173,11 +14151,12 @@ StackInterpreter >> signalFinalization: weakReferenceOop [
 	pendingFinalizationSignals := pendingFinalizationSignals + 1
 ]
 
-{ #category : #'primitive support' }
+{ #category : 'primitive support' }
 StackInterpreter >> signed32BitIntegerFor: integerValue [
 	"Answer a full 32 bit integer object for the given integer value.
 	 N.B.  Returning in each arm separately enables Slang inlining.
 	 /Don't/ return the ifTrue:ifFalse: unless Slang inlining of conditionals is fixed."
+	<api>
 	<inline: true>
 	objectMemory hasSixtyFourBitImmediates
 		ifTrue:
@@ -14193,11 +14172,11 @@ StackInterpreter >> signed32BitIntegerFor: integerValue [
 			 ^self noInlineSigned32BitIntegerGutsFor: integerValue]
 ]
 
-{ #category : #'primitive support' }
+{ #category : 'primitive support' }
 StackInterpreter >> signed64BitIntegerFor: integerValue [
 
 	"Answer a Large Integer object for the given integer value.  N.B. will *not* cause a GC."
-
+	<api>
 	<var: 'integerValue' type: #sqLong>
 	<inline: false>
 	<var: 'magnitude' type: #usqLong>
@@ -14239,7 +14218,7 @@ StackInterpreter >> signed64BitIntegerFor: integerValue [
 	^ newLargeInteger
 ]
 
-{ #category : #'runtime support' }
+{ #category : 'runtime support' }
 StackInterpreter >> sigset: aJumpBuf jmp: sigSaveMask [
 	"Hack simulation of sigsetjmp/siglongjmp.
 	 Assign to reenterInterpreter the exception that when
@@ -14249,7 +14228,7 @@ StackInterpreter >> sigset: aJumpBuf jmp: sigSaveMask [
 	^0
 ]
 
-{ #category : #'sista bytecodes' }
+{ #category : 'sista bytecodes' }
 StackInterpreter >> sistaInlinePrimitive: prim [
 	"SistaV1:	248		11111000 	iiiiiiii		mjjjjjjj		Call Primitive #iiiiiiii + (jjjjjjj * 256) m=1 means inlined primitive, no hard return after execution. This is the dispatch for unmapped sista inlined primitives."
 	<option: #SistaVM>
@@ -14281,7 +14260,7 @@ StackInterpreter >> sistaInlinePrimitive: prim [
 	^ self jumpTrinaryInlinePrimitive: prim - 8000.
 ]
 
-{ #category : #'sista bytecodes' }
+{ #category : 'sista bytecodes' }
 StackInterpreter >> sistaMappedInlinePrimitive: primIndex [
 	"SistaV1:	236		11101100	iiiiiiii		callMappedInlinedPrimitive"
 	"Number of arguments:
@@ -14335,7 +14314,7 @@ StackInterpreter >> sistaMappedInlinePrimitive: primIndex [
 
 ]
 
-{ #category : #'compiled methods' }
+{ #category : 'compiled methods' }
 StackInterpreter >> sizeOfCallPrimitiveBytecode: methodHeader [
 
 	"Answer the size of the CallPrimitive bytecode that may be used to store a method's primitive.
@@ -14346,7 +14325,7 @@ StackInterpreter >> sizeOfCallPrimitiveBytecode: methodHeader [
 	^ 3
 ]
 
-{ #category : #'compiled methods' }
+{ #category : 'compiled methods' }
 StackInterpreter >> sizeOfLongStoreTempBytecode: methodHeader [
 	"234		11101010	i i i i i i i i	Store Temporary Variable #iiiiiiii"
 	"129 		10000001 jjkkkkkk 	Store (Receiver Variable, Temporary Location, Illegal, Literal Variable) [jj] #kkkkkk"
@@ -14354,7 +14333,7 @@ StackInterpreter >> sizeOfLongStoreTempBytecode: methodHeader [
 	^2
 ]
 
-{ #category : #utilities }
+{ #category : 'utilities' }
 StackInterpreter >> sizeOfSTArrayFromCPrimitive: cPtr [
 	"Return the number of indexable fields of the given object. This method is to be called from an automatically generated C primitive. The argument is assumed to be a pointer to the first indexable field of a words or bytes object; the object header starts 4 bytes before that."
 	"Note: Only called by translated primitive code."
@@ -14369,7 +14348,7 @@ StackInterpreter >> sizeOfSTArrayFromCPrimitive: cPtr [
 
 ]
 
-{ #category : #'primitive support' }
+{ #category : 'primitive support' }
 StackInterpreter >> slowPrimitiveResponse [
 	"Invoke a normal (non-quick) primitive.
 	 Called under the assumption that primFunctionPointer has been preloaded."
@@ -14404,15 +14383,25 @@ StackInterpreter >> slowPrimitiveResponse [
 	^self successful
 ]
 
-{ #category : #'image save/restore' }
-StackInterpreter >> snapshot: embedded [ 
+{ #category : 'image save/restore' }
+StackInterpreter >> snapshot [ 
 	"update state of active context"
-	| activeContext activeProc rcvr stackIndex |
+	| activeContext activeProc rcvr stackIndex newFormatToUse stackModified |
 
-	"For now the stack munging below doesn't deal with more than one argument.
-	 It can, and should."
-	argumentCount ~= 0 ifTrue:
-		[^self primitiveFailFor: PrimErrBadNumArgs].
+	argumentCount > 1 ifTrue:
+		[self primitiveFailFor: PrimErrBadNumArgs.
+		 ^ self justActivateNewMethod: false].
+	
+	argumentCount = 1 ifTrue: [ 
+		"Fetching the format to use, should be 3 -> ComposedFormatForced or 4 -> SpurFormatForced See VMImageReadedWriter"
+		newFormatToUse := self stackIntegerValue: 0.
+		(newFormatToUse between: 3 and: 4)
+			ifTrue: [ imageReaderWriter setFormatToUse: newFormatToUse ]
+			ifFalse: [ 
+				self primitiveFailFor: PrimErrBadArgument.
+				^ self justActivateNewMethod: false ]].
+
+	stackModified := false.
 
 	"Need to convert all frames into contexts since the snapshot file only holds objects."
 	self push: instructionPointer.
@@ -14434,18 +14423,29 @@ StackInterpreter >> snapshot: embedded [
 	activeContext := tempOop.
 	tempOop := 0.
 
-
 	self successful ifTrue:
 		["Without contexts or stacks simulate
+			arg := self popStack. ""If we have to...""
 			rcvr := self popStack. ''pop rcvr''
 			self push: trueObj.
 		  to arrange that the snapshot resumes with true.  N.B. stackIndex is one-relative."
 		stackIndex := self quickFetchInteger: StackPointerIndex ofObject: activeContext.
+
+		argumentCount = 1 ifTrue: [ 
+			"Pop Argument"
+			stackIndex := stackIndex - 1.
+			self storeInteger: StackPointerIndex ofObject: activeContext  withValue: stackIndex.
+		].
+		
 		rcvr := objectMemory fetchPointer: stackIndex + CtxtTempFrameStart - 1 ofObject: activeContext.
+
 		objectMemory
 			storePointerUnchecked: stackIndex + CtxtTempFrameStart - 1
 			ofObject: activeContext
 			withValue: objectMemory trueObject.
+
+		stackModified := true.
+
 		"now attempt to write the snapshot file"		
 		self writeImageFileIO.
 		"Without contexts or stacks simulate
@@ -14457,26 +14457,30 @@ StackInterpreter >> snapshot: embedded [
 
 	objectMemory postSnapshot.
 	self marryContextInNewStackPageAndInitializeInterpreterRegisters: activeContext.
+
 	self successful
 		ifTrue: [self push: objectMemory falseObject]
 		ifFalse:
-			[self push: rcvr.
+			[
+			stackModified ifTrue: [ 
+				self push: rcvr.
+				argumentCount = 1 ifTrue: [ self pushInteger: newFormatToUse  ]].
 			 self justActivateNewMethod: true] "no point checking for machine code; there isn't any at this point"
 ]
 
-{ #category : #'debug printing' }
+{ #category : 'debug printing' }
 StackInterpreter >> space [
 	<inline: true>
 	self printChar: $ 
 ]
 
-{ #category : #'message sending' }
+{ #category : 'message sending' }
 StackInterpreter >> specialSelector: index [
 	<api>
 	^objectMemory fetchPointer: (index * 2) ofObject: (objectMemory splObj: SpecialSelectors)
 ]
 
-{ #category : #'message sending' }
+{ #category : 'message sending' }
 StackInterpreter >> specialSelector: index put: aValue [
 	<doNotGenerate>
 	^objectMemory
@@ -14485,18 +14489,22 @@ StackInterpreter >> specialSelector: index put: aValue [
 		withValue: aValue
 ]
 
-{ #category : #'message sending' }
+{ #category : 'message sending' }
 StackInterpreter >> specialSelectorArray: anOop [
 	<doNotGenerate>
 	objectMemory splObj: SpecialSelectors put: anOop
 ]
 
-{ #category : #'message sending' }
+{ #category : 'message sending' }
 StackInterpreter >> specialSelectorNumArgs: index [
-	^objectMemory integerValueOf: (objectMemory fetchPointer: (index * 2) + 1 ofObject: (objectMemory splObj: SpecialSelectors))
+
+	<api>
+	^ objectMemory integerValueOf: (objectMemory
+			   fetchPointer: index * 2 + 1
+			   ofObject: (objectMemory splObj: SpecialSelectors))
 ]
 
-{ #category : #'indexing primitive support' }
+{ #category : 'indexing primitive support' }
 StackInterpreter >> stObject: array at: index [
 	"Return what ST would return for <obj> at: index."
 
@@ -14522,7 +14530,7 @@ StackInterpreter >> stObject: array at: index [
 	^0
 ]
 
-{ #category : #'indexing primitive support' }
+{ #category : 'indexing primitive support' }
 StackInterpreter >> stObject: array at: index put: value [
 	"Do what ST would return for <obj> at: index put: value."
 	| hdr fmt totalLength fixedFields stSize |
@@ -14542,7 +14550,7 @@ StackInterpreter >> stObject: array at: index put: value [
 	^value
 ]
 
-{ #category : #'indexing primitive support' }
+{ #category : 'indexing primitive support' }
 StackInterpreter >> stSizeOf: oop [
 	"Return the number of indexable fields in the given object. (i.e., what Smalltalk would return for <obj> size)."
 	"Note: Assume oop is not a SmallInteger!"
@@ -14558,14 +14566,14 @@ StackInterpreter >> stSizeOf: oop [
 	^totalLength - fixedFields
 ]
 
-{ #category : #'stack access' }
+{ #category : 'stack access' }
 StackInterpreter >> stackFloatValue: offset [
 	"In the StackInterpreter stacks grow down."
 	<returnTypeC: #double>
 	^objectMemory floatValueOf: (stackPages unsignedLongAt: stackPointer + (offset*objectMemory wordSize))
 ]
 
-{ #category : #'stack access' }
+{ #category : 'stack access' }
 StackInterpreter >> stackIntegerValue: offset [
 	"In the StackInterpreter stacks grow down."
 	| integerPointer |
@@ -14573,14 +14581,14 @@ StackInterpreter >> stackIntegerValue: offset [
 	^self checkedIntegerValueOf: integerPointer
 ]
 
-{ #category : #'stack pages' }
+{ #category : 'stack pages' }
 StackInterpreter >> stackLimitBytes [
 	"Answer the actual stackLimit offset in a page.  Since stackPageByteSize may have chosen to shrink a page
 	 this may be less than stackPageFrameBytes, but it should be no more than stackPageFrameBytes."
 	^self stackPageFrameBytes min: self stackPageByteSize - self stackLimitOffset - self stackPageHeadroom.
 ]
 
-{ #category : #'stack pages' }
+{ #category : 'stack pages' }
 StackInterpreter >> stackLimitOffset [
 	"Answer the amount of slots needed to fit a new frame at the point the stack
 	 limit is checked.  A frame looks like this at the point the stack limit is checked:
@@ -14605,7 +14613,7 @@ StackInterpreter >> stackLimitOffset [
 	^(FrameSlots + 64) * objectMemory wordSize
 ]
 
-{ #category : #'stack access' }
+{ #category : 'stack access' }
 StackInterpreter >> stackObjectValue: offset [
 	"Ensures that the given object is a real object, not a SmallInteger."
 	"In the StackInterpreter stacks grow down."
@@ -14616,12 +14624,12 @@ StackInterpreter >> stackObjectValue: offset [
 	^oop
 ]
 
-{ #category : #'as yet unclassified' }
+{ #category : 'as yet unclassified' }
 StackInterpreter >> stackPage: aCogStackPage [ 
 	stackPage := aCogStackPage
 ]
 
-{ #category : #'stack pages' }
+{ #category : 'stack pages' }
 StackInterpreter >> stackPageByteSize [
 	"Answer a page size that is a power-of-two and contains a useful number of frames.
 	 Room for 256 slots for frames gives around 40 frames a page which is a
@@ -14641,7 +14649,7 @@ StackInterpreter >> stackPageByteSize [
 		ifFalse: [largeSize]
 ]
 
-{ #category : #'stack pages' }
+{ #category : 'stack pages' }
 StackInterpreter >> stackPageFrameBytes [
 	"Answer a byte size that accomodates a useful number of frames.  The minimum frame size is
 	 7 slots in the StackInterpreter, and 6 slots in the CoInterpreter, and the maximum size is 56 + 7
@@ -14652,7 +14660,7 @@ StackInterpreter >> stackPageFrameBytes [
 	^256 * objectMemory wordSize
 ]
 
-{ #category : #'stack pages' }
+{ #category : 'stack pages' }
 StackInterpreter >> stackPageHeadroom [
 	"Return a minimum amount of headroom for each stack page (in bytes).
 	 In a JIT the stack has to have room for interrupt handlers which will run on the
@@ -14660,44 +14668,45 @@ StackInterpreter >> stackPageHeadroom [
 	^0
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 StackInterpreter >> stackPages: anInterpreterStackPages [
 	<doNotGenerate>
 	1halt.
 	stackPages := anInterpreterStackPages
 ]
 
-{ #category : #initialization }
+{ #category : 'initialization' }
 StackInterpreter >> stackPagesClass [
 	<doNotGenerate>
 	^VMBIGENDIAN
-		ifTrue: [InterpreterStackPagesMSB]
-		ifFalse: [InterpreterStackPagesLSB]
+		ifTrue: [VMStackPagesMSB]
+		ifFalse: [VMStackPagesLSB]
 ]
 
-{ #category : #initialization }
+{ #category : 'initialization' }
 StackInterpreter >> stackPagesInitializedAt: theStackMemory totalSize: stackPagesBytes pageSize: stackPageBytes [
 
 	"Nothing to do, a nice hook for CoInterpreter"
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 StackInterpreter >> stackPointer [
 	<doNotGenerate>
 	^stackPointer
 ]
 
-{ #category : #'cog jit support' }
+{ #category : 'cog jit support' }
 StackInterpreter >> stackPointer: theSP [
 	"Simulation only"
 	<doNotGenerate>
 	stackPointer := theSP
 ]
 
-{ #category : #'internal interpreter access' }
+{ #category : 'internal interpreter access' }
 StackInterpreter >> stackPointerForMaybeMarriedContext: aContext [
 	"Return the stackPointer of a Context or BlockContext."
 	| sp |
+	<var: 'sp' type: 'sqInt'>
 	<inline: true>
 	(self isStillMarriedContext: aContext) ifTrue:
 		[sp := self stackPointerIndexForFrame: (self frameOfMarriedContext: aContext).
@@ -14706,14 +14715,14 @@ StackInterpreter >> stackPointerForMaybeMarriedContext: aContext [
 	^self fetchStackPointerOf: aContext
 ]
 
-{ #category : #'internal interpreter access' }
+{ #category : 'internal interpreter access' }
 StackInterpreter >> stackPointerIndex [
 	"Return the 1-based value of the stack pointer for the current frame.
 	 This is what the value of the stackp slot would be in a context object."
 	^self stackPointerIndexForFrame: framePointer WithSP: stackPointer
 ]
 
-{ #category : #'frame access' }
+{ #category : 'frame access' }
 StackInterpreter >> stackPointerIndexForFrame: theFP [
 	"Return the 0-based index rel to the given frame.
 	 (This is what stackPointer used to be before conversion to pointer)"
@@ -14723,19 +14732,23 @@ StackInterpreter >> stackPointerIndexForFrame: theFP [
 	<var: #theFP type: #'char *'>
 	<var: #thePage type: #'StackPage *'>
 	<var: #theSP type: #'char *'>
+	<returnTypeC: #sqInt>
 	thePage := stackPages stackPageFor: theFP.
 	theSP := self findSPOf: theFP on: thePage.
 	^self stackPointerIndexForFrame: theFP WithSP: theSP
 ]
 
-{ #category : #'frame access' }
+{ #category : 'frame access' }
 StackInterpreter >> stackPointerIndexForFrame: theFP WithSP: theSP [
 	"Return the 1-based index rel to the given frame"
+
 	"In the StackInterpreter stacks grow down."
-	^(((theFP + FoxReceiver) - theSP) >> objectMemory shiftForWord) + (self frameNumArgs: theFP)
+
+	^ (self frameReceiverLocation: theFP) - theSP
+	  >> objectMemory shiftForWord + (self frameNumArgs: theFP)
 ]
 
-{ #category : #'stack access' }
+{ #category : 'stack access' }
 StackInterpreter >> stackPositiveMachineIntegerValue: offset [
 	<api>
 	<returnTypeC: #'usqIntptr_t'>
@@ -14745,7 +14758,7 @@ StackInterpreter >> stackPositiveMachineIntegerValue: offset [
 	^self positiveMachineIntegerValueOf: integerPointer
 ]
 
-{ #category : #'stack access' }
+{ #category : 'stack access' }
 StackInterpreter >> stackSignedMachineIntegerValue: offset [
 	<api>
 	<returnTypeC: #'sqIntptr_t'>
@@ -14755,54 +14768,55 @@ StackInterpreter >> stackSignedMachineIntegerValue: offset [
 	^self signedMachineIntegerValueOf: integerPointer
 ]
 
-{ #category : #'stack access' }
+{ #category : 'stack access' }
 StackInterpreter >> stackTop [
 	<api>
 	^stackPages unsignedLongAt: stackPointer
 ]
 
-{ #category : #'stack access' }
+{ #category : 'stack access' }
 StackInterpreter >> stackTopPut: aValue [
 
-	^stackPages longAtPointer: stackPointer put: aValue
+	^stackPages unsignedLongAt: stackPointer put: aValue
 ]
 
-{ #category : #'internal interpreter access' }
+{ #category : 'internal interpreter access' }
 StackInterpreter >> stackTopPutIntegerObjectOf: aValue [
 
 	^ self stackTopPut: (objectMemory integerObjectOf: aValue)
 ]
 
-{ #category : #'stack access' }
+{ #category : 'stack access' }
 StackInterpreter >> stackValue: offset [
 	<api>
 	"In the StackInterpreter stacks grow down."
 	^stackPages unsignedLongAt: stackPointer + (offset*objectMemory wordSize)
 ]
 
-{ #category : #'stack access' }
+{ #category : 'stack access' }
 StackInterpreter >> stackValue: offset put: oop [
 	"In the StackInterpreter stacks grow down."
 	^stackPages
-		longAt: stackPointer + (offset*objectMemory wordSize)
+		unsignedLongAt: stackPointer + (offset*objectMemory wordSize)
 		put: oop
 ]
 
-{ #category : #'compiled methods' }
+{ #category : 'compiled methods' }
 StackInterpreter >> startPCOfMethod: aCompiledMethod [
 	<api>
 	"Zero-relative version of CompiledMethod>>startpc."
 	^(objectMemory literalCountOf: aCompiledMethod) + LiteralStart * objectMemory bytesPerOop
 ]
 
-{ #category : #'compiled methods' }
+{ #category : 'compiled methods' }
 StackInterpreter >> startPCOfMethodHeader: methodHeader [
 	"Answer the zero-relative index to the initial byte for a method.
 	 Zero-relative version of CompiledMethod>>startpc."
+	<api>
 	^(objectMemory literalCountOfMethodHeader: methodHeader) + LiteralStart * objectMemory bytesPerOop
 ]
 
-{ #category : #'stack bytecodes' }
+{ #category : 'stack bytecodes' }
 StackInterpreter >> storeAndPopReceiverVariableBytecode [
 
 	| rcvr top instVarIndex |
@@ -14817,13 +14831,13 @@ StackInterpreter >> storeAndPopReceiverVariableBytecode [
 	self fetchNextBytecode
 ]
 
-{ #category : #'stack bytecodes' }
+{ #category : 'stack bytecodes' }
 StackInterpreter >> storeAndPopRemoteTempLongBytecode [
 	self storeRemoteTempLongBytecode.
 	self pop: 1
 ]
 
-{ #category : #'stack bytecodes' }
+{ #category : 'stack bytecodes' }
 StackInterpreter >> storeAndPopTemporaryVariableBytecode [
 
 	<expandCases>
@@ -14831,20 +14845,20 @@ StackInterpreter >> storeAndPopTemporaryVariableBytecode [
 		cCode: [ "this bytecode will be expanded so that refs to currentBytecode below will be constant"
 			self fetchNextBytecode.
 			self
-				temporary: (currentBytecode bitAnd: 7)
+				itemporary: (currentBytecode bitAnd: 7)
 				in: framePointer
 				put: self stackTop.
 			self pop: 1 ]
 		inSmalltalk: [ "Interpreter version has fetchNextBytecode out of order"
 			self
-				temporary: (currentBytecode bitAnd: 7)
+				itemporary: (currentBytecode bitAnd: 7)
 				in: framePointer
 				put: self stackTop.
 			self fetchNextBytecode.
 			self pop: 1 ]
 ]
 
-{ #category : #'simd bytecodes' }
+{ #category : 'simd bytecodes' }
 StackInterpreter >> storeFloat32RegisterIntoArrayBytecode [
 	| reg index array |
 	array := self stackValue: 0.
@@ -14859,7 +14873,7 @@ StackInterpreter >> storeFloat32RegisterIntoArrayBytecode [
 	self pop: 3 thenPush: array.
 ]
 
-{ #category : #'simd bytecodes' }
+{ #category : 'simd bytecodes' }
 StackInterpreter >> storeFloat64RegisterIntoArrayBytecode [
 	| reg index array |
 	array := self stackValue: 0.
@@ -14872,7 +14886,7 @@ StackInterpreter >> storeFloat64RegisterIntoArrayBytecode [
 	self pop: 3 thenPush: array.
 ]
 
-{ #category : #utilities }
+{ #category : 'utilities' }
 StackInterpreter >> storeInteger: fieldIndex ofObject: objectPointer withValue: integerValue [ 
 	"Note: May be called by translated primitive code."
 	(objectMemory isIntegerValue: integerValue)
@@ -14882,21 +14896,20 @@ StackInterpreter >> storeInteger: fieldIndex ofObject: objectPointer withValue: 
 	^nil
 ]
 
-{ #category : #'stack bytecodes' }
+{ #category : 'stack bytecodes' }
 StackInterpreter >> storeLiteralVariable: literalIndex withValue: anObject [
-	| litVar |
-	litVar := self literal: literalIndex.
 	"push/store/popLiteralVariable all fetch a literal, and either read or write the literal's value field.
 	 The fetch of the literal needs an explicit check (otherwise we would have to scan all literals in
 	 all methods in the stack zone, and the entire method on return, and global variables are relatively
 	 rare; in my work image 8.7% of literals are globals)."
 
-	(objectMemory isForwarded: litVar) ifTrue:
-		[litVar := self unfollow: litVar atIndex: literalIndex].
+
+	| litVar |
+	litVar := self literalMaybeForwarder: literalIndex.
 	objectMemory storePointerImmutabilityCheck: ValueIndex ofObject: litVar withValue: anObject
 ]
 
-{ #category : #'stack bytecodes' }
+{ #category : 'stack bytecodes' }
 StackInterpreter >> storeMaybeContext: obj receiverVariable: fieldIndex withValue: anOop [
 	"Must trap accesses to married and widowed contexts.
 	 But don't want to check on all inst var accesses.  This
@@ -14912,7 +14925,7 @@ StackInterpreter >> storeMaybeContext: obj receiverVariable: fieldIndex withValu
 			[objectMemory storePointerImmutabilityCheck: fieldIndex ofObject: obj withValue: anOop]
 ]
 
-{ #category : #'stack bytecodes' }
+{ #category : 'stack bytecodes' }
 StackInterpreter >> storeMaybeContextReceiverVariable: fieldIndex withValue: anObject [
 	"Must trap accesses to married and widowed contexts.
 	 But don't want to check on all inst var accesses.  This
@@ -14921,11 +14934,11 @@ StackInterpreter >> storeMaybeContextReceiverVariable: fieldIndex withValue: anO
 
 ]
 
-{ #category : #'stack bytecodes' }
+{ #category : 'stack bytecodes' }
 StackInterpreter >> storeRemoteTemp: index inVectorAt: tempVectorIndex [
 
 	| tempVector |
-	tempVector := self temporary: tempVectorIndex in: framePointer.
+	tempVector := self itemporary: tempVectorIndex in: framePointer.
 	TempVectReadBarrier ifTrue: [ 
 		(objectMemory isForwarded: tempVector) ifTrue: [ 
 			tempVector := self
@@ -14938,7 +14951,7 @@ StackInterpreter >> storeRemoteTemp: index inVectorAt: tempVectorIndex [
 		withValue: self stackTop
 ]
 
-{ #category : #'stack bytecodes' }
+{ #category : 'stack bytecodes' }
 StackInterpreter >> storeRemoteTempLongBytecode [
 	| remoteTempIndex tempVectorIndex |
 	remoteTempIndex := self fetchByte.
@@ -14947,7 +14960,7 @@ StackInterpreter >> storeRemoteTempLongBytecode [
 	self storeRemoteTemp: remoteTempIndex inVectorAt: tempVectorIndex
 ]
 
-{ #category : #'frame access' }
+{ #category : 'frame access' }
 StackInterpreter >> storeSenderOfFrame: theFP withValue: anOop [
 	"Set the sender of a frame.  If the frame is a base frame then this is trivial;
 	 merely store into the FoxCallerSavedIP/FoxCallerContext field.  If not, then
@@ -14980,7 +14993,7 @@ StackInterpreter >> storeSenderOfFrame: theFP withValue: anOop [
 	^theMovedFP
 ]
 
-{ #category : #'internal interpreter access' }
+{ #category : 'internal interpreter access' }
 StackInterpreter >> storeStackPointerValue: value inContext: aContext [
 	"Assume: value is an integerValue"
 	self assert: ReceiverIndex + value < (objectMemory lengthOf: aContext).
@@ -14989,7 +15002,7 @@ StackInterpreter >> storeStackPointerValue: value inContext: aContext [
 		withValue: (objectMemory integerObjectOf: value)
 ]
 
-{ #category : #'debug support' }
+{ #category : 'debug support' }
 StackInterpreter >> stringOf: oop [
 	<doNotGenerate>
 	| size long nLongs chars |
@@ -14998,14 +15011,14 @@ StackInterpreter >> stringOf: oop [
 		size := 128 min: (self stSizeOf: oop).
 		nLongs := size-1//objectMemory wordSize+1.
 		1 to: nLongs do:
-			[:i | long := objectMemory longAt: oop + objectMemory baseHeaderSize + (i-1*objectMemory wordSize).
+			[:i | long := objectMemory unsignedLongAt: oop + objectMemory baseHeaderSize + (i-1*objectMemory wordSize).
 			chars := self charsOfLong: long.
 			strm nextPutAll: (i=nLongs
 							ifTrue: [chars copyFrom: 1 to: size-1\\objectMemory wordSize+1]
 							ifFalse: [chars])]]
 ]
 
-{ #category : #'simd bytecodes' }
+{ #category : 'simd bytecodes' }
 StackInterpreter >> subFloat64VectorBytecode [
 
 	<var: #tmp type: #double>
@@ -15026,7 +15039,7 @@ StackInterpreter >> subFloat64VectorBytecode [
 	self pop: 2 thenPush: res
 ]
 
-{ #category : #'indexing primitive support' }
+{ #category : 'indexing primitive support' }
 StackInterpreter >> subscript: array with: index format: fmt [
 
 	"Note: This method assumes that the index is within bounds!"
@@ -15048,7 +15061,7 @@ StackInterpreter >> subscript: array with: index format: fmt [
 		  (objectMemory fetchLong32: index - 1 ofObject: array)
 ]
 
-{ #category : #'indexing primitive support' }
+{ #category : 'indexing primitive support' }
 StackInterpreter >> subscript: array with: index storing: oopToStore format: fmt [ 
 	"Note: This method assumes that the index is within bounds!"
 	| signedValueToStore unsignedValueToStore |
@@ -15088,17 +15101,17 @@ StackInterpreter >> subscript: array with: index storing: oopToStore format: fmt
 		[objectMemory storeLong32: index - 1 ofObject: array withValue: unsignedValueToStore]
 ]
 
-{ #category : #'process primitive support' }
+{ #category : 'process primitive support' }
 StackInterpreter >> supendActiveProcess [
 	<api>
 	
 	| activeProc |
 	activeProc := self activeProcess.
-	self transferTo: self wakeHighestPriority.
+	self transferTo: self wakeHighestPriority from: CSCallbackEnter.
 	^ activeProc
 ]
 
-{ #category : #'message sending' }
+{ #category : 'message sending' }
 StackInterpreter >> superclassOf: classPointer [
 	"Using a read barrier here simplifies the become implementation and costs very
 	 little because the class index and superclass almost certainly share a cache line."
@@ -15106,7 +15119,7 @@ StackInterpreter >> superclassOf: classPointer [
 	^objectMemory followField: SuperclassIndex ofObject: classPointer
 ]
 
-{ #category : #'send bytecodes' }
+{ #category : 'send bytecodes' }
 StackInterpreter >> superclassSend [
 	"Send a message to self, starting lookup with the superclass of the class
 	 containing the currently executing method."
@@ -15127,7 +15140,7 @@ StackInterpreter >> superclassSend [
 	self commonSendOrdinary
 ]
 
-{ #category : #'debug support' }
+{ #category : 'debug support' }
 StackInterpreter >> symbolicMethod: aMethod [
 	<doNotGenerate>
 	 self transcript
@@ -15151,10 +15164,11 @@ StackInterpreter >> symbolicMethod: aMethod [
 		flush
 ]
 
-{ #category : #'process primitive support' }
+{ #category : 'process primitive support' }
 StackInterpreter >> synchronousSignal: aSemaphore [ 
 	"Signal the given semaphore from within the interpreter.
-	 Answer if the current process was preempted."
+	 Answer if the current process was preempted.
+	 Override to add tracing info."
 	| excessSignals |
 	<inline: false>
 	(self isEmptyList: aSemaphore) ifTrue:
@@ -15169,72 +15183,67 @@ StackInterpreter >> synchronousSignal: aSemaphore [
 
 	^self resume: (self removeFirstLinkOfList: aSemaphore)
 		preemptedYieldingIf: preemptionYields
+		from: CSSignal
 ]
 
-{ #category : #'debug printing' }
+{ #category : 'debug printing' }
 StackInterpreter >> tab [
 	<inline: true>
 	self printChar: $	"<-Character tab"
 ]
 
-{ #category : #'compiled methods' }
+{ #category : 'compiled methods' }
 StackInterpreter >> tempCountOf: methodPointer [
 	<api>
 	^self temporaryCountOfMethodHeader: (objectMemory methodHeaderOf: methodPointer)
 ]
 
-{ #category : #'internal interpreter access' }
+{ #category : 'internal interpreter access' }
 StackInterpreter >> temporary: offset in: theFP [
-	"See StackInterpreter class>>initializeFrameIndices"
-	| frameNumArgs |
+
 	<inline: true>
 	<var: #theFP type: #'char *'>
-	^offset < (frameNumArgs := self frameNumArgs: theFP)
-		ifTrue: [stackPages unsignedLongAt: theFP + FoxCallerSavedIP + ((frameNumArgs - offset) * objectMemory wordSize)]
-		ifFalse: [stackPages unsignedLongAt: theFP + FoxReceiver - objectMemory wordSize + ((frameNumArgs - offset) * objectMemory wordSize)]
+	^ self itemporary: offset in: theFP
 ]
 
-{ #category : #'internal interpreter access' }
+{ #category : 'internal interpreter access' }
 StackInterpreter >> temporary: offset in: theFP put: valueOop [
-	"See StackInterpreter class>>initializeFrameIndices"
-	| frameNumArgs |
-	<inline: true>
-	<var: #theFP type: #'char *'>
-	^offset < (frameNumArgs := self frameNumArgs: theFP)
-		ifTrue: [stackPages longAt: theFP + FoxCallerSavedIP + ((frameNumArgs - offset) * objectMemory wordSize) put: valueOop]
-		ifFalse: [stackPages longAt: theFP + FoxReceiver - objectMemory wordSize + ((frameNumArgs - offset) * objectMemory wordSize) put: valueOop]
+
+	^ self itemporary: offset in: theFP put: valueOop
 ]
 
-{ #category : #'compiled methods' }
+{ #category : 'compiled methods' }
 StackInterpreter >> temporaryCountOfMethodHeader: header [
 	<api>
 	<inline: true>
 	^header >> MethodHeaderTempCountShift bitAnd: 16r3F
 ]
 
-{ #category : #'internal interpreter access' }
+{ #category : 'internal interpreter access' }
 StackInterpreter >> temporaryLocation: offset in: theFP numArgs: numArgs [
 	"Answer the pointer to a given temporary (for debug frame printing in odd circumstances)"
 	<var: #theFP type: #'char *'>
 	<returnTypeC: #'char *'>
 	^offset < numArgs
 		ifTrue: [theFP + FoxCallerSavedIP + ((numArgs - offset) * objectMemory wordSize)]
-		ifFalse: [theFP + FoxReceiver - objectMemory wordSize + ((numArgs - offset) * objectMemory wordSize)]
+		ifFalse: [
+			(self frameReceiverLocation: theFP) - objectMemory wordSize
+			+ ((numArgs - offset) * objectMemory wordSize)]
 ]
 
-{ #category : #simulation }
+{ #category : 'simulation' }
 StackInterpreter >> thisClassIndex [
 	<doNotGenerate>
 	^thisClassIndex
 ]
 
-{ #category : #simulation }
+{ #category : 'simulation' }
 StackInterpreter >> time: aString [ 
 	<doNotGenerate>
 	^ 0
 ]
 
-{ #category : #'object memory support' }
+{ #category : 'object memory support' }
 StackInterpreter >> traceProfileState [
 	self followForwardingPointersInProfileState.
 	objectMemory markAndTrace: profileProcess.
@@ -15257,40 +15266,47 @@ StackInterpreter >> traceProfileState [
 		 objectMemory markAndTrace: longRunningPrimitiveCheckSemaphore]
 ]
 
-{ #category : #'process primitive support' }
-StackInterpreter >> transferTo: newProc [ 
+{ #category : 'process primitive support' }
+StackInterpreter >> transferTo: newProc from: sourceCode [
 	"Record a process to be awoken on the next interpreter cycle."
 	| activeContext sched oldProc |
 	<inline: false>
 	statProcessSwitch := statProcessSwitch + 1.
 	self push: instructionPointer.
-	self externalWriteBackHeadFramePointers.
-	self assertValidExecutionPointe: instructionPointer + 1 r: framePointer s: stackPointer.
+	self writeBackHeadFramePointers.
+	self assertValidExecutionPointe: instructionPointer r: framePointer s: stackPointer.
+	
+	"ensureMethodIsCogged: in makeBaseFrameFor: in
+	 externalSetStackPageAndPointersForSuspendedContextOfProcess:
+	 below may do a code compaction. Nil instructionPointer to avoid it getting pushed twice."
+	instructionPointer := 0.
 	sched := self schedulerPointer.
 	oldProc := objectMemory fetchPointer: ActiveProcessIndex ofObject: sched.
+	self recordContextSwitchFrom: oldProc in: sourceCode.
+
 	activeContext := self ensureFrameIsMarried: framePointer SP: stackPointer + objectMemory wordSize.
 	objectMemory storePointer: SuspendedContextIndex ofObject: oldProc withValue: activeContext.
 	objectMemory storePointer: ActiveProcessIndex ofObject: sched withValue: newProc.
 	objectMemory storePointerUnchecked: MyListIndex ofObject: newProc withValue: objectMemory nilObject.
-	self externalSetStackPageAndPointersForSuspendedContextOfProcess: newProc
+	self setStackPageAndPointersForSuspendedContextOfProcess: newProc
 ]
 
-{ #category : #'sista bytecodes' }
+{ #category : 'sista bytecodes' }
 StackInterpreter >> trinaryAtPutInlinePrimitive: primIndex [
 
 	<option: #SistaVM>
 	| result rec argIntAdjusted arg1 |
 	arg1 := self stackValue: 1.
 	rec := self stackValue: 2.
-	self deny: ((objectMemory isOopForwarded: rec) or: [ 
+	self deny: ((objectMemory isOopForwarded: rec) or: [
 			 objectMemory isImmediate: rec ]).
 	self assert: (objectMemory isIntegerObject: arg1).
 	argIntAdjusted := (objectMemory integerValueOf: arg1) - 1.
 	self assert: argIntAdjusted >= 0.
 	result := self stackTop.
 
-	primIndex caseOf: { 
-			([ 0 ] -> [ 
+	primIndex caseOf: {
+			([ 0 ] -> [
 			 self assert: (objectMemory isPointers: rec).
 			 self assert: argIntAdjusted < (objectMemory numSlotsOfAny: rec).
 			 objectMemory
@@ -15299,7 +15315,7 @@ StackInterpreter >> trinaryAtPutInlinePrimitive: primIndex [
 				 withValue: result ]).
 			"3001	storeCheckPointerAt:put:
 		 Mutable pointer object (Fixed sized or not) and not a context, Smi, Anything => arg2 (1-based, optimised if arg1 is a constant)"
-			([ 1 ] -> [ 
+			([ 1 ] -> [
 			 self assert: (objectMemory isPointers: rec).
 			 self assert: argIntAdjusted < (objectMemory numSlotsOfAny: rec).
 			 objectMemory
@@ -15308,35 +15324,31 @@ StackInterpreter >> trinaryAtPutInlinePrimitive: primIndex [
 				 withValue: result ]).
 			"3002	maybeContextPointerAt:put:
 		 Mutable pointer object (Fixed sized or not), Smi, Anything => arg2 (1-based, optimised if arg1 is a constant)"
-			([ 2 ] -> [ 
-			 ((objectMemory isContextNonImm: rec) and: [ 
+			([ 2 ] -> [
+			 ((objectMemory isContextNonImm: rec) and: [
 				  self isMarriedOrWidowedContext: rec ])
-				 ifTrue: [ 
-					 self externalizeIPandSP.
-					 self externalInstVar: argIntAdjusted ofContext: rec put: result.
-					 self internalizeIPandSP ]
-				 ifFalse: [ 
+				 ifTrue: [
+				 self instVar: argIntAdjusted ofContext: rec put: result ]
+				 ifFalse: [
 					 objectMemory
 						 storePointer: argIntAdjusted
 						 ofObject: rec
 						 withValue: result ] ]).
 			"3003	maybeContextStoreCheckPointerAt:put:
 		Mutable pointer object (Fixed sized or not), Smi, Anything => arg2 (1-based, optimised if arg1 is a constant)"
-			([ 3 ] -> [ 
-			 ((objectMemory isContextNonImm: rec) and: [ 
+			([ 3 ] -> [
+			 ((objectMemory isContextNonImm: rec) and: [
 				  self isMarriedOrWidowedContext: rec ])
-				 ifTrue: [ 
-					 self externalizeIPandSP.
-					 self externalInstVar: argIntAdjusted ofContext: rec put: result.
-					 self internalizeIPandSP ]
-				 ifFalse: [ 
+				 ifTrue: [
+				 self instVar: argIntAdjusted ofContext: rec put: result ]
+				 ifFalse: [
 					 objectMemory
 						 storePointer: argIntAdjusted
 						 ofObject: rec
 						 withValue: result ] ]).
 			"3004	byteAt:put:
 		Mutable byte object, Smi, 8 bits unsigned Smi => arg2 (1-based, optimised if arg1 is a constant)"
-			([ 4 ] -> [ 
+			([ 4 ] -> [
 			 self assert: (objectMemory isBytes: rec).
 			 self assert: argIntAdjusted < (objectMemory numBytesOf: rec).
 			 self assert: (objectMemory isIntegerObject: result).
@@ -15346,7 +15358,7 @@ StackInterpreter >> trinaryAtPutInlinePrimitive: primIndex [
 				 withValue: (objectMemory integerValueOf: result) ]).
 			"3005	shortAt:put:
 		 Mutable short object, Smi, 16 bits unsigned Smi => arg2 (1-based, optimised if arg1 is a constant)"
-			([ 5 ] -> [ 
+			([ 5 ] -> [
 			 self assert: (objectMemory isShorts: rec).
 			 self assert: argIntAdjusted < (objectMemory num16BitUnitsOf: rec).
 			 self assert: (objectMemory isIntegerObject: result).
@@ -15356,7 +15368,7 @@ StackInterpreter >> trinaryAtPutInlinePrimitive: primIndex [
 				 withValue: (objectMemory integerValueOf: result) ]).
 			"3006	wordAt:put:
 		 Mutable word object, Smi, 32 bits unsigned Smi => arg2 (1-based, optimised if arg1 is a constant)"
-			([ 6 ] -> [ 
+			([ 6 ] -> [
 			 self assert: (objectMemory isWords: rec).
 			 self assert: argIntAdjusted < (objectMemory num32BitUnitsOf: rec).
 			 objectMemory
@@ -15365,7 +15377,7 @@ StackInterpreter >> trinaryAtPutInlinePrimitive: primIndex [
 				 withValue: (objectMemory positive32BitValueOf: result) ]).
 			"3007	doubleWordAt:put:
 		 Mutable double word object, Smi, 64 bits unsigned Smi or LargePositiveInteger => arg2 (1-based, optimised if arg1 is a constant)"
-			([ 7 ] -> [ 
+			([ 7 ] -> [
 			 self assert: (objectMemory isLong64s: rec).
 			 self assert: argIntAdjusted < (objectMemory num64BitUnitsOf: rec).
 			 objectMemory
@@ -15379,7 +15391,7 @@ StackInterpreter >> trinaryAtPutInlinePrimitive: primIndex [
 		stackTopPut: result
 ]
 
-{ #category : #'sista bytecodes' }
+{ #category : 'sista bytecodes' }
 StackInterpreter >> trinaryInlinePrimitive: primIndex [
 
 	"Bulk comment, each sub method has its own comment
@@ -15427,7 +15439,7 @@ StackInterpreter >> trinaryInlinePrimitive: primIndex [
 	self unknownInlinePrimitive
 ]
 
-{ #category : #'primitive support' }
+{ #category : 'primitive support' }
 StackInterpreter >> tryLoadNewPlugin: pluginString pluginEntries: pluginEntries [
 
 	"Load the plugin and if on Spur, populate pluginEntries with the prmitives in the plugin."
@@ -15493,20 +15505,27 @@ StackInterpreter >> tryLoadNewPlugin: pluginString pluginEntries: pluginEntries 
 	^ pluginString asString -> plugin
 ]
 
-{ #category : #'debug printing' }
+{ #category : 'debug printing' }
 StackInterpreter >> ultimateLiteralOf: aMethodOop [
 	<api>
 	self assert: (objectMemory isOopCompiledMethod: aMethodOop).
 	^self literal: (objectMemory literalCountOf: aMethodOop) - 1 ofMethod: aMethodOop
 ]
 
-{ #category : #'internal interpreter access' }
+{ #category : 'debug printing' }
+StackInterpreter >> ultimateLiteralOf: aMethodOop put: aValue [
+	<api>
+	self assert: (objectMemory isOopCompiledMethod: aMethodOop).
+	^self literal: (objectMemory literalCountOf: aMethodOop) - 1 ofMethod: aMethodOop put: aValue
+]
+
+{ #category : 'internal interpreter access' }
 StackInterpreter >> unPop: nItems [
 	"In the StackInterpreter stacks grow down."
 	stackPointer := stackPointer - (nItems*objectMemory wordSize)
 ]
 
-{ #category : #'sista inline primitives - unary' }
+{ #category : 'sista inline primitives - unary' }
 StackInterpreter >> unaryClassPrimitive [
 
 	| result top |
@@ -15518,7 +15537,7 @@ StackInterpreter >> unaryClassPrimitive [
 	self stackTopPut: result
 ]
 
-{ #category : #'sista inline primitives - unary' }
+{ #category : 'sista inline primitives - unary' }
 StackInterpreter >> unaryConvertInlinePrimitive: primIndex [
 
 	<option: #SistaVM>
@@ -15552,7 +15571,7 @@ StackInterpreter >> unaryConvertInlinePrimitive: primIndex [
 		 Character => 22 bits strictly positive Smi (Unicode)"
 ]
 
-{ #category : #'sista inline primitives - unary' }
+{ #category : 'sista inline primitives - unary' }
 StackInterpreter >> unaryHashInlinePrimitive: primIndex [
 
 	<option: #SistaVM>
@@ -15601,7 +15620,7 @@ StackInterpreter >> unaryHashInlinePrimitive: primIndex [
 		 non-immediate and non-behavior => 22 bits strictly positive Smi"
 ]
 
-{ #category : #'sista inline primitives - unary' }
+{ #category : 'sista inline primitives - unary' }
 StackInterpreter >> unaryInlinePrimitive: primIndex [
 	<option: #SistaVM>
 	"Bulk comments: each sub-method has its own comment with the specific case.
@@ -15657,7 +15676,7 @@ StackInterpreter >> unaryInlinePrimitive: primIndex [
 	self unknownInlinePrimitive
 ]
 
-{ #category : #'sista inline primitives - unary' }
+{ #category : 'sista inline primitives - unary' }
 StackInterpreter >> unaryNewInlinePrimitive: primIndex [
 
 	"1011	RawNew
@@ -15676,7 +15695,7 @@ StackInterpreter >> unaryNewInlinePrimitive: primIndex [
 	self stackTopPut: result
 ]
 
-{ #category : #'sista inline primitives - unary' }
+{ #category : 'sista inline primitives - unary' }
 StackInterpreter >> unaryPossibleRootInlinePrimitive [
 
 	"1041	possibleRoot
@@ -15687,11 +15706,11 @@ StackInterpreter >> unaryPossibleRootInlinePrimitive [
 	top := self stackTop.
 	self deny: (objectMemory isImmediate: top).
 	self deny: (objectMemory isOopForwarded: top).
-	(objectMemory isYoungObject: top) ifFalse: [ 
-		objectMemory possibleRootStoreInto: top ]
+	(objectMemory getMemoryMap isYoungObject: top) ifFalse: [ 
+		objectMemory possibleOldObjectStoreInto: top ]
 ]
 
-{ #category : #'sista inline primitives - unary' }
+{ #category : 'sista inline primitives - unary' }
 StackInterpreter >> unarySizeInlinePrimitive: primIndex [
 
 	<option: #SistaVM>
@@ -15731,7 +15750,7 @@ StackInterpreter >> unarySizeInlinePrimitive: primIndex [
 	self stackTopPut: (objectMemory integerObjectOf: result)
 ]
 
-{ #category : #'sista inline primitives - unary' }
+{ #category : 'sista inline primitives - unary' }
 StackInterpreter >> unaryUnforwardInlinePrimitive: primIndex [
 
 	"1039	unforwardNonImmediate
@@ -15750,7 +15769,7 @@ StackInterpreter >> unaryUnforwardInlinePrimitive: primIndex [
 		self stackTopPut: (objectMemory followForwarded: top) ]
 ]
 
-{ #category : #'sista bytecodes' }
+{ #category : 'sista bytecodes' }
 StackInterpreter >> unconditionnalTrapBytecode [
 	"SistaV1: *	217	Trap"
 	SistaVM 
@@ -15758,14 +15777,14 @@ StackInterpreter >> unconditionnalTrapBytecode [
 		ifFalse: [^self respondToUnknownBytecode]
 ]
 
-{ #category : #'interpreter shell' }
+{ #category : 'interpreter shell' }
 StackInterpreter >> undoFetchNextBytecode [
 	"Backup the ip when it has been incremented to fetch the next bytecode."
 
 	instructionPointer := instructionPointer - 1
 ]
 
-{ #category : #'compiled methods' }
+{ #category : 'compiled methods' }
 StackInterpreter >> unfollow: litVar atIndex: literalIndex [
 	<option: #SpurMemoryManager>
 	<inline: #never> "So rare it mustn't bulk up the common path"
@@ -15775,36 +15794,36 @@ StackInterpreter >> unfollow: litVar atIndex: literalIndex [
 	^followed
 ]
 
-{ #category : #'compiled methods' }
+{ #category : 'compiled methods' }
 StackInterpreter >> unfollowTempVector: tempVector atIndex: tempVectorIndex in: theFP [
 	<option: #TempVectReadBarrier>
 	<inline: #never> "So rare it mustn't bulk up the common path"
 	| followed |
 	followed := objectMemory followForwarded: tempVector.
-	self temporary: tempVectorIndex in: theFP put: followed.
+	self itemporary: tempVectorIndex in: theFP put: followed.
 	^followed
 ]
 
-{ #category : #'miscellaneous bytecodes' }
+{ #category : 'miscellaneous bytecodes' }
 StackInterpreter >> unknownBytecode [
 	"If an error selector is available then send it to the activeContext, otherwise abort."
 	self respondToUnknownBytecode
 ]
 
-{ #category : #'sista bytecodes' }
+{ #category : 'sista bytecodes' }
 StackInterpreter >> unknownInlinePrimitive [
 	<inline: #always> "Should be inlined everywhere to access localIP"
 	instructionPointer := instructionPointer - 3.
 	self respondToUnknownBytecode
 ]
 
-{ #category : #'image save/restore' }
+{ #category : 'image save/restore' }
 StackInterpreter >> unknownShortOrCodeSizeInKs [
 	"preserve whatever this value was (for images run on Cog)"
 	^theUnknownShort
 ]
 
-{ #category : #'I/O primitive support' }
+{ #category : 'I/O primitive support' }
 StackInterpreter >> updateDisplayLeft: l Top: t Right: r Bottom: b [
 	"Repaint the portion of the Smalltalk screen bounded by the affected rectangle.
 	 Used to synchronize the screen after a Bitblt to the Smalltalk Display object."
@@ -15828,7 +15847,7 @@ StackInterpreter >> updateDisplayLeft: l Top: t Right: r Bottom: b [
 				p: left l: right a: top y: bottom]
 ]
 
-{ #category : #'image save/restore' }
+{ #category : 'image save/restore' }
 StackInterpreter >> updateObjectsPostByteSwap [
 
 	"Byte-swap the words of all bytes objects in the image, including Strings, ByteArrays,
@@ -15868,19 +15887,21 @@ StackInterpreter >> updateObjectsPostByteSwap [
 						put: temp ] ] ]
 ]
 
-{ #category : #'frame access' }
+{ #category : 'frame access' }
 StackInterpreter >> updateStateOfSpouseContextForFrame: theFP WithSP: theSP [
 	"Update the frame's spouse context with the frame's current state except for the
 	 sender and instruction pointer, which are used to mark the context as married."
-	| theContext tempIndex pointer |
+	| theContext tempIndex pointer argsPointer |
 	<inline: false>
 	<var: #theFP type: #'char *'>
 	<var: #theSP type: #'char *'>
 	<var: #pointer type: #'char *'>
+	<var: #argsPointer type: #'char *'>
 	self assert: (self frameHasContext: theFP).
 	theContext := self frameContext: theFP.
+	self assert: (objectMemory isContext: theContext).
 	self assert: (self frameReceiver: theFP)
-				= (objectMemory fetchPointer: ReceiverIndex ofObject: theContext).
+				= (objectMemory noFixupFollowField: ReceiverIndex ofObject: theContext).
 	tempIndex := self frameNumArgs: theFP.
 	"update the arguments. this would appear not to be strictly necessary, but is for two reasons.
 	 First, the fact that arguments are read-only is only as convention in the Smalltalk compiler;
@@ -15888,16 +15909,17 @@ StackInterpreter >> updateStateOfSpouseContextForFrame: theFP WithSP: theSP [
 	 Second, the Squeak runUntilErrorOrReturnFrom: nightmare pops the stack top, which may, in
 	 certain circumstances, be the last argument, and hence the last argument may not have been
 	 stored into the context."
-	pointer := theFP + (self frameStackedReceiverOffsetNumArgs: tempIndex).
+	argsPointer := theFP + (self frameStackedReceiverOffsetNumArgs: tempIndex).
 	1 to: tempIndex do:
 		[:i|
-		pointer := pointer - objectMemory wordSize.
-		self assert: (objectMemory addressCouldBeOop: (stackPages longAt: pointer)).
+		argsPointer := argsPointer - objectMemory wordSize.
+		self assert: (objectMemory addressCouldBeOop: (stackPages longAt: argsPointer)).
 		 objectMemory storePointer: ReceiverIndex + i
 			ofObject: theContext
-			withValue: (stackPages longAt: pointer)].
+			withValue: (stackPages longAt: argsPointer)].
+	
 	"now update the non-argument stack contents."
-	pointer := theFP + FoxReceiver - objectMemory wordSize.
+	pointer := (self frameReceiverLocation: theFP) - objectMemory wordSize.
 	[pointer >= theSP] whileTrue:
 		[self assert: (objectMemory addressCouldBeOop: (stackPages longAt: pointer)).
 		 tempIndex := tempIndex + 1.
@@ -15911,7 +15933,7 @@ StackInterpreter >> updateStateOfSpouseContextForFrame: theFP WithSP: theSP [
 		withValue: (objectMemory integerObjectOf: tempIndex)
 ]
 
-{ #category : #'debug support' }
+{ #category : 'debug support' }
 StackInterpreter >> validBCPC: thePC inMethod: aMethod [
 	<var: #aMethod type: #usqInt>
 	"Note that we accept anInstrPointer pointing to a callPrimitiveBytecode
@@ -15921,7 +15943,7 @@ StackInterpreter >> validBCPC: thePC inMethod: aMethod [
 	  and: [thePC <= (objectMemory numBytesOfBytes: aMethod)]
 ]
 
-{ #category : #'debug support' }
+{ #category : 'debug support' }
 StackInterpreter >> validInstructionPointer: anInstrPointer inFrame: fp [
 	<var: #anInstrPointer type: #usqInt>
 	<var: #fp type: #'char *'>
@@ -15932,7 +15954,7 @@ StackInterpreter >> validInstructionPointer: anInstrPointer inFrame: fp [
 	^self validInstructionPointer: anInstrPointer inMethod: (self frameMethodObject: fp) framePointer: fp
 ]
 
-{ #category : #'debug support' }
+{ #category : 'debug support' }
 StackInterpreter >> validInstructionPointer: theInstrPointer inMethod: aMethod framePointer: fp [
 	<var: #theInstrPointer type: #usqInt>
 	<var: #aMethod type: #usqInt>
@@ -15942,10 +15964,10 @@ StackInterpreter >> validInstructionPointer: theInstrPointer inMethod: aMethod f
 	 Context(Part)>>reset have to be updated to skip the callPrimtiive bytecode otherwise."
 	"-1 for pre-increment in fetchNextBytecode"
 	^theInstrPointer >= (aMethod + (objectMemory lastPointerOf: aMethod) + objectMemory bytesPerOop - 1)
-	  and: [theInstrPointer < (aMethod + (objectMemory numBytesOfBytes: aMethod) + objectMemory baseHeaderSize - 1)]
+	  and: [theInstrPointer < (aMethod + (objectMemory numBytesOfBytes: aMethod) + objectMemory baseHeaderSize)]
 ]
 
-{ #category : #'stack pages' }
+{ #category : 'stack pages' }
 StackInterpreter >> validStackPageBaseFrame: aPage [
 	"Check that the base frame in the stack page has a valid sender context."
 	<var: #aPage type: #'StackPage *'>
@@ -15961,7 +15983,7 @@ StackInterpreter >> validStackPageBaseFrame: aPage [
 	^true
 ]
 
-{ #category : #'stack pages' }
+{ #category : 'stack pages' }
 StackInterpreter >> validStackPageBaseFrames [
 	"Check that the base frames in all in-use stack pages have a sender and a saved context."
 	<var: #aPage type: #'StackPage *'>
@@ -15974,7 +15996,7 @@ StackInterpreter >> validStackPageBaseFrames [
 	^true
 ]
 
-{ #category : #'primitive support' }
+{ #category : 'primitive support' }
 StackInterpreter >> voidLongRunningPrimitive: reason [
 	"Void the state associated with the long-running primitive check.
 	 This is done when a new semaphore is installed or when it appears
@@ -15989,7 +16011,7 @@ StackInterpreter >> voidLongRunningPrimitive: reason [
 	self sqLowLevelMFence
 ]
 
-{ #category : #'frame access' }
+{ #category : 'frame access' }
 StackInterpreter >> voidVMStateForSnapshotFlushingExternalPrimitivesIf: flushExtPrims [
 	"Make sure that all VM state that affects the heap contents is voided so that the heap is
 	 ready to be snapshotted.  If flushExtPrims is true, flush references to external
@@ -16001,7 +16023,7 @@ StackInterpreter >> voidVMStateForSnapshotFlushingExternalPrimitivesIf: flushExt
 	^activeContext
 ]
 
-{ #category : #'process primitive support' }
+{ #category : 'process primitive support' }
 StackInterpreter >> wakeHighestPriority [
 
 	"Return the highest priority process that is ready to run.
@@ -16012,7 +16034,7 @@ StackInterpreter >> wakeHighestPriority [
 	 Note: It is a fatal VM error if there is no runnable process."
 
 	| schedLists p processList proc ctxt |
-	self externalWriteBackHeadFramePointers.
+	self writeBackHeadFramePointers.
 	schedLists := objectMemory
 		              fetchPointer: ProcessListsIndex
 		              ofObject: self schedulerPointer.
@@ -16044,7 +16066,7 @@ StackInterpreter >> wakeHighestPriority [
 	^ nil
 ]
 
-{ #category : #'debug printing' }
+{ #category : 'debug printing' }
 StackInterpreter >> whereIs: anOop [
 	<api>
 	<returnTypeC: 'char *'>
@@ -16055,7 +16077,7 @@ StackInterpreter >> whereIs: anOop [
 	^' is no where obvious'
 ]
 
-{ #category : #'frame access' }
+{ #category : 'frame access' }
 StackInterpreter >> withSmallIntegerTags: value [
 	<inline: true>
 	<var: #value type: #'char *'>
@@ -16065,7 +16087,7 @@ StackInterpreter >> withSmallIntegerTags: value [
 		inSmalltalk: [value bitAnd: objectMemory maxCInteger]) + objectMemory smallIntegerTag
 ]
 
-{ #category : #'frame access' }
+{ #category : 'frame access' }
 StackInterpreter >> withoutSmallIntegerTags: anInteger [
 	<inline: true>
 	<returnTypeC: #'char *'>
@@ -16073,7 +16095,7 @@ StackInterpreter >> withoutSmallIntegerTags: anInteger [
 	^self pointerForOop: (anInteger - 1)
 ]
 
-{ #category : #'image save/restore' }
+{ #category : 'image save/restore' }
 StackInterpreter >> wordSwapped: w [
 	"Return the given 64-bit integer with its halves in the reverse order."
 
@@ -16083,14 +16105,16 @@ StackInterpreter >> wordSwapped: w [
 
 ]
 
-{ #category : #'stack pages' }
+{ #category : 'stack pages' }
 StackInterpreter >> writeBackHeadFramePointers [
+	self assert:  (framePointer - stackPointer) < (LargeContextSlots * objectMemory bytesPerOop).
 	self assert: stackPage = stackPages mostRecentlyUsedPage.
+	self deny: stackPage isFree.
 	self setHeadFP: framePointer andSP: stackPointer inPage: stackPage.
 	self assert: stackPages pageListIsWellFormed
 ]
 
-{ #category : #'image save/restore' }
+{ #category : 'image save/restore' }
 StackInterpreter >> writeImageFileIO [
 	"Write the image header and heap contents to imageFile for snapshot. 
 	The game below is to maintain 64-bit alignment for all putLong:toFile: occurrences."
@@ -16101,11 +16125,11 @@ StackInterpreter >> writeImageFileIO [
 	
 	"The image name is defined as a extern char[] variable"
 	self simulationOnly: [ imageName := self imageName ].
-	imageWriter writeImageFile: imageName fromHeader: self newHeader
+	imageReaderWriter writeImageFile: imageName fromHeader: self newHeader
 
 ]
 
-{ #category : #'stack pages' }
+{ #category : 'stack pages' }
 StackInterpreter >> zeroStackPage [
 	"In its own method as a debugging hook.
 	 Frame pointers should have been written back already."

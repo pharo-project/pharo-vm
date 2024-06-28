@@ -1342,6 +1342,53 @@ VMJittedGeneralPrimitiveTest >> testPrimitiveEqualReturnsABooleanWhenNegativeNum
 	self assert: self machineSimulator receiverRegisterValue equals: (memory falseObject).
 ]
 
+{ #category : #'tests - primitiveFormat' }
+VMJittedGeneralPrimitiveTest >> testPrimitiveFormatArray [
+	
+	| primitiveAddress |
+		
+	primitiveAddress := self compile: [ 
+		cogit objectRepresentation genPrimitiveFormat ].
+
+	self prepareStackForSendReceiver: (memory newArrayWith: {42 . 123 . 31}).
+
+	"Assert it reaches the caller address and we have the format in the receiver register"
+	self runFrom: primitiveAddress until: callerAddress.
+	self assert: self machineSimulator receiverRegisterValue equals: (memory integerObjectOf: memory arrayFormat).
+]
+
+{ #category : #'tests - primitiveFormat' }
+VMJittedGeneralPrimitiveTest >> testPrimitiveFormatFailsWhenReceiverIsImmediate [
+	
+	| endInstruction primitiveAddress |
+		
+	primitiveAddress := self compile: [ 
+		cogit objectRepresentation genPrimitiveFormat.
+		"If the primitive fails it continues, so we need to have an instruction to detect the end"
+		endInstruction := cogit Stop ].
+
+	self prepareStackForSendReceiver: (memory integerObjectOf: 42).
+
+	"Assert it reaches the Stop and that it does not destroy the value inside the ReceiverResultReg "
+	self runFrom: primitiveAddress until: endInstruction address.
+	self assert: self machineSimulator receiverRegisterValue equals: (memory integerObjectOf: 42).
+]
+
+{ #category : #'tests - primitiveFormat' }
+VMJittedGeneralPrimitiveTest >> testPrimitiveFormatTrueObject [
+	
+	| primitiveAddress |
+		
+	primitiveAddress := self compile: [ 
+		cogit objectRepresentation genPrimitiveFormat ].
+
+	self prepareStackForSendReceiver: (memory trueObject).
+
+	"Assert it reaches the caller address and we have the format in the receiver register"
+	self runFrom: primitiveAddress until: callerAddress.
+	self assert: self machineSimulator receiverRegisterValue equals: (memory integerObjectOf: 0). "According to SpurMemomyManager >> formatOfHeader:, the format of the True object is 0."
+]
+
 { #category : #'tests - primitiveGreaterOrEqual' }
 VMJittedGeneralPrimitiveTest >> testPrimitiveGreaterOrEqualDoesNotCompileIfReceiverTagIsNotSmallInteger [
 	
@@ -2151,6 +2198,100 @@ VMJittedGeneralPrimitiveTest >> testPrimitiveQuoReturnsZeroWithZeroReceiver [
 
 	self prepareStackForSendReceiver: (memory integerObjectOf: 0) arguments: { memory integerObjectOf: 100 }.
 	self runFrom: primitiveAddress until: callerAddress.
+	self assert: self machineSimulator receiverRegisterValue equals: (memory integerObjectOf: 0).
+]
+
+{ #category : #'tests - primitiveStringCompare' }
+VMJittedGeneralPrimitiveTest >> testPrimitiveStringCompareBigString [
+	
+
+	| aByteSymbol endInstruction primitiveAddress |
+	"256 has a size bigger than 8 bits"
+	aByteSymbol := (String loremIpsum: 256) asSymbol forMemory: memory inMethod: nil.
+	
+	primitiveAddress := self compile: [ 
+		cogit objectRepresentation genPrimitiveStringCompareWith.
+		"If the primitive fails it continues, so we need to have an instruction to detect the end"
+		endInstruction := cogit Stop ].
+
+	self prepareStackForSendReceiver: aByteSymbol arguments: { aByteSymbol }.
+	self runFrom: primitiveAddress until: callerAddress.
+
+	self assert: self machineSimulator receiverRegisterValue equals: (memory integerObjectOf: 0).
+]
+
+{ #category : #'tests - primitiveStringCompare' }
+VMJittedGeneralPrimitiveTest >> testPrimitiveStringCompareWithHigherSymbol [
+	
+
+	| aByteSymbol bByteSymbol endInstruction primitiveAddress |
+	aByteSymbol := #a forMemory: memory inMethod: nil.
+	bByteSymbol := #b forMemory: memory inMethod: nil.
+	
+	primitiveAddress := self compile: [ 
+		cogit objectRepresentation genPrimitiveStringCompareWith.
+		"If the primitive fails it continues, so we need to have an instruction to detect the end"
+		endInstruction := cogit Stop ].
+
+	self prepareStackForSendReceiver: bByteSymbol arguments: { aByteSymbol }.
+	self runFrom: primitiveAddress until: callerAddress.
+
+	self assert: self machineSimulator receiverRegisterValue equals: (memory integerObjectOf: 1).
+]
+
+{ #category : #'tests - primitiveStringCompare' }
+VMJittedGeneralPrimitiveTest >> testPrimitiveStringCompareWithIsCaseSensitive [
+	
+
+	| endInstruction primitiveAddress lowerByteSymbol upperByteSymbol |
+	lowerByteSymbol := #z forMemory: memory inMethod: nil.
+	upperByteSymbol := #Z forMemory: memory inMethod: nil.
+	
+	primitiveAddress := self compile: [ 
+		cogit objectRepresentation genPrimitiveStringCompareWith.
+		"If the primitive fails it continues, so we need to have an instruction to detect the end"
+		endInstruction := cogit Stop ].
+
+	self prepareStackForSendReceiver: lowerByteSymbol arguments: { upperByteSymbol }.
+	self runFrom: primitiveAddress until: callerAddress.
+
+	self assert: self machineSimulator receiverRegisterValue equals: (memory integerObjectOf: 32).
+]
+
+{ #category : #'tests - primitiveStringCompare' }
+VMJittedGeneralPrimitiveTest >> testPrimitiveStringCompareWithLowerSymbol [
+	
+
+	| aByteSymbol bByteSymbol endInstruction primitiveAddress |
+	aByteSymbol := #a forMemory: memory inMethod: nil.
+	bByteSymbol := #b forMemory: memory inMethod: nil.
+
+	primitiveAddress := self compile: [ 
+		cogit objectRepresentation genPrimitiveStringCompareWith.
+		"If the primitive fails it continues, so we need to have an instruction to detect the end"
+		endInstruction := cogit Stop ].
+
+	self prepareStackForSendReceiver: aByteSymbol arguments: { bByteSymbol }.
+	self runFrom: primitiveAddress until: callerAddress.
+
+	self assert: self machineSimulator receiverRegisterValue equals: (memory integerObjectOf: -1).
+]
+
+{ #category : #'tests - primitiveStringCompare' }
+VMJittedGeneralPrimitiveTest >> testPrimitiveStringCompareWithSameSymbol [
+	
+
+	| aByteSymbol endInstruction primitiveAddress |
+	aByteSymbol := #a forMemory: memory inMethod: nil.
+	
+	primitiveAddress := self compile: [ 
+		cogit objectRepresentation genPrimitiveStringCompareWith.
+		"If the primitive fails it continues, so we need to have an instruction to detect the end"
+		endInstruction := cogit Stop ].
+
+	self prepareStackForSendReceiver: aByteSymbol arguments: { aByteSymbol }.
+	self runFrom: primitiveAddress until: callerAddress.
+
 	self assert: self machineSimulator receiverRegisterValue equals: (memory integerObjectOf: 0).
 ]
 

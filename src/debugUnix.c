@@ -58,12 +58,16 @@ void doReport(char* fault, ucontext_t *uap){
 	crashdumpFileName[0] = 0;
 	getCrashDumpFilenameInto(crashdumpFileName);
 	crashDumpFile = fopen(crashdumpFileName, "a+");
-	vm_setVMOutputStream(crashDumpFile);
-
-	reportStackState(fault, ctimebuf, 1, uap, crashDumpFile);
+	if (crashDumpFile != NULL) {
+		vm_setVMOutputStream(crashDumpFile);
+	
+		reportStackState(fault, ctimebuf, 1, uap, crashDumpFile);
+	}
 
 	vm_setVMOutputStream(stderr);
-	fclose(crashDumpFile);
+	if (crashDumpFile != NULL) {
+		fclose(crashDumpFile);
+	}
 
 	reportStackState(fault, ctimebuf, 1, uap, stderr);
 
@@ -96,12 +100,15 @@ void terminateHandler(int sig, siginfo_t *info, ucontext_t *uap)
 
 	logWarn("VM terminated with signal %s", fault);
 
-	if(getLogLevel() >= LOG_DEBUG){		
+	if(getLogLevel() >= LOG_DEBUG) {
 		doReport(fault, uap);
 	}
 
-	logWarn("Exiting with error code 1");	
-	exit(1);
+	/* See exit code guideline: https://tldp.org/LDP/abs/html/exitcodes.html */
+	int exit_code = 128 + sig;
+
+	logWarn("Exiting with error code %d", exit_code);
+	exit(exit_code);
 }
 
 

@@ -2,8 +2,8 @@
 I am a pool for the Register-Transfer-Language to which Cog compiles.  I define unique integer values for all RTL opcodes.  See CogAbstractInstruction for instances of instructions with the opcodes that I define.
 "
 Class {
-	#name : #CogRTLOpcodes,
-	#superclass : #SharedPool,
+	#name : 'CogRTLOpcodes',
+	#superclass : 'SharedPool',
 	#classVars : [
 		'AddCqR',
 		'AddCwR',
@@ -161,10 +161,12 @@ Class {
 		'ZeroExtend32RR',
 		'ZeroExtend8RR'
 	],
-	#category : #'VMMaker-JIT'
+	#category : 'VMMaker-JIT',
+	#package : 'VMMaker',
+	#tag : 'JIT'
 }
 
-{ #category : #'class initialization' }
+{ #category : 'class initialization' }
 CogRTLOpcodes class >> initialize [
 	"Abstract opcodes are a compound of a one word operation specifier and zero or more operand type specifiers.
 	 The assembler is in Cogit protocol abstract instructions and uses `at&t' syntax, assigning to the register on the
@@ -345,15 +347,12 @@ CogRTLOpcodes class >> initialize [
 	"Find the variables directly referenced by this method"
 	refs := (thisContext method literals select: [:l| l isVariableBinding and: [classPool includesKey: l key]]) collect:
 				[:ea| ea key].
-	"Move to Undeclared any opcodes in classPool not in opcodes or this method."
-	(classPool keys reject: [:k| (opcodeNames includes: k) or: [refs includes: k]]) do:
-		[:k|
-		Undeclared declare: k from: classPool].
+
 	"Declare as class variables and number elements of opcodeArray above"
 	opcodeNames withIndexDo:
 		[:classVarName :value|
+				Undeclared removeKey: classVarName ifAbsent: [ "Nothing" ].
 		self classPool
-			declare: classVarName from: Undeclared;
 			at: classVarName put: value].
 
 	"For CogAbstractInstruction>>isJump etc..."
@@ -366,7 +365,7 @@ CogRTLOpcodes class >> initialize [
 		[:cogAbstractInstruction| cogAbstractInstruction allSubclasses do: [:sc| sc initialize]]
 ]
 
-{ #category : #'debug printing' }
+{ #category : 'debug printing' }
 CogRTLOpcodes class >> nameForOpcode: opcode [ "<Integer>"
 	opcode < LastRTLCode ifTrue:
 		[classPool associations do:
@@ -378,7 +377,7 @@ CogRTLOpcodes class >> nameForOpcode: opcode [ "<Integer>"
 	^nil
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 CogRTLOpcodes class >> opcodes [
 	"CogRTLOpcodes opcodes"
 	"CogRTLOpcodes opcodes select:
@@ -394,7 +393,7 @@ CogRTLOpcodes class >> opcodes [
 		or: [#('Reg' 'Min' 'Max') anySatisfy: [:postfix| k endsWith: postfix]]]) asArray sort
 ]
 
-{ #category : #'debug printing' }
+{ #category : 'debug printing' }
 CogRTLOpcodes class >> printFormatForOpcodeName: opcodeName [
 	"Answer a sequence of $r, $f or nil for the operands in the opcode, used for printing, where
 	 r => integer register, f => floating point register, and nil => numeric or address operand."

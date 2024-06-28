@@ -40,6 +40,12 @@ SlangClass class >> prepareToBeAddedToCodeGenerator: aCCodeGenerator [
 	 superclass's methods by deleting them before it adds its own."
 ]
 
+{ #category : #'as yet unclassified' }
+SlangClass class >> renameSelectorIfStaticallyResolved: aString [ 
+
+	^ aString
+]
+
 { #category : #translation }
 SlangClass class >> requiredMethodNames: options [
 	"Answer a list of method names that should be retained for export or other
@@ -167,6 +173,17 @@ SlangClass >> interpreterClass [
 SlangClass >> objectMemoryClass [
 	
 	self subclassResponsibility
+]
+
+{ #category : #'translation support' }
+SlangClass >> simulationOnly: aBlock [
+
+	"Evaluate piece of code only during simulation.
+	This should get translated as a NOP"
+	<inline: #always>
+	self
+		cCode: [  ]
+		inSmalltalk: aBlock
 ]
 
 { #category : #'translation support' }

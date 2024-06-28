@@ -120,6 +120,9 @@ typedef struct VMParameters_
 	//The eden size (This is the space used to allocate new objects).
 	long long edenSize;
 
+	//The minimal Permanent Space Size
+	long long minPermSpaceSize;
+
 	// FIXME: Why passing this is needed when we have the separated vectors?
 	int processArgc;
 	const char** processArgv;

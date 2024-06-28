@@ -1,6 +1,6 @@
 Class {
-	#name : #LibFFIType,
-	#superclass : #VMStructType,
+	#name : 'LibFFIType',
+	#superclass : 'VMStructType',
 	#instVars : [
 		'type',
 		'size',
@@ -11,16 +11,18 @@ Class {
 	#pools : [
 		'LibFFIConstants'
 	],
-	#category : #'VMMaker-FFI'
+	#category : 'VMMaker-FFI',
+	#package : 'VMMaker',
+	#tag : 'FFI'
 }
 
-{ #category : #translation }
+{ #category : 'translation' }
 LibFFIType class >> filteredInstVarNames [
 	"Eliminate the obvious simulation-only inst vars"
 	^ self allInstVarNames copyWithoutAll: #(libFFI)
 ]
 
-{ #category : #'type constants' }
+{ #category : 'type constants' }
 LibFFIType class >> instVarNamesAndTypesForTranslationDo: aBinaryBlock [ 
 
 	self filteredInstVarNames do:
@@ -35,19 +37,19 @@ LibFFIType class >> instVarNamesAndTypesForTranslationDo: aBinaryBlock [
 				} otherwise: [ self halt ])]
 ]
 
-{ #category : #'type constants' }
+{ #category : 'type constants' }
 LibFFIType class >> printTypedefOn: aStream [
 
 	"This is already defined in ffi.h"
 ]
 
-{ #category : #'type constants' }
+{ #category : 'type constants' }
 LibFFIType class >> structTypeName [
 	
 	^ 'ffi_type'
 ]
 
-{ #category : #'type constants' }
+{ #category : 'type constants' }
 LibFFIType class >> type: aType size: aSize on: aLibFFI [
 
 	^ self new
@@ -57,12 +59,12 @@ LibFFIType class >> type: aType size: aSize on: aLibFFI [
 		yourself
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 LibFFIType >> elements: aCollection [ 
 	elements := aCollection
 ]
 
-{ #category : #testing }
+{ #category : 'testing' }
 LibFFIType >> fromSmalltalk: aNumber putInto: aCArrayAccessor [
 	<doNotGenerate>
 	[ type ]
@@ -111,12 +113,12 @@ LibFFIType >> fromSmalltalk: aNumber putInto: aCArrayAccessor [
 		} otherwise: [ self halt ]
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 LibFFIType >> libFFI: aLibFFI [ 
 	libFFI := aLibFFI
 ]
 
-{ #category : #simulating }
+{ #category : 'simulating' }
 LibFFIType >> marshallToSmalltalk: holder [ 
 		
 	^ [ type ] 
@@ -141,22 +143,22 @@ LibFFIType >> marshallToSmalltalk: holder [
 
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 LibFFIType >> size [
 	^ size
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 LibFFIType >> size: anObject [
 	size := anObject
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 LibFFIType >> type [
 	^ type
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 LibFFIType >> type: anObject [
 	type := anObject
 ]

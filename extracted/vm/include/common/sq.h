@@ -57,7 +57,6 @@
  * If the attempt fails, answer null.  If the attempt succeeds, answer the
  * start of the region and assign its size through asp.
  */
-extern void *sqAllocateMemorySegmentOfSizeAboveAllocatedSizeInto(sqInt sz, void *minAddr, sqInt *asp);
 extern void sqDeallocateMemorySegmentAtOfSize(void *addr, sqInt sz);
 #endif /* SPURVM */
 /* Platform-dependent memory size adjustment macro. */
@@ -497,7 +496,7 @@ sqInt ioDisableImageWrite(void);
 
 #include "pharovm/imageAccess.h"
 
-size_t readImageFromFileStartingAt(sqImageFile f, squeakFileOffsetType imageOffset);
+sqInt readImageNamed(char* fileName);
 
 /* Clipboard (cut/copy/paste). */
 sqInt clipboardSize(void);

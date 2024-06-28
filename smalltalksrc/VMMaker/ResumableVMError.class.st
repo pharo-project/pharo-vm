@@ -1,10 +1,12 @@
 Class {
-	#name : #ResumableVMError,
-	#superclass : #Error,
-	#category : #'VMMaker-Support'
+	#name : 'ResumableVMError',
+	#superclass : 'Error',
+	#category : 'VMMaker-Support',
+	#package : 'VMMaker',
+	#tag : 'Support'
 }
 
-{ #category : #exceptionDescription }
+{ #category : 'exceptionDescription' }
 ResumableVMError >> isResumable [
 	^true
 ]

@@ -25,34 +25,36 @@ cogit
 	- the just-in-time compiler
 "
 Class {
-	#name : #Spur64BitCoMemoryManager,
-	#superclass : #Spur64BitMemoryManager,
+	#name : 'Spur64BitCoMemoryManager',
+	#superclass : 'Spur64BitMemoryManager',
 	#instVars : [
 		'cogit'
 	],
 	#pools : [
 		'CogMethodConstants'
 	],
-	#category : #'VMMaker-SpurMemoryManager'
+	#category : 'VMMaker-SpurMemoryManager',
+	#package : 'VMMaker',
+	#tag : 'SpurMemoryManager'
 }
 
-{ #category : #simulation }
+{ #category : 'simulation' }
 Spur64BitCoMemoryManager class >> defaultISA [
 	"Answer the default instruction set architecture to use for simulation."
 	^#X64
 ]
 
-{ #category : #'accessing class hierarchy' }
+{ #category : 'accessing class hierarchy' }
 Spur64BitCoMemoryManager class >> objectRepresentationClass [
 	^CogObjectRepresentationFor64BitSpur
 ]
 
-{ #category : #simulation }
+{ #category : 'simulation' }
 Spur64BitCoMemoryManager class >> simulatorClass [
 	^ Spur64BitMMLECoSimulator
 ]
 
-{ #category : #'growing/shrinking memory' }
+{ #category : 'growing/shrinking memory' }
 Spur64BitCoMemoryManager >> assimilateNewSegment: segInfo [
 	"Update after adding a segment.
 	 Here we make sure the new segment is not executable."
@@ -61,47 +63,39 @@ Spur64BitCoMemoryManager >> assimilateNewSegment: segInfo [
 	coInterpreter sqMakeMemoryNotExecutableFrom: segInfo segStart To: segInfo segLimit
 ]
 
-{ #category : #trampolines }
+{ #category : 'trampolines' }
 Spur64BitCoMemoryManager >> ceScheduleScavenge [
 	<api>
 	self assert: freeStart >= scavengeThreshold.
 	self scheduleScavenge
 ]
 
-{ #category : #'debug support' }
+{ #category : 'debug support' }
 Spur64BitCoMemoryManager >> checkMemoryMap [
 	"Override to check that Cog methods are considered neither young nor old.
 	 Being young would cause them to be scavenged.
 	 Being old would cause them to be remembered if stored into (but wait, they don't get stored into)."
 
-	self assert: (self isYoungObject: newSpaceStart).
-	self assert: (self isYoungObject: newSpaceLimit - self wordSize).
-	self assert: (self isOldObject: newSpaceStart) not.
-	self assert: (self isOldObject: newSpaceLimit - self wordSize) not.
-	self assert: (self isYoungObject: newSpaceLimit) not.
-	self assert: (self isYoungObject: oldSpaceStart) not.
-	self assert: (self isYoungObject: endOfMemory) not.
-	self assert: (self isOldObject: oldSpaceStart).
-	self assert: (self isOldObject: endOfMemory).
+	super checkMemoryMap.
 
 	"we would like the following to be true, but we either choose one boundary check for
 	 cogMethods vs objects (isMachineCodeFrame: et al) or one boundary check for
 	 copyAndForward:.  We can't have both, and the former is likely the highest dynamic
 	 frequency."
 	false ifTrue:
-		[self assert: (self isYoungObject: cogit minCogMethodAddress) not.
-		 self assert: (self isYoungObject: cogit maxCogMethodAddress) not].
-	self assert: (self isOldObject: cogit minCogMethodAddress) not.
-	self assert: (self isOldObject: cogit maxCogMethodAddress) not
+		[self assert: (memoryMap isYoungObject: cogit minCogMethodAddress) not.
+		 self assert: (memoryMap isYoungObject: cogit maxCogMethodAddress) not].
+	self assert: (memoryMap isOldObject: cogit minCogMethodAddress) not.
+	self assert: (memoryMap isOldObject: cogit maxCogMethodAddress) not
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 Spur64BitCoMemoryManager >> classSmallFloat [
 	<api>
 	^self fetchPointer: self smallFloatTag ofObject: classTableFirstPage
 ]
 
-{ #category : #'debug support' }
+{ #category : 'debug support' }
 Spur64BitCoMemoryManager >> clearLeakMapAndMapAccessibleObjects [
 	"Perform an integrity/leak check using the heapMap.  Set a bit at each object's header.
 	 Override to set a bit at each Cog method"
@@ -109,28 +103,28 @@ Spur64BitCoMemoryManager >> clearLeakMapAndMapAccessibleObjects [
 	cogit addCogMethodsToHeapMap
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 Spur64BitCoMemoryManager >> cogit: aCogit [ 
 	<doNotGenerate>
 
 	cogit := aCogit
 ]
 
-{ #category : #'cog jit support' }
+{ #category : 'cog jit support' }
 Spur64BitCoMemoryManager >> ensureNoForwardedLiteralsIn: aMethodObj [
 	"Ensure there are no forwarded literals in the argument."
 	<api>
 	self followForwardedObjectFields: aMethodObj toDepth: 0
 ]
 
-{ #category : #'cog jit support' }
+{ #category : 'cog jit support' }
 Spur64BitCoMemoryManager >> freeStart: aValue [
 	self assert: (aValue >= scavenger eden start and: [aValue < (scavengeThreshold + 1024)]).
 	self assert: (scavengeThreshold max: aValue) + coInterpreter interpreterAllocationReserveBytes <= scavenger eden limit.
 	^freeStart := aValue
 ]
 
-{ #category : #'trampoline support' }
+{ #category : 'trampoline support' }
 Spur64BitCoMemoryManager >> freeStartAddress [
 	<api>
 	<returnTypeC: #usqInt>
@@ -138,14 +132,14 @@ Spur64BitCoMemoryManager >> freeStartAddress [
 		inSmalltalk: [cogit simulatedReadWriteVariableAddress: #freeStart in: self]
 ]
 
-{ #category : #'cog jit support' }
+{ #category : 'cog jit support' }
 Spur64BitCoMemoryManager >> getScavengeThreshold [
 	<api>
 	<returnTypeC: #usqInt>
 	^scavengeThreshold
 ]
 
-{ #category : #'garbage collection' }
+{ #category : 'garbage collection' }
 Spur64BitCoMemoryManager >> headerWhileForwardingOf: aCompiledMethodObjOop [
 	"Answer the header of the argument even though
 	 it may have its header word in a forwarding block
@@ -154,30 +148,7 @@ Spur64BitCoMemoryManager >> headerWhileForwardingOf: aCompiledMethodObjOop [
 	^self baseHeader: aCompiledMethodObjOop
 ]
 
-{ #category : #'simulation only' }
-Spur64BitCoMemoryManager >> initializeFreeSpaceForFacadeFrom: base to: limit [
-	"c.f. initializeFreeSpacePostLoad: freeListObj."
-	| freeListObj freeBytes |
-	newSpaceLimit := oldSpaceStart := freeStart := base.
-	endOfMemory := limit.
-	scavengeThreshold := limit * 3 // 4.
-	segmentManager initSegmentForInImageCompilationFrom: base to: limit.
-	freeListObj := self allocateSlots: self numFreeLists
-						format: self wordIndexableFormat
-						classIndex: self wordSizeClassIndexPun.
-	freeLists := self firstIndexableField: freeListObj.
-	freeListsMask := 0.
-	0 to: self numFreeLists - 1 do:
-		[:i|
-		(freeLists at: i) ~= 0 ifTrue:
-			[freeListsMask := freeListsMask bitOr: (1 << i).
-			 freeLists at: i put: (segmentManager swizzleObj: (freeLists at: i))]].
-	freeBytes := segmentManager lastSegment segLimit - self bridgeSize - freeStart.
-	freeLists at: 0 put: (self initFreeChunkWithBytes: freeBytes at: freeStart).
-	totalFreeOldSpace := freeBytes
-]
-
-{ #category : #'class table' }
+{ #category : 'class table' }
 Spur64BitCoMemoryManager >> isForwardedClassIndex: maybeClassIndex [
 	"A lenient tester of forwarded class indices for inline cache management in the Cogit."
 	<api>
@@ -194,32 +165,23 @@ Spur64BitCoMemoryManager >> isForwardedClassIndex: maybeClassIndex [
 	^self isForwarded: entry
 ]
 
-{ #category : #'cog jit support' }
+{ #category : 'cog jit support' }
 Spur64BitCoMemoryManager >> isImmediateClass: classObj [
 	<api>
 	^(self instSpecOfClass: classObj) = self instSpecForImmediateClasses
 ]
 
-{ #category : #'object testing' }
-Spur64BitCoMemoryManager >> isReallyYoungObject: objOop [
-	<api>
-	"Answer if obj is young. Require that obj is non-immediate. Override to filter-out Cog methods"
-	self assert: (self isNonImmediate: objOop).
-	^(self oop: objOop isLessThan: newSpaceLimit)
-	  and: [self oop: objOop isGreaterThanOrEqualTo: newSpaceStart]
-]
-
-{ #category : #compaction }
+{ #category : 'compaction' }
 Spur64BitCoMemoryManager >> methodHeaderFromSavedFirstField: field [
 	(self isIntegerObject: field) ifTrue:
 		[^field].
-	self assert: ((self isNonImmediate: field) and: [field < newSpaceStart]).
+	self assert: ((self isNonImmediate: field) and: [field < memoryMap newSpaceStart]).
 	self assert: (coInterpreter cCoerceSimple: field to: #'CogMethod *') objectHeader
 				= self nullHeaderForMachineCodeMethod.
 	^(coInterpreter cCoerceSimple: field to: #'CogMethod *') methodHeader
 ]
 
-{ #category : #'growing/shrinking memory' }
+{ #category : 'growing/shrinking memory' }
 Spur64BitCoMemoryManager >> methodHeaderOf: methodObj [
 	"Answer the method header of a CompiledMethod object.
 	 If the method has been cogged then the header is a pointer to
@@ -232,13 +194,13 @@ Spur64BitCoMemoryManager >> methodHeaderOf: methodObj [
 	^(self isIntegerObject: header)
 		ifTrue: [header]
 		ifFalse:
-			[self assert: header asUnsignedInteger < newSpaceStart.
+			[self assert: header asUnsignedInteger < memoryMap newSpaceStart.
 			 self assert: (coInterpreter cCoerceSimple: header to: #'CogMethod *') objectHeader
 						= self nullHeaderForMachineCodeMethod.
 			(coInterpreter cCoerceSimple: header to: #'CogMethod *') methodHeader]
 ]
 
-{ #category : #'trampoline support' }
+{ #category : 'trampoline support' }
 Spur64BitCoMemoryManager >> needGCFlagAddress [
 	<api>
 	<returnTypeC: #usqInt>
@@ -246,16 +208,7 @@ Spur64BitCoMemoryManager >> needGCFlagAddress [
 		inSmalltalk: [cogit simulatedReadWriteVariableAddress: #needGCFlag in: self]
 ]
 
-{ #category : #'garbage collection' }
-Spur64BitCoMemoryManager >> nullHeaderForMachineCodeMethod [
-	<api>
-	<returnTypeC: #sqLong>
-	^(self firstLongFormat << self formatShift)
-	+ (1 << self markedBitFullShift)
-	+ ClassBitmapCompactIndex
-]
-
-{ #category : #'object enumeration' }
+{ #category : 'object enumeration' }
 Spur64BitCoMemoryManager >> objectBytesForSlots: numSlots [
 	"Answer the total number of bytes in an object with the given
 	 number of slots, including header and possible overflow size header."
@@ -264,7 +217,7 @@ Spur64BitCoMemoryManager >> objectBytesForSlots: numSlots [
 	^super objectBytesForSlots: numSlots
 ]
 
-{ #category : #'cog jit support' }
+{ #category : 'cog jit support' }
 Spur64BitCoMemoryManager >> receiverTagBitsForMethod: aMethodObj [
 	"Answer the tag bits for the receiver based on the method's methodClass, if any."
 	<api>
@@ -281,13 +234,7 @@ Spur64BitCoMemoryManager >> receiverTagBitsForMethod: aMethodObj [
 	^self smallFloatTag
 ]
 
-{ #category : #'cog jit support' }
-Spur64BitCoMemoryManager >> remember: objOop [
-	<doNotGenerate>
-	^scavenger remember: objOop
-]
-
-{ #category : #'trampoline support' }
+{ #category : 'trampoline support' }
 Spur64BitCoMemoryManager >> scavengeThresholdAddress [
 	<api>
 	<returnTypeC: #usqInt>
@@ -295,35 +242,14 @@ Spur64BitCoMemoryManager >> scavengeThresholdAddress [
 		inSmalltalk: [cogit simulatedReadWriteVariableAddress: #getScavengeThreshold in: self]
 ]
 
-{ #category : #'debug support' }
-Spur64BitCoMemoryManager >> setUpForUseByFacade: aCurrentImageCoInterpreterFacade [
-	"Make sure that eden etc are initialized, so that methods can be printed.
-	 This is really to make addressCouldBeObj: et al work."
-	<doNotGenerate>
-	self edenBytes: 0.
-	self setHeapBase: self freeStart
-		memoryLimit: self endOfMemory
-		endOfMemory: self endOfMemory
-]
-
-{ #category : #'trampoline support' }
+{ #category : 'trampoline support' }
 Spur64BitCoMemoryManager >> specialObjectsArrayAddress [
 	<api>
 	^self cCode: [(self addressOf: specialObjectsOop) asUnsignedInteger]
 		inSmalltalk: [cogit simulatedVariableAddress: #specialObjectsOop in: self]
 ]
 
-{ #category : #accessing }
-Spur64BitCoMemoryManager >> startOfMemory [
-	"Return the start of object memory.  This is immediately after the native code zone.
-	 N.B. the stack zone is alloca'ed. Use a macro so as not to punish the debug VM."
-	<api>
-	<cmacro: '() heapBase'>
-	<returnTypeC: #usqInt>
-	^coInterpreter heapBase
-]
-
-{ #category : #'simulation only' }
+{ #category : 'simulation only' }
 Spur64BitCoMemoryManager >> unalignedLongAt: byteAddress [
 	<doNotGenerate>
 	| rem |
@@ -333,7 +259,7 @@ Spur64BitCoMemoryManager >> unalignedLongAt: byteAddress [
 		ifFalse: [((self unsignedLong64At: byteAddress - rem) + ((self unsignedLong64At: byteAddress - rem + 8) bitShift: 64) bitShift: rem * -8) bitAnd: 16rFFFFFFFFFFFFFFFF]
 ]
 
-{ #category : #'simulation only' }
+{ #category : 'simulation only' }
 Spur64BitCoMemoryManager >> unalignedLongAt: byteAddress put: aLong [
 	<doNotGenerate>
 	| rem mask |
@@ -351,7 +277,7 @@ Spur64BitCoMemoryManager >> unalignedLongAt: byteAddress put: aLong [
 			 aLong]
 ]
 
-{ #category : #'cog jit support' }
+{ #category : 'cog jit support' }
 Spur64BitCoMemoryManager >> withoutForwardingOn: obj1 and: obj2 with: aBool sendToCogit: selector [
 	"For the purposes of become: send selector to the cogit with obj1, obj2
 	 and aBool and answer the result.  Undo forwarding for the selector."

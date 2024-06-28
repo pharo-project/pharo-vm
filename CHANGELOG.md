@@ -1,6 +1,232 @@
 # Change log
 
-I am a changelog... do not wait too much from me :D
+## v10.3.0
+
+* New harmonize rule by @RenaudFondeur in https://github.com/pharo-project/pharo-vm/pull/817
+* Ignoring EAGAIN in epoll_wait by @tesonep in https://github.com/pharo-project/pharo-vm/pull/818
+* Extend macOS implementation of SqueakSSL plugin to support setting a certificate on the SSL session context by @Rinzwind in https://github.com/pharo-project/pharo-vm/pull/816
+* Adding macro for win32.  by @tesonep in https://github.com/pharo-project/pharo-vm/pull/814
+
+## v10.2.1
+
+* Adding the missing tty.c file in the packaging. by @tesonep in https://github.com/pharo-project/pharo-vm/pull/771
+* Do not allow comparing objects of different types by @guillep in https://github.com/pharo-project/pharo-vm/pull/772
+* Prepare release 10.2.1 by @guillep in https://github.com/pharo-project/pharo-vm/pull/773
+* Constant conversion warning by @guillep in https://github.com/pharo-project/pharo-vm/pull/777
+* Fix tautological-pointer-compare warnings by @guillep in https://github.com/pharo-project/pharo-vm/pull/775
+* Removed Cogit>>#voidNSSendCache:  by @jordanmontt in https://github.com/pharo-project/pharo-vm/pull/776
+* Re-enable incompatible-function-pointer-types warning by @guillep in https://github.com/pharo-project/pharo-vm/pull/778
+* Removed unused functions from the C written by hand by @jordanmontt in https://github.com/pharo-project/pharo-vm/pull/780
+* Fix function pointer comparison warning by @guillep in https://github.com/pharo-project/pharo-vm/pull/783
+* Fix -return-type warnings by @doste in https://github.com/pharo-project/pharo-vm/pull/781
+* Fix shift-negative-value warning and reenable warning by @guillep in https://github.com/pharo-project/pharo-vm/pull/785
+* Remove warnings c compiler by @PalumboN in https://github.com/pharo-project/pharo-vm/pull/789
+* Remove StackInterpreter interruptPending instance variable by @jordanmontt in https://github.com/pharo-project/pharo-vm/pull/793
+* Do not use asserta: in a statement by @guillep in https://github.com/pharo-project/pharo-vm/pull/788
+* Bump to MacOS 11 and above by @guillep in https://github.com/pharo-project/pharo-vm/pull/792
+* Moving pharo.signatures files for OSX Bundle to Resources folder by @tesonep in https://github.com/pharo-project/pharo-vm/pull/770
+* Do not retain any selectors in CogAbstractInstruction by @RenaudFondeur in https://github.com/pharo-project/pharo-vm/pull/798
+* remove warning because of type and unsigned shift issues by @RenaudFondeur in https://github.com/pharo-project/pharo-vm/pull/800
+* add tests for type harmonization by @RenaudFondeur in https://github.com/pharo-project/pharo-vm/pull/807
+* Primitive format by @doste in https://github.com/pharo-project/pharo-vm/pull/802
+* Adding an implementation of the aio.c using EPOLL in Linux. by @tesonep in https://github.com/pharo-project/pharo-vm/pull/805
+* Fixing warnings that are errors in newer versions of clang by @tesonep in https://github.com/pharo-project/pharo-vm/pull/813
+
+## New Contributors
+* @RenaudFondeur made their first contribution in https://github.com/pharo-project/pharo-vm/pull/798
+
+**Full Changelog**: https://github.com/pharo-project/pharo-vm/compare/v10.2.0...v10.2.1
+
+## v10.2.0
+* Add library with function to spawn a process connected to a pseudo-terminal by @Rinzwind in https://github.com/pharo-project/pharo-vm/pull/742
+* Fix VM build in MacOS sonoma by @guillep in https://github.com/pharo-project/pharo-vm/pull/758
+* Primitive to compare bytes by @doste in https://github.com/pharo-project/pharo-vm/pull/759
+* Translate documentation picture to Englitsh by @Inao0 in https://github.com/pharo-project/pharo-vm/pull/764
+
+**Full Changelog**: https://github.com/pharo-project/pharo-vm/compare/v10.1.1...v10.2.0
+
+## v10.1.1
+* Change custom command in ‘vmmaker.cmake’ to take into account that the ‘CMAKE_CURRENT_BINARY_DIR_TO_OUT’ can contain other characters besides spaces that require escaping by @Rinzwind in https://github.com/pharo-project/pharo-vm/pull/741
+* Backporting PR for allocating in the old space by @jordanmontt in https://github.com/pharo-project/pharo-vm/pull/709
+* Fixing memory map in OSX by @tesonep in https://github.com/pharo-project/pharo-vm/pull/751
+* Adding generation of signature files by @tesonep in https://github.com/pharo-project/pharo-vm/pull/749
+
+**Full Changelog**: https://github.com/pharo-project/pharo-vm/compare/v10.1.0...v10.1.1
+
+## v10.1.0
+* Fixing undefined behaviors that Clang 15 removes by @tesonep in https://github.com/pharo-project/pharo-vm/pull/731
+* Fix ‘doReport’ to take into account that ‘fopen’ can return NULL by @Rinzwind in https://github.com/pharo-project/pharo-vm/pull/739
+* Change custom command in ‘vmmaker.cmake’ to take into account that the ‘CMAKE_CURRENT_BINARY_DIR_TO_OUT’ can contain spaces by @Rinzwind in https://github.com/pharo-project/pharo-vm/pull/738
+* Integrating new format by @tesonep in https://github.com/pharo-project/pharo-vm/pull/734
+
+ New Contributors
+* @Rinzwind made their first contribution in https://github.com/pharo-project/pharo-vm/pull/739
+
+**Full Changelog**: https://github.com/pharo-project/pharo-vm/compare/v10.0.9...v10.1.0
+
+## v10.0.9
+
+* Improves in PermSpace by @tesonep in https://github.com/pharo-project/pharo-vm/pull/684
+
+**Full Changelog**: https://github.com/pharo-project/pharo-vm/compare/v10.0.8...v10.0.9
+
+## v10.0.8
+
+* Fixes #14768: File class>>primFileAttributes😷 answers corrupted result by @akgrant43 in https://github.com/pharo-project/pharo-vm/pull/697
+* Fix/speed regression by @tesonep in https://github.com/pharo-project/pharo-vm/pull/705
+
+**Full Changelog**: https://github.com/pharo-project/pharo-vm/compare/v10.0.7...v10.0.8
+
+## v10.0.7
+
+* Update README.md by @guillep in https://github.com/pharo-project/pharo-vm/pull/688
+* Fix ephemeron scanning perf by @guillep in https://github.com/pharo-project/pharo-vm/pull/691
+
+**Full Changelog**: https://github.com/pharo-project/pharo-vm/compare/v10.0.6...v10.0.7
+
+## v10.0.6
+
+Improvements in build environment
+* Update build environment for Pharo 10 vm branch by @guillep in https://github.com/pharo-project/pharo-vm/pull/594
+* Make tests run in parallel by @guillep in https://github.com/pharo-project/pharo-vm/pull/596
+* Update Jenkins to use Pharo 110 for building by @PalumboN in https://github.com/pharo-project/pharo-vm/pull/661
+
+Cleanups
+* Cleanups/externalize internalize by @guillep in https://github.com/pharo-project/pharo-vm/pull/583
+* Fix/warnings by @guillep in https://github.com/pharo-project/pharo-vm/pull/584
+* fixing-categorization in P10 by @tesonep in https://github.com/pharo-project/pharo-vm/pull/625
+
+Fixes
+* Fix mnuMethodOrNilFor: for method wrappers by @guillep in https://github.com/pharo-project/pharo-vm/pull/578
+* fix function signatures by @pavel-krivanek in https://github.com/pharo-project/pharo-vm/pull/582
+
+Debugging improvements
+* Gdbinit file and helpers v2 by @guillep in https://github.com/pharo-project/pharo-vm/pull/486
+* VM Debugger improvement with IR by @QDucasse in https://github.com/pharo-project/pharo-vm/pull/342
+
+VM Improvements
+* improving-permSpace by @tesonep in https://github.com/pharo-project/pharo-vm/pull/614
+* Changing the order of command-line processing and PList in OSX by @tesonep in https://github.com/pharo-project/pharo-vm/pull/609
+* Adding parsing of image parameters from PList by @tesonep in https://github.com/pharo-project/pharo-vm/pull/636
+* Change terminate handler to exit with 128+signal by @jvalteren in https://github.com/pharo-project/pharo-vm/pull/644
+* Improvements in parameters handling in OSX by @tesonep in https://github.com/pharo-project/pharo-vm/pull/639
+* Adding check to fix when the image is open with an older VM by @tesonep in https://github.com/pharo-project/pharo-vm/pull/642
+* Fix/ephemeron list by @guillep in https://github.com/pharo-project/pharo-vm/pull/668
+
+New Contributors
+* @jvalteren made their first contribution in https://github.com/pharo-project/pharo-vm/pull/644
+
+**Full Changelog**: https://github.com/pharo-project/pharo-vm/compare/v10.0.5...v10.0.6
+
+## v10.0.5
+
+* Testing scavenger tenuring by @PalumboN in https://github.com/pharo-project/pharo-vm/pull/588
+* Deleting Pharo image from the vm repo by @jordanmontt in https://github.com/pharo-project/pharo-vm/pull/591
+* Cleaning Up Third Party Libraries by @tesonep in https://github.com/pharo-project/pharo-vm/pull/581
+
+**Full Changelog**: https://github.com/pharo-project/pharo-vm/compare/v10.0.4...v10.0.5
+
+## v10.0.4
+
+- Composed image format by @PalumboN in https://github.com/pharo-project/pharo-vm/pull/377
+- Composed image format: C translation by @PalumboN in https://github.com/pharo-project/pharo-vm/pull/388
+- Perm space on image by @PalumboN in https://github.com/pharo-project/pharo-vm/pull/416
+- New & old remembered sets by @PalumboN in https://github.com/pharo-project/pharo-vm/pull/418
+- Reduce segment files size on move objects to PermSpace by @PalumboN in https://github.com/pharo-project/pharo-vm/pull/508
+- Adding Support for PermSpace by @tesonep in https://github.com/pharo-project/pharo-vm/pull/488
+
+- Adding option to not use contant block optimization for test by @StevenCostiou in https://github.com/pharo-project/pharo-vm/pull/573
+- Do not use newer CMAKE features by @estebanlm in https://github.com/pharo-project/pharo-vm/pull/572
+- Split a method in two to reuse part in espell by @jecisc in https://github.com/pharo-project/pharo-vm/pull/569
+
+
+## New Contributors
+* @StevenCostiou made their first contribution in https://github.com/pharo-project/pharo-vm/pull/573
+* @estebanlm made their first contribution in https://github.com/pharo-project/pharo-vm/pull/572
+* @jecisc made their first contribution in https://github.com/pharo-project/pharo-vm/pull/569
+
+**Full Changelog**: https://github.com/pharo-project/pharo-vm/compare/v10.0.3...v10.0.4
+
+## v10.0.3
+
+ - Fix ARM32 by @tesonep in #562
+ - Verify ephemeron key is not immediate when marking by @guillep in #565
+
+## v10.0.2
+
+- Generate Pharo VM dependency graph by @hernanmd in #554
+- Link against a shared SDL2 if already installed in target by @hernanmd in #555
+- Slang: Integer>>#bitOr: and Integer>>#| are translated to C code differently by @hernanmd in #523
+- Fix ephemeron compaction by @guillep in #561
+
+## v10.0.1
+
+- Adding image version field to the image header
+- Fixes in String comparison primitive when JIT
+- Improvements in dependency of the VMMaker code.
+
+## v10.0.0
+
+- Slang (Smalltalk to C Translator)
+	- Introducing a C AST to ease the generation of C Code
+	- Having a Pretty Printer for C AST
+	- Translation Tests
+	- Fixing Translation Issues
+	- Clear separation between Slang and VM code
+	- Improving Cast generation
+
+- Clean Up:	
+	- Remove Old Bytecode Set
+	- Remove Old Block Implementation
+	- Simplification of the Primitives
+	- Removing Unused / Old Code / Dead Code
+	- Cleanup / Removal of Old Unused primitives
+	- Removing Old FFI Implementation
+	- Removing MT Experiment from the code base (Kept in own branch)
+	- Fixing Compilation Warnings
+	- Improving Type annotations to fix bugs in the translation / compilation
+	- Removing Conditional Code on Old Configurations / Features
+	- Renaming Concepts to be inline with Common terminology
+	- Remove Newspeak, Multiple Bytecode and Old Memory Managers
+	- Removing Unused Plugins
+
+- Tests
+	- GNUification Tests
+	- Tests for Math primitives including overflow and conversion testing.
+	- Tests for comparison primitives (Equals / Not Equals / Less than / Less or Equals / Greater Than / Greater or Equals)
+	- Testing Primitives for objects Pinned in Memory
+	- Testing Math Primitives for Immediate Classes (SmallFloats / SmallIntegers)	
+	- Improving Simulation Infrastructure
+	- Using Sista Bytecode in all Tests
+	- Updating Unicorn version
+	- Improving Machine Code emulation
+	- Testing Image Read / Image Write
+	- Using the same memory map in Tests and Execution
+	- Testing Ephemerons
+	- Become Primitives
+
+- Ephemeron
+	- Fix for large ammounts
+	- Make it available
+	- Testing Signal Finalizations
+	
+- Fixing Become Errors.
+
+- Fixing XRay Primitive
+
+- Single-Instruction Multiple-Data (SIMD) initial Support:
+	- Initialization of new objects using SIMD (ARM64)
+	- Adding Bytecode Extensions to support SIMD instructions
+	- Adding Vector Registers
+	- Vector Register bytecodes
+
+- Auto Localization of Interpreter loop variables and edge detection simplifying development and minimizing code
+
+- ImageReader / ImageWriter reification needed for Permanent Space.
+
+- Improving Memory Map of the VM (Using constant positions)
+
+- Dependencies Improvements
 
 ## v9.0.21
 

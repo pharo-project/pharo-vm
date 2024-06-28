@@ -5,7 +5,7 @@ Class {
 }
 
 { #category : #'building suites' }
-VMARMV8SIMDEncodingTest class >> testParameters [
+VMARMV8SIMDEncodingTest class >> wordSizeParameters [
 
 	^ ParametrizedTestMatrix new
 		addCase: { #ISA -> #'aarch64'. #wordSize -> 8};
@@ -16,7 +16,7 @@ VMARMV8SIMDEncodingTest class >> testParameters [
 VMARMV8SIMDEncodingTest >> armInstructionAt: index [
 
 	| addr inst |
-	addr := initialAddress + ((index - 1) * 8).
+	addr := memory getMemoryMap codeZoneStart + ((index - 1) * 8).
 	inst := memory uint32AtPointer: addr.
 	
 	^ inst aarch64Disassembled

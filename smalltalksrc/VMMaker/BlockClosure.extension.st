@@ -1,12 +1,12 @@
-Extension { #name : #BlockClosure }
+Extension { #name : 'BlockClosure' }
 
-{ #category : #'*VMMaker-interpreter simulator' }
+{ #category : '*VMMaker-interpreter simulator' }
 BlockClosure >> shouldStopIfAtPC: address [
 	<primitive: 202>
 	^self value: address
 ]
 
-{ #category : #'*VMMaker-conveniences' }
+{ #category : '*VMMaker-conveniences' }
 BlockClosure >> value: firstArg value: secondArg value: thirdArg value: fourthArg value: fifthArg [
 	"Activate the receiver, creating a closure activation (MethodContext)
 	 whose closure is the receiver and whose caller is the sender of this

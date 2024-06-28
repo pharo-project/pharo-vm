@@ -85,6 +85,11 @@ SlangBasicTypeInferenceTestClass >> returnAFalseMessageSend [
 	^ self returnAFalseConstantNode
 ]
 
+{ #category : #'return-float' }
+SlangBasicTypeInferenceTestClass >> returnAFloat [ 
+	^ 1.1
+]
+
 { #category : #'return-constant' }
 SlangBasicTypeInferenceTestClass >> returnAFloatConstantNode [
 	^ 1.0
@@ -95,6 +100,11 @@ SlangBasicTypeInferenceTestClass >> returnAFloatMessageSend [
 	^ self returnAFloatConstantNode
 ]
 
+{ #category : #'return-signed' }
+SlangBasicTypeInferenceTestClass >> returnANegativeNumber [
+	^ -1
+]
+
 { #category : #'return-constant' }
 SlangBasicTypeInferenceTestClass >> returnANilConstantNode [
 	^ nil
@@ -103,6 +113,24 @@ SlangBasicTypeInferenceTestClass >> returnANilConstantNode [
 { #category : #'return-message-send' }
 SlangBasicTypeInferenceTestClass >> returnANilMessageSend [
 	^ self returnANilConstantNode
+]
+
+{ #category : #'return-signed' }
+SlangBasicTypeInferenceTestClass >> returnASignIntFromAnUnsigned: j [
+	| i |
+	i := 2.
+	i > 0 whileTrue: [ i := i - 1 ].
+	^ i
+]
+
+{ #category : #'return-signed' }
+SlangBasicTypeInferenceTestClass >> returnASignIntFromAnUnsignedShouldNotWork: j [
+
+	<var: #j type: #'unsigned int'>
+	| i |
+	i := j.
+	i < 1 whileTrue: [ i := i + 1 ].
+	^ i
 ]
 
 { #category : #'return-constant' }
@@ -282,6 +310,150 @@ SlangBasicTypeInferenceTestClass >> returnExplicitTempUnsignedLongLong [
 	^ t
 ]
 
+{ #category : #'return-long-int' }
+SlangBasicTypeInferenceTestClass >> returnLongInt [
+	^ 2147483648
+	
+
+]
+
+{ #category : #'return-long-int' }
+SlangBasicTypeInferenceTestClass >> returnLongIntInVariable [
+	| i |
+	i := 2147483648.
+	^ i
+	
+
+]
+
+{ #category : #'return-long-int' }
+SlangBasicTypeInferenceTestClass >> returnMultipleLongInt [
+	| i |
+	i := 2147483648.
+	i = 2147483648
+	ifTrue: [  
+		^ i
+	]
+	ifFalse: [ 
+		^ 5
+	].
+	
+
+]
+
+{ #category : #'return-long-int' }
+SlangBasicTypeInferenceTestClass >> returnMultipleLongIntAnnotation [
+	| i |
+	i := 2147483648.
+	i = 2147483648
+	ifTrue: [  
+		^ i
+	]
+	ifFalse: [ 
+		^ 5
+	].
+	
+
+]
+
+{ #category : #'return-long-int' }
+SlangBasicTypeInferenceTestClass >> returnMultipleLongIntAnnotation: i [
+	<var: #i type: #'unsigned int'>
+	i = 6
+	ifTrue: [  
+		^ i
+	]
+	ifFalse: [ 
+		^ 5
+	].
+	
+
+]
+
+{ #category : #'return-long-int' }
+SlangBasicTypeInferenceTestClass >> returnMultipleLongIntNotWorking [
+	| i |
+	i := 2147483648.
+	i = 2147483648
+	ifTrue: [  
+		^ 2147483648
+	]
+	ifFalse: [ 
+		^ 2147483649
+	].
+	
+
+]
+
+{ #category : #'return-multiple-type' }
+SlangBasicTypeInferenceTestClass >> returnStringAndIntInIfTrue1 [ 
+	| i |
+	i := 3.
+	i = 3
+	ifTrue: [  
+		^ 5
+	].
+	^ 'aa'
+]
+
+{ #category : #'return-multiple-type' }
+SlangBasicTypeInferenceTestClass >> returnStringAndIntInIfTrue2 [
+	| i |
+	i := 3.
+	i = 3
+	ifTrue: [  
+		^ 'aa'
+	].
+	^ 5
+]
+
+{ #category : #'return-multiple-type' }
+SlangBasicTypeInferenceTestClass >> returnStringAndIntInIfTrueifFalse1 [ 
+	| i |
+	i := 3.
+	i = 3
+	ifTrue: [  
+		^ 5
+	]
+	ifFalse: [ 
+		^ 'aa'
+	].
+	
+
+]
+
+{ #category : #'return-multiple-type' }
+SlangBasicTypeInferenceTestClass >> returnStringAndIntInIfTrueifFalse2 [
+	| i |
+	i := 3.
+	i = 3
+	ifTrue: [  
+		^ 'aa'
+	]
+	ifFalse: [ 
+		^ 5
+	].
+	
+
+]
+
+{ #category : #'return-multiple-type' }
+SlangBasicTypeInferenceTestClass >> returnStringAndIntInIfTrueifFalse3 [
+	| i |
+	i := 3.
+	i = 3
+	ifTrue: [  
+		^ i
+	]
+	ifFalse: [ 
+		^ 'aa'
+	].
+	^ 7
+
+	
+
+]
+
 { #category : #'return-temp-assigned-const' }
 SlangBasicTypeInferenceTestClass >> returnTempBigNegativeIntegerConstantNode [
 	| t |
@@ -438,4 +610,21 @@ SlangBasicTypeInferenceTestClass >> returnTempTrueMessageNode [
 	| t |
 	t := self returnATrueConstantNode.
 	^ t
+]
+
+{ #category : #'return-signed' }
+SlangBasicTypeInferenceTestClass >> unsignedIntInASignedOperation [
+	| i |
+	i := 2147483648.
+	i > 0 whileTrue: [ i := i - 1 ].
+	^ i
+]
+
+{ #category : #'return-signed' }
+SlangBasicTypeInferenceTestClass >> unsignedIntInASignedOperationNotWorking [
+	<var: #i type: #'unsigned int'>
+	| i |
+	i := 2.
+	i > -2 whileTrue: [ i := i - 1 ].
+	^ i
 ]
