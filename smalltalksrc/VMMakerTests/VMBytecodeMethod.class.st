@@ -1,14 +1,16 @@
 Class {
-	#name : #VMBytecodeMethod,
-	#superclass : #Object,
+	#name : 'VMBytecodeMethod',
+	#superclass : 'Object',
 	#instVars : [
 		'virtualMachine',
 		'methodOop'
 	],
-	#category : #'VMMakerTests-Visualisation'
+	#category : 'VMMakerTests-Visualisation',
+	#package : 'VMMakerTests',
+	#tag : 'Visualisation'
 }
 
-{ #category : #'instance creation' }
+{ #category : 'instance creation' }
 VMBytecodeMethod class >> newOnInterpreter: virtualMachine methodOop: methodOop [
 	
 	^ self new
@@ -17,13 +19,13 @@ VMBytecodeMethod class >> newOnInterpreter: virtualMachine methodOop: methodOop 
 		yourself
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 VMBytecodeMethod >> at: index [
 
 	^ virtualMachine objectMemory fetchByte: index - 1 "0 based" ofObject: methodOop
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 VMBytecodeMethod >> disassemble [
 	| symbolicBytecodes |
 	symbolicBytecodes := SymbolicBytecodeBuilder decode: self.
@@ -31,52 +33,52 @@ VMBytecodeMethod >> disassemble [
 ' join: (symbolicBytecodes collect: [ :sbc | sbc description ])
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 VMBytecodeMethod >> encoderClass [
 	^ EncoderForSistaV1
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 VMBytecodeMethod >> endPC [
 	
 	^ virtualMachine objectMemory bytesInObject: methodOop
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 VMBytecodeMethod >> initialPC [
 	"Answer the program counter for the receiver's first bytecode."
 
 	^ (self numLiterals + 1) * virtualMachine objectMemory wordSize + 1
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 VMBytecodeMethod >> literalAt: anInteger [ 
 	
 	^ 'literal key' -> 'literal?'
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 VMBytecodeMethod >> methodOop [
 	^ methodOop
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 VMBytecodeMethod >> methodOop: anObject [
 	methodOop := anObject
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 VMBytecodeMethod >> numLiterals [
 	
 	^ virtualMachine objectMemory literalCountOf: methodOop 
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 VMBytecodeMethod >> virtualMachine [
 	^ virtualMachine
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 VMBytecodeMethod >> virtualMachine: anObject [
 	virtualMachine := anObject
 ]

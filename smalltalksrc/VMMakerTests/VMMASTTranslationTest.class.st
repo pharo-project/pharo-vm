@@ -1,46 +1,47 @@
 Class {
-	#name : #VMMASTTranslationTest,
-	#superclass : #TestCase,
-	#category : #VMMakerTests
+	#name : 'VMMASTTranslationTest',
+	#superclass : 'TestCase',
+	#category : 'VMMakerTests',
+	#package : 'VMMakerTests'
 }
 
-{ #category : #'generation-targets' }
+{ #category : 'generation-targets' }
 VMMASTTranslationTest >> + arg [
 ]
 
-{ #category : #'generation-targets' }
+{ #category : 'generation-targets' }
 VMMASTTranslationTest >> emptyBlockHasSingleNilStatement [
 
 	[  ] value
 ]
 
-{ #category : #'generation-targets' }
+{ #category : 'generation-targets' }
 VMMASTTranslationTest >> inlineMethodWithLoop [
 
 	self methodWithLoop
 ]
 
-{ #category : #'generation-targets' }
+{ #category : 'generation-targets' }
 VMMASTTranslationTest >> inlineSecondLevelMethodWithLoop [
 
 	self inlineMethodWithLoop
 ]
 
-{ #category : #'generation-targets' }
+{ #category : 'generation-targets' }
 VMMASTTranslationTest >> inlineTwiceMethodWithLoop [
 
 	self methodWithLoop.
 	self methodWithLoop
 ]
 
-{ #category : #'generation-targets' }
+{ #category : 'generation-targets' }
 VMMASTTranslationTest >> inlineTwiceSecondLevelMethodWithLoop [
 
 	self inlineMethodWithLoop.
 	self inlineMethodWithLoop
 ]
 
-{ #category : #'generation-targets' }
+{ #category : 'generation-targets' }
 VMMASTTranslationTest >> inlinedMethodWithLocalWithSameName [
 
 	<inline:true>
@@ -50,17 +51,17 @@ VMMASTTranslationTest >> inlinedMethodWithLocalWithSameName [
 
 ]
 
-{ #category : #'generation-targets' }
+{ #category : 'generation-targets' }
 VMMASTTranslationTest >> methodWithArgument: anArgument [
 ]
 
-{ #category : #'generation-targets' }
+{ #category : 'generation-targets' }
 VMMASTTranslationTest >> methodWithExpressionInLoopCondition [
 
 	1 to: self something - 10 do: [ :i | self foo: i ]
 ]
 
-{ #category : #'generation-targets' }
+{ #category : 'generation-targets' }
 VMMASTTranslationTest >> methodWithIfNil [
 
 	self something
@@ -68,7 +69,7 @@ VMMASTTranslationTest >> methodWithIfNil [
 		ifNotNil: [ 2 ]
 ]
 
-{ #category : #'generation-targets' }
+{ #category : 'generation-targets' }
 VMMASTTranslationTest >> methodWithIfNilIfNotNil [
 
 	self something
@@ -77,7 +78,7 @@ VMMASTTranslationTest >> methodWithIfNilIfNotNil [
 
 ]
 
-{ #category : #'generation-targets' }
+{ #category : 'generation-targets' }
 VMMASTTranslationTest >> methodWithIfNilIfNotNilWithArgument [
 
 	self something
@@ -85,7 +86,7 @@ VMMASTTranslationTest >> methodWithIfNilIfNotNilWithArgument [
 		ifNotNil: [ :soSomething | self lala: soSomething ]
 ]
 
-{ #category : #'generation-targets' }
+{ #category : 'generation-targets' }
 VMMASTTranslationTest >> methodWithIfNotNilIfNil [
 
 	self something
@@ -93,7 +94,7 @@ VMMASTTranslationTest >> methodWithIfNotNilIfNil [
 		ifNil: [ 2 ]
 ]
 
-{ #category : #'generation-targets' }
+{ #category : 'generation-targets' }
 VMMASTTranslationTest >> methodWithIfNotNilIfNilWithArgument [
 
 	self something
@@ -101,14 +102,14 @@ VMMASTTranslationTest >> methodWithIfNotNilIfNilWithArgument [
 		ifNil: [ ]
 ]
 
-{ #category : #'generation-targets' }
+{ #category : 'generation-targets' }
 VMMASTTranslationTest >> methodWithIfNotNilWithArgument [
 
 	self something ifNotNil: [ :soSomething |
 		self lala: soSomething ]
 ]
 
-{ #category : #'generation-targets' }
+{ #category : 'generation-targets' }
 VMMASTTranslationTest >> methodWithLocalVarAndAndInlinedMethod [
 
 	<var: 'cond' type: 'pthread_cond_t'>
@@ -117,17 +118,17 @@ VMMASTTranslationTest >> methodWithLocalVarAndAndInlinedMethod [
 	self inlinedMethodWithLocalWithSameName.
 ]
 
-{ #category : #'generation-targets' }
+{ #category : 'generation-targets' }
 VMMASTTranslationTest >> methodWithLoop [
 
 	1 to: 10 do: [ :i | self foo: i ]
 ]
 
-{ #category : #'generation-targets' }
+{ #category : 'generation-targets' }
 VMMASTTranslationTest >> methodWithNoArguments [
 ]
 
-{ #category : #tests }
+{ #category : 'tests' }
 VMMASTTranslationTest >> testArgumentIsNoTemp [
 
 	| translation method |
@@ -137,7 +138,7 @@ VMMASTTranslationTest >> testArgumentIsNoTemp [
 	self deny: (translation locals includes: method methodNode arguments first name)
 ]
 
-{ #category : #tests }
+{ #category : 'tests' }
 VMMASTTranslationTest >> testComplexIfNilIfNotNilWithArgument [
 
 	| translation method codeGenerator assignment conditional condition |
@@ -174,7 +175,7 @@ VMMASTTranslationTest >> testComplexIfNilIfNotNilWithArgument [
 	self assert: condition arguments first name equals: 'nil'
 ]
 
-{ #category : #tests }
+{ #category : 'tests' }
 VMMASTTranslationTest >> testComplexIfNotNilIfNilWithArgument [
 
 	| translation method codeGenerator assignment conditional condition |
@@ -211,7 +212,7 @@ VMMASTTranslationTest >> testComplexIfNotNilIfNilWithArgument [
 	self assert: condition arguments first name equals: 'nil'
 ]
 
-{ #category : #tests }
+{ #category : 'tests' }
 VMMASTTranslationTest >> testComplexIfNotNilWithArgument [
 
 	| translation method codeGenerator assignment conditional condition |
@@ -243,7 +244,7 @@ VMMASTTranslationTest >> testComplexIfNotNilWithArgument [
 	self assert: condition arguments first name equals: 'nil'
 ]
 
-{ #category : #tests }
+{ #category : 'tests' }
 VMMASTTranslationTest >> testEmptyBlockGeneratesSingleNilStatement [
 
 	| translation method codeGenerator block |
@@ -259,7 +260,7 @@ VMMASTTranslationTest >> testEmptyBlockGeneratesSingleNilStatement [
 	self assert: block statements first value equals: nil
 ]
 
-{ #category : #tests }
+{ #category : 'tests' }
 VMMASTTranslationTest >> testIfNilIfNotNilBecomesIfTrueIfFalse [
 
 	| translation |
@@ -268,7 +269,7 @@ VMMASTTranslationTest >> testIfNilIfNotNilBecomesIfTrueIfFalse [
 	self assert: translation statements first selector equals: #ifTrue:ifFalse:
 ]
 
-{ #category : #tests }
+{ #category : 'tests' }
 VMMASTTranslationTest >> testIfNilIfNotNilDoesNotInvertBlocks [
 
 	| translation |
@@ -288,7 +289,7 @@ VMMASTTranslationTest >> testIfNilIfNotNilDoesNotInvertBlocks [
 		equals: 2
 ]
 
-{ #category : #tests }
+{ #category : 'tests' }
 VMMASTTranslationTest >> testIfNotNilIfNilInversesBlocks [
 
 	| translation |
@@ -308,7 +309,7 @@ VMMASTTranslationTest >> testIfNotNilIfNilInversesBlocks [
 		equals: 1
 ]
 
-{ #category : #tests }
+{ #category : 'tests' }
 VMMASTTranslationTest >> testInlineMethodWithLoopDeclaresLoopIndexVariable [
 
 	| translation codeGenerator inlinedMethod |
@@ -323,7 +324,7 @@ VMMASTTranslationTest >> testInlineMethodWithLoopDeclaresLoopIndexVariable [
 	self assert: (translation locals includesAll: inlinedMethod locals)
 ]
 
-{ #category : #tests }
+{ #category : 'tests' }
 VMMASTTranslationTest >> testInlineSecondLevelMethodWithLoopDeclaresLoopIndexVariable [
 
 	| translation codeGenerator inlinedMethods |
@@ -339,7 +340,7 @@ VMMASTTranslationTest >> testInlineSecondLevelMethodWithLoopDeclaresLoopIndexVar
 	self assert: translation locals asSet size equals: 1
 ]
 
-{ #category : #tests }
+{ #category : 'tests' }
 VMMASTTranslationTest >> testInlineTwiceMethodWithLoopDeclaresTwiceLoopIndexVariable [
 
 	| translation codeGenerator inlinedMethod |
@@ -354,7 +355,7 @@ VMMASTTranslationTest >> testInlineTwiceMethodWithLoopDeclaresTwiceLoopIndexVari
 	self assert: translation locals asSet size equals: 2
 ]
 
-{ #category : #tests }
+{ #category : 'tests' }
 VMMASTTranslationTest >> testInlineTwiceSecondLevelMethodWithLoopDeclaresLoopIndexVariable [
 
 	| translation codeGenerator inlinedMethods |
@@ -370,7 +371,7 @@ VMMASTTranslationTest >> testInlineTwiceSecondLevelMethodWithLoopDeclaresLoopInd
 	self assert: translation locals asSet size equals: 2
 ]
 
-{ #category : #tests }
+{ #category : 'tests' }
 VMMASTTranslationTest >> testInlinedLocalVariableWithSameNameIsProperlyRenamed [
 
 	|  method codeGenerator  methodTranslation inlinedMethod inlinedMethodTranslation |
@@ -390,7 +391,7 @@ VMMASTTranslationTest >> testInlinedLocalVariableWithSameNameIsProperlyRenamed [
 	self assert: (methodTranslation declarations at: #cond2) equals: 'pthread_cond_t cond2'
 ]
 
-{ #category : #tests }
+{ #category : 'tests' }
 VMMASTTranslationTest >> testKeywordMethodHasArgument [
 
 	| translation method |
@@ -400,7 +401,7 @@ VMMASTTranslationTest >> testKeywordMethodHasArgument [
 	self assert: (translation args includes: method methodNode arguments first name)
 ]
 
-{ #category : #tests }
+{ #category : 'tests' }
 VMMASTTranslationTest >> testMethodWithConditionInLoopLimitHasLimitVariable [
 
 	| translation method loop |
@@ -411,7 +412,7 @@ VMMASTTranslationTest >> testMethodWithConditionInLoopLimitHasLimitVariable [
 	self assert: loop arguments size equals: 4
 ]
 
-{ #category : #tests }
+{ #category : 'tests' }
 VMMASTTranslationTest >> testMethodWithConstantConditionInLoopHasNoLimitVariable [
 
 	| translation method loop |
@@ -422,7 +423,7 @@ VMMASTTranslationTest >> testMethodWithConstantConditionInLoopHasNoLimitVariable
 	self assert: loop arguments size equals: 6
 ]
 
-{ #category : #tests }
+{ #category : 'tests' }
 VMMASTTranslationTest >> testMethodWithLoopDeclaresLoopIndexVariable [
 
 	| translation method block |
@@ -433,7 +434,7 @@ VMMASTTranslationTest >> testMethodWithLoopDeclaresLoopIndexVariable [
 	self deny: (translation locals includes: block arguments first)
 ]
 
-{ #category : #tests }
+{ #category : 'tests' }
 VMMASTTranslationTest >> testMethodWithoutExplicitReturnInOtherMethodReturnsVoid [
 
 	| translation codeGenerator |
@@ -450,7 +451,7 @@ VMMASTTranslationTest >> testMethodWithoutExplicitReturnInOtherMethodReturnsVoid
 	self assert: translation returnType equals: #void
 ]
 
-{ #category : #tests }
+{ #category : 'tests' }
 VMMASTTranslationTest >> testMethodWithoutExplicitReturnReturnsVoid [
 
 	| translation codeGenerator |
@@ -467,7 +468,7 @@ VMMASTTranslationTest >> testMethodWithoutExplicitReturnReturnsVoid [
 	self assert: translation returnType equals: #void
 ]
 
-{ #category : #tests }
+{ #category : 'tests' }
 VMMASTTranslationTest >> testTranslateBinaryMethodHasSameName [
 
 	| translation |
@@ -476,7 +477,7 @@ VMMASTTranslationTest >> testTranslateBinaryMethodHasSameName [
 	self assert: translation selector equals: #+.
 ]
 
-{ #category : #tests }
+{ #category : 'tests' }
 VMMASTTranslationTest >> testTranslateKeywordMethodHasSameName [
 
 	| translation method |
@@ -486,7 +487,7 @@ VMMASTTranslationTest >> testTranslateKeywordMethodHasSameName [
 	self assert: translation selector equals: method selector.
 ]
 
-{ #category : #tests }
+{ #category : 'tests' }
 VMMASTTranslationTest >> testTranslateUnaryMethodHasSameName [
 
 	| translation method |

@@ -1,6 +1,6 @@
-Extension { #name : #StackToRegisterMappingCogit }
+Extension { #name : 'StackToRegisterMappingCogit' }
 
-{ #category : #'*VMMakerTests' }
+{ #category : '*VMMakerTests' }
 StackToRegisterMappingCogit >> methodOrBlockNumTemps: anInteger [ 
 
 	methodOrBlockNumTemps := anInteger

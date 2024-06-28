@@ -22,16 +22,18 @@ v := SLCallGraphVisitor codeGenerator: generator.
 v startFromMethod: (generator methodNamed: #foo).
 "
 Class {
-	#name : #SLCallGraphVisitor,
-	#superclass : #Object,
+	#name : 'SLCallGraphVisitor',
+	#superclass : 'Object',
 	#instVars : [
 		'codeGenerator',
 		'alreadyVisited'
 	],
-	#category : #'Slang-Optimizations'
+	#category : 'Slang-Optimizations',
+	#package : 'Slang',
+	#tag : 'Optimizations'
 }
 
-{ #category : #'instance creation' }
+{ #category : 'instance creation' }
 SLCallGraphVisitor class >> codeGenerator: aCodeGenerator [
 	
 	^ self new
@@ -39,26 +41,26 @@ SLCallGraphVisitor class >> codeGenerator: aCodeGenerator [
 		yourself
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 SLCallGraphVisitor >> codeGenerator [
 
 	^ codeGenerator
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 SLCallGraphVisitor >> codeGenerator: anObject [
 
 	codeGenerator := anObject
 ]
 
-{ #category : #initialization }
+{ #category : 'initialization' }
 SLCallGraphVisitor >> initialize [
 
 	super initialize.
 	alreadyVisited := Set new.
 ]
 
-{ #category : #private }
+{ #category : 'private' }
 SLCallGraphVisitor >> internalVisitMethod: aTMethod [
 
 	"Recursive private method. Called only once per selector/method in the callgraph visit"
@@ -78,7 +80,7 @@ SLCallGraphVisitor >> internalVisitMethod: aTMethod [
 	self postVisitMethod: aTMethod.
 ]
 
-{ #category : #private }
+{ #category : 'private' }
 SLCallGraphVisitor >> internalVisitSelector: aSelector [
 
 	"Recursive private method. Called only once per selector/method in the callgraph visit"
@@ -94,19 +96,19 @@ SLCallGraphVisitor >> internalVisitSelector: aSelector [
 	method ifNotNil: [ self internalVisitMethod: method ]
 ]
 
-{ #category : #hooks }
+{ #category : 'hooks' }
 SLCallGraphVisitor >> postVisitMethod: aTMethod [
 	
 	^ true
 ]
 
-{ #category : #hooks }
+{ #category : 'hooks' }
 SLCallGraphVisitor >> preVisitMethod: aTMethod [
 	
 	^ true
 ]
 
-{ #category : #api }
+{ #category : 'api' }
 SLCallGraphVisitor >> startFromSelector: aSelector [
 	
 	"Non-recursive public method. Called only once per callgraph visit"

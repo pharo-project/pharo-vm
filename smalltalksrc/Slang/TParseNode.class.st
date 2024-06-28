@@ -2,22 +2,24 @@
 A TParseNode is node in the parse tree of a TMethod. Subclasses correspond to different types of nodes in a method parse tree. The tree of translation parse nodes mirrors the parse tree of a Smalltalk method, and is used for translating a Smalltalk method to C source.
 "
 Class {
-	#name : #TParseNode,
-	#superclass : #Object,
+	#name : 'TParseNode',
+	#superclass : 'Object',
 	#instVars : [
 		'parent',
 		'comment'
 	],
-	#category : #'Slang-AST'
+	#category : 'Slang-AST',
+	#package : 'Slang',
+	#tag : 'AST'
 }
 
-{ #category : #visiting }
+{ #category : 'visiting' }
 TParseNode >> accept: aVisitor [
 
 	self subclassResponsibility
 ]
 
-{ #category : #utilities }
+{ #category : 'utilities' }
 TParseNode >> allCalls [
 	"Answer a collection of selectors for the messages sent in this parse tree."
 
@@ -32,25 +34,25 @@ TParseNode >> allCalls [
 	^calls
 ]
 
-{ #category : #enumerating }
+{ #category : 'enumerating' }
 TParseNode >> allSatisfy: aBlock [
 	self nodesDo: [:n| (aBlock value: n) ifFalse: [^false]].
 	^true
 ]
 
-{ #category : #enumerating }
+{ #category : 'enumerating' }
 TParseNode >> allStatementsDo: aFullBlockClosure [ 
 	
 	self children do: [ :child | child allStatementsDo: aFullBlockClosure ]
 ]
 
-{ #category : #enumerating }
+{ #category : 'enumerating' }
 TParseNode >> anySatisfy: aBlock [
 	self nodesDo: [:n| (aBlock value: n) ifTrue: [^true]].
 	^false
 ]
 
-{ #category : #transforming }
+{ #category : 'transforming' }
 TParseNode >> asCASTExpressionIn: aBuilder [
 
 	"By default use the normal translation.
@@ -58,41 +60,41 @@ TParseNode >> asCASTExpressionIn: aBuilder [
 	^ self asCASTIn: aBuilder
 ]
 
-{ #category : #tranforming }
+{ #category : 'tranforming' }
 TParseNode >> asCASTIn: aBuilder [
 
 	self subclassResponsibility
 ]
 
-{ #category : #'C code generation' }
+{ #category : 'C code generation' }
 TParseNode >> asCASTIn: aBuilder prependToEnd: aNodeOrNil [
 	aNodeOrNil ifNotNil:
 		[^ aNodeOrNil prependCASTIn: aBuilder expression: self].
 	^ self asCASTExpressionIn: aBuilder
 ]
 
-{ #category : #linearisation }
+{ #category : 'linearisation' }
 TParseNode >> asExpressionIn: aMLStatementListBuider [ 
 	
 	"A TNode returns itself as an expression"
 	^ self
 ]
 
-{ #category : #transformations }
+{ #category : 'transformations' }
 TParseNode >> asReturnNode [
 	^TReturnNode new 
 		setExpression: self;
 		yourself
 ]
 
-{ #category : #linearisation }
+{ #category : 'linearisation' }
 TParseNode >> asStatementIn: aMLStatementListBuider [ 
 
 	"A TNode returns itself as a statement"
 	^ self
 ]
 
-{ #category : #transformations }
+{ #category : 'transformations' }
 TParseNode >> assignLastExpressionTo: aTVariableNode [ 
 	
 	"An expression just assigns itself"
@@ -101,7 +103,7 @@ TParseNode >> assignLastExpressionTo: aTVariableNode [
 			expression: self
 ]
 
-{ #category : #transformations }
+{ #category : 'transformations' }
 TParseNode >> bindVariableUsesIn: aDictionary [
 	"Bind uses of all variables in the given dictionary, but do not change variables that appear on the left-hand-side of an assignment statement."
 
@@ -109,7 +111,7 @@ TParseNode >> bindVariableUsesIn: aDictionary [
 
 ]
 
-{ #category : #transformations }
+{ #category : 'transformations' }
 TParseNode >> bindVariableUsesIn: aDictionary andConstantFoldIf: constantFold in: codeGen [
 	"Answer either the receiver, if it contains no references to the given variables, or a new node with the given variables rebound.
 	 But do not change variables that appear on the left-hand-side of an assignment statement."
@@ -117,19 +119,19 @@ TParseNode >> bindVariableUsesIn: aDictionary andConstantFoldIf: constantFold in
 
 ]
 
-{ #category : #transformations }
+{ #category : 'transformations' }
 TParseNode >> bindVariablesIn: aDictionary [
 
 	^self
 ]
 
-{ #category : #transformations }
+{ #category : 'transformations' }
 TParseNode >> bindVariablesIn: aDictionary unless: cautionaryBlock [
 
 	^self
 ]
 
-{ #category : #enumerating }
+{ #category : 'enumerating' }
 TParseNode >> collect: aBlock [
 	| nodes |
 	nodes := OrderedCollection new.
@@ -137,54 +139,54 @@ TParseNode >> collect: aBlock [
 	^nodes
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 TParseNode >> comment [
 	^comment
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 TParseNode >> comment: aComment [
 
 	comment := aComment 
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 TParseNode >> constantNumbericValueIfAtAllPossibleOrNilIn: aCCodeGen [
 	"This is a version of constantNumbericValueOrNil for type checking rather than code generation.
 	 It aims to yield a value if at all possible."
 	^self constantNumbericValueOrNil
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 TParseNode >> constantNumbericValueOrNil [
 
 	^nil
 ]
 
-{ #category : #enumerating }
+{ #category : 'enumerating' }
 TParseNode >> detect: aBlock [
 	^self detect: aBlock ifNone: [self error: 'Node is not in the tree']
 ]
 
-{ #category : #enumerating }
+{ #category : 'enumerating' }
 TParseNode >> detect: aBlock ifNone: defaultBlock [
 	self nodesDo: [:n| (aBlock value: n) ifTrue: [^n]].
 	^defaultBlock value
 ]
 
-{ #category : #testing }
+{ #category : 'testing' }
 TParseNode >> endsWithReturn [
 
 	^false
 ]
 
-{ #category : #flattenin }
+{ #category : 'flattenin' }
 TParseNode >> flattened [
 	
 	^ { self }
 ]
 
-{ #category : #testing }
+{ #category : 'testing' }
 TParseNode >> hasExplicitReturn [
 
 	self nodesDo: [ :node |
@@ -193,167 +195,167 @@ TParseNode >> hasExplicitReturn [
 	^false
 ]
 
-{ #category : #testing }
+{ #category : 'testing' }
 TParseNode >> hasSideEffect [
 	"Answer if the parse tree rooted at this node has a side-effect or not.  By default assume it has.  Nodes that don't override."
 	^true
 ]
 
-{ #category : #testing }
+{ #category : 'testing' }
 TParseNode >> isAssertion [
 	^false
 ]
 
-{ #category : #testing }
+{ #category : 'testing' }
 TParseNode >> isAssignment [
 
 	^false
 ]
 
-{ #category : #testing }
+{ #category : 'testing' }
 TParseNode >> isCaseStmt [
 
 	^false
 ]
 
-{ #category : #testing }
+{ #category : 'testing' }
 TParseNode >> isComment [
 
 	^false
 ]
 
-{ #category : #testing }
+{ #category : 'testing' }
 TParseNode >> isConditionalSend [
 	"Answer if the receiver is a send of any of the conditionals, ifTrue: ifTrue:ifFalse: et al"
 	^false
 ]
 
-{ #category : #testing }
+{ #category : 'testing' }
 TParseNode >> isConstant [
 
 	^false
 ]
 
-{ #category : #testing }
+{ #category : 'testing' }
 TParseNode >> isDefine [
 
 	^false
 ]
 
-{ #category : #testing }
+{ #category : 'testing' }
 TParseNode >> isGoTo [
 
 	^false
 ]
 
-{ #category : #testing }
+{ #category : 'testing' }
 TParseNode >> isInline [
 	^false
 ]
 
-{ #category : #testing }
+{ #category : 'testing' }
 TParseNode >> isLabel [
 
 	^false
 ]
 
-{ #category : #testing }
+{ #category : 'testing' }
 TParseNode >> isLeaf [
 	"Answer true if the receiver is a variable or a constant node."
 
 	^false
 ]
 
-{ #category : #testing }
+{ #category : 'testing' }
 TParseNode >> isLiteralArrayDeclaration [
 	^false
 ]
 
-{ #category : #testing }
+{ #category : 'testing' }
 TParseNode >> isNonNullCCode [
 	"overridden in TSendNode"
 	^false
 ]
 
-{ #category : #testing }
+{ #category : 'testing' }
 TParseNode >> isReturn [
 
 	^false
 ]
 
-{ #category : #testing }
+{ #category : 'testing' }
 TParseNode >> isReturningIf [
 	^false
 ]
 
-{ #category : #comparing }
+{ #category : 'comparing' }
 TParseNode >> isSameAs: aTParseNode [
 	"Answer if the ParseTree rooted at this node is the same as aTParseNode.
 	 By default answer false and have subclasses override as appropriate."
 	^ self subclassResponsibility
 ]
 
-{ #category : #testing }
+{ #category : 'testing' }
 TParseNode >> isSend [
 
 	^false
 ]
 
-{ #category : #testing }
+{ #category : 'testing' }
 TParseNode >> isStatementList [
 
 	^false
 ]
 
-{ #category : #testing }
+{ #category : 'testing' }
 TParseNode >> isSwitch [
 	^false
 ]
 
-{ #category : #testing }
+{ #category : 'testing' }
 TParseNode >> isTMethod [
 	^false
 ]
 
-{ #category : #testing }
+{ #category : 'testing' }
 TParseNode >> isTParseNode [
 	^true
 ]
 
-{ #category : #testing }
+{ #category : 'testing' }
 TParseNode >> isVariable [
 
 	^false
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 TParseNode >> nameOrValue [
 
 	self error: 'object is neither variable nor constant'
 ]
 
-{ #category : #testing }
+{ #category : 'testing' }
 TParseNode >> needsTrailingSemicolon [
 	"Answer if, when emitted as a statement (in particular in a TStmtList), the
 	 receiver needs a trailing semicolon.  Subclasses redefine as appropriate."
 	^true
 ]
 
-{ #category : #enumerating }
+{ #category : 'enumerating' }
 TParseNode >> nodesDo: aBlock [
 	"Apply aBlock to all nodes in the receiver.
 	 N.B. This is assumed to be bottom-up, leaves first."
 	aBlock value: self
 ]
 
-{ #category : #enumerating }
+{ #category : 'enumerating' }
 TParseNode >> nodesDo: aBlock parent: parent [
 	"Apply aBlock to all nodes in the receiver with each node's parent.
 	 N.B. This is assumed to be bottom-up, leaves first."
 	self subclassResponsibility
 ]
 
-{ #category : #enumerating }
+{ #category : 'enumerating' }
 TParseNode >> nodesDo: aBlock parent: parent unless: cautionaryBlock [
 	"Evaluate aBlock for all nodes in  the tree except those for which cautionaryBlock
 	 answers true or are children of those for which cautionaryBlock answers true."
@@ -361,7 +363,7 @@ TParseNode >> nodesDo: aBlock parent: parent unless: cautionaryBlock [
 		[aBlock value: self value: parent]
 ]
 
-{ #category : #enumerating }
+{ #category : 'enumerating' }
 TParseNode >> nodesDo: aBlock unless: cautionaryBlock [
 	"Evaluate aBlock for all nodes in  the tree except those for which cautionaryBlock
 	 answers true or are children of those for which cautionaryBlock answers true."
@@ -369,14 +371,14 @@ TParseNode >> nodesDo: aBlock unless: cautionaryBlock [
 		[aBlock value: self]
 ]
 
-{ #category : #enumerating }
+{ #category : 'enumerating' }
 TParseNode >> nodesWithParentsDo: aBlock [
 	"Apply aBlock to all nodes in the receiver with each node's parent.
 	 N.B. This is assumed to be bottom-up, leaves first."
 	self nodesDo: aBlock parent: nil
 ]
 
-{ #category : #enumerating }
+{ #category : 'enumerating' }
 TParseNode >> nodesWithParentsDo: aBlock unless: cautionaryBlock [
 	"Evaluate aBlock for all nodes in the tree and their parent except those for which
 	 cautionaryBlock answers true or are children of those for which cautionaryBlock
@@ -384,13 +386,13 @@ TParseNode >> nodesWithParentsDo: aBlock unless: cautionaryBlock [
 	self nodesDo: aBlock parent: nil unless: cautionaryBlock
 ]
 
-{ #category : #enumerating }
+{ #category : 'enumerating' }
 TParseNode >> noneSatisfy: aBlock [
 	self nodesDo: [:n| (aBlock value: n) ifTrue: [^false]].
 	^true
 ]
 
-{ #category : #enumerating }
+{ #category : 'enumerating' }
 TParseNode >> noneSatisfy: aBlock unless: cautionaryBlock [
 	self
 		nodesDo: [:n| (aBlock value: n) ifTrue: [^false]]
@@ -398,7 +400,7 @@ TParseNode >> noneSatisfy: aBlock unless: cautionaryBlock [
 	^true
 ]
 
-{ #category : #enumerating }
+{ #category : 'enumerating' }
 TParseNode >> occurrencesOf: aNode [
 	| count |
 	count := 0.
@@ -408,56 +410,56 @@ TParseNode >> occurrencesOf: aNode [
 	^count
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 TParseNode >> parent [
 
 	^ parent
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 TParseNode >> parent: anObject [
 
 	parent := anObject
 ]
 
-{ #category : #printing }
+{ #category : 'printing' }
 TParseNode >> printOn: aStream [ 
 	"Append a description of the receiver onto the given stream."
 
 	self printOn: aStream level: 0.
 ]
 
-{ #category : #printing }
+{ #category : 'printing' }
 TParseNode >> printOn: aStream level: anInteger [ 
 	"Typically overridden. If control actually gets here, avoid recursion loop by sending to super."
 
 	super printOn: aStream.
 ]
 
-{ #category : #transformations }
+{ #category : 'transformations' }
 TParseNode >> removeAssertions [
 	"default: do nothing"
 ]
 
-{ #category : #transformations }
+{ #category : 'transformations' }
 TParseNode >> replaceBy: aNode [
 
 	self parent replaceChild: self with: aNode
 ]
 
-{ #category : #transformations }
+{ #category : 'transformations' }
 TParseNode >> replaceChild: aNode with: aReplacementNode [
 
 	self subclassResponsibility
 ]
 
-{ #category : #transformations }
+{ #category : 'transformations' }
 TParseNode >> replaceNodesIn: aDictionary [
 
 	^aDictionary at: self ifAbsent: [self]
 ]
 
-{ #category : #enumerating }
+{ #category : 'enumerating' }
 TParseNode >> select: aBlock [
 	| nodes |
 	nodes := OrderedCollection new.
@@ -465,7 +467,7 @@ TParseNode >> select: aBlock [
 	^nodes
 ]
 
-{ #category : #testing }
+{ #category : 'testing' }
 TParseNode >> structTargetKindIn: aCodeGen [
 	"Answer if the recever evaluates to a struct or struct pointer
 	 and hence can be dereferenced using . or ->.  Answer any of
@@ -473,7 +475,7 @@ TParseNode >> structTargetKindIn: aCodeGen [
 	^nil
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 TParseNode >> tMethod [
 
 	"Climb up the parent links up to the TMethod node"
@@ -486,20 +488,20 @@ TParseNode >> tMethod [
 		n := n parent ]
 ]
 
-{ #category : #'type inference' }
+{ #category : 'type inference' }
 TParseNode >> typeFrom: aCodeGenerator in: aTMethod [
 	"This is the default type in case of doubt"
 	^(self typeOrNilFrom: aCodeGenerator in: aTMethod)
 		ifNil: [ aCodeGenerator defaultType ]
 ]
 
-{ #category : #'type inference' }
+{ #category : 'type inference' }
 TParseNode >> typeOrNilFrom: aCodeGenerator in: aTMethod [
 	"When we don't know, it's nil"
 	^nil
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 TParseNode >> variableNameOrNil [
 	"Overridden in TAssignmentNode & TVariableNode to answer their variable name."
 	^nil

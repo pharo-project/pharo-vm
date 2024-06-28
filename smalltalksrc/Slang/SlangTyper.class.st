@@ -1,14 +1,16 @@
 Class {
-	#name : #SlangTyper,
-	#superclass : #Object,
+	#name : 'SlangTyper',
+	#superclass : 'Object',
 	#instVars : [
 		'codeGenerator',
 		'stopOnErrors'
 	],
-	#category : #'Slang-TypeInference'
+	#category : 'Slang-TypeInference',
+	#package : 'Slang',
+	#tag : 'TypeInference'
 }
 
-{ #category : #'instance creation' }
+{ #category : 'instance creation' }
 SlangTyper class >> on: aCCodeGenerator [ 
 	
 	^ self new
@@ -16,7 +18,7 @@ SlangTyper class >> on: aCCodeGenerator [
 		yourself
 ]
 
-{ #category : #'type inference' }
+{ #category : 'type inference' }
 SlangTyper >> addTypesFor: node inMethod: method to: typeSet [
 
 	"Add the value types for the node to typeSet.
@@ -58,17 +60,17 @@ SlangTyper >> addTypesFor: node inMethod: method to: typeSet [
 	^ false
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 SlangTyper >> codeGenerator [
 	^ codeGenerator
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 SlangTyper >> codeGenerator: aCCodeGenerator [ 
 	codeGenerator := aCCodeGenerator
 ]
 
-{ #category : #'type inference' }
+{ #category : 'type inference' }
 SlangTyper >> inferReturnTypeFromReturnsOf: aMethod [
 
 	"Attempt to infer the return type of the receiver from returns in the parse tree."
@@ -139,7 +141,7 @@ SlangTyper >> inferReturnTypeFromReturnsOf: aMethod [
 					(codeGenerator implicitReturnTypeFor: aMethod selector) ] ]
 ]
 
-{ #category : #'type inference' }
+{ #category : 'type inference' }
 SlangTyper >> inferReturnTypeOf: aMethod [
 	"Attempt to infer the return type of the receiver and answer if it changed."
 
@@ -149,7 +151,7 @@ SlangTyper >> inferReturnTypeOf: aMethod [
 	^existingReturnType ~= aMethod returnType
 ]
 
-{ #category : #'type inference' }
+{ #category : 'type inference' }
 SlangTyper >> inferTypes [
 	| typeConflicts |
 	typeConflicts := OrderedCollection new.
@@ -161,7 +163,7 @@ SlangTyper >> inferTypes [
 	(stopOnErrors and: [ typeConflicts isNotEmpty ]) ifTrue: [ Error signal: 'there were type errors' ]
 ]
 
-{ #category : #'type inference' }
+{ #category : 'type inference' }
 SlangTyper >> inferTypesForImplicitlyTypedVariablesAndMethods [
 	"Infer the return tupe and the types of untyped variables.
 	 As far as variables go, for now we try only to infer variables
@@ -209,7 +211,7 @@ SlangTyper >> inferTypesForImplicitlyTypedVariablesAndMethods [
 		self inferTypesForImplicitlyTypedVariablesIn: m ]
 ]
 
-{ #category : #'type inference' }
+{ #category : 'type inference' }
 SlangTyper >> inferTypesForImplicitlyTypedVariablesIn: aMethod [
 
 	" Infer types for untyped variables from assignments and arithmetic uses "
@@ -276,7 +278,7 @@ SlangTyper >> inferTypesForImplicitlyTypedVariablesIn: aMethod [
 		aMethod declarations at: var put: decl ]
 ]
 
-{ #category : #'type inference' }
+{ #category : 'type inference' }
 SlangTyper >> mergeTypeOf: var in: aDictionary with: newType method: tMethod [
 	"var is a variable that has been assigned an expression of type  newType.
 	 Either assign its type, if it is as yet untyped, or merge newType with its existing type.
@@ -301,7 +303,7 @@ SlangTyper >> mergeTypeOf: var in: aDictionary with: newType method: tMethod [
 					 aDictionary at: var put: mergedType, ' ', var]]]
 ]
 
-{ #category : #'type inference' }
+{ #category : 'type inference' }
 SlangTyper >> signedTypeForIntegralType: aCTypeString [
 	(aCTypeString beginsWith: 'unsigned ') ifTrue:
 		[^aCTypeString allButFirst: 8].
@@ -315,17 +317,17 @@ SlangTyper >> signedTypeForIntegralType: aCTypeString [
 	^#long
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 SlangTyper >> stopOnErrors [
 	^ stopOnErrors
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 SlangTyper >> stopOnErrors: anObject [
 	stopOnErrors := anObject
 ]
 
-{ #category : #'type inference' }
+{ #category : 'type inference' }
 SlangTyper >> tryExtractTypeFromAssignmentNode: node inMethod: aMethod [
 
 	^ node expression isSend

@@ -1,27 +1,29 @@
 Class {
-	#name : #VMImageReadingTest,
-	#superclass : #VMAbstractImageFormatTest,
+	#name : 'VMImageReadingTest',
+	#superclass : 'VMAbstractImageFormatTest',
 	#instVars : [
 		'originalNilObjectIdentityHash',
 		'permanentObject',
 		'originalPermanentObjectIdentityHash'
 	],
-	#category : #'VMMakerTests-ImageFormat'
+	#category : 'VMMakerTests-ImageFormat',
+	#package : 'VMMakerTests',
+	#tag : 'ImageFormat'
 }
 
-{ #category : #query }
+{ #category : 'query' }
 VMImageReadingTest >> dataFrom: fileName [
 
 	^ self imageFileName asFileReference / fileName
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 VMImageReadingTest >> initializationOptions [
 
 	^ super initializationOptions , { #CloneOnGC. false. #CloneOnScavenge. false }
 ]
 
-{ #category : #utilities }
+{ #category : 'utilities' }
 VMImageReadingTest >> loadImage [
 
 	environmentBuilder := VMSimulatedEnvironmentBuilder new.
@@ -41,7 +43,7 @@ VMImageReadingTest >> loadImage [
 
 ]
 
-{ #category : #query }
+{ #category : 'query' }
 VMImageReadingTest >> metadataFrom: fileName [
 
 	| writtenHeader |
@@ -49,7 +51,7 @@ VMImageReadingTest >> metadataFrom: fileName [
 	^ STON fromString: writtenHeader
 ]
 
-{ #category : #utilities }
+{ #category : 'utilities' }
 VMImageReadingTest >> saveImage [
 
 	memory garbageCollectForSnapshot.
@@ -62,7 +64,7 @@ VMImageReadingTest >> saveImage [
 
 ]
 
-{ #category : #initialization }
+{ #category : 'initialization' }
 VMImageReadingTest >> setUp [
 
 	super setUp.
@@ -75,7 +77,7 @@ VMImageReadingTest >> setUp [
 
 ]
 
-{ #category : #tests }
+{ #category : 'tests' }
 VMImageReadingTest >> testMovingObjectsToPermSpaceReduceOldSpace [
 
 	| obj magicNumber initSegmentSize initPermSpaceSize finalSegmentSize finalPermSpaceSize |
@@ -116,7 +118,7 @@ VMImageReadingTest >> testMovingObjectsToPermSpaceReduceOldSpace [
 	self assert: (self metadataFrom: 'permSpace.ston') dataSize equals: finalPermSpaceSize
 ]
 
-{ #category : #tests }
+{ #category : 'tests' }
 VMImageReadingTest >> testReadingSTONHeader [
 
 	| headerStruct headerFile |
@@ -134,7 +136,7 @@ VMImageReadingTest >> testReadingSTONHeader [
 	self assert: (self stonPretty: headerStruct) equals: headerFile contents.
 ]
 
-{ #category : #tests }
+{ #category : 'tests' }
 VMImageReadingTest >> testSavedImageSavesObjectFromOldSpace [
 	
 	self saveImage.	
@@ -143,7 +145,7 @@ VMImageReadingTest >> testSavedImageSavesObjectFromOldSpace [
 	self assert: originalNilObjectIdentityHash equals: (memory hashBitsOf: memory nilObject).
 ]
 
-{ #category : #tests }
+{ #category : 'tests' }
 VMImageReadingTest >> testSavedImageSavesObjectFromPermanentSpace [
 
 	"Only valid in the new format"
@@ -159,7 +161,7 @@ VMImageReadingTest >> testSavedImageSavesObjectFromPermanentSpace [
 
 ]
 
-{ #category : #tests }
+{ #category : 'tests' }
 VMImageReadingTest >> testSavingImageWithThreeSegmentsIsCorrectlySqueezed [
 	
 	| firstNewSegmentSize secondNewSegmentSize obj newObj originalObjHash |
@@ -191,7 +193,7 @@ VMImageReadingTest >> testSavingImageWithThreeSegmentsIsCorrectlySqueezed [
 	self assert: originalObjHash equals: (memory hashBitsOf: newObj).
 ]
 
-{ #category : #tests }
+{ #category : 'tests' }
 VMImageReadingTest >> testSavingPermanentSpaceObjectsInSpurFormatFails [
 
 	imageWriterClass = SpurImageWriter ifFalse: [ ^ self skip ].

@@ -1,6 +1,6 @@
-Extension { #name : #RBCascadeNode }
+Extension { #name : 'RBCascadeNode' }
 
-{ #category : #'*VMMakerCompatibilityForPharo6-C translation' }
+{ #category : '*VMMakerCompatibilityForPharo6-C translation' }
 RBCascadeNode >> asTranslatorNodeIn: aTMethod [
 	"Answer a TParseNode subclass equivalent of me."
 	^TStatementListNode new

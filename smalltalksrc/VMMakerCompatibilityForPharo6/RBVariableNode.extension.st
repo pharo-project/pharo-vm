@@ -1,6 +1,6 @@
-Extension { #name : #RBVariableNode }
+Extension { #name : 'RBVariableNode' }
 
-{ #category : #'*VMMakerCompatibilityForPharo6-C translation' }
+{ #category : '*VMMakerCompatibilityForPharo6-C translation' }
 RBVariableNode >> asTranslatorNodeIn: aTMethod [
 	"Answer a TParseNode subclass equivalent of me"
 	name = 'true' ifTrue: [^ TConstantNode value: true].
@@ -8,7 +8,7 @@ RBVariableNode >> asTranslatorNodeIn: aTMethod [
 	^ TVariableNode new setName: name
 ]
 
-{ #category : #'*VMMakerCompatibilityForPharo6-testing' }
+{ #category : '*VMMakerCompatibilityForPharo6-testing' }
 RBVariableNode >> isVariableNode [
 	^true
 ]

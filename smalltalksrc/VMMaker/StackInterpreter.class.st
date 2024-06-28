@@ -1665,7 +1665,6 @@ StackInterpreter class >> reorganizeAsISeeFit [
 
 { #category : 'translation' }
 StackInterpreter class >> requiredMethodNames: options [
-
 	"Answer the list of method names that should be retained for export or other support reasons"
 
 	| requiredList |
@@ -1690,10 +1689,9 @@ StackInterpreter class >> requiredMethodNames: options [
 		(self primitiveTable select: [ :each | each isSymbol ]).
 
 	"InterpreterProxy is the internal analogue of sqVirtualMachine.c, so make sure to keep all those"
-	InterpreterProxy organization categories do: [ :cat | 
-		(cat ~= 'initialize' and: [ cat ~= 'private' ]) ifTrue: [ 
-			requiredList addAll:
-				(InterpreterProxy organization listAtCategoryNamed: cat) ] ].
+	InterpreterProxy protocolNames do: [ :cat |
+		(cat ~= 'initialize' and: [ cat ~= 'private' ]) ifTrue: [
+			requiredList addAll: (InterpreterProxy selectorsInProtocol: cat) ] ].
 
 	^ requiredList
 ]

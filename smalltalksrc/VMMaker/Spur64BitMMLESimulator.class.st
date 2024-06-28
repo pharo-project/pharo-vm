@@ -85,14 +85,6 @@ Spur64BitMMLESimulator >> fetchFloatAt: floatBitsAddress into: aFloat [
 	aFloat at: 1 put: (self uint32AtPointer: floatBitsAddress+4)
 ]
 
-{ #category : 'as yet unclassified' }
-Spur64BitMMLESimulator >> fetchPointer: fieldIndex ofObject: objOop [
-	self assert: (self isForwarded: objOop) not.
-	self assert: (fieldIndex >= 0 and: [fieldIndex < (self numSlotsOfAny: objOop)
-				or: [fieldIndex = 0 "forwarders"]]).
-	^super fetchPointer: fieldIndex ofObject: objOop
-]
-
 { #category : 'spur bootstrap' }
 Spur64BitMMLESimulator >> freeLists [
 	^freeLists

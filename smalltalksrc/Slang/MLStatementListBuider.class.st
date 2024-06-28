@@ -1,6 +1,6 @@
 Class {
-	#name : #MLStatementListBuider,
-	#superclass : #Object,
+	#name : 'MLStatementListBuider',
+	#superclass : 'Object',
 	#instVars : [
 		'parent',
 		'statements',
@@ -8,10 +8,12 @@ Class {
 		'declarations',
 		'codeGenerator'
 	],
-	#category : #'Slang-Optimizations'
+	#category : 'Slang-Optimizations',
+	#package : 'Slang',
+	#tag : 'Optimizations'
 }
 
-{ #category : #building }
+{ #category : 'building' }
 MLStatementListBuider >> addLinearisedStatement: expressionNode [
 
 	"Add the expression when used"
@@ -56,13 +58,13 @@ MLStatementListBuider >> addLinearisedStatement: expressionNode [
 	^ assignment variable
 ]
 
-{ #category : #building }
+{ #category : 'building' }
 MLStatementListBuider >> addStatement: aStatement [ 
 	
 	statements addLast: aStatement
 ]
 
-{ #category : #transforming }
+{ #category : 'transforming' }
 MLStatementListBuider >> assignLastExpressionOf: aNode toVariable: aTVariableNode [ 
 	
 	"We need to take the expression and find its last expression recursively.
@@ -84,7 +86,7 @@ MLStatementListBuider >> assignLastExpressionOf: aNode toVariable: aTVariableNod
 	^ aNode
 ]
 
-{ #category : #building }
+{ #category : 'building' }
 MLStatementListBuider >> buildStatementList [
 	
 	"Build a statement list that could be in an expression.
@@ -94,13 +96,13 @@ MLStatementListBuider >> buildStatementList [
 		statements: (statements ifEmpty: [ { TConstantNode value: nil } ])
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 MLStatementListBuider >> codeGenerator: anObject [
 
 	codeGenerator := anObject
 ]
 
-{ #category : #building }
+{ #category : 'building' }
 MLStatementListBuider >> finishStatement [
 	
 	"If there was an unused expression yet in the stack, pop it and add it as a statement"
@@ -108,7 +110,7 @@ MLStatementListBuider >> finishStatement [
 	self popNoValue
 ]
 
-{ #category : #initialization }
+{ #category : 'initialization' }
 MLStatementListBuider >> initialize [
 
 	super initialize.
@@ -117,31 +119,31 @@ MLStatementListBuider >> initialize [
 	declarations := Dictionary new
 ]
 
-{ #category : #building }
+{ #category : 'building' }
 MLStatementListBuider >> newVariableName [
 
 	^ 't' , statements size asString
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 MLStatementListBuider >> parent [
 
 	^ parent
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 MLStatementListBuider >> parent: anObject [
 
 	parent := anObject
 ]
 
-{ #category : #building }
+{ #category : 'building' }
 MLStatementListBuider >> popAsExpression [
 
 	^ expressionStack removeLast asExpressionIn: self
 ]
 
-{ #category : #building }
+{ #category : 'building' }
 MLStatementListBuider >> popAsStatement [
 
 	"Add the expression when used"
@@ -151,7 +153,7 @@ MLStatementListBuider >> popAsStatement [
 	^ self addLinearisedStatement: expressionNode
 ]
 
-{ #category : #building }
+{ #category : 'building' }
 MLStatementListBuider >> popNoValue [
 
 	"Add the expression when used"	
@@ -160,20 +162,20 @@ MLStatementListBuider >> popNoValue [
 	self addStatement: expressionNode
 ]
 
-{ #category : #building }
+{ #category : 'building' }
 MLStatementListBuider >> push: anExpression [
 
 	"pushes an expression to add it as a new statement"
 	expressionStack addLast: anExpression
 ]
 
-{ #category : #pushing }
+{ #category : 'pushing' }
 MLStatementListBuider >> pushAsStatement: anExpression [
 	
 	self push: (MLLinerarisedStatement new expressionToLinearise: anExpression; yourself)
 ]
 
-{ #category : #'control-flow' }
+{ #category : 'control-flow' }
 MLStatementListBuider >> transformControlFlowNodeForValue: aTSendNode withVariable: aVariable [
 
 	| arguments secondArgument |

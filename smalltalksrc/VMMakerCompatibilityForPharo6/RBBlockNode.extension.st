@@ -1,6 +1,6 @@
-Extension { #name : #RBBlockNode }
+Extension { #name : 'RBBlockNode' }
 
-{ #category : #'*VMMakerCompatibilityForPharo6-C translation' }
+{ #category : '*VMMakerCompatibilityForPharo6-C translation' }
 RBBlockNode >> asTranslatorNodeIn: aTMethod [
 	
 	body := body asTranslatorNodeIn: aTMethod.
@@ -10,12 +10,12 @@ RBBlockNode >> asTranslatorNodeIn: aTMethod [
 	^ body
 ]
 
-{ #category : #'*VMMakerCompatibilityForPharo6-testing' }
+{ #category : '*VMMakerCompatibilityForPharo6-testing' }
 RBBlockNode >> isBlockNode [
 	^true
 ]
 
-{ #category : #'*VMMakerCompatibilityForPharo6-C translation' }
+{ #category : '*VMMakerCompatibilityForPharo6-C translation' }
 RBBlockNode >> isPotentialCCaseLabel: stmt in: aTMethod [
 	(stmt isVariable
 	 or: [stmt isLiteralNode
@@ -46,7 +46,7 @@ RBBlockNode >> isPotentialCCaseLabel: stmt in: aTMethod [
 	^false
 ]
 
-{ #category : #'*VMMakerCompatibilityForPharo6-C translation' }
+{ #category : '*VMMakerCompatibilityForPharo6-C translation' }
 RBBlockNode >> isPotentialCCaseLabelIn: aTMethod [
 	body statements size ~= 1 ifTrue: [^false].
 	^self isPotentialCCaseLabel: body statements first in: aTMethod

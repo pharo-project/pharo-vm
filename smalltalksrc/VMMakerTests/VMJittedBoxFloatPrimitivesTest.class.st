@@ -1,14 +1,16 @@
 Class {
-	#name : #VMJittedBoxFloatPrimitivesTest,
-	#superclass : #VMJittedPrimitivesTest,
+	#name : 'VMJittedBoxFloatPrimitivesTest',
+	#superclass : 'VMJittedPrimitivesTest',
 	#pools : [
 		'CogAbstractRegisters',
 		'CogRTLOpcodes'
 	],
-	#category : #'VMMakerTests-JitTests'
+	#category : 'VMMakerTests-JitTests',
+	#package : 'VMMakerTests',
+	#tag : 'JitTests'
 }
 
-{ #category : #tests }
+{ #category : 'tests' }
 VMJittedBoxFloatPrimitivesTest >> setUp [
 
 	super setUp.
@@ -22,7 +24,7 @@ VMJittedBoxFloatPrimitivesTest >> setUp [
 				 named: 'ceCheckFeatures') ]
 ]
 
-{ #category : #tests }
+{ #category : 'tests' }
 VMJittedBoxFloatPrimitivesTest >> testAsFloat [
 
 	cogit receiverTags: memory smallIntegerTag.
@@ -36,7 +38,7 @@ VMJittedBoxFloatPrimitivesTest >> testAsFloat [
 		equals: 27.0
 ]
 
-{ #category : #tests }
+{ #category : 'tests' }
 VMJittedBoxFloatPrimitivesTest >> testAsFloatWhenThereIsNotSpaceFailsPrimitive [
 
 	| stop |

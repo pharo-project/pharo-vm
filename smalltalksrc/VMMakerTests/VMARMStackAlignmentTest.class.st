@@ -1,16 +1,18 @@
 Class {
-	#name : #VMARMStackAlignmentTest,
-	#superclass : #VMSimpleStackBasedCogitAbstractTest,
+	#name : 'VMARMStackAlignmentTest',
+	#superclass : 'VMSimpleStackBasedCogitAbstractTest',
 	#instVars : [
 		'instructions'
 	],
 	#pools : [
 		'CogAbstractRegisters'
 	],
-	#category : #'VMMakerTests-JitTests'
+	#category : 'VMMakerTests-JitTests',
+	#package : 'VMMakerTests',
+	#tag : 'JitTests'
 }
 
-{ #category : #'building suites' }
+{ #category : 'building suites' }
 VMARMStackAlignmentTest class >> wordSizeParameters [
 
 	^ ParametrizedTestMatrix new
@@ -18,25 +20,25 @@ VMARMStackAlignmentTest class >> wordSizeParameters [
 		yourself
 ]
 
-{ #category : #'as yet unclassified' }
+{ #category : 'as yet unclassified' }
 VMARMStackAlignmentTest >> addInstruction: anInstruction [ 
 
 	instructions add: anInstruction 
 ]
 
-{ #category : #'as yet unclassified' }
+{ #category : 'as yet unclassified' }
 VMARMStackAlignmentTest >> disassembleInstructions [
 
 	^ self disassembleFrom: cogInitialAddress opcodes: instructions size
 ]
 
-{ #category : #'as yet unclassified' }
+{ #category : 'as yet unclassified' }
 VMARMStackAlignmentTest >> runInstructions [
 
 	^ self runFrom: cogInitialAddress until: cogInitialAddress + (instructions size * 4)
 ]
 
-{ #category : #tests }
+{ #category : 'tests' }
 VMARMStackAlignmentTest >> setUp [
 
 	super setUp.
@@ -45,7 +47,7 @@ VMARMStackAlignmentTest >> setUp [
 	machineSimulator stackPointerRegisterValue: interpreter rumpCStackAddress
 ]
 
-{ #category : #tests }
+{ #category : 'tests' }
 VMARMStackAlignmentTest >> testUnAlignedStackWriteShouldGenerateError [
 	"To start the stack pointer should be aligned"
 
@@ -96,7 +98,7 @@ VMARMStackAlignmentTest >> testUnAlignedStackWriteShouldGenerateError [
 				equals: 'Unhandled CPU exception (UC_ERR_EXCEPTION)' ]
 ]
 
-{ #category : #tests }
+{ #category : 'tests' }
 VMARMStackAlignmentTest >> testUnAlignedStackWriteShouldPass [
 
 	"To start the stack pointer should be aligned"	
@@ -135,7 +137,7 @@ VMARMStackAlignmentTest >> testUnAlignedStackWriteShouldPass [
 
 ]
 
-{ #category : #'as yet unclassified' }
+{ #category : 'as yet unclassified' }
 VMARMStackAlignmentTest >> writeInstructions [
 	
 	cogInitialAddress := cogit methodZone allocate: instructions size * 4 .

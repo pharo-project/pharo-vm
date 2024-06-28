@@ -1,51 +1,53 @@
 Class {
-	#name : #SlangMemoryRegion,
-	#superclass : #Object,
+	#name : 'SlangMemoryRegion',
+	#superclass : 'Object',
 	#instVars : [
 		'start',
 		'memory',
 		'originallyRequestedMemory'
 	],
-	#category : #'Slang-Simulation'
+	#category : 'Slang-Simulation',
+	#package : 'Slang',
+	#tag : 'Simulation'
 }
 
-{ #category : #'memory access' }
+{ #category : 'memory access' }
 SlangMemoryRegion >> at: anInteger [
 	
 	^ self byteAt: anInteger
 ]
 
-{ #category : #'memory access' }
+{ #category : 'memory access' }
 SlangMemoryRegion >> byteAt: anInteger [
 	"0 based offset"
 	^ memory at: anInteger
 ]
 
-{ #category : #'memory access' }
+{ #category : 'memory access' }
 SlangMemoryRegion >> doubleAt: anInteger [ 
 	"anInteger is 0 based offset"
 	^ memory float64AtOffset: anInteger
 ]
 
-{ #category : #'memory access' }
+{ #category : 'memory access' }
 SlangMemoryRegion >> doubleAt: anInteger put: aNumber [ 
 	"anInteger is 0 based offset"
 	^ memory float64AtOffset: anInteger put: aNumber
 ]
 
-{ #category : #'memory access' }
+{ #category : 'memory access' }
 SlangMemoryRegion >> floatAt: anInteger [
 	"anInteger is 0 based offset"
 	^ memory float32AtOffset: anInteger
 ]
 
-{ #category : #'memory access' }
+{ #category : 'memory access' }
 SlangMemoryRegion >> floatAt: anInteger put: aNumber [ 
 	"anInteger is 0 based offset"
 	^ memory float32AtOffset: anInteger put: aNumber
 ]
 
-{ #category : #'memory access' }
+{ #category : 'memory access' }
 SlangMemoryRegion >> integerAt: anInteger put: value size: nBytes signed: aBoolean [
 	"anInteger is 0 based offset"
 	
@@ -56,7 +58,7 @@ SlangMemoryRegion >> integerAt: anInteger put: value size: nBytes signed: aBoole
 		signed: aBoolean
 ]
 
-{ #category : #'memory access' }
+{ #category : 'memory access' }
 SlangMemoryRegion >> integerAt: anInteger size: nBytes signed: aBoolean [
 	"anInteger is 0 based offset"
 	
@@ -66,31 +68,31 @@ SlangMemoryRegion >> integerAt: anInteger size: nBytes signed: aBoolean [
 		signed: aBoolean
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 SlangMemoryRegion >> memory [
 
 	^ memory
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 SlangMemoryRegion >> memory: anObject [
 
 	memory := anObject
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 SlangMemoryRegion >> originallyRequestedMemory [
 
 	^ originallyRequestedMemory
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 SlangMemoryRegion >> originallyRequestedMemory: anObject [
 
 	originallyRequestedMemory := anObject
 ]
 
-{ #category : #printing }
+{ #category : 'printing' }
 SlangMemoryRegion >> printOn: aStream [
 
 	super printOn: aStream.
@@ -102,36 +104,36 @@ SlangMemoryRegion >> printOn: aStream [
 		print: (start+originallyRequestedMemory)
 ]
 
-{ #category : #'bulk-replace' }
+{ #category : 'bulk-replace' }
 SlangMemoryRegion >> replaceFrom: anInteger to: anInteger2 with: aSlangMemoryRegion [ 
 
 	^ memory replaceFrom: anInteger to: anInteger2 with: aSlangMemoryRegion
 ]
 
-{ #category : #'bulk-replace' }
+{ #category : 'bulk-replace' }
 SlangMemoryRegion >> replaceFrom: anInteger to: anInteger2 with: aCArray startingAt: anInteger4 [ 
 	
 	^ memory replaceFrom: anInteger to: anInteger2 with: aCArray startingAt: anInteger4 
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 SlangMemoryRegion >> requestedMemoryCopy [
 	
 	^ memory copyFrom: 1 to: originallyRequestedMemory
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 SlangMemoryRegion >> size [
 	^ self originallyRequestedMemory 
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 SlangMemoryRegion >> start [
 
 	^ start
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 SlangMemoryRegion >> start: anObject [
 
 	start := anObject
