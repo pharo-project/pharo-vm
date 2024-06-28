@@ -1,9 +1,11 @@
 Trait {
-	#name : #TVMSpurMemoryManagerSimulator,
-	#category : #'VMMaker-SpurMemoryManagerSimulation'
+	#name : 'TVMSpurMemoryManagerSimulator',
+	#category : 'VMMaker-SpurMemoryManagerSimulation',
+	#package : 'VMMaker',
+	#tag : 'SpurMemoryManagerSimulation'
 }
 
-{ #category : #'object format' }
+{ #category : 'object format' }
 TVMSpurMemoryManagerSimulator >> firstIndexableField: objOop [
 	"NOTE: overridden from SpurMemoryManager to add coercion to CArray, so please duplicate any changes.
 	 There are only two important cases, both for objects with named inst vars, i.e. formats 2,3 & 5.
@@ -36,7 +38,7 @@ TVMSpurMemoryManagerSimulator >> firstIndexableField: objOop [
 				ifFalse: ["byte objects (including CompiledMethod" #'char *'])
 ]
 
-{ #category : #initialization }
+{ #category : 'initialization' }
 TVMSpurMemoryManagerSimulator >> initializeFreeSpaceForFacadeFrom: base to: limit [
 	"c.f. initializeFreeSpacePostLoad: freeListObj."
 	| freeListObj freeBytes |
@@ -63,7 +65,7 @@ TVMSpurMemoryManagerSimulator >> initializeFreeSpaceForFacadeFrom: base to: limi
 	self totalFreeOldSpace: freeBytes
 ]
 
-{ #category : #initialization }
+{ #category : 'initialization' }
 TVMSpurMemoryManagerSimulator >> setHeapBase: baseOfHeap memoryLimit: memLimit endOfMemory: memEnd [
 	"Set the dimensions of the heap, answering the start of oldSpace. edenBytes holds the desired ``size of eden''
 	 which is actually the total size of new space minus the reserve.  edenBytes is then divided up between eden
@@ -93,7 +95,7 @@ TVMSpurMemoryManagerSimulator >> setHeapBase: baseOfHeap memoryLimit: memLimit e
 	^baseOfHeap
 ]
 
-{ #category : #initialization }
+{ #category : 'initialization' }
 TVMSpurMemoryManagerSimulator >> setUpForUseByFacade: aCurrentImageCoInterpreterFacade [
 	"Make sure that eden etc are initialized, so that methods can be printed.
 	 This is really to make addressCouldBeObj: et al work."

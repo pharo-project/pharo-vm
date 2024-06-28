@@ -1,6 +1,6 @@
-Extension { #name : #IdentityDictionary }
+Extension { #name : 'IdentityDictionary' }
 
-{ #category : #'*VMMaker-accessing' }
+{ #category : '*VMMaker-accessing' }
 IdentityDictionary >> keyAtNonIdentityValue: value [
 	"Answer the key that is the external name for the argument, value. If 
 	 there is none, answer the result of evaluating exceptionBlock.
@@ -9,7 +9,7 @@ IdentityDictionary >> keyAtNonIdentityValue: value [
 	^self keyAtNonIdentityValue: value ifAbsent: [self errorValueNotFound]
 ]
 
-{ #category : #'*VMMaker-accessing' }
+{ #category : '*VMMaker-accessing' }
 IdentityDictionary >> keyAtNonIdentityValue: value ifAbsent: exceptionBlock [
 	"Answer the key that is the external name for the argument, value. If 
 	 there is none, answer the result of evaluating exceptionBlock.

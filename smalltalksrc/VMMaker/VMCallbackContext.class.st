@@ -1,6 +1,6 @@
 Class {
-	#name : #VMCallbackContext,
-	#superclass : #VMStructType,
+	#name : 'VMCallbackContext',
+	#superclass : 'VMStructType',
 	#instVars : [
 		'thunkp',
 		'stackp',
@@ -13,10 +13,12 @@ Class {
 		'trampoline',
 		'savedReenterInterpreter'
 	],
-	#category : #'VMMaker-Support'
+	#category : 'VMMaker-Support',
+	#package : 'VMMaker',
+	#tag : 'Support'
 }
 
-{ #category : #translation }
+{ #category : 'translation' }
 VMCallbackContext class >> instVarNamesAndTypesForTranslationDo: aBinaryBlock [
 	"Define a CallbackContext, the argument to sendInvokeCallbackContext:
 	 self typedef"
@@ -42,14 +44,14 @@ VMCallbackContext class >> instVarNamesAndTypesForTranslationDo: aBinaryBlock [
 						otherwise: [#'void *'])]
 ]
 
-{ #category : #translation }
+{ #category : 'translation' }
 VMCallbackContext class >> needsTypeTag [
 	"This allows sqVirtualMachine.h to declare VMCallbackContext  as an
 	 opaque type avoiding everyone including setjmp.h & vmCallback.h"
 	^true
 ]
 
-{ #category : #translation }
+{ #category : 'translation' }
 VMCallbackContext class >> printTypedefOn: aStream [
 	super printTypedefOn: aStream.
 	aStream
@@ -62,146 +64,146 @@ VMCallbackContext class >> printTypedefOn: aStream [
 		newLine
 ]
 
-{ #category : #translation }
+{ #category : 'translation' }
 VMCallbackContext class >> shouldBeGenerated [
 
 	^ false
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 VMCallbackContext >> floatregargsp [
 	"Answer the value of floatregargsp"
 
 	^ floatregargsp
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 VMCallbackContext >> floatregargsp: anObject [
 	"Set the value of floatregargsp"
 
 	^floatregargsp := anObject
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 VMCallbackContext >> intregargsp [
 	"Answer the value of intregargsp"
 
 	^ intregargsp
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 VMCallbackContext >> intregargsp: anObject [
 	"Set the value of intregargsp"
 
 	^intregargsp := anObject
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 VMCallbackContext >> rvs [
 	"Answer the value of rvs"
 
 	^ rvs
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 VMCallbackContext >> rvs: anObject [
 	"Set the value of rvs"
 
 	^rvs := anObject
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 VMCallbackContext >> savedCFramePointer [
 	"Answer the value of savedCFramePointer"
 
 	^ savedCFramePointer
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 VMCallbackContext >> savedCFramePointer: anObject [
 	"Set the value of savedCFramePointer"
 
 	^savedCFramePointer := anObject
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 VMCallbackContext >> savedCStackPointer [
 	"Answer the value of savedCStackPointer"
 
 	^ savedCStackPointer
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 VMCallbackContext >> savedCStackPointer: anObject [
 	"Set the value of savedCStackPointer"
 
 	^savedCStackPointer := anObject
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 VMCallbackContext >> savedPrimFunctionPointer [
 	
 	^ savedPrimFunctionPointer
 
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 VMCallbackContext >> savedPrimFunctionPointer: anObject [
 	
 	^ savedPrimFunctionPointer := anObject.
 
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 VMCallbackContext >> savedReenterInterpreter [
 	"Answer the value of savedReenterInterpreter"
 
 	^ savedReenterInterpreter
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 VMCallbackContext >> savedReenterInterpreter: anObject [
 	"Set the value of savedReenterInterpreter"
 
 	^savedReenterInterpreter := anObject
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 VMCallbackContext >> stackp [
 	"Answer the value of stackp"
 
 	^ stackp
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 VMCallbackContext >> stackp: anObject [
 	"Set the value of stackp"
 
 	^stackp := anObject
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 VMCallbackContext >> thunkp [
 	"Answer the value of thunkp"
 
 	^ thunkp
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 VMCallbackContext >> thunkp: anObject [
 	"Set the value of thunkp"
 
 	^thunkp := anObject
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 VMCallbackContext >> trampoline [
 	"Answer the value of trampoline"
 
 	^ trampoline
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 VMCallbackContext >> trampoline: anObject [
 	"Set the value of trampoline"
 

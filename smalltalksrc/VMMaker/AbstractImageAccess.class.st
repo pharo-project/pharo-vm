@@ -1,21 +1,23 @@
 Class {
-	#name : #AbstractImageAccess,
-	#superclass : #VMClass,
+	#name : 'AbstractImageAccess',
+	#superclass : 'VMClass',
 	#instVars : [
 		'objectMemory',
 		'segmentManager',
 		'coInterpreter'
 	],
-	#category : #'VMMaker-ImageFormat'
+	#category : 'VMMaker-ImageFormat',
+	#package : 'VMMaker',
+	#tag : 'ImageFormat'
 }
 
-{ #category : #translation }
+{ #category : 'translation' }
 AbstractImageAccess class >> implicitReturnTypeFor: aSelector [
 	"Answer the return type for methods that don't have an explicit return."
 	^#void
 ]
 
-{ #category : #'instance creation' }
+{ #category : 'instance creation' }
 AbstractImageAccess class >> newWithMemory: memory andInterpreter: anInterpreter [
 
 	| newInstance |
@@ -28,7 +30,7 @@ AbstractImageAccess class >> newWithMemory: memory andInterpreter: anInterpreter
 	^ newInstance
 ]
 
-{ #category : #'accessing - files' }
+{ #category : 'accessing - files' }
 AbstractImageAccess >> beginWriteImageSegments [
 
 "	self assert:
@@ -39,7 +41,7 @@ AbstractImageAccess >> beginWriteImageSegments [
 
 ]
 
-{ #category : #reading }
+{ #category : 'reading' }
 AbstractImageAccess >> extractImageVersionFrom: fileVersion into: header [
 	"Read and verify the image file version number and return true if the the given image file needs to be byte-swapped. As a side effect, position the file stream just after the version number of the image header. This code prints a warning and does a hard-exit if it cannot find a valid version number."
 	"This code is based on C code by Ian Piumarta."
@@ -70,7 +72,7 @@ AbstractImageAccess >> extractImageVersionFrom: fileVersion into: header [
 
 ]
 
-{ #category : #segments }
+{ #category : 'segments' }
 AbstractImageAccess >> finalizeSegmentsRead: totalBytesRead newBase: newBase [
 
 	"newBase should point just past the last bridge. all others should have been eliminated."
@@ -85,14 +87,14 @@ AbstractImageAccess >> finalizeSegmentsRead: totalBytesRead newBase: newBase [
 
 ]
 
-{ #category : #reading }
+{ #category : 'reading' }
 AbstractImageAccess >> imageFormatCompatibilityVersion [
 	"This VM is backward-compatible with the immediately preceding version."
 
 	^objectMemory wordSize = 4 ifTrue: [6504] ifFalse: [68002]
 ]
 
-{ #category : #reading }
+{ #category : 'reading' }
 AbstractImageAccess >> imageFormatVersion [
 	"Return a magic constant that changes when the image format changes.
 	 Since the image reading code uses this to detect byte ordering, one
@@ -102,7 +104,7 @@ AbstractImageAccess >> imageFormatVersion [
 	^objectMemory imageFormatVersion
 ]
 
-{ #category : #reading }
+{ #category : 'reading' }
 AbstractImageAccess >> initializeInterpreterFromHeader: header withBytes: bytesRead [
 
 	| bytesToShift |
@@ -119,7 +121,7 @@ AbstractImageAccess >> initializeInterpreterFromHeader: header withBytes: bytesR
 	coInterpreter initializeInterpreter: bytesToShift "adjusts all oops to new location"
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 AbstractImageAccess >> interpreter [
 
 	<doNotGenerate>
@@ -127,7 +129,7 @@ AbstractImageAccess >> interpreter [
 	^ coInterpreter
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 AbstractImageAccess >> interpreter: anObject [
 
 	<doNotGenerate>
@@ -135,7 +137,7 @@ AbstractImageAccess >> interpreter: anObject [
 	coInterpreter := anObject
 ]
 
-{ #category : #reading }
+{ #category : 'reading' }
 AbstractImageAccess >> loadHeaderToMemory: header [
 
 	<var: #header type: #'SpurImageHeaderStruct'>
@@ -159,27 +161,27 @@ AbstractImageAccess >> loadHeaderToMemory: header [
 
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 AbstractImageAccess >> objectMemory: memory [
 
 	<doNotGenerate>
 	objectMemory := memory
 ]
 
-{ #category : #segments }
+{ #category : 'segments' }
 AbstractImageAccess >> prepareSegmentsToRead [
 
 	segmentManager clearSegments.
 	segmentManager allocateOrExtendSegmentInfos
 ]
 
-{ #category : #segments }
+{ #category : 'segments' }
 AbstractImageAccess >> readSegmentsFromImageFile: imageFile header: header [
 
 	self subclassResponsibility 
 ]
 
-{ #category : #reading }
+{ #category : 'reading' }
 AbstractImageAccess >> readableFormat: imageVersion [
 	"Anwer true if images of the given format are readable by this interpreter.
 	 Allows a virtual machine to accept selected older image formats."
@@ -188,14 +190,14 @@ AbstractImageAccess >> readableFormat: imageVersion [
 	   or: [imageVersion = self imageFormatCompatibilityVersion] "Float words in BigEndian order"
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 AbstractImageAccess >> segmentManager: anObject [
 
 	<doNotGenerate>
 	segmentManager := anObject
 ]
 
-{ #category : #'accessing - files' }
+{ #category : 'accessing - files' }
 AbstractImageAccess >> sq: startingAddress Image: byteSize File: bytesToRead Read: aZnBufferedReadStream [ 
 
 	<doNotGenerate>
@@ -209,7 +211,7 @@ AbstractImageAccess >> sq: startingAddress Image: byteSize File: bytesToRead Rea
 		count: bytesToRead
 ]
 
-{ #category : #'accessing - files' }
+{ #category : 'accessing - files' }
 AbstractImageAccess >> sq: start Image: n File: segSize Write: file [
 
 	<doNotGenerate>
@@ -224,7 +226,7 @@ AbstractImageAccess >> sq: start Image: n File: segSize Write: file [
 	^ segSize
 ]
 
-{ #category : #'accessing - files' }
+{ #category : 'accessing - files' }
 AbstractImageAccess >> sqImageFile: imageName Open: fileMode [
 
 	<doNotGenerate>
@@ -237,14 +239,14 @@ AbstractImageAccess >> sqImageFile: imageName Open: fileMode [
 	self error: 'File mode not supported'
 ]
 
-{ #category : #'accessing - files' }
+{ #category : 'accessing - files' }
 AbstractImageAccess >> sqImageFileClose: file [
 
 	<doNotGenerate>
 	file close
 ]
 
-{ #category : #testing }
+{ #category : 'testing' }
 AbstractImageAccess >> validateImage: imageName [
 
 	<doNotGenerate>

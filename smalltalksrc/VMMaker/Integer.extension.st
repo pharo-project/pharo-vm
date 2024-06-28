@@ -1,29 +1,29 @@
-Extension { #name : #Integer }
+Extension { #name : 'Integer' }
 
-{ #category : #'*VMMaker-bit manipulation' }
+{ #category : '*VMMaker-bit manipulation' }
 Integer >> >>> shiftAmount [  "right shift, but causes CCodeGenerator to generate a signed shift"
 	shiftAmount < 0 ifTrue: [self error: 'negative arg'].
 	^self bitShift: 0 - shiftAmount
 ]
 
-{ #category : #'*VMMaker-interpreter simulator' }
+{ #category : '*VMMaker-interpreter simulator' }
 Integer >> addBreakpoint: address [
 	^{self. address}
 ]
 
-{ #category : #'*VMMaker-interpreter simulator' }
+{ #category : '*VMMaker-interpreter simulator' }
 Integer >> asC_int [
 	^self >= 0
 		ifTrue: [self bitAnd: 16rFFFFFFFF]
 		ifFalse: [(self bitAnd: 16rFFFFFFFF) - 16r100000000]
 ]
 
-{ #category : #'*VMMaker-interpreter simulator' }
+{ #category : '*VMMaker-interpreter simulator' }
 Integer >> asC_unsigned_int [
 	^self bitAnd: 16rFFFFFFFF
 ]
 
-{ #category : #'*VMMaker-interpreter simulator' }
+{ #category : '*VMMaker-interpreter simulator' }
 Integer >> asCharPtr [
 	^(Notification new tag: #getInterpreter; signal)
 		ifNotNil: [:interpreter|
@@ -33,17 +33,17 @@ Integer >> asCharPtr [
 		ifNil: [self]
 ]
 
-{ #category : #'*VMMaker-interpreter simulator' }
+{ #category : '*VMMaker-interpreter simulator' }
 Integer >> asIntegerPtr [
 	^self
 ]
 
-{ #category : #'*VMMaker-interpreter simulator' }
+{ #category : '*VMMaker-interpreter simulator' }
 Integer >> asLong [
 	^self
 ]
 
-{ #category : #'*VMMaker-interpreter simulator' }
+{ #category : '*VMMaker-interpreter simulator' }
 Integer >> asPositiveIntegerObj [
 	"This is a SmartSyntaxPlugin convenience, invented with little thought for simulation (grrr).
 	  In the VM this is equivalent to
@@ -58,14 +58,14 @@ Integer >> asPositiveIntegerObj [
 	^self
 ]
 
-{ #category : #'*VMMaker-interpreter simulator' }
+{ #category : '*VMMaker-interpreter simulator' }
 Integer >> asSmallIntegerObj [
 	^(Notification new tag: #getInterpreter; signal)
 		ifNotNil: [:interpreter| interpreter integerObjectOf: self]
 		ifNil: [self]
 ]
 
-{ #category : #'*VMMaker-interpreter simulator' }
+{ #category : '*VMMaker-interpreter simulator' }
 Integer >> asUnsignedInteger [
 	"Since the simulator deals with positive integers most of the time we assert that the receiver is greater than zero.
 	 But one major exception is stack pointers in the StackInterpreterSimulator, which are negative.  So don't fail
@@ -78,7 +78,7 @@ Integer >> asUnsignedInteger [
 	^self
 ]
 
-{ #category : #'*VMMaker-interpreter simulator' }
+{ #category : '*VMMaker-interpreter simulator' }
 Integer >> asUnsignedIntegerPtr [
 	"Since the simulator deals with positive integers most of the time we assert that the receiver is greater than zero.
 	 But one major exception is stack pointers in the StackInterpreterSimulator, which are negative.  So don't fail
@@ -89,31 +89,31 @@ Integer >> asUnsignedIntegerPtr [
 	^self
 ]
 
-{ #category : #'*VMMaker-interpreter simulator' }
+{ #category : '*VMMaker-interpreter simulator' }
 Integer >> asUnsignedLong [
 	self assert: self >= 0.
 	^self
 ]
 
-{ #category : #'*VMMaker-interpreter simulator' }
+{ #category : '*VMMaker-interpreter simulator' }
 Integer >> asUnsignedLongLong [
 	self assert: self >= 0.
 	^self
 ]
 
-{ #category : #'*VMMaker-interpreter simulator' }
+{ #category : '*VMMaker-interpreter simulator' }
 Integer >> asVoidPointer [
 	^self
 ]
 
-{ #category : #'*VMMaker-bit manipulation' }
+{ #category : '*VMMaker-bit manipulation' }
 Integer >> bitInvert64 [
 	"Answer the 64-bit complement of the receiver."
 
 	^self bitXor: 16rFFFFFFFFFFFFFFFF
 ]
 
-{ #category : #'*VMMaker-bit manipulation' }
+{ #category : '*VMMaker-bit manipulation' }
 Integer >> byteSwap32 [
 	"swap the bytes of a 32 bit unsigned integer"
 	
@@ -123,7 +123,7 @@ Integer >> byteSwap32 [
 	  (((self >> 24) bitAnd: 16rFF))))
 ]
 
-{ #category : #'*VMMaker-bit manipulation' }
+{ #category : '*VMMaker-bit manipulation' }
 Integer >> byteSwap64 [
 	"swap the bytes of a 64 bit unsigned integer"
 	
@@ -137,13 +137,13 @@ Integer >> byteSwap64 [
 	  ((self >> 56) bitAnd: 16rFF))))))))
 ]
 
-{ #category : #'*VMMaker-plugin generation' }
+{ #category : '*VMMaker-plugin generation' }
 Integer class >> ccg: cg prolog: aBlock expr: aString index: anInteger [
 
 	^cg ccgLoad: aBlock expr: aString asKindOfIntegerFrom: anInteger
 ]
 
-{ #category : #'*VMMaker-interpreter simulator' }
+{ #category : '*VMMaker-interpreter simulator' }
 Integer >> coerceTo: cTypeString sim: interpreter [
 
 	| unitSize |
@@ -170,7 +170,7 @@ Integer >> coerceTo: cTypeString sim: interpreter [
 	^self  "C number (int, char, float, etc)"
 ]
 
-{ #category : #'*VMMaker' }
+{ #category : '*VMMaker' }
 Integer >> gtInspectorIntegerIn: composite [
 	<gtInspectorPresentationOrder: 30>
 	
@@ -202,7 +202,7 @@ Integer >> gtInspectorIntegerIn: composite [
 		send: #value
 ]
 
-{ #category : #'*VMMaker-printing' }
+{ #category : '*VMMaker-printing' }
 Integer >> hex8 [
 	"Print the receiver in base 16 with prefixed base, using at least 8 digits.
 	 DO NOT CHANGE THIS!  The Cog VMMaker depends on this.
@@ -216,7 +216,7 @@ Integer >> hex8 [
 		ifFalse: [hex]
 ]
 
-{ #category : #'*VMMaker' }
+{ #category : '*VMMaker' }
 Integer >> inspectIntegerIn: aBuilder [
 	<inspectorPresentationOrder: 30 title: 'Integer'> 
 	| keysColumn valuesColumn items oop32Bit value32Bit oop64Bit value64Bit |
@@ -249,27 +249,27 @@ Integer >> inspectIntegerIn: aBuilder [
 		yourself
 ]
 
-{ #category : #'*VMMaker-interpreter simulator' }
+{ #category : '*VMMaker-interpreter simulator' }
 Integer >> isActiveBreakpoint [
 	^true
 ]
 
-{ #category : #'*VMMaker-interpreter simulator' }
+{ #category : '*VMMaker-interpreter simulator' }
 Integer >> isBreakpointFor: address [
 	^self = address
 ]
 
-{ #category : #'*VMMaker-interpreter simulator' }
+{ #category : '*VMMaker-interpreter simulator' }
 Integer >> menuPrompt [
 	^' (', self hex, ')'
 ]
 
-{ #category : #'*VMMaker-interpreter simulator' }
+{ #category : '*VMMaker-interpreter simulator' }
 Integer >> removeBreakpoint: address [
 	^nil
 ]
 
-{ #category : #'*VMMaker-interpreter simulator' }
+{ #category : '*VMMaker-interpreter simulator' }
 Integer >> signedBitShift: anInteger [
 	"For historical reasons Slang generates an unsigned shift from all of the shift operators >>, << & bitShift:.
 	 These are too deeply entrenched to try and redefine the semantics.  So instead we provide a signed bitShift:
@@ -277,7 +277,7 @@ Integer >> signedBitShift: anInteger [
 	^self bitShift: anInteger
 ]
 
-{ #category : #'*VMMaker-interpreter simulator' }
+{ #category : '*VMMaker-interpreter simulator' }
 Integer >> signedIntFromChar [
 	"Self is an unsigned 8-bit integer in twos-comp form"
 
@@ -288,7 +288,7 @@ Integer >> signedIntFromChar [
 		ifFalse: [shortBits - 16r100]
 ]
 
-{ #category : #'*VMMaker-interpreter simulator' }
+{ #category : '*VMMaker-interpreter simulator' }
 Integer >> signedIntFromLong [
 	"Self is a signed or unsigned 32-bit integer"
 
@@ -300,7 +300,7 @@ Integer >> signedIntFromLong [
 	^bits - 16r100000000
 ]
 
-{ #category : #'*VMMaker-interpreter simulator' }
+{ #category : '*VMMaker-interpreter simulator' }
 Integer >> signedIntFromLong64 [
 	"Self is a signed or unsigned 64-bit integer"
 
@@ -313,7 +313,7 @@ Integer >> signedIntFromLong64 [
 	^bits - 16r10000000000000000
 ]
 
-{ #category : #'*VMMaker-interpreter simulator' }
+{ #category : '*VMMaker-interpreter simulator' }
 Integer >> signedIntFromShort [
 	"Self is an unsigned 16-bit integer in twos-comp form"
 
@@ -324,40 +324,40 @@ Integer >> signedIntFromShort [
 		ifFalse: [shortBits - 16r10000]
 ]
 
-{ #category : #'*VMMaker-interpreter simulator' }
+{ #category : '*VMMaker-interpreter simulator' }
 Integer >> signedIntToChar [
 	"Produces an 8-bit value in twos-comp form. Truncates if out-of-range as per a C cast"
 
 	^self bitAnd: 16rFF
 ]
 
-{ #category : #'*VMMaker-interpreter simulator' }
+{ #category : '*VMMaker-interpreter simulator' }
 Integer >> signedIntToLong [
 	"Produces a 32-bit value in twos-comp form. Truncates if out-of-range as per a C cast"
 
 	^self bitAnd: 16rFFFFFFFF
 ]
 
-{ #category : #'*VMMaker-interpreter simulator' }
+{ #category : '*VMMaker-interpreter simulator' }
 Integer >> signedIntToLong64 [
 	"Produces a 64-bit value in twos-comp form. Truncates if out-of-range as per a C cast"
 
 	^self bitAnd: 16rFFFFFFFFFFFFFFFF
 ]
 
-{ #category : #'*VMMaker-interpreter simulator' }
+{ #category : '*VMMaker-interpreter simulator' }
 Integer >> signedIntToShort [
 	"Produces a 16-bit value in twos-comp form. Truncates if out-of-range as per a C cast"
 
 	^self bitAnd: 16rFFFF
 ]
 
-{ #category : #'*VMMaker-interpreter simulator' }
+{ #category : '*VMMaker-interpreter simulator' }
 Integer >> singleStepRequiredToTriggerIn: aCogit [
 	^self between: aCogit cogCodeBase and: aCogit methodZone limitZony
 ]
 
-{ #category : #'*VMMaker' }
+{ #category : '*VMMaker' }
 Integer >> twoComplementOfBitSize: aBitSize [
 
 	| mask result |

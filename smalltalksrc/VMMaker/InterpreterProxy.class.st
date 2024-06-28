@@ -3,8 +3,8 @@ This class should provide the definition of what interpreter support plugins nee
 The main use of the class is to support the vm simulator and the RSqueak VM, which implements as many primitives as possible in Smalltalk.
 "
 Class {
-	#name : #InterpreterProxy,
-	#superclass : #Object,
+	#name : 'InterpreterProxy',
+	#superclass : 'Object',
 	#instVars : [
 		'primFailCode',
 		'remapBuffer',
@@ -19,22 +19,24 @@ Class {
 	#pools : [
 		'VMBasicConstants'
 	],
-	#category : #'VMMaker-InterpreterSimulation'
+	#category : 'VMMaker-InterpreterSimulation',
+	#package : 'VMMaker',
+	#tag : 'InterpreterSimulation'
 }
 
-{ #category : #translation }
+{ #category : 'translation' }
 InterpreterProxy class >> implicitReturnTypeFor: aSelector [
 	"Answer the return type for methods that don't have an explicit return."
 	^#sqInt
 ]
 
-{ #category : #translation }
+{ #category : 'translation' }
 InterpreterProxy class >> renameSelectorIfStaticallyResolved: aString [ 
 
 	^ aString
 ]
 
-{ #category : #private }
+{ #category : 'private' }
 InterpreterProxy class >> validateProxyImplementation: anInterpreter [ 
 	"InterpreterProxy validateProxyImplementation: Interpreter"
 
@@ -50,25 +52,25 @@ InterpreterProxy class >> validateProxyImplementation: anInterpreter [
 					[self notifyWithLabel: selector, ' is not implemented in ', anInterpreter name]]]
 ]
 
-{ #category : #'object access' }
+{ #category : 'object access' }
 InterpreterProxy >> argumentCountOf: methodPointer [
 	^methodPointer numArgs
 ]
 
-{ #category : #'object access' }
+{ #category : 'object access' }
 InterpreterProxy >> arrayValueOf: oop [
 	<returnTypeC: 'void *'>
 	self success: (self isWordsOrBytes: oop).
 	^CArrayAccessor on: oop.
 ]
 
-{ #category : #other }
+{ #category : 'other' }
 InterpreterProxy >> become: array1 with: array2 [
 	<returnTypeC: #sqInt>
 	array1 elementsExchangeIdentityWith: array2
 ]
 
-{ #category : #converting }
+{ #category : 'converting' }
 InterpreterProxy >> booleanValueOf: obj [
 	obj == true ifTrue:[^true].
 	obj == false ifTrue:[^false].
@@ -76,22 +78,22 @@ InterpreterProxy >> booleanValueOf: obj [
 	^nil
 ]
 
-{ #category : #private }
+{ #category : 'private' }
 InterpreterProxy >> byteAt: accessor [
 	^accessor byteAt: 0
 ]
 
-{ #category : #private }
+{ #category : 'private' }
 InterpreterProxy >> byteAt: accessor put: value [
 	^accessor byteAt: 0 put: value
 ]
 
-{ #category : #private }
+{ #category : 'private' }
 InterpreterProxy >> byteAtPointer: accessor [
 	^ self byteAt: accessor
 ]
 
-{ #category : #'object access' }
+{ #category : 'object access' }
 InterpreterProxy >> byteSizeOf: oop [
 	"Return the size of the receiver in bytes"
 	^oop class isBits
@@ -99,7 +101,7 @@ InterpreterProxy >> byteSizeOf: oop [
 		ifFalse: [(self slotSizeOf: oop) * Smalltalk wordSize]
 ]
 
-{ #category : #other }
+{ #category : 'other' }
 InterpreterProxy >> byteSwapped32IfBigEndian: anInteger [
 	"Note: for simulation only.
 	This message is not generated in C but replaced with a macro"
@@ -108,7 +110,7 @@ InterpreterProxy >> byteSwapped32IfBigEndian: anInteger [
 	^anInteger
 ]
 
-{ #category : #other }
+{ #category : 'other' }
 InterpreterProxy >> byteSwapped64IfBigEndian: anInteger [
 	"Note: for simulation only.
 	This message is not generated in C but replaced with a macro"
@@ -117,7 +119,7 @@ InterpreterProxy >> byteSwapped64IfBigEndian: anInteger [
 	^anInteger
 ]
 
-{ #category : #testing }
+{ #category : 'testing' }
 InterpreterProxy >> cStringOrNullFor: oop [
 	"Answer either a malloced string with the null-terminated contents of oop if oop is a string,
 	 or the null pointer if oop is nil, or fail.  It is the client's responsibility to free the string later."
@@ -125,125 +127,125 @@ InterpreterProxy >> cStringOrNullFor: oop [
 	oop isString ifTrue: [^oop] ifFalse: [self primitiveFail. ^0]
 ]
 
-{ #category : #'callback support' }
+{ #category : 'callback support' }
 InterpreterProxy >> callbackLeave: cbID [
 	"Leave from a previous callback"
 	^self notYetImplementedError
 ]
 
-{ #category : #'object access' }
+{ #category : 'object access' }
 InterpreterProxy >> characterObjectOf: characterCode [
 	<option: #(atLeastVMProxyMajor:minor: 1 13)>
 	^StackInterpreter objectMemoryClass characterObjectOf: characterCode
 ]
 
-{ #category : #'object access' }
+{ #category : 'object access' }
 InterpreterProxy >> characterValueOf: aCharacter [
 	<option: #(atLeastVMProxyMajor:minor: 1 13)>
 	^aCharacter asInteger
 ]
 
-{ #category : #converting }
+{ #category : 'converting' }
 InterpreterProxy >> checkedIntegerValueOf: intOop [
 	(self isIntegerObject: intOop)
 		ifTrue:[^self integerValueOf: intOop]
 		ifFalse:[self primitiveFail. ^0].
 ]
 
-{ #category : #'special classes' }
+{ #category : 'special classes' }
 InterpreterProxy >> classArray [
 	^Array
 ]
 
-{ #category : #'special classes' }
+{ #category : 'special classes' }
 InterpreterProxy >> classBitmap [
 	^Bitmap
 ]
 
-{ #category : #'special classes' }
+{ #category : 'special classes' }
 InterpreterProxy >> classByteArray [
 	^ByteArray
 ]
 
-{ #category : #'special classes' }
+{ #category : 'special classes' }
 InterpreterProxy >> classCharacter [
 	^Character
 ]
 
-{ #category : #'FFI support' }
+{ #category : 'FFI support' }
 InterpreterProxy >> classExternalAddress [
 	^Smalltalk at: #ExternalAddress ifAbsent:[nil]
 ]
 
-{ #category : #'special classes' }
+{ #category : 'special classes' }
 InterpreterProxy >> classFloat [
 	^Float
 ]
 
-{ #category : #'special classes' }
+{ #category : 'special classes' }
 InterpreterProxy >> classLargeNegativeInteger [
 	^LargeNegativeInteger
 ]
 
-{ #category : #'special classes' }
+{ #category : 'special classes' }
 InterpreterProxy >> classLargePositiveInteger [
 	^LargePositiveInteger
 ]
 
-{ #category : #'special classes' }
+{ #category : 'special classes' }
 InterpreterProxy >> classPoint [
 	^Point
 ]
 
-{ #category : #'special classes' }
+{ #category : 'special classes' }
 InterpreterProxy >> classSemaphore [
 	^Semaphore
 ]
 
-{ #category : #'special classes' }
+{ #category : 'special classes' }
 InterpreterProxy >> classSmallInteger [
 	^SmallInteger
 ]
 
-{ #category : #'special classes' }
+{ #category : 'special classes' }
 InterpreterProxy >> classString [
 	^ByteString
 ]
 
-{ #category : #'instance creation' }
+{ #category : 'instance creation' }
 InterpreterProxy >> clone: oop [
 	^oop shallowCopy
 ]
 
-{ #category : #'BitBlt support' }
+{ #category : 'BitBlt support' }
 InterpreterProxy >> copyBits [
 	<returnTypeC: #sqInt>
 	bb copyBits
 ]
 
-{ #category : #'BitBlt support' }
+{ #category : 'BitBlt support' }
 InterpreterProxy >> copyBitsFrom: leftX to: rightX at: yValue [
 	<returnTypeC: #sqInt>
 	bb copyBitsFrom: leftX to: rightX at: yValue.
 ]
 
-{ #category : #'special objects' }
+{ #category : 'special objects' }
 InterpreterProxy >> displayObject [
 	^Display
 ]
 
-{ #category : #other }
+{ #category : 'other' }
 InterpreterProxy >> failed [
 
 	^primFailCode ~= 0
 ]
 
-{ #category : #'special objects' }
+{ #category : 'special objects' }
 InterpreterProxy >> falseObject [
 	^false
 ]
 
-{ #category : #'object access' }
+{ #category : 'object access' }
 InterpreterProxy >> fetchArray: fieldIndex ofObject: objectPointer [
 	"Fetch the instance variable at the given index of the given object. Return the address of first indexable field of resulting array object, or fail if the instance variable does not contain an indexable bytes or words object."
 	"Note: May be called by translated primitive code."
@@ -255,12 +257,12 @@ InterpreterProxy >> fetchArray: fieldIndex ofObject: objectPointer [
 
 ]
 
-{ #category : #'object access' }
+{ #category : 'object access' }
 InterpreterProxy >> fetchClassOf: oop [
 	^oop class
 ]
 
-{ #category : #'object access' }
+{ #category : 'object access' }
 InterpreterProxy >> fetchFloat: fieldIndex ofObject: objectPointer [
 	"Fetch the instance variable at the given index of the given object. Return the C double precision floating point value of that instance variable, or fail if it is not a Float."
 	"Note: May be called by translated primitive code."
@@ -271,7 +273,7 @@ InterpreterProxy >> fetchFloat: fieldIndex ofObject: objectPointer [
 	^ self floatValueOf: floatOop
 ]
 
-{ #category : #'object access' }
+{ #category : 'object access' }
 InterpreterProxy >> fetchInteger: fieldIndex ofObject: objectPointer [
 	"Note: May be called by translated primitive code."
 
@@ -281,7 +283,7 @@ InterpreterProxy >> fetchInteger: fieldIndex ofObject: objectPointer [
 	^self checkedIntegerValueOf: intOop
 ]
 
-{ #category : #private }
+{ #category : 'private' }
 InterpreterProxy >> fetchIntegerOrTruncFloat: fieldIndex ofObject: objectPointer [
 	"Support for BitBlt simulation only"
 	| intOrFloat |
@@ -291,30 +293,30 @@ InterpreterProxy >> fetchIntegerOrTruncFloat: fieldIndex ofObject: objectPointer
 	^self primitiveFail.
 ]
 
-{ #category : #'object access' }
+{ #category : 'object access' }
 InterpreterProxy >> fetchLong32: fieldIndex ofObject: oop [
 "fetchWord:ofObject: is rescinded as of VMMaker 3.8 64bit VM. This is the same code as used therein and may need revision for 64 bit cleanliness"
 	^oop instVarAt: fieldIndex+1
 ]
 
-{ #category : #'object access' }
+{ #category : 'object access' }
 InterpreterProxy >> fetchPointer: index ofObject: oop [
 	^oop instVarAt: index+1
 ]
 
-{ #category : #'object access' }
+{ #category : 'object access' }
 InterpreterProxy >> firstFixedField: oop [
 	<returnTypeC:'void *'>
 	^CObjectAccessor on: oop
 ]
 
-{ #category : #'object access' }
+{ #category : 'object access' }
 InterpreterProxy >> firstIndexableField: oop [
 	<returnTypeC:'void *'>
 	^CArrayAccessor on: oop
 ]
 
-{ #category : #'stack access' }
+{ #category : 'stack access' }
 InterpreterProxy >> floatArg: offset [
 	"Like #stackFloatValue: but access method arguments left-to-right"
 	"Obsolete; was never used; replaced with methodReturnString: in the VirtualMachine struct."
@@ -326,7 +328,7 @@ InterpreterProxy >> floatArg: offset [
 	^oop
 ]
 
-{ #category : #converting }
+{ #category : 'converting' }
 InterpreterProxy >> floatObjectOf: aFloat [
 	<returnTypeC: #sqInt> "...because answering the float argument causes the type inferencer to say this answers a float."
 	<var: #aFloat type: #double>
@@ -334,7 +336,7 @@ InterpreterProxy >> floatObjectOf: aFloat [
 	^aFloat
 ]
 
-{ #category : #converting }
+{ #category : 'converting' }
 InterpreterProxy >> floatValueOf: oop [
 	<returnTypeC:'double'>
 	oop isFloat
@@ -342,24 +344,24 @@ InterpreterProxy >> floatValueOf: oop [
 		ifFalse:[self primitiveFail. ^0.0].
 ]
 
-{ #category : #other }
+{ #category : 'other' }
 InterpreterProxy >> fullGC [
 	<returnTypeC: #sqInt>
 	Smalltalk garbageCollect
 ]
 
-{ #category : #'special objects' }
+{ #category : 'special objects' }
 InterpreterProxy >> getDeferDisplayUpdates [
 	^false
 ]
 
-{ #category : #other }
+{ #category : 'other' }
 InterpreterProxy >> getStackPointer [
 	<returnTypeC: #'sqInt *'>
 	^self notYetImplementedError
 ]
 
-{ #category : #other }
+{ #category : 'other' }
 InterpreterProxy >> getThisSessionID [
 	"Answer a session identifier which represents the current instance of Squeak.
 	The identifier is expected to be unique among all instances of Squeak on a
@@ -371,31 +373,31 @@ InterpreterProxy >> getThisSessionID [
 	^ thisSessionID
 ]
 
-{ #category : #testing }
+{ #category : 'testing' }
 InterpreterProxy >> includesBehavior: aClass ThatOf: aSuperclass [
 	^aClass includesBehavior: aSuperclass
 ]
 
-{ #category : #initialize }
+{ #category : 'initialize' }
 InterpreterProxy >> initialize [
 	primFailCode := 0.
 	remapBuffer := OrderedCollection new.
 	stack := OrderedCollection new.
 ]
 
-{ #category : #'object access' }
+{ #category : 'object access' }
 InterpreterProxy >> instanceSizeOf: classObj [
 	^classObj instSize
 ]
 
-{ #category : #'instance creation' }
+{ #category : 'instance creation' }
 InterpreterProxy >> instantiateClass: classPointer indexableSize: size [
 	^size = 0 
 		ifTrue:[classPointer basicNew]
 		ifFalse:[classPointer basicNew: size]
 ]
 
-{ #category : #'stack access' }
+{ #category : 'stack access' }
 InterpreterProxy >> integerArg: offset [
 	"Like #stackIntegerValue: but access method arguments left-to-right"
 	"Obsolete; was never used; replaced with methodReturnInteger: in the VirtualMachine struct."
@@ -406,19 +408,19 @@ InterpreterProxy >> integerArg: offset [
 	^oop
 ]
 
-{ #category : #converting }
+{ #category : 'converting' }
 InterpreterProxy >> integerObjectOf: value [
 	value class == SmallInteger ifFalse:[self error:'Not a SmallInteger object'].
 	^value
 ]
 
-{ #category : #converting }
+{ #category : 'converting' }
 InterpreterProxy >> integerValueOf: oop [
 	oop class == SmallInteger ifFalse:[self error:'Not a SmallInteger'].
 	^oop
 ]
 
-{ #category : #converting }
+{ #category : 'converting' }
 InterpreterProxy >> ioFilename: aCharBuffer fromString: aFilenameString ofLength: filenameLength resolveAliases: aBoolean [
 	<var: #aCharBuffer type: #'char *'>
 	<var: #aFilenameString type: #'char *'>
@@ -427,7 +429,7 @@ Note the resolveAliases flag - this is an awful artefact of OSX and Apples demen
 	aCharBuffer replaceFrom:1 to: filenameLength with: aFilenameString
 ]
 
-{ #category : #'FFI support' }
+{ #category : 'FFI support' }
 InterpreterProxy >> ioLoadFunction: functionName From: moduleName [
 	<returnTypeC: #'void *'>
 	<var: #functionName type: #'char *'>
@@ -436,7 +438,7 @@ InterpreterProxy >> ioLoadFunction: functionName From: moduleName [
 	^0
 ]
 
-{ #category : #'FFI support' }
+{ #category : 'FFI support' }
 InterpreterProxy >> ioLoadFunction: functionName From: moduleName AccessorDepthInto: accessorDepthPtr [
 	<returnTypeC: #'void *'>
 	<var: #functionName type: #'char *'>
@@ -446,26 +448,26 @@ InterpreterProxy >> ioLoadFunction: functionName From: moduleName AccessorDepthI
 	^0
 ]
 
-{ #category : #'FFI support' }
+{ #category : 'FFI support' }
 InterpreterProxy >> ioLoadModule: moduleNameIndex OfLength: moduleLength [
 	<returnTypeC: #'void *'>
 	"Dummy - provided by support code"
 	^0
 ]
 
-{ #category : #'FFI support' }
+{ #category : 'FFI support' }
 InterpreterProxy >> ioLoadSymbol: functionNameIndex OfLength: functionLength FromModule: moduleHandle [
 	<returnTypeC: #'void *'>
 	"Dummy - provided by support code"
 	^0
 ]
 
-{ #category : #other }
+{ #category : 'other' }
 InterpreterProxy >> ioMicroMSecs [
 	^Time millisecondClockValue
 ]
 
-{ #category : #testing }
+{ #category : 'testing' }
 InterpreterProxy >> is: oop KindOf: aString [
 	"InterpreterProxy new is: 42 KindOf: 'Number'"
 	<var: #aString type: 'char *'>
@@ -475,13 +477,13 @@ InterpreterProxy >> is: oop KindOf: aString [
 		ifNotNil: [:theClass| oop isKindOf: theClass]
 ]
 
-{ #category : #testing }
+{ #category : 'testing' }
 InterpreterProxy >> is: oop KindOfClass: aClass [
 	"InterpreterProxy new is: 42 KindOfClass: Number"
 	^oop isKindOf: aClass
 ]
 
-{ #category : #testing }
+{ #category : 'testing' }
 InterpreterProxy >> is: oop MemberOf: aString [
 	"InterpreterProxy new is: 42 MemberOf:'SmallInteger'"
 	| theClass |
@@ -492,164 +494,164 @@ InterpreterProxy >> is: oop MemberOf: aString [
 		ifFalse:[^oop isMemberOf: theClass]
 ]
 
-{ #category : #testing }
+{ #category : 'testing' }
 InterpreterProxy >> isArray: oop [
 	^(self isNonImmediate: oop) and: [oop class instSpec = 2]
 ]
 
-{ #category : #testing }
+{ #category : 'testing' }
 InterpreterProxy >> isBooleanObject: oop [
 	<option: #(atLeastVMProxyMajor:minor: 1 15)>
 	^oop == true or: [oop == false]
 ]
 
-{ #category : #testing }
+{ #category : 'testing' }
 InterpreterProxy >> isBytes: oop [
 	^oop class isBytes
 ]
 
-{ #category : #testing }
+{ #category : 'testing' }
 InterpreterProxy >> isCharacterObject: oop [
 	<option: #(atLeastVMProxyMajor:minor: 1 13)>
 	^oop isCharacter
 ]
 
-{ #category : #testing }
+{ #category : 'testing' }
 InterpreterProxy >> isCharacterValue: anInteger [
 	<option: #(atLeastVMProxyMajor:minor: 1 13)>
 	^(self isIntegerValue: anInteger) and: [anInteger >= 0]
 ]
 
-{ #category : #testing }
+{ #category : 'testing' }
 InterpreterProxy >> isFloatObject: oop [
 	^oop isFloat
 ]
 
-{ #category : #testing }
+{ #category : 'testing' }
 InterpreterProxy >> isImmediate: anObject [
 	<option: #(atLeastVMProxyMajor:minor: 1 13)>
 	^StackInterpreter objectMemoryClass isImmediate: anObject
 ]
 
-{ #category : #'FFI support' }
+{ #category : 'FFI support' }
 InterpreterProxy >> isInMemory: address [
 	"Return true if the given address is in ST object memory"
 	^true
 ]
 
-{ #category : #testing }
+{ #category : 'testing' }
 InterpreterProxy >> isIndexable: oop [
 	^oop class isVariable
 ]
 
-{ #category : #testing }
+{ #category : 'testing' }
 InterpreterProxy >> isIntegerObject: objectPointer [
 	^objectPointer class == SmallInteger
 ]
 
-{ #category : #testing }
+{ #category : 'testing' }
 InterpreterProxy >> isIntegerValue: intValue [
 	^intValue class == SmallInteger
 ]
 
-{ #category : #private }
+{ #category : 'private' }
 InterpreterProxy >> isInterpreterProxy [
 	"Return true since I am not a real Interpreter simulation"
 	^true
 ]
 
-{ #category : #testing }
+{ #category : 'testing' }
 InterpreterProxy >> isKindOfInteger: objectOrientedPointer [
 	^objectOrientedPointer isInteger
 ]
 
-{ #category : #testing }
+{ #category : 'testing' }
 InterpreterProxy >> isLargeIntegerObject: objectOrientedPointer [
 	^objectOrientedPointer isKindOf: LargePositiveInteger
 ]
 
-{ #category : #testing }
+{ #category : 'testing' }
 InterpreterProxy >> isLargeNegativeIntegerObject: objectOrientedPointer [
 	^objectOrientedPointer isMemberOf: LargeNegativeInteger
 ]
 
-{ #category : #testing }
+{ #category : 'testing' }
 InterpreterProxy >> isLargePositiveIntegerObject: objectOrientedPointer [
 	^objectOrientedPointer isMemberOf: LargePositiveInteger
 ]
 
-{ #category : #testing }
+{ #category : 'testing' }
 InterpreterProxy >> isNonImmediate: anObject [
 
 	^ (self isImmediate: anObject) not
 ]
 
-{ #category : #'object access' }
+{ #category : 'object access' }
 InterpreterProxy >> isOopImmutable: oop [
 	<option: #IMMUTABILITY>
 	^StackInterpreter objectMemoryClass isOopImmutable: oop
 ]
 
-{ #category : #testing }
+{ #category : 'testing' }
 InterpreterProxy >> isOopMutable: anOop [
 	<api>
 	^self notYetImplementedError
 ]
 
-{ #category : #testing }
+{ #category : 'testing' }
 InterpreterProxy >> isPinned: anObject [
 	<option: #(atLeastVMProxyMajor:minor: 1 13)>
 	^self shouldBeImplemented
 ]
 
-{ #category : #testing }
+{ #category : 'testing' }
 InterpreterProxy >> isPointers: oop [
 	^oop class isPointers
 ]
 
-{ #category : #testing }
+{ #category : 'testing' }
 InterpreterProxy >> isPositiveMachineIntegerObject: oop [
 	<option: #(atLeastVMProxyMajor:minor: 1 15)>
 	^oop isInteger and: [oop >= 0 and: [oop digitLength <= Smalltalk wordSize]]
 ]
 
-{ #category : #testing }
+{ #category : 'testing' }
 InterpreterProxy >> isWeak: oop [
 	^oop class isWeak
 ]
 
-{ #category : #testing }
+{ #category : 'testing' }
 InterpreterProxy >> isWords: oop [
 	^oop class isPointers not and:[oop class isBytes not]
 ]
 
-{ #category : #testing }
+{ #category : 'testing' }
 InterpreterProxy >> isWordsOrBytes: oop [
 	^(self isBytes: oop) or:[self isWords: oop]
 ]
 
-{ #category : #'FFI support' }
+{ #category : 'FFI support' }
 InterpreterProxy >> isYoung: anOop [
 	^self notYetImplementedError
 ]
 
-{ #category : #'object access' }
+{ #category : 'object access' }
 InterpreterProxy >> literal: offset ofMethod: methodPointer [
 	^methodPointer literalAt: offset+1
 ]
 
-{ #category : #'object access' }
+{ #category : 'object access' }
 InterpreterProxy >> literalCountOf: methodPointer [
 	^methodPointer numLiterals
 ]
 
-{ #category : #'BitBlt support' }
+{ #category : 'BitBlt support' }
 InterpreterProxy >> loadBitBltFrom: bbOop [
 	<returnTypeC: #sqInt>
 	bb := bbOop
 ]
 
-{ #category : #initialize }
+{ #category : 'initialize' }
 InterpreterProxy >> loadStackFrom: aContext [
 	self push: aContext receiver.
 	method := aContext method.
@@ -657,36 +659,36 @@ InterpreterProxy >> loadStackFrom: aContext [
 	1 to: argumentCount do:[:i| self push: (aContext at: i) ].
 ]
 
-{ #category : #private }
+{ #category : 'private' }
 InterpreterProxy >> long32At: arrayOffset [
 
 	^ arrayOffset long32At: 0
 
 ]
 
-{ #category : #private }
+{ #category : 'private' }
 InterpreterProxy >> longAt: accessor [
 	^accessor longAt: 0
 ]
 
-{ #category : #private }
+{ #category : 'private' }
 InterpreterProxy >> longAt: accessor put: value [
 	^accessor longAt: 0 put: value
 ]
 
-{ #category : #other }
+{ #category : 'other' }
 InterpreterProxy >> majorVersion [
 	^ 1
 ]
 
-{ #category : #'instance creation' }
+{ #category : 'instance creation' }
 InterpreterProxy >> makePointwithxValue: xValue yValue: yValue [
 	(xValue class == SmallInteger and:[yValue class == SmallInteger]) 
 		ifFalse:[self error:'Not SmallInteger objects'].
 	^xValue@yValue
 ]
 
-{ #category : #'stack access' }
+{ #category : 'stack access' }
 InterpreterProxy >> methodArg: offset [
 	"Like #stackValue: but access method arguments left-to-right"
 	"Obsolete; was never used; replaced with methodReturnBool: in the VirtualMachine struct."
@@ -695,24 +697,24 @@ InterpreterProxy >> methodArg: offset [
 	^self stackValue: argumentCount - offset
 ]
 
-{ #category : #'object access' }
+{ #category : 'object access' }
 InterpreterProxy >> methodArgumentCount [
 	^argumentCount
 ]
 
-{ #category : #'object access' }
+{ #category : 'object access' }
 InterpreterProxy >> methodPrimitiveIndex [
 	^method primitive
 ]
 
-{ #category : #'stack access' }
+{ #category : 'stack access' }
 InterpreterProxy >> methodReturnBool: boolean [
 	"Sets the return value for a method"
 	self pop: argumentCount+1 thenPushBool: boolean.
 	^0
 ]
 
-{ #category : #'stack access' }
+{ #category : 'stack access' }
 InterpreterProxy >> methodReturnFloat: aFloat [
 	"Sets the return value for a method"
 	<var: 'aFloat' type: #double>
@@ -720,21 +722,21 @@ InterpreterProxy >> methodReturnFloat: aFloat [
 	^0
 ]
 
-{ #category : #'stack access' }
+{ #category : 'stack access' }
 InterpreterProxy >> methodReturnInteger: integer [
 	"Sets the return value for a method"
 	self pop: argumentCount+1 thenPushInteger: integer.
 	^0
 ]
 
-{ #category : #'stack access' }
+{ #category : 'stack access' }
 InterpreterProxy >> methodReturnReceiver [
 	"Sets the return value for a method"
 	self pop: argumentCount.
 	^0
 ]
 
-{ #category : #'stack access' }
+{ #category : 'stack access' }
 InterpreterProxy >> methodReturnString: aCString [
 	"Sets the return value for a method."
 	"THIS IS DUBIOUS!  CONSIDER REMOVING IT!  RIGHT NOW IT IS NOT SENT."
@@ -745,29 +747,29 @@ InterpreterProxy >> methodReturnString: aCString [
 	^0
 ]
 
-{ #category : #'stack access' }
+{ #category : 'stack access' }
 InterpreterProxy >> methodReturnValue: oop [
 	"Sets the return value for a method"
 	self pop: argumentCount+1 thenPush: oop.
 	^0
 ]
 
-{ #category : #other }
+{ #category : 'other' }
 InterpreterProxy >> minorVersion [
 	^ 8
 ]
 
-{ #category : #'special objects' }
+{ #category : 'special objects' }
 InterpreterProxy >> nilObject [
 	^nil
 ]
 
-{ #category : #private }
+{ #category : 'private' }
 InterpreterProxy >> notYetImplementedError [
 	^self error: 'not yet implemented in Smalltalk'
 ]
 
-{ #category : #'stack access' }
+{ #category : 'stack access' }
 InterpreterProxy >> objectArg: offset [
 	"Like #stackObjectValue: but access method arguments left-to-right"
 	"Obsolete; was never used; replaced with methodReturnFloat: in the VirtualMachine struct."
@@ -778,44 +780,44 @@ InterpreterProxy >> objectArg: offset [
 	^oop
 ]
 
-{ #category : #'object access' }
+{ #category : 'object access' }
 InterpreterProxy >> obsoleteDontUseThisFetchWord: fieldIndex ofObject: oop [
 "fetchWord:ofObject: is rescinded as of VMMaker 3.8 64bit VM. This is a placeholder to sit in the sqVirtualMachine structure to support older plugins for a while"
 	self halt: 'deprecated method'
 ]
 
-{ #category : #'FFI support' }
+{ #category : 'FFI support' }
 InterpreterProxy >> ownVM: flags [
 	^self notYetImplementedError
 ]
 
-{ #category : #'object access' }
+{ #category : 'object access' }
 InterpreterProxy >> pinObject: anObject [
 	<option: #(atLeastVMProxyMajor:minor: 1 13)>
 	^self shouldBeImplemented
 ]
 
-{ #category : #'stack access' }
+{ #category : 'stack access' }
 InterpreterProxy >> pop: nItems [
 	<returnTypeC: #sqInt>
 	1 to: nItems do:[:i| stack removeLast].
 ]
 
-{ #category : #'stack access' }
+{ #category : 'stack access' }
 InterpreterProxy >> pop: nItems thenPush: oop [
 	<returnTypeC: #void>
 	self pop: nItems.
 	self push: oop
 ]
 
-{ #category : #private }
+{ #category : 'private' }
 InterpreterProxy >> pop: nItems thenPushBool: boolean [
 	<returnTypeC: #sqInt>
 	self pop: nItems.
 	self push: (boolean ifTrue: [self trueObject] ifFalse: [self falseObject])
 ]
 
-{ #category : #private }
+{ #category : 'private' }
 InterpreterProxy >> pop: nItems thenPushFloat: float [
 	<var: #float type: #double>
 	<returnTypeC: #sqInt>
@@ -823,19 +825,19 @@ InterpreterProxy >> pop: nItems thenPushFloat: float [
 	self push: (self floatObjectOf: float)
 ]
 
-{ #category : #private }
+{ #category : 'private' }
 InterpreterProxy >> pop: nItems thenPushInteger: integer [
 	<returnTypeC: #sqInt>
 	self pop: nItems.
 	self push: (self integerObjectOf: integer)
 ]
 
-{ #category : #'instance creation' }
+{ #category : 'instance creation' }
 InterpreterProxy >> popRemappableOop [
 	^remapBuffer removeLast
 ]
 
-{ #category : #converting }
+{ #category : 'converting' }
 InterpreterProxy >> positive32BitIntegerFor: integerValue [
 	<returnTypeC: #sqInt>
 	<var: 'integerValue' type: #'unsigned int'>
@@ -845,7 +847,7 @@ InterpreterProxy >> positive32BitIntegerFor: integerValue [
 		ifFalse:[ (1 bitShift: 32) + integerValue]
 ]
 
-{ #category : #converting }
+{ #category : 'converting' }
 InterpreterProxy >> positive32BitValueOf: oop [
 	<returnTypeC: #'unsigned int'>
 	oop isInteger ifFalse:[self error:'Not an integer object'].
@@ -854,7 +856,7 @@ InterpreterProxy >> positive32BitValueOf: oop [
 		ifFalse:[^oop]
 ]
 
-{ #category : #converting }
+{ #category : 'converting' }
 InterpreterProxy >> positive64BitIntegerFor: integerValue [
 	<api>
 	<returnTypeC: #sqInt> "...because answering the 64-bit argument causes the type inferencer to say this answers 64-bits."
@@ -865,7 +867,7 @@ InterpreterProxy >> positive64BitIntegerFor: integerValue [
 		ifFalse:[ (1 bitShift: 64) + integerValue]
 ]
 
-{ #category : #converting }
+{ #category : 'converting' }
 InterpreterProxy >> positive64BitValueOf: oop [
 	<returnTypeC: #usqLong>
 	oop isInteger ifFalse:[self error:'Not an integer object'].
@@ -874,7 +876,7 @@ InterpreterProxy >> positive64BitValueOf: oop [
 		ifFalse:[^oop]
 ]
 
-{ #category : #converting }
+{ #category : 'converting' }
 InterpreterProxy >> positiveMachineIntegerValueOf: oop [
 	<returnTypeC: #'usqIntptr_t'>
 	oop isInteger ifFalse:[self error: 'Not an integer object'].
@@ -883,19 +885,19 @@ InterpreterProxy >> positiveMachineIntegerValueOf: oop [
 		ifFalse: [oop]
 ]
 
-{ #category : #'special objects' }
+{ #category : 'special objects' }
 InterpreterProxy >> primitiveErrorTable [
 	^Smalltalk primitiveErrorTable
 ]
 
-{ #category : #other }
+{ #category : 'other' }
 InterpreterProxy >> primitiveFail [
 	<returnTypeC: #sqInt>
 	"Set general (unspecified) primitive failure."
 	self primitiveFailFor: 1
 ]
 
-{ #category : #other }
+{ #category : 'other' }
 InterpreterProxy >> primitiveFailFor: reasonCode [
 	"Set specific primitive failure.
 	N.B. primitiveFailFor: PrimNoErr is expected to clear the primFailCode.
@@ -904,7 +906,7 @@ InterpreterProxy >> primitiveFailFor: reasonCode [
 	^ primFailCode := reasonCode
 ]
 
-{ #category : #other }
+{ #category : 'other' }
 InterpreterProxy >> primitiveFailForFFIException: exceptionCode at: pc [
 	<var: 'exceptionCode' type: #usqLong>
 	<var: 'pc' type: #usqInt>
@@ -917,7 +919,7 @@ InterpreterProxy >> primitiveFailForFFIException: exceptionCode at: pc [
 	^primFailCode := PrimErrFFIException
 ]
 
-{ #category : #other }
+{ #category : 'other' }
 InterpreterProxy >> primitiveFailForOSError: osError [
 	<var: 'osError' type: #sqLong>
 	<option: #(atLeastVMProxyMajor:minor: 1 14)>
@@ -928,36 +930,36 @@ InterpreterProxy >> primitiveFailForOSError: osError [
 	^primFailCode := PrimErrOSError
 ]
 
-{ #category : #other }
+{ #category : 'other' }
 InterpreterProxy >> primitiveFailureCode [
 	^primFailCode
 ]
 
-{ #category : #'object access' }
+{ #category : 'object access' }
 InterpreterProxy >> primitiveIndexOf: methodPointer [
 	^methodPointer primitive
 ]
 
-{ #category : #'object access' }
+{ #category : 'object access' }
 InterpreterProxy >> primitiveMethod [
 	"Return the method an external primitive was defined in"
 	^method
 ]
 
-{ #category : #'stack access' }
+{ #category : 'stack access' }
 InterpreterProxy >> push: object [
 	<returnTypeC: #sqInt>
 	stack addLast: object
 ]
 
-{ #category : #'stack access' }
+{ #category : 'stack access' }
 InterpreterProxy >> pushBool: trueOrFalse [
 	<returnTypeC: #sqInt>
 	(trueOrFalse == true or:[trueOrFalse == false]) ifFalse:[self error:'Not a Boolean'].
 	self push: trueOrFalse
 ]
 
-{ #category : #'stack access' }
+{ #category : 'stack access' }
 InterpreterProxy >> pushFloat: f [
 	<returnTypeC: #sqInt>
 	<var: #f type: 'double '>
@@ -965,19 +967,19 @@ InterpreterProxy >> pushFloat: f [
 	self push: f.
 ]
 
-{ #category : #'stack access' }
+{ #category : 'stack access' }
 InterpreterProxy >> pushInteger: integerValue [
 	<returnTypeC: #sqInt>
 	self push: (self integerObjectOf: integerValue).
 ]
 
-{ #category : #'instance creation' }
+{ #category : 'instance creation' }
 InterpreterProxy >> pushRemappableOop: oop [
 	<returnTypeC: #void>
 	remapBuffer addLast: oop
 ]
 
-{ #category : #'callback support' }
+{ #category : 'callback support' }
 InterpreterProxy >> reestablishContextPriorToCallback: callbackContext [
 	"callbackContext is an activation of invokeCallback:stack:registers:jmpbuf:.  Its sender
 	is the interpreter's state prior to the callback.  Reestablish that state."
@@ -985,7 +987,7 @@ InterpreterProxy >> reestablishContextPriorToCallback: callbackContext [
 	self notYetImplemented
 ]
 
-{ #category : #'callback support' }
+{ #category : 'callback support' }
 InterpreterProxy >> returnAs: returnTypeOop ThroughCallback: vmCallbackContext Context: callbackMethodContext [
 	<returnTypeC: #sqInt>
 	<var: #vmCallbackContext type: #'VMCallbackContext *'>
@@ -995,7 +997,7 @@ InterpreterProxy >> returnAs: returnTypeOop ThroughCallback: vmCallbackContext C
 	self notYetImplemented
 ]
 
-{ #category : #'callback support' }
+{ #category : 'callback support' }
 InterpreterProxy >> sendInvokeCallback: thunkPtr Stack: stackPtr Registers: regsPtr Jmpbuf: jmpBufPtr [
 	"Send the 4 argument callback message invokeCallback:stack:registers:jmpbuf:
 	 to Alien class with the supplied args.  The arguments are raw C addresses
@@ -1004,7 +1006,7 @@ InterpreterProxy >> sendInvokeCallback: thunkPtr Stack: stackPtr Registers: regs
 	self notYetImplemented
 ]
 
-{ #category : #'callback support' }
+{ #category : 'callback support' }
 InterpreterProxy >> sendInvokeCallbackContext: vmCallbackContext [
 	<var: #vmCallbackContext type: #'VMCallbackContext *'>
 	"Send the calllback message to Alien class with the supplied arg(s).  Use either the
@@ -1017,38 +1019,38 @@ InterpreterProxy >> sendInvokeCallbackContext: vmCallbackContext [
 	self notYetImplemented
 ]
 
-{ #category : #other }
+{ #category : 'other' }
 InterpreterProxy >> showDisplayBits: aForm Left: l Top: t Right: r Bottom: b [
 	aForm == Display ifTrue:[
 		Display class isDeferringUpdates ifTrue: [^ nil].
 		Display forceToScreen: (Rectangle left: l right: r top: t bottom: b)].
 ]
 
-{ #category : #'callback support' }
+{ #category : 'callback support' }
 InterpreterProxy >> signalNoResume: aSemaphore [
 	^self notYetImplementedError
 ]
 
-{ #category : #other }
+{ #category : 'other' }
 InterpreterProxy >> signalSemaphoreWithIndex: semaIndex [
 	<returnTypeC: #sqInt>
 	((Smalltalk externalObjects) at: semaIndex) signal
 ]
 
-{ #category : #converting }
+{ #category : 'converting' }
 InterpreterProxy >> signed32BitIntegerFor: integerValue [
 	integerValue isInteger ifFalse:[self error:'Not an Integer object'].
 	^integerValue
 ]
 
-{ #category : #converting }
+{ #category : 'converting' }
 InterpreterProxy >> signed32BitValueOf: oop [
 	<returnTypeC: #int>
 	oop isInteger ifFalse:[self error:'Not an integer object'].
 	^oop
 ]
 
-{ #category : #converting }
+{ #category : 'converting' }
 InterpreterProxy >> signed64BitIntegerFor: integerValue [
 	<returnTypeC: #sqInt> "...because answering the 64-bit argument causes the type inferencer to say this answers 64-bits."
 	<var: 'integerValue' type: #sqLong>
@@ -1056,28 +1058,28 @@ InterpreterProxy >> signed64BitIntegerFor: integerValue [
 	^integerValue
 ]
 
-{ #category : #converting }
+{ #category : 'converting' }
 InterpreterProxy >> signed64BitValueOf: oop [
 	<returnTypeC: #sqLong>
 	oop isInteger ifFalse:[self error:'Not an integer object'].
 	^oop
 ]
 
-{ #category : #converting }
+{ #category : 'converting' }
 InterpreterProxy >> signedMachineIntegerValueOf: oop [
 	<returnTypeC: #'sqIntptr_t'>
 	oop isInteger ifFalse:[self error:'Not an integer object'].
 	^oop
 ]
 
-{ #category : #'object access' }
+{ #category : 'object access' }
 InterpreterProxy >> sizeOfSTArrayFromCPrimitive: cPtr [
 	"Note: Only called by translated primitive code."
 	<var: #cPtr type: 'void *'>
 	^self shouldNotImplement
 ]
 
-{ #category : #'object access' }
+{ #category : 'object access' }
 InterpreterProxy >> slotSizeOf: oop [
 	"Returns the number of slots in the receiver.
 	If the receiver is a byte object, return the number of bytes.
@@ -1085,23 +1087,23 @@ InterpreterProxy >> slotSizeOf: oop [
 	^(oop basicSize) + (oop class instSize)
 ]
 
-{ #category : #'object access' }
+{ #category : 'object access' }
 InterpreterProxy >> stObject: array at: index [
 	^array at: index
 ]
 
-{ #category : #'object access' }
+{ #category : 'object access' }
 InterpreterProxy >> stObject: array at: index put: value [
 	^array at: index put: value
 ]
 
-{ #category : #'object access' }
+{ #category : 'object access' }
 InterpreterProxy >> stSizeOf: oop [
 	"Return the number of indexable fields in the receiver"
 	^oop basicSize
 ]
 
-{ #category : #'stack access' }
+{ #category : 'stack access' }
 InterpreterProxy >> stackFloatValue: offset [
 	| oop |
 	<returnTypeC: 'double'>
@@ -1110,7 +1112,7 @@ InterpreterProxy >> stackFloatValue: offset [
 	^oop
 ]
 
-{ #category : #'stack access' }
+{ #category : 'stack access' }
 InterpreterProxy >> stackIntegerValue: offset [
 	| oop |
 	oop := self stackValue: offset.
@@ -1118,7 +1120,7 @@ InterpreterProxy >> stackIntegerValue: offset [
 	^oop
 ]
 
-{ #category : #'stack access' }
+{ #category : 'stack access' }
 InterpreterProxy >> stackObjectValue: offset [
 	| oop |
 	oop := self stackValue: offset.
@@ -1126,42 +1128,42 @@ InterpreterProxy >> stackObjectValue: offset [
 	^oop
 ]
 
-{ #category : #'stack access' }
+{ #category : 'stack access' }
 InterpreterProxy >> stackPositiveMachineIntegerValue: offset [
 	<returnTypeC: #'usqIntptr_t'>
 	^self positiveMachineIntegerValueOf: (self stackValue: offset)
 ]
 
-{ #category : #'stack access' }
+{ #category : 'stack access' }
 InterpreterProxy >> stackSignedMachineIntegerValue: offset [
 	<returnTypeC: #'sqIntptr_t'>
 	^self signedMachineIntegerValueOf: (self stackValue: offset)
 ]
 
-{ #category : #'stack access' }
+{ #category : 'stack access' }
 InterpreterProxy >> stackValue: offset [
 	^stack at: stack size - offset.
 ]
 
-{ #category : #other }
+{ #category : 'other' }
 InterpreterProxy >> statNumGCs [
 	<option: #(atLeastVMProxyMajor:minor: 1 14)>
 	^(Smalltalk vmParameterAt: 7 "statFullGCs") + (Smalltalk vmParameterAt: 9 "statScavenges/statIncrGCs")
 ]
 
-{ #category : #'object access' }
+{ #category : 'object access' }
 InterpreterProxy >> storeInteger: index ofObject: oop withValue: integer [
 	(self isIntegerValue: integer) 
 		ifTrue:[^self storePointer: index ofObject: oop withValue: integer]
 		ifFalse:[^self primitiveFail]
 ]
 
-{ #category : #'object access' }
+{ #category : 'object access' }
 InterpreterProxy >> storePointer: index ofObject: oop withValue: valuePointer [
 	^oop instVarAt: index+1 put: valuePointer
 ]
 
-{ #category : #testing }
+{ #category : 'testing' }
 InterpreterProxy >> stringForCString: aCString [
 	"Answer a ByteString object containing the bytes (possibly UTF-8?) in the null-terminated C string aCString."
 	<option: #(atLeastVMProxyMajor:minor: 1 14)>
@@ -1170,19 +1172,19 @@ InterpreterProxy >> stringForCString: aCString [
 	self notYetImplemented
 ]
 
-{ #category : #other }
+{ #category : 'other' }
 InterpreterProxy >> success: aBoolean [
 	<returnTypeC: #sqInt>
 	aBoolean ifTrue: [^self].
 	primFailCode = 0 ifTrue: [self primitiveFailFor: 1]
 ]
 
-{ #category : #other }
+{ #category : 'other' }
 InterpreterProxy >> superclassOf: classPointer [
 	^classPointer superclass
 ]
 
-{ #category : #initialize }
+{ #category : 'initialize' }
 InterpreterProxy >> synthesizeStackFor: receiver with: args [
 	<doNotGenerate>
 	self push: receiver.
@@ -1190,30 +1192,30 @@ InterpreterProxy >> synthesizeStackFor: receiver with: args [
 	1 to: argumentCount do: [:i | self push: (args at: i)].
 ]
 
-{ #category : #other }
+{ #category : 'other' }
 InterpreterProxy >> tenuringIncrementalGC [
 	<returnTypeC: #void>
 	Smalltalk forceTenuring; garbageCollectMost
 ]
 
-{ #category : #'instance creation' }
+{ #category : 'instance creation' }
 InterpreterProxy >> topRemappableOop [
 	"Returns the top of the remappable oop. Useful when writing loops."
 	^remapBuffer last
 ]
 
-{ #category : #'special objects' }
+{ #category : 'special objects' }
 InterpreterProxy >> trueObject [
 	^true
 ]
 
-{ #category : #'object access' }
+{ #category : 'object access' }
 InterpreterProxy >> unpinObject: anObject [
 	<option: #(atLeastVMProxyMajor:minor: 1 13)>
 	^self shouldBeImplemented
 ]
 
-{ #category : #other }
+{ #category : 'other' }
 InterpreterProxy >> vmEndianness [
 	"return 0 for little endian, 1 for big endian"
 	^SmalltalkImage current endianness =#big ifTrue:[1] ifFalse:[0]

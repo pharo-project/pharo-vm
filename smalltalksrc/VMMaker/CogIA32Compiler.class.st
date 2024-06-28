@@ -8,8 +8,8 @@ I generate IA32 (x86) instructions from CogAbstractInstructions.  For reference 
 This class does not take any special action to flush the instruction cache on instruction-modification, trusting that Intel and AMD processors correctly invalidate the instruction cache via snooping.  According to the manuals, this will work on systems where code and data have the same virtual address.  The CogICacheFlushingIA32Compiler subclass exists to use the CPUID instruction to serialize instruction-modification for systems with code and data at different virtual addresses.
 "
 Class {
-	#name : #CogIA32Compiler,
-	#superclass : #CogAbstractInstruction,
+	#name : 'CogIA32Compiler',
+	#superclass : 'CogAbstractInstruction',
 	#classVars : [
 		'CDQ',
 		'CLD',
@@ -57,21 +57,23 @@ Class {
 		'XMM6L',
 		'XMM7L'
 	],
-	#category : #'VMMaker-JIT'
+	#category : 'VMMaker-JIT',
+	#package : 'VMMaker',
+	#tag : 'JIT'
 }
 
-{ #category : #translation }
+{ #category : 'translation' }
 CogIA32Compiler class >> ISA [
 	"Answer the name of the ISA the receiver implements."
 	^#IA32
 ]
 
-{ #category : #translation }
+{ #category : 'translation' }
 CogIA32Compiler class >> identifyingPredefinedMacros [
 	^#('_M_I386' '_M_IX86' '_X86_' 'i386' 'i486' 'i586' 'i686' '__i386__' '__386__' 'X86' 'I386')
 ]
 
-{ #category : #'class initialization' }
+{ #category : 'class initialization' }
 CogIA32Compiler class >> initialize [
 	"Initialize various IA32/x86 instruction-related constants.
 	 [1] IA-32 Intel® Architecture Software Developer's Manual Volume 2A: Instruction Set Reference, A-M"
@@ -120,7 +122,7 @@ CogIA32Compiler class >> initialize [
 		in: thisContext method
 ]
 
-{ #category : #'class initialization' }
+{ #category : 'class initialization' }
 CogIA32Compiler class >> initializeAbstractRegisters [
 	"Assign the abstract registers with the identities/indices of the relevant concrete registers."
 
@@ -154,32 +156,32 @@ CogIA32Compiler class >> initializeAbstractRegisters [
 	NumFloatRegisters := 8
 ]
 
-{ #category : #testing }
+{ #category : 'testing' }
 CogIA32Compiler class >> isRISCTempRegister: reg [
 	"For tests to filter-out bogus values left in the RISCTempRegister, if any."
 	^false
 ]
 
-{ #category : #translation }
+{ #category : 'translation' }
 CogIA32Compiler class >> machineCodeDeclaration [
 	"Answer the declaration for the machineCode array."
 	^{#'unsigned char'. '[', self basicNew machineCodeBytes printString, ']'}
 ]
 
-{ #category : #verification }
+{ #category : 'verification' }
 CogIA32Compiler class >> specificOpcodes [
 	"Answer the processor-specific opcodes for this class.
 	 They're all in an Array literal in the initialize method."
 	^(self class >> #initialize) literals detect: [:l| l isArray and: [l includes: #LOCK]]
 ]
 
-{ #category : #translation }
+{ #category : 'translation' }
 CogIA32Compiler class >> wordSize [
 	"This is a 32-bit ISA"
 	^4
 ]
 
-{ #category : #testing }
+{ #category : 'testing' }
 CogIA32Compiler >> byteReadsZeroExtend [
 	"Answer if a byte read, via MoveAbR, MoveMbrR, or MoveXbrRR zero-extends
 	 into the full register, or merely affects the least significant 8 bits of the
@@ -189,57 +191,57 @@ CogIA32Compiler >> byteReadsZeroExtend [
 	^true
 ]
 
-{ #category : #abi }
+{ #category : 'abi' }
 CogIA32Compiler >> cFloatResultToRd: reg [
 	cogit gen: FSTPD operand: -8 operand: SPReg .
 	cogit MoveM64: -8 r: SPReg Rd: reg
 ]
 
-{ #category : #abi }
+{ #category : 'abi' }
 CogIA32Compiler >> cFloatResultToRs: reg [
 	cogit gen: FSTPS operand: -4 operand: SPReg.
 	cogit MoveM32: -4 r: SPReg Rs: reg
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 CogIA32Compiler >> cResultRegister [
 	"Answer the register through which C funcitons return integral results."
 	<inline: true>
 	^EAX
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 CogIA32Compiler >> cResultRegisterHigh [
 	"Answer the abstract register for the C result register.
 	 Only partially implemented.  Works on x86 since TempReg = EAX = C result reg."
 	^ EDX
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 CogIA32Compiler >> cResultRegisterLow [
 	"Answer the abstract register for the C result register.
 	 Only partially implemented.  Works on x86 since TempReg = EAX = C result reg."
 	^ EAX
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 CogIA32Compiler >> cStackPointer [
 	
 	^ ESP
 ]
 
-{ #category : #'inline cacheing' }
+{ #category : 'inline cacheing' }
 CogIA32Compiler >> callFullTargetFromReturnAddress: callSiteReturnAddress [
 	"Answer the address the call immediately preceding callSiteReturnAddress will jump to."
 	^self callTargetFromReturnAddress: callSiteReturnAddress
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 CogIA32Compiler >> callInstructionByteSize [
 	^5
 ]
 
-{ #category : #'inline cacheing' }
+{ #category : 'inline cacheing' }
 CogIA32Compiler >> callTargetFromReturnAddress: callSiteReturnAddress [
 	"Answer the address the call immediately preceding callSiteReturnAddress will jump to."
 	| callDistance |
@@ -247,42 +249,42 @@ CogIA32Compiler >> callTargetFromReturnAddress: callSiteReturnAddress [
 	^callSiteReturnAddress + callDistance signedIntFromLong
 ]
 
-{ #category : #testing }
+{ #category : 'testing' }
 CogIA32Compiler >> canDivQuoRem [
 	^true
 ]
 
-{ #category : #testing }
+{ #category : 'testing' }
 CogIA32Compiler >> canMulRR [
 	^true
 ]
 
-{ #category : #testing }
+{ #category : 'testing' }
 CogIA32Compiler >> canSignExtend [
 	"IA32 has native SignExtend8RR & SignExtend16RR."
 	<inline: true>
 	^true
 ]
 
-{ #category : #testing }
+{ #category : 'testing' }
 CogIA32Compiler >> canZeroExtend [
 	"IA32 has native ZeroExtend8RR & ZeroExtend16RR."
 	<inline: true>
 	^true
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 CogIA32Compiler >> cmpC32RTempByteSize [
 	^5
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 CogIA32Compiler >> codeGranularity [
 	"Answer the size in bytes of a unit of machine code."
 	^1
 ]
 
-{ #category : #'generate machine code' }
+{ #category : 'generate machine code' }
 CogIA32Compiler >> computeMaximumSize [
 	"Compute the maximum size for each opcode.  This allows jump offsets to
 	 be determined, provided that all backward branches are long branches."
@@ -570,7 +572,7 @@ CogIA32Compiler >> computeMaximumSize [
 	^0 "to keep C compiler quiet"
 ]
 
-{ #category : #'generate machine code' }
+{ #category : 'generate machine code' }
 CogIA32Compiler >> computeShiftRRSize [
 	"On the x86 the only instructions that shift by the value of a
 	 register require the shift count to be  in %ecx.  So we may
@@ -585,7 +587,7 @@ CogIA32Compiler >> computeShiftRRSize [
 				ifFalse: [2 "XCHG r1,r2" + 2 "Sxx" + 2 "XCHG r1,r2"]]
 ]
 
-{ #category : #'generate machine code' }
+{ #category : 'generate machine code' }
 CogIA32Compiler >> concretizeAddCqR [
 	"Will get inlined into concretizeAt: switch."
 	<inline: true>
@@ -616,7 +618,7 @@ CogIA32Compiler >> concretizeAddCqR [
 	 ^machineCodeSize := 6
 ]
 
-{ #category : #'generate machine code' }
+{ #category : 'generate machine code' }
 CogIA32Compiler >> concretizeAddCwR [
 	"Will get inlined into concretizeAt: switch."
 	<inline: true>
@@ -641,7 +643,7 @@ CogIA32Compiler >> concretizeAddCwR [
 	 ^machineCodeSize := 6
 ]
 
-{ #category : #'generate machine code' }
+{ #category : 'generate machine code' }
 CogIA32Compiler >> concretizeAddcCqR [
 	"Will get inlined into concretizeAt: switch."
 	<inline: true>
@@ -672,7 +674,7 @@ CogIA32Compiler >> concretizeAddcCqR [
 	 ^machineCodeSize := 6
 ]
 
-{ #category : #'generate machine code' }
+{ #category : 'generate machine code' }
 CogIA32Compiler >> concretizeAddcRR [
 	"Will get inlined into concretizeAt: switch."
 	<inline: true>
@@ -686,7 +688,7 @@ CogIA32Compiler >> concretizeAddcRR [
 	^machineCodeSize := 2
 ]
 
-{ #category : #'generate machine code' }
+{ #category : 'generate machine code' }
 CogIA32Compiler >> concretizeAlignmentNops [
 	<inline: true>
 	self flag: 'if performance is an issue generate longer nops'.
@@ -695,7 +697,7 @@ CogIA32Compiler >> concretizeAlignmentNops [
 		machineCode at: i put: 16r90]
 ]
 
-{ #category : #'generate machine code' }
+{ #category : 'generate machine code' }
 CogIA32Compiler >> concretizeAndCqR [
 	"Will get inlined into concretizeAt: switch."
 	<inline: true>
@@ -726,7 +728,7 @@ CogIA32Compiler >> concretizeAndCqR [
 	 ^machineCodeSize := 6
 ]
 
-{ #category : #'generate machine code' }
+{ #category : 'generate machine code' }
 CogIA32Compiler >> concretizeAndCwR [
 	"Will get inlined into concretizeAt: switch."
 	<inline: true>
@@ -751,7 +753,7 @@ CogIA32Compiler >> concretizeAndCwR [
 	 ^machineCodeSize := 6
 ]
 
-{ #category : #'generate machine code' }
+{ #category : 'generate machine code' }
 CogIA32Compiler >> concretizeArithmeticShiftRightCqR [
 	<inline: true>
 	| shiftCount reg |
@@ -770,7 +772,7 @@ CogIA32Compiler >> concretizeArithmeticShiftRightCqR [
 	^machineCodeSize := 3
 ]
 
-{ #category : #'generate machine code' }
+{ #category : 'generate machine code' }
 CogIA32Compiler >> concretizeArithmeticShiftRightRR [
 	"On the x86 the only instructions that shift by the value of a
 	 register require the shift count to be  in %ecx.  So we may
@@ -806,7 +808,7 @@ CogIA32Compiler >> concretizeArithmeticShiftRightRR [
 	^machineCodeSize := 6
 ]
 
-{ #category : #'generate machine code' }
+{ #category : 'generate machine code' }
 CogIA32Compiler >> concretizeCDQ [
 	"Will get inlined into concretizeAt: switch."
 	<inline: true>
@@ -814,14 +816,14 @@ CogIA32Compiler >> concretizeCDQ [
 	^machineCodeSize := 1
 ]
 
-{ #category : #'generate machine code' }
+{ #category : 'generate machine code' }
 CogIA32Compiler >> concretizeCLD [
 	<inline: true>
 	machineCode at: 0 put: 16rFC.
 	^machineCodeSize := 1
 ]
 
-{ #category : #'generate machine code' }
+{ #category : 'generate machine code' }
 CogIA32Compiler >> concretizeCMPXCHGAwR [
 	<inline: true>
 	| addressOperand reg |
@@ -838,7 +840,7 @@ CogIA32Compiler >> concretizeCMPXCHGAwR [
 	^machineCodeSize := 7
 ]
 
-{ #category : #'generate machine code' }
+{ #category : 'generate machine code' }
 CogIA32Compiler >> concretizeCMPXCHGMwrR [
 	<inline: true>
 	| srcReg offset destReg |
@@ -883,7 +885,7 @@ CogIA32Compiler >> concretizeCMPXCHGMwrR [
 	^machineCodeSize := 8
 ]
 
-{ #category : #'generate machine code' }
+{ #category : 'generate machine code' }
 CogIA32Compiler >> concretizeCPUID [
 	<inline: true>
 	machineCode
@@ -892,7 +894,7 @@ CogIA32Compiler >> concretizeCPUID [
 	^machineCodeSize := 2
 ]
 
-{ #category : #'generate machine code' }
+{ #category : 'generate machine code' }
 CogIA32Compiler >> concretizeCall [
 	"Will get inlined into concretizeAt: switch."
 	<inline: true>
@@ -908,7 +910,7 @@ CogIA32Compiler >> concretizeCall [
 	^machineCodeSize := 5
 ]
 
-{ #category : #'generate machine code' }
+{ #category : 'generate machine code' }
 CogIA32Compiler >> concretizeCallR [
 	"Will get inlined into concretizeAt: switch."
 	<inline: true>
@@ -921,7 +923,7 @@ CogIA32Compiler >> concretizeCallR [
 	^machineCodeSize := 2
 ]
 
-{ #category : #'generate machine code' }
+{ #category : 'generate machine code' }
 CogIA32Compiler >> concretizeCmpCqR [
 	"Will get inlined into concretizeAt: switch."
 	<inline: true>
@@ -952,7 +954,7 @@ CogIA32Compiler >> concretizeCmpCqR [
 	 ^machineCodeSize := 6
 ]
 
-{ #category : #'generate machine code' }
+{ #category : 'generate machine code' }
 CogIA32Compiler >> concretizeCmpCwR [
 	"Will get inlined into concretizeAt: switch."
 	<inline: true>
@@ -977,7 +979,7 @@ CogIA32Compiler >> concretizeCmpCwR [
 	 ^machineCodeSize := 6
 ]
 
-{ #category : #'generate machine code' }
+{ #category : 'generate machine code' }
 CogIA32Compiler >> concretizeCmpRdRd [
 	"Will get inlined into concretizeAt: switch.
 	 We use UCOMISD (see p 4-260 [2])"
@@ -994,7 +996,7 @@ CogIA32Compiler >> concretizeCmpRdRd [
 	^machineCodeSize := 4
 ]
 
-{ #category : #'generate machine code' }
+{ #category : 'generate machine code' }
 CogIA32Compiler >> concretizeCmpRsRs [
 	"Will get inlined into concretizeAt: switch.
 	 We use UCOMISS (see p 4-260 [2])"
@@ -1010,7 +1012,7 @@ CogIA32Compiler >> concretizeCmpRsRs [
 	^machineCodeSize := 3
 ]
 
-{ #category : #'generate machine code' }
+{ #category : 'generate machine code' }
 CogIA32Compiler >> concretizeConditionalJump: conditionCode [
 	"Will get inlined into concretizeAt: switch."
 	"Sizing/generating jumps.
@@ -1030,7 +1032,7 @@ CogIA32Compiler >> concretizeConditionalJump: conditionCode [
 	^self concretizeConditionalJumpLong: conditionCode
 ]
 
-{ #category : #'generate machine code' }
+{ #category : 'generate machine code' }
 CogIA32Compiler >> concretizeConditionalJumpLong: conditionCode [
 	"Will get inlined into concretizeAt: switch."
 	"Sizing/generating jumps.
@@ -1050,7 +1052,7 @@ CogIA32Compiler >> concretizeConditionalJumpLong: conditionCode [
 	^machineCodeSize := 6
 ]
 
-{ #category : #'generate machine code' }
+{ #category : 'generate machine code' }
 CogIA32Compiler >> concretizeConvertRRd [
 	"Will get inlined into concretizeAt: switch."
 	"CVTSI2D"
@@ -1066,7 +1068,7 @@ CogIA32Compiler >> concretizeConvertRRd [
 	 ^machineCodeSize := 4
 ]
 
-{ #category : #'generate machine code' }
+{ #category : 'generate machine code' }
 CogIA32Compiler >> concretizeConvertRRs [
 	"Will get inlined into concretizeAt: switch."
 	"CVTSI2SS"
@@ -1082,7 +1084,7 @@ CogIA32Compiler >> concretizeConvertRRs [
 	 ^machineCodeSize := 4
 ]
 
-{ #category : #'generate machine code' }
+{ #category : 'generate machine code' }
 CogIA32Compiler >> concretizeConvertRdR [
 	"Will get inlined into concretizeAt: switch."
 	"CVTSD2SI"
@@ -1098,7 +1100,7 @@ CogIA32Compiler >> concretizeConvertRdR [
 	 ^machineCodeSize := 4
 ]
 
-{ #category : #'generate machine code' }
+{ #category : 'generate machine code' }
 CogIA32Compiler >> concretizeConvertRdRs [
 	"Will get inlined into concretizeAt: switch."
 	"CVTSD2SS"
@@ -1114,7 +1116,7 @@ CogIA32Compiler >> concretizeConvertRdRs [
 	 ^machineCodeSize := 4
 ]
 
-{ #category : #'generate machine code' }
+{ #category : 'generate machine code' }
 CogIA32Compiler >> concretizeConvertRsR [
 	"Will get inlined into concretizeAt: switch."
 	"CVTSS2SI"
@@ -1130,7 +1132,7 @@ CogIA32Compiler >> concretizeConvertRsR [
 	 ^machineCodeSize := 4
 ]
 
-{ #category : #'generate machine code' }
+{ #category : 'generate machine code' }
 CogIA32Compiler >> concretizeConvertRsRd [
 	"Will get inlined into concretizeAt: switch."
 	"CVTSS2SD"
@@ -1146,7 +1148,7 @@ CogIA32Compiler >> concretizeConvertRsRd [
 	 ^machineCodeSize := 4
 ]
 
-{ #category : #'generate machine code' }
+{ #category : 'generate machine code' }
 CogIA32Compiler >> concretizeFENCE: regOpcode [
 	<inline: true>
 	machineCode
@@ -1156,7 +1158,7 @@ CogIA32Compiler >> concretizeFENCE: regOpcode [
 	^machineCodeSize := 3
 ]
 
-{ #category : #'generate machine code' }
+{ #category : 'generate machine code' }
 CogIA32Compiler >> concretizeFSTPD [
 	"Will get inlined into concretizeAt: switch."
 	<inline: true>
@@ -1200,7 +1202,7 @@ CogIA32Compiler >> concretizeFSTPD [
 	^machineCodeSize := 7
 ]
 
-{ #category : #'generate machine code' }
+{ #category : 'generate machine code' }
 CogIA32Compiler >> concretizeFSTPS [
 	"Will get inlined into concretizeAt: switch."
 	<inline: true>
@@ -1244,7 +1246,7 @@ CogIA32Compiler >> concretizeFSTPS [
 	^machineCodeSize := 7
 ]
 
-{ #category : #'generate machine code' }
+{ #category : 'generate machine code' }
 CogIA32Compiler >> concretizeFill32 [
 	<inline: true>
 	| word |
@@ -1257,7 +1259,7 @@ CogIA32Compiler >> concretizeFill32 [
 	^machineCodeSize := 4
 ]
 
-{ #category : #'generate machine code' }
+{ #category : 'generate machine code' }
 CogIA32Compiler >> concretizeIDIVR [
 	"Will get inlined into concretizeAt: switch."
 	<inline: true>
@@ -1269,7 +1271,7 @@ CogIA32Compiler >> concretizeIDIVR [
 	^machineCodeSize := 2
 ]
 
-{ #category : #'generate machine code' }
+{ #category : 'generate machine code' }
 CogIA32Compiler >> concretizeJump [
 	"Will get inlined into concretizeAt: switch."
 	"Sizing/generating jumps.
@@ -1302,7 +1304,7 @@ CogIA32Compiler >> concretizeJump [
 	^machineCodeSize := 5
 ]
 
-{ #category : #'generate machine code' }
+{ #category : 'generate machine code' }
 CogIA32Compiler >> concretizeJumpLong [
 	"Will get inlined into concretizeAt: switch."
 	"Sizing/generating jumps.
@@ -1326,7 +1328,7 @@ CogIA32Compiler >> concretizeJumpLong [
 	^machineCodeSize := 5
 ]
 
-{ #category : #'generate machine code' }
+{ #category : 'generate machine code' }
 CogIA32Compiler >> concretizeJumpR [
 	<inline: true>
 	| reg |
@@ -1337,14 +1339,14 @@ CogIA32Compiler >> concretizeJumpR [
 	^machineCodeSize := 2
 ]
 
-{ #category : #'generate machine code' }
+{ #category : 'generate machine code' }
 CogIA32Compiler >> concretizeLOCK [
 	<inline: true>
 	machineCode at: 0 put: 16rF0.
 	^machineCodeSize := 1
 ]
 
-{ #category : #'generate machine code' }
+{ #category : 'generate machine code' }
 CogIA32Compiler >> concretizeLoadEffectiveAddressMwrR [
 	"Will get inlined into concretizeAt: switch."
 	<inline: true>
@@ -1386,7 +1388,7 @@ CogIA32Compiler >> concretizeLoadEffectiveAddressMwrR [
 	^machineCodeSize := 7
 ]
 
-{ #category : #'generate machine code' }
+{ #category : 'generate machine code' }
 CogIA32Compiler >> concretizeLogicalShiftLeftCqR [
 	"Will get inlined into concretizeAt: switch."
 	<inline: true>
@@ -1405,7 +1407,7 @@ CogIA32Compiler >> concretizeLogicalShiftLeftCqR [
 	^machineCodeSize := 3
 ]
 
-{ #category : #'generate machine code' }
+{ #category : 'generate machine code' }
 CogIA32Compiler >> concretizeLogicalShiftLeftRR [
 	<inline: true>
 	"On the x86 the only instructions that shift by the value of a
@@ -1441,7 +1443,7 @@ CogIA32Compiler >> concretizeLogicalShiftLeftRR [
 	^machineCodeSize := 6
 ]
 
-{ #category : #'generate machine code' }
+{ #category : 'generate machine code' }
 CogIA32Compiler >> concretizeLogicalShiftRightCqR [
 	"Will get inlined into concretizeAt: switch."
 	<inline: true>
@@ -1460,21 +1462,21 @@ CogIA32Compiler >> concretizeLogicalShiftRightCqR [
 	^machineCodeSize := 3
 ]
 
-{ #category : #'generate machine code' }
+{ #category : 'generate machine code' }
 CogIA32Compiler >> concretizeMOVSB [
 	<inline: true>
 	machineCode at: 0 put: 16rA4.
 	^machineCodeSize := 1
 ]
 
-{ #category : #'generate machine code' }
+{ #category : 'generate machine code' }
 CogIA32Compiler >> concretizeMOVSD [
 	<inline: true>
 	machineCode at: 0 put: 16rA5.
 	^machineCodeSize := 1
 ]
 
-{ #category : #'generate machine code' }
+{ #category : 'generate machine code' }
 CogIA32Compiler >> concretizeMoveAbR [
 	"N.B. we zero-extend because we state byteReadsZeroExtend."
 	"Will get inlined into concretizeAt: switch."
@@ -1495,7 +1497,7 @@ CogIA32Compiler >> concretizeMoveAbR [
 	^machineCodeSize := 7
 ]
 
-{ #category : #'generate machine code' }
+{ #category : 'generate machine code' }
 CogIA32Compiler >> concretizeMoveAwR [
 	"Will get inlined into concretizeAt: switch."
 	<inline: true>
@@ -1522,7 +1524,7 @@ CogIA32Compiler >> concretizeMoveAwR [
 	^machineCodeSize := 6
 ]
 
-{ #category : #'generate machine code' }
+{ #category : 'generate machine code' }
 CogIA32Compiler >> concretizeMoveCqR [
 	"Will get inlined into concretizeAt: switch.
 	 Note that for quick constants, xor reg,reg, movq r8 may be shorter.  But
@@ -1538,7 +1540,7 @@ CogIA32Compiler >> concretizeMoveCqR [
 	^machineCodeSize := 2
 ]
 
-{ #category : #'generate machine code' }
+{ #category : 'generate machine code' }
 CogIA32Compiler >> concretizeMoveCwR [
 	"Will get inlined into concretizeAt: switch."
 	<inline: true>
@@ -1553,7 +1555,7 @@ CogIA32Compiler >> concretizeMoveCwR [
 	^machineCodeSize := 5
 ]
 
-{ #category : #'generate machine code' }
+{ #category : 'generate machine code' }
 CogIA32Compiler >> concretizeMoveM16rR [
 	"Will get inlined into concretizeAt: switch."
 	<inline: true>
@@ -1599,7 +1601,7 @@ CogIA32Compiler >> concretizeMoveM16rR [
 	^machineCodeSize := 8
 ]
 
-{ #category : #'generate machine code' }
+{ #category : 'generate machine code' }
 CogIA32Compiler >> concretizeMoveM32rRs [
 	"Will get inlined into concretizeAt: switch."
 	<inline: true>
@@ -1649,7 +1651,7 @@ CogIA32Compiler >> concretizeMoveM32rRs [
 	^machineCodeSize := 9
 ]
 
-{ #category : #'generate machine code' }
+{ #category : 'generate machine code' }
 CogIA32Compiler >> concretizeMoveM64rRd [
 	"Will get inlined into concretizeAt: switch."
 	<inline: true>
@@ -1699,7 +1701,7 @@ CogIA32Compiler >> concretizeMoveM64rRd [
 	^machineCodeSize := 9
 ]
 
-{ #category : #'generate machine code' }
+{ #category : 'generate machine code' }
 CogIA32Compiler >> concretizeMoveM8rR [
 	"Will get inlined into concretizeAt: switch."
 	"movzwl"
@@ -1746,7 +1748,7 @@ CogIA32Compiler >> concretizeMoveM8rR [
 	^machineCodeSize := 8
 ]
 
-{ #category : #'generate machine code' }
+{ #category : 'generate machine code' }
 CogIA32Compiler >> concretizeMoveMbrR [
 	"N.B. we zero-extend because we state byteReadsZeroExtend."
 	"Will get inlined into concretizeAt: switch."
@@ -1793,7 +1795,7 @@ CogIA32Compiler >> concretizeMoveMbrR [
 	^machineCodeSize := 8
 ]
 
-{ #category : #'generate machine code' }
+{ #category : 'generate machine code' }
 CogIA32Compiler >> concretizeMoveMwrR [
 	"Will get inlined into concretizeAt: switch."
 	<inline: true>
@@ -1846,13 +1848,13 @@ CogIA32Compiler >> concretizeMoveMwrR [
 	^machineCodeSize := 7
 ]
 
-{ #category : #'as yet unclassified' }
+{ #category : 'as yet unclassified' }
 CogIA32Compiler >> concretizeMovePatcheableC32R [
 	
 	^ self concretizeMoveCwR
 ]
 
-{ #category : #'generate machine code' }
+{ #category : 'generate machine code' }
 CogIA32Compiler >> concretizeMoveRAb [
 	"Will get inlined into concretizeAt: switch."
 	<inline: true>
@@ -1879,7 +1881,7 @@ CogIA32Compiler >> concretizeMoveRAb [
 	^machineCodeSize := 6
 ]
 
-{ #category : #'generate machine code' }
+{ #category : 'generate machine code' }
 CogIA32Compiler >> concretizeMoveRAw [
 	"Will get inlined into concretizeAt: switch."
 	<inline: true>
@@ -1906,7 +1908,7 @@ CogIA32Compiler >> concretizeMoveRAw [
 	^machineCodeSize := 6
 ]
 
-{ #category : #'generate machine code' }
+{ #category : 'generate machine code' }
 CogIA32Compiler >> concretizeMoveRM16r [
 	"Will get inlined into concretizeAt: switch."
 	<inline: true>
@@ -1943,7 +1945,7 @@ CogIA32Compiler >> concretizeMoveRM16r [
 	^machineCodeSize := 8
 ]
 
-{ #category : #'generate machine code' }
+{ #category : 'generate machine code' }
 CogIA32Compiler >> concretizeMoveRMbr [
 	"Will get inlined into concretizeAt: switch."
 	<inline: true>
@@ -1978,7 +1980,7 @@ CogIA32Compiler >> concretizeMoveRMbr [
 	^machineCodeSize := 7
 ]
 
-{ #category : #'generate machine code' }
+{ #category : 'generate machine code' }
 CogIA32Compiler >> concretizeMoveRMwr [
 	"Will get inlined into concretizeAt: switch."
 	<inline: true>
@@ -2031,7 +2033,7 @@ CogIA32Compiler >> concretizeMoveRMwr [
 	^machineCodeSize := 7
 ]
 
-{ #category : #'generate machine code' }
+{ #category : 'generate machine code' }
 CogIA32Compiler >> concretizeMoveRXbrR [
 	"Will get inlined into concretizeAt: switch."
 	<inline: true>
@@ -2066,7 +2068,7 @@ CogIA32Compiler >> concretizeMoveRXbrR [
 	 ^machineCodeSize := 4 + (2 * mcIdx)
 ]
 
-{ #category : #'generate machine code' }
+{ #category : 'generate machine code' }
 CogIA32Compiler >> concretizeMoveRXwrR [
 	"Will get inlined into concretizeAt: switch."
 	<inline: true>
@@ -2088,7 +2090,7 @@ CogIA32Compiler >> concretizeMoveRXwrR [
 	 ^machineCodeSize := 4
 ]
 
-{ #category : #'generate machine code' }
+{ #category : 'generate machine code' }
 CogIA32Compiler >> concretizeMoveRdM64r [
 	"Will get inlined into concretizeAt: switch."
 	<inline: true>
@@ -2138,7 +2140,7 @@ CogIA32Compiler >> concretizeMoveRdM64r [
 	^machineCodeSize := 9
 ]
 
-{ #category : #'generate machine code' }
+{ #category : 'generate machine code' }
 CogIA32Compiler >> concretizeMoveRdRd [
 	"Will get inlined into concretizeAt: switch."
 	"MOVSD"
@@ -2154,7 +2156,7 @@ CogIA32Compiler >> concretizeMoveRdRd [
 	^machineCodeSize := 4
 ]
 
-{ #category : #'generate machine code' }
+{ #category : 'generate machine code' }
 CogIA32Compiler >> concretizeMoveRsM32r [
 	"Will get inlined into concretizeAt: switch."
 	<inline: true>
@@ -2206,7 +2208,7 @@ CogIA32Compiler >> concretizeMoveRsM32r [
 	^machineCodeSize := 9
 ]
 
-{ #category : #'generate machine code' }
+{ #category : 'generate machine code' }
 CogIA32Compiler >> concretizeMoveRsRs [
 	"Will get inlined into concretizeAt: switch."
 	"MOVSS"
@@ -2222,7 +2224,7 @@ CogIA32Compiler >> concretizeMoveRsRs [
 	^machineCodeSize := 4
 ]
 
-{ #category : #'generate machine code' }
+{ #category : 'generate machine code' }
 CogIA32Compiler >> concretizeMoveXbrRR [
 	"N.B. we zero-extend because we state byteReadsZeroExtend."
 	"Will get inlined into concretizeAt: switch."
@@ -2247,7 +2249,7 @@ CogIA32Compiler >> concretizeMoveXbrRR [
 	 ^machineCodeSize := 5
 ]
 
-{ #category : #'generate machine code' }
+{ #category : 'generate machine code' }
 CogIA32Compiler >> concretizeMoveXwrRR [
 	"Will get inlined into concretizeAt: switch."
 	<inline: true>
@@ -2269,7 +2271,7 @@ CogIA32Compiler >> concretizeMoveXwrRR [
 	 ^machineCodeSize := 4
 ]
 
-{ #category : #'generate machine code' }
+{ #category : 'generate machine code' }
 CogIA32Compiler >> concretizeMulRR [
 	"Will get inlined into concretizeAt: switch."
 	<inline: true>
@@ -2283,7 +2285,7 @@ CogIA32Compiler >> concretizeMulRR [
 	^machineCodeSize := 3
 ]
 
-{ #category : #'generate machine code' }
+{ #category : 'generate machine code' }
 CogIA32Compiler >> concretizeNegateR [
 	"Will get inlined into concretizeAt: switch."
 	<inline: true>
@@ -2295,14 +2297,14 @@ CogIA32Compiler >> concretizeNegateR [
 	^machineCodeSize := 2
 ]
 
-{ #category : #'generate machine code' }
+{ #category : 'generate machine code' }
 CogIA32Compiler >> concretizeNop [
 	<inline: true>
 	machineCode at: 0 put: 16r90.
 	^machineCodeSize := 1
 ]
 
-{ #category : #'generate machine code' }
+{ #category : 'generate machine code' }
 CogIA32Compiler >> concretizeNotR [
 	"Will get inlined into concretizeAt: switch."
 	<inline: true>
@@ -2314,7 +2316,7 @@ CogIA32Compiler >> concretizeNotR [
 	^machineCodeSize := 2
 ]
 
-{ #category : #'generate machine code' }
+{ #category : 'generate machine code' }
 CogIA32Compiler >> concretizeOpRR: x86opcode [
 	| regLHS regRHS |
 	regLHS := operands at: 0.
@@ -2325,7 +2327,7 @@ CogIA32Compiler >> concretizeOpRR: x86opcode [
 	^machineCodeSize := 2
 ]
 
-{ #category : #'generate machine code' }
+{ #category : 'generate machine code' }
 CogIA32Compiler >> concretizeOrCqR [
 	"Will get inlined into concretizeAt: switch."
 	<inline: true>
@@ -2356,7 +2358,7 @@ CogIA32Compiler >> concretizeOrCqR [
 	 ^machineCodeSize := 6
 ]
 
-{ #category : #'generate machine code' }
+{ #category : 'generate machine code' }
 CogIA32Compiler >> concretizeOrCwR [
 	"Will get inlined into concretizeAt: switch."
 	<inline: true>
@@ -2381,14 +2383,14 @@ CogIA32Compiler >> concretizeOrCwR [
 	 ^machineCodeSize := 6
 ]
 
-{ #category : #'generate machine code' }
+{ #category : 'generate machine code' }
 CogIA32Compiler >> concretizePopR [
 	<inline: true>
 	machineCode at: 0 put: 16r58 + (operands at: 0).
 	^machineCodeSize := 1
 ]
 
-{ #category : #'generate machine code' }
+{ #category : 'generate machine code' }
 CogIA32Compiler >> concretizePrefetchAw [
 	"Will get inlined into concretizeAt: switch."
 	<inline: true>
@@ -2407,7 +2409,7 @@ CogIA32Compiler >> concretizePrefetchAw [
 	^machineCodeSize := maxSize
 ]
 
-{ #category : #'generate machine code' }
+{ #category : 'generate machine code' }
 CogIA32Compiler >> concretizePushCq [
 	<inline: true>
 	| value |
@@ -2426,7 +2428,7 @@ CogIA32Compiler >> concretizePushCq [
 	^machineCodeSize := 5
 ]
 
-{ #category : #'generate machine code' }
+{ #category : 'generate machine code' }
 CogIA32Compiler >> concretizePushCw [
 	<inline: true>
 	| value |
@@ -2440,21 +2442,21 @@ CogIA32Compiler >> concretizePushCw [
 	^machineCodeSize := 5
 ]
 
-{ #category : #'generate machine code' }
+{ #category : 'generate machine code' }
 CogIA32Compiler >> concretizePushR [
 	<inline: true>
 	machineCode at: 0 put: 16r50 + (operands at: 0).
 	^machineCodeSize := 1
 ]
 
-{ #category : #'generate machine code' }
+{ #category : 'generate machine code' }
 CogIA32Compiler >> concretizeREP [
 	<inline: true>
 	machineCode at: 0 put: 16rF3.
 	^machineCodeSize := 1
 ]
 
-{ #category : #'generate machine code' }
+{ #category : 'generate machine code' }
 CogIA32Compiler >> concretizeRetN [
 	"Will get inlined into concretizeAt: switch."
 	<inline: true>
@@ -2470,7 +2472,7 @@ CogIA32Compiler >> concretizeRetN [
 	^machineCodeSize := 3
 ]
 
-{ #category : #'generate machine code' }
+{ #category : 'generate machine code' }
 CogIA32Compiler >> concretizeReverseOpRR: x86opcode [
 	| regLHS regRHS |
 	regRHS := operands at: 0.
@@ -2481,7 +2483,7 @@ CogIA32Compiler >> concretizeReverseOpRR: x86opcode [
 	^machineCodeSize := 2
 ]
 
-{ #category : #'generate machine code' }
+{ #category : 'generate machine code' }
 CogIA32Compiler >> concretizeSEE2OpRdRd: opCode [
 	"Will get inlined into concretizeAt: switch."
 	<inline: true>
@@ -2496,7 +2498,7 @@ CogIA32Compiler >> concretizeSEE2OpRdRd: opCode [
 	^machineCodeSize := 4
 ]
 
-{ #category : #'generate machine code' }
+{ #category : 'generate machine code' }
 CogIA32Compiler >> concretizeSEEOpRsRs: opCode [
 	"Will get inlined into concretizeAt: switch."
 	<inline: true>
@@ -2511,7 +2513,7 @@ CogIA32Compiler >> concretizeSEEOpRsRs: opCode [
 	^machineCodeSize := 4
 ]
 
-{ #category : #'generate machine code' }
+{ #category : 'generate machine code' }
 CogIA32Compiler >> concretizeSignExtend16RR [
 	"Will get inlined into concretizeAt: switch."
 	"movswl"
@@ -2526,7 +2528,7 @@ CogIA32Compiler >> concretizeSignExtend16RR [
 	^ machineCodeSize := 3
 ]
 
-{ #category : #'generate machine code' }
+{ #category : 'generate machine code' }
 CogIA32Compiler >> concretizeSignExtend8RR [
 	"Will get inlined into concretizeAt: switch."
 	"movsbl"
@@ -2541,7 +2543,7 @@ CogIA32Compiler >> concretizeSignExtend8RR [
 	^ machineCodeSize := 3
 ]
 
-{ #category : #'generate machine code' }
+{ #category : 'generate machine code' }
 CogIA32Compiler >> concretizeSqrtRd [
 	"Will get inlined into concretizeAt: switch."
 	<inline: true>
@@ -2555,7 +2557,7 @@ CogIA32Compiler >> concretizeSqrtRd [
 	^machineCodeSize := 4
 ]
 
-{ #category : #'generate machine code' }
+{ #category : 'generate machine code' }
 CogIA32Compiler >> concretizeSqrtRs [
 	"Will get inlined into concretizeAt: switch."
 	"SRTSS"
@@ -2570,14 +2572,14 @@ CogIA32Compiler >> concretizeSqrtRs [
 	^machineCodeSize := 4
 ]
 
-{ #category : #'generate machine code' }
+{ #category : 'generate machine code' }
 CogIA32Compiler >> concretizeStop [
 	<inline: true>
 	machineCode at: 0 put: 16rCC.
 	^machineCodeSize := 1
 ]
 
-{ #category : #'generate machine code' }
+{ #category : 'generate machine code' }
 CogIA32Compiler >> concretizeSubCqR [
 	"Will get inlined into concretizeAt: switch."
 	<inline: true>
@@ -2608,7 +2610,7 @@ CogIA32Compiler >> concretizeSubCqR [
 	 ^machineCodeSize := 6
 ]
 
-{ #category : #'generate machine code' }
+{ #category : 'generate machine code' }
 CogIA32Compiler >> concretizeSubCwR [
 	"Will get inlined into concretizeAt: switch."
 	<inline: true>
@@ -2633,7 +2635,7 @@ CogIA32Compiler >> concretizeSubCwR [
 	 ^machineCodeSize := 6
 ]
 
-{ #category : #'generate machine code' }
+{ #category : 'generate machine code' }
 CogIA32Compiler >> concretizeSubbRR [
 	"Will get inlined into concretizeAt: switch."
 	<inline: true>
@@ -2647,7 +2649,7 @@ CogIA32Compiler >> concretizeSubbRR [
 	^machineCodeSize := 2
 ]
 
-{ #category : #'generate machine code' }
+{ #category : 'generate machine code' }
 CogIA32Compiler >> concretizeTstCqR [
 	"Will get inlined into concretizeAt: switch."
 	<inline: true>
@@ -2678,7 +2680,7 @@ CogIA32Compiler >> concretizeTstCqR [
 	 ^machineCodeSize := 6
 ]
 
-{ #category : #'generate machine code' }
+{ #category : 'generate machine code' }
 CogIA32Compiler >> concretizeXCHGAwR [
 	<inline: true>
 	| addressOperand reg |
@@ -2694,7 +2696,7 @@ CogIA32Compiler >> concretizeXCHGAwR [
 	^machineCodeSize := 6
 ]
 
-{ #category : #'generate machine code' }
+{ #category : 'generate machine code' }
 CogIA32Compiler >> concretizeXCHGMwrR [
 	<inline: true>
 	| srcReg offset destReg |
@@ -2735,7 +2737,7 @@ CogIA32Compiler >> concretizeXCHGMwrR [
 	^machineCodeSize := 7
 ]
 
-{ #category : #'generate machine code' }
+{ #category : 'generate machine code' }
 CogIA32Compiler >> concretizeXCHGRR [
 	<inline: true>
 	| reg1 reg2 |
@@ -2753,7 +2755,7 @@ CogIA32Compiler >> concretizeXCHGRR [
 	^machineCodeSize := 2
 ]
 
-{ #category : #'generate machine code' }
+{ #category : 'generate machine code' }
 CogIA32Compiler >> concretizeXorCwR [
 	"Will get inlined into concretizeAt: switch."
 	<inline: true>
@@ -2778,7 +2780,7 @@ CogIA32Compiler >> concretizeXorCwR [
 	 ^machineCodeSize := 6
 ]
 
-{ #category : #'generate machine code' }
+{ #category : 'generate machine code' }
 CogIA32Compiler >> concretizeXorRdRd [
 	"Will get inlined into concretizeAt: switch."
 	<inline: true>
@@ -2793,7 +2795,7 @@ CogIA32Compiler >> concretizeXorRdRd [
 	^machineCodeSize := 4
 ]
 
-{ #category : #'generate machine code' }
+{ #category : 'generate machine code' }
 CogIA32Compiler >> concretizeXorRsRs [
 	"Will get inlined into concretizeAt: switch."
 	<inline: true>
@@ -2807,7 +2809,7 @@ CogIA32Compiler >> concretizeXorRsRs [
 	^machineCodeSize := 3
 ]
 
-{ #category : #'generate machine code' }
+{ #category : 'generate machine code' }
 CogIA32Compiler >> concretizeZeroExtend16RR [
 	"Will get inlined into concretizeAt: switch."
 	"movzwl"
@@ -2821,7 +2823,7 @@ CogIA32Compiler >> concretizeZeroExtend16RR [
 	^ machineCodeSize := 3
 ]
 
-{ #category : #'generate machine code' }
+{ #category : 'generate machine code' }
 CogIA32Compiler >> concretizeZeroExtend8RR [
 	"Will get inlined into concretizeAt: switch."
 	"movzbl"
@@ -2836,14 +2838,14 @@ CogIA32Compiler >> concretizeZeroExtend8RR [
 	^ machineCodeSize := 3
 ]
 
-{ #category : #simulation }
+{ #category : 'simulation' }
 CogIA32Compiler >> configureStackAlignment [
 	
 	<doNotGenerate>
 	cogit setStackAlignment: 16 expectedSPOffset: 0 expectedFPOffset: 0.
 ]
 
-{ #category : #'generate machine code' }
+{ #category : 'generate machine code' }
 CogIA32Compiler >> dispatchConcretize [
 	"Attempt to generate concrete machine code for the instruction at address.
 	 This is the inner dispatch of concretizeAt: actualAddress which exists only
@@ -2990,7 +2992,7 @@ CogIA32Compiler >> dispatchConcretize [
 		[ MovePatcheableC32R ] -> [ ^ self concretizeMovePatcheableC32R ] }
 ]
 
-{ #category : #'generate machine code' }
+{ #category : 'generate machine code' }
 CogIA32Compiler >> dispatchConcretizeProcessorSpecific [
 	"Attempt to generate concrete machine code for the instruction at address.
 	 This is part of the inner dispatch of concretizeAt: actualAddress which exists only
@@ -3021,7 +3023,7 @@ CogIA32Compiler >> dispatchConcretizeProcessorSpecific [
 	}
 ]
 
-{ #category : #abi }
+{ #category : 'abi' }
 CogIA32Compiler >> fullCallsAreRelative [
 	"Answer if CallFull and/or JumpFull are relative and hence need relocating on method
 	 compation. If so, they are annotated with IsRelativeCall in methods and relocated in
@@ -3029,7 +3031,7 @@ CogIA32Compiler >> fullCallsAreRelative [
 	^true
 ]
 
-{ #category : #'abstract instructions' }
+{ #category : 'abstract instructions' }
 CogIA32Compiler >> genDivR: abstractRegDivisor R: abstractRegDividend Quo: abstractRegQuotient Rem: abstractRegRemainder [
 	| rDividend rDivisor rQuotient rRemainder saveRestoreEAX saveRestoreEDX saveRestoreExchanged |
 	self assert: abstractRegDividend ~= abstractRegDivisor.
@@ -3096,7 +3098,7 @@ CogIA32Compiler >> genDivR: abstractRegDivisor R: abstractRegDividend Quo: abstr
 		[cogit PopR: EAX]
 ]
 
-{ #category : #'abstract instructions' }
+{ #category : 'abstract instructions' }
 CogIA32Compiler >> genJumpFPEqual: jumpTarget [
 	<inline: true>
 	<returnTypeC: #'AbstractInstruction *'>
@@ -3110,7 +3112,7 @@ CogIA32Compiler >> genJumpFPEqual: jumpTarget [
 	^jumpToTarget
 ]
 
-{ #category : #'abstract instructions' }
+{ #category : 'abstract instructions' }
 CogIA32Compiler >> genJumpFPNotEqual: jumpTarget [
 	<inline: true>
 	<returnTypeC: #'AbstractInstruction *'>
@@ -3124,7 +3126,7 @@ CogIA32Compiler >> genJumpFPNotEqual: jumpTarget [
 	^jumpToTarget
 ]
 
-{ #category : #'smalltalk calling convention' }
+{ #category : 'smalltalk calling convention' }
 CogIA32Compiler >> genLoadCStackPointer [
 	"Load the stack pointer register with that of the C stack, effecting
 	 a switch to the C stack.  Used when machine code calls into the
@@ -3133,7 +3135,7 @@ CogIA32Compiler >> genLoadCStackPointer [
 	^0
 ]
 
-{ #category : #'smalltalk calling convention' }
+{ #category : 'smalltalk calling convention' }
 CogIA32Compiler >> genLoadCStackPointers [
 	"Load the frame and stack pointer registers with those of the C stack,
 	 effecting a switch to the C stack.  Used when machine code calls into
@@ -3143,7 +3145,7 @@ CogIA32Compiler >> genLoadCStackPointers [
 	^0
 ]
 
-{ #category : #'smalltalk calling convention' }
+{ #category : 'smalltalk calling convention' }
 CogIA32Compiler >> genLoadStackPointers [
 	"Switch back to the Smalltalk stack. Assign SPReg first
 	 because typically it is used immediately afterwards."
@@ -3152,7 +3154,7 @@ CogIA32Compiler >> genLoadStackPointers [
 	^0
 ]
 
-{ #category : #abi }
+{ #category : 'abi' }
 CogIA32Compiler >> genMarshallNArgs: numArgs arg: regOrConst0 arg: regOrConst1 arg: regOrConst2 arg: regOrConst3 [
 	"Generate the code to pass up to four arguments in a C run-time call.  Hack: each argument is
 	 either a negative number, which encodes a constant, or a non-negative number, that of a register.
@@ -3185,7 +3187,7 @@ CogIA32Compiler >> genMarshallNArgs: numArgs arg: regOrConst0 arg: regOrConst1 a
 		ifTrue: [cogit PushCq: (cogit trampolineArgValue: regOrConst0)]
 ]
 
-{ #category : #abi }
+{ #category : 'abi' }
 CogIA32Compiler >> genMarshallNArgs: numArgs floatArg: regOrConst0 floatArg: regOrConst1 floatArg: regOrConst2 floatArg: regOrConst3 [
 	"Generate the code to pass up to four arguments in a C run-time call.  Hack: each argument is
 	 either a negative number, which encodes a constant, or a non-negative number, that of a register.
@@ -3218,7 +3220,7 @@ CogIA32Compiler >> genMarshallNArgs: numArgs floatArg: regOrConst0 floatArg: reg
 		ifTrue: [cogit PushC64: (cogit trampolineArgValue: regOrConst0)]
 ]
 
-{ #category : #'abstract instructions' }
+{ #category : 'abstract instructions' }
 CogIA32Compiler >> genMemCopy: originalSourceReg to: originalDestReg constantSize: size [
 	| numbytes numwords sourceReg destReg countReg inst |
 
@@ -3264,7 +3266,7 @@ CogIA32Compiler >> genMemCopy: originalSourceReg to: originalDestReg constantSiz
 
 ]
 
-{ #category : #'abstract instructions' }
+{ #category : 'abstract instructions' }
 CogIA32Compiler >> genMemCopy: originalSourceReg to: originalDestReg size: originalSize [
 	| spilledSize size sourceReg destReg countReg inst |
 
@@ -3327,7 +3329,7 @@ CogIA32Compiler >> genMemCopy: originalSourceReg to: originalDestReg size: origi
 
 ]
 
-{ #category : #'abstract instructions' }
+{ #category : 'abstract instructions' }
 CogIA32Compiler >> genMoveCf32: constantFloat32 Rs: register [
 	<inline: true>
 	<returnTypeC: #'AbstractInstruction *'>
@@ -3338,7 +3340,7 @@ CogIA32Compiler >> genMoveCf32: constantFloat32 Rs: register [
 	^ inst
 ]
 
-{ #category : #'abstract instructions' }
+{ #category : 'abstract instructions' }
 CogIA32Compiler >> genMoveCf64: constantFloat64 Rd: register [
 	<inline: true>
 	<returnTypeC: #'AbstractInstruction *'>
@@ -3349,12 +3351,12 @@ CogIA32Compiler >> genMoveCf64: constantFloat64 Rd: register [
 	^ inst
 ]
 
-{ #category : #'abstract instructions' }
+{ #category : 'abstract instructions' }
 CogIA32Compiler >> genMulR: regSource R: regDest [
 	^cogit gen: IMULRR operand: regSource operand: regDest
 ]
 
-{ #category : #'abstract instructions' }
+{ #category : 'abstract instructions' }
 CogIA32Compiler >> genPopRd: reg [
 	<inline: true>
 	<returnTypeC: #'AbstractInstruction *'>
@@ -3364,7 +3366,7 @@ CogIA32Compiler >> genPopRd: reg [
 	^ inst
 ]
 
-{ #category : #'abstract instructions' }
+{ #category : 'abstract instructions' }
 CogIA32Compiler >> genPopRs: reg [
 	<inline: true>
 	<returnTypeC: #'AbstractInstruction *'>
@@ -3374,7 +3376,7 @@ CogIA32Compiler >> genPopRs: reg [
 	^ inst
 ]
 
-{ #category : #'abstract instructions' }
+{ #category : 'abstract instructions' }
 CogIA32Compiler >> genPushC64: constant64Bits [
 	<inline: true>
 	<var: #constant64Bits type: #sqLong>
@@ -3386,7 +3388,7 @@ CogIA32Compiler >> genPushC64: constant64Bits [
 	^inst
 ]
 
-{ #category : #'abstract instructions' }
+{ #category : 'abstract instructions' }
 CogIA32Compiler >> genPushRd: reg [
 	<inline: true>
 	<returnTypeC: #'AbstractInstruction *'>
@@ -3396,7 +3398,7 @@ CogIA32Compiler >> genPushRd: reg [
 	^ inst
 ]
 
-{ #category : #'smalltalk calling convention' }
+{ #category : 'smalltalk calling convention' }
 CogIA32Compiler >> genPushRegisterArgsForAbortMissNumArgs: numArgs [
 	"Ensure that the register args are pushed before the outer and
 	 inner retpcs at an entry miss for arity <= self numRegArgs.  The
@@ -3444,7 +3446,7 @@ CogIA32Compiler >> genPushRegisterArgsForAbortMissNumArgs: numArgs [
 			 ^self]]
 ]
 
-{ #category : #'smalltalk calling convention' }
+{ #category : 'smalltalk calling convention' }
 CogIA32Compiler >> genPushRegisterArgsForNumArgs: numArgs scratchReg: scratchReg [
 	"Ensure that the register args are pushed before the retpc for arity <= self numRegArgs.  This
 	 isn't as clumsy on a RISC.  But putting the receiver and args above the return address
@@ -3478,7 +3480,7 @@ CogIA32Compiler >> genPushRegisterArgsForNumArgs: numArgs scratchReg: scratchReg
 				 cogit PushR: scratchReg]] "Restore return address"
 ]
 
-{ #category : #'abstract instructions' }
+{ #category : 'abstract instructions' }
 CogIA32Compiler >> genPushRs: reg [
 	<inline: true>
 	<returnTypeC: #'AbstractInstruction *'>
@@ -3488,21 +3490,21 @@ CogIA32Compiler >> genPushRs: reg [
 	^ inst
 ]
 
-{ #category : #abi }
+{ #category : 'abi' }
 CogIA32Compiler >> genRemoveNArgsFromStack: n [
 	<inline: true>
 	n = 0 ifFalse: [cogit AddCq: n * 4 R: ESP].
 	^0
 ]
 
-{ #category : #abi }
+{ #category : 'abi' }
 CogIA32Compiler >> genRemoveNFloatArgsFromStack: n [
 	<inline: true>
 	n > 0 ifTrue: [cogit AddCq: n * 8 R: ESP].
 	^0
 ]
 
-{ #category : #abi }
+{ #category : 'abi' }
 CogIA32Compiler >> genRestoreRegs: regMask [
 	"Restore the registers in regMask as saved by genSaveRegs:."
 	self deny: (regMask anyMask: (cogit registerMaskFor: ESP and: EBP)).
@@ -3513,7 +3515,7 @@ CogIA32Compiler >> genRestoreRegs: regMask [
 	^0
 ]
 
-{ #category : #abi }
+{ #category : 'abi' }
 CogIA32Compiler >> genSaveRegs: regMask [
 	"Save the registers in regMask for a call into the C run-time from a trampoline."
 
@@ -3526,7 +3528,7 @@ CogIA32Compiler >> genSaveRegs: regMask [
 	^0
 ]
 
-{ #category : #'smalltalk calling convention' }
+{ #category : 'smalltalk calling convention' }
 CogIA32Compiler >> genSaveStackPointers [
 	"Save the frame and stack pointer registers to the framePointer
 	 and stackPointer variables.  Used to save the machine code frame
@@ -3536,19 +3538,19 @@ CogIA32Compiler >> genSaveStackPointers [
 	^0
 ]
 
-{ #category : #'abstract instructions' }
+{ #category : 'abstract instructions' }
 CogIA32Compiler >> genSubstituteReturnAddress: retpc [
 	<inline: true>
 	<returnTypeC: #'AbstractInstruction *'>
 	^cogit PushCw: retpc
 ]
 
-{ #category : #'abstract instructions' }
+{ #category : 'abstract instructions' }
 CogIA32Compiler >> genSwapR: regA R: regB Scratch: regTmp [
 	^cogit gen: XCHGRR operand: regA operand: regB
 ]
 
-{ #category : #disassembly }
+{ #category : 'disassembly' }
 CogIA32Compiler >> generalPurposeRegisterMap [
 	<doNotGenerate>
 	"Answer a Dictionary from register getter to register index."
@@ -3561,7 +3563,7 @@ CogIA32Compiler >> generalPurposeRegisterMap [
 			#edi.  EDI	}
 ]
 
-{ #category : #'feature detection' }
+{ #category : 'feature detection' }
 CogIA32Compiler >> generateCheckFeatures [
 	cogit
 		PushR: EDX;
@@ -3576,7 +3578,7 @@ CogIA32Compiler >> generateCheckFeatures [
 		RetN: 0
 ]
 
-{ #category : #'multi-threading' }
+{ #category : 'multi-threading' }
 CogIA32Compiler >> generateLowLevelTryLock: vmOwnerLockAddress [
 	"Generate a function that attempts to lock the vmOwnerLock and answers
 	 true if it succeeded."
@@ -3595,7 +3597,7 @@ CogIA32Compiler >> generateLowLevelTryLock: vmOwnerLockAddress [
 		RetN: 0
 ]
 
-{ #category : #'multi-threading' }
+{ #category : 'multi-threading' }
 CogIA32Compiler >> generateLowLevelUnlock: vmOwnerLockAddress [
 	vmOwnerLockAddress ~= 0 ifTrue:
 		[cogit
@@ -3605,49 +3607,49 @@ CogIA32Compiler >> generateLowLevelUnlock: vmOwnerLockAddress [
 	cogit RetN: 0
 ]
 
-{ #category : #testing }
+{ #category : 'testing' }
 CogIA32Compiler >> hasConditionRegister [
 	"Answer if the receiver supports, e.g., JumpOverflow after a regular AddRR"
 	^true
 ]
 
-{ #category : #testing }
+{ #category : 'testing' }
 CogIA32Compiler >> hasDoublePrecisionFloatingPointSupport [
 	"We can generate dpfp support if the processor has SSE2 instructions."
 	<inline: true>
 	^self hasSSE2Instructions
 ]
 
-{ #category : #testing }
+{ #category : 'testing' }
 CogIA32Compiler >> hasLinkRegister [
 	^false
 ]
 
-{ #category : #testing }
+{ #category : 'testing' }
 CogIA32Compiler >> hasSSE2Instructions [
 	"Answer if we support SSE2"
 	^(cogit ceCheckFeatures bitAnd: (1 << 26)) ~= 0
 ]
 
-{ #category : #testing }
+{ #category : 'testing' }
 CogIA32Compiler >> hasSSEInstructions [
 	"Answer if we support SSE"
 	^(cogit ceCheckFeatures bitAnd: (1 << 25)) ~= 0
 ]
 
-{ #category : #testing }
+{ #category : 'testing' }
 CogIA32Compiler >> hasThreeAddressArithmetic [
 	"Answer if the receiver supports three-address arithmetic instructions"
 	^false
 ]
 
-{ #category : #'inline cacheing' }
+{ #category : 'inline cacheing' }
 CogIA32Compiler >> inlineCacheTagAt: callSiteReturnAddress [
 	"Answer the inline cache tag for the return address of a send."
 	^self literalBeforeFollowingAddress: callSiteReturnAddress - 5
 ]
 
-{ #category : #disassembly }
+{ #category : 'disassembly' }
 CogIA32Compiler >> instructionSizeAt: pc [
 	"Answer the instruction size at pc.  This is very far from a full decode.
 	 It only has to cope with the instructions generated in a block dispatch."
@@ -3681,18 +3683,18 @@ CogIA32Compiler >> instructionSizeAt: pc [
 			[16rCC]	->	[1]. "int3" }
 ]
 
-{ #category : #testing }
+{ #category : 'testing' }
 CogIA32Compiler >> isBigEndian [
 	^false
 ]
 
-{ #category : #testing }
+{ #category : 'testing' }
 CogIA32Compiler >> isCallPrecedingReturnPC: mcpc [
 	"Assuming mcpc is a send return pc answer if the instruction before it is a call (not a CallFull)."
 	^(objectMemory byteAt: mcpc - 5) = 16rE8
 ]
 
-{ #category : #disassembly }
+{ #category : 'disassembly' }
 CogIA32Compiler >> isJumpAt: pc [
 	| op |
 	op := objectMemory byteAt: pc.
@@ -3703,19 +3705,19 @@ CogIA32Compiler >> isJumpAt: pc [
 		and: [(objectMemory byteAt: pc + 1) between: 16r80 and: 16r8F]]]]
 ]
 
-{ #category : #testing }
+{ #category : 'testing' }
 CogIA32Compiler >> isPCDependent [
 	"Answer if the receiver is a pc-dependent instruction."
 	^self isJump or: [opcode = AlignmentNops]
 ]
 
-{ #category : #testing }
+{ #category : 'testing' }
 CogIA32Compiler >> isQuick: operand [
 	<var: #operand type: #'usqIntptr_t'>
 	^operand signedIntFromLong between: -128 and: 127
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 CogIA32Compiler >> jmpTarget: anAbstractInstruction [
 	"Set the target of a jump instruction.  These all have the target in the first operand.
 	 Override to cope with JumpFPNotEqual where because of IEEE NaN conformance and
@@ -3729,7 +3731,7 @@ CogIA32Compiler >> jmpTarget: anAbstractInstruction [
 	^super jmpTarget: anAbstractInstruction
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 CogIA32Compiler >> jumpLongByteSize [
 "	Branch/Call ranges.  Jump[Cond] can be generated as short as possible.  Call/Jump[Cond]Long must be generated
 	in the same number of bytes irrespective of displacement since their targets may be updated, but they need only
@@ -3740,23 +3742,23 @@ CogIA32Compiler >> jumpLongByteSize [
 	^5
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 CogIA32Compiler >> jumpLongConditionalByteSize [
 	^6
 ]
 
-{ #category : #'inline cacheing' }
+{ #category : 'inline cacheing' }
 CogIA32Compiler >> jumpLongTargetBeforeFollowingAddress: mcpc [ 
 	"Answer the target address for the long jump immediately preceding mcpc"
 	^self callTargetFromReturnAddress: mcpc
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 CogIA32Compiler >> jumpShortByteSize [
 	^2
 ]
 
-{ #category : #disassembly }
+{ #category : 'disassembly' }
 CogIA32Compiler >> jumpTargetPCAt: pc [
 	<returnTypeC: #usqInt>
 	| size byte offset |
@@ -3774,7 +3776,7 @@ CogIA32Compiler >> jumpTargetPCAt: pc [
 	^pc + size + offset
 ]
 
-{ #category : #abi }
+{ #category : 'abi' }
 CogIA32Compiler >> leafCallStackPointerDelta [
 	"Answer the delta from the stack pointer after a call to the stack pointer
 	 immediately prior to the call.  This is used to compute the stack pointer
@@ -3783,7 +3785,7 @@ CogIA32Compiler >> leafCallStackPointerDelta [
 	^4
 ]
 
-{ #category : #'inline cacheing' }
+{ #category : 'inline cacheing' }
 CogIA32Compiler >> literalBeforeFollowingAddress: followingAddress [
 	"Answer the literal embedded in the instruction immediately preceding followingAddress."
 	^  ((objectMemory byteAt: followingAddress - 1) << 24)
@@ -3792,19 +3794,19 @@ CogIA32Compiler >> literalBeforeFollowingAddress: followingAddress [
 	+   (objectMemory byteAt: followingAddress - 4)
 ]
 
-{ #category : #'inline cacheing' }
+{ #category : 'inline cacheing' }
 CogIA32Compiler >> literalBeforeInlineCacheTagAt: callSiteReturnAddress [
 	"Answer a literal loaded before the inline cache tag load for the return address of a send."
 	^self literalBeforeFollowingAddress: callSiteReturnAddress - 10
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 CogIA32Compiler >> loadLiteralByteSize [
 	"Answer the byte size of a MoveCwR opcode's corresponding machine code"
 	^5
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 CogIA32Compiler >> loadPICLiteralByteSize [
 	"Answer the byte size of a MoveCwR opcode's corresponding machine code
 	 when the argument is a PIC.  This is for the self-reference at the end of a
@@ -3813,19 +3815,19 @@ CogIA32Compiler >> loadPICLiteralByteSize [
 	^self loadLiteralByteSize
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 CogIA32Compiler >> machineCodeAt: anOffset [
 	^machineCode at: anOffset
 ]
 
-{ #category : #'generate machine code' }
+{ #category : 'generate machine code' }
 CogIA32Compiler >> machineCodeBytes [
 	"Answer the maximum number of bytes of machine code generated for any abstract instruction.
 	 e.g. lock movsd  0x400(%esp),%xmm4 => f0 f2 0f 10 a4 24 00 04 00 00"
 	^10
 ]
 
-{ #category : #encoding }
+{ #category : 'encoding' }
 CogIA32Compiler >> mod: mod RM: regMode RO: regOpcode [
 	"See ModR/M byte & opcode syntax
 	 In addition to the notation shown above in 'Mnemonic Syntax' on page 43,
@@ -3837,18 +3839,18 @@ CogIA32Compiler >> mod: mod RM: regMode RO: regOpcode [
 	^mod << 6 + (regOpcode << 3) + regMode
 ]
 
-{ #category : #'feature detection' }
+{ #category : 'feature detection' }
 CogIA32Compiler >> numCheckFeaturesOpcodes [
 	"Answer the number of opcodes required to compile the CPUID call to extract the extended features information."
 	^11
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 CogIA32Compiler >> numIntRegArgs [
 	^0
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 CogIA32Compiler >> numLowLevelLockOpcodes [
 	"push $ebx
 	 movl #0, %eax
@@ -3866,12 +3868,12 @@ CogIA32Compiler >> numLowLevelLockOpcodes [
 	^14
 ]
 
-{ #category : #'generate machine code' }
+{ #category : 'generate machine code' }
 CogIA32Compiler >> padIfPossibleWithStopsFrom: startAddr to: endAddr [
 	self stopsFrom: startAddr to: endAddr
 ]
 
-{ #category : #'calling C function in Smalltalk stack' }
+{ #category : 'calling C function in Smalltalk stack' }
 CogIA32Compiler >> prepareStackToCallCFunctionInSmalltalkStack: numberOfArguments [
 
 	| numberAdditionalPushes remainer |
@@ -3892,7 +3894,7 @@ CogIA32Compiler >> prepareStackToCallCFunctionInSmalltalkStack: numberOfArgument
 	
 ]
 
-{ #category : #'inline cacheing' }
+{ #category : 'inline cacheing' }
 CogIA32Compiler >> relocateCallBeforeReturnPC: retpc by: delta [
 	| distance |
 	delta ~= 0 ifTrue:
@@ -3908,13 +3910,13 @@ CogIA32Compiler >> relocateCallBeforeReturnPC: retpc by: delta [
 			byteAt: retpc - 4 put: (distance            bitAnd: 16rFF)]
 ]
 
-{ #category : #'inline cacheing' }
+{ #category : 'inline cacheing' }
 CogIA32Compiler >> relocateMethodReferenceBeforeAddress: pc by: delta [
 	<inline: true>
 	self relocateCallBeforeReturnPC: pc by: delta
 ]
 
-{ #category : #'calling C function in Smalltalk stack' }
+{ #category : 'calling C function in Smalltalk stack' }
 CogIA32Compiler >> returnFromCallCFunctionInSmalltalkStack: numberOfArguments [
 
 	| numberAdditionalPushes remainer |
@@ -3935,7 +3937,7 @@ CogIA32Compiler >> returnFromCallCFunctionInSmalltalkStack: numberOfArguments [
 	
 ]
 
-{ #category : #'inline cacheing' }
+{ #category : 'inline cacheing' }
 CogIA32Compiler >> rewriteCPICJumpAt: addressFollowingJump target: jumpTargetAddr [
 	"Rewrite the short jump instruction to jump to a new cpic case target. "
 	<var: #addressFollowingJump type: #usqInt>
@@ -3951,7 +3953,7 @@ CogIA32Compiler >> rewriteCPICJumpAt: addressFollowingJump target: jumpTargetAdd
 		inSmalltalk: [cogit disassembleFrom: addressFollowingJump - 10 to: addressFollowingJump - 1]."
 ]
 
-{ #category : #'inline cacheing' }
+{ #category : 'inline cacheing' }
 CogIA32Compiler >> rewriteCallAt: callSiteReturnAddress target: callTargetAddress [
 	"Rewrite a call instruction to call a different target.  This variant is used to link PICs
 	 in ceSendMiss et al, and to rewrite cached primitive calls.   Answer the extent of
@@ -3977,7 +3979,7 @@ CogIA32Compiler >> rewriteCallAt: callSiteReturnAddress target: callTargetAddres
 	^5
 ]
 
-{ #category : #'inline cacheing' }
+{ #category : 'inline cacheing' }
 CogIA32Compiler >> rewriteInlineCacheAt: callSiteReturnAddress tag: cacheTag target: callTargetAddress [
 	"Rewrite an inline cache to call a different target for a new tag.  This variant is used
 	 to link unlinked sends in ceSend:to:numArgs: et al.  Answer the extent of the code
@@ -4007,7 +4009,7 @@ CogIA32Compiler >> rewriteInlineCacheAt: callSiteReturnAddress tag: cacheTag tar
 	^10
 ]
 
-{ #category : #'inline cacheing' }
+{ #category : 'inline cacheing' }
 CogIA32Compiler >> rewriteInlineCacheTag: cacheTag at: callSiteReturnAddress [
 	"Rewrite an inline cache with a new tag.  This variant is used
 	 by the garbage collector."
@@ -4018,7 +4020,7 @@ CogIA32Compiler >> rewriteInlineCacheTag: cacheTag at: callSiteReturnAddress [
 		byteAt: callSiteReturnAddress - 9 put: (cacheTag            bitAnd: 16rFF)
 ]
 
-{ #category : #'inline cacheing' }
+{ #category : 'inline cacheing' }
 CogIA32Compiler >> rewriteJumpLongAt: callSiteReturnAddress target: callTargetAddress [
 	"Rewrite a long jump instruction to jump to a different target.  This variant
 	 is used to rewrite cached primitive calls.   Answer the extent of the
@@ -4026,12 +4028,12 @@ CogIA32Compiler >> rewriteJumpLongAt: callSiteReturnAddress target: callTargetAd
 	^self rewriteCallAt: callSiteReturnAddress target: callTargetAddress
 ]
 
-{ #category : #encoding }
+{ #category : 'encoding' }
 CogIA32Compiler >> s: scale i: indexReg b: baseReg [ 
 	^scale << 6 + (indexReg << 3) + baseReg
 ]
 
-{ #category : #abi }
+{ #category : 'abi' }
 CogIA32Compiler >> saveAndRestoreLinkRegAround: aBlock [
 	"If the processor's ABI includes a link register, generate instructions
 	 to save and restore it around aBlock, which is assumed to generate code."
@@ -4039,7 +4041,7 @@ CogIA32Compiler >> saveAndRestoreLinkRegAround: aBlock [
 	^aBlock value
 ]
 
-{ #category : #testing }
+{ #category : 'testing' }
 CogIA32Compiler >> setsConditionCodesFor: aConditionalJumpOpcode [
 	<inline: false> "to save Slang from having to be a real compiler (it can't inline switches that return)"
 	"Answer if the receiver's opcode sets the condition codes correctly for the given conditional jump opcode."
@@ -4053,7 +4055,7 @@ CogIA32Compiler >> setsConditionCodesFor: aConditionalJumpOpcode [
 		otherwise: [self halt: 'unhandled opcode in setsConditionCodesFor:'. false]
 ]
 
-{ #category : #testing }
+{ #category : 'testing' }
 CogIA32Compiler >> shiftSetsConditionCodesFor: aConditionalJumpOpcode [
 	"OF flag only guaranteed to be set for 1-bit shifts.  See [1] p 490.
 	 Only SF, ZF & PF set according to result.  Since the question is currently
@@ -4062,7 +4064,7 @@ CogIA32Compiler >> shiftSetsConditionCodesFor: aConditionalJumpOpcode [
 	^(aConditionalJumpOpcode between: JumpZero and: JumpNonNegative)
 ]
 
-{ #category : #disassembly }
+{ #category : 'disassembly' }
 CogIA32Compiler >> sizeHasModrm: op at: pc [
 	| modrm mod ro rm |
 	modrm := objectMemory byteAt: pc + 1.
@@ -4082,7 +4084,7 @@ CogIA32Compiler >> sizeHasModrm: op at: pc [
 	^0
 ]
 
-{ #category : #disassembly }
+{ #category : 'disassembly' }
 CogIA32Compiler >> sizeImmediateGroup1: op at: pc [
 	"see [1] p A-7, p A-13"
 	| modrm mod ro rm |
@@ -4096,7 +4098,7 @@ CogIA32Compiler >> sizeImmediateGroup1: op at: pc [
 							ifFalse: [3]] }
 ]
 
-{ #category : #'generate machine code' }
+{ #category : 'generate machine code' }
 CogIA32Compiler >> sizePCDependentInstructionAt: eventualAbsoluteAddress [
 	"Size a jump and set its address.  The target may be another instruction
 	 or an absolute address.  On entry the address inst var holds our virtual
@@ -4141,12 +4143,12 @@ CogIA32Compiler >> sizePCDependentInstructionAt: eventualAbsoluteAddress [
 									ifFalse: [6]]
 ]
 
-{ #category : #abi }
+{ #category : 'abi' }
 CogIA32Compiler >> stackBytesForNumArgs: numArgs [
 	^numArgs * 4
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 CogIA32Compiler >> stackPageInterruptHeadroomBytes [
 	"Return a minimum amount of headroom for each stack page (in bytes).  In a
 	 JIT the stack has to have room for interrupt handlers which will run on the stack.
@@ -4156,14 +4158,14 @@ CogIA32Compiler >> stackPageInterruptHeadroomBytes [
 	^256
 ]
 
-{ #category : #encoding }
+{ #category : 'encoding' }
 CogIA32Compiler >> stop [
 	"int3"
 	<inline: true>
 	^16rCC
 ]
 
-{ #category : #'generate machine code' }
+{ #category : 'generate machine code' }
 CogIA32Compiler >> stopsFrom: startAddr to: endAddr [
 	self
 		cCode: [self me: startAddr ms: self stop et: endAddr - startAddr + 1]
@@ -4186,7 +4188,7 @@ CogIA32Compiler >> stopsFrom: startAddr to: endAddr [
 						[:addr | objectMemory byteAt: addr put: self stop]]]
 ]
 
-{ #category : #'inline cacheing' }
+{ #category : 'inline cacheing' }
 CogIA32Compiler >> storeLiteral: literal beforeFollowingAddress: followingAddress [
 	"Rewrite the literal in the instruction immediately preceding followingAddress."
 	objectMemory
@@ -4196,7 +4198,7 @@ CogIA32Compiler >> storeLiteral: literal beforeFollowingAddress: followingAddres
 		byteAt: followingAddress - 4 put: (literal            bitAnd: 16rFF)
 ]
 
-{ #category : #disassembly }
+{ #category : 'disassembly' }
 CogIA32Compiler >> twoByteInstructionSizeAt: pc [
 	| op |
 	op := objectMemory byteAt: pc + 1. 
@@ -4204,24 +4206,24 @@ CogIA32Compiler >> twoByteInstructionSizeAt: pc [
 		{	[16r80]	->	[6 "long conditional jumps"] }
 ]
 
-{ #category : #'memory access' }
+{ #category : 'memory access' }
 CogIA32Compiler >> unalignedLongAt: byteAddress [
 	<cmacro: '(byteAddress) longAt(byteAddress)'>
 	^objectMemory unalignedLongAt: byteAddress
 ]
 
-{ #category : #'memory access' }
+{ #category : 'memory access' }
 CogIA32Compiler >> unalignedLongAt: byteAddress put: aWord [
 	<cmacro: '(byteAddress,aWord) longAtput(byteAddress,aWord)'>
 	^objectMemory unalignedLongAt: byteAddress put: aWord
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 CogIA32Compiler >> unsignedShortAt: byteAddress [
 	^(objectMemory byteAt: byteAddress) + ((objectMemory byteAt: byteAddress + 1) bitShift: 8)
 ]
 
-{ #category : #'inline cacheing' }
+{ #category : 'inline cacheing' }
 CogIA32Compiler >> zoneCallsAreRelative [
 	"Answer if Call and JumpLong are relative and hence need to take the caller's
 	 relocation delta into account during code compaction, rather than just the

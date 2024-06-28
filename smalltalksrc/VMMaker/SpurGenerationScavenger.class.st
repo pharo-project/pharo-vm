@@ -95,8 +95,8 @@ The case of ephemerons is a little more complicated because an ephemeron's key s
 So if the scavenger does not scan ephemerons in the remembered set or in future space until the scavenger finishes cycling, it can detect ephemerons whose keys are about to die because these will be unforwarded objects in eden and/or past space.  Ephemerons encountered in the remembered set are either processed like ordinary objects if their keys have been promoted to futureSpace, or are moved to the front of the rememberedSet (because, dear reader, it is a sequence) if their keys have not been promoted.  Ephemerons encountered in scavengeReferentsOf: are either scanned like normal objects if their keys have been promoted, or added to the ephemeronList, organized identically to the weakList, if their keys are yet to be promoted.  Since references from other ephemerons with surviving keys to ephemeron keys can and should prevent the ephemerons whose keys they are from firing the scavenger does not fire ephemerons unless all unscavenged ephemerons have unscavenged keys.  So the unscavenged ephemerons (they will be at the beginning of the remembered set and on the ephemeronList) are scanned and any that have promoted keys are scavenged.  But if no unscavenged ephemerons have surviving keys then all the unscavenged ephemerons are fired and then scavenged.  This in turn may remember more objects and promote more objects to future space, and encounter more unscavenged ephemerons.  So the scavenger continues until no more objects are remembered, no more objects are promoted to future space and no more unscavenged ephemerons exist.
 "
 Class {
-	#name : #SpurGenerationScavenger,
-	#superclass : #VMClass,
+	#name : 'SpurGenerationScavenger',
+	#superclass : 'VMClass',
 	#instVars : [
 		'coInterpreter',
 		'manager',
@@ -119,10 +119,12 @@ Class {
 	#pools : [
 		'SpurMemoryManagementConstants'
 	],
-	#category : #'VMMaker-SpurMemoryManager'
+	#category : 'VMMaker-SpurMemoryManager',
+	#package : 'VMMaker',
+	#tag : 'SpurMemoryManager'
 }
 
-{ #category : #translation }
+{ #category : 'translation' }
 SpurGenerationScavenger class >> declareCVarsIn: aCCodeGenerator [
 	#(eden futureSpace pastSpace) do:
 		[:var| aCCodeGenerator var: var type: #SpurNewSpaceSpace].
@@ -132,13 +134,13 @@ SpurGenerationScavenger class >> declareCVarsIn: aCCodeGenerator [
 		var: #scavengeLog type: #'FILE *'
 ]
 
-{ #category : #translation }
+{ #category : 'translation' }
 SpurGenerationScavenger class >> implicitReturnTypeFor: aSelector [
 	"Answer the return type for methods that don't have an explicit return."
 	^#void
 ]
 
-{ #category : #'class initialization' }
+{ #category : 'class initialization' }
 SpurGenerationScavenger class >> initialize [
 	"SpurGenerationScavenger initialize"
 	TenureByAge := 1.
@@ -149,17 +151,17 @@ SpurGenerationScavenger class >> initialize [
 	MaxRTRefCount := 7 "The field comprised of {isGrey,isPinned,isRemembered}"
 ]
 
-{ #category : #translation }
+{ #category : 'translation' }
 SpurGenerationScavenger class >> isNonArgumentImplicitReceiverVariableName: instVarName [
 	^#('self' 'coInterpreter' 'manager') includes: instVarName
 ]
 
-{ #category : #simulation }
+{ #category : 'simulation' }
 SpurGenerationScavenger class >> simulatorClass [
 	^SpurGenerationScavengerSimulator
 ]
 
-{ #category : #'weakness and ephemerality' }
+{ #category : 'weakness and ephemerality' }
 SpurGenerationScavenger >> addToEphemeronList: ephemeronCorpse [
 	"ephemeronCorpse is the corpse of an ephemeron that was copied and forwarded.
 	 Later on its surviving copy must be scanned to nil weak references.
@@ -175,7 +177,7 @@ SpurGenerationScavenger >> addToEphemeronList: ephemeronCorpse [
 	self assert: (self firstCorpse: ephemeronList) = ephemeronCorpse
 ]
 
-{ #category : #'weakness and ephemerality' }
+{ #category : 'weakness and ephemerality' }
 SpurGenerationScavenger >> addToWeakList: weakCorpse [
 	"weakCorpse is the corpse of a weak array that was copied and forwarded.
 	 Later on its surviving copy must be scanned to nil weak references.
@@ -190,7 +192,7 @@ SpurGenerationScavenger >> addToWeakList: weakCorpse [
 	self assert: (self firstCorpse: weakList) = weakCorpse
 ]
 
-{ #category : #'weakness and ephemerality' }
+{ #category : 'weakness and ephemerality' }
 SpurGenerationScavenger >> allFutureSpaceEntitiesDo: aBlock [
 	"Enumerate all future space objects, including free objects."
 
@@ -205,7 +207,7 @@ SpurGenerationScavenger >> allFutureSpaceEntitiesDo: aBlock [
 		 objOop := manager objectAfter: objOop limit: limit]
 ]
 
-{ #category : #'remembered set' }
+{ #category : 'remembered set' }
 SpurGenerationScavenger >> allNewSpaceObjectsHaveZeroRTRefCount [
 	manager allNewSpaceObjectsDo:
 		[:obj|
@@ -214,7 +216,7 @@ SpurGenerationScavenger >> allNewSpaceObjectsHaveZeroRTRefCount [
 	^true
 ]
 
-{ #category : #'weakness and ephemerality' }
+{ #category : 'weakness and ephemerality' }
 SpurGenerationScavenger >> allWeakSurvivorsOnWeakList [
 	self allFutureSpaceEntitiesDo:
 		[:survivor|
@@ -224,12 +226,12 @@ SpurGenerationScavenger >> allWeakSurvivorsOnWeakList [
 	^true
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 SpurGenerationScavenger >> coInterpreter: aCoInterpreter [
 	coInterpreter := aCoInterpreter
 ]
 
-{ #category : #'remembered set' }
+{ #category : 'remembered set' }
 SpurGenerationScavenger >> computeRefCountToShrinkRememberedSet [
 	"Some time in every scavenger's life there may come a time when someone writes code that stresses
 	 the remembered set. One might conclude that if the remembered set is full, then the right thing
@@ -261,7 +263,7 @@ SpurGenerationScavenger >> computeRefCountToShrinkRememberedSet [
 	(manager allNewSpaceObjectsDo: [:o| manager rtRefCountOf: o put: 0])"
 ]
 
-{ #category : #tenuring }
+{ #category : 'tenuring' }
 SpurGenerationScavenger >> computeTenuringThreshold [
 
 	tenureThreshold := self futureSpaceIsFull
@@ -269,7 +271,7 @@ SpurGenerationScavenger >> computeTenuringThreshold [
 		                   ifFalse: [ 0 ]
 ]
 
-{ #category : #scavenger }
+{ #category : 'scavenger' }
 SpurGenerationScavenger >> copyAndForward: survivor [
 	"copyAndForward: survivor copies a survivor object either to
 	 futureSurvivorSpace or, if it is to be promoted, to oldSpace.
@@ -297,7 +299,7 @@ SpurGenerationScavenger >> copyAndForward: survivor [
 	^newLocation
 ]
 
-{ #category : #scavenger }
+{ #category : 'scavenger' }
 SpurGenerationScavenger >> copyAndForwardMourner: mourner [
 	"A special version of copyAndForward: for objects in the mournQueue.  If we're
 	 in the good times tenuring regime then copy to futureSpace, otherwise tenure.
@@ -319,7 +321,7 @@ SpurGenerationScavenger >> copyAndForwardMourner: mourner [
 	^newLocation
 ]
 
-{ #category : #scavenger }
+{ #category : 'scavenger' }
 SpurGenerationScavenger >> copyToFutureSpace: survivor bytes: bytesInObject [
 	"Copy survivor to futureSpace.  Assume it will fit (checked by sender).
 	 Answer the new oop of the object (it may have an overflow size field)."
@@ -336,7 +338,7 @@ SpurGenerationScavenger >> copyToFutureSpace: survivor bytes: bytesInObject [
 	^newStart + (survivor - startOfSurvivor)
 ]
 
-{ #category : #scavenger }
+{ #category : 'scavenger' }
 SpurGenerationScavenger >> copyToOldSpace: survivor bytes: bytesInObject format: formatOfSurvivor [
 	"Copy survivor to oldSpace.  Answer the new oop of the object."
 	<inline: #never> "Should be too infrequent to lower icache density of copyAndForward:"
@@ -381,7 +383,7 @@ SpurGenerationScavenger >> copyToOldSpace: survivor bytes: bytesInObject format:
 	^newOop
 ]
 
-{ #category : #'weakness and ephemerality' }
+{ #category : 'weakness and ephemerality' }
 SpurGenerationScavenger >> corpseForCorpseOffset: corpseOffset [
 	"Use the identityHash and format fields to construct a 27 bit offset through
 	 non-future newSpace and use this to implement lists for weak array and
@@ -390,7 +392,7 @@ SpurGenerationScavenger >> corpseForCorpseOffset: corpseOffset [
 	^corpseOffset - 1 << manager shiftForAllocationUnit + manager getMemoryMap newSpaceStart
 ]
 
-{ #category : #'weakness and ephemerality' }
+{ #category : 'weakness and ephemerality' }
 SpurGenerationScavenger >> corpseOffsetOf: corpse [
 	"Answer the offset of the corpse in newSpace as a multiple of allocationUnits.
 	 Use the identityHash and format fields to construct a 27 bit offset through
@@ -402,19 +404,19 @@ SpurGenerationScavenger >> corpseOffsetOf: corpse [
 	^corpse - manager getMemoryMap newSpaceStart >> manager shiftForAllocationUnit + 1
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 SpurGenerationScavenger >> eden [
 	<returnTypeC: #SpurNewSpaceSpace>
 	<cmacro: '() GIV(eden)'>
 	^eden
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 SpurGenerationScavenger >> edenBytes [
 	^eden limit - eden start
 ]
 
-{ #category : #scavenger }
+{ #category : 'scavenger' }
 SpurGenerationScavenger >> exchangeSurvivorSpaces [
 	| temp |
 	<var: #temp type: #SpurNewSpaceSpace>
@@ -423,7 +425,7 @@ SpurGenerationScavenger >> exchangeSurvivorSpaces [
 	futureSpace := temp
 ]
 
-{ #category : #'printf logging' }
+{ #category : 'printf logging' }
 SpurGenerationScavenger >> f: logFilename open: mode [
 
 	"Simulate a FILE stream by answering a transcript.
@@ -433,7 +435,7 @@ SpurGenerationScavenger >> f: logFilename open: mode [
 	^ self coInterpreter transcript
 ]
 
-{ #category : #'weakness and ephemerality' }
+{ #category : 'weakness and ephemerality' }
 SpurGenerationScavenger >> fireEphemeronsInRememberedSet [
 	"There are ephemerons to be fired in the remembered set.
 	 Fire them and scavenge their keys.  Leave it to scavengeLoop
@@ -475,7 +477,7 @@ SpurGenerationScavenger >> fireEphemeronsInRememberedSet [
 	manager getFromOldSpaceRememberedSet numRememberedEphemerons: 0
 ]
 
-{ #category : #'weakness and ephemerality' }
+{ #category : 'weakness and ephemerality' }
 SpurGenerationScavenger >> fireEphemeronsOnEphemeronList [
 	"There are ephemerons to be fired in the remembered set.
 	 Fire them and scavenge their keys.  Be careful since copyAndForward:
@@ -514,12 +516,12 @@ SpurGenerationScavenger >> fireEphemeronsOnEphemeronList [
 		ephemeronCorpse := self nextCorpseOrNil: ephemeronCorpse ]
 ]
 
-{ #category : #'weakness and ephemerality' }
+{ #category : 'weakness and ephemerality' }
 SpurGenerationScavenger >> firstCorpse: headOfCorpseList [
 	^self corpseForCorpseOffset: headOfCorpseList
 ]
 
-{ #category : #'gc - global' }
+{ #category : 'gc - global' }
 SpurGenerationScavenger >> forgetUnmarkedRememberedObjectsFromOldSpace [
 
 	"Remove all unmarked objects from the remembered set.
@@ -539,14 +541,14 @@ SpurGenerationScavenger >> forgetUnmarkedRememberedObjectsFromOldSpace [
 	self assert: manager getFromOldSpaceRememberedSet rememberedSetSize >= 0
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 SpurGenerationScavenger >> futureSpace [
 	<returnTypeC: #SpurNewSpaceSpace>
 	<cmacro: '() GIV(futureSpace)'>
 	^futureSpace
 ]
 
-{ #category : #tenuring }
+{ #category : 'tenuring' }
 SpurGenerationScavenger >> futureSpaceIsFull [
 
 	"After the scavenge, if the future space remains full (more than 90%).
@@ -563,7 +565,7 @@ SpurGenerationScavenger >> futureSpaceIsFull [
 	^ fractionSurvived > 0.9 
 ]
 
-{ #category : #'debug support' }
+{ #category : 'debug support' }
 SpurGenerationScavenger >> futureSpaceObjectsDo: aBlock [
 	| obj |
 	futureSurvivorStart > futureSpace start ifTrue:
@@ -573,18 +575,18 @@ SpurGenerationScavenger >> futureSpaceObjectsDo: aBlock [
 			 obj := manager objectAfter: obj limit: futureSurvivorStart]]
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 SpurGenerationScavenger >> futureSurvivorStart [
 	<cmacro: '() GIV(futureSurvivorStart)'>
 	^futureSurvivorStart
 ]
 
-{ #category : #tenuring }
+{ #category : 'tenuring' }
 SpurGenerationScavenger >> getRawTenuringThreshold [
 	^tenureThreshold
 ]
 
-{ #category : #initialization }
+{ #category : 'initialization' }
 SpurGenerationScavenger >> initFutureSpaceStart [
 	| oldStart |
 	oldStart := futureSurvivorStart.
@@ -592,7 +594,7 @@ SpurGenerationScavenger >> initFutureSpaceStart [
 	^oldStart
 ]
 
-{ #category : #initialization }
+{ #category : 'initialization' }
 SpurGenerationScavenger >> initialize [
 
 	pastSpace := SpurNewSpaceSpace new.
@@ -603,7 +605,7 @@ SpurGenerationScavenger >> initialize [
 	scavengeLogRecord := SpurScavengeLogRecord new.
 ]
 
-{ #category : #'weakness and ephemerality' }
+{ #category : 'weakness and ephemerality' }
 SpurGenerationScavenger >> is: oop onWeaklingList: listHead [
 	| corpse |
 	corpse := self firstCorpse: listHead.
@@ -614,7 +616,7 @@ SpurGenerationScavenger >> is: oop onWeaklingList: listHead [
 	^false
 ]
 
-{ #category : #'weakness and ephemerality' }
+{ #category : 'weakness and ephemerality' }
 SpurGenerationScavenger >> isMaybeOldScavengeSurvivor: oop [
 	"Answer whether the oop has survived a scavenge.  This version is
 	 for processing weak survivors and must cope with the scavenge in
@@ -640,7 +642,7 @@ SpurGenerationScavenger >> isMaybeOldScavengeSurvivor: oop [
 			[manager isInFutureSpace: target]
 ]
 
-{ #category : #'weakness and ephemerality' }
+{ #category : 'weakness and ephemerality' }
 SpurGenerationScavenger >> isScavengeSurvivor: oop [
 	"Answer whether the oop has survived a scavenge.  This is equivalent to
 		| target |
@@ -661,7 +663,7 @@ SpurGenerationScavenger >> isScavengeSurvivor: oop [
 	  or: [manager isInFutureSpace: target]
 ]
 
-{ #category : #logging }
+{ #category : 'logging' }
 SpurGenerationScavenger >> logEndScavenge [
 	<inline: #always>
 	scavengeLogRecord
@@ -670,14 +672,14 @@ SpurGenerationScavenger >> logEndScavenge [
 		eStatTenures: statTenures
 ]
 
-{ #category : #logging }
+{ #category : 'logging' }
 SpurGenerationScavenger >> logScavenge [
 	<inline: #always>
 	scavengeLog ifNotNil:
 		[self writeScavengeLog]
 ]
 
-{ #category : #logging }
+{ #category : 'logging' }
 SpurGenerationScavenger >> logStartScavenge [
 	<inline: #always>
 	scavengeLogRecord
@@ -689,13 +691,13 @@ SpurGenerationScavenger >> logStartScavenge [
 		sStatTenures: statTenures
 ]
 
-{ #category : #logging }
+{ #category : 'logging' }
 SpurGenerationScavenger >> logStream [
 	<inline: #always>
 	^scavengeLog
 ]
 
-{ #category : #logging }
+{ #category : 'logging' }
 SpurGenerationScavenger >> logTenuringPolicy [
 	<inline: #always>
 	scavengeLogRecord
@@ -706,7 +708,7 @@ SpurGenerationScavenger >> logTenuringPolicy [
 		tRefCountToShrinkRT: refCountToShrinkRT
 ]
 
-{ #category : #scavenger }
+{ #category : 'scavenger' }
 SpurGenerationScavenger >> mapOopsFromPermSpace [
 
 	| destIndex sourceIndex referrer result |
@@ -749,14 +751,14 @@ SpurGenerationScavenger >> mapOopsFromPermSpace [
 	"self assert: (manager isPermSpaceRememberedSetSane)."
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 SpurGenerationScavenger >> newSpaceCapacity [
 	<inline: false>
 	<returnTypeC: #usqInt>
 	^eden limit - (futureSpace start min: pastSpace start)
 ]
 
-{ #category : #initialization }
+{ #category : 'initialization' }
 SpurGenerationScavenger >> newSpaceStart: startAddress newSpaceBytes: totalBytes survivorBytes: requestedSurvivorBytes [
 	| actualEdenBytes survivorBytes |
 	survivorBytes := requestedSurvivorBytes truncateTo: manager allocationUnit.
@@ -788,7 +790,7 @@ SpurGenerationScavenger >> newSpaceStart: startAddress newSpaceBytes: totalBytes
 	tenuringProportion := 0.9
 ]
 
-{ #category : #'weakness and ephemerality' }
+{ #category : 'weakness and ephemerality' }
 SpurGenerationScavenger >> nextCorpseOffset: corpse [
 	"Answer the offset of the next corpse to corpse, which is zero if none.
 	 Use the identityHash and format fields to construct a 27 bit offset through
@@ -799,7 +801,7 @@ SpurGenerationScavenger >> nextCorpseOffset: corpse [
 	 + (manager formatOf: corpse)
 ]
 
-{ #category : #'weakness and ephemerality' }
+{ #category : 'weakness and ephemerality' }
 SpurGenerationScavenger >> nextCorpseOrNil: corpse [
 	"corpse is the corpse of a weak array that has been added to the weakList.
 	 Answer the next object on the list, or nil if none."
@@ -810,7 +812,7 @@ SpurGenerationScavenger >> nextCorpseOrNil: corpse [
 		[self corpseForCorpseOffset: listOffset]
 ]
 
-{ #category : #'weakness and ephemerality' }
+{ #category : 'weakness and ephemerality' }
 SpurGenerationScavenger >> noUnfiredEphemeronsAtEndOfRememberedSet [
 
 	"For assert checking only."
@@ -826,25 +828,25 @@ SpurGenerationScavenger >> noUnfiredEphemeronsAtEndOfRememberedSet [
 	^ true
 ]
 
-{ #category : #logging }
+{ #category : 'logging' }
 SpurGenerationScavenger >> openScavengeLog [
 	<api>
 	scavengeLog := self f: 'scavenge.log' open: 'a+'
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 SpurGenerationScavenger >> pastSpace [
 	<returnTypeC: #SpurNewSpaceSpace>
 	<cmacro: '() GIV(pastSpace)'>
 	^pastSpace
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 SpurGenerationScavenger >> pastSpaceBytes [
 	^pastSpace limit - pastSpace start
 ]
 
-{ #category : #'debug support' }
+{ #category : 'debug support' }
 SpurGenerationScavenger >> printRememberedSet [
 
 	"Print the objects in the remembered set."
@@ -875,7 +877,7 @@ SpurGenerationScavenger >> printRememberedSet [
 			shortPrintOop: oop ]		
 ]
 
-{ #category : #'debug support' }
+{ #category : 'debug support' }
 SpurGenerationScavenger >> printWeaklingList: listHead [
 	"Print the objects on either the weakList or the ephemeronList."
 	| corpse |
@@ -888,7 +890,7 @@ SpurGenerationScavenger >> printWeaklingList: listHead [
 		 corpse := self nextCorpseOrNil: corpse]
 ]
 
-{ #category : #'weakness and ephemerality' }
+{ #category : 'weakness and ephemerality' }
 SpurGenerationScavenger >> processEphemerons [
 	"There are ephemerons to be scavenged.  Scavenge them and fire any whose keys are
 	 still in pastSpace and/or eden.  The unscavenged ephemerons in this cycle can only be
@@ -907,7 +909,7 @@ SpurGenerationScavenger >> processEphemerons [
 		 self fireEphemeronsOnEphemeronList]
 ]
 
-{ #category : #'weakness and ephemerality' }
+{ #category : 'weakness and ephemerality' }
 SpurGenerationScavenger >> processWeakSurvivor: weakObj [
 
 	"Process a weak survivor on the weakList.  Those of its fields
@@ -953,7 +955,7 @@ SpurGenerationScavenger >> processWeakSurvivor: weakObj [
 	^ hasYoungReferents
 ]
 
-{ #category : #'weakness and ephemerality' }
+{ #category : 'weakness and ephemerality' }
 SpurGenerationScavenger >> processWeaklings [
 
 	"Go through the remembered set and the weak list, nilling references to
@@ -991,19 +993,19 @@ SpurGenerationScavenger >> processWeaklings [
 		weakList := nil ]
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 SpurGenerationScavenger >> refCountToShrinkRT [
 
 	^ refCountToShrinkRT
 ]
 
-{ #category : #'remembered set' }
+{ #category : 'remembered set' }
 SpurGenerationScavenger >> referenceCountRememberedReferents: population [ 
 
 	manager getFromOldSpaceRememberedSet referenceCountRememberedReferents: population  maxRefCount: MaxRTRefCount 
 ]
 
-{ #category : #'remembered set' }
+{ #category : 'remembered set' }
 SpurGenerationScavenger >> rememberedSetFudge [
 	
 	<inline: true>
@@ -1013,7 +1015,7 @@ SpurGenerationScavenger >> rememberedSetFudge [
 	^ eden limit - eden start / manager wordSize // 1024.
 ]
 
-{ #category : #scavenger }
+{ #category : 'scavenger' }
 SpurGenerationScavenger >> scavenge: tenuringCriterion [
 	"The main routine, scavenge, scavenges young objects reachable from the roots (the stack zone
 	 and the rememberedTable).  It first scavenges the new objects immediately reachable from old
@@ -1041,7 +1043,7 @@ SpurGenerationScavenger >> scavenge: tenuringCriterion [
 	^self initFutureSpaceStart
 ]
 
-{ #category : #scavenger }
+{ #category : 'scavenger' }
 SpurGenerationScavenger >> scavengeFutureSurvivorSpaceStartingAt: initialAddress [
 	"scavengeFutureSurvivorSpaceStartingAt: does a depth-first traversal of the
 	 new objects starting at the one at initialAddress in futureSurvivorSpace."
@@ -1054,7 +1056,7 @@ SpurGenerationScavenger >> scavengeFutureSurvivorSpaceStartingAt: initialAddress
 		 self cCoerceSimple: (self scavengeReferentsOfFromOldSpace: obj) to: #void]
 ]
 
-{ #category : #scavenger }
+{ #category : 'scavenger' }
 SpurGenerationScavenger >> scavengeLoop [
 	"This is the inner loop of the main routine, scavenge.  It first scavenges the new objects immediately
 	 reachable from old ones. Then it scavenges those that are transitively reachable.  If this results in a
@@ -1114,7 +1116,7 @@ SpurGenerationScavenger >> scavengeLoop [
 		 self processEphemerons]] repeat
 ]
 
-{ #category : #scavenger }
+{ #category : 'scavenger' }
 SpurGenerationScavenger >> scavengeReferentsOf: referrer additionalTestingBlock: additionalTestingBlock [
 	"scavengeReferentsOf: referrer inspects all the pointers in referrer.  If
 	 any are new objects, it has them moved to FutureSurvivorSpace, and
@@ -1166,7 +1168,7 @@ SpurGenerationScavenger >> scavengeReferentsOf: referrer additionalTestingBlock:
 	^foundNewReferentOrIsWeakling
 ]
 
-{ #category : #scavenger }
+{ #category : 'scavenger' }
 SpurGenerationScavenger >> scavengeReferentsOfFromOldSpace: referrer [
 
 	<inline: #never>
@@ -1176,7 +1178,7 @@ SpurGenerationScavenger >> scavengeReferentsOfFromOldSpace: referrer [
 		additionalTestingBlock: [ :aReferrer :aReferent :foundNewReferentOrIsWeakling | "Do nothing" ].
 ]
 
-{ #category : #scavenger }
+{ #category : 'scavenger' }
 SpurGenerationScavenger >> scavengeReferentsOfFromPermSpace: referrer [
 
 	<var: #map type: #'VMMemoryMap *'>
@@ -1201,7 +1203,7 @@ SpurGenerationScavenger >> scavengeReferentsOfFromPermSpace: referrer [
 	^ 3 "Refers PermSpace only"
 ]
 
-{ #category : #scavenger }
+{ #category : 'scavenger' }
 SpurGenerationScavenger >> scavengeRememberedSetStartingAt: n [
 	"scavengeRememberedSetStartingAt: n traverses objects in the remembered
 	 set starting at the nth one.  If the object does not refer to any new objects, it
@@ -1239,7 +1241,7 @@ SpurGenerationScavenger >> scavengeRememberedSetStartingAt: n [
 	self assert: self noUnfiredEphemeronsAtEndOfRememberedSet.
 ]
 
-{ #category : #'weakness and ephemerality' }
+{ #category : 'weakness and ephemerality' }
 SpurGenerationScavenger >> scavengeUnfiredEphemeronsInRememberedSet [
 
 	"There are ephemerons to be scavenged in the remembered set.
@@ -1271,7 +1273,7 @@ SpurGenerationScavenger >> scavengeUnfiredEphemeronsInRememberedSet [
 	^ unfiredEphemeronsScavenged
 ]
 
-{ #category : #'weakness and ephemerality' }
+{ #category : 'weakness and ephemerality' }
 SpurGenerationScavenger >> scavengeUnfiredEphemeronsOnEphemeronList [
 	"There may be ephemerons to be scavenged on the ephemeronList.
 	 Scavenge any with unfired (live) keys, removing them from the
@@ -1312,7 +1314,7 @@ SpurGenerationScavenger >> scavengeUnfiredEphemeronsOnEphemeronList [
 	^unfiredEphemeronsScavenged
 ]
 
-{ #category : #tenuring }
+{ #category : 'tenuring' }
 SpurGenerationScavenger >> scavengerTenuringProportion [
 	<returnTypeC: #float>
 	^tenureThreshold >= pastSpace start
@@ -1320,7 +1322,7 @@ SpurGenerationScavenger >> scavengerTenuringProportion [
 		ifFalse: [0]
 ]
 
-{ #category : #tenuring }
+{ #category : 'tenuring' }
 SpurGenerationScavenger >> scavengerTenuringProportionToKeepInPastSpace: aProportion [
 	<var: 'aProportion' type: #double>
 	tenuringProportion := aProportion.
@@ -1329,7 +1331,7 @@ SpurGenerationScavenger >> scavengerTenuringProportionToKeepInPastSpace: aPropor
 							ifFalse: [self tenuringThresholdForSpace: pastSpace ]
 ]
 
-{ #category : #'weakness and ephemerality' }
+{ #category : 'weakness and ephemerality' }
 SpurGenerationScavenger >> setCorpseOffsetOf: corpse to: offset [
 	"Set the offset of the corpse's next corpse to offset.  Use the identityHash
 	 and format fields to construct a 27 bit offset through non-future newSpace
@@ -1355,12 +1357,12 @@ SpurGenerationScavenger >> setCorpseOffsetOf: corpse to: offset [
 						classIndex: manager isForwardedObjectClassIndexPun)]
 ]
 
-{ #category : #tenuring }
+{ #category : 'tenuring' }
 SpurGenerationScavenger >> setRawTenuringThreshold: threshold [
 	tenureThreshold := threshold
 ]
 
-{ #category : #'remembered set' }
+{ #category : 'remembered set' }
 SpurGenerationScavenger >> setRefCountToShrinkRT: population [
 	"Choose a refCount that should shrink the rt by at least  half.
 	 i.e. find the maximum reference count that half the population have at least."
@@ -1378,7 +1380,7 @@ SpurGenerationScavenger >> setRefCountToShrinkRT: population [
 	refCountToShrinkRT := i max: 0
 ]
 
-{ #category : #tenuring }
+{ #category : 'tenuring' }
 SpurGenerationScavenger >> shouldBeTenured: survivor [
 	"Answer if an object should be tenured.  The default policy tenuring policy
 	 is to use the tenuringThreshold to decide. If the survivors (measured in
@@ -1403,29 +1405,29 @@ SpurGenerationScavenger >> shouldBeTenured: survivor [
 		otherwise: [false]
 ]
 
-{ #category : #scavenger }
+{ #category : 'scavenger' }
 SpurGenerationScavenger >> shouldMournerBeTenured: survivor [
 	"Answer if an object in the mourn queue should be tenured.  If we're
 	 in the good times tenuring regime then copy to futureSpace, otherwise tenure."
 	^(tenureCriterion = TenureByAge and: [tenureThreshold = 0]) not
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 SpurGenerationScavenger >> statSurvivorCount [
 	^statSurvivorCount
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 SpurGenerationScavenger >> statTenures [
 	^statTenures
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 SpurGenerationScavenger >> statTenures: aValue [
 	statTenures := aValue
 ]
 
-{ #category : #'remembered set' }
+{ #category : 'remembered set' }
 SpurGenerationScavenger >> strategizeToLimitRememberedSet [
 	<inline: true>
 	(tenureCriterion = TenureByAge
@@ -1434,29 +1436,29 @@ SpurGenerationScavenger >> strategizeToLimitRememberedSet [
 		 self computeRefCountToShrinkRememberedSet]
 ]
 
-{ #category : #tenuring }
+{ #category : 'tenuring' }
 SpurGenerationScavenger >> tenuringClassIndex [
 	^tenuringClassIndex
 ]
 
-{ #category : #tenuring }
+{ #category : 'tenuring' }
 SpurGenerationScavenger >> tenuringClassIndex: anInteger [
 	tenuringClassIndex := anInteger
 ]
 
-{ #category : #tenuring }
+{ #category : 'tenuring' }
 SpurGenerationScavenger >> tenuringProportion [
 
 	^ tenuringProportion
 ]
 
-{ #category : #tenuring }
+{ #category : 'tenuring' }
 SpurGenerationScavenger >> tenuringThresholdForSpace: aSpace [
 
 	^ (aSpace spaceSize * (1.0 - tenuringProportion)) rounded + aSpace start
 ]
 
-{ #category : #logging }
+{ #category : 'logging' }
 SpurGenerationScavenger >> writeScavengeLog [
 	"Output the entire record."
 	<inline: #never>
