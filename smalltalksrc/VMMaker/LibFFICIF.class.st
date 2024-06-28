@@ -1,6 +1,6 @@
 Class {
-	#name : #LibFFICIF,
-	#superclass : #VMStructType,
+	#name : 'LibFFICIF',
+	#superclass : 'VMStructType',
 	#instVars : [
 		'address',
 		'libFFI',
@@ -11,16 +11,18 @@ Class {
 		'bytes',
 		'flags'
 	],
-	#category : #'VMMaker-FFI'
+	#category : 'VMMaker-FFI',
+	#package : 'VMMaker',
+	#tag : 'FFI'
 }
 
-{ #category : #translation }
+{ #category : 'translation' }
 LibFFICIF class >> filteredInstVarNames [
 	"Eliminate the obvious simulation-only inst vars"
 	^ super filteredInstVarNames copyWithoutAll: #(address libFFI)
 ]
 
-{ #category : #translation }
+{ #category : 'translation' }
 LibFFICIF class >> instVarNamesAndTypesForTranslationDo: aBinaryBlock [ 
 
 	self filteredInstVarNames do:
@@ -37,101 +39,101 @@ LibFFICIF class >> instVarNamesAndTypesForTranslationDo: aBinaryBlock [
 				} otherwise: [ self halt ])]
 ]
 
-{ #category : #translation }
+{ #category : 'translation' }
 LibFFICIF class >> printTypedefOn: aStream [
 
 	"This is already defined in ffi.h"
 ]
 
-{ #category : #translation }
+{ #category : 'translation' }
 LibFFICIF class >> structTypeName [
 	
 	^ 'ffi_cif'
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 LibFFICIF >> address [
 	<doNotGenerate>	
 	^ address
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 LibFFICIF >> address: anInteger [ 
 	<doNotGenerate>	
 	address := anInteger
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 LibFFICIF >> argTypeAt: anIndex [
 
 	^ self arg_types at: anIndex
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 LibFFICIF >> arg_types [
 
 	^ arg_types
 ]
 
-{ #category : #simulation }
+{ #category : 'simulation' }
 LibFFICIF >> argumentTypes: aCollectionOfTypes [ 
 	<doNotGenerate>
 	nargs := aCollectionOfTypes size.
 	arg_types := CArrayAccessor on: aCollectionOfTypes
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 LibFFICIF >> interpreter [
 	
 	<doNotGenerate>
 	^ libFFI interpreter
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 LibFFICIF >> libFFI: aLibFFI [ 
 	<doNotGenerate>	
 	libFFI := aLibFFI
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 LibFFICIF >> nargs [
 
 	^ nargs
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 LibFFICIF >> numberArguments [
 
 	^ self nargs
 ]
 
-{ #category : #testing }
+{ #category : 'testing' }
 LibFFICIF >> parametersToSmalltalk: parameters [ 
 	<doNotGenerate>		
 	^ arg_types getObject collectWithIndex: [ :type :index | 
 		type marshallToSmalltalk: (parameters at: index - 1) ].
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 LibFFICIF >> returnType [ 
 	<inline: #always>
 	
 	^ self rtype
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 LibFFICIF >> returnType: aType [ 
 	<inline: #always>
 	
 	self rtype: aType
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 LibFFICIF >> rtype [
 	^ rtype
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 LibFFICIF >> rtype: aLibFFIType [ 
 	rtype := aLibFFIType
 ]

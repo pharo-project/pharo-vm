@@ -1,27 +1,29 @@
 Class {
-	#name : #Spur64BitMMLESimulator,
-	#superclass : #Spur64BitMemoryManager,
+	#name : 'Spur64BitMMLESimulator',
+	#superclass : 'Spur64BitMemoryManager',
 	#traits : 'TVMSpurMemoryManagerSimulator',
 	#classTraits : 'TVMSpurMemoryManagerSimulator classTrait',
 	#instVars : [
 		'parent',
 		'bootstrapping'
 	],
-	#category : #'VMMaker-SpurMemoryManagerSimulation'
+	#category : 'VMMaker-SpurMemoryManagerSimulation',
+	#package : 'VMMaker',
+	#tag : 'SpurMemoryManagerSimulation'
 }
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 Spur64BitMMLESimulator >> bootstrapping [
 	^bootstrapping
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 Spur64BitMMLESimulator >> bootstrapping: aBoolean [
 	bootstrapping := aBoolean.
 	segmentManager initForBootstrap
 ]
 
-{ #category : #'memory access' }
+{ #category : 'memory access' }
 Spur64BitMMLESimulator >> byteAt: byteAddress [
 	| lowBits long32 |
 	lowBits := byteAddress bitAnd: 3.
@@ -29,7 +31,7 @@ Spur64BitMMLESimulator >> byteAt: byteAddress [
 	^(long32 bitShift: -8 * lowBits) bitAnd: 16rFF
 ]
 
-{ #category : #'memory access' }
+{ #category : 'memory access' }
 Spur64BitMMLESimulator >> byteAt: byteAddress put: byte [
 	| lowBits long32 longAddress mask value |
 	lowBits := byteAddress bitAnd: 3.
@@ -41,7 +43,7 @@ Spur64BitMMLESimulator >> byteAt: byteAddress put: byte [
 	^byte
 ]
 
-{ #category : #'memory access' }
+{ #category : 'memory access' }
 Spur64BitMMLESimulator >> byteAtPointer: pointer [
 	"This gets implemented by Macros in C, where its types will also be checked.
 	 pointer is a raw address."
@@ -49,17 +51,17 @@ Spur64BitMMLESimulator >> byteAtPointer: pointer [
 	^self byteAt: pointer
 ]
 
-{ #category : #'memory access' }
+{ #category : 'memory access' }
 Spur64BitMMLESimulator >> byteSwapped32IfBigEndian: w [
 	^w bitAnd: 16rFFFFFFFF
 ]
 
-{ #category : #'memory access' }
+{ #category : 'memory access' }
 Spur64BitMMLESimulator >> byteSwapped64IfBigEndian: w [
 	^w bitAnd: 16rFFFFFFFFFFFFFFFF
 ]
 
-{ #category : #'debug support' }
+{ #category : 'debug support' }
 Spur64BitMMLESimulator >> checkHeapIntegrity: excludeUnmarkedObjs classIndicesShouldBeValid: classIndicesShouldBeValid [
 	"Almost all of the time spent in SourMemoryManager>>checkHeapIntegrity:classIndicesShouldBeValid: used to go into the asserts in fetchPointer:ofObject: in the simulator class overrides.
 	 Since we know here the indices used are valid we temporarily remove them to claw back that poerformance."
@@ -67,23 +69,23 @@ Spur64BitMMLESimulator >> checkHeapIntegrity: excludeUnmarkedObjs classIndicesSh
 		[super checkHeapIntegrity: excludeUnmarkedObjs classIndicesShouldBeValid: classIndicesShouldBeValid]
 ]
 
-{ #category : #'debug support' }
+{ #category : 'debug support' }
 Spur64BitMMLESimulator >> eek [
 	self halt
 ]
 
-{ #category : #'memory access' }
+{ #category : 'memory access' }
 Spur64BitMMLESimulator >> endianness [
 	^#little
 ]
 
-{ #category : #'float primitives' }
+{ #category : 'float primitives' }
 Spur64BitMMLESimulator >> fetchFloatAt: floatBitsAddress into: aFloat [
 	aFloat at: 2 put: (self uint32AtPointer: floatBitsAddress).
 	aFloat at: 1 put: (self uint32AtPointer: floatBitsAddress+4)
 ]
 
-{ #category : #'as yet unclassified' }
+{ #category : 'as yet unclassified' }
 Spur64BitMMLESimulator >> fetchPointer: fieldIndex ofObject: objOop [
 	self assert: (self isForwarded: objOop) not.
 	self assert: (fieldIndex >= 0 and: [fieldIndex < (self numSlotsOfAny: objOop)
@@ -91,12 +93,12 @@ Spur64BitMMLESimulator >> fetchPointer: fieldIndex ofObject: objOop [
 	^super fetchPointer: fieldIndex ofObject: objOop
 ]
 
-{ #category : #'spur bootstrap' }
+{ #category : 'spur bootstrap' }
 Spur64BitMMLESimulator >> freeLists [
 	^freeLists
 ]
 
-{ #category : #'growing/shrinking memory' }
+{ #category : 'growing/shrinking memory' }
 Spur64BitMMLESimulator >> growOldSpaceByAtLeast: minAmmount [
 	"Attempt to grow memory by at least minAmmount.
 	 Answer the size of the new segment, or nil if the attempt failed.
@@ -105,21 +107,21 @@ Spur64BitMMLESimulator >> growOldSpaceByAtLeast: minAmmount [
 		[super growOldSpaceByAtLeast: minAmmount]
 ]
 
-{ #category : #'memory access' }
+{ #category : 'memory access' }
 Spur64BitMMLESimulator >> halfWordHighInLong32: long32 [
 	"Used by Balloon"
 
 	^long32 bitAnd: 16rFFFF
 ]
 
-{ #category : #'memory access' }
+{ #category : 'memory access' }
 Spur64BitMMLESimulator >> halfWordLowInLong32: long32 [
 	"Used by Balloon"
 
 	^long32 bitShift: -16
 ]
 
-{ #category : #'header format' }
+{ #category : 'header format' }
 Spur64BitMMLESimulator >> headerForSlots: numSlots format: formatField classIndex: classIndex [
 	"The header format in LSB is
 	 MSB:	| 2 bits				|
@@ -135,12 +137,12 @@ Spur64BitMMLESimulator >> headerForSlots: numSlots format: formatField classInde
 	^super headerForSlots: numSlots format: formatField classIndex: classIndex
 ]
 
-{ #category : #'debug support' }
+{ #category : 'debug support' }
 Spur64BitMMLESimulator >> heapMapAtWord: address [
 	^heapMap heapMapAtWord: address
 ]
 
-{ #category : #compaction }
+{ #category : 'compaction' }
 Spur64BitMMLESimulator >> inSortedFreeListLink: freeChunk to: nextFree given: prevFree [
 	"thisContext sender selector = #sweepToCoallesceFreeSpaceForPigCompactFrom: ifTrue:
 		[| pit |
@@ -157,29 +159,29 @@ Spur64BitMMLESimulator >> inSortedFreeListLink: freeChunk to: nextFree given: pr
 	super inSortedFreeListLink: freeChunk to: nextFree given: prevFree
 ]
 
-{ #category : #initialization }
+{ #category : 'initialization' }
 Spur64BitMMLESimulator >> initialize [
 	super initialize.
 	bootstrapping := false
 ]
 
-{ #category : #'memory access' }
+{ #category : 'memory access' }
 Spur64BitMMLESimulator >> intAt: byteAddress [ 
 	^self long32At: byteAddress
 ]
 
-{ #category : #'memory access' }
+{ #category : 'memory access' }
 Spur64BitMMLESimulator >> intAt: byteAddress put: a64BitValue [
 	^self long32At: byteAddress put: (a64BitValue bitAnd: 16rFFFFFFFF)
 ]
 
-{ #category : #'memory access' }
+{ #category : 'memory access' }
 Spur64BitMMLESimulator >> long32At: byteAddress [
 
 	^ memoryManager uint32AtPointer: byteAddress
 ]
 
-{ #category : #'memory access' }
+{ #category : 'memory access' }
 Spur64BitMMLESimulator >> long32At: byteAddress put: a32BitValue [
 	"Note: Adjusted for Smalltalk's 1-based array indexing."
 	"(byteAddress = 16r183FB00 and: [a32BitValue = 16r3FFFFC]) ifTrue:
@@ -189,7 +191,7 @@ Spur64BitMMLESimulator >> long32At: byteAddress put: a32BitValue [
 	^ memoryManager uint32AtPointer: byteAddress put: a32BitValue
 ]
 
-{ #category : #'memory access' }
+{ #category : 'memory access' }
 Spur64BitMMLESimulator >> long64At: byteAddress [
 	"memory is a Bitmap, a 32-bit indexable array of bits"
 	| hiWord loWord |
@@ -201,7 +203,7 @@ Spur64BitMMLESimulator >> long64At: byteAddress [
 		ifFalse: [(hiWord bitShift: 32) + loWord]
 ]
 
-{ #category : #'memory access' }
+{ #category : 'memory access' }
 Spur64BitMMLESimulator >> long64At: byteAddress put: a64BitValue [
 	byteAddress \\ 8 ~= 0 ifTrue: [self unalignedAccessError].
 	self
@@ -210,21 +212,21 @@ Spur64BitMMLESimulator >> long64At: byteAddress put: a64BitValue [
 	^a64BitValue
 ]
 
-{ #category : #'memory access' }
+{ #category : 'memory access' }
 Spur64BitMMLESimulator >> longAt: byteAddress [
 	"Answer the 64-bit word at byteAddress which must be 0 mod 4."
 
 	^self long64At: byteAddress
 ]
 
-{ #category : #'memory access' }
+{ #category : 'memory access' }
 Spur64BitMMLESimulator >> longAt: byteAddress put: a64BitValue [
 	"Store the 64-bit value at byteAddress which must be 0 mod 8."
 	"byteAddress = 16r43C790 ifTrue: [self halt]."
 	^self long64At: byteAddress put: a64BitValue
 ]
 
-{ #category : #compaction }
+{ #category : 'compaction' }
 Spur64BitMMLESimulator >> moveARunOfObjectsStartingAt: startAddress upTo: limit [
 	| result |.
 	"self checkTraversableSortedFreeList."
@@ -233,38 +235,38 @@ Spur64BitMMLESimulator >> moveARunOfObjectsStartingAt: startAddress upTo: limit 
 	^result
 ]
 
-{ #category : #initialization }
+{ #category : 'initialization' }
 Spur64BitMMLESimulator >> nextLongFrom: aStream [
 	"Read a 32- or 64-bit quantity from the given (binary) stream."
 
 	^aStream nextLittleEndianNumber: self wordSize
 ]
 
-{ #category : #initialization }
+{ #category : 'initialization' }
 Spur64BitMMLESimulator >> nextWord32From: aStream [
 	"Read a 32-bit quantity from the given (binary) stream."
 
 	^aStream nextLittleEndianNumber: 4
 ]
 
-{ #category : #'spur bootstrap' }
+{ #category : 'spur bootstrap' }
 Spur64BitMMLESimulator >> numClassTablePages [
 	^numClassTablePages
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 Spur64BitMMLESimulator >> parent [
 
 	^ parent
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 Spur64BitMMLESimulator >> parent: anObject [
 
 	parent := anObject
 ]
 
-{ #category : #'debug support' }
+{ #category : 'debug support' }
 Spur64BitMMLESimulator >> runLeakCheckerFor: gcModes excludeUnmarkedObjs: excludeUnmarkedObjs classIndicesShouldBeValid: classIndicesShouldBeValid [
 
 	(gcModes anyMask: checkForLeaks) ifTrue: [ 
@@ -277,7 +279,7 @@ Spur64BitMMLESimulator >> runLeakCheckerFor: gcModes excludeUnmarkedObjs: exclud
 		  classIndicesShouldBeValid: classIndicesShouldBeValid
 ]
 
-{ #category : #'gc - global' }
+{ #category : 'gc - global' }
 Spur64BitMMLESimulator >> scavengingGCTenuringIf: tenuringCriterion [
 	"If we're /not/ a clone, clone the VM and push it over the cliff.
 	 If it survives, destroy the clone and continue.  We should be OK until next time."
@@ -290,7 +292,7 @@ Spur64BitMMLESimulator >> scavengingGCTenuringIf: tenuringCriterion [
 	^super scavengingGCTenuringIf: tenuringCriterion
 ]
 
-{ #category : #'memory access' }
+{ #category : 'memory access' }
 Spur64BitMMLESimulator >> shortAt: byteAddress [
     "Return the half-word at byteAddress which must be even."
 	| lowBits long |
@@ -301,7 +303,7 @@ Spur64BitMMLESimulator >> shortAt: byteAddress [
 		ifFalse: [ long bitAnd: 16rFFFF ]
 ]
 
-{ #category : #'memory access' }
+{ #category : 'memory access' }
 Spur64BitMMLESimulator >> shortAt: byteAddress put: a16BitValue [
     "Return the half-word at byteAddress which must be even."
 	| lowBits long longAddress |
@@ -319,13 +321,13 @@ Spur64BitMMLESimulator >> shortAt: byteAddress put: a16BitValue [
 	^a16BitValue
 ]
 
-{ #category : #'float primitives' }
+{ #category : 'float primitives' }
 Spur64BitMMLESimulator >> storeFloatAt: floatBitsAddress from: aFloat [
 	self long32At: floatBitsAddress put: (aFloat at: 2).
 	self long32At: floatBitsAddress+4 put: (aFloat at: 1)
 ]
 
-{ #category : #'memory access' }
+{ #category : 'memory access' }
 Spur64BitMMLESimulator >> vmEndianness [
 	"1 = big, 0 = little"
 	^0

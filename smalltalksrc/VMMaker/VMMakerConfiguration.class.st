@@ -1,90 +1,92 @@
 Class {
-	#name : #VMMakerConfiguration,
-	#superclass : #Object,
+	#name : 'VMMakerConfiguration',
+	#superclass : 'Object',
 	#classVars : [
 		'DirNames'
 	],
-	#category : #'VMMaker-Slang'
+	#category : 'VMMaker-Slang',
+	#package : 'VMMaker',
+	#tag : 'Slang'
 }
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 VMMakerConfiguration class >> baseClass [
 
 	^ VMClass
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 VMMakerConfiguration class >> baseCogitClass [
 
 	^ Cogit
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 VMMakerConfiguration class >> baseInterpreterClass [
 
 	^ InterpreterPrimitives
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 VMMakerConfiguration class >> baseObjectMemoryManagerClass [
 
 	^ SpurMemoryManager
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 VMMakerConfiguration class >> baseStructClass [
 	
 	^ VMStructType
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 VMMakerConfiguration class >> bytesPerOop [
 
 	^ self baseClass bytesPerOop
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 VMMakerConfiguration class >> bytesPerOop: anInteger [
 
 	^ self baseClass bytesPerOop: anInteger
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 VMMakerConfiguration class >> bytesPerWord [
 	
 	^ self baseClass bytesPerWord
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 VMMakerConfiguration class >> bytesPerWord: anInteger [
 
 	^ self baseClass bytesPerWord: anInteger
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 VMMakerConfiguration class >> constantClass [
 	"The basic constant pool for full generation"
 	^ self baseClass constantClass
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 VMMakerConfiguration class >> coreVMDirName [
 	^DirNames at: #coreVMDir
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 VMMakerConfiguration class >> coreVMHeadersDirName [
 
 	^ DirNames at: #coreVMHeadersDir ifAbsent: [ self coreVMDirName ]
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 VMMakerConfiguration class >> defaultInterpreterClass [
 
 	^ StackInterpreter
 ]
 
-{ #category : #configurations }
+{ #category : 'configurations' }
 VMMakerConfiguration class >> generateConfiguration [
 	"VMMaker generateConfiguration"
 	| configCategoryName selectors |
@@ -103,7 +105,7 @@ VMMakerConfiguration class >> generateConfiguration [
 		self perform: choice]
 ]
 
-{ #category : #configurations }
+{ #category : 'configurations' }
 VMMakerConfiguration class >> generateSqueakSpurCog64VM [
 	"No primitives since we can use those for the Cog VM"
 	^VMMaker
@@ -117,7 +119,7 @@ VMMakerConfiguration class >> generateSqueakSpurCog64VM [
 			configuration: self
 ]
 
-{ #category : #configurations }
+{ #category : 'configurations' }
 VMMakerConfiguration class >> generateSqueakSpurCogSista64VM [
 	^VMMaker
 		generate: CoInterpreter
@@ -131,7 +133,7 @@ VMMakerConfiguration class >> generateSqueakSpurCogSista64VM [
 		configuration: self
 ]
 
-{ #category : #configurations }
+{ #category : 'configurations' }
 VMMakerConfiguration class >> generateSqueakSpurCogSistaVM [
 	"No primitives since we can use those for the Cog VM"
 	^VMMaker
@@ -146,7 +148,7 @@ VMMakerConfiguration class >> generateSqueakSpurCogSistaVM [
 		configuration: self
 ]
 
-{ #category : #configurations }
+{ #category : 'configurations' }
 VMMakerConfiguration class >> generateSqueakSpurCogVM [
 	"No primitives since we can use those for the Cog VM"
 	^VMMaker
@@ -160,7 +162,7 @@ VMMakerConfiguration class >> generateSqueakSpurCogVM [
 		configuration: self
 ]
 
-{ #category : #configurations }
+{ #category : 'configurations' }
 VMMakerConfiguration class >> generateSqueakSpurRegisterCogVM [
 	"No primitives since we can use those for the Cog VM"
 	^VMMaker
@@ -173,7 +175,7 @@ VMMakerConfiguration class >> generateSqueakSpurRegisterCogVM [
 		configuration: self
 ]
 
-{ #category : #initialisation }
+{ #category : 'initialisation' }
 VMMakerConfiguration class >> initialize [
 	"VMMaker initialize"
 	DirNames := Dictionary new.
@@ -202,7 +204,7 @@ VMMakerConfiguration class >> initialize [
 						ifTrue: [DirNames at: #sourceTree put: path. ^self]]])
 ]
 
-{ #category : #initialisation }
+{ #category : 'initialisation' }
 VMMakerConfiguration class >> initializeForPharo [
 	"VMMaker initialize"
 	DirNames := Dictionary new.
@@ -214,51 +216,51 @@ VMMakerConfiguration class >> initializeForPharo [
 		at: #sourceDir put: 'src'
 ]
 
-{ #category : #initialize }
+{ #category : 'initialize' }
 VMMakerConfiguration class >> initializeForPlugins: options [ 
 	
 	VMClass initializeForPlugins: options 
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 VMMakerConfiguration class >> interpreterPluginClass [
 
 	^ InterpreterPlugin
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 VMMakerConfiguration class >> interpreterProxyClass [
 
 	^ InterpreterProxy
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 VMMakerConfiguration class >> platformsDirName [
 	^DirNames at: #platformsDir
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 VMMakerConfiguration class >> pluginsDirName [
 	^DirNames at: #pluginsDir
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 VMMakerConfiguration class >> referenceObjectMemoryClass [
 	"Define the class from which to take methods to define the interpreter proxy imports."
 	^ Spur32BitMemoryManager
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 VMMakerConfiguration class >> sourceDirName [
 	^DirNames at: #sourceDir
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 VMMakerConfiguration class >> sourceTree [
 	^DirNames at: #sourceTree ifAbsent: [ FileSystem workingDirectory pathString ]
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 VMMakerConfiguration class >> unusedConstantNames [
 	"Don't generate any defines for the externally defined constants,
 	 STACKVM, COGVM et al, unless they're actually used."

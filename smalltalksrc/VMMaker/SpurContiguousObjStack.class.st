@@ -1,13 +1,15 @@
 Class {
-	#name : #SpurContiguousObjStack,
-	#superclass : #SpurNewSpaceSpace,
+	#name : 'SpurContiguousObjStack',
+	#superclass : 'SpurNewSpaceSpace',
 	#instVars : [
 		'top'
 	],
-	#category : #'VMMaker-SpurMemoryManager'
+	#category : 'VMMaker-SpurMemoryManager',
+	#package : 'VMMaker',
+	#tag : 'SpurMemoryManager'
 }
 
-{ #category : #printing }
+{ #category : 'printing' }
 SpurContiguousObjStack >> printOn: aStream [
 	<doNotGenerate>
 	super printOn: aStream.
@@ -15,14 +17,14 @@ SpurContiguousObjStack >> printOn: aStream [
 		[aStream nextPutAll: ' top: '; nextPutAll: top hex]
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 SpurContiguousObjStack >> top [
 	"Answer the value of top"
 
 	^ top
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 SpurContiguousObjStack >> top: anObject [
 	"Set the value of top"
 

@@ -2,8 +2,8 @@
 I am an abstract superclass for object representations whose job it is to generate abstract instructions for accessing objects.  It is hoped that this level of indirection between the Cogit code generator and object access makes it easier to adapt the code generator to different garbage collectors, object representations and languages.
 "
 Class {
-	#name : #CogObjectRepresentation,
-	#superclass : #VMClass,
+	#name : 'CogObjectRepresentation',
+	#superclass : 'VMClass',
 	#instVars : [
 		'cogit',
 		'methodZone',
@@ -30,75 +30,77 @@ Class {
 		'VMObjectIndices',
 		'VMStackFrameOffsets'
 	],
-	#category : #'VMMaker-JIT'
+	#category : 'VMMaker-JIT',
+	#package : 'VMMaker',
+	#tag : 'JIT'
 }
 
-{ #category : #'instance creation' }
+{ #category : 'instance creation' }
 CogObjectRepresentation class >> forCogit: aCogit methodZone: methodZone [
 	^self new setCogit: aCogit methodZone: methodZone
 ]
 
-{ #category : #translation }
+{ #category : 'translation' }
 CogObjectRepresentation class >> implicitReturnTypeFor: aSelector [
 	"Answer the return type for methods that don't have an explicit return."
 	^#void
 ]
 
-{ #category : #initialization }
+{ #category : 'initialization' }
 CogObjectRepresentation class >> initializeMiscConstants [
 	"Override to avoid inheriting (and hence repeating) VMClass class>>initializeMiscConstants.
 	 Subclasses that have misc constants to initialize will override further."
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 CogObjectRepresentation class >> numTrampolines [
 	^1 "ceStoreCheckTrampoline"
 ]
 
-{ #category : #translation }
+{ #category : 'translation' }
 CogObjectRepresentation class >> typeForSelf [
 	^#implicit
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 CogObjectRepresentation class >> wordSize [
 	^4
 ]
 
-{ #category : #'garbage collection' }
+{ #category : 'garbage collection' }
 CogObjectRepresentation >> allYoungObjectsAgeInFullGC [
 	^self subclassResponsibility
 ]
 
-{ #category : #'sista support' }
+{ #category : 'sista support' }
 CogObjectRepresentation >> allocateCounters: nCounters [
 	self subclassResponsibility
 ]
 
-{ #category : #testing }
+{ #category : 'testing' }
 CogObjectRepresentation >> canPinObjects [
 	"Answer if the memory manager supports pinned objects."
 	^false
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 CogObjectRepresentation >> ceStoreCheckTrampoline: anAddress [
 	<doNotGenerate>
 	ceStoreCheckTrampoline := anAddress
 ]
 
-{ #category : #'garbage collection' }
+{ #category : 'garbage collection' }
 CogObjectRepresentation >> checkValidObjectReference: anOop [
 	^(objectMemory isImmediate: anOop) not
 	   and: [(objectMemory heapMapAtWord: (self pointerForOop: anOop)) ~= 0]
 ]
 
-{ #category : #'in-line cacheing' }
+{ #category : 'in-line cacheing' }
 CogObjectRepresentation >> classForInlineCacheTag: classIndex [
 	^self subclassResponsibility
 ]
 
-{ #category : #'bytecode generator support' }
+{ #category : 'bytecode generator support' }
 CogObjectRepresentation >> createsArraysInline [
 	"Answer if the object representation allocates arrays inline.  By
 	 default answer false. Better code can be generated when creating
@@ -106,7 +108,7 @@ CogObjectRepresentation >> createsArraysInline [
 	^false
 ]
 
-{ #category : #'bytecode generator support' }
+{ #category : 'bytecode generator support' }
 CogObjectRepresentation >> createsClosuresInline [
 	"Answer if the object representation allocates closures inline.  By
 	 default answer false. Better code can be generated when creating
@@ -114,20 +116,20 @@ CogObjectRepresentation >> createsClosuresInline [
 	^false
 ]
 
-{ #category : #compilation }
+{ #category : 'compilation' }
 CogObjectRepresentation >> ensureNoForwardedLiteralsIn: aMethodObj [
 	"Ensure there are no forwarded literals in the argument.
 	 By default this is a noop.  Subclasses redefine as necessary."
 	<inline: true>
 ]
 
-{ #category : #'sista support' }
+{ #category : 'sista support' }
 CogObjectRepresentation >> freeCounters: theCounters [
 	<var: #theCounters type: #usqInt>
 	self subclassResponsibility
 ]
 
-{ #category : #'compile abstract instructions' }
+{ #category : 'compile abstract instructions' }
 CogObjectRepresentation >> genCheckObjectPosition: destReg scratchReg: scratchReg valueReg: valueReg results: resultBlock [ 
 
 	| isDestYoung isOldAndOld isPermAndPerm recvIsPerm exit valueIsMachineCode| 
@@ -159,34 +161,34 @@ CogObjectRepresentation >> genCheckObjectPosition: destReg scratchReg: scratchRe
 	^ 0 
 ]
 
-{ #category : #'compile abstract instructions' }
+{ #category : 'compile abstract instructions' }
 CogObjectRepresentation >> genClearAndSetSmallIntegerTagsIn: scratchReg [
 	"Set the SmallInteger tag bits when the tag bits may be filled with garbage."
 	self subclassResponsibility
 ]
 
-{ #category : #'compile abstract instructions' }
+{ #category : 'compile abstract instructions' }
 CogObjectRepresentation >> genCmpClassFloatCompactIndexR: reg [
 	^cogit CmpCq: ClassFloatCompactIndex R: reg
 ]
 
-{ #category : #'compile abstract instructions' }
+{ #category : 'compile abstract instructions' }
 CogObjectRepresentation >> genCmpClassMethodContextCompactIndexR: reg [
 	^cogit CmpCq: ClassMethodContextCompactIndex R: reg
 ]
 
-{ #category : #'sista support' }
+{ #category : 'sista support' }
 CogObjectRepresentation >> genConvertSmallFloatToSmallFloatHashAsIntegerInReg: reg scratch: scratch [
 	^EncounteredUnknownBytecode
 ]
 
-{ #category : #'primitive generators' }
+{ #category : 'primitive generators' }
 CogObjectRepresentation >> genConvertSmallIntegerToIntegerInReg: aRegister [
 
 	self subclassResponsibility
 ]
 
-{ #category : #'bytecode generator support' }
+{ #category : 'bytecode generator support' }
 CogObjectRepresentation >> genCreateClosureAt: bcpc numArgs: numArgs numCopied: numCopied contextNumArgs: ctxtNumArgs large: isLargeCtxt inBlock: isInBlock [
 	"Create a closure with the given startpc, numArgs and numCopied
 	 within a context with ctxtNumArgs, large if isLargeCtxt that is in a
@@ -194,13 +196,13 @@ CogObjectRepresentation >> genCreateClosureAt: bcpc numArgs: numArgs numCopied: 
 	self subclassResponsibility
 ]
 
-{ #category : #'bytecode generator support' }
+{ #category : 'bytecode generator support' }
 CogObjectRepresentation >> genCreateFullClosure: compiledBlock numArgs: numArgs numCopied: numCopied ignoreContext: ignoreContext contextNumArgs: contextNumArgs large: contextIsLarge inBlock: contextIsBlock [
 	"Create a full closure"
 	self subclassResponsibility
 ]
 
-{ #category : #'primitive generators' }
+{ #category : 'primitive generators' }
 CogObjectRepresentation >> genDoubleArithmetic: arithmeticOperator preOpCheck: preOpCheckOrNil [
 	<option: #DPFPReg0>
 	<var: #preOpCheckOrNil declareC: 'AbstractInstruction *(*preOpCheckOrNil)(int rcvrReg, int argReg)'>
@@ -247,7 +249,7 @@ CogObjectRepresentation >> genDoubleArithmetic: arithmeticOperator preOpCheck: p
 	^0
 ]
 
-{ #category : #'primitive generators' }
+{ #category : 'primitive generators' }
 CogObjectRepresentation >> genDoubleComparison: jumpOpcodeGenerator invert: invertComparison [
 	<option: #DPFPReg0>
 	<var: #jumpOpcodeGenerator declareC: 'AbstractInstruction * NoDbgRegParms (*jumpOpcodeGenerator)(void *)'>
@@ -287,7 +289,7 @@ CogObjectRepresentation >> genDoubleComparison: jumpOpcodeGenerator invert: inve
 	^CompletePrimitive
 ]
 
-{ #category : #'compile abstract instructions' }
+{ #category : 'compile abstract instructions' }
 CogObjectRepresentation >> genEnsureObjInRegNotForwarded: reg scratchReg: scratch [
 	"Make sure that the object in reg is not forwarded.  By default there is
 	 nothing to do.  Subclasses for memory managers that forward will override."
@@ -295,7 +297,7 @@ CogObjectRepresentation >> genEnsureObjInRegNotForwarded: reg scratchReg: scratc
 	^0
 ]
 
-{ #category : #'compile abstract instructions' }
+{ #category : 'compile abstract instructions' }
 CogObjectRepresentation >> genEnsureOopInRegNotForwarded: reg scratchReg: scratch [
 	"Make sure that the oop in reg is not forwarded.  By default there is
 	 nothing to do.  Subclasses for memory managers that forward will override."
@@ -303,7 +305,7 @@ CogObjectRepresentation >> genEnsureOopInRegNotForwarded: reg scratchReg: scratc
 	^0
 ]
 
-{ #category : #'compile abstract instructions' }
+{ #category : 'compile abstract instructions' }
 CogObjectRepresentation >> genEnsureOopInRegNotForwarded: reg scratchReg: scratch ifForwarder: fwdJumpTarget ifNotForwarder: nonFwdJumpTargetOrZero [
 	"Make sure that the oop in reg is not forwarded.  By default there is
 	 nothing to do.  Subclasses for memory managers that forward will override."
@@ -311,7 +313,7 @@ CogObjectRepresentation >> genEnsureOopInRegNotForwarded: reg scratchReg: scratc
 	^0
 ]
 
-{ #category : #'compile abstract instructions' }
+{ #category : 'compile abstract instructions' }
 CogObjectRepresentation >> genEnsureOopInRegNotForwarded: reg scratchReg: scratch jumpBackTo: instruction [
 	"Make sure that the oop in reg is not forwarded.  By default there is
 	 nothing to do.  Subclasses for memory managers that forward will override."
@@ -320,7 +322,7 @@ CogObjectRepresentation >> genEnsureOopInRegNotForwarded: reg scratchReg: scratc
 	^0
 ]
 
-{ #category : #'compile abstract instructions' }
+{ #category : 'compile abstract instructions' }
 CogObjectRepresentation >> genEnsureOopInRegNotForwarded: reg scratchReg: scratch updatingMw: offset r: baseReg [
 	"Make sure that the oop in reg is not forwarded, updating the field at offset from baseReg.
 	 By default there is nothing to do.  Subclasses for memory managers that forward will override."
@@ -328,7 +330,7 @@ CogObjectRepresentation >> genEnsureOopInRegNotForwarded: reg scratchReg: scratc
 	^0
 ]
 
-{ #category : #'compile abstract instructions' }
+{ #category : 'compile abstract instructions' }
 CogObjectRepresentation >> genEnsureOopInRegNotForwarded: reg scratchReg: scratch updatingSlot: index in: objReg [
 	"Make sure that the oop in reg is not forwarded, updating the slot in objReg with the value."
 	<inline: true>
@@ -340,26 +342,26 @@ CogObjectRepresentation >> genEnsureOopInRegNotForwarded: reg scratchReg: scratc
 		r: objReg
 ]
 
-{ #category : #'primitive generators' }
+{ #category : 'primitive generators' }
 CogObjectRepresentation >> genFastPrimFail [
 	<doNotGenerate>
 	^cogit genFastPrimFail
 ]
 
-{ #category : #'bytecode generator support' }
+{ #category : 'bytecode generator support' }
 CogObjectRepresentation >> genGetActiveContextNumArgs: numArgs large: isLargeContext inBlock: isInBlock [
 	"Get the active context into ReceiverResultReg, creating it if necessary."
 	self subclassResponsibility
 ]
 
-{ #category : #'compile abstract instructions' }
+{ #category : 'compile abstract instructions' }
 CogObjectRepresentation >> genGetFormatOf: srcReg into: destReg [
 	"Get the format field of the object in srcReg into destReg.
 	 srcReg may equal destReg."
 	self subclassResponsibility
 ]
 
-{ #category : #'compile abstract instructions' }
+{ #category : 'compile abstract instructions' }
 CogObjectRepresentation >> genGetInlineCacheClassTagFrom: sourceReg into: destReg forEntry: forEntry [
 	"Extract the inline cache tag for the object in sourceReg into destReg. The inline cache tag
 	 for a given object is the value loaded in inline caches to distinguish objects of different
@@ -369,7 +371,7 @@ CogObjectRepresentation >> genGetInlineCacheClassTagFrom: sourceReg into: destRe
 	self subclassResponsibility
 ]
 
-{ #category : #'compile abstract instructions' }
+{ #category : 'compile abstract instructions' }
 CogObjectRepresentation >> genGetMethodHeaderOf: methodReg into: headerReg scratch: scratchReg [
 	"Get the method header (first word) of a CompiledMethod into headerReg.
 	 Deal with the method possibly being cogged."
@@ -382,14 +384,14 @@ CogObjectRepresentation >> genGetMethodHeaderOf: methodReg into: headerReg scrat
 	^0
 ]
 
-{ #category : #'compile abstract instructions' }
+{ #category : 'compile abstract instructions' }
 CogObjectRepresentation >> genGetNumSlotsOf: srcReg into: destReg [
 	"Get the size in word-sized slots of the object in srcReg into destReg.
 	 srcReg may equal destReg."
 	self subclassResponsibility
 ]
 
-{ #category : #'compile abstract instructions' }
+{ #category : 'compile abstract instructions' }
 CogObjectRepresentation >> genJumpImmediate: aRegister [
 	"Generate a compare and branch to test if aRegister contains an immediate.
 	 Answer the jump."
@@ -398,14 +400,14 @@ CogObjectRepresentation >> genJumpImmediate: aRegister [
 	
 ]
 
-{ #category : #'compile abstract instructions' }
+{ #category : 'compile abstract instructions' }
 CogObjectRepresentation >> genJumpIsSmallIntegerValue: aRegister scratch: scratchReg [
 	"Generate a test for aRegister containing an integer value in the SmallInteger range, and a jump if so, answering the jump."
 	<returnTypeC: #'AbstractInstruction *'>
 	self subclassResponsibility
 ]
 
-{ #category : #'compile abstract instructions' }
+{ #category : 'compile abstract instructions' }
 CogObjectRepresentation >> genJumpNotImmediate: aRegister [
 	"Generate a compare and branch to test if aRegister contains a non-immediate.
 	 Answer the jump."
@@ -414,7 +416,7 @@ CogObjectRepresentation >> genJumpNotImmediate: aRegister [
 	
 ]
 
-{ #category : #'compile abstract instructions' }
+{ #category : 'compile abstract instructions' }
 CogObjectRepresentation >> genJumpNotSmallInteger: aRegister [
 	"Generate a compare and branch to test if aRegister contains other than a SmallInteger.
 	 Answer the jump, or UnimplementedOperation if this cannot be done with a single register."
@@ -423,7 +425,7 @@ CogObjectRepresentation >> genJumpNotSmallInteger: aRegister [
 	^cogit cCoerceSimple: UnimplementedOperation to: #'AbstractInstruction *'
 ]
 
-{ #category : #'compile abstract instructions' }
+{ #category : 'compile abstract instructions' }
 CogObjectRepresentation >> genJumpNotSmallInteger: aRegister scratchReg: scratch [
 	"Generate a compare and branch to test if aRegister contains other than a SmallInteger.
 	 Answer the jump.  Use scratch if required.  Subclasses will override if scratch is needed."
@@ -431,21 +433,21 @@ CogObjectRepresentation >> genJumpNotSmallInteger: aRegister scratchReg: scratch
 	^self genJumpNotSmallInteger: aRegister
 ]
 
-{ #category : #'compile abstract instructions' }
+{ #category : 'compile abstract instructions' }
 CogObjectRepresentation >> genJumpNotSmallIntegerInScratchReg: aRegister [
 	"Generate a test for aRegister containing an integer value outside the SmallInteger range, and a jump if so, answering the jump."
 	<returnTypeC: #'AbstractInstruction *'>
 	self subclassResponsibility
 ]
 
-{ #category : #'compile abstract instructions' }
+{ #category : 'compile abstract instructions' }
 CogObjectRepresentation >> genJumpNotSmallIntegerValue: aRegister scratch: scratchReg [
 	"Generate a test for aRegister containing an integer value outside the SmallInteger range, and a jump if so, answering the jump."
 	<returnTypeC: #'AbstractInstruction *'>
 	self subclassResponsibility
 ]
 
-{ #category : #'compile abstract instructions' }
+{ #category : 'compile abstract instructions' }
 CogObjectRepresentation >> genJumpNotSmallIntegersIn: aRegister and: bRegister scratch: scratchRegister [
 	"Generate a compare and branch to test if aRegister and bRegister contains other than SmallIntegers,
 	 i.e. don't branch if both aRegister and bRegister contain SmallIntegers.
@@ -458,7 +460,7 @@ CogObjectRepresentation >> genJumpNotSmallIntegersIn: aRegister and: bRegister s
 	^self genJumpNotSmallIntegerInScratchReg: scratchRegister
 ]
 
-{ #category : #'compile abstract instructions' }
+{ #category : 'compile abstract instructions' }
 CogObjectRepresentation >> genJumpSmallInteger: aRegister [
 	"Generate a compare and branch to test if aRegister contains a SmallInteger.
 	 Answer the jump, or UnimplementedOperation if this cannot be done with
@@ -468,7 +470,7 @@ CogObjectRepresentation >> genJumpSmallInteger: aRegister [
 	^cogit cCoerceSimple: UnimplementedOperation to: #'AbstractInstruction *'
 ]
 
-{ #category : #'compile abstract instructions' }
+{ #category : 'compile abstract instructions' }
 CogObjectRepresentation >> genJumpSmallInteger: aRegister scratchReg: scratch [
 	"Generate a compare and branch to test if aRegister contains a SmallInteger.
 	 Answer the jump.  Use scratch if required.  Subclasses will override if scratch is needed."
@@ -476,7 +478,7 @@ CogObjectRepresentation >> genJumpSmallInteger: aRegister scratchReg: scratch [
 	^self genJumpSmallInteger: aRegister
 ]
 
-{ #category : #'compile abstract instructions' }
+{ #category : 'compile abstract instructions' }
 CogObjectRepresentation >> genLoadSlot: index sourceReg: sourceReg destReg: destReg [
 	cogit
 		MoveMw: index * objectMemory wordSize + objectMemory baseHeaderSize
@@ -485,7 +487,7 @@ CogObjectRepresentation >> genLoadSlot: index sourceReg: sourceReg destReg: dest
 	^0
 ]
 
-{ #category : #'bytecode generator support' }
+{ #category : 'bytecode generator support' }
 CogObjectRepresentation >> genNewArrayOfSize: size initialized: initialized [
 	"Generate a call to code that allocates a new Array of size.
 	 The Array should be initialized with nils iff initialized is true.
@@ -494,7 +496,7 @@ CogObjectRepresentation >> genNewArrayOfSize: size initialized: initialized [
 	self subclassResponsibility
 ]
 
-{ #category : #'primitive generators' }
+{ #category : 'primitive generators' }
 CogObjectRepresentation >> genNonImplementedPrimitive [
 	"Primitive generator used to mark primitives that have no machine code implementation
 	This works as a null pattern.
@@ -503,7 +505,7 @@ CogObjectRepresentation >> genNonImplementedPrimitive [
 	^UnimplementedPrimitive
 ]
 
-{ #category : #'primitive generators' }
+{ #category : 'primitive generators' }
 CogObjectRepresentation >> genPrimitiveAdd [
 	| jumpNotSI jumpOvfl |
 	<var: #jumpNotSI type: #'AbstractInstruction *'>
@@ -522,13 +524,13 @@ CogObjectRepresentation >> genPrimitiveAdd [
 	^CompletePrimitive
 ]
 
-{ #category : #'primitive generators' }
+{ #category : 'primitive generators' }
 CogObjectRepresentation >> genPrimitiveAsCharacter [
 	"subclasses override if they can"
 	^UnimplementedPrimitive
 ]
 
-{ #category : #'primitive generators' }
+{ #category : 'primitive generators' }
 CogObjectRepresentation >> genPrimitiveAsFloat [
 	<option: #DPFPReg0>
 	| jumpFailAlloc |
@@ -555,19 +557,19 @@ CogObjectRepresentation >> genPrimitiveAsFloat [
 	^ 0 
 ]
 
-{ #category : #'primitive generators' }
+{ #category : 'primitive generators' }
 CogObjectRepresentation >> genPrimitiveAt [
 	"subclasses override if they can"
 	^UnimplementedPrimitive
 ]
 
-{ #category : #'primitive generators' }
+{ #category : 'primitive generators' }
 CogObjectRepresentation >> genPrimitiveAtPut [
 	"subclasses override if they can"
 	^UnimplementedPrimitive
 ]
 
-{ #category : #'primitive generators' }
+{ #category : 'primitive generators' }
 CogObjectRepresentation >> genPrimitiveBitAnd [
 	| jumpNotSI |
 	<var: #jumpNotSI type: #'AbstractInstruction *'>
@@ -582,7 +584,7 @@ CogObjectRepresentation >> genPrimitiveBitAnd [
 	^CompletePrimitive
 ]
 
-{ #category : #'primitive generators' }
+{ #category : 'primitive generators' }
 CogObjectRepresentation >> genPrimitiveBitOr [
 	| jumpNotSI |
 	<var: #jumpNotSI type: #'AbstractInstruction *'>
@@ -597,7 +599,7 @@ CogObjectRepresentation >> genPrimitiveBitOr [
 	^CompletePrimitive
 ]
 
-{ #category : #'primitive generators' }
+{ #category : 'primitive generators' }
 CogObjectRepresentation >> genPrimitiveBitShift [
 	"rTemp := rArg0
 	rClass := tTemp
@@ -667,7 +669,7 @@ nonInt:
 	^CompletePrimitive
 ]
 
-{ #category : #'primitive generators' }
+{ #category : 'primitive generators' }
 CogObjectRepresentation >> genPrimitiveBitXor [
 	| jumpNotSI |
 	<var: #jumpNotSI type: #'AbstractInstruction *'>
@@ -683,7 +685,7 @@ CogObjectRepresentation >> genPrimitiveBitXor [
 	^CompletePrimitive
 ]
 
-{ #category : #'primitive generators' }
+{ #category : 'primitive generators' }
 CogObjectRepresentation >> genPrimitiveClass [
 	| reg |
 	reg := ReceiverResultReg.
@@ -706,7 +708,7 @@ CogObjectRepresentation >> genPrimitiveClass [
 	^UnfailingPrimitive
 ]
 
-{ #category : #'primitive generators' }
+{ #category : 'primitive generators' }
 CogObjectRepresentation >> genPrimitiveDiv [
 	| jumpNotSI jumpIsSI jumpZero jumpExact jumpSameSign convert |
 	<var: #convert type: #'AbstractInstruction *'>
@@ -751,7 +753,7 @@ CogObjectRepresentation >> genPrimitiveDiv [
 	^CompletePrimitive
 ]
 
-{ #category : #'primitive generators' }
+{ #category : 'primitive generators' }
 CogObjectRepresentation >> genPrimitiveDivide [
 	| jumpNotSI jumpZero jumpInexact jumpOverflow |
 	<var: #jumpNotSI type: #'AbstractInstruction *'>
@@ -782,7 +784,7 @@ CogObjectRepresentation >> genPrimitiveDivide [
 	^CompletePrimitive
 ]
 
-{ #category : #'primitive generators' }
+{ #category : 'primitive generators' }
 CogObjectRepresentation >> genPrimitiveEqual [
 	^self 
 		genSmallIntegerComparison: JumpZero
@@ -790,13 +792,13 @@ CogObjectRepresentation >> genPrimitiveEqual [
 		invert: false
 ]
 
-{ #category : #'primitive generators' }
+{ #category : 'primitive generators' }
 CogObjectRepresentation >> genPrimitiveFloatAdd [
 	<option: #DPFPReg0>
 	^self genDoubleArithmetic: AddRdRd preOpCheck: nil
 ]
 
-{ #category : #'primitive generators' }
+{ #category : 'primitive generators' }
 CogObjectRepresentation >> genPrimitiveFloatDivide [
 	<option: #DPFPReg0>
 	^self 
@@ -804,49 +806,49 @@ CogObjectRepresentation >> genPrimitiveFloatDivide [
 		preOpCheck: #genDoubleFailIfZeroArgRcvr:arg:
 ]
 
-{ #category : #'primitive generators' }
+{ #category : 'primitive generators' }
 CogObjectRepresentation >> genPrimitiveFloatEqual [
 	<option: #DPFPReg0>
 	^self genDoubleComparison: #JumpFPEqual: invert: false
 ]
 
-{ #category : #'primitive generators' }
+{ #category : 'primitive generators' }
 CogObjectRepresentation >> genPrimitiveFloatGreaterOrEqual [
 	<option: #DPFPReg0>
 	^self genDoubleComparison: #JumpFPGreaterOrEqual: invert: false
 ]
 
-{ #category : #'primitive generators' }
+{ #category : 'primitive generators' }
 CogObjectRepresentation >> genPrimitiveFloatGreaterThan [
 	<option: #DPFPReg0>
 	^self genDoubleComparison: #JumpFPGreater: invert: false
 ]
 
-{ #category : #'primitive generators' }
+{ #category : 'primitive generators' }
 CogObjectRepresentation >> genPrimitiveFloatLessOrEqual [
 	<option: #DPFPReg0>
 	^self genDoubleComparison: #JumpFPGreaterOrEqual: invert: true
 ]
 
-{ #category : #'primitive generators' }
+{ #category : 'primitive generators' }
 CogObjectRepresentation >> genPrimitiveFloatLessThan [
 	<option: #DPFPReg0>
 	^self genDoubleComparison: #JumpFPGreater: invert: true
 ]
 
-{ #category : #'primitive generators' }
+{ #category : 'primitive generators' }
 CogObjectRepresentation >> genPrimitiveFloatMultiply [
 	<option: #DPFPReg0>
 	^self genDoubleArithmetic: MulRdRd preOpCheck: nil
 ]
 
-{ #category : #'primitive generators' }
+{ #category : 'primitive generators' }
 CogObjectRepresentation >> genPrimitiveFloatNotEqual [
 	<option: #DPFPReg0>
 	^self genDoubleComparison: #JumpFPNotEqual: invert: false
 ]
 
-{ #category : #'primitive generators' }
+{ #category : 'primitive generators' }
 CogObjectRepresentation >> genPrimitiveFloatSquareRoot [
 	<option: #DPFPReg0>
 	| jumpFailAlloc |
@@ -866,13 +868,13 @@ CogObjectRepresentation >> genPrimitiveFloatSquareRoot [
 	^0
 ]
 
-{ #category : #'primitive generators' }
+{ #category : 'primitive generators' }
 CogObjectRepresentation >> genPrimitiveFloatSubtract [
 	<option: #DPFPReg0>
 	^self genDoubleArithmetic: SubRdRd preOpCheck: nil
 ]
 
-{ #category : #'primitive generators' }
+{ #category : 'primitive generators' }
 CogObjectRepresentation >> genPrimitiveFormat [
 
 	| jumpIsImm primitiveFailure |
@@ -891,7 +893,7 @@ CogObjectRepresentation >> genPrimitiveFormat [
 	^CompletePrimitive 
 ]
 
-{ #category : #'primitive generators' }
+{ #category : 'primitive generators' }
 CogObjectRepresentation >> genPrimitiveFullClosureValue [
 	"Defer to the cogit for this one, to match the split for genPrimitiveClosureValue."
 	<doNotGenerate>
@@ -899,7 +901,7 @@ CogObjectRepresentation >> genPrimitiveFullClosureValue [
 	^cogit genPrimitiveFullClosureValue
 ]
 
-{ #category : #'primitive generators' }
+{ #category : 'primitive generators' }
 CogObjectRepresentation >> genPrimitiveGreaterOrEqual [
 	^self 
 		genSmallIntegerComparison: JumpGreaterOrEqual
@@ -907,7 +909,7 @@ CogObjectRepresentation >> genPrimitiveGreaterOrEqual [
 		invert: false
 ]
 
-{ #category : #'primitive generators' }
+{ #category : 'primitive generators' }
 CogObjectRepresentation >> genPrimitiveGreaterThan [
 	^self
 		genSmallIntegerComparison: JumpGreater
@@ -915,36 +917,36 @@ CogObjectRepresentation >> genPrimitiveGreaterThan [
 		invert: false
 ]
 
-{ #category : #'primitive generators' }
+{ #category : 'primitive generators' }
 CogObjectRepresentation >> genPrimitiveHashMultiply [
 	<doNotGenerate>
 	^cogit genPrimitiveHashMultiply
 ]
 
-{ #category : #'primitive generators' }
+{ #category : 'primitive generators' }
 CogObjectRepresentation >> genPrimitiveIdentical [
 	^self genPrimitiveIdenticalOrNotIf: false
 ]
 
-{ #category : #'primitive generators' }
+{ #category : 'primitive generators' }
 CogObjectRepresentation >> genPrimitiveImmediateAsInteger [
 	"subclasses override if they can"
 	^UnimplementedPrimitive
 ]
 
-{ #category : #'primitive generators' }
+{ #category : 'primitive generators' }
 CogObjectRepresentation >> genPrimitiveIntegerAt [
 	"subclasses override if they can"
 	^UnimplementedPrimitive
 ]
 
-{ #category : #'primitive generators' }
+{ #category : 'primitive generators' }
 CogObjectRepresentation >> genPrimitiveIntegerAtPut [
 	"subclasses override if they can"
 	^UnimplementedPrimitive
 ]
 
-{ #category : #'primitive generators' }
+{ #category : 'primitive generators' }
 CogObjectRepresentation >> genPrimitiveLessOrEqual [
 	^self
 		genSmallIntegerComparison: JumpLessOrEqual
@@ -952,7 +954,7 @@ CogObjectRepresentation >> genPrimitiveLessOrEqual [
 		invert: true
 ]
 
-{ #category : #'primitive generators' }
+{ #category : 'primitive generators' }
 CogObjectRepresentation >> genPrimitiveLessThan [
 	^self
 		genSmallIntegerComparison: JumpLess
@@ -960,187 +962,187 @@ CogObjectRepresentation >> genPrimitiveLessThan [
 		invert: true
 ]
 
-{ #category : #'primitive generators' }
+{ #category : 'primitive generators' }
 CogObjectRepresentation >> genPrimitiveLoadBoolean8FromBytes [
 	"subclasses override if they can"
 	^UnimplementedPrimitive
 ]
 
-{ #category : #'primitive generators' }
+{ #category : 'primitive generators' }
 CogObjectRepresentation >> genPrimitiveLoadBoolean8FromExternalAddress [
 	"subclasses override if they can"
 	^UnimplementedPrimitive
 ]
 
-{ #category : #'primitive generators' }
+{ #category : 'primitive generators' }
 CogObjectRepresentation >> genPrimitiveLoadChar16FromBytes [
 	"subclasses override if they can"
 	^UnimplementedPrimitive
 ]
 
-{ #category : #'primitive generators' }
+{ #category : 'primitive generators' }
 CogObjectRepresentation >> genPrimitiveLoadChar16FromExternalAddress [
 	"subclasses override if they can"
 	^UnimplementedPrimitive
 ]
 
-{ #category : #'primitive generators' }
+{ #category : 'primitive generators' }
 CogObjectRepresentation >> genPrimitiveLoadChar32FromBytes [
 	"subclasses override if they can"
 	^UnimplementedPrimitive
 ]
 
-{ #category : #'primitive generators' }
+{ #category : 'primitive generators' }
 CogObjectRepresentation >> genPrimitiveLoadChar32FromExternalAddress [
 	"subclasses override if they can"
 	^UnimplementedPrimitive
 ]
 
-{ #category : #'primitive generators' }
+{ #category : 'primitive generators' }
 CogObjectRepresentation >> genPrimitiveLoadChar8FromBytes [
 	"subclasses override if they can"
 	^UnimplementedPrimitive
 ]
 
-{ #category : #'primitive generators' }
+{ #category : 'primitive generators' }
 CogObjectRepresentation >> genPrimitiveLoadChar8FromExternalAddress [
 	"subclasses override if they can"
 	^UnimplementedPrimitive
 ]
 
-{ #category : #'primitive generators' }
+{ #category : 'primitive generators' }
 CogObjectRepresentation >> genPrimitiveLoadFloat32FromBytes [
 	"subclasses override if they can"
 	^UnimplementedPrimitive
 ]
 
-{ #category : #'primitive generators' }
+{ #category : 'primitive generators' }
 CogObjectRepresentation >> genPrimitiveLoadFloat32FromExternalAddress [
 	"subclasses override if they can"
 	^UnimplementedPrimitive
 ]
 
-{ #category : #'primitive generators' }
+{ #category : 'primitive generators' }
 CogObjectRepresentation >> genPrimitiveLoadFloat64FromBytes [
 	"subclasses override if they can"
 	^UnimplementedPrimitive
 ]
 
-{ #category : #'primitive generators' }
+{ #category : 'primitive generators' }
 CogObjectRepresentation >> genPrimitiveLoadFloat64FromExternalAddress [
 	"subclasses override if they can"
 	^UnimplementedPrimitive
 ]
 
-{ #category : #'primitive generators' }
+{ #category : 'primitive generators' }
 CogObjectRepresentation >> genPrimitiveLoadInt16FromBytes [
 	"subclasses override if they can"
 	^UnimplementedPrimitive
 ]
 
-{ #category : #'primitive generators' }
+{ #category : 'primitive generators' }
 CogObjectRepresentation >> genPrimitiveLoadInt16FromExternalAddress [
 	"subclasses override if they can"
 	^UnimplementedPrimitive
 ]
 
-{ #category : #'primitive generators' }
+{ #category : 'primitive generators' }
 CogObjectRepresentation >> genPrimitiveLoadInt32FromBytes [
 	"subclasses override if they can"
 	^UnimplementedPrimitive
 ]
 
-{ #category : #'primitive generators' }
+{ #category : 'primitive generators' }
 CogObjectRepresentation >> genPrimitiveLoadInt32FromExternalAddress [
 	"subclasses override if they can"
 	^UnimplementedPrimitive
 ]
 
-{ #category : #'primitive generators' }
+{ #category : 'primitive generators' }
 CogObjectRepresentation >> genPrimitiveLoadInt64FromBytes [
 	"subclasses override if they can"
 	^UnimplementedPrimitive
 ]
 
-{ #category : #'primitive generators' }
+{ #category : 'primitive generators' }
 CogObjectRepresentation >> genPrimitiveLoadInt64FromExternalAddress [
 	"subclasses override if they can"
 	^UnimplementedPrimitive
 ]
 
-{ #category : #'primitive generators' }
+{ #category : 'primitive generators' }
 CogObjectRepresentation >> genPrimitiveLoadInt8FromBytes [
 	"subclasses override if they can"
 	^UnimplementedPrimitive
 ]
 
-{ #category : #'primitive generators' }
+{ #category : 'primitive generators' }
 CogObjectRepresentation >> genPrimitiveLoadInt8FromExternalAddress [
 	"subclasses override if they can"
 	^UnimplementedPrimitive
 ]
 
-{ #category : #'primitive generators' }
+{ #category : 'primitive generators' }
 CogObjectRepresentation >> genPrimitiveLoadPointerFromBytes [
 	"subclasses override if they can"
 	^UnimplementedPrimitive
 ]
 
-{ #category : #'primitive generators' }
+{ #category : 'primitive generators' }
 CogObjectRepresentation >> genPrimitiveLoadPointerFromExternalAddress [
 	"subclasses override if they can"
 	^UnimplementedPrimitive
 ]
 
-{ #category : #'primitive generators' }
+{ #category : 'primitive generators' }
 CogObjectRepresentation >> genPrimitiveLoadUInt16FromBytes [
 	"subclasses override if they can"
 	^UnimplementedPrimitive
 ]
 
-{ #category : #'primitive generators' }
+{ #category : 'primitive generators' }
 CogObjectRepresentation >> genPrimitiveLoadUInt16FromExternalAddress [
 	"subclasses override if they can"
 	^UnimplementedPrimitive
 ]
 
-{ #category : #'primitive generators' }
+{ #category : 'primitive generators' }
 CogObjectRepresentation >> genPrimitiveLoadUInt32FromBytes [
 	"subclasses override if they can"
 	^UnimplementedPrimitive
 ]
 
-{ #category : #'primitive generators' }
+{ #category : 'primitive generators' }
 CogObjectRepresentation >> genPrimitiveLoadUInt32FromExternalAddress [
 	"subclasses override if they can"
 	^UnimplementedPrimitive
 ]
 
-{ #category : #'primitive generators' }
+{ #category : 'primitive generators' }
 CogObjectRepresentation >> genPrimitiveLoadUInt64FromBytes [
 	"subclasses override if they can"
 	^UnimplementedPrimitive
 ]
 
-{ #category : #'primitive generators' }
+{ #category : 'primitive generators' }
 CogObjectRepresentation >> genPrimitiveLoadUInt64FromExternalAddress [
 	"subclasses override if they can"
 	^UnimplementedPrimitive
 ]
 
-{ #category : #'primitive generators' }
+{ #category : 'primitive generators' }
 CogObjectRepresentation >> genPrimitiveLoadUInt8FromBytes [
 	"subclasses override if they can"
 	^UnimplementedPrimitive
 ]
 
-{ #category : #'primitive generators' }
+{ #category : 'primitive generators' }
 CogObjectRepresentation >> genPrimitiveLoadUInt8FromExternalAddress [
 	"subclasses override if they can"
 	^UnimplementedPrimitive
 ]
 
-{ #category : #'primitive generators' }
+{ #category : 'primitive generators' }
 CogObjectRepresentation >> genPrimitiveMod [
 	| jumpNotSI jumpZero jumpExact jumpSameSign |
 	<var: #jumpNotSI type: #'AbstractInstruction *'>
@@ -1176,7 +1178,7 @@ CogObjectRepresentation >> genPrimitiveMod [
 	^CompletePrimitive
 ]
 
-{ #category : #'primitive generators' }
+{ #category : 'primitive generators' }
 CogObjectRepresentation >> genPrimitiveMultiply [
 	| jumpNotSI jumpOvfl |
 	<var: #jumpNotSI type: #'AbstractInstruction *'>
@@ -1198,25 +1200,25 @@ CogObjectRepresentation >> genPrimitiveMultiply [
 	^CompletePrimitive
 ]
 
-{ #category : #'primitive generators' }
+{ #category : 'primitive generators' }
 CogObjectRepresentation >> genPrimitiveNew [
 	"subclasses override if they can"
 	^UnimplementedPrimitive
 ]
 
-{ #category : #'primitive generators' }
+{ #category : 'primitive generators' }
 CogObjectRepresentation >> genPrimitiveNewMethod [
 	"subclasses override if they can"
 	^UnimplementedPrimitive
 ]
 
-{ #category : #'primitive generators' }
+{ #category : 'primitive generators' }
 CogObjectRepresentation >> genPrimitiveNewWithArg [
 	"subclasses override if they can"
 	^UnimplementedPrimitive
 ]
 
-{ #category : #'primitive generators' }
+{ #category : 'primitive generators' }
 CogObjectRepresentation >> genPrimitiveNotEqual [
 	^self
 		genSmallIntegerComparison: JumpNonZero
@@ -1224,25 +1226,25 @@ CogObjectRepresentation >> genPrimitiveNotEqual [
 		invert: false
 ]
 
-{ #category : #'primitive generators' }
+{ #category : 'primitive generators' }
 CogObjectRepresentation >> genPrimitiveNotIdentical [
 	^self genPrimitiveIdenticalOrNotIf: true
 ]
 
-{ #category : #'primitive generators' }
+{ #category : 'primitive generators' }
 CogObjectRepresentation >> genPrimitiveObjectAt [
 	"subclasses override if they can"
 	^UnimplementedPrimitive
 ]
 
-{ #category : #'primitive generators' }
+{ #category : 'primitive generators' }
 CogObjectRepresentation >> genPrimitivePerform [
 	"Defer to the cogit for this one.  All the code is method-cache related."
 	<doNotGenerate>
 	^cogit genPrimitivePerform
 ]
 
-{ #category : #'primitive generators' }
+{ #category : 'primitive generators' }
 CogObjectRepresentation >> genPrimitiveQuo [
 	| convert jumpNotSI jumpZero jumpIsSI jumpExact |
 	<var: #convert type: #'AbstractInstruction *'>
@@ -1278,67 +1280,67 @@ CogObjectRepresentation >> genPrimitiveQuo [
 	^CompletePrimitive
 ]
 
-{ #category : #'primitive generators' }
+{ #category : 'primitive generators' }
 CogObjectRepresentation >> genPrimitiveShallowCopy [
 	"subclasses override if they can"
 	^UnimplementedPrimitive
 ]
 
-{ #category : #'primitive generators' }
+{ #category : 'primitive generators' }
 CogObjectRepresentation >> genPrimitiveSmallFloatAdd [
 	<option: #Spur64BitMemoryManager>
 	^self genSmallFloatArithmetic: AddRdRd preOpCheck: nil
 ]
 
-{ #category : #'primitive generators' }
+{ #category : 'primitive generators' }
 CogObjectRepresentation >> genPrimitiveSmallFloatDivide [
 	<option: #Spur64BitMemoryManager>
 	^self genSmallFloatArithmetic: DivRdRd preOpCheck: #genDoubleFailIfZeroArgRcvr:arg:
 ]
 
-{ #category : #'primitive generators' }
+{ #category : 'primitive generators' }
 CogObjectRepresentation >> genPrimitiveSmallFloatEqual [
 	<option: #Spur64BitMemoryManager>
 	^self genSmallFloatComparison: #JumpFPEqual: invert: false
 ]
 
-{ #category : #'primitive generators' }
+{ #category : 'primitive generators' }
 CogObjectRepresentation >> genPrimitiveSmallFloatGreaterOrEqual [
 	<option: #Spur64BitMemoryManager>
 	^self genSmallFloatComparison: #JumpFPGreaterOrEqual: invert: false
 ]
 
-{ #category : #'primitive generators' }
+{ #category : 'primitive generators' }
 CogObjectRepresentation >> genPrimitiveSmallFloatGreaterThan [
 	<option: #Spur64BitMemoryManager>
 	^self genSmallFloatComparison: #JumpFPGreater: invert: false
 ]
 
-{ #category : #'primitive generators' }
+{ #category : 'primitive generators' }
 CogObjectRepresentation >> genPrimitiveSmallFloatLessOrEqual [
 	<option: #Spur64BitMemoryManager>
 	^self genSmallFloatComparison: #JumpFPGreaterOrEqual: invert: true
 ]
 
-{ #category : #'primitive generators' }
+{ #category : 'primitive generators' }
 CogObjectRepresentation >> genPrimitiveSmallFloatLessThan [
 	<option: #Spur64BitMemoryManager>
 	^self genSmallFloatComparison: #JumpFPGreater: invert: true
 ]
 
-{ #category : #'primitive generators' }
+{ #category : 'primitive generators' }
 CogObjectRepresentation >> genPrimitiveSmallFloatMultiply [
 	<option: #Spur64BitMemoryManager>
 	^self genSmallFloatArithmetic: MulRdRd preOpCheck: nil
 ]
 
-{ #category : #'primitive generators' }
+{ #category : 'primitive generators' }
 CogObjectRepresentation >> genPrimitiveSmallFloatNotEqual [
 	<option: #Spur64BitMemoryManager>
 	^self genSmallFloatComparison: #JumpFPNotEqual: invert: false
 ]
 
-{ #category : #'primitive generators' }
+{ #category : 'primitive generators' }
 CogObjectRepresentation >> genPrimitiveSmallFloatSquareRoot [
 	<option: #Spur64BitMemoryManager>
 	| jumpFailAlloc jumpNegative |
@@ -1361,211 +1363,211 @@ CogObjectRepresentation >> genPrimitiveSmallFloatSquareRoot [
 	^0
 ]
 
-{ #category : #'primitive generators' }
+{ #category : 'primitive generators' }
 CogObjectRepresentation >> genPrimitiveSmallFloatSubtract [
 	<option: #Spur64BitMemoryManager>
 	^self genSmallFloatArithmetic: SubRdRd preOpCheck: nil
 ]
 
-{ #category : #'primitive generators' }
+{ #category : 'primitive generators' }
 CogObjectRepresentation >> genPrimitiveStoreBoolean8IntoBytes [
 	"subclasses override if they can"
 	^UnimplementedPrimitive
 ]
 
-{ #category : #'primitive generators' }
+{ #category : 'primitive generators' }
 CogObjectRepresentation >> genPrimitiveStoreBoolean8IntoExternalAddress [
 	"subclasses override if they can"
 	^UnimplementedPrimitive
 ]
 
-{ #category : #'primitive generators' }
+{ #category : 'primitive generators' }
 CogObjectRepresentation >> genPrimitiveStoreChar16IntoBytes [
 	"subclasses override if they can"
 	^UnimplementedPrimitive
 ]
 
-{ #category : #'primitive generators' }
+{ #category : 'primitive generators' }
 CogObjectRepresentation >> genPrimitiveStoreChar16IntoExternalAddress [
 	"subclasses override if they can"
 	^UnimplementedPrimitive
 ]
 
-{ #category : #'primitive generators' }
+{ #category : 'primitive generators' }
 CogObjectRepresentation >> genPrimitiveStoreChar32IntoBytes [
 	"subclasses override if they can"
 	^UnimplementedPrimitive
 ]
 
-{ #category : #'primitive generators' }
+{ #category : 'primitive generators' }
 CogObjectRepresentation >> genPrimitiveStoreChar32IntoExternalAddress [
 	"subclasses override if they can"
 	^UnimplementedPrimitive
 ]
 
-{ #category : #'primitive generators' }
+{ #category : 'primitive generators' }
 CogObjectRepresentation >> genPrimitiveStoreChar8IntoBytes [
 	"subclasses override if they can"
 	^UnimplementedPrimitive
 ]
 
-{ #category : #'primitive generators' }
+{ #category : 'primitive generators' }
 CogObjectRepresentation >> genPrimitiveStoreChar8IntoExternalAddress [
 	"subclasses override if they can"
 	^UnimplementedPrimitive
 ]
 
-{ #category : #'primitive generators' }
+{ #category : 'primitive generators' }
 CogObjectRepresentation >> genPrimitiveStoreFloat32IntoBytes [
 	"subclasses override if they can"
 	^UnimplementedPrimitive
 ]
 
-{ #category : #'primitive generators' }
+{ #category : 'primitive generators' }
 CogObjectRepresentation >> genPrimitiveStoreFloat32IntoExternalAddress [
 	"subclasses override if they can"
 	^UnimplementedPrimitive
 ]
 
-{ #category : #'primitive generators' }
+{ #category : 'primitive generators' }
 CogObjectRepresentation >> genPrimitiveStoreFloat64IntoBytes [
 	"subclasses override if they can"
 	^UnimplementedPrimitive
 ]
 
-{ #category : #'primitive generators' }
+{ #category : 'primitive generators' }
 CogObjectRepresentation >> genPrimitiveStoreFloat64IntoExternalAddress [
 	"subclasses override if they can"
 	^UnimplementedPrimitive
 ]
 
-{ #category : #'primitive generators' }
+{ #category : 'primitive generators' }
 CogObjectRepresentation >> genPrimitiveStoreInt16IntoBytes [
 	"subclasses override if they can"
 	^UnimplementedPrimitive
 ]
 
-{ #category : #'primitive generators' }
+{ #category : 'primitive generators' }
 CogObjectRepresentation >> genPrimitiveStoreInt16IntoExternalAddress [
 	"subclasses override if they can"
 	^UnimplementedPrimitive
 ]
 
-{ #category : #'primitive generators' }
+{ #category : 'primitive generators' }
 CogObjectRepresentation >> genPrimitiveStoreInt32IntoBytes [
 	"subclasses override if they can"
 	^UnimplementedPrimitive
 ]
 
-{ #category : #'primitive generators' }
+{ #category : 'primitive generators' }
 CogObjectRepresentation >> genPrimitiveStoreInt32IntoExternalAddress [
 	"subclasses override if they can"
 	^UnimplementedPrimitive
 ]
 
-{ #category : #'primitive generators' }
+{ #category : 'primitive generators' }
 CogObjectRepresentation >> genPrimitiveStoreInt64IntoBytes [
 	"subclasses override if they can"
 	^UnimplementedPrimitive
 ]
 
-{ #category : #'primitive generators' }
+{ #category : 'primitive generators' }
 CogObjectRepresentation >> genPrimitiveStoreInt64IntoExternalAddress [
 	"subclasses override if they can"
 	^UnimplementedPrimitive
 ]
 
-{ #category : #'primitive generators' }
+{ #category : 'primitive generators' }
 CogObjectRepresentation >> genPrimitiveStoreInt8IntoBytes [
 	"subclasses override if they can"
 	^UnimplementedPrimitive
 ]
 
-{ #category : #'primitive generators' }
+{ #category : 'primitive generators' }
 CogObjectRepresentation >> genPrimitiveStoreInt8IntoExternalAddress [
 	"subclasses override if they can"
 	^UnimplementedPrimitive
 ]
 
-{ #category : #'primitive generators' }
+{ #category : 'primitive generators' }
 CogObjectRepresentation >> genPrimitiveStorePointerIntoBytes [
 	"subclasses override if they can"
 	^UnimplementedPrimitive
 ]
 
-{ #category : #'primitive generators' }
+{ #category : 'primitive generators' }
 CogObjectRepresentation >> genPrimitiveStorePointerIntoExternalAddress [
 	"subclasses override if they can"
 	^UnimplementedPrimitive
 ]
 
-{ #category : #'primitive generators' }
+{ #category : 'primitive generators' }
 CogObjectRepresentation >> genPrimitiveStoreUInt16IntoBytes [
 	"subclasses override if they can"
 	^UnimplementedPrimitive
 ]
 
-{ #category : #'primitive generators' }
+{ #category : 'primitive generators' }
 CogObjectRepresentation >> genPrimitiveStoreUInt16IntoExternalAddress [
 	"subclasses override if they can"
 	^UnimplementedPrimitive
 ]
 
-{ #category : #'primitive generators' }
+{ #category : 'primitive generators' }
 CogObjectRepresentation >> genPrimitiveStoreUInt32IntoBytes [
 	"subclasses override if they can"
 	^UnimplementedPrimitive
 ]
 
-{ #category : #'primitive generators' }
+{ #category : 'primitive generators' }
 CogObjectRepresentation >> genPrimitiveStoreUInt32IntoExternalAddress [
 	"subclasses override if they can"
 	^UnimplementedPrimitive
 ]
 
-{ #category : #'primitive generators' }
+{ #category : 'primitive generators' }
 CogObjectRepresentation >> genPrimitiveStoreUInt64IntoBytes [
 	"subclasses override if they can"
 	^UnimplementedPrimitive
 ]
 
-{ #category : #'primitive generators' }
+{ #category : 'primitive generators' }
 CogObjectRepresentation >> genPrimitiveStoreUInt64IntoExternalAddress [
 	"subclasses override if they can"
 	^UnimplementedPrimitive
 ]
 
-{ #category : #'primitive generators' }
+{ #category : 'primitive generators' }
 CogObjectRepresentation >> genPrimitiveStoreUInt8IntoBytes [
 	"subclasses override if they can"
 	^UnimplementedPrimitive
 ]
 
-{ #category : #'primitive generators' }
+{ #category : 'primitive generators' }
 CogObjectRepresentation >> genPrimitiveStoreUInt8IntoExternalAddress [
 	"subclasses override if they can"
 	^UnimplementedPrimitive
 ]
 
-{ #category : #'primitive generators' }
+{ #category : 'primitive generators' }
 CogObjectRepresentation >> genPrimitiveStringAtPut [
 	"subclasses override if they can"
 	^UnimplementedPrimitive
 ]
 
-{ #category : #'primitive generators' }
+{ #category : 'primitive generators' }
 CogObjectRepresentation >> genPrimitiveStringCompareWith [
 	"subclasses override if they can"
 	^UnimplementedPrimitive
 ]
 
-{ #category : #'primitive generators' }
+{ #category : 'primitive generators' }
 CogObjectRepresentation >> genPrimitiveStringReplace [
 	"subclasses override if they can"
 	^UnimplementedPrimitive
 ]
 
-{ #category : #'primitive generators' }
+{ #category : 'primitive generators' }
 CogObjectRepresentation >> genPrimitiveSubtract [
 	| jumpNotSI jumpOvfl |
 	<var: #jumpNotSI type: #'AbstractInstruction *'>
@@ -1584,35 +1586,35 @@ CogObjectRepresentation >> genPrimitiveSubtract [
 	^CompletePrimitive
 ]
 
-{ #category : #'primitive generators' }
+{ #category : 'primitive generators' }
 CogObjectRepresentation >> genQuickReturnConst [
 	<doNotGenerate>
 	^cogit genQuickReturnConst
 ]
 
-{ #category : #'primitive generators' }
+{ #category : 'primitive generators' }
 CogObjectRepresentation >> genQuickReturnInstVar [
 	<doNotGenerate>
 	^cogit genQuickReturnInstVar
 ]
 
-{ #category : #'primitive generators' }
+{ #category : 'primitive generators' }
 CogObjectRepresentation >> genQuickReturnSelf [
 	<doNotGenerate>
 	^cogit genQuickReturnSelf
 ]
 
-{ #category : #'compile abstract instructions' }
+{ #category : 'compile abstract instructions' }
 CogObjectRepresentation >> genRemoveSmallIntegerTagsInScratchReg: scratchReg [
 	self subclassResponsibility
 ]
 
-{ #category : #'compile abstract instructions' }
+{ #category : 'compile abstract instructions' }
 CogObjectRepresentation >> genSetSmallIntegerTagsIn: scratchReg [
 	self subclassResponsibility
 ]
 
-{ #category : #'primitive generators' }
+{ #category : 'primitive generators' }
 CogObjectRepresentation >> genSmallIntegerComparison: jumpOpcode [
 	| jumpFail jumpTrue |
 	<var: #jumpFail type: #'AbstractInstruction *'>
@@ -1631,7 +1633,7 @@ CogObjectRepresentation >> genSmallIntegerComparison: jumpOpcode [
 	^CompletePrimitive
 ]
 
-{ #category : #'primitive generators' }
+{ #category : 'primitive generators' }
 CogObjectRepresentation >> genSmallIntegerComparison: jumpOpcode orDoubleComparison: jumpFPOpcodeGenerator invert: invertComparison [
 	"Stack looks like
 		return address"
@@ -1672,7 +1674,7 @@ CogObjectRepresentation >> genSmallIntegerComparison: jumpOpcode orDoubleCompari
 	^CompletePrimitive
 ]
 
-{ #category : #'compile abstract instructions' }
+{ #category : 'compile abstract instructions' }
 CogObjectRepresentation >> genStoreSourceReg: sourceReg slotIndex: index destReg: destReg scratchReg: scratchReg inFrame: inFrame [
 	<inline: true>
 	self 
@@ -1695,7 +1697,7 @@ CogObjectRepresentation >> genStoreSourceReg: sourceReg slotIndex: index destReg
 				needsStoreCheck: true ]
 ]
 
-{ #category : #initialization }
+{ #category : 'initialization' }
 CogObjectRepresentation >> generateObjectRepresentationTrampolines [
 	"Do the store check.  Answer the argument for the benefit of the code generator;
 	 ReceiverResultReg may be caller-saved and hence smashed by this call.  Answering
@@ -1703,56 +1705,56 @@ CogObjectRepresentation >> generateObjectRepresentationTrampolines [
 	self subclassResponsibility
 ]
 
-{ #category : #'bytecode generator support' }
+{ #category : 'bytecode generator support' }
 CogObjectRepresentation >> getActiveContextAllocatesInMachineCode [
 	"subclasses override if they want, and will have SendNumArgsReg and ClassReg
 	 available in addition to ReceiverResultReg and TempReg if they do."
 	^false
 ]
 
-{ #category : #'in-line cacheing' }
+{ #category : 'in-line cacheing' }
 CogObjectRepresentation >> illegalClassTag [
 	"Answer a class tag that will fail for every object."
 	self subclassResponsibility
 ]
 
-{ #category : #'in-line cacheing' }
+{ #category : 'in-line cacheing' }
 CogObjectRepresentation >> inlineCacheTagForClass: classOop [
 	"Answer the relevant inline cache tag for a class.
 	 c.f. inlineCacheTagForInstance:"
 	self subclassResponsibility
 ]
 
-{ #category : #'in-line cacheing' }
+{ #category : 'in-line cacheing' }
 CogObjectRepresentation >> inlineCacheTagForInstance: oop [
 	"Answer the relevant inline cache tag for an instance.
 	 c.f. getInlineCacheClassTagFrom:into: & inlineCacheTagForClass:"
 	^self subclassResponsibility
 ]
 
-{ #category : #'in-line cacheing' }
+{ #category : 'in-line cacheing' }
 CogObjectRepresentation >> inlineCacheTagIsYoung: cacheTag [
 	^self subclassResponsibility
 ]
 
-{ #category : #'in-line cacheing' }
+{ #category : 'in-line cacheing' }
 CogObjectRepresentation >> inlineCacheTagsMayBeObjects [
 	<inline: true>
 	^self subclassResponsibility
 ]
 
-{ #category : #testing }
+{ #category : 'testing' }
 CogObjectRepresentation >> isImmediate: oop [
 	<doNotGenerate>
 	^objectMemory isImmediate: oop
 ]
 
-{ #category : #testing }
+{ #category : 'testing' }
 CogObjectRepresentation >> isSmallIntegerTagNonZero [
 	self subclassResponsibility
 ]
 
-{ #category : #'compile abstract instructions' }
+{ #category : 'compile abstract instructions' }
 CogObjectRepresentation >> isUnannotatableConstant: simStackEntry [
 	<inline: true>
 	<var: 'simStackEntry' type: #'CogSimStackEntry *'>
@@ -1761,7 +1763,7 @@ CogObjectRepresentation >> isUnannotatableConstant: simStackEntry [
 		or: [(self shouldAnnotateObjectReference: simStackEntry constant) not]]
 ]
 
-{ #category : #'garbage collection' }
+{ #category : 'garbage collection' }
 CogObjectRepresentation >> markAndTraceCacheTagLiteral: literal in: cogMethodOrNil atpc: address [
 	"Mark and trace a literal in an inline cache preceding address in cogMethodOrNil.
 	 Answer if code was modified."
@@ -1770,12 +1772,12 @@ CogObjectRepresentation >> markAndTraceCacheTagLiteral: literal in: cogMethodOrN
 	self subclassResponsibility
 ]
 
-{ #category : #'garbage collection' }
+{ #category : 'garbage collection' }
 CogObjectRepresentation >> markAndTraceLiteral: literal [
 	self subclassResponsibility
 ]
 
-{ #category : #'garbage collection' }
+{ #category : 'garbage collection' }
 CogObjectRepresentation >> markAndTraceLiteral: literal in: cogMethod at: address [
 	"Mark and trace a literal in a sqInt variable of cogMethod."
 	<var: #cogMethod type: #'CogMethod *'>
@@ -1783,7 +1785,7 @@ CogObjectRepresentation >> markAndTraceLiteral: literal in: cogMethod at: addres
 	self subclassResponsibility
 ]
 
-{ #category : #'garbage collection' }
+{ #category : 'garbage collection' }
 CogObjectRepresentation >> markAndTraceLiteral: literal in: cogMethodOrNil atpc: address [
 	"Mark and trace a literal in a machine code instruction preceding address in cogMethodOrNil.
 	 Answer if code was modified."
@@ -1792,12 +1794,12 @@ CogObjectRepresentation >> markAndTraceLiteral: literal in: cogMethodOrNil atpc:
 	self subclassResponsibility
 ]
 
-{ #category : #'garbage collection' }
+{ #category : 'garbage collection' }
 CogObjectRepresentation >> markAndTraceLiteralIfYoung: literal [
 	self subclassResponsibility
 ]
 
-{ #category : #'primitive generators' }
+{ #category : 'primitive generators' }
 CogObjectRepresentation >> maybeCompileRetry: retryInst onPrimitiveFail: primIndex primPropertyFlags: flags [
 	<var: #retryInst type: #'AbstractInstruction *'>
 	"Object representations with lazy forwarding will want to check for
@@ -1805,7 +1807,7 @@ CogObjectRepresentation >> maybeCompileRetry: retryInst onPrimitiveFail: primInd
 	 By default do nothing."
 ]
 
-{ #category : #'primitive generators' }
+{ #category : 'primitive generators' }
 CogObjectRepresentation >> maybeCompileRetryOnPrimitiveFail: primIndex [
 	"Object representations with lazy forwarding will want to check for
 	 forwarding pointers on primitive failure and retry the primitive if found.
@@ -1813,7 +1815,7 @@ CogObjectRepresentation >> maybeCompileRetryOnPrimitiveFail: primIndex [
 	<inline: true>
 ]
 
-{ #category : #'primitive generators' }
+{ #category : 'primitive generators' }
 CogObjectRepresentation >> maybeGenConvertIfSmallFloatIn: oopReg scratchReg: scratch into: dpReg andJumpTo: targetInst [
 	"If the receiver supports immediate floats then generate a test for a smallFloat in  oopReg,
 	 converting it to the float value in dpReg and jumping to targetInst.  Otherwise do nothing."
@@ -1821,7 +1823,7 @@ CogObjectRepresentation >> maybeGenConvertIfSmallFloatIn: oopReg scratchReg: scr
 	^0
 ]
 
-{ #category : #initialization }
+{ #category : 'initialization' }
 CogObjectRepresentation >> maybeGenerateSelectorIndexDereferenceRoutine [
 	"If required, generate the routine that converts selector indices into selector objects.
 	 If it exists, it is called from the send trampolines.
@@ -1830,7 +1832,7 @@ CogObjectRepresentation >> maybeGenerateSelectorIndexDereferenceRoutine [
 	 This is only required on 64-bit platforms."
 ]
 
-{ #category : #'sista support' }
+{ #category : 'sista support' }
 CogObjectRepresentation >> maybeMarkCounters: theCounters [
 	"In SIsta Spur counters are held on the heap in pinned objects which must be marked
 	 to avoid them being garbage collected.  This is the hook through which that happens.
@@ -1839,7 +1841,7 @@ CogObjectRepresentation >> maybeMarkCounters: theCounters [
 	<inline: true>
 ]
 
-{ #category : #compilation }
+{ #category : 'compilation' }
 CogObjectRepresentation >> maybeNoteDescriptor: descriptor blockStart: blockStart [
 	"A hook for the object representation to set state in a blockStart during scanBlock:.
 	 By default do nothing.  Subclasses that need to do something special will override."
@@ -1848,7 +1850,7 @@ CogObjectRepresentation >> maybeNoteDescriptor: descriptor blockStart: blockStar
 	<inline: true>
 ]
 
-{ #category : #'method cacheing' }
+{ #category : 'method cacheing' }
 CogObjectRepresentation >> maybeShiftClassTagRegisterForMethodCacheProbe: classTagReg [
 	"If required, generate a shift of the register containing the class tag in a method cache probe.
 	 By default this is a no-op.  Subclasses redefine as required."
@@ -1856,13 +1858,13 @@ CogObjectRepresentation >> maybeShiftClassTagRegisterForMethodCacheProbe: classT
 	^0
 ]
 
-{ #category : #'sista support' }
+{ #category : 'sista support' }
 CogObjectRepresentation >> numCountersFor: theCounters [
 	<var: #counters type: #usqInt>
 	self subclassResponsibility
 ]
 
-{ #category : #'calling convention' }
+{ #category : 'calling convention' }
 CogObjectRepresentation >> numRegArgs [
 	"Define how many register arguments a StackToRegisterMappingCogit can and should use
 	 with the receiver.  The value must be 0, 1 or 2.  Note that a SimpleStackBasedCogit always
@@ -1876,21 +1878,21 @@ CogObjectRepresentation >> numRegArgs [
 	self subclassResponsibility
 ]
 
-{ #category : #'sista support' }
+{ #category : 'sista support' }
 CogObjectRepresentation >> resetCountersIn: cogMethod [
 	<var: #cogMethod type: #'CogMethod *'>
 	<api>
 	self subclassResponsibility
 ]
 
-{ #category : #'calling convention' }
+{ #category : 'calling convention' }
 CogObjectRepresentation >> selectorIndexDereferenceRoutine [
 	"If the object representation is 64-bits, selectors must be accessed via indices in the inline caches.
 	 Answer the routine that will map from indices to selector objects if so, otherwise nil."
 	^nil
 ]
 
-{ #category : #initialization }
+{ #category : 'initialization' }
 CogObjectRepresentation >> setCogit: aCogit methodZone: aMethodZone [
 	<doNotGenerate>
 	cogit := aCogit.
@@ -1901,22 +1903,22 @@ CogObjectRepresentation >> setCogit: aCogit methodZone: aMethodZone [
 						ifFalse: [coInterpreter]
 ]
 
-{ #category : #testing }
+{ #category : 'testing' }
 CogObjectRepresentation >> smallIntegerIsOnlyImmediateType [
 	self subclassResponsibility
 ]
 
-{ #category : #'debug support' }
+{ #category : 'debug support' }
 CogObjectRepresentation >> validInlineCacheTag: classIndexOrTagPattern [
 	self subclassResponsibility
 ]
 
-{ #category : #'sista support' }
+{ #category : 'sista support' }
 CogObjectRepresentation >> valueOfAssociation: association [
 	self subclassResponsibility
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 CogObjectRepresentation >> wordSize [
 	<doNotGenerate>
 	^objectMemory wordSize

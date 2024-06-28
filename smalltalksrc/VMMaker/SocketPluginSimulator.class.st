@@ -1,6 +1,6 @@
 Class {
-	#name : #SocketPluginSimulator,
-	#superclass : #SocketPlugin,
+	#name : 'SocketPluginSimulator',
+	#superclass : 'SocketPlugin',
 	#instVars : [
 		'openSocketHandles',
 		'externalSemaphores',
@@ -18,10 +18,12 @@ Class {
 		'ResolverReady',
 		'ResolverUninitialized'
 	],
-	#category : #'VMMaker-InterpreterSimulation'
+	#category : 'VMMaker-InterpreterSimulation',
+	#package : 'VMMaker',
+	#tag : 'InterpreterSimulation'
 }
 
-{ #category : #'class initialization' }
+{ #category : 'class initialization' }
 SocketPluginSimulator class >> initialize [
 	ResolverUninitialized := 0.	"network is not initialized"
 	ResolverReady := 1.		"resolver idle, last request succeeded"
@@ -29,12 +31,12 @@ SocketPluginSimulator class >> initialize [
 	ResolverError := 3.			"resolver idle, last request failed"
 ]
 
-{ #category : #translation }
+{ #category : 'translation' }
 SocketPluginSimulator class >> shouldBeTranslated [
 	^false
 ]
 
-{ #category : #simulation }
+{ #category : 'simulation' }
 SocketPluginSimulator >> cCoerce: value to: cTypeString [
 	"Type coercion for translation only; just return the value when running in Smalltalk.
 	 This overrides the generic coercion method in VMClass.  For some reason we are the exception.
@@ -45,13 +47,13 @@ SocketPluginSimulator >> cCoerce: value to: cTypeString [
 		ifFalse: [super cCoerce: value to: cTypeString]
 ]
 
-{ #category : #'initialize-release' }
+{ #category : 'initialize-release' }
 SocketPluginSimulator >> close [  "close any sockets that ST may have opened"
 	openSocketHandles do: [:h | self closeAndDestroy: h].
 	Smalltalk unregisterExternalObjects: externalSemaphores
 ]
 
-{ #category : #'initialize-release' }
+{ #category : 'initialize-release' }
 SocketPluginSimulator >> closeAndDestroy: socketHandle [
 	"c.f. Socket closeAndDestroy: timeoutSeconds"
 	| fakeSocket |
@@ -65,7 +67,7 @@ SocketPluginSimulator >> closeAndDestroy: socketHandle [
 		do: [:ex| Transcript cr; show: ex message]
 ]
 
-{ #category : #'simulation support' }
+{ #category : 'simulation support' }
 SocketPluginSimulator >> hostSocketHandleFromSimSocketHandle: socketHandleCArray [
 	"Answer the corresponding host socketHandle for the simulation socketHandle, or nil if none, failing the primitive."
 	^simSocketToHostSocketMap
@@ -73,21 +75,21 @@ SocketPluginSimulator >> hostSocketHandleFromSimSocketHandle: socketHandleCArray
 		ifAbsent: [interpreterProxy primitiveFail. nil]
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 SocketPluginSimulator >> ipv6support [
 	
 	^ ipv6support
 
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 SocketPluginSimulator >> ipv6support: anObject [
 	
 	ipv6support := anObject.
 
 ]
 
-{ #category : #'simulation support' }
+{ #category : 'simulation support' }
 SocketPluginSimulator >> map: hostSocketHandle to: simSockPtr type: socketType register: semaphores spawning: blockOne and: blockTwo and: blockThree [
 	| simSocket |
 	"SQSocket is typedef struct { int sessionID; int socketType; void *privateSocketPtr; } SQSocket"
@@ -115,7 +117,7 @@ SocketPluginSimulator >> map: hostSocketHandle to: simSockPtr type: socketType r
 	blockThree fork
 ]
 
-{ #category : #'simulation support' }
+{ #category : 'simulation support' }
 SocketPluginSimulator >> netAddressAsByteArrayFromInt: netAddress [
 	^ByteArray
 		with: ((netAddress bitShift: -24) bitAnd: 16rFF)
@@ -124,7 +126,7 @@ SocketPluginSimulator >> netAddressAsByteArrayFromInt: netAddress [
 		with:  (netAddress bitAnd: 16rFF)
 ]
 
-{ #category : #'simulation support' }
+{ #category : 'simulation support' }
 SocketPluginSimulator >> simSocketHandleFrom: socketHandleCArray [
 	| simSocket |
 	"SQSocket is typedef struct { int sessionID; int socketType; void *privateSocketPtr; } SQSocket"
@@ -135,13 +137,13 @@ SocketPluginSimulator >> simSocketHandleFrom: socketHandleCArray [
 	^simSocket
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 SocketPluginSimulator >> simulator: aSmartSyntaxPluginSimulator [
 	super simulator: aSmartSyntaxPluginSimulator.
 	"aSmartSyntaxPluginSimulator logging: true"
 ]
 
-{ #category : #'initialize-release' }
+{ #category : 'initialize-release' }
 SocketPluginSimulator >> socketInit [
 	openSocketHandles := Set new.
 	externalSemaphores := Set new.
@@ -156,7 +158,7 @@ SocketPluginSimulator >> socketInit [
 	^true
 ]
 
-{ #category : #simulation }
+{ #category : 'simulation' }
 SocketPluginSimulator >> sqNetworkInit: resolverSemaIndex [
 	"Simply assume the network is initialized."
 	(NetNameResolver classPool at: #HaveNetwork) ifNil:
@@ -168,13 +170,13 @@ SocketPluginSimulator >> sqNetworkInit: resolverSemaIndex [
 	^0
 ]
 
-{ #category : #simulation }
+{ #category : 'simulation' }
 SocketPluginSimulator >> sqResolverHostNameSize [
 	ipv6support ifTrue: [^NetNameResolver primHostNameSize].
 	interpreterProxy primitiveFail
 ]
 
-{ #category : #simulation }
+{ #category : 'simulation' }
 SocketPluginSimulator >> sqResolverLocalAddress [
 	"For now don't simulate the implicit semaphore."
 	| bytes |
@@ -187,7 +189,7 @@ SocketPluginSimulator >> sqResolverLocalAddress [
 		((bytes at: 1) <<24)
 ]
 
-{ #category : #simulation }
+{ #category : 'simulation' }
 SocketPluginSimulator >> sqResolverNameLookupResult [
 	"For now don't simulate the implicit semaphore."
 	addressForName ifNil: [^interpreterProxy primitiveFail].
@@ -199,7 +201,7 @@ SocketPluginSimulator >> sqResolverNameLookupResult [
 		((addressForName at: 1) <<24)
 ]
 
-{ #category : #simulation }
+{ #category : 'simulation' }
 SocketPluginSimulator >> sqResolverStartName: aCArray Lookup: size [
 	"For now don't simulate the implicit semaphore."
 	| hostName |
@@ -210,12 +212,12 @@ SocketPluginSimulator >> sqResolverStartName: aCArray Lookup: size [
 		 interpreterProxy signalSemaphoreWithIndex: resolverSemaphoreIndex]
 ]
 
-{ #category : #simulation }
+{ #category : 'simulation' }
 SocketPluginSimulator >> sqResolverStatus [
 	^resolverStatus 
 ]
 
-{ #category : #simulation }
+{ #category : 'simulation' }
 SocketPluginSimulator >> sqSocket: socketHandle ConnectTo: addr Port: port [
 	^[Socket basicNew
 			primSocket: ((self hostSocketHandleFromSimSocketHandle: socketHandle) ifNil: [^self])
@@ -227,7 +229,7 @@ SocketPluginSimulator >> sqSocket: socketHandle ConnectTo: addr Port: port [
 			0]
 ]
 
-{ #category : #simulation }
+{ #category : 'simulation' }
 SocketPluginSimulator >> sqSocket: sockPtr CreateNetType: netType SocketType: socketType RecvBytes: recvBufSize SendBytes: sendBufSize SemaID: semaIndex ReadSemaID: readSemaIndex WriteSemaID: writeSemaIndex [
 	"Simulate the sqSocketCreateNetTypeSocketTypeRecvBytesSendBytesSemaIDReadSemaIDWriteSemaID function.
 	 We descend beneath the Socket abstraftion to simulate as accurately as possible."
@@ -261,7 +263,7 @@ SocketPluginSimulator >> sqSocket: sockPtr CreateNetType: netType SocketType: so
 		and:		[[semaphores third wait. interpreterProxy  signalSemaphoreWithIndex: writeSemaIndex] repeat]
 ]
 
-{ #category : #simulation }
+{ #category : 'simulation' }
 SocketPluginSimulator >> sqSocket: socketHandleCArray ReceiveDataBuf: bufferStartCArray Count: numBytes [
 	^[| buffer n |
 	  buffer := ByteArray new: numBytes.
@@ -280,7 +282,7 @@ SocketPluginSimulator >> sqSocket: socketHandleCArray ReceiveDataBuf: bufferStar
 			0]
 ]
 
-{ #category : #simulation }
+{ #category : 'simulation' }
 SocketPluginSimulator >> sqSocket: socketHandleCArray SendDataBuf: bufferStartCArray Count: numBytes [
 	| data |
 	data := ByteArray new: numBytes.
@@ -297,7 +299,7 @@ SocketPluginSimulator >> sqSocket: socketHandleCArray SendDataBuf: bufferStartCA
 			0]
 ]
 
-{ #category : #simulation }
+{ #category : 'simulation' }
 SocketPluginSimulator >> sqSocketAbortConnection: socketHandleCArray [
 	^[Socket basicNew
 			primSocketAbortConnection: ((self hostSocketHandleFromSimSocketHandle: socketHandleCArray) ifNil: [^false])]
@@ -307,7 +309,7 @@ SocketPluginSimulator >> sqSocketAbortConnection: socketHandleCArray [
 			false]
 ]
 
-{ #category : #simulation }
+{ #category : 'simulation' }
 SocketPluginSimulator >> sqSocketCloseConnection: socketHandleCArray [
 	^[Socket basicNew
 			primSocketCloseConnection: ((self hostSocketHandleFromSimSocketHandle: socketHandleCArray) ifNil: [^false])]
@@ -317,7 +319,7 @@ SocketPluginSimulator >> sqSocketCloseConnection: socketHandleCArray [
 			false]
 ]
 
-{ #category : #simulation }
+{ #category : 'simulation' }
 SocketPluginSimulator >> sqSocketConnectionStatus: socketHandleCArray [
 	^[Socket basicNew
 			primSocketConnectionStatus: ((self hostSocketHandleFromSimSocketHandle: socketHandleCArray) ifNil: [^-1])]
@@ -327,7 +329,7 @@ SocketPluginSimulator >> sqSocketConnectionStatus: socketHandleCArray [
 			-1]
 ]
 
-{ #category : #simulation }
+{ #category : 'simulation' }
 SocketPluginSimulator >> sqSocketDestroy: socketHandleCArray [ 
 	| simHandle hostHandle |
 	simHandle := self simSocketHandleFrom: socketHandleCArray.
@@ -342,7 +344,7 @@ SocketPluginSimulator >> sqSocketDestroy: socketHandleCArray [
 			interpreterProxy primitiveFail]
 ]
 
-{ #category : #simulation }
+{ #category : 'simulation' }
 SocketPluginSimulator >> sqSocketReceiveDataAvailable: socketHandleCArray [ 
 	^[Socket basicNew
 			primSocketReceiveDataAvailable: ((self hostSocketHandleFromSimSocketHandle: socketHandleCArray) ifNil: [^false])]
@@ -352,7 +354,7 @@ SocketPluginSimulator >> sqSocketReceiveDataAvailable: socketHandleCArray [
 			false]
 ]
 
-{ #category : #simulation }
+{ #category : 'simulation' }
 SocketPluginSimulator >> sqSocketSendDone: socketHandleCArray [
 	^[Socket basicNew
 			primSocketSendDone: ((self hostSocketHandleFromSimSocketHandle: socketHandleCArray) ifNil: [^false])]

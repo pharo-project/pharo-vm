@@ -12,16 +12,18 @@ mergeSimStack
 	- the state of the stack at the jump to this fixup
 "
 Class {
-	#name : #CogRASSBytecodeFixup,
-	#superclass : #CogSSBytecodeFixup,
+	#name : 'CogRASSBytecodeFixup',
+	#superclass : 'CogSSBytecodeFixup',
 	#instVars : [
 		'cogit',
 		'mergeSimStack'
 	],
-	#category : #'VMMaker-JIT'
+	#category : 'VMMaker-JIT',
+	#package : 'VMMaker',
+	#tag : 'JIT'
 }
 
-{ #category : #translation }
+{ #category : 'translation' }
 CogRASSBytecodeFixup class >> filteredInstVarNames [
 	"Override to group char and short vars together for compactness.
 	 self typedef"
@@ -33,42 +35,42 @@ CogRASSBytecodeFixup class >> filteredInstVarNames [
 	^vars
 ]
 
-{ #category : #'instance creation' }
+{ #category : 'instance creation' }
 CogRASSBytecodeFixup class >> for: aCogit [
 	^self new cogit: aCogit
 ]
 
-{ #category : #'initialize-release' }
+{ #category : 'initialize-release' }
 CogRASSBytecodeFixup >> cogit: aCogit [
 	cogit := aCogit.
 	^self
 ]
 
-{ #category : #'debug printing' }
+{ #category : 'debug printing' }
 CogRASSBytecodeFixup >> hasMergeSimStack [
 	^self needsFixup and: [mergeSimStack notNil]
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 CogRASSBytecodeFixup >> mergeSimStack [
 	<returnTypeC: #'CogSimStackEntry *'>
 	^mergeSimStack
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 CogRASSBytecodeFixup >> mergeSimStack: anObject [
 
 	^mergeSimStack := anObject
 ]
 
-{ #category : #'debug printing' }
+{ #category : 'debug printing' }
 CogRASSBytecodeFixup >> printSimStack [
 	<doNotGenerate>
 	self notAFixup ifFalse:
 		[cogit printSimStack: mergeSimStack toDepth: simStackPtr spillBase: -1 on: cogit coInterpreter transcript]
 ]
 
-{ #category : #'debug printing' }
+{ #category : 'debug printing' }
 CogRASSBytecodeFixup >> printStateOn: aStream [
 	<doNotGenerate>
 	(targetInstruction isNil and: [simStackPtr isNil]) ifTrue:
@@ -80,14 +82,14 @@ CogRASSBytecodeFixup >> printStateOn: aStream [
 		 aStream nextPut: $); nextPut: $)]
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 CogRASSBytecodeFixup >> reinitialize [
 	<inline: true>
 	super reinitialize.
 	mergeSimStack := nil
 ]
 
-{ #category : #'debug printing' }
+{ #category : 'debug printing' }
 CogRASSBytecodeFixup >> simStackPrintString [
 	<doNotGenerate>
 	^String streamContents:

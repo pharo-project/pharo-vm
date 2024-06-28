@@ -1,10 +1,12 @@
 Class {
-	#name : #CogInLineLiteralsX64Compiler,
-	#superclass : #CogX64Compiler,
-	#category : #'VMMaker-JIT'
+	#name : 'CogInLineLiteralsX64Compiler',
+	#superclass : 'CogX64Compiler',
+	#category : 'VMMaker-JIT',
+	#package : 'VMMaker',
+	#tag : 'JIT'
 }
 
-{ #category : #'class initialization' }
+{ #category : 'class initialization' }
 CogInLineLiteralsX64Compiler class >> initializeAbstractRegistersSysV [
 	"Assign the abstract registers with the identities/indices of the relevant concrete registers."
 
@@ -12,7 +14,7 @@ CogInLineLiteralsX64Compiler class >> initializeAbstractRegistersSysV [
 	RISCTempReg := R8
 ]
 
-{ #category : #'class initialization' }
+{ #category : 'class initialization' }
 CogInLineLiteralsX64Compiler class >> initializeAbstractRegistersWin64 [
 	"Assign the abstract registers with the identities/indices of the relevant concrete registers."
 
@@ -20,13 +22,13 @@ CogInLineLiteralsX64Compiler class >> initializeAbstractRegistersWin64 [
 	RISCTempReg := R11
 ]
 
-{ #category : #testing }
+{ #category : 'testing' }
 CogInLineLiteralsX64Compiler class >> isRISCTempRegister: reg [
 	"For tests to filter-out bogus values left in the RISCTempRegister, if any."
 	^reg = RISCTempReg
 ]
 
-{ #category : #'generate machine code' }
+{ #category : 'generate machine code' }
 CogInLineLiteralsX64Compiler >> computeSizeOfArithCqR [
 	"With CqR we assume constants are 32-bits or less."
 	<inline: true>
@@ -37,13 +39,13 @@ CogInLineLiteralsX64Compiler >> computeSizeOfArithCqR [
 	^10 "movabsq" + 3 "r op r"
 ]
 
-{ #category : #'generate machine code' }
+{ #category : 'generate machine code' }
 CogInLineLiteralsX64Compiler >> computeSizeOfArithCwR [
 	<inline: true>
 	^10 "MoveCwR" +  3 "ArithRR"
 ]
 
-{ #category : #'generate machine code' }
+{ #category : 'generate machine code' }
 CogInLineLiteralsX64Compiler >> concretizeArithCwR: x64opcode [
 	| value reg reverse |
 	value := operands at: 0.
@@ -71,7 +73,7 @@ CogInLineLiteralsX64Compiler >> concretizeArithCwR: x64opcode [
 	^machineCodeSize := 13
 ]
 
-{ #category : #'generate machine code' }
+{ #category : 'generate machine code' }
 CogInLineLiteralsX64Compiler >> concretizeMoveCwR [
 	"Will get inlined into concretizeAt: switch."
 	<inline: true>
@@ -107,13 +109,13 @@ CogInLineLiteralsX64Compiler >> concretizeMoveCwR [
 	^machineCodeSize := 11
 ]
 
-{ #category : #'as yet unclassified' }
+{ #category : 'as yet unclassified' }
 CogInLineLiteralsX64Compiler >> concretizeMovePatcheableC32R [
 	
 	^ self concretizeMoveC32R
 ]
 
-{ #category : #'generate machine code' }
+{ #category : 'generate machine code' }
 CogInLineLiteralsX64Compiler >> concretizePushCw [
 	"Will get inlined into concretizeAt: switch."
 	<inline: true>
@@ -151,7 +153,7 @@ CogInLineLiteralsX64Compiler >> concretizePushCw [
 	^machineCodeSize := 12
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 CogInLineLiteralsX64Compiler >> getDefaultCogCodeSize [
 	"Answer the default number of bytes to allocate for native code at startup.
 	 The actual value can be set via vmParameterAt: and/or a preference in the ini file."
@@ -159,19 +161,19 @@ CogInLineLiteralsX64Compiler >> getDefaultCogCodeSize [
 	^1024 * 1400
 ]
 
-{ #category : #'inline cacheing' }
+{ #category : 'inline cacheing' }
 CogInLineLiteralsX64Compiler >> inlineCacheTagAt: callSiteReturnAddress [
 	"Answer the inline cache tag for the return address of a send."
 	^self literal32BeforeFollowingAddress: callSiteReturnAddress - 5
 ]
 
-{ #category : #testing }
+{ #category : 'testing' }
 CogInLineLiteralsX64Compiler >> isPCDependent [
 	"Answer if the receiver is a pc-dependent instruction."
 	^self isJump or: [opcode = AlignmentNops]
 ]
 
-{ #category : #'inline cacheing' }
+{ #category : 'inline cacheing' }
 CogInLineLiteralsX64Compiler >> literal32BeforeFollowingAddress: followingAddress [
 	"Answer the 32-bit literal embedded in the instruction immediately preceding followingAddress."
 	^cogit
@@ -179,7 +181,7 @@ CogInLineLiteralsX64Compiler >> literal32BeforeFollowingAddress: followingAddres
 		to: #'unsigned int'
 ]
 
-{ #category : #'inline cacheing' }
+{ #category : 'inline cacheing' }
 CogInLineLiteralsX64Compiler >> literalBeforeFollowingAddress: followingAddress [
 	"Answer the literal embedded in the instruction immediately preceding followingAddress.
 	 This is used in the MoveCwR, PushCw and ArithCwR cases; these are distinguished by a
@@ -198,13 +200,13 @@ CogInLineLiteralsX64Compiler >> literalBeforeFollowingAddress: followingAddress 
 	"(Symbol allSymbols select: [:s| '*Cw:R:' match: s]), {#PushCw:} collect: [:s| {s. (self systemNavigation allCallsOn: s localToPackage: #VMMaker) size}]"
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 CogInLineLiteralsX64Compiler >> loadLiteralByteSize [
 	<inline: true>
 	^self moveCwRByteSize
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 CogInLineLiteralsX64Compiler >> moveCwRByteSize [
 	"With in-line literals we use an 11 byte sequence for loading a 64-bit immediate,
 	 which is one more than strictly necessary.  We plant a nop at the end of the
@@ -214,7 +216,7 @@ CogInLineLiteralsX64Compiler >> moveCwRByteSize [
 	^11
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 CogInLineLiteralsX64Compiler >> pushCwByteSize [
 	"With in-line literals we use a 12 byte sequence for loading a 64-bit immediate, which
 	 is one more than strictly necessary.  The sequence ends with a 16r50 + reg opcode
@@ -224,7 +226,7 @@ CogInLineLiteralsX64Compiler >> pushCwByteSize [
 	^12
 ]
 
-{ #category : #'generate machine code' }
+{ #category : 'generate machine code' }
 CogInLineLiteralsX64Compiler >> sizePCDependentInstructionAt: eventualAbsoluteAddress [
 	"Size a jump and set its address.  The target may be another instruction
 	 or an absolute address.  On entry the address inst var holds our virtual
@@ -272,7 +274,7 @@ CogInLineLiteralsX64Compiler >> sizePCDependentInstructionAt: eventualAbsoluteAd
 	^machineCodeSize "Slang can't inline the switch into the ifTrue:ifFalse: correctly"
 ]
 
-{ #category : #'inline cacheing' }
+{ #category : 'inline cacheing' }
 CogInLineLiteralsX64Compiler >> storeLiteral: literal beforeFollowingAddress: followingAddress [
 	"Rewrite the literal in the instruction immediately preceding followingAddress.
 	 This is used in the MoveCwR, PushCw and CmpCwR cases; these are distinguished by a

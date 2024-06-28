@@ -1,10 +1,12 @@
 Class {
-	#name : #CogRegisterAllocatingSimStackEntry,
-	#superclass : #CogSimStackEntry,
-	#category : #'VMMaker-JIT'
+	#name : 'CogRegisterAllocatingSimStackEntry',
+	#superclass : 'CogSimStackEntry',
+	#category : 'VMMaker-JIT',
+	#package : 'VMMaker',
+	#tag : 'JIT'
 }
 
-{ #category : #'compile abstract instructions' }
+{ #category : 'compile abstract instructions' }
 CogRegisterAllocatingSimStackEntry >> copyLiveRegisterIfSameAs: simStackEntry [
 	<inline: true>
 	self flag: 'should this also apply to SSConstant entries assigned to registers?'.
@@ -15,7 +17,7 @@ CogRegisterAllocatingSimStackEntry >> copyLiveRegisterIfSameAs: simStackEntry [
 		[liveRegister := simStackEntry liveRegister]
 ]
 
-{ #category : #'compile abstract instructions' }
+{ #category : 'compile abstract instructions' }
 CogRegisterAllocatingSimStackEntry >> ensureSpilledAt: baseOffset from: baseRegister [
 	spilled ifTrue:
 		[type = SSSpill ifTrue:
@@ -51,7 +53,7 @@ CogRegisterAllocatingSimStackEntry >> ensureSpilledAt: baseOffset from: baseRegi
 	register := baseRegister
 ]
 
-{ #category : #comparing }
+{ #category : 'comparing' }
 CogRegisterAllocatingSimStackEntry >> isIdenticalEntryAs: ssEntry [
 	<var: 'ssEntry' type: #'CogSimStackEntry *'>
 	^type = ssEntry type
@@ -61,7 +63,7 @@ CogRegisterAllocatingSimStackEntry >> isIdenticalEntryAs: ssEntry [
 		or: [(type = SSConstant and: [constant = ssEntry constant])]]]]
 ]
 
-{ #category : #comparing }
+{ #category : 'comparing' }
 CogRegisterAllocatingSimStackEntry >> isMergedWithTargetEntry: targetEntry [
 	"The receiver is a simStackEntry at a jump to the corresponding simStackEntry at the jump's target.
 	 Answer if no merge is required for the jump."
@@ -86,13 +88,13 @@ CogRegisterAllocatingSimStackEntry >> isMergedWithTargetEntry: targetEntry [
 	^false
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 CogRegisterAllocatingSimStackEntry >> liveRegister [
 
 	^ liveRegister
 ]
 
-{ #category : #'compile abstract instructions' }
+{ #category : 'compile abstract instructions' }
 CogRegisterAllocatingSimStackEntry >> moveToReg: reg [
 	liveRegister ~= NoReg
 		ifTrue: 
@@ -120,14 +122,14 @@ CogRegisterAllocatingSimStackEntry >> moveToReg: reg [
 		 cogit copyLiveRegisterToCopiesOf: self]
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 CogRegisterAllocatingSimStackEntry >> offset [
 	"Answer the value of offset"
 	self assert: (type = SSBaseOffset or: [type = SSSpill]).
 	^offset
 ]
 
-{ #category : #'compile abstract instructions' }
+{ #category : 'compile abstract instructions' }
 CogRegisterAllocatingSimStackEntry >> popToRegNoAssign: reg [
 	liveRegister ~= NoReg
 		ifTrue: 
@@ -151,7 +153,7 @@ CogRegisterAllocatingSimStackEntry >> popToRegNoAssign: reg [
 												ifFalse: [cogit Label]] }]]
 ]
 
-{ #category : #printing }
+{ #category : 'printing' }
 CogRegisterAllocatingSimStackEntry >> printStateOn: aStream [
 	<doNotGenerate> "Smalltalk-side only"
 	type isInteger ifFalse: [^self].
@@ -182,7 +184,7 @@ CogRegisterAllocatingSimStackEntry >> printStateOn: aStream [
 	aStream nextPut: $)
 ]
 
-{ #category : #'compile abstract instructions' }
+{ #category : 'compile abstract instructions' }
 CogRegisterAllocatingSimStackEntry >> reconcileWith: targetEntry spillOffset: spillOffset onSpillOrUnspill: spillOrUnspillBlock [
 	"Make the state of a targetEntry, a stack entry following a non-inlined special selector
 	 send, the same as the corresponding entry (the receiver) along the inlined path.
@@ -248,14 +250,14 @@ CogRegisterAllocatingSimStackEntry >> reconcileWith: targetEntry spillOffset: sp
 	^false
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 CogRegisterAllocatingSimStackEntry >> register [
 	"Answer the value of register"
 	self assert: (type = SSBaseOffset or: [type = SSRegister or: [type = SSSpill]]).
 	^register
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 CogRegisterAllocatingSimStackEntry >> registerMask [
 	"Answer a bit mask for the receiver's register, if any."
 	liveRegister ~= NoReg ifTrue:
@@ -263,21 +265,21 @@ CogRegisterAllocatingSimStackEntry >> registerMask [
 	^super registerMask
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 CogRegisterAllocatingSimStackEntry >> registerMaskOrNone [
 	liveRegister ~= NoReg ifTrue:
 		[^cogit registerMaskFor: liveRegister].
 	^super registerMaskOrNone
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 CogRegisterAllocatingSimStackEntry >> registerOrNone [
 	liveRegister ~= NoReg ifTrue:
 		[^liveRegister].
 	^super registerOrNone
 ]
 
-{ #category : #'compile abstract instructions' }
+{ #category : 'compile abstract instructions' }
 CogRegisterAllocatingSimStackEntry >> storeToReg: reg [
 	liveRegister ~= NoReg
 		ifTrue:
@@ -299,7 +301,7 @@ CogRegisterAllocatingSimStackEntry >> storeToReg: reg [
 		 cogit copyLiveRegisterToCopiesOf: self]
 ]
 
-{ #category : #'compile abstract instructions' }
+{ #category : 'compile abstract instructions' }
 CogRegisterAllocatingSimStackEntry >> storeToRegNoAssign: reg [
 	liveRegister ~= NoReg
 		ifTrue:

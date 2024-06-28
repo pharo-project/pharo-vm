@@ -1,6 +1,6 @@
 Class {
-	#name : #VMClassIndices,
-	#superclass : #VMBasicConstants,
+	#name : 'VMClassIndices',
+	#superclass : 'VMBasicConstants',
 	#classVars : [
 		'ClassArrayCompactIndex',
 		'ClassBitmapCompactIndex',
@@ -17,5 +17,7 @@ Class {
 		'ClassMessageCompactIndex',
 		'ClassMethodContextCompactIndex'
 	],
-	#category : #'VMMaker-Interpreter'
+	#category : 'VMMaker-Interpreter',
+	#package : 'VMMaker',
+	#tag : 'Interpreter'
 }
