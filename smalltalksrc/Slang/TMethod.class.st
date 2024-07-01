@@ -573,9 +573,11 @@ TMethod >> children [
 
 { #category : #'inlining support' }
 TMethod >> cleanASTOf: aNode [
-		"supressing an unused variable in a conditional statement can leave it empty, leaving only a goto and its associated label. We can supress the conditional branch if we encounter such cases"
-		aNode parent remove: aNode.
-		aNode parent children isEmpty ifTrue: [ self cleanASTOf: aNode parent ].
+	"supressing an unused variable in a conditional statement can leave it empty. We can supress the conditional branch if we encounter such cases"
+
+	aNode parent remove: aNode.
+	aNode parent children isEmpty ifTrue: [
+		self cleanASTOf: aNode parent ]
 ]
 
 { #category : #accessing }
@@ -2047,10 +2049,14 @@ TMethod >> isVolatile [
 TMethod >> iterateThrought: aNode [
 	"iterate throuht an AST and supress unused variables and constants, since we don't do anything when meeting a send (except in a conditional expression),assignment or return node the only variables and constants we come accross are alone in their lines"
 
-	(aNode isStatementList or: [aNode isSwitch]) ifTrue: [
+	aNode isStatementList ifTrue: [
 		aNode children do: [ :subNode |
 			subNode ifNotNil: [ self iterateThrought: subNode ] ] ].
-	(aNode isSend and: [ aNode isConditionalSend or: [aNode selector beginsWith: #cCoerce]]) ifTrue: [
+	aNode isSwitch ifTrue: [
+		aNode cases do: [ :case | self iterateThrought: case second ] ].
+	(aNode isSend and: [
+		 aNode isConditionalSend or: [ aNode selector beginsWith: #cCoerce ] ])
+		ifTrue: [
 		aNode arguments do: [ :subNode | self iterateThrought: subNode ] ].
 	(aNode isVariable or: aNode isConstant) ifTrue: [
 		self cleanASTOf: aNode ]

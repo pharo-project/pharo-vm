@@ -77,6 +77,13 @@ TBraceCaseNode >> cases: anObject [
 	cases do: [ :e | e parent: self ]
 ]
 
+{ #category : #accessing }
+TBraceCaseNode >> children [
+	"does nothing right now"
+
+	^ #(  )
+]
+
 { #category : #enumerating }
 TBraceCaseNode >> nodesDo: aBlock [
 	"Apply aBlock to all nodes in the receiver.
@@ -119,6 +126,13 @@ TBraceCaseNode >> nodesDo: aBlock unless: cautionaryBlock [
 	cases do:
 		[:node| node nodesDo: aBlock unless: cautionaryBlock].
 	aBlock value: self
+]
+
+{ #category : #transformations }
+TBraceCaseNode >> remove: aChild [
+	"does nothing right now"
+
+	^ self
 ]
 
 { #category : #enumerating }
