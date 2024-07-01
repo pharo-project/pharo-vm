@@ -546,7 +546,7 @@ TSendNode >> remove: aChild [
 	arguments isEmpty
 		ifTrue: [ receiver := nil ]
 		ifFalse: [
-			self selector = #cCoerce:to:
+			(self selector beginsWith: #cCoerce:to:)
 				ifTrue: [ "produce an empty collection without knowing the type"
 					arguments := arguments select: [ :e | e = aChild ].
 					receiver := nil ]
