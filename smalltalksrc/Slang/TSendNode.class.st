@@ -519,11 +519,38 @@ TSendNode >> receiver: aNode [
 ]
 
 { #category : #transformations }
-TSendNode >> remove: aChild [ 
-	"this method should be only called when cleaning an AST tree after an unused variable was found.only remove in the argument but delete the receiver if the arguments number changed to zero (meaning the method is in a deleting process), it makes children size reach 0, the method should be then deleted"
-	self halt.
+TSendNode >> reduceConditionalSend: branchIndex [
+	"called when an argument of a conditional send have been removed, if the method has multiple branches we can reduce the branch number to match the transformation"
+
+	| separation |
+	(#( #ifTrue:ifFalse: #ifFalse:ifTrue: #ifNil:ifNotNil:
+	    #ifNotNil:ifNil: ) includes: self selector) ifFalse: [ ^ self ].
+	separation := self selector indexOf: $:.
+	branchIndex = 1
+		ifTrue: [
+			self selector:
+				(self selector copyFrom: separation + 1 to: self selector size) ]
+		ifFalse: [
+		self selector: (self selector copyFrom: 1 to: separation) ]
+]
+
+{ #category : #transformations }
+TSendNode >> remove: aChild [
+	"this method should be only called when cleaning an AST tree after an unused variable was found meaning the method should be a conditional send or a cCoerce. 
+	If the selector has multiple branch and one become empty, we can elude it.
+	Only remove in the arguments but delete the receiver if the arguments number changed to zero (meaning the method can now be deleted), it makes children size reach 0, the method should then be deleted"
+
+	| branchIndex |
+	branchIndex := arguments indexOf: aChild.
 	arguments := arguments select: [ :e | e ~= aChild ].
-	receiver := nil
+	arguments isEmpty
+		ifTrue: [ receiver := nil ]
+		ifFalse: [
+			self selector = #cCoerce:to:
+				ifTrue: [ "produce an empty collection without knowing the type"
+					arguments := arguments select: [ :e | e = aChild ].
+					receiver := nil ]
+				ifFalse: [ self reduceConditionalSend: branchIndex ] ]
 ]
 
 { #category : #transformations }
@@ -563,6 +590,18 @@ TSendNode >> selector [
 { #category : #accessing }
 TSendNode >> selector: aSymbol [
 	selector := aSymbol
+]
+
+{ #category : #transformations }
+TSendNode >> selectorForReducedConditionalBranch: branchIndex [
+	"reduce the selector of the method accroding to branch index"
+
+	| separation |
+	separation := self selector indexOf: $:.
+	branchIndex = 1
+		ifTrue: [ self selector: (self selector copyFrom: 1 to: separation) ]
+		ifFalse: [
+		self selector copyFrom: separation + 1 to: self selector size ]
 ]
 
 { #category : #accessing }
