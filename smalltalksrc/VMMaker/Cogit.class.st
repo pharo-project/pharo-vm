@@ -614,8 +614,7 @@ Cogit class >> declareCVarsIn: aCCodeGenerator [
 	"In C the abstract opcode names clash with the Smalltak generator syntactic sugar.
 	 Most of the syntactic sugar is inlined, but alas some remains.  Rename the syntactic
 	 sugar to avoid the clash."
-	(self organization listAtCategoryNamed:
-		 #'abstract instructions') do: [ :s |
+	(self selectorsInProtocol: #'abstract instructions') do: [ :s |
 		aCCodeGenerator
 			addSelectorTranslation: s
 			to: 'g' , (aCCodeGenerator cFunctionNameFor: s) ].

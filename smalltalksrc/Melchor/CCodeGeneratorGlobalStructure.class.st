@@ -4,16 +4,17 @@ This subclass of CCodeGenerator adds support for sticking most global variables 
 Only simple globals are currently put in the array. Someday we might try adding pointers to the various arrays etc.
 "
 Class {
-	#name : #CCodeGeneratorGlobalStructure,
-	#superclass : #MLVMCCodeGenerator,
+	#name : 'CCodeGeneratorGlobalStructure',
+	#superclass : 'MLVMCCodeGenerator',
 	#instVars : [
 		'localStructDef',
 		'structDefDefine'
 	],
-	#category : #Melchor
+	#category : 'Melchor',
+	#package : 'Melchor'
 }
 
-{ #category : #'CAST translation' }
+{ #category : 'CAST translation' }
 CCodeGeneratorGlobalStructure >> bindBlock: aTBlockNode withArgs: arguments [
 
 	| blockStatements argumentNames replacements |
@@ -30,7 +31,7 @@ CCodeGeneratorGlobalStructure >> bindBlock: aTBlockNode withArgs: arguments [
 		  anStatement copy bindVariableUsesIn: replacements asDictionary ]
 ]
 
-{ #category : #'C code generator' }
+{ #category : 'C code generator' }
 CCodeGeneratorGlobalStructure >> buildSortedVariablesCollection [
 	"Build sorted vars, end result will be sorted collection based on static usage, 
 	perhaps cache lines will like this!"
@@ -63,7 +64,7 @@ CCodeGeneratorGlobalStructure >> buildSortedVariablesCollection [
 			[:ea| ea key]
 ]
 
-{ #category : #utilities }
+{ #category : 'utilities' }
 CCodeGeneratorGlobalStructure >> checkForGlobalUsage: vars in: aTMethod [ 
 	"override to handle global struct needs"
 	super checkForGlobalUsage: vars in: aTMethod.
@@ -77,7 +78,7 @@ CCodeGeneratorGlobalStructure >> checkForGlobalUsage: vars in: aTMethod [
 			[aTMethod referencesGlobalStruct]]
 ]
 
-{ #category : #'C code generator' }
+{ #category : 'C code generator' }
 CCodeGeneratorGlobalStructure >> emitCCodeOn: aStream doInlining: inlineFlag doAssertions: assertionFlag [
 	super emitCCodeOn: aStream doInlining: inlineFlag doAssertions: assertionFlag.
 
@@ -92,7 +93,7 @@ CCodeGeneratorGlobalStructure >> emitCCodeOn: aStream doInlining: inlineFlag doA
 		cr
 ]
 
-{ #category : #'C code generator' }
+{ #category : 'C code generator' }
 CCodeGeneratorGlobalStructure >> emitCVariablesOn: aStream [
 	"Store the global variable declarations on the given stream.
 	 Break logic into vars for structure and vars for non-structure."
@@ -167,7 +168,7 @@ CCodeGeneratorGlobalStructure >> emitCVariablesOn: aStream [
 		cr
 ]
 
-{ #category : #'C code generator' }
+{ #category : 'C code generator' }
 CCodeGeneratorGlobalStructure >> emitGlobalStructFlagOn: aStream [
 	"Depending upon the value of structDefDefine (See also #structDefDefine:), define SQ_USE_GLOBAL_STRUCT before including the header. Also derive the flag for using the global register; define USE_GLOBAL_STRUCT_REG to do so"
 
@@ -186,50 +187,48 @@ CCodeGeneratorGlobalStructure >> emitGlobalStructFlagOn: aStream [
 		cr
 ]
 
-{ #category : #'CAST translation' }
-CCodeGeneratorGlobalStructure >> generateCASTSetFieldTo: aTSendNode [ 
+{ #category : 'CAST translation' }
+CCodeGeneratorGlobalStructure >> generateCASTSetFieldTo: aTSendNode [
 
 	| structType fieldName fieldVale setFieldStatements |
-	
 	self assert: aTSendNode arguments size = 2.
 
 	fieldName := aTSendNode arguments first.
 	fieldVale := aTSendNode arguments second.
-	
+
 	structType := self structTypeFor: aTSendNode receiver.
-	
 
-	setFieldStatements := structType asClass allSlots collect: [ :slot |
-		| comparison |
-		
-		comparison := TSendNode 
-									receiver: (TSendNode 
-											receiver: (TConstantNode value: slot name asString) 
-											selector: 'strcmp:' 
-											arguments: { fieldName })
-									selector: '='
-									arguments: { TConstantNode value: 0 }.
 
-		TSendNode 
-			receiver: comparison
-			selector: 'ifTrue:' 
-			arguments: { 
-				TStatementListNode 
-					statements: { 
-						TSendNode 
-							receiver: aTSendNode receiver 
-							selector: (slot name, ':') 
-							arguments: { fieldVale } 
-					}
-			}			
+	setFieldStatements := (structType asClassInEnvironment:
+		                       self class environment) allSlots collect: [
+		                      :slot |
+		                      | comparison |
+		                      comparison := TSendNode
+			                                    receiver: (TSendNode
+					                                     receiver:
+					                                     (TConstantNode value:
+						                                      slot name asString)
+					                                     selector: 'strcmp:'
+					                                     arguments: { fieldName })
+			                                    selector: '='
+			                                    arguments:
+			                                    { (TConstantNode value: 0) }.
 
-	].
+		                      TSendNode
+			                      receiver: comparison
+			                      selector: 'ifTrue:'
+			                      arguments:
+				                      { (TStatementListNode statements:
+					                       { (TSendNode
+						                        receiver: aTSendNode receiver
+						                        selector: slot name , ':'
+						                        arguments: { fieldVale }) }) } ].
 
-	^ CCompoundStatementNode statements: (setFieldStatements collect: [ :e | e asCASTIn: self]).
-
+	^ CCompoundStatementNode statements:
+		  (setFieldStatements collect: [ :e | e asCASTIn: self ])
 ]
 
-{ #category : #'CAST translation' }
+{ #category : 'CAST translation' }
 CCodeGeneratorGlobalStructure >> generateCASTWithFieldsDoSeparatedBy: aTSendNode [
 
 	| structType allRewrittenStatements blockSeparatorStatements fieldBlock allFieldArguments |
@@ -242,8 +241,10 @@ CCodeGeneratorGlobalStructure >> generateCASTWithFieldsDoSeparatedBy: aTSendNode
 
 	structType := self structTypeFor: aTSendNode receiver.
 
-	allFieldArguments := structType asClass allSlots collect: [ :slot | 
-		                     { 
+	allFieldArguments := (structType asClassInEnvironment:
+		                      self class environment) allSlots collect: [
+		                     :slot |
+		                     {
 			                     (TConstantNode value: slot name asString).
 			                     (TSendNode
 				                      receiver: aTSendNode receiver
@@ -253,17 +254,17 @@ CCodeGeneratorGlobalStructure >> generateCASTWithFieldsDoSeparatedBy: aTSendNode
 	allRewrittenStatements := OrderedCollection new.
 
 	allFieldArguments
-		do: [ :fieldArgs | 
+		do: [ :fieldArgs |
 			allRewrittenStatements addAll:
 				(self bindBlock: fieldBlock withArgs: fieldArgs) ]
-		separatedBy: [ 
+		separatedBy: [
 		allRewrittenStatements addAll: blockSeparatorStatements ].
 
 	^ CCompoundStatementNode statements:
 		  (allRewrittenStatements collect: [ :e | e asCASTIn: self ])
 ]
 
-{ #category : #'CAST translation' }
+{ #category : 'CAST translation' }
 CCodeGeneratorGlobalStructure >> generateCASTWithStructNameDo: aTSendNode [
 
 	| argumentName structType rewrittenStatements aBlock |
@@ -284,14 +285,14 @@ CCodeGeneratorGlobalStructure >> generateCASTWithStructNameDo: aTSendNode [
 		  (rewrittenStatements collect: [ :e | e asCASTIn: self ])
 ]
 
-{ #category : #'C code generator' }
+{ #category : 'C code generator' }
 CCodeGeneratorGlobalStructure >> initialize [
 	super initialize.
 	localStructDef := nil. "ignored ivar - no longer used"
 	structDefDefine := '1'
 ]
 
-{ #category : #initialization }
+{ #category : 'initialization' }
 CCodeGeneratorGlobalStructure >> initializeCASTTranslationDictionary [
 
 	super initializeCASTTranslationDictionary.
@@ -301,12 +302,12 @@ CCodeGeneratorGlobalStructure >> initializeCASTTranslationDictionary [
 	castTranslationDict at: #setField:to: put: #generateCASTSetFieldTo:.
 ]
 
-{ #category : #public }
+{ #category : 'public' }
 CCodeGeneratorGlobalStructure >> isGlobalStructureBuild [
 	^true
 ]
 
-{ #category : #utilities }
+{ #category : 'utilities' }
 CCodeGeneratorGlobalStructure >> localizeGlobalVariables [
 "TPR - remove all the global vars destined for the structure that are only used once - not worth the space,
 actually what will happen is the folding code will fold these variables into the method"
@@ -316,7 +317,7 @@ actually what will happen is the folding code will fold these variables into the
 
 ]
 
-{ #category : #'C code generator' }
+{ #category : 'C code generator' }
 CCodeGeneratorGlobalStructure >> placeInStructure: var [
 	"See if we should put this array into a structure.
 	The variables listed are hardcoded as C in the interpreter thus they don't get resolved via TVariableNode logic.
@@ -332,7 +333,7 @@ CCodeGeneratorGlobalStructure >> placeInStructure: var [
 	^(self vmClass mustBeGlobal: var) not
 ]
 
-{ #category : #'C code generator' }
+{ #category : 'C code generator' }
 CCodeGeneratorGlobalStructure >> returnPrefixFromVariable: aName [
 	^((variables includes: aName)
 	   and: [self placeInStructure: aName])
@@ -340,7 +341,7 @@ CCodeGeneratorGlobalStructure >> returnPrefixFromVariable: aName [
 		ifFalse: [aName]
 ]
 
-{ #category : #'initialize-release' }
+{ #category : 'initialize-release' }
 CCodeGeneratorGlobalStructure >> structDefDefine: aString [
 "set the string that will appear in the C file to define whether or not to use the global struct; reasonable values would be:
 'USE_GLOBAL_STRUCT' - which would be defined in a header or makefile
@@ -349,7 +350,7 @@ CCodeGeneratorGlobalStructure >> structDefDefine: aString [
 	structDefDefine := aString
 ]
 
-{ #category : #'CAST translation' }
+{ #category : 'CAST translation' }
 CCodeGeneratorGlobalStructure >> structTypeFor: structNode [
 
 	| nodeType |

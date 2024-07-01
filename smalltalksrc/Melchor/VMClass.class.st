@@ -2,8 +2,8 @@
 I am an abstract superclass for all classes in the VM that want to maintain a source timeStamp.  I am also the holder of the InitializationOptions class variable which holds options such as which JIT or which memory manager to use when creating or generating a VM.
 "
 Class {
-	#name : #VMClass,
-	#superclass : #SlangClass,
+	#name : 'VMClass',
+	#superclass : 'SlangClass',
 	#instVars : [
 		'memoryManager'
 	],
@@ -18,47 +18,48 @@ Class {
 	#classInstVars : [
 		'timeStamp'
 	],
-	#category : #Melchor
+	#category : 'Melchor',
+	#package : 'Melchor'
 }
 
-{ #category : #translation }
+{ #category : 'translation' }
 VMClass class >> apiExportHeaderName [
 	"VM classesd that want to generate an api export header override this."
 	^nil
 ]
 
-{ #category : #'adding/removing methods' }
+{ #category : 'adding/removing methods' }
 VMClass class >> basicRemoveSelector: aSelector [
 	"Override to update the timeStamp"
 	^(super basicRemoveSelector: aSelector) ifNotNil:
 		[:oldMethod| self touch. oldMethod]
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 VMClass class >> bytesPerOop [
 	
 	^ BytesPerOop
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 VMClass class >> bytesPerOop: anInteger [
 
 	BytesPerOop := anInteger
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 VMClass class >> bytesPerWord [
 	
 	^ BytesPerWord 
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 VMClass class >> bytesPerWord: anInteger [ 
 
 	^ BytesPerWord := anInteger
 ]
 
-{ #category : #'accessing class hierarchy' }
+{ #category : 'accessing class hierarchy' }
 VMClass class >> cogitClass [
 	"Answer the cogitClass in effect.  Ensure that StackInterpreter has a nil cogitClass."
 	(self isInterpreterClass and: [self hasCogit not]) ifTrue:
@@ -68,13 +69,13 @@ VMClass class >> cogitClass [
 								ifAbsent: [#StackToRegisterMappingCogit])
 ]
 
-{ #category : #'accessing class hierarchy' }
+{ #category : 'accessing class hierarchy' }
 VMClass class >> constantClass [
 
 	^ VMBasicConstants
 ]
 
-{ #category : #'accessing class hierarchy' }
+{ #category : 'accessing class hierarchy' }
 VMClass class >> coreInterpreterClass [
 	"While the interpreterClass/vmClass for translation may be
 	 a subclass that holds a few primitives we want the actual
@@ -85,7 +86,7 @@ VMClass class >> coreInterpreterClass [
 		ifFalse: [self]
 ]
 
-{ #category : #translation }
+{ #category : 'translation' }
 VMClass class >> declareC: arrayOfVariableNames as: aCType in: aCCodeGenerator [
 	"Declare the variables in arrayOfVariableNames with the given type."
 
@@ -93,7 +94,7 @@ VMClass class >> declareC: arrayOfVariableNames as: aCType in: aCCodeGenerator [
 		do: [:varName | aCCodeGenerator var: varName type: aCType]
 ]
 
-{ #category : #translation }
+{ #category : 'translation' }
 VMClass class >> declareCAsOop: arrayOfVariableNames in: aCCodeGenerator [
 	"Declare the variables in arrayOfVariableNames with type representing position in object memory."
 
@@ -101,7 +102,7 @@ VMClass class >> declareCAsOop: arrayOfVariableNames in: aCCodeGenerator [
 		[:varName| aCCodeGenerator var: varName type: #usqInt]
 ]
 
-{ #category : #translation }
+{ #category : 'translation' }
 VMClass class >> declareCAsUSqLong: arrayOfVariableNames in: aCCodeGenerator [
 	"Declare the variables in arrayOfVariableNames with type representing position in object memory."
 
@@ -109,7 +110,7 @@ VMClass class >> declareCAsUSqLong: arrayOfVariableNames in: aCCodeGenerator [
 		[:varName| aCCodeGenerator var: varName type: #usqLong]
 ]
 
-{ #category : #translation }
+{ #category : 'translation' }
 VMClass class >> declareCVarsIn: aCCodeGenerator [ 
 	"Declare any additional variables and/or add type declarations for existing variables."
 	aCCodeGenerator
@@ -117,7 +118,7 @@ VMClass class >> declareCVarsIn: aCCodeGenerator [
 		declareC: 'char expensiveAsserts = 0'
 ]
 
-{ #category : #translation }
+{ #category : 'translation' }
 VMClass class >> declareInterpreterVersionIn: aCCodeGenerator defaultName: defaultName [	
 	aCCodeGenerator
 		var: #interpreterVersion
@@ -125,29 +126,29 @@ VMClass class >> declareInterpreterVersionIn: aCCodeGenerator defaultName: defau
 					(aCCodeGenerator shortMonticelloDescriptionForClass: self),']"'.
 ]
 
-{ #category : #'accessing class hierarchy' }
+{ #category : 'accessing class hierarchy' }
 VMClass class >> hasCogit [
 	^false
 ]
 
-{ #category : #translation }
+{ #category : 'translation' }
 VMClass class >> implicitReturnTypeFor: aSelector [
 	"Answer the return type for methods that don't have an explicit return."
 	^#sqInt
 ]
 
-{ #category : #initialization }
+{ #category : 'initialization' }
 VMClass class >> initializationOptions [
 	^InitializationOptions
 ]
 
-{ #category : #initialization }
+{ #category : 'initialization' }
 VMClass class >> initialize [
 	InitializationOptions ifNil: [InitializationOptions := Dictionary new].
 	ExpensiveAsserts := false
 ]
 
-{ #category : #initialization }
+{ #category : 'initialization' }
 VMClass class >> initializePrimitiveErrorCodes [
 	"Define the VM's primitive error codes.  N.B. these are
 	 replicated in platforms/Cross/vm/sqVirtualMachine.h."
@@ -186,7 +187,7 @@ VMClass class >> initializePrimitiveErrorCodes [
 	PrimErrOperationFailed		:= pet indexOf: #'operation failed' ifAbsent: 24
 ]
 
-{ #category : #initialization }
+{ #category : 'initialization' }
 VMClass class >> initializeWithOptions: optionsDictionaryOrArray [
 	"Initialize the receiver, typically initializing class variables. Initialize any class variables
 	 whose names occur in optionsDictionary with the corresponding values there-in."
@@ -197,84 +198,84 @@ VMClass class >> initializeWithOptions: optionsDictionaryOrArray [
 	ExpensiveAsserts := InitializationOptions at: #ExpensiveAsserts ifAbsent: [false]
 ]
 
-{ #category : #'accessing class hierarchy' }
+{ #category : 'accessing class hierarchy' }
 VMClass class >> interpreterClass [
 	^self isInterpreterClass ifTrue: [self]
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 VMClass class >> interpreterVersion [ 
 	^ self subclassResponsibility
 ]
 
-{ #category : #translation }
+{ #category : 'translation' }
 VMClass class >> isAcceptableAncilliaryClass: aClass [
 	^true
 ]
 
-{ #category : #translation }
+{ #category : 'translation' }
 VMClass class >> isAccessor: aSelector [
 	"Answer if aSelector is simply an accessor method for one of our fields.
 	 Answer false by default.  VMStructType classes redefine this appropriately."
 	^false
 ]
 
-{ #category : #translation }
+{ #category : 'translation' }
 VMClass class >> isCogitClass [
 	"The various Cogit classes override this."
 	^false
 ]
 
-{ #category : #translation }
+{ #category : 'translation' }
 VMClass class >> isInterpreterClass [
 	"The various Interpreter classes override this."
 	^false
 ]
 
-{ #category : #translation }
+{ #category : 'translation' }
 VMClass class >> isNonArgumentImplicitReceiverVariableName: aString [
 	^false
 ]
 
-{ #category : #translation }
+{ #category : 'translation' }
 VMClass class >> isPluginClass [
 	"InterpreterPlugin class override this."
 	^false
 ]
 
-{ #category : #translation }
+{ #category : 'translation' }
 VMClass class >> isSpurMemoryManagerClass [
 
 	^ false
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 VMClass class >> memoryManagerVersion [ 
 	^ self subclassResponsibility
 ]
 
-{ #category : #translation }
+{ #category : 'translation' }
 VMClass class >> monticelloDescription [
 	"Answer the Monticello version of the packlage containing the receiver.
 	 This is a hook to allow subclasses to expand upon the default monticello description."
 	^CCodeGenerator monticelloDescriptionFor: self
 ]
 
-{ #category : #translation }
+{ #category : 'translation' }
 VMClass class >> mustBeGlobal: var [
 	"Answer if a variable must be global and exported.  Used for inst vars that are accessed from VM support code."
 
 	^var = #expensiveAsserts
 ]
 
-{ #category : #translation }
+{ #category : 'translation' }
 VMClass class >> noteCompilationOf: aSelector meta: isMeta [
 	"note the recompiliation by resetting the timeStamp "
 	timeStamp := Time totalSeconds.
 	^super noteCompilationOf: aSelector meta: isMeta
 ]
 
-{ #category : #'accessing class hierarchy' }
+{ #category : 'accessing class hierarchy' }
 VMClass class >> objectMemoryClass [
 
 	^Smalltalk at: (InitializationOptions
@@ -282,12 +283,12 @@ VMClass class >> objectMemoryClass [
 					ifAbsent: [ #Spur32BitMemoryManager ])
 ]
 
-{ #category : #'accessing class hierarchy' }
+{ #category : 'accessing class hierarchy' }
 VMClass class >> objectRepresentationClass [
 	^self objectMemoryClass objectRepresentationClass
 ]
 
-{ #category : #translation }
+{ #category : 'translation' }
 VMClass class >> renameSelectorIfStaticallyResolved: aString [
 
 	^ (self staticallyResolvedSelectors includes: aString)
@@ -295,13 +296,13 @@ VMClass class >> renameSelectorIfStaticallyResolved: aString [
 		  ifFalse: [ ^ aString ]
 ]
 
-{ #category : #translation }
+{ #category : 'translation' }
 VMClass class >> shouldGenerateTypedefFor: aStructClass [
 	"Hack to work-around multiple definitions.  Sometimes a type has been defined in an include."
 	^aStructClass shouldBeGenerated
 ]
 
-{ #category : #translation }
+{ #category : 'translation' }
 VMClass class >> shouldIncludeMethodForSelector: selector [
 	"Answer whether a primitive method should be translated.  Emit a warning to the transcript if the method doesn't exist."
 	^(self whichClassIncludesSelector: selector)
@@ -322,35 +323,35 @@ VMClass class >> shouldIncludeMethodForSelector: selector [
 			 false]
 ]
 
-{ #category : #simulation }
+{ #category : 'simulation' }
 VMClass class >> simulatorClass [
 	"For running from Smalltalk - answer a class that can be used to simulate the receiver."
 
 	^self
 ]
 
-{ #category : #translation }
+{ #category : 'translation' }
 VMClass class >> specialValueForConstant: constantName default: defaultValue [
 	^nil
 ]
 
-{ #category : #translation }
+{ #category : 'translation' }
 VMClass class >> staticallyResolvePolymorphicSelector: aSelectorSymbol [
 	^((self name select: [:ea| ea isUppercase]), '_', aSelectorSymbol) asSymbol
 ]
 
-{ #category : #translation }
+{ #category : 'translation' }
 VMClass class >> staticallyResolvedSelectors [
 
 	^ #()
 ]
 
-{ #category : #translation }
+{ #category : 'translation' }
 VMClass class >> timeStamp [
 	^timeStamp ifNil:[0]
 ]
 
-{ #category : #translation }
+{ #category : 'translation' }
 VMClass class >> touch [
 	"Reset the timeStamp"
 	"Smalltalk allClasses select:
@@ -359,7 +360,7 @@ VMClass class >> touch [
 	timeStamp := Time totalSeconds
 ]
 
-{ #category : #translation }
+{ #category : 'translation' }
 VMClass class >> translationClass [
 	"Return the class to use as the interpreterCLass when translating.  For the all-in-one
 	 VMs that inherit from ObjectMemory this is the receiver.  But for the separate VMs
@@ -367,7 +368,7 @@ VMClass class >> translationClass [
 	^self
 ]
 
-{ #category : #translation }
+{ #category : 'translation' }
 VMClass class >> writeVMHeaderTo: aStream bytesPerWord: bytesPerWord generator: aCCodeGenerator [
 	"Generate the contents of interp.h on aStream.  Specific Interpreter subclasses
 	 override to add more stuff."
@@ -399,14 +400,14 @@ VMClass class >> writeVMHeaderTo: aStream bytesPerWord: bytesPerWord generator: 
 	aStream newLine
 ]
 
-{ #category : #'translation support' }
+{ #category : 'translation support' }
 VMClass >> addressOf: anObject [
 	<doNotGenerate>
 	"Translates into &anObject in C."
 	^anObject
 ]
 
-{ #category : #'translation support' }
+{ #category : 'translation support' }
 VMClass >> addressOf: anObject put: aBlock [
 	<doNotGenerate>
 	"Simulate a C pointer.  Translates into &anObject in C. Provides something
@@ -419,7 +420,7 @@ VMClass >> addressOf: anObject put: aBlock [
 		atPutBlock: [:obj :idx :val| aBlock value: (thing := val)]
 ]
 
-{ #category : #'C library simulation' }
+{ #category : 'C library simulation' }
 VMClass >> alloca: desiredSize [
 	"Simulation of alloca(3)"
 	<doNotGenerate>
@@ -435,13 +436,13 @@ VMClass >> alloca: desiredSize [
 		yourself
 ]
 
-{ #category : #'C library extensions' }
+{ #category : 'C library extensions' }
 VMClass >> alloca: numElements type: elementType [
 	<cmacro: '(numElements, elementType) alloca((numElements)*sizeof(elementType))'>
 	^CArrayAccessor on: ((1 to: numElements) collect: [:ign| elementType new])
 ]
 
-{ #category : #'C library extensions' }
+{ #category : 'C library extensions' }
 VMClass >> asString: aStringOrStringIndex [
 	"aStringOrStringIndex is either a string or an address in the heap.
 	 Create a String of the requested length form the bytes in the
@@ -454,13 +455,13 @@ VMClass >> asString: aStringOrStringIndex [
 	^self strncpy: (ByteString new: sz) _: aStringOrStringIndex _: sz
 ]
 
-{ #category : #'debug support' }
+{ #category : 'debug support' }
 VMClass >> assert: aBooleanExpression l: linenum [
 	<doNotGenerate>
 	^self assert: aBooleanExpression
 ]
 
-{ #category : #'debug support' }
+{ #category : 'debug support' }
 VMClass >> asserta: aBooleanExpression [
 	<doNotGenerate>
 	| result |
@@ -469,13 +470,13 @@ VMClass >> asserta: aBooleanExpression [
 	^result
 ]
 
-{ #category : #'debug support' }
+{ #category : 'debug support' }
 VMClass >> asserta: aBooleanExpression l: linenum [
 	<doNotGenerate>
 	^self asserta: aBooleanExpression
 ]
 
-{ #category : #'memory access' }
+{ #category : 'memory access' }
 VMClass >> cCoerce: value to: cTypeString [
 	"Type coercion. For translation a cast will be emmitted. When running in Smalltalk
 	  answer a suitable wrapper for correct indexing."
@@ -485,7 +486,7 @@ VMClass >> cCoerce: value to: cTypeString [
 		ifNotNil: [value coerceTo: cTypeString sim: self]
 ]
 
-{ #category : #'translation support' }
+{ #category : 'translation support' }
 VMClass >> cCoerceSimple: value to: cTypeString [
 	<doNotGenerate>
 	"Type coercion for translation and simulation.
@@ -515,14 +516,14 @@ VMClass >> cCoerceSimple: value to: cTypeString [
 		[#'usqIntptr_t (*)(void)']					->	[value] }
 ]
 
-{ #category : #'C library simulation' }
+{ #category : 'C library simulation' }
 VMClass >> calloc: num _: size [ 
 
 	<doNotGenerate>
 	^ self malloc: num * size
 ]
 
-{ #category : #'translation support' }
+{ #category : 'translation support' }
 VMClass >> contentsOf: valueHolder [
 
 	<cmacro: '(value) value'>
@@ -530,7 +531,7 @@ VMClass >> contentsOf: valueHolder [
 	^ valueHolder contents
 ]
 
-{ #category : #'translation support' }
+{ #category : 'translation support' }
 VMClass >> cppIf: conditionBlockOrValue ifTrue: trueExpressionOrBlock [
 	"When translated, produces #if (condition) #else #endif CPP directives.
 	 Example usage:
@@ -542,7 +543,7 @@ VMClass >> cppIf: conditionBlockOrValue ifTrue: trueExpressionOrBlock [
 	^self cppIf: conditionBlockOrValue ifTrue: trueExpressionOrBlock ifFalse: nil
 ]
 
-{ #category : #'C pre-processor extensions' }
+{ #category : 'C pre-processor extensions' }
 VMClass >> defined: aSymbol [
 	"Simulated version of the C pre-processor defined()"
 	<doNotGenerate>
@@ -551,7 +552,7 @@ VMClass >> defined: aSymbol [
 		ifNotNil: [:binding| binding value ~~ #undefined]
 ]
 
-{ #category : #'memory access' }
+{ #category : 'memory access' }
 VMClass >> fetchSingleFloatAtPointer: pointer into: aFloat [
 	"This gets implemented by Macros in C, where its types will also be checked.
 	 pointer is a raw address, and aFloat is a 32-bit single precision float."
@@ -560,49 +561,49 @@ VMClass >> fetchSingleFloatAtPointer: pointer into: aFloat [
 	^self fetchSingleFloatAt: pointer into: aFloat
 ]
 
-{ #category : #'file primitives' }
+{ #category : 'file primitives' }
 VMClass >> fgetc: file [ 
 
 	<doNotGenerate>
 	^ file next
 ]
 
-{ #category : #'memory access' }
+{ #category : 'memory access' }
 VMClass >> floatAtPointer: pointer [
 
 	<doNotGenerate>
 	self notYetImplemented 
 ]
 
-{ #category : #'memory access' }
+{ #category : 'memory access' }
 VMClass >> floatAtPointer: pointer put: value [
 
 	<doNotGenerate>
 	self notYetImplemented
 ]
 
-{ #category : #'file primitives' }
+{ #category : 'file primitives' }
 VMClass >> fprintf: aStream _: format [ 
 
 	<doNotGenerate>
 	^ self fprintf: aStream format: format arguments: { }
 ]
 
-{ #category : #'file primitives' }
+{ #category : 'file primitives' }
 VMClass >> fprintf: aStream _: format _: aValue [ 
 
 	<doNotGenerate>
 	^ self fprintf: aStream format: format arguments: { aValue }
 ]
 
-{ #category : #'file primitives' }
+{ #category : 'file primitives' }
 VMClass >> fprintf: aStream _: format _: aValue _: otherValue [
 
 	<doNotGenerate>
 	^ self fprintf: aStream format: format arguments: { aValue. otherValue }
 ]
 
-{ #category : #'file primitives' }
+{ #category : 'file primitives' }
 VMClass >> fprintf: aStream format: aFormat arguments: arguments [
 
 	<doNotGenerate>
@@ -616,13 +617,13 @@ VMClass >> fprintf: aStream format: aFormat arguments: arguments [
 		flush
 ]
 
-{ #category : #'C library simulation' }
+{ #category : 'C library simulation' }
 VMClass >> free: pointer [
 	<doNotGenerate>
 	"Do nothing"
 ]
 
-{ #category : #'memory access' }
+{ #category : 'memory access' }
 VMClass >> int16AtPointer: pointer [
 	"This gets implemented by Macros in C, where its types will also be checked.
 	 pointer is a raw address, and the result is an 16 bit integer."
@@ -631,7 +632,7 @@ VMClass >> int16AtPointer: pointer [
 	^self shortAt: pointer
 ]
 
-{ #category : #'memory access' }
+{ #category : 'memory access' }
 VMClass >> int16AtPointer: pointer put: value [
 	"This gets implemented by Macros in C, where its types will also be checked.
 	 pointer is a raw address, and the result is an 16 bit integer."
@@ -640,7 +641,7 @@ VMClass >> int16AtPointer: pointer put: value [
 	^self shortAt: pointer put: value
 ]
 
-{ #category : #'memory access' }
+{ #category : 'memory access' }
 VMClass >> int32AtPointer: pointer [
 	"This gets implemented by Macros in C, where its types will also be checked.
 	 pointer is a raw address, and the result is an 32 bit integer."
@@ -649,7 +650,7 @@ VMClass >> int32AtPointer: pointer [
 	^self longAt: pointer
 ]
 
-{ #category : #'memory access' }
+{ #category : 'memory access' }
 VMClass >> int32AtPointer: pointer put: value [
 	"This gets implemented by Macros in C, where its types will also be checked.
 	 pointer is a raw address, and the result is an 32 bit integer."
@@ -658,7 +659,7 @@ VMClass >> int32AtPointer: pointer put: value [
 	^self longAt: pointer put: value
 ]
 
-{ #category : #'memory access' }
+{ #category : 'memory access' }
 VMClass >> int64AtPointer: pointer [
 	"This gets implemented by Macros in C, where its types will also be checked.
 	 pointer is a raw address, and the result is the width of a machine word."
@@ -667,7 +668,7 @@ VMClass >> int64AtPointer: pointer [
 	^ memoryManager long64At: pointer
 ]
 
-{ #category : #'memory access' }
+{ #category : 'memory access' }
 VMClass >> int64AtPointer: pointer put: longValue [
 	"This gets implemented by Macros in C, where its types will also be checked.
 	 pointer is a raw address, and longValue is the width of a machine word."
@@ -676,7 +677,7 @@ VMClass >> int64AtPointer: pointer put: longValue [
 	^ memoryManager long64At: pointer put: longValue
 ]
 
-{ #category : #'memory access' }
+{ #category : 'memory access' }
 VMClass >> int8AtPointer: pointer [
 	"This gets implemented by Macros in C, where its types will also be checked.
 	 pointer is a raw address, and the result is an 16 bit integer."
@@ -685,7 +686,7 @@ VMClass >> int8AtPointer: pointer [
 	^self at: pointer
 ]
 
-{ #category : #'memory access' }
+{ #category : 'memory access' }
 VMClass >> int8AtPointer: pointer put: value [
 	"This gets implemented by Macros in C, where its types will also be checked.
 	 pointer is a raw address, and the result is an 16 bit integer."
@@ -694,20 +695,20 @@ VMClass >> int8AtPointer: pointer put: value [
 	^self at: pointer put: value
 ]
 
-{ #category : #'plugin support' }
+{ #category : 'plugin support' }
 VMClass >> isInterpreterProxy [
 	<doNotGenerate>
 	"Return false since I am a real Interpreter simulation"
 	^false
 ]
 
-{ #category : #'hack compatibility' }
+{ #category : 'hack compatibility' }
 VMClass >> localNameFor: aString [
 	<doNotGenerate>
 	^ aString asFileReference basename
 ]
 
-{ #category : #logging }
+{ #category : 'logging' }
 VMClass >> logDebug: aFormat _: aParameter [
 
 	<doNotGenerate>
@@ -715,56 +716,56 @@ VMClass >> logDebug: aFormat _: aParameter [
 	(aFormat printf: { aParameter }) traceCr
 ]
 
-{ #category : #'debug support' }
+{ #category : 'debug support' }
 VMClass >> logError: aMessage [
 	
 	<doNotGenerate>
 	self logError: aMessage withArgs: #()
 ]
 
-{ #category : #'debug support' }
+{ #category : 'debug support' }
 VMClass >> logError: aFormat _: arg1 [
 	
 	<doNotGenerate>
 	self logError: aFormat withArgs: { arg1 }
 ]
 
-{ #category : #'debug support' }
+{ #category : 'debug support' }
 VMClass >> logError: aFormat _: arg1 _: arg2 [
 	
 	<doNotGenerate>
 	self logError: aFormat withArgs: { arg1. arg2 }
 ]
 
-{ #category : #'debug support' }
+{ #category : 'debug support' }
 VMClass >> logError: aFormat withArgs: args [
 	
 	<doNotGenerate>
 	Error signal: (aFormat printf: args)
 ]
 
-{ #category : #'debug support' }
+{ #category : 'debug support' }
 VMClass >> logWarn: aMessage [
 	
 	<doNotGenerate>
 	self logWarn: aMessage withArgs: #()
 ]
 
-{ #category : #'debug support' }
+{ #category : 'debug support' }
 VMClass >> logWarn: aMessage _: anArgument [
 	
 	<doNotGenerate>
 	self logWarn: aMessage withArgs: { anArgument }
 ]
 
-{ #category : #'debug support' }
+{ #category : 'debug support' }
 VMClass >> logWarn: aFormat withArgs: args [
 	
 	<doNotGenerate>
 	(aFormat printf: args) traceCr
 ]
 
-{ #category : #'memory access' }
+{ #category : 'memory access' }
 VMClass >> long64AtPointer: pointer [
 	"This gets implemented by Macros in C, where its types will also be checked.
 	 pointer is a raw address, and the result is the width of a machine word."
@@ -773,7 +774,7 @@ VMClass >> long64AtPointer: pointer [
 	^self halt
 ]
 
-{ #category : #'memory access' }
+{ #category : 'memory access' }
 VMClass >> long64AtPointer: pointer put: longValue [
 	"This gets implemented by Macros in C, where its types will also be checked.
 	 pointer is a raw address, and longValue is the width of a machine word."
@@ -782,7 +783,7 @@ VMClass >> long64AtPointer: pointer put: longValue [
 	^self halt.
 ]
 
-{ #category : #'memory access' }
+{ #category : 'memory access' }
 VMClass >> longAtPointer: pointer [
 	"This gets implemented by Macros in C, where its types will also be checked.
 	 pointer is a raw address, and the result is the width of a machine word."
@@ -791,7 +792,7 @@ VMClass >> longAtPointer: pointer [
 	^self longAt: pointer
 ]
 
-{ #category : #'memory access' }
+{ #category : 'memory access' }
 VMClass >> longAtPointer: pointer put: longValue [
 	"This gets implemented by Macros in C, where its types will also be checked.
 	 pointer is a raw address, and longValue is the width of a machine word."
@@ -800,14 +801,14 @@ VMClass >> longAtPointer: pointer put: longValue [
 	^self longAt: pointer put: longValue
 ]
 
-{ #category : #'simulation support' }
+{ #category : 'simulation support' }
 VMClass >> majorVersion [
 	"This is implemented in sqVirtualMachine.c, so this form is for simulation only."
 	<doNotGenerate>
 	^self class vmProxyMajorVersion
 ]
 
-{ #category : #'C library simulation' }
+{ #category : 'C library simulation' }
 VMClass >> malloc: size [
 	<doNotGenerate>
 	| address region |
@@ -822,7 +823,7 @@ VMClass >> malloc: size [
 		yourself
 ]
 
-{ #category : #'C library simulation' }
+{ #category : 'C library simulation' }
 VMClass >> memcmp: array1 _: array2 _: length [
 
 	<doNotGenerate>
@@ -831,7 +832,7 @@ VMClass >> memcmp: array1 _: array2 _: length [
 	^ 0
 ]
 
-{ #category : #'C library simulation' }
+{ #category : 'C library simulation' }
 VMClass >> memcpy: dest _: src _: bytes [
 	<doNotGenerate>
 	"implementation of memcpy(3). N.B. If ranges overlap, must use memmove."
@@ -881,7 +882,7 @@ VMClass >> memcpy: dest _: src _: bytes [
 	^destination
 ]
 
-{ #category : #'C library simulation' }
+{ #category : 'C library simulation' }
 VMClass >> memmove: destAddress _: sourceAddress _: bytes [
 	<doNotGenerate>
 	| dst src  |
@@ -898,33 +899,33 @@ VMClass >> memmove: destAddress _: sourceAddress _: bytes [
 				[:i| self longAt: dst + i put: (self longAt: src + i)]]
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 VMClass >> memoryManager [
 	<doNotGenerate>
 	^ memoryManager
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 VMClass >> memoryManager: aMemoryManager [
 	<doNotGenerate>
 	memoryManager := aMemoryManager
 ]
 
-{ #category : #'simulation support' }
+{ #category : 'simulation support' }
 VMClass >> minorVersion [
 	"This is implemented in sqVirtualMachine.c, so this form is for simulation only."
 	<doNotGenerate>
 	^self class vmProxyMinorVersion
 ]
 
-{ #category : #'translation support' }
+{ #category : 'translation support' }
 VMClass >> notYetImplemented [
 
 	<inline: true>
 	self notYetImplemented: 'Not Yet Implemented!'
 ]
 
-{ #category : #'translation support' }
+{ #category : 'translation support' }
 VMClass >> notYetImplemented: aMessage [
 
 	<inline: true>
@@ -936,13 +937,13 @@ VMClass >> notYetImplemented: aMessage [
 		inSmalltalk: [ super notYetImplemented ]
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 VMClass >> objectRepresentationClass [
 	<doNotGenerate>
 	^self class objectRepresentationClass
 ]
 
-{ #category : #'oop comparison' }
+{ #category : 'oop comparison' }
 VMClass >> oop: anOop isGreaterThan: otherOop [
 	"Compare two oop values, treating them as object memory locations; i.e. use unsigned comparisons.
 	 Use a macro, instead of #cCoerce:to: to provide fast simulation and inline code in conditionals,
@@ -951,7 +952,7 @@ VMClass >> oop: anOop isGreaterThan: otherOop [
 	^anOop > otherOop
 ]
 
-{ #category : #'oop comparison' }
+{ #category : 'oop comparison' }
 VMClass >> oop: anOop isGreaterThan: baseOop andLessThan: limitOop [
 	"Compare two oop values, treating them as object memory locations; i.e. use unsigned comparisons.
 	 Use a macro, instead of #cCoerce:to: to provide fast simulation and inline code in conditionals,
@@ -960,7 +961,7 @@ VMClass >> oop: anOop isGreaterThan: baseOop andLessThan: limitOop [
 	^anOop > baseOop and: [anOop < limitOop]
 ]
 
-{ #category : #'oop comparison' }
+{ #category : 'oop comparison' }
 VMClass >> oop: anOop isGreaterThanOrEqualTo: otherOop [
 	"Compare two oop values, treating them as object memory locations; i.e. use unsigned comparisons.
 	 Use a macro, instead of #cCoerce:to: to provide fast simulation and inline code in conditionals,
@@ -969,7 +970,7 @@ VMClass >> oop: anOop isGreaterThanOrEqualTo: otherOop [
 	^anOop >= otherOop
 ]
 
-{ #category : #'oop comparison' }
+{ #category : 'oop comparison' }
 VMClass >> oop: anOop isGreaterThanOrEqualTo: baseOop andLessThan: limitOop [
 	"Compare two oop values, treating them as object memory locations; i.e. use unsigned comparisons.
 	 Use a macro, instead of #cCoerce:to: to provide fast simulation and inline code in conditionals,
@@ -978,7 +979,7 @@ VMClass >> oop: anOop isGreaterThanOrEqualTo: baseOop andLessThan: limitOop [
 	^anOop >= baseOop and: [anOop < limitOop]
 ]
 
-{ #category : #'oop comparison' }
+{ #category : 'oop comparison' }
 VMClass >> oop: anOop isGreaterThanOrEqualTo: baseOop andLessThanOrEqualTo: limitOop [
 	"Compare two oop values, treating them as object memory locations; i.e. use unsigned comparisons.
 	 Use a macro, instead of #cCoerce:to: to provide fast simulation and inline code in conditionals,
@@ -987,7 +988,7 @@ VMClass >> oop: anOop isGreaterThanOrEqualTo: baseOop andLessThanOrEqualTo: limi
 	^anOop >= baseOop and: [anOop <= limitOop]
 ]
 
-{ #category : #'oop comparison' }
+{ #category : 'oop comparison' }
 VMClass >> oop: anOop isLessThan: otherOop [
 	"Compare two oop values, treating them as object memory locations; i.e. use unsigned comparisons.
 	 Use a macro, instead of #cCoerce:to: to provide fast simulation and inline code in conditionals,
@@ -996,7 +997,7 @@ VMClass >> oop: anOop isLessThan: otherOop [
 	^anOop < otherOop
 ]
 
-{ #category : #'oop comparison' }
+{ #category : 'oop comparison' }
 VMClass >> oop: anOop isLessThanOrEqualTo: otherOop [
 	"Compare two oop values, treating them as object memory locations; i.e. use unsigned comparisons.
 	 Use a macro, instead of #cCoerce:to: to provide fast simulation and inline code in conditionals,
@@ -1005,7 +1006,7 @@ VMClass >> oop: anOop isLessThanOrEqualTo: otherOop [
 	^anOop <= otherOop
 ]
 
-{ #category : #'memory access' }
+{ #category : 'memory access' }
 VMClass >> oopForPointer: pointerOrSurrogate [
 	"This gets implemented by Macros in C, where its types will also be checked.
 	 oop is the width of a machine word, and pointer is a raw address."
@@ -1013,7 +1014,7 @@ VMClass >> oopForPointer: pointerOrSurrogate [
 	^pointerOrSurrogate asInteger
 ]
 
-{ #category : #'memory access' }
+{ #category : 'memory access' }
 VMClass >> pointerAtPointer: pointer [
 	"This gets implemented by Macros in C, where its types will also be checked.
 	 pointer is a raw address, and the result is the width of a machine word."
@@ -1022,7 +1023,7 @@ VMClass >> pointerAtPointer: pointer [
 	^self longAt: pointer
 ]
 
-{ #category : #'memory access' }
+{ #category : 'memory access' }
 VMClass >> pointerAtPointer: pointer put: value [
 	"This gets implemented by Macros in C, where its types will also be checked.
 	 pointer is a raw address, and the result is the width of a machine word."
@@ -1031,7 +1032,7 @@ VMClass >> pointerAtPointer: pointer put: value [
 	^self longAt: pointer put: value
 ]
 
-{ #category : #'translation support' }
+{ #category : 'translation support' }
 VMClass >> pointerForOop: oop [
 	"This gets implemented by Macros in C, where its types will also be checked.
 	 oop is the width of a machine word, and pointer is a raw address."
@@ -1040,14 +1041,14 @@ VMClass >> pointerForOop: oop [
 	^oop
 ]
 
-{ #category : #'C library simulation' }
+{ #category : 'C library simulation' }
 VMClass >> realloc: originalAddress _: desiredSize [
 
 	<doNotGenerate>
 	^ memoryManager reallocate: originalAddress withSize: desiredSize
 ]
 
-{ #category : #arithmetic }
+{ #category : 'arithmetic' }
 VMClass >> safe: signedInteger mod: positiveModulus [
 	<inline>
 	| remainder |
@@ -1056,7 +1057,7 @@ VMClass >> safe: signedInteger mod: positiveModulus [
 		ifFalse: [remainder]
 ]
 
-{ #category : #'translation support' }
+{ #category : 'translation support' }
 VMClass >> simulationOnly: aBlock [
 
 	"Evaluate piece of code only during simulation.
@@ -1067,32 +1068,32 @@ VMClass >> simulationOnly: aBlock [
 		inSmalltalk: aBlock
 ]
 
-{ #category : #'memory access' }
+{ #category : 'memory access' }
 VMClass >> singleFloatAtPointer: pointer [
 	<doNotGenerate>
 	self halt.
 ]
 
-{ #category : #'memory access' }
+{ #category : 'memory access' }
 VMClass >> singleFloatAtPointer: pointer put: value [
 	<doNotGenerate>
 	self halt.
 ]
 
-{ #category : #'I/O primitive support' }
+{ #category : 'I/O primitive support' }
 VMClass >> sqImageFile: imageFile Seek: position [
 
 	<doNotGenerate>
 	imageFile position: position
 ]
 
-{ #category : #'simulation support' }
+{ #category : 'simulation support' }
 VMClass >> sqLowLevelMFence [
 	<doNotGenerate>
 	"A no-op in the simulator"
 ]
 
-{ #category : #'memory access' }
+{ #category : 'memory access' }
 VMClass >> storeFloatAtPointer: pointer from: aFloat [
 	"This gets implemented by Macros in C, where its types will also be checked.
 	 pointer is a raw address, and aFloat is a 64-bit double precision float."
@@ -1101,7 +1102,7 @@ VMClass >> storeFloatAtPointer: pointer from: aFloat [
 	^self storeFloatAt: pointer from: aFloat
 ]
 
-{ #category : #'memory access' }
+{ #category : 'memory access' }
 VMClass >> storeSingleFloatAtPointer: pointer from: aFloat [
 	"This gets implemented by Macros in C, where its types will also be checked.
 	 pointer is a raw address, and aFloat is a 32-bit single precision float."
@@ -1110,14 +1111,14 @@ VMClass >> storeSingleFloatAtPointer: pointer from: aFloat [
 	^self storeSingleFloatAt: pointer from: aFloat
 ]
 
-{ #category : #'C library simulation' }
+{ #category : 'C library simulation' }
 VMClass >> strcat: aString _: bString [
 	<doNotGenerate>
 	"implementation of strcat(3)"
 	^(self asString: aString), (self asString: bString)
 ]
 
-{ #category : #'C library extensions' }
+{ #category : 'C library extensions' }
 VMClass >> stretch: s1 cat: s2 [
 	<var: 's1' type: #'char *'>
 	<var: 's2' type: #'char *'>
@@ -1131,7 +1132,7 @@ VMClass >> stretch: s1 cat: s2 [
 		inSmalltalk: [self strcat: s1  _: s2]
 ]
 
-{ #category : #'C library simulation' }
+{ #category : 'C library simulation' }
 VMClass >> strlen: aCString [
 	"Simulate strlen(3)"
 	<doNotGenerate>
@@ -1156,7 +1157,7 @@ VMClass >> strlen: aCString [
 	len := len + 1] repeat
 ]
 
-{ #category : #'C library simulation' }
+{ #category : 'C library simulation' }
 VMClass >> strncmp: aString _: bString _: n [
 	<doNotGenerate>
 	"implementation of strncmp(3)"
@@ -1174,7 +1175,7 @@ VMClass >> strncmp: aString _: bString _: n [
 	^0
 ]
 
-{ #category : #'C library simulation' }
+{ #category : 'C library simulation' }
 VMClass >> strncpy: dest _: src _: n [
 	<doNotGenerate>
 	"implementation of strncpy(3).
@@ -1217,7 +1218,7 @@ VMClass >> strncpy: dest _: src _: n [
 	^dest
 ]
 
-{ #category : #'memory access' }
+{ #category : 'memory access' }
 VMClass >> uint16AtPointer: pointer [
 	"This gets implemented by Macros in C, where its types will also be checked.
 	 pointer is a raw address, and the result is an 16 bit integer."
@@ -1226,7 +1227,7 @@ VMClass >> uint16AtPointer: pointer [
 	^self shortAt: pointer
 ]
 
-{ #category : #'memory access' }
+{ #category : 'memory access' }
 VMClass >> uint16AtPointer: pointer put: value [
 	"This gets implemented by Macros in C, where its types will also be checked.
 	 pointer is a raw address, and the result is an 16 bit integer."
@@ -1235,7 +1236,7 @@ VMClass >> uint16AtPointer: pointer put: value [
 	^self shortAt: pointer put: value
 ]
 
-{ #category : #'memory access' }
+{ #category : 'memory access' }
 VMClass >> uint32AtPointer: pointer [
 	"This gets implemented by Macros in C, where its types will also be checked.
 	 pointer is a raw address, and the result is an 32 bit integer."
@@ -1244,7 +1245,7 @@ VMClass >> uint32AtPointer: pointer [
 	^memoryManager readIntegerAt: pointer size: 4 signed: false
 ]
 
-{ #category : #'memory access' }
+{ #category : 'memory access' }
 VMClass >> uint32AtPointer: pointer put: value [
 	"This gets implemented by Macros in C, where its types will also be checked.
 	 pointer is a raw address, and the result is an 32 bit integer."
@@ -1253,7 +1254,7 @@ VMClass >> uint32AtPointer: pointer put: value [
 	^memoryManager uint32AtPointer: pointer put: value
 ]
 
-{ #category : #'memory access' }
+{ #category : 'memory access' }
 VMClass >> uint64AtPointer: pointer [
 	"This gets implemented by Macros in C, where its types will also be checked.
 	 pointer is a raw address, and the result is the width of a machine word."
@@ -1262,7 +1263,7 @@ VMClass >> uint64AtPointer: pointer [
 	^ memoryManager unsignedLong64At: pointer
 ]
 
-{ #category : #'memory access' }
+{ #category : 'memory access' }
 VMClass >> uint64AtPointer: pointer put: value [
 	"This gets implemented by Macros in C, where its types will also be checked.
 	 pointer is a raw address, and longValue is the width of a machine word."
@@ -1272,7 +1273,7 @@ VMClass >> uint64AtPointer: pointer put: value [
 
 ]
 
-{ #category : #'memory access' }
+{ #category : 'memory access' }
 VMClass >> uint8AtPointer: pointer [
 	"This gets implemented by Macros in C, where its types will also be checked.
 	 pointer is a raw address, and the result is an 16 bit integer."
@@ -1281,7 +1282,7 @@ VMClass >> uint8AtPointer: pointer [
 	^self at: pointer
 ]
 
-{ #category : #'memory access' }
+{ #category : 'memory access' }
 VMClass >> uint8AtPointer: pointer put: value [
 	"This gets implemented by Macros in C, where its types will also be checked.
 	 pointer is a raw address, and the result is an 16 bit integer."
@@ -1290,46 +1291,46 @@ VMClass >> uint8AtPointer: pointer put: value [
 	^self at: pointer put: value
 ]
 
-{ #category : #simulation }
+{ #category : 'simulation' }
 VMClass >> unalignedAccessError [
 	^self error: 'unaligned access'
 ]
 
-{ #category : #'debug support' }
+{ #category : 'debug support' }
 VMClass >> unreachable [
 	<inline: true>
 	self error: 'UNREACHABLE'
 ]
 
-{ #category : #'memory access' }
+{ #category : 'memory access' }
 VMClass >> unsignedLong32At: anInteger [
 	
 	<inline: #always>
 	^ self uint32AtPointer: anInteger
 ]
 
-{ #category : #'memory access' }
+{ #category : 'memory access' }
 VMClass >> unsignedLong32At: anInteger put: aValue [
 	
 	<inline: #always>
 	^ self uint32AtPointer: anInteger put: aValue
 ]
 
-{ #category : #'memory access' }
+{ #category : 'memory access' }
 VMClass >> unsignedLong64At: anInteger [
 	
 	<inline: #always>
 	^ self uint64AtPointer: anInteger
 ]
 
-{ #category : #'memory access' }
+{ #category : 'memory access' }
 VMClass >> unsignedLong64At: anInteger put: aValue [
 	
 	<inline: #always>
 	^ self uint64AtPointer: anInteger put: aValue
 ]
 
-{ #category : #'hack compatibility' }
+{ #category : 'hack compatibility' }
 VMClass >> vmPath [
 	<doNotGenerate>
 	^ (Smalltalk classNamed: #VirtualMachine)
@@ -1337,7 +1338,7 @@ VMClass >> vmPath [
 		  ifNil: [ "Pharo" Smalltalk vmPath ]
 ]
 
-{ #category : #'hack compatibility' }
+{ #category : 'hack compatibility' }
 VMClass >> vmPathSize [
 	<doNotGenerate>
 	^self vmPath size
