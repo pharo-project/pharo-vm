@@ -2050,7 +2050,7 @@ TMethod >> iterateThrought: aNode [
 	aNode isStatementList ifTrue: [
 		aNode children do: [ :subNode |
 			subNode ifNotNil: [ self iterateThrought: subNode ] ] ].
-	(aNode isSend and: [ aNode isConditionalSend or: [aNode selector beginsWith: #cCoerce:]]) ifTrue: [
+	(aNode isSend and: [ aNode isConditionalSend or: [aNode selector beginsWith: #cCoerce]]) ifTrue: [
 		aNode arguments do: [ :subNode | self iterateThrought: subNode ] ].
 	(aNode isVariable or: aNode isConstant) ifTrue: [
 		self cleanASTOf: aNode ]
