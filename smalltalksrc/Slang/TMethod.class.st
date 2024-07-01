@@ -2047,7 +2047,7 @@ TMethod >> isVolatile [
 TMethod >> iterateThrought: aNode [
 	"iterate throuht an AST and supress unused variables and constants, since we don't do anything when meeting a send (except in a conditional expression),assignment or return node the only variables and constants we come accross are alone in their lines"
 
-	aNode isStatementList ifTrue: [
+	(aNode isStatementList or: [aNode isSwitch]) ifTrue: [
 		aNode children do: [ :subNode |
 			subNode ifNotNil: [ self iterateThrought: subNode ] ] ].
 	(aNode isSend and: [ aNode isConditionalSend or: [aNode selector beginsWith: #cCoerce]]) ifTrue: [
