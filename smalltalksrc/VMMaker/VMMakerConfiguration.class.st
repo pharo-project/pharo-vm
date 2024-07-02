@@ -90,7 +90,7 @@ VMMakerConfiguration class >> defaultInterpreterClass [
 VMMakerConfiguration class >> generateConfiguration [
 	"VMMaker generateConfiguration"
 	| configCategoryName selectors |
-	configCategoryName := self class whichCategoryIncludesSelector: thisContext selector.
+	configCategoryName := self class protocolNameOfSelector: thisContext selector.
 	selectors := Set new.
 	self class organization categories do:
 		[:cat|
