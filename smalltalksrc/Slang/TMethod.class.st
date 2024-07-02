@@ -1879,13 +1879,11 @@ TMethod >> isInlineableConditional: aSendNode in: aCodeGen [
 ]
 
 { #category : #accessing }
-TMethod >> isMaybeSendWithoutSideEffect: aNode in: aCodeGen [
+TMethod >> isMaybeSendWithoutSideEffect: aNode [
 	"called when trying to clean unused variable"
 
 	^ aNode isSend and: [
-		  aNode isConditionalSend or: [
-			  (aNode selector beginsWith: #cCoerce) or: [
-				  (aCodeGen isStructSend: aNode) and: [ aNode numArgs = 0 ] ] ] ]
+		  aNode isConditionalSend or: [ aNode selector beginsWith: #cCoerce ] ]
 ]
 
 { #category : #inlining }
@@ -2001,6 +1999,14 @@ TMethod >> isStructAccessor [
 		do: [:ex| false]
 ]
 
+{ #category : #accessing }
+TMethod >> isStructAccessorWithNoSideEffect: aNode in: aCodeGen [
+	"called when cleaning an AST of unused variables"
+
+	^ aNode isSend and: [
+		  (aCodeGen isStructSend: aNode) and: [ aNode numArgs = 0 ] ]
+]
+
 { #category : #inlining }
 TMethod >> isSubstitutableNode: aNode intoMethod: targetMeth in: aCodeGen [
 	"Answer true if the given parameter node is either a constant, a local variable, or a formal parameter of the receiver. Such parameter nodes may be substituted directly into the body of the method during inlining. Note that global variables cannot be subsituted into methods with possible side effects (i.e., methods that may assign to global variables) because the inlined method might depend on having the value of the global variable captured when it is passed in as an argument."
@@ -2065,7 +2071,9 @@ TMethod >> iterateThrought: aNode in: aCodeGen [
 	aNode isSwitch ifTrue: [
 		aNode cases do: [ :case |
 			self iterateThrought: case second in: aCodeGen ] ].
-	(self isMaybeSendWithoutSideEffect: aNode in: aCodeGen) ifTrue: [
+	(self isStructAccessorWithNoSideEffect: aNode in: aCodeGen) 
+		ifTrue: [ self cleanASTOf: aNode ].
+	(self isMaybeSendWithoutSideEffect: aNode) ifTrue: [
 		aNode arguments do: [ :subNode |
 			self iterateThrought: subNode in: aCodeGen ] ].
 	(aNode isVariable or: aNode isConstant) ifTrue: [

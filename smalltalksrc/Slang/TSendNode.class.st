@@ -536,7 +536,7 @@ TSendNode >> reduceConditionalSend: branchIndex [
 
 { #category : #transformations }
 TSendNode >> remove: aChild [
-	"this method should be only called when cleaning an AST tree after an unused variable was found meaning the method should be a conditional send or a cCoerce. 
+	"this method should be only called when cleaning an AST tree after an unused variable was found meaning the method should be a conditional send,a cCoerce or aStructAccesor. 
 	If the selector has multiple branch and one become empty, we can elude it.
 	Only remove in the arguments but delete the receiver if the arguments number changed to zero (meaning the method can now be deleted), it makes children size reach 0, the method should then be deleted"
 
