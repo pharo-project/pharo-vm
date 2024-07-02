@@ -134,14 +134,14 @@ SLInliningTest >> testInlineMethodWithUnusedVariableReturnConstantInIfElse [
 	| translation tMethod |
 	tMethod := ccg methodNamed: #methodCalledMethodWithUnusedVariableReturnConstantInIfElse.
 	ccg doBasicInlining: true.
-	self halt.
+
 
 	translation := self translate: tMethod.
 	translation := translation trimBoth.
 	
 	self
 		assert: translation
-		equals: '/*    SLInliningTestClass>>#methodCalledMethodWithUnusedVariableReturnConstantInIfElse */
+		equals: '/* SLInliningTestClass>>#methodCalledMethodWithUnusedVariableReturnConstantInIfElse */
 static sqInt
 methodCalledMethodWithUnusedVariableReturnConstantInIfElse(void)
 {
@@ -150,7 +150,7 @@ methodCalledMethodWithUnusedVariableReturnConstantInIfElse(void)
 		goto l1;
 	}
 	l1:
-	;   
+	;
 	return 0;
 }'
 ]

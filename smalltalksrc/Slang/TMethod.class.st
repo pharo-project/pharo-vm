@@ -926,9 +926,9 @@ TMethod >> ensureConditionalAssignmentsAreTransformedIn: aCodeGen [
 ]
 
 { #category : #inlining }
-TMethod >> ensureIsValidMethodAfterInlining [
+TMethod >> ensureIsValidMethodAfterInliningIn: aCodeGen [
 	"inlining can cause some issues in the AST that will produce incorrect code, modify the AST if needed to produce a cleaner one "
-	self iterateThrought: self parseTree
+	self iterateThrought: self parseTree in: aCodeGen 
 	
 ]
 
@@ -1878,6 +1878,16 @@ TMethod >> isInlineableConditional: aSendNode in: aCodeGen [
 				 and: [#(true false) includes: node expression value]]]]]]]]
 ]
 
+{ #category : #accessing }
+TMethod >> isMaybeSendWithoutSideEffect: aNode in: aCodeGen [
+	"called when trying to clean unused variable"
+
+	^ aNode isSend and: [
+		  aNode isConditionalSend or: [
+			  (aNode selector beginsWith: #cCoerce) or: [
+				  (aCodeGen isStructSend: aNode) and: [ aNode numArgs = 0 ] ] ] ]
+]
+
 { #category : #inlining }
 TMethod >> isNode: aNode substitutableFor: argName inMethod: targetMeth in: aCodeGen [
 	"Answer if the given parameter node may be substituted directly into the body of
@@ -2046,35 +2056,20 @@ TMethod >> isVolatile [
 ]
 
 { #category : #'inlining support' }
-TMethod >> iterateThrought: aNode [
-	"iterate throuht an AST and supress unused variables and constants, since we don't do anything when meeting a send (except in a conditional expression),assignment or return node the only variables and constants we come accross are alone in their lines"
+TMethod >> iterateThrought: aNode in: aCodeGen [
+	"iterate throuht an AST and supress unused variables and constants, since we don't do anything when meeting a send (except in some cases), assignment or return node the only variables and constants we come accross are alone in their lines"
 
 	aNode isStatementList ifTrue: [
 		aNode children do: [ :subNode |
-			subNode ifNotNil: [ self iterateThrought: subNode ] ] ].
+			subNode ifNotNil: [ self iterateThrought: subNode in: aCodeGen ] ] ].
 	aNode isSwitch ifTrue: [
-		aNode cases do: [ :case | self iterateThrought: case second ] ].
-	(aNode isSend and: [
-		 aNode isConditionalSend or: [ aNode selector beginsWith: #cCoerce ] ])
-		ifTrue: [
-		aNode arguments do: [ :subNode | self iterateThrought: subNode ] ].
+		aNode cases do: [ :case |
+			self iterateThrought: case second in: aCodeGen ] ].
+	(self isMaybeSendWithoutSideEffect: aNode in: aCodeGen) ifTrue: [
+		aNode arguments do: [ :subNode |
+			self iterateThrought: subNode in: aCodeGen ] ].
 	(aNode isVariable or: aNode isConstant) ifTrue: [
 		self cleanASTOf: aNode ]
-]
-
-{ #category : #'inlining support' }
-TMethod >> iterateThrought: aNode nodeToSupress: aSetOfNodeAndLabel [
-	"iterate throuht an AST and supress unused variables and constants, since we don't do anything when meeting a send (except in a conditional expression),assignment or return node the only variables and constants we come accross are alone in their lines"
-
-	aNode isStatementList ifTrue: [
-		aNode children do: [ :subNode |
-			subNode ifNotNil: [ self iterateThrought: subNode nodeToSupress: aSetOfNodeAndLabel ] ] ].
-	(aNode isSend and: [
-		 aNode isConditionalSend ]) ifTrue: [
-		aNode arguments do: [ :subNode | self iterateThrought: subNode nodeToSupress: aSetOfNodeAndLabel ] ].
-	(aNode isVariable or: [ aNode isConstant ]) ifTrue: [
-		aSetOfNodeAndLabel addAll: (self cleanASTOf: aNode).
-		]
 ]
 
 { #category : #accessing }
@@ -3254,25 +3249,26 @@ TMethod >> tryToInlineMethodsIn: aCodeGen [
 	| didSomething statementLists |
 	"complete ifTrue:
 		[^false]."
-
-	self definedAsMacro ifTrue:
-		[complete ifTrue:
-			[^false].
-		 ^complete := true].
+	self definedAsMacro ifTrue: [
+		complete ifTrue: [ ^ false ].
+		^ complete := true ].
 
 	self ensureConditionalAssignmentsAreTransformedIn: aCodeGen.
-	didSomething := self tryToInlineMethodStatementsIn: aCodeGen statementListsInto: [:stmtLists| statementLists := stmtLists].
-	didSomething := (self tryToInlineMethodExpressionsIn: aCodeGen) or: [didSomething].
+	didSomething := self
+		                tryToInlineMethodStatementsIn: aCodeGen
+		                statementListsInto: [ :stmtLists |
+		                statementLists := stmtLists ].
+	didSomething := (self tryToInlineMethodExpressionsIn: aCodeGen) or: [
+		                didSomething ].
 
-	didSomething ifTrue:
-		[writtenToGlobalVarsCache := nil.
-		self ensureIsValidMethodAfterInlining
-		].
+	didSomething ifTrue: [
+		writtenToGlobalVarsCache := nil.
+		self ensureIsValidMethodAfterInliningIn: aCodeGen ].
 
-	complete ifFalse:
-		[self checkForCompletenessIn: aCodeGen.
-		 complete ifTrue: [didSomething := true]].  "marking a method complete is progress"
-	^didSomething
+	complete ifFalse: [
+		self checkForCompletenessIn: aCodeGen.
+		complete ifTrue: [ didSomething := true ] ]. "marking a method complete is progress"
+	^ didSomething
 ]
 
 { #category : #utilities }
