@@ -2,22 +2,24 @@
 Subclass of InterpreterPlugin, used in connection with TestCodeGenerator for named primitives with type coercion specifications
 "
 Class {
-	#name : #SmartSyntaxInterpreterPlugin,
-	#superclass : #InterpreterPlugin,
+	#name : 'SmartSyntaxInterpreterPlugin',
+	#superclass : 'InterpreterPlugin',
 	#instVars : [
 		'simulator'
 	],
-	#category : #'VMMaker-SmartSyntaxPlugins'
+	#category : 'VMMaker-SmartSyntaxPlugins',
+	#package : 'VMMaker',
+	#tag : 'SmartSyntaxPlugins'
 }
 
-{ #category : #private }
+{ #category : 'private' }
 SmartSyntaxInterpreterPlugin class >> codeGeneratorClass [
 	"return the appropriate class of code generator for this kind ofplugin"
 
 	^SmartSyntaxPluginCodeGenerator
 ]
 
-{ #category : #'instance creation' }
+{ #category : 'instance creation' }
 SmartSyntaxInterpreterPlugin class >> doPrimitive: primitiveName withArguments: argArray [
 	| proxy plugin |
 	proxy := InterpreterProxy new.
@@ -27,26 +29,26 @@ SmartSyntaxInterpreterPlugin class >> doPrimitive: primitiveName withArguments: 
 	^plugin perform: primitiveName asSymbol withArguments: argArray
 ]
 
-{ #category : #translation }
+{ #category : 'translation' }
 SmartSyntaxInterpreterPlugin class >> implicitReturnTypeFor: aSelector [
 	"Answer the return type for methods that don't have an explicit return."
 	^#void
 ]
 
-{ #category : #translation }
+{ #category : 'translation' }
 SmartSyntaxInterpreterPlugin class >> shouldBeTranslated [
 "SmartSyntaxInterpreterPlugin should not be translated but its subclasses should"
 	^self ~= SmartSyntaxInterpreterPlugin
 ]
 
-{ #category : #simulation }
+{ #category : 'simulation' }
 SmartSyntaxInterpreterPlugin class >> simulatorClass [
 	"For running from Smalltalk - answer a class that can be used to simulate the receiver, or nil if you want the primitives in this module to always fail, causing simulation to fall through to the Smalltalk code."
 
 	^SmartSyntaxPluginSimulator
 ]
 
-{ #category : #simulation }
+{ #category : 'simulation' }
 SmartSyntaxInterpreterPlugin class >> simulatorForInterpreterInterface: objectMemoryOrInterpreterProxy [
 	"Answer an uninitialized (in the sense that the plugin has been sent initialize, but not initialiseModule)
 	 simulator for the receiver, or nil, if the receiver answers nil to simulatorClass.  In this case, answer an
@@ -65,7 +67,7 @@ SmartSyntaxInterpreterPlugin class >> simulatorForInterpreterInterface: objectMe
 			yourself]
 ]
 
-{ #category : #translation }
+{ #category : 'translation' }
 SmartSyntaxInterpreterPlugin class >> translateDoInlining: inlineFlag locally: localFlag debug: debugFlag [ 
 	^ self
 		translate: self moduleName , '.c'
@@ -74,37 +76,37 @@ SmartSyntaxInterpreterPlugin class >> translateDoInlining: inlineFlag locally: l
 		debug: debugFlag
 ]
 
-{ #category : #simulation }
+{ #category : 'simulation' }
 SmartSyntaxInterpreterPlugin >> primitive: primName [
 	<doNotGenerate>
 	^simulator primitive: primName
 ]
 
-{ #category : #simulation }
+{ #category : 'simulation' }
 SmartSyntaxInterpreterPlugin >> primitive: primName parameters: parms [
 	<doNotGenerate>
 	^simulator primitive: primName parameters: parms
 ]
 
-{ #category : #simulation }
+{ #category : 'simulation' }
 SmartSyntaxInterpreterPlugin >> primitive: primName parameters: anArray receiver: aClassSymbol [
 	<doNotGenerate>
 	^simulator primitive: primName parameters: anArray receiver: aClassSymbol
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 SmartSyntaxInterpreterPlugin >> simulator [
 	<doNotGenerate>
 	^simulator
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 SmartSyntaxInterpreterPlugin >> simulator: aSmartSyntaxPluginSimulator [
 	<doNotGenerate>
 	simulator := aSmartSyntaxPluginSimulator
 ]
 
-{ #category : #debugging }
+{ #category : 'debugging' }
 SmartSyntaxInterpreterPlugin >> sqAssert: aBool [ 
 	self debugCode:
 		[aBool ifFalse:

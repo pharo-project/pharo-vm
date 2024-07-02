@@ -1,6 +1,6 @@
 Class {
-	#name : #VMMemoryMap,
-	#superclass : #VMStructType,
+	#name : 'VMMemoryMap',
+	#superclass : 'VMStructType',
 	#instVars : [
 		'memoryManager',
 		'oldSpaceStart',
@@ -30,23 +30,25 @@ Class {
 	#pools : [
 		'VMBasicConstants'
 	],
-	#category : #'VMMaker-Memory'
+	#category : 'VMMaker-Memory',
+	#package : 'VMMaker',
+	#tag : 'Memory'
 }
 
-{ #category : #translation }
+{ #category : 'translation' }
 VMMemoryMap class >> declareCVarsIn: aCCodeGenerator [
 
 	aCCodeGenerator
 		var: #memoryMapConfiguration type: #implicit. 
 ]
 
-{ #category : #translation }
+{ #category : 'translation' }
 VMMemoryMap class >> filteredInstVarNames [
 
 	^ super filteredInstVarNames copyWithoutAll: #(memoryManager memoryMapConfiguration objectMemory)
 ]
 
-{ #category : #translation }
+{ #category : 'translation' }
 VMMemoryMap class >> generateHeader: aBinaryBlock [
 
 	aBinaryBlock
@@ -56,7 +58,7 @@ VMMemoryMap class >> generateHeader: aBinaryBlock [
 				 s cr ])
 ]
 
-{ #category : #translation }
+{ #category : 'translation' }
 VMMemoryMap class >> instVarNamesAndTypesForTranslationDo: aBinaryBlock [
 
 	self filteredInstVarNames do: [ :aName |
@@ -64,19 +66,19 @@ VMMemoryMap class >> instVarNamesAndTypesForTranslationDo: aBinaryBlock [
 
 ]
 
-{ #category : #translation }
+{ #category : 'translation' }
 VMMemoryMap class >> needsTypeTag [
 
 	^true
 ]
 
-{ #category : #translation }
+{ #category : 'translation' }
 VMMemoryMap class >> shouldBeGenerated [
 
 	^ false
 ]
 
-{ #category : #private }
+{ #category : 'private' }
 VMMemoryMap >> allocateCodeZone [
 	
 	initialCodeZoneSize = 0 ifTrue: [ ^ self ].
@@ -92,7 +94,7 @@ VMMemoryMap >> allocateCodeZone [
 	self codeZoneEnd: codeZoneStart + initialCodeZoneSize.
 ]
 
-{ #category : #allocating }
+{ #category : 'allocating' }
 VMMemoryMap >> allocateHeap [
 	<inline: false>
 	
@@ -102,21 +104,21 @@ VMMemoryMap >> allocateHeap [
 	self allocatePermObjectsSpace.
 ]
 
-{ #category : #private }
+{ #category : 'private' }
 VMMemoryMap >> allocateJITMemory: desiredSize _: desiredPosition [ 
 
 	<doNotGenerate>
 	^ memoryManager allocate: desiredSize desiredPosition: desiredPosition
 ]
 
-{ #category : #private }
+{ #category : 'private' }
 VMMemoryMap >> allocateMemory: desiredSize BaseAddress: baseAddress [
 
 	<doNotGenerate>
 	^ memoryManager allocate: desiredSize desiredPosition: baseAddress
 ]
 
-{ #category : #private }
+{ #category : 'private' }
 VMMemoryMap >> allocateNewObjectsSpace [
 	
 	| newSpaceSizeToAllocate |
@@ -135,7 +137,7 @@ VMMemoryMap >> allocateNewObjectsSpace [
 	self newSpaceEnd: self newSpaceStart + newSpaceSizeToAllocate.
 ]
 
-{ #category : #private }
+{ #category : 'private' }
 VMMemoryMap >> allocateOldObjectsSpace [
 
 	| sizeToAllocate |
@@ -154,7 +156,7 @@ VMMemoryMap >> allocateOldObjectsSpace [
 	self setOldSpaceEnd: self oldSpaceStart + sizeToAllocate
 ]
 
-{ #category : #private }
+{ #category : 'private' }
 VMMemoryMap >> allocatePermObjectsSpace [
 
 	| minSize |
@@ -182,7 +184,7 @@ VMMemoryMap >> allocatePermObjectsSpace [
 
 ]
 
-{ #category : #allocating }
+{ #category : 'allocating' }
 VMMemoryMap >> allocateSegmentOfSize: ammount minAddress: minAddress resultsIn: blockWithAddressAndSegSize [
 
 	| sizeToRequest segmentAddress |
@@ -197,7 +199,7 @@ VMMemoryMap >> allocateSegmentOfSize: ammount minAddress: minAddress resultsIn: 
 	blockWithAddressAndSegSize value: segmentAddress value: sizeToRequest.
 ]
 
-{ #category : #allocating }
+{ #category : 'allocating' }
 VMMemoryMap >> allocateStackPages: initialStackSize [ 
 	
 	<inline: false>
@@ -221,7 +223,7 @@ VMMemoryMap >> allocateStackPages: initialStackSize [
 
 ]
 
-{ #category : #utils }
+{ #category : 'utils' }
 VMMemoryMap >> allocationGranularity [
 	
 	"In windows we have an allocation granularity. Maybe we have to get it from the system.
@@ -229,18 +231,18 @@ VMMemoryMap >> allocationGranularity [
 	self cppIf: WIN32 ifTrue: [ ^ 64 * 1024 ] ifFalse: [ ^ 0 ]
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 VMMemoryMap >> allocationReserve [
 	^ allocationReserve
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 VMMemoryMap >> allocationReserve: anInteger [ 
 
 	allocationReserve := anInteger 
 ]
 
-{ #category : #'initial addresses' }
+{ #category : 'initial addresses' }
 VMMemoryMap >> calculateMaskToUse [
 
 	<inline: false>
@@ -276,29 +278,29 @@ VMMemoryMap >> calculateMaskToUse [
 	self permSpaceMask: (memoryMapConfiguration permSpaceInitialAddress bitAnd: self spaceMaskToUse).		
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 VMMemoryMap >> codeZoneEnd [
 
 	^ codeZoneEnd
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 VMMemoryMap >> codeZoneEnd: anInteger [ 
 	codeZoneEnd := anInteger
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 VMMemoryMap >> codeZoneStart [
 
 	^ codeZoneStart
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 VMMemoryMap >> codeZoneStart: anInteger [ 
 	codeZoneStart := anInteger
 ]
 
-{ #category : #asserting }
+{ #category : 'asserting' }
 VMMemoryMap >> doCheckMemoryMap [
 
 	self assert: (self isYoungObject: self newSpaceStart).
@@ -314,7 +316,7 @@ VMMemoryMap >> doCheckMemoryMap [
 
 ]
 
-{ #category : #allocating }
+{ #category : 'allocating' }
 VMMemoryMap >> ensureAtLeastPermSpaceOf: requestedSize [ 
 
 	| diff |
@@ -343,7 +345,7 @@ VMMemoryMap >> ensureAtLeastPermSpaceOf: requestedSize [
 	^ self extendPermObjectsSpaceBy: diff.
 ]
 
-{ #category : #allocating }
+{ #category : 'allocating' }
 VMMemoryMap >> extendPermObjectsSpaceBy: aSize [
 
 	| requestedSize extendedAddress |
@@ -362,7 +364,7 @@ VMMemoryMap >> extendPermObjectsSpaceBy: aSize [
 	^ true.
 ]
 
-{ #category : #allocating }
+{ #category : 'allocating' }
 VMMemoryMap >> extendPermObjectsSpaceMinimum: minimalSize [
 
 	| size |
@@ -378,14 +380,14 @@ VMMemoryMap >> extendPermObjectsSpaceMinimum: minimalSize [
 	^ self extendPermObjectsSpaceBy: size
 ]
 
-{ #category : #'as yet unclassified' }
+{ #category : 'as yet unclassified' }
 VMMemoryMap >> fixedPermSpaceStart [
 
 	<api>
 	^ memoryMapConfiguration permSpaceInitialAddress
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 VMMemoryMap >> getNewSpaceStart [
 
 	<api>
@@ -393,7 +395,7 @@ VMMemoryMap >> getNewSpaceStart [
 	^ self newSpaceStart 
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 VMMemoryMap >> getOldSpaceStart [
 
 	<api>
@@ -401,7 +403,7 @@ VMMemoryMap >> getOldSpaceStart [
 	^ self oldSpaceStart 
 ]
 
-{ #category : #simulation }
+{ #category : 'simulation' }
 VMMemoryMap >> getpagesize [
 
 	<doNotGenerate>
@@ -409,64 +411,64 @@ VMMemoryMap >> getpagesize [
 	^ 4096
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 VMMemoryMap >> initialCodeZoneSize [
 
 	^ initialCodeZoneSize
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 VMMemoryMap >> initialCodeZoneSize: aValue [
 
 	initialCodeZoneSize := aValue
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 VMMemoryMap >> initialHeadroom [
 	^ initialHeadroom
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 VMMemoryMap >> initialHeadroom: anInteger [ 
 	
 	initialHeadroom := anInteger 
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 VMMemoryMap >> initialNewSpaceSize [
 	^ initialNewSpaceSize
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 VMMemoryMap >> initialNewSpaceSize: anInteger [ 
 	
 	initialNewSpaceSize := anInteger
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 VMMemoryMap >> initialOldSpaceSize [
 	^ initialOldSpaceSize
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 VMMemoryMap >> initialOldSpaceSize: anInteger [ 
 
 	initialOldSpaceSize := anInteger
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 VMMemoryMap >> initialPermSpaceSize [
 
 	^ initialPermSpaceSize
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 VMMemoryMap >> initialPermSpaceSize: anObject [
 
 	initialPermSpaceSize := anObject
 ]
 
-{ #category : #initialization }
+{ #category : 'initialization' }
 VMMemoryMap >> initializeMemoryMap [
 
 	initialCodeZoneSize := 0.
@@ -483,14 +485,14 @@ VMMemoryMap >> initializeMemoryMap [
 	self calculateMaskToUse.
 ]
 
-{ #category : #private }
+{ #category : 'private' }
 VMMemoryMap >> insufficientMemoryAvailableError [
 
 	<doNotGenerate>
 	self error.
 ]
 
-{ #category : #'testing objects' }
+{ #category : 'testing objects' }
 VMMemoryMap >> isOldObject: anOop [ 
 
 	<api>
@@ -499,7 +501,7 @@ VMMemoryMap >> isOldObject: anOop [
 
 ]
 
-{ #category : #'testing objects' }
+{ #category : 'testing objects' }
 VMMemoryMap >> isPermanentObject: anOop [ 
 
 	<api>
@@ -507,7 +509,7 @@ VMMemoryMap >> isPermanentObject: anOop [
 	^ anOop >= self fixedPermSpaceStart 
 ]
 
-{ #category : #'testing objects' }
+{ #category : 'testing objects' }
 VMMemoryMap >> isYoungObject: anOop [ 
 
 	<api>
@@ -515,19 +517,19 @@ VMMemoryMap >> isYoungObject: anOop [
 	^ (anOop bitAnd: spaceMaskToUse) = newSpaceMask and: [ anOop >= newSpaceStart ]
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 VMMemoryMap >> memoryManager [
 
 	^ memoryManager
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 VMMemoryMap >> memoryManager: anObject [
 
 	memoryManager := anObject
 ]
 
-{ #category : #simulation }
+{ #category : 'simulation' }
 VMMemoryMap >> memset: startAddress _: value _: size [
 
 	<doNotGenerate>
@@ -537,132 +539,132 @@ VMMemoryMap >> memset: startAddress _: value _: size [
 
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 VMMemoryMap >> minPermSpaceSize [
 
 	^ minPermSpaceSize
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 VMMemoryMap >> minPermSpaceSize: anObject [
 
 	minPermSpaceSize := anObject
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 VMMemoryMap >> newSpaceEnd [
 
 	^ newSpaceEnd
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 VMMemoryMap >> newSpaceEnd: anObject [
 
 	newSpaceEnd := anObject
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 VMMemoryMap >> newSpaceMask [
 
 	^ newSpaceMask
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 VMMemoryMap >> newSpaceMask: anObject [
 
 	newSpaceMask := anObject
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 VMMemoryMap >> newSpaceStart [
 
 	^ newSpaceStart
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 VMMemoryMap >> newSpaceStart: anObject [
 
 	newSpaceStart := anObject
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 VMMemoryMap >> objectMemory: aValue [	
 
 	<doNotGenerate>
 	objectMemory := aValue
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 VMMemoryMap >> oldSpaceEnd [
 	^ oldSpaceEnd
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 VMMemoryMap >> oldSpaceMask [
 
 	^ oldSpaceMask
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 VMMemoryMap >> oldSpaceMask: anObject [
 
 	oldSpaceMask := anObject
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 VMMemoryMap >> oldSpaceStart [
 
 	^ oldSpaceStart
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 VMMemoryMap >> oldSpaceStart: anObject [
 
 	oldSpaceStart := anObject
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 VMMemoryMap >> permSpaceEnd [
 	^ permSpaceEnd
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 VMMemoryMap >> permSpaceEnd: anInteger [ 
 
 	permSpaceEnd := anInteger
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 VMMemoryMap >> permSpaceMask [
 
 	^ permSpaceMask
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 VMMemoryMap >> permSpaceMask: anObject [
 
 	permSpaceMask := anObject
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 VMMemoryMap >> permSpaceSize [
 
 	^ self permSpaceEnd - self permSpaceStart
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 VMMemoryMap >> permSpaceStart [
 	^ permSpaceStart
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 VMMemoryMap >> permSpaceStart: anInteger [ 
 
 	self assert: anInteger > oldSpaceEnd.
 	permSpaceStart := anInteger 
 ]
 
-{ #category : #utils }
+{ #category : 'utils' }
 VMMemoryMap >> roundToAllocationSize: anInteger [
 
 	<inline: false>
@@ -681,7 +683,7 @@ VMMemoryMap >> roundToAllocationSize: anInteger [
 	^ rounded max: self allocationGranularity
 ]
 
-{ #category : #initialization }
+{ #category : 'initialization' }
 VMMemoryMap >> setOldSpaceEnd: anInteger [ 
 	
 	oldSpaceEnd := anInteger.
@@ -689,43 +691,43 @@ VMMemoryMap >> setOldSpaceEnd: anInteger [
 
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 VMMemoryMap >> spaceMaskToUse [
 
 	^ spaceMaskToUse
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 VMMemoryMap >> spaceMaskToUse: anObject [
 
 	spaceMaskToUse := anObject
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 VMMemoryMap >> stackPagesEnd [
 
 	^ stackPagesEnd
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 VMMemoryMap >> stackPagesEnd: anObject [
 
 	stackPagesEnd := anObject
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 VMMemoryMap >> stackPagesStart [
 
 	^ stackPagesStart
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 VMMemoryMap >> stackPagesStart: anObject [
 
 	stackPagesStart := anObject
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 VMMemoryMap >> startOfObjectMemory [
 	
 	<api>

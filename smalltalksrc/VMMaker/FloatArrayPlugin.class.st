@@ -2,17 +2,19 @@
 FloatArrayPlugin provides fast access to FloatArrays for batch processing of float numbers
 "
 Class {
-	#name : #FloatArrayPlugin,
-	#superclass : #InterpreterPlugin,
-	#category : #'VMMaker-Plugins'
+	#name : 'FloatArrayPlugin',
+	#superclass : 'InterpreterPlugin',
+	#category : 'VMMaker-Plugins',
+	#package : 'VMMaker',
+	#tag : 'Plugins'
 }
 
-{ #category : #'translation to C' }
+{ #category : 'translation to C' }
 FloatArrayPlugin class >> declareCVarsIn: cg [
 	"Nothing to declare..."
 ]
 
-{ #category : #'arithmetic primitives' }
+{ #category : 'arithmetic primitives' }
 FloatArrayPlugin >> primitiveAddFloatArray [
 	"Primitive. Add the receiver and the argument, both Float32Arrays and store the result into the receiver."
 	| rcvr arg rcvrPtr argPtr length |
@@ -32,7 +34,7 @@ FloatArrayPlugin >> primitiveAddFloatArray [
 	interpreterProxy pop: 1. "Leave rcvr on stack"
 ]
 
-{ #category : #'arithmetic primitives' }
+{ #category : 'arithmetic primitives' }
 FloatArrayPlugin >> primitiveAddScalar [
 	"Primitive. Add the argument, a scalar value to the receiver, a Float32Array"
 	| rcvr rcvrPtr value length |
@@ -51,7 +53,7 @@ FloatArrayPlugin >> primitiveAddScalar [
 	interpreterProxy pop: 1. "Leave rcvr on stack"
 ]
 
-{ #category : #'access primitives' }
+{ #category : 'access primitives' }
 FloatArrayPlugin >> primitiveAt [
 	<export: true>
 	| index rcvr floatPtr |
@@ -66,7 +68,7 @@ FloatArrayPlugin >> primitiveAt [
 	interpreterProxy methodReturnFloat: (floatPtr at: index - 1)
 ]
 
-{ #category : #'access primitives' }
+{ #category : 'access primitives' }
 FloatArrayPlugin >> primitiveAtPut [
 
 	| value floatValue index rcvr floatPtr |
@@ -88,7 +90,7 @@ FloatArrayPlugin >> primitiveAtPut [
 	interpreterProxy pop: 3 thenPush: value
 ]
 
-{ #category : #'arithmetic primitives' }
+{ #category : 'arithmetic primitives' }
 FloatArrayPlugin >> primitiveDivFloatArray [
 	"Primitive. Divide each element in the receiver by the corresponding element in the argument, both FloatArrays, and store the result into the receiver."
 	<export: true>
@@ -112,7 +114,7 @@ FloatArrayPlugin >> primitiveDivFloatArray [
 	interpreterProxy pop: 1 "Leave rcvr on stack"
 ]
 
-{ #category : #'arithmetic primitives' }
+{ #category : 'arithmetic primitives' }
 FloatArrayPlugin >> primitiveDivScalar [
 	"Primitive. Divide each element in the receiver by the argument, a scalar, and store the result into the receiver, a FloatArray"
 	| rcvr rcvrPtr value inverse length |
@@ -134,7 +136,7 @@ FloatArrayPlugin >> primitiveDivScalar [
 	interpreterProxy pop: 1 "Leave rcvr on stack"
 ]
 
-{ #category : #'arithmetic primitives' }
+{ #category : 'arithmetic primitives' }
 FloatArrayPlugin >> primitiveDotProduct [
 	"Primitive. Compute the dot product of the receiver and the argument.
 	The dot product is defined as the sum of the products of the individual elements."
@@ -158,7 +160,7 @@ FloatArrayPlugin >> primitiveDotProduct [
 	interpreterProxy methodReturnFloat: result. "Return result"
 ]
 
-{ #category : #'access primitives' }
+{ #category : 'access primitives' }
 FloatArrayPlugin >> primitiveEqual [
 
 	| rcvr arg rcvrPtr argPtr length |
@@ -181,7 +183,7 @@ FloatArrayPlugin >> primitiveEqual [
 	^interpreterProxy pushBool: true
 ]
 
-{ #category : #'access primitives' }
+{ #category : 'access primitives' }
 FloatArrayPlugin >> primitiveHashArray [
 
 	| rcvr rcvrPtr length result |
@@ -199,7 +201,7 @@ FloatArrayPlugin >> primitiveHashArray [
 	interpreterProxy methodReturnInteger: (result bitAnd: 16r1FFFFFFF)
 ]
 
-{ #category : #'arithmetic primitives' }
+{ #category : 'arithmetic primitives' }
 FloatArrayPlugin >> primitiveLength [
 	"Primitive. Compute the length of the argument (sqrt of sum of component squares)."
 	<export: true>
@@ -219,7 +221,7 @@ FloatArrayPlugin >> primitiveLength [
 	interpreterProxy methodReturnFloat: (self sqrt: len)
 ]
 
-{ #category : #'arithmetic primitives' }
+{ #category : 'arithmetic primitives' }
 FloatArrayPlugin >> primitiveMulFloatArray [
 	"Primitive. Multiply the receiver and the argument, both FloatArrays and store the result into the receiver."
 	<export: true>
@@ -240,7 +242,7 @@ FloatArrayPlugin >> primitiveMulFloatArray [
 	interpreterProxy pop: 1 "Leave rcvr on stack"
 ]
 
-{ #category : #'arithmetic primitives' }
+{ #category : 'arithmetic primitives' }
 FloatArrayPlugin >> primitiveMulScalar [
 	<export: true>
 	"Primitive. Multiply elements in the receiver, a FloatArray, by argument, a scalar value, and store the result into the receiver."
@@ -260,7 +262,7 @@ FloatArrayPlugin >> primitiveMulScalar [
 	interpreterProxy pop: 1 "Leave rcvr on stack"
 ]
 
-{ #category : #'arithmetic primitives' }
+{ #category : 'arithmetic primitives' }
 FloatArrayPlugin >> primitiveNormalize [
 	"Primitive. Normalize the argument (A FloatArray) in place."
 	<export: true>
@@ -285,7 +287,7 @@ FloatArrayPlugin >> primitiveNormalize [
 	"Leave receiver on the stack."
 ]
 
-{ #category : #'arithmetic primitives' }
+{ #category : 'arithmetic primitives' }
 FloatArrayPlugin >> primitiveSubFloatArray [
 	"Primitive. Subtract each element in the argument from each element in the receiver, both FloatArrays and store the result into the receiver."
 	<export: true>
@@ -306,7 +308,7 @@ FloatArrayPlugin >> primitiveSubFloatArray [
 	interpreterProxy pop: 1 "Leave rcvr on stack"
 ]
 
-{ #category : #'arithmetic primitives' }
+{ #category : 'arithmetic primitives' }
 FloatArrayPlugin >> primitiveSubScalar [
 	"Primitive. Subtract the argument, a scalar value from  each element in the receiver, a FloatArray"
 	<export: true>
@@ -326,7 +328,7 @@ FloatArrayPlugin >> primitiveSubScalar [
 	interpreterProxy pop: 1 "Leave rcvr on stack"
 ]
 
-{ #category : #'arithmetic primitives' }
+{ #category : 'arithmetic primitives' }
 FloatArrayPlugin >> primitiveSum [
 	"Primitive. Answer the sum of each float in the receiver, a FloatArray."
 	<export: true>
@@ -345,7 +347,7 @@ FloatArrayPlugin >> primitiveSum [
 	interpreterProxy methodReturnFloat: sum
 ]
 
-{ #category : #simulation }
+{ #category : 'simulation' }
 FloatArrayPlugin >> sqrt: aFloat [
 	<doNotGenerate>
 	^aFloat sqrt

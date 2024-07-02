@@ -1,10 +1,12 @@
 Class {
-	#name : #SmartSyntaxPluginAssignmentCodeGenerator,
-	#superclass : #SmartSyntaxPluginPrologCodeGenerator,
-	#category : #'VMMaker-SmartSyntaxPlugins'
+	#name : 'SmartSyntaxPluginAssignmentCodeGenerator',
+	#superclass : 'SmartSyntaxPluginPrologCodeGenerator',
+	#category : 'VMMaker-SmartSyntaxPlugins',
+	#package : 'VMMaker',
+	#tag : 'SmartSyntaxPlugins'
 }
 
-{ #category : #'coercing support' }
+{ #category : 'coercing support' }
 SmartSyntaxPluginAssignmentCodeGenerator >> assign: variableName coerceTo: cType from: stackIndex [
 	^String streamContents:
 		[:aStream |
@@ -16,22 +18,22 @@ SmartSyntaxPluginAssignmentCodeGenerator >> assign: variableName coerceTo: cType
 			store: cType]
 ]
 
-{ #category : #coercing }
+{ #category : 'coercing' }
 SmartSyntaxPluginAssignmentCodeGenerator >> ccgLoad: aBlock expr: aString asBooleanValueFrom: stackIndex [
 	^(aString, ' := '), (self loadAs: #booleanValueOf: from: stackIndex)
 ]
 
-{ #category : #coercing }
+{ #category : 'coercing' }
 SmartSyntaxPluginAssignmentCodeGenerator >> ccgLoad: aBlock expr: aString asCharPtrFrom: stackIndex [
 	^self assign: aString coerceTo: #'char *' from: stackIndex
 ]
 
-{ #category : #coercing }
+{ #category : 'coercing' }
 SmartSyntaxPluginAssignmentCodeGenerator >> ccgLoad: aBlock expr: aString asCharPtrFrom: stackIndex andThen: valBlock [
 	^self assign: aString coerceTo: #'char *' from: stackIndex
 ]
 
-{ #category : #coercing }
+{ #category : 'coercing' }
 SmartSyntaxPluginAssignmentCodeGenerator >> ccgLoad: aBlock expr: aString asFloatValueFrom: anInteger [
 	^String streamContents:
 		[:aStream |
@@ -41,17 +43,17 @@ SmartSyntaxPluginAssignmentCodeGenerator >> ccgLoad: aBlock expr: aString asFloa
 			print: anInteger]
 ]
 
-{ #category : #coercing }
+{ #category : 'coercing' }
 SmartSyntaxPluginAssignmentCodeGenerator >> ccgLoad: aBlock expr: aString asIntPtrFrom: stackIndex [
 	^self assign: aString coerceTo: #'int *' from: stackIndex
 ]
 
-{ #category : #coercing }
+{ #category : 'coercing' }
 SmartSyntaxPluginAssignmentCodeGenerator >> ccgLoad: aBlock expr: aString asIntPtrFrom: stackIndex andThen: valBlock [
 	^self assign: aString coerceTo: #'int *' from: stackIndex
 ]
 
-{ #category : #coercing }
+{ #category : 'coercing' }
 SmartSyntaxPluginAssignmentCodeGenerator >> ccgLoad: aBlock expr: aString asIntegerValueFrom: anInteger [
 	^String streamContents:
 		[:aStream |
@@ -61,57 +63,57 @@ SmartSyntaxPluginAssignmentCodeGenerator >> ccgLoad: aBlock expr: aString asInte
 			print: anInteger]
 ]
 
-{ #category : #coercing }
+{ #category : 'coercing' }
 SmartSyntaxPluginAssignmentCodeGenerator >> ccgLoad: aBlock expr: aString asKindOf: aClass from: stackIndex [
 	^self ccgLoad: aBlock expr: aString asRawOopFrom: stackIndex
 ]
 
-{ #category : #coercing }
+{ #category : 'coercing' }
 SmartSyntaxPluginAssignmentCodeGenerator >> ccgLoad: aBlock expr: aString asKindOfIntegerFrom: stackIndex [
 	^self ccgLoad: aBlock expr: aString asRawOopFrom: stackIndex
 ]
 
-{ #category : #coercing }
+{ #category : 'coercing' }
 SmartSyntaxPluginAssignmentCodeGenerator >> ccgLoad: aBlock expr: aString asMemberOf: aClass from: stackIndex [
 	^self ccgLoad: aBlock expr: aString asRawOopFrom: stackIndex
 ]
 
-{ #category : #coercing }
+{ #category : 'coercing' }
 SmartSyntaxPluginAssignmentCodeGenerator >> ccgLoad: aBlock expr: aString asMemberOfLargeNegativeIntegerFrom: stackIndex [
 	^self ccgLoad: aBlock expr: aString asRawOopFrom: stackIndex
 ]
 
-{ #category : #coercing }
+{ #category : 'coercing' }
 SmartSyntaxPluginAssignmentCodeGenerator >> ccgLoad: aBlock expr: aString asMemberOfLargePositiveIntegerFrom: stackIndex [
 	^self ccgLoad: aBlock expr: aString asRawOopFrom: stackIndex
 ]
 
-{ #category : #coercing }
+{ #category : 'coercing' }
 SmartSyntaxPluginAssignmentCodeGenerator >> ccgLoad: aBlock expr: aString asNonIntegerValueFrom: stackIndex [
 	^self ccgLoad: aBlock expr: aString asRawOopFrom: stackIndex
 ]
 
-{ #category : #coercing }
+{ #category : 'coercing' }
 SmartSyntaxPluginAssignmentCodeGenerator >> ccgLoad: aBlock expr: aString asOopPtrFrom: stackIndex [
 	^self assign: aString coerceTo: 'sqInt *' from: stackIndex
 ]
 
-{ #category : #coercing }
+{ #category : 'coercing' }
 SmartSyntaxPluginAssignmentCodeGenerator >> ccgLoad: aBlock expr: aString asOopPtrFrom: stackIndex andThen: valBlock [
 	^self assign: aString coerceTo: 'sqInt *' from: stackIndex
 ]
 
-{ #category : #coercing }
+{ #category : 'coercing' }
 SmartSyntaxPluginAssignmentCodeGenerator >> ccgLoad: aBlock expr: aString asRawOopFrom: stackIndex [
 	^aString, ' := ', (self stackAccessorFor: stackIndex)
 ]
 
-{ #category : #coercing }
+{ #category : 'coercing' }
 SmartSyntaxPluginAssignmentCodeGenerator >> ccgLoad: aBlock expr: aString asUnsignedPtrFrom: stackIndex andThen: valBlock [
 	^self assign: aString coerceTo: 'unsigned *' from: stackIndex
 ]
 
-{ #category : #coercing }
+{ #category : 'coercing' }
 SmartSyntaxPluginAssignmentCodeGenerator >> ccgLoad: aBlock expr: aString asUnsignedValueFrom: stackIndex [
 	^String streamContents:
 		[:aStream |
@@ -126,27 +128,27 @@ SmartSyntaxPluginAssignmentCodeGenerator >> ccgLoad: aBlock expr: aString asUnsi
 			nextPutAll: '])']
 ]
 
-{ #category : #coercing }
+{ #category : 'coercing' }
 SmartSyntaxPluginAssignmentCodeGenerator >> ccgLoad: aBlock expr: aString asWBCharPtrFrom: stackIndex [
 	^self assign: aString coerceTo: #'char *' from: stackIndex
 ]
 
-{ #category : #coercing }
+{ #category : 'coercing' }
 SmartSyntaxPluginAssignmentCodeGenerator >> ccgLoad: aBlock expr: aString asWBFloatPtrFrom: stackIndex [
 	^self assign: aString coerceTo: #'float *' from: stackIndex
 ]
 
-{ #category : #coercing }
+{ #category : 'coercing' }
 SmartSyntaxPluginAssignmentCodeGenerator >> ccgLoad: aBlock expr: aString asWBIntPtrFrom: stackIndex [
 	^self assign: aString coerceTo: #'int *' from: stackIndex
 ]
 
-{ #category : #'coercing support' }
+{ #category : 'coercing support' }
 SmartSyntaxPluginAssignmentCodeGenerator >> ccgValBlock: aString [
 	"ignore"
 ]
 
-{ #category : #'coercing support' }
+{ #category : 'coercing support' }
 SmartSyntaxPluginAssignmentCodeGenerator >> loadAs: coercionSelector from: stackIndex [
 
 	^String streamContents:

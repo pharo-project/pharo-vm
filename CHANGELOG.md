@@ -1,5 +1,12 @@
 # Change log
 
+## v10.3.0
+
+* New harmonize rule by @RenaudFondeur in https://github.com/pharo-project/pharo-vm/pull/817
+* Ignoring EAGAIN in epoll_wait by @tesonep in https://github.com/pharo-project/pharo-vm/pull/818
+* Extend macOS implementation of SqueakSSL plugin to support setting a certificate on the SSL session context by @Rinzwind in https://github.com/pharo-project/pharo-vm/pull/816
+* Adding macro for win32.  by @tesonep in https://github.com/pharo-project/pharo-vm/pull/814
+
 ## v10.2.1
 
 * Adding the missing tty.c file in the packaging. by @tesonep in https://github.com/pharo-project/pharo-vm/pull/771

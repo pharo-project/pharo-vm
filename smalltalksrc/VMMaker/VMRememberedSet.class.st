@@ -1,6 +1,6 @@
 Class {
-	#name : #VMRememberedSet,
-	#superclass : #VMStructType,
+	#name : 'VMRememberedSet',
+	#superclass : 'VMStructType',
 	#instVars : [
 		'manager',
 		'fudge',
@@ -13,16 +13,17 @@ Class {
 		'previousRememberedSetSize',
 		'doFullScan'
 	],
-	#category : #VMMaker
+	#category : 'VMMaker',
+	#package : 'VMMaker'
 }
 
-{ #category : #translation }
+{ #category : 'translation' }
 VMRememberedSet class >> filteredInstVarNames [
 
 	^ super filteredInstVarNames copyWithoutAll: #(manager)
 ]
 
-{ #category : #translation }
+{ #category : 'translation' }
 VMRememberedSet class >> generateHeader: aBinaryBlock [
 
 	aBinaryBlock
@@ -32,7 +33,7 @@ VMRememberedSet class >> generateHeader: aBinaryBlock [
 				 s cr ])
 ]
 
-{ #category : #translation }
+{ #category : 'translation' }
 VMRememberedSet class >> instVarNamesAndTypesForTranslationDo: aBinaryBlock [
 
 	self filteredInstVarNames do: [ :aName |
@@ -42,19 +43,19 @@ VMRememberedSet class >> instVarNamesAndTypesForTranslationDo: aBinaryBlock [
 
 ]
 
-{ #category : #translation }
+{ #category : 'translation' }
 VMRememberedSet class >> needsTypeTag [
 
 	^true
 ]
 
-{ #category : #translation }
+{ #category : 'translation' }
 VMRememberedSet class >> shouldBeGenerated [
 
 	^ false
 ]
 
-{ #category : #initialization }
+{ #category : 'initialization' }
 VMRememberedSet >> countNotNilObjects [
 
 	<inline: false>
@@ -70,19 +71,19 @@ VMRememberedSet >> countNotNilObjects [
 	^ count
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 VMRememberedSet >> doFullScan [
 
 	^ doFullScan
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 VMRememberedSet >> doFullScan: aValue [	
 
 	doFullScan := aValue
 ]
 
-{ #category : #initialization }
+{ #category : 'initialization' }
 VMRememberedSet >> emptyRememberedSet [
 
 	| oldObj |
@@ -97,7 +98,7 @@ VMRememberedSet >> emptyRememberedSet [
 
 ]
 
-{ #category : #'store check' }
+{ #category : 'store check' }
 VMRememberedSet >> forgetObject: objOop [
 
 	self assert: rememberedSetSize > 0.
@@ -118,19 +119,19 @@ VMRememberedSet >> forgetObject: objOop [
 	self assert: rememberedSetSize >= 0
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 VMRememberedSet >> fudge [
 
 	^ fudge
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 VMRememberedSet >> fudge: anObject [
 
 	fudge := anObject
 ]
 
-{ #category : #'remembered set' }
+{ #category : 'remembered set' }
 VMRememberedSet >> growRememberedSet [
 	| obj numSlots newObj base |
 
@@ -165,7 +166,7 @@ VMRememberedSet >> growRememberedSet [
 	
 ]
 
-{ #category : #initialization }
+{ #category : 'initialization' }
 VMRememberedSet >> initialize [
 
 	rememberedSetSize := 0.
@@ -174,7 +175,7 @@ VMRememberedSet >> initialize [
 	doFullScan := false
 ]
 
-{ #category : #initialization }
+{ #category : 'initialization' }
 VMRememberedSet >> initializeRememberedSetShouldStartEmpty: shouldStartEmpty [
 	| obj |
 	obj := self objectOop.
@@ -209,13 +210,13 @@ VMRememberedSet >> initializeRememberedSetShouldStartEmpty: shouldStartEmpty [
 	self setRememberedSetRedZone
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 VMRememberedSet >> isInRedZone [
 
 	^ rememberedSetSize >= rememberedSetRedZone
 ]
 
-{ #category : #'store check' }
+{ #category : 'store check' }
 VMRememberedSet >> isInRememberedSet: objOop [
 	0 to: rememberedSetSize - 1 do:
 		[:i|
@@ -224,26 +225,26 @@ VMRememberedSet >> isInRememberedSet: objOop [
 	^false
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 VMRememberedSet >> keepSameSize [
 
 	^ previousRememberedSetSize = rememberedSetSize
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 VMRememberedSet >> manager: anObject [
 	<doNotGenerate>
 	manager := anObject
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 VMRememberedSet >> moveLastObjectTo: anIndex [
 
 	rememberedSetArray
 		at: anIndex put: (rememberedSetArray at: rememberedSetSize - 1)
 ]
 
-{ #category : #'debug support' }
+{ #category : 'debug support' }
 VMRememberedSet >> moveNewEphemeron: ephemeron destinationIndex: destIndex [
 
 	rememberedSetArray
@@ -253,35 +254,35 @@ VMRememberedSet >> moveNewEphemeron: ephemeron destinationIndex: destIndex [
 	numRememberedEphemerons := numRememberedEphemerons + 1
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 VMRememberedSet >> numRememberedEphemerons [
 	^ numRememberedEphemerons
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 VMRememberedSet >> numRememberedEphemerons: anInteger [ 
 	numRememberedEphemerons := anInteger
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 VMRememberedSet >> objectAt: anIndex [
 
 	<inline: true>	
  	^ self rememberedSetArray at: anIndex 
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 VMRememberedSet >> objectOop [
 
 	^ manager objStackAt: rootIndex
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 VMRememberedSet >> previousRememberedSetSize [
 	^ previousRememberedSetSize
 ]
 
-{ #category : #'remembered set' }
+{ #category : 'remembered set' }
 VMRememberedSet >> referenceCountRememberedReferents: population maxRefCount: maxRefCount [
 	"Both reference count young objects reachable from the RT,
 	 and count the populations of each ref count, in a single pass."
@@ -308,14 +309,14 @@ VMRememberedSet >> referenceCountRememberedReferents: population maxRefCount: ma
 					 population at: refCount put: (population at: refCount) + 1]]]].
 ]
 
-{ #category : #'remembered set' }
+{ #category : 'remembered set' }
 VMRememberedSet >> relocateRememberedSet [
 
 	"For SpurPlanningCompactor"
 	self rememberedSetArray: (self rememberedSetArrayPointerFromObject: self objectOop)
 ]
 
-{ #category : #'store check' }
+{ #category : 'store check' }
 VMRememberedSet >> remember: objOop [
 	"Add the argument to the remembered set and set its isRemembered bit to true.
 	 Answer the argument for the benefit of the Cogit."
@@ -328,13 +329,13 @@ VMRememberedSet >> remember: objOop [
 	^ self rememberWithoutMarkingAsRemembered: objOop
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 VMRememberedSet >> rememberPreviousSize [
 
 	previousRememberedSetSize := rememberedSetSize
 ]
 
-{ #category : #'store check' }
+{ #category : 'store check' }
 VMRememberedSet >> rememberWithoutMarkingAsRemembered: objOop [
 
 	<api>
@@ -354,19 +355,19 @@ VMRememberedSet >> rememberWithoutMarkingAsRemembered: objOop [
 	^objOop
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 VMRememberedSet >> rememberedSetArray [
 
 	^ rememberedSetArray
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 VMRememberedSet >> rememberedSetArray: anObject [
 
 	rememberedSetArray := anObject
 ]
 
-{ #category : #initialization }
+{ #category : 'initialization' }
 VMRememberedSet >> rememberedSetArrayPointerFromObject: anOop [ 
 	
 	^ manager cCoerce: (manager firstIndexableField: anOop) to: 'usqInt *'
@@ -376,49 +377,49 @@ VMRememberedSet >> rememberedSetArrayPointerFromObject: anOop [
 	
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 VMRememberedSet >> rememberedSetLimit [
 
 	^rememberedSetLimit
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 VMRememberedSet >> rememberedSetLimit: anObject [
 
 	rememberedSetLimit := anObject
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 VMRememberedSet >> rememberedSetRedZone [
 	^ rememberedSetRedZone
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 VMRememberedSet >> rememberedSetRedZone: anInteger [
 
 	rememberedSetRedZone := anInteger
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 VMRememberedSet >> rememberedSetSize [
 
 	^rememberedSetSize
 ]
 
-{ #category : #'debug support' }
+{ #category : 'debug support' }
 VMRememberedSet >> rememberedSetWithIndexDo: aBlock [
 
 	self rememberedSetWithIndexDo: aBlock startingAt: 0
 ]
 
-{ #category : #'debug support' }
+{ #category : 'debug support' }
 VMRememberedSet >> rememberedSetWithIndexDo: aBlock startingAt: startIndex [
 
 	startIndex to: rememberedSetSize - 1 do: [ :i | 
 	aBlock value: (rememberedSetArray at: i) value: i ]
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 VMRememberedSet >> removeByIndexUsingPreviousSize: anIndex [
 
 	| newRememberedSetSize |
@@ -434,7 +435,7 @@ VMRememberedSet >> removeByIndexUsingPreviousSize: anIndex [
 	self setRememberedSetSize: newRememberedSetSize.
 ]
 
-{ #category : #'debug support' }
+{ #category : 'debug support' }
 VMRememberedSet >> removeLastEphemeronAndKeepIn: index [
 
 	numRememberedEphemerons := numRememberedEphemerons - 1.
@@ -443,7 +444,7 @@ VMRememberedSet >> removeLastEphemeronAndKeepIn: index [
 		put: (rememberedSetArray at: numRememberedEphemerons)
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 VMRememberedSet >> removeLastEphemeronAndMoveTo: index [
 
 	self removeLastEphemeronAndKeepIn: index.
@@ -451,7 +452,7 @@ VMRememberedSet >> removeLastEphemeronAndMoveTo: index [
 	self removeByIndexUsingPreviousSize: numRememberedEphemerons.
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 VMRememberedSet >> removeLastEphemeronTo: index andSave: anOop [
 
 	self removeLastEphemeronAndKeepIn: index.
@@ -459,13 +460,13 @@ VMRememberedSet >> removeLastEphemeronTo: index andSave: anOop [
 	self save: anOop at: numRememberedEphemerons
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 VMRememberedSet >> removeLastObject [
 
 	self setRememberedSetSize: rememberedSetSize - 1
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 VMRememberedSet >> removeObjectAt: anIndex [
 
 	| newRememberedSetSize |
@@ -477,7 +478,7 @@ VMRememberedSet >> removeObjectAt: anIndex [
 	self setRememberedSetSize: newRememberedSetSize.
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 VMRememberedSet >> replace: oldOop with: newOop [
 
 	self rememberedSetWithIndexDo: [ :oop :index | 
@@ -487,32 +488,32 @@ VMRememberedSet >> replace: oldOop with: newOop [
 			^ self save: newOop at: index ] ]
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 VMRememberedSet >> rootIndex [
 
 	^ rootIndex
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 VMRememberedSet >> rootIndex: anIndex [
 
 	rootIndex := anIndex
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 VMRememberedSet >> save: anOop at: index [
 
 	rememberedSetArray at: index put: anOop
 ]
 
-{ #category : #'remembered set' }
+{ #category : 'remembered set' }
 VMRememberedSet >> setRememberedSetRedZone [
 
 	<inline: true>
 	self rememberedSetRedZone: ((self rememberedSetLimit - 4) max: self fudge)
 ]
 
-{ #category : #initialization }
+{ #category : 'initialization' }
 VMRememberedSet >> setRememberedSetSize: aNewValue [
 
 	"We want to guarantee that the first free position is a with 0"
@@ -521,7 +522,7 @@ VMRememberedSet >> setRememberedSetSize: aNewValue [
 
 ]
 
-{ #category : #'remembered set' }
+{ #category : 'remembered set' }
 VMRememberedSet >> shrinkRememberedSet [
 	| obj numSlots newObj base |
 
@@ -559,7 +560,7 @@ VMRememberedSet >> shrinkRememberedSet [
 	
 ]
 
-{ #category : #scavenger }
+{ #category : 'scavenger' }
 VMRememberedSet >> startingLoop [
 
 	numRememberedEphemerons := 0.
