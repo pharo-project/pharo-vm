@@ -4517,33 +4517,25 @@ StackToRegisterMappingCogit >> ssUnspillStackSlotAt: n [
 
 { #category : #'simulation stack' }
 StackToRegisterMappingCogit >> ssUnspillStackSlots: n startingAt: start [
-	"Make sure the top n stack slots starting at start and going from the top of the stack to the base are not spilled.
-	Die if a stack slot before the start is spilled.
-	If ok, generate a pop P instruction and mark all S slots as not spilled, 
-	   where P = min(N, S)
-	         S = number of spilled slots in the range [start and start + n)"
+	"Low-level: generate runtime pops that unspill the top n stack slots starting at start and going from the top of the stack to the base are not spilled.
+	CAREFUL: This gets the abstract stack and the runtime stack desynchronized.
+	The abstract stack is not modified, so from this point on, it does not track anymore spill slots.
+	This should be coupled generally with a ssPop without unspilling"
 
 	| numberOfSpilledSlots |
 	self assert: (simStackPtr - n >= methodOrBlockNumTemps or: [
 			 needsFrame not and: [ simStackPtr - n >= 0 ] ]).
 
-"	simSpillBase - 1 > (simStackPtr - start) ifTrue: [
-		self error: 'Cannot unspill slots if slots above are spilled' ].
-"
 	numberOfSpilledSlots := 0.
 	start to: start + n - 1 do: [ :stackIndex |
 		| stackSlot |
 		stackSlot := self ssValue: stackIndex.
 		stackSlot spilled ifTrue: [
-			numberOfSpilledSlots := numberOfSpilledSlots + 1.
-			"stackSlot type: SSBaseOffset.
-			stackSlot spilled: false.
-			simSpillBase := simStackPtr - stackIndex" ] ].
+			numberOfSpilledSlots := numberOfSpilledSlots + 1 ] ].
 
 	"Check how many elements to pop from the stack have been spilled.
 	If no stack slot is spilled, do not generate a pop instruction."
 	numberOfSpilledSlots > 0 ifTrue: [
-		1halt.
 		self AddCq: numberOfSpilledSlots * objectMemory wordSize R: SPReg ].
 	self updateSimSpillBase
 ]

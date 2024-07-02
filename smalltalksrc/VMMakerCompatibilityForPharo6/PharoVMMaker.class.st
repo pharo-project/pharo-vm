@@ -195,7 +195,7 @@ PharoVMMaker >> generateDruidVMFullCompilation [
 { #category : #generation }
 PharoVMMaker >> generateDruidVMStaticTypePrediction [
 
-	options := #( PartialCompilation true ).
+	options := #( PartialCompilation false ).
 
 	self
 		generate: CoInterpreter
