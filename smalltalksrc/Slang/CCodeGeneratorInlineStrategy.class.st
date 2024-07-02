@@ -1,31 +1,33 @@
 Class {
-	#name : #CCodeGeneratorInlineStrategy,
-	#superclass : #Object,
+	#name : 'CCodeGeneratorInlineStrategy',
+	#superclass : 'Object',
 	#instVars : [
 		'codeGenerator'
 	],
-	#category : #'Slang-CodeGeneration'
+	#category : 'Slang-CodeGeneration',
+	#package : 'Slang',
+	#tag : 'CodeGeneration'
 }
 
-{ #category : #'instance-cre' }
+{ #category : 'instance-cre' }
 CCodeGeneratorInlineStrategy class >> always [
 	
 	^ CCodeGeneratorInlineAlwaysStrategy new
 ]
 
-{ #category : #'instance-creation' }
+{ #category : 'instance-creation' }
 CCodeGeneratorInlineStrategy class >> asSpecified [
 
 	^ CCodeGeneratorInlineAsSpecifiedStrategy new
 ]
 
-{ #category : #'instance-creation' }
+{ #category : 'instance-creation' }
 CCodeGeneratorInlineStrategy class >> asSpecifiedOrQuick [
 
 	^ CCodeGeneratorInlineAsSpecifiedOrQuickStrategy new
 ]
 
-{ #category : #'instance creation' }
+{ #category : 'instance creation' }
 CCodeGeneratorInlineStrategy class >> from: anObject [
 	
 	"The argument is either a boolean or a symbol.
@@ -43,37 +45,37 @@ CCodeGeneratorInlineStrategy class >> from: anObject [
 	^ self perform: anObject
 ]
 
-{ #category : #'instance-crea' }
+{ #category : 'instance-crea' }
 CCodeGeneratorInlineStrategy class >> never [
 
 	^ CCodeGeneratorInlineNeverStrategy new
 ]
 
-{ #category : #testing }
+{ #category : 'testing' }
 CCodeGeneratorInlineStrategy >> canInline: aTMethod [
 	
 	^ (self hasUnrenamableCCode: aTMethod) not
 		and: [ aTMethod extractInlineDirective ~= false ]
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 CCodeGeneratorInlineStrategy >> codeGenerator [
 	^ codeGenerator
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 CCodeGeneratorInlineStrategy >> codeGenerator: anObject [
 	codeGenerator := anObject
 ]
 
-{ #category : #testing }
+{ #category : 'testing' }
 CCodeGeneratorInlineStrategy >> hasUnrenamableCCode: aTMethod [
 
 	^ (codeGenerator isSpecialSelector: aTMethod selector)
 		or: [ aTMethod hasUnrenamableCCode ]
 ]
 
-{ #category : #testing }
+{ #category : 'testing' }
 CCodeGeneratorInlineStrategy >> isSelectiveInlineStrategy [
 	"If true, it can answers yes or no. If false it always answers true.
 	Note: I'm not sur of the point of such optimisation path."
@@ -81,13 +83,13 @@ CCodeGeneratorInlineStrategy >> isSelectiveInlineStrategy [
 	^ true
 ]
 
-{ #category : #asserting }
+{ #category : 'asserting' }
 CCodeGeneratorInlineStrategy >> shouldInlineMethod: aMethod [
 
 	^ self canInline: aMethod
 ]
 
-{ #category : #asserting }
+{ #category : 'asserting' }
 CCodeGeneratorInlineStrategy >> validateCanInline: aMethod [
 
 	((self canInline: aMethod) not
@@ -96,7 +98,7 @@ CCodeGeneratorInlineStrategy >> validateCanInline: aMethod [
 			codeGenerator cannotInline: aMethod selector ]
 ]
 
-{ #category : #testing }
+{ #category : 'testing' }
 CCodeGeneratorInlineStrategy >> wantsInline: aTMethod [ 
 	
 	^ (codeGenerator isSpecialSelector: aTMethod selector) not

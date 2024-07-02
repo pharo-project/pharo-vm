@@ -1,6 +1,6 @@
-Extension { #name : #CompiledMethod }
+Extension { #name : 'CompiledMethod' }
 
-{ #category : #'*VMMakerCompatibilityForPharo6-closures' }
+{ #category : '*VMMakerCompatibilityForPharo6-closures' }
 CompiledMethod >> embeddedBlockClosures [
 	| bms extractor scanner endPC encoderClass |
 	bms := OrderedCollection new.

@@ -1,6 +1,6 @@
-Extension { #name : #RBMethodNode }
+Extension { #name : 'RBMethodNode' }
 
-{ #category : #'*VMMakerCompatibilityForPharo6-C translation' }
+{ #category : '*VMMakerCompatibilityForPharo6-C translation' }
 RBMethodNode >> asTranslationMethodOfClass: aTMethodClass [
  	"Answer a TMethod (or subclass) derived from the receiver."
 	| additionalMethodState comment |
@@ -19,7 +19,7 @@ RBMethodNode >> asTranslationMethodOfClass: aTMethodClass [
 
 	^aTMethodClass new
 		setSelector: selector
-		definingClass: compilationContext getClass
+		definingClass: compilationContext semanticScope targetClass
 		args: arguments
 		locals: ((self allDefinedVariables copyWithoutAll: (arguments collect: #name)) collect: [:string| string -> string])
 		block: (body lastIsReturn
@@ -35,7 +35,7 @@ RBMethodNode >> asTranslationMethodOfClass: aTMethodClass [
 		comment: comment
 ]
 
-{ #category : #'*VMMakerCompatibilityForPharo6-C translation' }
+{ #category : '*VMMakerCompatibilityForPharo6-C translation' }
 RBMethodNode >> asTranslationMethodOfClass: aTMethodClass forCodeGenerator: aCodeGenerator [
  	"Answer a TMethod (or subclass) derived from the receiver."
 	| additionalMethodState comment renamedSelector |
@@ -58,7 +58,7 @@ RBMethodNode >> asTranslationMethodOfClass: aTMethodClass forCodeGenerator: aCod
 
 	^aTMethodClass new
 		setSelector: renamedSelector
-		definingClass: compilationContext getClass
+		definingClass: compilationContext semanticScope targetClass
 		args: arguments
 		locals: ((self allDefinedVariables copyWithoutAll: (arguments collect: #name)) collect: [:string| string -> string])
 		block: (body lastIsReturn
@@ -74,7 +74,7 @@ RBMethodNode >> asTranslationMethodOfClass: aTMethodClass forCodeGenerator: aCod
 		comment: comment
 ]
 
-{ #category : #'*VMMakerCompatibilityForPharo6-results' }
+{ #category : '*VMMakerCompatibilityForPharo6-results' }
 RBMethodNode >> printSchematicTempsFor: blockNode in: blockScope on: stream [
 	| startPos vectorStartPos |
 	startPos := stream position.
@@ -102,7 +102,7 @@ RBMethodNode >> printSchematicTempsFor: blockNode in: blockScope on: stream [
 	stream position > vectorStartPos ifTrue: [stream nextPut: $)]
 ]
 
-{ #category : #'*VMMakerCompatibilityForPharo6-C translation' }
+{ #category : '*VMMakerCompatibilityForPharo6-C translation' }
 RBMethodNode >> quickMethodReturnLiteral [
 	| node |
 	node := body statements last value.

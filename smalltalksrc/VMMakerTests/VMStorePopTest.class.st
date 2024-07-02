@@ -1,10 +1,12 @@
 Class {
-	#name : #VMStorePopTest,
-	#superclass : #VMStackToRegisterMappingCogitTest,
-	#category : #'VMMakerTests-JitTests'
+	#name : 'VMStorePopTest',
+	#superclass : 'VMStackToRegisterMappingCogitTest',
+	#category : 'VMMakerTests-JitTests',
+	#package : 'VMMakerTests',
+	#tag : 'JitTests'
 }
 
-{ #category : #running }
+{ #category : 'running' }
 VMStorePopTest >> jitOptions [
 
 	^ super jitOptions
@@ -12,7 +14,7 @@ VMStorePopTest >> jitOptions [
 		  yourself
 ]
 
-{ #category : #tests }
+{ #category : 'tests' }
 VMStorePopTest >> testExtendedStoreAndPopIV1ImmutableObjectCallingConvention [
 
 	| instanceVariableToWrite stopAddress methodWithStoreCheck storeTrampoline |
@@ -57,7 +59,7 @@ VMStorePopTest >> testExtendedStoreAndPopIV1ImmutableObjectCallingConvention [
 	self assert: machineSimulator classRegisterValue equals: memory falseObject
 ]
 
-{ #category : #tests }
+{ #category : 'tests' }
 VMStorePopTest >> testStoreAndPopIV1ImmutableObjectCallingConvention [
 
 	| instanceVariableToWrite stopAddress methodWithStoreCheck |

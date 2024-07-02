@@ -4838,7 +4838,7 @@ StackToRegisterMappingCogit >> updateSimSpillBase [
 	self assert: (simSpillBase > simStackPtr or: [(self simStackAt: simSpillBase) spilled == false])
 ]
 
-{ #category :'accessing' }
+{ #category : 'accessing' }
 StackToRegisterMappingCogit >> useTwoPaths: aBoolean [ 
 	<doNotGenerate>
 	useTwoPaths := aBoolean

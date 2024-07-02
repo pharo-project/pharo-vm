@@ -1,6 +1,6 @@
-Extension { #name : #VMMaker }
+Extension { #name : 'VMMaker' }
 
-{ #category : #'*Melchor' }
+{ #category : '*Melchor' }
 VMMaker >> createCodeGenerator [
 "set up a CCodeGenerator for this VMMaker"
 	^MLVMCCodeGenerator new
@@ -11,7 +11,7 @@ VMMaker >> createCodeGenerator [
 		yourself
 ]
 
-{ #category : #'*Melchor' }
+{ #category : '*Melchor' }
 VMMaker >> createCogitCodeGenerator [
 	^MLVMCCodeGenerator new
 		vmMaker: self;

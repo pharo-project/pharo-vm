@@ -1,14 +1,16 @@
 Class {
-	#name : #TAssignmentNode,
-	#superclass : #TParseNode,
+	#name : 'TAssignmentNode',
+	#superclass : 'TParseNode',
 	#instVars : [
 		'variable',
 		'expression'
 	],
-	#category : #'Slang-AST'
+	#category : 'Slang-AST',
+	#package : 'Slang',
+	#tag : 'AST'
 }
 
-{ #category : #'instance creation' }
+{ #category : 'instance creation' }
 TAssignmentNode class >> variable: aVariable expression: anExpression [
 
 	^ self new
@@ -17,7 +19,7 @@ TAssignmentNode class >> variable: aVariable expression: anExpression [
 		yourself
 ]
 
-{ #category : #'instance creation' }
+{ #category : 'instance creation' }
 TAssignmentNode class >> variableNamed: aVariableName expression: anExpression [
 
 	^ self new
@@ -25,13 +27,13 @@ TAssignmentNode class >> variableNamed: aVariableName expression: anExpression [
 		  yourself
 ]
 
-{ #category : #visiting }
+{ #category : 'visiting' }
 TAssignmentNode >> accept: aVisitor [ 
 	
 	^ aVisitor visitAssignmentNode: self
 ]
 
-{ #category : #'C code generation' }
+{ #category : 'C code generation' }
 TAssignmentNode >> asCASTExpressionIn: aCodeGen [
 
 	(expression isStatementList and: [ expression statements size > 1 ]) 
@@ -41,7 +43,7 @@ TAssignmentNode >> asCASTExpressionIn: aCodeGen [
 		  yourself
 ]
 
-{ #category : #tranforming }
+{ #category : 'tranforming' }
 TAssignmentNode >> asCASTIn: aBuilder [
 
 	| type |
@@ -89,7 +91,7 @@ TAssignmentNode >> asCASTIn: aBuilder [
 		  rvalue: (expression asCASTExpressionIn: aBuilder)
 ]
 
-{ #category : #'C code generation' }
+{ #category : 'C code generation' }
 TAssignmentNode >> asCASTStatementListExpansionAsExpression: aCodeGen [
 	(variable isSameAs: expression statements last) ifTrue:
 		[^ expression asCASTExpressionIn: aCodeGen].
@@ -98,7 +100,7 @@ TAssignmentNode >> asCASTStatementListExpansionAsExpression: aCodeGen [
 		asCASTExpressionIn: aCodeGen
 ]
 
-{ #category : #'C code generation' }
+{ #category : 'C code generation' }
 TAssignmentNode >> asCASTValueExpansionIn: aCodeGen [
 
 	| stmtList lastStmt copy |
@@ -136,7 +138,7 @@ TAssignmentNode >> asCASTValueExpansionIn: aCodeGen [
 		   arguments: expression arguments) asCASTIn: aCodeGen
 ]
 
-{ #category : #transformations }
+{ #category : 'transformations' }
 TAssignmentNode >> bindVariableUsesIn: aDictionary [
 	"Do NOT bind the variable on the left-hand-side of an assignment statement."
 	"was bindVariablesIn:"
@@ -144,7 +146,7 @@ TAssignmentNode >> bindVariableUsesIn: aDictionary [
 
 ]
 
-{ #category : #transformations }
+{ #category : 'transformations' }
 TAssignmentNode >> bindVariableUsesIn: aDictionary andConstantFoldIf: constantFold in: codeGen [
 	"Answer either the receiver, if it contains no references to the given variables, or a new node with the given variables rebound."
 	"Do NOT bind the variable on the left-hand-side of an assignment statement."
@@ -157,14 +159,14 @@ TAssignmentNode >> bindVariableUsesIn: aDictionary andConstantFoldIf: constantFo
 					yourself]
 ]
 
-{ #category : #transformations }
+{ #category : 'transformations' }
 TAssignmentNode >> bindVariablesIn: aDictionary [
 
 	self variable: (variable bindVariablesIn: aDictionary).
 	self expression: (expression bindVariablesIn: aDictionary).
 ]
 
-{ #category : #transformations }
+{ #category : 'transformations' }
 TAssignmentNode >> bindVariablesIn: aDictionary unless: cautionaryBlock [
 
 	(cautionaryBlock value: self) ifTrue: [^self].
@@ -172,45 +174,45 @@ TAssignmentNode >> bindVariablesIn: aDictionary unless: cautionaryBlock [
 	self expression: (expression bindVariablesIn: aDictionary unless: cautionaryBlock).
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 TAssignmentNode >> children [
 	
 	^ { variable . expression }
 ]
 
-{ #category : #displaying }
+{ #category : 'displaying' }
 TAssignmentNode >> displayString [
 
 	^ ' := '
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 TAssignmentNode >> expression [
 
 	^expression
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 TAssignmentNode >> expression: anExpression [
 
 	expression := anExpression.
 	expression parent: self.
 ]
 
-{ #category : #testing }
+{ #category : 'testing' }
 TAssignmentNode >> isAssignment [
 
 	^true
 ]
 
-{ #category : #testing }
+{ #category : 'testing' }
 TAssignmentNode >> isSameAs: aTParseNode [
 	^aTParseNode isAssignment
 	 and: [(variable isSameAs: aTParseNode variable)
 	 and: [expression isSameAs: aTParseNode expression]]
 ]
 
-{ #category : #testing }
+{ #category : 'testing' }
 TAssignmentNode >> isVariableUpdatingAssignment [
 	"Return true if this assignment statement is of one of the forms:
 		var = var + ...
@@ -223,7 +225,7 @@ TAssignmentNode >> isVariableUpdatingAssignment [
 	^ (expression receiver name = variable name) and: [(sel = #+) or: [sel = #-]]
 ]
 
-{ #category : #enumerating }
+{ #category : 'enumerating' }
 TAssignmentNode >> nodesDo: aBlock [
 	"Apply aBlock to all nodes in the receiver.
 	 N.B. This is assumed to be bottom-up, leaves first."
@@ -232,7 +234,7 @@ TAssignmentNode >> nodesDo: aBlock [
 	aBlock value: self
 ]
 
-{ #category : #enumerating }
+{ #category : 'enumerating' }
 TAssignmentNode >> nodesDo: aBlock parent: parent [
 	"Apply aBlock to all nodes in the receiver with each node's parent.
 	 N.B. This is assumed to be bottom-up, leaves first."
@@ -241,7 +243,7 @@ TAssignmentNode >> nodesDo: aBlock parent: parent [
 	aBlock value: self value: parent
 ]
 
-{ #category : #enumerating }
+{ #category : 'enumerating' }
 TAssignmentNode >> nodesDo: aBlock parent: parent unless: cautionaryBlock [
 
 	(cautionaryBlock value: self value: parent) ifTrue: [^self].
@@ -250,7 +252,7 @@ TAssignmentNode >> nodesDo: aBlock parent: parent unless: cautionaryBlock [
 	aBlock value: self value: parent
 ]
 
-{ #category : #enumerating }
+{ #category : 'enumerating' }
 TAssignmentNode >> nodesDo: aBlock unless: cautionaryBlock [
 
 	(cautionaryBlock value: self) ifTrue: [^self].
@@ -259,14 +261,14 @@ TAssignmentNode >> nodesDo: aBlock unless: cautionaryBlock [
 	aBlock value: self.
 ]
 
-{ #category : #copying }
+{ #category : 'copying' }
 TAssignmentNode >> postCopy [
 
 	self variable: variable copy.
 	self expression: expression copy
 ]
 
-{ #category : #'C code generation' }
+{ #category : 'C code generation' }
 TAssignmentNode >> prependCASTIn: aBuilder expression: nodeExp [
 
 	^ CAssignmentNode
@@ -277,7 +279,7 @@ TAssignmentNode >> prependCASTIn: aBuilder expression: nodeExp [
 		  rvalue: (nodeExp asCASTExpressionIn: aBuilder)
 ]
 
-{ #category : #printing }
+{ #category : 'printing' }
 TAssignmentNode >> printOn: aStream level: level [
 
 	variable printOn: aStream level: level.
@@ -285,13 +287,13 @@ TAssignmentNode >> printOn: aStream level: level [
 	expression printOn: aStream level: level + 2.
 ]
 
-{ #category : #transformations }
+{ #category : 'transformations' }
 TAssignmentNode >> removeAssertions [
 
 	expression removeAssertions
 ]
 
-{ #category : #transformations }
+{ #category : 'transformations' }
 TAssignmentNode >> replaceChild: aNode with: aReplacementNode [
 
 	variable == aNode ifTrue: [ 
@@ -300,7 +302,7 @@ TAssignmentNode >> replaceChild: aNode with: aReplacementNode [
 		self expression: aReplacementNode ]
 ]
 
-{ #category : #transformations }
+{ #category : 'transformations' }
 TAssignmentNode >> replaceNodesIn: aDictionary [
 
 	^aDictionary at: self ifAbsent: [
@@ -309,14 +311,14 @@ TAssignmentNode >> replaceNodesIn: aDictionary [
 		self]
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 TAssignmentNode >> setVariable: varNode expression: expressionNode [
 	self assert: (expressionNode isGoTo or: [expressionNode isLabel]) not.
 	self variable: varNode.
 	self expression: expressionNode.
 ]
 
-{ #category : #testing }
+{ #category : 'testing' }
 TAssignmentNode >> structTargetKindIn: aCodeGen [
 	"Answer if the recever evaluates to a struct or struct pointer
 	 and hence can be dereferenced using . or ->.  Answer any of
@@ -324,27 +326,27 @@ TAssignmentNode >> structTargetKindIn: aCodeGen [
 	^variable structTargetKindIn: aCodeGen
 ]
 
-{ #category : #'type inference' }
+{ #category : 'type inference' }
 TAssignmentNode >> typeOrNilFrom: aCodeGenerator in: aTMethod [
 	"This is the default type in case of doubt"
 	^(variable typeOrNilFrom: aCodeGenerator in: aTMethod) ifNil:
 		[expression typeOrNilFrom: aCodeGenerator in: aTMethod]
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 TAssignmentNode >> variable [
 
 	^variable
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 TAssignmentNode >> variable: anObject [
 
 	variable := anObject.
 	variable parent: self.
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 TAssignmentNode >> variableNameOrNil [
 	^variable variableNameOrNil
 ]

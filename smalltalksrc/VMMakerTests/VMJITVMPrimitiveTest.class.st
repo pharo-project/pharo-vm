@@ -1,10 +1,12 @@
 Class {
-	#name : #VMJITVMPrimitiveTest,
-	#superclass : #VMSimpleStackBasedCogitAbstractTest,
-	#category : #'VMMakerTests-JitTests'
+	#name : 'VMJITVMPrimitiveTest',
+	#superclass : 'VMSimpleStackBasedCogitAbstractTest',
+	#category : 'VMMakerTests-JitTests',
+	#package : 'VMMakerTests',
+	#tag : 'JitTests'
 }
 
-{ #category : #'tests - primitiveMethodXray' }
+{ #category : 'tests - primitiveMethodXray' }
 VMJITVMPrimitiveTest >> setUp [
 
 	super setUp.
@@ -14,7 +16,7 @@ VMJITVMPrimitiveTest >> setUp [
 	self createBaseFrame
 ]
 
-{ #category : #'tests - primitiveMethodXray' }
+{ #category : 'tests - primitiveMethodXray' }
 VMJITVMPrimitiveTest >> testPrimitiveMethodXRayPreviouslyCompiledFramelessMethod [
 
 	| methodToXray target |
@@ -33,7 +35,7 @@ VMJITVMPrimitiveTest >> testPrimitiveMethodXRayPreviouslyCompiledFramelessMethod
 	self assert: ((memory integerValueOf: interpreter stackTop) anyMask: 2r0111)
 ]
 
-{ #category : #'tests - primitiveMethodXray' }
+{ #category : 'tests - primitiveMethodXray' }
 VMJITVMPrimitiveTest >> testPrimitiveMethodXRayShouldCompile [
 
 	| methodToXray target |
@@ -52,7 +54,7 @@ VMJITVMPrimitiveTest >> testPrimitiveMethodXRayShouldCompile [
 	self assert: ((memory integerValueOf: interpreter stackTop) anyMask: 2r0001)
 ]
 
-{ #category : #'tests - primitiveMethodXray' }
+{ #category : 'tests - primitiveMethodXray' }
 VMJITVMPrimitiveTest >> testPrimitiveMethodXRayShouldNotCompile [
 
 	| methodToXray target |
@@ -60,7 +62,7 @@ VMJITVMPrimitiveTest >> testPrimitiveMethodXRayShouldNotCompile [
 	"This test is only valid as far as the method is the same.
 	It should be a method with so many literals that the compiler does not even try to compile it."
 	target := (CogARMv8Compiler class>>#initialize).
-	self assert: target bytecodes hash equals: 129771193.
+	self assert: target bytecodes hash equals: 46085044.
 	
 	methodToXray := self createMethodOopFromHostMethod: target.
 	interpreter push: methodToXray.
@@ -70,7 +72,7 @@ VMJITVMPrimitiveTest >> testPrimitiveMethodXRayShouldNotCompile [
 	self assert: interpreter stackTop equals: (memory integerObjectOf: 0)
 ]
 
-{ #category : #'tests - primitiveMethodXray' }
+{ #category : 'tests - primitiveMethodXray' }
 VMJITVMPrimitiveTest >> testPrimitiveMethodXRayWasCompiled [
 
 	| methodToXray target |
@@ -89,7 +91,7 @@ VMJITVMPrimitiveTest >> testPrimitiveMethodXRayWasCompiled [
 	self assert: ((memory integerValueOf: interpreter stackTop) anyMask: 2r0010)
 ]
 
-{ #category : #'tests - primitiveMethodXray' }
+{ #category : 'tests - primitiveMethodXray' }
 VMJITVMPrimitiveTest >> testPrimitiveMethodXRayWasNotCompiled [
 
 	| methodToXray target |

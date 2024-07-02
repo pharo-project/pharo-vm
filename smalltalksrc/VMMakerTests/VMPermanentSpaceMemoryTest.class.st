@@ -1,10 +1,12 @@
 Class {
-	#name : #VMPermanentSpaceMemoryTest,
-	#superclass : #VMSpurInitializedOldSpaceTest,
-	#category : #'VMMakerTests-PermSpace'
+	#name : 'VMPermanentSpaceMemoryTest',
+	#superclass : 'VMSpurInitializedOldSpaceTest',
+	#category : 'VMMakerTests-PermSpace',
+	#package : 'VMMakerTests',
+	#tag : 'PermSpace'
 }
 
-{ #category : #running }
+{ #category : 'running' }
 VMPermanentSpaceMemoryTest >> setUp [
 
 	super setUp.
@@ -12,7 +14,7 @@ VMPermanentSpaceMemoryTest >> setUp [
 	self createWeakArrayClass
 ]
 
-{ #category : #'tests - allocation' }
+{ #category : 'tests - allocation' }
 VMPermanentSpaceMemoryTest >> testAllInstancesReturnsObjectsInPermSpace [
 
 	| permanentObject allInstances |
@@ -25,7 +27,7 @@ VMPermanentSpaceMemoryTest >> testAllInstancesReturnsObjectsInPermSpace [
 	self assert: (memory fetchPointer: 0 ofObject: allInstances) equals: permanentObject.
 ]
 
-{ #category : #'tests - allocation' }
+{ #category : 'tests - allocation' }
 VMPermanentSpaceMemoryTest >> testBecomingOfPermanentObjectFails [
 
 	| permanentObject oldObject youngReplacement arrFrom arrTo ec |
@@ -52,7 +54,7 @@ VMPermanentSpaceMemoryTest >> testBecomingOfPermanentObjectFails [
 	self deny: ec equals: PrimNoErr
 ]
 
-{ #category : #'test - moving' }
+{ #category : 'test - moving' }
 VMPermanentSpaceMemoryTest >> testCompiledMethodWithMachineCodeIsNotRememberedWhenModified [
 
 	| oldObject1 permanentObject1 |
@@ -73,7 +75,7 @@ VMPermanentSpaceMemoryTest >> testCompiledMethodWithMachineCodeIsNotRememberedWh
 			 permanentObject1)
 ]
 
-{ #category : #'test - moving' }
+{ #category : 'test - moving' }
 VMPermanentSpaceMemoryTest >> testCompiledMethodWithMachineCodeIsNotRememberedWhenMoving [
 
 	| oldObject1 permanentObject1 |
@@ -94,7 +96,7 @@ VMPermanentSpaceMemoryTest >> testCompiledMethodWithMachineCodeIsNotRememberedWh
 			 permanentObject1)
 ]
 
-{ #category : #'tests - allocation' }
+{ #category : 'tests - allocation' }
 VMPermanentSpaceMemoryTest >> testMarkingNewSpaceDoesNotMarkPermSpace [
 
 	| permanentObject newObject |
@@ -112,7 +114,7 @@ VMPermanentSpaceMemoryTest >> testMarkingNewSpaceDoesNotMarkPermSpace [
 	self deny: (memory isMarked: permanentObject)
 ]
 
-{ #category : #'tests - allocation' }
+{ #category : 'tests - allocation' }
 VMPermanentSpaceMemoryTest >> testMarkingOldSpaceDoesNotMarkPermSpace [
 
 	| permanentObject oldObject |
@@ -130,7 +132,7 @@ VMPermanentSpaceMemoryTest >> testMarkingOldSpaceDoesNotMarkPermSpace [
 	self deny: (memory isMarked: permanentObject)
 ]
 
-{ #category : #'test - moving' }
+{ #category : 'test - moving' }
 VMPermanentSpaceMemoryTest >> testMoveOldObjectInRememberedSetIsMovedFromSet [
 
 	| oldObject youngObject permanentObject |
@@ -159,7 +161,7 @@ VMPermanentSpaceMemoryTest >> testMoveOldObjectInRememberedSetIsMovedFromSet [
 
 ]
 
-{ #category : #'test - moving' }
+{ #category : 'test - moving' }
 VMPermanentSpaceMemoryTest >> testMovingAnObjectReferencingAYoungOnePutsInRememberedSet [
 
 	| permanentObject youngObject rootObject|
@@ -175,7 +177,7 @@ VMPermanentSpaceMemoryTest >> testMovingAnObjectReferencingAYoungOnePutsInRememb
 	self assert: (memory getFromPermToNewSpaceRememberedSet isInRememberedSet: permanentObject).
 ]
 
-{ #category : #'test - moving' }
+{ #category : 'test - moving' }
 VMPermanentSpaceMemoryTest >> testMovingAnObjectReferencingAnOldOnePutsInRememberedSet [
 
 	| permanentObject oldObject rootObject|
@@ -192,7 +194,7 @@ VMPermanentSpaceMemoryTest >> testMovingAnObjectReferencingAnOldOnePutsInRemembe
 	self assert: (memory getFromPermToOldSpaceRememberedSet isInRememberedSet: permanentObject).
 ]
 
-{ #category : #'test - moving' }
+{ #category : 'test - moving' }
 VMPermanentSpaceMemoryTest >> testMovingOldObjectToPermSpaceIsCorrectlyForwarded [
 
 	| permanentObject oldObject rootObject|
@@ -215,7 +217,7 @@ VMPermanentSpaceMemoryTest >> testMovingOldObjectToPermSpaceIsCorrectlyForwarded
 
 ]
 
-{ #category : #'test - moving' }
+{ #category : 'test - moving' }
 VMPermanentSpaceMemoryTest >> testMovingOldObjectToPermSpaceLeavesForwarder [
 
 	| permanentObject oldObject |
@@ -230,7 +232,7 @@ VMPermanentSpaceMemoryTest >> testMovingOldObjectToPermSpaceLeavesForwarder [
 
 ]
 
-{ #category : #'test - moving' }
+{ #category : 'test - moving' }
 VMPermanentSpaceMemoryTest >> testMovingTwoObjectsPutBothInPermSpaceAndUpdatesArray [
 
 	| permanentObject youngObject rootObject anArray|
@@ -254,7 +256,7 @@ VMPermanentSpaceMemoryTest >> testMovingTwoObjectsPutBothInPermSpaceAndUpdatesAr
 	self assert: (memory getMemoryMap isPermanentObject: youngObject).	
 ]
 
-{ #category : #'tests - allocation' }
+{ #category : 'tests - allocation' }
 VMPermanentSpaceMemoryTest >> testNewPermanentByteArrayIsCorrectlyAllocated [
 
 	| permanentObject |
@@ -264,7 +266,7 @@ VMPermanentSpaceMemoryTest >> testNewPermanentByteArrayIsCorrectlyAllocated [
 	self assert: permanentObject equals: memory getMemoryMap permSpaceStart + 16 "There is a zero-slot objects always in the perm space"
 ]
 
-{ #category : #'tests - allocation' }
+{ #category : 'tests - allocation' }
 VMPermanentSpaceMemoryTest >> testNewPermanentByteArrayIsNonYoungObject [
 
 	| permanentObject |
@@ -274,7 +276,7 @@ VMPermanentSpaceMemoryTest >> testNewPermanentByteArrayIsNonYoungObject [
 	self deny: (memory getMemoryMap isYoungObject: permanentObject)
 ]
 
-{ #category : #'tests - allocation' }
+{ #category : 'tests - allocation' }
 VMPermanentSpaceMemoryTest >> testNewPermanentByteArrayIsNotAnOldObject [
 
 	| permanentObject |
@@ -284,7 +286,7 @@ VMPermanentSpaceMemoryTest >> testNewPermanentByteArrayIsNotAnOldObject [
 	self deny: (memory getMemoryMap isOldObject: permanentObject)
 ]
 
-{ #category : #'tests - allocation' }
+{ #category : 'tests - allocation' }
 VMPermanentSpaceMemoryTest >> testNewPermanentByteArrayIsPermanentObject [
 
 	| permanentObject |
@@ -294,7 +296,7 @@ VMPermanentSpaceMemoryTest >> testNewPermanentByteArrayIsPermanentObject [
 	self assert: (memory getMemoryMap isPermanentObject: permanentObject)
 ]
 
-{ #category : #'tests - allocation' }
+{ #category : 'tests - allocation' }
 VMPermanentSpaceMemoryTest >> testNextObjectIsReturningAGoodValue [
 
 	| permanentObject nextObject |
@@ -306,7 +308,7 @@ VMPermanentSpaceMemoryTest >> testNextObjectIsReturningAGoodValue [
 	
 ]
 
-{ #category : #'test - moving' }
+{ #category : 'test - moving' }
 VMPermanentSpaceMemoryTest >> testObjectInBothRememberedSetIsCorrectlyUpdated [
 
 	| oldObject1 permanentObject1 oldObject2 youngObject |
@@ -343,7 +345,7 @@ VMPermanentSpaceMemoryTest >> testObjectInBothRememberedSetIsCorrectlyUpdated [
 	
 ]
 
-{ #category : #'tests - allocation' }
+{ #category : 'tests - allocation' }
 VMPermanentSpaceMemoryTest >> testObjectReferencingOldIsAddedToCorrectRememberedSetAndThenRemoved [
 
 	| oldObject1 oldObject2 permObject2 |
@@ -367,7 +369,7 @@ VMPermanentSpaceMemoryTest >> testObjectReferencingOldIsAddedToCorrectRemembered
 	self assert: memory getFromPermToNewSpaceRememberedSet rememberedSetSize equals: 0.
 ]
 
-{ #category : #'test - moving' }
+{ #category : 'test - moving' }
 VMPermanentSpaceMemoryTest >> testObjectWithForwarderIsCorrectlyResolved [
 
 	
@@ -385,7 +387,7 @@ VMPermanentSpaceMemoryTest >> testObjectWithForwarderIsCorrectlyResolved [
 
 ]
 
-{ #category : #'test - moving' }
+{ #category : 'test - moving' }
 VMPermanentSpaceMemoryTest >> testPassingObjectInBulkToPermSpaceKeepsFirstInRememberedSet [
 
 	| oldObject1 permanentObject1 oldObject2 array |
@@ -406,7 +408,7 @@ VMPermanentSpaceMemoryTest >> testPassingObjectInBulkToPermSpaceKeepsFirstInReme
 
 ]
 
-{ #category : #'test - moving' }
+{ #category : 'test - moving' }
 VMPermanentSpaceMemoryTest >> testPassingObjectsInBulkPreservesObjectAlreadyInTheRememberedSet [
 
 	| oldObject1 permanentObject1 oldObject2 permanentObject2 array youngObject |
@@ -438,7 +440,7 @@ VMPermanentSpaceMemoryTest >> testPassingObjectsInBulkPreservesObjectAlreadyInTh
 
 ]
 
-{ #category : #'test - moving' }
+{ #category : 'test - moving' }
 VMPermanentSpaceMemoryTest >> testPassingTwoObjectsInBulkToPermSpaceIsRemovedFromRememberedSet [
 
 	| oldObject1 permanentObject1 oldObject2 permanentObject2 array |
@@ -461,7 +463,7 @@ VMPermanentSpaceMemoryTest >> testPassingTwoObjectsInBulkToPermSpaceIsRemovedFro
 	self deny: (memory getFromPermToOldSpaceRememberedSet isInRememberedSet: permanentObject1).		
 ]
 
-{ #category : #'test - moving' }
+{ #category : 'test - moving' }
 VMPermanentSpaceMemoryTest >> testPassingTwoObjectsToPermSpaceIsRemovedFromRememberedSet [
 
 	| oldObject1 permanentObject1 oldObject2 permanentObject2 |
@@ -481,7 +483,7 @@ VMPermanentSpaceMemoryTest >> testPassingTwoObjectsToPermSpaceIsRemovedFromRemem
 	self deny: (memory getFromPermToOldSpaceRememberedSet isInRememberedSet: permanentObject1).		
 ]
 
-{ #category : #'test - moving' }
+{ #category : 'test - moving' }
 VMPermanentSpaceMemoryTest >> testPassingTwoObjectsToPermSpaceKeepsFirstInRememberedSet [
 
 	| oldObject1 permanentObject1 oldObject2 permanentObject2 |
@@ -499,7 +501,7 @@ VMPermanentSpaceMemoryTest >> testPassingTwoObjectsToPermSpaceKeepsFirstInRememb
 
 ]
 
-{ #category : #'test - moving' }
+{ #category : 'test - moving' }
 VMPermanentSpaceMemoryTest >> testPassingTwoObjectsToPermSpaceKeepsPointerToForwarderInOldSpace [
 
 	| oldObject1 permanentObject1 oldObject2 permanentObject2 |
@@ -514,7 +516,7 @@ VMPermanentSpaceMemoryTest >> testPassingTwoObjectsToPermSpaceKeepsPointerToForw
 	self assert: (memory fetchPointer: 0 ofObject: permanentObject1) equals: oldObject2
 ]
 
-{ #category : #'test - moving' }
+{ #category : 'test - moving' }
 VMPermanentSpaceMemoryTest >> testPassingTwoObjectsToPermSpaceNotUpdatesForwarderInScanvenge [
 
 	| oldObject1 permanentObject1 oldObject2 permanentObject2 |
@@ -531,7 +533,7 @@ VMPermanentSpaceMemoryTest >> testPassingTwoObjectsToPermSpaceNotUpdatesForwarde
 	self deny: (memory fetchPointer: 0 ofObject: permanentObject1) equals: permanentObject2
 ]
 
-{ #category : #'test - moving' }
+{ #category : 'test - moving' }
 VMPermanentSpaceMemoryTest >> testPassingTwoObjectsToPermSpaceUpdatesForwarderInGC [
 
 	| oldObject1 permanentObject1 oldObject2 permanentObject2 |
@@ -548,7 +550,7 @@ VMPermanentSpaceMemoryTest >> testPassingTwoObjectsToPermSpaceUpdatesForwarderIn
 	self assert: (memory fetchPointer: 0 ofObject: permanentObject1) equals: permanentObject2
 ]
 
-{ #category : #'test - moving' }
+{ #category : 'test - moving' }
 VMPermanentSpaceMemoryTest >> testPermObjectPointingToOldSpaceIsUpdatedWhenCompactingForSaving [
 
 	| oldObject1 permanentObject1 oldObject2 oldObject2Hash |
@@ -572,7 +574,7 @@ VMPermanentSpaceMemoryTest >> testPermObjectPointingToOldSpaceIsUpdatedWhenCompa
 	self assert: (memory hashBitsOf: (memory fetchPointer: 0 ofObject: permanentObject1)) equals: oldObject2Hash 
 ]
 
-{ #category : #'test - moving' }
+{ #category : 'test - moving' }
 VMPermanentSpaceMemoryTest >> testPermanentObjectMarksItsOldClass [
 
 	| permanentObject oldObject oldClass oldClassHash found |
@@ -598,7 +600,7 @@ VMPermanentSpaceMemoryTest >> testPermanentObjectMarksItsOldClass [
 	self assert: found
 ]
 
-{ #category : #'test - moving' }
+{ #category : 'test - moving' }
 VMPermanentSpaceMemoryTest >> testPermanentObjectPointingToFalseIsNotRemembered [
 
 	
@@ -611,7 +613,7 @@ VMPermanentSpaceMemoryTest >> testPermanentObjectPointingToFalseIsNotRemembered 
 	self deny: (memory getFromPermToOldSpaceRememberedSet isInRememberedSet: permanentObject ).	
 ]
 
-{ #category : #'test - moving' }
+{ #category : 'test - moving' }
 VMPermanentSpaceMemoryTest >> testPermanentObjectPointingToMachineCodeIsNotRemembered [
 
 	
@@ -624,7 +626,7 @@ VMPermanentSpaceMemoryTest >> testPermanentObjectPointingToMachineCodeIsNotRemem
 	self deny: (memory getFromPermToOldSpaceRememberedSet isInRememberedSet: permanentObject ).	
 ]
 
-{ #category : #'test - moving' }
+{ #category : 'test - moving' }
 VMPermanentSpaceMemoryTest >> testPermanentObjectPointingToNilIsNotRemembered [
 
 	
@@ -636,7 +638,7 @@ VMPermanentSpaceMemoryTest >> testPermanentObjectPointingToNilIsNotRemembered [
 	self deny: (memory getFromPermToOldSpaceRememberedSet isInRememberedSet: permanentObject ).	
 ]
 
-{ #category : #'test - moving' }
+{ #category : 'test - moving' }
 VMPermanentSpaceMemoryTest >> testPermanentObjectPointingToTrueIsNotRemembered [
 
 	
@@ -649,7 +651,7 @@ VMPermanentSpaceMemoryTest >> testPermanentObjectPointingToTrueIsNotRemembered [
 	self deny: (memory getFromPermToOldSpaceRememberedSet isInRememberedSet: permanentObject ).	
 ]
 
-{ #category : #'test - moving' }
+{ #category : 'test - moving' }
 VMPermanentSpaceMemoryTest >> testPermanentObjectPointingToYoungObjectIsRemovedWhenPointingToMachineCodeMethod [
 
 	
@@ -680,7 +682,7 @@ VMPermanentSpaceMemoryTest >> testPermanentObjectPointingToYoungObjectIsRemovedW
 	self assert: (memory fetchPointer: 0 ofObject: permanentObject ) equals: fakeMachineCodeMethod.
 ]
 
-{ #category : #'test - moving' }
+{ #category : 'test - moving' }
 VMPermanentSpaceMemoryTest >> testPermanentObjectUpdatedToTrueIsRemovedFromRememberedSet [
 
 	
@@ -702,7 +704,7 @@ VMPermanentSpaceMemoryTest >> testPermanentObjectUpdatedToTrueIsRemovedFromRemem
 
 ]
 
-{ #category : #'test - moving' }
+{ #category : 'test - moving' }
 VMPermanentSpaceMemoryTest >> testReferencingAnObjectFromOldEphemeronIsNotFired [
 
 	| permanentObject oldObject ephemeronObject |
@@ -728,7 +730,7 @@ VMPermanentSpaceMemoryTest >> testReferencingAnObjectFromOldEphemeronIsNotFired 
 
 ]
 
-{ #category : #'test - moving' }
+{ #category : 'test - moving' }
 VMPermanentSpaceMemoryTest >> testReferencingAnObjectFromOldWeakObjectIsNotNilled [
 
 	| permanentObject oldObject weakObject |
@@ -757,7 +759,7 @@ VMPermanentSpaceMemoryTest >> testReferencingAnObjectFromOldWeakObjectIsNotNille
 
 ]
 
-{ #category : #'test - moving' }
+{ #category : 'test - moving' }
 VMPermanentSpaceMemoryTest >> testReferencingAnObjectFromYoungEphemeronIsNotFired [
 
 	| permanentObject oldObject ephemeronObject |
@@ -780,7 +782,7 @@ VMPermanentSpaceMemoryTest >> testReferencingAnObjectFromYoungEphemeronIsNotFire
 
 ]
 
-{ #category : #'test - moving' }
+{ #category : 'test - moving' }
 VMPermanentSpaceMemoryTest >> testReferencingAnObjectFromYoungWeakObjectIsNotNilled [
 
 	| permanentObject oldObject weakObject |

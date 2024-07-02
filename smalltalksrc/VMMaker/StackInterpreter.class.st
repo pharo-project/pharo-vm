@@ -1072,8 +1072,8 @@ StackInterpreter class >> initializePrimitiveTable [
 		(63 primitiveStringAt)
 		(64 primitiveStringAtPut)
 		"The stream primitives no longer pay their way; normal Smalltalk code is faster."
-		(65 primitiveStartProfiling)"was primitiveNext"
-		(66 primitiveStopProfiling) "was primitiveNextPut"
+		(65 0)"was primitiveNext"
+		(66 0) "was primitiveNextPut"
 		(67 0 "a.k.a. primitiveFail but faster because primitiveFail won't even be called") "was primitiveAtEnd"
 
 		"StorageManagement Primitives (68-79)"
@@ -1467,14 +1467,14 @@ StackInterpreter class >> isNonArgumentImplicitReceiverVariableName: aString [
 StackInterpreter class >> isObjectAccessor: selector [
 	"Answer if selector is one of fetchPointer:ofObject: storePointer:ofObject:withValue:
 	 et al."
-	^(InterpreterProxy whichCategoryIncludesSelector: selector) = #'object access'
-	 or: [(SpurMemoryManager whichCategoryIncludesSelector: selector) = #'object access']
+	^(InterpreterProxy protocolNameOfSelector: selector) = #'object access'
+	 or: [(SpurMemoryManager protocolNameOfSelector: selector) = #'object access']
 
 ]
 
 { #category : 'spur compilation support' }
 StackInterpreter class >> isStackAccessor: selector [
-	^(StackInterpreter whichCategoryIncludesSelector: selector) = #'stack access'
+	^(StackInterpreter protocolNameOfSelector: selector) = #'stack access'
 ]
 
 { #category : 'translation' }
@@ -1665,7 +1665,6 @@ StackInterpreter class >> reorganizeAsISeeFit [
 
 { #category : 'translation' }
 StackInterpreter class >> requiredMethodNames: options [
-
 	"Answer the list of method names that should be retained for export or other support reasons"
 
 	| requiredList |
@@ -1690,10 +1689,9 @@ StackInterpreter class >> requiredMethodNames: options [
 		(self primitiveTable select: [ :each | each isSymbol ]).
 
 	"InterpreterProxy is the internal analogue of sqVirtualMachine.c, so make sure to keep all those"
-	InterpreterProxy organization categories do: [ :cat | 
-		(cat ~= 'initialize' and: [ cat ~= 'private' ]) ifTrue: [ 
-			requiredList addAll:
-				(InterpreterProxy organization listAtCategoryNamed: cat) ] ].
+	InterpreterProxy protocolNames do: [ :cat |
+		(cat ~= 'initialize' and: [ cat ~= 'private' ]) ifTrue: [
+			requiredList addAll: (InterpreterProxy selectorsInProtocol: cat) ] ].
 
 	^ requiredList
 ]

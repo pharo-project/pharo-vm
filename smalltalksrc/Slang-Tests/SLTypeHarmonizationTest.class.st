@@ -1,19 +1,20 @@
 Class {
-	#name : #SLTypeHarmonizationTest,
-	#superclass : #SlangAbstractTestCase,
+	#name : 'SLTypeHarmonizationTest',
+	#superclass : 'SlangAbstractTestCase',
 	#instVars : [
 		'types'
 	],
-	#category : #'Slang-Tests'
+	#category : 'Slang-Tests',
+	#package : 'Slang-Tests'
 }
 
-{ #category : #running }
+{ #category : 'running' }
 SLTypeHarmonizationTest >> setUp [
 	super setUp.
 	types := Set new.
 ]
 
-{ #category : #harmonizeOneType }
+{ #category : 'harmonizeOneType' }
 SLTypeHarmonizationTest >> testHarmonizedChar [
 	"cast a char to an int"
 	| result |
@@ -24,7 +25,7 @@ SLTypeHarmonizationTest >> testHarmonizedChar [
 	
 ]
 
-{ #category : #harmonizeTwoType }
+{ #category : 'harmonizeTwoType' }
 SLTypeHarmonizationTest >> testHarmonizedCharAndInt [
 	| result |
 	types add: #int.
@@ -35,7 +36,7 @@ SLTypeHarmonizationTest >> testHarmonizedCharAndInt [
 	
 ]
 
-{ #category : #harmonizeTwoType }
+{ #category : 'harmonizeTwoType' }
 SLTypeHarmonizationTest >> testHarmonizedCharAndUnknown [
 	| result |
 	types add: #unknown.
@@ -46,7 +47,7 @@ SLTypeHarmonizationTest >> testHarmonizedCharAndUnknown [
 	
 ]
 
-{ #category : #harmonizeOnePointer }
+{ #category : 'harmonizeOnePointer' }
 SLTypeHarmonizationTest >> testHarmonizedCharPtr [
 	"doesn't change the type"
 	| result |
@@ -57,7 +58,7 @@ SLTypeHarmonizationTest >> testHarmonizedCharPtr [
 	
 ]
 
-{ #category : #harmonizeOneType }
+{ #category : 'harmonizeOneType' }
 SLTypeHarmonizationTest >> testHarmonizedEmptyRetrunType [
 	"unknowned type doesn't get any transformation"
 	| result |
@@ -67,7 +68,7 @@ SLTypeHarmonizationTest >> testHarmonizedEmptyRetrunType [
 	
 ]
 
-{ #category : #harmonizeOneType }
+{ #category : 'harmonizeOneType' }
 SLTypeHarmonizationTest >> testHarmonizedInt [
 	| result |
 	types add: #int.
@@ -77,7 +78,7 @@ SLTypeHarmonizationTest >> testHarmonizedInt [
 	
 ]
 
-{ #category : #harmonizeTwoType }
+{ #category : 'harmonizeTwoType' }
 SLTypeHarmonizationTest >> testHarmonizedIntAndLongNotWorking [
 	"the type are not merged"
 	| result |
@@ -89,7 +90,7 @@ SLTypeHarmonizationTest >> testHarmonizedIntAndLongNotWorking [
 	
 ]
 
-{ #category : #harmonizeTwoType }
+{ #category : 'harmonizeTwoType' }
 SLTypeHarmonizationTest >> testHarmonizedIntAndLonglongNotWorking [
 	"the type are not merged"
 	| result |
@@ -101,7 +102,7 @@ SLTypeHarmonizationTest >> testHarmonizedIntAndLonglongNotWorking [
 	
 ]
 
-{ #category : #harmonizeTwoType }
+{ #category : 'harmonizeTwoType' }
 SLTypeHarmonizationTest >> testHarmonizedIntAndShort [
 	| result |
 	types add: #int.
@@ -112,7 +113,7 @@ SLTypeHarmonizationTest >> testHarmonizedIntAndShort [
 	
 ]
 
-{ #category : #harmonizeTwoType }
+{ #category : 'harmonizeTwoType' }
 SLTypeHarmonizationTest >> testHarmonizedIntAndUnsignedIntAndLonglongNotAndUnsignedlonglongWorking [
 	"default to signed type"
 	| result |
@@ -126,7 +127,7 @@ SLTypeHarmonizationTest >> testHarmonizedIntAndUnsignedIntAndLonglongNotAndUnsig
 	
 ]
 
-{ #category : #harmonizeThreeType }
+{ #category : 'harmonizeThreeType' }
 SLTypeHarmonizationTest >> testHarmonizedIntAndUnsignedIntAndLonglongNotWorking [
 	"default to signed type"
 	| result |
@@ -139,7 +140,7 @@ SLTypeHarmonizationTest >> testHarmonizedIntAndUnsignedIntAndLonglongNotWorking 
 	
 ]
 
-{ #category : #harmonizeTwoType }
+{ #category : 'harmonizeTwoType' }
 SLTypeHarmonizationTest >> testHarmonizedIntAndUnsignedIntNotWorking [
 	"default to signed type"
 	| result |
@@ -151,7 +152,7 @@ SLTypeHarmonizationTest >> testHarmonizedIntAndUnsignedIntNotWorking [
 	
 ]
 
-{ #category : #harmonizeOnePointer }
+{ #category : 'harmonizeOnePointer' }
 SLTypeHarmonizationTest >> testHarmonizedIntPtr [
 	"doesn't change the type"
 	| result |
@@ -162,7 +163,7 @@ SLTypeHarmonizationTest >> testHarmonizedIntPtr [
 	
 ]
 
-{ #category : #harmonizeThreeType }
+{ #category : 'harmonizeThreeType' }
 SLTypeHarmonizationTest >> testHarmonizedKnownTypeAndNotKnownAndUnsignedIntNotWorking [
 	"if at least one of the type isn't in #(char short int #'long long' #'unsigned char' #'unsigned short' #'unsigned int' #'unsigned long long') then it will remain unmerged"
 	| result |
@@ -175,7 +176,7 @@ SLTypeHarmonizationTest >> testHarmonizedKnownTypeAndNotKnownAndUnsignedIntNotWo
 	
 ]
 
-{ #category : #harmonizeThreeType }
+{ #category : 'harmonizeThreeType' }
 SLTypeHarmonizationTest >> testHarmonizedKnownTypeAndNotKnownNotWorking [
 	"if at least one of the type isn't in #(char short int #'long long' #'unsigned char' #'unsigned short' #'unsigned int' #'unsigned long long') then it will remain unmerged"
 	| result |
@@ -188,7 +189,7 @@ SLTypeHarmonizationTest >> testHarmonizedKnownTypeAndNotKnownNotWorking [
 	
 ]
 
-{ #category : #harmonizeOneType }
+{ #category : 'harmonizeOneType' }
 SLTypeHarmonizationTest >> testHarmonizedLong [
 	"long type doesn't get any transformation, it counts as unknown"
 	| result |
@@ -199,7 +200,7 @@ SLTypeHarmonizationTest >> testHarmonizedLong [
 	
 ]
 
-{ #category : #harmonizeTwoType }
+{ #category : 'harmonizeTwoType' }
 SLTypeHarmonizationTest >> testHarmonizedLongAndUnsignedLongNotWorking [
 	"doesn't merge the type"
 	| result |
@@ -211,7 +212,7 @@ SLTypeHarmonizationTest >> testHarmonizedLongAndUnsignedLongNotWorking [
 	
 ]
 
-{ #category : #harmonizeOnePointer }
+{ #category : 'harmonizeOnePointer' }
 SLTypeHarmonizationTest >> testHarmonizedLongPtr [
 	"doesn't change the type"
 	| result |
@@ -222,7 +223,7 @@ SLTypeHarmonizationTest >> testHarmonizedLongPtr [
 	
 ]
 
-{ #category : #harmonizeOneType }
+{ #category : 'harmonizeOneType' }
 SLTypeHarmonizationTest >> testHarmonizedLonglong [
 	| result |
 	types add: #'long long'.
@@ -232,7 +233,7 @@ SLTypeHarmonizationTest >> testHarmonizedLonglong [
 	
 ]
 
-{ #category : #harmonizeOnePointer }
+{ #category : 'harmonizeOnePointer' }
 SLTypeHarmonizationTest >> testHarmonizedLonglongPtr [
 	"doesn't change the type"
 	| result |
@@ -243,7 +244,7 @@ SLTypeHarmonizationTest >> testHarmonizedLonglongPtr [
 	
 ]
 
-{ #category : #harmonizeOneType }
+{ #category : 'harmonizeOneType' }
 SLTypeHarmonizationTest >> testHarmonizedNumber [
 	| result |
 	types add: 7.
@@ -253,7 +254,7 @@ SLTypeHarmonizationTest >> testHarmonizedNumber [
 	
 ]
 
-{ #category : #harmonizeTwoType }
+{ #category : 'harmonizeTwoType' }
 SLTypeHarmonizationTest >> testHarmonizedNumberAndAnything [
 	"doesn't harmonize and produce a notification"
 	| result |
@@ -265,7 +266,7 @@ SLTypeHarmonizationTest >> testHarmonizedNumberAndAnything [
 	
 ]
 
-{ #category : #harmonizeTwoType }
+{ #category : 'harmonizeTwoType' }
 SLTypeHarmonizationTest >> testHarmonizedNumbers [
 	| result |
 	types add: 7.
@@ -276,7 +277,7 @@ SLTypeHarmonizationTest >> testHarmonizedNumbers [
 	
 ]
 
-{ #category : #harmonizeOneType }
+{ #category : 'harmonizeOneType' }
 SLTypeHarmonizationTest >> testHarmonizedShort [
 	"cast short to int"
 	| result |
@@ -287,7 +288,7 @@ SLTypeHarmonizationTest >> testHarmonizedShort [
 	
 ]
 
-{ #category : #harmonizeOnePointer }
+{ #category : 'harmonizeOnePointer' }
 SLTypeHarmonizationTest >> testHarmonizedShortPtr [
 	"doesn't change the type"
 	| result |
@@ -298,7 +299,7 @@ SLTypeHarmonizationTest >> testHarmonizedShortPtr [
 	
 ]
 
-{ #category : #harmonizeSignedAndUnsigned }
+{ #category : 'harmonizeSignedAndUnsigned' }
 SLTypeHarmonizationTest >> testHarmonizedSignedUnsignedIntNotWorking [
 	| result |
 	types add: #int.
@@ -309,7 +310,7 @@ SLTypeHarmonizationTest >> testHarmonizedSignedUnsignedIntNotWorking [
 	
 ]
 
-{ #category : #harmonizeSignedAndUnsigned }
+{ #category : 'harmonizeSignedAndUnsigned' }
 SLTypeHarmonizationTest >> testHarmonizedSignedUnsignedNotWorking [
 	"ignore the unsigned long long in the merge operation"
 	| result |
@@ -322,7 +323,7 @@ SLTypeHarmonizationTest >> testHarmonizedSignedUnsignedNotWorking [
 	
 ]
 
-{ #category : #harmonizeOneType }
+{ #category : 'harmonizeOneType' }
 SLTypeHarmonizationTest >> testHarmonizedUnknown [
 	"unknowned type doesn't get any transformation"
 	| result |
@@ -333,7 +334,7 @@ SLTypeHarmonizationTest >> testHarmonizedUnknown [
 	
 ]
 
-{ #category : #harmonizeOnePointer }
+{ #category : 'harmonizeOnePointer' }
 SLTypeHarmonizationTest >> testHarmonizedUnknownPtr [
 	"doesn't change the type"
 	| result |
@@ -344,7 +345,7 @@ SLTypeHarmonizationTest >> testHarmonizedUnknownPtr [
 	
 ]
 
-{ #category : #harmonizeOnePointer }
+{ #category : 'harmonizeOnePointer' }
 SLTypeHarmonizationTest >> testHarmonizedUnsignedIntPtr [
 	"doesn't change the type"
 	| result |
@@ -355,7 +356,7 @@ SLTypeHarmonizationTest >> testHarmonizedUnsignedIntPtr [
 	
 ]
 
-{ #category : #harmonizeOneType }
+{ #category : 'harmonizeOneType' }
 SLTypeHarmonizationTest >> testHarmonizedUnsignedchar [
 	"cast an unsigned char to an usqInt"
 	| result |
@@ -366,7 +367,7 @@ SLTypeHarmonizationTest >> testHarmonizedUnsignedchar [
 	
 ]
 
-{ #category : #harmonizeOnePointer }
+{ #category : 'harmonizeOnePointer' }
 SLTypeHarmonizationTest >> testHarmonizedUnsignedcharPtr [
 	"doesn't change the type"
 	| result |
@@ -377,7 +378,7 @@ SLTypeHarmonizationTest >> testHarmonizedUnsignedcharPtr [
 	
 ]
 
-{ #category : #harmonizeOneType }
+{ #category : 'harmonizeOneType' }
 SLTypeHarmonizationTest >> testHarmonizedUnsignedint [
 	| result |
 	types add: #'unsigned int'.
@@ -387,7 +388,7 @@ SLTypeHarmonizationTest >> testHarmonizedUnsignedint [
 	
 ]
 
-{ #category : #harmonizeOneType }
+{ #category : 'harmonizeOneType' }
 SLTypeHarmonizationTest >> testHarmonizedUnsignedlong [
 	"unsigned long type doesn't get any transformation, it counts as unknown"
 	| result |
@@ -398,7 +399,7 @@ SLTypeHarmonizationTest >> testHarmonizedUnsignedlong [
 	
 ]
 
-{ #category : #harmonizeOnePointer }
+{ #category : 'harmonizeOnePointer' }
 SLTypeHarmonizationTest >> testHarmonizedUnsignedlongPtr [
 	"doesn't change the type"
 	| result |
@@ -409,7 +410,7 @@ SLTypeHarmonizationTest >> testHarmonizedUnsignedlongPtr [
 	
 ]
 
-{ #category : #harmonizeOneType }
+{ #category : 'harmonizeOneType' }
 SLTypeHarmonizationTest >> testHarmonizedUnsignedlonglong [
 	| result |
 	types add: #'unsigned long long'.
@@ -419,7 +420,7 @@ SLTypeHarmonizationTest >> testHarmonizedUnsignedlonglong [
 	
 ]
 
-{ #category : #harmonizeOnePointer }
+{ #category : 'harmonizeOnePointer' }
 SLTypeHarmonizationTest >> testHarmonizedUnsignedlonglongPtr [
 	"doesn't change the type"
 	| result |
@@ -430,7 +431,7 @@ SLTypeHarmonizationTest >> testHarmonizedUnsignedlonglongPtr [
 	
 ]
 
-{ #category : #harmonizeOneType }
+{ #category : 'harmonizeOneType' }
 SLTypeHarmonizationTest >> testHarmonizedUnsignedshort [
 	| result |
 	types add: #'unsigned short'.
@@ -440,7 +441,7 @@ SLTypeHarmonizationTest >> testHarmonizedUnsignedshort [
 	
 ]
 
-{ #category : #harmonizeOnePointer }
+{ #category : 'harmonizeOnePointer' }
 SLTypeHarmonizationTest >> testHarmonizedUnsignedshortPtr [
 	"doesn't change the type"
 	| result |

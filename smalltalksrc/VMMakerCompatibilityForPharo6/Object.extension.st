@@ -1,6 +1,6 @@
-Extension { #name : #Object }
+Extension { #name : 'Object' }
 
-{ #category : #'*VMMakerCompatibilityForPharo6-testing' }
+{ #category : '*VMMakerCompatibilityForPharo6-testing' }
 Object >> isCompiledCode [
 	^false
 ]

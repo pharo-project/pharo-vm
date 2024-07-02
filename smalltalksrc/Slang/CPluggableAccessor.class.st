@@ -2,43 +2,45 @@
 This class adds generalized block parameter access to C objects for vm simulation
 "
 Class {
-	#name : #CPluggableAccessor,
-	#superclass : #CArrayAccessor,
+	#name : 'CPluggableAccessor',
+	#superclass : 'CArrayAccessor',
 	#instVars : [
 		'readBlock',
 		'writeBlock',
 		'objectSize'
 	],
-	#category : #'Slang-Types'
+	#category : 'Slang-Types',
+	#package : 'Slang',
+	#tag : 'Types'
 }
 
-{ #category : #coercion }
+{ #category : 'coercion' }
 CPluggableAccessor >> asInteger [
 	^self
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 CPluggableAccessor >> at: index [
 	^readBlock value: object value: index + offset
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 CPluggableAccessor >> at: index put: value [
 	^writeBlock value: object value: index + offset value: value
 ]
 
-{ #category : #initialize }
+{ #category : 'initialize' }
 CPluggableAccessor >> atBlock: rBlock atPutBlock: wBlock [
 	readBlock := rBlock.
 	writeBlock := wBlock
 ]
 
-{ #category : #initialize }
+{ #category : 'initialize' }
 CPluggableAccessor >> objectSize: n [
 	objectSize := n
 ]
 
-{ #category : #printing }
+{ #category : 'printing' }
 CPluggableAccessor >> printOn: aStream [
 	super printOn: aStream.
 	(object isNil and: [readBlock notNil or: [writeBlock notNil]]) ifTrue:
@@ -47,7 +49,7 @@ CPluggableAccessor >> printOn: aStream [
 			do: [:ex| ]]
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 CPluggableAccessor >> size [
 	^objectSize ifNil: [super size]
 ]
