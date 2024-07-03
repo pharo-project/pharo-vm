@@ -12,6 +12,7 @@ TVMSimulator >> openOn: fileName extraMemory: extraBytes [
 	self memoryManager ifNil: [	
 		self memoryManager: MachineSimulatorMemoryManager new.
 		self objectMemory memoryManager: self memoryManager.
+		self objectMemory ensureMemoryMap memoryManager: self memoryManager.
 		self memoryManager wordSize: self objectMemory wordSize.
 	].
 

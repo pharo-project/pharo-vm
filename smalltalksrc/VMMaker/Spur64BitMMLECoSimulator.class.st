@@ -159,9 +159,9 @@ Spur64BitMMLECoSimulator >> heapMapAtWord: address [
 
 { #category : #initialization }
 Spur64BitMMLECoSimulator >> initialize [
+
 	super initialize.
-	bootstrapping := false.
-	self ensureMemoryMap
+	bootstrapping := false
 ]
 
 { #category : #'memory access' }
