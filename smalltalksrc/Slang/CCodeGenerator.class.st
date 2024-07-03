@@ -979,24 +979,29 @@ CCodeGenerator >> doBasicInlining: inlineFlagOrSymbol [
 	"Inline the bodies of all methods that are suitable for inlining.
 	This method does only the basic inlining suitable for both the core VM and plugins - no bytecode inlining etc"
 
-	| pass progress |
+	| pass progress hasBeenThroughtInline |
 	self collectInlineList: inlineFlagOrSymbol.
 	pass := 0.
 	progress := true.
-	[progress] whileTrue: [
-		"repeatedly attempt to inline methods until no further progress is made"
+	[ progress ] whileTrue: [ "repeatedly attempt to inline methods until no further progress is made"
 		progress := false.
+		hasBeenThroughtInline := false.
 		UIManager default
-			displayProgress: ('Inlining pass ', (pass := pass + 1) printString, '...')
-			from: 0 to: methods size
-			during: [:bar |
-				(self sortMethods: methods) doWithIndex: [:m :i |
+			displayProgress:
+			'Inlining pass ' , (pass := pass + 1) printString , '...'
+			from: 0
+			to: methods size
+			during: [ :bar |
+				(self sortMethods: methods) doWithIndex: [ :m :i |
 					bar value: i.
 					self currentMethod: m.
 					(m tryToInlineMethodsIn: self)
-						ifTrue: [progress := true]]]].
-
-
+						ifTrue: [
+							progress := true.
+							hasBeenThroughtInline := true ]
+						"ifFalse: [
+							hasBeenThroughtInline ifTrue: [
+								m ensureIsValidMethodAfterInliningIn: self ] ]" ] ] ]
 ]
 
 { #category : #inlining }

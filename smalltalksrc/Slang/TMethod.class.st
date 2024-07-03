@@ -574,7 +574,7 @@ TMethod >> children [
 { #category : #'inlining support' }
 TMethod >> cleanASTOf: aNode [
 	"supressing an unused variable in a conditional statement can leave it empty. We can supress the conditional branch if we encounter such cases"
-
+	aNode parent isTMethod ifTrue: [ ^self ].
 	aNode parent remove: aNode.
 	aNode parent children isEmpty ifTrue: [
 		self cleanASTOf: aNode parent ]
@@ -1883,7 +1883,7 @@ TMethod >> isMaybeSendWithoutSideEffect: aNode [
 	"called when trying to clean unused variable"
 
 	^ aNode isSend and: [
-		  aNode isConditionalSend or: [ aNode selector beginsWith: #cCoerce ] ]
+		  aNode isConditionalSend "or: [ aNode selector beginsWith: #cCoerce ] "]
 ]
 
 { #category : #inlining }
@@ -2064,15 +2064,15 @@ TMethod >> isVolatile [
 { #category : #'inlining support' }
 TMethod >> iterateThrought: aNode in: aCodeGen [
 	"iterate throuht an AST and supress unused variables and constants, since we don't do anything when meeting a send (except in some cases), assignment or return node the only variables and constants we come accross are alone in their lines"
-
+	self haltIf: [ selector = #numPointerSlotsOf:].
 	aNode isStatementList ifTrue: [
 		aNode children do: [ :subNode |
 			subNode ifNotNil: [ self iterateThrought: subNode in: aCodeGen ] ] ].
 	aNode isSwitch ifTrue: [
 		aNode cases do: [ :case |
 			self iterateThrought: case second in: aCodeGen ] ].
-	(self isStructAccessorWithNoSideEffect: aNode in: aCodeGen) 
-		ifTrue: [ self cleanASTOf: aNode ].
+	(self isStructAccessorWithNoSideEffect: aNode in: aCodeGen) ifTrue: [
+		self cleanASTOf: aNode ].
 	(self isMaybeSendWithoutSideEffect: aNode) ifTrue: [
 		aNode arguments do: [ :subNode |
 			self iterateThrought: subNode in: aCodeGen ] ].
@@ -2234,6 +2234,11 @@ TMethod >> outputConditionalDefineFor: compileTimeOptionPragmas on: aStream [
 			aStream nextPutAll: (pragma argumentAt: 1) ]
 		separatedBy: [ aStream nextPutAll: ' && ' ].
 	aStream cr
+]
+
+{ #category : #'inlining support' }
+TMethod >> parentWontUse: aNode [
+	^ aNode parent isTMethod or: [aNode parent isAssignment not or: [aNode parent isReturn not]]
 ]
 
 { #category : #accessing }
