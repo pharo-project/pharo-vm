@@ -8,8 +8,6 @@ Class {
 VMContextAccessTest >> assertContext: newContext equals: contextOop onInstVar: anIndex [ 
 
 	| originalPC copiedPC |
-	interpreter longPrintOop: contextOop.
-	interpreter longPrintOop: newContext.
 
 	originalPC := interpreter instVar: anIndex ofContext: contextOop. 
 	copiedPC := interpreter instVar: anIndex ofContext: newContext. 

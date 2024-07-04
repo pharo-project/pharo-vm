@@ -4658,6 +4658,7 @@ SpurMemoryManager >> ensureMemoryMap [
 			memoryMap memoryManager: memoryManager ].
 		
 	memoryMap initializeMemoryMap.
+	^ memoryMap
 ]
 
 { #category : #'image segment in/out' }

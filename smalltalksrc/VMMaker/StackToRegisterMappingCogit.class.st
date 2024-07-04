@@ -2007,27 +2007,40 @@ StackToRegisterMappingCogit >> genMappedInlinePrimitive: primIndex [
 
 { #category : #'bytecode generator support' }
 StackToRegisterMappingCogit >> genMarshalledSend: selectorIndex numArgs: numArgs sendTable: sendTable [
+
 	<inline: false>
+	self
+		genMarshalledSendNoPush: selectorIndex
+		numArgs: numArgs
+		sendTable: sendTable.
+	^ self ssPushRegister: ReceiverResultReg
+]
+
+{ #category : #'bytecode generator support' }
+StackToRegisterMappingCogit >> genMarshalledSendNoPush: selectorIndex numArgs: numArgs sendTable: sendTable [
+
 	<var: #sendTable type: #'sqInt *'>
 	| annotation |
 	self assert: needsFrame.
 	annotation := self annotationForSendTable: sendTable.
 	"Deal with stale super sends; see SpurMemoryManager's class comment."
-	(self annotationIsForUncheckedEntryPoint: annotation) ifTrue:
-		[objectRepresentation genEnsureOopInRegNotForwarded: ReceiverResultReg scratchReg: TempReg].
+	(self annotationIsForUncheckedEntryPoint: annotation) ifTrue: [
+		objectRepresentation
+			genEnsureOopInRegNotForwarded: ReceiverResultReg
+			scratchReg: TempReg ].
 	"0 through (NumSendTrampolines - 2) numArgs sends have the arg count implciti in the trampoline.
 	 The last send trampoline (NumSendTrampolines - 1) passes numArgs in SendNumArgsReg."
-	numArgs >= (NumSendTrampolines - 1) ifTrue:
-		[self MoveCq: numArgs R: SendNumArgsReg].
-	(BytecodeSetHasDirectedSuperSend
-	 and: [annotation
-			between: IsDirectedSuperSend
-			and: IsDirectedSuperBindingSend]) ifTrue:
-		[self genMoveConstant: tempOop R: TempReg].
+	numArgs >= (NumSendTrampolines - 1) ifTrue: [
+		self MoveCq: numArgs R: SendNumArgsReg ].
+	(BytecodeSetHasDirectedSuperSend and: [
+		 annotation
+			 between: IsDirectedSuperSend
+			 and: IsDirectedSuperBindingSend ]) ifTrue: [
+		self genMoveConstant: tempOop R: TempReg ].
 	self genLoadInlineCacheWithSelector: selectorIndex.
-	(self Call: (sendTable at: (numArgs min: NumSendTrampolines - 1))) annotation: annotation.
-	self voidReceiverOptStatus.
-	^self ssPushRegister: ReceiverResultReg
+	(self Call: (sendTable at: (numArgs min: NumSendTrampolines - 1)))
+		annotation: annotation.
+	self voidReceiverOptStatus
 ]
 
 { #category : #initialization }
@@ -2452,8 +2465,16 @@ StackToRegisterMappingCogit >> genReturnTopFromMethod [
 
 { #category : #'bytecode generator support' }
 StackToRegisterMappingCogit >> genSend: selectorIndex numArgs: numArgs [
-	self marshallSendArguments: numArgs.
-	^self genMarshalledSend: selectorIndex numArgs: numArgs sendTable: ordinarySendTrampolines
+
+	self ssFlushStackExceptTop: numArgs + 1.
+	self marshallSendArgumentsNoPush: numArgs. "Pop from the abstract stack, so that subsequent compilation in this unit make as if they were popped.
+	The previous line already discarded the entries in the runtime stack if necesary."
+	self ssPop: numArgs + 1 popSpilled: false.
+	self
+		genMarshalledSendNoPush: selectorIndex
+		numArgs: numArgs
+		sendTable: ordinarySendTrampolines.
+	^ self ssPushRegister: ReceiverResultReg
 ]
 
 { #category : #'bytecode generator support' }
@@ -3461,30 +3482,51 @@ StackToRegisterMappingCogit >> marshallSendArguments: numArgs [
 	 the receiver to ReceiverResultReg."
 
 	self ssFlushStackExceptTop: numArgs + 1.
+	self marshallSendArgumentsNoPush: numArgs.
+
+	"Pop from the abstract stack, so that subsequent compilation in this unit make as if they were popped.
+	The previous line already discarded the entries in the runtime stack if necesary."
+	self ssPop: numArgs + 1 popSpilled: false
+]
+
+{ #category : #'simulation stack' }
+StackToRegisterMappingCogit >> marshallSendArgumentsNoPush: numArgs [
+	"Spill everything on the simulated stack that needs spilling (that below receiver and arguments).
+	 Marshall receiver and arguments to stack and/or registers depending on arg count.
+	 If the args don't fit in registers push receiver and args (spill everything), but still assign
+	 the receiver to ReceiverResultReg.
+	
+	Postconditions: 
+	  - the abstract stack has receiver and argument pushed
+	  - the top N elements (receiver + args) are spilled if numArgs > self numRegArgs
+	  - the top N elements (receiver + args) are not spilled (Pop instruction have been emitted if necessary) if numArgs <= self numRegArgs
+	
+	It's the caller's responsibility to pop from the abstract stack.
+	"
+
+	| numSpilled |
+	"self ssFlushStackExceptTop: numArgs + 1."
 	numArgs > self numRegArgs
 		ifTrue: [ "If there are no spills and no references to ReceiverResultReg
 			 the fetch of ReceiverResultReg from the stack can be avoided
 			 by assigning directly to ReceiverResultReg and pushing it."
-			| numSpilled anyRefs |
+			| anyRefs |
+			anyRefs := self
+				           anyReferencesToRegister: ReceiverResultReg
+				           inTopNItems: numArgs + 1.
 			numSpilled := self numberOfSpillsInTopNItems: numArgs + 1.
-			anyRefs := self anyReferencesToRegister: ReceiverResultReg inTopNItems: numArgs + 1.
 			(numSpilled > 0 or: [ anyRefs ])
 				ifTrue: [
 					self ssFlushStack.
-					(self simStackAt: simStackPtr - numArgs) copyToReg: ReceiverResultReg ]
+					(self simStackAt: simStackPtr - numArgs) copyToReg:
+						ReceiverResultReg ]
 				ifFalse: [
 					(self simStackAt: simStackPtr - numArgs)
 						copyToReg: ReceiverResultReg;
 						type: SSRegister;
 						registerr: ReceiverResultReg.
-					self ssFlushStack ].
-			
-			"Pop from the stack, so that subsequent compilation in this unit make as if they were popped.
-			However, but do not discard the entries in the runtime stack (do not generate pops).
-			It's the callee responsibility of popping them."
-			^ self ssPop: numArgs + 1 popSpilled: false ]
-		ifFalse: [
-			"Move the args to the register arguments, being careful to do
+					self ssFlushStack ] ]
+		ifFalse: [ "Move the args to the register arguments, being careful to do
 			 so last to first so e.g. previous contents don't get overwritten.
 			 Also check for any arg registers in use by other args."
 			numArgs > 0 ifTrue: [
@@ -3492,18 +3534,21 @@ StackToRegisterMappingCogit >> marshallSendArguments: numArgs [
 					ifTrue: [
 						self ssAllocateRequiredReg: Arg0Reg upThrough: simStackPtr - 2.
 						self ssAllocateRequiredReg: Arg1Reg upThrough: simStackPtr - 1 ]
-					ifFalse: [ self ssAllocateRequiredReg: Arg0Reg upThrough: simStackPtr - 1 ] ].
+					ifFalse: [
+					self ssAllocateRequiredReg: Arg0Reg upThrough: simStackPtr - 1 ] ].
+			"Must compute spill items here, because the previous ssAllocateReg could spill more elements"
+			numSpilled := self numberOfSpillsInTopNItems: numArgs + 1.
+			(self numRegArgs > 1 and: [ numArgs > 1 ]) ifTrue: [
+				(self simStackAt: simStackPtr) copyToReg: Arg1Reg ].
 
-			(self numRegArgs > 1 and: [ numArgs > 1 ]) ifTrue: [ (self simStackAt: simStackPtr) copyToReg: Arg1Reg ].
+			numArgs > 0 ifTrue: [
+				(self simStackAt: simStackPtr - numArgs + 1) copyToReg: Arg0Reg ].
+			(self simStackAt: simStackPtr - numArgs) copyToReg:
+				ReceiverResultReg.
 
-			numArgs > 0 ifTrue: [ (self simStackAt: simStackPtr - numArgs + 1) copyToReg: Arg0Reg ].
-			(self simStackAt: simStackPtr - numArgs) copyToReg: ReceiverResultReg.
-
-			"Pop from the stack, so that subsequent compilation in this unit make as if they were popped.
-			Here, DO discard the entries in the runtime stack.
-			The calling convention dictates that in this case all receiver/args pass through registers and no stack is involved.
-			If we don't pop from the runtime stack, it will get desynchronised"
-			self ssPop: numArgs + 1 ]
+			"Pop the spilled stack slots at runtime. Do not touch the abstract stack, it will be managed by the caller"
+			numSpilled > 0 ifTrue: [
+				self AddCq: numSpilled * objectMemory wordSize R: SPReg ] ]
 ]
 
 { #category : #'compile abstract instructions' }
@@ -3653,10 +3698,10 @@ StackToRegisterMappingCogit >> numRegArgs [
 
 { #category : #'simulation stack' }
 StackToRegisterMappingCogit >> numberOfSpillsInTopNItems: n [
-	simStackPtr to: simStackPtr - n by: -1 do:
-		[:i| (self simStackAt: i) spilled ifTrue:
-			[^n - (simStackPtr - i)]].
-	^0
+
+	simStackPtr to: simStackPtr - n + 1 by: -1 do: [ :i |
+		(self simStackAt: i) spilled ifTrue: [ ^ n - (simStackPtr - i) ] ].
+	^ 0
 ]
 
 { #category : #trampolines }
@@ -4269,6 +4314,16 @@ StackToRegisterMappingCogit >> ssPop: n popSpilled: popSpilled [
 	self assert: (simStackPtr - n >= methodOrBlockNumTemps
 				or: [(needsFrame not and: [simStackPtr - n >= 0])]).
 
+	self simulationOnly: [
+		"For debug purposes, clean the stack when in simulation mode"
+		| toPop |
+		toPop := 0.
+		n timesRepeat: [
+			(self ssValue: toPop) type: nil.
+			toPop := toPop + 1.
+		]
+	].
+
 	"Pop from the simulated stack"
 	simStackPtr := simStackPtr - n.
 
@@ -4276,8 +4331,8 @@ StackToRegisterMappingCogit >> ssPop: n popSpilled: popSpilled [
 	If the spill base is above the stack, it means we popped spilled elements.
 	If the spill base is below or equals to the stack pointer, we don't need ot do anything"	
 	spilledToPop := simSpillBase - 1 - simStackPtr.
-	(popSpilled and: [spilledToPop > 0]) ifTrue:
-		[self AddCq: spilledToPop * objectMemory wordSize R: SPReg].
+	(popSpilled and: [spilledToPop > 0]) ifTrue: [
+		self AddCq: spilledToPop * objectMemory wordSize R: SPReg ].
 	
 	self updateSimSpillBase
 ]
@@ -4452,6 +4507,43 @@ StackToRegisterMappingCogit >> ssTopNeedsStoreCheck [
 	^self ssTop type ~= SSConstant
 	  or: [(objectMemory isNonImmediate: self ssTop constant)
 		and: [objectRepresentation shouldAnnotateObjectReference:  self ssTop constant]]
+]
+
+{ #category : #'simulation stack' }
+StackToRegisterMappingCogit >> ssUnspillStackSlotAt: n [
+
+	self ssUnspillStackSlots: 1 startingAt: n
+]
+
+{ #category : #'simulation stack' }
+StackToRegisterMappingCogit >> ssUnspillStackSlots: n startingAt: start [
+	"Low-level: generate runtime pops that unspill the top n stack slots starting at start and going from the top of the stack to the base are not spilled.
+	CAREFUL: This gets the abstract stack and the runtime stack desynchronized.
+	The abstract stack is not modified, so from this point on, it does not track anymore spill slots.
+	This should be coupled generally with a ssPop without unspilling"
+
+	| numberOfSpilledSlots |
+	self assert: (simStackPtr - n >= methodOrBlockNumTemps or: [
+			 needsFrame not and: [ simStackPtr - n >= 0 ] ]).
+
+	numberOfSpilledSlots := 0.
+	start to: start + n - 1 do: [ :stackIndex |
+		| stackSlot |
+		stackSlot := self ssValue: stackIndex.
+		stackSlot spilled ifTrue: [
+			numberOfSpilledSlots := numberOfSpilledSlots + 1 ] ].
+
+	"Check how many elements to pop from the stack have been spilled.
+	If no stack slot is spilled, do not generate a pop instruction."
+	numberOfSpilledSlots > 0 ifTrue: [
+		self AddCq: numberOfSpilledSlots * objectMemory wordSize R: SPReg ].
+	self updateSimSpillBase
+]
+
+{ #category : #'simulation stack' }
+StackToRegisterMappingCogit >> ssUnspillTopStackSlots: n [
+	
+	self ssUnspillStackSlots: n startingAt: 0
 ]
 
 { #category : #'simulation stack' }

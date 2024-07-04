@@ -1048,8 +1048,8 @@ StackInterpreter class >> initializePrimitiveTable [
 		(63 primitiveStringAt)
 		(64 primitiveStringAtPut)
 		"The stream primitives no longer pay their way; normal Smalltalk code is faster."
-		(65 primitiveStartProfiling)"was primitiveNext"
-		(66 primitiveStopProfiling) "was primitiveNextPut"
+		(65 0)"was primitiveNext"
+		(66 0) "was primitiveNextPut"
 		(67 0 "a.k.a. primitiveFail but faster because primitiveFail won't even be called") "was primitiveAtEnd"
 
 		"StorageManagement Primitives (68-79)"
@@ -2676,7 +2676,7 @@ StackInterpreter >> bytecodePrimAdd [
 	arg := self stackValue: 0.
 	(objectMemory areIntegers: rcvr and: arg)
 		ifTrue: [
-			self druidIgnore: [
+			self druidIf: #staticTypePrediction do: [
 				self
 					sumSmallInteger: rcvr
 					withSmallInteger: arg
@@ -2786,12 +2786,13 @@ StackInterpreter >> bytecodePrimBitAnd [
 
 	<compilationInfo: #isMapped>
 	<druidInfo: #hasSend>
-	
-	self druidIgnore: [
-		self initPrimCall.
-		self primitiveBitAnd.
-		self successful ifTrue:
-			[^self fetchNextBytecode "success"] ].
+	| rcvr arg |
+	rcvr := self stackValue: 1.
+	arg := self stackValue: 0.
+	self druidIf: #staticTypePrediction do: [
+		(objectMemory areIntegers: rcvr and: arg) ifTrue: [
+			self pop: 2 thenPush: (rcvr bitAnd: arg).
+			^ self fetchNextBytecode ] ].
 
 	self normalSendSpecialSelector: 14 argumentCount: 1
 ]
@@ -2802,11 +2803,13 @@ StackInterpreter >> bytecodePrimBitOr [
 	<compilationInfo: #isMapped>
 	<druidInfo: #hasSend>
 	
-	self druidIgnore: [
-		self initPrimCall.
-		self primitiveBitOr.
-		self successful ifTrue:
-			[^self fetchNextBytecode "success"] ].
+	| rcvr arg |
+	rcvr := self stackValue: 1.
+	arg := self stackValue: 0.
+	self druidIf: #staticTypePrediction do: [
+		(objectMemory areIntegers: rcvr and: arg) ifTrue: [
+			self pop: 2 thenPush: (rcvr bitOr: arg).
+			^ self fetchNextBytecode ] ].
 
 	self normalSendSpecialSelector: 15 argumentCount: 1
 ]
@@ -3254,21 +3257,22 @@ StackInterpreter >> bytecodePrimSubtract [
 
 	<compilationInfo: #isMapped>
 	<druidInfo: #hasSend>
-	
-	self druidIgnore: [
+	self druidIf: #staticTypePrediction do: [
 		| rcvr arg result |
 		rcvr := self stackValue: 1.
 		arg := self stackValue: 0.
 		(objectMemory areIntegers: rcvr and: arg)
 			ifTrue: [
-				result := (objectMemory integerValueOf: rcvr) - (objectMemory integerValueOf: arg).
+				result := (objectMemory integerValueOf: rcvr)
+				          - (objectMemory integerValueOf: arg).
 				(objectMemory isIntegerValue: result) ifTrue: [
 					self pop: 2 thenPush: (objectMemory integerObjectOf: result).
 					^ self fetchNextBytecode "success" ] ]
 			ifFalse: [
-				self initPrimCall.
-				self primitiveFloatSubtract: rcvr fromArg: arg.
-				self successful ifTrue: [ ^ self fetchNextBytecode "success" ] ] ].
+				self druidIgnore: [
+					self initPrimCall.
+					self primitiveFloatSubtract: rcvr fromArg: arg.
+					self successful ifTrue: [ ^ self fetchNextBytecode "success" ] ] ] ].
 
 	self normalSendSpecialSelector: 1 argumentCount: 1
 ]
@@ -14607,6 +14611,7 @@ StackInterpreter >> stackPointerIndexForFrame: theFP WithSP: theSP [
 	"Return the 1-based index rel to the given frame"
 
 	"In the StackInterpreter stacks grow down."
+	<returnTypeC: #sqInt>
 
 	^ (self frameReceiverLocation: theFP) - theSP
 	  >> objectMemory shiftForWord + (self frameNumArgs: theFP)

@@ -287,19 +287,19 @@ VMClass class >> objectRepresentationClass [
 	^self objectMemoryClass objectRepresentationClass
 ]
 
-{ #category : #accessing }
-VMClass class >> resetInitializationOptions [
-
-	self release.
-	InitializationOptions := nil
-]
-
 { #category : #translation }
 VMClass class >> renameSelectorIfStaticallyResolved: aString [
 
 	^ (self staticallyResolvedSelectors includes: aString)
 		  ifTrue: [ self staticallyResolvePolymorphicSelector: aString ]
 		  ifFalse: [ ^ aString ]
+]
+
+{ #category : #accessing }
+VMClass class >> resetInitializationOptions [
+
+	self release.
+	InitializationOptions := nil
 ]
 
 { #category : #translation }
@@ -578,10 +578,26 @@ VMClass >> druidForceIntepretation [
 ]
 
 { #category : #'druid support' }
+VMClass >> druidIf: conditionToCompile do: aBlock [
+
+	"Execute the block during interpretation, ignore it during compilation unless the compile option is given.
+	Should be used only to avoid extra fast-cases during compilation"
+	^ aBlock value
+]
+
+{ #category : #'druid support' }
 VMClass >> druidIgnore: aBlock [
 
 	"Execute the block during interpretation, ignore it during compilation.
 	Should be used only to avoid extra fast-cases during compilation"
+	^ aBlock value
+]
+
+{ #category : #'druid support' }
+VMClass >> druidStageable: aBlock [
+
+	"Execute the block during interpretation, stage it during compilation.
+	Should be used only with expressions that are known to be constant at JIT-compile time"
 	^ aBlock value
 ]
 
