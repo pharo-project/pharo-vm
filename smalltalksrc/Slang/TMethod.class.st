@@ -1440,7 +1440,6 @@ TMethod >> inlineConditional: aSendNode in: aCodeGen [
 
 { #category : #inlining }
 TMethod >> inlineFunctionCall: aSendNode in: aCodeGen [
-
 	"Answer the body of the called function, substituting the actual
 	 parameters for the formal argument variables in the method body.
 	 Assume caller has established that:
@@ -1454,24 +1453,26 @@ TMethod >> inlineFunctionCall: aSendNode in: aCodeGen [
 	doNotRename := Set withAll: args.
 	argsForInlining := aSendNode argumentsForInliningCodeGenerator:
 		                   aCodeGen.
-	meth args with: argsForInlining do: [ :argName :exprNode | 
+	meth args with: argsForInlining do: [ :argName :exprNode |
 		exprNode isLeaf ifTrue: [ doNotRename add: argName ] ].
-	(meth statements size = 2 and: [ 
-		 meth statements first isSend and: [ 
-			 meth statements first selector == #flag: ] ]) ifTrue: [ 
+	(meth statements size = 2 and: [
+		 meth statements first isSend and: [
+			 meth statements first selector == #flag: ] ]) ifTrue: [
 		meth statements removeFirst ].
 	meth renameVarsForInliningInto: self except: doNotRename in: aCodeGen.
 	meth renameLabelsForInliningInto: self.
 	self addVarsDeclarationsAndLabelsOf: meth except: doNotRename.
 	substitutionDict := Dictionary new: meth args size * 2.
-	meth args with: argsForInlining do: [ :argName :exprNode | 
+	meth args with: argsForInlining do: [ :argName :exprNode |
 		substitutionDict at: argName put: exprNode.
-		(doNotRename includes: argName) ifFalse: [ 
+		(doNotRename includes: argName) ifFalse: [
 			self removeLocal: argName ] ].
 	meth parseTree bindVariablesIn: substitutionDict.
-	^ meth parseTree endsWithReturn
-		  ifTrue: [ meth parseTree copyWithoutReturn ]
-		  ifFalse: [ meth parseTree ]
+	meth parseTree endsWithReturn ifTrue: [
+		meth parseTree: meth parseTree copyWithoutReturn ].
+	(self parentWontUse: aSendNode) ifTrue: [
+		meth ensureIsValidMethodAfterInliningIn: aCodeGen ].
+	^ meth parseTree
 ]
 
 { #category : #inlining }
@@ -1555,7 +1556,6 @@ TMethod >> inlineMethod: meth inCaseStatement: stmtNode [
 
 { #category : #inlining }
 TMethod >> inlineReturningConditional: aSendNode in: aCodeGen [
-
 	"Inline
 		aSend ifTrue:/ifFalse: [^expr]
 	 where aSend is inlineable and always answers booleans.  We inline ^expr
@@ -1568,6 +1568,7 @@ TMethod >> inlineReturningConditional: aSendNode in: aCodeGen [
 	returnIfTrue := aSendNode selector = #ifTrue:.
 	returnNode := aSendNode arguments first.
 	method := (aCodeGen methodNamed: aSendNode receiver selector) copy.
+	self haltIf: [ selector = #markAndTrace: ].
 	replacementTree := method
 		                   inlineFunctionCall: aSendNode receiver
 		                   in: aCodeGen.
@@ -1575,31 +1576,31 @@ TMethod >> inlineReturningConditional: aSendNode in: aCodeGen [
 	"The last node is either a return or a boolean constant."
 	lastNode := replacementTree statements last.
 	replacementTree statements last isReturn
-		ifTrue: [ 
-			replacementTree statements last expression value == returnIfTrue 
-				ifTrue: [ 
+		ifTrue: [
+			replacementTree statements last expression value == returnIfTrue
+				ifTrue: [
 					lastNode := nil "i.e. take the fall-through path and /don't/ return" ] ]
-		ifFalse: [ 
+		ifFalse: [
 			self assert:
-				(lastNode isConstant and: [ 
+				(lastNode isConstant and: [
 					 #( true false ) includes: lastNode value ]).
-			lastNode value == returnIfTrue ifTrue: [ "i.e. /do/ return" 
+			lastNode value == returnIfTrue ifTrue: [ "i.e. /do/ return"
 				map at: lastNode put: returnNode ] ].
-	replacementTree nodesDo: [ :node | 
+	replacementTree nodesDo: [ :node |
 		| expr |
-		node isReturn ifTrue: [ 
+		node isReturn ifTrue: [
 			expr := node expression.
 			self assert:
 				(expr isConstant and: [ #( true false ) includes: expr value ]).
 			map at: node put: (expr value == returnIfTrue
 					 ifTrue: [ returnNode ]
-					 ifFalse: [ 
+					 ifFalse: [
 						 node == lastNode
-							 ifTrue: [ 
+							 ifTrue: [
 								 TLabeledCommentNode new setComment:
 									 'end ' , aSendNode receiver selector , '; fall through' ]
-							 ifFalse: [ 
-								 label ifNil: [ 
+							 ifFalse: [
+								 label ifNil: [
 									 label := TLabeledCommentNode new setLabel:
 										          (self unusedLabelForInlining: method) ].
 								 TGoToNode label: label label ] ]) ] ].
@@ -1607,8 +1608,8 @@ TMethod >> inlineReturningConditional: aSendNode in: aCodeGen [
 	self addVarsDeclarationsAndLabelsOf: method except: method args.
 	replacementTree comment:
 		{ ('inline ' , aSendNode receiver selector) }.
-	^ label ifNil: [ replacementTree ] ifNotNil: [ 
-		  TStatementListNode new setArguments: #(  ) statements: { 
+	^ label ifNil: [ replacementTree ] ifNotNil: [
+		  TStatementListNode new setArguments: #(  ) statements: {
 				  replacementTree.
 				  label } ]
 ]
@@ -1883,7 +1884,7 @@ TMethod >> isMaybeSendWithoutSideEffect: aNode [
 	"called when trying to clean unused variable"
 
 	^ aNode isSend and: [
-		  aNode isConditionalSend "or: [ aNode selector beginsWith: #cCoerce ] "]
+		  aNode isConditionalSend or: [ aNode selector beginsWith: #cCoerce ] ]
 ]
 
 { #category : #inlining }
@@ -2064,7 +2065,7 @@ TMethod >> isVolatile [
 { #category : #'inlining support' }
 TMethod >> iterateThrought: aNode in: aCodeGen [
 	"iterate throuht an AST and supress unused variables and constants, since we don't do anything when meeting a send (except in some cases), assignment or return node the only variables and constants we come accross are alone in their lines"
-	self haltIf: [ selector = #numPointerSlotsOf:].
+
 	aNode isStatementList ifTrue: [
 		aNode children do: [ :subNode |
 			subNode ifNotNil: [ self iterateThrought: subNode in: aCodeGen ] ] ].
@@ -2238,7 +2239,11 @@ TMethod >> outputConditionalDefineFor: compileTimeOptionPragmas on: aStream [
 
 { #category : #'inlining support' }
 TMethod >> parentWontUse: aNode [
-	^ aNode parent isTMethod or: [aNode parent isAssignment not or: [aNode parent isReturn not]]
+	"if the parent is an assignement, a send or a return, then we should not try to delete unused expression, they might be used by the parent"
+
+	| parent |
+	parent := aNode parent.
+	^ parent isNil or: [ parent isTMethod or: [ parent isStatementList ] ]
 ]
 
 { #category : #accessing }
@@ -3274,10 +3279,7 @@ TMethod >> tryToInlineMethodsIn: aCodeGen [
 	didSomething := (self tryToInlineMethodExpressionsIn: aCodeGen) or: [
 		                didSomething ].
 
-	didSomething ifTrue: [
-		writtenToGlobalVarsCache := nil.
-		self ensureIsValidMethodAfterInliningIn: aCodeGen ].
-
+	didSomething ifTrue: [ writtenToGlobalVarsCache := nil ].
 	complete ifFalse: [
 		self checkForCompletenessIn: aCodeGen.
 		complete ifTrue: [ didSomething := true ] ]. "marking a method complete is progress"
