@@ -926,9 +926,11 @@ TMethod >> ensureConditionalAssignmentsAreTransformedIn: aCodeGen [
 ]
 
 { #category : #inlining }
-TMethod >> ensureIsValidMethodAfterInliningIn: aCodeGen [
-	"inlining can cause some issues in the AST that will produce incorrect code, modify the AST if needed to produce a cleaner one "
-	self iterateThrought: self parseTree in: aCodeGen 
+TMethod >> ensureIsValidMethodAfterInlining: aNode in: aCodeGen [
+	"inlining can cause some issues in the AST that will produce incorrect code, modify the AST if needed to produce a cleaner one. Return true if anything was done "
+	^ self iterateThrought: aNode in: aCodeGen 
+	
+	
 	
 ]
 
@@ -1404,22 +1406,31 @@ TMethod >> inlineCodeOrNilForStatement: aNode returningNodes: returningNodes in:
 	"If the given statement node can be inlined, answer the statements that replace it. Otherwise, answer nil."
 
 	| stmts |
-	(aNode isReturn
-	 and: [self inlineableSend: aNode expression in: aCodeGen]) ifTrue:
-		[stmts := self inlineSend: aNode expression
-						directReturn: true exitVar: nil in: aCodeGen.
-		stmts last endsWithReturn ifFalse:
-			[stmts at: stmts size put: stmts last asReturnNode].
-		^stmts].
-	(aNode isAssignment
-	 and: [self inlineableSend: aNode expression in: aCodeGen]) ifTrue:
-		[^self inlineSend: aNode expression
-				directReturn: false exitVar: aNode variable name in: aCodeGen].
-	(aNode isSend
-	 and: [self inlineableSend: aNode in: aCodeGen]) ifTrue:
-		[^self inlineSend: aNode
-				directReturn: (returningNodes includes: aNode) exitVar: nil in: aCodeGen].
-	^nil
+	(aNode isReturn and: [
+		 self inlineableSend: aNode expression in: aCodeGen ]) ifTrue: [
+		stmts := self
+			         inlineSend: aNode expression
+			         directReturn: true
+			         exitVar: nil
+			         in: aCodeGen.
+		stmts last endsWithReturn ifFalse: [
+			stmts at: stmts size put: stmts last asReturnNode ].
+		^ stmts ].
+	(aNode isAssignment and: [
+		 self inlineableSend: aNode expression in: aCodeGen ]) ifTrue: [
+		^ self
+			  inlineSend: aNode expression
+			  directReturn: false
+			  exitVar: aNode variable name
+			  in: aCodeGen ].
+	(aNode isSend and: [ self inlineableSend: aNode in: aCodeGen ])
+		ifTrue: [
+			^ self
+				  inlineSend: aNode
+				  directReturn: (returningNodes includes: aNode)
+				  exitVar: nil
+				  in: aCodeGen ].
+	^ nil
 ]
 
 { #category : #inlining }
@@ -1471,7 +1482,7 @@ TMethod >> inlineFunctionCall: aSendNode in: aCodeGen [
 	meth parseTree endsWithReturn ifTrue: [
 		meth parseTree: meth parseTree copyWithoutReturn ].
 	(self parentWontUse: aSendNode) ifTrue: [
-		meth ensureIsValidMethodAfterInliningIn: aCodeGen ].
+		self ensureIsValidMethodAfterInlining: meth parseTree in: aCodeGen ].
 	^ meth parseTree
 ]
 
@@ -1568,7 +1579,7 @@ TMethod >> inlineReturningConditional: aSendNode in: aCodeGen [
 	returnIfTrue := aSendNode selector = #ifTrue:.
 	returnNode := aSendNode arguments first.
 	method := (aCodeGen methodNamed: aSendNode receiver selector) copy.
-	self haltIf: [ selector = #markAndTrace: ].
+	"self haltIf: [ selector = #markAndTrace: ]."
 	replacementTree := method
 		                   inlineFunctionCall: aSendNode receiver
 		                   in: aCodeGen.
@@ -1616,7 +1627,6 @@ TMethod >> inlineReturningConditional: aSendNode in: aCodeGen [
 
 { #category : #inlining }
 TMethod >> inlineSend: aSendNode directReturn: directReturn exitVar: exitVar in: aCodeGen [
-
 	"Answer a collection of statements to replace the given send.  directReturn indicates
 	 that the send is the expression in a return statement, so returns can be left in the
 	 body of the inlined method. If exitVar is nil, the value returned by the send is not
@@ -1633,49 +1643,51 @@ TMethod >> inlineSend: aSendNode directReturn: directReturn exitVar: exitVar in:
 	"convenient for debugging..."
 	aCodeGen maybeBreakForInlineOf: aSendNode in: self.
 	elidedArgs := #(  ).
-	(methArgs notEmpty and: [ methArgs first beginsWith: 'self_in_' ]) 
+	(methArgs notEmpty and: [ methArgs first beginsWith: 'self_in_' ])
 		ifTrue: [ "If the first arg is not used we can and should elide it."
 			| varNode |
 			varNode := TVariableNode new setName: methArgs first.
-			(meth parseTree noneSatisfy: [ :node | varNode isSameAs: node ]) 
+			(meth parseTree noneSatisfy: [ :node | varNode isSameAs: node ])
 				ifTrue: [ elidedArgs := { methArgs first } ].
 			methArgs := methArgs allButFirst ].
 	methArgs size = aSendNode arguments size ifFalse: [ ^ nil ].
 	meth := meth copy.
 
-	(meth statements size > 1 and: [ 
-		 meth statements first isSend and: [ 
-			 meth statements first selector == #flag: ] ]) ifTrue: [ 
+	(meth statements size > 1 and: [
+		 meth statements first isSend and: [
+			 meth statements first selector == #flag: ] ]) ifTrue: [
 		meth statements removeFirst ].
 
 	"Propagate the return type of an inlined method"
-	(directReturn or: [ exitVar notNil ]) ifTrue: [ 
+	(directReturn or: [ exitVar notNil ]) ifTrue: [
 		exitType := directReturn
 			            ifTrue: [ returnType ]
-			            ifFalse: [ 
+			            ifFalse: [
 			            (self typeFor: exitVar in: aCodeGen) ifNil: [ #sqInt ] ].
-		(exitType = #void or: [ exitType = meth returnType ]) ifFalse: [ 
+		(exitType = #void or: [ exitType = meth returnType ]) ifFalse: [
 			meth propagateReturnIn: aCodeGen ] ].
 
 	"Propagate any unusual argument types to untyped argument variables"
-	methArgs with: aSendNode arguments do: [ :formal :actual | 
-		(meth declarationAt: formal ifAbsent: nil) ifNil: [ | type |
-			(actual isVariable and: [ (type := self typeFor: actual name in: aCodeGen) notNil ])
-			 ifTrue: [
-				type ~= #sqInt ifTrue: [ 
-					meth declarationAt: formal put: (type last = $*
-							 ifTrue: [ type , formal ]
-							 ifFalse: [ type , ' ' , formal ]) ] ] ] ].
+	methArgs with: aSendNode arguments do: [ :formal :actual |
+		(meth declarationAt: formal ifAbsent: nil) ifNil: [
+			| type |
+			(actual isVariable and: [
+				 (type := self typeFor: actual name in: aCodeGen) notNil ])
+				ifTrue: [
+					type ~= #sqInt ifTrue: [
+						meth declarationAt: formal put: (type last = $*
+								 ifTrue: [ type , formal ]
+								 ifFalse: [ type , ' ' , formal ]) ] ] ] ].
 
 	meth renameVarsForInliningInto: self except: elidedArgs in: aCodeGen.
 	meth renameLabelsForInliningInto: self.
 	self addVarsDeclarationsAndLabelsOf: meth except: elidedArgs.
-	meth hasReturn ifTrue: [ 
-		directReturn ifFalse: [ 
+	meth hasReturn ifTrue: [
+		directReturn ifFalse: [
 			exitLabel := self unusedLabelForInliningInto: self.
 			(meth exitVar: exitVar label: exitLabel)
 				ifTrue: [ labels add: exitLabel ]
-				ifFalse: [ exitLabel := nil ] "is label used?" ] ].
+				ifFalse: [ "is label used?" exitLabel := nil ] ] ].
 	(inlineStmts := OrderedCollection new:
 			                meth statements size + meth args size + 2)
 		add: (label := TLabeledCommentNode new setComment: 'begin ' , sel);
@@ -1685,18 +1697,18 @@ TMethod >> inlineSend: aSendNode directReturn: directReturn exitVar: exitVar in:
 				 except: elidedArgs
 				 in: aCodeGen);
 		addAll: meth statements. "method body"
-	directReturn ifTrue: [ 
+	directReturn ifTrue: [
 		meth endsWithReturn
-			ifTrue: [ 
+			ifTrue: [
 				exitVar ifNotNil: [ "don't remove the returns if being invoked in the context of a return"
 					inlineStmts
 						at: inlineStmts size
 						put: inlineStmts last copyWithoutReturn ] ]
-			ifFalse: [ 
+			ifFalse: [
 				inlineStmts add:
 					(TReturnNode new setExpression:
 						 (TVariableNode new setName: 'nil')) ] ].
-	exitLabel ifNotNil: [ 
+	exitLabel ifNotNil: [
 		inlineStmts add: (TLabeledCommentNode new
 				 setLabel: exitLabel
 				 comment: 'end ' , meth selector) ].
@@ -2065,20 +2077,25 @@ TMethod >> isVolatile [
 { #category : #'inlining support' }
 TMethod >> iterateThrought: aNode in: aCodeGen [
 	"iterate throuht an AST and supress unused variables and constants, since we don't do anything when meeting a send (except in some cases), assignment or return node the only variables and constants we come accross are alone in their lines"
-
+	| didSomething |
+	didSomething := false.
 	aNode isStatementList ifTrue: [
 		aNode children do: [ :subNode |
-			subNode ifNotNil: [ self iterateThrought: subNode in: aCodeGen ] ] ].
-	aNode isSwitch ifTrue: [
+			subNode ifNotNil: [
+				didSomething := didSomething or: [ self iterateThrought: subNode in: aCodeGen ] ] ] ].
+	aNode isSwitch ifTrue: [ 
 		aNode cases do: [ :case |
-			self iterateThrought: case second in: aCodeGen ] ].
+			didSomething := didSomething or: [self iterateThrought: case second in: aCodeGen] ] ].
 	(self isStructAccessorWithNoSideEffect: aNode in: aCodeGen) ifTrue: [
-		self cleanASTOf: aNode ].
+		self cleanASTOf: aNode.
+		^ true ].
 	(self isMaybeSendWithoutSideEffect: aNode) ifTrue: [
 		aNode arguments do: [ :subNode |
-			self iterateThrought: subNode in: aCodeGen ] ].
+			didSomething := didSomething or: [self iterateThrought: subNode in: aCodeGen ] ]].
 	(aNode isVariable or: aNode isConstant) ifTrue: [
-		self cleanASTOf: aNode ]
+		self cleanASTOf: aNode.
+		^ true ].
+	^ didSomething
 ]
 
 { #category : #accessing }
@@ -2239,11 +2256,17 @@ TMethod >> outputConditionalDefineFor: compileTimeOptionPragmas on: aStream [
 
 { #category : #'inlining support' }
 TMethod >> parentWontUse: aNode [
-	"if the parent is an assignement, a send or a return, then we should not try to delete unused expression, they might be used by the parent"
+	"if aNode is in an assignement, a send or a return, then we should not try to delete unused expression"
 
-	| parent |
-	parent := aNode parent.
-	^ parent isNil or: [ parent isTMethod or: [ parent isStatementList ] ]
+	| currentParent |
+	currentParent := aNode parent.
+	[ currentParent isNil or: [ currentParent isTMethod ] ] whileFalse: [
+		(currentParent isReturn or: [
+			 currentParent isAssignment or: [
+				 currentParent isSend "and: [ (self parentWontUse: currentParent) ] " ] ])
+			ifTrue: [ ^ false ].
+		currentParent := currentParent parent ].
+	^ true
 ]
 
 { #category : #accessing }
@@ -3185,70 +3208,77 @@ TMethod >> tryToInlineMethodExpressionsIn: aCodeGen [
 
 	| sendsToInline |
 	sendsToInline := Dictionary new: 100.
-	aCodeGen
-		pushScope: self
-		while: [parseTree
-					nodesDo:
-						[:node|
-						(self inlineableFunctionCall: node in: aCodeGen) ifTrue:
-							[(self inlineFunctionCall: node in: aCodeGen) ifNotNil:
-								[:replacement|
-								 (replacement isConstant
-								  and: [replacement isDefine not
-								  and: [replacement value isNumber
-								  and: [replacement comment isNil]]]) ifTrue:
-									[replacement comment: node selector].
-								 sendsToInline at: node put: replacement]]]
-					unless: "Don't inline the arguments to asserts to keep the asserts readable"
-						[:node|
-						node isSend
-						and: [node selector == #cCode:inSmalltalk:
-							or: [aCodeGen isAssertSelector: node selector]]]].
+	aCodeGen pushScope: self while: [
+		parseTree
+			nodesDo: [ :node |
+				"self haltIf: [ self selector = #rewriteCPICCaseAt:tag:objRef:target: and: [ node isSend ] ]."
+				(self inlineableFunctionCall: node in: aCodeGen) ifTrue: [
+					(self inlineFunctionCall: node in: aCodeGen) ifNotNil: [
+						:replacement |
+						(replacement isConstant and: [
+							 replacement isDefine not and: [
+								 replacement value isNumber and: [ replacement comment isNil ] ] ])
+							ifTrue: [ replacement comment: node selector ].
+						sendsToInline at: node put: replacement ] ] ]
+			unless: [ :node | "Don't inline the arguments to asserts to keep the asserts readable"
+				node isSend and: [
+					node selector == #cCode:inSmalltalk: or: [
+						aCodeGen isAssertSelector: node selector ] ] ] ].
 
-	sendsToInline isEmpty ifTrue:
-		[^false].
+	sendsToInline isEmpty ifTrue: [ ^ false ].
 	self replaceNodesIn: sendsToInline.
-	^true
+	^ true
 ]
 
 { #category : #inlining }
 TMethod >> tryToInlineMethodStatementsIn: aCodeGen statementListsInto: aBlock [
-
 	"Expand any (complete) inline methods sent by this method as top-level statements.
 	 Answer if anything was inlined."
 
 	| stmtLists didSomething newStatements returningNodes |
 	didSomething := false.
 	returningNodes := Set new.
-	parseTree nodesDo: [ :node | 
-		node isReturn ifTrue: [ 
+	parseTree nodesDo: [ :node |
+		node isReturn ifTrue: [
 			returningNodes add: node expression.
-			node expression isConditionalSend ifTrue: [ 
+			node expression isConditionalSend ifTrue: [
 				returningNodes addAll:
-					(node expression arguments collect: [ :stmtList | 
+					(node expression arguments collect: [ :stmtList |
 						 stmtList statements last ]) ] ] ].
 	stmtLists := self statementsListsForInliningIn: aCodeGen.
-	stmtLists do: [ :stmtList | 
+	stmtLists do: [ :stmtList |
 		newStatements := OrderedCollection new: stmtList statements size.
-		stmtList statements do: [ :stmt | 
+		stmtList statements do: [ :stmt |
 			(self
 				 inlineCodeOrNilForStatement: stmt
 				 returningNodes: returningNodes
 				 in: aCodeGen)
 				ifNil: [ newStatements addLast: stmt ]
-				ifNotNil: [ :inlinedStmts | 
+				ifNotNil: [ :inlinedStmts |
 					didSomething := true.
-					newStatements addAllLast: inlinedStmts ] ].
+					(self parentWontUse: stmt) ifTrue: [
+						inlinedStmts doWithIndex: [ :node :idx |
+							"since we are working with a collection instead of a tree, branches are supress in the parent but are still in the collection.
+							if we see that a node is no longer in its parent we can supress it"
+							((self ensureIsValidMethodAfterInlining: node in: aCodeGen)
+								 and: [
+									 node parent isNotNil and: [
+										 (node parent children includes: node ) not ] ]) ifTrue: [
+								inlinedStmts at: idx put: nil ] ] ].
+					newStatements addAllLast:
+						(inlinedStmts select: [ :node | node isNotNil ]) ] ].
 		stmtList statements: newStatements asArray ].
+
+
 
 	"This is a hack; forgive me. The inlining above tends to keep return statements in statement lists.
 	 In the case of returning ifs we don't want the returns in case the returning if is generated as an expression."
-	returningNodes do: [ :returningNode | 
-		(returningNode isConditionalSend and: [ 
-			 returningNode arguments anySatisfy: [ :alternativeNode | 
-				 alternativeNode endsWithReturn ] ]) ifTrue: [ 
-			returningNode arguments withIndexDo: [ :alternativeNode :index | 
-				alternativeNode endsWithReturn ifTrue: [ 
+	returningNodes do: [ :returningNode |
+		(returningNode isConditionalSend and: [
+			 returningNode arguments anySatisfy: [ :alternativeNode |
+				 alternativeNode endsWithReturn ] ]) ifTrue: [
+			returningNode arguments withIndexDo: [ :alternativeNode :index |
+				alternativeNode endsWithReturn ifTrue: [
 					returningNode arguments
 						at: index
 						put: alternativeNode copyWithoutReturn ] ] ] ].
