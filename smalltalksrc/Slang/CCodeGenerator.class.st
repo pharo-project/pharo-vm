@@ -48,7 +48,7 @@ Class {
 	#classVars : [
 		'NoRegParmsInAssertVMs'
 	],
-	#category : #'Slang-CodeGeneration'
+	#category : 'Slang-CodeGeneration'
 }
 
 { #category : #'class initialization' }
@@ -67,12 +67,17 @@ CCodeGenerator class >> isVarargsSelector: aRBSelectorNode [
 { #category : #'C code generator' }
 CCodeGenerator class >> monticelloDescriptionFor: aClass [
 	"Answer a suitable Monticello package stamp to include in the header."
+
 	| pkgInfo pkg uuid |
 	pkgInfo := aClass package.
-	pkg := MCWorkingCopy allManagers detect: [:ea| ea packageName = pkgInfo packageName].
-	pkg ancestry ancestors isEmpty ifFalse:
-		[uuid := pkg ancestry ancestors first id].
-	^aClass name, (pkg modified ifTrue: [' * '] ifFalse: [' ']), pkg ancestry ancestorString, ' uuid: ', uuid asString
+	pkg := MCWorkingCopy allWorkingCopies detect: [ :ea |
+		       ea packageName = pkgInfo name ].
+	pkg ancestry ancestors isEmpty ifFalse: [
+		uuid := pkg ancestry ancestors first id ].
+	^ aClass name , (pkg modified
+		   ifTrue: [ ' * ' ]
+		   ifFalse: [ ' ' ]) , pkg ancestry ancestorString , ' uuid: '
+	  , uuid asString
 ]
 
 { #category : #'C code generator' }
@@ -279,15 +284,14 @@ CCodeGenerator >> addMethodsForTranslatedPrimitives: classAndSelectorList [
 ]
 
 { #category : #public }
-CCodeGenerator >> addPoolVarsFor: aClass [ 
+CCodeGenerator >> addPoolVarsFor: aClass [
 	"Add the pool variables for the given class to the code base as constants."
 
-	(aClass sharedPools reject: [:pool| pools includes: pool]) do:
-		[:pool |
+	(aClass sharedPools reject: [ :pool | pools includes: pool ]) do: [
+		:pool |
 		pools add: pool.
-		pool bindingsDo:
-			[:binding |
-			self addConstantForBinding: binding]]
+		pool classVariables do: [ :binding |
+			self addConstantForBinding: binding ] ]
 ]
 
 { #category : #public }
@@ -715,7 +719,7 @@ CCodeGenerator >> checkClassForNameConflicts: aClass [
 	"and in shared pools"
 	(aClass sharedPools reject: [ :pool | pools includes: pool ]) do: [
 		:pool |
-		pool bindingsDo: [ :assoc |
+		pool classVariables do: [ :assoc |
 			(constants includesKey: assoc key) ifTrue: [
 				self error:
 					'Constant ' , assoc key
@@ -4887,12 +4891,8 @@ CCodeGenerator >> structTargetKindForVariableName: varName [ "<String>"
 
 { #category : #utilities }
 CCodeGenerator >> superclassOrder: classes [
-	^[ChangeSet superclassOrder: classes] "Squeak"
-		on: MessageNotUnderstood
-		do: [ :ex|
-			ex message selector == #superclassOrder: ifFalse:
-				[ex pass].
-			Class superclassOrder: classes] "Pharo"
+
+	^ Class superclassOrder: classes
 ]
 
 { #category : #accessing }

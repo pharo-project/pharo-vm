@@ -7,8 +7,16 @@ Class {
 		'objectMemoryClass',
 		'initializationOptions'
 	],
-	#category : #'Slang-Tests'
+	#category : 'Slang-Tests'
 }
+
+{ #category : #testing }
+MockSlangClass >> bindingOf: aString [ 
+	
+	"For compatibility, used by the code generator to lookup for constants"
+	
+	^ nil
+]
 
 { #category : #accessing }
 MockSlangClass >> cogitClass [

@@ -314,7 +314,7 @@ Class {
 		'generatorTable',
 		'primitiveTable'
 	],
-	#category : #'VMMaker-JIT'
+	#category : 'VMMaker-JIT'
 }
 
 { #category : #translation }
@@ -612,8 +612,7 @@ Cogit class >> declareCVarsIn: aCCodeGenerator [
 	"In C the abstract opcode names clash with the Smalltak generator syntactic sugar.
 	 Most of the syntactic sugar is inlined, but alas some remains.  Rename the syntactic
 	 sugar to avoid the clash."
-	(self organization listAtCategoryNamed:
-		 #'abstract instructions') do: [ :s |
+	(self selectorsInProtocol: #'abstract instructions') do: [ :s |
 		aCCodeGenerator
 			addSelectorTranslation: s
 			to: 'g' , (aCCodeGenerator cFunctionNameFor: s) ].
@@ -3916,14 +3915,14 @@ Cogit >> ceCheckForInterruptTrampoline: anInteger [
 	ceCheckForInterruptTrampoline := anInteger
 ]
 
-{ #category : #'as yet unclassified' }
+{ #category : #accessing }
 Cogit >> ceDereferenceSelectorIndex [
 	
 	<doNotGenerate>
 	^ objectRepresentation selectorIndexDereferenceRoutine
 ]
 
-{ #category : #'as yet unclassified' }
+{ #category : #accessing }
 Cogit >> ceDereferenceSelectorIndex: anInteger [ 
 	
 	<doNotGenerate>
@@ -8194,7 +8193,7 @@ Cogit >> getPrimitiveIndex [
 	^primitiveIndex
 ]
 
-{ #category : #'as yet unclassified' }
+{ #category : #accessing }
 Cogit >> guardPageSize: anInteger [ 
 
 	<doNotGenerate>
@@ -8781,7 +8780,7 @@ Cogit >> labelForSimulationAccessor: blockOrMessageSendOrSelector [
 						ifFalse: [blockOrMessageSendOrSelector]])
 ]
 
-{ #category : #'as yet unclassified' }
+{ #category : #accessing }
 Cogit >> lastNInstructions: aCollection [ 
 	<doNotGenerate>
 	lastNInstructions := aCollection
@@ -10031,7 +10030,7 @@ Cogit >> methodZoneBase [
 	^methodZoneBase
 ]
 
-{ #category : #'*VMMaker-Tests' }
+{ #category : #accessing }
 Cogit >> methodZoneBase: anInteger [ 
 	<doNotGenerate>
 	methodZoneBase := anInteger
@@ -10741,7 +10740,7 @@ Cogit >> promptForBreakPC [
 	self breakPC: pc
 ]
 
-{ #category : #'as yet unclassified' }
+{ #category : #accessing }
 Cogit >> receiverTags: anInteger [ 
 	receiverTags := anInteger
 ]
@@ -11728,7 +11727,7 @@ Cogit >> stackPointerAddress [
 	^coInterpreter stackPointerAddress
 ]
 
-{ #category : #'as yet unclassified' }
+{ #category : #accessing }
 Cogit >> stackPointerAlignment [
 	<doNotGenerate>
 	^ backEnd stackPointerAlignment

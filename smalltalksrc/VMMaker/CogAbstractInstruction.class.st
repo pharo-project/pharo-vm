@@ -67,7 +67,7 @@ Class {
 		'CogCompilationConstants',
 		'CogRTLOpcodes'
 	],
-	#category : #'VMMaker-JIT'
+	#category : 'VMMaker-JIT'
 }
 
 { #category : #translation }
@@ -151,11 +151,8 @@ CogAbstractInstruction class >> initializeSpecificOpcodes: opcodeSymbolSequence 
 											[:ea| ea key].
 
 	"Declare opcodeSymbolSequence's elements from LastRTLCode on up."
-	opcodeSymbolSequence withIndexDo:
-		[:classVarName :value|
-		pool
-			declare: classVarName from: Undeclared;
-			at: classVarName put: value + LastRTLCode - 1]
+	opcodeSymbolSequence withIndexDo: [:classVarName :value|
+		pool at: classVarName put: value + LastRTLCode - 1]
 ]
 
 { #category : #translation }
