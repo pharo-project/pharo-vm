@@ -2,9 +2,11 @@ Class {
 	#name : #VMAbstractImageFormatTest,
 	#superclass : #VMSpurInitializedOldSpaceTest,
 	#instVars : [
-		'imageReader'
+		'imageReader',
+		'imageReaderClass',
+		'imageWriterClass'
 	],
-	#category : #'VMMakerTests-ImageFormat'
+	#category : 'VMMakerTests-ImageFormat'
 }
 
 { #category : #accessing }
@@ -35,7 +37,6 @@ VMAbstractImageFormatTest >> saveImage [
 { #category : #running }
 VMAbstractImageFormatTest >> setUp [
 
-	| imageReaderClass |
 	super setUp.
 	
 	"Objects should be registerd in Special Object Array, as they are validated while loading"
@@ -50,6 +51,8 @@ VMAbstractImageFormatTest >> setUp [
 	
 	imageReaderClass := useComposedImageFormat ifTrue: [ ComposedImageReader ] ifFalse: [ SpurImageReader ].
 	imageReader := imageReaderClass newWithMemory: memory andInterpreter: interpreter.
+	
+	interpreter imageReaderWriter useComposedImageFormatAsDefault: useComposedImageFormat.
 	
 	"ByteArrayClass is asserted while loading image"
 	memory classByteArray: (self newClassInOldSpaceWithSlots: 0 instSpec: (memory byteFormatForNumBytes: 0)).

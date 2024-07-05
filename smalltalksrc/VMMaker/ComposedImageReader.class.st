@@ -3,7 +3,7 @@ Class {
 	#superclass : #AbstractComposedImageAccess,
 	#traits : 'TImageReader',
 	#classTraits : 'TImageReader classTrait',
-	#category : #'VMMaker-ImageFormat'
+	#category : 'VMMaker-ImageFormat'
 }
 
 { #category : #reading }

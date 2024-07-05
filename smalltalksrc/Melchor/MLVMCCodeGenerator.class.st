@@ -5,7 +5,7 @@ Class {
 		'vmClass',
 		'vmMaker'
 	],
-	#category : #Melchor
+	#category : 'Melchor'
 }
 
 { #category : #'C code generator' }

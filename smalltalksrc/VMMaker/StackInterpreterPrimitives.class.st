@@ -5,7 +5,7 @@ Class {
 		'LibFFIConstants',
 		'VMBasicConstants'
 	],
-	#category : #'VMMaker-Interpreter'
+	#category : 'VMMaker-Interpreter'
 }
 
 { #category : #initialization }

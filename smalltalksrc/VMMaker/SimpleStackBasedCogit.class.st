@@ -20,7 +20,7 @@ Class {
 		'VMObjectIndices',
 		'VMWellKnownPrimitivesConstants'
 	],
-	#category : #'VMMaker-JIT'
+	#category : 'VMMaker-JIT'
 }
 
 { #category : #translation }
@@ -291,6 +291,12 @@ SimpleStackBasedCogit >> ceShortCutTraceStore: aProcessorSimulationTrap [
 		to: [coInterpreter
 				ceTraceStoreOf: (processor registerAt: ClassReg)
 				into: (processor registerAt: ReceiverResultReg)]
+]
+
+{ #category : #accessing }
+SimpleStackBasedCogit >> ceStoreContextInstVarTrampoline: anInteger [ 
+	<doNotGenerate>
+	ceStoreContextInstVarTrampoline := anInteger
 ]
 
 { #category : #'compile abstract instructions' }
@@ -1018,7 +1024,7 @@ SimpleStackBasedCogit >> endPC: anInteger [
 	endPC := anInteger
 ]
 
-{ #category : #'*VMMaker-Tests' }
+{ #category : #accessing }
 SimpleStackBasedCogit >> entryOffset: anInteger [ 
 	<doNotGenerate>
 	cmEntryOffset := anInteger
@@ -1032,6 +1038,12 @@ SimpleStackBasedCogit >> evaluateTrampolineCallBlock: block protectLinkRegIfNot:
 			[ backEnd saveAndRestoreLinkRegAround: [ block value ] ]
 		ifTrue:
 			[ block value ].
+]
+
+{ #category : #accessing }
+SimpleStackBasedCogit >> extA: anInteger [ 
+	<doNotGenerate>
+	extA := anInteger
 ]
 
 { #category : #'bytecode generators' }

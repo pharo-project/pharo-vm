@@ -19,7 +19,7 @@ RBMethodNode >> asTranslationMethodOfClass: aTMethodClass [
 
 	^aTMethodClass new
 		setSelector: selector
-		definingClass: compilationContext getClass
+		definingClass: compilationContext semanticScope targetClass
 		args: arguments
 		locals: ((self allDefinedVariables copyWithoutAll: (arguments collect: #name)) collect: [:string| string -> string])
 		block: (body lastIsReturn
@@ -58,7 +58,7 @@ RBMethodNode >> asTranslationMethodOfClass: aTMethodClass forCodeGenerator: aCod
 
 	^aTMethodClass new
 		setSelector: renamedSelector
-		definingClass: compilationContext getClass
+		definingClass: compilationContext semanticScope targetClass
 		args: arguments
 		locals: ((self allDefinedVariables copyWithoutAll: (arguments collect: #name)) collect: [:string| string -> string])
 		block: (body lastIsReturn

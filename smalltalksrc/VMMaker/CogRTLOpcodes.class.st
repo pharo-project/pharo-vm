@@ -161,7 +161,7 @@ Class {
 		'ZeroExtend32RR',
 		'ZeroExtend8RR'
 	],
-	#category : #'VMMaker-JIT'
+	#category : 'VMMaker-JIT'
 }
 
 { #category : #'class initialization' }
@@ -345,15 +345,12 @@ CogRTLOpcodes class >> initialize [
 	"Find the variables directly referenced by this method"
 	refs := (thisContext method literals select: [:l| l isVariableBinding and: [classPool includesKey: l key]]) collect:
 				[:ea| ea key].
-	"Move to Undeclared any opcodes in classPool not in opcodes or this method."
-	(classPool keys reject: [:k| (opcodeNames includes: k) or: [refs includes: k]]) do:
-		[:k|
-		Undeclared declare: k from: classPool].
+
 	"Declare as class variables and number elements of opcodeArray above"
 	opcodeNames withIndexDo:
 		[:classVarName :value|
+				Undeclared removeKey: classVarName ifAbsent: [ "Nothing" ].
 		self classPool
-			declare: classVarName from: Undeclared;
 			at: classVarName put: value].
 
 	"For CogAbstractInstruction>>isJump etc..."

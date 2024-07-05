@@ -10,7 +10,7 @@ Class {
 		'localStructDef',
 		'structDefDefine'
 	],
-	#category : #Melchor
+	#category : 'Melchor'
 }
 
 { #category : #'CAST translation' }
@@ -187,46 +187,44 @@ CCodeGeneratorGlobalStructure >> emitGlobalStructFlagOn: aStream [
 ]
 
 { #category : #'CAST translation' }
-CCodeGeneratorGlobalStructure >> generateCASTSetFieldTo: aTSendNode [ 
+CCodeGeneratorGlobalStructure >> generateCASTSetFieldTo: aTSendNode [
 
 	| structType fieldName fieldVale setFieldStatements |
-	
 	self assert: aTSendNode arguments size = 2.
 
 	fieldName := aTSendNode arguments first.
 	fieldVale := aTSendNode arguments second.
-	
+
 	structType := self structTypeFor: aTSendNode receiver.
-	
 
-	setFieldStatements := structType asClass allSlots collect: [ :slot |
-		| comparison |
-		
-		comparison := TSendNode 
-									receiver: (TSendNode 
-											receiver: (TConstantNode value: slot name asString) 
-											selector: 'strcmp:' 
-											arguments: { fieldName })
-									selector: '='
-									arguments: { TConstantNode value: 0 }.
 
-		TSendNode 
-			receiver: comparison
-			selector: 'ifTrue:' 
-			arguments: { 
-				TStatementListNode 
-					statements: { 
-						TSendNode 
-							receiver: aTSendNode receiver 
-							selector: (slot name, ':') 
-							arguments: { fieldVale } 
-					}
-			}			
+	setFieldStatements := (structType asClassInEnvironment:
+		                       self class environment) allSlots collect: [
+		                      :slot |
+		                      | comparison |
+		                      comparison := TSendNode
+			                                    receiver: (TSendNode
+					                                     receiver:
+					                                     (TConstantNode value:
+						                                      slot name asString)
+					                                     selector: 'strcmp:'
+					                                     arguments: { fieldName })
+			                                    selector: '='
+			                                    arguments:
+			                                    { (TConstantNode value: 0) }.
 
-	].
+		                      TSendNode
+			                      receiver: comparison
+			                      selector: 'ifTrue:'
+			                      arguments:
+				                      { (TStatementListNode statements:
+					                       { (TSendNode
+						                        receiver: aTSendNode receiver
+						                        selector: slot name , ':'
+						                        arguments: { fieldVale }) }) } ].
 
-	^ CCompoundStatementNode statements: (setFieldStatements collect: [ :e | e asCASTIn: self]).
-
+	^ CCompoundStatementNode statements:
+		  (setFieldStatements collect: [ :e | e asCASTIn: self ])
 ]
 
 { #category : #'CAST translation' }
@@ -242,8 +240,10 @@ CCodeGeneratorGlobalStructure >> generateCASTWithFieldsDoSeparatedBy: aTSendNode
 
 	structType := self structTypeFor: aTSendNode receiver.
 
-	allFieldArguments := structType asClass allSlots collect: [ :slot | 
-		                     { 
+	allFieldArguments := (structType asClassInEnvironment:
+		                      self class environment) allSlots collect: [
+		                     :slot |
+		                     {
 			                     (TConstantNode value: slot name asString).
 			                     (TSendNode
 				                      receiver: aTSendNode receiver
@@ -253,10 +253,10 @@ CCodeGeneratorGlobalStructure >> generateCASTWithFieldsDoSeparatedBy: aTSendNode
 	allRewrittenStatements := OrderedCollection new.
 
 	allFieldArguments
-		do: [ :fieldArgs | 
+		do: [ :fieldArgs |
 			allRewrittenStatements addAll:
 				(self bindBlock: fieldBlock withArgs: fieldArgs) ]
-		separatedBy: [ 
+		separatedBy: [
 		allRewrittenStatements addAll: blockSeparatorStatements ].
 
 	^ CCompoundStatementNode statements:

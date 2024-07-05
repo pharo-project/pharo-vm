@@ -4,7 +4,7 @@ Class {
 	#instVars : [
 		'types'
 	],
-	#category : #'Slang-Tests'
+	#category : 'Slang-Tests'
 }
 
 { #category : #running }
