@@ -163,34 +163,43 @@ VMImageReadingTest >> testSavedImageSavesObjectFromPermanentSpace [
 
 { #category : 'tests' }
 VMImageReadingTest >> testSavingImageWithThreeSegmentsIsCorrectlySqueezed [
-	
+
 	| firstNewSegmentSize secondNewSegmentSize obj newObj originalObjHash |
-	firstNewSegmentSize := memory growOldSpaceByAtLeast: 12 * 1024.
-	secondNewSegmentSize := memory growOldSpaceByAtLeast: 12 * 1024.
-	
+	firstNewSegmentSize := memory
+		                       growOldSpaceByAtLeast: 12 * 1024
+		                       callingOperation: 'testSavingImageWithThreeSegmentsIsCorrectlySqueezed'.
+	secondNewSegmentSize := memory
+		                        growOldSpaceByAtLeast: 12 * 1024
+		                        callingOperation: 'testSavingImageWithThreeSegmentsIsCorrectlySqueezed'.
+
 	self assert: memory segmentManager numSegments equals: 3.
 
-	self assert: (memory segmentManager segments at: 1) segSize equals: firstNewSegmentSize.
-	self assert: (memory segmentManager segments at: 2) segSize equals: secondNewSegmentSize.
+	self
+		assert: (memory segmentManager segments at: 1) segSize
+		equals: firstNewSegmentSize.
+	self
+		assert: (memory segmentManager segments at: 2) segSize
+		equals: secondNewSegmentSize.
 
-	obj := self newOldSpaceObjectWithSlots: (firstNewSegmentSize / 2) // memory wordSize.
-	memory splObj: 4 put: obj. "Store object in SpecialObjects Array to keep it" 
+	obj := self newOldSpaceObjectWithSlots:
+		       firstNewSegmentSize / 2 // memory wordSize.
+	memory splObj: 4 put: obj. "Store object in SpecialObjects Array to keep it"
 	originalObjHash := memory hashBitsOf: obj.
 
 
-	"Ensure the object is created in the last segment".
+	"Ensure the object is created in the last segment"
 	self assert: obj > (memory segmentManager segments at: 2) segStart.
 	self assert: obj < (memory segmentManager segments at: 2) segLimit.
 
-	self saveImage.	
+	self saveImage.
 
 	self loadImage.
 
 	self assert: memory segmentManager numSegments equals: 1.
-	
-	newObj := memory splObj: 4. 
-	
-	self assert: originalObjHash equals: (memory hashBitsOf: newObj).
+
+	newObj := memory splObj: 4.
+
+	self assert: originalObjHash equals: (memory hashBitsOf: newObj)
 ]
 
 { #category : 'tests' }
