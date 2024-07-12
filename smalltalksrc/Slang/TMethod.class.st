@@ -1458,6 +1458,7 @@ TMethod >> inlineFunctionCall: aSendNode in: aCodeGen [
 		2. the method to be inlined contains no additional embedded returns."
 
 	| sel meth doNotRename argsForInlining substitutionDict |
+	self haltIf: [ selector = #methodCallInIfMethodWithReturnConstantWithoutReturn ].
 	sel := aSendNode selector.
 	meth := (aCodeGen methodNamed: sel) copy.
 	meth ifNil: [ ^ self inlineBuiltin: aSendNode in: aCodeGen ].
@@ -1482,6 +1483,7 @@ TMethod >> inlineFunctionCall: aSendNode in: aCodeGen [
 	meth parseTree endsWithReturn ifTrue: [
 		meth parseTree: meth parseTree copyWithoutReturn ].
 	(self parentWontUse: aSendNode) ifTrue: [
+		meth parseTree parent: aSendNode parent.
 		self ensureIsValidMethodAfterInlining: meth parseTree in: aCodeGen ].
 	^ meth parseTree
 ]
@@ -3260,6 +3262,7 @@ TMethod >> tryToInlineMethodStatementsIn: aCodeGen statementListsInto: aBlock [
 						inlinedStmts doWithIndex: [ :node :idx |
 							"since we are working with a collection instead of a tree, branches are supress in the parent but are still in the collection.
 							if we see that a node is no longer in its parent we can supress it"
+							self haltIf: [ selector = #methodCallInIfMethodWithReturnConstantWithoutReturn ].
 							((self ensureIsValidMethodAfterInlining: node in: aCodeGen)
 								 and: [
 									 node parent isNotNil and: [

@@ -205,7 +205,9 @@ TStatementListNode >> asCASTIn: aBuilder prependToEnd: aNodeOrNil [
 					ifTrue: [ 
 					collect add: (e asCASTIn: aBuilder prependToEnd: aNodeOrNil) ]
 					ifFalse: [ collect add: (e asCASTIn: aBuilder) ] ]
-			ifTrue: [ CEmptyStatementNode new ] ].
+			ifTrue: [ 
+				self halt.
+				CEmptyStatementNode new ] ].
 	
 	"We should collect the variable declarations after generating the body, because the body generation will record used yet non declared variables"
 	methodIsVolatile := aBuilder currentMethod isVolatile.
