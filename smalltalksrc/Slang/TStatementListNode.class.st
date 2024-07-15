@@ -1,6 +1,6 @@
 Class {
-	#name : #TStatementListNode,
-	#superclass : #TParseNode,
+	#name : 'TStatementListNode',
+	#superclass : 'TParseNode',
 	#instVars : [
 		'locals',
 		'declarations',
@@ -8,10 +8,12 @@ Class {
 		'statements',
 		'usedVariables'
 	],
-	#category : #'Slang-AST'
+	#category : 'Slang-AST',
+	#package : 'Slang',
+	#tag : 'AST'
 }
 
-{ #category : #'instance creation' }
+{ #category : 'instance creation' }
 TStatementListNode class >> declarations: declarations locals: locals statements: aCollection [ 
 	
 	^ self new
@@ -21,7 +23,7 @@ TStatementListNode class >> declarations: declarations locals: locals statements
 		yourself
 ]
 
-{ #category : #'instance creation' }
+{ #category : 'instance creation' }
 TStatementListNode class >> declarations: declarations statements: aCollection [ 
 	
 	^ self new
@@ -31,7 +33,7 @@ TStatementListNode class >> declarations: declarations statements: aCollection [
 		yourself
 ]
 
-{ #category : #'instance creation' }
+{ #category : 'instance creation' }
 TStatementListNode class >> parameters: parameters statements: statementList [
 	
 	^ self new
@@ -39,7 +41,7 @@ TStatementListNode class >> parameters: parameters statements: statementList [
 		yourself
 ]
 
-{ #category : #'instance creation' }
+{ #category : 'instance creation' }
 TStatementListNode class >> statements: aCollection [ 
 	
 	^ self new
@@ -47,7 +49,7 @@ TStatementListNode class >> statements: aCollection [
 		yourself
 ]
 
-{ #category : #comparing }
+{ #category : 'comparing' }
 TStatementListNode >> = aNode [
 
 	super = aNode ifFalse: [ ^ false ].
@@ -58,20 +60,20 @@ TStatementListNode >> = aNode [
 	^ true
 ]
 
-{ #category : #visiting }
+{ #category : 'visiting' }
 TStatementListNode >> accept: aVisitor [ 
 	
 	^ aVisitor visitStatementListNode: self
 ]
 
-{ #category : #declarations }
+{ #category : 'declarations' }
 TStatementListNode >> addDeclarations: aCollection [ 
 	
 	declarations addAll: aCollection.
 	locals addAll: aCollection keys.
 ]
 
-{ #category : #utilities }
+{ #category : 'utilities' }
 TStatementListNode >> addReadBeforeAssignedIn: variables to: readBeforeAssigned assignments: assigned in: aCodeGen [
 
 	"Add any variables in variables that are read before written to readBeforeAssigned.
@@ -142,7 +144,7 @@ TStatementListNode >> addReadBeforeAssignedIn: variables to: readBeforeAssigned 
 	^ assigned
 ]
 
-{ #category : #enumerating }
+{ #category : 'enumerating' }
 TStatementListNode >> allStatementsDo: aFullBlockClosure [ 
 	
 	statements do: [ :statement |
@@ -150,7 +152,7 @@ TStatementListNode >> allStatementsDo: aFullBlockClosure [
 		statement allStatementsDo: aFullBlockClosure ].
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 TStatementListNode >> args [
 	self
 		deprecated: 'use #arguments instead'
@@ -158,13 +160,13 @@ TStatementListNode >> args [
 	^arguments
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 TStatementListNode >> arguments [
 
 	^arguments
 ]
 
-{ #category : #tranforming }
+{ #category : 'tranforming' }
 TStatementListNode >> asCASTExpressionIn: aBuilder [
 
 	| expressionList |
@@ -177,7 +179,7 @@ TStatementListNode >> asCASTExpressionIn: aBuilder [
 	^ expressionList
 ]
 
-{ #category : #tranforming }
+{ #category : 'tranforming' }
 TStatementListNode >> asCASTIn: aBuilder [
 	
 	"Push the argument before pushing myself in the scope stack.
@@ -189,7 +191,7 @@ TStatementListNode >> asCASTIn: aBuilder [
 		while: [ self asCASTIn: aBuilder prependToEnd: nil ]
 ]
 
-{ #category : #tranforming }
+{ #category : 'tranforming' }
 TStatementListNode >> asCASTIn: aBuilder prependToEnd: aNodeOrNil [
 
 	| cDeclarations collect methodIsVolatile |
@@ -206,7 +208,6 @@ TStatementListNode >> asCASTIn: aBuilder prependToEnd: aNodeOrNil [
 					collect add: (e asCASTIn: aBuilder prependToEnd: aNodeOrNil) ]
 					ifFalse: [ collect add: (e asCASTIn: aBuilder) ] ]
 			ifTrue: [ 
-				self halt.
 				CEmptyStatementNode new ] ].
 	
 	"We should collect the variable declarations after generating the body, because the body generation will record used yet non declared variables"
@@ -235,7 +236,7 @@ TStatementListNode >> asCASTIn: aBuilder prependToEnd: aNodeOrNil [
 	^ CCompoundStatementNode declarations: cDeclarations statements: collect
 ]
 
-{ #category : #transformations }
+{ #category : 'transformations' }
 TStatementListNode >> asReturnNode [
 	self endsWithReturn ifTrue:
 		[^self].
@@ -245,7 +246,7 @@ TStatementListNode >> asReturnNode [
 		yourself
 ]
 
-{ #category : #transformations }
+{ #category : 'transformations' }
 TStatementListNode >> assignLastExpressionTo: variableNode [
 	"Destructively transform the receiver so that its last expression is assigned to the argument."
 	| index lastExpression replacement |
@@ -260,13 +261,13 @@ TStatementListNode >> assignLastExpressionTo: variableNode [
 	replacement parent: self.
 ]
 
-{ #category : #transformations }
+{ #category : 'transformations' }
 TStatementListNode >> bindVariableUsesIn: aDictionary [
 
 	self statements: (statements collect: [ :s | s bindVariableUsesIn: aDictionary ]).
 ]
 
-{ #category : #transformations }
+{ #category : 'transformations' }
 TStatementListNode >> bindVariableUsesIn: aDictionary andConstantFoldIf: constantFold in: codeGen [
 
 	"Answer either the receiver, if it contains no references to the given variables, or a new node with the given variables rebound."
@@ -285,26 +286,26 @@ TStatementListNode >> bindVariableUsesIn: aDictionary andConstantFoldIf: constan
 				  yourself ]
 ]
 
-{ #category : #transformations }
+{ #category : 'transformations' }
 TStatementListNode >> bindVariablesIn: aDictionary [
 
 	self statements: (statements collect: [ :s | s bindVariablesIn: aDictionary ]).
 ]
 
-{ #category : #transformations }
+{ #category : 'transformations' }
 TStatementListNode >> bindVariablesIn: aDictionary unless: cautionaryBlock [
 
 	(cautionaryBlock value: self) ifTrue: [^self].
 	self statements: (statements collect: [ :s | s bindVariablesIn: aDictionary unless: cautionaryBlock]).
 ]
 
-{ #category : #enumerating }
+{ #category : 'enumerating' }
 TStatementListNode >> children [
 
 	^ statements
 ]
 
-{ #category : #transformations }
+{ #category : 'transformations' }
 TStatementListNode >> copyWithoutReturn [
 	self assert: self endsWithReturn.
 	statements size = 1 ifTrue:
@@ -315,32 +316,32 @@ TStatementListNode >> copyWithoutReturn [
 		yourself
 ]
 
-{ #category : #declarations }
+{ #category : 'declarations' }
 TStatementListNode >> declarationAt: aString ifPresent: aFullBlockClosure [ 
 	
 	^ declarations at: aString ifPresent: aFullBlockClosure
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 TStatementListNode >> declarations [
 
 	^ declarations ifNil: [ declarations := Dictionary new ]
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 TStatementListNode >> declarations: anObject [
 
 	declarations := anObject
 ]
 
-{ #category : #displaying }
+{ #category : 'displaying' }
 TStatementListNode >> displayString [
 
 	"Nothing..."
 	^ ''
 ]
 
-{ #category : #testing }
+{ #category : 'testing' }
 TStatementListNode >> endsWithReturn [
 	"Answer true if the last statement of this lock is a return."
 
@@ -348,20 +349,20 @@ TStatementListNode >> endsWithReturn [
 	  and: [statements last isReturn or: [statements last isReturningIf]]
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 TStatementListNode >> first [
 	
 	^ self statements first
 ]
 
-{ #category : #flattening }
+{ #category : 'flattening' }
 TStatementListNode >> flattened [
 
 	^ statements flatCollect: [ :each |
 		each flattened ]
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 TStatementListNode >> initialize [
 
 	super initialize.
@@ -371,7 +372,7 @@ TStatementListNode >> initialize [
 	arguments := #()
 ]
 
-{ #category : #testing }
+{ #category : 'testing' }
 TStatementListNode >> isNilStmtListNode [
 
 	|stmt|
@@ -380,7 +381,7 @@ TStatementListNode >> isNilStmtListNode [
 	^ stmt isVariable and: [stmt name = 'nil']
 ]
 
-{ #category : #testing }
+{ #category : 'testing' }
 TStatementListNode >> isSameAs: aTParseNode [
 	(aTParseNode isStatementList
 	 and: [statements size = aTParseNode statements size]) ifFalse:
@@ -392,31 +393,31 @@ TStatementListNode >> isSameAs: aTParseNode [
 	^true
 ]
 
-{ #category : #testing }
+{ #category : 'testing' }
 TStatementListNode >> isStatementList [
 
 	^true
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 TStatementListNode >> last [
 	
 	^ self statements last
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 TStatementListNode >> locals [
 
 	^ locals
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 TStatementListNode >> locals: anObject [
 
 	locals := anObject
 ]
 
-{ #category : #enumerating }
+{ #category : 'enumerating' }
 TStatementListNode >> nodesDo: aBlock [
 	"Apply aBlock to all nodes in the receiver.
 	 N.B. This is assumed to be bottom-up, leaves first."
@@ -424,7 +425,7 @@ TStatementListNode >> nodesDo: aBlock [
 	aBlock value: self
 ]
 
-{ #category : #enumerating }
+{ #category : 'enumerating' }
 TStatementListNode >> nodesDo: aBlock parent: parent [
 	"Apply aBlock to all nodes in the receiver with each node's parent.
 	 N.B. This is assumed to be bottom-up, leaves first."
@@ -432,7 +433,7 @@ TStatementListNode >> nodesDo: aBlock parent: parent [
 	aBlock value: self value: parent
 ]
 
-{ #category : #enumerating }
+{ #category : 'enumerating' }
 TStatementListNode >> nodesDo: aBlock parent: parent unless: cautionaryBlock [
 
 	(cautionaryBlock value: self value: parent) ifTrue: [^self].
@@ -440,7 +441,7 @@ TStatementListNode >> nodesDo: aBlock parent: parent unless: cautionaryBlock [
 	aBlock value: self value: parent
 ]
 
-{ #category : #enumerating }
+{ #category : 'enumerating' }
 TStatementListNode >> nodesDo: aBlock unless: cautionaryBlock [
 
 	(cautionaryBlock value: self) ifTrue: [^self].
@@ -448,26 +449,26 @@ TStatementListNode >> nodesDo: aBlock unless: cautionaryBlock [
 	aBlock value: self
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 TStatementListNode >> noteUsedVariableName: aString [ 
 
 	usedVariables add: aString
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 TStatementListNode >> parameterNames [
 	
 	^ arguments
 ]
 
-{ #category : #copying }
+{ #category : 'copying' }
 TStatementListNode >> postCopy [
 
 	arguments := arguments copy.
 	self statements: (statements collect: [ :s | s copy ])
 ]
 
-{ #category : #printing }
+{ #category : 'printing' }
 TStatementListNode >> printOn: aStream level: level [
 
 	statements size > 1 ifTrue: [ aStream crtab: level + 1 ].
@@ -479,7 +480,7 @@ TStatementListNode >> printOn: aStream level: level [
 	aStream nextPut: $]
 ]
 
-{ #category : #printing }
+{ #category : 'printing' }
 TStatementListNode >> printStatementsOn: aStream level: level [
 
 	statements
@@ -487,13 +488,13 @@ TStatementListNode >> printStatementsOn: aStream level: level [
 		separatedBy: [aStream nextPut: $.; crtab: level + 1]
 ]
 
-{ #category : #transformations }
+{ #category : 'transformations' }
 TStatementListNode >> remove: aChild [
 	"this method should be only called when cleaning an AST tree after an unused variable was found, remove an unused variable from the list of statements"
 	statements := statements select: [ :stmt | stmt ~= aChild ]
 ]
 
-{ #category : #transformations }
+{ #category : 'transformations' }
 TStatementListNode >> removeAssertions [
 	| newStatements |
 	newStatements := OrderedCollection new: statements size.
@@ -505,7 +506,7 @@ TStatementListNode >> removeAssertions [
 	self setStatements: newStatements asArray
 ]
 
-{ #category : #'inlining support' }
+{ #category : 'inlining support' }
 TStatementListNode >> renameLabelsForInliningInto: aTMethod [
 	"TMethod already has a method for this; hijack it..."
 	| labels |
@@ -518,7 +519,7 @@ TStatementListNode >> renameLabelsForInliningInto: aTMethod [
 		renameLabelsForInliningInto: aTMethod
 ]
 
-{ #category : #transformations }
+{ #category : 'transformations' }
 TStatementListNode >> replaceChild: aNode with: bNode [
 
 	self statements: (statements collect: [ :node |
@@ -527,7 +528,7 @@ TStatementListNode >> replaceChild: aNode with: bNode [
 			ifFalse: [ node ] ])
 ]
 
-{ #category : #transformations }
+{ #category : 'transformations' }
 TStatementListNode >> replaceNodesIn: aDictionary [
 
 	^aDictionary at: self ifAbsent: [
@@ -535,7 +536,7 @@ TStatementListNode >> replaceNodesIn: aDictionary [
 		self]
 ]
 
-{ #category : #testing }
+{ #category : 'testing' }
 TStatementListNode >> returnsExpression [
 	"Answer true if the last statement of this block is a return of some expression, not merely self or nil."
 
@@ -549,26 +550,26 @@ TStatementListNode >> returnsExpression [
 	  and: [statements last variable ~= 'nil']
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 TStatementListNode >> second [
 	
 	^ self statements second
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 TStatementListNode >> setArguments: argList [
 
 	arguments := argList.
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 TStatementListNode >> setArguments: argList statements: statementList [
 	"Initialize this method using the given information."
 	arguments := argList.
 	self statements: statementList.
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 TStatementListNode >> setStatements: stmtList [
 
 	self
@@ -577,18 +578,18 @@ TStatementListNode >> setStatements: stmtList [
 	self statements: stmtList.
 ]
 
-{ #category : #inlining }
+{ #category : 'inlining' }
 TStatementListNode >> shouldExpand [
 	^(statements detect: [:stmt| stmt isInline]) shouldExpand
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 TStatementListNode >> statements [
 
 	^statements
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 TStatementListNode >> statements: anObject [
 
 	| oldStatements |
@@ -596,13 +597,13 @@ TStatementListNode >> statements: anObject [
 	statements do: [ :e | e parent: self ]
 ]
 
-{ #category : #'type inference' }
+{ #category : 'type inference' }
 TStatementListNode >> typeOrNilFrom: aCodeGenerator in: aTMethod [
 	^statements isEmpty ifFalse:
 		[statements last typeOrNilFrom: aCodeGenerator in: aTMethod]
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 TStatementListNode >> usedVariables [
 	
 	^ usedVariables

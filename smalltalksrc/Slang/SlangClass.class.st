@@ -1,25 +1,27 @@
 Class {
-	#name : #SlangClass,
-	#superclass : #Object,
+	#name : 'SlangClass',
+	#superclass : 'Object',
 	#classVars : [
 		'ExpensiveAsserts'
 	],
-	#category : #'Slang-Types'
+	#category : 'Slang-Types',
+	#package : 'Slang',
+	#tag : 'Types'
 }
 
-{ #category : #translation }
+{ #category : 'translation' }
 SlangClass class >> ancilliaryClasses [
 	"Answer any extra classes to be included in the translation."
 	^{}
 ]
 
-{ #category : #translation }
+{ #category : 'translation' }
 SlangClass class >> declareCVarsIn: aCCodeGenerator [ 
 
 
 ]
 
-{ #category : #translation }
+{ #category : 'translation' }
 SlangClass class >> defineAtCompileTime: anObject [
 
 	"Override to define at translation time those variables that need to
@@ -28,25 +30,25 @@ SlangClass class >> defineAtCompileTime: anObject [
 	^ false
 ]
 
-{ #category : #translation }
+{ #category : 'translation' }
 SlangClass class >> isStructClass [
 	"The various VMStructType classes override this."
 	^false
 ]
 
-{ #category : #translation }
+{ #category : 'translation' }
 SlangClass class >> prepareToBeAddedToCodeGenerator: aCCodeGenerator [ 
 	"Hook for translation.  e.g. allows a subclass to override its
 	 superclass's methods by deleting them before it adds its own."
 ]
 
-{ #category : #'as yet unclassified' }
+{ #category : 'as yet unclassified' }
 SlangClass class >> renameSelectorIfStaticallyResolved: aString [ 
 
 	^ aString
 ]
 
-{ #category : #translation }
+{ #category : 'translation' }
 SlangClass class >> requiredMethodNames: options [
 	"Answer a list of method names that should be retained for export or other
 	 support reasons.  These are typically entry-points that unless explicitly noted
@@ -54,7 +56,7 @@ SlangClass class >> requiredMethodNames: options [
 	^#()
 ]
 
-{ #category : #translation }
+{ #category : 'translation' }
 SlangClass class >> shouldGenerateDeadCode [
 	"Answer if the code generator should generate dead code, e.g. in false ifTrue: [dead] ifFalse: [live].
 	 This *may* be useful in debugging (see CCodeGenerator>>nilOrBooleanConstantReceiverOf: et al).
@@ -63,13 +65,13 @@ SlangClass class >> shouldGenerateDeadCode [
 	^false
 ]
 
-{ #category : #translation }
+{ #category : 'translation' }
 SlangClass class >> typeForSelf [
 	"Answer the type to give self if appropriate, or nil if not."
 	^nil
 ]
 
-{ #category : #'translation support' }
+{ #category : 'translation support' }
 SlangClass >> cCode: codeString [
 	"Support for Smalltalk-to-C translation.
 	 For translation only; noop when running in Smalltalk.
@@ -77,7 +79,7 @@ SlangClass >> cCode: codeString [
 	<doNotGenerate>
 ]
 
-{ #category : #'translation support' }
+{ #category : 'translation support' }
 SlangClass >> cCode: codeStringOrBlock inSmalltalk: aBlock [
 	"Support for Smalltalk-to-C translation. The first argument is output when generating C code.
 	  But if this code is being simulated in Smalltalk, answer the result of evaluating the given block.
@@ -88,13 +90,13 @@ SlangClass >> cCode: codeStringOrBlock inSmalltalk: aBlock [
 	^aBlock value
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 SlangClass >> cogitClass [
 	
 	self subclassResponsibility
 ]
 
-{ #category : #'translation support' }
+{ #category : 'translation support' }
 SlangClass >> cppIf: conditionBlockOrSymbolValue ifTrue: trueExpressionOrBlock ifFalse: falseExpressionOrBlockOrNil [
 	"When translated, produces #if (condition) #else #endif CPP directives.
 	 Example usage:
@@ -124,7 +126,7 @@ SlangClass >> cppIf: conditionBlockOrSymbolValue ifTrue: trueExpressionOrBlock i
 		ifFalse: falseExpressionOrBlockOrNil
 ]
 
-{ #category : #'C pre-processor extensions' }
+{ #category : 'C pre-processor extensions' }
 SlangClass >> defined: aSymbol [
 	"Simulated version of the C pre-processor defined()"
 	<doNotGenerate>
@@ -133,13 +135,13 @@ SlangClass >> defined: aSymbol [
 		ifNotNil: [:binding| binding value ~~ #undefined]
 ]
 
-{ #category : #'simulation support' }
+{ #category : 'simulation support' }
 SlangClass >> deny: aBooleanOrBlock [
 	<doNotGenerate>
 	aBooleanOrBlock value ifTrue: [AssertionFailure signal: 'Assertion failed']
 ]
 
-{ #category : #'debug support' }
+{ #category : 'debug support' }
 SlangClass >> eassert: aBooleanExpressionOrBlock [
 	"This is for expensive asserts that we're only interested in checking in extremis.
 	 For example now that Spur objStacks are debugged there's no benefit to
@@ -150,32 +152,32 @@ SlangClass >> eassert: aBooleanExpressionOrBlock [
 			[AssertionFailure signal: 'Assertion failed']]
 ]
 
-{ #category : #'translation support' }
+{ #category : 'translation support' }
 SlangClass >> error [
 	"Throw a generic Error exception."
 
 	^self error: 'Error!'.
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 SlangClass >> initializationOptions [
 	
 	self subclassResponsibility
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 SlangClass >> interpreterClass [
 	
 	self subclassResponsibility
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 SlangClass >> objectMemoryClass [
 	
 	self subclassResponsibility
 ]
 
-{ #category : #'translation support' }
+{ #category : 'translation support' }
 SlangClass >> simulationOnly: aBlock [
 
 	"Evaluate piece of code only during simulation.
@@ -186,7 +188,7 @@ SlangClass >> simulationOnly: aBlock [
 		inSmalltalk: aBlock
 ]
 
-{ #category : #'translation support' }
+{ #category : 'translation support' }
 SlangClass >> sizeof: objectSymbolOrClass [
 	<doNotGenerate>
 	| index |

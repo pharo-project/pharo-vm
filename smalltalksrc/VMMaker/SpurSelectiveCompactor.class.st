@@ -17,8 +17,8 @@ Performance trick for lilliputian chunks:
 Specific free chunks (called lilliputian, see isLilliputianSize:) are managed using a single linked list instead of a double linked list since there's not enough room in the free chunk for the back pointer. During the sweep phase this is not a problem since we're rebuilding the free chunk structure, but during selective compaction we're detaching free chunks from the free chunk structure and that can be horribly slow (10 seconds sometimes at 20Gb heap due to many iteration over the single linked list). To work around this problem, the sweep phase use lastLilliputianChunk variable to sort the lilliputian free chunk single linked list in ascending address order (See interceptAddFreeChunkWithBytes:at:). During the selective compation phase, the same variable is re-used to iterate at most once over the single linked list while detaching lilliputian chunks (See incrementalUnlinkSmallChunk:). In addition, each segment is annotated during the sweep phase with the last lilliputian chunk it holds. Hence, during the compaction phase, the linked list is iterated but the iteration can jump to the last chunk of the previous segment to compact.
 "
 Class {
-	#name : #SpurSelectiveCompactor,
-	#superclass : #SpurSweeper,
+	#name : 'SpurSelectiveCompactor',
+	#superclass : 'SpurSweeper',
 	#instVars : [
 		'segmentToFill',
 		'lastLilliputianChunk'
@@ -26,16 +26,18 @@ Class {
 	#classVars : [
 		'MaxOccupationForCompaction'
 	],
-	#category : #'VMMaker-SpurMemoryManager'
+	#category : 'VMMaker-SpurMemoryManager',
+	#package : 'VMMaker',
+	#tag : 'SpurMemoryManager'
 }
 
-{ #category : #translation }
+{ #category : 'translation' }
 SpurSelectiveCompactor class >> declareCVarsIn: aCCodeGenerator [
 	super declareCVarsIn: aCCodeGenerator.
 	aCCodeGenerator var: 'segmentToFill' type: #'SpurSegmentInfo *'
 ]
 
-{ #category : #initialization }
+{ #category : 'initialization' }
 SpurSelectiveCompactor class >> initialize [
 	super initialize.
 	"If the segment is occupied by more than MaxOccupationForCompaction, 
@@ -44,12 +46,12 @@ SpurSelectiveCompactor class >> initialize [
 	MaxOccupationForCompaction := 16rD000. "81%"
 ]
 
-{ #category : #simulation }
+{ #category : 'simulation' }
 SpurSelectiveCompactor class >> simulatorClass [
 	^ SpurSelectiveCompactor"Simulator"
 ]
 
-{ #category : #compaction }
+{ #category : 'compaction' }
 SpurSelectiveCompactor >> assertNoSegmentBeingCompacted [
 	"Assertion only - no segment is being claimed at this point"
 	| segInfo |
@@ -61,7 +63,7 @@ SpurSelectiveCompactor >> assertNoSegmentBeingCompacted [
 	
 ]
 
-{ #category : #api }
+{ #category : 'api' }
 SpurSelectiveCompactor >> compact [
 	<inline: #never> "for profiling, though we profile selectiveCompaction and sweep separatly."
 	self resetFreeLists.
@@ -73,7 +75,7 @@ SpurSelectiveCompactor >> compact [
 	
 ]
 
-{ #category : #compaction }
+{ #category : 'compaction' }
 SpurSelectiveCompactor >> compactSegment: segInfo freeStart: initialFreeStart segIndex: segIndex [
 	<var: 'segInfo' type: #'SpurSegmentInfo *'>
 	| currentEntity fillStart bytesToCopy bridge copy |
@@ -108,7 +110,7 @@ SpurSelectiveCompactor >> compactSegment: segInfo freeStart: initialFreeStart se
 	^ fillStart
 ]
 
-{ #category : #compaction }
+{ #category : 'compaction' }
 SpurSelectiveCompactor >> compactSegmentsToCompact [
 	"Forwards all objects in segments to compact and removes their freechunks"
 	| segInfo fillStart |
@@ -134,7 +136,7 @@ SpurSelectiveCompactor >> compactSegmentsToCompact [
 	
 ]
 
-{ #category : #compaction }
+{ #category : 'compaction' }
 SpurSelectiveCompactor >> computeSegmentsToCompact [
 	"Compute segments to compact: least occupied.
 	 Answers true if compaction should be done 
@@ -162,7 +164,7 @@ SpurSelectiveCompactor >> computeSegmentsToCompact [
 	^atLeastOneSegmentToCompact
 ]
 
-{ #category : #'segment to fill' }
+{ #category : 'segment to fill' }
 SpurSelectiveCompactor >> findAndSetSegmentToFill [
 	| segInfo firstEntity |
 	<var: 'segInfo' type: #'SpurSegmentInfo *'>
@@ -176,7 +178,7 @@ SpurSelectiveCompactor >> findAndSetSegmentToFill [
 	
 ]
 
-{ #category : #compaction }
+{ #category : 'compaction' }
 SpurSelectiveCompactor >> findNextSegmentToCompact [
 	"Answers the next segment to compact or nil if none.
 	  The next segment to compact:
@@ -200,7 +202,7 @@ SpurSelectiveCompactor >> findNextSegmentToCompact [
 	^leastOccupiedSegment
 ]
 
-{ #category : #'segment to fill' }
+{ #category : 'segment to fill' }
 SpurSelectiveCompactor >> findOrAllocateSegmentToFill [
 	"There was no compacted segments from past GC that we can directly re-use.
 	 We need either to find an empty segment or allocate a new one."
@@ -218,7 +220,7 @@ SpurSelectiveCompactor >> findOrAllocateSegmentToFill [
 	
 ]
 
-{ #category : #'segment access' }
+{ #category : 'segment access' }
 SpurSelectiveCompactor >> freePastSegmentsAndSetSegmentToFill [	
 	"The first segment being claimed met becomes the segmentToFill. The others are just freed."
 	| segInfo |
@@ -235,7 +237,7 @@ SpurSelectiveCompactor >> freePastSegmentsAndSetSegmentToFill [
 				 segmentToFill ifNil: [segmentToFill := segInfo]]]
 ]
 
-{ #category : #'sweep phase' }
+{ #category : 'sweep phase' }
 SpurSelectiveCompactor >> globalSweepAndSegmentOccupationAnalysis [
 	<inline: #never> "profiling"
 	"Iterate over old space, free unmarked objects, annotate each segment with each occupation"
@@ -279,7 +281,7 @@ SpurSelectiveCompactor >> globalSweepAndSegmentOccupationAnalysis [
 	manager unmarkSurvivingObjectsForCompact.
 ]
 
-{ #category : #compaction }
+{ #category : 'compaction' }
 SpurSelectiveCompactor >> incrementalLilliputianSmallChunk: freeChunk [
 	"This is duplicate form #unlinkSmallChunk:index: for performance hack (single iteration of single linked list)"
 	<inline: #never> "for profiling"
@@ -305,7 +307,7 @@ SpurSelectiveCompactor >> incrementalLilliputianSmallChunk: freeChunk [
 
 ]
 
-{ #category : #'sweep phase' }
+{ #category : 'sweep phase' }
 SpurSelectiveCompactor >> interceptAddFreeChunkWithBytes: bytes at: start [
 	<inline: true>
 	| freeChunk |
@@ -322,35 +324,35 @@ SpurSelectiveCompactor >> interceptAddFreeChunkWithBytes: bytes at: start [
 
 ]
 
-{ #category : #'segment access' }
+{ #category : 'segment access' }
 SpurSelectiveCompactor >> isSegmentBeingCompacted: segInfo [ 
 	<var: 'segInfo' type: #'SpurSegmentInfo *'>
 	"Swizzle is abused bit 16 isBeingCompacted bits 0-15 occupation"
 	^ segInfo swizzle anyMask: 1 << 16
 ]
 
-{ #category : #'segment access' }
+{ #category : 'segment access' }
 SpurSelectiveCompactor >> lastLilliputianChunkAtIndex: segIndex [
 	<inline: true>
 	"Abuse lastFreeObject field, can be used during compaction only, used for different purpose during snapshot"
 	^(self addressOf: (manager segmentManager segments at: 0)) lastFreeObject
 ]
 
-{ #category : #'segment access' }
+{ #category : 'segment access' }
 SpurSelectiveCompactor >> markSegmentAsBeingCompacted: segInfo [ 
 	<var: 'segInfo' type: #'SpurSegmentInfo *'>
 	"Swizzle is abused bit 16 isBeingCompacted bits 0-15 occupation"
 	segInfo swizzle: (segInfo swizzle bitOr: 1 << 16)
 ]
 
-{ #category : #'segment access' }
+{ #category : 'segment access' }
 SpurSelectiveCompactor >> occupationOf: segInfo [ 
 	<var: 'segInfo' type: #'SpurSegmentInfo *'>
 	"Swizzle is abused bit 16 isBeingCompacted bits 0-15 occupation"
 	^segInfo swizzle bitAnd: 16rFFFF
 ]
 
-{ #category : #compaction }
+{ #category : 'compaction' }
 SpurSelectiveCompactor >> postCompactionAction [
 	| allFlags |
 	"For now we don't optimize and just follow everything everywhere on stack and in caches, let's see in the profiler if we need to optimize with those cases. My guess is that this is < 100 microSecond"
@@ -373,7 +375,7 @@ SpurSelectiveCompactor >> postCompactionAction [
 	self assert: manager validClassTableHashes.
 ]
 
-{ #category : #api }
+{ #category : 'api' }
 SpurSelectiveCompactor >> postSwizzleAction [
 	"Since the compact abuses the swizzle field of segment, it needs to be reset after start-up."
 	| segInfo |
@@ -384,7 +386,7 @@ SpurSelectiveCompactor >> postSwizzleAction [
 		 segInfo swizzle: 0 ]
 ]
 
-{ #category : #compaction }
+{ #category : 'compaction' }
 SpurSelectiveCompactor >> selectiveCompaction [
 	"Figures out which segments to compact and compact them into segmentToFill"
 	| shouldCompact |
@@ -401,14 +403,14 @@ SpurSelectiveCompactor >> selectiveCompaction [
 	manager checkFreeSpace: GCModeFull.
 ]
 
-{ #category : #'segment access' }
+{ #category : 'segment access' }
 SpurSelectiveCompactor >> setLastLilliputianChunkAtindex: segIndex to: chunk [ 
 	<inline: true>
 	"Abuse lastFreeObject field, can be used during compaction only, used for different purpose during snapshot"
 	(self addressOf: (manager segmentManager segments at: 0)) lastFreeObject: chunk
 ]
 
-{ #category : #'segment access' }
+{ #category : 'segment access' }
 SpurSelectiveCompactor >> setOccupationAtIndex: segmentIndex used: used unused: unused [
 	"WARNING: Resets the isCompacted bit"
 	"Swizzle is abused bit 16 isBeingCompacted bits 0-15 occupation
@@ -422,7 +424,7 @@ SpurSelectiveCompactor >> setOccupationAtIndex: segmentIndex used: used unused: 
 	segInfo swizzle: occupation
 ]
 
-{ #category : #'segment access' }
+{ #category : 'segment access' }
 SpurSelectiveCompactor >> sizeClaimedIn: segment [ 
 	<var: 'segment' type: #'SpurSegmentInfo *'>
 	<var: 'ratio' type: #'double'>
@@ -433,7 +435,7 @@ SpurSelectiveCompactor >> sizeClaimedIn: segment [
 	^(ratio * (segment segSize - manager bridgeSize)) asInteger 
 ]
 
-{ #category : #'sweep phase' }
+{ #category : 'sweep phase' }
 SpurSelectiveCompactor >> sortedLilliputianChunks [
 	|current next|
 	current := manager firstLilliputianChunk.
@@ -446,7 +448,7 @@ SpurSelectiveCompactor >> sortedLilliputianChunks [
 
 ]
 
-{ #category : #'segment access' }
+{ #category : 'segment access' }
 SpurSelectiveCompactor >> unmarkSegmentAsBeingCompacted: segInfo [ 
 	<inline: true> "So it is not generated if unused"
 	<var: 'segInfo' type: #'SpurSegmentInfo *'>

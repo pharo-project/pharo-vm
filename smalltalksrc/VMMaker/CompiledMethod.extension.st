@@ -1,6 +1,6 @@
-Extension { #name : #CompiledMethod }
+Extension { #name : 'CompiledMethod' }
 
-{ #category : #'*VMMaker' }
+{ #category : '*VMMaker' }
 CompiledMethod >> abstractBytecodeMessageAt: pc [
 
 	^ [
@@ -10,18 +10,18 @@ CompiledMethod >> abstractBytecodeMessageAt: pc [
 		  do: [ :ex | ex message ]
 ]
 
-{ #category : #'*VMMaker-support' }
+{ #category : '*VMMaker-support' }
 CompiledMethod >> abstractDetailedSymbolic [
 	^String streamContents: [:s| (RelativeDetailedInstructionPrinter on: self) printInstructionsOn: s]
 ]
 
-{ #category : #'*VMMaker-C translation' }
+{ #category : '*VMMaker-C translation' }
 CompiledMethod >> asTranslationMethodOfClass: aTMethodClass [
 
 	^ self parseTree asTranslationMethodOfClass: aTMethodClass
 ]
 
-{ #category : #'*VMMaker-C translation' }
+{ #category : '*VMMaker-C translation' }
 CompiledMethod >> asTranslationMethodOfClass: aTMethodClass forCodeGenerator: aCodeGenerator [
 
 	^ self parseTree asTranslationMethodOfClass: aTMethodClass forCodeGenerator: aCodeGenerator

@@ -1,6 +1,6 @@
 Class {
-	#name : #LibFFIWorkerTask,
-	#superclass : #VMStructType,
+	#name : 'LibFFIWorkerTask',
+	#superclass : 'VMStructType',
 	#instVars : [
 		'address',
 		'anExternalFunction',
@@ -9,16 +9,18 @@ Class {
 		'returnHolderAddress',
 		'semaphoreIndex'
 	],
-	#category : #'VMMaker-FFI'
+	#category : 'VMMaker-FFI',
+	#package : 'VMMaker',
+	#tag : 'FFI'
 }
 
-{ #category : #translation }
+{ #category : 'translation' }
 LibFFIWorkerTask class >> filteredInstVarNames [
 	"Eliminate the obvious simulation-only inst vars"
 	^ self allInstVarNames copyWithoutAll: #(address)
 ]
 
-{ #category : #translation }
+{ #category : 'translation' }
 LibFFIWorkerTask class >> instVarNamesAndTypesForTranslationDo: aBinaryBlock [ 
 
 	self filteredInstVarNames do:
@@ -34,36 +36,36 @@ LibFFIWorkerTask class >> instVarNamesAndTypesForTranslationDo: aBinaryBlock [
 				} otherwise: [ self halt ])]
 ]
 
-{ #category : #translation }
+{ #category : 'translation' }
 LibFFIWorkerTask class >> printTypedefOn: aStream [
 
 	"This is already defined in workerTask.h"
 ]
 
-{ #category : #translation }
+{ #category : 'translation' }
 LibFFIWorkerTask class >> structTypeName [
 	
 	^ 'WorkerTask'
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 LibFFIWorkerTask >> anExternalFunction [
 	^ anExternalFunction
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 LibFFIWorkerTask >> anExternalFunction: anObject [
 	anExternalFunction := anObject
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 LibFFIWorkerTask >> asInteger [
 
 	^ address ifNil: [ 
 		  address := (Random new nextInteger: 1024) + 16rFF1FF ]
 ]
 
-{ #category : #'memory access' }
+{ #category : 'memory access' }
 LibFFIWorkerTask >> cCoerce: value to: cTypeString [
 
 	<doNotGenerate>
@@ -73,24 +75,24 @@ LibFFIWorkerTask >> cCoerce: value to: cTypeString [
 		ifNotNil: [value coerceTo: cTypeString sim: cif interpreter]
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 LibFFIWorkerTask >> cif [
 	^ cif
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 LibFFIWorkerTask >> cif: anObject [
 	cif := anObject
 ]
 
-{ #category : #operations }
+{ #category : 'operations' }
 LibFFIWorkerTask >> doFreeFromTask: anAddress [
 
 	<cmacro: '(aTask,anAddress) (free(anAddress))'>
 	
 ]
 
-{ #category : #operations }
+{ #category : 'operations' }
 LibFFIWorkerTask >> freeTask [
 	
 	self parametersAddress
@@ -106,32 +108,32 @@ LibFFIWorkerTask >> freeTask [
 	self doFreeFromTask: self asInteger
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 LibFFIWorkerTask >> parametersAddress [
 	^ parametersAddress
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 LibFFIWorkerTask >> parametersAddress: anObject [
 	parametersAddress := anObject
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 LibFFIWorkerTask >> returnHolderAddress [
 	^ returnHolderAddress
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 LibFFIWorkerTask >> returnHolderAddress: anObject [
 	returnHolderAddress := anObject
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 LibFFIWorkerTask >> semaphoreIndex [
 	^ semaphoreIndex
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 LibFFIWorkerTask >> semaphoreIndex: anObject [
 	semaphoreIndex := anObject
 ]

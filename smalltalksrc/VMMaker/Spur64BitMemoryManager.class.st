@@ -1,10 +1,12 @@
 Class {
-	#name : #Spur64BitMemoryManager,
-	#superclass : #SpurMemoryManager,
-	#category : #'VMMaker-SpurMemoryManager'
+	#name : 'Spur64BitMemoryManager',
+	#superclass : 'SpurMemoryManager',
+	#category : 'VMMaker-SpurMemoryManager',
+	#package : 'VMMaker',
+	#tag : 'SpurMemoryManager'
 }
 
-{ #category : #'class initialization' }
+{ #category : 'class initialization' }
 Spur64BitMemoryManager class >> initializeWithOptions: optionsDictionary [
 	"SpurMemoryManager initializeWithOptions: Dictionary new"
 
@@ -12,7 +14,7 @@ Spur64BitMemoryManager class >> initializeWithOptions: optionsDictionary [
 	super initializeWithOptions: optionsDictionary
 ]
 
-{ #category : #'simulation only' }
+{ #category : 'simulation only' }
 Spur64BitMemoryManager class >> isImmediate: anObject [
 	self flag: 'The float range is close but probably wrong. Revisit when immediate floats are implemented'.
 	^(anObject isInteger and: [anObject between: self minSmallInteger and: self maxSmallInteger])
@@ -28,34 +30,34 @@ Spur64BitMemoryManager class >> isImmediate: anObject [
 	 (NumberParser new makeFloatFromMantissa: 1 exponent: -126 base: 2) exponent -126"
 ]
 
-{ #category : #translation }
+{ #category : 'translation' }
 Spur64BitMemoryManager class >> maxSmallInteger [
 	^16rFFFFFFFFFFFFFFF
 ]
 
-{ #category : #translation }
+{ #category : 'translation' }
 Spur64BitMemoryManager class >> minSmallInteger [
 	^-16r1000000000000000
 ]
 
-{ #category : #'simulation only' }
+{ #category : 'simulation only' }
 Spur64BitMemoryManager class >> numSmallIntegerTagBits [
 	^3
 ]
 
-{ #category : #'simulation only' }
+{ #category : 'simulation only' }
 Spur64BitMemoryManager class >> simulatorClass [
 	^ Spur64BitMMLESimulator
 ]
 
-{ #category : #'word size' }
+{ #category : 'word size' }
 Spur64BitMemoryManager class >> wordSize [
 	"Answer the manager's word size, which is the size of an oop, and which
 	 is assumed to be equivalent to the underlying machine's word size."
 	^8
 ]
 
-{ #category : #'object enumeration' }
+{ #category : 'object enumeration' }
 Spur64BitMemoryManager >> addressAfter: objOop [
 	"Answer the address immediately following an object."
 	<returnTypeC: #usqInt>
@@ -67,7 +69,7 @@ Spur64BitMemoryManager >> addressAfter: objOop [
 	^objOop + self baseHeaderSize + (numSlots bitShift: self shiftForWord)
 ]
 
-{ #category : #snapshot }
+{ #category : 'snapshot' }
 Spur64BitMemoryManager >> byteSwapped: w [
 	"Answer the given integer with its bytes in the reverse order."
 	<api>
@@ -75,7 +77,7 @@ Spur64BitMemoryManager >> byteSwapped: w [
 	^w byteSwap64
 ]
 
-{ #category : #'object enumeration' }
+{ #category : 'object enumeration' }
 Spur64BitMemoryManager >> bytesInObject: objOop [
 	"Answer the total number of bytes in an object including header and possible overflow size header."
 	<returnTypeC: #usqInt>
@@ -93,7 +95,7 @@ Spur64BitMemoryManager >> bytesInObject: objOop [
 		ifFalse: [self baseHeaderSize])
 ]
 
-{ #category : #'object enumeration' }
+{ #category : 'object enumeration' }
 Spur64BitMemoryManager >> bytesInObject: objOop given: rawNumSotsOfObjOop [
 	"Answer the total number of bytes in an object including header and possible overflow size header, given the value of the object's numSlots field."
 	<returnTypeC: #usqInt>
@@ -108,12 +110,12 @@ Spur64BitMemoryManager >> bytesInObject: objOop given: rawNumSotsOfObjOop [
 		ifFalse: [self baseHeaderSize])
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 Spur64BitMemoryManager >> bytesPerOop [
 	^8
 ]
 
-{ #category : #'interpreter access' }
+{ #category : 'interpreter access' }
 Spur64BitMemoryManager >> changeClassOf: rcvr to: argClass [
 	"Attempt to change the class of the receiver to the argument given that the
 	 format of the receiver matches the format of the argument.  If successful,
@@ -181,7 +183,7 @@ Spur64BitMemoryManager >> changeClassOf: rcvr to: argClass [
 	^0
 ]
 
-{ #category : #'gc - global' }
+{ #category : 'gc - global' }
 Spur64BitMemoryManager >> coalesce: obj1 and: obj2 [
 	| header1NumSlots header2NumSlots obj2slots newNumSlots |
 	header1NumSlots := self rawNumSlotsOf: obj1.
@@ -216,7 +218,7 @@ Spur64BitMemoryManager >> coalesce: obj1 and: obj2 [
 	^obj1 + self baseHeaderSize
 ]
 
-{ #category : #'interpreter access' }
+{ #category : 'interpreter access' }
 Spur64BitMemoryManager >> dbgFloatValueOf: oop [
 	"Answer the C double precision floating point value of the argument,
 	 or if it is not, answer 0."
@@ -236,7 +238,7 @@ Spur64BitMemoryManager >> dbgFloatValueOf: oop [
 	^0.0
 ]
 
-{ #category : #snapshot }
+{ #category : 'snapshot' }
 Spur64BitMemoryManager >> defaultEdenBytes [
 	"Answer the default amount of memory to allocate for the eden space.
 	 The actual value can be set via vmParameterAt: and/or a preference in the ini file.
@@ -266,7 +268,7 @@ Spur64BitMemoryManager >> defaultEdenBytes [
 		 and: [self isIntegerValue: (coInterpreter signed64BitValueOf: o)]]) ifTrue: [l := l + 1]]. l"
 ]
 
-{ #category : #'interpreter access' }
+{ #category : 'interpreter access' }
 Spur64BitMemoryManager >> exponentOfSmallFloat: oop [
 	"Answer the exponent of the argument, a SmallFloat.
 	 See section 61-bit Immediate Floats in the SpurMemoryManager class comment.
@@ -281,7 +283,7 @@ Spur64BitMemoryManager >> exponentOfSmallFloat: oop [
 			 exp + self smallFloatExponentOffset - 1022]
 ]
 
-{ #category : #'interpreter access' }
+{ #category : 'interpreter access' }
 Spur64BitMemoryManager >> fetchClassTagOf: oop [
 	<api>
 	| tagBits |
@@ -290,7 +292,7 @@ Spur64BitMemoryManager >> fetchClassTagOf: oop [
 		ifFalse: [self classIndexOf: oop]
 ]
 
-{ #category : #'object access' }
+{ #category : 'object access' }
 Spur64BitMemoryManager >> fetchLong32: fieldIndex ofFloatObject: oop [
 
 	"index by word size, and return a pointer as long as the word size"
@@ -305,7 +307,7 @@ Spur64BitMemoryManager >> fetchLong32: fieldIndex ofFloatObject: oop [
 		  ifFalse: [ bits >> 32 ]
 ]
 
-{ #category : #instantiation }
+{ #category : 'instantiation' }
 Spur64BitMemoryManager >> fillObj: objOop numSlots: numSlots with: fillValue [
 	<inline: true>
 	<var: #p type: #usqInt>
@@ -317,7 +319,7 @@ Spur64BitMemoryManager >> fillObj: objOop numSlots: numSlots with: fillValue [
 		do: [:p| self longAt: p put: fillValue]
 ]
 
-{ #category : #'interpreter access' }
+{ #category : 'interpreter access' }
 Spur64BitMemoryManager >> floatObjectOf: aFloat [
 	<inline: false>
 	<var: #aFloat type: #double>
@@ -327,7 +329,7 @@ Spur64BitMemoryManager >> floatObjectOf: aFloat [
 	^ self boxedFloatObjectOf: aFloat
 ]
 
-{ #category : #'interpreter access' }
+{ #category : 'interpreter access' }
 Spur64BitMemoryManager >> floatValueOf: oop [
 	"Answer the C double precision floating point value of the argument,
 	 or fail if it is not a Float, and answer 0.
@@ -349,20 +351,20 @@ Spur64BitMemoryManager >> floatValueOf: oop [
 	^0.0
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 Spur64BitMemoryManager >> freeLists [
 	<doNotGenerate>
 	^ freeLists
 ]
 
-{ #category : #'interpreter access' }
+{ #category : 'interpreter access' }
 Spur64BitMemoryManager >> hasSixtyFourBitImmediates [
 	"The V3 64-bit memory manager has 64-bit oops, but its SmallIntegers only have
 	 31 bits of precision.  The Spur 64-bit memory manager has 61-bit immediates."
 	^true
 ]
 
-{ #category : #immediates }
+{ #category : 'immediates' }
 Spur64BitMemoryManager >> imageFormatVersion [
 	"Return a magic constant that changes when the image format changes.
 	 Since the image reading code uses this to detect byte ordering, one
@@ -373,7 +375,7 @@ Spur64BitMemoryManager >> imageFormatVersion [
 	^68021
 ]
 
-{ #category : #'free space' }
+{ #category : 'free space' }
 Spur64BitMemoryManager >> initFreeChunkWithBytes: numBytes at: address [
 	<var: #numBytes type: #usqLong>
 	| numSlots |
@@ -393,7 +395,7 @@ Spur64BitMemoryManager >> initFreeChunkWithBytes: numBytes at: address [
 	^address
 ]
 
-{ #category : #segments }
+{ #category : 'segments' }
 Spur64BitMemoryManager >> initSegmentBridgeWithBytes: numBytes at: address [
 	<var: #numBytes type: #usqLong>
 	| numSlots |
@@ -419,7 +421,7 @@ Spur64BitMemoryManager >> initSegmentBridgeWithBytes: numBytes at: address [
 						+ self segmentBridgePun]
 ]
 
-{ #category : #instantiation }
+{ #category : 'instantiation' }
 Spur64BitMemoryManager >> instantiateClass: classObj indexableSize: nElements isPinned: isPinned isOldSpace: isOldSpace [
 	<api>
 	<var: #nElements type: #usqInt>
@@ -485,7 +487,7 @@ Spur64BitMemoryManager >> instantiateClass: classObj indexableSize: nElements is
 	^newObj
 ]
 
-{ #category : #instantiation }
+{ #category : 'instantiation' }
 Spur64BitMemoryManager >> instantiateCompiledMethodClass: classObj indexableSize: nElements [
 	<var: #nElements type: #usqInt>
 	"Allocate an instance of a CompiledMethod class."
@@ -513,7 +515,7 @@ Spur64BitMemoryManager >> instantiateCompiledMethodClass: classObj indexableSize
 	^newObj
 ]
 
-{ #category : #immediates }
+{ #category : 'immediates' }
 Spur64BitMemoryManager >> integerObjectOf: value [
 	"Convert the integer value, assumed to be in SmallInteger range, into a tagged SmallInteger object.
 	 In C, use a shift and an add to set the tag bit.
@@ -527,13 +529,13 @@ Spur64BitMemoryManager >> integerObjectOf: value [
 						ifFalse: [16r10000000000000001])]
 ]
 
-{ #category : #immediates }
+{ #category : 'immediates' }
 Spur64BitMemoryManager >> integerObjectOfCharacterObject: oop [
 	"Immediate characters are unsigned"
 	^oop - (self characterTag - self smallIntegerTag)
 ]
 
-{ #category : #immediates }
+{ #category : 'immediates' }
 Spur64BitMemoryManager >> integerValueOf: oop [
 	"Translator produces 'oop >> 3'"
 	^(oop bitShift: -63) = 1 "tests top bit"
@@ -543,7 +545,7 @@ Spur64BitMemoryManager >> integerValueOf: oop [
 			[oop bitShift: self numTagBits negated]
 ]
 
-{ #category : #'interpreter access' }
+{ #category : 'interpreter access' }
 Spur64BitMemoryManager >> isFloatInstance: oop [
 	<inline: true>
 	| tagBits |
@@ -552,7 +554,7 @@ Spur64BitMemoryManager >> isFloatInstance: oop [
 		ifFalse: [(self classIndexOf: oop) = ClassFloatCompactIndex]
 ]
 
-{ #category : #'interpreter access' }
+{ #category : 'interpreter access' }
 Spur64BitMemoryManager >> isFloatOrInt: anOop [
 	"Answer if anOop is either a SmallInteger or a Float."
 
@@ -562,24 +564,24 @@ Spur64BitMemoryManager >> isFloatOrInt: anOop [
 		ifFalse: [(self classIndexOf: anOop) = ClassFloatCompactIndex]
 ]
 
-{ #category : #'object testing' }
+{ #category : 'object testing' }
 Spur64BitMemoryManager >> isImmediateCharacter: oop [
 	<inline: true>
 	^oop anyMask: self characterTag
 ]
 
-{ #category : #'object testing' }
+{ #category : 'object testing' }
 Spur64BitMemoryManager >> isImmediateFloat: oop [
 	<inline: true>
 	^oop anyMask: self smallFloatTag
 ]
 
-{ #category : #'object testing' }
+{ #category : 'object testing' }
 Spur64BitMemoryManager >> isIntegerObject: oop [
 	^oop anyMask: self smallIntegerTag
 ]
 
-{ #category : #'interpreter access' }
+{ #category : 'interpreter access' }
 Spur64BitMemoryManager >> isIntegerValue: intValue [
 	"Answer if the given value can be represented as a Smalltalk integer value.
 	 In 64-bits we use a 3 bit tag which leaves 61 bits for 2's complement signed
@@ -592,32 +594,32 @@ Spur64BitMemoryManager >> isIntegerValue: intValue [
 		inSmalltalk: [intValue >= self minSmallInteger and: [intValue <= self maxSmallInteger]]
 ]
 
-{ #category : #'free space' }
+{ #category : 'free space' }
 Spur64BitMemoryManager >> isLilliputianSize: chunkBytes [
 	"To have a prev pointer, which follows the next pointer, we need at least two slots."
 	self assert: chunkBytes >= (self baseHeaderSize + self allocationUnit).
 	^chunkBytes = (self baseHeaderSize + self allocationUnit)
 ]
 
-{ #category : #'header access' }
+{ #category : 'header access' }
 Spur64BitMemoryManager >> isMarked: objOop [
 	<api>
 	^((self longAt: objOop) >> self markedBitFullShift bitAnd: 1) ~= 0
 ]
 
-{ #category : #'interpreter access' }
+{ #category : 'interpreter access' }
 Spur64BitMemoryManager >> isNegativeSmallFloat: aSmallFloat [
 	<inline: true>
 	self assert: (self isImmediateFloat: aSmallFloat).
 	^aSmallFloat anyMask: self smallFloatSignBit
 ]
 
-{ #category : #'object testing' }
+{ #category : 'object testing' }
 Spur64BitMemoryManager >> isNonIntegerObject: oop [
 	^oop noMask: self smallIntegerTag
 ]
 
-{ #category : #'interpreter access' }
+{ #category : 'interpreter access' }
 Spur64BitMemoryManager >> isSmallFloatValue: aFloat [
 	<inline: true>
 	<var: #rawFloat type: #usqLong>
@@ -635,21 +637,21 @@ Spur64BitMemoryManager >> isSmallFloatValue: aFloat [
 				ifFalse: [exponent = self smallFloatExponentOffset]]
 ]
 
-{ #category : #'interpreter access' }
+{ #category : 'interpreter access' }
 Spur64BitMemoryManager >> isSmallFloatZero: aSmallFloat [
 	<inline: #always>
 	self assert: (self isImmediateFloat: aSmallFloat).
 	^aSmallFloat asUnsignedInteger <= self negativeSmallFloatZero
 ]
 
-{ #category : #'object testing' }
+{ #category : 'object testing' }
 Spur64BitMemoryManager >> isWordsNonImm: objOop [
 	"Answer if the argument contains only indexable words (no oops). See comment in formatOf:"
 
 	^(self formatOf: objOop) between: self firstLongFormat and: self firstShortFormat - 1
 ]
 
-{ #category : #allocation }
+{ #category : 'allocation' }
 Spur64BitMemoryManager >> largeObjectBytesForSlots: numSlots [
 	"Answer the total number of bytes in an object with an overflow header, including header bytes."
 	<returnTypeC: #usqInt>
@@ -657,7 +659,7 @@ Spur64BitMemoryManager >> largeObjectBytesForSlots: numSlots [
 	+ (numSlots * self bytesPerOop) "no rounding; bytesPerOop = allocationUnit"
 ]
 
-{ #category : #'object access' }
+{ #category : 'object access' }
 Spur64BitMemoryManager >> lengthOf: objOop format: fmt [
 	"Answer the number of indexable units in the given object.
 	 For a CompiledMethod, the size of the method header (in bytes)
@@ -679,7 +681,7 @@ Spur64BitMemoryManager >> lengthOf: objOop format: fmt [
 	^0
 ]
 
-{ #category : #'interpreter access' }
+{ #category : 'interpreter access' }
 Spur64BitMemoryManager >> loadFloatOrIntFrom: floatOrIntOop [
 	"If floatOrInt is an integer, then convert it to a C double float and return it.
 	 If it is a Float, then load its value and return it.
@@ -708,36 +710,36 @@ Spur64BitMemoryManager >> loadFloatOrIntFrom: floatOrIntOop [
 	^0.0
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 Spur64BitMemoryManager >> logBytesPerOop [
 	^3
 ]
 
-{ #category : #'interpreter access' }
+{ #category : 'interpreter access' }
 Spur64BitMemoryManager >> mapSignedSmallFloatToSignedSmallFloatZero: aSmallFloat [
 	<inline: true>
 	self assert: (self isImmediateFloat: aSmallFloat).
 	^aSmallFloat bitAnd: self smallFloatSignBit + self tagMask
 ]
 
-{ #category : #'interpreter access' }
+{ #category : 'interpreter access' }
 Spur64BitMemoryManager >> maxCInteger [
 	^16rFFFFFFFFFFFFFFFF
 ]
 
-{ #category : #instantiation }
+{ #category : 'instantiation' }
 Spur64BitMemoryManager >> maxSlotsForAlloc [
 	"Answer the maximum number of slots we are willing to attempt to allocate in an object.
 	 Must fit in 56-bits; c.f. bytesInObject:"
 	^1024*1024*1024*1024
 ]
 
-{ #category : #'interpreter access' }
+{ #category : 'interpreter access' }
 Spur64BitMemoryManager >> maxSmallInteger [
 	^16rFFFFFFFFFFFFFFF
 ]
 
-{ #category : #'interpreter access' }
+{ #category : 'interpreter access' }
 Spur64BitMemoryManager >> methodDictionaryHash: oop mask: mask [
 	<inline: true>
 	^mask bitAnd: ((self isImmediate: oop)
@@ -745,18 +747,18 @@ Spur64BitMemoryManager >> methodDictionaryHash: oop mask: mask [
 						ifFalse: [self rawHashBitsOf: oop]) "If no hash then it isn't in the dictionary..."
 ]
 
-{ #category : #'interpreter access' }
+{ #category : 'interpreter access' }
 Spur64BitMemoryManager >> minSmallInteger [
 	^-16r1000000000000000
 ]
 
-{ #category : #'interpreter access' }
+{ #category : 'interpreter access' }
 Spur64BitMemoryManager >> negativeSmallFloatZero [
 	<inline: true>
 	^self smallFloatSignBit + self smallFloatTag
 ]
 
-{ #category : #'free space' }
+{ #category : 'free space' }
 Spur64BitMemoryManager >> numFreeLists [
 	"Answer the number of free lists.  We use freeListsMask, a bitmap, to avoid
 	 reading empty list heads.  This should fit in a machine word to end up in a
@@ -764,7 +766,7 @@ Spur64BitMemoryManager >> numFreeLists [
 	^64
 ]
 
-{ #category : #allocation }
+{ #category : 'allocation' }
 Spur64BitMemoryManager >> numSlotsForShortening: objOop toIndexableSize: indexableSize [
 	<inline: true>
 	^(self formatOf: objOop) caseOf:
@@ -773,17 +775,17 @@ Spur64BitMemoryManager >> numSlotsForShortening: objOop toIndexableSize: indexab
 		  [self firstLongFormat + 1]	-> [self numSlotsForBytes: indexableSize * 4] }
 ]
 
-{ #category : #'interpreter access' }
+{ #category : 'interpreter access' }
 Spur64BitMemoryManager >> numSmallIntegerBits [
 	^61
 ]
 
-{ #category : #'interpreter access' }
+{ #category : 'interpreter access' }
 Spur64BitMemoryManager >> numSmallIntegerTagBits [
 	^3
 ]
 
-{ #category : #'object access' }
+{ #category : 'object access' }
 Spur64BitMemoryManager >> numTagBits [
 	<api>
 	<cmacro>
@@ -791,7 +793,7 @@ Spur64BitMemoryManager >> numTagBits [
 	^3
 ]
 
-{ #category : #'object enumeration' }
+{ #category : 'object enumeration' }
 Spur64BitMemoryManager >> objectAfter: objOop limit: limit [
 	"Object parsing.
 	1. all objects have at least a word following the header, for a forwarding pointer.
@@ -810,7 +812,7 @@ Spur64BitMemoryManager >> objectAfter: objOop limit: limit [
 		ifFalse: [followingWordAddress]
 ]
 
-{ #category : #'object enumeration' }
+{ #category : 'object enumeration' }
 Spur64BitMemoryManager >> objectBytesForSlots: numSlots [
 	"Answer the total number of bytes in an object with the given
 	 number of slots, including header and possible overflow size header."
@@ -824,25 +826,25 @@ Spur64BitMemoryManager >> objectBytesForSlots: numSlots [
 					ifFalse: [self baseHeaderSize])]
 ]
 
-{ #category : #'object access' }
+{ #category : 'object access' }
 Spur64BitMemoryManager >> oldRawNumSlotsOf: objOop [
 	<returnTypeC: #usqInt>
 	<inline: true>
 	^(self longAt: objOop) asUnsignedInteger >> self numSlotsFullShift
 ]
 
-{ #category : #'cog jit support' }
+{ #category : 'cog jit support' }
 Spur64BitMemoryManager >> oldSmallFloatTag [
 	^3
 ]
 
-{ #category : #'interpreter access' }
+{ #category : 'interpreter access' }
 Spur64BitMemoryManager >> positiveSmallFloatZero [
 	<inline: true>
 	^self smallFloatTag
 ]
 
-{ #category : #'object access' }
+{ #category : 'object access' }
 Spur64BitMemoryManager >> rawOverflowSlotsOf: objOop [
 	<returnTypeC: #usqLong>
 	<inline: true>
@@ -852,7 +854,7 @@ Spur64BitMemoryManager >> rawOverflowSlotsOf: objOop [
 		inSmalltalk: [(self longAt: objOop - self baseHeaderSize) bitAnd: 16rFFFFFFFFFFFFFF]
 ]
 
-{ #category : #'object access' }
+{ #category : 'object access' }
 Spur64BitMemoryManager >> rawOverflowSlotsOf: objOop put: numSlots [
 	<returnTypeC: #usqLong>
 	<inline: true>
@@ -861,17 +863,17 @@ Spur64BitMemoryManager >> rawOverflowSlotsOf: objOop put: numSlots [
 	^numSlots
 ]
 
-{ #category : #'interpreter access' }
+{ #category : 'interpreter access' }
 Spur64BitMemoryManager >> rotateLeft: anInteger [
 	^(anInteger >> 63 bitAnd: 1) + ((self cCode: [anInteger] inSmalltalk: [anInteger bitAnd: 16r7FFFFFFFFFFFFFFF]) << 1)
 ]
 
-{ #category : #'interpreter access' }
+{ #category : 'interpreter access' }
 Spur64BitMemoryManager >> rotateRight: anInteger [
 	^(self cCode: [anInteger] inSmalltalk: [anInteger bitAnd: 1]) << 63 + (anInteger asUnsignedInteger >> 1)
 ]
 
-{ #category : #'interpreter access' }
+{ #category : 'interpreter access' }
 Spur64BitMemoryManager >> rotatedFloatBitsOf: oop [
 	"Answer the signed, but unadjusted value of a SmallFloat64, suitable for use as a hash.
 	 Keeping the exponent unadjusted keeps the value in the SmallInteger range.
@@ -887,7 +889,7 @@ Spur64BitMemoryManager >> rotatedFloatBitsOf: oop [
 		ifFalse: [0])
 ]
 
-{ #category : #'header access' }
+{ #category : 'header access' }
 Spur64BitMemoryManager >> rtRefCountOf: obj put: refCount [
 	"Set the rt reference count of obj; this is the three bit field comprised
 	 of isGrey,isPinned,isRemembered.  See computeRefCountToShrinkRT."
@@ -899,7 +901,7 @@ Spur64BitMemoryManager >> rtRefCountOf: obj put: refCount [
 	self longAt: obj put: header
 ]
 
-{ #category : #'header access' }
+{ #category : 'header access' }
 Spur64BitMemoryManager >> set: objOop classIndexTo: classIndex formatTo: format [
 	"0 = 0 sized objects (UndefinedObject True False et al)
 	 1 = non-indexable objects with inst vars (Point et al)
@@ -924,7 +926,7 @@ Spur64BitMemoryManager >> set: objOop classIndexTo: classIndex formatTo: format 
 			+  (format << self formatShift))
 ]
 
-{ #category : #'header access' }
+{ #category : 'header access' }
 Spur64BitMemoryManager >> setClassIndexOf: objOop to: classIndex [
 	self assert: (classIndex between: 0 and: self classIndexMask).
 	self longAt: objOop
@@ -932,7 +934,7 @@ Spur64BitMemoryManager >> setClassIndexOf: objOop to: classIndex [
 			+ classIndex
 ]
 
-{ #category : #'header access' }
+{ #category : 'header access' }
 Spur64BitMemoryManager >> setFormatOf: objOop to: format [
 	"0 = 0 sized objects (UndefinedObject True False et al)
 	 1 = non-indexable objects with inst vars (Point et al)
@@ -954,7 +956,7 @@ Spur64BitMemoryManager >> setFormatOf: objOop to: format [
 			+ (format << self formatShift)
 ]
 
-{ #category : #'header access' }
+{ #category : 'header access' }
 Spur64BitMemoryManager >> setIsGreyOf: objOop to: aBoolean [
 	self longAt: objOop
 		put: (aBoolean
@@ -962,7 +964,7 @@ Spur64BitMemoryManager >> setIsGreyOf: objOop to: aBoolean [
 				ifFalse: [(self longAt: objOop) bitAnd: (1 << self greyBitShift) bitInvert64])
 ]
 
-{ #category : #'header access' }
+{ #category : 'header access' }
 Spur64BitMemoryManager >> setIsImmutableOf: objOop to: aBoolean [
 	self longAt: objOop
 		put: (aBoolean
@@ -970,7 +972,7 @@ Spur64BitMemoryManager >> setIsImmutableOf: objOop to: aBoolean [
 				ifFalse: [(self longAt: objOop) bitAnd: (1 << self immutableBitShift) bitInvert64])
 ]
 
-{ #category : #'header access' }
+{ #category : 'header access' }
 Spur64BitMemoryManager >> setIsMarkedOf: objOop to: aBoolean [
 	self assert: (self isFreeObject: objOop) not.
 		
@@ -980,7 +982,7 @@ Spur64BitMemoryManager >> setIsMarkedOf: objOop to: aBoolean [
 				ifFalse: [(self unsignedLongAt: objOop) bitAnd: (1 << self markedBitFullShift) bitInvert64])
 ]
 
-{ #category : #'header access' }
+{ #category : 'header access' }
 Spur64BitMemoryManager >> setIsPinnedOf: objOop to: aBoolean [
 	self longAt: objOop
 		put: (aBoolean
@@ -988,7 +990,7 @@ Spur64BitMemoryManager >> setIsPinnedOf: objOop to: aBoolean [
 				ifFalse: [(self longAt: objOop) bitAnd: (1 << self pinnedBitShift) bitInvert64])
 ]
 
-{ #category : #'header access' }
+{ #category : 'header access' }
 Spur64BitMemoryManager >> setIsRememberedOf: objOop to: aBoolean [
 	self unsignedLong64At: objOop
 		put: (aBoolean
@@ -996,14 +998,14 @@ Spur64BitMemoryManager >> setIsRememberedOf: objOop to: aBoolean [
 				ifFalse: [(self unsignedLong64At: objOop) bitAnd: (1 << self rememberedBitShift) bitInvert64])
 ]
 
-{ #category : #'word size' }
+{ #category : 'word size' }
 Spur64BitMemoryManager >> shiftForWord [
 	<api>
 	<cmacro>
 	^3
 ]
 
-{ #category : #allocation }
+{ #category : 'allocation' }
 Spur64BitMemoryManager >> shorten: objOop toIndexableSize: indexableSize [
 	"Reduce the number of indexable fields in objOop, a pointer object, to nSlots. Convert the
 	 unused residual to a free chunk. Without changes to numSlotsForShortening:toIndexableSize:
@@ -1061,7 +1063,7 @@ Spur64BitMemoryManager >> shorten: objOop toIndexableSize: indexableSize [
 	^delta
 ]
 
-{ #category : #'interpreter access' }
+{ #category : 'interpreter access' }
 Spur64BitMemoryManager >> smallFloatBitsOf: oop [
 	"Answer the ieee 754 double precision floating point bits of the argument, a SmallFloat.
 	 See section 61-bit Immediate Floats in the SpurMemoryManager class comment.
@@ -1081,7 +1083,7 @@ Spur64BitMemoryManager >> smallFloatBitsOf: oop [
 	^rot
 ]
 
-{ #category : #'interpreter access' }
+{ #category : 'interpreter access' }
 Spur64BitMemoryManager >> smallFloatExponentBits [
 	"SmallFloat64's have the same mantissa as IEEE single-precision floating point"
 	<api>
@@ -1089,7 +1091,7 @@ Spur64BitMemoryManager >> smallFloatExponentBits [
 	^8
 ]
 
-{ #category : #'interpreter access' }
+{ #category : 'interpreter access' }
 Spur64BitMemoryManager >> smallFloatExponentOffset [
 	"896 is 1023 - 127, where 1023 is the mid-point of the 11-bit double precision exponent range,
 	 and 127 is the mid-point of the 8-bit SmallDouble exponent range."
@@ -1098,7 +1100,7 @@ Spur64BitMemoryManager >> smallFloatExponentOffset [
 	^896
 ]
 
-{ #category : #'interpreter access' }
+{ #category : 'interpreter access' }
 Spur64BitMemoryManager >> smallFloatMantissaBits [
 	"SmallFloat64's have the same mantissa as IEEE double-precision floating point"
 	<api>
@@ -1106,7 +1108,7 @@ Spur64BitMemoryManager >> smallFloatMantissaBits [
 	^52
 ]
 
-{ #category : #'interpreter access' }
+{ #category : 'interpreter access' }
 Spur64BitMemoryManager >> smallFloatObjectOf: aFloat [
 	"Encode the argument, aFloat in the SmallFloat range, as a tagged small float.
 	 See section 61-bit Immediate Floats in the SpurMemoryManager class comment.
@@ -1134,20 +1136,20 @@ Spur64BitMemoryManager >> smallFloatObjectOf: aFloat [
 		inSmalltalk: [((rot << self numTagBits) bitAnd: 16rFFFFFFFFFFFFFFFF) + self smallFloatTag]
 ]
 
-{ #category : #'interpreter access' }
+{ #category : 'interpreter access' }
 Spur64BitMemoryManager >> smallFloatSignBit [
 	<inline: true>
 	^1 << self numTagBits
 ]
 
-{ #category : #'cog jit support' }
+{ #category : 'cog jit support' }
 Spur64BitMemoryManager >> smallFloatTag [
 	<api>
 	<cmacro>
 	^4
 ]
 
-{ #category : #'interpreter access' }
+{ #category : 'interpreter access' }
 Spur64BitMemoryManager >> smallFloatValueOf: oop [
 	"Answer the C double precision floating point value of the argument, a SmallFloat.
 	 See section 61-bit Immediate Floats in the SpurMemoryManager class comment.
@@ -1171,7 +1173,7 @@ Spur64BitMemoryManager >> smallFloatValueOf: oop [
 				* 1.0 "reduce to SmallFloat64 if possible"]
 ]
 
-{ #category : #allocation }
+{ #category : 'allocation' }
 Spur64BitMemoryManager >> smallObjectBytesForSlots: numSlots [
 	"Answer the total number of bytes in an object without an overflow header, including header bytes."
 	<api>
@@ -1182,33 +1184,33 @@ Spur64BitMemoryManager >> smallObjectBytesForSlots: numSlots [
 		ifFalse: [numSlots * self bytesPerOop])
 ]
 
-{ #category : #'word size' }
+{ #category : 'word size' }
 Spur64BitMemoryManager >> tagMask [
 	<api>
 	<cmacro>
 	^7
 ]
 
-{ #category : #'memory access' }
+{ #category : 'memory access' }
 Spur64BitMemoryManager >> unsignedLongAt: anAddress [
 
 	<doNotGenerate>
 	^ self unsignedLong64At: anAddress
 ]
 
-{ #category : #'memory access' }
+{ #category : 'memory access' }
 Spur64BitMemoryManager >> unsignedLongAt: anAddress put: aValue [ 
 
 	<doNotGenerate>
 	^ self unsignedLong64At: anAddress put: aValue
 ]
 
-{ #category : #'header formats' }
+{ #category : 'header formats' }
 Spur64BitMemoryManager >> wordIndexableFormat [
 	^self sixtyFourBitIndexableFormat
 ]
 
-{ #category : #'word size' }
+{ #category : 'word size' }
 Spur64BitMemoryManager >> wordSize [
 	"Answer the manager's word size, which is the size of an oop, and which
 	 is assumed to be equivalent to the underlying machine's word size."
@@ -1216,7 +1218,7 @@ Spur64BitMemoryManager >> wordSize [
 	^8
 ]
 
-{ #category : #'class table' }
+{ #category : 'class table' }
 Spur64BitMemoryManager >> wordSizeClassIndexPun [
 	^self sixtyFourBitLongsClassIndexPun
 ]

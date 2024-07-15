@@ -4,24 +4,26 @@ I implement a Smalltalk
 statement converting it into a C switch statement.  I make some effort to discover identical right-hand-side cases.
 "
 Class {
-	#name : #TSwitchStmtNode,
-	#superclass : #TParseNode,
+	#name : 'TSwitchStmtNode',
+	#superclass : 'TParseNode',
 	#instVars : [
 		'expression',
 		'cases',
 		'otherwiseOrNil',
 		'switchVariable'
 	],
-	#category : #'Slang-AST'
+	#category : 'Slang-AST',
+	#package : 'Slang',
+	#tag : 'AST'
 }
 
-{ #category : #visiting }
+{ #category : 'visiting' }
 TSwitchStmtNode >> accept: aVisitor [
 	
 	^ aVisitor visitSwitchStatementNode: self
 ]
 
-{ #category : #transforming }
+{ #category : 'transforming' }
 TSwitchStmtNode >> asCASTExpressionIn: aBuilder [
 
 	| var ternary |
@@ -82,7 +84,7 @@ TSwitchStmtNode >> asCASTExpressionIn: aBuilder [
 	^ ternary
 ]
 
-{ #category : #transforming }
+{ #category : 'transforming' }
 TSwitchStmtNode >> asCASTIn: aBuilder [
 
 	| statements |
@@ -116,7 +118,7 @@ TSwitchStmtNode >> asCASTIn: aBuilder [
 		  statement: statements
 ]
 
-{ #category : #transforming }
+{ #category : 'transforming' }
 TSwitchStmtNode >> asCASTIn: aBuilder addToEndOfCases: aNodeToPrependOrNil [
 
 	| statements |
@@ -170,7 +172,7 @@ TSwitchStmtNode >> asCASTIn: aBuilder addToEndOfCases: aNodeToPrependOrNil [
 		  statement: statements
 ]
 
-{ #category : #transformations }
+{ #category : 'transformations' }
 TSwitchStmtNode >> bindVariableUsesIn: aDictionary [
 	expression := expression bindVariableUsesIn: aDictionary.
 	cases := (cases collect:
@@ -181,7 +183,7 @@ TSwitchStmtNode >> bindVariableUsesIn: aDictionary [
 		[otherwiseOrNil := otherwiseOrNil bindVariableUsesIn: aDictionary]
 ]
 
-{ #category : #transformations }
+{ #category : 'transformations' }
 TSwitchStmtNode >> bindVariableUsesIn: aDictionary andConstantFoldIf: constantFold in: codeGen [
 	"Answer either the receiver, if it contains no references to the given variables, or a new node with the given variables rebound."
 	| newExpression newCases newOtherwise |
@@ -204,7 +206,7 @@ TSwitchStmtNode >> bindVariableUsesIn: aDictionary andConstantFoldIf: constantFo
 				yourself]
 ]
 
-{ #category : #transformations }
+{ #category : 'transformations' }
 TSwitchStmtNode >> bindVariablesIn: aDictionary [
 	expression := expression bindVariablesIn: aDictionary.
 	cases := (cases collect:
@@ -215,7 +217,7 @@ TSwitchStmtNode >> bindVariablesIn: aDictionary [
 		[otherwiseOrNil := otherwiseOrNil bindVariablesIn: aDictionary]
 ]
 
-{ #category : #transformations }
+{ #category : 'transformations' }
 TSwitchStmtNode >> bindVariablesIn: aDictionary unless: cautionaryBlock [
 
 	(cautionaryBlock value: self) ifTrue: [^self].
@@ -228,21 +230,21 @@ TSwitchStmtNode >> bindVariablesIn: aDictionary unless: cautionaryBlock [
 		[otherwiseOrNil := otherwiseOrNil bindVariablesIn: aDictionary unless: cautionaryBlock]
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 TSwitchStmtNode >> cases [
 	"Answer the value of cases"
 
 	^ cases
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 TSwitchStmtNode >> cases: anObject [
 	"Set the value of cases"
 
 	cases := anObject
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 TSwitchStmtNode >> children [
 	
 	^ { expression },
@@ -250,7 +252,7 @@ TSwitchStmtNode >> children [
 		(otherwiseOrNil ifNil: [ #() ] ifNotNil: [ {otherwiseOrNil} ])
 ]
 
-{ #category : #'instance initialization' }
+{ #category : 'instance initialization' }
 TSwitchStmtNode >> createCasesFromBraceNode: aTBraceNode [
 	"Answer a sequence of tuples of { labels. case } for a TBraceNode, making
 	 sure to collect equivalent cases together under a signle sequence of labels."
@@ -279,21 +281,21 @@ TSwitchStmtNode >> createCasesFromBraceNode: aTBraceNode [
 	^ newCases
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 TSwitchStmtNode >> expression [
 	"Answer the value of expression"
 
 	^ expression
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 TSwitchStmtNode >> expression: anObject [
 	"Set the value of expression"
 
 	expression := anObject
 ]
 
-{ #category : #'instance initialization' }
+{ #category : 'instance initialization' }
 TSwitchStmtNode >> expression: expr cases: aTBraceNode otherwiseOrNil: otherwiseOrNilNode [
 
 	self expression: expr.
@@ -301,7 +303,7 @@ TSwitchStmtNode >> expression: expr cases: aTBraceNode otherwiseOrNil: otherwise
 	self otherwiseOrNil: otherwiseOrNilNode
 ]
 
-{ #category : #comparing }
+{ #category : 'comparing' }
 TSwitchStmtNode >> isSameAs: anotherNode [
 
 	anotherNode isSwitch ifFalse: [ ^ false ].
@@ -320,12 +322,12 @@ TSwitchStmtNode >> isSameAs: anotherNode [
 	^ true
 ]
 
-{ #category : #testing }
+{ #category : 'testing' }
 TSwitchStmtNode >> isSwitch [
 	^true
 ]
 
-{ #category : #enumerating }
+{ #category : 'enumerating' }
 TSwitchStmtNode >> nodesDo: aBlock [
 	"Apply aBlock to all nodes in the receiver.
 	 N.B. This is assumed to be bottom-up, leaves first."
@@ -339,7 +341,7 @@ TSwitchStmtNode >> nodesDo: aBlock [
 	aBlock value: self
 ]
 
-{ #category : #enumerating }
+{ #category : 'enumerating' }
 TSwitchStmtNode >> nodesDo: aBlock parent: parent [
 	"Apply aBlock to all nodes in the receiver with each node's parent.
 	 N.B. This is assumed to be bottom-up, leaves first."
@@ -353,7 +355,7 @@ TSwitchStmtNode >> nodesDo: aBlock parent: parent [
 	aBlock value: self value: parent
 ]
 
-{ #category : #enumerating }
+{ #category : 'enumerating' }
 TSwitchStmtNode >> nodesDo: aBlock parent: parent unless: cautionaryBlock [
 
 	(cautionaryBlock value: self value: parent) ifTrue: [^self].
@@ -366,7 +368,7 @@ TSwitchStmtNode >> nodesDo: aBlock parent: parent unless: cautionaryBlock [
 		[otherwiseOrNil nodesDo: aBlock parent: self unless: cautionaryBlock]
 ]
 
-{ #category : #enumerating }
+{ #category : 'enumerating' }
 TSwitchStmtNode >> nodesDo: aBlock unless: cautionaryBlock [
 
 	(cautionaryBlock value: self) ifTrue: [^self].
@@ -379,21 +381,21 @@ TSwitchStmtNode >> nodesDo: aBlock unless: cautionaryBlock [
 		[otherwiseOrNil nodesDo: aBlock unless: cautionaryBlock]
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 TSwitchStmtNode >> otherwiseOrNil [
 	"Answer the value of otherwiseOrNil"
 
 	^ otherwiseOrNil
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 TSwitchStmtNode >> otherwiseOrNil: anObject [
 	"Set the value of otherwiseOrNil"
 
 	otherwiseOrNil := anObject
 ]
 
-{ #category : #copying }
+{ #category : 'copying' }
 TSwitchStmtNode >> postCopy [
 	expression := expression copy.
 	cases := (cases collect:
@@ -403,7 +405,7 @@ TSwitchStmtNode >> postCopy [
 	otherwiseOrNil := otherwiseOrNil copy
 ]
 
-{ #category : #printing }
+{ #category : 'printing' }
 TSwitchStmtNode >> printOn: aStream level: level [
 
 	aStream crtab: level.
@@ -435,7 +437,7 @@ TSwitchStmtNode >> printOn: aStream level: level [
 		nextPut: $}
 ]
 
-{ #category : #transformations }
+{ #category : 'transformations' }
 TSwitchStmtNode >> remove: aChild [
 	"called when inlining happens, supress a case if it contains only an unused variable"
 
@@ -445,7 +447,7 @@ TSwitchStmtNode >> remove: aChild [
 	cases := cases select: [ :each | each second ~= aChild ]
 ]
 
-{ #category : #transformations }
+{ #category : 'transformations' }
 TSwitchStmtNode >> removeAssertions [
 	expression removeAssertions.
 	cases do:
@@ -456,7 +458,7 @@ TSwitchStmtNode >> removeAssertions [
 		[otherwiseOrNil removeAssertions]
 ]
 
-{ #category : #transformations }
+{ #category : 'transformations' }
 TSwitchStmtNode >> replaceNodesIn: aDictionary [
 	^aDictionary
 		at: self
@@ -471,14 +473,14 @@ TSwitchStmtNode >> replaceNodesIn: aDictionary [
 			 self]
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 TSwitchStmtNode >> switchVariable [
 	"Answer the value of switchVariable"
 
 	^ switchVariable
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 TSwitchStmtNode >> switchVariable: anObject [
 	"Set the value of switchVariable"
 

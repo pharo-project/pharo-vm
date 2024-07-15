@@ -2,18 +2,20 @@
 I implement the main dispatch case statements for bytecode and primitive dispatch.  See TMethod classPool associationAt: #CaseStatements
 "
 Class {
-	#name : #TCaseStmtNode,
-	#superclass : #TParseNode,
+	#name : 'TCaseStmtNode',
+	#superclass : 'TParseNode',
 	#instVars : [
 		'expression',
 		'firsts',
 		'lasts',
 		'cases'
 	],
-	#category : #'Slang-AST'
+	#category : 'Slang-AST',
+	#package : 'Slang',
+	#tag : 'AST'
 }
 
-{ #category : #'instance-creation' }
+{ #category : 'instance-creation' }
 TCaseStmtNode class >> newWithExpression: anExpression selectors: aCollectionOfSelectors arguments: arguments [
 	
 	^ self new
@@ -23,13 +25,13 @@ TCaseStmtNode class >> newWithExpression: anExpression selectors: aCollectionOfS
 		yourself
 ]
 
-{ #category : #visiting }
+{ #category : 'visiting' }
 TCaseStmtNode >> accept: aVisitor [
 	
 	^ aVisitor visitCaseStatementNode: self
 ]
 
-{ #category : #tranforming }
+{ #category : 'tranforming' }
 TCaseStmtNode >> asCASTIn: aBuilder [
 	
 	| statements expansions duplicates switchStatement result |
@@ -69,7 +71,7 @@ TCaseStmtNode >> asCASTIn: aBuilder [
 	^ result
 ]
 
-{ #category : #tranforming }
+{ #category : 'tranforming' }
 TCaseStmtNode >> asCASTIn: aBuilder addToEndOfCases: aNodeToPrepend [
 	
 	| statements |
@@ -102,14 +104,14 @@ TCaseStmtNode >> asCASTIn: aBuilder addToEndOfCases: aNodeToPrepend [
 		statement: statements
 ]
 
-{ #category : #transformations }
+{ #category : 'transformations' }
 TCaseStmtNode >> bindVariableUsesIn: aDictionary [
 
 	self expression: (expression bindVariableUsesIn: aDictionary).
 	self cases: (cases collect: [ :c | c bindVariableUsesIn: aDictionary ]).
 ]
 
-{ #category : #transformations }
+{ #category : 'transformations' }
 TCaseStmtNode >> bindVariableUsesIn: aDictionary andConstantFoldIf: constantFold in: codeGen [
 	"Answer either the receiver, if it contains no references to the given variables, or a new node with the given variables rebound."
 	| newExpression newCases |
@@ -123,14 +125,14 @@ TCaseStmtNode >> bindVariableUsesIn: aDictionary andConstantFoldIf: constantFold
 					yourself]
 ]
 
-{ #category : #transformations }
+{ #category : 'transformations' }
 TCaseStmtNode >> bindVariablesIn: aDictionary [
 
 	self expression: (expression bindVariablesIn: aDictionary).
 	self cases: (cases collect: [ :c | c bindVariablesIn: aDictionary ]).
 ]
 
-{ #category : #transformations }
+{ #category : 'transformations' }
 TCaseStmtNode >> bindVariablesIn: aDictionary unless: cautionaryBlock [
 
 	(cautionaryBlock value: self) ifTrue: [^self].
@@ -138,26 +140,26 @@ TCaseStmtNode >> bindVariablesIn: aDictionary unless: cautionaryBlock [
 	self cases: (cases collect: [ :c | c bindVariablesIn: aDictionary unless: cautionaryBlock ]).
 ]
 
-{ #category : #comparing }
+{ #category : 'comparing' }
 TCaseStmtNode >> cases [
 
 	^ cases
 ]
 
-{ #category : #comparing }
+{ #category : 'comparing' }
 TCaseStmtNode >> cases: aListOfCases [
 
 	cases := aListOfCases.
 	cases do: [ :e | e parent: self ]
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 TCaseStmtNode >> children [
 	
 	^ { expression }, cases
 ]
 
-{ #category : #transformations }
+{ #category : 'transformations' }
 TCaseStmtNode >> customizeCase: caseParseTree forVar: varName from: firstIndex to: lastIndex in: codeGen method: aTMethod expandedCases: seen [
 	"Return a collection of copies of the given parse tree, each of which has the value of the case index substituted for the given variable."
 
@@ -173,7 +175,7 @@ TCaseStmtNode >> customizeCase: caseParseTree forVar: varName from: firstIndex t
 	^newCases
 ]
 
-{ #category : #transformations }
+{ #category : 'transformations' }
 TCaseStmtNode >> customizeShortCasesForDispatchVar: varName in: codeGen method: aTMethod [
 	"Make customized versions of short bytecode methods, substituting a constant having the case index value for the given variable.
 	 This produces better code for short bytecodes such as instance variable pushes that encode the index of the instance variable in the bytecode."
@@ -206,20 +208,20 @@ TCaseStmtNode >> customizeShortCasesForDispatchVar: varName in: codeGen method: 
 	self cases: newCases asArray
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 TCaseStmtNode >> expression [
 
 	^ expression
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 TCaseStmtNode >> expression: anExpression [
 
 	expression := anExpression.
 	anExpression parent: self
 ]
 
-{ #category : #private }
+{ #category : 'private' }
 TCaseStmtNode >> filterCommentsFrom: aString [
 	"elide any /* comment */ occurrences from aString."
 	| i |
@@ -231,13 +233,13 @@ TCaseStmtNode >> filterCommentsFrom: aString [
 			to: aString size))
 ]
 
-{ #category : #testing }
+{ #category : 'testing' }
 TCaseStmtNode >> isCaseStmt [
 
 	^true
 ]
 
-{ #category : #comparing }
+{ #category : 'comparing' }
 TCaseStmtNode >> isSameAs: anotherNode [
 
 	anotherNode isCaseStmt ifFalse: [ ^ false ].
@@ -253,7 +255,7 @@ TCaseStmtNode >> isSameAs: anotherNode [
 	^ true
 ]
 
-{ #category : #enumerating }
+{ #category : 'enumerating' }
 TCaseStmtNode >> nodesDo: aBlock [
 	"Apply aBlock to all nodes in the receiver.
 	 N.B. This is assumed to be bottom-up, leaves first."
@@ -262,7 +264,7 @@ TCaseStmtNode >> nodesDo: aBlock [
 	aBlock value: self
 ]
 
-{ #category : #enumerating }
+{ #category : 'enumerating' }
 TCaseStmtNode >> nodesDo: aBlock parent: parent [
 	"Apply aBlock to all nodes in the receiver with each node's parent.
 	 N.B. This is assumed to be bottom-up, leaves first."
@@ -271,7 +273,7 @@ TCaseStmtNode >> nodesDo: aBlock parent: parent [
 	aBlock value: self value: parent
 ]
 
-{ #category : #enumerating }
+{ #category : 'enumerating' }
 TCaseStmtNode >> nodesDo: aBlock parent: parent unless: cautionaryBlock [
 
 	(cautionaryBlock value: self value: parent) ifTrue: [^self].
@@ -280,7 +282,7 @@ TCaseStmtNode >> nodesDo: aBlock parent: parent unless: cautionaryBlock [
 	aBlock value: self value: parent
 ]
 
-{ #category : #enumerating }
+{ #category : 'enumerating' }
 TCaseStmtNode >> nodesDo: aBlock unless: cautionaryBlock [
 
 	(cautionaryBlock value: self) ifTrue: [^self].
@@ -289,7 +291,7 @@ TCaseStmtNode >> nodesDo: aBlock unless: cautionaryBlock [
 	aBlock value: self
 ]
 
-{ #category : #copying }
+{ #category : 'copying' }
 TCaseStmtNode >> postCopy [
 
 	self expression: expression copy.
@@ -298,7 +300,7 @@ TCaseStmtNode >> postCopy [
 	self cases: (cases collect: [ :case | case copy ])
 ]
 
-{ #category : #printing }
+{ #category : 'printing' }
 TCaseStmtNode >> printOn: aStream level: level [
 
 	aStream crtab: level.
@@ -317,7 +319,7 @@ TCaseStmtNode >> printOn: aStream level: level [
 	aStream nextPutAll: 'end select'.
 ]
 
-{ #category : #transformations }
+{ #category : 'transformations' }
 TCaseStmtNode >> processSharedCodeBlocks: caseTree forCase: caseIndex in: codeGen method: aTMethod expandedCases: seen [
 
 	"Process any shared code blocks in the case parse tree for the given case, either inlining them or making them a 'goto sharedLabel'."
@@ -382,13 +384,13 @@ TCaseStmtNode >> processSharedCodeBlocks: caseTree forCase: caseIndex in: codeGe
 				 (TLabeledCommentNode new setLabel: exitLabel comment: 'end case')) ]
 ]
 
-{ #category : #transformations }
+{ #category : 'transformations' }
 TCaseStmtNode >> removeAssertions [
 	expression removeAssertions.
 	cases do: [ :case | case removeAssertions ].
 ]
 
-{ #category : #transformations }
+{ #category : 'transformations' }
 TCaseStmtNode >> replaceNodesIn: aDictionary [
 
 	^aDictionary at: self ifAbsent: [
@@ -397,13 +399,13 @@ TCaseStmtNode >> replaceNodesIn: aDictionary [
 		self]
 ]
 
-{ #category : #private }
+{ #category : 'private' }
 TCaseStmtNode >> setExpression: newExpression cases: newCases [
 	self expression: newExpression.
 	self cases: newCases
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 TCaseStmtNode >> setExpression: aNode selectors: selectorList arguments: anArray [
 	"Initialize the node from the given set of selectors."
 	"Note: Each case is a statement list with containing one statement, a send to self of a selector from the given selector list. Having statement list nodes makes inlining easier later."

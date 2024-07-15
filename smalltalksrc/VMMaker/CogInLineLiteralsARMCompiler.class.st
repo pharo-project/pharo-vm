@@ -1,10 +1,12 @@
 Class {
-	#name : #CogInLineLiteralsARMCompiler,
-	#superclass : #CogARMCompiler,
-	#category : #'VMMaker-JIT'
+	#name : 'CogInLineLiteralsARMCompiler',
+	#superclass : 'CogARMCompiler',
+	#category : 'VMMaker-JIT',
+	#package : 'VMMaker',
+	#tag : 'JIT'
 }
 
-{ #category : #'inline cacheing' }
+{ #category : 'inline cacheing' }
 CogInLineLiteralsARMCompiler >> callFullTargetFromReturnAddress: callSiteReturnAddress [
 	"Answer the address that the call immediately preceding callSiteReturnAddress will jump to."
 	"this is also used by #jumpLongTargetBeforeFollowingAddress: and so we check for both call and jump related instructions; later on we can use simpler tests once it feels safe to assume we get here always with a call/jump in the proper place"
@@ -15,12 +17,12 @@ CogInLineLiteralsARMCompiler >> callFullTargetFromReturnAddress: callSiteReturnA
 	^self extract32BitOperandFrom4Instructionspreceding: callSiteReturnAddress - 4
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 CogInLineLiteralsARMCompiler >> cmpC32RTempByteSize [
 	^20
 ]
 
-{ #category : #initialization }
+{ #category : 'initialization' }
 CogInLineLiteralsARMCompiler >> cogit: aCogit [
 	<doNotGenerate>
 	"There is no support for synthesizing 64-bit constants using inline instructions in this code generator."
@@ -28,7 +30,7 @@ CogInLineLiteralsARMCompiler >> cogit: aCogit [
 	super cogit: aCogit
 ]
 
-{ #category : #testing }
+{ #category : 'testing' }
 CogInLineLiteralsARMCompiler >> extract32BitOperandFrom4InstructionsPreceding: addr [
 	<inline: true>
 	^(objectMemory byteAt: addr -4) 
@@ -37,7 +39,7 @@ CogInLineLiteralsARMCompiler >> extract32BitOperandFrom4InstructionsPreceding: a
 	 + ((objectMemory byteAt: addr - 16) << 24)
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 CogInLineLiteralsARMCompiler >> getDefaultCogCodeSize [
 	"Return the default number of bytes to allocate for native code at startup.
 	 The actual value can be set via vmParameterAt: and/or a preference in the ini file."
@@ -45,14 +47,14 @@ CogInLineLiteralsARMCompiler >> getDefaultCogCodeSize [
 	^1024 * 1536
 ]
 
-{ #category : #'inline cacheing' }
+{ #category : 'inline cacheing' }
 CogInLineLiteralsARMCompiler >> inlineCacheTagAt: callSiteReturnAddress [
 	"Answer the inline cache tag for the return address of a send."
 	self assert: (self instructionIsBL: (self instructionBeforeAddress: callSiteReturnAddress)).
 	^self extract32BitOperandFrom4InstructionsPreceding: callSiteReturnAddress - 4
 ]
 
-{ #category : #testing }
+{ #category : 'testing' }
 CogInLineLiteralsARMCompiler >> insert32BitOperand: operand into4InstructionsPreceding: addr [
 	<inline: true>
 	objectMemory
@@ -62,13 +64,13 @@ CogInLineLiteralsARMCompiler >> insert32BitOperand: operand into4InstructionsPre
 		byteAt: addr - 16 put: (operand >> 24	bitAnd: 16rFF)
 ]
 
-{ #category : #testing }
+{ #category : 'testing' }
 CogInLineLiteralsARMCompiler >> isPCDependent [
 	"Answer if the receiver is a pc-dependent instruction."
 	^self isJump or: [opcode = AlignmentNops]
 ]
 
-{ #category : #'inline cacheing' }
+{ #category : 'inline cacheing' }
 CogInLineLiteralsARMCompiler >> literal32BeforeFollowingAddress: followingAddress [
 	"Answer the 32-bit constant loaded by a MOV/ORR/ORR/ORR
 	 or MOV/ORR/ORR/ORR/PUSH, or MOV/ORR/ORR/ORR/CMP sequence, just before this address:"
@@ -77,7 +79,7 @@ CogInLineLiteralsARMCompiler >> literal32BeforeFollowingAddress: followingAddres
 		ifFalse: [self extract32BitOperandFrom4InstructionsPreceding: followingAddress - 4]
 ]
 
-{ #category : #'inline cacheing' }
+{ #category : 'inline cacheing' }
 CogInLineLiteralsARMCompiler >> literalBeforeFollowingAddress: followingAddress [
 	"Answer the long constant loaded by a MOV/ORR/ORR/ORR
 	 or MOV/ORR/ORR/ORR/PUSH, or MOV/ORR/ORR/ORR/CMP sequence, just before this address:"
@@ -86,20 +88,20 @@ CogInLineLiteralsARMCompiler >> literalBeforeFollowingAddress: followingAddress 
 		ifFalse: [self extract32BitOperandFrom4InstructionsPreceding: followingAddress - 4]
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 CogInLineLiteralsARMCompiler >> literalLoadInstructionBytes [
 	"Answer the size of a literal load instruction.  With in-line literals this is 4 instructions."
 	<inline: true>
 	^16
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 CogInLineLiteralsARMCompiler >> loadLiteralByteSize [
 	"Answer the byte size of a MoveCwR opcode's corresponding machine code. On ARM this is a single instruction pc-relative register load - unless we have made a mistake and not turned on the out of line literals manager"
 	^16
 ]
 
-{ #category : #'generate machine code - support' }
+{ #category : 'generate machine code - support' }
 CogInLineLiteralsARMCompiler >> moveCw: constant intoR: destReg [
 	"Emit a load of aWord into destReg.  Because most ARM instruction enable using a (8-12bit) offset relative to a
 	 register, the LS Byte can be included in that instruction, saving one instruction. This is done in a decorator,
@@ -121,7 +123,7 @@ CogInLineLiteralsARMCompiler >> moveCw: constant intoR: destReg [
 	^16
 ]
 
-{ #category : #'inline cacheing' }
+{ #category : 'inline cacheing' }
 CogInLineLiteralsARMCompiler >> relocateMethodReferenceBeforeAddress: pc by: delta [
 	"If possible we generate the method address using pc-relative addressing.
 	 If so we don't need to relocate it in code.  So check if pc-relative code was
@@ -139,7 +141,7 @@ CogInLineLiteralsARMCompiler >> relocateMethodReferenceBeforeAddress: pc by: del
 		 self insert32BitOperand: reference into4InstructionsPreceding: pcPrecedingLoad]
 ]
 
-{ #category : #'inline cacheing' }
+{ #category : 'inline cacheing' }
 CogInLineLiteralsARMCompiler >> rewriteFullTransferAt: callSiteReturnAddress target: callTargetAddress expectedInstruction: expectedInstruction [
 	"Rewrite a CallFull or JumpFull instruction to transfer to a different target.
 	 This variant is used to rewrite cached primitive calls.   Answer the extent
@@ -153,7 +155,7 @@ CogInLineLiteralsARMCompiler >> rewriteFullTransferAt: callSiteReturnAddress tar
 	^20
 ]
 
-{ #category : #'inline cacheing' }
+{ #category : 'inline cacheing' }
 CogInLineLiteralsARMCompiler >> rewriteInlineCacheAt: callSiteReturnAddress tag: cacheTag target: callTargetAddress [
 	"Rewrite an inline cache to call a different target for a new tag.  This variant is used
 	 to link unlinked sends in ceSend:to:numArgs: et al.  Answer the extent of the code
@@ -177,14 +179,14 @@ CogInLineLiteralsARMCompiler >> rewriteInlineCacheAt: callSiteReturnAddress tag:
 	^20
 ]
 
-{ #category : #'inline cacheing' }
+{ #category : 'inline cacheing' }
 CogInLineLiteralsARMCompiler >> rewriteInlineCacheTag: cacheTag at: callSiteReturnAddress [
 	"Rewrite an inline cache with a new tag.  This variant is used
 	 by the garbage collector."
 	self insert32BitOperand: cacheTag into4InstructionsPreceding: callSiteReturnAddress -4
 ]
 
-{ #category : #'generate machine code' }
+{ #category : 'generate machine code' }
 CogInLineLiteralsARMCompiler >> sizePCDependentInstructionAt: eventualAbsoluteAddress [
 	"Size a jump and set its address.  The target may be another instruction
 	 or an absolute address.  On entry the address inst var holds our virtual
@@ -211,7 +213,7 @@ CogInLineLiteralsARMCompiler >> sizePCDependentInstructionAt: eventualAbsoluteAd
 	^machineCodeSize := maxSize
 ]
 
-{ #category : #'inline cacheing' }
+{ #category : 'inline cacheing' }
 CogInLineLiteralsARMCompiler >> storeLiteral: literal beforeFollowingAddress: followingAddress [
 	"Rewrite the long constant loaded by a MOV/ORR/ORR/ORR
 	 or MOV/ORR/ORR/ORR/PUSH  sequence, just before this address:"
