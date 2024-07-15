@@ -341,46 +341,59 @@ SpurGenerationScavenger >> copyToFutureSpace: survivor bytes: bytesInObject [
 { #category : 'scavenger' }
 SpurGenerationScavenger >> copyToOldSpace: survivor bytes: bytesInObject format: formatOfSurvivor [
 	"Copy survivor to oldSpace.  Answer the new oop of the object."
-	<inline: #never> "Should be too infrequent to lower icache density of copyAndForward:"
+
+	"Should be too infrequent to lower icache density of copyAndForward:"
+
+	<inline: #never>
 	| nTenures startOfSurvivor newStart newOop growResult |
-	self assert: (formatOfSurvivor = (manager formatOf: survivor)
-				and: [((manager isMarked: survivor) not or: [tenureCriterion = MarkOnTenure])
-				and: [tenureCriterion = TenureToShrinkRT
-					or: [(manager isPinned: survivor) not
-						and: [(manager isRemembered: survivor) not]]]]).
+	self assert: (formatOfSurvivor = (manager formatOf: survivor) and: [
+			 ((manager isMarked: survivor) not or: [
+				  tenureCriterion = MarkOnTenure ]) and: [
+				 tenureCriterion = TenureToShrinkRT or: [
+					 (manager isPinned: survivor) not and: [
+						 (manager isRemembered: survivor) not ] ] ] ]).
 	nTenures := statTenures.
 	startOfSurvivor := manager startOfObject: survivor.
 	newStart := manager allocateOldSpaceChunkOfBytes: bytesInObject.
-	newStart ifNil:
-		[growResult := manager growOldSpaceByAtLeast: 0. "grow by growHeadroom"
-		 newStart := manager allocateOldSpaceChunkOfBytes: bytesInObject.
-		 newStart ifNil:
-			[	growResult 
-					ifNil: [ self error: 'Could not allocate new object in the old space. It was not possible to allocate a new memory segment' ] 
-					ifNotNil: [ self error: 'Could not allocate new object in the old space' ]]].
-		
+	newStart ifNil: [
+		growResult := manager
+			              growOldSpaceByAtLeast: 0
+			              callingOperation: 'copying objects to OldSpace during GC'. "grow by growHeadroom"
+		newStart := manager allocateOldSpaceChunkOfBytes: bytesInObject.
+		newStart ifNil: [
+			growResult
+				ifNil: [
+					self error:
+						'Could not allocate new object in the old space. It was not possible to allocate a new memory segment' ]
+				ifNotNil: [
+				self error: 'Could not allocate new object in the old space' ] ] ].
+
 	"manager checkFreeSpace."
-	manager memcpy: newStart asVoidPointer _: startOfSurvivor asVoidPointer _: bytesInObject.
+	manager
+		memcpy: newStart asVoidPointer
+		_: startOfSurvivor asVoidPointer
+		_: bytesInObject.
 	newOop := newStart + (survivor - startOfSurvivor).
-	tenureCriterion >= (TenureToShrinkRT min: MarkOnTenure) ifTrue:
-		[tenureCriterion = TenureToShrinkRT ifTrue:
-			[manager rtRefCountOf: newOop put: 0].
-		 tenureCriterion = MarkOnTenure ifTrue:
-			[manager setIsMarkedOf: newOop to: true]].
+	tenureCriterion >= (TenureToShrinkRT min: MarkOnTenure) ifTrue: [
+		tenureCriterion = TenureToShrinkRT ifTrue: [
+			manager rtRefCountOf: newOop put: 0 ].
+		tenureCriterion = MarkOnTenure ifTrue: [
+			manager setIsMarkedOf: newOop to: true ] ].
 	statTenures := nTenures + 1.
-	(manager isAnyPointerFormat: formatOfSurvivor) ifTrue:
-		["A very quick and dirty scan to find young referents.  If we misidentify bytes
+	(manager isAnyPointerFormat: formatOfSurvivor) ifTrue: [ "A very quick and dirty scan to find young referents.  If we misidentify bytes
 		  in a CompiledMethod as young we don't care; it's unlikely, and a subsequent
 		  scan of the rt will filter the object out.  But it's good to filter here because
 		  otherwise an attempt to shrink the RT may simply fill it up with new objects,
 		  and here the data is likely in the cache."
-		 manager baseHeaderSize to: bytesInObject - (survivor - startOfSurvivor) - manager wordSize by: manager wordSize do:
-			[:p| | field |
+		manager baseHeaderSize to:
+			bytesInObject - (survivor - startOfSurvivor) - manager wordSize by:
+			manager wordSize do: [ :p |
+			| field |
 			field := manager longAt: survivor + p.
-			(manager isReallyYoung: field) ifTrue:
-				[manager getFromOldSpaceRememberedSet remember: newOop.
-				 ^newOop]]].
-	^newOop
+			(manager isReallyYoung: field) ifTrue: [
+				manager getFromOldSpaceRememberedSet remember: newOop.
+				^ newOop ] ] ].
+	^ newOop
 ]
 
 { #category : 'weakness and ephemerality' }
