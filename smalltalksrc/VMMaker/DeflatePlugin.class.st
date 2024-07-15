@@ -3,8 +3,8 @@ This adds Zip deflating support.
 InflatePlugin should not be translated but this subclass should since it is incorporated within that class's translation process
 "
 Class {
-	#name : #DeflatePlugin,
-	#superclass : #InflatePlugin,
+	#name : 'DeflatePlugin',
+	#superclass : 'InflatePlugin',
 	#instVars : [
 		'zipHashHead',
 		'zipHashTail',
@@ -40,10 +40,12 @@ Class {
 		'DeflateWindowMask',
 		'DeflateWindowSize'
 	],
-	#category : #'VMMaker-Plugins'
+	#category : 'VMMaker-Plugins',
+	#package : 'VMMaker',
+	#tag : 'Plugins'
 }
 
-{ #category : #translation }
+{ #category : 'translation' }
 DeflatePlugin class >> declareCVarsIn: cg [
 	super declareCVarsIn: cg. "Required since we share some instVars"
 	cg var: #zipHashHead type: #'unsigned int*'.
@@ -61,7 +63,7 @@ DeflatePlugin class >> declareCVarsIn: cg [
 	cg var: #zipBaseDistance type: #'unsigned int' array: ZipWriteStream baseDistance
 ]
 
-{ #category : #'class initialization' }
+{ #category : 'class initialization' }
 DeflatePlugin class >> initialize [
 	"DeflatePlugin initialize"
 	DeflateWindowSize := 16r8000.
@@ -77,7 +79,7 @@ DeflatePlugin class >> initialize [
 	DeflateMaxDistanceCodes := ZipWriteStream maxDistanceCodes.
 ]
 
-{ #category : #deflating }
+{ #category : 'deflating' }
 DeflatePlugin >> compare: here with: matchPos min: minLength [
 	"Compare the two strings and return the length of matching characters.
 	minLength is a lower bound for match lengths that will be accepted.
@@ -102,7 +104,7 @@ DeflatePlugin >> compare: here with: matchPos min: minLength [
 	^length
 ]
 
-{ #category : #deflating }
+{ #category : 'deflating' }
 DeflatePlugin >> deflateBlock: lastIndex chainLength: chainLength goodMatch: goodMatch [
 	"Continue deflating the receiver's collection from blockPosition to lastIndex.
 	Note that lastIndex must be at least MaxMatch away from the end of collection"
@@ -165,7 +167,7 @@ DeflatePlugin >> deflateBlock: lastIndex chainLength: chainLength goodMatch: goo
 	^false
 ]
 
-{ #category : #'primitive support' }
+{ #category : 'primitive support' }
 DeflatePlugin >> determineSizeOfWriteStream: rcvr [
 	"Determine the inst size of the class above DeflateStream or
 	 ZipEncoder by looking for the first class whose inst size is less than 7."
@@ -181,7 +183,7 @@ DeflatePlugin >> determineSizeOfWriteStream: rcvr [
 
 ]
 
-{ #category : #encoding }
+{ #category : 'encoding' }
 DeflatePlugin >> encodeLiteral: lit [
 	"Encode the given literal"
 	<inline: true>
@@ -194,7 +196,7 @@ DeflatePlugin >> encodeLiteral: lit [
 			and:[self shouldFlush]]
 ]
 
-{ #category : #encoding }
+{ #category : 'encoding' }
 DeflatePlugin >> encodeMatch: length distance: dist [
 	"Encode the given match of length length starting at dist bytes ahead"
 	| literal distance |
@@ -214,7 +216,7 @@ DeflatePlugin >> encodeMatch: length distance: dist [
 			and:[self shouldFlush]]
 ]
 
-{ #category : #deflating }
+{ #category : 'deflating' }
 DeflatePlugin >> findMatch: here lastLength: lastLength lastMatch: lastMatch chainLength: maxChainLength goodMatch: goodMatch [
 	"Find the longest match for the string starting at here.
 	If there is no match longer than lastLength return lastMatch/lastLength.
@@ -269,13 +271,13 @@ DeflatePlugin >> findMatch: here lastLength: lastLength lastMatch: lastMatch cha
 	].
 ]
 
-{ #category : #'initialize-release' }
+{ #category : 'initialize-release' }
 DeflatePlugin >> initialize [
 	writeStreamInstSize := 0.
 	super initialize
 ]
 
-{ #category : #deflating }
+{ #category : 'deflating' }
 DeflatePlugin >> insertStringAt: here [
 	"Insert the string at the given start position into the hash table.
 	Note: The hash value is updated starting at MinMatch-1 since
@@ -289,7 +291,7 @@ DeflatePlugin >> insertStringAt: here [
 	zipHashTail at: (here bitAnd: DeflateWindowMask) put: prevEntry.
 ]
 
-{ #category : #'primitive support' }
+{ #category : 'primitive support' }
 DeflatePlugin >> loadDeflateStreamFrom: rcvr [
 	| oop |
 	<inline: false>
@@ -356,7 +358,7 @@ DeflatePlugin >> loadDeflateStreamFrom: rcvr [
 	^interpreterProxy failed not
 ]
 
-{ #category : #'primitive support' }
+{ #category : 'primitive support' }
 DeflatePlugin >> loadZipEncoderFrom: rcvr [
 	| oop |
 	<inline: false>
@@ -385,7 +387,7 @@ DeflatePlugin >> loadZipEncoderFrom: rcvr [
 	^interpreterProxy failed not
 ]
 
-{ #category : #encoding }
+{ #category : 'encoding' }
 DeflatePlugin >> nextZipBits: nBits put: value [
 	"Require:
 		zipCollection, zipCollectionSize, zipPosition,
@@ -404,7 +406,7 @@ DeflatePlugin >> nextZipBits: nBits put: value [
 
 ]
 
-{ #category : #primitives }
+{ #category : 'primitives' }
 DeflatePlugin >> primitiveDeflateBlock [
 	"Primitive. Deflate the current contents of the receiver."
 	| goodMatch chainLength lastIndex rcvr result |
@@ -435,7 +437,7 @@ DeflatePlugin >> primitiveDeflateBlock [
 	].
 ]
 
-{ #category : #primitives }
+{ #category : 'primitives' }
 DeflatePlugin >> primitiveDeflateUpdateHashTable [
 	"Primitive. Update the hash tables after data has been moved by delta."
 	| delta table tableSize tablePtr entry |
@@ -458,7 +460,7 @@ DeflatePlugin >> primitiveDeflateUpdateHashTable [
 	interpreterProxy pop: 2. "Leave rcvr on stack"
 ]
 
-{ #category : #primitives }
+{ #category : 'primitives' }
 DeflatePlugin >> primitiveUpdateAdler32 [
 	"Primitive. Update a 32bit CRC value."
 	| collection stopIndex startIndex length bytePtr s1 adler32 s2 b |
@@ -492,7 +494,7 @@ DeflatePlugin >> primitiveUpdateAdler32 [
 		thenPush: (interpreterProxy positive32BitIntegerFor: adler32)
 ]
 
-{ #category : #primitives }
+{ #category : 'primitives' }
 DeflatePlugin >> primitiveUpdateGZipCrc32 [
 	"Primitive. Update a 32bit CRC value."
 	| collection stopIndex startIndex crc length bytePtr |
@@ -521,7 +523,7 @@ DeflatePlugin >> primitiveUpdateGZipCrc32 [
 		thenPush: (interpreterProxy positive32BitIntegerFor: crc)
 ]
 
-{ #category : #primitives }
+{ #category : 'primitives' }
 DeflatePlugin >> primitiveZipSendBlock [
 	| distTree litTree distStream litStream rcvr result |
 	<export: true>
@@ -566,7 +568,7 @@ DeflatePlugin >> primitiveZipSendBlock [
 	].
 ]
 
-{ #category : #encoding }
+{ #category : 'encoding' }
 DeflatePlugin >> sendBlock: literalStream with: distanceStream with: litTree with: distTree [
 	"Require: 
 		zipCollection, zipCollectionSize, zipPosition,
@@ -659,7 +661,7 @@ DeflatePlugin >> sendBlock: literalStream with: distanceStream with: litTree wit
 	^sum
 ]
 
-{ #category : #encoding }
+{ #category : 'encoding' }
 DeflatePlugin >> shouldFlush [
 	"Check if we should flush the current block.
 	Flushing can be useful if the input characteristics change."
@@ -680,14 +682,14 @@ DeflatePlugin >> shouldFlush [
 	^nLits * 4 <= zipMatchCount
 ]
 
-{ #category : #deflating }
+{ #category : 'deflating' }
 DeflatePlugin >> updateHash: nextValue [
 	"Update the running hash value based on the next input byte.
 	Return the new updated hash value."
 	^((zipHashValue << DeflateHashShift) bitXor: nextValue) bitAnd: DeflateHashMask.
 ]
 
-{ #category : #deflating }
+{ #category : 'deflating' }
 DeflatePlugin >> updateHashAt: here [
 	"Update the hash value at position here (one based)"
 	^self updateHash: (zipCollection at: here)

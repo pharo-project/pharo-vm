@@ -26,15 +26,16 @@ There is only one possible type by node, no ambiguities.
 	returns an argument typed by a pragma #var:type:.
 "
 Class {
-	#name : #SlangBasicTypeInferenceTest,
-	#superclass : #SlangAbstractTestCase,
+	#name : 'SlangBasicTypeInferenceTest',
+	#superclass : 'SlangAbstractTestCase',
 	#instVars : [
 		'conflictException'
 	],
-	#category : #'Slang-Tests'
+	#category : 'Slang-Tests',
+	#package : 'Slang-Tests'
 }
 
-{ #category : #helpers }
+{ #category : 'helpers' }
 SlangBasicTypeInferenceTest >> inferTypes [
 	conflictException := OrderedCollection new.
 	[ ccg inferTypes ]
@@ -42,14 +43,14 @@ SlangBasicTypeInferenceTest >> inferTypes [
 		do: [ :ex | conflictException add: ex ]
 ]
 
-{ #category : #running }
+{ #category : 'running' }
 SlangBasicTypeInferenceTest >> setUp [
 	super setUp.
 	ccg addClass: SlangBasicTypeInferenceTestClass.
 	self inferTypes.
 ]
 
-{ #category : #constant }
+{ #category : 'constant' }
 SlangBasicTypeInferenceTest >> testABigNegativeIntegerConstantNode [
 	| tMethod |
 	tMethod := ccg methodNamed: #aBigNegativeIntegerConstantNode.
@@ -58,7 +59,7 @@ SlangBasicTypeInferenceTest >> testABigNegativeIntegerConstantNode [
 	self assert: (ccg typeFor: tMethod statements first in: tMethod) equals: #'long long'
 ]
 
-{ #category : #constant }
+{ #category : 'constant' }
 SlangBasicTypeInferenceTest >> testAFalseConstantNode [
 	| tMethod |
 	tMethod := ccg methodNamed: #aFalseConstantNode.
@@ -67,7 +68,7 @@ SlangBasicTypeInferenceTest >> testAFalseConstantNode [
 	self assert: (ccg typeFor: tMethod statements first in: tMethod) equals: #int
 ]
 
-{ #category : #constant }
+{ #category : 'constant' }
 SlangBasicTypeInferenceTest >> testAFloatConstantNode [
 	| tMethod |
 	tMethod := ccg methodNamed: #aFloatConstantNode.
@@ -76,7 +77,7 @@ SlangBasicTypeInferenceTest >> testAFloatConstantNode [
 	self assert: (ccg typeFor: tMethod statements first in: tMethod) equals: #double
 ]
 
-{ #category : #constant }
+{ #category : 'constant' }
 SlangBasicTypeInferenceTest >> testANilConstantNode [
 	| tMethod |
 	tMethod := ccg methodNamed: #aNilConstantNode.
@@ -85,7 +86,7 @@ SlangBasicTypeInferenceTest >> testANilConstantNode [
 	self assert: (ccg typeFor: tMethod statements first in: tMethod) equals: #int
 ]
 
-{ #category : #constant }
+{ #category : 'constant' }
 SlangBasicTypeInferenceTest >> testASmallNegativeIntegerConstantNode [
 	| tMethod |
 	tMethod := ccg methodNamed: #aSmallNegativeIntegerConstantNode.
@@ -94,7 +95,7 @@ SlangBasicTypeInferenceTest >> testASmallNegativeIntegerConstantNode [
 	self assert: (ccg typeFor: tMethod statements first in: tMethod) equals: #int
 ]
 
-{ #category : #constant }
+{ #category : 'constant' }
 SlangBasicTypeInferenceTest >> testAStringConstantNode [
 	| tMethod |
 	tMethod := ccg methodNamed: #aStringConstantNode.
@@ -103,7 +104,7 @@ SlangBasicTypeInferenceTest >> testAStringConstantNode [
 	self assert: (ccg typeFor: tMethod statements first in: tMethod) equals: #'char *'
 ]
 
-{ #category : #constant }
+{ #category : 'constant' }
 SlangBasicTypeInferenceTest >> testATrueConstantNode [
 	| tMethod |
 	tMethod := ccg methodNamed: #aTrueConstantNode.
@@ -112,7 +113,7 @@ SlangBasicTypeInferenceTest >> testATrueConstantNode [
 	self assert: (ccg typeFor: tMethod statements first in: tMethod) equals: #int
 ]
 
-{ #category : #constant }
+{ #category : 'constant' }
 SlangBasicTypeInferenceTest >> testAnIntEqual32ConstantNode [
 	| tMethod |
 	tMethod := ccg methodNamed: #anIntEqual32ConstantNode.
@@ -121,7 +122,7 @@ SlangBasicTypeInferenceTest >> testAnIntEqual32ConstantNode [
 	self assert: (ccg typeFor: tMethod statements first in: tMethod) equals: #'unsigned int'
 ]
 
-{ #category : #constant }
+{ #category : 'constant' }
 SlangBasicTypeInferenceTest >> testAnIntEqual64ConstantNode [
 	| tMethod |
 	tMethod := ccg methodNamed: #anIntEqual64ConstantNode.
@@ -130,7 +131,7 @@ SlangBasicTypeInferenceTest >> testAnIntEqual64ConstantNode [
 	self assert: (ccg typeFor: tMethod statements first in: tMethod) equals: #'unsigned long long'
 ]
 
-{ #category : #constant }
+{ #category : 'constant' }
 SlangBasicTypeInferenceTest >> testAnIntGreater64ConstantNode [
 	| tMethod |
 
@@ -140,7 +141,7 @@ SlangBasicTypeInferenceTest >> testAnIntGreater64ConstantNode [
 	self assert: (ccg typeFor: tMethod statements first in: tMethod) equals: #'long long'
 ]
 
-{ #category : #constant }
+{ #category : 'constant' }
 SlangBasicTypeInferenceTest >> testAnIntLess32ConstantNode [
 	| tMethod |
 	tMethod := ccg methodNamed: #anIntLesser32ConstantNode.
@@ -150,7 +151,7 @@ SlangBasicTypeInferenceTest >> testAnIntLess32ConstantNode [
 
 ]
 
-{ #category : #'return-constant' }
+{ #category : 'return-constant' }
 SlangBasicTypeInferenceTest >> testReturnABigNegativeIntegerConstantNode [
 	| tMethod |
 	tMethod := ccg methodNamed: #returnABigNegativeIntegerConstantNode.
@@ -160,7 +161,7 @@ SlangBasicTypeInferenceTest >> testReturnABigNegativeIntegerConstantNode [
 	self assert: tMethod returnType equals: #sqLong
 ]
 
-{ #category : #'return-message-send' }
+{ #category : 'return-message-send' }
 SlangBasicTypeInferenceTest >> testReturnABigNegativeIntegerMessageSend [
 	| tMethod |
 	tMethod := ccg methodNamed: #returnABigNegativeIntegerMessageSend.
@@ -171,7 +172,7 @@ SlangBasicTypeInferenceTest >> testReturnABigNegativeIntegerMessageSend [
 	self assert: tMethod returnType equals: #sqLong.
 ]
 
-{ #category : #'return-constant' }
+{ #category : 'return-constant' }
 SlangBasicTypeInferenceTest >> testReturnAFalseConstantNode [
 	| tMethod |
 	tMethod := ccg methodNamed: #returnAFalseConstantNode.
@@ -181,7 +182,7 @@ SlangBasicTypeInferenceTest >> testReturnAFalseConstantNode [
 	self assert: tMethod returnType equals: #sqInt
 ]
 
-{ #category : #'return-message-send' }
+{ #category : 'return-message-send' }
 SlangBasicTypeInferenceTest >> testReturnAFalseMessageSend [
 	| tMethod |
 	tMethod := ccg methodNamed: #returnAFalseMessageSend.
@@ -192,7 +193,7 @@ SlangBasicTypeInferenceTest >> testReturnAFalseMessageSend [
 	self assert: tMethod returnType equals: #sqInt.
 ]
 
-{ #category : #'return-float' }
+{ #category : 'return-float' }
 SlangBasicTypeInferenceTest >> testReturnAFloat [
 	| tMethod |
 	tMethod := ccg methodNamed: #returnAFloat.
@@ -202,7 +203,7 @@ SlangBasicTypeInferenceTest >> testReturnAFloat [
 	self assert: tMethod returnType equals: #double
 ]
 
-{ #category : #'return-message-send' }
+{ #category : 'return-message-send' }
 SlangBasicTypeInferenceTest >> testReturnAFloatMessageSend [
 	| tMethod |
 	tMethod := ccg methodNamed: #returnAFloatMessageSend.
@@ -213,7 +214,7 @@ SlangBasicTypeInferenceTest >> testReturnAFloatMessageSend [
 	self assert: tMethod returnType equals: #double.
 ]
 
-{ #category : #'return-signed' }
+{ #category : 'return-signed' }
 SlangBasicTypeInferenceTest >> testReturnANegativeNumber [
 	| tMethod |
 	tMethod := ccg methodNamed: #returnANegativeNumber.
@@ -223,7 +224,7 @@ SlangBasicTypeInferenceTest >> testReturnANegativeNumber [
 	self assert: tMethod returnType equals: #sqInt
 ]
 
-{ #category : #'return-constant' }
+{ #category : 'return-constant' }
 SlangBasicTypeInferenceTest >> testReturnANilConstantNode [
 	| tMethod |
 	tMethod := ccg methodNamed: #returnANilConstantNode.
@@ -233,7 +234,7 @@ SlangBasicTypeInferenceTest >> testReturnANilConstantNode [
 	self assert: tMethod returnType equals: #sqInt
 ]
 
-{ #category : #'return-message-send' }
+{ #category : 'return-message-send' }
 SlangBasicTypeInferenceTest >> testReturnANilMessageSend [
 	| tMethod |
 	tMethod := ccg methodNamed: #returnANilMessageSend.
@@ -244,7 +245,7 @@ SlangBasicTypeInferenceTest >> testReturnANilMessageSend [
 	self assert: tMethod returnType equals: #sqInt.
 ]
 
-{ #category : #'return-constant' }
+{ #category : 'return-constant' }
 SlangBasicTypeInferenceTest >> testReturnASmallNegativeIntegerConstantNode [
 	| tMethod |
 	tMethod := ccg methodNamed: #returnASmallNegativeIntegerConstantNode.
@@ -254,7 +255,7 @@ SlangBasicTypeInferenceTest >> testReturnASmallNegativeIntegerConstantNode [
 	self assert: tMethod returnType equals: #sqInt
 ]
 
-{ #category : #'return-message-send' }
+{ #category : 'return-message-send' }
 SlangBasicTypeInferenceTest >> testReturnASmallNegativeIntegerMessageSend [
 	| tMethod |
 	tMethod := ccg methodNamed: #returnASmallNegativeIntegerMessageSend.
@@ -265,7 +266,7 @@ SlangBasicTypeInferenceTest >> testReturnASmallNegativeIntegerMessageSend [
 	self assert: tMethod returnType equals: #sqInt.
 ]
 
-{ #category : #'return-constant' }
+{ #category : 'return-constant' }
 SlangBasicTypeInferenceTest >> testReturnAStringConstantNode [
 	| tMethod |
 	tMethod := ccg methodNamed: #returnAStringConstantNode.
@@ -275,7 +276,7 @@ SlangBasicTypeInferenceTest >> testReturnAStringConstantNode [
 	self assert: tMethod returnType equals: #'char *'
 ]
 
-{ #category : #'return-message-send' }
+{ #category : 'return-message-send' }
 SlangBasicTypeInferenceTest >> testReturnAStringMessageSend [
 	| tMethod |
 	tMethod := ccg methodNamed: #returnAStringMessageSend.
@@ -286,7 +287,7 @@ SlangBasicTypeInferenceTest >> testReturnAStringMessageSend [
 	self assert: tMethod returnType equals: #'char *'.
 ]
 
-{ #category : #'return-constant' }
+{ #category : 'return-constant' }
 SlangBasicTypeInferenceTest >> testReturnATrueConstantNode [
 	| tMethod |
 	tMethod := ccg methodNamed: #returnATrueConstantNode.
@@ -296,7 +297,7 @@ SlangBasicTypeInferenceTest >> testReturnATrueConstantNode [
 	self assert: tMethod returnType equals: #sqInt
 ]
 
-{ #category : #'return-message-send' }
+{ #category : 'return-message-send' }
 SlangBasicTypeInferenceTest >> testReturnATrueMessageSend [
 	| tMethod |
 	tMethod := ccg methodNamed: #returnATrueMessageSend.
@@ -307,7 +308,7 @@ SlangBasicTypeInferenceTest >> testReturnATrueMessageSend [
 	self assert: tMethod returnType equals: #sqInt.
 ]
 
-{ #category : #'return-constant' }
+{ #category : 'return-constant' }
 SlangBasicTypeInferenceTest >> testReturnAnIntEqual32ConstantNode [
 	| tMethod |
 	tMethod := ccg methodNamed: #returnAnIntEqual32ConstantNode.
@@ -318,7 +319,7 @@ SlangBasicTypeInferenceTest >> testReturnAnIntEqual32ConstantNode [
 
 ]
 
-{ #category : #'return-message-send' }
+{ #category : 'return-message-send' }
 SlangBasicTypeInferenceTest >> testReturnAnIntEqual32MessageSend [
 	| tMethod |
 	tMethod := ccg methodNamed: #returnAnIntEqual32MessageSend.
@@ -329,7 +330,7 @@ SlangBasicTypeInferenceTest >> testReturnAnIntEqual32MessageSend [
 	self assert: tMethod returnType equals: #sqInt.
 ]
 
-{ #category : #'return-constant' }
+{ #category : 'return-constant' }
 SlangBasicTypeInferenceTest >> testReturnAnIntEqual64ConstantNode [
 	| tMethod |
 	tMethod := ccg methodNamed: #returnAnIntEqual64ConstantNode.
@@ -339,7 +340,7 @@ SlangBasicTypeInferenceTest >> testReturnAnIntEqual64ConstantNode [
 	self assert: tMethod returnType equals: #sqInt
 ]
 
-{ #category : #'return-message-send' }
+{ #category : 'return-message-send' }
 SlangBasicTypeInferenceTest >> testReturnAnIntEqual64MessageSend [
 	| tMethod |
 	tMethod := ccg methodNamed: #returnAnIntEqual64MessageSend.
@@ -350,7 +351,7 @@ SlangBasicTypeInferenceTest >> testReturnAnIntEqual64MessageSend [
 	self assert: tMethod returnType equals: #sqInt.
 ]
 
-{ #category : #'return-constant' }
+{ #category : 'return-constant' }
 SlangBasicTypeInferenceTest >> testReturnAnIntGreater64ConstantNode [
 	| tMethod |
 	tMethod := ccg methodNamed: #returnAnIntGreater64ConstantNode.
@@ -360,7 +361,7 @@ SlangBasicTypeInferenceTest >> testReturnAnIntGreater64ConstantNode [
 	self assert: tMethod returnType equals: #sqInt
 ]
 
-{ #category : #'return-message-send' }
+{ #category : 'return-message-send' }
 SlangBasicTypeInferenceTest >> testReturnAnIntGreater64MessageSend [
 	| tMethod |
 	tMethod := ccg methodNamed: #returnAnIntGreater64MessageSend.
@@ -371,7 +372,7 @@ SlangBasicTypeInferenceTest >> testReturnAnIntGreater64MessageSend [
 	self assert: tMethod returnType equals: #sqInt.
 ]
 
-{ #category : #'return-constant' }
+{ #category : 'return-constant' }
 SlangBasicTypeInferenceTest >> testReturnAnIntLess32ConstantNode [
 	| tMethod |
 	tMethod := ccg methodNamed: #returnAnIntLesser32ConstantNode.
@@ -382,7 +383,7 @@ SlangBasicTypeInferenceTest >> testReturnAnIntLess32ConstantNode [
 
 ]
 
-{ #category : #'return-message-send' }
+{ #category : 'return-message-send' }
 SlangBasicTypeInferenceTest >> testReturnAnIntLesser32MessageSend [
 	| tMethod |
 	tMethod := ccg methodNamed: #returnAnIntLesser32MessageSend.
@@ -393,7 +394,7 @@ SlangBasicTypeInferenceTest >> testReturnAnIntLesser32MessageSend [
 	self assert: tMethod returnType equals: #sqInt.
 ]
 
-{ #category : #'return-explicit-arg' }
+{ #category : 'return-explicit-arg' }
 SlangBasicTypeInferenceTest >> testReturnExplicitArgDouble [
 	| tMethod |
 	tMethod := ccg methodNamed: #returnExplicitArgDouble:.
@@ -403,7 +404,7 @@ SlangBasicTypeInferenceTest >> testReturnExplicitArgDouble [
 	self assert: tMethod returnType equals: #double
 ]
 
-{ #category : #'return-explicit-arg' }
+{ #category : 'return-explicit-arg' }
 SlangBasicTypeInferenceTest >> testReturnExplicitArgFloat [
 	| tMethod |
 	tMethod := ccg methodNamed: #returnExplicitArgFloat:.
@@ -413,7 +414,7 @@ SlangBasicTypeInferenceTest >> testReturnExplicitArgFloat [
 	self assert: tMethod returnType equals: #float
 ]
 
-{ #category : #'return-explicit-arg' }
+{ #category : 'return-explicit-arg' }
 SlangBasicTypeInferenceTest >> testReturnExplicitArgInt [
 	| tMethod |
 	tMethod := ccg methodNamed: #returnExplicitArgInt:.
@@ -423,7 +424,7 @@ SlangBasicTypeInferenceTest >> testReturnExplicitArgInt [
 	self assert: tMethod returnType equals: #sqInt
 ]
 
-{ #category : #'return-explicit-arg' }
+{ #category : 'return-explicit-arg' }
 SlangBasicTypeInferenceTest >> testReturnExplicitArgLongLong [
 	| tMethod |
 	tMethod := ccg methodNamed: #returnExplicitArgLongLong:.
@@ -433,7 +434,7 @@ SlangBasicTypeInferenceTest >> testReturnExplicitArgLongLong [
 	self assert: tMethod returnType equals: #sqLong
 ]
 
-{ #category : #'return-explicit-arg' }
+{ #category : 'return-explicit-arg' }
 SlangBasicTypeInferenceTest >> testReturnExplicitArgRandom [
 	| tMethod |
 	tMethod := ccg methodNamed: #returnExplicitArgRandom:.
@@ -443,7 +444,7 @@ SlangBasicTypeInferenceTest >> testReturnExplicitArgRandom [
 	self assert: tMethod returnType equals: #completelyRandom
 ]
 
-{ #category : #'return-explicit-arg' }
+{ #category : 'return-explicit-arg' }
 SlangBasicTypeInferenceTest >> testReturnExplicitArgString [
 	| tMethod |
 	tMethod := ccg methodNamed: #returnExplicitArgString:.
@@ -453,7 +454,7 @@ SlangBasicTypeInferenceTest >> testReturnExplicitArgString [
 	self assert: tMethod returnType equals: #'char *'
 ]
 
-{ #category : #'return-explicit-arg' }
+{ #category : 'return-explicit-arg' }
 SlangBasicTypeInferenceTest >> testReturnExplicitArgUnsignedInt [
 	| tMethod |
 	tMethod := ccg methodNamed: #returnExplicitArgUnsignedInt:.
@@ -463,7 +464,7 @@ SlangBasicTypeInferenceTest >> testReturnExplicitArgUnsignedInt [
 	self assert: tMethod returnType equals: #usqInt
 ]
 
-{ #category : #'return-explicit-arg' }
+{ #category : 'return-explicit-arg' }
 SlangBasicTypeInferenceTest >> testReturnExplicitArgUnsignedLongLong [
 	| tMethod |
 	tMethod := ccg methodNamed: #returnExplicitArgUnsignedLongLong:.
@@ -473,7 +474,7 @@ SlangBasicTypeInferenceTest >> testReturnExplicitArgUnsignedLongLong [
 	self assert: tMethod returnType equals: #usqLong
 ]
 
-{ #category : #'return-explicit-temp' }
+{ #category : 'return-explicit-temp' }
 SlangBasicTypeInferenceTest >> testReturnExplicitTempDouble [
 	| tMethod |
 	tMethod := ccg methodNamed: #returnExplicitTempDouble.
@@ -483,7 +484,7 @@ SlangBasicTypeInferenceTest >> testReturnExplicitTempDouble [
 	self assert: tMethod returnType equals: #double
 ]
 
-{ #category : #'return-explicit-temp' }
+{ #category : 'return-explicit-temp' }
 SlangBasicTypeInferenceTest >> testReturnExplicitTempFloat [
 	| tMethod |
 	tMethod := ccg methodNamed: #returnExplicitTempFloat.
@@ -493,7 +494,7 @@ SlangBasicTypeInferenceTest >> testReturnExplicitTempFloat [
 	self assert: tMethod returnType equals: #float
 ]
 
-{ #category : #'return-explicit-temp' }
+{ #category : 'return-explicit-temp' }
 SlangBasicTypeInferenceTest >> testReturnExplicitTempInt [
 	| tMethod |
 	tMethod := ccg methodNamed: #returnExplicitTempInt.
@@ -503,7 +504,7 @@ SlangBasicTypeInferenceTest >> testReturnExplicitTempInt [
 	self assert: tMethod returnType equals: #sqInt
 ]
 
-{ #category : #'return-explicit-temp' }
+{ #category : 'return-explicit-temp' }
 SlangBasicTypeInferenceTest >> testReturnExplicitTempLongLong [
 	| tMethod |
 	tMethod := ccg methodNamed: #returnExplicitTempLongLong.
@@ -513,7 +514,7 @@ SlangBasicTypeInferenceTest >> testReturnExplicitTempLongLong [
 	self assert: tMethod returnType equals: #sqLong
 ]
 
-{ #category : #'return-explicit-temp' }
+{ #category : 'return-explicit-temp' }
 SlangBasicTypeInferenceTest >> testReturnExplicitTempRandom [
 	| tMethod |
 	tMethod := ccg methodNamed: #returnExplicitTempRandom.
@@ -523,7 +524,7 @@ SlangBasicTypeInferenceTest >> testReturnExplicitTempRandom [
 	self assert: tMethod returnType equals: #completelyRandom
 ]
 
-{ #category : #'return-explicit-temp' }
+{ #category : 'return-explicit-temp' }
 SlangBasicTypeInferenceTest >> testReturnExplicitTempString [
 	| tMethod |
 	tMethod := ccg methodNamed: #returnExplicitTempString.
@@ -533,7 +534,7 @@ SlangBasicTypeInferenceTest >> testReturnExplicitTempString [
 	self assert: tMethod returnType equals: #'char *'
 ]
 
-{ #category : #'return-explicit-temp' }
+{ #category : 'return-explicit-temp' }
 SlangBasicTypeInferenceTest >> testReturnExplicitTempUnsignedInt [
 	| tMethod |
 	tMethod := ccg methodNamed: #returnExplicitTempUnsignedInt.
@@ -543,7 +544,7 @@ SlangBasicTypeInferenceTest >> testReturnExplicitTempUnsignedInt [
 	self assert: tMethod returnType equals: #usqInt
 ]
 
-{ #category : #'return-explicit-temp' }
+{ #category : 'return-explicit-temp' }
 SlangBasicTypeInferenceTest >> testReturnExplicitTempUnsignedLongLong [
 	| tMethod |
 	tMethod := ccg methodNamed: #returnExplicitTempUnsignedLongLong.
@@ -553,7 +554,7 @@ SlangBasicTypeInferenceTest >> testReturnExplicitTempUnsignedLongLong [
 	self assert: tMethod returnType equals: #usqLong
 ]
 
-{ #category : #'return-constant' }
+{ #category : 'return-constant' }
 SlangBasicTypeInferenceTest >> testReturnFloatConstantNode [
 	| tMethod |
 	tMethod := ccg methodNamed: #returnAFloatConstantNode.
@@ -564,7 +565,7 @@ SlangBasicTypeInferenceTest >> testReturnFloatConstantNode [
 	
 ]
 
-{ #category : #'return-long-int' }
+{ #category : 'return-long-int' }
 SlangBasicTypeInferenceTest >> testReturnLongIntInVariable [
 	"the type is automatically determined, no need to annotate"
 	| tMethod |
@@ -574,7 +575,7 @@ SlangBasicTypeInferenceTest >> testReturnLongIntInVariable [
 	self assert: tMethod returnType equals: #usqInt
 ]
 
-{ #category : #'return-long-int' }
+{ #category : 'return-long-int' }
 SlangBasicTypeInferenceTest >> testReturnLongIntNotWorking [
 	"doesn't check for type limit"
 	| tMethod |
@@ -584,7 +585,7 @@ SlangBasicTypeInferenceTest >> testReturnLongIntNotWorking [
 	self assert: tMethod returnType equals: #sqInt
 ]
 
-{ #category : #'return-long-int' }
+{ #category : 'return-long-int' }
 SlangBasicTypeInferenceTest >> testReturnMultipleLongInt [
 	| tMethod |
 	tMethod := ccg methodNamed: #returnMultipleLongInt.
@@ -593,7 +594,7 @@ SlangBasicTypeInferenceTest >> testReturnMultipleLongInt [
 	self assert: tMethod returnType equals: #usqInt
 ]
 
-{ #category : #'return-long-int' }
+{ #category : 'return-long-int' }
 SlangBasicTypeInferenceTest >> testReturnMultipleLongIntAnnotation [
 	| tMethod |
 	tMethod := ccg methodNamed: #returnMultipleLongIntAnnotation:.
@@ -602,7 +603,7 @@ SlangBasicTypeInferenceTest >> testReturnMultipleLongIntAnnotation [
 	self assert: tMethod returnType equals: #usqInt
 ]
 
-{ #category : #'return-long-int' }
+{ #category : 'return-long-int' }
 SlangBasicTypeInferenceTest >> testReturnMultipleLongIntNotWorking [
 	"doesn't check for type limit"
 	| tMethod |
@@ -612,7 +613,7 @@ SlangBasicTypeInferenceTest >> testReturnMultipleLongIntNotWorking [
 	self assert: tMethod returnType equals: #sqInt
 ]
 
-{ #category : #'return-multiple-type' }
+{ #category : 'return-multiple-type' }
 SlangBasicTypeInferenceTest >> testReturnStringAndIntIfTrue1 [
 	"a conflict appear, the type are not harmonized"
 
@@ -628,7 +629,7 @@ SlangBasicTypeInferenceTest >> testReturnStringAndIntIfTrue1 [
 	self assert: tMethod isNotNil
 ]
 
-{ #category : #'return-multiple-type' }
+{ #category : 'return-multiple-type' }
 SlangBasicTypeInferenceTest >> testReturnStringAndIntIfTrue2 [
 	"a conflict appear, the type are not harmonized"
 
@@ -644,7 +645,7 @@ SlangBasicTypeInferenceTest >> testReturnStringAndIntIfTrue2 [
 	self assert: tMethod isNotNil
 ]
 
-{ #category : #'return-multiple-type' }
+{ #category : 'return-multiple-type' }
 SlangBasicTypeInferenceTest >> testReturnStringAndIntInIfTrueifFalse1 [
 	"a conflict appear, the type are not harmonized"
 
@@ -660,7 +661,7 @@ SlangBasicTypeInferenceTest >> testReturnStringAndIntInIfTrueifFalse1 [
 	self assert: tMethod isNotNil
 ]
 
-{ #category : #'return-multiple-type' }
+{ #category : 'return-multiple-type' }
 SlangBasicTypeInferenceTest >> testReturnStringAndIntInIfTrueifFalse2 [
 	"a conflict appear, the type are not harmonized"
 
@@ -677,7 +678,7 @@ SlangBasicTypeInferenceTest >> testReturnStringAndIntInIfTrueifFalse2 [
 	self assert: tMethod isNotNil
 ]
 
-{ #category : #'return-multiple-type' }
+{ #category : 'return-multiple-type' }
 SlangBasicTypeInferenceTest >> testReturnStringAndIntInIfTrueifFalse3 [
 	"a conflict appear, the type are not harmonized"
 
@@ -694,7 +695,7 @@ SlangBasicTypeInferenceTest >> testReturnStringAndIntInIfTrueifFalse3 [
 	self assert: tMethod isNotNil
 ]
 
-{ #category : #'return-temp-assigned-const' }
+{ #category : 'return-temp-assigned-const' }
 SlangBasicTypeInferenceTest >> testReturnTempBigNegativeIntegerConstantNode [
 	| tMethod |
 	tMethod := ccg methodNamed: #returnTempBigNegativeIntegerConstantNode.
@@ -706,7 +707,7 @@ SlangBasicTypeInferenceTest >> testReturnTempBigNegativeIntegerConstantNode [
 	self assertReturnTypeOf: tMethod equalsHarmonized: #'long long'
 ]
 
-{ #category : #'return-temp-assigned-message' }
+{ #category : 'return-temp-assigned-message' }
 SlangBasicTypeInferenceTest >> testReturnTempBigNegativeIntegerMessageNode [
 	| tMethod |
 	tMethod := ccg methodNamed: #returnTempBigNegativeIntegerMessageNode.
@@ -717,7 +718,7 @@ SlangBasicTypeInferenceTest >> testReturnTempBigNegativeIntegerMessageNode [
 	self assert: tMethod returnType equals: #sqLong.
 ]
 
-{ #category : #'return-temp-assigned-const' }
+{ #category : 'return-temp-assigned-const' }
 SlangBasicTypeInferenceTest >> testReturnTempFalseConstantNode [
 	| tMethod |
 	tMethod := ccg methodNamed: #returnTempFalseConstantNode.
@@ -730,7 +731,7 @@ SlangBasicTypeInferenceTest >> testReturnTempFalseConstantNode [
 	self assertReturnTypeOf: tMethod equalsHarmonized: #int
 ]
 
-{ #category : #'return-temp-assigned-message' }
+{ #category : 'return-temp-assigned-message' }
 SlangBasicTypeInferenceTest >> testReturnTempFalseMessageNode [
 	| tMethod |
 	tMethod := ccg methodNamed: #returnTempFalseMessageNode.
@@ -741,7 +742,7 @@ SlangBasicTypeInferenceTest >> testReturnTempFalseMessageNode [
 	self assert: tMethod returnType equals: #sqInt.
 ]
 
-{ #category : #'return-temp-assigned-const' }
+{ #category : 'return-temp-assigned-const' }
 SlangBasicTypeInferenceTest >> testReturnTempFloatConstantNode [
 	| tMethod |
 	tMethod := ccg methodNamed: #returnTempFloatConstantNode.
@@ -753,7 +754,7 @@ SlangBasicTypeInferenceTest >> testReturnTempFloatConstantNode [
 	self assert: tMethod returnType equals: #double
 ]
 
-{ #category : #'return-temp-assigned-message' }
+{ #category : 'return-temp-assigned-message' }
 SlangBasicTypeInferenceTest >> testReturnTempFloatMessageNode [
 	| tMethod |
 	tMethod := ccg methodNamed: #returnTempFloatMessageNode.
@@ -765,7 +766,7 @@ SlangBasicTypeInferenceTest >> testReturnTempFloatMessageNode [
 	self assert: tMethod returnType equals: #double
 ]
 
-{ #category : #'return-temp-assigned-const' }
+{ #category : 'return-temp-assigned-const' }
 SlangBasicTypeInferenceTest >> testReturnTempIntEqual32ConstantNode [
 	| tMethod |
 	tMethod := ccg methodNamed: #returnTempIntEqual32ConstantNode.
@@ -777,7 +778,7 @@ SlangBasicTypeInferenceTest >> testReturnTempIntEqual32ConstantNode [
 	self assertReturnTypeOf: tMethod equalsHarmonized: #'unsigned int'
 ]
 
-{ #category : #'return-temp-assigned-message' }
+{ #category : 'return-temp-assigned-message' }
 SlangBasicTypeInferenceTest >> testReturnTempIntEqual32MessageNode [
 	"now return an usqInt"
 	| tMethod |
@@ -789,7 +790,7 @@ SlangBasicTypeInferenceTest >> testReturnTempIntEqual32MessageNode [
 	self assert: tMethod returnType equals: #sqInt.
 ]
 
-{ #category : #'return-temp-assigned-const' }
+{ #category : 'return-temp-assigned-const' }
 SlangBasicTypeInferenceTest >> testReturnTempIntEqual64ConstantNode [
 	| tMethod |
 	tMethod := ccg methodNamed: #returnTempIntEqual64ConstantNode.
@@ -801,7 +802,7 @@ SlangBasicTypeInferenceTest >> testReturnTempIntEqual64ConstantNode [
 	self assertReturnTypeOf: tMethod equalsHarmonized: #'unsigned long long'
 ]
 
-{ #category : #'return-temp-assigned-message' }
+{ #category : 'return-temp-assigned-message' }
 SlangBasicTypeInferenceTest >> testReturnTempIntEqual64MessageNode [
 	"now return an usqInt"
 	| tMethod |
@@ -813,7 +814,7 @@ SlangBasicTypeInferenceTest >> testReturnTempIntEqual64MessageNode [
 	self assert: tMethod returnType equals: #sqInt.
 ]
 
-{ #category : #'return-temp-assigned-const' }
+{ #category : 'return-temp-assigned-const' }
 SlangBasicTypeInferenceTest >> testReturnTempIntGreater64ConstantNode [
 	| tMethod |
 	tMethod := ccg methodNamed: #returnTempIntGreater64ConstantNode.
@@ -825,7 +826,7 @@ SlangBasicTypeInferenceTest >> testReturnTempIntGreater64ConstantNode [
 	self assertReturnTypeOf: tMethod equalsHarmonized: #'long long'
 ]
 
-{ #category : #'return-temp-assigned-message' }
+{ #category : 'return-temp-assigned-message' }
 SlangBasicTypeInferenceTest >> testReturnTempIntGreater64MessageNode [
 	"now return an usqInt"
 	| tMethod |
@@ -837,7 +838,7 @@ SlangBasicTypeInferenceTest >> testReturnTempIntGreater64MessageNode [
 	self assert: tMethod returnType equals: #sqInt.
 ]
 
-{ #category : #'return-temp-assigned-const' }
+{ #category : 'return-temp-assigned-const' }
 SlangBasicTypeInferenceTest >> testReturnTempIntLesser32ConstantNode [
 	| tMethod |
 	tMethod := ccg methodNamed: #returnTempIntLesser32ConstantNode.
@@ -850,7 +851,7 @@ SlangBasicTypeInferenceTest >> testReturnTempIntLesser32ConstantNode [
 	self assertReturnTypeOf: tMethod equalsHarmonized: #'int'
 ]
 
-{ #category : #'return-temp-assigned-message' }
+{ #category : 'return-temp-assigned-message' }
 SlangBasicTypeInferenceTest >> testReturnTempIntLesser32MessageNode [
 	"now return an usqInt"
 	| tMethod |
@@ -862,7 +863,7 @@ SlangBasicTypeInferenceTest >> testReturnTempIntLesser32MessageNode [
 	self assert: tMethod returnType equals: #sqInt.
 ]
 
-{ #category : #'return-temp-assigned-const' }
+{ #category : 'return-temp-assigned-const' }
 SlangBasicTypeInferenceTest >> testReturnTempNilConstantNode [
 	| tMethod |
 	tMethod := ccg methodNamed: #returnTempNilConstantNode.
@@ -875,7 +876,7 @@ SlangBasicTypeInferenceTest >> testReturnTempNilConstantNode [
 	self assertReturnTypeOf: tMethod equalsHarmonized: #int
 ]
 
-{ #category : #'return-temp-assigned-message' }
+{ #category : 'return-temp-assigned-message' }
 SlangBasicTypeInferenceTest >> testReturnTempNilMessageNode [
 	| tMethod |
 	tMethod := ccg methodNamed: #returnTempNilMessageNode.
@@ -886,7 +887,7 @@ SlangBasicTypeInferenceTest >> testReturnTempNilMessageNode [
 	self assert: tMethod returnType equals: #sqInt.
 ]
 
-{ #category : #'return-temp-assigned-const' }
+{ #category : 'return-temp-assigned-const' }
 SlangBasicTypeInferenceTest >> testReturnTempSmallNegativeIntegerConstantNode [
 	| tMethod |
 	tMethod := ccg methodNamed: #returnTempSmallNegativeIntegerConstantNode.
@@ -899,7 +900,7 @@ SlangBasicTypeInferenceTest >> testReturnTempSmallNegativeIntegerConstantNode [
 	self assertReturnTypeOf: tMethod equalsHarmonized: #int
 ]
 
-{ #category : #'return-temp-assigned-message' }
+{ #category : 'return-temp-assigned-message' }
 SlangBasicTypeInferenceTest >> testReturnTempSmallNegativeIntegerMessageNode [
 	| tMethod |
 	tMethod := ccg methodNamed: #returnTempSmallNegativeIntegerMessageNode.
@@ -910,7 +911,7 @@ SlangBasicTypeInferenceTest >> testReturnTempSmallNegativeIntegerMessageNode [
 	self assert: tMethod returnType equals: #sqInt.
 ]
 
-{ #category : #'return-temp-assigned-const' }
+{ #category : 'return-temp-assigned-const' }
 SlangBasicTypeInferenceTest >> testReturnTempStringConstantNode [
 	| tMethod |
 	tMethod := ccg methodNamed: #returnTempStringConstantNode.
@@ -922,7 +923,7 @@ SlangBasicTypeInferenceTest >> testReturnTempStringConstantNode [
 	self assert: tMethod returnType equals: #'char *'
 ]
 
-{ #category : #'return-temp-assigned-message' }
+{ #category : 'return-temp-assigned-message' }
 SlangBasicTypeInferenceTest >> testReturnTempStringMessageNode [
 	| tMethod |
 	tMethod := ccg methodNamed: #returnTempStringMessageNode.
@@ -933,7 +934,7 @@ SlangBasicTypeInferenceTest >> testReturnTempStringMessageNode [
 	self assert: tMethod returnType equals: #'char *'.
 ]
 
-{ #category : #'return-temp-assigned-const' }
+{ #category : 'return-temp-assigned-const' }
 SlangBasicTypeInferenceTest >> testReturnTempTrueConstantNode [
 	| tMethod |
 	tMethod := ccg methodNamed: #returnTempTrueConstantNode.
@@ -946,7 +947,7 @@ SlangBasicTypeInferenceTest >> testReturnTempTrueConstantNode [
 	self assertReturnTypeOf: tMethod equalsHarmonized: #int
 ]
 
-{ #category : #'return-temp-assigned-message' }
+{ #category : 'return-temp-assigned-message' }
 SlangBasicTypeInferenceTest >> testReturnTempTrueMessageNode [
 	| tMethod |
 	tMethod := ccg methodNamed: #returnTempTrueMessageNode.
@@ -957,7 +958,7 @@ SlangBasicTypeInferenceTest >> testReturnTempTrueMessageNode [
 	self assert: tMethod returnType equals: #sqInt.
 ]
 
-{ #category : #'return-signed' }
+{ #category : 'return-signed' }
 SlangBasicTypeInferenceTest >> testUnsignedIntInASignedExpressionNotWorking [
 	"Slang will try to signed a variable if it is present in an iteration with a comparator (>,<,>=,<=) in its expression, here it does not work"
 	| tMethod |
@@ -968,7 +969,7 @@ SlangBasicTypeInferenceTest >> testUnsignedIntInASignedExpressionNotWorking [
 	self assert: tMethod returnType equals: #usqInt
 ]
 
-{ #category : #'return-signed' }
+{ #category : 'return-signed' }
 SlangBasicTypeInferenceTest >> testUnsignedIntInASignedOperation [
 	"Slang will try to signed a variable if it is present in an iteration with a comparator (>,<,>=,<=) in its expression, here i is first automatically typed as unsigned int but change its type to int eventually"
 

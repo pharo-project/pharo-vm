@@ -1,10 +1,12 @@
 Class {
-	#name : #VMSpurNewSpaceStructureTest,
-	#superclass : #VMSpurMemoryManagerTest,
-	#category : #'VMMakerTests-MemoryTests'
+	#name : 'VMSpurNewSpaceStructureTest',
+	#superclass : 'VMSpurMemoryManagerTest',
+	#category : 'VMMakerTests-MemoryTests',
+	#package : 'VMMakerTests',
+	#tag : 'MemoryTests'
 }
 
-{ #category : #'tests-2-instantiation' }
+{ #category : 'tests-2-instantiation' }
 VMSpurNewSpaceStructureTest >> fillEden [
 
 	"Allocate enough objects to fill the eden."
@@ -13,7 +15,7 @@ VMSpurNewSpaceStructureTest >> fillEden [
 		do: [ :index | self newZeroSizedObject ]
 ]
 
-{ #category : #'tests-2-instantiation' }
+{ #category : 'tests-2-instantiation' }
 VMSpurNewSpaceStructureTest >> testInstantiateNewObjectMovesFreeStartAfterObject [
 	
 	| freeStartBefore |
@@ -24,7 +26,7 @@ VMSpurNewSpaceStructureTest >> testInstantiateNewObjectMovesFreeStartAfterObject
 	self assert: memory freeStart equals: freeStartBefore + self emptyObjectSize
 ]
 
-{ #category : #'tests-2-instantiation' }
+{ #category : 'tests-2-instantiation' }
 VMSpurNewSpaceStructureTest >> testInstantiateNewObjectWithSlotMovesFreeStartAfterObject [
 	
 	| freeStartBefore |
@@ -35,38 +37,38 @@ VMSpurNewSpaceStructureTest >> testInstantiateNewObjectWithSlotMovesFreeStartAft
 	self assert: memory freeStart equals: freeStartBefore + self emptyObjectSize
 ]
 
-{ #category : #'tests-1-memory-initialization' }
+{ #category : 'tests-1-memory-initialization' }
 VMSpurNewSpaceStructureTest >> testNewMemoryEdenEndIsAtTheStartOfOldSpace [
 
 	self assert: memory scavenger eden limit equals: memory getMemoryMap newSpaceEnd 
 ]
 
-{ #category : #'tests-1-memory-initialization' }
+{ #category : 'tests-1-memory-initialization' }
 VMSpurNewSpaceStructureTest >> testNewMemoryEdenIsRestOfNewSpace [
 	
 	self
 		assert: memory scavenger eden size > (environmentBuilder newSpaceSize - memory scavenger pastSpace size - memory scavenger futureSpace size - interpreter interpreterAllocationReserveBytes) 
 ]
 
-{ #category : #'tests-1-memory-initialization' }
+{ #category : 'tests-1-memory-initialization' }
 VMSpurNewSpaceStructureTest >> testNewMemoryFreeStartIsEdenStart [
 	
 	self assert: memory freeStart equals: memory scavenger eden start
 ]
 
-{ #category : #'tests-1-memory-initialization' }
+{ #category : 'tests-1-memory-initialization' }
 VMSpurNewSpaceStructureTest >> testNewMemoryFutureSpaceEndIsAtTheStartOfEden [
 
 	self assert: memory scavenger futureSpace limit equals: memory scavenger eden start
 ]
 
-{ #category : #'tests-1-memory-initialization' }
+{ #category : 'tests-1-memory-initialization' }
 VMSpurNewSpaceStructureTest >> testNewMemoryFutureSpaceIsRoughlyOneSeventhOfNewSpace [
 	
 	self assert: memory scavenger futureSpace size equals: (environmentBuilder newSpaceSize // 7 truncateTo: memory allocationUnit)
 ]
 
-{ #category : #'tests-1-memory-initialization' }
+{ #category : 'tests-1-memory-initialization' }
 VMSpurNewSpaceStructureTest >> testNewMemoryFutureSurvivorSpaceIsAtFutureSpaceStart [
 	
 	"The future survivor start indicates during the execution of the scavenger, where the next free space in future space starts."
@@ -74,13 +76,13 @@ VMSpurNewSpaceStructureTest >> testNewMemoryFutureSurvivorSpaceIsAtFutureSpaceSt
 	self assert: memory scavenger futureSurvivorStart equals: memory scavenger futureSpace start
 ]
 
-{ #category : #'tests-1-memory-initialization' }
+{ #category : 'tests-1-memory-initialization' }
 VMSpurNewSpaceStructureTest >> testNewMemoryPastSpaceEndIsAtTheStartOfFutureSpace [
 
 	self assert: memory scavenger pastSpace limit equals: memory scavenger futureSpace start
 ]
 
-{ #category : #'tests-1-memory-initialization' }
+{ #category : 'tests-1-memory-initialization' }
 VMSpurNewSpaceStructureTest >> testNewMemoryPastSpaceFreeStartIsAtPastSpaceStart [
 	
 	" - pastSpaceStart points to where the free space in the past space starts => it **does** move
@@ -89,19 +91,19 @@ VMSpurNewSpaceStructureTest >> testNewMemoryPastSpaceFreeStartIsAtPastSpaceStart
 	self assert: memory pastSpaceStart equals: memory scavenger pastSpace start
 ]
 
-{ #category : #'tests-1-memory-initialization' }
+{ #category : 'tests-1-memory-initialization' }
 VMSpurNewSpaceStructureTest >> testNewMemoryPastSpaceIsAtTheStartOfNewSpace [
 	
 	self assert: memory scavenger pastSpace start equals: memory getMemoryMap newSpaceStart
 ]
 
-{ #category : #'tests-1-memory-initialization' }
+{ #category : 'tests-1-memory-initialization' }
 VMSpurNewSpaceStructureTest >> testNewMemoryPastSpaceIsRoughlyOneSeventhOfNewSpace [
 	
 	self assert: memory scavenger pastSpaceBytes equals: (environmentBuilder newSpaceSize // 7 truncateTo: memory allocationUnit)
 ]
 
-{ #category : #'tests-2-instantiation' }
+{ #category : 'tests-2-instantiation' }
 VMSpurNewSpaceStructureTest >> testNewObjectAfterEdenLimitThrowsError [
 
 	"Allocate enough objects to fill the eden."
@@ -115,7 +117,7 @@ VMSpurNewSpaceStructureTest >> testNewObjectAfterEdenLimitThrowsError [
 			self assert: error messageText equals: 'no room in eden for allocateNewSpaceSlots:format:classIndex:' ]
 ]
 
-{ #category : #'tests-2-instantiation' }
+{ #category : 'tests-2-instantiation' }
 VMSpurNewSpaceStructureTest >> testNewObjectInEdenDoesNotModifyFutureSpace [
 	
 	| futureSpaceStartBefore |
@@ -125,7 +127,7 @@ VMSpurNewSpaceStructureTest >> testNewObjectInEdenDoesNotModifyFutureSpace [
 	self assert: memory scavenger futureSurvivorStart equals: futureSpaceStartBefore
 ]
 
-{ #category : #'tests-2-instantiation' }
+{ #category : 'tests-2-instantiation' }
 VMSpurNewSpaceStructureTest >> testNewObjectInEdenDoesNotModifyPastSpace [
 	
 	| pastSpaceStartBefore |
@@ -135,7 +137,7 @@ VMSpurNewSpaceStructureTest >> testNewObjectInEdenDoesNotModifyPastSpace [
 	self assert: memory pastSpaceStart equals: pastSpaceStartBefore
 ]
 
-{ #category : #'tests-2-instantiation' }
+{ #category : 'tests-2-instantiation' }
 VMSpurNewSpaceStructureTest >> testNewObjectPositionIsBeforeObjectHeader [
 	
 	| freeStartBefore oop |
@@ -146,7 +148,7 @@ VMSpurNewSpaceStructureTest >> testNewObjectPositionIsBeforeObjectHeader [
 	self assert: oop equals: freeStartBefore
 ]
 
-{ #category : #'tests-2-instantiation' }
+{ #category : 'tests-2-instantiation' }
 VMSpurNewSpaceStructureTest >> testNewObjectWithSlotsPositionIsBeforeObjectHeader [
 	
 	| freeStartBefore oop |
@@ -157,7 +159,7 @@ VMSpurNewSpaceStructureTest >> testNewObjectWithSlotsPositionIsBeforeObjectHeade
 	self assert: oop equals: freeStartBefore
 ]
 
-{ #category : #'tests-2-instantiation' }
+{ #category : 'tests-2-instantiation' }
 VMSpurNewSpaceStructureTest >> testScavengeThresholdIsInsideTheEden [
 
 	self assert:(memory scavengeThreshold

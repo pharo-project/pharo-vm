@@ -3,51 +3,53 @@ A VMObjectProxy is a wraper for an oop in the VM, that provides limited access t
 
 "
 Class {
-	#name : #VMObjectProxy,
-	#superclass : #Object,
+	#name : 'VMObjectProxy',
+	#superclass : 'Object',
 	#instVars : [
 		'coInterpreter',
 		'oop',
 		'objectMemory'
 	],
-	#category : #'VMMaker-Support'
+	#category : 'VMMaker-Support',
+	#package : 'VMMaker',
+	#tag : 'Support'
 }
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 VMObjectProxy >> coInterpreter [
 	"Answer the value of coInterpreter"
 
 	^ coInterpreter
 ]
 
-{ #category : #'initialize-release' }
+{ #category : 'initialize-release' }
 VMObjectProxy >> for: aCompiledMethodOop coInterpreter: aCoInterpreter objectMemory: anObjectMemory [
 	oop := aCompiledMethodOop.
 	coInterpreter := aCoInterpreter.
 	objectMemory := anObjectMemory
 ]
 
-{ #category : #'symbolic printing' }
+{ #category : 'symbolic printing' }
 VMObjectProxy >> key [
 	"For InstructionPrinter>>pushLiteralVariable:"
 	^coInterpreter stringOf: (objectMemory fetchPointer: 0 ofObject: oop)
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 VMObjectProxy >> objectMemory [
 	"Answer the value of objectMemory"
 
 	^ objectMemory
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 VMObjectProxy >> oop [
 	"Answer the value of oop"
 
 	^ oop
 ]
 
-{ #category : #printing }
+{ #category : 'printing' }
 VMObjectProxy >> printOn: aStream [
 	| shortPrint |
 	shortPrint := [coInterpreter shortPrint: oop]
@@ -59,14 +61,14 @@ VMObjectProxy >> printOn: aStream [
 	aStream nextPutAll: ' for '; nextPutAll: shortPrint
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 VMObjectProxy >> selector [
 	| selector |
 	selector := coInterpreter maybeSelectorOfMethod: oop.
 	^coInterpreter stringOf: selector
 ]
 
-{ #category : #printing }
+{ #category : 'printing' }
 VMObjectProxy >> storeOn: aStream [
 	"We don't care about storing these things properly.  Doing so involves printing an entire VM.
 	 So simply print and hence get debuggable CompiledMethods whose literals are VMObjectProxys."

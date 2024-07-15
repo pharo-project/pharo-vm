@@ -1,6 +1,6 @@
-Extension { #name : #SlangBasicTranslationTest }
+Extension { #name : 'SlangBasicTranslationTest' }
 
-{ #category : #'*VMMaker' }
+{ #category : '*VMMaker' }
 SlangBasicTranslationTest >> setUp [
 
 	super setUp.
@@ -23,7 +23,7 @@ SlangBasicTranslationTest >> setUp [
 	numSmallIntegerTagBits := 42.
 ]
 
-{ #category : #'*VMMaker' }
+{ #category : '*VMMaker' }
 SlangBasicTranslationTest >> testSendMemberAccess [
 
 	| translation send |
@@ -41,7 +41,7 @@ SlangBasicTranslationTest >> testSendMemberAccess [
 	self assert: translation equals: '(toto.stackp)'
 ]
 
-{ #category : #'*VMMaker' }
+{ #category : '*VMMaker' }
 SlangBasicTranslationTest >> testSendMemberAccessFromPointer [
 
 	| translation send |
@@ -59,7 +59,7 @@ SlangBasicTranslationTest >> testSendMemberAccessFromPointer [
 	self assert: translation equals: '(toto->stackp)'
 ]
 
-{ #category : #'*VMMaker' }
+{ #category : '*VMMaker' }
 SlangBasicTranslationTest >> testSendMemberAccessWithAdressOfVariableStructureReceiver [
 
 	"Tests member access on an adress of a structure variable."
@@ -81,7 +81,7 @@ SlangBasicTranslationTest >> testSendMemberAccessWithAdressOfVariableStructureRe
 	self assert: translation equals: '((&x)->stackp)'
 ]
 
-{ #category : #'*VMMaker' }
+{ #category : '*VMMaker' }
 SlangBasicTranslationTest >> testSendMemberAccessWithArgumentAssignment [
 
 	"When there is an argument in the send node, it adds an assignement."
@@ -100,7 +100,7 @@ SlangBasicTranslationTest >> testSendMemberAccessWithArgumentAssignment [
 	self assert: translation equals: '(toto.stackp = 1)'
 ]
 
-{ #category : #'*VMMaker' }
+{ #category : '*VMMaker' }
 SlangBasicTranslationTest >> testSendMemberAccessWithArrayAccessReceiver [
 
 	"Tests member access on a structure contained in an array."
@@ -123,7 +123,7 @@ SlangBasicTranslationTest >> testSendMemberAccessWithArrayAccessReceiver [
 	self assert: translation equals: '((tab[7]).stackp)'
 ]
 
-{ #category : #'*VMMaker' }
+{ #category : '*VMMaker' }
 SlangBasicTranslationTest >> testSendMemberAccessWithArrayOfPointersToStructAccessReceiver [
 
 	"Tests member access on an adress contained in an array of pointers to structures."
@@ -146,7 +146,7 @@ SlangBasicTranslationTest >> testSendMemberAccessWithArrayOfPointersToStructAcce
 	self assert: translation equals: '((tab[7])->stackp)'
 ]
 
-{ #category : #'*VMMaker' }
+{ #category : '*VMMaker' }
 SlangBasicTranslationTest >> testSendMemberAccessWithCCoercionReceiver [
 
 	"Tests member access of a structure pointer cast."
@@ -170,7 +170,7 @@ SlangBasicTranslationTest >> testSendMemberAccessWithCCoercionReceiver [
 	self assert: translation equals: '((((VMCallbackContext *) var ))->stackp)'
 ]
 
-{ #category : #'*VMMaker' }
+{ #category : '*VMMaker' }
 SlangBasicTranslationTest >> testSendMemberAccessWithFunctionCallReceiver [
 
 	"Tests member access on a call function that returns a structure"
@@ -196,7 +196,7 @@ SlangBasicTranslationTest >> testSendMemberAccessWithFunctionCallReceiver [
 	self assert: translation equals: '((foo()).stackp)'
 ]
 
-{ #category : #'*VMMaker' }
+{ #category : '*VMMaker' }
 SlangBasicTranslationTest >> testSendMemberAccessWithFunctionCallReceiverWithPointerToStructReturn [
 
 	"Tests member access on a call function that returns a pointer to a structure."

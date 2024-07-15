@@ -1,10 +1,12 @@
 Class {
-	#name : #VMSimpleStackBasedCogitMonomorphicPICTest,
-	#superclass : #VMSimpleStackBasedCogitAbstractTest,
-	#category : #'VMMakerTests-JitTests'
+	#name : 'VMSimpleStackBasedCogitMonomorphicPICTest',
+	#superclass : 'VMSimpleStackBasedCogitAbstractTest',
+	#category : 'VMMakerTests-JitTests',
+	#package : 'VMMakerTests',
+	#tag : 'JitTests'
 }
 
-{ #category : #'tests - PIC' }
+{ #category : 'tests - PIC' }
 VMSimpleStackBasedCogitMonomorphicPICTest >> testCalculateClosePICSize [
 
 	"Calculate the size of the Closed Pic"
@@ -14,7 +16,7 @@ VMSimpleStackBasedCogitMonomorphicPICTest >> testCalculateClosePICSize [
 	self assert: cogit closedPICSize isNotNil
 ]
 
-{ #category : #'tests - PIC' }
+{ #category : 'tests - PIC' }
 VMSimpleStackBasedCogitMonomorphicPICTest >> testLinkCallDuringSendInTrampolineReplacesTheCallTargetWithTheCogMethodAddress [
 
 	"This is for the monomorphic case"
@@ -64,7 +66,7 @@ VMSimpleStackBasedCogitMonomorphicPICTest >> testLinkCallDuringSendInTrampolineR
 	self deny: executedTheTrampoline
 ]
 
-{ #category : #'tests - PIC' }
+{ #category : 'tests - PIC' }
 VMSimpleStackBasedCogitMonomorphicPICTest >> testObtainInlineCacheFromLinkedCall [
 
 	| sendingMethod targetCog selector executedTheTrampoline |

@@ -2,12 +2,14 @@
 This class provides support for the VMProfiler on MacOS X.  This support is for reading symbols from the executable.  We can use the OS's nm command to list symbols in the VM executable and loaded libraries.  To do this we need to know what libraries are loaded, not simply which libraries are linked against, since some libraries are loaded dynamically, and for each loaded library what the vm address relocation, if any, is for the loaded library.  The primitive primitiveExecutableModulesAndOffsets returns these as an array of pairs, module name to relocation.
 "
 Class {
-	#name : #VMProfileMacSupportPlugin,
-	#superclass : #InterpreterPlugin,
-	#category : #'VMMaker-Plugins'
+	#name : 'VMProfileMacSupportPlugin',
+	#superclass : 'InterpreterPlugin',
+	#category : 'VMMaker-Plugins',
+	#package : 'VMMaker',
+	#tag : 'Plugins'
 }
 
-{ #category : #translation }
+{ #category : 'translation' }
 VMProfileMacSupportPlugin class >> declareCVarsIn: aCCodeGen [
 	aCCodeGen
 		addHeaderFile: '<dlfcn.h>';
@@ -15,7 +17,7 @@ VMProfileMacSupportPlugin class >> declareCVarsIn: aCCodeGen [
 		addHeaderFile: '<mach-o/getsect.h>'
 ]
 
-{ #category : #primitives }
+{ #category : 'primitives' }
 VMProfileMacSupportPlugin >> primitiveDLSym [
 	"Answer the address of the argument in the current process or nil if none."
 	| nameObj name namePtr sz addr |
@@ -38,7 +40,7 @@ VMProfileMacSupportPlugin >> primitiveDLSym [
 												ifFalse: [interpreterProxy positiveMachineIntegerFor: addr asUnsignedIntegerPtr])
 ]
 
-{ #category : #primitives }
+{ #category : 'primitives' }
 VMProfileMacSupportPlugin >> primitiveExecutableModulesAndOffsets [
 	"Answer an Array of quads for executable modules (the VM executable
 	 and loaded libraries).  Each quad is the module's name, its vm address

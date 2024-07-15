@@ -1,45 +1,46 @@
 Class {
-	#name : #SlangBasicTranslationTestClass,
-	#superclass : #SlangClass,
-	#category : #'Slang-Tests'
+	#name : 'SlangBasicTranslationTestClass',
+	#superclass : 'SlangClass',
+	#category : 'Slang-Tests',
+	#package : 'Slang-Tests'
 }
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 SlangBasicTranslationTestClass class >> initializationOptions [
 
 	^ nil
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 SlangBasicTranslationTestClass class >> interpreterClass [
 
 	^ nil
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 SlangBasicTranslationTestClass class >> objectMemoryClass [
 
 	^ nil
 ]
 
-{ #category : #inline }
+{ #category : 'inline' }
 SlangBasicTranslationTestClass >> first: param1 second: param2 [
 	"Method with several parameters"
 ]
 
-{ #category : #inline }
+{ #category : 'inline' }
 SlangBasicTranslationTestClass >> increment: x [
 
 	^ x + 1
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 SlangBasicTranslationTestClass >> initializationOptions [
 
 	^ nil
 ]
 
-{ #category : #inline }
+{ #category : 'inline' }
 SlangBasicTranslationTestClass >> methodCallingMethodWithInlinePragma [
 
 	self methodWithoutInlinePragma.
@@ -48,27 +49,27 @@ SlangBasicTranslationTestClass >> methodCallingMethodWithInlinePragma [
 	self methodWithInlinePragmaAndBlock: [ self blockBody3. self blockBody4 ].
 ]
 
-{ #category : #inline }
+{ #category : 'inline' }
 SlangBasicTranslationTestClass >> methodDefiningSingleExternVariable [
 
 	<var: 'foo' type: #'extern int' >
 	| foo |
 ]
 
-{ #category : #inline }
+{ #category : 'inline' }
 SlangBasicTranslationTestClass >> methodDefiningSingleStaticVariable [
 
 	<var: 'foo' type: #'static int' >
 	| foo |
 ]
 
-{ #category : #inline }
+{ #category : 'inline' }
 SlangBasicTranslationTestClass >> methodDefiningSingleVariable [
 
 	| foo |
 ]
 
-{ #category : #inline }
+{ #category : 'inline' }
 SlangBasicTranslationTestClass >> methodUsingSingleArrayVariable [
 
 	<var: 'foo' type: #'int[17]' >
@@ -76,7 +77,7 @@ SlangBasicTranslationTestClass >> methodUsingSingleArrayVariable [
 	bar := foo
 ]
 
-{ #category : #inline }
+{ #category : 'inline' }
 SlangBasicTranslationTestClass >> methodUsingSingleExternalVariable [
 
 	<var: 'foo' type: #'external int' >
@@ -84,7 +85,7 @@ SlangBasicTranslationTestClass >> methodUsingSingleExternalVariable [
 	bar := foo
 ]
 
-{ #category : #inline }
+{ #category : 'inline' }
 SlangBasicTranslationTestClass >> methodUsingSingleInitializedVariable [
 
 	<var: 'foo' type: #'int foo = 17' >
@@ -92,14 +93,14 @@ SlangBasicTranslationTestClass >> methodUsingSingleInitializedVariable [
 	bar := foo
 ]
 
-{ #category : #inline }
+{ #category : 'inline' }
 SlangBasicTranslationTestClass >> methodUsingSingleNonInitializedVariable [
 
 	| foo bar |
 	bar := foo
 ]
 
-{ #category : #inline }
+{ #category : 'inline' }
 SlangBasicTranslationTestClass >> methodUsingSingleStaticVariable [
 
 	<var: 'foo' type: #'static int' >
@@ -107,28 +108,28 @@ SlangBasicTranslationTestClass >> methodUsingSingleStaticVariable [
 	bar := foo
 ]
 
-{ #category : #inline }
+{ #category : 'inline' }
 SlangBasicTranslationTestClass >> methodWithAnOptionPragma [
 
 	<option: #OPTION>
 	
 ]
 
-{ #category : #inline }
+{ #category : 'inline' }
 SlangBasicTranslationTestClass >> methodWithInlinePragma [
 
 	<inline: true>
 	self bodyOfMethodWithInlinePragma
 ]
 
-{ #category : #inline }
+{ #category : 'inline' }
 SlangBasicTranslationTestClass >> methodWithInlinePragmaAndBlock: aBlock [
 
 	<inline: true>
 	aBlock value
 ]
 
-{ #category : #inline }
+{ #category : 'inline' }
 SlangBasicTranslationTestClass >> methodWithLocalVariables [
 
 	<var: #foo declareC: 'float foo'>
@@ -139,12 +140,12 @@ SlangBasicTranslationTestClass >> methodWithLocalVariables [
 	^ a + b + foo
 ]
 
-{ #category : #inline }
+{ #category : 'inline' }
 SlangBasicTranslationTestClass >> methodWithMultilineComment [
 	"This function is doing nothing, and this comment is useless. Not that useless finaly, because used to test method comments :D"
 ]
 
-{ #category : #inline }
+{ #category : 'inline' }
 SlangBasicTranslationTestClass >> methodWithOptionPragma [
 
 	<option: #OPTION1>
@@ -153,19 +154,19 @@ SlangBasicTranslationTestClass >> methodWithOptionPragma [
 	
 ]
 
-{ #category : #inline }
+{ #category : 'inline' }
 SlangBasicTranslationTestClass >> methodWithSharedCase [
 
 	<sharedCodeInCase: 'sharedCase'>
 ]
 
-{ #category : #inline }
+{ #category : 'inline' }
 SlangBasicTranslationTestClass >> methodWithSharedLabelInCase [
 
 	<sharedCodeNamed: 'sharedLabel' inCase: 'sharedCase'>
 ]
 
-{ #category : #inline }
+{ #category : 'inline' }
 SlangBasicTranslationTestClass >> methodWithUnsortedTemps [
 
 	| foo bar zzz aaa ddd |
@@ -173,7 +174,7 @@ SlangBasicTranslationTestClass >> methodWithUnsortedTemps [
 	ddd := zzz + foo
 ]
 
-{ #category : #inline }
+{ #category : 'inline' }
 SlangBasicTranslationTestClass >> methodWithVolatileLocalVariables [
 
 	<volatile>
@@ -185,26 +186,26 @@ SlangBasicTranslationTestClass >> methodWithVolatileLocalVariables [
 	^ a + b + foo
 ]
 
-{ #category : #inline }
+{ #category : 'inline' }
 SlangBasicTranslationTestClass >> methodWithVolatilePragma [
 
 	<volatile>
 	
 ]
 
-{ #category : #inline }
+{ #category : 'inline' }
 SlangBasicTranslationTestClass >> methodWithoutInlinePragma [
 
 	self bodyOfMethodWithoutInlinePragma.
 ]
 
-{ #category : #inline }
+{ #category : 'inline' }
 SlangBasicTranslationTestClass >> methodWithoutInlinePragmaAndBlock: aBlock [
 
 	aBlock value
 ]
 
-{ #category : #inline }
+{ #category : 'inline' }
 SlangBasicTranslationTestClass >> methodWithoutReturn [
 
 	<returnTypeC: #sqInt>

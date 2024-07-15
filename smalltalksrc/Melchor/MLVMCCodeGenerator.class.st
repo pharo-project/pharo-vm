@@ -1,35 +1,36 @@
 Class {
-	#name : #MLVMCCodeGenerator,
-	#superclass : #CCodeGenerator,
+	#name : 'MLVMCCodeGenerator',
+	#superclass : 'CCodeGenerator',
 	#instVars : [
 		'vmClass',
 		'vmMaker'
 	],
-	#category : #Melchor
+	#category : 'Melchor',
+	#package : 'Melchor'
 }
 
-{ #category : #'C code generator' }
+{ #category : 'C code generator' }
 MLVMCCodeGenerator >> abortBlock [
 	^self vmMaker ifNotNil: [:vmm| vmm abortBlock]
 ]
 
-{ #category : #'spur primitive compilation' }
+{ #category : 'spur primitive compilation' }
 MLVMCCodeGenerator >> accessorDepthCalculator [
 
 	^ MLAccessorDepthCalculator forCodeGenerator: self 
 ]
 
-{ #category : #'C code generator' }
+{ #category : 'C code generator' }
 MLVMCCodeGenerator >> bytesPerOop [
 	^ self vmmakerConfiguration bytesPerOop
 ]
 
-{ #category : #'C code generator' }
+{ #category : 'C code generator' }
 MLVMCCodeGenerator >> bytesPerWord [
 	^ self vmmakerConfiguration bytesPerWord
 ]
 
-{ #category : #'C code generator' }
+{ #category : 'C code generator' }
 MLVMCCodeGenerator >> computeKernelReturnTypes [
 	| dictionary |
 	dictionary := Dictionary newFromPairs:
@@ -67,13 +68,13 @@ MLVMCCodeGenerator >> computeKernelReturnTypes [
 	^dictionary
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 MLVMCCodeGenerator >> constantClass [
 	
 	^ (self vmClass ifNil: [ self vmmakerConfiguration ]) constantClass.
 ]
 
-{ #category : #'C code generator' }
+{ #category : 'C code generator' }
 MLVMCCodeGenerator >> constants [
 
 	| unused |
@@ -82,7 +83,7 @@ MLVMCCodeGenerator >> constants [
 	^ constants keys reject: [ :any | unused includes: any ]
 ]
 
-{ #category : #'C code generator' }
+{ #category : 'C code generator' }
 MLVMCCodeGenerator >> declaredConstants [
 	| unused |
 	unused := super declaredConstants.
@@ -90,13 +91,13 @@ MLVMCCodeGenerator >> declaredConstants [
 	^ unused
 ]
 
-{ #category : #'C code generator' }
+{ #category : 'C code generator' }
 MLVMCCodeGenerator >> defaultType [
 	
 	^ #sqInt
 ]
 
-{ #category : #'compile-time-options' }
+{ #category : 'compile-time-options' }
 MLVMCCodeGenerator >> defineAtCompileTime: aString [ 
 	"Define if the code generator should define the option at compile time or at generation time.
 	If true, the decision of the option will be delayed to compilation time.
@@ -109,7 +110,7 @@ MLVMCCodeGenerator >> defineAtCompileTime: aString [
 	^ (self vmClass ifNil: [self constantClass]) defineAtCompileTime: aString
 ]
 
-{ #category : #inlining }
+{ #category : 'inlining' }
 MLVMCCodeGenerator >> doInlining: inlineFlagOrSymbol [
 	"Inline the bodies of all methods that are suitable for inlining."
 	"Modified slightly for the core VM translator, since the first level of inlining for the interpret loop must be performed in order that the instruction implementations can easily discover their addresses. Remember to inline the bytecode routines as well"
@@ -144,7 +145,7 @@ MLVMCCodeGenerator >> doInlining: inlineFlagOrSymbol [
 		inMethod: interpretMethod
 ]
 
-{ #category : #'C code generator' }
+{ #category : 'C code generator' }
 MLVMCCodeGenerator >> emitCAPIExportHeaderOn: aStream [ 
 	"Store prototype declarations for all API methods on the given stream."
 	| exportedAPIMethods usedConstants |
@@ -159,7 +160,7 @@ MLVMCCodeGenerator >> emitCAPIExportHeaderOn: aStream [
 	self emitCConstants: usedConstants on: aStream
 ]
 
-{ #category : #'C code generator' }
+{ #category : 'C code generator' }
 MLVMCCodeGenerator >> emitCCodeOn: aStream doInlining: inlineFlag doAssertions: assertionFlag [
 	"Emit C code for all methods in the code base onto the given stream. All inlined method calls should already have been expanded."
 
@@ -167,7 +168,7 @@ MLVMCCodeGenerator >> emitCCodeOn: aStream doInlining: inlineFlag doAssertions: 
 	self emitExportsOn: aStream
 ]
 
-{ #category : #'C code generator' }
+{ #category : 'C code generator' }
 MLVMCCodeGenerator >> emitCFunctionPrototypeFor: m on: aStream [
 	self vmClass ifNotNil: [ 
 		(NoRegParmsInAssertVMs and: [ 
@@ -177,7 +178,7 @@ MLVMCCodeGenerator >> emitCFunctionPrototypeFor: m on: aStream [
 	^ super emitCFunctionPrototypeFor: m on: aStream
 ]
 
-{ #category : #'compile-time-options' }
+{ #category : 'compile-time-options' }
 MLVMCCodeGenerator >> emitCHeaderOn: aStream [
 	"Emit the initial part of a source file on aStream, comprising the version stamp,
 	 the global struct usage flags, the header files and preamble code."
@@ -196,7 +197,7 @@ MLVMCCodeGenerator >> emitCHeaderOn: aStream [
 	aStream newLine
 ]
 
-{ #category : #'C code generator' }
+{ #category : 'C code generator' }
 MLVMCCodeGenerator >> emitCVariableDeclarationFor: aDeclaration andVarString: varString on: aStream [
 	| declaration |
 	declaration := aDeclaration.
@@ -222,7 +223,7 @@ MLVMCCodeGenerator >> emitCVariableDeclarationFor: aDeclaration andVarString: va
 		newLine
 ]
 
-{ #category : #'C code generator' }
+{ #category : 'C code generator' }
 MLVMCCodeGenerator >> emitExportNamed: exportsNamePrefix forMethod: method pluginName: pluginName on: aStream [
 
 	| primName |
@@ -245,14 +246,14 @@ MLVMCCodeGenerator >> emitExportNamed: exportsNamePrefix forMethod: method plugi
 		newLine
 ]
 
-{ #category : #'C code generator' }
+{ #category : 'C code generator' }
 MLVMCCodeGenerator >> emitExportsOn: aStream [
 	"Store all the exported primitives in the form used by the internal named prim system."
 	(self vmClass isNil or: [self vmClass isInterpreterClass]) ifTrue:
 		[self emitExportsNamed: 'vm' pluginName: '' on: aStream]
 ]
 
-{ #category : #'C code generator' }
+{ #category : 'C code generator' }
 MLVMCCodeGenerator >> emitFunctionPrototypesPreambleOn: aStream [
 	self vmClass ifNotNil: [ 
 		NoRegParmsInAssertVMs ifTrue: [ 
@@ -267,7 +268,7 @@ MLVMCCodeGenerator >> emitFunctionPrototypesPreambleOn: aStream [
 				withCRs ]
 ]
 
-{ #category : #'C code generator' }
+{ #category : 'C code generator' }
 MLVMCCodeGenerator >> emitGlobalCVariablesOn: aStream [
 	"Store the global variable declarations on the given stream."
 
@@ -292,7 +293,7 @@ MLVMCCodeGenerator >> emitGlobalCVariablesOn: aStream [
 	aStream newLine
 ]
 
-{ #category : #'type inference' }
+{ #category : 'type inference' }
 MLVMCCodeGenerator >> harmonizeIntegerIn: aSetOfTypes [
 	"help to decide if the element in a SetOfTypes will be treated as signed or unsigned.
 	only add sqInt to the types if an usqInt isn't here to prevent signing method returning usqInt."
@@ -305,7 +306,7 @@ MLVMCCodeGenerator >> harmonizeIntegerIn: aSetOfTypes [
 	aSetOfTypes add: #sqInt
 ]
 
-{ #category : #'type inference' }
+{ #category : 'type inference' }
 MLVMCCodeGenerator >> harmonizeReturnTypesIn: aSetOfTypes [
 	"Eliminate signed/unsigned conflicts in aSetOfTypes. Non-negative integers can be either
 	 signed or unsigned. if possible the type will default to the signed part"
@@ -330,7 +331,7 @@ MLVMCCodeGenerator >> harmonizeReturnTypesIn: aSetOfTypes [
 		  ifFalse: [ aSetOfTypes ]
 ]
 
-{ #category : #'C code generator' }
+{ #category : 'C code generator' }
 MLVMCCodeGenerator >> instVarNamesForClass: aClass [
 	^self vmClass
 		ifNil: [ super instVarNamesForClass: aClass ]
@@ -338,24 +339,24 @@ MLVMCCodeGenerator >> instVarNamesForClass: aClass [
 					[:ivn| self vmClass isNonArgumentImplicitReceiverVariableName: ivn]]
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 MLVMCCodeGenerator >> interpreterVersion [
 	^self vmClass interpreterVersion, '[', self vmClass objectMemoryClass memoryManagerVersion, ']'
 ]
 
-{ #category : #'C translation' }
+{ #category : 'C translation' }
 MLVMCCodeGenerator >> is32Bit [
 	^ self vmClass isNil or: [ 
 		  self vmClass objectMemoryClass wordSize = 4 ]
 ]
 
-{ #category : #'C code generator' }
+{ #category : 'C code generator' }
 MLVMCCodeGenerator >> isAcceptableAncilliaryClass: class [
 	^ self vmClass isNil or: [ 
 		  self vmClass isAcceptableAncilliaryClass: class ]
 ]
 
-{ #category : #'C code generator' }
+{ #category : 'C code generator' }
 MLVMCCodeGenerator >> isNonArgumentImplicitReceiverVariableName: aString [
 
 	^ (super isNonArgumentImplicitReceiverVariableName: aString)
@@ -364,13 +365,13 @@ MLVMCCodeGenerator >> isNonArgumentImplicitReceiverVariableName: aString [
 	 		ifNotNil: [self vmClass isNonArgumentImplicitReceiverVariableName: aString]]
 ]
 
-{ #category : #'C code generator' }
+{ #category : 'C code generator' }
 MLVMCCodeGenerator >> kernelReturnTypes [
 	
 	^ kernelReturnTypes ifNil: [ kernelReturnTypes := self computeKernelReturnTypes ]
 ]
 
-{ #category : #'C translation support' }
+{ #category : 'C translation support' }
 MLVMCCodeGenerator >> maybeEmitPrimitiveFailureDefineFor: selector on: aStream [
 	 (self vmClass notNil
 	 and: [(self vmClass inheritsFrom: self vmmakerConfiguration baseInterpreterClass)
@@ -378,7 +379,7 @@ MLVMCCodeGenerator >> maybeEmitPrimitiveFailureDefineFor: selector on: aStream [
 		[aStream nextPutAll: '#else\# define ' withCRs; nextPutAll: selector; nextPutAll: ' (void (*)(void))0\' withCRs]
 ]
 
-{ #category : #'C translation support' }
+{ #category : 'C translation support' }
 MLVMCCodeGenerator >> maybeGenerateCASTPrimitiveFailureDefineFor: selector [
 	 (self vmClass notNil
 	 and: [(self vmClass inheritsFrom: self vmmakerConfiguration baseInterpreterClass)
@@ -387,24 +388,24 @@ MLVMCCodeGenerator >> maybeGenerateCASTPrimitiveFailureDefineFor: selector [
 	^ nil
 ]
 
-{ #category : #translating }
+{ #category : 'translating' }
 MLVMCCodeGenerator >> mostBasicConstantSelectors [
 
 	^ self constantClass mostBasicConstantSelectors
 ]
 
-{ #category : #inlining }
+{ #category : 'inlining' }
 MLVMCCodeGenerator >> mustBeGlobal: aName [
 	^ self vmClass mustBeGlobal: aName
 ]
 
-{ #category : #'C code generator' }
+{ #category : 'C code generator' }
 MLVMCCodeGenerator >> nilTranslation [
 	"Defined in some header file as a macro?"
 	^ 'null'
 ]
 
-{ #category : #'C code generator' }
+{ #category : 'C code generator' }
 MLVMCCodeGenerator >> optionIsTrue: pragma in: aClass [
 	"Answer whether an option: or notOption: pragma is true in the context of aClass.
 	 The argument to the option: pragma is interpreted as either a Cogit class name
@@ -444,7 +445,7 @@ MLVMCCodeGenerator >> optionIsTrue: pragma in: aClass [
 	^false
 ]
 
-{ #category : #'C code generator' }
+{ #category : 'C code generator' }
 MLVMCCodeGenerator >> removeVariable: aName [
 
 	"Remove the given (instance) variable from the code base."
@@ -457,7 +458,7 @@ MLVMCCodeGenerator >> removeVariable: aName [
 					, ' doesn''t exist or has already been removed' ] ]
 ]
 
-{ #category : #'C code generator' }
+{ #category : 'C code generator' }
 MLVMCCodeGenerator >> returnTypeForSend: sendNode in: aTMethod boundTo: aCalledMethod typeIfNil: typeIfNil [
 	"Answer the return type for a send.  Unbound sends default to typeIfNil.
 	 Methods with types as yet unknown have a type determined either by the
@@ -476,13 +477,13 @@ MLVMCCodeGenerator >> returnTypeForSend: sendNode in: aTMethod boundTo: aCalledM
 				typeIfNil: typeIfNil ]
 ]
 
-{ #category : #'C translation support' }
+{ #category : 'C translation support' }
 MLVMCCodeGenerator >> shouldGenerateAsInterpreterProxySend: aSendNode [
 	^(self messageReceiverIsInterpreterProxy: aSendNode)
 	  and: [(self constantClass mostBasicConstantSelectors includes: aSendNode selector) not]
 ]
 
-{ #category : #'C code generator' }
+{ #category : 'C code generator' }
 MLVMCCodeGenerator >> shouldGenerateHeader [
 	^ [ 
 	  ((self class monticelloDescriptionFor: self vmClass) includes: $*)
@@ -491,14 +492,14 @@ MLVMCCodeGenerator >> shouldGenerateHeader [
 		  do: [ :ex | false ]
 ]
 
-{ #category : #'C code generator' }
+{ #category : 'C code generator' }
 MLVMCCodeGenerator >> shouldGenerateStruct: structClass [
 
 	^ (super shouldGenerateStruct: structClass)
 		and: [self vmClass shouldGenerateTypedefFor: structClass]
 ]
 
-{ #category : #public }
+{ #category : 'public' }
 MLVMCCodeGenerator >> storeAPIExportHeader: headerName OnFile: fullHeaderPath [
 	"Store C header code on the given file. Evaluate
 	 aBlock with the stream to generate its contents."
@@ -512,7 +513,7 @@ MLVMCCodeGenerator >> storeAPIExportHeader: headerName OnFile: fullHeaderPath [
 		[self storeHeaderOnFile: fullHeaderPath contents: header]
 ]
 
-{ #category : #'C translation support' }
+{ #category : 'C translation support' }
 MLVMCCodeGenerator >> unusedConstants [
 
 	| unused |
@@ -522,7 +523,7 @@ MLVMCCodeGenerator >> unusedConstants [
 	^ unused
 ]
 
-{ #category : #'C code generator' }
+{ #category : 'C code generator' }
 MLVMCCodeGenerator >> validateCppIf: nodeOrNil withValue: value [
 
 	(self vmClass notNil and: [ 
@@ -537,7 +538,7 @@ MLVMCCodeGenerator >> validateCppIf: nodeOrNil withValue: value [
 			newLine ]
 ]
 
-{ #category : #'compile-time-options' }
+{ #category : 'compile-time-options' }
 MLVMCCodeGenerator >> valueForContant: node ifAbsent: default [
 	^ self vmClass
 		  ifNotNil: [ 
@@ -547,7 +548,7 @@ MLVMCCodeGenerator >> valueForContant: node ifAbsent: default [
 		  ifNil: [ default ]
 ]
 
-{ #category : #'C code generator' }
+{ #category : 'C code generator' }
 MLVMCCodeGenerator >> valueOfConstantNode: aNode doing: aBlock [
 	(self constantClass valueOfBasicSelector: aNode selector) ifNotNil: [ 
 		:value | 
@@ -556,13 +557,13 @@ MLVMCCodeGenerator >> valueOfConstantNode: aNode doing: aBlock [
 	^ super valueOfConstantNode: aNode doing: aBlock
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 MLVMCCodeGenerator >> vmClass [
 	"Answer the interpreter class if any.  This is nil other than for the core VM."
 	^vmClass
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 MLVMCCodeGenerator >> vmClass: aClass [
 	"Set the main translation class if any.  This is nil other than for the core VM.
 	 It may be an interpreter or a cogit"
@@ -571,7 +572,7 @@ MLVMCCodeGenerator >> vmClass: aClass [
 		[generateDeadCode := vmClass shouldGenerateDeadCode]
 ]
 
-{ #category : #'C code generator' }
+{ #category : 'C code generator' }
 MLVMCCodeGenerator >> vmHeaderContentsWithBytesPerWord: bytesPerWord [
 	"Store C header code on the given stream."
 
@@ -579,17 +580,17 @@ MLVMCCodeGenerator >> vmHeaderContentsWithBytesPerWord: bytesPerWord [
 		streamContents: [ :tempStream | self vmClass writeVMHeaderTo: tempStream bytesPerWord: bytesPerWord generator: self ]
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 MLVMCCodeGenerator >> vmMaker [
 	^vmMaker
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 MLVMCCodeGenerator >> vmMaker: aVMMaker [
 	vmMaker := aVMMaker
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 MLVMCCodeGenerator >> vmmakerConfiguration [
 	
 	^ self vmMaker vmmakerConfiguration

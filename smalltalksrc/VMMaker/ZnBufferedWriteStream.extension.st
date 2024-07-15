@@ -1,6 +1,6 @@
-Extension { #name : #ZnBufferedWriteStream }
+Extension { #name : 'ZnBufferedWriteStream' }
 
-{ #category : #'*VMMaker' }
+{ #category : '*VMMaker' }
 ZnBufferedWriteStream >> stream [
 	^ stream
 ]

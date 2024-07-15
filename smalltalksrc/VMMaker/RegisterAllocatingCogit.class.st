@@ -38,8 +38,8 @@ scratchSpillBase
 	- a scratch variable to hold the state of spillBase while merge code is generated
 "
 Class {
-	#name : #RegisterAllocatingCogit,
-	#superclass : #StackToRegisterMappingCogit,
+	#name : 'RegisterAllocatingCogit',
+	#superclass : 'StackToRegisterMappingCogit',
 	#instVars : [
 		'numFixups',
 		'mergeSimStacksBase',
@@ -51,10 +51,12 @@ Class {
 		'recompileForLoopRegisterAssignments',
 		'scratchBytecodePC'
 	],
-	#category : #'VMMaker-JIT'
+	#category : 'VMMaker-JIT',
+	#package : 'VMMaker',
+	#tag : 'JIT'
 }
 
-{ #category : #'C translation' }
+{ #category : 'C translation' }
 RegisterAllocatingCogit class >> declareCVarsIn: aCodeGen [
 	aCodeGen
 		var: #scratchSimStack
@@ -63,7 +65,7 @@ RegisterAllocatingCogit class >> declareCVarsIn: aCodeGen [
 			type: #SimStackEntry
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 RegisterAllocatingCogit class >> numTrampolines [
 	^super numTrampolines + 2 "includes long sendMustBeBoolean trampolines"
 
@@ -73,7 +75,7 @@ RegisterAllocatingCogit class >> numTrampolines [
 	"self instVarNames select: [:ea| ea beginsWith: 'ce']"
 ]
 
-{ #category : #'compile abstract instructions' }
+{ #category : 'compile abstract instructions' }
 RegisterAllocatingCogit >> allocateMergeFixups [
 	"Allocate the various arrays needed to allocate the merge fixups, failing if the size
 	 needed is considered too high.
@@ -92,7 +94,7 @@ RegisterAllocatingCogit >> allocateMergeFixups [
 		 self b: mergeSimStacksBase zero: mergeSimStackBytes]
 ]
 
-{ #category : #'simulation stack' }
+{ #category : 'simulation stack' }
 RegisterAllocatingCogit >> allocateRegForStackEntryAt: index [
 	"If the stack entry is already in a register, answers it,
 	else allocate a new register for it"
@@ -103,7 +105,7 @@ RegisterAllocatingCogit >> allocateRegForStackEntryAt: index [
 	^self allocateRegForStackEntryAt: index notConflictingWith: (self liveRegisters bitOr: (self registerMaskFor: FPReg and: SPReg and: TempReg))
 ]
 
-{ #category : #'simulation stack' }
+{ #category : 'simulation stack' }
 RegisterAllocatingCogit >> allocatedRegisters [
 	| regsSet |
 	self assert: needsFrame.
@@ -114,7 +116,7 @@ RegisterAllocatingCogit >> allocatedRegisters [
 	^regsSet
 ]
 
-{ #category : #'compile abstract instructions' }
+{ #category : 'compile abstract instructions' }
 RegisterAllocatingCogit >> assertCorrectSimStackPtr [
 	<inline: true> "generates nothing anyway" "self simStackPrintString"
 	 self cCode: '' inSmalltalk:
@@ -128,13 +130,13 @@ RegisterAllocatingCogit >> assertCorrectSimStackPtr [
 		 self deny: self duplicateRegisterAssignmentsInTemporaries]
 ]
 
-{ #category : #'simulation only' }
+{ #category : 'simulation only' }
 RegisterAllocatingCogit >> bytecodeFixupClass [
 	<doNotGenerate>
 	^CogRASSBytecodeFixup
 ]
 
-{ #category : #'compile abstract instructions' }
+{ #category : 'compile abstract instructions' }
 RegisterAllocatingCogit >> compileAbstractInstructionsFrom: start through: end [
 	"Loop over bytecodes, dispatching to the generator for each bytecode, handling fixups in due course.
 	 Override to recompile after a loop requiring a merge is detected."
@@ -142,21 +144,21 @@ RegisterAllocatingCogit >> compileAbstractInstructionsFrom: start through: end [
 	^super compileAbstractInstructionsFrom: start through: end
 ]
 
-{ #category : #'compile abstract instructions' }
+{ #category : 'compile abstract instructions' }
 RegisterAllocatingCogit >> compileEntireFullBlockMethod: numCopied [
 	"Compile the abstract instructions for the entire full block method."
 	self allocateMergeFixups.
 	^super compileEntireFullBlockMethod: numCopied
 ]
 
-{ #category : #'compile abstract instructions' }
+{ #category : 'compile abstract instructions' }
 RegisterAllocatingCogit >> compileEntireMethod [
 	"Compile the abstract instructions for the entire method, including blocks."
 	self allocateMergeFixups.
 	^super compileEntireMethod
 ]
 
-{ #category : #'compile abstract instructions' }
+{ #category : 'compile abstract instructions' }
 RegisterAllocatingCogit >> compileMethodBody [
 	"Compile the top-level method body."
 	<inline: true>
@@ -187,7 +189,7 @@ RegisterAllocatingCogit >> compileMethodBody [
 	^result
 ]
 
-{ #category : #'bytecode generator support' }
+{ #category : 'bytecode generator support' }
 RegisterAllocatingCogit >> conflictingRegistersBetweenSimStackAnd: mergeSimStack [
 	<var: #mergeSimStack type: #'SimStackEntry *'>
 	| currentRegsMask mergeRegsMask potentialConflictRegMask |
@@ -206,7 +208,7 @@ RegisterAllocatingCogit >> conflictingRegistersBetweenSimStackAnd: mergeSimStack
 	^potentialConflictRegMask bitAnd: (currentRegsMask bitAnd: mergeRegsMask)
 ]
 
-{ #category : #'bytecode generator support' }
+{ #category : 'bytecode generator support' }
 RegisterAllocatingCogit >> conflictsResolvedBetweenSimStackAnd: mergeSimStack [ 
 	"There are no register conflicts between simStack and mergeSimStack if
 	 traversing both stacks from hot end (simStackPtr) to cold end (0) no register
@@ -227,7 +229,7 @@ RegisterAllocatingCogit >> conflictsResolvedBetweenSimStackAnd: mergeSimStack [
 	^true
 ]
 
-{ #category : #'bytecode generator support' }
+{ #category : 'bytecode generator support' }
 RegisterAllocatingCogit >> copyLiveRegisterToCopiesOf: simStackEntry [
 	"Copy the liveRegister in simStackEntry into all corresponding stack entries."
 	<var: #simStackEntry type: #'SimStackEntry *'>
@@ -236,13 +238,13 @@ RegisterAllocatingCogit >> copyLiveRegisterToCopiesOf: simStackEntry [
 		(self simStackAt: i) copyLiveRegisterIfSameAs: simStackEntry]
 ]
 
-{ #category : #'simulation only' }
+{ #category : 'simulation only' }
 RegisterAllocatingCogit >> copySimStack [
 	<doNotGenerate>
 	^CArrayAccessor on: (simStack object collect: [:stackEntry| stackEntry copy])
 ]
 
-{ #category : #'bytecode generator support' }
+{ #category : 'bytecode generator support' }
 RegisterAllocatingCogit >> copySimStackToFixup: fixup [
 	<var: #fixup type: #'BytecodeFixup *'>
 	<inline: true>
@@ -252,7 +254,7 @@ RegisterAllocatingCogit >> copySimStackToFixup: fixup [
 						fixup mergeSimStack at: i put: (simStack at: i) copy]]
 ]
 
-{ #category : #'bytecode generator support' }
+{ #category : 'bytecode generator support' }
 RegisterAllocatingCogit >> copySimStackToScratch: spillBase [
 	<inline: true>
 	self assert: (spillBase > methodOrBlockNumTemps).
@@ -266,7 +268,7 @@ RegisterAllocatingCogit >> copySimStackToScratch: spillBase [
 	scratchSpillBase := spillBase
 ]
 
-{ #category : #'bytecode generator support' }
+{ #category : 'bytecode generator support' }
 RegisterAllocatingCogit >> deassignRegister: register in: aSimStack [
 	"When a merge has assigned a register to a volatile stack entry
 	 deassign that register from any temporaries."
@@ -277,7 +279,7 @@ RegisterAllocatingCogit >> deassignRegister: register in: aSimStack [
 			[(self simStack: aSimStack at: i) liveRegister: NoReg]]
 ]
 
-{ #category : #debugging }
+{ #category : 'debugging' }
 RegisterAllocatingCogit >> duplicateRegisterAssignmentsInTemporaries [
 	| liveRegisters |
 	liveRegisters := 0.
@@ -292,7 +294,7 @@ RegisterAllocatingCogit >> duplicateRegisterAssignmentsInTemporaries [
 	^false
 ]
 
-{ #category : #'bytecode generator support' }
+{ #category : 'bytecode generator support' }
 RegisterAllocatingCogit >> ensureFixupAt: targetPC [
 	"Make sure there's a flagged fixup at the target pc in fixups.
 	 Initially a fixup's target is just a flag.  Later on it is replaced with a proper instruction.
@@ -324,13 +326,13 @@ RegisterAllocatingCogit >> ensureFixupAt: targetPC [
 	^super ensureFixupAt: targetPC
 ]
 
-{ #category : #'compile abstract instructions' }
+{ #category : 'compile abstract instructions' }
 RegisterAllocatingCogit >> ensureNonMergeFixupAt: targetPC [
 	"RegisterAllocatingCogit insists on merging."
 	self shouldNotImplement
 ]
 
-{ #category : #'bytecode generator support' }
+{ #category : 'bytecode generator support' }
 RegisterAllocatingCogit >> ensureReceiverResultRegContainsSelf [
 	"First ensure that ReceiverResultReg is allocated to self,
 	 which may cause spills, etc.  Then copy the register into
@@ -366,7 +368,7 @@ RegisterAllocatingCogit >> ensureReceiverResultRegContainsSelf [
 	self assert: self receiverResultRegIsAssignedToSelfAndNothingElse
 ]
 
-{ #category : #'bytecode generator support' }
+{ #category : 'bytecode generator support' }
 RegisterAllocatingCogit >> ensureRegisterAssignmentsAreAtHeadOfLoop: target [
 	"Compiling a loop body will compute a set of live registers.  The backward branch must merge
 	 with the head of the loop.  So it is preferrable to make the register assignments at the end of
@@ -394,7 +396,7 @@ RegisterAllocatingCogit >> ensureRegisterAssignmentsAreAtHeadOfLoop: target [
 		 targetEntry liveRegister: currentEntry liveRegister]
 ]
 
-{ #category : #'bytecode generator support' }
+{ #category : 'bytecode generator support' }
 RegisterAllocatingCogit >> existsInstVarRefBeforeSendOrReturn [
 	"Answer if the current bytecode is followed by an inst var ref before the next full send."
 	| pc nExts descriptor |
@@ -413,7 +415,7 @@ RegisterAllocatingCogit >> existsInstVarRefBeforeSendOrReturn [
 	^false
 ]
 
-{ #category : #'bytecode generator support' }
+{ #category : 'bytecode generator support' }
 RegisterAllocatingCogit >> flushLiveRegistersForCRunTimeCall [
 	"Flush any live registers for a C call, i.e. don't flush caller-saved registers.
 	 Answer if any registers were flushed."
@@ -432,7 +434,7 @@ RegisterAllocatingCogit >> flushLiveRegistersForCRunTimeCall [
 	^flushed
 ]
 
-{ #category : #'bytecode generator support' }
+{ #category : 'bytecode generator support' }
 RegisterAllocatingCogit >> flushLiveRegistersForSend [
 	<inline: true>
 	0 to: simStackPtr do:
@@ -448,7 +450,7 @@ RegisterAllocatingCogit >> flushLiveRegistersForSend [
 		 (self simStackAt: i) liveRegister: NoReg]
 ]
 
-{ #category : #'bytecode generator support' }
+{ #category : 'bytecode generator support' }
 RegisterAllocatingCogit >> flushLiveRegistersForSuspensionPoint [
 	"Flush any live registers for a C call at a suspension/resumption point, i.e.flush all registers.
 	 Answer if any registers were flushed."
@@ -466,7 +468,7 @@ RegisterAllocatingCogit >> flushLiveRegistersForSuspensionPoint [
 	^flushed
 ]
 
-{ #category : #'simulation stack' }
+{ #category : 'simulation stack' }
 RegisterAllocatingCogit >> flushRegistersOnlyLiveOnFallThrough: fixup [
 	"Forward jumps won't generate merge code if the source has a register that is live but the destination does not.
 	 For example in
@@ -484,7 +486,7 @@ RegisterAllocatingCogit >> flushRegistersOnlyLiveOnFallThrough: fixup [
 			[fallThrough liveRegister: NoReg]]
 ]
 
-{ #category : #'simulation stack' }
+{ #category : 'simulation stack' }
 RegisterAllocatingCogit >> freeAnyRegNotConflictingWith: regMask [
 	"Spill the closest register on stack not conflicting with regMask. 
 	 Override to unassign assigned temp regs if necessary."
@@ -514,7 +516,7 @@ RegisterAllocatingCogit >> freeAnyRegNotConflictingWith: regMask [
 	^NoReg
 ]
 
-{ #category : #'trampoline support' }
+{ #category : 'trampoline support' }
 RegisterAllocatingCogit >> genCallMustBeBooleanFor: boolean [
 	"Call ceSendMustBeBooleanTo:interpretingAtDelta: via the relevant trampoline."
 	self assert: ((self generatorAt: byte0) numBytes between: 1 and: 2).
@@ -529,7 +531,7 @@ RegisterAllocatingCogit >> genCallMustBeBooleanFor: boolean [
 							ifFalse: [ceSendMustBeBooleanAddTrueLongTrampoline]])
 ]
 
-{ #category : #'bytecode generators' }
+{ #category : 'bytecode generators' }
 RegisterAllocatingCogit >> genForwardersInlinedIdenticalOrNotIf: orNot [
 	| nextPC branchDescriptor unforwardRcvr argReg targetPC
 	  unforwardArg  rcvrReg postBranchPC retry fixup
@@ -635,7 +637,7 @@ RegisterAllocatingCogit >> genForwardersInlinedIdenticalOrNotIf: orNot [
 	^0
 ]
 
-{ #category : #'bytecode generator support' }
+{ #category : 'bytecode generator support' }
 RegisterAllocatingCogit >> genJumpBackTo: targetPC [
 	| target |
 	"On first pass install register allocations (if any) as of the end of the loop and back up to recompile.
@@ -669,7 +671,7 @@ RegisterAllocatingCogit >> genJumpBackTo: targetPC [
 	^0
 ]
 
-{ #category : #'bytecode generator support' }
+{ #category : 'bytecode generator support' }
 RegisterAllocatingCogit >> genJumpIf: boolean to: targetBytecodePC [
 	<inline: false>
 	| eventualTarget desc reg fixup ok mbb |
@@ -748,7 +750,7 @@ RegisterAllocatingCogit >> genJumpIf: boolean to: targetBytecodePC [
 	^0
 ]
 
-{ #category : #'bytecode generator support' }
+{ #category : 'bytecode generator support' }
 RegisterAllocatingCogit >> genJumpTo: targetBytecodePC [
 	"Overriden to avoid the flush because in this cogit stack state is merged at merge point."
 	| eventualTarget generator fixup |
@@ -773,19 +775,19 @@ RegisterAllocatingCogit >> genJumpTo: targetBytecodePC [
 	^0
 ]
 
-{ #category : #'bytecode generator support' }
+{ #category : 'bytecode generator support' }
 RegisterAllocatingCogit >> genMarshalledSend: selectorIndex numArgs: numArgs sendTable: sendTable [
 	self flushLiveRegistersForSend.
 	^super genMarshalledSend: selectorIndex numArgs: numArgs sendTable: sendTable
 ]
 
-{ #category : #initialization }
+{ #category : 'initialization' }
 RegisterAllocatingCogit >> genMustBeBooleanLongTrampolineFor: boolean called: trampolineName [
 	<inline: true>
 	^self genMustBeBooleanTrampolineFor: boolean branchBytes: 2 called: trampolineName
 ]
 
-{ #category : #initialization }
+{ #category : 'initialization' }
 RegisterAllocatingCogit >> genMustBeBooleanTrampolineFor: boolean branchBytes: branchBytes called: trampolineName [
 	<var: #trampolineName type: #'char *'>
 	"For RegisterAllocatingCogit we want the address following a conditional branch not to be reachable, so we
@@ -808,18 +810,18 @@ RegisterAllocatingCogit >> genMustBeBooleanTrampolineFor: boolean branchBytes: b
 		appendOpcodes: true
 ]
 
-{ #category : #initialization }
+{ #category : 'initialization' }
 RegisterAllocatingCogit >> genMustBeBooleanTrampolineFor: boolean called: trampolineName [
 	<inline: true>
 	^self genMustBeBooleanTrampolineFor: boolean branchBytes: 1 called: trampolineName
 ]
 
-{ #category : #'bytecode generators' }
+{ #category : 'bytecode generators' }
 RegisterAllocatingCogit >> genPushReceiverBytecode [
 	^self ssPushDesc: self ssSelfDescriptor
 ]
 
-{ #category : #'bytecode generators' }
+{ #category : 'bytecode generators' }
 RegisterAllocatingCogit >> genSpecialSelectorArithmetic [
 	| primDescriptor rcvrIsConst argIsConst rcvrIsInt argIsInt rcvrInt argInt destReg
 	 jumpNotSmallInts jumpContinue jumpOverflow index rcvrReg argReg regMask |
@@ -974,7 +976,7 @@ RegisterAllocatingCogit >> genSpecialSelectorArithmetic [
 	^0
 ]
 
-{ #category : #'bytecode generators' }
+{ #category : 'bytecode generators' }
 RegisterAllocatingCogit >> genSpecialSelectorClass [
 	| topReg destReg scratchReg |
 	topReg := self allocateRegForStackEntryAt: 0.
@@ -990,7 +992,7 @@ RegisterAllocatingCogit >> genSpecialSelectorClass [
 	^0
 ]
 
-{ #category : #'bytecode generators' }
+{ #category : 'bytecode generators' }
 RegisterAllocatingCogit >> genSpecialSelectorComparison [
 	| nextPC postBranchPC targetPC primDescriptor branchDescriptor
 	  rcvrIsInt rcvrIsConst argIsIntConst argInt jumpNotSmallInts inlineCAB index rcvrReg argReg branchToTarget needMergeToContinue needMergeToTarget |
@@ -1101,7 +1103,7 @@ RegisterAllocatingCogit >> genSpecialSelectorComparison [
 	^self genMarshalledSend: index negated - 1 numArgs: 1 sendTable: ordinarySendTrampolines
 ]
 
-{ #category : #'bytecode generator support' }
+{ #category : 'bytecode generator support' }
 RegisterAllocatingCogit >> genStorePop: popBoolean TemporaryVariable: tempIndex [
 	<inline: false>
 	| top targetTemp srcRegOrNone destReg |
@@ -1135,7 +1137,7 @@ RegisterAllocatingCogit >> genStorePop: popBoolean TemporaryVariable: tempIndex 
 	^0
 ]
 
-{ #category : #'bytecode generators' }
+{ #category : 'bytecode generators' }
 RegisterAllocatingCogit >> genVanillaInlinedIdenticalOrNotIf: orNot [
 	| nextPC postBranchPC targetBytecodePC branchDescriptor
 	  rcvrReg argReg argIsConstant rcvrIsConstant  |
@@ -1198,7 +1200,7 @@ RegisterAllocatingCogit >> genVanillaInlinedIdenticalOrNotIf: orNot [
 	^0
 ]
 
-{ #category : #initialization }
+{ #category : 'initialization' }
 RegisterAllocatingCogit >> generateRunTimeTrampolines [
 	"Generate the run-time entries at the base of the native code zone and update the base."
 	
@@ -1209,14 +1211,14 @@ RegisterAllocatingCogit >> generateRunTimeTrampolines [
 	super generateRunTimeTrampolines
 ]
 
-{ #category : #'simulation stack' }
+{ #category : 'simulation stack' }
 RegisterAllocatingCogit >> initSimStackForFramefulMethod: startpc [
 	super initSimStackForFramefulMethod: startpc.
 	0 to: simStackPtr do:
 		[:i| (self simStackAt: i) liveRegister: NoReg]
 ]
 
-{ #category : #'simulation stack' }
+{ #category : 'simulation stack' }
 RegisterAllocatingCogit >> initSimStackForFramelessBlock: startpc [
 	super initSimStackForFramelessBlock: startpc.
 	self simSelf liveRegister: ReceiverResultReg.
@@ -1224,7 +1226,7 @@ RegisterAllocatingCogit >> initSimStackForFramelessBlock: startpc [
 		[:i| (self simStackAt: i) liveRegister: NoReg]
 ]
 
-{ #category : #'simulation stack' }
+{ #category : 'simulation stack' }
 RegisterAllocatingCogit >> initSimStackForFramelessMethod: startpc [
 	super initSimStackForFramelessMethod: startpc.
 	0 to: simStackPtr do:
@@ -1233,20 +1235,20 @@ RegisterAllocatingCogit >> initSimStackForFramelessMethod: startpc [
 		desc liveRegister: (desc type = SSRegister ifTrue: [desc register] ifFalse: [NoReg])]
 ]
 
-{ #category : #initialization }
+{ #category : 'initialization' }
 RegisterAllocatingCogit >> initializeCodeZoneFrom: startAddress upTo: endAddress [
 	scratchSimStack := self cCode: [self malloc: self simStackSlots * (self sizeof: CogSimStackEntry)]
 							inSmalltalk: [CArrayAccessor on: ((1 to: self simStackSlots) collect: [:ign| CogRegisterAllocatingSimStackEntry new])].
 	super initializeCodeZoneFrom: startAddress upTo: endAddress
 ]
 
-{ #category : #'bytecode generator support' }
+{ #category : 'bytecode generator support' }
 RegisterAllocatingCogit >> isAPowerOfTwo: anInteger [ 
 	<inline: true>
 	^(anInteger bitAnd: anInteger - 1) = 0
 ]
 
-{ #category : #'simulation stack' }
+{ #category : 'simulation stack' }
 RegisterAllocatingCogit >> liveRegisters [
 	| regsSet |
 	needsFrame
@@ -1266,13 +1268,13 @@ RegisterAllocatingCogit >> liveRegisters [
 	^regsSet
 ]
 
-{ #category : #'simulation stack' }
+{ #category : 'simulation stack' }
 RegisterAllocatingCogit >> liveRegistersExceptingTopNItems: n in: aSimStack [
 	<var: 'aSimStack' type: #'SimStackEntry *'>
 	^self liveRegistersFrom: 0 to: simStackPtr - n in: aSimStack
 ]
 
-{ #category : #'simulation stack' }
+{ #category : 'simulation stack' }
 RegisterAllocatingCogit >> liveRegistersFrom: low to: high in: aSimStack [
 	<var: 'aSimStack' type: #'SimStackEntry *'>
 	<inline: true>
@@ -1284,12 +1286,12 @@ RegisterAllocatingCogit >> liveRegistersFrom: low to: high in: aSimStack [
 	^regsSet
 ]
 
-{ #category : #debugging }
+{ #category : 'debugging' }
 RegisterAllocatingCogit >> liveRegistersInSelfAndTemps [
 	^self liveRegistersFrom: 0 to: methodOrBlockNumTemps in: simStack
 ]
 
-{ #category : #'compile abstract instructions' }
+{ #category : 'compile abstract instructions' }
 RegisterAllocatingCogit >> maybeCountFixup: descriptor [
 	"Count needed fixups; descriptor is known to be a branch or a block creation."
 	<var: #descriptor type: #'BytecodeDescriptor *'>
@@ -1299,13 +1301,13 @@ RegisterAllocatingCogit >> maybeCountFixup: descriptor [
 									ifFalse: [1])
 ]
 
-{ #category : #'compile abstract instructions' }
+{ #category : 'compile abstract instructions' }
 RegisterAllocatingCogit >> maybeInitNumFixups [
 	<inline: true>
 	numFixups := 0
 ]
 
-{ #category : #'bytecode generator support' }
+{ #category : 'bytecode generator support' }
 RegisterAllocatingCogit >> mergeCurrentSimStackWith: fixup [
 	"At a merge point the cogit expects the stack to be in the same state as fixup's mergeSimStack.
 	 mergeSimStack is the state as of some jump forward or backward to this point.  So make
@@ -1374,7 +1376,7 @@ RegisterAllocatingCogit >> mergeCurrentSimStackWith: fixup [
 	self updateSimSpillBase
 ]
 
-{ #category : #'bytecode generator support' }
+{ #category : 'bytecode generator support' }
 RegisterAllocatingCogit >> mergeRequiredForJumpTo: targetPC [
 	"While this is a multi-pass compiler, no intermediate control-flow graph is built from bytecode and
 	 there is a monotonically increasing one-to-one relationship between bytecode pcs and machine
@@ -1415,7 +1417,7 @@ RegisterAllocatingCogit >> mergeRequiredForJumpTo: targetPC [
 	^self mergeRequiredToTarget: fixup mergeSimStack
 ]
 
-{ #category : #'bytecode generator support' }
+{ #category : 'bytecode generator support' }
 RegisterAllocatingCogit >> mergeRequiredToTarget: targetSimStack [
 	<var: 'targetSimStack' type: #'SimStackEntry *'>
 	<inline: true>
@@ -1430,7 +1432,7 @@ RegisterAllocatingCogit >> mergeRequiredToTarget: targetSimStack [
 	^false
 ]
 
-{ #category : #'simulation stack' }
+{ #category : 'simulation stack' }
 RegisterAllocatingCogit >> mergeWithFixupIfRequired: fixup [
 	"If this bytecode has a fixup, some kind of merge needs to be done. There are 4 cases:
 		1) the bytecode has no fixup (fixup isNotAFixup)
@@ -1503,13 +1505,13 @@ RegisterAllocatingCogit >> mergeWithFixupIfRequired: fixup [
 	^0
 ]
 
-{ #category : #'bytecode generator support' }
+{ #category : 'bytecode generator support' }
 RegisterAllocatingCogit >> moveVolatileSimStackEntriesToRegisters [
 	<inline: true>
 	self moveVolatileSimStackEntriesToRegistersPreserving: self allocatedRegisters
 ]
 
-{ #category : #'bytecode generator support' }
+{ #category : 'bytecode generator support' }
 RegisterAllocatingCogit >> moveVolatileSimStackEntriesToRegistersPreserving: registerSet [
 	"When jumping forward to a merge point the stack must be reconcilable with the state that falls through to the merge point.
 	 We cannot easily arrange that later we add code to the branch, e.g. to spill values.  Instead, any volatile contents must be
@@ -1545,14 +1547,14 @@ RegisterAllocatingCogit >> moveVolatileSimStackEntriesToRegistersPreserving: reg
 	self deny: self duplicateRegisterAssignmentsInTemporaries
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 RegisterAllocatingCogit >> needsFrame [
 	"for asserts"
 	<cmacro: '() needsFrame'>
 	^needsFrame
 ]
 
-{ #category : #'bytecode generator support' }
+{ #category : 'bytecode generator support' }
 RegisterAllocatingCogit >> pushForMergeWith: mergeSimStack [
 	"Answer if values must be pushed from simStack to merge with mergeSimStack, otherwise < 0 (the default)."
 	<var: #mergeSimStack type: #'SimStackEntry *'>
@@ -1564,7 +1566,7 @@ RegisterAllocatingCogit >> pushForMergeWith: mergeSimStack [
 	^false
 ]
 
-{ #category : #'bytecode generator support' }
+{ #category : 'bytecode generator support' }
 RegisterAllocatingCogit >> putSelfInReceiverResultReg [
 	"Override to force copying the register to duplicates on stack."
 	<inline: true>
@@ -1576,7 +1578,7 @@ RegisterAllocatingCogit >> putSelfInReceiverResultReg [
 		 self copyLiveRegisterToCopiesOf: self simSelf]
 ]
 
-{ #category : #'bytecode generator support' }
+{ #category : 'bytecode generator support' }
 RegisterAllocatingCogit >> receiverRefOnScratchSimStack [
 
 	self assert: scratchSpillBase >= 0.
@@ -1588,7 +1590,7 @@ RegisterAllocatingCogit >> receiverRefOnScratchSimStack [
 	^false
 ]
 
-{ #category : #testing }
+{ #category : 'testing' }
 RegisterAllocatingCogit >> receiverResultRegIsAssignedToSelfAndNothingElse [
 	| culprit |
 	0 to: simStackPtr do:
@@ -1600,7 +1602,7 @@ RegisterAllocatingCogit >> receiverResultRegIsAssignedToSelfAndNothingElse [
 	^true
 ]
 
-{ #category : #'bytecode generator support' }
+{ #category : 'bytecode generator support' }
 RegisterAllocatingCogit >> reconcileRegisterStateForJoinAfterSpecialSelectorSend [
 	"When the control flow from the inlined special selector code (e.g. add or comparison)
 	 joins the control flow from the send, taken when the inlined code fails, we should decide
@@ -1632,14 +1634,14 @@ RegisterAllocatingCogit >> reconcileRegisterStateForJoinAfterSpecialSelectorSend
 					inSmalltalk: [(scratchSimStack at: i) copy])]
 ]
 
-{ #category : #'bytecode generator support' }
+{ #category : 'bytecode generator support' }
 RegisterAllocatingCogit >> registerMaskUndesirableForTempVars [
 	"Answer the mask containing registers to avoid for temporary variables."
 	<inline: true>
 	^self registerMaskFor: ReceiverResultReg and: ClassReg and: SendNumArgsReg and: TempReg
 ]
 
-{ #category : #'compile abstract instructions' }
+{ #category : 'compile abstract instructions' }
 RegisterAllocatingCogit >> reinitializeAllButBackwardFixupsFrom: start through: end [
 	"When a method must be recompiled due to moving a loop's register
 	 assignments to the head of a loop, backward fixups must be marked
@@ -1665,7 +1667,7 @@ RegisterAllocatingCogit >> reinitializeAllButBackwardFixupsFrom: start through: 
 			[fixup reinitialize]]
 ]
 
-{ #category : #'bytecode generator support' }
+{ #category : 'bytecode generator support' }
 RegisterAllocatingCogit >> reinitializeOpcodesFrom: start to: end [
 	<inline: true>
 	start to: end do:
@@ -1673,7 +1675,7 @@ RegisterAllocatingCogit >> reinitializeOpcodesFrom: start to: end [
 		(self abstractInstructionAt: i) reinitializeOpcode]
 ]
 
-{ #category : #'bytecode generator support' }
+{ #category : 'bytecode generator support' }
 RegisterAllocatingCogit >> resetSimStack: startPC [
 	<inline: true>
 	simSpillBase := methodOrBlockNumTemps + 1.
@@ -1684,7 +1686,7 @@ RegisterAllocatingCogit >> resetSimStack: startPC [
 		self cCode: '' inSmalltalk: [(self simStackAt: i) bcptr: startPC]]
 ]
 
-{ #category : #'bytecode generator support' }
+{ #category : 'bytecode generator support' }
 RegisterAllocatingCogit >> resolveConflicts: registersInCommon with: mergeSimStack to: simStackPtr [
 	"registersInCommon is the register mask of registers in use in both the current
 	 simStack and the target mergeSimStack. Swap any and all conflicting register uses
@@ -1750,7 +1752,7 @@ RegisterAllocatingCogit >> resolveConflicts: registersInCommon with: mergeSimSta
 	"(initialIndex to: opcodeIndex - 1) collect: [:x| abstractOpcodes at: x]"
 ]
 
-{ #category : #'simulation stack' }
+{ #category : 'simulation stack' }
 RegisterAllocatingCogit >> restoreSimStackAtMergePoint: fixup [
 	<inline: true>
 	"All the execution paths reaching a merge point expect everything to be spilled
@@ -1768,7 +1770,7 @@ RegisterAllocatingCogit >> restoreSimStackAtMergePoint: fixup [
 	^0
 ]
 
-{ #category : #'bytecode generator support' }
+{ #category : 'bytecode generator support' }
 RegisterAllocatingCogit >> restoreSimStackFromScratch [
 	<inline: true>
 	self cCode: [self memcpy: simStack _: scratchSimStack _: self simStackSlots * (self sizeof: CogSimStackEntry)]
@@ -1778,7 +1780,7 @@ RegisterAllocatingCogit >> restoreSimStackFromScratch [
 	simSpillBase := scratchSpillBase
 ]
 
-{ #category : #'bytecode generator support' }
+{ #category : 'bytecode generator support' }
 RegisterAllocatingCogit >> setMergeSimStackOf: fixup [
 	<var: #fixup type: #'BytecodeFixup *'>
 	fixup mergeSimStack
@@ -1798,7 +1800,7 @@ RegisterAllocatingCogit >> setMergeSimStackOf: fixup [
 		inSmalltalk: [fixup mergeSimStack: self copySimStack]
 ]
 
-{ #category : #'bytecode generator support' }
+{ #category : 'bytecode generator support' }
 RegisterAllocatingCogit >> simSelfOnStackInReceiverResultReg [
 	"For assert checking only."
 	methodOrBlockNumTemps + 1 to: simStackPtr do:
@@ -1809,14 +1811,14 @@ RegisterAllocatingCogit >> simSelfOnStackInReceiverResultReg [
 	^false
 ]
 
-{ #category : #'simulation stack' }
+{ #category : 'simulation stack' }
 RegisterAllocatingCogit >> simStack: stack at: index [
 	<cmacro: '(stack,index) ((stack) + (index))'>
 	<returnTypeC: #'SimStackEntry *'>
 	^self addressOf: (stack at: index)
 ]
 
-{ #category : #'simulation stack' }
+{ #category : 'simulation stack' }
 RegisterAllocatingCogit >> simStack: aSimStack isIdenticalTo: bSimStack [
 	<var: 'aSimStack' type: #'SimStackEntry *'>
 	<var: 'bSimStack' type: #'SimStackEntry *'>
@@ -1827,13 +1829,13 @@ RegisterAllocatingCogit >> simStack: aSimStack isIdenticalTo: bSimStack [
 	^true
 ]
 
-{ #category : #initialization }
+{ #category : 'initialization' }
 RegisterAllocatingCogit >> simStackEntryClass [
 	<doNotGenerate>
 	^CogRegisterAllocatingSimStackEntry
 ]
 
-{ #category : #'bytecode generator support' }
+{ #category : 'bytecode generator support' }
 RegisterAllocatingCogit >> simStackMergeCompatibleWith: fixup [
 	simStackPtr = fixup simStackPtr ifFalse:
 		[^false].
@@ -1870,7 +1872,7 @@ RegisterAllocatingCogit >> simStackMergeCompatibleWith: fixup [
 	^true
 ]
 
-{ #category : #'bytecode generator support' }
+{ #category : 'bytecode generator support' }
 RegisterAllocatingCogit >> simStackSameAs: fixup [ 
 	"There are no register conflicts between simStack and mergeSimStack if
 	 traversing both stacks from hot end (simStackPtr) to cold end (0) no register
@@ -1888,7 +1890,7 @@ RegisterAllocatingCogit >> simStackSameAs: fixup [
 	^true
 ]
 
-{ #category : #'simulation stack' }
+{ #category : 'simulation stack' }
 RegisterAllocatingCogit >> ssAllocateRequiredRegMask: requiredRegsMask upThrough: stackPtr [
 	"Override to void any required registers in temp vars."
 	0 to: methodOrBlockNumTemps do:
@@ -1898,7 +1900,7 @@ RegisterAllocatingCogit >> ssAllocateRequiredRegMask: requiredRegsMask upThrough
 	super ssAllocateRequiredRegMask: requiredRegsMask upThrough: stackPtr
 ]
 
-{ #category : #'simulation stack' }
+{ #category : 'simulation stack' }
 RegisterAllocatingCogit >> ssEntriesDo: aBlock [
 	"Evaluate aBlock with all simStackEntries"
 	<inline: true>
@@ -1906,7 +1908,7 @@ RegisterAllocatingCogit >> ssEntriesDo: aBlock [
 		[:i| aBlock value: (self simStackAt: i)]
 ]
 
-{ #category : #'simulation stack' }
+{ #category : 'simulation stack' }
 RegisterAllocatingCogit >> ssEntrySuchThat: aBlock [
 	"Answer the SimStackEntry for which aBlock answers true, or nil if none."
 	<inline: true>
@@ -1917,7 +1919,7 @@ RegisterAllocatingCogit >> ssEntrySuchThat: aBlock [
 	^nil
 ]
 
-{ #category : #'simulation stack' }
+{ #category : 'simulation stack' }
 RegisterAllocatingCogit >> ssFlushFrom: start upThrough: unaryBlock [
 	"Any occurrences on the stack of the value being stored (which is the top of stack)
 	 must be flushed, and hence any values colder than them stack."
@@ -1928,7 +1930,7 @@ RegisterAllocatingCogit >> ssFlushFrom: start upThrough: unaryBlock [
 		(unaryBlock value: (self simStackAt: index)) ifTrue: [ ^ self ssFlushTo: index ] ]
 ]
 
-{ #category : #'simulation stack' }
+{ #category : 'simulation stack' }
 RegisterAllocatingCogit >> ssFlushFrom: start upThroughRegister: reg [
 	"Any occurrences on the stack of the register must be
 	 flushed, and hence any values colder than them stack."
@@ -1936,35 +1938,35 @@ RegisterAllocatingCogit >> ssFlushFrom: start upThroughRegister: reg [
 	self ssFlushFrom: start upThrough: [ :desc | desc type = SSRegister and: [ desc register = reg ] ]
 ]
 
-{ #category : #'simulation stack' }
+{ #category : 'simulation stack' }
 RegisterAllocatingCogit >> ssPushAnnotatedConstant: literal [
 	super ssPushAnnotatedConstant: literal.
 	self ssTop liveRegister: NoReg.
 	^0
 ]
 
-{ #category : #'simulation stack' }
+{ #category : 'simulation stack' }
 RegisterAllocatingCogit >> ssPushBase: reg offset: offset [
 	super ssPushBase: reg offset: offset.
 	self ssTop liveRegister: NoReg.
 	^0
 ]
 
-{ #category : #'simulation stack' }
+{ #category : 'simulation stack' }
 RegisterAllocatingCogit >> ssPushConstant: literal [
 	super ssPushConstant: literal.
 	self ssTop liveRegister: NoReg.
 	^0
 ]
 
-{ #category : #'simulation stack' }
+{ #category : 'simulation stack' }
 RegisterAllocatingCogit >> ssPushRegister: reg [
 	super ssPushRegister: reg.
 	self ssTop liveRegister: NoReg.
 	^0
 ]
 
-{ #category : #'simulation stack' }
+{ #category : 'simulation stack' }
 RegisterAllocatingCogit >> ssStorePop: popBoolean toPreferredReg: preferredReg [
 	"Store or pop the top simulated stack entry to a register.
 	 Use preferredReg if the entry is not itself a register.
@@ -1988,7 +1990,7 @@ RegisterAllocatingCogit >> ssStorePop: popBoolean toPreferredReg: preferredReg [
 	^actualReg
 ]
 
-{ #category : #'simulation stack' }
+{ #category : 'simulation stack' }
 RegisterAllocatingCogit >> ssStorePopNoAssign: popBoolean toReg: reg [
 	"Store or pop the top simulated stack entry to a register.
 	 Do /not/ assign reg to ssTop.
@@ -2000,14 +2002,14 @@ RegisterAllocatingCogit >> ssStorePopNoAssign: popBoolean toReg: reg [
 		ifFalse: [self ssTop storeToRegNoAssign: reg].
 ]
 
-{ #category : #'simulation only' }
+{ #category : 'simulation only' }
 RegisterAllocatingCogit >> traceSimStack [
 	<cmacro: '() 0'>
 	(compilationTrace anyMask: 4) ifTrue:
 		[self printSimStack]
 ]
 
-{ #category : #'bytecode generator support' }
+{ #category : 'bytecode generator support' }
 RegisterAllocatingCogit >> voidReceiverResultRegContainsSelf [
 	"Used when ReceiverResultReg is allocated for other than simSelf, and
 	 there may be references to ReceiverResultReg which need to be spilled."

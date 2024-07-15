@@ -1,6 +1,6 @@
-Extension { #name : #WarpBlt }
+Extension { #name : 'WarpBlt' }
 
-{ #category : #'*VMMaker-Interpreter-system simulation' }
+{ #category : '*VMMaker-Interpreter-system simulation' }
 WarpBlt >> warpBitsSimulated [
 	"Simulate WarpBlt"
 
@@ -11,7 +11,7 @@ WarpBlt >> warpBitsSimulated [
 
 ]
 
-{ #category : #'*VMMaker-Interpreter-system simulation' }
+{ #category : '*VMMaker-Interpreter-system simulation' }
 WarpBlt >> warpBitsSimulated: n sourceMap: sourceMap [
 	"Simulate WarpBlt"
 	^ BitBltSimulation warpBitsFrom: self

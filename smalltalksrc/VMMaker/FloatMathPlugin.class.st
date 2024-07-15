@@ -1,41 +1,43 @@
 Class {
-	#name : #FloatMathPlugin,
-	#superclass : #InterpreterPlugin,
-	#category : #'VMMaker-Plugins'
+	#name : 'FloatMathPlugin',
+	#superclass : 'InterpreterPlugin',
+	#category : 'VMMaker-Plugins',
+	#package : 'VMMaker',
+	#tag : 'Plugins'
 }
 
-{ #category : #translation }
+{ #category : 'translation' }
 FloatMathPlugin class >> hasHeaderFile [
 	"If there is a single intrinsic header file to be associated with the plugin, here is where you want to flag"
 	^true
 ]
 
-{ #category : #translation }
+{ #category : 'translation' }
 FloatMathPlugin class >> requiresCrossPlatformFiles [
 	"default is ok for most, any plugin needing platform specific files must say so"
 	^true
 ]
 
-{ #category : #simulation }
+{ #category : 'simulation' }
 FloatMathPlugin class >> simulatorClass [
 	^FloatMathPluginSimulator
 ]
 
-{ #category : #'float primitives' }
+{ #category : 'float primitives' }
 FloatMathPlugin >> floatExponentBits [
 	"Answer the number of bits in the double-precision exponent.  This is an 11-bit field."
 	<inline: true>
 	^11
 ]
 
-{ #category : #'float primitives' }
+{ #category : 'float primitives' }
 FloatMathPlugin >> isFinite: aDouble [
 	<var: #aDouble type: #double>
 	<inline: true>
 	^aDouble - aDouble = 0.0
 ]
 
-{ #category : #'float primitives' }
+{ #category : 'float primitives' }
 FloatMathPlugin >> primitiveArcCos [
 	"Computes acos(receiver)"
 	| rcvr result |
@@ -50,7 +52,7 @@ FloatMathPlugin >> primitiveArcCos [
 	interpreterProxy pushFloat: result.
 ]
 
-{ #category : #'float primitives' }
+{ #category : 'float primitives' }
 FloatMathPlugin >> primitiveArcCosH [
 	"Computes acosh(receiver)"
 	| rcvr result |
@@ -65,7 +67,7 @@ FloatMathPlugin >> primitiveArcCosH [
 	interpreterProxy pushFloat: result.
 ]
 
-{ #category : #'float primitives' }
+{ #category : 'float primitives' }
 FloatMathPlugin >> primitiveArcSin [
 	"Computes asin(receiver)"
 	| rcvr result |
@@ -80,7 +82,7 @@ FloatMathPlugin >> primitiveArcSin [
 	interpreterProxy pushFloat: result.
 ]
 
-{ #category : #'float primitives' }
+{ #category : 'float primitives' }
 FloatMathPlugin >> primitiveArcSinH [
 	"Computes asinh(receiver)"
 	| rcvr result |
@@ -95,7 +97,7 @@ FloatMathPlugin >> primitiveArcSinH [
 	interpreterProxy pushFloat: result.
 ]
 
-{ #category : #'float primitives' }
+{ #category : 'float primitives' }
 FloatMathPlugin >> primitiveArcTan [
 	"Computes atan(receiver)"
 	| rcvr result |
@@ -110,7 +112,7 @@ FloatMathPlugin >> primitiveArcTan [
 	interpreterProxy pushFloat: result.
 ]
 
-{ #category : #'float primitives' }
+{ #category : 'float primitives' }
 FloatMathPlugin >> primitiveArcTan2 [
 	"Computes atan2(receiver, arg)"
 	| rcvr arg result |
@@ -127,7 +129,7 @@ FloatMathPlugin >> primitiveArcTan2 [
 	interpreterProxy pushFloat: result.
 ]
 
-{ #category : #'float primitives' }
+{ #category : 'float primitives' }
 FloatMathPlugin >> primitiveArcTanH [
 	"Computes atanh(receiver)"
 	| rcvr result |
@@ -142,7 +144,7 @@ FloatMathPlugin >> primitiveArcTanH [
 	interpreterProxy pushFloat: result.
 ]
 
-{ #category : #'float primitives' }
+{ #category : 'float primitives' }
 FloatMathPlugin >> primitiveCos [
 	"Computes cos(receiver)"
 	| rcvr result |
@@ -157,7 +159,7 @@ FloatMathPlugin >> primitiveCos [
 	interpreterProxy pushFloat: result.
 ]
 
-{ #category : #'float primitives' }
+{ #category : 'float primitives' }
 FloatMathPlugin >> primitiveCosH [
 	"Computes cosh(receiver)"
 	| rcvr result |
@@ -172,7 +174,7 @@ FloatMathPlugin >> primitiveCosH [
 	interpreterProxy pushFloat: result.
 ]
 
-{ #category : #'float primitives' }
+{ #category : 'float primitives' }
 FloatMathPlugin >> primitiveExp [
 	"Computes E raised to the receiver power."
 	| rcvr result |
@@ -187,7 +189,7 @@ FloatMathPlugin >> primitiveExp [
 	interpreterProxy pushFloat: result.
 ]
 
-{ #category : #'float primitives' }
+{ #category : 'float primitives' }
 FloatMathPlugin >> primitiveFMod [
 	"Computes receiver \\ arg"
 	| rcvr arg result |
@@ -204,7 +206,7 @@ FloatMathPlugin >> primitiveFMod [
 	interpreterProxy pushFloat: result.
 ]
 
-{ #category : #'float primitives' }
+{ #category : 'float primitives' }
 FloatMathPlugin >> primitiveFractionalPart [
 	"Computes receiver \\ 1.0"
 	| rcvr result trunc |
@@ -220,7 +222,7 @@ FloatMathPlugin >> primitiveFractionalPart [
 	interpreterProxy pushFloat: result.
 ]
 
-{ #category : #'float primitives' }
+{ #category : 'float primitives' }
 FloatMathPlugin >> primitiveHypot [
 	"hypot(x,y) returns sqrt(x^2+y^2) with error less  than 1 ulps"
 	| rcvr arg result |
@@ -237,7 +239,7 @@ FloatMathPlugin >> primitiveHypot [
 	interpreterProxy pushFloat: result.
 ]
 
-{ #category : #'float primitives' }
+{ #category : 'float primitives' }
 FloatMathPlugin >> primitiveLog10 [
 	"Computes log10(receiver)"
 	| rcvr result |
@@ -253,7 +255,7 @@ FloatMathPlugin >> primitiveLog10 [
 	interpreterProxy pushFloat: result.
 ]
 
-{ #category : #'float primitives' }
+{ #category : 'float primitives' }
 FloatMathPlugin >> primitiveLogN [
 	"Computes log(receiver)"
 	| rcvr result |
@@ -269,7 +271,7 @@ FloatMathPlugin >> primitiveLogN [
 	interpreterProxy pushFloat: result.
 ]
 
-{ #category : #'float primitives' }
+{ #category : 'float primitives' }
 FloatMathPlugin >> primitiveRaisedToPower [
 	"Computes receiver**arg"
 	| rcvr arg result |
@@ -286,7 +288,7 @@ FloatMathPlugin >> primitiveRaisedToPower [
 	interpreterProxy pushFloat: result.
 ]
 
-{ #category : #'float primitives' }
+{ #category : 'float primitives' }
 FloatMathPlugin >> primitiveSin [
 	"Computes sin(receiver)"
 	| rcvr result |
@@ -301,7 +303,7 @@ FloatMathPlugin >> primitiveSin [
 	interpreterProxy pushFloat: result.
 ]
 
-{ #category : #'float primitives' }
+{ #category : 'float primitives' }
 FloatMathPlugin >> primitiveSinH [
 	"Computes sinh(receiver)"
 	| rcvr result |
@@ -316,7 +318,7 @@ FloatMathPlugin >> primitiveSinH [
 	interpreterProxy pushFloat: result.
 ]
 
-{ #category : #'float primitives' }
+{ #category : 'float primitives' }
 FloatMathPlugin >> primitiveSqrt [
 	"Computes sqrt(receiver)"
 	| rcvr result |
@@ -332,7 +334,7 @@ FloatMathPlugin >> primitiveSqrt [
 	interpreterProxy pushFloat: result.
 ]
 
-{ #category : #'float primitives' }
+{ #category : 'float primitives' }
 FloatMathPlugin >> primitiveTan [
 	"Computes tan(receiver)"
 	| rcvr result |
@@ -347,7 +349,7 @@ FloatMathPlugin >> primitiveTan [
 	interpreterProxy pushFloat: result.
 ]
 
-{ #category : #'float primitives' }
+{ #category : 'float primitives' }
 FloatMathPlugin >> primitiveTanH [
 	"Computes tanh(receiver)"
 	| rcvr result |
@@ -362,7 +364,7 @@ FloatMathPlugin >> primitiveTanH [
 	interpreterProxy pushFloat: result.
 ]
 
-{ #category : #'float primitives' }
+{ #category : 'float primitives' }
 FloatMathPlugin >> primitiveTimesTwoPower [
 	"Multiply the receiver by the power of the argument."
 	| rcvr arg result |

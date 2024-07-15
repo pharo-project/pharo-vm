@@ -40,8 +40,8 @@ type
 	- SSBaseOffset, SSConstant, SSRegister or SSSpill
 "
 Class {
-	#name : #CogSimStackEntry,
-	#superclass : #VMStructType,
+	#name : 'CogSimStackEntry',
+	#superclass : 'VMStructType',
 	#instVars : [
 		'cogit',
 		'objectRepresentation',
@@ -59,17 +59,19 @@ Class {
 		'CogRTLOpcodes',
 		'VMStackFrameOffsets'
 	],
-	#category : #'VMMaker-JIT'
+	#category : 'VMMaker-JIT',
+	#package : 'VMMaker',
+	#tag : 'JIT'
 }
 
-{ #category : #'simulation only' }
+{ #category : 'simulation only' }
 CogSimStackEntry class >> byteSizeForSimulator: aVMClass [
 	"Answer an approximation of the byte size of an AbstractInstruction struct.
 	 This is for estimating the alloca in allocateOpcodes:bytecodes:ifFail:"
 	^self instSize * (aVMClass sizeof: #'void *')
 ]
 
-{ #category : #translation }
+{ #category : 'translation' }
 CogSimStackEntry class >> instVarNamesAndTypesForTranslationDo: aBinaryBlock [
 	"Enumerate aBinaryBlock with the names and C type strings for the inst vars to include in a CogSimStackEntry struct."
 	"self typedef"
@@ -86,33 +88,33 @@ CogSimStackEntry class >> instVarNamesAndTypesForTranslationDo: aBinaryBlock [
 						[#sqInt])]
 ]
 
-{ #category : #translation }
+{ #category : 'translation' }
 CogSimStackEntry class >> structTypeName [
 	^'SimStackEntry'
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 CogSimStackEntry >> bcptr [
 	"Answer the value of bcptr"
 
 	^ bcptr
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 CogSimStackEntry >> bcptr: anObject [
 	"Set the value of bcptr"
 
 	^bcptr := anObject
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 CogSimStackEntry >> cogit [
 	"Answer the value of cogit"
 	<doNotGenerate>
 	^cogit
 ]
 
-{ #category : #'initialize-release' }
+{ #category : 'initialize-release' }
 CogSimStackEntry >> cogit: aCogit [
 	<doNotGenerate>
 	cogit := aCogit.
@@ -120,21 +122,21 @@ CogSimStackEntry >> cogit: aCogit [
 	^self
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 CogSimStackEntry >> constant [
 	"Answer the value of constant"
 	self assert: type = SSConstant.
 	^constant
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 CogSimStackEntry >> constant: anObject [
 	"Set the value of constant"
 
 	^constant := anObject
 ]
 
-{ #category : #'compile abstract instructions' }
+{ #category : 'compile abstract instructions' }
 CogSimStackEntry >> ensureSpilledAt: baseOffset from: baseRegister [
 	| inst |
 	<var: #inst type: #'AbstractInstruction *'>
@@ -161,19 +163,19 @@ CogSimStackEntry >> ensureSpilledAt: baseOffset from: baseRegister [
 	spilled := true.
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 CogSimStackEntry >> floatRegisterMask [
 	^ 0
 ]
 
-{ #category : #comparing }
+{ #category : 'comparing' }
 CogSimStackEntry >> isFrameSimSelf [
 	"Answer if the receiver is self.  This only works in a frameful method, hence the weird name."
 	<inline: true>
 	^type = SSBaseOffset and: [register = FPReg and: [offset = FoxMFReceiver]]
 ]
 
-{ #category : #comparing }
+{ #category : 'comparing' }
 CogSimStackEntry >> isFrameTempVar [
 	"Answer if the receiver is a temporary variable.  This
 	 only works in a frameful method, hence the weird name."
@@ -181,7 +183,7 @@ CogSimStackEntry >> isFrameTempVar [
 	^type = SSBaseOffset and: [register = FPReg and: [offset ~= FoxMFReceiver]]
 ]
 
-{ #category : #comparing }
+{ #category : 'comparing' }
 CogSimStackEntry >> isFrameVar [
 	"Answer if the receiver is a temporary variable or self.  This
 	 only works in a frameful method, hence the weird name."
@@ -189,7 +191,7 @@ CogSimStackEntry >> isFrameVar [
 	^type = SSBaseOffset and: [register = FPReg]
 ]
 
-{ #category : #comparing }
+{ #category : 'comparing' }
 CogSimStackEntry >> isSameEntryAs: ssEntry [
 	<var: 'ssEntry' type: #'CogSimStackEntry *'>
 	^type = ssEntry type
@@ -198,26 +200,26 @@ CogSimStackEntry >> isSameEntryAs: ssEntry [
 		or: [(type = SSConstant and: [constant = ssEntry constant])]]]
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 CogSimStackEntry >> liveRegister [
 
 	^ liveRegister
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 CogSimStackEntry >> liveRegister: anObject [
 
 	^liveRegister := anObject
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 CogSimStackEntry >> maybeConstant [
 	"Answer the value of constant, no assert check."
 	<cmacro: '(sse) ((sse)->constant)'>
 	^constant
 ]
 
-{ #category : #'compile abstract instructions' }
+{ #category : 'compile abstract instructions' }
 CogSimStackEntry >> moveToReg: reg [
 	spilled
 		ifTrue:
@@ -231,7 +233,7 @@ CogSimStackEntry >> moveToReg: reg [
 										ifFalse: [cogit Label]] }]
 ]
 
-{ #category : #'compile abstract instructions' }
+{ #category : 'compile abstract instructions' }
 CogSimStackEntry >> moveToVectorReg: reg [
 	self assert: type = SSVectorRegister.
 	spilled
@@ -244,21 +246,21 @@ CogSimStackEntry >> moveToVectorReg: reg [
 										ifFalse: [cogit Label]] }]
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 CogSimStackEntry >> offset [
 	"Answer the value of offset"
 	self assert: type = SSBaseOffset.
 	^offset
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 CogSimStackEntry >> offset: anObject [
 	"Set the value of offset"
 
 	^offset := anObject
 ]
 
-{ #category : #printing }
+{ #category : 'printing' }
 CogSimStackEntry >> printStateOn: aStream [
 	<doNotGenerate> "Smalltalk-side only"
 	type isInteger ifFalse: [^self].
@@ -290,21 +292,21 @@ CogSimStackEntry >> printStateOn: aStream [
 	aStream nextPut: $)
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 CogSimStackEntry >> register [
 	"Answer the value of register"
 	self assert: (type = SSBaseOffset or: [type = SSRegister or: [type = SSVectorRegister]]).
 	^register
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 CogSimStackEntry >> register: anObject [
 	"Set the value of register"
 
 	^register := anObject
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 CogSimStackEntry >> registerMask [
 	"Answer a bit mask for the receiver's register, if any."
 	^ (type = SSBaseOffset or: [ type = SSRegister or: [ type = SSVectorRegister ] ])
@@ -312,33 +314,33 @@ CogSimStackEntry >> registerMask [
 		ifFalse: [ 0 ]
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 CogSimStackEntry >> registerMaskOrNone [
 	^(type = SSRegister or: [ type = SSVectorRegister ]) ifTrue: [cogit registerMaskFor: register] ifFalse: [0]
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 CogSimStackEntry >> registerOrNone [
 	^ ((type = SSRegister) or: [ type = SSVectorRegister ])
 		ifTrue: [register] 
 		ifFalse: [NoReg]
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 CogSimStackEntry >> spilled [
 	"Answer the value of spilled"
 
 	^ spilled
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 CogSimStackEntry >> spilled: anObject [
 	"Set the value of spilled"
 
 	^spilled := anObject
 ]
 
-{ #category : #'compile abstract instructions' }
+{ #category : 'compile abstract instructions' }
 CogSimStackEntry >> storeToReg: reg [
 	type caseOf: {
 		[SSBaseOffset]	-> [cogit MoveMw: offset r: register R: reg].
@@ -349,14 +351,14 @@ CogSimStackEntry >> storeToReg: reg [
 								ifFalse: [cogit Label]] }
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 CogSimStackEntry >> type [
 	"Answer the value of type"
 
 	^ type
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 CogSimStackEntry >> type: anObject [
 	"Set the value of type"
 
