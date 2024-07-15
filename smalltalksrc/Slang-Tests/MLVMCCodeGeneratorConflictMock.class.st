@@ -1,13 +1,14 @@
 Class {
-	#name : #MLVMCCodeGeneratorConflictMock,
-	#superclass : #MLVMCCodeGenerator,
+	#name : 'MLVMCCodeGeneratorConflictMock',
+	#superclass : 'MLVMCCodeGenerator',
 	#instVars : [
 		'slangTyper'
 	],
-	#category : #'Slang-Tests'
+	#category : 'Slang-Tests',
+	#package : 'Slang-Tests'
 }
 
-{ #category : #'type inference' }
+{ #category : 'type inference' }
 MLVMCCodeGeneratorConflictMock >> inferTypes [
 	slangTyper  := 	SlangTyperConflictMock new
 		codeGenerator: self.
@@ -16,7 +17,7 @@ MLVMCCodeGeneratorConflictMock >> inferTypes [
 		inferTypes
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 MLVMCCodeGeneratorConflictMock >> slangTyper [ 
 	^ slangTyper
 ]
