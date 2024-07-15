@@ -1,13 +1,14 @@
 Class {
-	#name : #SLInliningTestClass,
-	#superclass : #SlangStructType,
+	#name : 'SLInliningTestClass',
+	#superclass : 'SlangStructType',
 	#instVars : [
 		'instancesVariable'
 	],
-	#category : #'Slang-Tests'
+	#category : 'Slang-Tests',
+	#package : 'Slang-Tests'
 }
 
-{ #category : #'unused-in-conditional' }
+{ #category : 'unused-in-conditional' }
 SLInliningTestClass >> methodCallInIfMethodWithReturnConstant [
 	| i |
 	i = 5
@@ -17,7 +18,17 @@ SLInliningTestClass >> methodCallInIfMethodWithReturnConstant [
 
 ]
 
-{ #category : #'unused-in-conditional' }
+{ #category : 'unused-in-conditional' }
+SLInliningTestClass >> methodCallInIfMethodWithReturnConstantInIfWithoutReturn [
+	| i |
+	i = 5
+	ifTrue: [
+	 self methodReturnConstantInIf ].
+	^ 0
+
+]
+
+{ #category : 'unused-in-conditional' }
 SLInliningTestClass >> methodCallInIfMethodWithReturnConstantWithoutReturn [
 	| i |
 	i = 5
@@ -27,77 +38,70 @@ SLInliningTestClass >> methodCallInIfMethodWithReturnConstantWithoutReturn [
 
 ]
 
-{ #category : #'unused-in-return' }
+{ #category : 'inline-in-return' }
 SLInliningTestClass >> methodCallInReturnMethodWithAssignmentAndReturnConstant [
 	<returnTypeC: #sqInt>
 	^ self methodWithAssignmentAndReturnConstant
 ]
 
-{ #category : #'unused-in-return' }
+{ #category : 'inline-in-return' }
+SLInliningTestClass >> methodCallInReturnMethodWithAssignmentAndReturnConstantInIf [
+	^ self methodWithAssignmentAndReturnConstantInIf
+]
+
+{ #category : 'inline-in-return' }
 SLInliningTestClass >> methodCallInReturnMethodWithReturnConstant [
 	^ self methodReturnConstant 
 ]
 
-{ #category : #'unused-in-return' }
+{ #category : 'inline-in-return' }
 SLInliningTestClass >> methodCallInReturnMethodWithReturnConstantInIf [
 	<returnTypeC: #sqInt>
 	^ self methodReturnConstantInIf 
 ]
 
-{ #category : #'unused-in-return' }
+{ #category : 'inline-in-return' }
 SLInliningTestClass >> methodCallInReturnMethodWithReturnConstantInIfElse [
 	<returnTypeC: #sqInt>
 	^ self methodReturnConstantInIfElse
 ]
 
-{ #category : #'unused-constant' }
+{ #category : 'unused-constant' }
 SLInliningTestClass >> methodCallMethodWithAssignmentAndReturnConstant [
 	self methodWithAssignmentAndReturnConstant.
 ]
 
-{ #category : #'unused-constant' }
+{ #category : 'unused-constant' }
 SLInliningTestClass >> methodCallMethodWithAssignmentAndReturnConstantInIf [
 	self methodWithAssignmentAndReturnConstantInIf.
 
 ]
 
-{ #category : #'unused-constant' }
-SLInliningTestClass >> methodCallMethodWithAssignmentAndReturnConstantInIfElse [
-	self methodWithAssignmentAndReturnConstantInIfElse
-
-]
-
-{ #category : #'unused-variable' }
+{ #category : 'unused-variable' }
 SLInliningTestClass >> methodCallMethodWithExpression [
 	self methodWithExpression
 
 ]
 
-{ #category : #'unused-constant' }
+{ #category : 'unused-constant' }
 SLInliningTestClass >> methodCallMethodWithReturnConstant [
 	self methodReturnConstant.
 ]
 
-{ #category : #'unused-constant' }
+{ #category : 'unused-constant' }
 SLInliningTestClass >> methodCallMethodWithReturnConstantInIf [
 	self methodReturnConstantInIf.
 
 ]
 
-{ #category : #'unused-constant' }
-SLInliningTestClass >> methodCallMethodWithReturnConstantInIfElse [
-	self methodReturnConstantInIfElse.
-
-]
-
-{ #category : #'unused-constant' }
+{ #category : 'unused-constant' }
 SLInliningTestClass >> methodReturnConstant [
 	^ 5
 	
 	
 ]
 
-{ #category : #'unused-constant' }
+{ #category : 'unused-constant' }
 SLInliningTestClass >> methodReturnConstantInIf [
 	<returnTypeC: #sqInt>
 	true 
@@ -109,7 +113,7 @@ SLInliningTestClass >> methodReturnConstantInIf [
 	
 ]
 
-{ #category : #'unused-constant' }
+{ #category : 'unused-constant' }
 SLInliningTestClass >> methodReturnConstantInIfElse [
 
 	true
@@ -117,7 +121,7 @@ SLInliningTestClass >> methodReturnConstantInIfElse [
 		ifFalse: [ ^ 5 ]
 ]
 
-{ #category : #'unused-constant' }
+{ #category : 'unused-constant' }
 SLInliningTestClass >> methodWithAssignmentAndReturnConstant [
 	| i |
 	i := 5.
@@ -126,7 +130,7 @@ SLInliningTestClass >> methodWithAssignmentAndReturnConstant [
 	
 ]
 
-{ #category : #'unused-constant' }
+{ #category : 'unused-constant' }
 SLInliningTestClass >> methodWithAssignmentAndReturnConstantInIf [
 	| i | 
 	true 
@@ -139,17 +143,7 @@ SLInliningTestClass >> methodWithAssignmentAndReturnConstantInIf [
 	
 ]
 
-{ #category : #'unused-constant' }
-SLInliningTestClass >> methodWithAssignmentAndReturnConstantInIfElse [
-	| i |
-	true
-		ifTrue: [ ^ -1 ]
-		ifFalse: [ i := 5 .
-			^ 5
-			]
-]
-
-{ #category : #'unused-variable' }
+{ #category : 'unused-variable' }
 SLInliningTestClass >> methodWithExpression [ 
 	| i |
 	i = 1 ifTrue: [ ^ 1 ].

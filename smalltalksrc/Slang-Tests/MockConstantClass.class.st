@@ -1,10 +1,11 @@
 Class {
-	#name : #MockConstantClass,
-	#superclass : #Object,
-	#category : 'Slang-Tests'
+	#name : 'MockConstantClass',
+	#superclass : 'Object',
+	#category : 'Slang-Tests',
+	#package : 'Slang-Tests'
 }
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 MockConstantClass >> bindingOf: aString [ 
 	
 	"For compatibility, used by the code generator to lookup for constants"
@@ -12,13 +13,13 @@ MockConstantClass >> bindingOf: aString [
 	^ nil
 ]
 
-{ #category : #testing }
+{ #category : 'testing' }
 MockConstantClass >> defineAtCompileTime: aString [ 
 	
 	^ false
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 MockConstantClass >> innerBindingOf: aString [ 
 	
 	"For compatibility, used by the code generator to lookup for constants"

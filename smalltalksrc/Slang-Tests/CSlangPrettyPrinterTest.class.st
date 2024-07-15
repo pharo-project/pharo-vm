@@ -2,12 +2,14 @@
 A CSlangPrettyPrinterTest is a test class for testing the behavior of CSlangPrettyPrinter
 "
 Class {
-	#name : #CSlangPrettyPrinterTest,
-	#superclass : #TestCase,
-	#category : #'Slang-Tests-AST'
+	#name : 'CSlangPrettyPrinterTest',
+	#superclass : 'TestCase',
+	#category : 'Slang-Tests-AST',
+	#package : 'Slang-Tests',
+	#tag : 'AST'
 }
 
-{ #category : #'initialize-release' }
+{ #category : 'initialize-release' }
 CSlangPrettyPrinterTest >> prettyPrint: cAST [
 
 	| prettyPrinter |
@@ -19,12 +21,12 @@ CSlangPrettyPrinterTest >> prettyPrint: cAST [
 	
 ]
 
-{ #category : #running }
+{ #category : 'running' }
 CSlangPrettyPrinterTest >> setUp [
 	super setUp.
 ]
 
-{ #category : #'tests-visitor' }
+{ #category : 'tests-visitor' }
 CSlangPrettyPrinterTest >> testVisitArray [
 
 	| print |
@@ -35,7 +37,7 @@ CSlangPrettyPrinterTest >> testVisitArray [
 
 ]
 
-{ #category : #'tests-visitor' }
+{ #category : 'tests-visitor' }
 CSlangPrettyPrinterTest >> testVisitArrayDeclarator [
 
 	| print |
@@ -46,7 +48,7 @@ CSlangPrettyPrinterTest >> testVisitArrayDeclarator [
 
 ]
 
-{ #category : #'tests-visitor' }
+{ #category : 'tests-visitor' }
 CSlangPrettyPrinterTest >> testVisitArrow [
 
 	| print |
@@ -57,7 +59,7 @@ CSlangPrettyPrinterTest >> testVisitArrow [
 
 ]
 
-{ #category : #'tests-visitor' }
+{ #category : 'tests-visitor' }
 CSlangPrettyPrinterTest >> testVisitAssignment [
 
 	| print |
@@ -70,7 +72,7 @@ CSlangPrettyPrinterTest >> testVisitAssignment [
 
 ]
 
-{ #category : #'tests-visitor' }
+{ #category : 'tests-visitor' }
 CSlangPrettyPrinterTest >> testVisitBinary [
 
 	| print |
@@ -86,7 +88,7 @@ CSlangPrettyPrinterTest >> testVisitBinary [
 
 ]
 
-{ #category : #'tests-visitor' }
+{ #category : 'tests-visitor' }
 CSlangPrettyPrinterTest >> testVisitBreakStatement [
 
 	| print |
@@ -95,7 +97,7 @@ CSlangPrettyPrinterTest >> testVisitBreakStatement [
 	self assert: print trimBoth equals: 'break'
 ]
 
-{ #category : #'tests-visitor' }
+{ #category : 'tests-visitor' }
 CSlangPrettyPrinterTest >> testVisitCall [
 
 	| print |
@@ -107,7 +109,7 @@ CSlangPrettyPrinterTest >> testVisitCall [
 
 ]
 
-{ #category : #'tests-visitor' }
+{ #category : 'tests-visitor' }
 CSlangPrettyPrinterTest >> testVisitCastExpression [
 
 	| print |
@@ -122,7 +124,7 @@ CSlangPrettyPrinterTest >> testVisitCastExpression [
 	self assert: print equals: '((int) (1 + x) )'
 ]
 
-{ #category : #'tests-visitor' }
+{ #category : 'tests-visitor' }
 CSlangPrettyPrinterTest >> testVisitCastExpressionDouble [
 
 	| print |
@@ -137,7 +139,7 @@ CSlangPrettyPrinterTest >> testVisitCastExpressionDouble [
 	self assert: print equals: '((double) a ) / b'
 ]
 
-{ #category : #'tests-visitor' }
+{ #category : 'tests-visitor' }
 CSlangPrettyPrinterTest >> testVisitComment [
 
 	| print |
@@ -148,7 +150,7 @@ CSlangPrettyPrinterTest >> testVisitComment [
 
 ]
 
-{ #category : #'tests-visitor' }
+{ #category : 'tests-visitor' }
 CSlangPrettyPrinterTest >> testVisitCompoundStatement [
 
 	| print |
@@ -169,7 +171,7 @@ CSlangPrettyPrinterTest >> testVisitCompoundStatement [
 
 ]
 
-{ #category : #'tests-visitor' }
+{ #category : 'tests-visitor' }
 CSlangPrettyPrinterTest >> testVisitConstant [
 
 	| print |
@@ -180,7 +182,7 @@ CSlangPrettyPrinterTest >> testVisitConstant [
 
 ]
 
-{ #category : #'tests-visitor' }
+{ #category : 'tests-visitor' }
 CSlangPrettyPrinterTest >> testVisitDeclaration [
 
 	| print |
@@ -210,7 +212,7 @@ CSlangPrettyPrinterTest >> testVisitDeclaration [
 
 ]
 
-{ #category : #'tests-visitor' }
+{ #category : 'tests-visitor' }
 CSlangPrettyPrinterTest >> testVisitDeclarator [
 
 	| print |
@@ -221,7 +223,7 @@ CSlangPrettyPrinterTest >> testVisitDeclarator [
 
 ]
 
-{ #category : #'tests-visitor' }
+{ #category : 'tests-visitor' }
 CSlangPrettyPrinterTest >> testVisitDecrement [
 
 	| print |
@@ -232,7 +234,7 @@ CSlangPrettyPrinterTest >> testVisitDecrement [
 
 ]
 
-{ #category : #'tests-visitor' }
+{ #category : 'tests-visitor' }
 CSlangPrettyPrinterTest >> testVisitDoStatement [
 
 	| print compound |
@@ -249,7 +251,7 @@ CSlangPrettyPrinterTest >> testVisitDoStatement [
 }while(a && b)'
 ]
 
-{ #category : #'tests-visitor' }
+{ #category : 'tests-visitor' }
 CSlangPrettyPrinterTest >> testVisitEmptyStatement [
 
 	| print |
@@ -260,7 +262,7 @@ CSlangPrettyPrinterTest >> testVisitEmptyStatement [
 
 ]
 
-{ #category : #'tests-visitor' }
+{ #category : 'tests-visitor' }
 CSlangPrettyPrinterTest >> testVisitExpressionList [
 
 	| print |
@@ -284,7 +286,7 @@ CSlangPrettyPrinterTest >> testVisitExpressionList [
 	self assert: print trimBoth equals: '(foo(1, 2), foo(3, 4), foo(5, 6))'
 ]
 
-{ #category : #'tests-visitor' }
+{ #category : 'tests-visitor' }
 CSlangPrettyPrinterTest >> testVisitForStatement [
 
 	| print init init2 until step step2 for |
@@ -320,7 +322,7 @@ CSlangPrettyPrinterTest >> testVisitForStatement [
 }'
 ]
 
-{ #category : #'tests-visitor' }
+{ #category : 'tests-visitor' }
 CSlangPrettyPrinterTest >> testVisitFunctionDefinition [
 
 	| print |
@@ -339,7 +341,7 @@ foo(int x)
 }'
 ]
 
-{ #category : #'tests-visitor' }
+{ #category : 'tests-visitor' }
 CSlangPrettyPrinterTest >> testVisitGotoStatement [
 
 	| print |
@@ -350,7 +352,7 @@ CSlangPrettyPrinterTest >> testVisitGotoStatement [
 
 ]
 
-{ #category : #'tests-visitor' }
+{ #category : 'tests-visitor' }
 CSlangPrettyPrinterTest >> testVisitIdentifier [
 
 	| print |
@@ -361,7 +363,7 @@ CSlangPrettyPrinterTest >> testVisitIdentifier [
 
 ]
 
-{ #category : #'tests-visitor' }
+{ #category : 'tests-visitor' }
 CSlangPrettyPrinterTest >> testVisitIfStatement [
 
 	| print |
@@ -396,7 +398,7 @@ CSlangPrettyPrinterTest >> testVisitIfStatement [
 }'
 ]
 
-{ #category : #'tests-visitor' }
+{ #category : 'tests-visitor' }
 CSlangPrettyPrinterTest >> testVisitIncrement [
 
 	| print |
@@ -407,7 +409,7 @@ CSlangPrettyPrinterTest >> testVisitIncrement [
 
 ]
 
-{ #category : #'tests-visitor' }
+{ #category : 'tests-visitor' }
 CSlangPrettyPrinterTest >> testVisitInitDeclarator [
 
 	| print |
@@ -420,7 +422,7 @@ CSlangPrettyPrinterTest >> testVisitInitDeclarator [
 
 ]
 
-{ #category : #'tests-visitor' }
+{ #category : 'tests-visitor' }
 CSlangPrettyPrinterTest >> testVisitInitializer [
 
 	| print |
@@ -434,7 +436,7 @@ CSlangPrettyPrinterTest >> testVisitInitializer [
 
 ]
 
-{ #category : #'tests-visitor' }
+{ #category : 'tests-visitor' }
 CSlangPrettyPrinterTest >> testVisitParameterDeclaration [
 
 	| print |
@@ -445,7 +447,7 @@ CSlangPrettyPrinterTest >> testVisitParameterDeclaration [
 	self assert: print equals: 'unsigned int x'
 ]
 
-{ #category : #'tests-visitor' }
+{ #category : 'tests-visitor' }
 CSlangPrettyPrinterTest >> testVisitParameterRawDeclaration [
 
 	| print |
@@ -456,7 +458,7 @@ CSlangPrettyPrinterTest >> testVisitParameterRawDeclaration [
 	self assert: print equals: 'unsigned int x'
 ]
 
-{ #category : #'tests-visitor' }
+{ #category : 'tests-visitor' }
 CSlangPrettyPrinterTest >> testVisitPoint [
 
 	| print |
@@ -467,7 +469,7 @@ CSlangPrettyPrinterTest >> testVisitPoint [
 
 ]
 
-{ #category : #'tests-visitor' }
+{ #category : 'tests-visitor' }
 CSlangPrettyPrinterTest >> testVisitPreIncrement [
 
 	| print |
@@ -478,7 +480,7 @@ CSlangPrettyPrinterTest >> testVisitPreIncrement [
 
 ]
 
-{ #category : #'tests-visitor' }
+{ #category : 'tests-visitor' }
 CSlangPrettyPrinterTest >> testVisitPreprocessorDefine [
 
 	| print |
@@ -489,7 +491,7 @@ CSlangPrettyPrinterTest >> testVisitPreprocessorDefine [
 	self assert: print equals: '#define MASK 10'
 ]
 
-{ #category : #'tests-visitor' }
+{ #category : 'tests-visitor' }
 CSlangPrettyPrinterTest >> testVisitPreprocessorDefineWithRawExpression [
 
 	| print |
@@ -502,7 +504,7 @@ CSlangPrettyPrinterTest >> testVisitPreprocessorDefineWithRawExpression [
 		equals: '#define failedFunctionDefinition (void (*)(void))0'
 ]
 
-{ #category : #'tests-visitor' }
+{ #category : 'tests-visitor' }
 CSlangPrettyPrinterTest >> testVisitPreprocessorIf [
 
 	| print |
@@ -541,7 +543,7 @@ CSlangPrettyPrinterTest >> testVisitPreprocessorIf [
 #endif /* a && b */'
 ]
 
-{ #category : #'tests-visitor' }
+{ #category : 'tests-visitor' }
 CSlangPrettyPrinterTest >> testVisitPreprocessorIfOfSimpleStatementsAddsSeparator [
 
 	| print |
@@ -567,7 +569,7 @@ CSlangPrettyPrinterTest >> testVisitPreprocessorIfOfSimpleStatementsAddsSeparato
 #endif /* condition */'
 ]
 
-{ #category : #'tests-visitor' }
+{ #category : 'tests-visitor' }
 CSlangPrettyPrinterTest >> testVisitReturnStatement [
 
 	| print |
@@ -578,7 +580,7 @@ CSlangPrettyPrinterTest >> testVisitReturnStatement [
 
 ]
 
-{ #category : #'tests-visitor' }
+{ #category : 'tests-visitor' }
 CSlangPrettyPrinterTest >> testVisitStringLiteral [
 
 	| print |
@@ -587,7 +589,7 @@ CSlangPrettyPrinterTest >> testVisitStringLiteral [
 	self assert: print equals: '"You are breathtaking!"'
 ]
 
-{ #category : #'tests-visitor' }
+{ #category : 'tests-visitor' }
 CSlangPrettyPrinterTest >> testVisitTernary [
 
 	| print |
@@ -602,7 +604,7 @@ CSlangPrettyPrinterTest >> testVisitTernary [
 	self assert: print trimBoth equals: '((a && b) ? 0 : 1)'
 ]
 
-{ #category : #'tests-visitor' }
+{ #category : 'tests-visitor' }
 CSlangPrettyPrinterTest >> testVisitTypename [
 
 	| print |
@@ -611,7 +613,7 @@ CSlangPrettyPrinterTest >> testVisitTypename [
 	self assert: print equals: 'int'
 ]
 
-{ #category : #'tests-visitor' }
+{ #category : 'tests-visitor' }
 CSlangPrettyPrinterTest >> testVisitUnaryOperator [
 
 	| print |
@@ -626,7 +628,7 @@ CSlangPrettyPrinterTest >> testVisitUnaryOperator [
 
 ]
 
-{ #category : #'tests-visitor' }
+{ #category : 'tests-visitor' }
 CSlangPrettyPrinterTest >> testVisitWhileStatement [
 
 	| print |

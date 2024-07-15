@@ -1,16 +1,17 @@
 Class {
-	#name : #MockEmptyVMStructWithRedefinedStructName,
-	#superclass : #SlangStructType,
-	#category : #'Slang-Tests'
+	#name : 'MockEmptyVMStructWithRedefinedStructName',
+	#superclass : 'SlangStructType',
+	#category : 'Slang-Tests',
+	#package : 'Slang-Tests'
 }
 
-{ #category : #enumerating }
+{ #category : 'enumerating' }
 MockEmptyVMStructWithRedefinedStructName class >> instVarNamesAndTypesForTranslationDo: aBinaryBlock [
 
 	"Nothing, no fields"
 ]
 
-{ #category : #enumerating }
+{ #category : 'enumerating' }
 MockEmptyVMStructWithRedefinedStructName class >> structTypeName [
 	"Provide the typedef name.  Subclases can override."
 	^ 'RedefinedStruct'

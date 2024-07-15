@@ -1,10 +1,11 @@
 Class {
-	#name : #SLInliningTest,
-	#superclass : #SlangAbstractTestCase,
-	#category : #'Slang-Tests'
+	#name : 'SLInliningTest',
+	#superclass : 'SlangAbstractTestCase',
+	#category : 'Slang-Tests',
+	#package : 'Slang-Tests'
 }
 
-{ #category : #helpers }
+{ #category : 'helpers' }
 SLInliningTest >> astTranslate: tast inStream: aWriteStream [ 
 	
 	| cAST prettyPrinter |
@@ -14,16 +15,15 @@ SLInliningTest >> astTranslate: tast inStream: aWriteStream [
 	cAST acceptVisitor: prettyPrinter.
 ]
 
-{ #category : #running }
+{ #category : 'running' }
 SLInliningTest >> setUp [
 	super setUp.
 	ccg addClass: SLInliningTestClass.
 	ccg inferTypes.
 ]
 
-{ #category : #'unused-in-conditional' }
+{ #category : 'inline-in-send' }
 SLInliningTest >> testInlineMethodCallInIfMethodWithReturnConstant [
-	"doesn't get rid off the 2 ^ "
 
 	| translation tMethod |
 	tMethod := ccg methodNamed: #methodCallInIfMethodWithReturnConstant.
@@ -48,13 +48,45 @@ methodCallInIfMethodWithReturnConstant(void)
 }'
 ]
 
-{ #category : #'unused-in-conditional' }
-SLInliningTest >> testInlineMethodCallInIfMethodWithReturnConstantWithoutReturn [
+{ #category : 'unused-in-conditional' }
+SLInliningTest >> testInlineMethodCallInIfMethodWithReturnConstantInIfWithoutReturn [
 
 	| translation tMethod |
-	tMethod := ccg methodNamed: #methodCallInIfMethodWithReturnConstantWithoutReturn.
+	tMethod := ccg methodNamed:
+		           #methodCallInIfMethodWithReturnConstantInIfWithoutReturn.
 	ccg doBasicInlining: true.
-	self halt.
+	translation := self translate: tMethod.
+	translation := translation trimBoth.
+
+	self
+		assert: translation
+		equals:
+			'/* SLInliningTestClass>>#methodCallInIfMethodWithReturnConstantInIfWithoutReturn */
+static sqInt
+methodCallInIfMethodWithReturnConstantInIfWithoutReturn(void)
+{
+	sqInt i;
+
+	if (i == 5) {
+		/* begin methodReturnConstantInIf */
+		if (1) {
+			goto l1;
+		}
+		l1:
+		;
+	}
+	return 0;
+}'
+]
+
+{ #category : 'unused-in-conditional' }
+SLInliningTest >> testInlineMethodCallInIfMethodWithReturnConstantWithoutReturn [
+	"in this case the empty if is not eluded, the reason if that one of the method that does inlining need refactoring"
+
+	| translation tMethod |
+	tMethod := ccg methodNamed:
+		           #methodCallInIfMethodWithReturnConstantWithoutReturn.
+	ccg doBasicInlining: true.
 	translation := self translate: tMethod.
 	translation := translation trimBoth.
 
@@ -73,8 +105,36 @@ methodCallInIfMethodWithReturnConstantWithoutReturn(void)
 }'
 ]
 
-{ #category : #'unused-in-return' }
-SLInliningTest >> testInlineMethodCallMethodCallMethodWithAssignmentAndReturnConstantInReturn [
+{ #category : 'inline-in-return' }
+SLInliningTest >> testInlineMethodCallInRetunMethodWithAssignmentAndReturnConstantInIf [
+
+	| translation tMethod |
+	tMethod := ccg methodNamed: #methodCallInReturnMethodWithAssignmentAndReturnConstantInIf.
+	ccg doBasicInlining: true.
+
+	translation := self translate: tMethod.
+	translation := translation trimBoth.
+
+	self
+		assert: translation
+		equals:
+			'/* SLInliningTestClass>>#methodCallInReturnMethodWithAssignmentAndReturnConstantInIf */
+static sqInt
+methodCallInReturnMethodWithAssignmentAndReturnConstantInIf(void)
+{
+	int i;
+
+	/* begin methodWithAssignmentAndReturnConstantInIf */
+	if (1) {
+		i = 5;
+		return -1;
+	}
+	return null;
+}'
+]
+
+{ #category : 'inline-in-return' }
+SLInliningTest >> testInlineMethodCallInReturnMethodWithAssignmentAndReturnConstant [
 
 	| translation tMethod |
 	tMethod := ccg methodNamed: #methodCallInReturnMethodWithAssignmentAndReturnConstant.
@@ -98,7 +158,55 @@ methodCallInReturnMethodWithAssignmentAndReturnConstant(void)
 }'
 ]
 
-{ #category : #'unused-constant' }
+{ #category : 'inline-in-return' }
+SLInliningTest >> testInlineMethodCallInReturnMethodWithReturnConstant [
+	"doesn't get rid off the ^ 5"
+
+	| translation tMethod |
+	tMethod := ccg methodNamed: #methodCallInReturnMethodWithReturnConstant.
+	ccg doBasicInlining: true.
+
+	translation := self translate: tMethod.
+	translation := translation trimBoth.
+
+	self
+		assert: translation
+		equals:
+			'/* SLInliningTestClass>>#methodCallInReturnMethodWithReturnConstant */
+static sqInt
+methodCallInReturnMethodWithReturnConstant(void)
+{
+	return 5;
+}'
+]
+
+{ #category : 'inline-in-return' }
+SLInliningTest >> testInlineMethodCallInReturnMethodWithReturnConstantInIf [
+	"doesn't get rid off the ^ 5"
+
+	| translation tMethod |
+	tMethod := ccg methodNamed: #methodCallInReturnMethodWithReturnConstantInIf.
+	ccg doBasicInlining: true.
+
+	translation := self translate: tMethod.
+	translation := translation trimBoth.
+
+	self
+		assert: translation
+		equals:
+			'/* SLInliningTestClass>>#methodCallInReturnMethodWithReturnConstantInIf */
+static sqInt
+methodCallInReturnMethodWithReturnConstantInIf(void)
+{
+	/* begin methodReturnConstantInIf */
+	if (1) {
+		return -1;
+	}
+	return null;
+}'
+]
+
+{ #category : 'unused-constant' }
 SLInliningTest >> testInlineMethodCallMethodWithAssignmentAndReturnConstant [
 	"get rid off the ^ 5 and keep the assignment"
 
@@ -125,7 +233,7 @@ methodCallMethodWithAssignmentAndReturnConstant(void)
 }'
 ]
 
-{ #category : #'unused-constant' }
+{ #category : 'unused-constant' }
 SLInliningTest >> testInlineMethodCallMethodWithAssignmentAndReturnConstantInIf [
 	"get rid off the ^ -1 and keep the assignment"
 
@@ -157,41 +265,7 @@ methodCallMethodWithAssignmentAndReturnConstantInIf(void)
 }'
 ]
 
-{ #category : #'unused-constant' }
-SLInliningTest >> testInlineMethodCallMethodWithAssignmentReturnConstantInIfElse [
-	"get rid off the ^ 5 and keep the assignment"
-
-	| translation tMethod |
-	tMethod := ccg methodNamed:
-		           #methodCallMethodWithAssignmentAndReturnConstantInIfElse.
-	ccg doBasicInlining: true.
-
-	translation := self translate: tMethod.
-	translation := translation trimBoth.
-
-	self
-		assert: translation
-		equals:
-			'/* SLInliningTestClass>>#methodCallMethodWithAssignmentAndReturnConstantInIfElse */
-static sqInt
-methodCallMethodWithAssignmentAndReturnConstantInIfElse(void)
-{
-	int i;
-
-	/* begin methodWithAssignmentAndReturnConstantInIfElse */
-	if (1) {
-		goto l1;
-	} else {
-		i = 5;
-		goto l1;
-	}
-	l1:
-	;
-	return 0;
-}'
-]
-
-{ #category : #'unused-constant' }
+{ #category : 'unused-constant' }
 SLInliningTest >> testInlineMethodCallMethodWithReturnConstant [
 	"get rid off the ^ 5"
 
@@ -213,9 +287,8 @@ methodCallMethodWithReturnConstant(void)
 }'
 ]
 
-{ #category : #'unused-constant' }
+{ #category : 'unused-constant' }
 SLInliningTest >> testInlineMethodCallMethodWithReturnConstantInIf [
-	"doesn't supress the ^ 5"
 
 	| translation tMethod |
 	tMethod := ccg methodNamed: #methodCallMethodWithReturnConstantInIf.
@@ -241,113 +314,7 @@ methodCallMethodWithReturnConstantInIf(void)
 }'
 ]
 
-{ #category : #'unused-constant' }
-SLInliningTest >> testInlineMethodCallMethodWithReturnConstantInIfElse [
-	"get rid off the ^ -1 and ^ 5"
-	| translation tMethod |
-	tMethod := ccg methodNamed:
-		           #methodCallMethodWithReturnConstantInIfElse.
-	ccg doBasicInlining: true.
-
-
-	translation := self translate: tMethod.
-	translation := translation trimBoth.
-
-	self
-		assert: translation
-		equals:
-			'/* SLInliningTestClass>>#methodCallMethodWithReturnConstantInIfElse */
-static sqInt
-methodCallMethodWithReturnConstantInIfElse(void)
-{
-	/* begin methodReturnConstantInIfElse */
-	if (1) {
-		goto l1;
-	} else {
-		goto l1;
-	}
-	l1:
-	;
-	return 0;
-}'
-]
-
-{ #category : #'unused-in-return' }
-SLInliningTest >> testInlineMethodCallMethodWithReturnConstantInIfElseInReturn [
-	"doesn't get rid off the 2 ^ "
-
-	| translation tMethod |
-	tMethod := ccg methodNamed: #methodCallInReturnMethodWithReturnConstantInIfElse.
-	ccg doBasicInlining: true.
-
-	translation := self translate: tMethod.
-	translation := translation trimBoth.
-
-	self
-		assert: translation
-		equals:
-			'/* SLInliningTestClass>>#methodCallInReturnMethodWithReturnConstantInIfElse */
-static sqInt
-methodCallInReturnMethodWithReturnConstantInIfElse(void)
-{
-	/* begin methodReturnConstantInIfElse */
-	if (1) {
-		return -1;
-	} else {
-		return 5;
-	}
-}'
-]
-
-{ #category : #'unused-in-return' }
-SLInliningTest >> testInlineMethodCallMethodWithReturnConstantInIfInReturn [
-	"doesn't get rid off the ^ 5"
-
-	| translation tMethod |
-	tMethod := ccg methodNamed: #methodCallInReturnMethodWithReturnConstantInIf.
-	ccg doBasicInlining: true.
-
-	translation := self translate: tMethod.
-	translation := translation trimBoth.
-
-	self
-		assert: translation
-		equals:
-			'/* SLInliningTestClass>>#methodCallInReturnMethodWithReturnConstantInIf */
-static sqInt
-methodCallInReturnMethodWithReturnConstantInIf(void)
-{
-	/* begin methodReturnConstantInIf */
-	if (1) {
-		return -1;
-	}
-	return null;
-}'
-]
-
-{ #category : #'unused-in-return' }
-SLInliningTest >> testInlineMethodCallMethodWithReturnConstantInReturn [
-	"doesn't get rid off the ^ 5"
-
-	| translation tMethod |
-	tMethod := ccg methodNamed: #methodCallInReturnMethodWithReturnConstant.
-	ccg doBasicInlining: true.
-
-	translation := self translate: tMethod.
-	translation := translation trimBoth.
-
-	self
-		assert: translation
-		equals:
-			'/* SLInliningTestClass>>#methodCallInReturnMethodWithReturnConstant */
-static sqInt
-methodCallInReturnMethodWithReturnConstant(void)
-{
-	return 5;
-}'
-]
-
-{ #category : #'unused-variable' }
+{ #category : 'unused-variable' }
 SLInliningTest >> testInlineMethodWithExpression [
 
 	| translation tMethod |
@@ -383,7 +350,7 @@ methodCallMethodWithExpression(void)
 }'
 ]
 
-{ #category : #helpers }
+{ #category : 'helpers' }
 SLInliningTest >> translate: tast [
 
 	^ String streamContents: [ :str | 
