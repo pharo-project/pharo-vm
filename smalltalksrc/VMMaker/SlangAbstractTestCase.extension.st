@@ -4,7 +4,7 @@ Extension { #name : 'SlangAbstractTestCase' }
 SlangAbstractTestCase >> setUp [
 
 	super setUp.
-	ccg := MLVMCCodeGeneratorConflictMock new.
+	ccg := MLVMCCodeGenerator new.
 	ccg vmMaker: VMMaker new.
 	ccg vmMaker vmmakerConfiguration: VMMakerConfiguration
 ]
