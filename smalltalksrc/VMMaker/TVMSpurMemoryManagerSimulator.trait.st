@@ -38,6 +38,18 @@ TVMSpurMemoryManagerSimulator >> firstIndexableField: objOop [
 				ifFalse: ["byte objects (including CompiledMethod" #'char *'])
 ]
 
+{ #category : 'growing/shrinking memory' }
+TVMSpurMemoryManagerSimulator >> growOldSpaceByAtLeast: minAmmount callingOperation: aString [
+	"Attempt to grow memory by at least minAmmount.
+	 Answer the size of the new segment, or nil if the attempt failed.
+	 Override to not grow during the Spur image bootstrap."
+
+	^ self bootstrapping ifFalse: [
+		  super
+			  growOldSpaceByAtLeast: minAmmount
+			  callingOperation: aString ]
+]
+
 { #category : 'initialization' }
 TVMSpurMemoryManagerSimulator >> initializeFreeSpaceForFacadeFrom: base to: limit [
 	"c.f. initializeFreeSpacePostLoad: freeListObj."

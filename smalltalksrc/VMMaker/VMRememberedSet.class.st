@@ -133,37 +133,37 @@ VMRememberedSet >> fudge: anObject [
 
 { #category : 'remembered set' }
 VMRememberedSet >> growRememberedSet [
-	| obj numSlots newObj base |
 
-	<inline: false> "Don't ruin locality in remember:"
+	<inline: false>
 	<var: #base type: #'sqInt *'>
-
-
-	obj := self objectOop.
+	| obj numSlots newObj base |
+	obj := self objectOop. "Don't ruin locality in remember:"
 	numSlots := manager numSlotsOf: obj.
 	self assert: numSlots >= 1024.
 	newObj := manager allocatePinnedSlots: numSlots * 2.
-	newObj ifNil:
-		[newObj := manager allocatePinnedSlots: numSlots + 1024.
-		 newObj ifNil:
-			[(manager growOldSpaceByAtLeast: (numSlots + 1024) * manager wordSize) ifNil: [self error: 'could not grow remembered set'].
-			 newObj := manager allocatePinnedSlots: numSlots + 1024. "cannot fail"]].
+	newObj ifNil: [
+		newObj := manager allocatePinnedSlots: numSlots + 1024.
+		newObj ifNil: [
+			(manager
+				 growOldSpaceByAtLeast: numSlots + 1024 * manager wordSize
+				 callingOperation: 'growing remembered set') ifNil: [
+				self error: 'could not grow remembered set' ].
+			newObj := manager allocatePinnedSlots: numSlots + 1024 "cannot fail" ] ].
 
 	manager rememberedSet: rootIndex oop: newObj.
 	base := self rememberedSetArrayPointerFromObject: newObj.
 
-	0 to: rememberedSetSize - 1 do:
-		[:i| base at: i put: (self rememberedSetArray at: i)].
+	0 to: rememberedSetSize - 1 do: [ :i |
+	base at: i put: (self rememberedSetArray at: i) ].
 	"if growing in the middle of a GC, need to preserve marked status."
-	(manager isMarked: obj) ifTrue:
-		[manager
+	(manager isMarked: obj) ifTrue: [
+		manager
 			setIsMarkedOf: newObj to: true;
-			setIsMarkedOf: obj to: false].
+			setIsMarkedOf: obj to: false ].
 	manager freeObject: obj.
 	self rememberedSetArray: base.
 	self rememberedSetLimit: (manager numSlotsOf: newObj).
 	self setRememberedSetRedZone
-	
 ]
 
 { #category : 'initialization' }
@@ -524,40 +524,40 @@ VMRememberedSet >> setRememberedSetSize: aNewValue [
 
 { #category : 'remembered set' }
 VMRememberedSet >> shrinkRememberedSet [
-	| obj numSlots newObj base |
 
 	<inline: false>
 	<var: #base type: #'sqInt *'>
-
+	| obj numSlots newObj base |
 	rememberedSetLimit >= 2048 ifFalse: [ ^ self ].
-	rememberedSetSize < (self rememberedSetLimit // 2) 
-		ifFalse: [ ^ self ].
+	rememberedSetSize < (self rememberedSetLimit // 2) ifFalse: [ ^ self ].
 
 	obj := self objectOop.
-	numSlots := ((manager numSlotsOf: obj) // 2) max: 2048.
+	numSlots := (manager numSlotsOf: obj) // 2 max: 2048.
 
 	newObj := manager allocatePinnedSlots: numSlots.
-	newObj ifNil:
-		[newObj := manager allocatePinnedSlots: numSlots.
-		 newObj ifNil:
-			[(manager growOldSpaceByAtLeast: numSlots * manager wordSize) ifNil: [self error: 'could not shrink remembered set'].
-			 newObj := manager allocatePinnedSlots: numSlots. "cannot fail"]].
+	newObj ifNil: [
+		newObj := manager allocatePinnedSlots: numSlots.
+		newObj ifNil: [
+			(manager
+				 growOldSpaceByAtLeast: numSlots * manager wordSize
+				 callingOperation: 'shrinking RememberedSet') ifNil: [
+				self error: 'could not shrink remembered set' ].
+			newObj := manager allocatePinnedSlots: numSlots "cannot fail" ] ].
 
 	manager rememberedSet: rootIndex oop: newObj.
 	base := self rememberedSetArrayPointerFromObject: newObj.
 
-	0 to: rememberedSetSize - 1 do:
-		[:i| base at: i put: (self rememberedSetArray at: i)].
+	0 to: rememberedSetSize - 1 do: [ :i |
+	base at: i put: (self rememberedSetArray at: i) ].
 	"if growing in the middle of a GC, need to preserve marked status."
-	(manager isMarked: obj) ifTrue:
-		[manager
+	(manager isMarked: obj) ifTrue: [
+		manager
 			setIsMarkedOf: newObj to: true;
-			setIsMarkedOf: obj to: false].
+			setIsMarkedOf: obj to: false ].
 	manager freeObject: obj.
 	self rememberedSetArray: base.
 	self rememberedSetLimit: (manager numSlotsOf: newObj).
 	self setRememberedSetRedZone
-	
 ]
 
 { #category : 'scavenger' }
