@@ -1,10 +1,11 @@
 Class {
-	#name : #VMFFISameThreadCalloutTest,
-	#superclass : #VMAbstractFFITest,
-	#category : #VMMakerTests
+	#name : 'VMFFISameThreadCalloutTest',
+	#superclass : 'VMAbstractFFITest',
+	#category : 'VMMakerTests',
+	#package : 'VMMakerTests'
 }
 
-{ #category : #'tests - callouts' }
+{ #category : 'tests - callouts' }
 VMFFISameThreadCalloutTest >> testPrimitiveSameThreadCalloutMaintainsActiveProcess [
 
 	| parametersArray tfExternalFunction oldActiveProcess |
@@ -24,7 +25,7 @@ VMFFISameThreadCalloutTest >> testPrimitiveSameThreadCalloutMaintainsActiveProce
 	self assert: interpreter activeProcess equals: oldActiveProcess
 ]
 
-{ #category : #'tests - callouts' }
+{ #category : 'tests - callouts' }
 VMFFISameThreadCalloutTest >> testPrimitiveSameThreadCalloutShouldKeepTheNewMethodVariable [
 
 	| parametersArray tfExternalFunction oldActiveProcess callbackContext |

@@ -1,16 +1,18 @@
 Class {
-	#name : #VMJitSimdBytecode,
-	#superclass : #VMStackToRegisterMappingCogitTest,
-	#category : #'VMMakerTests-JitTests'
+	#name : 'VMJitSimdBytecode',
+	#superclass : 'VMStackToRegisterMappingCogitTest',
+	#category : 'VMMakerTests-JitTests',
+	#package : 'VMMakerTests',
+	#tag : 'JitTests'
 }
 
-{ #category : #tests }
+{ #category : 'tests' }
 VMJitSimdBytecode class >> wordSizeParameters [ 
 
 	^ self wordSize64Parameters 
 ]
 
-{ #category : #running }
+{ #category : 'running' }
 VMJitSimdBytecode >> jitOptions [
 
 	^ super jitOptions
@@ -18,7 +20,7 @@ VMJitSimdBytecode >> jitOptions [
 		  yourself
 ]
 
-{ #category : #tests }
+{ #category : 'tests' }
 VMJitSimdBytecode >> testAddVector32CopiesArraySumIntoVectorRegister [
 
 	| endInstruction primitiveAddress array register |
@@ -60,7 +62,7 @@ VMJitSimdBytecode >> testAddVector32CopiesArraySumIntoVectorRegister [
 
 ]
 
-{ #category : #tests }
+{ #category : 'tests' }
 VMJitSimdBytecode >> testAddVectorCopiesArraySumIntoVectorRegister [
 
 	| endInstruction primitiveAddress array register |
@@ -95,7 +97,7 @@ VMJitSimdBytecode >> testAddVectorCopiesArraySumIntoVectorRegister [
 
 ]
 
-{ #category : #tests }
+{ #category : 'tests' }
 VMJitSimdBytecode >> testAddVectorPushesArraySumIntoSimulatedStack [
 
 	| endInstruction primitiveAddress array entry |
@@ -130,7 +132,7 @@ VMJitSimdBytecode >> testAddVectorPushesArraySumIntoSimulatedStack [
 
 ]
 
-{ #category : #tests }
+{ #category : 'tests' }
 VMJitSimdBytecode >> testPushArrayToRegisterCopiesArrayChunkIntoVectorRegister [
 
 	| endInstruction primitiveAddress array register |
@@ -161,7 +163,7 @@ VMJitSimdBytecode >> testPushArrayToRegisterCopiesArrayChunkIntoVectorRegister [
 
 ]
 
-{ #category : #tests }
+{ #category : 'tests' }
 VMJitSimdBytecode >> testPushArrayToRegisterPushesArrayChunkIntoSimulatedStack [
 
 	| endInstruction primitiveAddress array entry |
@@ -191,7 +193,7 @@ VMJitSimdBytecode >> testPushArrayToRegisterPushesArrayChunkIntoSimulatedStack [
 	self assert: (entry register) equals: 0.
 ]
 
-{ #category : #tests }
+{ #category : 'tests' }
 VMJitSimdBytecode >> testStoreRegisterIntoArrayReplacesArrayElementsWithRegisterContent [
 
 	| endInstruction primitiveAddress array |
@@ -222,7 +224,7 @@ VMJitSimdBytecode >> testStoreRegisterIntoArrayReplacesArrayElementsWithRegister
 	self assert: (memory fetchFloat64: 1 ofObject: array) equals: 4.0.
 ]
 
-{ #category : #tests }
+{ #category : 'tests' }
 VMJitSimdBytecode >> testSubVectorStoreResultIntoVectorRegister [
 
 	| endInstruction primitiveAddress array register |

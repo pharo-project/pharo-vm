@@ -1,10 +1,12 @@
 Class {
-	#name : #VMSistaSuperSendsTest,
-	#superclass : #VMStackToRegisterMappingCogitTest,
-	#category : #'VMMakerTests-JitTests'
+	#name : 'VMSistaSuperSendsTest',
+	#superclass : 'VMStackToRegisterMappingCogitTest',
+	#category : 'VMMakerTests-JitTests',
+	#package : 'VMMakerTests',
+	#tag : 'JitTests'
 }
 
-{ #category : #running }
+{ #category : 'running' }
 VMSistaSuperSendsTest >> jitOptions [
 
 	^ super jitOptions
@@ -12,7 +14,7 @@ VMSistaSuperSendsTest >> jitOptions [
 		  yourself
 ]
 
-{ #category : #'tests - sends/super' }
+{ #category : 'tests - sends/super' }
 VMSistaSuperSendsTest >> testSuperSendLiteralZeroWithZeroArgsMovesSelectorIndexClassRegisterIn64bits [
 
 	| selector binding literalVariableIndex literalSelectorIndex startPC receiver expectedSelector |

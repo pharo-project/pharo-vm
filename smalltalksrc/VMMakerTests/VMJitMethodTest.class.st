@@ -1,13 +1,15 @@
 Class {
-	#name : #VMJitMethodTest,
-	#superclass : #VMPrimitiveCallAbstractTest,
+	#name : 'VMJitMethodTest',
+	#superclass : 'VMPrimitiveCallAbstractTest',
 	#pools : [
 		'CogRTLOpcodes'
 	],
-	#category : 'VMMakerTests-JitTests'
+	#category : 'VMMakerTests-JitTests',
+	#package : 'VMMakerTests',
+	#tag : 'JitTests'
 }
 
-{ #category : #'as yet unclassified' }
+{ #category : 'as yet unclassified' }
 VMJitMethodTest >> addVector: arg1 with: arg2 intoVector: arg3 [
 
 	| tmp1 tmp2 |
@@ -19,14 +21,14 @@ VMJitMethodTest >> addVector: arg1 with: arg2 intoVector: arg3 [
 	^ arg3
 ]
 
-{ #category : #tests }
+{ #category : 'tests' }
 VMJitMethodTest >> comparingSmallIntegers: aBitmap [
 
 	aBitmap size = 32768 ifTrue: [ ^ 17 ].
 	^ 23
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 VMJitMethodTest >> filter: aGlyphForm [
 	"This method is here only for a test"
 
@@ -109,7 +111,7 @@ VMJitMethodTest >> filter: aGlyphForm [
 	^answer
 ]
 
-{ #category : #helpers }
+{ #category : 'helpers' }
 VMJitMethodTest >> initStack [
 
 	self createBaseFrame.
@@ -124,13 +126,13 @@ VMJitMethodTest >> initStack [
 
 ]
 
-{ #category : #running }
+{ #category : 'running' }
 VMJitMethodTest >> initialCodeSize [
 
 	^ 16 * 1024
 ]
 
-{ #category : #running }
+{ #category : 'running' }
 VMJitMethodTest >> setUp [ 
 
 	super setUp.
@@ -138,7 +140,7 @@ VMJitMethodTest >> setUp [
 	self installFloat64RegisterClass	
 ]
 
-{ #category : #running }
+{ #category : 'running' }
 VMJitMethodTest >> setUpTrampolines [
 
 	super setUpTrampolines.
@@ -150,7 +152,7 @@ VMJitMethodTest >> setUpTrampolines [
 	cogit ceReturnToInterpreterTrampoline: (self compileTrampoline: [ cogit Stop ] named:#ceReturnToInterpreterTrampoline).
 ]
 
-{ #category : #tests }
+{ #category : 'tests' }
 VMJitMethodTest >> testComparingSmallIntegersThatNotFit [
 	| callingMethod parameter aSize bytesPerSlot desiredByteSize numberOfWordSizeSlots padding |
 	
@@ -185,7 +187,7 @@ VMJitMethodTest >> testComparingSmallIntegersThatNotFit [
 		equals: 17
 ]
 
-{ #category : #tests }
+{ #category : 'tests' }
 VMJitMethodTest >> testJitCompiledFloat32VectorAddition [
 
 	| callingMethod cm x y z |
@@ -259,7 +261,7 @@ VMJitMethodTest >> testJitCompiledFloat32VectorAddition [
 
 ]
 
-{ #category : #tests }
+{ #category : 'tests' }
 VMJitMethodTest >> testJitCompiledFloat64VectorAddition [
 
 	| callingMethod cm x y z firstTerm size |
@@ -331,7 +333,7 @@ VMJitMethodTest >> testJitCompiledFloat64VectorAddition [
 	self assert: (memory fetchFloat64: 1 ofObject: z) equals: 22.0
 ]
 
-{ #category : #tests }
+{ #category : 'tests' }
 VMJitMethodTest >> testMixedInlinedLiteralsSmoteTest [
 	| callingMethod |
 	
@@ -340,7 +342,7 @@ VMJitMethodTest >> testMixedInlinedLiteralsSmoteTest [
 	self deny: callingMethod address equals: 0.
 ]
 
-{ #category : #tests }
+{ #category : 'tests' }
 VMJitMethodTest >> testOnStackReplacementForLongRunningVectorAddMethod [
 	| callingMethod cm x y z firstTerm size frame |
 	

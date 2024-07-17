@@ -2,24 +2,25 @@
 I generate code that can be loaded dynamically from external libraries (e.g., DSOs on Unix or DLLs on Windows)
 "
 Class {
-	#name : #VMPluginCodeGenerator,
-	#superclass : #MLVMCCodeGenerator,
+	#name : 'VMPluginCodeGenerator',
+	#superclass : 'MLVMCCodeGenerator',
 	#instVars : [
 		'pluginClass',
 		'pluginFunctionsUsed',
 		'inProgressSelectors',
 		'inliningDone'
 	],
-	#category : #Melchor
+	#category : 'Melchor',
+	#package : 'Melchor'
 }
 
-{ #category : #'spur primitive compilation' }
+{ #category : 'spur primitive compilation' }
 VMPluginCodeGenerator >> accessorDepthCalculator [
 
 	^ MLPluginAccessorDepthCalculator forCodeGenerator: self
 ]
 
-{ #category : #'C translation' }
+{ #category : 'C translation' }
 VMPluginCodeGenerator >> atLeastVMProxyMajor: major minor: minor [ 
 	^String streamContents:
 		[:s|
@@ -29,7 +30,7 @@ VMPluginCodeGenerator >> atLeastVMProxyMajor: major minor: minor [
 			nextPutAll: ')']
 ]
 
-{ #category : #utilities }
+{ #category : 'utilities' }
 VMPluginCodeGenerator >> collectAndCheckInterpreterProxyInterfaceFor: selectors verbose: beVerbose [
 	"self new
 		collectAndCheckInterpreterProxyInterfaceFor: (InterpreterProxy selectors reject: [:s| #(initialize private) includes: (InterpreterProxy whichCategoryIncludesSelector: s)])
@@ -68,7 +69,7 @@ VMPluginCodeGenerator >> collectAndCheckInterpreterProxyInterfaceFor: selectors 
 		actual]
 ]
 
-{ #category : #inlining }
+{ #category : 'inlining' }
 VMPluginCodeGenerator >> doInlining: inlineFlag [
 	"do inlining for a plugin; avoid doing it twice and make sure that
 	 primitive prolog preparation is done immediately after inlining.
@@ -83,7 +84,7 @@ VMPluginCodeGenerator >> doInlining: inlineFlag [
 		 inliningDone := true]
 ]
 
-{ #category : #'C code generator' }
+{ #category : 'C code generator' }
 VMPluginCodeGenerator >> emitAccessorDepthsOn: aStream [ 
 	"Output accessor depth bytes for all primitives in the plugin.
 	 This is for external primitives in Spur."
@@ -107,7 +108,7 @@ VMPluginCodeGenerator >> emitAccessorDepthsOn: aStream [
 							newLine]]]]
 ]
 
-{ #category : #'C code generator' }
+{ #category : 'C code generator' }
 VMPluginCodeGenerator >> emitCCodeOn: aStream doInlining: inlineFlag doAssertions: assertionFlag [
 	"Generate twice; the first time to collect the used functions, the second to output the used functions."
 	| savedHeaders |
@@ -122,7 +123,7 @@ VMPluginCodeGenerator >> emitCCodeOn: aStream doInlining: inlineFlag doAssertion
 	super emitCCodeOn: aStream doInlining: inlineFlag doAssertions: assertionFlag
 ]
 
-{ #category : #'C code generator' }
+{ #category : 'C code generator' }
 VMPluginCodeGenerator >> emitCHeaderOn: aStream [
 	"Write a C file header onto the given stream, adding include files and some basic definitions."
 	| standardHeaders |
@@ -160,7 +161,7 @@ VMPluginCodeGenerator >> emitCHeaderOn: aStream [
 	aStream newLine
 ]
 
-{ #category : #'C code generator' }
+{ #category : 'C code generator' }
 VMPluginCodeGenerator >> emitExportsOn: aStream [
 	"Store all the exported primitives in the form used by the internal named prim system."
 	| nilVMClass |
@@ -177,7 +178,7 @@ VMPluginCodeGenerator >> emitExportsOn: aStream [
 		[self vmClass: nil]
 ]
 
-{ #category : #'C translation' }
+{ #category : 'C translation' }
 VMPluginCodeGenerator >> emitIfdefForPluginFunctionOption: anArrayOrSymbol on: aStream [
 	"See e.g. senders of atLeastVMProxyMajor:minor: or <option: #IMMUTABLITY>
 	 in InterpreterProxy"
@@ -187,7 +188,7 @@ VMPluginCodeGenerator >> emitIfdefForPluginFunctionOption: anArrayOrSymbol on: a
 														withArguments: anArrayOrSymbol allButFirst])
 ]
 
-{ #category : #'CAST translation' }
+{ #category : 'CAST translation' }
 VMPluginCodeGenerator >> generateCASTInterpreterProxyFunctionDereference: aTSendNode [ 
 	
 	| pluginsToClone thenStatement |
@@ -216,7 +217,7 @@ VMPluginCodeGenerator >> generateCASTInterpreterProxyFunctionDereference: aTSend
 		thenStatement: thenStatement.
 ]
 
-{ #category : #'CAST translation' }
+{ #category : 'CAST translation' }
 VMPluginCodeGenerator >> generateCASTRemapOopIn: aTSendNode [ 
 	
 	"Generate the C code for this message onto the given stream."
@@ -240,13 +241,13 @@ VMPluginCodeGenerator >> generateCASTRemapOopIn: aTSendNode [
 				ifFalse: [ ex pass ] ]
 ]
 
-{ #category : #'CAST translation' }
+{ #category : 'CAST translation' }
 VMPluginCodeGenerator >> generateCASTSpurRemapOopIn: aTSendNode [
 
 	^ aTSendNode arguments second asCASTIn: self
 ]
 
-{ #category : #'type inference' }
+{ #category : 'type inference' }
 VMPluginCodeGenerator >> harmonizeReturnTypesIn: aSetOfTypes [
 	"Eliminate signed/unsigned conflicts in aSetOfTypes.  Override to
 	 default to void if any one return type is void."
@@ -255,14 +256,14 @@ VMPluginCodeGenerator >> harmonizeReturnTypesIn: aSetOfTypes [
 		ifFalse: [super harmonizeReturnTypesIn: aSetOfTypes]
 ]
 
-{ #category : #public }
+{ #category : 'public' }
 VMPluginCodeGenerator >> initialize [
 	super initialize.
 	pluginFunctionsUsed := Set new.
 	inliningDone := false
 ]
 
-{ #category : #public }
+{ #category : 'public' }
 VMPluginCodeGenerator >> initializeCASTTranslationDictionary [
 
 	super initializeCASTTranslationDictionary.
@@ -273,12 +274,12 @@ VMPluginCodeGenerator >> initializeCASTTranslationDictionary [
 			put: #generateCASTRemapOopIn:
 ]
 
-{ #category : #testing }
+{ #category : 'testing' }
 VMPluginCodeGenerator >> isGeneratingPluginCode [
 	^true
 ]
 
-{ #category : #utilities }
+{ #category : 'utilities' }
 VMPluginCodeGenerator >> isStructSend: aTSendNode [
 	"Answer if the argument aTSendNode is a send of a structure accessor.
 	 This is tricky.  We want
@@ -296,12 +297,12 @@ VMPluginCodeGenerator >> isStructSend: aTSendNode [
 	   and: [(aTSendNode receiver structTargetKindIn: self) notNil]
 ]
 
-{ #category : #public }
+{ #category : 'public' }
 VMPluginCodeGenerator >> localizeGlobalVariables [
 "TPR - we don't do this for plugins"
 ]
 
-{ #category : #public }
+{ #category : 'public' }
 VMPluginCodeGenerator >> notePluginFunctionsUsedByMacros [
 	"Declare the plugin functions that are used by macros."
 	#(
@@ -314,7 +315,7 @@ VMPluginCodeGenerator >> notePluginFunctionsUsedByMacros [
 				(pluginFunctionsUsed includes: macro) ifTrue: [pluginFunctionsUsed addAll: funcs]].
 ]
 
-{ #category : #public }
+{ #category : 'public' }
 VMPluginCodeGenerator >> noteUsedPluginFunction: aSelector [
 	"Remember aSelector and answer whether the call should be made through
 	 interpreterProxy. If not, it will be made either directly (in an internal plugin)
@@ -325,7 +326,7 @@ VMPluginCodeGenerator >> noteUsedPluginFunction: aSelector [
 	^#(majorVersion minorVersion) includes: aSelector
 ]
 
-{ #category : #public }
+{ #category : 'public' }
 VMPluginCodeGenerator >> pluginClass: aPluginClass [
 	"Set the plugin class and name when generating plugins.
 	 And for run-time use, answer the name string."
@@ -339,7 +340,7 @@ VMPluginCodeGenerator >> pluginClass: aPluginClass [
 	^self declareModuleName: pluginClass moduleNameAndVersion, packageId
 ]
 
-{ #category : #public }
+{ #category : 'public' }
 VMPluginCodeGenerator >> pluginFunctionsToClone [
 	"Answer those of the used plugin functions to clone as a sorted collection.
 	 Exclude those that are static to sqVirtualMachine.c and hence always need
@@ -351,7 +352,7 @@ VMPluginCodeGenerator >> pluginFunctionsToClone [
 				asSortedCollection
 ]
 
-{ #category : #'C code generator' }
+{ #category : 'C code generator' }
 VMPluginCodeGenerator >> preDeclareInterpreterProxyOn: aStream [
 	"Put the necessary #defines needed before interpreterProxy.  Basically
 	 internal plugins use the VM's interpreterProxy variable and external plugins
@@ -405,7 +406,7 @@ VMPluginCodeGenerator >> preDeclareInterpreterProxyOn: aStream [
 	aStream nextPutAll: 'extern'; newLine; nextPutAll: '#endif'; newLine
 ]
 
-{ #category : #'C code generator' }
+{ #category : 'C code generator' }
 VMPluginCodeGenerator >> preDeclareMacrosForFastClassCheckingOn: aStream [
 	"These macros can be used to check for various cases of Integer types.
 	 Since they can be defined based on existing API, this is a good trade off:
@@ -447,7 +448,7 @@ VMPluginCodeGenerator >> preDeclareMacrosForFastClassCheckingOn: aStream [
 		element ~~ #newLine ifTrue: [aStream nextPutAll: element]]
 ]
 
-{ #category : #'C code generator' }
+{ #category : 'C code generator' }
 VMPluginCodeGenerator >> prepareTranslatedPrimitives [
 	"Translated primitives need their prolog and epilog adding and all
 	 sends to self that should be sends to interpreterproxy changing."
@@ -459,41 +460,41 @@ VMPluginCodeGenerator >> prepareTranslatedPrimitives [
 				mapSendsFromSelfToInterpreterProxy: self vmmakerConfiguration interpreterProxyClass selectors]]
 ]
 
-{ #category : #'C code generator' }
+{ #category : 'C code generator' }
 VMPluginCodeGenerator >> referenceInterpreterClass [
 	"Define the class from which to take methods to define the interpreter proxy imports."
 	^(Smalltalk classNamed: #StackInterpreter) 
 		ifNil: [self vmmakerConfiguration interpreterProxyClass]
 ]
 
-{ #category : #'C code generator' }
+{ #category : 'C code generator' }
 VMPluginCodeGenerator >> referenceObjectMemoryClass [
 	"Define the class from which to take methods to define the interpreter proxy imports."
 	^ self vmmakerConfiguration referenceObjectMemoryClass
 ]
 
-{ #category : #public }
+{ #category : 'public' }
 VMPluginCodeGenerator >> selectorsThatAreGeneratedAsMacros [
 	"Answer a list of selectors that are generated as a C macro rather than as an interpreterProxy function call."
 	
 	^#(isKindOfInteger: isLargeIntegerObject: isLargeNegativeIntegerObject: isLargePositiveIntegerObject:)
 ]
 
-{ #category : #public }
+{ #category : 'public' }
 VMPluginCodeGenerator >> selectorsThatMayBeGeneratedAsMacros [
 	"Answer a list of selectors that maybe generated as a C macro rather than as an interpreterProxy function call."
 	
 	^self selectorsThatAreGeneratedAsMacros, #(isIntegerObject: isImmediate:)
 ]
 
-{ #category : #'C code generator' }
+{ #category : 'C code generator' }
 VMPluginCodeGenerator >> shouldGenerateStruct: structClass [
 
 	^ structClass isAbstract not
 		 and: [pluginClass shouldGenerateTypedefFor: structClass]
 ]
 
-{ #category : #inlining }
+{ #category : 'inlining' }
 VMPluginCodeGenerator >> sizeOfIntegralCType: anIntegralCType [ "<String>"
 	"Hack; because the plugin sources are compiled either as 32 or 64 bit
 	 size those types which are either 32 or 64 bits in size as 48 bits.
@@ -532,13 +533,13 @@ VMPluginCodeGenerator >> sizeOfIntegralCType: anIntegralCType [ "<String>"
 			ifFalse: [self error: 'unrecognized integral type']]
 ]
 
-{ #category : #'C code generator' }
+{ #category : 'C code generator' }
 VMPluginCodeGenerator >> structClasses [
 	
 	^ self structClassesForTranslationClasses: { pluginClass }
 ]
 
-{ #category : #'C code generator' }
+{ #category : 'C code generator' }
 VMPluginCodeGenerator >> structTargetKindForDeclaration: decl [ "<String>"
 	^(super structTargetKindForDeclaration: decl) ifNil:
 		[pluginClass ifNotNil:
@@ -550,7 +551,7 @@ VMPluginCodeGenerator >> structTargetKindForDeclaration: decl [ "<String>"
 					ifFalse: [#struct]]]]
 ]
 
-{ #category : #'type inference' }
+{ #category : 'type inference' }
 VMPluginCodeGenerator >> typeFor: aNode in: aTMethod [
 	"Override to provide the type for InterpreterProxy's implicit stack variable."
 	aNode isVariable ifTrue:
@@ -561,7 +562,7 @@ VMPluginCodeGenerator >> typeFor: aNode in: aTMethod [
 	^super typeFor: aNode in: aTMethod
 ]
 
-{ #category : #'C translation' }
+{ #category : 'C translation' }
 VMPluginCodeGenerator >> withCASTOptionalVerbiageFor: selector mainNode: mainNode ifOptionalNode: optionalNode [
 
 	^ (self vmmakerConfiguration interpreterProxyClass >> selector pragmaAt: #option:)
@@ -578,7 +579,7 @@ VMPluginCodeGenerator >> withCASTOptionalVerbiageFor: selector mainNode: mainNod
 				else: optionalNode ]
 ]
 
-{ #category : #'C translation' }
+{ #category : 'C translation' }
 VMPluginCodeGenerator >> withGuardAgainstDefinitionOf: selector on: aStream do: aBlock [
 	"Evaluate aBlock, surrounded by a define if selector is defined as a macro (i.e. by preDeclareInterpreterProxyOn:"
 	(self selectorsThatMayBeGeneratedAsMacros includes: selector) ifFalse:
@@ -590,7 +591,7 @@ VMPluginCodeGenerator >> withGuardAgainstDefinitionOf: selector on: aStream do: 
 		do: aBlock
 ]
 
-{ #category : #'C translation' }
+{ #category : 'C translation' }
 VMPluginCodeGenerator >> withOptionalVerbiageFor: selector on: aStream do: mainBlock ifOptionalDo: optionalBlock [
 	(self vmmakerConfiguration interpreterProxyClass >> selector pragmaAt: #option:)
 		ifNil:

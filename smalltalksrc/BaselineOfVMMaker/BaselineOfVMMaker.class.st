@@ -1,12 +1,14 @@
 Class {
-	#name : #BaselineOfVMMaker,
-	#superclass : #BaselineOf,
-	#category : 'BaselineOfVMMaker'
+	#name : 'BaselineOfVMMaker',
+	#superclass : 'BaselineOf',
+	#category : 'BaselineOfVMMaker',
+	#package : 'BaselineOfVMMaker'
 }
 
-{ #category : #baselines }
+{ #category : 'baselines' }
 BaselineOfVMMaker >> baseline: spec [
 	<baseline>
+
 	spec
 		for: #common
 		do: [
