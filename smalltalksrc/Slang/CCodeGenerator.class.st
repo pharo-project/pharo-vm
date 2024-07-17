@@ -1028,6 +1028,7 @@ CCodeGenerator >> emitCCodeOn: aStream doInlining: inlineFlag doAssertions: asse
 	assertionFlag ifFalse: [ self removeAssertions ].
 
 	self doInlining: inlineFlag.
+	SLDeadCodeEliminationVisitor new removeDeadCodeUsing: self.
 
 	SLAutomaticLocalization new
 		codeGenerator: self;

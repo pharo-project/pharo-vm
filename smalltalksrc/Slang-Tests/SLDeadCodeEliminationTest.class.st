@@ -1,12 +1,15 @@
 Class {
-	#name : 'SLInliningTest',
+	#name : 'SLDeadCodeEliminationTest',
 	#superclass : 'SlangAbstractTestCase',
+	#instVars : [
+		'sLDeadCodeEliminationVisitor'
+	],
 	#category : 'Slang-Tests',
 	#package : 'Slang-Tests'
 }
 
 { #category : 'helpers' }
-SLInliningTest >> astTranslate: tast inStream: aWriteStream [ 
+SLDeadCodeEliminationTest >> astTranslate: tast inStream: aWriteStream [ 
 	
 	| cAST prettyPrinter |
 	cAST := tast asCASTIn: ccg.
@@ -16,18 +19,21 @@ SLInliningTest >> astTranslate: tast inStream: aWriteStream [
 ]
 
 { #category : 'running' }
-SLInliningTest >> setUp [
+SLDeadCodeEliminationTest >> setUp [
 	super setUp.
-	ccg addClass: SLInliningTestClass.
+	ccg addClass: SLDeadCodeEliminationTestClass.
 	ccg inferTypes.
+	sLDeadCodeEliminationVisitor := SLDeadCodeEliminationVisitor new codeGenerator: ccg
+	
 ]
 
 { #category : 'inline-in-send' }
-SLInliningTest >> testInlineMethodCallInIfMethodWithReturnConstant [
+SLDeadCodeEliminationTest >> testInlineMethodCallInIfMethodWithReturnConstant [
 
 	| translation tMethod |
 	tMethod := ccg methodNamed: #methodCallInIfMethodWithReturnConstant.
 	ccg doBasicInlining: true.
+	sLDeadCodeEliminationVisitor visit: tMethod parseTree.
 
 	translation := self translate: tMethod.
 	translation := translation trimBoth.
@@ -49,12 +55,14 @@ methodCallInIfMethodWithReturnConstant(void)
 ]
 
 { #category : 'unused-in-conditional' }
-SLInliningTest >> testInlineMethodCallInIfMethodWithReturnConstantInIfWithoutReturn [
+SLDeadCodeEliminationTest >> testInlineMethodCallInIfMethodWithReturnConstantInIfWithoutReturn [
 
 	| translation tMethod |
 	tMethod := ccg methodNamed:
 		           #methodCallInIfMethodWithReturnConstantInIfWithoutReturn.
 	ccg doBasicInlining: true.
+	sLDeadCodeEliminationVisitor visit: tMethod parseTree.
+
 	translation := self translate: tMethod.
 	translation := translation trimBoth.
 
@@ -80,13 +88,14 @@ methodCallInIfMethodWithReturnConstantInIfWithoutReturn(void)
 ]
 
 { #category : 'unused-in-conditional' }
-SLInliningTest >> testInlineMethodCallInIfMethodWithReturnConstantWithoutReturn [
-	"in this case the empty if is not eluded, the reason if that one of the method that does inlining need refactoring"
+SLDeadCodeEliminationTest >> testInlineMethodCallInIfMethodWithReturnConstantWithoutReturn [
 
 	| translation tMethod |
 	tMethod := ccg methodNamed:
 		           #methodCallInIfMethodWithReturnConstantWithoutReturn.
 	ccg doBasicInlining: true.
+	sLDeadCodeEliminationVisitor visit: tMethod parseTree.
+
 	translation := self translate: tMethod.
 	translation := translation trimBoth.
 
@@ -98,20 +107,19 @@ static sqInt
 methodCallInIfMethodWithReturnConstantWithoutReturn(void)
 {
 	sqInt i;
-
-	if (i == 5) {
-	}
+   
 	return 0;
 }'
 ]
 
 { #category : 'inline-in-return' }
-SLInliningTest >> testInlineMethodCallInRetunMethodWithAssignmentAndReturnConstantInIf [
+SLDeadCodeEliminationTest >> testInlineMethodCallInRetunMethodWithAssignmentAndReturnConstantInIf [
 
 	| translation tMethod |
 	tMethod := ccg methodNamed: #methodCallInReturnMethodWithAssignmentAndReturnConstantInIf.
 	ccg doBasicInlining: true.
-
+	sLDeadCodeEliminationVisitor visit: tMethod parseTree.	
+	
 	translation := self translate: tMethod.
 	translation := translation trimBoth.
 
@@ -134,12 +142,13 @@ methodCallInReturnMethodWithAssignmentAndReturnConstantInIf(void)
 ]
 
 { #category : 'inline-in-return' }
-SLInliningTest >> testInlineMethodCallInReturnMethodWithAssignmentAndReturnConstant [
+SLDeadCodeEliminationTest >> testInlineMethodCallInReturnMethodWithAssignmentAndReturnConstant [
 
 	| translation tMethod |
 	tMethod := ccg methodNamed: #methodCallInReturnMethodWithAssignmentAndReturnConstant.
 	ccg doBasicInlining: true.
-
+	sLDeadCodeEliminationVisitor visit: tMethod parseTree.
+	
 	translation := self translate: tMethod.
 	translation := translation trimBoth.
 
@@ -159,12 +168,14 @@ methodCallInReturnMethodWithAssignmentAndReturnConstant(void)
 ]
 
 { #category : 'inline-in-return' }
-SLInliningTest >> testInlineMethodCallInReturnMethodWithReturnConstant [
+SLDeadCodeEliminationTest >> testInlineMethodCallInReturnMethodWithReturnConstant [
 	"doesn't get rid off the ^ 5"
 
 	| translation tMethod |
-	tMethod := ccg methodNamed: #methodCallInReturnMethodWithReturnConstant.
+	tMethod := ccg methodNamed:
+		           #methodCallInReturnMethodWithReturnConstant.
 	ccg doBasicInlining: true.
+	sLDeadCodeEliminationVisitor visit: tMethod parseTree.
 
 	translation := self translate: tMethod.
 	translation := translation trimBoth.
@@ -181,12 +192,14 @@ methodCallInReturnMethodWithReturnConstant(void)
 ]
 
 { #category : 'inline-in-return' }
-SLInliningTest >> testInlineMethodCallInReturnMethodWithReturnConstantInIf [
+SLDeadCodeEliminationTest >> testInlineMethodCallInReturnMethodWithReturnConstantInIf [
 	"doesn't get rid off the ^ 5"
 
 	| translation tMethod |
-	tMethod := ccg methodNamed: #methodCallInReturnMethodWithReturnConstantInIf.
+	tMethod := ccg methodNamed:
+		           #methodCallInReturnMethodWithReturnConstantInIf.
 	ccg doBasicInlining: true.
+	sLDeadCodeEliminationVisitor visit: tMethod parseTree.
 
 	translation := self translate: tMethod.
 	translation := translation trimBoth.
@@ -207,13 +220,14 @@ methodCallInReturnMethodWithReturnConstantInIf(void)
 ]
 
 { #category : 'unused-constant' }
-SLInliningTest >> testInlineMethodCallMethodWithAssignmentAndReturnConstant [
+SLDeadCodeEliminationTest >> testInlineMethodCallMethodWithAssignmentAndReturnConstant [
 	"get rid off the ^ 5 and keep the assignment"
 
 	| translation tMethod |
 	tMethod := ccg methodNamed:
 		           #methodCallMethodWithAssignmentAndReturnConstant.
 	ccg doBasicInlining: true.
+	sLDeadCodeEliminationVisitor visit: tMethod parseTree.
 
 	translation := self translate: tMethod.
 	translation := translation trimBoth.
@@ -234,13 +248,14 @@ methodCallMethodWithAssignmentAndReturnConstant(void)
 ]
 
 { #category : 'unused-constant' }
-SLInliningTest >> testInlineMethodCallMethodWithAssignmentAndReturnConstantInIf [
+SLDeadCodeEliminationTest >> testInlineMethodCallMethodWithAssignmentAndReturnConstantInIf [
 	"get rid off the ^ -1 and keep the assignment"
 
 	| translation tMethod |
 	tMethod := ccg methodNamed:
 		           #methodCallMethodWithAssignmentAndReturnConstantInIf.
 	ccg doBasicInlining: true.
+	sLDeadCodeEliminationVisitor visit: tMethod parseTree.
 
 	translation := self translate: tMethod.
 	translation := translation trimBoth.
@@ -266,12 +281,13 @@ methodCallMethodWithAssignmentAndReturnConstantInIf(void)
 ]
 
 { #category : 'unused-constant' }
-SLInliningTest >> testInlineMethodCallMethodWithReturnConstant [
+SLDeadCodeEliminationTest >> testInlineMethodCallMethodWithReturnConstant [
 	"get rid off the ^ 5"
 
 	| translation tMethod |
 	tMethod := ccg methodNamed: #methodCallMethodWithReturnConstant.
 	ccg doBasicInlining: true.
+	sLDeadCodeEliminationVisitor visit: tMethod parseTree.
 
 	translation := self translate: tMethod.
 	translation := translation trimBoth.
@@ -288,11 +304,12 @@ methodCallMethodWithReturnConstant(void)
 ]
 
 { #category : 'unused-constant' }
-SLInliningTest >> testInlineMethodCallMethodWithReturnConstantInIf [
+SLDeadCodeEliminationTest >> testInlineMethodCallMethodWithReturnConstantInIf [
 
 	| translation tMethod |
 	tMethod := ccg methodNamed: #methodCallMethodWithReturnConstantInIf.
 	ccg doBasicInlining: true.
+	sLDeadCodeEliminationVisitor visit: tMethod parseTree.
 
 	translation := self translate: tMethod.
 	translation := translation trimBoth.
@@ -315,20 +332,19 @@ methodCallMethodWithReturnConstantInIf(void)
 ]
 
 { #category : 'unused-variable' }
-SLInliningTest >> testInlineMethodWithExpression [
+SLDeadCodeEliminationTest >> testInlineMethodWithExpression [
 
 	| translation tMethod |
-	tMethod := ccg methodNamed:
-		           #methodCallMethodWithExpression.
+	tMethod := ccg methodNamed: #methodCallMethodWithExpression.
 	ccg doBasicInlining: true.
+	sLDeadCodeEliminationVisitor visit: tMethod parseTree.
 
 	translation := self translate: tMethod.
 	translation := translation trimBoth.
 
 	self
 		assert: translation
-		equals:
-			'/* SLInliningTestClass>>#methodCallMethodWithExpression */
+		equals: '/* SLInliningTestClass>>#methodCallMethodWithExpression */
 static sqInt
 methodCallMethodWithExpression(void)
 {
@@ -351,7 +367,7 @@ methodCallMethodWithExpression(void)
 ]
 
 { #category : 'helpers' }
-SLInliningTest >> translate: tast [
+SLDeadCodeEliminationTest >> translate: tast [
 
 	^ String streamContents: [ :str | 
 		self

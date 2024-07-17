@@ -594,18 +594,6 @@ TSendNode >> selector: aSymbol [
 	selector := aSymbol
 ]
 
-{ #category : 'transformations' }
-TSendNode >> selectorForReducedConditionalBranch: branchIndex [
-	"reduce the selector of the method accroding to branch index"
-
-	| separation |
-	separation := self selector indexOf: $:.
-	branchIndex = 1
-		ifTrue: [ self selector: (self selector copyFrom: 1 to: separation) ]
-		ifFalse: [
-		self selector copyFrom: separation + 1 to: self selector size ]
-]
-
 { #category : 'accessing' }
 TSendNode >> setSelector: aSymbol receiver: rcvrNode arguments: argList [
 

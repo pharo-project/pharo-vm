@@ -927,15 +927,6 @@ TMethod >> ensureConditionalAssignmentsAreTransformedIn: aCodeGen [
 		
 ]
 
-{ #category : 'inlining' }
-TMethod >> ensureIsValidMethodAfterInlining: aNode in: aCodeGen [
-	"inlining can cause some issues in the AST that will produce incorrect code, modify the AST if needed to produce a cleaner one. Return true if anything was done "
-	^ self iterateThrought: aNode in: aCodeGen 
-	
-	
-	
-]
-
 { #category : 'transformations' }
 TMethod >> ensureToByDoLoopLimitIsSafeAndEfficient: node in: aCodeGen [
 
@@ -1483,9 +1474,9 @@ TMethod >> inlineFunctionCall: aSendNode in: aCodeGen [
 	meth parseTree bindVariablesIn: substitutionDict.
 	meth parseTree endsWithReturn ifTrue: [
 		meth parseTree: meth parseTree copyWithoutReturn ].
-	(self parentWontUse: aSendNode) ifTrue: [
+"	(self parentWontUse: aSendNode) ifTrue: [
 		meth parseTree parent: aSendNode parent.
-		self ensureIsValidMethodAfterInlining: meth parseTree in: aCodeGen ].
+		self ensureIsValidMethodAfterInlining: meth parseTree in: aCodeGen ]."
 	^ meth parseTree
 ]
 
@@ -1894,14 +1885,6 @@ TMethod >> isInlineableConditional: aSendNode in: aCodeGen [
 				 and: [#(true false) includes: node expression value]]]]]]]]
 ]
 
-{ #category : 'accessing' }
-TMethod >> isMaybeSendWithoutSideEffect: aNode [
-	"called when trying to clean unused variable"
-
-	^ aNode isSend and: [
-		  aNode isConditionalSend or: [ aNode selector beginsWith: #cCoerce ] ]
-]
-
 { #category : 'inlining' }
 TMethod >> isNode: aNode substitutableFor: argName inMethod: targetMeth in: aCodeGen [
 	"Answer if the given parameter node may be substituted directly into the body of
@@ -2015,14 +1998,6 @@ TMethod >> isStructAccessor [
 		do: [:ex| false]
 ]
 
-{ #category : 'accessing' }
-TMethod >> isStructAccessorWithNoSideEffect: aNode in: aCodeGen [
-	"called when cleaning an AST of unused variables"
-
-	^ aNode isSend and: [
-		  (aCodeGen isStructSend: aNode) and: [ aNode numArgs = 0 ] ]
-]
-
 { #category : 'inlining' }
 TMethod >> isSubstitutableNode: aNode intoMethod: targetMeth in: aCodeGen [
 	"Answer true if the given parameter node is either a constant, a local variable, or a formal parameter of the receiver. Such parameter nodes may be substituted directly into the body of the method during inlining. Note that global variables cannot be subsituted into methods with possible side effects (i.e., methods that may assign to global variables) because the inlined method might depend on having the value of the global variable captured when it is passed in as an argument."
@@ -2075,30 +2050,6 @@ TMethod >> isTMethod [
 TMethod >> isVolatile [
 	
 	^ self hasProperties and: [properties includesKey: #volatile]
-]
-
-{ #category : 'inlining support' }
-TMethod >> iterateThrought: aNode in: aCodeGen [
-	"iterate throuht an AST and supress unused variables and constants, since we don't do anything when meeting a send (except in some cases), assignment or return node the only variables and constants we come accross are alone in their lines"
-	| didSomething |
-	didSomething := false.
-	aNode isStatementList ifTrue: [
-		aNode children do: [ :subNode |
-			subNode ifNotNil: [
-				didSomething := didSomething or: [ self iterateThrought: subNode in: aCodeGen ] ] ] ].
-	aNode isSwitch ifTrue: [ 
-		aNode cases do: [ :case |
-			didSomething := didSomething or: [self iterateThrought: case second in: aCodeGen] ] ].
-	(self isStructAccessorWithNoSideEffect: aNode in: aCodeGen) ifTrue: [
-		self cleanASTOf: aNode.
-		^ true ].
-	(self isMaybeSendWithoutSideEffect: aNode) ifTrue: [
-		aNode arguments do: [ :subNode |
-			didSomething := didSomething or: [self iterateThrought: subNode in: aCodeGen ] ]].
-	(aNode isVariable or: aNode isConstant) ifTrue: [
-		self cleanASTOf: aNode.
-		^ true ].
-	^ didSomething
 ]
 
 { #category : 'accessing' }
@@ -3259,14 +3210,14 @@ TMethod >> tryToInlineMethodStatementsIn: aCodeGen statementListsInto: aBlock [
 				ifNil: [ newStatements addLast: stmt ]
 				ifNotNil: [ :inlinedStmts |
 					didSomething := true.
-					(self parentWontUse: stmt) ifTrue: [
-						inlinedStmts doWithIndex: [ :node :idx | "since we are working with a collection instead of a tree, branches are supress in the parent but are still in the collection.
-							if we see that a node is no longer in its parent we can supress it"
+					"(self parentWontUse: stmt) ifTrue: [
+						inlinedStmts doWithIndex: [ :node :idx | ""since we are working with a collection instead of a tree, branches are supress in the parent but are still in the collection.
+							if we see that a node is no longer in its parent we can supress it""
 							((self ensureIsValidMethodAfterInlining: node in: aCodeGen)
 								 and: [
 									 node parent isNotNil and: [
 										 (node parent children includes: node) not ] ]) ifTrue: [
-								inlinedStmts at: idx put: nil ] ] ].
+								inlinedStmts at: idx put: nil ] ] ]."
 					newStatements addAllLast:
 						(inlinedStmts select: [ :node | node isNotNil ]) ] ].
 		stmtList statements: newStatements asArray ].
