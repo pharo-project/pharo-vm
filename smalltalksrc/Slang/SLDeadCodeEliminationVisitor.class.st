@@ -43,7 +43,9 @@ SLDeadCodeEliminationVisitor >> isStructAccessorWithNoSideEffect: aSendNode [
 SLDeadCodeEliminationVisitor >> removeDeadCodeUsing: aCodeGen [
 
 	codeGenerator := aCodeGen.
-	codeGenerator methods do: [ :m | self visit: m parseTree ]
+	codeGenerator methods do: [ :m | 
+		codeGenerator currentMethod: m.
+		self visit: m parseTree ]
 ]
 
 { #category : 'visiting' }

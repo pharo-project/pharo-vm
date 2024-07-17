@@ -8,11 +8,25 @@ Class {
 	#package : 'Slang-Tests'
 }
 
+{ #category : 'translation' }
+SLDeadCodeEliminationTestClass class >> instVarNamesAndTypesForTranslationDo: aBinaryBlock [
+
+	self filteredInstVarNames do: [ :ivn |
+		aBinaryBlock value: ivn value: (ivn
+				 caseOf: { ([ 'instancesVariable' ] -> [ #size_t ]) }
+				 otherwise: [ #sqInt ]) ]
+]
+
+{ #category : 'accessing' }
+SLDeadCodeEliminationTestClass >> instancesVariable [
+	^ instancesVariable
+]
+
 { #category : 'unused-in-conditional' }
 SLDeadCodeEliminationTestClass >> methodCallInIfMethodWithReturnConstant [
 
 	| i |
-	i = 5 ifTrue: [ ^ self methodReturnConstant ].
+	i = 5 ifTrue: [ self methodReturnConstant ].
 	^ 0
 ]
 
@@ -95,7 +109,7 @@ SLDeadCodeEliminationTestClass >> methodCallMethodWithReturnConstantInIf [
 { #category : 'unused-constant' }
 SLDeadCodeEliminationTestClass >> methodReturnConstant [
 
-	^ 5
+	^ 5 
 ]
 
 { #category : 'unused-constant' }

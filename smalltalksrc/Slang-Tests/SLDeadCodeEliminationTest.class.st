@@ -21,7 +21,7 @@ SLDeadCodeEliminationTest >> astTranslate: tast inStream: aWriteStream [
 { #category : 'running' }
 SLDeadCodeEliminationTest >> setUp [
 	super setUp.
-	ccg addClass: SLDeadCodeEliminationTestClass.
+	ccg addStructClass: SLDeadCodeEliminationTestClass.
 	ccg inferTypes.
 	sLDeadCodeEliminationVisitor := SLDeadCodeEliminationVisitor new codeGenerator: ccg
 	
@@ -29,10 +29,13 @@ SLDeadCodeEliminationTest >> setUp [
 
 { #category : 'inline-in-send' }
 SLDeadCodeEliminationTest >> testInlineMethodCallInIfMethodWithReturnConstant [
+	"the temporay variable is still here"
 
 	| translation tMethod |
 	tMethod := ccg methodNamed: #methodCallInIfMethodWithReturnConstant.
 	ccg doBasicInlining: true.
+
+	ccg currentMethod: tMethod.
 	sLDeadCodeEliminationVisitor visit: tMethod parseTree.
 
 	translation := self translate: tMethod.
@@ -41,15 +44,12 @@ SLDeadCodeEliminationTest >> testInlineMethodCallInIfMethodWithReturnConstant [
 	self
 		assert: translation
 		equals:
-			'/* SLInliningTestClass>>#methodCallInIfMethodWithReturnConstant */
+			'/* SLDeadCodeEliminationTestClass>>#methodCallInIfMethodWithReturnConstant */
 static sqInt
-methodCallInIfMethodWithReturnConstant(void)
+methodCallInIfMethodWithReturnConstant(SLDeadCodeEliminationTestClass * self_in_methodCallInIfMethodWithReturnConstant)
 {
 	sqInt i;
 
-	if (i == 5) {
-		return 5;
-	}
 	return 0;
 }'
 ]
@@ -69,9 +69,9 @@ SLDeadCodeEliminationTest >> testInlineMethodCallInIfMethodWithReturnConstantInI
 	self
 		assert: translation
 		equals:
-			'/* SLInliningTestClass>>#methodCallInIfMethodWithReturnConstantInIfWithoutReturn */
+			'/* SLDeadCodeEliminationTestClass>>#methodCallInIfMethodWithReturnConstantInIfWithoutReturn */
 static sqInt
-methodCallInIfMethodWithReturnConstantInIfWithoutReturn(void)
+methodCallInIfMethodWithReturnConstantInIfWithoutReturn(SLDeadCodeEliminationTestClass * self_in_methodCallInIfMethodWithReturnConstantInIfWithoutReturn)
 {
 	sqInt i;
 
@@ -89,6 +89,7 @@ methodCallInIfMethodWithReturnConstantInIfWithoutReturn(void)
 
 { #category : 'unused-in-conditional' }
 SLDeadCodeEliminationTest >> testInlineMethodCallInIfMethodWithReturnConstantWithoutReturn [
+	"the temporary variable is still here"
 
 	| translation tMethod |
 	tMethod := ccg methodNamed:
@@ -102,12 +103,12 @@ SLDeadCodeEliminationTest >> testInlineMethodCallInIfMethodWithReturnConstantWit
 	self
 		assert: translation
 		equals:
-			'/* SLInliningTestClass>>#methodCallInIfMethodWithReturnConstantWithoutReturn */
+			'/* SLDeadCodeEliminationTestClass>>#methodCallInIfMethodWithReturnConstantWithoutReturn */
 static sqInt
-methodCallInIfMethodWithReturnConstantWithoutReturn(void)
+methodCallInIfMethodWithReturnConstantWithoutReturn(SLDeadCodeEliminationTestClass * self_in_methodCallInIfMethodWithReturnConstantWithoutReturn)
 {
 	sqInt i;
-   
+
 	return 0;
 }'
 ]
@@ -126,9 +127,9 @@ SLDeadCodeEliminationTest >> testInlineMethodCallInRetunMethodWithAssignmentAndR
 	self
 		assert: translation
 		equals:
-			'/* SLInliningTestClass>>#methodCallInReturnMethodWithAssignmentAndReturnConstantInIf */
+			'/* SLDeadCodeEliminationTestClass>>#methodCallInReturnMethodWithAssignmentAndReturnConstantInIf */
 static sqInt
-methodCallInReturnMethodWithAssignmentAndReturnConstantInIf(void)
+methodCallInReturnMethodWithAssignmentAndReturnConstantInIf(SLDeadCodeEliminationTestClass * self_in_methodCallInReturnMethodWithAssignmentAndReturnConstantInIf)
 {
 	int i;
 
@@ -137,7 +138,7 @@ methodCallInReturnMethodWithAssignmentAndReturnConstantInIf(void)
 		i = 5;
 		return -1;
 	}
-	return null;
+	return self_in_methodCallInReturnMethodWithAssignmentAndReturnConstantInIf;
 }'
 ]
 
@@ -155,9 +156,9 @@ SLDeadCodeEliminationTest >> testInlineMethodCallInReturnMethodWithAssignmentAnd
 	self
 		assert: translation
 		equals:
-			'/* SLInliningTestClass>>#methodCallInReturnMethodWithAssignmentAndReturnConstant */
+			'/* SLDeadCodeEliminationTestClass>>#methodCallInReturnMethodWithAssignmentAndReturnConstant */
 static sqInt
-methodCallInReturnMethodWithAssignmentAndReturnConstant(void)
+methodCallInReturnMethodWithAssignmentAndReturnConstant(SLDeadCodeEliminationTestClass * self_in_methodCallInReturnMethodWithAssignmentAndReturnConstant)
 {
 	int i;
 
@@ -183,9 +184,9 @@ SLDeadCodeEliminationTest >> testInlineMethodCallInReturnMethodWithReturnConstan
 	self
 		assert: translation
 		equals:
-			'/* SLInliningTestClass>>#methodCallInReturnMethodWithReturnConstant */
+			'/* SLDeadCodeEliminationTestClass>>#methodCallInReturnMethodWithReturnConstant */
 static sqInt
-methodCallInReturnMethodWithReturnConstant(void)
+methodCallInReturnMethodWithReturnConstant(SLDeadCodeEliminationTestClass * self_in_methodCallInReturnMethodWithReturnConstant)
 {
 	return 5;
 }'
@@ -207,15 +208,15 @@ SLDeadCodeEliminationTest >> testInlineMethodCallInReturnMethodWithReturnConstan
 	self
 		assert: translation
 		equals:
-			'/* SLInliningTestClass>>#methodCallInReturnMethodWithReturnConstantInIf */
+			'/* SLDeadCodeEliminationTestClass>>#methodCallInReturnMethodWithReturnConstantInIf */
 static sqInt
-methodCallInReturnMethodWithReturnConstantInIf(void)
+methodCallInReturnMethodWithReturnConstantInIf(SLDeadCodeEliminationTestClass * self_in_methodCallInReturnMethodWithReturnConstantInIf)
 {
 	/* begin methodReturnConstantInIf */
 	if (1) {
 		return -1;
 	}
-	return null;
+	return self_in_methodCallInReturnMethodWithReturnConstantInIf;
 }'
 ]
 
@@ -235,15 +236,15 @@ SLDeadCodeEliminationTest >> testInlineMethodCallMethodWithAssignmentAndReturnCo
 	self
 		assert: translation
 		equals:
-			'/* SLInliningTestClass>>#methodCallMethodWithAssignmentAndReturnConstant */
-static sqInt
-methodCallMethodWithAssignmentAndReturnConstant(void)
+			'/* SLDeadCodeEliminationTestClass>>#methodCallMethodWithAssignmentAndReturnConstant */
+static SLDeadCodeEliminationTestClass *
+methodCallMethodWithAssignmentAndReturnConstant(SLDeadCodeEliminationTestClass * self_in_methodCallMethodWithAssignmentAndReturnConstant)
 {
 	int i;
 
 	/* begin methodWithAssignmentAndReturnConstant */
 	i = 5;
-	return 0;
+	return self_in_methodCallMethodWithAssignmentAndReturnConstant;
 }'
 ]
 
@@ -263,9 +264,9 @@ SLDeadCodeEliminationTest >> testInlineMethodCallMethodWithAssignmentAndReturnCo
 	self
 		assert: translation
 		equals:
-			'/* SLInliningTestClass>>#methodCallMethodWithAssignmentAndReturnConstantInIf */
-static sqInt
-methodCallMethodWithAssignmentAndReturnConstantInIf(void)
+			'/* SLDeadCodeEliminationTestClass>>#methodCallMethodWithAssignmentAndReturnConstantInIf */
+static SLDeadCodeEliminationTestClass *
+methodCallMethodWithAssignmentAndReturnConstantInIf(SLDeadCodeEliminationTestClass * self_in_methodCallMethodWithAssignmentAndReturnConstantInIf)
 {
 	int i;
 
@@ -276,7 +277,7 @@ methodCallMethodWithAssignmentAndReturnConstantInIf(void)
 	}
 	l1:
 	;
-	return 0;
+	return self_in_methodCallMethodWithAssignmentAndReturnConstantInIf;
 }'
 ]
 
@@ -295,11 +296,11 @@ SLDeadCodeEliminationTest >> testInlineMethodCallMethodWithReturnConstant [
 	self
 		assert: translation
 		equals:
-			'/* SLInliningTestClass>>#methodCallMethodWithReturnConstant */
-static sqInt
-methodCallMethodWithReturnConstant(void)
+			'/* SLDeadCodeEliminationTestClass>>#methodCallMethodWithReturnConstant */
+static SLDeadCodeEliminationTestClass *
+methodCallMethodWithReturnConstant(SLDeadCodeEliminationTestClass * self_in_methodCallMethodWithReturnConstant)
 {
-	return 0;
+	return self_in_methodCallMethodWithReturnConstant;
 }'
 ]
 
@@ -317,9 +318,9 @@ SLDeadCodeEliminationTest >> testInlineMethodCallMethodWithReturnConstantInIf [
 	self
 		assert: translation
 		equals:
-			'/* SLInliningTestClass>>#methodCallMethodWithReturnConstantInIf */
-static sqInt
-methodCallMethodWithReturnConstantInIf(void)
+			'/* SLDeadCodeEliminationTestClass>>#methodCallMethodWithReturnConstantInIf */
+static SLDeadCodeEliminationTestClass *
+methodCallMethodWithReturnConstantInIf(SLDeadCodeEliminationTestClass * self_in_methodCallMethodWithReturnConstantInIf)
 {
 	/* begin methodReturnConstantInIf */
 	if (1) {
@@ -327,7 +328,7 @@ methodCallMethodWithReturnConstantInIf(void)
 	}
 	l1:
 	;
-	return 0;
+	return self_in_methodCallMethodWithReturnConstantInIf;
 }'
 ]
 
@@ -337,6 +338,7 @@ SLDeadCodeEliminationTest >> testInlineMethodWithExpression [
 	| translation tMethod |
 	tMethod := ccg methodNamed: #methodCallMethodWithExpression.
 	ccg doBasicInlining: true.
+	ccg currentMethod: tMethod.
 	sLDeadCodeEliminationVisitor visit: tMethod parseTree.
 
 	translation := self translate: tMethod.
@@ -344,9 +346,10 @@ SLDeadCodeEliminationTest >> testInlineMethodWithExpression [
 
 	self
 		assert: translation
-		equals: '/* SLInliningTestClass>>#methodCallMethodWithExpression */
-static sqInt
-methodCallMethodWithExpression(void)
+		equals:
+			'/* SLDeadCodeEliminationTestClass>>#methodCallMethodWithExpression */
+static SLDeadCodeEliminationTestClass *
+methodCallMethodWithExpression(SLDeadCodeEliminationTestClass * self_in_methodCallMethodWithExpression)
 {
 	sqInt i;
 
@@ -362,7 +365,7 @@ methodCallMethodWithExpression(void)
 	}
 	l1:
 	;
-	return 0;
+	return self_in_methodCallMethodWithExpression;
 }'
 ]
 
