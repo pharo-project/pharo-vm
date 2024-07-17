@@ -1,13 +1,15 @@
 Class {
-	#name : #VMCodeCompactionTest,
-	#superclass : #VMPrimitiveCallAbstractTest,
+	#name : 'VMCodeCompactionTest',
+	#superclass : 'VMPrimitiveCallAbstractTest',
 	#pools : [
 		'CogRTLOpcodes'
 	],
-	#category : #'VMMakerTests-JitTests'
+	#category : 'VMMakerTests-JitTests',
+	#package : 'VMMakerTests',
+	#tag : 'JitTests'
 }
 
-{ #category : #tests }
+{ #category : 'tests' }
 VMCodeCompactionTest >> createBaseFrameWithMachineCodeMethod: aMachineCodeMethod [
 
 	"Create the root context with a valid method"
@@ -32,7 +34,7 @@ VMCodeCompactionTest >> createBaseFrameWithMachineCodeMethod: aMachineCodeMethod
 
 ]
 
-{ #category : #utils }
+{ #category : 'utils' }
 VMCodeCompactionTest >> createFillingMethods: anInteger [ 
 
 	| firstMethod |
@@ -45,7 +47,7 @@ VMCodeCompactionTest >> createFillingMethods: anInteger [
 
 ]
 
-{ #category : #tests }
+{ #category : 'tests' }
 VMCodeCompactionTest >> fillCodeZone [
 
 	| aMethod |
@@ -61,13 +63,13 @@ VMCodeCompactionTest >> fillCodeZone [
 
 ]
 
-{ #category : #running }
+{ #category : 'running' }
 VMCodeCompactionTest >> initialCodeSize [
 
 	^ 16 * 1024
 ]
 
-{ #category : #tests }
+{ #category : 'tests' }
 VMCodeCompactionTest >> testCompactDuringInterpreterPrimitiveThatMovesCurrentMethodWhenShouldNotCrashFromMachineCodeMethod [
 
 	| firstMethod compactMethod callerMethod |
@@ -110,7 +112,7 @@ VMCodeCompactionTest >> testCompactDuringInterpreterPrimitiveThatMovesCurrentMet
 
 ]
 
-{ #category : #tests }
+{ #category : 'tests' }
 VMCodeCompactionTest >> testCompactDuringInterpreterPrimitiveThatMovesCurrentMethodWhenUsingPrimCallMayCallBackShouldNotCrashFromMachineCodeMethod [
 
 	| firstMethod compactMethod callerMethod |
@@ -149,7 +151,7 @@ VMCodeCompactionTest >> testCompactDuringInterpreterPrimitiveThatMovesCurrentMet
 
 ]
 
-{ #category : #tests }
+{ #category : 'tests' }
 VMCodeCompactionTest >> testCompactingAnUnusedMethodCompactsRemainingMethodToTheBeginning [
 
 	| firstMethod compactMethod methodOop |
@@ -172,7 +174,7 @@ VMCodeCompactionTest >> testCompactingAnUnusedMethodCompactsRemainingMethodToThe
 
 ]
 
-{ #category : #tests }
+{ #category : 'tests' }
 VMCodeCompactionTest >> testCompactingShouldRelocateInSendsLiterals [
 
 	| firstMethod cogMethod methodOop |
@@ -206,7 +208,7 @@ VMCodeCompactionTest >> testCompactingShouldRelocateInSendsLiterals [
 		equals: memory nilObject
 ]
 
-{ #category : #tests }
+{ #category : 'tests' }
 VMCodeCompactionTest >> testCompactingShouldRelocateLiterals [
 
 	| firstMethod cogMethod methodOop |
@@ -239,7 +241,7 @@ VMCodeCompactionTest >> testCompactingShouldRelocateLiterals [
 		equals: memory nilObject
 ]
 
-{ #category : #tests }
+{ #category : 'tests' }
 VMCodeCompactionTest >> testCompactingShouldRelocateMethodReference [
 
 	| firstMethod cogMethod methodOop |
@@ -272,7 +274,7 @@ VMCodeCompactionTest >> testCompactingShouldRelocateMethodReference [
 		equals: (interpreter cogMethodOf: methodOop)
 ]
 
-{ #category : #tests }
+{ #category : 'tests' }
 VMCodeCompactionTest >> testCompactingShouldRelocateMonomorphicCallsite [
 
 	| firstMethod callerMethodOop calleeCogMethod selector callerCogMethod calleeMethodOop |
@@ -322,7 +324,7 @@ VMCodeCompactionTest >> testCompactingShouldRelocateMonomorphicCallsite [
 		equals: (interpreter cogMethodOf: calleeMethodOop) asInteger + cogit entryOffset
 ]
 
-{ #category : #tests }
+{ #category : 'tests' }
 VMCodeCompactionTest >> testCompactingShouldRelocatePolymorphicPICCallsite [
 
 	"This method sets up a method A that is linked to a polymorphic PIC linked to B and C.
@@ -419,7 +421,7 @@ VMCodeCompactionTest >> testCompactingShouldRelocatePolymorphicPICCallsite [
 		equals: cogit ceCPICMissTrampoline
 ]
 
-{ #category : #tests }
+{ #category : 'tests' }
 VMCodeCompactionTest >> testCompactingShouldRelocatePolymorphicPICInterpreterAbortCallsite [
 
 	"This method sets up a method A that is linked to a polymorphic PIC linked to B and C.
@@ -509,7 +511,7 @@ VMCodeCompactionTest >> testCompactingShouldRelocatePolymorphicPICInterpreterAbo
 		equals: cogit cePICAbortTrampoline
 ]
 
-{ #category : #tests }
+{ #category : 'tests' }
 VMCodeCompactionTest >> testCompactingShouldRelocatePolymorphicPICMNUAbortCallsite [
 
 	"This method sets up a method A that is linked to a polymorphic PIC linked to B and C.
@@ -583,7 +585,7 @@ VMCodeCompactionTest >> testCompactingShouldRelocatePolymorphicPICMNUAbortCallsi
 		equals: cogit cePICAbortTrampoline
 ]
 
-{ #category : #tests }
+{ #category : 'tests' }
 VMCodeCompactionTest >> testRelocatingAMethodDoesNotAffectTheFrameCreationPushes [
 
 	| firstMethod compactMethod methodOop readOnlyObject |

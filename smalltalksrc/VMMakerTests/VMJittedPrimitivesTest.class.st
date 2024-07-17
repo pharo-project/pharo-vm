@@ -1,21 +1,23 @@
 Class {
-	#name : #VMJittedPrimitivesTest,
-	#superclass : #VMSimpleStackBasedCogitAbstractTest,
+	#name : 'VMJittedPrimitivesTest',
+	#superclass : 'VMSimpleStackBasedCogitAbstractTest',
 	#instVars : [
 		'classFloat'
 	],
 	#pools : [
 		'CogRTLOpcodes'
 	],
-	#category : #'VMMakerTests-JitTests'
+	#category : 'VMMakerTests-JitTests',
+	#package : 'VMMakerTests',
+	#tag : 'JitTests'
 }
 
-{ #category : #private }
+{ #category : 'private' }
 VMJittedPrimitivesTest class >> isAbstract [
 	^ self == VMJittedPrimitivesTest
 ]
 
-{ #category : #helpers }
+{ #category : 'helpers' }
 VMJittedPrimitivesTest >> executePrimitiveWithReceiver: receiverOop [
 	
 	"Simulate a primitive execution having an object as receiver and a single argument
@@ -28,7 +30,7 @@ VMJittedPrimitivesTest >> executePrimitiveWithReceiver: receiverOop [
 
 ]
 
-{ #category : #helpers }
+{ #category : 'helpers' }
 VMJittedPrimitivesTest >> executePrimitiveWithReceiver: receiverOop withArgument: argumentOop [
 	
 	"Simulate a primitive execution having an object as receiver and a single argument
@@ -41,7 +43,7 @@ VMJittedPrimitivesTest >> executePrimitiveWithReceiver: receiverOop withArgument
 
 ]
 
-{ #category : #utils }
+{ #category : 'utils' }
 VMJittedPrimitivesTest >> executePrimitiveWithReceiver: receiverOop withArgument: firstArgumentOop and: secondArgumentOop [ 
 
 	"Simulate a primitive execution having an object as receiver and a single argument
@@ -54,13 +56,13 @@ VMJittedPrimitivesTest >> executePrimitiveWithReceiver: receiverOop withArgument
 	self runUntilReturn
 ]
 
-{ #category : #helpers }
+{ #category : 'helpers' }
 VMJittedPrimitivesTest >> prepareStackForSendReceiver: aReceiver [
 
 	self prepareStackForSendReceiver: aReceiver arguments: #()
 ]
 
-{ #category : #helpers }
+{ #category : 'helpers' }
 VMJittedPrimitivesTest >> setUp [
 
 	super setUp.

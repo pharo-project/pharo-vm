@@ -1,64 +1,66 @@
 Class {
-	#name : #UnicornARMv5Simulator,
-	#superclass : #UnicornSimulator,
-	#category : #'VMMakerTests-Unicorn'
+	#name : 'UnicornARMv5Simulator',
+	#superclass : 'UnicornSimulator',
+	#category : 'VMMakerTests-Unicorn',
+	#package : 'VMMakerTests',
+	#tag : 'Unicorn'
 }
 
-{ #category : #registers }
+{ #category : 'registers' }
 UnicornARMv5Simulator >> arg0Register [
 	
 	^ UcARMRegisters r3
 ]
 
-{ #category : #registers }
+{ #category : 'registers' }
 UnicornARMv5Simulator >> arg1Register [
 
 	^ UcARMRegisters r4
 ]
 
-{ #category : #registers }
+{ #category : 'registers' }
 UnicornARMv5Simulator >> baseRegister [
 
 	^ UcARMRegisters r10
 ]
 
-{ #category : #'c calling convention' }
+{ #category : 'c calling convention' }
 UnicornARMv5Simulator >> cResultRegister [
 	
 	^ UcARMRegisters r0
 ]
 
-{ #category : #'c calling convention' }
+{ #category : 'c calling convention' }
 UnicornARMv5Simulator >> carg0Register [
 	
 	^ UcARMRegisters r0
 ]
 
-{ #category : #'c calling convention' }
+{ #category : 'c calling convention' }
 UnicornARMv5Simulator >> carg1Register [
 	
 	^ UcARMRegisters r1
 ]
 
-{ #category : #'c calling convention' }
+{ #category : 'c calling convention' }
 UnicornARMv5Simulator >> carg2Register [
 	
 	^ UcARMRegisters r2
 ]
 
-{ #category : #'c calling convention' }
+{ #category : 'c calling convention' }
 UnicornARMv5Simulator >> carg3Register [
 	
 	^ UcARMRegisters r3
 ]
 
-{ #category : #registers }
+{ #category : 'registers' }
 UnicornARMv5Simulator >> classRegister [
 	
 	^ UcARMRegisters r8
 ]
 
-{ #category : #'as yet unclassified' }
+{ #category : 'as yet unclassified' }
 UnicornARMv5Simulator >> convertIntegerToInternal: anInteger [ 
 
 	anInteger < 0 ifFalse: [ ^ anInteger ].
@@ -66,7 +68,7 @@ UnicornARMv5Simulator >> convertIntegerToInternal: anInteger [
 	^ 16rFFFFFFFF - anInteger abs + 1
 ]
 
-{ #category : #'as yet unclassified' }
+{ #category : 'as yet unclassified' }
 UnicornARMv5Simulator >> convertInternalToInteger: aTwoComplementNumber [
 
 	(aTwoComplementNumber bitAnd: 1 << 31) = 0 ifTrue: [ 
@@ -75,7 +77,7 @@ UnicornARMv5Simulator >> convertInternalToInteger: aTwoComplementNumber [
 	^ aTwoComplementNumber - 16rFFFFFFFF - 1
 ]
 
-{ #category : #'as yet unclassified' }
+{ #category : 'as yet unclassified' }
 UnicornARMv5Simulator >> createUnicorn [
 
 	"Enable Floating Point...
@@ -112,13 +114,13 @@ UnicornARMv5Simulator >> createUnicorn [
 	^ simulator
 ]
 
-{ #category : #disassembling }
+{ #category : 'disassembling' }
 UnicornARMv5Simulator >> disassembler [
 	
 	^ LLVMARMDisassembler armv7
 ]
 
-{ #category : #executing }
+{ #category : 'executing' }
 UnicornARMv5Simulator >> doStartAt: startAddress until: until timeout: timeout count: count [
 
 	| actualCount result error startTime remainingTimeout currentTime |
@@ -174,25 +176,25 @@ UnicornARMv5Simulator >> doStartAt: startAddress until: until timeout: timeout c
 			self instructionPointerRegisterValue = until ifTrue: [ ^ result ]]
 ]
 
-{ #category : #'as yet unclassified' }
+{ #category : 'as yet unclassified' }
 UnicornARMv5Simulator >> doublePrecisionFloatingPointRegister0 [
 
 	^ UcARMRegisters d0
 ]
 
-{ #category : #'as yet unclassified' }
+{ #category : 'as yet unclassified' }
 UnicornARMv5Simulator >> doublePrecisionFloatingPointRegister1 [
 
 	^ UcARMRegisters d1
 ]
 
-{ #category : #'as yet unclassified' }
+{ #category : 'as yet unclassified' }
 UnicornARMv5Simulator >> doublePrecisionFloatingPointRegister2 [
 
 	^ UcARMRegisters d2
 ]
 
-{ #category : #'as yet unclassified' }
+{ #category : 'as yet unclassified' }
 UnicornARMv5Simulator >> extractDestinationRegisterFromAssembly: aLLVMInstruction [ 
 	
 	"In ARM, instructions are usually encoded asSpotterCandidateLink 
@@ -203,42 +205,42 @@ UnicornARMv5Simulator >> extractDestinationRegisterFromAssembly: aLLVMInstructio
 	^ (aLLVMInstruction assemblyCodeString substrings: String tab, ',') second trimBoth.
 ]
 
-{ #category : #registers }
+{ #category : 'registers' }
 UnicornARMv5Simulator >> framePointerRegister [
 	
 	^ UcARMRegisters fp
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 UnicornARMv5Simulator >> getReturnAddress [
 	
 	^ self linkRegisterValue
 ]
 
-{ #category : #testing }
+{ #category : 'testing' }
 UnicornARMv5Simulator >> hasLinkRegister [
 	^ true
 ]
 
-{ #category : #registers }
+{ #category : 'registers' }
 UnicornARMv5Simulator >> instructionPointerRegister [
 
 	^ UcARMRegisters pc
 ]
 
-{ #category : #'as yet unclassified' }
+{ #category : 'as yet unclassified' }
 UnicornARMv5Simulator >> integerRegisterState [
 	
 	^ #()
 ]
 
-{ #category : #registers }
+{ #category : 'registers' }
 UnicornARMv5Simulator >> linkRegister [
 	
 	^ UcARMRegisters lr
 ]
 
-{ #category : #'as yet unclassified' }
+{ #category : 'as yet unclassified' }
 UnicornARMv5Simulator >> postCallArgumentsNumArgs: numArgs in: aMemory [ 
 	"Answer an argument vector of the requested size after a vanilla
 	 ABI call. For ARM the Procedure Calling Specification can be found in IHI0042D_aapcs.pdf.
@@ -253,177 +255,177 @@ UnicornARMv5Simulator >> postCallArgumentsNumArgs: numArgs in: aMemory [
 			ifFalse: [memory unsignedLongAt: self sp + (i-5)*4 bigEndian: false]].	
 ]
 
-{ #category : #registers }
+{ #category : 'registers' }
 UnicornARMv5Simulator >> r0 [
 	^ self readRegister: UcARMRegisters r0
 ]
 
-{ #category : #registers }
+{ #category : 'registers' }
 UnicornARMv5Simulator >> r0: anInteger [ 
 	
 	^ self writeRegister: UcARMRegisters r0 value: anInteger
 ]
 
-{ #category : #registers }
+{ #category : 'registers' }
 UnicornARMv5Simulator >> r1 [
 	^ self readRegister: UcARMRegisters r1
 ]
 
-{ #category : #registers }
+{ #category : 'registers' }
 UnicornARMv5Simulator >> r10 [
 	^ self readRegister: UcARMRegisters r10
 ]
 
-{ #category : #registers }
+{ #category : 'registers' }
 UnicornARMv5Simulator >> r10: anInteger [ 
 	
 	^ self writeRegister: UcARMRegisters r10 value: anInteger
 ]
 
-{ #category : #registers }
+{ #category : 'registers' }
 UnicornARMv5Simulator >> r11: anInteger [ 
 	
 	^ self writeRegister: UcARMRegisters r11 value: anInteger
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 UnicornARMv5Simulator >> r12 [
 	
 	^ self readRegister: UcARMRegisters r12
 ]
 
-{ #category : #registers }
+{ #category : 'registers' }
 UnicornARMv5Simulator >> r12: anInteger [ 
 
 	self writeRegister: UcARMRegisters r12 value: anInteger
 ]
 
-{ #category : #registers }
+{ #category : 'registers' }
 UnicornARMv5Simulator >> r1: anInteger [ 
 	
 	^ self writeRegister: UcARMRegisters r1 value: anInteger
 ]
 
-{ #category : #registers }
+{ #category : 'registers' }
 UnicornARMv5Simulator >> r2 [
 	^ self readRegister: UcARMRegisters r2
 ]
 
-{ #category : #registers }
+{ #category : 'registers' }
 UnicornARMv5Simulator >> r2: anInteger [ 
 	
 	^ self writeRegister: UcARMRegisters r2 value: anInteger
 ]
 
-{ #category : #registers }
+{ #category : 'registers' }
 UnicornARMv5Simulator >> r3 [
 	^ self readRegister: UcARMRegisters r3
 ]
 
-{ #category : #registers }
+{ #category : 'registers' }
 UnicornARMv5Simulator >> r3: anInteger [ 
 	
 	^ self writeRegister: UcARMRegisters r3 value: anInteger
 ]
 
-{ #category : #registers }
+{ #category : 'registers' }
 UnicornARMv5Simulator >> r4 [
 	^ self readRegister: UcARMRegisters r4
 ]
 
-{ #category : #registers }
+{ #category : 'registers' }
 UnicornARMv5Simulator >> r4: anInteger [ 
 	
 	^ self writeRegister: UcARMRegisters r4 value: anInteger
 ]
 
-{ #category : #registers }
+{ #category : 'registers' }
 UnicornARMv5Simulator >> r5 [
 	^ self readRegister: UcARMRegisters r5
 ]
 
-{ #category : #registers }
+{ #category : 'registers' }
 UnicornARMv5Simulator >> r5: anInteger [ 
 	
 	^ self writeRegister: UcARMRegisters r5 value: anInteger
 ]
 
-{ #category : #registers }
+{ #category : 'registers' }
 UnicornARMv5Simulator >> r6 [
 	^ self readRegister: UcARMRegisters r6
 ]
 
-{ #category : #registers }
+{ #category : 'registers' }
 UnicornARMv5Simulator >> r6: anInteger [ 
 	
 	^ self writeRegister: UcARMRegisters r6 value: anInteger
 ]
 
-{ #category : #registers }
+{ #category : 'registers' }
 UnicornARMv5Simulator >> r7 [
 	^ self readRegister: UcARMRegisters r7
 ]
 
-{ #category : #registers }
+{ #category : 'registers' }
 UnicornARMv5Simulator >> r7: anInteger [ 
 	
 	^ self writeRegister: UcARMRegisters r7 value: anInteger
 ]
 
-{ #category : #registers }
+{ #category : 'registers' }
 UnicornARMv5Simulator >> r8 [
 	^ self readRegister: UcARMRegisters r8
 ]
 
-{ #category : #registers }
+{ #category : 'registers' }
 UnicornARMv5Simulator >> r8: anInteger [ 
 	
 	^ self writeRegister: UcARMRegisters r8 value: anInteger
 ]
 
-{ #category : #registers }
+{ #category : 'registers' }
 UnicornARMv5Simulator >> r9 [
 	^ self readRegister: UcARMRegisters r9
 ]
 
-{ #category : #registers }
+{ #category : 'registers' }
 UnicornARMv5Simulator >> r9: anInteger [ 
 	
 	^ self writeRegister: UcARMRegisters r9 value: anInteger
 ]
 
-{ #category : #registers }
+{ #category : 'registers' }
 UnicornARMv5Simulator >> receiverRegister [
 	
 	^ UcARMRegisters r5
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 UnicornARMv5Simulator >> registerList [
 
 	^ #(lr pc sp fp r0 r1 r2 r3 r4 r5 r6 r7 r8 r9)
 ]
 
-{ #category : #'as yet unclassified' }
+{ #category : 'as yet unclassified' }
 UnicornARMv5Simulator >> registerStateGetters [
 	
 	^#(r0 r1 r2 r3 r4)
 ]
 
-{ #category : #'as yet unclassified' }
+{ #category : 'as yet unclassified' }
 UnicornARMv5Simulator >> retpcIn: aMemory [ 
 	"The return address is on the stack, having been pushed by either
 	 simulateCallOf:nextpc:memory: or simulateJumpCallOf:memory:"
 	^memory longAt: self fp + 4
 ]
 
-{ #category : #registers }
+{ #category : 'registers' }
 UnicornARMv5Simulator >> sendNumberOfArgumentsRegister [
 	
 	^ UcARMRegisters r6
 ]
 
-{ #category : #'as yet unclassified' }
+{ #category : 'as yet unclassified' }
 UnicornARMv5Simulator >> simulateJumpCallOf: address memory: aMemory [
 	"Simulate a frame-building jump of address.  Build a frame since
 	a) this is used for calls into the run-time which are unlikely to be leaf-calls"
@@ -438,46 +440,46 @@ UnicornARMv5Simulator >> simulateJumpCallOf: address memory: aMemory [
 	self pc: address
 ]
 
-{ #category : #'as yet unclassified' }
+{ #category : 'as yet unclassified' }
 UnicornARMv5Simulator >> simulateLeafCallOf: address nextpc: nextpc memory: aMemory [
 
 	self lr: nextpc.
 	self pc: address
 ]
 
-{ #category : #'as yet unclassified' }
+{ #category : 'as yet unclassified' }
 UnicornARMv5Simulator >> simulateReturnIn: aSpurSimulatedMemory [
 
 	self fp: self popWord.
 	self pc: self popWord
 ]
 
-{ #category : #'as yet unclassified' }
+{ #category : 'as yet unclassified' }
 UnicornARMv5Simulator >> smashCallerSavedRegistersWithValuesFrom: base by: step in: aMemory [
 	#(r0: r1: r2: r3: r9: r12: lr:) withIndexDo:
 		[:accessor :index|
 		self perform: accessor with: index - 1 * step + base]
 ]
 
-{ #category : #registers }
+{ #category : 'registers' }
 UnicornARMv5Simulator >> smashRegisterAccessors [
 
 	^ #(r0: r1: r2: r3:)
 ]
 
-{ #category : #registers }
+{ #category : 'registers' }
 UnicornARMv5Simulator >> stackPointerRegister [
 	
 	^ UcARMRegisters sp
 ]
 
-{ #category : #registers }
+{ #category : 'registers' }
 UnicornARMv5Simulator >> temporaryRegister [
 	
 	^ UcARMRegisters r2
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 UnicornARMv5Simulator >> wordSize [
 	^ 4
 ]

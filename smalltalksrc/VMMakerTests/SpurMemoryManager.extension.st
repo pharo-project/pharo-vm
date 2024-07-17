@@ -1,6 +1,6 @@
-Extension { #name : #SpurMemoryManager }
+Extension { #name : 'SpurMemoryManager' }
 
-{ #category : #'*VMMakerTests' }
+{ #category : '*VMMakerTests' }
 SpurMemoryManager >> hiddenRootsObject: anInteger [ 
 	
 	hiddenRootsObj := anInteger

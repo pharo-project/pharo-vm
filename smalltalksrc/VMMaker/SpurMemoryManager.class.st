@@ -4685,39 +4685,67 @@ SpurMemoryManager >> ensureRoomOnObjStackAt: objStackRootIndex [
 	 ObjStackNextx. We don't want to shrink objStacks, since they're used
 	 in GC and its good to keep their memory around.  So unused pages
 	 created by popping emptying pages are kept on the ObjStackFreex list."
+
 	| stackOrNil freeOrNewPage |
-	stackOrNil := self fetchPointer: objStackRootIndex ofObject: hiddenRootsObj.
-	(stackOrNil = nilObj
-	 or: [(self fetchPointer: ObjStackTopx ofObject: stackOrNil) >= ObjStackLimit]) ifTrue:
-		[freeOrNewPage := stackOrNil = nilObj
-								ifTrue: [0]
-								ifFalse: [self fetchPointer: ObjStackFreex ofObject: stackOrNil].
-		 freeOrNewPage ~= 0
-			ifTrue: "the free page list is always on the new page."
-				[self storePointer: ObjStackFreex ofObjStack: stackOrNil withValue: 0.
-				 self assert: (marking not or: [self isMarked: freeOrNewPage])]
-			ifFalse:
-				[freeOrNewPage := self allocateSlotsInOldSpace: ObjStackPageSlots
-										format: self wordIndexableFormat
-										classIndex: self wordSizeClassIndexPun.
-				 freeOrNewPage ifNil: 
-					["Allocate a new segment an retry. This is very uncommon. But it happened to me (Clement)."
-					 self growOldSpaceByAtLeast: ObjStackPageSlots.
-					 freeOrNewPage := self allocateSlotsInOldSpace: ObjStackPageSlots
-										format: self wordIndexableFormat
-										classIndex: self wordSizeClassIndexPun.
-					freeOrNewPage ifNil: [self error: 'no memory to allocate or extend obj stack']].
-				 self storePointer: ObjStackFreex ofObjStack: freeOrNewPage withValue: 0.
-				 marking ifTrue: [self setIsMarkedOf: freeOrNewPage to: true]].
-		 self storePointer: ObjStackMyx ofObjStack: freeOrNewPage withValue: objStackRootIndex;
-			  storePointer: ObjStackNextx ofObjStack: freeOrNewPage withValue: (stackOrNil = nilObj ifTrue: [0] ifFalse: [stackOrNil]);
-			  storePointer: ObjStackTopx ofObjStack: freeOrNewPage withValue: 0;
-			  storePointer: objStackRootIndex ofObject: hiddenRootsObj withValue: freeOrNewPage.
-		 self assert: (self isValidObjStackAt: objStackRootIndex).
-		 "Added a new page; now update and answer the relevant cached first page."
-		 stackOrNil := self updateRootOfObjStackAt: objStackRootIndex with: freeOrNewPage].
+	stackOrNil := self
+		              fetchPointer: objStackRootIndex
+		              ofObject: hiddenRootsObj.
+	(stackOrNil = nilObj or: [
+		 (self fetchPointer: ObjStackTopx ofObject: stackOrNil)
+		 >= ObjStackLimit ]) ifTrue: [
+		freeOrNewPage := stackOrNil = nilObj
+			                 ifTrue: [ 0 ]
+			                 ifFalse: [
+			                 self
+				                 fetchPointer: ObjStackFreex
+				                 ofObject: stackOrNil ].
+		freeOrNewPage ~= 0
+			ifTrue: [ "the free page list is always on the new page."
+				self
+					storePointer: ObjStackFreex
+					ofObjStack: stackOrNil
+					withValue: 0.
+				self assert: (marking not or: [ self isMarked: freeOrNewPage ]) ]
+			ifFalse: [
+				freeOrNewPage := self
+					                 allocateSlotsInOldSpace: ObjStackPageSlots
+					                 format: self wordIndexableFormat
+					                 classIndex: self wordSizeClassIndexPun.
+				freeOrNewPage ifNil: [ "Allocate a new segment an retry. This is very uncommon. But it happened to me (Clement)."
+					self
+						growOldSpaceByAtLeast: ObjStackPageSlots
+						callingOperation: 'ensuring room on ObjStack'.
+					freeOrNewPage := self
+						                 allocateSlotsInOldSpace: ObjStackPageSlots
+						                 format: self wordIndexableFormat
+						                 classIndex: self wordSizeClassIndexPun.
+					freeOrNewPage ifNil: [
+						self error: 'no memory to allocate or extend obj stack' ] ].
+				self
+					storePointer: ObjStackFreex
+					ofObjStack: freeOrNewPage
+					withValue: 0.
+				marking ifTrue: [ self setIsMarkedOf: freeOrNewPage to: true ] ].
+		self
+			storePointer: ObjStackMyx
+			ofObjStack: freeOrNewPage
+			withValue: objStackRootIndex;
+			storePointer: ObjStackNextx
+			ofObjStack: freeOrNewPage
+			withValue: (stackOrNil = nilObj
+					 ifTrue: [ 0 ]
+					 ifFalse: [ stackOrNil ]);
+			storePointer: ObjStackTopx ofObjStack: freeOrNewPage withValue: 0;
+			storePointer: objStackRootIndex
+			ofObject: hiddenRootsObj
+			withValue: freeOrNewPage.
+		self assert: (self isValidObjStackAt: objStackRootIndex).
+		"Added a new page; now update and answer the relevant cached first page."
+		stackOrNil := self
+			              updateRootOfObjStackAt: objStackRootIndex
+			              with: freeOrNewPage ].
 	self assert: (self isValidObjStackAt: objStackRootIndex).
-	^stackOrNil
+	^ stackOrNil
 ]
 
 { #category : 'interpreter access' }
@@ -6041,11 +6069,14 @@ SpurMemoryManager >> growHeadroom: aValue [
 ]
 
 { #category : 'growing/shrinking memory' }
-SpurMemoryManager >> growOldSpaceByAtLeast: minAmmount [
+SpurMemoryManager >> growOldSpaceByAtLeast: minAmmount callingOperation: aString [
 	"Attempt to grow memory by at least minAmmount bytes.
 	 Answer the size of the new segment in bytes, or nil if the attempt failed."
 	| ammount headroom total start interval |
+	
 	<var: #segInfo type: #'SpurSegmentInfo *'>
+	<var: #aString type: #'char *'>
+	
 	"statGrowMemory counts attempts, not successes."
 	statGrowMemory := statGrowMemory + 1."we need to include overhead for a new object header plus the segment bridge."
 	ammount := minAmmount + (self baseHeaderSize * 2 + self bridgeSize).
@@ -6058,13 +6089,13 @@ SpurMemoryManager >> growOldSpaceByAtLeast: minAmmount [
 	maxOldSpaceSize > 0 ifTrue:
 		[total := segmentManager totalBytesInSegments.
 		 total >= maxOldSpaceSize ifTrue:[
-			self logError: 'Could not allocate more memory. MaxOldSpaceSize reached.'.
+			self logError: 'Could not allocate more memory while %s. MaxOldSpaceSize reached.' _: aString.
 			^nil].
 		 headroom := maxOldSpaceSize - total.
 		 headroom < ammount ifTrue:
 			[headroom < (minAmmount + (self baseHeaderSize * 2 + self bridgeSize)) ifTrue:
 				[
-				self logError: 'Required space is bigger than the headroom. Could not allocate'.
+				self logError: 'Required space is bigger than the headroom while %s. Could not allocate' _: aString.
 				^nil].
 			 ammount := headroom]].
 		 
@@ -6090,9 +6121,12 @@ SpurMemoryManager >> growToAccomodateContainerWithNumSlots: numSlots [
 	"Grow memory to accomodate a container (an Array) with numSlots.
 	 Grow by at least the growHeadroom.  Supports allInstancesOf: and allObjects.
 	 Answer the size of the new segment in bytes, or nil if the attempt failed."
+
 	| delta |
 	delta := self baseHeaderSize * 2 + (numSlots * self bytesPerOop).
-	^ self growOldSpaceByAtLeast: (growHeadroom max: delta)
+	^ self
+		  growOldSpaceByAtLeast: (growHeadroom max: delta)
+		  callingOperation: 'growing to accomodate allObjects / allInstances container'
 ]
 
 { #category : 'header access' }
@@ -8442,13 +8476,15 @@ SpurMemoryManager >> lookupAddress: address [
 
 { #category : 'free space' }
 SpurMemoryManager >> lowSpaceThreshold: threshold [
+
 	lowSpaceThreshold := threshold.
 	"N.B. The threshold > 0 guard eliminates a warning when
 		self lowSpaceThreshold: 0
 	 is inlined into setSignalLowSpaceFlagAndSaveProcess"
-	(threshold > 0
-	 and: [totalFreeOldSpace < threshold]) ifTrue:
-		[self growOldSpaceByAtLeast: threshold - totalFreeOldSpace].
+	(threshold > 0 and: [ totalFreeOldSpace < threshold ]) ifTrue: [
+		self
+			growOldSpaceByAtLeast: threshold - totalFreeOldSpace
+			callingOperation: 'ensuring enough space after setting lowSpaceThreshold' ].
 	self assert: totalFreeOldSpace >= lowSpaceThreshold
 ]
 
@@ -12605,17 +12641,20 @@ SpurMemoryManager >> sufficientSpaceAfterGC: numBytes [
 	| heapSizePostGC |
 	self assert: numBytes = 0.
 	self scavengingGCTenuringIf: TenureByAge.
-	heapSizePostGC := segmentManager totalOldSpaceCapacity - totalFreeOldSpace.
-	(heapSizePostGC - heapSizeAtPreviousGC) asFloat / heapSizeAtPreviousGC >= heapGrowthToSizeGCRatio ifTrue:
-		[self fullGC].
-	[totalFreeOldSpace < growHeadroom
-	 and: [(self growOldSpaceByAtLeast: 0) notNil]] whileTrue:
-		[totalFreeOldSpace >= growHeadroom ifTrue:
-			[^true]].
-	lowSpaceThreshold > totalFreeOldSpace ifTrue: "space is low"
-		[lowSpaceThreshold := 0. "avoid signalling low space twice"
-		 ^false].
-	^true
+	heapSizePostGC := segmentManager totalOldSpaceCapacity
+	                  - totalFreeOldSpace.
+	(heapSizePostGC - heapSizeAtPreviousGC) asFloat
+	/ heapSizeAtPreviousGC >= heapGrowthToSizeGCRatio ifTrue: [
+		self fullGC ].
+	[
+	totalFreeOldSpace < growHeadroom and: [
+		(self growOldSpaceByAtLeast: 0 callingOperation: 'ensuring sufficient space after GC')
+			notNil ] ] whileTrue: [
+		totalFreeOldSpace >= growHeadroom ifTrue: [ ^ true ] ].
+	lowSpaceThreshold > totalFreeOldSpace ifTrue: [ "space is low"
+		lowSpaceThreshold := 0. "avoid signalling low space twice"
+		^ false ].
+	^ true
 ]
 
 { #category : 'allocation' }

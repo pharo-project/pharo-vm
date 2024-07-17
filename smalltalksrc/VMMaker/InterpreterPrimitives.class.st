@@ -2017,14 +2017,17 @@ InterpreterPrimitives >> primitiveGreaterThanLargeIntegers [
 
 { #category : 'memory space primitives' }
 InterpreterPrimitives >> primitiveGrowMemoryByAtLeast [
+
 	<option: #SpurObjectMemory>
 	| ammount |
 	ammount := self stackTop.
-	(objectMemory isIntegerObject: ammount) ifFalse:
-		[^self primitiveFailFor: PrimErrBadArgument].
-	(objectMemory growOldSpaceByAtLeast: (objectMemory integerValueOf: ammount))
-		ifNil: [self primitiveFailFor: PrimErrNoMemory]
-		ifNotNil: [:segSize| self pop: 2 thenPushInteger: segSize]
+	(objectMemory isIntegerObject: ammount) ifFalse: [
+		^ self primitiveFailFor: PrimErrBadArgument ].
+	(objectMemory
+		 growOldSpaceByAtLeast: (objectMemory integerValueOf: ammount)
+		 callingOperation: 'primitiveGrowMemoryByAtLeast - requested by the image')
+		ifNil: [ self primitiveFailFor: PrimErrNoMemory ]
+		ifNotNil: [ :segSize | self pop: 2 thenPushInteger: segSize ]
 ]
 
 { #category : 'arithmetic integer primitives' }
