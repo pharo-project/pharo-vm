@@ -522,18 +522,13 @@ TSendNode >> receiver: aNode [
 
 { #category : 'transformations' }
 TSendNode >> reduceConditionalSend: branchIndex [
-	"called when an argument of a conditional send have been removed, if the method has multiple branches we can reduce the branch number to match the transformation"
+	"branch index is either 1 or 2, called when an argument of a conditional send have been removed, if the method has multiple branches we can reduce the branch number to match the transformation"
 
-	| separation |
 	(#( #ifTrue:ifFalse: #ifFalse:ifTrue: #ifNil:ifNotNil:
 	    #ifNotNil:ifNil: ) includes: self selector) ifFalse: [ ^ self ].
-	separation := self selector indexOf: $:.
 	branchIndex = 1
-		ifTrue: [
-			self selector:
-				(self selector copyFrom: separation + 1 to: self selector size) ]
-		ifFalse: [
-		self selector: (self selector copyFrom: 1 to: separation) ]
+		ifTrue: [ self selector: self selector keywords second ]
+		ifFalse: [ self selector: self selector keywords first ]
 ]
 
 { #category : 'transformations' }

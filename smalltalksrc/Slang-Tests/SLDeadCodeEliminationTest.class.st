@@ -54,7 +54,7 @@ methodCallInIfMethodWithReturnConstant(SLDeadCodeEliminationTestClass * self_in_
 }'
 ]
 
-{ #category : 'unused-in-conditional' }
+{ #category : 'inline-unused-in-conditional' }
 SLDeadCodeEliminationTest >> testInlineMethodCallInIfMethodWithReturnConstantInIfWithoutReturn [
 
 	| translation tMethod |
@@ -87,7 +87,7 @@ methodCallInIfMethodWithReturnConstantInIfWithoutReturn(SLDeadCodeEliminationTes
 }'
 ]
 
-{ #category : 'unused-in-conditional' }
+{ #category : 'inline-unused-in-conditional' }
 SLDeadCodeEliminationTest >> testInlineMethodCallInIfMethodWithReturnConstantWithoutReturn [
 	"the temporary variable is still here"
 
@@ -220,7 +220,7 @@ methodCallInReturnMethodWithReturnConstantInIf(SLDeadCodeEliminationTestClass * 
 }'
 ]
 
-{ #category : 'unused-constant' }
+{ #category : 'inline-unused-constant' }
 SLDeadCodeEliminationTest >> testInlineMethodCallMethodWithAssignmentAndReturnConstant [
 	"get rid off the ^ 5 and keep the assignment"
 
@@ -248,7 +248,7 @@ methodCallMethodWithAssignmentAndReturnConstant(SLDeadCodeEliminationTestClass *
 }'
 ]
 
-{ #category : 'unused-constant' }
+{ #category : 'inline-unused-constant' }
 SLDeadCodeEliminationTest >> testInlineMethodCallMethodWithAssignmentAndReturnConstantInIf [
 	"get rid off the ^ -1 and keep the assignment"
 
@@ -281,7 +281,7 @@ methodCallMethodWithAssignmentAndReturnConstantInIf(SLDeadCodeEliminationTestCla
 }'
 ]
 
-{ #category : 'unused-constant' }
+{ #category : 'inline-unused-constant' }
 SLDeadCodeEliminationTest >> testInlineMethodCallMethodWithReturnConstant [
 	"get rid off the ^ 5"
 
@@ -304,7 +304,7 @@ methodCallMethodWithReturnConstant(SLDeadCodeEliminationTestClass * self_in_meth
 }'
 ]
 
-{ #category : 'unused-constant' }
+{ #category : 'inline-unused-constant' }
 SLDeadCodeEliminationTest >> testInlineMethodCallMethodWithReturnConstantInIf [
 
 	| translation tMethod |
@@ -332,7 +332,7 @@ methodCallMethodWithReturnConstantInIf(SLDeadCodeEliminationTestClass * self_in_
 }'
 ]
 
-{ #category : 'unused-variable' }
+{ #category : 'inline-unused-variable' }
 SLDeadCodeEliminationTest >> testInlineMethodWithExpression [
 
 	| translation tMethod |
@@ -366,6 +366,935 @@ methodCallMethodWithExpression(SLDeadCodeEliminationTestClass * self_in_methodCa
 	l1:
 	;
 	return self_in_methodCallMethodWithExpression;
+}'
+]
+
+{ #category : 'used-leaf-in-assignment' }
+SLDeadCodeEliminationTest >> testMethodWithConstantInAssignment [
+
+	| translation tMethod |
+	tMethod := ccg methodNamed: #methodWithConstantInAssignment.
+	ccg currentMethod: tMethod.
+	sLDeadCodeEliminationVisitor visit: tMethod parseTree.
+
+	translation := self translate: tMethod.
+	translation := translation trimBoth.
+
+	self
+		assert: translation
+		equals:
+			'/* SLDeadCodeEliminationTestClass>>#methodWithConstantInAssignment */
+static void
+methodWithConstantInAssignment(SLDeadCodeEliminationTestClass * self_in_methodWithConstantInAssignment)
+{
+	int i;
+
+	i = 5;
+	{
+		return;
+	}
+}'
+]
+
+{ #category : 'used-leaf-in-return' }
+SLDeadCodeEliminationTest >> testMethodWithConstantInReturn [
+
+	| translation tMethod |
+	tMethod := ccg methodNamed: #methodWithConstantInReturn.
+	ccg currentMethod: tMethod.
+	sLDeadCodeEliminationVisitor visit: tMethod parseTree.
+
+	translation := self translate: tMethod.
+	translation := translation trimBoth.
+
+	self
+		assert: translation
+		equals:
+			'/* SLDeadCodeEliminationTestClass>>#methodWithConstantInReturn */
+static sqInt
+methodWithConstantInReturn(SLDeadCodeEliminationTestClass * self_in_methodWithConstantInReturn)
+{
+	return 5;
+}'
+]
+
+{ #category : 'empty-branch-in-boolean-conditional-no-send-in-receiver' }
+SLDeadCodeEliminationTest >> testMethodWithEmptyIfFalseIfTrueAndNoSendInReceiver [
+	"supress the send"
+
+	| translation tMethod |
+	tMethod := ccg methodNamed:
+		           #methodWithEmptyIfFalseIfTrueAndNoSendInReceiver.
+	ccg currentMethod: tMethod.
+	sLDeadCodeEliminationVisitor visit: tMethod parseTree.
+
+	translation := self translate: tMethod.
+	translation := translation trimBoth.
+
+	self
+		assert: translation
+		equals:
+			'/* SLDeadCodeEliminationTestClass>>#methodWithEmptyIfFalseIfTrueAndNoSendInReceiver */
+static void
+methodWithEmptyIfFalseIfTrueAndNoSendInReceiver(SLDeadCodeEliminationTestClass * self_in_methodWithEmptyIfFalseIfTrueAndNoSendInReceiver)
+{
+	{
+		return;
+	}
+}'
+]
+
+{ #category : 'empty-branch-in-boolean-conditional-send-in-receiver' }
+SLDeadCodeEliminationTest >> testMethodWithEmptyIfFalseIfTrueAndSendInReceiver [
+	"suppress the send and keep the send in the receiver"
+
+	| translation tMethod |
+	tMethod := ccg methodNamed:
+		           #methodWithEmptyIfFalseIfTrueAndSendInReceiver.
+	ccg currentMethod: tMethod.
+	sLDeadCodeEliminationVisitor visit: tMethod parseTree.
+
+	translation := self translate: tMethod.
+	translation := translation trimBoth.
+
+	self
+		assert: translation
+		equals:
+			'/* SLDeadCodeEliminationTestClass>>#methodWithEmptyIfFalseIfTrueAndSendInReceiver */
+static void
+methodWithEmptyIfFalseIfTrueAndSendInReceiver(SLDeadCodeEliminationTestClass * self_in_methodWithEmptyIfFalseIfTrueAndSendInReceiver)
+{
+	{
+		return;
+	}
+}'
+]
+
+{ #category : 'empty-branch-in-boolean-conditional-no-send-in-receiver' }
+SLDeadCodeEliminationTest >> testMethodWithEmptyIfFalseInIfFalseIfTrueAndNoSendInReceiver [
+	"reduce the conditional to an ifTrue"
+
+	| translation tMethod |
+	tMethod := ccg methodNamed:
+		           #methodWithEmptyIfFalseInIfFalseIfTrueAndNoSendInReceiver.
+	ccg currentMethod: tMethod.
+	sLDeadCodeEliminationVisitor visit: tMethod parseTree.
+
+	translation := self translate: tMethod.
+	translation := translation trimBoth.
+
+	self
+		assert: translation
+		equals:
+			'/* SLDeadCodeEliminationTestClass>>#methodWithEmptyIfFalseInIfFalseIfTrueAndNoSendInReceiver */
+static void
+methodWithEmptyIfFalseInIfFalseIfTrueAndNoSendInReceiver(SLDeadCodeEliminationTestClass * self_in_methodWithEmptyIfFalseInIfFalseIfTrueAndNoSendInReceiver)
+{
+	int i;
+
+	if (1) {
+		i = 5;
+	}
+	{
+		return;
+	}
+}'
+]
+
+{ #category : 'empty-branch-in-boolean-conditional-send-in-receiver' }
+SLDeadCodeEliminationTest >> testMethodWithEmptyIfFalseInIfFalseIfTrueAndSendInReceiver [
+	"reduce the conditional to an ifTrue"
+
+	| translation tMethod |
+	tMethod := ccg methodNamed:
+		           #methodWithEmptyIfFalseInIfFalseIfTrueAndSendInReceiver.
+	ccg currentMethod: tMethod.
+	sLDeadCodeEliminationVisitor visit: tMethod parseTree.
+
+	translation := self translate: tMethod.
+	translation := translation trimBoth.
+
+	self
+		assert: translation
+		equals:
+			'/* SLDeadCodeEliminationTestClass>>#methodWithEmptyIfFalseInIfFalseIfTrueAndSendInReceiver */
+static void
+methodWithEmptyIfFalseInIfFalseIfTrueAndSendInReceiver(SLDeadCodeEliminationTestClass * self_in_methodWithEmptyIfFalseInIfFalseIfTrueAndSendInReceiver)
+{
+	int i;
+
+	if (method(self_in_methodWithEmptyIfFalseInIfFalseIfTrueAndSendInReceiver)) {
+		i = 5;
+	}
+	{
+		return;
+	}
+}'
+]
+
+{ #category : 'empty-branch-in-boolean-conditional-no-send-in-receiver' }
+SLDeadCodeEliminationTest >> testMethodWithEmptyIfFalseInIfTrueIfFalseAndNoSendInReceiver [
+	"reduce the conditional to an ifTrue"
+
+	| translation tMethod |
+	tMethod := ccg methodNamed:
+		           #methodWithEmptyIfFalseInIfTrueIfFalseAndNoSendInReceiver.
+	ccg currentMethod: tMethod.
+	sLDeadCodeEliminationVisitor visit: tMethod parseTree.
+
+	translation := self translate: tMethod.
+	translation := translation trimBoth.
+
+	self
+		assert: translation
+		equals:
+			'/* SLDeadCodeEliminationTestClass>>#methodWithEmptyIfFalseInIfTrueIfFalseAndNoSendInReceiver */
+static void
+methodWithEmptyIfFalseInIfTrueIfFalseAndNoSendInReceiver(SLDeadCodeEliminationTestClass * self_in_methodWithEmptyIfFalseInIfTrueIfFalseAndNoSendInReceiver)
+{
+	int i;
+
+	if (1) {
+		i = 5;
+	}
+	{
+		return;
+	}
+}'
+]
+
+{ #category : 'empty-branch-in-boolean-conditional-send-in-receiver' }
+SLDeadCodeEliminationTest >> testMethodWithEmptyIfFalseInIfTrueIfFalseAndSendInReceiver [
+	"reduce the conditional to an ifTrue"
+
+	| translation tMethod |
+	tMethod := ccg methodNamed:
+		           #methodWithEmptyIfFalseInIfTrueIfFalseAndSendInReceiver.
+	ccg currentMethod: tMethod.
+	sLDeadCodeEliminationVisitor visit: tMethod parseTree.
+
+	translation := self translate: tMethod.
+	translation := translation trimBoth.
+
+	self
+		assert: translation
+		equals:
+			'/* SLDeadCodeEliminationTestClass>>#methodWithEmptyIfFalseInIfTrueIfFalseAndSendInReceiver */
+static void
+methodWithEmptyIfFalseInIfTrueIfFalseAndSendInReceiver(SLDeadCodeEliminationTestClass * self_in_methodWithEmptyIfFalseInIfTrueIfFalseAndSendInReceiver)
+{
+	int i;
+
+	if (method(self_in_methodWithEmptyIfFalseInIfTrueIfFalseAndSendInReceiver)) {
+		i = 5;
+	}
+	{
+		return;
+	}
+}'
+]
+
+{ #category : 'empty-branch-in-nil-conditional-no-send-in-receiver' }
+SLDeadCodeEliminationTest >> testMethodWithEmptyIfNilIfNotNilAndNoSendInReceiver [
+	"supress the send"
+
+	| translation tMethod |
+	tMethod := ccg methodNamed:
+		           #methodWithEmptyIfNilIfNotNilAndNoSendInReceiver.
+	ccg currentMethod: tMethod.
+	sLDeadCodeEliminationVisitor visit: tMethod parseTree.
+
+	translation := self translate: tMethod.
+	translation := translation trimBoth.
+
+	self
+		assert: translation
+		equals:
+			'/* SLDeadCodeEliminationTestClass>>#methodWithEmptyIfNilIfNotNilAndNoSendInReceiver */
+static void
+methodWithEmptyIfNilIfNotNilAndNoSendInReceiver(SLDeadCodeEliminationTestClass * self_in_methodWithEmptyIfNilIfNotNilAndNoSendInReceiver)
+{
+	{
+		return;
+	}
+}'
+]
+
+{ #category : 'empty-branch-in-nil-conditional-send-in-receiver' }
+SLDeadCodeEliminationTest >> testMethodWithEmptyIfNilIfNotNilAndSendInReceiver [
+	"supress the send and keep the send in the receiver"
+
+	| translation tMethod |
+	tMethod := ccg methodNamed:
+		           #methodWithEmptyIfNilIfNotNilAndSendInReceiver.
+	ccg currentMethod: tMethod.
+	sLDeadCodeEliminationVisitor visit: tMethod parseTree.
+
+	translation := self translate: tMethod.
+	translation := translation trimBoth.
+
+	self
+		assert: translation
+		equals:
+			'/* SLDeadCodeEliminationTestClass>>#methodWithEmptyIfNilIfNotNilAndSendInReceiver */
+static void
+methodWithEmptyIfNilIfNotNilAndSendInReceiver(SLDeadCodeEliminationTestClass * self_in_methodWithEmptyIfNilIfNotNilAndSendInReceiver)
+{
+	{
+		return;
+	}
+}'
+]
+
+{ #category : 'empty-branch-in-nil-conditional-no-send-in-receiver' }
+SLDeadCodeEliminationTest >> testMethodWithEmptyIfNotNilIfNilAndNoSendInReceiver [
+	"supress the send"
+
+	| translation tMethod |
+	tMethod := ccg methodNamed:
+		           #methodWithEmptyIfNotNilIfNilAndNoSendInReceiver.
+	ccg currentMethod: tMethod.
+	sLDeadCodeEliminationVisitor visit: tMethod parseTree.
+
+	translation := self translate: tMethod.
+	translation := translation trimBoth.
+
+	self
+		assert: translation
+		equals:
+			'/* SLDeadCodeEliminationTestClass>>#methodWithEmptyIfNotNilIfNilAndNoSendInReceiver */
+static void
+methodWithEmptyIfNotNilIfNilAndNoSendInReceiver(SLDeadCodeEliminationTestClass * self_in_methodWithEmptyIfNotNilIfNilAndNoSendInReceiver)
+{
+	{
+		return;
+	}
+}'
+]
+
+{ #category : 'empty-branch-in-nil-conditional-send-in-receiver' }
+SLDeadCodeEliminationTest >> testMethodWithEmptyIfNotNilIfNilAndSendInReceiver [
+	"supress the send"
+
+	| translation tMethod |
+	tMethod := ccg methodNamed:
+		           #methodWithEmptyIfNotNilIfNilAndSendInReceiver.
+	ccg currentMethod: tMethod.
+	sLDeadCodeEliminationVisitor visit: tMethod parseTree.
+
+	translation := self translate: tMethod.
+	translation := translation trimBoth.
+
+	self
+		assert: translation
+		equals:
+			'/* SLDeadCodeEliminationTestClass>>#methodWithEmptyIfNotNilIfNilAndSendInReceiver */
+static void
+methodWithEmptyIfNotNilIfNilAndSendInReceiver(SLDeadCodeEliminationTestClass * self_in_methodWithEmptyIfNotNilIfNilAndSendInReceiver)
+{
+	{
+		return;
+	}
+}'
+]
+
+{ #category : 'empty-branch-in-boolean-conditional-no-send-in-receiver' }
+SLDeadCodeEliminationTest >> testMethodWithEmptyIfTrueIfFalseAndNoSendInReceiver [
+	"supress the send"
+
+	| translation tMethod |
+	tMethod := ccg methodNamed:
+		           #methodWithEmptyIfTrueIfFalseAndNoSendInReceiver.
+	ccg currentMethod: tMethod.
+	sLDeadCodeEliminationVisitor visit: tMethod parseTree.
+
+	translation := self translate: tMethod.
+	translation := translation trimBoth.
+
+	self
+		assert: translation
+		equals:
+			'/* SLDeadCodeEliminationTestClass>>#methodWithEmptyIfTrueIfFalseAndNoSendInReceiver */
+static void
+methodWithEmptyIfTrueIfFalseAndNoSendInReceiver(SLDeadCodeEliminationTestClass * self_in_methodWithEmptyIfTrueIfFalseAndNoSendInReceiver)
+{
+	{
+		return;
+	}
+}'
+]
+
+{ #category : 'empty-branch-in-boolean-conditional-send-in-receiver' }
+SLDeadCodeEliminationTest >> testMethodWithEmptyIfTrueIfFalseAndSendInReceiver [
+	"supress the send and keep the send in the receiver"
+
+	| translation tMethod |
+	tMethod := ccg methodNamed:
+		           #methodWithEmptyIfTrueIfFalseAndSendInReceiver.
+	ccg currentMethod: tMethod.
+	sLDeadCodeEliminationVisitor visit: tMethod parseTree.
+
+	translation := self translate: tMethod.
+	translation := translation trimBoth.
+
+	self
+		assert: translation
+		equals:
+			'/* SLDeadCodeEliminationTestClass>>#methodWithEmptyIfTrueIfFalseAndSendInReceiver */
+static void
+methodWithEmptyIfTrueIfFalseAndSendInReceiver(SLDeadCodeEliminationTestClass * self_in_methodWithEmptyIfTrueIfFalseAndSendInReceiver)
+{
+	{
+		return;
+	}
+}'
+]
+
+{ #category : 'empty-branch-in-boolean-conditional-no-send-in-receiver' }
+SLDeadCodeEliminationTest >> testMethodWithEmptyIfTrueInIfFalseIfTrueAndNoSendInReceiver [
+	"reduce the conditional to an ifFalse"
+
+	| translation tMethod |
+	tMethod := ccg methodNamed:
+		           #methodWithEmptyIfTrueInIfFalseIfTrueAndNoSendInReceiver.
+	ccg currentMethod: tMethod.
+	sLDeadCodeEliminationVisitor visit: tMethod parseTree.
+
+	translation := self translate: tMethod.
+	translation := translation trimBoth.
+
+	self
+		assert: translation
+		equals:
+			'/* SLDeadCodeEliminationTestClass>>#methodWithEmptyIfTrueInIfFalseIfTrueAndNoSendInReceiver */
+static void
+methodWithEmptyIfTrueInIfFalseIfTrueAndNoSendInReceiver(SLDeadCodeEliminationTestClass * self_in_methodWithEmptyIfTrueInIfFalseIfTrueAndNoSendInReceiver)
+{
+	int i;
+
+	if (!1) {
+		i = 5;
+	}
+	{
+		return;
+	}
+}'
+]
+
+{ #category : 'empty-branch-in-boolean-conditional-send-in-receiver' }
+SLDeadCodeEliminationTest >> testMethodWithEmptyIfTrueInIfFalseIfTrueAndSendInReceiver [
+	"reduce the conditional to an ifFalse"
+
+	| translation tMethod |
+	tMethod := ccg methodNamed:
+		           #methodWithEmptyIfTrueInIfFalseIfTrueAndSendInReceiver.
+	ccg currentMethod: tMethod.
+	sLDeadCodeEliminationVisitor visit: tMethod parseTree.
+
+	translation := self translate: tMethod.
+	translation := translation trimBoth.
+
+	self
+		assert: translation
+		equals:
+			'/* SLDeadCodeEliminationTestClass>>#methodWithEmptyIfTrueInIfFalseIfTrueAndSendInReceiver */
+static void
+methodWithEmptyIfTrueInIfFalseIfTrueAndSendInReceiver(SLDeadCodeEliminationTestClass * self_in_methodWithEmptyIfTrueInIfFalseIfTrueAndSendInReceiver)
+{
+	int i;
+
+	if (!(method(self_in_methodWithEmptyIfTrueInIfFalseIfTrueAndSendInReceiver))) {
+		i = 5;
+	}
+	{
+		return;
+	}
+}'
+]
+
+{ #category : 'empty-branch-in-boolean-conditional-no-send-in-receiver' }
+SLDeadCodeEliminationTest >> testMethodWithEmptyIfTrueInIfTrueIfFalseAndNoSendInReceiver [
+	"reduce the conditional to an ifFalse"
+
+	| translation tMethod |
+	tMethod := ccg methodNamed:
+		           #methodWithEmptyIfTrueInIfTrueIfFalseAndNoSendInReceiver.
+	ccg currentMethod: tMethod.
+	sLDeadCodeEliminationVisitor visit: tMethod parseTree.
+
+	translation := self translate: tMethod.
+	translation := translation trimBoth.
+
+	self
+		assert: translation
+		equals:
+			'/* SLDeadCodeEliminationTestClass>>#methodWithEmptyIfTrueInIfTrueIfFalseAndNoSendInReceiver */
+static void
+methodWithEmptyIfTrueInIfTrueIfFalseAndNoSendInReceiver(SLDeadCodeEliminationTestClass * self_in_methodWithEmptyIfTrueInIfTrueIfFalseAndNoSendInReceiver)
+{
+	int i;
+
+	if (!1) {
+		i = 5;
+	}
+	{
+		return;
+	}
+}'
+]
+
+{ #category : 'empty-branch-in-boolean-conditional-send-in-receiver' }
+SLDeadCodeEliminationTest >> testMethodWithEmptyIfTrueInIfTrueIfFalseAndSendInReceiver [
+	"reduce the conditional to an ifFalse"
+
+	| translation tMethod |
+	tMethod := ccg methodNamed:
+		           #methodWithEmptyIfTrueInIfTrueIfFalseAndSendInReceiver.
+	ccg currentMethod: tMethod.
+	sLDeadCodeEliminationVisitor visit: tMethod parseTree.
+
+	translation := self translate: tMethod.
+	translation := translation trimBoth.
+
+	self
+		assert: translation
+		equals:
+			'/* SLDeadCodeEliminationTestClass>>#methodWithEmptyIfTrueInIfTrueIfFalseAndSendInReceiver */
+static void
+methodWithEmptyIfTrueInIfTrueIfFalseAndSendInReceiver(SLDeadCodeEliminationTestClass * self_in_methodWithEmptyIfTrueInIfTrueIfFalseAndSendInReceiver)
+{
+	int i;
+
+	if (!(method(self_in_methodWithEmptyIfTrueInIfTrueIfFalseAndSendInReceiver))) {
+		i = 5;
+	}
+	{
+		return;
+	}
+}'
+]
+
+{ #category : 'empty-branch-in-nil-conditional-no-send-in-receiver' }
+SLDeadCodeEliminationTest >> testMethodWithEmptyifNilInIfNilIfNotNilAndNoSendInReceiver [
+	"reduce the conditional to an ifNotNil"
+
+	| translation tMethod |
+	tMethod := ccg methodNamed:
+		           #methodWithEmptyifNilInIfNilIfNotNilAndNoSendInReceiver.
+	ccg currentMethod: tMethod.
+	sLDeadCodeEliminationVisitor visit: tMethod parseTree.
+
+	translation := self translate: tMethod.
+	translation := translation trimBoth.
+
+	self
+		assert: translation
+		equals:
+			'/* SLDeadCodeEliminationTestClass>>#methodWithEmptyifNilInIfNilIfNotNilAndNoSendInReceiver */
+static void
+methodWithEmptyifNilInIfNilIfNotNilAndNoSendInReceiver(SLDeadCodeEliminationTestClass * self_in_methodWithEmptyifNilInIfNilIfNotNilAndNoSendInReceiver)
+{
+	int i;
+
+	if (!(null == null)) {
+		i = 5;
+	}
+	{
+		return;
+	}
+}'
+]
+
+{ #category : 'empty-branch-in-nil-conditional-send-in-receiver' }
+SLDeadCodeEliminationTest >> testMethodWithEmptyifNilInIfNilIfNotNilAndSendInReceiver [
+	"reduce the conditional to an ifNotNil"
+
+	| translation tMethod |
+	tMethod := ccg methodNamed:
+		           #methodWithEmptyifNilInIfNilIfNotNilAndSendInReceiver.
+	ccg currentMethod: tMethod.
+	sLDeadCodeEliminationVisitor visit: tMethod parseTree.
+
+	translation := self translate: tMethod.
+	translation := translation trimBoth.
+
+	self
+		assert: translation
+		equals:
+			'/* SLDeadCodeEliminationTestClass>>#methodWithEmptyifNilInIfNilIfNotNilAndSendInReceiver */
+static void
+methodWithEmptyifNilInIfNilIfNotNilAndSendInReceiver(SLDeadCodeEliminationTestClass * self_in_methodWithEmptyifNilInIfNilIfNotNilAndSendInReceiver)
+{
+	int i;
+
+	if (!((method(self_in_methodWithEmptyifNilInIfNilIfNotNilAndSendInReceiver)) == null)) {
+		i = 5;
+	}
+	{
+		return;
+	}
+}'
+]
+
+{ #category : 'empty-branch-in-nil-conditional-no-send-in-receiver' }
+SLDeadCodeEliminationTest >> testMethodWithEmptyifNilInIfNotNilIfNilAndNoSendInReceiver [
+	"reduce the conditional to an ifNotNil"
+
+	| translation tMethod |
+	tMethod := ccg methodNamed:
+		           #methodWithEmptyifNilInIfNotNilIfNilAndNoSendInReceiver.
+	ccg currentMethod: tMethod.
+	sLDeadCodeEliminationVisitor visit: tMethod parseTree.
+
+	translation := self translate: tMethod.
+	translation := translation trimBoth.
+
+	self
+		assert: translation
+		equals:
+			'/* SLDeadCodeEliminationTestClass>>#methodWithEmptyifNilInIfNotNilIfNilAndNoSendInReceiver */
+static void
+methodWithEmptyifNilInIfNotNilIfNilAndNoSendInReceiver(SLDeadCodeEliminationTestClass * self_in_methodWithEmptyifNilInIfNotNilIfNilAndNoSendInReceiver)
+{
+	int i;
+
+	if (!(null == null)) {
+		i = 5;
+	}
+	{
+		return;
+	}
+}'
+]
+
+{ #category : 'empty-branch-in-nil-conditional-send-in-receiver' }
+SLDeadCodeEliminationTest >> testMethodWithEmptyifNilInIfNotNilIfNilAndSendInReceiver [
+	"reduce the conditional to an ifNotNil"
+
+	| translation tMethod |
+	tMethod := ccg methodNamed:
+		           #methodWithEmptyifNilInIfNotNilIfNilAndSendInReceiver.
+	ccg currentMethod: tMethod.
+	sLDeadCodeEliminationVisitor visit: tMethod parseTree.
+
+	translation := self translate: tMethod.
+	translation := translation trimBoth.
+
+	self
+		assert: translation
+		equals:
+			'/* SLDeadCodeEliminationTestClass>>#methodWithEmptyifNilInIfNotNilIfNilAndSendInReceiver */
+static void
+methodWithEmptyifNilInIfNotNilIfNilAndSendInReceiver(SLDeadCodeEliminationTestClass * self_in_methodWithEmptyifNilInIfNotNilIfNilAndSendInReceiver)
+{
+	int i;
+
+	if (!((method(self_in_methodWithEmptyifNilInIfNotNilIfNilAndSendInReceiver)) == null)) {
+		i = 5;
+	}
+	{
+		return;
+	}
+}'
+]
+
+{ #category : 'empty-branch-in-nil-conditional-no-send-in-receiver' }
+SLDeadCodeEliminationTest >> testMethodWithEmptyifNotNilInIfNilIfNotNilAndNoSendInReceiver [
+	"reduce the conditional to an ifNil"
+
+	| translation tMethod |
+	tMethod := ccg methodNamed:
+		           #methodWithEmptyifNotNilInIfNilIfNotNilAndNoSendInReceiver.
+	ccg currentMethod: tMethod.
+	sLDeadCodeEliminationVisitor visit: tMethod parseTree.
+
+	translation := self translate: tMethod.
+	translation := translation trimBoth.
+
+	self
+		assert: translation
+		equals:
+			'/* SLDeadCodeEliminationTestClass>>#methodWithEmptyifNotNilInIfNilIfNotNilAndNoSendInReceiver */
+static void
+methodWithEmptyifNotNilInIfNilIfNotNilAndNoSendInReceiver(SLDeadCodeEliminationTestClass * self_in_methodWithEmptyifNotNilInIfNilIfNotNilAndNoSendInReceiver)
+{
+	int i;
+
+	if (null == null) {
+		i = 5;
+	}
+	{
+		return;
+	}
+}'
+]
+
+{ #category : 'empty-branch-in-nil-conditional-send-in-receiver' }
+SLDeadCodeEliminationTest >> testMethodWithEmptyifNotNilInIfNilIfNotNilAndSendInReceiver [
+	"reduce the conditional to an ifNil"
+
+	| translation tMethod |
+	tMethod := ccg methodNamed:
+		           #methodWithEmptyifNotNilInIfNilIfNotNilAndSendInReceiver.
+	ccg currentMethod: tMethod.
+	sLDeadCodeEliminationVisitor visit: tMethod parseTree.
+
+	translation := self translate: tMethod.
+	translation := translation trimBoth.
+
+	self
+		assert: translation
+		equals:
+			'/* SLDeadCodeEliminationTestClass>>#methodWithEmptyifNotNilInIfNilIfNotNilAndSendInReceiver */
+static void
+methodWithEmptyifNotNilInIfNilIfNotNilAndSendInReceiver(SLDeadCodeEliminationTestClass * self_in_methodWithEmptyifNotNilInIfNilIfNotNilAndSendInReceiver)
+{
+	int i;
+
+	if ((method(self_in_methodWithEmptyifNotNilInIfNilIfNotNilAndSendInReceiver)) == null) {
+		i = 5;
+	}
+	{
+		return;
+	}
+}'
+]
+
+{ #category : 'empty-branch-in-nil-conditional-no-send-in-receiver' }
+SLDeadCodeEliminationTest >> testMethodWithEmptyifNotNilInIfNotNilIfNilAndNoSendInReceiver [
+	"reduce the conditional to an ifNil"
+
+	| translation tMethod |
+	tMethod := ccg methodNamed:
+		           #methodWithEmptyifNotNilInIfNotNilIfNilAndNoSendInReceiver.
+	ccg currentMethod: tMethod.
+	sLDeadCodeEliminationVisitor visit: tMethod parseTree.
+
+	translation := self translate: tMethod.
+	translation := translation trimBoth.
+
+	self
+		assert: translation
+		equals:
+			'/* SLDeadCodeEliminationTestClass>>#methodWithEmptyifNotNilInIfNotNilIfNilAndNoSendInReceiver */
+static void
+methodWithEmptyifNotNilInIfNotNilIfNilAndNoSendInReceiver(SLDeadCodeEliminationTestClass * self_in_methodWithEmptyifNotNilInIfNotNilIfNilAndNoSendInReceiver)
+{
+	int i;
+
+	if (null == null) {
+		i = 5;
+	}
+	{
+		return;
+	}
+}'
+]
+
+{ #category : 'empty-branch-in-nil-conditional-send-in-receiver' }
+SLDeadCodeEliminationTest >> testMethodWithEmptyifNotNilInIfNotNilIfNilAndSendInReceiver [
+	"reduce the conditional to an ifNil"
+
+	| translation tMethod |
+	tMethod := ccg methodNamed:
+		           #methodWithEmptyifNotNilInIfNotNilIfNilAndSendInReceiver.
+	ccg currentMethod: tMethod.
+	sLDeadCodeEliminationVisitor visit: tMethod parseTree.
+
+	translation := self translate: tMethod.
+	translation := translation trimBoth.
+
+	self
+		assert: translation
+		equals:
+			'/* SLDeadCodeEliminationTestClass>>#methodWithEmptyifNotNilInIfNotNilIfNilAndSendInReceiver */
+static void
+methodWithEmptyifNotNilInIfNotNilIfNilAndSendInReceiver(SLDeadCodeEliminationTestClass * self_in_methodWithEmptyifNotNilInIfNotNilIfNilAndSendInReceiver)
+{
+	int i;
+
+	if ((method(self_in_methodWithEmptyifNotNilInIfNotNilIfNilAndSendInReceiver)) == null) {
+		i = 5;
+	}
+	{
+		return;
+	}
+}'
+]
+
+{ #category : 'used-leaf-in-assignment' }
+SLDeadCodeEliminationTest >> testMethodWithInstanceVariableInAssignment [
+
+	| translation tMethod |
+	tMethod := ccg methodNamed: #methodWithInstanceVariableInAssignment.
+	ccg currentMethod: tMethod.
+	sLDeadCodeEliminationVisitor visit: tMethod parseTree.
+
+	translation := self translate: tMethod.
+	translation := translation trimBoth.
+
+	self
+		assert: translation
+		equals:
+			'/* SLDeadCodeEliminationTestClass>>#methodWithInstanceVariableInAssignment */
+static void
+methodWithInstanceVariableInAssignment(SLDeadCodeEliminationTestClass * self_in_methodWithInstanceVariableInAssignment)
+{
+	size_t i;
+
+	i = (self_in_methodWithInstanceVariableInAssignment->instancesVariable);
+	{
+		return;
+	}
+}'
+]
+
+{ #category : 'used-leaf-in-return' }
+SLDeadCodeEliminationTest >> testMethodWithInstanceVariableInReturn [
+
+	| translation tMethod |
+	tMethod := ccg methodNamed: #methodWithInstanceVariableInReturn.
+	ccg currentMethod: tMethod.
+	sLDeadCodeEliminationVisitor visit: tMethod parseTree.
+
+	translation := self translate: tMethod.
+	translation := translation trimBoth.
+
+	self
+		assert: translation
+		equals:
+			'/* SLDeadCodeEliminationTestClass>>#methodWithInstanceVariableInReturn */
+static size_t
+methodWithInstanceVariableInReturn(SLDeadCodeEliminationTestClass * self_in_methodWithInstanceVariableInReturn)
+{
+	return (self_in_methodWithInstanceVariableInReturn->instancesVariable);
+}'
+]
+
+{ #category : 'unused-leaf' }
+SLDeadCodeEliminationTest >> testMethodWithUnusedConstant [
+
+	| translation tMethod |
+	tMethod := ccg methodNamed: #methodWithUnusedConstant.
+
+	ccg currentMethod: tMethod.
+	sLDeadCodeEliminationVisitor visit: tMethod parseTree.
+
+	translation := self translate: tMethod.
+	translation := translation trimBoth.
+
+	self
+		assert: translation
+		equals:
+			'/* SLDeadCodeEliminationTestClass>>#methodWithUnusedConstant */
+static void
+methodWithUnusedConstant(SLDeadCodeEliminationTestClass * self_in_methodWithUnusedConstant)
+{
+	{
+		return;
+	}
+}'
+]
+
+{ #category : 'unused-leaf' }
+SLDeadCodeEliminationTest >> testMethodWithUnusedInstanceVariable [
+
+	| translation tMethod |
+	tMethod := ccg methodNamed: #methodWithUnusedInstanceVariable.
+	ccg currentMethod: tMethod.
+	sLDeadCodeEliminationVisitor visit: tMethod parseTree.
+
+	translation := self translate: tMethod.
+	translation := translation trimBoth.
+
+	self
+		assert: translation
+		equals:
+			'/* SLDeadCodeEliminationTestClass>>#methodWithUnusedInstanceVariable */
+static void
+methodWithUnusedInstanceVariable(SLDeadCodeEliminationTestClass * self_in_methodWithUnusedInstanceVariable)
+{
+	{
+		return;
+	}
+}'
+]
+
+{ #category : 'unused-leaf' }
+SLDeadCodeEliminationTest >> testMethodWithUnusedVariable [
+	"with variables, the definition will not be removed"
+	| translation tMethod |
+	tMethod := ccg methodNamed: #methodWithUnusedVariable.
+	ccg currentMethod: tMethod.
+	sLDeadCodeEliminationVisitor visit: tMethod parseTree.
+
+	translation := self translate: tMethod.
+	translation := translation trimBoth.
+
+	self
+		assert: translation
+		equals:
+			'/* SLDeadCodeEliminationTestClass>>#methodWithUnusedVariable */
+static void
+methodWithUnusedVariable(SLDeadCodeEliminationTestClass * self_in_methodWithUnusedVariable)
+{
+	sqInt i;
+
+	{
+		return;
+	}
+}'
+]
+
+{ #category : 'used-leaf-in-assignment' }
+SLDeadCodeEliminationTest >> testMethodWithVariableInAssignment [
+
+	| translation tMethod |
+	tMethod := ccg methodNamed: #methodWithVariableInAssignment.
+	ccg currentMethod: tMethod.
+	sLDeadCodeEliminationVisitor visit: tMethod parseTree.
+
+	translation := self translate: tMethod.
+	translation := translation trimBoth.
+
+	self
+		assert: translation
+		equals:
+			'/* SLDeadCodeEliminationTestClass>>#methodWithVariableInAssignment */
+static void
+methodWithVariableInAssignment(SLDeadCodeEliminationTestClass * self_in_methodWithVariableInAssignment)
+{
+	sqInt i;
+	sqInt j;
+
+	i = j;
+	{
+		return;
+	}
+}'
+]
+
+{ #category : 'used-leaf-in-return' }
+SLDeadCodeEliminationTest >> testMethodWithVariableInReturn [
+
+	| translation tMethod |
+	tMethod := ccg methodNamed: #methodWithVariableInReturn.
+	ccg currentMethod: tMethod.
+	sLDeadCodeEliminationVisitor visit: tMethod parseTree.
+
+	translation := self translate: tMethod.
+	translation := translation trimBoth.
+
+	self
+		assert: translation
+		equals:
+			'/* SLDeadCodeEliminationTestClass>>#methodWithVariableInReturn */
+static sqInt
+methodWithVariableInReturn(SLDeadCodeEliminationTestClass * self_in_methodWithVariableInReturn)
+{
+	sqInt i;
+
+	return i;
 }'
 ]
 
