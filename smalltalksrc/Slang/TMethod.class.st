@@ -573,15 +573,6 @@ TMethod >> children [
 	^ { parseTree }
 ]
 
-{ #category : 'inlining support' }
-TMethod >> cleanASTOf: aNode [
-	"supressing an unused variable in a conditional statement can leave it empty. We can supress the conditional branch if we encounter such cases"
-	aNode parent isTMethod ifTrue: [ ^self ].
-	aNode parent remove: aNode.
-	aNode parent children isEmpty ifTrue: [
-		self cleanASTOf: aNode parent ]
-]
-
 { #category : 'accessing' }
 TMethod >> clearReferencesToGlobalStruct [
 	globalStructureBuildMethodHasFoo := false
@@ -1294,24 +1285,6 @@ TMethod >> functionAttributes: aString [
 	functionAttributes := aString
 ]
 
-{ #category : 'type inference' }
-TMethod >> harmonizeSignedAndUnsignedTypesIn: aSetOfTypes [
-	"Eliminate signed/unsigned conflicts in aSetOfTypes"
-	| sqs usqs |
-	#(char short int #'unsigned char' #'unsigned short' #'unsigned int')
-		with: #(sqInt sqInt sqInt #usqInt #usqInt #usqInt)
-		do: [:type :replacement|
-			(aSetOfTypes includes: type) ifTrue:
-				[aSetOfTypes remove: type; add: replacement]].
-	sqs := aSetOfTypes select: [:t| t beginsWith: 'sq'].
-	usqs := aSetOfTypes select: [:t| t beginsWith: 'usq'].
-	^(sqs size + usqs size = aSetOfTypes size
-	   and: [sqs notEmpty
-	   and: [sqs allSatisfy: [:t| usqs includes: 'u', t]]])
-		ifTrue: [sqs]
-		ifFalse: [aSetOfTypes]
-]
-
 { #category : 'testing' }
 TMethod >> hasProperties [
 	^properties notNil and: [properties notEmpty]
@@ -1474,9 +1447,6 @@ TMethod >> inlineFunctionCall: aSendNode in: aCodeGen [
 	meth parseTree bindVariablesIn: substitutionDict.
 	meth parseTree endsWithReturn ifTrue: [
 		meth parseTree: meth parseTree copyWithoutReturn ].
-"	(self parentWontUse: aSendNode) ifTrue: [
-		meth parseTree parent: aSendNode parent.
-		self ensureIsValidMethodAfterInlining: meth parseTree in: aCodeGen ]."
 	^ meth parseTree
 ]
 
@@ -2206,21 +2176,6 @@ TMethod >> outputConditionalDefineFor: compileTimeOptionPragmas on: aStream [
 			aStream nextPutAll: (pragma argumentAt: 1) ]
 		separatedBy: [ aStream nextPutAll: ' && ' ].
 	aStream cr
-]
-
-{ #category : 'inlining support' }
-TMethod >> parentWontUse: aNode [
-	"if aNode is in an assignement, a send or a return, then we should not try to delete unused expression"
-
-	| currentParent |
-	currentParent := aNode parent.
-	[ currentParent isNil or: [ currentParent isTMethod ] ] whileFalse: [
-		(currentParent isReturn or: [
-			 currentParent isAssignment or: [
-				 currentParent isSend "and: [ (self parentWontUse: currentParent) ] " ] ])
-			ifTrue: [ ^ false ].
-		currentParent := currentParent parent ].
-	^ true
 ]
 
 { #category : 'accessing' }
@@ -3165,7 +3120,6 @@ TMethod >> tryToInlineMethodExpressionsIn: aCodeGen [
 	aCodeGen pushScope: self while: [
 		parseTree
 			nodesDo: [ :node |
-				"self haltIf: [ self selector = #rewriteCPICCaseAt:tag:objRef:target: and: [ node isSend ] ]."
 				(self inlineableFunctionCall: node in: aCodeGen) ifTrue: [
 					(self inlineFunctionCall: node in: aCodeGen) ifNotNil: [
 						:replacement |
@@ -3210,16 +3164,7 @@ TMethod >> tryToInlineMethodStatementsIn: aCodeGen statementListsInto: aBlock [
 				ifNil: [ newStatements addLast: stmt ]
 				ifNotNil: [ :inlinedStmts |
 					didSomething := true.
-					"(self parentWontUse: stmt) ifTrue: [
-						inlinedStmts doWithIndex: [ :node :idx | ""since we are working with a collection instead of a tree, branches are supress in the parent but are still in the collection.
-							if we see that a node is no longer in its parent we can supress it""
-							((self ensureIsValidMethodAfterInlining: node in: aCodeGen)
-								 and: [
-									 node parent isNotNil and: [
-										 (node parent children includes: node) not ] ]) ifTrue: [
-								inlinedStmts at: idx put: nil ] ] ]."
-					newStatements addAllLast:
-						(inlinedStmts select: [ :node | node isNotNil ]) ] ].
+					newStatements addAllLast: inlinedStmts ] ].
 		stmtList statements: newStatements asArray ].
 
 

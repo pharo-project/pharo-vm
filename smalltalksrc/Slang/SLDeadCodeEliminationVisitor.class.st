@@ -8,16 +8,7 @@ Class {
 	#package : 'Slang'
 }
 
-{ #category : 'cleaning' }
-SLDeadCodeEliminationVisitor >> cleanASTOf: aNode [
-	"supressing an unused variable in a conditional statement can leave it empty. We can supress the conditional branch if we encounter such cases"
-	aNode parent isTMethod ifTrue: [ ^self ].
-	aNode parent remove: aNode.
-	aNode parent children isEmpty ifTrue: [
-		self cleanASTOf: aNode parent ]
-]
-
-{ #category : 'acccessing' }
+{ #category : 'accessing' }
 SLDeadCodeEliminationVisitor >> codeGenerator [ 
 	^ codeGenerator
 ]
@@ -48,6 +39,15 @@ SLDeadCodeEliminationVisitor >> removeDeadCodeUsing: aCodeGen [
 		self visit: m parseTree ]
 ]
 
+{ #category : 'cleaning' }
+SLDeadCodeEliminationVisitor >> removeUnusedNodesInBranch: aNode [
+	"supressing an unused variable in a conditional statement can leave it empty. We can supress the conditional branch if we encounter such cases"
+	aNode parent isTMethod ifTrue: [ ^self ].
+	aNode parent remove: aNode.
+	aNode parent children isEmpty ifTrue: [
+		self removeUnusedNodesInBranch: aNode parent ]
+]
+
 { #category : 'visiting' }
 SLDeadCodeEliminationVisitor >> visit: aNode [
 
@@ -61,7 +61,7 @@ SLDeadCodeEliminationVisitor >> visitAssignmentNode: anAssignmentNode [
 { #category : 'visiting' }
 SLDeadCodeEliminationVisitor >> visitConstantNode: aConstantNode [
 
-	self cleanASTOf: aConstantNode
+	self removeUnusedNodesInBranch: aConstantNode
 ]
 
 { #category : 'visiting' }
@@ -87,7 +87,7 @@ SLDeadCodeEliminationVisitor >> visitSendNode: aSendNode [
 		aSendNode arguments do: [ :subNode | self visit: subNode ].
 		^ self ].
 	(self isStructAccessorWithNoSideEffect: aSendNode) ifTrue: [
-		self cleanASTOf: aSendNode ]
+		self removeUnusedNodesInBranch: aSendNode ]
 ]
 
 { #category : 'visiting' }
@@ -106,5 +106,5 @@ SLDeadCodeEliminationVisitor >> visitSwitchStatementNode: aSwitchStatementNode [
 { #category : 'visiting' }
 SLDeadCodeEliminationVisitor >> visitVariableNode: aVariableNode [
 
-	self cleanASTOf: aVariableNode
+	self removeUnusedNodesInBranch: aVariableNode
 ]
