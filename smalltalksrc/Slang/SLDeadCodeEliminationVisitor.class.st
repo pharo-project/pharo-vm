@@ -19,12 +19,6 @@ SLDeadCodeEliminationVisitor >> codeGenerator: aCodeGen [
 ]
 
 { #category : 'testing' }
-SLDeadCodeEliminationVisitor >> isMaybeSendWithoutSideEffect: aSendNode [
-
-	^ aSendNode isConditionalSend or: [ aSendNode selector beginsWith: #cCoerce ]
-]
-
-{ #category : 'testing' }
 SLDeadCodeEliminationVisitor >> isStructAccessorWithNoSideEffect: aSendNode [
 
 	^ (codeGenerator isStructSend: aSendNode) and: [ aSendNode numArgs = 0 ]
@@ -34,18 +28,17 @@ SLDeadCodeEliminationVisitor >> isStructAccessorWithNoSideEffect: aSendNode [
 SLDeadCodeEliminationVisitor >> removeDeadCodeUsing: aCodeGen [
 
 	codeGenerator := aCodeGen.
-	codeGenerator methods do: [ :m | 
+	codeGenerator methods do: [ :m |
 		codeGenerator currentMethod: m.
 		self visit: m parseTree ]
 ]
 
 { #category : 'cleaning' }
 SLDeadCodeEliminationVisitor >> removeUnusedNodesInBranch: aNode [
-	"supressing an unused variable in a conditional statement can leave it empty. We can supress the conditional branch if we encounter such cases"
-	aNode parent isTMethod ifTrue: [ ^self ].
-	aNode parent remove: aNode.
-	aNode parent children isEmpty ifTrue: [
-		self removeUnusedNodesInBranch: aNode parent ]
+	"supressing an unused expression can leave the parent empty, the method will recursively try to supress empty node "
+
+	aNode parent isTMethod ifTrue: [ ^ self ].
+	aNode parent removeUnusedNodesInBranch: aNode
 ]
 
 { #category : 'visiting' }
@@ -83,8 +76,11 @@ SLDeadCodeEliminationVisitor >> visitReturnNode: aReturnNode [
 { #category : 'visiting' }
 SLDeadCodeEliminationVisitor >> visitSendNode: aSendNode [
 
-	(self isMaybeSendWithoutSideEffect: aSendNode) ifTrue: [
+	aSendNode isConditionalSend ifTrue: [
 		aSendNode arguments do: [ :subNode | self visit: subNode ].
+		^ self ].
+	(aSendNode selector beginsWith: #cCoerce) ifTrue: [
+		self visit: aSendNode arguments first.
 		^ self ].
 	(self isStructAccessorWithNoSideEffect: aSendNode) ifTrue: [
 		self removeUnusedNodesInBranch: aSendNode ]

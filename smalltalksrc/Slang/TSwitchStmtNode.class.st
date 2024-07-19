@@ -438,16 +438,6 @@ TSwitchStmtNode >> printOn: aStream level: level [
 ]
 
 { #category : 'transformations' }
-TSwitchStmtNode >> remove: aChild [
-	"called when inlining happens, supress a case if it contains only an unused variable"
-
-	otherwiseOrNil = aChild ifTrue: [
-		otherwiseOrNil := nil.
-		^ self ].
-	cases := cases select: [ :each | each second ~= aChild ]
-]
-
-{ #category : 'transformations' }
 TSwitchStmtNode >> removeAssertions [
 	expression removeAssertions.
 	cases do:
@@ -456,6 +446,18 @@ TSwitchStmtNode >> removeAssertions [
 		pair last removeAssertions].
 	otherwiseOrNil ifNotNil:
 		[otherwiseOrNil removeAssertions]
+]
+
+{ #category : 'transformations' }
+TSwitchStmtNode >> removeUnusedNodesInBranch: aChild [
+	"called when inlining happens, supress a case if it contains only an unused expression"
+
+	otherwiseOrNil = aChild ifTrue: [
+		otherwiseOrNil := nil.
+		^ self ].
+	cases := cases select: [ :each | each second ~= aChild ].
+	self children isEmpty ifTrue: [
+		self parent removeUnusedNodesInBranch: self ]
 ]
 
 { #category : 'transformations' }

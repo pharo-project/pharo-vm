@@ -1023,8 +1023,7 @@ CCodeGenerator >> emitCCodeOn: aStream doInlining: inlineFlag doAssertions: asse
 	verbose ifTrue: [
 		self printUnboundCallWarnings.
 		self printUnboundVariableReferenceWarnings.
-		logger cr.
-	].
+		logger cr ].
 	assertionFlag ifFalse: [ self removeAssertions ].
 
 	self doInlining: inlineFlag.
@@ -1042,11 +1041,15 @@ CCodeGenerator >> emitCCodeOn: aStream doInlining: inlineFlag doAssertions: asse
 	 in the use of primitiveFunctionPointer as a function pointer and an index by trying
 	 to ensure that primitives have addresses much higher than any indices."
 	methodList := self sortMethods: methods.
-	(methods includesKey: #interpret) ifTrue:
-		[methodList := { methods at: #interpret }, (methodList copyWithout: (methods at: #interpret))].
+	(methods includesKey: #interpret) ifTrue: [
+		methodList := { (methods at: #interpret) }
+		              , (methodList copyWithout: (methods at: #interpret)) ].
 	"clean out no longer valid variable names and then
 	 handle any global variable usage in each method"
-	methodList do: [:m | self checkForGlobalUsage: (m removeUnusedTempsAndNilIfRequiredIn: self) in: m].
+	methodList do: [ :m |
+		self
+			checkForGlobalUsage: (m removeUnusedTempsAndNilIfRequiredIn: self)
+			in: m ].
 	self localizeGlobalVariables.
 
 	self emitCHeaderOn: aStream.
@@ -1056,7 +1059,6 @@ CCodeGenerator >> emitCCodeOn: aStream doInlining: inlineFlag doAssertions: asse
 	self emitCVariablesOn: aStream.
 	self emitCMacros: methodList on: aStream.
 	self emitCMethods: methodList on: aStream
-
 ]
 
 { #category : 'C code generator' }

@@ -443,14 +443,17 @@ TParseNode >> printOn: aStream level: anInteger [
 ]
 
 { #category : 'transformations' }
-TParseNode >> remove: aChild [
-	"this method should be only called when cleaning an AST tree after an unused variable was found"
-	self children remove: aChild 
+TParseNode >> removeAssertions [
+	"default: do nothing"
 ]
 
 { #category : 'transformations' }
-TParseNode >> removeAssertions [
-	"default: do nothing"
+TParseNode >> removeUnusedNodesInBranch: aChild [
+	"this method should be only called when cleaning an AST tree after an unused variable was found"
+
+	self children remove: aChild.
+	self children isEmpty ifTrue: [
+		self parent removeUnusedNodesInBranch: self ]
 ]
 
 { #category : 'transformations' }

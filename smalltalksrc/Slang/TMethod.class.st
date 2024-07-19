@@ -2546,6 +2546,11 @@ TMethod >> removeLocal: local ifAbsent: aBlock [
 	self locals remove: local ifAbsent: aBlock
 ]
 
+{ #category : 'transformations' }
+TMethod >> removeUnusedNodesInBranch: aChild [ 
+	"reach the top of the tree, does nothing"
+]
+
 { #category : 'utilities' }
 TMethod >> removeUnusedTempsAndNilIfRequiredIn: aCodeGen [
 	"Remove all of the unused temps in this method. Answer a set of the references.
