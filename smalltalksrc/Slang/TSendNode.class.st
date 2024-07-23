@@ -564,7 +564,7 @@ TSendNode >> removeAssertions [
 
 { #category : 'dead-code-elimination' }
 TSendNode >> removeUnusedNodesInBranch: aChild [
-	"this method should be only called when cleaning an AST tree after an unused expression was found meaning the method should be a conditional send,a cCoerce or a struct accessor. 
+	"this method should be only called when cleaning an AST tree after an unused expression was found meaning the method should be a conditional send or a cCoerce. 
 	If the selector is a conditional and only one branch become empty, we can elude it.
 	Only remove in the arguments but transform the receiver if the arguments number changed to zero (meaning the method is incorrect and can now be deleted)"
 
