@@ -2546,7 +2546,7 @@ TMethod >> removeLocal: local ifAbsent: aBlock [
 	self locals remove: local ifAbsent: aBlock
 ]
 
-{ #category : 'transformations' }
+{ #category : 'dead-code-elimination' }
 TMethod >> removeUnusedNodesInBranch: aChild [ 
 	"reach the top of the tree, does nothing"
 ]

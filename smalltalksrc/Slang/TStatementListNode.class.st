@@ -511,7 +511,7 @@ TStatementListNode >> removeAssertions [
 
 { #category : 'dead-code-elimination' }
 TStatementListNode >> removeUnusedNodesInBranch: aChild [
-	"this method should be only called when cleaning an AST tree after an unused expression was found, remove an unused variable from the list of statements"
+	"this method should be only called when cleaning an AST tree after an unused expression was found, remove aChild from the list of statements"
 
 	statements := statements select: [ :stmt | stmt ~~ aChild ].
 	statements isEmpty ifTrue: [
