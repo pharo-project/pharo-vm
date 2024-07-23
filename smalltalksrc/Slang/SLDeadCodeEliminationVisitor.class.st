@@ -88,8 +88,7 @@ SLDeadCodeEliminationVisitor >> visitSendNode: aSendNode [
 { #category : 'visiting' }
 SLDeadCodeEliminationVisitor >> visitStatementListNode: aStatementListNode [
 
-	aStatementListNode children do: [ :subNode |
-		self visit: subNode ]
+	aStatementListNode children do: [ :subNode | self visit: subNode ]
 ]
 
 { #category : 'visiting' }
