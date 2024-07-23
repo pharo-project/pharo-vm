@@ -154,6 +154,134 @@ methodWithConstantInReturn(SLDeadCodeEliminationTestClass * self_in_methodWithCo
 }'
 ]
 
+{ #category : 'empty-switch-no-send-in-expression' }
+SLDeadCodeEliminationTest >> testMethodWithEmptyCaseOfNoSendInReceiver [
+	"we need to use prepareMethodIn to build switch node, the cases are empty only the default remains "
+
+	| translation tMethod |
+	tMethod := ccg methodNamed: #methodWithEmptyCaseOfNoSendInReceiver:.
+	tMethod prepareMethodIn: ccg.
+
+	ccg currentMethod: tMethod.
+	sLDeadCodeEliminationVisitor visit: tMethod parseTree.
+	tMethod removeUnusedTempsAndNilIfRequiredIn: ccg.
+
+
+	translation := self translate: tMethod.
+	translation := translation trimBoth.
+
+	self
+		assert: translation
+		equals:
+			'/* SLDeadCodeEliminationTestClass>>#methodWithEmptyCaseOfNoSendInReceiver: */
+static void
+methodWithEmptyCaseOfNoSendInReceiver(SLDeadCodeEliminationTestClass * self_in_methodWithEmptyCaseOfNoSendInReceiver, sqInt anInt)
+{
+	switch (anInt) {
+		default:
+		error("Case not found and no otherwise clause");
+	}
+	{
+		return;
+	}
+}'
+]
+
+{ #category : 'empty-switch-no-send-in-expression' }
+SLDeadCodeEliminationTest >> testMethodWithEmptyCaseOfOtherwiseNoSendInReceiver [
+	"we need to use prepareMethodIn to build switch node, the cases and the otherwise are empty so the node is suppressed"
+
+	| translation tMethod |
+	tMethod := ccg methodNamed:
+		           #methodWithEmptyCaseOfOtherwiseNoSendInReceiver:.
+	tMethod prepareMethodIn: ccg.
+
+	ccg currentMethod: tMethod.
+	sLDeadCodeEliminationVisitor visit: tMethod parseTree.
+	tMethod removeUnusedTempsAndNilIfRequiredIn: ccg.
+
+
+	translation := self translate: tMethod.
+	translation := translation trimBoth.
+
+	self
+		assert: translation
+		equals:
+			'/* SLDeadCodeEliminationTestClass>>#methodWithEmptyCaseOfOtherwiseNoSendInReceiver: */
+static void
+methodWithEmptyCaseOfOtherwiseNoSendInReceiver(SLDeadCodeEliminationTestClass * self_in_methodWithEmptyCaseOfOtherwiseNoSendInReceiver, sqInt anInt)
+{
+	{
+		return;
+	}
+}'
+]
+
+{ #category : 'empty-switch-send-in-expression' }
+SLDeadCodeEliminationTest >> testMethodWithEmptyCaseOfOtherwiseSendInReceiver [
+	"we need to use prepareMethodIn to build switch node, we keep the message send but the cases and the otherwise are empty so the node is suppressed "
+
+	| translation tMethod |
+	tMethod := ccg methodNamed: #methodWithEmptyCaseOfOtherwiseSendInReceiver.
+	tMethod prepareMethodIn: ccg.
+
+	ccg currentMethod: tMethod.
+	sLDeadCodeEliminationVisitor visit: tMethod parseTree.
+	tMethod removeUnusedTempsAndNilIfRequiredIn: ccg.
+
+
+	translation := self translate: tMethod.
+	translation := translation trimBoth.
+
+	self
+		assert: translation
+		equals:
+			'/* SLDeadCodeEliminationTestClass>>#methodWithEmptyCaseOfOtherwiseSendInReceiver */
+static void
+methodWithEmptyCaseOfOtherwiseSendInReceiver(SLDeadCodeEliminationTestClass * self_in_methodWithEmptyCaseOfOtherwiseSendInReceiver)
+{
+	{
+		method(self_in_methodWithEmptyCaseOfOtherwiseSendInReceiver, 2);
+	}
+	{
+		return;
+	}
+}'
+]
+
+{ #category : 'empty-switch-send-in-expression' }
+SLDeadCodeEliminationTest >> testMethodWithEmptyCaseOfSendInReceiver [
+	"we need to use prepareMethodIn to build switch node, the cases are empty only the default remains "
+
+	| translation tMethod |
+	tMethod := ccg methodNamed: #methodWithEmptyCaseOfSendInReceiver.
+	tMethod prepareMethodIn: ccg.
+
+	ccg currentMethod: tMethod.
+	sLDeadCodeEliminationVisitor visit: tMethod parseTree.
+	tMethod removeUnusedTempsAndNilIfRequiredIn: ccg.
+
+
+	translation := self translate: tMethod.
+	translation := translation trimBoth.
+
+	self
+		assert: translation
+		equals:
+			'/* SLDeadCodeEliminationTestClass>>#methodWithEmptyCaseOfSendInReceiver */
+static void
+methodWithEmptyCaseOfSendInReceiver(SLDeadCodeEliminationTestClass * self_in_methodWithEmptyCaseOfSendInReceiver)
+{
+	switch (method(self_in_methodWithEmptyCaseOfSendInReceiver)) {
+		default:
+		error("Case not found and no otherwise clause");
+	}
+	{
+		return;
+	}
+}'
+]
+
 { #category : 'reduce-boolean-conditional-no-send-in-receiver' }
 SLDeadCodeEliminationTest >> testMethodWithEmptyIfFalseIfTrueAndNoSendInReceiver [
 	"supress the send"
@@ -950,6 +1078,295 @@ methodWithUnusedConstant(SLDeadCodeEliminationTestClass * self_in_methodWithUnus
 }'
 ]
 
+{ #category : 'unused-leaf-in-switch-no-send-in-expression' }
+SLDeadCodeEliminationTest >> testMethodWithUnusedConstantAndReturnInCaseOfNoSendInExpression [
+	"we need to use prepareMethodIn to build switch node, the case with unused constant is suppressed"
+
+	| translation tMethod |
+	tMethod := ccg methodNamed:
+		           #methodWithUnusedConstantAndReturnInCaseOfNoSendInExpression:.
+	tMethod prepareMethodIn: ccg.
+
+	ccg currentMethod: tMethod.
+	sLDeadCodeEliminationVisitor visit: tMethod parseTree.
+	tMethod removeUnusedTempsAndNilIfRequiredIn: ccg.
+
+
+	translation := self translate: tMethod.
+	translation := translation trimBoth.
+
+	self
+		assert: translation
+		equals:
+			'/* SLDeadCodeEliminationTestClass>>#methodWithUnusedConstantAndReturnInCaseOfNoSendInExpression: */
+static void
+methodWithUnusedConstantAndReturnInCaseOfNoSendInExpression(SLDeadCodeEliminationTestClass * self_in_methodWithUnusedConstantAndReturnInCaseOfNoSendInExpression, sqInt anInt)
+{
+	switch (anInt) {
+		case 6:
+		{
+			{
+				return;
+			}
+		}
+		break;
+		default:
+		error("Case not found and no otherwise clause");
+	}
+	{
+		return;
+	}
+}'
+]
+
+{ #category : 'unused-leaf-in-switch-send-in-expression' }
+SLDeadCodeEliminationTest >> testMethodWithUnusedConstantAndReturnInCaseOfSendInExpression [
+	"we need to use prepareMethodIn to build switch node. the empty case disappear"
+
+	| translation tMethod |
+	tMethod := ccg methodNamed:
+		           #methodWithUnusedConstantAndReturnInCaseOfSendInExpression.
+	tMethod prepareMethodIn: ccg.
+
+	ccg currentMethod: tMethod.
+	sLDeadCodeEliminationVisitor visit: tMethod parseTree.
+	tMethod removeUnusedTempsAndNilIfRequiredIn: ccg.
+
+
+	translation := self translate: tMethod.
+	translation := translation trimBoth.
+
+	self
+		assert: translation
+		equals:
+			'/* SLDeadCodeEliminationTestClass>>#methodWithUnusedConstantAndReturnInCaseOfSendInExpression */
+static void
+methodWithUnusedConstantAndReturnInCaseOfSendInExpression(SLDeadCodeEliminationTestClass * self_in_methodWithUnusedConstantAndReturnInCaseOfSendInExpression)
+{
+	switch (method(self_in_methodWithUnusedConstantAndReturnInCaseOfSendInExpression, 3)) {
+		case 6:
+		{
+			{
+				return;
+			}
+		}
+		break;
+		default:
+		error("Case not found and no otherwise clause");
+	}
+	{
+		return;
+	}
+}'
+]
+
+{ #category : 'unused-leaf-in-switch-no-send-in-expression' }
+SLDeadCodeEliminationTest >> testMethodWithUnusedConstantInCaseOfAndReturnInOtherwiseNoSendInExpression [
+	"we need to use prepareMethodIn to build switch node, the cases with unused constant are suppressed and the otherwise remains"
+
+	| translation tMethod |
+	tMethod := ccg methodNamed:
+		           #methodWithUnusedConstantInCaseOfAndReturnInOtherwiseNoSendInExpression:.
+	tMethod prepareMethodIn: ccg.
+
+	ccg currentMethod: tMethod.
+	sLDeadCodeEliminationVisitor visit: tMethod parseTree.
+	tMethod removeUnusedTempsAndNilIfRequiredIn: ccg.
+
+
+	translation := self translate: tMethod.
+	translation := translation trimBoth.
+
+	self
+		assert: translation
+		equals:
+			'/* SLDeadCodeEliminationTestClass>>#methodWithUnusedConstantInCaseOfAndReturnInOtherwiseNoSendInExpression: */
+static void
+methodWithUnusedConstantInCaseOfAndReturnInOtherwiseNoSendInExpression(SLDeadCodeEliminationTestClass * self_in_methodWithUnusedConstantInCaseOfAndReturnInOtherwiseNoSendInExpression, sqInt anInt)
+{
+	switch (anInt) {
+		default:
+		{
+			{
+				return;
+			}
+		}
+	}
+	{
+		return;
+	}
+}'
+]
+
+{ #category : 'unused-leaf-in-switch-send-in-expression' }
+SLDeadCodeEliminationTest >> testMethodWithUnusedConstantInCaseOfAndReturnInOtherwiseSendInExpression [
+	"we need to use prepareMethodIn to build switch node, the cases all have unused constant, they are suppressed"
+
+	| translation tMethod |
+	tMethod := ccg methodNamed:
+		           #methodWithUnusedConstantInCaseOfAndReturnInOtherwiseSendInExpression.
+	tMethod prepareMethodIn: ccg.
+
+	ccg currentMethod: tMethod.
+	sLDeadCodeEliminationVisitor visit: tMethod parseTree.
+	tMethod removeUnusedTempsAndNilIfRequiredIn: ccg.
+
+
+	translation := self translate: tMethod.
+	translation := translation trimBoth.
+
+	self
+		assert: translation
+		equals:
+			'/* SLDeadCodeEliminationTestClass>>#methodWithUnusedConstantInCaseOfAndReturnInOtherwiseSendInExpression */
+static void
+methodWithUnusedConstantInCaseOfAndReturnInOtherwiseSendInExpression(SLDeadCodeEliminationTestClass * self_in_methodWithUnusedConstantInCaseOfAndReturnInOtherwiseSendInExpression)
+{
+	switch (method(self_in_methodWithUnusedConstantInCaseOfAndReturnInOtherwiseSendInExpression, 3)) {
+		default:
+		{
+			{
+				return;
+			}
+		}
+	}
+	{
+		return;
+	}
+}'
+]
+
+{ #category : 'unused-leaf-in-switch-no-send-in-expression' }
+SLDeadCodeEliminationTest >> testMethodWithUnusedConstantInCaseOfAndUnusedConstantInOtherwiseNoSendInExpression [
+	"we need to use prepareMethodIn to build switch node, the cases and the otherwise all have unused constant so the node is suppressed "
+
+	| translation tMethod |
+	tMethod := ccg methodNamed:
+		           #methodWithUnusedConstantInCaseOfAndUnusedConstantInOtherwiseNoSendInExpression:.
+	tMethod prepareMethodIn: ccg.
+
+	ccg currentMethod: tMethod.
+	sLDeadCodeEliminationVisitor visit: tMethod parseTree.
+	tMethod removeUnusedTempsAndNilIfRequiredIn: ccg.
+
+
+	translation := self translate: tMethod.
+	translation := translation trimBoth.
+
+	self
+		assert: translation
+		equals:
+			'/* SLDeadCodeEliminationTestClass>>#methodWithUnusedConstantInCaseOfAndUnusedConstantInOtherwiseNoSendInExpression: */
+static void
+methodWithUnusedConstantInCaseOfAndUnusedConstantInOtherwiseNoSendInExpression(SLDeadCodeEliminationTestClass * self_in_methodWithUnusedConstantInCaseOfAndUnusedConstantInOtherwiseNoSendInExpression, sqInt anInt)
+{
+	{
+		return;
+	}
+}'
+]
+
+{ #category : 'unused-leaf-in-switch-send-in-expression' }
+SLDeadCodeEliminationTest >> testMethodWithUnusedConstantInCaseOfAndUnusedConstantInOtherwiseSendInExpression [
+	"we need to use prepareMethodIn to build switch node, the cases and the otherwise all have unused constant, the node is suppressed but the message call is kept"
+
+	| translation tMethod |
+	tMethod := ccg methodNamed:
+		           #methodWithUnusedConstantInCaseOfAndUnusedConstantInOtherwiseSendInExpression.
+	tMethod prepareMethodIn: ccg.
+
+	ccg currentMethod: tMethod.
+	sLDeadCodeEliminationVisitor visit: tMethod parseTree.
+	tMethod removeUnusedTempsAndNilIfRequiredIn: ccg.
+
+
+	translation := self translate: tMethod.
+	translation := translation trimBoth.
+
+	self
+		assert: translation
+		equals:
+			'/* SLDeadCodeEliminationTestClass>>#methodWithUnusedConstantInCaseOfAndUnusedConstantInOtherwiseSendInExpression */
+static void
+methodWithUnusedConstantInCaseOfAndUnusedConstantInOtherwiseSendInExpression(SLDeadCodeEliminationTestClass * self_in_methodWithUnusedConstantInCaseOfAndUnusedConstantInOtherwiseSendInExpression)
+{
+	{
+		method(self_in_methodWithUnusedConstantInCaseOfAndUnusedConstantInOtherwiseSendInExpression, 3);
+	}
+	{
+		return;
+	}
+}'
+]
+
+{ #category : 'unused-leaf-in-switch-no-send-in-expression' }
+SLDeadCodeEliminationTest >> testMethodWithUnusedConstantInCaseOfNoSendInExpression [
+	"we need to use prepareMethodIn to build switch node, the cases with unused variable are suppressed "
+
+	| translation tMethod |
+	tMethod := ccg methodNamed:
+		           #methodWithUnusedConstantInCaseOfNoSendInExpression:.
+	tMethod prepareMethodIn: ccg.
+
+	ccg currentMethod: tMethod.
+	sLDeadCodeEliminationVisitor visit: tMethod parseTree.
+	tMethod removeUnusedTempsAndNilIfRequiredIn: ccg.
+
+
+	translation := self translate: tMethod.
+	translation := translation trimBoth.
+
+	self
+		assert: translation
+		equals:
+			'/* SLDeadCodeEliminationTestClass>>#methodWithUnusedConstantInCaseOfNoSendInExpression: */
+static void
+methodWithUnusedConstantInCaseOfNoSendInExpression(SLDeadCodeEliminationTestClass * self_in_methodWithUnusedConstantInCaseOfNoSendInExpression, sqInt anInt)
+{
+	switch (anInt) {
+		default:
+		error("Case not found and no otherwise clause");
+	}
+	{
+		return;
+	}
+}'
+]
+
+{ #category : 'unused-leaf-in-switch-send-in-expression' }
+SLDeadCodeEliminationTest >> testMethodWithUnusedConstantInCaseOfSendInExpression [
+	"we need to use prepareMethodIn to build switch node, the cases are empty only the default remains "
+
+	| translation tMethod |
+	tMethod := ccg methodNamed:
+		           #methodWithUnusedConstantInCaseOfSendInExpression.
+	tMethod prepareMethodIn: ccg.
+
+	ccg currentMethod: tMethod.
+	sLDeadCodeEliminationVisitor visit: tMethod parseTree.
+	tMethod removeUnusedTempsAndNilIfRequiredIn: ccg.
+
+
+	translation := self translate: tMethod.
+	translation := translation trimBoth.
+
+	self
+		assert: translation
+		equals:
+			'/* SLDeadCodeEliminationTestClass>>#methodWithUnusedConstantInCaseOfSendInExpression */
+static void
+methodWithUnusedConstantInCaseOfSendInExpression(SLDeadCodeEliminationTestClass * self_in_methodWithUnusedConstantInCaseOfSendInExpression)
+{
+	switch (method(self_in_methodWithUnusedConstantInCaseOfSendInExpression, 3)) {
+		default:
+		error("Case not found and no otherwise clause");
+	}
+	{
+		return;
+	}
+}'
+]
+
 { #category : 'unused-leaf-in-c-coerce' }
 SLDeadCodeEliminationTest >> testMethodWithUnusedConstantInCoerce [
 
@@ -1408,6 +1825,90 @@ methodWithUnusedConstantInIfTrueSendInReceiver(SLDeadCodeEliminationTestClass * 
 }'
 ]
 
+{ #category : 'unused-leaf-in-switch-no-send-in-expression' }
+SLDeadCodeEliminationTest >> testMethodWithUnusedConstantReturnInCaseOfAndUnusedConstantInOtherwiseNoSendInExpression [
+	"we need to use prepareMethodIn to build switch node, the case and the otherwise with unused constant are suppressed"
+
+	| translation tMethod |
+	tMethod := ccg methodNamed:
+		           #methodWithUnusedConstantReturnInCaseOfAndUnusedConstantInOtherwiseNoSendInExpression:.
+	tMethod prepareMethodIn: ccg.
+
+	ccg currentMethod: tMethod.
+	sLDeadCodeEliminationVisitor visit: tMethod parseTree.
+	tMethod removeUnusedTempsAndNilIfRequiredIn: ccg.
+
+
+	translation := self translate: tMethod.
+	translation := translation trimBoth.
+
+	self
+		assert: translation
+		equals:
+			'/* SLDeadCodeEliminationTestClass>>#methodWithUnusedConstantReturnInCaseOfAndUnusedConstantInOtherwiseNoSendInExpression: */
+static void
+methodWithUnusedConstantReturnInCaseOfAndUnusedConstantInOtherwiseNoSendInExpression(SLDeadCodeEliminationTestClass * self_in_methodWithUnusedConstantReturnInCaseOfAndUnusedConstantInOtherwiseNoSendInExpression, sqInt anInt)
+{
+	switch (anInt) {
+		case 6:
+		{
+			{
+				return;
+			}
+		}
+		break;
+		default:
+		{
+		}
+	}
+	{
+		return;
+	}
+}'
+]
+
+{ #category : 'unused-leaf-in-switch-send-in-expression' }
+SLDeadCodeEliminationTest >> testMethodWithUnusedConstantReturnInCaseOfAndUnusedConstantInOtherwiseSendInExpression [
+	"we need to use prepareMethodIn to build switch node, the case with unused constant is supressed and the otherwise is kept empty"
+
+	| translation tMethod |
+	tMethod := ccg methodNamed:
+		           #methodWithUnusedConstantReturnInCaseOfAndUnusedConstantInOtherwiseSendInExpression.
+	tMethod prepareMethodIn: ccg.
+
+	ccg currentMethod: tMethod.
+	sLDeadCodeEliminationVisitor visit: tMethod parseTree.
+	tMethod removeUnusedTempsAndNilIfRequiredIn: ccg.
+
+
+	translation := self translate: tMethod.
+	translation := translation trimBoth.
+
+	self
+		assert: translation
+		equals:
+			'/* SLDeadCodeEliminationTestClass>>#methodWithUnusedConstantReturnInCaseOfAndUnusedConstantInOtherwiseSendInExpression */
+static void
+methodWithUnusedConstantReturnInCaseOfAndUnusedConstantInOtherwiseSendInExpression(SLDeadCodeEliminationTestClass * self_in_methodWithUnusedConstantReturnInCaseOfAndUnusedConstantInOtherwiseSendInExpression)
+{
+	switch (method(self_in_methodWithUnusedConstantReturnInCaseOfAndUnusedConstantInOtherwiseSendInExpression, 3)) {
+		case 6:
+		{
+			{
+				return;
+			}
+		}
+		break;
+		default:
+		{
+		}
+	}
+	{
+		return;
+	}
+}'
+]
+
 { #category : 'unused-leaf' }
 SLDeadCodeEliminationTest >> testMethodWithUnusedInstanceVariable [
 
@@ -1426,6 +1927,295 @@ SLDeadCodeEliminationTest >> testMethodWithUnusedInstanceVariable [
 static void
 methodWithUnusedInstanceVariable(SLDeadCodeEliminationTestClass * self_in_methodWithUnusedInstanceVariable)
 {
+	{
+		return;
+	}
+}'
+]
+
+{ #category : 'unused-leaf-in-switch-no-send-in-expression' }
+SLDeadCodeEliminationTest >> testMethodWithUnusedInstanceVariableAndReturnInCaseOfNoSendInExpression [
+	"we need to use prepareMethodIn to build switch node, the case with unused instance variable is suppressed"
+
+	| translation tMethod |
+	tMethod := ccg methodNamed:
+		           #methodWithUnusedInstanceVariableAndReturnInCaseOfNoSendInExpression:.
+	tMethod prepareMethodIn: ccg.
+
+	ccg currentMethod: tMethod.
+	sLDeadCodeEliminationVisitor visit: tMethod parseTree.
+	tMethod removeUnusedTempsAndNilIfRequiredIn: ccg.
+
+
+	translation := self translate: tMethod.
+	translation := translation trimBoth.
+
+	self
+		assert: translation
+		equals:
+			'/* SLDeadCodeEliminationTestClass>>#methodWithUnusedInstanceVariableAndReturnInCaseOfNoSendInExpression: */
+static void
+methodWithUnusedInstanceVariableAndReturnInCaseOfNoSendInExpression(SLDeadCodeEliminationTestClass * self_in_methodWithUnusedInstanceVariableAndReturnInCaseOfNoSendInExpression, sqInt anInt)
+{
+	switch (anInt) {
+		case 6:
+		{
+			{
+				return;
+			}
+		}
+		break;
+		default:
+		error("Case not found and no otherwise clause");
+	}
+	{
+		return;
+	}
+}'
+]
+
+{ #category : 'unused-leaf-in-switch-send-in-expression' }
+SLDeadCodeEliminationTest >> testMethodWithUnusedInstanceVariableAndReturnInCaseOfSendInExpression [
+	"we need to use prepareMethodIn to build switch node, the case with unused instance variable is suppressed"
+
+	| translation tMethod |
+	tMethod := ccg methodNamed:
+		           #methodWithUnusedInstanceVariableAndReturnInCaseOfSendInExpression.
+	tMethod prepareMethodIn: ccg.
+
+	ccg currentMethod: tMethod.
+	sLDeadCodeEliminationVisitor visit: tMethod parseTree.
+	tMethod removeUnusedTempsAndNilIfRequiredIn: ccg.
+
+
+	translation := self translate: tMethod.
+	translation := translation trimBoth.
+
+	self
+		assert: translation
+		equals:
+			'/* SLDeadCodeEliminationTestClass>>#methodWithUnusedInstanceVariableAndReturnInCaseOfSendInExpression */
+static void
+methodWithUnusedInstanceVariableAndReturnInCaseOfSendInExpression(SLDeadCodeEliminationTestClass * self_in_methodWithUnusedInstanceVariableAndReturnInCaseOfSendInExpression)
+{
+	switch (method(self_in_methodWithUnusedInstanceVariableAndReturnInCaseOfSendInExpression, 3)) {
+		case 6:
+		{
+			{
+				return;
+			}
+		}
+		break;
+		default:
+		error("Case not found and no otherwise clause");
+	}
+	{
+		return;
+	}
+}'
+]
+
+{ #category : 'unused-leaf-in-switch-no-send-in-expression' }
+SLDeadCodeEliminationTest >> testMethodWithUnusedInstanceVariableInCaseOfAndReturnInOtherwiseNoSendInExpression [
+	"we need to use prepareMethodIn to build switch node, the cases all have unused instance variable they are suppressed"
+
+	| translation tMethod |
+	tMethod := ccg methodNamed:
+		           #methodWithUnusedInstanceVariableInCaseOfAndReturnInOtherwiseNoSendInExpression:.
+	tMethod prepareMethodIn: ccg.
+
+	ccg currentMethod: tMethod.
+	sLDeadCodeEliminationVisitor visit: tMethod parseTree.
+	tMethod removeUnusedTempsAndNilIfRequiredIn: ccg.
+
+
+	translation := self translate: tMethod.
+	translation := translation trimBoth.
+
+	self
+		assert: translation
+		equals:
+			'/* SLDeadCodeEliminationTestClass>>#methodWithUnusedInstanceVariableInCaseOfAndReturnInOtherwiseNoSendInExpression: */
+static void
+methodWithUnusedInstanceVariableInCaseOfAndReturnInOtherwiseNoSendInExpression(SLDeadCodeEliminationTestClass * self_in_methodWithUnusedInstanceVariableInCaseOfAndReturnInOtherwiseNoSendInExpression, sqInt anInt)
+{
+	switch (anInt) {
+		default:
+		{
+			{
+				return;
+			}
+		}
+	}
+	{
+		return;
+	}
+}'
+]
+
+{ #category : 'unused-leaf-in-switch-send-in-expression' }
+SLDeadCodeEliminationTest >> testMethodWithUnusedInstanceVariableInCaseOfAndReturnInOtherwiseSendInExpression [
+	"we need to use prepareMethodIn to build switch node, the cases all have unused instance variable, they are suppressed"
+
+	| translation tMethod |
+	tMethod := ccg methodNamed:
+		           #methodWithUnusedInstanceVariableInCaseOfAndReturnInOtherwiseSendInExpression.
+	tMethod prepareMethodIn: ccg.
+
+	ccg currentMethod: tMethod.
+	sLDeadCodeEliminationVisitor visit: tMethod parseTree.
+	tMethod removeUnusedTempsAndNilIfRequiredIn: ccg.
+
+
+	translation := self translate: tMethod.
+	translation := translation trimBoth.
+
+	self
+		assert: translation
+		equals:
+			'/* SLDeadCodeEliminationTestClass>>#methodWithUnusedInstanceVariableInCaseOfAndReturnInOtherwiseSendInExpression */
+static void
+methodWithUnusedInstanceVariableInCaseOfAndReturnInOtherwiseSendInExpression(SLDeadCodeEliminationTestClass * self_in_methodWithUnusedInstanceVariableInCaseOfAndReturnInOtherwiseSendInExpression)
+{
+	switch (method(self_in_methodWithUnusedInstanceVariableInCaseOfAndReturnInOtherwiseSendInExpression, 3)) {
+		default:
+		{
+			{
+				return;
+			}
+		}
+	}
+	{
+		return;
+	}
+}'
+]
+
+{ #category : 'unused-leaf-in-switch-no-send-in-expression' }
+SLDeadCodeEliminationTest >> testMethodWithUnusedInstanceVariableInCaseOfAndUnusedInstanceVariableInOtherwiseNoSendInExpression [
+	"we need to use prepareMethodIn to build switch node, the cases and the otherwise have unused instance variable, they are all suppressed"
+
+	| translation tMethod |
+	tMethod := ccg methodNamed:
+		           #methodWithUnusedInstanceVariableInCaseOfAndUnusedInstanceVariableInOtherwiseNoSendInExpression:.
+	tMethod prepareMethodIn: ccg.
+
+	ccg currentMethod: tMethod.
+	sLDeadCodeEliminationVisitor visit: tMethod parseTree.
+	tMethod removeUnusedTempsAndNilIfRequiredIn: ccg.
+
+
+	translation := self translate: tMethod.
+	translation := translation trimBoth.
+
+	self
+		assert: translation
+		equals:
+			'/* SLDeadCodeEliminationTestClass>>#methodWithUnusedInstanceVariableInCaseOfAndUnusedInstanceVariableInOtherwiseNoSendInExpression: */
+static void
+methodWithUnusedInstanceVariableInCaseOfAndUnusedInstanceVariableInOtherwiseNoSendInExpression(SLDeadCodeEliminationTestClass * self_in_methodWithUnusedInstanceVariableInCaseOfAndUnusedInstanceVariableInOtherwiseNoSendInExpression, sqInt anInt)
+{
+	{
+		return;
+	}
+}'
+]
+
+{ #category : 'unused-leaf-in-switch-send-in-expression' }
+SLDeadCodeEliminationTest >> testMethodWithUnusedInstanceVariableInCaseOfAndUnusedInstanceVariableInOtherwiseSendInExpression [
+	"we need to use prepareMethodIn to build switch node, the cases and the otherwise all have unused instance variable, the node is suppressed but the message call is kept"
+
+	| translation tMethod |
+	tMethod := ccg methodNamed:
+		           #methodWithUnusedInstanceVariableInCaseOfAndUnusedInstanceVariableInOtherwiseSendInExpression.
+	tMethod prepareMethodIn: ccg.
+
+	ccg currentMethod: tMethod.
+	sLDeadCodeEliminationVisitor visit: tMethod parseTree.
+	tMethod removeUnusedTempsAndNilIfRequiredIn: ccg.
+
+
+	translation := self translate: tMethod.
+	translation := translation trimBoth.
+
+	self
+		assert: translation
+		equals:
+			'/* SLDeadCodeEliminationTestClass>>#methodWithUnusedInstanceVariableInCaseOfAndUnusedInstanceVariableInOtherwiseSendInExpression */
+static void
+methodWithUnusedInstanceVariableInCaseOfAndUnusedInstanceVariableInOtherwiseSendInExpression(SLDeadCodeEliminationTestClass * self_in_methodWithUnusedInstanceVariableInCaseOfAndUnusedInstanceVariableInOtherwiseSendInExpression)
+{
+	{
+		method(self_in_methodWithUnusedInstanceVariableInCaseOfAndUnusedInstanceVariableInOtherwiseSendInExpression, 3);
+	}
+	{
+		return;
+	}
+}'
+]
+
+{ #category : 'unused-leaf-in-switch-no-send-in-expression' }
+SLDeadCodeEliminationTest >> testMethodWithUnusedInstanceVariableInCaseOfNoSendInExpression [
+	"we need to use prepareMethodIn to build switch node, the cases with unused instance variable are suppressed, only the default remains "
+
+	| translation tMethod |
+	tMethod := ccg methodNamed:
+		           #methodWithUnusedInstanceVariableInCaseOfNoSendInExpression:.
+	tMethod prepareMethodIn: ccg.
+
+	ccg currentMethod: tMethod.
+	sLDeadCodeEliminationVisitor visit: tMethod parseTree.
+	tMethod removeUnusedTempsAndNilIfRequiredIn: ccg.
+
+
+	translation := self translate: tMethod.
+	translation := translation trimBoth.
+
+	self
+		assert: translation
+		equals:
+			'/* SLDeadCodeEliminationTestClass>>#methodWithUnusedInstanceVariableInCaseOfNoSendInExpression: */
+static void
+methodWithUnusedInstanceVariableInCaseOfNoSendInExpression(SLDeadCodeEliminationTestClass * self_in_methodWithUnusedInstanceVariableInCaseOfNoSendInExpression, sqInt anInt)
+{
+	switch (anInt) {
+		default:
+		error("Case not found and no otherwise clause");
+	}
+	{
+		return;
+	}
+}'
+]
+
+{ #category : 'unused-leaf-in-switch-send-in-expression' }
+SLDeadCodeEliminationTest >> testMethodWithUnusedInstanceVariableInCaseOfSendInExpression [
+	"we need to use prepareMethodIn to build switch node, the cases are empty only the default remains "
+
+	| translation tMethod |
+	tMethod := ccg methodNamed:
+		           #methodWithUnusedInstanceVariableInCaseOfSendInExpression.
+	tMethod prepareMethodIn: ccg.
+
+	ccg currentMethod: tMethod.
+	sLDeadCodeEliminationVisitor visit: tMethod parseTree.
+	tMethod removeUnusedTempsAndNilIfRequiredIn: ccg.
+
+
+	translation := self translate: tMethod.
+	translation := translation trimBoth.
+
+	self
+		assert: translation
+		equals:
+			'/* SLDeadCodeEliminationTestClass>>#methodWithUnusedInstanceVariableInCaseOfSendInExpression */
+static void
+methodWithUnusedInstanceVariableInCaseOfSendInExpression(SLDeadCodeEliminationTestClass * self_in_methodWithUnusedInstanceVariableInCaseOfSendInExpression)
+{
+	switch (method(self_in_methodWithUnusedInstanceVariableInCaseOfSendInExpression, 3)) {
+		default:
+		error("Case not found and no otherwise clause");
+	}
 	{
 		return;
 	}
@@ -1889,6 +2679,90 @@ methodWithUnusedInstanceVariableInIfTrueSendInReceiver(SLDeadCodeEliminationTest
 }'
 ]
 
+{ #category : 'unused-leaf-in-switch-no-send-in-expression' }
+SLDeadCodeEliminationTest >> testMethodWithUnusedInstanceVariableReturnInCaseOfAndUnusedInstanceVariableInOtherwiseNoSendInExpression [
+	"we need to use prepareMethodIn to build switch node, the case with unused instance variable is suppressed and the otherwise with instance variable is kept empty"
+
+	| translation tMethod |
+	tMethod := ccg methodNamed:
+		           #methodWithUnusedInstanceVariableReturnInCaseOfAndUnusedInstanceVariableInOtherwiseNoSendInExpression:.
+	tMethod prepareMethodIn: ccg.
+
+	ccg currentMethod: tMethod.
+	sLDeadCodeEliminationVisitor visit: tMethod parseTree.
+	tMethod removeUnusedTempsAndNilIfRequiredIn: ccg.
+
+
+	translation := self translate: tMethod.
+	translation := translation trimBoth.
+
+	self
+		assert: translation
+		equals:
+			'/* SLDeadCodeEliminationTestClass>>#methodWithUnusedInstanceVariableReturnInCaseOfAndUnusedInstanceVariableInOtherwiseNoSendInExpression: */
+static void
+methodWithUnusedInstanceVariableReturnInCaseOfAndUnusedInstanceVariableInOtherwiseNoSendInExpression(SLDeadCodeEliminationTestClass * self_in_methodWithUnusedInstanceVariableReturnInCaseOfAndUnusedInstanceVariableInOtherwiseNoSendInExpression, sqInt anInt)
+{
+	switch (anInt) {
+		case 6:
+		{
+			{
+				return;
+			}
+		}
+		break;
+		default:
+		{
+		}
+	}
+	{
+		return;
+	}
+}'
+]
+
+{ #category : 'unused-leaf-in-switch-send-in-expression' }
+SLDeadCodeEliminationTest >> testMethodWithUnusedInstanceVariableReturnInCaseOfAndUnusedInstanceVariableInOtherwiseSendInExpression [
+	"we need to use prepareMethodIn to build switch node, the case with unused instance variable is supressed and the otherwise is kept empty"
+
+	| translation tMethod |
+	tMethod := ccg methodNamed:
+		           #methodWithUnusedInstanceVariableReturnInCaseOfAndUnusedInstanceVariableInOtherwiseSendInExpression.
+	tMethod prepareMethodIn: ccg.
+
+	ccg currentMethod: tMethod.
+	sLDeadCodeEliminationVisitor visit: tMethod parseTree.
+	tMethod removeUnusedTempsAndNilIfRequiredIn: ccg.
+
+
+	translation := self translate: tMethod.
+	translation := translation trimBoth.
+
+	self
+		assert: translation
+		equals:
+			'/* SLDeadCodeEliminationTestClass>>#methodWithUnusedInstanceVariableReturnInCaseOfAndUnusedInstanceVariableInOtherwiseSendInExpression */
+static void
+methodWithUnusedInstanceVariableReturnInCaseOfAndUnusedInstanceVariableInOtherwiseSendInExpression(SLDeadCodeEliminationTestClass * self_in_methodWithUnusedInstanceVariableReturnInCaseOfAndUnusedInstanceVariableInOtherwiseSendInExpression)
+{
+	switch (method(self_in_methodWithUnusedInstanceVariableReturnInCaseOfAndUnusedInstanceVariableInOtherwiseSendInExpression, 3)) {
+		case 6:
+		{
+			{
+				return;
+			}
+		}
+		break;
+		default:
+		{
+		}
+	}
+	{
+		return;
+	}
+}'
+]
+
 { #category : 'unused-leaf' }
 SLDeadCodeEliminationTest >> testMethodWithUnusedVariable [
 
@@ -1909,6 +2783,295 @@ SLDeadCodeEliminationTest >> testMethodWithUnusedVariable [
 static void
 methodWithUnusedVariable(SLDeadCodeEliminationTestClass * self_in_methodWithUnusedVariable)
 {
+	{
+		return;
+	}
+}'
+]
+
+{ #category : 'unused-leaf-in-switch-no-send-in-expression' }
+SLDeadCodeEliminationTest >> testMethodWithUnusedVariableAndReturnInCaseOfNoSendInExpression [
+	"we need to use prepareMethodIn to build switch node, the case with unused variable is suppressed"
+
+	| translation tMethod |
+	tMethod := ccg methodNamed:
+		           #methodWithUnusedVariableAndReturnInCaseOfNoSendInExpression:.
+	tMethod prepareMethodIn: ccg.
+
+	ccg currentMethod: tMethod.
+	sLDeadCodeEliminationVisitor visit: tMethod parseTree.
+	tMethod removeUnusedTempsAndNilIfRequiredIn: ccg.
+
+
+	translation := self translate: tMethod.
+	translation := translation trimBoth.
+
+	self
+		assert: translation
+		equals:
+			'/* SLDeadCodeEliminationTestClass>>#methodWithUnusedVariableAndReturnInCaseOfNoSendInExpression: */
+static void
+methodWithUnusedVariableAndReturnInCaseOfNoSendInExpression(SLDeadCodeEliminationTestClass * self_in_methodWithUnusedVariableAndReturnInCaseOfNoSendInExpression, sqInt anInt)
+{
+	switch (anInt) {
+		case 6:
+		{
+			{
+				return;
+			}
+		}
+		break;
+		default:
+		error("Case not found and no otherwise clause");
+	}
+	{
+		return;
+	}
+}'
+]
+
+{ #category : 'unused-leaf-in-switch-send-in-expression' }
+SLDeadCodeEliminationTest >> testMethodWithUnusedVariableAndReturnInCaseOfSendInExpression [
+	"we need to use prepareMethodIn to build switch node, the case with unused variable is suppressed"
+
+	| translation tMethod |
+	tMethod := ccg methodNamed:
+		           #methodWithUnusedVariableAndReturnInCaseOfSendInExpression.
+	tMethod prepareMethodIn: ccg.
+
+	ccg currentMethod: tMethod.
+	sLDeadCodeEliminationVisitor visit: tMethod parseTree.
+	tMethod removeUnusedTempsAndNilIfRequiredIn: ccg.
+
+
+	translation := self translate: tMethod.
+	translation := translation trimBoth.
+
+	self
+		assert: translation
+		equals:
+			'/* SLDeadCodeEliminationTestClass>>#methodWithUnusedVariableAndReturnInCaseOfSendInExpression */
+static void
+methodWithUnusedVariableAndReturnInCaseOfSendInExpression(SLDeadCodeEliminationTestClass * self_in_methodWithUnusedVariableAndReturnInCaseOfSendInExpression)
+{
+	switch (method(self_in_methodWithUnusedVariableAndReturnInCaseOfSendInExpression, 3)) {
+		case 6:
+		{
+			{
+				return;
+			}
+		}
+		break;
+		default:
+		error("Case not found and no otherwise clause");
+	}
+	{
+		return;
+	}
+}'
+]
+
+{ #category : 'unused-leaf-in-switch-no-send-in-expression' }
+SLDeadCodeEliminationTest >> testMethodWithUnusedVariableInCaseOfAndReturnInOtherwiseNoSendInExpression [
+	"we need to use prepareMethodIn to build switch node, the cases all have unused variable, they are suppressed and the otherwise remains."
+
+	| translation tMethod |
+	tMethod := ccg methodNamed:
+		           #methodWithUnusedVariableInCaseOfAndReturnInOtherwiseNoSendInExpression:.
+	tMethod prepareMethodIn: ccg.
+
+	ccg currentMethod: tMethod.
+	sLDeadCodeEliminationVisitor visit: tMethod parseTree.
+	tMethod removeUnusedTempsAndNilIfRequiredIn: ccg.
+
+
+	translation := self translate: tMethod.
+	translation := translation trimBoth.
+
+	self
+		assert: translation
+		equals:
+			'/* SLDeadCodeEliminationTestClass>>#methodWithUnusedVariableInCaseOfAndReturnInOtherwiseNoSendInExpression: */
+static void
+methodWithUnusedVariableInCaseOfAndReturnInOtherwiseNoSendInExpression(SLDeadCodeEliminationTestClass * self_in_methodWithUnusedVariableInCaseOfAndReturnInOtherwiseNoSendInExpression, sqInt anInt)
+{
+	switch (anInt) {
+		default:
+		{
+			{
+				return;
+			}
+		}
+	}
+	{
+		return;
+	}
+}'
+]
+
+{ #category : 'unused-leaf-in-switch-send-in-expression' }
+SLDeadCodeEliminationTest >> testMethodWithUnusedVariableInCaseOfAndReturnInOtherwiseSendInExpression [
+	"we need to use prepareMethodIn to build switch node, the cases all have unused variable, they are suppressed"
+
+	| translation tMethod |
+	tMethod := ccg methodNamed:
+		           #methodWithUnusedVariableInCaseOfAndReturnInOtherwiseSendInExpression.
+	tMethod prepareMethodIn: ccg.
+
+	ccg currentMethod: tMethod.
+	sLDeadCodeEliminationVisitor visit: tMethod parseTree.
+	tMethod removeUnusedTempsAndNilIfRequiredIn: ccg.
+
+
+	translation := self translate: tMethod.
+	translation := translation trimBoth.
+
+	self
+		assert: translation
+		equals:
+			'/* SLDeadCodeEliminationTestClass>>#methodWithUnusedVariableInCaseOfAndReturnInOtherwiseSendInExpression */
+static void
+methodWithUnusedVariableInCaseOfAndReturnInOtherwiseSendInExpression(SLDeadCodeEliminationTestClass * self_in_methodWithUnusedVariableInCaseOfAndReturnInOtherwiseSendInExpression)
+{
+	switch (method(self_in_methodWithUnusedVariableInCaseOfAndReturnInOtherwiseSendInExpression, 3)) {
+		default:
+		{
+			{
+				return;
+			}
+		}
+	}
+	{
+		return;
+	}
+}'
+]
+
+{ #category : 'unused-leaf-in-switch-no-send-in-expression' }
+SLDeadCodeEliminationTest >> testMethodWithUnusedVariableInCaseOfAndUnusedVariableInOtherwiseNoSendInExpression [
+	"we need to use prepareMethodIn to build switch node, the case and the otherwise all have unused variable, the node is suppressed"
+
+	| translation tMethod |
+	tMethod := ccg methodNamed:
+		           #methodWithUnusedVariableInCaseOfAndUnusedVariableInOtherwiseNoSendInExpression:.
+	tMethod prepareMethodIn: ccg.
+
+	ccg currentMethod: tMethod.
+	sLDeadCodeEliminationVisitor visit: tMethod parseTree.
+	tMethod removeUnusedTempsAndNilIfRequiredIn: ccg.
+
+
+	translation := self translate: tMethod.
+	translation := translation trimBoth.
+
+	self
+		assert: translation
+		equals:
+			'/* SLDeadCodeEliminationTestClass>>#methodWithUnusedVariableInCaseOfAndUnusedVariableInOtherwiseNoSendInExpression: */
+static void
+methodWithUnusedVariableInCaseOfAndUnusedVariableInOtherwiseNoSendInExpression(SLDeadCodeEliminationTestClass * self_in_methodWithUnusedVariableInCaseOfAndUnusedVariableInOtherwiseNoSendInExpression, sqInt anInt)
+{
+	{
+		return;
+	}
+}'
+]
+
+{ #category : 'unused-leaf-in-switch-send-in-expression' }
+SLDeadCodeEliminationTest >> testMethodWithUnusedVariableInCaseOfAndUnusedVariableInOtherwiseSendInExpression [
+	"we need to use prepareMethodIn to build switch node, the cases and the otherwise all have unused variable, the node is suppressed but the message call is kept"
+
+	| translation tMethod |
+	tMethod := ccg methodNamed:
+		           #methodWithUnusedVariableInCaseOfAndUnusedVariableInOtherwiseSendInExpression.
+	tMethod prepareMethodIn: ccg.
+
+	ccg currentMethod: tMethod.
+	sLDeadCodeEliminationVisitor visit: tMethod parseTree.
+	tMethod removeUnusedTempsAndNilIfRequiredIn: ccg.
+
+
+	translation := self translate: tMethod.
+	translation := translation trimBoth.
+
+	self
+		assert: translation
+		equals:
+			'/* SLDeadCodeEliminationTestClass>>#methodWithUnusedVariableInCaseOfAndUnusedVariableInOtherwiseSendInExpression */
+static void
+methodWithUnusedVariableInCaseOfAndUnusedVariableInOtherwiseSendInExpression(SLDeadCodeEliminationTestClass * self_in_methodWithUnusedVariableInCaseOfAndUnusedVariableInOtherwiseSendInExpression)
+{
+	{
+		method(self_in_methodWithUnusedVariableInCaseOfAndUnusedVariableInOtherwiseSendInExpression, 3);
+	}
+	{
+		return;
+	}
+}'
+]
+
+{ #category : 'unused-leaf-in-switch-no-send-in-expression' }
+SLDeadCodeEliminationTest >> testMethodWithUnusedVariableInCaseOfNoSendInExpression [
+	"we need to use prepareMethodIn to build switch node, the cases all have unused variable, only the default remains "
+
+	| translation tMethod |
+	tMethod := ccg methodNamed:
+		           #methodWithUnusedVariableInCaseOfNoSendInExpression:.
+	tMethod prepareMethodIn: ccg.
+
+	ccg currentMethod: tMethod.
+	sLDeadCodeEliminationVisitor visit: tMethod parseTree.
+	tMethod removeUnusedTempsAndNilIfRequiredIn: ccg.
+
+
+	translation := self translate: tMethod.
+	translation := translation trimBoth.
+
+	self
+		assert: translation
+		equals:
+			'/* SLDeadCodeEliminationTestClass>>#methodWithUnusedVariableInCaseOfNoSendInExpression: */
+static void
+methodWithUnusedVariableInCaseOfNoSendInExpression(SLDeadCodeEliminationTestClass * self_in_methodWithUnusedVariableInCaseOfNoSendInExpression, sqInt anInt)
+{
+	switch (anInt) {
+		default:
+		error("Case not found and no otherwise clause");
+	}
+	{
+		return;
+	}
+}'
+]
+
+{ #category : 'unused-leaf-in-switch-send-in-expression' }
+SLDeadCodeEliminationTest >> testMethodWithUnusedVariableInCaseOfSendInExpression [
+	"we need to use prepareMethodIn to build switch node, the cases are empty only the default remains "
+
+	| translation tMethod |
+	tMethod := ccg methodNamed:
+		           #methodWithUnusedVariableInCaseOfSendInExpression.
+	tMethod prepareMethodIn: ccg.
+
+	ccg currentMethod: tMethod.
+	sLDeadCodeEliminationVisitor visit: tMethod parseTree.
+	tMethod removeUnusedTempsAndNilIfRequiredIn: ccg.
+
+
+	translation := self translate: tMethod.
+	translation := translation trimBoth.
+
+	self
+		assert: translation
+		equals:
+			'/* SLDeadCodeEliminationTestClass>>#methodWithUnusedVariableInCaseOfSendInExpression */
+static void
+methodWithUnusedVariableInCaseOfSendInExpression(SLDeadCodeEliminationTestClass * self_in_methodWithUnusedVariableInCaseOfSendInExpression)
+{
+	switch (method(self_in_methodWithUnusedVariableInCaseOfSendInExpression, 3)) {
+		default:
+		error("Case not found and no otherwise clause");
+	}
 	{
 		return;
 	}
@@ -2399,6 +3562,90 @@ methodWithUnusedVariableInIfTrueSendInReceiver(SLDeadCodeEliminationTestClass * 
 		method(self_in_methodWithUnusedVariableInIfTrueSendInReceiver);
 		method(self_in_methodWithUnusedVariableInIfTrueSendInReceiver, 3);
 		method(self_in_methodWithUnusedVariableInIfTrueSendInReceiver, method(self_in_methodWithUnusedVariableInIfTrueSendInReceiver));
+	}
+	{
+		return;
+	}
+}'
+]
+
+{ #category : 'unused-leaf-in-switch-no-send-in-expression' }
+SLDeadCodeEliminationTest >> testMethodWithUnusedVariableReturnInCaseOfAndUnusedVariableInOtherwiseNoSendInExpression [
+	"we need to use prepareMethodIn to build switch node, the case with unused variable is suppressed, the default is kept empty "
+
+	| translation tMethod |
+	tMethod := ccg methodNamed:
+		           #methodWithUnusedVariableReturnInCaseOfAndUnusedVariableInOtherwiseNoSendInExpression:.
+	tMethod prepareMethodIn: ccg.
+
+	ccg currentMethod: tMethod.
+	sLDeadCodeEliminationVisitor visit: tMethod parseTree.
+	tMethod removeUnusedTempsAndNilIfRequiredIn: ccg.
+
+
+	translation := self translate: tMethod.
+	translation := translation trimBoth.
+
+	self
+		assert: translation
+		equals:
+			'/* SLDeadCodeEliminationTestClass>>#methodWithUnusedVariableReturnInCaseOfAndUnusedVariableInOtherwiseNoSendInExpression: */
+static void
+methodWithUnusedVariableReturnInCaseOfAndUnusedVariableInOtherwiseNoSendInExpression(SLDeadCodeEliminationTestClass * self_in_methodWithUnusedVariableReturnInCaseOfAndUnusedVariableInOtherwiseNoSendInExpression, sqInt anInt)
+{
+	switch (anInt) {
+		case 6:
+		{
+			{
+				return;
+			}
+		}
+		break;
+		default:
+		{
+		}
+	}
+	{
+		return;
+	}
+}'
+]
+
+{ #category : 'unused-leaf-in-switch-send-in-expression' }
+SLDeadCodeEliminationTest >> testMethodWithUnusedVariableReturnInCaseOfAndUnusedVariableInOtherwiseSendInExpression [
+	"we need to use prepareMethodIn to build switch node, the case with unused variable is supressed and the otherwise is kept empty"
+
+	| translation tMethod |
+	tMethod := ccg methodNamed:
+		           #methodWithUnusedVariableReturnInCaseOfAndUnusedVariableInOtherwiseSendInExpression.
+	tMethod prepareMethodIn: ccg.
+
+	ccg currentMethod: tMethod.
+	sLDeadCodeEliminationVisitor visit: tMethod parseTree.
+	tMethod removeUnusedTempsAndNilIfRequiredIn: ccg.
+
+
+	translation := self translate: tMethod.
+	translation := translation trimBoth.
+
+	self
+		assert: translation
+		equals:
+			'/* SLDeadCodeEliminationTestClass>>#methodWithUnusedVariableReturnInCaseOfAndUnusedVariableInOtherwiseSendInExpression */
+static void
+methodWithUnusedVariableReturnInCaseOfAndUnusedVariableInOtherwiseSendInExpression(SLDeadCodeEliminationTestClass * self_in_methodWithUnusedVariableReturnInCaseOfAndUnusedVariableInOtherwiseSendInExpression)
+{
+	switch (method(self_in_methodWithUnusedVariableReturnInCaseOfAndUnusedVariableInOtherwiseSendInExpression, 3)) {
+		case 6:
+		{
+			{
+				return;
+			}
+		}
+		break;
+		default:
+		{
+		}
 	}
 	{
 		return;

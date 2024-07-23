@@ -447,7 +447,7 @@ TParseNode >> removeAssertions [
 	"default: do nothing"
 ]
 
-{ #category : 'transformations' }
+{ #category : 'dead-code-elimination' }
 TParseNode >> removeUnusedNodesInBranch: aChild [
 	"this method should be only called when cleaning an AST tree after an unused variable was found"
 

@@ -56,13 +56,54 @@ SLDeadCodeEliminationTestClass >> methodWithConstantInAssignment [
 
 	<returnTypeC: #void>
 	| i |
+	5.
 	i := 5
 ]
 
 { #category : 'used-leaf-in-return' }
 SLDeadCodeEliminationTestClass >> methodWithConstantInReturn [
-
+	5.
 	^ 5 
+]
+
+{ #category : 'empty-switch-no-send-in-expression' }
+SLDeadCodeEliminationTestClass >> methodWithEmptyCaseOfNoSendInReceiver: anInt [
+
+	<returnTypeC: #void>
+	anInt caseOf: {
+			([ 4 ] -> [  ]).
+			([ 6 ] -> [  ]) }
+]
+
+{ #category : 'empty-switch-no-send-in-expression' }
+SLDeadCodeEliminationTestClass >> methodWithEmptyCaseOfOtherwiseNoSendInReceiver: anInt [
+
+	<returnTypeC: #void>
+	anInt
+		caseOf: {
+				([ 1 ] -> [  ]).
+				([ 2 ] -> [  ]) }
+		otherwise: [  ]
+]
+
+{ #category : 'empty-switch-send-in-expression' }
+SLDeadCodeEliminationTestClass >> methodWithEmptyCaseOfOtherwiseSendInReceiver [
+
+	<returnTypeC: #void>
+	(self method: 2)
+		caseOf: {
+				([ 1 ] -> [  ]).
+				([ 2 ] -> [  ]) }
+		otherwise: [  ]
+]
+
+{ #category : 'empty-switch-send-in-expression' }
+SLDeadCodeEliminationTestClass >> methodWithEmptyCaseOfSendInReceiver [
+
+	<returnTypeC: #void>
+	self method caseOf: {
+			([ 4 ] -> [  ]).
+			([ 6 ] -> [  ]) }
 ]
 
 { #category : 'reduce-boolean-conditional-no-send-in-receiver' }
@@ -280,12 +321,14 @@ SLDeadCodeEliminationTestClass >> methodWithInstanceVariableInAssignment [
 
 	<returnTypeC: #void>
 	| i |
+	instancesVariable.
 	i := instancesVariable
 ]
 
 { #category : 'used-leaf-in-return' }
 SLDeadCodeEliminationTestClass >> methodWithInstanceVariableInReturn [
 
+	instancesVariable.
 	^ instancesVariable
 ]
 
@@ -294,6 +337,87 @@ SLDeadCodeEliminationTestClass >> methodWithUnusedConstant [
 
 	<returnTypeC: #void>
 	5
+]
+
+{ #category : 'unused-leaf-in-switch-no-send-in-expression' }
+SLDeadCodeEliminationTestClass >> methodWithUnusedConstantAndReturnInCaseOfNoSendInExpression: anInt [
+
+	<returnTypeC: #void>
+	anInt caseOf: {
+			([ 5 ] -> [ 1 ]).
+			([ 6 ] -> [ ^ 2 ]) }
+]
+
+{ #category : 'unused-leaf-in-switch-send-in-expression' }
+SLDeadCodeEliminationTestClass >> methodWithUnusedConstantAndReturnInCaseOfSendInExpression [
+
+	<returnTypeC: #void>
+	(self method: 3) caseOf: {
+			([ 5 ] -> [ 1 ]).
+			([ 6 ] -> [
+			 4.
+			 ^ 2 ]) }
+]
+
+{ #category : 'unused-leaf-in-switch-no-send-in-expression' }
+SLDeadCodeEliminationTestClass >> methodWithUnusedConstantInCaseOfAndReturnInOtherwiseNoSendInExpression: anInt [
+
+	<returnTypeC: #void>
+	anInt
+		caseOf: {
+				([ 5 ] -> [ nil ]).
+				([ 6 ] -> [ 2 ]) }
+		otherwise: [ 
+			2.
+			^ 5 ]
+]
+
+{ #category : 'unused-leaf-in-switch-send-in-expression' }
+SLDeadCodeEliminationTestClass >> methodWithUnusedConstantInCaseOfAndReturnInOtherwiseSendInExpression [
+
+	<returnTypeC: #void>
+	(self method: 3)
+		caseOf: {
+				([ 5 ] -> [ 1 ]).
+				([ 6 ] -> [ 2 ]) }
+		otherwise: [
+			4.
+			^ 5 ]
+]
+
+{ #category : 'unused-leaf-in-switch-no-send-in-expression' }
+SLDeadCodeEliminationTestClass >> methodWithUnusedConstantInCaseOfAndUnusedConstantInOtherwiseNoSendInExpression: anInt [
+
+	<returnTypeC: #void>
+	anInt caseOf: {
+			([ 5 ] -> [ 1 ]).
+			([ 6 ] -> [ 2 ]) }
+			otherwise: [ 5 ]
+]
+
+{ #category : 'unused-leaf-in-switch-send-in-expression' }
+SLDeadCodeEliminationTestClass >> methodWithUnusedConstantInCaseOfAndUnusedConstantInOtherwiseSendInExpression [
+
+	<returnTypeC: #void>
+	(self method: 3)
+		caseOf: {
+				([ 5 ] -> [ 1 ]).
+				([ 6 ] -> [ 2 ]) }
+		otherwise: [ 5 ]
+]
+
+{ #category : 'unused-leaf-in-switch-no-send-in-expression' }
+SLDeadCodeEliminationTestClass >> methodWithUnusedConstantInCaseOfNoSendInExpression: anInt [
+
+	<returnTypeC: #void>
+	anInt caseOf: { ([ 5 ] -> [ 1 ]) }
+]
+
+{ #category : 'unused-leaf-in-switch-send-in-expression' }
+SLDeadCodeEliminationTestClass >> methodWithUnusedConstantInCaseOfSendInExpression [
+
+	<returnTypeC: #void>
+	(self method: 3) caseOf: { ([ 5 ] -> [ 1 ]) }
 ]
 
 { #category : 'unused-leaf-in-c-coerce' }
@@ -427,11 +551,121 @@ SLDeadCodeEliminationTestClass >> methodWithUnusedConstantInIfTrueSendInReceiver
 		ifTrue: [ 5 ]
 ]
 
+{ #category : 'unused-leaf-in-switch-no-send-in-expression' }
+SLDeadCodeEliminationTestClass >> methodWithUnusedConstantReturnInCaseOfAndUnusedConstantInOtherwiseNoSendInExpression: anInt [
+
+	<returnTypeC: #void>
+	anInt
+		caseOf: {
+				([ 5 ] -> [ 1 ]).
+				([ 6 ] -> [
+				 5.
+				 ^ 2 ]) }
+		otherwise: [ 5 ]
+]
+
+{ #category : 'unused-leaf-in-switch-send-in-expression' }
+SLDeadCodeEliminationTestClass >> methodWithUnusedConstantReturnInCaseOfAndUnusedConstantInOtherwiseSendInExpression [
+
+	<returnTypeC: #void>
+	(self method: 3)
+		caseOf: {
+				([ 5 ] -> [ 1 ]).
+				([ 6 ] -> [
+				 3.
+				 ^ 2 ]) }
+		otherwise: [ 5 ]
+]
+
 { #category : 'unused-leaf' }
 SLDeadCodeEliminationTestClass >> methodWithUnusedInstanceVariable [
 
 	<returnTypeC: #void>
 	instancesVariable
+]
+
+{ #category : 'unused-leaf-in-switch-no-send-in-expression' }
+SLDeadCodeEliminationTestClass >> methodWithUnusedInstanceVariableAndReturnInCaseOfNoSendInExpression: anInt [
+
+	<returnTypeC: #void>
+	anInt caseOf: {
+			([ 5 ] -> [ instancesVariable ]).
+			([ 6 ] -> [
+			 instancesVariable.
+			 ^ instancesVariable ]) }
+]
+
+{ #category : 'unused-leaf-in-switch-send-in-expression' }
+SLDeadCodeEliminationTestClass >> methodWithUnusedInstanceVariableAndReturnInCaseOfSendInExpression [
+
+	<returnTypeC: #void>
+	(self method: 3) caseOf: {
+			([ 5 ] -> [ instancesVariable ]).
+			([ 6 ] -> [
+			 instancesVariable.
+			 ^ instancesVariable ]) }
+]
+
+{ #category : 'unused-leaf-in-switch-no-send-in-expression' }
+SLDeadCodeEliminationTestClass >> methodWithUnusedInstanceVariableInCaseOfAndReturnInOtherwiseNoSendInExpression: anInt [
+
+	<returnTypeC: #void>
+	anInt
+		caseOf: {
+				([ 5 ] -> [ instancesVariable ]).
+				([ 6 ] -> [ instancesVariable ]) }
+		otherwise: [
+			instancesVariable.
+			^ instancesVariable ]
+]
+
+{ #category : 'unused-leaf-in-switch-send-in-expression' }
+SLDeadCodeEliminationTestClass >> methodWithUnusedInstanceVariableInCaseOfAndReturnInOtherwiseSendInExpression [
+
+	<returnTypeC: #void>
+	(self method: 3)
+		caseOf: {
+				([ 5 ] -> [ instancesVariable ]).
+				([ 6 ] -> [ instancesVariable ]) }
+		otherwise: [
+			instancesVariable.
+			^ instancesVariable ]
+]
+
+{ #category : 'unused-leaf-in-switch-no-send-in-expression' }
+SLDeadCodeEliminationTestClass >> methodWithUnusedInstanceVariableInCaseOfAndUnusedInstanceVariableInOtherwiseNoSendInExpression: anInt [
+
+	<returnTypeC: #void>
+	anInt
+		caseOf: {
+				([ 5 ] -> [ instancesVariable ]).
+				([ 6 ] -> [ instancesVariable ]) }
+		otherwise: [ instancesVariable ]
+]
+
+{ #category : 'unused-leaf-in-switch-send-in-expression' }
+SLDeadCodeEliminationTestClass >> methodWithUnusedInstanceVariableInCaseOfAndUnusedInstanceVariableInOtherwiseSendInExpression [
+
+	<returnTypeC: #void>
+	(self method: 3)
+		caseOf: {
+				([ 5 ] -> [ instancesVariable ]).
+				([ 6 ] -> [ instancesVariable ]) }
+		otherwise: [ instancesVariable ]
+]
+
+{ #category : 'unused-leaf-in-switch-no-send-in-expression' }
+SLDeadCodeEliminationTestClass >> methodWithUnusedInstanceVariableInCaseOfNoSendInExpression: anInt [
+
+	<returnTypeC: #void>
+	anInt caseOf: { ([ 5 ] -> [ instancesVariable ]) }
+]
+
+{ #category : 'unused-leaf-in-switch-send-in-expression' }
+SLDeadCodeEliminationTestClass >> methodWithUnusedInstanceVariableInCaseOfSendInExpression [
+
+	<returnTypeC: #void>
+	(self method: 3) caseOf: { ([ 5 ] -> [ instancesVariable ]) }
 ]
 
 { #category : 'unused-leaf-in-c-coerce' }
@@ -567,12 +801,130 @@ SLDeadCodeEliminationTestClass >> methodWithUnusedInstanceVariableInIfTrueSendIn
 		ifTrue: [ instancesVariable ]
 ]
 
+{ #category : 'unused-leaf-in-switch-no-send-in-expression' }
+SLDeadCodeEliminationTestClass >> methodWithUnusedInstanceVariableReturnInCaseOfAndUnusedInstanceVariableInOtherwiseNoSendInExpression: anInt [
+
+	<returnTypeC: #void>
+	anInt
+		caseOf: {
+				([ 5 ] -> [ instancesVariable ]).
+				([ 6 ] -> [
+				 instancesVariable.
+				 ^ instancesVariable ]) }
+		otherwise: [ instancesVariable ]
+]
+
+{ #category : 'unused-leaf-in-switch-send-in-expression' }
+SLDeadCodeEliminationTestClass >> methodWithUnusedInstanceVariableReturnInCaseOfAndUnusedInstanceVariableInOtherwiseSendInExpression [
+
+	<returnTypeC: #void>
+	(self method: 3)
+		caseOf: {
+				([ 5 ] -> [ instancesVariable ]).
+				([ 6 ] -> [
+				 instancesVariable.
+				 ^ instancesVariable ]) }
+		otherwise: [ instancesVariable ]
+]
+
 { #category : 'unused-leaf' }
 SLDeadCodeEliminationTestClass >> methodWithUnusedVariable [
 
 	<returnTypeC: #void>
 	| i |
 	i
+]
+
+{ #category : 'unused-leaf-in-switch-no-send-in-expression' }
+SLDeadCodeEliminationTestClass >> methodWithUnusedVariableAndReturnInCaseOfNoSendInExpression: anInt [
+
+	<returnTypeC: #void>
+	| i |
+	anInt caseOf: {
+			([ 5 ] -> [ i ]).
+			([ 6 ] -> [
+			 i.
+			 ^ i ]) }
+]
+
+{ #category : 'unused-leaf-in-switch-send-in-expression' }
+SLDeadCodeEliminationTestClass >> methodWithUnusedVariableAndReturnInCaseOfSendInExpression [
+
+	<returnTypeC: #void>
+	| i |
+	(self method: 3) caseOf: {
+			([ 5 ] -> [ i ]).
+			([ 6 ] -> [ 
+				i.
+				^ i ]) }
+]
+
+{ #category : 'unused-leaf-in-switch-no-send-in-expression' }
+SLDeadCodeEliminationTestClass >> methodWithUnusedVariableInCaseOfAndReturnInOtherwiseNoSendInExpression: anInt [
+
+	<returnTypeC: #void>
+	| i |
+	anInt
+		caseOf: {
+				([ 5 ] -> [ i ]).
+				([ 6 ] -> [ i ]) }
+		otherwise: [
+			i.
+			^ i ]
+]
+
+{ #category : 'unused-leaf-in-switch-send-in-expression' }
+SLDeadCodeEliminationTestClass >> methodWithUnusedVariableInCaseOfAndReturnInOtherwiseSendInExpression [
+
+	<returnTypeC: #void>
+	| i |
+	(self method: 3)
+		caseOf: {
+				([ 5 ] -> [ i ]).
+				([ 6 ] -> [ i ]) }
+		otherwise: [
+			i.
+			^ i ]
+]
+
+{ #category : 'unused-leaf-in-switch-no-send-in-expression' }
+SLDeadCodeEliminationTestClass >> methodWithUnusedVariableInCaseOfAndUnusedVariableInOtherwiseNoSendInExpression: anInt [
+
+	<returnTypeC: #void>
+	| i |
+	anInt
+		caseOf: {
+				([ 5 ] -> [ i ]).
+				([ 6 ] -> [ i ]) }
+		otherwise: [ i ]
+]
+
+{ #category : 'unused-leaf-in-switch-send-in-expression' }
+SLDeadCodeEliminationTestClass >> methodWithUnusedVariableInCaseOfAndUnusedVariableInOtherwiseSendInExpression [
+
+	<returnTypeC: #void>
+	| i |
+	(self method: 3)
+		caseOf: {
+				([ 5 ] -> [ i ]).
+				([ 6 ] -> [ i ]) }
+		otherwise: [ i ]
+]
+
+{ #category : 'unused-leaf-in-switch-no-send-in-expression' }
+SLDeadCodeEliminationTestClass >> methodWithUnusedVariableInCaseOfNoSendInExpression: anInt [
+
+	<returnTypeC: #void>
+	| i |
+	anInt caseOf: { ([ 5 ] -> [ i ]) }
+]
+
+{ #category : 'unused-leaf-in-switch-send-in-expression' }
+SLDeadCodeEliminationTestClass >> methodWithUnusedVariableInCaseOfSendInExpression [
+
+	<returnTypeC: #void>
+	| i |
+	(self method: 3) caseOf: { ([ 5 ] -> [ i ]) }
 ]
 
 { #category : 'unused-leaf-in-c-coerce' }
@@ -726,16 +1078,48 @@ SLDeadCodeEliminationTestClass >> methodWithUnusedVariableInIfTrueSendInReceiver
 		ifTrue: [ i ]
 ]
 
+{ #category : 'unused-leaf-in-switch-no-send-in-expression' }
+SLDeadCodeEliminationTestClass >> methodWithUnusedVariableReturnInCaseOfAndUnusedVariableInOtherwiseNoSendInExpression: anInt [
+
+	<returnTypeC: #void>
+	| i |
+	anInt
+		caseOf: {
+				([ 5 ] -> [ i ]).
+				([ 6 ] -> [
+				 i.
+				 ^ i ]) }
+		otherwise: [ i ]
+]
+
+{ #category : 'unused-leaf-in-switch-send-in-expression' }
+SLDeadCodeEliminationTestClass >> methodWithUnusedVariableReturnInCaseOfAndUnusedVariableInOtherwiseSendInExpression [
+
+	<returnTypeC: #void>
+	| i |
+	(self method: 3)
+		caseOf: {
+				([ 5 ] -> [ i ]).
+				([ 6 ] -> [
+				 i.
+				 ^ i ]) }
+		otherwise: [ i ]
+]
+
 { #category : 'used-leaf-in-assignment' }
 SLDeadCodeEliminationTestClass >> methodWithVariableInAssignment [
 
 	<returnTypeC: #void>
 	| i j |
+	i.
+	j.
 	i := j
 ]
 
 { #category : 'used-leaf-in-return' }
 SLDeadCodeEliminationTestClass >> methodWithVariableInReturn [
+
 	| i |
+	i.
 	^ i
 ]

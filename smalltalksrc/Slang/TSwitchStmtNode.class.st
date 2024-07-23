@@ -392,6 +392,7 @@ TSwitchStmtNode >> otherwiseOrNil [
 TSwitchStmtNode >> otherwiseOrNil: anObject [
 	"Set the value of otherwiseOrNil"
 
+	anObject ifNotNil: [ anObject parent: self ].
 	otherwiseOrNil := anObject
 ]
 
@@ -448,16 +449,23 @@ TSwitchStmtNode >> removeAssertions [
 		[otherwiseOrNil removeAssertions]
 ]
 
-{ #category : 'transformations' }
+{ #category : 'dead-code-elimination' }
 TSwitchStmtNode >> removeUnusedNodesInBranch: aChild [
-	"called when inlining happens, supress a case if it contains only an unused expression"
+	"when removing a node from a switch, we have to be careful of if it comes from a caseOf: or a caseOf:otherwise:. if it comes from a caseOf:, otherwise is nil and must be kept it will be translated as a no case found error. To indicate that otherwise does nothing Slang use a TStatementListNode with a nil in it, hence the following code"
 
-	otherwiseOrNil = aChild ifTrue: [
-		otherwiseOrNil := nil.
-		^ self ].
-	cases := cases select: [ :each | each second ~= aChild ].
-	self children isEmpty ifTrue: [
-		self parent removeUnusedNodesInBranch: self ]
+	(otherwiseOrNil isNotNil and:[ otherwiseOrNil isNilConstantStmtListNode not and: [ otherwiseOrNil = aChild ]]) ifTrue: [
+		otherwiseOrNil := TStatementListNode new statements:
+			                  (TConstantNode new setValue: nil) ].
+	cases := cases select: [ :each | each second ~~ aChild ].
+	"check if we can suppress the node"
+	self cases isEmpty
+		ifTrue: [
+			otherwiseOrNil ifNil: [ "we're from a simple caseOf: so we're keeping otherwise"
+				^ self ].
+			otherwiseOrNil isNilConstantStmtListNode ifTrue: [
+				self transformExpressionAfterEmptyCasesAndOtherwise.
+				self parent removeUnusedNodesInBranch: self ] ]
+		ifFalse: [ ^ self ]
 ]
 
 { #category : 'transformations' }
@@ -487,4 +495,17 @@ TSwitchStmtNode >> switchVariable: anObject [
 	"Set the value of switchVariable"
 
 	switchVariable := anObject
+]
+
+{ #category : 'dead-code-elimination' }
+TSwitchStmtNode >> transformExpressionAfterEmptyCasesAndOtherwise [
+
+	| sendToCollect |
+	expression isSend ifFalse: [ ^ self ].
+	sendToCollect := OrderedCollection new.
+	expression collectSendInSelf: sendToCollect.
+	sendToCollect isNotEmpty ifTrue: [
+		self parent
+			replaceChild: self
+			with: (TStatementListNode new statements: sendToCollect) ]
 ]

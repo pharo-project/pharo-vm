@@ -24,7 +24,7 @@ SLDeadCodeEliminationVisitor >> isStructAccessorWithNoSideEffect: aSendNode [
 	^ (codeGenerator isStructSend: aSendNode) and: [ aSendNode numArgs = 0 ]
 ]
 
-{ #category : 'dead-code-elimimation' }
+{ #category : 'dead-code-elimination' }
 SLDeadCodeEliminationVisitor >> removeDeadCodeUsing: aCodeGen [
 
 	codeGenerator := aCodeGen.
@@ -37,7 +37,6 @@ SLDeadCodeEliminationVisitor >> removeDeadCodeUsing: aCodeGen [
 SLDeadCodeEliminationVisitor >> removeUnusedNodesInBranch: aNode [
 	"supressing an unused expression can leave the parent empty, the method will recursively try to supress empty node "
 
-	aNode parent isTMethod ifTrue: [ ^ self ].
 	aNode parent removeUnusedNodesInBranch: aNode
 ]
 
@@ -90,13 +89,16 @@ SLDeadCodeEliminationVisitor >> visitSendNode: aSendNode [
 SLDeadCodeEliminationVisitor >> visitStatementListNode: aStatementListNode [
 
 	aStatementListNode children do: [ :subNode |
-		subNode ifNotNil: [ self visit: subNode ] ]
+		self visit: subNode ]
 ]
 
 { #category : 'visiting' }
 SLDeadCodeEliminationVisitor >> visitSwitchStatementNode: aSwitchStatementNode [
-
-	aSwitchStatementNode cases do: [ :case | self visit: case second ]
+	
+	aSwitchStatementNode cases do: [ :case | self visit: case second ].
+	(aSwitchStatementNode otherwiseOrNil isNil or: [
+		 aSwitchStatementNode otherwiseOrNil isNilConstantStmtListNode ]) ifTrue: [ ^ self ].
+	self visit: aSwitchStatementNode otherwiseOrNil 
 ]
 
 { #category : 'visiting' }

@@ -272,7 +272,7 @@ TSendNode >> children [
 	^ { receiver } , arguments
 ]
 
-{ #category : 'transformations' }
+{ #category : 'dead-code-elimination' }
 TSendNode >> collectSendInArguments: sendToCollect [
 	arguments do: [ :child |
 		child isSend
@@ -281,7 +281,7 @@ TSendNode >> collectSendInArguments: sendToCollect [
 	
 ]
 
-{ #category : 'transformations' }
+{ #category : 'dead-code-elimination' }
 TSendNode >> collectSendInSelf: sendToCollect [
 	"collect send message in the receiver of a conditional send, in we encounter a comparaison operator, we split it and iterate through its left and right values to avoid having unused expression result"
 
@@ -414,7 +414,7 @@ TSendNode >> isSameAs: aTParseNode [
 	^ true
 ]
 
-{ #category : 'transformations' }
+{ #category : 'dead-code-elimination' }
 TSendNode >> isSelectorWithNoSideEffect [
 	^ #(#= #== #< #<= #> #>=) includes: selector
 ]
@@ -545,7 +545,7 @@ TSendNode >> receiver: aNode [
 	aNode parent: self
 ]
 
-{ #category : 'transformations' }
+{ #category : 'dead-code-elimination' }
 TSendNode >> reduceConditionalSend: branchIndex [
 	"branch index is either 1 or 2, called when an argument of a conditional send have been removed, if the method has multiple branches we can reduce the branch number to match the transformation"
 
@@ -562,7 +562,7 @@ TSendNode >> removeAssertions [
 	arguments do: [:arg | arg removeAssertions].
 ]
 
-{ #category : 'transformations' }
+{ #category : 'dead-code-elimination' }
 TSendNode >> removeUnusedNodesInBranch: aChild [
 	"this method should be only called when cleaning an AST tree after an unused expression was found meaning the method should be a conditional send,a cCoerce or a struct accessor. 
 	If the selector is a conditional and only one branch become empty, we can elude it.
@@ -703,7 +703,7 @@ TSendNode >> structTargetKindIn: aCodeGen [
 	^nil
 ]
 
-{ #category : 'transformations' }
+{ #category : 'dead-code-elimination' }
 TSendNode >> transformReceiverAfterEmptyArguments [
 
 	| sendToCollect |

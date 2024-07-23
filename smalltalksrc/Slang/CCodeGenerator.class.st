@@ -2952,9 +2952,9 @@ CCodeGenerator >> generateCASTWhileForeverBreakIf: boolean loop: tast [
 { #category : 'CAST translation' }
 CCodeGenerator >> generateCASTWhileTrue: tast [
 
-	tast receiver statements size <= 1 ifTrue: [ 
+	tast receiver statements size <= 1 ifTrue: [
 		^ self generateCASTWhile: true loop: tast ].
-	tast arguments first isNilStmtListNode ifTrue: [ 
+	tast arguments first isNilStmtListNode ifTrue: [
 		^ self generateCASTDoWhileTrue: tast ].
 	^ self generateCASTWhileForeverBreakIf: false loop: tast
 ]
