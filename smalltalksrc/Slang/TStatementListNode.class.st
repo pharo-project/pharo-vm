@@ -373,12 +373,11 @@ TStatementListNode >> initialize [
 ]
 
 { #category : 'testing' }
-TStatementListNode >> isNilConstantStmtListNode [
+TStatementListNode >> isEmptyStmtListNode [
+	"return true if the statement node is empty or has just a nil in it"
 
-	| stmt |
-	statements size = 1 ifFalse: [ ^ false ].
-	stmt := statements at: 1.
-	^ stmt isConstant and: [ stmt value isNil ]
+	statements isEmpty ifTrue: [ ^ true ].
+	^ false
 ]
 
 { #category : 'testing' }
@@ -604,7 +603,6 @@ TStatementListNode >> statements [
 { #category : 'accessing' }
 TStatementListNode >> statements: anObject [
 
-	| oldStatements |
 	statements := anObject asOrderedCollection.
 	statements do: [ :e | e parent: self ]
 ]

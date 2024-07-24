@@ -93,11 +93,10 @@ SLDeadCodeEliminationVisitor >> visitStatementListNode: aStatementListNode [
 
 { #category : 'visiting' }
 SLDeadCodeEliminationVisitor >> visitSwitchStatementNode: aSwitchStatementNode [
-	
+
 	aSwitchStatementNode cases do: [ :case | self visit: case second ].
-	(aSwitchStatementNode otherwiseOrNil isNil or: [
-		 aSwitchStatementNode otherwiseOrNil isNilConstantStmtListNode ]) ifTrue: [ ^ self ].
-	self visit: aSwitchStatementNode otherwiseOrNil 
+	aSwitchStatementNode otherwiseOrNil ifNil: [ ^ self ].
+	self visit: aSwitchStatementNode otherwiseOrNil
 ]
 
 { #category : 'visiting' }

@@ -274,11 +274,9 @@ TSendNode >> children [
 
 { #category : 'dead-code-elimination' }
 TSendNode >> collectSendInArguments: sendToCollect [
+
 	arguments do: [ :child |
-		child isSend
-		ifTrue: [ child collectSendInSelf: sendToCollect ]
-		 ] 
-	
+		child isSend ifTrue: [ child collectSendInSelf: sendToCollect ] ]
 ]
 
 { #category : 'dead-code-elimination' }
@@ -549,8 +547,6 @@ TSendNode >> receiver: aNode [
 TSendNode >> reduceConditionalSend: branchIndex [
 	"branch index is either 1 or 2, called when an argument of a conditional send have been removed, if the method has multiple branches we can reduce the branch number to match the transformation"
 
-	(#( #ifTrue:ifFalse: #ifFalse:ifTrue: #ifNil:ifNotNil:
-	    #ifNotNil:ifNil: ) includes: self selector) ifFalse: [ ^ self ].
 	branchIndex = 1
 		ifTrue: [ self selector: self selector keywords second ]
 		ifFalse: [ self selector: self selector keywords first ]
@@ -705,6 +701,7 @@ TSendNode >> structTargetKindIn: aCodeGen [
 
 { #category : 'dead-code-elimination' }
 TSendNode >> transformReceiverAfterEmptyArguments [
+	"keep any send that isn't a comparaison in the receiver to the parent of self. Since this method is called in a dead code cleaning processus the parent should only be a statement list or another conditional send"
 
 	| sendToCollect |
 	receiver isSend ifFalse: [ ^ self ].
@@ -713,7 +710,7 @@ TSendNode >> transformReceiverAfterEmptyArguments [
 	sendToCollect isNotEmpty ifTrue: [
 		self parent
 			replaceChild: self
-			with: (TStatementListNode new statements: sendToCollect) ]
+			with: (TStatementListNode statements: sendToCollect) ]
 ]
 
 { #category : 'type inference' }

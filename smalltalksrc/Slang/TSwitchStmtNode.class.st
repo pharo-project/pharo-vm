@@ -452,21 +452,16 @@ TSwitchStmtNode >> removeAssertions [
 
 { #category : 'dead-code-elimination' }
 TSwitchStmtNode >> removeUnusedNodesInBranch: aChild [
-	"when removing a node from a switch, we have to be careful of if it comes from a caseOf: or a caseOf:otherwise:. if it comes from a caseOf:, otherwise is nil and must be kept it will be translated as a no case found error. To indicate that otherwise does nothing Slang use a TStatementListNode with a nil in it, hence the following code"
-
-	(otherwiseOrNil isNotNil and:[ otherwiseOrNil isNilConstantStmtListNode not and: [ otherwiseOrNil = aChild ]]) ifTrue: [
-		otherwiseOrNil := TStatementListNode new statements:
-			                  (TConstantNode new setValue: nil) ].
+	"when removing a node from a switch, we have to be careful of if it comes from a caseOf: or a caseOf:otherwise:. if it comes from a caseOf:, otherwise is nil and must be kept it will be translated as a no case found error. To indicate that otherwise does nothing Slang use an empty TStatementListNode, hence the following code"
+	
 	cases := cases select: [ :each | each second ~~ aChild ].
-	"check if we can suppress the node"
-	self cases isEmpty
-		ifTrue: [
-			otherwiseOrNil ifNil: [ "we're from a simple caseOf: so we're keeping otherwise"
-				^ self ].
-			otherwiseOrNil isNilConstantStmtListNode ifTrue: [
-				self transformExpressionAfterEmptyCasesAndOtherwise.
-				self parent removeUnusedNodesInBranch: self ] ]
-		ifFalse: [ ^ self ]
+	self cases isEmpty ifFalse: [ ^ self ].
+	"we're from a caseOf: so we keep the node"
+	otherwiseOrNil ifNil: [ ^ self ].
+	"otherwiseOrNil may have been empty from the start or during the cleaning process, either way the node is now completely empty so we can supress it"
+	otherwiseOrNil isEmptyStmtListNode ifFalse: [ ^ self ].
+	self transformExpressionAfterEmptyCasesAndOtherwise.
+	self parent removeUnusedNodesInBranch: self
 ]
 
 { #category : 'transformations' }
@@ -508,5 +503,5 @@ TSwitchStmtNode >> transformExpressionAfterEmptyCasesAndOtherwise [
 	sendToCollect isNotEmpty ifTrue: [
 		self parent
 			replaceChild: self
-			with: (TStatementListNode new statements: sendToCollect) ]
+			with: (TStatementListNode statements: sendToCollect) ]
 ]
