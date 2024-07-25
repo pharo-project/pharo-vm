@@ -107,7 +107,10 @@ TReturnNode >> children [
 
 { #category : 'transformations' }
 TReturnNode >> copyWithoutReturn [
-	^expression
+
+	(expression isSend and: [ expression selector beginsWith: #cCoerce ])
+		ifTrue: [ ^ expression arguments first ].
+	^ expression
 ]
 
 { #category : 'testing' }
