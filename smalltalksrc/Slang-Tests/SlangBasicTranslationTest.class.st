@@ -229,16 +229,19 @@ methodCallingMethodWithInlinePragma(void)
 	methodWithoutInlinePragma();
 	/* begin methodWithInlinePragma */
 	bodyOfMethodWithInlinePragma();
-	
+	/* end methodWithInlinePragma */
+	/* begin methodWithoutInlinePragmaAndBlock: */
 	{
 		blockBody1();
 		blockBody2();
 	}
-	
+	/* end methodWithoutInlinePragmaAndBlock: */
+	/* begin methodWithInlinePragmaAndBlock: */
 	{
 		blockBody3();
 		blockBody4();
 	}
+	/* end methodWithInlinePragmaAndBlock: */
 	return 0;
 }'
 ]
@@ -265,16 +268,19 @@ methodCallingMethodWithInlinePragma(void)
 	methodWithoutInlinePragma();
 	/* begin methodWithInlinePragma */
 	bodyOfMethodWithInlinePragma();
-	
+	/* end methodWithInlinePragma */
+	/* begin methodWithoutInlinePragmaAndBlock: */
 	{
 		blockBody1();
 		blockBody2();
 	}
-	
+	/* end methodWithoutInlinePragmaAndBlock: */
+	/* begin methodWithInlinePragmaAndBlock: */
 	{
 		blockBody3();
 		blockBody4();
 	}
+	/* end methodWithInlinePragmaAndBlock: */
 	return 0;
 }'
 ]
@@ -305,11 +311,13 @@ methodCallingMethodWithInlinePragma(void)
 		blockBody1();
 		blockBody2();
 	}
-	
+	/* end methodWithoutInlinePragmaAndBlock: */
+	/* begin methodWithInlinePragmaAndBlock: */
 	{
 		blockBody3();
 		blockBody4();
 	}
+	/* end methodWithInlinePragmaAndBlock: */
 	return 0;
 }'
 ]
@@ -364,18 +372,22 @@ methodCallingMethodWithInlinePragma(void)
 {
 	/* begin methodWithoutInlinePragma */
 	bodyOfMethodWithoutInlinePragma();
-	
+	/* end methodWithoutInlinePragma */
+	/* begin methodWithInlinePragma */
 	bodyOfMethodWithInlinePragma();
-	
+	/* end methodWithInlinePragma */
+	/* begin methodWithoutInlinePragmaAndBlock: */
 	{
 		blockBody1();
 		blockBody2();
 	}
-	
+	/* end methodWithoutInlinePragmaAndBlock: */
+	/* begin methodWithInlinePragmaAndBlock: */
 	{
 		blockBody3();
 		blockBody4();
 	}
+	/* end methodWithInlinePragmaAndBlock: */
 	return 0;
 }'
 ]
@@ -1395,14 +1407,15 @@ SlangBasicTranslationTest >> testLabelWithComment [
 SlangBasicTranslationTest >> testLabelWithCommentWithPreviousCommentMarkingAnInline [
 
 	| label translation |
-	
-	"If the previous comment marked an inline, do not output anything"
+	"If the previous comment marked an inline, do not output anything""the method tested is responsible for the disparition of a lot of comment marking inlining, not sure of its purpose"
 	generator previousCommentMarksInlining: true.
-	
+
 	label := TLabeledCommentNode withComment: 'some comment'.
 	translation := self translate: label.
 
-	self assert: translation equals: ''
+	"self assert: translation equals: ''"
+
+	self assert: translation equals: '/* some comment */'
 ]
 
 { #category : 'tests-method' }

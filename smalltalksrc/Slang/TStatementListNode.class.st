@@ -66,6 +66,16 @@ TStatementListNode >> accept: aVisitor [
 	^ aVisitor visitStatementListNode: self
 ]
 
+{ #category : 'adding' }
+TStatementListNode >> addAllLast: aListOfStatement [
+
+	(statements isNotEmpty and: [ statements last isComment ])
+		ifFalse: [ statements addAllLast: aListOfStatement ]
+		ifTrue: [
+			statements := self allButLastNonCommentStatement , aListOfStatement
+			              , { statements last } ]
+]
+
 { #category : 'declarations' }
 TStatementListNode >> addDeclarations: aCollection [ 
 	
@@ -142,6 +152,16 @@ TStatementListNode >> addReadBeforeAssignedIn: variables to: readBeforeAssigned 
 						ifFalse: [ false ] ]
 				ifFalse: [ false ] ].
 	^ assigned
+]
+
+{ #category : 'accessing' }
+TStatementListNode >> allButLastNonCommentStatement [
+	"the last statement can be a comment if the TStatementList has been through inlining, return the statements without the actual last statement"
+
+	| actualLast |
+	statements last isComment ifFalse: [ ^ statements allButLast ].
+	actualLast := self lastNonCommentStatement.
+	^ statements select: [ :node | node ~~ actualLast ]
 ]
 
 { #category : 'enumerating' }
@@ -237,12 +257,23 @@ TStatementListNode >> asCASTIn: aBuilder prependToEnd: aNodeOrNil [
 
 { #category : 'transformations' }
 TStatementListNode >> asReturnNode [
-	self endsWithReturn ifTrue:
-		[^self].
-	^self class new
-		setArguments: arguments
-			statements: statements allButLast, {statements last asReturnNode};
-		yourself
+	"return a new STatementListNode with the last non-comment statement changed to a return"
+
+	| newStmtsListNode |
+	self endsWithReturn ifTrue: [ ^ self ].
+	newStmtsListNode := self class new setArguments: arguments.
+	statements last isComment
+		ifFalse: [
+			newStmtsListNode statements:
+				statements allButLast , { statements last asReturnNode } ]
+		ifTrue: [
+			| actualLast |
+			newStmtsListNode statements: statements copy.
+			actualLast := newStmtsListNode lastNonCommentStatement.
+			newStmtsListNode
+				replaceChild: actualLast
+				with: actualLast asReturnNode ].
+	^ newStmtsListNode
 ]
 
 { #category : 'transformations' }
@@ -306,13 +337,23 @@ TStatementListNode >> children [
 
 { #category : 'transformations' }
 TStatementListNode >> copyWithoutReturn [
+
+	| newStmtsListNode |
 	self assert: self endsWithReturn.
-	statements size = 1 ifTrue:
-		[^statements last expression].
-	^self class new
-		setArguments: arguments
-			statements: statements allButLast, {statements last copyWithoutReturn};
-		yourself
+	statements size = 1 ifTrue: [ ^ statements last expression ].
+	newStmtsListNode := self class new setArguments: arguments.
+	statements last isComment
+		ifFalse: [
+			newStmtsListNode statements:
+				statements allButLast , { statements last copyWithoutReturn } ]
+		ifTrue: [
+			| actualLast |
+			newStmtsListNode statements: statements copy.
+			actualLast := newStmtsListNode lastNonCommentStatement.
+			newStmtsListNode
+				replaceChild: actualLast
+				with: actualLast copyWithoutReturn ].
+	^ newStmtsListNode
 ]
 
 { #category : 'declarations' }
@@ -344,8 +385,9 @@ TStatementListNode >> displayString [
 TStatementListNode >> endsWithReturn [
 	"Answer true if the last statement of this lock is a return."
 
-	^statements notEmpty
-	  and: [statements last isReturn or: [statements last isReturningIf]]
+	^ statements notEmpty and: [
+		  self lastNonCommentStatement isReturn or: [
+			  self lastNonCommentStatement isReturningIf ] ]
 ]
 
 { #category : 'accessing' }
@@ -402,6 +444,21 @@ TStatementListNode >> isStatementList [
 TStatementListNode >> last [
 	
 	^ self statements last
+]
+
+{ #category : 'accessing' }
+TStatementListNode >> lastNonCommentStatement [
+	"the last statement can be a comment if the TStatementList has been through inlining, return the actual last statement"
+
+	| last indexOfLast |
+	last := statements last.
+	indexOfLast := statements size.
+	[ last isComment ] whileTrue: [
+		indexOfLast := indexOfLast - 1.
+		indexOfLast = 0 ifTrue: [ ^ nil ].
+		last := statements at: indexOfLast ].
+
+	^ last
 ]
 
 { #category : 'accessing' }
@@ -499,6 +556,13 @@ TStatementListNode >> removeAssertions [
 	self setStatements: newStatements asArray
 ]
 
+{ #category : 'transformations' }
+TStatementListNode >> removeLast [
+	"the last statement can be a comment if the TStatementList has been through inlining, remove the actual last statement"
+
+	statements := self allButLastNonCommentStatement
+]
+
 { #category : 'inlining support' }
 TStatementListNode >> renameLabelsForInliningInto: aTMethod [
 	"TMethod already has a method for this; hijack it..."
@@ -535,12 +599,12 @@ TStatementListNode >> returnsExpression [
 
 	statements isEmpty ifTrue:
 		[^false].
-	statements last isReturn ifFalse:
+	self lastNonCommentStatement isReturn ifFalse:
 		[^false].
-	statements last isVariable ifFalse:
+	self lastNonCommentStatement isVariable ifFalse:
 		[^true].
-	^statements last variable ~= 'self'
-	  and: [statements last variable ~= 'nil']
+	^self lastNonCommentStatement variable ~= 'self'
+	  and: [self lastNonCommentStatement variable ~= 'nil']
 ]
 
 { #category : 'accessing' }

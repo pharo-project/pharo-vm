@@ -93,11 +93,12 @@ TAssignmentNode >> asCASTIn: aBuilder [
 
 { #category : 'C code generation' }
 TAssignmentNode >> asCASTStatementListExpansionAsExpression: aCodeGen [
-	(variable isSameAs: expression statements last) ifTrue:
-		[^ expression asCASTExpressionIn: aCodeGen].
+
+	(variable isSameAs: expression lastNonCommentStatement) ifTrue: [
+		^ expression asCASTExpressionIn: aCodeGen ].
 	^ expression copy
-		assignLastExpressionTo: variable;
-		asCASTExpressionIn: aCodeGen
+		  assignLastExpressionTo: variable;
+		  asCASTExpressionIn: aCodeGen
 ]
 
 { #category : 'C code generation' }
@@ -117,7 +118,7 @@ TAssignmentNode >> asCASTValueExpansionIn: aCodeGen [
 	self assert: (expression isSend and: [ expression isValueExpansion ]).
 
 	stmtList := expression receiver.
-	lastStmt := stmtList statements last.
+	lastStmt := stmtList lastNonCommentStatement.
 
 	"Optimization. If the expression looks like:
 	
@@ -125,11 +126,10 @@ TAssignmentNode >> asCASTValueExpansionIn: aCodeGen [
 	
 	Emit directly the block without the last statement, as the assignment has no impact in the translation.
 	"
-	stmtList statements last = variable ifTrue: [ 
-		^ expression asCASTIn: aCodeGen ].
+	lastStmt = variable ifTrue: [ ^ expression asCASTIn: aCodeGen ].
 	copy := stmtList copy.
 	copy statements
-		at: stmtList statements size
+		at: (stmtList statements indexOf: lastStmt)
 		put:
 		(TAssignmentNode new setVariable: variable expression: lastStmt).
 	^ (TSendNode new
