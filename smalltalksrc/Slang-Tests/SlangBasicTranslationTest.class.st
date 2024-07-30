@@ -520,20 +520,21 @@ SlangBasicTranslationTest >> testBlockValueAsArgument [
 SlangBasicTranslationTest >> testBlockValueAsArgumentWithComment [
 
 	| translation expression |
-	expression := TStatementListNode new setArguments: #(  ) statements: { 
-		TLabeledCommentNode withComment: 'yes!'.
-		TConstantNode value: 17. }.
+	expression := TStatementListNode new
+		              setArguments: #(  )
+		              statements: {
+				              (TLabeledCommentNode withComment: 'yes!').
+				              (TConstantNode value: 17).
+				              (TLabeledCommentNode withComment: 'no!') }.
 	translation := self translate: (TAssignmentNode
-		variable: (TVariableNode named: 'v')
-		expression: (TSendNode
-			receiver: (TVariableNode named: 'v')
-			selector: #ifTrue: 
-			arguments: {expression})).
+			                variable: (TVariableNode named: 'v')
+			                expression: (TSendNode
+					                 receiver: (TVariableNode named: 'v')
+					                 selector: #ifTrue:
+					                 arguments: { expression })).
 
-	self
-		assert: translation trimBoth
-		equals: 'v = ((v)
-	 ? (/* yes! */ 17)
+	self assert: translation trimBoth equals: 'v = ((v)
+	 ? (/* yes! */ 17 /* no! */)
 	 : 0)'
 ]
 

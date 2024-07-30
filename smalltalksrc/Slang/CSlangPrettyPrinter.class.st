@@ -255,14 +255,21 @@ CSlangPrettyPrinter >> visitEmptyStatement: anEmptyStatement [
 { #category : 'generated' }
 CSlangPrettyPrinter >> visitExpressionList: anExpressionList [
 
-	| lastRequiredSeparator |
+	| lastRequiredSeparator futureRequireBeginningSeparator futureIndex size expressions |
 	stream nextPut: $(.
-	anExpressionList expressions
+	futureIndex := 1.
+	expressions := anExpressionList expressions.
+	size := expressions size.
+	expressions
 		do: [ :e |
 			e acceptVisitor: self.
-			lastRequiredSeparator := e isEmpty not or: [ e comments isNotEmpty  ] ]
+			lastRequiredSeparator := e isEmpty not.
+			futureIndex := futureIndex + 1.
+			futureRequireBeginningSeparator := futureIndex <= size and: [
+				                                   (expressions at: futureIndex)
+					                                   isEmpty not ] ]
 		separatedBy: [
-			lastRequiredSeparator
+			(lastRequiredSeparator and: [ futureRequireBeginningSeparator ])
 				ifFalse: [ stream nextPutAll: ' ' ]
 				ifTrue: [
 					stream nextPutAll: ', '.
