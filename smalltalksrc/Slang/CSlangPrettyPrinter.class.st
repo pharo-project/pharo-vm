@@ -257,15 +257,16 @@ CSlangPrettyPrinter >> visitExpressionList: anExpressionList [
 
 	| lastRequiredSeparator |
 	stream nextPut: $(.
-	anExpressionList expressions do: [ :e | 
-		e acceptVisitor: self.
-		lastRequiredSeparator := e isEmpty not ]
-	separatedBy: [ 
-		lastRequiredSeparator
-			ifFalse: [ stream nextPutAll: ' ' ]
-			ifTrue: [ 
-				stream nextPutAll: ', '.
-				anExpressionList printOnMultipleLines ifTrue: [ stream cr ] ] ].
+	anExpressionList expressions
+		do: [ :e |
+			e acceptVisitor: self.
+			lastRequiredSeparator := e isEmpty not or: [ e isLabel not ] ]
+		separatedBy: [
+			lastRequiredSeparator
+				ifFalse: [ stream nextPutAll: ' ' ]
+				ifTrue: [
+					stream nextPutAll: ', '.
+					anExpressionList printOnMultipleLines ifTrue: [ stream cr ] ] ].
 	stream nextPut: $)
 ]
 
