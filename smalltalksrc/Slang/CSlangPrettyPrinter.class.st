@@ -260,7 +260,7 @@ CSlangPrettyPrinter >> visitExpressionList: anExpressionList [
 	anExpressionList expressions
 		do: [ :e |
 			e acceptVisitor: self.
-			lastRequiredSeparator := e isEmpty not or: [ e isLabel not ] ]
+			lastRequiredSeparator := e isEmpty not or: [ e comments isNotEmpty  ] ]
 		separatedBy: [
 			lastRequiredSeparator
 				ifFalse: [ stream nextPutAll: ' ' ]
