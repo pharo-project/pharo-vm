@@ -85,40 +85,39 @@ TStatementListNode >> addDeclarations: aCollection [
 
 { #category : 'utilities' }
 TStatementListNode >> addReadBeforeAssignedIn: variables to: readBeforeAssigned assignments: assigned in: aCodeGen [
-
 	"Add any variables in variables that are read before written to readBeforeAssigned.
 	 Add unconditional assignments to assigned.  For convenience answer assigned."
 
 	self
-		nodesWithParentsDo: [ :node :parent | 
-			(node isAssignment and: [ variables includes: node variable name ]) 
+		nodesWithParentsDo: [ :node :parent |
+			(node isAssignment and: [ variables includes: node variable name ])
 				ifTrue: [ assigned add: node variable name ].
-			(node isVariable and: [ 
-				 (variables includes: node name) and: [ 
-					 (assigned includes: node name) not and: [ 
-						 (#( nil pointer ) includes: (node structTargetKindIn: aCodeGen)) 
-							 and: [ 
-								 (parent notNil and: [ 
-									  parent isAssignment and: [ parent variable == node ] ]) not ] ] ] ]) 
-				ifTrue: [ 
+			(node isVariable and: [
+				 (variables includes: node name) and: [
+					 (assigned includes: node name) not and: [
+						 (#( nil pointer ) includes: (node structTargetKindIn: aCodeGen))
+							 and: [
+								 (parent notNil and: [
+									  parent isAssignment and: [ parent variable == node ] ]) not ] ] ] ])
+				ifTrue: [
 					node name = 'theCalloutState' ifTrue: [ self halt ].
 					readBeforeAssigned add: node name ] ]
-		unless: [ :node :parent | 
+		unless: [ :node :parent |
 			| conditionalAssignments mayHaveSideEffects |
 			node isSend
 				ifTrue: [ "First deal with implicit assignments..."
-					node isValueExpansion ifTrue: [ 
+					node isValueExpansion ifTrue: [
 						assigned addAll: node receiver arguments ].
-					(#( #memcpy:_:_: #memmove:_:_: ) includes: node selector) 
-						ifTrue: [ 
+					(#( #memcpy:_:_: #memmove:_:_: ) includes: node selector)
+						ifTrue: [
 							assigned add:
 								(node arguments first detect: [ :subnode | subnode isVariable ])
 									name ].
-					(#( #to:do: #to:by:do: ) includes: node selector) ifTrue: [ 
+					(#( #to:do: #to:by:do: ) includes: node selector) ifTrue: [
 						assigned addAll:
 							(node arguments at: node selector numArgs) arguments.
 						mayHaveSideEffects := node arguments size = 4. "See TMethod>>prepareMethodIn:"
-						mayHaveSideEffects ifTrue: [ 
+						mayHaveSideEffects ifTrue: [
 							assigned add: node arguments last name ] ].
 					"Then deal with read-before-written in the arms of conditionals..."
 					(#( ifTrue: ifFalse: ifNil: ifNotNil: ) intersection:
@@ -133,8 +132,8 @@ TStatementListNode >> addReadBeforeAssignedIn: variables to: readBeforeAssigned 
 								in: aCodeGen.
 							"Now find read-before-written in each arm, and collect the assignments to spot those assigned in both arms"
 							conditionalAssignments := node arguments
-								                          collect: [ :block | 
-									                          block isStatementList ifTrue: [ 
+								                          collect: [ :block |
+									                          block isStatementList ifTrue: [
 										                          block
 											                          addReadBeforeAssignedIn:
 											                          variables
@@ -143,8 +142,8 @@ TStatementListNode >> addReadBeforeAssignedIn: variables to: readBeforeAssigned 
 											                          in: aCodeGen ] ]
 								                          thenSelect: [ :each | each notNil ].
 							"add to assigned those variables written to in both arms"
-							conditionalAssignments size = 2 ifTrue: [ 
-								conditionalAssignments := conditionalAssignments collect: [ 
+							conditionalAssignments size = 2 ifTrue: [
+								conditionalAssignments := conditionalAssignments collect: [
 									                          :set | set difference: assigned ].
 								assigned addAll: (conditionalAssignments first intersection:
 										 conditionalAssignments last) ].
@@ -190,12 +189,21 @@ TStatementListNode >> arguments [
 TStatementListNode >> asCASTExpressionIn: aBuilder [
 
 	| expressionList |
+	"self haltIf: [
+		self tMethod isNotNil and: [
+			self tMethod selector = #genMoveConstant:R: ] ]."
 	expressionList := CExpressionListNode new.
-	statements size == 1 ifTrue: [ 
+	statements size == 1 ifTrue: [
 		^ statements first asCASTExpressionIn: aBuilder ].
-	statements withIndexDo: [ :node :idx | 
-		(node isLeaf and: [ node isLabel not and: [ idx < statements size ] ]) 
-			ifFalse: [ expressionList , (node asCASTExpressionIn: aBuilder) ] ].
+	statements withIndexDo: [ :node :idx |
+		(node isLeaf and: [
+			 node isLabel not and: [ "idx < statements size"
+				 node ~~ self lastNonCommentStatement
+			"		 ifTrue: [
+						 self halt.
+						 true ]
+					 ifFalse: [ false ]" ] ]) ifFalse: [
+			expressionList , (node asCASTExpressionIn: aBuilder) ] ].
 	^ expressionList
 ]
 
