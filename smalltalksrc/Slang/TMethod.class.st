@@ -1713,8 +1713,7 @@ TMethod >> inlineSend: aSendNode directReturn: directReturn exitVar: exitVar in:
 				(TLabeledCommentNode new setLabel: exitLabel comment: 'end ' , sel) ]
 		ifNil: [
 		inlineStmts add: (TLabeledCommentNode new setComment: 'end ' , sel) ].
-	"self haltIf: [ sel = #primitiveFailFor: ]."
-	inlineStmts size = 2 ifTrue: [ "Nuke empty methods; e.g. override of flushAtCache"
+	(inlineStmts size = 2 or: [ sel = #simulationOnly: ]) ifTrue: [ "Nuke empty methods; e.g. override of flushAtCache"
 		self assert: inlineStmts first isComment.
 		self assert: inlineStmts second isComment.
 		inlineStmts removeFirst.

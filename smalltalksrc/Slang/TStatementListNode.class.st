@@ -189,21 +189,13 @@ TStatementListNode >> arguments [
 TStatementListNode >> asCASTExpressionIn: aBuilder [
 
 	| expressionList |
-	"self haltIf: [
-		self tMethod isNotNil and: [
-			self tMethod selector = #genMoveConstant:R: ] ]."
 	expressionList := CExpressionListNode new.
 	statements size == 1 ifTrue: [
 		^ statements first asCASTExpressionIn: aBuilder ].
 	statements withIndexDo: [ :node :idx |
 		(node isLeaf and: [
-			 node isLabel not and: [ "idx < statements size"
-				 node ~~ self lastNonCommentStatement
-			"		 ifTrue: [
-						 self halt.
-						 true ]
-					 ifFalse: [ false ]" ] ]) ifFalse: [
-			expressionList , (node asCASTExpressionIn: aBuilder) ] ].
+			 node isLabel not and: [ node ~~ self lastNonCommentStatement ] ])
+			ifFalse: [ expressionList , (node asCASTExpressionIn: aBuilder) ] ].
 	^ expressionList
 ]
 
