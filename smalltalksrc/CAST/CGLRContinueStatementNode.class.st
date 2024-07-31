@@ -1,10 +1,11 @@
 Class {
-	#name : #CGLRContinueStatementNode,
-	#superclass : #CGLRAbstractNode,
-	#category : #CAST
+	#name : 'CGLRContinueStatementNode',
+	#superclass : 'CGLRAbstractNode',
+	#category : 'CAST',
+	#package : 'CAST'
 }
 
-{ #category : #generated }
+{ #category : 'generated' }
 CGLRContinueStatementNode >> acceptVisitor: anAbstractVisitor [
 	^ anAbstractVisitor visitContinueStatement: self
 ]

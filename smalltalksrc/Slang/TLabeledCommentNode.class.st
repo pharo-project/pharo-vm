@@ -52,9 +52,11 @@ TLabeledCommentNode >> asCASTIn: aBuilder [
 
 	comment ifNotNil: [
 		| commentNode |
-		commentNode := CEmptyStatementNode new.
-		commentNode comments: { self comment }.
-		commentNode needsSeparator: false.
+		commentNode := CCommentNode new.
+		commentNode comment: (String streamContents: [ :s |
+				 s space.
+				 s nextPutAll: self comment.
+				 s space ]).
 		result add: commentNode.
 		aBuilder previousCommenter: self ].
 

@@ -263,11 +263,19 @@ CSlangPrettyPrinter >> visitExpressionList: anExpressionList [
 	expressions
 		do: [ :e |
 			e acceptVisitor: self.
-			lastRequiredSeparator := e isEmpty not.
+			lastRequiredSeparator := e isEmpty not and: [
+				                         e isComment not or: [
+					                         e comment beginsWith: #end ] ].
 			futureIndex := futureIndex + 1.
 			futureRequireBeginningSeparator := futureIndex <= size and: [
-				                                   (expressions at: futureIndex)
-					                                   isEmpty not ] ]
+				                                   | next |
+				                                   next := expressions at:
+					                                           futureIndex.
+				                                   next isEmpty not and: [
+					                                   next isComment not or: [
+						                                   lastRequiredSeparator and: [
+							                                   next comment beginsWith:
+								                                   #begin ] ] ] ] ]
 		separatedBy: [
 			(lastRequiredSeparator and: [ futureRequireBeginningSeparator ])
 				ifFalse: [ stream nextPutAll: ' ' ]
