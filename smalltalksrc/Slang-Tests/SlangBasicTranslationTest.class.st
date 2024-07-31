@@ -1359,6 +1359,32 @@ SlangBasicTranslationTest >> testInlineNodeWithSharedLabelInCase [
 }'
 ]
 
+{ #category : 'tests-inlinemethod' }
+SlangBasicTranslationTest >> testInlinedCommentInExpression [
+
+	| translation tMethod |
+	tMethod := self getTMethodFrom:
+		           #methodCallingMethodWithInlinePragmaExpressionList.
+	tMethod recordDeclarationsIn: generator.
+	generator doBasicInlining: true.
+
+	translation := self translate: tMethod.
+	translation := translation trimBoth.
+
+	self
+		assert: translation
+		equals:
+			'/* SlangBasicTranslationTestClass>>#methodCallingMethodWithInlinePragmaExpressionList */
+static sqInt
+methodCallingMethodWithInlinePragmaExpressionList(void)
+{
+	sqInt i;
+
+	i == ((/* begin methodWithoutInlinePragma */ bodyOfMethodWithoutInlinePragma() /* end methodWithoutInlinePragma */, /* begin methodWithInlinePragma */ bodyOfMethodWithInlinePragma() /* end methodWithInlinePragma */));
+	return 0;
+}'
+]
+
 { #category : 'tests-labels' }
 SlangBasicTranslationTest >> testLabel [
 

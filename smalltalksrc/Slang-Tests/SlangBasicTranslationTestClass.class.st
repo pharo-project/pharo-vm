@@ -50,6 +50,15 @@ SlangBasicTranslationTestClass >> methodCallingMethodWithInlinePragma [
 ]
 
 { #category : 'inline' }
+SlangBasicTranslationTestClass >> methodCallingMethodWithInlinePragmaExpressionList [
+
+	| i |
+	i = [
+	self methodWithoutInlinePragma.
+	self methodWithInlinePragma ]
+]
+
+{ #category : 'inline' }
 SlangBasicTranslationTestClass >> methodDefiningSingleExternVariable [
 
 	<var: 'foo' type: #'extern int' >
