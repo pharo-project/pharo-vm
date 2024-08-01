@@ -17,6 +17,20 @@ CSlangPrettyPrinter >> contents [
 ]
 
 { #category : 'testing' }
+CSlangPrettyPrinter >> expressionListHasNonCommentStatementAfter: expressions futureIndex: futureIndex [
+	"we found a begin inlining comment in an expressionList, sometimes the last statements of an expression list are serie of comment, we iterate the next element to see if there is an actual statement after otherwise the next part is not an element of the list"
+
+	| index current |
+	index := futureIndex + 1.
+	index to: expressions size do: [ :e |
+		current := expressions at: e.
+		(current isComment not and: [ current isEmpty not ]) ifTrue: [
+			^ true ] ].
+
+	^ false
+]
+
+{ #category : 'testing' }
 CSlangPrettyPrinter >> expressionListNeedAComma: expressions current: e futureIndex: futureIndex commentSeries: commentSeries [
 	"handle space, comma and comment in visitExpressionList, comments only comes from inlining in an expressionList. ensure comments are not considered as element of the list and are linked to theirs respective methods. if the list contains an empty inlined method we can have a potential series of comments  that shouldn't be considered as element, hence the boolean commentSeries. Return if a comma is needed and if the comment series continue/start.
 	"
@@ -42,7 +56,11 @@ CSlangPrettyPrinter >> expressionListNeedAComma: expressions current: e futureIn
 			                               currentIsEndComment ] ].
 	futureRequireBeginningSeparator := next isEmpty not and: [
 		                                   next isComment not or: [
-			                                   nextIsBeginComment ] ].
+			                                   nextIsBeginComment and: [
+				                                   self
+					                                   expressionListHasNonCommentStatementAfter:
+					                                   expressions
+					                                   futureIndex: futureIndex ] ] ].
 
 	^ {
 		  (currentRequiredEndSeparator and: [
