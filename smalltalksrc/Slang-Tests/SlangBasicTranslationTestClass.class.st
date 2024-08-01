@@ -54,7 +54,9 @@ SlangBasicTranslationTestClass >> methodCallingMethodWithInlinePragmaExpressionL
 
 	| i |
 	i = [
-	self methodWithoutInlinePragma.
+	self emptyMethod.
+	self bodyOfMethodWithoutInlinePragma.
+	self methodWithoutInlinePragmaAndEmptyMethodCall.
 	self methodWithInlinePragma ]
 ]
 
@@ -212,6 +214,12 @@ SlangBasicTranslationTestClass >> methodWithoutInlinePragma [
 SlangBasicTranslationTestClass >> methodWithoutInlinePragmaAndBlock: aBlock [
 
 	aBlock value
+]
+
+{ #category : 'inline' }
+SlangBasicTranslationTestClass >> methodWithoutInlinePragmaAndEmptyMethodCall [
+	self emptyMethod.
+	self bodyOfMethodWithoutInlinePragma.
 ]
 
 { #category : 'inline' }

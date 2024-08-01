@@ -16,6 +16,38 @@ CSlangPrettyPrinter >> contents [
 	^ stream contents
 ]
 
+{ #category : 'testing' }
+CSlangPrettyPrinter >> expressionListNeedAComma: expressions current: e futureIndex: futureIndex commentSeries: commentSeries [
+	"handle space, comma and comment in visitExpressionList, comments only comes from inlining in an expressionList. ensure comments are not considered as element of the list and are linked to theirs respective methods. if the list contains an empty inlined method we can have a potential series of comments  that shouldn't be considered as element, hence the boolean commentSeries. Return if a comma is needed and if the comment series continue/start.
+	"
+
+	| next currentRequiredEndSeparator futureRequireBeginningSeparator continueCommentSeries currentIsEndComment nextIsBeginComment |
+	futureIndex > expressions size ifTrue: [ ^ { false. false } ].
+	next := expressions at: futureIndex.
+
+	currentIsEndComment := e isComment and: [
+		                       e comment beginsWith: #' end' ].
+	nextIsBeginComment := next isComment and: [
+		                      next comment beginsWith: #' begin' ].
+
+	(currentIsEndComment and: [
+		 nextIsBeginComment and: [ commentSeries ] ]) ifTrue: [
+		^ { false. true } ].
+
+	continueCommentSeries := e isComment and: [ next isComment ].
+	currentRequiredEndSeparator := e isEmpty not and: [
+		                               e isComment not or: [
+			                               currentIsEndComment ] ].
+	futureRequireBeginningSeparator := next isEmpty not and: [
+		                                   next isComment not or: [
+			                                   nextIsBeginComment ] ].
+
+	^ {
+		  (currentRequiredEndSeparator and: [
+			   futureRequireBeginningSeparator ]).
+		  continueCommentSeries }
+]
+
 { #category : 'initialization' }
 CSlangPrettyPrinter >> initialize [
 
@@ -255,29 +287,23 @@ CSlangPrettyPrinter >> visitEmptyStatement: anEmptyStatement [
 { #category : 'generated' }
 CSlangPrettyPrinter >> visitExpressionList: anExpressionList [
 
-	| lastRequiredSeparator futureRequireBeginningSeparator futureIndex size expressions |
+	| needCommaAndCommentSeries futureIndex expressions commentSeries |
 	stream nextPut: $(.
 	futureIndex := 1.
 	expressions := anExpressionList expressions.
-	size := expressions size.
+	commentSeries := true.
 	expressions
 		do: [ :e |
 			e acceptVisitor: self.
-			lastRequiredSeparator := e isEmpty not and: [
-				                         e isComment not or: [
-					                         e comment beginsWith: #' end' ] ].
 			futureIndex := futureIndex + 1.
-			futureRequireBeginningSeparator := futureIndex <= size and: [
-				                                   | next |
-				                                   next := expressions at:
-					                                           futureIndex.
-				                                   next isEmpty not and: [
-					                                   next isComment not or: [
-						                                   lastRequiredSeparator and: [
-							                                   next comment beginsWith:
-								                                   #' begin' ] ] ] ] ]
+			needCommaAndCommentSeries := self
+				                             expressionListNeedAComma: expressions
+				                             current: e
+				                             futureIndex: futureIndex
+				                             commentSeries: commentSeries.
+			commentSeries := needCommaAndCommentSeries second ]
 		separatedBy: [
-			(lastRequiredSeparator and: [ futureRequireBeginningSeparator ])
+			needCommaAndCommentSeries first
 				ifFalse: [ stream nextPutAll: ' ' ]
 				ifTrue: [
 					stream nextPutAll: ', '.

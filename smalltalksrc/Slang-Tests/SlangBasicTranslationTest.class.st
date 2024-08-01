@@ -1380,7 +1380,7 @@ methodCallingMethodWithInlinePragmaExpressionList(void)
 {
 	sqInt i;
 
-	i == ((/* begin methodWithoutInlinePragma */ bodyOfMethodWithoutInlinePragma() /* end methodWithoutInlinePragma */, /* begin methodWithInlinePragma */ bodyOfMethodWithInlinePragma() /* end methodWithInlinePragma */));
+	i == ((/* begin emptyMethod */ /* end emptyMethod */, bodyOfMethodWithoutInlinePragma(), /* begin methodWithoutInlinePragmaAndEmptyMethodCall */ /* begin emptyMethod */ /* end emptyMethod */, bodyOfMethodWithoutInlinePragma() /* end methodWithoutInlinePragmaAndEmptyMethodCall */, /* begin methodWithInlinePragma */ bodyOfMethodWithInlinePragma() /* end methodWithInlinePragma */));
 	return 0;
 }'
 ]

@@ -72,8 +72,18 @@ TStatementListNode >> addAllLast: aListOfStatement [
 	(statements isNotEmpty and: [ statements last isComment ])
 		ifFalse: [ statements addAllLast: aListOfStatement ]
 		ifTrue: [
-			statements := self allButLastNonCommentStatement , aListOfStatement
-			              , { statements last } ]
+			| actualLast actualLastMet allWithoutEndComment endComment |
+			actualLast := self lastNonCommentStatement.
+			allWithoutEndComment := OrderedCollection new.
+			endComment := OrderedCollection new.
+			actualLastMet := false.
+			statements do: [ :e |
+				actualLastMet
+					ifFalse: [
+						allWithoutEndComment add: e.
+						actualLastMet := e == actualLast ]
+					ifTrue: [ endComment add: e ] ].
+			statements := allWithoutEndComment , aListOfStatement , endComment ]
 ]
 
 { #category : 'declarations' }

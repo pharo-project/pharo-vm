@@ -1637,6 +1637,7 @@ TMethod >> inlineSend: aSendNode directReturn: directReturn exitVar: exitVar in:
 
 	| sel meth methArgs exitLabel inlineStmts label exitType elidedArgs |
 	sel := aSendNode selector.
+	sel = #simulationOnly: ifTrue: [ ^ OrderedCollection new ].
 	meth := aCodeGen methodNamed: sel.
 	methArgs := meth args.
 	"convenient for debugging..."
@@ -1713,7 +1714,7 @@ TMethod >> inlineSend: aSendNode directReturn: directReturn exitVar: exitVar in:
 				(TLabeledCommentNode new setLabel: exitLabel comment: 'end ' , sel) ]
 		ifNil: [
 		inlineStmts add: (TLabeledCommentNode new setComment: 'end ' , sel) ].
-	(inlineStmts size = 2 or: [ sel = #simulationOnly: ]) ifTrue: [ "Nuke empty methods; e.g. override of flushAtCache"
+	inlineStmts size = 2 ifTrue: [ "Nuke empty methods; e.g. override of flushAtCache"
 		self assert: inlineStmts first isComment.
 		self assert: inlineStmts second isComment.
 		inlineStmts removeFirst.
