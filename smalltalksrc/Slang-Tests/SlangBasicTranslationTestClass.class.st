@@ -24,6 +24,11 @@ SlangBasicTranslationTestClass class >> objectMemoryClass [
 ]
 
 { #category : 'inline' }
+SlangBasicTranslationTestClass >> emptyMethod [
+	self cCode: [  ] inSmalltalk: [  ]
+]
+
+{ #category : 'inline' }
 SlangBasicTranslationTestClass >> first: param1 second: param2 [
 	"Method with several parameters"
 ]
