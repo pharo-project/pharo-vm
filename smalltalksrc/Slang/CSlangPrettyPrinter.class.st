@@ -34,7 +34,7 @@ CSlangPrettyPrinter >> expressionListNeedAComma: expressions current: e futureIn
 		 nextIsBeginComment and: [ commentSeries ] ]) ifTrue: [
 		^ { false. true } ].
 
-	continueCommentSeries := e isComment and: [ next isComment ].
+	continueCommentSeries := nextIsBeginComment.
 	currentRequiredEndSeparator := e isEmpty not and: [
 		                               e isComment not or: [
 			                               currentIsEndComment ] ].
