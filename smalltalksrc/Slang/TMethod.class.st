@@ -1637,7 +1637,6 @@ TMethod >> inlineSend: aSendNode directReturn: directReturn exitVar: exitVar in:
 
 	| sel meth methArgs exitLabel inlineStmts label exitType elidedArgs |
 	sel := aSendNode selector.
-	sel = #simulationOnly: ifTrue: [ ^ OrderedCollection new ].
 	meth := aCodeGen methodNamed: sel.
 	methArgs := meth args.
 	"convenient for debugging..."
