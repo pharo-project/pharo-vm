@@ -45,17 +45,8 @@ SlangBasicTranslationTestClass >> initializationOptions [
 	^ nil
 ]
 
-{ #category : 'inline' }
-SlangBasicTranslationTestClass >> methodCallingMethodWithInlinePragma [
-
-	self methodWithoutInlinePragma.
-	self methodWithInlinePragma.
-	self methodWithoutInlinePragmaAndBlock: [ self blockBody1. self blockBody2 ].
-	self methodWithInlinePragmaAndBlock: [ self blockBody3. self blockBody4 ].
-]
-
-{ #category : 'inline' }
-SlangBasicTranslationTestClass >> methodCallingMethodWithInlinePragmaExpressionList [
+{ #category : 'inline-comment' }
+SlangBasicTranslationTestClass >> methodCallingMethodExpressionList [
 
 	| i |
 	i = [
@@ -63,6 +54,15 @@ SlangBasicTranslationTestClass >> methodCallingMethodWithInlinePragmaExpressionL
 	self bodyOfMethodWithoutInlinePragma.
 	self methodWithoutInlinePragmaAndEmptyMethodCall.
 	self methodWithInlinePragma ]
+]
+
+{ #category : 'inline' }
+SlangBasicTranslationTestClass >> methodCallingMethodWithInlinePragma [
+
+	self methodWithoutInlinePragma.
+	self methodWithInlinePragma.
+	self methodWithoutInlinePragmaAndBlock: [ self blockBody1. self blockBody2 ].
+	self methodWithInlinePragmaAndBlock: [ self blockBody3. self blockBody4 ].
 ]
 
 { #category : 'inline' }
@@ -83,6 +83,12 @@ SlangBasicTranslationTestClass >> methodDefiningSingleStaticVariable [
 SlangBasicTranslationTestClass >> methodDefiningSingleVariable [
 
 	| foo |
+]
+
+{ #category : 'inline-comment' }
+SlangBasicTranslationTestClass >> methodInlinineSwitch [
+
+	self switch
 ]
 
 { #category : 'inline' }
@@ -231,4 +237,18 @@ SlangBasicTranslationTestClass >> methodWithoutInlinePragmaAndEmptyMethodCall [
 SlangBasicTranslationTestClass >> methodWithoutReturn [
 
 	<returnTypeC: #sqInt>
+]
+
+{ #category : 'inline-comment' }
+SlangBasicTranslationTestClass >> switch [
+
+	true caseOf:
+		  { ([ 4 ] -> [ self methodWithoutInlinePragmaAndEmptyMethodCall ]) }
+]
+
+{ #category : 'inline-comment' }
+SlangBasicTranslationTestClass >> switchInReturn [
+
+	^ true caseOf:
+		  { ([ 4 ] -> [ self methodWithoutInlinePragmaAndEmptyMethodCall ]) }
 ]

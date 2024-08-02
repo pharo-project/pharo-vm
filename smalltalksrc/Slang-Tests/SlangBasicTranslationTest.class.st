@@ -1359,12 +1359,11 @@ SlangBasicTranslationTest >> testInlineNodeWithSharedLabelInCase [
 }'
 ]
 
-{ #category : 'tests-inlinemethod' }
+{ #category : 'test-inline-comment' }
 SlangBasicTranslationTest >> testInlinedCommentInExpression [
 
 	| translation tMethod |
-	tMethod := self getTMethodFrom:
-		           #methodCallingMethodWithInlinePragmaExpressionList.
+	tMethod := self getTMethodFrom: #methodCallingMethodExpressionList.
 	tMethod recordDeclarationsIn: generator.
 	generator doBasicInlining: true.
 
@@ -1374,14 +1373,85 @@ SlangBasicTranslationTest >> testInlinedCommentInExpression [
 	self
 		assert: translation
 		equals:
-			'/* SlangBasicTranslationTestClass>>#methodCallingMethodWithInlinePragmaExpressionList */
+			'/* SlangBasicTranslationTestClass>>#methodCallingMethodExpressionList */
 static sqInt
-methodCallingMethodWithInlinePragmaExpressionList(void)
+methodCallingMethodExpressionList(void)
 {
 	sqInt i;
 
 	i == ((/* begin emptyMethod */ /* end emptyMethod */, bodyOfMethodWithoutInlinePragma(), /* begin methodWithoutInlinePragmaAndEmptyMethodCall */ /* begin emptyMethod */ /* end emptyMethod */, bodyOfMethodWithoutInlinePragma() /* end methodWithoutInlinePragmaAndEmptyMethodCall */, /* begin methodWithInlinePragma */ bodyOfMethodWithInlinePragma() /* end methodWithInlinePragma */));
 	return 0;
+}'
+]
+
+{ #category : 'test-inline-comment' }
+SlangBasicTranslationTest >> testInlinedCommentInSwitch [
+
+	| translation tMethod |
+	tMethod := self getTMethodFrom: #switch.
+	tMethod prepareMethodIn: generator.
+	tMethod recordDeclarationsIn: generator.
+	generator doBasicInlining: true.
+
+	translation := self translate: tMethod.
+	translation := translation trimBoth.
+
+	self
+		assert: translation
+		equals:
+			'/* SlangBasicTranslationTestClass>>#switch */
+static sqInt
+switch(void)
+{
+	switch (1) {
+		case 4:
+		{
+			/* begin methodWithoutInlinePragmaAndEmptyMethodCall */
+			/* begin emptyMethod */
+			/* end emptyMethod */
+			bodyOfMethodWithoutInlinePragma();
+			/* end methodWithoutInlinePragmaAndEmptyMethodCall */
+		}
+		break;
+		default:
+		error("Case not found and no otherwise clause");
+	}
+	return 0;
+}'
+]
+
+{ #category : 'test-inline-comment' }
+SlangBasicTranslationTest >> testInlinedCommentInSwitchAsExpression [
+
+	| translation tMethod |
+	tMethod := self getTMethodFrom: #switchInReturn.
+	tMethod prepareMethodIn: generator.
+	tMethod recordDeclarationsIn: generator.
+	generator doBasicInlining: true.
+	translation := self translate: tMethod.
+	translation := translation trimBoth.
+
+	self
+		assert: translation
+		equals: '/* SlangBasicTranslationTestClass>>#switchInReturn */
+static sqInt
+switchInReturn(void)
+{
+	sqInt switch0;
+
+	switch (1) {
+		case 4:
+		{
+			/* begin methodWithoutInlinePragmaAndEmptyMethodCall */
+			/* begin emptyMethod */
+			/* end emptyMethod */
+			return bodyOfMethodWithoutInlinePragma();
+			/* end methodWithoutInlinePragmaAndEmptyMethodCall */
+		}
+		default:
+		error("Case not found and no otherwise clause");
+		return -1;
+	}
 }'
 ]
 
