@@ -221,36 +221,40 @@ TStatementListNode >> asCASTIn: aBuilder [
 		while: [ self asCASTIn: aBuilder prependToEnd: nil ]
 ]
 
-{ #category : 'tranforming' }
+{ #category : 'C code generation' }
 TStatementListNode >> asCASTIn: aBuilder prependToEnd: aNodeOrNil [
 
-	| cDeclarations collect methodIsVolatile |
+	| cDeclarations collect methodIsVolatile actualLast |
 	cDeclarations := OrderedCollection new.
 	collect := OrderedCollection new.
+	statements isNotEmpty ifTrue: [
+		actualLast := self lastNonCommentStatement ].
 
-	statements doWithIndex: [ :e :index | 
-		(e isLeaf and: [ 
-			 e isLabel not and: [ 
+	statements doWithIndex: [ :e :index |
+		(e isLeaf and: [
+			 e isLabel not and: [
 				 aNodeOrNil isNil or: [ index < statements size ] ] ])
-			ifFalse: [ 
-				(aNodeOrNil notNil and: [ index = statements size ])
-					ifTrue: [ 
+			ifFalse: [
+				(aNodeOrNil notNil and: [ e == actualLast ])
+					ifTrue: [
 					collect add: (e asCASTIn: aBuilder prependToEnd: aNodeOrNil) ]
 					ifFalse: [ collect add: (e asCASTIn: aBuilder) ] ]
 			ifTrue: [ CEmptyStatementNode new ] ].
-	
+
 	"We should collect the variable declarations after generating the body, because the body generation will record used yet non declared variables"
 	methodIsVolatile := aBuilder currentMethod isVolatile.
-	(self parent notNil and: [self parent isTMethod and: [ self parent refersToGlobalStruct ]]) ifTrue: [ 
-		cDeclarations add:
-			(CIdentifierNode name: (methodIsVolatile
-					  ifTrue: [ 'DECL_MAYBE_VOLATILE_SQ_GLOBAL_STRUCT' ]
-					  ifFalse: [ 'DECL_MAYBE_SQ_GLOBAL_STRUCT' ])) ].
+	(self parent notNil and: [
+		 self parent isTMethod and: [ self parent refersToGlobalStruct ] ])
+		ifTrue: [
+			cDeclarations add: (CIdentifierNode name: (methodIsVolatile
+						  ifTrue: [ 'DECL_MAYBE_VOLATILE_SQ_GLOBAL_STRUCT' ]
+						  ifFalse: [ 'DECL_MAYBE_SQ_GLOBAL_STRUCT' ])) ].
 
-	(aBuilder sortStrings: self locals asSet) do: [ :var | | declaration |
+	(aBuilder sortStrings: self locals asSet) do: [ :var |
+		| declaration |
 		declaration := aBuilder
-		  declarationAt: var
-		  ifAbsent: [ aBuilder defaultType, ' ' , var ].
+			               declarationAt: var
+			               ifAbsent: [ aBuilder defaultType , ' ' , var ].
 
 		self flag: #TODO.
 		"Avoid implicit variables.
@@ -258,11 +262,13 @@ TStatementListNode >> asCASTIn: aBuilder prependToEnd: aNodeOrNil [
 		  - tracking used variables during code generation
 		  - generating variables after code"
 		(declaration beginsWith: 'implicit') ifFalse: [
-			methodIsVolatile ifTrue: [ declaration := 'volatile ' , declaration ].
-			cDeclarations add: (CRawCodeNode code: declaration)]
-	].		
+			methodIsVolatile ifTrue: [
+				declaration := 'volatile ' , declaration ].
+			cDeclarations add: (CRawCodeNode code: declaration) ] ].
 
-	^ CCompoundStatementNode declarations: cDeclarations statements: collect
+	^ CCompoundStatementNode
+		  declarations: cDeclarations
+		  statements: collect
 ]
 
 { #category : 'transformations' }
