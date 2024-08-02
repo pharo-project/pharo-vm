@@ -240,13 +240,6 @@ SlangBasicTranslationTestClass >> methodWithoutReturn [
 ]
 
 { #category : 'inline-comment' }
-SlangBasicTranslationTestClass >> switch [
-
-	true caseOf:
-		  { ([ 4 ] -> [ self methodWithoutInlinePragmaAndEmptyMethodCall ]) }
-]
-
-{ #category : 'inline-comment' }
 SlangBasicTranslationTestClass >> switchInReturn [
 
 	^ true caseOf:
