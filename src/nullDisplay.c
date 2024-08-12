@@ -197,20 +197,6 @@ clipboardWriteFromAt(sqInt count, sqInt byteArrayIndex, sqInt startIndex)
     return 0;
 }
 
-static sqInt
-dropInit (void)
-{
-	UNIMPLEMENTED
-    return 0;
-}
-
-static sqInt
-dropShutdown (void)
-{
-	UNIMPLEMENTED
-    return 0;
-}
-
 char*
 dropRequestFileName(sqInt dropIndex)
 {

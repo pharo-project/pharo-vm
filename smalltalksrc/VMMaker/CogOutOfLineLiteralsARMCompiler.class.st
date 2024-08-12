@@ -1,20 +1,22 @@
 Class {
-	#name : #CogOutOfLineLiteralsARMCompiler,
-	#superclass : #CogARMCompiler,
-	#category : #'VMMaker-JIT'
+	#name : 'CogOutOfLineLiteralsARMCompiler',
+	#superclass : 'CogARMCompiler',
+	#category : 'VMMaker-JIT',
+	#package : 'VMMaker',
+	#tag : 'JIT'
 }
 
-{ #category : #'accessing class hierarchy' }
+{ #category : 'accessing class hierarchy' }
 CogOutOfLineLiteralsARMCompiler class >> literalsManagerClass [
 	^OutOfLineLiteralsManager
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 CogOutOfLineLiteralsARMCompiler >> cmpC32RTempByteSize [
 	^8
 ]
 
-{ #category : #'generate machine code' }
+{ #category : 'generate machine code' }
 CogOutOfLineLiteralsARMCompiler >> concretizeLiteral [
 	"Generate an out-of-line literal.  Copy the value and any annotation from the stand-in in the literals manager."
 	| literalAsInstruction literal |
@@ -33,13 +35,13 @@ CogOutOfLineLiteralsARMCompiler >> concretizeLiteral [
 	machineCodeSize := 4
 ]
 
-{ #category : #'as yet unclassified' }
+{ #category : 'as yet unclassified' }
 CogOutOfLineLiteralsARMCompiler >> concretizeMovePatcheableC32R [
 	
 	^ self concretizeMoveCwR
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 CogOutOfLineLiteralsARMCompiler >> getDefaultCogCodeSize [
 	"Return the default number of bytes to allocate for native code at startup.
 	 The actual value can be set via vmParameterAt: and/or a preference in the ini file."
@@ -47,13 +49,13 @@ CogOutOfLineLiteralsARMCompiler >> getDefaultCogCodeSize [
 	^1024 * 1280
 ]
 
-{ #category : #'inline cacheing' }
+{ #category : 'inline cacheing' }
 CogOutOfLineLiteralsARMCompiler >> inlineCacheTagAt: callSiteReturnAddress [
 	<inline: true>
 	^objectMemory uint32AtPointer: (self pcRelativeAddressAt: (callSiteReturnAddress - 8) asUnsignedInteger)
 ]
 
-{ #category : #testing }
+{ #category : 'testing' }
 CogOutOfLineLiteralsARMCompiler >> isPCDependent [
 	"Answer if the receiver is a pc-dependent instruction.  With out-of-line literals any instruction
 	 that refers to a literal depends on the address of the literal, so add them in addition to the jumps."
@@ -62,7 +64,7 @@ CogOutOfLineLiteralsARMCompiler >> isPCDependent [
 	  or: [opcode ~= Literal and: [dependent notNil and: [dependent opcode = Literal]]]]
 ]
 
-{ #category : #'generate machine code' }
+{ #category : 'generate machine code' }
 CogOutOfLineLiteralsARMCompiler >> isSharable [
 	"Hack:  To know if a literal should be unique (not shared) mark the second operand."
 	<inline: true>
@@ -70,7 +72,7 @@ CogOutOfLineLiteralsARMCompiler >> isSharable [
 	^operands at: 1
 ]
 
-{ #category : #'inline cacheing' }
+{ #category : 'inline cacheing' }
 CogOutOfLineLiteralsARMCompiler >> literalBeforeFollowingAddress: followingAddress [
 	"Return the literal referenced by the instruction immediately preceding followingAddress."
 	^objectMemory uint32AtPointer: (self pcRelativeAddressAt:
@@ -79,7 +81,7 @@ CogOutOfLineLiteralsARMCompiler >> literalBeforeFollowingAddress: followingAddre
 			ifFalse: [self instructionAddressBefore: followingAddress - 4]))
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 CogOutOfLineLiteralsARMCompiler >> literalLoadInstructionBytes [
 	"Answer the size of a literal load instruction (which does not include the size of the literal).
 	 With out-of-line literals this is always a single LDR instruction that refers to the literal."
@@ -87,7 +89,7 @@ CogOutOfLineLiteralsARMCompiler >> literalLoadInstructionBytes [
 	^4
 ]
 
-{ #category : #'generate machine code' }
+{ #category : 'generate machine code' }
 CogOutOfLineLiteralsARMCompiler >> literalOpcodeIndex [
 	"Hack:  To know how far away a literal is from its referencing instruction we store
 	 its opcodeIndex, or -1, if as yet unassigned, in the second operand of the literal."
@@ -96,13 +98,13 @@ CogOutOfLineLiteralsARMCompiler >> literalOpcodeIndex [
 	^(operands at: 2) asInteger
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 CogOutOfLineLiteralsARMCompiler >> loadLiteralByteSize [
 	"Answer the byte size of a MoveCwR opcode's corresponding machine code. On ARM this is a single instruction pc-relative register load - unless we have made a mistake and not turned on the out of line literals manager"
 	^4
 ]
 
-{ #category : #'generate machine code' }
+{ #category : 'generate machine code' }
 CogOutOfLineLiteralsARMCompiler >> mapEntryAddress [
 	"Typically map entries apply to the end of an instruction, for two reasons:
 	  a)	to cope with literals embedded in variable-length instructions, since, e.g.
@@ -116,7 +118,7 @@ CogOutOfLineLiteralsARMCompiler >> mapEntryAddress [
 		ifFalse: [address + machineCodeSize]
 ]
 
-{ #category : #'generate machine code - support' }
+{ #category : 'generate machine code - support' }
 CogOutOfLineLiteralsARMCompiler >> moveCw: constant intoR: destReg [
 	"Emit a load of aWord into destReg.  Answer the number of bytes of machine code generated.
 	 Literals are stored out-of-line; emit a LDR with the relevant offset."
@@ -133,7 +135,7 @@ CogOutOfLineLiteralsARMCompiler >> moveCw: constant intoR: destReg [
 	^machineCodeSize := 4
 ]
 
-{ #category : #'compile abstract instructions' }
+{ #category : 'compile abstract instructions' }
 CogOutOfLineLiteralsARMCompiler >> outOfLineLiteralOpcodeLimit [
 	"The maximum offset in a LDR is (1<<12)-1, or (1<<10)-1 instructions.
 	 Be conservative.  The issue is that one abstract instruction can emit
@@ -144,7 +146,7 @@ CogOutOfLineLiteralsARMCompiler >> outOfLineLiteralOpcodeLimit [
 			- 1 "2 hardware instructions to 1 abstract opcode") - 1
 ]
 
-{ #category : #'inline cacheing' }
+{ #category : 'inline cacheing' }
 CogOutOfLineLiteralsARMCompiler >> pcRelativeAddressAt: instrAddress [
 	"Extract the address of the ldr rX, [pc, #NNN] instruction at address"
 	| inst offset |
@@ -156,7 +158,7 @@ CogOutOfLineLiteralsARMCompiler >> pcRelativeAddressAt: instrAddress [
 							ifFalse: [offset negated])
 ]
 
-{ #category : #'inline cacheing' }
+{ #category : 'inline cacheing' }
 CogOutOfLineLiteralsARMCompiler >> relocateMethodReferenceBeforeAddress: pc by: delta [
 	"If possible we generate the method address using pc-relative addressing.
 	 If so we don't need to relocate it in code.  So check if pc-relative code was
@@ -174,7 +176,7 @@ CogOutOfLineLiteralsARMCompiler >> relocateMethodReferenceBeforeAddress: pc by: 
 		 objectMemory longAt: litAddr put: reference + delta]
 ]
 
-{ #category : #'inline cacheing' }
+{ #category : 'inline cacheing' }
 CogOutOfLineLiteralsARMCompiler >> rewriteFullTransferAt: callSiteReturnAddress target: callTargetAddress expectedInstruction: expectedInstruction [
 	"Rewrite a CallFull or JumpFull instruction to transfer to a different target.
 	 This variant is used to rewrite cached primitive calls where we load the target address into ip
@@ -190,7 +192,7 @@ CogOutOfLineLiteralsARMCompiler >> rewriteFullTransferAt: callSiteReturnAddress 
 	^0
 ]
 
-{ #category : #'inline cacheing' }
+{ #category : 'inline cacheing' }
 CogOutOfLineLiteralsARMCompiler >> rewriteInlineCacheAt: callSiteReturnAddress tag: cacheTag target: callTargetAddress [
 	"Rewrite an inline cache to call a different target for a new tag.  This variant is used
 	 to link unlinked sends in ceSend:to:numArgs: et al.  Answer the extent of the code
@@ -212,7 +214,7 @@ CogOutOfLineLiteralsARMCompiler >> rewriteInlineCacheAt: callSiteReturnAddress t
 	^4
 ]
 
-{ #category : #'inline cacheing' }
+{ #category : 'inline cacheing' }
 CogOutOfLineLiteralsARMCompiler >> rewriteInlineCacheTag: cacheTag at: callSiteReturnAddress [
 	"Rewrite an inline cache with a new tag.  This variant is used
 	 by the garbage collector."
@@ -220,7 +222,7 @@ CogOutOfLineLiteralsARMCompiler >> rewriteInlineCacheTag: cacheTag at: callSiteR
 	objectMemory longAt: (self pcRelativeAddressAt: callSiteReturnAddress - 8) put: cacheTag
 ]
 
-{ #category : #'generate machine code' }
+{ #category : 'generate machine code' }
 CogOutOfLineLiteralsARMCompiler >> setLiteralOpcodeIndex: index [
 	"Hack:  To know how far away a literal is from its referencing instruction we store
 	 its opcodeIndex, or -1, if as yet unassigned, in the second operand of the literal."
@@ -229,7 +231,7 @@ CogOutOfLineLiteralsARMCompiler >> setLiteralOpcodeIndex: index [
 	operands at: 2 put: index
 ]
 
-{ #category : #'generate machine code' }
+{ #category : 'generate machine code' }
 CogOutOfLineLiteralsARMCompiler >> sizePCDependentInstructionAt: eventualAbsoluteAddress [
 	"Size a jump and set its address.  The target may be another instruction
 	 or an absolute address.  On entry the address inst var holds our virtual
@@ -269,7 +271,7 @@ CogOutOfLineLiteralsARMCompiler >> sizePCDependentInstructionAt: eventualAbsolut
 	^machineCodeSize := maxSize
 ]
 
-{ #category : #'inline cacheing' }
+{ #category : 'inline cacheing' }
 CogOutOfLineLiteralsARMCompiler >> storeLiteral: literal beforeFollowingAddress: followingAddress [
 	"Rewrite the literal in the instruction immediately preceding followingAddress."
 	objectMemory
@@ -280,13 +282,13 @@ CogOutOfLineLiteralsARMCompiler >> storeLiteral: literal beforeFollowingAddress:
 		put: literal
 ]
 
-{ #category : #'generate machine code' }
+{ #category : 'generate machine code' }
 CogOutOfLineLiteralsARMCompiler >> updateLabel: labelInstruction [
 	opcode ~= Literal ifTrue:
 		[super updateLabel: labelInstruction]
 ]
 
-{ #category : #testing }
+{ #category : 'testing' }
 CogOutOfLineLiteralsARMCompiler >> usesOutOfLineLiteral [
 	"Answer if the receiver uses an out-of-line literal.  Needs only
 	 to work for the opcodes created with gen:literal:operand: et al."

@@ -53,8 +53,8 @@ youngReferrers
 
 "
 Class {
-	#name : #CogMethodZone,
-	#superclass : #VMClass,
+	#name : 'CogMethodZone',
+	#superclass : 'VMClass',
 	#instVars : [
 		'youngReferrers',
 		'unpairedMethodList',
@@ -75,10 +75,12 @@ Class {
 		'CogMethodConstants',
 		'VMBasicConstants'
 	],
-	#category : #'VMMaker-JIT'
+	#category : 'VMMaker-JIT',
+	#package : 'VMMaker',
+	#tag : 'JIT'
 }
 
-{ #category : #translation }
+{ #category : 'translation' }
 CogMethodZone class >> declareCVarsIn: aCCodeGenerator [
 	aCCodeGenerator
 		removeVariable: 'coInterpreter';
@@ -89,23 +91,23 @@ CogMethodZone class >> declareCVarsIn: aCCodeGenerator [
 		in: aCCodeGenerator
 ]
 
-{ #category : #translation }
+{ #category : 'translation' }
 CogMethodZone class >> implicitReturnTypeFor: aSelector [
 	"Answer the return type for methods that don't have an explicit return."
 	^#void
 ]
 
-{ #category : #translation }
+{ #category : 'translation' }
 CogMethodZone class >> isNonArgumentImplicitReceiverVariableName: aString [
 	^#('self' 'coInterpreter' 'objectRepresentation') includes: aString
 ]
 
-{ #category : #translation }
+{ #category : 'translation' }
 CogMethodZone class >> typeForSelf [
 	^#implicit
 ]
 
-{ #category : #'young referers' }
+{ #category : 'young referers' }
 CogMethodZone >> addAllToYoungReferrers [
 	<api>
 	<returnTypeC: #void>
@@ -121,7 +123,7 @@ CogMethodZone >> addAllToYoungReferrers [
 			 cogMethod := self methodAfter: cogMethod]]
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 CogMethodZone >> addToOpenPICList: anOpenPIC [
 	<var: #anOpenPIC type: #'CogMethod *'>
 	self assert: anOpenPIC cmType = CMMegamorphicIC.
@@ -131,7 +133,7 @@ CogMethodZone >> addToOpenPICList: anOpenPIC [
 	openPICList := anOpenPIC
 ]
 
-{ #category : #'young referers' }
+{ #category : 'young referers' }
 CogMethodZone >> addToYoungReferrers: cogMethod [
 	<var: #cogMethod type: #'CogMethod *'>
 	self assert: youngReferrers <= limitAddress.
@@ -145,7 +147,7 @@ CogMethodZone >> addToYoungReferrers: cogMethod [
 	objectMemory longAt: youngReferrers put: cogMethod asUnsignedInteger
 ]
 
-{ #category : #allocating }
+{ #category : 'allocating' }
 CogMethodZone >> allocate: numBytes [
 	| roundedBytes allocation |
 	roundedBytes := numBytes + 7 bitAnd: -8.
@@ -161,27 +163,27 @@ CogMethodZone >> allocate: numBytes [
 	^allocation
 ]
 
-{ #category : #allocating }
+{ #category : 'allocating' }
 CogMethodZone >> allocationLimit [
 	<inline: true>
 	^limitAddress - (methodCount * objectMemory wordSize)
 ]
 
-{ #category : #'as yet unclassified' }
+{ #category : 'as yet unclassified' }
 CogMethodZone >> baseAddress [ 
 
 	<doNotGenerate>
 	^ baseAddress
 ]
 
-{ #category : #'as yet unclassified' }
+{ #category : 'as yet unclassified' }
 CogMethodZone >> baseAddress: anInteger [ 
 
 	<doNotGenerate>
 	baseAddress := anInteger
 ]
 
-{ #category : #'jit - api' }
+{ #category : 'jit - api' }
 CogMethodZone >> clearCogCompiledCode [
 	"Free all methods"
 	| cogMethod |
@@ -196,7 +198,7 @@ CogMethodZone >> clearCogCompiledCode [
 		self manageFrom: baseAddress to: limitAddress ]
 ]
 
-{ #category : #compaction }
+{ #category : 'compaction' }
 CogMethodZone >> clearSavedPICUsageCount: cogMethod [
 	"For Sista, where we want PICs to last so they can be observed, we need to keep PICs unless
 	 they are definitely unused.  So we need to identify unused PICs.  So in planCompact, zero the
@@ -210,7 +212,7 @@ CogMethodZone >> clearSavedPICUsageCount: cogMethod [
 		[cogMethod picUsage: 0]
 ]
 
-{ #category : #printing }
+{ #category : 'printing' }
 CogMethodZone >> cogMethodsSelect: aBlock [
 	<doNotGenerate>
 	| cogMethod cogMethods |
@@ -223,14 +225,14 @@ CogMethodZone >> cogMethodsSelect: aBlock [
 	^cogMethods
 ]
 
-{ #category : #'simulation only' }
+{ #category : 'simulation only' }
 CogMethodZone >> cogit [
 	"This is for the sizeof: CogMethod hook that allows different cogit classes to use differet CogMethod variants."
 	<doNotGenerate>
 	^cogit
 ]
 
-{ #category : #compaction }
+{ #category : 'compaction' }
 CogMethodZone >> compactCompiledCode [
 	| objectHeaderValue source dest bytes |
 	<var: #source type: #'CogMethod *'>
@@ -289,18 +291,18 @@ CogMethodZone >> compactCompiledCode [
 	compactionInProgress := false
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 CogMethodZone >> compactionInProgress [
 	^compactionInProgress
 ]
 
-{ #category : #allocating }
+{ #category : 'allocating' }
 CogMethodZone >> effectiveLimit [
 	<inline: true>
 	^limitAddress
 ]
 
-{ #category : #'young referers' }
+{ #category : 'young referers' }
 CogMethodZone >> ensureInYoungReferrers: cogMethod [
 	<var: #cogMethod type: #'CogMethod *'>
 	cogMethod cmRefersToYoung ifFalse:
@@ -309,7 +311,7 @@ CogMethodZone >> ensureInYoungReferrers: cogMethod [
 		 self addToYoungReferrers: cogMethod]
 ]
 
-{ #category : #'jit - api' }
+{ #category : 'jit - api' }
 CogMethodZone >> followForwardedLiteralsInOpenPICList [
 	<option: #SpurObjectMemory>
 	| openPIC |
@@ -320,7 +322,7 @@ CogMethodZone >> followForwardedLiteralsInOpenPICList [
 		 openPIC := self cCoerceSimple: openPIC nextOpenPIC to: #'CogMethod *'.]
 ]
 
-{ #category : #compaction }
+{ #category : 'compaction' }
 CogMethodZone >> freeMethod: cogMethod [
 	<api>
 	<var: #cogMethod type: #'CogMethod *'>
@@ -346,7 +348,7 @@ CogMethodZone >> freeMethod: cogMethod [
 												+ cogMethod blockSize
 ]
 
-{ #category : #compaction }
+{ #category : 'compaction' }
 CogMethodZone >> freeOlderMethodsForCompaction [
 	"Free methods, preferring older methods for compaction, up to some fraction, currently a quarter."
 	| zoneSize amountToFree initialFreeSpace freedSoFar freeableUsage cogMethod |
@@ -376,27 +378,27 @@ CogMethodZone >> freeOlderMethodsForCompaction [
 						cr; flush]
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 CogMethodZone >> freeStart [
 	"declared as a macro so as not to conflict with the memory manager's freeStart."
 	<cmacro: '() mzFreeStart'>
 	^mzFreeStart
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 CogMethodZone >> freeStart: zoneLimit [
 	<doNotGenerate>
 	^baseAddress := mzFreeStart := zoneLimit
 ]
 
-{ #category : #initialization }
+{ #category : 'initialization' }
 CogMethodZone >> initialize [
 	"Make youngReferrers arithmetic for addressIsInCodeZone:"
 	youngReferrers := methodCount := methodBytesFreedSinceLastCompaction := 0.
 	compactionInProgress := false
 ]
 
-{ #category : #'young referers' }
+{ #category : 'young referers' }
 CogMethodZone >> kosherYoungReferrers [
 	"Answer that all entries in youngReferrers are in-use and have the cmRefersToYoung flag set.
 	 Used to check that the youngreferrers pruning routines work correctly."
@@ -415,13 +417,13 @@ CogMethodZone >> kosherYoungReferrers [
 	^true
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 CogMethodZone >> limitZony [ "Let us salute Andrei Tarkovsky and his movie Stalker"
 	<cmacro: '() ((CogMethod *)mzFreeStart)'>
 	^mzFreeStart
 ]
 
-{ #category : #initialization }
+{ #category : 'initialization' }
 CogMethodZone >> manageFrom: theStartAddress to: theLimitAddress [
 	<returnTypeC: #void>
 	mzFreeStart := baseAddress := theStartAddress.
@@ -431,7 +433,7 @@ CogMethodZone >> manageFrom: theStartAddress to: theLimitAddress [
 	methodCount := 0
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 CogMethodZone >> methodAfter: cogMethod [
 	<var: #cogMethod type: #'CogMethod *'>
 	<inline: true>
@@ -440,13 +442,13 @@ CogMethodZone >> methodAfter: cogMethod [
 		to: #'CogMethod *'
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 CogMethodZone >> methodBytesFreedSinceLastCompaction [
 	<cmacro: '() methodBytesFreedSinceLastCompaction'>
 	^methodBytesFreedSinceLastCompaction
 ]
 
-{ #category : #'jit - api' }
+{ #category : 'jit - api' }
 CogMethodZone >> methodFor: address [
 	<api>
 	<returnTypeC: #'CogMethod *'>
@@ -467,7 +469,7 @@ CogMethodZone >> methodFor: address [
 	^0
 ]
 
-{ #category : #'simulation only' }
+{ #category : 'simulation only' }
 CogMethodZone >> methods [
 	<doNotGenerate>
 	| methods |
@@ -477,7 +479,7 @@ CogMethodZone >> methods [
 	^methods
 ]
 
-{ #category : #'method zone introspection' }
+{ #category : 'method zone introspection' }
 CogMethodZone >> methodsCompiledToMachineCodeInto: arrayObj [ 
 	<api>
 	<var: #cogMethod type: #'CogMethod *'>
@@ -496,7 +498,7 @@ CogMethodZone >> methodsCompiledToMachineCodeInto: arrayObj [
 	
 ]
 
-{ #category : #'simulation only' }
+{ #category : 'simulation only' }
 CogMethodZone >> methodsDo: aBlock [
 	<doNotGenerate>
 	| cogMethod |
@@ -516,13 +518,13 @@ CogMethodZone >> methodsDo: aBlock [
 		 cogMethod := self methodAfter: cogMethod]"
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 CogMethodZone >> numMethods [
 	<api>
 	^methodCount
 ]
 
-{ #category : #'jit - api' }
+{ #category : 'jit - api' }
 CogMethodZone >> numMethodsOfType: cogMethodType [
 	<api>
 	| n cogMethod |
@@ -536,7 +538,7 @@ CogMethodZone >> numMethodsOfType: cogMethodType [
 	^n
 ]
 
-{ #category : #'young referers' }
+{ #category : 'young referers' }
 CogMethodZone >> occurrencesInYoungReferrers: cogMethod [
 	<var: #cogMethod type: #'CogMethod *'>
 	| count pointer |
@@ -551,7 +553,7 @@ CogMethodZone >> occurrencesInYoungReferrers: cogMethod [
 	^count
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 CogMethodZone >> openPICWithSelector: aSelector [
 	| openPIC |
 	<var: #openPIC type: #'CogMethod *'>
@@ -566,7 +568,7 @@ CogMethodZone >> openPICWithSelector: aSelector [
 	 true] whileTrue
 ]
 
-{ #category : #compaction }
+{ #category : 'compaction' }
 CogMethodZone >> planCompaction [
 	"Some methods have been freed.  Compute how much each survivor needs to
 	 move during the ensuing compaction and record it in the objectHeader field.
@@ -592,7 +594,7 @@ CogMethodZone >> planCompaction [
 		 cogMethod := self methodAfter: cogMethod]
 ]
 
-{ #category : #printing }
+{ #category : 'printing' }
 CogMethodZone >> printCogMethods [
 	<api>
 	<returnTypeC: #void>
@@ -616,7 +618,7 @@ CogMethodZone >> printCogMethods [
 	coInterpreter print: ' total '; printNum: nm+nc+no+nf+nu; cr
 ]
 
-{ #category : #printing }
+{ #category : 'printing' }
 CogMethodZone >> printCogMethodsOfType: cmType [
 	<api>
 	<returnTypeC: #void>
@@ -629,7 +631,7 @@ CogMethodZone >> printCogMethodsOfType: cmType [
 		 cogMethod := self methodAfter: cogMethod]
 ]
 
-{ #category : #printing }
+{ #category : 'printing' }
 CogMethodZone >> printCogMethodsWithMethod: methodOop [
 	<api>
 	| cogMethod |
@@ -642,7 +644,7 @@ CogMethodZone >> printCogMethodsWithMethod: methodOop [
 		 cogMethod := self methodAfter: cogMethod]
 ]
 
-{ #category : #printing }
+{ #category : 'printing' }
 CogMethodZone >> printCogMethodsWithPrimitive: primIdx [
 	<api>
 	| cogMethod |
@@ -656,7 +658,7 @@ CogMethodZone >> printCogMethodsWithPrimitive: primIdx [
 		 cogMethod := self methodAfter: cogMethod]
 ]
 
-{ #category : #printing }
+{ #category : 'printing' }
 CogMethodZone >> printCogMethodsWithSelector: selectorOop [
 	<api>
 	| cogMethod |
@@ -669,7 +671,7 @@ CogMethodZone >> printCogMethodsWithSelector: selectorOop [
 		 cogMethod := self methodAfter: cogMethod]
 ]
 
-{ #category : #printing }
+{ #category : 'printing' }
 CogMethodZone >> printCogYoungReferrers [
 	<api>
 	<returnTypeC: #void>
@@ -688,7 +690,7 @@ CogMethodZone >> printCogYoungReferrers [
 		 pointer := pointer + objectMemory wordSize]
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 CogMethodZone >> printOpenPICList [
 	<api>
 	| n openPIC |
@@ -702,7 +704,7 @@ CogMethodZone >> printOpenPICList [
 	^n
 ]
 
-{ #category : #'young referers' }
+{ #category : 'young referers' }
 CogMethodZone >> pruneYoungReferrers [
 	| source dest next |
 	<var: #source type: #usqInt>
@@ -729,7 +731,7 @@ CogMethodZone >> pruneYoungReferrers [
 	self assert: self kosherYoungReferrers
 ]
 
-{ #category : #'jit - api' }
+{ #category : 'jit - api' }
 CogMethodZone >> quickClearCogCompiledCode [
 	"Quick, for in-image testing"
 	<doNotGenerate>
@@ -738,7 +740,7 @@ CogMethodZone >> quickClearCogCompiledCode [
 	cogit backEnd stopsFrom: mzFreeStart to: limitAddress - 1
 ]
 
-{ #category : #'young referers' }
+{ #category : 'young referers' }
 CogMethodZone >> relocateAndPruneYoungReferrers [
 	| source dest next cogMethod |
 	<var: #source type: #usqInt>
@@ -776,7 +778,7 @@ CogMethodZone >> relocateAndPruneYoungReferrers [
 	"self assert: self kosherYoungReferrers"
 ]
 
-{ #category : #compaction }
+{ #category : 'compaction' }
 CogMethodZone >> relocateMethodsPreCompaction [
 	"All surviving methods have had the amount they are going to relocate by
 	 stored in their objectHeader fields.  Relocate all relative calls so that after
@@ -795,7 +797,7 @@ CogMethodZone >> relocateMethodsPreCompaction [
 	^true
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 CogMethodZone >> removeFromOpenPICList: anOpenPIC [
 	<var: #anOpenPIC type: #'CogMethod *'>
 	| prevPIC |
@@ -820,7 +822,7 @@ CogMethodZone >> removeFromOpenPICList: anOpenPIC [
 	  true] whileTrue
 ]
 
-{ #category : #compaction }
+{ #category : 'compaction' }
 CogMethodZone >> restorePICUsageCount: cogMethod [
 	"For Sista, where we want PICs to last so they can be observed, we need to keep PICs unless
 	 they are definitely unused.  So we need to identify unused PICs.  So in planCompact, zero the
@@ -837,20 +839,20 @@ CogMethodZone >> restorePICUsageCount: cogMethod [
 			picUsage: 0]
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 CogMethodZone >> roundUpAddress: address [
 	<returnTypeC: #'void *'>
 	<var: #address type: #'void *'>
 	^self cCoerce: ((self cCoerce: address to: #'usqIntptr_t') + 7 bitAnd: -8) to: #'void *'
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 CogMethodZone >> roundUpLength: numBytes [
 	<cmacro: '(numBytes) ((numBytes) + 7 & -8)'>
 	^numBytes + 7 bitAnd: -8
 ]
 
-{ #category : #compaction }
+{ #category : 'compaction' }
 CogMethodZone >> savePICUsageCount: cogMethod [
 	"For Sista, where we want PICs to last so they can be observed, we need to keep PICs unless
 	 they are definitely unused.  So we need to identify unused PICs.  So in planCompact, zero the
@@ -866,7 +868,7 @@ CogMethodZone >> savePICUsageCount: cogMethod [
 			cmUsageCount: 0]
 ]
 
-{ #category : #initialization }
+{ #category : 'initialization' }
 CogMethodZone >> setInterpreter: aCoInterpreter objectRepresentation: anObjectRepresentation cogit: aCogit [
 	<doNotGenerate>
 	coInterpreter := aCoInterpreter.
@@ -875,7 +877,7 @@ CogMethodZone >> setInterpreter: aCoInterpreter objectRepresentation: anObjectRe
 	objectMemory := aCoInterpreter objectMemory
 ]
 
-{ #category : #compaction }
+{ #category : 'compaction' }
 CogMethodZone >> shouldFreeMethod: cogMethod given: freeableUsage [
 	"Answer if cogMethod should be freed in the current pass of freeOlderMethodsForCompaction.
 
@@ -898,12 +900,12 @@ CogMethodZone >> shouldFreeMethod: cogMethod given: freeableUsage [
 			  and: [cogMethod cmUsageCount <= freeableUsage]]
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 CogMethodZone >> voidOpenPICList [
 	openPICList := nil
 ]
 
-{ #category : #'jit - api' }
+{ #category : 'jit - api' }
 CogMethodZone >> voidYoungReferrersPostTenureAll [
 	<var: #cogMethod type: #'CogMethod *'>
 	| pointer cogMethod |
@@ -919,7 +921,7 @@ CogMethodZone >> voidYoungReferrersPostTenureAll [
 	youngReferrers := limitAddress
 ]
 
-{ #category : #'debug printing' }
+{ #category : 'debug printing' }
 CogMethodZone >> whereIsMaybeCodeThing: anOop [
 	<api>
 	<returnTypeC: 'char *'>
@@ -934,29 +936,29 @@ CogMethodZone >> whereIsMaybeCodeThing: anOop [
 	^nil
 ]
 
-{ #category : #'young referers' }
+{ #category : 'young referers' }
 CogMethodZone >> youngReferrers [
 	<cmacro: '() youngReferrers'>
 	^youngReferrers
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 CogMethodZone >> zoneAlignment [
 	^8
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 CogMethodZone >> zoneEnd [
 	^limitAddress
 ]
 
-{ #category : #'simulation only' }
+{ #category : 'simulation only' }
 CogMethodZone >> zoneEnd: zoneEnd [
 	<doNotGenerate> 
 	limitAddress := zoneEnd
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 CogMethodZone >> zoneFree [
 	^mzFreeStart
 ]

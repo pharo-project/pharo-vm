@@ -25,34 +25,36 @@ cogit
 	- the just-in-time compiler
 "
 Class {
-	#name : #Spur32BitCoMemoryManager,
-	#superclass : #Spur32BitMemoryManager,
+	#name : 'Spur32BitCoMemoryManager',
+	#superclass : 'Spur32BitMemoryManager',
 	#instVars : [
 		'cogit'
 	],
 	#pools : [
 		'CogMethodConstants'
 	],
-	#category : #'VMMaker-SpurMemoryManager'
+	#category : 'VMMaker-SpurMemoryManager',
+	#package : 'VMMaker',
+	#tag : 'SpurMemoryManager'
 }
 
-{ #category : #simulation }
+{ #category : 'simulation' }
 Spur32BitCoMemoryManager class >> defaultISA [
 	"Answer the default instruction set architecture to use for simulation."
 	^#IA32
 ]
 
-{ #category : #'accessing class hierarchy' }
+{ #category : 'accessing class hierarchy' }
 Spur32BitCoMemoryManager class >> objectRepresentationClass [
 	^CogObjectRepresentationFor32BitSpur
 ]
 
-{ #category : #simulation }
+{ #category : 'simulation' }
 Spur32BitCoMemoryManager class >> simulatorClass [
 	^ Spur32BitMMLECoSimulator
 ]
 
-{ #category : #'growing/shrinking memory' }
+{ #category : 'growing/shrinking memory' }
 Spur32BitCoMemoryManager >> assimilateNewSegment: segInfo [
 	"Update after adding a segment.
 	 Here we make sure the new segment is not executable."
@@ -61,14 +63,14 @@ Spur32BitCoMemoryManager >> assimilateNewSegment: segInfo [
 	coInterpreter sqMakeMemoryNotExecutableFrom: segInfo segStart To: segInfo segLimit
 ]
 
-{ #category : #trampolines }
+{ #category : 'trampolines' }
 Spur32BitCoMemoryManager >> ceScheduleScavenge [
 	<api>
 	self assert: freeStart >= scavengeThreshold.
 	self scheduleScavenge
 ]
 
-{ #category : #'debug support' }
+{ #category : 'debug support' }
 Spur32BitCoMemoryManager >> checkMemoryMap [
 	"Override to check that Cog methods are considered neither young nor old.
 	 Being young would cause them to be scavenged.
@@ -87,7 +89,7 @@ Spur32BitCoMemoryManager >> checkMemoryMap [
 	self assert: (memoryMap isOldObject: cogit maxCogMethodAddress) not
 ]
 
-{ #category : #'debug support' }
+{ #category : 'debug support' }
 Spur32BitCoMemoryManager >> clearLeakMapAndMapAccessibleObjects [
 	"Perform an integrity/leak check using the heapMap.  Set a bit at each object's header.
 	 Override to set a bit at each Cog method"
@@ -95,27 +97,27 @@ Spur32BitCoMemoryManager >> clearLeakMapAndMapAccessibleObjects [
 	cogit addCogMethodsToHeapMap
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 Spur32BitCoMemoryManager >> cogit: aCogit [ 
 	<doNotGenerate>
 	cogit := aCogit
 ]
 
-{ #category : #'cog jit support' }
+{ #category : 'cog jit support' }
 Spur32BitCoMemoryManager >> ensureNoForwardedLiteralsIn: aMethodObj [
 	"Ensure there are no forwarded literals in the argument."
 	<api>
 	self followForwardedObjectFields: aMethodObj toDepth: 0
 ]
 
-{ #category : #'cog jit support' }
+{ #category : 'cog jit support' }
 Spur32BitCoMemoryManager >> freeStart: aValue [
 	self assert: (aValue >= scavenger eden start and: [aValue < (scavengeThreshold + 1024)]).
 	self assert: (scavengeThreshold max: aValue) + coInterpreter interpreterAllocationReserveBytes <= scavenger eden limit.
 	^freeStart := aValue
 ]
 
-{ #category : #'trampoline support' }
+{ #category : 'trampoline support' }
 Spur32BitCoMemoryManager >> freeStartAddress [
 	<api>
 	<returnTypeC: #usqInt>
@@ -123,14 +125,14 @@ Spur32BitCoMemoryManager >> freeStartAddress [
 		inSmalltalk: [cogit simulatedReadWriteVariableAddress: #freeStart in: self]
 ]
 
-{ #category : #'cog jit support' }
+{ #category : 'cog jit support' }
 Spur32BitCoMemoryManager >> getScavengeThreshold [
 	<api>
 	<returnTypeC: #usqInt>
 	^scavengeThreshold
 ]
 
-{ #category : #'garbage collection' }
+{ #category : 'garbage collection' }
 Spur32BitCoMemoryManager >> headerWhileForwardingOf: aCompiledMethodObjOop [
 	"Answer the header of the argument even though
 	 it may have its header word in a forwarding block
@@ -139,7 +141,7 @@ Spur32BitCoMemoryManager >> headerWhileForwardingOf: aCompiledMethodObjOop [
 	^self baseHeader: aCompiledMethodObjOop
 ]
 
-{ #category : #'class table' }
+{ #category : 'class table' }
 Spur32BitCoMemoryManager >> isForwardedClassIndex: maybeClassIndex [
 	"A lenient tester of forwarded class indices for inline cache management in the Cogit."
 	<api>
@@ -156,13 +158,13 @@ Spur32BitCoMemoryManager >> isForwardedClassIndex: maybeClassIndex [
 	^self isForwarded: entry
 ]
 
-{ #category : #'cog jit support' }
+{ #category : 'cog jit support' }
 Spur32BitCoMemoryManager >> isImmediateClass: classObj [
 	<api>
 	^(self instSpecOfClass: classObj) = self instSpecForImmediateClasses
 ]
 
-{ #category : #compaction }
+{ #category : 'compaction' }
 Spur32BitCoMemoryManager >> methodHeaderFromSavedFirstField: field [
 	(self isIntegerObject: field) ifTrue:
 		[^field].
@@ -172,7 +174,7 @@ Spur32BitCoMemoryManager >> methodHeaderFromSavedFirstField: field [
 	^(coInterpreter cCoerceSimple: field to: #'CogMethod *') methodHeader
 ]
 
-{ #category : #'growing/shrinking memory' }
+{ #category : 'growing/shrinking memory' }
 Spur32BitCoMemoryManager >> methodHeaderOf: methodObj [
 	"Answer the method header of a CompiledMethod object.
 	 If the method has been cogged then the header is a pointer to
@@ -191,7 +193,7 @@ Spur32BitCoMemoryManager >> methodHeaderOf: methodObj [
 			(coInterpreter cCoerceSimple: header to: #'CogMethod *') methodHeader]
 ]
 
-{ #category : #'trampoline support' }
+{ #category : 'trampoline support' }
 Spur32BitCoMemoryManager >> needGCFlagAddress [
 	<api>
 	<returnTypeC: #usqInt>
@@ -199,7 +201,7 @@ Spur32BitCoMemoryManager >> needGCFlagAddress [
 		inSmalltalk: [cogit simulatedReadWriteVariableAddress: #needGCFlag in: self]
 ]
 
-{ #category : #'object enumeration' }
+{ #category : 'object enumeration' }
 Spur32BitCoMemoryManager >> objectBytesForSlots: numSlots [
 	"Answer the total number of bytes in an object with the given
 	 number of slots, including header and possible overflow size header."
@@ -208,7 +210,7 @@ Spur32BitCoMemoryManager >> objectBytesForSlots: numSlots [
 	^super objectBytesForSlots: numSlots
 ]
 
-{ #category : #'cog jit support' }
+{ #category : 'cog jit support' }
 Spur32BitCoMemoryManager >> receiverTagBitsForMethod: aMethodObj [
 	"Answer the tag bits for the receiver based on the method's methodClass, if any."
 	<api>
@@ -223,7 +225,7 @@ Spur32BitCoMemoryManager >> receiverTagBitsForMethod: aMethodObj [
 				self characterTag]
 ]
 
-{ #category : #'trampoline support' }
+{ #category : 'trampoline support' }
 Spur32BitCoMemoryManager >> scavengeThresholdAddress [
 	<api>
 	<returnTypeC: #usqInt>
@@ -231,7 +233,7 @@ Spur32BitCoMemoryManager >> scavengeThresholdAddress [
 		inSmalltalk: [cogit simulatedReadWriteVariableAddress: #getScavengeThreshold in: self]
 ]
 
-{ #category : #'cog jit support' }
+{ #category : 'cog jit support' }
 Spur32BitCoMemoryManager >> smallIntegerTag [
 	"Beware, SmallInteger tags are 1 or 3.  But SmallInteger's identityHash is 1."
 	<api>
@@ -239,7 +241,7 @@ Spur32BitCoMemoryManager >> smallIntegerTag [
 	^1
 ]
 
-{ #category : #'simulation only' }
+{ #category : 'simulation only' }
 Spur32BitCoMemoryManager >> unalignedLongAt: byteAddress [
 	<doNotGenerate>
 	| rem |
@@ -249,7 +251,7 @@ Spur32BitCoMemoryManager >> unalignedLongAt: byteAddress [
 		ifFalse: [((self longAt: byteAddress - rem) + ((self longAt: byteAddress - rem + 4) bitShift: 32) bitShift: rem * -8) bitAnd: 16rFFFFFFFF]
 ]
 
-{ #category : #'simulation only' }
+{ #category : 'simulation only' }
 Spur32BitCoMemoryManager >> unalignedLongAt: byteAddress put: aLong [
 	<doNotGenerate>
 	| rem mask |
@@ -267,7 +269,7 @@ Spur32BitCoMemoryManager >> unalignedLongAt: byteAddress put: aLong [
 			 aLong]
 ]
 
-{ #category : #'cog jit support' }
+{ #category : 'cog jit support' }
 Spur32BitCoMemoryManager >> withoutForwardingOn: obj1 and: obj2 with: aBool sendToCogit: selector [
 	"For the purposes of become: send selector to the cogit with obj1, obj2
 	 and aBool and answer the result.  Undo forwarding for the selector."

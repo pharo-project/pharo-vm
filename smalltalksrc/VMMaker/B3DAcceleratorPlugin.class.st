@@ -2,227 +2,229 @@
 B3DAcceleratorPlugin translate
 "
 Class {
-	#name : #B3DAcceleratorPlugin,
-	#superclass : #InterpreterPlugin,
+	#name : 'B3DAcceleratorPlugin',
+	#superclass : 'InterpreterPlugin',
 	#instVars : [
 		'doRangeChecks'
 	],
-	#category : #'VMMaker-Plugins'
+	#category : 'VMMaker-Plugins',
+	#package : 'VMMaker',
+	#tag : 'Plugins'
 }
 
-{ #category : #translation }
+{ #category : 'translation' }
 B3DAcceleratorPlugin class >> hasHeaderFile [
 	"If there is a single intrinsic header file to be associated with the plugin, here is where you want to flag"
 	^true
 ]
 
-{ #category : #translation }
+{ #category : 'translation' }
 B3DAcceleratorPlugin class >> moduleName [
 	^'B3DAcceleratorPlugin'
 ]
 
-{ #category : #translation }
+{ #category : 'translation' }
 B3DAcceleratorPlugin class >> requiresCrossPlatformFiles [
 	"default is ok for most, any plugin needing platform specific files must say so"
 	^true
 ]
 
-{ #category : #translation }
+{ #category : 'translation' }
 B3DAcceleratorPlugin class >> requiresPlatformFiles [
 	"default is ok for most, any plugin needing platform specific files must say so"
 	^true
 ]
 
-{ #category : #testing }
+{ #category : 'testing' }
 B3DAcceleratorPlugin class >> testLoadPlugin [
 	"B3DAcceleratorPlugin testLoadPlugin"
 	<primitive: 'primitiveRendererVersion' module: 'B3DAcceleratorPlugin' error: ec>
 	self primitiveFailed
 ]
 
-{ #category : #simulation }
+{ #category : 'simulation' }
 B3DAcceleratorPlugin >> b3dDrawArrays: handle _: mode _: minIdx _: maxIdx [
 	"int b3dDrawArrays(int handle, int mode, int minIdx, int maxIdx)"
 	<doNotGenerate>
 	^false
 ]
 
-{ #category : #simulation }
+{ #category : 'simulation' }
 B3DAcceleratorPlugin >> b3dDrawElements: handle _: mode _: faceSize _: facePtr [
 	"int b3dDrawElements(int handle, int mode, int nFaces, unsigned int *facePtr)"
 	<doNotGenerate>
 	^false
 ]
 
-{ #category : #simulation }
+{ #category : 'simulation' }
 B3DAcceleratorPlugin >> b3dDrawRangeElements: handle _: mode _: minIdx _: maxIdx _: faceSize _: facePtr [
 	"int b3dDrawRangeElements(int handle, int mode, int minIdx, int maxIdx, int nFaces, unsigned int *facePtr)"
 	<doNotGenerate>
 	^false
 ]
 
-{ #category : #simulation }
+{ #category : 'simulation' }
 B3DAcceleratorPlugin >> b3dLoadClientState: handle _: vtxData _: vtxSize _: colorData _: colorSize _: normalData _: normalSize _: txData _: txSize [
 	"int b3dLoadClientState(int handle, float *vtxData, int vtxSize, float *colorData, int colorSize, float *normalData, int normalSize, float *txData, int txSize)"
 	<doNotGenerate>
 	^false
 ]
 
-{ #category : #simulation }
+{ #category : 'simulation' }
 B3DAcceleratorPlugin >> b3dxActualTextureDepth: renderer _: handle [
 	"int b3dxActualTextureDepth(int renderer, int handle)"
 	<doNotGenerate>
 	^-1
 ]
 
-{ #category : #simulation }
+{ #category : 'simulation' }
 B3DAcceleratorPlugin >> b3dxAllocateTexture: renderer _: w _: h _: d [
 	"int b3dxAllocateTexture(int renderer, int w, int h, int d)"
 	<doNotGenerate>
 	^-1
 ]
 
-{ #category : #simulation }
+{ #category : 'simulation' }
 B3DAcceleratorPlugin >> b3dxCompositeTexture: rendererHandle _: texHandle _: x _: y _: w _: h _: translucent [
 	"int b3dxCompositeTexture(int renderer, int handle, int x, int y, int w, int h, int translucent)"
 	<doNotGenerate>
 	^false
 ]
 
-{ #category : #simulation }
+{ #category : 'simulation' }
 B3DAcceleratorPlugin >> b3dxDestroyRenderer: handle [
 	"int b3dxDestroyRenderer(int handle)"
 	<doNotGenerate>
 	^false
 ]
 
-{ #category : #simulation }
+{ #category : 'simulation' }
 B3DAcceleratorPlugin >> b3dxDestroyTexture: renderer _: handle [
 	"int b3dxDestroyTexture(int renderer, int handle)"
 	<doNotGenerate>
 	^false
 ]
 
-{ #category : #simulation }
+{ #category : 'simulation' }
 B3DAcceleratorPlugin >> b3dxDisableLights: handle [
 	"int b3dxDisableLights(int handle)"
 	<doNotGenerate>
 	^false
 ]
 
-{ #category : #simulation }
+{ #category : 'simulation' }
 B3DAcceleratorPlugin >> b3dxFinishRenderer: handle [
 	"int b3dxFinishRenderer(int handle)"
 	<doNotGenerate>
 	^false
 ]
 
-{ #category : #simulation }
+{ #category : 'simulation' }
 B3DAcceleratorPlugin >> b3dxFlushRenderer: handle [
 	"int b3dxFlushRenderer(int handle)"
 	<doNotGenerate>
 	^false
 ]
 
-{ #category : #simulation }
+{ #category : 'simulation' }
 B3DAcceleratorPlugin >> b3dxGetRendererColorMasks: handle _: masks [
 	"int b3dxGetRendererColorMasks(int handle, int *masks)"
 	<doNotGenerate>
 	^false
 ]
 
-{ #category : #simulation }
+{ #category : 'simulation' }
 B3DAcceleratorPlugin >> b3dxGetRendererSurfaceDepth: handle [
 	"int b3dxGetRendererSurfaceDepth(int handle)"
 	<doNotGenerate>
 	^-1
 ]
 
-{ #category : #simulation }
+{ #category : 'simulation' }
 B3DAcceleratorPlugin >> b3dxGetRendererSurfaceHandle: handle [
 	"int b3dxGetRendererSurfaceHandle(int handle)"
 	<doNotGenerate>
 	^-1
 ]
 
-{ #category : #simulation }
+{ #category : 'simulation' }
 B3DAcceleratorPlugin >> b3dxGetRendererSurfaceHeight: handle [
 	"int b3dxGetRendererSurfaceHeight(int handle)"
 	<doNotGenerate>
 	^-1
 ]
 
-{ #category : #simulation }
+{ #category : 'simulation' }
 B3DAcceleratorPlugin >> b3dxGetRendererSurfaceWidth: handle [
 	"int b3dxGetRendererSurfaceWidth(int handle)"
 	<doNotGenerate>
 	^-1
 ]
 
-{ #category : #simulation }
+{ #category : 'simulation' }
 B3DAcceleratorPlugin >> b3dxIsOverlayRenderer: handle [
 	"int b3dxIsOverlayRenderer(int handle)"
 	<doNotGenerate>
 	^false
 ]
 
-{ #category : #simulation }
+{ #category : 'simulation' }
 B3DAcceleratorPlugin >> b3dxLoadLight: handle _: i _: light [
 	"int b3dxLoadLight(int handle, int index, B3DPrimitiveLight *light)"
 	<doNotGenerate>
 	^false
 ]
 
-{ #category : #simulation }
+{ #category : 'simulation' }
 B3DAcceleratorPlugin >> b3dxLoadMaterial: handle _: material [
 	"int b3dxLoadMaterial(int handle, B3DPrimitiveMaterial *material)"
 	<doNotGenerate>
 	^false
 ]
 
-{ #category : #simulation }
+{ #category : 'simulation' }
 B3DAcceleratorPlugin >> b3dxRenderVertexBuffer: handle _: primType _: flags _: texHandle _: vtxArray _: vtxCount _: idxArray _: idxCount [
 	"int b3dxRenderVertexBuffer(int handle, int primType, int flags, int texHandle, float *vtxArray, int vtxSize, int *idxArray, int idxSize)"
 	<doNotGenerate>
 	^false
 ]
 
-{ #category : #simulation }
+{ #category : 'simulation' }
 B3DAcceleratorPlugin >> b3dxSwapRendererBuffers: handle [
 	"int b3dxSwapRendererBuffers(int handle)"
 	<doNotGenerate>
 	^false
 ]
 
-{ #category : #simulation }
+{ #category : 'simulation' }
 B3DAcceleratorPlugin >> b3dxTextureByteSex: renderer _: handle [
 	"int b3dxTextureByteSex(int renderer, int handle)"
 	<doNotGenerate>
 	^-1
 ]
 
-{ #category : #simulation }
+{ #category : 'simulation' }
 B3DAcceleratorPlugin >> b3dxTextureColorMasks: renderer _: handle _: masks [
 	"int b3dxTextureColorMasks(int renderer, int handle, int masks[4])"
 	<doNotGenerate>
 	^false
 ]
 
-{ #category : #simulation }
+{ #category : 'simulation' }
 B3DAcceleratorPlugin >> b3dxTextureSurfaceHandle: renderer _: handle [
 	"int b3dxTextureSurfaceHandle(int renderer, int handle)"
 	<doNotGenerate>
 	^-1
 ]
 
-{ #category : #simulation }
+{ #category : 'simulation' }
 B3DAcceleratorPlugin >> b3dxUploadTexture: renderer _: handle _: w _: h _: d _: bitsPtr [
 	"int b3dxUploadTexture(int renderer, int handle, int w, int h, int d, void* bits)"
 	<doNotGenerate>
 	^false
 ]
 
-{ #category : #'primitives-qwaq' }
+{ #category : 'primitives-qwaq' }
 B3DAcceleratorPlugin >> checkBoundsRange: vertices faces: facePtr count: faceCount [
 	"Verify the bounds condition on the entire faces array"
 	| vtxSize |
@@ -234,7 +236,7 @@ B3DAcceleratorPlugin >> checkBoundsRange: vertices faces: facePtr count: faceCou
 
 ]
 
-{ #category : #'primitives-qwaq' }
+{ #category : 'primitives-qwaq' }
 B3DAcceleratorPlugin >> checkVertexData: vertices [
 	"Check the entire vertex data to ensure no nan/inf values"
 	| vtxSize vtxPtr f |
@@ -249,7 +251,7 @@ B3DAcceleratorPlugin >> checkVertexData: vertices [
 
 ]
 
-{ #category : #'primitive support' }
+{ #category : 'primitive support' }
 B3DAcceleratorPlugin >> fetchLightSource: index ofObject: anArray [
 	"Fetch the primitive light source from the given array.
 	Note: No checks are done within here - that happened in stackLightArrayValue:"
@@ -260,14 +262,14 @@ B3DAcceleratorPlugin >> fetchLightSource: index ofObject: anArray [
 	^interpreterProxy firstIndexableField: lightOop
 ]
 
-{ #category : #'initialize-release' }
+{ #category : 'initialize-release' }
 B3DAcceleratorPlugin >> initialiseModule [
 	<export: true>
 	doRangeChecks := true.
 	^self b3dxInitialize
 ]
 
-{ #category : #'primitives-qwaq' }
+{ #category : 'primitives-qwaq' }
 B3DAcceleratorPlugin >> loadClientState: handle vertices: vertices colors: colors normals: normals texCoords: texCoords [
 	"Common method to set up client state for some render ops"
 	| nilOop vtxSize sz colorPtr normalPtr txPtr vertexPtr ok |
@@ -315,7 +317,7 @@ B3DAcceleratorPlugin >> loadClientState: handle vertices: vertices colors: color
 
 ]
 
-{ #category : #'primitives-textures' }
+{ #category : 'primitives-textures' }
 B3DAcceleratorPlugin >> primitiveAllocateTexture [
 	| h w d result renderer |
 	<export: true>
@@ -332,7 +334,7 @@ B3DAcceleratorPlugin >> primitiveAllocateTexture [
 	^interpreterProxy pushInteger: result.
 ]
 
-{ #category : #'primitives-renderer' }
+{ #category : 'primitives-renderer' }
 B3DAcceleratorPlugin >> primitiveClearDepthBuffer [
 	| handle |
 	<export: true>
@@ -345,7 +347,7 @@ B3DAcceleratorPlugin >> primitiveClearDepthBuffer [
 			ifFalse:[interpreterProxy primitiveFail]]
 ]
 
-{ #category : #'primitives-renderer' }
+{ #category : 'primitives-renderer' }
 B3DAcceleratorPlugin >> primitiveClearViewport [
 	| handle pv rgba |
 	<export: true>
@@ -360,7 +362,7 @@ B3DAcceleratorPlugin >> primitiveClearViewport [
 		ifFalse:[interpreterProxy primitiveFail]
 ]
 
-{ #category : #'primitives-textures' }
+{ #category : 'primitives-textures' }
 B3DAcceleratorPlugin >> primitiveCompositeTexture [
 	| result translucent y x w h texHandle rendererHandle |
 	<export: true>
@@ -380,7 +382,7 @@ B3DAcceleratorPlugin >> primitiveCompositeTexture [
 
 ]
 
-{ #category : #'primitives-renderer' }
+{ #category : 'primitives-renderer' }
 B3DAcceleratorPlugin >> primitiveCreateRenderer [
 	"NOTE: This primitive is obsolete but should be supported for older images"
 	| h w y x result allowHardware allowSoftware |
@@ -399,7 +401,7 @@ B3DAcceleratorPlugin >> primitiveCreateRenderer [
 			ifFalse: [interpreterProxy primitiveFail]]
 ]
 
-{ #category : #'primitives-renderer' }
+{ #category : 'primitives-renderer' }
 B3DAcceleratorPlugin >> primitiveCreateRendererFlags [
 	| flags h w y x result  |
 	<export: true>
@@ -416,7 +418,7 @@ B3DAcceleratorPlugin >> primitiveCreateRendererFlags [
 			ifFalse: [interpreterProxy primitiveFail]]
 ]
 
-{ #category : #'primitives-renderer' }
+{ #category : 'primitives-renderer' }
 B3DAcceleratorPlugin >> primitiveDestroyRenderer [
 	| handle result |
 	<export: true>
@@ -429,7 +431,7 @@ B3DAcceleratorPlugin >> primitiveDestroyRenderer [
 	^interpreterProxy pop: 1. "pop arg; return rcvr"
 ]
 
-{ #category : #'primitives-textures' }
+{ #category : 'primitives-textures' }
 B3DAcceleratorPlugin >> primitiveDestroyTexture [
 	| handle result renderer |
 	<export: true>
@@ -443,7 +445,7 @@ B3DAcceleratorPlugin >> primitiveDestroyTexture [
 	^interpreterProxy pop: 2. "pop arg; return rcvr"
 ]
 
-{ #category : #'primitives-qwaq' }
+{ #category : 'primitives-qwaq' }
 B3DAcceleratorPlugin >> primitiveDrawArrays [
 	"Primitive. Setup non-VBO client state and call drawRangeElements in one go to avoid
 	garbage collection to move the buffers underneith."
@@ -480,7 +482,7 @@ B3DAcceleratorPlugin >> primitiveDrawArrays [
 
 ]
 
-{ #category : #'primitives-qwaq' }
+{ #category : 'primitives-qwaq' }
 B3DAcceleratorPlugin >> primitiveDrawElements [
 	"Primitive. Setup non-VBO client state and call drawElements in one go to avoid
 	garbage collection to move the buffers underneith."
@@ -521,7 +523,7 @@ B3DAcceleratorPlugin >> primitiveDrawElements [
 
 ]
 
-{ #category : #'primitives-qwaq' }
+{ #category : 'primitives-qwaq' }
 B3DAcceleratorPlugin >> primitiveDrawRangeElements [
 	"Primitive. Setup non-VBO client state and call drawRangeElements in one go to avoid
 	garbage collection to move the buffers underneith."
@@ -568,7 +570,7 @@ B3DAcceleratorPlugin >> primitiveDrawRangeElements [
 
 ]
 
-{ #category : #'primitives-qwaq' }
+{ #category : 'primitives-qwaq' }
 B3DAcceleratorPlugin >> primitiveEnableDrawRangeChecks [
 	"Primitive. Enable/disable draw (range) checks"
 	| enabled |
@@ -584,7 +586,7 @@ B3DAcceleratorPlugin >> primitiveEnableDrawRangeChecks [
 	^nil "keep compiler quiet"
 ]
 
-{ #category : #'primitives-renderer' }
+{ #category : 'primitives-renderer' }
 B3DAcceleratorPlugin >> primitiveFinishRenderer [
 	| handle result |
 	<export: true>
@@ -597,7 +599,7 @@ B3DAcceleratorPlugin >> primitiveFinishRenderer [
 	^interpreterProxy pop: 1. "pop arg; return rcvr"
 ]
 
-{ #category : #'primitives-renderer' }
+{ #category : 'primitives-renderer' }
 B3DAcceleratorPlugin >> primitiveFlushRenderer [
 	| handle result |
 	<export: true>
@@ -610,7 +612,7 @@ B3DAcceleratorPlugin >> primitiveFlushRenderer [
 	^interpreterProxy pop: 1. "pop arg; return rcvr"
 ]
 
-{ #category : #'primitives-renderer' }
+{ #category : 'primitives-renderer' }
 B3DAcceleratorPlugin >> primitiveGetIntProperty [
 	| handle prop result |
 	<export: true>
@@ -622,7 +624,7 @@ B3DAcceleratorPlugin >> primitiveGetIntProperty [
 	interpreterProxy methodReturnInteger: result
 ]
 
-{ #category : #'primitives-renderer' }
+{ #category : 'primitives-renderer' }
 B3DAcceleratorPlugin >> primitiveGetRendererColorMasks [
 	| handle masks array |
 	<export: true>
@@ -646,7 +648,7 @@ B3DAcceleratorPlugin >> primitiveGetRendererColorMasks [
 	^interpreterProxy pop: 2 "pop args return receiver"
 ]
 
-{ #category : #'primitives-renderer' }
+{ #category : 'primitives-renderer' }
 B3DAcceleratorPlugin >> primitiveGetRendererSurfaceDepth [
 	| handle result |
 	<export: true>
@@ -660,7 +662,7 @@ B3DAcceleratorPlugin >> primitiveGetRendererSurfaceDepth [
 	^interpreterProxy pushInteger: result
 ]
 
-{ #category : #'primitives-renderer' }
+{ #category : 'primitives-renderer' }
 B3DAcceleratorPlugin >> primitiveGetRendererSurfaceHandle [
 	| handle result |
 	<export: true>
@@ -674,7 +676,7 @@ B3DAcceleratorPlugin >> primitiveGetRendererSurfaceHandle [
 	^interpreterProxy pushInteger: result
 ]
 
-{ #category : #'primitives-renderer' }
+{ #category : 'primitives-renderer' }
 B3DAcceleratorPlugin >> primitiveGetRendererSurfaceHeight [
 	| handle result |
 	<export: true>
@@ -688,7 +690,7 @@ B3DAcceleratorPlugin >> primitiveGetRendererSurfaceHeight [
 	^interpreterProxy pushInteger: result
 ]
 
-{ #category : #'primitives-renderer' }
+{ #category : 'primitives-renderer' }
 B3DAcceleratorPlugin >> primitiveGetRendererSurfaceWidth [
 	| handle result |
 	<export: true>
@@ -702,7 +704,7 @@ B3DAcceleratorPlugin >> primitiveGetRendererSurfaceWidth [
 	^interpreterProxy pushInteger: result
 ]
 
-{ #category : #'primitives-renderer' }
+{ #category : 'primitives-renderer' }
 B3DAcceleratorPlugin >> primitiveIsOverlayRenderer [
 	| handle result |
 	<export: true>
@@ -715,7 +717,7 @@ B3DAcceleratorPlugin >> primitiveIsOverlayRenderer [
 	^interpreterProxy pushBool: result.
 ]
 
-{ #category : #'primitives-renderer' }
+{ #category : 'primitives-renderer' }
 B3DAcceleratorPlugin >> primitiveRenderVertexBuffer [
 	| idxCount vtxCount vtxArray idxArray texHandle primType result flags handle |
 	<export: true>
@@ -745,7 +747,7 @@ B3DAcceleratorPlugin >> primitiveRenderVertexBuffer [
 	^interpreterProxy pop: 8. "pop args; return rcvr"
 ]
 
-{ #category : #'primitives-renderer' }
+{ #category : 'primitives-renderer' }
 B3DAcceleratorPlugin >> primitiveRendererVersion [
 	<export: true>
 	interpreterProxy methodArgumentCount = 0
@@ -754,7 +756,7 @@ B3DAcceleratorPlugin >> primitiveRendererVersion [
 	^interpreterProxy pushInteger: 1.
 ]
 
-{ #category : #'primitives-renderer' }
+{ #category : 'primitives-renderer' }
 B3DAcceleratorPlugin >> primitiveSetBufferRect [
 	"Primitive. Set the buffer rectangle (e.g., the pixel area on screen) to use for this renderer.
 	The viewport is positioned within the buffer rectangle."
@@ -773,7 +775,7 @@ B3DAcceleratorPlugin >> primitiveSetBufferRect [
 			ifFalse:[interpreterProxy primitiveFail]]
 ]
 
-{ #category : #'primitives-renderer' }
+{ #category : 'primitives-renderer' }
 B3DAcceleratorPlugin >> primitiveSetFog [
 	| handle rgba density fogType stop start |
 	<export: true>
@@ -794,7 +796,7 @@ B3DAcceleratorPlugin >> primitiveSetFog [
 			ifFalse:[interpreterProxy primitiveFail]]
 ]
 
-{ #category : #'primitives-renderer' }
+{ #category : 'primitives-renderer' }
 B3DAcceleratorPlugin >> primitiveSetIntProperty [
 	| handle prop value |
 	<export: true>
@@ -809,7 +811,7 @@ B3DAcceleratorPlugin >> primitiveSetIntProperty [
 
 ]
 
-{ #category : #'primitives-renderer' }
+{ #category : 'primitives-renderer' }
 B3DAcceleratorPlugin >> primitiveSetLights [
 	| lightArray lightCount light handle |
 	<export: true>
@@ -834,7 +836,7 @@ B3DAcceleratorPlugin >> primitiveSetLights [
 	^interpreterProxy pop: 2. "args; return rcvr"
 ]
 
-{ #category : #'primitives-renderer' }
+{ #category : 'primitives-renderer' }
 B3DAcceleratorPlugin >> primitiveSetMaterial [
 	| material handle |
 	<export: true>
@@ -850,7 +852,7 @@ B3DAcceleratorPlugin >> primitiveSetMaterial [
 	^interpreterProxy pop: 2. "args; return rcvr"
 ]
 
-{ #category : #'primitives-renderer' }
+{ #category : 'primitives-renderer' }
 B3DAcceleratorPlugin >> primitiveSetTransform [
 	"Transform an entire vertex buffer using the supplied modelview and projection matrix."
 	| projectionMatrix modelViewMatrix handle |
@@ -868,7 +870,7 @@ B3DAcceleratorPlugin >> primitiveSetTransform [
 		 interpreterProxy pop: 3] "Leave rcvr on stack"
 ]
 
-{ #category : #'primitives-renderer' }
+{ #category : 'primitives-renderer' }
 B3DAcceleratorPlugin >> primitiveSetVerboseLevel [
 	| result level |
 	<export: true>
@@ -879,7 +881,7 @@ B3DAcceleratorPlugin >> primitiveSetVerboseLevel [
 	interpreterProxy methodReturnInteger: result
 ]
 
-{ #category : #'primitives-renderer' }
+{ #category : 'primitives-renderer' }
 B3DAcceleratorPlugin >> primitiveSetViewport [
 	| h w y x handle |
 	<export: true>
@@ -896,7 +898,7 @@ B3DAcceleratorPlugin >> primitiveSetViewport [
 			ifFalse:[interpreterProxy primitiveFail]]
 ]
 
-{ #category : #'primitives-renderer' }
+{ #category : 'primitives-renderer' }
 B3DAcceleratorPlugin >> primitiveSwapRendererBuffers [
 	| handle result |
 	<export: true>
@@ -909,7 +911,7 @@ B3DAcceleratorPlugin >> primitiveSwapRendererBuffers [
 	^interpreterProxy pop: 1. "pop arg; return rcvr"
 ]
 
-{ #category : #'primitives-textures' }
+{ #category : 'primitives-textures' }
 B3DAcceleratorPlugin >> primitiveTextureByteSex [
 	| handle result renderer |
 	<export: true>
@@ -924,7 +926,7 @@ B3DAcceleratorPlugin >> primitiveTextureByteSex [
 	^interpreterProxy pushBool: result.
 ]
 
-{ #category : #'primitives-textures' }
+{ #category : 'primitives-textures' }
 B3DAcceleratorPlugin >> primitiveTextureDepth [
 	| handle result renderer |
 	<export: true>
@@ -939,7 +941,7 @@ B3DAcceleratorPlugin >> primitiveTextureDepth [
 	^interpreterProxy pushInteger: result.
 ]
 
-{ #category : #'primitives-textures' }
+{ #category : 'primitives-textures' }
 B3DAcceleratorPlugin >> primitiveTextureGetColorMasks [
 	| handle masks array renderer |
 	<export: true>
@@ -964,7 +966,7 @@ B3DAcceleratorPlugin >> primitiveTextureGetColorMasks [
 	^interpreterProxy pop: 3 "pop args return receiver"
 ]
 
-{ #category : #'primitives-textures' }
+{ #category : 'primitives-textures' }
 B3DAcceleratorPlugin >> primitiveTextureSurfaceHandle [
 	| handle result renderer |
 	<export: true>
@@ -979,7 +981,7 @@ B3DAcceleratorPlugin >> primitiveTextureSurfaceHandle [
 	^interpreterProxy pushInteger: result
 ]
 
-{ #category : #'primitives-textures' }
+{ #category : 'primitives-textures' }
 B3DAcceleratorPlugin >> primitiveTextureUpload [
 	| h w d result form bits ppw bitsPtr handle renderer |
 	<export: true>
@@ -1007,13 +1009,13 @@ B3DAcceleratorPlugin >> primitiveTextureUpload [
 	^interpreterProxy pop: 3. "args; return rcvr"
 ]
 
-{ #category : #'initialize-release' }
+{ #category : 'initialize-release' }
 B3DAcceleratorPlugin >> shutdownModule [
 	<export: true>
 	^self b3dxShutdown
 ]
 
-{ #category : #'primitive support' }
+{ #category : 'primitive support' }
 B3DAcceleratorPlugin >> stackLightArrayValue: stackIndex [
 	"Load an Array of B3DPrimitiveLights from the given stack index"
 	| oop array arraySize |
@@ -1031,7 +1033,7 @@ B3DAcceleratorPlugin >> stackLightArrayValue: stackIndex [
 	^array
 ]
 
-{ #category : #'primitive support' }
+{ #category : 'primitive support' }
 B3DAcceleratorPlugin >> stackMaterialValue: stackIndex [
 	"Load a B3DMaterial from the given stack index"
 	| oop |
@@ -1045,7 +1047,7 @@ B3DAcceleratorPlugin >> stackMaterialValue: stackIndex [
 	^nil
 ]
 
-{ #category : #'primitive support' }
+{ #category : 'primitive support' }
 B3DAcceleratorPlugin >> stackMatrix: index [
 	"Load a 4x4 transformation matrix from the interpreter stack.
 	Return a pointer to the matrix data if successful, nil otherwise."
@@ -1059,7 +1061,7 @@ B3DAcceleratorPlugin >> stackMatrix: index [
 	^nil
 ]
 
-{ #category : #'primitive support' }
+{ #category : 'primitive support' }
 B3DAcceleratorPlugin >> stackPrimitiveIndexArray: stackIndex ofSize: nItems validate: aBool forVertexSize: maxIndex [
 	"Load a primitive index array from the interpreter stack.
 	If aBool is true then check that all the indexes are in the range (1,maxIndex).
@@ -1082,7 +1084,7 @@ B3DAcceleratorPlugin >> stackPrimitiveIndexArray: stackIndex ofSize: nItems vali
 	^idxPtr
 ]
 
-{ #category : #'primitive support' }
+{ #category : 'primitive support' }
 B3DAcceleratorPlugin >> stackPrimitiveVertexArray: index ofSize: nItems [
 	"Load a primitive vertex array from the interpreter stack.
 	Return a pointer to the vertex data if successful, nil otherwise."

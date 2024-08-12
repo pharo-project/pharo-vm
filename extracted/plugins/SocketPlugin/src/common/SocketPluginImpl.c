@@ -440,21 +440,6 @@ static int socketReadable(int s, int type)
 
   return -1;	/* EOF */
 }
-
-
-/* answer whether the socket can be written without blocking */
-
-static int socketWritable(int s)
-{
-  struct timeval tv= { 0, 0 };
-  fd_set fds;
-  
-  FD_ZERO(&fds);
-  FD_SET(s, &fds);
-
-  return select(s+1, 0, &fds, 0, &tv) > 0;
-}
-
 /* answer the error condition on the given socket */
 
 static int socketError(int s)
@@ -1222,11 +1207,11 @@ sqInt sqSocketSendDone(SocketPtr s)
 {
   if (!socketValid(s))
     return false;
-  if (SOCKETSTATE(s) == Connected)
-    {
-      if (socketWritable(SOCKET(s))) return true;
-      aioHandle(SOCKET(s), dataHandler, AIO_WX);
-    }
+  
+  // If the socket is connected we just return true. Then the send/sendto might block, but we will use the event system
+  if(SOCKETSTATE(s) == Connected)
+	return true;
+  
   return false;
 }
 

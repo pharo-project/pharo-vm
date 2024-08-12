@@ -2,30 +2,32 @@
 This plugin provides access to the Mac's internet configuration toolkit - so long as you are running on a Mac.
 "
 Class {
-	#name : #InternetConfigPlugin,
-	#superclass : #SmartSyntaxInterpreterPlugin,
-	#category : #'VMMaker-Plugins'
+	#name : 'InternetConfigPlugin',
+	#superclass : 'SmartSyntaxInterpreterPlugin',
+	#category : 'VMMaker-Plugins',
+	#package : 'VMMaker',
+	#tag : 'Plugins'
 }
 
-{ #category : #translation }
+{ #category : 'translation' }
 InternetConfigPlugin class >> hasHeaderFile [
 	"If there is a single intrinsic header file to be associated with the plugin, here is where you want to flag"
 	^true
 ]
 
-{ #category : #translation }
+{ #category : 'translation' }
 InternetConfigPlugin class >> requiresPlatformFiles [
 	"this plugin requires platform specific files in order to work"
 	^true
 ]
 
-{ #category : #initialize }
+{ #category : 'initialize' }
 InternetConfigPlugin >> initialiseModule [
 	<export: true>
 	^self cCode: 'sqInternetConfigurationInit()' inSmalltalk:[true]
 ]
 
-{ #category : #'system primitives' }
+{ #category : 'system primitives' }
 InternetConfigPlugin >> primitiveGetMacintoshFileTypeAndCreatorFrom: aFileName [
 	| oop ptr keyLength creator |
 
@@ -44,7 +46,7 @@ InternetConfigPlugin >> primitiveGetMacintoshFileTypeAndCreatorFrom: aFileName [
 
 ]
 
-{ #category : #'system primitives' }
+{ #category : 'system primitives' }
 InternetConfigPlugin >> primitiveGetStringKeyedBy: aKey [
 	| oop ptr size aString keyLength |
 
@@ -63,7 +65,7 @@ InternetConfigPlugin >> primitiveGetStringKeyedBy: aKey [
 
 ]
 
-{ #category : #initialize }
+{ #category : 'initialize' }
 InternetConfigPlugin >> shutdownModule [
 	<export: true>
 	^self cCode: 'sqInternetConfigurationShutdown()' inSmalltalk:[true]

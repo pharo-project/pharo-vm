@@ -26,8 +26,8 @@ Note that in a 64-bit system all fields from cmNumArgs through blockEntry fit in
 My instances are not actually used.  The methods exist only as input to Slang.  The simulator uses my surrogates (CogMethodSurrogate32 and CogMethodSurrogate64.
 "
 Class {
-	#name : #CogMethod,
-	#superclass : #VMStructType,
+	#name : 'CogMethod',
+	#superclass : 'VMStructType',
 	#instVars : [
 		'objectHeader',
 		'homeOffset',
@@ -53,26 +53,28 @@ Class {
 		'VMBasicConstants',
 		'VMBytecodeConstants'
 	],
-	#category : #'VMMaker-JIT'
+	#category : 'VMMaker-JIT',
+	#package : 'VMMaker',
+	#tag : 'JIT'
 }
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 CogMethod class >> alignedByteSize [
 	self shouldNotImplement
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 CogMethod class >> alignedByteSizeOf: anObject forClient: aVMClass [
 	^aVMClass cogit cogMethodSurrogateClass alignedByteSize
 ]
 
-{ #category : #translation }
+{ #category : 'translation' }
 CogMethod class >> cogMethodHeader [
 
 	^ String streamContents: [ :s | self printTypedefOn: s ]
 ]
 
-{ #category : #'class initialization' }
+{ #category : 'class initialization' }
 CogMethod class >> initialize [
 	"CogMethod initialize"
 	"see instVarNamesAndTypesForTranslationDo:"
@@ -81,7 +83,7 @@ CogMethod class >> initialize [
 	MaxMethodSize		:= (2 raisedTo: 16) - 1
 ]
 
-{ #category : #translation }
+{ #category : 'translation' }
 CogMethod class >> instVarNamesAndTypesForTranslationDo: aBinaryBlock [
 	"enumerate aBinaryBlock with the names and C type strings for the
 	 inst vars to include in a CogMethod or CogBlockMethod struct."
@@ -117,14 +119,14 @@ CogMethod class >> instVarNamesAndTypesForTranslationDo: aBinaryBlock [
 								[#sqInt])]]
 ]
 
-{ #category : #translation }
+{ #category : 'translation' }
 CogMethod class >> isAccessor: aSelector [
 	"Answer if aSelector is simply an accessor method for one of our fields."
 	^(#(cPICNumCases cPICNumCases: nextOpenPIC nextOpenPIC:) includes: aSelector)
 	  or: [super isAccessor: aSelector]
 ]
 
-{ #category : #'code generation' }
+{ #category : 'code generation' }
 CogMethod class >> offsetForInstVar: instVarName [
 	"Hack to offset accesses to variables by certain values.  The inst vars following
 	 the objectHeader must be offset by the baseHeaderSize."
@@ -132,52 +134,52 @@ CogMethod class >> offsetForInstVar: instVarName [
 		['baseHeaderSize']
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 CogMethod class >> surrogateClass [
 	self shouldNotImplement
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 CogMethod >> blockSize [
 	"Answer the value of blockSize"
 
 	^ blockSize
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 CogMethod >> blockSize: anObject [
 	"Set the value of blockSize"
 
 	^blockSize := anObject
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 CogMethod >> cPICNumCases [
 	"Answer the value of cPICNumCases (a.k.a. stackCheckOffset)"
 	<cmacro: ' stackCheckOffset'>
 	^stackCheckOffset
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 CogMethod >> cPICNumCases: anObject [
 	"Set the value of cPICNumCases (a.k.a. stackCheckOffset)"
 	<cmacro: 'Hack hack hack hack i.e. the getter macro does all the work'>
 	^stackCheckOffset := anObject
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 CogMethod >> cbUsesInstVars [
 
 	^cbUsesInstVars
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 CogMethod >> cbUsesInstVars: anObject [
 
 	^cbUsesInstVars := anObject
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 CogMethod >> cmIsFullBlock [
 	"Answer the value of cpicHasMNUCaseOrCMIsFullBlock"
 	<inline: true>
@@ -186,77 +188,77 @@ CogMethod >> cmIsFullBlock [
 		ifFalse: [false]
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 CogMethod >> cmNumArgs [
 	"Answer the value of cmNumArgs"
 
 	^cmNumArgs
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 CogMethod >> cmNumArgs: anObject [
 	"Set the value of cmNumArgs"
 
 	^cmNumArgs := anObject
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 CogMethod >> cmRefersToYoung [
 	"Answer the value of cmRefersToYoung"
 
 	^cmRefersToYoung
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 CogMethod >> cmRefersToYoung: anObject [
 	"Set the value of cmRefersToYoung"
 
 	^cmRefersToYoung := anObject
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 CogMethod >> cmType [
 	"Answer the value of cmType"
 
 	^cmType
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 CogMethod >> cmType: anInteger [
 	"Set the value of cmType"
 
 	^cmType := anInteger
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 CogMethod >> cmUsageCount [
 	"Answer the value of cmUsageCount"
 
 	^cmUsageCount
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 CogMethod >> cmUsageCount: anInteger [
 	"Set the value of cmUsageCount"
 
 	^cmUsageCount := anInteger
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 CogMethod >> cmUsesPenultimateLit [
 	"Answer the value of cmUsesPenultimateLit"
 
 	^cmUsesPenultimateLit
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 CogMethod >> cmUsesPenultimateLit: anObject [
 	"Set the value of cmUsesPenultimateLit"
 
 	^cmUsesPenultimateLit := anObject
 ]
 
-{ #category : #testing }
+{ #category : 'testing' }
 CogMethod >> containsAddress: anAddress [
 	"is anAddress within my bounds; not a test of addresses referred to within instructions in the method"
 	<inline: true>
@@ -264,12 +266,12 @@ CogMethod >> containsAddress: anAddress [
 	  and: [self asUnsignedInteger + self blockSize >= anAddress asUnsignedInteger]
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 CogMethod >> counters [
 	^ 0
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 CogMethod >> cpicHasMNUCase [
 	"Answer if the receiver has an MNU case."
 	<inline: true>
@@ -279,133 +281,133 @@ CogMethod >> cpicHasMNUCase [
 		ifFalse: [cpicHasMNUCaseOrCMIsFullBlock]
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 CogMethod >> cpicHasMNUCase: anObject [
 	"Set if the receiver has an MNU case."
 	<inline: true>
 	^cpicHasMNUCaseOrCMIsFullBlock := anObject
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 CogMethod >> cpicHasMNUCaseOrCMIsFullBlock [
 	"Answer the value of cpicHasMNUCaseOrCMIsFullBlock"
 
 	^cpicHasMNUCaseOrCMIsFullBlock
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 CogMethod >> cpicHasMNUCaseOrCMIsFullBlock: anObject [
 	"Set the value of cpicHasMNUCaseOrCMIsFullBlock"
 
 	^cpicHasMNUCaseOrCMIsFullBlock := anObject
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 CogMethod >> methodHeader [
 	"Answer the value of methodHeader"
 
 	^ methodHeader
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 CogMethod >> methodHeader: anObject [
 	"Set the value of methodHeader"
 
 	^methodHeader := anObject
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 CogMethod >> methodObject [
 	"Answer the value of methodObject"
 
 	^methodObject
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 CogMethod >> methodObject: anObject [
 	"Set the value of methodObject"
 
 	^methodObject := anObject
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 CogMethod >> nextOpenPIC [
 	"Answer the value of nextOpenPIC (a.k.a. methodObject)"
 	<cmacro: ' methodObject'>
 	^methodObject
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 CogMethod >> nextOpenPIC: anObject [
 	"Set the value of nextOpenPIC (a.k.a. methodObject)"
 	<cmacro: 'Hack hack hack hack i.e. the getter macro does all the work'>
 	^methodObject := anObject
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 CogMethod >> objectHeader [
 	"Answer the value of objectHeader"
 
 	^objectHeader
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 CogMethod >> objectHeader: anObject [
 	"Set the value of objectHeader"
 
 	^objectHeader := anObject
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 CogMethod >> picUsage [
 	"Answer the value of blockEntryOffset"
 
 	^picUsage
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 CogMethod >> picUsage: anObject [
 	"Set the value of blockEntryOffset"
 
 	^picUsage := anObject
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 CogMethod >> selector [
 	"Answer the value of selector"
 
 	^ selector
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 CogMethod >> selector: anObject [
 	"Set the value of selector"
 
 	^selector := anObject
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 CogMethod >> stackCheckOffset [
 	"Answer the value of stackCheckOffset"
 
 	^stackCheckOffset
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 CogMethod >> stackCheckOffset: anObject [
 	"Set the value of stackCheckOffset"
 
 	^stackCheckOffset := anObject
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 CogMethod >> startpc [
 	"Answer the value of startpc"
 
 	^startpc
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 CogMethod >> startpc: anObject [
 	"Set the value of startpc"
 

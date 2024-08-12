@@ -1,22 +1,24 @@
 Class {
-	#name : #TSendNode,
-	#superclass : #TParseNode,
+	#name : 'TSendNode',
+	#superclass : 'TParseNode',
 	#instVars : [
 		'selector',
 		'receiver',
 		'arguments',
 		'isBuiltinOperator'
 	],
-	#category : #'Slang-AST'
+	#category : 'Slang-AST',
+	#package : 'Slang',
+	#tag : 'AST'
 }
 
-{ #category : #'instance creation' }
+{ #category : 'instance creation' }
 TSendNode class >> receiver: aReceiverNode selector: aString [
 	
 	^ self receiver: aReceiverNode selector: aString arguments: #()
 ]
 
-{ #category : #'instance creation' }
+{ #category : 'instance creation' }
 TSendNode class >> receiver: aReceiverNode selector: aString arguments: aCollection [ 
 	
 	^ self new
@@ -26,7 +28,7 @@ TSendNode class >> receiver: aReceiverNode selector: aString arguments: aCollect
 		yourself
 ]
 
-{ #category : #comparing }
+{ #category : 'comparing' }
 TSendNode >> = aNode [
 
 	super = aNode ifFalse: [ ^ false ].
@@ -39,13 +41,13 @@ TSendNode >> = aNode [
 	^ true
 ]
 
-{ #category : #visiting }
+{ #category : 'visiting' }
 TSendNode >> accept: aVisitor [
 	
 	^ aVisitor visitSendNode: self
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 TSendNode >> args [
 
 	self
@@ -55,26 +57,26 @@ TSendNode >> args [
 	^ self arguments
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 TSendNode >> arguments [
 
 	^arguments
 ]
 
-{ #category : #private }
+{ #category : 'private' }
 TSendNode >> arguments: aSequence [
 	arguments := aSequence.
 	arguments do: [ :e | e parent: self ].
 ]
 
-{ #category : #'inlining support' }
+{ #category : 'inlining support' }
 TSendNode >> argumentsForInliningCodeGenerator: aCodeGen [
 	^(self shouldIncludeReceiverAsFirstArgument: aCodeGen)
 		ifTrue: [{receiver}, arguments]
 		ifFalse: [arguments]
 ]
 
-{ #category : #tranforming }
+{ #category : 'tranforming' }
 TSendNode >> asCASTAsFieldReferenceIn: aCodeGen [
 
 	| struct access member |
@@ -105,7 +107,7 @@ TSendNode >> asCASTAsFieldReferenceIn: aCodeGen [
 		  yourself
 ]
 
-{ #category : #tranforming }
+{ #category : 'tranforming' }
 TSendNode >> asCASTAsFunctionCallIn: aCodeGen [
 
 	"Translate this message send into a C function call"
@@ -142,7 +144,7 @@ TSendNode >> asCASTAsFunctionCallIn: aCodeGen [
 	^ callNode
 ]
 
-{ #category : #tranforming }
+{ #category : 'tranforming' }
 TSendNode >> asCASTExpressionIn: aCCodeGenerator [
 
 	| construct |
@@ -154,7 +156,7 @@ TSendNode >> asCASTExpressionIn: aCCodeGenerator [
 	^ construct
 ]
 
-{ #category : #tranforming }
+{ #category : 'tranforming' }
 TSendNode >> asCASTIn: aCCodeGenerator [
 
 	| construct |
@@ -166,7 +168,7 @@ TSendNode >> asCASTIn: aCCodeGenerator [
 	^ construct
 ]
 
-{ #category : #'inlining support' }
+{ #category : 'inlining support' }
 TSendNode >> asTransformedConstantPerform [
 	"If the receiver is a send of perform: with a constant selector,
 	 answer a send node that elides the perform:, otherwise answer nil."
@@ -182,14 +184,14 @@ TSendNode >> asTransformedConstantPerform [
 			arguments: arguments allButFirst]
 ]
 
-{ #category : #transformations }
+{ #category : 'transformations' }
 TSendNode >> bindVariableUsesIn: aDictionary [
 
 	self receiver: (receiver bindVariableUsesIn: aDictionary).
 	self arguments: (arguments collect: [ :a | a bindVariableUsesIn: aDictionary ]).
 ]
 
-{ #category : #transformations }
+{ #category : 'transformations' }
 TSendNode >> bindVariableUsesIn: aDictionary andConstantFoldIf: constantFold in: codeGen [
 
 	"Answer either the receiver, if it contains no references to the given variables, or a new node with the given variables rebound.
@@ -249,14 +251,14 @@ TSendNode >> bindVariableUsesIn: aDictionary andConstantFoldIf: constantFold in:
 		  yourself
 ]
 
-{ #category : #transformations }
+{ #category : 'transformations' }
 TSendNode >> bindVariablesIn: aDictionary [
 
 	self receiver: (receiver bindVariablesIn: aDictionary).
 	self arguments: (arguments collect: [ :a | a bindVariablesIn: aDictionary ]).
 ]
 
-{ #category : #transformations }
+{ #category : 'transformations' }
 TSendNode >> bindVariablesIn: aDictionary unless: cautionaryBlock [
 
 	(cautionaryBlock value: self) ifTrue: [^self].
@@ -264,13 +266,13 @@ TSendNode >> bindVariablesIn: aDictionary unless: cautionaryBlock [
 	self arguments: (arguments collect: [ :a | a bindVariablesIn: aDictionary unless: cautionaryBlock]).
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 TSendNode >> children [
 	
 	^ { receiver }, arguments
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 TSendNode >> constantNumbericValueIfAtAllPossibleOrNilIn: aCCodeGen [
 	"This is a version of constantNumbericValueOrNil for type checking rather than code generation.
 	 It aims to yield a value if at all possible."
@@ -286,7 +288,7 @@ TSendNode >> constantNumbericValueIfAtAllPossibleOrNilIn: aCCodeGen [
 			[m statements last expression constantNumbericValueIfAtAllPossibleOrNilIn: aCCodeGen]]
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 TSendNode >> constantNumbericValueOrNil [
 	(#(* // + -) includes: selector) ifTrue:
 		[receiver constantNumbericValueOrNil ifNotNil:
@@ -297,7 +299,7 @@ TSendNode >> constantNumbericValueOrNil [
 	^nil
 ]
 
-{ #category : #transformations }
+{ #category : 'transformations' }
 TSendNode >> copyWithoutReturn [
 	self assert: self endsWithReturn.
 	^self class new
@@ -311,48 +313,48 @@ TSendNode >> copyWithoutReturn [
 		yourself
 ]
 
-{ #category : #displaying }
+{ #category : 'displaying' }
 TSendNode >> displayString [
 
 	^ selector printString
 ]
 
-{ #category : #testing }
+{ #category : 'testing' }
 TSendNode >> endsWithReturn [
 	^self isReturningIf
 ]
 
-{ #category : #testing }
+{ #category : 'testing' }
 TSendNode >> hasSideEffect [
 	"Answer if the parse tree rooted at this node has a side-effect or not."
 	^(#(#+ #- #* #/ #// #\\ #= #== #~= #~~) includes: selector) not
 ]
 
-{ #category : #testing }
+{ #category : 'testing' }
 TSendNode >> isAssertion [
 	^(selector beginsWith: 'assert') or: [selector beginsWith: 'verify']
 ]
 
-{ #category : #testing }
+{ #category : 'testing' }
 TSendNode >> isBuiltinOperator [
 
 	^ isBuiltinOperator
 ]
 
-{ #category : #testing }
+{ #category : 'testing' }
 TSendNode >> isBuiltinOperator: builtinFlag [
 
 	isBuiltinOperator := builtinFlag.
 ]
 
-{ #category : #testing }
+{ #category : 'testing' }
 TSendNode >> isConditionalSend [
 	"Answer if the receiver is a send of any of the conditionals, ifTrue: ifTrue:ifFalse: et al"
 	^#(	ifTrue:ifFalse: ifFalse:ifTrue: ifTrue: ifFalse:
 		ifNil:ifNotNil: ifNotNil:ifNil: ifNil: ifNotNil) includes: selector
 ]
 
-{ #category : #testing }
+{ #category : 'testing' }
 TSendNode >> isLiteralArrayDeclaration [
 	^selector == #cCoerce:to:
 	  and: [arguments first isConstant
@@ -360,7 +362,7 @@ TSendNode >> isLiteralArrayDeclaration [
 	  and: [arguments first value isCollection]]]
 ]
 
-{ #category : #testing }
+{ #category : 'testing' }
 TSendNode >> isNonNullCCode [
 	^(#(cCode: cCode:inSmalltalk:) includes: selector)
 	   and: [arguments first isConstant
@@ -368,18 +370,18 @@ TSendNode >> isNonNullCCode [
 	   and: [arguments first value notEmpty]]]
 ]
 
-{ #category : #testing }
+{ #category : 'testing' }
 TSendNode >> isPreprocessorDirective [
 	^#( cppIf:ifTrue:ifFalse: cppIf:ifTrue:) includes: selector
 ]
 
-{ #category : #testing }
+{ #category : 'testing' }
 TSendNode >> isReturningIf [
 	^(#(ifTrue:ifFalse: ifFalse:ifTrue: ifNil:ifNotNil: ifNotNil:ifNil:) includes: selector)
 	   and: [arguments allSatisfy: [:arg| arg endsWithReturn]]
 ]
 
-{ #category : #comparing }
+{ #category : 'comparing' }
 TSendNode >> isSameAs: aTParseNode [
 
 	(aTParseNode isSend and: [ 
@@ -391,37 +393,37 @@ TSendNode >> isSameAs: aTParseNode [
 	^ true
 ]
 
-{ #category : #'C code generation' }
+{ #category : 'C code generation' }
 TSendNode >> isSelfReference: varNode in: aCodeGen [
 	^(varNode name beginsWith: 'self')
 	  and: [varNode name = 'self' or: [varNode name beginsWith: 'self_in_']]
 ]
 
-{ #category : #testing }
+{ #category : 'testing' }
 TSendNode >> isSend [
 
 	^true
 ]
 
-{ #category : #'C code generation' }
+{ #category : 'C code generation' }
 TSendNode >> isStructReference: varNode in: aCodeGen [
 	^(varNode structTargetKindIn: aCodeGen) notNil
 ]
 
-{ #category : #testing }
+{ #category : 'testing' }
 TSendNode >> isValueExpansion [
 	"Answer if the receiver is of the form literalBlock value[: arg]"
 	^receiver isStatementList
 	 and: [selector keywords allSatisfy: [:k| #('value' 'value:') includes: k]]
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 TSendNode >> name [
 	
 	^ self printString
 ]
 
-{ #category : #testing }
+{ #category : 'testing' }
 TSendNode >> needsTrailingSemicolon [
 	"Answer if, when emitted as a statement (in particular in a TStmtList), the
 	 receiver needs a trailing semicolon.  Preprocessor directives and special expansions do not."
@@ -430,7 +432,7 @@ TSendNode >> needsTrailingSemicolon [
 	   or: [selector == #expandDereferenceInterpreterProxyFunctionTable]]) not
 ]
 
-{ #category : #enumerating }
+{ #category : 'enumerating' }
 TSendNode >> nodesDo: aBlock [
 	"Apply aBlock to all nodes in the receiver.
 	 N.B. This is assumed to be bottom-up, leaves first."
@@ -439,7 +441,7 @@ TSendNode >> nodesDo: aBlock [
 	aBlock value: self
 ]
 
-{ #category : #enumerating }
+{ #category : 'enumerating' }
 TSendNode >> nodesDo: aBlock parent: parent [
 	"Apply aBlock to all nodes in the receiver with each node's parent.
 	 N.B. This is assumed to be bottom-up, leaves first."
@@ -448,7 +450,7 @@ TSendNode >> nodesDo: aBlock parent: parent [
 	aBlock value: self value: parent
 ]
 
-{ #category : #enumerating }
+{ #category : 'enumerating' }
 TSendNode >> nodesDo: aBlock parent: parent unless: cautionaryBlock [
 
 	(cautionaryBlock value: self value: parent) ifTrue: [^self].
@@ -457,7 +459,7 @@ TSendNode >> nodesDo: aBlock parent: parent unless: cautionaryBlock [
 	aBlock value: self value: parent
 ]
 
-{ #category : #enumerating }
+{ #category : 'enumerating' }
 TSendNode >> nodesDo: aBlock unless: cautionaryBlock [
 
 	(cautionaryBlock value: self) ifTrue: [^self].
@@ -466,19 +468,19 @@ TSendNode >> nodesDo: aBlock unless: cautionaryBlock [
 	aBlock value: self.
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 TSendNode >> numArgs [
 	^arguments size
 ]
 
-{ #category : #copying }
+{ #category : 'copying' }
 TSendNode >> postCopy [
 
 	self receiver: receiver copy.
 	self arguments: (arguments collect: [ :arg | arg copy ])
 ]
 
-{ #category : #printing }
+{ #category : 'printing' }
 TSendNode >> printOn: aStream level: level [
 	| possiblyParenthesize |
 	possiblyParenthesize :=
@@ -504,26 +506,26 @@ TSendNode >> printOn: aStream level: level [
 		possiblyParenthesize value: arg value: level + 1]
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 TSendNode >> receiver [
 
 	^receiver
 ]
 
-{ #category : #private }
+{ #category : 'private' }
 TSendNode >> receiver: aNode [
 
 	receiver := aNode.
 	aNode parent: self
 ]
 
-{ #category : #transformations }
+{ #category : 'transformations' }
 TSendNode >> removeAssertions [
 	receiver removeAssertions.
 	arguments do: [:arg | arg removeAssertions].
 ]
 
-{ #category : #transformations }
+{ #category : 'transformations' }
 TSendNode >> replaceChild: aNode with: aReplacementNode [
 
 	receiver == aNode ifTrue: [
@@ -536,7 +538,7 @@ TSendNode >> replaceChild: aNode with: aReplacementNode [
 			ifFalse: [ e ] ])
 ]
 
-{ #category : #transformations }
+{ #category : 'transformations' }
 TSendNode >> replaceNodesIn: aDictionary [
 
 	^aDictionary at: self ifAbsent: [
@@ -545,24 +547,24 @@ TSendNode >> replaceNodesIn: aDictionary [
 		self]
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 TSendNode >> selector [
 
 	^selector
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 TSendNode >> selector: aSymbol [
 	selector := aSymbol
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 TSendNode >> setSelector: aSymbol receiver: rcvrNode arguments: argList [
 
 	^ self setSelector: aSymbol receiver: rcvrNode arguments: argList isBuiltInOp: false
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 TSendNode >> setSelector: aSymbol receiver: rcvrNode arguments: argList isBuiltInOp: builtinFlag [
 
 	selector := aSymbol.
@@ -571,7 +573,7 @@ TSendNode >> setSelector: aSymbol receiver: rcvrNode arguments: argList isBuiltI
 	isBuiltinOperator := builtinFlag.
 ]
 
-{ #category : #'C code generation' }
+{ #category : 'C code generation' }
 TSendNode >> shouldExcludeReceiverAsFirstArgument: aCodeGen [
 	"Only include the receiver as the first argument in certain cases.
 	 The receiver is always included if it is an expression.
@@ -599,7 +601,7 @@ TSendNode >> shouldExcludeReceiverAsFirstArgument: aCodeGen [
 					or: [#(implicit nil) includes: m typeForSelf]]]]
 ]
 
-{ #category : #'C code generation' }
+{ #category : 'C code generation' }
 TSendNode >> shouldIncludeReceiverAsFirstArgument: aCodeGen [
 	"Only include the receiver as the first argument in certain cases.
 	 The receiver is always included if it is an expression.
@@ -610,7 +612,7 @@ TSendNode >> shouldIncludeReceiverAsFirstArgument: aCodeGen [
 	^(self shouldExcludeReceiverAsFirstArgument: aCodeGen) not
 ]
 
-{ #category : #testing }
+{ #category : 'testing' }
 TSendNode >> structTargetKindIn: aCodeGen [
 	"Answer if the recever evaluates to a struct or struct pointer
 	 and hence can be dereferenced using . or ->.  Answer any of
@@ -645,7 +647,7 @@ TSendNode >> structTargetKindIn: aCodeGen [
 	^nil
 ]
 
-{ #category : #'type inference' }
+{ #category : 'type inference' }
 TSendNode >> typeOrNilFrom: aCodeGenerator in: aTMethod [
 	^aCodeGenerator returnTypeForSend: self in: aTMethod ifNil: nil
 ]

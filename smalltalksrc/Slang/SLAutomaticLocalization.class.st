@@ -45,17 +45,19 @@ Moreover, this process can be enhanced with an optimization pass that:
  - collapses sequences of copies when we find sequences of non-inlined calls
 "
 Class {
-	#name : #SLAutomaticLocalization,
-	#superclass : #Object,
+	#name : 'SLAutomaticLocalization',
+	#superclass : 'Object',
 	#instVars : [
 		'codeGenerator',
 		'selector',
 		'callgraphVariableCollector'
 	],
-	#category : #'Slang-Optimizations'
+	#category : 'Slang-Optimizations',
+	#package : 'Slang',
+	#tag : 'Optimizations'
 }
 
-{ #category : #applying }
+{ #category : 'applying' }
 SLAutomaticLocalization >> applyMethodNamed: interpreterSelector [ 
 
 	| autolocalizedVariables |
@@ -66,7 +68,7 @@ SLAutomaticLocalization >> applyMethodNamed: interpreterSelector [
 		withVariableBindings: autolocalizedVariables
 ]
 
-{ #category : #applying }
+{ #category : 'applying' }
 SLAutomaticLocalization >> autoLocalizationOfVariablesIn: aSelector withVariableBindings: replacementList [
 
 	| m replacementDict |
@@ -94,20 +96,20 @@ SLAutomaticLocalization >> autoLocalizationOfVariablesIn: aSelector withVariable
 				 expression: (TVariableNode named: asso key)) ].
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 SLAutomaticLocalization >> codeGenerator [
 
 	^ codeGenerator
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 SLAutomaticLocalization >> codeGenerator: anObject [
 
 	codeGenerator := anObject.
 	callgraphVariableCollector := SLCallGraphFreeVariableCollector codeGenerator: codeGenerator
 ]
 
-{ #category : #applying }
+{ #category : 'applying' }
 SLAutomaticLocalization >> externalizationOf: aVariableName [
 
 	^ (TAssignmentNode
@@ -115,7 +117,7 @@ SLAutomaticLocalization >> externalizationOf: aVariableName [
 			expression: (TVariableNode named: #local_, aVariableName))
 ]
 
-{ #category : #applying }
+{ #category : 'applying' }
 SLAutomaticLocalization >> internalizationOf: aVariableName [
 
 	^ (TAssignmentNode
@@ -123,7 +125,7 @@ SLAutomaticLocalization >> internalizationOf: aVariableName [
 			expression: (TVariableNode named: aVariableName))
 ]
 
-{ #category : #applying }
+{ #category : 'applying' }
 SLAutomaticLocalization >> linearizeExternalCallsIn: aTMethod withVariableBindings: replacementDict [
 
 	"Should be applied after inlining.
@@ -139,7 +141,7 @@ SLAutomaticLocalization >> linearizeExternalCallsIn: aTMethod withVariableBindin
 	aTMethod parseTree: linearStatementList
 ]
 
-{ #category : #applying }
+{ #category : 'applying' }
 SLAutomaticLocalization >> localizableVariablesInStatement: statement withVariableBindings: localizedVariables [
 
 	"Optimization: only externalize/localize variables used by the statement's called functions"
@@ -152,7 +154,7 @@ SLAutomaticLocalization >> localizableVariablesInStatement: statement withVariab
 	^ (statement accept: collector) localizableVariables
 ]
 
-{ #category : #applying }
+{ #category : 'applying' }
 SLAutomaticLocalization >> wrapStatementWithExternalizationAndLocalizations: statement ofLocalizedVariables: localizedVariables [
 
 	| variablesToExternalize replacementStatements potentialCall |
@@ -181,7 +183,7 @@ SLAutomaticLocalization >> wrapStatementWithExternalizationAndLocalizations: sta
 	^ TStatementListNode statements: replacementStatements
 ]
 
-{ #category : #applying }
+{ #category : 'applying' }
 SLAutomaticLocalization >> wrapStatements: tMethod withVariableBindings: replacementDict [
 
 	"Wrap statements with external calls with TExternalSendNode"

@@ -7,24 +7,26 @@ Also, using open by id functions doesn't help because internally they are also c
 If needed, that can be optimized then. 
 "
 Class {
-	#name : #SerialPlugin,
-	#superclass : #SmartSyntaxInterpreterPlugin,
-	#category : #'VMMaker-Plugins'
+	#name : 'SerialPlugin',
+	#superclass : 'SmartSyntaxInterpreterPlugin',
+	#category : 'VMMaker-Plugins',
+	#package : 'VMMaker',
+	#tag : 'Plugins'
 }
 
-{ #category : #translation }
+{ #category : 'translation' }
 SerialPlugin class >> hasHeaderFile [
 	"If there is a single intrinsic header file to be associated with the plugin, here is where you want to flag"
 	^true
 ]
 
-{ #category : #translation }
+{ #category : 'translation' }
 SerialPlugin class >> requiresPlatformFiles [
 	"this plugin requires platform specific files in order to work"
 	^true
 ]
 
-{ #category : #'private-support' }
+{ #category : 'private-support' }
 SerialPlugin >> copyPortNameToCString: portName [
 	<returnTypeC: #'char *'>
 	| port portNameSize |
@@ -37,13 +39,13 @@ SerialPlugin >> copyPortNameToCString: portName [
 	^port
 ]
 
-{ #category : #'initialize-release' }
+{ #category : 'initialize-release' }
 SerialPlugin >> initialiseModule [
 	<export: true>
 	^self cCode: 'serialPortInit()' inSmalltalk:[true]
 ]
 
-{ #category : #primitives }
+{ #category : 'primitives' }
 SerialPlugin >> primitiveSerialPortClose: portNum [
 
 	self primitive: 'primitiveSerialPortClose'
@@ -51,7 +53,7 @@ SerialPlugin >> primitiveSerialPortClose: portNum [
 	self serialPortClose: portNum
 ]
 
-{ #category : #primitives }
+{ #category : 'primitives' }
 SerialPlugin >> primitiveSerialPortCloseByName: portName [
 	| port |
 	self primitive: 'primitiveSerialPortCloseByName'
@@ -60,7 +62,7 @@ SerialPlugin >> primitiveSerialPortCloseByName: portName [
 	self serialPortCloseByName: port
 ]
 
-{ #category : #primitives }
+{ #category : 'primitives' }
 SerialPlugin >> primitiveSerialPortOpen: portNum baudRate: baudRate stopBitsType: stopBitsType parityType: parityType dataBits: dataBits inFlowControlType: inFlowControl outFlowControlType: outFlowControl xOnByte: xOnChar xOffByte: xOffChar [
 
 	self primitive: 'primitiveSerialPortOpen'
@@ -70,7 +72,7 @@ SerialPlugin >> primitiveSerialPortOpen: portNum baudRate: baudRate stopBitsType
 					_: inFlowControl _: outFlowControl _: xOnChar _: xOffChar
 ]
 
-{ #category : #primitives }
+{ #category : 'primitives' }
 SerialPlugin >> primitiveSerialPortOpenByName: portName baudRate: baudRate stopBitsType: stopBitsType parityType: parityType dataBits: dataBits inFlowControlType: inFlowControl outFlowControlType: outFlowControl xOnByte: xOnChar xOffByte: xOffChar [
 
 	| port |
@@ -82,7 +84,7 @@ SerialPlugin >> primitiveSerialPortOpenByName: portName baudRate: baudRate stopB
 							_: inFlowControl _: outFlowControl _: xOnChar _: xOffChar
 ]
 
-{ #category : #primitives }
+{ #category : 'primitives' }
 SerialPlugin >> primitiveSerialPortRead: portNum into: array startingAt: startIndex count: count [ 
 	| bytesRead |
 	self primitive: 'primitiveSerialPortRead'
@@ -94,7 +96,7 @@ SerialPlugin >> primitiveSerialPortRead: portNum into: array startingAt: startIn
 	interpreterProxy success: false
 ]
 
-{ #category : #primitives }
+{ #category : 'primitives' }
 SerialPlugin >> primitiveSerialPortReadByName: portName into: array startingAt: startIndex count: count [
 	| port bytesRead |
 	<var: #port type: #'char *'>
@@ -108,7 +110,7 @@ SerialPlugin >> primitiveSerialPortReadByName: portName into: array startingAt: 
 	interpreterProxy success: false
 ]
 
-{ #category : #primitives }
+{ #category : 'primitives' }
 SerialPlugin >> primitiveSerialPortWrite: portNum from: array startingAt: startIndex count: count [ 
 	| bytesWritten |
 	self primitive: 'primitiveSerialPortWrite'
@@ -120,7 +122,7 @@ SerialPlugin >> primitiveSerialPortWrite: portNum from: array startingAt: startI
 	interpreterProxy success: false
 ]
 
-{ #category : #primitives }
+{ #category : 'primitives' }
 SerialPlugin >> primitiveSerialPortWriteByName: portName from: array startingAt: startIndex count: count [ 
 	| bytesWritten port |
 	self primitive: 'primitiveSerialPortWriteByName'
@@ -133,7 +135,7 @@ SerialPlugin >> primitiveSerialPortWriteByName: portName from: array startingAt:
 	interpreterProxy success: false
 ]
 
-{ #category : #'initialize-release' }
+{ #category : 'initialize-release' }
 SerialPlugin >> shutdownModule [
 	<export: true>
 	^self cCode: 'serialPortShutdown()' inSmalltalk:[true]

@@ -43,8 +43,8 @@ prevMapAbsPCMcpc
 
 "
 Class {
-	#name : #SistaCogit,
-	#superclass : #StackToRegisterMappingCogit,
+	#name : 'SistaCogit',
+	#superclass : 'StackToRegisterMappingCogit',
 	#instVars : [
 		'numCounters',
 		'initialCounterValue',
@@ -59,10 +59,12 @@ Class {
 	#pools : [
 		'VMClassIndices'
 	],
-	#category : #'VMMaker-JIT'
+	#category : 'VMMaker-JIT',
+	#package : 'VMMaker',
+	#tag : 'JIT'
 }
 
-{ #category : #translation }
+{ #category : 'translation' }
 SistaCogit class >> additionalHeadersDo: aBinaryBlock [
 	"Evaluate aBinaryBlock with the names and contents of
 	 any additional header files that need to be generated."
@@ -71,18 +73,18 @@ SistaCogit class >> additionalHeadersDo: aBinaryBlock [
 		value: SistaCogMethod cogMethodHeader
 ]
 
-{ #category : #translation }
+{ #category : 'translation' }
 SistaCogit class >> ancilliaryClasses [
 	"Answer any extra classes to be included in the translation."
 	^super ancilliaryClasses copyWith: SistaCogMethod
 ]
 
-{ #category : #translation }
+{ #category : 'translation' }
 SistaCogit class >> declareCVarsIn: aCodeGen [
 	aCodeGen var: 'counters' type: #usqInt
 ]
 
-{ #category : #'class initialization' }
+{ #category : 'class initialization' }
 SistaCogit class >> initializeWithOptions: optionsDictionary [
 
 	super initializeWithOptions: optionsDictionary.
@@ -90,12 +92,12 @@ SistaCogit class >> initializeWithOptions: optionsDictionary [
 	MaxCounterValue := (1 << 16) - 1
 ]
 
-{ #category : #'accessing class hierarchy' }
+{ #category : 'accessing class hierarchy' }
 SistaCogit class >> methodZoneClass [
 	^SistaMethodZone
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 SistaCogit class >> numTrampolines [
 	^super numTrampolines + 1
 
@@ -103,26 +105,26 @@ SistaCogit class >> numTrampolines [
 	"self instVarNames select: [:ea| ea beginsWith: 'ce']"
 ]
 
-{ #category : #'in-line cacheing' }
+{ #category : 'in-line cacheing' }
 SistaCogit >> allowEarlyOpenPICPromotion [
 	<inline: true>
 	^ false
 ]
 
-{ #category : #'compile abstract instructions' }
+{ #category : 'compile abstract instructions' }
 SistaCogit >> compileCogFullBlockMethod: numCopied [
 	<option: #SistaV1BytecodeSet>
 	counters := 0.
 	^super compileCogFullBlockMethod: numCopied
 ]
 
-{ #category : #'compile abstract instructions' }
+{ #category : 'compile abstract instructions' }
 SistaCogit >> compileCogMethod: selector [
 	counters := 0.
 	^super compileCogMethod: selector
 ]
 
-{ #category : #'compile abstract instructions' }
+{ #category : 'compile abstract instructions' }
 SistaCogit >> compileFrameBuild [
 	"Override to prefetch counters, if any."
 	super compileFrameBuild.
@@ -130,7 +132,7 @@ SistaCogit >> compileFrameBuild [
 		[self PrefetchAw: counters]
 ]
 
-{ #category : #'compile abstract instructions' }
+{ #category : 'compile abstract instructions' }
 SistaCogit >> compileFullBlockMethodFrameBuild: numCopied [
 	"Override to prefetch counters if any"
 	super compileFullBlockMethodFrameBuild: numCopied.
@@ -138,7 +140,7 @@ SistaCogit >> compileFullBlockMethodFrameBuild: numCopied [
 		[self PrefetchAw: counters]
 ]
 
-{ #category : #'compile abstract instructions' }
+{ #category : 'compile abstract instructions' }
 SistaCogit >> decodePushIntegerLongBefore: bcpc in: aMethodObj [
 	<inline: true>
 	| distance upperByte | 
@@ -149,7 +151,7 @@ SistaCogit >> decodePushIntegerLongBefore: bcpc in: aMethodObj [
 		 
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 SistaCogit >> defaultCogCodeSize [
 	"Return the default number of bytes to allocate for native code at startup.
 	 The actual value can be set via vmParameterAt: and/or a preference in the ini file."
@@ -157,20 +159,20 @@ SistaCogit >> defaultCogCodeSize [
 	^2 * backEnd getDefaultCogCodeSize
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 SistaCogit >> estimateOfAbstractOpcodesPerBytecodes [
 	"Due to the counter logic, the estimation is higher"
 	<inline: true>
 	^ 16
 ]
 
-{ #category : #'generate machine code' }
+{ #category : 'generate machine code' }
 SistaCogit >> fillInCPICHeader: pic numArgs: numArgs numCases: numCases hasMNUCase: hasMNUCase selector: selector [
 	pic counters: 0.
 	^super fillInCPICHeader: pic numArgs: numArgs numCases: numCases hasMNUCase: hasMNUCase selector: selector
 ]
 
-{ #category : #'generate machine code' }
+{ #category : 'generate machine code' }
 SistaCogit >> fillInCounters: nCounters atEndAddress: endAddress [
 	endAddress - (nCounters * CounterBytes)
 		to: endAddress - CounterBytes
@@ -181,7 +183,7 @@ SistaCogit >> fillInCounters: nCounters atEndAddress: endAddress [
 				put: (initialCounterValue << 16 + initialCounterValue)]
 ]
 
-{ #category : #'generate machine code' }
+{ #category : 'generate machine code' }
 SistaCogit >> fillInCounters: nCounters atStartAddress: startAddress [
 	startAddress
 		to: startAddress + (nCounters - 1 * CounterBytes)
@@ -192,7 +194,7 @@ SistaCogit >> fillInCounters: nCounters atStartAddress: startAddress [
 				put: (initialCounterValue << 16 + initialCounterValue)]
 ]
 
-{ #category : #'generate machine code' }
+{ #category : 'generate machine code' }
 SistaCogit >> fillInMethodHeader: method size: size selector: selector [
 	super fillInMethodHeader: method size: size selector: selector.
 	self fillInCounters: numCounters atStartAddress: counters.
@@ -200,13 +202,13 @@ SistaCogit >> fillInMethodHeader: method size: size selector: selector [
 	^method
 ]
 
-{ #category : #'generate machine code' }
+{ #category : 'generate machine code' }
 SistaCogit >> fillInOPICHeader: pic numArgs: numArgs selector: selector [
 	pic counters: 0.
 	^super fillInOPICHeader: pic numArgs: numArgs selector: selector
 ]
 
-{ #category : #'inline primitive generators' }
+{ #category : 'inline primitive generators' }
 SistaCogit >> genAtPutInlinePrimitive: prim [
 	"The store check requires rr to be ReceiverResultReg"
 	prim caseOf: {
@@ -230,7 +232,7 @@ SistaCogit >> genAtPutInlinePrimitive: prim [
 	^0
 ]
 
-{ #category : #'inline primitive binary generators' }
+{ #category : 'inline primitive binary generators' }
 SistaCogit >> genBinaryAtConstInlinePrimitive: primIndex [
 	"2064	pointerAt:
 	Pointer object (Fixed sized or not) and not a context, Smi =>  (1-based, optimised if arg1 is a constant)
@@ -265,7 +267,7 @@ SistaCogit >> genBinaryAtConstInlinePrimitive: primIndex [
 	^self ssPushRegister: rr
 ]
 
-{ #category : #'inline primitive binary generators' }
+{ #category : 'inline primitive binary generators' }
 SistaCogit >> genBinaryAtInlinePrimitive: primIndex [
 	"2064	pointerAt:
 	Pointer object (Fixed sized or not) and not a context, Smi =>  (1-based, optimised if arg1 is a constant)
@@ -300,7 +302,7 @@ SistaCogit >> genBinaryAtInlinePrimitive: primIndex [
 	^self ssPushRegister: rr
 ]
 
-{ #category : #'inline primitive binary generators' }
+{ #category : 'inline primitive binary generators' }
 SistaCogit >> genBinaryCompInlinePrimitive: primIndex [
 	"2032	>
 	Smi, Smi => Boolean (optimised if one operand is a constant, Pipelined with ifTrue:ifFalse:)
@@ -357,7 +359,7 @@ SistaCogit >> genBinaryCompInlinePrimitive: primIndex [
 	
 ]
 
-{ #category : #'inline primitive generators' }
+{ #category : 'inline primitive generators' }
 SistaCogit >> genBinaryConstOpVarInlinePrimitive: prim [
 	"Const op var version of binary inline primitives."
 	"SistaV1: 248		11111000 	iiiiiiii		mjjjjjjj		Call Primitive #iiiiiiii + (jjjjjjj * 256) m=1 means inlined primitive, no hard return after execution.
@@ -432,7 +434,7 @@ SistaCogit >> genBinaryConstOpVarInlinePrimitive: prim [
 	^0
 ]
 
-{ #category : #'inline primitive binary generators' }
+{ #category : 'inline primitive binary generators' }
 SistaCogit >> genBinaryConstOpVarSmiInlinePrimitive: primIndex [
 	| ra val untaggedVal |
 	ra := self allocateRegForStackEntryAt: 0.
@@ -473,7 +475,7 @@ SistaCogit >> genBinaryConstOpVarSmiInlinePrimitive: primIndex [
 	^0
 ]
 
-{ #category : #'inline primitive binary generators' }
+{ #category : 'inline primitive binary generators' }
 SistaCogit >> genBinaryInlineComparison: opTrue opFalse: opFalse destReg: destReg [
 	"Inlined comparison. opTrue = jump for true and opFalse = jump for false"
 	<var: #branchDescriptor type: #'BytecodeDescriptor *'>
@@ -509,7 +511,7 @@ SistaCogit >> genBinaryInlineComparison: opTrue opFalse: opFalse destReg: destRe
 	^ 0
 ]
 
-{ #category : #'inline primitive binary generators' }
+{ #category : 'inline primitive binary generators' }
 SistaCogit >> genBinaryInlinePrimitive: primIndex [
 	"Bulk comments: each sub-method has its own comment with the specific case.
 	2000	+
@@ -589,7 +591,7 @@ SistaCogit >> genBinaryInlinePrimitive: primIndex [
 	^EncounteredUnknownBytecode
 ]
 
-{ #category : #'inline primitive binary generators' }
+{ #category : 'inline primitive binary generators' }
 SistaCogit >> genBinaryNewInlinePrimitive: primIndex [
 	"2048	rawNew:
 	literal which is a variable-sized behavior, Smi => instance of receiver, fields nilled/zeroed out (optimised if arg1 is a constant)
@@ -625,7 +627,7 @@ SistaCogit >> genBinaryNewInlinePrimitive: primIndex [
 	^UnimplementedOperation
 ]
 
-{ #category : #'inline primitive binary generators' }
+{ #category : 'inline primitive binary generators' }
 SistaCogit >> genBinarySmiBitShiftLeftInlinePrimitive [
 	"2019	bitShiftLeft:
 	Smi greater or equal to 0, Smi greater or equal to 0 => Smi (no overflow, optimised if arg1 is a constant)"
@@ -645,7 +647,7 @@ SistaCogit >> genBinarySmiBitShiftLeftInlinePrimitive [
 
 ]
 
-{ #category : #'inline primitive binary generators' }
+{ #category : 'inline primitive binary generators' }
 SistaCogit >> genBinarySmiBitShiftRightInlinePrimitive [
 	"2019	bitShiftLeft:
 	Smi greater or equal to 0, Smi greater or equal to 0 => Smi (no overflow, optimised if arg1 is a constant)"
@@ -663,7 +665,7 @@ SistaCogit >> genBinarySmiBitShiftRightInlinePrimitive [
 	^self ssPushRegister: rr
 ]
 
-{ #category : #'inline primitive generators' }
+{ #category : 'inline primitive generators' }
 SistaCogit >> genBinaryVarOpConstInlinePrimitive: prim [
 	"Var op const version of inline binary inline primitives."
 	"SistaV1: 248		11111000 	iiiiiiii		mjjjjjjj		Call Primitive #iiiiiiii + (jjjjjjj * 256) m=1 means inlined primitive, no hard return after execution.
@@ -724,7 +726,7 @@ SistaCogit >> genBinaryVarOpConstInlinePrimitive: prim [
 	^0
 ]
 
-{ #category : #'inline primitive binary generators' }
+{ #category : 'inline primitive binary generators' }
 SistaCogit >> genBinaryVarOpConstSmiInlinePrimitive: primIndex [
 	| rr val untaggedVal |
 	self assert: primIndex <= 18.
@@ -766,7 +768,7 @@ SistaCogit >> genBinaryVarOpConstSmiInlinePrimitive: primIndex [
 	^0
 ]
 
-{ #category : #'inline primitive generators' }
+{ #category : 'inline primitive generators' }
 SistaCogit >> genBinaryVarOpVarInlinePrimitive: prim [
 	"Var op var version of binary inline primitives."
 	"SistaV1: 248		11111000 	iiiiiiii		mjjjjjjj		Call Primitive #iiiiiiii + (jjjjjjj * 256) m=1 means inlined primitive, no hard return after execution.
@@ -838,7 +840,7 @@ SistaCogit >> genBinaryVarOpVarInlinePrimitive: prim [
 	^0
 ]
 
-{ #category : #'inline primitive binary generators' }
+{ #category : 'inline primitive binary generators' }
 SistaCogit >> genBinaryVarOpVarSmiInlinePrimitive: primIndex [
 	| ra rr |
 	self allocateRegForStackTopTwoEntriesInto: [:rTop :rNext | ra := rTop. rr := rNext ].
@@ -878,7 +880,7 @@ SistaCogit >> genBinaryVarOpVarSmiInlinePrimitive: primIndex [
 	^0
 ]
 
-{ #category : #'inline primitive generators' }
+{ #category : 'inline primitive generators' }
 SistaCogit >> genByteAtPut [
 	| ra1 ra2 rr adjust |
 	self 
@@ -900,7 +902,7 @@ SistaCogit >> genByteAtPut [
 	^self ssPushRegister: ra2
 ]
 
-{ #category : #'mapped inline primitive generators' }
+{ #category : 'mapped inline primitive generators' }
 SistaCogit >> genByteAtPutImmutabilityCheck [
 	| ra1 ra2 rr adjust mutableJump immutabilityFailure indexIsCst |
 	<var: #mutableJump type: #'AbstractInstruction *'>
@@ -940,7 +942,7 @@ SistaCogit >> genByteAtPutImmutabilityCheck [
 	^0
 ]
 
-{ #category : #'inline primitive generators' }
+{ #category : 'inline primitive generators' }
 SistaCogit >> genByteEqualsInlinePrimitive: prim [
 
 	"3021	Byte Object >> equals:length:	
@@ -1048,7 +1050,7 @@ SistaCogit >> genByteEqualsInlinePrimitive: prim [
 	^0
 ]
 
-{ #category : #'inline primitive generators' }
+{ #category : 'inline primitive generators' }
 SistaCogit >> genByteEqualsInlinePrimitiveCmp: str1Reg with: str2Reg scratch1: scratch1Reg scratch2: scratch2Reg field: index [
 	| shift |
 	<inline: true>
@@ -1062,7 +1064,7 @@ SistaCogit >> genByteEqualsInlinePrimitiveCmp: str1Reg with: str2Reg scratch1: s
 	self CmpR: scratch1Reg R: scratch2Reg.
 ]
 
-{ #category : #'inline primitive generators' }
+{ #category : 'inline primitive generators' }
 SistaCogit >> genByteEqualsInlinePrimitiveResult: jmp returnReg: reg [
 	"Byte equal is falling through if the result is true, or jumping using jmp if the result is false.
 	 The method is required to set the jump target of jmp.
@@ -1108,13 +1110,13 @@ SistaCogit >> genByteEqualsInlinePrimitiveResult: jmp returnReg: reg [
 	^0
 ]
 
-{ #category : #'mapped inline primitive generators' }
+{ #category : 'mapped inline primitive generators' }
 SistaCogit >> genCallMappedInlinedPrimitive [
 	"SistaV1:	236		11101100	iiiiiiii		callMappedInlinedPrimitive"
 	^ self genMappedInlinePrimitive: byte1
 ]
 
-{ #category : #'bytecode generators' }
+{ #category : 'bytecode generators' }
 SistaCogit >> genCallPrimitiveBytecode [
 	"SistaV1: 248		11111000 	iiiiiiii		mjjjjjjj		Call Primitive #iiiiiiii + (jjjjjjj * 256) m=1 means inlined primitive, no hard return after execution.
 	 See EncoderForSistaV1's class comment and StackInterpreter>>#inlinePrimitiveBytecode:"
@@ -1131,7 +1133,7 @@ SistaCogit >> genCallPrimitiveBytecode [
 	^ self genSistaInlinePrimitive: prim
 ]
 
-{ #category : #'bytecode generator support' }
+{ #category : 'bytecode generator support' }
 SistaCogit >> genCounterTripOnlyJumpIf: boolean to: targetBytecodePC [ 
 	"Specific version if the branch is only reached while falling through if the counter trips after an inlined #== branch. We do not regenerate the counter logic in this case to avoid 24 bytes instructions."
 	
@@ -1179,7 +1181,7 @@ SistaCogit >> genCounterTripOnlyJumpIf: boolean to: targetBytecodePC [
 	^0
 ]
 
-{ #category : #'mapped inline primitive generators' }
+{ #category : 'mapped inline primitive generators' }
 SistaCogit >> genDirectCall [
 	"250	directCall
 	literal index of the method to call on top of stack =>  (variable number of parameters)"
@@ -1204,7 +1206,7 @@ SistaCogit >> genDirectCall [
 	^ EncounteredUnknownBytecode "Need to finish implementation"
 ]
 
-{ #category : #'inline primitive binary generators' }
+{ #category : 'inline primitive binary generators' }
 SistaCogit >> genDivInlinePrimitive: primIndex [
 	"2003	/
 	Smi, Smi => Smi (no overflow, optimised if one operand is a constant) "
@@ -1266,7 +1268,7 @@ SistaCogit >> genDivInlinePrimitive: primIndex [
 	^0
 ]
 
-{ #category : #'mapped inline primitive generators' }
+{ #category : 'mapped inline primitive generators' }
 SistaCogit >> genEnsureEnoughSlots [
 	"50	EnsureEnoughWords
 	 literal which is a Smi => ret value is receiver"
@@ -1286,7 +1288,7 @@ SistaCogit >> genEnsureEnoughSlots [
 	^0
 ]
 
-{ #category : #'bytecode generator support' }
+{ #category : 'bytecode generator support' }
 SistaCogit >> genExecutionCountLogicInto: binaryBlock counterReg: counterReg [
 	<var: #countTripped type: #'AbstractInstruction *'>
 	<inline: true>
@@ -1301,7 +1303,7 @@ SistaCogit >> genExecutionCountLogicInto: binaryBlock counterReg: counterReg [
 	binaryBlock value: counterAddress value: countTripped
 ]
 
-{ #category : #'bytecode generator support' }
+{ #category : 'bytecode generator support' }
 SistaCogit >> genFallsThroughCountLogicCounterReg: counterReg counterAddress: counterAddress [
 	<inline: true>
 	"Gen this when the branch has not been taken and forwarders have been followed."
@@ -1309,7 +1311,7 @@ SistaCogit >> genFallsThroughCountLogicCounterReg: counterReg counterAddress: co
 	self MoveR: counterReg A32: counterAddress. "write back"
 ]
 
-{ #category : #'bytecode generators' }
+{ #category : 'bytecode generators' }
 SistaCogit >> genForwardersInlinedIdenticalOrNotIf: orNot [
 	"Override to count inlined branches if followed by a conditional branch.
 	 We borrow the following conditional branch's counter and when about to
@@ -1409,7 +1411,7 @@ SistaCogit >> genForwardersInlinedIdenticalOrNotIf: orNot [
 	^ 0
 ]
 
-{ #category : #'inline primitive generators' }
+{ #category : 'inline primitive generators' }
 SistaCogit >> genJumpBinaryInlinePrimitive: primIndex [
 	| target testReg |
 	self assert: self ssTop type = SSConstant.
@@ -1445,7 +1447,7 @@ SistaCogit >> genJumpBinaryInlinePrimitive: primIndex [
 	
 ]
 
-{ #category : #'bytecode generator support' }
+{ #category : 'bytecode generator support' }
 SistaCogit >> genJumpIf: boolean to: targetBytecodePC [
 	"The heart of performance counting in Sista.  Conditional branches are 6 times less
 	 frequent than sends and can provide basic block frequencies (send counters can't).
@@ -1536,7 +1538,7 @@ SistaCogit >> genJumpIf: boolean to: targetBytecodePC [
 	^0
 ]
 
-{ #category : #'inline primitive generators' }
+{ #category : 'inline primitive generators' }
 SistaCogit >> genJumpTrinaryInlinePrimitive: primIndex [
 	"Note: those tests work with forwarders (wrong class index)"
 	| testReg target behavior targetFixUp |
@@ -1572,7 +1574,7 @@ SistaCogit >> genJumpTrinaryInlinePrimitive: primIndex [
 	
 ]
 
-{ #category : #'inline primitive generators' }
+{ #category : 'inline primitive generators' }
 SistaCogit >> genJumpUnaryInlinePrimitive: primIndex [
 	"6000	backjumpNoInterrupt
 	 literal which is a Smi"
@@ -1588,7 +1590,7 @@ SistaCogit >> genJumpUnaryInlinePrimitive: primIndex [
 	^EncounteredUnknownBytecode
 ]
 
-{ #category : #'mapped inline primitive generators' }
+{ #category : 'mapped inline primitive generators' }
 SistaCogit >> genMappedInlinePrimitive: primIndex [
 	"SistaV1:	236		11101100	iiiiiiii		callMappedInlinedPrimitive"
 	"Number of arguments:
@@ -1638,7 +1640,7 @@ SistaCogit >> genMappedInlinePrimitive: primIndex [
 	
 ]
 
-{ #category : #'inline primitive generators' }
+{ #category : 'inline primitive generators' }
 SistaCogit >> genMoveAndAdjustSSEntry: ssEntry into: reg [
 	<var: #ssEntry type: #'SimStackEntry *'>
 	<inline: true>
@@ -1653,7 +1655,7 @@ SistaCogit >> genMoveAndAdjustSSEntry: ssEntry into: reg [
 			 adjust ~= 0 ifTrue: [ self AddCq: adjust R: reg. ]].	
 ]
 
-{ #category : #initialization }
+{ #category : 'initialization' }
 SistaCogit >> genMustBeBooleanTrampolineFor: boolean called: trampolineName [
 	"This can be entered in one of two states, depending on SendNumArgsReg. See
 	 e.g. genJumpIf:to:.  If SendNumArgsReg is non-zero then this has been entered via
@@ -1711,13 +1713,13 @@ SistaCogit >> genMustBeBooleanTrampolineFor: boolean called: trampolineName [
 		appendOpcodes: true
 ]
 
-{ #category : #'inline primitive generators' }
+{ #category : 'inline primitive generators' }
 SistaCogit >> genNullaryInlinePrimitive: prim [
 	<option: #SistaVM>
 	^EncounteredUnknownBytecode
 ]
 
-{ #category : #'inline primitive generators' }
+{ #category : 'inline primitive generators' }
 SistaCogit >> genPointerAtPutConstantMaybeContext: maybeContext storeCheck: needsStoreCheck immutabilityCheck: needsImmCheck [ 
 	| rcvrReg valReg indexCst |
 	indexCst := (objectMemory integerValueOf: (self ssValue: 1) constant) - 1.
@@ -1760,7 +1762,7 @@ SistaCogit >> genPointerAtPutConstantMaybeContext: maybeContext storeCheck: need
 				needsImmutabilityCheck: needsImmCheck]
 ]
 
-{ #category : #'mapped inline primitive generators' }
+{ #category : 'mapped inline primitive generators' }
 SistaCogit >> genPointerAtPutImmCheckAndStoreCheck [
 	| ra1 ra2 rr adjust scratchReg immutableJump jmpImmediate jmpDestYoung jmpSourceOld jumpRemembered indexIsCst |
 	<var: #jmpSourceOld type: #'AbstractInstruction *'>
@@ -1820,7 +1822,7 @@ SistaCogit >> genPointerAtPutImmCheckAndStoreCheck [
 	^0
 ]
 
-{ #category : #'mapped inline primitive generators' }
+{ #category : 'mapped inline primitive generators' }
 SistaCogit >> genPointerAtPutImmCheckButNoStoreCheck [
 	| ra1 ra2 rr adjust mutableJump immutabilityFailure indexIsCst |
 	<var: #mutableJump type: #'AbstractInstruction *'>
@@ -1858,7 +1860,7 @@ SistaCogit >> genPointerAtPutImmCheckButNoStoreCheck [
 	^0
 ]
 
-{ #category : #'mapped inline primitive generators' }
+{ #category : 'mapped inline primitive generators' }
 SistaCogit >> genPointerAtPutMaybeContext: maybeContext storeCheck: needsStoreCheck immutabilityCheck: needsImmCheck [
 	"150	immCheckPointerAt:put:
 	pointer object (Fixed sized or not) and not a context, Smi, Anything => arg2 (1-based, optimised if arg1 is a constant)
@@ -1884,7 +1886,7 @@ SistaCogit >> genPointerAtPutMaybeContext: maybeContext storeCheck: needsStoreCh
 	^self genPointerAtPutStoreCheck: needsStoreCheck
 ]
 
-{ #category : #'mapped inline primitive generators' }
+{ #category : 'mapped inline primitive generators' }
 SistaCogit >> genPointerAtPutStoreCheck: needsStoreCheck [ 
 	| ra1 ra2 rr adjust |
 	"Assumes rr is not a context and no immutability check is needed"
@@ -1910,17 +1912,17 @@ SistaCogit >> genPointerAtPutStoreCheck: needsStoreCheck [
 	^0
 ]
 
-{ #category : #'inline primitive generators' }
+{ #category : 'inline primitive generators' }
 SistaCogit >> genQuaternaryInlinePrimitive: prim [
 	^ EncounteredUnknownBytecode
 ]
 
-{ #category : #'inline primitive generators' }
+{ #category : 'inline primitive generators' }
 SistaCogit >> genQuinaryInlinePrimitive: prim [
 	^ EncounteredUnknownBytecode
 ]
 
-{ #category : #'inline primitive generators' }
+{ #category : 'inline primitive generators' }
 SistaCogit >> genSistaInlinePrimitive: prim [
 	"SistaV1:	248		11111000 	iiiiiiii		mjjjjjjj		Call Primitive #iiiiiiii + (jjjjjjj * 256) m=1 means inlined primitive, no hard return after execution. This is the dispatch for unmapped sista inlined primitives."
 	
@@ -1951,7 +1953,7 @@ SistaCogit >> genSistaInlinePrimitive: prim [
 	^ self genJumpTrinaryInlinePrimitive: prim - 8000.
 ]
 
-{ #category : #'bytecode generators' }
+{ #category : 'bytecode generators' }
 SistaCogit >> genSpecialSelectorComparison [
 	"Override to count inlined branches if followed by a conditional branch.
 	 We borrow the following conditional branch's counter and when about to
@@ -2038,13 +2040,13 @@ SistaCogit >> genSpecialSelectorComparison [
 	^self genMarshalledSend: index negated - 1 numArgs: 1 sendTable: ordinarySendTrampolines
 ]
 
-{ #category : #'bytecode generators' }
+{ #category : 'bytecode generators' }
 SistaCogit >> genSpecialSelectorComparisonWithoutCounters [
 	"This method is there because if I put directly the super send in genSpecialSelectorComparison Slang does not correctly translte the code to C, it does not correctly type one of the branchDescriptor to BytecodeDescriptor"
 	^ super genSpecialSelectorComparison
 ]
 
-{ #category : #'inline primitive generators' }
+{ #category : 'inline primitive generators' }
 SistaCogit >> genTrinaryInlinePrimitive: prim [
 	"Bulk comment, each sub method has its own comment
 	3000	pointerAt:put:
@@ -2069,7 +2071,7 @@ SistaCogit >> genTrinaryInlinePrimitive: prim [
 	^ EncounteredUnknownBytecode
 ]
 
-{ #category : #'inline primitive unary generators' }
+{ #category : 'inline primitive unary generators' }
 SistaCogit >> genUnaryClassPrimitive [ 
 	"1000	rawClass
 	not a forwarder => Behavior (Same as class special send, but receiver is not a forwarder)"
@@ -2110,7 +2112,7 @@ SistaCogit >> genUnaryClassPrimitive [
 	^self ssPushRegister: destReg
 ]
 
-{ #category : #'inline primitive unary generators' }
+{ #category : 'inline primitive unary generators' }
 SistaCogit >> genUnaryConvertInlinePrimitive: primIndex [
 	| resultReg |
 	self assert: (primIndex between: 30 and: 32).
@@ -2142,7 +2144,7 @@ SistaCogit >> genUnaryConvertInlinePrimitive: primIndex [
 	^self ssPushRegister: resultReg
 ]
 
-{ #category : #'inline primitive unary generators' }
+{ #category : 'inline primitive unary generators' }
 SistaCogit >> genUnaryHashInlinePrimitive: primIndex [
 	| rcvrReg resultReg |
 	self assert: (primIndex between: 20 and: 23).
@@ -2174,7 +2176,7 @@ SistaCogit >> genUnaryHashInlinePrimitive: primIndex [
 		^self ssPushRegister: resultReg
 ]
 
-{ #category : #'inline primitive unary generators' }
+{ #category : 'inline primitive unary generators' }
 SistaCogit >> genUnaryInlinePrimitive: primIndex [
 	"Bulk comments: each sub-method has its own comment with the specific case.
 	1000	rawClass
@@ -2227,7 +2229,7 @@ SistaCogit >> genUnaryInlinePrimitive: primIndex [
 	^EncounteredUnknownBytecode
 ]
 
-{ #category : #'inline primitive unary generators' }
+{ #category : 'inline primitive unary generators' }
 SistaCogit >> genUnaryNewInlinePrimitive: primIndex [ 
 	"1011	RawNew
 	 literal which is a fixed-sized behavior => instance of the receiver with fields nilled out
@@ -2246,7 +2248,7 @@ SistaCogit >> genUnaryNewInlinePrimitive: primIndex [
 	^self ssPushRegister: resultReg
 ]
 
-{ #category : #'inline primitive unary generators' }
+{ #category : 'inline primitive unary generators' }
 SistaCogit >> genUnaryPossibleRootInlinePrimitive [
 	"1041	possibleRoot
 	 non-immediate, not a forwarder => receiver is returned (should be effect-only) (If old, becomes gray and remembered to allow many unchecked stores in a row afterwards)"
@@ -2268,7 +2270,7 @@ SistaCogit >> genUnaryPossibleRootInlinePrimitive [
 	^self ssPushRegister: topReg
 ]
 
-{ #category : #'inline primitive unary generators' }
+{ #category : 'inline primitive unary generators' }
 SistaCogit >> genUnarySizeInlinePrimitive: primIndex [ 
 	| rcvrReg resultReg |
 	self assert: (primIndex between: 1 and: 6).
@@ -2301,7 +2303,7 @@ SistaCogit >> genUnarySizeInlinePrimitive: primIndex [
 	^ 0
 ]
 
-{ #category : #'inline primitive unary generators' }
+{ #category : 'inline primitive unary generators' }
 SistaCogit >> genUnaryUnforwardInlinePrimitive [
 	"1040	unforward
 	 Anything => Not a forwarder"
@@ -2313,7 +2315,7 @@ SistaCogit >> genUnaryUnforwardInlinePrimitive [
 	^self ssPushRegister: topReg
 ]
 
-{ #category : #'inline primitive unary generators' }
+{ #category : 'inline primitive unary generators' }
 SistaCogit >> genUnaryUnforwardNonImmediateInlinePrimitive [
 	"1039	unforwardNonImmediate
 	 non immediate => Not a forwarder"
@@ -2325,7 +2327,7 @@ SistaCogit >> genUnaryUnforwardNonImmediateInlinePrimitive [
 	^self ssPushRegister: topReg
 ]
 
-{ #category : #'bytecode generators' }
+{ #category : 'bytecode generators' }
 SistaCogit >> genUnconditionalTrapBytecode [
 	"SistaV1: *	217		Trap"
 	self ssFlushTo: simStackPtr.
@@ -2335,31 +2337,31 @@ SistaCogit >> genUnconditionalTrapBytecode [
 	^0
 ]
 
-{ #category : #'bytecode generators' }
+{ #category : 'bytecode generators' }
 SistaCogit >> genUnoptimizedSpecialSelectorComparison [
 	"This method is there because if I put directly the super send in genSpecialSelectorComparison Slang does not correctly translte the code to C, it does not correctly type one of the branchDescriptor to BytecodeDescriptor"
 	^ super genSpecialSelectorComparison
 ]
 
-{ #category : #initialization }
+{ #category : 'initialization' }
 SistaCogit >> generateSistaRuntime [
 	"Trap sends Sista trap message to context with top of stack, so we don't need any arguments..."
 	ceTrapTrampoline := self genTrampolineFor: #ceSistaTrap called: 'ceSistaTrapTrampoline'
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 SistaCogit >> getCogCodeZoneThreshold [
 	<doNotGenerate>
 	^methodZone getCogCodeZoneThreshold
 ]
 
-{ #category : #'method introspection' }
+{ #category : 'method introspection' }
 SistaCogit >> getJumpTargetPCAt: pc [
 	<api>
 	^backEnd jumpTargetPCAt: pc
 ]
 
-{ #category : #initialization }
+{ #category : 'initialization' }
 SistaCogit >> initialize [
 	super initialize.
 	branchReachedOnlyForCounterTrip := false.
@@ -2368,13 +2370,13 @@ SistaCogit >> initialize [
 										ifFalse: [CogSistaMethodSurrogate64]
 ]
 
-{ #category : #initialization }
+{ #category : 'initialization' }
 SistaCogit >> initializeCodeZoneFrom: startAddress upTo: endAddress [
 	initialCounterValue := MaxCounterValue.
 	super initializeCodeZoneFrom: startAddress upTo: endAddress
 ]
 
-{ #category : #'simulation only' }
+{ #category : 'simulation only' }
 SistaCogit >> isTrapAt: retpc [
 	"For stack depth checking."
 	<doNotGenerate>
@@ -2382,7 +2384,7 @@ SistaCogit >> isTrapAt: retpc [
 	 and: [(backEnd callTargetFromReturnAddress: retpc) = ceTrapTrampoline]
 ]
 
-{ #category : #'compile abstract instructions' }
+{ #category : 'compile abstract instructions' }
 SistaCogit >> maybeAllocAndInitCounters [
 	<inline: true>
 	self assert: counters = 0.
@@ -2393,19 +2395,19 @@ SistaCogit >> maybeAllocAndInitCounters [
 	^counters ~= 0
 ]
 
-{ #category : #'compile abstract instructions' }
+{ #category : 'compile abstract instructions' }
 SistaCogit >> maybeCountCounter [
 	<inline: true>
 	numCounters := numCounters + 1
 ]
 
-{ #category : #'compile abstract instructions' }
+{ #category : 'compile abstract instructions' }
 SistaCogit >> maybeCounterIndex [
 	<inline: true>
 	^counterIndex
 ]
 
-{ #category : #'compile abstract instructions' }
+{ #category : 'compile abstract instructions' }
 SistaCogit >> maybeDealWithUnsafeJumpForDescriptor: descriptor pc: pc latestContinuation: latestContinuation [
 	"Mapped: 250	backjumpAlwaysInterrupt
 	 Unmapped: 6000	backjumpNoInterrupt 
@@ -2443,27 +2445,27 @@ SistaCogit >> maybeDealWithUnsafeJumpForDescriptor: descriptor pc: pc latestCont
 	^newContinuation
 ]
 
-{ #category : #'compile abstract instructions' }
+{ #category : 'compile abstract instructions' }
 SistaCogit >> maybeFreeCounters [
 	<inline: true>
 	counters ~= 0 ifTrue:
 		[objectRepresentation freeCounters: counters]
 ]
 
-{ #category : #compaction }
+{ #category : 'compaction' }
 SistaCogit >> maybeFreeCountersOf: aCogMethod [
 	"Free any counters in the method."
 	<inline: true>
 	objectRepresentation freeCounters: aCogMethod counters
 ]
 
-{ #category : #'compile abstract instructions' }
+{ #category : 'compile abstract instructions' }
 SistaCogit >> maybeInitNumCounters [
 	<inline: true>
 	numCounters := 0
 ]
 
-{ #category : #'garbage collection' }
+{ #category : 'garbage collection' }
 SistaCogit >> maybeMarkCountersIn: cogMethod [
 	"In SIsta Spur counters are held on the heap in pinned objects which must be marked
 	 to avoid them being garbage collected.  This is the hook through which that happens."
@@ -2472,13 +2474,13 @@ SistaCogit >> maybeMarkCountersIn: cogMethod [
 	objectRepresentation maybeMarkCounters: cogMethod counters
 ]
 
-{ #category : #'compile abstract instructions' }
+{ #category : 'compile abstract instructions' }
 SistaCogit >> maybeSetCounterIndex: value [
 	<inline: true>
 	counterIndex := value
 ]
 
-{ #category : #'compile abstract instructions' }
+{ #category : 'compile abstract instructions' }
 SistaCogit >> maybeUnsafeJumpContinuation: latestContinuation at: bcpc for: descriptor in: aMethodObj [
 	<inline: true>
 	"Note: ignore backward jumps."
@@ -2504,19 +2506,19 @@ SistaCogit >> maybeUnsafeJumpContinuation: latestContinuation at: bcpc for: desc
 	^newContinuation
 ]
 
-{ #category : #'simulation only' }
+{ #category : 'simulation only' }
 SistaCogit >> methodsCompiledToMachineCodeInto: arrayObject [
 	<doNotGenerate>
 	^methodZone methodsCompiledToMachineCodeInto: arrayObject
 ]
 
-{ #category : #'simulation only' }
+{ #category : 'simulation only' }
 SistaCogit >> numMethods [
 	<doNotGenerate>
 	^methodZone numMethods
 ]
 
-{ #category : #'method introspection' }
+{ #category : 'method introspection' }
 SistaCogit >> profilingDataForCounter: counter at: bcpc [
 	| executedCount tuple untakenCount |
 	"N.B. Counters are always 32-bits, having two 16-bit halves for the reached and taken counts."
@@ -2537,13 +2539,13 @@ SistaCogit >> profilingDataForCounter: counter at: bcpc [
 	^tuple
 ]
 
-{ #category : #'sista callbacks' }
+{ #category : 'sista callbacks' }
 SistaCogit >> resetCountersIn: cogMethod [
 	<doNotGenerate>
 	objectRepresentation resetCountersIn: cogMethod
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 SistaCogit >> setCogCodeZoneThreshold: threshold [
 	<doNotGenerate>
 	^methodZone setCogCodeZoneThreshold: threshold

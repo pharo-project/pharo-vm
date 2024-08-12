@@ -1,6 +1,6 @@
-Extension { #name : #Time }
+Extension { #name : 'Time' }
 
-{ #category : #'*VMMakerCompatibilityForPharo6' }
+{ #category : '*VMMakerCompatibilityForPharo6' }
 Time class >> dateAndTimeNow [
 	
 	| now |

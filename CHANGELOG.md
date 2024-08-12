@@ -1,8 +1,39 @@
 # Change log
 
+## v10.3.0
+
+* New harmonize rule by @RenaudFondeur in https://github.com/pharo-project/pharo-vm/pull/817
+* Ignoring EAGAIN in epoll_wait by @tesonep in https://github.com/pharo-project/pharo-vm/pull/818
+* Extend macOS implementation of SqueakSSL plugin to support setting a certificate on the SSL session context by @Rinzwind in https://github.com/pharo-project/pharo-vm/pull/816
+* Adding macro for win32.  by @tesonep in https://github.com/pharo-project/pharo-vm/pull/814
+
 ## v10.2.1
+
 * Adding the missing tty.c file in the packaging. by @tesonep in https://github.com/pharo-project/pharo-vm/pull/771
 * Do not allow comparing objects of different types by @guillep in https://github.com/pharo-project/pharo-vm/pull/772
+* Prepare release 10.2.1 by @guillep in https://github.com/pharo-project/pharo-vm/pull/773
+* Constant conversion warning by @guillep in https://github.com/pharo-project/pharo-vm/pull/777
+* Fix tautological-pointer-compare warnings by @guillep in https://github.com/pharo-project/pharo-vm/pull/775
+* Removed Cogit>>#voidNSSendCache:  by @jordanmontt in https://github.com/pharo-project/pharo-vm/pull/776
+* Re-enable incompatible-function-pointer-types warning by @guillep in https://github.com/pharo-project/pharo-vm/pull/778
+* Removed unused functions from the C written by hand by @jordanmontt in https://github.com/pharo-project/pharo-vm/pull/780
+* Fix function pointer comparison warning by @guillep in https://github.com/pharo-project/pharo-vm/pull/783
+* Fix -return-type warnings by @doste in https://github.com/pharo-project/pharo-vm/pull/781
+* Fix shift-negative-value warning and reenable warning by @guillep in https://github.com/pharo-project/pharo-vm/pull/785
+* Remove warnings c compiler by @PalumboN in https://github.com/pharo-project/pharo-vm/pull/789
+* Remove StackInterpreter interruptPending instance variable by @jordanmontt in https://github.com/pharo-project/pharo-vm/pull/793
+* Do not use asserta: in a statement by @guillep in https://github.com/pharo-project/pharo-vm/pull/788
+* Bump to MacOS 11 and above by @guillep in https://github.com/pharo-project/pharo-vm/pull/792
+* Moving pharo.signatures files for OSX Bundle to Resources folder by @tesonep in https://github.com/pharo-project/pharo-vm/pull/770
+* Do not retain any selectors in CogAbstractInstruction by @RenaudFondeur in https://github.com/pharo-project/pharo-vm/pull/798
+* remove warning because of type and unsigned shift issues by @RenaudFondeur in https://github.com/pharo-project/pharo-vm/pull/800
+* add tests for type harmonization by @RenaudFondeur in https://github.com/pharo-project/pharo-vm/pull/807
+* Primitive format by @doste in https://github.com/pharo-project/pharo-vm/pull/802
+* Adding an implementation of the aio.c using EPOLL in Linux. by @tesonep in https://github.com/pharo-project/pharo-vm/pull/805
+* Fixing warnings that are errors in newer versions of clang by @tesonep in https://github.com/pharo-project/pharo-vm/pull/813
+
+## New Contributors
+* @RenaudFondeur made their first contribution in https://github.com/pharo-project/pharo-vm/pull/798
 
 **Full Changelog**: https://github.com/pharo-project/pharo-vm/compare/v10.2.0...v10.2.1
 

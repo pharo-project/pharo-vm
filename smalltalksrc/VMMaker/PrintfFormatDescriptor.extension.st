@@ -1,6 +1,6 @@
-Extension { #name : #PrintfFormatDescriptor }
+Extension { #name : 'PrintfFormatDescriptor' }
 
-{ #category : #'*VMMaker-C code generation' }
+{ #category : '*VMMaker-C code generation' }
 PrintfFormatDescriptor >> transformForVMMaker [
 	^self printString
 ]

@@ -1,6 +1,6 @@
-Extension { #name : #RBMessageNode }
+Extension { #name : 'RBMessageNode' }
 
-{ #category : #'*VMMakerCompatibilityForPharo6-C translation' }
+{ #category : '*VMMakerCompatibilityForPharo6-C translation' }
 RBMessageNode >> asTranslatorNodeIn: aTMethod [
 	"Answer a TParseNode subclass equivalent of me"
 	"selector is sometimes a Symbol, sometimes a SelectorNode!

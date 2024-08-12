@@ -22,49 +22,51 @@ Restoring the rights revoked by an image might be possible by some interaction w
 
 "
 Class {
-	#name : #SecurityPlugin,
-	#superclass : #InterpreterPlugin,
-	#category : #'VMMaker-Plugins'
+	#name : 'SecurityPlugin',
+	#superclass : 'InterpreterPlugin',
+	#category : 'VMMaker-Plugins',
+	#package : 'VMMaker',
+	#tag : 'Plugins'
 }
 
-{ #category : #translation }
+{ #category : 'translation' }
 SecurityPlugin class >> hasHeaderFile [
 	"If there is a single intrinsic header file to be associated with the plugin, here is where you want to flag"
 	^true
 ]
 
-{ #category : #translation }
+{ #category : 'translation' }
 SecurityPlugin class >> requiresPlatformFiles [
 	"default is ok for most, any plugin needing platform specific files must say so"
 	^true
 ]
 
-{ #category : #initialize }
+{ #category : 'initialize' }
 SecurityPlugin >> initialiseModule [
 	<export: true>
 	^self cCode: 'ioInitSecurity()' inSmalltalk:[true]
 ]
 
-{ #category : #simulation }
+{ #category : 'simulation' }
 SecurityPlugin >> ioCanRenameImage [
 	<doNotGenerate>
 	^true
 ]
 
-{ #category : #primitives }
+{ #category : 'primitives' }
 SecurityPlugin >> primitiveCanWriteImage [
 	<export: true>
 	interpreterProxy pop: 1.
 	interpreterProxy pushBool: (self cCode:'ioCanWriteImage()' inSmalltalk:[true])
 ]
 
-{ #category : #primitives }
+{ #category : 'primitives' }
 SecurityPlugin >> primitiveDisableImageWrite [
 	<export: true>
 	self cCode: 'ioDisableImageWrite()'
 ]
 
-{ #category : #primitives }
+{ #category : 'primitives' }
 SecurityPlugin >> primitiveGetSecureUserDirectory [
 	"Primitive. Return the secure directory for the current user."
 	| dirName dirLen dirOop dirPtr |
@@ -83,7 +85,7 @@ SecurityPlugin >> primitiveGetSecureUserDirectory [
 	interpreterProxy pop: 1 thenPush: dirOop.
 ]
 
-{ #category : #primitives }
+{ #category : 'primitives' }
 SecurityPlugin >> primitiveGetUntrustedUserDirectory [
 	"Primitive. Return the untrusted user directory name."
 	| dirName dirLen dirOop dirPtr |
@@ -102,124 +104,124 @@ SecurityPlugin >> primitiveGetUntrustedUserDirectory [
 	interpreterProxy pop: 1 thenPush: dirOop.
 ]
 
-{ #category : #'exported functions' }
+{ #category : 'exported functions' }
 SecurityPlugin >> secCan: socket ListenOnPort: port [
 	<export: true>
 	^self cCode: 'ioCanListenOnPort(socket, port)'
 ]
 
-{ #category : #'exported functions' }
+{ #category : 'exported functions' }
 SecurityPlugin >> secCanConnect: addr ToPort: port [
 	<export: true>
 	^self cCode: 'ioCanConnectToPort(addr, port)'
 ]
 
-{ #category : #'exported functions' }
+{ #category : 'exported functions' }
 SecurityPlugin >> secCanCreate: netType SocketOfType: socketType [
 	<export: true>
 	^self cCode: 'ioCanCreateSocketOfType(netType, socketType)'
 ]
 
-{ #category : #'exported functions' }
+{ #category : 'exported functions' }
 SecurityPlugin >> secCanCreatePath: dirName OfSize: dirNameSize [
 	<export: true>
 	<var: #dirName type: 'char *'>
 	^self cCode: 'ioCanCreatePathOfSize(dirName, dirNameSize)'
 ]
 
-{ #category : #'exported functions' }
+{ #category : 'exported functions' }
 SecurityPlugin >> secCanDeleteFile: fileName OfSize: fileNameSize [
 	<export: true>
 	<var: #fileName type: 'char *'>
 	^self cCode: 'ioCanDeleteFileOfSize(fileName, fileNameSize)'
 ]
 
-{ #category : #'exported functions' }
+{ #category : 'exported functions' }
 SecurityPlugin >> secCanDeletePath: dirName OfSize: dirNameSize [
 	<export: true>
 	<var: #dirName type: 'char *'>
 	^self cCode: 'ioCanDeletePathOfSize(dirName, dirNameSize)'
 ]
 
-{ #category : #'exported functions' }
+{ #category : 'exported functions' }
 SecurityPlugin >> secCanGetFileType: fileName OfSize: fileNameSize [
 	<export: true>
 	<var: #fileName type: 'char *'>
 	^self cCode: 'ioCanGetFileTypeOfSize(fileName, fileNameSize)'
 ]
 
-{ #category : #'exported functions' }
+{ #category : 'exported functions' }
 SecurityPlugin >> secCanListPath: pathName OfSize: pathNameSize [
 	<export: true>
 	<var: #pathName type: 'char *'>
 	^self cCode: 'ioCanListPathOfSize(pathName, pathNameSize)'
 ]
 
-{ #category : #'exported functions' }
+{ #category : 'exported functions' }
 SecurityPlugin >> secCanOpenAsyncFile: fileName OfSize: fileNameSize Writable: writeFlag [
 	<export: true>
 	<var: #fileName type: 'char *'>
 	^self cCode: 'ioCanOpenAsyncFileOfSizeWritable(fileName, fileNameSize, writeFlag)'
 ]
 
-{ #category : #'exported functions' }
+{ #category : 'exported functions' }
 SecurityPlugin >> secCanOpenFile: fileName OfSize: fileNameSize Writable: writeFlag [
 	<export: true>
 	<var: #fileName type: 'char *'>
 	^self cCode: 'ioCanOpenFileOfSizeWritable(fileName, fileNameSize, writeFlag)'
 ]
 
-{ #category : #'exported functions' }
+{ #category : 'exported functions' }
 SecurityPlugin >> secCanRenameFile: fileName OfSize: fileNameSize [
 	<export: true>
 	<var: #fileName type: 'char *'>
 	^self cCode: 'ioCanRenameFileOfSize(fileName, fileNameSize)'
 ]
 
-{ #category : #'exported functions' }
+{ #category : 'exported functions' }
 SecurityPlugin >> secCanRenameImage [
 	<export: true>
 	^self ioCanRenameImage
 ]
 
-{ #category : #'exported functions' }
+{ #category : 'exported functions' }
 SecurityPlugin >> secCanSetFileType: fileName OfSize: fileNameSize [
 	<export: true>
 	<var: #fileName type: 'char *'>
 	^self cCode: 'ioCanSetFileTypeOfSize(fileName, fileNameSize)'
 ]
 
-{ #category : #'exported functions' }
+{ #category : 'exported functions' }
 SecurityPlugin >> secCanWriteImage [
 	<export: true>
 	^self ioCanWriteImage
 ]
 
-{ #category : #'exported functions' }
+{ #category : 'exported functions' }
 SecurityPlugin >> secDisableFileAccess [
 	<export: true>
 	^self ioDisableFileAccess
 ]
 
-{ #category : #'exported functions' }
+{ #category : 'exported functions' }
 SecurityPlugin >> secDisableSocketAccess [
 	<export: true>
 	^self ioDisableSocketAccess
 ]
 
-{ #category : #'exported functions' }
+{ #category : 'exported functions' }
 SecurityPlugin >> secHasEnvironmentAccess [
 	<export: true>
 	^self ioHasEnvironmentAccess
 ]
 
-{ #category : #'exported functions' }
+{ #category : 'exported functions' }
 SecurityPlugin >> secHasFileAccess [
 	<export: true>
 	^self ioHasFileAccess
 ]
 
-{ #category : #'exported functions' }
+{ #category : 'exported functions' }
 SecurityPlugin >> secHasSocketAccess [
 	<export: true>
 	^self ioHasSocketAccess

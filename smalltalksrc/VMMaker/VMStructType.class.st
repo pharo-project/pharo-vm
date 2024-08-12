@@ -2,23 +2,25 @@
 I am an absract superclass for classes which map to simple structs in C,  Right now I merely serve to organize all the struct types.  I would like to arrange that generated assignment accessors answer their argument to correspond with field assignment in C, but createInstVarAccessors is implemented by the browser not by ClassDescription.
 "
 Class {
-	#name : #VMStructType,
-	#superclass : #SlangStructType,
-	#category : #'VMMaker-Support'
+	#name : 'VMStructType',
+	#superclass : 'SlangStructType',
+	#category : 'VMMaker-Support',
+	#package : 'VMMaker',
+	#tag : 'Support'
 }
 
-{ #category : #'accessing class hierarchy' }
+{ #category : 'accessing class hierarchy' }
 VMStructType class >> addSubclass: aSubclass [
 	self voidStructTypeCache.
 	^super addSubclass: aSubclass
 ]
 
-{ #category : #'simulation only' }
+{ #category : 'simulation only' }
 VMStructType class >> alignedByteSizeOf: objectSymbolOrClass forClient: aVMClass [
 	^objectSymbolOrClass byteSizeForSimulator: aVMClass
 ]
 
-{ #category : #'code generation' }
+{ #category : 'code generation' }
 VMStructType class >> changedAccesorsForSurrogate: surrogateClass bytesPerWord: bytesPerWord [
 	"Answer the changed accessor methods for the fields of the receiver and the alignedByteSize class method."
 
@@ -31,7 +33,7 @@ VMStructType class >> changedAccesorsForSurrogate: surrogateClass bytesPerWord: 
 		[:a| a value ~= a key sourceString])
 ]
 
-{ #category : #'code generation' }
+{ #category : 'code generation' }
 VMStructType class >> checkGenerateSurrogate: surrogateClass bytesPerWord: bytesPerWord [
 	"Check the accessor methods for the fields of the receiver and if necessary install new
 	 or updated versions in the surrogate class alpng with the alignedByteSize class method."
@@ -53,13 +55,13 @@ VMStructType class >> checkGenerateSurrogate: surrogateClass bytesPerWord: bytes
 		[:a| a value ~= a key sourceString])"
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 VMStructType class >> constantClass [
 	
 	^ VMClass constantClass
 ]
 
-{ #category : #'code generation' }
+{ #category : 'code generation' }
 VMStructType class >> fieldAccessorSourceFor: surrogateClass bytesPerWord: bytesPerWord [
 	"Answer a Dictionary of MethodReference to source for the accessors of the inst vars of the
 	 receiver and the alignedByteSize class method in surrogateClass with the given word size."
@@ -108,7 +110,7 @@ VMStructType class >> fieldAccessorSourceFor: surrogateClass bytesPerWord: bytes
 	^methods
 ]
 
-{ #category : #'code generation' }
+{ #category : 'code generation' }
 VMStructType class >> fieldAccessorsForBytesPerWord: bytesPerWord [
 	| fieldSpecs |
 	fieldSpecs := OrderedCollection new.
@@ -154,7 +156,7 @@ VMStructType class >> fieldAccessorsForBytesPerWord: bytesPerWord [
 	"#(4 8) collect: [:bpw| (CogMethod fieldAccessorsForBytesPerWord: bpw) asArray]"
 ]
 
-{ #category : #translation }
+{ #category : 'translation' }
 VMStructType class >> filteredInstVarNames [
 	"Eliminate the obvious simulation-only inst vars"
 	^super filteredInstVarNames reject:
@@ -162,7 +164,7 @@ VMStructType class >> filteredInstVarNames [
 		Cogit isNonArgumentImplicitReceiverVariableName: n]
 ]
 
-{ #category : #'code generation' }
+{ #category : 'code generation' }
 VMStructType class >> getter: getter bitPosition: bitPosition bitWidth: bitWidth type: typeOrNil [
 	^String streamContents:
 		[:s| | startByte endByte alignedPowerOf2 shift |
@@ -203,71 +205,71 @@ VMStructType class >> getter: getter bitPosition: bitPosition bitWidth: bitWidth
 					nextPut: $]]]]
 ]
 
-{ #category : #translation }
+{ #category : 'translation' }
 VMStructType class >> implicitReturnTypeFor: aSelector [
 	"Answer the return type for methods that don't have an explicit return."
 	^#void
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 VMStructType class >> initializationOptions [
 	
 	^ VMClass initializationOptions 
 ]
 
-{ #category : #translation }
+{ #category : 'translation' }
 VMStructType class >> instVarNamesAndTypesForTranslationDo: aBinaryBlock [
 	"enumerate aBinaryBlock with the names and C type strings for the inst vars to include in a struct of this type."
 
 	self subclassResponsibility
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 VMStructType class >> interpreterClass [
 	
 	^ VMClass interpreterClass 
 ]
 
-{ #category : #'accessing class hierarchy' }
+{ #category : 'accessing class hierarchy' }
 VMStructType class >> isAbstract [
 	^self == VMStructType
 ]
 
-{ #category : #translation }
+{ #category : 'translation' }
 VMStructType class >> isNonArgumentImplicitReceiverVariableName: aString [
 	^Cogit isNonArgumentImplicitReceiverVariableName: aString
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 VMStructType class >> objectMemoryClass [
 	
 	^ VMClass objectMemoryClass
 ]
 
-{ #category : #'code generation' }
+{ #category : 'code generation' }
 VMStructType class >> offsetForInstVar: instVarName [
 	"Hack to offset accesses to variables by certain values."
 	^nil
 ]
 
-{ #category : #'accessing class hierarchy' }
+{ #category : 'accessing class hierarchy' }
 VMStructType class >> removeSubclass: aSubclass [
 	self voidStructTypeCache.
 	^super removeSubclass: aSubclass
 ]
 
-{ #category : #'class name' }
+{ #category : 'class name' }
 VMStructType class >> rename: aString [
 	self voidStructTypeCache.
 	^super rename: aString
 ]
 
-{ #category : #'code generation' }
+{ #category : 'code generation' }
 VMStructType class >> roundUpBitPosition: bitPosition toWordBoundary: bytesPerWord [
 	^bitPosition + 7 // 8 + bytesPerWord - 1 // bytesPerWord * bytesPerWord * 8
 ]
 
-{ #category : #'code generation' }
+{ #category : 'code generation' }
 VMStructType class >> setter: getter bitPosition: bitPosition bitWidth: bitWidth type: typeOrNil [
 	^String streamContents:
 		[:s| | startByte endByte shift alignedPowerOf2 accessor mask expr |
@@ -315,38 +317,38 @@ VMStructType class >> setter: getter bitPosition: bitPosition bitWidth: bitWidth
 			[s nextPut: $.; crtab: 1; nextPutAll: '^aValue']]
 ]
 
-{ #category : #accessors }
+{ #category : 'accessors' }
 VMStructType class >> settersReturnValue [
 	"Override to get the browser to generate setters that return the
 	 value set, which matches C semantics for field assignments."
 	^true
 ]
 
-{ #category : #translation }
+{ #category : 'translation' }
 VMStructType class >> shouldBeGenerated [
 
 	^ true
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 VMStructType class >> timeStamp [
 	
 	^ VMClass timeStamp
 ]
 
-{ #category : #translation }
+{ #category : 'translation' }
 VMStructType class >> typedef [
 	^String streamContents: [:s| self printTypedefOn: s]
 ]
 
-{ #category : #'debug support' }
+{ #category : 'debug support' }
 VMStructType >> logError: aMessage [
 	
 	<doNotGenerate>
 	self logError: aMessage withArgs: #()
 ]
 
-{ #category : #printing }
+{ #category : 'printing' }
 VMStructType >> printOn: aStream [
 	"A hook to allow subclasses to print their state if useful."
 	<doNotGenerate>
@@ -354,7 +356,7 @@ VMStructType >> printOn: aStream [
 	self printStateOn: aStream
 ]
 
-{ #category : #printing }
+{ #category : 'printing' }
 VMStructType >> printStateOn: aStream [
 	"A hook to allow subclasses to print their state if useful."
 	<doNotGenerate>

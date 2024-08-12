@@ -1,21 +1,23 @@
 Class {
-	#name : #SlangMemoryManager,
-	#superclass : #Object,
+	#name : 'SlangMemoryManager',
+	#superclass : 'Object',
 	#instVars : [
 		'memoryMap',
 		'wordSize',
 		'initialAddress'
 	],
-	#category : #'Slang-Simulation'
+	#category : 'Slang-Simulation',
+	#package : 'Slang',
+	#tag : 'Simulation'
 }
 
-{ #category : #allocating }
+{ #category : 'allocating' }
 SlangMemoryManager >> allocate: desiredSize [
 
 	^ self allocate: desiredSize desiredPosition: initialAddress
 ]
 
-{ #category : #allocating }
+{ #category : 'allocating' }
 SlangMemoryManager >> allocate: desiredSize desiredPosition: desiredPos [ 
 
 	| allocatedAddress newMemoryRegion allocatedSize newMemory desiredPosition |
@@ -45,14 +47,14 @@ SlangMemoryManager >> allocate: desiredSize desiredPosition: desiredPos [
 	^ allocatedAddress
 ]
 
-{ #category : #allocating }
+{ #category : 'allocating' }
 SlangMemoryManager >> checkIsRegionAddress: address [
 
 	((address bitAnd: 16rfff) > 0)
 		ifTrue: [ self error: 'Not a region start address' ]
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 SlangMemoryManager >> copyFrom: start to: end [
 
 	| region |
@@ -63,7 +65,7 @@ SlangMemoryManager >> copyFrom: start to: end [
 		to: end - region start + 1
 ]
 
-{ #category : #allocating }
+{ #category : 'allocating' }
 SlangMemoryManager >> findHoleBiggerThan: desiredSize from: desiredPosition [
 
 	| foundPosition |
@@ -77,7 +79,7 @@ SlangMemoryManager >> findHoleBiggerThan: desiredSize from: desiredPosition [
 	^ foundPosition
 ]
 
-{ #category : #'memory-access' }
+{ #category : 'memory-access' }
 SlangMemoryManager >> float32At: address [ 
 
 	| region |
@@ -92,7 +94,7 @@ SlangMemoryManager >> float32At: address [
 
 ]
 
-{ #category : #'memory-access' }
+{ #category : 'memory-access' }
 SlangMemoryManager >> float32At: address put: value [ 
 	
 	| region |
@@ -107,7 +109,7 @@ SlangMemoryManager >> float32At: address put: value [
 		put: value
 ]
 
-{ #category : #'memory-access' }
+{ #category : 'memory-access' }
 SlangMemoryManager >> float64At: address [ 
 
 	| region |
@@ -122,7 +124,7 @@ SlangMemoryManager >> float64At: address [
 
 ]
 
-{ #category : #'memory-access' }
+{ #category : 'memory-access' }
 SlangMemoryManager >> float64At: address put: value [ 
 	
 	| region |
@@ -137,20 +139,20 @@ SlangMemoryManager >> float64At: address put: value [
 		put: value
 ]
 
-{ #category : #allocating }
+{ #category : 'allocating' }
 SlangMemoryManager >> free: address [ 
 	
 	self checkIsRegionAddress: address.
 	memoryMap removeKey: address >> 12
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 SlangMemoryManager >> initialAddress: anInteger [ 
 	
 	initialAddress := anInteger
 ]
 
-{ #category : #allocating }
+{ #category : 'allocating' }
 SlangMemoryManager >> initialize [
 
 	super initialize.
@@ -158,13 +160,13 @@ SlangMemoryManager >> initialize [
 	memoryMap := Dictionary new
 ]
 
-{ #category : #'memory-access' }
+{ #category : 'memory-access' }
 SlangMemoryManager >> int32AtPointer: address put: aValue [ 
 	
 	^ self writeSignedInteger: aValue at: address size: 4
 ]
 
-{ #category : #'memory-access' }
+{ #category : 'memory-access' }
 SlangMemoryManager >> isValidAddress: address [
 
 	"Memory regions are allocated in multiples of 4KB (12 bits).
@@ -172,49 +174,49 @@ SlangMemoryManager >> isValidAddress: address [
 	^ memoryMap includesKey: address >> 12
 ]
 
-{ #category : #'memory-access' }
+{ #category : 'memory-access' }
 SlangMemoryManager >> long32At: address [
 	
 	^ self readUnsignedIntegerAt: address size: 4
 ]
 
-{ #category : #'memory-access' }
+{ #category : 'memory-access' }
 SlangMemoryManager >> long32At: address put: a32BitValue [
 	
 	^ self writeSignedInteger: a32BitValue at: address size: 4
 ]
 
-{ #category : #'memory-access' }
+{ #category : 'memory-access' }
 SlangMemoryManager >> long64At: address [
 	
 	^ self readSignedIntegerAt: address size: 8
 ]
 
-{ #category : #'memory-access' }
+{ #category : 'memory-access' }
 SlangMemoryManager >> long64At: address put: a64BitValue [
 	
 	^ self writeSignedInteger: a64BitValue at: address size: 8
 ]
 
-{ #category : #'memory-access' }
+{ #category : 'memory-access' }
 SlangMemoryManager >> longAt: address [
 	
 	^ self readSignedIntegerAt: address size: self wordSize
 ]
 
-{ #category : #'memory-access' }
+{ #category : 'memory-access' }
 SlangMemoryManager >> longAt: address put: aWordSizedValue [
 	
 	^ self writeSignedInteger: aWordSizedValue at: address size: self wordSize
 ]
 
-{ #category : #utils }
+{ #category : 'utils' }
 SlangMemoryManager >> pageSize [
 
 	^ 4096
 ]
 
-{ #category : #'memory-access' }
+{ #category : 'memory-access' }
 SlangMemoryManager >> readIntegerAt: address size: size signed: aBoolean [
 	
 	| region |
@@ -230,19 +232,19 @@ SlangMemoryManager >> readIntegerAt: address size: size signed: aBoolean [
 		signed: aBoolean
 ]
 
-{ #category : #'memory-access' }
+{ #category : 'memory-access' }
 SlangMemoryManager >> readSignedIntegerAt: address size: size [
 	
 	^ self readIntegerAt: address size: size signed: true
 ]
 
-{ #category : #'memory-access' }
+{ #category : 'memory-access' }
 SlangMemoryManager >> readUnsignedIntegerAt: address size: size [
 	
 	^ self readIntegerAt: address size: size signed: false
 ]
 
-{ #category : #'memory-allocation' }
+{ #category : 'memory-allocation' }
 SlangMemoryManager >> reallocate: originalAddress withSize: desiredSize [
 	
 	| newAddress oldRegion newRegion |
@@ -254,14 +256,14 @@ SlangMemoryManager >> reallocate: originalAddress withSize: desiredSize [
 	^ newAddress
 ]
 
-{ #category : #'memory-access' }
+{ #category : 'memory-access' }
 SlangMemoryManager >> regionAtAddress: address [
 
 	self checkIsRegionAddress: address.
 	^ self regionForAddress: address
 ]
 
-{ #category : #'memory-access' }
+{ #category : 'memory-access' }
 SlangMemoryManager >> regionForAddress: address [
 
 	"Memory regions are allocated in multiples of 4KB (12 bits).
@@ -269,7 +271,7 @@ SlangMemoryManager >> regionForAddress: address [
 	^ memoryMap at: address >> 12
 ]
 
-{ #category : #enumerating }
+{ #category : 'enumerating' }
 SlangMemoryManager >> regionsDo: aFullBlockClosure [ 
 	
 	memoryMap values asSet do: [ :region |
@@ -278,7 +280,7 @@ SlangMemoryManager >> regionsDo: aFullBlockClosure [
 			value: region memory ]
 ]
 
-{ #category : #allocating }
+{ #category : 'allocating' }
 SlangMemoryManager >> registerNewRegion: newMemoryRegion size: desiredSize address: allocatedAddress [
 
 	allocatedAddress to: (allocatedAddress + desiredSize - 1) by: self pageSize do: [ 
@@ -286,102 +288,102 @@ SlangMemoryManager >> registerNewRegion: newMemoryRegion size: desiredSize addre
 		memoryMap at: pageAddress >> 12 put: newMemoryRegion ]
 ]
 
-{ #category : #utils }
+{ #category : 'utils' }
 SlangMemoryManager >> roundUpToPageSize: desiredSize [
 
 	^ (desiredSize / self pageSize) ceiling * self pageSize
 ]
 
-{ #category : #'memory-access' }
+{ #category : 'memory-access' }
 SlangMemoryManager >> uint32AtPointer: anInteger [
 	^ self unsignedLong32At: anInteger 
 ]
 
-{ #category : #'memory-access' }
+{ #category : 'memory-access' }
 SlangMemoryManager >> uint32AtPointer: anInteger put: anInteger2 [ 
 	^ self unsignedLong32At: anInteger put: anInteger2 
 ]
 
-{ #category : #'memory-access' }
+{ #category : 'memory-access' }
 SlangMemoryManager >> unsignedByteAt: anInteger [
 	
 	^ self readUnsignedIntegerAt: anInteger size: 1
 ]
 
-{ #category : #'memory-access' }
+{ #category : 'memory-access' }
 SlangMemoryManager >> unsignedByteAt: anAddress put: aValue [
 	
 	^ self writeUnsignedInteger: aValue at: anAddress size: 1
 ]
 
-{ #category : #'memory-access' }
+{ #category : 'memory-access' }
 SlangMemoryManager >> unsignedLong32At: address [
 
 	^ self readUnsignedIntegerAt: address size: 4
 ]
 
-{ #category : #'memory-access' }
+{ #category : 'memory-access' }
 SlangMemoryManager >> unsignedLong32At: address put: aValue [
 
 	^ self writeUnsignedInteger: aValue at: address size: 4
 ]
 
-{ #category : #'memory-access' }
+{ #category : 'memory-access' }
 SlangMemoryManager >> unsignedLong64At: address [
 
 	^ self readUnsignedIntegerAt: address size: 8
 ]
 
-{ #category : #'memory-access' }
+{ #category : 'memory-access' }
 SlangMemoryManager >> unsignedLong64At: address put: a64BitValue [ 
 
 	^ self writeUnsignedInteger: a64BitValue at: address size: 8
 ]
 
-{ #category : #'memory-access' }
+{ #category : 'memory-access' }
 SlangMemoryManager >> unsignedLongAt: address [
 	
 	^ self readUnsignedIntegerAt: address size: self wordSize
 ]
 
-{ #category : #'memory-access' }
+{ #category : 'memory-access' }
 SlangMemoryManager >> unsignedLongAt: address put: aValue [
 	
 	^ self writeUnsignedInteger: aValue at: address size: self wordSize
 ]
 
-{ #category : #'memory-access' }
+{ #category : 'memory-access' }
 SlangMemoryManager >> unsignedShortAt: anAddress [
 	
 	^ self readUnsignedIntegerAt: anAddress size: 2
 ]
 
-{ #category : #'memory-access' }
+{ #category : 'memory-access' }
 SlangMemoryManager >> unsignedShortAt: anAddress put: aValue [
 	
 	^ self writeUnsignedInteger: aValue at: anAddress size: 2
 ]
 
-{ #category : #allocating }
+{ #category : 'allocating' }
 SlangMemoryManager >> wholeAt: foundPosition fits: desiredSize [
 
 	^ (foundPosition to: (foundPosition + desiredSize) by: self pageSize)
 		allSatisfy: [ :position | self checkIsRegionAddress: position. (memoryMap includesKey: position >> 12) not ]
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 SlangMemoryManager >> wordSize [
 
 	^ wordSize
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 SlangMemoryManager >> wordSize: anObject [
 
 	wordSize := anObject
 ]
 
-{ #category : #'memory-access' }
+{ #category : 'memory-access' }
 SlangMemoryManager >> writeInteger: aValue at: address size: size signed: aBoolean [
 	
 	| region |
@@ -398,13 +400,13 @@ SlangMemoryManager >> writeInteger: aValue at: address size: size signed: aBoole
 		signed: aBoolean
 ]
 
-{ #category : #'memory-access' }
+{ #category : 'memory-access' }
 SlangMemoryManager >> writeSignedInteger: aValue at: address size: size [
 
 	^ self writeInteger: aValue at: address size: size signed: true
 ]
 
-{ #category : #'memory-access' }
+{ #category : 'memory-access' }
 SlangMemoryManager >> writeUnsignedInteger: aValue at: address size: size [
 	
 	^ self writeInteger: aValue at: address size: size signed: false
