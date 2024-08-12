@@ -17,12 +17,13 @@ CSlangPrettyPrinter >> contents [
 ]
 
 { #category : 'testing' }
-CSlangPrettyPrinter >> expressionListHasNonCommentStatementAfter: expressions futureIndex: futureIndex [
-	"we found a begin inlining comment in an expressionList, sometimes the last statements of an expression list are serie of comment, we iterate the next element to see if there is an actual statement after otherwise the next part is not an element of the list"
+CSlangPrettyPrinter >> expressionListHasNonCommentStatementAfter: expressions futureIndex: startingIndex [
+	"Find a begin inlining comment in an expressionList starting at futureIndex.
+	Sometimes the last statements of an expression list are a sequence of comments.
+	We iterate the next elements to see if there is an actual statement after otherwise the next part is not an element of the list"
 
-	| index current |
-	index := futureIndex + 1.
-	index to: expressions size do: [ :e |
+	startingIndex to: expressions size do: [ :e |
+		| current |
 		current := expressions at: e.
 		(current isComment not and: [ current isEmpty not ]) ifTrue: [
 			^ true ] ].
