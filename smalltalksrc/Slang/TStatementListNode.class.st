@@ -611,8 +611,7 @@ TStatementListNode >> replaceChild: aNode withList: aListOfStatement [
 	statements do: [ :e |
 		aNodeMet
 			ifFalse: [
-				allWithoutANode add: e.
-				aNodeMet := e == aNode ]
+			aNodeMet := e == aNode ifFalse: [ allWithoutANode add: e ] ]
 			ifTrue: [ endWithoutANode add: e ] ].
 	statements := allWithoutANode , aListOfStatement , endWithoutANode
 ]
