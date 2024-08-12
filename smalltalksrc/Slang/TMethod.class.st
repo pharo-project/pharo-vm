@@ -1035,9 +1035,7 @@ TMethod >> exitVar: exitVar label: exitLabel [
 			 node statements notEmpty and: [
 				 node lastNonCommentStatement isStatementList ] ]) ifTrue: [
 			list := node lastNonCommentStatement statements.
-			node
-				removeLast;
-				addAllLast: list ] ].
+			node replaceChild: node lastNonCommentStatement withList: list ] ].
 	^ labelUsed
 ]
 
