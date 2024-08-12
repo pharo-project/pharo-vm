@@ -602,6 +602,22 @@ TStatementListNode >> replaceChild: aNode with: bNode [
 ]
 
 { #category : 'transformations' }
+TStatementListNode >> replaceChild: aNode withList: aListOfStatement [
+
+	| aNodeMet allWithoutANode endWithoutANode |
+	allWithoutANode := OrderedCollection new.
+	endWithoutANode := OrderedCollection new.
+	aNodeMet := false.
+	statements do: [ :e |
+		aNodeMet
+			ifFalse: [
+				aNodeMet := e == aNode.
+				aNodeMet ifFalse: [ allWithoutANode add: e ] ]
+			ifTrue: [ endWithoutANode add: e ] ].
+	statements := allWithoutANode , aListOfStatement , endWithoutANode
+]
+
+{ #category : 'transformations' }
 TStatementListNode >> replaceNodesIn: aDictionary [
 
 	^aDictionary at: self ifAbsent: [
