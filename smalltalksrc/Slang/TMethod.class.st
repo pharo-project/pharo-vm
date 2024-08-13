@@ -1426,7 +1426,6 @@ TMethod >> inlineConditional: aSendNode in: aCodeGen [
 
 { #category : 'inlining' }
 TMethod >> inlineFunctionCall: aSendNode in: aCodeGen [
-
 	"Answer the body of the called function, substituting the actual
 	 parameters for the formal argument variables in the method body.
 	 Assume caller has established that:
@@ -1440,21 +1439,22 @@ TMethod >> inlineFunctionCall: aSendNode in: aCodeGen [
 	doNotRename := Set withAll: args.
 	argsForInlining := aSendNode argumentsForInliningCodeGenerator:
 		                   aCodeGen.
-	meth args with: argsForInlining do: [ :argName :exprNode | 
+	meth args with: argsForInlining do: [ :argName :exprNode |
 		exprNode isLeaf ifTrue: [ doNotRename add: argName ] ].
-	(meth statements size = 2 and: [ 
-		 meth statements first isSend and: [ 
-			 meth statements first selector == #flag: ] ]) ifTrue: [ 
+	(meth statements size = 2 and: [
+		 meth statements first isSend and: [
+			 meth statements first selector == #flag: ] ]) ifTrue: [
 		meth statements removeFirst ].
 	meth renameVarsForInliningInto: self except: doNotRename in: aCodeGen.
 	meth renameLabelsForInliningInto: self.
 	self addVarsDeclarationsAndLabelsOf: meth except: doNotRename.
 	substitutionDict := Dictionary new: meth args size * 2.
-	meth args with: argsForInlining do: [ :argName :exprNode | 
+	meth args with: argsForInlining do: [ :argName :exprNode |
 		substitutionDict at: argName put: exprNode.
-		(doNotRename includes: argName) ifFalse: [ 
+		(doNotRename includes: argName) ifFalse: [
 			self removeLocal: argName ] ].
 	meth parseTree bindVariablesIn: substitutionDict.
+	meth parseTree parent: aSendNode parent.
 	^ meth parseTree endsWithReturn
 		  ifTrue: [ meth parseTree copyWithoutReturn ]
 		  ifFalse: [ meth parseTree ]
@@ -1601,7 +1601,6 @@ TMethod >> inlineReturningConditional: aSendNode in: aCodeGen [
 
 { #category : 'inlining' }
 TMethod >> inlineSend: aSendNode directReturn: directReturn exitVar: exitVar in: aCodeGen [
-
 	"Answer a collection of statements to replace the given send.  directReturn indicates
 	 that the send is the expression in a return statement, so returns can be left in the
 	 body of the inlined method. If exitVar is nil, the value returned by the send is not
@@ -1618,49 +1617,51 @@ TMethod >> inlineSend: aSendNode directReturn: directReturn exitVar: exitVar in:
 	"convenient for debugging..."
 	aCodeGen maybeBreakForInlineOf: aSendNode in: self.
 	elidedArgs := #(  ).
-	(methArgs notEmpty and: [ methArgs first beginsWith: 'self_in_' ]) 
+	(methArgs notEmpty and: [ methArgs first beginsWith: 'self_in_' ])
 		ifTrue: [ "If the first arg is not used we can and should elide it."
 			| varNode |
 			varNode := TVariableNode new setName: methArgs first.
-			(meth parseTree noneSatisfy: [ :node | varNode isSameAs: node ]) 
+			(meth parseTree noneSatisfy: [ :node | varNode isSameAs: node ])
 				ifTrue: [ elidedArgs := { methArgs first } ].
 			methArgs := methArgs allButFirst ].
 	methArgs size = aSendNode arguments size ifFalse: [ ^ nil ].
 	meth := meth copy.
 
-	(meth statements size > 1 and: [ 
-		 meth statements first isSend and: [ 
-			 meth statements first selector == #flag: ] ]) ifTrue: [ 
+	(meth statements size > 1 and: [
+		 meth statements first isSend and: [
+			 meth statements first selector == #flag: ] ]) ifTrue: [
 		meth statements removeFirst ].
 
 	"Propagate the return type of an inlined method"
-	(directReturn or: [ exitVar notNil ]) ifTrue: [ 
+	(directReturn or: [ exitVar notNil ]) ifTrue: [
 		exitType := directReturn
 			            ifTrue: [ returnType ]
-			            ifFalse: [ 
+			            ifFalse: [
 			            (self typeFor: exitVar in: aCodeGen) ifNil: [ #sqInt ] ].
-		(exitType = #void or: [ exitType = meth returnType ]) ifFalse: [ 
+		(exitType = #void or: [ exitType = meth returnType ]) ifFalse: [
 			meth propagateReturnIn: aCodeGen ] ].
 
 	"Propagate any unusual argument types to untyped argument variables"
-	methArgs with: aSendNode arguments do: [ :formal :actual | 
-		(meth declarationAt: formal ifAbsent: nil) ifNil: [ | type |
-			(actual isVariable and: [ (type := self typeFor: actual name in: aCodeGen) notNil ])
-			 ifTrue: [
-				type ~= #sqInt ifTrue: [ 
-					meth declarationAt: formal put: (type last = $*
-							 ifTrue: [ type , formal ]
-							 ifFalse: [ type , ' ' , formal ]) ] ] ] ].
+	methArgs with: aSendNode arguments do: [ :formal :actual |
+		(meth declarationAt: formal ifAbsent: nil) ifNil: [
+			| type |
+			(actual isVariable and: [
+				 (type := self typeFor: actual name in: aCodeGen) notNil ])
+				ifTrue: [
+					type ~= #sqInt ifTrue: [
+						meth declarationAt: formal put: (type last = $*
+								 ifTrue: [ type , formal ]
+								 ifFalse: [ type , ' ' , formal ]) ] ] ] ].
 
 	meth renameVarsForInliningInto: self except: elidedArgs in: aCodeGen.
 	meth renameLabelsForInliningInto: self.
 	self addVarsDeclarationsAndLabelsOf: meth except: elidedArgs.
-	meth hasReturn ifTrue: [ 
-		directReturn ifFalse: [ 
+	meth hasReturn ifTrue: [
+		directReturn ifFalse: [
 			exitLabel := self unusedLabelForInliningInto: self.
 			(meth exitVar: exitVar label: exitLabel)
 				ifTrue: [ labels add: exitLabel ]
-				ifFalse: [ exitLabel := nil ] "is label used?" ] ].
+				ifFalse: [ "is label used?" exitLabel := nil ] ] ].
 	(inlineStmts := OrderedCollection new:
 			                meth statements size + meth args size + 2)
 		add: (label := TLabeledCommentNode new setComment: 'begin ' , sel);
@@ -1670,18 +1671,19 @@ TMethod >> inlineSend: aSendNode directReturn: directReturn exitVar: exitVar in:
 				 except: elidedArgs
 				 in: aCodeGen);
 		addAll: meth statements. "method body"
-	directReturn ifTrue: [ 
+	directReturn ifTrue: [
+		meth parseTree parent: aSendNode parent.
 		meth endsWithReturn
-			ifTrue: [ 
+			ifTrue: [
 				exitVar ifNotNil: [ "don't remove the returns if being invoked in the context of a return"
 					inlineStmts
 						at: inlineStmts size
 						put: inlineStmts last copyWithoutReturn ] ]
-			ifFalse: [ 
+			ifFalse: [
 				inlineStmts add:
 					(TReturnNode new setExpression:
 						 (TVariableNode new setName: 'nil')) ] ].
-	exitLabel ifNotNil: [ 
+	exitLabel ifNotNil: [
 		inlineStmts add: (TLabeledCommentNode new
 				 setLabel: exitLabel
 				 comment: 'end ' , meth selector) ].

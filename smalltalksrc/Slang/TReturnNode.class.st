@@ -110,7 +110,8 @@ TReturnNode >> copyWithoutReturn [
 	"called when inlining happens, if the expression is in a cast, it may be no longer needed and will produce a warning by the C compiler if the expression isn't use as an expression anymore"
 
 	((parent isTMethod or: [
-		  parent isSend not and: [ parent isReturn not ] ]) and: [
+		  parent isSend not and: [
+			  parent isReturn not and: [ parent isAssignment not ] ] ]) and: [
 		 expression isSend and: [ expression selector beginsWith: #cCoerce ] ])
 		ifTrue: [ ^ expression arguments first ].
 	^ expression
