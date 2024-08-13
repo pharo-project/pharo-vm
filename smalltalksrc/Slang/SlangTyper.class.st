@@ -72,7 +72,6 @@ SlangTyper >> codeGenerator: aCCodeGenerator [
 
 { #category : 'type inference' }
 SlangTyper >> inferReturnTypeFromReturnsOf: aMethod [
-
 	"Attempt to infer the return type of the receiver from returns in the parse tree."
 
 	"this for determining which returns have which return types:"
@@ -88,13 +87,11 @@ SlangTyper >> inferReturnTypeFromReturnsOf: aMethod [
 
 	codeGenerator maybeBreakForTestToInline: aMethod selector in: aMethod.
 	aMethod returnType ifNotNil: [ ^ self ].
-	codeGenerator
-		pushScope: aMethod
-		while:
-			[| hasReturn returnTypes |
-			 hasReturn := false.
-			 returnTypes := Set new.
-			 "Debug:
+	codeGenerator pushScope: aMethod while: [
+		| hasReturn returnTypes |
+		hasReturn := false.
+		returnTypes := Set new.
+		"Debug:
 			 (| rettypes |
 			  rettypes := Dictionary new.
 			  parseTree nodesDo:
@@ -104,8 +101,8 @@ SlangTyper >> inferReturnTypeFromReturnsOf: aMethod [
 					 self addTypesFor: node expression to: (types := Set new) in: aCodeGen.
 					 rettypes at: node expression put: types]].
 			  rettypes)"
-		aMethod parseTree nodesDo: [ :node | 
-			node isReturn ifTrue: [ 
+		aMethod parseTree nodesDo: [ :node |
+			node isReturn ifTrue: [
 				hasReturn := true.
 				"If we encounter a send of an as-yet-untyped method then abort,
 					  retrying and computing the type when that method is fully typed."
@@ -116,27 +113,12 @@ SlangTyper >> inferReturnTypeFromReturnsOf: aMethod [
 		returnTypes remove: #implicit ifAbsent: [  ].
 		returnTypes := codeGenerator harmonizeReturnTypesIn: returnTypes.
 		hasReturn
-			ifTrue: [ 
-				returnTypes size > 1 ifTrue: [ 
-					| message |
-					message := String streamContents: [ :s | 
-						           s nextPutAll: 'conflicting return types '.
-						           returnTypes
-							           do: [ :t | s nextPutAll: t ]
-							           separatedBy: [ s nextPutAll: ', ' ].
-						           s
-							           nextPutAll: ' in ';
-							           nextPutAll: aMethod definingClass name;
-							           nextPutAll: ' >> ';
-							           nextPutAll: aMethod selector;
-							           cr ].
-					Notification signal: message.
-					codeGenerator logger
-						newLine;
-						show: message ].
-				returnTypes size = 1 ifTrue: [ 
+			ifTrue: [
+				returnTypes size > 1 ifTrue: [
+					self throwConflictExceptionIn: aMethod with: returnTypes ].
+				returnTypes size = 1 ifTrue: [
 					aMethod returnType: returnTypes anyOne ] ]
-			ifFalse: [ 
+			ifFalse: [
 				aMethod returnType:
 					(codeGenerator implicitReturnTypeFor: aMethod selector) ] ]
 ]
@@ -325,6 +307,14 @@ SlangTyper >> stopOnErrors [
 { #category : 'accessing' }
 SlangTyper >> stopOnErrors: anObject [
 	stopOnErrors := anObject
+]
+
+{ #category : 'exceptions' }
+SlangTyper >> throwConflictExceptionIn: aMethod with: returnTypes [
+
+	SlangReturnTypeConflictException
+		signalConflictIn: aMethod
+		with: returnTypes
 ]
 
 { #category : 'type inference' }
