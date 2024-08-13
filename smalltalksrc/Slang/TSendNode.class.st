@@ -76,6 +76,13 @@ TSendNode >> argumentsForInliningCodeGenerator: aCodeGen [
 		ifFalse: [arguments]
 ]
 
+{ #category : 'testing' }
+TSendNode >> argumentsHasNothingButComments [
+	"related to dead code elimination and inlining, see if the cases has nothing but comment meaning they are empty"
+
+	^ arguments allSatisfy: [ :arg | arg isComment ]
+]
+
 { #category : 'tranforming' }
 TSendNode >> asCASTAsFieldReferenceIn: aCodeGen [
 
@@ -567,7 +574,7 @@ TSendNode >> removeUnusedNodesInBranch: aChild [
 	| branchIndex |
 	branchIndex := arguments indexOf: aChild.
 	arguments := arguments select: [ :e | e ~= aChild ].
-	arguments isEmpty
+	(arguments isEmpty or: [ self argumentsHasNothingButComments ])
 		ifTrue: [
 			self transformReceiverAfterEmptyArguments.
 			self parent removeUnusedNodesInBranch: self ]
