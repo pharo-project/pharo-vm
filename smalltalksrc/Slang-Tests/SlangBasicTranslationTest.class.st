@@ -1347,6 +1347,31 @@ SlangBasicTranslationTest >> testInlineNodeWithSharedLabelInCase [
 ]
 
 { #category : 'tests-inlinemethod' }
+SlangBasicTranslationTest >> testInlineWithCoerceAsArgument [
+	"the cast is still in an expression, so inlining does not supress it"
+
+	| translation tMethod |
+	tMethod := self getTMethodFrom:
+		           #methodCallingInSendMethodWithCCoerceInReturn.
+	tMethod recordDeclarationsIn: generator.
+	generator doBasicInlining: true.
+
+	translation := self translate: tMethod.
+	translation := translation trimBoth.
+
+	self
+		assert: translation
+		equals:
+			'/* SlangBasicTranslationTestClass>>#methodCallingInSendMethodWithCCoerceInReturn */
+static sqInt
+methodCallingInSendMethodWithCCoerceInReturn(void)
+{
+	method(((sqInt) (method()) ));
+	return 0;
+}'
+]
+
+{ #category : 'tests-inlinemethod' }
 SlangBasicTranslationTest >> testInlineWithUnecessaryCoerce [
 	"the cast isn't in an expression anymore, so inlining supress it. If it we keep the cast we would have the line '(sqInt) method;' which would produce an 'unused expression result' warning."
 

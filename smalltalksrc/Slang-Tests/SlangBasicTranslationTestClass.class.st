@@ -41,6 +41,12 @@ SlangBasicTranslationTestClass >> initializationOptions [
 ]
 
 { #category : 'inline' }
+SlangBasicTranslationTestClass >> methodCallingInSendMethodWithCCoerceInReturn [
+
+	self method: self methodWithCCoerceInReturn
+]
+
+{ #category : 'inline' }
 SlangBasicTranslationTestClass >> methodCallingMethodWithCCoerceInReturn [
 
 	self methodWithCCoerceInReturn

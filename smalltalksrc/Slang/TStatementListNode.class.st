@@ -306,13 +306,16 @@ TStatementListNode >> children [
 
 { #category : 'transformations' }
 TStatementListNode >> copyWithoutReturn [
+
 	self assert: self endsWithReturn.
-	statements size = 1 ifTrue:
-		[^statements last copyWithoutReturn].
-	^self class new
-		setArguments: arguments
-			statements: statements allButLast, {statements last copyWithoutReturn};
-		yourself
+	statements size = 1 ifTrue: [
+		statements last parent: self parent.
+		^ statements last copyWithoutReturn ].
+	^ self class new
+		  setArguments: arguments
+		  statements:
+			  statements allButLast , { statements last copyWithoutReturn };
+		  yourself
 ]
 
 { #category : 'declarations' }
