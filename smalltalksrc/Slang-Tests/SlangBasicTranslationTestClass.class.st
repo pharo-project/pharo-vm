@@ -41,6 +41,12 @@ SlangBasicTranslationTestClass >> initializationOptions [
 ]
 
 { #category : 'inline' }
+SlangBasicTranslationTestClass >> methodCallingMethodWithCCoerceInReturn [
+
+	self methodWithCCoerceInReturn
+]
+
+{ #category : 'inline' }
 SlangBasicTranslationTestClass >> methodCallingMethodWithInlinePragma [
 
 	self methodWithoutInlinePragma.
@@ -113,6 +119,11 @@ SlangBasicTranslationTestClass >> methodWithAnOptionPragma [
 
 	<option: #OPTION>
 	
+]
+
+{ #category : 'inline' }
+SlangBasicTranslationTestClass >> methodWithCCoerceInReturn [
+	^ self cCoerce: self method to: #sqInt 
 ]
 
 { #category : 'inline' }
