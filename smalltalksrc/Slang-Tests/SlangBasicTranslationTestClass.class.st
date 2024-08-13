@@ -24,6 +24,11 @@ SlangBasicTranslationTestClass class >> objectMemoryClass [
 ]
 
 { #category : 'inline' }
+SlangBasicTranslationTestClass >> emptyMethod [
+	self cCode: [  ] inSmalltalk: [  ]
+]
+
+{ #category : 'inline' }
 SlangBasicTranslationTestClass >> first: param1 second: param2 [
 	"Method with several parameters"
 ]
@@ -38,6 +43,17 @@ SlangBasicTranslationTestClass >> increment: x [
 SlangBasicTranslationTestClass >> initializationOptions [
 
 	^ nil
+]
+
+{ #category : 'inline-comment' }
+SlangBasicTranslationTestClass >> methodCallingMethodExpressionList [
+
+	| i |
+	i = [
+	self emptyMethod.
+	self bodyOfMethodWithoutInlinePragma.
+	self methodWithoutInlinePragmaAndEmptyMethodCall.
+	self methodWithInlinePragma ]
 ]
 
 { #category : 'inline' }
@@ -67,6 +83,12 @@ SlangBasicTranslationTestClass >> methodDefiningSingleStaticVariable [
 SlangBasicTranslationTestClass >> methodDefiningSingleVariable [
 
 	| foo |
+]
+
+{ #category : 'inline-comment' }
+SlangBasicTranslationTestClass >> methodInlinineSwitch [
+
+	self switch
 ]
 
 { #category : 'inline' }
@@ -206,7 +228,20 @@ SlangBasicTranslationTestClass >> methodWithoutInlinePragmaAndBlock: aBlock [
 ]
 
 { #category : 'inline' }
+SlangBasicTranslationTestClass >> methodWithoutInlinePragmaAndEmptyMethodCall [
+	self emptyMethod.
+	self bodyOfMethodWithoutInlinePragma.
+]
+
+{ #category : 'inline' }
 SlangBasicTranslationTestClass >> methodWithoutReturn [
 
 	<returnTypeC: #sqInt>
+]
+
+{ #category : 'inline-comment' }
+SlangBasicTranslationTestClass >> switchInReturn [
+
+	^ true caseOf:
+		  { ([ 4 ] -> [ self methodWithoutInlinePragmaAndEmptyMethodCall ]) }
 ]

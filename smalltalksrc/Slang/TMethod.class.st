@@ -965,6 +965,7 @@ TMethod >> exitVar: exitVar label: exitLabel [
 	"Replace each return statement in this method with an assignment to the
 	 exit variable followed by either a return or a goto to the given label.
 	 Answer if a goto was generated."
+
 	"Optimization: If exitVar is nil, the return value of the inlined method is not being used, so don't add the assignment statement."
 
 	| labelUsed map elisions eliminateReturnSelfs |
@@ -974,62 +975,68 @@ TMethod >> exitVar: exitVar label: exitLabel [
 	"Conceivably one might ^self from a struct class and mean it.  In most cases though
 	 ^self means `get me outta here, fast'.  So unless this method is from a VMStruct class,
 	 elide any ^self's"
-	eliminateReturnSelfs := ((definingClass inheritsFrom: SlangClass) and: [definingClass isStructClass]) not
-							  and: [returnType = #void or: [returnType = #sqInt]].
-	parseTree nodesDo:
-		[:node | | replacement |
-		node isReturn ifTrue:
-			[self transformReturnSubExpression: node
+	eliminateReturnSelfs := ((definingClass inheritsFrom: SlangClass)
+		                         and: [ definingClass isStructClass ]) not
+		                        and: [
+		                        returnType = #void or: [
+			                        returnType = #sqInt ] ].
+	parseTree nodesDo: [ :node |
+		| replacement |
+		node isReturn ifTrue: [
+			self
+				transformReturnSubExpression: node
 				toAssignmentOf: exitVar
 				andGoto: exitLabel
 				unless: eliminateReturnSelfs
-				into: [:rep :labelWasUsed|
+				into: [ :rep :labelWasUsed |
 					replacement := rep.
-					labelWasUsed ifTrue: [labelUsed := true]].
+					labelWasUsed ifTrue: [ labelUsed := true ] ].
 			"replaceNodesIn: is strictly top-down, so any replacement for ^expr ifTrue: [...^fu...] ifFalse: [...^bar...]
 			 will prevent replacement of either ^fu or ^bar. The corollary is that ^expr ifTrue: [foo] ifFalse: [^bar]
 			 must be transformed into expr ifTrue: [^foo] ifFalse: [^bar]"
-			(node expression isConditionalSend
-			 and: [node expression hasExplicitReturn])
-				ifTrue:
-					[elisions add: node.
-					 (node expression args reject: [:arg| arg endsWithReturn]) do:
-						[:nodeNeedingReturn|
-						 self transformReturnSubExpression: nodeNeedingReturn statements last
-							toAssignmentOf: exitVar
-							andGoto: exitLabel
-							unless: eliminateReturnSelfs
-							into: [:rep :labelWasUsed|
-								replacement := rep.
-								labelWasUsed ifTrue: [labelUsed := true]].
-						 map
-							at: nodeNeedingReturn statements last
-							put: replacement]]
-				ifFalse:
-					[map
-						at: node
-						put: (replacement ifNil:
-								[TLabeledCommentNode new setComment: 'return ', node expression printString])]]].
-	map isEmpty ifTrue:
-		[self deny: labelUsed.
-		 ^false].
+			(node expression isConditionalSend and: [
+				 node expression hasExplicitReturn ])
+				ifTrue: [
+					elisions add: node.
+					(node expression arguments reject: [ :arg | arg endsWithReturn ])
+						do: [ :nodeNeedingReturn |
+							self
+								transformReturnSubExpression:
+								nodeNeedingReturn lastNonCommentStatement
+								toAssignmentOf: exitVar
+								andGoto: exitLabel
+								unless: eliminateReturnSelfs
+								into: [ :rep :labelWasUsed |
+									replacement := rep.
+									labelWasUsed ifTrue: [ labelUsed := true ] ].
+							map
+								at: nodeNeedingReturn lastNonCommentStatement
+								put: replacement ] ]
+				ifFalse: [
+					map at: node put: (replacement ifNil: [
+							 TLabeledCommentNode new setComment:
+								 'return ' , node expression printString ]) ] ] ].
+	map isEmpty ifTrue: [
+		self deny: labelUsed.
+		^ false ].
 	"Now do a top-down replacement for all returns that should be mapped to assignments and gotos"
 	parseTree replaceNodesIn: map.
 	"Now it is safe to eliminate the returning ifs..."
-	elisions isEmpty ifFalse:
-		[| elisionMap |
-		 elisionMap := Dictionary new.
-		 elisions do: [:returnNode| elisionMap at: returnNode put: returnNode expression].
-		 parseTree replaceNodesIn: elisionMap].
+	elisions isEmpty ifFalse: [
+		| elisionMap |
+		elisionMap := Dictionary new.
+		elisions do: [ :returnNode |
+			elisionMap at: returnNode put: returnNode expression ].
+		parseTree replaceNodesIn: elisionMap ].
 	"Now flatten any new statement lists..."
-	parseTree nodesDo:
-		[:node| | list |
-		(node isStatementList
-		 and: [node statements notEmpty
-		 and: [node statements last isStatementList]]) ifTrue:
-			[list := node statements last statements.
-			 node statements removeLast; addAllLast: list]].
-	^labelUsed
+	parseTree nodesDo: [ :node |
+		| list |
+		(node isStatementList and: [
+			 node statements notEmpty and: [
+				 node lastNonCommentStatement isStatementList ] ]) ifTrue: [
+			list := node lastNonCommentStatement statements.
+			node replaceChild: node lastNonCommentStatement withList: list ] ].
+	^ labelUsed
 ]
 
 { #category : 'accessing' }
@@ -1390,22 +1397,38 @@ TMethod >> inlineCodeOrNilForStatement: aNode returningNodes: returningNodes in:
 	"If the given statement node can be inlined, answer the statements that replace it. Otherwise, answer nil."
 
 	| stmts |
-	(aNode isReturn
-	 and: [self inlineableSend: aNode expression in: aCodeGen]) ifTrue:
-		[stmts := self inlineSend: aNode expression
-						directReturn: true exitVar: nil in: aCodeGen.
-		stmts last endsWithReturn ifFalse:
-			[stmts at: stmts size put: stmts last asReturnNode].
-		^stmts].
-	(aNode isAssignment
-	 and: [self inlineableSend: aNode expression in: aCodeGen]) ifTrue:
-		[^self inlineSend: aNode expression
-				directReturn: false exitVar: aNode variable name in: aCodeGen].
-	(aNode isSend
-	 and: [self inlineableSend: aNode in: aCodeGen]) ifTrue:
-		[^self inlineSend: aNode
-				directReturn: (returningNodes includes: aNode) exitVar: nil in: aCodeGen].
-	^nil
+	(aNode isReturn and: [
+		 self inlineableSend: aNode expression in: aCodeGen ]) ifTrue: [
+		| last indexOfLast |
+		stmts := self
+			         inlineSend: aNode expression
+			         directReturn: true
+			         exitVar: nil
+			         in: aCodeGen.
+		"the last statements may be comments"
+		last := stmts last.
+		indexOfLast := stmts size.
+		[ last isComment ] whileTrue: [
+			indexOfLast := indexOfLast - 1.
+			last := stmts at: indexOfLast ].
+		last endsWithReturn ifFalse: [
+			stmts at: indexOfLast put: last asReturnNode ].
+		^ stmts ].
+	(aNode isAssignment and: [
+		 self inlineableSend: aNode expression in: aCodeGen ]) ifTrue: [
+		^ self
+			  inlineSend: aNode expression
+			  directReturn: false
+			  exitVar: aNode variable name
+			  in: aCodeGen ].
+	(aNode isSend and: [ self inlineableSend: aNode in: aCodeGen ])
+		ifTrue: [
+			^ self
+				  inlineSend: aNode
+				  directReturn: (returningNodes includes: aNode)
+				  exitVar: nil
+				  in: aCodeGen ].
+	^ nil
 ]
 
 { #category : 'inlining' }
@@ -1601,7 +1624,6 @@ TMethod >> inlineReturningConditional: aSendNode in: aCodeGen [
 
 { #category : 'inlining' }
 TMethod >> inlineSend: aSendNode directReturn: directReturn exitVar: exitVar in: aCodeGen [
-
 	"Answer a collection of statements to replace the given send.  directReturn indicates
 	 that the send is the expression in a return statement, so returns can be left in the
 	 body of the inlined method. If exitVar is nil, the value returned by the send is not
@@ -1618,49 +1640,51 @@ TMethod >> inlineSend: aSendNode directReturn: directReturn exitVar: exitVar in:
 	"convenient for debugging..."
 	aCodeGen maybeBreakForInlineOf: aSendNode in: self.
 	elidedArgs := #(  ).
-	(methArgs notEmpty and: [ methArgs first beginsWith: 'self_in_' ]) 
+	(methArgs notEmpty and: [ methArgs first beginsWith: 'self_in_' ])
 		ifTrue: [ "If the first arg is not used we can and should elide it."
 			| varNode |
 			varNode := TVariableNode new setName: methArgs first.
-			(meth parseTree noneSatisfy: [ :node | varNode isSameAs: node ]) 
+			(meth parseTree noneSatisfy: [ :node | varNode isSameAs: node ])
 				ifTrue: [ elidedArgs := { methArgs first } ].
 			methArgs := methArgs allButFirst ].
 	methArgs size = aSendNode arguments size ifFalse: [ ^ nil ].
 	meth := meth copy.
 
-	(meth statements size > 1 and: [ 
-		 meth statements first isSend and: [ 
-			 meth statements first selector == #flag: ] ]) ifTrue: [ 
+	(meth statements size > 1 and: [
+		 meth statements first isSend and: [
+			 meth statements first selector == #flag: ] ]) ifTrue: [
 		meth statements removeFirst ].
 
 	"Propagate the return type of an inlined method"
-	(directReturn or: [ exitVar notNil ]) ifTrue: [ 
+	(directReturn or: [ exitVar notNil ]) ifTrue: [
 		exitType := directReturn
 			            ifTrue: [ returnType ]
-			            ifFalse: [ 
+			            ifFalse: [
 			            (self typeFor: exitVar in: aCodeGen) ifNil: [ #sqInt ] ].
-		(exitType = #void or: [ exitType = meth returnType ]) ifFalse: [ 
+		(exitType = #void or: [ exitType = meth returnType ]) ifFalse: [
 			meth propagateReturnIn: aCodeGen ] ].
 
 	"Propagate any unusual argument types to untyped argument variables"
-	methArgs with: aSendNode arguments do: [ :formal :actual | 
-		(meth declarationAt: formal ifAbsent: nil) ifNil: [ | type |
-			(actual isVariable and: [ (type := self typeFor: actual name in: aCodeGen) notNil ])
-			 ifTrue: [
-				type ~= #sqInt ifTrue: [ 
-					meth declarationAt: formal put: (type last = $*
-							 ifTrue: [ type , formal ]
-							 ifFalse: [ type , ' ' , formal ]) ] ] ] ].
+	methArgs with: aSendNode arguments do: [ :formal :actual |
+		(meth declarationAt: formal ifAbsent: nil) ifNil: [
+			| type |
+			(actual isVariable and: [
+				 (type := self typeFor: actual name in: aCodeGen) notNil ])
+				ifTrue: [
+					type ~= #sqInt ifTrue: [
+						meth declarationAt: formal put: (type last = $*
+								 ifTrue: [ type , formal ]
+								 ifFalse: [ type , ' ' , formal ]) ] ] ] ].
 
 	meth renameVarsForInliningInto: self except: elidedArgs in: aCodeGen.
 	meth renameLabelsForInliningInto: self.
 	self addVarsDeclarationsAndLabelsOf: meth except: elidedArgs.
-	meth hasReturn ifTrue: [ 
-		directReturn ifFalse: [ 
+	meth hasReturn ifTrue: [
+		directReturn ifFalse: [
 			exitLabel := self unusedLabelForInliningInto: self.
 			(meth exitVar: exitVar label: exitLabel)
 				ifTrue: [ labels add: exitLabel ]
-				ifFalse: [ exitLabel := nil ] "is label used?" ] ].
+				ifFalse: [ "is label used?" exitLabel := nil ] ] ].
 	(inlineStmts := OrderedCollection new:
 			                meth statements size + meth args size + 2)
 		add: (label := TLabeledCommentNode new setComment: 'begin ' , sel);
@@ -1670,24 +1694,28 @@ TMethod >> inlineSend: aSendNode directReturn: directReturn exitVar: exitVar in:
 				 except: elidedArgs
 				 in: aCodeGen);
 		addAll: meth statements. "method body"
-	directReturn ifTrue: [ 
+	directReturn ifTrue: [
 		meth endsWithReturn
-			ifTrue: [ 
+			ifTrue: [
 				exitVar ifNotNil: [ "don't remove the returns if being invoked in the context of a return"
 					inlineStmts
 						at: inlineStmts size
 						put: inlineStmts last copyWithoutReturn ] ]
-			ifFalse: [ 
+			ifFalse: [
 				inlineStmts add:
 					(TReturnNode new setExpression:
 						 (TVariableNode new setName: 'nil')) ] ].
-	exitLabel ifNotNil: [ 
-		inlineStmts add: (TLabeledCommentNode new
-				 setLabel: exitLabel
-				 comment: 'end ' , meth selector) ].
-	inlineStmts size = 1 ifTrue: [ "Nuke empty methods; e.g. override of flushAtCache"
+	exitLabel
+		ifNotNil: [
+			inlineStmts add:
+				(TLabeledCommentNode new setLabel: exitLabel comment: 'end ' , sel) ]
+		ifNil: [
+		inlineStmts add: (TLabeledCommentNode new setComment: 'end ' , sel) ].
+	inlineStmts size = 2 ifTrue: [ "Nuke empty methods; e.g. override of flushAtCache"
 		self assert: inlineStmts first isComment.
-		inlineStmts removeFirst ].
+		self assert: inlineStmts second isComment.
+		inlineStmts removeFirst.
+		inlineStmts removeLast ].
 	^ inlineStmts
 ]
 
@@ -1836,9 +1864,9 @@ TMethod >> isFunctionalIn: aCodeGen [
 			or: [(aCodeGen isAssertSelector: parseTree statements first selector)
 				and: [parseTree statements first selector ~~ #asserta:]]]]) ifFalse:
 			[^false]].
-	parseTree statements last isReturn ifFalse:
+	parseTree lastNonCommentStatement isReturn ifFalse:
 		[^false].
-	parseTree statements last expression nodesDo:
+	parseTree lastNonCommentStatement expression nodesDo:
 		[ :n | n isReturn ifTrue: [^false]].
 	^#(int #'unsigned int' #long #'unsigned long' #'long long' #'unsigned long long'
 		sqInt usqInt #'sqIntptr_t' #'usqIntptr_t' sqLong usqLong
@@ -3043,7 +3071,7 @@ TMethod >> transformReturnSubExpression: node toAssignmentOf: exitVar andGoto: e
 								ifNotNil: [TAssignmentNode new
 											setVariable: (TVariableNode new setName: exitVar)
 											expression: expr]].
-	 node == parseTree statements last
+	 node == parseTree lastNonCommentStatement 
 		ifTrue:
 			[aBinaryBlock value: replacement value: false]
 		ifFalse:

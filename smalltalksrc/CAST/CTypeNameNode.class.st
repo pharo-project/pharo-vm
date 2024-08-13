@@ -1,13 +1,15 @@
 Class {
-	#name : #CTypeNameNode,
-	#superclass : #CGLRAbstractNode,
+	#name : 'CTypeNameNode',
+	#superclass : 'CGLRAbstractNode',
 	#instVars : [
 		'symbol'
 	],
-	#category : #'CAST-Nodes'
+	#category : 'CAST-Nodes',
+	#package : 'CAST',
+	#tag : 'Nodes'
 }
 
-{ #category : #'instance creation' }
+{ #category : 'instance creation' }
 CTypeNameNode class >> symbol: aType [
 
 	^ self new
@@ -15,23 +17,23 @@ CTypeNameNode class >> symbol: aType [
 		  yourself
 ]
 
-{ #category : #generated }
+{ #category : 'generated' }
 CTypeNameNode >> acceptVisitor: anAbstractVisitor [
 	^ anAbstractVisitor visitTypename: self
 ]
 
-{ #category : #generated }
+{ #category : 'generated' }
 CTypeNameNode >> isTypeName [
 
 	^ true
 ]
 
-{ #category : #generated }
+{ #category : 'generated' }
 CTypeNameNode >> symbol [
 	^ symbol
 ]
 
-{ #category : #generated }
+{ #category : 'generated' }
 CTypeNameNode >> symbol: aSmaCCToken [
 	symbol := aSmaCCToken
 ]

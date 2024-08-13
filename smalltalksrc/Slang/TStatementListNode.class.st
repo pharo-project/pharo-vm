@@ -66,6 +66,26 @@ TStatementListNode >> accept: aVisitor [
 	^ aVisitor visitStatementListNode: self
 ]
 
+{ #category : 'adding' }
+TStatementListNode >> addAllLast: aListOfStatement [
+
+	(statements isNotEmpty and: [ statements last isComment ])
+		ifFalse: [ statements addAllLast: aListOfStatement ]
+		ifTrue: [
+			| actualLast actualLastMet allWithoutEndComment endComment |
+			actualLast := self lastNonCommentStatement.
+			allWithoutEndComment := OrderedCollection new.
+			endComment := OrderedCollection new.
+			actualLastMet := false.
+			statements do: [ :e |
+				actualLastMet
+					ifFalse: [
+						allWithoutEndComment add: e.
+						actualLastMet := e == actualLast ]
+					ifTrue: [ endComment add: e ] ].
+			statements := allWithoutEndComment , aListOfStatement , endComment ]
+]
+
 { #category : 'declarations' }
 TStatementListNode >> addDeclarations: aCollection [ 
 	
@@ -75,40 +95,39 @@ TStatementListNode >> addDeclarations: aCollection [
 
 { #category : 'utilities' }
 TStatementListNode >> addReadBeforeAssignedIn: variables to: readBeforeAssigned assignments: assigned in: aCodeGen [
-
 	"Add any variables in variables that are read before written to readBeforeAssigned.
 	 Add unconditional assignments to assigned.  For convenience answer assigned."
 
 	self
-		nodesWithParentsDo: [ :node :parent | 
-			(node isAssignment and: [ variables includes: node variable name ]) 
+		nodesWithParentsDo: [ :node :parent |
+			(node isAssignment and: [ variables includes: node variable name ])
 				ifTrue: [ assigned add: node variable name ].
-			(node isVariable and: [ 
-				 (variables includes: node name) and: [ 
-					 (assigned includes: node name) not and: [ 
-						 (#( nil pointer ) includes: (node structTargetKindIn: aCodeGen)) 
-							 and: [ 
-								 (parent notNil and: [ 
-									  parent isAssignment and: [ parent variable == node ] ]) not ] ] ] ]) 
-				ifTrue: [ 
+			(node isVariable and: [
+				 (variables includes: node name) and: [
+					 (assigned includes: node name) not and: [
+						 (#( nil pointer ) includes: (node structTargetKindIn: aCodeGen))
+							 and: [
+								 (parent notNil and: [
+									  parent isAssignment and: [ parent variable == node ] ]) not ] ] ] ])
+				ifTrue: [
 					node name = 'theCalloutState' ifTrue: [ self halt ].
 					readBeforeAssigned add: node name ] ]
-		unless: [ :node :parent | 
+		unless: [ :node :parent |
 			| conditionalAssignments mayHaveSideEffects |
 			node isSend
 				ifTrue: [ "First deal with implicit assignments..."
-					node isValueExpansion ifTrue: [ 
+					node isValueExpansion ifTrue: [
 						assigned addAll: node receiver arguments ].
-					(#( #memcpy:_:_: #memmove:_:_: ) includes: node selector) 
-						ifTrue: [ 
+					(#( #memcpy:_:_: #memmove:_:_: ) includes: node selector)
+						ifTrue: [
 							assigned add:
 								(node arguments first detect: [ :subnode | subnode isVariable ])
 									name ].
-					(#( #to:do: #to:by:do: ) includes: node selector) ifTrue: [ 
+					(#( #to:do: #to:by:do: ) includes: node selector) ifTrue: [
 						assigned addAll:
 							(node arguments at: node selector numArgs) arguments.
 						mayHaveSideEffects := node arguments size = 4. "See TMethod>>prepareMethodIn:"
-						mayHaveSideEffects ifTrue: [ 
+						mayHaveSideEffects ifTrue: [
 							assigned add: node arguments last name ] ].
 					"Then deal with read-before-written in the arms of conditionals..."
 					(#( ifTrue: ifFalse: ifNil: ifNotNil: ) intersection:
@@ -123,8 +142,8 @@ TStatementListNode >> addReadBeforeAssignedIn: variables to: readBeforeAssigned 
 								in: aCodeGen.
 							"Now find read-before-written in each arm, and collect the assignments to spot those assigned in both arms"
 							conditionalAssignments := node arguments
-								                          collect: [ :block | 
-									                          block isStatementList ifTrue: [ 
+								                          collect: [ :block |
+									                          block isStatementList ifTrue: [
 										                          block
 											                          addReadBeforeAssignedIn:
 											                          variables
@@ -133,8 +152,8 @@ TStatementListNode >> addReadBeforeAssignedIn: variables to: readBeforeAssigned 
 											                          in: aCodeGen ] ]
 								                          thenSelect: [ :each | each notNil ].
 							"add to assigned those variables written to in both arms"
-							conditionalAssignments size = 2 ifTrue: [ 
-								conditionalAssignments := conditionalAssignments collect: [ 
+							conditionalAssignments size = 2 ifTrue: [
+								conditionalAssignments := conditionalAssignments collect: [
 									                          :set | set difference: assigned ].
 								assigned addAll: (conditionalAssignments first intersection:
 										 conditionalAssignments last) ].
@@ -142,6 +161,16 @@ TStatementListNode >> addReadBeforeAssignedIn: variables to: readBeforeAssigned 
 						ifFalse: [ false ] ]
 				ifFalse: [ false ] ].
 	^ assigned
+]
+
+{ #category : 'accessing' }
+TStatementListNode >> allButLastNonCommentStatement [
+	"the last statement can be a comment if the TStatementList has been through inlining, return the statements without the actual last statement"
+
+	| actualLast |
+	statements last isComment ifFalse: [ ^ statements allButLast ].
+	actualLast := self lastNonCommentStatement.
+	^ statements select: [ :node | node ~~ actualLast ]
 ]
 
 { #category : 'enumerating' }
@@ -171,10 +200,11 @@ TStatementListNode >> asCASTExpressionIn: aBuilder [
 
 	| expressionList |
 	expressionList := CExpressionListNode new.
-	statements size == 1 ifTrue: [ 
+	statements size == 1 ifTrue: [
 		^ statements first asCASTExpressionIn: aBuilder ].
-	statements withIndexDo: [ :node :idx | 
-		(node isLeaf and: [ node isLabel not and: [ idx < statements size ] ]) 
+	statements withIndexDo: [ :node :idx |
+		(node isLeaf and: [
+			 node isLabel not and: [ node ~~ self lastNonCommentStatement ] ])
 			ifFalse: [ expressionList , (node asCASTExpressionIn: aBuilder) ] ].
 	^ expressionList
 ]
@@ -191,36 +221,40 @@ TStatementListNode >> asCASTIn: aBuilder [
 		while: [ self asCASTIn: aBuilder prependToEnd: nil ]
 ]
 
-{ #category : 'tranforming' }
+{ #category : 'C code generation' }
 TStatementListNode >> asCASTIn: aBuilder prependToEnd: aNodeOrNil [
 
-	| cDeclarations collect methodIsVolatile |
+	| cDeclarations collect methodIsVolatile actualLast |
 	cDeclarations := OrderedCollection new.
 	collect := OrderedCollection new.
+	statements isNotEmpty ifTrue: [
+		actualLast := self lastNonCommentStatement ].
 
-	statements doWithIndex: [ :e :index | 
-		(e isLeaf and: [ 
-			 e isLabel not and: [ 
+	statements doWithIndex: [ :e :index |
+		(e isLeaf and: [
+			 e isLabel not and: [
 				 aNodeOrNil isNil or: [ index < statements size ] ] ])
-			ifFalse: [ 
-				(aNodeOrNil notNil and: [ index = statements size ])
-					ifTrue: [ 
+			ifFalse: [
+				(aNodeOrNil notNil and: [ e == actualLast ])
+					ifTrue: [
 					collect add: (e asCASTIn: aBuilder prependToEnd: aNodeOrNil) ]
 					ifFalse: [ collect add: (e asCASTIn: aBuilder) ] ]
 			ifTrue: [ CEmptyStatementNode new ] ].
-	
+
 	"We should collect the variable declarations after generating the body, because the body generation will record used yet non declared variables"
 	methodIsVolatile := aBuilder currentMethod isVolatile.
-	(self parent notNil and: [self parent isTMethod and: [ self parent refersToGlobalStruct ]]) ifTrue: [ 
-		cDeclarations add:
-			(CIdentifierNode name: (methodIsVolatile
-					  ifTrue: [ 'DECL_MAYBE_VOLATILE_SQ_GLOBAL_STRUCT' ]
-					  ifFalse: [ 'DECL_MAYBE_SQ_GLOBAL_STRUCT' ])) ].
+	(self parent notNil and: [
+		 self parent isTMethod and: [ self parent refersToGlobalStruct ] ])
+		ifTrue: [
+			cDeclarations add: (CIdentifierNode name: (methodIsVolatile
+						  ifTrue: [ 'DECL_MAYBE_VOLATILE_SQ_GLOBAL_STRUCT' ]
+						  ifFalse: [ 'DECL_MAYBE_SQ_GLOBAL_STRUCT' ])) ].
 
-	(aBuilder sortStrings: self locals asSet) do: [ :var | | declaration |
+	(aBuilder sortStrings: self locals asSet) do: [ :var |
+		| declaration |
 		declaration := aBuilder
-		  declarationAt: var
-		  ifAbsent: [ aBuilder defaultType, ' ' , var ].
+			               declarationAt: var
+			               ifAbsent: [ aBuilder defaultType , ' ' , var ].
 
 		self flag: #TODO.
 		"Avoid implicit variables.
@@ -228,21 +262,34 @@ TStatementListNode >> asCASTIn: aBuilder prependToEnd: aNodeOrNil [
 		  - tracking used variables during code generation
 		  - generating variables after code"
 		(declaration beginsWith: 'implicit') ifFalse: [
-			methodIsVolatile ifTrue: [ declaration := 'volatile ' , declaration ].
-			cDeclarations add: (CRawCodeNode code: declaration)]
-	].		
+			methodIsVolatile ifTrue: [
+				declaration := 'volatile ' , declaration ].
+			cDeclarations add: (CRawCodeNode code: declaration) ] ].
 
-	^ CCompoundStatementNode declarations: cDeclarations statements: collect
+	^ CCompoundStatementNode
+		  declarations: cDeclarations
+		  statements: collect
 ]
 
 { #category : 'transformations' }
 TStatementListNode >> asReturnNode [
-	self endsWithReturn ifTrue:
-		[^self].
-	^self class new
-		setArguments: arguments
-			statements: statements allButLast, {statements last asReturnNode};
-		yourself
+	"return a new STatementListNode with the last non-comment statement changed to a return"
+
+	| newStmtsListNode |
+	self endsWithReturn ifTrue: [ ^ self ].
+	newStmtsListNode := self class new setArguments: arguments.
+	statements last isComment
+		ifFalse: [
+			newStmtsListNode statements:
+				statements allButLast , { statements last asReturnNode } ]
+		ifTrue: [
+			| actualLast |
+			newStmtsListNode statements: statements copy.
+			actualLast := newStmtsListNode lastNonCommentStatement.
+			newStmtsListNode
+				replaceChild: actualLast
+				with: actualLast asReturnNode ].
+	^ newStmtsListNode
 ]
 
 { #category : 'transformations' }
@@ -306,13 +353,23 @@ TStatementListNode >> children [
 
 { #category : 'transformations' }
 TStatementListNode >> copyWithoutReturn [
+
+	| newStmtsListNode |
 	self assert: self endsWithReturn.
-	statements size = 1 ifTrue:
-		[^statements last expression].
-	^self class new
-		setArguments: arguments
-			statements: statements allButLast, {statements last copyWithoutReturn};
-		yourself
+	statements size = 1 ifTrue: [ ^ statements last expression ].
+	newStmtsListNode := self class new setArguments: arguments.
+	statements last isComment
+		ifFalse: [
+			newStmtsListNode statements:
+				statements allButLast , { statements last copyWithoutReturn } ]
+		ifTrue: [
+			| actualLast |
+			newStmtsListNode statements: statements copy.
+			actualLast := newStmtsListNode lastNonCommentStatement.
+			newStmtsListNode
+				replaceChild: actualLast
+				with: actualLast copyWithoutReturn ].
+	^ newStmtsListNode
 ]
 
 { #category : 'declarations' }
@@ -344,8 +401,9 @@ TStatementListNode >> displayString [
 TStatementListNode >> endsWithReturn [
 	"Answer true if the last statement of this lock is a return."
 
-	^statements notEmpty
-	  and: [statements last isReturn or: [statements last isReturningIf]]
+	^ statements notEmpty and: [
+		  self lastNonCommentStatement isReturn or: [
+			  self lastNonCommentStatement isReturningIf ] ]
 ]
 
 { #category : 'accessing' }
@@ -402,6 +460,21 @@ TStatementListNode >> isStatementList [
 TStatementListNode >> last [
 	
 	^ self statements last
+]
+
+{ #category : 'accessing' }
+TStatementListNode >> lastNonCommentStatement [
+	"the last statement can be a comment if the TStatementList has been through inlining, return the actual last statement"
+
+	| last indexOfLast |
+	last := statements last.
+	indexOfLast := statements size.
+	[ last isComment ] whileTrue: [
+		indexOfLast := indexOfLast - 1.
+		indexOfLast = 0 ifTrue: [ ^ nil ].
+		last := statements at: indexOfLast ].
+
+	^ last
 ]
 
 { #category : 'accessing' }
@@ -499,6 +572,13 @@ TStatementListNode >> removeAssertions [
 	self setStatements: newStatements asArray
 ]
 
+{ #category : 'transformations' }
+TStatementListNode >> removeLast [
+	"the last statement can be a comment if the TStatementList has been through inlining, remove the actual last statement"
+
+	statements := self allButLastNonCommentStatement
+]
+
 { #category : 'inlining support' }
 TStatementListNode >> renameLabelsForInliningInto: aTMethod [
 	"TMethod already has a method for this; hijack it..."
@@ -522,6 +602,22 @@ TStatementListNode >> replaceChild: aNode with: bNode [
 ]
 
 { #category : 'transformations' }
+TStatementListNode >> replaceChild: aNode withList: aListOfStatement [
+
+	| aNodeMet allWithoutANode endWithoutANode |
+	allWithoutANode := OrderedCollection new.
+	endWithoutANode := OrderedCollection new.
+	aNodeMet := false.
+	statements do: [ :e |
+		aNodeMet
+			ifFalse: [
+				aNodeMet := e == aNode.
+				aNodeMet ifFalse: [ allWithoutANode add: e ] ]
+			ifTrue: [ endWithoutANode add: e ] ].
+	statements := allWithoutANode , aListOfStatement , endWithoutANode
+]
+
+{ #category : 'transformations' }
 TStatementListNode >> replaceNodesIn: aDictionary [
 
 	^aDictionary at: self ifAbsent: [
@@ -535,12 +631,12 @@ TStatementListNode >> returnsExpression [
 
 	statements isEmpty ifTrue:
 		[^false].
-	statements last isReturn ifFalse:
+	self lastNonCommentStatement isReturn ifFalse:
 		[^false].
-	statements last isVariable ifFalse:
+	self lastNonCommentStatement isVariable ifFalse:
 		[^true].
-	^statements last variable ~= 'self'
-	  and: [statements last variable ~= 'nil']
+	^self lastNonCommentStatement variable ~= 'self'
+	  and: [self lastNonCommentStatement variable ~= 'nil']
 ]
 
 { #category : 'accessing' }
