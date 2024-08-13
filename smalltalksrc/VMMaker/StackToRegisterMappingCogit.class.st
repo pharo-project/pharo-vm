@@ -3947,67 +3947,74 @@ StackToRegisterMappingCogit >> printSimStack: aSimStack toDepth: limit spillBase
 
 { #category : 'method introspection' }
 StackToRegisterMappingCogit >> profilingDataFor: descriptor Annotation: isBackwardBranchAndAnnotation Mcpc: mcpc Bcpc: bcpc Method: cogMethodArg [
+
 	<var: #descriptor type: #'BytecodeDescriptor *'>
 	<var: #mcpc type: #'char *'>
 	<var: #cogMethodArg type: #'void *'>
-	<var: #methodClassIfSuper type: #'sqInt'>
+	<var: #methodClassIfSuper type: #sqInt>
+	<var: #counter type: #'unsigned int'>
 	| annotation entryPoint tuple counter |
 	"N.B. Counters are always 32-bits, having two 16-bit halves for the reached and taken counts."
-	<var: #counter type: #'unsigned int'>
+	descriptor ifNil: [ ^ 0 ].
+	descriptor isBranch ifTrue: [ "it's a branch; conditional?"
+		(descriptor isBranchTrue or: [ descriptor isBranchFalse ]) ifTrue: [
+			| _counters |
+			_counters := self
+				             cCoerce:
+				             (self cCoerceSimple: cogMethodArg to: #'CogMethod *')
+					             counters
+				             to: #'usqInt *'.
+			"If no _counters are available, do not record _counters"
+			_counters = 0 ifTrue: [ ^ 0 ].
 
-	descriptor ifNil:
-		[^0].
-	descriptor isBranch ifTrue:
-		["it's a branch; conditional?"
-		 (descriptor isBranchTrue or: [descriptor isBranchFalse]) ifTrue: [ | counters | 
-			counters := self
-							cCoerce: ((self
-											cCoerceSimple: cogMethodArg
-											to: #'CogMethod *') counters)
-							to: #'usqInt *'.
-			"If no counters are available, do not record counters"
-			counters = 0 ifTrue: [ ^ 0 ].
-			
-			counter := counters at: counterIndex.
+			counter := _counters at: counterIndex.
 			tuple := self profilingDataForCounter: counter at: bcpc + 1.
-			tuple = 0 ifTrue: [^PrimErrNoMemory].
+			tuple = 0 ifTrue: [ ^ PrimErrNoMemory ].
 			objectMemory
 				storePointer: introspectionDataIndex
 				ofObject: introspectionData
 				withValue: tuple.
 			introspectionDataIndex := introspectionDataIndex + 1.
-			counterIndex := counterIndex + 1].
-		 ^0].
+			counterIndex := counterIndex + 1 ].
+		^ 0 ].
 
 	annotation := isBackwardBranchAndAnnotation >> 1.
-	((self isPureSendAnnotation: annotation)
-	 and: [entryPoint := backEnd callTargetFromReturnAddress: mcpc asUnsignedInteger.
-		 entryPoint > methodZoneBase]) ifFalse: "send is not linked, or is not a send"
-		[^0].
+	((self isPureSendAnnotation: annotation) and: [
+		 entryPoint := backEnd callTargetFromReturnAddress:
+			               mcpc asUnsignedInteger.
+		 entryPoint > methodZoneBase ]) ifFalse: [ "send is not linked, or is not a send"
+		^ 0 ].
 
 	"It's a linked send; find which kind."
-	self targetMethodAndSendTableFor: entryPoint
+	self
+		targetMethodAndSendTableFor: entryPoint
 		annotation: annotation
-		into: [:targetCogCode :sendTable| | methodClassIfSuper association |
+		into: [ :targetCogCode :sendTable |
+			| methodClassIfSuper association |
 			methodClassIfSuper := nil.
 			sendTable = superSendTrampolines ifTrue: [
-				methodClassIfSuper := coInterpreter methodClassOf: (self cCoerceSimple: cogMethodArg to: #'CogMethod *') methodObject.
-			].
+				methodClassIfSuper := coInterpreter methodClassOf:
+					                      (self
+						                       cCoerceSimple: cogMethodArg
+						                       to: #'CogMethod *') methodObject ].
 			sendTable = directedSuperSendTrampolines ifTrue: [
-				association := backEnd literalBeforeInlineCacheTagAt: mcpc asUnsignedInteger.
-				methodClassIfSuper := objectRepresentation valueOfAssociation: association ].
-			tuple := self profilingDataForSendTo: targetCogCode
-						methodClassIfSuper: methodClassIfSuper
-						at: mcpc
-						bcpc: bcpc + 1].
+				association := backEnd literalBeforeInlineCacheTagAt:
+					               mcpc asUnsignedInteger.
+				methodClassIfSuper := objectRepresentation valueOfAssociation:
+					                      association ].
+			tuple := self
+				         profilingDataForSendTo: targetCogCode
+				         methodClassIfSuper: methodClassIfSuper
+				         at: mcpc
+				         bcpc: bcpc + 1 ].
 
-	tuple = 0 ifTrue: [^PrimErrNoMemory].
+	tuple = 0 ifTrue: [ ^ PrimErrNoMemory ].
 	objectMemory
 		storePointer: introspectionDataIndex
 		ofObject: introspectionData
 		withValue: tuple.
 	introspectionDataIndex := introspectionDataIndex + 1.
-	^0
+	^ 0
 ]
 
 { #category : 'method introspection' }

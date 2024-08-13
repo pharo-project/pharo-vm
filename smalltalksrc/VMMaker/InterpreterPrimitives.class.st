@@ -1758,10 +1758,10 @@ InterpreterPrimitives >> primitiveFlushExternalPrimitives [
 { #category : 'object access primitives' }
 InterpreterPrimitives >> primitiveFormat [
 
-	| receiver header format |
-	receiver := self stackTop.
-	(objectMemory isImmediate: receiver) ifTrue: [ ^ self primitiveFail ].
-	header := objectMemory baseHeader: receiver.
+	| _receiver header format |
+	_receiver := self stackTop.
+	(objectMemory isImmediate: _receiver) ifTrue: [ ^ self primitiveFail ].
+	header := objectMemory baseHeader: _receiver.
 	format := objectMemory formatOfHeader: header.
 	self
 		pop: argumentCount + 1
