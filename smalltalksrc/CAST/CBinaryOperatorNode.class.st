@@ -1,15 +1,17 @@
 Class {
-	#name : #CBinaryOperatorNode,
-	#superclass : #CExpressionNode,
+	#name : 'CBinaryOperatorNode',
+	#superclass : 'CExpressionNode',
 	#instVars : [
 		'left',
 		'right',
 		'operator'
 	],
-	#category : #'CAST-Nodes'
+	#category : 'CAST-Nodes',
+	#package : 'CAST',
+	#tag : 'Nodes'
 }
 
-{ #category : #'instance creation' }
+{ #category : 'instance creation' }
 CBinaryOperatorNode class >> operator: aString left: lexpression right: rexpression [
 	
 	^ self new
@@ -19,23 +21,23 @@ CBinaryOperatorNode class >> operator: aString left: lexpression right: rexpress
 		yourself
 ]
 
-{ #category : #generated }
+{ #category : 'generated' }
 CBinaryOperatorNode >> acceptVisitor: anAbstractVisitor [
 	^ anAbstractVisitor visitBinary: self
 ]
 
-{ #category : #testing }
+{ #category : 'testing' }
 CBinaryOperatorNode >> isBinaryOperation [
 	
 	^ true
 ]
 
-{ #category : #generated }
+{ #category : 'generated' }
 CBinaryOperatorNode >> left [
 	^ left
 ]
 
-{ #category : #generated }
+{ #category : 'generated' }
 CBinaryOperatorNode >> left: aCGLRAbstractNode [
 	self assertExpression: aCGLRAbstractNode.
 	
@@ -46,22 +48,22 @@ CBinaryOperatorNode >> left: aCGLRAbstractNode [
 		ifTrue: [ self left parent: self ]
 ]
 
-{ #category : #generated }
+{ #category : 'generated' }
 CBinaryOperatorNode >> operator [
 	^ operator
 ]
 
-{ #category : #generated }
+{ #category : 'generated' }
 CBinaryOperatorNode >> operator: aSmaCCToken [
 	operator := aSmaCCToken
 ]
 
-{ #category : #generated }
+{ #category : 'generated' }
 CBinaryOperatorNode >> right [
 	^ right
 ]
 
-{ #category : #generated }
+{ #category : 'generated' }
 CBinaryOperatorNode >> right: aCGLRAbstractNode [
 	self assertExpression: aCGLRAbstractNode.
 	

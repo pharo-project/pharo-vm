@@ -1,58 +1,59 @@
 Class {
-	#name : #CGLRStructOrUnionSpecifierNode,
-	#superclass : #CGLRAbstractNode,
+	#name : 'CGLRStructOrUnionSpecifierNode',
+	#superclass : 'CGLRAbstractNode',
 	#instVars : [
 		'prefix',
 		'symbol',
 		'members'
 	],
-	#category : #CAST
+	#category : 'CAST',
+	#package : 'CAST'
 }
 
-{ #category : #generated }
+{ #category : 'generated' }
 CGLRStructOrUnionSpecifierNode >> acceptVisitor: anAbstractVisitor [
 	^ anAbstractVisitor visitStructOrUnionSpecifier: self
 ]
 
-{ #category : #'generated-initialize-release' }
+{ #category : 'generated-initialize-release' }
 CGLRStructOrUnionSpecifierNode >> initialize [
 	super initialize.
 	members := OrderedCollection new: 2.
 ]
 
-{ #category : #generated }
+{ #category : 'generated' }
 CGLRStructOrUnionSpecifierNode >> members [
 	^ members
 ]
 
-{ #category : #generated }
+{ #category : 'generated' }
 CGLRStructOrUnionSpecifierNode >> members: anOrderedCollection [
 	self setParents: self members to: nil.
 	members := anOrderedCollection.
 	self setParents: self members to: self
 ]
 
-{ #category : #generated }
+{ #category : 'generated' }
 CGLRStructOrUnionSpecifierNode >> nodeVariables [
 	^ #(#symbol)
 ]
 
-{ #category : #generated }
+{ #category : 'generated' }
 CGLRStructOrUnionSpecifierNode >> prefix [
 	^ prefix
 ]
 
-{ #category : #generated }
+{ #category : 'generated' }
 CGLRStructOrUnionSpecifierNode >> prefix: aSmaCCToken [
 	prefix := aSmaCCToken
 ]
 
-{ #category : #generated }
+{ #category : 'generated' }
 CGLRStructOrUnionSpecifierNode >> symbol [
 	^ symbol
 ]
 
-{ #category : #generated }
+{ #category : 'generated' }
 CGLRStructOrUnionSpecifierNode >> symbol: aCGLRIdentifierNode [
 	self symbol notNil
 		ifTrue: [ self symbol parent: nil ].

@@ -1,24 +1,25 @@
 Class {
-	#name : #CGLREnumeratorNode,
-	#superclass : #CGLRAbstractNode,
+	#name : 'CGLREnumeratorNode',
+	#superclass : 'CGLRAbstractNode',
 	#instVars : [
 		'symbol',
 		'expr'
 	],
-	#category : #CAST
+	#category : 'CAST',
+	#package : 'CAST'
 }
 
-{ #category : #generated }
+{ #category : 'generated' }
 CGLREnumeratorNode >> acceptVisitor: anAbstractVisitor [
 	^ anAbstractVisitor visitEnumerator: self
 ]
 
-{ #category : #generated }
+{ #category : 'generated' }
 CGLREnumeratorNode >> expression [
 	^ expr
 ]
 
-{ #category : #generated }
+{ #category : 'generated' }
 CGLREnumeratorNode >> expression: aCGLRAbstractNode [
 	self expression notNil
 		ifTrue: [ self expression parent: nil ].
@@ -27,12 +28,12 @@ CGLREnumeratorNode >> expression: aCGLRAbstractNode [
 		ifTrue: [ self expression parent: self ]
 ]
 
-{ #category : #generated }
+{ #category : 'generated' }
 CGLREnumeratorNode >> symbol [
 	^ symbol
 ]
 
-{ #category : #generated }
+{ #category : 'generated' }
 CGLREnumeratorNode >> symbol: aCGLRIdentifierNode [
 	self symbol notNil
 		ifTrue: [ self symbol parent: nil ].

@@ -1,13 +1,15 @@
 Class {
-	#name : #CCommentNode,
-	#superclass : #CGLRAbstractNode,
+	#name : 'CCommentNode',
+	#superclass : 'CGLRAbstractNode',
 	#instVars : [
 		'comment'
 	],
-	#category : #'CAST-Nodes'
+	#category : 'CAST-Nodes',
+	#package : 'CAST',
+	#tag : 'Nodes'
 }
 
-{ #category : #'instance creation' }
+{ #category : 'instance creation' }
 CCommentNode class >> comment: aString [
 
 	^ self new
@@ -15,37 +17,37 @@ CCommentNode class >> comment: aString [
 		  yourself
 ]
 
-{ #category : #generated }
+{ #category : 'generated' }
 CCommentNode >> acceptVisitor: anAbstractVisitor [
 
 	^ anAbstractVisitor visitComment: self
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 CCommentNode >> comment [
 
 	^ comment
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 CCommentNode >> comment: aComment [
 
 	comment := aComment
 ]
 
-{ #category : #testing }
+{ #category : 'testing' }
 CCommentNode >> isComment [
 
 	^ true
 ]
 
-{ #category : #testing }
+{ #category : 'testing' }
 CCommentNode >> needsSeparator [
 
 	^ false
 ]
 
-{ #category : #testing }
+{ #category : 'testing' }
 CCommentNode >> needsTrailingSemicolon [
 
 	^ false

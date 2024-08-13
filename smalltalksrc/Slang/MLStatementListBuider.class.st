@@ -75,7 +75,7 @@ MLStatementListBuider >> assignLastExpressionOf: aNode toVariable: aTVariableNod
 	[ worklist isEmpty ] whileFalse: [ | current |
 		current := worklist removeLast.
 		current isStatementList ifTrue: [ 
-				worklist add: current last
+				worklist add: current lastNonCommentStatement 
 			] ifFalse: [ | replacement parentBeforeReplacement |
 				self flag: #polymorphism.
 				parentBeforeReplacement := current parent.

@@ -1,47 +1,49 @@
 Class {
-	#name : #CDecrementNode,
-	#superclass : #CGLRAbstractNode,
+	#name : 'CDecrementNode',
+	#superclass : 'CGLRAbstractNode',
 	#instVars : [
 		'object',
 		'prefix'
 	],
-	#category : #'CAST-Nodes'
+	#category : 'CAST-Nodes',
+	#package : 'CAST',
+	#tag : 'Nodes'
 }
 
-{ #category : #'instance creation' }
+{ #category : 'instance creation' }
 CDecrementNode class >> object: aVariable [
 	
 	^self new object: aVariable; prefix: false; yourself
 ]
 
-{ #category : #'instance creation' }
+{ #category : 'instance creation' }
 CDecrementNode class >> object: aVariable prefix: boolean [
 	
 	^self new object: aVariable; prefix: boolean; yourself
 ]
 
-{ #category : #generated }
+{ #category : 'generated' }
 CDecrementNode >> acceptVisitor: anAbstractVisitor [
 	^ anAbstractVisitor visitDecrement: self
 ]
 
-{ #category : #testing }
+{ #category : 'testing' }
 CDecrementNode >> isDecrement [
 
 	^ true
 ]
 
-{ #category : #generated }
+{ #category : 'generated' }
 CDecrementNode >> nodeVariables [
 	^ #(#object)
 ]
 
-{ #category : #generated }
+{ #category : 'generated' }
 CDecrementNode >> object [
 	^ object
 ]
 
-{ #category : #generated }
+{ #category : 'generated' }
 CDecrementNode >> object: aCGLRAbstractNode [
 	self object notNil
 		ifTrue: [ self object parent: nil ].
@@ -50,13 +52,13 @@ CDecrementNode >> object: aCGLRAbstractNode [
 		ifTrue: [ self object parent: self ]
 ]
 
-{ #category : #acccessing }
+{ #category : 'acccessing' }
 CDecrementNode >> prefix [
 
 	^ prefix
 ]
 
-{ #category : #acccessing }
+{ #category : 'acccessing' }
 CDecrementNode >> prefix: boolean [
 
 	prefix := boolean

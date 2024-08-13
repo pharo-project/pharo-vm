@@ -1,13 +1,14 @@
 Class {
-	#name : #CGLRInitializerNode,
-	#superclass : #CGLRAbstractNode,
+	#name : 'CGLRInitializerNode',
+	#superclass : 'CGLRAbstractNode',
 	#instVars : [
 		'initializers'
 	],
-	#category : #CAST
+	#category : 'CAST',
+	#package : 'CAST'
 }
 
-{ #category : #'instance creation' }
+{ #category : 'instance creation' }
 CGLRInitializerNode class >> initializers: aCollection [ 
 	
 	^ self new
@@ -15,7 +16,7 @@ CGLRInitializerNode class >> initializers: aCollection [
 		yourself
 ]
 
-{ #category : #comparing }
+{ #category : 'comparing' }
 CGLRInitializerNode >> = anObject [
 
 	"Answer whether the receiver and anObject represent the same object."
@@ -25,12 +26,12 @@ CGLRInitializerNode >> = anObject [
 	^ initializers = anObject initializers
 ]
 
-{ #category : #generated }
+{ #category : 'generated' }
 CGLRInitializerNode >> acceptVisitor: anAbstractVisitor [
 	^ anAbstractVisitor visitInitializer: self
 ]
 
-{ #category : #comparing }
+{ #category : 'comparing' }
 CGLRInitializerNode >> hash [
 
 	"Answer an integer value that is related to the identity of the receiver."
@@ -38,18 +39,18 @@ CGLRInitializerNode >> hash [
 	^ initializers hash
 ]
 
-{ #category : #'generated-initialize-release' }
+{ #category : 'generated-initialize-release' }
 CGLRInitializerNode >> initialize [
 	super initialize.
 	initializers := OrderedCollection new: 2.
 ]
 
-{ #category : #generated }
+{ #category : 'generated' }
 CGLRInitializerNode >> initializers [
 	^ initializers
 ]
 
-{ #category : #generated }
+{ #category : 'generated' }
 CGLRInitializerNode >> initializers: anOrderedCollection [
 	self setParents: self initializers to: nil.
 	initializers := anOrderedCollection.

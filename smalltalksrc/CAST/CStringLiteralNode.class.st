@@ -1,14 +1,16 @@
 Class {
-	#name : #CStringLiteralNode,
-	#superclass : #CExpressionNode,
+	#name : 'CStringLiteralNode',
+	#superclass : 'CExpressionNode',
 	#instVars : [
 		'value',
 		'needsDoubleQuotes'
 	],
-	#category : #'CAST-Nodes'
+	#category : 'CAST-Nodes',
+	#package : 'CAST',
+	#tag : 'Nodes'
 }
 
-{ #category : #'instance creation' }
+{ #category : 'instance creation' }
 CStringLiteralNode class >> value: aString [
 
 	^ self new
@@ -17,35 +19,35 @@ CStringLiteralNode class >> value: aString [
 		  yourself
 ]
 
-{ #category : #generated }
+{ #category : 'generated' }
 CStringLiteralNode >> acceptVisitor: anAbstractVisitor [
 	^ anAbstractVisitor visitStringLiteral: self
 ]
 
-{ #category : #generated }
+{ #category : 'generated' }
 CStringLiteralNode >> isLeaf [
 
 	^ true
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 CStringLiteralNode >> needsDoubleQuotes [
 
 	^ needsDoubleQuotes
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 CStringLiteralNode >> needsDoubleQuotes: aBoolean [
 
 	needsDoubleQuotes := aBoolean
 ]
 
-{ #category : #generated }
+{ #category : 'generated' }
 CStringLiteralNode >> value [
 	^ value
 ]
 
-{ #category : #generated }
+{ #category : 'generated' }
 CStringLiteralNode >> value: aSmaCCToken [
 	value := aSmaCCToken
 ]
