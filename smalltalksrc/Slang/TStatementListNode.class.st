@@ -241,7 +241,7 @@ TStatementListNode >> asCASTIn: aBuilder prependToEnd: aNodeOrNil [
 					ifFalse: [ collect add: (e asCASTIn: aBuilder) ] ]
 			ifTrue: [ CEmptyStatementNode new ] ].
 
-	"We should collect the variable declarations after generating the body, because the body generation will record used yet non declared variables"
+  "We should collect the variable declarations after generating the body, because the body generation will record used yet non declared variables"
 	methodIsVolatile := aBuilder currentMethod isVolatile.
 	(self parent notNil and: [
 		 self parent isTMethod and: [ self parent refersToGlobalStruct ] ])
@@ -430,6 +430,14 @@ TStatementListNode >> initialize [
 ]
 
 { #category : 'testing' }
+TStatementListNode >> isEmptyStmtListNode [
+	"return true if the statement node is empty or has just a nil in it"
+
+	statements isEmpty ifTrue: [ ^ true ].
+	^ false
+]
+
+{ #category : 'testing' }
 TStatementListNode >> isNilStmtListNode [
 
 	|stmt|
@@ -537,7 +545,7 @@ TStatementListNode >> parameterNames [
 TStatementListNode >> postCopy [
 
 	arguments := arguments copy.
-	self statements: (statements collect: [ :s | s copy ])
+	self statements: (statements collect: [ :s | s copy parent: self ])
 ]
 
 { #category : 'printing' }
@@ -570,6 +578,15 @@ TStatementListNode >> removeAssertions [
 		]
 	].
 	self setStatements: newStatements asArray
+]
+
+{ #category : 'dead-code-elimination' }
+TStatementListNode >> removeUnusedNodesInBranch: aChild [
+	"this method should be only called when cleaning an AST tree after an unused expression was found, remove aChild from the list of statements"
+
+	statements := statements select: [ :stmt | stmt ~~ aChild ].
+	statements isEmpty ifTrue: [
+		self parent removeUnusedNodesInBranch: self ]
 ]
 
 { #category : 'transformations' }
@@ -681,7 +698,6 @@ TStatementListNode >> statements [
 { #category : 'accessing' }
 TStatementListNode >> statements: anObject [
 
-	| oldStatements |
 	statements := anObject asOrderedCollection.
 	statements do: [ :e | e parent: self ]
 ]

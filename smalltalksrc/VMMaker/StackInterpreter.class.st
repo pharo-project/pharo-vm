@@ -7469,8 +7469,7 @@ StackInterpreter >> initStackPages [
 	theStackMemory :=  stackPages
 									initializeWithByteSize: stackPagesBytes
 									inMemoryMap: objectMemory getMemoryMap
-									for: self.
-			
+									for: self.		
 	stackPages
 		initializeStack: theStackMemory
 		numSlots: stackPagesBytes / objectMemory wordSize
