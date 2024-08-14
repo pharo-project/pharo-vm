@@ -2537,7 +2537,7 @@ StackInterpreterPrimitives >> primitiveMoveToPermSpaceInBulk [
 	(objectMemory isArrayNonImm: rcvr)
 		ifFalse: [ 
 			self primitiveFailFor: PrimErrBadReceiver. 
-			^ nil].
+			^ self].
 	
 	objectMemory moveToPermSpaceInBulk: rcvr.	
 	self successful ifFalse: [ ^ self ].

@@ -1,6 +1,6 @@
 Class {
-	#name : #CFunctionDefinitionNode,
-	#superclass : #CGLRAbstractNode,
+	#name : 'CFunctionDefinitionNode',
+	#superclass : 'CGLRAbstractNode',
 	#instVars : [
 		'declarator',
 		'body',
@@ -8,10 +8,12 @@ Class {
 		'arguments',
 		'hasRawPrototype'
 	],
-	#category : #'CAST-Nodes'
+	#category : 'CAST-Nodes',
+	#package : 'CAST',
+	#tag : 'Nodes'
 }
 
-{ #category : #'instance creation' }
+{ #category : 'instance creation' }
 CFunctionDefinitionNode class >> declarator: aDeclarator body: aBlock specifiers: specifiers [
 
 	^ self new
@@ -21,7 +23,7 @@ CFunctionDefinitionNode class >> declarator: aDeclarator body: aBlock specifiers
 		  yourself
 ]
 
-{ #category : #'instance creation' }
+{ #category : 'instance creation' }
 CFunctionDefinitionNode class >> declarator: aDeclarator body: aBlock specifiers: specifiers arguments: arguments [
 
 	^ self new
@@ -32,7 +34,7 @@ CFunctionDefinitionNode class >> declarator: aDeclarator body: aBlock specifiers
 		  yourself
 ]
 
-{ #category : #'instance creation' }
+{ #category : 'instance creation' }
 CFunctionDefinitionNode class >> declarator: aDeclarator specifiers: specifiers [
 
 	^ self new
@@ -41,7 +43,7 @@ CFunctionDefinitionNode class >> declarator: aDeclarator specifiers: specifiers 
 		  yourself
 ]
 
-{ #category : #'instance creation' }
+{ #category : 'instance creation' }
 CFunctionDefinitionNode class >> declarator: aDeclarator specifiers: specifiers arguments: arguments [
 
 	^ self new
@@ -51,29 +53,29 @@ CFunctionDefinitionNode class >> declarator: aDeclarator specifiers: specifiers 
 		  yourself
 ]
 
-{ #category : #generated }
+{ #category : 'generated' }
 CFunctionDefinitionNode >> acceptVisitor: anAbstractVisitor [
 	^ anAbstractVisitor visitFunctionDefinition: self
 ]
 
-{ #category : #generated }
+{ #category : 'generated' }
 CFunctionDefinitionNode >> arguments [
 	^ arguments
 ]
 
-{ #category : #generated }
+{ #category : 'generated' }
 CFunctionDefinitionNode >> arguments: anOrderedCollection [
 	self setParents: self arguments to: nil.
 	arguments := anOrderedCollection.
 	self setParents: self arguments to: self
 ]
 
-{ #category : #generated }
+{ #category : 'generated' }
 CFunctionDefinitionNode >> body [
 	^ body
 ]
 
-{ #category : #generated }
+{ #category : 'generated' }
 CFunctionDefinitionNode >> body: aCGLRCompoundStatementNode [
 	self body notNil
 		ifTrue: [ self body parent: nil ].
@@ -82,18 +84,18 @@ CFunctionDefinitionNode >> body: aCGLRCompoundStatementNode [
 		ifTrue: [ self body parent: self ]
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 CFunctionDefinitionNode >> declarations [
 	
 	^ body declarations
 ]
 
-{ #category : #generated }
+{ #category : 'generated' }
 CFunctionDefinitionNode >> declarator [
 	^ declarator
 ]
 
-{ #category : #generated }
+{ #category : 'generated' }
 CFunctionDefinitionNode >> declarator: aCGLRDeclaratorNode [
 	self declarator notNil
 		ifTrue: [ self declarator parent: nil ].
@@ -102,19 +104,19 @@ CFunctionDefinitionNode >> declarator: aCGLRDeclaratorNode [
 		ifTrue: [ self declarator parent: self ]
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 CFunctionDefinitionNode >> hasRawPrototype [
 
 	^ hasRawPrototype
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 CFunctionDefinitionNode >> hasRawPrototype: aBoolean [
 
 	hasRawPrototype := aBoolean
 ]
 
-{ #category : #'generated-initialize-release' }
+{ #category : 'generated-initialize-release' }
 CFunctionDefinitionNode >> initialize [
 	super initialize.
 	hasRawPrototype := false.
@@ -122,29 +124,29 @@ CFunctionDefinitionNode >> initialize [
 	arguments := OrderedCollection new: 2.
 ]
 
-{ #category : #testing }
+{ #category : 'testing' }
 CFunctionDefinitionNode >> needsSeparator [
 
 	^ false
 ]
 
-{ #category : #testing }
+{ #category : 'testing' }
 CFunctionDefinitionNode >> needsTrailingSemicolon [
 
 	^ false
 ]
 
-{ #category : #generated }
+{ #category : 'generated' }
 CFunctionDefinitionNode >> specifiers [
 	^ specifiers
 ]
 
-{ #category : #generated }
+{ #category : 'generated' }
 CFunctionDefinitionNode >> specifiers: anOrderedCollection [
 	specifiers := anOrderedCollection
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 CFunctionDefinitionNode >> statements [
 	
 	^ body statements 

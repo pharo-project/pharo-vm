@@ -1,32 +1,33 @@
 Class {
-	#name : #CGLRStructDeclarationNode,
-	#superclass : #CGLRAbstractNode,
+	#name : 'CGLRStructDeclarationNode',
+	#superclass : 'CGLRAbstractNode',
 	#instVars : [
 		'declarators',
 		'specifiers',
 		'qualifiers'
 	],
-	#category : #CAST
+	#category : 'CAST',
+	#package : 'CAST'
 }
 
-{ #category : #generated }
+{ #category : 'generated' }
 CGLRStructDeclarationNode >> acceptVisitor: anAbstractVisitor [
 	^ anAbstractVisitor visitStructDeclaration: self
 ]
 
-{ #category : #generated }
+{ #category : 'generated' }
 CGLRStructDeclarationNode >> declarators [
 	^ declarators
 ]
 
-{ #category : #generated }
+{ #category : 'generated' }
 CGLRStructDeclarationNode >> declarators: anOrderedCollection [
 	self setParents: self declarators to: nil.
 	declarators := anOrderedCollection.
 	self setParents: self declarators to: self
 ]
 
-{ #category : #'generated-initialize-release' }
+{ #category : 'generated-initialize-release' }
 CGLRStructDeclarationNode >> initialize [
 	super initialize.
 	specifiers := OrderedCollection new: 2.
@@ -34,22 +35,22 @@ CGLRStructDeclarationNode >> initialize [
 	declarators := OrderedCollection new: 2.
 ]
 
-{ #category : #generated }
+{ #category : 'generated' }
 CGLRStructDeclarationNode >> qualifiers [
 	^ qualifiers
 ]
 
-{ #category : #generated }
+{ #category : 'generated' }
 CGLRStructDeclarationNode >> qualifiers: anOrderedCollection [
 	qualifiers := anOrderedCollection
 ]
 
-{ #category : #generated }
+{ #category : 'generated' }
 CGLRStructDeclarationNode >> specifiers [
 	^ specifiers
 ]
 
-{ #category : #generated }
+{ #category : 'generated' }
 CGLRStructDeclarationNode >> specifiers: anOrderedCollection [
 	specifiers := anOrderedCollection
 ]

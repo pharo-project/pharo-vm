@@ -8,6 +8,10 @@ Class {
 	#tag : 'ImageFormat'
 }
 
+{ #category : 'translation' }
+ComposedImageReader class >> declareCVarsIn: aCCodeGenerator [
+]
+
 { #category : 'reading' }
 ComposedImageReader >> endOfSTON: file [
 	

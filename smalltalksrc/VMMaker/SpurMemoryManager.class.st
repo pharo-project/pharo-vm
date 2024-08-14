@@ -6073,7 +6073,7 @@ SpurMemoryManager >> growOldSpaceByAtLeast: minAmmount callingOperation: aString
 	"Attempt to grow memory by at least minAmmount bytes.
 	 Answer the size of the new segment in bytes, or nil if the attempt failed."
 	| ammount headroom total start interval |
-	
+	<returnTypeC: #size_t>
 	<var: #segInfo type: #'SpurSegmentInfo *'>
 	<var: #aString type: #'char *'>
 	
@@ -6100,20 +6100,27 @@ SpurMemoryManager >> growOldSpaceByAtLeast: minAmmount callingOperation: aString
 			 ammount := headroom]].
 		 
 	start := coInterpreter ioUTCMicrosecondsNow.
-	^(segmentManager addSegmentOfSize: ammount) ifNotNil:
-		[:segInfo|
-		| freeChunk |
-		 self assimilateNewSegment: segInfo.
-		 "and add the new free chunk to the free list; done here
+	(segmentManager addSegmentOfSize: ammount)
+		ifNil: [ ^ 0 ]
+		ifNotNil: [ :segInfo |
+			| freeChunk |
+			self assimilateNewSegment: segInfo.
+			"and add the new free chunk to the free list; done here
 		  instead of in assimilateNewSegment: for the assert"
-		 freeChunk := self addFreeChunkWithBytes: segInfo segSize - self bridgeSize at: segInfo segStart.
-		 self assert: freeChunk = (self objectStartingAt: segInfo segStart).
-		 self assert: (self addressAfter: freeChunk) = (segInfo segLimit - self bridgeSize).
-		 self checkFreeSpace: GCModeFreeSpace.
-		 segmentManager checkSegments.
-		 interval := coInterpreter ioUTCMicrosecondsNow - start.
-		 interval > statMaxAllocSegmentTime ifTrue: [statMaxAllocSegmentTime := interval].
-		 segInfo segSize]
+			freeChunk := self
+				             addFreeChunkWithBytes:
+				             segInfo segSize - self bridgeSize
+				             at: segInfo segStart.
+			self assert: freeChunk = (self objectStartingAt: segInfo segStart).
+			self assert:
+				(self addressAfter: freeChunk)
+				= (segInfo segLimit - self bridgeSize).
+			self checkFreeSpace: GCModeFreeSpace.
+			segmentManager checkSegments.
+			interval := coInterpreter ioUTCMicrosecondsNow - start.
+			interval > statMaxAllocSegmentTime ifTrue: [
+				statMaxAllocSegmentTime := interval ].
+			^ segInfo segSize ]
 ]
 
 { #category : 'growing/shrinking memory' }

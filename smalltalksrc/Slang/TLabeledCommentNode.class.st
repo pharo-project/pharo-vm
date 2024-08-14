@@ -42,27 +42,29 @@ TLabeledCommentNode >> asCASTIn: aBuilder [
 	result := CCompoundStatementNode new.
 	result needsBrackets: false.
 
-	label ifNotNil: [ 	| labelledNode |
-		labelledNode := CLabeledStatementNode new.		
+	label ifNotNil: [
+		| labelledNode |
+		labelledNode := CLabeledStatementNode new.
 		labelledNode label: (CIdentifierNode name: label).
 		labelledNode statement: CEmptyStatementNode new.
-		result add: labelledNode ].	
+		result add: labelledNode ].
 
 
-	comment ifNotNil: [ | commentNode |
-		(aBuilder previousCommentMarksInlining: (label isNil and: [asmLabel isNil and: [comment beginsWith: 'begin ']]))
-			ifTrue: [ ^ result ].
-		commentNode := CEmptyStatementNode new.
-		commentNode comments: { self comment }.
-		commentNode needsSeparator: false.
+	comment ifNotNil: [
+		| commentNode |
+		commentNode := CCommentNode new.
+		commentNode comment: (String streamContents: [ :s |
+				 s space.
+				 s nextPutAll: self comment.
+				 s space ]).
 		result add: commentNode.
-		aBuilder previousCommenter: self].
+		aBuilder previousCommenter: self ].
 
-	(asmLabel notNil "only output labels in the interpret function."
-	 and: [aBuilder currentMethod selector == #interpret]) ifTrue: [ | asmLabelNode |
+	(asmLabel notNil and: [
+		 aBuilder currentMethod selector == #interpret ]) ifTrue: [
+		| asmLabelNode |
 		asmLabelNode := aBuilder asmLabelNodeFor: asmLabel.
-		result add: asmLabelNode
-	].	
+		result add: asmLabelNode ]. "only output labels in the interpret function."
 
 	^ result
 ]

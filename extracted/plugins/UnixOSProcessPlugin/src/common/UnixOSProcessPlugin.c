@@ -4887,7 +4887,7 @@ transientCStringFromString(sqInt aString)
 
 	/* Point to the actual C string. */
 	cString = arrayValueOf(newString);
-	(char *)strncpy(cString, stringPtr, len);
+	strncpy(cString, stringPtr, len);
 	cString[len] = 0;
 	return cString;
 }

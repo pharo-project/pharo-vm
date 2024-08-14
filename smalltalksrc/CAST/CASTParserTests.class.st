@@ -4,12 +4,14 @@ A few tests to explore the ambiguity of a GLR grammar.
 
 "
 Class {
-	#name : #CASTParserTests,
-	#superclass : #TestCase,
-	#category : #'CAST-Tests'
+	#name : 'CASTParserTests',
+	#superclass : 'TestCase',
+	#category : 'CAST-Tests',
+	#package : 'CAST',
+	#tag : 'Tests'
 }
 
-{ #category : #examples }
+{ #category : 'examples' }
 CASTParserTests class >> ambiguityAsAttribute [
 	<example>
 	| block |
@@ -33,7 +35,7 @@ CASTParserTests class >> ambiguityAsAttribute [
 			ex resume: results first ]
 ]
 
-{ #category : #examples }
+{ #category : 'examples' }
 CASTParserTests class >> ambiguityAsAttribute2 [
 	<example>
 	| block |
@@ -53,7 +55,7 @@ CASTParserTests class >> ambiguityAsAttribute2 [
 			ex resume: results first ]
 ]
 
-{ #category : #examples }
+{ #category : 'examples' }
 CASTParserTests class >> ambiguityAsAttribute3 [
 	<example>
 	| block |
@@ -75,7 +77,7 @@ CASTParserTests class >> ambiguityAsAttribute3 [
 			ex resume: results first ]
 ]
 
-{ #category : #examples }
+{ #category : 'examples' }
 CASTParserTests class >> inspectingAmbiguousNotification [
 	<example>
 	[ CASTParser
@@ -89,7 +91,7 @@ CASTParserTests class >> inspectingAmbiguousNotification [
 			ex resume: ex tag first ]
 ]
 
-{ #category : #examples }
+{ #category : 'examples' }
 CASTParserTests class >> inspectingAmbiguousNotificationWithHalt [
 	<example>
 	[ CASTParser
@@ -104,7 +106,7 @@ void f() {
 			ex resume: ex tag first ]
 ]
 
-{ #category : #helpers }
+{ #category : 'helpers' }
 CASTParserTests >> parseDeclaration: aStratement [
 
 	| unit |
@@ -115,14 +117,14 @@ CASTParserTests >> parseDeclaration: aStratement [
 	^ unit declarations first declarations first
 ]
 
-{ #category : #helpers }
+{ #category : 'helpers' }
 CASTParserTests >> parseExpression: anExpression [
 
 	
 	^ self parseStatement: anExpression, ';'
 ]
 
-{ #category : #helpers }
+{ #category : 'helpers' }
 CASTParserTests >> parseStatement: aStratement [
 
 	| unit |
@@ -133,7 +135,7 @@ CASTParserTests >> parseStatement: aStratement [
 	^ unit declarations first statements first
 ]
 
-{ #category : #'tests-assignment' }
+{ #category : 'tests-assignment' }
 CASTParserTests >> testParseAccumulatingAssignment [
 
 	| assignment |
@@ -144,7 +146,7 @@ CASTParserTests >> testParseAccumulatingAssignment [
 	self assert: assignment operator equals: '+='.
 ]
 
-{ #category : #'tests-binary operators' }
+{ #category : 'tests-binary operators' }
 CASTParserTests >> testParseAddition [
 
 	| expression |
@@ -155,7 +157,7 @@ CASTParserTests >> testParseAddition [
 	self assert: expression operator equals: '+'
 ]
 
-{ #category : #'tests-binary operators' }
+{ #category : 'tests-binary operators' }
 CASTParserTests >> testParseAdditionPrecedence [
 
 	| expression |
@@ -177,7 +179,7 @@ CASTParserTests >> testParseAdditionPrecedence [
 
 ]
 
-{ #category : #'tests-binary operators' }
+{ #category : 'tests-binary operators' }
 CASTParserTests >> testParseAdressOf [
 
 	| expression |
@@ -187,7 +189,7 @@ CASTParserTests >> testParseAdressOf [
 	self assert: expression operator equals: '&'
 ]
 
-{ #category : #'tests-declarators' }
+{ #category : 'tests-declarators' }
 CASTParserTests >> testParseArrayDeclarationWithInitializer [
 
 	| declaration declarator |
@@ -207,7 +209,7 @@ CASTParserTests >> testParseArrayDeclarationWithInitializer [
 	self assert: declarator declarator name equals: 'a'.
 ]
 
-{ #category : #'tests-declarators' }
+{ #category : 'tests-declarators' }
 CASTParserTests >> testParseArrayDeclarationWithSize [
 
 	| declaration declarator |
@@ -222,7 +224,7 @@ CASTParserTests >> testParseArrayDeclarationWithSize [
 	self assert: declarator declarator name equals: 'a'.
 ]
 
-{ #category : #'tests-basic expressions' }
+{ #category : 'tests-basic expressions' }
 CASTParserTests >> testParseArrayNode [
 
 	| expression |
@@ -234,7 +236,7 @@ CASTParserTests >> testParseArrayNode [
 	self assert: expression index value equals: '1'.
 ]
 
-{ #category : #'tests-assignment' }
+{ #category : 'tests-assignment' }
 CASTParserTests >> testParseAssignment [
 
 	| assignment |
@@ -245,7 +247,7 @@ CASTParserTests >> testParseAssignment [
 	self assert: assignment operator equals: '='.
 ]
 
-{ #category : #'tests-calls' }
+{ #category : 'tests-calls' }
 CASTParserTests >> testParseCall [
 
 	| expression |
@@ -257,7 +259,7 @@ CASTParserTests >> testParseCall [
 	self assert: expression arguments isEmpty.
 ]
 
-{ #category : #'tests-calls' }
+{ #category : 'tests-calls' }
 CASTParserTests >> testParseCallWithArguments [
 
 	| expression |
@@ -271,7 +273,7 @@ CASTParserTests >> testParseCallWithArguments [
 	self assert: expression arguments third isBinaryOperation.
 ]
 
-{ #category : #'tests-control flow' }
+{ #category : 'tests-control flow' }
 CASTParserTests >> testParseCastExpression [
 
 	| statement |
@@ -281,7 +283,7 @@ CASTParserTests >> testParseCastExpression [
 	self assert: statement type equals: 'int'
 ]
 
-{ #category : #'tests-basic expressions' }
+{ #category : 'tests-basic expressions' }
 CASTParserTests >> testParseCommaSeparatedExpression [
 
 	| expression commaSeparatedExpression |
@@ -294,7 +296,7 @@ CASTParserTests >> testParseCommaSeparatedExpression [
 	self assert: commaSeparatedExpression expressions third isBinaryOperation.
 ]
 
-{ #category : #'tests-compound statements' }
+{ #category : 'tests-compound statements' }
 CASTParserTests >> testParseCompoundStatement [
 
 	| statement |
@@ -310,7 +312,7 @@ CASTParserTests >> testParseCompoundStatement [
 	self assert: statement statements third value equals: '3'.
 ]
 
-{ #category : #'tests-assignment' }
+{ #category : 'tests-assignment' }
 CASTParserTests >> testParseDecrementingAssignment [
 
 	| assignment |
@@ -321,7 +323,7 @@ CASTParserTests >> testParseDecrementingAssignment [
 	self assert: assignment operator equals: '-='.
 ]
 
-{ #category : #'tests-assignment' }
+{ #category : 'tests-assignment' }
 CASTParserTests >> testParseDividingAssignment [
 
 	| assignment |
@@ -332,7 +334,7 @@ CASTParserTests >> testParseDividingAssignment [
 	self assert: assignment operator equals: '/='.
 ]
 
-{ #category : #'tests-compound statements' }
+{ #category : 'tests-compound statements' }
 CASTParserTests >> testParseEmptyCompoundStatement [
 
 	| statement |
@@ -343,7 +345,7 @@ CASTParserTests >> testParseEmptyCompoundStatement [
 	self assert: statement statements isEmpty
 ]
 
-{ #category : #'tests-basic expressions' }
+{ #category : 'tests-basic expressions' }
 CASTParserTests >> testParseEmptyStatement [
 
 	| unit |
@@ -351,7 +353,7 @@ CASTParserTests >> testParseEmptyStatement [
 	self assert: unit declarations first statements first isEmptyStatement.
 ]
 
-{ #category : #'tests-numbers' }
+{ #category : 'tests-numbers' }
 CASTParserTests >> testParseFloatingPointConstant [
 
 	| unit firstStatement |
@@ -366,7 +368,7 @@ CASTParserTests >> testParseFloatingPointConstant [
 	self assert: firstStatement value equals: '17.2333'.
 ]
 
-{ #category : #'tests-declarators' }
+{ #category : 'tests-declarators' }
 CASTParserTests >> testParseFunctionDeclarator [
 
 	| declaration declarator |
@@ -381,7 +383,7 @@ CASTParserTests >> testParseFunctionDeclarator [
 	self assert: declarator parameters size equals: 1.
 ]
 
-{ #category : #'tests-declarators' }
+{ #category : 'tests-declarators' }
 CASTParserTests >> testParseFunctionPointerDeclarator [
 
 	| declaration declarator |
@@ -396,7 +398,7 @@ CASTParserTests >> testParseFunctionPointerDeclarator [
 	self assert: declarator declarator declarator name equals: 'pf'.
 ]
 
-{ #category : #'tests-numbers' }
+{ #category : 'tests-numbers' }
 CASTParserTests >> testParseGoTo [
 
 	| unit firstStatement |
@@ -411,7 +413,7 @@ CASTParserTests >> testParseGoTo [
 	self assert: firstStatement label name equals: 'toto'.
 ]
 
-{ #category : #'tests-numbers' }
+{ #category : 'tests-numbers' }
 CASTParserTests >> testParseHexadecimalIntegerConstantConstant [
 
 	| unit firstStatement |
@@ -426,7 +428,7 @@ CASTParserTests >> testParseHexadecimalIntegerConstantConstant [
 	self assert: firstStatement value equals: '0x7'.
 ]
 
-{ #category : #'tests-numbers' }
+{ #category : 'tests-numbers' }
 CASTParserTests >> testParseHexadecimalIntegerConstantConstant2 [
 
 	| unit firstStatement |
@@ -441,7 +443,7 @@ CASTParserTests >> testParseHexadecimalIntegerConstantConstant2 [
 	self assert: firstStatement value equals: '0X7'.
 ]
 
-{ #category : #'tests-basic expressions' }
+{ #category : 'tests-basic expressions' }
 CASTParserTests >> testParseIdentifier [
 
 	| expression |
@@ -452,7 +454,7 @@ CASTParserTests >> testParseIdentifier [
 	self assert: expression name equals: 'a'.
 ]
 
-{ #category : #'tests-control flow' }
+{ #category : 'tests-control flow' }
 CASTParserTests >> testParseIfElse [
 
 	| statement |
@@ -462,7 +464,7 @@ CASTParserTests >> testParseIfElse [
 	self assert: statement else notNil
 ]
 
-{ #category : #'tests-control flow' }
+{ #category : 'tests-control flow' }
 CASTParserTests >> testParseIfNoElse [
 
 	| statement |
@@ -472,7 +474,7 @@ CASTParserTests >> testParseIfNoElse [
 	self assert: statement else isNil
 ]
 
-{ #category : #'tests-numbers' }
+{ #category : 'tests-numbers' }
 CASTParserTests >> testParseIntegerConstant [
 
 	| unit firstStatement |
@@ -487,7 +489,7 @@ CASTParserTests >> testParseIntegerConstant [
 	self assert: firstStatement value equals: '17'.
 ]
 
-{ #category : #'tests-control flow' }
+{ #category : 'tests-control flow' }
 CASTParserTests >> testParseLabelledEmptyStatement [
 
 	| statement |
@@ -499,7 +501,7 @@ CASTParserTests >> testParseLabelledEmptyStatement [
 	self assert: statement statement isEmptyStatement
 ]
 
-{ #category : #'tests-control flow' }
+{ #category : 'tests-control flow' }
 CASTParserTests >> testParseLabelledStatement [
 
 	| statement |
@@ -511,7 +513,7 @@ CASTParserTests >> testParseLabelledStatement [
 	self assert: statement statement isBinaryOperation
 ]
 
-{ #category : #'tests-numbers' }
+{ #category : 'tests-numbers' }
 CASTParserTests >> testParseLongIntegerConstantConstant [
 
 	| unit firstStatement |
@@ -526,7 +528,7 @@ CASTParserTests >> testParseLongIntegerConstantConstant [
 	self assert: firstStatement value equals: '7L'.
 ]
 
-{ #category : #'tests-numbers' }
+{ #category : 'tests-numbers' }
 CASTParserTests >> testParseLongIntegerConstantConstant2 [
 
 	| unit firstStatement |
@@ -541,7 +543,7 @@ CASTParserTests >> testParseLongIntegerConstantConstant2 [
 	self assert: firstStatement value equals: '7l'.
 ]
 
-{ #category : #'tests-binary operators' }
+{ #category : 'tests-binary operators' }
 CASTParserTests >> testParseMultiplication [
 
 	| expression |
@@ -552,7 +554,7 @@ CASTParserTests >> testParseMultiplication [
 	self assert: expression operator equals: '*'
 ]
 
-{ #category : #'tests-binary operators' }
+{ #category : 'tests-binary operators' }
 CASTParserTests >> testParseMultiplicationPrecedenceOverAddition [
 
 	| expression |
@@ -574,7 +576,7 @@ CASTParserTests >> testParseMultiplicationPrecedenceOverAddition [
 
 ]
 
-{ #category : #'tests-assignment' }
+{ #category : 'tests-assignment' }
 CASTParserTests >> testParseMultiplyingAssignment [
 
 	| assignment |
@@ -585,7 +587,7 @@ CASTParserTests >> testParseMultiplyingAssignment [
 	self assert: assignment operator equals: '*='.
 ]
 
-{ #category : #'tests-binary operators' }
+{ #category : 'tests-binary operators' }
 CASTParserTests >> testParseNot [
 
 	| expression |
@@ -596,7 +598,7 @@ CASTParserTests >> testParseNot [
 	self assert: expression operator equals: '!'
 ]
 
-{ #category : #'tests-numbers' }
+{ #category : 'tests-numbers' }
 CASTParserTests >> testParseOctalIntegerConstantConstant [
 
 	| unit firstStatement |
@@ -611,7 +613,7 @@ CASTParserTests >> testParseOctalIntegerConstantConstant [
 	self assert: firstStatement value equals: '07'.
 ]
 
-{ #category : #'tests-basic expressions' }
+{ #category : 'tests-basic expressions' }
 CASTParserTests >> testParseParenthesizedExpression [
 
 	| expression |
@@ -620,7 +622,7 @@ CASTParserTests >> testParseParenthesizedExpression [
 	self assert: expression isExpression.
 ]
 
-{ #category : #'tests-declarators' }
+{ #category : 'tests-declarators' }
 CASTParserTests >> testParsePointerDeclarator [
 
 	| declaration declarator |
@@ -634,7 +636,7 @@ CASTParserTests >> testParsePointerDeclarator [
 	self assert: declarator declarator name equals: 'a'.
 ]
 
-{ #category : #'tests-binary operators' }
+{ #category : 'tests-binary operators' }
 CASTParserTests >> testParsePostIncrement [
 
 	| expression |
@@ -643,7 +645,7 @@ CASTParserTests >> testParsePostIncrement [
 	self assert: expression isIncrement.
 ]
 
-{ #category : #'tests-control flow' }
+{ #category : 'tests-control flow' }
 CASTParserTests >> testParseReturnWithExpression [
 
 	| statement |
@@ -653,7 +655,7 @@ CASTParserTests >> testParseReturnWithExpression [
 	self assert: statement expression notNil
 ]
 
-{ #category : #'tests-control flow' }
+{ #category : 'tests-control flow' }
 CASTParserTests >> testParseReturnWithoutExpression [
 
 	| statement |
@@ -663,7 +665,7 @@ CASTParserTests >> testParseReturnWithoutExpression [
 	self assert: statement expression isNil
 ]
 
-{ #category : #'tests-declarators' }
+{ #category : 'tests-declarators' }
 CASTParserTests >> testParseSequenceOfDeclarators [
 
 	| declaration declarator |
@@ -683,7 +685,7 @@ CASTParserTests >> testParseSequenceOfDeclarators [
 	self assert: declarator declarator name equals: 'b'.
 ]
 
-{ #category : #'tests-declarators' }
+{ #category : 'tests-declarators' }
 CASTParserTests >> testParseSimpleArrayDeclaration [
 
 	| declaration declarator |
@@ -698,7 +700,7 @@ CASTParserTests >> testParseSimpleArrayDeclaration [
 	self assert: declarator declarator name equals: 'a'.
 ]
 
-{ #category : #'tests-control flow' }
+{ #category : 'tests-control flow' }
 CASTParserTests >> testParseSizeofExpression [
 
 	| statement |
@@ -710,7 +712,7 @@ CASTParserTests >> testParseSizeofExpression [
 	self assert: statement child expression isIdentifier.
 ]
 
-{ #category : #'tests-control flow' }
+{ #category : 'tests-control flow' }
 CASTParserTests >> testParseSizeofTypeInt [
 
 	| statement |
@@ -721,7 +723,7 @@ CASTParserTests >> testParseSizeofTypeInt [
 	self assert: statement child specifiers first value equals: 'int'
 ]
 
-{ #category : #'tests-declarators' }
+{ #category : 'tests-declarators' }
 CASTParserTests >> testParseStructDeclarator [
 
 	| declaration declarator |
@@ -736,7 +738,7 @@ CASTParserTests >> testParseStructDeclarator [
 	self assert: declarator parameters size equals: 1.
 ]
 
-{ #category : #'tests-structures' }
+{ #category : 'tests-structures' }
 CASTParserTests >> testParseStructureAndUnionAccess [
 
 	| expression |
@@ -748,7 +750,7 @@ CASTParserTests >> testParseStructureAndUnionAccess [
 	self assert: expression member name equals: 'field'.
 ]
 
-{ #category : #'tests-structures' }
+{ #category : 'tests-structures' }
 CASTParserTests >> testParseStructurePointerAccess [
 
 	| expression |
@@ -760,7 +762,7 @@ CASTParserTests >> testParseStructurePointerAccess [
 	self assert: expression member name equals: 'field'.
 ]
 
-{ #category : #'tests-control flow' }
+{ #category : 'tests-control flow' }
 CASTParserTests >> testParseSwitch [
 
 	| statement case0 case1 |
@@ -786,7 +788,7 @@ CASTParserTests >> testParseSwitch [
 	self assert: statement statement statements second isBreakStatement.
 ]
 
-{ #category : #'tests-control flow' }
+{ #category : 'tests-control flow' }
 CASTParserTests >> testParseSwitchWithDefaultCase [
 
 	| statement case0 |
@@ -805,7 +807,7 @@ CASTParserTests >> testParseSwitchWithDefaultCase [
 	self assert: statement statement statements second case value equals: 'default'.
 ]
 
-{ #category : #'tests-control flow' }
+{ #category : 'tests-control flow' }
 CASTParserTests >> testParseTernary [
 
 	| statement |
@@ -816,7 +818,7 @@ CASTParserTests >> testParseTernary [
 	self assert: statement else isConstant
 ]
 
-{ #category : #'tests-declarators' }
+{ #category : 'tests-declarators' }
 CASTParserTests >> testParseUnionDeclarator [
 
 	| declaration declarator |
@@ -831,7 +833,7 @@ CASTParserTests >> testParseUnionDeclarator [
 	self assert: declarator parameters size equals: 1.
 ]
 
-{ #category : #'tests-numbers' }
+{ #category : 'tests-numbers' }
 CASTParserTests >> testParseUnsignedIntegerConstantConstant [
 
 	| unit firstStatement |
@@ -846,7 +848,7 @@ CASTParserTests >> testParseUnsignedIntegerConstantConstant [
 	self assert: firstStatement value equals: '7U'.
 ]
 
-{ #category : #'tests-numbers' }
+{ #category : 'tests-numbers' }
 CASTParserTests >> testParseUnsignedIntegerConstantConstant2 [
 
 	| unit firstStatement |
@@ -861,7 +863,7 @@ CASTParserTests >> testParseUnsignedIntegerConstantConstant2 [
 	self assert: firstStatement value equals: '7u'.
 ]
 
-{ #category : #'tests-control flow' }
+{ #category : 'tests-control flow' }
 CASTParserTests >> testParseWhile [
 
 	| statement |
@@ -870,7 +872,7 @@ CASTParserTests >> testParseWhile [
 	self assert: statement isWhile
 ]
 
-{ #category : #'tests-control flow' }
+{ #category : 'tests-control flow' }
 CASTParserTests >> testSwitchStatement [
 
 	| statement |
