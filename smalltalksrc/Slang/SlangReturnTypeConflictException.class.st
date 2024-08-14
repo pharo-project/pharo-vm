@@ -1,10 +1,11 @@
 Class {
-	#name : #SlangReturnTypeConflictException,
-	#superclass : #SlangTyperException,
-	#category : #Slang
+	#name : 'SlangReturnTypeConflictException',
+	#superclass : 'SlangTyperException',
+	#category : 'Slang',
+	#package : 'Slang'
 }
 
-{ #category : #exceptions }
+{ #category : 'exceptions' }
 SlangReturnTypeConflictException class >> signalConflictIn: aMethod with: aCollectionOfType [
 
 	| message |

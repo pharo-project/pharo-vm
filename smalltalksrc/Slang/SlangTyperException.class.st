@@ -1,5 +1,6 @@
 Class {
-	#name : #SlangTyperException,
-	#superclass : #Error,
-	#category : #Slang
+	#name : 'SlangTyperException',
+	#superclass : 'Error',
+	#category : 'Slang',
+	#package : 'Slang'
 }
