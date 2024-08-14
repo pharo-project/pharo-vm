@@ -623,9 +623,9 @@ SlangBasicTypeInferenceTestClass >> unsignedIntInASignedOperation [
 
 { #category : 'return-signed' }
 SlangBasicTypeInferenceTestClass >> unsignedIntInASignedOperationNotWorking [
-	<var: #i type: #'unsigned int'>
+
 	| i |
-	i := 2.
+	i := 4294967295.
 	i > -2 whileTrue: [ i := i - 1 ].
 	^ i
 ]

@@ -16,6 +16,59 @@ CSlangPrettyPrinter >> contents [
 	^ stream contents
 ]
 
+{ #category : 'testing' }
+CSlangPrettyPrinter >> expressionListHasNonCommentStatementAfter: expressions futureIndex: startingIndex [
+	"Find a begin inlining comment in an expressionList starting at futureIndex.
+	Sometimes the last statements of an expression list are a sequence of comments.
+	We iterate the next elements to see if there is an actual statement after otherwise the next part is not an element of the list"
+
+	startingIndex to: expressions size do: [ :e |
+		| current |
+		current := expressions at: e.
+		(current isComment not and: [ current isEmpty not ]) ifTrue: [
+			^ true ] ].
+
+	^ false
+]
+
+{ #category : 'testing' }
+CSlangPrettyPrinter >> expressionListNeedAComma: expressions current: e futureIndex: futureIndex commentSeries: commentSeries [
+	"handle space, comma and comment in visitExpressionList, comments only comes from inlining in an expressionList. ensure comments are not considered as element of the list and are linked to theirs respective methods. if the list contains an empty inlined method we can have a potential series of comments  that shouldn't be considered as element, hence the boolean commentSeries. Return if a comma is needed and if the comment series continue/start.
+	"
+
+	| next currentRequiredEndSeparator futureRequireBeginningSeparator continueCommentSeries currentIsEndComment nextIsBeginComment |
+	futureIndex > expressions size ifTrue: [ ^ { false. false } ].
+	next := expressions at: futureIndex.
+
+	currentIsEndComment := e isComment and: [
+		                       e comment beginsWith: #' end' ].
+	nextIsBeginComment := next isComment and: [
+		                      next comment beginsWith: #' begin' ].
+
+	(currentIsEndComment and: [
+		 nextIsBeginComment and: [ commentSeries ] ]) ifTrue: [
+		^ { false. true } ].
+
+	continueCommentSeries := (commentSeries and: [
+		                          e isComment and: [ next isComment ] ])
+		                         or: [ nextIsBeginComment ].
+	currentRequiredEndSeparator := e isEmpty not and: [
+		                               e isComment not or: [
+			                               currentIsEndComment ] ].
+	futureRequireBeginningSeparator := next isEmpty not and: [
+		                                   next isComment not or: [
+			                                   nextIsBeginComment and: [
+				                                   self
+					                                   expressionListHasNonCommentStatementAfter:
+					                                   expressions
+					                                   futureIndex: futureIndex ] ] ].
+
+	^ {
+		  (currentRequiredEndSeparator and: [
+			   futureRequireBeginningSeparator ]).
+		  continueCommentSeries }
+]
+
 { #category : 'initialization' }
 CSlangPrettyPrinter >> initialize [
 
@@ -255,17 +308,27 @@ CSlangPrettyPrinter >> visitEmptyStatement: anEmptyStatement [
 { #category : 'generated' }
 CSlangPrettyPrinter >> visitExpressionList: anExpressionList [
 
-	| lastRequiredSeparator |
+	| needCommaAndCommentSeries futureIndex expressions commentSeries |
 	stream nextPut: $(.
-	anExpressionList expressions do: [ :e | 
-		e acceptVisitor: self.
-		lastRequiredSeparator := e isEmpty not ]
-	separatedBy: [ 
-		lastRequiredSeparator
-			ifFalse: [ stream nextPutAll: ' ' ]
-			ifTrue: [ 
-				stream nextPutAll: ', '.
-				anExpressionList printOnMultipleLines ifTrue: [ stream cr ] ] ].
+	futureIndex := 1.
+	expressions := anExpressionList expressions.
+	commentSeries := true.
+	expressions
+		do: [ :e |
+			e acceptVisitor: self.
+			futureIndex := futureIndex + 1.
+			needCommaAndCommentSeries := self
+				                             expressionListNeedAComma: expressions
+				                             current: e
+				                             futureIndex: futureIndex
+				                             commentSeries: commentSeries.
+			commentSeries := needCommaAndCommentSeries second ]
+		separatedBy: [
+			needCommaAndCommentSeries first
+				ifFalse: [ stream nextPutAll: ' ' ]
+				ifTrue: [
+					stream nextPutAll: ', '.
+					anExpressionList printOnMultipleLines ifTrue: [ stream cr ] ] ].
 	stream nextPut: $)
 ]
 

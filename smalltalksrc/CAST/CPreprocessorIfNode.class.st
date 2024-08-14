@@ -1,16 +1,18 @@
 Class {
-	#name : #CPreprocessorIfNode,
-	#superclass : #CExpressionNode,
+	#name : 'CPreprocessorIfNode',
+	#superclass : 'CExpressionNode',
 	#instVars : [
 		'then',
 		'else',
 		'if',
 		'isArgument'
 	],
-	#category : #'CAST-Nodes'
+	#category : 'CAST-Nodes',
+	#package : 'CAST',
+	#tag : 'Nodes'
 }
 
-{ #category : #'instance creation' }
+{ #category : 'instance creation' }
 CPreprocessorIfNode class >> if: aCondition then: anExpression [
 
 	^ self new
@@ -19,7 +21,7 @@ CPreprocessorIfNode class >> if: aCondition then: anExpression [
 		  yourself
 ]
 
-{ #category : #'instance creation' }
+{ #category : 'instance creation' }
 CPreprocessorIfNode class >> if: aCondition then: anExpression asArgument: asArgument [
 
 	^ self new
@@ -29,7 +31,7 @@ CPreprocessorIfNode class >> if: aCondition then: anExpression asArgument: asArg
 		  yourself
 ]
 
-{ #category : #'instance creation' }
+{ #category : 'instance creation' }
 CPreprocessorIfNode class >> if: aCondition then: anExpression else: anOtherExpression [
 
 	^ self new
@@ -39,67 +41,67 @@ CPreprocessorIfNode class >> if: aCondition then: anExpression else: anOtherExpr
 		  yourself
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 CPreprocessorIfNode >> acceptVisitor: anAbstractVisitor [
 	^ anAbstractVisitor visitPreprocessorIf: self
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 CPreprocessorIfNode >> else [
 
 	^ else
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 CPreprocessorIfNode >> else: aStatement [
 
 	else := aStatement
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 CPreprocessorIfNode >> if [
 
 	^ if
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 CPreprocessorIfNode >> if: aStatement [
 
 	if := aStatement
 ]
 
-{ #category : #initialization }
+{ #category : 'initialization' }
 CPreprocessorIfNode >> initialize [ 
 
 	super initialize.
 	isArgument := false
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 CPreprocessorIfNode >> isArgument [
 
 	^ isArgument
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 CPreprocessorIfNode >> isArgument: aBoolean [
 
 	isArgument := aBoolean
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 CPreprocessorIfNode >> needsSeparator [
 
 	^ false
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 CPreprocessorIfNode >> then [
 
 	^ then
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 CPreprocessorIfNode >> then: aStatement [
 
 	then := aStatement

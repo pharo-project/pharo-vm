@@ -1,22 +1,24 @@
 Class {
-	#name : #CDeclarationNode,
-	#superclass : #CGLRAbstractNode,
+	#name : 'CDeclarationNode',
+	#superclass : 'CGLRAbstractNode',
 	#instVars : [
 		'specifiers',
 		'declarators',
 		'hasRawPrototype',
 		'isFunctionPrototype'
 	],
-	#category : #'CAST-Nodes'
+	#category : 'CAST-Nodes',
+	#package : 'CAST',
+	#tag : 'Nodes'
 }
 
-{ #category : #'instance creation' }
+{ #category : 'instance creation' }
 CDeclarationNode class >> specifiers: specifiers declarator: aDeclarator [
 	
 	^ self specifiers: specifiers declarators: {aDeclarator}
 ]
 
-{ #category : #'instance creation' }
+{ #category : 'instance creation' }
 CDeclarationNode class >> specifiers: specifiers declarators: declarators [
 	
 	^ self new
@@ -25,7 +27,7 @@ CDeclarationNode class >> specifiers: specifiers declarators: declarators [
 		yourself
 ]
 
-{ #category : #comparing }
+{ #category : 'comparing' }
 CDeclarationNode >> = anObject [
 
 	"Answer whether the receiver and anObject represent the same object."
@@ -36,36 +38,36 @@ CDeclarationNode >> = anObject [
 		  declarators = anObject declarators ]
 ]
 
-{ #category : #generated }
+{ #category : 'generated' }
 CDeclarationNode >> acceptVisitor: anAbstractVisitor [
 	^ anAbstractVisitor visitDeclaration: self
 ]
 
-{ #category : #generated }
+{ #category : 'generated' }
 CDeclarationNode >> declarators [
 	^ declarators
 ]
 
-{ #category : #generated }
+{ #category : 'generated' }
 CDeclarationNode >> declarators: anOrderedCollection [
 	self setParents: self declarators to: nil.
 	declarators := anOrderedCollection.
 	self setParents: self declarators to: self
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 CDeclarationNode >> hasRawPrototype [
 
 	^ hasRawPrototype
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 CDeclarationNode >> hasRawPrototype: aBoolean [
 	
 	hasRawPrototype := aBoolean
 ]
 
-{ #category : #comparing }
+{ #category : 'comparing' }
 CDeclarationNode >> hash [
 
 	"Answer an integer value that is related to the identity of the receiver."
@@ -73,7 +75,7 @@ CDeclarationNode >> hash [
 	^ specifiers hash bitXor: declarators hash
 ]
 
-{ #category : #'generated-initialize-release' }
+{ #category : 'generated-initialize-release' }
 CDeclarationNode >> initialize [
 
 	super initialize.
@@ -83,24 +85,24 @@ CDeclarationNode >> initialize [
 	declarators := OrderedCollection new: 2
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 CDeclarationNode >> isFunctionPrototype [
 	"Return true if this declaration is a function prototype."
 	^ isFunctionPrototype
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 CDeclarationNode >> isFunctionPrototype: aBoolean [
 	
 	isFunctionPrototype := aBoolean
 ]
 
-{ #category : #generated }
+{ #category : 'generated' }
 CDeclarationNode >> specifiers [
 	^ specifiers
 ]
 
-{ #category : #generated }
+{ #category : 'generated' }
 CDeclarationNode >> specifiers: anOrderedCollection [
 	specifiers := anOrderedCollection
 ]

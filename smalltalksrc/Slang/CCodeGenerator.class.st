@@ -1735,13 +1735,17 @@ CCodeGenerator >> generateCASTDivide: tast [
 { #category : 'CAST translation' }
 CCodeGenerator >> generateCASTDoWhile: boolean loop: tast [
 
-	| block  cond|
-	block := TStatementListNode statements: tast receiver statements allButLast.
+	| block cond |
+	block := TStatementListNode statements:
+		         tast receiver allButLastNonCommentStatement.
 	block addDeclarations: tast receiver declarations.
 	block := block asCASTIn: self.
-	cond := (tast receiver statements last asCASTExpressionIn: self).
+	cond := tast receiver lastNonCommentStatement asCASTExpressionIn:
+		        self.
 	^ CDoStatementNode
-		  while: (boolean ifTrue: [ cond ] ifFalse: [ CUnaryOperatorNode operator: #! expression: cond ])
+		  while: (boolean
+				   ifTrue: [ cond ]
+				   ifFalse: [ CUnaryOperatorNode operator: #! expression: cond ])
 		  statement: block
 ]
 
@@ -2935,16 +2939,23 @@ CCodeGenerator >> generateCASTWhileFalse: tast [
 CCodeGenerator >> generateCASTWhileForeverBreakIf: boolean loop: tast [
 
 	| block if cond |
-	cond := (tast receiver statements last asCASTExpressionIn: self).
-	if := CIfStatementNode if: (boolean ifTrue: [ cond ] ifFalse: [ CUnaryOperatorNode operator: #! expression: cond ]) then: (CBreakStatementNode new).
-	block := TStatementListNode statements: tast receiver statements allButLast.
+	cond := tast receiver lastNonCommentStatement asCASTExpressionIn:
+		        self.
+	if := CIfStatementNode
+		      if: (boolean
+				       ifTrue: [ cond ]
+				       ifFalse: [
+				       CUnaryOperatorNode operator: #! expression: cond ])
+		      then: CBreakStatementNode new.
+	block := TStatementListNode statements:
+		         tast receiver allButLastNonCommentStatement.
 	block addDeclarations: tast receiver declarations.
-	block addDeclarations:  tast arguments first declarations.
+	block addDeclarations: tast arguments first declarations.
 	block := block asCASTIn: self.
 	block add: if.
 	block addAll: (tast arguments first asCASTIn: self).
 
-	^ CWhileStatementNode 
+	^ CWhileStatementNode
 		  while: (CConstantNode value: 1)
 		  statement: block
 ]

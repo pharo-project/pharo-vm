@@ -225,9 +225,10 @@ VMMemoryMap >> allocateStackPages: initialStackSize [
 
 { #category : 'utils' }
 VMMemoryMap >> allocationGranularity [
-	
 	"In windows we have an allocation granularity. Maybe we have to get it from the system.
 	https://docs.microsoft.com/en-us/windows/win32/api/sysinfoapi/ns-sysinfoapi-system_info"
+
+	<returnTypeC: #sqInt>
 	self cppIf: WIN32 ifTrue: [ ^ 64 * 1024 ] ifFalse: [ ^ 0 ]
 ]
 

@@ -505,6 +505,7 @@ CoInterpreter >> activateNewFullClosure: blockClosure method: theMethod numArgs:
 	"Similar to activateNewMethod but for Closure and newMethod."
 	| numCopied methodHeader inInterpreter |
 	<inline: true>
+	<returnTypeC: #void>
 	self assert: theMethod = (objectMemory fetchPointer: FullClosureCompiledBlockIndex ofObject: blockClosure).
 	methodHeader := self rawHeaderOf: theMethod.
 	(self isCogMethodReference: methodHeader) ifTrue:
