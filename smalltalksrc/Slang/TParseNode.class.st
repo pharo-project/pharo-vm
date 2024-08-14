@@ -131,6 +131,12 @@ TParseNode >> bindVariablesIn: aDictionary unless: cautionaryBlock [
 	^self
 ]
 
+{ #category : 'accessing' }
+TParseNode >> children [
+
+	self subclassResponsibility
+]
+
 { #category : 'enumerating' }
 TParseNode >> collect: aBlock [
 	| nodes |
@@ -439,6 +445,15 @@ TParseNode >> printOn: aStream level: anInteger [
 { #category : 'transformations' }
 TParseNode >> removeAssertions [
 	"default: do nothing"
+]
+
+{ #category : 'dead-code-elimination' }
+TParseNode >> removeUnusedNodesInBranch: aChild [
+	"this method should be only called when cleaning an AST tree after an unused expression was found"
+
+	self children remove: aChild.
+	self children isEmpty ifTrue: [
+		self parent removeUnusedNodesInBranch: self ]
 ]
 
 { #category : 'transformations' }

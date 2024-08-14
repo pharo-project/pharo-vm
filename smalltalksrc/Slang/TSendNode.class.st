@@ -268,8 +268,27 @@ TSendNode >> bindVariablesIn: aDictionary unless: cautionaryBlock [
 
 { #category : 'accessing' }
 TSendNode >> children [
-	
-	^ { receiver }, arguments
+
+	^ { receiver } , arguments
+]
+
+{ #category : 'dead-code-elimination' }
+TSendNode >> collectSendInArguments: sendToCollect [
+
+	arguments do: [ :child |
+		child isSend ifTrue: [ child collectSendInSelf: sendToCollect ] ]
+]
+
+{ #category : 'dead-code-elimination' }
+TSendNode >> collectSendInSelf: sendToCollect [
+	"collect send message in the receiver of a conditional send, in we encounter a comparaison operator, we split it and iterate through its left and right values to avoid having unused expression result"
+
+	self isSelectorWithNoSideEffect
+		ifFalse: [ sendToCollect add: self ]
+		ifTrue: [
+			receiver isSend ifTrue: [
+				receiver collectSendInSelf: sendToCollect ].
+			self collectSendInArguments: sendToCollect ]
 ]
 
 { #category : 'accessing' }
@@ -353,7 +372,7 @@ TSendNode >> isBuiltinOperator: builtinFlag [
 TSendNode >> isConditionalSend [
 	"Answer if the receiver is a send of any of the conditionals, ifTrue: ifTrue:ifFalse: et al"
 	^#(	ifTrue:ifFalse: ifFalse:ifTrue: ifTrue: ifFalse:
-		ifNil:ifNotNil: ifNotNil:ifNil: ifNil: ifNotNil) includes: selector
+		ifNil:ifNotNil: ifNotNil:ifNil: ifNil: ifNotNil:) includes: selector
 ]
 
 { #category : 'testing' }
@@ -393,6 +412,11 @@ TSendNode >> isSameAs: aTParseNode [
 		with: aTParseNode arguments
 		do: [ :a :b | (a isSameAs: b) ifFalse: [ ^ false ] ].
 	^ true
+]
+
+{ #category : 'dead-code-elimination' }
+TSendNode >> isSelectorWithNoSideEffect [
+	^ #(#= #== #< #<= #> #>=) includes: selector
 ]
 
 { #category : 'C code generation' }
@@ -521,10 +545,38 @@ TSendNode >> receiver: aNode [
 	aNode parent: self
 ]
 
+{ #category : 'dead-code-elimination' }
+TSendNode >> reduceConditionalSend: branchIndex [
+	"branch index is either 1 or 2, called when an argument of a conditional send have been removed, if the method has multiple branches we can reduce the branch number to match the transformation"
+
+	branchIndex = 1
+		ifTrue: [ self selector: self selector keywords second ]
+		ifFalse: [ self selector: self selector keywords first ]
+]
+
 { #category : 'transformations' }
 TSendNode >> removeAssertions [
 	receiver removeAssertions.
 	arguments do: [:arg | arg removeAssertions].
+]
+
+{ #category : 'dead-code-elimination' }
+TSendNode >> removeUnusedNodesInBranch: aChild [
+	"this method should be only called when cleaning an AST tree after an unused expression was found meaning the method should be a conditional send or a cCoerce. 
+	If the selector is a conditional and only one branch become empty, we can elude it.
+	Only remove in the arguments but transform the receiver if the arguments number changed to zero (meaning the method is incorrect and can now be deleted)"
+
+	| branchIndex |
+	branchIndex := arguments indexOf: aChild.
+	arguments := arguments select: [ :e | e ~= aChild ].
+	arguments isEmpty
+		ifTrue: [
+			self transformReceiverAfterEmptyArguments.
+			self parent removeUnusedNodesInBranch: self ]
+		ifFalse: [
+			(self selector beginsWith: #cCoerce)
+				ifTrue: [ self parent removeUnusedNodesInBranch: self ]
+				ifFalse: [ self reduceConditionalSend: branchIndex ] ]
 ]
 
 { #category : 'transformations' }
@@ -647,6 +699,20 @@ TSendNode >> structTargetKindIn: aCodeGen [
 		[^#struct].
 
 	^nil
+]
+
+{ #category : 'dead-code-elimination' }
+TSendNode >> transformReceiverAfterEmptyArguments [
+	"keep any send that isn't a comparaison in the receiver to the parent of self. Since this method is called in a dead code cleaning processus the parent should only be a statement list or another conditional send"
+
+	| sendToCollect |
+	receiver isSend ifFalse: [ ^ self ].
+	sendToCollect := OrderedCollection new.
+	receiver collectSendInSelf: sendToCollect.
+	sendToCollect isNotEmpty ifTrue: [
+		self parent
+			replaceChild: self
+			with: (TStatementListNode statements: sendToCollect) ]
 ]
 
 { #category : 'type inference' }
