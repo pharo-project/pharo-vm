@@ -256,22 +256,29 @@ TSwitchStmtNode >> children [
 TSwitchStmtNode >> createCasesFromBraceNode: aTBraceNode [
 	"Answer a sequence of tuples of { labels. case } for a TBraceNode, making
 	 sure to collect equivalent cases together under a signle sequence of labels."
+
 	| casesToStrings stringsToLabels newCases |
 	casesToStrings := Dictionary new.
 	stringsToLabels := Dictionary new.
 	newCases := OrderedCollection new: aTBraceNode caseLabels size.
-	aTBraceNode caseLabels with: aTBraceNode cases do:
-		[:label :case| | printString |
+	aTBraceNode caseLabels with: aTBraceNode cases do: [ :label :case |
+		| printString |
 		printString := casesToStrings at: case put: case printString.
-		(stringsToLabels at: printString ifAbsentPut: [OrderedCollection new]) addLast: label].
+		(stringsToLabels
+			 at: printString
+			 ifAbsentPut: [ OrderedCollection new ]) addLast: label ].
 
-	aTBraceNode caseLabels with: aTBraceNode cases do:
-		[:label :case| | printString labels |
+	aTBraceNode caseLabels with: aTBraceNode cases do: [ :label :case |
+		| printString labels |
 		printString := casesToStrings at: case.
-		label = (labels := (stringsToLabels at: printString) asArray) first ifTrue:
-			[newCases addLast: { labels collect: [:ea| ea statements first]. case}]].
+		label = (labels := (stringsToLabels at: printString) asArray) first
+			ifTrue: [
+				newCases addLast: {
+						(labels collect: [ :ea | ea statements first ]).
+						case }.
+				case parent: self ] ].
 
-	^newCases
+	^ newCases
 ]
 
 { #category : 'accessing' }
@@ -385,6 +392,7 @@ TSwitchStmtNode >> otherwiseOrNil [
 TSwitchStmtNode >> otherwiseOrNil: anObject [
 	"Set the value of otherwiseOrNil"
 
+	anObject ifNotNil: [ anObject parent: self ].
 	otherwiseOrNil := anObject
 ]
 
@@ -394,8 +402,9 @@ TSwitchStmtNode >> postCopy [
 	cases := (cases collect:
 				[:pair| "<Array with: <Array with: ParseTreeNode> with: TStmtListNode"
 				{ pair first collect: [:labelNode| labelNode copy].
-				   pair last copy }]).
-	otherwiseOrNil := otherwiseOrNil copy
+				   (pair last copy parent: self) }]).
+	otherwiseOrNil := otherwiseOrNil copy.
+	otherwiseOrNil ifNotNil: [ otherwiseOrNil parent: self ]
 ]
 
 { #category : 'printing' }
@@ -441,6 +450,20 @@ TSwitchStmtNode >> removeAssertions [
 		[otherwiseOrNil removeAssertions]
 ]
 
+{ #category : 'dead-code-elimination' }
+TSwitchStmtNode >> removeUnusedNodesInBranch: aChild [
+	"when removing a node from a switch, we have to be careful of if it comes from a caseOf: or a caseOf:otherwise:. if it comes from a caseOf:, otherwise is nil and must be kept it will be translated as a no case found error. To indicate that otherwise does nothing Slang use an empty TStatementListNode, hence the following code"
+	
+	cases := cases select: [ :each | each second ~~ aChild ].
+	self cases isEmpty ifFalse: [ ^ self ].
+	"we're from a caseOf: so we keep the node"
+	otherwiseOrNil ifNil: [ ^ self ].
+	"otherwiseOrNil may have been empty from the start or during the cleaning process, either way the node is now completely empty so we can supress it"
+	otherwiseOrNil isEmptyStmtListNode ifFalse: [ ^ self ].
+	self transformExpressionAfterEmptyCasesAndOtherwise.
+	self parent removeUnusedNodesInBranch: self
+]
+
 { #category : 'transformations' }
 TSwitchStmtNode >> replaceNodesIn: aDictionary [
 	^aDictionary
@@ -468,4 +491,17 @@ TSwitchStmtNode >> switchVariable: anObject [
 	"Set the value of switchVariable"
 
 	switchVariable := anObject
+]
+
+{ #category : 'dead-code-elimination' }
+TSwitchStmtNode >> transformExpressionAfterEmptyCasesAndOtherwise [
+
+	| sendToCollect |
+	expression isSend ifFalse: [ ^ self ].
+	sendToCollect := OrderedCollection new.
+	expression collectSendInSelf: sendToCollect.
+	sendToCollect isNotEmpty ifTrue: [
+		self parent
+			replaceChild: self
+			with: (TStatementListNode statements: sendToCollect) ]
 ]

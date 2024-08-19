@@ -8,6 +8,10 @@ Class {
 	#tag : 'ImageFormat'
 }
 
+{ #category : 'translation' }
+ComposedImageWriter class >> declareCVarsIn: aCCodeGenerator [
+]
+
 { #category : 'writing' }
 ComposedImageWriter >> ensureDeleteSegments: imageFileName [ 
 	

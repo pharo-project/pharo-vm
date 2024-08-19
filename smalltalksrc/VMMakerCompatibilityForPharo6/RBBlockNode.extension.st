@@ -2,11 +2,10 @@ Extension { #name : 'RBBlockNode' }
 
 { #category : '*VMMakerCompatibilityForPharo6-C translation' }
 RBBlockNode >> asTranslatorNodeIn: aTMethod [
-	
+
 	body := body asTranslatorNodeIn: aTMethod.
-	body statements ifEmpty: [ 
-		body statements add: (TConstantNode value: nil).
-	].
+	body statements ifEmpty: [
+		body statements add: (TConstantNode value: nil) ].
 	^ body
 ]
 

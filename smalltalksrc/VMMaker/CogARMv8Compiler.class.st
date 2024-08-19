@@ -5135,8 +5135,8 @@ CogARMv8Compiler >> machineCodeAt: anOffset [
 { #category : 'accessing' }
 CogARMv8Compiler >> machineCodeAt: anOffset put: aWord [
 	"add aWord to machineCode, with little endian"
+
 	<inline: true>
-	self haltIf: [ aWord highBit > 32 ].
 	machineCode at: anOffset // 4 put: aWord
 ]
 

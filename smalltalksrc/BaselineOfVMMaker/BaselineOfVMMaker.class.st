@@ -8,6 +8,7 @@ Class {
 { #category : 'baselines' }
 BaselineOfVMMaker >> baseline: spec [
 	<baseline>
+
 	spec
 		for: #common
 		do: [

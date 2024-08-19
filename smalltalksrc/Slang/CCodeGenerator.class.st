@@ -989,20 +989,18 @@ CCodeGenerator >> doBasicInlining: inlineFlagOrSymbol [
 	self collectInlineList: inlineFlagOrSymbol.
 	pass := 0.
 	progress := true.
-	[progress] whileTrue: [
-		"repeatedly attempt to inline methods until no further progress is made"
+	[ progress ] whileTrue: [ "repeatedly attempt to inline methods until no further progress is made"
 		progress := false.
 		UIManager default
-			displayProgress: ('Inlining pass ', (pass := pass + 1) printString, '...')
-			from: 0 to: methods size
-			during: [:bar |
-				(self sortMethods: methods) doWithIndex: [:m :i |
+			displayProgress:
+			'Inlining pass ' , (pass := pass + 1) printString , '...'
+			from: 0
+			to: methods size
+			during: [ :bar |
+				(self sortMethods: methods) doWithIndex: [ :m :i |
 					bar value: i.
 					self currentMethod: m.
-					(m tryToInlineMethodsIn: self)
-						ifTrue: [progress := true]]]].
-
-
+					(m tryToInlineMethodsIn: self) ifTrue: [ progress := true ] ] ] ]
 ]
 
 { #category : 'inlining' }
@@ -1025,11 +1023,11 @@ CCodeGenerator >> emitCCodeOn: aStream doInlining: inlineFlag doAssertions: asse
 	verbose ifTrue: [
 		self printUnboundCallWarnings.
 		self printUnboundVariableReferenceWarnings.
-		logger cr.
-	].
+		logger cr ].
 	assertionFlag ifFalse: [ self removeAssertions ].
 
 	self doInlining: inlineFlag.
+	SLDeadCodeEliminationVisitor new removeDeadCodeUsing: self.
 
 	SLAutomaticLocalization new
 		codeGenerator: self;
@@ -1043,11 +1041,15 @@ CCodeGenerator >> emitCCodeOn: aStream doInlining: inlineFlag doAssertions: asse
 	 in the use of primitiveFunctionPointer as a function pointer and an index by trying
 	 to ensure that primitives have addresses much higher than any indices."
 	methodList := self sortMethods: methods.
-	(methods includesKey: #interpret) ifTrue:
-		[methodList := { methods at: #interpret }, (methodList copyWithout: (methods at: #interpret))].
+	(methods includesKey: #interpret) ifTrue: [
+		methodList := { (methods at: #interpret) }
+		              , (methodList copyWithout: (methods at: #interpret)) ].
 	"clean out no longer valid variable names and then
 	 handle any global variable usage in each method"
-	methodList do: [:m | self checkForGlobalUsage: (m removeUnusedTempsAndNilIfRequiredIn: self) in: m].
+	methodList do: [ :m |
+		self
+			checkForGlobalUsage: (m removeUnusedTempsAndNilIfRequiredIn: self)
+			in: m ].
 	self localizeGlobalVariables.
 
 	self emitCHeaderOn: aStream.
@@ -1057,7 +1059,6 @@ CCodeGenerator >> emitCCodeOn: aStream doInlining: inlineFlag doAssertions: asse
 	self emitCVariablesOn: aStream.
 	self emitCMacros: methodList on: aStream.
 	self emitCMethods: methodList on: aStream
-
 ]
 
 { #category : 'C code generator' }
@@ -2131,14 +2132,13 @@ CCodeGenerator >> generateCASTInlineCCode: aTSendNode [
 { #category : 'CAST translation' }
 CCodeGenerator >> generateCASTInlineCCodeAsArgument: aTSendNode [
 
-	(aTSendNode arguments first isConstant and: [ 
+	(aTSendNode arguments first isConstant and: [
 		 aTSendNode arguments first value isString ]) ifTrue: [ "If it is a pre-processor declaration"
 		(aTSendNode arguments first value at: 1 ifAbsent: nil) = $# ifTrue: [ "This was assuming the argument is a preprocessor directive.
-			So it was printing it in a new line" 
+			So it was printing it in a new line"
 			self error: 'unsupported' ].
 
 		^ CRawCodeNode code: aTSendNode arguments first value ].
-
 	^ aTSendNode arguments first asCASTExpressionIn: self
 ]
 
@@ -2963,9 +2963,9 @@ CCodeGenerator >> generateCASTWhileForeverBreakIf: boolean loop: tast [
 { #category : 'CAST translation' }
 CCodeGenerator >> generateCASTWhileTrue: tast [
 
-	tast receiver statements size <= 1 ifTrue: [ 
+	tast receiver statements size <= 1 ifTrue: [
 		^ self generateCASTWhile: true loop: tast ].
-	tast arguments first isNilStmtListNode ifTrue: [ 
+	tast arguments first isNilStmtListNode ifTrue: [
 		^ self generateCASTDoWhileTrue: tast ].
 	^ self generateCASTWhileForeverBreakIf: false loop: tast
 ]
@@ -3699,7 +3699,7 @@ CCodeGenerator >> logger: aTranscriptStream [
 CCodeGenerator >> mayInline: sel [
 	"Answer if the method with the given selector may be inlined."
 
-	^(self isAssertSelector: sel) not and: [inlineList includes: sel]
+	^ (self isAssertSelector: sel) not and: [ inlineList includes: sel ]
 ]
 
 { #category : 'inlining' }

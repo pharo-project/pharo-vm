@@ -297,6 +297,7 @@ MLVMCCodeGenerator >> emitGlobalCVariablesOn: aStream [
 MLVMCCodeGenerator >> harmonizeIntegerIn: aSetOfTypes [
 	"help to decide if the element in a SetOfTypes will be treated as signed or unsigned.
 	only add sqInt to the types if an usqInt isn't here to prevent signing method returning usqInt."
+
 	| constantIntegers |
 	constantIntegers := aSetOfTypes select: [ :element |
 		                    element isInteger ].
