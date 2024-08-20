@@ -5668,7 +5668,7 @@ CogARMv8Compiler >> rewriteCallFullAt: callSiteReturnAddress target: callTargetA
 	^self
 		rewriteFullTransferAt: callSiteReturnAddress
 		target: callTargetAddress
-		expectedInstruction: 16rE12FFF3C
+		expectedInstruction: 16rD63F0200
 ]
 
 { #category : #'inline cacheing' }

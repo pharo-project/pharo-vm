@@ -944,8 +944,8 @@ VMPrimitiveTest >> testPrimitiveBitAndWithNegativNumbers [
 	interpreter push: (memory integerObjectOf: 21).
 	
 	interpreter primitiveBitAnd. 
-	
-	self assert: interpreter stackTop equals: (memory integerObjectOf: 21). 
+
+	self assert: interpreter stackTop equals: (memory integerObjectOf: (-42 bitAnd: 21)). 
 ]
 
 { #category : #'tests - primitiveBitOr' }
@@ -1054,7 +1054,7 @@ VMPrimitiveTest >> testPrimitiveBitOrWithMaxBitIntWithNoDataLoss [
 	
 	interpreter primitiveBitOr. 
 	
-	self assert: interpreter stackTop equals: (memory integerObjectOf: (num - 1)).
+	self assert: interpreter stackTop equals: (memory integerObjectOf: (num bitOr: num - 1)).
 ]
 
 { #category : #'tests - primitiveBitOr' }
@@ -1065,7 +1065,7 @@ VMPrimitiveTest >> testPrimitiveBitOrWithNegativNumbers [
 	
 	interpreter primitiveBitOr. 
 
-	self assert: interpreter stackTop equals: (memory integerObjectOf: ((memory maxCInteger >> memory numSmallIntegerTagBits) - 1)).
+	self assert: interpreter stackTop equals: (memory integerObjectOf: (-73 bitOr: (memory maxCInteger >> memory numSmallIntegerTagBits) - 1)).
 ]
 
 { #category : #'tests - primitiveBitShift' }
