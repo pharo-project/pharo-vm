@@ -2967,7 +2967,8 @@ StackInterpreter >> bytecodePrimGreaterThanSistaV1 [
 
 { #category : #'common selector sends' }
 StackInterpreter >> bytecodePrimIdenticalSistaV1 [
-
+	"short-jumps"
+	<nextSuperInstructions: #(184 185 186 187 188 189 190 191 192 193 194 195 196 197 198 199)>
 	| rcvr arg |
 	rcvr := self stackValue: 1.
 	arg := self stackValue: 0.
@@ -3165,7 +3166,8 @@ StackInterpreter >> bytecodePrimNotEqualSistaV1 [
 
 { #category : #'common selector sends' }
 StackInterpreter >> bytecodePrimNotIdenticalSistaV1 [
-
+	"short-jumps"
+	<nextSuperInstructions: #(184 185 186 187 188 189 190 191 192 193 194 195 196 197 198 199)>
 	| rcvr arg |
 	rcvr := self stackValue: 1.
 	arg := self stackValue: 0.
