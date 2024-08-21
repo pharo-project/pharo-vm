@@ -10,7 +10,6 @@ Class {
 	#instVars : [
 		'structClasses',
 		'translationDict',
-		'asArgumentTranslationDict',
 		'inlineList',
 		'constants',
 		'variables',
@@ -43,7 +42,8 @@ Class {
 		'stopOnErrors',
 		'castTranslationDict',
 		'castAsArgumentTranslationDict',
-		'wordSize'
+		'wordSize',
+		'structInstanceVariableTranslations'
 	],
 	#classVars : [
 		'NoRegParmsInAssertVMs'
