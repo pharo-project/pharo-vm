@@ -10818,6 +10818,8 @@ StackInterpreter >> primitiveCompareBytes [
 	 ..."
 
 	<export: true>
+	<returnTypeC: #void>
+
 	| arg1 arg2 len1 len2 result boolean |
 	argumentCount < 1 ifTrue: [ ^ self primitiveFail ].
 
@@ -10832,8 +10834,7 @@ StackInterpreter >> primitiveCompareBytes [
 	This prevents comparison of byte arrays with word arrays"
 	(objectMemory instSpecOfClass: (objectMemory fetchClassOf: arg1)) ~= (objectMemory instSpecOfClass: (objectMemory fetchClassOf: arg2))
 		ifTrue: [
-			self primitiveFail.
-			^ self ].
+			^ self primitiveFail ].
 
 	"This primitive only works for bytes and words objects.
 	The check below does not even let pass forwarders.
@@ -10844,7 +10845,7 @@ StackInterpreter >> primitiveCompareBytes [
 	len1 := objectMemory byteSizeOf: arg1.
 	len2 := objectMemory byteSizeOf: arg2.
 	len1 = len2 ifFalse: [
-		^ self pop: 2 thenPush: objectMemory falseObject ].
+		^self pop: 2 thenPush: objectMemory falseObject ].
 
 	"Use memcmp to compare the array contents.
 	Our benchmarks showed that 

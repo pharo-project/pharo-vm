@@ -193,6 +193,7 @@ ComposedImageReader >> readPermanentSpaceFromImageFile: imageFileName header: aH
 	<var: #dataSize type: #'size_t'>
 	<var: #oldBase type: #'void*'>
 	<var: #newBase type: #'void*'>
+	<returnTypeC: #size_t>
 
 	| newBase permSpaceMetadata oldBase dataSize bytesRead |
 
@@ -204,12 +205,12 @@ ComposedImageReader >> readPermanentSpaceFromImageFile: imageFileName header: aH
 	dataSize := permSpaceMetadata dataSize.
 
 	(objectMemory getMemoryMap ensureAtLeastPermSpaceOf: dataSize)
-		ifFalse: [ interpreter error: 'Could not allocate PermSpace' ].
+		ifFalse: [ coInterpreter error: 'Could not allocate PermSpace' ].
 
 	newBase := objectMemory getMemoryMap permSpaceStart.
 	newBase ~= oldBase ifTrue: [ 
 		self logError: 'Expecting Base %p Got %p' _: oldBase _: newBase.		
-		interpreter unableToReadImageError ].
+		coInterpreter unableToReadImageError ].
 
 	bytesRead := self
 		             readPermanentSpaceDataFromImage: imageFileName
@@ -221,7 +222,7 @@ ComposedImageReader >> readPermanentSpaceFromImageFile: imageFileName header: aH
 	"Check bytes read"
 	bytesRead ~= dataSize ifTrue: [ 
 		self logError: 'Expecting %lld Got %lld' _: dataSize _: bytesRead.		
-		interpreter unableToReadImageError ].
+		coInterpreter unableToReadImageError ].
 
 	^ bytesRead
 ]

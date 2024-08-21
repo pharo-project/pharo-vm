@@ -8,7 +8,9 @@ Class {
 		'outputDirectory',
 		'stopOnErrors',
 		'generatePlugins',
-		'wordSizesToGenerate'
+		'wordSizesToGenerate',
+		'imageFormatName',
+		'options'
 	],
 	#category : 'VMMakerCompatibilityForPharo6-CommandLine',
 	#package : 'VMMakerCompatibilityForPharo6',
@@ -25,6 +27,12 @@ PharoVMMaker class >> default32BitsMemoryManagerClass [
 PharoVMMaker class >> default64BitsMemoryManagerClass [
 
 	^ Spur64BitCoMemoryManager
+]
+
+{ #category : 'defaults' }
+PharoVMMaker class >> defaultImageFormatName [
+
+	^ #SpurFormat
 ]
 
 { #category : 'defaults' }

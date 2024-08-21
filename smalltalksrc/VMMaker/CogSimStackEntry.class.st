@@ -315,6 +315,8 @@ CogSimStackEntry >> registerMaskOrNone [
 
 { #category : 'accessing' }
 CogSimStackEntry >> registerOrNone [
+
+	<returnTypeC: #'signed char'>
 	^ ((type = SSRegister) or: [ type = SSVectorRegister ])
 		ifTrue: [registerr] 
 		ifFalse: [NoReg]

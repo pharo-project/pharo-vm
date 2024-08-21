@@ -651,6 +651,7 @@ StackToRegisterMappingCogit >> allocateRegForStackEntryAt: index notConflictingW
 	"If the stack entry is already in a register not conflicting with regMask, answers it,
 	else allocate a new register not conflicting with reg mask"
 	<var: #stackEntry type: #'CogSimStackEntry *'>
+	<returnTypeC: #'signed char'>
 	| stackEntry mask |
 	stackEntry := self ssValue: index.
 	mask := stackEntry registerMaskOrNone.
@@ -756,6 +757,7 @@ StackToRegisterMappingCogit >> allocateVectorRegForStackEntryAt: index notConfli
 	"If the stack entry is already in a register not conflicting with regMask, answers it,
 	else allocate a new register not conflicting with reg mask"
 	<var: #stackEntry type: #'CogSimStackEntry *'>
+	<returnTypeC: #'signed char'>
 	| stackEntry mask |
 	stackEntry := self ssValue: index.
 	mask := stackEntry registerMaskOrNone.
