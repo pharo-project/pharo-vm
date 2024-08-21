@@ -63,7 +63,7 @@ static sqInt (*falseObject)(void);
 static void * (*firstIndexableField)(sqInt oop);
 static sqInt (*instantiateClassindexableSize)(sqInt classPointer, sqInt size);
 static sqInt (*integerObjectOf)(sqInt value);
-static sqInt (*popthenPush)(sqInt nItems, sqInt oop);
+static void (*popthenPush)(sqInt nItems, sqInt oop);
 static sqInt (*trueObject)(void);
 #else /* !defined(SQUEAK_BUILTIN_PLUGIN) */
 extern sqInt classString(void);
@@ -72,7 +72,7 @@ extern sqInt falseObject(void);
 extern void * firstIndexableField(sqInt oop);
 extern sqInt instantiateClassindexableSize(sqInt classPointer, sqInt size);
 extern sqInt integerObjectOf(sqInt value);
-extern sqInt popthenPush(sqInt nItems, sqInt oop);
+extern void popthenPush(sqInt nItems, sqInt oop);
 extern sqInt trueObject(void);
 extern
 #endif

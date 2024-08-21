@@ -1,10 +1,11 @@
 Class {
-	#name : #VMLiterRulesTest,
-	#superclass : #TestCase,
-	#category : #VMMakerTests
+	#name : 'VMLiterRulesTest',
+	#superclass : 'TestCase',
+	#category : 'VMMakerTests',
+	#package : 'VMMakerTests'
 }
 
-{ #category : #tests }
+{ #category : 'tests' }
 VMLiterRulesTest >> testSlangRedundantTypeDeclaration [
 
 	| ast |
@@ -20,7 +21,7 @@ VMLiterRulesTest >> testSlangRedundantTypeDeclaration [
 			 ast pragmas first).
 ]
 
-{ #category : #tests }
+{ #category : 'tests' }
 VMLiterRulesTest >> testSlangTypeDeclarationForArgument [
 
 	| ast |
@@ -31,7 +32,7 @@ VMLiterRulesTest >> testSlangTypeDeclarationForArgument [
 			 ast pragmas first)
 ]
 
-{ #category : #tests }
+{ #category : 'tests' }
 VMLiterRulesTest >> testSlangTypeDeclarationForVariable [
 
 	| ast |

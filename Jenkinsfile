@@ -126,19 +126,23 @@ def runBuild(platformName, configuration, headless = true, someAdditionalParamet
 	}
   
 	stage("Build-${platform}-${configuration}"){
-    if(isWindows()){
-      runInCygwin "mkdir ${buildDirectory}"
-      recordCygwinVersions(buildDirectory)
-      runInCygwin "cd ${buildDirectory} && cmake -DFLAVOUR=${configuration} ${additionalParameters} -DPHARO_DEPENDENCIES_PREFER_DOWNLOAD_BINARIES=TRUE ../repository -DICEBERG_DEFAULT_REMOTE=httpsUrl"
-      runInCygwin "cd ${buildDirectory} && VERBOSE=1 make install package"
-      runInCygwin "mkdir -p artifacts-${platformName} && cp -a ${buildDirectory}/build/packages/* artifacts-${platformName}/"
-    }else{
-      cmakeBuild generator: "Unix Makefiles", cmakeArgs: "-DFLAVOUR=${configuration} ${additionalParameters} -DPHARO_DEPENDENCIES_PREFER_DOWNLOAD_BINARIES=TRUE -DICEBERG_DEFAULT_REMOTE=httpsUrl", sourceDir: "repository", buildDir: "${buildDirectory}", installation: "InSearchPath"
-      dir("${buildDirectory}"){
-        shell "VERBOSE=1 make install package"
-      }
-      shell "mkdir -p artifacts-${platformName} && cp -a ${buildDirectory}/build/packages/* artifacts-${platformName}/"
-    }
+		
+		withCredentials([sshUserPrivateKey(credentialsId: 'pharo_signature_key', keyFileVariable: 'SIGN_CERT', passphraseVariable: 'SIGN_CERT_PASSWORD')]) {		
+			if(isWindows()){
+				runInCygwin "mkdir ${buildDirectory}"
+				recordCygwinVersions(buildDirectory)
+				runInCygwin "cd ${buildDirectory} && cmake -DFLAVOUR=${configuration} ${additionalParameters} -DPHARO_DEPENDENCIES_PREFER_DOWNLOAD_BINARIES=TRUE ../repository -DICEBERG_DEFAULT_REMOTE=httpsUrl"
+				runInCygwin "cd ${buildDirectory} && VERBOSE=1 make sign install package"
+				runInCygwin "mkdir artifacts-${platformName} && cp -a ${buildDirectory}/build/packages/* artifacts-${platformName}/"
+			}else{
+				cmakeBuild generator: "Unix Makefiles", cmakeArgs: "-DFLAVOUR=${configuration} ${additionalParameters} -DPHARO_DEPENDENCIES_PREFER_DOWNLOAD_BINARIES=TRUE -DICEBERG_DEFAULT_REMOTE=httpsUrl", sourceDir: "repository", buildDir: "${buildDirectory}", installation: "InSearchPath"
+				dir("${buildDirectory}"){
+					shell "VERBOSE=1 make sign install package"
+			}
+			shell "mkdir -p artifacts-${platformName} && cp -a ${buildDirectory}/build/packages/* artifacts-${platformName}/"
+		}		
+		
+	}
 	
 		stash excludes: '_CPack_Packages', includes: "${buildDirectory}/build/packages/*", name: "packages-${platform}-${configuration}"
         stash includes: "repository/scripts/*", name: "scripts"
@@ -235,8 +239,8 @@ def runTests(platform, configuration, packages, withWorker, additionalParameters
 		shell "mkdir runTests"
 		dir("runTests"){
 			try{
-				shell "wget -O - get.pharo.org/64/110 | bash "
-				shell "echo 110 > pharo.version"
+				shell "wget -O - get.pharo.org/64/120 | bash "
+				shell "echo 120 > pharo.version"
           
 				if(isWindows()){
 					runInCygwin "cd runTests && unzip ../build/build/packages/PharoVM-*-${platform}-bin.zip -d ."
@@ -492,9 +496,6 @@ try{
 				
 				timeout(40){
 					runBuild(platform, "StackVM")
-				}
-				timeout(40){
-					runBuild("${platform}-ComposedFormat", "CoInterpreter", true, " -DIMAGE_FORMAT=ComposedFormat ")
 				}
 				timeout(40){
 					// Only build the Stock replacement version in the main branch

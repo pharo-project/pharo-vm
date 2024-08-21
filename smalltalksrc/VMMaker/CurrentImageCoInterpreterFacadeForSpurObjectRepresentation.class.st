@@ -1,28 +1,30 @@
 Class {
-	#name : #CurrentImageCoInterpreterFacadeForSpurObjectRepresentation,
-	#superclass : #CurrentImageCoInterpreterFacade,
+	#name : 'CurrentImageCoInterpreterFacadeForSpurObjectRepresentation',
+	#superclass : 'CurrentImageCoInterpreterFacade',
 	#instVars : [
 		'hiddenRoots'
 	],
-	#category : #'VMMaker-Support'
+	#category : 'VMMaker-Support',
+	#package : 'VMMaker',
+	#tag : 'Support'
 }
 
-{ #category : #'accessing class hierarchy' }
+{ #category : 'accessing class hierarchy' }
 CurrentImageCoInterpreterFacadeForSpurObjectRepresentation class >> objectMemoryClass [
 	^Spur32BitCoMemoryManager
 ]
 
-{ #category : #'accessing class hierarchy' }
+{ #category : 'accessing class hierarchy' }
 CurrentImageCoInterpreterFacadeForSpurObjectRepresentation class >> objectRepresentationClass [
 	^CogObjectRepresentationFor32BitSpur
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 CurrentImageCoInterpreterFacadeForSpurObjectRepresentation >> accessorDepthForPrimitiveIndex: anInteger [
 	^StackInterpreterPrimitives primitiveAccessorDepthTable at: anInteger + 1
 ]
 
-{ #category : #'cog jit support' }
+{ #category : 'cog jit support' }
 CurrentImageCoInterpreterFacadeForSpurObjectRepresentation >> allocatePinnedSlots: nSlots [
 	^(objectMemory allocatePinnedSlots: nSlots)
 		ifNil: [nil]
@@ -31,65 +33,65 @@ CurrentImageCoInterpreterFacadeForSpurObjectRepresentation >> allocatePinnedSlot
 			 objectMap at: objOop put: objOop]
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 CurrentImageCoInterpreterFacadeForSpurObjectRepresentation >> arrayFormat [
 	^objectMemory arrayFormat
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 CurrentImageCoInterpreterFacadeForSpurObjectRepresentation >> baseHeaderSize [
 	^SpurMemoryManager baseHeaderSize
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 CurrentImageCoInterpreterFacadeForSpurObjectRepresentation >> ceCheckAndMaybeRetryPrimitive: primIndex [
 	^coInterpreter ceCheckAndMaybeRetryPrimitive: primIndex
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 CurrentImageCoInterpreterFacadeForSpurObjectRepresentation >> characterTag [
 	^objectMemory characterTag
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 CurrentImageCoInterpreterFacadeForSpurObjectRepresentation >> classIndexMask [
 	^objectMemory classIndexMask
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 CurrentImageCoInterpreterFacadeForSpurObjectRepresentation >> classTableMajorIndexShift [
 	^objectMemory classTableMajorIndexShift
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 CurrentImageCoInterpreterFacadeForSpurObjectRepresentation >> classTableMinorIndexMask [
 	^objectMemory classTableMinorIndexMask
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 CurrentImageCoInterpreterFacadeForSpurObjectRepresentation >> classTablePageSize [
 	^objectMemory classTablePageSize
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 CurrentImageCoInterpreterFacadeForSpurObjectRepresentation >> classTableRootObj [
 	hiddenRoots ifNil:
 		[hiddenRoots := Array new: objectMemory classTableRootSlots + objectMemory hiddenRootSlots].
 	^self oopForObject: hiddenRoots
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 CurrentImageCoInterpreterFacadeForSpurObjectRepresentation >> classTagForClass: classOop [
 	^(self objectForOop: classOop) identityHash
 ]
 
-{ #category : #'cog jit support' }
+{ #category : 'cog jit support' }
 CurrentImageCoInterpreterFacadeForSpurObjectRepresentation >> eeInstantiateClassIndex: knownClassIndex format: objFormat numSlots: numSlots [
 	self assert: knownClassIndex = ClassArrayCompactIndex.
 	^self oopForObject: (Array new: numSlots)
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 CurrentImageCoInterpreterFacadeForSpurObjectRepresentation >> fetchClassTagOf: anOop [
 	| class |
 	self assert: SmalltalkImage current isRunningSpur.
@@ -99,80 +101,80 @@ CurrentImageCoInterpreterFacadeForSpurObjectRepresentation >> fetchClassTagOf: a
 		ifFalse: [class identityHash]
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 CurrentImageCoInterpreterFacadeForSpurObjectRepresentation >> firstShortFormat [
 	^objectMemory firstShortFormat
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 CurrentImageCoInterpreterFacadeForSpurObjectRepresentation >> fixedFieldsOfClassFormatMask [
 	^objectMemory fixedFieldsOfClassFormatMask
 ]
 
-{ #category : #forwarding }
+{ #category : 'forwarding' }
 CurrentImageCoInterpreterFacadeForSpurObjectRepresentation >> followForwardedObjectFields: objOop toDepth: depth [ 
 	"This is a noop in the facade"
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 CurrentImageCoInterpreterFacadeForSpurObjectRepresentation >> formatMask [
 	^objectMemory formatMask
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 CurrentImageCoInterpreterFacadeForSpurObjectRepresentation >> formatOfClass: classOop [ 
 	^(self objectForOop: classOop) format
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 CurrentImageCoInterpreterFacadeForSpurObjectRepresentation >> formatShift [
 	^objectMemory formatShift
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 CurrentImageCoInterpreterFacadeForSpurObjectRepresentation >> getScavengeThreshold [
 	^variables
 		at: 'scavengeThreshold'
 		ifAbsentPut: [objectMemory getScavengeThreshold ifNil: [16r24680]]
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 CurrentImageCoInterpreterFacadeForSpurObjectRepresentation >> headerForSlots: numSlots format: formatField classIndex: classIndex [
 	^objectMemory headerForSlots: numSlots format: formatField classIndex: classIndex
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 CurrentImageCoInterpreterFacadeForSpurObjectRepresentation >> identityHashFullWordShift [
 	^objectMemory identityHashFullWordShift
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 CurrentImageCoInterpreterFacadeForSpurObjectRepresentation >> immutableBitMask [
 	^objectMemory immutableBitMask
 ]
 
-{ #category : #'cog jit support' }
+{ #category : 'cog jit support' }
 CurrentImageCoInterpreterFacadeForSpurObjectRepresentation >> instSpecOfClassFormat: classFormat [
 	^objectMemory instSpecOfClassFormat: classFormat
 ]
 
-{ #category : #'cog jit support' }
+{ #category : 'cog jit support' }
 CurrentImageCoInterpreterFacadeForSpurObjectRepresentation >> isFixedSizePointerFormat: formatOop [
 	^objectMemory isFixedSizePointerFormat: formatOop
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 CurrentImageCoInterpreterFacadeForSpurObjectRepresentation >> isForwardedObjectClassIndexPun [
 	^objectMemory isForwardedObjectClassIndexPun
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 CurrentImageCoInterpreterFacadeForSpurObjectRepresentation >> isImmediateClass: classOop [
 	"Can't rely on the host image; may be running on SqueakV3.  hence..."
 	^#(Character SmallInteger SmallFloat) includes: (self objectForOop: classOop) name
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 CurrentImageCoInterpreterFacadeForSpurObjectRepresentation >> maybeMethodClassOf: methodObj seemsToBeInstantiating: format [
 	"Answers if the code is installed in a class instantiating objects with the format. Used in primitive 
 	 generation to make a quick path based on where the method is installed. This method cannot
@@ -186,27 +188,27 @@ CurrentImageCoInterpreterFacadeForSpurObjectRepresentation >> maybeMethodClassOf
 	 and: [maybeClassObj instSpec = format]
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 CurrentImageCoInterpreterFacadeForSpurObjectRepresentation >> needGCFlagAddress [
 	^self addressForLabel: #needGCFlag
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 CurrentImageCoInterpreterFacadeForSpurObjectRepresentation >> numSlotsFullShift [
 	^objectMemory numSlotsFullShift
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 CurrentImageCoInterpreterFacadeForSpurObjectRepresentation >> numSlotsMask [
 	^objectMemory numSlotsMask
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 CurrentImageCoInterpreterFacadeForSpurObjectRepresentation >> numTagBits [
 	^objectMemory numTagBits
 ]
 
-{ #category : #'private-cacheing' }
+{ #category : 'private-cacheing' }
 CurrentImageCoInterpreterFacadeForSpurObjectRepresentation >> objectForOop: anOop [
 	"This is a keyAtValue: search and so needs speeding up either by a reverse map or a simple cache."
 	^(anOop bitAnd: 3) caseOf: {
@@ -220,7 +222,7 @@ CurrentImageCoInterpreterFacadeForSpurObjectRepresentation >> objectForOop: anOo
 		[3] -> [anOop signedIntFromLong >> 1] }
 ]
 
-{ #category : #'object map' }
+{ #category : 'object map' }
 CurrentImageCoInterpreterFacadeForSpurObjectRepresentation >> oopForObject: o [
 	^(o isInteger and: [o between: objectMemory minSmallInteger and: objectMemory maxSmallInteger])
 		ifTrue: [o << 1 + 1]
@@ -230,12 +232,12 @@ CurrentImageCoInterpreterFacadeForSpurObjectRepresentation >> oopForObject: o [
 				ifFalse: [objectMap at: o ifAbsentPut: [objectMap size * 8 + (1024 * 1024)]]]
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 CurrentImageCoInterpreterFacadeForSpurObjectRepresentation >> rawHashBitsOf: obj [
 	^(self objectForOop: obj) identityHash
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 CurrentImageCoInterpreterFacadeForSpurObjectRepresentation >> receiverTagBitsForMethod: methodOop [
 	^(self objectForOop: methodOop) methodClass
 		caseOf: {
@@ -245,42 +247,42 @@ CurrentImageCoInterpreterFacadeForSpurObjectRepresentation >> receiverTagBitsFor
 		otherwise: [0]
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 CurrentImageCoInterpreterFacadeForSpurObjectRepresentation >> rememberedBitShift [
 	^objectMemory rememberedBitShift
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 CurrentImageCoInterpreterFacadeForSpurObjectRepresentation >> remoteIsInstVarAccess [
 	^ 128
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 CurrentImageCoInterpreterFacadeForSpurObjectRepresentation >> scavengeThreshold [
 	^objectMemory scavengeThreshold
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 CurrentImageCoInterpreterFacadeForSpurObjectRepresentation >> shiftForWord [
 	^objectMemory shiftForWord
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 CurrentImageCoInterpreterFacadeForSpurObjectRepresentation >> smallIntegerTag [
 	^objectMemory smallIntegerTag
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 CurrentImageCoInterpreterFacadeForSpurObjectRepresentation >> smallObjectBytesForSlots: numSlots [
 	^objectMemory smallObjectBytesForSlots: numSlots
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 CurrentImageCoInterpreterFacadeForSpurObjectRepresentation >> storeCheckBoundary [
 	^objectMemory storeCheckBoundary ifNil: [16r12345678]
 ]
 
-{ #category : #testing }
+{ #category : 'testing' }
 CurrentImageCoInterpreterFacadeForSpurObjectRepresentation >> tagMask [
 	^objectMemory tagMask
 ]

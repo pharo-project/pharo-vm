@@ -17,17 +17,19 @@ unitSize
 
 "
 Class {
-	#name : #ObjectProxyForTranslatedPrimitiveSimulation,
-	#superclass : #Object,
+	#name : 'ObjectProxyForTranslatedPrimitiveSimulation',
+	#superclass : 'Object',
 	#instVars : [
 		'interpreter',
 		'oop',
 		'unitSize'
 	],
-	#category : #'VMMaker-InterpreterSimulation'
+	#category : 'VMMaker-InterpreterSimulation',
+	#package : 'VMMaker',
+	#tag : 'InterpreterSimulation'
 }
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 ObjectProxyForTranslatedPrimitiveSimulation >> at: index [
 	self assert: (index between: 1 and: self size).
 	unitSize = 1 ifTrue: [^interpreter fetchByte: index - 1 ofObject: oop].
@@ -37,7 +39,7 @@ ObjectProxyForTranslatedPrimitiveSimulation >> at: index [
 	self halt: 'Can''t handle unitSize ', unitSize printString
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 ObjectProxyForTranslatedPrimitiveSimulation >> at: index put: val [
 	self assert: (index between: 1 and: self size).
 	unitSize = 1 ifTrue: [^ interpreter storeByte: index - 1 ofObject: oop withValue: val].
@@ -47,53 +49,53 @@ ObjectProxyForTranslatedPrimitiveSimulation >> at: index put: val [
 	self halt: 'Can''t handle unitSize ', unitSize printString
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 ObjectProxyForTranslatedPrimitiveSimulation >> basicAt: offset [
 	^self at: offset
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 ObjectProxyForTranslatedPrimitiveSimulation >> basicAt: offset put: val [
 	^self at: offset put: val
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 ObjectProxyForTranslatedPrimitiveSimulation >> basicSize [
 	^self size
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 ObjectProxyForTranslatedPrimitiveSimulation >> interpreter [
 
 	^ interpreter
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 ObjectProxyForTranslatedPrimitiveSimulation >> interpreter: anObject [
 
 	interpreter := anObject
 ]
 
-{ #category : #'initialize-release' }
+{ #category : 'initialize-release' }
 ObjectProxyForTranslatedPrimitiveSimulation >> interpreter:  anInterpreter oop: objOop unitSize: baseTypeSize [
 	interpreter := anInterpreter.
 	oop := objOop.
 	unitSize := baseTypeSize
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 ObjectProxyForTranslatedPrimitiveSimulation >> oop [
 
 	^ oop
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 ObjectProxyForTranslatedPrimitiveSimulation >> oop: anObject [
 
 	oop := anObject
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 ObjectProxyForTranslatedPrimitiveSimulation >> size [
 	unitSize = 1 ifTrue: [^interpreter numBytesOf: oop].
 	unitSize = 2 ifTrue: [^interpreter num16BitUnitsOf: oop].
@@ -102,13 +104,13 @@ ObjectProxyForTranslatedPrimitiveSimulation >> size [
 	self halt: 'Can''t handle unitSize ', unitSize printString
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 ObjectProxyForTranslatedPrimitiveSimulation >> unitSize [
 
 	^ unitSize
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 ObjectProxyForTranslatedPrimitiveSimulation >> unitSize: anObject [
 
 	unitSize := anObject

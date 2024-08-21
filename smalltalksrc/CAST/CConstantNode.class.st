@@ -1,13 +1,15 @@
 Class {
-	#name : #CConstantNode,
-	#superclass : #CExpressionNode,
+	#name : 'CConstantNode',
+	#superclass : 'CExpressionNode',
 	#instVars : [
 		'value'
 	],
-	#category : #'CAST-Nodes'
+	#category : 'CAST-Nodes',
+	#package : 'CAST',
+	#tag : 'Nodes'
 }
 
-{ #category : #'instance creation' }
+{ #category : 'instance creation' }
 CConstantNode class >> value: aValue [
 
 	^ self new
@@ -15,7 +17,7 @@ CConstantNode class >> value: aValue [
 		yourself
 ]
 
-{ #category : #comparing }
+{ #category : 'comparing' }
 CConstantNode >> = anObject [
 
 	"Answer whether the receiver and anObject represent the same object."
@@ -25,12 +27,12 @@ CConstantNode >> = anObject [
 	^ value = anObject value
 ]
 
-{ #category : #generated }
+{ #category : 'generated' }
 CConstantNode >> acceptVisitor: anAbstractVisitor [
 	^ anAbstractVisitor visitConstant: self
 ]
 
-{ #category : #comparing }
+{ #category : 'comparing' }
 CConstantNode >> hash [
 
 	"Answer an integer value that is related to the identity of the receiver."
@@ -38,24 +40,24 @@ CConstantNode >> hash [
 	^ value hash
 ]
 
-{ #category : #testing }
+{ #category : 'testing' }
 CConstantNode >> isConstant [
 	
 	^ true
 ]
 
-{ #category : #testing }
+{ #category : 'testing' }
 CConstantNode >> isLeaf [
 	
 	^ true
 ]
 
-{ #category : #generated }
+{ #category : 'generated' }
 CConstantNode >> value [
 	^ value
 ]
 
-{ #category : #generated }
+{ #category : 'generated' }
 CConstantNode >> value: aSmaCCToken [
 	value := aSmaCCToken
 ]

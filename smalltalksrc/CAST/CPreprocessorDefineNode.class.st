@@ -1,15 +1,17 @@
 Class {
-	#name : #CPreprocessorDefineNode,
-	#superclass : #CGLRAbstractNode,
+	#name : 'CPreprocessorDefineNode',
+	#superclass : 'CGLRAbstractNode',
 	#instVars : [
 		'token',
 		'expression',
 		'rawMacro'
 	],
-	#category : #'CAST-Nodes'
+	#category : 'CAST-Nodes',
+	#package : 'CAST',
+	#tag : 'Nodes'
 }
 
-{ #category : #'instance creation' }
+{ #category : 'instance creation' }
 CPreprocessorDefineNode class >> token: anIdentifier expression: anExpression [
 
 	^ self new
@@ -18,7 +20,7 @@ CPreprocessorDefineNode class >> token: anIdentifier expression: anExpression [
 		  yourself
 ]
 
-{ #category : #'instance creation' }
+{ #category : 'instance creation' }
 CPreprocessorDefineNode class >> token: anIdentifier rawMacro: aString [
 
 	^ self new
@@ -27,42 +29,42 @@ CPreprocessorDefineNode class >> token: anIdentifier rawMacro: aString [
 		  yourself
 ]
 
-{ #category : #generated }
+{ #category : 'generated' }
 CPreprocessorDefineNode >> acceptVisitor: anAbstractVisitor [
 	^ anAbstractVisitor visitPreprocessorDefine: self
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 CPreprocessorDefineNode >> expression [
 
 	^ expression
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 CPreprocessorDefineNode >> expression: anObject [
 
 	expression := anObject
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 CPreprocessorDefineNode >> rawMacro [
 
 	^ rawMacro
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 CPreprocessorDefineNode >> rawMacro: anObject [
 
 	rawMacro := anObject
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 CPreprocessorDefineNode >> token [
 
 	^ token
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 CPreprocessorDefineNode >> token: anObject [
 
 	token := anObject

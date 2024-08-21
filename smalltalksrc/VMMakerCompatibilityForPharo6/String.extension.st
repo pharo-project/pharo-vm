@@ -1,6 +1,6 @@
-Extension { #name : #String }
+Extension { #name : 'String' }
 
-{ #category : #'*VMMakerCompatibilityForPharo6-converting' }
+{ #category : '*VMMakerCompatibilityForPharo6-converting' }
 String >> withBlanksTrimmed [
 	"Return a copy of the receiver from which leading and trailing blanks have been trimmed."
 

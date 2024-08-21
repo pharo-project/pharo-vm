@@ -1,10 +1,12 @@
 Class {
-	#name : #VMSpurScavengeWeakTest,
-	#superclass : #VMSpurInitializedOldSpaceTest,
-	#category : #'VMMakerTests-MemoryTests'
+	#name : 'VMSpurScavengeWeakTest',
+	#superclass : 'VMSpurInitializedOldSpaceTest',
+	#category : 'VMMakerTests-MemoryTests',
+	#package : 'VMMakerTests',
+	#tag : 'MemoryTests'
 }
 
-{ #category : #'test-format' }
+{ #category : 'test-format' }
 VMSpurScavengeWeakTest >> testNewWeakObjectShouldBeInstanceOfWeakClass [
 
 	| weakObjectOop |
@@ -14,7 +16,7 @@ VMSpurScavengeWeakTest >> testNewWeakObjectShouldBeInstanceOfWeakClass [
 	self assert: (memory fetchClassOfNonImm: weakObjectOop) equals: ourWeakClass
 ]
 
-{ #category : #'test-format' }
+{ #category : 'test-format' }
 VMSpurScavengeWeakTest >> testNewWeakObjectShouldHaveClassIndexOfItsClass [
 
 	| weakObjectOop classIndex |
@@ -26,7 +28,7 @@ VMSpurScavengeWeakTest >> testNewWeakObjectShouldHaveClassIndexOfItsClass [
 	self assert: classIndex equals: (memory ensureBehaviorHash: ourWeakClass)
 ]
 
-{ #category : #tests }
+{ #category : 'tests' }
 VMSpurScavengeWeakTest >> testScavengeOldWeakObjectReferencingNonSurvivorShouldBeNilled [
 
 	| weakObjectOop nonWeakObjectOop nonWeakObjectHash nilHash |
@@ -50,7 +52,7 @@ VMSpurScavengeWeakTest >> testScavengeOldWeakObjectReferencingNonSurvivorShouldB
 		equals: nilHash
 ]
 
-{ #category : #tests }
+{ #category : 'tests' }
 VMSpurScavengeWeakTest >> testScavengeWeakObjectReferencingNonSurvivorShouldBeNilled [
 
 	| weakObjectOop nonWeakObjectOop nilHash |
@@ -70,7 +72,7 @@ VMSpurScavengeWeakTest >> testScavengeWeakObjectReferencingNonSurvivorShouldBeNi
 		equals: nilHash
 ]
 
-{ #category : #tests }
+{ #category : 'tests' }
 VMSpurScavengeWeakTest >> testScavengeWeakObjectReferencingSurvivorShouldLeaveWeakObjectAsIs [
 
 	| weakObjectOop nonWeakObjectOop nonWeakObjectHash |

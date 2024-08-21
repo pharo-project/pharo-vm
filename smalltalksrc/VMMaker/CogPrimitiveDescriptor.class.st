@@ -1,15 +1,17 @@
 Class {
-	#name : #CogPrimitiveDescriptor,
-	#superclass : #VMStructType,
+	#name : 'CogPrimitiveDescriptor',
+	#superclass : 'VMStructType',
 	#instVars : [
 		'primitiveGenerator',
 		'primNumArgs',
 		'primMayCallBack'
 	],
-	#category : #'VMMaker-JIT'
+	#category : 'VMMaker-JIT',
+	#package : 'VMMaker',
+	#tag : 'JIT'
 }
 
-{ #category : #translation }
+{ #category : 'translation' }
 CogPrimitiveDescriptor class >> instVarNamesAndTypesForTranslationDo: aBinaryBlock [
 	"enumerate aBinaryBlock with the names and C type strings for the inst vars to include in a PrimitiveDescriptor struct."
 
@@ -22,52 +24,52 @@ CogPrimitiveDescriptor class >> instVarNamesAndTypesForTranslationDo: aBinaryBlo
 					ifFalse: [#sqInt])]
 ]
 
-{ #category : #translation }
+{ #category : 'translation' }
 CogPrimitiveDescriptor class >> structTypeName [
 	^self name allButFirst: 3 "Drop initial Cog"
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 CogPrimitiveDescriptor >> primMayCallBack [
 	
 	^ primMayCallBack
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 CogPrimitiveDescriptor >> primMayCallBack: aBoolean [
 	
 	^ primMayCallBack := aBoolean
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 CogPrimitiveDescriptor >> primNumArgs [
 	"Answer the value of primNumArgs"
 
 	^primNumArgs
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 CogPrimitiveDescriptor >> primNumArgs: anObject [
 	"Set the value of primNumArgs"
 
 	^primNumArgs := anObject
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 CogPrimitiveDescriptor >> primitiveGenerator [
 	"Answer the value of primitiveGenerator"
 
 	^primitiveGenerator
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 CogPrimitiveDescriptor >> primitiveGenerator: anObject [
 	"Set the value of primitiveGenerator"
 
 	^primitiveGenerator := anObject
 ]
 
-{ #category : #translation }
+{ #category : 'translation' }
 CogPrimitiveDescriptor >> printCInitializerOn: aStream in: aCCodeGenerator [
 	<doNotGenerate>
 	| first |

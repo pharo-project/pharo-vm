@@ -1,15 +1,17 @@
 Class {
-	#name : #CAssignmentNode,
-	#superclass : #CExpressionNode,
+	#name : 'CAssignmentNode',
+	#superclass : 'CExpressionNode',
 	#instVars : [
 		'lvalue',
 		'rvalue',
 		'operator'
 	],
-	#category : #'CAST-Nodes'
+	#category : 'CAST-Nodes',
+	#package : 'CAST',
+	#tag : 'Nodes'
 }
 
-{ #category : #'instance creation' }
+{ #category : 'instance creation' }
 CAssignmentNode class >> lvalue: lvalue operator: aString rvalue: rvalue [
 	
 	^ self new
@@ -19,13 +21,13 @@ CAssignmentNode class >> lvalue: lvalue operator: aString rvalue: rvalue [
 		yourself
 ]
 
-{ #category : #'instance creation' }
+{ #category : 'instance creation' }
 CAssignmentNode class >> lvalue: lValue rvalue: rValue [
 
 	^ self lvalue: lValue operator: '=' rvalue: rValue
 ]
 
-{ #category : #comparing }
+{ #category : 'comparing' }
 CAssignmentNode >> = anObject [
 
 	"Answer whether the receiver and anObject represent the same object."
@@ -36,12 +38,12 @@ CAssignmentNode >> = anObject [
 		  operator = anObject operator and: [ lvalue = anObject lvalue ] ]
 ]
 
-{ #category : #generated }
+{ #category : 'generated' }
 CAssignmentNode >> acceptVisitor: anAbstractVisitor [
 	^ anAbstractVisitor visitAssignment: self
 ]
 
-{ #category : #comparing }
+{ #category : 'comparing' }
 CAssignmentNode >> hash [
 
 	"Answer an integer value that is related to the identity of the receiver."
@@ -49,12 +51,12 @@ CAssignmentNode >> hash [
 	^ rvalue hash bitXor: (operator hash bitXor: lvalue hash)
 ]
 
-{ #category : #generated }
+{ #category : 'generated' }
 CAssignmentNode >> lvalue [
 	^ lvalue
 ]
 
-{ #category : #generated }
+{ #category : 'generated' }
 CAssignmentNode >> lvalue: aCGLRAbstractNode [
 	self lvalue notNil
 		ifTrue: [ self lvalue parent: nil ].
@@ -63,22 +65,22 @@ CAssignmentNode >> lvalue: aCGLRAbstractNode [
 		ifTrue: [ self lvalue parent: self ]
 ]
 
-{ #category : #generated }
+{ #category : 'generated' }
 CAssignmentNode >> operator [
 	^ operator
 ]
 
-{ #category : #generated }
+{ #category : 'generated' }
 CAssignmentNode >> operator: aSmaCCToken [
 	operator := aSmaCCToken
 ]
 
-{ #category : #generated }
+{ #category : 'generated' }
 CAssignmentNode >> rvalue [
 	^ rvalue
 ]
 
-{ #category : #generated }
+{ #category : 'generated' }
 CAssignmentNode >> rvalue: aCGLRAbstractNode [
 	self assertExpression: aCGLRAbstractNode.
 

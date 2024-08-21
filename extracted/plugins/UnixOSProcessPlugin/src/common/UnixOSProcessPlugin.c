@@ -277,13 +277,13 @@ static sqInt (*methodArgumentCount)(void);
 static sqInt (*methodReturnValue)(sqInt oop);
 static sqInt (*nilObject)(void);
 static sqInt (*pop)(sqInt nItems);
-static sqInt (*popthenPush)(sqInt nItems, sqInt oop);
+static void (*popthenPush)(sqInt nItems, sqInt oop);
 static sqInt (*popRemappableOop)(void);
 static sqInt (*primitiveFail)(void);
 static sqInt (*primitiveFailFor)(sqInt reasonCode);
-static sqInt (*push)(sqInt object);
+static void (*push)(sqInt object);
 static sqInt (*pushInteger)(sqInt integerValue);
-static sqInt (*pushRemappableOop)(sqInt oop);
+static void (*pushRemappableOop)(sqInt oop);
 static sqInt (*signalSemaphoreWithIndex)(sqInt semaIndex);
 static sqInt (*sizeOfSTArrayFromCPrimitive)(void *cPtr);
 static sqInt (*stObjectatput)(sqInt array, sqInt index, sqInt value);
@@ -315,13 +315,13 @@ extern sqInt methodArgumentCount(void);
 extern sqInt methodReturnValue(sqInt oop);
 extern sqInt nilObject(void);
 extern sqInt pop(sqInt nItems);
-extern sqInt popthenPush(sqInt nItems, sqInt oop);
+extern void popthenPush(sqInt nItems, sqInt oop);
 extern sqInt popRemappableOop(void);
 extern sqInt primitiveFail(void);
 extern sqInt primitiveFailFor(sqInt reasonCode);
-extern sqInt push(sqInt object);
+extern void push(sqInt object);
 extern sqInt pushInteger(sqInt integerValue);
-extern sqInt pushRemappableOop(sqInt oop);
+extern void pushRemappableOop(sqInt oop);
 extern sqInt signalSemaphoreWithIndex(sqInt semaIndex);
 extern sqInt sizeOfSTArrayFromCPrimitive(void *cPtr);
 extern sqInt stObjectatput(sqInt array, sqInt index, sqInt value);
@@ -939,18 +939,14 @@ forkAndExecInDirectory(sqInt useSignalHandler)
 		_exit(-1);
 	}
 	/* begin restoreDefaultSignalHandlers */
-	if (!(semaIndices == null)) {
-
-		/* nil if in interpreter simulation */
-		sigNum = 1;
-		while (sigNum <= (signalArraySize())) {
-			if ((semaIndices[sigNum]) > 0) {
-				setSignalNumberhandler(sigNum, (originalSignalHandlers())[sigNum]);
-			}
-			sigNum += 1;
+	sigNum = 1;
+	while (sigNum <= (signalArraySize())) {
+		if ((semaIndices[sigNum]) > 0) {
+			setSignalNumberhandler(sigNum, (originalSignalHandlers())[sigNum]);
 		}
+		sigNum += 1;
 	}
-	execve(progNamePtr, args, env);
+    execve(progNamePtr, args, env);
 	logErrorFromErrno(progNamePtr);
 	_exit(-1);
 	return 0;
@@ -1050,9 +1046,6 @@ forwardSignaltoSemaphoreAt(sqInt sigNum, sqInt semaphoreIndex)
 {
     void *oldHandler;
 
-	if (semaIndices == null) {
-		return null;
-	}
 	if (semaphoreIndex == 0) {
 
 		/* Disable the handler */
@@ -1194,7 +1187,9 @@ getStdHandle(sqInt n)
 		return primitiveFailFor(PrimErrNoMemory);
 	}
 	memcpy(firstIndexableField(fileOop), &fileRecords[n], sizeof(SQFile));
-	return popthenPush(1, fileOop);
+	popthenPush(1, fileOop);
+
+	return fileOop;
 }
 
 	/* OSProcessPlugin>>#getThisSessionIdentifier */
@@ -3014,14 +3009,7 @@ primitiveSemaIndexFor(void)
     sqInt sigNum;
 
 	sigNum = stackIntegerValue(0);
-	if (semaIndices == null) {
-
-		/* interpreter simulation */
-		index = 0;
-	}
-	else {
-		index = semaIndices[sigNum];
-	}
+	index = semaIndices[sigNum];
 	pop(2);
 	pushInteger(index);
 	return 0;
@@ -4301,7 +4289,6 @@ reapChildProcess(int sigNum)
 	}
 }
 
-
 /*	Signal sigNum has been caught by a thread other than the pthread in which
 	the interpreter is executing. Rather than handling it in this thread,
 	resend it to the interpreter thread. */
@@ -4323,16 +4310,13 @@ restoreDefaultSignalHandlers(void)
 {
     sqInt sigNum;
 
-	if (!(semaIndices == null)) {
-
-		/* nil if in interpreter simulation */
-		sigNum = 1;
-		while (sigNum <= (signalArraySize())) {
-			if ((semaIndices[sigNum]) > 0) {
-				setSignalNumberhandler(sigNum, (originalSignalHandlers())[sigNum]);
-			}
-			sigNum += 1;
+    /* nil if in interpreter simulation */
+	sigNum = 1;
+	while (sigNum <= (signalArraySize())) {
+		if ((semaIndices[sigNum]) > 0) {
+			setSignalNumberhandler(sigNum, (originalSignalHandlers())[sigNum]);
 		}
+		sigNum += 1;
 	}
 }
 
@@ -4448,6 +4432,14 @@ setInterpreter(struct VirtualMachine *anInterpreter)
 	return ok;
 }
 
+#  if defined(SA_NOCLDSTOP)
+/* This wrapper is used to handle the new signature of the function */
+
+static void 
+reapChildProcessWrapper(int sigNum, struct __siginfo * sigInfo, void * userData){
+	reapChildProcess(sigNum);
+}
+# endif
 
 /*	Set the SIGCHLD signal handler in the virtual machine. */
 
@@ -4459,7 +4451,7 @@ setSigChldHandler(void)
 
 	
 #  if defined(SA_NOCLDSTOP)
-	sigchldHandlerAction.sa_sigaction = reapChildProcess;
+	sigchldHandlerAction.sa_sigaction = reapChildProcessWrapper;
 	sigchldHandlerAction.sa_flags = SA_NODEFER | SA_NOCLDSTOP;
 	if (needSigaltstack()) {
 		sigchldHandlerAction.sa_flags |= SA_ONSTACK;
@@ -4557,17 +4549,12 @@ shutdownModule(void)
 {
     sqInt sigNum;
 
-	/* begin restoreDefaultSignalHandlers */
-	if (!(semaIndices == null)) {
-
-		/* nil if in interpreter simulation */
-		sigNum = 1;
-		while (sigNum <= (signalArraySize())) {
-			if ((semaIndices[sigNum]) > 0) {
-				setSignalNumberhandler(sigNum, (originalSignalHandlers())[sigNum]);
-			}
-			sigNum += 1;
+	sigNum = 1;
+	while (sigNum <= (signalArraySize())) {
+		if ((semaIndices[sigNum]) > 0) {
+			setSignalNumberhandler(sigNum, (originalSignalHandlers())[sigNum]);
 		}
+		sigNum += 1;
 	}
 	return 0;
 }
@@ -4900,7 +4887,7 @@ transientCStringFromString(sqInt aString)
 
 	/* Point to the actual C string. */
 	cString = arrayValueOf(newString);
-	(char *)strncpy(cString, stringPtr, len);
+	strncpy(cString, stringPtr, len);
 	cString[len] = 0;
 	return cString;
 }

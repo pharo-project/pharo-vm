@@ -1,6 +1,6 @@
-Extension { #name : #ArrayedCollection }
+Extension { #name : 'ArrayedCollection' }
 
-{ #category : #'*VMMaker-plugin generation' }
+{ #category : '*VMMaker-plugin generation' }
 ArrayedCollection class >> ccg: cg generateCoerceToOopFrom: aNode on: aStream [
 	"N.B.  The is used both for generation and simulation so answer the result (for interpretation)"
 	self instSize > 0 ifTrue: 
@@ -8,7 +8,7 @@ ArrayedCollection class >> ccg: cg generateCoerceToOopFrom: aNode on: aStream [
 	^cg generateCoerceToObjectFromPtr: aNode on: aStream
 ]
 
-{ #category : #'*VMMaker-plugin generation' }
+{ #category : '*VMMaker-plugin generation' }
 ArrayedCollection class >> ccg: cg generateCoerceToValueFrom: aNode on: aStream [
 	"N.B.  The could be used both for generation and simulation so answer the result (for interpretation)"
 	^cg 
@@ -16,7 +16,7 @@ ArrayedCollection class >> ccg: cg generateCoerceToValueFrom: aNode on: aStream 
 		fromObject: aNode on: aStream
 ]
 
-{ #category : #'*VMMaker-simulated image growing' }
+{ #category : '*VMMaker-simulated image growing' }
 ArrayedCollection >> copyGrownBy: n [
 	"Create a new collection containing all the elements from aCollection."
 

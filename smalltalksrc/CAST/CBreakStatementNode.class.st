@@ -1,15 +1,17 @@
 Class {
-	#name : #CBreakStatementNode,
-	#superclass : #CGLRAbstractNode,
-	#category : #'CAST-Nodes'
+	#name : 'CBreakStatementNode',
+	#superclass : 'CGLRAbstractNode',
+	#category : 'CAST-Nodes',
+	#package : 'CAST',
+	#tag : 'Nodes'
 }
 
-{ #category : #generated }
+{ #category : 'generated' }
 CBreakStatementNode >> acceptVisitor: anAbstractVisitor [
 	^ anAbstractVisitor visitBreakStatement: self
 ]
 
-{ #category : #testing }
+{ #category : 'testing' }
 CBreakStatementNode >> isBreakStatement [
 
 	^true

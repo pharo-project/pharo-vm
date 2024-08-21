@@ -1,15 +1,15 @@
-Extension { #name : #VMClass }
+Extension { #name : 'VMClass' }
 
-{ #category : #'*VMMaker' }
-VMClass class >> initializeForPlugins: optionsDictionaryOrArray [
+{ #category : '*VMMaker' }
+VMClass classSide >> initializeForPlugins: optionsDictionaryOrArray [
 	"Do a default initialization, suitable for generating plugin sources."
 	StackInterpreterSimulator
 		initializeWithOptions: optionsDictionaryOrArray
 
 ]
 
-{ #category : #'*VMMaker' }
-VMClass class >> initializeMiscConstants [
+{ #category : '*VMMaker' }
+VMClass classSide >> initializeMiscConstants [
 
 	"Falsify the `what type of VM is this?' flags that are defined in the various interp.h files.
 	 Subclass implementations need to include a super initializeMiscConstants"
@@ -74,7 +74,7 @@ VMClass class >> initializeMiscConstants [
 	PRIdSQINT := InitializationOptions at: #FormatSqInt ifAbsent: [ 'ld' ]
 ]
 
-{ #category : #'*VMMaker' }
+{ #category : '*VMMaker' }
 VMClass >> isEndOfLine: aCharacter [
 
 	<inline: true>

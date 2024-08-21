@@ -1,22 +1,24 @@
 Class {
-	#name : #TBraceCaseNode,
-	#superclass : #TParseNode,
+	#name : 'TBraceCaseNode',
+	#superclass : 'TParseNode',
 	#instVars : [
 		'caseLabels',
 		'cases',
 		'oldCases'
 	],
-	#category : #'Slang-AST'
+	#category : 'Slang-AST',
+	#package : 'Slang',
+	#tag : 'AST'
 }
 
-{ #category : #transformations }
+{ #category : 'transformations' }
 TBraceCaseNode >> bindVariableUsesIn: aDictionary [
 
 	self caseLabels: (caseLabels collect: [:node| node bindVariableUsesIn: aDictionary]).
 	self cases: (cases collect: [:node| node bindVariableUsesIn: aDictionary])
 ]
 
-{ #category : #transformations }
+{ #category : 'transformations' }
 TBraceCaseNode >> bindVariableUsesIn: aDictionary andConstantFoldIf: constantFold in: codeGen [
 	"Answer either the receiver, if it contains no references to the given variables, or a new node with the given variables rebound."
 	| newCaseLabels newCases |
@@ -31,14 +33,14 @@ TBraceCaseNode >> bindVariableUsesIn: aDictionary andConstantFoldIf: constantFol
 					yourself]
 ]
 
-{ #category : #transformations }
+{ #category : 'transformations' }
 TBraceCaseNode >> bindVariablesIn: aDictionary [
 
 	self caseLabels: (caseLabels collect: [:node| node bindVariablesIn: aDictionary]).
 	self cases: (cases collect: [:node| node bindVariablesIn: aDictionary])
 ]
 
-{ #category : #transformations }
+{ #category : 'transformations' }
 TBraceCaseNode >> bindVariablesIn: aDictionary unless: cautionaryBlock [
 
 	(cautionaryBlock value: self) ifTrue: [^self].
@@ -46,14 +48,14 @@ TBraceCaseNode >> bindVariablesIn: aDictionary unless: cautionaryBlock [
 	self cases: (cases collect: [:node| node bindVariablesIn: aDictionary unless: cautionaryBlock])
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 TBraceCaseNode >> caseLabels [
 	"Answer the value of caseLabels"
 
 	^ caseLabels
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 TBraceCaseNode >> caseLabels: anObject [
 
 	"Set the value of caseLabels"
@@ -62,14 +64,14 @@ TBraceCaseNode >> caseLabels: anObject [
 	caseLabels do: [ :e | e parent: self ]
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 TBraceCaseNode >> cases [
 	"Answer the value of cases"
 
 	^ cases
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 TBraceCaseNode >> cases: anObject [
 	"Set the value of cases"
 
@@ -77,7 +79,7 @@ TBraceCaseNode >> cases: anObject [
 	cases do: [ :e | e parent: self ]
 ]
 
-{ #category : #enumerating }
+{ #category : 'enumerating' }
 TBraceCaseNode >> nodesDo: aBlock [
 	"Apply aBlock to all nodes in the receiver.
 	 N.B. This is assumed to be bottom-up, leaves first."
@@ -88,7 +90,7 @@ TBraceCaseNode >> nodesDo: aBlock [
 	aBlock value: self
 ]
 
-{ #category : #enumerating }
+{ #category : 'enumerating' }
 TBraceCaseNode >> nodesDo: aBlock parent: parent [
 	"Apply aBlock to all nodes in the receiver with each node's parent.
 	 N.B. This is assumed to be bottom-up, leaves first."
@@ -99,7 +101,7 @@ TBraceCaseNode >> nodesDo: aBlock parent: parent [
 	aBlock value: self value: parent
 ]
 
-{ #category : #enumerating }
+{ #category : 'enumerating' }
 TBraceCaseNode >> nodesDo: aBlock parent: parent unless: cautionaryBlock [
 
 	(cautionaryBlock value: self value: parent) ifTrue: [^self].
@@ -110,7 +112,7 @@ TBraceCaseNode >> nodesDo: aBlock parent: parent unless: cautionaryBlock [
 	aBlock value: self value: parent
 ]
 
-{ #category : #enumerating }
+{ #category : 'enumerating' }
 TBraceCaseNode >> nodesDo: aBlock unless: cautionaryBlock [
 
 	(cautionaryBlock value: self) ifTrue: [^self].
@@ -121,7 +123,7 @@ TBraceCaseNode >> nodesDo: aBlock unless: cautionaryBlock [
 	aBlock value: self
 ]
 
-{ #category : #enumerating }
+{ #category : 'enumerating' }
 TBraceCaseNode >> replaceNodesIn: aDictionary [
 
 	^aDictionary at: self ifAbsent: [
@@ -130,7 +132,7 @@ TBraceCaseNode >> replaceNodesIn: aDictionary [
 		self]
 ]
 
-{ #category : #'type inference' }
+{ #category : 'type inference' }
 TBraceCaseNode >> typeOrNilFrom: aCodeGenerator in: aTMethod [
 	| types |
 	types := Set withAll: (cases collect: [:case| case typeOrNilFrom: aCodeGenerator in: aTMethod]).

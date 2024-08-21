@@ -2,12 +2,14 @@
 This plugin pulls together a number of string and array related primitives.  In the olden days these primitives were generated as ""translated primitives"", which generated the primitive versions form methods in the image.  In 2018 they were rewritten to use conventional Slang.
 "
 Class {
-	#name : #MiscPrimitivePlugin,
-	#superclass : #InterpreterPlugin,
-	#category : #'VMMaker-Plugins'
+	#name : 'MiscPrimitivePlugin',
+	#superclass : 'InterpreterPlugin',
+	#category : 'VMMaker-Plugins',
+	#package : 'VMMaker',
+	#tag : 'Plugins'
 }
 
-{ #category : #'helper functions' }
+{ #category : 'helper functions' }
 MiscPrimitivePlugin >> encodeBytesOf: anInt in: ba at: i [
 	"Copy the integer anInt into byteArray ba at index i, and answer the next index"
 	<inline: #always>
@@ -17,7 +19,7 @@ MiscPrimitivePlugin >> encodeBytesOf: anInt in: ba at: i [
 	^i + 4
 ]
 
-{ #category : #'helper functions' }
+{ #category : 'helper functions' }
 MiscPrimitivePlugin >> encodeInt: anInt in: ba at: i [
 	"Encode the integer anInt in byteArray ba at index i, and answer the next index.
 	 The encoding is as follows...
@@ -33,7 +35,7 @@ MiscPrimitivePlugin >> encodeInt: anInt in: ba at: i [
 	^self encodeBytesOf: anInt in: ba at: i + 1
 ]
 
-{ #category : #primitives }
+{ #category : 'primitives' }
 MiscPrimitivePlugin >> primitiveCompareString [
 	"ByteString (class) compare: string1 with: string2 collated: order"
 	<export: true>
@@ -66,7 +68,7 @@ MiscPrimitivePlugin >> primitiveCompareString [
 		(len1 = len2 ifTrue: [2] ifFalse: [len1 < len2 ifTrue: [1] ifFalse: [3]])
 ]
 
-{ #category : #primitives }
+{ #category : 'primitives' }
 MiscPrimitivePlugin >> primitiveCompressToByteArray [
 	"Bitmap compress: bm toByteArray: ba"
 	<export: true>
@@ -122,7 +124,7 @@ MiscPrimitivePlugin >> primitiveCompressToByteArray [
 	interpreterProxy methodReturnInteger: i
 ]
 
-{ #category : #primitives }
+{ #category : 'primitives' }
 MiscPrimitivePlugin >> primitiveConvert8BitSigned [
 	"SampledSound (class) convert8bitSignedFrom: aByteArray to16Bit: aSoundBuffer"
 	<export: true>
@@ -157,7 +159,7 @@ MiscPrimitivePlugin >> primitiveConvert8BitSigned [
 	interpreterProxy methodReturnReceiver
 ]
 
-{ #category : #primitives }
+{ #category : 'primitives' }
 MiscPrimitivePlugin >> primitiveDecompressFromByteArray [
 	"Bitmap decompress: bm fromByteArray: ba at: index"
 	<export: true>
@@ -233,7 +235,7 @@ MiscPrimitivePlugin >> primitiveDecompressFromByteArray [
 	interpreterProxy pop: interpreterProxy methodArgumentCount
 ]
 
-{ #category : #primitives }
+{ #category : 'primitives' }
 MiscPrimitivePlugin >> primitiveFindFirstInString [
 	"ByteString (class) findFirstInString: aString inSet: inclusionMap  startingAt: start"
 	<export: true>
@@ -261,7 +263,7 @@ MiscPrimitivePlugin >> primitiveFindFirstInString [
 	interpreterProxy methodReturnInteger: (i >= stringSize ifTrue: [0] ifFalse: [i + 1])
 ]
 
-{ #category : #primitives }
+{ #category : 'primitives' }
 MiscPrimitivePlugin >> primitiveFindSubstring [
 	"ByteString findSubstring: key in: body startingAt: start matchTable: matchTable"
 	<export: true>
@@ -300,7 +302,7 @@ MiscPrimitivePlugin >> primitiveFindSubstring [
 	^interpreterProxy methodReturnInteger: 0
 ]
 
-{ #category : #primitives }
+{ #category : 'primitives' }
 MiscPrimitivePlugin >> primitiveIndexOfAsciiInString [
 	"ByteString indexOfAscii: anInteger inString: aString startingAt: start"
 	<export: true>
@@ -326,7 +328,7 @@ MiscPrimitivePlugin >> primitiveIndexOfAsciiInString [
 	^interpreterProxy methodReturnInteger: 0
 ]
 
-{ #category : #primitives }
+{ #category : 'primitives' }
 MiscPrimitivePlugin >> primitiveStringHash [
 	"ByteArray (class) hashBytes: aByteArray startingWith: speciesHash"
 	<export: true>
@@ -347,7 +349,7 @@ MiscPrimitivePlugin >> primitiveStringHash [
 	interpreterProxy methodReturnInteger: (hash bitAnd: 16r0FFFFFFF)
 ]
 
-{ #category : #primitives }
+{ #category : 'primitives' }
 MiscPrimitivePlugin >> primitiveTranslateStringWithTable [
 	"ByteString (class) translate: aString from: start to: stop table: table"
 	<export: true>

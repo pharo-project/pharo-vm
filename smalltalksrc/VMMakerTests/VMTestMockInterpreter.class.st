@@ -1,14 +1,15 @@
 Class {
-	#name : #VMTestMockInterpreter,
-	#superclass : #StackInterpreterSimulatorLSB,
+	#name : 'VMTestMockInterpreter',
+	#superclass : 'StackInterpreterSimulatorLSB',
 	#instVars : [
 		'interpreteBlock',
 		'allocatedElements'
 	],
-	#category : #VMMakerTests
+	#category : 'VMMakerTests',
+	#package : 'VMMakerTests'
 }
 
-{ #category : #'memory testing' }
+{ #category : 'memory testing' }
 VMTestMockInterpreter >> allocateParameters: anInteger using: allocationBlock [
 	
 	| allocated |
@@ -19,43 +20,43 @@ VMTestMockInterpreter >> allocateParameters: anInteger using: allocationBlock [
 	^ allocated
 ]
 
-{ #category : #'memory testing' }
+{ #category : 'memory testing' }
 VMTestMockInterpreter >> allocatedElements [
 	
 	^ allocatedElements 
 ]
 
-{ #category : #initialization }
+{ #category : 'initialization' }
 VMTestMockInterpreter >> basicInitialize [
 
 	super basicInitialize.
 	allocatedElements := Set new
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 VMTestMockInterpreter >> enterSmalltalkExecutiveImplementation [ 
 
 	interpreteBlock value
 ]
 
-{ #category : #initialization }
+{ #category : 'initialization' }
 VMTestMockInterpreter >> free: aPointer [
 
 	allocatedElements remove: aPointer.
 	^ super free: aPointer
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 VMTestMockInterpreter >> interpreteBlock [
 	^ interpreteBlock
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 VMTestMockInterpreter >> interpreteBlock: anObject [
 	interpreteBlock := anObject
 ]
 
-{ #category : #initialization }
+{ #category : 'initialization' }
 VMTestMockInterpreter >> malloc: aSize [
 
 	^ allocatedElements add: (super malloc: aSize)

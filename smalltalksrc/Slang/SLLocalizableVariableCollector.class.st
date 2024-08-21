@@ -18,8 +18,8 @@ collector localizableVariables.
 ```
 "
 Class {
-	#name : #SLLocalizableVariableCollector,
-	#superclass : #Object,
+	#name : 'SLLocalizableVariableCollector',
+	#superclass : 'Object',
 	#instVars : [
 		'codeGenerator',
 		'alreadyVisited',
@@ -27,10 +27,12 @@ Class {
 		'localizableCandidateVariables',
 		'localizableVariables'
 	],
-	#category : #'Slang-Optimizations'
+	#category : 'Slang-Optimizations',
+	#package : 'Slang',
+	#tag : 'Optimizations'
 }
 
-{ #category : #'instance creation' }
+{ #category : 'instance creation' }
 SLLocalizableVariableCollector class >> inCodeGenerator: aCodeGenerator localizableCandidateVariables: aCollectionOfCandidates callgraphVariableCollector: aCollector [
 	
 	^ self new
@@ -40,31 +42,31 @@ SLLocalizableVariableCollector class >> inCodeGenerator: aCodeGenerator localiza
 		yourself
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 SLLocalizableVariableCollector >> callgraphVariableCollector [
 
 	^ callgraphVariableCollector
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 SLLocalizableVariableCollector >> callgraphVariableCollector: anObject [
 
 	callgraphVariableCollector := anObject
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 SLLocalizableVariableCollector >> codeGenerator [
 
 	^ codeGenerator
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 SLLocalizableVariableCollector >> codeGenerator: anObject [
 
 	codeGenerator := anObject
 ]
 
-{ #category : #initialization }
+{ #category : 'initialization' }
 SLLocalizableVariableCollector >> initialize [
 
 	super initialize.
@@ -72,31 +74,31 @@ SLLocalizableVariableCollector >> initialize [
 	alreadyVisited := Set new.
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 SLLocalizableVariableCollector >> localizableCandidateVariables [
 
 	^ localizableCandidateVariables
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 SLLocalizableVariableCollector >> localizableCandidateVariables: anObject [
 
 	localizableCandidateVariables := anObject
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 SLLocalizableVariableCollector >> localizableVariables [
 	^ localizableVariables
 ]
 
-{ #category : #visiting }
+{ #category : 'visiting' }
 SLLocalizableVariableCollector >> visitAssignmentNode: aTAssignmentNode [ 
 	
 	aTAssignmentNode variable accept: self.
 	aTAssignmentNode expression accept: self.
 ]
 
-{ #category : #visiting }
+{ #category : 'visiting' }
 SLLocalizableVariableCollector >> visitCaseStatementNode: aTCaseStmtNode [ 
 	
 	"Do not recurse on children of a case statement.
@@ -104,39 +106,39 @@ SLLocalizableVariableCollector >> visitCaseStatementNode: aTCaseStmtNode [
 	aTCaseStmtNode expression accept: self
 ]
 
-{ #category : #visiting }
+{ #category : 'visiting' }
 SLLocalizableVariableCollector >> visitConstantNode: aTConstantNode [ 
 	
 	"Nothing for constants"
 ]
 
-{ #category : #visiting }
+{ #category : 'visiting' }
 SLLocalizableVariableCollector >> visitGoToNode: aTGoToNode [ 
 	
 	"Nothing"
 ]
 
-{ #category : #visiting }
+{ #category : 'visiting' }
 SLLocalizableVariableCollector >> visitInlineNode: aTInlineNode [
 	
 	"Do not recurse on children of an inline statement.
 	Children will be recursed as separate statements"
 ]
 
-{ #category : #visiting }
+{ #category : 'visiting' }
 SLLocalizableVariableCollector >> visitLabeledCommentNode: aTLabeledCommentNode [ 
 	
 	"Nothing"
 ]
 
-{ #category : #visiting }
+{ #category : 'visiting' }
 SLLocalizableVariableCollector >> visitReturnNode: aTReturnNode [ 
 	
 	"If we are doing a return node, we should externalize everything, no need to go into children"
 	localizableVariables addAll: localizableCandidateVariables
 ]
 
-{ #category : #visiting }
+{ #category : 'visiting' }
 SLLocalizableVariableCollector >> visitSendNode: aTSendNode [
 
 	(codeGenerator isDynamicCall: aTSendNode)
@@ -154,13 +156,13 @@ SLLocalizableVariableCollector >> visitSendNode: aTSendNode [
 		thenDo: [ :each | localizableVariables add: each ]
 ]
 
-{ #category : #visiting }
+{ #category : 'visiting' }
 SLLocalizableVariableCollector >> visitStatementListNode: aTStatementListNode [ 
 	
 	aTStatementListNode statements do: [ :e | e accept: self ]
 ]
 
-{ #category : #visiting }
+{ #category : 'visiting' }
 SLLocalizableVariableCollector >> visitSwitchStatementNode: aTSwitchStmtNode [ 
 	
 	"Do not recurse on children of a case statement.
@@ -168,7 +170,7 @@ SLLocalizableVariableCollector >> visitSwitchStatementNode: aTSwitchStmtNode [
 	aTSwitchStmtNode expression accept: self
 ]
 
-{ #category : #visiting }
+{ #category : 'visiting' }
 SLLocalizableVariableCollector >> visitVariableNode: aTVariableNode [ 
 	
 	(localizableCandidateVariables includes: aTVariableNode name)

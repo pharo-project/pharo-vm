@@ -41,6 +41,7 @@ set(APPNAME			"Pharo"         CACHE STRING                 "VM Application name"
 set(FLAVOUR			"CoInterpreter" CACHE STRING                 "The kind of VM to generate. Possible values: StackVM, CoInterpreter")
 set(PHARO_LIBRARY_PATH		"@executable_path/Plugins" CACHE STRING      "The RPATH to use in the build")
 set(ICEBERG_DEFAULT_REMOTE	"scpUrl"        CACHE STRING                 "If Iceberg uses HTTPS (httpsUrl) or tries first with SSH (scpUrl)")
+set(CMAKE_OSX_DEPLOYMENT_TARGET "11.0")
 
 if(VERBOSE_BUILD)
     set(CMAKE_VERBOSE_MAKEFILE TRUE)
@@ -51,8 +52,8 @@ include(cmake/versionExtraction.cmake)
 extractVCSInformation(GIT_COMMIT_HASH GIT_DESCRIBE GIT_COMMIT_DATE)
 
 set(VERSION_MAJOR 10)
-set(VERSION_MINOR 0)
-set(VERSION_PATCH_NUMBER 9)
+set(VERSION_MINOR 3)
+set(VERSION_PATCH_NUMBER 0)
 
 if(BUILD_IS_RELEASE)
 	set(VERSION_PATCH "${VERSION_PATCH_NUMBER}")
@@ -259,9 +260,6 @@ elseif(UNIX)
         set(OSX 1)
         set(OS_TYPE "Mac OS")
         set(VM_TARGET_OS "1000") # Used to recognise OS X
-
-        set(COMMON_FLAGS "-stdlib=libc++ -mmacosx-version-min=10.7 ${COMMON_FLAGS}")
-
     elseif(${CMAKE_SYSTEM_NAME} MATCHES "Linux")
         set(VM_TARGET_OS "linux-gnu")
     elseif(${CMAKE_SYSTEM_NAME} MATCHES "OpenBSD")
@@ -317,24 +315,16 @@ add_compile_options(
     -Wno-unused-variable
     -Wno-unused-but-set-variable
     -Wno-int-conversion
-    -Wno-unused-value
     -Wno-absolute-value
     -Wno-unused-function
     -Wno-non-literal-null-conversion
     -Wno-pointer-integer-compare
     -Wno-unknown-pragmas
     -Wno-pointer-sign
-    -Wno-constant-conversion
-    -Wno-tautological-pointer-compare
     -Wno-deprecated-declarations
     -Wno-pointer-to-int-cast
     -Wno-compare-distinct-pointer-types
-    -Wno-conditional-type-mismatch
-    -Wno-incompatible-function-pointer-types
-    -Wno-return-type
     -Wno-unused-local-typedef
-    -Wno-incompatible-pointer-types
-    -Wno-shift-negative-value
     -Wno-unknown-warning-option
 )
 
@@ -569,6 +559,13 @@ add_subdirectory(ffiTestLibrary ${CMAKE_CURRENT_BINARY_DIR}/build/ffiTestLibrary
 
 # Handling Third party dependencies
 add_third_party_dependencies_per_platform()
+
+if (UNIX)
+    addIndependentLibraryWithRPATH(tty ${CMAKE_CURRENT_SOURCE_DIR}/tty/tty.c)
+endif()
+
+# Signing Setup
+include(cmake/sign.cmake)
 
 # Packaging Setup
 include(cmake/packaging.cmake)

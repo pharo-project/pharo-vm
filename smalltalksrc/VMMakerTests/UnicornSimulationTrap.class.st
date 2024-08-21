@@ -1,14 +1,16 @@
 Class {
-	#name : #UnicornSimulationTrap,
-	#superclass : #Object,
+	#name : 'UnicornSimulationTrap',
+	#superclass : 'Object',
 	#instVars : [
 		'unicornInvalidAccess',
 		'simulator'
 	],
-	#category : #'VMMakerTests-Unicorn'
+	#category : 'VMMakerTests-Unicorn',
+	#package : 'VMMakerTests',
+	#tag : 'Unicorn'
 }
 
-{ #category : #'instance creation' }
+{ #category : 'instance creation' }
 UnicornSimulationTrap class >> simulator: simulator error: anUnicornInvalidMemoryAccess [
 
 	^ self new
@@ -17,13 +19,13 @@ UnicornSimulationTrap class >> simulator: simulator error: anUnicornInvalidMemor
 		yourself
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 UnicornSimulationTrap >> address [
 	
 	^ unicornInvalidAccess address
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 UnicornSimulationTrap >> nextpc [
 	
 	| instruction |
@@ -31,7 +33,7 @@ UnicornSimulationTrap >> nextpc [
 	^ self simulator instructionPointerRegisterValue + instruction size
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 UnicornSimulationTrap >> registerAccessor [
 	
 	"Assume this is a read of a value into a register"
@@ -44,18 +46,18 @@ UnicornSimulationTrap >> registerAccessor [
 	^ (registerName , ':') asSymbol
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 UnicornSimulationTrap >> simulator [
 	
 	^ simulator
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 UnicornSimulationTrap >> simulator: anObject [
 	simulator := anObject
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 UnicornSimulationTrap >> type [
 	
 	unicornInvalidAccess type = UcMemoryAccessType UC_MEM_WRITE_UNMAPPED
@@ -68,12 +70,12 @@ UnicornSimulationTrap >> type [
 	self halt
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 UnicornSimulationTrap >> unicornInvalidAccess: anUnicornInvalidMemoryAccess [ 
 	unicornInvalidAccess := anUnicornInvalidMemoryAccess
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 UnicornSimulationTrap >> writtenValue [
 	"This is the value that was tried to be written but failed (if this is a failed write)"
 	^ unicornInvalidAccess value

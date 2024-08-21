@@ -15,8 +15,8 @@ temp2
 method
 "
 Class {
-	#name : #StackBuilderTest,
-	#superclass : #VMInterpreterTests,
+	#name : 'StackBuilderTest',
+	#superclass : 'VMInterpreterTests',
 	#instVars : [
 		'stackElement1',
 		'stackElement2',
@@ -32,10 +32,12 @@ Class {
 	#pools : [
 		'VMStackFrameOffsets'
 	],
-	#category : #'VMMakerTests-InterpreterTests'
+	#category : 'VMMakerTests-InterpreterTests',
+	#package : 'VMMakerTests',
+	#tag : 'InterpreterTests'
 }
 
-{ #category : #offset }
+{ #category : 'offset' }
 StackBuilderTest >> addFullFrame [
 
 	| frame |
@@ -69,78 +71,78 @@ StackBuilderTest >> addFullFrame [
 	^ frame
 ]
 
-{ #category : #offset }
+{ #category : 'offset' }
 StackBuilderTest >> offsetArgument1 [
 	^ self offsetArgument2 + 1
 ]
 
-{ #category : #offset }
+{ #category : 'offset' }
 StackBuilderTest >> offsetArgument1FromBaseFP [
 	^ self offsetArgument2FromBaseFP + 1
 ]
 
-{ #category : #offset }
+{ #category : 'offset' }
 StackBuilderTest >> offsetArgument2 [
 	"we skip the frame pointer"
 	^ self offsetMethod + 2
 ]
 
-{ #category : #offset }
+{ #category : 'offset' }
 StackBuilderTest >> offsetArgument2FromBaseFP [
 	^ 2
 ]
 
-{ #category : #offset }
+{ #category : 'offset' }
 StackBuilderTest >> offsetCallerFP [
 	^ self offsetMethod + 1
 ]
 
-{ #category : #offset }
+{ #category : 'offset' }
 StackBuilderTest >> offsetContext [ 
 	^ self offsetFlags + 1
 ]
 
-{ #category : #offset }
+{ #category : 'offset' }
 StackBuilderTest >> offsetFlags [
 	^ self offsetReceiver + 1
 ]
 
-{ #category : #offset }
+{ #category : 'offset' }
 StackBuilderTest >> offsetInstructionPointer [
 	^ 0
 ]
 
-{ #category : #offset }
+{ #category : 'offset' }
 StackBuilderTest >> offsetMethod [
 	^ self offsetContext + 1
 ]
 
-{ #category : #offset }
+{ #category : 'offset' }
 StackBuilderTest >> offsetReceiver [
 	^ self offsetTemp1 + 1 
 ]
 
-{ #category : #offset }
+{ #category : 'offset' }
 StackBuilderTest >> offsetStackElement1 [
 	^ self offsetStackElement2 + 1
 ]
 
-{ #category : #offset }
+{ #category : 'offset' }
 StackBuilderTest >> offsetStackElement2 [
 	^ self offsetInstructionPointer + 1
 ]
 
-{ #category : #offset }
+{ #category : 'offset' }
 StackBuilderTest >> offsetTemp1 [
 	^ self offsetTemp2 + 1
 ]
 
-{ #category : #offset }
+{ #category : 'offset' }
 StackBuilderTest >> offsetTemp2 [
 	^ self offsetStackElement1 + 1
 ]
 
-{ #category : #running }
+{ #category : 'running' }
 StackBuilderTest >> setUp [
 	super setUp.
 	
@@ -155,14 +157,14 @@ StackBuilderTest >> setUp [
 
 ]
 
-{ #category : #'test-VMstate' }
+{ #category : 'test-VMstate' }
 StackBuilderTest >> testCallerFrameOfTopFrameShouldBeSecondFrameBuilderObject [
 	"For debug purpose, we added a link to the caller frame in the current frame."
 	self assert: (stackBuilder topFrame callerFrame) 
 		equals: (stackBuilder frames nextToLast)
 ]
 
-{ #category : #'test-VMstate' }
+{ #category : 'test-VMstate' }
 StackBuilderTest >> testCallerInstructionPointerIsPushedInStack [
 	"We have 3 frames. 
 	The caller of the caller of the top frame is the first one, which is the base"
@@ -170,7 +172,7 @@ StackBuilderTest >> testCallerInstructionPointerIsPushedInStack [
 		equals: stackBuilder frames second instructionPointer.
 ]
 
-{ #category : #'test-setFromMethod' }
+{ #category : 'test-setFromMethod' }
 StackBuilderTest >> testFrameHasMoreArgumentsThanMethodShouldFail [
 
 	| frame |
@@ -185,7 +187,7 @@ StackBuilderTest >> testFrameHasMoreArgumentsThanMethodShouldFail [
 	self should: [ stackBuilder buildStack ] raise: Error
 ]
 
-{ #category : #'test-setFromMethod' }
+{ #category : 'test-setFromMethod' }
 StackBuilderTest >> testFrameHasMoreTemporariesThanMethodShouldFail [
 
 	| frame |
@@ -200,7 +202,7 @@ StackBuilderTest >> testFrameHasMoreTemporariesThanMethodShouldFail [
 	self should: [ stackBuilder buildStack ] raise: Error
 ]
 
-{ #category : #'test-VMstate' }
+{ #category : 'test-VMstate' }
 StackBuilderTest >> testHeadFramePointerCallerCallerIsBaseFramePointer [
 	"We have 3 frames. 
 	The caller of the caller of the top frame is the first one, which is the base"
@@ -208,7 +210,7 @@ StackBuilderTest >> testHeadFramePointerCallerCallerIsBaseFramePointer [
 		equals: stackBuilder page baseFP
 ]
 
-{ #category : #'test-VMstate' }
+{ #category : 'test-VMstate' }
 StackBuilderTest >> testHeadFramePointerCallerIsNotBaseFramePointer [
 	"We have 3 frames. 
 	The caller of the top frame should be the middle one"
@@ -216,7 +218,7 @@ StackBuilderTest >> testHeadFramePointerCallerIsNotBaseFramePointer [
 		equals: stackBuilder page baseFP
 ]
 
-{ #category : #'test-setFromMethod' }
+{ #category : 'test-setFromMethod' }
 StackBuilderTest >> testInstructionPointerIsSetBeforeFirstBytecodeOfLastMethodPushed [
 
 	method := methodBuilder newMethod buildMethod.
@@ -228,7 +230,7 @@ StackBuilderTest >> testInstructionPointerIsSetBeforeFirstBytecodeOfLastMethodPu
 		equals: (methodBuilder bytecodeAt: 0 forMethod: method)
 ]
 
-{ #category : #'test-setFromMethod' }
+{ #category : 'test-setFromMethod' }
 StackBuilderTest >> testMethodHasMoreArgumentsThanFrameShouldUpdateFrame [
 
 	| frame argNum |
@@ -247,7 +249,7 @@ StackBuilderTest >> testMethodHasMoreArgumentsThanFrameShouldUpdateFrame [
 	self assert: frame argumentSize equals: argNum
 ]
 
-{ #category : #'test-setFromMethod' }
+{ #category : 'test-setFromMethod' }
 StackBuilderTest >> testMethodHasMoreTemporariesThanFrameShouldUpdateFrame [
 
 	| frame tempNum |
@@ -268,37 +270,37 @@ StackBuilderTest >> testMethodHasMoreTemporariesThanFrameShouldUpdateFrame [
 		equals: (OrderedCollection new: tempNum withAll: memory nilObject)
 ]
 
-{ #category : #'test-order' }
+{ #category : 'test-order' }
 StackBuilderTest >> testOrderArgument1InBaseFrame [
 	self assert: (interpreter stackPages unsignedLongAt: interpreter stackPage baseFP + (self offsetArgument1FromBaseFP * memory bytesPerOop))
 		equals: argument1
 ]
 
-{ #category : #'test-order' }
+{ #category : 'test-order' }
 StackBuilderTest >> testOrderArgument2InBaseFrame [
 	self assert: (interpreter stackPages unsignedLongAt: interpreter stackPage baseFP + (self offsetArgument2FromBaseFP * memory bytesPerOop))
 		equals: argument2
 ]
 
-{ #category : #'test-order' }
+{ #category : 'test-order' }
 StackBuilderTest >> testOrderContext [
 	self assert: (interpreter stackValue: self offsetContext)
 		equals: context
 ]
 
-{ #category : #'test-order' }
+{ #category : 'test-order' }
 StackBuilderTest >> testOrderMethod [
 	self assert: (interpreter stackValue: self offsetMethod)
 		equals: method
 ]
 
-{ #category : #'test-order' }
+{ #category : 'test-order' }
 StackBuilderTest >> testOrderReceiver [
 	self assert: (interpreter stackValue: self offsetReceiver)
 		equals: receiver
 ]
 
-{ #category : #'test-order' }
+{ #category : 'test-order' }
 StackBuilderTest >> testOrderStackElementIsReversed [
 	self assert: (interpreter stackValue: self offsetStackElement1)
 		equals: stackElement1.
@@ -306,7 +308,7 @@ StackBuilderTest >> testOrderStackElementIsReversed [
 		equals: stackElement2.
 ]
 
-{ #category : #'test-order' }
+{ #category : 'test-order' }
 StackBuilderTest >> testOrderStackTopOfSuspendedProcessIsInstructionPointer [
 	"When a process is suspended, the Instruction Pointer is pushed on the stack of the frame.
 	It should be the last thing pushed, and therefore, be at the top. "
@@ -314,7 +316,7 @@ StackBuilderTest >> testOrderStackTopOfSuspendedProcessIsInstructionPointer [
 		equals: instructionPointer.
 ]
 
-{ #category : #'test-order' }
+{ #category : 'test-order' }
 StackBuilderTest >> testOrderTempIsReversed [
 	self assert: (interpreter stackValue: self offsetTemp1)
 		equals: temp1.
@@ -322,7 +324,7 @@ StackBuilderTest >> testOrderTempIsReversed [
 		equals: temp2.
 ]
 
-{ #category : #'test-VMstate' }
+{ #category : 'test-VMstate' }
 StackBuilderTest >> testPageHeadFPIsLastFrameFP [
 	"The FramePointer of the interpreter should be the FramePointer of the current process last pushed frame."
 	self assert: interpreter framePointer
