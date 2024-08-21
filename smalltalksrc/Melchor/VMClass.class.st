@@ -568,20 +568,6 @@ VMClass >> fgetc: file [
 	^ file next
 ]
 
-{ #category : 'memory access' }
-VMClass >> floatAtPointer: pointer [
-
-	<doNotGenerate>
-	self notYetImplemented 
-]
-
-{ #category : 'memory access' }
-VMClass >> floatAtPointer: pointer put: value [
-
-	<doNotGenerate>
-	self notYetImplemented
-]
-
 { #category : 'file primitives' }
 VMClass >> fprintf: aStream _: format [ 
 

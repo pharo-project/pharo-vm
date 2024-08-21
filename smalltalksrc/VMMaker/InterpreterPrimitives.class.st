@@ -128,12 +128,6 @@ InterpreterPrimitives >> asUnsigned: anInteger [
 	^self cCode: [anInteger asUnsignedInteger] inSmalltalk: [anInteger bitAnd: objectMemory maxCInteger]
 ]
 
-{ #category : 'stack access' }
-InterpreterPrimitives >> booleanValueOf: obj [
-
-	self subclassResponsibility
-]
-
 { #category : 'primitive support' }
 InterpreterPrimitives >> cStringOrNullFor: oop [
 	"Answer either a malloced string with the null-terminated contents of oop if oop is a string,
@@ -326,15 +320,12 @@ InterpreterPrimitives >> isInstanceOfClassArray: oop [
 
 { #category : 'primitive support' }
 InterpreterPrimitives >> isInstanceOfClassBlockClosure: oop [
+
 	<inline: true>
-	"N.B.  Because Slang always inlines is:instanceOf:compactClassIndex:
-	 (because is:instanceOf:compactClassIndex: has an inline: pragma) the
-	 phrase (objectMemory splObj: ClassBlockClosure) is expanded in-place
-	 and is _not_ evaluated if oop has a non-zero CompactClassIndex."
-	^objectMemory
-		is: oop
-		instanceOf: nil
-		compactClassIndex: ClassFullBlockClosureCompactIndex
+	^ objectMemory
+		  is: oop
+		  instanceOf: nil
+		  compactClassIndex: ClassFullBlockClosureCompactIndex
 ]
 
 { #category : 'primitive support' }
@@ -578,12 +569,6 @@ InterpreterPrimitives >> noInlineSigned32BitValueGutsOf: oop [
 		ifTrue: [value := 0 - magnitude]
 		ifFalse: [value := magnitude].
 	^value
-]
-
-{ #category : 'stack access' }
-InterpreterPrimitives >> pop: nItems thenPushBool: boolean [
-
-	self subclassResponsibility
 ]
 
 { #category : 'primitive support' }
@@ -2965,28 +2950,6 @@ InterpreterPrimitives >> primitiveObjectPointsTo [
 		(objectMemory longAt: rcvr + i) = thang ifTrue:
 			[^self pop: 2 thenPushBool: true]].
 	self pop: 2 thenPushBool: false
-]
-
-{ #category : 'other primitives' }
-InterpreterPrimitives >> primitivePathToUsing [
-	"primitivePathTo: anObject using: stack <Array> followWeak: boolean
-	 Answer a path to anObject from the root that does not pass through
-	 the current context"
-	| err path |
-	<export: true>
-	self writeBackHeadFramePointers.
-	argumentCount >= 2 ifFalse:
-		[^self primitiveFailFor: PrimErrBadNumArgs].
-	(self stackTop = objectMemory trueObject
-	 or: [self stackTop = objectMemory falseObject]) ifFalse:
-		[^self primitiveFailFor: PrimErrBadArgument].
-	err := self pathTo: (self stackValue: 2)
-				using: (self stackValue: 1)
-				followWeak: self stackTop = objectMemory trueObject.
-	err ~= 0 ifTrue:
-		[^self primitiveFailFor: err].
-	path := self self stackValue: 1.
-	self pop: argumentCount + 1 thenPush: path
 ]
 
 { #category : 'control primitives' }

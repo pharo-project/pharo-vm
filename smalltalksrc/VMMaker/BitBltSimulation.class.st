@@ -418,20 +418,6 @@ BitBltSimulation class >> timingTest: extent [
 		with: (Time millisecondsToRun: [100 timesRepeat: [f copyBits: f boundingBox from: f2 at: 0 @ 0 colorMap: map]])
 ]
 
-{ #category : 'system simulation' }
-BitBltSimulation class >> warpBitsFrom: aBitBlt [
-	"Simulate the warpBits primitive"
-	| proxy bb |
-	proxy := InterpreterProxy new.
-	proxy loadStackFrom: thisContext sender home.
-	bb := self simulatorClass new.
-	bb initialiseModule.
-	bb setInterpreter: proxy.
-	proxy success: (bb loadWarpBltFrom: aBitBlt).
-	bb warpBits.
-	^proxy stackValue: 0
-]
-
 { #category : 'combination rules' }
 BitBltSimulation >> OLDrgbDiff: sourceWord with: destinationWord [
 	"Subract the pixels in the source and destination, color by color,

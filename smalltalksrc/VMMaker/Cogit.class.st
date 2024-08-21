@@ -204,12 +204,9 @@ Class {
 		'ceEnterCogCodePopReceiverReg',
 		'ceCallCogCodePopReceiverReg',
 		'ceCallCogCodePopReceiverAndClassRegs',
-		'cePrimReturnEnterCogCode',
-		'cePrimReturnEnterCogCodeProfiling',
 		'ceNonLocalReturnTrampoline',
 		'ceFetchContextInstVarTrampoline',
 		'ceStoreContextInstVarTrampoline',
-		'ceEnclosingObjectTrampoline',
 		'ceFlushICache',
 		'ceCheckFeaturesFunction',
 		'ceTraceLinkedSendTrampoline',
@@ -222,9 +219,6 @@ Class {
 		'superSendTrampolines',
 		'directedSuperSendTrampolines',
 		'directedSuperBindingSendTrampolines',
-		'dynamicSuperSendTrampolines',
-		'outerSendTrampolines',
-		'selfSendTrampolines',
 		'firstSend',
 		'lastSend',
 		'realCEEnterCogCodePopReceiverReg',
@@ -242,13 +236,8 @@ Class {
 		'extB',
 		'numExtB',
 		'tempOop',
-		'numIRCs',
-		'indexOfIRC',
-		'theIRCs',
 		'receiverTags',
-		'implicitReceiverSendTrampolines',
 		'cogMethodSurrogateClass',
-		'cogBlockMethodSurrogateClass',
 		'CStackPointer',
 		'CFramePointer',
 		'cPICPrototype',
@@ -266,7 +255,9 @@ Class {
 		'statCompileFullBlockUsecs',
 		'statCompileMethodCount',
 		'statCompileMethodUsecs',
-		'jitCodeZoneWriteEnabled'
+		'jitCodeZoneWriteEnabled',
+		'cePrimReturnEnterCogCode',
+		'cePrimReturnEnterCogCodeProfiling'
 	],
 	#classVars : [
 		'AnnotationConstantNames',
@@ -294,7 +285,6 @@ Class {
 		'MaxNumberOfAbstractOpcodes',
 		'MaxX2NDisplacement',
 		'NumObjRefsInRuntime',
-		'NumOopsPerNSC',
 		'NumSpecialSelectors',
 		'NumTrampolines',
 		'ProcessorClass',
@@ -7803,12 +7793,12 @@ Cogit >> generateEnilopmarts [
 					and: ClassReg
 					forCall: true
 					called: 'ceCallCogCodePopReceiverAndClassRegs'].
-
+	
 	self genPrimReturnEnterCogCodeEnilopmart: false.
 	cePrimReturnEnterCogCode := methodZoneBase.
 	self outputInstructionsForGeneratedRuntimeAt: cePrimReturnEnterCogCode.
 	self recordGeneratedRunTime: 'cePrimReturnEnterCogCode' address: cePrimReturnEnterCogCode.
-
+	
 	self genPrimReturnEnterCogCodeEnilopmart: true.
 	cePrimReturnEnterCogCodeProfiling := methodZoneBase.
 	self outputInstructionsForGeneratedRuntimeAt: cePrimReturnEnterCogCodeProfiling.

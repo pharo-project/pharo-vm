@@ -181,7 +181,7 @@ Spur64BitCoMemoryManager >> methodHeaderFromSavedFirstField: field [
 	^(coInterpreter cCoerceSimple: field to: #'CogMethod *') methodHeader
 ]
 
-{ #category : 'growing/shrinking memory' }
+{ #category : 'memory access' }
 Spur64BitCoMemoryManager >> methodHeaderOf: methodObj [
 	"Answer the method header of a CompiledMethod object.
 	 If the method has been cogged then the header is a pointer to
@@ -190,7 +190,7 @@ Spur64BitCoMemoryManager >> methodHeaderOf: methodObj [
 	<inline: true>
 	| header |
 	self assert: (self isCompiledMethod: methodObj).
-	header := self fetchPointer: HeaderIndex ofObject: methodObj.
+	header := self rawHeaderOf: methodObj.
 	^(self isIntegerObject: header)
 		ifTrue: [header]
 		ifFalse:

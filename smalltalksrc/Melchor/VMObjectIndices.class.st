@@ -14,7 +14,6 @@ Class {
 		'CharacterValueIndex',
 		'ClassArray',
 		'ClassBitmap',
-		'ClassBlockClosure',
 		'ClassByteArray',
 		'ClassByteString',
 		'ClassCharacter',
