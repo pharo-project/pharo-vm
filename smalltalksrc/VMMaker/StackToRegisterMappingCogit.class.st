@@ -1691,6 +1691,19 @@ StackToRegisterMappingCogit >> genGenericStorePop: popBoolean MaybeContextSlotIn
 	 involve wholesale reorganization of stack pages, and the only way to preserve the
 	 execution state of an activation in that case is if it has a frame."
 	self assert: needsFrame.
+	
+	"Allocate ClassReg and SenNumArgsReg for the trampoline calls."
+	self ssAllocateCallReg: SendNumArgsReg.
+	"Avoid allocating ClassReg if at the top the stack, to avoid extra push/pops, given that we are going to pop it next"
+	self
+		ssAllocateCallReg: ClassReg
+		upThrough: simStackPtr - 1.
+	self ssStoreAndReplacePop: popBoolean toReg: ClassReg.
+	
+	"Flush the rest of the stack now that all stack manipulations have been done.
+	This guarantees that the stack is all spilled when jumping to the potential trampolines"
+	self ssFlushStack.
+
 	self 
 		cppIf: IMMUTABILITY
 		ifTrue:
@@ -1702,15 +1715,11 @@ StackToRegisterMappingCogit >> genGenericStorePop: popBoolean MaybeContextSlotIn
 					 immutabilityFailure := self Jump: 0.
 					 mutableJump jmpTarget: self Label.]].
 
-	"for ceStoreContextInstVarTrampoline"
-	self ssAllocateCallReg: ClassReg and: SendNumArgsReg upThrough: simStackPtr -1.
-
 	objectRepresentation
 		genLoadSlot: SenderIndex
 		sourceReg: ReceiverResultReg
 		destReg: TempReg.
-	self ssStoreAndReplacePop: popBoolean toReg: ClassReg.
-	self ssFlushStack.
+
 	self MoveCq: slotIndex R: SendNumArgsReg.
 	self CallRT: ceStoreContextInstVarTrampoline.
 	self 
@@ -4284,6 +4293,17 @@ StackToRegisterMappingCogit >> ssAllocateCallReg: requiredReg1 and: requiredReg2
 	self ssAllocateRequiredRegMask: (CallerSavedRegisterMask
 										bitOr: ((self registerMaskFor: requiredReg1)
 										bitOr: (self registerMaskFor: requiredReg2)))
+		upThrough: aStackPointer
+]
+
+{ #category : 'simulation stack' }
+StackToRegisterMappingCogit >> ssAllocateCallReg: requiredReg upThrough: aStackPointer [
+	"Allocate a register needed in a run-time call (i.e. flush uses of the
+	 register to the real stack).  Since the run-time can smash any and
+	 all caller-saved registers also flush all caller-saved registers."
+	<inline: true>
+	self ssAllocateRequiredRegMask: (CallerSavedRegisterMask
+										bitOr: (self registerMaskFor: requiredReg))
 		upThrough: aStackPointer
 ]
 
