@@ -336,11 +336,8 @@ Class {
 		'reenterInterpreter',
 		'nextWakeupUsecs',
 		'nextPollUsecs',
-		'savedWindowSize',
 		'imageHeaderFlags',
-		'fullScreenFlag',
 		'extraVMMemory',
-		'interpreterProxy',
 		'primitiveTable',
 		'primitiveAccessorDepthTable',
 		'externalPrimitiveTable',
@@ -380,25 +377,17 @@ Class {
 		'gcSemaphoreIndex',
 		'classByteArrayCompactIndex',
 		'checkedPluginName',
-		'displayBits',
-		'displayWidth',
-		'displayHeight',
-		'displayDepth',
 		'statForceInterruptCheck',
 		'statStackOverflow',
 		'statStackPageDivorce',
 		'statCheckForEvents',
 		'statProcessSwitch',
 		'statIdleUsecs',
-		'debugCallbackPath',
-		'debugCallbackReturns',
-		'debugCallbackInvokes',
 		'printedStackFrames',
 		'maxStacksToPrint',
 		'maxStackMessagePrinted',
 		'libFFI',
 		'codeGeneratorToComputeAccessorDepth',
-		'showSurfaceFn',
 		'imageReaderWriter',
 		'pendingFinalizationSignals',
 		'imageVersionNumber'
@@ -431,7 +420,6 @@ Class {
 		'DirEntryFound',
 		'DirNoMoreEntries',
 		'DumpStackOnLowSpace',
-		'EnclosingObjectIndex',
 		'FailImbalancedPrimitives',
 		'LongStoreBytecode',
 		'MaxExternalPrimitiveTableSize',
@@ -500,7 +488,7 @@ StackInterpreter class >> bytecodeTable [
 	^ BytecodeTable
 ]
 
-{ #category : 'translation' }
+{ #category : 'C translation' }
 StackInterpreter class >> declareCVarsIn: aCCodeGenerator [
 	| vmClass |
 	self class == thisContext methodClass ifFalse: [^self]. "Don't duplicate decls in subclasses"
@@ -607,13 +595,7 @@ If ffi is put as a separate header, slang will sort the header and put it outsid
 	aCCodeGenerator removeVariable: #'libFFI'.
 	LibFFIConstants classVariables do: [ :e | aCCodeGenerator removeConstant: e name ].
 	
-	aCCodeGenerator 
-		"this variable is not used in the exported code, so it has to be removed.
-		If it is changed, it should be marked with type implicit"
-		removeVariable: 'imageReader'; 
-		var: #imageWriter type: #implicit.
-"		removeVariable: 'imageWriter'.
-"
+	aCCodeGenerator removeVariable: #imageReaderWriter
 ]
 
 { #category : 'translation' }

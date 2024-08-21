@@ -612,8 +612,7 @@ Cogit class >> declareCVarsIn: aCCodeGenerator [
 	"In C the abstract opcode names clash with the Smalltak generator syntactic sugar.
 	 Most of the syntactic sugar is inlined, but alas some remains.  Rename the syntactic
 	 sugar to avoid the clash."
-	(self organization listAtCategoryNamed:
-		 #'abstract instructions') do: [ :s |
+	(self selectorsInProtocol: #'abstract instructions') do: [ :s |
 		aCCodeGenerator
 			addSelectorTranslation: s
 			to: 'g' , (aCCodeGenerator cFunctionNameFor: s) ].
@@ -633,7 +632,7 @@ Cogit class >> decomposeSchematicTemps: aString [
 						ifFalse: [rs upTo: Character space])]]
 ]
 
-{ #category : 'C translation' }
+{ #category : 'translation' }
 Cogit class >> defineAtCompileTime: anObject [
 	"Override to define at translation time those variables that need to
 	 be defined at compile time only in plugins, but not in the main VM,

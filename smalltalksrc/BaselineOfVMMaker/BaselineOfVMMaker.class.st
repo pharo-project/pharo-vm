@@ -34,7 +34,7 @@ BaselineOfVMMaker >> baseline: spec [
 			spec baseline: 'LLVMDisassembler' with: [ 
 				spec repository: 'github://pharo-project/pharo-llvmDisassembler' ].
 			spec baseline: 'OpalSimdBytecode' with: [ 
-				spec repository: 'github://nrainhart/pharo-opal-simd-bytecode:main' ].
+				spec repository: 'github://evref-inria/pharo-opal-simd-bytecode:main' ].
 
 			"Tests"			
 			spec
