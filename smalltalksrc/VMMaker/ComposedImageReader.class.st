@@ -10,6 +10,7 @@ Class {
 
 { #category : 'translation' }
 ComposedImageReader class >> declareCVarsIn: aCCodeGenerator [
+	"currently Slang lacks some support for subclasses: prevent <sys/stat.h> to be include a second time during C code generation as the superclass already includes it but declareCVarsIn: is called for each concrete class logging the warning inside addHeaderFile: method"
 ]
 
 { #category : 'reading' }
