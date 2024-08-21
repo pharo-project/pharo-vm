@@ -493,10 +493,6 @@ Cogit class >> declareCVarsIn: aCCodeGenerator [
 	   'clickConfirm' 'singleStep' ) do: [
 		:simulationVariableNotNeededForRealVM |
 		aCCodeGenerator removeVariable: simulationVariableNotNeededForRealVM ].
-	#( 'dynamicSuperSendTrampolines'
-	   'ceEnclosingObjectTrampoline') do: [
-		:variableNotNeededInNormalVM |
-		aCCodeGenerator removeVariable: variableNotNeededInNormalVM ].
 
 	aCCodeGenerator
 		addHeaderFile: '<stddef.h>';

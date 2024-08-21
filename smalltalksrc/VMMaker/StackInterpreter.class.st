@@ -389,10 +389,9 @@ Class {
 		'maxStackMessagePrinted',
 		'libFFI',
 		'codeGeneratorToComputeAccessorDepth',
-		'imageReader',
-		'imageWriter',
 		'pendingFinalizationSignals',
-		'imageVersionNumber'
+		'imageVersionNumber',
+		'imageReaderWriter'
 	],
 	#classVars : [
 		'AlternateHeaderHasPrimFlag',
@@ -14543,7 +14542,7 @@ StackInterpreter >> snapshot [
 
 	argumentCount > 1 ifTrue:
 		[self primitiveFailFor: PrimErrBadNumArgs.
-		 ^ self justActivateNewMethod: false].
+		 ^ self activateNewMethod ].
 	
 	argumentCount = 1 ifTrue: [ 
 		"Fetching the format to use, should be 3 -> ComposedFormatForced or 4 -> SpurFormatForced See VMImageReadedWriter"
@@ -14552,7 +14551,7 @@ StackInterpreter >> snapshot [
 			ifTrue: [ imageReaderWriter setFormatToUse: newFormatToUse ]
 			ifFalse: [ 
 				self primitiveFailFor: PrimErrBadArgument.
-				^ self justActivateNewMethod: false ]].
+				^ self activateNewMethod ]].
 
 	stackModified := false.
 
@@ -14618,7 +14617,7 @@ StackInterpreter >> snapshot [
 			stackModified ifTrue: [ 
 				self push: rcvr.
 				argumentCount = 1 ifTrue: [ self pushInteger: newFormatToUse  ]].
-			 self justActivateNewMethod: true] "no point checking for machine code; there isn't any at this point"
+			 self activateNewMethodInterpreted ] "no point checking for machine code; there isn't any at this point"
 ]
 
 { #category : 'debug printing' }
