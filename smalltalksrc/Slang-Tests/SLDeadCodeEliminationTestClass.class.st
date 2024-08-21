@@ -17,6 +17,24 @@ SLDeadCodeEliminationTestClass class >> instVarNamesAndTypesForTranslationDo: aB
 				 otherwise: [ #sqInt ]) ]
 ]
 
+{ #category : 'only-comment' }
+SLDeadCodeEliminationTestClass >> conditionalWithOnlyCommentNoSendInReceiver [
+
+	<returnTypeC: #void>
+	true
+		ifTrue: [ self method ]
+		ifFalse: [ self method ]
+]
+
+{ #category : 'only-comment' }
+SLDeadCodeEliminationTestClass >> conditionalWithOnlyCommentSendInReceiver [
+
+	<returnTypeC: #void>
+	(self method: self method)
+		ifTrue: [ self method ]
+		ifFalse: [ self method ]
+]
+
 { #category : 'accessing' }
 SLDeadCodeEliminationTestClass >> instancesVariable [
 	^ instancesVariable
@@ -24,6 +42,9 @@ SLDeadCodeEliminationTestClass >> instancesVariable [
 
 { #category : 'helpers' }
 SLDeadCodeEliminationTestClass >> method [
+
+	<inline: true>
+	
 ]
 
 { #category : 'helpers' }
@@ -330,6 +351,13 @@ SLDeadCodeEliminationTestClass >> methodWithInstanceVariableInReturn [
 
 	instancesVariable.
 	^ instancesVariable
+]
+
+{ #category : 'only-comment' }
+SLDeadCodeEliminationTestClass >> methodWithOnlyComment [
+
+	<returnTypeC: #void>
+	self method
 ]
 
 { #category : 'unused-leaf' }
@@ -1122,4 +1150,26 @@ SLDeadCodeEliminationTestClass >> methodWithVariableInReturn [
 	| i |
 	i.
 	^ i
+]
+
+{ #category : 'only-comment' }
+SLDeadCodeEliminationTestClass >> switchWithOnlyCommentNoSendInReceiver: anInt [
+
+	<returnTypeC: #void>
+	anInt
+		caseOf: {
+				([ 5 ] -> [ self method ]).
+				([ 6 ] -> [ self method ]) }
+		otherwise: [ self method ]
+]
+
+{ #category : 'only-comment' }
+SLDeadCodeEliminationTestClass >> switchWithOnlyCommentSendInReceiver [
+
+	<returnTypeC: #void>
+	(self method: self method)
+		caseOf: {
+				([ 5 ] -> [ self method ]).
+				([ 6 ] -> [ self method ]) }
+		otherwise: [ self method ]
 ]

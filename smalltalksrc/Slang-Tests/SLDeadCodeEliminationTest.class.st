@@ -27,6 +27,66 @@ SLDeadCodeEliminationTest >> setUp [
 	
 ]
 
+{ #category : 'only-comment' }
+SLDeadCodeEliminationTest >> testConditionalWithOnlyCommentNoSendInReceiver [
+	"currently the only way to get comments in a methods is through inlining, having only comments is equivalent to being empty so it shouldn't change the behavior of the dead code elimination process"
+
+	| translation tMethod |
+	tMethod := ccg methodNamed: #conditionalWithOnlyCommentNoSendInReceiver.
+
+	ccg doBasicInlining: true.
+	ccg currentMethod: tMethod.
+
+	sLDeadCodeEliminationVisitor visit: tMethod parseTree.
+
+	translation := self translate: tMethod.
+	translation := translation trimBoth.
+
+	self
+		assert: translation
+		equals:
+			'/* SLDeadCodeEliminationTestClass>>#conditionalWithOnlyCommentNoSendInReceiver */
+static void
+conditionalWithOnlyCommentNoSendInReceiver(SLDeadCodeEliminationTestClass * self_in_conditionalWithOnlyCommentNoSendInReceiver)
+{
+	{
+		return;
+	}
+}'
+]
+
+{ #category : 'only-comment' }
+SLDeadCodeEliminationTest >> testConditionalWithOnlyCommentSendInReceiver [
+	"currently the only way to get comments in a methods is through inlining, having only comments is equivalent to being empty so it shouldn't change the behavior of the dead code elimination process"
+
+	| translation tMethod |
+	tMethod := ccg methodNamed:
+		           #conditionalWithOnlyCommentSendInReceiver.
+
+	ccg doBasicInlining: true.
+	ccg currentMethod: tMethod.
+
+	sLDeadCodeEliminationVisitor visit: tMethod parseTree.
+
+	translation := self translate: tMethod.
+	translation := translation trimBoth.
+
+	self
+		assert: translation
+		equals:
+			'/* SLDeadCodeEliminationTestClass>>#conditionalWithOnlyCommentSendInReceiver */
+static void
+conditionalWithOnlyCommentSendInReceiver(SLDeadCodeEliminationTestClass * self_in_conditionalWithOnlyCommentSendInReceiver)
+{
+	{
+		method(self_in_conditionalWithOnlyCommentSendInReceiver, method(self_in_conditionalWithOnlyCommentSendInReceiver));
+	}
+	{
+		return;
+	}
+}'
+]
+
 { #category : 'method-in-c-coerce' }
 SLDeadCodeEliminationTest >> testMethodAddingCallInCoerce [
 
@@ -1050,6 +1110,34 @@ static size_t
 methodWithInstanceVariableInReturn(SLDeadCodeEliminationTestClass * self_in_methodWithInstanceVariableInReturn)
 {
 	return (self_in_methodWithInstanceVariableInReturn->instancesVariable);
+}'
+]
+
+{ #category : 'only-comment' }
+SLDeadCodeEliminationTest >> testMethodWithOnlyComment [
+	"currently the only way to get comments in a methods is through inlining, having only comments is equivalent to being empty so it shouldn't change the behavior of the dead code elimination process"
+
+	| translation tMethod |
+	tMethod := ccg methodNamed: #methodWithOnlyComment.
+	ccg doBasicInlining: true.
+	ccg currentMethod: tMethod.
+	sLDeadCodeEliminationVisitor visit: tMethod parseTree.
+
+	translation := self translate: tMethod.
+	translation := translation trimBoth.
+
+	self
+		assert: translation
+		equals:
+			'/* SLDeadCodeEliminationTestClass>>#methodWithOnlyComment */
+static void
+methodWithOnlyComment(SLDeadCodeEliminationTestClass * self_in_methodWithOnlyComment)
+{
+	/* begin method */
+	/* end method */
+	{
+		return;
+	}
 }'
 ]
 
@@ -3702,6 +3790,63 @@ methodWithVariableInReturn(SLDeadCodeEliminationTestClass * self_in_methodWithVa
 	sqInt i;
 
 	return i;
+}'
+]
+
+{ #category : 'only-comment' }
+SLDeadCodeEliminationTest >> testSwitchWithOnlyCommentNoSendInReceiver [
+	"currently the only way to get comments in a methods is through inlining, having only comments is equivalent to being empty so it shouldn't change the behavior of the dead code elimination process"
+
+	| translation tMethod |
+	tMethod := ccg methodNamed: #switchWithOnlyCommentNoSendInReceiver:.
+	tMethod prepareMethodIn: ccg.
+	ccg doBasicInlining: true.
+	ccg currentMethod: tMethod.
+	sLDeadCodeEliminationVisitor visit: tMethod parseTree.
+
+	translation := self translate: tMethod.
+	translation := translation trimBoth.
+
+	self
+		assert: translation
+		equals:
+			'/* SLDeadCodeEliminationTestClass>>#switchWithOnlyCommentNoSendInReceiver: */
+static void
+switchWithOnlyCommentNoSendInReceiver(SLDeadCodeEliminationTestClass * self_in_switchWithOnlyCommentNoSendInReceiver, sqInt anInt)
+{
+	{
+		return;
+	}
+}'
+]
+
+{ #category : 'only-comment' }
+SLDeadCodeEliminationTest >> testSwitchWithOnlyCommentSendInReceiver [
+	"currently the only way to get comments in a methods is through inlining, having only comments is equivalent to being empty so it shouldn't change the behavior of the dead code elimination process"
+
+	| translation tMethod |
+	tMethod := ccg methodNamed: #switchWithOnlyCommentSendInReceiver.
+	tMethod prepareMethodIn: ccg.
+	ccg doBasicInlining: true.
+	ccg currentMethod: tMethod.
+	sLDeadCodeEliminationVisitor visit: tMethod parseTree.
+
+	translation := self translate: tMethod.
+	translation := translation trimBoth.
+
+	self
+		assert: translation
+		equals:
+			'/* SLDeadCodeEliminationTestClass>>#switchWithOnlyCommentSendInReceiver */
+static void
+switchWithOnlyCommentSendInReceiver(SLDeadCodeEliminationTestClass * self_in_switchWithOnlyCommentSendInReceiver)
+{
+	{
+		method(self_in_switchWithOnlyCommentSendInReceiver, method(self_in_switchWithOnlyCommentSendInReceiver));
+	}
+	{
+		return;
+	}
 }'
 ]
 

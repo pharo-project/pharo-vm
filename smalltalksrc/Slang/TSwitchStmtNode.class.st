@@ -244,6 +244,13 @@ TSwitchStmtNode >> cases: anObject [
 	cases := anObject
 ]
 
+{ #category : 'testing' }
+TSwitchStmtNode >> casesHasNothingButComments [
+	"related to dead code elimination and inlining, see if the cases has nothing but comment meaning they are empty"
+
+	^ cases allSatisfy: [ :case | case second isComment ]
+]
+
 { #category : 'accessing' }
 TSwitchStmtNode >> children [
 	
@@ -453,9 +460,10 @@ TSwitchStmtNode >> removeAssertions [
 { #category : 'dead-code-elimination' }
 TSwitchStmtNode >> removeUnusedNodesInBranch: aChild [
 	"when removing a node from a switch, we have to be careful of if it comes from a caseOf: or a caseOf:otherwise:. if it comes from a caseOf:, otherwise is nil and must be kept it will be translated as a no case found error. To indicate that otherwise does nothing Slang use an empty TStatementListNode, hence the following code"
-	
+
 	cases := cases select: [ :each | each second ~~ aChild ].
-	self cases isEmpty ifFalse: [ ^ self ].
+	(cases isEmpty or: [ self casesHasNothingButComments ]) ifFalse: [
+		^ self ].
 	"we're from a caseOf: so we keep the node"
 	otherwiseOrNil ifNil: [ ^ self ].
 	"otherwiseOrNil may have been empty from the start or during the cleaning process, either way the node is now completely empty so we can supress it"
