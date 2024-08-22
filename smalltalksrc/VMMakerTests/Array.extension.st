@@ -1,13 +1,13 @@
-Extension { #name : #Array }
+Extension { #name : 'Array' }
 
-{ #category : #'*VMMakerTests' }
+{ #category : '*VMMakerTests' }
 Array >> forMemory: aMemory inMethod: anObject [
 
 	^ aMemory newArrayWith: (self collect: [ :anElement | 
 			   anElement forMemory: aMemory inMethod: nil ])
 ]
 
-{ #category : #'*VMMakerTests' }
+{ #category : '*VMMakerTests' }
 Array >> forMethodBuilder: aBuilder [
 
 	^ self forMemory: aBuilder memory

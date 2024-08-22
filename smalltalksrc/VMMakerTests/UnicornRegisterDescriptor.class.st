@@ -1,48 +1,50 @@
 Class {
-	#name : #UnicornRegisterDescriptor,
-	#superclass : #Object,
+	#name : 'UnicornRegisterDescriptor',
+	#superclass : 'Object',
 	#instVars : [
 		'simulator',
 		'name',
 		'alias'
 	],
-	#category : #'VMMakerTests-Unicorn'
+	#category : 'VMMakerTests-Unicorn',
+	#package : 'VMMakerTests',
+	#tag : 'Unicorn'
 }
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 UnicornRegisterDescriptor >> alias [
 	^ alias
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 UnicornRegisterDescriptor >> alias: aString [ 
 	
 	alias := aString
 ]
 
-{ #category : #actions }
+{ #category : 'actions' }
 UnicornRegisterDescriptor >> copyValueToClipboard [
 	
 	Clipboard clipboardText: self value hex
 ]
 
-{ #category : #actions }
+{ #category : 'actions' }
 UnicornRegisterDescriptor >> inspectValue [
 
 	self value inspect
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 UnicornRegisterDescriptor >> name [
 	^ name
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 UnicornRegisterDescriptor >> name: anObject [
 	name := anObject
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 UnicornRegisterDescriptor >> printOn: aStream [
 
 	(self value isKindOf: Boolean )
@@ -52,23 +54,23 @@ UnicornRegisterDescriptor >> printOn: aStream [
 
 ]
 
-{ #category : #actions }
+{ #category : 'actions' }
 UnicornRegisterDescriptor >> printValue [
 
 	simulator memory interpreter longPrintOop: self value
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 UnicornRegisterDescriptor >> simulator [
 	^ simulator
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 UnicornRegisterDescriptor >> simulator: anObject [
 	simulator := anObject
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 UnicornRegisterDescriptor >> value [
 
 	^ simulator perform: name

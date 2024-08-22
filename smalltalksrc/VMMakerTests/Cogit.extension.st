@@ -1,28 +1,28 @@
-Extension { #name : #Cogit }
+Extension { #name : 'Cogit' }
 
-{ #category : #'*VMMakerTests' }
+{ #category : '*VMMakerTests' }
 Cogit >> byte0: anInteger [
 
 	byte0 := anInteger
 ]
 
-{ #category : #'*VMMakerTests' }
+{ #category : '*VMMakerTests' }
 Cogit >> inBlock: anInteger [ 
 	inBlock := anInteger
 ]
 
-{ #category : #'*VMMakerTests' }
+{ #category : '*VMMakerTests' }
 Cogit >> methodOrBlockNumArgs: anInteger [ 
 	methodOrBlockNumArgs := anInteger
 ]
 
-{ #category : #'*VMMakerTests' }
+{ #category : '*VMMakerTests' }
 Cogit >> needsFrame [ 
 
 	^ true
 ]
 
-{ #category : #'*VMMakerTests' }
+{ #category : '*VMMakerTests' }
 Cogit >> needsFrame: aFalse [ 
 	needsFrame := aFalse
 ]
