@@ -1,12 +1,10 @@
 Class {
-	#name : 'VMSimpleStackBasedCogitRememberedSetTest',
-	#superclass : 'VMSimpleStackBasedCogitAbstractTest',
-	#category : 'VMMakerTests-JitTests',
-	#package : 'VMMakerTests',
-	#tag : 'JitTests'
+	#name : #VMSimpleStackBasedCogitRememberedSetTest,
+	#superclass : #VMSimpleStackBasedCogitAbstractTest,
+	#category : #'VMMakerTests-JitTests'
 }
 
-{ #category : 'tests' }
+{ #category : #tests }
 VMSimpleStackBasedCogitRememberedSetTest >> assertReceiver: receiver value: value shouldCallTrampoline: shouldCallTrampoline [
 
 	| trampoline afterBytecode |
@@ -30,14 +28,14 @@ VMSimpleStackBasedCogitRememberedSetTest >> assertReceiver: receiver value: valu
 	
 ]
 
-{ #category : 'initialization' }
+{ #category : #initialization }
 VMSimpleStackBasedCogitRememberedSetTest >> setUp [
 
 	super setUp.
 	self setUpTrampolines
 ]
 
-{ #category : 'tests' }
+{ #category : #tests }
 VMSimpleStackBasedCogitRememberedSetTest >> testStoringNewObjectInNewObjectDoesNotCallTrampoline [
 
 	| newObject otherNewObject |
@@ -50,7 +48,7 @@ VMSimpleStackBasedCogitRememberedSetTest >> testStoringNewObjectInNewObjectDoesN
 		shouldCallTrampoline: false
 ]
 
-{ #category : 'tests' }
+{ #category : #tests }
 VMSimpleStackBasedCogitRememberedSetTest >> testStoringNewObjectInOldObjectDoesCallTrampoline [
 
 	| oldObject otherNewObject |
@@ -64,7 +62,7 @@ VMSimpleStackBasedCogitRememberedSetTest >> testStoringNewObjectInOldObjectDoesC
 		shouldCallTrampoline: true
 ]
 
-{ #category : 'tests' }
+{ #category : #tests }
 VMSimpleStackBasedCogitRememberedSetTest >> testStoringOldObjectInOldObjectDoesNotCallTrampoline [
 
 	| oldObject otherOldObject |
@@ -78,7 +76,7 @@ VMSimpleStackBasedCogitRememberedSetTest >> testStoringOldObjectInOldObjectDoesN
 		shouldCallTrampoline: false
 ]
 
-{ #category : 'tests' }
+{ #category : #tests }
 VMSimpleStackBasedCogitRememberedSetTest >> testStoringOldObjectInPermObjectDoesCallTrampoline [
 
 	| permObject otherPermObject |

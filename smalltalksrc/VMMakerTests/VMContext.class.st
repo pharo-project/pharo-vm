@@ -1,6 +1,6 @@
 Class {
-	#name : 'VMContext',
-	#superclass : 'Object',
+	#name : #VMContext,
+	#superclass : #Object,
 	#instVars : [
 		'contextOop',
 		'interpreter'
@@ -8,12 +8,10 @@ Class {
 	#pools : [
 		'VMObjectIndices'
 	],
-	#category : 'VMMakerTests-Visualisation',
-	#package : 'VMMakerTests',
-	#tag : 'Visualisation'
+	#category : #'VMMakerTests-Visualisation'
 }
 
-{ #category : 'instance creation' }
+{ #category : #'instance creation' }
 VMContext class >> newOnContext: anInteger withInterpreter: aStackInterpreterSimulatorLSB [
 	^ self new
 		contextOop: anInteger;
@@ -21,7 +19,7 @@ VMContext class >> newOnContext: anInteger withInterpreter: aStackInterpreterSim
 		yourself
 ]
 
-{ #category : 'accessing' }
+{ #category : #accessing }
 VMContext >> caller [
 	| senderContext |
 
@@ -37,12 +35,12 @@ VMContext >> caller [
 	^ VMContext newOnContext: senderContext withInterpreter: interpreter
 ]
 
-{ #category : 'accessing' }
+{ #category : #accessing }
 VMContext >> contextOop: anInteger [ 
 	contextOop := anInteger
 ]
 
-{ #category : 'accessing' }
+{ #category : #accessing }
 VMContext >> description [
 	| homeContextOop method selector |
 	homeContextOop := interpreter findHomeForContext: contextOop.
@@ -52,32 +50,32 @@ VMContext >> description [
 	^ interpreter stringOf: selector
 ]
 
-{ #category : 'accessing' }
+{ #category : #accessing }
 VMContext >> instructionPointer [
 	^interpreter objectMemory fetchPointer: InstructionPointerIndex ofObject: contextOop.
 ]
 
-{ #category : 'accessing' }
+{ #category : #accessing }
 VMContext >> interpreter: aStackInterpreterSimulatorLSB [ 
 	interpreter := aStackInterpreterSimulatorLSB
 ]
 
-{ #category : 'testing' }
+{ #category : #testing }
 VMContext >> isMarried [
 	^interpreter isStillMarriedContext: contextOop.
 ]
 
-{ #category : 'testing' }
+{ #category : #testing }
 VMContext >> isNilObject [
 	^interpreter objectMemory nilObject = contextOop.
 ]
 
-{ #category : 'accessing' }
+{ #category : #accessing }
 VMContext >> receiver [
 	^interpreter objectMemory fetchPointer: ReceiverIndex ofObject: contextOop
 ]
 
-{ #category : 'accessing' }
+{ #category : #accessing }
 VMContext >> sender [
 	^interpreter objectMemory fetchPointer: SenderIndex ofObject: contextOop.
 ]

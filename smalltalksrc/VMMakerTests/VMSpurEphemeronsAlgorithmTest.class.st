@@ -1,18 +1,16 @@
 Class {
-	#name : 'VMSpurEphemeronsAlgorithmTest',
-	#superclass : 'VMSpurInitializedOldSpaceTest',
+	#name : #VMSpurEphemeronsAlgorithmTest,
+	#superclass : #VMSpurInitializedOldSpaceTest,
 	#instVars : [
 		'ephemeronObjectOopOne',
 		'ephemeronObjectOopTwo',
 		'nonEphemeronObjectOopOne',
 		'nonEphemeronObjectOopTwo'
 	],
-	#category : 'VMMakerTests-MemoryTests',
-	#package : 'VMMakerTests',
-	#tag : 'MemoryTests'
+	#category : #'VMMakerTests-MemoryTests'
 }
 
-{ #category : 'helper' }
+{ #category : #helper }
 VMSpurEphemeronsAlgorithmTest >> addKeysToEphemerons [
 
 	memory storePointer: 0
@@ -24,7 +22,7 @@ VMSpurEphemeronsAlgorithmTest >> addKeysToEphemerons [
 		withValue: nonEphemeronObjectOopTwo
 ]
 
-{ #category : 'helper' }
+{ #category : #helper }
 VMSpurEphemeronsAlgorithmTest >> keepEphemeronsInVMVariables [
 	"Force ephemerons to not be collected by putting them in special variables"
 
@@ -32,7 +30,7 @@ VMSpurEphemeronsAlgorithmTest >> keepEphemeronsInVMVariables [
 	self keepObjectInVMVariable2: ephemeronObjectOopTwo
 ]
 
-{ #category : 'helper' }
+{ #category : #helper }
 VMSpurEphemeronsAlgorithmTest >> newEphemeronObjectOldSpace [
 	"In pharo Ephemerons have 3 slots"
 
@@ -41,7 +39,7 @@ VMSpurEphemeronsAlgorithmTest >> newEphemeronObjectOldSpace [
 		  classIndex: (memory ensureBehaviorHash: ourEphemeronClass)
 ]
 
-{ #category : 'running' }
+{ #category : #running }
 VMSpurEphemeronsAlgorithmTest >> setUp [
 
 	super setUp.
@@ -49,7 +47,7 @@ VMSpurEphemeronsAlgorithmTest >> setUp [
 	self createEphemeronClass
 ]
 
-{ #category : 'tests - finalization - algorithm' }
+{ #category : #'tests - finalization - algorithm' }
 VMSpurEphemeronsAlgorithmTest >> testEphemeronsOldObjectsOld [
 
 	ephemeronObjectOopOne := self newEphemeronObjectOldSpace.
@@ -72,7 +70,7 @@ VMSpurEphemeronsAlgorithmTest >> testEphemeronsOldObjectsOld [
 	self assert: memory dequeueMourner equals: ephemeronObjectOopOne
 ]
 
-{ #category : 'tests - finalization - algorithm' }
+{ #category : #'tests - finalization - algorithm' }
 VMSpurEphemeronsAlgorithmTest >> testEphemeronsOldObjectsOldInverse [
 
 	ephemeronObjectOopOne := self newEphemeronObjectOldSpace.
@@ -95,7 +93,7 @@ VMSpurEphemeronsAlgorithmTest >> testEphemeronsOldObjectsOldInverse [
 	self assert: memory dequeueMourner equals: ephemeronObjectOopOne
 ]
 
-{ #category : 'tests - finalization - algorithm' }
+{ #category : #'tests - finalization - algorithm' }
 VMSpurEphemeronsAlgorithmTest >> testEphemeronsOldObjectsYoung [
 	
 	ephemeronObjectOopOne := self newEphemeronObjectOldSpace.
@@ -119,7 +117,7 @@ VMSpurEphemeronsAlgorithmTest >> testEphemeronsOldObjectsYoung [
 	self assert: memory dequeueMourner equals: ephemeronObjectOopOne
 ]
 
-{ #category : 'tests - finalization - algorithm' }
+{ #category : #'tests - finalization - algorithm' }
 VMSpurEphemeronsAlgorithmTest >> testEphemeronsOldObjectsYoungInverse [
 
 	ephemeronObjectOopOne := self newEphemeronObjectOldSpace.
@@ -143,7 +141,7 @@ VMSpurEphemeronsAlgorithmTest >> testEphemeronsOldObjectsYoungInverse [
 	self assert: memory dequeueMourner equals: ephemeronObjectOopOne
 ]
 
-{ #category : 'tests - ephemerons with same key' }
+{ #category : #'tests - ephemerons with same key' }
 VMSpurEphemeronsAlgorithmTest >> testEphemeronsWithSameKeyNewSpace [
 
 	ephemeronObjectOopOne := self newEphemeronObject.
@@ -161,14 +159,14 @@ VMSpurEphemeronsAlgorithmTest >> testEphemeronsWithSameKeyNewSpace [
 	self keepObjectInVMVariable1: ephemeronObjectOopOne.
 	self keepObjectInVMVariable2: ephemeronObjectOopTwo.
 
-	"Collect non ephemeoron objetc"
+	"Collect ephemerons"
 	memory doScavenge: 1.
 
 	self assert: ({ ephemeronObjectOopOne. ephemeronObjectOopTwo } includes: memory dequeueMourner).
 	self assert: ({ ephemeronObjectOopOne. ephemeronObjectOopTwo } includes: memory dequeueMourner)
 ]
 
-{ #category : 'tests - ephemerons with same key' }
+{ #category : #'tests - ephemerons with same key' }
 VMSpurEphemeronsAlgorithmTest >> testEphemeronsWithSameKeyNewSpaceFlush [
 
 	ephemeronObjectOopOne := self newEphemeronObject.
@@ -193,7 +191,7 @@ VMSpurEphemeronsAlgorithmTest >> testEphemeronsWithSameKeyNewSpaceFlush [
 	self assert: ({ ephemeronObjectOopOne. ephemeronObjectOopTwo } includes: memory dequeueMourner)
 ]
 
-{ #category : 'tests - ephemerons with same key' }
+{ #category : #'tests - ephemerons with same key' }
 VMSpurEphemeronsAlgorithmTest >> testEphemeronsWithSameKeyNewSpaceOldSpace [
 
 	ephemeronObjectOopOne := self newEphemeronObject.
@@ -211,14 +209,14 @@ VMSpurEphemeronsAlgorithmTest >> testEphemeronsWithSameKeyNewSpaceOldSpace [
 	self keepObjectInVMVariable1: ephemeronObjectOopOne.
 	self keepObjectInVMVariable2: ephemeronObjectOopTwo.
 
-	"Collect non ephemeron object"
+	"Collect ephemerons"
 	memory fullGC.
 
 	self assert: ({ ephemeronObjectOopOne. ephemeronObjectOopTwo } includes: memory dequeueMourner).
 	self assert: ({ ephemeronObjectOopOne. ephemeronObjectOopTwo } includes: memory dequeueMourner)
 ]
 
-{ #category : 'tests - ephemerons with same key' }
+{ #category : #'tests - ephemerons with same key' }
 VMSpurEphemeronsAlgorithmTest >> testEphemeronsWithSameKeyOldSpace [
 
 	ephemeronObjectOopOne := self newEphemeronObjectOldSpace.
@@ -243,7 +241,7 @@ VMSpurEphemeronsAlgorithmTest >> testEphemeronsWithSameKeyOldSpace [
 	self assert: ({ ephemeronObjectOopOne. ephemeronObjectOopTwo } includes: memory dequeueMourner)
 ]
 
-{ #category : 'tests - ephemerons with same key' }
+{ #category : #'tests - ephemerons with same key' }
 VMSpurEphemeronsAlgorithmTest >> testEphemeronsWithSameKeyOldSpaceNewSpace [
 
 	ephemeronObjectOopOne := self newEphemeronObjectOldSpace.
@@ -268,7 +266,7 @@ VMSpurEphemeronsAlgorithmTest >> testEphemeronsWithSameKeyOldSpaceNewSpace [
 	self assert: ({ ephemeronObjectOopOne. ephemeronObjectOopTwo } includes: memory dequeueMourner)
 ]
 
-{ #category : 'tests - finalization - algorithm' }
+{ #category : #'tests - finalization - algorithm' }
 VMSpurEphemeronsAlgorithmTest >> testEphemeronsYoungObjectsOld [
 
 	ephemeronObjectOopOne := self newEphemeronObject.
@@ -292,7 +290,7 @@ VMSpurEphemeronsAlgorithmTest >> testEphemeronsYoungObjectsOld [
 	self assert: memory dequeueMourner equals: ephemeronObjectOopOne
 ]
 
-{ #category : 'tests - finalization - algorithm' }
+{ #category : #'tests - finalization - algorithm' }
 VMSpurEphemeronsAlgorithmTest >> testEphemeronsYoungObjectsOldInverse [
 
 	ephemeronObjectOopOne := self newEphemeronObject.
@@ -316,7 +314,7 @@ VMSpurEphemeronsAlgorithmTest >> testEphemeronsYoungObjectsOldInverse [
 	self assert: memory dequeueMourner equals: ephemeronObjectOopOne
 ]
 
-{ #category : 'tests - finalization - algorithm' }
+{ #category : #'tests - finalization - algorithm' }
 VMSpurEphemeronsAlgorithmTest >> testEphemeronsYoungObjectsYoung [
 
 	ephemeronObjectOopOne := self newEphemeronObject.
@@ -339,7 +337,7 @@ VMSpurEphemeronsAlgorithmTest >> testEphemeronsYoungObjectsYoung [
 	self assert: memory dequeueMourner equals: ephemeronObjectOopTwo
 ]
 
-{ #category : 'tests - finalization - algorithm' }
+{ #category : #'tests - finalization - algorithm' }
 VMSpurEphemeronsAlgorithmTest >> testEphemeronsYoungObjectsYoungInverse [
 
 	ephemeronObjectOopOne := self newEphemeronObject.

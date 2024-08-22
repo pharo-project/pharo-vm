@@ -1,6 +1,6 @@
 Class {
-	#name : 'VMMachineCodeMethod',
-	#superclass : 'Object',
+	#name : #VMMachineCodeMethod,
+	#superclass : #Object,
 	#instVars : [
 		'virtualMachine',
 		'cogMethodSurrogate'
@@ -8,12 +8,10 @@ Class {
 	#pools : [
 		'VMStackFrameOffsets'
 	],
-	#category : 'VMMakerTests-Visualisation',
-	#package : 'VMMakerTests',
-	#tag : 'Visualisation'
+	#category : #'VMMakerTests-Visualisation'
 }
 
-{ #category : 'instance creation' }
+{ #category : #'instance creation' }
 VMMachineCodeMethod class >> newOnInterpreter: aVirtualMachine cogMethodSurrogate: aCogMethodSurrogate [
 	
 	^ self new
@@ -22,17 +20,17 @@ VMMachineCodeMethod class >> newOnInterpreter: aVirtualMachine cogMethodSurrogat
 		yourself
 ]
 
-{ #category : 'accessing' }
+{ #category : #accessing }
 VMMachineCodeMethod >> cogMethodSurrogate [
 	^ cogMethodSurrogate
 ]
 
-{ #category : 'accessing' }
+{ #category : #accessing }
 VMMachineCodeMethod >> cogMethodSurrogate: anObject [
 	cogMethodSurrogate := anObject
 ]
 
-{ #category : 'accessing' }
+{ #category : #accessing }
 VMMachineCodeMethod >> disassemble [
 	| methodEntry instructions |
 	methodEntry := cogMethodSurrogate asInteger + virtualMachine cogit entryOffset.
@@ -44,12 +42,12 @@ VMMachineCodeMethod >> disassemble [
 ' join: (instructions collect: [:i | i assemblyCodeString])
 ]
 
-{ #category : 'accessing' }
+{ #category : #accessing }
 VMMachineCodeMethod >> virtualMachine [
 	^ virtualMachine
 ]
 
-{ #category : 'accessing' }
+{ #category : #accessing }
 VMMachineCodeMethod >> virtualMachine: anObject [
 	virtualMachine := anObject
 ]

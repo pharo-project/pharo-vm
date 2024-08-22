@@ -1,12 +1,10 @@
 Class {
-	#name : 'VMSpurOldSpaceBootstrapTest',
-	#superclass : 'VMSpurMemoryManagerTest',
-	#category : 'VMMakerTests-MemoryTests',
-	#package : 'VMMakerTests',
-	#tag : 'MemoryTests'
+	#name : #VMSpurOldSpaceBootstrapTest,
+	#superclass : #VMSpurMemoryManagerTest,
+	#category : #'VMMakerTests-MemoryTests'
 }
 
-{ #category : 'tests-memory-bootstrap' }
+{ #category : #'tests-memory-bootstrap' }
 VMSpurOldSpaceBootstrapTest >> testClassTableHasTablePagesAndHiddenRoots [
 
 	| tableRoot |
@@ -31,7 +29,7 @@ VMSpurOldSpaceBootstrapTest >> testClassTableHasTablePagesAndHiddenRoots [
 		equals: memory classTableRootSlots + memory hiddenRootSlots
 ]
 
-{ #category : 'tests-memory-bootstrap' }
+{ #category : #'tests-memory-bootstrap' }
 VMSpurOldSpaceBootstrapTest >> testFreeListHasAsManySlotsAsRequiredByTheVM [
 
 	| freeListOop |
@@ -40,7 +38,7 @@ VMSpurOldSpaceBootstrapTest >> testFreeListHasAsManySlotsAsRequiredByTheVM [
 	self assert: (memory numSlotsOf: freeListOop) equals: memory numFreeLists
 ]
 
-{ #category : 'tests-memory-bootstrap' }
+{ #category : #'tests-memory-bootstrap' }
 VMSpurOldSpaceBootstrapTest >> testFreeListIsWordIndexable [
 
 	| freeListOop |
@@ -49,7 +47,7 @@ VMSpurOldSpaceBootstrapTest >> testFreeListIsWordIndexable [
 	self assert: (memory formatOf: freeListOop) equals: memory wordIndexableFormat
 ]
 
-{ #category : 'tests-memory-bootstrap' }
+{ #category : #'tests-memory-bootstrap' }
 VMSpurOldSpaceBootstrapTest >> testNewFreeListHasAllSlotsInitializedInZero [
 
 	| freeListOop |
@@ -59,14 +57,14 @@ VMSpurOldSpaceBootstrapTest >> testNewFreeListHasAllSlotsInitializedInZero [
 		self assert: (memory fetchPointer: i ofObject: freeListOop) equals: 0 ]
 ]
 
-{ #category : 'tests-memory-bootstrap' }
+{ #category : #'tests-memory-bootstrap' }
 VMSpurOldSpaceBootstrapTest >> testNewFreeListIsValid [
 
 	memory initializeFreeList.
 	memory validFreeTree
 ]
 
-{ #category : 'tests-memory-bootstrap' }
+{ #category : #'tests-memory-bootstrap' }
 VMSpurOldSpaceBootstrapTest >> testNewFreeListIsValid2 [
 
 	memory initializeFreeList.

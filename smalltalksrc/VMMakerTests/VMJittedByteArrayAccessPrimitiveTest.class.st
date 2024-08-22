@@ -1,22 +1,20 @@
 Class {
-	#name : 'VMJittedByteArrayAccessPrimitiveTest',
-	#superclass : 'VMJittedPrimitivesTest',
+	#name : #VMJittedByteArrayAccessPrimitiveTest,
+	#superclass : #VMJittedPrimitivesTest,
 	#instVars : [
 		'receiver',
 		'targetReceiver'
 	],
-	#category : 'VMMakerTests-JitTests',
-	#package : 'VMMakerTests',
-	#tag : 'JitTests'
+	#category : #'VMMakerTests-JitTests'
 }
 
-{ #category : 'building suites' }
+{ #category : #'building suites' }
 VMJittedByteArrayAccessPrimitiveTest class >> wordSizeParameters [
 
 	^ self wordSize64Parameters 
 ]
 
-{ #category : 'tests - store integers' }
+{ #category : #'tests - store integers' }
 VMJittedByteArrayAccessPrimitiveTest >> assertEqualsTo: expectedValue bitSize: bitSize [
 
 	({ 8. 16. 32. 64 } includes: bitSize) ifFalse: [ self fail ].
@@ -44,7 +42,7 @@ VMJittedByteArrayAccessPrimitiveTest >> assertEqualsTo: expectedValue bitSize: b
 	
 ]
 
-{ #category : 'utils' }
+{ #category : #utils }
 VMJittedByteArrayAccessPrimitiveTest >> genPrimitive: aString [ 
 
 	| endPart |
@@ -56,7 +54,7 @@ VMJittedByteArrayAccessPrimitiveTest >> genPrimitive: aString [
 
 ]
 
-{ #category : 'utils' }
+{ #category : #utils }
 VMJittedByteArrayAccessPrimitiveTest >> newReceiver [
 	"In this case the target receiver is the same receiver"
 	
@@ -70,7 +68,7 @@ VMJittedByteArrayAccessPrimitiveTest >> newReceiver [
 	targetReceiver := receiver
 ]
 
-{ #category : 'utils' }
+{ #category : #utils }
 VMJittedByteArrayAccessPrimitiveTest >> newReceiverWithValue: aValue ofBitSize: bitSize [ 
 
 	| complementedValue |
@@ -92,7 +90,7 @@ VMJittedByteArrayAccessPrimitiveTest >> newReceiverWithValue: aValue ofBitSize: 
 		memory storeLong64: 0 ofObject: targetReceiver withValue: complementedValue ].	
 ]
 
-{ #category : 'tests - load booleans' }
+{ #category : #'tests - load booleans' }
 VMJittedByteArrayAccessPrimitiveTest >> testLoadBoolean8LoadsFalse [
 
 	| expectedValue |
@@ -113,7 +111,7 @@ VMJittedByteArrayAccessPrimitiveTest >> testLoadBoolean8LoadsFalse [
 
 ]
 
-{ #category : 'tests - load booleans' }
+{ #category : #'tests - load booleans' }
 VMJittedByteArrayAccessPrimitiveTest >> testLoadBoolean8LoadsTrue [
 
 	| expectedValue |
@@ -134,7 +132,7 @@ VMJittedByteArrayAccessPrimitiveTest >> testLoadBoolean8LoadsTrue [
 
 ]
 
-{ #category : 'tests - load chars' }
+{ #category : #'tests - load chars' }
 VMJittedByteArrayAccessPrimitiveTest >> testLoadChar16LoadsValue [
 
 	| expectedValue |
@@ -155,7 +153,7 @@ VMJittedByteArrayAccessPrimitiveTest >> testLoadChar16LoadsValue [
 
 ]
 
-{ #category : 'tests - load chars' }
+{ #category : #'tests - load chars' }
 VMJittedByteArrayAccessPrimitiveTest >> testLoadChar32LoadsValue [
 
 	| expectedValue |
@@ -176,7 +174,7 @@ VMJittedByteArrayAccessPrimitiveTest >> testLoadChar32LoadsValue [
 
 ]
 
-{ #category : 'tests - load chars' }
+{ #category : #'tests - load chars' }
 VMJittedByteArrayAccessPrimitiveTest >> testLoadChar8LoadsValue [
 
 	| expectedValue |
@@ -197,7 +195,7 @@ VMJittedByteArrayAccessPrimitiveTest >> testLoadChar8LoadsValue [
 
 ]
 
-{ #category : 'tests - load floats' }
+{ #category : #'tests - load floats' }
 VMJittedByteArrayAccessPrimitiveTest >> testLoadFloat32LoadsValue [
 
 	| expectedValue |
@@ -218,7 +216,7 @@ VMJittedByteArrayAccessPrimitiveTest >> testLoadFloat32LoadsValue [
 
 ]
 
-{ #category : 'tests - load floats' }
+{ #category : #'tests - load floats' }
 VMJittedByteArrayAccessPrimitiveTest >> testLoadFloat64LoadsBoxedValue [
 
 	| expectedValue |
@@ -239,7 +237,7 @@ VMJittedByteArrayAccessPrimitiveTest >> testLoadFloat64LoadsBoxedValue [
 
 ]
 
-{ #category : 'tests - load floats' }
+{ #category : #'tests - load floats' }
 VMJittedByteArrayAccessPrimitiveTest >> testLoadFloat64LoadsValue [
 
 	| expectedValue |
@@ -260,7 +258,7 @@ VMJittedByteArrayAccessPrimitiveTest >> testLoadFloat64LoadsValue [
 
 ]
 
-{ #category : 'tests - load integers' }
+{ #category : #'tests - load integers' }
 VMJittedByteArrayAccessPrimitiveTest >> testPrimitiveLoadInt16LoadsNegativeValue [
 
 	| expectedValue |
@@ -281,7 +279,7 @@ VMJittedByteArrayAccessPrimitiveTest >> testPrimitiveLoadInt16LoadsNegativeValue
 
 ]
 
-{ #category : 'tests - load integers' }
+{ #category : #'tests - load integers' }
 VMJittedByteArrayAccessPrimitiveTest >> testPrimitiveLoadInt16LoadsPositiveValue [
 
 	| expectedValue |
@@ -302,7 +300,7 @@ VMJittedByteArrayAccessPrimitiveTest >> testPrimitiveLoadInt16LoadsPositiveValue
 
 ]
 
-{ #category : 'tests - load integers' }
+{ #category : #'tests - load integers' }
 VMJittedByteArrayAccessPrimitiveTest >> testPrimitiveLoadInt32LoadsNegativeValue [
 
 	| expectedValue |
@@ -323,7 +321,7 @@ VMJittedByteArrayAccessPrimitiveTest >> testPrimitiveLoadInt32LoadsNegativeValue
 
 ]
 
-{ #category : 'tests - load integers' }
+{ #category : #'tests - load integers' }
 VMJittedByteArrayAccessPrimitiveTest >> testPrimitiveLoadInt32LoadsPositiveValue [
 
 	| expectedValue |
@@ -344,7 +342,7 @@ VMJittedByteArrayAccessPrimitiveTest >> testPrimitiveLoadInt32LoadsPositiveValue
 
 ]
 
-{ #category : 'tests - load integers' }
+{ #category : #'tests - load integers' }
 VMJittedByteArrayAccessPrimitiveTest >> testPrimitiveLoadInt64LoadsNegativeValue [
 
 	| expectedValue |
@@ -365,7 +363,7 @@ VMJittedByteArrayAccessPrimitiveTest >> testPrimitiveLoadInt64LoadsNegativeValue
 
 ]
 
-{ #category : 'tests - load integers' }
+{ #category : #'tests - load integers' }
 VMJittedByteArrayAccessPrimitiveTest >> testPrimitiveLoadInt64LoadsPositiveValue [
 
 	| expectedValue |
@@ -386,7 +384,7 @@ VMJittedByteArrayAccessPrimitiveTest >> testPrimitiveLoadInt64LoadsPositiveValue
 
 ]
 
-{ #category : 'tests - load integers' }
+{ #category : #'tests - load integers' }
 VMJittedByteArrayAccessPrimitiveTest >> testPrimitiveLoadInt8LoadsNegativeValue [
 
 	| expectedValue |
@@ -407,7 +405,7 @@ VMJittedByteArrayAccessPrimitiveTest >> testPrimitiveLoadInt8LoadsNegativeValue 
 
 ]
 
-{ #category : 'tests - load integers' }
+{ #category : #'tests - load integers' }
 VMJittedByteArrayAccessPrimitiveTest >> testPrimitiveLoadInt8LoadsPositiveValue [
 
 	| expectedValue |
@@ -428,7 +426,7 @@ VMJittedByteArrayAccessPrimitiveTest >> testPrimitiveLoadInt8LoadsPositiveValue 
 
 ]
 
-{ #category : 'tests - load integers' }
+{ #category : #'tests - load integers' }
 VMJittedByteArrayAccessPrimitiveTest >> testPrimitiveLoadPointerLoadsValue [
 
 	| expectedValue |
@@ -449,7 +447,7 @@ VMJittedByteArrayAccessPrimitiveTest >> testPrimitiveLoadPointerLoadsValue [
 
 ]
 
-{ #category : 'tests - load integers' }
+{ #category : #'tests - load integers' }
 VMJittedByteArrayAccessPrimitiveTest >> testPrimitiveLoadUInt16LoadsValue [
 
 	| expectedValue |
@@ -470,7 +468,7 @@ VMJittedByteArrayAccessPrimitiveTest >> testPrimitiveLoadUInt16LoadsValue [
 
 ]
 
-{ #category : 'tests - load integers' }
+{ #category : #'tests - load integers' }
 VMJittedByteArrayAccessPrimitiveTest >> testPrimitiveLoadUInt32LoadsValue [
 
 	| expectedValue |
@@ -491,7 +489,7 @@ VMJittedByteArrayAccessPrimitiveTest >> testPrimitiveLoadUInt32LoadsValue [
 
 ]
 
-{ #category : 'tests - load integers' }
+{ #category : #'tests - load integers' }
 VMJittedByteArrayAccessPrimitiveTest >> testPrimitiveLoadUInt64LoadsValue [
 
 	| expectedValue |
@@ -512,7 +510,7 @@ VMJittedByteArrayAccessPrimitiveTest >> testPrimitiveLoadUInt64LoadsValue [
 
 ]
 
-{ #category : 'tests - load integers' }
+{ #category : #'tests - load integers' }
 VMJittedByteArrayAccessPrimitiveTest >> testPrimitiveLoadUInt8LoadsValue [
 
 	| expectedValue |
@@ -533,7 +531,7 @@ VMJittedByteArrayAccessPrimitiveTest >> testPrimitiveLoadUInt8LoadsValue [
 
 ]
 
-{ #category : 'tests - store booleans' }
+{ #category : #'tests - store booleans' }
 VMJittedByteArrayAccessPrimitiveTest >> testPrimitiveStoreBoolean8StoresFalse [
 
 	self genPrimitive: #StoreBoolean8.
@@ -549,7 +547,7 @@ VMJittedByteArrayAccessPrimitiveTest >> testPrimitiveStoreBoolean8StoresFalse [
 
 ]
 
-{ #category : 'tests - store booleans' }
+{ #category : #'tests - store booleans' }
 VMJittedByteArrayAccessPrimitiveTest >> testPrimitiveStoreBoolean8StoresTrue [
 
 	self genPrimitive: #StoreBoolean8.
@@ -565,7 +563,7 @@ VMJittedByteArrayAccessPrimitiveTest >> testPrimitiveStoreBoolean8StoresTrue [
 
 ]
 
-{ #category : 'tests - store chars' }
+{ #category : #'tests - store chars' }
 VMJittedByteArrayAccessPrimitiveTest >> testPrimitiveStoreChar16StoresValue [
 
 	| expectedValue |
@@ -585,7 +583,7 @@ VMJittedByteArrayAccessPrimitiveTest >> testPrimitiveStoreChar16StoresValue [
 
 ]
 
-{ #category : 'tests - store chars' }
+{ #category : #'tests - store chars' }
 VMJittedByteArrayAccessPrimitiveTest >> testPrimitiveStoreChar32StoresValue [
 
 	| expectedValue |
@@ -605,7 +603,7 @@ VMJittedByteArrayAccessPrimitiveTest >> testPrimitiveStoreChar32StoresValue [
 
 ]
 
-{ #category : 'tests - store chars' }
+{ #category : #'tests - store chars' }
 VMJittedByteArrayAccessPrimitiveTest >> testPrimitiveStoreChar8StoresValue [
 
 	| expectedValue |
@@ -625,7 +623,7 @@ VMJittedByteArrayAccessPrimitiveTest >> testPrimitiveStoreChar8StoresValue [
 
 ]
 
-{ #category : 'tests - store floats' }
+{ #category : #'tests - store floats' }
 VMJittedByteArrayAccessPrimitiveTest >> testPrimitiveStoreFloat32StoresValue [
 
 	| expectedValue |
@@ -644,7 +642,7 @@ VMJittedByteArrayAccessPrimitiveTest >> testPrimitiveStoreFloat32StoresValue [
 
 ]
 
-{ #category : 'tests - store floats' }
+{ #category : #'tests - store floats' }
 VMJittedByteArrayAccessPrimitiveTest >> testPrimitiveStoreFloat32StoresValueDoNotOverwriteAfter [
 
 	| expectedValue |
@@ -663,7 +661,7 @@ VMJittedByteArrayAccessPrimitiveTest >> testPrimitiveStoreFloat32StoresValueDoNo
 		self assert: (memory fetchByte: i ofObject: targetReceiver) equals: 16r90 + i + 1. ].
 ]
 
-{ #category : 'tests - store floats' }
+{ #category : #'tests - store floats' }
 VMJittedByteArrayAccessPrimitiveTest >> testPrimitiveStoreFloat64StoresBoxedFloatValue [
 
 	| expectedValue |
@@ -682,7 +680,7 @@ VMJittedByteArrayAccessPrimitiveTest >> testPrimitiveStoreFloat64StoresBoxedFloa
 
 ]
 
-{ #category : 'tests - store floats' }
+{ #category : #'tests - store floats' }
 VMJittedByteArrayAccessPrimitiveTest >> testPrimitiveStoreFloat64StoresValue [
 
 	| expectedValue |
@@ -701,7 +699,7 @@ VMJittedByteArrayAccessPrimitiveTest >> testPrimitiveStoreFloat64StoresValue [
 
 ]
 
-{ #category : 'tests - store integers' }
+{ #category : #'tests - store integers' }
 VMJittedByteArrayAccessPrimitiveTest >> testPrimitiveStoreInt16StoresNegativeValue [
 
 	| expectedValue |
@@ -721,7 +719,7 @@ VMJittedByteArrayAccessPrimitiveTest >> testPrimitiveStoreInt16StoresNegativeVal
 
 ]
 
-{ #category : 'tests - store integers' }
+{ #category : #'tests - store integers' }
 VMJittedByteArrayAccessPrimitiveTest >> testPrimitiveStoreInt16StoresPositiveValue [
 
 	| expectedValue |
@@ -741,7 +739,7 @@ VMJittedByteArrayAccessPrimitiveTest >> testPrimitiveStoreInt16StoresPositiveVal
 
 ]
 
-{ #category : 'tests - store integers' }
+{ #category : #'tests - store integers' }
 VMJittedByteArrayAccessPrimitiveTest >> testPrimitiveStoreInt16StoresPositiveValueWithoutOverwritting [
 
 	| expectedValue |
@@ -763,7 +761,7 @@ VMJittedByteArrayAccessPrimitiveTest >> testPrimitiveStoreInt16StoresPositiveVal
 		self assert: (memory fetchByte: i ofObject: targetReceiver) equals: 16r90 + i + 1. ].
 ]
 
-{ #category : 'tests - store integers' }
+{ #category : #'tests - store integers' }
 VMJittedByteArrayAccessPrimitiveTest >> testPrimitiveStoreInt32StoresNegativeValue [
 
 	| expectedValue |
@@ -783,7 +781,7 @@ VMJittedByteArrayAccessPrimitiveTest >> testPrimitiveStoreInt32StoresNegativeVal
 
 ]
 
-{ #category : 'tests - store integers' }
+{ #category : #'tests - store integers' }
 VMJittedByteArrayAccessPrimitiveTest >> testPrimitiveStoreInt32StoresPositiveValue [
 
 	| expectedValue |
@@ -803,7 +801,7 @@ VMJittedByteArrayAccessPrimitiveTest >> testPrimitiveStoreInt32StoresPositiveVal
 
 ]
 
-{ #category : 'tests - store integers' }
+{ #category : #'tests - store integers' }
 VMJittedByteArrayAccessPrimitiveTest >> testPrimitiveStoreInt32StoresPositiveValueWithoutOverwriting [
 
 	| expectedValue |
@@ -823,7 +821,7 @@ VMJittedByteArrayAccessPrimitiveTest >> testPrimitiveStoreInt32StoresPositiveVal
 		self assert: (memory fetchByte: i ofObject: targetReceiver) equals: 16r90 + i + 1. ].
 ]
 
-{ #category : 'tests - store integers' }
+{ #category : #'tests - store integers' }
 VMJittedByteArrayAccessPrimitiveTest >> testPrimitiveStoreInt64StoresNegativeValue [
 
 	| expectedValue |
@@ -843,7 +841,7 @@ VMJittedByteArrayAccessPrimitiveTest >> testPrimitiveStoreInt64StoresNegativeVal
 
 ]
 
-{ #category : 'tests - store integers' }
+{ #category : #'tests - store integers' }
 VMJittedByteArrayAccessPrimitiveTest >> testPrimitiveStoreInt64StoresPositiveValue [
 
 	| expectedValue |
@@ -863,7 +861,7 @@ VMJittedByteArrayAccessPrimitiveTest >> testPrimitiveStoreInt64StoresPositiveVal
 
 ]
 
-{ #category : 'tests - store integers' }
+{ #category : #'tests - store integers' }
 VMJittedByteArrayAccessPrimitiveTest >> testPrimitiveStoreInt8StoresNegativeValue [
 
 	| expectedValue |
@@ -883,7 +881,7 @@ VMJittedByteArrayAccessPrimitiveTest >> testPrimitiveStoreInt8StoresNegativeValu
 
 ]
 
-{ #category : 'tests - store integers' }
+{ #category : #'tests - store integers' }
 VMJittedByteArrayAccessPrimitiveTest >> testPrimitiveStoreInt8StoresPositiveValue [
 
 	| expectedValue |
@@ -903,7 +901,7 @@ VMJittedByteArrayAccessPrimitiveTest >> testPrimitiveStoreInt8StoresPositiveValu
 
 ]
 
-{ #category : 'tests - store integers' }
+{ #category : #'tests - store integers' }
 VMJittedByteArrayAccessPrimitiveTest >> testPrimitiveStoreInt8StoresPositiveValueWithoutOverwritting [
 
 	| expectedValue |
@@ -925,7 +923,7 @@ VMJittedByteArrayAccessPrimitiveTest >> testPrimitiveStoreInt8StoresPositiveValu
 		self assert: (memory fetchByte: i ofObject: targetReceiver) equals: 16r90 + i + 1. ].
 ]
 
-{ #category : 'tests - store integers' }
+{ #category : #'tests - store integers' }
 VMJittedByteArrayAccessPrimitiveTest >> testPrimitiveStorePointerStoresValue [
 
 	| expectedValue |
@@ -945,7 +943,7 @@ VMJittedByteArrayAccessPrimitiveTest >> testPrimitiveStorePointerStoresValue [
 
 ]
 
-{ #category : 'tests - store integers' }
+{ #category : #'tests - store integers' }
 VMJittedByteArrayAccessPrimitiveTest >> testPrimitiveStoreUInt16StoresValue [
 
 	| expectedValue |
@@ -965,7 +963,7 @@ VMJittedByteArrayAccessPrimitiveTest >> testPrimitiveStoreUInt16StoresValue [
 
 ]
 
-{ #category : 'tests - store integers' }
+{ #category : #'tests - store integers' }
 VMJittedByteArrayAccessPrimitiveTest >> testPrimitiveStoreUInt32StoresValue [
 
 	| expectedValue |
@@ -985,7 +983,7 @@ VMJittedByteArrayAccessPrimitiveTest >> testPrimitiveStoreUInt32StoresValue [
 
 ]
 
-{ #category : 'tests - store integers' }
+{ #category : #'tests - store integers' }
 VMJittedByteArrayAccessPrimitiveTest >> testPrimitiveStoreUInt64StoresValue [
 
 	| expectedValue |
@@ -1006,7 +1004,7 @@ VMJittedByteArrayAccessPrimitiveTest >> testPrimitiveStoreUInt64StoresValue [
 
 ]
 
-{ #category : 'tests - store integers' }
+{ #category : #'tests - store integers' }
 VMJittedByteArrayAccessPrimitiveTest >> testPrimitiveStoreUInt8StoresValue [
 
 	| expectedValue |
@@ -1026,7 +1024,7 @@ VMJittedByteArrayAccessPrimitiveTest >> testPrimitiveStoreUInt8StoresValue [
 
 ]
 
-{ #category : 'utils' }
+{ #category : #utils }
 VMJittedByteArrayAccessPrimitiveTest >> trailingName [
 
 	^ 'Bytes'

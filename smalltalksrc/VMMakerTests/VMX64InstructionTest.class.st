@@ -1,15 +1,13 @@
 Class {
-	#name : 'VMX64InstructionTest',
-	#superclass : 'VMSimpleStackBasedCogitAbstractTest',
+	#name : #VMX64InstructionTest,
+	#superclass : #VMSimpleStackBasedCogitAbstractTest,
 	#pools : [
 		'CogRTLOpcodes'
 	],
-	#category : 'VMMakerTests-JitTests',
-	#package : 'VMMakerTests',
-	#tag : 'JitTests'
+	#category : #'VMMakerTests-JitTests'
 }
 
-{ #category : 'building suites' }
+{ #category : #'building suites' }
 VMX64InstructionTest class >> wordSizeParameters [ 
 
 	^ ParametrizedTestMatrix new
@@ -17,13 +15,13 @@ VMX64InstructionTest class >> wordSizeParameters [
 		yourself
 ]
 
-{ #category : 'configuration' }
+{ #category : #configuration }
 VMX64InstructionTest >> generateCaptureCStackPointers [
 	
 	^ false
 ]
 
-{ #category : 'tests' }
+{ #category : #tests }
 VMX64InstructionTest >> testDupAndStoreFromVectorRegister [
 
 	| mem |
@@ -47,7 +45,7 @@ VMX64InstructionTest >> testDupAndStoreFromVectorRegister [
 
 ]
 
-{ #category : 'tests' }
+{ #category : #tests }
 VMX64InstructionTest >> testDupAndStoreFromVectorRegisterUnAligned [
 
 	| mem |
@@ -72,7 +70,7 @@ VMX64InstructionTest >> testDupAndStoreFromVectorRegisterUnAligned [
 
 ]
 
-{ #category : 'tests' }
+{ #category : #tests }
 VMX64InstructionTest >> testDupSRVr [
 
 
@@ -88,7 +86,7 @@ VMX64InstructionTest >> testDupSRVr [
 
 ]
 
-{ #category : 'tests' }
+{ #category : #tests }
 VMX64InstructionTest >> testFaddSRvRvRv [
 
 	| result |
@@ -107,7 +105,7 @@ VMX64InstructionTest >> testFaddSRvRvRv [
 	self assert: (result doubleAt: 9) equals: 3.0.	
 ]
 
-{ #category : 'tests' }
+{ #category : #tests }
 VMX64InstructionTest >> testFaddSRvRvRvWithThreeDifferentRegisters [
 
 	| result |
@@ -126,7 +124,7 @@ VMX64InstructionTest >> testFaddSRvRvRvWithThreeDifferentRegisters [
 	self assert: (result doubleAt: 9) equals: 3.0.	
 ]
 
-{ #category : 'tests' }
+{ #category : #tests }
 VMX64InstructionTest >> testFsubSRvRvRv [
 
 	| result |
@@ -145,7 +143,7 @@ VMX64InstructionTest >> testFsubSRvRvRv [
 	self assert: (result doubleAt: 9) equals: -1.0.	
 ]
 
-{ #category : 'tests' }
+{ #category : #tests }
 VMX64InstructionTest >> testFsubSRvRvRvWithThreeDifferentRegisters [
 
 	| result |

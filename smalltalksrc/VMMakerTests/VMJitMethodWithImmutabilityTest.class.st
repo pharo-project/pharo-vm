@@ -1,28 +1,26 @@
 Class {
-	#name : 'VMJitMethodWithImmutabilityTest',
-	#superclass : 'VMPrimitiveCallAbstractTest',
+	#name : #VMJitMethodWithImmutabilityTest,
+	#superclass : #VMPrimitiveCallAbstractTest,
 	#pools : [
 		'CogRTLOpcodes'
 	],
-	#category : 'VMMakerTests-JitTests',
-	#package : 'VMMakerTests',
-	#tag : 'JitTests'
+	#category : #'VMMakerTests-JitTests'
 }
 
-{ #category : 'running' }
+{ #category : #running }
 VMJitMethodWithImmutabilityTest >> initialCodeSize [
 
 	^ 32 * 1024
 ]
 
-{ #category : 'initialization' }
+{ #category : #initialization }
 VMJitMethodWithImmutabilityTest >> setUp [ 
 
 	super setUp.
 	self initializeSpecialSelectors
 ]
 
-{ #category : 'initialization' }
+{ #category : #initialization }
 VMJitMethodWithImmutabilityTest >> setUpTrampolines [
 
 	super setUpTrampolines.
@@ -32,7 +30,7 @@ VMJitMethodWithImmutabilityTest >> setUpTrampolines [
 	
 ]
 
-{ #category : 'tests' }
+{ #category : #tests }
 VMJitMethodWithImmutabilityTest >> testCompileMethodWithALotOfAssignmentsToInstanceVariables [
 	| callingMethod |
 	

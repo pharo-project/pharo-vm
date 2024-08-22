@@ -1,6 +1,6 @@
 Class {
-	#name : 'VMFFIWorkerArgumentMarshallingTest',
-	#superclass : 'VMFFIArgumentMarshallingTest',
+	#name : #VMFFIWorkerArgumentMarshallingTest,
+	#superclass : #VMFFIArgumentMarshallingTest,
 	#instVars : [
 		'aFunctionBlock',
 		'tfExternalFunction',
@@ -11,11 +11,10 @@ Class {
 		'task',
 		'savedValue'
 	],
-	#category : 'VMMakerTests',
-	#package : 'VMMakerTests'
+	#category : #VMMakerTests
 }
 
-{ #category : 'implementation' }
+{ #category : #implementation }
 VMFFIWorkerArgumentMarshallingTest >> doTestFuntionWithArgumentType: argumentType smalltalkValue: smalltalkValue expectedValue: expectedValue [
 
 	self doWorkerCallWithValue: smalltalkValue ofType: argumentType.
@@ -33,7 +32,7 @@ VMFFIWorkerArgumentMarshallingTest >> doTestFuntionWithArgumentType: argumentTyp
 	self assert: savedValue equals: expectedValue
 ]
 
-{ #category : 'implementation' }
+{ #category : #implementation }
 VMFFIWorkerArgumentMarshallingTest >> doTestFuntionWithArgumentType: argumentType smalltalkValue: smalltalkValue failsWith: expectedErrorCode [
 
 	self doWorkerCallWithValue: smalltalkValue ofType: argumentType.
@@ -42,7 +41,7 @@ VMFFIWorkerArgumentMarshallingTest >> doTestFuntionWithArgumentType: argumentTyp
 	self assert: interpreter primFailCode equals: expectedErrorCode.
 ]
 
-{ #category : 'implementation' }
+{ #category : #implementation }
 VMFFIWorkerArgumentMarshallingTest >> doWorkerCallWithValue: smalltalkValue ofType: argumentType [
 
 	aFunctionBlock := [ :anArgument | self fail: 'It should enqueue it, not execute it' ].
@@ -78,21 +77,21 @@ VMFFIWorkerArgumentMarshallingTest >> doWorkerCallWithValue: smalltalkValue ofTy
 	interpreter primitiveWorkerCallout
 ]
 
-{ #category : 'tests' }
+{ #category : #tests }
 VMFFIWorkerArgumentMarshallingTest >> initializationOptions [
 
 	^ super initializationOptions , { 
 		#FEATURE_THREADED_FFI . true }
 ]
 
-{ #category : 'running' }
+{ #category : #running }
 VMFFIWorkerArgumentMarshallingTest >> setUp [ 
 
 	super setUp.
 	interpreter libFFI testWorker clear
 ]
 
-{ #category : 'tests' }
+{ #category : #tests }
 VMFFIWorkerArgumentMarshallingTest >> testCalloutWithoutArgumentsMarshallsCorrectly [
 
 	aFunctionBlock := [ :anArgument | self fail: 'It should enqueue it, not execute it' ].

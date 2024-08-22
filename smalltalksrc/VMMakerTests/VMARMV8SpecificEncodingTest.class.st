@@ -1,12 +1,10 @@
 Class {
-	#name : 'VMARMV8SpecificEncodingTest',
-	#superclass : 'VMSimpleStackBasedCogitAbstractTest',
-	#category : 'VMMakerTests-JitTests',
-	#package : 'VMMakerTests',
-	#tag : 'JitTests'
+	#name : #VMARMV8SpecificEncodingTest,
+	#superclass : #VMSimpleStackBasedCogitAbstractTest,
+	#category : #'VMMakerTests-JitTests'
 }
 
-{ #category : 'building suites' }
+{ #category : #'building suites' }
 VMARMV8SpecificEncodingTest class >> wordSizeParameters [
 
 	^ ParametrizedTestMatrix new
@@ -14,7 +12,7 @@ VMARMV8SpecificEncodingTest class >> wordSizeParameters [
 		yourself
 ]
 
-{ #category : 'tests - MoveRMwr' }
+{ #category : #'tests - MoveRMwr' }
 VMARMV8SpecificEncodingTest >> armInstructionAt: index [
 
 	| addr inst |
@@ -24,7 +22,7 @@ VMARMV8SpecificEncodingTest >> armInstructionAt: index [
 	^ inst aarch64Disassembled
 ]
 
-{ #category : 'tests - MoveMbrR' }
+{ #category : #'tests - MoveMbrR' }
 VMARMV8SpecificEncodingTest >> doTestEncodeMoveMbrR: constant [
 
 	| expectedAddress expectedValue |
@@ -48,7 +46,7 @@ VMARMV8SpecificEncodingTest >> doTestEncodeMoveMbrR: constant [
 
 ]
 
-{ #category : 'tests - MoveMwrR' }
+{ #category : #'tests - MoveMwrR' }
 VMARMV8SpecificEncodingTest >> doTestEncodeMoveMwrR: constant [
 
 	| expectedAddress expectedValue |
@@ -72,7 +70,7 @@ VMARMV8SpecificEncodingTest >> doTestEncodeMoveMwrR: constant [
 
 ]
 
-{ #category : 'tests - MoveRMwr' }
+{ #category : #'tests - MoveRMwr' }
 VMARMV8SpecificEncodingTest >> doTestEncodeMoveRMwr: constant [
 
 	| expectedAddress expectedValue |
@@ -94,7 +92,7 @@ VMARMV8SpecificEncodingTest >> doTestEncodeMoveRMwr: constant [
 
 ]
 
-{ #category : 'tests - cmpCqR' }
+{ #category : #'tests - cmpCqR' }
 VMARMV8SpecificEncodingTest >> testEncodeCmpCqRNonEncodeable12BitConstant [
 
 	| constant |
@@ -110,7 +108,7 @@ VMARMV8SpecificEncodingTest >> testEncodeCmpCqRNonEncodeable12BitConstant [
 	self assert: machineSimulator zero
 ]
 
-{ #category : 'tests - cmpCqR' }
+{ #category : #'tests - cmpCqR' }
 VMARMV8SpecificEncodingTest >> testEncodeCmpCqRWithNegative12BitConstant [
 
 	| negativeConstant12Bits |
@@ -125,7 +123,7 @@ VMARMV8SpecificEncodingTest >> testEncodeCmpCqRWithNegative12BitConstant [
 	self assert: machineSimulator zero
 ]
 
-{ #category : 'tests - cmpCqR' }
+{ #category : #'tests - cmpCqR' }
 VMARMV8SpecificEncodingTest >> testEncodeCmpCqRWithNegative12ShiftableBitConstant [
 
 	| negativeConstant12Bits |
@@ -140,7 +138,7 @@ VMARMV8SpecificEncodingTest >> testEncodeCmpCqRWithNegative12ShiftableBitConstan
 	self assert: machineSimulator zero
 ]
 
-{ #category : 'tests - cmpCqR' }
+{ #category : #'tests - cmpCqR' }
 VMARMV8SpecificEncodingTest >> testEncodeCmpCqRWithNegative13ShiftableBitConstant [
 
 	| negativeConstant12Bits |
@@ -155,7 +153,7 @@ VMARMV8SpecificEncodingTest >> testEncodeCmpCqRWithNegative13ShiftableBitConstan
 	self assert: machineSimulator zero
 ]
 
-{ #category : 'tests - cmpCqR' }
+{ #category : #'tests - cmpCqR' }
 VMARMV8SpecificEncodingTest >> testEncodeCmpCqRWithNegativeConstant [
 
 	| negativeConstant12Bits |
@@ -170,7 +168,7 @@ VMARMV8SpecificEncodingTest >> testEncodeCmpCqRWithNegativeConstant [
 	self assert: machineSimulator zero
 ]
 
-{ #category : 'tests - cmpCqR' }
+{ #category : #'tests - cmpCqR' }
 VMARMV8SpecificEncodingTest >> testEncodeCmpCqRWithPositive12BitConstant [
 
 	| positiveConstant12Bits |
@@ -185,7 +183,7 @@ VMARMV8SpecificEncodingTest >> testEncodeCmpCqRWithPositive12BitConstant [
 	self assert: machineSimulator zero
 ]
 
-{ #category : 'tests - cmpCqR' }
+{ #category : #'tests - cmpCqR' }
 VMARMV8SpecificEncodingTest >> testEncodeCmpCqRWithPositiveBigConstant [
 
 	| positiveConstant12Bits |
@@ -200,7 +198,7 @@ VMARMV8SpecificEncodingTest >> testEncodeCmpCqRWithPositiveBigConstant [
 	self assert: machineSimulator zero
 ]
 
-{ #category : 'tests - cmpCqR' }
+{ #category : #'tests - cmpCqR' }
 VMARMV8SpecificEncodingTest >> testEncodeCmpCqRWithPositiveShiftable12BitConstant [
 
 	| positiveConstant12Bits |
@@ -215,7 +213,7 @@ VMARMV8SpecificEncodingTest >> testEncodeCmpCqRWithPositiveShiftable12BitConstan
 	self assert: machineSimulator zero
 ]
 
-{ #category : 'tests - cmpCqR' }
+{ #category : #'tests - cmpCqR' }
 VMARMV8SpecificEncodingTest >> testEncodeCmpCqRWithPositiveShiftable13BitConstant [
 
 	| positiveConstant12Bits |
@@ -230,7 +228,7 @@ VMARMV8SpecificEncodingTest >> testEncodeCmpCqRWithPositiveShiftable13BitConstan
 	self assert: machineSimulator zero
 ]
 
-{ #category : 'tests - cmpCqR' }
+{ #category : #'tests - cmpCqR' }
 VMARMV8SpecificEncodingTest >> testEncodeMoveCqRWithEncodeableLargeNumber [
 
 
@@ -245,7 +243,7 @@ VMARMV8SpecificEncodingTest >> testEncodeMoveCqRWithEncodeableLargeNumber [
 	self assert: machineSimulator x24 equals: constantValue
 ]
 
-{ #category : 'tests - cmpCqR' }
+{ #category : #'tests - cmpCqR' }
 VMARMV8SpecificEncodingTest >> testEncodeMoveCqRWithLargeConstant [
 
 
@@ -260,7 +258,7 @@ VMARMV8SpecificEncodingTest >> testEncodeMoveCqRWithLargeConstant [
 	self assert: machineSimulator x24 equals: constantValue
 ]
 
-{ #category : 'tests - cmpCqR' }
+{ #category : #'tests - cmpCqR' }
 VMARMV8SpecificEncodingTest >> testEncodeMoveCqRWithNegativeLargeConstant [
 
 
@@ -277,7 +275,7 @@ VMARMV8SpecificEncodingTest >> testEncodeMoveCqRWithNegativeLargeConstant [
 	self assert: machineSimulator x24 hex equals: completementValue hex
 ]
 
-{ #category : 'tests - MoveMbrR' }
+{ #category : #'tests - MoveMbrR' }
 VMARMV8SpecificEncodingTest >> testEncodeMoveMbrRWithNegative9BitConstant [
 
 	self doTestEncodeMoveMbrR: -256.
@@ -285,7 +283,7 @@ VMARMV8SpecificEncodingTest >> testEncodeMoveMbrRWithNegative9BitConstant [
 
 ]
 
-{ #category : 'tests - MoveMbrR' }
+{ #category : #'tests - MoveMbrR' }
 VMARMV8SpecificEncodingTest >> testEncodeMoveMbrRWithNegativeNon9BitConstant [
 
 	self doTestEncodeMoveMbrR: -1024.
@@ -293,7 +291,7 @@ VMARMV8SpecificEncodingTest >> testEncodeMoveMbrRWithNegativeNon9BitConstant [
 
 ]
 
-{ #category : 'tests - MoveMbrR' }
+{ #category : #'tests - MoveMbrR' }
 VMARMV8SpecificEncodingTest >> testEncodeMoveMbrRWithPositive9BitConstant [
 
 	self doTestEncodeMoveMbrR: 255.
@@ -301,7 +299,7 @@ VMARMV8SpecificEncodingTest >> testEncodeMoveMbrRWithPositive9BitConstant [
 
 ]
 
-{ #category : 'tests - MoveMbrR' }
+{ #category : #'tests - MoveMbrR' }
 VMARMV8SpecificEncodingTest >> testEncodeMoveMbrRWithPositiveNon9BitConstant [
 
 	self doTestEncodeMoveMbrR: 1024.
@@ -309,35 +307,35 @@ VMARMV8SpecificEncodingTest >> testEncodeMoveMbrRWithPositiveNon9BitConstant [
 
 ]
 
-{ #category : 'tests - MoveMwrR' }
+{ #category : #'tests - MoveMwrR' }
 VMARMV8SpecificEncodingTest >> testEncodeMoveMwrRWithNegative9BitConstant [
 
 	self doTestEncodeMoveMwrR: -256
 	
 ]
 
-{ #category : 'tests - MoveMwrR' }
+{ #category : #'tests - MoveMwrR' }
 VMARMV8SpecificEncodingTest >> testEncodeMoveMwrRWithNegativeNon9BitConstant [
 
 	self doTestEncodeMoveMwrR: -20056
 	
 ]
 
-{ #category : 'tests - MoveMwrR' }
+{ #category : #'tests - MoveMwrR' }
 VMARMV8SpecificEncodingTest >> testEncodeMoveMwrRWithPositive12BitConstant [
 
 	self doTestEncodeMoveMwrR: 16r100
 	
 ]
 
-{ #category : 'tests - MoveMwrR' }
+{ #category : #'tests - MoveMwrR' }
 VMARMV8SpecificEncodingTest >> testEncodeMoveMwrRWithPositiveNon9BitConstant [
 
 	self doTestEncodeMoveMwrR: 20056
 	
 ]
 
-{ #category : 'tests - MoveRMwr' }
+{ #category : #'tests - MoveRMwr' }
 VMARMV8SpecificEncodingTest >> testEncodeMoveRMwrWithNegative9BitConstant [
 
 	self doTestEncodeMoveRMwr: -256.
@@ -348,28 +346,28 @@ VMARMV8SpecificEncodingTest >> testEncodeMoveRMwrWithNegative9BitConstant [
 		equals: 'stur	x23, [x3, #-256]'
 ]
 
-{ #category : 'tests - MoveRMwr' }
+{ #category : #'tests - MoveRMwr' }
 VMARMV8SpecificEncodingTest >> testEncodeMoveRMwrWithNon9BitButShiftableConstant [
 
 	self doTestEncodeMoveRMwr: 512
 
 ]
 
-{ #category : 'tests - MoveRMwr' }
+{ #category : #'tests - MoveRMwr' }
 VMARMV8SpecificEncodingTest >> testEncodeMoveRMwrWithNon9BitNegativeConstant [
 
 	self doTestEncodeMoveRMwr: -61440
 
 ]
 
-{ #category : 'tests - MoveRMwr' }
+{ #category : #'tests - MoveRMwr' }
 VMARMV8SpecificEncodingTest >> testEncodeMoveRMwrWithPositive9BitConstant [
 
 	self doTestEncodeMoveRMwr: 256
 
 ]
 
-{ #category : 'tests - cmpCqR' }
+{ #category : #'tests - cmpCqR' }
 VMARMV8SpecificEncodingTest >> testEncodeOrCqRWithEncodableConstant [
 
 	self compile: [
@@ -381,7 +379,7 @@ VMARMV8SpecificEncodingTest >> testEncodeOrCqRWithEncodableConstant [
 	self assert: machineSimulator receiverRegisterValue equals: 16r1FF
 ]
 
-{ #category : 'tests - cmpCqR' }
+{ #category : #'tests - cmpCqR' }
 VMARMV8SpecificEncodingTest >> testEncodeOrCqRWithLargeConstant [
 
 	self compile: [
@@ -393,7 +391,7 @@ VMARMV8SpecificEncodingTest >> testEncodeOrCqRWithLargeConstant [
 	self assert: machineSimulator receiverRegisterValue equals: (67108865 bitOr: 16r100)
 ]
 
-{ #category : 'tests - cmpCqR' }
+{ #category : #'tests - cmpCqR' }
 VMARMV8SpecificEncodingTest >> testEncodeOrCqRWithNonEncodableConstant [
 
 	self compile: [

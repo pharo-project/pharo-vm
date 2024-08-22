@@ -1,50 +1,49 @@
 Class {
-	#name : 'RegisterDescriptor',
-	#superclass : 'Object',
+	#name : #RegisterDescriptor,
+	#superclass : #Object,
 	#instVars : [
 		'simulator',
 		'name',
 		'alias',
 		'smalltalkAlias'
 	],
-	#category : 'VMMakerTests',
-	#package : 'VMMakerTests'
+	#category : #VMMakerTests
 }
 
-{ #category : 'accessing' }
+{ #category : #accessing }
 RegisterDescriptor >> alias [
 	^ alias
 ]
 
-{ #category : 'accessing' }
+{ #category : #accessing }
 RegisterDescriptor >> alias: aString [ 
 	
 	alias := aString
 ]
 
-{ #category : 'actions' }
+{ #category : #actions }
 RegisterDescriptor >> copyValueToClipboard [
 	
 	Clipboard clipboardText: self value hex
 ]
 
-{ #category : 'actions' }
+{ #category : #actions }
 RegisterDescriptor >> inspectValue [
 
 	self value inspect
 ]
 
-{ #category : 'accessing' }
+{ #category : #accessing }
 RegisterDescriptor >> name [
 	^ name
 ]
 
-{ #category : 'accessing' }
+{ #category : #accessing }
 RegisterDescriptor >> name: anObject [
 	name := anObject
 ]
 
-{ #category : 'accessing' }
+{ #category : #accessing }
 RegisterDescriptor >> printOn: aStream [
 
 	(self value isKindOf: Boolean )
@@ -54,35 +53,35 @@ RegisterDescriptor >> printOn: aStream [
 
 ]
 
-{ #category : 'actions' }
+{ #category : #actions }
 RegisterDescriptor >> printValue [
 
 	simulator memory interpreter longPrintOop: self value
 ]
 
-{ #category : 'accessing' }
+{ #category : #accessing }
 RegisterDescriptor >> simulator [
 	^ simulator
 ]
 
-{ #category : 'accessing' }
+{ #category : #accessing }
 RegisterDescriptor >> simulator: anObject [
 	simulator := anObject
 ]
 
-{ #category : 'accessing' }
+{ #category : #accessing }
 RegisterDescriptor >> smalltalkAlias [
 	
 	^ smalltalkAlias
 ]
 
-{ #category : 'accessing' }
+{ #category : #accessing }
 RegisterDescriptor >> smalltalkAlias: aString [ 
 	
 	smalltalkAlias := aString
 ]
 
-{ #category : 'accessing' }
+{ #category : #accessing }
 RegisterDescriptor >> value [
 
 	^ simulator perform: name

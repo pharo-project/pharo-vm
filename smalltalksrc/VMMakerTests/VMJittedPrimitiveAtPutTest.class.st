@@ -1,15 +1,13 @@
 Class {
-	#name : 'VMJittedPrimitiveAtPutTest',
-	#superclass : 'VMJittedPrimitivesTest',
+	#name : #VMJittedPrimitiveAtPutTest,
+	#superclass : #VMJittedPrimitivesTest,
 	#instVars : [
 		'stop'
 	],
-	#category : 'VMMakerTests-JitTests',
-	#package : 'VMMakerTests',
-	#tag : 'JitTests'
+	#category : #'VMMakerTests-JitTests'
 }
 
-{ #category : 'running' }
+{ #category : #running }
 VMJittedPrimitiveAtPutTest >> setUp [
 
 	super setUp.
@@ -23,7 +21,7 @@ VMJittedPrimitiveAtPutTest >> setUp [
 		bytecodes: 10.
 ]
 
-{ #category : 'running' }
+{ #category : #running }
 VMJittedPrimitiveAtPutTest >> setUpTrampolines [ 
 
 	super setUpTrampolines.
@@ -32,7 +30,7 @@ VMJittedPrimitiveAtPutTest >> setUpTrampolines [
 
 ]
 
-{ #category : 'tests' }
+{ #category : #tests }
 VMJittedPrimitiveAtPutTest >> testPrimitiveAtPut32bitIndexableWithLargeNumberShouldStoreValue [
 
 	| integerArray offset expectedValue |

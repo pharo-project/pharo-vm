@@ -1,6 +1,6 @@
 Class {
-	#name : 'VMFFIWorkerCalloutTest',
-	#superclass : 'VMAbstractFFITest',
+	#name : #VMFFIWorkerCalloutTest,
+	#superclass : #VMAbstractFFITest,
 	#instVars : [
 		'aFunctionBlock',
 		'tfExternalFunction',
@@ -9,17 +9,16 @@ Class {
 		'workerOop',
 		'semaphoreIndex'
 	],
-	#category : 'VMMakerTests',
-	#package : 'VMMakerTests'
+	#category : #VMMakerTests
 }
 
-{ #category : 'tests' }
+{ #category : #tests }
 VMFFIWorkerCalloutTest >> doWorkerCallWithArguments: smalltalkValues ofTypes: argumentTypes [
 
 	^ self doWorkerCallWithArguments: smalltalkValues ofTypes: argumentTypes returnType: interpreter libFFI void
 ]
 
-{ #category : 'tests' }
+{ #category : #tests }
 VMFFIWorkerCalloutTest >> doWorkerCallWithArguments: smalltalkValues ofTypes: argumentTypes returnType: returnType [
 
 	aFunctionBlock := [ self fail: 'It should enqueue it, not execute it' ].
@@ -50,21 +49,21 @@ VMFFIWorkerCalloutTest >> doWorkerCallWithArguments: smalltalkValues ofTypes: ar
 	interpreter primitiveWorkerCallout
 ]
 
-{ #category : 'tests' }
+{ #category : #tests }
 VMFFIWorkerCalloutTest >> initializationOptions [
 
 	^ super initializationOptions , { 
 		#FEATURE_THREADED_FFI . true }
 ]
 
-{ #category : 'tests' }
+{ #category : #tests }
 VMFFIWorkerCalloutTest >> testPrimitiveWorkerCalloutEnqueuesOnlyOneTask [
 
 	self doWorkerCallWithArguments: {} ofTypes: {}.
 	self assert: interpreter libFFI testWorker tasks size equals: 1
 ]
 
-{ #category : 'tests' }
+{ #category : #tests }
 VMFFIWorkerCalloutTest >> testPrimitiveWorkerCalloutReleasesAllAllocatedMemoryIfPrimitiveFails [
 
 	| previous |
@@ -87,7 +86,7 @@ VMFFIWorkerCalloutTest >> testPrimitiveWorkerCalloutReleasesAllAllocatedMemoryIf
 	self assert: interpreter allocatedElements size equals: previous.
 ]
 
-{ #category : 'tests' }
+{ #category : #tests }
 VMFFIWorkerCalloutTest >> testPrimitiveWorkerCalloutReturningVoidDoesNotAllocateReturnHolder [
 
 	self doWorkerCallWithArguments: {} ofTypes: {}.
@@ -95,7 +94,7 @@ VMFFIWorkerCalloutTest >> testPrimitiveWorkerCalloutReturningVoidDoesNotAllocate
 	self assert: interpreter libFFI testWorker tasks first returnHolderAddress isNil
 ]
 
-{ #category : 'tests' }
+{ #category : #tests }
 VMFFIWorkerCalloutTest >> testPrimitiveWorkerCalloutWithParametersAllocatesArgumentHoldersAndReturnHolderInCHeap [
 
 	| previous |
@@ -117,7 +116,7 @@ VMFFIWorkerCalloutTest >> testPrimitiveWorkerCalloutWithParametersAllocatesArgum
 	self assert: interpreter allocatedElements size equals: previous + 7.
 ]
 
-{ #category : 'tests' }
+{ #category : #tests }
 VMFFIWorkerCalloutTest >> testPrimitiveWorkerCalloutWithoutParametersAndWithReturnAllocateJustOne [
 
 	| previous |
@@ -128,7 +127,7 @@ VMFFIWorkerCalloutTest >> testPrimitiveWorkerCalloutWithoutParametersAndWithRetu
 	self assert: interpreter allocatedElements size equals: previous + 1.
 ]
 
-{ #category : 'tests' }
+{ #category : #tests }
 VMFFIWorkerCalloutTest >> testPrimitiveWorkerCalloutWithoutParametersAndWithoutReturnDoesNotAllocate [
 
 	| previous |
@@ -139,7 +138,7 @@ VMFFIWorkerCalloutTest >> testPrimitiveWorkerCalloutWithoutParametersAndWithoutR
 	self assert: interpreter allocatedElements size equals: previous.
 ]
 
-{ #category : 'tests' }
+{ #category : #tests }
 VMFFIWorkerCalloutTest >> testPrimitiveWorkerCalloutWithoutParametersHasNilAsParametersPointer [
 
 	self doWorkerCallWithArguments: {} ofTypes: {}.

@@ -1,18 +1,16 @@
 Class {
-	#name : 'VMJittedLookupTest',
-	#superclass : 'VMSimpleStackBasedCogitAbstractTest',
+	#name : #VMJittedLookupTest,
+	#superclass : #VMSimpleStackBasedCogitAbstractTest,
 	#instVars : [
 		'methodOop',
 		'selectorOop',
 		'receiver',
 		'receiverClass'
 	],
-	#category : 'VMMakerTests-JitTests',
-	#package : 'VMMakerTests',
-	#tag : 'JitTests'
+	#category : #'VMMakerTests-JitTests'
 }
 
-{ #category : 'tests' }
+{ #category : #tests }
 VMJittedLookupTest >> installSelector: aSelectorOop method: aMethodOop inMethodDictionary: aMethodDictionary [
 	
 	| anArrayOfMethods |
@@ -27,7 +25,7 @@ VMJittedLookupTest >> installSelector: aSelectorOop method: aMethodOop inMethodD
 		withValue: aMethodOop
 ]
 
-{ #category : 'tests' }
+{ #category : #tests }
 VMJittedLookupTest >> setArrayClassIntoClassTable [
 	| aClass |
 	aClass := self
@@ -40,7 +38,7 @@ VMJittedLookupTest >> setArrayClassIntoClassTable [
 		withValue: aClass
 ]
 
-{ #category : 'tests' }
+{ #category : #tests }
 VMJittedLookupTest >> setMessageClassIntoClassTable [
 	| aClass |
 	aClass := self
@@ -53,7 +51,7 @@ VMJittedLookupTest >> setMessageClassIntoClassTable [
 		withValue: aClass
 ]
 
-{ #category : 'tests' }
+{ #category : #tests }
 VMJittedLookupTest >> setUpClassAndMethod [
 
 
@@ -65,7 +63,7 @@ VMJittedLookupTest >> setUpClassAndMethod [
 	receiverClass := self setSmallIntegerClassIntoClassTable
 ]
 
-{ #category : 'tests' }
+{ #category : #tests }
 VMJittedLookupTest >> setUpMethodDictionaryIn: aClass [
 	"2 instances variables the array of methods and the tally
 	and 12 entries to put elemetns of the collection"
@@ -92,7 +90,7 @@ VMJittedLookupTest >> setUpMethodDictionaryIn: aClass [
 
 ]
 
-{ #category : 'tests' }
+{ #category : #tests }
 VMJittedLookupTest >> testLookUpMNUShouldJItCompile [
 
 	| superclass superclassMethodDictionary foundMethod |
@@ -125,7 +123,7 @@ VMJittedLookupTest >> testLookUpMNUShouldJItCompile [
 	self assert: foundMethod equals: methodOop
 ]
 
-{ #category : 'tests' }
+{ #category : #tests }
 VMJittedLookupTest >> testLookUpMNUWithAnyNonMethodObjectShouldNotJItCompile [
 
 	| superclass superclassMethodDictionary foundMethod |

@@ -1,11 +1,10 @@
 Class {
-	#name : 'VMFFISameThreadArgumentMarshallingTest',
-	#superclass : 'VMFFIArgumentMarshallingTest',
-	#category : 'VMMakerTests',
-	#package : 'VMMakerTests'
+	#name : #VMFFISameThreadArgumentMarshallingTest,
+	#superclass : #VMFFIArgumentMarshallingTest,
+	#category : #VMMakerTests
 }
 
-{ #category : 'implementation' }
+{ #category : #implementation }
 VMFFISameThreadArgumentMarshallingTest >> doTestFuntionWithArgumentType: argumentType smalltalkValue: smalltalkValue expectedValue: expectedValue [
 
 	| parametersArray tfExternalFunction savedValue |
@@ -29,7 +28,7 @@ VMFFISameThreadArgumentMarshallingTest >> doTestFuntionWithArgumentType: argumen
 	self assert: savedValue equals: expectedValue.
 ]
 
-{ #category : 'implementation' }
+{ #category : #implementation }
 VMFFISameThreadArgumentMarshallingTest >> doTestFuntionWithArgumentType: argumentType smalltalkValue: smalltalkValue failsWith: expectedErrorCode [
 
 	| parametersArray tfExternalFunction savedValue |
@@ -53,7 +52,7 @@ VMFFISameThreadArgumentMarshallingTest >> doTestFuntionWithArgumentType: argumen
 	self assert: interpreter primFailCode equals: expectedErrorCode.
 ]
 
-{ #category : 'tests - parameters marshalling' }
+{ #category : #'tests - parameters marshalling' }
 VMFFISameThreadArgumentMarshallingTest >> testCalloutWithoutArgumentsMarshallsCorrectly [
 
 	| parametersArray tfExternalFunction functionCalled |

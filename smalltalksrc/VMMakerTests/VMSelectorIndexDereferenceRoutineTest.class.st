@@ -1,15 +1,13 @@
 Class {
-	#name : 'VMSelectorIndexDereferenceRoutineTest',
-	#superclass : 'VMSimpleStackBasedCogitAbstractTest',
+	#name : #VMSelectorIndexDereferenceRoutineTest,
+	#superclass : #VMSimpleStackBasedCogitAbstractTest,
 	#pools : [
 		'VMClassIndices'
 	],
-	#category : 'VMMakerTests-JitTests',
-	#package : 'VMMakerTests',
-	#tag : 'JitTests'
+	#category : #'VMMakerTests-JitTests'
 }
 
-{ #category : 'tests' }
+{ #category : #tests }
 VMSelectorIndexDereferenceRoutineTest >> test32BitsDoesNotGenerateRoutine [
 
 	"32 bit platforms use a direct selector reference and not an index"
@@ -20,7 +18,7 @@ VMSelectorIndexDereferenceRoutineTest >> test32BitsDoesNotGenerateRoutine [
 	self assert: cogit ceDereferenceSelectorIndex isNil
 ]
 
-{ #category : 'tests' }
+{ #category : #tests }
 VMSelectorIndexDereferenceRoutineTest >> test64BitsGeneratesRoutine [
 
 	"64 bit platforms use a selector index and a routine to map it to the real selector"
@@ -31,7 +29,7 @@ VMSelectorIndexDereferenceRoutineTest >> test64BitsGeneratesRoutine [
 	self assert: cogit ceDereferenceSelectorIndex notNil
 ]
 
-{ #category : 'tests' }
+{ #category : #tests }
 VMSelectorIndexDereferenceRoutineTest >> testNegativeSelectorIndexIsLookedUpInSpecialSelectorTable [
 
 	"64 bit platforms use a selector index and a routine to map it to the real selector"
@@ -60,7 +58,7 @@ VMSelectorIndexDereferenceRoutineTest >> testNegativeSelectorIndexIsLookedUpInSp
 	self assert: machineSimulator classRegisterValue equals: memory falseObject
 ]
 
-{ #category : 'tests' }
+{ #category : #tests }
 VMSelectorIndexDereferenceRoutineTest >> testPositiveSelectorIndexIsLookedUpInMethodLiterals [
 
 	"64 bit platforms use a selector index and a routine to map it to the real selector"

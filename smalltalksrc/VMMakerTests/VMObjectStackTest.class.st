@@ -1,12 +1,10 @@
 Class {
-	#name : 'VMObjectStackTest',
-	#superclass : 'VMSpurInitializedOldSpaceTest',
-	#category : 'VMMakerTests-MemoryTests',
-	#package : 'VMMakerTests',
-	#tag : 'MemoryTests'
+	#name : #VMObjectStackTest,
+	#superclass : #VMSpurInitializedOldSpaceTest,
+	#category : #'VMMakerTests-MemoryTests'
 }
 
-{ #category : 'tests' }
+{ #category : #tests }
 VMObjectStackTest >> testGrowingMournQueueUpdatesVMGlobalVariable [
 
 	
@@ -14,7 +12,7 @@ VMObjectStackTest >> testGrowingMournQueueUpdatesVMGlobalVariable [
 	self assert: memory mournQueue equals: (memory objStackAt: 4098"MournQueueRootIndex")
 ]
 
-{ #category : 'tests' }
+{ #category : #tests }
 VMObjectStackTest >> testNewMournQueueIsEmpty [
 
 	| objStack |
@@ -24,7 +22,7 @@ VMObjectStackTest >> testNewMournQueueIsEmpty [
 	
 ]
 
-{ #category : 'tests' }
+{ #category : #tests }
 VMObjectStackTest >> testNewObjectStackIsEmpty [
 
 	"Create an object stack at the position of the mark stack in the class table (4096)"
@@ -35,7 +33,7 @@ VMObjectStackTest >> testNewObjectStackIsEmpty [
 	
 ]
 
-{ #category : 'tests' }
+{ #category : #tests }
 VMObjectStackTest >> testObjectsInMournQueueArePoppedInOrder [
 
 	| objStack |
@@ -48,7 +46,7 @@ VMObjectStackTest >> testObjectsInMournQueueArePoppedInOrder [
 	].
 ]
 
-{ #category : 'tests' }
+{ #category : #tests }
 VMObjectStackTest >> testObjectsInObjectStackArePoppedInOrder [
 
 	"Create an object stack at the position of the mark stack in the class table (4096)"
@@ -62,7 +60,7 @@ VMObjectStackTest >> testObjectsInObjectStackArePoppedInOrder [
 	].
 ]
 
-{ #category : 'tests' }
+{ #category : #tests }
 VMObjectStackTest >> testPopMournQueueReducesSize [
 
 	| objStack |
@@ -72,7 +70,7 @@ VMObjectStackTest >> testPopMournQueueReducesSize [
 	self assert: (memory isEmptyObjStack: objStack)
 ]
 
-{ #category : 'tests' }
+{ #category : #tests }
 VMObjectStackTest >> testPopObjectInMournQueueReturnsInitiallyPushedObject [
 
 	| objStack |
@@ -81,7 +79,7 @@ VMObjectStackTest >> testPopObjectInMournQueueReturnsInitiallyPushedObject [
 	self assert: (memory popObjStack: objStack) equals: memory trueObject
 ]
 
-{ #category : 'tests' }
+{ #category : #tests }
 VMObjectStackTest >> testPopObjectInStackReturnsInitiallyPushedObject [
 
 	"Create an object stack at the position of the mark stack in the class table (4096)"
@@ -91,7 +89,7 @@ VMObjectStackTest >> testPopObjectInStackReturnsInitiallyPushedObject [
 	self assert: (memory popObjStack: objStack) equals: memory trueObject
 ]
 
-{ #category : 'tests' }
+{ #category : #tests }
 VMObjectStackTest >> testPopObjectStackReducesSize [
 
 	"Create an object stack at the position of the mark stack in the class table (4096)"
@@ -102,14 +100,14 @@ VMObjectStackTest >> testPopObjectStackReducesSize [
 	self assert: (memory isEmptyObjStack: objStack)
 ]
 
-{ #category : 'tests' }
+{ #category : #tests }
 VMObjectStackTest >> testPushObjects: n [
 
 	"Create an object stack at the position of the mark stack in the class table (4096)"
 	self testPushObjects: n inStackAtIndex: 4096
 ]
 
-{ #category : 'tests' }
+{ #category : #tests }
 VMObjectStackTest >> testPushObjects: n inStackAtIndex: objectStackIndex [
 
 	memory ensureRoomOnObjStackAt: objectStackIndex.
@@ -121,19 +119,19 @@ VMObjectStackTest >> testPushObjects: n inStackAtIndex: objectStackIndex [
 	self assert: (memory sizeOfObjStack: (memory objStackAt: objectStackIndex)) equals: n
 ]
 
-{ #category : 'tests' }
+{ #category : #tests }
 VMObjectStackTest >> testPushObjectsAboveObjectStackLimit [
 
 	self testPushObjects: memory objectStackPageLimit + 1
 ]
 
-{ #category : 'tests' }
+{ #category : #tests }
 VMObjectStackTest >> testPushObjectsToObjectStackLimit [
 
 	self testPushObjects: memory objectStackPageLimit
 ]
 
-{ #category : 'tests' }
+{ #category : #tests }
 VMObjectStackTest >> testPushToMournQueueIncreasesSize [
 
 	| objStack |
@@ -142,7 +140,7 @@ VMObjectStackTest >> testPushToMournQueueIncreasesSize [
 	self assert: (memory sizeOfObjStack: objStack) equals: 1
 ]
 
-{ #category : 'tests' }
+{ #category : #tests }
 VMObjectStackTest >> testPushToObjectStackIncreasesSize [
 
 	"Create an object stack at the position of the mark stack in the class table (4096)"
