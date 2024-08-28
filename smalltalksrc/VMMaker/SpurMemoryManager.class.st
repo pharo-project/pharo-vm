@@ -5955,6 +5955,14 @@ SpurMemoryManager >> gcStartUsecs [
 ]
 
 { #category : 'accessing' }
+SpurMemoryManager >> getAvoidSearchingSegmentsWithPinnedObjects [
+
+	<api>
+
+	^ avoidSearchingSegmentsWithPinnedObjects
+]
+
+{ #category : 'accessing' }
 SpurMemoryManager >> getFromOldSpaceRememberedSet [
 
 	<api>
