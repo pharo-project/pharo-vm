@@ -2806,6 +2806,10 @@ StackInterpreterPrimitives >> primitiveSetVMParameter: index arg: argOop [
 					 self setImageVersion: arg.
 					 self initPrimCall] ].
 		[86] -> [ 
+			result := objectMemory getAvoidSearchingSegmentsWithPinnedObjects 
+				ifTrue: [objectMemory trueObject] 
+				ifFalse: [objectMemory falseObject].
+				
 			objectMemory setAvoidSearchingSegmentsWithPinnedObjects: arg.
 			self initPrimCall ]}
 		otherwise: [].
