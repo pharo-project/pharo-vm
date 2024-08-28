@@ -790,8 +790,7 @@ CoInterpreter >> attemptToSwitchToMachineCode: bcpc [
 CoInterpreter >> baseFrameCannotReturnTo: contextToReturnTo [
 
 	| contextToReturnFrom |
-	contextToReturnFrom := stackPages longAt:
-		                       stackPage baseAddress - objectMemory wordSize.
+	contextToReturnFrom := stackPages longAt: stackPage baseAddress - objectMemory wordSize.
 	self
 		tearDownAndRebuildFrameForCannotReturnBaseFrameReturnFrom:
 		contextToReturnFrom
@@ -1336,11 +1335,13 @@ CoInterpreter >> ceNonLocalReturn: returnValue [
 		 [self assert: (objectMemory isContext: currentCtx).
 		  (self isMarriedOrWidowedContext: currentCtx)
 		   and: [(stackPages stackPageFor: (theFP := self frameOfMarriedContext: currentCtx)) = newPage]] whileFalse:
-			[(self isMarriedOrWidowedContext: currentCtx)
+			[
+			(self isMarriedOrWidowedContext: currentCtx)
 				ifTrue:
 					[thePage := stackPages stackPageFor: theFP.
 					 currentCtx := self frameCallerContext: thePage baseFP.
-					 stackPages freeStackPage: thePage]
+					 stackPages freeStackPage: thePage.
+					]
 				ifFalse:
 					[nextCntx := objectMemory fetchPointer: SenderIndex ofObject: currentCtx.
 					 self markContextAsDead: currentCtx.
