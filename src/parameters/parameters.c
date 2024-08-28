@@ -742,6 +742,7 @@ vm_parameters_init(VMParameters *parameters){
 	parameters->maxOldSpaceSize = 0;
 	parameters->edenSize = 0;
 	parameters->minPermSpaceSize = 0;
+    parameters->stackPageSize = 0;
 	parameters->imageFileName = NULL;
 	parameters->isDefaultImage = false;
 	parameters->defaultImageFound = false;
