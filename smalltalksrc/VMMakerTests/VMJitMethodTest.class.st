@@ -424,8 +424,9 @@ VMJitMethodTest >> testOnStackReplacementForLongRunningVectorAddMethod [
 	stackBuilder setInterpreterVariables.
 
 	cogit generateReturnToInterpreterPCTrampoline.
+	interpreter argumentCount: 3.
 	interpreter newMethod: callingMethod.
-	interpreter activateNewMethod.
+	interpreter activateNewMethodInterpreted.
 	"Set the backwards branch count to 3 so it trips in the first iteration.
 	This should trigger JIT compilation and On Stack Replacement"
 	interpreter

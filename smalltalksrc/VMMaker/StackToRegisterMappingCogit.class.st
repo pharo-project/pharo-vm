@@ -2467,12 +2467,6 @@ StackToRegisterMappingCogit >> genSendDirectedSuper: selectorIndex numArgs: numA
 ]
 
 { #category : 'bytecode generator support' }
-StackToRegisterMappingCogit >> genSendDynamicSuper: selectorIndex numArgs: numArgs [
-	self marshallSendArguments: numArgs.
-	^self genMarshalledSend: selectorIndex numArgs: numArgs sendTable: dynamicSuperSendTrampolines
-]
-
-{ #category : 'bytecode generator support' }
 StackToRegisterMappingCogit >> genSendSuper: selectorIndex numArgs: numArgs [
 	self marshallSendArguments: numArgs.
 	^self genMarshalledSend: selectorIndex numArgs: numArgs sendTable: superSendTrampolines

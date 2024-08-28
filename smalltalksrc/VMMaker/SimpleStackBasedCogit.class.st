@@ -1293,27 +1293,6 @@ SimpleStackBasedCogit >> genExtPushPseudoVariable [
 ]
 
 { #category : 'bytecode generators' }
-SimpleStackBasedCogit >> genExtPushPseudoVariableOrOuterBytecode [
-	"77			01001101		Push false [* 1:true, 2:nil, 3:thisContext, ..., -N: pushEnclosingObjectAt: N, N = Extend B]"
-	| ext |
-	ext := extB.
-	extB := 0.
-	numExtB := 0.
-	ext caseOf: {
-		[0]	->	[^self genPushLiteral: objectMemory falseObject].
-		[1]	->	[^self genPushLiteral: objectMemory trueObject].
-		[2]	->	[^self genPushLiteral: objectMemory nilObject].
-		[3]	->	[^self genPushActiveContextBytecode]
-		}
-		otherwise:
-			[ext < 0 ifTrue:
-				[^self genPushEnclosingObjectAt: 0 - ext].
-			 self warning: 'undefined extension for extPushPseudoVariableOrOuter'.
-			 ^self unknownBytecode].
-	^0
-]
-
-{ #category : 'bytecode generators' }
 SimpleStackBasedCogit >> genExtPushReceiverVariableBytecode [
 	"226		11100010	i i i i i i i i	Push Receiver Variable #iiiiiiii (+ Extend A * 256)"
 	| index |
@@ -2033,15 +2012,6 @@ SimpleStackBasedCogit >> genPushConstantTrueBytecode [
 SimpleStackBasedCogit >> genPushConstantZeroBytecode [
 	"78			01001110		Push 0"
 	^self genPushLiteral: (objectMemory integerObjectOf: 0)
-]
-
-{ #category : 'bytecode generator support' }
-SimpleStackBasedCogit >> genPushEnclosingObjectAt: level [
-	"Uncached push enclosing object"
-	self MoveCq: level R: SendNumArgsReg.
-	self CallRT: ceEnclosingObjectTrampoline.
-	self PushR: ReceiverResultReg.
-	^0
 ]
 
 { #category : 'bytecode generator support' }
