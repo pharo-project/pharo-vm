@@ -1421,6 +1421,108 @@ methodCallingMethodExpressionList(void)
 }'
 ]
 
+{ #category : 'tests-inlinemethod' }
+SlangBasicTranslationTest >> testInlineWithCoerceAsArgument [
+	"the cast is still in an expression, so inlining does not supress it"
+
+	| translation tMethod |
+	tMethod := self getTMethodFrom:
+		           #methodCallingInSendMethodWithCCoerceInReturn.
+	tMethod recordDeclarationsIn: generator.
+
+	generator doBasicInlining: true.
+
+	translation := self translate: tMethod.
+	translation := translation trimBoth.
+
+	self
+		assert: translation
+		equals:
+			'/* SlangBasicTranslationTestClass>>#methodCallingInSendMethodWithCCoerceInReturn */
+static sqInt
+methodCallingInSendMethodWithCCoerceInReturn(void)
+{
+	method(((sqInt) (method()) ));
+	return 0;
+}'
+]
+
+{ #category : 'tests-inlinemethod' }
+SlangBasicTranslationTest >> testInlineWithCoerceAsExpressionInAssignment [
+	"the cast is still in an expression, so inlining does not supress it"
+
+	| translation tMethod |
+	tMethod := self getTMethodFrom:
+		           #methodCallingInAssignemtMethodWithCCoerceInReturn.
+	tMethod recordDeclarationsIn: generator.
+	generator doBasicInlining: true.
+
+	translation := self translate: tMethod.
+	translation := translation trimBoth.
+
+	self
+		assert: translation
+		equals:
+			'/* SlangBasicTranslationTestClass>>#methodCallingInAssignemtMethodWithCCoerceInReturn */
+static sqInt
+methodCallingInAssignemtMethodWithCCoerceInReturn(void)
+{
+	sqInt i;
+
+	i = ((sqInt) (method()) );
+	return 0;
+}'
+]
+
+{ #category : 'tests-inlinemethod' }
+SlangBasicTranslationTest >> testInlineWithCoerceAsExpressionInReturn [
+	"the cast is still in an expression, so inlining does not supress it"
+
+	| translation tMethod |
+	tMethod := self getTMethodFrom:
+		           #methodCallingInReturnMethodWithCCoerceInReturn.
+	tMethod recordDeclarationsIn: generator.
+	generator doBasicInlining: true.
+
+	translation := self translate: tMethod.
+	translation := translation trimBoth.
+
+	self
+		assert: translation
+		equals:
+			'/* SlangBasicTranslationTestClass>>#methodCallingInReturnMethodWithCCoerceInReturn */
+static sqInt
+methodCallingInReturnMethodWithCCoerceInReturn(void)
+{
+	return ((sqInt) (method()) );
+}'
+]
+
+{ #category : 'tests-inlinemethod' }
+SlangBasicTranslationTest >> testInlineWithUnecessaryCoerce [
+	"the cast isn't in an expression anymore, so inlining supress it. If it we keep the cast we would have the line '(sqInt) method;' which would produce an 'unused expression result' warning."
+
+	| translation tMethod |
+	tMethod := self getTMethodFrom:
+		           #methodCallingMethodWithCCoerceInReturn.
+	tMethod recordDeclarationsIn: generator.
+	generator doBasicInlining: true.
+
+	translation := self translate: tMethod.
+	translation := translation trimBoth.
+
+	self
+		assert: translation
+		equals:
+			'/* SlangBasicTranslationTestClass>>#methodCallingMethodWithCCoerceInReturn */
+static sqInt
+methodCallingMethodWithCCoerceInReturn(void)
+{
+	method();
+	return 0;
+}'
+]
+
 { #category : 'tests-labels' }
 SlangBasicTranslationTest >> testLabel [
 
