@@ -1,6 +1,6 @@
-Extension { #name : #PrintfNumberFormatDescriptor }
+Extension { #name : 'PrintfNumberFormatDescriptor' }
 
-{ #category : #'*VMMaker-C code generation' }
+{ #category : '*VMMaker-C code generation' }
 PrintfNumberFormatDescriptor >> transformForVMMaker [
 	('duxX' includes: operator) ifFalse:
 		[^super transformForVMMaker].

@@ -188,6 +188,7 @@ static unsigned int rgbSubwith(unsigned int sourceWord, unsigned int destination
 EXPORT(sqInt) setInterpreter(struct VirtualMachine *anInterpreter);
 static sqInt setupColorMasks(void);
 static sqInt setupColorMasksFromto(sqInt srcBits, sqInt targetBits);
+static sqInt showDisplayBits(void);
 static sqInt sourceSkewAndPointerInit(void);
 static unsigned int sourceWordwith(unsigned int sourceWord, unsigned int destinationWord);
 static sqInt sqAssert(sqInt aBool);
@@ -286,7 +287,7 @@ static sqInt (*methodReturnInteger)(sqInt integer);
 static sqInt (*methodReturnReceiver)(void);
 static sqInt (*nilObject)(void);
 static sqInt (*pop)(sqInt nItems);
-static sqInt (*popthenPush)(sqInt nItems, sqInt oop);
+static void (*popthenPush)(sqInt nItems, sqInt oop);
 static sqInt (*positive32BitIntegerFor)(unsigned int integerValue);
 static usqInt (*positive32BitValueOf)(sqInt oop);
 static usqLong (*positive64BitValueOf)(sqInt oop);
@@ -327,7 +328,7 @@ extern sqInt methodReturnInteger(sqInt integer);
 extern sqInt methodReturnReceiver(void);
 extern sqInt nilObject(void);
 extern sqInt pop(sqInt nItems);
-extern sqInt popthenPush(sqInt nItems, sqInt oop);
+extern void popthenPush(sqInt nItems, sqInt oop);
 extern sqInt positive32BitIntegerFor(unsigned int integerValue);
 extern usqInt positive32BitValueOf(sqInt oop);
 extern usqLong positive64BitValueOf(sqInt oop);
@@ -1352,6 +1353,10 @@ copyBitsFromtoat(sqInt startX, sqInt stopX, sqInt yValue)
 	sourceX = startX;
 	width = stopX - startX;
 	copyBits();
+	/* begin showDisplayBits */
+	if (numGCsOnInvocation != (statNumGCs())) {
+		reloadDestAndSourceForms();
+	}
 	return 0;
 }
 
@@ -2686,6 +2691,10 @@ drawLoopXY(sqInt xDelta, sqInt yDelta)
 						affectedR = affR;
 						affectedT = affT;
 						affectedB = affB;
+						/* begin showDisplayBits */
+						if (numGCsOnInvocation != (statNumGCs())) {
+							reloadDestAndSourceForms();
+						}
 
 						/* init null rectangle */
 						affL = (affT = 9999);
@@ -2725,6 +2734,10 @@ drawLoopXY(sqInt xDelta, sqInt yDelta)
 						affectedR = affR;
 						affectedT = affT;
 						affectedB = affB;
+						/* begin showDisplayBits */
+						if (numGCsOnInvocation != (statNumGCs())) {
+							reloadDestAndSourceForms();
+						}
 
 						/* init null rectangle */
 						affL = (affT = 9999);
@@ -5098,6 +5111,10 @@ primitiveCopyBits(void)
 	if (failed()) {
 		return null;
 	}
+	/* begin showDisplayBits */
+	if (numGCsOnInvocation != (statNumGCs())) {
+		reloadDestAndSourceForms();
+	}
 	if (failed()) {
 		return null;
 	}
@@ -5253,6 +5270,10 @@ primitiveDisplayString(void)
 	if (!quickBlt) {
 		unlockSurfaces();
 	}
+	/* begin showDisplayBits */
+	if (numGCsOnInvocation != (statNumGCs())) {
+		reloadDestAndSourceForms();
+	}
 	storeIntegerofObjectwithValue(BBDestXIndex, bbObj, destX);
 	pop(6);
 	return 0;
@@ -5345,6 +5366,10 @@ primitiveDrawLoop(void)
 							affectedR = affR;
 							affectedT = affT;
 							affectedB = affB;
+							/* begin showDisplayBits */
+							if (numGCsOnInvocation != (statNumGCs())) {
+								reloadDestAndSourceForms();
+							}
 
 							/* init null rectangle */
 							affL = (affT = 9999);
@@ -5384,6 +5409,10 @@ primitiveDrawLoop(void)
 							affectedR = affR;
 							affectedT = affT;
 							affectedB = affB;
+							/* begin showDisplayBits */
+							if (numGCsOnInvocation != (statNumGCs())) {
+								reloadDestAndSourceForms();
+							}
 
 							/* init null rectangle */
 							affL = (affT = 9999);
@@ -5402,6 +5431,10 @@ primitiveDrawLoop(void)
 		storeIntegerofObjectwithValue(BBDestXIndex, bitBltOop, destX);
 		storeIntegerofObjectwithValue(BBDestYIndex, bitBltOop, destY);
 	l1:	/* end drawLoopX:Y: */;
+		/* begin showDisplayBits */
+		if (numGCsOnInvocation != (statNumGCs())) {
+			reloadDestAndSourceForms();
+		}
 	}
 	if (!(failed())) {
 		pop(2);
@@ -5611,6 +5644,10 @@ primitiveWarpBits(void)
 	l1:	/* end warpBits */;
 	if (failed()) {
 		return null;
+	}
+	/* begin showDisplayBits */
+	if (numGCsOnInvocation != (statNumGCs())) {
+		reloadDestAndSourceForms();
 	}
 	if (failed()) {
 		return null;
@@ -6709,6 +6746,18 @@ setupColorMasksFromto(sqInt srcBits, sqInt targetBits)
 	cmFlags = cmFlags | (ColorMapPresent | ColorMapFixedPart);
 	return 0;
 }
+
+	/* BitBltSimulation>>#showDisplayBits */
+static sqInt
+showDisplayBits(void)
+{
+	/* begin ensureDestAndSourceFormsAreValid */
+	if (numGCsOnInvocation != (statNumGCs())) {
+		reloadDestAndSourceForms();
+	}
+	return 0;
+}
+
 
 /*	This is only used when source and dest are same depth,
 	ie, when the barrel-shift copy loop is used. */

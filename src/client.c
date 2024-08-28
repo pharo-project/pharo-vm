@@ -33,7 +33,7 @@ void mtfsfi(unsigned long long fpscr)
 #   define mtfsfi(fpscr)
 #endif
 
-static int loadPharoImage(const char* fileName);
+static int loadPharoImage(char* fileName);
 static void* runVMThread(void* p);
 static int runOnMainThread(VMParameters *parameters);
 #ifdef PHARO_VM_IN_WORKER_THREAD
@@ -206,12 +206,10 @@ vm_main(int argc, const char** argv, const char** env)
 }
 
 static int
-loadPharoImage(const char* fileName)
+loadPharoImage(char* fileName)
 {
-    struct stat sb;
-
     /* Check image exists */
-    if (stat(fileName, &sb) == -1) {
+    if (!sqImageFileExists(fileName)) {
         logErrorFromErrno("Image file not found");
         return false;
     }

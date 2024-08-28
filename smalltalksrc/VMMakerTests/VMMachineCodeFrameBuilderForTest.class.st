@@ -1,6 +1,6 @@
 Class {
-	#name : #VMMachineCodeFrameBuilderForTest,
-	#superclass : #Object,
+	#name : 'VMMachineCodeFrameBuilderForTest',
+	#superclass : 'Object',
 	#instVars : [
 		'test',
 		'returnAddress',
@@ -10,20 +10,21 @@ Class {
 		'spouseContext',
 		'method'
 	],
-	#category : #VMMakerTests
+	#category : 'VMMakerTests',
+	#package : 'VMMakerTests'
 }
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 VMMachineCodeFrameBuilderForTest >> arguments [
 	^ arguments
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 VMMachineCodeFrameBuilderForTest >> arguments: anObject [
 	arguments := anObject
 ]
 
-{ #category : #building }
+{ #category : 'building' }
 VMMachineCodeFrameBuilderForTest >> buildFrame [
 
 	| methodAddress |
@@ -54,13 +55,13 @@ VMMachineCodeFrameBuilderForTest >> buildFrame [
 	test cogit needsFrame: true.
 ]
 
-{ #category : #testing }
+{ #category : 'testing' }
 VMMachineCodeFrameBuilderForTest >> hasSpouseContext [
 
 	^ spouseContext notNil
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 VMMachineCodeFrameBuilderForTest >> initializeWithTest: aTest [
 	
 	self test: aTest.
@@ -70,63 +71,63 @@ VMMachineCodeFrameBuilderForTest >> initializeWithTest: aTest [
 	temporaries := #().
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 VMMachineCodeFrameBuilderForTest >> method [
 	^ method
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 VMMachineCodeFrameBuilderForTest >> method: anObject [
 	method := anObject
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 VMMachineCodeFrameBuilderForTest >> receiver [
 	^ receiver
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 VMMachineCodeFrameBuilderForTest >> receiver: anObject [
 	receiver := anObject
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 VMMachineCodeFrameBuilderForTest >> returnAddress [
 	^ returnAddress
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 VMMachineCodeFrameBuilderForTest >> returnAddress: anObject [
 	returnAddress := anObject
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 VMMachineCodeFrameBuilderForTest >> spouseContext [
 	^ spouseContext
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 VMMachineCodeFrameBuilderForTest >> spouseContext: aContextOop [
 	
 	spouseContext := aContextOop
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 VMMachineCodeFrameBuilderForTest >> temporaries [
 	^ temporaries
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 VMMachineCodeFrameBuilderForTest >> temporaries: anObject [
 	temporaries := anObject
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 VMMachineCodeFrameBuilderForTest >> test [
 	^ test
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 VMMachineCodeFrameBuilderForTest >> test: anObject [
 	test := anObject
 ]

@@ -200,7 +200,7 @@ start_pass_phuff_decoder (j_decompress_ptr cinfo)
 
 #ifdef AVOID_TABLES
 
-#define HUFF_EXTEND(x,s)  ((x) < (1<<((s)-1)) ? (x) + (((-1)<<(s)) + 1) : (x))
+#define HUFF_EXTEND(x,s)  ((x) < (1<<((s)-1)) ? (x) + ((((signed int)((unsigned int)-1))<<(s)) + 1) : (x))
 
 #else
 
@@ -211,10 +211,10 @@ static const int extend_test[16] =   /* entry n is 2**(n-1) */
     0x0100, 0x0200, 0x0400, 0x0800, 0x1000, 0x2000, 0x4000 };
 
 static const int extend_offset[16] = /* entry n is (-1 << n) + 1 */
-  { 0, ((-1)<<1) + 1, ((-1)<<2) + 1, ((-1)<<3) + 1, ((-1)<<4) + 1,
-    ((-1)<<5) + 1, ((-1)<<6) + 1, ((-1)<<7) + 1, ((-1)<<8) + 1,
-    ((-1)<<9) + 1, ((-1)<<10) + 1, ((-1)<<11) + 1, ((-1)<<12) + 1,
-    ((-1)<<13) + 1, ((-1)<<14) + 1, ((-1)<<15) + 1 };
+  { 0, (((signed int)((unsigned int)-1))<<1) + 1, (((signed int)((unsigned int)-1))<<2) + 1, (((signed int)((unsigned int)-1))<<3) + 1, (((signed int)((unsigned int)-1))<<4) + 1,
+    (((signed int)((unsigned int)-1))<<5) + 1, (((signed int)((unsigned int)-1))<<6) + 1, (((signed int)((unsigned int)-1))<<7) + 1, (((signed int)((unsigned int)-1))<<8) + 1,
+    (((signed int)((unsigned int)-1))<<9) + 1, (((signed int)((unsigned int)-1))<<10) + 1, (((signed int)((unsigned int)-1))<<11) + 1, (((signed int)((unsigned int)-1))<<12) + 1,
+    (((signed int)((unsigned int)-1))<<13) + 1, (((signed int)((unsigned int)-1))<<14) + 1, (((signed int)((unsigned int)-1))<<15) + 1 };
 
 #endif /* AVOID_TABLES */
 
@@ -493,7 +493,7 @@ decode_mcu_AC_refine (j_decompress_ptr cinfo, JBLOCKROW *MCU_data)
   phuff_entropy_ptr entropy = (phuff_entropy_ptr) cinfo->entropy;
   int Se = cinfo->Se;
   int p1 = 1 << cinfo->Al;	/* 1 in the bit position being coded */
-  int m1 = (-1) << cinfo->Al;	/* -1 in the bit position being coded */
+  int m1 = ((signed int)((unsigned int)-1)) << cinfo->Al;	/* -1 in the bit position being coded */
   register int s, k, r;
   unsigned int EOBRUN;
   JBLOCKROW block;

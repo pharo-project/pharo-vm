@@ -2,8 +2,8 @@
 Fake Standard input using a dialog to prompt for a line of input at a time.
 "
 Class {
-	#name : #FakeStdinStream,
-	#superclass : #WriteStream,
+	#name : 'FakeStdinStream',
+	#superclass : 'WriteStream',
 	#instVars : [
 		'atEnd',
 		'simulator'
@@ -11,10 +11,12 @@ Class {
 	#pools : [
 		'VMBasicConstants'
 	],
-	#category : #'VMMaker-JITSimulation'
+	#category : 'VMMaker-JITSimulation',
+	#package : 'VMMaker',
+	#tag : 'JITSimulation'
 }
 
-{ #category : #'instance creation' }
+{ #category : 'instance creation' }
 FakeStdinStream class >> for: aCogVMSimulator [
 	^(self basicNew simulator: aCogVMSimulator)
 		on: (String new: 80) from: 1 to: 0
@@ -22,34 +24,34 @@ FakeStdinStream class >> for: aCogVMSimulator [
 	"self new next"
 ]
 
-{ #category : #'instance creation' }
+{ #category : 'instance creation' }
 FakeStdinStream class >> new [
 	^super on: (String new: 80) from: 1 to: 0
 
 	"self new next"
 ]
 
-{ #category : #testing }
+{ #category : 'testing' }
 FakeStdinStream >> atEnd [
 	^atEnd ifNil: [atEnd := false]
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 FakeStdinStream >> atEnd: aBoolean [
 	atEnd := aBoolean
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 FakeStdinStream >> close [
 	atEnd := true
 ]
 
-{ #category : #testing }
+{ #category : 'testing' }
 FakeStdinStream >> isFakeStdinStream [
 	^true
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 FakeStdinStream >> next [
 	"Answer the next object in the Stream represented by the receiver.
 	 If there are no more elements in the stream fill up the buffer by prompting for input"
@@ -87,7 +89,7 @@ s wait. s signal.
 r"
 ]
 
-{ #category : #'initialize-release' }
+{ #category : 'initialize-release' }
 FakeStdinStream >> simulator: aCogVMSimulator [
 	simulator := aCogVMSimulator.
 	atEnd := false

@@ -1,10 +1,12 @@
 Class {
-	#name : #VMSimulationTest,
-	#superclass : #TestCase,
-	#category : #'VMMakerTests-Simulation'
+	#name : 'VMSimulationTest',
+	#superclass : 'TestCase',
+	#category : 'VMMakerTests-Simulation',
+	#package : 'VMMakerTests',
+	#tag : 'Simulation'
 }
 
-{ #category : #tests }
+{ #category : 'tests' }
 VMSimulationTest >> testSetUpJITSimulationReadsImage [
 
 	| options c |
@@ -16,9 +18,7 @@ VMSimulationTest >> testSetUpJITSimulationReadsImage [
 	    #ObjectMemory -> #Spur64BitCoMemoryManager.
 	    #ISA -> #aarch64.
 	    #BytesPerWord -> 8.
-	    #bytecodeTableInitializer -> #initializeBytecodeTableForSistaV1.
-	    #ImageWriter -> #SpurImageWriter.
-	    #ImageReader -> #SpurImageReader.
+	    #bytecodeTableInitializer -> #initializeBytecodeTableForSistaV1
 	} asDictionary.
 
 	c := CogVMSimulator newWithOptions: options.
@@ -27,7 +27,7 @@ VMSimulationTest >> testSetUpJITSimulationReadsImage [
 		extraMemory: 100000.
 ]
 
-{ #category : #tests }
+{ #category : 'tests' }
 VMSimulationTest >> testSetUpNonJITSimulationReadsImage [
 
 	| options c |
@@ -38,9 +38,7 @@ VMSimulationTest >> testSetUpNonJITSimulationReadsImage [
 	options := {
 	    #ObjectMemory -> #Spur64BitMemoryManager.
 	    #BytesPerWord -> 8.
-	    #bytecodeTableInitializer -> #initializeBytecodeTableForSistaV1.
-	    #ImageWriter -> #SpurImageWriter.
-	    #ImageReader -> #SpurImageReader.
+	    #bytecodeTableInitializer -> #initializeBytecodeTableForSistaV1
 	} asDictionary.
 
 	c := StackInterpreterSimulator newWithOptions: options.

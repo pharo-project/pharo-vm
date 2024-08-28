@@ -7,14 +7,13 @@ self classPool declare: #Foo from: StackInterpreter classPool
 	[:k| self classPool declare: k from: ObjectMemory classPool]
 "
 Class {
-	#name : #VMObjectIndices,
-	#superclass : #SharedPool,
+	#name : 'VMObjectIndices',
+	#superclass : 'SharedPool',
 	#classVars : [
 		'ActiveProcessIndex',
 		'CharacterValueIndex',
 		'ClassArray',
 		'ClassBitmap',
-		'ClassBlockClosure',
 		'ClassByteArray',
 		'ClassByteString',
 		'ClassCharacter',
@@ -96,5 +95,6 @@ Class {
 		'XIndex',
 		'YIndex'
 	],
-	#category : #Melchor
+	#category : 'Melchor',
+	#package : 'Melchor'
 }

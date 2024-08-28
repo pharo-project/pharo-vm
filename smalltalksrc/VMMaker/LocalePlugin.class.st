@@ -17,30 +17,32 @@ primMeasurement - return boolean for imperial or metric
 
 "
 Class {
-	#name : #LocalePlugin,
-	#superclass : #SmartSyntaxInterpreterPlugin,
-	#category : #'VMMaker-Plugins'
+	#name : 'LocalePlugin',
+	#superclass : 'SmartSyntaxInterpreterPlugin',
+	#category : 'VMMaker-Plugins',
+	#package : 'VMMaker',
+	#tag : 'Plugins'
 }
 
-{ #category : #translation }
+{ #category : 'translation' }
 LocalePlugin class >> hasHeaderFile [
 	"If there is a single intrinsic header file to be associated with the plugin, here is where you want to flag"
 	^true
 ]
 
-{ #category : #translation }
+{ #category : 'translation' }
 LocalePlugin class >> requiresPlatformFiles [
 	"this plugin requires platform specific files in order to work"
 	^true
 ]
 
-{ #category : #initialize }
+{ #category : 'initialize' }
 LocalePlugin >> initialiseModule [
 	<export: true>
 	^self sqLocInitialize
 ]
 
-{ #category : #'system primitives' }
+{ #category : 'system primitives' }
 LocalePlugin >> primitiveCountry [
 	"return a 3 char string describing the country in use. ISO 3166 is the relevant source here; see http://www.unicode.org/onlinedat/countries.html for details. Using the 3 character Alpha-3 codes"
 	| oop |
@@ -51,14 +53,14 @@ LocalePlugin >> primitiveCountry [
 
 ]
 
-{ #category : #'system primitives' }
+{ #category : 'system primitives' }
 LocalePlugin >> primitiveCurrencyNotation [
 	"return a boolean specifying whether the currency symbol is pre or post fix. true -> pre"
 	self primitive:'primitiveCurrencyNotation'.
 	^self sqLocCurrencyNotation asOop: Boolean
 ]
 
-{ #category : #'system primitives' }
+{ #category : 'system primitives' }
 LocalePlugin >> primitiveCurrencySymbol [
 	"return a string describing the currency symbol used 
 Still need to find details on standard symbols - ISO 4217 is supposed to be it but cannot find on web"
@@ -71,14 +73,14 @@ Still need to find details on standard symbols - ISO 4217 is supposed to be it b
 
 ]
 
-{ #category : #'system primitives' }
+{ #category : 'system primitives' }
 LocalePlugin >> primitiveDaylightSavings [
 	"return a boolean specifying the DST setting. true -> active"
 	self primitive:'primitiveDaylightSavings'.
 	^self sqLocDaylightSavings asOop: Boolean
 ]
 
-{ #category : #'system primitives' }
+{ #category : 'system primitives' }
 LocalePlugin >> primitiveDecimalSymbol [
 	"return a 1 char string describing the decimal symbol used - usually a . or a ,"
 	| oop |
@@ -89,7 +91,7 @@ LocalePlugin >> primitiveDecimalSymbol [
 
 ]
 
-{ #category : #'system primitives' }
+{ #category : 'system primitives' }
 LocalePlugin >> primitiveDigitGroupingSymbol [
 	"return a 1 char string describing the digitGrouping symbol used - usually a . or a , between triples of digits"
 	| oop |
@@ -100,7 +102,7 @@ LocalePlugin >> primitiveDigitGroupingSymbol [
 
 ]
 
-{ #category : #'system primitives' }
+{ #category : 'system primitives' }
 LocalePlugin >> primitiveLanguage [
 	"return a 3 char string describing the language in use. ISO 639 is the relevant source here; see http://www.w3.org/WAI/ER/IG/ert/iso639.html for details"
 	| oop |
@@ -111,7 +113,7 @@ LocalePlugin >> primitiveLanguage [
 
 ]
 
-{ #category : #'system primitives' }
+{ #category : 'system primitives' }
 LocalePlugin >> primitiveLongDateFormat [
 	"return a string describing the long date formatting.
 Format is made up of
@@ -129,14 +131,14 @@ mmmm month name
 
 ]
 
-{ #category : #'system primitives' }
+{ #category : 'system primitives' }
 LocalePlugin >> primitiveMeasurementMetric [
 	"return a boolean specifying whether the currency symbol is pre or post fix. true -> pre"
 	self primitive:'primitiveMeasurementMetric'.
 	^self sqLocMeasurementMetric asOop: Boolean
 ]
 
-{ #category : #'system primitives' }
+{ #category : 'system primitives' }
 LocalePlugin >> primitiveShortDateFormat [
 	"return a string describing the long date formatting.
 Format is made up of
@@ -154,7 +156,7 @@ mmmm month name
 
 ]
 
-{ #category : #'system primitives' }
+{ #category : 'system primitives' }
 LocalePlugin >> primitiveTimeFormat [
 	"return a string describing the time formatting.
 Format is made up of
@@ -169,7 +171,7 @@ double symbol is null padded, single not padded (h=6, hh=06)"
 
 ]
 
-{ #category : #'system primitives' }
+{ #category : 'system primitives' }
 LocalePlugin >> primitiveTimezoneOffset [
 	"return the number of minutes this VM's time value is offset from UTC"
 
@@ -178,7 +180,7 @@ LocalePlugin >> primitiveTimezoneOffset [
 
 ]
 
-{ #category : #'system primitives' }
+{ #category : 'system primitives' }
 LocalePlugin >> primitiveVMOffsetToUTC [
 	"return the number of minutes this VM's time value is offset from UTC"
 
@@ -187,13 +189,13 @@ LocalePlugin >> primitiveVMOffsetToUTC [
 
 ]
 
-{ #category : #'simulation support' }
+{ #category : 'simulation support' }
 LocalePlugin >> sqLocGetTimezoneOffset [
 	<doNotGenerate>
 	^(DateAndTime localTimeZone offset asSeconds / 60) rounded
 ]
 
-{ #category : #'simulation support' }
+{ #category : 'simulation support' }
 LocalePlugin >> sqLocInitialize [
 	<doNotGenerate>
 	^true

@@ -1,16 +1,18 @@
 Class {
-	#name : #CTernaryNode,
-	#superclass : #CExpressionNode,
+	#name : 'CTernaryNode',
+	#superclass : 'CExpressionNode',
 	#instVars : [
 		'condition',
 		'else',
 		'then',
 		'printOnMultipleLines'
 	],
-	#category : #'CAST-Nodes'
+	#category : 'CAST-Nodes',
+	#package : 'CAST',
+	#tag : 'Nodes'
 }
 
-{ #category : #'instance creation' }
+{ #category : 'instance creation' }
 CTernaryNode class >> condition: aCondition then: thenExpression else: elseExpression [
 
 	^ self new
@@ -21,17 +23,17 @@ CTernaryNode class >> condition: aCondition then: thenExpression else: elseExpre
 		  yourself
 ]
 
-{ #category : #generated }
+{ #category : 'generated' }
 CTernaryNode >> acceptVisitor: anAbstractVisitor [
 	^ anAbstractVisitor visitTernary: self
 ]
 
-{ #category : #generated }
+{ #category : 'generated' }
 CTernaryNode >> condition [
 	^ condition
 ]
 
-{ #category : #generated }
+{ #category : 'generated' }
 CTernaryNode >> condition: aCGLRExpressionNode [
 	self assertExpression: aCGLRExpressionNode.
 	
@@ -42,12 +44,12 @@ CTernaryNode >> condition: aCGLRExpressionNode [
 		ifTrue: [ self condition parent: self ]
 ]
 
-{ #category : #generated }
+{ #category : 'generated' }
 CTernaryNode >> else [
 	^ else
 ]
 
-{ #category : #generated }
+{ #category : 'generated' }
 CTernaryNode >> else: aCGLRExpressionNode [
 	self assertExpression: aCGLRExpressionNode.
 	
@@ -58,29 +60,29 @@ CTernaryNode >> else: aCGLRExpressionNode [
 		ifTrue: [ self else parent: self ]
 ]
 
-{ #category : #generated }
+{ #category : 'generated' }
 CTernaryNode >> isTernary [
 	^ true
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 CTernaryNode >> printOnMultipleLines [
 
 	^ printOnMultipleLines
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 CTernaryNode >> printOnMultipleLines: aBoolean [
 
 	printOnMultipleLines := aBoolean
 ]
 
-{ #category : #generated }
+{ #category : 'generated' }
 CTernaryNode >> then [
 	^ then
 ]
 
-{ #category : #generated }
+{ #category : 'generated' }
 CTernaryNode >> then: aCGLRExpressionNode [
 	self assertExpression: aCGLRExpressionNode.
 	

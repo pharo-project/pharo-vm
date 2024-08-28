@@ -1,6 +1,6 @@
-Extension { #name : #RBPragmaNode }
+Extension { #name : 'RBPragmaNode' }
 
-{ #category : #'*VMMaker' }
+{ #category : '*VMMaker' }
 RBPragmaNode >> isTypeDefinition [
 
 	^ #( #var:type: #var:declareC: ) includes: self selector

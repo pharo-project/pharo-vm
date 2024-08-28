@@ -1,6 +1,6 @@
-Extension { #name : #RBSequenceNode }
+Extension { #name : 'RBSequenceNode' }
 
-{ #category : #'*VMMakerCompatibilityForPharo6-C translation' }
+{ #category : '*VMMakerCompatibilityForPharo6-C translation' }
 RBSequenceNode >> asTranslatorNodeIn: aTMethod [
 
 	"Answer a TParseNode subclass equivalent of me"

@@ -1,5 +1,6 @@
 Class {
-	#name : #TranslationError,
-	#superclass : #Error,
-	#category : #Slang
+	#name : 'TranslationError',
+	#superclass : 'Error',
+	#category : 'Slang',
+	#package : 'Slang'
 }

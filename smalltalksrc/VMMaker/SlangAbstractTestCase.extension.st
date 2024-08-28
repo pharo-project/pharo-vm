@@ -1,6 +1,6 @@
-Extension { #name : #SlangAbstractTestCase }
+Extension { #name : 'SlangAbstractTestCase' }
 
-{ #category : #'*VMMaker' }
+{ #category : '*VMMaker' }
 SlangAbstractTestCase >> setUp [
 	super setUp.
 	ccg := MLVMCCodeGenerator new.

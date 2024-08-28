@@ -48,8 +48,8 @@ statPageCountWhenMappingSum:
 
 "
 Class {
-	#name : #VMStackPages,
-	#superclass : #VMClass,
+	#name : 'VMStackPages',
+	#superclass : 'VMClass',
 	#instVars : [
 		'coInterpreter',
 		'objectMemory',
@@ -68,10 +68,12 @@ Class {
 	#pools : [
 		'VMBasicConstants'
 	],
-	#category : #'VMMaker-Interpreter'
+	#category : 'VMMaker-Interpreter',
+	#package : 'VMMaker',
+	#tag : 'Interpreter'
 }
 
-{ #category : #translation }
+{ #category : 'translation' }
 VMStackPages class >> declareCVarsIn: aCCodeGenerator [
 	aCCodeGenerator
 		var: #mostRecentlyUsedPage type: #'StackPage *';
@@ -85,18 +87,18 @@ VMStackPages class >> declareCVarsIn: aCCodeGenerator [
 		removeVariable: 'minStackAddress' "These are simulation/debugging things only"		
 ]
 
-{ #category : #assertions }
+{ #category : 'assertions' }
 VMStackPages >> allPagesFree [
 	<doNotGenerate>
 	^pages allSatisfy: [:page| (self isFree: page)]
 ]
 
-{ #category : #'memory access' }
+{ #category : 'memory access' }
 VMStackPages >> byteAt: byteAddress [ "<Integer>" 
 	self subclassResponsibility
 ]
 
-{ #category : #assertions }
+{ #category : 'assertions' }
 VMStackPages >> couldBeFramePointer: pointer [
 	"Answer if the argument is a properly aligned pointer into the stack zone."
 	<var: #pointer type: #'void *'>
@@ -107,14 +109,14 @@ VMStackPages >> couldBeFramePointer: pointer [
 							inSmalltalk: [(self stackPageAt: 0) asUnsignedInteger])]
 ]
 
-{ #category : #initialization }
+{ #category : 'initialization' }
 VMStackPages >> extraStackBytes [
 	"See initializeStack:numSlots:pageSize:stackLimitOffset:stackPageHeadroom:
 	``Because stack pages grow down...''"
 	^objectMemory wordSize
 ]
 
-{ #category : #'page access' }
+{ #category : 'page access' }
 VMStackPages >> freeStackPage: aPage [ "<InterpreterStackPage>"
 	"MRUP-->used page<->used page<->used page<->used page<--LRUP
 	               ^                        <-next-prev->                         ^
@@ -127,7 +129,7 @@ VMStackPages >> freeStackPage: aPage [ "<InterpreterStackPage>"
 	self assert: self pageListIsWellFormed
 ]
 
-{ #category : #'page access' }
+{ #category : 'page access' }
 VMStackPages >> freeStackPageNoAssert: aPage [ "<InterpreterStackPage>"
 	"MRUP-->used page<->used page<->used page<->used page<--LRUP
 	               ^                        <-next-prev->                         ^
@@ -152,13 +154,13 @@ VMStackPages >> freeStackPageNoAssert: aPage [ "<InterpreterStackPage>"
 	mostRecentlyUsedPage nextPage: aPage
 ]
 
-{ #category : #initialization }
+{ #category : 'initialization' }
 VMStackPages >> initialize [
 	"Here we can initialize the variables C initializes to zero.  #initialize methods do /not/ get translated."
 	statNumMaps := statPageCountWhenMappingSum := statMaxPageCountWhenMapping := 0
 ]
 
-{ #category : #initialization }
+{ #category : 'initialization' }
 VMStackPages >> initializeStack: theStackPages numSlots: stackSlots pageSize: slotsPerPage [
 	"Initialize the stack pages.  In the C VM theStackPages will be alloca'ed memory to hold the
 	 stack pages on the C stack.  In the simulator they are housed in the memory between the
@@ -247,7 +249,7 @@ VMStackPages >> initializeStack: theStackPages numSlots: stackSlots pageSize: sl
 	self assert: self pageListIsWellFormed
 ]
 
-{ #category : #initialization }
+{ #category : 'initialization' }
 VMStackPages >> initializeWithByteSize: byteSize inMemoryMap: aMemoryMap for: anInterpreter [ 
 
 	<inline: true>
@@ -271,7 +273,7 @@ VMStackPages >> initializeWithByteSize: byteSize inMemoryMap: aMemoryMap for: an
 	^ stackAddress 
 ]
 
-{ #category : #'page access' }
+{ #category : 'page access' }
 VMStackPages >> isFree: thePage [
 	"This is an anachronism.  Previously Slang couldn't generate the method correctly
 	 from e.g. CogStackPageSurrogate>>isFree since Slang didn't do substitution on self.
@@ -280,7 +282,7 @@ VMStackPages >> isFree: thePage [
 	^thePage baseFP = 0
 ]
 
-{ #category : #'memory access' }
+{ #category : 'memory access' }
 VMStackPages >> longAt: anInteger [ 
 
 	<doNotGenerate>
@@ -289,7 +291,7 @@ VMStackPages >> longAt: anInteger [
 	^objectMemory longAt: anInteger
 ]
 
-{ #category : #'memory access' }
+{ #category : 'memory access' }
 VMStackPages >> longAt: byteAddress put: a32Or64BitValue [
 
 	<doNotGenerate>
@@ -297,7 +299,7 @@ VMStackPages >> longAt: byteAddress put: a32Or64BitValue [
 	^objectMemory longAt: byteAddress put: a32Or64BitValue
 ]
 
-{ #category : #'page access' }
+{ #category : 'page access' }
 VMStackPages >> markStackPageLeastMostRecentlyUsed: page [ "<InterpreterStackPage>"
 	"This method is used to move a page to the end of the used pages.
 	 This is to keep asserts checking pageListIsWellFormed happy."
@@ -327,7 +329,7 @@ VMStackPages >> markStackPageLeastMostRecentlyUsed: page [ "<InterpreterStackPag
 	self assert: self pageListIsWellFormed
 ]
 
-{ #category : #'page access' }
+{ #category : 'page access' }
 VMStackPages >> markStackPageMostRecentlyUsed: page [ "<InterpreterStackPage>"
 	"MRUP-->used page<->used page<->used page<->used page<--LRUP
 	               ^                        <-next-prev->                         ^
@@ -353,7 +355,7 @@ VMStackPages >> markStackPageMostRecentlyUsed: page [ "<InterpreterStackPage>"
 	self assert: self pageListIsWellFormed
 ]
 
-{ #category : #'page access' }
+{ #category : 'page access' }
 VMStackPages >> markStackPageNextMostRecentlyUsed: page [ "<InterpreterStackPage>"
 	"This method is used to move a page to a position in the list such that it cannot
 	 be deallocated when a new page is allocated, without changing the most recently
@@ -380,27 +382,27 @@ VMStackPages >> markStackPageNextMostRecentlyUsed: page [ "<InterpreterStackPage
 	self assert: self pageListIsWellFormed
 ]
 
-{ #category : #'page access' }
+{ #category : 'page access' }
 VMStackPages >> memIndexFor: byteAddress [
 	"Map an address into the stack zone into a word index into the slots in the stack zone."
 	<doNotGenerate>
 	^(self oopForPointer: byteAddress) - minStackAddress - 1 // objectMemory wordSize + 1
 ]
 
-{ #category : #'as yet unclassified' }
+{ #category : 'as yet unclassified' }
 VMStackPages >> minStackAddress [
 	<doNotGenerate>
 	^ minStackAddress
 ]
 
-{ #category : #'page access' }
+{ #category : 'page access' }
 VMStackPages >> mostRecentlyUsedPage [
 	<cmacro: '() GIV(mostRecentlyUsedPage)'>
 	<returnTypeC: #'StackPage *'> "this is to guide Slang's inliner"
 	^mostRecentlyUsedPage
 ]
 
-{ #category : #'page access' }
+{ #category : 'page access' }
 VMStackPages >> newStackPage [
 	"MRUP-->used page<->used page<->used page<->used page<--LRUP
 	               ^                        <-next-prev->                         ^
@@ -417,12 +419,12 @@ VMStackPages >> newStackPage [
 	^lruOrFree
 ]
 
-{ #category : #'page access' }
+{ #category : 'page access' }
 VMStackPages >> overflowLimit [
 	^overflowLimit
 ]
 
-{ #category : #'page access' }
+{ #category : 'page access' }
 VMStackPages >> pageIndexFor: pointer [ "<Integer>"
 	"Answer the page index for a pointer into stack memory, i.e. the index
 	 for the page the address is in.  N.B.  This is a zero-relative index."
@@ -435,7 +437,7 @@ VMStackPages >> pageIndexFor: pointer [ "<Integer>"
 	^self pageIndexFor: pointer stackBasePlus1: stackBasePlus1 bytesPerPage: bytesPerPage
 ]
 
-{ #category : #'page access' }
+{ #category : 'page access' }
 VMStackPages >> pageIndexFor: pointer "<Integer>" stackBasePlus1: stkBasePlus1 "<Integer>" bytesPerPage: pageByteSize [ "<Integer>"
 	"Answer the page index for a pointer into stack memory, i.e. the index
 	 for the page the address is in.  N.B.  This is a zero-relative index."
@@ -443,7 +445,7 @@ VMStackPages >> pageIndexFor: pointer "<Integer>" stackBasePlus1: stkBasePlus1 "
 	^pointer - stkBasePlus1 // pageByteSize
 ]
 
-{ #category : #assertions }
+{ #category : 'assertions' }
 VMStackPages >> pageListIsWellFormed [
 	"Answer if the stack page list is well-formed.
 	 MRUP-->used page<->used page<->used page<->used page<--LRUP
@@ -483,13 +485,13 @@ VMStackPages >> pageListIsWellFormed [
 	^ok
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 VMStackPages >> pages [
 	<doNotGenerate>
 	^pages
 ]
 
-{ #category : #statistics }
+{ #category : 'statistics' }
 VMStackPages >> recordLivePagesOnMapping: numLivePages [
 	<inline: true>
 	statNumMaps := statNumMaps + 1.
@@ -497,7 +499,7 @@ VMStackPages >> recordLivePagesOnMapping: numLivePages [
 	statMaxPageCountWhenMapping := statMaxPageCountWhenMapping max: numLivePages
 ]
 
-{ #category : #initialization }
+{ #category : 'initialization' }
 VMStackPages >> setInterpreter: anInterpreter [
 	"Initialize the stackPages memory for simulation.  To keep access monitoring
 	 in one place we defer to the coInterpreter for accessing memory."
@@ -506,14 +508,14 @@ VMStackPages >> setInterpreter: anInterpreter [
 	objectMemory := coInterpreter objectMemory
 ]
 
-{ #category : #assertions }
+{ #category : 'assertions' }
 VMStackPages >> somePageHasHeadFrameFP: theFP [
 	<doNotGenerate>
 	^pages anySatisfy: [:page| page headFP = theFP]
 
 ]
 
-{ #category : #'page access' }
+{ #category : 'page access' }
 VMStackPages >> stackPageAt: index [
 	"Answer the page for a page index.
 	 N.B.  This is a zero-relative index."
@@ -522,7 +524,7 @@ VMStackPages >> stackPageAt: index [
 	^self stackPageAt: index pages: pages
 ]
 
-{ #category : #'page access' }
+{ #category : 'page access' }
 VMStackPages >> stackPageAt: index pages: thePages [
 	"Answer the page for a page index.
 	 N.B.  This is a zero-relative index."
@@ -531,7 +533,7 @@ VMStackPages >> stackPageAt: index pages: thePages [
 	^thePages at: index + 1
 ]
 
-{ #category : #'page access' }
+{ #category : 'page access' }
 VMStackPages >> stackPageFor: pointer [ "<Integer>"
 	<inline: true>
 	<var: #pointer type: #'void *'>
@@ -539,7 +541,7 @@ VMStackPages >> stackPageFor: pointer [ "<Integer>"
 	^self stackPageAt: (self pageIndexFor: pointer)
 ]
 
-{ #category : #statistics }
+{ #category : 'statistics' }
 VMStackPages >> statAverageLivePagesWhenMapping [
 	<returnTypeC: #double>
 	^statNumMaps = 0
@@ -547,7 +549,7 @@ VMStackPages >> statAverageLivePagesWhenMapping [
 		ifFalse: [statPageCountWhenMappingSum asFloat / statNumMaps]
 ]
 
-{ #category : #statistics }
+{ #category : 'statistics' }
 VMStackPages >> statAverageLivePagesWhenMapping: aFloat [
 	<var: #aFloat type: #double>
 	aFloat == 0.0
@@ -555,24 +557,24 @@ VMStackPages >> statAverageLivePagesWhenMapping: aFloat [
 		ifFalse: [coInterpreter primitiveFailFor: PrimErrBadArgument]
 ]
 
-{ #category : #statistics }
+{ #category : 'statistics' }
 VMStackPages >> statMaxPageCountWhenMapping [
 	<cmacro: '() GIV(statMaxPageCountWhenMapping)'>
 	^statMaxPageCountWhenMapping
 ]
 
-{ #category : #statistics }
+{ #category : 'statistics' }
 VMStackPages >> statMaxPageCountWhenMapping: num [
 	statMaxPageCountWhenMapping := num
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 VMStackPages >> surrogateAtAddress: anAddress [
 	<doNotGenerate>
 	^pageMap at: anAddress
 ]
 
-{ #category : #'memory access' }
+{ #category : 'memory access' }
 VMStackPages >> unsignedLongAt: anInteger [ 
 
 	<doNotGenerate>
@@ -581,7 +583,7 @@ VMStackPages >> unsignedLongAt: anInteger [
 	^objectMemory unsignedLongAt: anInteger
 ]
 
-{ #category : #'memory access' }
+{ #category : 'memory access' }
 VMStackPages >> unsignedLongAt: byteAddress put: a32Or64BitValue [
 
 	<doNotGenerate>
@@ -589,7 +591,7 @@ VMStackPages >> unsignedLongAt: byteAddress put: a32Or64BitValue [
 	^objectMemory unsignedLongAt: byteAddress put: a32Or64BitValue
 ]
 
-{ #category : #'debug printing' }
+{ #category : 'debug printing' }
 VMStackPages >> whereIsMaybeStackThing: anOop [
 	"If anOop is an address within the stack zone answer a string stating that, otherwise answer nil."
 	<returnTypeC: 'char *'>

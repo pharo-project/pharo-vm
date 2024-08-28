@@ -1,13 +1,15 @@
 Class {
-	#name : #SlangStructType,
-	#superclass : #SlangClass,
+	#name : 'SlangStructType',
+	#superclass : 'SlangClass',
 	#classVars : [
 		'StructTypeNameCache'
 	],
-	#category : #'Slang-Types'
+	#category : 'Slang-Types',
+	#package : 'Slang',
+	#tag : 'Types'
 }
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 SlangStructType class >> baseStructClass [
 	"The base class of the hierarchy of structs.
 	All state and behavior of this class will not be included for generation.
@@ -17,20 +19,20 @@ SlangStructType class >> baseStructClass [
 	^ SlangStructType
 ]
 
-{ #category : #translation }
+{ #category : 'translation' }
 SlangStructType class >> filteredInstVarNames [
 
 	^ self allInstVarNames
 ]
 
-{ #category : #translation }
+{ #category : 'translation' }
 SlangStructType class >> instVarNamesAndTypesForTranslationDo: aBinaryBlock [
 	"enumerate aBinaryBlock with the names and C type strings for the inst vars to include in a struct of this type."
 
 	self subclassResponsibility
 ]
 
-{ #category : #translation }
+{ #category : 'translation' }
 SlangStructType class >> instVarTypeDeclarationsDo: aBinaryBlock [
 
 	| instVarNameTypeDeclarations |
@@ -50,18 +52,18 @@ SlangStructType class >> instVarTypeDeclarationsDo: aBinaryBlock [
 		aBinaryBlock value: ivn value: typeDeclaration ]
 ]
 
-{ #category : #translation }
+{ #category : 'translation' }
 SlangStructType class >> isAccessor: aSelector [
 	"Answer if aSelector is simply an accessor method for one of our fields."
 	^(self instVarIndexFor: (aSelector copyWithout: $:) ifAbsent: [0]) > 0
 ]
 
-{ #category : #translation }
+{ #category : 'translation' }
 SlangStructType class >> isStructClass [
 	^true
 ]
 
-{ #category : #translation }
+{ #category : 'translation' }
 SlangStructType class >> isTypePointerToStruct: type [
 	| index |
 	StructTypeNameCache ifNil:
@@ -76,7 +78,7 @@ SlangStructType class >> isTypePointerToStruct: type [
 			and: [index > structType size]]]]
 ]
 
-{ #category : #translation }
+{ #category : 'translation' }
 SlangStructType class >> isTypeStruct: type [
 	StructTypeNameCache ifNil:
 		[StructTypeNameCache := Set new.
@@ -88,7 +90,7 @@ SlangStructType class >> isTypeStruct: type [
 			type = structType]]
 ]
 
-{ #category : #translation }
+{ #category : 'translation' }
 SlangStructType class >> needsTypeTag [
 	self instVarTypeDeclarationsDo:
 		[:ivn :type|
@@ -102,13 +104,13 @@ SlangStructType class >> needsTypeTag [
 	"VMStructType allSubclasses select: [:sc| sc needsTypeTag]"
 ]
 
-{ #category : #translation }
+{ #category : 'translation' }
 SlangStructType class >> printTypedefOn: aStream [
 
 	^self printTypedefOn: aStream withTranslations: Dictionary new.
 ]
 
-{ #category : #translation }
+{ #category : 'translation' }
 SlangStructType class >> printTypedefOn: aStream withTranslations: ivnTranslations [
 
 	aStream nextPutAll: 'typedef struct '.
@@ -178,7 +180,7 @@ SlangStructType class >> printTypedefOn: aStream withTranslations: ivnTranslatio
 	aStream flush
 ]
 
-{ #category : #translation }
+{ #category : 'translation' }
 SlangStructType class >> returnTypeForAccessor: aSelector [
 	| varName deStructTag |
 	varName := aSelector copyWithout: $:.
@@ -195,12 +197,12 @@ SlangStructType class >> returnTypeForAccessor: aSelector [
 	"InterpreterStackPage returnTypeForAccessor: #nextPage:"
 ]
 
-{ #category : #translation }
+{ #category : 'translation' }
 SlangStructType class >> structTagName [
 	^'_', self structTypeName
 ]
 
-{ #category : #translation }
+{ #category : 'translation' }
 SlangStructType class >> structTargetKindForDeclaration: decl [
 	StructTypeNameCache ifNil:
 		[StructTypeNameCache := Set new.
@@ -217,7 +219,7 @@ SlangStructType class >> structTargetKindForDeclaration: decl [
 			ifFalse: [#struct]]
 ]
 
-{ #category : #translation }
+{ #category : 'translation' }
 SlangStructType class >> structTargetKindForType: type [
 	StructTypeNameCache ifNil:
 		[StructTypeNameCache := Set new.
@@ -234,24 +236,24 @@ SlangStructType class >> structTargetKindForType: type [
 			ifFalse: [#struct]]
 ]
 
-{ #category : #translation }
+{ #category : 'translation' }
 SlangStructType class >> structTypeName [
 	"Provide the typedef name.  Subclases can override."
 	^self name
 ]
 
-{ #category : #translation }
+{ #category : 'translation' }
 SlangStructType class >> typeForSelf [
 	"Answer the type to give self if appropriate, or nil if not."
 	^self structTypeName, ' *'
 ]
 
-{ #category : #translation }
+{ #category : 'translation' }
 SlangStructType class >> voidStructTypeCache [
 	StructTypeNameCache := nil
 ]
 
-{ #category : #macros }
+{ #category : 'macros' }
 SlangStructType >> setField: fieldName to: fieldValue [
 
 	| slot |
@@ -259,7 +261,7 @@ SlangStructType >> setField: fieldName to: fieldValue [
 	slot write: fieldValue to: self
 ]
 
-{ #category : #macros }
+{ #category : 'macros' }
 SlangStructType >> withFieldsDo: forEachBlock separatedBy: separatorBlock [ 
 
 	self class allSlots 
@@ -267,7 +269,7 @@ SlangStructType >> withFieldsDo: forEachBlock separatedBy: separatorBlock [
 		separatedBy: separatorBlock 
 ]
 
-{ #category : #macros }
+{ #category : 'macros' }
 SlangStructType >> withStructNameDo: aFullBlockClosure [ 
 	
 	^ aFullBlockClosure value: self class structTypeName

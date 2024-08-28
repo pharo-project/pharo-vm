@@ -76,43 +76,45 @@ v1.0
 
 "
 Class {
-	#name : #LargeIntegersPlugin,
-	#superclass : #SmartSyntaxInterpreterPlugin,
+	#name : 'LargeIntegersPlugin',
+	#superclass : 'SmartSyntaxInterpreterPlugin',
 	#instVars : [
 		'andOpIndex',
 		'orOpIndex',
 		'xorOpIndex'
 	],
-	#category : #'VMMaker-Plugins'
+	#category : 'VMMaker-Plugins',
+	#package : 'VMMaker',
+	#tag : 'Plugins'
 }
 
-{ #category : #translation }
+{ #category : 'translation' }
 LargeIntegersPlugin class >> declareCVarsIn: cg [ 
 	cg var: 'andOpIndex' declareC: 'const int  andOpIndex = 0'.
 	cg var: 'orOpIndex' declareC: 'const int  orOpIndex = 1'.
 	cg var: 'xorOpIndex' declareC: 'const int  xorOpIndex = 2'
 ]
 
-{ #category : #translation }
+{ #category : 'translation' }
 LargeIntegersPlugin class >> moduleName [
 	^'LargeIntegers'
 ]
 
-{ #category : #translation }
+{ #category : 'translation' }
 LargeIntegersPlugin class >> moduleNameAndVersion [
 	"Answer the receiver's module name and version info that is used for the plugin's C code. The default is to append the code generation date, but any useful text is ok (keep it short)"
 
 	^ self moduleName, ' ', self version
 ]
 
-{ #category : #translation }
+{ #category : 'translation' }
 LargeIntegersPlugin class >> version [
 	"Answer the receiver's version info as String."
 
 	^ 'v2.0'
 ]
 
-{ #category : #util }
+{ #category : 'util' }
 LargeIntegersPlugin >> anyBitOfLargeInt: anOop from: start to: stopArg [ 
 	"Argument has to be a Large Integer!"
 	"Tests for any magnitude bits in the interval from start to stopArg."
@@ -154,7 +156,7 @@ LargeIntegersPlugin >> anyBitOfLargeInt: anOop from: start to: stopArg [
 	^ false
 ]
 
-{ #category : #util }
+{ #category : 'util' }
 LargeIntegersPlugin >> byteSizeOfCSI: csi [ 
 	"Answer the number of bytes required to represent the value of a C-SmallInteger."
 	csi >= 0 ifTrue:
@@ -198,7 +200,7 @@ LargeIntegersPlugin >> byteSizeOfCSI: csi [
 			^8]
 ]
 
-{ #category : #util }
+{ #category : 'util' }
 LargeIntegersPlugin >> byteSizeOfLargeInt: bytesOop [ 
 	"Answer the number of bytes required to represent a LargeInteger.
 	Precondition: bytesOop is not a small integer."
@@ -206,21 +208,21 @@ LargeIntegersPlugin >> byteSizeOfLargeInt: bytesOop [
 	^ interpreterProxy slotSizeOf: bytesOop
 ]
 
-{ #category : #'C core util' }
+{ #category : 'C core util' }
 LargeIntegersPlugin >> byteSwapped32IfBigEndian: anInteger [
 	"This is only for simulation purposes"
 	<doNotGenerate>
 	^interpreterProxy byteSwapped32IfBigEndian: anInteger
 ]
 
-{ #category : #'C core util' }
+{ #category : 'C core util' }
 LargeIntegersPlugin >> byteSwapped64IfBigEndian: anInteger [
 	"This is only for simulation purposes"
 	<doNotGenerate>
 	^interpreterProxy byteSwapped64IfBigEndian: anInteger
 ]
 
-{ #category : #'C core' }
+{ #category : 'C core' }
 LargeIntegersPlugin >> cDigitAdd: pWordShort len: shortLen with: pWordLong len: longLen into: pWordRes [ 
 	"pWordRes len = longLen; returns over.."
 	| accum |
@@ -244,7 +246,7 @@ LargeIntegersPlugin >> cDigitAdd: pWordShort len: shortLen with: pWordLong len: 
 	^ accum >> 32
 ]
 
-{ #category : #'C core' }
+{ #category : 'C core' }
 LargeIntegersPlugin >> cDigitCompare: pFirst with: pSecond len: len [ 
 	"Precondition: pFirst len = pSecond len."
 	| secondDigit ix firstDigit |
@@ -263,7 +265,7 @@ LargeIntegersPlugin >> cDigitCompare: pFirst with: pSecond len: len [
 	^ 0
 ]
 
-{ #category : #'C core util' }
+{ #category : 'C core util' }
 LargeIntegersPlugin >> cDigitCopyFrom: pFrom to: pTo len: len [ 
 	<var: #pFrom type: #'unsigned int *'>
 	<var: #pTo type: #'unsigned int *'>
@@ -273,7 +275,7 @@ LargeIntegersPlugin >> cDigitCopyFrom: pFrom to: pTo len: len [
 	^ 0
 ]
 
-{ #category : #'C core' }
+{ #category : 'C core' }
 LargeIntegersPlugin >> cDigitDiv: pDiv len: divLen rem: pRem len: remLen quo: pQuo len: quoLen [ 
 	| dl ql dh dnh j t hi lo r3 l a b cond q r1r2 mul |
 	<var: #pDiv type: #'unsigned int *'>
@@ -372,7 +374,7 @@ LargeIntegersPlugin >> cDigitDiv: pDiv len: divLen rem: pRem len: remLen quo: pQ
 	^0
 ]
 
-{ #category : #'C core util' }
+{ #category : 'C core util' }
 LargeIntegersPlugin >> cDigitHighBit: pUint32 len: len [ 
 	"Answer the index (in bits) of the high order bit of the receiver, or zero if the    
 	 receiver is zero. This method is allowed (and needed) for     
@@ -388,7 +390,7 @@ LargeIntegersPlugin >> cDigitHighBit: pUint32 len: len [
 	^  (self cHighBit32: lastDigit) + (32 * realLength)
 ]
 
-{ #category : #'C core' }
+{ #category : 'C core' }
 LargeIntegersPlugin >> cDigitLshift: shiftCount from: pFrom len: lenFrom to: pTo len: lenTo [ 
 	"C indexed!"
 	| digitShift bitShift carry limit digit rshift |
@@ -426,7 +428,7 @@ LargeIntegersPlugin >> cDigitLshift: shiftCount from: pFrom len: lenFrom to: pTo
 	^0
 ]
 
-{ #category : #'C core' }
+{ #category : 'C core' }
 LargeIntegersPlugin >> cDigitMontgomery: pFirst
 				len: firstLen
 				times: pSecond
@@ -499,7 +501,7 @@ LargeIntegersPlugin >> cDigitMontgomery: pFirst
 	^0
 ]
 
-{ #category : #'C core' }
+{ #category : 'C core' }
 LargeIntegersPlugin >> cDigitMultiply: pWordShort len: shortLen with: pWordLong len: longLen into: pWordRes len: resLen [
 	| limitLong digit k carry limitShort ab |
 	<returnTypeC: #'unsigned int'>
@@ -533,7 +535,7 @@ LargeIntegersPlugin >> cDigitMultiply: pWordShort len: shortLen with: pWordLong 
 	^ 0
 ]
 
-{ #category : #'C core util' }
+{ #category : 'C core util' }
 LargeIntegersPlugin >> cDigitOf: cPointer at: zeroBasedDigitIndex [
 	<inline: true>
 	<returnTypeC: #'unsigned int'>
@@ -541,7 +543,7 @@ LargeIntegersPlugin >> cDigitOf: cPointer at: zeroBasedDigitIndex [
 	^self byteSwapped32IfBigEndian: ((self cCode: [cPointer] inSmalltalk: [interpreterProxy cCoerce: cPointer to: #'unsigned int *']) at: zeroBasedDigitIndex)
 ]
 
-{ #category : #'C core util' }
+{ #category : 'C core util' }
 LargeIntegersPlugin >> cDigitOf: cPointer at: zeroBasedDigitIndex put: aValue [
 	<inline: true>
 	<returnTypeC: #'unsigned int'>
@@ -552,7 +554,7 @@ LargeIntegersPlugin >> cDigitOf: cPointer at: zeroBasedDigitIndex put: aValue [
 		put: (self byteSwapped32IfBigEndian: aValue)
 ]
 
-{ #category : #'C core' }
+{ #category : 'C core' }
 LargeIntegersPlugin >> cDigitOp: opIndex short: pWordShort len: shortLen long: pWordLong len: longLen into: pWordRes [ 
 	"pWordRes len = longLen.
 	NOTE: we don't bother with endianness here, those bit opes are endian-neutral"
@@ -585,7 +587,7 @@ LargeIntegersPlugin >> cDigitOp: opIndex short: pWordShort len: shortLen long: p
 	^ interpreterProxy primitiveFail
 ]
 
-{ #category : #'C core util' }
+{ #category : 'C core util' }
 LargeIntegersPlugin >> cDigitReplace: pTo from: start to: stop with: pFrom startingAt: repStart [ 
 	"C indexed!"
 	<var: #pTo type: #'unsigned int *'>
@@ -596,7 +598,7 @@ LargeIntegersPlugin >> cDigitReplace: pTo from: start to: stop with: pFrom start
 		len: stop - start + 1
 ]
 
-{ #category : #'C core' }
+{ #category : 'C core' }
 LargeIntegersPlugin >> cDigitRshift: shiftCount from: pFrom len: lenFrom to: pTo len: lenTo [ 
 	| carry digit digitShift bitShift leftShift limit start |
 	<var: #pTo type: #'unsigned int *'>
@@ -629,7 +631,7 @@ LargeIntegersPlugin >> cDigitRshift: shiftCount from: pFrom len: lenFrom to: pTo
 	^0
 ]
 
-{ #category : #'C core' }
+{ #category : 'C core' }
 LargeIntegersPlugin >> cDigitSub: pWordSmall
 		len: smallLen
 		with: pWordLarge
@@ -655,7 +657,7 @@ LargeIntegersPlugin >> cDigitSub: pWordSmall
 	^0
 ]
 
-{ #category : #'C core util' }
+{ #category : 'C core util' }
 LargeIntegersPlugin >> cHighBit32: anUnsignedInt32 [ 
 	"Answer the index of the high order bit of the argument, or zero if the  
 	argument is zero."
@@ -684,7 +686,7 @@ LargeIntegersPlugin >> cHighBit32: anUnsignedInt32 [
 	^ bitNo + shifted
 ]
 
-{ #category : #'oop util' }
+{ #category : 'oop util' }
 LargeIntegersPlugin >> createLargeFromSmallInteger: anOop [ 
 	"anOop has to be a SmallInteger!"
 	| val res pDigit byteSize digitSize |
@@ -698,7 +700,7 @@ LargeIntegersPlugin >> createLargeFromSmallInteger: anOop [
 	^ res
 ]
 
-{ #category : #util }
+{ #category : 'util' }
 LargeIntegersPlugin >> createLargeIntegerNeg: neg byteLength: byteLength [
 	<inline: #always>
 	^interpreterProxy
@@ -708,13 +710,13 @@ LargeIntegersPlugin >> createLargeIntegerNeg: neg byteLength: byteLength [
 		indexableSize: byteLength
 ]
 
-{ #category : #util }
+{ #category : 'util' }
 LargeIntegersPlugin >> createLargeIntegerNeg: neg digitLength: digitLength [
 	<inline: #always>
 	^self createLargeIntegerNeg: neg byteLength: digitLength * 4
 ]
 
-{ #category : #'oop functions' }
+{ #category : 'oop functions' }
 LargeIntegersPlugin >> digit: anOop Lshift: shiftCount [ 
 	"Attention: this method invalidates all oop's! Only newOop is valid at return."
 	"Does not normalize."
@@ -740,7 +742,7 @@ LargeIntegersPlugin >> digit: anOop Lshift: shiftCount [
 	^ newOop
 ]
 
-{ #category : #'oop functions' }
+{ #category : 'oop functions' }
 LargeIntegersPlugin >> digit: anOop Rshift: shiftCount lookfirst: a [ 
 	"Attention: this method invalidates all oop's! Only newBytes is valid at return."
 	"Shift right 32*digitShift+bitShift bits, 0<=bitShift<32.         
@@ -770,7 +772,7 @@ LargeIntegersPlugin >> digit: anOop Rshift: shiftCount lookfirst: a [
 	^ newOop
 ]
 
-{ #category : #'oop functions' }
+{ #category : 'oop functions' }
 LargeIntegersPlugin >> digitAddLarge: firstInteger with: secondInteger [ 
 	"Does not need to normalize!"
 	| over firstDigitLen secondDigitLen shortInt shortDigitLen longInt longDigitLen sum newSum neg |
@@ -818,7 +820,7 @@ LargeIntegersPlugin >> digitAddLarge: firstInteger with: secondInteger [
 	^ sum
 ]
 
-{ #category : #'oop functions' }
+{ #category : 'oop functions' }
 LargeIntegersPlugin >> digitBitLogic: firstInteger with: secondInteger opIndex: opIx [ 
 	"Bit logic here is only implemented for positive integers or Zero;
 	if rec or arg is negative, it fails."
@@ -868,7 +870,7 @@ LargeIntegersPlugin >> digitBitLogic: firstInteger with: secondInteger opIndex: 
 	^self normalizePositive: result
 ]
 
-{ #category : #'oop functions' }
+{ #category : 'oop functions' }
 LargeIntegersPlugin >> digitCompareLarge: firstInteger with: secondInteger [ 
 	"Compare the magnitude of firstInteger with that of secondInteger.      
 	Return a code of 1, 0, -1 for firstInteger >, = , < secondInteger"
@@ -886,7 +888,7 @@ LargeIntegersPlugin >> digitCompareLarge: firstInteger with: secondInteger [
 		asOop: SmallInteger
 ]
 
-{ #category : #'oop functions' }
+{ #category : 'oop functions' }
 LargeIntegersPlugin >> digitDivLarge: firstInteger with: secondInteger negative: neg [ 
 	"Does not normalize."
 	"Division by zero has to be checked in caller."
@@ -936,7 +938,7 @@ LargeIntegersPlugin >> digitDivLarge: firstInteger with: secondInteger negative:
 	^result
 ]
 
-{ #category : #'oop functions' }
+{ #category : 'oop functions' }
 LargeIntegersPlugin >> digitMontgomery: firstLarge times: secondLarge modulo: thirdLarge mInvModB: mInv [
 	<var: #mInv type: #'unsigned int'>
 	| firstLen secondLen thirdLen prod |
@@ -960,7 +962,7 @@ LargeIntegersPlugin >> digitMontgomery: firstLarge times: secondLarge modulo: th
 	^self normalizePositive: prod
 ]
 
-{ #category : #'oop functions' }
+{ #category : 'oop functions' }
 LargeIntegersPlugin >> digitMultiplyLarge: firstInteger with: secondInteger negative: neg [ 
 	"Normalizes."
 	| firstLen secondLen shortInt shortLen longInt longLen prod |
@@ -991,7 +993,7 @@ LargeIntegersPlugin >> digitMultiplyLarge: firstInteger with: secondInteger nega
 		ifFalse: [self normalizePositive: prod]
 ]
 
-{ #category : #util }
+{ #category : 'util' }
 LargeIntegersPlugin >> digitOfCSI: csi at: ix [ 
 	"Answer the value of a 32 bits digit in a C-SmallInteger."
 	"ST indexed!"
@@ -1000,7 +1002,7 @@ LargeIntegersPlugin >> digitOfCSI: csi at: ix [
 		ifFalse: [csi]) >> (ix - 1 * 32)
 ]
 
-{ #category : #util }
+{ #category : 'util' }
 LargeIntegersPlugin >> digitOfLargeInt: aBytesOop at: ix [ 
 	"Argument has to be aLargeInteger!"
 	ix > (self digitSizeOfLargeInt: aBytesOop)
@@ -1008,7 +1010,7 @@ LargeIntegersPlugin >> digitOfLargeInt: aBytesOop at: ix [
 		ifFalse: [^ self unsafeDigitOfLargeInt: aBytesOop at: ix]
 ]
 
-{ #category : #util }
+{ #category : 'util' }
 LargeIntegersPlugin >> digitSizeOfCSI: csi [ 
 	"Answer the number of 32-bits fields of a C-SmallInteger. This value is 
 	   the same as the largest legal subscript."
@@ -1021,14 +1023,14 @@ LargeIntegersPlugin >> digitSizeOfCSI: csi [
 				ifFalse: [1]]]
 ]
 
-{ #category : #util }
+{ #category : 'util' }
 LargeIntegersPlugin >> digitSizeOfLargeInt: anOop [
 	"answer number of 32 bits digits of a Large Integer"
 	<inline: true>
 	^(self byteSizeOfLargeInt: anOop) + 3 // 4
 ]
 
-{ #category : #'oop functions' }
+{ #category : 'oop functions' }
 LargeIntegersPlugin >> digitSubLarge: firstInteger with: secondInteger [ 
 	"Normalizes."
 	| firstDigitLen secondDigitLen larger largeDigitLen smaller smallerDigitLen neg resDigitLen res firstNeg |
@@ -1070,7 +1072,7 @@ LargeIntegersPlugin >> digitSubLarge: firstInteger with: secondInteger [
 		ifFalse: [self normalizePositive: res]
 ]
 
-{ #category : #util }
+{ #category : 'util' }
 LargeIntegersPlugin >> highBitOfLargeInt: anOop [ 
 	<inline: true>
 	^ self
@@ -1078,7 +1080,7 @@ LargeIntegersPlugin >> highBitOfLargeInt: anOop [
 		len: (self digitSizeOfLargeInt: anOop)
 ]
 
-{ #category : #'ST initialize' }
+{ #category : 'ST initialize' }
 LargeIntegersPlugin >> initialize [
 	"Initializes ST constants; C's are set by class>>declareCVarsIn:."
 	<returnTypeC: 'void'>
@@ -1089,7 +1091,7 @@ LargeIntegersPlugin >> initialize [
 			xorOpIndex := 2]
 ]
 
-{ #category : #'oop functions' }
+{ #category : 'oop functions' }
 LargeIntegersPlugin >> isNormalized: aLargeInteger [ 
 	| len |
 	"Check for leading zero of LargeInteger"
@@ -1101,7 +1103,7 @@ LargeIntegersPlugin >> isNormalized: aLargeInteger [
 	^true
 ]
 
-{ #category : #'oop util' }
+{ #category : 'oop util' }
 LargeIntegersPlugin >> largeInt: aBytesObject growTo: newByteLen [ 
 	"Attention: this method invalidates all oop's! Only newBytes is valid at return."
 	"Does not normalize."
@@ -1124,7 +1126,7 @@ LargeIntegersPlugin >> largeInt: aBytesObject growTo: newByteLen [
 	^newBytes
 ]
 
-{ #category : #'oop functions' }
+{ #category : 'oop functions' }
 LargeIntegersPlugin >> normalize: aLargeInteger [ 
 	"Check for leading zeroes and return shortened copy if so."
 	self debugCode: [self msg: 'normalize: aLargeInteger'].
@@ -1133,7 +1135,7 @@ LargeIntegersPlugin >> normalize: aLargeInteger [
 		ifFalse: [^ self normalizeNegative: aLargeInteger]
 ]
 
-{ #category : #'oop functions' }
+{ #category : 'oop functions' }
 LargeIntegersPlugin >> normalizeNegative: aLargeNegativeInteger [ 
 	"Check for leading zeroes and return shortened copy if so."
 	"First establish len = significant length."
@@ -1170,7 +1172,7 @@ LargeIntegersPlugin >> normalizeNegative: aLargeNegativeInteger [
 		ifFalse: [^ aLargeNegativeInteger]
 ]
 
-{ #category : #'oop functions' }
+{ #category : 'oop functions' }
 LargeIntegersPlugin >> normalizePositive: aLargePositiveInteger [ 
 	"Check for leading zeroes and return shortened copy if so."
 	"First establish len = significant length."
@@ -1210,14 +1212,14 @@ LargeIntegersPlugin >> normalizePositive: aLargePositiveInteger [
 		ifFalse: [^ aLargePositiveInteger]
 ]
 
-{ #category : #util }
+{ #category : 'util' }
 LargeIntegersPlugin >> pointerToFirstDigitOfLargeInt: bytesObject [
 	<inline: #always>
 	<returnTypeC: #'unsigned int *'>
 	^interpreterProxy cCoerce: (interpreterProxy firstIndexableField: bytesObject) to: #'unsigned int *'
 ]
 
-{ #category : #'Integer primitives' }
+{ #category : 'Integer primitives' }
 LargeIntegersPlugin >> primAnyBitFrom: from to: to [ 
 	| integer large |
 	self debugCode: [self msg: 'primAnyBitFrom: from to: to'].
@@ -1236,7 +1238,7 @@ LargeIntegersPlugin >> primAnyBitFrom: from to: to [
 		asOop: Boolean
 ]
 
-{ #category : #'Integer primitives' }
+{ #category : 'Integer primitives' }
 LargeIntegersPlugin >> primDigitAdd: secondInteger [
 	| firstLarge secondLarge firstInteger |
 	self debugCode: [self msg: 'primDigitAdd: secondInteger'].
@@ -1255,7 +1257,7 @@ LargeIntegersPlugin >> primDigitAdd: secondInteger [
 	^ self digitAddLarge: firstLarge with: secondLarge
 ]
 
-{ #category : #'Integer primitives' }
+{ #category : 'Integer primitives' }
 LargeIntegersPlugin >> primDigitBitAnd: secondInteger [ 
 	"Bit logic here is only implemented for positive integers or Zero; if rec 
 	or arg is negative, it fails."
@@ -1271,7 +1273,7 @@ LargeIntegersPlugin >> primDigitBitAnd: secondInteger [
 		opIndex: andOpIndex
 ]
 
-{ #category : #'Integer primitives' }
+{ #category : 'Integer primitives' }
 LargeIntegersPlugin >> primDigitBitOr: secondInteger [ 
 	"Bit logic here is only implemented for positive integers or Zero; if rec 
 	or arg is negative, it fails."
@@ -1287,7 +1289,7 @@ LargeIntegersPlugin >> primDigitBitOr: secondInteger [
 		opIndex: orOpIndex
 ]
 
-{ #category : #'Integer primitives' }
+{ #category : 'Integer primitives' }
 LargeIntegersPlugin >> primDigitBitShiftMagnitude: shiftCount [ 
 	| rShift aLarge anInteger |
 	self debugCode: [self msg: 'primDigitBitShiftMagnitude: shiftCount'].
@@ -1309,7 +1311,7 @@ LargeIntegersPlugin >> primDigitBitShiftMagnitude: shiftCount [
 					lookfirst: (self digitSizeOfLargeInt: aLarge))]
 ]
 
-{ #category : #'Integer primitives' }
+{ #category : 'Integer primitives' }
 LargeIntegersPlugin >> primDigitBitXor: secondInteger [ 
 	"Bit logic here is only implemented for positive integers or Zero; if rec 
 	or arg is negative, it fails."
@@ -1325,7 +1327,7 @@ LargeIntegersPlugin >> primDigitBitXor: secondInteger [
 		opIndex: xorOpIndex
 ]
 
-{ #category : #'Integer primitives' }
+{ #category : 'Integer primitives' }
 LargeIntegersPlugin >> primDigitCompare: secondInteger [ 
 	"Compare the magnitude of self with that of arg.   
 	 Answer a code of 1, 0, -1 for self >, = , < arg"	| firstVal secondVal firstInteger |
@@ -1356,7 +1358,7 @@ LargeIntegersPlugin >> primDigitCompare: secondInteger [
 	^ self digitCompareLarge: firstInteger with: secondInteger
 ]
 
-{ #category : #'Integer primitives' }
+{ #category : 'Integer primitives' }
 LargeIntegersPlugin >> primDigitDiv: secondInteger negative: neg [ 
 	"Answer the result of dividing firstInteger by secondInteger. 
 	Fail if parameters are not integers, not normalized or secondInteger is 
@@ -1406,7 +1408,7 @@ LargeIntegersPlugin >> primDigitDiv: secondInteger negative: neg [
 		negative: neg
 ]
 
-{ #category : #'Integer primitives' }
+{ #category : 'Integer primitives' }
 LargeIntegersPlugin >> primDigitMultiply: secondInteger negative: neg [ 
 	| firstLarge secondLarge firstInteger |
 	self debugCode: [self msg: 'primDigitMultiply: secondInteger negative: neg'].
@@ -1432,7 +1434,7 @@ LargeIntegersPlugin >> primDigitMultiply: secondInteger negative: neg [
 		negative: neg
 ]
 
-{ #category : #'Integer primitives' }
+{ #category : 'Integer primitives' }
 LargeIntegersPlugin >> primDigitSubtract: secondInteger [ 
 	| firstLarge secondLarge firstInteger |
 	self debugCode: [self msg: 'primDigitSubtract: secondInteger'].
@@ -1455,7 +1457,7 @@ LargeIntegersPlugin >> primDigitSubtract: secondInteger [
 	^ self digitSubLarge: firstLarge with: secondLarge
 ]
 
-{ #category : #'control & support primitives' }
+{ #category : 'control & support primitives' }
 LargeIntegersPlugin >> primGetModuleName [
 	"If calling this primitive fails, then C module does not exist."
 	| strLen strOop |
@@ -1472,7 +1474,7 @@ LargeIntegersPlugin >> primGetModuleName [
 	^strOop
 ]
 
-{ #category : #'Integer primitives' }
+{ #category : 'Integer primitives' }
 LargeIntegersPlugin >> primMontgomeryDigitLength [
 	self debugCode: [self msg: 'primMontgomeryDigitLength'].
 	self
@@ -1482,7 +1484,7 @@ LargeIntegersPlugin >> primMontgomeryDigitLength [
 	^interpreterProxy integerObjectOf: 32
 ]
 
-{ #category : #'Integer primitives' }
+{ #category : 'Integer primitives' }
 LargeIntegersPlugin >> primMontgomeryTimes: secondOperandInteger modulo: thirdModuloInteger mInvModB: mInverseInteger [
 	| firstLarge secondLarge firstInteger thirdLarge mInv |
 	<var: #mInv type: #'unsigned int'>
@@ -1507,7 +1509,7 @@ LargeIntegersPlugin >> primMontgomeryTimes: secondOperandInteger modulo: thirdMo
 	^ self digitMontgomery: firstLarge times: secondLarge modulo: thirdLarge mInvModB: mInv
 ]
 
-{ #category : #'Integer primitives' }
+{ #category : 'Integer primitives' }
 LargeIntegersPlugin >> primNormalizeNegative [
 	| rcvr |
 	self debugCode: [self msg: 'primNormalizeNegative'].
@@ -1518,7 +1520,7 @@ LargeIntegersPlugin >> primNormalizeNegative [
 	^ self normalizeNegative: rcvr
 ]
 
-{ #category : #'Integer primitives' }
+{ #category : 'Integer primitives' }
 LargeIntegersPlugin >> primNormalizePositive [
 	| rcvr |
 	self debugCode: [self msg: 'primNormalizePositive'].
@@ -1529,7 +1531,7 @@ LargeIntegersPlugin >> primNormalizePositive [
 	^ self normalizePositive: rcvr
 ]
 
-{ #category : #util }
+{ #category : 'util' }
 LargeIntegersPlugin >> unsafeByteOfLargeInt: bytesObj at: ix [
 	"Argument bytesObj must not be aSmallInteger!"
 	<inline: true>
@@ -1537,7 +1539,7 @@ LargeIntegersPlugin >> unsafeByteOfLargeInt: bytesObj at: ix [
 	^(interpreterProxy cCoerce: (interpreterProxy firstIndexableField: bytesObj) to: #'unsigned char *') at: ix - 1
 ]
 
-{ #category : #util }
+{ #category : 'util' }
 LargeIntegersPlugin >> unsafeDigitOfLargeInt: anOop at: ix [
 	"Argument must not be aSmallInteger!"
 	<inline: #always>
