@@ -2708,15 +2708,26 @@ StackInterpreterPrimitives >> primitiveSetVMParameter: index arg: argOop [
 	| arg result |
 
 	"argOop read & checks; in most cases this is an integer parameter.  In some it is either an integer or a Float"
-	(index = 17 or: [index = 55 or: [index = 68]])
-		ifTrue:
-			[((objectMemory isFloatInstance: argOop)
+	index 
+		caseOf: {  
+			[17] -> [((objectMemory isFloatInstance: argOop)
 			  or: [objectMemory isIntegerObject: argOop]) ifFalse:
-				[^self primitiveFailFor: PrimErrBadArgument]]
-		ifFalse:
-			[(objectMemory isIntegerObject: argOop) ifFalse:
+				[^self primitiveFailFor: PrimErrBadArgument]].
+			[55] -> [((objectMemory isFloatInstance: argOop)
+			  or: [objectMemory isIntegerObject: argOop]) ifFalse:
+				[^self primitiveFailFor: PrimErrBadArgument]].
+			[68] -> [((objectMemory isFloatInstance: argOop)
+			  or: [objectMemory isIntegerObject: argOop]) ifFalse:
+				[^self primitiveFailFor: PrimErrBadArgument]].
+			[86] -> [ 
+			(objectMemory isBooleanObject: argOop) ifFalse:
 				[^self primitiveFailFor: PrimErrBadArgument].
-			 arg := objectMemory integerValueOf: argOop].
+			 arg := objectMemory booleanValueOf: argOop 
+			 ]}
+		otherwise: [ 
+			(objectMemory isIntegerObject: argOop) ifFalse:
+				[^self primitiveFailFor: PrimErrBadArgument].
+			 arg := objectMemory integerValueOf: argOop ].
 
 	"assume failure, then set success for handled indices"
 	self primitiveFailFor: PrimErrBadArgument.
@@ -2794,9 +2805,7 @@ StackInterpreterPrimitives >> primitiveSetVMParameter: index arg: argOop [
 					[result := objectMemory integerObjectOf: self getImageVersion.
 					 self setImageVersion: arg.
 					 self initPrimCall] ].
-		[86] -> [ (objectMemory isBooleanObject: arg)
-						ifTrue: [ 
-							objectMemory setAvoidSearchingSegmentsWithPinnedObjects: 								(objectMemory booleanValueOf: arg) ]]}
+		[86] -> [ objectMemory setAvoidSearchingSegmentsWithPinnedObjects: arg ]}
 		otherwise: [].
 
 	self successful
