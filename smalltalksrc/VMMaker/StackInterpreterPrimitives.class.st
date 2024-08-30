@@ -1697,7 +1697,8 @@ StackInterpreterPrimitives >> primitiveGetVMParameter: index [
 			[84] ->  [^objectMemory integerObjectOf: 
 								objectMemory getFromPermToNewSpaceRememberedSet rememberedSetSize].
 			[85] ->  [^objectMemory integerObjectOf: 
-								objectMemory getFromPermToNewSpaceRememberedSet rememberedSetLimit]}
+								objectMemory getFromPermToNewSpaceRememberedSet rememberedSetLimit].
+			[86] ->  [^ objectMemory getAvoidSearchingSegmentsWithPinnedObjects ifTrue: [ objectMemory trueObject ] ifFalse: [objectMemory falseObject]]}
 		otherwise: [^nil]
 ]
 
@@ -2707,15 +2708,26 @@ StackInterpreterPrimitives >> primitiveSetVMParameter: index arg: argOop [
 	| arg result |
 
 	"argOop read & checks; in most cases this is an integer parameter.  In some it is either an integer or a Float"
-	(index = 17 or: [index = 55 or: [index = 68]])
-		ifTrue:
-			[((objectMemory isFloatInstance: argOop)
+	index 
+		caseOf: {  
+			[17] -> [((objectMemory isFloatInstance: argOop)
 			  or: [objectMemory isIntegerObject: argOop]) ifFalse:
-				[^self primitiveFailFor: PrimErrBadArgument]]
-		ifFalse:
-			[(objectMemory isIntegerObject: argOop) ifFalse:
+				[^self primitiveFailFor: PrimErrBadArgument]].
+			[55] -> [((objectMemory isFloatInstance: argOop)
+			  or: [objectMemory isIntegerObject: argOop]) ifFalse:
+				[^self primitiveFailFor: PrimErrBadArgument]].
+			[68] -> [((objectMemory isFloatInstance: argOop)
+			  or: [objectMemory isIntegerObject: argOop]) ifFalse:
+				[^self primitiveFailFor: PrimErrBadArgument]].
+			[86] -> [ 
+			(objectMemory isBooleanObject: argOop) ifFalse:
 				[^self primitiveFailFor: PrimErrBadArgument].
-			 arg := objectMemory integerValueOf: argOop].
+			 arg := objectMemory booleanValueOf: argOop 
+			 ]}
+		otherwise: [ 
+			(objectMemory isIntegerObject: argOop) ifFalse:
+				[^self primitiveFailFor: PrimErrBadArgument].
+			 arg := objectMemory integerValueOf: argOop ].
 
 	"assume failure, then set success for handled indices"
 	self primitiveFailFor: PrimErrBadArgument.
@@ -2792,7 +2804,14 @@ StackInterpreterPrimitives >> primitiveSetVMParameter: index arg: argOop [
 		[79] -> [ (arg between: 0 and: 65535) ifTrue:
 					[result := objectMemory integerObjectOf: self getImageVersion.
 					 self setImageVersion: arg.
-					 self initPrimCall] ] }
+					 self initPrimCall] ].
+		[86] -> [ 
+			result := objectMemory getAvoidSearchingSegmentsWithPinnedObjects 
+				ifTrue: [objectMemory trueObject] 
+				ifFalse: [objectMemory falseObject].
+				
+			objectMemory setAvoidSearchingSegmentsWithPinnedObjects: arg.
+			self initPrimCall ]}
 		otherwise: [].
 
 	self successful
@@ -3984,7 +4003,7 @@ StackInterpreterPrimitives >> primitiveVMParameter [
 	Otherwise the *real* list is in the code: `StackInterpreterPrimitives>>#primitiveGetVMParameter:`"
 
 	| paramsArraySize index |
-	paramsArraySize := 85.
+	paramsArraySize := 86.
 	argumentCount = 0 ifTrue: [^self primitiveAllVMParameters: paramsArraySize].
 	argumentCount > 2 ifTrue: [^self primitiveFailFor: PrimErrBadNumArgs].
 	
