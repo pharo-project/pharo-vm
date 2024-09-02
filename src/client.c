@@ -10,6 +10,7 @@ extern void setDesiredCogCodeSize(sqInt anInteger);
 extern void setDesiredEdenBytes(sqLong anInteger);
 extern void setMinimalPermSpaceSize(sqInt min);
 extern void setDesiredStackPageBytes(sqLong anInteger);
+extern void setAvoidSearchingSegmentsWithPinnedObjects(sqInt aValue);
 
 #if defined(__GNUC__) && ( defined(i386) || defined(__i386) || defined(__i386__)  \
 			|| defined(i486) || defined(__i486) || defined (__i486__) \
@@ -71,6 +72,8 @@ EXPORT(int) vm_init(VMParameters* parameters)
 	setDesiredEdenBytes(parameters->edenSize);
 	setMinimalPermSpaceSize(parameters->minPermSpaceSize);
 	setDesiredStackPageBytes(parameters->stackPageSize);
+
+	setAvoidSearchingSegmentsWithPinnedObjects(parameters->avoidSearchingSegmentsWithPinnedObjects);
 
 	if(parameters->maxCodeSize > 0) {
 #ifndef COGVM

@@ -618,7 +618,8 @@ Class {
 		'permSpaceFreeStart',
 		'fromOldSpaceRememberedSet',
 		'fromPermToOldSpaceRememberedSet',
-		'fromPermToNewSpaceRememberedSet'
+		'fromPermToNewSpaceRememberedSet',
+		'avoidSearchingSegmentsWithPinnedObjects'
 	],
 	#classVars : [
 		'BitsPerByte',
@@ -2405,14 +2406,20 @@ SpurMemoryManager >> allocateSlots: numSlots format: formatField classIndex: cla
 
 { #category : 'allocation' }
 SpurMemoryManager >> allocateSlotsForPinningInOldSpace: numSlots bytes: totalBytes format: formatField classIndex: classIndex [
-	"Answer the oop of a chunk of space in oldSpace with numSlots slots.  Try and
-	 allocate in a segment that already includes pinned objects.  The header of the
-	 result will have been filled-in but not the contents."
+	"Answer the oop of a chunk of space in oldSpace with numSlots slots. 
+	Try and allocate in a segment that already includes pinned objects.
+	If the option #avoidSearchingSegmentsWithPinnedObjects is true, we don't do the search.
+	For some users this can have a good impact when having many pinned objects used in FFI calls.
+	The header of the result will have been filled-in but not the contents."
 	<var: #totalBytes type: #usqInt>
 	<inline: false>
 	| chunk newOop |
-	chunk := self allocateOldSpaceChunkOfBytes: totalBytes
-				   suchThat: [:f| (segmentManager segmentContainingObj: f) containsPinned].
+
+	chunk := avoidSearchingSegmentsWithPinnedObjects 
+		ifTrue: [ nil ]
+		ifFalse: [self allocateOldSpaceChunkOfBytes: totalBytes
+				   suchThat: [:f| (segmentManager segmentContainingObj: f) containsPinned]].
+			
 	chunk ifNil:
 		[chunk := self allocateOldSpaceChunkOfBytes: totalBytes.
 		 chunk ifNil: [^nil].
@@ -5965,6 +5972,14 @@ SpurMemoryManager >> gcStartUsecs [
 ]
 
 { #category : 'accessing' }
+SpurMemoryManager >> getAvoidSearchingSegmentsWithPinnedObjects [
+
+	<api>
+
+	^ avoidSearchingSegmentsWithPinnedObjects
+]
+
+{ #category : 'accessing' }
 SpurMemoryManager >> getFromOldSpaceRememberedSet [
 
 	<api>
@@ -6654,6 +6669,8 @@ SpurMemoryManager >> initialize [
 	maxOldSpaceSize := self class initializationOptions
 							ifNotNil: [:initOpts| initOpts at: #maxOldSpaceSize ifAbsent: [0]]
 							ifNil: [0].
+	
+	avoidSearchingSegmentsWithPinnedObjects := false.
 
 ]
 
@@ -11719,6 +11736,15 @@ SpurMemoryManager >> set: objOop classIndexTo: classIndex formatTo: format [
 	 16 - 23 byte indexable
 	 24 - 31 compiled method"
 	self subclassResponsibility
+]
+
+{ #category : 'accessing' }
+SpurMemoryManager >> setAvoidSearchingSegmentsWithPinnedObjects: aValue [
+
+	<api>
+	<var: #aValue type: #sqInt>
+
+	avoidSearchingSegmentsWithPinnedObjects := aValue
 ]
 
 { #category : 'spur bootstrap' }

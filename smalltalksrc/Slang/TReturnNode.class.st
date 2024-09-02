@@ -107,7 +107,12 @@ TReturnNode >> children [
 
 { #category : 'transformations' }
 TReturnNode >> copyWithoutReturn [
-	^expression
+	"called when inlining happens, if the expression is in a cast, it may be no longer needed and will produce a warning by the C compiler if the expression isn't use as an expression anymore"
+
+	(self isNotExpression and: [
+		 expression isSend and: [ expression selector beginsWith: #cCoerce ] ])
+		ifTrue: [ ^ expression arguments first ].
+	^ expression
 ]
 
 { #category : 'testing' }

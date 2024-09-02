@@ -297,6 +297,15 @@ TParseNode >> isNonNullCCode [
 ]
 
 { #category : 'testing' }
+TParseNode >> isNotExpression [
+
+	^ parent isNil or: [
+		  parent isTMethod or: [
+			  parent isSend not and: [
+				  parent isReturn not and: [ parent isAssignment not ] ] ] ]
+]
+
+{ #category : 'testing' }
 TParseNode >> isReturn [
 
 	^false

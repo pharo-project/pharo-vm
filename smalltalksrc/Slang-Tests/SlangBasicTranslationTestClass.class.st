@@ -62,6 +62,31 @@ SlangBasicTranslationTestClass >> methodCallingMethodExpressionList [
 ]
 
 { #category : 'inline' }
+SlangBasicTranslationTestClass >> methodCallingInAssignemtMethodWithCCoerceInReturn [
+
+	| i |
+	i := self methodWithCCoerceInReturn
+]
+
+{ #category : 'inline' }
+SlangBasicTranslationTestClass >> methodCallingInReturnMethodWithCCoerceInReturn [
+
+	^ self methodWithCCoerceInReturn
+]
+
+{ #category : 'inline' }
+SlangBasicTranslationTestClass >> methodCallingInSendMethodWithCCoerceInReturn [
+
+	self method: self methodWithCCoerceInReturn
+]
+
+{ #category : 'inline' }
+SlangBasicTranslationTestClass >> methodCallingMethodWithCCoerceInReturn [
+
+	self methodWithCCoerceInReturn
+]
+
+{ #category : 'inline' }
 SlangBasicTranslationTestClass >> methodCallingMethodWithInlinePragma [
 
 	self methodWithoutInlinePragma.
@@ -206,6 +231,11 @@ SlangBasicTranslationTestClass >> methodWithIfAndShiftRight: var [
 	^ (var < 0
 		ifTrue:  [ 0 ]
 		ifFalse: [ var ]) >> (var - 1 * 32)
+]
+
+{ #category : 'inline' }
+SlangBasicTranslationTestClass >> methodWithCCoerceInReturn [
+	^ self cCoerce: self method to: #sqInt 
 ]
 
 { #category : 'inline' }
