@@ -1,5 +1,25 @@
 # Change log
 
+## What's Changed
+* Redo 294 by @guillep in https://github.com/pharo-project/pharo-vm/pull/829
+* Making it loadable in P12 by @guillep in https://github.com/pharo-project/pharo-vm/pull/825
+* Added test on extended store and pop by @guillep in https://github.com/pharo-project/pharo-vm/pull/520
+* Update build version to P12 by @guillep in https://github.com/pharo-project/pharo-vm/pull/826
+* Improving log of old space limit error reporting by @tesonep in https://github.com/pharo-project/pharo-vm/pull/833
+* a better comment support for Slang by @RenaudFondeur in https://github.com/pharo-project/pharo-vm/pull/838
+* a first version of Slang with no type conflict and an exception if one appear by @RenaudFondeur in https://github.com/pharo-project/pharo-vm/pull/819
+* remove unused cast and expression by @RenaudFondeur in https://github.com/pharo-project/pharo-vm/pull/837
+* fix warnings related to multiple include of the same header file by @RenaudFondeur in https://github.com/pharo-project/pharo-vm/pull/840
+* Fix a lot of unused expression by @RenaudFondeur in https://github.com/pharo-project/pharo-vm/pull/832
+* add a comment explaining why declareCVarsIn: is empty in some subclasses by @RenaudFondeur in https://github.com/pharo-project/pharo-vm/pull/842
+* small change in dead code elimination to considers a method with only comments empty by @RenaudFondeur in https://github.com/pharo-project/pharo-vm/pull/843
+* small change in copyWithoutReturn to handle CCoerce by @RenaudFondeur in https://github.com/pharo-project/pharo-vm/pull/836
+* Remove hostname lookup on network initialization by @guillep in https://github.com/pharo-project/pharo-vm/pull/845
+* Update SDL2 version in OSX (Intel & Apple) by @tesonep in https://github.com/pharo-project/pharo-vm/pull/849
+* Adding option for pin behaviour by @tesonep in https://github.com/pharo-project/pharo-vm/pull/844
+
+**Full Changelog**: https://github.com/pharo-project/pharo-vm/compare/v10.3.0...v10.3.1
+
 ## v10.3.0
 
 * New harmonize rule by @RenaudFondeur in https://github.com/pharo-project/pharo-vm/pull/817
