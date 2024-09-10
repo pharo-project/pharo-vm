@@ -191,8 +191,11 @@ StackInterpreterSimulator >> basicInitialize [
 	externalPrimitiveTableFirstFreeIndex := 0.
 	primitiveTable := self class primitiveTable copy.
 	desiredNumStackPages := desiredEdenBytes := 0.
-	"This is initialized on loading the image, but convenient for testing stack page values..."
-	numStackPages := self defaultNumStackPages. 
+
+	"This is initialized on loading the image, but convenient for testing stack page values..."	
+	desiredStackPageBytes := 0.
+	self setNumStackPages: self defaultNumStackPages.
+
 	startMicroseconds := lastYieldMicroseconds := self ioUTCStartMicroseconds.
 
 	"initialize InterpreterSimulator variables used for debugging"
