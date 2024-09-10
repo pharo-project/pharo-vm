@@ -356,7 +356,9 @@ TStatementListNode >> copyWithoutReturn [
 
 	| newStmtsListNode |
 	self assert: self endsWithReturn.
-	statements size = 1 ifTrue: [ ^ statements last expression ].
+	statements size = 1 ifTrue: [
+		statements last parent: self parent.
+		^ statements last copyWithoutReturn ].
 	newStmtsListNode := self class new setArguments: arguments.
 	statements last isComment
 		ifFalse: [
@@ -369,8 +371,7 @@ TStatementListNode >> copyWithoutReturn [
 			newStmtsListNode
 				replaceChild: actualLast
 				with: actualLast copyWithoutReturn ].
-	^ newStmtsListNode
-]
+	^ newStmtsListNode]
 
 { #category : 'declarations' }
 TStatementListNode >> declarationAt: aString ifPresent: aFullBlockClosure [ 

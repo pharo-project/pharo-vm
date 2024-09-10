@@ -22,9 +22,9 @@ function(download_SDL2)
     endif()
   elseif(OSX)
     if(${CMAKE_SYSTEM_PROCESSOR} MATCHES "arm64")
-      add_third_party_dependency("SDL2-2.24.1")
+      add_third_party_dependency("SDL2-2.30.6")
     else()
-      add_third_party_dependency("SDL2-2.24.1")
+      add_third_party_dependency("SDL2-2.30.6")    
     endif()
   else() #LINUX
     If(${CMAKE_SYSTEM_PROCESSOR} MATCHES "armv7l" OR (${CMAKE_SYSTEM_PROCESSOR} MATCHES "aarch64"))
@@ -39,8 +39,13 @@ function(build_SDL2)
     message(STATUS "Building SDL2")
   	include(cmake/DownloadProject.cmake)
 	download_project(PROJ   SDL2
+<<<<<<< HEAD
         GIT_REPOSITORY      https://github.com/libsdl-org/SDL.git
         GIT_TAG             "release-2.26.5"
+=======
+        GIT_REPOSITORY      https://github.com/pharo-project/SDL2.git
+        GIT_TAG             "v2.30.6"
+>>>>>>> pharo-10
         ${UPDATE_DISCONNECTED_IF_AVAILABLE}
 	)
     add_subdirectory(${SDL2_SOURCE_DIR} ${SDL2_BINARY_DIR} EXCLUDE_FROM_ALL)

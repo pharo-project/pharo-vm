@@ -194,7 +194,6 @@ volatile static int thisNetSession = 0;
 static int one= 1;
 
 static char   localHostName[MAXHOSTNAMELEN];
-static u_long localHostAddress;	/* GROSS IPv4 ASSUMPTION! */
 
 /*
  * The ERROR constants are different in Windows and in Unix.
@@ -635,8 +634,6 @@ sqInt sqNetworkInit(sqInt resolverSemaIndex)
 {
   if (0 != thisNetSession)
     return 0;  /* already initialised */
-  gethostname(localHostName, MAXHOSTNAMELEN);
-  localHostAddress= nameToAddr(localHostName);
   thisNetSession= clock() + time(0);
   if (0 == thisNetSession)
     thisNetSession= 1;  /* 0 => uninitialised */
@@ -1710,7 +1707,6 @@ sqInt sqResolverLocalAddress(void) {
     sqInt address;
 
     gethostname(localHostName,MAXHOSTNAMELEN);
-
     return nameToAddr(localHostName);
 
 #endif

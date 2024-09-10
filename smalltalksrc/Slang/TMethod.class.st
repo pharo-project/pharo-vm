@@ -1479,9 +1479,10 @@ TMethod >> inlineFunctionCall: aSendNode in: aCodeGen [
 		(doNotRename includes: argName) ifFalse: [
 			self removeLocal: argName ] ].
 	meth parseTree bindVariablesIn: substitutionDict.
-	meth parseTree endsWithReturn ifTrue: [
-		meth parseTree: meth parseTree copyWithoutReturn ].
-	^ meth parseTree
+	meth parseTree parent: aSendNode parent.
+	^ meth parseTree endsWithReturn
+		  ifTrue: [ meth parseTree copyWithoutReturn ]
+		  ifFalse: [ meth parseTree ]
 ]
 
 { #category : 'inlining' }
@@ -1696,6 +1697,7 @@ TMethod >> inlineSend: aSendNode directReturn: directReturn exitVar: exitVar in:
 				 in: aCodeGen);
 		addAll: meth statements. "method body"
 	directReturn ifTrue: [
+		meth parseTree parent: aSendNode parent.
 		meth endsWithReturn
 			ifTrue: [
 				exitVar ifNotNil: [ "don't remove the returns if being invoked in the context of a return"
