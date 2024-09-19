@@ -222,6 +222,16 @@ SlangStructType >> setField: fieldName to: fieldValue [
 ]
 
 { #category : 'macros' }
+SlangStructType >> withFieldsDo: forEachBlock [
+
+	<inline: #always>
+
+	self class allSlots 
+		do: [ :aSlot | forEachBlock value: aSlot name value: (aSlot read: self) ] 
+		separatedBy: [  ]
+]
+
+{ #category : 'macros' }
 SlangStructType >> withFieldsDo: forEachBlock separatedBy: separatorBlock [ 
 
 	self class allSlots 
