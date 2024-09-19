@@ -430,7 +430,7 @@ def uploadPackages(platformNames){
 }
 
 def runInsideDocker(platform, imageName, closure){
-	node('docker20'){
+	node('docker'){
 		cleanWs()
 		def image;
 		stage("Build Image ${platform}"){
