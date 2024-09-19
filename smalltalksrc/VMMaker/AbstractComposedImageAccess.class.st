@@ -264,13 +264,14 @@ AbstractComposedImageAccess >> sscanf: line _: format _: varHolder1 _: varHolder
 
 	<doNotGenerate>
 
-	^ (format = self fieldFormat)
+	(format = self fieldFormat)
 		  ifTrue: [ 
 			  | dataArray |
 			  dataArray := line substrings: '#:, '.
-			  dataArray first = '}' ifTrue: [ ^ false ].
+			  dataArray first = '}' ifTrue: [ ^ self ].
 			  varHolder1 contents: dataArray second.
-			  varHolder2 contents: dataArray third asInteger ].
+			  varHolder2 contents: dataArray third asInteger.
+			  ^ self ].
 
 	self error
 ]
