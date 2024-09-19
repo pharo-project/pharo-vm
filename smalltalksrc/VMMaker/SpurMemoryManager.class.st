@@ -1312,18 +1312,27 @@ SpurMemoryManager >> adjustAllOopsBy: bytesToShift [
 	| obj classIndex |
 	self assert: self newSpaceIsEmpty.
 	self countNumClassPagesPreSwizzle: bytesToShift.
-	(bytesToShift ~= 0
-	 or: [segmentManager numSegments > 1]) ifTrue:
-		[obj := self objectStartingAt: memoryMap oldSpaceStart.
-		 [self oop: obj isLessThan: freeOldSpaceStart] whileTrue:
-			[classIndex := self classIndexOf: obj.
-			 classIndex >= self isForwardedObjectClassIndexPun
-				ifTrue:
-					[self swizzleFieldsOfObject: obj]
-				ifFalse:
-					[classIndex = self isFreeObjectClassIndexPun ifTrue:
-						[self swizzleFieldsOfFreeChunk: obj]].
-			 obj := self objectAfter: obj limit: memoryMap oldSpaceEnd]]
+
+	(bytesToShift = 0 and: [segmentManager numSegments = 1]) ifTrue:[ ^ self ].
+	
+	obj := self objectStartingAt: memoryMap oldSpaceStart.
+	 [self oop: obj isLessThan: freeOldSpaceStart] whileTrue:
+		[classIndex := self classIndexOf: obj.
+		 classIndex >= self isForwardedObjectClassIndexPun
+			ifTrue:
+				[self swizzleFieldsOfObject: obj]
+			ifFalse:
+				[classIndex = self isFreeObjectClassIndexPun ifTrue:
+					[self swizzleFieldsOfFreeChunk: obj]].
+		 obj := self objectAfter: obj limit: memoryMap oldSpaceEnd].
+	
+	
+	"As we know all the permanent space objects that are pointing to the old space, and as the permanent space is always in the same place.
+	We need only to iterate the remembered set to swizzle the fields of permanent objects"
+	
+	self getFromPermToOldSpaceRememberedSet 
+		rememberedSetWithIndexDo: [ :oop :i | self swizzleFieldsOfObject: oop ].
+
 ]
 
 { #category : 'object enumeration' }
