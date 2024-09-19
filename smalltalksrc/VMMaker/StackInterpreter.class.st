@@ -2067,7 +2067,7 @@ StackInterpreter >> allocateMemoryForImageHeader: header [
 
 	objectMemory getMemoryMap 
 		allocationReserve: self interpreterAllocationReserveBytes;
-		initialOldSpaceSize: header dataSize;
+		initialOldSpaceSize: header hdrOldSpaceSize;
 		initialNewSpaceSize: objectMemory newSpaceBytes;
 		initialHeadroom: (objectMemory initialHeadroom: extraVMMemory givenFreeOldSpaceInImage: header freeOldSpaceInImage);
 		allocateHeap.
@@ -10341,6 +10341,7 @@ StackInterpreter >> newHeader [
 	
 	sizeToWrite := objectMemory imageSizeToWrite.
 	header dataSize: sizeToWrite.
+	header hdrOldSpaceSize: objectMemory oldSpaceSizeToWrite.
 
 	header oldBaseAddr: objectMemory getMemoryMap oldSpaceStart.
 	header initialSpecialObjectsOop: objectMemory specialObjectsOop.

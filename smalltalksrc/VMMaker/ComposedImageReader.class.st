@@ -123,6 +123,10 @@ ComposedImageReader >> readHeaderFromImage: imageFileName [
 	
 	headerPtr := self addressOf: header.
 	self readSTONFrom: file into: headerPtr.
+	
+	"If the field is missing, as it was added later"
+	header hdrOldSpaceSize = 0 
+		ifTrue: [ header hdrOldSpaceSize: header dataSize ].
 
 	self extractImageVersionFrom: (header imageFormat) into: headerPtr.
 	

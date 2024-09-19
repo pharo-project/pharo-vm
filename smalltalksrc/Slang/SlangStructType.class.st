@@ -216,9 +216,9 @@ SlangStructType class >> voidStructTypeCache [
 { #category : 'macros' }
 SlangStructType >> setField: fieldName to: fieldValue [
 
-	| slot |
-	slot := self class slotNamed: fieldName.
-	slot write: fieldValue to: self
+	self class
+		slotNamed: fieldName
+		ifFound: [ :slot | slot write: fieldValue to: self ]
 ]
 
 { #category : 'macros' }

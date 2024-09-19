@@ -371,7 +371,8 @@ TStatementListNode >> copyWithoutReturn [
 			newStmtsListNode
 				replaceChild: actualLast
 				with: actualLast copyWithoutReturn ].
-	^ newStmtsListNode]
+	^ newStmtsListNode
+]
 
 { #category : 'declarations' }
 TStatementListNode >> declarationAt: aString ifPresent: aFullBlockClosure [ 

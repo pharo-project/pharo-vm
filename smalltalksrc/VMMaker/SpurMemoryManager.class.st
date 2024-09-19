@@ -10166,6 +10166,12 @@ SpurMemoryManager >> oldSpaceSize [
 	^segmentManager totalBytesInSegments
 ]
 
+{ #category : 'snapshot' }
+SpurMemoryManager >> oldSpaceSizeToWrite [
+	<returnTypeC: #'size_t'> 
+	^segmentManager totalBytesInNonEmptySegments
+]
+
 { #category : 'become implementation' }
 SpurMemoryManager >> outOfPlaceBecome: obj1 and: obj2 copyHashFlag: copyHashFlag [
 	<inline: #never> "in an effort to fix a compiler bug with two-way become post r3427"
