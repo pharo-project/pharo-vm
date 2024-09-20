@@ -1,12 +1,10 @@
 Class {
-	#name : 'VMImageHeaderWritingTest',
-	#superclass : 'VMAbstractImageFormatTest',
-	#category : 'VMMakerTests-ImageFormat',
-	#package : 'VMMakerTests',
-	#tag : 'ImageFormat'
+	#name : #VMImageHeaderWritingTest,
+	#superclass : #VMAbstractImageFormatTest,
+	#category : #'VMMakerTests-ImageFormat'
 }
 
-{ #category : 'running' }
+{ #category : #running }
 VMImageHeaderWritingTest >> setUp [
 
 	super setUp.
@@ -20,7 +18,7 @@ VMImageHeaderWritingTest >> setUp [
 	self saveImage.
 ]
 
-{ #category : 'tests' }
+{ #category : #tests }
 VMImageHeaderWritingTest >> testImageHeaderWithPermanentObjects [
 
 	| header permanentObject |
@@ -37,7 +35,7 @@ VMImageHeaderWritingTest >> testImageHeaderWithPermanentObjects [
 				+ (memory bytesInObject: permanentObject) + 16 "PermSpace has an empty object as first object.".
 ]
 
-{ #category : 'tests' }
+{ #category : #tests }
 VMImageHeaderWritingTest >> testWritingImageWritesCorrectBaseAddress [
 
 	| header |
@@ -47,7 +45,7 @@ VMImageHeaderWritingTest >> testWritingImageWritesCorrectBaseAddress [
 	self assert: header oldBaseAddr equals: memory getMemoryMap oldSpaceStart
 ]
 
-{ #category : 'tests' }
+{ #category : #tests }
 VMImageHeaderWritingTest >> testWritingImageWritesCorrectBytesLeftInOldSpace [
 
 	| header |
@@ -57,7 +55,7 @@ VMImageHeaderWritingTest >> testWritingImageWritesCorrectBytesLeftInOldSpace [
 	self assert: header freeOldSpaceInImage equals: memory bytesLeftInOldSpace
 ]
 
-{ #category : 'tests' }
+{ #category : #tests }
 VMImageHeaderWritingTest >> testWritingImageWritesCorrectCodeSize [
 
 	| header |
@@ -67,7 +65,7 @@ VMImageHeaderWritingTest >> testWritingImageWritesCorrectCodeSize [
 	self assert: header hdrCogCodeSize equals: interpreter unknownShortOrCodeSizeInKs
 ]
 
-{ #category : 'tests' }
+{ #category : #tests }
 VMImageHeaderWritingTest >> testWritingImageWritesCorrectDataSize [
 
 	| header |
@@ -77,7 +75,7 @@ VMImageHeaderWritingTest >> testWritingImageWritesCorrectDataSize [
 	self assert: header dataSize equals: memory imageSizeToWrite
 ]
 
-{ #category : 'tests' }
+{ #category : #tests }
 VMImageHeaderWritingTest >> testWritingImageWritesCorrectDesiredEdenSize [
 
 	| header |
@@ -87,7 +85,7 @@ VMImageHeaderWritingTest >> testWritingImageWritesCorrectDesiredEdenSize [
 	self assert: header hdrEdenBytes equals: interpreter getDesiredEdenBytes
 ]
 
-{ #category : 'tests' }
+{ #category : #tests }
 VMImageHeaderWritingTest >> testWritingImageWritesCorrectDesiredNumberStackPages [
 
 	| header |
@@ -97,7 +95,7 @@ VMImageHeaderWritingTest >> testWritingImageWritesCorrectDesiredNumberStackPages
 	self assert: header hdrNumStackPages equals: interpreter getDesiredNumStackPages
 ]
 
-{ #category : 'tests' }
+{ #category : #tests }
 VMImageHeaderWritingTest >> testWritingImageWritesCorrectExternalSemaphoreTable [
 
 	| header |
@@ -107,7 +105,7 @@ VMImageHeaderWritingTest >> testWritingImageWritesCorrectExternalSemaphoreTable 
 	self assert: header hdrMaxExtSemTabSize equals: (interpreter getMaxExtSemTabSizeSet ifTrue: [interpreter ioGetMaxExtSemTableSize] ifFalse: [0])
 ]
 
-{ #category : 'tests' }
+{ #category : #tests }
 VMImageHeaderWritingTest >> testWritingImageWritesCorrectExtraVMMemory [
 
 	| header |
@@ -117,7 +115,7 @@ VMImageHeaderWritingTest >> testWritingImageWritesCorrectExtraVMMemory [
 	self assert: header extraVMMemory equals: interpreter getExtraVMMemory
 ]
 
-{ #category : 'tests' }
+{ #category : #tests }
 VMImageHeaderWritingTest >> testWritingImageWritesCorrectFirstSegmentSize [
 
 	| header |
@@ -127,7 +125,7 @@ VMImageHeaderWritingTest >> testWritingImageWritesCorrectFirstSegmentSize [
 	self assert: header firstSegSize equals: memory firstSegmentBytes
 ]
 
-{ #category : 'tests' }
+{ #category : #tests }
 VMImageHeaderWritingTest >> testWritingImageWritesCorrectHeaderFlags [
 
 	| header |
@@ -137,7 +135,7 @@ VMImageHeaderWritingTest >> testWritingImageWritesCorrectHeaderFlags [
 	self assert: header headerFlags equals: interpreter getImageHeaderFlags
 ]
 
-{ #category : 'tests' }
+{ #category : #tests }
 VMImageHeaderWritingTest >> testWritingImageWritesCorrectHeaderSize [
 
 	| header expectedHeaderSize |
@@ -149,7 +147,7 @@ VMImageHeaderWritingTest >> testWritingImageWritesCorrectHeaderSize [
 	self assert: header imageHeaderSize equals: expectedHeaderSize.
 ]
 
-{ #category : 'tests' }
+{ #category : #tests }
 VMImageHeaderWritingTest >> testWritingImageWritesCorrectImageFormat [
 
 	| header |
@@ -159,7 +157,7 @@ VMImageHeaderWritingTest >> testWritingImageWritesCorrectImageFormat [
 	self assert: header imageFormat equals: interpreter imageFormatVersion
 ]
 
-{ #category : 'tests' }
+{ #category : #tests }
 VMImageHeaderWritingTest >> testWritingImageWritesCorrectImageVersion [
 
 	| header |
@@ -169,7 +167,7 @@ VMImageHeaderWritingTest >> testWritingImageWritesCorrectImageVersion [
 	self assert: header imageVersion equals: interpreter getImageVersion
 ]
 
-{ #category : 'tests' }
+{ #category : #tests }
 VMImageHeaderWritingTest >> testWritingImageWritesCorrectNextObjectHash [
 
 	| header |
@@ -179,7 +177,7 @@ VMImageHeaderWritingTest >> testWritingImageWritesCorrectNextObjectHash [
 	self assert: header hdrLastHash equals: memory lastHash
 ]
 
-{ #category : 'tests' }
+{ #category : #tests }
 VMImageHeaderWritingTest >> testWritingImageWritesCorrectSpecialObjectsArrayOop [
 
 	| header |
@@ -189,7 +187,7 @@ VMImageHeaderWritingTest >> testWritingImageWritesCorrectSpecialObjectsArrayOop 
 	self assert: header initialSpecialObjectsOop equals: memory specialObjectsOop
 ]
 
-{ #category : 'tests' }
+{ #category : #tests }
 VMImageHeaderWritingTest >> testWritingSTONHeader [
 
 	| header readHeader |
@@ -203,7 +201,7 @@ VMImageHeaderWritingTest >> testWritingSTONHeader [
 	self assert: readHeader equals: (self stonPretty: header).
 ]
 
-{ #category : 'tests' }
+{ #category : #tests }
 VMImageHeaderWritingTest >> testWritingSTONPermSpace [
 
 	| writtenMetadata expectedPermSpaceMetadata |
@@ -224,7 +222,7 @@ VMImageHeaderWritingTest >> testWritingSTONPermSpace [
 	self assert: writtenMetadata equals: (self stonPretty: expectedPermSpaceMetadata).
 ]
 
-{ #category : 'tests' }
+{ #category : #tests }
 VMImageHeaderWritingTest >> testWritingSTONPermSpaceOnEmptySpace [
 
 	| writtenMetadata |
@@ -238,7 +236,7 @@ VMImageHeaderWritingTest >> testWritingSTONPermSpaceOnEmptySpace [
 	self assert: writtenMetadata equals: (self stonPretty: ComposedMetadataStruct new).
 ]
 
-{ #category : 'tests' }
+{ #category : #tests }
 VMImageHeaderWritingTest >> testWritingSTONSegment [
 
 	| header writtenHeader segmentMetadata |

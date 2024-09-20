@@ -1,16 +1,14 @@
 Class {
-	#name : 'VMInterpreterTests',
-	#superclass : 'VMSpurMemoryManagerTest',
+	#name : #VMInterpreterTests,
+	#superclass : #VMSpurMemoryManagerTest,
 	#pools : [
 		'VMClassIndices',
 		'VMObjectIndices'
 	],
-	#category : 'VMMakerTests-InterpreterTests',
-	#package : 'VMMakerTests',
-	#tag : 'InterpreterTests'
+	#category : #'VMMakerTests-InterpreterTests'
 }
 
-{ #category : 'tests' }
+{ #category : #tests }
 VMInterpreterTests >> installSelector: aSelectorOop method: aMethodOop inMethodDictionary: aMethodDictionary [
 	
 	| anArrayOfMethods |
@@ -25,7 +23,7 @@ VMInterpreterTests >> installSelector: aSelectorOop method: aMethodOop inMethodD
 		withValue: aMethodOop
 ]
 
-{ #category : 'running' }
+{ #category : #running }
 VMInterpreterTests >> setUp [
 	
 	"taken from VMSimpleStackBasedCogitBytecodeTest >> #setup"
@@ -43,7 +41,7 @@ VMInterpreterTests >> setUp [
 
 ]
 
-{ #category : 'tests' }
+{ #category : #tests }
 VMInterpreterTests >> setUpMethodDictionaryIn: aClass [
 	"2 instances variables the array of methods and the tally
 	and 12 entries to put elemetns of the collection"

@@ -1,15 +1,13 @@
 Class {
-	#name : 'VMPushThisContextRoutineTest',
-	#superclass : 'VMSimpleStackBasedCogitAbstractTest',
+	#name : #VMPushThisContextRoutineTest,
+	#superclass : #VMSimpleStackBasedCogitAbstractTest,
 	#pools : [
 		'VMClassIndices'
 	],
-	#category : 'VMMakerTests-JitTests',
-	#package : 'VMMakerTests',
-	#tag : 'JitTests'
+	#category : #'VMMakerTests-JitTests'
 }
 
-{ #category : 'tests' }
+{ #category : #tests }
 VMPushThisContextRoutineTest >> setUp [
 
 	| contextClass |
@@ -29,7 +27,7 @@ VMPushThisContextRoutineTest >> setUp [
 
 ]
 
-{ #category : 'tests' }
+{ #category : #tests }
 VMPushThisContextRoutineTest >> testMarriedContextReturnsSpouseObject [
 
 	| isLargeContext isInBlock routine numberOfArguments methodObject contextOop |
@@ -74,7 +72,7 @@ VMPushThisContextRoutineTest >> testMarriedContextReturnsSpouseObject [
 		equals: contextOop
 ]
 
-{ #category : 'tests' }
+{ #category : #tests }
 VMPushThisContextRoutineTest >> testNewMarriedContextHasLargeSize [
 
 	| isLargeContext isInBlock routine numberOfArguments |
@@ -107,7 +105,7 @@ VMPushThisContextRoutineTest >> testNewMarriedContextHasLargeSize [
 	self assert: (memory numSlotsOf: machineSimulator receiverRegisterValue) equals: LargeContextSlots.
 ]
 
-{ #category : 'tests' }
+{ #category : #tests }
 VMPushThisContextRoutineTest >> testNewMarriedContextHasSmallSize [
 
 	| isLargeContext isInBlock routine numberOfArguments |
@@ -142,7 +140,7 @@ VMPushThisContextRoutineTest >> testNewMarriedContextHasSmallSize [
 	self assert: (memory numSlotsOf: machineSimulator receiverRegisterValue) equals: SmallContextSlots
 ]
 
-{ #category : 'tests' }
+{ #category : #tests }
 VMPushThisContextRoutineTest >> testNewMarriedLargeContextHasCorrectStackPointer [
 
 	| isLargeContext isInBlock routine numberOfArguments expectedStackPointer |
@@ -179,7 +177,7 @@ VMPushThisContextRoutineTest >> testNewMarriedLargeContextHasCorrectStackPointer
 	self assert: (memory fetchPointer: StackPointerIndex ofObject: machineSimulator receiverRegisterValue ) equals: (memory integerObjectOf: expectedStackPointer).
 ]
 
-{ #category : 'tests' }
+{ #category : #tests }
 VMPushThisContextRoutineTest >> testNewMarriedSmallContextHasArguments [
 
 	| isLargeContext isInBlock routine numberOfArguments |
@@ -216,7 +214,7 @@ VMPushThisContextRoutineTest >> testNewMarriedSmallContextHasArguments [
 	self assert: (memory fetchPointer: Context allSlots size +2 ofObject: machineSimulator receiverRegisterValue ) equals: (memory integerObjectOf: 3).		
 ]
 
-{ #category : 'tests' }
+{ #category : #tests }
 VMPushThisContextRoutineTest >> testNewMarriedSmallContextHasClosureInNil [
 
 	| isLargeContext isInBlock routine numberOfArguments |
@@ -250,7 +248,7 @@ VMPushThisContextRoutineTest >> testNewMarriedSmallContextHasClosureInNil [
 	self assert: (memory fetchPointer: ClosureIndex ofObject: machineSimulator receiverRegisterValue ) equals: (memory nilObject).
 ]
 
-{ #category : 'tests' }
+{ #category : #tests }
 VMPushThisContextRoutineTest >> testNewMarriedSmallContextHasClosureInSetOne [
 
 	| isLargeContext isInBlock routine numberOfArguments |
@@ -285,7 +283,7 @@ VMPushThisContextRoutineTest >> testNewMarriedSmallContextHasClosureInSetOne [
 	self assert: (memory fetchPointer: ClosureIndex ofObject: machineSimulator receiverRegisterValue ) equals: (memory trueObject).
 ]
 
-{ #category : 'tests' }
+{ #category : #tests }
 VMPushThisContextRoutineTest >> testNewMarriedSmallContextHasCorrectStackPointer [
 
 	| isLargeContext isInBlock routine numberOfArguments methodObject contextOop expectedStackPointer |
@@ -323,7 +321,7 @@ VMPushThisContextRoutineTest >> testNewMarriedSmallContextHasCorrectStackPointer
 	self assert: (memory fetchPointer: StackPointerIndex ofObject: machineSimulator receiverRegisterValue ) equals: (memory integerObjectOf: expectedStackPointer).
 ]
 
-{ #category : 'tests' }
+{ #category : #tests }
 VMPushThisContextRoutineTest >> testNewMarriedSmallContextHasReceiver [
 
 	| isLargeContext isInBlock routine numberOfArguments |
@@ -358,7 +356,7 @@ VMPushThisContextRoutineTest >> testNewMarriedSmallContextHasReceiver [
 	self assert: (memory fetchPointer: ReceiverIndex ofObject: machineSimulator receiverRegisterValue ) equals: (memory trueObject).
 ]
 
-{ #category : 'tests' }
+{ #category : #tests }
 VMPushThisContextRoutineTest >> testNewMarriedSmallContextHasTemporaries [
 
 	| isLargeContext isInBlock routine numberOfArguments |
@@ -398,7 +396,7 @@ VMPushThisContextRoutineTest >> testNewMarriedSmallContextHasTemporaries [
 	self assert: (memory fetchPointer: Context allSlots size + numberOfArguments + 3 ofObject: machineSimulator receiverRegisterValue ) equals: (memory nilObject).				
 ]
 
-{ #category : 'tests' }
+{ #category : #tests }
 VMPushThisContextRoutineTest >> testSingleContextReturnsNewSpouseInNewSpace [
 
 	| isLargeContext isInBlock routine numberOfArguments methodObject contextOop |

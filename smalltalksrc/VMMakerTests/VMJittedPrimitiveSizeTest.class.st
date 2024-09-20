@@ -1,22 +1,20 @@
 Class {
-	#name : 'VMJittedPrimitiveSizeTest',
-	#superclass : 'VMJittedPrimitivesTest',
+	#name : #VMJittedPrimitiveSizeTest,
+	#superclass : #VMJittedPrimitivesTest,
 	#instVars : [
 		'stop'
 	],
-	#category : 'VMMakerTests-JitTests',
-	#package : 'VMMakerTests',
-	#tag : 'JitTests'
+	#category : #'VMMakerTests-JitTests'
 }
 
-{ #category : 'helpers' }
+{ #category : #helpers }
 VMJittedPrimitiveSizeTest >> assertFallsThrough [
 
 	self runFrom: cogInitialAddress until: stop address.
 	self assert: machineSimulator instructionPointerRegisterValue equals: stop address
 ]
 
-{ #category : 'running' }
+{ #category : #running }
 VMJittedPrimitiveSizeTest >> setUp [
 
 	super setUp.
@@ -27,7 +25,7 @@ VMJittedPrimitiveSizeTest >> setUp [
 		bytecodes: 10.
 ]
 
-{ #category : 'tests - bit indexable' }
+{ #category : #'tests - bit indexable' }
 VMJittedPrimitiveSizeTest >> testPrimitiveSize16bitIndexableShouldReturnNumberOf16bitSlots [
 
 	| integerArray |
@@ -43,7 +41,7 @@ VMJittedPrimitiveSizeTest >> testPrimitiveSize16bitIndexableShouldReturnNumberOf
 		equals: 7
 ]
 
-{ #category : 'tests - bit indexable' }
+{ #category : #'tests - bit indexable' }
 VMJittedPrimitiveSizeTest >> testPrimitiveSize32bitIndexableShouldReturnNumberOf32bitSlots [
 
 	| integerArray |
@@ -59,7 +57,7 @@ VMJittedPrimitiveSizeTest >> testPrimitiveSize32bitIndexableShouldReturnNumberOf
 		equals: 7
 ]
 
-{ #category : 'tests - bit indexable' }
+{ #category : #'tests - bit indexable' }
 VMJittedPrimitiveSizeTest >> testPrimitiveSize32bitIndexableWithExtraHeaderShouldReturnNumberOf32bitSlots [
 
 	| integerArray aSize bytesPerSlot desiredByteSize numberOfWordSizeSlots padding |
@@ -85,7 +83,7 @@ VMJittedPrimitiveSizeTest >> testPrimitiveSize32bitIndexableWithExtraHeaderShoul
 		equals: 32768
 ]
 
-{ #category : 'tests - bit indexable' }
+{ #category : #'tests - bit indexable' }
 VMJittedPrimitiveSizeTest >> testPrimitiveSize64bitIndexableShouldReturnNumberOf64bitSlots [
 
 	| integerArray |
@@ -101,7 +99,7 @@ VMJittedPrimitiveSizeTest >> testPrimitiveSize64bitIndexableShouldReturnNumberOf
 		equals: 7
 ]
 
-{ #category : 'tests - bit indexable' }
+{ #category : #'tests - bit indexable' }
 VMJittedPrimitiveSizeTest >> testPrimitiveSize8bitIndexableShouldReturnNumberOf8bitSlots [
 
 	| integerArray |
@@ -117,7 +115,7 @@ VMJittedPrimitiveSizeTest >> testPrimitiveSize8bitIndexableShouldReturnNumberOf8
 		equals: 7
 ]
 
-{ #category : 'tests - pointer indexable' }
+{ #category : #'tests - pointer indexable' }
 VMJittedPrimitiveSizeTest >> testPrimitiveSizeArrayShouldReturnPointerSizedSlots [
 	
 	| array |
@@ -131,7 +129,7 @@ VMJittedPrimitiveSizeTest >> testPrimitiveSizeArrayShouldReturnPointerSizedSlots
 	self assert: machineSimulator receiverRegisterValue equals: (memory integerObjectOf: 7)
 ]
 
-{ #category : 'tests - fixed pointer layout' }
+{ #category : #'tests - fixed pointer layout' }
 VMJittedPrimitiveSizeTest >> testPrimitiveSizeFixedObjectShouldFallThrough [
 	
 	| objectWithInstanceVariables |
@@ -146,7 +144,7 @@ VMJittedPrimitiveSizeTest >> testPrimitiveSizeFixedObjectShouldFallThrough [
 	self assertFallsThrough
 ]
 
-{ #category : 'tests - fixed pointer layout' }
+{ #category : #'tests - fixed pointer layout' }
 VMJittedPrimitiveSizeTest >> testPrimitiveSizeImmediateCharacterShouldFallThrough [
 	
 	self prepareStackForSendReceiver: (memory characterObjectOf: $a codePoint).
@@ -154,7 +152,7 @@ VMJittedPrimitiveSizeTest >> testPrimitiveSizeImmediateCharacterShouldFallThroug
 	self assertFallsThrough
 ]
 
-{ #category : 'tests - fixed pointer layout' }
+{ #category : #'tests - fixed pointer layout' }
 VMJittedPrimitiveSizeTest >> testPrimitiveSizeImmediateFloatShouldFallThrough [
 
 	"Floats are not immediate in 32 bits"
@@ -165,7 +163,7 @@ VMJittedPrimitiveSizeTest >> testPrimitiveSizeImmediateFloatShouldFallThrough [
 	self assertFallsThrough
 ]
 
-{ #category : 'tests - fixed pointer layout' }
+{ #category : #'tests - fixed pointer layout' }
 VMJittedPrimitiveSizeTest >> testPrimitiveSizeImmediateIntegerShouldFallThrough [
 	
 	self prepareStackForSendReceiver: (memory integerObjectOf: 17).

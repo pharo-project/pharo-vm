@@ -1,18 +1,16 @@
 Class {
-	#name : 'VMSpurTreeAllocationStrategyForLargeTreeTest',
-	#superclass : 'VMSpurTreeAllocationStrategyForSmallTreeTest',
-	#category : 'VMMakerTests-MemoryTests',
-	#package : 'VMMakerTests',
-	#tag : 'MemoryTests'
+	#name : #VMSpurTreeAllocationStrategyForLargeTreeTest,
+	#superclass : #VMSpurTreeAllocationStrategyForSmallTreeTest,
+	#category : #'VMMakerTests-MemoryTests'
 }
 
-{ #category : 'tests-10-bestfit-liliputian-leftovers' }
+{ #category : #'tests-10-bestfit-liliputian-leftovers' }
 VMSpurTreeAllocationStrategyForLargeTreeTest class >> shouldInheritSelectors [
 
 	^ true
 ]
 
-{ #category : 'running' }
+{ #category : #running }
 VMSpurTreeAllocationStrategyForLargeTreeTest >> setUpTree [
 
 	"          1120
@@ -54,7 +52,7 @@ VMSpurTreeAllocationStrategyForLargeTreeTest >> setUpTree [
 	self assert: (memory bytesInObject: (self largerNodeOf: parent)) equals: (sizesInBreadthFirstOrder at: childNumber * 2 + 1).
 ]
 
-{ #category : 'tests-10-bestfit-liliputian-leftovers' }
+{ #category : #'tests-10-bestfit-liliputian-leftovers' }
 VMSpurTreeAllocationStrategyForLargeTreeTest >> test01AllocateBestFitTreeRootWithChildrenShouldReplaceNodeWithSmaller [
 
 	memory allocateOldSpaceChunkOfBytes: (self sizeOfChildInBreadthFirstOrder: 1) - 16.
@@ -62,7 +60,7 @@ VMSpurTreeAllocationStrategyForLargeTreeTest >> test01AllocateBestFitTreeRootWit
 	self assert: (memory bytesInObject: self freeTreeRootOop) equals: (self sizeOfChildInBreadthFirstOrder: 2)
 ]
 
-{ #category : 'tests-10-bestfit-liliputian-leftovers' }
+{ #category : #'tests-10-bestfit-liliputian-leftovers' }
 VMSpurTreeAllocationStrategyForLargeTreeTest >> test02AllocateBestFitTreeRootWithChildrenShouldReInsertSmallerLargerChildFromRoot [
 
 	memory allocateOldSpaceChunkOfBytes: (self sizeOfChildInBreadthFirstOrder: 1) - 16.
@@ -70,7 +68,7 @@ VMSpurTreeAllocationStrategyForLargeTreeTest >> test02AllocateBestFitTreeRootWit
 	self assert: (memory bytesInObject: (self largerNodeOf: self freeTreeRootOop)) equals: (self sizeOfChildInBreadthFirstOrder: 5)
 ]
 
-{ #category : 'tests-10-bestfit-liliputian-leftovers' }
+{ #category : #'tests-10-bestfit-liliputian-leftovers' }
 VMSpurTreeAllocationStrategyForLargeTreeTest >> test03AllocateBestFitTreeRootWithChildrenShouldReplaceSmallerChildWithSmallerSmaller [
 
 	memory allocateOldSpaceChunkOfBytes: (self sizeOfChildInBreadthFirstOrder: 1) - 16.
@@ -78,7 +76,7 @@ VMSpurTreeAllocationStrategyForLargeTreeTest >> test03AllocateBestFitTreeRootWit
 	self assert: (memory bytesInObject: (self smallerNodeOf: self freeTreeRootOop)) equals: (self sizeOfChildInBreadthFirstOrder: 4)
 ]
 
-{ #category : 'tests-10-bestfit-liliputian-leftovers' }
+{ #category : #'tests-10-bestfit-liliputian-leftovers' }
 VMSpurTreeAllocationStrategyForLargeTreeTest >> test04AllocateBestFitTreeRootWithChildrenShouldInsertLiliputianInFreeList [
 
 	memory allocateOldSpaceChunkOfBytes: (self sizeOfChildInBreadthFirstOrder: 1) - 16.
@@ -86,7 +84,7 @@ VMSpurTreeAllocationStrategyForLargeTreeTest >> test04AllocateBestFitTreeRootWit
 	self denyFreeListEmpty: (self freeListForSize: 16)
 ]
 
-{ #category : 'tests-10-bestfit-liliputian-leftovers' }
+{ #category : #'tests-10-bestfit-liliputian-leftovers' }
 VMSpurTreeAllocationStrategyForLargeTreeTest >> test05AllocateBestFitSmallerTreeNodeShouldReplaceNodeWithSmaller [
 
 	memory allocateOldSpaceChunkOfBytes: (self sizeOfChildInBreadthFirstOrder: 2) - 16.
@@ -94,7 +92,7 @@ VMSpurTreeAllocationStrategyForLargeTreeTest >> test05AllocateBestFitSmallerTree
 	self assert: (memory bytesInObject: (self smallerNodeOf: self freeTreeRootOop)) equals: (self sizeOfChildInBreadthFirstOrder: 4)
 ]
 
-{ #category : 'tests-10-bestfit-liliputian-leftovers' }
+{ #category : #'tests-10-bestfit-liliputian-leftovers' }
 VMSpurTreeAllocationStrategyForLargeTreeTest >> test06AllocateBestFitSmallerTreeNodeShouldReuseNodeAddress [
 
 	| desiredAddress allocatedAddress |
@@ -104,7 +102,7 @@ VMSpurTreeAllocationStrategyForLargeTreeTest >> test06AllocateBestFitSmallerTree
 	self assert: allocatedAddress equals: desiredAddress
 ]
 
-{ #category : 'tests-10-bestfit-liliputian-leftovers' }
+{ #category : #'tests-10-bestfit-liliputian-leftovers' }
 VMSpurTreeAllocationStrategyForLargeTreeTest >> test07AllocateBestFitSmallerTreeNodeShouldInsertLiliputianInFreeList [
 
 	memory allocateOldSpaceChunkOfBytes: (self sizeOfChildInBreadthFirstOrder: 2) - 16.
@@ -112,7 +110,7 @@ VMSpurTreeAllocationStrategyForLargeTreeTest >> test07AllocateBestFitSmallerTree
 	self denyFreeListEmpty: (self freeListForSize: 16)
 ]
 
-{ #category : 'tests-10-bestfit-liliputian-leftovers' }
+{ #category : #'tests-10-bestfit-liliputian-leftovers' }
 VMSpurTreeAllocationStrategyForLargeTreeTest >> test15AllocateBestFitBiggerTreeNodeShouldReplaceNodeWithSmaller [
 
 	memory allocateOldSpaceChunkOfBytes: (self sizeOfChildInBreadthFirstOrder: 3) - 16.
@@ -120,7 +118,7 @@ VMSpurTreeAllocationStrategyForLargeTreeTest >> test15AllocateBestFitBiggerTreeN
 	self assert: (memory bytesInObject: (self largerNodeOf: self freeTreeRootOop)) equals: (self sizeOfChildInBreadthFirstOrder: 6)
 ]
 
-{ #category : 'tests-10-bestfit-liliputian-leftovers' }
+{ #category : #'tests-10-bestfit-liliputian-leftovers' }
 VMSpurTreeAllocationStrategyForLargeTreeTest >> test16AllocateBestFitBiggerTreeNodeShouldReuseNodeAddress [
 
 	| desiredAddress allocatedAddress |
@@ -130,7 +128,7 @@ VMSpurTreeAllocationStrategyForLargeTreeTest >> test16AllocateBestFitBiggerTreeN
 	self assert: allocatedAddress equals: desiredAddress
 ]
 
-{ #category : 'tests-10-bestfit-liliputian-leftovers' }
+{ #category : #'tests-10-bestfit-liliputian-leftovers' }
 VMSpurTreeAllocationStrategyForLargeTreeTest >> test17AllocateBestFitLargerTreeNodeShouldInsertLiliputianInFreeList [
 
 	memory allocateOldSpaceChunkOfBytes: (self sizeOfChildInBreadthFirstOrder: 3) - 16.
@@ -138,7 +136,7 @@ VMSpurTreeAllocationStrategyForLargeTreeTest >> test17AllocateBestFitLargerTreeN
 	self denyFreeListEmpty: (self freeListForSize: 16)
 ]
 
-{ #category : 'tests-10-bestfit-liliputian-leftovers' }
+{ #category : #'tests-10-bestfit-liliputian-leftovers' }
 VMSpurTreeAllocationStrategyForLargeTreeTest >> test20AllocateBestFitSmallerOfSmallerLeafTreeNodeShouldRemoveNode [
 
 	memory allocateOldSpaceChunkOfBytes: (self sizeOfChildInBreadthFirstOrder: 4) - 16.
@@ -146,7 +144,7 @@ VMSpurTreeAllocationStrategyForLargeTreeTest >> test20AllocateBestFitSmallerOfSm
 	self assert: (self smallerNodeOf: (self smallerNodeOf: self freeTreeRootOop)) equals: 0
 ]
 
-{ #category : 'tests-10-bestfit-liliputian-leftovers' }
+{ #category : #'tests-10-bestfit-liliputian-leftovers' }
 VMSpurTreeAllocationStrategyForLargeTreeTest >> test21AllocateBestFitSmallerOfSmallerLeafTreeNodeShouldReuseNodeAddress [
 
 	| desiredAddress allocatedAddress |
@@ -156,7 +154,7 @@ VMSpurTreeAllocationStrategyForLargeTreeTest >> test21AllocateBestFitSmallerOfSm
 	self assert: allocatedAddress equals: desiredAddress
 ]
 
-{ #category : 'tests-10-bestfit-liliputian-leftovers' }
+{ #category : #'tests-10-bestfit-liliputian-leftovers' }
 VMSpurTreeAllocationStrategyForLargeTreeTest >> test22AllocateBestFitSmallerOfSmallerLeafTreeNodeShouldInsertLiliputianInFreeList [
 
 	memory allocateOldSpaceChunkOfBytes: (self sizeOfChildInBreadthFirstOrder: 4) - 16.
@@ -164,7 +162,7 @@ VMSpurTreeAllocationStrategyForLargeTreeTest >> test22AllocateBestFitSmallerOfSm
 	self denyFreeListEmpty: (self freeListForSize: 16)
 ]
 
-{ #category : 'tests-10-bestfit-liliputian-leftovers' }
+{ #category : #'tests-10-bestfit-liliputian-leftovers' }
 VMSpurTreeAllocationStrategyForLargeTreeTest >> test25AllocateBestFitLargerOfSmallerLeafTreeNodeShouldRemoveNode [
 
 	memory allocateOldSpaceChunkOfBytes: (self sizeOfChildInBreadthFirstOrder: 5) - 16.
@@ -172,7 +170,7 @@ VMSpurTreeAllocationStrategyForLargeTreeTest >> test25AllocateBestFitLargerOfSma
 	self assert: (self largerNodeOf: (self smallerNodeOf: self freeTreeRootOop)) equals: 0
 ]
 
-{ #category : 'tests-10-bestfit-liliputian-leftovers' }
+{ #category : #'tests-10-bestfit-liliputian-leftovers' }
 VMSpurTreeAllocationStrategyForLargeTreeTest >> test26AllocateBestFitLargerOfSmallerLeafTreeNodeShouldReuseNodeAddress [
 
 	| desiredAddress allocatedAddress |
@@ -181,7 +179,7 @@ VMSpurTreeAllocationStrategyForLargeTreeTest >> test26AllocateBestFitLargerOfSma
 	self assert: allocatedAddress equals: desiredAddress
 ]
 
-{ #category : 'tests-10-bestfit-liliputian-leftovers' }
+{ #category : #'tests-10-bestfit-liliputian-leftovers' }
 VMSpurTreeAllocationStrategyForLargeTreeTest >> test27AllocateBestFitLargerOfSmallerLeafTreeNodeShouldShouldInsertLiliputianInFreeList [
 
 	memory allocateOldSpaceChunkOfBytes: (self sizeOfChildInBreadthFirstOrder: 5) - 16.
@@ -189,7 +187,7 @@ VMSpurTreeAllocationStrategyForLargeTreeTest >> test27AllocateBestFitLargerOfSma
 	self denyFreeListEmpty: (self freeListForSize: 16)
 ]
 
-{ #category : 'tests-10-bestfit-liliputian-leftovers' }
+{ #category : #'tests-10-bestfit-liliputian-leftovers' }
 VMSpurTreeAllocationStrategyForLargeTreeTest >> test30AllocateBestFitSmallerOfLargerLeafTreeNodeShouldRemoveNode [
 
 	memory allocateOldSpaceChunkOfBytes: (self sizeOfChildInBreadthFirstOrder: 6) - 16.
@@ -197,7 +195,7 @@ VMSpurTreeAllocationStrategyForLargeTreeTest >> test30AllocateBestFitSmallerOfLa
 	self assert: (self smallerNodeOf: (self largerNodeOf: self freeTreeRootOop)) equals: 0
 ]
 
-{ #category : 'tests-10-bestfit-liliputian-leftovers' }
+{ #category : #'tests-10-bestfit-liliputian-leftovers' }
 VMSpurTreeAllocationStrategyForLargeTreeTest >> test31AllocateBestFitSmallerOfLargerLeafTreeNodeShouldReuseNodeAddress [
 
 	| desiredAddress allocatedAddress |
@@ -207,7 +205,7 @@ VMSpurTreeAllocationStrategyForLargeTreeTest >> test31AllocateBestFitSmallerOfLa
 	self assert: allocatedAddress equals: desiredAddress
 ]
 
-{ #category : 'tests-10-bestfit-liliputian-leftovers' }
+{ #category : #'tests-10-bestfit-liliputian-leftovers' }
 VMSpurTreeAllocationStrategyForLargeTreeTest >> test32AllocateBestFitSmallerOfLargerLeafTreeNodeShouldInsertLiliputianInFreeList [
 
 	memory allocateOldSpaceChunkOfBytes: (self sizeOfChildInBreadthFirstOrder: 6) - 16.
@@ -215,7 +213,7 @@ VMSpurTreeAllocationStrategyForLargeTreeTest >> test32AllocateBestFitSmallerOfLa
 	self denyFreeListEmpty: (self freeListForSize: 16)
 ]
 
-{ #category : 'tests-10-bestfit-liliputian-leftovers' }
+{ #category : #'tests-10-bestfit-liliputian-leftovers' }
 VMSpurTreeAllocationStrategyForLargeTreeTest >> test35AllocateBestFitLargerOfLargerLeafTreeNodeShouldRemoveChildNode [
 
 	memory allocateOldSpaceChunkOfBytes: (self sizeOfChildInBreadthFirstOrder: 7) - 16.
@@ -223,7 +221,7 @@ VMSpurTreeAllocationStrategyForLargeTreeTest >> test35AllocateBestFitLargerOfLar
 	self assert: (self largerNodeOf: (self largerNodeOf: self freeTreeRootOop)) equals: 0
 ]
 
-{ #category : 'tests-10-bestfit-liliputian-leftovers' }
+{ #category : #'tests-10-bestfit-liliputian-leftovers' }
 VMSpurTreeAllocationStrategyForLargeTreeTest >> test36AllocateBestFitLargerOfLargerLeafTreeNodeShouldReuseNodeAddress [
 
 	| desiredAddress allocatedAddress |
@@ -233,7 +231,7 @@ VMSpurTreeAllocationStrategyForLargeTreeTest >> test36AllocateBestFitLargerOfLar
 	self assert: allocatedAddress equals: desiredAddress
 ]
 
-{ #category : 'tests-10-bestfit-liliputian-leftovers' }
+{ #category : #'tests-10-bestfit-liliputian-leftovers' }
 VMSpurTreeAllocationStrategyForLargeTreeTest >> test37AllocateBestFitLargerOfLargerLeafTreeNodeShouldInsertLiliputianInFreeList [
 
 	memory allocateOldSpaceChunkOfBytes: (self sizeOfChildInBreadthFirstOrder: 7) - 16.

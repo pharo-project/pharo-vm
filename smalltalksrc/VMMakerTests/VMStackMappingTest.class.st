@@ -1,12 +1,10 @@
 Class {
-	#name : 'VMStackMappingTest',
-	#superclass : 'VMSpurInitializedOldSpaceTest',
-	#category : 'VMMakerTests-MemoryTests',
-	#package : 'VMMakerTests',
-	#tag : 'MemoryTests'
+	#name : #VMStackMappingTest,
+	#superclass : #VMSpurInitializedOldSpaceTest,
+	#category : #'VMMakerTests-MemoryTests'
 }
 
-{ #category : 'helpers' }
+{ #category : #helpers }
 VMStackMappingTest >> buildStackFromFrames [
 
 	3 timesRepeat: [ 
@@ -19,7 +17,7 @@ VMStackMappingTest >> buildStackFromFrames [
 	stackBuilder buildStack
 ]
 
-{ #category : 'helpers' }
+{ #category : #helpers }
 VMStackMappingTest >> newContext [
 
 	| method |
@@ -32,13 +30,13 @@ VMStackMappingTest >> newContext [
 		  ip: 10
 ]
 
-{ #category : 'tests' }
+{ #category : #tests }
 VMStackMappingTest >> testCreatingNewContextByHandShouldbeSingle [
 
 	self assert: (interpreter isSingleContext: self newContext)
 ]
 
-{ #category : 'tests' }
+{ #category : #tests }
 VMStackMappingTest >> testDivorceAMarriedContextShuoldMakeItSingle [
 	| context fp |
 	context := self newContext.
@@ -48,7 +46,7 @@ VMStackMappingTest >> testDivorceAMarriedContextShuoldMakeItSingle [
 	self assert: (interpreter isSingleContext: context)
 ]
 
-{ #category : 'tests' }
+{ #category : #tests }
 VMStackMappingTest >> testDivorceFramesInPage [
 	| page |
 	self buildStackFromFrames.
@@ -69,7 +67,7 @@ VMStackMappingTest >> testDivorceFramesInPage [
 
 ]
 
-{ #category : 'tests' }
+{ #category : #tests }
 VMStackMappingTest >> testMarryNewContextIsMarried [
 	| context |
 	context := self newContext.
@@ -77,7 +75,7 @@ VMStackMappingTest >> testMarryNewContextIsMarried [
 	self assert: (interpreter isStillMarriedContext: context)
 ]
 
-{ #category : 'test-context-tomove' }
+{ #category : #'test-context-tomove' }
 VMStackMappingTest >> testMarryThenDivorceBaseFrameShouldFreeOldPage [
 	| aContext framePointerToMarry stackPointerToMarry oldPage |
 	self buildStackFromFrames.
@@ -91,7 +89,7 @@ VMStackMappingTest >> testMarryThenDivorceBaseFrameShouldFreeOldPage [
 	self assert: oldPage isFree
 ]
 
-{ #category : 'test-context-tomove' }
+{ #category : #'test-context-tomove' }
 VMStackMappingTest >> testMarryThenDivorceBaseFrameShouldSetDivorcedContextAsSenderContextInNewPage [
 	| aContext framePointerToMarry stackPointerToMarry  expectedDivorcedContext |
 	self buildStackFromFrames.
@@ -105,7 +103,7 @@ VMStackMappingTest >> testMarryThenDivorceBaseFrameShouldSetDivorcedContextAsSen
 	self assert: expectedDivorcedContext equals: aContext.
 ]
 
-{ #category : 'test-context-tomove' }
+{ #category : #'test-context-tomove' }
 VMStackMappingTest >> testMarryThenDivorceBaseFrameShouldSplitPage [
 	| aContext framePointerToMarry stackPointerToMarry oldPage newPage |
 	self buildStackFromFrames.
@@ -119,7 +117,7 @@ VMStackMappingTest >> testMarryThenDivorceBaseFrameShouldSplitPage [
 	self deny: oldPage equals: newPage
 ]
 
-{ #category : 'test-context-tomove' }
+{ #category : #'test-context-tomove' }
 VMStackMappingTest >> testMarryThenDivorceMiddleFrame [
 	| aContext framePointerToMarry stackPointerToMarry |
 	self buildStackFromFrames.
@@ -131,7 +129,7 @@ VMStackMappingTest >> testMarryThenDivorceMiddleFrame [
 	self assert: (interpreter isSingleContext: aContext).
 ]
 
-{ #category : 'test-context-tomove' }
+{ #category : #'test-context-tomove' }
 VMStackMappingTest >> testMarryThenDivorceMiddleFrameShouldSetDivorcedContextAsSenderContextInNewPage [
 	| aContext framePointerToMarry stackPointerToMarry  expectedDivorcedContext oldBaseFramePointer callerContext |
 	self buildStackFromFrames.
@@ -151,7 +149,7 @@ VMStackMappingTest >> testMarryThenDivorceMiddleFrameShouldSetDivorcedContextAsS
 	
 ]
 
-{ #category : 'test-context-tomove' }
+{ #category : #'test-context-tomove' }
 VMStackMappingTest >> testMarryThenDivorceMiddleFrameShouldSplitPage [
 	| aContext framePointerToMarry stackPointerToMarry initialiNumberOfusedPages newNumberOfUsedPages |
 	self buildStackFromFrames.
@@ -165,7 +163,7 @@ VMStackMappingTest >> testMarryThenDivorceMiddleFrameShouldSplitPage [
 	self assert: initialiNumberOfusedPages + 1 equals: newNumberOfUsedPages
 ]
 
-{ #category : 'test-context-tomove' }
+{ #category : #'test-context-tomove' }
 VMStackMappingTest >> testMarryThenDivorceTopFrame [
 	| aContext framePointerToMarry stackPointerToMarry |
 	self buildStackFromFrames.
@@ -177,7 +175,7 @@ VMStackMappingTest >> testMarryThenDivorceTopFrame [
 	self assert: (interpreter isSingleContext: aContext).
 ]
 
-{ #category : 'test-context-tomove' }
+{ #category : #'test-context-tomove' }
 VMStackMappingTest >> testMarryThenDivorceTopFrameShouldNotSplitPage [
 	| aContext initialiNumberOfusedPages newNumberOfUsedPages |
 	self buildStackFromFrames.
@@ -189,7 +187,7 @@ VMStackMappingTest >> testMarryThenDivorceTopFrameShouldNotSplitPage [
 	self assert: initialiNumberOfusedPages equals: 	newNumberOfUsedPages
 ]
 
-{ #category : 'test-context-tomove' }
+{ #category : #'test-context-tomove' }
 VMStackMappingTest >> testMarryTopFrame [
 	| aContext |
 	self buildStackFromFrames.

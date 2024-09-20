@@ -1,12 +1,10 @@
 Class {
-	#name : 'VMARMV8SIMDEncodingTest',
-	#superclass : 'VMSimpleStackBasedCogitAbstractTest',
-	#category : 'VMMakerTests-JitTests',
-	#package : 'VMMakerTests',
-	#tag : 'JitTests'
+	#name : #VMARMV8SIMDEncodingTest,
+	#superclass : #VMSimpleStackBasedCogitAbstractTest,
+	#category : #'VMMakerTests-JitTests'
 }
 
-{ #category : 'building suites' }
+{ #category : #'building suites' }
 VMARMV8SIMDEncodingTest class >> wordSizeParameters [
 
 	^ ParametrizedTestMatrix new
@@ -14,7 +12,7 @@ VMARMV8SIMDEncodingTest class >> wordSizeParameters [
 		yourself
 ]
 
-{ #category : 'tests' }
+{ #category : #tests }
 VMARMV8SIMDEncodingTest >> armInstructionAt: index [
 
 	| addr inst |
@@ -24,20 +22,20 @@ VMARMV8SIMDEncodingTest >> armInstructionAt: index [
 	^ inst aarch64Disassembled
 ]
 
-{ #category : 'configuration' }
+{ #category : #configuration }
 VMARMV8SIMDEncodingTest >> generateCaptureCStackPointers [
 	
 	^ false
 ]
 
-{ #category : 'accessing' }
+{ #category : #accessing }
 VMARMV8SIMDEncodingTest >> initializationOptions [
 
 	^ super initializationOptions , { 
 		#ProcessorClass . DummyProcessor }
 ]
 
-{ #category : 'accessing' }
+{ #category : #accessing }
 VMARMV8SIMDEncodingTest >> jitOptions [
 
 	^ super jitOptions
@@ -46,7 +44,7 @@ VMARMV8SIMDEncodingTest >> jitOptions [
 		  yourself
 ]
 
-{ #category : 'tests' }
+{ #category : #tests }
 VMARMV8SIMDEncodingTest >> testEncodeDupWith64BitLanes [
 
 	self compile: [ cogit DupS: 64 R: 3 Vr: 0 ].
@@ -56,7 +54,7 @@ VMARMV8SIMDEncodingTest >> testEncodeDupWith64BitLanes [
 		equals: 'dup	v0.2d, x3'
 ]
 
-{ #category : 'tests' }
+{ #category : #tests }
 VMARMV8SIMDEncodingTest >> testEncodeFaddWith32BitLanes [
 
 	self compile: [ cogit FaddS: 32 Rv: 0 Rv: 1 Rv: 2 ].
@@ -66,7 +64,7 @@ VMARMV8SIMDEncodingTest >> testEncodeFaddWith32BitLanes [
 		equals: 'fadd	v2.4s, v0.4s, v1.4s'
 ]
 
-{ #category : 'tests' }
+{ #category : #tests }
 VMARMV8SIMDEncodingTest >> testEncodeFaddWith64BitLanes [
 
 	self compile: [ cogit FaddS: 64 Rv: 0 Rv: 1 Rv: 2 ].
@@ -76,7 +74,7 @@ VMARMV8SIMDEncodingTest >> testEncodeFaddWith64BitLanes [
 		equals: 'fadd	v2.2d, v0.2d, v1.2d'
 ]
 
-{ #category : 'tests' }
+{ #category : #tests }
 VMARMV8SIMDEncodingTest >> testEncodeFsubWith64BitLanes [
 
 	self compile: [ cogit FsubS: 64 Rv: 0 Rv: 1 Rv: 2 ].
@@ -86,7 +84,7 @@ VMARMV8SIMDEncodingTest >> testEncodeFsubWith64BitLanes [
 		equals: 'fsub	v2.2d, v0.2d, v1.2d'
 ]
 
-{ #category : 'tests' }
+{ #category : #tests }
 VMARMV8SIMDEncodingTest >> testEncodeLd1WithOne32BitLaneRegisterAndImmediateOffset [
 
 	self compile: [ cogit Ld1S: 32 Vr: 0 R: 1 Mw: 16 ].
@@ -96,7 +94,7 @@ VMARMV8SIMDEncodingTest >> testEncodeLd1WithOne32BitLaneRegisterAndImmediateOffs
 		equals: 'ld1	{ v0.4s }, [x1], #16'
 ]
 
-{ #category : 'tests' }
+{ #category : #tests }
 VMARMV8SIMDEncodingTest >> testEncodeLd1WithOne64BitLaneRegisterAndImmediateOffset [
 
 	self compile: [ cogit Ld1S: 64 Vr: 0 R: 1 Mw: 16 ].
@@ -106,7 +104,7 @@ VMARMV8SIMDEncodingTest >> testEncodeLd1WithOne64BitLaneRegisterAndImmediateOffs
 		equals: 'ld1	{ v0.2d }, [x1], #16'
 ]
 
-{ #category : 'tests' }
+{ #category : #tests }
 VMARMV8SIMDEncodingTest >> testEncodeLd1WithOne64BitLaneRegisterAndNoOffset [
 
 	self compile: [ cogit Ld1S: 64 Vr: 0 R: 1 Mw: 0 ].
@@ -116,7 +114,7 @@ VMARMV8SIMDEncodingTest >> testEncodeLd1WithOne64BitLaneRegisterAndNoOffset [
 		equals: 'ld1	{ v0.2d }, [x1]'
 ]
 
-{ #category : 'tests' }
+{ #category : #tests }
 VMARMV8SIMDEncodingTest >> testEncodeSt1WithOne32BitLaneRegisterAndImmediateOffset [
 
 	self compile: [ cogit St1S: 32 Vr: 0 R: 1 Mw: 16 ].
@@ -126,7 +124,7 @@ VMARMV8SIMDEncodingTest >> testEncodeSt1WithOne32BitLaneRegisterAndImmediateOffs
 		equals: 'st1	{ v0.4s }, [x1], #16'
 ]
 
-{ #category : 'tests' }
+{ #category : #tests }
 VMARMV8SIMDEncodingTest >> testEncodeSt1WithOne64BitLaneRegisterAndImmediateOffset [
 
 	self compile: [ cogit St1S: 64 Vr: 0 R: 1 Mw: 16 ].
@@ -136,7 +134,7 @@ VMARMV8SIMDEncodingTest >> testEncodeSt1WithOne64BitLaneRegisterAndImmediateOffs
 		equals: 'st1	{ v0.2d }, [x1], #16'
 ]
 
-{ #category : 'tests' }
+{ #category : #tests }
 VMARMV8SIMDEncodingTest >> testEncodeSt1WithOne64BitLaneRegisterAndNoOffset [
 
 	self compile: [ cogit St1S: 64 Vr: 0 R: 1 Mw: 0 ].

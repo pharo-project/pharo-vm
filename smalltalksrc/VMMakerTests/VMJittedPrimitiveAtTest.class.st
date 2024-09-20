@@ -1,22 +1,20 @@
 Class {
-	#name : 'VMJittedPrimitiveAtTest',
-	#superclass : 'VMJittedPrimitivesTest',
+	#name : #VMJittedPrimitiveAtTest,
+	#superclass : #VMJittedPrimitivesTest,
 	#instVars : [
 		'stop'
 	],
-	#category : 'VMMakerTests-JitTests',
-	#package : 'VMMakerTests',
-	#tag : 'JitTests'
+	#category : #'VMMakerTests-JitTests'
 }
 
-{ #category : 'helpers' }
+{ #category : #helpers }
 VMJittedPrimitiveAtTest >> assertFallsThrough [
 
 	self runFrom: cogInitialAddress until: stop address.
 	self assert: machineSimulator instructionPointerRegisterValue equals: stop address
 ]
 
-{ #category : 'running' }
+{ #category : #running }
 VMJittedPrimitiveAtTest >> setUp [
 
 	super setUp.
@@ -27,7 +25,7 @@ VMJittedPrimitiveAtTest >> setUp [
 		bytecodes: 10.
 ]
 
-{ #category : 'tests - 16bit indexable' }
+{ #category : #'tests - 16bit indexable' }
 VMJittedPrimitiveAtTest >> testPrimitiveAt16bitIndexableFirstPaddingOutOfBoundsShouldFallThrough [
 
 	| integerArray offset |
@@ -43,7 +41,7 @@ VMJittedPrimitiveAtTest >> testPrimitiveAt16bitIndexableFirstPaddingOutOfBoundsS
 	self assertFallsThrough
 ]
 
-{ #category : 'tests - 16bit indexable' }
+{ #category : #'tests - 16bit indexable' }
 VMJittedPrimitiveAtTest >> testPrimitiveAt16bitIndexableOutOfBoundsShouldFallThrough [
 
 	| integerArray offset |
@@ -59,7 +57,7 @@ VMJittedPrimitiveAtTest >> testPrimitiveAt16bitIndexableOutOfBoundsShouldFallThr
 	self assertFallsThrough
 ]
 
-{ #category : 'tests - 16bit indexable' }
+{ #category : #'tests - 16bit indexable' }
 VMJittedPrimitiveAtTest >> testPrimitiveAt16bitIndexableSecondPaddingOutOfBoundsShouldFallThrough [
 
 	| integerArray offset |
@@ -75,7 +73,7 @@ VMJittedPrimitiveAtTest >> testPrimitiveAt16bitIndexableSecondPaddingOutOfBounds
 	self assertFallsThrough
 ]
 
-{ #category : 'tests - 16bit indexable' }
+{ #category : #'tests - 16bit indexable' }
 VMJittedPrimitiveAtTest >> testPrimitiveAt16bitIndexableShouldReturnValue [
 
 	| integerArray offset |
@@ -102,7 +100,7 @@ VMJittedPrimitiveAtTest >> testPrimitiveAt16bitIndexableShouldReturnValue [
 		equals: 17
 ]
 
-{ #category : 'tests - 16bit indexable' }
+{ #category : #'tests - 16bit indexable' }
 VMJittedPrimitiveAtTest >> testPrimitiveAt16bitIndexableThirdPaddingOutOfBoundsShouldFallThrough [
 
 	| integerArray offset |
@@ -118,7 +116,7 @@ VMJittedPrimitiveAtTest >> testPrimitiveAt16bitIndexableThirdPaddingOutOfBoundsS
 	self assertFallsThrough
 ]
 
-{ #category : 'tests - 16bit indexable' }
+{ #category : #'tests - 16bit indexable' }
 VMJittedPrimitiveAtTest >> testPrimitiveAt16bitIndexableWithLargeNumberShouldReturnValue [
 
 	| integerArray offset expectedValue |
@@ -144,7 +142,7 @@ VMJittedPrimitiveAtTest >> testPrimitiveAt16bitIndexableWithLargeNumberShouldRet
 		equals: expectedValue
 ]
 
-{ #category : 'tests - 32bit indexable' }
+{ #category : #'tests - 32bit indexable' }
 VMJittedPrimitiveAtTest >> testPrimitiveAt32bitIndexableOutOfBoundsAtPaddingShouldFallThrough [
 
 	| integerArray offset |
@@ -160,7 +158,7 @@ VMJittedPrimitiveAtTest >> testPrimitiveAt32bitIndexableOutOfBoundsAtPaddingShou
 	self assertFallsThrough
 ]
 
-{ #category : 'tests - 32bit indexable' }
+{ #category : #'tests - 32bit indexable' }
 VMJittedPrimitiveAtTest >> testPrimitiveAt32bitIndexableOutOfBoundsShouldFallThrough [
 
 	| integerArray offset |
@@ -176,7 +174,7 @@ VMJittedPrimitiveAtTest >> testPrimitiveAt32bitIndexableOutOfBoundsShouldFallThr
 	self assertFallsThrough
 ]
 
-{ #category : 'tests - 32bit indexable' }
+{ #category : #'tests - 32bit indexable' }
 VMJittedPrimitiveAtTest >> testPrimitiveAt32bitIndexableShouldReturnValue [
 
 	| integerArray offset |
@@ -201,7 +199,7 @@ VMJittedPrimitiveAtTest >> testPrimitiveAt32bitIndexableShouldReturnValue [
 		equals: 17
 ]
 
-{ #category : 'tests - 32bit indexable' }
+{ #category : #'tests - 32bit indexable' }
 VMJittedPrimitiveAtTest >> testPrimitiveAt32bitIndexableWithLargeNumberShouldReturnValue [
 
 	| integerArray offset expectedValue |
@@ -230,7 +228,7 @@ VMJittedPrimitiveAtTest >> testPrimitiveAt32bitIndexableWithLargeNumberShouldRet
 		equals: expectedValue
 ]
 
-{ #category : 'tests - 64bit indexable' }
+{ #category : #'tests - 64bit indexable' }
 VMJittedPrimitiveAtTest >> testPrimitiveAt64bitIndexableOutOfBoundsShouldFallThrough [
 
 	| integerArray offset |
@@ -246,7 +244,7 @@ VMJittedPrimitiveAtTest >> testPrimitiveAt64bitIndexableOutOfBoundsShouldFallThr
 	self assertFallsThrough
 ]
 
-{ #category : 'tests - 64bit indexable' }
+{ #category : #'tests - 64bit indexable' }
 VMJittedPrimitiveAtTest >> testPrimitiveAt64bitIndexableWithLargeIntegerIn32BitsShouldFallthrough [
 
 	| integerArray offset |
@@ -263,7 +261,7 @@ VMJittedPrimitiveAtTest >> testPrimitiveAt64bitIndexableWithLargeIntegerIn32Bits
 	self assertFallsThrough
 ]
 
-{ #category : 'tests - 64bit indexable' }
+{ #category : #'tests - 64bit indexable' }
 VMJittedPrimitiveAtTest >> testPrimitiveAt64bitIndexableWithLargeIntegerShouldReturnValue [
 
 	| integerArray offset |
@@ -290,7 +288,7 @@ VMJittedPrimitiveAtTest >> testPrimitiveAt64bitIndexableWithLargeIntegerShouldRe
 		equals: SmallInteger maxVal + 1
 ]
 
-{ #category : 'tests - 64bit indexable' }
+{ #category : #'tests - 64bit indexable' }
 VMJittedPrimitiveAtTest >> testPrimitiveAt64bitIndexableWithSmallIntegerShouldReturnValue [
 
 	| integerArray offset |
@@ -317,7 +315,7 @@ VMJittedPrimitiveAtTest >> testPrimitiveAt64bitIndexableWithSmallIntegerShouldRe
 		equals: (memory integerObjectOf: 17)
 ]
 
-{ #category : 'tests - 8bit indexable' }
+{ #category : #'tests - 8bit indexable' }
 VMJittedPrimitiveAtTest >> testPrimitiveAt8bitIndexableFifthPaddingOutOfBoundsShouldFallThrough [
 
 	| integerArray offset |
@@ -332,7 +330,7 @@ VMJittedPrimitiveAtTest >> testPrimitiveAt8bitIndexableFifthPaddingOutOfBoundsSh
 	self assertFallsThrough
 ]
 
-{ #category : 'tests - 8bit indexable' }
+{ #category : #'tests - 8bit indexable' }
 VMJittedPrimitiveAtTest >> testPrimitiveAt8bitIndexableFirstPaddingOutOfBoundsShouldFallThrough [
 
 	| integerArray offset |
@@ -347,7 +345,7 @@ VMJittedPrimitiveAtTest >> testPrimitiveAt8bitIndexableFirstPaddingOutOfBoundsSh
 	self assertFallsThrough
 ]
 
-{ #category : 'tests - 8bit indexable' }
+{ #category : #'tests - 8bit indexable' }
 VMJittedPrimitiveAtTest >> testPrimitiveAt8bitIndexableFourthPaddingOutOfBoundsShouldFallThrough [
 
 	| integerArray offset |
@@ -362,7 +360,7 @@ VMJittedPrimitiveAtTest >> testPrimitiveAt8bitIndexableFourthPaddingOutOfBoundsS
 	self assertFallsThrough
 ]
 
-{ #category : 'tests - 8bit indexable' }
+{ #category : #'tests - 8bit indexable' }
 VMJittedPrimitiveAtTest >> testPrimitiveAt8bitIndexableOutOfBoundsShouldFallThrough [
 
 	| integerArray offset |
@@ -377,7 +375,7 @@ VMJittedPrimitiveAtTest >> testPrimitiveAt8bitIndexableOutOfBoundsShouldFallThro
 	self assertFallsThrough
 ]
 
-{ #category : 'tests - 8bit indexable' }
+{ #category : #'tests - 8bit indexable' }
 VMJittedPrimitiveAtTest >> testPrimitiveAt8bitIndexableSecondPaddingOutOfBoundsShouldFallThrough [
 
 	| integerArray offset |
@@ -392,7 +390,7 @@ VMJittedPrimitiveAtTest >> testPrimitiveAt8bitIndexableSecondPaddingOutOfBoundsS
 	self assertFallsThrough
 ]
 
-{ #category : 'tests - 8bit indexable' }
+{ #category : #'tests - 8bit indexable' }
 VMJittedPrimitiveAtTest >> testPrimitiveAt8bitIndexableSeventhPaddingOutOfBoundsShouldFallThrough [
 
 	| integerArray offset |
@@ -407,7 +405,7 @@ VMJittedPrimitiveAtTest >> testPrimitiveAt8bitIndexableSeventhPaddingOutOfBounds
 	self assertFallsThrough
 ]
 
-{ #category : 'tests - 8bit indexable' }
+{ #category : #'tests - 8bit indexable' }
 VMJittedPrimitiveAtTest >> testPrimitiveAt8bitIndexableShouldReturnValue [
 
 	| integerArray offset |
@@ -433,7 +431,7 @@ VMJittedPrimitiveAtTest >> testPrimitiveAt8bitIndexableShouldReturnValue [
 		equals: 17
 ]
 
-{ #category : 'tests - 8bit indexable' }
+{ #category : #'tests - 8bit indexable' }
 VMJittedPrimitiveAtTest >> testPrimitiveAt8bitIndexableSixthPaddingOutOfBoundsShouldFallThrough [
 
 	| integerArray offset |
@@ -448,7 +446,7 @@ VMJittedPrimitiveAtTest >> testPrimitiveAt8bitIndexableSixthPaddingOutOfBoundsSh
 	self assertFallsThrough
 ]
 
-{ #category : 'tests - 8bit indexable' }
+{ #category : #'tests - 8bit indexable' }
 VMJittedPrimitiveAtTest >> testPrimitiveAt8bitIndexableThirdPaddingOutOfBoundsShouldFallThrough [
 
 	| integerArray offset |
@@ -463,7 +461,7 @@ VMJittedPrimitiveAtTest >> testPrimitiveAt8bitIndexableThirdPaddingOutOfBoundsSh
 	self assertFallsThrough
 ]
 
-{ #category : 'tests - 8bit indexable' }
+{ #category : #'tests - 8bit indexable' }
 VMJittedPrimitiveAtTest >> testPrimitiveAt8bitIndexableWithLargeNumberShouldReturnValue [
 
 	| integerArray offset expectedValue |
@@ -489,7 +487,7 @@ VMJittedPrimitiveAtTest >> testPrimitiveAt8bitIndexableWithLargeNumberShouldRetu
 		equals: expectedValue
 ]
 
-{ #category : 'tests - pointer indexable' }
+{ #category : #'tests - pointer indexable' }
 VMJittedPrimitiveAtTest >> testPrimitiveAtArrayOutOfBoundsShouldFallThrough [
 	
 	| offset array |
@@ -502,7 +500,7 @@ VMJittedPrimitiveAtTest >> testPrimitiveAtArrayOutOfBoundsShouldFallThrough [
 	self assertFallsThrough
 ]
 
-{ #category : 'tests - pointer indexable' }
+{ #category : #'tests - pointer indexable' }
 VMJittedPrimitiveAtTest >> testPrimitiveAtArrayShouldAccessValue [
 	
 	| offset array |
@@ -516,7 +514,7 @@ VMJittedPrimitiveAtTest >> testPrimitiveAtArrayShouldAccessValue [
 	self assert: machineSimulator receiverRegisterValue equals: memory falseObject
 ]
 
-{ #category : 'tests - fixed pointer layout' }
+{ #category : #'tests - fixed pointer layout' }
 VMJittedPrimitiveAtTest >> testPrimitiveAtFixedObjectWithInstanceVariablesShouldFallThrough [
 	
 	| objectWithInstanceVariables |
@@ -533,7 +531,7 @@ VMJittedPrimitiveAtTest >> testPrimitiveAtFixedObjectWithInstanceVariablesShould
 	self assertFallsThrough
 ]
 
-{ #category : 'tests - fixed pointer layout' }
+{ #category : #'tests - fixed pointer layout' }
 VMJittedPrimitiveAtTest >> testPrimitiveAtFixedObjectWithNoInstanceVariablesShouldFallThrough [
 	
 	| objectWithNoInstanceVariables |
@@ -548,7 +546,7 @@ VMJittedPrimitiveAtTest >> testPrimitiveAtFixedObjectWithNoInstanceVariablesShou
 	self assert: machineSimulator instructionPointerRegisterValue equals: stop address
 ]
 
-{ #category : 'tests - immediate' }
+{ #category : #'tests - immediate' }
 VMJittedPrimitiveAtTest >> testPrimitiveAtImmediateCharacterShouldFallThrough [
 	
 	machineSimulator receiverRegisterValue: (memory characterObjectOf: $a codePoint).
@@ -557,7 +555,7 @@ VMJittedPrimitiveAtTest >> testPrimitiveAtImmediateCharacterShouldFallThrough [
 	self assert: machineSimulator instructionPointerRegisterValue equals: stop address
 ]
 
-{ #category : 'tests - immediate' }
+{ #category : #'tests - immediate' }
 VMJittedPrimitiveAtTest >> testPrimitiveAtImmediateFloatShouldFallThrough [
 	
 	"Floats are not immediate in 32 bits"
@@ -569,7 +567,7 @@ VMJittedPrimitiveAtTest >> testPrimitiveAtImmediateFloatShouldFallThrough [
 	self assert: machineSimulator instructionPointerRegisterValue equals: stop address
 ]
 
-{ #category : 'tests - immediate' }
+{ #category : #'tests - immediate' }
 VMJittedPrimitiveAtTest >> testPrimitiveAtSmallIntegerShouldFallThrough [
 		
 	machineSimulator receiverRegisterValue: (memory integerObjectOf: 17).

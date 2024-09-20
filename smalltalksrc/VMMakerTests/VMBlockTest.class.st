@@ -1,26 +1,24 @@
 Class {
-	#name : 'VMBlockTest',
-	#superclass : 'VMInterpreterTests',
+	#name : #VMBlockTest,
+	#superclass : #VMInterpreterTests,
 	#pools : [
 		'VMClassIndices',
 		'VMObjectIndices'
 	],
-	#category : 'VMMakerTests-InterpreterTests',
-	#package : 'VMMakerTests',
-	#tag : 'InterpreterTests'
+	#category : #'VMMakerTests-InterpreterTests'
 }
 
-{ #category : 'supports' }
+{ #category : #supports }
 VMBlockTest >> anEmptyMethod [
 ]
 
-{ #category : 'as yet unclassified' }
+{ #category : #'as yet unclassified' }
 VMBlockTest >> evaluatingABlock [
 
   [^1] value
 ]
 
-{ #category : 'helpers' }
+{ #category : #helpers }
 VMBlockTest >> installFullBlockClosureClass [
 		| aClass |
 	aClass := self
@@ -34,14 +32,14 @@ VMBlockTest >> installFullBlockClosureClass [
 		withValue: aClass
 ]
 
-{ #category : 'supports' }
+{ #category : #supports }
 VMBlockTest >> methodReturningABlock [
 	<compilerOptions: #(- #optionConstantBlockClosure)>
 	^ []
 	
 ]
 
-{ #category : 'as yet unclassified' }
+{ #category : #'as yet unclassified' }
 VMBlockTest >> methodReturningABlockInsideABlockWithLocal [
 
 	true ifTrue: [ 
@@ -50,14 +48,14 @@ VMBlockTest >> methodReturningABlockInsideABlockWithLocal [
 		^ [ anArgument ] ]
 ]
 
-{ #category : 'supports' }
+{ #category : #supports }
 VMBlockTest >> methodReturningABlockWithTwoArguments [
 	
 	^ [:a :b]
 	
 ]
 
-{ #category : 'supports' }
+{ #category : #supports }
 VMBlockTest >> methodWithLocalReturningABlock [
 
 	| a |
@@ -65,14 +63,14 @@ VMBlockTest >> methodWithLocalReturningABlock [
 	^ [ a ]
 ]
 
-{ #category : 'running' }
+{ #category : #running }
 VMBlockTest >> setUp [
 
 	super setUp.
 	self initializeSpecialSelectors
 ]
 
-{ #category : 'as yet unclassified' }
+{ #category : #'as yet unclassified' }
 VMBlockTest >> testCreatingABlockCapturesReceiver [
 
 	| methodReturning initialMethod |
@@ -97,7 +95,7 @@ VMBlockTest >> testCreatingABlockCapturesReceiver [
 	self assert: (memory fetchPointer: FullClosureReceiverIndex ofObject: interpreter stackTop) equals: memory trueObject
 ]
 
-{ #category : 'testing' }
+{ #category : #testing }
 VMBlockTest >> testCreatingABlockClosureKnowsCompiledBlock [
 
 	| methodReturning initialMethod placeTakenByLiterals closure blockInitialPC compiledBlock |
@@ -134,7 +132,7 @@ VMBlockTest >> testCreatingABlockClosureKnowsCompiledBlock [
 
 ]
 
-{ #category : 'testing' }
+{ #category : #testing }
 VMBlockTest >> testCreatingABlockClosureShouldCopyUsedMethodVariable [
 
 	| methodReturning initialMethod |
@@ -161,7 +159,7 @@ VMBlockTest >> testCreatingABlockClosureShouldCopyUsedMethodVariable [
 		assert: (memory fetchPointer: FullClosureFirstCopiedValueIndex ofObject: interpreter stackTop) equals: (memory integerObjectOf: 2)
 ]
 
-{ #category : 'testing' }
+{ #category : #testing }
 VMBlockTest >> testCreatingABlockClosureShouldHaveOuterContextObject [
 
 	| methodReturning initialMethod |
@@ -190,7 +188,7 @@ VMBlockTest >> testCreatingABlockClosureShouldHaveOuterContextObject [
 	self assert: (interpreter isWidowedContext: (memory outerContextOf: interpreter stackTop))
 ]
 
-{ #category : 'as yet unclassified' }
+{ #category : #'as yet unclassified' }
 VMBlockTest >> testCreatingABlockInsideABlockClosureShouldCopyUsedBlockVariable [
 
 	| methodReturning initialMethod |
@@ -217,7 +215,7 @@ VMBlockTest >> testCreatingABlockInsideABlockClosureShouldCopyUsedBlockVariable 
 
 ]
 
-{ #category : 'testing' }
+{ #category : #testing }
 VMBlockTest >> testCreatingABlockWithoutArgumentsClosureShouldHaveNoArgument [
 
 	| methodReturning initialMethod |
@@ -244,7 +242,7 @@ VMBlockTest >> testCreatingABlockWithoutArgumentsClosureShouldHaveNoArgument [
 
 ]
 
-{ #category : 'as yet unclassified' }
+{ #category : #'as yet unclassified' }
 VMBlockTest >> testEvaluatingABlock [
 
 	| methodReturning initialMethod |
@@ -276,7 +274,7 @@ VMBlockTest >> testEvaluatingABlock [
 		equals: (memory classAtIndex: ClassFullBlockClosureCompactIndex)
 ]
 
-{ #category : 'testing' }
+{ #category : #testing }
 VMBlockTest >> testPushClosureBytecodePushesClosure [
 
 	| methodReturning initialMethod |

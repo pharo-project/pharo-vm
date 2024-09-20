@@ -1,12 +1,10 @@
 Class {
-	#name : 'VMSpurOldSpaceTest',
-	#superclass : 'VMSpurInitializedOldSpaceTest',
-	#category : 'VMMakerTests-MemoryTests',
-	#package : 'VMMakerTests',
-	#tag : 'MemoryTests'
+	#name : #VMSpurOldSpaceTest,
+	#superclass : #VMSpurInitializedOldSpaceTest,
+	#category : #'VMMakerTests-MemoryTests'
 }
 
-{ #category : 'tests-2-allocation-basic' }
+{ #category : #'tests-2-allocation-basic' }
 VMSpurOldSpaceTest >> testAllocateAllFreeMemoryShouldLeaveNoFreeMemory [
 
 	memory allocateOldSpaceChunkOfBytes: memory totalFreeListBytes.
@@ -14,7 +12,7 @@ VMSpurOldSpaceTest >> testAllocateAllFreeMemoryShouldLeaveNoFreeMemory [
 	self assert: memory totalFreeListBytes equals: 0
 ]
 
-{ #category : 'tests-8-allocation-strategy-list-bestfit' }
+{ #category : #'tests-8-allocation-strategy-list-bestfit' }
 VMSpurOldSpaceTest >> testAllocateBestFitInListShouldAddLeftoverInList [
 
 	self createFreeChunkOfSize: 120.
@@ -26,7 +24,7 @@ VMSpurOldSpaceTest >> testAllocateBestFitInListShouldAddLeftoverInList [
 	self denyFreeListEmpty: (self freeListForSize: 24)
 ]
 
-{ #category : 'tests-8-allocation-strategy-list-bestfit' }
+{ #category : #'tests-8-allocation-strategy-list-bestfit' }
 VMSpurOldSpaceTest >> testAllocateBestFitInListShouldRemoveSmallerNodeFromLists [
 
 	self createFreeChunkOfSize: 120.
@@ -38,7 +36,7 @@ VMSpurOldSpaceTest >> testAllocateBestFitInListShouldRemoveSmallerNodeFromLists 
 	self assertFreeListEmpty: (self freeListForSize: 120)
 ]
 
-{ #category : 'tests-8-allocation-strategy-list-bestfit' }
+{ #category : #'tests-8-allocation-strategy-list-bestfit' }
 VMSpurOldSpaceTest >> testAllocateBestFitInListShouldReuseSmallerAddress [
 
 	| smallerAddress newAddress |
@@ -51,7 +49,7 @@ VMSpurOldSpaceTest >> testAllocateBestFitInListShouldReuseSmallerAddress [
 	self assert: newAddress equals: smallerAddress
 ]
 
-{ #category : 'tests-8-allocation-strategy-list-bestfit' }
+{ #category : #'tests-8-allocation-strategy-list-bestfit' }
 VMSpurOldSpaceTest >> testAllocateBestFitInListShouldUseIgnoreBiggerChunk [
 
 	self createFreeChunkOfSize: 120.
@@ -63,7 +61,7 @@ VMSpurOldSpaceTest >> testAllocateBestFitInListShouldUseIgnoreBiggerChunk [
 	self denyFreeListEmpty: (self freeListForSize: 160)
 ]
 
-{ #category : 'tests-2-allocation-basic' }
+{ #category : #'tests-2-allocation-basic' }
 VMSpurOldSpaceTest >> testAllocateChunkOfMemoryShouldHaveSoMuchMemoryLessAfter [
 
 	| someBytes freeBytesBefore |
@@ -74,7 +72,7 @@ VMSpurOldSpaceTest >> testAllocateChunkOfMemoryShouldHaveSoMuchMemoryLessAfter [
 	self assert: memory totalFreeListBytes equals: freeBytesBefore - someBytes
 ]
 
-{ #category : 'tests-5-allocation-strategy' }
+{ #category : #'tests-5-allocation-strategy' }
 VMSpurOldSpaceTest >> testAllocateExactBiggerChunkShouldNotReuseSmallFreeChunk [
 
 	| secondAddress newAddress |
@@ -85,7 +83,7 @@ VMSpurOldSpaceTest >> testAllocateExactBiggerChunkShouldNotReuseSmallFreeChunk [
 	self deny: newAddress equals: secondAddress
 ]
 
-{ #category : 'tests-6-allocation-strategy-list-exact' }
+{ #category : #'tests-6-allocation-strategy-list-exact' }
 VMSpurOldSpaceTest >> testAllocateExactFitInListShouldIgnoreBiggerChunks [
 
 	self createFreeChunkOfSize: 160.
@@ -97,7 +95,7 @@ VMSpurOldSpaceTest >> testAllocateExactFitInListShouldIgnoreBiggerChunks [
 	self denyFreeListEmpty: (self freeListForSize: 200)
 ]
 
-{ #category : 'tests-6-allocation-strategy-list-exact' }
+{ #category : #'tests-6-allocation-strategy-list-exact' }
 VMSpurOldSpaceTest >> testAllocateExactFitInListShouldRemoveNodeFromList [
 
 	| secondAddress |
@@ -108,7 +106,7 @@ VMSpurOldSpaceTest >> testAllocateExactFitInListShouldRemoveNodeFromList [
 	self assert: (self freeListForSize: 160) equals: 0
 ]
 
-{ #category : 'tests-6-allocation-strategy-list-exact' }
+{ #category : #'tests-6-allocation-strategy-list-exact' }
 VMSpurOldSpaceTest >> testAllocateExactFitInListShouldReuseAddress [
 
 	| secondAddress newAddress |
@@ -118,7 +116,7 @@ VMSpurOldSpaceTest >> testAllocateExactFitInListShouldReuseAddress [
 	self assert: newAddress equals: secondAddress
 ]
 
-{ #category : 'tests-9-allocation-strategy-tree' }
+{ #category : #'tests-9-allocation-strategy-tree' }
 VMSpurOldSpaceTest >> testAllocateExactFitTreeRootShouldRemoveRootFromTree [
 
 	memory allocateOldSpaceChunkOfBytes: (memory bytesInObject: self freeTreeRootOop).
@@ -126,7 +124,7 @@ VMSpurOldSpaceTest >> testAllocateExactFitTreeRootShouldRemoveRootFromTree [
 	self assert: self freeTreeRootOop equals: 0
 ]
 
-{ #category : 'tests-9-allocation-strategy-tree' }
+{ #category : #'tests-9-allocation-strategy-tree' }
 VMSpurOldSpaceTest >> testAllocateExactTreeRootShouldReuseRootAddress [
 
 	| oldRootAddress newAddress |
@@ -137,7 +135,7 @@ VMSpurOldSpaceTest >> testAllocateExactTreeRootShouldReuseRootAddress [
 	self assert: newAddress equals: oldRootAddress
 ]
 
-{ #category : 'tests-4-free-tree' }
+{ #category : #'tests-4-free-tree' }
 VMSpurOldSpaceTest >> testAllocateHalfOfTreeNodeShouldSplitIt [
 	| size childAddress smallerChildOop largerChildOop aBitBiggerThanHalf |
 	
@@ -156,7 +154,7 @@ VMSpurOldSpaceTest >> testAllocateHalfOfTreeNodeShouldSplitIt [
 	self assert: (memory bytesInObject: largerChildOop) equals: aBitBiggerThanHalf
 ]
 
-{ #category : 'tests-4-free-tree' }
+{ #category : #'tests-4-free-tree' }
 VMSpurOldSpaceTest >> testAllocateInFreeTreeShouldChangeRoot [
 
 	| freeRootOopBeforeAllocation |
@@ -167,7 +165,7 @@ VMSpurOldSpaceTest >> testAllocateInFreeTreeShouldChangeRoot [
 	self deny: freeRootOopBeforeAllocation equals: self freeTreeRootOop
 ]
 
-{ #category : 'tests-2-allocation-basic' }
+{ #category : #'tests-2-allocation-basic' }
 VMSpurOldSpaceTest >> testAllocateManyChunksShouldKeepSingleFreeEntry [
 
 	"Allocation should be contiguous because we have a single big chunk of memory to take memory from"
@@ -178,7 +176,7 @@ VMSpurOldSpaceTest >> testAllocateManyChunksShouldKeepSingleFreeEntry [
 	self assert: memory allFreeObjects size equals: 1
 ]
 
-{ #category : 'tests-2-allocation-basic' }
+{ #category : #'tests-2-allocation-basic' }
 VMSpurOldSpaceTest >> testAllocateMoreThanFreeMemoryShouldFailReturningNil [
 	
 	| address |
@@ -187,7 +185,7 @@ VMSpurOldSpaceTest >> testAllocateMoreThanFreeMemoryShouldFailReturningNil [
 	self assert: address isNil
 ]
 
-{ #category : 'tests-9-allocation-strategy-tree' }
+{ #category : #'tests-9-allocation-strategy-tree' }
 VMSpurOldSpaceTest >> testAllocatePartOfTreeRootShouldAddBigLeftOverAsFreeTreeRoot [
 
 	| leftOverSize |
@@ -197,7 +195,7 @@ VMSpurOldSpaceTest >> testAllocatePartOfTreeRootShouldAddBigLeftOverAsFreeTreeRo
 	self assert: (memory bytesInObject: self freeTreeRootOop) equals: leftOverSize
 ]
 
-{ #category : 'tests-9-allocation-strategy-tree' }
+{ #category : #'tests-9-allocation-strategy-tree' }
 VMSpurOldSpaceTest >> testAllocatePartOfTreeRootShouldAddSmallLeftOverInFreeList [
 
 	| leftOverSize |
@@ -207,7 +205,7 @@ VMSpurOldSpaceTest >> testAllocatePartOfTreeRootShouldAddSmallLeftOverInFreeList
 	self denyFreeListEmpty: (self freeListForSize: leftOverSize)
 ]
 
-{ #category : 'tests-9-allocation-strategy-tree' }
+{ #category : #'tests-9-allocation-strategy-tree' }
 VMSpurOldSpaceTest >> testAllocatePartOfTreeRootShouldReuseRootAddress [
 
 	| oldRootAddress newAddress |
@@ -220,7 +218,7 @@ VMSpurOldSpaceTest >> testAllocatePartOfTreeRootShouldReuseRootAddress [
 	self assert: newAddress equals: oldRootAddress
 ]
 
-{ #category : 'tests-7-allocation-strategy-list-power' }
+{ #category : #'tests-7-allocation-strategy-list-power' }
 VMSpurOldSpaceTest >> testAllocatePowerInListShouldAddLeftoverInList [
 
 	| sizeToAllocate powerOfSizeToAllocate leftOverSize |
@@ -233,7 +231,7 @@ VMSpurOldSpaceTest >> testAllocatePowerInListShouldAddLeftoverInList [
 	self denyFreeListEmpty: (self freeListForSize: leftOverSize)
 ]
 
-{ #category : 'tests-7-allocation-strategy-list-power' }
+{ #category : #'tests-7-allocation-strategy-list-power' }
 VMSpurOldSpaceTest >> testAllocatePowerInListShouldIgnoreNonPowers [
 
 	| sizeToAllocate powerOfSizeToAllocate nonMultipleAddress newAddress |
@@ -255,7 +253,7 @@ VMSpurOldSpaceTest >> testAllocatePowerInListShouldIgnoreNonPowers [
 	self deny: newAddress equals: nonMultipleAddress.
 ]
 
-{ #category : 'tests-7-allocation-strategy-list-power' }
+{ #category : #'tests-7-allocation-strategy-list-power' }
 VMSpurOldSpaceTest >> testAllocatePowerInListShouldRemoveNodeFromList [
 
 	| sizeToAllocate powerOfSizeToAllocate |
@@ -267,7 +265,7 @@ VMSpurOldSpaceTest >> testAllocatePowerInListShouldRemoveNodeFromList [
 	self assertFreeListEmpty: (self freeListForSize: powerOfSizeToAllocate)
 ]
 
-{ #category : 'tests-7-allocation-strategy-list-power' }
+{ #category : #'tests-7-allocation-strategy-list-power' }
 VMSpurOldSpaceTest >> testAllocatePowerInListShouldReuseMultipleAddress [
 
 	| sizeToAllocate freeMultipleAddress newAddress powerOfSizeToAllocate |
@@ -279,7 +277,7 @@ VMSpurOldSpaceTest >> testAllocatePowerInListShouldReuseMultipleAddress [
 	self assert: newAddress equals: freeMultipleAddress
 ]
 
-{ #category : 'tests-5-allocation-strategy' }
+{ #category : #'tests-5-allocation-strategy' }
 VMSpurOldSpaceTest >> testAllocateSmallerChunkShouldReusePartiallyFreeChunk [
 
 	| secondAddress newAddress |
@@ -290,7 +288,7 @@ VMSpurOldSpaceTest >> testAllocateSmallerChunkShouldReusePartiallyFreeChunk [
 	self assert: newAddress equals: secondAddress
 ]
 
-{ #category : 'tests-2-allocation-basic' }
+{ #category : #'tests-2-allocation-basic' }
 VMSpurOldSpaceTest >> testAllocatedChunkAddressesShouldBeInAllocationOrder [
 
 	| secondAddress thirdAddress |
@@ -301,7 +299,7 @@ VMSpurOldSpaceTest >> testAllocatedChunkAddressesShouldBeInAllocationOrder [
 	self assert: secondAddress < thirdAddress
 ]
 
-{ #category : 'tests-2-allocation-basic' }
+{ #category : #'tests-2-allocation-basic' }
 VMSpurOldSpaceTest >> testAllocatedChunkOfMemoryShouldRemoveSpaceFromFreeList [
 
 	| freeChunkStartAddress allocatedSize |
@@ -313,7 +311,7 @@ VMSpurOldSpaceTest >> testAllocatedChunkOfMemoryShouldRemoveSpaceFromFreeList [
 		equals: freeChunkStartAddress + allocatedSize
 ]
 
-{ #category : 'tests-2-allocation-basic' }
+{ #category : #'tests-2-allocation-basic' }
 VMSpurOldSpaceTest >> testAllocatedChunkOfMemoryShouldStartWhereFreeChunkStarted [
 
 	| freeChunkStartAddressBeforeAllocation allocatedAddress |
@@ -324,7 +322,7 @@ VMSpurOldSpaceTest >> testAllocatedChunkOfMemoryShouldStartWhereFreeChunkStarted
 		equals: freeChunkStartAddressBeforeAllocation
 ]
 
-{ #category : 'tests-4-free-tree' }
+{ #category : #'tests-4-free-tree' }
 VMSpurOldSpaceTest >> testAllocationLargerThanFreeListLimitShouldUseFreeTree [
 
 	| firstAddress byteSize smallerNodeOop |
@@ -337,7 +335,7 @@ VMSpurOldSpaceTest >> testAllocationLargerThanFreeListLimitShouldUseFreeTree [
 	self assert: smallerNodeOop equals: firstAddress
 ]
 
-{ #category : 'tests-5-allocation-strategy' }
+{ #category : #'tests-5-allocation-strategy' }
 VMSpurOldSpaceTest >> testAllocationShouldNotLeaveFreeChunkSmallerThanLiliputian [
 
 	| newAddress freeLargeSpaceAddressBeforeAllocation freeAddress |
@@ -351,7 +349,7 @@ VMSpurOldSpaceTest >> testAllocationShouldNotLeaveFreeChunkSmallerThanLiliputian
 	self assert: newAddress equals: freeLargeSpaceAddressBeforeAllocation
 ]
 
-{ #category : 'tests-5-allocation-strategy' }
+{ #category : #'tests-5-allocation-strategy' }
 VMSpurOldSpaceTest >> testChildNodeShouldHaveRootAsParent [
 
 	| smallerChild freeTreeRoot parentNode |
@@ -364,7 +362,7 @@ VMSpurOldSpaceTest >> testChildNodeShouldHaveRootAsParent [
 	self assert: parentNode equals: freeTreeRoot
 ]
 
-{ #category : 'tests-5-allocation-strategy' }
+{ #category : #'tests-5-allocation-strategy' }
 VMSpurOldSpaceTest >> testChildSiblingNodesInFreeTreeShouldHavePrevious [
 
 	| freeTreeRoot size child1 child2 nextChildOop child3 siblingOop previousOop |
@@ -391,7 +389,7 @@ VMSpurOldSpaceTest >> testChildSiblingNodesInFreeTreeShouldHavePrevious [
 	self assert: previousOop equals: nextChildOop.
 ]
 
-{ #category : 'tests-5-allocation-strategy' }
+{ #category : #'tests-5-allocation-strategy' }
 VMSpurOldSpaceTest >> testChildSiblingNodesInFreeTreeShouldNotHaveLarger [
 
 	| freeTreeRoot size child1 child2 nextChildOop child3 largerOop largerThanSmaller siblingOop |
@@ -423,7 +421,7 @@ VMSpurOldSpaceTest >> testChildSiblingNodesInFreeTreeShouldNotHaveLarger [
 	self assert: largerOop equals: 0.
 ]
 
-{ #category : 'tests-5-allocation-strategy' }
+{ #category : #'tests-5-allocation-strategy' }
 VMSpurOldSpaceTest >> testChildSiblingNodesInFreeTreeShouldNotHaveParent [
 
 	| freeTreeRoot size child1 child2 nextChild child3 parentOop |
@@ -450,7 +448,7 @@ VMSpurOldSpaceTest >> testChildSiblingNodesInFreeTreeShouldNotHaveParent [
 	self assert: parentOop equals: 0.
 ]
 
-{ #category : 'tests-5-allocation-strategy' }
+{ #category : #'tests-5-allocation-strategy' }
 VMSpurOldSpaceTest >> testChildSiblingNodesInFreeTreeShouldNotHaveSmaller [
 
 	| freeTreeRoot size child1 child2 nextChildOop child3 smallerOop smallerThanSmaller siblingOop |
@@ -482,7 +480,7 @@ VMSpurOldSpaceTest >> testChildSiblingNodesInFreeTreeShouldNotHaveSmaller [
 	self assert: smallerOop equals: 0.
 ]
 
-{ #category : 'tests-5-allocation-strategy' }
+{ #category : #'tests-5-allocation-strategy' }
 VMSpurOldSpaceTest >> testDeallocateShouldNotChangeRoot [
 
 	| freeRoot address |	
@@ -494,7 +492,7 @@ VMSpurOldSpaceTest >> testDeallocateShouldNotChangeRoot [
 	self assert: freeRoot equals: (memory freeLists at: 0)
 ]
 
-{ #category : 'tests-5-allocation-strategy' }
+{ #category : #'tests-5-allocation-strategy' }
 VMSpurOldSpaceTest >> testEqualSizeChildNodeInFreeTreeShouldBeInsertedAfterHead [
 
 	| smallerChild freeTreeRoot size child1 child2 nextChild child3 |
@@ -516,7 +514,7 @@ VMSpurOldSpaceTest >> testEqualSizeChildNodeInFreeTreeShouldBeInsertedAfterHead 
 	self assert: nextChild equals: child2.
 ]
 
-{ #category : 'tests-5-allocation-strategy' }
+{ #category : #'tests-5-allocation-strategy' }
 VMSpurOldSpaceTest >> testEqualSizeChildNodeShouldBeNextNode [
 
 	| smallerChild freeTreeRoot size child1 child2 nextChild |
@@ -534,13 +532,13 @@ VMSpurOldSpaceTest >> testEqualSizeChildNodeShouldBeNextNode [
 	self assert: nextChild equals: child2.
 ]
 
-{ #category : 'tests-5-allocation-strategy' }
+{ #category : #'tests-5-allocation-strategy' }
 VMSpurOldSpaceTest >> testFalseObjectIsNotAnArray [
 
 	self deny: (memory isArray: memory falseObject).
 ]
 
-{ #category : 'tests-3-free-lists' }
+{ #category : #'tests-3-free-lists' }
 VMSpurOldSpaceTest >> testFreeAChunkShouldBePutAsHeadOfFreeList [
 	| firstAddress secondAddress freeListHead chunkSize |
 	chunkSize := 32.
@@ -554,7 +552,7 @@ VMSpurOldSpaceTest >> testFreeAChunkShouldBePutAsHeadOfFreeList [
 	self assert: freeListHead equals: secondAddress
 ]
 
-{ #category : 'tests-2-allocation-basic' }
+{ #category : #'tests-2-allocation-basic' }
 VMSpurOldSpaceTest >> testFreeChunkDoesNotGetMergedWithExistingFreeChunks [
 
 	| secondAddress |
@@ -564,7 +562,7 @@ VMSpurOldSpaceTest >> testFreeChunkDoesNotGetMergedWithExistingFreeChunks [
 	self assert: memory allFreeObjects size equals: 2
 ]
 
-{ #category : 'tests-3-free-lists' }
+{ #category : #'tests-3-free-lists' }
 VMSpurOldSpaceTest >> testFreeChunkShouldKnowNextChunkOfSameSize [
 	| firstAddress secondAddress freeListHead nextFreeChunk allocationSize |
 	allocationSize := 32.
@@ -580,7 +578,7 @@ VMSpurOldSpaceTest >> testFreeChunkShouldKnowNextChunkOfSameSize [
 	self assert: nextFreeChunk equals: firstAddress
 ]
 
-{ #category : 'tests-3-free-lists' }
+{ #category : #'tests-3-free-lists' }
 VMSpurOldSpaceTest >> testFreeChunkShouldKnowPreviousChunkOfSameSize [
 	| firstAddress secondAddress freeListHead nextFreeChunk allocationSize previousFreeChunk |
 	allocationSize := 32.
@@ -597,7 +595,7 @@ VMSpurOldSpaceTest >> testFreeChunkShouldKnowPreviousChunkOfSameSize [
 	self assert: previousFreeChunk equals: freeListHead
 ]
 
-{ #category : 'tests-2-allocation-basic' }
+{ #category : #'tests-2-allocation-basic' }
 VMSpurOldSpaceTest >> testFreeChunksWithSameSizeShouldBeListedAsDifferentFreeChunks [
 
 	| secondAddress newAddress |
@@ -609,7 +607,7 @@ VMSpurOldSpaceTest >> testFreeChunksWithSameSizeShouldBeListedAsDifferentFreeChu
 	self assert: memory allFreeObjects size equals: 3
 ]
 
-{ #category : 'tests-3-free-lists' }
+{ #category : #'tests-3-free-lists' }
 VMSpurOldSpaceTest >> testFreeChunksWithSameSizeShouldShareSingleHead [
 	| secondAddress allocationSize firstAddress |
 	allocationSize := 32.
@@ -622,7 +620,7 @@ VMSpurOldSpaceTest >> testFreeChunksWithSameSizeShouldShareSingleHead [
 	self assert: memory allFreeListHeads size equals: 1
 ]
 
-{ #category : 'tests-3-free-lists' }
+{ #category : #'tests-3-free-lists' }
 VMSpurOldSpaceTest >> testFreeListsShouldBeIndexedBySlotSize [
 
 	| firstAddress freeListHead |
@@ -638,7 +636,7 @@ VMSpurOldSpaceTest >> testFreeListsShouldBeIndexedBySlotSize [
 	]
 ]
 
-{ #category : 'tests-1-startup' }
+{ #category : #'tests-1-startup' }
 VMSpurOldSpaceTest >> testInitialFreeListShouldBeEmpty [
 
 	2 to: memory numFreeLists - 1 do: [ :numberOfSlots |
@@ -648,7 +646,7 @@ VMSpurOldSpaceTest >> testInitialFreeListShouldBeEmpty [
 	]
 ]
 
-{ #category : 'tests-1-startup' }
+{ #category : #'tests-1-startup' }
 VMSpurOldSpaceTest >> testInitialFreeTreeRootHasNoLargerNode [
 
 	| bigChunk nextNode |
@@ -658,7 +656,7 @@ VMSpurOldSpaceTest >> testInitialFreeTreeRootHasNoLargerNode [
 	self assert: nextNode equals: 0.
 ]
 
-{ #category : 'tests-1-startup' }
+{ #category : #'tests-1-startup' }
 VMSpurOldSpaceTest >> testInitialFreeTreeRootHasNoNextNode [
 
 	| bigChunk nextNode |
@@ -668,7 +666,7 @@ VMSpurOldSpaceTest >> testInitialFreeTreeRootHasNoNextNode [
 	self assert: nextNode equals: 0.
 ]
 
-{ #category : 'tests-1-startup' }
+{ #category : #'tests-1-startup' }
 VMSpurOldSpaceTest >> testInitialFreeTreeRootHasNoParentNode [
 
 	| bigChunk nextNode |
@@ -678,7 +676,7 @@ VMSpurOldSpaceTest >> testInitialFreeTreeRootHasNoParentNode [
 	self assert: nextNode equals: 0.
 ]
 
-{ #category : 'tests-1-startup' }
+{ #category : #'tests-1-startup' }
 VMSpurOldSpaceTest >> testInitialFreeTreeRootHasNoPreviousNode [
 
 	| bigChunk nextNode |
@@ -688,7 +686,7 @@ VMSpurOldSpaceTest >> testInitialFreeTreeRootHasNoPreviousNode [
 	self assert: nextNode equals: 0.
 ]
 
-{ #category : 'tests-1-startup' }
+{ #category : #'tests-1-startup' }
 VMSpurOldSpaceTest >> testInitialFreeTreeRootHasNoSmallerNode [
 
 	| bigChunk nextNode |
@@ -698,13 +696,13 @@ VMSpurOldSpaceTest >> testInitialFreeTreeRootHasNoSmallerNode [
 	self assert: nextNode equals: 0.
 ]
 
-{ #category : 'tests-1-startup' }
+{ #category : #'tests-1-startup' }
 VMSpurOldSpaceTest >> testInitialFreeTreeRootIsFreeObject [
 
 	self assert: (memory isFreeObject: self freeTreeRootOop)
 ]
 
-{ #category : 'tests-1-startup' }
+{ #category : #'tests-1-startup' }
 VMSpurOldSpaceTest >> testInitialFreeTreeRootSizeShouldBeTotalFreeSpace [
 
 	self
@@ -712,7 +710,7 @@ VMSpurOldSpaceTest >> testInitialFreeTreeRootSizeShouldBeTotalFreeSpace [
 		equals: memory totalFreeListBytes
 ]
 
-{ #category : 'tests-4-free-tree' }
+{ #category : #'tests-4-free-tree' }
 VMSpurOldSpaceTest >> testLargeFreeChunkInFreeTreeNodeShouldStoreChunkOop [
 
 	| firstAddress byteSize smallerNodeOop |
@@ -725,7 +723,7 @@ VMSpurOldSpaceTest >> testLargeFreeChunkInFreeTreeNodeShouldStoreChunkOop [
 	self assert: (memory startOfObject: smallerNodeOop) equals: firstAddress
 ]
 
-{ #category : 'tests-5-allocation-strategy' }
+{ #category : #'tests-5-allocation-strategy' }
 VMSpurOldSpaceTest >> testNewBigFreeChunkShouldBeFreeTreeChild [
 
 	| firstAddress freeRoot rootSize moreThanHalf newRoot largerChildOop |
@@ -746,7 +744,7 @@ VMSpurOldSpaceTest >> testNewBigFreeChunkShouldBeFreeTreeChild [
 	self assert: (memory startOfObject: largerChildOop) equals: firstAddress
 ]
 
-{ #category : 'tests-5-allocation-strategy' }
+{ #category : #'tests-5-allocation-strategy' }
 VMSpurOldSpaceTest >> testNewBigFreeChunkShouldHaveRootAsParent [
 
 	| firstAddress freeRoot rootSize moreThanHalf newRoot largerChildOop parentNodeOop |
@@ -768,13 +766,13 @@ VMSpurOldSpaceTest >> testNewBigFreeChunkShouldHaveRootAsParent [
 	self assert: parentNodeOop equals: newRoot
 ]
 
-{ #category : 'tests-1-startup' }
+{ #category : #'tests-1-startup' }
 VMSpurOldSpaceTest >> testNewMemoryShouldHaveSingleFreeObject [
 
 	self assert: memory allFreeObjects size equals: 1
 ]
 
-{ #category : 'tests-2-allocation-basic' }
+{ #category : #'tests-2-allocation-basic' }
 VMSpurOldSpaceTest >> testNewObjectShouldBeOld [
 	
 	| oop |
@@ -783,19 +781,19 @@ VMSpurOldSpaceTest >> testNewObjectShouldBeOld [
 	self assert: (memory getMemoryMap isOldObject: oop)
 ]
 
-{ #category : 'tests-5-allocation-strategy' }
+{ #category : #'tests-5-allocation-strategy' }
 VMSpurOldSpaceTest >> testNilObjectIsNotAnArray [
 
 	self deny: (memory isArray: memory nilObject).
 ]
 
-{ #category : 'tests-5-allocation-strategy' }
+{ #category : #'tests-5-allocation-strategy' }
 VMSpurOldSpaceTest >> testNilObjectObjectFormatIsZero [
 
 	self assert: (memory formatOf: memory nilObject) equals: 0.
 ]
 
-{ #category : 'tests-2-allocation-basic' }
+{ #category : #'tests-2-allocation-basic' }
 VMSpurOldSpaceTest >> testPartiallyReusingFreeChunkShouldKeepNumberOfEntriesInFreeList [
 
 	| secondAddress freeChunksBefore |
@@ -808,7 +806,7 @@ VMSpurOldSpaceTest >> testPartiallyReusingFreeChunkShouldKeepNumberOfEntriesInFr
 	self assert: memory allFreeObjects size equals: freeChunksBefore.
 ]
 
-{ #category : 'tests-2-allocation-basic' }
+{ #category : #'tests-2-allocation-basic' }
 VMSpurOldSpaceTest >> testReuseFreeChunkShouldRemoveEntryFromFreeList [
 
 	| secondAddress |
@@ -819,7 +817,7 @@ VMSpurOldSpaceTest >> testReuseFreeChunkShouldRemoveEntryFromFreeList [
 	self assert: memory allFreeObjects size equals: 1
 ]
 
-{ #category : 'tests-3-free-lists' }
+{ #category : #'tests-3-free-lists' }
 VMSpurOldSpaceTest >> testSingleFreeChunkListNextShouldBeZero [
 	| firstAddress freeListHead allocationSize |
 	allocationSize := 32.
@@ -831,7 +829,7 @@ VMSpurOldSpaceTest >> testSingleFreeChunkListNextShouldBeZero [
 	self assert: (self nextNodeOf: freeListHead) equals: 0
 ]
 
-{ #category : 'tests-3-free-lists' }
+{ #category : #'tests-3-free-lists' }
 VMSpurOldSpaceTest >> testSingleFreeChunkListPreviousShouldBeZero [
 	| firstAddress freeListHead allocationSize |
 	allocationSize := 32.
@@ -843,7 +841,7 @@ VMSpurOldSpaceTest >> testSingleFreeChunkListPreviousShouldBeZero [
 	self assert: (self previousNodeOf: freeListHead) equals: 0
 ]
 
-{ #category : 'tests-5-allocation-strategy' }
+{ #category : #'tests-5-allocation-strategy' }
 VMSpurOldSpaceTest >> testSmallerChildNodeShouldBeFreeTreeChild [
 
 	| smallerChild freeTreeRoot parentNode smallerSize rootSize |
@@ -860,7 +858,7 @@ VMSpurOldSpaceTest >> testSmallerChildNodeShouldBeFreeTreeChild [
 	self assert: parentNode equals: freeTreeRoot
 ]
 
-{ #category : 'tests-5-allocation-strategy' }
+{ #category : #'tests-5-allocation-strategy' }
 VMSpurOldSpaceTest >> testTrueObjectIsNotAnArray [
 
 	self deny: (memory isArray: memory trueObject).

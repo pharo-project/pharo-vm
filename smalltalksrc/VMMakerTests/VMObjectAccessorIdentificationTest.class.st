@@ -1,12 +1,10 @@
 Class {
-	#name : 'VMObjectAccessorIdentificationTest',
-	#superclass : 'TestCase',
-	#category : 'VMMakerTests-Simulation',
-	#package : 'VMMakerTests',
-	#tag : 'Simulation'
+	#name : #VMObjectAccessorIdentificationTest,
+	#superclass : #TestCase,
+	#category : #'VMMakerTests-Simulation'
 }
 
-{ #category : 'tests' }
+{ #category : #tests }
 VMObjectAccessorIdentificationTest >> testObjectAccessorMessagesAreCorrectlyDetected [
 
 	| knownSelectors nonAccessorSelectors |

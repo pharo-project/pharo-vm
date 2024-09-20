@@ -1,12 +1,10 @@
 Class {
-	#name : 'VMSegmentsImageFormatTest',
-	#superclass : 'VMAbstractImageFormatTest',
-	#category : 'VMMakerTests-ImageFormat',
-	#package : 'VMMakerTests',
-	#tag : 'ImageFormat'
+	#name : #VMSegmentsImageFormatTest,
+	#superclass : #VMAbstractImageFormatTest,
+	#category : #'VMMakerTests-ImageFormat'
 }
 
-{ #category : 'tests' }
+{ #category : #tests }
 VMSegmentsImageFormatTest >> testImageWithTwoSegmentsHasCorrectSizeForFirstSegment [
 
 	| header newSegmentSize |
@@ -25,7 +23,7 @@ VMSegmentsImageFormatTest >> testImageWithTwoSegmentsHasCorrectSizeForFirstSegme
 		equals: (memory segmentManager segments at: 0) segSize
 ]
 
-{ #category : 'tests' }
+{ #category : #tests }
 VMSegmentsImageFormatTest >> testImageWithTwoSegmentsHasCorrectSizeForFullImage [
 
 	| header newSegmentSize |
@@ -48,7 +46,7 @@ VMSegmentsImageFormatTest >> testImageWithTwoSegmentsHasCorrectSizeForFullImage 
 		equals: header firstSegSize + newSegmentSize
 ]
 
-{ #category : 'tests' }
+{ #category : #tests }
 VMSegmentsImageFormatTest >> testImageWithTwoSegmentsRespectGrowHeadroomWhenIsBigger [
 
 	| newSegmentSize |
@@ -61,7 +59,7 @@ VMSegmentsImageFormatTest >> testImageWithTwoSegmentsRespectGrowHeadroomWhenIsBi
 	self assert: newSegmentSize >= memory growHeadroom
 ]
 
-{ #category : 'tests' }
+{ #category : #tests }
 VMSegmentsImageFormatTest >> testImageWithTwoSegmentsRespectGrowHeadroomWhenIsSmaller [
 
 	| newSegmentSize |
@@ -76,7 +74,7 @@ VMSegmentsImageFormatTest >> testImageWithTwoSegmentsRespectGrowHeadroomWhenIsSm
 	self assert: newSegmentSize >= memory growHeadroom
 ]
 
-{ #category : 'tests' }
+{ #category : #tests }
 VMSegmentsImageFormatTest >> testMinimalImageHasASingleSegment [
 
 

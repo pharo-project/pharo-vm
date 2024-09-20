@@ -1,12 +1,10 @@
 Class {
-	#name : 'VMSessionIdTest',
-	#superclass : 'VMInterpreterTests',
-	#category : 'VMMakerTests-InterpreterTests',
-	#package : 'VMMakerTests',
-	#tag : 'InterpreterTests'
+	#name : #VMSessionIdTest,
+	#superclass : #VMInterpreterTests,
+	#category : #'VMMakerTests-InterpreterTests'
 }
 
-{ #category : 'tests' }
+{ #category : #tests }
 VMSessionIdTest >> testGlobalSessionID [
 	"The globalSessionID is stored as a 64 bit number, but for compatibility with older plugins, is restricted to postive signed 32 bit values"
 	| vm predicted diff |

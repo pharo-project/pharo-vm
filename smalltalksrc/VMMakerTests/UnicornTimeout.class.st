@@ -1,20 +1,18 @@
 Class {
-	#name : 'UnicornTimeout',
-	#superclass : 'Error',
+	#name : #UnicornTimeout,
+	#superclass : #Error,
 	#instVars : [
 		'target'
 	],
-	#category : 'VMMakerTests-Unicorn',
-	#package : 'VMMakerTests',
-	#tag : 'Unicorn'
+	#category : #'VMMakerTests-Unicorn'
 }
 
-{ #category : 'accessing' }
+{ #category : #accessing }
 UnicornTimeout >> target [
 	^ target
 ]
 
-{ #category : 'accessing' }
+{ #category : #accessing }
 UnicornTimeout >> target: anObject [
 	target := anObject
 ]
