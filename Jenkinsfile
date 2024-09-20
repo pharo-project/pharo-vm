@@ -475,6 +475,40 @@ try{
 		runUnitTests('Darwin-x86_64')
 	}
 
+	dockerBuilders['Linux-aarch64'] = {
+		buildUsingDocker('Linux-aarch64', 'ubuntu-arm64', "CoInterpreter")
+
+		// If we are not in the main branch we want to run the tests as fast as possible
+		if(!isMainBranch()){
+			runTestsUsingDocker('Linux-aarch64', 'ubuntu-arm64', "CoInterpreter", "Kernel.*|Zinc.*", false)
+			}else{
+				testsOnMainBranch['Linux-aarch64'] = {
+					runTestsUsingDocker('Linux-aarch64', 'ubuntu-arm64', "CoInterpreter", "Kernel.*|Zinc.*", false)
+				}
+			}
+		
+		if(isMainBranch()){
+			buildUsingDocker('Linux-aarch64', 'ubuntu-arm64', "CoInterpreter", false)
+		}
+	}
+
+	dockerBuilders['Linux-armv7l'] = {
+		buildUsingDocker('Linux-armv7l', 'debian10-armv7', "CoInterpreter")	
+
+		// If we are not in the main branch we want to run the tests as fast as possible
+		if(!isMainBranch()){
+			runTestsUsingDocker('Linux-armv7l', 'debian10-armv7', "CoInterpreter", "Kernel.*|Zinc.*", false)
+		}else{
+			testsOnMainBranch['Linux-armv7l'] = {
+				runTestsUsingDocker('Linux-armv7l', 'debian10-armv7', "CoInterpreter", "Kernel.*|Zinc.*", false)
+			}
+		}
+		
+		if(isMainBranch()){
+			buildUsingDocker('Linux-armv7l', 'debian10-armv7', "CoInterpreter", false)
+		}
+	}
+
 	for (platf in parallelBuilderPlatforms) {
 		// Need to bind the label variable before the closure - can't do 'for (label in labels)'
 		def platform = platf
@@ -484,6 +518,12 @@ try{
 				timeout(40){
 					runBuild(platform, "CoInterpreter")
 				}
+				
+				if(platform == 'Linux-x86_64'){
+					// As the docker builders depends on the linux build, I will launch it when it end.
+					parallel dockerBuilders
+				}
+				
 				// If we are not in the main branch we want to run the tests as fast as possible
 				if(!isMainBranch()){
 					timeout(45){
@@ -520,43 +560,7 @@ try{
 		}	
 	}
 
-	dockerBuilders['Linux-aarch64'] = {
-		buildUsingDocker('Linux-aarch64', 'ubuntu-arm64', "CoInterpreter")
-
-		// If we are not in the main branch we want to run the tests as fast as possible
-		if(!isMainBranch()){
-			runTestsUsingDocker('Linux-aarch64', 'ubuntu-arm64', "CoInterpreter", "Kernel.*|Zinc.*", false)
-			}else{
-				testsOnMainBranch['Linux-aarch64'] = {
-					runTestsUsingDocker('Linux-aarch64', 'ubuntu-arm64', "CoInterpreter", "Kernel.*|Zinc.*", false)
-				}
-			}
-		
-		if(isMainBranch()){
-			buildUsingDocker('Linux-aarch64', 'ubuntu-arm64', "CoInterpreter", false)
-		}
-	}
-
-	dockerBuilders['Linux-armv7l'] = {
-		buildUsingDocker('Linux-armv7l', 'debian10-armv7', "CoInterpreter")	
-
-		// If we are not in the main branch we want to run the tests as fast as possible
-		if(!isMainBranch()){
-			runTestsUsingDocker('Linux-armv7l', 'debian10-armv7', "CoInterpreter", "Kernel.*|Zinc.*", false)
-		}else{
-			testsOnMainBranch['Linux-armv7l'] = {
-				runTestsUsingDocker('Linux-armv7l', 'debian10-armv7', "CoInterpreter", "Kernel.*|Zinc.*", false)
-			}
-		}
-		
-		if(isMainBranch()){
-			buildUsingDocker('Linux-armv7l', 'debian10-armv7', "CoInterpreter", false)
-		}
-	}
-
 	parallel builders
-
-	parallel dockerBuilders
 	
 	uploadPackages(platforms)
 
