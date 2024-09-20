@@ -1,17 +1,19 @@
 Class {
-	#name : #VMObjectLayoutTests,
-	#superclass : #VMInterpreterTests,
-	#category : #'VMMakerTests-ObjectLayoutTests'
+	#name : 'VMObjectLayoutTests',
+	#superclass : 'VMInterpreterTests',
+	#category : 'VMMakerTests-ObjectLayoutTests',
+	#package : 'VMMakerTests',
+	#tag : 'ObjectLayoutTests'
 }
 
-{ #category : #helpers }
+{ #category : 'helpers' }
 VMObjectLayoutTests >> formatFromInstSpec: instSpecInt instSize: instSizeInt [ 		
 	"A class format is composed by"
 	"<5 bits inst spec><16 bits inst size>"
 	^ instSpecInt << 16 + instSizeInt
 ]
 
-{ #category : #helpers }
+{ #category : 'helpers' }
 VMObjectLayoutTests >> installClassIntoClassTableWithInstSpec: aFormatInt instSize: aSizeInt [ 
 	| class |
 	class := self
@@ -21,7 +23,7 @@ VMObjectLayoutTests >> installClassIntoClassTableWithInstSpec: aFormatInt instSi
 	^class	
 ]
 
-{ #category : #helper }
+{ #category : 'helper' }
 VMObjectLayoutTests >> objSizeWithNumberOfSlots: numberOfSlots [ 
 	| objSize |
 	"always have at least one slot for forwarders"
@@ -37,7 +39,7 @@ VMObjectLayoutTests >> objSizeWithNumberOfSlots: numberOfSlots [
 	
 ]
 
-{ #category : #tests }
+{ #category : 'tests' }
 VMObjectLayoutTests >> testCharacterIsImmediate [
 	| char |
 	char := memory characterObjectOf: $a asInteger.
@@ -45,7 +47,7 @@ VMObjectLayoutTests >> testCharacterIsImmediate [
 	self assert: (memory fetchClassTagOf: char) equals: 2
 ]
 
-{ #category : #tests }
+{ #category : 'tests' }
 VMObjectLayoutTests >> testHeaderOfObjectEncodesTheCorrectAmountOfSlots [
 	| class objOop |
 	0 to: 254 do: [ :slots | 
@@ -61,19 +63,19 @@ VMObjectLayoutTests >> testHeaderOfObjectEncodesTheCorrectAmountOfSlots [
 			equals: objSize ]
 ]
 
-{ #category : #'tests - integerValues' }
+{ #category : 'tests - integerValues' }
 VMObjectLayoutTests >> testNegativeIntegerValuesInRange [
 
 	self assert: (memory isIntegerValue: memory minSmallInteger)
 ]
 
-{ #category : #'tests - integerValues' }
+{ #category : 'tests - integerValues' }
 VMObjectLayoutTests >> testNegativeIntegerValuesNotInRange [
 	"An integer smaller than the smallest integer is not in a valid range"
 	self deny: (memory isIntegerValue: memory minSmallInteger - 1)
 ]
 
-{ #category : #tests }
+{ #category : 'tests' }
 VMObjectLayoutTests >> testObjectAlignment [
 	| class objOop1 objOop2 instSpec |
 	instSpec := 0.
@@ -84,7 +86,7 @@ VMObjectLayoutTests >> testObjectAlignment [
 	self assert: objOop2 \\ 8 equals: 0
 ]
 
-{ #category : #tests }
+{ #category : 'tests' }
 VMObjectLayoutTests >> testObjectHeaderEncodesAmountOfSlots [
 	| class objOop header |
 	0 to: 254 do: [ :slots |
@@ -95,7 +97,7 @@ VMObjectLayoutTests >> testObjectHeaderEncodesAmountOfSlots [
 	]
 ]
 
-{ #category : #tests }
+{ #category : 'tests' }
 VMObjectLayoutTests >> testObjectHeaderEncodesClassIndex [
 	| class objOop header classIndex |
 	0 to: 10 do: [ :slots |
@@ -108,7 +110,7 @@ VMObjectLayoutTests >> testObjectHeaderEncodesClassIndex [
 	]
 ]
 
-{ #category : #tests }
+{ #category : 'tests' }
 VMObjectLayoutTests >> testObjectHeaderEncodesObjecFormatForFixedLayout [
 	| class objOop header classInstSpec |
 	 "instSpec: 
@@ -123,7 +125,7 @@ VMObjectLayoutTests >> testObjectHeaderEncodesObjecFormatForFixedLayout [
 	]
 ]
 
-{ #category : #tests }
+{ #category : 'tests' }
 VMObjectLayoutTests >> testObjectHeaderEncodesObjecFormatForIndexableOpaqueLayout16Bit [
 	| class objOop header classInstSpec instSpec bits maxSize |
 	 "instSpec: 	12-15	= 16-bit indexable
@@ -145,7 +147,7 @@ VMObjectLayoutTests >> testObjectHeaderEncodesObjecFormatForIndexableOpaqueLayou
 		] 
 ]
 
-{ #category : #tests }
+{ #category : 'tests' }
 VMObjectLayoutTests >> testObjectHeaderEncodesObjecFormatForIndexableOpaqueLayout32Bit [
 	| class objOop header classInstSpec instSpec bits maxSize |
 	 "instSpec: 	10-11	= 32-bit indexable
@@ -165,7 +167,7 @@ VMObjectLayoutTests >> testObjectHeaderEncodesObjecFormatForIndexableOpaqueLayou
 		] 
 ]
 
-{ #category : #tests }
+{ #category : 'tests' }
 VMObjectLayoutTests >> testObjectHeaderEncodesObjecFormatForIndexableOpaqueLayout8Bit [
 	| class objOop header classInstSpec instSpec bits maxSize |
 	 "instSpec: 	16-23	= 8-bit indexable
@@ -192,7 +194,7 @@ VMObjectLayoutTests >> testObjectHeaderEncodesObjecFormatForIndexableOpaqueLayou
 	
 ]
 
-{ #category : #tests }
+{ #category : 'tests' }
 VMObjectLayoutTests >> testObjectHeaderEncodesObjecFormatForIndexablePointerLayout [
 	| class objOop header classInstSpec instSpec |
 	instSpec := 2. "instSpec for indexable objects with no inst vars (Array et al)"	
@@ -206,7 +208,7 @@ VMObjectLayoutTests >> testObjectHeaderEncodesObjecFormatForIndexablePointerLayo
 	
 ]
 
-{ #category : #tests }
+{ #category : 'tests' }
 VMObjectLayoutTests >> testObjectMinimumSize [
 	| class objOop1 objOop2 instSpec |
 	instSpec := 0.
@@ -216,7 +218,7 @@ VMObjectLayoutTests >> testObjectMinimumSize [
 	self assert: objOop2 - objOop1 equals: 16
 ]
 
-{ #category : #tests }
+{ #category : 'tests' }
 VMObjectLayoutTests >> testObjectWith0SlotsIsAreAlwaysAligned [
 	| class slots obj1oop obj2oop |
 	"objects always are allocated with at least one slots for forwarding"
@@ -227,7 +229,7 @@ VMObjectLayoutTests >> testObjectWith0SlotsIsAreAlwaysAligned [
 	self assert: obj2oop - obj1oop equals: self objectHeaderSize + memory allocationUnit
 ]
 
-{ #category : #tests }
+{ #category : 'tests' }
 VMObjectLayoutTests >> testObjectWith0SlotsIsAreAlwaysWithAtLeastOneSlotsForForwarding [
 	| class slots  oop |
 	slots := 0.
@@ -236,7 +238,7 @@ VMObjectLayoutTests >> testObjectWith0SlotsIsAreAlwaysWithAtLeastOneSlotsForForw
 	self assert: (memory bytesInObject: oop) equals: self objectHeaderSize + memory allocationUnit.
 ]
 
-{ #category : #tests }
+{ #category : 'tests' }
 VMObjectLayoutTests >> testObjectWithMoreThan254SlotsHasTheCorrectSize [
 	| class objOop slots |
 	slots := 255.
@@ -251,7 +253,7 @@ VMObjectLayoutTests >> testObjectWithMoreThan254SlotsHasTheCorrectSize [
 	
 ]
 
-{ #category : #tests }
+{ #category : 'tests' }
 VMObjectLayoutTests >> testObjectWithMoreThan254SlotsHasTwoHeaders [
 	| class objOop bigOopHeader mask numSlots |
 	mask := 16rFFFFFFFFFFFFFF.
@@ -265,7 +267,7 @@ VMObjectLayoutTests >> testObjectWithMoreThan254SlotsHasTwoHeaders [
 		self assert: numSlots equals: slots ]
 ]
 
-{ #category : #'tests - integerValues' }
+{ #category : 'tests - integerValues' }
 VMObjectLayoutTests >> testPositiveIntegerBorderCase1 [
 	"Test of the border case when int = 2r000111111... . The highest possible value using usqInt encoding is (2**61) -1 since (2**61) can be confused with a pointer (on a 64 bits machine)
 	Regarding the cCode implementation, the sign bit can be lost if this test fails. The maxCInteger and numSmallIntegerTagBits guarantees the portability 
@@ -274,25 +276,25 @@ VMObjectLayoutTests >> testPositiveIntegerBorderCase1 [
 	self deny: (memory isIntegerValue: memory maxCInteger >> memory numSmallIntegerTagBits)
 ]
 
-{ #category : #'tests - integerValues' }
+{ #category : 'tests - integerValues' }
 VMObjectLayoutTests >> testPositiveIntegerBorderCase2 [
 "Test of the border case when int = 2r111000000 ... . Regarding the cCode implementation, the sign bit can be lost if this test fails. The maxCInteger and numSmallIntegerTagBits guaranties the portability of the test on 32 and 64 bit computer. "
 	self deny: (memory isIntegerValue: (memory maxCInteger >> memory numSmallIntegerTagBits) bitInvert) "<=> isIntegerValue: (0001111) bitInvert" 
 ]
 
-{ #category : #'tests - integerValues' }
+{ #category : 'tests - integerValues' }
 VMObjectLayoutTests >> testPositiveIntegerValuesInRange [
 
 	self assert: (memory isIntegerValue: memory maxSmallInteger)
 ]
 
-{ #category : #'tests - integerValues' }
+{ #category : 'tests - integerValues' }
 VMObjectLayoutTests >> testPositiveIntegerValuesNotInRange [
 
 	self deny: (memory isIntegerValue: memory maxSmallInteger + 1)
 ]
 
-{ #category : #tests }
+{ #category : 'tests' }
 VMObjectLayoutTests >> testSmallIntegerIsImmediate [
 	| int |
 	int := memory integerObjectOf: 42.
@@ -300,7 +302,7 @@ VMObjectLayoutTests >> testSmallIntegerIsImmediate [
 	self assert: (memory fetchClassTagOf: int) equals: 1
 ]
 
-{ #category : #tests }
+{ #category : 'tests' }
 VMObjectLayoutTests >> testVariableObjectWithInstVarsHasTheRightSize [
 	| class objOop fixedFieldsSize indexableSize |
 	indexableSize := 12.

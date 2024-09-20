@@ -1,38 +1,40 @@
 Class {
-	#name : #VMAbstractImageFormatTest,
-	#superclass : #VMSpurInitializedOldSpaceTest,
+	#name : 'VMAbstractImageFormatTest',
+	#superclass : 'VMSpurInitializedOldSpaceTest',
 	#instVars : [
 		'imageReader'
 	],
-	#category : #'VMMakerTests-ImageFormat'
+	#category : 'VMMakerTests-ImageFormat',
+	#package : 'VMMakerTests',
+	#tag : 'ImageFormat'
 }
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 VMAbstractImageFormatTest >> defaultTimeLimit [
 
 	^ 30 seconds
 ]
 
-{ #category : #tests }
+{ #category : 'tests' }
 VMAbstractImageFormatTest >> imageFileName [
 
 	^ 'lala.image'
 ]
 
-{ #category : #tests }
+{ #category : 'tests' }
 VMAbstractImageFormatTest >> readHeader [
 
 	^ imageReader readHeaderFromImage: self imageFileName
 ]
 
-{ #category : #actions }
+{ #category : 'actions' }
 VMAbstractImageFormatTest >> saveImage [
 	
 	interpreter writeImageFileIO.
 
 ]
 
-{ #category : #running }
+{ #category : 'running' }
 VMAbstractImageFormatTest >> setUp [
 
 	super setUp.
@@ -55,7 +57,7 @@ VMAbstractImageFormatTest >> setUp [
 
 ]
 
-{ #category : #ston }
+{ #category : 'ston' }
 VMAbstractImageFormatTest >> stonPretty: anObject [ 
 
 	^ String streamContents: [ :s |
@@ -66,7 +68,7 @@ VMAbstractImageFormatTest >> stonPretty: anObject [
 		 ]
 ]
 
-{ #category : #running }
+{ #category : 'running' }
 VMAbstractImageFormatTest >> tearDown [
 
 	self imageFileName asFileReference ensureDeleteAll.
