@@ -6454,6 +6454,15 @@ StackInterpreter >> followForwardedMethodsInMethodZone [
 ]
 
 { #category : 'object memory support' }
+StackInterpreter >> followForwardingPointersInPermSpace [
+
+	objectMemory allPermSpaceNonForwardedObjectsDo: [ :permObj |
+			objectMemory followForwardedObjectFields: permObj toDepth: 0 ].
+
+	objectMemory recreateFromPermSpaceRememberedSet
+]
+
+{ #category : 'object memory support' }
 StackInterpreter >> followForwardingPointersInProfileState [
 	(objectMemory isForwarded: profileProcess) ifTrue:
 		[profileProcess := objectMemory followForwarded: profileProcess].
@@ -10813,7 +10822,10 @@ StackInterpreter >> postBecomeAction: theBecomeEffectsFlags [
 			self followForwardingPointersInSpecialObjectsArray ].
 		(theBecomeEffectsFlags anyMask:
 			 BecamePointerObjectFlag + BecameCompiledMethodFlag) ifTrue: [ 
-			self followForwardingPointersInProfileState ] ].
+			self followForwardingPointersInProfileState ].
+		(theBecomeEffectsFlags anyMask: BecamePermanentObject) ifTrue: [  
+			self followForwardingPointersInPermSpace] 
+		].
 	self followForwardingPointersInStackZone: theBecomeEffectsFlags
 ]
 

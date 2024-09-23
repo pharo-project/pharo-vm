@@ -914,7 +914,8 @@ SpurMemoryManager class >> initializeSpurObjectRepresentationConstants [
 	BecamePointerObjectFlag := 1.
 	BecameCompiledMethodFlag := 2.
 	OldBecameNewFlag := 4.
-	BecameActiveClassFlag := 8 "For flushing method caches"
+	BecameActiveClassFlag := 8 "For flushing method caches".
+	BecamePermanentObject := 16.
 ]
 
 { #category : 'class initialization' }
@@ -1814,6 +1815,13 @@ SpurMemoryManager >> allPastSpaceObjectsDo: aBlock [
 		[:objOop|
 		 self assert: (self isEnumerableObjectNoAssert: objOop).
 		 aBlock value: objOop]
+]
+
+{ #category : 'perm - space' }
+SpurMemoryManager >> allPermSpaceNonForwardedObjectsDo: aBlockClosure [
+
+	self allPermSpaceObjectsDo: [ :anObj |
+		(self isForwarded: anObj) ifFalse: [ aBlockClosure value: anObj ] ]
 ]
 
 { #category : 'perm - space' }
@@ -3960,15 +3968,20 @@ SpurMemoryManager >> clone: objOop [
 	| numSlots fmt newObj |
 	numSlots := self numSlotsOf: objOop.
 	fmt := self formatOf: objOop.
-	numSlots > self maxSlotsForNewSpaceAlloc
-		ifTrue:
-			[newObj := self allocateSlotsInOldSpace: numSlots
-							format: fmt
-							classIndex: (self classIndexOf: objOop)]
-		ifFalse:
-			[newObj := self allocateSlots: numSlots
-							format: fmt
-							classIndex: (self classIndexOf: objOop)].
+	
+	(memoryMap isPermanentObject: objOop)
+		ifTrue: [ newObj := self allocateSlotsInPermSpace: numSlots format: fmt classIndex: (self classIndexOf: objOop)]
+		ifFalse: [  
+				numSlots > self maxSlotsForNewSpaceAlloc
+					ifTrue:
+						[newObj := self allocateSlotsInOldSpace: numSlots
+										format: fmt
+										classIndex: (self classIndexOf: objOop)]
+					ifFalse:
+						[newObj := self allocateSlots: numSlots
+										format: fmt
+										classIndex: (self classIndexOf: objOop)]].
+
 	newObj ifNil:
 		[^0].
 	(self isPointersFormat: fmt)
@@ -4366,6 +4379,9 @@ SpurMemoryManager >> doBecome: obj1 and: obj2 copyHash: copyHashFlag [
 	(o2ClassIndex ~= 0 and: [(self classAtIndex: o2ClassIndex) ~= obj2]) ifTrue:
 		[o2ClassIndex := 0].
 
+	((self isPermanent: obj1) or: [ self isPermanent: obj2 ])
+		ifTrue: [ becomeEffectsFlags := becomeEffectsFlags bitOr: BecamePermanentObject ].
+
 	"Refuse to do an in-place become on classes since their being
 	 forwarded is used in the flush method cache implementations."
 	((self numSlotsOf: obj1) = (self numSlotsOf: obj2)
@@ -4410,12 +4426,20 @@ SpurMemoryManager >> doBecome: obj1 to: obj2 copyHash: copyHashFlag [
 	 then the entry at obj1's hash is valid, otherwise the the existing one at obj2's
 	 hash.  When all the instances with the old hash have been collected, the GC will
 	 discover this and expunge obj2 at the unused index (see markAndTraceClassOf:)."
+
 	self forward: obj1 to: obj2.
-	copyHashFlag ifTrue: [self setHashBitsOf: obj2 to: (self rawHashBitsOf: obj1)].
-	((memoryMap isOldObject: obj1)
-	 and: [self isYoung: obj2]) ifTrue:
-		[becomeEffectsFlags := becomeEffectsFlags bitOr: OldBecameNewFlag].
-	self deny: (self isOopForwarded: obj2)
+	copyHashFlag ifTrue: [
+		self setHashBitsOf: obj2 to: (self rawHashBitsOf: obj1) ].
+
+	self deny: (self isOopForwarded: obj2).
+
+	(memoryMap isPermanentObject: obj1) 
+		ifTrue: [ becomeEffectsFlags := 
+			becomeEffectsFlags bitOr: BecamePermanentObject ].
+
+	((memoryMap isOldObject: obj1) and: [ self isYoung: obj2 ])
+		ifTrue: [
+				becomeEffectsFlags := becomeEffectsFlags bitOr: OldBecameNewFlag ] 
 ]
 
 { #category : 'private - perm space' }
@@ -6350,8 +6374,6 @@ SpurMemoryManager >> ifOopInvalidForBecome: oop errorCodeInto: aBlock [
 	(self isPinned: oop) ifTrue:
 		[^aBlock value: PrimErrObjectIsPinned].
 	(self isObjImmutable: oop) ifTrue:
-		[^aBlock value: PrimErrNoModification].
-	(memoryMap isPermanentObject: oop) ifTrue:
 		[^aBlock value: PrimErrNoModification]
 ]
 
@@ -7768,7 +7790,7 @@ SpurMemoryManager >> isPermSpaceRememberedSetSane [
 
 	isValid := true.
 
-	self allPermSpaceObjectsDo: [ :objOop |
+	self allPermSpaceNonForwardedObjectsDo: [ :objOop |
 		
 		refersNewSpace := self hasYoungReferents: objOop.	
 		refersOldSpace := self hasOldReferents: objOop.
@@ -8925,13 +8947,14 @@ SpurMemoryManager >> markLoopFrom: objOop [
 			[ index > 0 ] whileTrue: [
 				index := index - 1.
 				field := self fetchPointer: index ofObject: objToScan.
-				((self isNonImmediate: field) and: [(self isPermanent: field) not]) ifTrue: [ 
+				(self isNonImmediate: field) ifTrue: [ 
 					(self isForwarded: field) ifTrue: [ "fixFollowedField: is /not/ inlined"
 						field := self
 							         fixFollowedField: index
 							         ofObject: objToScan
 							         withInitialValue: field ].
-					(self markAndShouldScan: field) ifTrue: [
+					((self isPermanent: field) not and: [self markAndShouldScan: field]) 
+					ifTrue: [
 						self push: field onObjStack: markStack.
 						((self rawNumSlotsOf: field) > self traceImmediatelySlotLimit
 							 and: [
@@ -9295,7 +9318,7 @@ SpurMemoryManager >> moveToPermSpaceAllOldObjects [
 			(self isValidToMoveToPermSpace: objOop) 
 				ifTrue: [ self doMoveToPermSpace: objOop addToRememberedSet: true ]]].
 
-	self allPermSpaceObjectsDo: [ :permObj |
+	self allPermSpaceNonForwardedObjectsDo: [ :permObj |
 		self followForwardedObjectFields: permObj toDepth: 0 ].
 
 	self recreateFromPermSpaceRememberedSet.
@@ -11323,7 +11346,7 @@ SpurMemoryManager >> recreateFromPermSpaceRememberedSet [
 	self getFromPermToOldSpaceRememberedSet emptyRememberedSet.
 	self getFromPermToNewSpaceRememberedSet emptyRememberedSet.
 
-	self allPermSpaceObjectsDo: [ :aPermSpaceObject | 
+	self allPermSpaceNonForwardedObjectsDo: [ :aPermSpaceObject | 
 			| slotIndex referenced numPointerSlots refersNewSpace refersOldSpace |
 	
 		"We clear the bit of all remembered objects, it will be recalculated"
