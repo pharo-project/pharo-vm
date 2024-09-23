@@ -20,6 +20,7 @@ RUN set -eu; \
     libssl-dev \
     libtool \
     automake \
+    adduser \
     ; \
   apt-get clean; \
   addgroup --gid 1000 ci; \
