@@ -27,7 +27,7 @@ RUN set -eu; \
   groupdel ubuntu; \
   addgroup --gid 1000 ci; \
   useradd --uid 7431 --gid 1000 --home-dir /opt/pharo --no-create-home --no-user-group pharo; \
-  chown 7431:1000 /opt/pharo -R; \
+  chown 7431:100 /opt/pharo -R; \
   chmod 755 /opt/pharo -R; \
   rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*; \
   true
