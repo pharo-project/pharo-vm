@@ -23,9 +23,9 @@ RUN set -eu; \
     adduser \
     ; \
   apt-get clean; \
-  addgroup --gid 1000 ci; \
+  addgroup --gid 1100 ci; \
   useradd --uid 7431 --gid 1000 --home-dir /opt/pharo --no-create-home --no-user-group pharo; \
-  chown 7431:100 /opt/pharo -R; \
+  chown 7431:1100 /opt/pharo -R; \
   chmod 755 /opt/pharo -R; \
   rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*; \
   true
