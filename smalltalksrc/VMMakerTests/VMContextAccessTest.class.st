@@ -1,10 +1,12 @@
 Class {
-	#name : #VMContextAccessTest,
-	#superclass : #VMSimpleStackBasedCogitAbstractTest,
-	#category : #'VMMakerTests-JitTests'
+	#name : 'VMContextAccessTest',
+	#superclass : 'VMSimpleStackBasedCogitAbstractTest',
+	#category : 'VMMakerTests-JitTests',
+	#package : 'VMMakerTests',
+	#tag : 'JitTests'
 }
 
-{ #category : #'as yet unclassified' }
+{ #category : 'as yet unclassified' }
 VMContextAccessTest >> assertContext: newContext equals: contextOop onInstVar: anIndex [ 
 
 	| originalPC copiedPC |
@@ -17,7 +19,7 @@ VMContextAccessTest >> assertContext: newContext equals: contextOop onInstVar: a
 	self assert: copiedPC  equals: originalPC
 ]
 
-{ #category : #tests }
+{ #category : 'tests' }
 VMContextAccessTest >> pushActiveContext [
 
 	interpreter pushActiveContextBytecode.
@@ -25,7 +27,7 @@ VMContextAccessTest >> pushActiveContext [
 	^ interpreter stackTop
 ]
 
-{ #category : #running }
+{ #category : 'running' }
 VMContextAccessTest >> setUp [
 
 	"taken from VMSimpleStackBasedCogitBytecodeTest >> #setup"
@@ -59,7 +61,7 @@ VMContextAccessTest >> setUp [
 	self initializeOldSpaceForFullGC
 ]
 
-{ #category : #tests }
+{ #category : 'tests' }
 VMContextAccessTest >> testCloningTopContextHasCorrectPC [
 		
 	| contextOop newContext |
@@ -73,7 +75,7 @@ VMContextAccessTest >> testCloningTopContextHasCorrectPC [
 
 ]
 
-{ #category : #tests }
+{ #category : 'tests' }
 VMContextAccessTest >> testCloningTopContextHasCorrectPCAfterFullGC [
 		
 	| contextOop newContext |
@@ -91,7 +93,7 @@ VMContextAccessTest >> testCloningTopContextHasCorrectPCAfterFullGC [
 
 ]
 
-{ #category : #tests }
+{ #category : 'tests' }
 VMContextAccessTest >> testCloningTopContextHasCorrectReceiver [
 		
 	| contextOop newContext |
@@ -106,7 +108,7 @@ VMContextAccessTest >> testCloningTopContextHasCorrectReceiver [
 
 ]
 
-{ #category : #tests }
+{ #category : 'tests' }
 VMContextAccessTest >> testCloningTopContextHasCorrectSenderWhenItIsNil [
 		
 	| contextOop newContext |

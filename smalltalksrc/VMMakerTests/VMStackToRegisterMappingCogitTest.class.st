@@ -1,6 +1,6 @@
 Class {
-	#name : #VMStackToRegisterMappingCogitTest,
-	#superclass : #VMSimpleStackBasedCogitAbstractTest,
+	#name : 'VMStackToRegisterMappingCogitTest',
+	#superclass : 'VMSimpleStackBasedCogitAbstractTest',
 	#instVars : [
 		'methodReceiver',
 		'receiverOperationBlock',
@@ -15,21 +15,23 @@ Class {
 		'expectedResult',
 		'expectedReflexiveResult'
 	],
-	#category : #'VMMakerTests-JitTests'
+	#category : 'VMMakerTests-JitTests',
+	#package : 'VMMakerTests',
+	#tag : 'JitTests'
 }
 
-{ #category : #builder }
+{ #category : 'builder' }
 VMStackToRegisterMappingCogitTest >> argumentOperation: aFullBlockClosure [ 
 	
 	argumentOperation := aFullBlockClosure
 ]
 
-{ #category : #builder }
+{ #category : 'builder' }
 VMStackToRegisterMappingCogitTest >> arguments: aCollection [ 
 	arguments := aCollection
 ]
 
-{ #category : #builder }
+{ #category : 'builder' }
 VMStackToRegisterMappingCogitTest >> buildStackFrame [
 	"Let's prepare the trampoline in case of non-optimized path"
 	self createSpecialSelectorArray.
@@ -49,7 +51,7 @@ VMStackToRegisterMappingCogitTest >> buildStackFrame [
 
 ]
 
-{ #category : #builder }
+{ #category : 'builder' }
 VMStackToRegisterMappingCogitTest >> compileMethod [
 
 	codeAddress := self compile: [ 
@@ -61,54 +63,54 @@ VMStackToRegisterMappingCogitTest >> compileMethod [
 		               cogit genReturnTopFromMethod ]
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 VMStackToRegisterMappingCogitTest >> expectedReflexiveResult [
 	^ expectedReflexiveResult
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 VMStackToRegisterMappingCogitTest >> expectedReflexiveResult: anObject [
 	expectedReflexiveResult := anObject
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 VMStackToRegisterMappingCogitTest >> expectedResult [
 	^ expectedResult
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 VMStackToRegisterMappingCogitTest >> expectedResult: anObject [
 	expectedResult := anObject
 ]
 
-{ #category : #running }
+{ #category : 'running' }
 VMStackToRegisterMappingCogitTest >> jitCompilerClass [
 
 	^ StackToRegisterMappingCogit 
 ]
 
-{ #category : #builder }
+{ #category : 'builder' }
 VMStackToRegisterMappingCogitTest >> methodReceiver: anOop [ 
 	methodReceiver := anOop
 ]
 
-{ #category : #builder }
+{ #category : 'builder' }
 VMStackToRegisterMappingCogitTest >> receiverOperation: aFullBlockClosure [ 
 	
 	receiverOperationBlock := aFullBlockClosure
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 VMStackToRegisterMappingCogitTest >> sendBytecode [
 	^ sendBytecode
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 VMStackToRegisterMappingCogitTest >> sendBytecode: anObject [
 	sendBytecode := anObject
 ]
 
-{ #category : #running }
+{ #category : 'running' }
 VMStackToRegisterMappingCogitTest >> setUp [
 
 	super setUp.
@@ -116,7 +118,7 @@ VMStackToRegisterMappingCogitTest >> setUp [
 	arguments := #().
 ]
 
-{ #category : #builder }
+{ #category : 'builder' }
 VMStackToRegisterMappingCogitTest >> shouldCallTrampolineWith: receiverOfOperation and: argumentOfOperation [ 
 
 	self buildStackFrame.
@@ -126,7 +128,7 @@ VMStackToRegisterMappingCogitTest >> shouldCallTrampolineWith: receiverOfOperati
 	self assertSpecialSendTo: receiverOfOperation value withArg: argumentOfOperation value
 ]
 
-{ #category : #builder }
+{ #category : 'builder' }
 VMStackToRegisterMappingCogitTest >> shouldPerformOperationReturning: aValue [ 
 
 	self buildStackFrame.
@@ -136,22 +138,22 @@ VMStackToRegisterMappingCogitTest >> shouldPerformOperationReturning: aValue [
 	self assert: machineSimulator receiverRegisterValue equals: (memory integerObjectOf: aValue).
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 VMStackToRegisterMappingCogitTest >> value1 [
 	^ value1
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 VMStackToRegisterMappingCogitTest >> value1: anObject [
 	value1 := anObject
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 VMStackToRegisterMappingCogitTest >> value2 [
 	^ value2
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 VMStackToRegisterMappingCogitTest >> value2: anObject [
 	value2 := anObject
 ]
