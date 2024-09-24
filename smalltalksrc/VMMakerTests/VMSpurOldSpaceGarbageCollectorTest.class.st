@@ -629,7 +629,7 @@ VMSpurOldSpaceGarbageCollectorTest >> testEphemeronWithImmediateKeyShouldNotFail
 		equals: 15
 ]
 
-{ #category : #tests }
+{ #category : 'tests' }
 VMSpurOldSpaceGarbageCollectorTest >> testEphemeronsWithSameKeyNewSpaceOldSpace [
 
 	| ephemeronObjectOopOne ephemeronObjectOopTwo nonEphemeronObjectOop |
@@ -661,7 +661,7 @@ VMSpurOldSpaceGarbageCollectorTest >> testEphemeronsWithSameKeyNewSpaceOldSpace 
 	self assert: ({ ephemeronObjectOopOne. ephemeronObjectOopTwo } includes: memory dequeueMourner)
 ]
 
-{ #category : #tests }
+{ #category : 'tests' }
 VMSpurOldSpaceGarbageCollectorTest >> testGrowOldSpace [
 
 	| freespace freespace2 slotsNumber anObjectOop |
