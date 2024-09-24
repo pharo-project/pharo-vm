@@ -1,6 +1,6 @@
 Class {
-	#name : #CogCompilationConstants,
-	#superclass : #SharedPool,
+	#name : 'CogCompilationConstants',
+	#superclass : 'SharedPool',
 	#classVars : [
 		'BadRegisterSet',
 		'CogCompilerClass',
@@ -27,5 +27,7 @@ Class {
 		'SSVectorRegister',
 		'UnimplementedOperation'
 	],
-	#category : #'VMMaker-JIT'
+	#category : 'VMMaker-JIT',
+	#package : 'VMMaker',
+	#tag : 'JIT'
 }

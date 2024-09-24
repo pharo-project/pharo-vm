@@ -1,6 +1,6 @@
-Extension { #name : #RBArrayNode }
+Extension { #name : 'RBArrayNode' }
 
-{ #category : #'*VMMakerCompatibilityForPharo6-C translation' }
+{ #category : '*VMMakerCompatibilityForPharo6-C translation' }
 RBArrayNode >> asTranslatorNodeIn: aTMethod [
 	"Answer a TParseNode subclass equivalent of me."
 

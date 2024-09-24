@@ -7,8 +7,8 @@ The Architecture Reference Manual used is that of version 5, which includes some
 This class does not take any special action to flush the instruction cache on instruction-modification.
 "
 Class {
-	#name : #CogARMCompiler,
-	#superclass : #CogAbstractInstruction,
+	#name : 'CogARMCompiler',
+	#superclass : 'CogAbstractInstruction',
 	#instVars : [
 		'conditionOrNil'
 	],
@@ -83,50 +83,52 @@ Class {
 		'VS',
 		'XorOpcode'
 	],
-	#category : #'VMMaker-JIT'
+	#category : 'VMMaker-JIT',
+	#package : 'VMMaker',
+	#tag : 'JIT'
 }
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 CogARMCompiler class >> IPReg [
 	"Answer the number of the general temp reg in the ARM APCS convention, IP"
 	^ConcreteIPReg
 ]
 
-{ #category : #translation }
+{ #category : 'translation' }
 CogARMCompiler class >> ISA [
 	"Answer the name of the ISA the receiver implements."
 	^#ARMv5
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 CogARMCompiler class >> PCReg [
 	^ConcretePCReg
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 CogARMCompiler class >> VarBaseReg [
 	"Answer the number of the reg we use to hold the base address of CoInterpreter variables"
 	^ConcreteVarBaseReg
 ]
 
-{ #category : #translation }
+{ #category : 'translation' }
 CogARMCompiler class >> defaultCompilerClass [
 	^CogOutOfLineLiteralsARMCompiler
 ]
 
-{ #category : #translation }
+{ #category : 'translation' }
 CogARMCompiler class >> filteredInstVarNames [
 	"Edit such that conditionOrNil is amongst the char size vars opcode machineCodeSize and maxSize."
 	^(super filteredInstVarNames copyWithout: 'conditionOrNil')
 		copyReplaceFrom: 5 to: 4 with: #('conditionOrNil')
 ]
 
-{ #category : #translation }
+{ #category : 'translation' }
 CogARMCompiler class >> identifyingPredefinedMacros [
 	^#('__ARM_ARCH_5__' '__ARM_ARCH_6__' '__ARM_ARCH_7__' '__arm__' '__arm32__' 'ARM32' '_M_ARM')
 ]
 
-{ #category : #'class initialization' }
+{ #category : 'class initialization' }
 CogARMCompiler class >> initialize [
 
 	"Initialize various ARM instruction-related constants."
@@ -212,7 +214,7 @@ CogARMCompiler class >> initialize [
 		in: thisContext method
 ]
 
-{ #category : #'class initialization' }
+{ #category : 'class initialization' }
 CogARMCompiler class >> initializeAbstractRegisters [
 	"Assign the abstract registers with the identities/indices of the relevant concrete registers."
 
@@ -269,43 +271,43 @@ CogARMCompiler class >> initializeAbstractRegisters [
 	NumFloatRegisters := 8
 ]
 
-{ #category : #testing }
+{ #category : 'testing' }
 CogARMCompiler class >> isAbstract [
 	^self == CogARMCompiler
 ]
 
-{ #category : #testing }
+{ #category : 'testing' }
 CogARMCompiler class >> isRISCTempRegister: reg [
 	"For tests to filter-out bogus values left in the RISCTempRegister, if any."
 	^reg = ConcreteIPReg
 ]
 
-{ #category : #translation }
+{ #category : 'translation' }
 CogARMCompiler class >> machineCodeDeclaration [
 	"Answer the declaration for the machineCode array.
 	 ARM instructions are 32-bits in length."
 	^{#'unsigned int'. '[', self basicNew machineCodeWords printString, ']'}
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 CogARMCompiler class >> orOpcode [
 	^OrOpcode
 ]
 
-{ #category : #'class initialization' }
+{ #category : 'class initialization' }
 CogARMCompiler class >> specificOpcodes [
 	"Answer the processor-specific opcodes for this class.
 	 They're all in an Array literal in the initialize method."
 	^(self class >> #initialize) literals detect: [:l| l isArray and: [l includes: #LDMFD]]
 ]
 
-{ #category : #translation }
+{ #category : 'translation' }
 CogARMCompiler class >> wordSize [
 	"This is a 32-bit ISA"
 	^4
 ]
 
-{ #category : #'ARM convenience instructions' }
+{ #category : 'ARM convenience instructions' }
 CogARMCompiler >> add: destReg rn: srcReg imm: immediate ror: rot [
 "Remember the ROR is doubled by the cpu so use 30>>1 etc.
 	ADD destReg, srcReg, #immediate ROR #rot - ARM_ARM v7 DDI10406 p. A8-23"
@@ -313,7 +315,7 @@ CogARMCompiler >> add: destReg rn: srcReg imm: immediate ror: rot [
 	^self type: 1 op: AddOpcode set: 0 rn: srcReg rd: destReg shifterOperand: ((rot>>1) <<8 bitOr: immediate)
 ]
 
-{ #category : #'ARM convenience instructions' }
+{ #category : 'ARM convenience instructions' }
 CogARMCompiler >> add: destReg rn: srcReg rm: addReg [
 "return an ADD destReg, srcReg, addReg instruction
 	ADD destReg, srcReg, addReg - ARM_ARM v7 DDI10406 p. A8-24"
@@ -321,7 +323,7 @@ CogARMCompiler >> add: destReg rn: srcReg rm: addReg [
 	^self type: 0 op: AddOpcode set: 0 rn: srcReg rd: destReg shifterOperand: addReg
 ]
 
-{ #category : #'ARM convenience instructions' }
+{ #category : 'ARM convenience instructions' }
 CogARMCompiler >> adds: destReg rn: srcReg imm: immediate ror: rot [
 "Remember the ROR is doubled by the cpu so use 30>>1 etc
 	ADDS destReg, srcReg, #immediate ROR #rot - ARM_ARM v7 DDI10406 p. A8-23"
@@ -329,7 +331,7 @@ CogARMCompiler >> adds: destReg rn: srcReg imm: immediate ror: rot [
 	^self type: 1 op: AddOpcode set: 1 rn: srcReg rd: destReg shifterOperand: ((rot>>1) <<8 bitOr: immediate)
 ]
 
-{ #category : #simulation }
+{ #category : 'simulation' }
 CogARMCompiler >> aeabiDiv: dividend Mod: divisor [
 "simulate the __aeabi_idivmod call"
 	<doNotGenerate>
@@ -344,7 +346,7 @@ CogARMCompiler >> aeabiDiv: dividend Mod: divisor [
 	^result
 ]
 
-{ #category : #'ARM convenience instructions' }
+{ #category : 'ARM convenience instructions' }
 CogARMCompiler >> aeabiDivModFunctionAddr [
 	"Answer the address of the __aeabi_idivmod() call provided by the ARM low level libs to do an integer divide that returns the quo in R0 and rem in R1.
 	 A word on the somewhat strange usage of idivmod herein; we need a declaration for the _aeabi_idivmod helper function, despite the fact that in a simple C program test, you don't.
@@ -358,7 +360,7 @@ CogARMCompiler >> aeabiDivModFunctionAddr [
 	^self cCode: '(usqInt)__aeabi_idivmod' inSmalltalk:[#aeabiDiv:Mod:]
 ]
 
-{ #category : #'ARM convenience instructions' }
+{ #category : 'ARM convenience instructions' }
 CogARMCompiler >> and: destReg rn: srcReg imm: immediate ror: rot [
 "Remember the ROR is doubled by the cpu so use 30>>1 etc
 	AND destReg, srcReg, #immediate ROR #rot - ARM_ARM v7 DDI10406 p. A8-34"
@@ -366,7 +368,7 @@ CogARMCompiler >> and: destReg rn: srcReg imm: immediate ror: rot [
 	^self type: 1 op: AndOpcode set: 0 rn: srcReg rd: destReg shifterOperand: ((rot>>1) <<8 bitOr: immediate)
 ]
 
-{ #category : #'ARM convenience instructions' }
+{ #category : 'ARM convenience instructions' }
 CogARMCompiler >> ands: destReg rn: srcReg imm: immediate ror: rot [
 "Remember the ROR is doubled by the cpu so use 30>>1 etc
 	ANDS destReg, srcReg, #immediate ROR #rot - ARM_ARM v7 DDI10406 p. A8-34"
@@ -374,7 +376,7 @@ CogARMCompiler >> ands: destReg rn: srcReg imm: immediate ror: rot [
 	^self type: 1 op: AndOpcode set: 1 rn: srcReg rd: destReg shifterOperand: ((rot>>1) <<8 bitOr: immediate)
 ]
 
-{ #category : #'register allocation' }
+{ #category : 'register allocation' }
 CogARMCompiler >> availableRegisterOrNoneFor: liveRegsMask [
 	"Answer an unused abstract register in the liveRegMask.
 	 Subclasses with more registers can override to answer them.
@@ -389,7 +391,7 @@ CogARMCompiler >> availableRegisterOrNoneFor: liveRegsMask [
 	^super availableRegisterOrNoneFor: liveRegsMask
 ]
 
-{ #category : #'ARM convenience instructions' }
+{ #category : 'ARM convenience instructions' }
 CogARMCompiler >> b: offset [
 "return a B offset instruction; offset is signed 24bits of WORD offset, so +_32Mbyte range
 	B offset - ARM_ARM v7 DDI10406 pp. A8-44-5"
@@ -397,7 +399,7 @@ CogARMCompiler >> b: offset [
 
 ]
 
-{ #category : #'ARM convenience instructions' }
+{ #category : 'ARM convenience instructions' }
 CogARMCompiler >> bics: destReg rn: srcReg imm: immediate ror: rot [
 "Remember the ROR is doubled by the cpu so use 30>>1 etc
 	BICS destReg, srcReg, #immediate ROR #rot - ARM_ARM v7 DDI10406 pp. A8-50-1"
@@ -405,7 +407,7 @@ CogARMCompiler >> bics: destReg rn: srcReg imm: immediate ror: rot [
 	^self type: 1 op: BicOpcode set: 1 rn: srcReg rd: destReg shifterOperand: ((rot>>1) <<8 bitOr: immediate)
 ]
 
-{ #category : #'ARM convenience instructions' }
+{ #category : 'ARM convenience instructions' }
 CogARMCompiler >> bl: offset [
 "return a BL offset instruction; offset is signed 24bits of WORD offset, so +_32Mbyte range. Return address is in LR
 	BL offset - ARM_ARM v7 DDI10406 pp. A8-58-9"
@@ -413,7 +415,7 @@ CogARMCompiler >> bl: offset [
 
 ]
 
-{ #category : #'ARM convenience instructions' }
+{ #category : 'ARM convenience instructions' }
 CogARMCompiler >> blx: targetReg [
 	"Branch&link to the address in targetReg. Return address is in LR
 	BLX targetReg - ARM_ARM v7 DDI10406 pp. A8-60-1"
@@ -422,7 +424,7 @@ CogARMCompiler >> blx: targetReg [
 
 ]
 
-{ #category : #'ARM convenience instructions' }
+{ #category : 'ARM convenience instructions' }
 CogARMCompiler >> bx: targetReg [
 	"Branch to address in targetReg. BX targetReg
 	BX targetReg  - ARM_ARM v7 DDI10406 pp. A8-62-3"
@@ -431,31 +433,31 @@ CogARMCompiler >> bx: targetReg [
 
 ]
 
-{ #category : #testing }
+{ #category : 'testing' }
 CogARMCompiler >> byteReadsZeroExtend [
 	^true
 ]
 
-{ #category : #abi }
+{ #category : 'abi' }
 CogARMCompiler >> cResultRegister [
 	"Answer the register through which C funcitons return integral results."
 	<inline: true>
 	^R0
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 CogARMCompiler >> cStackPointer [
 	
 	^ SP
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 CogARMCompiler >> callInstructionByteSize [
 	"ARM calls and jumps span +/- 32 mb, more than enough for intra-zone calls and jumps."
 	^4
 ]
 
-{ #category : #'inline cacheing' }
+{ #category : 'inline cacheing' }
 CogARMCompiler >> callTargetFromReturnAddress: callSiteReturnAddress [
 	"Answer the address that the call immediately preceding callSiteReturnAddress will jump to."
 	"this is also used by #jumpLongTargetBeforeFollowingAddress:."
@@ -467,31 +469,31 @@ CogARMCompiler >> callTargetFromReturnAddress: callSiteReturnAddress [
 	^callSiteReturnAddress + 4  + callDistance signedIntFromLong
 ]
 
-{ #category : #testing }
+{ #category : 'testing' }
 CogARMCompiler >> canDivQuoRem [
 	^true
 ]
 
-{ #category : #testing }
+{ #category : 'testing' }
 CogARMCompiler >> canMulRR [
 "we can do a MulRR be we can't simulate it correctly for some reason. More bug-fixing in the simulator one day"
 	^true
 ]
 
-{ #category : #testing }
+{ #category : 'testing' }
 CogARMCompiler >> canPushPopMultipleRegisters [
 	<inline: true>
 	^true
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 CogARMCompiler >> codeGranularity [
 	"Answer the size in bytes of a unit of machine code."
 	<inline: true>
 	^4
 ]
 
-{ #category : #'generate machine code' }
+{ #category : 'generate machine code' }
 CogARMCompiler >> computeMaximumSize [
 	"Because we don't use Thumb, each ARM instruction has 4 bytes. Many
 	 abstract opcodes need more than one instruction. Instructions that refer
@@ -705,7 +707,7 @@ CogARMCompiler >> computeMaximumSize [
 
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 CogARMCompiler >> concreteCalleeSavedRegisterMask [
 	"According to IHI0042E ARM Architecture Procedure Calling Standard, in section 5.1.1:
 		A subroutine must preserve the contents of the registers r4-r8, r10, r11 and SP (and r9 in PCS variants that designate r9 as v6).
@@ -713,7 +715,7 @@ CogARMCompiler >> concreteCalleeSavedRegisterMask [
 	^2r0000110111110000
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 CogARMCompiler >> concreteCallerSavedRegisterMask [
 	"According to IHI0042E ARM Architecture Procedure Calling Standard, in section 5.1.1:
 		A subroutine must preserve the contents of the registers r4-r8, r10, r11 and SP (and r9 in PCS variants that designate r9 as v6).
@@ -723,7 +725,7 @@ CogARMCompiler >> concreteCallerSavedRegisterMask [
 	^2r1001000001111
 ]
 
-{ #category : #'generate machine code - concretize' }
+{ #category : 'generate machine code - concretize' }
 CogARMCompiler >> concretizeAddRdRd [
 	"Will get inlined into concretizeAt: switch."
 	<inline: true>
@@ -736,7 +738,7 @@ CogARMCompiler >> concretizeAddRdRd [
 	
 ]
 
-{ #category : #'generate machine code - concretize' }
+{ #category : 'generate machine code - concretize' }
 CogARMCompiler >> concretizeAlignmentNops [
 	<inline: true>
 	"fill any slots with NOPs - in this case mov  r0, r0 - which is the NOP I always used to use"
@@ -745,7 +747,7 @@ CogARMCompiler >> concretizeAlignmentNops [
 		[:p| self machineCodeAt: p put: 16rE1A00000]
 ]
 
-{ #category : #'generate machine code - concretize' }
+{ #category : 'generate machine code - concretize' }
 CogARMCompiler >> concretizeAndCqRR [
 	"Will get inlined into concretizeAt: switch."
 	"AND is very important since it's used to mask all sorts of flags in the jit. We take special care to try to find compact ways to make the masks"
@@ -775,7 +777,7 @@ CogARMCompiler >> concretizeAndCqRR [
 	^0 "to keep Slang happy"
 ]
 
-{ #category : #'generate machine code - concretize' }
+{ #category : 'generate machine code - concretize' }
 CogARMCompiler >> concretizeArithmeticShiftRightCqR [
 	"Will get inlined into concretizeAt: switch."
 	"this is an unfortunate waste of an instruction in most cases since the shift can usually be done in a subsequent arithmetic instruction. 
@@ -790,7 +792,7 @@ CogARMCompiler >> concretizeArithmeticShiftRightCqR [
 	^machineCodeSize := 4
 ]
 
-{ #category : #'generate machine code - concretize' }
+{ #category : 'generate machine code - concretize' }
 CogARMCompiler >> concretizeArithmeticShiftRightRR [
 	"Will get inlined into concretizeAt: switch."
 	"this is an unfortunate waste of an instruction in most cases since the shift can usually be done in a subsequent arithmetic instruction. 
@@ -805,7 +807,7 @@ CogARMCompiler >> concretizeArithmeticShiftRightRR [
 	^machineCodeSize := 4
 ]
 
-{ #category : #'generate machine code' }
+{ #category : 'generate machine code' }
 CogARMCompiler >> concretizeAt: actualAddress [
 	"Generate concrete machine code for the instruction at actualAddress,
 	 setting machineCodeSize, and answer the following address."
@@ -814,7 +816,7 @@ CogARMCompiler >> concretizeAt: actualAddress [
 	^super concretizeAt: actualAddress
 ]
 
-{ #category : #'generate machine code - concretize' }
+{ #category : 'generate machine code - concretize' }
 CogARMCompiler >> concretizeCMPSMULL [
 	"Generate a CMP a, b, ASR #31 instruction, specifically for comparing the resutls of SMULLs in genMulR:R:"
 	| hiReg loReg |
@@ -828,7 +830,7 @@ CogARMCompiler >> concretizeCMPSMULL [
 	^machineCodeSize := 4
 ]
 
-{ #category : #'generate machine code - concretize' }
+{ #category : 'generate machine code - concretize' }
 CogARMCompiler >> concretizeCall [
 	"Will get inlined into concretizeAt: switch."
 	<inline: true>
@@ -842,7 +844,7 @@ CogARMCompiler >> concretizeCall [
 	^machineCodeSize := 4
 ]
 
-{ #category : #'generate machine code - concretize' }
+{ #category : 'generate machine code - concretize' }
 CogARMCompiler >> concretizeCallFull [
 	"Will get inlined into concretizeAt: switch."
 	"Sizing/generating calls.
@@ -860,7 +862,7 @@ CogARMCompiler >> concretizeCallFull [
 	^machineCodeSize := instrOffset + 4
 ]
 
-{ #category : #'generate machine code - concretize' }
+{ #category : 'generate machine code - concretize' }
 CogARMCompiler >> concretizeCmpRdRd [
 	"Will get inlined into concretizeAt: switch."
 	<inline: true>
@@ -874,7 +876,7 @@ CogARMCompiler >> concretizeCmpRdRd [
 
 ]
 
-{ #category : #'generate machine code' }
+{ #category : 'generate machine code' }
 CogARMCompiler >> concretizeConditionalInstruction [
 	"Concretize the current instruction, but with a condition."
 	<returnTypeC: #void>
@@ -890,7 +892,7 @@ CogARMCompiler >> concretizeConditionalInstruction [
 		self machineCodeAt: i put: (instr bitOr: (conditionOrNil bitAnd: 16rF)<<28)]
 ]
 
-{ #category : #'generate machine code - concretize' }
+{ #category : 'generate machine code - concretize' }
 CogARMCompiler >> concretizeConditionalJump: conditionCode [
 	"Will get inlined into concretizeAt: switch."
 	"Sizing/generating jumps.
@@ -905,7 +907,7 @@ CogARMCompiler >> concretizeConditionalJump: conditionCode [
 	^machineCodeSize := 4
 ]
 
-{ #category : #'generate machine code - concretize' }
+{ #category : 'generate machine code - concretize' }
 CogARMCompiler >> concretizeConvertRRd [
 	"Will get inlined into concretizeAt: switch."
 	<inline: true>
@@ -919,7 +921,7 @@ CogARMCompiler >> concretizeConvertRRd [
 
 ]
 
-{ #category : #'generate machine code - concretize' }
+{ #category : 'generate machine code - concretize' }
 CogARMCompiler >> concretizeDataOperationCqR: armOpcode [
 	"Will get inlined into concretizeAt: switch."
 	"4 == Add, 2 == Sub, Xor == 1, And == 0, Or == 12, Bic == 14"
@@ -948,7 +950,7 @@ CogARMCompiler >> concretizeDataOperationCqR: armOpcode [
 	
 ]
 
-{ #category : #'generate machine code - concretize' }
+{ #category : 'generate machine code - concretize' }
 CogARMCompiler >> concretizeDataOperationCwR: armOpcode [
 	"Will get inlined into concretizeAt: switch."
 	"Load the word into the RISCTempReg, then cmp R, RISCTempReg"
@@ -963,7 +965,7 @@ CogARMCompiler >> concretizeDataOperationCwR: armOpcode [
 	^machineCodeSize := instrOffset + 4
 ]
 
-{ #category : #'generate machine code - concretize' }
+{ #category : 'generate machine code - concretize' }
 CogARMCompiler >> concretizeDataOperationRR: armOpcode [
 	"Will get inlined into concretizeAt: switch."
 	"Load the word into the RISCTempReg, then op R, RISCTempReg"
@@ -977,7 +979,7 @@ CogARMCompiler >> concretizeDataOperationRR: armOpcode [
 	^machineCodeSize := 4.
 ]
 
-{ #category : #'generate machine code - concretize' }
+{ #category : 'generate machine code - concretize' }
 CogARMCompiler >> concretizeDivRdRd [
 	"Will get inlined into concretizeAt: switch."
 	<inline: true>
@@ -990,7 +992,7 @@ CogARMCompiler >> concretizeDivRdRd [
 	
 ]
 
-{ #category : #'generate machine code - concretize' }
+{ #category : 'generate machine code - concretize' }
 CogARMCompiler >> concretizeFPConditionalJump: conditionCode [
 	"Will get inlined into concretizeAt: switch."
 	<inline: true>
@@ -1003,14 +1005,14 @@ CogARMCompiler >> concretizeFPConditionalJump: conditionCode [
 	^machineCodeSize := 8
 ]
 
-{ #category : #'generate machine code' }
+{ #category : 'generate machine code' }
 CogARMCompiler >> concretizeFill32 [
 	"fill with operand 0 according to the processor's endianness"
 	self machineCodeAt: 0 put: (operands at: 0).
 	^machineCodeSize := 4
 ]
 
-{ #category : #'generate machine code - concretize' }
+{ #category : 'generate machine code - concretize' }
 CogARMCompiler >> concretizeInvertibleDataOperationCqR: armOpcode [
 	"Will get inlined into concretizeAt: switch."
 	"Xor == 1, And == 0, Or == 12, Bic == 14"
@@ -1045,7 +1047,7 @@ CogARMCompiler >> concretizeInvertibleDataOperationCqR: armOpcode [
 	^0 "to keep Slang happy"
 ]
 
-{ #category : #'generate machine code - concretize' }
+{ #category : 'generate machine code - concretize' }
 CogARMCompiler >> concretizeJumpFull [
 	"Will get inlined into concretizeAt: switch."
 	"A JumpFull is used when we need to jump to anywhere in 32bit address space rather than somewhere known to be in code-space. It also must be relocatable and non-varying with the jump range. On ARM this means using the build-long-const + BX sequence."
@@ -1059,7 +1061,7 @@ CogARMCompiler >> concretizeJumpFull [
 	^machineCodeSize := instrOffset + 4
 ]
 
-{ #category : #'generate machine code - concretize' }
+{ #category : 'generate machine code - concretize' }
 CogARMCompiler >> concretizeJumpR [
 	"Will get inlined into concretizeAt: switch."
 	"Sizing/generating jumps.
@@ -1074,7 +1076,7 @@ CogARMCompiler >> concretizeJumpR [
 	^machineCodeSize := 4
 ]
 
-{ #category : #'generate machine code - concretize' }
+{ #category : 'generate machine code - concretize' }
 CogARMCompiler >> concretizeLoadEffectiveAddressMwrR [
 	"Will get inlined into concretizeAt: switch."
 	"destReg = srcReg (which contains an address) + offset"
@@ -1098,7 +1100,7 @@ CogARMCompiler >> concretizeLoadEffectiveAddressMwrR [
 	^machineCodeSize "to keep Slang happy"
 ]
 
-{ #category : #'generate machine code - concretize' }
+{ #category : 'generate machine code - concretize' }
 CogARMCompiler >> concretizeLogicalShiftLeftCqR [
 	"Will get inlined into concretizeAt: switch."
 	"this is an unfortunate waste of an instruction in most cases since the shift can usually be done in a subsequent arithmetic instruction. 
@@ -1112,7 +1114,7 @@ CogARMCompiler >> concretizeLogicalShiftLeftCqR [
 	^machineCodeSize := 4
 ]
 
-{ #category : #'generate machine code - concretize' }
+{ #category : 'generate machine code - concretize' }
 CogARMCompiler >> concretizeLogicalShiftLeftRR [
 	"Will get inlined into concretizeAt: switch."
 	"this is an unfortunate waste of an instruction in most cases since the shift can usually be done in a subsequent arithmetic instruction. 
@@ -1127,7 +1129,7 @@ CogARMCompiler >> concretizeLogicalShiftLeftRR [
 	^machineCodeSize := 4
 ]
 
-{ #category : #'generate machine code - concretize' }
+{ #category : 'generate machine code - concretize' }
 CogARMCompiler >> concretizeLogicalShiftRightCqR [
 	"Will get inlined into concretizeAt: switch."
 	"this is an unfortunate waste of an instruction in most cases since the shift can usually be done in a subsequent arithmetic instruction. 
@@ -1142,7 +1144,7 @@ CogARMCompiler >> concretizeLogicalShiftRightCqR [
 	^machineCodeSize := 4
 ]
 
-{ #category : #'generate machine code - concretize' }
+{ #category : 'generate machine code - concretize' }
 CogARMCompiler >> concretizeLogicalShiftRightRR [
 	"Will get inlined into concretizeAt: switch."
 	"this is an unfortunate waste of an instruction in most cases since the shift can usually be done in a subsequent arithmetic instruction. 
@@ -1157,7 +1159,7 @@ CogARMCompiler >> concretizeLogicalShiftRightRR [
 	^machineCodeSize := 4
 ]
 
-{ #category : #'generate machine code - concretize' }
+{ #category : 'generate machine code - concretize' }
 CogARMCompiler >> concretizeMSR [
 	"Generate an MSR CPSR_f, #flags instruction.
 Note that we only have business with the NZCV flags so we use
@@ -1172,7 +1174,7 @@ You don't want to mess with this too much."
 	^machineCodeSize := 4
 ]
 
-{ #category : #'generate machine code - concretize' }
+{ #category : 'generate machine code - concretize' }
 CogARMCompiler >> concretizeMoveAbR [
 	"Will get inlined into concretizeAt: switch."
 	<inline: true>
@@ -1189,7 +1191,7 @@ CogARMCompiler >> concretizeMoveAbR [
 	^machineCodeSize := instrOffset + 4
 ]
 
-{ #category : #'generate machine code - concretize' }
+{ #category : 'generate machine code - concretize' }
 CogARMCompiler >> concretizeMoveAwR [
 	"Will get inlined into concretizeAt: switch."
 	<inline: true>
@@ -1206,7 +1208,7 @@ CogARMCompiler >> concretizeMoveAwR [
 	^machineCodeSize := instrOffset + 4
 ]
 
-{ #category : #'generate machine code - concretize' }
+{ #category : 'generate machine code - concretize' }
 CogARMCompiler >> concretizeMoveCqR [
 	"Will get inlined into concretizeAt: switch."
 	"If the quick constant is in fact a shiftable 8bit, generate the apropriate MOV, otherwise do what is necessary for a whole word."
@@ -1232,14 +1234,14 @@ CogARMCompiler >> concretizeMoveCqR [
 	^0 "to keep Slang happy"
 ]
 
-{ #category : #'generate machine code - concretize' }
+{ #category : 'generate machine code - concretize' }
 CogARMCompiler >> concretizeMoveCwR [
 	"Will get inlined into concretizeAt: switch."
 	<inline: true>
 	^machineCodeSize := self loadCwInto: (operands at: 1)
 ]
 
-{ #category : #'generate machine code - concretize' }
+{ #category : 'generate machine code - concretize' }
 CogARMCompiler >> concretizeMoveM16rR [
 	"Will get inlined into concretizeAt: switch."
 	"ldrh destReg, [srcReg, #immediate],
@@ -1266,7 +1268,7 @@ CogARMCompiler >> concretizeMoveM16rR [
 	^0 "to keep Slang happy"
 ]
 
-{ #category : #'generate machine code - concretize' }
+{ #category : 'generate machine code - concretize' }
 CogARMCompiler >> concretizeMoveM64rRd [
 	"Will get inlined into concretizeAt: switch."	
 	<inline: true>
@@ -1281,7 +1283,7 @@ CogARMCompiler >> concretizeMoveM64rRd [
 
 ]
 
-{ #category : #'generate machine code - concretize' }
+{ #category : 'generate machine code - concretize' }
 CogARMCompiler >> concretizeMoveMbrR [
 	"Will get inlined into concretizeAt: switch."
 	"ldrb destReg, [srcReg, #immediate] or ldrb destReg, [srcReg, ConcreteIPReg]"
@@ -1310,7 +1312,7 @@ CogARMCompiler >> concretizeMoveMbrR [
 	^0 "to keep Slang happy"
 ]
 
-{ #category : #'generate machine code - concretize' }
+{ #category : 'generate machine code - concretize' }
 CogARMCompiler >> concretizeMoveMwrR [
 	"Will get inlined into concretizeAt: switch."
 	<var: #offset type: #sqInt>
@@ -1333,7 +1335,7 @@ CogARMCompiler >> concretizeMoveMwrR [
 	^0 "to keep Slang happy"
 ]
 
-{ #category : #'generate machine code - concretize' }
+{ #category : 'generate machine code - concretize' }
 CogARMCompiler >> concretizeMoveRAb [
 	"Will get inlined into concretizeAt: switch."
 	"LEA ConcreteIPReg
@@ -1352,7 +1354,7 @@ CogARMCompiler >> concretizeMoveRAb [
 	^machineCodeSize := instrOffset + 4
 ]
 
-{ #category : #'generate machine code - concretize' }
+{ #category : 'generate machine code - concretize' }
 CogARMCompiler >> concretizeMoveRAw [
 	"Will get inlined into concretizeAt: switch."
 	"LEA ConcreteIPReg
@@ -1371,7 +1373,7 @@ CogARMCompiler >> concretizeMoveRAw [
 	^machineCodeSize := instrOffset + 4
 ]
 
-{ #category : #'generate machine code - concretize' }
+{ #category : 'generate machine code - concretize' }
 CogARMCompiler >> concretizeMoveRM16r [
 	"Will get inlined into concretizeAt: switch."
 	<var: #offset type: #sqInt>
@@ -1400,7 +1402,7 @@ CogARMCompiler >> concretizeMoveRM16r [
 	^0 "to keep Slang happy"
 ]
 
-{ #category : #'generate machine code - concretize' }
+{ #category : 'generate machine code - concretize' }
 CogARMCompiler >> concretizeMoveRMbr [
 	"Will get inlined into concretizeAt: switch."
 	<var: #offset type: #sqInt>
@@ -1428,7 +1430,7 @@ CogARMCompiler >> concretizeMoveRMbr [
 	^0 "to keep Slang happy"
 ]
 
-{ #category : #'generate machine code - concretize' }
+{ #category : 'generate machine code - concretize' }
 CogARMCompiler >> concretizeMoveRMwr [
 	"Will get inlined into concretizeAt: switch."
 	<var: #offset type: #sqInt>
@@ -1451,7 +1453,7 @@ CogARMCompiler >> concretizeMoveRMwr [
 	^0 "to keep Slang happy"
 ]
 
-{ #category : #'generate machine code - concretize' }
+{ #category : 'generate machine code - concretize' }
 CogARMCompiler >> concretizeMoveRR [
 	"Will get inlined into concretizeAt: switch."
 	<inline: true>
@@ -1463,7 +1465,7 @@ CogARMCompiler >> concretizeMoveRR [
 	^machineCodeSize := 4
 ]
 
-{ #category : #'generate machine code - concretize' }
+{ #category : 'generate machine code - concretize' }
 CogARMCompiler >> concretizeMoveRXbrR [
 	"Will get inlined into concretizeAt: switch."
 	"Write the word in R(src) into memory at address (base+1*index)"
@@ -1478,7 +1480,7 @@ CogARMCompiler >> concretizeMoveRXbrR [
 	^machineCodeSize := 4
 ]
 
-{ #category : #'generate machine code - concretize' }
+{ #category : 'generate machine code - concretize' }
 CogARMCompiler >> concretizeMoveRXwrR [
 	"Will get inlined into concretizeAt: switch."
 	"Write the word in R(src) into memory at address (base+4*index)"
@@ -1493,7 +1495,7 @@ CogARMCompiler >> concretizeMoveRXwrR [
 	^machineCodeSize := 4
 ]
 
-{ #category : #'generate machine code - concretize' }
+{ #category : 'generate machine code - concretize' }
 CogARMCompiler >> concretizeMoveRdM64r [
 	"Will get inlined into concretizeAt: switch."	
 	<inline: true>
@@ -1508,7 +1510,7 @@ CogARMCompiler >> concretizeMoveRdM64r [
 
 ]
 
-{ #category : #'generate machine code - concretize' }
+{ #category : 'generate machine code - concretize' }
 CogARMCompiler >> concretizeMoveXbrRR [
 	"Will get inlined into concretizeAt: switch."
 	
@@ -1523,7 +1525,7 @@ CogARMCompiler >> concretizeMoveXbrRR [
 	^machineCodeSize := 4
 ]
 
-{ #category : #'generate machine code - concretize' }
+{ #category : 'generate machine code - concretize' }
 CogARMCompiler >> concretizeMoveXwrRR [
 	"Will get inlined into concretizeAt: switch."
 	
@@ -1538,7 +1540,7 @@ CogARMCompiler >> concretizeMoveXwrRR [
 	^machineCodeSize := 4
 ]
 
-{ #category : #'generate machine code - concretize' }
+{ #category : 'generate machine code - concretize' }
 CogARMCompiler >> concretizeMulRdRd [
 	"Will get inlined into concretizeAt: switch."
 	<inline: true>
@@ -1551,7 +1553,7 @@ CogARMCompiler >> concretizeMulRdRd [
 	
 ]
 
-{ #category : #'generate machine code - concretize' }
+{ #category : 'generate machine code - concretize' }
 CogARMCompiler >> concretizeNegateR [
 	"Will get inlined into concretizeAt: switch."
 	<inline: true>
@@ -1562,7 +1564,7 @@ CogARMCompiler >> concretizeNegateR [
 	^machineCodeSize := 4
 ]
 
-{ #category : #'generate machine code - concretize' }
+{ #category : 'generate machine code - concretize' }
 CogARMCompiler >> concretizeNegateableDataOperationCqR: armOpcode [
 	"Will get inlined into concretizeAt: switch."
 	"4 == Add, 2 == Sub, 10 = Cmp"
@@ -1598,7 +1600,7 @@ CogARMCompiler >> concretizeNegateableDataOperationCqR: armOpcode [
 	^0 "to keep Slang happy"
 ]
 
-{ #category : #'generate machine code - concretize' }
+{ #category : 'generate machine code - concretize' }
 CogARMCompiler >> concretizeNop [
 	"Will get inlined into concretizeAt: switch."
 	<inline: true>
@@ -1608,7 +1610,7 @@ CogARMCompiler >> concretizeNop [
 			
 ]
 
-{ #category : #'generate machine code - concretize' }
+{ #category : 'generate machine code - concretize' }
 CogARMCompiler >> concretizePopR [
 	"Will get inlined into concretizeAt: switch."
 	<inline: true>
@@ -1619,7 +1621,7 @@ CogARMCompiler >> concretizePopR [
 	^machineCodeSize := 4
 ]
 
-{ #category : #'generate machine code - concretize' }
+{ #category : 'generate machine code - concretize' }
 CogARMCompiler >> concretizePrefetchAw [
 	"Will get inlined into concretizeAt: switch."
 	<inline: true>
@@ -1634,7 +1636,7 @@ CogARMCompiler >> concretizePrefetchAw [
 	^machineCodeSize := instrOffset + 4
 ]
 
-{ #category : #'generate machine code - concretize' }
+{ #category : 'generate machine code - concretize' }
 CogARMCompiler >> concretizePushCq [
 	"Will get inlined into concretizeAt: switch."
 	<inline: true>
@@ -1655,7 +1657,7 @@ CogARMCompiler >> concretizePushCq [
 	^machineCodeSize := instrOffset + 4
 ]
 
-{ #category : #'generate machine code - concretize' }
+{ #category : 'generate machine code - concretize' }
 CogARMCompiler >> concretizePushCw [
 	"Will get inlined into concretizeAt: switch."
 	<inline: true>
@@ -1680,7 +1682,7 @@ CogARMCompiler >> concretizePushCw [
 	^machineCodeSize := instrOffset + 4
 ]
 
-{ #category : #'generate machine code - concretize' }
+{ #category : 'generate machine code - concretize' }
 CogARMCompiler >> concretizePushOrPopMultipleRegisters: doPush [
 	self assert: (operands at: 0) ~= 0.
 	machineCode at: 0 put: AL << 28
@@ -1692,7 +1694,7 @@ CogARMCompiler >> concretizePushOrPopMultipleRegisters: doPush [
 	^machineCodeSize := 4
 ]
 
-{ #category : #'generate machine code - concretize' }
+{ #category : 'generate machine code - concretize' }
 CogARMCompiler >> concretizePushR [
 	"Will get inlined into concretizeAt: switch."
 	<inline: true>
@@ -1703,7 +1705,7 @@ CogARMCompiler >> concretizePushR [
 	^machineCodeSize := 4
 ]
 
-{ #category : #'generate machine code - concretize' }
+{ #category : 'generate machine code - concretize' }
 CogARMCompiler >> concretizeRetN [
 	"Will get inlined into concretizeAt: switch."
 	<var: #offset type: #sqInt>
@@ -1720,7 +1722,7 @@ CogARMCompiler >> concretizeRetN [
 	^machineCodeSize := 8
 ]
 
-{ #category : #'generate machine code - concretize' }
+{ #category : 'generate machine code - concretize' }
 CogARMCompiler >> concretizeSMULL [
 	| srcA srcB hiResultReg loResultReg |
 	"Generate an SMULL loResultReg, hiResultReg, srcA, srcB instruction"
@@ -1736,7 +1738,7 @@ CogARMCompiler >> concretizeSMULL [
 	^machineCodeSize := 4
 ]
 
-{ #category : #'generate machine code - concretize' }
+{ #category : 'generate machine code - concretize' }
 CogARMCompiler >> concretizeSqrtRd [
 	"Will get inlined into concretizeAt: switch."
 	<inline: true>
@@ -1748,14 +1750,14 @@ CogARMCompiler >> concretizeSqrtRd [
 	
 ]
 
-{ #category : #'generate machine code - concretize' }
+{ #category : 'generate machine code - concretize' }
 CogARMCompiler >> concretizeStop [
 	<inline: true>
 	self machineCodeAt: 0 put: self stop.
 	^machineCodeSize := 4
 ]
 
-{ #category : #'generate machine code - concretize' }
+{ #category : 'generate machine code - concretize' }
 CogARMCompiler >> concretizeSubCqR [
 	"Will get inlined into concretizeAt: switch."
 	"Try whether the quick constant is a small negative number. If it is, optimize."
@@ -1779,7 +1781,7 @@ CogARMCompiler >> concretizeSubCqR [
 	^0 "to keep Slang happy"
 ]
 
-{ #category : #'generate machine code - concretize' }
+{ #category : 'generate machine code - concretize' }
 CogARMCompiler >> concretizeSubRdRd [
 	"Will get inlined into concretizeAt: switch."
 	<inline: true>
@@ -1792,7 +1794,7 @@ CogARMCompiler >> concretizeSubRdRd [
 	
 ]
 
-{ #category : #'generate machine code - concretize' }
+{ #category : 'generate machine code - concretize' }
 CogARMCompiler >> concretizeTstCqR [
 	"Will get inlined into concretizeAt: switch."
 	<inline: true>
@@ -1805,7 +1807,7 @@ CogARMCompiler >> concretizeTstCqR [
 	^0 "to keep Slang happy"
 ]
 
-{ #category : #encoding }
+{ #category : 'encoding' }
 CogARMCompiler >> cond: c br: link offset: offset [
 	"c : 4 bit, opcode = 10 bitOr: link, offset >>2, limited to 24 bits (which are sign-extended, shifted left 2 and added to 8 + pc to make the resulting address)"
 	"single instr Branch, no link"
@@ -1813,7 +1815,7 @@ CogARMCompiler >> cond: c br: link offset: offset [
 	^ c << 28 bitOr: (((2r1010 bitOr: (link bitAnd: 1)) << 24) bitOr: (offset >> 2 bitAnd: 16r00FFFFFF))
 ]
 
-{ #category : #encoding }
+{ #category : 'encoding' }
 CogARMCompiler >> cond: c bx: link target: targetReg [
 	"c : 4 bit, opcode = 10 bitOr: link, offset >>2, limited to 24 bits (which are sign-extended, shifted left 2 and added to 8 + pc to make the resulting address)"
 	"BX targetReg or BLX targetReg"
@@ -1821,7 +1823,7 @@ CogARMCompiler >> cond: c bx: link target: targetReg [
 	^ c << 28 bitOr: ( (16r12FFF10  bitOr: (link bitAnd: 1) <<5 ) bitOr: targetReg)
 ]
 
-{ #category : #encoding }
+{ #category : 'encoding' }
 CogARMCompiler >> cond: c type: t op: o set: s [
 	"c : 4 bit, t: 3 bit, o: 4 bit, s: 1bit"
 	"cccctttoooos + oxFFFFF - the leftmost 12bits of (most) ARM instruction. The other 20 bits get built elsewhere"
@@ -1829,7 +1831,7 @@ CogARMCompiler >> cond: c type: t op: o set: s [
 	^ c << 28 bitOr: ((t << 25) bitOr: ((o << 21) bitOr: (s << 20)))
 ]
 
-{ #category : #encoding }
+{ #category : 'encoding' }
 CogARMCompiler >> cond: conditionCode type: type op: flagsOrOpcode set: doUpdateStatusRegister rn:  sourceRegister rd: targetRegister [
 "build an instruction - cccctttoooo + source + target"
 	<inline: true>
@@ -1837,32 +1839,32 @@ CogARMCompiler >> cond: conditionCode type: type op: flagsOrOpcode set: doUpdate
 		bitOr: (sourceRegister << 16 bitOr: targetRegister << 12)
 ]
 
-{ #category : #encoding }
+{ #category : 'encoding' }
 CogARMCompiler >> cond: conditionCode type: type op: flagsOrOpcode set: doUpdateStatusRegister rn:  sourceRegister rd: targetRegister shifterOperand: so [
 "build an instruction - cccctttoooo + source + target + shifter op"
 	<inline: true>
 	^(self cond: conditionCode type: type op: flagsOrOpcode set: doUpdateStatusRegister rn: sourceRegister rd: targetRegister) bitOr: (so bitAnd: 16rFFF)
 ]
 
-{ #category : #testing }
+{ #category : 'testing' }
 CogARMCompiler >> conditionIsNotNever: instr [
 	"test for the NV condition code; this isn't allowed as an actual condition and is used to encdoe many of the newer instructions"
 	^instr >> 28 < 16rF 
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 CogARMCompiler >> conditionOrNil [
 "has to be named oddly like this to satisfay i-var code gen translating rules"
 	^conditionOrNil
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 CogARMCompiler >> conditionOrNil: condCode [
 "has to be named oddly like this to satisfay i-var code gen translating rules"
 	^conditionOrNil := condCode
 ]
 
-{ #category : #simulation }
+{ #category : 'simulation' }
 CogARMCompiler >> configureStackAlignment [
 	
 	<doNotGenerate>
@@ -1875,7 +1877,7 @@ CogARMCompiler >> configureStackAlignment [
 	cogit setStackAlignment: 8 expectedSPOffset: 0 expectedFPOffset: 0.
 ]
 
-{ #category : #'ARM convenience instructions' }
+{ #category : 'ARM convenience instructions' }
 CogARMCompiler >> dataOpType: armOpcode rd: destReg rn: srcReg rm: addReg lsr: shft [
 "return an {opcode} destReg, srcReg, addReg lsl #shft"
 "important detail - a 0 shft requires setting the shift-type code to 0 to avoid potential instruction confusion"
@@ -1884,7 +1886,7 @@ CogARMCompiler >> dataOpType: armOpcode rd: destReg rn: srcReg rm: addReg lsr: s
 		ifFalse:[^self type: 0 op: armOpcode set: 1 rn: srcReg rd: destReg shifterOperand: ((shft <<7 bitOr: 32) bitOr:  addReg)]
 ]
 
-{ #category : #'generate machine code' }
+{ #category : 'generate machine code' }
 CogARMCompiler >> dispatchConcretize [
 	"Attempt to generate concrete machine code for the instruction at address.
 	 This is the inner dispatch of concretizeAt: actualAddress which exists only
@@ -2011,7 +2013,7 @@ CogARMCompiler >> dispatchConcretize [
 		[ MovePatcheableC32R ] -> [ ^ self concretizeMovePatcheableC32R ]}
 ]
 
-{ #category : #testing }
+{ #category : 'testing' }
 CogARMCompiler >> extractOffsetFromBL: instr [
 	"we are told this is a BL <offset> instruction, so work out the offset it encodes"
 	<inline: true>
@@ -2023,7 +2025,7 @@ CogARMCompiler >> extractOffsetFromBL: instr [
 	^relativeJump
 ]
 
-{ #category : #'ARM convenience instructions' }
+{ #category : 'ARM convenience instructions' }
 CogARMCompiler >> faddd: destReg with: srcReg [
 "FADDD or VADD instruction to add double srcReg to double destReg and stick result in double destReg
 FADDD destReg, destReg, srcReg -  ARM_ARM v5 DDI 01001.pdf pp. C4-6
@@ -2032,7 +2034,7 @@ VADD.F64 destReg, destReg, srcReg - ARM_ARM v7 DDI10406.pdf pp. A8-536-7"
 	^((2r11101110001100000000101100000000 bitOr: destReg<<16 ) bitOr: destReg<<12) bitOr: srcReg
 ]
 
-{ #category : #'ARM convenience instructions' }
+{ #category : 'ARM convenience instructions' }
 CogARMCompiler >> fcmpFrom: regA to: regB [
 "FCMPD or VCMP instruction to compare two fpu double registers.
 FCMPD regA, regB - ARM_ARM v5 DDI 01001.pdf pp. C4-10
@@ -2041,7 +2043,7 @@ VCMP.F64 regA, regB - ARM_ARM v7 DDI10406 -1"
 	^(2r11101110101101000000101101000000 bitOr:(regA <<12)) bitOr: regB
 ]
 
-{ #category : #'ARM convenience instructions' }
+{ #category : 'ARM convenience instructions' }
 CogARMCompiler >> fcmpeFrom: regA to: regB [
 	"FCMPED or VCMPE instruction to compare two fpu double registers.
 FCMPED regA, regB - ARM_ARM v5 DDI 01001.pdf pp. C4-12
@@ -2050,7 +2052,7 @@ VCMPE.F64 regA,regB - ARM_ARM v7 DDI10406 pp. 570-1"
 	^(2r11101110101101000000101111000000 bitOr: (regA <<12)) bitOr: regB
 ]
 
-{ #category : #'ARM convenience instructions' }
+{ #category : 'ARM convenience instructions' }
 CogARMCompiler >> fdivd: dividend by: divisor [
 "FDIVD or VDIV instruction to divide double dividend by double divisor and stick result in double dividend
 FDIVD dividend, dividend, divisor - ARM_ARM v5 DDI 01001.pdf pp. C4-32
@@ -2059,7 +2061,7 @@ VDIV.F64 dvidend, dividend, divisor - ARM_ARM v7 DDI10406 pp. A8-584-5"
 	^((2r11101110100000000000101100000000 bitOr: dividend<<16 ) bitOr: dividend<<12) bitOr: divisor
 ]
 
-{ #category : #'ARM convenience instructions' }
+{ #category : 'ARM convenience instructions' }
 CogARMCompiler >> fldd: destReg rn: srcReg plus: u imm: immediate8bitValue [
 "FLDD or VLDR instruction to move a value from address in an ARM srcReg +/- offset<<2 to an fpu double destReg
 FLDD ARM_ARM v5 DDI 01001.pdf pp. C4-36
@@ -2072,7 +2074,7 @@ VLDR.64 ARM_ARM v7 DDI10406 pp. A8-622-3"
 	^(((2r11101101000100000000101100000000 bitOr:(srcReg <<16)) bitOr: destReg<<12) bitOr: u<<23) bitOr: immediate8bitValue
 ]
 
-{ #category : #'ARM convenience instructions' }
+{ #category : 'ARM convenience instructions' }
 CogARMCompiler >> fmsrFrom: regA to: regB [
 "FMSR or VMOV instruction to move a value from an ARM reg to an fpu double register ready for conversion
 FMSR regB, regA - ARM_ARM v5 DDI 01001.pdf pp. C4-68
@@ -2084,7 +2086,7 @@ VMOV regB, regA - ARM_ARM v7 DDi10406 pp. A8-462-3"
 	^(2r11101110000000000000101000010000 bitOr:(regA <<12)) bitOr: destReg
 ]
 
-{ #category : #'ARM convenience instructions' }
+{ #category : 'ARM convenience instructions' }
 CogARMCompiler >> fmstat [
 	"FMSTAT or VMRS unconditional transfer FP status to cpsr to choose jumps etc.
 FMSTAT r15, FPSCR - ARM_ARM v5 DDI 01001.pdf pp. C4-72
@@ -2093,7 +2095,7 @@ VMRS APSR_nzcv, FPSCR - ARM_ARM v7 DDI10406 pp. A8-652-3"
 	^2r11101110111100011111101000010000
 ]
 
-{ #category : #'ARM convenience instructions' }
+{ #category : 'ARM convenience instructions' }
 CogARMCompiler >> fmuld: destReg with: srcReg [
 "FMULD or VMUL instruction to multiply double srcReg by double destReg and stick result in double destReg
 FMULD destReg, destReg, srcReg - ARM_ARM v5 DDI 01001.pdf pp. C4-73
@@ -2102,7 +2104,7 @@ VMUL.F64 destReg, destReg, srcReg - ARM_ARM v7 DDI10406 pp A8-658-9"
 	^((2r11101110001000000000101100000000 bitOr: destReg<<16 ) bitOr: destReg<<12) bitOr: srcReg
 ]
 
-{ #category : #'ARM convenience instructions' }
+{ #category : 'ARM convenience instructions' }
 CogARMCompiler >> fsitodFrom: regA to: regB [
 "FSITOD or VCVT instruction to move convert an integer value to an fpu double
 FSITOD regB, regA - ARM_ARM v5 DDI 01001.pdf pp. C4-95
@@ -2114,7 +2116,7 @@ VCVTW. regB, regA - ARM_ARM v7 DDI10406.pdf pp. A8-576-8"
 	^(2r11101110101110000000101111000000 bitOr: srcReg ) bitOr: regB<<12
 ]
 
-{ #category : #'ARM convenience instructions' }
+{ #category : 'ARM convenience instructions' }
 CogARMCompiler >> fsqrtd: destReg [
 "FSQRTD or VSQRT instruction to square root double dividend destReg and stick result in double destReg
 ARM_ARM v5 DDI 01001.pdf pp. C4-97
@@ -2123,7 +2125,7 @@ VSQRT.F64 destReg, destReg - ARM_ARM v7 DDI10406 pp. A8-756-7"
 	^((2r11101110101100010000101111000000 ) bitOr: destReg<<12) bitOr: destReg
 ]
 
-{ #category : #'ARM convenience instructions' }
+{ #category : 'ARM convenience instructions' }
 CogARMCompiler >> fstd: fpReg rn: addrReg plus: u imm: immediate8bitValue [
 "FSTD or VSTR instruction to move a value to address in an ARM addrReg +/- offset<<2 from an fpu double fpReg
 FSTD fpReg, addrReg, #offset - ARM_ARM v5 DDI 01001.pdf pp. C4-101
@@ -2136,7 +2138,7 @@ VSTR.64 fpReg, addrReg, #offset - ARM_ARM v7 DDI10406 pp. A8-780-1"
 	^(((2r11101101000000000000101100000000 bitOr:(addrReg <<16)) bitOr: fpReg<<12) bitOr: u<<23) bitOr: immediate8bitValue
 ]
 
-{ #category : #'ARM convenience instructions' }
+{ #category : 'ARM convenience instructions' }
 CogARMCompiler >> fsubd: destReg with: srcReg [
 "FSUBD or VSUB instruction to subtract double srcReg from double destREg and stick result in double destReg
 FSUBD destReg, destReg, srcReg - ARM_ARM v5 DDI 01001.pdf pp. C4-112
@@ -2145,7 +2147,7 @@ VSUB.F64 destReg, destReg, srcReg - ARM_ARM v7 DDI10406 pp. A8-784-5"
 	^((2r11101110001100000000101101000000 bitOr: destReg<<16 ) bitOr: destReg<<12) bitOr: srcReg
 ]
 
-{ #category : #abi }
+{ #category : 'abi' }
 CogARMCompiler >> fullCallsAreRelative [
 	"Answer if CallFull and/or JumpFull are relative and hence need relocating on method
 	 compation. If so, they are annotated with IsRelativeCall in methods and relocated in
@@ -2153,7 +2155,7 @@ CogARMCompiler >> fullCallsAreRelative [
 	^false
 ]
 
-{ #category : #'abstract instructions' }
+{ #category : 'abstract instructions' }
 CogARMCompiler >> genDivR: abstractRegDivisor R: abstractRegDividend Quo: abstractRegQuotient Rem: abstractRegRemainder [
 "Currently no instruction level support for divide on ARM. See also #canDivQuoRem"
 	| rDividend rDivisor rQuotient rRemainder divRemFunctionAddr |
@@ -2191,7 +2193,7 @@ CogARMCompiler >> genDivR: abstractRegDivisor R: abstractRegDividend Quo: abstra
 
 ]
 
-{ #category : #'smalltalk calling convention' }
+{ #category : 'smalltalk calling convention' }
 CogARMCompiler >> genLoadCStackPointer [
 	"Load the stack pointer register with that of the C stack, effecting
 	 a switch to the C stack.  Used when machine code calls into the
@@ -2200,7 +2202,7 @@ CogARMCompiler >> genLoadCStackPointer [
 	^0
 ]
 
-{ #category : #'smalltalk calling convention' }
+{ #category : 'smalltalk calling convention' }
 CogARMCompiler >> genLoadCStackPointers [
 	"Load the frame and stack pointer registers with those of the C stack,
 	 effecting a switch to the C stack.  Used when machine code calls into
@@ -2210,7 +2212,7 @@ CogARMCompiler >> genLoadCStackPointers [
 	^0
 ]
 
-{ #category : #'smalltalk calling convention' }
+{ #category : 'smalltalk calling convention' }
 CogARMCompiler >> genLoadStackPointers [
 	"Switch back to the Smalltalk stack. Assign SPReg first
 	 because typically it is used immediately afterwards."
@@ -2219,7 +2221,7 @@ CogARMCompiler >> genLoadStackPointers [
 	^0
 ]
 
-{ #category : #abi }
+{ #category : 'abi' }
 CogARMCompiler >> genMarshallNArgs: numArgs arg: regOrConst0 arg: regOrConst1 arg: regOrConst2 arg: regOrConst3 [
 	"Generate the code to pass up to four arguments in a C run-time call.  Hack: each argument is
 	 either a negative number, which encodes a constant, or a non-negative number, that of a register.
@@ -2251,7 +2253,7 @@ CogARMCompiler >> genMarshallNArgs: numArgs arg: regOrConst0 arg: regOrConst1 ar
 		ifFalse: [cogit MoveR: regOrConst3 R: CArg3Reg]
 ]
 
-{ #category : #'abstract instructions' }
+{ #category : 'abstract instructions' }
 CogARMCompiler >> genMulR: regSource R: regDest [
 	"Use SMULL to produce a 64-bit result, explicitly in RISCTempReg,regDest. - ARM_ARM v7 DDI10406 pp. A8-354-5
 	 By comparing RISCTempReg with regDest ASR 31(which effectively makes it 0 or -1) we know that the result being EQ means the hi reg and the top bit of the lo reg are the same - ie no overflow. The condition code can then be forced to oVerflow by use of MSR APSR_nzcvq, #1, lsl 28"
@@ -2263,7 +2265,7 @@ CogARMCompiler >> genMulR: regSource R: regDest [
 	^first
 ]
 
-{ #category : #'generate machine code' }
+{ #category : 'generate machine code' }
 CogARMCompiler >> genPopRegisterMask: registersToBeSavedMask [
 	<inline: true>
 	^registersToBeSavedMask = 0
@@ -2271,7 +2273,7 @@ CogARMCompiler >> genPopRegisterMask: registersToBeSavedMask [
 		ifFalse: [cogit gen: PopLDM operand: registersToBeSavedMask]
 ]
 
-{ #category : #'smalltalk calling convention' }
+{ #category : 'smalltalk calling convention' }
 CogARMCompiler >> genPushRegisterArgsForAbortMissNumArgs: numArgs [
 	"Ensure that the register args are pushed before the outer and
 	 inner retpcs at an entry miss for arity <= self numRegArgs.  The
@@ -2303,7 +2305,7 @@ CogARMCompiler >> genPushRegisterArgsForAbortMissNumArgs: numArgs [
 	cogit PushR: LinkReg
 ]
 
-{ #category : #'smalltalk calling convention' }
+{ #category : 'smalltalk calling convention' }
 CogARMCompiler >> genPushRegisterArgsForNumArgs: numArgs scratchReg: ignored [
 	"Ensure that the register args are pushed before the retpc for arity <= self numRegArgs."
 	"This is easy on a RISC like ARM because the return address is in the link register.  Putting
@@ -2319,7 +2321,7 @@ CogARMCompiler >> genPushRegisterArgsForNumArgs: numArgs scratchReg: ignored [
 				[cogit PushR: Arg1Reg]]]
 ]
 
-{ #category : #'generate machine code' }
+{ #category : 'generate machine code' }
 CogARMCompiler >> genPushRegisterMask: registersToBeSavedMask [
 	<inline: true>
 	^registersToBeSavedMask = 0
@@ -2327,7 +2329,7 @@ CogARMCompiler >> genPushRegisterMask: registersToBeSavedMask [
 		ifFalse: [cogit gen: PushSTM operand: registersToBeSavedMask]
 ]
 
-{ #category : #abi }
+{ #category : 'abi' }
 CogARMCompiler >> genRemoveNArgsFromStack: n [
 	"This is a no-op on ARM since the ABI passes up to 4 args in registers and trampolines currently observe that limit."
 	<inline: true>
@@ -2335,28 +2337,28 @@ CogARMCompiler >> genRemoveNArgsFromStack: n [
 	^0
 ]
 
-{ #category : #abi }
+{ #category : 'abi' }
 CogARMCompiler >> genRestoreRegs: regMask [
 	"Restore the registers in regMask as saved by genSaveRegs:."
 	<inline: true>
 	^self genPopRegisterMask: regMask
 ]
 
-{ #category : #abi }
+{ #category : 'abi' }
 CogARMCompiler >> genSaveRegForCCall [
 	"Save the general purpose registers for a call into the C run-time from a trampoline."
 	"Save none, because the ARM ABI only defines callee saved registers, no caller-saved regs."
 	"cogit gen: STMFD operand: 16r7F"
 ]
 
-{ #category : #abi }
+{ #category : 'abi' }
 CogARMCompiler >> genSaveRegs: regMask [
 	"Save the registers in regMask for a call into the C run-time from a trampoline"
 	<inline: true>
 	^self genPushRegisterMask: regMask
 ]
 
-{ #category : #'smalltalk calling convention' }
+{ #category : 'smalltalk calling convention' }
 CogARMCompiler >> genSaveStackPointers [
 	"Save the frame and stack pointer registers to the framePointer
 	 and stackPointer variables.  Used to save the machine code frame
@@ -2366,14 +2368,14 @@ CogARMCompiler >> genSaveStackPointers [
 	^0
 ]
 
-{ #category : #'abstract instructions' }
+{ #category : 'abstract instructions' }
 CogARMCompiler >> genSubstituteReturnAddress: retpc [
 	<inline: true>
 	<returnTypeC: #'AbstractInstruction *'>
 	^cogit MoveCw: retpc R: LR
 ]
 
-{ #category : #disassembly }
+{ #category : 'disassembly' }
 CogARMCompiler >> generalPurposeRegisterMap [
 	<doNotGenerate>
 	"Answer a Dictionary from register getter to register index."
@@ -2393,49 +2395,49 @@ CogARMCompiler >> generalPurposeRegisterMap [
 			#r12. R12	}
 ]
 
-{ #category : #testing }
+{ #category : 'testing' }
 CogARMCompiler >> hasConditionRegister [
 	"Answer if the receiver supports, e.g., JumpOverflow after a regular AddRR"
 	^true
 ]
 
-{ #category : #testing }
+{ #category : 'testing' }
 CogARMCompiler >> hasDoublePrecisionFloatingPointSupport [
 	"might be true, but is for the forseeable future disabled"
 	^true
 ]
 
-{ #category : #testing }
+{ #category : 'testing' }
 CogARMCompiler >> hasLinkRegister [
 	^true "lr"
 ]
 
-{ #category : #testing }
+{ #category : 'testing' }
 CogARMCompiler >> hasPCDependentInstruction [
 	"e.g. B, BL: Branch, Branch and Link"
 	^true
 ]
 
-{ #category : #testing }
+{ #category : 'testing' }
 CogARMCompiler >> hasPCRegister [
 	"Answer if the processor has a generally addressable pc register, which ARM does."
 	^true
 ]
 
-{ #category : #testing }
+{ #category : 'testing' }
 CogARMCompiler >> hasThreeAddressArithmetic [
 	"Answer if the receiver supports three-address arithmetic instructions (currently only AndCqRR)"
 	^true
 ]
 
-{ #category : #testing }
+{ #category : 'testing' }
 CogARMCompiler >> hasVarBaseRegister [
 	"Answer if the processor has a dedicated callee-saved register to point to
 	 the base of commonly-accessed variables. On ARM we use R10 for this."
 	^true "r10/sl"
 ]
 
-{ #category : #'generate machine code' }
+{ #category : 'generate machine code' }
 CogARMCompiler >> initialize [
 	"This method intializes the Smalltalk instance.  The C instance is merely a struct and doesn't need initialization."
 	<doNotGenerate>
@@ -2443,81 +2445,81 @@ CogARMCompiler >> initialize [
 	machineCode := CArrayAccessor on: (Array new: self machineCodeWords)
 ]
 
-{ #category : #'inline cacheing' }
+{ #category : 'inline cacheing' }
 CogARMCompiler >> inlineCacheTagAt: callSiteReturnAddress [
 	"Answer the inline cache tag for the return address of a send."
 	^self subclassResponsibility
 ]
 
-{ #category : #'inline cacheing' }
+{ #category : 'inline cacheing' }
 CogARMCompiler >> instructionAddressBefore: followingAddress [
 	"Answer the instruction address immediately preceding followingAddress."
 	<inline: true>
 	^followingAddress -4
 ]
 
-{ #category : #'inline cacheing' }
+{ #category : 'inline cacheing' }
 CogARMCompiler >> instructionBeforeAddress: followingAddress [
 	"Answer the instruction immediately preceding followingAddress."
 	<inline: true>
 	^objectMemory uint32AtPointer: (self instructionAddressBefore: followingAddress)
 ]
 
-{ #category : #testing }
+{ #category : 'testing' }
 CogARMCompiler >> instructionIsB: instr [
 "is this a B <offset> instruction?"
 	^(self conditionIsNotNever: instr) and: [(instr bitAnd: (16rF<<24)) = (16rA<<24)]
 ]
 
-{ #category : #testing }
+{ #category : 'testing' }
 CogARMCompiler >> instructionIsBL: instr [
 "is this a BL <offset> instruction?"
 	^(self conditionIsNotNever: instr)  and: [(instr bitAnd: (16rF<<24)) = (16rB<<24)]
 ]
 
-{ #category : #testing }
+{ #category : 'testing' }
 CogARMCompiler >> instructionIsBLX: instr [
 "is this a BLX <targetReg> instruction?"
 	^(self conditionIsNotNever: instr)  and: [(instr bitAnd: 16r0FFFFFF0) = 16r12FFF30]
 ]
 
-{ #category : #testing }
+{ #category : 'testing' }
 CogARMCompiler >> instructionIsBX: instr [
 "is this a BX <targetReg> instruction?"
 	^(self conditionIsNotNever: instr) and: [(instr bitAnd: 16r0FFFFFF0) = 16r12FFF10]
 ]
 
-{ #category : #testing }
+{ #category : 'testing' }
 CogARMCompiler >> instructionIsCMP: instr [
 	"is this a CMP instruction?"
 	^(self conditionIsNotNever: instr) and: [(instr >> 21 bitAnd: 16r7F) = CmpOpcode]
 ]
 
-{ #category : #testing }
+{ #category : 'testing' }
 CogARMCompiler >> instructionIsLDR: instr [
 	"is this any kind of LDR instruction? c.f. memMxr:reg:base:u:b:l:imm:"
 	^(self conditionIsNotNever: instr) and: [(instr >> 20 bitAnd: 16rC5) = 16r41] "ldr r1, [r2, #+/-imm] or ldr r1, [r2, r3]"
 ]
 
-{ #category : #testing }
+{ #category : 'testing' }
 CogARMCompiler >> instructionIsOR: instr [
 	"is this an ORR instruction?"
 	^(self conditionIsNotNever: instr)  and:[(instr >> 21 bitAnd: 16r7F) = (16r10 bitOr: OrOpcode)]
 ]
 
-{ #category : #testing }
+{ #category : 'testing' }
 CogARMCompiler >> instructionIsPush: instr [
 	"is this a push -str r??, [sp, #-4] -  instruction?"
 	^(self conditionIsNotNever: instr) and: [(instr bitAnd: 16rFFF0FFF) = 16r52D0004]
 ]
 
-{ #category : #disassembly }
+{ #category : 'disassembly' }
 CogARMCompiler >> instructionSizeAt: pc [
 	"Answer the instruction size at pc.Simple on ARM ;-)"
 	^4
 ]
 
-{ #category : #'generate machine code - support' }
+{ #category : 'generate machine code - support' }
 CogARMCompiler >> inverseOpcodeFor: armOpcode [
 	"Several of the opcodes are inverses.  Answer the inverse for an opcode if it has one.
 	 See Table A3-2 in sec A3.4 Data-processing instructions of the AARM."
@@ -2534,7 +2536,7 @@ CogARMCompiler >> inverseOpcodeFor: armOpcode [
 			 -1]
 ]
 
-{ #category : #testing }
+{ #category : 'testing' }
 CogARMCompiler >> is12BitValue: constant ifTrue: trueAlternativeBlock	ifFalse: falseAlternativeBlock [
 	"For LDR and STR, there is an instruction allowing for one instruction encoding if the offset is encodable in signed 12 bit form. pass the trueBlock the value and a 1-bit flag to tell it the sign.
 	The falseBlock can do whatever it needs to, typically building the constant as a full 32bit value and then ld/st with that as a register offset"
@@ -2547,7 +2549,7 @@ CogARMCompiler >> is12BitValue: constant ifTrue: trueAlternativeBlock	ifFalse: f
 		ifFalse: [^falseAlternativeBlock value]
 ]
 
-{ #category : #testing }
+{ #category : 'testing' }
 CogARMCompiler >> is8BitValue: constant ifTrue: trueAlternativeBlock	ifFalse: falseAlternativeBlock [
 	"For extended LDR and STR for half & double, there is an instruction allowing for one instruction encoding if the offset is encodable in 8 bit."
 
@@ -2559,7 +2561,7 @@ CogARMCompiler >> is8BitValue: constant ifTrue: trueAlternativeBlock	ifFalse: fa
 		ifFalse: falseAlternativeBlock
 ]
 
-{ #category : #testing }
+{ #category : 'testing' }
 CogARMCompiler >> isAddressRelativeToVarBase: varAddress [
 	<inline: true>
 	<var: #varAddress type: #usqInt>
@@ -2569,12 +2571,12 @@ CogARMCompiler >> isAddressRelativeToVarBase: varAddress [
 	  and: [varAddress - cogit varBaseAddress < (1 << 12)]]
 ]
 
-{ #category : #testing }
+{ #category : 'testing' }
 CogARMCompiler >> isBigEndian [
 	^false
 ]
 
-{ #category : #testing }
+{ #category : 'testing' }
 CogARMCompiler >> isCallPrecedingReturnPC: mcpc [
 	"Assuming mcpc is a send return pc answer if the instruction before it is a call (not a CallFull)."
 	"There are two types of calls: BL and/BLX encoding"
@@ -2583,14 +2585,14 @@ CogARMCompiler >> isCallPrecedingReturnPC: mcpc [
 	^(self instructionIsBL: call) or:[self instructionIsBLX: call]
 ]
 
-{ #category : #testing }
+{ #category : 'testing' }
 CogARMCompiler >> isInImmediateJumpRange: operand [
 	"ARM calls and jumps span +/- 32 mb, more than enough for intra-zone calls and jumps."
 	<var: #operand type: #'usqIntptr_t'>
 	^operand signedIntFromLong between: -16r2000000 and: 16r1FFFFFC
 ]
 
-{ #category : #testing }
+{ #category : 'testing' }
 CogARMCompiler >> isJumpAt: pc [
 	| instr |
 	instr := objectMemory long32At: pc.
@@ -2598,14 +2600,14 @@ CogARMCompiler >> isJumpAt: pc [
 	  or: [self instructionIsBX: instr]
 ]
 
-{ #category : #testing }
+{ #category : 'testing' }
 CogARMCompiler >> isPCRelativeValueLoad: instr [
 	<var: 'instr' type: #'unsigned int'>
 	"add xx, pc, blah or sub xx, pc, blah"
 	^(instr >> 16) = 16rE28F or: [instr >> 16 = 16rE24F]
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 CogARMCompiler >> jumpLongByteSize [
 "	Branch/Call ranges.  Jump[Cond] can be generated as short as possible.  Call/Jump[Cond]Long must be generated
 	in the same number of bytes irrespective of displacement since their targets may be updated, but they need only
@@ -2616,18 +2618,18 @@ CogARMCompiler >> jumpLongByteSize [
 	^4
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 CogARMCompiler >> jumpLongConditionalByteSize [
 	^self jumpLongByteSize
 ]
 
-{ #category : #'inline cacheing' }
+{ #category : 'inline cacheing' }
 CogARMCompiler >> jumpLongTargetBeforeFollowingAddress: mcpc [ 
 	"Answer the target address for the long jump immediately preceding mcpc"
 	^self callTargetFromReturnAddress: mcpc
 ]
 
-{ #category : #disassembly }
+{ #category : 'disassembly' }
 CogARMCompiler >> jumpTargetPCAt: pc [
 	<returnTypeC: #usqInt>
 	| operand word |
@@ -2640,53 +2642,53 @@ CogARMCompiler >> jumpTargetPCAt: pc [
 		inSmalltalk: [operand * 4 + pc + 8 bitAnd: cogit addressSpaceMask]
 ]
 
-{ #category : #'ARM convenience instructions' }
+{ #category : 'ARM convenience instructions' }
 CogARMCompiler >> ldr: destReg rn: baseReg plus: u imm: immediate12bitValue [
 "	LDR destReg, [baseReg, immediate12bitValue] u=0 -> subtract imm; =1 -> add imm  - ARM_ARM v7 DDI10406 pp. A8-120-1"
 	^self memMxr: AL reg: destReg  base: baseReg u: u b: 0 l: 1 imm: immediate12bitValue
 ]
 
-{ #category : #'ARM convenience instructions' }
+{ #category : 'ARM convenience instructions' }
 CogARMCompiler >> ldr: destReg rn: baseReg plusImm: immediate12bitValue [
 "	LDR destReg, [baseReg, +immediate12bitValue] - ARM_ARM v7 DDI10406 pp. A8-120-1"
 	^self memMxr: AL reg: destReg  base: baseReg u: 1 b: 0 l: 1 imm: immediate12bitValue
 ]
 
-{ #category : #'ARM convenience instructions' }
+{ #category : 'ARM convenience instructions' }
 CogARMCompiler >> ldr: destReg rn: baseReg rm: offsetReg [
 "	LDR destReg, [baseReg, + offsetReg]  - ARM_ARM v7 DDI10406 pp. A8-124-5
 	The contents of offsetReg are assumed to be correctly signed"
 	^self memMxr: AL reg: destReg  base: baseReg p: 1 u: 1 b: 0 w: 0 l: 1 rm: offsetReg
 ]
 
-{ #category : #'ARM convenience instructions' }
+{ #category : 'ARM convenience instructions' }
 CogARMCompiler >> ldrb: destReg rn: baseReg plus: u imm: immediate12bitValue [
 "	LDRB destReg, [baseReg, 'u' immediate12bitValue] u=0 ->  - ARM_ARM v7 DDI10406 pp. A8-128-9
 	Note that this is a very low level interface that does not check the sign of the immediate, nor validity. See for example #concretizeMoveMbrR"
 	^self memMxr: AL reg: destReg  base: baseReg u: u b: 1 l: 1 imm: immediate12bitValue
 ]
 
-{ #category : #'ARM convenience instructions' }
+{ #category : 'ARM convenience instructions' }
 CogARMCompiler >> ldrb: destReg rn: baseReg rm: offsetReg [
 "	LDRB destReg, [baseReg, + offsetReg]  - ARM_ARM v7 DDI10406 pp. A8-132-3
 	The contents of offsetReg are assumed to be correctly signed"
 	^self memMxr: AL reg: destReg  base: baseReg p: 1 u: 1 b: 1 w: 0 l: 1 rm: offsetReg
 ]
 
-{ #category : #'ARM convenience instructions' }
+{ #category : 'ARM convenience instructions' }
 CogARMCompiler >> ldrh: destReg rn: baseReg plus: u imm: immediate8bitValue [
 "	LDRH destReg, [baseReg, 'u' immediate8bitValue] u=0 -> subtract imm; =1 -> add imm  - ARM_ARM v7 DDI10406 pp. A8-152-3"
 	^self memM16xr: AL reg: destReg  base: baseReg p: 1 u: u  w: 0 l: 1 offset: immediate8bitValue
 ]
 
-{ #category : #'ARM convenience instructions' }
+{ #category : 'ARM convenience instructions' }
 CogARMCompiler >> ldrh: destReg rn: baseReg rm: offsetReg [
 "	LDRH destReg, [baseReg, +offsetReg]  - ARM_ARM v7 DDI10406 pp. A8-156-7
 	The contents of offsetReg are assumed to be correctly signed"
 	^self memM16xr: AL reg: destReg  base: baseReg p: 1 u: 1  w: 0 l: 1 rm: offsetReg
 ]
 
-{ #category : #abi }
+{ #category : 'abi' }
 CogARMCompiler >> leafCallStackPointerDelta [
 	"Answer the delta from the stack pointer after a call to the stack pointer
 	 immediately prior to the call.  This is used to compute the stack pointer
@@ -2696,14 +2698,14 @@ CogARMCompiler >> leafCallStackPointerDelta [
 	^0
 ]
 
-{ #category : #'inline cacheing' }
+{ #category : 'inline cacheing' }
 CogARMCompiler >> literalBeforeInlineCacheTagAt: callSiteReturnAddress [
 
 	self notYetImplemented: 'Should implement access to the class in directed super sends for ARMv7'.
 	^ 0
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 CogARMCompiler >> literalLoadInstructionBytes [
 	"Answer the size of a literal load instruction (which may or may not include the size of the literal).
 	 This differs between in-line and out-of-line literal generation."
@@ -2711,7 +2713,7 @@ CogARMCompiler >> literalLoadInstructionBytes [
 	^self subclassResponsibility
 ]
 
-{ #category : #'generate machine code - support' }
+{ #category : 'generate machine code - support' }
 CogARMCompiler >> loadCwInto: destReg [
 	"Load the operand into the destination register, answering
 	 the size of the instructions generated to do so."
@@ -2736,7 +2738,7 @@ CogARMCompiler >> loadCwInto: destReg [
 	^self moveCw: operand intoR: destReg
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 CogARMCompiler >> loadPICLiteralByteSize [
 	"Answer the byte size of a MoveCwR opcode's corresponding machine code
 	 when the argument is a PIC.  This is for the self-reference at the end of a
@@ -2744,21 +2746,21 @@ CogARMCompiler >> loadPICLiteralByteSize [
 	^4
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 CogARMCompiler >> machineCodeAt: anOffset [
 	"read aWord from machineCode, with little endian"
 	<inline: true>
 	^machineCode at: anOffset // 4
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 CogARMCompiler >> machineCodeAt: anOffset put: aWord [
 	"add aWord to machineCode, with little endian"
 	<inline: true>
 	machineCode at: anOffset // 4 put: aWord
 ]
 
-{ #category : #'generate machine code' }
+{ #category : 'generate machine code' }
 CogARMCompiler >> machineCodeBytes [
 	"Answer the maximum number of bytes of machine code generated for any abstract instruction.
 	 e.g. CmpCwR =>
@@ -2770,7 +2772,7 @@ CogARMCompiler >> machineCodeBytes [
 	^20
 ]
 
-{ #category : #'generate machine code' }
+{ #category : 'generate machine code' }
 CogARMCompiler >> machineCodeWords [
 	"Answer the maximum number of words of machine code generated for any abstract instruction.
 	 e.g. CmpCwR =>
@@ -2782,7 +2784,7 @@ CogARMCompiler >> machineCodeWords [
 	^5
 ]
 
-{ #category : #encoding }
+{ #category : 'encoding' }
 CogARMCompiler >> memM16xr: cond reg: destReg base: baseReg p: postpreoffset u: updown w: weirdstuff l: loadstore offset: offset8 [ 
 	"build an ARM [base +/- offset8]  half-word memory instruction
 	p -> pre-index (1) or post-index (0) the offset. Combines with W to do some odd things.
@@ -2804,7 +2806,7 @@ CogARMCompiler >> memM16xr: cond reg: destReg base: baseReg p: postpreoffset u: 
 		bitOr: (offset8 bitAnd: 16rF)))))))))))
 ]
 
-{ #category : #encoding }
+{ #category : 'encoding' }
 CogARMCompiler >> memM16xr: cond reg: destReg base: baseReg p: postpreoffset u: updown w: weirdstuff l: loadstore rm: offsetReg [ 
 	"build an ARM [base +/- offsetReg] memory instruction
 	p -> pre-index (1) or post-index (0) the offset. Combines with W to do some odd things.
@@ -2825,7 +2827,7 @@ CogARMCompiler >> memM16xr: cond reg: destReg base: baseReg p: postpreoffset u: 
 		bitOr: offsetReg)))))))))
 ]
 
-{ #category : #encoding }
+{ #category : 'encoding' }
 CogARMCompiler >> memMxr: cond reg: destReg base: baseReg p: postpreoffset u: updown b: byteword w: weirdstuff l: loadstore imm: offset [
 	"build an ARM [base +/- offset] memory instruction
 	p -> pre-index (1) or post-index (0) the offset. Combines with W to do some odd things.
@@ -2844,7 +2846,7 @@ CogARMCompiler >> memMxr: cond reg: destReg base: baseReg p: postpreoffset u: up
 		bitOr: (destReg << 12 bitOr: offset))))))))
 ]
 
-{ #category : #encoding }
+{ #category : 'encoding' }
 CogARMCompiler >> memMxr: cond reg: destReg base: baseReg p: postpreoffset u: updown b: byteword w: weirdstuff l: loadstore rm: offsetReg [ 
 	"build an ARM [base +/- offsetReg] memory instruction
 	p -> pre-index (1) or post-index (0) the offset. Combines with W to do some odd things.
@@ -2864,7 +2866,7 @@ CogARMCompiler >> memMxr: cond reg: destReg base: baseReg p: postpreoffset u: up
 		bitOr: (offsetReg bitAnd: 16rF)))))))))
 ]
 
-{ #category : #encoding }
+{ #category : 'encoding' }
 CogARMCompiler >> memMxr: cond reg: destReg base: baseReg p: postpreoffset u: updown b: byteword w: weirdstuff l: loadstore rmLsl2: offsetReg [ 
 	"build an ARM [base +/- offsetReg lsl #2] memory instruction - see also #memMxr:reg:base:p:u:b:w:l:rm: and keep them correlated properly
 	p -> pre-index (1) or post-index (0) the offset. Combines with W to do some odd things.
@@ -2885,7 +2887,7 @@ CogARMCompiler >> memMxr: cond reg: destReg base: baseReg p: postpreoffset u: up
 		bitOr: (offsetReg bitAnd: 16rF))))))))))
 ]
 
-{ #category : #encoding }
+{ #category : 'encoding' }
 CogARMCompiler >> memMxr: cond reg: destReg  base: baseReg u: updown b: byteword l: loadstore imm: immediate12bitValue [
 "This is the lowest level build of an ARM [base +/- immediate 12bit offset] memory instruction
 u -> up (1) or down (0) ie + or - for the offset
@@ -2902,21 +2904,21 @@ l -> load (1) or store (0)"
 		bitOr: (immediate12bitValue bitAnd: 16rFFF)))))))
 ]
 
-{ #category : #'ARM convenience instructions' }
+{ #category : 'ARM convenience instructions' }
 CogARMCompiler >> mov: destReg imm: immediate8bitValue ror: rot [
 	"Remember the ROR is doubled by the cpu so use 30>>1 etc.
 	MOV destReg, #immediate8BitValue ROR rot - ARM_ARM v7 DDI10406 pp. A8-194-5"
 	^self type: 1 op: MoveOpcode set: 0 rn: 0 rd: destReg shifterOperand: ((rot>>1) <<8 bitOr: immediate8bitValue)
 ]
 
-{ #category : #'ARM convenience instructions' }
+{ #category : 'ARM convenience instructions' }
 CogARMCompiler >> mov: destReg rn: srcReg [
 "	MOV destReg, srcReg - ARM_ARM v7 DDI10406 pp. A8-196-7"
 
 	^self type: 0 op: MoveOpcode set: 0 rn: 0 rd: destReg shifterOperand: srcReg
 ]
 
-{ #category : #'generate machine code - support' }
+{ #category : 'generate machine code - support' }
 CogARMCompiler >> moveCw: constant intoR: destReg [
 	"Emit a load of aWord into destReg.  Answer the number of bytes of machine code generated."
 	 <var: 'constant' type: #usqInt>
@@ -2924,14 +2926,14 @@ CogARMCompiler >> moveCw: constant intoR: destReg [
 	^self subclassResponsibility
 ]
 
-{ #category : #'ARM convenience instructions' }
+{ #category : 'ARM convenience instructions' }
 CogARMCompiler >> movs: destReg rn: srcReg [
 "	MOVS destReg, srcReg - ARM_ARM v7 DDI10406 pp. A8-196-7"
 
 	^self type: 0 op: MoveOpcode set: 1 rn: 0 rd: destReg shifterOperand: srcReg
 ]
 
-{ #category : #encoding }
+{ #category : 'encoding' }
 CogARMCompiler >> msr: flags [
 "Generate an MSR CPSR_f, #flags instruction.
 Note that 
@@ -2943,14 +2945,14 @@ b) We only have business with the NZCV flags so the generated instruction shifts
 	+ (flags bitAnd: 16rF) " to make sure we don't have silly values here"
 ]
 
-{ #category : #'ARM convenience instructions' }
+{ #category : 'ARM convenience instructions' }
 CogARMCompiler >> mvn: destReg imm: immediate8bitValue ror: rot [
 	"Remember the ROR is doubled by the cpu so use 30>>1 etc.
 	MVN destReg, #immediate8BitValue ROR rot - ARM_ARM v7 DDI10406 pp. A8-214-5"
 	^self type: 1 op: MoveNotOpcode set: 0 rn: 0 rd: destReg shifterOperand: ((rot>>1) <<8 bitOr: immediate8bitValue)
 ]
 
-{ #category : #printing }
+{ #category : 'printing' }
 CogARMCompiler >> nameForFPRegister: reg [ "<Integer>"
 	<doNotGenerate>
 	(reg between: 0 and: 7) ifTrue:
@@ -2958,7 +2960,7 @@ CogARMCompiler >> nameForFPRegister: reg [ "<Integer>"
 	^super nameForFPRegister: reg
 ]
 
-{ #category : #printing }
+{ #category : 'printing' }
 CogARMCompiler >> nameForRegister: reg [ "<Integer>"
 	<doNotGenerate>
 	| default |
@@ -2972,7 +2974,7 @@ CogARMCompiler >> nameForRegister: reg [ "<Integer>"
 			[default]
 ]
 
-{ #category : #'inline cacheing' }
+{ #category : 'inline cacheing' }
 CogARMCompiler >> numICacheFlushOpcodes [
 	"ARM needs to do icache flushing when code is written"
 	"for now return 0 to skip it and probably blow up"
@@ -2980,19 +2982,19 @@ CogARMCompiler >> numICacheFlushOpcodes [
 	
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 CogARMCompiler >> numIntRegArgs [
 	^4
 ]
 
-{ #category : #'ARM convenience instructions' }
+{ #category : 'ARM convenience instructions' }
 CogARMCompiler >> orr: destReg imm: immediate8bitValue ror: rot [
 	"Remember the ROR is doubled by the cpu so use 30>>1 etc.
 	ORR destReg, #immediate8BitValue ROR rot - ARM_ARM v7 DDI10406 pp. A8-228-9"
 	^self type: 1 op: OrOpcode set: 0 rn: destReg rd: destReg shifterOperand: ((rot>>1) <<8 bitOr: immediate8bitValue)
 ]
 
-{ #category : #'generate machine code' }
+{ #category : 'generate machine code' }
 CogARMCompiler >> outputMachineCodeAt: targetAddress [
 	"Override to move machine code a word at a time."
 	<inline: true>
@@ -3001,7 +3003,7 @@ CogARMCompiler >> outputMachineCodeAt: targetAddress [
 		objectMemory uint32AtPointer: targetAddress + j put: (machineCode at: j // 4)]
 ]
 
-{ #category : #'generate machine code' }
+{ #category : 'generate machine code' }
 CogARMCompiler >> padIfPossibleWithStopsFrom: startAddr to: endAddr [
 	| nullBytes |
 	nullBytes := (endAddr - startAddr + 1) \\ 4.
@@ -3010,7 +3012,7 @@ CogARMCompiler >> padIfPossibleWithStopsFrom: startAddr to: endAddr [
 		do: [ :p | objectMemory byteAt: p put: 16rFF]
 ]
 
-{ #category : #encoding }
+{ #category : 'encoding' }
 CogARMCompiler >> pld: baseReg plus: u offset: immediate [
 	"hint to memory that we will want to read from baseReg +/- imediate sometime soon
 	PLD baseReg, immediate  - ARM_ARM v7 DDI10406 pp. A8-236-7"
@@ -3018,14 +3020,14 @@ CogARMCompiler >> pld: baseReg plus: u offset: immediate [
 	^ 2r11110101010100001111000000000000 bitOr: (baseReg<<16 bitOr:(u <<23 bitOr: immediate))
 ]
 
-{ #category : #'ARM convenience instructions' }
+{ #category : 'ARM convenience instructions' }
 CogARMCompiler >> popR: dstReg [
 "	pop word off TOS
 	LDR srcReg, [sp] #4 - ARM_ARM v7 DDI10406 pp. A8-120-1"
 	^self memMxr: AL reg: dstReg base: SP p: 0 u: 1 b: 0 w: 0 l: 1 imm: 4
 ]
 
-{ #category : #'calling C function in Smalltalk stack' }
+{ #category : 'calling C function in Smalltalk stack' }
 CogARMCompiler >> prepareStackToCallCFunctionInSmalltalkStack: anObject [
 
 	"ARMv5 should be aligned to 16 bytes"
@@ -3039,19 +3041,19 @@ CogARMCompiler >> prepareStackToCallCFunctionInSmalltalkStack: anObject [
 	cogit MoveR: Extra2Reg R: SPReg.
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 CogARMCompiler >> pushLinkRegisterByteSize [
 	^4
 ]
 
-{ #category : #'ARM convenience instructions' }
+{ #category : 'ARM convenience instructions' }
 CogARMCompiler >> pushR: srcReg [
 "	push word to TOS 
 	STR srcReg, [sp, #-4]! - ARM_ARM v7 DDI10406 pp. A8-382-3"
 	^self memMxr: AL reg: srcReg base: SP p: 1 u: 0 b: 0 w: 1l: 0 imm: 4
 ]
 
-{ #category : #'inline cacheing' }
+{ #category : 'inline cacheing' }
 CogARMCompiler >> relocateCallBeforeReturnPC: retpc by: delta [
 	| instr distanceDiv4 |
 	self assert: delta \\ 4 = 0.
@@ -3063,14 +3065,14 @@ CogARMCompiler >> relocateCallBeforeReturnPC: retpc by: delta [
 		 objectMemory uint32AtPointer: (self instructionAddressBefore: retpc ) put: ((instr bitAnd: 16rFF000000) bitOr: (distanceDiv4 bitAnd: 16rFFFFFF))]
 ]
 
-{ #category : #'calling C function in Smalltalk stack' }
+{ #category : 'calling C function in Smalltalk stack' }
 CogARMCompiler >> returnFromCallCFunctionInSmalltalkStack: anObject [
 
 	cogit MoveR: ClassReg R: SPReg.
 
 ]
 
-{ #category : #'inline cacheing' }
+{ #category : 'inline cacheing' }
 CogARMCompiler >> rewriteCPICJumpAt: addressFollowingJump target: jumpTargetAddr [
 	"Rewrite a jump instruction to call a different target.  This variant is used to reset the 
 	jumps in the prototype CPIC to suit each use,.   
@@ -3081,7 +3083,7 @@ CogARMCompiler >> rewriteCPICJumpAt: addressFollowingJump target: jumpTargetAddr
 	^self rewriteTransferAt: addressFollowingJump target: jumpTargetAddr
 ]
 
-{ #category : #'inline cacheing' }
+{ #category : 'inline cacheing' }
 CogARMCompiler >> rewriteCallAt: callSiteReturnAddress target: callTargetAddress [
 	"Rewrite a call instruction to call a different target.  This variant is used to link PICs
 	 in ceSendMiss et al,.   
@@ -3091,7 +3093,7 @@ CogARMCompiler >> rewriteCallAt: callSiteReturnAddress target: callTargetAddress
 	^self rewriteTransferAt: callSiteReturnAddress target: callTargetAddress
 ]
 
-{ #category : #'inline cacheing' }
+{ #category : 'inline cacheing' }
 CogARMCompiler >> rewriteCallFullAt: callSiteReturnAddress target: callTargetAddress [
 	"Rewrite a callFull instruction to jump to a different target.  This variant
 	 is used to rewrite cached primitive calls where we load the target address into ip
@@ -3105,7 +3107,7 @@ CogARMCompiler >> rewriteCallFullAt: callSiteReturnAddress target: callTargetAdd
 		expectedInstruction: 16rE12FFF3C
 ]
 
-{ #category : #'inline cacheing' }
+{ #category : 'inline cacheing' }
 CogARMCompiler >> rewriteFullTransferAt: callSiteReturnAddress target: callTargetAddress expectedInstruction: expectedInstruction [
 	"Rewrite a CallFull or JumpFull instruction to transfer to a different target.
 	 This variant is used to rewrite cached primitive calls.   Answer the extent
@@ -3113,7 +3115,7 @@ CogARMCompiler >> rewriteFullTransferAt: callSiteReturnAddress target: callTarge
 	^self subclassResponsibility
 ]
 
-{ #category : #'inline cacheing' }
+{ #category : 'inline cacheing' }
 CogARMCompiler >> rewriteInlineCacheAt: callSiteReturnAddress tag: cacheTag target: callTargetAddress [
 	"Rewrite an inline cache to call a different target for a new tag.  This variant is used
 	 to link unlinked sends in ceSend:to:numArgs: et al.  Answer the extent of the code
@@ -3122,7 +3124,7 @@ CogARMCompiler >> rewriteInlineCacheAt: callSiteReturnAddress tag: cacheTag targ
 	^self subclassResponsibility
 ]
 
-{ #category : #'inline cacheing' }
+{ #category : 'inline cacheing' }
 CogARMCompiler >> rewriteJumpFullAt: callSiteReturnAddress target: callTargetAddress [
 	"Rewrite a full jump instruction to jump to a different target.  This variant
 	 is used to rewrite cached primitive calls where we load the target address into ip
@@ -3136,7 +3138,7 @@ CogARMCompiler >> rewriteJumpFullAt: callSiteReturnAddress target: callTargetAdd
 		expectedInstruction: 16rE12FFF1C
 ]
 
-{ #category : #'inline cacheing' }
+{ #category : 'inline cacheing' }
 CogARMCompiler >> rewriteJumpLongAt: callSiteReturnAddress target: callTargetAddress [
 	"Rewrite a jump instruction to call a different target.  This variant is used to reset the 
 	jumps in the prototype CPIC to suit each use,.   
@@ -3146,7 +3148,7 @@ CogARMCompiler >> rewriteJumpLongAt: callSiteReturnAddress target: callTargetAdd
 	^self rewriteTransferAt: callSiteReturnAddress target: callTargetAddress
 ]
 
-{ #category : #'inline cacheing' }
+{ #category : 'inline cacheing' }
 CogARMCompiler >> rewriteTransferAt: callSiteReturnAddress target: callTargetAddress [
 	"Rewrite a call/jump instruction to call a different target.  This variant is used to link PICs
 	 in ceSendMiss et al, and to rewrite call/jumps in CPICs.
@@ -3174,7 +3176,7 @@ CogARMCompiler >> rewriteTransferAt: callSiteReturnAddress target: callTargetAdd
 	^4
 ]
 
-{ #category : #testing }
+{ #category : 'testing' }
 CogARMCompiler >> rotateable8bitBitwiseImmediate: constant ifTrue: trueAlternativeBlock ifFalse: falseAlternativeBlock [
 
 	"Invoke trueAlternativeBlock with shift, value and inverted if constant can be represented
@@ -3200,7 +3202,7 @@ CogARMCompiler >> rotateable8bitBitwiseImmediate: constant ifTrue: trueAlternati
 	^falseAlternativeBlock value
 ]
 
-{ #category : #testing }
+{ #category : 'testing' }
 CogARMCompiler >> rotateable8bitImmediate: constant ifTrue: trueAlternativeBlock ifFalse: falseAlternativeBlock [
 
 	"For data processing operands, there is the immediate shifter_operand variant, 
@@ -3216,7 +3218,7 @@ CogARMCompiler >> rotateable8bitImmediate: constant ifTrue: trueAlternativeBlock
 	^falseAlternativeBlock value
 ]
 
-{ #category : #testing }
+{ #category : 'testing' }
 CogARMCompiler >> rotateable8bitSignedImmediate: constant ifTrue: trueAlternativeBlock ifFalse: falseAlternativeBlock [
 
 	"Invoke trueAlternativeBlock with shift, value and negated if constant can be represented
@@ -3240,7 +3242,7 @@ CogARMCompiler >> rotateable8bitSignedImmediate: constant ifTrue: trueAlternativ
 	^falseAlternativeBlock value
 ]
 
-{ #category : #abi }
+{ #category : 'abi' }
 CogARMCompiler >> saveAndRestoreLinkRegAround: aBlock [
 	"If the processor's ABI includes a link register, generate instructions
 	 to save and restore it around aBlock, which is assumed to generate code."
@@ -3252,7 +3254,7 @@ CogARMCompiler >> saveAndRestoreLinkRegAround: aBlock [
 	^inst
 ]
 
-{ #category : #testing }
+{ #category : 'testing' }
 CogARMCompiler >> setsConditionCodesFor: aConditionalJumpOpcode [
 	<inline: false> "to save Slang from having to be a real compiler (it can't inline switches that return)"
 	"Answer if the receiver's opcode sets the condition codes correctly for the given conditional jump opcode.
@@ -3267,7 +3269,7 @@ CogARMCompiler >> setsConditionCodesFor: aConditionalJumpOpcode [
 		otherwise: [self halt: 'unhandled opcode in setsConditionCodesFor:'. false]
 ]
 
-{ #category : #testing }
+{ #category : 'testing' }
 CogARMCompiler >> shiftSetsConditionCodesFor: aConditionalJumpOpcode [
 	"check what flags the opcdoe needs setting - ARM doesn't set V when simply MOVing"
 		^aConditionalJumpOpcode caseOf:
@@ -3278,7 +3280,7 @@ CogARMCompiler >> shiftSetsConditionCodesFor: aConditionalJumpOpcode [
 		otherwise: [self halt: 'unhandled opcode in setsConditionCodesFor:'. false]
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 CogARMCompiler >> stackPageInterruptHeadroomBytes [
 	"Return a minimum amount of headroom for each stack page (in bytes).  In a
 	 JIT the stack has to have room for interrupt handlers which will run on the stack.
@@ -3286,71 +3288,71 @@ CogARMCompiler >> stackPageInterruptHeadroomBytes [
 	^128 "32 words"
 ]
 
-{ #category : #encoding }
+{ #category : 'encoding' }
 CogARMCompiler >> stop [
 "generate a BKPT ( - ARM_ARM v7 DDI10406 pp. A8-56) instruction. We could, given a good enough creative impulse and an over-active sense of humour, add some numerically encoded witticism to this instruction in bits 8-19 & 0-3. It has no effect on the execution but can be a way to specify which breakpoint has been hit etc."
 	<inline: true>
 	^AL << 28 bitOr: (16r12 << 20 bitOr: (7 << 4))
 ]
 
-{ #category : #'generate machine code - support' }
+{ #category : 'generate machine code - support' }
 CogARMCompiler >> stopsFrom: startAddr to: endAddr [
 	self assert: endAddr - startAddr + 1 \\ 4 = 0.
 	startAddr to: endAddr by: 4 do: 
 		[:addr | objectMemory uint32AtPointer: addr put: self stop].
 ]
 
-{ #category : #'inline cacheing' }
+{ #category : 'inline cacheing' }
 CogARMCompiler >> storeLiteral: literal beforeFollowingAddress: followingAddress [
 	"Rewrite the long constant loaded by the instruction sequence just before this address:"
 	^self subclassResponsibility
 ]
 
-{ #category : #'ARM convenience instructions' }
+{ #category : 'ARM convenience instructions' }
 CogARMCompiler >> str: destReg rn: baseReg plus: u imm: immediate12bitValue [
 "	STR destReg, [baseReg, 'u' immediate12bitValue] u=0 -> subtract imm; =1 -> add imm - ARM_ARM v7 DDI10406 pp. A8-382-3 "
 	^self memMxr: AL reg: destReg  base: baseReg u: u b: 0 l: 0 imm: immediate12bitValue
 ]
 
-{ #category : #'ARM convenience instructions' }
+{ #category : 'ARM convenience instructions' }
 CogARMCompiler >> str: srcReg rn: baseReg plusImm: immediate12bitValue [
 "	STR srcReg, [baseReg, +immediate12bitValue] - ARM_ARM v7 DDI10406 pp. A8-382-3"
 	^self memMxr: AL reg: srcReg  base: baseReg u: 1 b: 0 l: 0 imm: immediate12bitValue
 ]
 
-{ #category : #'ARM convenience instructions' }
+{ #category : 'ARM convenience instructions' }
 CogARMCompiler >> str: srcReg rn: baseReg rm: offsetReg [
 "	STR srcReg, [baseReg, + offsetReg]  - ARM_ARM v7 DDI10406 pp. A8-384-5
 The contents of offsetReg are assumed to be correctly signed"
 	^self memMxr: AL reg: srcReg  base: baseReg p: 1 u: 1 b: 0 w: 0 l: 0 rm: offsetReg
 ]
 
-{ #category : #'ARM convenience instructions' }
+{ #category : 'ARM convenience instructions' }
 CogARMCompiler >> strb: destReg rn: baseReg plus: u imm: immediate12bitValue [
 "	STRB destReg, [baseReg, 'u' immediate12bitValue] u=0 -> subtract imm; =1 -> add imm  - ARM_ARM v7 DDI10406 pp. A8-388-9"
 	^self memMxr: AL reg: destReg  base: baseReg u: u b: 1 l: 0 imm: immediate12bitValue
 ]
 
-{ #category : #'ARM convenience instructions' }
+{ #category : 'ARM convenience instructions' }
 CogARMCompiler >> strb: srcReg rn: baseReg rm: offsetReg [
 "	STRB srcReg, [baseReg, + offsetReg]  - ARM_ARM v7 DDI10406 pp. A8-390-1
 	The contents of offsetReg are assumed to be correctly signed"
 	^self memMxr: AL reg: srcReg  base: baseReg p: 1 u: 1 b: 1 w: 0 l: 0 rm: offsetReg
 ]
 
-{ #category : #'ARM convenience instructions' }
+{ #category : 'ARM convenience instructions' }
 CogARMCompiler >> strh: destReg rn: baseReg plus: u imm: immediate8bitValue [
 "	STRH destReg, [baseReg, 'u' immediate8bitValue] u=0 -> subtract imm; =1 -> add imm  - ARM_ARM v7 DDI10406 pp. A8-408-9"
 	^self memM16xr: AL reg: destReg  base: baseReg p: 1 u: u  w: 0 l: 0 offset: immediate8bitValue
 ]
 
-{ #category : #'ARM convenience instructions' }
+{ #category : 'ARM convenience instructions' }
 CogARMCompiler >> strh: srcReg rn: baseReg rm: offsetReg [
 "	STRH srcReg, [baseReg, +offsetReg] - ARM_ARM v7 DDI10406 pp. A8-410-1"
 	^self memM16xr: AL reg: srcReg base: baseReg p: 1 u: 1 w: 0 l: 0 rm: offsetReg
 ]
 
-{ #category : #'ARM convenience instructions' }
+{ #category : 'ARM convenience instructions' }
 CogARMCompiler >> sub: destReg rn: srcReg imm: immediate ror: rot [
 "	Remember the ROR is doubled by the cpu so use 30>>1 etc
 	SUB destReg, srcReg, #immediate ROR rot - ARM_ARM v7 DDI10406 pp. A8-418-9"
@@ -3358,7 +3360,7 @@ CogARMCompiler >> sub: destReg rn: srcReg imm: immediate ror: rot [
 	^self type: 1 op: SubOpcode set: 0 rn: srcReg rd: destReg shifterOperand: ((rot>>1) <<8 bitOr: immediate)
 ]
 
-{ #category : #'ARM convenience instructions' }
+{ #category : 'ARM convenience instructions' }
 CogARMCompiler >> subs: destReg rn: srcReg imm: immediate ror: rot [
 "	Remember the ROR is doubled by the cpu so use 30>>1 etc
 	SUBS destReg, srcReg, #immediate ROR rot - ARM_ARM v7 DDI10406 pp. A8-418-9"
@@ -3366,7 +3368,7 @@ CogARMCompiler >> subs: destReg rn: srcReg imm: immediate ror: rot [
 	^self type: 1 op: SubOpcode set: 1 rn: srcReg rd: destReg shifterOperand: ((rot>>1) <<8 bitOr: immediate)
 ]
 
-{ #category : #'ARM convenience instructions' }
+{ #category : 'ARM convenience instructions' }
 CogARMCompiler >> tst: ignored rn: srcReg imm: immediate ror: rot [
 "	Remember the ROR is doubled by the cpu so use 30>>1 etc"
 "also note that TST has no destReg
@@ -3375,27 +3377,27 @@ CogARMCompiler >> tst: ignored rn: srcReg imm: immediate ror: rot [
 	^self type: 1 op: TstOpcode set: 1 rn: srcReg rd: 0 shifterOperand: ((rot>>1) <<8 bitOr: immediate)
 ]
 
-{ #category : #encoding }
+{ #category : 'encoding' }
 CogARMCompiler >> type: type op: flagsOrOpcode set: doUpdateStatusRegister rn:  sourceRegister rd: targetRegister [
 	<inline: true>
 	^(self cond: AL type: type op: flagsOrOpcode set: doUpdateStatusRegister) 
 		bitOr: (sourceRegister << 16 bitOr: targetRegister << 12)
 ]
 
-{ #category : #encoding }
+{ #category : 'encoding' }
 CogARMCompiler >> type: type op: flagsOrOpcode set: doUpdateStatusRegister rn:  sourceRegister rd: targetRegister shifterOperand: so [
 	<inline: true>
 	^(self type: type op: flagsOrOpcode set: doUpdateStatusRegister rn: sourceRegister rd: targetRegister) bitOr: (so bitAnd: 16rFFF)
 ]
 
-{ #category : #simulation }
+{ #category : 'simulation' }
 CogARMCompiler >> wantsNearAddressFor: anObject [
 	"A hack hook to allow ARM to override the simulated address for the short-cut trampolines"
 	<doNotGenerate>
 	^anObject isSymbol and: [anObject beginsWith: 'ceShortCut']
 ]
 
-{ #category : #'inline cacheing' }
+{ #category : 'inline cacheing' }
 CogARMCompiler >> zoneCallsAreRelative [
 	"Answer if Call and JumpLong are relative and hence need to take the caller's
 	 relocation delta into account during code compaction, rather than just the

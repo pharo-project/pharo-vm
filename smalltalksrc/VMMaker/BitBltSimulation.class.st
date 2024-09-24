@@ -43,8 +43,8 @@ To add a new rule to BitBlt...
 
 "
 Class {
-	#name : #BitBltSimulation,
-	#superclass : #SmartSyntaxInterpreterPlugin,
+	#name : 'BitBltSimulation',
+	#superclass : 'SmartSyntaxInterpreterPlugin',
 	#instVars : [
 		'destForm',
 		'sourceForm',
@@ -176,10 +176,12 @@ Class {
 		'OpTableSize',
 		'RedIndex'
 	],
-	#category : #'VMMaker-Interpreter'
+	#category : 'VMMaker-Interpreter',
+	#package : 'VMMaker',
+	#tag : 'Interpreter'
 }
 
-{ #category : #'system simulation' }
+{ #category : 'system simulation' }
 BitBltSimulation class >> copyBitsFrom: aBitBlt [
 	"Simulate the copyBits primitive"
 	| proxy bb |
@@ -193,7 +195,7 @@ BitBltSimulation class >> copyBitsFrom: aBitBlt [
 	^ proxy stackValue: 0
 ]
 
-{ #category : #translation }
+{ #category : 'translation' }
 BitBltSimulation class >> declareCVarsIn: aCCodeGenerator [
 
 	"add option of  fast path BitBLT code header"
@@ -259,7 +261,7 @@ BitBltSimulation class >> declareCVarsIn: aCCodeGenerator [
 		[:ivar| aCCodeGenerator var: ivar type: #usqInt]
 ]
 
-{ #category : #initialization }
+{ #category : 'initialization' }
 BitBltSimulation class >> initialize [
 	"BitBltSimulation initialize"
 
@@ -318,7 +320,7 @@ BitBltSimulation class >> initialize [
 	ColorMapNewStyle := 8.		"new style color map"
 ]
 
-{ #category : #initialization }
+{ #category : 'initialization' }
 BitBltSimulation class >> initializeRuleTable [
 	"BitBltSimulation initializeRuleTable"
 	"**WARNING** You MUST change initBBOpTable if you change this"
@@ -371,29 +373,29 @@ BitBltSimulation class >> initializeRuleTable [
 
 ]
 
-{ #category : #translation }
+{ #category : 'translation' }
 BitBltSimulation class >> moduleName [
 	^'BitBltPlugin'
 ]
 
-{ #category : #translation }
+{ #category : 'translation' }
 BitBltSimulation class >> opTable [
 
 	^ OpTable
 
 ]
 
-{ #category : #translation }
+{ #category : 'translation' }
 BitBltSimulation class >> requiredMethodNames: options [
 	^self opTable asSet
 ]
 
-{ #category : #'system simulation' }
+{ #category : 'system simulation' }
 BitBltSimulation class >> simulatorClass [
 	^BitBltSimulator
 ]
 
-{ #category : #testing }
+{ #category : 'testing' }
 BitBltSimulation class >> test2 [
 	"BitBltSimulation test2"
 	| f |
@@ -403,7 +405,7 @@ BitBltSimulation class >> test2 [
 			0 to: 20 do: [:x | f displayOn: Display at: x * 13 @ (i * 10)]]
 ]
 
-{ #category : #testing }
+{ #category : 'testing' }
 BitBltSimulation class >> timingTest: extent [ 
 	"BitBltSimulation timingTest: 640@480"
 	| f f2 map |
@@ -416,21 +418,7 @@ BitBltSimulation class >> timingTest: extent [
 		with: (Time millisecondsToRun: [100 timesRepeat: [f copyBits: f boundingBox from: f2 at: 0 @ 0 colorMap: map]])
 ]
 
-{ #category : #'system simulation' }
-BitBltSimulation class >> warpBitsFrom: aBitBlt [
-	"Simulate the warpBits primitive"
-	| proxy bb |
-	proxy := InterpreterProxy new.
-	proxy loadStackFrom: thisContext sender home.
-	bb := self simulatorClass new.
-	bb initialiseModule.
-	bb setInterpreter: proxy.
-	proxy success: (bb loadWarpBltFrom: aBitBlt).
-	bb warpBits.
-	^proxy stackValue: 0
-]
-
-{ #category : #'combination rules' }
+{ #category : 'combination rules' }
 BitBltSimulation >> OLDrgbDiff: sourceWord with: destinationWord [
 	"Subract the pixels in the source and destination, color by color,
 	and return the sum of the absolute value of all the differences.
@@ -470,7 +458,7 @@ BitBltSimulation >> OLDrgbDiff: sourceWord with: destinationWord [
 	^ destinationWord  "For no effect on dest"
 ]
 
-{ #category : #'combination rules' }
+{ #category : 'combination rules' }
 BitBltSimulation >> OLDtallyIntoMap: sourceWord with: destinationWord [
 	"Tally pixels into the color map.  Note that the source should be 
 	specified = destination, in order for the proper color map checks 
@@ -507,7 +495,7 @@ BitBltSimulation >> OLDtallyIntoMap: sourceWord with: destinationWord [
 	^ destinationWord  "For no effect on dest"
 ]
 
-{ #category : #'combination rules' }
+{ #category : 'combination rules' }
 BitBltSimulation >> addWord: sourceWord with: destinationWord [
 	<returnTypeC: 'unsigned int'>
 	<var: #sourceWord type: 'unsigned int'>
@@ -515,31 +503,31 @@ BitBltSimulation >> addWord: sourceWord with: destinationWord [
 	^sourceWord + destinationWord
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 BitBltSimulation >> affectedBottom [
 
 	^affectedB
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 BitBltSimulation >> affectedLeft [
 
 	^affectedL
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 BitBltSimulation >> affectedRight [
 
 	^affectedR
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 BitBltSimulation >> affectedTop [
 
 	^affectedT
 ]
 
-{ #category : #'combination rules' }
+{ #category : 'combination rules' }
 BitBltSimulation >> alphaBlend: sourceWord with: destinationWord [
 	"Blend sourceWord with destinationWord, assuming both are 32-bit pixels.
 	The source is assumed to have 255*alpha in the high 8 bits of each pixel,
@@ -577,7 +565,7 @@ BitBltSimulation >> alphaBlend: sourceWord with: destinationWord [
 
 ]
 
-{ #category : #'combination rules' }
+{ #category : 'combination rules' }
 BitBltSimulation >> alphaBlendConst: sourceWord with: destinationWord [
 	<returnTypeC: 'unsigned int'>
 	<var: #sourceWord type: 'unsigned int'>
@@ -586,7 +574,7 @@ BitBltSimulation >> alphaBlendConst: sourceWord with: destinationWord [
 	^ self alphaBlendConst: sourceWord with: destinationWord paintMode: false
 ]
 
-{ #category : #'combination rules' }
+{ #category : 'combination rules' }
 BitBltSimulation >> alphaBlendConst: sourceWord with: destinationWord paintMode: paintMode [
 	"Blend sourceWord with destinationWord using a constant alpha.
 	Alpha is encoded as 0 meaning 0.0, and 255 meaning 1.0.
@@ -665,7 +653,7 @@ BitBltSimulation >> alphaBlendConst: sourceWord with: destinationWord paintMode:
 
 ]
 
-{ #category : #'combination rules' }
+{ #category : 'combination rules' }
 BitBltSimulation >> alphaBlendScaled: sourceWord with: destinationWord [
 	"Blend sourceWord with destinationWord using the alpha value from sourceWord.
 	Alpha is encoded as 0 meaning 0.0, and 255 meaning 1.0.
@@ -690,7 +678,7 @@ BitBltSimulation >> alphaBlendScaled: sourceWord with: destinationWord [
 	^ag bitOr: rb "recompose"
 ]
 
-{ #category : #'combination rules' }
+{ #category : 'combination rules' }
 BitBltSimulation >> alphaPaintConst: sourceWord with: destinationWord [
 	<returnTypeC: 'unsigned int'>
 	<var: #sourceWord type: 'unsigned int'>
@@ -700,7 +688,7 @@ BitBltSimulation >> alphaPaintConst: sourceWord with: destinationWord [
 	^ self alphaBlendConst: sourceWord with: destinationWord paintMode: true
 ]
 
-{ #category : #'inner loop' }
+{ #category : 'inner loop' }
 BitBltSimulation >> alphaSourceBlendBits16 [
 	"This version assumes 
 		combinationRule = 34
@@ -777,7 +765,7 @@ BitBltSimulation >> alphaSourceBlendBits16 [
 	].
 ]
 
-{ #category : #'inner loop' }
+{ #category : 'inner loop' }
 BitBltSimulation >> alphaSourceBlendBits32 [
 	"This version assumes 
 		combinationRule = 34
@@ -855,7 +843,7 @@ BitBltSimulation >> alphaSourceBlendBits32 [
 	].
 ]
 
-{ #category : #'inner loop' }
+{ #category : 'inner loop' }
 BitBltSimulation >> alphaSourceBlendBits8 [
 	"This version assumes 
 		combinationRule = 34
@@ -933,7 +921,7 @@ BitBltSimulation >> alphaSourceBlendBits8 [
 	].
 ]
 
-{ #category : #'combination rules' }
+{ #category : 'combination rules' }
 BitBltSimulation >> bitAnd: sourceWord with: destinationWord [
 	<returnTypeC: 'unsigned int'>
 	<var: #sourceWord type: 'unsigned int'>
@@ -941,7 +929,7 @@ BitBltSimulation >> bitAnd: sourceWord with: destinationWord [
 	^sourceWord bitAnd: destinationWord
 ]
 
-{ #category : #'combination rules' }
+{ #category : 'combination rules' }
 BitBltSimulation >> bitAndInvert: sourceWord with: destinationWord [
 	<returnTypeC: 'unsigned int'>
 	<var: #sourceWord type: 'unsigned int'>
@@ -949,7 +937,7 @@ BitBltSimulation >> bitAndInvert: sourceWord with: destinationWord [
 	^sourceWord bitAnd: destinationWord bitInvert32
 ]
 
-{ #category : #'combination rules' }
+{ #category : 'combination rules' }
 BitBltSimulation >> bitInvertAnd: sourceWord with: destinationWord [
 	<returnTypeC: 'unsigned int'>
 	<var: #sourceWord type: 'unsigned int'>
@@ -957,7 +945,7 @@ BitBltSimulation >> bitInvertAnd: sourceWord with: destinationWord [
 	^sourceWord bitInvert32 bitAnd: destinationWord
 ]
 
-{ #category : #'combination rules' }
+{ #category : 'combination rules' }
 BitBltSimulation >> bitInvertAndInvert: sourceWord with: destinationWord [
 	<returnTypeC: 'unsigned int'>
 	<var: #sourceWord type: 'unsigned int'>
@@ -965,7 +953,7 @@ BitBltSimulation >> bitInvertAndInvert: sourceWord with: destinationWord [
 	^sourceWord bitInvert32 bitAnd: destinationWord bitInvert32
 ]
 
-{ #category : #'combination rules' }
+{ #category : 'combination rules' }
 BitBltSimulation >> bitInvertDestination: sourceWord with: destinationWord [
 	<returnTypeC: 'unsigned int'>
 	<var: #sourceWord type: 'unsigned int'>
@@ -973,7 +961,7 @@ BitBltSimulation >> bitInvertDestination: sourceWord with: destinationWord [
 	^destinationWord bitInvert32
 ]
 
-{ #category : #'combination rules' }
+{ #category : 'combination rules' }
 BitBltSimulation >> bitInvertOr: sourceWord with: destinationWord [
 	<returnTypeC: 'unsigned int'>
 	<var: #sourceWord type: 'unsigned int'>
@@ -981,7 +969,7 @@ BitBltSimulation >> bitInvertOr: sourceWord with: destinationWord [
 	^sourceWord bitInvert32 bitOr: destinationWord
 ]
 
-{ #category : #'combination rules' }
+{ #category : 'combination rules' }
 BitBltSimulation >> bitInvertOrInvert: sourceWord with: destinationWord [
 	<returnTypeC: 'unsigned int'>
 	<var: #sourceWord type: 'unsigned int'>
@@ -989,7 +977,7 @@ BitBltSimulation >> bitInvertOrInvert: sourceWord with: destinationWord [
 	^sourceWord bitInvert32 bitOr: destinationWord bitInvert32
 ]
 
-{ #category : #'combination rules' }
+{ #category : 'combination rules' }
 BitBltSimulation >> bitInvertSource: sourceWord with: destinationWord [
 	<returnTypeC: 'unsigned int'>
 	<var: #sourceWord type: 'unsigned int'>
@@ -997,7 +985,7 @@ BitBltSimulation >> bitInvertSource: sourceWord with: destinationWord [
 	^sourceWord bitInvert32
 ]
 
-{ #category : #'combination rules' }
+{ #category : 'combination rules' }
 BitBltSimulation >> bitInvertXor: sourceWord with: destinationWord [
 	<returnTypeC: 'unsigned int'>
 	<var: #sourceWord type: 'unsigned int'>
@@ -1005,7 +993,7 @@ BitBltSimulation >> bitInvertXor: sourceWord with: destinationWord [
 	^sourceWord bitInvert32 bitXor: destinationWord
 ]
 
-{ #category : #'combination rules' }
+{ #category : 'combination rules' }
 BitBltSimulation >> bitOr: sourceWord with: destinationWord [
 	<returnTypeC: 'unsigned int'>
 	<var: #sourceWord type: 'unsigned int'>
@@ -1013,7 +1001,7 @@ BitBltSimulation >> bitOr: sourceWord with: destinationWord [
 	^sourceWord bitOr: destinationWord
 ]
 
-{ #category : #'combination rules' }
+{ #category : 'combination rules' }
 BitBltSimulation >> bitOrInvert: sourceWord with: destinationWord [
 	<returnTypeC: 'unsigned int'>
 	<var: #sourceWord type: 'unsigned int'>
@@ -1021,7 +1009,7 @@ BitBltSimulation >> bitOrInvert: sourceWord with: destinationWord [
 	^sourceWord bitOr: destinationWord bitInvert32
 ]
 
-{ #category : #'combination rules' }
+{ #category : 'combination rules' }
 BitBltSimulation >> bitXor: sourceWord with: destinationWord [
 	<returnTypeC: 'unsigned int'>
 	<var: #sourceWord type: 'unsigned int'>
@@ -1029,7 +1017,7 @@ BitBltSimulation >> bitXor: sourceWord with: destinationWord [
 	^sourceWord bitXor: destinationWord
 ]
 
-{ #category : #setup }
+{ #category : 'setup' }
 BitBltSimulation >> checkSourceOverlap [
 	"check for possible overlap of source and destination"
 
@@ -1057,7 +1045,7 @@ BitBltSimulation >> checkSourceOverlap [
 		destDelta := destPitch * vDir - (4 * (nWords * hDir)) ]
 ]
 
-{ #category : #'combination rules' }
+{ #category : 'combination rules' }
 BitBltSimulation >> clearWord: sourceWord with: destinationWord [
 	<returnTypeC: 'unsigned int'>
 	<var: #sourceWord type: 'unsigned int'>
@@ -1065,7 +1053,7 @@ BitBltSimulation >> clearWord: sourceWord with: destinationWord [
 	^ 0
 ]
 
-{ #category : #setup }
+{ #category : 'setup' }
 BitBltSimulation >> clipRange [
 	"clip and adjust source origin and extent appropriately"
 	"first in x"
@@ -1103,7 +1091,7 @@ BitBltSimulation >> clipRange [
 		ifTrue: [bbH := bbH - (sy + bbH - sourceHeight)]
 ]
 
-{ #category : #setup }
+{ #category : 'setup' }
 BitBltSimulation >> copyBits [
 	"This function is exported for the Balloon engine"
 	<export: true>
@@ -1125,7 +1113,7 @@ BitBltSimulation >> copyBits [
 	self unlockSurfaces.
 ]
 
-{ #category : #setup }
+{ #category : 'setup' }
 BitBltSimulation >> copyBits: op Fallback: flags [
 	"Recover from the fast path specialised code saying Help-I-cant-cope"
 	|done |
@@ -1192,7 +1180,7 @@ BitBltSimulation >> copyBits: op Fallback: flags [
 
 ]
 
-{ #category : #setup }
+{ #category : 'setup' }
 BitBltSimulation >> copyBitsFastPathSpecialised [
 	"Perform the actual copyBits operation using the fast path specialised code; fail some cases by falling back to normal code.
 	Assume: Surfaces have been locked and clipping was performed."
@@ -1274,7 +1262,7 @@ BitBltSimulation >> copyBitsFastPathSpecialised [
 	]
 ]
 
-{ #category : #setup }
+{ #category : 'setup' }
 BitBltSimulation >> copyBitsFrom: startX to: stopX at: yValue [
 	"Support for the balloon engine."
 	<export: true>
@@ -1286,7 +1274,7 @@ BitBltSimulation >> copyBitsFrom: startX to: stopX at: yValue [
 
 ]
 
-{ #category : #setup }
+{ #category : 'setup' }
 BitBltSimulation >> copyBitsLockedAndClipped [
 	"Perform the actual copyBits operation.
 	Assume: Surfaces have been locked and clipping was performed."
@@ -1330,7 +1318,7 @@ BitBltSimulation >> copyBitsLockedAndClipped [
 						affectedB := dy + 1]]
 ]
 
-{ #category : #setup }
+{ #category : 'setup' }
 BitBltSimulation >> copyBitsRule41Test [
 	"Test possible use of rule 41, rgbComponentAlpha:with: Nothing to return, just set up some variables"
 	| gammaLookupTableOop ungammaLookupTableOop |
@@ -1370,7 +1358,7 @@ BitBltSimulation >> copyBitsRule41Test [
 
 ]
 
-{ #category : #'inner loop' }
+{ #category : 'inner loop' }
 BitBltSimulation >> copyLoop [
 	| prevWord thisWord skewWord halftoneWord mergeWord hInc y unskew skewMask notSkewMask mergeFnwith destWord |
 	"This version of the inner loop assumes noSource = false."
@@ -1549,7 +1537,7 @@ BitBltSimulation >> copyLoop [
 				self incDestIndex: destDelta]]
 ]
 
-{ #category : #'inner loop' }
+{ #category : 'inner loop' }
 BitBltSimulation >> copyLoopNoSource [
 	"Faster copyLoop when source not used.  hDir and vDir are both
 	positive, and perload and skew are unused"
@@ -1609,7 +1597,7 @@ BitBltSimulation >> copyLoopNoSource [
 		self incDestIndex: destDelta]
 ]
 
-{ #category : #'inner loop' }
+{ #category : 'inner loop' }
 BitBltSimulation >> copyLoopPixMap [
 	"This version of the inner loop maps source pixels
 	to a destination form with different depth.  Because it is already
@@ -1713,7 +1701,7 @@ BitBltSimulation >> copyLoopPixMap [
 
 ]
 
-{ #category : #'pixel mapping' }
+{ #category : 'pixel mapping' }
 BitBltSimulation >> default8To32Table [
 	"Return the default translation table from 1..8 bit indexed colors to 32bit"
 	"The table has been generated by the following statements"
@@ -1768,7 +1756,7 @@ BitBltSimulation >> default8To32Table [
 	^theTable
 ]
 
-{ #category : #'pixel mapping' }
+{ #category : 'pixel mapping' }
 BitBltSimulation >> deltaFrom: x1 to: x2 nSteps: n [
 	"Utility routine for computing Warp increments."
 	<inline: true>
@@ -1778,7 +1766,7 @@ BitBltSimulation >> deltaFrom: x1 to: x2 nSteps: n [
 				^ 0 - (x1 - x2 + FixedPt1 // (n+1) + 1)]
 ]
 
-{ #category : #setup }
+{ #category : 'setup' }
 BitBltSimulation >> destMaskAndPointerInit [
 	"Compute masks for left and right destination words"
 	| startBits pixPerM1 endBits |
@@ -1813,7 +1801,7 @@ BitBltSimulation >> destMaskAndPointerInit [
 	destDelta := destPitch * vDir - (4 * (nWords * hDir)) "byte addr delta"
 ]
 
-{ #category : #'combination rules' }
+{ #category : 'combination rules' }
 BitBltSimulation >> destinationWord: sourceWord with: destinationWord [
 	<returnTypeC: 'unsigned int'>
 	<var: #sourceWord type: 'unsigned int'>
@@ -1821,7 +1809,7 @@ BitBltSimulation >> destinationWord: sourceWord with: destinationWord [
 	^destinationWord
 ]
 
-{ #category : #'pixel mapping' }
+{ #category : 'pixel mapping' }
 BitBltSimulation >> dither32To16: srcWord threshold: ditherValue [
 	"Dither the given 32bit word to 16 bit. Ignore alpha."
 	| addThreshold  |
@@ -1835,7 +1823,7 @@ BitBltSimulation >> dither32To16: srcWord threshold: ditherValue [
 
 ]
 
-{ #category : #'interpreter interface' }
+{ #category : 'interpreter interface' }
 BitBltSimulation >> drawLoopX: xDelta Y: yDelta [ 
 	"This is the primitive implementation of the line-drawing loop.
 	See the comments in BitBlt>>drawLoopX:Y:"
@@ -1917,14 +1905,14 @@ BitBltSimulation >> drawLoopX: xDelta Y: yDelta [
 	interpreterProxy storeInteger: BBDestYIndex ofObject: bitBltOop withValue: destY.
 ]
 
-{ #category : #'memory access' }
+{ #category : 'memory access' }
 BitBltSimulation >> dstLongAt: idx [
 	<inline: #always>
 	self assert: idx asUnsignedInteger < endOfDestination.
 	^self long32At: idx
 ]
 
-{ #category : #'memory access' }
+{ #category : 'memory access' }
 BitBltSimulation >> dstLongAt: idx put: value [
 	<inline: #always>
 	"We omit the assert here since dstLongAt:put: is always preceded by a dstLongAt: which does have an assert.
@@ -1932,7 +1920,7 @@ BitBltSimulation >> dstLongAt: idx put: value [
 	^self long32At: idx put: value
 ]
 
-{ #category : #'memory access' }
+{ #category : 'memory access' }
 BitBltSimulation >> dstLongAt: idx put: srcValue mask: dstMask [
 	"Store the given value back into destination form, using dstMask
 	 to mask out the bits to be modified. This is an essential
@@ -1945,7 +1933,7 @@ BitBltSimulation >> dstLongAt: idx put: srcValue mask: dstMask [
 	self dstLongAt: idx put: dstValue.
 ]
 
-{ #category : #setup }
+{ #category : 'setup' }
 BitBltSimulation >> ensureDestAndSourceFormsAreValid [
 	"If a GC has occurred, update destForm and sourceForm from the stack."
 	<inline: #always>
@@ -1953,7 +1941,7 @@ BitBltSimulation >> ensureDestAndSourceFormsAreValid [
 		[self reloadDestAndSourceForms]
 ]
 
-{ #category : #'pixel mapping' }
+{ #category : 'pixel mapping' }
 BitBltSimulation >> expensiveDither32To16: srcWord threshold: ditherValue [
 	"Dither the given 32bit word to 16 bit. Ignore alpha."
 	| pv threshold value out |
@@ -1981,7 +1969,7 @@ BitBltSimulation >> expensiveDither32To16: srcWord threshold: ditherValue [
 	^out
 ]
 
-{ #category : #'interpreter interface' }
+{ #category : 'interpreter interface' }
 BitBltSimulation >> fetchIntOrFloat: fieldIndex ofObject: objectPointer [
 	"Return the integer value of the given field of the given object. If the field contains a Float, truncate it and return its integral part. Fail if the given field does not contain a small integer or Float, or if the truncated Float is out of the range of small integers."
 	| fieldOop floatValue |
@@ -1995,7 +1983,7 @@ BitBltSimulation >> fetchIntOrFloat: fieldIndex ofObject: objectPointer [
 	^floatValue asInteger
 ]
 
-{ #category : #'interpreter interface' }
+{ #category : 'interpreter interface' }
 BitBltSimulation >> fetchIntOrFloat: fieldIndex ofObject: objectPointer ifNil: defaultValue [
 	"Return the integer value of the given field of the given object. If the field contains a Float, truncate it and return its integral part. Fail if the given field does not contain a small integer or Float, or if the truncated Float is out of the range of small integers."
 	| fieldOop floatValue |
@@ -2010,7 +1998,7 @@ BitBltSimulation >> fetchIntOrFloat: fieldIndex ofObject: objectPointer ifNil: d
 	^floatValue asInteger
 ]
 
-{ #category : #'combination rules' }
+{ #category : 'combination rules' }
 BitBltSimulation >> fixAlpha: sourceWord with: destinationWord [
 	"For any non-zero pixel value in destinationWord with zero alpha channel take the alpha from sourceWord and fill it in. Intended for fixing alpha channels left at zero during 16->32 bpp conversions."
 	<returnTypeC: 'unsigned int'>
@@ -2023,14 +2011,14 @@ BitBltSimulation >> fixAlpha: sourceWord with: destinationWord [
 
 ]
 
-{ #category : #'memory access' }
+{ #category : 'memory access' }
 BitBltSimulation >> halftoneAt: idx [
 	"Return a value from the halftone pattern."
 	<inline: #always>
 	^self long32At: halftoneBase + (idx \\ halftoneHeight * 4)
 ]
 
-{ #category : #setup }
+{ #category : 'setup' }
 BitBltSimulation >> ignoreSourceOrHalftone: formPointer [
 
 	formPointer = interpreterProxy nilObject ifTrue: [ ^true ].
@@ -2041,21 +2029,21 @@ BitBltSimulation >> ignoreSourceOrHalftone: formPointer [
 	^false
 ]
 
-{ #category : #'memory access' }
+{ #category : 'memory access' }
 BitBltSimulation >> incDestIndex: offset [
 	<inline: #always>
 	^destIndex := destIndex + offset
 
 ]
 
-{ #category : #'memory access' }
+{ #category : 'memory access' }
 BitBltSimulation >> incSrcIndex: offset [
 	<inline: #always>
 	^sourceIndex := sourceIndex + offset
 
 ]
 
-{ #category : #'initialize-release' }
+{ #category : 'initialize-release' }
 BitBltSimulation >> initBBOpTable [
 	self cCode: 'opTable[0+1] = (void *)clearWordwith'.
 	self cCode: 'opTable[1+1] = (void *)bitAndwith'.
@@ -2101,7 +2089,7 @@ BitBltSimulation >> initBBOpTable [
 	self cCode: 'opTable[41+1] = (void *)rgbComponentAlphawith'.
 ]
 
-{ #category : #'initialize-release' }
+{ #category : 'initialize-release' }
 BitBltSimulation >> initDither8Lookup [	
 	<inline: false> 
 	0 to: 255 do: [:b | 
@@ -2111,7 +2099,7 @@ BitBltSimulation >> initDither8Lookup [
 	
 ]
 
-{ #category : #'initialize-release' }
+{ #category : 'initialize-release' }
 BitBltSimulation >> initialiseModule [
 	<export: true>
 	self initBBOpTable.
@@ -2121,7 +2109,7 @@ BitBltSimulation >> initialiseModule [
 	^true
 ]
 
-{ #category : #'interpreter interface' }
+{ #category : 'interpreter interface' }
 BitBltSimulation >> isIdentityMap: shifts with: masks [
 	"Return true if shiftTable/maskTable define an identity mapping."
 	<var: #shifts type:'int *'>
@@ -2139,7 +2127,7 @@ BitBltSimulation >> isIdentityMap: shifts with: masks [
 	^false
 ]
 
-{ #category : #'interpreter interface' }
+{ #category : 'interpreter interface' }
 BitBltSimulation >> loadBitBltDestForm [
 	"Load the dest form for BitBlt. Answer false if anything is wrong, true otherwise."
 
@@ -2183,7 +2171,7 @@ BitBltSimulation >> loadBitBltDestForm [
 	^true
 ]
 
-{ #category : #'interpreter interface' }
+{ #category : 'interpreter interface' }
 BitBltSimulation >> loadBitBltFrom: bbObj [
 	"Load BitBlt from the oop.
 	This function is exported for the Balloon engine."
@@ -2191,7 +2179,7 @@ BitBltSimulation >> loadBitBltFrom: bbObj [
 	^self loadBitBltFrom: bbObj warping: false.
 ]
 
-{ #category : #'interpreter interface' }
+{ #category : 'interpreter interface' }
 BitBltSimulation >> loadBitBltFrom: bbObj warping: aBool [
 	"Load context from BitBlt instance.  Return false if anything is amiss"
 	"NOTE this should all be changed to minX/maxX coordinates for simpler clipping
@@ -2253,7 +2241,7 @@ BitBltSimulation >> loadBitBltFrom: bbObj warping: aBool [
 	^true
 ]
 
-{ #category : #'interpreter interface' }
+{ #category : 'interpreter interface' }
 BitBltSimulation >> loadBitBltSourceForm [
 	"Load the source form for BitBlt. Return false if anything is wrong, true otherwise."
 	| sourceBitsSize |
@@ -2296,7 +2284,7 @@ BitBltSimulation >> loadBitBltSourceForm [
 	^true
 ]
 
-{ #category : #'interpreter interface' }
+{ #category : 'interpreter interface' }
 BitBltSimulation >> loadColorMap [
 	"ColorMap, if not nil, must be longWords, and 
 	2^N long, where N = sourceDepth for 1, 2, 4, 8 bits, 
@@ -2352,7 +2340,7 @@ BitBltSimulation >> loadColorMap [
 	^true
 ]
 
-{ #category : #'interpreter interface' }
+{ #category : 'interpreter interface' }
 BitBltSimulation >> loadColorMapShiftOrMaskFrom: mapOop [
 	<returnTypeC:'void *'>
 	mapOop = interpreterProxy nilObject ifTrue:[^nil].
@@ -2362,7 +2350,7 @@ BitBltSimulation >> loadColorMapShiftOrMaskFrom: mapOop [
 	^interpreterProxy firstIndexableField: mapOop
 ]
 
-{ #category : #'interpreter interface' }
+{ #category : 'interpreter interface' }
 BitBltSimulation >> loadHalftoneForm [
 	"Load the halftone form"
 	| halftoneBits |
@@ -2388,7 +2376,7 @@ BitBltSimulation >> loadHalftoneForm [
 	^true
 ]
 
-{ #category : #'surface support' }
+{ #category : 'surface support' }
 BitBltSimulation >> loadSurfacePlugin [
 	"Load the surface support plugin"
 	querySurfaceFn := interpreterProxy ioLoadFunction:'ioGetSurfaceFormat' From:'SurfacePlugin'.
@@ -2397,19 +2385,19 @@ BitBltSimulation >> loadSurfacePlugin [
 	^querySurfaceFn ~= 0 and:[lockSurfaceFn ~= 0 and:[unlockSurfaceFn ~= 0]]
 ]
 
-{ #category : #'interpreter interface' }
+{ #category : 'interpreter interface' }
 BitBltSimulation >> loadWarpBltFrom: bbObj [
 	^self loadBitBltFrom: bbObj warping: true
 ]
 
-{ #category : #'surface support' }
+{ #category : 'surface support' }
 BitBltSimulation >> lockSurfaceFn: sourceHandle _: pitchPtr _: x _: y _: w _: h [
 	"Simulate the lockSurfaceFn function call as a failure to load the surface."
 	<doNotGenerate>
 	^0
 ]
 
-{ #category : #'surface support' }
+{ #category : 'surface support' }
 BitBltSimulation >> lockSurfaces [
 	"Get a pointer to the bits of any OS surfaces."
 	"Notes: 
@@ -2534,7 +2522,7 @@ BitBltSimulation >> lockSurfaces [
 	^destBits ~= 0 and: [sourceBits ~= 0 or: [noSource]]
 ]
 
-{ #category : #'color mapping' }
+{ #category : 'color mapping' }
 BitBltSimulation >> mapPixel: sourcePixel flags: mapperFlags [
 	"Color map the given source pixel."
 	| pv |
@@ -2551,7 +2539,7 @@ BitBltSimulation >> mapPixel: sourcePixel flags: mapperFlags [
 	^pv
 ]
 
-{ #category : #'combination rules' }
+{ #category : 'combination rules' }
 BitBltSimulation >> merge: sourceWord with: destinationWord [
 	| mergeFnwith |
 	"Sender warpLoop is too big to include this in-line"
@@ -2565,7 +2553,7 @@ BitBltSimulation >> merge: sourceWord with: destinationWord [
 	^ self mergeFn: sourceWord with: destinationWord
 ]
 
-{ #category : #'initialize-release' }
+{ #category : 'initialize-release' }
 BitBltSimulation >> moduleUnloaded: aModuleName [
 	"The module with the given name was just unloaded.
 	 Make sure we have no dangling references."
@@ -2577,7 +2565,7 @@ BitBltSimulation >> moduleUnloaded: aModuleName [
 		 unlockSurfaceFn := 0]
 ]
 
-{ #category : #'combination rules' }
+{ #category : 'combination rules' }
 BitBltSimulation >> partitionedAND: word1 to: word2 nBits: nBits nPartitions: nParts [
 	"AND word1 to word2 as nParts partitions of nBits each.
 	Any field of word1 not all-ones is treated as all-zeroes.
@@ -2598,7 +2586,7 @@ BitBltSimulation >> partitionedAND: word1 to: word2 nBits: nBits nPartitions: nP
 
 ]
 
-{ #category : #'combination rules' }
+{ #category : 'combination rules' }
 BitBltSimulation >> partitionedAdd: word1 to: word2 nBits: nBits componentMask: componentMask carryOverflowMask: carryOverflowMask [
 	"Add word1 to word2 as nParts partitions of nBits each.
 	This is useful for packed pixels, or packed colors"
@@ -2621,7 +2609,7 @@ BitBltSimulation >> partitionedAdd: word1 to: word2 nBits: nBits componentMask: 
 		bitOr: carryOverflow>>(nBits-1) * componentMask "saturate in case of overflow"
 ]
 
-{ #category : #'combination rules' }
+{ #category : 'combination rules' }
 BitBltSimulation >> partitionedMax: word1 with: word2 nBits: nBits nPartitions: nParts [
 	"Max word1 to word2 as nParts partitions of nBits each"
 	| mask result |
@@ -2643,7 +2631,7 @@ BitBltSimulation >> partitionedMax: word1 with: word2 nBits: nBits nPartitions: 
 
 ]
 
-{ #category : #'combination rules' }
+{ #category : 'combination rules' }
 BitBltSimulation >> partitionedMin: word1 with: word2 nBits: nBits nPartitions: nParts [
 	"Min word1 to word2 as nParts partitions of nBits each"
 	| mask result |
@@ -2665,7 +2653,7 @@ BitBltSimulation >> partitionedMin: word1 with: word2 nBits: nBits nPartitions: 
 
 ]
 
-{ #category : #'combination rules' }
+{ #category : 'combination rules' }
 BitBltSimulation >> partitionedMul: word1 with: word2 nBits: nBits nPartitions: nParts [
 	"Multiply word1 with word2 as nParts partitions of nBits each.
 	This is useful for packed pixels, or packed colors.
@@ -2711,7 +2699,7 @@ BitBltSimulation >> partitionedMul: word1 with: word2 nBits: nBits nPartitions: 
 	^ result"
 ]
 
-{ #category : #'combination rules' }
+{ #category : 'combination rules' }
 BitBltSimulation >> partitionedRgbComponentAlpha: sourceWord dest: destWord nBits: nBits nPartitions: nParts [
 	| mask result p1 p2 v |
 	<returnTypeC: 'unsigned int'>
@@ -2746,7 +2734,7 @@ BitBltSimulation >> partitionedRgbComponentAlpha: sourceWord dest: destWord nBit
 
 ]
 
-{ #category : #'combination rules' }
+{ #category : 'combination rules' }
 BitBltSimulation >> partitionedSub: word1 from: word2 nBits: nBits nPartitions: nParts [
 	"Subtract word1 from word2 as nParts partitions of nBits each.
 	This is useful for packed pixels, or packed colors"
@@ -2775,7 +2763,7 @@ BitBltSimulation >> partitionedSub: word1 from: word2 nBits: nBits nPartitions: 
 
 ]
 
-{ #category : #setup }
+{ #category : 'setup' }
 BitBltSimulation >> performCopyLoop [
 	"Based on the values provided during setup choose and
 	perform the appropriate inner loop function."
@@ -2795,7 +2783,7 @@ BitBltSimulation >> performCopyLoop [
 					 self copyLoop]]
 ]
 
-{ #category : #'combination rules' }
+{ #category : 'combination rules' }
 BitBltSimulation >> pickSourcePixels: nPixels flags: mapperFlags srcMask: srcMask destMask: dstMask srcShiftInc: srcShiftInc dstShiftInc: dstShiftInc [
 	"Pick nPix pixels starting at srcBitIndex from the source, map by the
 	color map, and justify them according to dstBitIndex in the resulting destWord."
@@ -2841,7 +2829,7 @@ BitBltSimulation >> pickSourcePixels: nPixels flags: mapperFlags srcMask: srcMas
 
 ]
 
-{ #category : #'pixel mapping' }
+{ #category : 'pixel mapping' }
 BitBltSimulation >> pickWarpPixelAtX: xx y: yy [
 	"Pick a single pixel from the source for WarpBlt.
 	Note: This method is crucial for WarpBlt speed w/o smoothing
@@ -2870,7 +2858,7 @@ BitBltSimulation >> pickWarpPixelAtX: xx y: yy [
 	^sourcePix
 ]
 
-{ #category : #'combination rules' }
+{ #category : 'combination rules' }
 BitBltSimulation >> pixClear: sourceWord with: destinationWord [
 	"Clear all pixels in destinationWord for which the pixels of sourceWord have the same values. Used to clear areas of some constant color to zero."
 	| mask result nBits pv |
@@ -2895,7 +2883,7 @@ BitBltSimulation >> pixClear: sourceWord with: destinationWord [
 	^ result
 ]
 
-{ #category : #'combination rules' }
+{ #category : 'combination rules' }
 BitBltSimulation >> pixMask: sourceWord with: destinationWord [
 	<inline: false>
 	<returnTypeC: 'unsigned int'>
@@ -2905,7 +2893,7 @@ BitBltSimulation >> pixMask: sourceWord with: destinationWord [
 					nBits: destDepth nPartitions: destPPW
 ]
 
-{ #category : #'combination rules' }
+{ #category : 'combination rules' }
 BitBltSimulation >> pixPaint: sourceWord with: destinationWord [
 	<inline: false>
 	<returnTypeC: 'unsigned int'>
@@ -2917,7 +2905,7 @@ BitBltSimulation >> pixPaint: sourceWord with: destinationWord [
 						nBits: destDepth nPartitions: destPPW)
 ]
 
-{ #category : #'combination rules' }
+{ #category : 'combination rules' }
 BitBltSimulation >> pixSwap: sourceWord with: destWord [
 	"Swap the pixels in destWord"
 	| result shift lowMask highMask |
@@ -2947,7 +2935,7 @@ BitBltSimulation >> pixSwap: sourceWord with: destWord [
 	^result
 ]
 
-{ #category : #primitives }
+{ #category : 'primitives' }
 BitBltSimulation >> primitiveCompareColorA: colorA to: colorB test: testID [ 
 	"Invoke the pixel color comparing primitive.Only applicable if compiling
 	with ENABLE_FAST_BLT"
@@ -2991,7 +2979,7 @@ BitBltSimulation >> primitiveCompareColorA: colorA to: colorB test: testID [
 		ifFalse: [interpreterProxy primitiveFail]
 ]
 
-{ #category : #primitives }
+{ #category : 'primitives' }
 BitBltSimulation >> primitiveCopyBits [
 	"Invoke the copyBits primitive. If the destination is the display, then copy it to the screen."
 	| rcvr |
@@ -3007,7 +2995,7 @@ BitBltSimulation >> primitiveCopyBits [
 		ifFalse: [interpreterProxy methodReturnReceiver]
 ]
 
-{ #category : #primitives }
+{ #category : 'primitives' }
 BitBltSimulation >> primitiveDisplayString [
 	<export: true>
 	| kernDelta xTable glyphMap stopIndex startIndex sourceString bbObj maxGlyph ascii glyphIndex sourcePtr left quickBlt |
@@ -3090,7 +3078,7 @@ BitBltSimulation >> primitiveDisplayString [
 	interpreterProxy pop: 6 "pop args, return rcvr"
 ]
 
-{ #category : #primitives }
+{ #category : 'primitives' }
 BitBltSimulation >> primitiveDrawLoop [
 	"Invoke the line drawing primitive."
 	| rcvr xDelta yDelta |
@@ -3104,7 +3092,7 @@ BitBltSimulation >> primitiveDrawLoop [
 	interpreterProxy failed ifFalse:[interpreterProxy pop: 2].
 ]
 
-{ #category : #primitives }
+{ #category : 'primitives' }
 BitBltSimulation >> primitivePixelValueAtX: xVal y: yVal [
 	"returns the single pixel at x@y.
 	It does not handle LSB bitmaps right now.
@@ -3150,7 +3138,7 @@ BitBltSimulation >> primitivePixelValueAtX: xVal y: yVal [
 
 ]
 
-{ #category : #primitives }
+{ #category : 'primitives' }
 BitBltSimulation >> primitiveWarpBits [
 	"Invoke the warpBits primitive. If the destination is the display, then copy it to the screen."
 	| rcvr |
@@ -3165,7 +3153,7 @@ BitBltSimulation >> primitiveWarpBits [
 	interpreterProxy methodReturnReceiver
 ]
 
-{ #category : #'surface support' }
+{ #category : 'surface support' }
 BitBltSimulation >> querySurfaceFn: handle _: widthPtr _: heightPtr _: depthPtr _: endianPtr [
 	"Query the dimension of an OS surface.
 	This method is provided so that in case the inst vars of the
@@ -3177,7 +3165,7 @@ BitBltSimulation >> querySurfaceFn: handle _: widthPtr _: heightPtr _: depthPtr 
 	^false
 ]
 
-{ #category : #setup }
+{ #category : 'setup' }
 BitBltSimulation >> reloadDestAndSourceForms [
 	"A GC has occurred.  The destForm must be updated.  But where to derive it from?
 	  For copyBits and warpBits it is derived from the receiver.  But for a BalloonEnginePlugin
@@ -3191,7 +3179,7 @@ BitBltSimulation >> reloadDestAndSourceForms [
 	sourceForm := interpreterProxy fetchPointer: BBSourceFormIndex ofObject: receiver
 ]
 
-{ #category : #'combination rules' }
+{ #category : 'combination rules' }
 BitBltSimulation >> rgbAdd: sourceWord with: destinationWord [
 	<inline: false>
 	<returnTypeC: 'unsigned int'>
@@ -3220,7 +3208,7 @@ BitBltSimulation >> rgbAdd: sourceWord with: destinationWord [
 						nBits: 8 componentMask: componentMask carryOverflowMask: carryOverflowMask]
 ]
 
-{ #category : #'combination rules' }
+{ #category : 'combination rules' }
 BitBltSimulation >> rgbComponentAlpha16 [
 	"This version assumes 
 		combinationRule = 41
@@ -3290,7 +3278,7 @@ BitBltSimulation >> rgbComponentAlpha16 [
 
 ]
 
-{ #category : #'combination rules' }
+{ #category : 'combination rules' }
 BitBltSimulation >> rgbComponentAlpha32 [
 	"This version assumes 
 		combinationRule = 41
@@ -3356,7 +3344,7 @@ BitBltSimulation >> rgbComponentAlpha32 [
 	].
 ]
 
-{ #category : #'combination rules' }
+{ #category : 'combination rules' }
 BitBltSimulation >> rgbComponentAlpha32: sourceWord with: destinationWord [
 	"
 	componentAlphaModeColor is the color,
@@ -3441,7 +3429,7 @@ BitBltSimulation >> rgbComponentAlpha32: sourceWord with: destinationWord [
 	^answer	
 ]
 
-{ #category : #'combination rules' }
+{ #category : 'combination rules' }
 BitBltSimulation >> rgbComponentAlpha8 [
 	"This version assumes 
 		combinationRule = 41
@@ -3526,7 +3514,7 @@ BitBltSimulation >> rgbComponentAlpha8 [
 
 ]
 
-{ #category : #'combination rules' }
+{ #category : 'combination rules' }
 BitBltSimulation >> rgbComponentAlpha: sourceWord with: destinationWord [
 	"
 	componentAlphaModeColor is the color,
@@ -3550,7 +3538,7 @@ BitBltSimulation >> rgbComponentAlpha: sourceWord with: destinationWord [
 	^self partitionedRgbComponentAlpha: sourceWord dest: destinationWord nBits: destDepth nPartitions: destPPW.
 ]
 
-{ #category : #'combination rules' }
+{ #category : 'combination rules' }
 BitBltSimulation >> rgbDiff: sourceWord with: destinationWord [
 	"Subract the pixels in the source and destination, color by color,
 	and return the sum of the absolute value of all the differences.
@@ -3595,7 +3583,7 @@ BitBltSimulation >> rgbDiff: sourceWord with: destinationWord [
 
 ]
 
-{ #category : #'color mapping' }
+{ #category : 'color mapping' }
 BitBltSimulation >> rgbMap16To32: sourcePixel [
 	"Convert the given 16bit pixel value to a 32bit RGBA value.
  	Note: This method is intended to deal with different source formats."
@@ -3604,14 +3592,14 @@ BitBltSimulation >> rgbMap16To32: sourcePixel [
 			((sourcePixel bitAnd: 16r7C00) << 9)
 ]
 
-{ #category : #'color mapping' }
+{ #category : 'color mapping' }
 BitBltSimulation >> rgbMap32To32: sourcePixel [
 	"Convert the given 32bit pixel value to a 32bit RGBA value.
  	Note: This method is intended to deal with different source formats."
 	^sourcePixel "For now do it simple"
 ]
 
-{ #category : #'pixel mapping' }
+{ #category : 'pixel mapping' }
 BitBltSimulation >> rgbMap: sourcePixel from: nBitsIn to: nBitsOut [
 	"Convert the given pixel value with nBitsIn bits for each color component to a pixel value with nBitsOut bits for each color component. Typical values for nBitsIn/nBitsOut are 3, 5, or 8."
 	| mask d srcPix destPix |
@@ -3652,7 +3640,7 @@ BitBltSimulation >> rgbMap: sourcePixel from: nBitsIn to: nBitsOut [
 			^ destPix]
 ]
 
-{ #category : #'color mapping' }
+{ #category : 'color mapping' }
 BitBltSimulation >> rgbMapPixel: sourcePixel flags: mapperFlags [
 	"Perform the RGBA conversion for the given source pixel"
 	| val |
@@ -3664,7 +3652,7 @@ BitBltSimulation >> rgbMapPixel: sourcePixel flags: mapperFlags [
 
 ]
 
-{ #category : #'combination rules' }
+{ #category : 'combination rules' }
 BitBltSimulation >> rgbMax: sourceWord with: destinationWord [
 	<inline: false>
 	<returnTypeC: 'unsigned int'>
@@ -3686,7 +3674,7 @@ BitBltSimulation >> rgbMax: sourceWord with: destinationWord [
 						nBits: 8 nPartitions: 4]
 ]
 
-{ #category : #'combination rules' }
+{ #category : 'combination rules' }
 BitBltSimulation >> rgbMin: sourceWord with: destinationWord [
 	<inline: false>
 	<returnTypeC: 'unsigned int'>
@@ -3708,7 +3696,7 @@ BitBltSimulation >> rgbMin: sourceWord with: destinationWord [
 						nBits: 8 nPartitions: 4]
 ]
 
-{ #category : #'combination rules' }
+{ #category : 'combination rules' }
 BitBltSimulation >> rgbMinInvert: wordToInvert with: destinationWord [
 	| sourceWord |
 	<inline: false>
@@ -3733,7 +3721,7 @@ BitBltSimulation >> rgbMinInvert: wordToInvert with: destinationWord [
 						nBits: 8 nPartitions: 4]
 ]
 
-{ #category : #'combination rules' }
+{ #category : 'combination rules' }
 BitBltSimulation >> rgbMul: sourceWord with: destinationWord [
 	<inline: false>
 	<returnTypeC: 'unsigned int'>
@@ -3760,7 +3748,7 @@ BitBltSimulation >> rgbMul: sourceWord with: destinationWord [
 	MessageTally time: [0 to: 760 by: 4 do:  [:y |scanner drawString: 'qwrepoiuasfd=)(/&()=#!lkjzxv.,mn124+09857907QROIYTOAFDJZXNBNB,M-.,Mqwrepoiuasfd=)(/&()=#!lkjzxv.,mn124+09857907QROIYTOAFDJZXNBNB,M-.,M1234124356785678' at: 0@y]]. "
 ]
 
-{ #category : #'combination rules' }
+{ #category : 'combination rules' }
 BitBltSimulation >> rgbSub: sourceWord with: destinationWord [
 	<inline: false>
 	<returnTypeC: 'unsigned int'>
@@ -3782,7 +3770,7 @@ BitBltSimulation >> rgbSub: sourceWord with: destinationWord [
 						nBits: 8 nPartitions: 4]
 ]
 
-{ #category : #'interpreter interface' }
+{ #category : 'interpreter interface' }
 BitBltSimulation >> setupColorMasks [
 	"WARNING: For WarpBlt w/ smoothing the source depth is wrong here!"
 	| bits targetBits |
@@ -3801,7 +3789,7 @@ BitBltSimulation >> setupColorMasks [
 	self setupColorMasksFrom: bits to: targetBits
 ]
 
-{ #category : #'interpreter interface' }
+{ #category : 'interpreter interface' }
 BitBltSimulation >> setupColorMasksFrom: srcBits to: targetBits [
 	"Setup color masks for converting an incoming RGB pixel value from srcBits to targetBits."
 	| mask shifts masks deltaBits |
@@ -3838,7 +3826,7 @@ BitBltSimulation >> setupColorMasksFrom: srcBits to: targetBits [
 
 ]
 
-{ #category : #setup }
+{ #category : 'setup' }
 BitBltSimulation >> sourceSkewAndPointerInit [
 	"This is only used when source and dest are same depth,
 	ie, when the barrel-shift copy loop is used."
@@ -3875,7 +3863,7 @@ BitBltSimulation >> sourceSkewAndPointerInit [
 	self assert: (skew between: -31 and: 31)
 ]
 
-{ #category : #'combination rules' }
+{ #category : 'combination rules' }
 BitBltSimulation >> sourceWord: sourceWord with: destinationWord [
 	<returnTypeC: 'unsigned int'>
 	<var: #sourceWord type: 'unsigned int'>
@@ -3883,14 +3871,14 @@ BitBltSimulation >> sourceWord: sourceWord with: destinationWord [
 	^sourceWord
 ]
 
-{ #category : #'memory access' }
+{ #category : 'memory access' }
 BitBltSimulation >> srcLongAt: idx [
 	<inline: #always>
 	self assert: idx asUnsignedInteger < endOfSource.
 	^self long32At: idx
 ]
 
-{ #category : #'combination rules' }
+{ #category : 'combination rules' }
 BitBltSimulation >> subWord: sourceWord with: destinationWord [
 	<returnTypeC: 'unsigned int'>
 	<var: #sourceWord type: 'unsigned int'>
@@ -3898,7 +3886,7 @@ BitBltSimulation >> subWord: sourceWord with: destinationWord [
 	^sourceWord - destinationWord
 ]
 
-{ #category : #'combination rules' }
+{ #category : 'combination rules' }
 BitBltSimulation >> tallyIntoMap: sourceWord with: destinationWord [
 	"Tally pixels into the color map.  Those tallied are exactly those
 	in the destination rectangle.  Note that the source should be 
@@ -3934,21 +3922,21 @@ BitBltSimulation >> tallyIntoMap: sourceWord with: destinationWord [
 	^ destinationWord  "For no effect on dest"
 ]
 
-{ #category : #'memory access' }
+{ #category : 'memory access' }
 BitBltSimulation >> tallyMapAt: idx [
 	"Return the word at position idx from the colorMap"
 	<inline: #always>
 	^cmLookupTable at: (idx bitAnd: cmMask)
 ]
 
-{ #category : #'memory access' }
+{ #category : 'memory access' }
 BitBltSimulation >> tallyMapAt: idx put: value [
 	"Store the word at position idx in the colorMap"
 	<inline: #always>
 	^cmLookupTable at: (idx bitAnd: cmMask) put: value
 ]
 
-{ #category : #setup }
+{ #category : 'setup' }
 BitBltSimulation >> tryCopyingBitsQuickly [
 	"Shortcut for stuff that's being run from the balloon engine.
 	Since we do this at each scan line we should avoid the expensive 
@@ -4008,7 +3996,7 @@ BitBltSimulation >> tryCopyingBitsQuickly [
 	^true
 ]
 
-{ #category : #'surface support' }
+{ #category : 'surface support' }
 BitBltSimulation >> unlockSurfaces [
 	"Unlock the bits of any OS surfaces."
 	"See the comment in lockSurfaces. Similar rules apply. That is, the area provided in ioUnlockSurface
@@ -4042,7 +4030,7 @@ BitBltSimulation >> unlockSurfaces [
 	hasSurfaceLock := false
 ]
 
-{ #category : #setup }
+{ #category : 'setup' }
 BitBltSimulation >> warpBits [
 	| ns |
 	<inline: true>
@@ -4071,7 +4059,7 @@ BitBltSimulation >> warpBits [
 	self unlockSurfaces.
 ]
 
-{ #category : #'inner loop' }
+{ #category : 'inner loop' }
 BitBltSimulation >> warpLoop [
 	"This version of the inner loop traverses an arbirary quadrilateral
 	source, thus producing a general affine transformation."
@@ -4224,7 +4212,7 @@ BitBltSimulation >> warpLoop [
 		self incDestIndex: destDelta]
 ]
 
-{ #category : #'pixel mapping' }
+{ #category : 'pixel mapping' }
 BitBltSimulation >> warpLoopSetup [
 	"Setup values for faster pixel fetching."
 	| words |
@@ -4255,7 +4243,7 @@ BitBltSimulation >> warpLoopSetup [
 
 ]
 
-{ #category : #'pixel mapping' }
+{ #category : 'pixel mapping' }
 BitBltSimulation >> warpPickSmoothPixels: nPixels
 	xDeltah: xDeltah yDeltah: yDeltah
 	xDeltav: xDeltav yDeltav: yDeltav
@@ -4335,7 +4323,7 @@ BitBltSimulation >> warpPickSmoothPixels: nPixels
 
 ]
 
-{ #category : #'pixel mapping' }
+{ #category : 'pixel mapping' }
 BitBltSimulation >> warpPickSourcePixels: nPixels
 	xDeltah: xDeltah yDeltah: yDeltah
 	xDeltav: xDeltav yDeltav: yDeltav

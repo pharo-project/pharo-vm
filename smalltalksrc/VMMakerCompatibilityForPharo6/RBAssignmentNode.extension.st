@@ -1,6 +1,6 @@
-Extension { #name : #RBAssignmentNode }
+Extension { #name : 'RBAssignmentNode' }
 
-{ #category : #'*VMMakerCompatibilityForPharo6-C translation' }
+{ #category : '*VMMakerCompatibilityForPharo6-C translation' }
 RBAssignmentNode >> anyReturns: aSequenceOfNodes [
 	aSequenceOfNodes do:
 		[:node|
@@ -11,7 +11,7 @@ RBAssignmentNode >> anyReturns: aSequenceOfNodes [
 	^false
 ]
 
-{ #category : #'*VMMakerCompatibilityForPharo6-C translation' }
+{ #category : '*VMMakerCompatibilityForPharo6-C translation' }
 RBAssignmentNode >> asTranslatorNodeIn: aTMethod [
 	"Answer a TParseNode subclass equivalent of me"
 	| varNode valueNode |

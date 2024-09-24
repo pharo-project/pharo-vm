@@ -1,16 +1,18 @@
 Class {
-	#name : #VMSpurOldSpaceStructureTest,
-	#superclass : #VMSpurMemoryManagerTest,
-	#category : #'VMMakerTests-MemoryTests'
+	#name : 'VMSpurOldSpaceStructureTest',
+	#superclass : 'VMSpurMemoryManagerTest',
+	#category : 'VMMakerTests-MemoryTests',
+	#package : 'VMMakerTests',
+	#tag : 'MemoryTests'
 }
 
-{ #category : #tests }
+{ #category : 'tests' }
 VMSpurOldSpaceStructureTest >> testNewMemoryOldSpaceShouldHaveOneSegment [
 
 	self assert: memory segmentManager numSegments equals: 1
 ]
 
-{ #category : #tests }
+{ #category : 'tests' }
 VMSpurOldSpaceStructureTest >> testNewMemoryOldSpaceSingleSegmentShouldBeHaveSameSizeAsOldSpace [
 
 	self
@@ -18,7 +20,7 @@ VMSpurOldSpaceStructureTest >> testNewMemoryOldSpaceSingleSegmentShouldBeHaveSam
 		equals: memory oldSpaceSize
 ]
 
-{ #category : #tests }
+{ #category : 'tests' }
 VMSpurOldSpaceStructureTest >> testNewMemoryOldSpaceSizeShouldBeAskedMemory [
 
 	self assert: memory oldSpaceSize equals: oldSpaceSize

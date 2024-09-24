@@ -1,18 +1,20 @@
 Class {
-	#name : #VMSpurOldSpaceGarbageCollectorTest,
-	#superclass : #VMSpurInitializedOldSpaceTest,
+	#name : 'VMSpurOldSpaceGarbageCollectorTest',
+	#superclass : 'VMSpurInitializedOldSpaceTest',
 	#instVars : [
 		'objectStackLimit'
 	],
-	#category : #'VMMakerTests-MemoryTests'
+	#category : 'VMMakerTests-MemoryTests',
+	#package : 'VMMakerTests',
+	#tag : 'MemoryTests'
 }
 
-{ #category : #assertion }
+{ #category : 'assertion' }
 VMSpurOldSpaceGarbageCollectorTest >> assertHashOf: anOop equals: aHash [ 
 	self assert: (memory hashBitsOf: anOop) equals: aHash
 ]
 
-{ #category : #helpers }
+{ #category : 'helpers' }
 VMSpurOldSpaceGarbageCollectorTest >> deltaFreeSpaceAfterGC: aBlock [ 
 	| initialSpace lastObjectToBeRemembered sizeOfLastObject |
 	"The planning compactor frees object by sliding, and therefore does not reclaim memory if there is only dead objects in the oldspace."
@@ -33,34 +35,34 @@ VMSpurOldSpaceGarbageCollectorTest >> deltaFreeSpaceAfterGC: aBlock [
 	^ initialSpace - sizeOfLastObject - memory totalFreeListBytes
 ]
 
-{ #category : #ephemerons }
+{ #category : 'ephemerons' }
 VMSpurOldSpaceGarbageCollectorTest >> initializationOptions [
 
 	^ super initializationOptions , { 
 		#ObjStackPageSlots . objectStackLimit }
 ]
 
-{ #category : #testing }
+{ #category : 'testing' }
 VMSpurOldSpaceGarbageCollectorTest >> isValidFirstBridge [
 
 	^ memory segmentManager
 		isValidSegmentBridge: (memory segmentManager bridgeAt: 0)
 ]
 
-{ #category : #running }
+{ #category : 'running' }
 VMSpurOldSpaceGarbageCollectorTest >> runCaseManaged [ 
 
 	^ self runCase
 ]
 
-{ #category : #ephemerons }
+{ #category : 'ephemerons' }
 VMSpurOldSpaceGarbageCollectorTest >> setUp [
 
 	objectStackLimit :=  10.
 	super setUp.
 ]
 
-{ #category : #'tests-OldSpaceSize' }
+{ #category : 'tests-OldSpaceSize' }
 VMSpurOldSpaceGarbageCollectorTest >> testAllocateObjectBiggerThanSizeOfFreeSpace [
 
 	| anObjectOop slotsNumber |
@@ -71,7 +73,7 @@ VMSpurOldSpaceGarbageCollectorTest >> testAllocateObjectBiggerThanSizeOfFreeSpac
 	self assert: anObjectOop isNil
 ]
 
-{ #category : #'tests-OldSpaceSize' }
+{ #category : 'tests-OldSpaceSize' }
 VMSpurOldSpaceGarbageCollectorTest >> testAllocateObjectBiggerThanSizeOfFreeSpaceShouldPlanifyGC [
 
 	| anObjectOop slotsNumber |
@@ -82,7 +84,7 @@ VMSpurOldSpaceGarbageCollectorTest >> testAllocateObjectBiggerThanSizeOfFreeSpac
 	self assert: memory needGCFlag
 ]
 
-{ #category : #testCompactor }
+{ #category : 'testCompactor' }
 VMSpurOldSpaceGarbageCollectorTest >> testAllocateObjectRightBeforeOverflowingFreeChunk [
 	| chuckSize chunk next object free |
 
@@ -117,7 +119,7 @@ VMSpurOldSpaceGarbageCollectorTest >> testAllocateObjectRightBeforeOverflowingFr
 	self assert: (memory isFreeObject: free).
 ]
 
-{ #category : #'tests-OldSpaceSize' }
+{ #category : 'tests-OldSpaceSize' }
 VMSpurOldSpaceGarbageCollectorTest >> testAllocateObjectWithFreeSpaceSize [
 
 	| anObjectOop slotsNumber |
@@ -128,7 +130,7 @@ VMSpurOldSpaceGarbageCollectorTest >> testAllocateObjectWithFreeSpaceSize [
 	self assert: anObjectOop isNotNil
 ]
 
-{ #category : #'tests-OldSpaceSize' }
+{ #category : 'tests-OldSpaceSize' }
 VMSpurOldSpaceGarbageCollectorTest >> testAllocateObjectWithFreeSpaceSizeShouldBeZero [
 
 	| anObjectOop slotsNumber |
@@ -139,7 +141,7 @@ VMSpurOldSpaceGarbageCollectorTest >> testAllocateObjectWithFreeSpaceSizeShouldB
 	self assert: memory totalFreeOldSpace equals: 0
 ]
 
-{ #category : #'tests-OldSpaceSize' }
+{ #category : 'tests-OldSpaceSize' }
 VMSpurOldSpaceGarbageCollectorTest >> testAllocateObjectWithFreeSpaceSizeShouldPlanifyGC [
 
 	| anObjectOop slotsNumber |
@@ -150,7 +152,7 @@ VMSpurOldSpaceGarbageCollectorTest >> testAllocateObjectWithFreeSpaceSizeShouldP
 	self assert: memory needGCFlag
 ]
 
-{ #category : #'tests-OldSpaceSize' }
+{ #category : 'tests-OldSpaceSize' }
 VMSpurOldSpaceGarbageCollectorTest >> testAnOldObjectNotReferencedShouldBeCollected [
 
 	| deltaFreeSpace |
@@ -160,7 +162,7 @@ VMSpurOldSpaceGarbageCollectorTest >> testAnOldObjectNotReferencedShouldBeCollec
 	self assert: deltaFreeSpace equals: 0
 ]
 
-{ #category : #'tests-OldSpaceSize' }
+{ #category : 'tests-OldSpaceSize' }
 VMSpurOldSpaceGarbageCollectorTest >> testAnOldObjectReferencedFromNewObjectShouldBeCollected [
 
 	| deltaFreeSpace |
@@ -173,7 +175,7 @@ VMSpurOldSpaceGarbageCollectorTest >> testAnOldObjectReferencedFromNewObjectShou
 	self assert: deltaFreeSpace equals: 0
 ]
 
-{ #category : #'tests-OldSpaceSize' }
+{ #category : 'tests-OldSpaceSize' }
 VMSpurOldSpaceGarbageCollectorTest >> testAnOldObjectReferencedFromRememberedPermObjectShouldBeKept [
 
 	| oldObjectSize deltaFreeSpace |
@@ -186,7 +188,7 @@ VMSpurOldSpaceGarbageCollectorTest >> testAnOldObjectReferencedFromRememberedPer
 	self assert: deltaFreeSpace equals: oldObjectSize
 ]
 
-{ #category : #'tests-OldSpaceSize' }
+{ #category : 'tests-OldSpaceSize' }
 VMSpurOldSpaceGarbageCollectorTest >> testAnOldObjectReferencedFromUnreferencedCycleObjectShouldBeCollected [
 
 	| deltaFreeSpace |
@@ -200,7 +202,7 @@ VMSpurOldSpaceGarbageCollectorTest >> testAnOldObjectReferencedFromUnreferencedC
 	self assert: deltaFreeSpace equals: 0
 ]
 
-{ #category : #'tests-OldSpaceSize' }
+{ #category : 'tests-OldSpaceSize' }
 VMSpurOldSpaceGarbageCollectorTest >> testAnOldObjectReferencedFromVMVariableShouldBeKept [
 
 	| oldOop objectSize deltaFreeSpace |
@@ -214,7 +216,7 @@ VMSpurOldSpaceGarbageCollectorTest >> testAnOldObjectReferencedFromVMVariableSho
 	self assert: deltaFreeSpace equals: objectSize
 ]
 
-{ #category : #'tests-OldSpaceSize' }
+{ #category : 'tests-OldSpaceSize' }
 VMSpurOldSpaceGarbageCollectorTest >> testAnOldObjectReferencedFromVMVariableShouldBeMoved [
 
 	| anObjectOop hash |
@@ -233,7 +235,7 @@ VMSpurOldSpaceGarbageCollectorTest >> testAnOldObjectReferencedFromVMVariableSho
 	self assertHashOf: self keptObjectInVMVariable1 equals: hash
 ]
 
-{ #category : #'tests-OldSpaceSize' }
+{ #category : 'tests-OldSpaceSize' }
 VMSpurOldSpaceGarbageCollectorTest >> testArrayOfPermanentObjectsPointingToOldObjectsIsCorrectlyMantained [
 
 	| deltaFreeSpace arrayOfPerms objectsSize aPermObject anOldObject originalRememberedSetSize afteRememberedSetSize numberOfObjects originalNewRememberedSetSize afteNewRememberedSetSize |
@@ -260,7 +262,7 @@ VMSpurOldSpaceGarbageCollectorTest >> testArrayOfPermanentObjectsPointingToOldOb
 	self assert: deltaFreeSpace equals: objectsSize + (afteRememberedSetSize - originalRememberedSetSize) + (afteNewRememberedSetSize - originalNewRememberedSetSize)
 ]
 
-{ #category : #'tests-OldSpaceSize' }
+{ #category : 'tests-OldSpaceSize' }
 VMSpurOldSpaceGarbageCollectorTest >> testArrayOfPermanentObjectsPointingToOldObjectsIsCorrectlyMantainedWhenObjectsMoved [
 
 	| numberOfObjects originalHashes permArray anOldObject |
@@ -283,7 +285,137 @@ VMSpurOldSpaceGarbageCollectorTest >> testArrayOfPermanentObjectsPointingToOldOb
 		self assert: (originalHashes at: i) equals: (memory hashBitsOf: (memory fetchPointer: i - 1 ofObject: permArray))]
 ]
 
-{ #category : #ephemerons }
+{ #category : 'ephemerons' }
+VMSpurOldSpaceGarbageCollectorTest >> testChainOfFirableEphemerons [
+
+	"This test creates a set of ephemerons on the old space that should be fired because their key is not referenced.
+	However, the only strong reference to an ephemeron is in another ephemeron.
+	Since all ephemerons depend on different keys, all should be fired at the same time."
+
+	| mourned previousEphemeron ephemerons |
+	self createEphemeronClass.
+	previousEphemeron := memory nilObject.
+	ephemerons := 3.
+	1 to: ephemerons do: [ :i | | ephemeronKey ephemeronObjectOop |
+		ephemeronKey := self newZeroSizedObject.
+		"An ephemeron with 3 slots"
+		ephemeronObjectOop := self newOldEphemeronObject.
+		memory
+			storePointer: 0 "key"
+			ofObject: ephemeronObjectOop
+			withValue: ephemeronKey.
+		memory
+			storePointer: 1 "value"
+			ofObject: ephemeronObjectOop
+			withValue: previousEphemeron.
+		previousEphemeron := ephemeronObjectOop.
+	].
+	
+	"Force the first ephemeron in the chain to not be collected by putting it in an intepreter register"
+	self keepObjectInVMVariable1: previousEphemeron.
+
+	self assert: memory validObjStacks.
+	memory unscannedEphemeronsQueueInitialSize: ephemerons.
+	memory fullGC.
+
+	mourned := 0.
+	[ memory dequeueMourner notNil ] whileTrue: [ mourned := mourned + 1 ].
+	self
+		assert: mourned
+		equals: ephemerons
+]
+
+{ #category : 'ephemerons' }
+VMSpurOldSpaceGarbageCollectorTest >> testChainOfFirableEphemeronsWithNonFirableHead [
+
+	"This test creates a set of ephemerons on the old space that should be fired because their key is not referenced.
+	The only strong reference to an ephemeron is in another ephemeron.
+	
+	However, the head of the list is an ephemeron with a referenced key!
+	Since all other ephemerons depend on different keys, all should be fired at the same time."
+
+	| mourned previousEphemeron nonFirableEphemeron |
+	self createEphemeronClass.
+	previousEphemeron := memory nilObject.
+	1 to: 5 do: [ :i | | ephemeronKey ephemeronObjectOop |
+		ephemeronKey := self newZeroSizedObject.
+		ephemeronObjectOop := self newOldEphemeronObject.
+		memory
+			storePointer: 0 "key"
+			ofObject: ephemeronObjectOop
+			withValue: ephemeronKey.
+		memory
+			storePointer: 1 "value"
+			ofObject: ephemeronObjectOop
+			withValue: previousEphemeron.
+		previousEphemeron := ephemeronObjectOop.
+	].
+
+	nonFirableEphemeron := self newOldEphemeronObject.
+	memory
+			storePointer: 0 "key"
+			ofObject: nonFirableEphemeron
+			withValue: memory nilObject.
+		memory
+			storePointer: 1 "value"
+			ofObject: nonFirableEphemeron
+			withValue: previousEphemeron.
+	
+	"Force the first ephemeron in the chain to not be collected by putting it in an intepreter register"
+	self keepObjectInVMVariable1: nonFirableEphemeron.
+
+	self assert: memory validObjStacks.
+	memory unscannedEphemeronsQueueInitialSize: 5.
+	memory fullGC.
+
+	mourned := 0.
+	[ memory dequeueMourner notNil ] whileTrue: [ mourned := mourned + 1 ].
+	self
+		assert: mourned
+		equals: 5
+]
+
+{ #category : 'ephemerons' }
+VMSpurOldSpaceGarbageCollectorTest >> testChainOfFirableEphemeronsWithOldKeys [
+
+	"This test creates a set of ephemerons on the old space that should be fired because their key is not referenced.
+	However, the only strong reference to an ephemeron is in another ephemeron.
+	Since all ephemerons depend on different keys, all should be fired at the same time."
+
+	| mourned previousEphemeron ephemerons |
+	self createEphemeronClass.
+	previousEphemeron := memory nilObject.
+	ephemerons := 3.
+	1 to: ephemerons do: [ :i | | ephemeronKey ephemeronObjectOop |
+		ephemeronKey := self newOldSpaceObjectWithSlots: 0.
+		"An ephemeron with 3 slots"
+		ephemeronObjectOop := self newOldEphemeronObject.
+		memory
+			storePointer: 0 "key"
+			ofObject: ephemeronObjectOop
+			withValue: ephemeronKey.
+		memory
+			storePointer: 1 "value"
+			ofObject: ephemeronObjectOop
+			withValue: previousEphemeron.
+		previousEphemeron := ephemeronObjectOop.
+	].
+	
+	"Force the first ephemeron in the chain to not be collected by putting it in an intepreter register"
+	self keepObjectInVMVariable1: previousEphemeron.
+
+	self assert: memory validObjStacks.
+	memory unscannedEphemeronsQueueInitialSize: ephemerons.
+	memory fullGC.
+
+	mourned := 0.
+	[ memory dequeueMourner notNil ] whileTrue: [ mourned := mourned + 1 ].
+	self
+		assert: mourned
+		equals: ephemerons
+]
+
+{ #category : 'ephemerons' }
 VMSpurOldSpaceGarbageCollectorTest >> testCompactEphemeronQueuePass1 [
 
 	| ephemeron |
@@ -305,7 +437,7 @@ VMSpurOldSpaceGarbageCollectorTest >> testCompactEphemeronQueuePass1 [
 	self assert: memory dequeueMourner equals: self keptObjectInVMVariable1.
 ]
 
-{ #category : #ephemerons }
+{ #category : 'ephemerons' }
 VMSpurOldSpaceGarbageCollectorTest >> testCompactEphemeronQueuePass2 [
 
 	| ephemeron |
@@ -335,7 +467,7 @@ VMSpurOldSpaceGarbageCollectorTest >> testCompactEphemeronQueuePass2 [
 	self assert: memory dequeueMourner equals: self keptObjectInVMVariable1.
 ]
 
-{ #category : #'tests-OldSpaceSize' }
+{ #category : 'tests-OldSpaceSize' }
 VMSpurOldSpaceGarbageCollectorTest >> testDoNotCollectRoots [
 
 	memory fullGC.
@@ -346,7 +478,7 @@ VMSpurOldSpaceGarbageCollectorTest >> testDoNotCollectRoots [
 	self deny: (memory isFreeObject: (memory freeListsObj)).
 ]
 
-{ #category : #'tests-OldSpaceSize' }
+{ #category : 'tests-OldSpaceSize' }
 VMSpurOldSpaceGarbageCollectorTest >> testDoubleForwardToYoungs [
 
 		| obj1 obj2 obj3 arrFrom arrTo arrFrom2 arrTo2 |
@@ -378,7 +510,7 @@ VMSpurOldSpaceGarbageCollectorTest >> testDoubleForwardToYoungs [
 		self assert: (memory isRemembered: arrTo2).
 ]
 
-{ #category : #ephemerons }
+{ #category : 'ephemerons' }
 VMSpurOldSpaceGarbageCollectorTest >> testEphemeronDiscoverKey [
 
 	| roots ephemeron1 ephemeron2 ephemeron3 key1 key2 key3 |
@@ -441,7 +573,7 @@ VMSpurOldSpaceGarbageCollectorTest >> testEphemeronDiscoverKey [
 
 ]
 
-{ #category : #ephemerons }
+{ #category : 'ephemerons' }
 VMSpurOldSpaceGarbageCollectorTest >> testEphemeronOverflowUnscannedEphemeronQueue [
 
 	"This test Fires more ephemerons than those that fit in a single page of the mourn queue.
@@ -479,7 +611,7 @@ VMSpurOldSpaceGarbageCollectorTest >> testEphemeronOverflowUnscannedEphemeronQue
 		equals: numberJustOverLimit
 ]
 
-{ #category : #tests }
+{ #category : 'tests' }
 VMSpurOldSpaceGarbageCollectorTest >> testEphemeronWithImmediateKeyShouldNotFail [
 
 	| ephemeron1 key |
@@ -533,24 +665,28 @@ VMSpurOldSpaceGarbageCollectorTest >> testEphemeronsWithSameKeyNewSpaceOldSpace 
 VMSpurOldSpaceGarbageCollectorTest >> testGrowOldSpace [
 
 	| freespace freespace2 slotsNumber anObjectOop |
-	
 	memory fullGC.
-	
+
 	freespace := memory totalFreeOldSpace.
-	slotsNumber := freespace / memory wordSize.	
-	memory growOldSpaceByAtLeast: slotsNumber.
+	slotsNumber := freespace / memory wordSize.
+	memory
+		growOldSpaceByAtLeast: slotsNumber
+		callingOperation: 'testGrowOldSpace'.
+		
 	freespace2 := memory totalFreeOldSpace.
-	self assert: freespace*2 <= freespace2.
-	
+	self assert: freespace * 2 <= freespace2.
+
 	anObjectOop := self newObjectWithSlots: slotsNumber.
 	self deny: anObjectOop equals: nil.
-	self assert: freespace2 - (memory bytesInObject: anObjectOop) equals: memory totalFreeOldSpace.
-	
+	self
+		assert: freespace2 - (memory bytesInObject: anObjectOop)
+		equals: memory totalFreeOldSpace.
+
 	memory fullGC.
-	self assert: freespace equals: memory totalFreeOldSpace.
+	self assert: freespace equals: memory totalFreeOldSpace
 ]
 
-{ #category : #ephemerons }
+{ #category : 'ephemerons' }
 VMSpurOldSpaceGarbageCollectorTest >> testMournQueue [
 
 	| roots keyObj ephemeronObj |
@@ -569,7 +705,7 @@ VMSpurOldSpaceGarbageCollectorTest >> testMournQueue [
 	self assert: memory dequeueMourner equals: nil.
 ]
 
-{ #category : #ephemerons }
+{ #category : 'ephemerons' }
 VMSpurOldSpaceGarbageCollectorTest >> testMournQueue2 [
 
 	| roots keyObj ephemeronObj keyObj2 ephemeronObj2 |
@@ -596,7 +732,7 @@ VMSpurOldSpaceGarbageCollectorTest >> testMournQueue2 [
 	self assert: memory dequeueMourner equals: nil.
 ]
 
-{ #category : #ephemerons }
+{ #category : 'ephemerons' }
 VMSpurOldSpaceGarbageCollectorTest >> testMultiPageMournQueue [
 
 	"This test Fires more ephemerons than those that fit in a single page of the mourn queue.
@@ -634,7 +770,7 @@ VMSpurOldSpaceGarbageCollectorTest >> testMultiPageMournQueue [
 		equals: numberJustOverLimit
 ]
 
-{ #category : #tests }
+{ #category : 'tests' }
 VMSpurOldSpaceGarbageCollectorTest >> testNewRootEphemeronHoldsAnotherEphemeronAsKeyThenFullGC [
 
 	| ephemeron1 ephemeron2 |
@@ -649,7 +785,7 @@ VMSpurOldSpaceGarbageCollectorTest >> testNewRootEphemeronHoldsAnotherEphemeronA
 	memory fullGC
 ]
 
-{ #category : #tests }
+{ #category : 'tests' }
 VMSpurOldSpaceGarbageCollectorTest >> testNewRootEphemeronHoldsOldNonRootEphemeronAsNonKeyThenFullGC [
 
 	| ephemeron1 ephemeron2 |
@@ -663,7 +799,7 @@ VMSpurOldSpaceGarbageCollectorTest >> testNewRootEphemeronHoldsOldNonRootEphemer
 	memory fullGC
 ]
 
-{ #category : #tests }
+{ #category : 'tests' }
 VMSpurOldSpaceGarbageCollectorTest >> testNewRootEphemeronIsHeldsByOldNonRootEphemeronAsNonKeyThenFullGC [
 
 	| ephemeron1 ephemeron2 |
@@ -680,7 +816,7 @@ VMSpurOldSpaceGarbageCollectorTest >> testNewRootEphemeronIsHeldsByOldNonRootEph
 	memory fullGC
 ]
 
-{ #category : #ephemerons }
+{ #category : 'ephemerons' }
 VMSpurOldSpaceGarbageCollectorTest >> testPageLimitMournQueue [
 
 	"This test Fires more ephemerons than those that fit in a single page of the mourn queue.

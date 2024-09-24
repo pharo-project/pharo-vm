@@ -1,20 +1,22 @@
 Class {
-	#name : #VMPinnedObjectTest,
-	#superclass : #VMSpurInitializedOldSpaceTest,
-	#category : #'VMMakerTests-MemoryTests'
+	#name : 'VMPinnedObjectTest',
+	#superclass : 'VMSpurInitializedOldSpaceTest',
+	#category : 'VMMakerTests-MemoryTests',
+	#package : 'VMMakerTests',
+	#tag : 'MemoryTests'
 }
 
-{ #category : #helper }
+{ #category : 'helper' }
 VMPinnedObjectTest >> lastAliveObject [
 	^ self keptObjectInVMVariable2
 ]
 
-{ #category : #helper }
+{ #category : 'helper' }
 VMPinnedObjectTest >> lastPinnedObject [
 	^ self keptObjectInVMVariable1
 ]
 
-{ #category : #helper }
+{ #category : 'helper' }
 VMPinnedObjectTest >> newAliveObject [
 	| newAliveObject |
 	newAliveObject := self newOldSpaceObjectWithSlots: 1.
@@ -23,12 +25,12 @@ VMPinnedObjectTest >> newAliveObject [
 	^ newAliveObject
 ]
 
-{ #category : #helper }
+{ #category : 'helper' }
 VMPinnedObjectTest >> newDeadObject [
 	^ self newOldSpaceObjectWithSlots: 1
 ]
 
-{ #category : #helper }
+{ #category : 'helper' }
 VMPinnedObjectTest >> newKeptPinnedObject [
 	| newPinned |
 	newPinned := self newOldSpaceObjectWithSlots: 1.
@@ -38,7 +40,7 @@ VMPinnedObjectTest >> newKeptPinnedObject [
 	^ newPinned
 ]
 
-{ #category : #testCompactor }
+{ #category : 'testCompactor' }
 VMPinnedObjectTest >> testAllocatingObjectAfterAPinObjectShouldSlideAtStartOfOldSpace [
 	| aliveObject destination shouldBeFreed aliveHash |
 	"D = Dead
@@ -68,7 +70,7 @@ VMPinnedObjectTest >> testAllocatingObjectAfterAPinObjectShouldSlideAtStartOfOld
 	self assert: (memory isFreeObject: shouldBeFreed)
 ]
 
-{ #category : #testCompactor }
+{ #category : 'testCompactor' }
 VMPinnedObjectTest >> testAllocatingObjectAfterAPinObjectShouldSlideBeforeLastPinnedObject [
 	| aliveObject destination |
 	"D = Dead
@@ -96,7 +98,7 @@ VMPinnedObjectTest >> testAllocatingObjectAfterAPinObjectShouldSlideBeforeLastPi
 	self assert: self lastAliveObject equals: destination.
 ]
 
-{ #category : #testCompactor }
+{ #category : 'testCompactor' }
 VMPinnedObjectTest >> testAllocatingObjectAfterManyPinnedObjectShouldSlideAtStartOfOldSpace [
 	| aliveObject destination shouldBeFreed |
 	"D = Dead
@@ -126,7 +128,7 @@ VMPinnedObjectTest >> testAllocatingObjectAfterManyPinnedObjectShouldSlideAtStar
 	self assert: (memory isFreeObject: shouldBeFreed)
 ]
 
-{ #category : #testCompactor }
+{ #category : 'testCompactor' }
 VMPinnedObjectTest >> testAllocatingObjectAfterManyPinnedObjectShouldSlideBeforeFirstPinned [
 	| aliveObject destination |
 	"D = Dead
@@ -154,7 +156,7 @@ VMPinnedObjectTest >> testAllocatingObjectAfterManyPinnedObjectShouldSlideBefore
 	self assert: self lastAliveObject equals: destination.
 ]
 
-{ #category : #testCompactor }
+{ #category : 'testCompactor' }
 VMPinnedObjectTest >> testAllocatingObjectAfterTwoPinObjectShouldSlideAtStartOfOldSpace [
 	| aliveObject destination shouldBeFreed |
 	"D = Dead
@@ -184,7 +186,7 @@ VMPinnedObjectTest >> testAllocatingObjectAfterTwoPinObjectShouldSlideAtStartOfO
 	self assert: (memory isFreeObject: shouldBeFreed)
 ]
 
-{ #category : #testCompactor }
+{ #category : 'testCompactor' }
 VMPinnedObjectTest >> testAllocatingObjectRightAfterPinnedShouldMoveItOnFirstDead [
 	| destination aliveObject aliveObjectHash |
 	"D = Dead
@@ -210,7 +212,7 @@ VMPinnedObjectTest >> testAllocatingObjectRightAfterPinnedShouldMoveItOnFirstDea
 	self assert: (memory isFreeObject: (memory objectAfter: self lastPinnedObject)).
 ]
 
-{ #category : #tests }
+{ #category : 'tests' }
 VMPinnedObjectTest >> testPinANewObjectShouldMoveItToTheOldSpace [
 	"if we follow the forwarder, the object is in the old space"
 	| obj |
@@ -221,7 +223,7 @@ VMPinnedObjectTest >> testPinANewObjectShouldMoveItToTheOldSpace [
 	self assert: (memory isInOldSpace: (memory followForwarded: obj))
 ]
 
-{ #category : #tests }
+{ #category : 'tests' }
 VMPinnedObjectTest >> testPinANewObjectShouldMoveItToTheOldSpaceAndLeaveAForwarderBehind [
 	| obj |
 	obj := self newObjectWithSlots: 0.
@@ -231,7 +233,7 @@ VMPinnedObjectTest >> testPinANewObjectShouldMoveItToTheOldSpaceAndLeaveAForward
 	self assert: (memory isForwarded: obj)
 ]
 
-{ #category : #tests }
+{ #category : 'tests' }
 VMPinnedObjectTest >> testPinnedObjectShouldNotBeMovedByGC [
 	| pinned |
 	self newOldSpaceObjectWithSlots: 0. "deadObject, that differenciate the start of the old space to the pin"	

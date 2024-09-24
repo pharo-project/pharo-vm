@@ -1,10 +1,11 @@
 Class {
-	#name : #AbstractInterpreter,
-	#superclass : #VMClass,
-	#category : #Melchor
+	#name : 'AbstractInterpreter',
+	#superclass : 'VMClass',
+	#category : 'Melchor',
+	#package : 'Melchor'
 }
 
-{ #category : #initialization }
+{ #category : 'initialization' }
 AbstractInterpreter class >> table: anArray from: specArray [ 
 	"SpecArray is an array of one of (index selector) or (index1 
 	 index2 selector) or (index nil) or (index1 index2 nil).  If selector

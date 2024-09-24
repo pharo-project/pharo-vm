@@ -1,6 +1,6 @@
-Extension { #name : #ColorArray }
+Extension { #name : 'ColorArray' }
 
-{ #category : #'*VMMakerCompatibilityForPharo6-accessing' }
+{ #category : '*VMMakerCompatibilityForPharo6-accessing' }
 ColorArray >> bytesPerElement [
 
 	^4

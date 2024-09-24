@@ -4,24 +4,26 @@ I implement a Smalltalk
 statement converting it into a C switch statement.  I make some effort to discover identical right-hand-side cases.
 "
 Class {
-	#name : #TSwitchStmtNode,
-	#superclass : #TParseNode,
+	#name : 'TSwitchStmtNode',
+	#superclass : 'TParseNode',
 	#instVars : [
 		'expression',
 		'cases',
 		'otherwiseOrNil',
 		'switchVariable'
 	],
-	#category : #'Slang-AST'
+	#category : 'Slang-AST',
+	#package : 'Slang',
+	#tag : 'AST'
 }
 
-{ #category : #visiting }
+{ #category : 'visiting' }
 TSwitchStmtNode >> accept: aVisitor [
 	
 	^ aVisitor visitSwitchStatementNode: self
 ]
 
-{ #category : #transforming }
+{ #category : 'transforming' }
 TSwitchStmtNode >> asCASTExpressionIn: aBuilder [
 
 	| var ternary |
@@ -82,7 +84,7 @@ TSwitchStmtNode >> asCASTExpressionIn: aBuilder [
 	^ ternary
 ]
 
-{ #category : #transforming }
+{ #category : 'transforming' }
 TSwitchStmtNode >> asCASTIn: aBuilder [
 
 	| statements |
@@ -116,7 +118,7 @@ TSwitchStmtNode >> asCASTIn: aBuilder [
 		  statement: statements
 ]
 
-{ #category : #transforming }
+{ #category : 'transforming' }
 TSwitchStmtNode >> asCASTIn: aBuilder addToEndOfCases: aNodeToPrependOrNil [
 
 	| statements |
@@ -170,7 +172,7 @@ TSwitchStmtNode >> asCASTIn: aBuilder addToEndOfCases: aNodeToPrependOrNil [
 		  statement: statements
 ]
 
-{ #category : #transformations }
+{ #category : 'transformations' }
 TSwitchStmtNode >> bindVariableUsesIn: aDictionary [
 	expression := expression bindVariableUsesIn: aDictionary.
 	cases := (cases collect:
@@ -181,7 +183,7 @@ TSwitchStmtNode >> bindVariableUsesIn: aDictionary [
 		[otherwiseOrNil := otherwiseOrNil bindVariableUsesIn: aDictionary]
 ]
 
-{ #category : #transformations }
+{ #category : 'transformations' }
 TSwitchStmtNode >> bindVariableUsesIn: aDictionary andConstantFoldIf: constantFold in: codeGen [
 	"Answer either the receiver, if it contains no references to the given variables, or a new node with the given variables rebound."
 	| newExpression newCases newOtherwise |
@@ -204,7 +206,7 @@ TSwitchStmtNode >> bindVariableUsesIn: aDictionary andConstantFoldIf: constantFo
 				yourself]
 ]
 
-{ #category : #transformations }
+{ #category : 'transformations' }
 TSwitchStmtNode >> bindVariablesIn: aDictionary [
 	expression := expression bindVariablesIn: aDictionary.
 	cases := (cases collect:
@@ -215,7 +217,7 @@ TSwitchStmtNode >> bindVariablesIn: aDictionary [
 		[otherwiseOrNil := otherwiseOrNil bindVariablesIn: aDictionary]
 ]
 
-{ #category : #transformations }
+{ #category : 'transformations' }
 TSwitchStmtNode >> bindVariablesIn: aDictionary unless: cautionaryBlock [
 
 	(cautionaryBlock value: self) ifTrue: [^self].
@@ -228,21 +230,28 @@ TSwitchStmtNode >> bindVariablesIn: aDictionary unless: cautionaryBlock [
 		[otherwiseOrNil := otherwiseOrNil bindVariablesIn: aDictionary unless: cautionaryBlock]
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 TSwitchStmtNode >> cases [
 	"Answer the value of cases"
 
 	^ cases
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 TSwitchStmtNode >> cases: anObject [
 	"Set the value of cases"
 
 	cases := anObject
 ]
 
-{ #category : #accessing }
+{ #category : 'testing' }
+TSwitchStmtNode >> casesHasNothingButComments [
+	"related to dead code elimination and inlining, see if the cases has nothing but comment meaning they are empty"
+
+	^ cases allSatisfy: [ :case | case second isComment ]
+]
+
+{ #category : 'accessing' }
 TSwitchStmtNode >> children [
 	
 	^ { expression },
@@ -250,43 +259,50 @@ TSwitchStmtNode >> children [
 		(otherwiseOrNil ifNil: [ #() ] ifNotNil: [ {otherwiseOrNil} ])
 ]
 
-{ #category : #'instance initialization' }
+{ #category : 'instance initialization' }
 TSwitchStmtNode >> createCasesFromBraceNode: aTBraceNode [
 	"Answer a sequence of tuples of { labels. case } for a TBraceNode, making
 	 sure to collect equivalent cases together under a signle sequence of labels."
+
 	| casesToStrings stringsToLabels newCases |
 	casesToStrings := Dictionary new.
 	stringsToLabels := Dictionary new.
 	newCases := OrderedCollection new: aTBraceNode caseLabels size.
-	aTBraceNode caseLabels with: aTBraceNode cases do:
-		[:label :case| | printString |
+	aTBraceNode caseLabels with: aTBraceNode cases do: [ :label :case |
+		| printString |
 		printString := casesToStrings at: case put: case printString.
-		(stringsToLabels at: printString ifAbsentPut: [OrderedCollection new]) addLast: label].
+		(stringsToLabels
+			 at: printString
+			 ifAbsentPut: [ OrderedCollection new ]) addLast: label ].
 
-	aTBraceNode caseLabels with: aTBraceNode cases do:
-		[:label :case| | printString labels |
+	aTBraceNode caseLabels with: aTBraceNode cases do: [ :label :case |
+		| printString labels |
 		printString := casesToStrings at: case.
-		label = (labels := (stringsToLabels at: printString) asArray) first ifTrue:
-			[newCases addLast: { labels collect: [:ea| ea statements first]. case}]].
+		label = (labels := (stringsToLabels at: printString) asArray) first
+			ifTrue: [
+				newCases addLast: {
+						(labels collect: [ :ea | ea statements first ]).
+						case }.
+				case parent: self ] ].
 
-	^newCases
+	^ newCases
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 TSwitchStmtNode >> expression [
 	"Answer the value of expression"
 
 	^ expression
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 TSwitchStmtNode >> expression: anObject [
 	"Set the value of expression"
 
 	expression := anObject
 ]
 
-{ #category : #'instance initialization' }
+{ #category : 'instance initialization' }
 TSwitchStmtNode >> expression: expr cases: aTBraceNode otherwiseOrNil: otherwiseOrNilNode [
 
 	self expression: expr.
@@ -294,13 +310,13 @@ TSwitchStmtNode >> expression: expr cases: aTBraceNode otherwiseOrNil: otherwise
 	self otherwiseOrNil: otherwiseOrNilNode
 ]
 
-{ #category : #testing }
+{ #category : 'testing' }
 TSwitchStmtNode >> isExpression [
 
 	^ true
 ]
 
-{ #category : #comparing }
+{ #category : 'comparing' }
 TSwitchStmtNode >> isSameAs: anotherNode [
 
 	anotherNode isSwitch ifFalse: [ ^ false ].
@@ -319,12 +335,12 @@ TSwitchStmtNode >> isSameAs: anotherNode [
 	^ true
 ]
 
-{ #category : #testing }
+{ #category : 'testing' }
 TSwitchStmtNode >> isSwitch [
 	^true
 ]
 
-{ #category : #enumerating }
+{ #category : 'enumerating' }
 TSwitchStmtNode >> nodesDo: aBlock [
 	"Apply aBlock to all nodes in the receiver.
 	 N.B. This is assumed to be bottom-up, leaves first."
@@ -338,7 +354,7 @@ TSwitchStmtNode >> nodesDo: aBlock [
 	aBlock value: self
 ]
 
-{ #category : #enumerating }
+{ #category : 'enumerating' }
 TSwitchStmtNode >> nodesDo: aBlock parent: parent [
 	"Apply aBlock to all nodes in the receiver with each node's parent.
 	 N.B. This is assumed to be bottom-up, leaves first."
@@ -352,7 +368,7 @@ TSwitchStmtNode >> nodesDo: aBlock parent: parent [
 	aBlock value: self value: parent
 ]
 
-{ #category : #enumerating }
+{ #category : 'enumerating' }
 TSwitchStmtNode >> nodesDo: aBlock parent: parent unless: cautionaryBlock [
 
 	(cautionaryBlock value: self value: parent) ifTrue: [^self].
@@ -365,7 +381,7 @@ TSwitchStmtNode >> nodesDo: aBlock parent: parent unless: cautionaryBlock [
 		[otherwiseOrNil nodesDo: aBlock parent: self unless: cautionaryBlock]
 ]
 
-{ #category : #enumerating }
+{ #category : 'enumerating' }
 TSwitchStmtNode >> nodesDo: aBlock unless: cautionaryBlock [
 
 	(cautionaryBlock value: self) ifTrue: [^self].
@@ -378,31 +394,33 @@ TSwitchStmtNode >> nodesDo: aBlock unless: cautionaryBlock [
 		[otherwiseOrNil nodesDo: aBlock unless: cautionaryBlock]
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 TSwitchStmtNode >> otherwiseOrNil [
 	"Answer the value of otherwiseOrNil"
 
 	^ otherwiseOrNil
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 TSwitchStmtNode >> otherwiseOrNil: anObject [
 	"Set the value of otherwiseOrNil"
 
+	anObject ifNotNil: [ anObject parent: self ].
 	otherwiseOrNil := anObject
 ]
 
-{ #category : #copying }
+{ #category : 'copying' }
 TSwitchStmtNode >> postCopy [
 	expression := expression copy.
 	cases := (cases collect:
 				[:pair| "<Array with: <Array with: ParseTreeNode> with: TStmtListNode"
 				{ pair first collect: [:labelNode| labelNode copy].
-				   pair last copy }]).
-	otherwiseOrNil := otherwiseOrNil copy
+				   (pair last copy parent: self) }]).
+	otherwiseOrNil := otherwiseOrNil copy.
+	otherwiseOrNil ifNotNil: [ otherwiseOrNil parent: self ]
 ]
 
-{ #category : #printing }
+{ #category : 'printing' }
 TSwitchStmtNode >> printOn: aStream level: level [
 
 	aStream crtab: level.
@@ -434,7 +452,7 @@ TSwitchStmtNode >> printOn: aStream level: level [
 		nextPut: $}
 ]
 
-{ #category : #transformations }
+{ #category : 'transformations' }
 TSwitchStmtNode >> removeAssertions [
 	expression removeAssertions.
 	cases do:
@@ -445,7 +463,22 @@ TSwitchStmtNode >> removeAssertions [
 		[otherwiseOrNil removeAssertions]
 ]
 
-{ #category : #transformations }
+{ #category : 'dead-code-elimination' }
+TSwitchStmtNode >> removeUnusedNodesInBranch: aChild [
+	"when removing a node from a switch, we have to be careful of if it comes from a caseOf: or a caseOf:otherwise:. if it comes from a caseOf:, otherwise is nil and must be kept it will be translated as a no case found error. To indicate that otherwise does nothing Slang use an empty TStatementListNode, hence the following code"
+
+	cases := cases select: [ :each | each second ~~ aChild ].
+	(cases isEmpty or: [ self casesHasNothingButComments ]) ifFalse: [
+		^ self ].
+	"we're from a caseOf: so we keep the node"
+	otherwiseOrNil ifNil: [ ^ self ].
+	"otherwiseOrNil may have been empty from the start or during the cleaning process, either way the node is now completely empty so we can supress it"
+	otherwiseOrNil isEmptyStmtListNode ifFalse: [ ^ self ].
+	self transformExpressionAfterEmptyCasesAndOtherwise.
+	self parent removeUnusedNodesInBranch: self
+]
+
+{ #category : 'transformations' }
 TSwitchStmtNode >> replaceNodesIn: aDictionary [
 	^aDictionary
 		at: self
@@ -460,16 +493,29 @@ TSwitchStmtNode >> replaceNodesIn: aDictionary [
 			 self]
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 TSwitchStmtNode >> switchVariable [
 	"Answer the value of switchVariable"
 
 	^ switchVariable
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 TSwitchStmtNode >> switchVariable: anObject [
 	"Set the value of switchVariable"
 
 	switchVariable := anObject
+]
+
+{ #category : 'dead-code-elimination' }
+TSwitchStmtNode >> transformExpressionAfterEmptyCasesAndOtherwise [
+
+	| sendToCollect |
+	expression isSend ifFalse: [ ^ self ].
+	sendToCollect := OrderedCollection new.
+	expression collectSendInSelf: sendToCollect.
+	sendToCollect isNotEmpty ifTrue: [
+		self parent
+			replaceChild: self
+			with: (TStatementListNode statements: sendToCollect) ]
 ]

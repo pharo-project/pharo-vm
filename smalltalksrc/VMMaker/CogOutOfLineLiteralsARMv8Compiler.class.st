@@ -1,20 +1,22 @@
 Class {
-	#name : #CogOutOfLineLiteralsARMv8Compiler,
-	#superclass : #CogARMv8Compiler,
-	#category : #'VMMaker-JIT'
+	#name : 'CogOutOfLineLiteralsARMv8Compiler',
+	#superclass : 'CogARMv8Compiler',
+	#category : 'VMMaker-JIT',
+	#package : 'VMMaker',
+	#tag : 'JIT'
 }
 
-{ #category : #'accessing class hierarchy' }
+{ #category : 'accessing class hierarchy' }
 CogOutOfLineLiteralsARMv8Compiler class >> literalsManagerClass [
 	^OutOfLineLiteralsManager
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 CogOutOfLineLiteralsARMv8Compiler >> cmpC32RTempByteSize [
 	^8
 ]
 
-{ #category : #'generate machine code - concretize' }
+{ #category : 'generate machine code - concretize' }
 CogOutOfLineLiteralsARMv8Compiler >> concretizeLiteral [
 	"Generate an out-of-line literal.  Copy the value and any annotation from the stand-in in the literals manager."
 	| literalAsInstruction literal twoComplement |
@@ -39,7 +41,7 @@ CogOutOfLineLiteralsARMv8Compiler >> concretizeLiteral [
 	machineCodeSize := 8
 ]
 
-{ #category : #'generate machine code - concretize' }
+{ #category : 'generate machine code - concretize' }
 CogOutOfLineLiteralsARMv8Compiler >> concretizeMoveC32R [
 	"Will get inlined into concretizeAt: switch."
 	<var: #quickConstant type: #sqInt>
@@ -74,7 +76,7 @@ CogOutOfLineLiteralsARMv8Compiler >> concretizeMoveC32R [
 			^ machineCodeSize := 4 ]
 ]
 
-{ #category : #'generate machine code - concretize' }
+{ #category : 'generate machine code - concretize' }
 CogOutOfLineLiteralsARMv8Compiler >> concretizeMoveMbrR [
 	"Will get inlined into concretizeAt: switch."
 
@@ -90,11 +92,8 @@ CogOutOfLineLiteralsARMv8Compiler >> concretizeMoveMbrR [
 		ifTrue: [ :immediate9bitTwoComplementValue |
 			self
 				machineCodeAt: 0
-				put: (self movSize: 1 destinationRegister: destReg imm: 0 shift: 0).
-			self
-				machineCodeAt: 4
 				put: (self ldurbSize: 1 baseRegister: srcReg signedOffset: immediate9bitTwoComplementValue destinationRegister: destReg).
-			^ machineCodeSize := 8 ]
+			^ machineCodeSize := 4 ]
 		ifFalse: [
 			self loadRelativeLiteralIn: ConcreteIPReg.
 			self
@@ -105,14 +104,14 @@ CogOutOfLineLiteralsARMv8Compiler >> concretizeMoveMbrR [
 	^ 0	"to keep Slang happy"
 ]
 
-{ #category : #'as yet unclassified' }
+{ #category : 'as yet unclassified' }
 CogOutOfLineLiteralsARMv8Compiler >> concretizeMovePatcheableC32R [
 	
 	self loadRelativeLiteralIn: (operands at: 1).
 	^ machineCodeSize := 4
 ]
 
-{ #category : #'generate machine code - concretize' }
+{ #category : 'generate machine code - concretize' }
 CogOutOfLineLiteralsARMv8Compiler >> concretizeMoveRM32r [
 	"Will get inlined into concretizeAt: switch."
 
@@ -155,7 +154,7 @@ CogOutOfLineLiteralsARMv8Compiler >> concretizeMoveRM32r [
 	^ 0	"to keep Slang happy"
 ]
 
-{ #category : #'generate machine code - concretize' }
+{ #category : 'generate machine code - concretize' }
 CogOutOfLineLiteralsARMv8Compiler >> concretizeMoveRMwr [
 	"Will get inlined into concretizeAt: switch."
 
@@ -198,7 +197,7 @@ CogOutOfLineLiteralsARMv8Compiler >> concretizeMoveRMwr [
 	^ 0	"to keep Slang happy"
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 CogOutOfLineLiteralsARMv8Compiler >> getDefaultCogCodeSize [
 	"Return the default number of bytes to allocate for native code at startup.
 	 The actual value can be set via vmParameterAt: and/or a preference in the ini file."
@@ -206,13 +205,13 @@ CogOutOfLineLiteralsARMv8Compiler >> getDefaultCogCodeSize [
 	^1024 * 1280
 ]
 
-{ #category : #'inline cacheing' }
+{ #category : 'inline cacheing' }
 CogOutOfLineLiteralsARMv8Compiler >> inlineCacheTagAt: callSiteReturnAddress [
 	<inline: true>
 	^objectMemory unsignedLongAt: (self pcRelativeAddressAt: (callSiteReturnAddress - 8) asUnsignedInteger)
 ]
 
-{ #category : #testing }
+{ #category : 'testing' }
 CogOutOfLineLiteralsARMv8Compiler >> isPCDependent [
 	"Answer if the receiver is a pc-dependent instruction.  With out-of-line literals any instruction
 	 that refers to a literal depends on the address of the literal, so add them in addition to the jumps."
@@ -221,7 +220,7 @@ CogOutOfLineLiteralsARMv8Compiler >> isPCDependent [
 	  or: [opcode ~= Literal and: [dependent notNil and: [dependent opcode = Literal]]]]
 ]
 
-{ #category : #'generate machine code - support' }
+{ #category : 'generate machine code - support' }
 CogOutOfLineLiteralsARMv8Compiler >> isSharable [
 	"Hack:  To know if a literal should be unique (not shared) mark the second operand."
 	<inline: true>
@@ -229,7 +228,7 @@ CogOutOfLineLiteralsARMv8Compiler >> isSharable [
 	^operands at: 1
 ]
 
-{ #category : #'inline cacheing' }
+{ #category : 'inline cacheing' }
 CogOutOfLineLiteralsARMv8Compiler >> literalBeforeFollowingAddress: followingAddress [
 	"Return the literal referenced by the instruction immediately preceding followingAddress."
 	^objectMemory unsignedLong64At: (self pcRelativeAddressAt:
@@ -238,7 +237,7 @@ CogOutOfLineLiteralsARMv8Compiler >> literalBeforeFollowingAddress: followingAdd
 			ifFalse: [ self instructionAddressBefore: followingAddress - 4]))
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 CogOutOfLineLiteralsARMv8Compiler >> literalLoadInstructionBytes [
 	"Answer the size of a literal load instruction (which does not include the size of the literal).
 	 With out-of-line literals this is always a single LDR instruction that refers to the literal."
@@ -246,7 +245,7 @@ CogOutOfLineLiteralsARMv8Compiler >> literalLoadInstructionBytes [
 	^4
 ]
 
-{ #category : #'generate machine code - support' }
+{ #category : 'generate machine code - support' }
 CogOutOfLineLiteralsARMv8Compiler >> literalOpcodeIndex [
 	"Hack:  To know how far away a literal is from its referencing instruction we store
 	 its opcodeIndex, or -1, if as yet unassigned, in the second operand of the literal."
@@ -255,13 +254,13 @@ CogOutOfLineLiteralsARMv8Compiler >> literalOpcodeIndex [
 	^(operands at: 2) asInteger
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 CogOutOfLineLiteralsARMv8Compiler >> loadLiteralByteSize [
 	"Answer the byte size of a MoveCwR opcode's corresponding machine code. On ARM this is a single instruction pc-relative register load - unless we have made a mistake and not turned on the out of line literals manager"
 	^4
 ]
 
-{ #category : #literals }
+{ #category : 'literals' }
 CogOutOfLineLiteralsARMv8Compiler >> loadRelativeLiteralIn: destReg [
 
 	<inline: true>
@@ -275,7 +274,7 @@ CogOutOfLineLiteralsARMv8Compiler >> loadRelativeLiteralIn: destReg [
 			 destinationRegister: destReg) "64 bits"
 ]
 
-{ #category : #'generate machine code - support' }
+{ #category : 'generate machine code - support' }
 CogOutOfLineLiteralsARMv8Compiler >> mapEntryAddress [
 	"Typically map entries apply to the end of an instruction, for two reasons:
 	  a)	to cope with literals embedded in variable-length instructions, since, e.g.
@@ -289,7 +288,7 @@ CogOutOfLineLiteralsARMv8Compiler >> mapEntryAddress [
 		ifFalse: [address + machineCodeSize]
 ]
 
-{ #category : #'generate machine code - support' }
+{ #category : 'generate machine code - support' }
 CogOutOfLineLiteralsARMv8Compiler >> moveCw: constant intoR: destReg [
 	"Emit a load of aWord into destReg.  Answer the number of bytes of machine code generated.
 	 Literals are stored out-of-line; emit a LDR with the relevant offset."
@@ -299,7 +298,7 @@ CogOutOfLineLiteralsARMv8Compiler >> moveCw: constant intoR: destReg [
 	^machineCodeSize := 4
 ]
 
-{ #category : #'compile abstract instructions' }
+{ #category : 'compile abstract instructions' }
 CogOutOfLineLiteralsARMv8Compiler >> outOfLineLiteralOpcodeLimit [
 	"The maximum offset in a LDR is (1<<12)-1, or (1<<10)-1 instructions.
 	 Be conservative.  The issue is that one abstract instruction can emit
@@ -310,7 +309,7 @@ CogOutOfLineLiteralsARMv8Compiler >> outOfLineLiteralOpcodeLimit [
 			- 1 "2 hardware instructions to 1 abstract opcode") - 1
 ]
 
-{ #category : #'inline cacheing' }
+{ #category : 'inline cacheing' }
 CogOutOfLineLiteralsARMv8Compiler >> pcRelativeAddressAt: instrAddress [
 	"Extract the address of the LDR (literal) instruction at address
 	
@@ -326,7 +325,7 @@ CogOutOfLineLiteralsARMv8Compiler >> pcRelativeAddressAt: instrAddress [
 							ifFalse: [offset]) * 4 "because LDR includes the imm / 4")
 ]
 
-{ #category : #'inline cacheing' }
+{ #category : 'inline cacheing' }
 CogOutOfLineLiteralsARMv8Compiler >> relocateMethodReferenceBeforeAddress: pc by: delta [
 	"If possible we generate the method address using pc-relative addressing.
 	 If so we don't need to relocate it in code.  So check if pc-relative code was
@@ -344,7 +343,7 @@ CogOutOfLineLiteralsARMv8Compiler >> relocateMethodReferenceBeforeAddress: pc by
 		 objectMemory long64At: litAddr put: reference + delta - 4]
 ]
 
-{ #category : #'inline cacheing' }
+{ #category : 'inline cacheing' }
 CogOutOfLineLiteralsARMv8Compiler >> rewriteFullTransferAt: callSiteReturnAddress target: callTargetAddress expectedInstruction: expectedInstruction [
 	"Rewrite a CallFull or JumpFull instruction to transfer to a different target.
 	 This variant is used to rewrite cached primitive calls where we load the target address into ip
@@ -360,7 +359,7 @@ CogOutOfLineLiteralsARMv8Compiler >> rewriteFullTransferAt: callSiteReturnAddres
 	^0
 ]
 
-{ #category : #'inline cacheing' }
+{ #category : 'inline cacheing' }
 CogOutOfLineLiteralsARMv8Compiler >> rewriteInlineCacheAt: callSiteReturnAddress tag: cacheTag target: callTargetAddress [
 	"Rewrite an inline cache to call a different target for a new tag.  This variant is used
 	 to link unlinked sends in ceSend:to:numArgs: et al.  Answer the extent of the code
@@ -382,7 +381,7 @@ CogOutOfLineLiteralsARMv8Compiler >> rewriteInlineCacheAt: callSiteReturnAddress
 	^4
 ]
 
-{ #category : #'inline cacheing' }
+{ #category : 'inline cacheing' }
 CogOutOfLineLiteralsARMv8Compiler >> rewriteInlineCacheTag: cacheTag at: callSiteReturnAddress [
 	"Rewrite an inline cache with a new tag.  This variant is used
 	 by the garbage collector."
@@ -390,7 +389,7 @@ CogOutOfLineLiteralsARMv8Compiler >> rewriteInlineCacheTag: cacheTag at: callSit
 	objectMemory longAt: (self pcRelativeAddressAt: callSiteReturnAddress - 8) put: cacheTag
 ]
 
-{ #category : #'generate machine code - support' }
+{ #category : 'generate machine code - support' }
 CogOutOfLineLiteralsARMv8Compiler >> setLiteralOpcodeIndex: index [
 	"Hack:  To know how far away a literal is from its referencing instruction we store
 	 its opcodeIndex, or -1, if as yet unassigned, in the second operand of the literal."
@@ -399,7 +398,7 @@ CogOutOfLineLiteralsARMv8Compiler >> setLiteralOpcodeIndex: index [
 	operands at: 2 put: index
 ]
 
-{ #category : #'generate machine code - support' }
+{ #category : 'generate machine code - support' }
 CogOutOfLineLiteralsARMv8Compiler >> sizePCDependentInstructionAt: eventualAbsoluteAddress [
 	"Size a jump and set its address.  The target may be another instruction
 	 or an absolute address.  On entry the address inst var holds our virtual
@@ -439,7 +438,7 @@ CogOutOfLineLiteralsARMv8Compiler >> sizePCDependentInstructionAt: eventualAbsol
 	^machineCodeSize := maxSize
 ]
 
-{ #category : #'inline cacheing' }
+{ #category : 'inline cacheing' }
 CogOutOfLineLiteralsARMv8Compiler >> storeLiteral: literal beforeFollowingAddress: followingAddress [
 	"Rewrite the literal in the instruction immediately preceding followingAddress."
 
@@ -451,127 +450,220 @@ CogOutOfLineLiteralsARMv8Compiler >> storeLiteral: literal beforeFollowingAddres
 		put: literal
 ]
 
-{ #category : #'generate machine code - support' }
+{ #category : 'generate machine code - support' }
 CogOutOfLineLiteralsARMv8Compiler >> updateLabel: labelInstruction [
 	opcode ~= Literal ifTrue:
 		[super updateLabel: labelInstruction]
 ]
 
-{ #category : #testing }
+{ #category : 'testing' }
 CogOutOfLineLiteralsARMv8Compiler >> usesOutOfLineLiteral [
 	"Answer if the receiver uses an out-of-line literal.  Needs only
 	 to work for the opcodes created with gen:literal:operand: et al."
 
-	| offset |
-	
 	<var: #offset type: 'sqInt'>
-
+	| offset |
 	opcode
 		caseOf: {
-		[CallFull]		-> [^true].
-		[JumpFull]		-> [^true].
-		"Arithmetic"
-		[AddCqR]		-> [ | constant |
-			constant := operands at: 0.
-			^ (constant abs bitAnd: 16rfff) ~= constant abs].
-		[AndCqR]		-> [^ self
-				encodeLogicalImmediate: (operands at: 0)
-				registerSize: 64
-				ifPossible: [ :value | false ]
-				ifNotPossible: [ true ] ].
-		[AndCqRR]		-> [^ self
-				encodeLogicalImmediate: (operands at: 0)
-				registerSize: 64
-				ifPossible: [ :value | false ]
-				ifNotPossible: [ true ]].
-		[CmpCqR]		-> [ 
-				((operands at: 0) abs bitAnd: 16rFFF) = (operands at: 0) abs ifTrue: [ ^ false ].
-				((operands at: 0) abs << 12 >> 12 bitAnd: 16rFFF) = (operands at: 0) abs ifTrue: [ ^ false ].
-				^ true].
-		[CmpC32R]		-> [^self rotateable8bitSignedImmediate: (operands at: 0) ifTrue: [:r :i :n| false] ifFalse: [true]].
-		[OrCqR]			-> [^self
-				encodeLogicalImmediate: (operands at: 0)
-				registerSize: 64
-				ifPossible: [ :v | false ]
-				ifNotPossible: [ true ]].
-				
-		[SubCqR]		-> [ | constant |
-			constant := operands at: 0.
-			^ (constant bitAnd: 16rfff) ~= constant ].
-		[TstCqR]		-> [ ^self
-				encodeLogicalImmediate: (operands at: 0)
-				registerSize: 64
-				ifPossible: [ :v | false ]
-				ifNotPossible: [ true ] ].
-		[XorCqR]		-> [^self rotateable8bitBitwiseImmediate: (operands at: 0) ifTrue: [:r :i :n| false] ifFalse: [true]].
-		[AddCwR]		-> [^true].
-		[AndCwR]		-> [^true].
-		[CmpCwR]		-> [^true].
-		[OrCwR]		-> [^true].
-		[SubCwR]		-> [^true].
-		[XorCwR]		-> [^true].
-		[LoadEffectiveAddressMwrR]
-						-> [^self rotateable8bitImmediate: (operands at: 0) ifTrue: [:r :i| false] ifFalse: [true]].
-		"Data Movement"						
-		[MoveCqR]		-> [^ self shiftable16bitImmediate: (operands at: 0) abs
-								ifTrue: [ :s :v | false ] ifFalse: [ true ]].
-		[MoveC32R]  -> [ ^ self shiftable16bitImmediate: (operands at: 0) abs
-			ifTrue: [ :s :v | false ] ifFalse: [ true ] ].
+				([ CallFull ] -> [ ^ true ]).
+				([ JumpFull ] -> [ ^ true ]).
+				"Arithmetic"
+				([ AddCqR ] -> [
+				 | constant |
+				 constant := operands at: 0.
+				 ^ (constant abs bitAnd: 16rfff) ~= constant abs ]).
+				([ AndCqR ] -> [
+				 ^ self
+					   encodeLogicalImmediate: (operands at: 0)
+					   registerSize: 64
+					   ifPossible: [ :value | false ]
+					   ifNotPossible: [ true ] ]).
+				([ AndCqRR ] -> [
+				 ^ self
+					   encodeLogicalImmediate: (operands at: 0)
+					   registerSize: 64
+					   ifPossible: [ :value | false ]
+					   ifNotPossible: [ true ] ]).
+				([ CmpCqR ] -> [
+				 ((operands at: 0) abs bitAnd: 16rFFF) = (operands at: 0) abs
+					 ifTrue: [ ^ false ].
+				 ((operands at: 0) abs << 12 >> 12 bitAnd: 16rFFF)
+				 = (operands at: 0) abs ifTrue: [ ^ false ].
+				 ^ true ]).
+				([ CmpC32R ] -> [
+				 ^ self
+					   rotateable8bitSignedImmediate: (operands at: 0)
+					   ifTrue: [ :r :i :n | false ]
+					   ifFalse: [ true ] ]).
+				([ OrCqR ] -> [
+				 ^ self
+					   encodeLogicalImmediate: (operands at: 0)
+					   registerSize: 64
+					   ifPossible: [ :v | false ]
+					   ifNotPossible: [ true ] ]).
 
-		[MoveCwR]		-> [^(self inCurrentCompilation: (operands at: 0)) not].
-		[MoveAwR]		-> [^(self isAddressRelativeToVarBase: (operands at: 0)) ifTrue: [false] ifFalse: [true]].
-		[MoveRAw]		-> [^(self isAddressRelativeToVarBase: (operands at: 1)) ifTrue: [false] ifFalse: [true]].
-		[MoveAbR]		-> [^(self isAddressRelativeToVarBase: (operands at: 0)) ifTrue: [false] ifFalse: [true]].
-		[MoveRAb]		-> [^(self isAddressRelativeToVarBase: (operands at: 1)) ifTrue: [false] ifFalse: [true]].
-	
+				([ SubCqR ] -> [
+				 | constant |
+				 constant := operands at: 0.
+				 ^ (constant bitAnd: 16rfff) ~= constant ]).
+				([ TstCqR ] -> [
+				 ^ self
+					   encodeLogicalImmediate: (operands at: 0)
+					   registerSize: 64
+					   ifPossible: [ :v | false ]
+					   ifNotPossible: [ true ] ]).
+				([ XorCqR ] -> [
+				 ^ self
+					   rotateable8bitBitwiseImmediate: (operands at: 0)
+					   ifTrue: [ :r :i :n | false ]
+					   ifFalse: [ true ] ]).
+				([ AddCwR ] -> [ ^ true ]).
+				([ AndCwR ] -> [ ^ true ]).
+				([ CmpCwR ] -> [ ^ true ]).
+				([ OrCwR ] -> [ ^ true ]).
+				([ SubCwR ] -> [ ^ true ]).
+				([ XorCwR ] -> [ ^ true ]).
+				([ LoadEffectiveAddressMwrR ] -> [
+				 ^ self
+					   rotateable8bitImmediate: (operands at: 0)
+					   ifTrue: [ :r :i | false ]
+					   ifFalse: [ true ] ]).
+				"Data Movement"
+				([ MoveCqR ] -> [
+				 | quickConstant |
+				 quickConstant := operands at: 0.
+				 ^ (quickConstant < 0 and: [
+					    (self isShiftable16bitImmediate: quickConstant negated - 1)
+						    not ]) or: [
+					   (self isShiftable16bitImmediate: quickConstant) not ] ]).
+				([ MoveC32R ] -> [
+				 | quickConstant |
+				 quickConstant := operands at: 0.
+				 ^ (quickConstant < 0 and: [
+					    (self isShiftable16bitImmediate: quickConstant negated - 1)
+						    not ]) or: [
+					   (self isShiftable16bitImmediate: quickConstant) not ] ]).
 
-		[MoveRM32r]	-> [self is9BitValue: (operands at: 1)
-										ifTrue: [ :value | ^  false ]
-										ifFalse: [ self shiftable16bitImmediate: (operands at: 1) 
-														ifTrue: [ :value :shift | ^ false ] 
-														ifFalse: [ ^ true ] ]].
+				([ MoveCwR ]
+				 -> [ ^ (self inCurrentCompilation: (operands at: 0)) not ]).
+				([ MoveAwR ] -> [
+				 ^ (self isAddressRelativeToVarBase: (operands at: 0))
+					   ifTrue: [ false ]
+					   ifFalse: [ true ] ]).
+				([ MoveRAw ] -> [
+				 ^ (self isAddressRelativeToVarBase: (operands at: 1))
+					   ifTrue: [ false ]
+					   ifFalse: [ true ] ]).
+				([ MoveAbR ] -> [
+				 ^ (self isAddressRelativeToVarBase: (operands at: 0))
+					   ifTrue: [ false ]
+					   ifFalse: [ true ] ]).
+				([ MoveRAb ] -> [
+				 ^ (self isAddressRelativeToVarBase: (operands at: 1))
+					   ifTrue: [ false ]
+					   ifFalse: [ true ] ]).
 
-		[MoveRMwr]	-> [self is9BitValue: (operands at: 1)
-										ifTrue: [ :value | ^  false ]
-										ifFalse: [ self shiftable16bitImmediate: (operands at: 1) 
-														ifTrue: [ :value :shift | ^ false ] 
-														ifFalse: [ ^ true ] ]].
 
-		[MoveRsM32r]	-> [^self is12BitValue: (operands at: 1) ifTrue: [:s :v| false] ifFalse: [true]]. 												
-		[MoveRdM64r]	-> [^self is12BitValue: (operands at: 1) ifTrue: [:s :v| false] ifFalse: [true]]. 
-		[MoveMbrR]	-> [^self is9BitValue: (operands at: 0) ifTrue: [:v| false] ifFalse: [true]].
-		[MoveRMbr]	-> [^self is12BitValue: (operands at: 1) ifTrue: [:s :v| false] ifFalse: [true]].
-		[MoveRM8r]	-> [^self is12BitValue: (operands at: 1) ifTrue: [:s :v| false] ifFalse: [true]].
-		[MoveM16rR]	-> [^self rotateable8bitImmediate: (operands at: 0) ifTrue: [:r :i| false] ifFalse: [true]].
-		[MoveRM16r]	-> [^self is12BitValue: (operands at: 1) ifTrue: [:s :v| false] ifFalse: [true]].
-		[MoveM32rRs]	-> [^self is12BitValue: (operands at: 0) ifTrue: [:s :v| false] ifFalse: [true]].
-		[MoveM64rRd]	-> [^self is12BitValue: (operands at: 0) ifTrue: [:s :v| false] ifFalse: [true]].
-			
-		[MoveM32rR] -> [ offset := (operands at: 0).
-			(offset >= 0 and: [ (offset bitAnd: 16rFFF) = offset ]) 
-				ifTrue: [ ^ false ]
-				ifFalse: [ 	self
-									is9BitValue: offset
-										ifTrue: [ :v | ^ false ] 
-										ifFalse: [^ true ] ] ].
+				([ MoveRM32r ] -> [
+				 self
+					 is9BitValue: (operands at: 1)
+					 ifTrue: [ :value | ^ false ]
+					 ifFalse: [
+						 self
+							 shiftable16bitImmediate: (operands at: 1)
+							 ifTrue: [ :value :shift | ^ false ]
+							 ifFalse: [ ^ true ] ] ]).
 
-		[MoveMwrR]	-> [
-			offset := (operands at: 0).
-			(offset >= 0 and: [ (offset bitAnd: 16rFFF) = offset ]) 
-				ifTrue: [ ^ false ]
-				ifFalse: [ 	self
-									is9BitValue: offset
-										ifTrue: [ :v | ^ false ] 
-										ifFalse: [^ true ] ]].
-								
-		[PushCw]		-> [^(self inCurrentCompilation: (operands at: 0)) not].
-		[PushCq]		-> [^self shiftable16bitImmediate: (operands at: 0) ifTrue: [:r :i| false] ifFalse: [true]].
-		[PrefetchAw] 	-> [^(self isAddressRelativeToVarBase: (operands at: 0)) ifTrue: [false] ifFalse: [true]].
+				([ MoveRMwr ] -> [
+				 self
+					 is9BitValue: (operands at: 1)
+					 ifTrue: [ :value | ^ false ]
+					 ifFalse: [
+						 self
+							 shiftable16bitImmediate: (operands at: 1)
+							 ifTrue: [ :value :shift | ^ false ]
+							 ifFalse: [ ^ true ] ] ]).
 
-		"Patcheable instruction. Moves a literal. Uses out of line literal."
-		[MovePatcheableC32R] -> [ ^ true ]
-		}
-		otherwise: [self error: 'We should not be here!!!'].
-	^false "to keep C compiler quiet"
+				([ MoveRsM32r ] -> [
+				 ^ self
+					   is12BitValue: (operands at: 1)
+					   ifTrue: [ :s :v | false ]
+					   ifFalse: [ true ] ]).
+				([ MoveRdM64r ] -> [
+				 ^ self
+					   is12BitValue: (operands at: 1)
+					   ifTrue: [ :s :v | false ]
+					   ifFalse: [ true ] ]).
+				([ MoveMbrR ] -> [
+				 ^ self
+					   is9BitValue: (operands at: 0)
+					   ifTrue: [ :v | false ]
+					   ifFalse: [ true ] ]).
+				([ MoveRMbr ] -> [
+				 ^ self
+					   is12BitValue: (operands at: 1)
+					   ifTrue: [ :s :v | false ]
+					   ifFalse: [ true ] ]).
+				([ MoveRM8r ] -> [
+				 ^ self
+					   is12BitValue: (operands at: 1)
+					   ifTrue: [ :s :v | false ]
+					   ifFalse: [ true ] ]).
+				([ MoveM16rR ] -> [
+				 ^ self
+					   rotateable8bitImmediate: (operands at: 0)
+					   ifTrue: [ :r :i | false ]
+					   ifFalse: [ true ] ]).
+				([ MoveRM16r ] -> [
+				 ^ self
+					   is12BitValue: (operands at: 1)
+					   ifTrue: [ :s :v | false ]
+					   ifFalse: [ true ] ]).
+				([ MoveM32rRs ] -> [
+				 ^ self
+					   is12BitValue: (operands at: 0)
+					   ifTrue: [ :s :v | false ]
+					   ifFalse: [ true ] ]).
+				([ MoveM64rRd ] -> [
+				 ^ self
+					   is12BitValue: (operands at: 0)
+					   ifTrue: [ :s :v | false ]
+					   ifFalse: [ true ] ]).
 
+				([ MoveM32rR ] -> [
+				 offset := operands at: 0.
+				 (offset >= 0 and: [ (offset bitAnd: 16rFFF) = offset ])
+					 ifTrue: [ ^ false ]
+					 ifFalse: [
+						 self
+							 is9BitValue: offset
+							 ifTrue: [ :v | ^ false ]
+							 ifFalse: [ ^ true ] ] ]).
+
+				([ MoveMwrR ] -> [
+				 offset := operands at: 0.
+				 (offset >= 0 and: [ (offset bitAnd: 16rFFF) = offset ])
+					 ifTrue: [ ^ false ]
+					 ifFalse: [
+						 self
+							 is9BitValue: offset
+							 ifTrue: [ :v | ^ false ]
+							 ifFalse: [ ^ true ] ] ]).
+
+				([ PushCw ]
+				 -> [ ^ (self inCurrentCompilation: (operands at: 0)) not ]).
+				([ PushCq ] -> [
+				 ^ self
+					   shiftable16bitImmediate: (operands at: 0)
+					   ifTrue: [ :r :i | false ]
+					   ifFalse: [ true ] ]).
+				([ PrefetchAw ] -> [
+				 ^ (self isAddressRelativeToVarBase: (operands at: 0))
+					   ifTrue: [ false ]
+					   ifFalse: [ true ] ]).
+
+				"Patcheable instruction. Moves a literal. Uses out of line literal."
+				([ MovePatcheableC32R ] -> [ ^ true ]) }
+		otherwise: [ self error: 'We should not be here!!!' ].
+	^ false "to keep C compiler quiet"
 ]

@@ -1,6 +1,6 @@
-Extension { #name : #ByteSymbol }
+Extension { #name : 'ByteSymbol' }
 
-{ #category : #'*VMMakerTests' }
+{ #category : '*VMMakerTests' }
 ByteSymbol >> forMemory: aMemory inMethod: anObject [ 
 
 	| vmString instSpec numSlots |
@@ -27,7 +27,7 @@ ByteSymbol >> forMemory: aMemory inMethod: anObject [
 	^ vmString
 ]
 
-{ #category : #'*VMMakerTests' }
+{ #category : '*VMMakerTests' }
 ByteSymbol >> forMethodBuilder: aBuilder [
 
 	^ self forMemory: aBuilder memory

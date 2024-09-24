@@ -1,16 +1,18 @@
 Class {
-	#name : #CCodeGeneratorInlineAlwaysStrategy,
-	#superclass : #CCodeGeneratorAbsoluteInlineStrategy,
-	#category : #'Slang-CodeGeneration'
+	#name : 'CCodeGeneratorInlineAlwaysStrategy',
+	#superclass : 'CCodeGeneratorAbsoluteInlineStrategy',
+	#category : 'Slang-CodeGeneration',
+	#package : 'Slang',
+	#tag : 'CodeGeneration'
 }
 
-{ #category : #testing }
+{ #category : 'testing' }
 CCodeGeneratorInlineAlwaysStrategy >> isSelectiveInlineStrategy [
 
 	^ false
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 CCodeGeneratorInlineAlwaysStrategy >> nodeCountOfMethod: aTMethod [
 
 	| nodeCount |
@@ -19,7 +21,7 @@ CCodeGeneratorInlineAlwaysStrategy >> nodeCountOfMethod: aTMethod [
 	^ nodeCount
 ]
 
-{ #category : #asserting }
+{ #category : 'asserting' }
 CCodeGeneratorInlineAlwaysStrategy >> shouldInlineMethod: aTMethod [ 
 
 	^ (super shouldInlineMethod: aTMethod) and: [

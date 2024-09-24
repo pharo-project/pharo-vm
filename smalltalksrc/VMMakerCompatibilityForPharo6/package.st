@@ -1,1 +1,1 @@
-Package { #name : #VMMakerCompatibilityForPharo6 }
+Package { #name : 'VMMakerCompatibilityForPharo6' }

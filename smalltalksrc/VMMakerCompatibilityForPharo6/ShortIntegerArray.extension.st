@@ -1,6 +1,6 @@
-Extension { #name : #ShortIntegerArray }
+Extension { #name : 'ShortIntegerArray' }
 
-{ #category : #'*VMMakerCompatibilityForPharo6-accessing' }
+{ #category : '*VMMakerCompatibilityForPharo6-accessing' }
 ShortIntegerArray >> bytesPerElement [
 	^2
 ]

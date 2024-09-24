@@ -1,34 +1,12 @@
 Class {
-	#name : #CoInterpreterPrimitives,
-	#superclass : #CoInterpreter,
-	#category : #'VMMaker-JIT'
+	#name : 'CoInterpreterPrimitives',
+	#superclass : 'CoInterpreter',
+	#category : 'VMMaker-JIT',
+	#package : 'VMMaker',
+	#tag : 'JIT'
 }
 
-{ #category : #'object access primitives' }
-CoInterpreterPrimitives >> frameIsMarked: theFPInt [
-	| methodField |
-	methodField := stackPages longAt: theFPInt + FoxMethod.
-	^methodField asUnsignedInteger < objectMemory getMemoryMap startOfObjectMemory
-		ifTrue: [(methodField bitAnd: 4) ~= 0]
-		ifFalse: [((stackPages longAt: theFPInt + FoxIFrameFlags) bitAnd: 2) ~= 0]
-]
-
-{ #category : #'object access primitives' }
-CoInterpreterPrimitives >> markFrame: theFPInt [
-	| methodField |
-	methodField := stackPages unsignedLongAt: theFPInt + FoxMethod.
-	methodField asUnsignedInteger < objectMemory getMemoryMap startOfObjectMemory
-		ifTrue:
-			[stackPages
-				unsignedLongAt: theFPInt + FoxMethod
-				put: (methodField bitOr: 4)]
-		ifFalse:
-			[stackPages
-				unsignedLongAt: theFPInt + FoxIFrameFlags
-				put: ((stackPages longAt: theFPInt + FoxIFrameFlags) bitOr: 2)]
-]
-
-{ #category : #'arithmetic primitives' }
+{ #category : 'arithmetic primitives' }
 CoInterpreterPrimitives >> mcprimHashMultiply: receiverArg [
 	"Machine code primitive for hash multiply. c.f. primitiveHashMultiply.
 	 mcprims consume receiver and arguments as parameters and answer the
@@ -48,93 +26,7 @@ CoInterpreterPrimitives >> mcprimHashMultiply: receiverArg [
 	^objectMemory integerObjectOf: (value * HashMultiplyConstant bitAnd: 16rFFFFFFF)
 ]
 
-{ #category : #'object access primitives' }
-CoInterpreterPrimitives >> pathTo: goal using: stack followWeak: followWeak [
-	"Trace objects and frames from the root, marking visited objects, pushing the current path on stack, until goal is found.
-	 If found, unmark, leaving path in stack, and answer 0.  Otherwise answer an error:
-		PrimErrBadArgument if stack is not an Array
-		PrimErrBadIndex if search overflows stack
-		PrimErrNotFound if goal cannot be found"
-	| current index next stackSize stackp freeStartAtStart |
-	<var: #index type: #sqInt> "Force the sign because typeInference does not seem to work"
-	(objectMemory isArray: stack) ifFalse:
-		[^PrimErrBadArgument].
-	self assert: objectMemory allObjectsUnmarked.
-	freeStartAtStart := objectMemory freeStart. "check no allocations during search"
-	objectMemory beRootIfOld: stack. "so no store checks are necessary on stack"
-	stackSize := objectMemory lengthOf: stack.
-	objectMemory mark: stack.
-	"no need. the current context is not reachable from the active process (suspendedContext is nil)"
-	"objectMemory mark: self activeProcess."
-	current := objectMemory specialObjectsOop.
-	objectMemory mark: current.
-	index := objectMemory lengthOf: current.
-	stackp := 0.
-	[[(index := index - 1) >= -1] whileTrue:
-		[(stackPages couldBeFramePointer: current)
-			ifTrue:
-				[next := index >= 0
-							ifTrue: [self field: index ofFrame: (self cCoerceSimple: current to: #'char *')]
-							ifFalse: [objectMemory nilObject]]
-			ifFalse:
-				[index >= 0
-					ifTrue:
-						[next := (objectMemory isContextNonImm: current)
-									ifTrue: [self fieldOrSenderFP: index ofContext: current]
-									ifFalse: [objectMemory fetchPointer: index ofObject: current]]
-					ifFalse:
-						[next := objectMemory fetchClassOfNonImm: current]].
-		 (stackPages couldBeFramePointer: next)
-			ifTrue: [self assert: (self isFrame: (self cCoerceSimple: next to: #'char *')
-										onPage: (stackPages stackPageFor: (self cCoerceSimple: next to: #'char *')))]
-			ifFalse:
-				[next >= objectMemory getMemoryMap startOfObjectMemory ifTrue: "exclude Cog methods"
-					[self assert: (self checkOkayOop: next)]].
-		 next = goal ifTrue:
-			[self assert: freeStartAtStart = objectMemory freeStart.
-			 self unmarkAfterPathTo.
-			 objectMemory storePointer: stackp ofObject: stack withValue: current.
-			 self pruneStack: stack stackp: stackp.
-			 ^0].
-		 ((objectMemory isNonIntegerObject: next)
-		  and: [(stackPages couldBeFramePointer: next)
-				ifTrue: [(self frameIsMarked: next) not]
-				ifFalse:
-					[next >= objectMemory getMemoryMap startOfObjectMemory "exclude Cog methods"
-					  and: [(objectMemory isMarked: next) not
-					  and: [((objectMemory isPointers: next) or: [objectMemory isCompiledMethod: next])
-					  and: [followWeak or: [(objectMemory isWeakNonImm: next) not]]]]]])
-			ifTrue:
-				[stackp + 2 > stackSize ifTrue:
-					[self assert: freeStartAtStart = objectMemory freeStart.
-					 self unmarkAfterPathTo.
-					 objectMemory nilFieldsOf: stack.
-					 ^PrimErrBadIndex]. "PrimErrNoMemory ?"
-				 objectMemory
-					storePointerUnchecked: stackp ofObject: stack withValue: current;
-					storePointerUnchecked: stackp + 1 ofObject: stack withValue: (objectMemory integerObjectOf: index).
-				 stackp := stackp + 2.
-				 (stackPages couldBeFramePointer: (self cCoerceSimple: next to: #'char *'))
-					ifTrue:
-						[self markFrame: next.
-						index := self fieldsInFrame: (self cCoerceSimple: next to: #'char *')]
-					ifFalse:
-						[objectMemory mark: next.
-						 (objectMemory isCompiledMethod: next)
-							ifTrue: [index := (objectMemory literalCountOf: next) + LiteralStart]
-							ifFalse: [index := objectMemory lengthOf: next]].
-				 current := next]].
-		 current = objectMemory specialObjectsOop ifTrue:
-			[self assert: freeStartAtStart = objectMemory freeStart.
-			 self unmarkAfterPathTo.
-			 objectMemory nilFieldsOf: stack.
-			^PrimErrNotFound].
-		 index := objectMemory integerValueOf: (objectMemory fetchPointer: stackp - 1 ofObject: stack).
-		 current := objectMemory fetchPointer: stackp - 2 ofObject: stack.
-		 stackp := stackp - 2] repeat
-]
-
-{ #category : #'method introspection support' }
+{ #category : 'method introspection support' }
 CoInterpreterPrimitives >> pcDataFor: cogMethod [
 	<var: #cogMethod type: #'CogMethod *'>
 	| cm nSlots nEntries data |
@@ -150,7 +42,7 @@ CoInterpreterPrimitives >> pcDataFor: cogMethod [
 	^data
 ]
 
-{ #category : #'method introspection primitives' }
+{ #category : 'method introspection primitives' }
 CoInterpreterPrimitives >> primitiveAllMethodsCompiledToMachineCode [
 	<export: true>
 	<option: #SistaCogit>
@@ -168,7 +60,7 @@ CoInterpreterPrimitives >> primitiveAllMethodsCompiledToMachineCode [
 	self pop: 1 thenPush: arrayObj
 ]
 
-{ #category : #'process primitives' }
+{ #category : 'process primitives' }
 CoInterpreterPrimitives >> primitiveCollectCogCodeConstituents [
 	"Answer the contents of the code zone as an array of pair-wise element, address in ascending
 	 address order. Answer a string for a runtime routine or abstract label (beginning, end, etc),
@@ -189,7 +81,7 @@ CoInterpreterPrimitives >> primitiveCollectCogCodeConstituents [
 	self pop: argumentCount + 1 thenPush: constituents
 ]
 
-{ #category : #'indexing primitives' }
+{ #category : 'indexing primitives' }
 CoInterpreterPrimitives >> primitiveContextXray [
 	"Lift the veil from a context and answer an integer describing its interior state.
 	 Used for e.g. VM tests so they can verify they're testing what they think they're testing.
@@ -222,7 +114,7 @@ CoInterpreterPrimitives >> primitiveContextXray [
 	self pop: 1 thenPush: (objectMemory integerObjectOf: flags)
 ]
 
-{ #category : #'system control primitives' }
+{ #category : 'system control primitives' }
 CoInterpreterPrimitives >> primitiveFlushCacheByMethod [
 	"The receiver is a compiledMethod.  Clear all entries in the method lookup cache that
 	 refer to this method, presumably because it has been redefined, overridden or removed.
@@ -231,7 +123,7 @@ CoInterpreterPrimitives >> primitiveFlushCacheByMethod [
 	cogit unlinkSendsTo: self stackTop andFreeIf: false
 ]
 
-{ #category : #'system control primitives' }
+{ #category : 'system control primitives' }
 CoInterpreterPrimitives >> primitiveFlushCacheBySelector [
 	"The receiver is a message selector.  Clear all entries in the method lookup cache
 	 with this selector, presumably because an associated method has been redefined.
@@ -251,7 +143,7 @@ CoInterpreterPrimitives >> primitiveFlushCacheBySelector [
 		isMNUSelector: (selector = (objectMemory splObj: SelectorDoesNotUnderstand))
 ]
 
-{ #category : #'trampoline support' }
+{ #category : 'trampoline support' }
 CoInterpreterPrimitives >> primitiveFunctionPointerAddress [
 	<api>
 	<returnTypeC: #usqInt>
@@ -259,7 +151,7 @@ CoInterpreterPrimitives >> primitiveFunctionPointerAddress [
 		inSmalltalk: [cogit simulatedReadWriteVariableAddress: #primitiveFunctionPointer in: self]
 ]
 
-{ #category : #'process primitives' }
+{ #category : 'process primitives' }
 CoInterpreterPrimitives >> primitiveLongRunningPrimitiveSemaphore [
 	"Primitive. Install the semaphore to be used for collecting long-running primitives, 
 	 or nil if no semaphore should be used."
@@ -294,7 +186,7 @@ CoInterpreterPrimitives >> primitiveLongRunningPrimitiveSemaphore [
 		[self siglong: reenterInterpreter jmp: ReturnToInterpreter]
 ]
 
-{ #category : #'method introspection primitives' }
+{ #category : 'method introspection primitives' }
 CoInterpreterPrimitives >> primitiveMethodPCData [
 	<export: true>
 	| methodReceiver data |
@@ -311,7 +203,7 @@ CoInterpreterPrimitives >> primitiveMethodPCData [
 	self pop: 1 thenPush: data
 ]
 
-{ #category : #'method introspection primitives' }
+{ #category : 'method introspection primitives' }
 CoInterpreterPrimitives >> primitiveMethodProfilingData [
 	<export: true>
 	| methodReceiver data |
@@ -328,7 +220,7 @@ CoInterpreterPrimitives >> primitiveMethodProfilingData [
 	self pop: 1 thenPush: data
 ]
 
-{ #category : #'indexing primitives' }
+{ #category : 'indexing primitives' }
 CoInterpreterPrimitives >> primitiveMethodXray [
 
 	"Lift the veil from a method and answer an integer describing the interior state
@@ -384,13 +276,13 @@ CoInterpreterPrimitives >> primitiveMethodXray [
 	self pop: 1 thenPush: (objectMemory integerObjectOf: flags)
 ]
 
-{ #category : #'other primitives' }
+{ #category : 'other primitives' }
 CoInterpreterPrimitives >> primitiveMinimumUnusedHeadroom [
 	<export: true>
 	self methodReturnValue: (self integerObjectOf: self minimumUnusedHeadroom)
 ]
 
-{ #category : #'object access primitives' }
+{ #category : 'object access primitives' }
 CoInterpreterPrimitives >> primitiveObjectAt [
 "Defined for CompiledMethods only"
 	| thisReceiver rawHeader realHeader index |
@@ -411,7 +303,7 @@ CoInterpreterPrimitives >> primitiveObjectAt [
 					ifFalse: [objectMemory fetchPointer: index - 1 ofObject: thisReceiver])
 ]
 
-{ #category : #'object access primitives' }
+{ #category : 'object access primitives' }
 CoInterpreterPrimitives >> primitiveObjectAtPut [
 	"Store a literal into a CompiledMethod at the given index. Defined for CompiledMethods only."
 	| thisReceiver rawHeader realHeader index newValue |
@@ -443,7 +335,7 @@ CoInterpreterPrimitives >> primitiveObjectAtPut [
 	self pop: 3 thenPush: newValue
 ]
 
-{ #category : #'process primitives' }
+{ #category : 'process primitives' }
 CoInterpreterPrimitives >> primitiveProfileSemaphore [
 	"Primitive. Install the semaphore to be used for profiling, 
 	or nil if no semaphore should be used.
@@ -478,7 +370,7 @@ CoInterpreterPrimitives >> primitiveProfileSemaphore [
 		[self siglong: reenterInterpreter jmp: ReturnToInterpreter]
 ]
 
-{ #category : #'method introspection primitives' }
+{ #category : 'method introspection primitives' }
 CoInterpreterPrimitives >> primitiveResetCountersInMethod [
 	<export: true>
 	<option: #SistaCogit>
@@ -490,7 +382,7 @@ CoInterpreterPrimitives >> primitiveResetCountersInMethod [
 		[cogit resetCountersIn: (self cogMethodOf: methodReceiver)]
 ]
 
-{ #category : #'process primitives' }
+{ #category : 'process primitives' }
 CoInterpreterPrimitives >> primitiveSignal [
 	"Synchronously signal the semaphore.
 	 This may change the active process as a result."
@@ -505,14 +397,14 @@ CoInterpreterPrimitives >> primitiveSignal [
 		[self forProcessPrimitiveReturnToExecutivePostContextSwitch: inInterpreter]
 ]
 
-{ #category : #'system control primitives' }
+{ #category : 'system control primitives' }
 CoInterpreterPrimitives >> primitiveSnapshot [
 	"Save a normal snapshot under the same name as it was loaded
 	 unless it has been renamed by the last primitiveImageName.
 
 	 Override to jump to the interpreter because the machine code zone is now void."
 	<inline: false>
-	self snapshot: false.
+	self snapshot.
 	(self iframeMethod: framePointer) = newMethod ifTrue:
 		["snapshot: has reached the end and built a frame.
 		 In the JIT we need to back-up the pc before reentering the interpreter."
@@ -521,7 +413,7 @@ CoInterpreterPrimitives >> primitiveSnapshot [
 	self unreachable
 ]
 
-{ #category : #'control primitives' }
+{ #category : 'control primitives' }
 CoInterpreterPrimitives >> primitiveTerminateTo [
 	"Primitive. Terminate up the context stack from the receiver up to but not including
 	 the argument, if previousContext is on my Context stack. Make previousContext my
@@ -700,7 +592,7 @@ CoInterpreterPrimitives >> primitiveTerminateTo [
 	self assert: stackPage = stackPages mostRecentlyUsedPage
 ]
 
-{ #category : #'system control primitives' }
+{ #category : 'system control primitives' }
 CoInterpreterPrimitives >> primitiveVoidVMState [
 	"Void all internal VM state in the stack and machine code zones
 
@@ -713,7 +605,7 @@ CoInterpreterPrimitives >> primitiveVoidVMState [
 	self unreachable
 ]
 
-{ #category : #'system control primitives' }
+{ #category : 'system control primitives' }
 CoInterpreterPrimitives >> primitiveVoidVMStateForMethod [
 	"The receiver (or first argument) must be a compiledMethod.  The optional (or second) argument must be a
 	 boolean. Clear all VM state associated with the method, including any machine code, or machine code pcs
@@ -770,7 +662,7 @@ CoInterpreterPrimitives >> primitiveVoidVMStateForMethod [
 	self pop: argumentCount
 ]
 
-{ #category : #'method introspection support' }
+{ #category : 'method introspection support' }
 CoInterpreterPrimitives >> profilingDataFor: cogMethod [
 	<var: #cogMethod type: #'CogMethod *'>
 	| cm nSlots nEntries data |
@@ -784,27 +676,4 @@ CoInterpreterPrimitives >> profilingDataFor: cogMethod [
 	nEntries < nSlots ifTrue:
 		[objectMemory shorten: data toIndexableSize: nEntries].
 	^data
-]
-
-{ #category : #'object access primitives' }
-CoInterpreterPrimitives >> unmarkAllFrames [
-	| thePage theFP methodField flags |
-	<var: #thePage type: #'StackPage *'>
-	<var: #theFP type: #'char *'>
-	<inline: false>
-	0 to: numStackPages - 1 do:
-		[:i|
-		thePage := stackPages stackPageAt: i.
-		(stackPages isFree: thePage) ifFalse:
-			[theFP := thePage  headFP.
-			 [methodField := stackPages unsignedLongAt: theFP + FoxMethod.
-			 methodField asUnsignedInteger < objectMemory getMemoryMap startOfObjectMemory
-				ifTrue:
-					[(methodField bitAnd: 4) ~= 0 ifTrue:
-						[self unsignedLongAt: theFP + FoxMethod put: methodField - 4]]
-				ifFalse:
-					[flags := stackPages unsignedLongAt: theFP + FoxIFrameFlags.
-					  (flags bitAnd: 2) ~= 0 ifTrue:
-						[stackPages unsignedLongAt: theFP + FoxIFrameFlags put: flags - 2]].
-			  (theFP := self frameCallerFP: theFP) ~= 0] whileTrue]]
 ]

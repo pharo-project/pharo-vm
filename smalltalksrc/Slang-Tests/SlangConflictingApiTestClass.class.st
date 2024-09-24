@@ -1,35 +1,36 @@
 Class {
-	#name : #SlangConflictingApiTestClass,
-	#superclass : #SlangClass,
-	#category : #'Slang-Tests'
+	#name : 'SlangConflictingApiTestClass',
+	#superclass : 'SlangClass',
+	#category : 'Slang-Tests',
+	#package : 'Slang-Tests'
 }
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 SlangConflictingApiTestClass class >> initializationOptions [
 
 	^ nil
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 SlangConflictingApiTestClass class >> interpreterClass [
 
 	^ nil
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 SlangConflictingApiTestClass class >> objectMemoryClass [
 
 	^ nil
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 SlangConflictingApiTestClass >> main [
 
 	<api>
 	
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 SlangConflictingApiTestClass >> main: arg1 [
 
 	<api>

@@ -7,14 +7,13 @@ self classPool declare: #Foo from: StackInterpreter classPool
 	[:k| self classPool declare: k from: ObjectMemory classPool]
 "
 Class {
-	#name : #VMObjectIndices,
-	#superclass : #SharedPool,
+	#name : 'VMObjectIndices',
+	#superclass : 'SharedPool',
 	#classVars : [
 		'ActiveProcessIndex',
 		'CharacterValueIndex',
 		'ClassArray',
 		'ClassBitmap',
-		'ClassBlockClosure',
 		'ClassByteArray',
 		'ClassByteString',
 		'ClassCharacter',
@@ -65,6 +64,7 @@ Class {
 		'PriorityIndex',
 		'ProcessInExternalCodeTag',
 		'ProcessListsIndex',
+		'ProcessShouldOverflowIndex',
 		'ProcessSignalingLowSpace',
 		'ReceiverIndex',
 		'SchedulerAssociation',
@@ -77,6 +77,7 @@ Class {
 		'SelectorMustBeBoolean',
 		'SelectorRunWithIn',
 		'SelectorSistaTrap',
+		'SelectorStackOverflow',
 		'SelectorStart',
 		'SelectorUnknownBytecode',
 		'SenderIndex',
@@ -94,5 +95,6 @@ Class {
 		'XIndex',
 		'YIndex'
 	],
-	#category : #Melchor
+	#category : 'Melchor',
+	#package : 'Melchor'
 }

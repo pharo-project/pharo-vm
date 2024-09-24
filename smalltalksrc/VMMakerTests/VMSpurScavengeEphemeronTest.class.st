@@ -1,10 +1,28 @@
 Class {
-	#name : #VMSpurScavengeEphemeronTest,
-	#superclass : #VMSpurInitializedOldSpaceTest,
-	#category : #'VMMakerTests-MemoryTests'
+	#name : 'VMSpurScavengeEphemeronTest',
+	#superclass : 'VMSpurInitializedOldSpaceTest',
+	#category : 'VMMakerTests-MemoryTests',
+	#package : 'VMMakerTests',
+	#tag : 'MemoryTests'
 }
 
-{ #category : #initialization }
+{ #category : 'tests-ephemerons-globals' }
+VMSpurScavengeEphemeronTest >> pushRoot: anObject [
+
+	| link |
+	link := self newArrayWithSlots: 2.
+	memory
+		storePointer: 0 "Value"
+		ofObject: link
+		withValue: anObject.
+	memory
+		storePointer: 1 "Next"
+		ofObject: link
+		withValue: self keptObjectInVMVariable1.
+	self keepObjectInVMVariable1: link.
+]
+
+{ #category : 'initialization' }
 VMSpurScavengeEphemeronTest >> setUp [
 
 	super setUp.
@@ -12,7 +30,7 @@ VMSpurScavengeEphemeronTest >> setUp [
 	self createEphemeronClass
 ]
 
-{ #category : #'tests-ephemerons-globals' }
+{ #category : 'tests-ephemerons-globals' }
 VMSpurScavengeEphemeronTest >> testDequeueMournerWithOnlyOneEphemeronShouldEmptyMournQueue [
 
 	| ephemeronObjectOop nonEphemeronObjectOop |
@@ -32,7 +50,77 @@ VMSpurScavengeEphemeronTest >> testDequeueMournerWithOnlyOneEphemeronShouldEmpty
 	self assert: memory dequeueMourner equals: nil
 ]
 
-{ #category : #'tests-ephemerons-globals' }
+{ #category : 'tests-ephemerons-globals' }
+VMSpurScavengeEphemeronTest >> testEphemeronDiscoveredDuringEphemeronListIteration [
+
+	| ephemeronObjectOop1 ephemeronObjectOop2 dicoveredEphemeron nonSurvivingKey key1 key2 |
+	ephemeronObjectOop1 := self newEphemeronObject.
+	ephemeronObjectOop2 := self newEphemeronObject.
+	dicoveredEphemeron := self newEphemeronObject.
+	key1 := self newObjectWithSlots: 0.
+	key2 := self newObjectWithSlots: 0.
+	nonSurvivingKey := self newObjectWithSlots: 0.
+	memory
+		storePointer: 0
+		ofObject: ephemeronObjectOop1
+		withValue: key1.
+	memory
+		storePointer: 0
+		ofObject: ephemeronObjectOop2
+		withValue: key2.
+	memory
+		storePointer: 0
+		ofObject: dicoveredEphemeron
+		withValue: nonSurvivingKey.
+	memory
+		storePointer: 1
+		ofObject: ephemeronObjectOop1
+		withValue: dicoveredEphemeron.
+	
+	"Order is important here. The surviving key should be traced AFTER the ephemerons.
+	This way they are added to the ephemeron list to be traced later."
+	self pushRoot: key1.
+	self pushRoot: key2.
+	
+	"Both these ephemerons must survive.
+	When iterating the ephemeron list, if the head survives, the head gets rewritten and the ephemeron gets traced.
+	If, when tracing the ephemeron a new ephemeron is discovered, it gets added at the head of the list"
+	self pushRoot: ephemeronObjectOop1.
+	
+	"Then, when iterating the second ephemeron in the list, the head has changed!
+	This should be properly handled"
+	self pushRoot: ephemeronObjectOop2.
+	
+	memory doScavenge: 1 "TenureByAge".
+
+	"Weak assertion: check the heap is in correct state"
+	memory setCheckForLeaks: -1.
+	memory runLeakCheckerFor: GCModeIncremental
+]
+
+{ #category : 'tests-ephemerons-globals' }
+VMSpurScavengeEphemeronTest >> testEphemeronDiscoveredTwiceInRememberedSet [
+
+	| ephemeronObjectOop oldEphemeronObjectOop1 oldEphemeronObjectOop2 |
+	ephemeronObjectOop := self newEphemeronObject.
+	oldEphemeronObjectOop1 := self newOldEphemeronObject.
+	oldEphemeronObjectOop2 := self newOldEphemeronObject.
+	memory
+		storePointer: 0
+		ofObject: oldEphemeronObjectOop1
+		withValue: ephemeronObjectOop.
+	memory
+		storePointer: 0
+		ofObject: oldEphemeronObjectOop2
+		withValue: ephemeronObjectOop.
+
+	memory doScavenge: 1 "TenureByAge".
+
+	memory setCheckForLeaks: -1.
+	memory runLeakCheckerFor: GCModeIncremental
+]
+
+{ #category : 'tests-ephemerons-globals' }
 VMSpurScavengeEphemeronTest >> testFireManyEphemeronWithSameKey [
 
 	| numberOfEphemerons ephemeronKey |
@@ -68,7 +156,7 @@ VMSpurScavengeEphemeronTest >> testFireManyEphemeronWithSameKey [
 			withValue: memory nilObject ]
 ]
 
-{ #category : #'tests-ephemerons-globals' }
+{ #category : 'tests-ephemerons-globals' }
 VMSpurScavengeEphemeronTest >> testNewEphemeronObjectShouldBeInstanceOfEphemeronClass [
 
 	| ephemeronObjectOop |
@@ -79,7 +167,7 @@ VMSpurScavengeEphemeronTest >> testNewEphemeronObjectShouldBeInstanceOfEphemeron
 		equals: ourEphemeronClass
 ]
 
-{ #category : #'tests-ephemerons-globals' }
+{ #category : 'tests-ephemerons-globals' }
 VMSpurScavengeEphemeronTest >> testScavengeEphemeronInRememberdSetBecomesNormalObjectAfterFinalizationIsFired [
 
 	| ephemeronObjectOop nonEphemeronObjectOop |
@@ -102,7 +190,7 @@ VMSpurScavengeEphemeronTest >> testScavengeEphemeronInRememberdSetBecomesNormalO
 		equals: memory nonIndexablePointerFormat
 ]
 
-{ #category : #'tests-ephemerons-globals' }
+{ #category : 'tests-ephemerons-globals' }
 VMSpurScavengeEphemeronTest >> testScavengeEphemeronInRememberedSetReferencingDyingObjectShouldBeAddedInTheMournQueue [
 
 	| ephemeronObjectOop nonEphemeronObjectOop |
@@ -123,7 +211,7 @@ VMSpurScavengeEphemeronTest >> testScavengeEphemeronInRememberedSetReferencingDy
 	self assert: memory dequeueMourner equals: ephemeronObjectOop
 ]
 
-{ #category : #'tests-ephemerons-globals' }
+{ #category : 'tests-ephemerons-globals' }
 VMSpurScavengeEphemeronTest >> testScavengeEphemeronInRememberedSetReferencingDyingObjectShouldScavengeEphemeronKey [
 
 	| ephemeronObjectOop nonEphemeronObjectOop nonEphemeronObjectHash |
@@ -150,7 +238,7 @@ VMSpurScavengeEphemeronTest >> testScavengeEphemeronInRememberedSetReferencingDy
 		equals: nonEphemeronObjectHash
 ]
 
-{ #category : #'tests-ephemerons-globals' }
+{ #category : 'tests-ephemerons-globals' }
 VMSpurScavengeEphemeronTest >> testScavengeEphemeronInRememberedSetReferencingSurvivorShouldLeaveEphemeronObjectAsIs [
 
 	| ephemeronObjectOop nonEphemeronObjectOop nonEphemeronObjectHash |
@@ -179,7 +267,7 @@ VMSpurScavengeEphemeronTest >> testScavengeEphemeronInRememberedSetReferencingSu
 		equals: nonEphemeronObjectHash
 ]
 
-{ #category : #'tests-ephemerons-globals' }
+{ #category : 'tests-ephemerons-globals' }
 VMSpurScavengeEphemeronTest >> testScavengeEphemeronObjectBecomesNormalObjectAfterFinalizationIsFired [
 
 	| ephemeronObjectOop nonEphemeronObjectOop |
@@ -200,7 +288,7 @@ VMSpurScavengeEphemeronTest >> testScavengeEphemeronObjectBecomesNormalObjectAft
 		equals: memory nonIndexablePointerFormat
 ]
 
-{ #category : #'tests-ephemerons-globals' }
+{ #category : 'tests-ephemerons-globals' }
 VMSpurScavengeEphemeronTest >> testScavengeEphemeronObjectReferencingDyingObjectShouldBeAddedInTheMournQueue [
 
 	| ephemeronObjectOop nonEphemeronObjectOop |
@@ -219,7 +307,7 @@ VMSpurScavengeEphemeronTest >> testScavengeEphemeronObjectReferencingDyingObject
 	self assert: memory dequeueMourner equals: ephemeronObjectOop
 ]
 
-{ #category : #'tests-ephemerons-globals' }
+{ #category : 'tests-ephemerons-globals' }
 VMSpurScavengeEphemeronTest >> testScavengeEphemeronObjectReferencingDyingObjectShouldScavengeEphemeronKey [
 
 	| ephemeronObjectOop nonEphemeronObjectOop nonEphemeronObjectHash |
@@ -241,7 +329,7 @@ VMSpurScavengeEphemeronTest >> testScavengeEphemeronObjectReferencingDyingObject
 		equals: nonEphemeronObjectHash
 ]
 
-{ #category : #'tests-ephemerons-globals' }
+{ #category : 'tests-ephemerons-globals' }
 VMSpurScavengeEphemeronTest >> testScavengeEphemeronObjectReferencingSurvivorShouldLeaveEphemeronObjectAsIs [
 
 	| ephemeronObjectOop nonEphemeronObjectOop nonEphemeronObjectHash |
@@ -265,7 +353,7 @@ VMSpurScavengeEphemeronTest >> testScavengeEphemeronObjectReferencingSurvivorSho
 		equals: nonEphemeronObjectHash
 ]
 
-{ #category : #'tests-ephemerons-globals' }
+{ #category : 'tests-ephemerons-globals' }
 VMSpurScavengeEphemeronTest >> testScavengeTwoEphemeronObjectsReferencingDifferentDyingObjectsShouldBeAddedInTheMournQueueAfterScavengingInEden [
 
 	| ephemeronObjectOop nonEphemeronObjectOop anotherEphemeronObjectOop anotherNonEphemeronObjectOop |
@@ -296,7 +384,7 @@ VMSpurScavengeEphemeronTest >> testScavengeTwoEphemeronObjectsReferencingDiffere
 	self assert: memory dequeueMourner equals: anotherEphemeronObjectOop
 ]
 
-{ #category : #'tests-ephemerons-globals' }
+{ #category : 'tests-ephemerons-globals' }
 VMSpurScavengeEphemeronTest >> testScavengeTwoEphemeronObjectsReferencingDifferentDyingObjectsShouldBeAddedInTheMournQueueAfterScavengingInPastSpace [
 
 	| ephemeronObjectOop nonEphemeronObjectOop anotherEphemeronObjectOop anotherNonEphemeronObjectOop |
@@ -338,7 +426,7 @@ VMSpurScavengeEphemeronTest >> testScavengeTwoEphemeronObjectsReferencingDiffere
 	self assert: memory dequeueMourner equals: ephemeronObjectOop
 ]
 
-{ #category : #'tests-ephemerons-globals' }
+{ #category : 'tests-ephemerons-globals' }
 VMSpurScavengeEphemeronTest >> testScavengeTwoEphemeronObjectsReferencingSameDyingObjectsShouldAddOnlyOneEphemeron [
 
 	| ephemeronObjectOop nonEphemeronObjectOop anotherEphemeronObjectOop |
@@ -370,7 +458,7 @@ VMSpurScavengeEphemeronTest >> testScavengeTwoEphemeronObjectsReferencingSameDyi
 	self assert: memory dequeueMourner equals: nil
 ]
 
-{ #category : #'tests-ephemerons-globals' }
+{ #category : 'tests-ephemerons-globals' }
 VMSpurScavengeEphemeronTest >> testScavengeTwoEphemeronObjectsReferencingSameDyingObjectsShouldAddOnlySecond [
 
 	| ephemeronObjectOop nonEphemeronObjectOop anotherEphemeronObjectOop |
@@ -400,7 +488,7 @@ VMSpurScavengeEphemeronTest >> testScavengeTwoEphemeronObjectsReferencingSameDyi
 	self assert: memory dequeueMourner equals: anotherEphemeronObjectOop
 ]
 
-{ #category : #'tests-ephemerons-globals' }
+{ #category : 'tests-ephemerons-globals' }
 VMSpurScavengeEphemeronTest >> testScavengeTwoEphemeronObjectsReferencingSameDyingObjectsShouldBeQueuedAfterConsumingMournQueue [
 
 	| ephemeronObjectOop nonEphemeronObjectOop anotherEphemeronObjectOop |
@@ -438,7 +526,7 @@ VMSpurScavengeEphemeronTest >> testScavengeTwoEphemeronObjectsReferencingSameDyi
 	self assert: memory dequeueMourner equals: ephemeronObjectOop
 ]
 
-{ #category : #'tests-ephemerons-globals' }
+{ #category : 'tests-ephemerons-globals' }
 VMSpurScavengeEphemeronTest >> testScavengeTwoEphemeronObjectsReferencingSameDyingObjectsShouldLeaveFirstOneAsEphemeron [
 
 	| ephemeronObjectOop nonEphemeronObjectOop anotherEphemeronObjectOop |
@@ -468,7 +556,7 @@ VMSpurScavengeEphemeronTest >> testScavengeTwoEphemeronObjectsReferencingSameDyi
 	self assert: (memory isEphemeron: ephemeronObjectOop)
 ]
 
-{ #category : #'tests-ephemerons-globals' }
+{ #category : 'tests-ephemerons-globals' }
 VMSpurScavengeEphemeronTest >> testScavengeTwoEphemeronObjectsReferencingSameDyingObjectsShouldScavengeKeyOfSecond [
 
 	| ephemeronObjectOop nonEphemeronObjectOop anotherEphemeronObjectOop |
@@ -500,7 +588,7 @@ VMSpurScavengeEphemeronTest >> testScavengeTwoEphemeronObjectsReferencingSameDyi
 		equals: (memory remapObj: nonEphemeronObjectOop)
 ]
 
-{ #category : #'tests-ephemerons-globals' }
+{ #category : 'tests-ephemerons-globals' }
 VMSpurScavengeEphemeronTest >> testScavengeZeroSizedEphemeronShouldTreatItAsNormalObject [
 	| ephemeronObjectOop zeroSizedEphemeronClass hashBefore addressBefore |
 	

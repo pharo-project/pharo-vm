@@ -1,15 +1,17 @@
 Class {
-	#name : #VMPrimitiveCallAbstractTest,
-	#superclass : #VMSimpleStackBasedCogitAbstractTest,
+	#name : 'VMPrimitiveCallAbstractTest',
+	#superclass : 'VMSimpleStackBasedCogitAbstractTest',
 	#instVars : [
 		'baseMethodIP',
 		'baseFrame',
 		'baseMethod'
 	],
-	#category : #'VMMakerTests-JitTests'
+	#category : 'VMMakerTests-JitTests',
+	#package : 'VMMakerTests',
+	#tag : 'JitTests'
 }
 
-{ #category : #helpers }
+{ #category : 'helpers' }
 VMPrimitiveCallAbstractTest >> callCogMethod: callingMethod receiver: receiver arguments: arguments returnAddress: returnAddress [
 
 	machineSimulator receiverRegisterValue: receiver.
@@ -32,19 +34,19 @@ VMPrimitiveCallAbstractTest >> callCogMethod: callingMethod receiver: receiver a
 
 ]
 
-{ #category : #helpers }
+{ #category : 'helpers' }
 VMPrimitiveCallAbstractTest >> findMethod: aSelector [
 
 	^ self class lookupSelector: aSelector
 ]
 
-{ #category : #'methods under test' }
+{ #category : 'methods under test' }
 VMPrimitiveCallAbstractTest >> jitCompilerClass [
 
 	^ StackToRegisterMappingCogit 
 ]
 
-{ #category : #'methods under test' }
+{ #category : 'methods under test' }
 VMPrimitiveCallAbstractTest >> jitOptions [
 
 	^ super jitOptions
@@ -52,13 +54,13 @@ VMPrimitiveCallAbstractTest >> jitOptions [
 		  yourself
 ]
 
-{ #category : #'methods under test' }
+{ #category : 'methods under test' }
 VMPrimitiveCallAbstractTest >> methodReturningNil [
 
 	^ nil
 ]
 
-{ #category : #'methods under test' }
+{ #category : 'methods under test' }
 VMPrimitiveCallAbstractTest >> methodSendingCharacterArgument [
 
 	"This method is used to test sends.
@@ -66,7 +68,7 @@ VMPrimitiveCallAbstractTest >> methodSendingCharacterArgument [
 	^ self methodWithSend: $7
 ]
 
-{ #category : #'methods under test' }
+{ #category : 'methods under test' }
 VMPrimitiveCallAbstractTest >> methodSendingLiteralVariableArgument [
 
 	"This method is used to test sends.
@@ -74,7 +76,7 @@ VMPrimitiveCallAbstractTest >> methodSendingLiteralVariableArgument [
 	^ self methodWithSend: Object
 ]
 
-{ #category : #'methods under test' }
+{ #category : 'methods under test' }
 VMPrimitiveCallAbstractTest >> methodSendingNilArgument [
 
 	"This method is used to test sends.
@@ -82,7 +84,7 @@ VMPrimitiveCallAbstractTest >> methodSendingNilArgument [
 	^ self methodWithSend: nil
 ]
 
-{ #category : #'methods under test' }
+{ #category : 'methods under test' }
 VMPrimitiveCallAbstractTest >> methodThatCallNamedPrimitive: anArg [
 
 	"This method is used to test the invocation of a primitive.
@@ -92,7 +94,7 @@ VMPrimitiveCallAbstractTest >> methodThatCallNamedPrimitive: anArg [
 	^ 84
 ]
 
-{ #category : #'methods under test' }
+{ #category : 'methods under test' }
 VMPrimitiveCallAbstractTest >> methodThatCallNamedPrimitiveCounting: anArg [
 
 	"This method is used to test the invocation of a primitive.
@@ -102,7 +104,7 @@ VMPrimitiveCallAbstractTest >> methodThatCallNamedPrimitiveCounting: anArg [
 	^ 84
 ]
 
-{ #category : #'methods under test' }
+{ #category : 'methods under test' }
 VMPrimitiveCallAbstractTest >> methodThatCallPrimitive159 [
 
 	<primitive: 159>
@@ -110,7 +112,7 @@ VMPrimitiveCallAbstractTest >> methodThatCallPrimitive159 [
 	^ 42 
 ]
 
-{ #category : #'methods under test' }
+{ #category : 'methods under test' }
 VMPrimitiveCallAbstractTest >> methodThatCallPrimitive173: anArg [
 
 	"This method is used to test the invocation of a primitive.
@@ -120,7 +122,7 @@ VMPrimitiveCallAbstractTest >> methodThatCallPrimitive173: anArg [
 	^ 42
 ]
 
-{ #category : #'methods under test' }
+{ #category : 'methods under test' }
 VMPrimitiveCallAbstractTest >> methodThatCallPrimitive1: anArg [
 
 	"This method is used to test the invocation of a primitive.
@@ -130,13 +132,13 @@ VMPrimitiveCallAbstractTest >> methodThatCallPrimitive1: anArg [
 	^ 42
 ]
 
-{ #category : #'methods under test' }
+{ #category : 'methods under test' }
 VMPrimitiveCallAbstractTest >> methodToCompile1 [
 
 	^ 42
 ]
 
-{ #category : #'methods under test' }
+{ #category : 'methods under test' }
 VMPrimitiveCallAbstractTest >> methodWithSend [
 
 	"This method is used to test sends.
@@ -144,7 +146,7 @@ VMPrimitiveCallAbstractTest >> methodWithSend [
 	^ self send
 ]
 
-{ #category : #'methods under test' }
+{ #category : 'methods under test' }
 VMPrimitiveCallAbstractTest >> methodWithSend: arg [
 
 	"This method is used to test sends.
@@ -152,7 +154,7 @@ VMPrimitiveCallAbstractTest >> methodWithSend: arg [
 	^ arg send
 ]
 
-{ #category : #running }
+{ #category : 'running' }
 VMPrimitiveCallAbstractTest >> setUp [
 
 	| primitiveAccessorDepthTable |
@@ -177,7 +179,7 @@ VMPrimitiveCallAbstractTest >> setUp [
 
 ]
 
-{ #category : #running }
+{ #category : 'running' }
 VMPrimitiveCallAbstractTest >> setUpTrampolines [
 
 	super setUpTrampolines.

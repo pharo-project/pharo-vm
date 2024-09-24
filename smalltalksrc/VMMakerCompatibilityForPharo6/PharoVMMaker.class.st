@@ -2,8 +2,8 @@
 Main entry point to generate the VM code from the command line.
 "
 Class {
-	#name : #PharoVMMaker,
-	#superclass : #Object,
+	#name : 'PharoVMMaker',
+	#superclass : 'Object',
 	#instVars : [
 		'outputDirectory',
 		'stopOnErrors',
@@ -12,46 +12,48 @@ Class {
 		'imageFormatName',
 		'options'
 	],
-	#category : #'VMMakerCompatibilityForPharo6-CommandLine'
+	#category : 'VMMakerCompatibilityForPharo6-CommandLine',
+	#package : 'VMMakerCompatibilityForPharo6',
+	#tag : 'CommandLine'
 }
 
-{ #category : #defaults }
+{ #category : 'defaults' }
 PharoVMMaker class >> default32BitsMemoryManagerClass [
 
 	^ Spur32BitCoMemoryManager
 ]
 
-{ #category : #defaults }
+{ #category : 'defaults' }
 PharoVMMaker class >> default64BitsMemoryManagerClass [
 
 	^ Spur64BitCoMemoryManager
 ]
 
-{ #category : #defaults }
+{ #category : 'defaults' }
 PharoVMMaker class >> defaultImageFormatName [
 
-	^ 'SpurFormat'
+	^ #SpurFormat
 ]
 
-{ #category : #defaults }
+{ #category : 'defaults' }
 PharoVMMaker class >> defaultInterpreterClass [
 
 	^ CoInterpreter
 ]
 
-{ #category : #defaults }
+{ #category : 'defaults' }
 PharoVMMaker class >> defaultMemoryManagerClass [
 
 	^ self default64BitsMemoryManagerClass 
 ]
 
-{ #category : #generation }
+{ #category : 'generation' }
 PharoVMMaker class >> defaultOutputDirectory [
 
 	^ FileSystem workingDirectory
 ]
 
-{ #category : #generation }
+{ #category : 'generation' }
 PharoVMMaker class >> generate: anInterpreterClass [
 
 	self
@@ -59,13 +61,24 @@ PharoVMMaker class >> generate: anInterpreterClass [
 		outputDirectory: self defaultOutputDirectory
 ]
 
-{ #category : #generation }
+{ #category : 'generation' }
 PharoVMMaker class >> generate: anInterpreterClass outputDirectory: aDirectory [
 
-	^ self generate: anInterpreterClass outputDirectory: aDirectory imageFormat: self defaultImageFormatName
+	Transcript
+		nextPutAll: 'Generating ';
+		nextPutAll: anInterpreterClass printString;
+		nextPutAll: ' in ';
+		nextPutAll: aDirectory printString;
+		nextPutAll: '...';
+		newLine;
+		flush.
+
+	self new
+		outputDirectory: aDirectory;
+		perform: #generate , anInterpreterClass asSymbol
 ]
 
-{ #category : #generation }
+{ #category : 'generation' }
 PharoVMMaker class >> generate: anInterpreterClass outputDirectory: aDirectory options: options [
 
 	self new
@@ -74,7 +87,7 @@ PharoVMMaker class >> generate: anInterpreterClass outputDirectory: aDirectory o
 		perform: #generate , anInterpreterClass asSymbol
 ]
 
-{ #category : #generation }
+{ #category : 'generation' }
 PharoVMMaker class >> on: anInterpreterClass [
 
 	^ self
@@ -82,7 +95,7 @@ PharoVMMaker class >> on: anInterpreterClass [
 		  outputDirectory: self defaultOutputDirectory
 ]
 
-{ #category : #generation }
+{ #category : 'generation' }
 PharoVMMaker class >> on: anInterpreterClass outputDirectory: aDirectory [
 
 	^ self new
@@ -90,19 +103,19 @@ PharoVMMaker class >> on: anInterpreterClass outputDirectory: aDirectory [
 		  vmMakerOn: anInterpreterClass
 ]
 
-{ #category : #generation }
+{ #category : 'generation' }
 PharoVMMaker class >> withCoInterpreter [
 
 	^ self on: CoInterpreter
 ]
 
-{ #category : #generation }
+{ #category : 'generation' }
 PharoVMMaker >> generate: interpreterClass memoryManager: memoryManager [
 
 	self generate: interpreterClass memoryManager: memoryManager compilerClass: StackToRegisterMappingCogit
 ]
 
-{ #category : #generation }
+{ #category : 'generation' }
 PharoVMMaker >> generate: interpreterClass memoryManager: memoryManager compilerClass: compilerClass [
 
 	| platformDirectory vmmaker imageReaderClassName imageWriterClassName |
@@ -146,7 +159,7 @@ PharoVMMaker >> generate: interpreterClass memoryManager: memoryManager compiler
 		generatePlugins ifTrue: [ vmmaker generateExternalPlugins ]] valueSupplyingAnswer:true.]
 ]
 
-{ #category : #generation }
+{ #category : 'generation' }
 PharoVMMaker >> generateCoInterpreter [
 
 	self generates64Bits ifTrue: [self generate: CoInterpreter memoryManager: Spur64BitCoMemoryManager].
@@ -154,19 +167,19 @@ PharoVMMaker >> generateCoInterpreter [
 
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 PharoVMMaker >> generatePlugins [
 
 	^ generatePlugins
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 PharoVMMaker >> generatePlugins: anObject [
 
 	generatePlugins := anObject
 ]
 
-{ #category : #generation }
+{ #category : 'generation' }
 PharoVMMaker >> generateStackVM [
 
 	self generates64Bits ifTrue: [self generate: StackInterpreter memoryManager: Spur64BitMemoryManager].
@@ -174,25 +187,19 @@ PharoVMMaker >> generateStackVM [
 
 ]
 
-{ #category : #testing }
+{ #category : 'testing' }
 PharoVMMaker >> generates32Bits [
 
 	^ wordSizesToGenerate includes: 4
 ]
 
-{ #category : #testing }
+{ #category : 'testing' }
 PharoVMMaker >> generates64Bits [
 	
 	^ wordSizesToGenerate includes: 8
 ]
 
-{ #category : #accessing }
-PharoVMMaker >> imageFormatName: aString [ 
-	
-	imageFormatName := aString
-]
-
-{ #category : #initialization }
+{ #category : 'initialization' }
 PharoVMMaker >> initialize [
 	super initialize.
 	stopOnErrors := false.
@@ -203,51 +210,51 @@ PharoVMMaker >> initialize [
 	options := #()
 ]
 
-{ #category : #initialization }
+{ #category : 'initialization' }
 PharoVMMaker >> initializeOutputDirectory [
 
 	^ outputDirectory := self class defaultOutputDirectory
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 PharoVMMaker >> options [
 
 	^ options
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 PharoVMMaker >> options: anObject [
 
 	options := anObject
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 PharoVMMaker >> outputDirectory [
 	^ outputDirectory ifNil: [ self initializeOutputDirectory ]
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 PharoVMMaker >> outputDirectory: anObject [
 	outputDirectory := anObject asFileReference
 ]
 
-{ #category : #utils }
+{ #category : 'utils' }
 PharoVMMaker >> platformDirectoryFor: aMemoryManagerClass [ 
 	
 	^ self outputDirectory / 'generated' / (aMemoryManagerClass wordSize * 8) asString
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 PharoVMMaker >> stopOnErrors [
 	^ stopOnErrors
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 PharoVMMaker >> stopOnErrors: anObject [
 	stopOnErrors := anObject
 ]
 
-{ #category : #generation }
+{ #category : 'generation' }
 PharoVMMaker >> vmMakerOn: anInterpreterClass [
 
 	^ self
@@ -255,7 +262,7 @@ PharoVMMaker >> vmMakerOn: anInterpreterClass [
 		  memoryManager: self class defaultMemoryManagerClass
 ]
 
-{ #category : #generation }
+{ #category : 'generation' }
 PharoVMMaker >> vmMakerWith: interpreterClass memoryManager: memoryManager [
 
 	| platformDirectory |
@@ -276,13 +283,13 @@ PharoVMMaker >> vmMakerWith: interpreterClass memoryManager: memoryManager [
 		  yourself
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 PharoVMMaker >> wordSizesToGenerate [
 
 	^ wordSizesToGenerate
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 PharoVMMaker >> wordSizesToGenerate: anObject [
 
 	wordSizesToGenerate := anObject
