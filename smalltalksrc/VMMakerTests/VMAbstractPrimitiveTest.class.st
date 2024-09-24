@@ -1,17 +1,16 @@
 Class {
-	#name : 'VMAbstractPrimitiveTest',
-	#superclass : 'VMSpurMemoryManagerTest',
+	#name : #VMAbstractPrimitiveTest,
+	#superclass : #VMSpurMemoryManagerTest,
 	#pools : [
 		'VMBasicConstants',
 		'VMBytecodeConstants',
 		'VMClassIndices',
 		'VMObjectIndices'
 	],
-	#category : 'VMMakerTests',
-	#package : 'VMMakerTests'
+	#category : #VMMakerTests
 }
 
-{ #category : 'running' }
+{ #category : #running }
 VMAbstractPrimitiveTest >> createProcessFor: newMethod priority: aPriority [
 
 	| aProcess |
@@ -24,7 +23,7 @@ VMAbstractPrimitiveTest >> createProcessFor: newMethod priority: aPriority [
 	^ aProcess
 ]
 
-{ #category : 'running' }
+{ #category : #running }
 VMAbstractPrimitiveTest >> createSuspendedProcessFor: newMethod priority: aPriority [
 
 	| suspendedContext aProcess |
@@ -46,7 +45,7 @@ VMAbstractPrimitiveTest >> createSuspendedProcessFor: newMethod priority: aPrior
 	^ aProcess
 ]
 
-{ #category : 'as yet unclassified' }
+{ #category : #'as yet unclassified' }
 VMAbstractPrimitiveTest >> newArrayWith: aCollection [ 
 	| array |
 	array := self newObjectWithSlots: aCollection size format: memory arrayFormat classIndex: memory arrayClassIndexPun.
@@ -57,7 +56,7 @@ VMAbstractPrimitiveTest >> newArrayWith: aCollection [
 	
 ]
 
-{ #category : 'as yet unclassified' }
+{ #category : #'as yet unclassified' }
 VMAbstractPrimitiveTest >> newMethodWithBytecodes: aCollection [
 
 	^ methodBuilder
@@ -66,7 +65,7 @@ VMAbstractPrimitiveTest >> newMethodWithBytecodes: aCollection [
 		  buildMethod
 ]
 
-{ #category : 'helpers - frames' }
+{ #category : #'helpers - frames' }
 VMAbstractPrimitiveTest >> newSmallContextReceiver: anOop method: aMethodOop arguments: aCollectionOfArgumentsOop temporaries: aCollectionOfTemporariesOop ip: anIp [
 
 	| newCtx numArgs numTemps |
@@ -115,7 +114,7 @@ VMAbstractPrimitiveTest >> newSmallContextReceiver: anOop method: aMethodOop arg
 	^ newCtx
 ]
 
-{ #category : 'running' }
+{ #category : #running }
 VMAbstractPrimitiveTest >> setUp [
 	
 	"taken from VMSimpleStackBasedCogitBytecodeTest >> #setup"

@@ -1,6 +1,6 @@
 Class {
-	#name : 'VMJistMethodTestObject',
-	#superclass : 'Object',
+	#name : #VMJistMethodTestObject,
+	#superclass : #Object,
 	#instVars : [
 		'var1',
 		'var2',
@@ -132,12 +132,10 @@ Class {
 		'var128',
 		'var129'
 	],
-	#category : 'VMMakerTests-JitTests',
-	#package : 'VMMakerTests',
-	#tag : 'JitTests'
+	#category : #'VMMakerTests-JitTests'
 }
 
-{ #category : 'initialization' }
+{ #category : #initialization }
 VMJistMethodTestObject >> initialize [
     super initialize.
     var1 := Array new.

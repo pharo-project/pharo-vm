@@ -1,15 +1,13 @@
 Class {
-	#name : 'VMMachineSimulatorTest',
-	#superclass : 'VMSimpleStackBasedCogitAbstractTest',
+	#name : #VMMachineSimulatorTest,
+	#superclass : #VMSimpleStackBasedCogitAbstractTest,
 	#pools : [
 		'CogAbstractRegisters'
 	],
-	#category : 'VMMakerTests-JitTests',
-	#package : 'VMMakerTests',
-	#tag : 'JitTests'
+	#category : #'VMMakerTests-JitTests'
 }
 
-{ #category : 'tests - instruction exception' }
+{ #category : #'tests - instruction exception' }
 VMMachineSimulatorTest >> testInstructionExceptionHasCorrectInstructionAddress [
 
 	| label lastInstruction subInstruction breakInstruction |
@@ -38,7 +36,7 @@ VMMachineSimulatorTest >> testInstructionExceptionHasCorrectInstructionAddress [
 
 ]
 
-{ #category : 'tests - instruction exception' }
+{ #category : #'tests - instruction exception' }
 VMMachineSimulatorTest >> testInstructionExceptionIsRaisedAsUnicornError [
 
 	| label lastInstruction subInstruction breakInstruction |
@@ -67,7 +65,7 @@ VMMachineSimulatorTest >> testInstructionExceptionIsRaisedAsUnicornError [
 
 ]
 
-{ #category : 'tests - memory access exception' }
+{ #category : #'tests - memory access exception' }
 VMMachineSimulatorTest >> testMemoryAccessExceptionComesWithCorrectAddress [
 
 	| lastInstruction invalidAccessInstruction invalidAddressHandled |
@@ -95,7 +93,7 @@ VMMachineSimulatorTest >> testMemoryAccessExceptionComesWithCorrectAddress [
 	self assert: invalidAddressHandled
 ]
 
-{ #category : 'tests - memory access exception' }
+{ #category : #'tests - memory access exception' }
 VMMachineSimulatorTest >> testMemoryAccessExceptionHandledCountIsRespected [
 
 	| label lastInstruction invalidAddressHandled addInstruction jumpInstruction |
@@ -135,7 +133,7 @@ VMMachineSimulatorTest >> testMemoryAccessExceptionHandledCountIsRespected [
 		equals: jumpInstruction address
 ]
 
-{ #category : 'tests - memory access exception' }
+{ #category : #'tests - memory access exception' }
 VMMachineSimulatorTest >> testMemoryAccessExceptionHandledTimeoutIsRespected [
 
 	| label lastInstruction invalidAddressHandled |
@@ -179,7 +177,7 @@ VMMachineSimulatorTest >> testMemoryAccessExceptionHandledTimeoutIsRespected [
 			^ self ]
 ]
 
-{ #category : 'tests - memory access exception' }
+{ #category : #'tests - memory access exception' }
 VMMachineSimulatorTest >> testMemoryAccessExceptionHandledUntilAddressIsRespected [
 
 	| label invalidAddressHandled addInstruction jumpInstruction |
@@ -215,7 +213,7 @@ VMMachineSimulatorTest >> testMemoryAccessExceptionHandledUntilAddressIsRespecte
 	self assert: self temporaryRegisterValue equals: 1
 ]
 
-{ #category : 'tests - memory access exception' }
+{ #category : #'tests - memory access exception' }
 VMMachineSimulatorTest >> testMemoryAccessExceptionHandledUntilAddressIsRespectedCorrectInstructionPointer [
 
 	| label invalidAddressHandled addInstruction jumpInstruction |
@@ -251,7 +249,7 @@ VMMachineSimulatorTest >> testMemoryAccessExceptionHandledUntilAddressIsRespecte
 	self assert: self machineSimulator instructionPointerRegisterValue equals: jumpInstruction address
 ]
 
-{ #category : 'tests - memory access exception' }
+{ #category : #'tests - memory access exception' }
 VMMachineSimulatorTest >> testMemoryAccessExceptionInCallContinuesToCorrectPC [
 
 	| lastInstruction invalidAddressHandled returningPoint |
@@ -278,7 +276,7 @@ VMMachineSimulatorTest >> testMemoryAccessExceptionInCallContinuesToCorrectPC [
 	self assert: invalidAddressHandled
 ]
 
-{ #category : 'tests - memory access exception' }
+{ #category : #'tests - memory access exception' }
 VMMachineSimulatorTest >> testMemoryAccessExceptionInCallHasUpdatedPC [
 
 	| lastInstruction invalidAddressHandled |
@@ -304,7 +302,7 @@ VMMachineSimulatorTest >> testMemoryAccessExceptionInCallHasUpdatedPC [
 	self assert: invalidAddressHandled
 ]
 
-{ #category : 'tests - memory access exception' }
+{ #category : #'tests - memory access exception' }
 VMMachineSimulatorTest >> testMemoryAccessExceptionInJumpContinuesToCorrectPC [
 
 	| lastInstruction invalidAddressHandled returningPoint |
@@ -331,7 +329,7 @@ VMMachineSimulatorTest >> testMemoryAccessExceptionInJumpContinuesToCorrectPC [
 	self assert: invalidAddressHandled
 ]
 
-{ #category : 'tests - memory access exception' }
+{ #category : #'tests - memory access exception' }
 VMMachineSimulatorTest >> testMemoryAccessExceptionInJumpHasUpdatedPC [
 
 	| lastInstruction invalidAddressHandled |
@@ -357,7 +355,7 @@ VMMachineSimulatorTest >> testMemoryAccessExceptionInJumpHasUpdatedPC [
 	self assert: invalidAddressHandled
 ]
 
-{ #category : 'tests - memory access exception' }
+{ #category : #'tests - memory access exception' }
 VMMachineSimulatorTest >> testMemoryAccessExceptionInstructionPointerInCorrectAddress [
 
 	| lastInstruction invalidAccessInstruction invalidAddressHandled |
@@ -388,7 +386,7 @@ VMMachineSimulatorTest >> testMemoryAccessExceptionInstructionPointerInCorrectAd
 	self assert: invalidAddressHandled
 ]
 
-{ #category : 'tests - normal execution' }
+{ #category : #'tests - normal execution' }
 VMMachineSimulatorTest >> testNormalExecutionCountIsRespected [
 
 	| label lastInstruction subInstruction |
@@ -414,7 +412,7 @@ VMMachineSimulatorTest >> testNormalExecutionCountIsRespected [
 
 ]
 
-{ #category : 'tests - normal execution' }
+{ #category : #'tests - normal execution' }
 VMMachineSimulatorTest >> testNormalExecutionCountIsRespectedAndHasCorrectInstructionPointer [
 
 	| label lastInstruction subInstruction jumpInstruction |
@@ -439,7 +437,7 @@ VMMachineSimulatorTest >> testNormalExecutionCountIsRespectedAndHasCorrectInstru
 
 ]
 
-{ #category : 'tests - normal execution' }
+{ #category : #'tests - normal execution' }
 VMMachineSimulatorTest >> testNormalExecutionRespectTimeout [
 
 	| label lastInstruction |
@@ -461,7 +459,7 @@ VMMachineSimulatorTest >> testNormalExecutionRespectTimeout [
 	self fail.
 ]
 
-{ #category : 'tests - normal execution' }
+{ #category : #'tests - normal execution' }
 VMMachineSimulatorTest >> testNormalExecutionRespectTimeoutUpdatesInstructionPointer [
 
 	| label lastInstruction |
@@ -485,7 +483,7 @@ VMMachineSimulatorTest >> testNormalExecutionRespectTimeoutUpdatesInstructionPoi
 	self fail.
 ]
 
-{ #category : 'tests - normal execution' }
+{ #category : #'tests - normal execution' }
 VMMachineSimulatorTest >> testNormalExecutionUntilAddressIsRespected [
 
 	| label lastInstruction |

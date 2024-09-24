@@ -1,6 +1,6 @@
 Class {
-	#name : 'VMSimpleStackBasedCogitPolymorphicPICTest',
-	#superclass : 'VMSimpleStackBasedCogitAbstractTest',
+	#name : #VMSimpleStackBasedCogitPolymorphicPICTest,
+	#superclass : #VMSimpleStackBasedCogitAbstractTest,
 	#instVars : [
 		'selector',
 		'numArgs',
@@ -14,12 +14,10 @@ Class {
 	#pools : [
 		'CogMethodConstants'
 	],
-	#category : 'VMMakerTests-JitTests',
-	#package : 'VMMakerTests',
-	#tag : 'JitTests'
+	#category : #'VMMakerTests-JitTests'
 }
 
-{ #category : 'building suites' }
+{ #category : #'building suites' }
 VMSimpleStackBasedCogitPolymorphicPICTest class >> testParameters [
 
 	^ super testParameters * 
@@ -28,7 +26,7 @@ VMSimpleStackBasedCogitPolymorphicPICTest class >> testParameters [
 			yourself)
 ]
 
-{ #category : 'helpers' }
+{ #category : #helpers }
 VMSimpleStackBasedCogitPolymorphicPICTest >> assertHitAtCase: aCase [
 	| pic |
 	"Only run this test if the test is configured for so much cases"
@@ -39,7 +37,7 @@ VMSimpleStackBasedCogitPolymorphicPICTest >> assertHitAtCase: aCase [
 	self assertPIC: pic hits: (cogMethods at: aCase)
 ]
 
-{ #category : 'helpers' }
+{ #category : #helpers }
 VMSimpleStackBasedCogitPolymorphicPICTest >> assertPIC: pic hits: hitMethod [
 	"Receiver is nil, class tag of the first entry is the receiver's class tag.
 	 - the receiver matches class tag for case 0
@@ -61,7 +59,7 @@ VMSimpleStackBasedCogitPolymorphicPICTest >> assertPIC: pic hits: hitMethod [
 	self assert: machineSimulator receiverRegisterValue equals: receiver
 ]
 
-{ #category : 'helpers' }
+{ #category : #helpers }
 VMSimpleStackBasedCogitPolymorphicPICTest >> assertPICMiss: pic [
 
 	"Receiver is nil, class tag of the first entry is 1 (a small integer).
@@ -82,19 +80,19 @@ VMSimpleStackBasedCogitPolymorphicPICTest >> assertPICMiss: pic [
 	self assert: machineSimulator receiverRegisterValue equals: receiver
 ]
 
-{ #category : 'helpers' }
+{ #category : #helpers }
 VMSimpleStackBasedCogitPolymorphicPICTest >> configuredPicCases [
 	
 	^ configuredPicCases
 ]
 
-{ #category : 'helpers' }
+{ #category : #helpers }
 VMSimpleStackBasedCogitPolymorphicPICTest >> configuredPicCases: aNumber [
 	
 	configuredPicCases := aNumber
 ]
 
-{ #category : 'helpers' }
+{ #category : #helpers }
 VMSimpleStackBasedCogitPolymorphicPICTest >> extendPIC: aPic [
 
 	cogit
@@ -104,7 +102,7 @@ VMSimpleStackBasedCogitPolymorphicPICTest >> extendPIC: aPic [
 		isMNUCase: false.
 ]
 
-{ #category : 'helpers' }
+{ #category : #helpers }
 VMSimpleStackBasedCogitPolymorphicPICTest >> makePolymorphicPIC [
 
 	| pic |
@@ -119,7 +117,7 @@ VMSimpleStackBasedCogitPolymorphicPICTest >> makePolymorphicPIC [
 	^ pic
 ]
 
-{ #category : 'running' }
+{ #category : #running }
 VMSimpleStackBasedCogitPolymorphicPICTest >> setUp [
 
 	super setUp.
@@ -160,7 +158,7 @@ VMSimpleStackBasedCogitPolymorphicPICTest >> setUp [
 		cogMethods at: index - 1 put: cogMethod ] "Maximum polymorphic  cases"
 ]
 
-{ #category : 'tests - metadata' }
+{ #category : #'tests - metadata' }
 VMSimpleStackBasedCogitPolymorphicPICTest >> testHasConfiguredCases [
 	| pic |	
 
@@ -169,7 +167,7 @@ VMSimpleStackBasedCogitPolymorphicPICTest >> testHasConfiguredCases [
 	self assert: pic cPICNumCases equals: self configuredPicCases
 ]
 
-{ #category : 'tests - metadata' }
+{ #category : #'tests - metadata' }
 VMSimpleStackBasedCogitPolymorphicPICTest >> testHasJumpToAbortTrampoline [
 	| pic |	
 	pic := self makePolymorphicPIC.
@@ -177,43 +175,43 @@ VMSimpleStackBasedCogitPolymorphicPICTest >> testHasJumpToAbortTrampoline [
 	self assert: (cogit backend callTargetFromReturnAddress: pic asInteger + cogit missOffset) equals: (cogit picAbortTrampolineFor: numArgs)
 ]
 
-{ #category : 'tests - hit/miss' }
+{ #category : #'tests - hit/miss' }
 VMSimpleStackBasedCogitPolymorphicPICTest >> testHitCase0 [
 
 	self assertHitAtCase: 0
 ]
 
-{ #category : 'tests - hit/miss' }
+{ #category : #'tests - hit/miss' }
 VMSimpleStackBasedCogitPolymorphicPICTest >> testHitCase1 [
 
 	self assertHitAtCase: 1
 ]
 
-{ #category : 'tests - hit/miss' }
+{ #category : #'tests - hit/miss' }
 VMSimpleStackBasedCogitPolymorphicPICTest >> testHitCase2 [
 
 	self assertHitAtCase: 2
 ]
 
-{ #category : 'tests - hit/miss' }
+{ #category : #'tests - hit/miss' }
 VMSimpleStackBasedCogitPolymorphicPICTest >> testHitCase3 [
 
 	self assertHitAtCase: 3
 ]
 
-{ #category : 'tests - hit/miss' }
+{ #category : #'tests - hit/miss' }
 VMSimpleStackBasedCogitPolymorphicPICTest >> testHitCase4 [
 
 	self assertHitAtCase: 4
 ]
 
-{ #category : 'tests - hit/miss' }
+{ #category : #'tests - hit/miss' }
 VMSimpleStackBasedCogitPolymorphicPICTest >> testHitCase5 [
 	"This is the last case. Cog PICs have 6 cases (0-based)"
 	self assertHitAtCase: 5
 ]
 
-{ #category : 'tests - metadata' }
+{ #category : #'tests - metadata' }
 VMSimpleStackBasedCogitPolymorphicPICTest >> testIsClosedPic [
 	| pic |	
 	pic := self makePolymorphicPIC.
@@ -221,7 +219,7 @@ VMSimpleStackBasedCogitPolymorphicPICTest >> testIsClosedPic [
 	self assert: pic cmType equals: CMPolymorphicIC. 
 ]
 
-{ #category : 'tests - hit/miss' }
+{ #category : #'tests - hit/miss' }
 VMSimpleStackBasedCogitPolymorphicPICTest >> testMiss [
 
 	| pic |	
@@ -231,7 +229,7 @@ VMSimpleStackBasedCogitPolymorphicPICTest >> testMiss [
 	self assertPICMiss: pic
 ]
 
-{ #category : 'tests - metadata' }
+{ #category : #'tests - metadata' }
 VMSimpleStackBasedCogitPolymorphicPICTest >> testNumberOfArgumentsInHeader [
 	| pic |
 	
@@ -240,7 +238,7 @@ VMSimpleStackBasedCogitPolymorphicPICTest >> testNumberOfArgumentsInHeader [
 	self assert: pic cmNumArgs equals: numArgs
 ]
 
-{ #category : 'tests - hit/miss' }
+{ #category : #'tests - hit/miss' }
 VMSimpleStackBasedCogitPolymorphicPICTest >> testPolymorphicPICHitDoesNotCallEntryOffset [
 
 	| pic methodCheckEntryPoint methodNoCheckEntryPoint passedByCheckEntryPoint |	
@@ -271,7 +269,7 @@ VMSimpleStackBasedCogitPolymorphicPICTest >> testPolymorphicPICHitDoesNotCallEnt
 	self deny: passedByCheckEntryPoint
 ]
 
-{ #category : 'tests - metadata' }
+{ #category : #'tests - metadata' }
 VMSimpleStackBasedCogitPolymorphicPICTest >> testSelectorInHeader [
 	| pic |	
 

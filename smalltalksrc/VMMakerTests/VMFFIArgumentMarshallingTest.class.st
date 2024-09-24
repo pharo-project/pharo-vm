@@ -1,29 +1,28 @@
 Class {
-	#name : 'VMFFIArgumentMarshallingTest',
-	#superclass : 'VMAbstractFFITest',
-	#category : 'VMMakerTests',
-	#package : 'VMMakerTests'
+	#name : #VMFFIArgumentMarshallingTest,
+	#superclass : #VMAbstractFFITest,
+	#category : #VMMakerTests
 }
 
-{ #category : 'private' }
+{ #category : #private }
 VMFFIArgumentMarshallingTest class >> isAbstract [
 	
 	^ self == VMFFIArgumentMarshallingTest
 ]
 
-{ #category : 'implementation' }
+{ #category : #implementation }
 VMFFIArgumentMarshallingTest >> doTestFuntionWithArgumentType: argumentType smalltalkValue: smalltalkValue expectedValue: expectedValue [
 
 	self subclassResponsibility 
 ]
 
-{ #category : 'implementation' }
+{ #category : #implementation }
 VMFFIArgumentMarshallingTest >> doTestFuntionWithArgumentType: argumentType smalltalkValue: smalltalkValue failsWith: expectedErrorCode [
 
 	self subclassResponsibility 
 ]
 
-{ #category : 'tests - parameters marshalling' }
+{ #category : #'tests - parameters marshalling' }
 VMFFIArgumentMarshallingTest >> newLargeIntegerForValue: aValue [
 
 	| newLargeInteger byteSize class |
@@ -44,7 +43,7 @@ VMFFIArgumentMarshallingTest >> newLargeIntegerForValue: aValue [
 	^ newLargeInteger
 ]
 
-{ #category : 'tests - parameters marshalling' }
+{ #category : #'tests - parameters marshalling' }
 VMFFIArgumentMarshallingTest >> testCalloutWithCharacterArgumentIsMarshalledCorrectly [
 
 	self
@@ -53,7 +52,7 @@ VMFFIArgumentMarshallingTest >> testCalloutWithCharacterArgumentIsMarshalledCorr
 		expectedValue: 17
 ]
 
-{ #category : 'tests - parameters marshalling' }
+{ #category : #'tests - parameters marshalling' }
 VMFFIArgumentMarshallingTest >> testCalloutWithDoubleArgumentIsMarshalledCorrectly [
 
 	self
@@ -62,7 +61,7 @@ VMFFIArgumentMarshallingTest >> testCalloutWithDoubleArgumentIsMarshalledCorrect
 		expectedValue: 17.0
 ]
 
-{ #category : 'tests - parameters marshalling' }
+{ #category : #'tests - parameters marshalling' }
 VMFFIArgumentMarshallingTest >> testCalloutWithFloatArgumentIsMarshalledCorrectly [
 
 	self
@@ -71,7 +70,7 @@ VMFFIArgumentMarshallingTest >> testCalloutWithFloatArgumentIsMarshalledCorrectl
 		expectedValue: 17.0
 ]
 
-{ #category : 'tests - parameters marshalling' }
+{ #category : #'tests - parameters marshalling' }
 VMFFIArgumentMarshallingTest >> testCalloutWithPointerArgumentIsMarshalledCorrectly [
 
 	self
@@ -80,7 +79,7 @@ VMFFIArgumentMarshallingTest >> testCalloutWithPointerArgumentIsMarshalledCorrec
 		expectedValue: 17
 ]
 
-{ #category : 'tests - parameters marshalling' }
+{ #category : #'tests - parameters marshalling' }
 VMFFIArgumentMarshallingTest >> testCalloutWithSINT16ArgumentWithNegativeValueIsMarshalledCorrectly [
 
 	self
@@ -89,7 +88,7 @@ VMFFIArgumentMarshallingTest >> testCalloutWithSINT16ArgumentWithNegativeValueIs
 		expectedValue: -42
 ]
 
-{ #category : 'tests - parameters marshalling' }
+{ #category : #'tests - parameters marshalling' }
 VMFFIArgumentMarshallingTest >> testCalloutWithSINT16ArgumentWithPositiveValueIsMarshalledCorrectly [
 
 	self
@@ -98,7 +97,7 @@ VMFFIArgumentMarshallingTest >> testCalloutWithSINT16ArgumentWithPositiveValueIs
 		expectedValue: 42
 ]
 
-{ #category : 'tests - parameters marshalling' }
+{ #category : #'tests - parameters marshalling' }
 VMFFIArgumentMarshallingTest >> testCalloutWithSINT16NegativeOutOfRangeProducesBadArgument [
 
 	self
@@ -108,7 +107,7 @@ VMFFIArgumentMarshallingTest >> testCalloutWithSINT16NegativeOutOfRangeProducesB
 
 ]
 
-{ #category : 'tests - parameters marshalling' }
+{ #category : #'tests - parameters marshalling' }
 VMFFIArgumentMarshallingTest >> testCalloutWithSINT16PositiveOutOfRangeProducesBadArgument [
 
 	self
@@ -118,7 +117,7 @@ VMFFIArgumentMarshallingTest >> testCalloutWithSINT16PositiveOutOfRangeProducesB
 
 ]
 
-{ #category : 'tests - parameters marshalling' }
+{ #category : #'tests - parameters marshalling' }
 VMFFIArgumentMarshallingTest >> testCalloutWithSINT32ArgumentWithLargeNegativeValueIsMarshalledCorrectly [
 
 	| aValue aValueToStore |
@@ -135,7 +134,7 @@ VMFFIArgumentMarshallingTest >> testCalloutWithSINT32ArgumentWithLargeNegativeVa
 		expectedValue: aValue
 ]
 
-{ #category : 'tests - parameters marshalling' }
+{ #category : #'tests - parameters marshalling' }
 VMFFIArgumentMarshallingTest >> testCalloutWithSINT32ArgumentWithLargePositiveHigherThan4BytesFails [
 
 	| aValue |
@@ -150,7 +149,7 @@ VMFFIArgumentMarshallingTest >> testCalloutWithSINT32ArgumentWithLargePositiveHi
 		failsWith: PrimErrBadArgument
 ]
 
-{ #category : 'tests - parameters marshalling' }
+{ #category : #'tests - parameters marshalling' }
 VMFFIArgumentMarshallingTest >> testCalloutWithSINT32ArgumentWithNegativeValueIsMarshalledCorrectly [
 
 	self
@@ -159,7 +158,7 @@ VMFFIArgumentMarshallingTest >> testCalloutWithSINT32ArgumentWithNegativeValueIs
 		expectedValue: -42
 ]
 
-{ #category : 'tests - parameters marshalling' }
+{ #category : #'tests - parameters marshalling' }
 VMFFIArgumentMarshallingTest >> testCalloutWithSINT32ArgumentWithPositiveValueIsMarshalledCorrectly [
 
 	self
@@ -168,7 +167,7 @@ VMFFIArgumentMarshallingTest >> testCalloutWithSINT32ArgumentWithPositiveValueIs
 		expectedValue: 42
 ]
 
-{ #category : 'tests - parameters marshalling' }
+{ #category : #'tests - parameters marshalling' }
 VMFFIArgumentMarshallingTest >> testCalloutWithSINT32NegativeOutOfRangeProducesBadArgument [
 
 	| valueToStore |
@@ -184,7 +183,7 @@ VMFFIArgumentMarshallingTest >> testCalloutWithSINT32NegativeOutOfRangeProducesB
 
 ]
 
-{ #category : 'tests - parameters marshalling' }
+{ #category : #'tests - parameters marshalling' }
 VMFFIArgumentMarshallingTest >> testCalloutWithSINT32PositiveOutOfRangeProducesBadArgument [
 
 	self
@@ -194,7 +193,7 @@ VMFFIArgumentMarshallingTest >> testCalloutWithSINT32PositiveOutOfRangeProducesB
 
 ]
 
-{ #category : 'tests - parameters marshalling' }
+{ #category : #'tests - parameters marshalling' }
 VMFFIArgumentMarshallingTest >> testCalloutWithSINT64ArgumentWithLargeNegativeValueIsMarshalledCorrectly [
 
 	| aValue |
@@ -206,7 +205,7 @@ VMFFIArgumentMarshallingTest >> testCalloutWithSINT64ArgumentWithLargeNegativeVa
 		expectedValue: aValue
 ]
 
-{ #category : 'tests - parameters marshalling' }
+{ #category : #'tests - parameters marshalling' }
 VMFFIArgumentMarshallingTest >> testCalloutWithSINT64ArgumentWithLargePositiveHigherThan8BytesFails [
 
 	| aValue newLargeInteger |
@@ -225,7 +224,7 @@ VMFFIArgumentMarshallingTest >> testCalloutWithSINT64ArgumentWithLargePositiveHi
 		failsWith: PrimErrBadArgument
 ]
 
-{ #category : 'tests - parameters marshalling' }
+{ #category : #'tests - parameters marshalling' }
 VMFFIArgumentMarshallingTest >> testCalloutWithSINT64ArgumentWithLargePositiveValueIsMarshalledCorrectly [
 
 	| aValue |
@@ -238,7 +237,7 @@ VMFFIArgumentMarshallingTest >> testCalloutWithSINT64ArgumentWithLargePositiveVa
 
 ]
 
-{ #category : 'tests - parameters marshalling' }
+{ #category : #'tests - parameters marshalling' }
 VMFFIArgumentMarshallingTest >> testCalloutWithSINT64ArgumentWithNegativeValueIsMarshalledCorrectly [
 
 	self
@@ -247,7 +246,7 @@ VMFFIArgumentMarshallingTest >> testCalloutWithSINT64ArgumentWithNegativeValueIs
 		expectedValue: -42
 ]
 
-{ #category : 'tests - parameters marshalling' }
+{ #category : #'tests - parameters marshalling' }
 VMFFIArgumentMarshallingTest >> testCalloutWithSINT64ArgumentWithPositiveValueIsMarshalledCorrectly [
 
 	self
@@ -256,7 +255,7 @@ VMFFIArgumentMarshallingTest >> testCalloutWithSINT64ArgumentWithPositiveValueIs
 		expectedValue: 42
 ]
 
-{ #category : 'tests - parameters marshalling' }
+{ #category : #'tests - parameters marshalling' }
 VMFFIArgumentMarshallingTest >> testCalloutWithSINT8ArgumentWithNegativeValueIsMarshalledCorrectly [
 
 	self
@@ -265,7 +264,7 @@ VMFFIArgumentMarshallingTest >> testCalloutWithSINT8ArgumentWithNegativeValueIsM
 		expectedValue: -42
 ]
 
-{ #category : 'tests - parameters marshalling' }
+{ #category : #'tests - parameters marshalling' }
 VMFFIArgumentMarshallingTest >> testCalloutWithSINT8ArgumentWithPositiveValueIsMarshalledCorrectly [
 
 	self
@@ -274,7 +273,7 @@ VMFFIArgumentMarshallingTest >> testCalloutWithSINT8ArgumentWithPositiveValueIsM
 		expectedValue: 42
 ]
 
-{ #category : 'tests - parameters marshalling' }
+{ #category : #'tests - parameters marshalling' }
 VMFFIArgumentMarshallingTest >> testCalloutWithSINT8NegativeOutOfRangeProducesBadArgument [
 
 	self
@@ -284,7 +283,7 @@ VMFFIArgumentMarshallingTest >> testCalloutWithSINT8NegativeOutOfRangeProducesBa
 
 ]
 
-{ #category : 'tests - parameters marshalling' }
+{ #category : #'tests - parameters marshalling' }
 VMFFIArgumentMarshallingTest >> testCalloutWithSINT8PositiveOutOfRangeProducesBadArgument [
 
 	self
@@ -294,7 +293,7 @@ VMFFIArgumentMarshallingTest >> testCalloutWithSINT8PositiveOutOfRangeProducesBa
 
 ]
 
-{ #category : 'tests - parameters marshalling' }
+{ #category : #'tests - parameters marshalling' }
 VMFFIArgumentMarshallingTest >> testCalloutWithStructByteArrayArgumentIsMarshalledCorrectly [
 
 	| oop ptr storedValue |
@@ -311,7 +310,7 @@ VMFFIArgumentMarshallingTest >> testCalloutWithStructByteArrayArgumentIsMarshall
 		expectedValue: storedValue
 ]
 
-{ #category : 'tests - parameters marshalling' }
+{ #category : #'tests - parameters marshalling' }
 VMFFIArgumentMarshallingTest >> testCalloutWithStructPointerArgumentIsMarshalledCorrectly [
 
 	| oop ptr storedValue |
@@ -328,7 +327,7 @@ VMFFIArgumentMarshallingTest >> testCalloutWithStructPointerArgumentIsMarshalled
 		expectedValue: storedValue
 ]
 
-{ #category : 'tests - parameters marshalling' }
+{ #category : #'tests - parameters marshalling' }
 VMFFIArgumentMarshallingTest >> testCalloutWithUINT16ArgumentWithNegatieValueFails [
 
 	self
@@ -337,7 +336,7 @@ VMFFIArgumentMarshallingTest >> testCalloutWithUINT16ArgumentWithNegatieValueFai
 		failsWith: PrimErrBadArgument
 ]
 
-{ #category : 'tests - parameters marshalling' }
+{ #category : #'tests - parameters marshalling' }
 VMFFIArgumentMarshallingTest >> testCalloutWithUINT16ArgumentWithPositiveValueIsMarshalledCorrectly [
 
 	self
@@ -346,7 +345,7 @@ VMFFIArgumentMarshallingTest >> testCalloutWithUINT16ArgumentWithPositiveValueIs
 		expectedValue: 8
 ]
 
-{ #category : 'tests - parameters marshalling' }
+{ #category : #'tests - parameters marshalling' }
 VMFFIArgumentMarshallingTest >> testCalloutWithUINT16WithPositiveOutOfRangeFailsWithPrimErrBadArgument [
 
 	self
@@ -355,7 +354,7 @@ VMFFIArgumentMarshallingTest >> testCalloutWithUINT16WithPositiveOutOfRangeFails
 		failsWith: PrimErrBadArgument
 ]
 
-{ #category : 'tests - parameters marshalling' }
+{ #category : #'tests - parameters marshalling' }
 VMFFIArgumentMarshallingTest >> testCalloutWithUINT32ArgumentWithLargePositiveHigherThan4BytesFails [
 
 	| aValue |
@@ -370,7 +369,7 @@ VMFFIArgumentMarshallingTest >> testCalloutWithUINT32ArgumentWithLargePositiveHi
 		failsWith: PrimErrBadArgument
 ]
 
-{ #category : 'tests - parameters marshalling' }
+{ #category : #'tests - parameters marshalling' }
 VMFFIArgumentMarshallingTest >> testCalloutWithUINT32ArgumentWithLargePositiveValueIsMarshalledCorrectly [
 
 	| aValue |
@@ -385,7 +384,7 @@ VMFFIArgumentMarshallingTest >> testCalloutWithUINT32ArgumentWithLargePositiveVa
 		expectedValue: 16r3FFFFFFF + 2
 ]
 
-{ #category : 'tests - parameters marshalling' }
+{ #category : #'tests - parameters marshalling' }
 VMFFIArgumentMarshallingTest >> testCalloutWithUINT32ArgumentWithNegatieValueFails [
 
 	self
@@ -394,7 +393,7 @@ VMFFIArgumentMarshallingTest >> testCalloutWithUINT32ArgumentWithNegatieValueFai
 		failsWith: PrimErrBadArgument
 ]
 
-{ #category : 'tests - parameters marshalling' }
+{ #category : #'tests - parameters marshalling' }
 VMFFIArgumentMarshallingTest >> testCalloutWithUINT32ArgumentWithPositiveValueIsMarshalledCorrectly [
 
 	self
@@ -403,7 +402,7 @@ VMFFIArgumentMarshallingTest >> testCalloutWithUINT32ArgumentWithPositiveValueIs
 		expectedValue: 42
 ]
 
-{ #category : 'tests - parameters marshalling' }
+{ #category : #'tests - parameters marshalling' }
 VMFFIArgumentMarshallingTest >> testCalloutWithUINT32WithPositiveOutOfRangeFailsWithPrimErrBadArgument [
 
 	| valueToStore |
@@ -418,7 +417,7 @@ VMFFIArgumentMarshallingTest >> testCalloutWithUINT32WithPositiveOutOfRangeFails
 		failsWith: PrimErrBadArgument
 ]
 
-{ #category : 'tests - parameters marshalling' }
+{ #category : #'tests - parameters marshalling' }
 VMFFIArgumentMarshallingTest >> testCalloutWithUINT64ArgumentWithLargePositiveHigherThan8BytesFails [
 
 	| aValue newLargeInteger |
@@ -437,7 +436,7 @@ VMFFIArgumentMarshallingTest >> testCalloutWithUINT64ArgumentWithLargePositiveHi
 		failsWith: PrimErrBadArgument
 ]
 
-{ #category : 'tests - parameters marshalling' }
+{ #category : #'tests - parameters marshalling' }
 VMFFIArgumentMarshallingTest >> testCalloutWithUINT64ArgumentWithLargePositiveValueIsMarshalledCorrectly [
 
 	| aValue |
@@ -449,7 +448,7 @@ VMFFIArgumentMarshallingTest >> testCalloutWithUINT64ArgumentWithLargePositiveVa
 		expectedValue: aValue
 ]
 
-{ #category : 'tests - parameters marshalling' }
+{ #category : #'tests - parameters marshalling' }
 VMFFIArgumentMarshallingTest >> testCalloutWithUINT64ArgumentWithNegatieValueFails [
 
 	self
@@ -458,7 +457,7 @@ VMFFIArgumentMarshallingTest >> testCalloutWithUINT64ArgumentWithNegatieValueFai
 		failsWith: PrimErrBadArgument
 ]
 
-{ #category : 'tests - parameters marshalling' }
+{ #category : #'tests - parameters marshalling' }
 VMFFIArgumentMarshallingTest >> testCalloutWithUINT64ArgumentWithPositiveValueIsMarshalledCorrectly [
 
 	self
@@ -467,7 +466,7 @@ VMFFIArgumentMarshallingTest >> testCalloutWithUINT64ArgumentWithPositiveValueIs
 		expectedValue: 42
 ]
 
-{ #category : 'tests - parameters marshalling' }
+{ #category : #'tests - parameters marshalling' }
 VMFFIArgumentMarshallingTest >> testCalloutWithUINT8ArgumentWithNegatieValueFails [
 
 	self
@@ -476,7 +475,7 @@ VMFFIArgumentMarshallingTest >> testCalloutWithUINT8ArgumentWithNegatieValueFail
 		failsWith: PrimErrBadArgument
 ]
 
-{ #category : 'tests - parameters marshalling' }
+{ #category : #'tests - parameters marshalling' }
 VMFFIArgumentMarshallingTest >> testCalloutWithUINT8ArgumentWithPositiveValueIsMarshalledCorrectly [
 
 	self
@@ -485,7 +484,7 @@ VMFFIArgumentMarshallingTest >> testCalloutWithUINT8ArgumentWithPositiveValueIsM
 		expectedValue: 8
 ]
 
-{ #category : 'tests - parameters marshalling' }
+{ #category : #'tests - parameters marshalling' }
 VMFFIArgumentMarshallingTest >> testCalloutWithUINT8WithPositiveOutOfRangeFailsWithPrimErrBadArgument [
 
 	self

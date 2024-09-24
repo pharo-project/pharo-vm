@@ -1,12 +1,10 @@
 Class {
-	#name : 'VMJITVMPrimitiveTest',
-	#superclass : 'VMSimpleStackBasedCogitAbstractTest',
-	#category : 'VMMakerTests-JitTests',
-	#package : 'VMMakerTests',
-	#tag : 'JitTests'
+	#name : #VMJITVMPrimitiveTest,
+	#superclass : #VMSimpleStackBasedCogitAbstractTest,
+	#category : #'VMMakerTests-JitTests'
 }
 
-{ #category : 'tests - primitiveMethodXray' }
+{ #category : #'tests - primitiveMethodXray' }
 VMJITVMPrimitiveTest >> setUp [
 
 	super setUp.
@@ -16,7 +14,7 @@ VMJITVMPrimitiveTest >> setUp [
 	self createBaseFrame
 ]
 
-{ #category : 'tests - primitiveMethodXray' }
+{ #category : #'tests - primitiveMethodXray' }
 VMJITVMPrimitiveTest >> testPrimitiveMethodXRayPreviouslyCompiledFramelessMethod [
 
 	| methodToXray target |
@@ -35,7 +33,7 @@ VMJITVMPrimitiveTest >> testPrimitiveMethodXRayPreviouslyCompiledFramelessMethod
 	self assert: ((memory integerValueOf: interpreter stackTop) anyMask: 2r0111)
 ]
 
-{ #category : 'tests - primitiveMethodXray' }
+{ #category : #'tests - primitiveMethodXray' }
 VMJITVMPrimitiveTest >> testPrimitiveMethodXRayShouldCompile [
 
 	| methodToXray target |
@@ -54,7 +52,7 @@ VMJITVMPrimitiveTest >> testPrimitiveMethodXRayShouldCompile [
 	self assert: ((memory integerValueOf: interpreter stackTop) anyMask: 2r0001)
 ]
 
-{ #category : 'tests - primitiveMethodXray' }
+{ #category : #'tests - primitiveMethodXray' }
 VMJITVMPrimitiveTest >> testPrimitiveMethodXRayShouldNotCompile [
 
 	| methodToXray target |
@@ -72,7 +70,7 @@ VMJITVMPrimitiveTest >> testPrimitiveMethodXRayShouldNotCompile [
 	self assert: interpreter stackTop equals: (memory integerObjectOf: 0)
 ]
 
-{ #category : 'tests - primitiveMethodXray' }
+{ #category : #'tests - primitiveMethodXray' }
 VMJITVMPrimitiveTest >> testPrimitiveMethodXRayWasCompiled [
 
 	| methodToXray target |
@@ -91,7 +89,7 @@ VMJITVMPrimitiveTest >> testPrimitiveMethodXRayWasCompiled [
 	self assert: ((memory integerValueOf: interpreter stackTop) anyMask: 2r0010)
 ]
 
-{ #category : 'tests - primitiveMethodXray' }
+{ #category : #'tests - primitiveMethodXray' }
 VMJITVMPrimitiveTest >> testPrimitiveMethodXRayWasNotCompiled [
 
 	| methodToXray target |

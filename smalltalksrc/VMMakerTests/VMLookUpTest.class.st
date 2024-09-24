@@ -1,6 +1,6 @@
 Class {
-	#name : 'VMLookUpTest',
-	#superclass : 'VMInterpreterTests',
+	#name : #VMLookUpTest,
+	#superclass : #VMInterpreterTests,
 	#instVars : [
 		'methodOop',
 		'selectorOop',
@@ -14,12 +14,10 @@ Class {
 		'VMBasicConstants',
 		'VMBytecodeConstants'
 	],
-	#category : 'VMMakerTests-InterpreterTests',
-	#package : 'VMMakerTests',
-	#tag : 'InterpreterTests'
+	#category : #'VMMakerTests-InterpreterTests'
 }
 
-{ #category : 'tests' }
+{ #category : #tests }
 VMLookUpTest class >> testParameters [
 
 	^ super testParameters * (ParametrizedTestMatrix new
@@ -28,7 +26,7 @@ VMLookUpTest class >> testParameters [
 		   yourself)
 ]
 
-{ #category : 'assertions' }
+{ #category : #assertions }
 VMLookUpTest >> assertNonForwardedSelectorsIn: aMethodDictionary [
 
 	| length |
@@ -39,19 +37,19 @@ VMLookUpTest >> assertNonForwardedSelectorsIn: aMethodDictionary [
 		self deny: (memory isForwarded: selector) ]
 ]
 
-{ #category : 'accessing' }
+{ #category : #accessing }
 VMLookUpTest >> linearSearchLimit [
 
 	^ linearSearchLimit
 ]
 
-{ #category : 'accessing' }
+{ #category : #accessing }
 VMLookUpTest >> linearSearchLimit: anObject [
 
 	linearSearchLimit := anObject
 ]
 
-{ #category : 'tests' }
+{ #category : #tests }
 VMLookUpTest >> setArrayClassIntoClassTable [
 	| aClass |
 	aClass := self
@@ -64,7 +62,7 @@ VMLookUpTest >> setArrayClassIntoClassTable [
 		withValue: aClass
 ]
 
-{ #category : 'tests' }
+{ #category : #tests }
 VMLookUpTest >> setMessageClassIntoClassTable [
 	| aClass |
 	aClass := self
@@ -77,7 +75,7 @@ VMLookUpTest >> setMessageClassIntoClassTable [
 		withValue: aClass
 ]
 
-{ #category : 'running' }
+{ #category : #running }
 VMLookUpTest >> setUp [
 
 	"taken from VMSimpleStackBasedCogitBytecodeTest >> #setup"
@@ -133,7 +131,7 @@ VMLookUpTest >> setUp [
 
 ]
 
-{ #category : 'tests' }
+{ #category : #tests }
 VMLookUpTest >> setUpClassAndMethod [
 
 
@@ -145,7 +143,7 @@ VMLookUpTest >> setUpClassAndMethod [
 	receiverClass := self setSmallIntegerClassIntoClassTable
 ]
 
-{ #category : 'tests' }
+{ #category : #tests }
 VMLookUpTest >> testInstallSmallIntegerClassIntoClassTable [
 	"We set a smallInteger class into the classTable"
 
@@ -155,7 +153,7 @@ VMLookUpTest >> testInstallSmallIntegerClassIntoClassTable [
 		equals: receiverClass
 ]
 
-{ #category : 'tests' }
+{ #category : #tests }
 VMLookUpTest >> testLookUpFindsForwardedMethod [
 
 	| aMethodDictionary |
@@ -171,7 +169,7 @@ VMLookUpTest >> testLookUpFindsForwardedMethod [
 	self assert: interpreter newMethod equals: methodOop.
 ]
 
-{ #category : 'tests' }
+{ #category : #tests }
 VMLookUpTest >> testLookUpFindsMethodInClass [
 	
 	| aMethodDictionary |
@@ -186,7 +184,7 @@ VMLookUpTest >> testLookUpFindsMethodInClass [
 	self assert: interpreter newMethod equals: methodOop
 ]
 
-{ #category : 'tests' }
+{ #category : #tests }
 VMLookUpTest >> testLookUpFindsMethodInSuperclass [
 
 	| superclass superclassMethodDictionary |
@@ -211,7 +209,7 @@ VMLookUpTest >> testLookUpFindsMethodInSuperclass [
 	self assert: interpreter newMethod equals: methodOop
 ]
 
-{ #category : 'tests' }
+{ #category : #tests }
 VMLookUpTest >> testLookUpFindsMethodWithForwardedSelector [
 
 	| aMethodDictionary |
@@ -228,7 +226,7 @@ VMLookUpTest >> testLookUpFindsMethodWithForwardedSelector [
 	self assertNonForwardedSelectorsIn: aMethodDictionary
 ]
 
-{ #category : 'tests' }
+{ #category : #tests }
 VMLookUpTest >> testLookUpInDefiningClassCreatesANewEntryInCache [
 
 	| aMethodDictionary |
@@ -243,7 +241,7 @@ VMLookUpTest >> testLookUpInDefiningClassCreatesANewEntryInCache [
 	self assert: (interpreter lookupInMethodCacheSel: selectorOop classTag:memory smallIntegerTag).
 ]
 
-{ #category : 'tests' }
+{ #category : #tests }
 VMLookUpTest >> testLookUpInFindsCannotInterpretCreatesANewEntryInCache [
 
 	| nonExistingSelector cannotInterpretMethodOop cannotInterpretSelectorOop superclass superclassMethodDictionary |
@@ -285,7 +283,7 @@ VMLookUpTest >> testLookUpInFindsCannotInterpretCreatesANewEntryInCache [
 			 classTag: memory smallIntegerTag)
 ]
 
-{ #category : 'tests' }
+{ #category : #tests }
 VMLookUpTest >> testLookUpInFindsDNUCreatesANewEntryInCache [
 
 	| nonExistingSelector dnuMethodOop dnuSelectorOop aMethodDictionary |
@@ -321,7 +319,7 @@ VMLookUpTest >> testLookUpInFindsDNUCreatesANewEntryInCache [
 			 classTag: memory smallIntegerTag)
 ]
 
-{ #category : 'tests' }
+{ #category : #tests }
 VMLookUpTest >> testLookUpInSuperclassCreatesANewEntryInCache [
 
 	| superclass superclassMethodDictionary |
@@ -343,7 +341,7 @@ VMLookUpTest >> testLookUpInSuperclassCreatesANewEntryInCache [
 	self assert: (interpreter lookupInMethodCacheSel: selectorOop classTag:memory smallIntegerTag).
 ]
 
-{ #category : 'tests' }
+{ #category : #tests }
 VMLookUpTest >> testLookUpNonExistingCannotInterpretAnswersDNUMethod [
 
 	| nonExistingSelector superclass superclassMethodDictionary dnuMethodOop dnuSelectorOop |
@@ -381,7 +379,7 @@ VMLookUpTest >> testLookUpNonExistingCannotInterpretAnswersDNUMethod [
 	self assert: interpreter newMethod equals: dnuMethodOop
 ]
 
-{ #category : 'tests' }
+{ #category : #tests }
 VMLookUpTest >> testLookUpNonExistingDNUThrowsRecursivelyDoesNotUnderstand [
 
 	| nonExistingSelector aMethodDictionary |
@@ -402,7 +400,7 @@ VMLookUpTest >> testLookUpNonExistingDNUThrowsRecursivelyDoesNotUnderstand [
 	self should: [interpreter lookupMethodInClass: receiverClass] raise: Error.
 ]
 
-{ #category : 'tests' }
+{ #category : #tests }
 VMLookUpTest >> testLookUpNonExistingSelectorAnswersDNUMethod [
 
 	| nonExistingSelector dnuMethodOop dnuSelectorOop aMethodDictionary |
@@ -436,7 +434,7 @@ VMLookUpTest >> testLookUpNonExistingSelectorAnswersDNUMethod [
 	self assert: interpreter newMethod equals: dnuMethodOop
 ]
 
-{ #category : 'tests' }
+{ #category : #tests }
 VMLookUpTest >> testLookUpWithNilMethodDictionaryAndNilSuperclassFails [
 	"There is no superclass, so no cannotInterpret: to call"
 
@@ -458,7 +456,7 @@ VMLookUpTest >> testLookUpWithNilMethodDictionaryAndNilSuperclassFails [
 	self should: [ interpreter lookupMethodInClass: receiverClass ] raise: Error
 ]
 
-{ #category : 'tests' }
+{ #category : #tests }
 VMLookUpTest >> testLookUpWithNilMethodDictionaryAndNoCannotInterpretAnswersDNUMethod [
 	"Class has a nil methodDictionary, so `cannotInterpret:` is send.
 	But superclass does not understand it, so `doesNotUnderstand:` is called instead."
@@ -504,7 +502,7 @@ VMLookUpTest >> testLookUpWithNilMethodDictionaryAndNoCannotInterpretAnswersDNUM
 	self assert: interpreter newMethod equals: dnuMethodOop
 ]
 
-{ #category : 'tests' }
+{ #category : #tests }
 VMLookUpTest >> testLookUpWithNilMethodDictionaryFindsCannotInterpret [
 
 	| nonExistingSelector cannotInterpretMethodOop cannotInterpretSelectorOop superclass superclassMethodDictionary |
@@ -544,7 +542,7 @@ VMLookUpTest >> testLookUpWithNilMethodDictionaryFindsCannotInterpret [
 	self assert: interpreter newMethod equals: cannotInterpretMethodOop
 ]
 
-{ #category : 'tests' }
+{ #category : #tests }
 VMLookUpTest >> testPrimitivePerformCreatesCorrectFrame [
 	| aMethodDictionary receiverOop frame |	
 	"Primitive perform sets everything up (frame, instruction pointer..) so next interpret loop will execute the first bytecode."
@@ -569,7 +567,7 @@ VMLookUpTest >> testPrimitivePerformCreatesCorrectFrame [
 
 ]
 
-{ #category : 'tests' }
+{ #category : #tests }
 VMLookUpTest >> testPrimitivePerformExecutes [
 	| aMethodDictionary receiverOop |
 	self setUpClassAndMethod.	
@@ -587,7 +585,7 @@ VMLookUpTest >> testPrimitivePerformExecutes [
 	self assert: interpreter stackTop equals: receiverOop
 ]
 
-{ #category : 'tests' }
+{ #category : #tests }
 VMLookUpTest >> testPrimitivePerformFindsMethodOop [
 	| aMethodDictionary receiverOop |
 	self setUpClassAndMethod.	
@@ -608,7 +606,7 @@ VMLookUpTest >> testPrimitivePerformFindsMethodOop [
 	"(1) the Instruction Pointer is set to be just before the bytecode to execute, so fetchNextBytecode will fetch the first bytecode ( #justActivateNewMethod: )"
 ]
 
-{ #category : 'tests' }
+{ #category : #tests }
 VMLookUpTest >> testPrimitivePerformSetsIPBeforeFirstBytecode [
 	| aMethodDictionary receiverOop |	
 	"Primitive perform sets everything up (frame, instruction pointer..) so next interpret loop will execute the first bytecode."

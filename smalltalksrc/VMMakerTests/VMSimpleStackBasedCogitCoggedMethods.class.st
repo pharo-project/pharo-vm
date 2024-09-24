@@ -1,21 +1,19 @@
 Class {
-	#name : 'VMSimpleStackBasedCogitCoggedMethods',
-	#superclass : 'VMSimpleStackBasedCogitAbstractTest',
+	#name : #VMSimpleStackBasedCogitCoggedMethods,
+	#superclass : #VMSimpleStackBasedCogitAbstractTest,
 	#pools : [
 		'CogMethodConstants'
 	],
-	#category : 'VMMakerTests-JitTests',
-	#package : 'VMMakerTests',
-	#tag : 'JitTests'
+	#category : #'VMMakerTests-JitTests'
 }
 
-{ #category : 'running' }
+{ #category : #running }
 VMSimpleStackBasedCogitCoggedMethods >> setUp [
 	super setUp.
 	self setUpCogMethodEntry.
 ]
 
-{ #category : 'tests' }
+{ #category : #tests }
 VMSimpleStackBasedCogitCoggedMethods >> testUsingEntryOffsetChecksClassRegisterAndContinue [
 
 	| cogMethod otherBlock |
@@ -30,7 +28,7 @@ VMSimpleStackBasedCogitCoggedMethods >> testUsingEntryOffsetChecksClassRegisterA
 	self assert: machineSimulator instructionPointerRegisterValue equals: otherBlock 
 ]
 
-{ #category : 'tests' }
+{ #category : #tests }
 VMSimpleStackBasedCogitCoggedMethods >> testUsingEntryOffsetChecksClassRegisterAndGoesToAbort [
 
 	| cogMethod otherBlock |
@@ -45,7 +43,7 @@ VMSimpleStackBasedCogitCoggedMethods >> testUsingEntryOffsetChecksClassRegisterA
 	self assert: machineSimulator instructionPointerRegisterValue equals: cogit ceMethodAbortTrampoline 
 ]
 
-{ #category : 'tests' }
+{ #category : #tests }
 VMSimpleStackBasedCogitCoggedMethods >> testUsingNoCheckEntryDoesNotCheckClassTag [
 
 	| cogMethod otherBlock |

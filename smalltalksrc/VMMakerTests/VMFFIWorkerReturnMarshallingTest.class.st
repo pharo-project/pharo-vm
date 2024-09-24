@@ -1,6 +1,6 @@
 Class {
-	#name : 'VMFFIWorkerReturnMarshallingTest',
-	#superclass : 'VMFFIReturnMarshallingTest',
+	#name : #VMFFIWorkerReturnMarshallingTest,
+	#superclass : #VMFFIReturnMarshallingTest,
 	#instVars : [
 		'tfExternalFunction',
 		'returnHolder',
@@ -12,11 +12,10 @@ Class {
 		'worker',
 		'workerOop'
 	],
-	#category : 'VMMakerTests',
-	#package : 'VMMakerTests'
+	#category : #VMMakerTests
 }
 
-{ #category : 'tests - marshalling return' }
+{ #category : #'tests - marshalling return' }
 VMFFIWorkerReturnMarshallingTest >> doTestCalloutWithReturnType: aLibFFIType returnValue: valueToReturn asserting: aBlock [
 
 	tfExternalFunction := self
@@ -55,14 +54,14 @@ VMFFIWorkerReturnMarshallingTest >> doTestCalloutWithReturnType: aLibFFIType ret
 	aBlock value.
 ]
 
-{ #category : 'tests - marshalling return' }
+{ #category : #'tests - marshalling return' }
 VMFFIWorkerReturnMarshallingTest >> initializationOptions [
 
 	^ super initializationOptions , { 
 		#FEATURE_THREADED_FFI . true }
 ]
 
-{ #category : 'tests - marshalling return' }
+{ #category : #'tests - marshalling return' }
 VMFFIWorkerReturnMarshallingTest >> testPrimitiveCalloutReturningVoidPushesTheReceiver [
 
 	self 

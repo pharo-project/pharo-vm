@@ -1,12 +1,10 @@
 Class {
-	#name : 'VMSpurObjectAllocationTest',
-	#superclass : 'VMSpurInitializedOldSpaceTest',
-	#category : 'VMMakerTests-MemoryTests',
-	#package : 'VMMakerTests',
-	#tag : 'MemoryTests'
+	#name : #VMSpurObjectAllocationTest,
+	#superclass : #VMSpurInitializedOldSpaceTest,
+	#category : #'VMMakerTests-MemoryTests'
 }
 
-{ #category : 'tests' }
+{ #category : #tests }
 VMSpurObjectAllocationTest >> testAllocateObjectInNewSpaceMovesFreeStart [
 
 	| oldFreeStart |
@@ -16,7 +14,7 @@ VMSpurObjectAllocationTest >> testAllocateObjectInNewSpaceMovesFreeStart [
 	self assert: memory freeStart > oldFreeStart
 ]
 
-{ #category : 'tests' }
+{ #category : #tests }
 VMSpurObjectAllocationTest >> testAllocateObjectInOldSpaceMovesFreeStart [
 
 	| oldFreeStart |
