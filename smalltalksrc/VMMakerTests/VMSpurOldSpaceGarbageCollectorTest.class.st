@@ -630,6 +630,38 @@ VMSpurOldSpaceGarbageCollectorTest >> testEphemeronWithImmediateKeyShouldNotFail
 ]
 
 { #category : 'tests' }
+VMSpurOldSpaceGarbageCollectorTest >> testEphemeronsWithSameKeyNewSpaceOldSpace [
+
+	| ephemeronObjectOopOne ephemeronObjectOopTwo nonEphemeronObjectOop |
+	"set up"
+	memory initializeMournQueue.
+	self createEphemeronClass.
+	
+	ephemeronObjectOopOne := self newEphemeronObject.
+	ephemeronObjectOopTwo := self newEphemeronObject.
+	nonEphemeronObjectOop := self newOldSpaceObjectWithSlots: 0.
+
+	"Both ephemerons share the same key"
+	memory storePointer: 0
+		ofObject: ephemeronObjectOopOne
+		withValue: nonEphemeronObjectOop.
+	memory storePointer: 0
+		ofObject: ephemeronObjectOopTwo
+		withValue: nonEphemeronObjectOop.
+
+	self keepObjectInVMVariable1: ephemeronObjectOopOne.
+	self keepObjectInVMVariable2: ephemeronObjectOopTwo.
+
+	"Collect non ephemeron object"
+	memory fullGC.
+	ephemeronObjectOopOne := memory remapObj: ephemeronObjectOopOne.
+	ephemeronObjectOopTwo := memory remapObj: ephemeronObjectOopTwo.
+
+	self assert: ({ ephemeronObjectOopOne. ephemeronObjectOopTwo } includes: memory dequeueMourner).
+	self assert: ({ ephemeronObjectOopOne. ephemeronObjectOopTwo } includes: memory dequeueMourner)
+]
+
+{ #category : 'tests' }
 VMSpurOldSpaceGarbageCollectorTest >> testGrowOldSpace [
 
 	| freespace freespace2 slotsNumber anObjectOop |
