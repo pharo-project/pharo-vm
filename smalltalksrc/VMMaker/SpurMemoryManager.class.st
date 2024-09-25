@@ -1327,12 +1327,9 @@ SpurMemoryManager >> adjustAllOopsBy: bytesToShift [
 					[self swizzleFieldsOfFreeChunk: obj]].
 		 obj := self objectAfter: obj limit: memoryMap oldSpaceEnd].
 	
+	"We need to iterate all the permSpace, as still we don't have the fromPermToOldSpaceRememberedSet. If we move the initialization of the remembered set before we can use it here or just after the initialization"
 	
-	"As we know all the permanent space objects that are pointing to the old space, and as the permanent space is always in the same place.
-	We need only to iterate the remembered set to swizzle the fields of permanent objects"
-	
-	self getFromPermToOldSpaceRememberedSet 
-		rememberedSetWithIndexDo: [ :oop :i | self swizzleFieldsOfObject: oop ].
+	self allPermSpaceObjectsDo: [ :oop | self swizzleFieldsOfObject: oop ].
 
 ]
 
@@ -3965,12 +3962,23 @@ SpurMemoryManager >> cleverSwapHeaders: obj1 and: obj2 copyHashFlag: copyHashFla
 
 { #category : 'allocation' }
 SpurMemoryManager >> clone: objOop [
+
+	^ self clone: objOop shouldAllocateInPermSpace: false
+]
+
+{ #category : 'allocation' }
+SpurMemoryManager >> clone: objOop shouldAllocateInPermSpace: shouldAllocateInPermSpace [
+
+	"Attention: the shouldAllocateInPermSpace is only used by the become, as it handles adding or not the new perm object to the remembered sets"
+
 	| numSlots fmt newObj |
 	numSlots := self numSlotsOf: objOop.
 	fmt := self formatOf: objOop.
 	
-	(memoryMap isPermanentObject: objOop)
-		ifTrue: [ newObj := self allocateSlotsInPermSpace: numSlots format: fmt classIndex: (self classIndexOf: objOop)]
+	(shouldAllocateInPermSpace)
+		ifTrue: [ newObj := self allocateSlotsInPermSpace: numSlots 
+										format: fmt 
+										classIndex: (self classIndexOf: objOop)]
 		ifFalse: [  
 				numSlots > self maxSlotsForNewSpaceAlloc
 					ifTrue:
@@ -4014,6 +4022,7 @@ SpurMemoryManager >> clone: objOop [
 				 ((memoryMap isOldObject: newObj)
 				  and: [(memoryMap isYoungObject: objOop) or: [self isRemembered: objOop]]) ifTrue:
 					[self getFromOldSpaceRememberedSet remember: newObj]]].
+		
 	^newObj
 ]
 
@@ -10212,13 +10221,13 @@ SpurMemoryManager >> outOfPlaceBecome: obj1 and: obj2 copyHashFlag: copyHashFlag
 	| clone1 clone2 |
 	clone1 := (self isContextNonImm: obj1)
 				ifTrue: [coInterpreter cloneContext: obj1]
-				ifFalse: [self clone: obj1].
+				ifFalse: [self clone: obj1 shouldAllocateInPermSpace: (memoryMap isPermanentObject: obj1)].
 	
 	clone1 ifNil: [ self error: 'Not enough space to copy the objects in two-way become. This should have been detected before'. ^ self].	
 			
 	clone2 := (self isContextNonImm: obj2)
 				ifTrue: [coInterpreter cloneContext: obj2]
-				ifFalse: [self clone: obj2].	
+				ifFalse: [self clone: obj2 shouldAllocateInPermSpace: (memoryMap isPermanentObject: obj2)].	
 
 	clone2 ifNil: [ self error: 'Not enough space to copy the objects in two-way become. This should have been detected before'.^ self ].	
 			
