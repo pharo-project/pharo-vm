@@ -12280,6 +12280,25 @@ StackInterpreter >> printPageHeadFrame [
 ]
 
 { #category : 'debug printing' }
+StackInterpreter >> printPointersTo: anAddress [
+
+	<api>
+	
+	| referent |
+	
+	objectMemory allObjectsDo: [ :anOop |
+		(objectMemory isForwarded: anOop)
+			ifTrue: [ 
+					referent := objectMemory fetchPointer: 0 ofMaybeForwardedObject: anOop.
+					referent = anAddress ifTrue: [ self shortPrintOop: anOop ]]
+			ifFalse: [
+				0 to: (objectMemory numPointerSlotsOf: anOop) - 1 do: [ :idx |
+					referent := objectMemory fetchPointer: idx ofObject: anOop.
+					referent = anAddress ifTrue: [ self shortPrintOop: anOop ] ]]].
+
+]
+
+{ #category : 'debug printing' }
 StackInterpreter >> printProcessStack: aProcess [
 	<api>
 	<inline: false>
