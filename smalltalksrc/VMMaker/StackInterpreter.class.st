@@ -4921,6 +4921,12 @@ StackInterpreter >> currentBytecode [
 	^ currentBytecode
 ]
 
+{ #category : 'frame access' }
+StackInterpreter >> defaultCallerSavedIP [
+
+	^ objectMemory nilObject
+]
+
 { #category : 'initialization' }
 StackInterpreter >> defaultNumStackPages [
 	"Return the default number of stack pages allocate at startup.
@@ -6946,6 +6952,12 @@ StackInterpreter >> getBlockCompilationCount [
 StackInterpreter >> getBlockCompilationMSecs [
 	"This is nil in the StackVM"
 	^objectMemory nilObject
+]
+
+{ #category : 'frame access' }
+StackInterpreter >> getCallerIPFromFP: theFP callerFP: callerFP [
+
+	^ self oopForPointer: (self frameCallerSavedIP: theFP)
 ]
 
 { #category : 'internal interpreter access' }
@@ -10289,7 +10301,7 @@ StackInterpreter >> moveFramesIn: oldPage through: theFP toPage: newPage [
 	self setHeadFP: oldPage headFP + delta andSP: newSP inPage: newPage.
 	newPage baseFP: newFP.
 
-	callerIP := self oopForPointer: (self frameCallerSavedIP: theFP).
+	callerIP := self getCallerIPFromFP: theFP callerFP: callerFP.
 	stackPages longAt: theFP + stackedReceiverOffset put: callerIP.
 	self assert: (callerFP < oldPage baseAddress
 				and: [callerFP > (oldPage realStackLimit - (LargeContextSlots * objectMemory bytesPerOop / 2))]).
@@ -10298,7 +10310,7 @@ StackInterpreter >> moveFramesIn: oldPage through: theFP toPage: newPage [
 		headSP: theFP + stackedReceiverOffset.
 	"Mark the new base frame in the new page"
 	stackPages
-		longAt: newFP + FoxCallerSavedIP put: objectMemory nilObject;
+		longAt: newFP + FoxCallerSavedIP put: self defaultCallerSavedIP;
 		longAt: newFP + FoxSavedFP put: 0.
 	"Now relocate frame pointers, updating married contexts to refer to their moved spouse frames."
 	fpInNewPage := newPage headFP.
