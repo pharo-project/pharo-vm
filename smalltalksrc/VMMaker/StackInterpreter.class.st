@@ -15736,6 +15736,7 @@ StackInterpreter >> tryLoadNewPlugin: pluginString pluginEntries: pluginEntries 
 { #category : 'interpreter inline caches' }
 StackInterpreter >> tryToUseInlineCacheForClassTag: classTag ifSuccessful: aBlock [
 	| classTagSmallInteger inlineCacheClassTag |
+	<inline: false>
 	"If there's no cache then return"
 	inlineCacheStartIndex ~= -1 ifFalse: [ ^ self ].
 
@@ -16083,7 +16084,7 @@ StackInterpreter >> unknownShortOrCodeSizeInKs [
 StackInterpreter >> updateInlineCacheIfNeeded: classTagArg [
 
 	| classTag |
-	"^ self."
+	<inline: false>
 	"If there's no cache then return"
 	inlineCacheStartIndex ~= -1 ifFalse: [ ^ self ].
 
