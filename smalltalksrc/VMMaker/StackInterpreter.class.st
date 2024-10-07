@@ -15733,7 +15733,7 @@ StackInterpreter >> tryLoadNewPlugin: pluginString pluginEntries: pluginEntries 
 	^ pluginString asString -> plugin
 ]
 
-{ #category : 'message sending' }
+{ #category : 'interpreter inline caches' }
 StackInterpreter >> tryToUseInlineCacheForClassTag: classTag ifSuccessful: aBlock [
 	| classTagSmallInteger inlineCacheClassTag |
 	"If there's no cache then return"
@@ -16079,7 +16079,7 @@ StackInterpreter >> unknownShortOrCodeSizeInKs [
 	^theUnknownShort
 ]
 
-{ #category : 'message sending' }
+{ #category : 'interpreter inline caches' }
 StackInterpreter >> updateInlineCacheIfNeeded: classTagArg [
 
 	| classTag |
