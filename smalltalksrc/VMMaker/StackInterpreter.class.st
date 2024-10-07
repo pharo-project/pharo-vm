@@ -6050,13 +6050,15 @@ StackInterpreter >> findNewMethodInClassTag: classTagArg ifFound: aBlock [
 	 sent to the given classTag, setting the values of newMethod and primitiveIndex."
 
 	<inline: true>
-	| classTag |
+	| classTag classTagArgSmallInteger |
 	classTag := classTagArg.
+	classTagArgSmallInteger := objectMemory integerObjectOf: classTagArg.
 	inlineCacheStartIndex ~= -1 ifTrue: [
 		| inlineCacheClassTag |
 		inlineCacheClassTag := self literal: inlineCacheStartIndex + 1.
-		classTagArg = inlineCacheClassTag ifTrue: [
+		classTagArgSmallInteger = inlineCacheClassTag ifTrue: [
 			newMethod := self literal: inlineCacheStartIndex + 2.
+			primitiveFunctionPointer := self literal: inlineCacheStartIndex + 3.
 			^ aBlock value] ].
 
 	(self inlineLookupInMethodCacheSel: messageSelector classTag: classTag)
@@ -6072,9 +6074,7 @@ StackInterpreter >> findNewMethodInClassTag: classTagArg ifFound: aBlock [
 					classTag := self handleForwardedSendFaultForTag: classTag ].
 				(self lookupInMethodCacheSel: messageSelector classTag: classTag)
 					ifTrue: [
-						inlineCacheStartIndex ~= -1 ifTrue: [
-							self modifyLiteral: inlineCacheStartIndex + 1 writing: classTagArg.
-							self modifyLiteral: inlineCacheStartIndex + 2 writing: newMethod ].
+						self updateInlineCacheIfNeeded: classTagArg.
 						^ aBlock value ] ].
 
 			"Entry was not found in the cache; look it up the hard way "
@@ -6082,14 +6082,10 @@ StackInterpreter >> findNewMethodInClassTag: classTagArg ifFound: aBlock [
 			(objectMemory isOopForwarded: lkupClass) ifTrue: [
 				lkupClass := objectMemory followForwarded: lkupClass ].
 			self lookupMethodInClass: lkupClass.
-			inlineCacheStartIndex ~= -1 ifTrue: [
-				self modifyLiteral: inlineCacheStartIndex + 1 writing: classTagArg.
-				self modifyLiteral: inlineCacheStartIndex + 2 writing: newMethod ].
-			self addNewMethodToCache: lkupClass ]
+			self addNewMethodToCache: lkupClass.
+			self updateInlineCacheIfNeeded: classTagArg]
 		ifTrue: [
-			inlineCacheStartIndex ~= -1 ifTrue: [
-				self modifyLiteral: inlineCacheStartIndex + 1 writing: classTagArg.
-				self modifyLiteral: inlineCacheStartIndex + 2 writing: newMethod ].
+			self updateInlineCacheIfNeeded: classTagArg.
 			aBlock value ]
 ]
 
@@ -16060,6 +16056,19 @@ StackInterpreter >> unknownInlinePrimitive [
 StackInterpreter >> unknownShortOrCodeSizeInKs [
 	"preserve whatever this value was (for images run on Cog)"
 	^theUnknownShort
+]
+
+{ #category : 'message sending' }
+StackInterpreter >> updateInlineCacheIfNeeded: classTagArg [
+
+	| classTag |
+	classTag := objectMemory integerObjectOf: classTagArg.
+	inlineCacheStartIndex ~= -1 ifFalse: [ ^ self ].
+	self modifyLiteral: inlineCacheStartIndex + 1 writing: classTag.
+	self modifyLiteral: inlineCacheStartIndex + 2 writing: newMethod.
+	self
+		modifyLiteral: inlineCacheStartIndex + 3
+		writing: primitiveFunctionPointer
 ]
 
 { #category : 'image save/restore' }
