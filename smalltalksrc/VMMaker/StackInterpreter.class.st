@@ -16090,7 +16090,7 @@ StackInterpreter >> updateInlineCacheIfNeeded: classTagArg [
 
 	"Otherwise let's put the class tag in an small integer and update the IC"
 	classTag := objectMemory integerObjectOf: classTagArg.
-	(objectMemory nilObject = self literal: inlineCacheStartIndex + 1) ifTrue: [
+	(objectMemory nilObject = (self literal: inlineCacheStartIndex + 1)) ifTrue: [
 		self literal: inlineCacheStartIndex + 1 put: classTag.
 		self literal: inlineCacheStartIndex + 2 put: newMethod ]
 ]
