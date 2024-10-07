@@ -16086,6 +16086,7 @@ StackInterpreter >> unknownShortOrCodeSizeInKs [
 StackInterpreter >> updateInlineCacheIfNeeded: classTagArg [
 	| classTag |
 	<inline: false>
+	^ self.
 	"If there's no cache then return"
 	inlineCacheStartIndex = -1 ifTrue: [ ^ self ].
 
