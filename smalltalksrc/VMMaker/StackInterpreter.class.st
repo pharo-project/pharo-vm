@@ -6052,7 +6052,8 @@ StackInterpreter >> findNewMethodInClassTag: classTagArg ifFound: aBlock [
 	<inline: true>
 	| classTag |
 	classTag := classTagArg.
-	self tryToUseInlineCacheForClassTag: classTag ifSuccessful: [ ^ aBlock value ].
+	(self tryToUseInlineCacheForClassTag: classTag) ifTrue: [
+		^ aBlock value ].
 
 	(self inlineLookupInMethodCacheSel: messageSelector classTag: classTag)
 		ifFalse: [
@@ -15734,16 +15735,16 @@ StackInterpreter >> tryLoadNewPlugin: pluginString pluginEntries: pluginEntries 
 ]
 
 { #category : 'interpreter inline caches' }
-StackInterpreter >> tryToUseInlineCacheForClassTag: classTag ifSuccessful: aBlock [
+StackInterpreter >> tryToUseInlineCacheForClassTag: classTag [
 	| classTagSmallInteger inlineCacheClassTag |
 	<inline: false>
 	"If there's no cache then return"
-	inlineCacheStartIndex ~= -1 ifFalse: [ ^ self ].
+	inlineCacheStartIndex = -1 ifTrue: [ ^ false ].
 
 	"If the cached tag is not the same one then return"
 	classTagSmallInteger := objectMemory integerObjectOf: classTag.
 	inlineCacheClassTag := self literal: inlineCacheStartIndex + 1.
-	classTagSmallInteger = inlineCacheClassTag ifFalse: [ ^ self ].
+	classTagSmallInteger = inlineCacheClassTag ifFalse: [ ^ false ].
 
 	"Otherwise let's get the method and primitive function pointer"
 	newMethod := self literal: inlineCacheStartIndex + 2.
@@ -15758,8 +15759,8 @@ StackInterpreter >> tryToUseInlineCacheForClassTag: classTag ifSuccessful: aBloc
 				and: [objectMemory isForwarded: newMethod]) not.
 			primitiveFunctionPointer := #primitiveInvokeObjectAsMethod ].
 
-	"... and invoke the callback before returning"
-	^ aBlock value
+	"... and notify the caller that we were able to use the IC"
+	^ true
 ]
 
 { #category : 'debug printing' }
@@ -16082,7 +16083,6 @@ StackInterpreter >> unknownShortOrCodeSizeInKs [
 
 { #category : 'interpreter inline caches' }
 StackInterpreter >> updateInlineCacheIfNeeded: classTagArg [
-
 	| classTag |
 	<inline: false>
 	"If there's no cache then return"
