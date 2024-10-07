@@ -392,7 +392,8 @@ Class {
 		'pendingFinalizationSignals',
 		'imageVersionNumber',
 		'desiredStackPageBytes',
-		'imageReaderWriter'
+		'imageReaderWriter',
+		'inlineCacheStartIndex'
 	],
 	#classVars : [
 		'AlternateHeaderHasPrimFlag',
@@ -5649,12 +5650,14 @@ StackInterpreter >> extSendBytecode [
 	"238		11101110	i i i i i j j j	Send Literal Selector #iiiii (+ Extend A * 32) with jjj (+ Extend B * 8) Arguments"
 	| byte |
 	byte := self fetchByte.
-	messageSelector := self literal: (byte >> 3) + (extA << 5).
+	inlineCacheStartIndex := (byte >> 3) + (extA << 5).
+	messageSelector := self literal: inlineCacheStartIndex.
 	extA := 0.
 	argumentCount := (byte bitAnd: 7) + (extB << 3).
 	extB := 0.
 	numExtB := 0.
-	self normalSend
+	self normalSend.
+	inlineCacheStartIndex := -1
 ]
 
 { #category : 'send bytecodes' }
@@ -5665,7 +5668,8 @@ StackInterpreter >> extSendSuperBytecode [
 			ifFalse: [Send To Superclass of Stacked Class Literal Selector #iiiii (+ Extend A * 32) with jjj (+ (Extend B bitAnd: 63) * 8) Arguments]"
 	| byte |
 	byte := self fetchByte.
-	messageSelector := self literal: (byte >> 3) + (extA << 5).
+	inlineCacheStartIndex := (byte >> 3) + (extA << 5).
+	messageSelector := self literal: inlineCacheStartIndex.
 	extA := 0.
 	BytecodeSetHasDirectedSuperSend ifTrue:
 		[extB >= 64 ifTrue:
@@ -5676,7 +5680,8 @@ StackInterpreter >> extSendSuperBytecode [
 	argumentCount := (byte bitAnd: 7) + (extB << 3).
 	extB := 0.
 	numExtB := 0.
-	self superclassSend
+	self superclassSend.
+	inlineCacheStartIndex := -1
 ]
 
 { #category : 'stack bytecodes' }
@@ -6047,6 +6052,13 @@ StackInterpreter >> findNewMethodInClassTag: classTagArg ifFound: aBlock [
 	<inline: true>
 	| classTag |
 	classTag := classTagArg.
+	inlineCacheStartIndex ~= -1 ifTrue: [
+		| inlineCacheClassTag |
+		inlineCacheClassTag := self literal: inlineCacheStartIndex + 1.
+		classTagArg = inlineCacheClassTag ifTrue: [
+			newMethod := self literal: inlineCacheStartIndex + 2.
+			^ aBlock value] ].
+
 	(self inlineLookupInMethodCacheSel: messageSelector classTag: classTag)
 		ifFalse: [
 			"Entry was not found in the cache; perhaps something was forwarded.
@@ -6059,15 +6071,26 @@ StackInterpreter >> findNewMethodInClassTag: classTagArg ifFound: aBlock [
 				(objectMemory isForwardedClassTag: classTag) ifTrue: [
 					classTag := self handleForwardedSendFaultForTag: classTag ].
 				(self lookupInMethodCacheSel: messageSelector classTag: classTag)
-					ifTrue: [ ^ aBlock value ] ].
+					ifTrue: [
+						inlineCacheStartIndex ~= -1 ifTrue: [
+							self modifyLiteral: inlineCacheStartIndex + 1 writing: classTagArg.
+							self modifyLiteral: inlineCacheStartIndex + 2 writing: newMethod ].
+						^ aBlock value ] ].
 
 			"Entry was not found in the cache; look it up the hard way "
 			lkupClass := objectMemory classForClassTag: classTag.
 			(objectMemory isOopForwarded: lkupClass) ifTrue: [
 				lkupClass := objectMemory followForwarded: lkupClass ].
 			self lookupMethodInClass: lkupClass.
+			inlineCacheStartIndex ~= -1 ifTrue: [
+				self modifyLiteral: inlineCacheStartIndex + 1 writing: classTagArg.
+				self modifyLiteral: inlineCacheStartIndex + 2 writing: newMethod ].
 			self addNewMethodToCache: lkupClass ]
-		ifTrue: [ aBlock value ]
+		ifTrue: [
+			inlineCacheStartIndex ~= -1 ifTrue: [
+				self modifyLiteral: inlineCacheStartIndex + 1 writing: classTagArg.
+				self modifyLiteral: inlineCacheStartIndex + 2 writing: newMethod ].
+			aBlock value ]
 ]
 
 { #category : 'message sending' }
@@ -7676,6 +7699,7 @@ StackInterpreter >> initializeInterpreter: bytesToShift [
 	profileSemaphore := profileProcess := profileMethod := objectMemory nilObject.
 	self initializeGlobalSessionID.
 	metaAccessorDepth := -2.
+	inlineCacheStartIndex := -1.
 
 ]
 
@@ -10229,6 +10253,12 @@ StackInterpreter >> methodUsesPrimitiveErrorCode: aMethodObj [
 StackInterpreter >> microsecondsToMilliseconds: microseconds [
 	<var: #microseconds type: #usqLong>
 	^microseconds // 1000 bitAnd: MillisecondClockMask
+]
+
+{ #category : 'compiled methods' }
+StackInterpreter >> modifyLiteral: offset writing: aValue [
+	self assert: method = (self iframeMethod: framePointer).
+	^ objectMemory storePointer: offset + LiteralStart + 1 ofObject: method withValue: aValue
 ]
 
 { #category : 'initialization' }
@@ -13592,36 +13622,42 @@ StackInterpreter >> sendCannotReturn: resultOop [
 StackInterpreter >> sendLiteralSelector0ArgsBytecode [
 	"Can use any of the first 16 literals for the selector."
 	| rcvr |
-	messageSelector := self literal: (currentBytecode bitAnd: 16rF).
+	inlineCacheStartIndex := currentBytecode bitAnd: 16rF.
+	messageSelector := self literal: inlineCacheStartIndex.
 	argumentCount := 0.
 	rcvr := self stackValue: 0.
 	lkupClassTag := objectMemory fetchClassTagOf: rcvr.
 	self assert: lkupClassTag ~= objectMemory nilObject.
-	self commonSendOrdinary
+	self commonSendOrdinary.
+	inlineCacheStartIndex := -1
 ]
 
 { #category : 'send bytecodes' }
 StackInterpreter >> sendLiteralSelector1ArgBytecode [
 	"Can use any of the first 16 literals for the selector."
 	| rcvr |
-	messageSelector := self literal: (currentBytecode bitAnd: 16rF).
+	inlineCacheStartIndex := currentBytecode bitAnd: 16rF.
+	messageSelector := self literal: inlineCacheStartIndex.
 	argumentCount := 1.
 	rcvr := self stackValue: 1.
 	lkupClassTag := objectMemory fetchClassTagOf: rcvr.
 	self assert: lkupClassTag ~= objectMemory nilObject.
-	self commonSendOrdinary
+	self commonSendOrdinary.
+	inlineCacheStartIndex := -1
 ]
 
 { #category : 'send bytecodes' }
 StackInterpreter >> sendLiteralSelector2ArgsBytecode [
 	"Can use any of the first 16 literals for the selector."
 	| rcvr |
-	messageSelector := self literal: (currentBytecode bitAnd: 16rF).
+	inlineCacheStartIndex := currentBytecode bitAnd: 16rF.
+	messageSelector := self literal: inlineCacheStartIndex.
 	argumentCount := 2.
 	rcvr := self stackValue: 2.
 	lkupClassTag := objectMemory fetchClassTagOf: rcvr.
 	self assert: lkupClassTag ~= objectMemory nilObject.
-	self commonSendOrdinary
+	self commonSendOrdinary.
+	inlineCacheStartIndex := -1
 ]
 
 { #category : 'debug support' }
