@@ -8665,6 +8665,12 @@ StackInterpreter >> literal: offset ofMethod: methodPointer put: oop [
 ]
 
 { #category : 'compiled methods' }
+StackInterpreter >> literal: offset put: oop [
+	self assert: method = (self iframeMethod: framePointer).
+	^self literal: offset ofMethod: method put: oop
+]
+
+{ #category : 'compiled methods' }
 StackInterpreter >> literalCountOfAlternateHeader: headerPointer [
 	<inline: true>
 	^(objectMemory integerValueOf: headerPointer) bitAnd: AlternateHeaderNumLiteralsMask
@@ -10243,12 +10249,6 @@ StackInterpreter >> methodUsesPrimitiveErrorCode: aMethodObj [
 StackInterpreter >> microsecondsToMilliseconds: microseconds [
 	<var: #microseconds type: #usqLong>
 	^microseconds // 1000 bitAnd: MillisecondClockMask
-]
-
-{ #category : 'compiled methods' }
-StackInterpreter >> modifyLiteral: offset writing: aValue [
-	self assert: method = (self iframeMethod: framePointer).
-	^ objectMemory storePointer: offset + LiteralStart + 1 ofObject: method withValue: aValue
 ]
 
 { #category : 'initialization' }
@@ -16086,12 +16086,12 @@ StackInterpreter >> updateInlineCacheIfNeeded: classTagArg [
 	| classTag |
 	<inline: false>
 	"If there's no cache then return"
-	inlineCacheStartIndex ~= -1 ifFalse: [ ^ self ].
+	inlineCacheStartIndex = -1 ifTrue: [ ^ self ].
 
 	"Otherwise let's put the class tag in an small integer and update the IC"
 	classTag := objectMemory integerObjectOf: classTagArg.
-	self modifyLiteral: inlineCacheStartIndex + 1 writing: classTag.
-	self modifyLiteral: inlineCacheStartIndex + 2 writing: newMethod
+	self literal: inlineCacheStartIndex + 1 put: classTag.
+	self literal: inlineCacheStartIndex + 2 put: newMethod
 ]
 
 { #category : 'image save/restore' }
