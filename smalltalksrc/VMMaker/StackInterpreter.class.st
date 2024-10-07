@@ -6050,25 +6050,9 @@ StackInterpreter >> findNewMethodInClassTag: classTagArg ifFound: aBlock [
 	 sent to the given classTag, setting the values of newMethod and primitiveIndex."
 
 	<inline: true>
-	| classTag classTagSmallInteger |
+	| classTag |
 	classTag := classTagArg.
-	classTagSmallInteger := objectMemory integerObjectOf: classTag.
-	inlineCacheStartIndex ~= -1 ifTrue: [
-		| inlineCacheClassTag |
-		inlineCacheClassTag := self literal: inlineCacheStartIndex + 1.
-		classTagSmallInteger = inlineCacheClassTag ifTrue: [
-			newMethod := self literal: inlineCacheStartIndex + 2.
-			(objectMemory isOopCompiledMethod: newMethod)
-				ifTrue: [
-					| primitiveIndex |
-					primitiveIndex := self primitiveIndexOf: newMethod.
-					primitiveFunctionPointer := self functionPointerFor: primitiveIndex inClass: classTag ]
-			ifFalse: [
-				self assert: (
-					(objectMemory isNonImmediate: newMethod)
-					and: [objectMemory isForwarded: newMethod]) not.
-					primitiveFunctionPointer := #primitiveInvokeObjectAsMethod ].
-			^ aBlock value ] ].
+	self tryToUseInlineCacheForClassTag: classTag ifSuccessful: [ ^ aBlock value ].
 
 	(self inlineLookupInMethodCacheSel: messageSelector classTag: classTag)
 		ifFalse: [
@@ -15749,6 +15733,34 @@ StackInterpreter >> tryLoadNewPlugin: pluginString pluginEntries: pluginEntries 
 	^ pluginString asString -> plugin
 ]
 
+{ #category : 'message sending' }
+StackInterpreter >> tryToUseInlineCacheForClassTag: classTag ifSuccessful: aBlock [
+	| classTagSmallInteger inlineCacheClassTag |
+	"If there's no cache then return"
+	inlineCacheStartIndex ~= -1 ifFalse: [ ^ self ].
+
+	"If the cached tag is not the same one then return"
+	classTagSmallInteger := objectMemory integerObjectOf: classTag.
+	inlineCacheClassTag := self literal: inlineCacheStartIndex + 1.
+	classTagSmallInteger = inlineCacheClassTag ifFalse: [ ^ self ].
+
+	"Otherwise let's get the method and primitive function pointer"
+	newMethod := self literal: inlineCacheStartIndex + 2.
+	(objectMemory isOopCompiledMethod: newMethod)
+		ifTrue: [
+			| primitiveIndex |
+			primitiveIndex := self primitiveIndexOf: newMethod.
+			primitiveFunctionPointer := self functionPointerFor: primitiveIndex inClass: classTag ]
+		ifFalse: [
+			self assert: (
+				(objectMemory isNonImmediate: newMethod)
+				and: [objectMemory isForwarded: newMethod]) not.
+			primitiveFunctionPointer := #primitiveInvokeObjectAsMethod ].
+
+	"... and invoke the callback before returning"
+	^ aBlock value
+]
+
 { #category : 'debug printing' }
 StackInterpreter >> ultimateLiteralOf: aMethodOop [
 	<api>
@@ -16071,8 +16083,11 @@ StackInterpreter >> unknownShortOrCodeSizeInKs [
 StackInterpreter >> updateInlineCacheIfNeeded: classTagArg [
 
 	| classTag |
-	classTag := objectMemory integerObjectOf: classTagArg.
+	"If there's no cache then return"
 	inlineCacheStartIndex ~= -1 ifFalse: [ ^ self ].
+
+	"Otherwise let's put the class tag in an small integer and update the IC"
+	classTag := objectMemory integerObjectOf: classTagArg.
 	self modifyLiteral: inlineCacheStartIndex + 1 writing: classTag.
 	self modifyLiteral: inlineCacheStartIndex + 2 writing: newMethod
 ]
