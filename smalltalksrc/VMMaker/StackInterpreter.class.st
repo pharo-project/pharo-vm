@@ -6050,16 +6050,25 @@ StackInterpreter >> findNewMethodInClassTag: classTagArg ifFound: aBlock [
 	 sent to the given classTag, setting the values of newMethod and primitiveIndex."
 
 	<inline: true>
-	| classTag classTagArgSmallInteger |
+	| classTag classTagSmallInteger |
 	classTag := classTagArg.
-	classTagArgSmallInteger := objectMemory integerObjectOf: classTagArg.
+	classTagSmallInteger := objectMemory integerObjectOf: classTag.
 	inlineCacheStartIndex ~= -1 ifTrue: [
 		| inlineCacheClassTag |
 		inlineCacheClassTag := self literal: inlineCacheStartIndex + 1.
-		classTagArgSmallInteger = inlineCacheClassTag ifTrue: [
+		classTagSmallInteger = inlineCacheClassTag ifTrue: [
 			newMethod := self literal: inlineCacheStartIndex + 2.
-			primitiveFunctionPointer := self literal: inlineCacheStartIndex + 3.
-			^ aBlock value] ].
+			(objectMemory isOopCompiledMethod: newMethod)
+				ifTrue: [
+					| primitiveIndex |
+					primitiveIndex := self primitiveIndexOf: newMethod.
+					primitiveFunctionPointer := self functionPointerFor: primitiveIndex inClass: classTag ]
+			ifFalse: [
+				self assert: (
+					(objectMemory isNonImmediate: newMethod)
+					and: [objectMemory isForwarded: newMethod]) not.
+					primitiveFunctionPointer := #primitiveInvokeObjectAsMethod ].
+			^ aBlock value ] ].
 
 	(self inlineLookupInMethodCacheSel: messageSelector classTag: classTag)
 		ifFalse: [
@@ -6083,7 +6092,7 @@ StackInterpreter >> findNewMethodInClassTag: classTagArg ifFound: aBlock [
 				lkupClass := objectMemory followForwarded: lkupClass ].
 			self lookupMethodInClass: lkupClass.
 			self addNewMethodToCache: lkupClass.
-			self updateInlineCacheIfNeeded: classTagArg]
+			self updateInlineCacheIfNeeded: classTagArg ]
 		ifTrue: [
 			self updateInlineCacheIfNeeded: classTagArg.
 			aBlock value ]
@@ -16065,10 +16074,7 @@ StackInterpreter >> updateInlineCacheIfNeeded: classTagArg [
 	classTag := objectMemory integerObjectOf: classTagArg.
 	inlineCacheStartIndex ~= -1 ifFalse: [ ^ self ].
 	self modifyLiteral: inlineCacheStartIndex + 1 writing: classTag.
-	self modifyLiteral: inlineCacheStartIndex + 2 writing: newMethod.
-	self
-		modifyLiteral: inlineCacheStartIndex + 3
-		writing: primitiveFunctionPointer
+	self modifyLiteral: inlineCacheStartIndex + 2 writing: newMethod
 ]
 
 { #category : 'image save/restore' }
