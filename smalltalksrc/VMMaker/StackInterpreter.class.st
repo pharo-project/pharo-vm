@@ -15738,7 +15738,6 @@ StackInterpreter >> tryLoadNewPlugin: pluginString pluginEntries: pluginEntries 
 StackInterpreter >> tryToUseInlineCacheForClassTag: classTag [
 	| classTagSmallInteger inlineCacheClassTag |
 	<inline: false>
-	^ false.
 	"If there's no cache then return"
 	inlineCacheStartIndex = -1 ifTrue: [ ^ false ].
 
