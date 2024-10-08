@@ -6075,7 +6075,12 @@ StackInterpreter >> findNewMethodInClassTag: classTagArg ifFound: aBlock [
 					classTag := self handleForwardedSendFaultForTag: classTag ].
 				(self lookupInMethodCacheSel: messageSelector classTag: classTag)
 					ifTrue: [
-						(wasCacheMiss or: [ newMethod = foundMethod and: [ primitiveFunctionPointer = foundPrimitive ] ]) ifFalse: [ self error: 'Inline cache went wrong!' ].
+						(wasCacheMiss or: [ newMethod = foundMethod and: [ primitiveFunctionPointer = foundPrimitive ] ]) ifFalse: [
+							self longPrintOop: newMethod.
+							self longPrintOop: foundMethod.
+							self printHex: primitiveFunctionPointer.
+							self printHex: foundPrimitive.
+							self error: 'Inline cache went wrong!' ].
 						self updateInlineCacheIfNeeded: lkupClass.
 						^ aBlock value ] ].
 
@@ -6085,10 +6090,20 @@ StackInterpreter >> findNewMethodInClassTag: classTagArg ifFound: aBlock [
 				lkupClass := objectMemory followForwarded: lkupClass ].
 			self lookupMethodInClass: lkupClass.
 			self addNewMethodToCache: lkupClass.
-			(wasCacheMiss or: [ newMethod = foundMethod and: [ primitiveFunctionPointer = foundPrimitive ] ]) ifFalse: [ self error: 'Inline cache went wrong!' ].
+			(wasCacheMiss or: [ newMethod = foundMethod and: [ primitiveFunctionPointer = foundPrimitive ] ]) ifFalse: [
+				self longPrintOop: newMethod.
+				self longPrintOop: foundMethod.
+				self printHex: primitiveFunctionPointer.
+				self printHex: foundPrimitive.
+				self error: 'Inline cache went wrong!' ].
 			self updateInlineCacheIfNeeded: lkupClass ]
 		ifTrue: [
-			(wasCacheMiss or: [ newMethod = foundMethod and: [ primitiveFunctionPointer = foundPrimitive ] ]) ifFalse: [ self error: 'Inline cache went wrong!' ].
+			(wasCacheMiss or: [ newMethod = foundMethod and: [ primitiveFunctionPointer = foundPrimitive ] ]) ifFalse: [
+				self longPrintOop: newMethod.
+				self longPrintOop: foundMethod.
+				self printHex: primitiveFunctionPointer.
+				self printHex: foundPrimitive.
+				self error: 'Inline cache went wrong!' ].
 			self updateInlineCacheIfNeeded: lkupClass.
 			aBlock value ]
 ]
