@@ -6075,7 +6075,7 @@ StackInterpreter >> findNewMethodInClassTag: classTagArg ifFound: aBlock [
 					classTag := self handleForwardedSendFaultForTag: classTag ].
 				(self lookupInMethodCacheSel: messageSelector classTag: classTag)
 					ifTrue: [
-						self assert: (wasCacheMiss or: (newMethod = foundMethod and: primitiveFunctionPointer  = foundPrimitive)).
+						(wasCacheMiss or: (newMethod = foundMethod and: primitiveFunctionPointer  = foundPrimitive)) ifFalse: [ self error: 'Inline cache went wrong!' ].
 						self updateInlineCacheIfNeeded: lkupClass.
 						^ aBlock value ] ].
 
@@ -6085,10 +6085,10 @@ StackInterpreter >> findNewMethodInClassTag: classTagArg ifFound: aBlock [
 				lkupClass := objectMemory followForwarded: lkupClass ].
 			self lookupMethodInClass: lkupClass.
 			self addNewMethodToCache: lkupClass.
-			self assert: (wasCacheMiss or: (newMethod = foundMethod and: primitiveFunctionPointer  = foundPrimitive)).
+			(wasCacheMiss or: (newMethod = foundMethod and: primitiveFunctionPointer  = foundPrimitive)) ifFalse: [ self error: 'Inline cache went wrong!' ].
 			self updateInlineCacheIfNeeded: lkupClass ]
 		ifTrue: [
-			self assert: (wasCacheMiss or: (newMethod = foundMethod and: primitiveFunctionPointer  = foundPrimitive)).
+			(wasCacheMiss or: (newMethod = foundMethod and: primitiveFunctionPointer  = foundPrimitive)) ifFalse: [ self error: 'Inline cache went wrong!' ].
 			self updateInlineCacheIfNeeded: lkupClass.
 			aBlock value ]
 ]
