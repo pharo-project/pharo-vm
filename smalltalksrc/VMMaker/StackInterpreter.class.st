@@ -6050,9 +6050,17 @@ StackInterpreter >> findNewMethodInClassTag: classTagArg ifFound: aBlock [
 	 sent to the given classTag, setting the values of newMethod and primitiveIndex."
 
 	<inline: true>
-	| classTag |
+	| classTag wasCacheMiss originalLkupClass foundMethod foundPrimitive |
 	classTag := classTagArg.
-	self tryToUseInlineCache ifTrue: [ ^ aBlock value ].
+	wasCacheMiss := true.
+	foundMethod := nil.
+	foundPrimitive := nil.
+	self tryToUseInlineCache ifTrue: [
+		wasCacheMiss := false.
+		originalLkupClass := lkupClass.
+		foundMethod := newMethod.
+		foundPrimitive := primitiveFunctionPointer. 
+		"^ aBlock value" ].
 
 	(self inlineLookupInMethodCacheSel: messageSelector classTag: classTag)
 		ifFalse: [
@@ -6067,6 +6075,7 @@ StackInterpreter >> findNewMethodInClassTag: classTagArg ifFound: aBlock [
 					classTag := self handleForwardedSendFaultForTag: classTag ].
 				(self lookupInMethodCacheSel: messageSelector classTag: classTag)
 					ifTrue: [
+						self assert: (wasCacheMiss or: (newMethod = foundMethod and: primitiveFunctionPointer  = foundPrimitive)).
 						self updateInlineCacheIfNeeded: lkupClass.
 						^ aBlock value ] ].
 
@@ -6076,8 +6085,10 @@ StackInterpreter >> findNewMethodInClassTag: classTagArg ifFound: aBlock [
 				lkupClass := objectMemory followForwarded: lkupClass ].
 			self lookupMethodInClass: lkupClass.
 			self addNewMethodToCache: lkupClass.
+			self assert: (wasCacheMiss or: (newMethod = foundMethod and: primitiveFunctionPointer  = foundPrimitive)).
 			self updateInlineCacheIfNeeded: lkupClass ]
 		ifTrue: [
+			self assert: (wasCacheMiss or: (newMethod = foundMethod and: primitiveFunctionPointer  = foundPrimitive)).
 			self updateInlineCacheIfNeeded: lkupClass.
 			aBlock value ]
 ]
@@ -16084,7 +16095,7 @@ StackInterpreter >> updateInlineCacheIfNeeded: classObj [
 	"If there's no cache then return"
 	inlineCacheStartIndex = -1 ifTrue: [ ^ self ].
 
-	"Otherwise let's put the class tag in an small integer and update the IC"
+	"... otherwise lets update the IC"
 	self literal: inlineCacheStartIndex + 1 put: classObj.
 	self literal: inlineCacheStartIndex + 2 put: newMethod
 ]
