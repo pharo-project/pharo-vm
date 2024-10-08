@@ -6055,12 +6055,12 @@ StackInterpreter >> findNewMethodInClassTag: classTagArg ifFound: aBlock [
 	foundMethod := nil.
 	foundPrimitive := nil.
 	lkupClass := objectMemory classForClassTag: classTag.
-	self tryToUseInlineCache ifTrue: [
+	"self tryToUseInlineCache ifTrue: [
 		wasCacheMiss := false.
 		originalLkupClass := lkupClass.
 		foundMethod := newMethod.
 		foundPrimitive := primitiveFunctionPointer. 
-		"^ aBlock value" ].
+		^ aBlock value ]."
 
 	(self inlineLookupInMethodCacheSel: messageSelector classTag: classTag)
 		ifFalse: [
