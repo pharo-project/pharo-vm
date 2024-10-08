@@ -16090,8 +16090,6 @@ StackInterpreter >> unknownShortOrCodeSizeInKs [
 { #category : 'interpreter inline caches' }
 StackInterpreter >> updateInlineCacheIfNeeded: classObj [
 	<inline: false>
-	inlineCacheStartIndex := -1.
-	^self.
 	"If there's no cache then return"
 	inlineCacheStartIndex = -1 ifTrue: [ ^ self ].
 
