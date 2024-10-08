@@ -7778,6 +7778,18 @@ StackInterpreter >> initializePageTraceToInvalid: aPage [
 	aPage trace: StackPageTraceInvalid "for assert checking of the page tracing flags"
 ]
 
+{ #category : 'accessing' }
+StackInterpreter >> inlineCacheStartIndex [
+
+	^ inlineCacheStartIndex
+]
+
+{ #category : 'accessing' }
+StackInterpreter >> inlineCacheStartIndex: anObject [
+
+	inlineCacheStartIndex := anObject
+]
+
 { #category : 'method lookup cache' }
 StackInterpreter >> inlineLookupInMethodCacheSel: selector classTag: classTag [
 	"This method implements a simple method lookup cache.  If an entry for the given selector and classTag is
