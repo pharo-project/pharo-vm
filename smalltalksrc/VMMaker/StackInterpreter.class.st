@@ -15802,6 +15802,7 @@ StackInterpreter >> tryToUseInlineCache [
 			primitiveFunctionPointer := #primitiveInvokeObjectAsMethod ].
 
 	"... and notify the caller that we were able to use the IC"
+	inlineCacheStartIndex := -1.
 	^ true
 ]
 
