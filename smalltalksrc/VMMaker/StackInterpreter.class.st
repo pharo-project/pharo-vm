@@ -6076,10 +6076,18 @@ StackInterpreter >> findNewMethodInClassTag: classTagArg ifFound: aBlock [
 				(self lookupInMethodCacheSel: messageSelector classTag: classTag)
 					ifTrue: [
 						(wasCacheMiss or: [ newMethod = foundMethod and: [ primitiveFunctionPointer = foundPrimitive ] ]) ifFalse: [
-							self longPrintOop: newMethod.
-							self longPrintOop: foundMethod.
-							self printHex: primitiveFunctionPointer.
-							self printHex: foundPrimitive.
+							self
+								print: '=== current method ===';
+								longPrintOop: method;
+								print: '=== selector ==='; cr;
+								longPrintOop: messageSelector;
+								print: '=== newMethod ==='; cr;
+								longPrintOop: newMethod;
+								print: '=== foundMethod ==='; cr;
+								longPrintOop: foundMethod;
+								cr;
+								print: 'primitiveFunctionPointer = '; printHex: primitiveFunctionPointer; cr;
+								print: 'foundPrimitive = '; printHex: foundPrimitive; cr.
 							self error: 'Inline cache went wrong!' ].
 						self updateInlineCacheIfNeeded: lkupClass.
 						^ aBlock value ] ].
@@ -6091,18 +6099,34 @@ StackInterpreter >> findNewMethodInClassTag: classTagArg ifFound: aBlock [
 			self lookupMethodInClass: lkupClass.
 			self addNewMethodToCache: lkupClass.
 			(wasCacheMiss or: [ newMethod = foundMethod and: [ primitiveFunctionPointer = foundPrimitive ] ]) ifFalse: [
-				self longPrintOop: newMethod.
-				self longPrintOop: foundMethod.
-				self printHex: primitiveFunctionPointer.
-				self printHex: foundPrimitive.
+				self
+					print: '=== current method ===';
+					longPrintOop: method;
+					print: '=== selector ==='; cr;
+					longPrintOop: messageSelector;
+					print: '=== newMethod ==='; cr;
+					longPrintOop: newMethod;
+					print: '=== foundMethod ==='; cr;
+					longPrintOop: foundMethod;
+					cr;
+					print: 'primitiveFunctionPointer = '; printHex: primitiveFunctionPointer; cr;
+					print: 'foundPrimitive = '; printHex: foundPrimitive; cr.
 				self error: 'Inline cache went wrong!' ].
 			self updateInlineCacheIfNeeded: lkupClass ]
 		ifTrue: [
 			(wasCacheMiss or: [ newMethod = foundMethod and: [ primitiveFunctionPointer = foundPrimitive ] ]) ifFalse: [
-				self longPrintOop: newMethod.
-				self longPrintOop: foundMethod.
-				self printHex: primitiveFunctionPointer.
-				self printHex: foundPrimitive.
+				self
+					print: '=== current method ===';
+					longPrintOop: method;
+					print: '=== selector ==='; cr;
+					longPrintOop: messageSelector;
+					print: '=== newMethod ==='; cr;
+					longPrintOop: newMethod;
+					print: '=== foundMethod ==='; cr;
+					longPrintOop: foundMethod;
+					cr;
+					print: 'primitiveFunctionPointer = '; printHex: primitiveFunctionPointer; cr;
+					print: 'foundPrimitive = '; printHex: foundPrimitive; cr.
 				self error: 'Inline cache went wrong!' ].
 			self updateInlineCacheIfNeeded: lkupClass.
 			aBlock value ]
