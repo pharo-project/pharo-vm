@@ -6054,6 +6054,7 @@ StackInterpreter >> findNewMethodInClassTag: classTagArg ifFound: aBlock [
 	wasCacheMiss := true.
 	foundMethod := nil.
 	foundPrimitive := nil.
+	lkupClass := objectMemory classForClassTag: classTag.
 	self tryToUseInlineCache ifTrue: [
 		wasCacheMiss := false.
 		originalLkupClass := lkupClass.
