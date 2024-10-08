@@ -6048,6 +6048,7 @@ StackInterpreter >> findNewMethodInClassTag: classTagArg ifFound: aBlock [
 	 sent to the given classTag, setting the values of newMethod and primitiveIndex."
 
 	<inline: true>
+	<var: #foundPrimitive declareC: 'void (*foundPrimitive)()'>
 	| classTag wasCacheMiss originalLkupClass foundMethod foundPrimitive |
 	classTag := classTagArg.
 	wasCacheMiss := true.
