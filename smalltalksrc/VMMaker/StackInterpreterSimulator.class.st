@@ -552,7 +552,7 @@ StackInterpreterSimulator >> framePointer [
 ]
 
 { #category : 'interpreter shell' }
-StackInterpreterSimulator >> functionPointerFor: primIndex inClass: lookupClass [
+StackInterpreterSimulator >> functionPointerFor: primIndex [
 	"Override Interpreter to handle the external primitives caching.  See also
 	 internalExecuteNewMethod."
 

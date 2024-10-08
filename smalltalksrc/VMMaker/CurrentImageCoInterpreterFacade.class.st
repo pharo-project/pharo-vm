@@ -379,10 +379,10 @@ CurrentImageCoInterpreterFacade >> freeStartAddress [
 ]
 
 { #category : 'accessing' }
-CurrentImageCoInterpreterFacade >> functionPointerFor: primIndex inClass: lookupClass [
+CurrentImageCoInterpreterFacade >> functionPointerFor: primIndex [
 	^primIndex = 0
 		ifTrue: [#primitiveFail]
-		ifFalse: [coInterpreter functionPointerFor: primIndex inClass: lookupClass]
+		ifFalse: [coInterpreter functionPointerFor: primIndex]
 ]
 
 { #category : 'accessing' }

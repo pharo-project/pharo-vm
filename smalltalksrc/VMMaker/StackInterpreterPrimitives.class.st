@@ -962,7 +962,7 @@ StackInterpreterPrimitives >> primitiveDoPrimitiveWithArgs [
 		[^self primitiveFailFor: PrimErrLimitExceeded negated].
 
 	primIdx := objectMemory integerValueOf: primIdx.
-	primitiveFunctionPointer := self functionPointerFor: primIdx inClass: nil.
+	primitiveFunctionPointer := self functionPointerFor: primIdx.
 	primitiveFunctionPointer = 0 ifTrue:
 		[primitiveFunctionPointer := #primitiveDoPrimitiveWithArgs.
 		 ^self primitiveFailFor: PrimErrBadIndex negated].
@@ -1027,7 +1027,7 @@ StackInterpreterPrimitives >> primitiveExecuteMethod [
 		[^self primitiveFailFor: PrimErrBadNumArgs].
 	newMethod := self popStack.
 	primitiveIndex := self primitiveIndexOf: newMethod.
-	primitiveFunctionPointer := self functionPointerFor: primitiveIndex inClass: nil.
+	primitiveFunctionPointer := self functionPointerFor: primitiveIndex.
 	argumentCount := argumentCount - 1.
 	self executeNewMethod.
 	"Recursive xeq affects primErrorCode"
@@ -1064,7 +1064,7 @@ StackInterpreterPrimitives >> primitiveExecuteMethodArgsArray [
 		self push: (objectMemory fetchPointer: i ofObject: argumentArray)].
 	newMethod := methodArgument.
 	primitiveIndex := self primitiveIndexOf: newMethod.
-	primitiveFunctionPointer := self functionPointerFor: primitiveIndex inClass: nil.
+	primitiveFunctionPointer := self functionPointerFor: primitiveIndex.
 	argumentCount := argCnt.
 	self executeNewMethod.
 	"Recursive xeq affects primErrorCode"

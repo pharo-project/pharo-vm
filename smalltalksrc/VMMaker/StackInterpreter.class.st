@@ -1973,7 +1973,7 @@ StackInterpreter >> addNewMethodToCache: classObj [
 	(objectMemory isOopCompiledMethod: newMethod)
 		ifTrue:
 			[primitiveIndex := self primitiveIndexOf: newMethod.
-			 primitiveFunctionPointer := self functionPointerFor: primitiveIndex inClass: classObj]
+			 primitiveFunctionPointer := self functionPointerFor: primitiveIndex]
 		ifFalse:
 			[self assert: ((objectMemory isNonImmediate: newMethod)
 						  and: [objectMemory isForwarded: newMethod]) not.
@@ -6940,7 +6940,7 @@ StackInterpreter >> functionForPrimitiveCallout [
 ]
 
 { #category : 'method lookup cache' }
-StackInterpreter >> functionPointerFor: primIdx inClass: theClass [
+StackInterpreter >> functionPointerFor: primIdx [
 	"Find an actual function pointer for this primitiveIndex.  This is an
 	opportunity to specialise the prim for the relevant class (format for
 	example).  Default for now is simply the entry in the base primitiveTable."
@@ -9420,7 +9420,7 @@ StackInterpreter >> mappedDirectCall [
 	localPrimIndex := self primitiveIndexOfMethod: newMethod header: methodHeader.
 	argumentCount := self argumentCountOfMethodHeader: methodHeader.
 	"The primitive function pointer is not cached in the interpreter, but it's called quickly in the JIT"
-	primitiveFunctionPointer := self functionPointerFor: localPrimIndex inClass: objectMemory nilObject..
+	primitiveFunctionPointer := self functionPointerFor: localPrimIndex.
 	self activateNewMethod
 ]
 
@@ -13512,7 +13512,7 @@ StackInterpreter >> safeMethodClassOf: methodPointer [
 StackInterpreter >> saneFunctionPointerForFailureOfPrimIndex: primIndex [
 	| basePrimitive |
 	<var: 'basePrimitive' declareC: 'void (*basePrimitive)(void)'>
-	basePrimitive := self functionPointerFor: primIndex inClass: objectMemory nilObject.
+	basePrimitive := self functionPointerFor: primIndex.
 	^primitiveFunctionPointer = basePrimitive
 	  or: [(basePrimitive = #primitiveExternalCall and: [self isPrimitiveFunctionPointerAnIndex not]) 
 	  or: [(self isMetaPrimitiveIndex: primIndex) and: [metaAccessorDepth > -2]]]
