@@ -5656,8 +5656,7 @@ StackInterpreter >> extSendBytecode [
 	argumentCount := (byte bitAnd: 7) + (extB << 3).
 	extB := 0.
 	numExtB := 0.
-	self normalSend.
-	inlineCacheStartIndex := -1
+	self normalSend
 ]
 
 { #category : 'send bytecodes' }
@@ -5680,8 +5679,7 @@ StackInterpreter >> extSendSuperBytecode [
 	argumentCount := (byte bitAnd: 7) + (extB << 3).
 	extB := 0.
 	numExtB := 0.
-	self superclassSend.
-	inlineCacheStartIndex := -1
+	self superclassSend
 ]
 
 { #category : 'stack bytecodes' }
@@ -7738,7 +7736,7 @@ StackInterpreter >> initializeInterpreter: bytesToShift [
 	profileSemaphore := profileProcess := profileMethod := objectMemory nilObject.
 	self initializeGlobalSessionID.
 	metaAccessorDepth := -2.
-	inlineCacheStartIndex := -1.
+	inlineCacheStartIndex := -1
 
 ]
 
@@ -13667,8 +13665,7 @@ StackInterpreter >> sendLiteralSelector0ArgsBytecode [
 	rcvr := self stackValue: 0.
 	lkupClassTag := objectMemory fetchClassTagOf: rcvr.
 	self assert: lkupClassTag ~= objectMemory nilObject.
-	self commonSendOrdinary.
-	inlineCacheStartIndex := -1
+	self commonSendOrdinary
 ]
 
 { #category : 'send bytecodes' }
@@ -13681,8 +13678,7 @@ StackInterpreter >> sendLiteralSelector1ArgBytecode [
 	rcvr := self stackValue: 1.
 	lkupClassTag := objectMemory fetchClassTagOf: rcvr.
 	self assert: lkupClassTag ~= objectMemory nilObject.
-	self commonSendOrdinary.
-	inlineCacheStartIndex := -1
+	self commonSendOrdinary
 ]
 
 { #category : 'send bytecodes' }
@@ -13695,8 +13691,7 @@ StackInterpreter >> sendLiteralSelector2ArgsBytecode [
 	rcvr := self stackValue: 2.
 	lkupClassTag := objectMemory fetchClassTagOf: rcvr.
 	self assert: lkupClassTag ~= objectMemory nilObject.
-	self commonSendOrdinary.
-	inlineCacheStartIndex := -1
+	self commonSendOrdinary
 ]
 
 { #category : 'debug support' }
@@ -16136,7 +16131,10 @@ StackInterpreter >> updateInlineCacheIfNeeded: classObj [
 
 	"... otherwise lets update the IC"
 	self literal: inlineCacheStartIndex + 1 put: classObj.
-	self literal: inlineCacheStartIndex + 2 put: newMethod
+	self literal: inlineCacheStartIndex + 2 put: newMethod.
+	
+	"... and now there's no inline cache to work with"
+	inlineCacheStartIndex := -1
 ]
 
 { #category : 'image save/restore' }
