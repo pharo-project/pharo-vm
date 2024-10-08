@@ -6076,8 +6076,12 @@ StackInterpreter >> findNewMethodInClassTag: classTagArg ifFound: aBlock [
 					ifTrue: [
 						(wasCacheMiss or: [ newMethod = foundMethod and: [ primitiveFunctionPointer = foundPrimitive ] ]) ifFalse: [
 							self
-								print: '=== current method ===';
+								print: '=== current method ==='; cr;
 								longPrintOop: method;
+								print: '=== originalLkupClass ==='; cr;
+								longPrintOop: originalLkupClass;
+								print: '=== lkupClass ==='; cr;
+								longPrintOop: lkupClass;
 								print: '=== selector ==='; cr;
 								longPrintOop: messageSelector;
 								print: '=== newMethod ==='; cr;
@@ -6099,9 +6103,13 @@ StackInterpreter >> findNewMethodInClassTag: classTagArg ifFound: aBlock [
 			self addNewMethodToCache: lkupClass.
 			(wasCacheMiss or: [ newMethod = foundMethod and: [ primitiveFunctionPointer = foundPrimitive ] ]) ifFalse: [
 				self
-					print: '=== current method ===';
+					print: '=== current method ==='; cr;
 					longPrintOop: method;
-					print: '=== selector ==='; cr;
+					print: '=== originalLkupClass ==='; cr;
+					longPrintOop: originalLkupClass;
+					print: '=== lkupClass ==='; cr;
+					longPrintOop: lkupClass;
+					print: '=== selector ==='; cr;	
 					longPrintOop: messageSelector;
 					print: '=== newMethod ==='; cr;
 					longPrintOop: newMethod;
@@ -6115,9 +6123,13 @@ StackInterpreter >> findNewMethodInClassTag: classTagArg ifFound: aBlock [
 		ifTrue: [
 			(wasCacheMiss or: [ newMethod = foundMethod and: [ primitiveFunctionPointer = foundPrimitive ] ]) ifFalse: [
 				self
-					print: '=== current method ===';
+					print: '=== current method ==='; cr;
 					longPrintOop: method;
-					print: '=== selector ==='; cr;
+					print: '=== originalLkupClass ==='; cr;
+					longPrintOop: originalLkupClass;
+					print: '=== lkupClass ==='; cr;
+					longPrintOop: lkupClass;
+					print: '=== selector ==='; cr;	
 					longPrintOop: messageSelector;
 					print: '=== newMethod ==='; cr;
 					longPrintOop: newMethod;
