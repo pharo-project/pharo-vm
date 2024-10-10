@@ -6057,7 +6057,7 @@ StackInterpreter >> findNewMethodInClassTag: classTagArg ifFound: aBlock [
 		ifTrue: [
 			self updateInlineCacheIfNeeded: lkupClass.
 			^ aBlock value ]
-		ifFalse: [
+		."ifFalse: ["
 			"Entry was not found in the cache; perhaps something was forwarded.
 			Resolve forwarders and retry"
 			shouldRetry := false.
@@ -6077,7 +6077,7 @@ StackInterpreter >> findNewMethodInClassTag: classTagArg ifFound: aBlock [
 				lkupClass := objectMemory followForwarded: lkupClass ].
 			self lookupMethodInClass: lkupClass.
 			self addNewMethodToCache: lkupClass.
-			self updateInlineCacheIfNeeded: lkupClass ]
+			self updateInlineCacheIfNeeded: lkupClass "]"
 ]
 
 { #category : 'message sending' }
