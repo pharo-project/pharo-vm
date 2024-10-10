@@ -16092,6 +16092,8 @@ StackInterpreter >> updateInlineCacheIfNeeded: classObj [
 	<inline: false>
 	"If there's no cache then return"
 	inlineCacheStartIndex = -1 ifTrue: [ ^ self ].
+	"Don't cache DNUs"
+	messageSelector = (objectMemory splObj: SelectorDoesNotUnderstand) ifTrue: [ ^ self ].
 
 	"... otherwise lets update the IC"
 	self literal: inlineCacheStartIndex + 1 put: classObj.
