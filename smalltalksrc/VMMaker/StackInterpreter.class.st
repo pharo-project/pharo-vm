@@ -6053,7 +6053,7 @@ StackInterpreter >> findNewMethodInClassTag: classTagArg ifFound: aBlock [
 	lkupClass := objectMemory classForClassTag: classTag.
 	self tryToUseInlineCache ifTrue: [ ^ aBlock value ].
 
-	"Entry was not found in the cache; perhaps something was forwarded.
+	"Entry was not found in the local IC cache; perhaps something was forwarded.
 	Resolve forwarders and retry"
 	shouldRetry := false.
 	(objectMemory isOopForwarded: messageSelector) ifTrue: [
@@ -6064,12 +6064,13 @@ StackInterpreter >> findNewMethodInClassTag: classTagArg ifFound: aBlock [
 		classTag := self handleForwardedSendFaultForTag: classTag ].
 	self tryToUseInlineCache ifTrue: [ ^ aBlock value ].
 
+	"ICs failed. Try the lookup cache"
 	(self inlineLookupInMethodCacheSel: messageSelector classTag: classTag)
 		ifTrue: [
 			self updateInlineCacheIfNeeded: lkupClass.
 			^ aBlock value ]
 		ifFalse: [
-			"Entry was not found in the cache; look it up the hard way "
+			"All caches failed. Do a proper lookup"
 			lkupClass := objectMemory classForClassTag: classTag.
 			(objectMemory isOopForwarded: lkupClass) ifTrue: [
 				lkupClass := objectMemory followForwarded: lkupClass ].
