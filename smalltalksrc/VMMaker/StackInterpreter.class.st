@@ -6048,35 +6048,37 @@ StackInterpreter >> findNewMethodInClassTag: classTagArg ifFound: aBlock [
 	 sent to the given classTag, setting the values of newMethod and primitiveIndex."
 
 	<inline: true>
-	| classTag shouldRetry |
+	| classTag |
 	classTag := classTagArg.
 	lkupClass := objectMemory classForClassTag: classTag.
 	self tryToUseInlineCache ifTrue: [ ^ aBlock value ].
 
-	(self inlineLookupInMethodCacheSel: messageSelector classTag: classTag) ifTrue: [
-		self updateInlineCacheIfNeeded: lkupClass.
-		^ aBlock value ].
-
-		"Entry was not found in the cache; perhaps something was forwarded.
-		Resolve forwarders and retry"
-		shouldRetry := false.
-		(objectMemory isOopForwarded: messageSelector) ifTrue: [
-			shouldRetry := true.
-			messageSelector := self handleForwardedSelectorFaultFor: messageSelector ].
-		(objectMemory isForwardedClassTag: classTag) ifTrue: [
-			shouldRetry := true.
-			classTag := self handleForwardedSendFaultForTag: classTag ].
-		(shouldRetry and: [ self lookupInMethodCacheSel: messageSelector classTag: classTag ]) ifTrue: [
+	(self inlineLookupInMethodCacheSel: messageSelector classTag: classTag)
+		ifTrue: [
 			self updateInlineCacheIfNeeded: lkupClass.
-			^ aBlock value ].
+			aBlock value ]
+		ifFalse: [
+			"Entry was not found in the cache; perhaps something was forwarded.
+			Resolve forwarders and retry"
+			| shouldRetry |
+			shouldRetry := false.
+			(objectMemory isOopForwarded: messageSelector) ifTrue: [
+				shouldRetry := true.
+				messageSelector := self handleForwardedSelectorFaultFor: messageSelector ].
+			(objectMemory isForwardedClassTag: classTag) ifTrue: [
+				shouldRetry := true.
+				classTag := self handleForwardedSendFaultForTag: classTag ].
+			(shouldRetry and: [ self lookupInMethodCacheSel: messageSelector classTag: classTag ]) ifTrue: [
+				self updateInlineCacheIfNeeded: lkupClass.
+				^ aBlock value ].
 
-		"Entry was not found in the cache; look it up the hard way "
-		lkupClass := objectMemory classForClassTag: classTag.
-		(objectMemory isOopForwarded: lkupClass) ifTrue: [
-			lkupClass := objectMemory followForwarded: lkupClass ].
-		self lookupMethodInClass: lkupClass.
-		self addNewMethodToCache: lkupClass.
-		self updateInlineCacheIfNeeded: lkupClass
+			"Entry was not found in the cache; look it up the hard way "
+			lkupClass := objectMemory classForClassTag: classTag.
+			(objectMemory isOopForwarded: lkupClass) ifTrue: [
+				lkupClass := objectMemory followForwarded: lkupClass ].
+			self lookupMethodInClass: lkupClass.
+			self addNewMethodToCache: lkupClass.
+			self updateInlineCacheIfNeeded: lkupClass ]
 ]
 
 { #category : 'message sending' }
