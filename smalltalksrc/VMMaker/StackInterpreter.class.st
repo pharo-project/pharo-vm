@@ -6047,7 +6047,7 @@ StackInterpreter >> findNewMethodInClassTag: classTagArg ifFound: aBlock [
 	"Find the compiled method to be run when the current messageSelector is
 	 sent to the given classTag, setting the values of newMethod and primitiveIndex."
 
-	<inline: true>
+	<inline: false>
 	| classTag shouldRetry |
 	classTag := classTagArg.
 	lkupClass := objectMemory classForClassTag: classTag.
