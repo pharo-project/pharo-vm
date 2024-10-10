@@ -6061,7 +6061,8 @@ StackInterpreter >> findNewMethodInClassTag: classTagArg ifFound: aBlock [
 		messageSelector := self handleForwardedSelectorFaultFor: messageSelector ].
 	(objectMemory isForwardedClassTag: classTag) ifTrue: [
 		shouldRetry := true.
-		classTag := self handleForwardedSendFaultForTag: classTag ].
+		classTag := self handleForwardedSendFaultForTag: classTag.
+		lkupClass := objectMemory classForClassTag: classTag. ].
 	self tryToUseInlineCache ifTrue: [ ^ aBlock value ].
 
 	"ICs failed. Try the lookup cache"
