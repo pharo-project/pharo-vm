@@ -6048,7 +6048,7 @@ StackInterpreter >> findNewMethodInClassTag: classTagArg ifFound: aBlock [
 	 sent to the given classTag, setting the values of newMethod and primitiveIndex."
 
 	<inline: true>
-	| classTag |
+	| classTag shouldRetry |
 	classTag := classTagArg.
 	lkupClass := objectMemory classForClassTag: classTag.
 	self tryToUseInlineCache ifTrue: [ ^ aBlock value ].
@@ -6058,7 +6058,6 @@ StackInterpreter >> findNewMethodInClassTag: classTagArg ifFound: aBlock [
 			self updateInlineCacheIfNeeded: lkupClass.
 			^ aBlock value ]
 		ifFalse: [
-			| shouldRetry |
 			"Entry was not found in the cache; perhaps something was forwarded.
 			Resolve forwarders and retry"
 			shouldRetry := false.
