@@ -6051,7 +6051,7 @@ StackInterpreter >> findNewMethodInClassTag: classTagArg ifFound: aBlock [
 	| classTag shouldRetry |
 	classTag := classTagArg.
 	lkupClass := objectMemory classForClassTag: classTag.
-	(lkupClass ~= objectMemory nilObject tryToUseInlineCache) ifTrue: [ ^ aBlock value ].
+	((lkupClass ~= objectMemory nilObject) and: [ self tryToUseInlineCache ]) ifTrue: [ ^ aBlock value ].
 
 	"Entry was not found in the local IC cache; perhaps something was forwarded.
 	Resolve forwarders and retry"
