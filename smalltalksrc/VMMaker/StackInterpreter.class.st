@@ -15743,8 +15743,9 @@ StackInterpreter >> tryToUseInlineCacheFor: classTag [
 	inlineCacheStartIndex = -1 ifTrue: [ ^ false ].
 
 	"If the cached tag is not the same one then return"
-	inlineCacheClass := self literal: inlineCacheStartIndex + 1.
-	inlineCacheClassTag := objectMemory classTagForClass: inlineCacheClass.
+	"inlineCacheClass := self literal: inlineCacheStartIndex + 1.
+	inlineCacheClassTag := objectMemory classTagForClass: inlineCacheClass."
+	inlineCacheClassTag := objectMemory integerValueOf: (self literal: inlineCacheStartIndex  + 1).
 	inlineCacheClassTag = classTag ifFalse: [ ^ false ].
 
 	"Otherwise let's get the method and primitive function pointer"
@@ -16093,7 +16094,8 @@ StackInterpreter >> updateInlineCacheIfNeeded: classTag [
 	"Don't cache cannotInterpret:"
 	messageSelector = (objectMemory splObj: SelectorCannotInterpret) ifTrue: [ ^ self ].
 	
-	classObj := objectMemory classForClassTag: classTag.
+	"classObj := objectMemory classForClassTag: classTag."
+	classObj := objectMemory integerObjectOf: classTag.
 
 	"... otherwise lets update the IC"
 	self literal: inlineCacheStartIndex + 1 put: classObj.
