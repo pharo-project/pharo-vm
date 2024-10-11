@@ -6048,19 +6048,14 @@ StackInterpreter >> findNewMethodInClassTag: classTagArg ifFound: aBlock [
 	 sent to the given classTag, setting the values of newMethod and primitiveIndex."
 
 	<inline: true>
-	| classTag shouldRetry |
+	| classTag |
 	classTag := classTagArg.
-	(self tryToUseInlineCacheFor: classTag) ifTrue: [ ^ aBlock value ].
 
-	"Entry was not found in the local IC cache; perhaps something was forwarded.
-	Resolve forwarders and retry"
-	shouldRetry := false.
 	(objectMemory isOopForwarded: messageSelector) ifTrue: [
-		shouldRetry := true.
 		messageSelector := self handleForwardedSelectorFaultFor: messageSelector ].
 	(objectMemory isForwardedClassTag: classTag) ifTrue: [
-		shouldRetry := true.
 		classTag := self handleForwardedSendFaultForTag: classTag ].
+
 	(self tryToUseInlineCacheFor: classTag) ifTrue: [ ^ aBlock value ].
 
 	"ICs failed. Try the lookup cache"
@@ -15749,10 +15744,10 @@ StackInterpreter >> tryToUseInlineCacheFor: classTag [
 
 	"If there's no cached class then return"
 	inlineCacheClass = objectMemory nilObject ifTrue: [ ^ false ].
-	
+
 	"If the cached tag is not the same one then return"
 	inlineCacheClassTag := objectMemory classTagForClass: inlineCacheClass.
-	classTag = inlineCacheClassTag ifFalse: [ ^ false ].
+	inlineCacheClassTag = classTag ifFalse: [ ^ false ].
 
 	"Otherwise let's get the method and primitive function pointer"
 	newMethod := self literal: inlineCacheStartIndex + 2.
