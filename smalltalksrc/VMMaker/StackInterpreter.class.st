@@ -15746,8 +15746,9 @@ StackInterpreter >> tryToUseInlineCacheFor: classTag [
 	inlineCacheClass = objectMemory nilObject ifTrue: [ ^ false ].
 
 	"If the cached tag is not the same one then return"
-	inlineCacheClassTag := objectMemory classTagForClass: inlineCacheClass.
-	inlineCacheClassTag = classTag ifFalse: [ ^ false ].
+	"inlineCacheClassTag := objectMemory classTagForClass: inlineCacheClass.
+	inlineCacheClassTag = classTag ifFalse: [ ^ false ]."
+	inlineCacheClass = (objectMemory classForClassTag: classTag) ifFalse: [ ^ false ].
 
 	"Otherwise let's get the method and primitive function pointer"
 	newMethod := self literal: inlineCacheStartIndex + 2.
