@@ -6048,15 +6048,22 @@ StackInterpreter >> findNewMethodInClassTag: classTagArg ifFound: aBlock [
 	 sent to the given classTag, setting the values of newMethod and primitiveIndex."
 
 	<inline: true>
-	| classTag |
+	| classTag shouldRetry |
 	classTag := classTagArg.
+	lkupClass := objectMemory classForClassTag: classTag.
+	((lkupClass ~= objectMemory nilObject) and: [ self tryToUseInlineCache ]) ifTrue: [ ^ aBlock value ].
 
+	"Entry was not found in the local IC cache; perhaps something was forwarded.
+	Resolve forwarders and retry"
+	shouldRetry := false.
 	(objectMemory isOopForwarded: messageSelector) ifTrue: [
+		shouldRetry := true.
 		messageSelector := self handleForwardedSelectorFaultFor: messageSelector ].
 	(objectMemory isForwardedClassTag: classTag) ifTrue: [
-		classTag := self handleForwardedSendFaultForTag: classTag ].
-
-	(self tryToUseInlineCacheFor: classTag) ifTrue: [ ^ aBlock value ].
+		shouldRetry := true.
+		classTag := self handleForwardedSendFaultForTag: classTag.
+		lkupClass := objectMemory classForClassTag: classTag. ].
+	self tryToUseInlineCache ifTrue: [ ^ aBlock value ].
 
 	"ICs failed. Try the lookup cache"
 	(self inlineLookupInMethodCacheSel: messageSelector classTag: classTag)
@@ -15734,21 +15741,15 @@ StackInterpreter >> tryLoadNewPlugin: pluginString pluginEntries: pluginEntries 
 ]
 
 { #category : 'interpreter inline caches' }
-StackInterpreter >> tryToUseInlineCacheFor: classTag [
-	| inlineCacheClass inlineCacheClassTag |
+StackInterpreter >> tryToUseInlineCache [
+	| inlineCacheClass |
 	<inline: false>
 	"If there's no cache then return"
 	inlineCacheStartIndex = -1 ifTrue: [ ^ false ].
 
-	inlineCacheClass := self literal: inlineCacheStartIndex + 1.
-
-	"If there's no cached class then return"
-	"inlineCacheClass = objectMemory nilObject ifTrue: [ ^ false ]."
-
 	"If the cached tag is not the same one then return"
-	"inlineCacheClassTag := objectMemory classTagForClass: inlineCacheClass.
-	inlineCacheClassTag = classTag ifFalse: [ ^ false ]."
-	inlineCacheClass = (objectMemory classForClassTag: classTag) ifFalse: [ ^ false ].
+	inlineCacheClass := self literal: inlineCacheStartIndex + 1.
+	lkupClass = inlineCacheClass ifFalse: [ ^ false ].
 
 	"Otherwise let's get the method and primitive function pointer"
 	newMethod := self literal: inlineCacheStartIndex + 2.
@@ -16087,7 +16088,7 @@ StackInterpreter >> unknownShortOrCodeSizeInKs [
 
 { #category : 'interpreter inline caches' }
 StackInterpreter >> updateInlineCacheIfNeeded: classObj [
-	<inline: true>
+	<inline: false>
 	"If there's no cache then return"
 	inlineCacheStartIndex = -1 ifTrue: [ ^ self ].
 	"Don't cache doesNotUnderstand:"
