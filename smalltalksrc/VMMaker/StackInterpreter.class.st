@@ -6051,14 +6051,14 @@ StackInterpreter >> findNewMethodInClassTag: classTagArg ifFound: aBlock [
 	| classTag |
 	classTag := classTagArg.
 
+	"(self tryToUseInlineCacheFor: classTag) ifTrue: [ ^ aBlock value ]."
+
 	"Entry was not found in the local IC cache; perhaps something was forwarded.
 	Resolve forwarders and retry"
 	(objectMemory isOopForwarded: messageSelector) ifTrue: [
 		messageSelector := self handleForwardedSelectorFaultFor: messageSelector ].
 	(objectMemory isForwardedClassTag: classTag) ifTrue: [
 		classTag := self handleForwardedSendFaultForTag: classTag ].
-
-	(self tryToUseInlineCacheFor: classTag) ifTrue: [ ^ aBlock value ].
 
 	"ICs failed. Try the lookup cache"
 	(self inlineLookupInMethodCacheSel: messageSelector classTag: classTag)
@@ -15737,14 +15737,12 @@ StackInterpreter >> tryLoadNewPlugin: pluginString pluginEntries: pluginEntries 
 
 { #category : 'interpreter inline caches' }
 StackInterpreter >> tryToUseInlineCacheFor: classTag [
-	| inlineCacheClass inlineCacheClassTag |
+	| inlineCacheClassTag |
 	<inline: false>
 	"If there's no cache then return"
 	inlineCacheStartIndex = -1 ifTrue: [ ^ false ].
 
 	"If the cached tag is not the same one then return"
-	"inlineCacheClass := self literal: inlineCacheStartIndex + 1.
-	inlineCacheClassTag := objectMemory classTagForClass: inlineCacheClass."
 	inlineCacheClassTag := objectMemory integerValueOf: (self literal: inlineCacheStartIndex  + 1).
 	inlineCacheClassTag = classTag ifFalse: [ ^ false ].
 
@@ -16086,7 +16084,7 @@ StackInterpreter >> unknownShortOrCodeSizeInKs [
 { #category : 'interpreter inline caches' }
 StackInterpreter >> updateInlineCacheIfNeeded: classTag [
 	<inline: true>
-	| classObj |
+	| classTagObj |
 	"If there's no cache then return"
 	inlineCacheStartIndex = -1 ifTrue: [ ^ self ].
 	"Don't cache doesNotUnderstand:"
@@ -16094,11 +16092,10 @@ StackInterpreter >> updateInlineCacheIfNeeded: classTag [
 	"Don't cache cannotInterpret:"
 	messageSelector = (objectMemory splObj: SelectorCannotInterpret) ifTrue: [ ^ self ].
 	
-	"classObj := objectMemory classForClassTag: classTag."
-	classObj := objectMemory integerObjectOf: classTag.
+	classTagObj := objectMemory integerObjectOf: classTag.
 
 	"... otherwise lets update the IC"
-	self literal: inlineCacheStartIndex + 1 put: classObj.
+	self literal: inlineCacheStartIndex + 1 put: classTagObj.
 	self literal: inlineCacheStartIndex + 2 put: newMethod.
 	
 	"... and now there's no inline cache to work with"
