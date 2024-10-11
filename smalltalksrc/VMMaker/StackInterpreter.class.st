@@ -6051,7 +6051,7 @@ StackInterpreter >> findNewMethodInClassTag: classTagArg ifFound: aBlock [
 	| classTag |
 	classTag := classTagArg.
 
-	"(self tryToUseInlineCacheFor: classTag) ifTrue: [ ^ aBlock value ]."
+	(self tryToUseInlineCacheFor: classTag) ifTrue: [ ^ aBlock value ].
 
 	"Entry was not found in the local IC cache; perhaps something was forwarded.
 	Resolve forwarders and retry"
@@ -15738,7 +15738,7 @@ StackInterpreter >> tryLoadNewPlugin: pluginString pluginEntries: pluginEntries 
 { #category : 'interpreter inline caches' }
 StackInterpreter >> tryToUseInlineCacheFor: classTag [
 	| inlineCacheClassTag |
-	<inline: false>
+	<inline: true>
 	"If there's no cache then return"
 	inlineCacheStartIndex = -1 ifTrue: [ ^ false ].
 
