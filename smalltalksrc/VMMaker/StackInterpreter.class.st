@@ -15748,7 +15748,7 @@ StackInterpreter >> tryToUseInlineCacheFor: classTag [
 
 	"Otherwise let's get the method and primitive function pointer"
 	newMethod := self literal: inlineCacheStartIndex + 2.
-	primitiveFunctionPointer := #primitiveFail.
+	primitiveFunctionPointer := self cCoerce: #primitiveFail to: #'void (*)()'.
 
 	"... and notify the caller that we were able to use the IC"
 	inlineCacheStartIndex := -1.
