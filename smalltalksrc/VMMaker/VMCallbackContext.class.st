@@ -52,8 +52,8 @@ VMCallbackContext class >> needsTypeTag [
 ]
 
 { #category : 'translation' }
-VMCallbackContext class >> printTypedefOn: aStream [
-	super printTypedefOn: aStream.
+VMCallbackContext class >> printTypedefOn: aStream  withTranslations: ivnTranslations [
+	super printTypedefOn: aStream  withTranslations: ivnTranslations.
 	aStream
 		newLine;
 		nextPutAll: '/* The callback return type codes */'; newLine;

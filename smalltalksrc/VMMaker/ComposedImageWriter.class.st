@@ -206,11 +206,11 @@ ComposedImageWriter >> writePermanentSpaceMetadata: imageFileName [
 ]
 
 { #category : 'writing' }
-ComposedImageWriter >> writeSTON: struct toFile: f [
+ComposedImageWriter >> writeSTON: aStruct toFile: f [
 
 	<inline: true>
-	struct withStructNameDo: [ :name | self fprintf: f _: self headFormat _: name ].
-	struct withFieldsDo: [ :fieldName :fieldValue |
+	aStruct withStructNameDo: [ :name | self fprintf: f _: self headFormat _: name ].
+	aStruct withFieldsDo: [ :fieldName :fieldValue |
 			self fprintf: f _: self fieldFormat _: fieldName _: (self cCoerce: fieldValue to: #sqInt)]
 		separatedBy: [ self fprintf: f _: ',\n'].
 		

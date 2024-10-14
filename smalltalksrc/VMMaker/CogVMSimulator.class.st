@@ -48,7 +48,6 @@ Class {
 		'enableCog',
 		'byteCount',
 		'lastPollCount',
-		'lastExtPC',
 		'sendCount',
 		'lookupCount',
 		'printSends',
@@ -59,7 +58,6 @@ Class {
 		'mappedPluginEntries',
 		'quitBlock',
 		'transcript',
-		'eventTransformer',
 		'printFrameAtEachStep',
 		'printBytecodeAtEachStep',
 		'systemAttributes',
@@ -73,13 +71,11 @@ Class {
 		'externalSemaphoreSignalResponses',
 		'extSemTabSize',
 		'debugStackDepthDictionary',
-		'performFilters',
 		'eventQueue',
 		'expectedSends',
 		'expecting',
 		'bootstrapping',
 		'primitiveFailCount',
-		'primitiveFlags',
 		'initialAddress',
 		'rumpCStackBase'
 	],
@@ -228,6 +224,7 @@ CogVMSimulator >> basicInitialize [
 	primitiveTable := self class primitiveTable copy.
 
 	desiredNumStackPages := desiredEdenBytes := desiredCogCodeSize := 0.
+	self setDesiredStackPageBytes: 256 * objectMemory wordSize.
 	"This is initialized on loading the image, but convenient for testing stack page values..."
 	numStackPages := self defaultNumStackPages. 
 	startMicroseconds := lastYieldMicroseconds := self ioUTCStartMicroseconds.
@@ -369,18 +366,6 @@ CogVMSimulator >> classAndSelectorOfMethod: meth forReceiver: rcvr [
 		with: (objectMemory splObj: SelectorDoesNotUnderstand)
 ]
 
-{ #category : 'plugin support' }
-CogVMSimulator >> classNameOf: aClass Is: className [
-	"Check if aClass' name is className"
-	| name |
-	(objectMemory lengthOf: aClass) <= classNameIndex ifTrue:
-		[^false]. "Not a class but maybe behavior" 
-	name := objectMemory fetchPointer: classNameIndex ofObject: aClass.
-	(objectMemory isBytes: name) ifFalse:
-		[^false].
-	^ className = (self stringOf: name)
-]
-
 { #category : 'I/O primitives' }
 CogVMSimulator >> clipboardRead: sz Into: actualAddress At: zeroBaseIndex [
 	| str |
@@ -438,12 +423,6 @@ CogVMSimulator >> codeGeneratorToComputeAccessorDepth [
 				yourself]
 ]
 
-{ #category : 'as yet unclassified' }
-CogVMSimulator >> codeGeneratorToComputeAccessorDepth: aCCodeGenerator [ 
-
-	codeGeneratorToComputeAccessorDepth := aCCodeGenerator
-]
-
 { #category : 'simulation only' }
 CogVMSimulator >> cogit [
 	^cogit
@@ -467,14 +446,6 @@ CogVMSimulator >> cr [
 	traceOn ifTrue: [ transcript cr; flush ].
 ]
 
-{ #category : 'debugging traps' }
-CogVMSimulator >> createActualMessageTo: class [
-
-	class = objectMemory nilObject ifTrue: [self halt].
-
-	^super createActualMessageTo: class
-]
-
 { #category : 'debug support' }
 CogVMSimulator >> debugStackPointersFor: aMethod [
 	^CArrayAccessor on:
@@ -488,14 +459,6 @@ CogVMSimulator >> debugStackPointersFor: aMethod [
 { #category : 'initialization' }
 CogVMSimulator >> desiredCogCodeSize: anInteger [
 	desiredCogCodeSize := anInteger
-]
-
-{ #category : 'UI' }
-CogVMSimulator >> desiredDisplayExtent [
-	^(savedWindowSize
-		ifNil: [640@480]
-		ifNotNil: [savedWindowSize >> 16 @ (savedWindowSize bitAnd: 16rFFFF)])
-			min: Display extent * 2 // 3
 ]
 
 { #category : 'initialization' }
@@ -524,13 +487,6 @@ CogVMSimulator >> dispatchOn: anInteger in: selectorArray [
 		[cogit breakBlock ifNotNil:
 			[:bb| (bb value: cogit) ifTrue: [self halt: 'breakpoint reached']]].
 	self perform: (selectorArray at: (anInteger + 1)).
-]
-
-{ #category : 'debugging traps' }
-CogVMSimulator >> divorceFrame: theFP andContext: ctxt [
-	"((#(16r100570 16r101BC8) includes: theFP) or: [#(16r17159A4 16r1715948) includes: ctxt]) ifTrue:
-		[self halt]."
-	^super divorceFrame: theFP andContext: ctxt
 ]
 
 { #category : 'process primitive support' }
@@ -594,11 +550,6 @@ CogVMSimulator >> dumpMethodHeader: hdr [
 		]
 ]
 
-{ #category : 'debug printing' }
-CogVMSimulator >> elementsPerPrintOopLine [
-	^4
-]
-
 { #category : 'debugging traps' }
 CogVMSimulator >> enableCog: aBoolean [
 	enableCog := aBoolean
@@ -608,32 +559,6 @@ CogVMSimulator >> enableCog: aBoolean [
 CogVMSimulator >> expectSends: anArray [
 	expectedSends := ReadStream on: anArray.
 	expecting := true
-]
-
-{ #category : 'miscellaneous bytecodes' }
-CogVMSimulator >> extABytecode [
-	"224		11100000	aaaaaaaa	Extend A (Ext A = Ext A prev * 256 + Ext A)"
-	(extA = 0 and: [extB = 0]) ifTrue:
-		[lastExtPC := instructionPointer].
-	^super extABytecode
-]
-
-{ #category : 'miscellaneous bytecodes' }
-CogVMSimulator >> extBBytecode [
-	"225		11100001	sbbbbbbb	Extend B (Ext B = Ext B prev * 256 + Ext B)"
-	(extA = 0 and: [extB = 0]) ifTrue:
-		[lastExtPC := instructionPointer].
-	^super extBBytecode
-]
-
-{ #category : 'jump bytecodes' }
-CogVMSimulator >> extUnconditionalJump [
-	"242		11110010	i i i i i i i i	Jump i i i i i i i i (+ Extend B * 256, where bbbbbbbb = sddddddd, e.g. -32768 = i=0, a=0, s=1)"
-	"| byte offset |
-	byte := objectMemory byteAt: localIP + 1.
-	offset := byte + (extB << 8).
-	(offset < 0 and: [(self iframeBackwardBranchByte: localFP) - 2 = 1]) ifTrue: [self halt]."
-	^super extUnconditionalJump
 ]
 
 { #category : 'interpreter shell' }
@@ -646,16 +571,6 @@ CogVMSimulator >> fetchPointer: fieldIndex ofObject: oop [
 	"index by word size, and return a pointer as long as the word size"
 	self assert: (objectMemory cheapIsInMemory: oop).
 	^objectMemory fetchPointer: fieldIndex ofObject: oop
-]
-
-{ #category : 'control primitives' }
-CogVMSimulator >> filterPerformOf: selector to: receiver [
-	"This is to allow simulator to filter start-up items to avoid as-yet unsimulatable plugins."
-	performFilters ifNil: [^false].
-	(performFilters at: (self shortPrint: receiver) ifAbsent: []) ifNotNil:
-		[:messages|
-		^messages includes: (self stringOf: selector)].
-	^false
 ]
 
 { #category : 'memory access' }
@@ -674,21 +589,6 @@ CogVMSimulator >> flush [
 CogVMSimulator >> flushExternalPrimitives [
 	self initializePluginEntries.
 	super flushExternalPrimitives
-]
-
-{ #category : 'control primitives' }
-CogVMSimulator >> forShortPrintString: shortPrintString filterPerformMessages: aCollection [
-	performFilters ifNil:
-		[performFilters := Dictionary new].
-	performFilters at: shortPrintString put: aCollection
-]
-
-{ #category : 'frame access' }
-CogVMSimulator >> frameOfMarriedContext: aContext [ 
-	| senderOop |
-	senderOop := objectMemory fetchPointer: SenderIndex ofObject: aContext.
-	self assert: (objectMemory isIntegerObject: senderOop).
-	^self withoutSmallIntegerTags: senderOop
 ]
 
 { #category : 'debug support' }
@@ -1149,12 +1049,6 @@ CogVMSimulator >> longAt: byteAddress put: a32BitValue [
 	^objectMemory longAt: byteAddress put: a32BitValue
 ]
 
-{ #category : 'callback support' }
-CogVMSimulator >> lookupOrdinaryNoMNUEtcInClass: class [
-	lookupCount := lookupCount + 1.
-	^super lookupOrdinaryNoMNUEtcInClass: class
-]
-
 { #category : 'cog jit support' }
 CogVMSimulator >> mapFunctionToAddress: aSymbolOrIndexOrBlock [
 	"Hackery to deal with the plugin primitive simulation hoops.
@@ -1500,15 +1394,6 @@ CogVMSimulator >> primitiveNewWithArg [
 	^super primitiveNewWithArg
 ]
 
-{ #category : 'control primitives' }
-CogVMSimulator >> primitiveObject: actualReceiver perform: selector withArguments: argumentArray lookedUpIn: lookupClass [
-	"Override to allow simulator to filter start-up items to avoid as-yet unsimulatable plugins."
-
-	(self filterPerformOf: selector to: actualReceiver) ifTrue:
-		[^self pop: argumentCount + 1 thenPush: actualReceiver].
-	^super primitiveObject: actualReceiver perform: selector withArguments: argumentArray lookedUpIn: lookupClass
-]
-
 { #category : 'object access primitives' }
 CogVMSimulator >> primitiveObjectAt [
 	"self transcript
@@ -1524,23 +1409,6 @@ CogVMSimulator >> primitiveObjectAt [
 CogVMSimulator >> primitiveObjectPointsTo [
 	"self halt."
 	^super primitiveObjectPointsTo
-]
-
-{ #category : 'debugging traps' }
-CogVMSimulator >> primitivePerform [
-	| receiver selector |
-	"If called from the machine code perform primitive, it should not have been found,
-	 except that the cacheing for V3 has a mismatch between that used ror the first-level
-	 method cache and inline caches."
-	receiver := (self stackValue: argumentCount).
-	selector := self stackValue: argumentCount - 1.
-	((self methodHasCogMethod: newMethod)
-	 and: [(objectMemory isCompactInstance: receiver) not]) ifTrue:
-		[self deny: (self newMethodInLookupCacheAt: selector and: (objectMemory fetchClassTagOf: receiver))].
-	self sendBreakpoint: selector receiver: receiver.
-	(self filterPerformOf: selector to: receiver) ifTrue:
-		[^self pop: argumentCount].
-	^super primitivePerform
 ]
 
 { #category : 'system control primitives' }
@@ -1595,18 +1463,6 @@ CogVMSimulator >> print: it [
 
 	traceOn ifTrue:
 		[it isString ifTrue: [transcript nextPutAll: it] ifFalse: [it printOn: transcript]]
-]
-
-{ #category : 'debug printing' }
-CogVMSimulator >> printActivationNameForSelector: aSelector startClass: startClass [
-	super printActivationNameForSelector: aSelector startClass: startClass.
-	"(self transcript dependents detect: [:d| d isTextView] ifNone: []) ifNotNil:
-		[:textView| | text size |
-		text := textView text asString.
-		((size := text size) >= 30
-		and: [(text copyFrom: size - 29 to: size) = 'Object(ProtoObject)>initialize']) ifTrue:
-			[self doOrDefer: [self changed: #byteCountText; changed: #composeAll].
-			 self halt]"
 ]
 
 { #category : 'debug printing' }
@@ -1879,11 +1735,6 @@ CogVMSimulator >> saneFunctionPointerForFailureOfPrimIndex: primIndex [
 		 ^(cogit lookupAddress: primitiveFunctionPointer) endsWith: basePrimitive].
 
 	^super saneFunctionPointerForFailureOfPrimIndex: primIndex
-]
-
-{ #category : 'I/O primitives' }
-CogVMSimulator >> savedWindowSize [
-	^savedWindowSize ifNil: [0]
 ]
 
 { #category : 'accessing' }

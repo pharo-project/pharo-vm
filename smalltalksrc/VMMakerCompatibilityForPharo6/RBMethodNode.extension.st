@@ -19,7 +19,7 @@ RBMethodNode >> asTranslationMethodOfClass: aTMethodClass [
 
 	^aTMethodClass new
 		setSelector: selector
-		definingClass: compilationContext semanticScope targetClass
+		definingClass: self methodClass
 		args: arguments
 		locals: ((self allDefinedVariables copyWithoutAll: (arguments collect: #name)) collect: [:string| string -> string])
 		block: (body lastIsReturn
@@ -53,12 +53,12 @@ RBMethodNode >> asTranslationMethodOfClass: aTMethodClass forCodeGenerator: aCod
 			ifNil: [ bodyComment ]
 			ifNotNil: [ comment, self body commentOrNil ].
 	].
-
+	
 	renamedSelector := self methodClass renameSelectorIfStaticallyResolved: selector.
 
 	^aTMethodClass new
 		setSelector: renamedSelector
-		definingClass: compilationContext semanticScope targetClass
+		definingClass: self methodClass
 		args: arguments
 		locals: ((self allDefinedVariables copyWithoutAll: (arguments collect: #name)) collect: [:string| string -> string])
 		block: (body lastIsReturn

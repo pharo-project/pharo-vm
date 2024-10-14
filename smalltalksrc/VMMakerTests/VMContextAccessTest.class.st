@@ -41,7 +41,7 @@ VMContextAccessTest >> setUp [
 
 	"The context has 5 (in 32 bits) or 9 (in 64 bits) as initial IP, as method has at least one literal"
 	ctx := self
-		       newSmallContextReceiver: memory nilObject
+		       newSmallContextReceiver: (memory integerObjectOf: 17)
 		       method: newMethod
 		       arguments: #(  )
 		       temporaries: #(  )

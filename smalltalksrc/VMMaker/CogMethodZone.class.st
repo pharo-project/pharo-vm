@@ -124,7 +124,7 @@ CogMethodZone >> addAllToYoungReferrers [
 ]
 
 { #category : 'accessing' }
-CogMethodZone >> addToOpenPICList: anOpenPIC [
+CogMethodZone >> addToMegamorphicICList: anOpenPIC [
 	<var: #anOpenPIC type: #'CogMethod *'>
 	self assert: anOpenPIC cmType = CMMegamorphicIC.
 	self assert: (openPICList == nil
@@ -251,7 +251,7 @@ CogMethodZone >> compactCompiledCode [
 		 SistaVM ifTrue:
 			[self clearSavedPICUsageCount: source].
 		 source cmType = CMMegamorphicIC ifTrue:
-			[self addToOpenPICList: source].
+			[self addToMegamorphicICList: source].
 		 methodCount := methodCount + 1.
 		 source := self methodAfter: source].
 	source >= self limitZony ifTrue:
@@ -277,7 +277,7 @@ CogMethodZone >> compactCompiledCode [
 					[SistaVM ifTrue:
 						[self clearSavedPICUsageCount: dest].
 					 dest cmType = CMMegamorphicIC ifTrue:
-						[self addToOpenPICList: dest]].
+						[self addToMegamorphicICList: dest]].
 			 dest cmUsageCount > 0 ifTrue:
 				[dest cmUsageCount: dest cmUsageCount // 2].
 			 dest := coInterpreter
@@ -742,6 +742,12 @@ CogMethodZone >> quickClearCogCompiledCode [
 
 { #category : 'young referers' }
 CogMethodZone >> relocateAndPruneYoungReferrers [
+	"This method compacts the young referrers array, and updates the references to the methods were moved."
+
+	"Young referrers is an array that holds references to CogMethods that references objects that are in the new space.
+	The young referrers array is stored at the end of the code cache, it grows towards lower addresses.
+	The variable youngReferrers points to the lowest entry in the array, and it spans up to the limitAddress"
+	
 	| source dest next cogMethod |
 	<var: #source type: #usqInt>
 	<var: #dest type: #usqInt>

@@ -3309,6 +3309,37 @@ VMPrimitiveTest >> testPrimitiveNewWithArgWithInvalidClassFails [
 ]
 
 { #category : 'tests - primitiveNewWithArgs' }
+VMPrimitiveTest >> testPrimitiveNewWithArgWithInvalidClassFails2 [
+	| class |
+
+	"class object with no slots, so no format"
+	class := self newObjectWithSlots: 0.
+
+	interpreter push: class.
+	interpreter push: (memory integerObjectOf: 256).
+
+	interpreter primitiveNewWithArg.
+
+	self assert: interpreter primFailCode equals: PrimErrBadReceiver
+]
+
+{ #category : 'tests - primitiveNewWithArgs' }
+VMPrimitiveTest >> testPrimitiveNewWithArgWithInvalidClassFails3 [
+	| class |
+
+	"class with nil as format"
+	class := self newClassInOldSpaceWithSlots: 0 instSpec: memory nonIndexablePointerFormat.
+	memory storePointer: 2 ofObject: class withValue: memory nilObject.
+
+	interpreter push: class.
+	interpreter push: (memory integerObjectOf: 256).
+
+	interpreter primitiveNewWithArg.
+
+	self assert: interpreter primFailCode equals: PrimErrBadReceiver
+]
+
+{ #category : 'tests - primitiveNewWithArgs' }
 VMPrimitiveTest >> testPrimitiveNewWithArgWithNegativeArgumentFails [
 	| class |
 
@@ -3327,6 +3358,31 @@ VMPrimitiveTest >> testPrimitiveNewWithInvalidClassFails [
 	| class |
 	class := self newClassInOldSpaceWithSlots: 0 instSpec: memory arrayFormat.
 
+	interpreter push: class.
+	interpreter primitiveNew.
+
+	self assert: interpreter primFailCode equals: PrimErrBadReceiver
+]
+
+{ #category : 'tests - primitiveNew' }
+VMPrimitiveTest >> testPrimitiveNewWithInvalidClassFails2 [
+	| class |
+	"class object with no slots, so no format"
+	class := self newObjectWithSlots: 0.
+
+	interpreter push: class.
+	interpreter primitiveNew.
+
+	self assert: interpreter primFailCode equals: PrimErrBadReceiver
+]
+
+{ #category : 'tests - primitiveNew' }
+VMPrimitiveTest >> testPrimitiveNewWithInvalidClassFails3 [
+	| class |
+	"class with nil used as format"
+	class := self newClassInOldSpaceWithSlots: 0 instSpec: memory nonIndexablePointerFormat.
+	memory storePointer: 2 ofObject: class withValue: memory nilObject.
+	
 	interpreter push: class.
 	interpreter primitiveNew.
 

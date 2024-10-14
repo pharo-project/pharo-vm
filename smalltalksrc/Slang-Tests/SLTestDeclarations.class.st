@@ -12,6 +12,14 @@ SLTestDeclarations >> setUp [
 ]
 
 { #category : 'tests' }
+SLTestDeclarations >> testAddTypeForSelfWithDeclarationsDoesNotThrowError [
+
+	| method |
+	method := ccg methodNamed: #methodWithNonExistingLocalDeclaration.
+	self shouldnt: [ method addTypeForSelf ] raise: TranslationError
+]
+
+{ #category : 'tests' }
 SLTestDeclarations >> testAllLocalsReturnsBlockLocals [
 
 	self
@@ -69,4 +77,24 @@ SLTestDeclarations >> testLocalsReturnsDirectLocals [
 	self
 		assertCollection: (ccg methodNamed: #methodWithLocal) locals
 		hasSameElements: #( 'var' )
+]
+
+{ #category : 'tests' }
+SLTestDeclarations >> testStructInstanceVariablesWithoutTypeDeclaration [
+
+	ccg
+		addStructClasses: (OrderedCollection with: MockVMStructWithoutTypeDeclarations) 
+		silently: true.
+
+	self
+		should: [ ccg emitCTypesOn: (WriteStream on: #(  )) ]
+		raise: TranslationError
+]
+
+{ #category : 'tests' }
+SLTestDeclarations >> testUndefinedLocalWithDeclarationsThrowsError [
+
+	| method |
+	method := ccg methodNamed: #methodWithNonExistingLocalDeclaration.
+	self should: [ method recordDeclarationsIn: ccg ] raise: TranslationError
 ]

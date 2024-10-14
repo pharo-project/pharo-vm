@@ -75,8 +75,7 @@ Class {
 		'profileProcess',
 		'profileSemaphore',
 		'nextProfileTick',
-		'preemptionYields',
-		'ffiExceptionResponse'
+		'preemptionYields'
 	],
 	#classVars : [
 		'CrossedX',
@@ -127,12 +126,6 @@ InterpreterPrimitives class >> initializeMiscConstants [
 InterpreterPrimitives >> asUnsigned: anInteger [
 	<inline: true>
 	^self cCode: [anInteger asUnsignedInteger] inSmalltalk: [anInteger bitAnd: objectMemory maxCInteger]
-]
-
-{ #category : 'stack access' }
-InterpreterPrimitives >> booleanValueOf: obj [
-
-	self subclassResponsibility
 ]
 
 { #category : 'primitive support' }
@@ -269,7 +262,7 @@ InterpreterPrimitives >> initPrimCall [
 InterpreterPrimitives >> initialize [
 
 	"Here we can initialize the variables C initializes to zero.  #initialize methods do /not/ get translated."
-	argumentCount := primFailCode := nextProfileTick := osErrorCode := exceptionPC := ffiExceptionResponse := 0
+	argumentCount := primFailCode := nextProfileTick := osErrorCode := exceptionPC := 0
 ]
 
 { #category : 'simulation support' }
@@ -327,15 +320,12 @@ InterpreterPrimitives >> isInstanceOfClassArray: oop [
 
 { #category : 'primitive support' }
 InterpreterPrimitives >> isInstanceOfClassBlockClosure: oop [
+
 	<inline: true>
-	"N.B.  Because Slang always inlines is:instanceOf:compactClassIndex:
-	 (because is:instanceOf:compactClassIndex: has an inline: pragma) the
-	 phrase (objectMemory splObj: ClassBlockClosure) is expanded in-place
-	 and is _not_ evaluated if oop has a non-zero CompactClassIndex."
-	^objectMemory
-		is: oop
-		instanceOf: nil
-		compactClassIndex: ClassFullBlockClosureCompactIndex
+	^ objectMemory
+		  is: oop
+		  instanceOf: nil
+		  compactClassIndex: ClassFullBlockClosureCompactIndex
 ]
 
 { #category : 'primitive support' }
@@ -579,12 +569,6 @@ InterpreterPrimitives >> noInlineSigned32BitValueGutsOf: oop [
 		ifTrue: [value := 0 - magnitude]
 		ifFalse: [value := magnitude].
 	^value
-]
-
-{ #category : 'stack access' }
-InterpreterPrimitives >> pop: nItems thenPushBool: boolean [
-
-	self subclassResponsibility
 ]
 
 { #category : 'primitive support' }
@@ -2728,11 +2712,6 @@ InterpreterPrimitives >> primitiveNew [
 
 	(objectMemory instantiateClass: self stackTop)
 		ifNotNil: [ :obj | self pop: argumentCount + 1 thenPush: obj ]
-		ifNil: [ 
-			self primitiveFailFor: ((objectMemory isFixedSizePointerFormat:
-					  (objectMemory instSpecOfClass: self stackTop))
-					 ifTrue: [ PrimErrNoMemory ]
-					 ifFalse: [ PrimErrBadReceiver ]) ]
 ]
 
 { #category : 'compiled methods' }
@@ -2812,13 +2791,6 @@ InterpreterPrimitives >> primitiveNewWithArg [
 		 instantiateClass: (self stackValue: 1)
 		 indexableSize: size)
 		ifNotNil: [ :obj | self pop: argumentCount + 1 thenPush: obj ]
-		ifNil: [ 
-			instSpec := objectMemory instSpecOfClass: (self stackValue: 1).
-			self primitiveFailFor:
-				(((objectMemory isIndexableFormat: instSpec) and: [ 
-					  (objectMemory isCompiledMethodFormat: instSpec) not ])
-					 ifTrue: [ PrimErrNoMemory ]
-					 ifFalse: [ PrimErrBadReceiver ]) ]
 ]
 
 { #category : 'object access primitives' }
@@ -2978,28 +2950,6 @@ InterpreterPrimitives >> primitiveObjectPointsTo [
 		(objectMemory longAt: rcvr + i) = thang ifTrue:
 			[^self pop: 2 thenPushBool: true]].
 	self pop: 2 thenPushBool: false
-]
-
-{ #category : 'other primitives' }
-InterpreterPrimitives >> primitivePathToUsing [
-	"primitivePathTo: anObject using: stack <Array> followWeak: boolean
-	 Answer a path to anObject from the root that does not pass through
-	 the current context"
-	| err path |
-	<export: true>
-	self writeBackHeadFramePointers.
-	argumentCount >= 2 ifFalse:
-		[^self primitiveFailFor: PrimErrBadNumArgs].
-	(self stackTop = objectMemory trueObject
-	 or: [self stackTop = objectMemory falseObject]) ifFalse:
-		[^self primitiveFailFor: PrimErrBadArgument].
-	err := self pathTo: (self stackValue: 2)
-				using: (self stackValue: 1)
-				followWeak: self stackTop = objectMemory trueObject.
-	err ~= 0 ifTrue:
-		[^self primitiveFailFor: err].
-	path := self self stackValue: 1.
-	self pop: argumentCount + 1 thenPush: path
 ]
 
 { #category : 'control primitives' }

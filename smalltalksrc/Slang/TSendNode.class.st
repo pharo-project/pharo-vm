@@ -383,6 +383,12 @@ TSendNode >> isConditionalSend [
 ]
 
 { #category : 'testing' }
+TSendNode >> isExpression [
+
+	^ true
+]
+
+{ #category : 'testing' }
 TSendNode >> isLiteralArrayDeclaration [
 	^selector == #cCoerce:to:
 	  and: [arguments first isConstant

@@ -229,11 +229,6 @@ InterpreterProxy >> copyBitsFrom: leftX to: rightX at: yValue [
 	bb copyBitsFrom: leftX to: rightX at: yValue.
 ]
 
-{ #category : 'special objects' }
-InterpreterProxy >> displayObject [
-	^Display
-]
-
 { #category : 'other' }
 InterpreterProxy >> failed [
 
@@ -1017,13 +1012,6 @@ InterpreterProxy >> sendInvokeCallbackContext: vmCallbackContext [
 	 The arguments are raw C addresses and are converted to integer objects on the way."
 	<returnTypeC: #sqInt>
 	self notYetImplemented
-]
-
-{ #category : 'other' }
-InterpreterProxy >> showDisplayBits: aForm Left: l Top: t Right: r Bottom: b [
-	aForm == Display ifTrue:[
-		Display class isDeferringUpdates ifTrue: [^ nil].
-		Display forceToScreen: (Rectangle left: l right: r top: t bottom: b)].
 ]
 
 { #category : 'callback support' }

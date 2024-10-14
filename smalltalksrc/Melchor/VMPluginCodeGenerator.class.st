@@ -521,7 +521,7 @@ VMPluginCodeGenerator >> sizeOfIntegralCType: anIntegralCType [ "<String>"
 		['short']			->	[2].
 		['short int']		->	[2].
 		['char']			->	[1].
-		['long']			->	[BytesPerWord]. "It's ambiguous on LLP64 and we'll later remove it"
+		['long']			->	[ self bytesPerWord ]. "It's ambiguous on LLP64 and we'll later remove it"
 		['size_t']		->	[6].
 		['pid_t']			->	[6].
 	}

@@ -40,7 +40,7 @@ LibFFICIF class >> instVarNamesAndTypesForTranslationDo: aBinaryBlock [
 ]
 
 { #category : 'translation' }
-LibFFICIF class >> printTypedefOn: aStream [
+LibFFICIF class >> printTypedefOn: aStream withTranslations: ivnTranslations [
 
 	"This is already defined in ffi.h"
 ]

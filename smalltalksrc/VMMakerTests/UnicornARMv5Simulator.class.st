@@ -473,6 +473,14 @@ UnicornARMv5Simulator >> stackPointerRegister [
 	^ UcARMRegisters sp
 ]
 
+{ #category : 'executing' }
+UnicornARMv5Simulator >> startAt: begin until: until timeout: timeout count: count [
+
+	begin == until ifTrue: [ ^ self ].
+	^ super startAt: begin until: until timeout: timeout count: count
+
+]
+
 { #category : 'registers' }
 UnicornARMv5Simulator >> temporaryRegister [
 	

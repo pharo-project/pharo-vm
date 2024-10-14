@@ -33,6 +33,7 @@ UUIDPlugin >> initialiseModule [
 
 { #category : 'system primitives' }
 UUIDPlugin >> primitiveMakeUUID [
+    "This generates an UUID inside the 16 bytes long ByteArray to which it is sent."
 	| oop location |
 	<export: true>
 	<var: #location type: #'char*'>

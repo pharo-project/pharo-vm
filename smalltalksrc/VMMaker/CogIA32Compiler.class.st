@@ -3330,24 +3330,24 @@ CogIA32Compiler >> genMemCopy: originalSourceReg to: originalDestReg size: origi
 ]
 
 { #category : 'abstract instructions' }
-CogIA32Compiler >> genMoveCf32: constantFloat32 Rs: register [
+CogIA32Compiler >> genMoveCf32: constantFloat32 Rs: reg [
 	<inline: true>
 	<returnTypeC: #'AbstractInstruction *'>
 	<var: #constantFloat32 type: #float>
 	| inst |
 	inst := cogit PushCw: constantFloat32 asIEEE32BitWord.
-	cogit PopRs: register.
+	cogit PopRs: reg.
 	^ inst
 ]
 
 { #category : 'abstract instructions' }
-CogIA32Compiler >> genMoveCf64: constantFloat64 Rd: register [
+CogIA32Compiler >> genMoveCf64: constantFloat64 Rd: reg [
 	<inline: true>
 	<returnTypeC: #'AbstractInstruction *'>
 	<var: #constantFloat64 type: #double>
 	| inst |
 	inst := cogit PushC64: constantFloat64 asIEEE64BitWord.
-	cogit PopRd: register.
+	cogit PopRd: reg.
 	^ inst
 ]
 

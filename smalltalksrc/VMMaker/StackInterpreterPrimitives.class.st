@@ -282,64 +282,6 @@ StackInterpreterPrimitives >> ffi_call: aCif _: externalFunctionAddress _: retur
 	libFFI ffiCall: aCif _: externalFunctionAddress _: returnHolder _: parameters
 ]
 
-{ #category : 'object access primitives' }
-StackInterpreterPrimitives >> field: index ofFrame: theFP [
-	"Arrange to answer naked frame pointers for unmarried
-	 senders to avoid reifying contexts in the search."
-	<var: #theFP type: #'char *'>
-	<inline: false>
-	| callerFP |
-	<var: #callerFP type: #'char *'>
-	^index caseOf:
-		{[SenderIndex] ->	[callerFP := self frameCallerFP: theFP.
-							 callerFP = 0
-								ifTrue: [self frameCallerContext: theFP]
-								ifFalse: [(self frameHasContext: callerFP)
-											ifTrue: [self assert: (self checkIsStillMarriedContext: (self frameContext: callerFP) currentFP: nil).
-													self frameContext: callerFP]
-											ifFalse: [callerFP asInteger]]].
-		[StackPointerIndex]			->	[ConstZero].
-		[InstructionPointerIndex]	->	[ConstZero].
-		[MethodIndex]				->	[self frameMethodObject: theFP].
-		[ClosureIndex]				->	[(self frameIsBlockActivation: theFP)
-											ifTrue: [self frameStackedReceiver: theFP
-														numArgs: (self frameNumArgs: theFP)]
-											ifFalse: [objectMemory nilObject]].
-		[ReceiverIndex]				->	[self frameReceiver: theFP] }
-		otherwise:
-			[self assert: (index - CtxtTempFrameStart between: 0 and: (self stackPointerIndexForFrame: theFP)).
-			 self temporary: index - CtxtTempFrameStart in: theFP]
-]
-
-{ #category : 'object access primitives' }
-StackInterpreterPrimitives >> fieldOrSenderFP: index ofContext: contextObj [
-	"Arrange to answer naked frame pointers for unmarried
-	 senders to avoid reifying contexts in the search."
-	<inline: false>
-	| tempIndex spouseFP |
-	<var: #spouseFP type: #'char *'>
-	tempIndex := index - CtxtTempFrameStart.
-	(self isStillMarriedContext: contextObj) ifFalse:
-		[^tempIndex >= (self fetchStackPointerOf: contextObj)
-			ifTrue: [objectMemory nilObject]
-			ifFalse: [self fetchPointer: index ofObject: contextObj]].
-	spouseFP := self frameOfMarriedContext: contextObj.
-	tempIndex >= (self stackPointerIndexForFrame: spouseFP) ifTrue:
-		[^objectMemory nilObject].
-	^self field: index ofFrame: spouseFP
-]
-
-{ #category : 'object access primitives' }
-StackInterpreterPrimitives >> fieldsInFrame: theFP [
-	<var: #theFP type: #'char *'>
-	^CtxtTempFrameStart + (self stackPointerIndexForFrame: theFP)
-]
-
-{ #category : 'object access primitives' }
-StackInterpreterPrimitives >> frameIsMarked: theFPInt [
-	^((stackPages unsignedLongAt: theFPInt + FoxFrameFlags) bitAnd: 2) ~= 0
-]
-
 { #category : 'ffi - helpers' }
 StackInterpreterPrimitives >> freeArgumentsArray: arguments count: count [
 
@@ -430,21 +372,6 @@ StackInterpreterPrimitives >> loadModuleByName: moduleNameOop [
 	moduleNameStringSize := objectMemory byteSizeOf: moduleNameOop.
 		
 	^ self ioLoadModule: moduleNameString OfLength: moduleNameStringSize
-]
-
-{ #category : 'logging' }
-StackInterpreterPrimitives >> logDebug: aString [
-
-	<doNotGenerate>
-
-	aString traceCr.
-]
-
-{ #category : 'object access primitives' }
-StackInterpreterPrimitives >> markFrame: theFPInt [
-	stackPages
-		unsignedLongAt: theFPInt + FoxFrameFlags
-		put: ((stackPages unsignedLongAt: theFPInt + FoxFrameFlags) bitOr: 2)
 ]
 
 { #category : 'ffi - helpers' }
@@ -733,89 +660,6 @@ StackInterpreterPrimitives >> newByteArrayWithStructContent: aPointer size: size
 StackInterpreterPrimitives >> noInlineLoadFloatOrIntFrom: floatOrInt [
 	<inline: #never>
 	^objectMemory loadFloatOrIntFrom: floatOrInt
-]
-
-{ #category : 'object access primitives' }
-StackInterpreterPrimitives >> pathTo: goal using: anArray followWeak: followWeak [
-	"Trace objects and frames from the root, marking visited objects, pushing the current path on stack, until goal is found.
-	 If found, unmark, leaving path in stack, and answer 0.  Otherwise answer an error:
-		PrimErrBadArgument if stack is not an Array
-		PrimErrBadIndex if search overflows stack
-		PrimErrNotFound if goal cannot be found"
-	<var: #index type: #sqInt> "beware, must be signed"
-	| current index next stackSize stackp freeStartAtStart |
-	(objectMemory isArray: anArray) ifFalse:
-		[^PrimErrBadArgument].
-	self assert: objectMemory allObjectsUnmarked.
-	freeStartAtStart := objectMemory freeStart. "check no allocations during search"
-	objectMemory beRootIfOld: anArray. "so no store checks are necessary on stack"
-	stackSize := objectMemory lengthOf: anArray.
-	objectMemory mark: anArray.
-	"no need. the current context is not reachable from the active process (suspendedContext is nil)"
-	"objectMemory mark: self activeProcess."
-	current := objectMemory specialObjectsOop.
-	objectMemory mark: current.
-	index := objectMemory lengthOf: current.
-	stackp := 0.
-	[[(index := index - 1) >= -1] whileTrue:
-		[(stackPages couldBeFramePointer: current)
-			ifTrue:
-				[next := index >= 0
-							ifTrue: [self field: index ofFrame: (self cCoerceSimple: current to: #'char *')]
-							ifFalse: [objectMemory nilObject]]
-			ifFalse:
-				[index >= 0
-					ifTrue:
-						[next := (objectMemory isContextNonImm: current)
-									ifTrue: [self fieldOrSenderFP: index ofContext: current]
-									ifFalse: [objectMemory fetchPointer: index ofObject: current]]
-					ifFalse:
-						[next := objectMemory fetchClassOfNonImm: current]].
-		 (stackPages couldBeFramePointer: next)
-			ifTrue: [self assert: (self isFrame: (self cCoerceSimple: next to: #'char *')
-									onPage: (stackPages stackPageFor: (self cCoerceSimple: next to: #'char *')))]
-			ifFalse: [self assert: (self checkOkayOop: next)].
-		 next = goal ifTrue:
-			[self assert: freeStartAtStart = objectMemory freeStart.
-			 self unmarkAfterPathTo.
-			 objectMemory storePointer: stackp ofObject: anArray withValue: current.
-			 self pruneStack: anArray stackp: stackp.
-			 ^0].
-		 ((objectMemory isNonIntegerObject: next)
-		  and: [(stackPages couldBeFramePointer: next)
-				ifTrue: [(self frameIsMarked: next) not]
-				ifFalse:
-					[(objectMemory isMarked: next) not
-					  and: [((objectMemory isPointers: next) or: [objectMemory isCompiledMethod: next])
-					  and: [followWeak or: [(objectMemory isWeakNonImm: next) not]]]]])
-			ifTrue:
-				[stackp + 2 > stackSize ifTrue:
-					[self assert: freeStartAtStart = objectMemory freeStart.
-					 self unmarkAfterPathTo.
-					 objectMemory nilFieldsOf: anArray.
-					 ^PrimErrBadIndex]. "PrimErrNoMemory ?"
-				 objectMemory
-					storePointerUnchecked: stackp ofObject: anArray withValue: current;
-					storePointerUnchecked: stackp + 1 ofObject: anArray withValue: (objectMemory integerObjectOf: index).
-				 stackp := stackp + 2.
-				 (stackPages couldBeFramePointer: (self cCoerceSimple: next to: #'char *'))
-					ifTrue:
-						[self markFrame: next.
-						index := self fieldsInFrame: (self cCoerceSimple: next to: #'char *')]
-					ifFalse:
-						[objectMemory mark: next.
-						 (objectMemory isCompiledMethod: next)
-							ifTrue: [index := (objectMemory literalCountOf: next) + LiteralStart]
-							ifFalse: [index := objectMemory lengthOf: next]].
-				 current := next]].
-		 current = objectMemory specialObjectsOop ifTrue:
-			[self assert: freeStartAtStart = objectMemory freeStart.
-			 self unmarkAfterPathTo.
-			 objectMemory nilFieldsOf: anArray.
-			^PrimErrNotFound].
-		 index := objectMemory integerValueOf: (objectMemory fetchPointer: stackp - 1 ofObject: anArray).
-		 current := objectMemory fetchPointer: stackp - 2 ofObject: anArray.
-		 stackp := stackp - 2] repeat
 ]
 
 { #category : 'ffi - helpers' }
@@ -4065,53 +3909,6 @@ StackInterpreterPrimitives >> primitiveWorkerExtractReturnValue [
 		self primitiveFailFor: PrimErrUnsupported ]
 ]
 
-{ #category : 'object access primitives' }
-StackInterpreterPrimitives >> pruneStack: anArray stackp: stackp [
-	"Prune the stack to contain only the path, removing stacked indices
-	 and mapping frame pointers to contexts  The  issue here is that a
-	 GC can occur during ensureFrameIsMarried:SP:, but frame pointers
-	 are not valid objects.  So first prune back to objects and framePointers
-	 as integers, and then replace frame pointers as integers by contexts."
-	
-	<inline: false>
-	| objOrFP theStack finger |
-	<var: #theFP type: #'char *'>
-	<var: #thePage type: #'StackPage *'>
-	<var: #theFPAbove type: #'char *'>
-	finger := 1.
-	2 to: stackp - 1 by: 2 do:
-		[:i|
-		objOrFP := objectMemory fetchPointer: i ofObject: anArray.
-		(stackPages couldBeFramePointer: (self cCoerceSimple: objOrFP to: #'char *')) ifTrue:
-			[objOrFP := self withSmallIntegerTags: objOrFP].
-		objectMemory
-			storePointerUnchecked: finger
-			ofObject: anArray
-			withValue: objOrFP.
-		finger := finger + 1].
-	finger to: (objectMemory lengthOf: anArray) - 1 do:
-		[:i|
-		objectMemory
-			storePointerUnchecked: i
-			ofObject: anArray
-			withValue: objectMemory nilObject].
-	objectMemory pushRemappableOop: (theStack := anArray).
-	1 to: finger - 1 do:
-		[:i| | thePage theFP theFPAbove |
-		objOrFP := objectMemory fetchPointer: i ofObject: theStack.
-		(self isIntegerObject: objOrFP) ifTrue:
-			[theFP := self withoutSmallIntegerTags: objOrFP.
-			 thePage := stackPages stackPageFor: theFP.
-			 theFPAbove := self findFrameAbove: theFP inPage: thePage.
-			 objOrFP := self ensureFrameIsMarried: theFP SP: (self frameCallerSP: theFPAbove).
-			 theStack := objectMemory topRemappableOop.
-			 objectMemory "after a GC stack may no longer be a root."
-				storePointer: finger
-				ofObject: theStack
-				withValue: objOrFP]].
-	objectMemory popRemappableOop
-]
-
 { #category : 'ffi' }
 StackInterpreterPrimitives >> ptEnterInterpreterFromCallback: aPointer [
 
@@ -4202,30 +3999,6 @@ StackInterpreterPrimitives >> readAddress: anOop [
 		ifFalse: [ self primitiveFail. ^ nil ].
 
 	^ objectMemory fetchPointer: 0 ofObject: anOop.
-]
-
-{ #category : 'object access primitives' }
-StackInterpreterPrimitives >> unmarkAfterPathTo [
-	<inline: false>
-	self unmarkAllFrames.
-	objectMemory unmarkAllObjects
-]
-
-{ #category : 'object access primitives' }
-StackInterpreterPrimitives >> unmarkAllFrames [
-	| thePage theFP flags |
-	<var: #thePage type: #'StackPage *'>
-	<var: #theFP type: #'char *'>
-	<inline: false>
-	0 to: numStackPages - 1 do:
-		[:i|
-		thePage := stackPages stackPageAt: i.
-		(stackPages isFree: thePage) ifFalse:
-			[theFP := thePage  headFP.
-			 [flags := objectMemory longAt: theFP + FoxFrameFlags.
-			  (flags bitAnd: 2) ~= 0 ifTrue:
-				[objectMemory longAt: theFP + FoxFrameFlags put: flags - 2].
-			  (theFP := self frameCallerFP: theFP) ~= 0] whileTrue]]
 ]
 
 { #category : 'ffi - helpers' }

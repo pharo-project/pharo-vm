@@ -98,7 +98,7 @@ VMMachineSimulatorTest >> testMemoryAccessExceptionComesWithCorrectAddress [
 { #category : 'tests - memory access exception' }
 VMMachineSimulatorTest >> testMemoryAccessExceptionHandledCountIsRespected [
 
-	| label lastInstruction invalidAddressHandled addInstruction jumpInstruction expectedAddress |
+	| label lastInstruction invalidAddressHandled addInstruction jumpInstruction |
 
 	self timeLimit: 30 minutes.
 
@@ -129,14 +129,10 @@ VMMachineSimulatorTest >> testMemoryAccessExceptionHandledCountIsRespected [
 		until: lastInstruction address
 		timeout: 0
 		count: 10. 
-	
-	"ARM v8 generates two instructions for MoveMbrR, so it will execute and instruction less"
-	expectedAddress := isa = #aarch64 ifTrue: [addInstruction address] ifFalse: [jumpInstruction address].
-	
-	
+		
 	self 
 		assert: self machineSimulator instructionPointerRegisterValue 
-		equals: expectedAddress
+		equals: jumpInstruction address
 ]
 
 { #category : 'tests - memory access exception' }
@@ -364,7 +360,7 @@ VMMachineSimulatorTest >> testMemoryAccessExceptionInJumpHasUpdatedPC [
 { #category : 'tests - memory access exception' }
 VMMachineSimulatorTest >> testMemoryAccessExceptionInstructionPointerInCorrectAddress [
 
-	| lastInstruction invalidAccessInstruction invalidAddressHandled exptectedAddress |
+	| lastInstruction invalidAccessInstruction invalidAddressHandled |
 	self timeLimit: 30 minutes.
 
 	self compile: [ 
@@ -377,16 +373,11 @@ VMMachineSimulatorTest >> testMemoryAccessExceptionInstructionPointerInCorrectAd
 	
 	invalidAddressHandled := false.
 	
-	"In ArmV8 the MoveMbrR are two instructions"
-	isa = #aarch64 
-		ifTrue: [ exptectedAddress := invalidAccessInstruction address + 4 ]
-		ifFalse: [ exptectedAddress := invalidAccessInstruction address ].
-	
 	self machineSimulator invalidAccessHandler: [:invalidAccess | 
 		invalidAddressHandled := true.
 		self 
 			assert: self machineSimulator lastExecutedInstructionAddress 
-			equals: exptectedAddress.
+			equals: invalidAccessInstruction address.
 		false ].
 	
 	self

@@ -128,7 +128,7 @@ VMJitSimdBytecode >> testAddVectorPushesArraySumIntoSimulatedStack [
 	entry := cogit ssTop.
 	"The register with the result is the same as the first one"
 	self assert: (entry type) equals: SSVectorRegister.
-	self assert: (entry register) equals: 0.
+	self assert: (entry registerr) equals: 0.
 
 ]
 
@@ -190,7 +190,7 @@ VMJitSimdBytecode >> testPushArrayToRegisterPushesArrayChunkIntoSimulatedStack [
 	entry := cogit ssTop.
 	
 	self assert: (entry type) equals: SSVectorRegister.
-	self assert: (entry register) equals: 0.
+	self assert: (entry registerr) equals: 0.
 ]
 
 { #category : 'tests' }

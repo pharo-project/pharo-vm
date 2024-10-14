@@ -427,7 +427,10 @@ Spur64BitMemoryManager >> instantiateClass: classObj indexableSize: nElements is
 	<var: #nElements type: #usqInt>
 	"Allocate an instance of a variable class, excepting CompiledMethod."
 	| instSpec classFormat numSlots classIndex newObj fillValue |
-	classFormat := self formatOfClass: classObj.
+	classFormat := self formatOfClassSafe: classObj.
+	classFormat == -1 ifTrue:
+		[self primitiveFailFor: PrimErrBadReceiver. "no format"
+		 ^nil].
 	instSpec := self instSpecOfClassFormat: classFormat.
 	classIndex := self rawHashBitsOf: classObj.
 	fillValue := 0.
@@ -462,7 +465,8 @@ Spur64BitMemoryManager >> instantiateClass: classObj indexableSize: nElements is
 			  this method.
 			  Hence allow fixed classes to be instantiated here iff nElements = 0."
 			 (nElements ~= 0 or: [instSpec > self lastPointerFormat]) ifTrue:
-				[^nil].
+				[coInterpreter primitiveFailFor: PrimErrBadReceiver.
+				 ^nil].
 			 numSlots := self fixedFieldsOfClassFormat: classFormat.
 			 fillValue := nilObj].
 	classIndex = 0 ifTrue:
@@ -483,7 +487,8 @@ Spur64BitMemoryManager >> instantiateClass: classObj indexableSize: nElements is
 		ifFalse:
 			[newObj := self allocateSlots: numSlots format: instSpec classIndex: classIndex].
 	newObj ifNotNil:
-		[self fillObj: newObj numSlots: numSlots with: fillValue].
+		[self fillObj: newObj numSlots: numSlots with: fillValue]
+		ifNil: [ self primitiveFailFor: PrimErrNoMemory ].	
 	^newObj
 ]
 

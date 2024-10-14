@@ -568,20 +568,6 @@ VMClass >> fgetc: file [
 	^ file next
 ]
 
-{ #category : 'memory access' }
-VMClass >> floatAtPointer: pointer [
-
-	<doNotGenerate>
-	self notYetImplemented 
-]
-
-{ #category : 'memory access' }
-VMClass >> floatAtPointer: pointer put: value [
-
-	<doNotGenerate>
-	self notYetImplemented
-]
-
 { #category : 'file primitives' }
 VMClass >> fprintf: aStream _: format [ 
 
@@ -1298,8 +1284,12 @@ VMClass >> unalignedAccessError [
 
 { #category : 'debug support' }
 VMClass >> unreachable [
+	"Hint for the developper (and the compiler) that the instruction is unreachable.
+	Raise an error in debug mode, but is a noop on release mode."
+
 	<inline: true>
-	self error: 'UNREACHABLE'
+	self assert: false.
+	^nil
 ]
 
 { #category : 'memory access' }

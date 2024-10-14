@@ -210,7 +210,6 @@ ComposedImageReader >> readPermanentSpaceDataFromImage: imageFileName startingAt
 ComposedImageReader >> readPermanentSpaceFromImageFile: imageFileName header: aHeader [
 
 	<inline: false>
-	<var: #imageFile type: #sqImageFile>
 	<var: #aHeader type: #SpurImageHeaderStruct>
 	<var: #permSpaceMetadata type: #ComposedMetadataStruct>
 	<var: #bytesRead type: #'size_t'>

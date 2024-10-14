@@ -418,22 +418,6 @@ BitBltSimulation class >> timingTest: extent [
 		with: (Time millisecondsToRun: [100 timesRepeat: [f copyBits: f boundingBox from: f2 at: 0 @ 0 colorMap: map]])
 ]
 
-{ #category : 'system simulation' }
-BitBltSimulation class >> warpBitsFrom: aBitBlt [
-	"Simulate the warpBits primitive"
-	| proxy bb |
-	proxy := InterpreterProxy new.
-	proxy loadStackFrom: thisContext sender home.
-	bb := self simulatorClass new.
-	bb initialiseModule.
-	bb setInterpreter: proxy.
-	proxy success: (bb loadWarpBltFrom: aBitBlt).
-	bb warpBits.
-	proxy failed ifFalse:[
-		proxy showDisplayBits: aBitBlt destForm Left: bb affectedLeft Top: bb affectedTop Right: bb affectedRight Bottom: bb affectedBottom].
-	^proxy stackValue: 0
-]
-
 { #category : 'combination rules' }
 BitBltSimulation >> OLDrgbDiff: sourceWord with: destinationWord [
 	"Subract the pixels in the source and destination, color by color,
@@ -1287,7 +1271,7 @@ BitBltSimulation >> copyBitsFrom: startX to: stopX at: yValue [
 	sourceX := startX.
 	width := (stopX - startX).
 	self copyBits.
-	self showDisplayBits.
+
 ]
 
 { #category : 'setup' }
@@ -1882,7 +1866,6 @@ BitBltSimulation >> drawLoopX: xDelta Y: yDelta [
 							["If affected rectangle gets large, update it in chunks"
 							affectedL := affL.  affectedR := affR.
 							affectedT := affT.  affectedB := affB.
-							self showDisplayBits.
 							affL := affT := 9999.  "init null rectangle"
 							affR := affB := -9999]].
 					]]]
@@ -1909,7 +1892,6 @@ BitBltSimulation >> drawLoopX: xDelta Y: yDelta [
 							["If affected rectangle gets large, update it in chunks"
 							affectedL := affL.  affectedR := affR.
 							affectedT := affT.  affectedB := affB.
-							self showDisplayBits.
 							affL := affT := 9999.  "init null rectangle"
 							affR := affB := -9999]].
 					]]].
@@ -3007,7 +2989,6 @@ BitBltSimulation >> primitiveCopyBits [
 		[^interpreterProxy primitiveFail].
 	self copyBits.
 	interpreterProxy failed ifTrue: [^nil].
-	self showDisplayBits.
 	interpreterProxy failed ifTrue: [^nil].
 	(combinationRule = 22 or: [combinationRule = 32])
 		ifTrue: [interpreterProxy methodReturnInteger: bitCount]
@@ -3091,7 +3072,7 @@ BitBltSimulation >> primitiveDisplayString [
 	affectedL := left.
 	quickBlt ifFalse:
 		[self unlockSurfaces].
-	self showDisplayBits.
+
 	"store destX back"	
 	interpreterProxy storeInteger: BBDestXIndex ofObject: bbObj withValue: destX.
 	interpreterProxy pop: 6 "pop args, return rcvr"
@@ -3107,8 +3088,7 @@ BitBltSimulation >> primitiveDrawLoop [
 	yDelta := interpreterProxy stackIntegerValue: 0.
 	(self loadBitBltFrom: rcvr) ifFalse:[^interpreterProxy primitiveFail].
 	interpreterProxy failed ifFalse:[
-		self drawLoopX: xDelta Y: yDelta.
-		self showDisplayBits].
+		self drawLoopX: xDelta Y: yDelta].
 	interpreterProxy failed ifFalse:[interpreterProxy pop: 2].
 ]
 
@@ -3168,7 +3148,7 @@ BitBltSimulation >> primitiveWarpBits [
 		ifFalse:[^interpreterProxy primitiveFail].
 	self warpBits.
 	interpreterProxy failed ifTrue:[^nil].
-	self showDisplayBits.
+
 	interpreterProxy failed ifTrue:[^nil].
 	interpreterProxy methodReturnReceiver
 ]
@@ -3844,17 +3824,6 @@ BitBltSimulation >> setupColorMasksFrom: srcBits to: targetBits [
 	cmMaskTable := masks.
 	cmFlags := cmFlags bitOr: (ColorMapPresent bitOr: ColorMapFixedPart).
 
-]
-
-{ #category : 'interpreter interface' }
-BitBltSimulation >> showDisplayBits [
-	self ensureDestAndSourceFormsAreValid.
-	interpreterProxy 
-		showDisplayBits: destForm
-		Left: affectedL
-		Top: affectedT
-		Right: affectedR
-		Bottom: affectedB
 ]
 
 { #category : 'setup' }

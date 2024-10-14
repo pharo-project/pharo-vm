@@ -3959,24 +3959,24 @@ CogX64Compiler >> genMemCopy: originalSourceReg to: originalDestReg size: origin
 ]
 
 { #category : 'abstract instructions' }
-CogX64Compiler >> genMoveCf32: constantFloat32 Rs: register [
+CogX64Compiler >> genMoveCf32: constantFloat32 Rs: reg [
 	<inline: true>
 	<returnTypeC: #'AbstractInstruction *'>
 	<var: #constantFloat32 type: #float>
 	| inst |
 	inst := cogit PushCw: constantFloat32 asIEEE32BitWord.
-	cogit PopRs: register.
+	cogit PopRs: reg.
 	^ inst
 ]
 
 { #category : 'abstract instructions' }
-CogX64Compiler >> genMoveCf64: constantFloat64 Rd: register [
+CogX64Compiler >> genMoveCf64: constantFloat64 Rd: reg [
 	<inline: true>
 	<returnTypeC: #'AbstractInstruction *'>
 	<var: #constantFloat64 type: #double>
 	| inst |
 	inst := cogit PushCw: constantFloat64 asIEEE64BitWord.
-	cogit PopRd: register.
+	cogit PopRd: reg.
 	^ inst
 ]
 

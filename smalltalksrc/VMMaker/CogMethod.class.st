@@ -74,6 +74,13 @@ CogMethod class >> cogMethodHeader [
 	^ String streamContents: [ :s | self printTypedefOn: s ]
 ]
 
+{ #category : 'translation' }
+CogMethod class >> filteredInstVarNames [
+	"Eliminate the obvious simulation-only inst vars"
+	^super filteredInstVarNames copyWithoutAll: #('homeOffset' 'startpc' 'padToWord')
+
+]
+
 { #category : 'class initialization' }
 CogMethod class >> initialize [
 	"CogMethod initialize"
@@ -88,35 +95,32 @@ CogMethod class >> instVarNamesAndTypesForTranslationDo: aBinaryBlock [
 	"enumerate aBinaryBlock with the names and C type strings for the
 	 inst vars to include in a CogMethod or CogBlockMethod struct."
 
-	self allInstVarNames do:
-		[:ivn|
-		"Notionally objectHeader is in a union with homeOffset and startpc but
+	self filteredInstVarNames do: [ :ivn | "Notionally objectHeader is in a union with homeOffset and startpc but
 		 we don't have any convenient support for unions.  So hack, hack, hack, hack."
-		(#('homeOffset' 'startpc' 'padToWord') includes: ivn) ifFalse:
-				[aBinaryBlock
-					value: ivn
-					value: (ivn caseOf: {
-								['objectHeader']			-> [VMClass objectMemoryClass baseHeaderSize = 8
-																ifTrue: [#sqLong]
-																ifFalse: [#sqInt]].
-								['cmNumArgs']				-> [#(unsigned ' : 8')].		"SqueakV3 needs only 5 bits"
-								['cmType']					-> [#(unsigned ' : 3')].
-								['cmRefersToYoung']		-> [#(unsigned #Boolean ' : 1')].
-								['cpicHasMNUCaseOrCMIsFullBlock']
-															-> [#(unsigned #Boolean ' : 1')].
-								['cmUsageCount']			-> [#(unsigned ' : 3')].		"See CMMaxUsageCount in initialize"
-								['cmUsesPenultimateLit']	-> [#(unsigned #Boolean ' : 1')].
-								['cbUsesInstVars']			-> [#(unsigned #Boolean ' : 1')].
-								['cmUnusedFlags']			-> [#(unsigned ' : 2')].
-								['stackCheckOffset']		-> [#(unsigned ' : 12')].	"See MaxStackCheckOffset in initialize. a.k.a. cPICNumCases"
-								['blockSize']				-> [#'unsigned short'].		"See MaxMethodSize in initialize"
-								['picUsage']			-> [#'unsigned short'].
-								['homeOffset']				-> [#'unsigned short'].
-								['startpc']					-> [#'unsigned short'].
-								['padToWord']				-> [#(#BaseHeaderSize 8 'unsigned int')].
-								['counters']					-> [#usqInt]}				"See SistaCogMethod"
-							otherwise:
-								[#sqInt])]]
+		aBinaryBlock value: ivn value: (ivn
+				 caseOf: {
+						 ([ 'objectHeader' ] -> [
+						  VMClass objectMemoryClass baseHeaderSize = 8
+							  ifTrue: [ #sqLong ]
+							  ifFalse: [ #sqInt ] ]).
+						 ([ 'cmNumArgs' ] -> [ #( unsigned ' : 8' ) ]). "SqueakV3 needs only 5 bits"
+						 ([ 'cmType' ] -> [ #( unsigned ' : 3' ) ]).
+						 ([ 'cmRefersToYoung' ] -> [ #( unsigned #Boolean ' : 1' ) ]).
+						 ([ 'cpicHasMNUCaseOrCMIsFullBlock' ]
+						  -> [ #( unsigned #Boolean ' : 1' ) ]).
+						 ([ 'cmUsageCount' ] -> [ #( unsigned ' : 3' ) ]). "See CMMaxUsageCount in initialize"
+						 ([ 'cmUsesPenultimateLit' ]
+						  -> [ #( unsigned #Boolean ' : 1' ) ]).
+						 ([ 'cbUsesInstVars' ] -> [ #( unsigned #Boolean ' : 1' ) ]).
+						 ([ 'cmUnusedFlags' ] -> [ #( unsigned ' : 2' ) ]).
+						 ([ 'stackCheckOffset' ] -> [ #( unsigned ' : 12' ) ]). "See MaxStackCheckOffset in initialize. a.k.a. cPICNumCases"
+						 ([ 'blockSize' ] -> [ #'unsigned short' ]). "See MaxMethodSize in initialize"
+						 ([ 'picUsage' ] -> [ #'unsigned short' ]).
+						 ([ 'homeOffset' ] -> [ #'unsigned short' ]).
+						 ([ 'startpc' ] -> [ #'unsigned short' ]).
+						 ([ 'padToWord' ] -> [ #( #BaseHeaderSize 8 'unsigned int' ) ]).
+						 ([ 'counters' ] -> [ #usqInt ]) }
+				 otherwise: [ #sqInt ]) "See SistaCogMethod" ]
 ]
 
 { #category : 'translation' }

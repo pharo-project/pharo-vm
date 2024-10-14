@@ -1080,7 +1080,6 @@ CurrentImageCoInterpreterFacade >> splObj: splObjIndex [
 		[ClassLargeNegativeInteger]	-> [self oopForObject: LargeNegativeInteger].
 		[ClassLargePositiveInteger]	-> [self oopForObject: LargePositiveInteger].
 		[ClassSmallInteger]				-> [self oopForObject: SmallInteger].
-		[CompactClasses]				-> [self oopForObject: Smalltalk compactClassesArray]
 		}
 ]
 

@@ -38,7 +38,7 @@ LibFFIType class >> instVarNamesAndTypesForTranslationDo: aBinaryBlock [
 ]
 
 { #category : 'type constants' }
-LibFFIType class >> printTypedefOn: aStream [
+LibFFIType class >> printTypedefOn: aStream withTranslations: ivnTranslations [
 
 	"This is already defined in ffi.h"
 ]
