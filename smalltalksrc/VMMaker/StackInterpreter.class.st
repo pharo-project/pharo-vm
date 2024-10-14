@@ -15748,7 +15748,15 @@ StackInterpreter >> tryToUseInlineCacheFor: classTag [
 
 	"Otherwise let's get the method and primitive function pointer"
 	newMethod := self literal: inlineCacheStartIndex + 2.
-	primitiveFunctionPointer := nil.
+	(objectMemory isOopCompiledMethod: newMethod)
+		ifTrue: [
+			| primitiveIndex |
+			primitiveIndex := self primitiveIndexOf: newMethod.
+			primitiveFunctionPointer := self functionPointerFor: primitiveIndex ]
+		ifFalse: [
+			self assert: (
+				(objectMemory isNonImmediate: newMethod) and: [objectMemory isForwarded: newMethod]) not.
+			primitiveFunctionPointer := #primitiveInvokeObjectAsMethod ].
 
 	"... and notify the caller that we were able to use the IC"
 	inlineCacheStartIndex := -1.
@@ -16079,18 +16087,12 @@ StackInterpreter >> updateInlineCacheIfNeeded: classTag [
 	| classTagObj |
 	"If there's no cache then return"
 	inlineCacheStartIndex = -1 ifTrue: [ ^ self ].
-	"Don't cache any primitive method"
-	primitiveFunctionPointer = nil ifFalse: [
-		inlineCacheStartIndex := -1.
-		^ self ].
 	"Don't cache doesNotUnderstand:"
-	messageSelector = (objectMemory splObj: SelectorDoesNotUnderstand) ifTrue: [
-		inlineCacheStartIndex := -1.
-		^ self ].
+	messageSelector = (objectMemory splObj: SelectorDoesNotUnderstand) ifTrue: [ ^ self ].
 	"Don't cache cannotInterpret:"
-	messageSelector = (objectMemory splObj: SelectorCannotInterpret) ifTrue: [
-		inlineCacheStartIndex := -1.
-		^ self ].
+	messageSelector = (objectMemory splObj: SelectorCannotInterpret) ifTrue: [ ^ self ].
+	"Don't cache external methods (we need a mechanism for quickening of external methods)"
+	primitiveFunctionPointer = #primitiveExternalCall ifTrue: [ ^ self ].
 	
 	classTagObj := objectMemory integerObjectOf: classTag.
 
