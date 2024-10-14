@@ -16088,11 +16088,17 @@ StackInterpreter >> updateInlineCacheIfNeeded: classTag [
 	"If there's no cache then return"
 	inlineCacheStartIndex = -1 ifTrue: [ ^ self ].
 	"Don't cache doesNotUnderstand:"
-	messageSelector = (objectMemory splObj: SelectorDoesNotUnderstand) ifTrue: [ ^ self ].
+	messageSelector = (objectMemory splObj: SelectorDoesNotUnderstand) ifTrue: [
+		inlineCacheStartIndex := -1.
+		^ self ].
 	"Don't cache cannotInterpret:"
-	messageSelector = (objectMemory splObj: SelectorCannotInterpret) ifTrue: [ ^ self ].
+	messageSelector = (objectMemory splObj: SelectorCannotInterpret) ifTrue: [
+		inlineCacheStartIndex := -1.
+		^ self ].
 	"Don't cache external methods (we need a mechanism for quickening of external methods)"
-	primitiveFunctionPointer = #primitiveExternalCall ifTrue: [ ^ self ].
+	primitiveFunctionPointer = #primitiveExternalCall ifTrue: [
+		inlineCacheStartIndex := -1.
+		^ self ].
 	
 	classTagObj := objectMemory integerObjectOf: classTag.
 
