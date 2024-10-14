@@ -16091,6 +16091,8 @@ StackInterpreter >> updateInlineCacheIfNeeded: classTag [
 	messageSelector = (objectMemory splObj: SelectorDoesNotUnderstand) ifTrue: [ ^ self ].
 	"Don't cache cannotInterpret:"
 	messageSelector = (objectMemory splObj: SelectorCannotInterpret) ifTrue: [ ^ self ].
+	"Don't cache external methods (we need a mechanism for quickening of external methods)"
+	primitiveFunctionPointer = #primitiveExternalCall ifTrue: [ ^ self ].
 	
 	classTagObj := objectMemory integerObjectOf: classTag.
 
