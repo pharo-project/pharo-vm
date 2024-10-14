@@ -15748,7 +15748,7 @@ StackInterpreter >> tryToUseInlineCacheFor: classTag [
 
 	"Otherwise let's get the method and primitive function pointer"
 	newMethod := self literal: inlineCacheStartIndex + 2.
-	primitiveFunctionPointer := #primitiveFail.
+	primitiveFunctionPointer := nil.
 
 	"... and notify the caller that we were able to use the IC"
 	inlineCacheStartIndex := -1.
@@ -16080,7 +16080,7 @@ StackInterpreter >> updateInlineCacheIfNeeded: classTag [
 	"If there's no cache then return"
 	inlineCacheStartIndex = -1 ifTrue: [ ^ self ].
 	"Don't cache any primitive method"
-	primitiveFunctionPointer = #primitiveFail ifFalse: [
+	primitiveFunctionPointer = nil ifFalse: [
 		inlineCacheStartIndex := -1.
 		^ self ].
 	"Don't cache doesNotUnderstand:"
