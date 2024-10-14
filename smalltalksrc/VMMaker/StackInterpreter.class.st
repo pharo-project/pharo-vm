@@ -2067,7 +2067,7 @@ StackInterpreter >> allocateMemoryForImageHeader: header [
 
 	objectMemory getMemoryMap 
 		allocationReserve: self interpreterAllocationReserveBytes;
-		initialOldSpaceSize: header dataSize;
+		initialOldSpaceSize: header hdrOldSpaceSize;
 		initialNewSpaceSize: objectMemory newSpaceBytes;
 		initialHeadroom: (objectMemory initialHeadroom: extraVMMemory givenFreeOldSpaceInImage: header freeOldSpaceInImage);
 		allocateHeap.
@@ -6454,6 +6454,15 @@ StackInterpreter >> followForwardedMethodsInMethodZone [
 ]
 
 { #category : 'object memory support' }
+StackInterpreter >> followForwardingPointersInPermSpace [
+
+	objectMemory allPermSpaceNonForwardedObjectsDo: [ :permObj |
+			objectMemory followForwardedObjectFields: permObj toDepth: 0 ].
+
+	objectMemory recreateFromPermSpaceRememberedSet
+]
+
+{ #category : 'object memory support' }
 StackInterpreter >> followForwardingPointersInProfileState [
 	(objectMemory isForwarded: profileProcess) ifTrue:
 		[profileProcess := objectMemory followForwarded: profileProcess].
@@ -10341,6 +10350,7 @@ StackInterpreter >> newHeader [
 	
 	sizeToWrite := objectMemory imageSizeToWrite.
 	header dataSize: sizeToWrite.
+	header hdrOldSpaceSize: objectMemory oldSpaceSizeToWrite.
 
 	header oldBaseAddr: objectMemory getMemoryMap oldSpaceStart.
 	header initialSpecialObjectsOop: objectMemory specialObjectsOop.
@@ -10812,7 +10822,10 @@ StackInterpreter >> postBecomeAction: theBecomeEffectsFlags [
 			self followForwardingPointersInSpecialObjectsArray ].
 		(theBecomeEffectsFlags anyMask:
 			 BecamePointerObjectFlag + BecameCompiledMethodFlag) ifTrue: [ 
-			self followForwardingPointersInProfileState ] ].
+			self followForwardingPointersInProfileState ].
+		(theBecomeEffectsFlags anyMask: BecamePermanentObject) ifTrue: [  
+			self followForwardingPointersInPermSpace] 
+		].
 	self followForwardingPointersInStackZone: theBecomeEffectsFlags
 ]
 
@@ -12264,6 +12277,25 @@ StackInterpreter >> printOopShortInner: oop [
 StackInterpreter >> printPageHeadFrame [
 	<inline: false>
 	self printFrame: stackPage headFP WithSP: stackPage headSP
+]
+
+{ #category : 'debug printing' }
+StackInterpreter >> printPointersTo: anAddress [
+
+	<api>
+	
+	| referent |
+	
+	objectMemory allObjectsDo: [ :anOop |
+		(objectMemory isForwarded: anOop)
+			ifTrue: [ 
+					referent := objectMemory fetchPointer: 0 ofMaybeForwardedObject: anOop.
+					referent = anAddress ifTrue: [ self shortPrintOop: anOop ]]
+			ifFalse: [
+				0 to: (objectMemory numPointerSlotsOf: anOop) - 1 do: [ :idx |
+					referent := objectMemory fetchPointer: idx ofObject: anOop.
+					referent = anAddress ifTrue: [ self shortPrintOop: anOop ] ]]].
+
 ]
 
 { #category : 'debug printing' }
