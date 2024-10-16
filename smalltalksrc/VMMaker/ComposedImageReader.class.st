@@ -15,14 +15,15 @@ ComposedImageReader class >> declareCVarsIn: aCCodeGenerator [
 
 { #category : 'reading' }
 ComposedImageReader >> endOfSTON: file [
-	
-	"This method consume 2 chars from file and return they are equivalent to '\n}'"
-		
-	| charLeft charRight |
-	charLeft := self fgetc: file.
-	charRight := self fgetc: file.
 
-	^ (self isEndOfLine: charLeft) and: [ charRight = $} ]
+	^ self 
+		cCode: [ | aCharacter |
+			aCharacter := self fgetc: file.
+			self ungetc: aCharacter  _:file.
+			aCharacter = -1 or: [ aCharacter = $} ]] 
+		inSmalltalk: [ file peek = $} ].
+	
+	
 ]
 
 { #category : 'reading' }
@@ -55,10 +56,13 @@ ComposedImageReader >> readFieldsSTONFrom: file into: aStruct [
 	<inline: true>
 	<var: #fieldName declareC: 'char fieldName[255]'>
 	<var: #fieldValue type: #'long long'>
-	| fieldName fieldValue |
+	<var: #lineBuffer declareC: 'char lineBuffer[1024]'>
+	
+	| fieldName fieldValue lineBuffer |
 	self simulationOnly: [ 
 		fieldName := ValueHolder new.
-		fieldValue := ValueHolder new ].
+		fieldValue := ValueHolder new.
+		lineBuffer := ValueHolder new ].
 
 	"Initialize the Struct with zeros"
 	
@@ -67,9 +71,14 @@ ComposedImageReader >> readFieldsSTONFrom: file into: aStruct [
 		separatedBy: [ ].
 
 	"This solution does NOT WORK with STON file without fields (empty STON)"
-	[ 
+	[ 	
+		self 
+			readLineFrom: file 
+			into: lineBuffer 
+			ofSize: 1024.
+			
 		self
-			fscanf: file
+			sscanf: (self contentsOf: lineBuffer)
 			_: self fieldFormat
 			_: fieldName
 			_: (self cCoerce: (self addressOf: fieldValue) to: #'sqInt*').
@@ -85,10 +94,20 @@ ComposedImageReader >> readHeadSTONFrom: file into: aStruct [
 
 	<inline: true>
 	<var: #structName declareC: 'char structName[255]'>
-	| structName |
-	self simulationOnly: [ structName := ValueHolder new ].
+	<var: #lineBuffer declareC: 'char lineBuffer[1024]'>
 
-	self fscanf: file _: self headFormat _: structName.
+	| structName lineBuffer |
+
+	self simulationOnly: [ 
+		lineBuffer := ValueHolder new.
+		structName := ValueHolder new ].
+
+	self 
+		readLineFrom: file 
+		into: lineBuffer 
+		ofSize: 1024.
+
+	self sscanf: (self contentsOf: lineBuffer) _: self headFormat _: structName.
 
 	self simulationOnly: [ 
 		aStruct withStructNameDo: [ :name | 
@@ -123,6 +142,10 @@ ComposedImageReader >> readHeaderFromImage: imageFileName [
 	
 	headerPtr := self addressOf: header.
 	self readSTONFrom: file into: headerPtr.
+	
+	"If the field is missing, as it was added later"
+	header hdrOldSpaceSize = 0 
+		ifTrue: [ header hdrOldSpaceSize: header dataSize ].
 
 	self extractImageVersionFrom: (header imageFormat) into: headerPtr.
 	

@@ -46,7 +46,7 @@ set(PLUGIN_GENERATED_FILES
 if(GENERATE_SOURCES)
 
     #Setting vmmaker directory and image
-    set( VMMAKER_DIR    "${CMAKE_CURRENT_BINARY_DIR_TO_OUT}/build/vmmaker")
+    set( VMMAKER_DIR    "${CMAKE_CURRENT_BINARY_DIR}/build/vmmaker")
 
     # If we are generating the vmmaker image, set a the image path
     # Otherwise set it with a default, but parametrizable
@@ -115,15 +115,23 @@ if(GENERATE_SOURCES)
             )
     endif()
 
+	set(IMAGE_PATH ${VMMAKER_DIR}/image/Pharo12.0-SNAPSHOT-64bit-aa50f9c.image)
+
+	convert_cygwin_path_ifNeeded(${IMAGE_PATH} IMAGE_PATH_TO_USE)
+	convert_cygwin_path_ifNeeded(${VMMAKER_IMAGE} VMMAKER_IMAGE_TO_USE)
+	convert_cygwin_path_ifNeeded(${CMAKE_CURRENT_SOURCE_DIR} CMAKE_CURRENT_SOURCE_DIR_OUT)
+	convert_cygwin_path_ifNeeded(${CMAKE_CURRENT_BINARY_DIR} CMAKE_CURRENT_BINARY_DIR_OUT)
+
     if(GENERATE_VMMAKER)
         #Bootstrap VMMaker.image from downloaded plain Pharo image
+		
         ExternalProject_Add(
             vmmaker
 
             URL https://files.pharo.org/image/120/Pharo12.0-SNAPSHOT.build.1519.sha.aa50f9c.arch.64bit.zip
             URL_HASH SHA256=b12270631ffc0c6adcb0b6449565b9abfd8e88a863a894a7320f660c05a0af1e
-            BUILD_COMMAND ${VMMAKER_VM} --headless ${VMMAKER_DIR}/image/Pharo12.0-SNAPSHOT-64bit-aa50f9c.image --no-default-preferences save VMMaker
-	    COMMAND ${VMMAKER_VM} --headless ${VMMAKER_IMAGE} --no-default-preferences --save --quit "${CMAKE_CURRENT_SOURCE_DIR_TO_OUT}/scripts/installVMMaker.st" "${CMAKE_CURRENT_SOURCE_DIR_TO_OUT}" "${ICEBERG_DEFAULT_REMOTE}"
+            BUILD_COMMAND ${VMMAKER_VM} --headless ${IMAGE_PATH_TO_USE} --no-default-preferences save VMMaker
+	    COMMAND ${VMMAKER_VM} --headless ${VMMAKER_IMAGE_TO_USE} --no-default-preferences --save --quit "${CMAKE_CURRENT_SOURCE_DIR_OUT}/scripts/installVMMaker.st" "${CMAKE_CURRENT_SOURCE_DIR_OUT}" "${ICEBERG_DEFAULT_REMOTE}"
             UPDATE_COMMAND      ""
             CONFIGURE_COMMAND   ""
             INSTALL_COMMAND     ""
@@ -144,7 +152,7 @@ if(GENERATE_SOURCES)
     #Custom command that generates the vm source code from VMMaker into the generated folder
     add_custom_command(
         OUTPUT ${VMSOURCEFILES} ${PLUGIN_GENERATED_FILES}
-        COMMAND ${VMMAKER_VM} --headless ${VMMAKER_IMAGE} --no-default-preferences perform PharoVMMaker generate:outputDirectory: ${FLAVOUR} ${CMAKE_CURRENT_BINARY_DIR_TO_OUT}
+        COMMAND ${VMMAKER_VM} --headless ${VMMAKER_IMAGE_TO_USE} --no-default-preferences perform PharoVMMaker generate:outputDirectory: ${FLAVOUR} ${CMAKE_CURRENT_BINARY_DIR_OUT}
         VERBATIM
         DEPENDS vmmaker ${VMMAKER_IMAGE} ${VMMAKER_VM}
         COMMENT "Generating VM files for flavour: ${FLAVOUR}")

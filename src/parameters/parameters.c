@@ -76,6 +76,7 @@ static VMErrorCode processMaxCodeSpaceSizeOption(const char *argument, VMParamet
 static VMErrorCode processEdenSizeOption(const char *argument, VMParameters * params);
 static VMErrorCode processWorkerOption(const char *argument, VMParameters * params);
 static VMErrorCode processMinPermSpaceSizeOption(const char *argument, VMParameters * params);
+static VMErrorCode processWorkingDirectory(const char *argument, VMParameters * params);
 static VMErrorCode processStackPageSizeOption(const char *argument, VMParameters * params);
 static VMErrorCode processAvoidSearchingSegmentsWithPinnedObjects(const char *argument, VMParameters * params);
 
@@ -97,6 +98,8 @@ static const VMParameterSpec vm_parameters_spec[] =
   {.name = "codeSize", .hasArgument = true, .function = processMaxCodeSpaceSizeOption},
   {.name = "edenSize", .hasArgument = true, .function = processEdenSizeOption},
   {.name = "minPermSpaceSize", .hasArgument = true, .function = processMinPermSpaceSizeOption},
+
+  {.name = "workingDirectory", .hasArgument = true, .function = processWorkingDirectory},
 
   {.name = "avoidSearchingSegmentsWithPinnedObjects", .hasArgument = false, .function = processAvoidSearchingSegmentsWithPinnedObjects},
 #ifdef __APPLE__
@@ -441,6 +444,7 @@ vm_printUsageTo(FILE *out)
 "                                       It is possible to use k(kB), M(MB) and G(GB).\n"
 "  --minPermSpaceSize=<size>[mk]        Sets the size of eden\n"
 "                                       It is possible to use k(kB), M(MB) and G(GB).\n"
+"  --workingDirectory=<dir>				      It sets the working directory for the running image.\n"
 "  --stackPageSize=<size>[mk]           Sets the size of each stack page\n"
 "                                       It is possible to use k(kB), M(MB) and G(GB).\n"
 "\n"
@@ -560,6 +564,18 @@ processMinPermSpaceSizeOption(const char* originalArgument, VMParameters * param
 	}
 
 	params->minPermSpaceSize = intValue;
+
+	return VM_SUCCESS;
+}
+
+static VMErrorCode
+processWorkingDirectory(const char* originalArgument, VMParameters * params)
+{
+
+	logDebug("Changing working directory to: %s", originalArgument);
+	if(chdir(originalArgument)== -1){
+		logErrorFromErrno("Error changing directory");
+	}
 
 	return VM_SUCCESS;
 }
