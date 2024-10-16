@@ -198,7 +198,6 @@ if(MSVC)
     set(OS_TYPE "Win32")
     get_platform_name(VM_TARGET_OS)
     message(STATUS "Building for ${VM_TARGET_OS}")
-    set(CMAKE_CURRENT_SOURCE_DIR_TO_OUT ${CMAKE_CURRENT_SOURCE_DIR})
     
     # Define WIN32_LEAN_AND_MEAN to exclude APIs such as Cryptography, DDE, RPC, Shell, and Windows Sockets
     # They can be included if needed
@@ -211,17 +210,6 @@ elseif(WIN)
     #Tell the system we are not in UNIX. This is required for Cygwin builds
     unset(UNIX)
     unset(UNIX CACHE)
-
-  	# transform the path into a windows path with unix backslashes C:/bla/blu
-  	# this is the path required to send as argument to libraries outside of the control of cygwin (like pharo itself)
-  	execute_process(
-          COMMAND cygpath ${CMAKE_CURRENT_SOURCE_DIR} --mixed
-          OUTPUT_VARIABLE CMAKE_CURRENT_SOURCE_DIR_TO_OUT
-          OUTPUT_STRIP_TRAILING_WHITESPACE)
-    execute_process(
-          COMMAND cygpath ${CMAKE_CURRENT_BINARY_DIR} --mixed
-          OUTPUT_VARIABLE CMAKE_CURRENT_BINARY_DIR_TO_OUT
-          OUTPUT_STRIP_TRAILING_WHITESPACE)
 
     set(CMAKE_SHARED_LIBRARY_PREFIX "")
     set(CMAKE_SHARED_LIBRARY_SUFFIX ".dll")
@@ -247,10 +235,6 @@ elseif(WIN)
 
 elseif(UNIX)
 
-    # Use the default path to send as argument of extrernal apps (like pharo itself)
-    set(CMAKE_CURRENT_SOURCE_DIR_TO_OUT ${CMAKE_CURRENT_SOURCE_DIR})
-    set(CMAKE_CURRENT_BINARY_DIR_TO_OUT ${CMAKE_CURRENT_BINARY_DIR})
-
     set(COMMON_FLAGS "-Wall -Werror=implicit-function-declaration")
 
     add_compile_definitions(LSB_FIRST=1)
@@ -273,9 +257,9 @@ endif()
 # If we are generating sources, set the binary dir as the generation source dir, as vmmaker will generate the C files here. (we do not alter the source directory)
 # Otherwise set it to by default to the current binary dir, parametrizable
 if(${GENERATE_SOURCES})
-    set(GENERATED_SOURCE_DIR ${CMAKE_CURRENT_BINARY_DIR_TO_OUT})
+    set(GENERATED_SOURCE_DIR ${CMAKE_CURRENT_BINARY_DIR})
 else()
-    set(GENERATED_SOURCE_DIR ${CMAKE_CURRENT_BINARY_DIR_TO_OUT} CACHE STRING "Source directory where to find the generated source. Default value is CMAKE_CURRENT_BINARY_DIR")
+    set(GENERATED_SOURCE_DIR ${CMAKE_CURRENT_BINARY_DIR} CACHE STRING "Source directory where to find the generated source. Default value is CMAKE_CURRENT_BINARY_DIR")
 endif()
 
 if (${FEATURE_COMPILE_INLINE_MEMORY_ACCESSORS})
