@@ -78,7 +78,7 @@ VMPermanentSpaceMemoryTest >> testBecomingOneWayOfPermanentObjectWithOldObject [
 	self assert: (memory fetchPointer: 0 ofObject: permanentObjectReferencingPermanent) equals: oldReplacement.
 	
 	"The forwarded object is not in any remembered set"
-	self deny: (memory getFromPermToOldSpaceRememberedSet isInRememberedSet: permanentObject).
+	self assert: (memory getFromPermToOldSpaceRememberedSet isInRememberedSet: permanentObject).
 	self deny: (memory getFromPermToNewSpaceRememberedSet isInRememberedSet: permanentObject).
 	
 	self assert: (memory getFromPermToOldSpaceRememberedSet isInRememberedSet: permanentObjectReferencingPermanent).
@@ -211,9 +211,8 @@ VMPermanentSpaceMemoryTest >> testBecomingOneWayOfPermanentObjectWithYoungObject
 	"Perm objects still points to the result"
 	self assert: (memory fetchPointer: 0 ofObject: permanentObjectReferencingPermanent) equals: oldReplacement.
 	
-	"The forwarded object is not in any remembered set"
 	self deny: (memory getFromPermToOldSpaceRememberedSet isInRememberedSet: permanentObject).
-	self deny: (memory getFromPermToNewSpaceRememberedSet isInRememberedSet: permanentObject).
+	self assert: (memory getFromPermToNewSpaceRememberedSet isInRememberedSet: permanentObject).
 	
 	self deny: (memory getFromPermToOldSpaceRememberedSet isInRememberedSet: permanentObjectReferencingPermanent).
 	self assert: (memory getFromPermToNewSpaceRememberedSet isInRememberedSet: permanentObjectReferencingPermanent).
@@ -282,9 +281,8 @@ VMPermanentSpaceMemoryTest >> testBecomingTwoWayOfPermanentObjectWithOldObjectLe
 	"Perm objects still points to the result"
 	self assert: (memory fetchPointer: 0 ofObject: permanentObjectReferencingPermanent) equals: self keptObjectInVMVariable3.
 	
-	"The forwarded object is not in any remembered set"
 	self deny: (memory getFromPermToOldSpaceRememberedSet isInRememberedSet: permanentObject).
-	self deny: (memory getFromPermToNewSpaceRememberedSet isInRememberedSet: permanentObject).
+	self assert: (memory getFromPermToNewSpaceRememberedSet isInRememberedSet: permanentObject).
 	
 	memory fullGC.
 	
@@ -565,9 +563,8 @@ VMPermanentSpaceMemoryTest >> testBecomingTwoWayOfPermanentObjectWithYoungObject
 	"Perm objects still points to the result"
 	self assert: (memory fetchPointer: 0 ofObject: permanentObjectReferencingPermanent) equals: self keptObjectInVMVariable3.
 	
-	"The forwarded object is not in any remembered set"
 	self deny: (memory getFromPermToOldSpaceRememberedSet isInRememberedSet: permanentObject).
-	self deny: (memory getFromPermToNewSpaceRememberedSet isInRememberedSet: permanentObject).
+	self assert: (memory getFromPermToNewSpaceRememberedSet isInRememberedSet: permanentObject).
 	
 	memory fullGC.
 	
