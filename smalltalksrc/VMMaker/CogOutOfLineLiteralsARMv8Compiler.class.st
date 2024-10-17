@@ -471,7 +471,7 @@ CogOutOfLineLiteralsARMv8Compiler >> usesOutOfLineLiteral [
 				([ AddCqR ] -> [
 				 | constant |
 				 constant := operands at: 0.
-				 ^ (constant abs bitAnd: 16rfff) ~= constant abs ]).
+				 ^ (constant bitAnd: 16rfff) ~= constant ]).
 				([ AndCqR ] -> [
 				 ^ self
 					   encodeLogicalImmediate: (operands at: 0)
@@ -485,10 +485,10 @@ CogOutOfLineLiteralsARMv8Compiler >> usesOutOfLineLiteral [
 					   ifPossible: [ :value | false ]
 					   ifNotPossible: [ true ] ]).
 				([ CmpCqR ] -> [
-				 ((operands at: 0) abs bitAnd: 16rFFF) = (operands at: 0) abs
+				 ((operands at: 0) bitAnd: 16rFFF) = (operands at: 0)
 					 ifTrue: [ ^ false ].
-				 ((operands at: 0) abs << 12 >> 12 bitAnd: 16rFFF)
-				 = (operands at: 0) abs ifTrue: [ ^ false ].
+				 ((operands at: 0) << 12 >> 12 bitAnd: 16rFFF)
+				 = (operands at: 0) ifTrue: [ ^ false ].
 				 ^ true ]).
 				([ CmpC32R ] -> [
 				 ^ self

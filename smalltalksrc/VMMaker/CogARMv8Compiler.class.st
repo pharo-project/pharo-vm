@@ -1057,7 +1057,7 @@ CogARMv8Compiler >> computeMaximumSize [
 														ifFalse: [self literalLoadInstructionBytes + 4]]]].
 
 		[CmpCqR]				-> [| immediate |
-			immediate := (operands at: 0) abs.
+			immediate := operands at: 0.
 			^ ((immediate bitAnd: 16rfff) = immediate
 				or: [ (immediate << 12 >> 12 bitAnd: 16rFFF) = immediate ])
 					ifTrue: [ 4]
