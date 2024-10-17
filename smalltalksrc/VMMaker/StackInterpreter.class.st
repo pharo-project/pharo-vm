@@ -392,7 +392,8 @@ Class {
 		'pendingFinalizationSignals',
 		'imageVersionNumber',
 		'desiredStackPageBytes',
-		'imageReaderWriter'
+		'imageReaderWriter',
+		'inlineCacheStartIndex'
 	],
 	#classVars : [
 		'AlternateHeaderHasPrimFlag',
@@ -1972,7 +1973,7 @@ StackInterpreter >> addNewMethodToCache: classObj [
 	(objectMemory isOopCompiledMethod: newMethod)
 		ifTrue:
 			[primitiveIndex := self primitiveIndexOf: newMethod.
-			 primitiveFunctionPointer := self functionPointerFor: primitiveIndex inClass: classObj]
+			 primitiveFunctionPointer := self functionPointerFor: primitiveIndex]
 		ifFalse:
 			[self assert: ((objectMemory isNonImmediate: newMethod)
 						  and: [objectMemory isForwarded: newMethod]) not.
@@ -5649,7 +5650,8 @@ StackInterpreter >> extSendBytecode [
 	"238		11101110	i i i i i j j j	Send Literal Selector #iiiii (+ Extend A * 32) with jjj (+ Extend B * 8) Arguments"
 	| byte |
 	byte := self fetchByte.
-	messageSelector := self literal: (byte >> 3) + (extA << 5).
+	inlineCacheStartIndex := (byte >> 3) + (extA << 5).
+	messageSelector := self literal: inlineCacheStartIndex.
 	extA := 0.
 	argumentCount := (byte bitAnd: 7) + (extB << 3).
 	extB := 0.
@@ -5665,7 +5667,8 @@ StackInterpreter >> extSendSuperBytecode [
 			ifFalse: [Send To Superclass of Stacked Class Literal Selector #iiiii (+ Extend A * 32) with jjj (+ (Extend B bitAnd: 63) * 8) Arguments]"
 	| byte |
 	byte := self fetchByte.
-	messageSelector := self literal: (byte >> 3) + (extA << 5).
+	inlineCacheStartIndex := (byte >> 3) + (extA << 5).
+	messageSelector := self literal: inlineCacheStartIndex.
 	extA := 0.
 	BytecodeSetHasDirectedSuperSend ifTrue:
 		[extB >= 64 ifTrue:
@@ -6047,27 +6050,29 @@ StackInterpreter >> findNewMethodInClassTag: classTagArg ifFound: aBlock [
 	<inline: true>
 	| classTag |
 	classTag := classTagArg.
-	(self inlineLookupInMethodCacheSel: messageSelector classTag: classTag)
-		ifFalse: [
-			"Entry was not found in the cache; perhaps something was forwarded.
-			Resolve forwarders and retry"
-			((objectMemory isOopForwarded: messageSelector) or: [
-				 objectMemory isForwardedClassTag: classTag ]) ifTrue: [
-				(objectMemory isOopForwarded: messageSelector) ifTrue: [
-					messageSelector := self handleForwardedSelectorFaultFor:
-						                   messageSelector ].
-				(objectMemory isForwardedClassTag: classTag) ifTrue: [
-					classTag := self handleForwardedSendFaultForTag: classTag ].
-				(self lookupInMethodCacheSel: messageSelector classTag: classTag)
-					ifTrue: [ ^ aBlock value ] ].
 
-			"Entry was not found in the cache; look it up the hard way "
+	(self tryToUseInlineCacheFor: classTag) ifTrue: [ ^ aBlock value ].
+
+	"Entry was not found in the local IC cache; perhaps something was forwarded.
+	Resolve forwarders and retry"
+	(objectMemory isOopForwarded: messageSelector) ifTrue: [
+		messageSelector := self handleForwardedSelectorFaultFor: messageSelector ].
+	(objectMemory isForwardedClassTag: classTag) ifTrue: [
+		classTag := self handleForwardedSendFaultForTag: classTag ].
+
+	"ICs failed. Try the lookup cache"
+	(self inlineLookupInMethodCacheSel: messageSelector classTag: classTag)
+		ifTrue: [
+			self updateInlineCacheIfNeeded: classTag.
+			^ aBlock value ]
+		ifFalse: [
+			"All caches failed. Do a proper lookup"
 			lkupClass := objectMemory classForClassTag: classTag.
 			(objectMemory isOopForwarded: lkupClass) ifTrue: [
 				lkupClass := objectMemory followForwarded: lkupClass ].
 			self lookupMethodInClass: lkupClass.
-			self addNewMethodToCache: lkupClass ]
-		ifTrue: [ aBlock value ]
+			self addNewMethodToCache: lkupClass.
+			self updateInlineCacheIfNeeded: classTag ]
 ]
 
 { #category : 'message sending' }
@@ -6927,7 +6932,7 @@ StackInterpreter >> functionForPrimitiveCallout [
 ]
 
 { #category : 'method lookup cache' }
-StackInterpreter >> functionPointerFor: primIdx inClass: theClass [
+StackInterpreter >> functionPointerFor: primIdx [
 	"Find an actual function pointer for this primitiveIndex.  This is an
 	opportunity to specialise the prim for the relevant class (format for
 	example).  Default for now is simply the entry in the base primitiveTable."
@@ -7676,6 +7681,7 @@ StackInterpreter >> initializeInterpreter: bytesToShift [
 	profileSemaphore := profileProcess := profileMethod := objectMemory nilObject.
 	self initializeGlobalSessionID.
 	metaAccessorDepth := -2.
+	inlineCacheStartIndex := -1
 
 ]
 
@@ -7701,6 +7707,18 @@ StackInterpreter >> initializeObjectMemoryWithEdenBytes: requestedEdenBytes [
 StackInterpreter >> initializePageTraceToInvalid: aPage [
 	<var: #aPage type: #'StackPage *'>
 	aPage trace: StackPageTraceInvalid "for assert checking of the page tracing flags"
+]
+
+{ #category : 'accessing' }
+StackInterpreter >> inlineCacheStartIndex [
+
+	^ inlineCacheStartIndex
+]
+
+{ #category : 'accessing' }
+StackInterpreter >> inlineCacheStartIndex: anObject [
+
+	inlineCacheStartIndex := anObject
 ]
 
 { #category : 'method lookup cache' }
@@ -8651,6 +8669,12 @@ StackInterpreter >> literal: offset ofMethod: methodPointer put: oop [
 ]
 
 { #category : 'compiled methods' }
+StackInterpreter >> literal: offset put: oop [
+	self assert: method = (self iframeMethod: framePointer).
+	^self literal: offset ofMethod: method put: oop
+]
+
+{ #category : 'compiled methods' }
 StackInterpreter >> literalCountOfAlternateHeader: headerPointer [
 	<inline: true>
 	^(objectMemory integerValueOf: headerPointer) bitAnd: AlternateHeaderNumLiteralsMask
@@ -9400,7 +9424,7 @@ StackInterpreter >> mappedDirectCall [
 	localPrimIndex := self primitiveIndexOfMethod: newMethod header: methodHeader.
 	argumentCount := self argumentCountOfMethodHeader: methodHeader.
 	"The primitive function pointer is not cached in the interpreter, but it's called quickly in the JIT"
-	primitiveFunctionPointer := self functionPointerFor: localPrimIndex inClass: objectMemory nilObject..
+	primitiveFunctionPointer := self functionPointerFor: localPrimIndex.
 	self activateNewMethod
 ]
 
@@ -13492,7 +13516,7 @@ StackInterpreter >> safeMethodClassOf: methodPointer [
 StackInterpreter >> saneFunctionPointerForFailureOfPrimIndex: primIndex [
 	| basePrimitive |
 	<var: 'basePrimitive' declareC: 'void (*basePrimitive)(void)'>
-	basePrimitive := self functionPointerFor: primIndex inClass: objectMemory nilObject.
+	basePrimitive := self functionPointerFor: primIndex.
 	^primitiveFunctionPointer = basePrimitive
 	  or: [(basePrimitive = #primitiveExternalCall and: [self isPrimitiveFunctionPointerAnIndex not]) 
 	  or: [(self isMetaPrimitiveIndex: primIndex) and: [metaAccessorDepth > -2]]]
@@ -13592,7 +13616,8 @@ StackInterpreter >> sendCannotReturn: resultOop [
 StackInterpreter >> sendLiteralSelector0ArgsBytecode [
 	"Can use any of the first 16 literals for the selector."
 	| rcvr |
-	messageSelector := self literal: (currentBytecode bitAnd: 16rF).
+	inlineCacheStartIndex := currentBytecode bitAnd: 16rF.
+	messageSelector := self literal: inlineCacheStartIndex.
 	argumentCount := 0.
 	rcvr := self stackValue: 0.
 	lkupClassTag := objectMemory fetchClassTagOf: rcvr.
@@ -13604,7 +13629,8 @@ StackInterpreter >> sendLiteralSelector0ArgsBytecode [
 StackInterpreter >> sendLiteralSelector1ArgBytecode [
 	"Can use any of the first 16 literals for the selector."
 	| rcvr |
-	messageSelector := self literal: (currentBytecode bitAnd: 16rF).
+	inlineCacheStartIndex := currentBytecode bitAnd: 16rF.
+	messageSelector := self literal: inlineCacheStartIndex.
 	argumentCount := 1.
 	rcvr := self stackValue: 1.
 	lkupClassTag := objectMemory fetchClassTagOf: rcvr.
@@ -13616,7 +13642,8 @@ StackInterpreter >> sendLiteralSelector1ArgBytecode [
 StackInterpreter >> sendLiteralSelector2ArgsBytecode [
 	"Can use any of the first 16 literals for the selector."
 	| rcvr |
-	messageSelector := self literal: (currentBytecode bitAnd: 16rF).
+	inlineCacheStartIndex := currentBytecode bitAnd: 16rF.
+	messageSelector := self literal: inlineCacheStartIndex.
 	argumentCount := 2.
 	rcvr := self stackValue: 2.
 	lkupClassTag := objectMemory fetchClassTagOf: rcvr.
@@ -15708,6 +15735,34 @@ StackInterpreter >> tryLoadNewPlugin: pluginString pluginEntries: pluginEntries 
 	^ pluginString asString -> plugin
 ]
 
+{ #category : 'interpreter inline caches' }
+StackInterpreter >> tryToUseInlineCacheFor: classTag [
+	| inlineCacheClassTag |
+	<inline: true>
+	"If there's no cache then return"
+	inlineCacheStartIndex = -1 ifTrue: [ ^ false ].
+
+	"If the cached tag is not the same one then return"
+	inlineCacheClassTag := objectMemory integerValueOf: (self literal: inlineCacheStartIndex  + 1).
+	inlineCacheClassTag = classTag ifFalse: [ ^ false ].
+
+	"Otherwise let's get the method and primitive function pointer"
+	newMethod := self literal: inlineCacheStartIndex + 2.
+	(objectMemory isOopCompiledMethod: newMethod)
+		ifTrue: [
+			| primitiveIndex |
+			primitiveIndex := self primitiveIndexOf: newMethod.
+			primitiveFunctionPointer := self functionPointerFor: primitiveIndex ]
+		ifFalse: [
+			self assert: (
+				(objectMemory isNonImmediate: newMethod) and: [objectMemory isForwarded: newMethod]) not.
+			primitiveFunctionPointer := #primitiveInvokeObjectAsMethod ].
+
+	"... and notify the caller that we were able to use the IC"
+	inlineCacheStartIndex := -1.
+	^ true
+]
+
 { #category : 'debug printing' }
 StackInterpreter >> ultimateLiteralOf: aMethodOop [
 	<api>
@@ -16024,6 +16079,35 @@ StackInterpreter >> unknownInlinePrimitive [
 StackInterpreter >> unknownShortOrCodeSizeInKs [
 	"preserve whatever this value was (for images run on Cog)"
 	^theUnknownShort
+]
+
+{ #category : 'interpreter inline caches' }
+StackInterpreter >> updateInlineCacheIfNeeded: classTag [
+	<inline: true>
+	| classTagObj |
+	"If there's no cache then return"
+	inlineCacheStartIndex = -1 ifTrue: [ ^ self ].
+	"Don't cache doesNotUnderstand:"
+	messageSelector = (objectMemory splObj: SelectorDoesNotUnderstand) ifTrue: [
+		inlineCacheStartIndex := -1.
+		^ self ].
+	"Don't cache cannotInterpret:"
+	messageSelector = (objectMemory splObj: SelectorCannotInterpret) ifTrue: [
+		inlineCacheStartIndex := -1.
+		^ self ].
+	"Don't cache external methods (we need a mechanism for quickening of external methods)"
+	primitiveFunctionPointer = #primitiveExternalCall ifTrue: [
+		inlineCacheStartIndex := -1.
+		^ self ].
+	
+	classTagObj := objectMemory integerObjectOf: classTag.
+
+	"... otherwise lets update the IC"
+	self literal: inlineCacheStartIndex + 1 put: classTagObj.
+	self literal: inlineCacheStartIndex + 2 put: newMethod.
+	
+	"... and now there's no inline cache to work with"
+	inlineCacheStartIndex := -1
 ]
 
 { #category : 'image save/restore' }

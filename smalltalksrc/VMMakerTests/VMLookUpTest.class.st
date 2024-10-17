@@ -130,6 +130,7 @@ VMLookUpTest >> setUp [
 
 	interpreter setBreakSelector: nil.
 	interpreter methodDictLinearSearchLimit: linearSearchLimit.
+	interpreter inlineCacheStartIndex: -1.
 
 ]
 
@@ -153,6 +154,40 @@ VMLookUpTest >> testInstallSmallIntegerClassIntoClassTable [
 	self
 		assert: (memory fetchClassOf: (memory integerObjectOf: 17))
 		equals: receiverClass
+]
+
+{ #category : 'tests' }
+VMLookUpTest >> testLookUpAlreadyUpdatedICGoesThroughFastPath [
+
+	| aMethodDictionary |
+	selectorOop := self
+		newClassInOldSpaceWithSlots: 0
+		instSpec: memory nonIndexablePointerFormat.
+
+	receiverClass := self setSmallIntegerClassIntoClassTable.
+	methodBuilder newMethod literals: { selectorOop. receiverClass. memory trueObject. }.
+	methodOop := methodBuilder buildMethod.
+	receiver := memory integerObjectOf: 56.
+
+	self setUpMethodDictionaryIn: receiverClass.
+	aMethodDictionary := memory fetchPointer: MethodDictionaryIndex ofObject: receiverClass.
+	self installSelector: selectorOop method: methodOop  inMethodDictionary: aMethodDictionary.
+
+	stackBuilder addNewFrame method: methodOop.
+	stackBuilder buildStack.
+	interpreter
+		inlineCacheStartIndex: 0;
+		methodDictLinearSearchLimit: 3;
+		messageSelector: selectorOop;
+		findNewMethodInClassTag: memory smallIntegerTag.
+	interpreter lookupInMethodCacheSel: selectorOop classTag: memory smallIntegerTag.
+
+	"The IC was not updated"
+	self assert: (interpreter literal: 1 ofMethod: methodOop) equals: receiverClass.
+	self assert: (interpreter literal: 2 ofMethod: methodOop) equals: memory trueObject.
+
+	"The new method is the expected one"
+	self assert: interpreter newMethod equals: memory trueObject.
 ]
 
 { #category : 'tests' }
@@ -241,6 +276,36 @@ VMLookUpTest >> testLookUpInDefiningClassCreatesANewEntryInCache [
 	interpreter messageSelector: selectorOop.
 	interpreter findNewMethodInClassTag: memory smallIntegerTag.
 	self assert: (interpreter lookupInMethodCacheSel: selectorOop classTag:memory smallIntegerTag).
+]
+
+{ #category : 'tests' }
+VMLookUpTest >> testLookUpInDefiningClassUpdatesAnIC [
+
+	| aMethodDictionary |
+	selectorOop := self
+		newClassInOldSpaceWithSlots: 0
+		instSpec: memory nonIndexablePointerFormat.
+
+	methodBuilder newMethod literals: { selectorOop. interpreter objectMemory nilObject. interpreter objectMemory nilObject. }.
+	methodOop := methodBuilder buildMethod.
+	receiver := memory integerObjectOf: 56.
+	receiverClass := self setSmallIntegerClassIntoClassTable.
+
+	self setUpMethodDictionaryIn: receiverClass.
+	aMethodDictionary := memory fetchPointer: MethodDictionaryIndex ofObject: receiverClass.
+	self installSelector: selectorOop method: methodOop  inMethodDictionary: aMethodDictionary.
+
+	stackBuilder addNewFrame method: methodOop.
+	stackBuilder buildStack.
+	interpreter
+		inlineCacheStartIndex: 0;
+		methodDictLinearSearchLimit: 3;
+		messageSelector: selectorOop;
+		findNewMethodInClassTag: memory smallIntegerTag.
+	interpreter lookupInMethodCacheSel: selectorOop classTag: memory smallIntegerTag.
+
+	self assert: (interpreter literal: 1 ofMethod: methodOop) equals: receiverClass.
+	self assert: (interpreter literal: 2 ofMethod: methodOop) equals: methodOop.
 ]
 
 { #category : 'tests' }

@@ -1196,7 +1196,7 @@ CoInterpreter >> ceInterpretMethodFromPIC: aMethodObj receiver: rcvr [
 	messageSelector := pic selector.
 	newMethod := aMethodObj.
 	primitiveIndex := self primitiveIndexOf: aMethodObj.
-	primitiveFunctionPointer := self functionPointerFor: primitiveIndex inClass: objectMemory nilObject.
+	primitiveFunctionPointer := self functionPointerFor: primitiveIndex.
 	argumentCount := pic cmNumArgs.
 	instructionPointer := self popStack.
 	self interpretMethodFromMachineCode.
@@ -1226,7 +1226,7 @@ CoInterpreter >> ceMNUFromPICMNUMethod: aMethodObj receiver: rcvr [
 			 self unreachable].
 		newMethod := aMethodObj.
 		primitiveIndex := self primitiveIndexOf: aMethodObj.
-		primitiveFunctionPointer := self functionPointerFor: primitiveIndex inClass: objectMemory nilObject.
+		primitiveFunctionPointer := self functionPointerFor: primitiveIndex.
 		^self interpretMethodFromMachineCode].
 	"handleMNU:InMachineCodeTo:classForMessage: assumes lkupClass is set, since every other use is
 	 after a lookupMethodNoMNUEtcInClass: call, which sets lkupClass.  Here we must set it manually.
@@ -2790,7 +2790,7 @@ CoInterpreter >> functionPointerForCompiledMethod: methodObj primitiveIndex: pri
 	<returnTypeC: 'void (*functionPointerForCompiledMethodprimitiveIndex(sqInt methodObj, sqInt primIndex))(void)'>
 	| functionPointer |
 	<var: #functionPointer declareC: #'void (*functionPointer)(void)'>
-	functionPointer := self functionPointerFor: primIndex inClass: nil.
+	functionPointer := self functionPointerFor: primIndex.
 	functionPointer == #primitiveCalloutToFFI ifTrue:
 		[^self functionForPrimitiveCallout].
 	functionPointer == #primitiveExternalCall ifTrue:

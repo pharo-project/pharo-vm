@@ -605,7 +605,7 @@ VMByteCodesTest >> testSendMessageWithTwoArgumentsMakeAFrame [
 
 	| selectorOop aMethod aMethodToActivate receiver receiverClass aMethodDictionary arg1 arg2 |
 	selectorOop := memory integerObjectOf: 42.
-	methodBuilder newMethod literals: { selectorOop }.
+	methodBuilder newMethod literals: { selectorOop. interpreter objectMemory nilObject. interpreter objectMemory nilObject. }.
 	aMethod := methodBuilder buildMethod.
 	aMethodToActivate := methodBuilder newMethod
 		                     numberOfArguments: 2;
