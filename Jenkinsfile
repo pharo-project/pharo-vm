@@ -430,7 +430,7 @@ def uploadPackages(platformNames){
 }
 
 def runInsideDocker(platform, imageName, closure){
-	node('docker20'){
+	node('docker'){
 		cleanWs()
 		def image;
 		stage("Build Image ${platform}"){
@@ -466,13 +466,47 @@ try{
 	properties([disableConcurrentBuilds()])
 
 	def parallelBuilderPlatforms = ['Linux-x86_64', 'Darwin-x86_64', 'Windows-x86_64', 'Darwin-arm64']
-	def platforms = parallelBuilderPlatforms // + ['Linux-aarch64', 'Linux-armv7l']
+	def platforms = parallelBuilderPlatforms + ['Linux-aarch64', 'Linux-armv7l']
 	def builders = [:]
 	def dockerBuilders = [:]
 	def testsOnMainBranch = [:]
 
 	node('Darwin-x86_64'){
 		runUnitTests('Darwin-x86_64')
+	}
+
+	dockerBuilders['Linux-aarch64'] = {
+		buildUsingDocker('Linux-aarch64', 'ubuntu-arm64', "CoInterpreter")
+
+		// If we are not in the main branch we want to run the tests as fast as possible
+		if(!isMainBranch()){
+			runTestsUsingDocker('Linux-aarch64', 'ubuntu-arm64', "CoInterpreter", "Kernel.*|Zinc.*", false)
+			}else{
+				testsOnMainBranch['Linux-aarch64'] = {
+					runTestsUsingDocker('Linux-aarch64', 'ubuntu-arm64', "CoInterpreter", "Kernel.*|Zinc.*", false)
+				}
+			}
+		
+		if(isMainBranch()){
+			buildUsingDocker('Linux-aarch64', 'ubuntu-arm64', "CoInterpreter", false)
+		}
+	}
+
+	dockerBuilders['Linux-armv7l'] = {
+		buildUsingDocker('Linux-armv7l', 'debian10-armv7', "CoInterpreter")	
+
+		// If we are not in the main branch we want to run the tests as fast as possible
+		if(!isMainBranch()){
+			runTestsUsingDocker('Linux-armv7l', 'debian10-armv7', "CoInterpreter", "Kernel.*|Zinc.*", false)
+		}else{
+			testsOnMainBranch['Linux-armv7l'] = {
+				runTestsUsingDocker('Linux-armv7l', 'debian10-armv7', "CoInterpreter", "Kernel.*|Zinc.*", false)
+			}
+		}
+		
+		if(isMainBranch()){
+			buildUsingDocker('Linux-armv7l', 'debian10-armv7', "CoInterpreter", false)
+		}
 	}
 
 	for (platf in parallelBuilderPlatforms) {
@@ -484,6 +518,12 @@ try{
 				timeout(40){
 					runBuild(platform, "CoInterpreter")
 				}
+				
+				if(platform == 'Linux-x86_64'){
+					// As the docker builders depends on the linux build, I will launch it when it end.
+					parallel dockerBuilders
+				}
+				
 				// If we are not in the main branch we want to run the tests as fast as possible
 				if(!isMainBranch()){
 					timeout(45){
@@ -520,45 +560,7 @@ try{
 		}	
 	}
 
-	/*
-	dockerBuilders['Linux-aarch64'] = {
-		buildUsingDocker('Linux-aarch64', 'ubuntu-arm64', "CoInterpreter")
-
-		// If we are not in the main branch we want to run the tests as fast as possible
-		if(!isMainBranch()){
-			runTestsUsingDocker('Linux-aarch64', 'ubuntu-arm64', "CoInterpreter", "Kernel.*|Zinc.*", false)
-			}else{
-				testsOnMainBranch['Linux-aarch64'] = {
-					runTestsUsingDocker('Linux-aarch64', 'ubuntu-arm64', "CoInterpreter", "Kernel.*|Zinc.*", false)
-				}
-			}
-		
-		if(isMainBranch()){
-			buildUsingDocker('Linux-aarch64', 'ubuntu-arm64', "CoInterpreter", false)
-		}
-	}
-
-	dockerBuilders['Linux-armv7l'] = {
-		buildUsingDocker('Linux-armv7l', 'debian10-armv7', "CoInterpreter")	
-
-		// If we are not in the main branch we want to run the tests as fast as possible
-		if(!isMainBranch()){
-			runTestsUsingDocker('Linux-armv7l', 'debian10-armv7', "CoInterpreter", "Kernel.*|Zinc.*", false)
-		}else{
-			testsOnMainBranch['Linux-armv7l'] = {
-				runTestsUsingDocker('Linux-armv7l', 'debian10-armv7', "CoInterpreter", "Kernel.*|Zinc.*", false)
-			}
-		}
-		
-		if(isMainBranch()){
-			buildUsingDocker('Linux-armv7l', 'debian10-armv7', "CoInterpreter", false)
-		}
-	}
-	*/
-
 	parallel builders
-
-	parallel dockerBuilders
 	
 	uploadPackages(platforms)
 
