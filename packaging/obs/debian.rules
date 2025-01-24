@@ -1,0 +1,33 @@
+#! /usr/bin/make -f
+
+export DH_VERBOSE=1
+version=@PharoVM_VERSION_FULL@
+libdir=/usr/lib/$(DEB_TARGET_MULTIARCH)
+pkgdir=${libdir}/pharo${version}
+buildPrefix=debian/pharo-vm-@PharoVM_VERSION_MAJOR@.@PharoVM_VERSION_MINOR@
+
+%:
+	dh $@
+	
+override_dh_auto_configure:
+	set
+	dh_auto_configure -- \
+		-DGENERATE_SOURCES=FALSE \
+		-DPHARO_DEPENDENCIES_PREFER_DOWNLOAD_BINARIES=FALSE \
+		-DPHARO_LIBRARY_PATH=${pkgdir}/lib \
+		-DPHARO_BIN_LOCATION=${pkgdir}/lib \
+		-DGENERATED_SOURCE_DIR="${PWD}/" \
+		-DBUILD_BUNDLE=FALSE
+
+override_dh_auto_build:
+	cd obj-$(DEB_TARGET_MULTIARCH) && make install
+
+override_dh_auto_install: 
+	mkdir -p ${buildPrefix}${pkgdir}/bin
+	mkdir -p ${buildPrefix}${pkgdir}/lib
+
+	install -Dm755 obj-$(DEB_TARGET_MULTIARCH)/build/dist/pharo ${buildPrefix}${pkgdir}
+	install -D obj-$(DEB_TARGET_MULTIARCH)/build/dist/bin/* ${buildPrefix}${pkgdir}/bin
+	install -D obj-$(DEB_TARGET_MULTIARCH)/build/dist/lib/* ${buildPrefix}${pkgdir}/lib
+	mkdir -p ${buildPrefix}/usr/bin
+	ln -s ${pkgdir}/pharo ${buildPrefix}/usr/bin/pharo

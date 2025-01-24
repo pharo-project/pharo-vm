@@ -402,6 +402,23 @@ include(cmake/vmmaker.cmake)
 #Generating config file
 configure_file(${CMAKE_CURRENT_SOURCE_DIR}/include/pharovm/config.h.in ${CMAKE_CURRENT_BINARY_DIR}/build/include/pharovm/config.h)
 
+#Generate obs config files, generating a debian-like changelog from our current CHANGELOG.md file
+file(READ "${CMAKE_CURRENT_SOURCE_DIR}/CHANGELOG.md" CHANGELOG_STRING)
+file(GLOB OBS_FILES "${CMAKE_CURRENT_SOURCE_DIR}/packaging/obs/*")
+foreach(OBS_FILE ${OBS_FILES})
+    get_filename_component(OBS_FILE_NAME "${OBS_FILE}" NAME)
+    message(STATUS "Configuring OBS file: ${OBS_FILE_NAME}")
+    
+    if(OBS_FILE_NAME MATCHES "pharo.*")
+        #replace pharo by pharo-vm-{full_version}
+        string(REGEX REPLACE "pharo" "pharo-vm-${PharoVM_VERSION_MAJOR}.${PharoVM_VERSION_MINOR}" OBS_TARGET_NAME ${OBS_FILE_NAME})
+    else()
+        set(OBS_TARGET_NAME ${OBS_FILE_NAME})
+    endif()
+    message(STATUS "Writing OBS file to: ${CMAKE_CURRENT_BINARY_DIR}/obs/${OBS_TARGET_NAME}")
+    configure_file("${OBS_FILE}" "${CMAKE_CURRENT_BINARY_DIR}/obs/${OBS_TARGET_NAME}" @ONLY)
+endforeach()
+
 message(STATUS "C Compiler: ${CMAKE_C_COMPILER}")
 message(STATUS "C++ Compiler: ${CMAKE_CXX_COMPILER}")
 message(STATUS "Resource Compiler: ${CMAKE_RC_COMPILER}")

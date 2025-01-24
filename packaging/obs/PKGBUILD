@@ -1,0 +1,41 @@
+pkgname=(pharo-vm-@PharoVM_VERSION_MAJOR@.@PharoVM_VERSION_MINOR@)
+arch=('x86_64' 'aarch64' 'armv7h')
+pkgver=@PharoVM_VERSION_FULL@
+pkgrel=0
+pkgdesc="Pharo is a pure object-oriented programming language and a powerful environment, focused on simplicity and immediate feedback (think IDE and OS rolled into one)."
+url="https://github.com/pharo-project/pharo-vm"
+license=('MIT')
+makedepends=(gcc clang cmake openssl-1.1 libutil-linux util-linux-libs libffi)
+provides=(pharo)
+source=("${pkgname}-${pkgver}.tar.gz")
+md5sums=("SKIP")
+libdir="/usr/lib"
+destdir="${libdir}/${pkgname}"
+
+build() {
+  cd pharo-vm
+  cmake . \
+  	-DGENERATE_SOURCES=FALSE \
+  	-DPHARO_DEPENDENCIES_PREFER_DOWNLOAD_BINARIES=FALSE \
+  	-DPHARO_LIBRARY_PATH=${pkgdir}${destdir} \
+  	-DPHARO_BIN_LOCATION=${destdir}/lib \
+  	-DBUILD_BUNDLE=FALSE
+  make install
+}
+
+package_pharo() {
+  depends=('openssl>1.0' 'libutil-linux' 'util-linux-libs' 'libffi>=3.3')
+  
+  mkdir -p ${pkgdir}${destdir}/bin
+  mkdir -p ${pkgdir}${destdir}/lib
+  mkdir -p ${pkgdir}${destdir}
+
+  install -D -m755 pharo-vm/build/dist/pharo ${pkgdir}${destdir}
+  install -D -m755 pharo-vm/build/dist/bin/* ${pkgdir}${destdir}/bin
+  install -D -m755 pharo-vm/build/dist/lib/* ${pkgdir}${destdir}/lib
+
+  mkdir -p ${pkgdir}/usr/bin
+
+  ln -s ${destdir}/pharo ${pkgdir}/usr/bin/pharo
+}
+

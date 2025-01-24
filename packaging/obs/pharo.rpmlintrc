@@ -1,0 +1,2 @@
+addFilter("E: binary-or-shlib-defines-rpath")
+addFilter("E: explicit-lib-dependency")

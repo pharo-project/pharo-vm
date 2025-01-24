@@ -1,0 +1,13 @@
+Source: pharo-vm-@PharoVM_VERSION_MAJOR@.@PharoVM_VERSION_MINOR@
+Section: devel
+Priority: optional
+Maintainer: Esteban Lorenzano <estebanlm@netc.eu>, Pablo Tesone <tesonep@gmail.com>
+Build-Depends: debhelper (>= 8.0.0)
+Standards-Version: 3.9.4
+Homepage: https://github.com/pharo-project/opensmalltalk-vm
+
+Package: pharo
+Architecture: amd64 arm64 armhf
+Depends: ${shlibs:Depends}, ${misc:Depends}
+Description: Pharo is a pure object-oriented programming language and a powerful environment, focused on simplicity and immediate feedback (think IDE and OS rolled into one).
+Recommends: libcairo2, libsdl2-2.0-0, libgit2 (=1.0.1-1) | libgit2-1.1 | libgit2-1.5, libfreetype6

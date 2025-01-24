@@ -1,0 +1,3 @@
+pharo-vm-@PharoVM_VERSION_MAJOR@.@PharoVM_VERSION_MINOR@ (@PharoVM_VERSION_MAJOR@.@PharoVM_VERSION_MINOR@.@PharoVM_VERSION_PATCH@) stable; urgency=low
+
+@CHANGELOG_STRING@
