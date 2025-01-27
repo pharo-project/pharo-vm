@@ -47,6 +47,26 @@ VMJitMethodTest >> initialCodeSize [
 	^ 16 * 1024
 ]
 
+{ #category : #tests }
+VMJitMethodTest >> printInstructions [
+
+	^ self printInstructionsAt: cogInitialAddress
+]
+
+{ #category : #accessing }
+VMJitMethodTest >> printInstructionsAt: anAddress [
+
+	| debuggerInstructions |
+	debuggerInstructions := VMMachineCodeDebugger new
+		                        cogit: cogit;
+		                        abstractInstructions: self abstractInstructions;
+		                        machineSimulator: machineSimulator;
+		                        initialInstructionToDisassemble: anAddress;
+		                        initialDisassembly.
+
+	^ Character cr join: (debuggerInstructions collect: #assemblyCodeString)
+]
+
 { #category : #running }
 VMJitMethodTest >> setUp [ 
 
@@ -65,6 +85,8 @@ VMJitMethodTest >> setUpTrampolines [
 
 	cogit ceCheckForInterruptTrampoline: (self compileTrampoline: [ cogit RetN: 0 ] named:#ceCheckForInterruptTrampoline).
 	cogit ceReturnToInterpreterTrampoline: (self compileTrampoline: [ cogit Stop ] named:#ceReturnToInterpreterTrampoline).
+	
+	cogit ceDeoptimiseFrameTrampoline: (self compileTrampoline: [ cogit Stop ] named:#ceDeoptimiseFrameTrampoline).
 ]
 
 { #category : #tests }
