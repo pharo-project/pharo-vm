@@ -158,34 +158,45 @@ CogSimStackEntry >> copyToReg: reg [
 
 { #category : #'compile abstract instructions' }
 CogSimStackEntry >> ensureSpilledAt: baseOffset from: baseRegister [
-	| inst |
-	<var: #inst type: #'AbstractInstruction *'>
-	spilled ifTrue:
-		[type = SSSpill ifTrue:
-			[self assert: ((offset = baseOffset and: [registerr = baseRegister]) or: [cogit violatesEnsureSpilledSpillAssert]).
-			 ^self]].
+
+	spilled ifTrue: [
+		type = SSSpill ifTrue: [
+			self assert: (offset = baseOffset and: [ registerr = baseRegister ]).
+			^ self ] ].
+
 	self assert: type ~= SSSpill.
 	cogit traceSpill: self.
-	type = SSConstant
-		ifTrue:
-			[inst := cogit genPushConstant: constant]
-		ifFalse:
-			[type = SSBaseOffset
-				ifTrue:
-					[cogit MoveMw: offset r: registerr R: TempReg.
-					 inst := cogit PushR: TempReg]
-				ifFalse:
-					[self assert: type = SSRegister.
-					 inst := cogit PushR: registerr].
-			 type := SSSpill.
-			 offset := baseOffset.
-			 registerr := baseRegister].
-	spilled := true.
+
+	self generatePush.
+
+	type = SSConstant ifFalse: [
+		type := SSSpill.
+		offset := baseOffset.
+		registerr := baseRegister ].
+
+	spilled := true
 ]
 
 { #category : #accessing }
 CogSimStackEntry >> floatRegisterMask [
 	^ 0
+]
+
+{ #category : #'code-generation' }
+CogSimStackEntry >> generatePush [
+
+	self assert: spilled not.
+		
+	type = SSConstant
+		ifTrue: [ cogit genPushConstant: constant ]
+		ifFalse: [
+			type = SSBaseOffset
+				ifTrue: [
+					cogit MoveMw: offset r: registerr R: TempReg.
+					cogit PushR: TempReg ]
+				ifFalse: [
+					self assert: type = SSRegister.
+					cogit PushR: registerr ] ]
 ]
 
 { #category : #comparing }
@@ -330,6 +341,14 @@ CogSimStackEntry >> registerr: anObject [
 	"Set the value of register"
 
 	^registerr := anObject
+]
+
+{ #category : #spilling }
+CogSimStackEntry >> silentlyEnsureSpilled [
+
+	spilled ifTrue: [ ^ self ].
+
+	self generatePush
 ]
 
 { #category : #accessing }

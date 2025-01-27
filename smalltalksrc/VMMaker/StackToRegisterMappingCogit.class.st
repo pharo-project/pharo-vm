@@ -4225,7 +4225,7 @@ StackToRegisterMappingCogit >> ssFlushStack [
 	self ssFlushStackExceptTop: 0
 ]
 
-{ #category : #'as yet unclassified' }
+{ #category : #'simulation stack' }
 StackToRegisterMappingCogit >> ssFlushStackExceptTop: n [
 	
 	self ssFlushTo: simStackPtr - n
@@ -4235,6 +4235,7 @@ StackToRegisterMappingCogit >> ssFlushStackExceptTop: n [
 StackToRegisterMappingCogit >> ssFlushTo: index [
 	<inline: true>
 	self assert: self tempsValidAndVolatileEntriesSpilled.
+	
 	simSpillBase <= index ifTrue:
 		[(((simSpillBase max: methodOrBlockNumTemps + 1) min: simStackPtr) min: index) to: index do:
 			[:i|
@@ -4453,6 +4454,29 @@ StackToRegisterMappingCogit >> ssSelfDescriptor [
 	<returnTypeC: #SimStackEntry>
 	<inline: true>
 	^simStack at: 0
+]
+
+{ #category : #'simulation stack' }
+StackToRegisterMappingCogit >> ssSilentlyFlushStackExceptTop: n [
+
+	self ssSilentlyFlushTo: simStackPtr - n
+]
+
+{ #category : #'simulation stack' }
+StackToRegisterMappingCogit >> ssSilentlyFlushTo: index [
+
+	"
+	This method generate the Pushes of the unspilled elements in the stack until index.
+	WARNING: The SimStack is not modified. This cause a de-syncronization with the runtime stack.
+	"
+
+	<inline: true>
+	self assert: self tempsValidAndVolatileEntriesSpilled.
+
+	simSpillBase <= index ifTrue: [
+		(((simSpillBase max: methodOrBlockNumTemps + 1) min: simStackPtr) min: index) to: index do: [ :i |
+			self assert: needsFrame.
+			(self simStackAt: i) silentlyEnsureSpilled ] ]
 ]
 
 { #category : #'simulation stack' }
@@ -4744,11 +4768,6 @@ StackToRegisterMappingCogit >> v4PushNilSize: aMethodObj numInitialNils: numInit
 	 225		11100001	sbbbbbbb	Extend B (Ext B = Ext B prev * 256 + Ext B)"
 	<inline: true>
 	^3 * numInitialNils
-]
-
-{ #category : #testing }
-StackToRegisterMappingCogit >> violatesEnsureSpilledSpillAssert [
-	^true
 ]
 
 { #category : #'bytecode generator support' }
