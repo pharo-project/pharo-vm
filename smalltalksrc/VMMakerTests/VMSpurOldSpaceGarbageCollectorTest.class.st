@@ -60,6 +60,10 @@ VMSpurOldSpaceGarbageCollectorTest >> setUp [
 
 	objectStackLimit :=  10.
 	super setUp.
+	"[HACK]
+	 When the GC checks for stack integrity we should have *something* resembling a stack.
+	 For now adding a dummy frame works well enough :)"
+	stackBuilder addNewFrame; buildStack.
 ]
 
 { #category : 'tests-OldSpaceSize' }
