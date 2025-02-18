@@ -14714,18 +14714,12 @@ StackInterpreter >> stackPageByteSize [
 	 Room for 256 slots for frames gives around 40 frames a page which is a
 	 good compromise between overflow rate and latency in divorcing a page."
 	<inline: false>
-	| pageBytes largeSize smallSize |
+	| pageBytes |
 	pageBytes := self stackPageFrameBytes + self stackLimitOffset + self stackPageHeadroom.
 	(pageBytes bitAnd: pageBytes - 1) = 0 ifTrue: "= 0 => a power of two"
 		[^pageBytes].
-	"round up or round down; that is the question.  If rounding down reduces
-	 the size by no more than 1/8th round down, otherwise roundup."
-	largeSize := 1 << pageBytes highBit.
-	smallSize := 1 << (pageBytes highBit - 1).
-	self assert: (largeSize > pageBytes and: [pageBytes > smallSize]).
-	^(pageBytes - smallSize) <= (smallSize / 8)
-		ifTrue: [smallSize]
-		ifFalse: [largeSize]
+	"round up to be a power of 2"
+	^ 1 << pageBytes highBit
 ]
 
 { #category : 'stack pages' }
