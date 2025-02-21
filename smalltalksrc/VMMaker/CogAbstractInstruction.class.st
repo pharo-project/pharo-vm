@@ -379,16 +379,6 @@ CogAbstractInstruction >> >= anAbstractInstruction [
 	^(opcodesArray identityIndexOf: self) >= (opcodesArray identityIndexOf: anAbstractInstruction)
 ]
 
-{ #category : 'abstract instructions' }
-CogAbstractInstruction >> MoveM32: offset r: baseReg R: destReg [
-
-	^ cogit
-		  gen: MoveM32rR
-		  quickConstant: offset
-		  operand: baseReg
-		  operand: destReg
-]
-
 { #category : 'accessing' }
 CogAbstractInstruction >> addDependent: anInstruction [
 	<var: #anInstruction type: #'AbstractInstruction *'>
@@ -873,6 +863,16 @@ CogAbstractInstruction >> genMarshallNArgs: numArgs floatArg: regOrConst0 floatA
 	 register assignments the original author has grown accustomed to."
 	<inline: true>
 	^self subclassResponsibility
+]
+
+{ #category : 'abstract instructions' }
+CogAbstractInstruction >> genMoveM32: offset r: baseReg R: destReg [
+
+	^ cogit
+		  gen: MoveM32rR
+		  quickConstant: offset
+		  operand: baseReg
+		  operand: destReg
 ]
 
 { #category : 'abstract instructions' }

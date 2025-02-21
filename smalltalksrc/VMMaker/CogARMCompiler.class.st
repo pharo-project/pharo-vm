@@ -307,12 +307,6 @@ CogARMCompiler class >> wordSize [
 	^4
 ]
 
-{ #category : 'abstract instructions' }
-CogARMCompiler >> MoveM32: offset r: baseReg R: destReg [
-
-	^ cogit MoveMw: offset r: baseReg R: destReg
-]
-
 { #category : 'ARM convenience instructions' }
 CogARMCompiler >> add: destReg rn: srcReg imm: immediate ror: rot [
 "Remember the ROR is doubled by the cpu so use 30>>1 etc.
@@ -2257,6 +2251,12 @@ CogARMCompiler >> genMarshallNArgs: numArgs arg: regOrConst0 arg: regOrConst1 ar
 	(cogit isTrampolineArgConstant: regOrConst3)
 		ifTrue: [cogit MoveCq: (cogit trampolineArgValue: regOrConst3) R: CArg3Reg]
 		ifFalse: [cogit MoveR: regOrConst3 R: CArg3Reg]
+]
+
+{ #category : 'abstract instructions' }
+CogARMCompiler >> genMoveM32: offset r: baseReg R: destReg [
+
+	^ cogit MoveMw: offset r: baseReg R: destReg
 ]
 
 { #category : 'abstract instructions' }

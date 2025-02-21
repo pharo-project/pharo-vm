@@ -130,10 +130,13 @@ Class {
 		'printInstructions',
 		'compilationTrace',
 		'clickConfirm',
+		'breakPC',
+		'breakBlock',
 		'singleStep',
 		'guardPageSize',
 		'traceFlags',
 		'traceStores',
+		'breakMethod',
 		'methodObj',
 		'enumeratingCogMethod',
 		'methodHeader',
@@ -2299,7 +2302,7 @@ Cogit >> MoveM16: offset r: baseReg R: destReg [
 Cogit >> MoveM32: offset r: baseReg R: destReg [
 	<inline: true>
 	<returnTypeC: #'AbstractInstruction *'>
-	^ backEnd MoveM32: offset r: baseReg R: destReg
+	^ backEnd genMoveM32: offset r: baseReg R: destReg
 	
 
 ]
