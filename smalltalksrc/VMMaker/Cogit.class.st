@@ -11275,6 +11275,19 @@ Cogit >> setCStackPointer: aStackPointer [
 					put: aStackPointer) asVoidPointer]
 ]
 
+{ #category : 'jit - api' }
+Cogit >> setHeaderOopOf: cogMethod to: aMethodHeaderOop [
+	"If a method is compiled to machine code via a block entry it won't have a selector.
+	 A subsequent send can find the method and hence fill in the selector."
+
+	<api>
+	<var: #cogMethod type: #'CogMethod *'>
+	self assert: cogMethod cmType = CMMethod.
+
+	self enableCodeZoneWriteDuring: [
+		cogMethod methodHeader: aMethodHeaderOop ]
+]
+
 { #category : 'initialization' }
 Cogit >> setInterpreter: aCoInterpreter [
 	"Initialization of the code generator in the simulator.

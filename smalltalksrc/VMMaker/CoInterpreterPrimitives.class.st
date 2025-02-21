@@ -325,13 +325,10 @@ CoInterpreterPrimitives >> primitiveObjectAtPut [
 	index = 1
 		ifTrue:
 			[((objectMemory isNonIntegerObject: newValue)
-			 or: [(objectMemory literalCountOfMethodHeader: newValue) ~= (objectMemory literalCountOfMethodHeader: realHeader)]) ifTrue:
-				[^self primitiveFailFor: PrimErrBadArgument].
+			 or: [(objectMemory literalCountOfMethodHeader: newValue) ~= (objectMemory literalCountOfMethodHeader: realHeader)])
+				ifTrue: [^self primitiveFailFor: PrimErrBadArgument].
 			 (self isCogMethodReference: rawHeader)
-				ifTrue: [
-					"Activate code zone writing because we write the header in the machine code method"
-					cogit enableCodeZoneWriteDuring:  [
-						(self cCoerceSimple: rawHeader to: #'CogMethod *') methodHeader: newValue] ]
+				ifTrue: [ cogit setHeaderOopOf: (self cCoerceSimple: rawHeader to: #'CogMethod *') to: newValue ]
 				ifFalse: [objectMemory storePointerUnchecked: 0 ofObject: thisReceiver withValue: newValue]]
 		ifFalse:
 			[objectMemory storePointer: index - 1 ofObject: thisReceiver withValue: newValue].
