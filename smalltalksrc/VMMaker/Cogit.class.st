@@ -11277,8 +11277,7 @@ Cogit >> setCStackPointer: aStackPointer [
 
 { #category : 'jit - api' }
 Cogit >> setHeaderOopOf: cogMethod to: aMethodHeaderOop [
-	"If a method is compiled to machine code via a block entry it won't have a selector.
-	 A subsequent send can find the method and hence fill in the selector."
+	"Change a JIT'ed method's header, enabling code zone wrote."
 
 	<api>
 	<var: #cogMethod type: #'CogMethod *'>
