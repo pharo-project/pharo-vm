@@ -307,6 +307,12 @@ CogARMCompiler class >> wordSize [
 	^4
 ]
 
+{ #category : 'abstract instructions' }
+CogARMCompiler >> MoveM32: offset r: baseReg R: destReg [
+
+	^ cogit MoveMw: offset r: baseReg R: destReg
+]
+
 { #category : 'ARM convenience instructions' }
 CogARMCompiler >> add: destReg rn: srcReg imm: immediate ror: rot [
 "Remember the ROR is doubled by the cpu so use 30>>1 etc.
