@@ -128,7 +128,7 @@ VMCogitHelpersTest >> testCheckSmallIntegerWithValidSmallIntegers [
 	self assertIsInSmallIntegerRange: memory maxSmallInteger
 ]
 
-{ #category : 'as yet unclassified' }
+{ #category : 'testing' }
 VMCogitHelpersTest >> testLoadHigh32BitsZeroExtends [
 
 	| object stub |
@@ -151,7 +151,7 @@ VMCogitHelpersTest >> testLoadHigh32BitsZeroExtends [
 	self assert: (machineSimulator receiverRegisterValue) equals: 16rFFFFFFFF
 ]
 
-{ #category : 'as yet unclassified' }
+{ #category : 'testing' }
 VMCogitHelpersTest >> testLoadLow32BitsZeroExtends [
 
 	| object stub |
