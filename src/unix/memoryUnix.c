@@ -79,10 +79,6 @@ void
 sqMakeMemoryNotExecutableFromTo(unsigned long startAddr, unsigned long endAddr)
 {
 	sqInt firstPage = roundDownToPage(startAddr);
-	/* Arguably this is pointless since allocated memory always does include
-	 * write permission.  Annoyingly the mprotect call fails on both linux &
-	 * mac os x.  So make the whole thing a nop.
-	 */
 	if (mprotect((void *)firstPage,
 				 endAddr - firstPage,
 				 PROT_READ | PROT_WRITE) < 0) {
