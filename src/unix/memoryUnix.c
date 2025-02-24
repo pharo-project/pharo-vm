@@ -101,7 +101,11 @@ void* allocateJITMemory(usqInt desiredSize, usqInt desiredPosition){
 	int prot = PROT_READ | PROT_WRITE | PROT_EXEC;
 #else
 	int additionalFlags = desiredPosition ? MAP_FIXED : 0;
-	int prot = PROT_READ | PROT_EXEC;
+#	if READ_ONLY_CODE_ZONE
+		int prot = PROT_READ | PROT_EXEC;
+#	else
+		int prot = PROT_READ | PROT_WRITE | PROT_EXEC;
+#	endif
 #endif
 
 	logDebug("Trying to allocate JIT memory in %p\n", (void* )desiredBaseAddressAligned);
