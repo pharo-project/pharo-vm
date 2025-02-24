@@ -54,15 +54,6 @@ Spur64BitCoMemoryManager class >> simulatorClass [
 	^ Spur64BitMMLECoSimulator
 ]
 
-{ #category : 'growing/shrinking memory' }
-Spur64BitCoMemoryManager >> assimilateNewSegment: segInfo [
-	"Update after adding a segment.
-	 Here we make sure the new segment is not executable."
-	<var: #segInfo type: #'SpurSegmentInfo *'>
-	super assimilateNewSegment: segInfo.
-	"coInterpreter sqMakeMemoryNotExecutableFrom: segInfo segStart To: segInfo segLimit"
-]
-
 { #category : 'trampolines' }
 Spur64BitCoMemoryManager >> ceScheduleScavenge [
 	<api>
