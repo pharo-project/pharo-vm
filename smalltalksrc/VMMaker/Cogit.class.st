@@ -8356,11 +8356,7 @@ Cogit >> initializeCodeZoneFrom: startAddress upTo: endAddress [
 		backEnd stopsFrom: startAddress to: endAddress - 1 ].
 
 	self
-		cCode: [
-			self cCall: 'sqMakeMemoryExecutableFromTo' withArguments: {
-					startAddress.
-					endAddress } ]
-		inSmalltalk: [
+		simulationOnly: [
 			startAddress = self class guardPageSize ifTrue: [
 				backEnd stopsFrom: 0 to: endAddress - 1 ].
 			self initializeProcessor ].
