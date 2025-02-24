@@ -1,19 +1,24 @@
 Class {
-	#name : #VMSegmentsImageFormatTest,
-	#superclass : #VMAbstractImageFormatTest,
-	#category : #'VMMakerTests-ImageFormat'
+	#name : 'VMSegmentsImageFormatTest',
+	#superclass : 'VMAbstractImageFormatTest',
+	#category : 'VMMakerTests-ImageFormat',
+	#package : 'VMMakerTests',
+	#tag : 'ImageFormat'
 }
 
-{ #category : #tests }
+{ #category : 'tests' }
 VMSegmentsImageFormatTest >> testImageWithTwoSegmentsHasCorrectSizeForFirstSegment [
 
 	| header newSegmentSize |
-	
-	newSegmentSize := memory growOldSpaceByAtLeast: 10000.
-	
+	newSegmentSize := memory
+		                  growOldSpaceByAtLeast: 10000
+		                  callingOperation: 'testImageWithTwoSegmentsHasCorrectSizeForFirstSegment'.
+
 	self assert: memory segmentManager numSegments equals: 2.
-	self assert: (memory segmentManager segments at: 1) segSize equals: newSegmentSize.
-	
+	self
+		assert: (memory segmentManager segments at: 1) segSize
+		equals: newSegmentSize.
+
 	self saveImage.
 
 	header := self readHeader.
@@ -23,16 +28,19 @@ VMSegmentsImageFormatTest >> testImageWithTwoSegmentsHasCorrectSizeForFirstSegme
 		equals: (memory segmentManager segments at: 0) segSize
 ]
 
-{ #category : #tests }
+{ #category : 'tests' }
 VMSegmentsImageFormatTest >> testImageWithTwoSegmentsHasCorrectSizeForFullImage [
 
 	| header newSegmentSize |
-	
-	newSegmentSize := memory growOldSpaceByAtLeast: 10000.
-	
+	newSegmentSize := memory
+		                  growOldSpaceByAtLeast: 10000
+		                  callingOperation: 'testImageWithTwoSegmentsHasCorrectSizeForFullImage'.
+
 	self assert: memory segmentManager numSegments equals: 2.
-	self assert: (memory segmentManager segments at: 1) segSize equals: newSegmentSize.
-	
+	self
+		assert: (memory segmentManager segments at: 1) segSize
+		equals: newSegmentSize.
+
 	self saveImage.
 
 	header := self readHeader.
@@ -40,41 +48,47 @@ VMSegmentsImageFormatTest >> testImageWithTwoSegmentsHasCorrectSizeForFullImage 
 	self
 		assert: header firstSegSize
 		equals: (memory segmentManager segments at: 0) segSize.
-		
+
 	self
 		assert: header dataSize
 		equals: header firstSegSize + newSegmentSize
 ]
 
-{ #category : #tests }
+{ #category : 'tests' }
 VMSegmentsImageFormatTest >> testImageWithTwoSegmentsRespectGrowHeadroomWhenIsBigger [
 
 	| newSegmentSize |
-	
-	newSegmentSize := memory growOldSpaceByAtLeast: 10000.
-	
+	newSegmentSize := memory
+		                  growOldSpaceByAtLeast: 10000
+		                  callingOperation: 'testImageWithTwoSegmentsRespectGrowHeadroomWhenIsBigger'.
+
 	self assert: memory segmentManager numSegments equals: 2.
-	self assert: (memory segmentManager segments at: 1) segSize equals: newSegmentSize.
-	
+	self
+		assert: (memory segmentManager segments at: 1) segSize
+		equals: newSegmentSize.
+
 	self assert: newSegmentSize >= memory growHeadroom
 ]
 
-{ #category : #tests }
+{ #category : 'tests' }
 VMSegmentsImageFormatTest >> testImageWithTwoSegmentsRespectGrowHeadroomWhenIsSmaller [
 
 	| newSegmentSize |
-	
 	memory growHeadroom: 4096.
-	
-	newSegmentSize := memory growOldSpaceByAtLeast: 10000.
-	
+
+	newSegmentSize := memory
+		                  growOldSpaceByAtLeast: 10000
+		                  callingOperation: 'testImageWithTwoSegmentsRespectGrowHeadroomWhenIsSmaller'.
+
 	self assert: memory segmentManager numSegments equals: 2.
-	self assert: (memory segmentManager segments at: 1) segSize equals: newSegmentSize.
-	
+	self
+		assert: (memory segmentManager segments at: 1) segSize
+		equals: newSegmentSize.
+
 	self assert: newSegmentSize >= memory growHeadroom
 ]
 
-{ #category : #tests }
+{ #category : 'tests' }
 VMSegmentsImageFormatTest >> testMinimalImageHasASingleSegment [
 
 

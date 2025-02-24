@@ -1,10 +1,12 @@
 Class {
-	#name : #VMSpecialSendArithmethicTest,
-	#superclass : #VMStackToRegisterMappingCogitTest,
-	#category : #'VMMakerTests-JitTests'
+	#name : 'VMSpecialSendArithmethicTest',
+	#superclass : 'VMStackToRegisterMappingCogitTest',
+	#category : 'VMMakerTests-JitTests',
+	#package : 'VMMakerTests',
+	#tag : 'JitTests'
 }
 
-{ #category : #'building suites' }
+{ #category : 'building suites' }
 VMSpecialSendArithmethicTest class >> testParameters [ 
 
 	^ super testParameters * { 
@@ -13,7 +15,7 @@ VMSpecialSendArithmethicTest class >> testParameters [
 	 }
 ]
 
-{ #category : #running }
+{ #category : 'running' }
 VMSpecialSendArithmethicTest >> assertSpecialSendTo: receiverOop withArg: argOop [ 
 
 	self assert: machineSimulator instructionPointerRegisterValue equals: sendTrampolineAddress.
@@ -21,7 +23,7 @@ VMSpecialSendArithmethicTest >> assertSpecialSendTo: receiverOop withArg: argOop
 	self assert: machineSimulator arg0RegisterValue equals: argOop.
 ]
 
-{ #category : #'tests - receiver non integer argument' }
+{ #category : 'tests - receiver non integer argument' }
 VMSpecialSendArithmethicTest >> testNonIntegerArgumentPlusFalseArgumentCallsTrampoline [
 		
 	self
@@ -31,7 +33,7 @@ VMSpecialSendArithmethicTest >> testNonIntegerArgumentPlusFalseArgumentCallsTram
 		shouldCallTrampolineWith: [ memory trueObject ] and: [ memory falseObject ]
 ]
 
-{ #category : #'tests - receiver non integer argument' }
+{ #category : 'tests - receiver non integer argument' }
 VMSpecialSendArithmethicTest >> testNonIntegerArgumentPlusFalseSelfCallsTrampoline [
 		
 	self
@@ -42,7 +44,7 @@ VMSpecialSendArithmethicTest >> testNonIntegerArgumentPlusFalseSelfCallsTrampoli
 		shouldCallTrampolineWith: [ memory trueObject ] and: [ memory falseObject ]
 ]
 
-{ #category : #'tests - receiver non integer argument' }
+{ #category : 'tests - receiver non integer argument' }
 VMSpecialSendArithmethicTest >> testNonIntegerArgumentPlusSmallIntegerArgumentCallsTrampoline [
 		
 	self
@@ -52,7 +54,7 @@ VMSpecialSendArithmethicTest >> testNonIntegerArgumentPlusSmallIntegerArgumentCa
 		shouldCallTrampolineWith: [ memory trueObject ] and: [ memory integerObjectOf: value1 ]
 ]
 
-{ #category : #'tests - receiver non integer argument' }
+{ #category : 'tests - receiver non integer argument' }
 VMSpecialSendArithmethicTest >> testNonIntegerArgumentPlusSmallIntegerConstCallsTrampoline [
 		
 	self
@@ -62,7 +64,7 @@ VMSpecialSendArithmethicTest >> testNonIntegerArgumentPlusSmallIntegerConstCalls
 		shouldCallTrampolineWith: [ memory trueObject ] and: [ memory integerObjectOf: value1 ]
 ]
 
-{ #category : #'tests - receiver non integer argument' }
+{ #category : 'tests - receiver non integer argument' }
 VMSpecialSendArithmethicTest >> testNonIntegerArgumentPlusSmallIntegerSelfCallsTrampoline [
 		
 	self
@@ -73,7 +75,7 @@ VMSpecialSendArithmethicTest >> testNonIntegerArgumentPlusSmallIntegerSelfCallsT
 		shouldCallTrampolineWith: [ memory trueObject ] and: [ (memory integerObjectOf: value1) ]
 ]
 
-{ #category : #'tests - receiver non integer argument' }
+{ #category : 'tests - receiver non integer argument' }
 VMSpecialSendArithmethicTest >> testNonIntegerArgumentPlusTrueConstCallsTrampoline [
 		
 	self
@@ -83,7 +85,7 @@ VMSpecialSendArithmethicTest >> testNonIntegerArgumentPlusTrueConstCallsTrampoli
 		shouldCallTrampolineWith: [ memory trueObject ] and: [ memory falseObject ]
 ]
 
-{ #category : #'tests - receiver integer argument' }
+{ #category : 'tests - receiver integer argument' }
 VMSpecialSendArithmethicTest >> testSmallIntegerArgumentPlusIntegerSelfReturnsSmallInteger [
 	
 	self
@@ -94,7 +96,7 @@ VMSpecialSendArithmethicTest >> testSmallIntegerArgumentPlusIntegerSelfReturnsSm
 		shouldPerformOperationReturning: expectedResult
 ]
 
-{ #category : #'tests - receiver integer argument' }
+{ #category : 'tests - receiver integer argument' }
 VMSpecialSendArithmethicTest >> testSmallIntegerArgumentPlusSmallIntegerArgumentCallsTrampoline [
 	
 	self
@@ -104,7 +106,7 @@ VMSpecialSendArithmethicTest >> testSmallIntegerArgumentPlusSmallIntegerArgument
 		shouldCallTrampolineWith: (memory integerObjectOf: value1) and: (memory integerObjectOf: value2)
 ]
 
-{ #category : #'tests - receiver integer argument' }
+{ #category : 'tests - receiver integer argument' }
 VMSpecialSendArithmethicTest >> testSmallIntegerArgumentPlusSmallIntegerConstReturnsSmallInteger [
 	
 	self
@@ -114,7 +116,7 @@ VMSpecialSendArithmethicTest >> testSmallIntegerArgumentPlusSmallIntegerConstRet
 		shouldPerformOperationReturning: expectedResult.
 ]
 
-{ #category : #'tests - receiver integer argument' }
+{ #category : 'tests - receiver integer argument' }
 VMSpecialSendArithmethicTest >> testSmallIntegerArgumentPlusTrueArgumentCallsTrampoline [
 	
 	self
@@ -124,7 +126,7 @@ VMSpecialSendArithmethicTest >> testSmallIntegerArgumentPlusTrueArgumentCallsTra
 		shouldCallTrampolineWith: (memory integerObjectOf: value2) and: memory trueObject
 ]
 
-{ #category : #'tests - receiver integer argument' }
+{ #category : 'tests - receiver integer argument' }
 VMSpecialSendArithmethicTest >> testSmallIntegerArgumentPlusTrueConstCallsTrampoline [
 	
 	self
@@ -134,7 +136,7 @@ VMSpecialSendArithmethicTest >> testSmallIntegerArgumentPlusTrueConstCallsTrampo
 		shouldCallTrampolineWith: (memory integerObjectOf: value1) and: memory trueObject
 ]
 
-{ #category : #'tests - receiver integer argument' }
+{ #category : 'tests - receiver integer argument' }
 VMSpecialSendArithmethicTest >> testSmallIntegerArgumentPlusTrueSelfCallsTrampoline [
 	
 	self
@@ -145,7 +147,7 @@ VMSpecialSendArithmethicTest >> testSmallIntegerArgumentPlusTrueSelfCallsTrampol
 		shouldCallTrampolineWith: (memory integerObjectOf: value1) and: memory trueObject
 ]
 
-{ #category : #'tests - receiver constant integer' }
+{ #category : 'tests - receiver constant integer' }
 VMSpecialSendArithmethicTest >> testSmallIntegerConstPlusSmallIntegerArgumentReturnsSmallInteger [
 	
 	self
@@ -156,7 +158,7 @@ VMSpecialSendArithmethicTest >> testSmallIntegerConstPlusSmallIntegerArgumentRet
 
 ]
 
-{ #category : #'tests - receiver constant integer' }
+{ #category : 'tests - receiver constant integer' }
 VMSpecialSendArithmethicTest >> testSmallIntegerConstPlusSmallIntegerConstReturnsSmallInteger [
 	
 	self
@@ -166,7 +168,7 @@ VMSpecialSendArithmethicTest >> testSmallIntegerConstPlusSmallIntegerConstReturn
 
 ]
 
-{ #category : #'tests - receiver constant integer' }
+{ #category : 'tests - receiver constant integer' }
 VMSpecialSendArithmethicTest >> testSmallIntegerConstPlusSmallIntegerSelfReturnsSmallInteger [
 	
 	self
@@ -177,7 +179,7 @@ VMSpecialSendArithmethicTest >> testSmallIntegerConstPlusSmallIntegerSelfReturns
 	
 ]
 
-{ #category : #'tests - receiver constant integer' }
+{ #category : 'tests - receiver constant integer' }
 VMSpecialSendArithmethicTest >> testSmallIntegerConstPlusTrueArgumentCallsTrampoline [
 	
 	
@@ -188,7 +190,7 @@ VMSpecialSendArithmethicTest >> testSmallIntegerConstPlusTrueArgumentCallsTrampo
 		shouldCallTrampolineWith: [ memory integerObjectOf: value1 ] and: [ memory trueObject ].	
 ]
 
-{ #category : #'tests - receiver constant integer' }
+{ #category : 'tests - receiver constant integer' }
 VMSpecialSendArithmethicTest >> testSmallIntegerConstPlusTrueConstCallsTrampoline [
 	
 	self
@@ -198,7 +200,7 @@ VMSpecialSendArithmethicTest >> testSmallIntegerConstPlusTrueConstCallsTrampolin
 
 ]
 
-{ #category : #'tests - receiver constant integer' }
+{ #category : 'tests - receiver constant integer' }
 VMSpecialSendArithmethicTest >> testSmallIntegerConstPlusTrueSelfCallsTrampoline [
 
 
@@ -209,7 +211,7 @@ VMSpecialSendArithmethicTest >> testSmallIntegerConstPlusTrueSelfCallsTrampoline
 		shouldCallTrampolineWith: [ memory integerObjectOf: value1 ] and: [ memory trueObject ].	
 ]
 
-{ #category : #'tests - receiver integer self' }
+{ #category : 'tests - receiver integer self' }
 VMSpecialSendArithmethicTest >> testSmallIntegerSelfPlusSmallIntegerArgumentReturnsSmallInteger [
 		
 	self
@@ -220,7 +222,7 @@ VMSpecialSendArithmethicTest >> testSmallIntegerSelfPlusSmallIntegerArgumentRetu
 		shouldPerformOperationReturning: expectedResult
 ]
 
-{ #category : #'tests - receiver integer self' }
+{ #category : 'tests - receiver integer self' }
 VMSpecialSendArithmethicTest >> testSmallIntegerSelfPlusSmallIntegerConstReturnsSmallInteger [
 	
 	self
@@ -231,7 +233,7 @@ VMSpecialSendArithmethicTest >> testSmallIntegerSelfPlusSmallIntegerConstReturns
 
 ]
 
-{ #category : #'tests - receiver integer self' }
+{ #category : 'tests - receiver integer self' }
 VMSpecialSendArithmethicTest >> testSmallIntegerSelfPlusSmallIntegerSelfReturnsSmallInteger [
 		
 	self
@@ -241,7 +243,7 @@ VMSpecialSendArithmethicTest >> testSmallIntegerSelfPlusSmallIntegerSelfReturnsS
 		shouldPerformOperationReturning: expectedReflexiveResult
 ]
 
-{ #category : #'tests - receiver integer self' }
+{ #category : 'tests - receiver integer self' }
 VMSpecialSendArithmethicTest >> testSmallIntegerSelfPlusTrueArgumentCallsTrampoline [
 		
 	self
@@ -252,7 +254,7 @@ VMSpecialSendArithmethicTest >> testSmallIntegerSelfPlusTrueArgumentCallsTrampol
 		shouldCallTrampolineWith: [ memory integerObjectOf: value1 ] and: [ memory trueObject ]
 ]
 
-{ #category : #'tests - receiver integer self' }
+{ #category : 'tests - receiver integer self' }
 VMSpecialSendArithmethicTest >> testSmallIntegerSelfPlusTrueConstCallsTrampoline [
 		
 	self
@@ -262,7 +264,7 @@ VMSpecialSendArithmethicTest >> testSmallIntegerSelfPlusTrueConstCallsTrampoline
 		shouldCallTrampolineWith: [ memory integerObjectOf: value1 ] and: [ memory trueObject ]
 ]
 
-{ #category : #'tests - receiver constant not integer' }
+{ #category : 'tests - receiver constant not integer' }
 VMSpecialSendArithmethicTest >> testTrueConstPlusFalseArgumentCallsTrampoline [
 	
 	self
@@ -272,7 +274,7 @@ VMSpecialSendArithmethicTest >> testTrueConstPlusFalseArgumentCallsTrampoline [
 		shouldCallTrampolineWith: [ memory trueObject ] and: [ memory falseObject ]
 ]
 
-{ #category : #'tests - receiver constant not integer' }
+{ #category : 'tests - receiver constant not integer' }
 VMSpecialSendArithmethicTest >> testTrueConstPlusFalseConstCallsTrampoline [
 	
 	self
@@ -281,7 +283,7 @@ VMSpecialSendArithmethicTest >> testTrueConstPlusFalseConstCallsTrampoline [
 		shouldCallTrampolineWith: [ memory trueObject ] and: [ memory falseObject ]
 ]
 
-{ #category : #'tests - receiver constant not integer' }
+{ #category : 'tests - receiver constant not integer' }
 VMSpecialSendArithmethicTest >> testTrueConstPlusFalseSelfCallsTrampoline [
 	
 	self
@@ -291,7 +293,7 @@ VMSpecialSendArithmethicTest >> testTrueConstPlusFalseSelfCallsTrampoline [
 		shouldCallTrampolineWith: [ memory trueObject ] and: [ memory falseObject ]
 ]
 
-{ #category : #'tests - receiver constant not integer' }
+{ #category : 'tests - receiver constant not integer' }
 VMSpecialSendArithmethicTest >> testTrueConstPlusSmallIntegerArgumentCallsTrampoline [
 	
 	self
@@ -301,7 +303,7 @@ VMSpecialSendArithmethicTest >> testTrueConstPlusSmallIntegerArgumentCallsTrampo
 		shouldCallTrampolineWith: [ memory trueObject ] and: [ memory integerObjectOf: value1 ]
 ]
 
-{ #category : #'tests - receiver constant not integer' }
+{ #category : 'tests - receiver constant not integer' }
 VMSpecialSendArithmethicTest >> testTrueConstPlusSmallIntegerConstCallsTrampoline [
 	
 	self
@@ -310,7 +312,7 @@ VMSpecialSendArithmethicTest >> testTrueConstPlusSmallIntegerConstCallsTrampolin
 		shouldCallTrampolineWith: [ memory trueObject ] and: [ memory integerObjectOf: value1 ].		
 ]
 
-{ #category : #'tests - receiver constant not integer' }
+{ #category : 'tests - receiver constant not integer' }
 VMSpecialSendArithmethicTest >> testTrueConstPlusSmallIntegerSelfCallsTrampoline [
 	
 	self
@@ -320,7 +322,7 @@ VMSpecialSendArithmethicTest >> testTrueConstPlusSmallIntegerSelfCallsTrampoline
 		shouldCallTrampolineWith: [ memory trueObject ] and: [ (memory integerObjectOf: value1) ]
 ]
 
-{ #category : #'tests - receiver non integer self' }
+{ #category : 'tests - receiver non integer self' }
 VMSpecialSendArithmethicTest >> testTrueSelfPlusFalseArgumentCallsTrampoline [
 			
 	self
@@ -331,7 +333,7 @@ VMSpecialSendArithmethicTest >> testTrueSelfPlusFalseArgumentCallsTrampoline [
 		shouldCallTrampolineWith: [ memory trueObject ] and: [ memory falseObject ].		
 ]
 
-{ #category : #'tests - receiver non integer self' }
+{ #category : 'tests - receiver non integer self' }
 VMSpecialSendArithmethicTest >> testTrueSelfPlusFalseConstCallsTrampoline [
 			
 	self
@@ -341,7 +343,7 @@ VMSpecialSendArithmethicTest >> testTrueSelfPlusFalseConstCallsTrampoline [
 		shouldCallTrampolineWith: [ memory trueObject ] and: [ memory falseObject ].		
 ]
 
-{ #category : #'tests - receiver non integer self' }
+{ #category : 'tests - receiver non integer self' }
 VMSpecialSendArithmethicTest >> testTrueSelfPlusSmallIntegerArgumentCallsTrampoline [
 			
 	self
@@ -352,7 +354,7 @@ VMSpecialSendArithmethicTest >> testTrueSelfPlusSmallIntegerArgumentCallsTrampol
 		shouldCallTrampolineWith: [ memory trueObject ] and: [ memory integerObjectOf: value1 ].		
 ]
 
-{ #category : #'tests - receiver non integer self' }
+{ #category : 'tests - receiver non integer self' }
 VMSpecialSendArithmethicTest >> testTrueSelfPlusSmallIntegerConstCallsTrampoline [
 			
 	self
@@ -362,7 +364,7 @@ VMSpecialSendArithmethicTest >> testTrueSelfPlusSmallIntegerConstCallsTrampoline
 		shouldCallTrampolineWith: [ memory trueObject ] and: [ memory integerObjectOf: value1 ].		
 ]
 
-{ #category : #'tests - receiver non integer self' }
+{ #category : 'tests - receiver non integer self' }
 VMSpecialSendArithmethicTest >> testTrueSelfPlusTrueSelfCallsTrampoline [
 			
 	self

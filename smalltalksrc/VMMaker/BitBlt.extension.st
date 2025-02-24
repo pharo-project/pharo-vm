@@ -1,16 +1,16 @@
-Extension { #name : #BitBlt }
+Extension { #name : 'BitBlt' }
 
-{ #category : #'*VMMaker-Interpreter' }
+{ #category : '*VMMaker-Interpreter' }
 BitBlt >> copyBitsSimulated [
 	^ BitBltSimulation copyBitsFrom: self
 ]
 
-{ #category : #'*VMMaker-Interpreter' }
+{ #category : '*VMMaker-Interpreter' }
 BitBlt >> copyBitsSimulated: alpha [
 	^ BitBltSimulation copyBitsFrom: self
 ]
 
-{ #category : #'*VMMaker-Interpreter' }
+{ #category : '*VMMaker-Interpreter' }
 BitBlt >> simulatePrimitive: aString args: args [ 
 	"simulate primitives in RSqueak"
 	| proxy bb |

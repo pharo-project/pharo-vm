@@ -1,17 +1,18 @@
 Class {
-	#name : #SlangTypeForDereferenceTest,
-	#superclass : #SlangAbstractTestCase,
-	#category : #'Slang-Tests'
+	#name : 'SlangTypeForDereferenceTest',
+	#superclass : 'SlangAbstractTestCase',
+	#category : 'Slang-Tests',
+	#package : 'Slang-Tests'
 }
 
-{ #category : #running }
+{ #category : 'running' }
 SlangTypeForDereferenceTest >> setUp [
 	super setUp.
 	ccg addClass: SlangTypeForDereferenceTestClass.
 	ccg inferTypes.
 ]
 
-{ #category : #tests }
+{ #category : 'tests' }
 SlangTypeForDereferenceTest >> testAtOnArray [
 	| tMethod |
 	tMethod := ccg methodNamed: #aMethodReturningAnAtOnAnArray.
@@ -23,7 +24,7 @@ SlangTypeForDereferenceTest >> testAtOnArray [
 	self assertReturnTypeOf: tMethod equalsHarmonized: #int
 ]
 
-{ #category : #tests }
+{ #category : 'tests' }
 SlangTypeForDereferenceTest >> testAtOnMatrix [
 	| tMethod |
 	tMethod := ccg methodNamed: #aMethodReturningAnAtOnAMatrix.
@@ -34,7 +35,7 @@ SlangTypeForDereferenceTest >> testAtOnMatrix [
 	self assert: tMethod returnType equals: #'int *'.
 ]
 
-{ #category : #tests }
+{ #category : 'tests' }
 SlangTypeForDereferenceTest >> testReturnPointerTypeExplicitTempVariable [
 	| tMethod |
 	tMethod := ccg methodNamed: #aMethodReturningAPointerType.
@@ -45,7 +46,7 @@ SlangTypeForDereferenceTest >> testReturnPointerTypeExplicitTempVariable [
 	self assert: tMethod returnType equals: #'int *'
 ]
 
-{ #category : #tests }
+{ #category : 'tests' }
 SlangTypeForDereferenceTest >> testSelfMessageReturningPointerType [
 	| tMethod |
 	tMethod := ccg methodNamed: #aMethodReturningAPointerType.
@@ -56,7 +57,7 @@ SlangTypeForDereferenceTest >> testSelfMessageReturningPointerType [
 	self assert: tMethod returnType equals: #'int *'
 ]
 
-{ #category : #tests }
+{ #category : 'tests' }
 SlangTypeForDereferenceTest >> testTwoAtOnMatrix [
 	| tMethod |
 	tMethod := ccg methodNamed: #aMethodReturningTwoAtOnAMatrix.

@@ -1,13 +1,15 @@
 Class {
-	#name : #VMForwardLiteralInMachineMethodTest,
-	#superclass : #VMPrimitiveCallAbstractTest,
+	#name : 'VMForwardLiteralInMachineMethodTest',
+	#superclass : 'VMPrimitiveCallAbstractTest',
 	#pools : [
 		'CogRTLOpcodes'
 	],
-	#category : #'VMMakerTests-JitTests'
+	#category : 'VMMakerTests-JitTests',
+	#package : 'VMMakerTests',
+	#tag : 'JitTests'
 }
 
-{ #category : #helpers }
+{ #category : 'helpers' }
 VMForwardLiteralInMachineMethodTest >> initStack [
 
 	self createBaseFrame.
@@ -22,13 +24,13 @@ VMForwardLiteralInMachineMethodTest >> initStack [
 
 ]
 
-{ #category : #'methods under test' }
+{ #category : 'methods under test' }
 VMForwardLiteralInMachineMethodTest >> methodWithGlobal [
 
 	^ Smalltalk
 ]
 
-{ #category : #tests }
+{ #category : 'tests' }
 VMForwardLiteralInMachineMethodTest >> testForwardLiteralInMethod [
 
 	| machineCodeMethod literal methodOop array literalValue selector associationClass valueClass literalKey |

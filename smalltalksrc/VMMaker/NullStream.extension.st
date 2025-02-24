@@ -1,5 +1,5 @@
-Extension { #name : #NullStream }
+Extension { #name : 'NullStream' }
 
-{ #category : #'*VMMaker-translation support' }
+{ #category : '*VMMaker-translation support' }
 NullStream >> crtab [
 ]

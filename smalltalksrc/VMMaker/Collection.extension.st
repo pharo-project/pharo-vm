@@ -1,6 +1,6 @@
-Extension { #name : #Collection }
+Extension { #name : 'Collection' }
 
-{ #category : #'*VMMaker-printing' }
+{ #category : '*VMMaker-printing' }
 Collection >> storeStringBase: base [
 	"This for bit/byte/word collections."
 	^String streamContents: [:strm | self storeOn: strm base: base]

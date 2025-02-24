@@ -1,6 +1,6 @@
-Extension { #name : #LiteralVariable }
+Extension { #name : 'LiteralVariable' }
 
-{ #category : #'*VMMakerTests' }
+{ #category : '*VMMakerTests' }
 LiteralVariable >> forMemory: aMemory inMethod: anObject [
 
 	| aVariable |

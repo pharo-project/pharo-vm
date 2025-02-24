@@ -1,10 +1,12 @@
 Class {
-	#name : #VMStackToRegisterMappingTest,
-	#superclass : #VMStackToRegisterMappingCogitTest,
-	#category : #'VMMakerTests-JitTests'
+	#name : 'VMStackToRegisterMappingTest',
+	#superclass : 'VMStackToRegisterMappingCogitTest',
+	#category : 'VMMakerTests-JitTests',
+	#package : 'VMMakerTests',
+	#tag : 'JitTests'
 }
 
-{ #category : #running }
+{ #category : 'running' }
 VMStackToRegisterMappingTest >> setUp [
 
 	super setUp.
@@ -29,7 +31,7 @@ VMStackToRegisterMappingTest >> setUp [
 	cogit needsFrame: true
 ]
 
-{ #category : #tests }
+{ #category : 'tests' }
 VMStackToRegisterMappingTest >> testFlushBelowTop [
 
 	| stop stackPointerBefore framePointer |
@@ -57,7 +59,7 @@ VMStackToRegisterMappingTest >> testFlushBelowTop [
 	self assert: self popAddress equals: (memory integerObjectOf: 17)
 ]
 
-{ #category : #tests }
+{ #category : 'tests' }
 VMStackToRegisterMappingTest >> testPopConstant [
 
 	cogit ssPushConstant: 1.
@@ -67,7 +69,7 @@ VMStackToRegisterMappingTest >> testPopConstant [
 	self assert: cogit ssTop equals: cogit simSelf.
 ]
 
-{ #category : #tests }
+{ #category : 'tests' }
 VMStackToRegisterMappingTest >> testPopNonSpilledTopToRegister [
 
 	| stop stackPointerBefore framePointer |
@@ -94,7 +96,7 @@ VMStackToRegisterMappingTest >> testPopNonSpilledTopToRegister [
 	self assert: self machineSimulator receiverRegisterValue equals: 1
 ]
 
-{ #category : #tests }
+{ #category : 'tests' }
 VMStackToRegisterMappingTest >> testPopRegister [
 
 	cogit ssPushRegister: TempReg.
@@ -104,7 +106,7 @@ VMStackToRegisterMappingTest >> testPopRegister [
 	self assert: cogit ssTop equals: cogit simSelf
 ]
 
-{ #category : #tests }
+{ #category : 'tests' }
 VMStackToRegisterMappingTest >> testPopSpilledConstantShouldPopFromStack [
 
 	| stop stackPointerBefore framePointer |
@@ -130,7 +132,7 @@ VMStackToRegisterMappingTest >> testPopSpilledConstantShouldPopFromStack [
 	self assert: self machineSimulator smalltalkStackPointerRegisterValue equals: stackPointerBefore
 ]
 
-{ #category : #tests }
+{ #category : 'tests' }
 VMStackToRegisterMappingTest >> testPopSpilledConstantWithoutPoppingShouldNotPopFromStack [
 
 	| stop stackPointerBefore framePointer |
@@ -157,7 +159,7 @@ VMStackToRegisterMappingTest >> testPopSpilledConstantWithoutPoppingShouldNotPop
 	self assert: self popAddress equals: 1
 ]
 
-{ #category : #tests }
+{ #category : 'tests' }
 VMStackToRegisterMappingTest >> testPopSpilledTopToRegister [
 
 	| stop stackPointerBefore framePointer |
@@ -184,7 +186,7 @@ VMStackToRegisterMappingTest >> testPopSpilledTopToRegister [
 	self assert: self machineSimulator receiverRegisterValue equals: 1
 ]
 
-{ #category : #tests }
+{ #category : 'tests' }
 VMStackToRegisterMappingTest >> testPushConstant [
 
 	cogit ssPushConstant: 1.
@@ -195,7 +197,7 @@ VMStackToRegisterMappingTest >> testPushConstant [
 	self deny: cogit ssTop spilled
 ]
 
-{ #category : #tests }
+{ #category : 'tests' }
 VMStackToRegisterMappingTest >> testPushRegister [
 
 	cogit ssPushRegister: TempReg.
@@ -206,7 +208,7 @@ VMStackToRegisterMappingTest >> testPushRegister [
 	self deny: cogit ssTop spilled
 ]
 
-{ #category : #tests }
+{ #category : 'tests' }
 VMStackToRegisterMappingTest >> testSpillConstant [
 
 	cogit ssPushConstant: 1.
@@ -223,7 +225,7 @@ VMStackToRegisterMappingTest >> testSpillConstant [
 	self assert: cogit ssTop spilled
 ]
 
-{ #category : #tests }
+{ #category : 'tests' }
 VMStackToRegisterMappingTest >> testSpillRegister [
 
 	cogit ssPushRegister: TempReg.
@@ -242,7 +244,7 @@ VMStackToRegisterMappingTest >> testSpillRegister [
 	self assert: cogit ssTop spilled
 ]
 
-{ #category : #tests }
+{ #category : 'tests' }
 VMStackToRegisterMappingTest >> testTopOfEmptyIsSimSelf [
 	
 	self assert: cogit ssSize equals: 1.

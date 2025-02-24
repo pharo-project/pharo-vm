@@ -19,8 +19,8 @@ Instance Variables
 	manager:					<SpurMemoryManager>
 "
 Class {
-	#name : #SpurCompactor,
-	#superclass : #VMClass,
+	#name : 'SpurCompactor',
+	#superclass : 'VMClass',
 	#instVars : [
 		'coInterpreter',
 		'manager',
@@ -31,17 +31,19 @@ Class {
 		'VMBasicConstants',
 		'VMSpurObjectRepresentationConstants'
 	],
-	#category : #'VMMaker-SpurMemoryManager'
+	#category : 'VMMaker-SpurMemoryManager',
+	#package : 'VMMaker',
+	#tag : 'SpurMemoryManager'
 }
 
-{ #category : #translation }
+{ #category : 'translation' }
 SpurCompactor class >> classesForTranslation [
 	"Usually we want to add the SpurCompactor first, followed by the subclass.
 	 SpurHybridCompactor is more complicated."
 	^(self withAllSuperclasses copyUpThrough: SpurCompactor) reverse
 ]
 
-{ #category : #translation }
+{ #category : 'translation' }
 SpurCompactor class >> declareCVarsIn: aCCodeGenerator [
 	"If subclasses are being used but are not the compactorClass itself
 	 then statically resolve their api selectors."
@@ -55,34 +57,34 @@ SpurCompactor class >> declareCVarsIn: aCCodeGenerator [
 					to: (self staticallyResolvePolymorphicSelector: selectorToStaticallyResolve)]]]
 ]
 
-{ #category : #translation }
+{ #category : 'translation' }
 SpurCompactor class >> implicitReturnTypeFor: aSelector [
 	"Answer the return type for methods that don't have an explicit return."
 	^#void
 ]
 
-{ #category : #api }
+{ #category : 'api' }
 SpurCompactor >> biasForGC [
 	self subclassResponsibility
 ]
 
-{ #category : #api }
+{ #category : 'api' }
 SpurCompactor >> biasForSnapshot [
 	self subclassResponsibility
 ]
 
-{ #category : #initialization }
+{ #category : 'initialization' }
 SpurCompactor >> coInterpreter: aVMSimulator [
 	<doNotGenerate>
 	coInterpreter := aVMSimulator
 ]
 
-{ #category : #api }
+{ #category : 'api' }
 SpurCompactor >> compact [
 	self subclassResponsibility
 ]
 
-{ #category : #initialization }
+{ #category : 'initialization' }
 SpurCompactor >> manager: aSpurNBitMMXEndianSimulator [
 	<doNotGenerate>
 	manager := aSpurNBitMMXEndianSimulator.
@@ -92,32 +94,32 @@ SpurCompactor >> manager: aSpurNBitMMXEndianSimulator [
 		[:scav| scavenger := scav]
 ]
 
-{ #category : #api }
+{ #category : 'api' }
 SpurCompactor >> postSwizzleAction [
 	"do nothing"
 ]
 
-{ #category : #debugging }
+{ #category : 'debugging' }
 SpurCompactor >> printTheBogons: aBogon [
 	<inline: true>
 	coInterpreter
 		print: 'bogon '; printHexnp: aBogon; cr
 ]
 
-{ #category : #api }
+{ #category : 'api' }
 SpurCompactor >> remapObj: objOop [
 	<api>
 	<inline: false>
 	^manager vanillaRemapObj: objOop
 ]
 
-{ #category : #initialization }
+{ #category : 'initialization' }
 SpurCompactor >> scavenger: aSpurGenerationScavenger [
 	<doNotGenerate>
 	scavenger := aSpurGenerationScavenger
 ]
 
-{ #category : #api }
+{ #category : 'api' }
 SpurCompactor >> shouldRemapObj: objOop [
 	<api>
 	"Answer if the obj should be scavenged (or simply followed). The method is called

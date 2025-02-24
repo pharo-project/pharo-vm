@@ -1,10 +1,12 @@
 Class {
-	#name : #VMSimulationTest,
-	#superclass : #TestCase,
-	#category : #'VMMakerTests-Simulation'
+	#name : 'VMSimulationTest',
+	#superclass : 'TestCase',
+	#category : 'VMMakerTests-Simulation',
+	#package : 'VMMakerTests',
+	#tag : 'Simulation'
 }
 
-{ #category : #tests }
+{ #category : 'tests' }
 VMSimulationTest >> testSetUpJITSimulationReadsImage [
 
 	| options c |
@@ -25,7 +27,7 @@ VMSimulationTest >> testSetUpJITSimulationReadsImage [
 		extraMemory: 100000.
 ]
 
-{ #category : #tests }
+{ #category : 'tests' }
 VMSimulationTest >> testSetUpNonJITSimulationReadsImage [
 
 	| options c |

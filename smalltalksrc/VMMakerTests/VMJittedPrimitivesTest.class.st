@@ -1,22 +1,32 @@
 Class {
-	#name : #VMJittedPrimitivesTest,
-	#superclass : #VMSimpleStackBasedCogitAbstractTest,
+	#name : 'VMJittedPrimitivesTest',
+	#superclass : 'VMSimpleStackBasedCogitAbstractTest',
 	#instVars : [
 		'classFloat'
 	],
 	#pools : [
 		'CogRTLOpcodes'
 	],
-	#category : #'VMMakerTests-JitTests'
+	#category : 'VMMakerTests-JitTests',
+	#package : 'VMMakerTests',
+	#tag : 'JitTests'
 }
 
-{ #category : #private }
+{ #category : 'private' }
 VMJittedPrimitivesTest class >> isAbstract [
 	^ self == VMJittedPrimitivesTest
 ]
 
-{ #category : #helpers }
-VMJittedPrimitivesTest >> new16BitIndexableOfSize: aSize [
+{ #category : 'helpers' }
+VMJittedPrimitivesTest >> executePrimitiveWithReceiver: receiverOop [
+	
+	"Simulate a primitive execution having an object as receiver and a single argument
+	  - the receiver goes to the receiver register
+	  - the argument should be pushed to the stack
+	If we are in a system without a link register, we need to push the caller IP to the stack to simulate a call"
+	
+	self prepareStackForSendReceiver: receiverOop arguments: #().
+	self runUntilReturn.
 
 	^ self newBitIndexableOfSize: aSize bytesPerSlot: 2 format: memory firstShortFormat
 ]
@@ -33,7 +43,7 @@ VMJittedPrimitivesTest >> new64BitIndexableOfSize: aSize [
 	^ self newBitIndexableOfSize: aSize bytesPerSlot: 8 format: memory sixtyFourBitIndexableFormat
 ]
 
-{ #category : #helpers }
+{ #category : 'helpers' }
 VMJittedPrimitivesTest >> setUp [
 
 	super setUp.

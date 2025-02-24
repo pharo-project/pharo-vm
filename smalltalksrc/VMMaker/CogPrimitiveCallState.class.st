@@ -1,6 +1,6 @@
 Class {
-	#name : #CogPrimitiveCallState,
-	#superclass : #VMStructType,
+	#name : 'CogPrimitiveCallState',
+	#superclass : 'VMStructType',
 	#instVars : [
 		'jmpToFallbackCode',
 		'jmpSamplePrim',
@@ -8,10 +8,12 @@ Class {
 		'jmpSampleNonPrim',
 		'continuePostSampleNonPrim'
 	],
-	#category : #'VMMaker-JIT'
+	#category : 'VMMaker-JIT',
+	#package : 'VMMaker',
+	#tag : 'JIT'
 }
 
-{ #category : #'simulation only' }
+{ #category : 'simulation only' }
 CogPrimitiveCallState class >> byteSizeForSimulator: aCogit [
 
 	"Answer an approximation of the byte size of an AbstractInstruction struct.
@@ -19,7 +21,7 @@ CogPrimitiveCallState class >> byteSizeForSimulator: aCogit [
 	^self instSize * (aCogit sizeof: #'void *')
 ]
 
-{ #category : #translation }
+{ #category : 'translation' }
 CogPrimitiveCallState class >> instVarNamesAndTypesForTranslationDo: aBinaryBlock [
 	"enumerate aBinaryBlock with the names and C type strings for the inst vars to include in a struct of this type."
 
@@ -42,61 +44,61 @@ CogPrimitiveCallState class >> instVarNamesAndTypesForTranslationDo: aBinaryBloc
 				} otherwise: [ self halt ])]
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 CogPrimitiveCallState >> continuePostSampleNonPrim [
 
 	^ continuePostSampleNonPrim
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 CogPrimitiveCallState >> continuePostSampleNonPrim: anObject [
 
 	continuePostSampleNonPrim := anObject
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 CogPrimitiveCallState >> continuePostSamplePrim [
 
 	^ continuePostSamplePrim
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 CogPrimitiveCallState >> continuePostSamplePrim: anObject [
 
 	continuePostSamplePrim := anObject
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 CogPrimitiveCallState >> jmpSampleNonPrim [
 
 	^ jmpSampleNonPrim
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 CogPrimitiveCallState >> jmpSampleNonPrim: anObject [
 
 	jmpSampleNonPrim := anObject
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 CogPrimitiveCallState >> jmpSamplePrim [
 
 	^ jmpSamplePrim
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 CogPrimitiveCallState >> jmpSamplePrim: anObject [
 
 	jmpSamplePrim := anObject
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 CogPrimitiveCallState >> jmpToFallbackCode [
 
 	^ jmpToFallbackCode
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 CogPrimitiveCallState >> jmpToFallbackCode: anObject [
 
 	jmpToFallbackCode := anObject

@@ -1,14 +1,15 @@
 Class {
-	#name : #VMTFreeListNode,
-	#superclass : #Object,
+	#name : 'VMTFreeListNode',
+	#superclass : 'Object',
 	#instVars : [
 		'nodeOop',
 		'memory'
 	],
-	#category : #'VMMaker-Tools'
+	#category : 'VMMaker-Tools',
+	#package : 'VMMaker-Tools'
 }
 
-{ #category : #'instance-creation' }
+{ #category : 'instance-creation' }
 VMTFreeListNode class >> on: anOop memory: aMemory [
 	
 	anOop = 0 ifTrue: [ self halt ].
@@ -18,19 +19,19 @@ VMTFreeListNode class >> on: anOop memory: aMemory [
 		yourself
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 VMTFreeListNode >> address [
 	
 	^ memory startOfObject: nodeOop
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 VMTFreeListNode >> children [
 	
 	^ self edges
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 VMTFreeListNode >> edges [
 	
 	| edges |
@@ -40,23 +41,23 @@ VMTFreeListNode >> edges [
 	^ edges
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 VMTFreeListNode >> hasChildren [
 	
 	^ self nextOop ~= 0 or: [ self previousOop ~= 0 ]
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 VMTFreeListNode >> memory [
 	^ memory
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 VMTFreeListNode >> memory: anObject [
 	memory := anObject
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 VMTFreeListNode >> nextOop [
 
 	^ memory
@@ -64,17 +65,17 @@ VMTFreeListNode >> nextOop [
 		ofFreeChunk: nodeOop
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 VMTFreeListNode >> nodeOop [
 	^ nodeOop
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 VMTFreeListNode >> nodeOop: anObject [
 	nodeOop := anObject
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 VMTFreeListNode >> previousOop [
 
 	^ memory
@@ -82,7 +83,7 @@ VMTFreeListNode >> previousOop [
 		ofFreeChunk: nodeOop
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 VMTFreeListNode >> printOn: aStream [
 
 	aStream
@@ -91,7 +92,7 @@ VMTFreeListNode >> printOn: aStream [
 		nextPutAll: ')'
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 VMTFreeListNode >> size [
 
 	^ memory bytesInObject: nodeOop

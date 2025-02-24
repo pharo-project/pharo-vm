@@ -1,14 +1,15 @@
 Class {
-	#name : #MockVMStructWithoutTypeDeclarations,
-	#superclass : #VMStructType,
+	#name : 'MockVMStructWithoutTypeDeclarations',
+	#superclass : 'VMStructType',
 	#instVars : [
 		'foo',
 		'bar'
 	],
-	#category : #VMMakerTests
+	#category : 'VMMakerTests',
+	#package : 'VMMakerTests'
 }
 
-{ #category : #enumerating }
+{ #category : 'enumerating' }
 MockVMStructWithoutTypeDeclarations class >> instVarNamesAndTypesForTranslationDo: aBinaryBlock [
 	"Missing the bar type declaration"
 	

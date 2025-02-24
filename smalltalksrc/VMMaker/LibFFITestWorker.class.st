@@ -1,37 +1,39 @@
 Class {
-	#name : #LibFFITestWorker,
-	#superclass : #Object,
+	#name : 'LibFFITestWorker',
+	#superclass : 'Object',
 	#instVars : [
 		'tasks'
 	],
-	#category : #'VMMaker-FFI'
+	#category : 'VMMaker-FFI',
+	#package : 'VMMaker',
+	#tag : 'FFI'
 }
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 LibFFITestWorker >> asInteger [
 	^ 16rFFFF1FFF
 ]
 
-{ #category : #clearing }
+{ #category : 'clearing' }
 LibFFITestWorker >> clear [
 	
 	tasks removeAll
 ]
 
-{ #category : #'as yet unclassified' }
+{ #category : 'as yet unclassified' }
 LibFFITestWorker >> dispatchCallout: aLibFFITestWorkerTask [ 
 
 	tasks add: aLibFFITestWorkerTask
 ]
 
-{ #category : #'as yet unclassified' }
+{ #category : 'as yet unclassified' }
 LibFFITestWorker >> initialize [ 
 
 	super initialize.
 	tasks := OrderedCollection new
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 LibFFITestWorker >> tasks [
 	^ tasks
 ]

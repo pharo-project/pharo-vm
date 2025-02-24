@@ -1,14 +1,16 @@
 Class {
-	#name : #VMAbstractBuilder,
-	#superclass : #Object,
+	#name : 'VMAbstractBuilder',
+	#superclass : 'Object',
 	#instVars : [
 		'interpreter',
 		'memory'
 	],
-	#category : #'VMMakerTests-Builders'
+	#category : 'VMMakerTests-Builders',
+	#package : 'VMMakerTests',
+	#tag : 'Builders'
 }
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 VMAbstractBuilder >> collection: aCollection at: anIndex put: anOop [
 	"convinience method to put an oop at a specific place
 	No need to take care of the size of the collection, I'm taking care of it!"
@@ -20,22 +22,22 @@ VMAbstractBuilder >> collection: aCollection at: anIndex put: anOop [
 	
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 VMAbstractBuilder >> interpreter [
 	^ interpreter
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 VMAbstractBuilder >> interpreter: anObject [
 	interpreter := anObject
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 VMAbstractBuilder >> memory [
 	^ memory
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 VMAbstractBuilder >> memory: anObject [
 	memory := anObject
 ]

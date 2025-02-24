@@ -9,15 +9,17 @@ counters
 
 "
 Class {
-	#name : #SistaCogMethod,
-	#superclass : #CogMethod,
+	#name : 'SistaCogMethod',
+	#superclass : 'CogMethod',
 	#instVars : [
 		'counters'
 	],
-	#category : #'VMMaker-JIT'
+	#category : 'VMMaker-JIT',
+	#package : 'VMMaker',
+	#tag : 'JIT'
 }
 
-{ #category : #'class initialization' }
+{ #category : 'class initialization' }
 SistaCogMethod class >> initialize [
 	"self initialize"
 	(Smalltalk classNamed: #CogSistaMethodSurrogate32) ifNotNil:
@@ -28,20 +30,20 @@ SistaCogMethod class >> initialize [
 		self checkGenerateSurrogate: cms64 bytesPerWord: 8]
 ]
 
-{ #category : #translation }
+{ #category : 'translation' }
 SistaCogMethod class >> structTypeName [
 	"Provide the typedef name."
 	^superclass structTypeName
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 SistaCogMethod >> counters [
 	"Answer the value of counters"
 
 	^ counters
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 SistaCogMethod >> counters: anObject [
 	"Set the value of counters"
 

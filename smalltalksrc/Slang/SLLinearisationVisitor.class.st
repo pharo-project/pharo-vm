@@ -26,56 +26,58 @@ Calls become statements and nested calls are assigned to variables.
 	""
 "
 Class {
-	#name : #SLLinearisationVisitor,
-	#superclass : #Object,
+	#name : 'SLLinearisationVisitor',
+	#superclass : 'Object',
 	#instVars : [
 		'codeGenerator',
 		'builder',
 		'localizedVariables',
 		'callgraphVariableCollector'
 	],
-	#category : #'Slang-Optimizations'
+	#category : 'Slang-Optimizations',
+	#package : 'Slang',
+	#tag : 'Optimizations'
 }
 
-{ #category : #visiting }
+{ #category : 'visiting' }
 SLLinearisationVisitor >> addLinearisedStatement: anExpression [
 
 	builder push: anExpression.
 	^ builder popAsStatement
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 SLLinearisationVisitor >> builder [
 
 	^ builder
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 SLLinearisationVisitor >> codeGenerator [
 
 	^ codeGenerator
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 SLLinearisationVisitor >> codeGenerator: anObject [
 
 	codeGenerator := anObject.
 	callgraphVariableCollector := SLCallGraphFreeVariableCollector codeGenerator: codeGenerator
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 SLLinearisationVisitor >> localizedVariables: anObject [
 
 	localizedVariables := anObject
 ]
 
-{ #category : #visiting }
+{ #category : 'visiting' }
 SLLinearisationVisitor >> pop [
 
 	^ builder popAsExpression
 ]
 
-{ #category : #visiting }
+{ #category : 'visiting' }
 SLLinearisationVisitor >> shouldLineariseSend: aTSendNode [
 
 	(codeGenerator isDynamicCall: aTSendNode) ifTrue: [ ^ true ].
@@ -85,7 +87,7 @@ SLLinearisationVisitor >> shouldLineariseSend: aTSendNode [
 		anySatisfy: [ :each | localizedVariables includes: each ]
 ]
 
-{ #category : #visiting }
+{ #category : 'visiting' }
 SLLinearisationVisitor >> visitAssignmentNode: aTAssignmentNode [ 
 
 	| expression |
@@ -99,7 +101,7 @@ SLLinearisationVisitor >> visitAssignmentNode: aTAssignmentNode [
 		yourself)
 ]
 
-{ #category : #visiting }
+{ #category : 'visiting' }
 SLLinearisationVisitor >> visitCaseStatementNode: aTCaseStmtNode [
 	
 	| expressionVar newCases |
@@ -116,32 +118,32 @@ SLLinearisationVisitor >> visitCaseStatementNode: aTCaseStmtNode [
 		yourself)
 ]
 
-{ #category : #visiting }
+{ #category : 'visiting' }
 SLLinearisationVisitor >> visitConstantNode: aTConstantNode [ 
 	
 	builder push: aTConstantNode
 ]
 
-{ #category : #visiting }
+{ #category : 'visiting' }
 SLLinearisationVisitor >> visitGoToNode: aTGoToNode [ 
 	
 	builder push: aTGoToNode
 ]
 
-{ #category : #visiting }
+{ #category : 'visiting' }
 SLLinearisationVisitor >> visitInlineNode: aTInlineNode [
 
 	aTInlineNode method accept: self.
 	builder push: self pop asInlineNode
 ]
 
-{ #category : #visiting }
+{ #category : 'visiting' }
 SLLinearisationVisitor >> visitLabeledCommentNode: aTLabeledCommentNode [ 
 
 	builder push: aTLabeledCommentNode
 ]
 
-{ #category : #visiting }
+{ #category : 'visiting' }
 SLLinearisationVisitor >> visitMethod: aTMethod [ 
 
 	aTMethod parseTree accept: self.
@@ -150,14 +152,14 @@ SLLinearisationVisitor >> visitMethod: aTMethod [
 		yourself)
 ]
 
-{ #category : #visiting }
+{ #category : 'visiting' }
 SLLinearisationVisitor >> visitReturnNode: aTReturnNode [ 
 	
 	aTReturnNode expression accept: self.
 	builder addStatement: (TReturnNode expression: builder popAsStatement)
 ]
 
-{ #category : #visiting }
+{ #category : 'visiting' }
 SLLinearisationVisitor >> visitSendNode: aTSendNode [
 
 	| receiverVar argVars newSelector newNode shouldLinearise |
@@ -200,14 +202,14 @@ SLLinearisationVisitor >> visitSendNode: aTSendNode [
 		ifFalse: [ builder push: newNode ]
 ]
 
-{ #category : #visiting }
+{ #category : 'visiting' }
 SLLinearisationVisitor >> visitStatement: aStatement [
 
 	aStatement accept: self.
 	builder finishStatement
 ]
 
-{ #category : #visiting }
+{ #category : 'visiting' }
 SLLinearisationVisitor >> visitStatementListNode: aTStatementListNode [ 
 	
 	| statementList previousBuilder |
@@ -231,7 +233,7 @@ SLLinearisationVisitor >> visitStatementListNode: aTStatementListNode [
 	^ statementList
 ]
 
-{ #category : #visiting }
+{ #category : 'visiting' }
 SLLinearisationVisitor >> visitSwitchStatementNode: aTSwitchStmtNode [ 
 	
 	| expressionVar newCases |
@@ -248,7 +250,7 @@ SLLinearisationVisitor >> visitSwitchStatementNode: aTSwitchStmtNode [
 		yourself)
 ]
 
-{ #category : #visiting }
+{ #category : 'visiting' }
 SLLinearisationVisitor >> visitVariableNode: aTVariableNode [ 
 	
 	builder push: aTVariableNode

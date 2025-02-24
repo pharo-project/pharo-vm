@@ -1,13 +1,15 @@
 Class {
-	#name : #TVariableNode,
-	#superclass : #TParseNode,
+	#name : 'TVariableNode',
+	#superclass : 'TParseNode',
 	#instVars : [
 		'name'
 	],
-	#category : #'Slang-AST'
+	#category : 'Slang-AST',
+	#package : 'Slang',
+	#tag : 'AST'
 }
 
-{ #category : #'instance creation' }
+{ #category : 'instance creation' }
 TVariableNode class >> named: aName [
 
 	^ self new
@@ -15,106 +17,105 @@ TVariableNode class >> named: aName [
 		yourself
 ]
 
-{ #category : #'instance creation' }
+{ #category : 'instance creation' }
 TVariableNode class >> selfNode [
 
 	^ self named: 'self'
 ]
 
-{ #category : #visiting }
+{ #category : 'visiting' }
 TVariableNode >> accept: aVisitor [
 	
 	^ aVisitor visitVariableNode: self
 ]
 
-{ #category : #tranforming }
+{ #category : 'tranforming' }
 TVariableNode >> asCASTIn: aBuilder [
 
-	^ name = 'nil'
-		  ifTrue: [ CIdentifierNode name: aBuilder nilTranslation ]
-		  ifFalse: [ CIdentifierNode name: (aBuilder returnPrefixFromVariable: name) ]
+	^ CIdentifierNode name: (aBuilder returnPrefixFromVariable: name)
 ]
 
-{ #category : #transformations }
+{ #category : 'transformations' }
 TVariableNode >> bindVariableUsesIn: aDictionary [
 
 	^ (aDictionary at: name ifAbsent: [^ self]) copy
 ]
 
-{ #category : #transformations }
+{ #category : 'transformations' }
 TVariableNode >> bindVariableUsesIn: aDictionary andConstantFoldIf: constantFold in: codeGen [
 	"Answer either the receiver, if it is not a reference to one of the given variables, or the replacement if it is."
 	^(aDictionary at: name ifAbsent: [^self]) copy
 ]
 
-{ #category : #transformations }
-TVariableNode >> bindVariablesIn: aDictionary [ 
-	^ (aDictionary at: name ifAbsent: [^ self]) copy
+{ #category : 'transformations' }
+TVariableNode >> bindVariablesIn: aDictionary [
+
+	^ (aDictionary at: name ifAbsent: [ ^ self ]) copy
 ]
 
-{ #category : #transformations }
+{ #category : 'transformations' }
 TVariableNode >> bindVariablesIn: aDictionary unless: cautionaryBlock [
 
 	(cautionaryBlock value: self) ifTrue: [^self].
 	^ (aDictionary at: name ifAbsent: [^ self]) copy
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 TVariableNode >> children [
 	
 	^ #()
 ]
 
-{ #category : #displaying }
+{ #category : 'displaying' }
 TVariableNode >> displayString [
 
 	^ name asString
 ]
 
-{ #category : #testing }
+{ #category : 'testing' }
 TVariableNode >> hasSideEffect [
 	"Answer if the parse tree rooted at this node has a side-effect or not."
 	^false
 ]
 
-{ #category : #testing }
+{ #category : 'testing' }
 TVariableNode >> isLeaf [
 
 	^true
 ]
 
-{ #category : #comparing }
+{ #category : 'comparing' }
 TVariableNode >> isSameAs: aTParseNode [
 	^aTParseNode isVariable
 	 and: [name = aTParseNode name]
 ]
 
-{ #category : #testing }
+{ #category : 'testing' }
 TVariableNode >> isVariable [
 
 	^true
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 TVariableNode >> name [
 
 	^name asString
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 TVariableNode >> nameOrValue [
 
 	^name
 ]
 
-{ #category : #enumerating }
+{ #category : 'enumerating' }
 TVariableNode >> nodesDo: aBlock parent: parent [
 	"Apply aBlock to all nodes in the receiver with each node's parent.
 	 N.B. This is assumed to be bottom-up, leaves first."
 	aBlock value: self value: parent
 ]
 
-{ #category : #printing }
+{ #category : 'printing' }
 TVariableNode >> printOn: aStream level: level [
 
 	super printOn: aStream level: level.
@@ -124,17 +125,41 @@ TVariableNode >> printOn: aStream level: level [
 		nextPutAll: ')'
 ]
 
-{ #category : #accessing }
-TVariableNode >> setName: aString [
+{ #category : 'transformations' }
+TVariableNode >> renameLocalVariablesGivenClassVariables: classVariables globalVariables: globalsVariables classNames: classNames inCodeGenerator: aCodeGen collectingChangesIn: changedVariables [
+	"Answer either the receiver, if it is not a reference to one of the given variables, or the replacement if it is. classVariables is a Dictionary and globalsVariables is a collection"
 
-	(CCodeGenerator reservedWords includes:
-		 aString) ifTrue: [
-		TranslationError signal: aString , ' is a reserved word' ].
+	"'self', 'self_in...', 'super' and 'cascade are reserved variable names"
+	(name = #super or: [
+		 (name beginsWith: #self) or: [ name beginsWith: #cascade ] ])
+		ifTrue: [ ^ self ].
+
+	"don't rename variables which reference class name"
+	(classNames includes: name) ifTrue: [ ^ self ].
+
+	"don't rename implicit arguments, they do not appear in the C code but some of them are hard coded in Slang"
+	(aCodeGen isNonArgumentImplicitReceiverVariableName: name) ifTrue: [
+		^ self ].
+
+	(globalsVariables includes: name) ifTrue: [ ^ self ].
+	classVariables
+		at: name
+		ifPresent: [ :replacement |
+			replacement shouldBeGenerated ifTrue: [ ^ replacement ].
+			"in case of library name don't redefine them"
+			^ self ]
+		ifAbsent: [ "the variable is local, we update its name with an _ and add it to the changedVariables collection which will change all its appearance in the TMethods/parseTree "
+			changedVariables add: name.
+			^ self class new setName: #_ , name ]
+]
+
+{ #category : 'accessing' }
+TVariableNode >> setName: aString [
 
 	name := aString
 ]
 
-{ #category : #testing }
+{ #category : 'testing' }
 TVariableNode >> structTargetKindIn: aCodeGen [
 	"Answer if the recever evaluates to a struct or struct pointer
 	 and hence can be dereferenced using . or ->.  Answer any of
@@ -142,12 +167,12 @@ TVariableNode >> structTargetKindIn: aCodeGen [
 	^aCodeGen structTargetKindForVariableName: name
 ]
 
-{ #category : #'type inference' }
+{ #category : 'type inference' }
 TVariableNode >> typeOrNilFrom: aCodeGenerator in: aTMethod [
 	^aTMethod typeFor: self name in: aCodeGenerator
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 TVariableNode >> variableNameOrNil [
 	^name
 ]

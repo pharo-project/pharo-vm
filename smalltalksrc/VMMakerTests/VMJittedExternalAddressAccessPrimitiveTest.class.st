@@ -1,10 +1,12 @@
 Class {
-	#name : #VMJittedExternalAddressAccessPrimitiveTest,
-	#superclass : #VMJittedByteArrayAccessPrimitiveTest,
-	#category : #'VMMakerTests-JitTests'
+	#name : 'VMJittedExternalAddressAccessPrimitiveTest',
+	#superclass : 'VMJittedByteArrayAccessPrimitiveTest',
+	#category : 'VMMakerTests-JitTests',
+	#package : 'VMMakerTests',
+	#tag : 'JitTests'
 }
 
-{ #category : #utils }
+{ #category : 'utils' }
 VMJittedExternalAddressAccessPrimitiveTest >> newReceiver [
 	"In this case the target receiver is a byteArray and the receiver to the primitive is an external address pointing to it"
 
@@ -14,7 +16,7 @@ VMJittedExternalAddressAccessPrimitiveTest >> newReceiver [
 
 ]
 
-{ #category : #utils }
+{ #category : 'utils' }
 VMJittedExternalAddressAccessPrimitiveTest >> trailingName [
 
 	^ 'ExternalAddress'

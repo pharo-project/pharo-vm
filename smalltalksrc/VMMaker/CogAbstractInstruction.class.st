@@ -44,8 +44,8 @@ operands
 	- the array containing any operands the instruction may have; the opcode defines implicitly how many operands are consdered
 "
 Class {
-	#name : #CogAbstractInstruction,
-	#superclass : #VMStructType,
+	#name : 'CogAbstractInstruction',
+	#superclass : 'VMStructType',
 	#instVars : [
 		'opcode',
 		'machineCodeSize',
@@ -67,16 +67,18 @@ Class {
 		'CogCompilationConstants',
 		'CogRTLOpcodes'
 	],
-	#category : #'VMMaker-JIT'
+	#category : 'VMMaker-JIT',
+	#package : 'VMMaker',
+	#tag : 'JIT'
 }
 
-{ #category : #translation }
+{ #category : 'translation' }
 CogAbstractInstruction class >> ISA [
 	"Answer the name of the ISA the receiver's subclass implements."
 	^self subclassResponsibility
 ]
 
-{ #category : #'simulation only' }
+{ #category : 'simulation only' }
 CogAbstractInstruction class >> byteSizeForSimulator: aVMClass [
 	"Answer an approximation of the byte size of an AbstractInstruction struct.
 	 This is for estimating the alloca in allocateOpcodes:bytecodes:ifFail:
@@ -91,42 +93,42 @@ CogAbstractInstruction class >> byteSizeForSimulator: aVMClass [
 		roundTo: ptrsize
 ]
 
-{ #category : #translation }
+{ #category : 'translation' }
 CogAbstractInstruction class >> defaultCompilerClass [
 	^self
 ]
 
-{ #category : #translation }
+{ #category : 'translation' }
 CogAbstractInstruction class >> filteredInstVarNames [
 	"Eliminate bcpc, which is development-time only."
 	^super filteredInstVarNames copyWithout: 'bcpc'
 ]
 
-{ #category : #'instance creation' }
+{ #category : 'instance creation' }
 CogAbstractInstruction class >> for: aCogit [
 	^self new cogit: aCogit
 ]
 
-{ #category : #translation }
+{ #category : 'translation' }
 CogAbstractInstruction class >> identifyingPredefinedMacros [
 	"Answer the predefined macros that identify the processors a subclass handles, if any.
 	 If the subclass isn't yet ready for production (a work in progress) simply answer nil."
 	^nil
 ]
 
-{ #category : #translation }
+{ #category : 'translation' }
 CogAbstractInstruction class >> ifTranslateableAddWithOptionsTo: aCollection [
 	(self wordSize = Cogit objectMemoryClass wordSize
 	 and: [self identifyingPredefinedMacros notNil]) ifTrue:
 		[aCollection add: {self. {#ISA. self ISA}}]
 ]
 
-{ #category : #'class initialization' }
+{ #category : 'class initialization' }
 CogAbstractInstruction class >> initialize [
 	NumOperands := 4
 ]
 
-{ #category : #'class initialization' }
+{ #category : 'class initialization' }
 CogAbstractInstruction class >> initializeAbstractRegisters [
 	"Assign the abstract registers with the identities/indices of the relevant concrete registers,
 	 and assign CallerSavedRegisterMask appropriately.
@@ -136,7 +138,7 @@ CogAbstractInstruction class >> initializeAbstractRegisters [
 	CogAbstractRegisters initialize
 ]
 
-{ #category : #'class initialization' }
+{ #category : 'class initialization' }
 CogAbstractInstruction class >> initializeSpecificOpcodes: opcodeSymbolSequence in: initializeMethod [
 	"Declare as class variables, the opcodes in opcodeSymbolSequence.
 	 Assign values to them from LastRTLOpcode on.  
@@ -151,14 +153,11 @@ CogAbstractInstruction class >> initializeSpecificOpcodes: opcodeSymbolSequence 
 											[:ea| ea key].
 
 	"Declare opcodeSymbolSequence's elements from LastRTLCode on up."
-	opcodeSymbolSequence withIndexDo:
-		[:classVarName :value|
-		pool
-			declare: classVarName from: Undeclared;
-			at: classVarName put: value + LastRTLCode - 1]
+	opcodeSymbolSequence withIndexDo: [:classVarName :value|
+		pool at: classVarName put: value + LastRTLCode - 1]
 ]
 
-{ #category : #translation }
+{ #category : 'translation' }
 CogAbstractInstruction class >> instVarNamesAndTypesForTranslationDo: aBinaryBlock [
 	"Enumerate aBinaryBlock with the names and C type strings for the inst vars to include in an AbstractInstruction struct."
 	"(CogAbstractInstruction withAllSubclasses reject: [:c| c name includesSubString: 'ForTests']) do:
@@ -176,31 +175,31 @@ CogAbstractInstruction class >> instVarNamesAndTypesForTranslationDo: aBinaryBlo
 						[#'unsigned char'])]
 ]
 
-{ #category : #testing }
+{ #category : 'testing' }
 CogAbstractInstruction class >> isAbstract [
 	^self == CogAbstractInstruction
 ]
 
-{ #category : #translation }
+{ #category : 'translation' }
 CogAbstractInstruction class >> isAccessor: aSelector [
 	^(#(cogit coInterpreter objectMemory) includes: aSelector) not
 	   and: [super isAccessor: aSelector]
 ]
 
-{ #category : #testing }
+{ #category : 'testing' }
 CogAbstractInstruction class >> isRISCTempRegister: reg [
 	"For tests to filter-out bogus values left in the RISCTempRegister, if any."
 	^self subclassResponsibility
 ]
 
-{ #category : #'accessing class hierarchy' }
+{ #category : 'accessing class hierarchy' }
 CogAbstractInstruction class >> literalsManagerClass [
 	"Answer the manager that generates in-line literals;
 	 subclasses that use out-of-line literals override."
 	^InLineLiteralsManager
 ]
 
-{ #category : #printing }
+{ #category : 'printing' }
 CogAbstractInstruction class >> localNameForOpcode: opcode [
 	^(self classPool keyAtValue: opcode ifAbsent: nil)
 		ifNotNil: [:opcodeName| opcodeName]
@@ -209,19 +208,19 @@ CogAbstractInstruction class >> localNameForOpcode: opcode [
 				ifFalse: [superclass localNameForOpcode: opcode]]
 ]
 
-{ #category : #translation }
+{ #category : 'translation' }
 CogAbstractInstruction class >> machineCodeDeclaration [
 	"Answer a dummy declaration.  Subclasses will override to provide the real one."
 	^#(#'unsigned char' '[4]')
 ]
 
-{ #category : #translation }
+{ #category : 'translation' }
 CogAbstractInstruction class >> moduleName [
 	"CogAbstractInstruction subclasses collect: [:ea| ea moduleName]"
 	^'cogit', self ISA
 ]
 
-{ #category : #'debug printing' }
+{ #category : 'debug printing' }
 CogAbstractInstruction class >> nameForOpcode: opcode [ "<Integer>"
 	^(CogRTLOpcodes nameForOpcode: opcode)
 		ifNotNil:
@@ -230,7 +229,7 @@ CogAbstractInstruction class >> nameForOpcode: opcode [ "<Integer>"
 			[self localNameForOpcode: opcode]
 ]
 
-{ #category : #'debug printing' }
+{ #category : 'debug printing' }
 CogAbstractInstruction class >> printFormatForOpcodeName: opcodeName [
 	"Answer a sequence of $r, $f or nil for the operands in the opcode, used for printing, where
 	 r => integer register, f => floating point register, and nil => numeric or address operand.
@@ -238,99 +237,89 @@ CogAbstractInstruction class >> printFormatForOpcodeName: opcodeName [
 	^#()
 ]
 
-{ #category : #'register management' }
+{ #category : 'register management' }
 CogAbstractInstruction class >> registerMaskFor: reg [
 	^Cogit basicNew registerMaskFor: reg
 ]
 
-{ #category : #'register management' }
+{ #category : 'register management' }
 CogAbstractInstruction class >> registerMaskFor: reg1 and: reg2 [
 	^Cogit basicNew registerMaskFor: reg1 and: reg2
 ]
 
-{ #category : #'register management' }
+{ #category : 'register management' }
 CogAbstractInstruction class >> registerMaskFor: reg1 and: reg2 and: reg3 [
 	^Cogit basicNew registerMaskFor: reg1 and: reg2 and: reg3
 ]
 
-{ #category : #'register management' }
+{ #category : 'register management' }
 CogAbstractInstruction class >> registerMaskFor: reg1 and: reg2 and: reg3 and: reg4 [
 	^Cogit basicNew registerMaskFor: reg1 and: reg2 and: reg3 and: reg4
 ]
 
-{ #category : #'register management' }
+{ #category : 'register management' }
 CogAbstractInstruction class >> registerMaskFor: reg1 and: reg2 and: reg3 and: reg4 and: reg5 [
 	^Cogit basicNew registerMaskFor: reg1 and: reg2 and: reg3 and: reg4 and: reg5
 ]
 
-{ #category : #'register management' }
+{ #category : 'register management' }
 CogAbstractInstruction class >> registerMaskFor: reg1 and: reg2 and: reg3 and: reg4 and: reg5 and: reg6 [
 	^Cogit basicNew registerMaskFor: reg1 and: reg2 and: reg3 and: reg4 and: reg5 and: reg6
 ]
 
-{ #category : #'register management' }
+{ #category : 'register management' }
 CogAbstractInstruction class >> registerMaskFor: reg1 and: reg2 and: reg3 and: reg4 and: reg5 and: reg6 and: reg7 [
 	^Cogit basicNew registerMaskFor: reg1 and: reg2 and: reg3 and: reg4 and: reg5 and: reg6 and: reg7
 ]
 
-{ #category : #'register management' }
+{ #category : 'register management' }
 CogAbstractInstruction class >> registerMaskFor: reg1 and: reg2 and: reg3 and: reg4 and: reg5 and: reg6 and: reg7 and: reg8 [
 	^Cogit basicNew registerMaskFor: reg1 and: reg2 and: reg3 and: reg4 and: reg5 and: reg6 and: reg7 and: reg8
 ]
 
-{ #category : #'register management' }
+{ #category : 'register management' }
 CogAbstractInstruction class >> registerMaskFor: reg1 and: reg2 and: reg3 and: reg4 and: reg5 and: reg6 and: reg7 and: reg8 and: reg9 [
 	^Cogit basicNew registerMaskFor: reg1 and: reg2 and: reg3 and: reg4 and: reg5 and: reg6 and: reg7 and: reg8 and: reg9
 ]
 
-{ #category : #'register management' }
+{ #category : 'register management' }
 CogAbstractInstruction class >> registerMaskFor: reg1 and: reg2 and: reg3 and: reg4 and: reg5 and: reg6 and: reg7 and: reg8 and: reg9 and: reg10 [
 	^Cogit basicNew registerMaskFor: reg1 and: reg2 and: reg3 and: reg4 and: reg5 and: reg6 and: reg7 and: reg8 and: reg9 and: reg10
 ]
 
-{ #category : #translation }
-CogAbstractInstruction class >> requiredMethodNames: options [
-	^self selectors reject:
-		[:s| | m |
-		(self isAccessor: s)
-		or: [((m := self compiledMethodAt: s) isQuick and: [m pragmas isEmpty])
-		or: [(m pragmaAt: #doNotGenerate) notNil
-		or: [(m pragmaAt: #inline:) notNil and: [(m pragmaAt: #inline:) arguments first == true]]]]]
-]
-
-{ #category : #verification }
+{ #category : 'verification' }
 CogAbstractInstruction class >> specificOpcodes [
 	^self subclassResponsibility
 ]
 
-{ #category : #translation }
+{ #category : 'translation' }
 CogAbstractInstruction class >> structTypeName [
 	^'AbstractInstruction'
 ]
 
-{ #category : #translation }
+{ #category : 'translation' }
 CogAbstractInstruction class >> translateableSubclassesAndOptions [
 	"CogAbstractInstruction translateableSubclassesAndOptions"
+
 	| translateableSubclassesAndOptions |
 	translateableSubclassesAndOptions := OrderedCollection new.
-	self subclasses do:
-		[:subclass|
-		subclass ifTranslateableAddWithOptionsTo: translateableSubclassesAndOptions].
-	^translateableSubclassesAndOptions sort:
-		[:a :b|
-		a first name < b first name
-		or: [a first name = b first name "If equal, sort on the ABI"
-			and: [a last last < b last last]]]
+	self allSubclasses do: [ :subclass |
+		subclass isAbstract ifFalse: [
+			subclass ifTranslateableAddWithOptionsTo:
+				translateableSubclassesAndOptions ] ].
+	^ translateableSubclassesAndOptions sort: [ :a :b |
+		  a first name < b first name or: [
+			  a first name = b first name and: [ a last last < b last last ] "If equal, sort on the ABI" ] ]
 ]
 
-{ #category : #translation }
+{ #category : 'translation' }
 CogAbstractInstruction class >> typeForSelf [
 	"Answer the type to give self if appropriate, or nil if not.
 	 In C all subclasses are mapped to the AbstractInstruction type."
 	^#'AbstractInstruction *'
 ]
 
-{ #category : #verification }
+{ #category : 'verification' }
 CogAbstractInstruction class >> unimplementedOpcodes [
 	"Check computeMaximumSize and dispatchConcretize for unimplemented opcodes."
 	"self subclasses collect: [:compiler| {compiler. compiler unimplementedOpcodes}]"
@@ -348,36 +337,13 @@ CogAbstractInstruction class >> unimplementedOpcodes [
 		yourself
 ]
 
-{ #category : #verification }
-CogAbstractInstruction class >> usedUnimplementedOpcodes [
-	"Check for uses of unimplemented opcodes"
-	"self subclasses collect: [:compiler| {compiler. compiler usedUnimplementedOpcodes}]"
-	| genericUnimplementedOpcodeBindings specificUnimplementedOpcodeBindings |
-	genericUnimplementedOpcodeBindings := Set new.
-	specificUnimplementedOpcodeBindings := Set new.
-	self unimplementedOpcodes do:
-		[:arrayOfOpcodes|
-		arrayOfOpcodes do:
-			[:opcode|
-			(self bindingOf: opcode)
-				ifNotNil: [:b| specificUnimplementedOpcodeBindings add: b]
-				ifNil: [genericUnimplementedOpcodeBindings add: (CogRTLOpcodes bindingOf: opcode)]]].
-	^ { (SystemNavigation new allCallsOn: genericUnimplementedOpcodeBindings localToPackage: #VMMaker)
-			inject: Set new
-			into:  [:them :methodRef| "These should be in Cogit's abstract instructions category"
-				them
-					addAll: (SystemNavigation new allCallsOn: methodRef method selector localToPackage: #VMMaker);
-					yourself].
-		SystemNavigation new allCallsOn: specificUnimplementedOpcodeBindings localToPackage: #VMMaker }
-]
-
-{ #category : #translation }
+{ #category : 'translation' }
 CogAbstractInstruction class >> wordSize [
 	"Answer either 4 or 8 depending on the processor's basic architacture."
 	self subclassResponsibility
 ]
 
-{ #category : #comparing }
+{ #category : 'comparing' }
 CogAbstractInstruction >> <= anAbstractInstruction [
 	"Support for Cogit>>abstractInstruction:follows: and CogBytecodeFixup>targetInstruction testing:"
 	<doNotGenerate>
@@ -389,7 +355,7 @@ CogAbstractInstruction >> <= anAbstractInstruction [
 	^(opcodesArray identityIndexOf: self) <= (opcodesArray identityIndexOf: anAbstractInstruction)
 ]
 
-{ #category : #comparing }
+{ #category : 'comparing' }
 CogAbstractInstruction >> > anAbstractInstruction [
 	"Support for Cogit>>abstractInstruction:follows: and CogBytecodeFixup>targetInstruction testing:"
 	<doNotGenerate>
@@ -401,7 +367,7 @@ CogAbstractInstruction >> > anAbstractInstruction [
 	^(opcodesArray identityIndexOf: self) > (opcodesArray identityIndexOf: anAbstractInstruction)
 ]
 
-{ #category : #comparing }
+{ #category : 'comparing' }
 CogAbstractInstruction >> >= anAbstractInstruction [
 	"Support for Cogit>>abstractInstruction:follows: and CogBytecodeFixup>targetInstruction testing:"
 	<doNotGenerate>
@@ -413,7 +379,7 @@ CogAbstractInstruction >> >= anAbstractInstruction [
 	^(opcodesArray identityIndexOf: self) >= (opcodesArray identityIndexOf: anAbstractInstruction)
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 CogAbstractInstruction >> addDependent: anInstruction [
 	<var: #anInstruction type: #'AbstractInstruction *'>
 	<returnTypeC: #'AbstractInstruction *'>
@@ -422,52 +388,52 @@ CogAbstractInstruction >> addDependent: anInstruction [
 	^dependent := anInstruction
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 CogAbstractInstruction >> address [
 	^address
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 CogAbstractInstruction >> address: theAddress [
 	^address := theAddress
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 CogAbstractInstruction >> annotation [
 	^annotation
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 CogAbstractInstruction >> annotation: aByte [
 
 	^annotation := aByte
 ]
 
-{ #category : #coercion }
+{ #category : 'coercion' }
 CogAbstractInstruction >> asInteger [
 	<doNotGenerate>
 	^self
 ]
 
-{ #category : #coercion }
+{ #category : 'coercion' }
 CogAbstractInstruction >> asIntegerPtr [
 	<doNotGenerate>
 	^self
 ]
 
-{ #category : #coercion }
+{ #category : 'coercion' }
 CogAbstractInstruction >> asUnsignedInteger [
 	<doNotGenerate>
 	^self
 ]
 
-{ #category : #coercion }
+{ #category : 'coercion' }
 CogAbstractInstruction >> asUnsignedIntegerPtr [
 	<doNotGenerate>
 	^self
 ]
 
-{ #category : #'register allocation' }
+{ #category : 'register allocation' }
 CogAbstractInstruction >> availableFloatRegisterOrNoneFor: liveRegsMask [
 	"Answer an unused abstract register in the liveRegMask.
 	 Subclasses with more registers can override to answer them."
@@ -492,7 +458,7 @@ CogAbstractInstruction >> availableFloatRegisterOrNoneFor: liveRegsMask [
 	^ NoReg
 ]
 
-{ #category : #'register allocation' }
+{ #category : 'register allocation' }
 CogAbstractInstruction >> availableRegisterOrNoneFor: liveRegsMask [
 	"Answer an unused abstract register in the liveRegMask.
 	 Subclasses with more registers can override to answer them.
@@ -511,7 +477,7 @@ CogAbstractInstruction >> availableRegisterOrNoneFor: liveRegsMask [
 	^NoReg
 ]
 
-{ #category : #'register allocation' }
+{ #category : 'register allocation' }
 CogAbstractInstruction >> availableVectorRegisterOrNoneFor: liveRegsMask [
 	"Answer an unused abstract vector register in the liveRegMask.
 	 Subclasses with more registers can override to answer them."
@@ -535,17 +501,17 @@ CogAbstractInstruction >> availableVectorRegisterOrNoneFor: liveRegsMask [
 	^NoReg
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 CogAbstractInstruction >> bcpc [
 	^bcpc
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 CogAbstractInstruction >> bcpc: theBcpc [
 	^bcpc := theBcpc
 ]
 
-{ #category : #comparing }
+{ #category : 'comparing' }
 CogAbstractInstruction >> between: min and: max [
 	"Support for CogBytecodeFixup>targetInstruction testing:"
 	<doNotGenerate>
@@ -558,7 +524,7 @@ CogAbstractInstruction >> between: min and: max [
 		and: (opcodesArray identityIndexOf: max)
 ]
 
-{ #category : #testing }
+{ #category : 'testing' }
 CogAbstractInstruction >> byteReadsZeroExtend [
 	"Answer if a byte read, via MoveAbR, MoveMbrR, or MoveXbrRR zero-extends
 	 into the full register, or merely affects the least significant 8 bits of the
@@ -567,44 +533,44 @@ CogAbstractInstruction >> byteReadsZeroExtend [
 	^false
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 CogAbstractInstruction >> cResultRegister [
 	"Answer the register through which C funcitons return integral results."
 	<inline: true>
 	self subclassResponsibility
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 CogAbstractInstruction >> cStackPointer [
 	
 	"Return the SP register for the current platform used by C code"
 	self subclassResponsibility
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 CogAbstractInstruction >> callInstructionByteSize [
 	self subclassResponsibility
 ]
 
-{ #category : #testing }
+{ #category : 'testing' }
 CogAbstractInstruction >> canDivQuoRem [
 	<inline: true>
 	^self subclassResponsibility
 ]
 
-{ #category : #testing }
+{ #category : 'testing' }
 CogAbstractInstruction >> canMulRR [
 	<inline: true>
 	^self subclassResponsibility
 ]
 
-{ #category : #testing }
+{ #category : 'testing' }
 CogAbstractInstruction >> canPushPopMultipleRegisters [
 	<inline: true>
 	^false
 ]
 
-{ #category : #testing }
+{ #category : 'testing' }
 CogAbstractInstruction >> canSignExtend [
 	"Answer if the processor provides native sign extension instructions.  If it does it must be able to generate
 		SignExtend8RR SignExtend16RR
@@ -613,7 +579,7 @@ CogAbstractInstruction >> canSignExtend [
 	^false
 ]
 
-{ #category : #testing }
+{ #category : 'testing' }
 CogAbstractInstruction >> canZeroExtend [
 	"Answer if the processor provides native zero extension instructions.  If it does it must be able to generate
 		ZeroExtend8RR ZeroExtend16RR
@@ -622,7 +588,7 @@ CogAbstractInstruction >> canZeroExtend [
 	^false
 ]
 
-{ #category : #initialization }
+{ #category : 'initialization' }
 CogAbstractInstruction >> cloneLiteralFrom: existingLiteral [
 	"For out-of-line literal support, clone a literal from a literal."
 	<var: 'existingLiteral' type: #'AbstractInstruction *'>
@@ -635,26 +601,26 @@ CogAbstractInstruction >> cloneLiteralFrom: existingLiteral [
 		at: 2 put: (existingLiteral operands at: 2)
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 CogAbstractInstruction >> cmpC32RTempByteSize [
 	self subclassResponsibility
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 CogAbstractInstruction >> codeGranularity [
 	"Answer the size in bytes of a unit of machine code."
 	<inline: true>
 	^self subclassResponsibility
 ]
 
-{ #category : #initialization }
+{ #category : 'initialization' }
 CogAbstractInstruction >> cogit: aCogit [
 	<doNotGenerate>
 	cogit := aCogit.
 	objectMemory := aCogit objectMemory
 ]
 
-{ #category : #'generate machine code' }
+{ #category : 'generate machine code' }
 CogAbstractInstruction >> computeJumpTargetOffsetPlus: anPCOffset [
 
 	"Since it's an extraction from other methods."
@@ -666,7 +632,7 @@ CogAbstractInstruction >> computeJumpTargetOffsetPlus: anPCOffset [
 	^ jumpTarget - (cogit cCoerceSimple: address + anPCOffset to: #sqInt)
 ]
 
-{ #category : #'generate machine code' }
+{ #category : 'generate machine code' }
 CogAbstractInstruction >> concretizeAt: actualAddress [
 	"Generate concrete machine code for the instruction at actualAddress,
 	 setting machineCodeSize, and answer the following address."
@@ -677,13 +643,13 @@ CogAbstractInstruction >> concretizeAt: actualAddress [
 	^actualAddress + machineCodeSize
 ]
 
-{ #category : #'generate machine code' }
+{ #category : 'generate machine code' }
 CogAbstractInstruction >> concretizeFill32 [
 	"fill with operand 0 according to the processor's endianness"
 	self subclassResponsibility
 ]
 
-{ #category : #'generate machine code' }
+{ #category : 'generate machine code' }
 CogAbstractInstruction >> concretizeLabel [
 	<inline: true>
 	<var: #dependentChain type: #'AbstractInstruction *'>
@@ -695,7 +661,7 @@ CogAbstractInstruction >> concretizeLabel [
 	^machineCodeSize := 0
 ]
 
-{ #category : #'as yet unclassified' }
+{ #category : 'as yet unclassified' }
 CogAbstractInstruction >> concretizeMovePatcheableC32R [
 	"Move a 32 bit literal to a register.
 	This is patcheable instruction so it needs to be a fixed size instruction.
@@ -706,39 +672,23 @@ CogAbstractInstruction >> concretizeMovePatcheableC32R [
 	self subclassResponsibility 
 ]
 
-{ #category : #simulation }
+{ #category : 'simulation' }
 CogAbstractInstruction >> configureStackAlignment [
 	
 	self subclassResponsibility
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 CogAbstractInstruction >> dependent [
 	^dependent
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 CogAbstractInstruction >> dependent: anInstruction [
 	^dependent := anInstruction
 ]
 
-{ #category : #'full transfer run-time support' }
-CogAbstractInstruction >> disassemble [
-	<doNotGenerate>
-	self disassembleOn: Transcript
-]
-
-{ #category : #'full transfer run-time support' }
-CogAbstractInstruction >> disassembleOn: aStream [
-	<doNotGenerate>
-	cogit processor
-		disassembleFrom: 0
-		to: machineCodeSize - 1
-		in: machineCode object
-		on: aStream
-]
-
-{ #category : #accessing }
+{ #category : 'accessing' }
 CogAbstractInstruction >> fillFrom: startMemoryAddr until: endMemoryAddr with: fillReg usingVr: vectorRegister [
 	<inline: true>
 	| fillLoop |
@@ -750,7 +700,7 @@ CogAbstractInstruction >> fillFrom: startMemoryAddr until: endMemoryAddr with: f
 	^0 "Necessary to keep Slang happy"
 ]
 
-{ #category : #abi }
+{ #category : 'abi' }
 CogAbstractInstruction >> fullCallsAreRelative [
 	"Answer if CallFull and/or JumpFull are relative and hence need relocating on method
 	 compation. If so, they are annotated with IsRelativeCall in methods and relocated in
@@ -758,7 +708,7 @@ CogAbstractInstruction >> fullCallsAreRelative [
 	self subclassResponsibility
 ]
 
-{ #category : #abi }
+{ #category : 'abi' }
 CogAbstractInstruction >> genAlignCStackSavingRegisters: regMask numArgs: numArgs wordAlignment: alignment [
 	<inline: true>
 	| regMaskCopy numRegsPushed wordsPushedModAlignment delta |
@@ -778,7 +728,7 @@ CogAbstractInstruction >> genAlignCStackSavingRegisters: regMask numArgs: numArg
 	^0
 ]
 
-{ #category : #abi }
+{ #category : 'abi' }
 CogAbstractInstruction >> genCaptureCStackPointers: captureFramePointer [
 
 	self hasVarBaseRegister ifTrue:
@@ -802,7 +752,7 @@ CogAbstractInstruction >> genCaptureCStackPointers: captureFramePointer [
 	cogit RetN: 0.
 ]
 
-{ #category : #'abstract instructions' }
+{ #category : 'abstract instructions' }
 CogAbstractInstruction >> genJumpFPEqual: jumpTarget [
 	<inline: true>
 	<returnTypeC: #'AbstractInstruction *'>
@@ -810,7 +760,7 @@ CogAbstractInstruction >> genJumpFPEqual: jumpTarget [
 	^cogit gen: JumpFPEqual operand: jumpTarget asInteger
 ]
 
-{ #category : #'abstract instructions' }
+{ #category : 'abstract instructions' }
 CogAbstractInstruction >> genJumpFPGreater: jumpTarget [
 	<inline: true>
 	<returnTypeC: #'AbstractInstruction *'>
@@ -818,7 +768,7 @@ CogAbstractInstruction >> genJumpFPGreater: jumpTarget [
 	^cogit gen: JumpFPGreater operand: jumpTarget asInteger
 ]
 
-{ #category : #'abstract instructions' }
+{ #category : 'abstract instructions' }
 CogAbstractInstruction >> genJumpFPGreaterOrEqual: jumpTarget [
 	<inline: true>
 	<returnTypeC: #'AbstractInstruction *'>
@@ -826,7 +776,7 @@ CogAbstractInstruction >> genJumpFPGreaterOrEqual: jumpTarget [
 	^cogit gen: JumpFPGreaterOrEqual operand: jumpTarget asInteger
 ]
 
-{ #category : #'abstract instructions' }
+{ #category : 'abstract instructions' }
 CogAbstractInstruction >> genJumpFPLess: jumpTarget [
 	<inline: true>
 	<returnTypeC: #'AbstractInstruction *'>
@@ -834,7 +784,7 @@ CogAbstractInstruction >> genJumpFPLess: jumpTarget [
 	^cogit gen: JumpFPLess operand: jumpTarget asInteger
 ]
 
-{ #category : #'abstract instructions' }
+{ #category : 'abstract instructions' }
 CogAbstractInstruction >> genJumpFPLessOrEqual: jumpTarget [
 	<inline: true>
 	<returnTypeC: #'AbstractInstruction *'>
@@ -842,7 +792,7 @@ CogAbstractInstruction >> genJumpFPLessOrEqual: jumpTarget [
 	^cogit gen: JumpFPLessOrEqual operand: jumpTarget asInteger
 ]
 
-{ #category : #'abstract instructions' }
+{ #category : 'abstract instructions' }
 CogAbstractInstruction >> genJumpFPNotEqual: jumpTarget [
 	<inline: true>
 	<returnTypeC: #'AbstractInstruction *'>
@@ -866,7 +816,7 @@ CogAbstractInstruction >> genJumpMultiplyOverflow: jumpTarget [
 	^cogit JumpOverflow: jumpTarget
 ]
 
-{ #category : #'smalltalk calling convention' }
+{ #category : 'smalltalk calling convention' }
 CogAbstractInstruction >> genLoadCStackPointer [
 	"Load the stack pointer register with that of the C stack, effecting
 	 a switch to the C stack.  Used when machine code calls into the
@@ -874,7 +824,7 @@ CogAbstractInstruction >> genLoadCStackPointer [
 	self subclassResponsibility
 ]
 
-{ #category : #'smalltalk calling convention' }
+{ #category : 'smalltalk calling convention' }
 CogAbstractInstruction >> genLoadCStackPointers [
 	"Load the frame and stack pointer registers with those of the C stack,
 	 effecting a switch to the C stack.  Used when machine code calls into
@@ -882,14 +832,14 @@ CogAbstractInstruction >> genLoadCStackPointers [
 	self subclassResponsibility
 ]
 
-{ #category : #'smalltalk calling convention' }
+{ #category : 'smalltalk calling convention' }
 CogAbstractInstruction >> genLoadStackPointers [
 	"Switch back to the Smalltalk stack. Assign SPReg first
 	 because typically it is used immediately afterwards."
 	self subclassResponsibility
 ]
 
-{ #category : #abi }
+{ #category : 'abi' }
 CogAbstractInstruction >> genMarshallNArgs: numArgs arg: regOrConst0 arg: regOrConst1 arg: regOrConst2 arg: regOrConst3 [
 	"Generate the code to pass up to four arguments in a C run-time call.  Hack: each argument is
 	 either a negative number, which encodes a constant, or a non-negative number, that of a register.
@@ -906,7 +856,7 @@ CogAbstractInstruction >> genMarshallNArgs: numArgs arg: regOrConst0 arg: regOrC
 	^self subclassResponsibility
 ]
 
-{ #category : #abi }
+{ #category : 'abi' }
 CogAbstractInstruction >> genMarshallNArgs: numArgs floatArg: regOrConst0 floatArg: regOrConst1 floatArg: regOrConst2 floatArg: regOrConst3 [
 	"Generate the code to pass up to four arguments in a C run-time call.  Hack: each argument is
 	 either a negative number, which encodes a constant, or a non-negative number, that of a register.
@@ -923,7 +873,17 @@ CogAbstractInstruction >> genMarshallNArgs: numArgs floatArg: regOrConst0 floatA
 	^self subclassResponsibility
 ]
 
-{ #category : #'abstract instructions' }
+{ #category : 'abstract instructions' }
+CogAbstractInstruction >> genMoveM32: offset r: baseReg R: destReg [
+
+	^ cogit
+		  gen: MoveM32rR
+		  quickConstant: offset
+		  operand: baseReg
+		  operand: destReg
+]
+
+{ #category : 'abstract instructions' }
 CogAbstractInstruction >> genMulR: regSource R: regDest [
 	"Generate whatever code necessary to do a bytesPerOop x bytesPerOop multiplication,
 	 answering the first instruction uin the sequence."
@@ -931,7 +891,7 @@ CogAbstractInstruction >> genMulR: regSource R: regDest [
 	self subclassResponsibility
 ]
 
-{ #category : #'smalltalk calling convention' }
+{ #category : 'smalltalk calling convention' }
 CogAbstractInstruction >> genPushRegisterArgsForAbortMissNumArgs: numArgs [
 	"Ensure that the register args are pushed before the outer and
 	 inner retpcs at an entry miss for arity <= self numRegArgs.  The
@@ -954,7 +914,7 @@ CogAbstractInstruction >> genPushRegisterArgsForAbortMissNumArgs: numArgs [
 	self subclassResponsibility
 ]
 
-{ #category : #'smalltalk calling convention' }
+{ #category : 'smalltalk calling convention' }
 CogAbstractInstruction >> genPushRegisterArgsForNumArgs: numArgs scratchReg: scratchReg [
 	"Ensure that the register args are pushed before the retpc for arity <= self numRegArgs.
 	 This isn't as clumsy on a RISC.  But putting the receiver and
@@ -971,7 +931,7 @@ CogAbstractInstruction >> genPushRegisterArgsForNumArgs: numArgs scratchReg: scr
 	self subclassResponsibility
 ]
 
-{ #category : #'smalltalk calling convention' }
+{ #category : 'smalltalk calling convention' }
 CogAbstractInstruction >> genSaveStackPointers [
 	"Save the frame and stack pointer registers to the framePointer
 	 and stackPointer variables.  Used to save the machine code frame
@@ -979,14 +939,14 @@ CogAbstractInstruction >> genSaveStackPointers [
 	self subclassResponsibility
 ]
 
-{ #category : #'abstract instructions' }
+{ #category : 'abstract instructions' }
 CogAbstractInstruction >> genSubstituteReturnAddress: retpc [
 	"Fake the return address for a call/jump so that the ``call'' returns
 	 to retpc given that the ``call'' will be made by a following jump."
 	self subclassResponsibility
 ]
 
-{ #category : #'abstract instructions' }
+{ #category : 'abstract instructions' }
 CogAbstractInstruction >> genSwapR: regA R: regB Scratch: regTmp [
 	"Generic register swap code.  Subclasses for processors that have a true exchange operation will override to use it."
 	| first |
@@ -998,7 +958,7 @@ CogAbstractInstruction >> genSwapR: regA R: regB Scratch: regTmp [
 	^first
 ]
 
-{ #category : #abi }
+{ #category : 'abi' }
 CogAbstractInstruction >> genWriteCResultIntoReg: abstractRegister [
 	| cResultReg |
 	cResultReg := self cResultRegister.
@@ -1006,24 +966,24 @@ CogAbstractInstruction >> genWriteCResultIntoReg: abstractRegister [
 		[cogit gen: MoveRR operand: cResultReg operand: abstractRegister]
 ]
 
-{ #category : #'inline cacheing' }
+{ #category : 'inline cacheing' }
 CogAbstractInstruction >> generateICacheFlush [
 	"A dummy routine.
 	 Processors that can generate code to flush the icache can override."
 
 ]
 
-{ #category : #'multi-threading' }
+{ #category : 'multi-threading' }
 CogAbstractInstruction >> generateLowLevelTryLock: vmOwnerLockAddress [
 	self subclassResponsibility
 ]
 
-{ #category : #'multi-threading' }
+{ #category : 'multi-threading' }
 CogAbstractInstruction >> generateLowLevelUnlock: vmOwnerLockAddress [
 	self subclassResponsibility
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 CogAbstractInstruction >> getDefaultCogCodeSize [
 	"Answer the default number of bytes to allocate for native code at startup.
 	 The actual value can be set via vmParameterAt: and/or a preference in the ini file.
@@ -1033,7 +993,7 @@ CogAbstractInstruction >> getDefaultCogCodeSize [
 	^1024 * 1024
 ]
 
-{ #category : #printing }
+{ #category : 'printing' }
 CogAbstractInstruction >> getFormatFromOpCodeName: opcodeName [
 
 	<doNotGenerate>
@@ -1046,14 +1006,14 @@ CogAbstractInstruction >> getFormatFromOpCodeName: opcodeName [
 	^ format
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 CogAbstractInstruction >> getJmpTarget [
 	"Get the target of a jump instruction.  Jumps have the target in the first operand."
 	<inline: true>
 	^cogit cCoerceSimple: (operands at: 0) to: #'AbstractInstruction *'
 ]
 
-{ #category : #printing }
+{ #category : 'printing' }
 CogAbstractInstruction >> getOperandsWithFormat: format [
 
 	<doNotGenerate>
@@ -1076,7 +1036,7 @@ CogAbstractInstruction >> getOperandsWithFormat: format [
 						ifTrue: [ (operand > 16 and: [ opcode ~= Label ]) 
 							ifTrue: [ 
 								(operand allMask: 16r80000000) 
-									ifTrue: [ strOperands add: operand asString, '/', operand signedIntFromLong asString].
+									ifTrue: [ strOperands add: operand printString, '/', operand signedIntFromLong printString ].
 									strOperands add: operand asString, '/', (operand hex)]
 							ifFalse: [ 
 								strOperands add: operand.
@@ -1088,20 +1048,20 @@ CogAbstractInstruction >> getOperandsWithFormat: format [
 	^ strOperands 
 ]
 
-{ #category : #testing }
+{ #category : 'testing' }
 CogAbstractInstruction >> hasConditionRegister [
 	"Answer if the receiver supports, e.g., JumpOverflow after a regular AddRR"
 	<inline: true>
 	^self subclassResponsibility
 ]
 
-{ #category : #testing }
+{ #category : 'testing' }
 CogAbstractInstruction >> hasDoublePrecisionFloatingPointSupport [
 	<inline: true>
 	^self subclassResponsibility
 ]
 
-{ #category : #testing }
+{ #category : 'testing' }
 CogAbstractInstruction >> hasLinkRegister [
 	"Answer if the processor has a link register, i.e. if calls pass
 	 the return pc in a register instead of pushing it on a stack."
@@ -1109,7 +1069,7 @@ CogAbstractInstruction >> hasLinkRegister [
 	^self subclassResponsibility
 ]
 
-{ #category : #testing }
+{ #category : 'testing' }
 CogAbstractInstruction >> hasPCRegister [
 	"Answer if the processor has a generally addressable pc register, such as the ARM.
 	 On such processors we can execute jumping to pop top of stack by popping into
@@ -1118,21 +1078,21 @@ CogAbstractInstruction >> hasPCRegister [
 	^false
 ]
 
-{ #category : #testing }
+{ #category : 'testing' }
 CogAbstractInstruction >> hasThreeAddressArithmetic [
 	"Answer if the receiver supports three-address arithmetic instructions (currently only AndCqRR)"
 	<inline: true>
 	^self subclassResponsibility
 ]
 
-{ #category : #testing }
+{ #category : 'testing' }
 CogAbstractInstruction >> hasVarBaseRegister [
 	"Answer if the processor has a dedicated callee-saved register to point to
 	 the base of commonly-accessed variables. By default this is false."
 	^false
 ]
 
-{ #category : #'generate machine code' }
+{ #category : 'generate machine code' }
 CogAbstractInstruction >> inCurrentCompilation: operand [
 	"Answer if operand is in the current compilation; and henced could be a candidate for pc-relative addressing."
 	<inline: true>
@@ -1140,7 +1100,7 @@ CogAbstractInstruction >> inCurrentCompilation: operand [
 	   or: [cogit addressIsInCurrentCompilation: operand]
 ]
 
-{ #category : #initialization }
+{ #category : 'initialization' }
 CogAbstractInstruction >> initialize [
 	"This method intializes the Smalltalk instance.  The C instance is merely a struct and doesn't need initialization."
 	<doNotGenerate>
@@ -1148,7 +1108,7 @@ CogAbstractInstruction >> initialize [
 	machineCode := CArrayAccessor on: (ByteArray new: self machineCodeBytes)
 ]
 
-{ #category : #initialization }
+{ #category : 'initialization' }
 CogAbstractInstruction >> initializeSharableLiteral: literal [
 	"For out-of-line literal support, initialize a sharable literal."
 	opcode := Literal.
@@ -1161,7 +1121,7 @@ CogAbstractInstruction >> initializeSharableLiteral: literal [
 		at: 2 put: -1			"opcodeIndex"
 ]
 
-{ #category : #initialization }
+{ #category : 'initialization' }
 CogAbstractInstruction >> initializeUniqueLiteral: literal [
 	"For out-of-line literal support, initialize an unsharable literal."
 	opcode := Literal.
@@ -1174,7 +1134,7 @@ CogAbstractInstruction >> initializeUniqueLiteral: literal [
 		at: 2 put: -1			"opcodeIndex"
 ]
 
-{ #category : #disassembly }
+{ #category : 'disassembly' }
 CogAbstractInstruction >> instructionSizeAt: pc [
 	"Answer the instruction size at pc. This is used in method disassembly
 	 to decode the jumps in block dispatch to discover where block methods
@@ -1182,14 +1142,14 @@ CogAbstractInstruction >> instructionSizeAt: pc [
 	^self subclassResponsibility
 ]
 
-{ #category : #testing }
+{ #category : 'testing' }
 CogAbstractInstruction >> isAFixup: fixupOrAddress [
 	<var: #fixupOrAddress type: #'void *'>
 	<inline: true>
 	^cogit addressIsInFixups: fixupOrAddress
 ]
 
-{ #category : #testing }
+{ #category : 'testing' }
 CogAbstractInstruction >> isAnInstruction: addressOrInstruction [
 	<var: #addressOrInstruction type: #'AbstractInstruction *'>
 	<inline: true>
@@ -1197,36 +1157,36 @@ CogAbstractInstruction >> isAnInstruction: addressOrInstruction [
 	  or: [addressOrInstruction == cogit methodLabel]
 ]
 
-{ #category : #testing }
+{ #category : 'testing' }
 CogAbstractInstruction >> isBigEndian [
 	<inline: true>
 	^self subclassResponsibility
 ]
 
-{ #category : #testing }
+{ #category : 'testing' }
 CogAbstractInstruction >> isCallPrecedingReturnPC: mcpc [
 	"Assuming mcpc is a send return pc answer if the instruction before it is a call (not a CallFull)."
 	^self subclassResponsibility
 ]
 
-{ #category : #testing }
+{ #category : 'testing' }
 CogAbstractInstruction >> isJump [
 	^opcode between: FirstJump and: LastJump
 ]
 
-{ #category : #testing }
+{ #category : 'testing' }
 CogAbstractInstruction >> isLiteral [
 
 	^ opcode = Literal
 ]
 
-{ #category : #testing }
+{ #category : 'testing' }
 CogAbstractInstruction >> isPCDependent [
 	"Answer if the receiver is a pc-dependent instruction, such as a relative jump."
 	^self subclassResponsibility
 ]
 
-{ #category : #testing }
+{ #category : 'testing' }
 CogAbstractInstruction >> isWithinMwOffsetRange: anAddress [
 	"Answer if an immediate value can be used as offset in a MoveMw:r:R: or similar instruction.
 	 By default, the backend will handle it"
@@ -1234,7 +1194,7 @@ CogAbstractInstruction >> isWithinMwOffsetRange: anAddress [
 	^true
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 CogAbstractInstruction >> jmpTarget: anAbstractInstruction [
 	"Set the target of a jump instruction.  These all have the target in the first operand."
 	<returnTypeC: #'AbstractInstruction *'>
@@ -1250,17 +1210,17 @@ CogAbstractInstruction >> jmpTarget: anAbstractInstruction [
 	^anAbstractInstruction
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 CogAbstractInstruction >> jumpLongByteSize [
 	self subclassResponsibility
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 CogAbstractInstruction >> jumpLongConditionalByteSize [
 	self subclassResponsibility
 ]
 
-{ #category : #'inline cacheing' }
+{ #category : 'inline cacheing' }
 CogAbstractInstruction >> jumpLongConditionalTargetBeforeFollowingAddress: mcpc [
 	"Extract the target from a long conditional jump.  On many ISAs this si the same as
 	 extracting the target from a long unconditional jump, so we provide the default here.
@@ -1269,17 +1229,17 @@ CogAbstractInstruction >> jumpLongConditionalTargetBeforeFollowingAddress: mcpc 
 	^self jumpLongTargetBeforeFollowingAddress: mcpc
 ]
 
-{ #category : #'inline cacheing' }
+{ #category : 'inline cacheing' }
 CogAbstractInstruction >> jumpLongTargetBeforeFollowingAddress: mcpc [
 	^self subclassResponsibility
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 CogAbstractInstruction >> jumpShortByteSize [
 	self subclassResponsibility
 ]
 
-{ #category : #'generate machine code' }
+{ #category : 'generate machine code' }
 CogAbstractInstruction >> jumpTargetAddress [
 	<inline: true> "Since it's an extraction from other methods."
 	| jumpTarget |
@@ -1295,7 +1255,7 @@ CogAbstractInstruction >> jumpTargetAddress [
 	^ cogit cCoerceSimple: jumpTarget to: #sqInt.
 ]
 
-{ #category : #'generate machine code' }
+{ #category : 'generate machine code' }
 CogAbstractInstruction >> labelOffset [
 	"Hack:  To arrange that the block method field pushed in a block entry has
 	 its MFMethodFlagIsBlockFlag bit set we provide labels with an offset.  The
@@ -1305,26 +1265,26 @@ CogAbstractInstruction >> labelOffset [
 	^operands at: 1
 ]
 
-{ #category : #'inline cacheing' }
+{ #category : 'inline cacheing' }
 CogAbstractInstruction >> literal32BeforeFollowingAddress: followingAddress [
 	"Answer the constant loaded by the instruction sequence just before this address:"
 	<inline: true>
 	^ self literalBeforeFollowingAddress: followingAddress
 ]
 
-{ #category : #'inline cacheing' }
+{ #category : 'inline cacheing' }
 CogAbstractInstruction >> literalBeforeFollowingAddress: followingAddress [
 	"Answer the constant loaded by the instruction sequence just before this address:"
 	^self subclassResponsibility
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 CogAbstractInstruction >> loadLiteralByteSize [
 	"Answer the byte size of a MoveCwR opcode's corresponding machine code"
 	self subclassResponsibility
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 CogAbstractInstruction >> loadPICLiteralByteSize [
 	"Answer the byte size of a MoveCwR opcode's corresponding machine code
 	 when the argument is a PIC.  This is for the self-reference at the end of a
@@ -1332,7 +1292,7 @@ CogAbstractInstruction >> loadPICLiteralByteSize [
 	self subclassResponsibility
 ]
 
-{ #category : #'generate machine code' }
+{ #category : 'generate machine code' }
 CogAbstractInstruction >> longJumpTargetAddress [
 	<inline: true> "Since it's an extraction from other methods."
 	"This needs to be different from jumpTargetAddress because long jumps can
@@ -1346,37 +1306,37 @@ CogAbstractInstruction >> longJumpTargetAddress [
 	^jumpTarget
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 CogAbstractInstruction >> machineCode [
 	^machineCode
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 CogAbstractInstruction >> machineCode: anObject [
 	"Set the value of machineCode"
 
 	machineCode := anObject
 ]
 
-{ #category : #'generate machine code' }
+{ #category : 'generate machine code' }
 CogAbstractInstruction >> machineCodeBytes [
 	"Answer the maximum number of bytes of machine code generated for any abstract instruction."
 	self subclassResponsibility
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 CogAbstractInstruction >> machineCodeSize [
 	"N.B. This is a byte size."
 	^machineCodeSize
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 CogAbstractInstruction >> machineCodeSize: size [ "<signed byte>"
 	"N.B. This is a byte size."
 	^machineCodeSize := size
 ]
 
-{ #category : #'generate machine code' }
+{ #category : 'generate machine code' }
 CogAbstractInstruction >> mapEntryAddress [
 	"Typically map entries apply to the end of an instruction, for two reasons:
 	  a)	to cope with literals embedded in variable-length instructions, since, e.g.
@@ -1387,33 +1347,33 @@ CogAbstractInstruction >> mapEntryAddress [
 	^address + machineCodeSize
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 CogAbstractInstruction >> maxSize [
 	"N.B. This is a byte size."
 	^maxSize
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 CogAbstractInstruction >> maxSize: size [ "<signed byte>"
 	"N.B. This is a byte size."
 	maxSize := size
 ]
 
-{ #category : #printing }
+{ #category : 'printing' }
 CogAbstractInstruction >> nameForFPRegister: reg [ "<Integer>"
 	"subclasses with special purpose registers may need to override."
 	<doNotGenerate>
 	^CogAbstractRegisters nameForFPRegister: reg
 ]
 
-{ #category : #printing }
+{ #category : 'printing' }
 CogAbstractInstruction >> nameForRegister: reg [ "<Integer>"
 	"subclasses with special purpose registers may need to override."
 	<doNotGenerate>
 	^CogAbstractRegisters nameForRegister: reg
 ]
 
-{ #category : #'abstract instructions' }
+{ #category : 'abstract instructions' }
 CogAbstractInstruction >> noteFollowingConditionalBranch: branch [
 	"Support for processors without condition codes, such as the MIPS.
 	 Answer the branch opcode.  If there are no condition codes, modify
@@ -1426,71 +1386,71 @@ CogAbstractInstruction >> noteFollowingConditionalBranch: branch [
 	^branch
 ]
 
-{ #category : #initialization }
+{ #category : 'initialization' }
 CogAbstractInstruction >> numCheckFeaturesOpcodes [
 	"If the priocessor has a feature check facility answer the number
 	 of opcodes required to compile an accessor for the feature."
 	^0
 ]
 
-{ #category : #'inline cacheing' }
+{ #category : 'inline cacheing' }
 CogAbstractInstruction >> numICacheFlushOpcodes [
 	"If the processor has the ablity to generate code to flush the icache answer
 	 the number of opcodes required to compile an accessor for the feature."
 	^0
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 CogAbstractInstruction >> numIntRegArgs [
 	^self subclassResponsibility
 ]
 
-{ #category : #'multi-threading' }
+{ #category : 'multi-threading' }
 CogAbstractInstruction >> numLowLevelLockOpcodes [
 	self subclassResponsibility
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 CogAbstractInstruction >> opcode [
 	^opcode
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 CogAbstractInstruction >> opcode: value [
 	^opcode := value
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 CogAbstractInstruction >> operand0: operand [
 	<inline: true>
 	operands at: 0 put: operand
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 CogAbstractInstruction >> operand1: operand [
 	<inline: true>
 	operands at: 1 put: operand
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 CogAbstractInstruction >> operand2: operand [
 	<inline: true>
 	operands at: 2 put: operand
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 CogAbstractInstruction >> operands [
 	^operands
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 CogAbstractInstruction >> operands: anObject [
 	"Set the value of operands"
 
 	operands := anObject
 ]
 
-{ #category : #'generate machine code' }
+{ #category : 'generate machine code' }
 CogAbstractInstruction >> outputMachineCodeAt: targetAddress [
 	"By default move machine code a byte at a time
 	  Subclasses with coarser granularity can override as desired."
@@ -1500,7 +1460,7 @@ CogAbstractInstruction >> outputMachineCodeAt: targetAddress [
 		objectMemory byteAt: targetAddress + j put: (machineCode at: j)]
 ]
 
-{ #category : #'calling C function in Smalltalk stack' }
+{ #category : 'calling C function in Smalltalk stack' }
 CogAbstractInstruction >> prepareStackToCallCFunctionInSmalltalkStack: anObject [
 	
 	"This is a hook to allow the backends to implement special handling when calling a C function in the Smalltalk stack"
@@ -1509,7 +1469,7 @@ CogAbstractInstruction >> prepareStackToCallCFunctionInSmalltalkStack: anObject 
 	self subclassResponsibility
 ]
 
-{ #category : #printing }
+{ #category : 'printing' }
 CogAbstractInstruction >> printAddressOn: aStream [
 
 	<doNotGenerate>
@@ -1519,7 +1479,7 @@ CogAbstractInstruction >> printAddressOn: aStream [
 		address printOn: aStream base: 16 ]
 ]
 
-{ #category : #printing }
+{ #category : 'printing' }
 CogAbstractInstruction >> printMachineCodeOn: aStream [
 
 	<doNotGenerate>
@@ -1536,7 +1496,7 @@ CogAbstractInstruction >> printMachineCodeOn: aStream [
 							ifFalse: [ mc printOn: aStream ] ] ] ] ]
 ]
 
-{ #category : #printing }
+{ #category : 'printing' }
 CogAbstractInstruction >> printOperandsOn: aStream withFormat: format [
 
 	<doNotGenerate>
@@ -1572,7 +1532,7 @@ CogAbstractInstruction >> printOperandsOn: aStream withFormat: format [
 							operand printOn: aStream base: 16 ] ] ] ]
 ]
 
-{ #category : #printing }
+{ #category : 'printing' }
 CogAbstractInstruction >> printStateOn: aStream [
 
 	<doNotGenerate>
@@ -1596,7 +1556,7 @@ CogAbstractInstruction >> printStateOn: aStream [
 	aStream nextPut: $)
 ]
 
-{ #category : #initialization }
+{ #category : 'initialization' }
 CogAbstractInstruction >> reinitializeOpcode [
 	<inline: true>
 	annotation := nil.
@@ -1604,12 +1564,12 @@ CogAbstractInstruction >> reinitializeOpcode [
 	operands at: 0 put: (operands at: 1 put: (operands at: 2 put: 0))
 ]
 
-{ #category : #'inline cacheing' }
+{ #category : 'inline cacheing' }
 CogAbstractInstruction >> relocateCallBeforeReturnPC: retpc by: delta [
 	^self subclassResponsibility
 ]
 
-{ #category : #'inline cacheing' }
+{ #category : 'inline cacheing' }
 CogAbstractInstruction >> relocateJumpLongBeforeFollowingAddress: pc by: delta [
 	"We assume here that calls and jumps look the same as regards their displacement.
 	 This works on at least x86, ARM and x86_64.  Processors on which that isn't the
@@ -1617,14 +1577,14 @@ CogAbstractInstruction >> relocateJumpLongBeforeFollowingAddress: pc by: delta [
 	self relocateCallBeforeReturnPC: pc by: delta
 ]
 
-{ #category : #'inline cacheing' }
+{ #category : 'inline cacheing' }
 CogAbstractInstruction >> relocateJumpLongConditionalBeforeFollowingAddress: pc by: delta [
 	"Relocate a long conditional jump before pc.  Default to relocating a non-conditional jump.
 	 Processors that have different formats for conditional and unconditional jumps override."
 	self relocateJumpLongBeforeFollowingAddress: pc by: delta
 ]
 
-{ #category : #'inline cacheing' }
+{ #category : 'inline cacheing' }
 CogAbstractInstruction >> relocateMethodReferenceBeforeAddress: pc by: delta [
 	"On some processors the method reference is a load constant and
 	 hence needs changing when methods are moved.  On others the
@@ -1632,7 +1592,7 @@ CogAbstractInstruction >> relocateMethodReferenceBeforeAddress: pc by: delta [
 	self subclassResponsibility
 ]
 
-{ #category : #'generate machine code' }
+{ #category : 'generate machine code' }
 CogAbstractInstruction >> resolveJumpTarget [
 
 	<var: #fixup type: #'BytecodeFixup *'>
@@ -1648,7 +1608,7 @@ CogAbstractInstruction >> resolveJumpTarget [
 		self jmpTarget: fixup targetInstruction ]
 ]
 
-{ #category : #'calling C function in Smalltalk stack' }
+{ #category : 'calling C function in Smalltalk stack' }
 CogAbstractInstruction >> returnFromCallCFunctionInSmalltalkStack: anObject [
 	
 	"This is a hook to allow the backends to implement special handling when calling a C function in the Smalltalk stack"
@@ -1657,7 +1617,7 @@ CogAbstractInstruction >> returnFromCallCFunctionInSmalltalkStack: anObject [
 	self subclassResponsibility
 ]
 
-{ #category : #'full transfer run-time support' }
+{ #category : 'full transfer run-time support' }
 CogAbstractInstruction >> rewriteCallFullAt: callSiteReturnAddress target: callTargetAddress [
 	"Rewrite a CallFull instruction to call a different target.  This variant is used to rewrite cached primitive calls.
 	 Answer the extent of the code change which is used to compute the range of the icache to flush.
@@ -1665,21 +1625,21 @@ CogAbstractInstruction >> rewriteCallFullAt: callSiteReturnAddress target: callT
 	^self rewriteCallAt: callSiteReturnAddress target: callTargetAddress
 ]
 
-{ #category : #'inline cacheing' }
+{ #category : 'inline cacheing' }
 CogAbstractInstruction >> rewriteConditionalJumpLongAt: callSiteReturnAddress target: callTargetAddress [
 	"Rewrite a conditional jump long to jump to target.  This version defaults to using
 	 rewriteJumpLongAt:, which works for many ISAs.  Subclasses override if necessary."
 	^self rewriteJumpLongAt: callSiteReturnAddress target: callTargetAddress
 ]
 
-{ #category : #'inline cacheing' }
+{ #category : 'inline cacheing' }
 CogAbstractInstruction >> rewriteInlineCacheTag: cacheTag at: callSiteReturnAddress [
 	"Rewrite an inline cache with a new tag.  This variant is used
 	 by the garbage collector."
 	self subclassResponsibility
 ]
 
-{ #category : #'full transfer run-time support' }
+{ #category : 'full transfer run-time support' }
 CogAbstractInstruction >> rewriteJumpFullAt: callSiteReturnAddress target: callTargetAddress [
 	"Rewrite a JumpFull instruction to jump to a different target.  This variant is used to rewrite cached primitive calls.
 	 Answer the extent of the code change which is used to compute the range of the icache to flush.
@@ -1687,7 +1647,7 @@ CogAbstractInstruction >> rewriteJumpFullAt: callSiteReturnAddress target: callT
 	^self rewriteJumpLongAt: callSiteReturnAddress target: callTargetAddress
 ]
 
-{ #category : #abi }
+{ #category : 'abi' }
 CogAbstractInstruction >> saveAndRestoreLinkRegAround: aBlock [
 	"If the processor's ABI includes a link register, generate instructions
 	 to save and restore it around aBlock, which is assumed to generate code."
@@ -1695,14 +1655,14 @@ CogAbstractInstruction >> saveAndRestoreLinkRegAround: aBlock [
 	self subclassResponsibility
 ]
 
-{ #category : #'as yet unclassified' }
+{ #category : 'as yet unclassified' }
 CogAbstractInstruction >> seeAlso: aString [ 
 	
 	<cmacro: '(self, msg) '>
 	"like a flag"
 ]
 
-{ #category : #'generate machine code' }
+{ #category : 'generate machine code' }
 CogAbstractInstruction >> setLabelOffset: aValue [
 	"Hack:  To arrange that the block method field pushed in a block entry has
 	 its MFMethodFlagIsBlockFlag bit set we provide labels with an offset.  The
@@ -1712,13 +1672,13 @@ CogAbstractInstruction >> setLabelOffset: aValue [
 	^operands at: 1 put: aValue
 ]
 
-{ #category : #testing }
+{ #category : 'testing' }
 CogAbstractInstruction >> setsConditionCodesFor: aConditionalJumpOpcode [
 	"Answer if the receiver's opcode sets the condition codes correctly for the given conditional jump opcode."
 	self subclassResponsibility
 ]
 
-{ #category : #'generate machine code' }
+{ #category : 'generate machine code' }
 CogAbstractInstruction >> sizePCDependentInstructionAt: eventualAbsoluteAddress [
 	"Size a jump and set its address.  The target may be another instruction
 	 or an absolute address.  On entry the address inst var holds our virtual
@@ -1733,34 +1693,34 @@ CogAbstractInstruction >> sizePCDependentInstructionAt: eventualAbsoluteAddress 
 	self subclassResponsibility
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 CogAbstractInstruction >> stackPageInterruptHeadroomBytes [
 	"Return a minimum amount of headroom for each stack page (in bytes).  In a
 	 JIT the stack has to have room for interrupt handlers which will run on the stack."
 	self subclassResponsibility
 ]
 
-{ #category : #'as yet unclassified' }
+{ #category : 'as yet unclassified' }
 CogAbstractInstruction >> stackPointerAlignment [
 	
 	<doNotGenerate>
 	^ cogit objectMemory wordSize 
 ]
 
-{ #category : #'inline cacheing' }
+{ #category : 'inline cacheing' }
 CogAbstractInstruction >> storeLiteral32: literal32 beforeFollowingAddress: followingAddress [
 	"Answer the constant loaded by the instruction sequence just before this address:"
 	<inline: true>
 	self storeLiteral: literal32 beforeFollowingAddress: followingAddress
 ]
 
-{ #category : #printing }
+{ #category : 'printing' }
 CogAbstractInstruction >> symbolic [
 	<doNotGenerate> "Smalltalk-side only"
 	^String streamContents: [:s| self symbolicOn: s]
 ]
 
-{ #category : #printing }
+{ #category : 'printing' }
 CogAbstractInstruction >> symbolicOn: aStream [
 	| orneryOperands |
 	<doNotGenerate> "Smalltalk-side only"
@@ -1798,20 +1758,29 @@ CogAbstractInstruction >> symbolicOn: aStream [
 	aStream nextPut: $)
 ]
 
-{ #category : #'memory access' }
+{ #category : 'memory access' }
 CogAbstractInstruction >> unalignedLongAt: byteAddress [
-	"Some processors need this, but word-oriented RISCs don't. Hence doNotGenerate."
-	<doNotGenerate>
-	^self subclassResponsibility
+
+	self
+		cCode: [
+			| readValue |
+			self
+				memcpy: (self addressOf: readValue)
+				_: byteAddress
+				_: (self sizeof: readValue).
+			^ readValue ]
+		inSmalltalk: [ ^ objectMemory unalignedLongAt: byteAddress ]
 ]
 
-{ #category : #'memory access' }
+{ #category : 'memory access' }
 CogAbstractInstruction >> unalignedLongAt: byteAddress put: aWord [
-	"Some processors need this, but word-oriented RISCs don't. Hence doNotGenerate."
-	^self subclassResponsibility
+
+	<cmacro: '(byteAddress,aWord) memcpy((void*)byteAddress, &aWord, sizeof(sqInt))'>
+
+	^ objectMemory unalignedLongAt: byteAddress put: aWord
 ]
 
-{ #category : #'generate machine code' }
+{ #category : 'generate machine code' }
 CogAbstractInstruction >> updateLabel: labelInstruction [
 	"Update an instruction that depends on a label outside
 	 of generated code (e.g. a method or block header)."
@@ -1821,21 +1790,21 @@ CogAbstractInstruction >> updateLabel: labelInstruction [
 	operands at: 0 put: labelInstruction address + labelInstruction labelOffset
 ]
 
-{ #category : #testing }
+{ #category : 'testing' }
 CogAbstractInstruction >> usesTempRegForAbsoluteLoads [
 	"Answer if TempReg is used in absolute memory loads (as it is on x64).  By default answer false, allowing subclasses to override."
 	<inline: true>
 	^false
 ]
 
-{ #category : #simulation }
+{ #category : 'simulation' }
 CogAbstractInstruction >> wantsNearAddressFor: anObject [
 	"A hack hook to allow ARM to override the simulated address for the short-cut trampolines,
 	 and to allow x64 to address CStackPointer and CFramePointer relative to VarBaseReg."
 	^false
 ]
 
-{ #category : #'inline cacheing' }
+{ #category : 'inline cacheing' }
 CogAbstractInstruction >> zoneCallsAreRelative [
 	"Answer if Call and JumpLong are relative and hence need to take the caller's
 	 relocation delta into account during code compaction, rather than just the

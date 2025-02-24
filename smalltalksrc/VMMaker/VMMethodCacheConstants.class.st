@@ -6,8 +6,8 @@ self ensureClassPool.
 	self classPool declare: k from: StackInterpreter classPool]
 "
 Class {
-	#name : #VMMethodCacheConstants,
-	#superclass : #SharedPool,
+	#name : 'VMMethodCacheConstants',
+	#superclass : 'SharedPool',
 	#classVars : [
 		'LookupRuleDynamicSuper',
 		'LookupRuleImplicit',
@@ -24,5 +24,7 @@ Class {
 		'MethodCacheSelector',
 		'MethodCacheSize'
 	],
-	#category : #'VMMaker-Interpreter'
+	#category : 'VMMaker-Interpreter',
+	#package : 'VMMaker',
+	#tag : 'Interpreter'
 }

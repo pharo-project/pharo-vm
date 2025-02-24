@@ -1,10 +1,11 @@
 Class {
-	#name : #VMFFIHelpersTest,
-	#superclass : #VMAbstractFFITest,
-	#category : #VMMakerTests
+	#name : 'VMFFIHelpersTest',
+	#superclass : 'VMAbstractFFITest',
+	#category : 'VMMakerTests',
+	#package : 'VMMakerTests'
 }
 
-{ #category : #'tests - helpers' }
+{ #category : 'tests - helpers' }
 VMFFIHelpersTest >> assertPopInEmptyStackFails [
 
 	[ interpreter popSameThreadCalloutSuspendedProcess.
@@ -15,7 +16,7 @@ VMFFIHelpersTest >> assertPopInEmptyStackFails [
 				equals: 'SameThreadCalloutSuspendedProcessStack is empty' ]
 ]
 
-{ #category : #'tests - helpers' }
+{ #category : 'tests - helpers' }
 VMFFIHelpersTest >> testPopSameThreadCalloutSuspendedProcessInEmptyStackRaisesError [
 
  	self assert: (memory splObj: SuspendedProcessInCallout) equals: memory nilObject.	
@@ -23,7 +24,7 @@ VMFFIHelpersTest >> testPopSameThreadCalloutSuspendedProcessInEmptyStackRaisesEr
 	self assertPopInEmptyStackFails
 ]
 
-{ #category : #'tests - helpers' }
+{ #category : 'tests - helpers' }
 VMFFIHelpersTest >> testPushPushThenPopPopSameThreadCalloutSuspendedProcessInEmptyStackReturnsFirstPushedProcess [
 
  	| aProcess anotherProcess |
@@ -41,7 +42,7 @@ VMFFIHelpersTest >> testPushPushThenPopPopSameThreadCalloutSuspendedProcessInEmp
 
 ]
 
-{ #category : #'tests - helpers' }
+{ #category : 'tests - helpers' }
 VMFFIHelpersTest >> testPushPushThenPopPopSameThreadCalloutSuspendedProcessInEmptyStackReturnsFirstPushedProcessWithNilNextLink [
 
  	| aProcess anotherProcess |
@@ -59,7 +60,7 @@ VMFFIHelpersTest >> testPushPushThenPopPopSameThreadCalloutSuspendedProcessInEmp
 
 ]
 
-{ #category : #'tests - helpers' }
+{ #category : 'tests - helpers' }
 VMFFIHelpersTest >> testPushPushThenPopSameThreadCalloutSuspendedProcessInEmptyStackReturnsLastPushedProcess [
 
  	| aProcess anotherProcess |
@@ -75,7 +76,7 @@ VMFFIHelpersTest >> testPushPushThenPopSameThreadCalloutSuspendedProcessInEmptyS
 
 ]
 
-{ #category : #'tests - helpers' }
+{ #category : 'tests - helpers' }
 VMFFIHelpersTest >> testPushPushThenPopSameThreadCalloutSuspendedProcessInEmptyStackReturnsLastPushedProcessWithNilNextLink [
 
  	| aProcess anotherProcess |
@@ -91,7 +92,7 @@ VMFFIHelpersTest >> testPushPushThenPopSameThreadCalloutSuspendedProcessInEmptyS
 
 ]
 
-{ #category : #'tests - helpers' }
+{ #category : 'tests - helpers' }
 VMFFIHelpersTest >> testPushSameThreadCalloutSuspendedProcessInEmptyStackStoresThePassedProcess [
 
  	| aProcess |
@@ -104,7 +105,7 @@ VMFFIHelpersTest >> testPushSameThreadCalloutSuspendedProcessInEmptyStackStoresT
 
 ]
 
-{ #category : #'tests - helpers' }
+{ #category : 'tests - helpers' }
 VMFFIHelpersTest >> testPushSameThreadCalloutSuspendedProcessInEmptyStackUpdatesNextLinkWithNil [
 
  	| aProcess |
@@ -117,7 +118,7 @@ VMFFIHelpersTest >> testPushSameThreadCalloutSuspendedProcessInEmptyStackUpdates
 
 ]
 
-{ #category : #'tests - helpers' }
+{ #category : 'tests - helpers' }
 VMFFIHelpersTest >> testPushThenPopPopSameThreadCalloutSuspendedProcessInEmptyStackFails [
 
  	| aProcess |
@@ -132,7 +133,7 @@ VMFFIHelpersTest >> testPushThenPopPopSameThreadCalloutSuspendedProcessInEmptySt
 
 ]
 
-{ #category : #'tests - helpers' }
+{ #category : 'tests - helpers' }
 VMFFIHelpersTest >> testPushThenPopSameThreadCalloutSuspendedProcessInEmptyStackReturnsProcessWithNilInNextLink [
 
  	| aProcess |
@@ -145,7 +146,7 @@ VMFFIHelpersTest >> testPushThenPopSameThreadCalloutSuspendedProcessInEmptyStack
 
 ]
 
-{ #category : #'tests - helpers' }
+{ #category : 'tests - helpers' }
 VMFFIHelpersTest >> testPushThenPopSameThreadCalloutSuspendedProcessInEmptyStackReturnsPushedProcess [
 
  	| aProcess |
@@ -158,7 +159,7 @@ VMFFIHelpersTest >> testPushThenPopSameThreadCalloutSuspendedProcessInEmptyStack
 
 ]
 
-{ #category : #'tests - helpers' }
+{ #category : 'tests - helpers' }
 VMFFIHelpersTest >> testReadAddressReadsTheValidAddressValue [
 
 	| anExternalAddress |

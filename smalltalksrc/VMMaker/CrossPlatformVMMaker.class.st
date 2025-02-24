@@ -2,12 +2,14 @@
 A generic VMMaker that creates a single source tree, leaving it up to external files to decide what platform to compile for and what plugins to include.
 "
 Class {
-	#name : #CrossPlatformVMMaker,
-	#superclass : #VMMaker,
-	#category : #'VMMaker-Slang'
+	#name : 'CrossPlatformVMMaker',
+	#superclass : 'VMMaker',
+	#category : 'VMMaker-Slang',
+	#package : 'VMMaker',
+	#tag : 'Slang'
 }
 
-{ #category : #initialize }
+{ #category : 'initialize' }
 CrossPlatformVMMaker >> createCodeGenerator [
 	"Set up a CCodeGenerator for this VMMaker - A cross platform tree leaves it up to the makefiles to decide whether to use the global struct or not."
 	^CCodeGeneratorGlobalStructure new
@@ -19,7 +21,7 @@ CrossPlatformVMMaker >> createCodeGenerator [
 		yourself
 ]
 
-{ #category : #'target directories' }
+{ #category : 'target directories' }
 CrossPlatformVMMaker >> externalPluginListName [
 	"Answer the filename for the list of external plugins. Since we're leaving it up to
 	 platform makefiles to specify the actual named prims, just produce an example file."
@@ -27,7 +29,7 @@ CrossPlatformVMMaker >> externalPluginListName [
 	^'examplePlugins.ext'
 ]
 
-{ #category : #'target directories' }
+{ #category : 'target directories' }
 CrossPlatformVMMaker >> internalPluginListName [
 	"Answer the filename for the list of internal plugins. Since we're leaving it up to
 	 platform makefiles to specify the actual named prims, just produce an example file."
@@ -35,20 +37,20 @@ CrossPlatformVMMaker >> internalPluginListName [
 	^'examplePlugins.int'
 ]
 
-{ #category : #'target directories' }
+{ #category : 'target directories' }
 CrossPlatformVMMaker >> internalPluginsDirectory [
 	"For the Cross-platfrorm all-in-one tree we simply use <root>/src/plugins, not <root>/src/intplugins"
 	^self externalPluginsDirectory
 ]
 
-{ #category : #'generate sources' }
+{ #category : 'generate sources' }
 CrossPlatformVMMaker >> interpreterExportsFilePath [
 	"Return the full path for the interpreter exports file.  Since we're leaving it up to
 	 platform makefiles to specify the actual named prims, just produce an example file."
 	^self coreVMHeadersDirectory fullNameFor: 'exampleSqNamedPrims.h'
 ]
 
-{ #category : #'generate sources' }
+{ #category : 'generate sources' }
 CrossPlatformVMMaker >> validatePlugin: plName in: listOfPlugins [
 	"Check that the class for the plugin exists, and answer that class.
 	 No longer check that if the plugin requires platform files that at least

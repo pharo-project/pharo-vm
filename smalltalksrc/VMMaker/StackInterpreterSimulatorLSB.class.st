@@ -6,32 +6,34 @@ This class overrides a few methods in StackInterpreterSimulator required for sim
 Note that the image must have been saved at least once on the local architecture, since the compiled VM performs some byte swapping that the simulator cannot cope with.
 "
 Class {
-	#name : #StackInterpreterSimulatorLSB,
-	#superclass : #StackInterpreterSimulator,
-	#category : #'VMMaker-InterpreterSimulation'
+	#name : 'StackInterpreterSimulatorLSB',
+	#superclass : 'StackInterpreterSimulator',
+	#category : 'VMMaker-InterpreterSimulation',
+	#package : 'VMMaker',
+	#tag : 'InterpreterSimulation'
 }
 
-{ #category : #'memory access' }
+{ #category : 'memory access' }
 StackInterpreterSimulatorLSB >> halfWordHighInLong32: long32 [
 	"Used by Balloon"
 
 	^ long32 bitAnd: 16rFFFF
 ]
 
-{ #category : #'memory access' }
+{ #category : 'memory access' }
 StackInterpreterSimulatorLSB >> halfWordLowInLong32: long32 [
 	"Used by Balloon"
 
 	^ long32 bitShift: -16
 ]
 
-{ #category : #initialization }
+{ #category : 'initialization' }
 StackInterpreterSimulatorLSB >> nextShortFrom: aStream [
 	"Read a 16-bit quantity from the given (binary) stream."
 	^aStream nextLittleEndianNumber: 2
 ]
 
-{ #category : #'memory access' }
+{ #category : 'memory access' }
 StackInterpreterSimulatorLSB >> vmEndianness [
 	"return 0 for little endian, 1 for big endian"
 	^0

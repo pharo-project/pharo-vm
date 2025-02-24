@@ -1,6 +1,6 @@
-Extension { #name : #SequenceableCollection }
+Extension { #name : 'SequenceableCollection' }
 
-{ #category : #'*VMMaker-translation support' }
+{ #category : '*VMMaker-translation support' }
 SequenceableCollection >> copyReplaceAll: oldSubstring with: newSubstring tokenish: tokenishBlock [
 	"Answer a copy of the receiver in which all occurrences of
 	 oldSubstring have been replaced by newSubstring.

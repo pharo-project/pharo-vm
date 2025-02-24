@@ -1,14 +1,16 @@
 Class {
-	#name : #CPointerDeclaratorNode,
-	#superclass : #CAbstractDeclaratorNode,
+	#name : 'CPointerDeclaratorNode',
+	#superclass : 'CAbstractDeclaratorNode',
 	#instVars : [
 		'pointers',
 		'qualifiers'
 	],
-	#category : #'CAST-Nodes'
+	#category : 'CAST-Nodes',
+	#package : 'CAST',
+	#tag : 'Nodes'
 }
 
-{ #category : #'as yet unclassified' }
+{ #category : 'as yet unclassified' }
 CPointerDeclaratorNode class >> declarator: aDeclarator pointers: numberOfPointers [
 	
 	^ (self declarator: aDeclarator)
@@ -16,7 +18,7 @@ CPointerDeclaratorNode class >> declarator: aDeclarator pointers: numberOfPointe
 		yourself
 ]
 
-{ #category : #comparing }
+{ #category : 'comparing' }
 CPointerDeclaratorNode >> = anObject [
 
 	"Answer whether the receiver and anObject represent the same object."
@@ -28,18 +30,18 @@ CPointerDeclaratorNode >> = anObject [
 			  declarator = anObject declarator2 ] ]
 ]
 
-{ #category : #generated }
+{ #category : 'generated' }
 CPointerDeclaratorNode >> acceptVisitor: anAbstractVisitor [
 	^ anAbstractVisitor visitDeclarator: self
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 CPointerDeclaratorNode >> declarator2 [
 
 	^ declarator
 ]
 
-{ #category : #comparing }
+{ #category : 'comparing' }
 CPointerDeclaratorNode >> hash [
 
 	"Answer an integer value that is related to the identity of the receiver."
@@ -47,35 +49,35 @@ CPointerDeclaratorNode >> hash [
 	^ qualifiers hash bitXor: (pointers hash bitXor: declarator hash)
 ]
 
-{ #category : #'generated-initialize-release' }
+{ #category : 'generated-initialize-release' }
 CPointerDeclaratorNode >> initialize [
 	super initialize.
 	pointers := OrderedCollection new: 2.
 	qualifiers := OrderedCollection new: 2.
 ]
 
-{ #category : #testing }
+{ #category : 'testing' }
 CPointerDeclaratorNode >> isPointerDeclarator [
 	
 	^ true
 ]
 
-{ #category : #generated }
+{ #category : 'generated' }
 CPointerDeclaratorNode >> pointers [
 	^ pointers
 ]
 
-{ #category : #generated }
+{ #category : 'generated' }
 CPointerDeclaratorNode >> pointers: anOrderedCollection [
 	pointers := anOrderedCollection
 ]
 
-{ #category : #generated }
+{ #category : 'generated' }
 CPointerDeclaratorNode >> qualifiers [
 	^ qualifiers
 ]
 
-{ #category : #generated }
+{ #category : 'generated' }
 CPointerDeclaratorNode >> qualifiers: anOrderedCollection [
 	qualifiers := anOrderedCollection
 ]

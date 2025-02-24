@@ -1,6 +1,6 @@
 Class {
-	#name : #CogMethodConstants,
-	#superclass : #SharedPool,
+	#name : 'CogMethodConstants',
+	#superclass : 'SharedPool',
 	#classVars : [
 		'CMBlock',
 		'CMFree',
@@ -31,5 +31,7 @@ Class {
 		'UnimplementedPrimitive',
 		'YoungSelectorInPIC'
 	],
-	#category : #'VMMaker-JIT'
+	#category : 'VMMaker-JIT',
+	#package : 'VMMaker',
+	#tag : 'JIT'
 }

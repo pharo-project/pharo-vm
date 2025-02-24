@@ -2,8 +2,8 @@
 I am a fixup for a bytecode in the Cogit.  Currently fixups are for labels only.  To fixup jumps the cogit places fixups in the fixups array at indices that correspond to bytecodes that are the targets of jumps.  When the cogit encounters a bytecode with a fixup it assigns the fixup's target field to the first generated instruction for the bytecode.  Later when AbstractInstruction Jump* instructions attempt to compute their target they follow the indirection through the fixup to the actual target.
 "
 Class {
-	#name : #CogBytecodeFixup,
-	#superclass : #VMStructType,
+	#name : 'CogBytecodeFixup',
+	#superclass : 'VMStructType',
 	#instVars : [
 		'targetInstruction',
 		'instructionIndex',
@@ -12,28 +12,30 @@ Class {
 	#classVars : [
 		'NeedsFixupFlag'
 	],
-	#category : #'VMMaker-JIT'
+	#category : 'VMMaker-JIT',
+	#package : 'VMMaker',
+	#tag : 'JIT'
 }
 
-{ #category : #'simulation only' }
+{ #category : 'simulation only' }
 CogBytecodeFixup class >> byteSizeForSimulator: aVMClass [
 	"Answer an approximation of the byte size of an AbstractInstruction struct.
 	 This is for estimating the alloca in allocateOpcodes:bytecodes:ifFail:"
 	^self instSize * (aVMClass sizeof: #'void *')
 ]
 
-{ #category : #translation }
+{ #category : 'translation' }
 CogBytecodeFixup class >> filteredInstVarNames [
 	"Override to eliminate bcpc,"
 	^super filteredInstVarNames copyWithout: 'bcpc'
 ]
 
-{ #category : #'instance creation' }
+{ #category : 'instance creation' }
 CogBytecodeFixup class >> for: aCogit [
 	^self new
 ]
 
-{ #category : #'class initialization' }
+{ #category : 'class initialization' }
 CogBytecodeFixup class >> initialize [
 	"Initialize the fixup flags.  In this class we have only one flag, 1, which
 	 means set the fixup to point to the first instruction for a particular bytecode.
@@ -45,7 +47,7 @@ CogBytecodeFixup class >> initialize [
 	NeedsFixupFlag := 1
 ]
 
-{ #category : #translation }
+{ #category : 'translation' }
 CogBytecodeFixup class >> instVarNamesAndTypesForTranslationDo: aBinaryBlock [
 	"Enumerate aBinaryBlock with the names and C type strings for the inst vars to include in a BytecodeFixup struct."
 	"self withAllSubclasses collect: [:ea| ea typedef]"
@@ -65,80 +67,80 @@ CogBytecodeFixup class >> instVarNamesAndTypesForTranslationDo: aBinaryBlock [
 							['isTargetOfBackwardBranch']	-> [#char] }])]
 ]
 
-{ #category : #translation }
+{ #category : 'translation' }
 CogBytecodeFixup class >> structTypeName [
 	^'BytecodeFixup'
 ]
 
-{ #category : #coercion }
+{ #category : 'coercion' }
 CogBytecodeFixup >> asInteger [
 	<doNotGenerate>
 	^self
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 CogBytecodeFixup >> bcpc [
 
 	^ bcpc
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 CogBytecodeFixup >> bcpc: anObject [
 
 	^bcpc := anObject
 ]
 
-{ #category : #converting }
+{ #category : 'converting' }
 CogBytecodeFixup >> becomeFixup [
 	<inline: true>
 	targetInstruction := self cCoerceSimple: NeedsFixupFlag to: #'AbstractInstruction *'
 ]
 
-{ #category : #coercion }
+{ #category : 'coercion' }
 CogBytecodeFixup >> cCoerceSimple: flagOrAbstractOp to: cType [
 	<doNotGenerate>
 	^ flagOrAbstractOp
 ]
 
-{ #category : #'instance initialization' }
+{ #category : 'instance initialization' }
 CogBytecodeFixup >> initialize [
 	targetInstruction := 0
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 CogBytecodeFixup >> instructionIndex [
 	"Answer the value of instructionIndex"
 
 	^instructionIndex
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 CogBytecodeFixup >> instructionIndex: anObject [
 	"Set the value of instructionIndex"
 
 	^instructionIndex := anObject
 ]
 
-{ #category : #testing }
+{ #category : 'testing' }
 CogBytecodeFixup >> needsFixup [
 	<inline: true>
 	^ targetInstruction asInteger = NeedsFixupFlag
 ]
 
-{ #category : #testing }
+{ #category : 'testing' }
 CogBytecodeFixup >> notAFixup [
 	<inline: true>
 	^ targetInstruction = 0
 ]
 
-{ #category : #'debug printing' }
+{ #category : 'debug printing' }
 CogBytecodeFixup >> printStateOn: aStream [
 	<doNotGenerate>
 	targetInstruction ifNotNil:
 		[aStream space; nextPut: $(; print: targetInstruction; nextPutAll: ' bc '; print: bcpc; nextPut: $)]
 ]
 
-{ #category : #simulation }
+{ #category : 'simulation' }
 CogBytecodeFixup >> recordBcpc: theBytecodePC [
 	<inline: true>
 	self cCode: '' inSmalltalk:
@@ -152,14 +154,14 @@ CogBytecodeFixup >> recordBcpc: theBytecodePC [
 								 bcpc, {theBytecodePC}]]]
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 CogBytecodeFixup >> targetInstruction [
 	"Answer the value of targetInstruction"
 
 	^ targetInstruction
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 CogBytecodeFixup >> targetInstruction: anObject [
 	"Set the value of targetInstruction"
 

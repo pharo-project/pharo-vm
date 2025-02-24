@@ -1,10 +1,12 @@
 Class {
-	#name : #AbstractComposedImageAccess,
-	#superclass : #AbstractImageAccess,
-	#category : #'VMMaker-ImageFormat'
+	#name : 'AbstractComposedImageAccess',
+	#superclass : 'AbstractImageAccess',
+	#category : 'VMMaker-ImageFormat',
+	#package : 'VMMaker',
+	#tag : 'ImageFormat'
 }
 
-{ #category : #translation }
+{ #category : 'translation' }
 AbstractComposedImageAccess class >> declareCVarsIn: aCCodeGenerator [
 
 	aCCodeGenerator
@@ -12,21 +14,21 @@ AbstractComposedImageAccess class >> declareCVarsIn: aCCodeGenerator [
 
 ]
 
-{ #category : #'file operations' }
+{ #category : 'file operations' }
 AbstractComposedImageAccess >> createImageDirectory: imageFileName [
 
 	self
 		cCode: [ 
 			self
 				cppIf: ((self defined: #_WIN32) or: [(self defined: #_WIN64)])
-				ifTrue: [ self mkdir: imageFileName ]
-				ifFalse: [ self mkdir: imageFileName _: 8r777 ] ]
+				ifTrue: [ self cCall: 'mkdir' withArguments: {imageFileName} ]
+				ifFalse: [ self cCall: 'mkdir' withArguments: {imageFileName . 8r777} ] ]
 		inSmalltalk: [ 
 			imageFileName asFileReference ensureDeleteAll.
 			imageFileName asFileReference ensureCreateDirectory ]
 ]
 
-{ #category : #'file operations' }
+{ #category : 'file operations' }
 AbstractComposedImageAccess >> existSegment: segmentIndex inImage: imageFileName [
 
 	<var: #buffer declareC: 'char buffer[255]'>
@@ -43,7 +45,7 @@ AbstractComposedImageAccess >> existSegment: segmentIndex inImage: imageFileName
 
 ]
 
-{ #category : #formats }
+{ #category : 'formats' }
 AbstractComposedImageAccess >> fieldFormat [
 
 	<cmacro: '() "\t#%s : %" PRIdSQINT'>
@@ -51,21 +53,22 @@ AbstractComposedImageAccess >> fieldFormat [
 	^ '\t#%s : %' , PRIdSQINT.
 ]
 
-{ #category : #'file operations' }
+{ #category : 'file operations' }
 AbstractComposedImageAccess >> fileExists: fileName [
-
-	| sb |
 
 	<inline: false>
 	<var: #fileName type: 'char *'>
 	<var: #sb type: 'struct stat'>
-
+	| sb |
 	^ self
-		  cCode: [ (self stat: fileName _: (self addressOf: sb)) = 0]
+		  cCode: [
+			  (self cCall: 'stat' withArguments: {
+					   fileName.
+					   (self addressOf: sb) }) = 0 ]
 		  inSmalltalk: [ fileName asFileReference exists ]
 ]
 
-{ #category : #'file primitives' }
+{ #category : 'file primitives' }
 AbstractComposedImageAccess >> fscanf: file _: format _: varHolder [
 
 	<doNotGenerate>
@@ -75,7 +78,7 @@ AbstractComposedImageAccess >> fscanf: file _: format _: varHolder [
 		  yourself
 ]
 
-{ #category : #'file primitives' }
+{ #category : 'file primitives' }
 AbstractComposedImageAccess >> fscanf: file _: format _: varHolder1 _: varHolder2 [
 
 	<doNotGenerate>
@@ -93,14 +96,14 @@ AbstractComposedImageAccess >> fscanf: file _: format _: varHolder1 _: varHolder
 		  yourself
 ]
 
-{ #category : #formats }
+{ #category : 'formats' }
 AbstractComposedImageAccess >> headFormat [
 	
 	<inline: true>
 	^ '%s {\n'.
 ]
 
-{ #category : #'file operations' }
+{ #category : 'file operations' }
 AbstractComposedImageAccess >> headerFileNameinImage: imageFileName into: buffer bufferSize: bufferSize [
 
 	| headerFileName |
@@ -118,7 +121,7 @@ AbstractComposedImageAccess >> headerFileNameinImage: imageFileName into: buffer
 		inSmalltalk: [ imageFileName , '/', headerFileName ]
 ]
 
-{ #category : #formats }
+{ #category : 'formats' }
 AbstractComposedImageAccess >> msgFormat: aMessage [
 
 	<cmacro: '(aMessage) aMessage "%" PRIdSQINT'>
@@ -126,7 +129,7 @@ AbstractComposedImageAccess >> msgFormat: aMessage [
 	^ aMessage , '%' , PRIdSQINT.
 ]
 
-{ #category : #'perm - space' }
+{ #category : 'perm - space' }
 AbstractComposedImageAccess >> permSpaceDataFileInImage: imageFileName [ 
 
 	<inline: #always>
@@ -139,7 +142,7 @@ AbstractComposedImageAccess >> permSpaceDataFileInImage: imageFileName [
 	^ self permSpaceFileName: 'permSpace.data' inImage: imageFileName into: buffer bufferSize: 255
 ]
 
-{ #category : #'perm - space' }
+{ #category : 'perm - space' }
 AbstractComposedImageAccess >> permSpaceFileName: fileName inImage: imageFileName into: buffer bufferSize: bufferSize [
 
 	^ self 
@@ -153,7 +156,7 @@ AbstractComposedImageAccess >> permSpaceFileName: fileName inImage: imageFileNam
 		inSmalltalk: [ imageFileName , '/', fileName ].
 ]
 
-{ #category : #'perm - space' }
+{ #category : 'perm - space' }
 AbstractComposedImageAccess >> permSpaceMetadataFileNameInImage: imageFileName [
 
 	<inline: #always>
@@ -166,7 +169,42 @@ AbstractComposedImageAccess >> permSpaceMetadataFileNameInImage: imageFileName [
 	^ self permSpaceFileName: 'permSpace.ston' inImage: imageFileName into: buffer bufferSize: 255
 ]
 
-{ #category : #segments }
+{ #category : 'file primitives' }
+AbstractComposedImageAccess >> readLineFrom: file into: lineBuffer ofSize: bufferSize [
+
+	<var: #lineBuffer type: 'char*'>
+	<var: #file type: #sqImageFile>
+	self
+		cCode: [
+			| idx aCharacter |
+			idx := 0.
+
+			aCharacter := self fgetc: file.
+
+			[ aCharacter = -1 ] whileFalse: [
+				aCharacter = 10
+					ifTrue: [ aCharacter := -1 ]
+					ifFalse: [
+						aCharacter = 13
+							ifTrue: [
+								aCharacter := self fgetc: file.
+								aCharacter ~= 13 ifTrue: [
+									self cCall: 'ungetc' withArguments: {
+											aCharacter.
+											file } ].
+								aCharacter := -1 ]
+							ifFalse: [
+								lineBuffer at: idx put: aCharacter.
+								idx := idx + 1.
+								bufferSize = (idx + 1)
+									ifTrue: [ aCharacter := -1 ]
+									ifFalse: [ aCharacter := self fgetc: file ] ] ] ].
+
+			lineBuffer at: idx put: 0 ]
+		inSmalltalk: [ lineBuffer contents: file nextLine ]
+]
+
+{ #category : 'segments' }
 AbstractComposedImageAccess >> segmentDataFile: segmentIndex inImage: imageFileName [
 
 	<inline: true>
@@ -180,7 +218,7 @@ AbstractComposedImageAccess >> segmentDataFile: segmentIndex inImage: imageFileN
 
 ]
 
-{ #category : #segments }
+{ #category : 'segments' }
 AbstractComposedImageAccess >> segmentFileName: segmentIndex withExtension: extension inImage: imageFileName into: buffer bufferSize: bufferSize [
 
 	^ self 
@@ -194,7 +232,7 @@ AbstractComposedImageAccess >> segmentFileName: segmentIndex withExtension: exte
 		inSmalltalk: [ imageFileName , '/seg', segmentIndex asString , extension ]
 ]
 
-{ #category : #segments }
+{ #category : 'segments' }
 AbstractComposedImageAccess >> segmentMetadataFile: segmentIndex inImage: imageFileName [
 
 	<inline: true>
@@ -206,4 +244,52 @@ AbstractComposedImageAccess >> segmentMetadataFile: segmentIndex inImage: imageF
 
 	^ self segmentFileName: segmentIndex withExtension: '.ston' inImage: imageFileName into: buffer bufferSize: 255. 
 
+]
+
+{ #category : 'perm - space' }
+AbstractComposedImageAccess >> snprintf: buffer _: bufferSize _: format _: vararg1 _: vararg2 [
+	"int snprintf(char * restrict str, size_t size, const char * restrict format, ...);"
+
+	"Defined in C code"
+
+	<doNotGenerate>
+	self notYetImplemented
+]
+
+{ #category : 'perm - space' }
+AbstractComposedImageAccess >> snprintf: buffer _: bufferSize _: format _: vararg1 _: vararg2 _: vararg3 [
+	"int snprintf(char * restrict str, size_t size, const char * restrict format, ...);"
+
+	"Defined in C code"
+
+	<doNotGenerate>
+	self notYetImplemented
+]
+
+{ #category : 'file primitives' }
+AbstractComposedImageAccess >> sscanf: aString _: format _: varHolder [
+
+	<doNotGenerate>
+	(format = self headFormat)
+		  ifTrue: [ 
+			  ^ varHolder contents: (aString substrings: ' ') first ].
+
+	self error.
+]
+
+{ #category : 'file primitives' }
+AbstractComposedImageAccess >> sscanf: line _: format _: varHolder1 _: varHolder2 [
+
+	<doNotGenerate>
+
+	(format = self fieldFormat)
+		  ifTrue: [ 
+			  | dataArray |
+			  dataArray := line substrings: '#:, '.
+			  dataArray first = '}' ifTrue: [ ^ self ].
+			  varHolder1 contents: dataArray second.
+			  varHolder2 contents: dataArray third asInteger.
+			  ^ self ].
+
+	self error
 ]

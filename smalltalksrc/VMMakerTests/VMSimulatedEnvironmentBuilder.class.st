@@ -1,6 +1,6 @@
 Class {
-	#name : #VMSimulatedEnvironmentBuilder,
-	#superclass : #Object,
+	#name : 'VMSimulatedEnvironmentBuilder',
+	#superclass : 'Object',
 	#instVars : [
 		'interpreter',
 		'interpreterClass',
@@ -19,17 +19,19 @@ Class {
 		'allocateMemory',
 		'useComposedImageFormatAsDefault'
 	],
-	#category : #'VMMakerTests-Builders'
+	#category : 'VMMakerTests-Builders',
+	#package : 'VMMakerTests',
+	#tag : 'Builders'
 }
 
-{ #category : #building }
+{ #category : 'building' }
 VMSimulatedEnvironmentBuilder >> build [
 	
 	self doBuildSimulator.		
 	self doBuild
 ]
 
-{ #category : #building }
+{ #category : 'building' }
 VMSimulatedEnvironmentBuilder >> doBuild [
 
 	"100 k at least to put the class table in the old space.
@@ -86,7 +88,7 @@ VMSimulatedEnvironmentBuilder >> doBuild [
 
 ]
 
-{ #category : #building }
+{ #category : 'building' }
 VMSimulatedEnvironmentBuilder >> doBuildSimulator [
 	
 	objectMemory := objectMemoryClass simulatorClass new.
@@ -103,17 +105,17 @@ VMSimulatedEnvironmentBuilder >> doBuildSimulator [
 
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 VMSimulatedEnvironmentBuilder >> initialCodeSize: anInteger [ 
 	initialCodeSize := anInteger
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 VMSimulatedEnvironmentBuilder >> initializationOptions: aCollection [ 
 	initializationOptions := aCollection
 ]
 
-{ #category : #initialization }
+{ #category : 'initialization' }
 VMSimulatedEnvironmentBuilder >> initialize [
 
 	super initialize.
@@ -121,58 +123,58 @@ VMSimulatedEnvironmentBuilder >> initialize [
 	permSpaceSize := 0.
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 VMSimulatedEnvironmentBuilder >> interpreter [
 	^ interpreter
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 VMSimulatedEnvironmentBuilder >> interpreterClass: aClass [ 
 	interpreterClass := aClass
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 VMSimulatedEnvironmentBuilder >> memoryInitialAddress [
 
 	^ initialAddress 
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 VMSimulatedEnvironmentBuilder >> methodCacheSize [
 	^ methodCacheSize
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 VMSimulatedEnvironmentBuilder >> newSpaceSize [
 	^ newSpaceSize
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 VMSimulatedEnvironmentBuilder >> objectMemory [
 	^ objectMemory
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 VMSimulatedEnvironmentBuilder >> objectMemoryClass: aClass [ 
 	objectMemoryClass := aClass
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 VMSimulatedEnvironmentBuilder >> oldSpaceSize [
 	^ oldSpaceSize
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 VMSimulatedEnvironmentBuilder >> permSpaceSize: anInteger [ 
 	permSpaceSize := anInteger
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 VMSimulatedEnvironmentBuilder >> primitiveTraceLogSize: anInteger [ 
 	primitiveTraceLogSize := anInteger
 ]
 
-{ #category : #helpers }
+{ #category : 'helpers' }
 VMSimulatedEnvironmentBuilder >> roundToPageSize: anInteger [ 
 
 	"Unicorn simulator requires mapped memory to be multiple of 4096"
@@ -184,7 +186,7 @@ VMSimulatedEnvironmentBuilder >> roundToPageSize: anInteger [
 	^ anInteger + (pageSize - remainder)
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 VMSimulatedEnvironmentBuilder >> rumpCStackSize [
 
 	^ 4096.
@@ -192,18 +194,18 @@ VMSimulatedEnvironmentBuilder >> rumpCStackSize [
 
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 VMSimulatedEnvironmentBuilder >> stackSpaceSize [
 	^ stackSpaceSize
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 VMSimulatedEnvironmentBuilder >> useComposedImageFormatAsDefault: aBoolean [
 
 	useComposedImageFormatAsDefault := aBoolean
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 VMSimulatedEnvironmentBuilder >> wordSize: anInteger [ 
 	wordSize := anInteger
 ]

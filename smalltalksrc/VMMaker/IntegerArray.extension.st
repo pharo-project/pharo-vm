@@ -1,6 +1,6 @@
-Extension { #name : #IntegerArray }
+Extension { #name : 'IntegerArray' }
 
-{ #category : #'*VMMaker-plugin generation' }
+{ #category : '*VMMaker-plugin generation' }
 IntegerArray class >> ccg: cg prolog: aBlock expr: aString index: anInteger [
 
 	^cg 
@@ -10,7 +10,7 @@ IntegerArray class >> ccg: cg prolog: aBlock expr: aString index: anInteger [
 		andThen: (cg ccgValBlock: 'isWords')
 ]
 
-{ #category : #'*VMMaker-plugin generation' }
+{ #category : '*VMMaker-plugin generation' }
 IntegerArray class >> ccgDeclareCForVar: aSymbolOrString [
 
 	^'int *', aSymbolOrString

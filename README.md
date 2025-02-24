@@ -1,19 +1,19 @@
 # Pharo VM
 
-This repository holds the code of the Pharo Virtual Machine.
-This implementation started as a fork of [OpenSmalltalk-vm](https://github.com/OpenSmalltalk/opensmalltalk-vm).
-The current project could not have been possible with all their previous work.
+This repository contains the code of the Pharo Virtual Machine.
+This implementation started as a fork of [OpenSmalltalk-VM](https://github.com/OpenSmalltalk/opensmalltalk-vm).
+The current project would not have been possible without all their previous work.
 
-The current implementation presents the following core features:
+The current implementation has the following core features:
 - an indirect threaded bytecode compiler using GNU extensions
-- a generational scavenger garbage collector: semi-space + nursery for the young generation, a mark-compact collecting for the old generation
-- a space for permanent objects that need not to be scanned by the GC
+- a generational scavenger garbage collector: a semi-space + nursery for the young generation, and a mark-compact collector for the old generation
+- a space for permanent objects that do not need to be scanned by the GC
 - a baseline JIT compiler that
   - translates primitive operations using IR templates
-  - translates bytecode methods using a simple abstract interpretation approach to reduce memory pressure (less loads/stores)
+  - translates bytecode methods using a simple abstract interpretation approach to reduce memory pressure (fewer loads/stores)
 - FFI through the well-known [libFFI](https://github.com/libffi/libffi), and support for non-blocking FFI using worker threads
 
-For more details about the whole Pharo VM project refer to our [wiki](../../wiki). 
+For more details about the whole Pharo VM project, refer to our [wiki](../../wiki).
 
 # Table of Contents
 
@@ -44,7 +44,7 @@ For more details about the whole Pharo VM project refer to our [wiki](../../wiki
       - [Compiling ARM32 third party dependencies](https://github.com/pharo-project/pharo-vm/wiki/Building-Linux-ARM32-Third-Party-Dependencies)
   - [Troubleshooting](https://github.com/pharo-project/pharo-vm/wiki/Troubleshooting)
 - [Continuous Integration](https://github.com/pharo-project/pharo-vm/wiki/Continuous-Integration)
-- [Developer documentation](#developer-documentation)
+- Developer documentation
   - [Source Directory Structure](https://github.com/pharo-project/pharo-vm/wiki/Source-Directory-Structure)
   - [Simulation Environment](https://github.com/pharo-project/pharo-vm/wiki/Simulation-Environment)
   - [Slang](https://github.com/pharo-project/pharo-vm/wiki/Slang)

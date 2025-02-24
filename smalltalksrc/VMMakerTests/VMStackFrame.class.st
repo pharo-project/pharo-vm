@@ -1,6 +1,6 @@
 Class {
-	#name : #VMStackFrame,
-	#superclass : #Object,
+	#name : 'VMStackFrame',
+	#superclass : 'Object',
 	#instVars : [
 		'framePointer',
 		'interpreter'
@@ -8,10 +8,12 @@ Class {
 	#pools : [
 		'VMStackFrameOffsets'
 	],
-	#category : #'VMMakerTests-Visualisation'
+	#category : 'VMMakerTests-Visualisation',
+	#package : 'VMMakerTests',
+	#tag : 'Visualisation'
 }
 
-{ #category : #'instance creation' }
+{ #category : 'instance creation' }
 VMStackFrame class >> newFramePointer: anInteger withInterpreter: aStackInterpreterSimulatorLSB [
 	^self new
 		framePointer: anInteger;
@@ -19,19 +21,19 @@ VMStackFrame class >> newFramePointer: anInteger withInterpreter: aStackInterpre
 		yourself
 ]
 
-{ #category : #'instance creation' }
+{ #category : 'instance creation' }
 VMStackFrame class >> virtualMachine: aVirtualMachine fp: anInteger [
 	
 	^ self newFramePointer: anInteger withInterpreter: aVirtualMachine
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 VMStackFrame >> bytecodeMethod [
 	
 	^ VMBytecodeMethod newOnInterpreter: interpreter methodOop: self method
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 VMStackFrame >> caller [
 
 	| callerContext |
@@ -65,41 +67,41 @@ VMStackFrame >> caller [
 	^ VMContext newOnContext: callerContext withInterpreter: interpreter
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 VMStackFrame >> callerContext [
 	
 	^ interpreter frameCallerContext: framePointer
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 VMStackFrame >> callerFP [
 
 	^ interpreter frameCallerFP: framePointer
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 VMStackFrame >> context [
 	^VMContext newOnContext: (interpreter frameContext: framePointer) withInterpreter: interpreter 
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 VMStackFrame >> description [
 	| selector |
 	selector := interpreter findSelectorOfMethod: self methodOop.
 	^ interpreter stringOf: selector
 ]
 
-{ #category : #accesing }
+{ #category : 'accesing' }
 VMStackFrame >> framePointer: anInteger [ 
 	framePointer := anInteger
 ]
 
-{ #category : #testing }
+{ #category : 'testing' }
 VMStackFrame >> hasContext [
 	^interpreter frameHasContext: framePointer 
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 VMStackFrame >> instructionPointer [
 
 	^ interpreter framePointer = framePointer
@@ -107,50 +109,50 @@ VMStackFrame >> instructionPointer [
 		ifFalse: [ interpreter frameCallerSavedIP: ( interpreter findFrameAbove: framePointer inPage: self stackPage) ]
 ]
 
-{ #category : #acccessing }
+{ #category : 'acccessing' }
 VMStackFrame >> interpreter: aStackInterpreterSimulatorLSB [ 
 	interpreter := aStackInterpreterSimulatorLSB
 ]
 
-{ #category : #testing }
+{ #category : 'testing' }
 VMStackFrame >> isMachineCodeFrame [
 	
 	^ interpreter isMachineCodeFrame: framePointer
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 VMStackFrame >> machineCodeMethod [
 	| methodSurrogate |
 	methodSurrogate := interpreter cogMethodZone methodFor: self method.
 	^ VMMachineCodeMethod newOnInterpreter: interpreter cogMethodSurrogate: methodSurrogate
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 VMStackFrame >> method [
 
 	^ interpreter iframeMethod: framePointer
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 VMStackFrame >> methodOop [
 
 	^ interpreter frameMethodObject: framePointer
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 VMStackFrame >> receiver [
 	^ interpreter framePointer = framePointer
 		ifTrue: [ interpreter receiver ]
 		ifFalse: [ self halt. interpreter frameCallerSavedIP: ( interpreter findFrameAbove: framePointer inPage: self stackPage) ]
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 VMStackFrame >> sender [
 	^ VMStackFrame newFramePointer:(interpreter frameCallerFP: framePointer) withInterpreter: interpreter
 	 
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 VMStackFrame >> sourceCode [
 	
 	^ self isMachineCodeFrame
@@ -158,7 +160,7 @@ VMStackFrame >> sourceCode [
 		ifFalse: [ self bytecodeMethod disassemble ]
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 VMStackFrame >> stack [
 	| stack currentFrame |
 	stack := OrderedCollection new.
@@ -169,7 +171,7 @@ VMStackFrame >> stack [
 	^ stack
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 VMStackFrame >> stackPage [
 	^interpreter stackPages stackPageFor: framePointer.
 ]

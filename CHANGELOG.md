@@ -1,5 +1,91 @@
 # Change log
 
+## v10.3.3
+
+* Fixes for 10.3.2 by @guillep in https://github.com/pharo-project/pharo-vm/pull/885
+* Enhancement(versionning): Extract full semantic version from git by @guillep in https://github.com/pharo-project/pharo-vm/pull/884
+* Fix linking of UnixOSProcessPlugin - Remove dead code by @guillep in https://github.com/pharo-project/pharo-vm/pull/888
+* Fix failing tests by @guillep in https://github.com/pharo-project/pharo-vm/pull/887
+* fixing-classTag-tests by @tesonep in https://github.com/pharo-project/pharo-vm/pull/886
+* fix C warnings related to self assignments by @RenaudFondeur in https://github.com/pharo-project/pharo-vm/pull/894
+* Build on old linux server by @guillep in https://github.com/pharo-project/pharo-vm/pull/898
+* force non-shallow checkout on CI by @guillep in https://github.com/pharo-project/pharo-vm/pull/899
+* Update build and dev VM and image to latest pharo 12 release by @guillep in https://github.com/pharo-project/pharo-vm/pull/900
+
+**Full Changelog**: https://github.com/pharo-project/pharo-vm/compare/v10.3.2...v10.3.3
+
+## v10.3.2
+
+* Improving Implementation of CompositeImageFormat and PermanentSpace by @tesonep in https://github.com/pharo-project/pharo-vm/pull/855
+* Fixing cygpath conversion for newer version of cmake by @tesonep in https://github.com/pharo-project/pharo-vm/pull/860
+* use pharo file server @ inria by @demarey in https://github.com/pharo-project/pharo-vm/pull/867
+* compatible with FreeBSD mmap() by @Dieken in https://github.com/pharo-project/pharo-vm/pull/863
+* Improving Forwarders in the PermSpace by @tesonep in https://github.com/pharo-project/pharo-vm/pull/861
+* When patching JITed code after become of a class, the class index can look like a negative number by @tesonep in https://github.com/pharo-project/pharo-vm/pull/873
+
+**Full Changelog**: https://github.com/pharo-project/pharo-vm/compare/v10.3.1...v10.3.2
+
+## v10.3.1
+* Making it loadable in P12 by @guillep in https://github.com/pharo-project/pharo-vm/pull/825
+* Added test on extended store and pop by @guillep in https://github.com/pharo-project/pharo-vm/pull/520
+* Update build version to P12 by @guillep in https://github.com/pharo-project/pharo-vm/pull/826
+* Improving log of old space limit error reporting by @tesonep in https://github.com/pharo-project/pharo-vm/pull/833
+* a better comment support for Slang by @RenaudFondeur in https://github.com/pharo-project/pharo-vm/pull/838
+* a first version of Slang with no type conflict and an exception if one appear by @RenaudFondeur in https://github.com/pharo-project/pharo-vm/pull/819
+* remove unused cast and expression by @RenaudFondeur in https://github.com/pharo-project/pharo-vm/pull/837
+* fix warnings related to multiple include of the same header file by @RenaudFondeur in https://github.com/pharo-project/pharo-vm/pull/840
+* Fix a lot of unused expression by @RenaudFondeur in https://github.com/pharo-project/pharo-vm/pull/832
+* add a comment explaining why declareCVarsIn: is empty in some subclasses by @RenaudFondeur in https://github.com/pharo-project/pharo-vm/pull/842
+* small change in dead code elimination to considers a method with only comments empty by @RenaudFondeur in https://github.com/pharo-project/pharo-vm/pull/843
+* small change in copyWithoutReturn to handle CCoerce by @RenaudFondeur in https://github.com/pharo-project/pharo-vm/pull/836
+* Remove hostname lookup on network initialization by @guillep in https://github.com/pharo-project/pharo-vm/pull/845
+* Update SDL2 version in OSX (Intel & Apple) by @tesonep in https://github.com/pharo-project/pharo-vm/pull/849
+* Adding option for pin behaviour by @tesonep in https://github.com/pharo-project/pharo-vm/pull/844
+
+**Full Changelog**: https://github.com/pharo-project/pharo-vm/compare/v10.3.0...v10.3.1
+
+## v10.3.0
+
+* New harmonize rule by @RenaudFondeur in https://github.com/pharo-project/pharo-vm/pull/817
+* Ignoring EAGAIN in epoll_wait by @tesonep in https://github.com/pharo-project/pharo-vm/pull/818
+* Extend macOS implementation of SqueakSSL plugin to support setting a certificate on the SSL session context by @Rinzwind in https://github.com/pharo-project/pharo-vm/pull/816
+* Adding macro for win32.  by @tesonep in https://github.com/pharo-project/pharo-vm/pull/814
+
+## v10.2.1
+
+* Adding the missing tty.c file in the packaging. by @tesonep in https://github.com/pharo-project/pharo-vm/pull/771
+* Do not allow comparing objects of different types by @guillep in https://github.com/pharo-project/pharo-vm/pull/772
+* Prepare release 10.2.1 by @guillep in https://github.com/pharo-project/pharo-vm/pull/773
+* Constant conversion warning by @guillep in https://github.com/pharo-project/pharo-vm/pull/777
+* Fix tautological-pointer-compare warnings by @guillep in https://github.com/pharo-project/pharo-vm/pull/775
+* Removed Cogit>>#voidNSSendCache:  by @jordanmontt in https://github.com/pharo-project/pharo-vm/pull/776
+* Re-enable incompatible-function-pointer-types warning by @guillep in https://github.com/pharo-project/pharo-vm/pull/778
+* Removed unused functions from the C written by hand by @jordanmontt in https://github.com/pharo-project/pharo-vm/pull/780
+* Fix function pointer comparison warning by @guillep in https://github.com/pharo-project/pharo-vm/pull/783
+* Fix -return-type warnings by @doste in https://github.com/pharo-project/pharo-vm/pull/781
+* Fix shift-negative-value warning and reenable warning by @guillep in https://github.com/pharo-project/pharo-vm/pull/785
+* Remove warnings c compiler by @PalumboN in https://github.com/pharo-project/pharo-vm/pull/789
+* Remove StackInterpreter interruptPending instance variable by @jordanmontt in https://github.com/pharo-project/pharo-vm/pull/793
+* Do not use asserta: in a statement by @guillep in https://github.com/pharo-project/pharo-vm/pull/788
+* Bump to MacOS 11 and above by @guillep in https://github.com/pharo-project/pharo-vm/pull/792
+* Moving pharo.signatures files for OSX Bundle to Resources folder by @tesonep in https://github.com/pharo-project/pharo-vm/pull/770
+* Do not retain any selectors in CogAbstractInstruction by @RenaudFondeur in https://github.com/pharo-project/pharo-vm/pull/798
+* remove warning because of type and unsigned shift issues by @RenaudFondeur in https://github.com/pharo-project/pharo-vm/pull/800
+* add tests for type harmonization by @RenaudFondeur in https://github.com/pharo-project/pharo-vm/pull/807
+* Primitive format by @doste in https://github.com/pharo-project/pharo-vm/pull/802
+* Adding an implementation of the aio.c using EPOLL in Linux. by @tesonep in https://github.com/pharo-project/pharo-vm/pull/805
+* Fixing warnings that are errors in newer versions of clang by @tesonep in https://github.com/pharo-project/pharo-vm/pull/813
+
+**Full Changelog**: https://github.com/pharo-project/pharo-vm/compare/v10.2.0...v10.2.1
+
+## v10.2.0
+* Add library with function to spawn a process connected to a pseudo-terminal by @Rinzwind in https://github.com/pharo-project/pharo-vm/pull/742
+* Fix VM build in MacOS sonoma by @guillep in https://github.com/pharo-project/pharo-vm/pull/758
+* Primitive to compare bytes by @doste in https://github.com/pharo-project/pharo-vm/pull/759
+* Translate documentation picture to Englitsh by @Inao0 in https://github.com/pharo-project/pharo-vm/pull/764
+
+**Full Changelog**: https://github.com/pharo-project/pharo-vm/compare/v10.1.1...v10.2.0
+
 ## v10.1.1
 * Change custom command in ‘vmmaker.cmake’ to take into account that the ‘CMAKE_CURRENT_BINARY_DIR_TO_OUT’ can contain other characters besides spaces that require escaping by @Rinzwind in https://github.com/pharo-project/pharo-vm/pull/741
 * Backporting PR for allocating in the old space by @jordanmontt in https://github.com/pharo-project/pharo-vm/pull/709

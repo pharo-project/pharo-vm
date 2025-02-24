@@ -2,8 +2,8 @@
 This is another JPEG reader plugin, this time not requiring jpeglib support. 
 "
 Class {
-	#name : #JPEGReaderPlugin,
-	#superclass : #InterpreterPlugin,
+	#name : 'JPEGReaderPlugin',
+	#superclass : 'InterpreterPlugin',
 	#instVars : [
 		'yComponent',
 		'crComponent',
@@ -72,10 +72,12 @@ Class {
 		'SampleOffset',
 		'VScaleIndex'
 	],
-	#category : #'VMMaker-Plugins'
+	#category : 'VMMaker-Plugins',
+	#package : 'VMMaker',
+	#tag : 'Plugins'
 }
 
-{ #category : #translation }
+{ #category : 'translation' }
 JPEGReaderPlugin class >> declareCVarsIn: cg [
 	cg var: 'yComponent'
 		declareC: 'int yComponent[' , MinComponentSize printString , ']'.
@@ -115,7 +117,7 @@ JPEGReaderPlugin class >> declareCVarsIn: cg [
 
 ]
 
-{ #category : #'class initialization' }
+{ #category : 'class initialization' }
 JPEGReaderPlugin class >> initialize [
 	"JPEGReaderPlugin initialize"
 	DCTSize := 8.
@@ -165,13 +167,13 @@ JPEGReaderPlugin class >> initialize [
 	MaxBits := 16.
 ]
 
-{ #category : #decoding }
+{ #category : 'decoding' }
 JPEGReaderPlugin >> cbColorComponentFrom: oop [
 	^(self colorComponent: cbComponent from: oop)
 		and:[self colorComponentBlocks: cbBlocks from: oop]
 ]
 
-{ #category : #decoding }
+{ #category : 'decoding' }
 JPEGReaderPlugin >> colorComponent: aColorComponent from: oop [
 	<var: #aColorComponent type: 'int *'>
 	(interpreterProxy isPointers: oop) ifFalse:[^false].
@@ -193,7 +195,7 @@ JPEGReaderPlugin >> colorComponent: aColorComponent from: oop [
 	^interpreterProxy failed not
 ]
 
-{ #category : #decoding }
+{ #category : 'decoding' }
 JPEGReaderPlugin >> colorComponentBlocks: blocks from: oop [
 	| arrayOop max blockOop |
 	<var: #blocks type: 'int **'>
@@ -213,7 +215,7 @@ JPEGReaderPlugin >> colorComponentBlocks: blocks from: oop [
 	^interpreterProxy failed not
 ]
 
-{ #category : #decoding }
+{ #category : 'decoding' }
 JPEGReaderPlugin >> colorConvertGrayscaleMCU [
 	| y |
 	yComponent at: CurrentXIndex put: 0.
@@ -229,7 +231,7 @@ JPEGReaderPlugin >> colorConvertGrayscaleMCU [
 	].
 ]
 
-{ #category : #decoding }
+{ #category : 'decoding' }
 JPEGReaderPlugin >> colorConvertMCU [
 	| y cb cr red green blue |
 	yComponent at: CurrentXIndex put: 0.
@@ -264,13 +266,13 @@ JPEGReaderPlugin >> colorConvertMCU [
 	].
 ]
 
-{ #category : #decoding }
+{ #category : 'decoding' }
 JPEGReaderPlugin >> crColorComponentFrom: oop [
 	^(self colorComponent: crComponent from: oop)
 		and:[self colorComponentBlocks: crBlocks from: oop]
 ]
 
-{ #category : #decoding }
+{ #category : 'decoding' }
 JPEGReaderPlugin >> decodeBlockInto: anArray component: aColorComponent [
 	| byte zeroCount bits index |
 	<var: #anArray type: 'int *'>
@@ -304,7 +306,7 @@ JPEGReaderPlugin >> decodeBlockInto: anArray component: aColorComponent [
 	].
 ]
 
-{ #category : #'stream support' }
+{ #category : 'stream support' }
 JPEGReaderPlugin >> fillBuffer [
 	| byte |
 	[jsBitCount <= 16] whileTrue:[
@@ -321,7 +323,7 @@ JPEGReaderPlugin >> fillBuffer [
 	^jsBitCount
 ]
 
-{ #category : #'stream support' }
+{ #category : 'stream support' }
 JPEGReaderPlugin >> getBits: requestedBits [
 	| value |
 	requestedBits > jsBitCount ifTrue:[
@@ -333,7 +335,7 @@ JPEGReaderPlugin >> getBits: requestedBits [
 	^ value
 ]
 
-{ #category : #decoding }
+{ #category : 'decoding' }
 JPEGReaderPlugin >> idctBlockInt: anArray qt: qt [
 	| ws anACTerm dcval z2 z3 z1 t2 t3 t0 t1 t10 t13 t11 t12 z4 z5 v |
 	<var: #anArray type: 'int *'>
@@ -457,7 +459,7 @@ JPEGReaderPlugin >> idctBlockInt: anArray qt: qt [
 		anArray at: (i + 4) put: v].
 ]
 
-{ #category : #'stream support' }
+{ #category : 'stream support' }
 JPEGReaderPlugin >> jpegDecodeValueFrom: table size: tableSize [
 	"Decode the next value in the receiver using the given huffman table."
 	| bits bitsNeeded tableIndex value index |
@@ -479,7 +481,7 @@ JPEGReaderPlugin >> jpegDecodeValueFrom: table size: tableSize [
 	^-1
 ]
 
-{ #category : #'stream support' }
+{ #category : 'stream support' }
 JPEGReaderPlugin >> loadJPEGStreamFrom: streamOop [
 	| oop sz |
 	(interpreterProxy isPointers: streamOop) ifFalse:[^false].
@@ -498,7 +500,7 @@ JPEGReaderPlugin >> loadJPEGStreamFrom: streamOop [
 	^true
 ]
 
-{ #category : #decoding }
+{ #category : 'decoding' }
 JPEGReaderPlugin >> nextSampleCb [
 	| dx dy blockIndex sampleIndex sample curX sx sy |
 	<inline: true>
@@ -523,7 +525,7 @@ JPEGReaderPlugin >> nextSampleCb [
 	^ sample
 ]
 
-{ #category : #decoding }
+{ #category : 'decoding' }
 JPEGReaderPlugin >> nextSampleCr [
 	| dx dy blockIndex sampleIndex sample curX sx sy |
 	<inline: true>
@@ -548,7 +550,7 @@ JPEGReaderPlugin >> nextSampleCr [
 	^ sample
 ]
 
-{ #category : #decoding }
+{ #category : 'decoding' }
 JPEGReaderPlugin >> nextSampleFrom: aComponent blocks: aBlockArray [
 	| dx dy blockIndex sampleIndex sample curX sx sy |
 	<var: #aComponent type: 'int *'>
@@ -575,7 +577,7 @@ JPEGReaderPlugin >> nextSampleFrom: aComponent blocks: aBlockArray [
 	^ sample
 ]
 
-{ #category : #decoding }
+{ #category : 'decoding' }
 JPEGReaderPlugin >> nextSampleY [
 	| dx dy blockIndex sampleIndex sample curX sx sy |
 	<inline: true>
@@ -600,7 +602,7 @@ JPEGReaderPlugin >> nextSampleY [
 	^ sample
 ]
 
-{ #category : #primitives }
+{ #category : 'primitives' }
 JPEGReaderPlugin >> primitiveColorConvertGrayscaleMCU [
 	"Requires:
 		JPEGColorComponent
@@ -631,7 +633,7 @@ JPEGReaderPlugin >> primitiveColorConvertGrayscaleMCU [
 	interpreterProxy pop: 4
 ]
 
-{ #category : #primitives }
+{ #category : 'primitives' }
 JPEGReaderPlugin >> primitiveColorConvertMCU [
 	"Requires:
 		Array with: 3*JPEGColorComponent
@@ -668,7 +670,7 @@ JPEGReaderPlugin >> primitiveColorConvertMCU [
 	interpreterProxy pop: 4
 ]
 
-{ #category : #primitives }
+{ #category : 'primitives' }
 JPEGReaderPlugin >> primitiveDecodeMCU [
 	"In:
 		anArray 		WordArray of: DCTSize2
@@ -725,7 +727,7 @@ JPEGReaderPlugin >> primitiveDecodeMCU [
 	interpreterProxy pop: 5
 ]
 
-{ #category : #primitives }
+{ #category : 'primitives' }
 JPEGReaderPlugin >> primitiveIdctInt [
 	"In:
 		anArray: IntegerArray new: DCTSize2
@@ -750,7 +752,7 @@ JPEGReaderPlugin >> primitiveIdctInt [
 	interpreterProxy pop: 2
 ]
 
-{ #category : #decoding }
+{ #category : 'decoding' }
 JPEGReaderPlugin >> scaleAndSignExtend: aNumber inFieldWidth: w [
 	<inline: true>
 	aNumber < (1 << (w - 1))
@@ -758,7 +760,7 @@ JPEGReaderPlugin >> scaleAndSignExtend: aNumber inFieldWidth: w [
 		ifFalse: [^aNumber]
 ]
 
-{ #category : #initialize }
+{ #category : 'initialize' }
 JPEGReaderPlugin >> stInit [
 	self cCode:'' inSmalltalk:[
 		yComponent := CArrayAccessor on: (IntegerArray new: MinComponentSize).
@@ -779,14 +781,14 @@ JPEGReaderPlugin >> stInit [
 	].
 ]
 
-{ #category : #'stream support' }
+{ #category : 'stream support' }
 JPEGReaderPlugin >> storeJPEGStreamOn: streamOop [
 	interpreterProxy storeInteger: 1 ofObject: streamOop withValue: jsPosition.
 	interpreterProxy storeInteger: 3 ofObject: streamOop withValue: jsBitBuffer.
 	interpreterProxy storeInteger: 4 ofObject: streamOop withValue: jsBitCount.
 ]
 
-{ #category : #decoding }
+{ #category : 'decoding' }
 JPEGReaderPlugin >> yColorComponentFrom: oop [
 	^(self colorComponent: yComponent from: oop)
 		and:[self colorComponentBlocks: yBlocks from: oop]

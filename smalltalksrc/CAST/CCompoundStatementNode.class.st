@@ -1,15 +1,17 @@
 Class {
-	#name : #CCompoundStatementNode,
-	#superclass : #CGLRAbstractNode,
+	#name : 'CCompoundStatementNode',
+	#superclass : 'CGLRAbstractNode',
 	#instVars : [
 		'declarations',
 		'statements',
 		'needsBrackets'
 	],
-	#category : #'CAST-Nodes'
+	#category : 'CAST-Nodes',
+	#package : 'CAST',
+	#tag : 'Nodes'
 }
 
-{ #category : #'instance creation' }
+{ #category : 'instance creation' }
 CCompoundStatementNode class >> declarations: declarations statements: statements [
 
 	^ self new
@@ -18,7 +20,7 @@ CCompoundStatementNode class >> declarations: declarations statements: statement
 		yourself
 ]
 
-{ #category : #'instance creation' }
+{ #category : 'instance creation' }
 CCompoundStatementNode class >> statements: statements [
 
 	^ self new
@@ -26,7 +28,7 @@ CCompoundStatementNode class >> statements: statements [
 		  yourself
 ]
 
-{ #category : #comparing }
+{ #category : 'comparing' }
 CCompoundStatementNode >> = anObject [
 
 	"Answer whether the receiver and anObject represent the same object."
@@ -37,36 +39,43 @@ CCompoundStatementNode >> = anObject [
 		  declarations = anObject declarations ]
 ]
 
-{ #category : #generated }
+{ #category : 'generated' }
 CCompoundStatementNode >> acceptVisitor: anAbstractVisitor [
 	^ anAbstractVisitor visitCompoundStatement: self
 ]
 
-{ #category : #adding }
+{ #category : 'adding' }
 CCompoundStatementNode >> add: aStatement [
 
-	statements add: aStatement
+	statements add: aStatement.
+	aStatement parent: self
 ]
 
-{ #category : #adding }
+{ #category : 'adding' }
 CCompoundStatementNode >> addAll: aCompoundStatement [
 
 	statements addAll: aCompoundStatement statements
 ]
 
-{ #category : #generated }
+{ #category : 'accessing' }
+CCompoundStatementNode >> comment [
+
+	^ self statements first comment
+]
+
+{ #category : 'generated' }
 CCompoundStatementNode >> declarations [
 	^ declarations
 ]
 
-{ #category : #generated }
+{ #category : 'generated' }
 CCompoundStatementNode >> declarations: anOrderedCollection [
 	self setParents: self declarations to: nil.
 	declarations := anOrderedCollection.
 	self setParents: self declarations to: self
 ]
 
-{ #category : #comparing }
+{ #category : 'comparing' }
 CCompoundStatementNode >> hash [
 
 	"Answer an integer value that is related to the identity of the receiver."
@@ -74,28 +83,45 @@ CCompoundStatementNode >> hash [
 	^ statements hash bitXor: declarations hash
 ]
 
-{ #category : #'generated-initialize-release' }
+{ #category : 'generated-initialize-release' }
 CCompoundStatementNode >> initialize [
 	super initialize.
 	statements := OrderedCollection new: 2.
 	declarations := OrderedCollection new: 2.
-	needsBrackets := true.
-	needsSeparator := false
+	needsBrackets := true
 ]
 
-{ #category : #testing }
+{ #category : 'testing' }
+CCompoundStatementNode >> isAtEndOfStatement [
+	"Signals whether the end of this block (think of the closing brace) is at the
+	 end of a statement. This is only false when the block is followed by a
+	 `while(..);` or an `else`."
+	parent ifNil: [ ^ true ].
+	parent isDoWhile ifTrue: [ ^ false ].
+	parent isIf ifTrue: [
+		^ parent else = self or: [ parent else isNil ] ].
+	^ true
+]
+
+{ #category : 'testing' }
+CCompoundStatementNode >> isComment [
+
+	^ self statements size = 1 and: [ self statements first isComment ]
+]
+
+{ #category : 'testing' }
 CCompoundStatementNode >> isCompoundStatement [
 	
 	^ true
 ]
 
-{ #category : #testing }
+{ #category : 'testing' }
 CCompoundStatementNode >> isEmpty [
 	
 	^ statements isEmpty or: [ statements allSatisfy: [ :e | e isEmpty ] ]
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 CCompoundStatementNode >> last [
 	"For some unknown reason, the some compound can be empty."
 	[ statements last isEmpty ] whileTrue: [ statements removeAt: statements size ].
@@ -103,7 +129,7 @@ CCompoundStatementNode >> last [
 	^ statements last last
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 CCompoundStatementNode >> last: aCReturnStatementNode [ 
 	
 	"We rewrite the tree recursively.
@@ -114,30 +140,24 @@ CCompoundStatementNode >> last: aCReturnStatementNode [
 		put: (statements last last: aCReturnStatementNode)
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 CCompoundStatementNode >> needsBrackets [
 
 	^ needsBrackets
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 CCompoundStatementNode >> needsBrackets: anObject [
 
 	needsBrackets := anObject
 ]
 
-{ #category : #testing }
-CCompoundStatementNode >> needsTrailingSemicolon [
-
-	^ false
-]
-
-{ #category : #generated }
+{ #category : 'generated' }
 CCompoundStatementNode >> statements [
 	^ statements
 ]
 
-{ #category : #generated }
+{ #category : 'generated' }
 CCompoundStatementNode >> statements: anOrderedCollection [
 	self setParents: self statements to: nil.
 	statements := anOrderedCollection.

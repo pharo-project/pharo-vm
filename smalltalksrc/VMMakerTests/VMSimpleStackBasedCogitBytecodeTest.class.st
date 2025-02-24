@@ -1,10 +1,12 @@
 Class {
-	#name : #VMSimpleStackBasedCogitBytecodeTest,
-	#superclass : #VMSimpleStackBasedCogitAbstractTest,
-	#category : #'VMMakerTests-JitTests'
+	#name : 'VMSimpleStackBasedCogitBytecodeTest',
+	#superclass : 'VMSimpleStackBasedCogitAbstractTest',
+	#category : 'VMMakerTests-JitTests',
+	#package : 'VMMakerTests',
+	#tag : 'JitTests'
 }
 
-{ #category : #'tests - single bytecode - pop into inst var' }
+{ #category : 'tests - single bytecode - pop into inst var' }
 VMSimpleStackBasedCogitBytecodeTest >> doPopIntoReceiverVariableBytecodeStoresVariableAt: instanceVariableToWrite [
 
 	"Create an object with at least `instanceVariableToWrite` instance variables.
@@ -25,7 +27,7 @@ VMSimpleStackBasedCogitBytecodeTest >> doPopIntoReceiverVariableBytecodeStoresVa
 	self runGeneratedCode.
 ]
 
-{ #category : #'tests - single bytecode - return' }
+{ #category : 'tests - single bytecode - return' }
 VMSimpleStackBasedCogitBytecodeTest >> doTestReturnCleansStackWithFrame: isFrameful onBlock: generationBlock [
 
 	| oldFP oldSP |
@@ -45,7 +47,7 @@ VMSimpleStackBasedCogitBytecodeTest >> doTestReturnCleansStackWithFrame: isFrame
 	self assert: oldSP equals: self stackPointerRegisterValue.
 ]
 
-{ #category : #'tests - single bytecode - return' }
+{ #category : 'tests - single bytecode - return' }
 VMSimpleStackBasedCogitBytecodeTest >> doTestReturnReturnsObjectInReturnRegister: anAddress withFrame: isFrameful onBlock: compilationBlock [
 
 	isFrameful 
@@ -58,7 +60,7 @@ VMSimpleStackBasedCogitBytecodeTest >> doTestReturnReturnsObjectInReturnRegister
 	self assert: machineSimulator receiverRegisterValue equals: anAddress
 ]
 
-{ #category : #'tests - single bytecode - return' }
+{ #category : 'tests - single bytecode - return' }
 VMSimpleStackBasedCogitBytecodeTest >> doTestReturnReturnsToCallerWithFrame: isFrameful onBlock: compilationBlock [
 
 	isFrameful 
@@ -69,50 +71,50 @@ VMSimpleStackBasedCogitBytecodeTest >> doTestReturnReturnsToCallerWithFrame: isF
 	self runUntilReturn.
 ]
 
-{ #category : #'tests - extended store bytecode - store inst var' }
+{ #category : 'tests - extended store bytecode - store inst var' }
 VMSimpleStackBasedCogitBytecodeTest >> setUp [
 
 	super setUp.
 	self setUpTrampolines
 ]
 
-{ #category : #'tests - extended push bytecode - push inst var' }
+{ #category : 'tests - extended push bytecode - push inst var' }
 VMSimpleStackBasedCogitBytecodeTest >> testExtendedPushPushesInstanceVariable1 [
 
 	self testExtendedPushPushesInstanceVariable: 1
 ]
 
-{ #category : #'tests - extended push bytecode - push inst var' }
+{ #category : 'tests - extended push bytecode - push inst var' }
 VMSimpleStackBasedCogitBytecodeTest >> testExtendedPushPushesInstanceVariable2 [
 
 	self testExtendedPushPushesInstanceVariable: 2
 ]
 
-{ #category : #'tests - extended push bytecode - push inst var' }
+{ #category : 'tests - extended push bytecode - push inst var' }
 VMSimpleStackBasedCogitBytecodeTest >> testExtendedPushPushesInstanceVariable3 [
 
 	self testExtendedPushPushesInstanceVariable: 3
 ]
 
-{ #category : #'tests - extended push bytecode - push inst var' }
+{ #category : 'tests - extended push bytecode - push inst var' }
 VMSimpleStackBasedCogitBytecodeTest >> testExtendedPushPushesInstanceVariable32 [
 
 	self testExtendedPushPushesInstanceVariable: 32
 ]
 
-{ #category : #'tests - extended push bytecode - push inst var' }
+{ #category : 'tests - extended push bytecode - push inst var' }
 VMSimpleStackBasedCogitBytecodeTest >> testExtendedPushPushesInstanceVariable64 [
 
 	self testExtendedPushPushesInstanceVariable: 64
 ]
 
-{ #category : #'tests - extended push bytecode - push inst var' }
+{ #category : 'tests - extended push bytecode - push inst var' }
 VMSimpleStackBasedCogitBytecodeTest >> testExtendedPushPushesInstanceVariable: instanceVariableToWrite [
 
 	self testExtendedPushPushesVariableType: 0 "Instance variable type" index: instanceVariableToWrite
 ]
 
-{ #category : #'tests - extended push bytecode - push inst var' }
+{ #category : 'tests - extended push bytecode - push inst var' }
 VMSimpleStackBasedCogitBytecodeTest >> testExtendedPushPushesVariableType: type index: instanceVariableToWrite [
 
 	"Type = 0 is instance variable"
@@ -136,7 +138,7 @@ VMSimpleStackBasedCogitBytecodeTest >> testExtendedPushPushesVariableType: type 
 	self assert: self popAddress equals: memory falseObject
 ]
 
-{ #category : #'tests - jumps' }
+{ #category : 'tests - jumps' }
 VMSimpleStackBasedCogitBytecodeTest >> testJumpForwardJumpsOverAnInstruction [
 
 	| firstBytecode |
@@ -176,67 +178,67 @@ VMSimpleStackBasedCogitBytecodeTest >> testJumpForwardJumpsOverAnInstruction [
 		equals: memory trueObject
 ]
 
-{ #category : #'tests - single bytecode - pop into temp' }
+{ #category : 'tests - single bytecode - pop into temp' }
 VMSimpleStackBasedCogitBytecodeTest >> testPopInto3rdTempPopsValue [
 
 	self testPopIntoTempPopsValueAt: 3
 ]
 
-{ #category : #'tests - single bytecode - pop into temp' }
+{ #category : 'tests - single bytecode - pop into temp' }
 VMSimpleStackBasedCogitBytecodeTest >> testPopInto3rdTempUpdatesTemporaryWithFalse [
 
 	self testPopIntoTempUpdatesVariableAt: 3
 ]
 
-{ #category : #'tests - single bytecode - pop into temp' }
+{ #category : 'tests - single bytecode - pop into temp' }
 VMSimpleStackBasedCogitBytecodeTest >> testPopInto4thTempPopsValue [
 
 	self testPopIntoTempPopsValueAt: 4
 ]
 
-{ #category : #'tests - single bytecode - pop into temp' }
+{ #category : 'tests - single bytecode - pop into temp' }
 VMSimpleStackBasedCogitBytecodeTest >> testPopInto4thTempUpdatesTemporaryWithFalse [
 
 	self testPopIntoTempUpdatesVariableAt: 4
 ]
 
-{ #category : #'tests - single bytecode - pop into temp' }
+{ #category : 'tests - single bytecode - pop into temp' }
 VMSimpleStackBasedCogitBytecodeTest >> testPopInto5thTempPopsValue [
 
 	self testPopIntoTempPopsValueAt: 5
 ]
 
-{ #category : #'tests - single bytecode - pop into temp' }
+{ #category : 'tests - single bytecode - pop into temp' }
 VMSimpleStackBasedCogitBytecodeTest >> testPopInto5thTempUpdatesTemporaryWithFalse [
 
 	self testPopIntoTempUpdatesVariableAt: 5
 ]
 
-{ #category : #'tests - single bytecode - pop into temp' }
+{ #category : 'tests - single bytecode - pop into temp' }
 VMSimpleStackBasedCogitBytecodeTest >> testPopInto6thTempPopsValue [
 
 	self testPopIntoTempPopsValueAt: 6
 ]
 
-{ #category : #'tests - single bytecode - pop into temp' }
+{ #category : 'tests - single bytecode - pop into temp' }
 VMSimpleStackBasedCogitBytecodeTest >> testPopInto6thTempUpdatesTemporaryWithFalse [
 
 	self testPopIntoTempUpdatesVariableAt: 6
 ]
 
-{ #category : #'tests - single bytecode - pop into temp' }
+{ #category : 'tests - single bytecode - pop into temp' }
 VMSimpleStackBasedCogitBytecodeTest >> testPopInto7thTempPopsValue [
 
 	self testPopIntoTempPopsValueAt: 7
 ]
 
-{ #category : #'tests - single bytecode - pop into temp' }
+{ #category : 'tests - single bytecode - pop into temp' }
 VMSimpleStackBasedCogitBytecodeTest >> testPopInto7thTempUpdatesTemporaryWithFalse [
 
 	self testPopIntoTempUpdatesVariableAt: 7
 ]
 
-{ #category : #'tests - single bytecode - pop into inst var' }
+{ #category : 'tests - single bytecode - pop into inst var' }
 VMSimpleStackBasedCogitBytecodeTest >> testPopIntoEighthReceiverVariableBytecodePopsValue [
 
 	"The block pushed and then pops.
@@ -244,7 +246,7 @@ VMSimpleStackBasedCogitBytecodeTest >> testPopIntoEighthReceiverVariableBytecode
 	self assertStackRemainsUnchangedDuring: [ self doPopIntoReceiverVariableBytecodeStoresVariableAt: 8 ]
 ]
 
-{ #category : #'tests - single bytecode - pop into inst var' }
+{ #category : 'tests - single bytecode - pop into inst var' }
 VMSimpleStackBasedCogitBytecodeTest >> testPopIntoFifthReceiverVariableBytecodePopsValue [
 
 	"The block pushed and then pops.
@@ -252,7 +254,7 @@ VMSimpleStackBasedCogitBytecodeTest >> testPopIntoFifthReceiverVariableBytecodeP
 	self assertStackRemainsUnchangedDuring: [ self doPopIntoReceiverVariableBytecodeStoresVariableAt: 5 ]
 ]
 
-{ #category : #'tests - single bytecode - pop into inst var' }
+{ #category : 'tests - single bytecode - pop into inst var' }
 VMSimpleStackBasedCogitBytecodeTest >> testPopIntoFirstReceiverVariableBytecodePopsValue [
 
 	"The block pushed and then pops.
@@ -260,19 +262,19 @@ VMSimpleStackBasedCogitBytecodeTest >> testPopIntoFirstReceiverVariableBytecodeP
 	self assertStackRemainsUnchangedDuring: [ self doPopIntoReceiverVariableBytecodeStoresVariableAt: 1 ]
 ]
 
-{ #category : #'tests - single bytecode - pop into temp' }
+{ #category : 'tests - single bytecode - pop into temp' }
 VMSimpleStackBasedCogitBytecodeTest >> testPopIntoFirstTempPopsValue [
 
 	self testPopIntoTempPopsValueAt: 1
 ]
 
-{ #category : #'tests - single bytecode - pop into temp' }
+{ #category : 'tests - single bytecode - pop into temp' }
 VMSimpleStackBasedCogitBytecodeTest >> testPopIntoFirstTempUpdatesTemporaryWithFalse [
 
 	self testPopIntoTempUpdatesVariableAt: 1
 ]
 
-{ #category : #'tests - single bytecode - pop into inst var' }
+{ #category : 'tests - single bytecode - pop into inst var' }
 VMSimpleStackBasedCogitBytecodeTest >> testPopIntoFourthReceiverVariableBytecodePopsValue [
 
 	"The block pushed and then pops.
@@ -280,55 +282,55 @@ VMSimpleStackBasedCogitBytecodeTest >> testPopIntoFourthReceiverVariableBytecode
 	self assertStackRemainsUnchangedDuring: [ self doPopIntoReceiverVariableBytecodeStoresVariableAt: 4 ]
 ]
 
-{ #category : #'tests - single bytecode - pop into inst var' }
+{ #category : 'tests - single bytecode - pop into inst var' }
 VMSimpleStackBasedCogitBytecodeTest >> testPopIntoReceiverVariableBytecodeStoresEigthInstanceVariable [
 
 	self testPopIntoReceiverVariableBytecodeStoresVariableAt: 8
 ]
 
-{ #category : #'tests - single bytecode - pop into inst var' }
+{ #category : 'tests - single bytecode - pop into inst var' }
 VMSimpleStackBasedCogitBytecodeTest >> testPopIntoReceiverVariableBytecodeStoresFifthInstanceVariable [
 
 	self testPopIntoReceiverVariableBytecodeStoresVariableAt: 5
 ]
 
-{ #category : #'tests - single bytecode - pop into inst var' }
+{ #category : 'tests - single bytecode - pop into inst var' }
 VMSimpleStackBasedCogitBytecodeTest >> testPopIntoReceiverVariableBytecodeStoresFirstInstanceVariable [
 
 	self testPopIntoReceiverVariableBytecodeStoresVariableAt: 1
 ]
 
-{ #category : #'tests - single bytecode - pop into inst var' }
+{ #category : 'tests - single bytecode - pop into inst var' }
 VMSimpleStackBasedCogitBytecodeTest >> testPopIntoReceiverVariableBytecodeStoresFourthInstanceVariable [
 
 	self testPopIntoReceiverVariableBytecodeStoresVariableAt: 4
 ]
 
-{ #category : #'tests - single bytecode - pop into inst var' }
+{ #category : 'tests - single bytecode - pop into inst var' }
 VMSimpleStackBasedCogitBytecodeTest >> testPopIntoReceiverVariableBytecodeStoresSecondInstanceVariable [
 
 	self testPopIntoReceiverVariableBytecodeStoresVariableAt: 2
 ]
 
-{ #category : #'tests - single bytecode - pop into inst var' }
+{ #category : 'tests - single bytecode - pop into inst var' }
 VMSimpleStackBasedCogitBytecodeTest >> testPopIntoReceiverVariableBytecodeStoresSeventhInstanceVariable [
 
 	self testPopIntoReceiverVariableBytecodeStoresVariableAt: 7
 ]
 
-{ #category : #'tests - single bytecode - pop into inst var' }
+{ #category : 'tests - single bytecode - pop into inst var' }
 VMSimpleStackBasedCogitBytecodeTest >> testPopIntoReceiverVariableBytecodeStoresSixthInstanceVariable [
 
 	self testPopIntoReceiverVariableBytecodeStoresVariableAt: 6
 ]
 
-{ #category : #'tests - single bytecode - pop into inst var' }
+{ #category : 'tests - single bytecode - pop into inst var' }
 VMSimpleStackBasedCogitBytecodeTest >> testPopIntoReceiverVariableBytecodeStoresThirdInstanceVariable [
 
 	self testPopIntoReceiverVariableBytecodeStoresVariableAt: 3
 ]
 
-{ #category : #'tests - single bytecode - pop into inst var' }
+{ #category : 'tests - single bytecode - pop into inst var' }
 VMSimpleStackBasedCogitBytecodeTest >> testPopIntoReceiverVariableBytecodeStoresVariableAt: instanceVariableToWrite [
 
 	self doPopIntoReceiverVariableBytecodeStoresVariableAt: instanceVariableToWrite.
@@ -337,7 +339,7 @@ VMSimpleStackBasedCogitBytecodeTest >> testPopIntoReceiverVariableBytecodeStores
 	self assert: (memory fetchPointer: instanceVariableToWrite - 1 ofObject: obj) equals: memory falseObject
 ]
 
-{ #category : #'tests - single bytecode - pop into inst var' }
+{ #category : 'tests - single bytecode - pop into inst var' }
 VMSimpleStackBasedCogitBytecodeTest >> testPopIntoSecondReceiverVariableBytecodePopsValue [
 
 	"The block pushed and then pops.
@@ -345,19 +347,19 @@ VMSimpleStackBasedCogitBytecodeTest >> testPopIntoSecondReceiverVariableBytecode
 	self assertStackRemainsUnchangedDuring: [ self doPopIntoReceiverVariableBytecodeStoresVariableAt: 2 ]
 ]
 
-{ #category : #'tests - single bytecode - pop into temp' }
+{ #category : 'tests - single bytecode - pop into temp' }
 VMSimpleStackBasedCogitBytecodeTest >> testPopIntoSecondTempPopsValue [
 
 	self testPopIntoTempPopsValueAt: 2
 ]
 
-{ #category : #'tests - single bytecode - pop into temp' }
+{ #category : 'tests - single bytecode - pop into temp' }
 VMSimpleStackBasedCogitBytecodeTest >> testPopIntoSecondTempUpdatesTemporaryWithFalse [
 
 	self testPopIntoTempUpdatesVariableAt: 2
 ]
 
-{ #category : #'tests - single bytecode - pop into inst var' }
+{ #category : 'tests - single bytecode - pop into inst var' }
 VMSimpleStackBasedCogitBytecodeTest >> testPopIntoSeventhReceiverVariableBytecodePopsValue [
 
 	"The block pushed and then pops.
@@ -365,7 +367,7 @@ VMSimpleStackBasedCogitBytecodeTest >> testPopIntoSeventhReceiverVariableBytecod
 	self assertStackRemainsUnchangedDuring: [ self doPopIntoReceiverVariableBytecodeStoresVariableAt: 7 ]
 ]
 
-{ #category : #'tests - single bytecode - pop into inst var' }
+{ #category : 'tests - single bytecode - pop into inst var' }
 VMSimpleStackBasedCogitBytecodeTest >> testPopIntoSixthReceiverVariableBytecodePopsValue [
 
 	"The block pushed and then pops.
@@ -373,7 +375,7 @@ VMSimpleStackBasedCogitBytecodeTest >> testPopIntoSixthReceiverVariableBytecodeP
 	self assertStackRemainsUnchangedDuring: [ self doPopIntoReceiverVariableBytecodeStoresVariableAt: 6 ]
 ]
 
-{ #category : #'tests - single bytecode - pop into temp' }
+{ #category : 'tests - single bytecode - pop into temp' }
 VMSimpleStackBasedCogitBytecodeTest >> testPopIntoTempPopsValueAt: tempVariableUnderTest [
 
 	| temporaries |
@@ -400,7 +402,7 @@ VMSimpleStackBasedCogitBytecodeTest >> testPopIntoTempPopsValueAt: tempVariableU
 	self assert: self popAddress equals: memory trueObject
 ]
 
-{ #category : #'tests - single bytecode - pop into temp' }
+{ #category : 'tests - single bytecode - pop into temp' }
 VMSimpleStackBasedCogitBytecodeTest >> testPopIntoTempUpdatesVariableAt: tempVariableUnderTest [
 
 	| temporaries |
@@ -425,7 +427,7 @@ VMSimpleStackBasedCogitBytecodeTest >> testPopIntoTempUpdatesVariableAt: tempVar
 	self assert: (self readTemporaryValueAt: tempVariableUnderTest) equals: memory falseObject
 ]
 
-{ #category : #'tests - single bytecode - pop into inst var' }
+{ #category : 'tests - single bytecode - pop into inst var' }
 VMSimpleStackBasedCogitBytecodeTest >> testPopIntoThirdReceiverVariableBytecodePopsValue [
 
 	"The block pushed and then pops.
@@ -433,157 +435,157 @@ VMSimpleStackBasedCogitBytecodeTest >> testPopIntoThirdReceiverVariableBytecodeP
 	self assertStackRemainsUnchangedDuring: [ self doPopIntoReceiverVariableBytecodeStoresVariableAt: 3 ]
 ]
 
-{ #category : #'tests - single bytecode - push temp' }
+{ #category : 'tests - single bytecode - push temp' }
 VMSimpleStackBasedCogitBytecodeTest >> testPush10thTempVariablePushesVariable [
 
 	self testPushTempVariablePushesVariableAt: 10
 ]
 
-{ #category : #'tests - single bytecode - push temp - arg' }
+{ #category : 'tests - single bytecode - push temp - arg' }
 VMSimpleStackBasedCogitBytecodeTest >> testPush10thTempVariableWithArgumentsPushesArgument [
 
 	self testPushTempVariablePushesArgumentAt: 10
 ]
 
-{ #category : #'tests - single bytecode - push temp' }
+{ #category : 'tests - single bytecode - push temp' }
 VMSimpleStackBasedCogitBytecodeTest >> testPush11thTempVariablePushesVariable [
 
 	self testPushTempVariablePushesVariableAt: 11
 ]
 
-{ #category : #'tests - single bytecode - push temp - arg' }
+{ #category : 'tests - single bytecode - push temp - arg' }
 VMSimpleStackBasedCogitBytecodeTest >> testPush11thTempVariableWithArgumentsPushesArgument [
 
 	self testPushTempVariablePushesArgumentAt: 11
 ]
 
-{ #category : #'tests - single bytecode - push temp' }
+{ #category : 'tests - single bytecode - push temp' }
 VMSimpleStackBasedCogitBytecodeTest >> testPush12thTempVariablePushesVariable [
 
 	self testPushTempVariablePushesVariableAt: 12
 ]
 
-{ #category : #'tests - single bytecode - push temp - arg' }
+{ #category : 'tests - single bytecode - push temp - arg' }
 VMSimpleStackBasedCogitBytecodeTest >> testPush12thTempVariableWithArgumentsPushesArgument [
 
 	self testPushTempVariablePushesArgumentAt: 12
 ]
 
-{ #category : #'tests - single bytecode - push temp' }
+{ #category : 'tests - single bytecode - push temp' }
 VMSimpleStackBasedCogitBytecodeTest >> testPush13thTempVariablePushesVariable [
 
 	self testPushTempVariablePushesVariableAt: 13
 ]
 
-{ #category : #'tests - single bytecode - push temp - arg' }
+{ #category : 'tests - single bytecode - push temp - arg' }
 VMSimpleStackBasedCogitBytecodeTest >> testPush13thTempVariableWithArgumentsPushesArgument [
 
 	self testPushTempVariablePushesArgumentAt: 13
 ]
 
-{ #category : #'tests - single bytecode - push temp' }
+{ #category : 'tests - single bytecode - push temp' }
 VMSimpleStackBasedCogitBytecodeTest >> testPush14thTempVariablePushesVariable [
 
 	self testPushTempVariablePushesVariableAt: 14
 ]
 
-{ #category : #'tests - single bytecode - push temp - arg' }
+{ #category : 'tests - single bytecode - push temp - arg' }
 VMSimpleStackBasedCogitBytecodeTest >> testPush14thTempVariableWithArgumentsPushesArgument [
 
 	self testPushTempVariablePushesArgumentAt: 14
 ]
 
-{ #category : #'tests - single bytecode - push temp' }
+{ #category : 'tests - single bytecode - push temp' }
 VMSimpleStackBasedCogitBytecodeTest >> testPush15thTempVariablePushesVariable [
 
 	self testPushTempVariablePushesVariableAt: 15
 ]
 
-{ #category : #'tests - single bytecode - push temp - arg' }
+{ #category : 'tests - single bytecode - push temp - arg' }
 VMSimpleStackBasedCogitBytecodeTest >> testPush15thTempVariableWithArgumentsPushesArgument [
 
 	self testPushTempVariablePushesArgumentAt: 15
 ]
 
-{ #category : #'tests - single bytecode - push temp - arg' }
+{ #category : 'tests - single bytecode - push temp - arg' }
 VMSimpleStackBasedCogitBytecodeTest >> testPush3rdTempVariableWithArgumentsPushesArgument [
 
 	self testPushTempVariablePushesArgumentAt: 3
 ]
 
-{ #category : #'tests - single bytecode - push temp' }
+{ #category : 'tests - single bytecode - push temp' }
 VMSimpleStackBasedCogitBytecodeTest >> testPush4thTempVariablePushesVariable [
 
 	self testPushTempVariablePushesVariableAt: 4
 ]
 
-{ #category : #'tests - single bytecode - push temp - arg' }
+{ #category : 'tests - single bytecode - push temp - arg' }
 VMSimpleStackBasedCogitBytecodeTest >> testPush4thTempVariableWithArgumentsPushesArgument [
 
 	self testPushTempVariablePushesArgumentAt: 4
 ]
 
-{ #category : #'tests - single bytecode - push temp' }
+{ #category : 'tests - single bytecode - push temp' }
 VMSimpleStackBasedCogitBytecodeTest >> testPush5thTempVariablePushesVariable [
 
 	self testPushTempVariablePushesVariableAt: 5
 ]
 
-{ #category : #'tests - single bytecode - push temp - arg' }
+{ #category : 'tests - single bytecode - push temp - arg' }
 VMSimpleStackBasedCogitBytecodeTest >> testPush5thTempVariableWithArgumentsPushesArgument [
 
 	self testPushTempVariablePushesArgumentAt: 5
 ]
 
-{ #category : #'tests - single bytecode - push temp' }
+{ #category : 'tests - single bytecode - push temp' }
 VMSimpleStackBasedCogitBytecodeTest >> testPush6thTempVariablePushesVariable [
 
 	self testPushTempVariablePushesVariableAt: 6
 ]
 
-{ #category : #'tests - single bytecode - push temp - arg' }
+{ #category : 'tests - single bytecode - push temp - arg' }
 VMSimpleStackBasedCogitBytecodeTest >> testPush6thTempVariableWithArgumentsPushesArgument [
 
 	self testPushTempVariablePushesArgumentAt: 6
 ]
 
-{ #category : #'tests - single bytecode - push temp' }
+{ #category : 'tests - single bytecode - push temp' }
 VMSimpleStackBasedCogitBytecodeTest >> testPush7thTempVariablePushesVariable [
 
 	self testPushTempVariablePushesVariableAt: 7
 ]
 
-{ #category : #'tests - single bytecode - push temp - arg' }
+{ #category : 'tests - single bytecode - push temp - arg' }
 VMSimpleStackBasedCogitBytecodeTest >> testPush7thTempVariableWithArgumentsPushesArgument [
 
 	self testPushTempVariablePushesArgumentAt: 7
 ]
 
-{ #category : #'tests - single bytecode - push temp' }
+{ #category : 'tests - single bytecode - push temp' }
 VMSimpleStackBasedCogitBytecodeTest >> testPush8thTempVariablePushesVariable [
 
 	self testPushTempVariablePushesVariableAt: 8
 ]
 
-{ #category : #'tests - single bytecode - push temp - arg' }
+{ #category : 'tests - single bytecode - push temp - arg' }
 VMSimpleStackBasedCogitBytecodeTest >> testPush8thTempVariableWithArgumentsPushesArgument [
 
 	self testPushTempVariablePushesArgumentAt: 8
 ]
 
-{ #category : #'tests - single bytecode - push temp' }
+{ #category : 'tests - single bytecode - push temp' }
 VMSimpleStackBasedCogitBytecodeTest >> testPush9thTempVariablePushesVariable [
 
 	self testPushTempVariablePushesVariableAt: 9
 ]
 
-{ #category : #'tests - single bytecode - push temp - arg' }
+{ #category : 'tests - single bytecode - push temp - arg' }
 VMSimpleStackBasedCogitBytecodeTest >> testPush9thTempVariableWithArgumentsPushesArgument [
 
 	self testPushTempVariablePushesArgumentAt: 9
 ]
 
-{ #category : #'tests - single bytecode' }
+{ #category : 'tests - single bytecode' }
 VMSimpleStackBasedCogitBytecodeTest >> testPushConstantFalseBytecodePushesFalse [
 	
 	self compile: [ cogit genPushConstantFalseBytecode ].	
@@ -592,7 +594,7 @@ VMSimpleStackBasedCogitBytecodeTest >> testPushConstantFalseBytecodePushesFalse 
 	self assert: self popAddress equals: memory falseObject
 ]
 
-{ #category : #'tests - two bytecodes' }
+{ #category : 'tests - two bytecodes' }
 VMSimpleStackBasedCogitBytecodeTest >> testPushConstantNilAndThenReturn [
 	
 	self compile: [ 
@@ -604,7 +606,7 @@ VMSimpleStackBasedCogitBytecodeTest >> testPushConstantNilAndThenReturn [
 	self assert: machineSimulator receiverRegisterValue equals: memory nilObject
 ]
 
-{ #category : #'tests - single bytecode' }
+{ #category : 'tests - single bytecode' }
 VMSimpleStackBasedCogitBytecodeTest >> testPushConstantNilBytecodePushesNil [
 	
 	self compile: [ cogit genPushConstantNilBytecode ].
@@ -613,7 +615,7 @@ VMSimpleStackBasedCogitBytecodeTest >> testPushConstantNilBytecodePushesNil [
 	self assert: self popAddress equals: memory nilObject
 ]
 
-{ #category : #'tests - single bytecode' }
+{ #category : 'tests - single bytecode' }
 VMSimpleStackBasedCogitBytecodeTest >> testPushConstantTrueBytecodePushesTrue [
 
 	self compile: [ cogit genPushConstantTrueBytecode ].
@@ -622,7 +624,7 @@ VMSimpleStackBasedCogitBytecodeTest >> testPushConstantTrueBytecodePushesTrue [
 	self assert: self popAddress equals: memory trueObject
 ]
 
-{ #category : #'tests - single bytecode' }
+{ #category : 'tests - single bytecode' }
 VMSimpleStackBasedCogitBytecodeTest >> testPushConstantZeroBytecodePushesASmallIntegerZero [
 	
 	self compile: [ cogit genPushConstantZeroBytecode ].	
@@ -631,19 +633,19 @@ VMSimpleStackBasedCogitBytecodeTest >> testPushConstantZeroBytecodePushesASmallI
 	self assert: self popAddress equals: (memory integerObjectOf: 0)
 ]
 
-{ #category : #'tests - single bytecode - push temp' }
+{ #category : 'tests - single bytecode - push temp' }
 VMSimpleStackBasedCogitBytecodeTest >> testPushFirstTempVariablePushesVariable [
 
 	self testPushTempVariablePushesVariableAt: 1
 ]
 
-{ #category : #'tests - single bytecode - push temp - arg' }
+{ #category : 'tests - single bytecode - push temp - arg' }
 VMSimpleStackBasedCogitBytecodeTest >> testPushFirstTempVariableWithArgumentsPushesArgument [
 
 	self testPushTempVariablePushesArgumentAt: 1
 ]
 
-{ #category : #'tests - single bytecode' }
+{ #category : 'tests - single bytecode' }
 VMSimpleStackBasedCogitBytecodeTest >> testPushQuickIntegerMinusOnePushesAMinusOne [
 	
 	cogit byte0: 116. 
@@ -654,7 +656,7 @@ VMSimpleStackBasedCogitBytecodeTest >> testPushQuickIntegerMinusOnePushesAMinusO
 	self assert: self popAddress equals: (memory integerObjectOf: -1)
 ]
 
-{ #category : #'tests - single bytecode' }
+{ #category : 'tests - single bytecode' }
 VMSimpleStackBasedCogitBytecodeTest >> testPushQuickIntegerOnePushesOne [
 	
 	cogit byte0: 118. 
@@ -665,7 +667,7 @@ VMSimpleStackBasedCogitBytecodeTest >> testPushQuickIntegerOnePushesOne [
 	self assert: self popAddress equals: (memory integerObjectOf: 1)
 ]
 
-{ #category : #'tests - single bytecode' }
+{ #category : 'tests - single bytecode' }
 VMSimpleStackBasedCogitBytecodeTest >> testPushQuickIntegerTwoPushesTwo [
 	
 	cogit byte0: 119. 
@@ -676,7 +678,7 @@ VMSimpleStackBasedCogitBytecodeTest >> testPushQuickIntegerTwoPushesTwo [
 	self assert: self popAddress equals: (memory integerObjectOf: 2)
 ]
 
-{ #category : #'tests - single bytecode' }
+{ #category : 'tests - single bytecode' }
 VMSimpleStackBasedCogitBytecodeTest >> testPushQuickIntegerZeroPushesAZero [
 	
 	cogit byte0: 117. 
@@ -687,7 +689,7 @@ VMSimpleStackBasedCogitBytecodeTest >> testPushQuickIntegerZeroPushesAZero [
 	self assert: self popAddress equals: (memory integerObjectOf: 0)
 ]
 
-{ #category : #'tests - single bytecode' }
+{ #category : 'tests - single bytecode' }
 VMSimpleStackBasedCogitBytecodeTest >> testPushReceiverBytecodePushesTheReceiver [
 
 	machineSimulator receiverRegisterValue: 75. 
@@ -698,103 +700,103 @@ VMSimpleStackBasedCogitBytecodeTest >> testPushReceiverBytecodePushesTheReceiver
 	self assert: self popAddress equals: 75
 ]
 
-{ #category : #'tests - single bytecode - push inst var' }
+{ #category : 'tests - single bytecode - push inst var' }
 VMSimpleStackBasedCogitBytecodeTest >> testPushReceiverVariableBytecodeZeroPushesEighthVariable [
 
 	self testPushReceiverVariableBytecodeZeroPushesVariableAt: 8
 ]
 
-{ #category : #'tests - single bytecode - push inst var' }
+{ #category : 'tests - single bytecode - push inst var' }
 VMSimpleStackBasedCogitBytecodeTest >> testPushReceiverVariableBytecodeZeroPushesEleventhVariable [
 
 	self testPushReceiverVariableBytecodeZeroPushesVariableAt: 11
 ]
 
-{ #category : #'tests - single bytecode - push inst var' }
+{ #category : 'tests - single bytecode - push inst var' }
 VMSimpleStackBasedCogitBytecodeTest >> testPushReceiverVariableBytecodeZeroPushesFifteenthVariable [
 
 	self testPushReceiverVariableBytecodeZeroPushesVariableAt: 15
 ]
 
-{ #category : #'tests - single bytecode - push inst var' }
+{ #category : 'tests - single bytecode - push inst var' }
 VMSimpleStackBasedCogitBytecodeTest >> testPushReceiverVariableBytecodeZeroPushesFifthVariable [
 
 	self testPushReceiverVariableBytecodeZeroPushesVariableAt: 5
 ]
 
-{ #category : #'tests - single bytecode - push inst var' }
+{ #category : 'tests - single bytecode - push inst var' }
 VMSimpleStackBasedCogitBytecodeTest >> testPushReceiverVariableBytecodeZeroPushesFirstVariable [
 
 	self testPushReceiverVariableBytecodeZeroPushesVariableAt: 1
 ]
 
-{ #category : #'tests - single bytecode - push inst var' }
+{ #category : 'tests - single bytecode - push inst var' }
 VMSimpleStackBasedCogitBytecodeTest >> testPushReceiverVariableBytecodeZeroPushesFourteenthVariable [
 
 	self testPushReceiverVariableBytecodeZeroPushesVariableAt: 14
 ]
 
-{ #category : #'tests - single bytecode - push inst var' }
+{ #category : 'tests - single bytecode - push inst var' }
 VMSimpleStackBasedCogitBytecodeTest >> testPushReceiverVariableBytecodeZeroPushesFourthVariable [
 
 	self testPushReceiverVariableBytecodeZeroPushesVariableAt: 4
 ]
 
-{ #category : #'tests - single bytecode - push inst var' }
+{ #category : 'tests - single bytecode - push inst var' }
 VMSimpleStackBasedCogitBytecodeTest >> testPushReceiverVariableBytecodeZeroPushesNinthVariable [
 
 	self testPushReceiverVariableBytecodeZeroPushesVariableAt: 9
 ]
 
-{ #category : #'tests - single bytecode - push inst var' }
+{ #category : 'tests - single bytecode - push inst var' }
 VMSimpleStackBasedCogitBytecodeTest >> testPushReceiverVariableBytecodeZeroPushesSecondVariable [
 
 	self testPushReceiverVariableBytecodeZeroPushesVariableAt: 2
 ]
 
-{ #category : #'tests - single bytecode - push inst var' }
+{ #category : 'tests - single bytecode - push inst var' }
 VMSimpleStackBasedCogitBytecodeTest >> testPushReceiverVariableBytecodeZeroPushesSeventhVariable [
 
 	self testPushReceiverVariableBytecodeZeroPushesVariableAt: 7
 ]
 
-{ #category : #'tests - single bytecode - push inst var' }
+{ #category : 'tests - single bytecode - push inst var' }
 VMSimpleStackBasedCogitBytecodeTest >> testPushReceiverVariableBytecodeZeroPushesSixteenthVariable [
 
 	self testPushReceiverVariableBytecodeZeroPushesVariableAt: 16
 ]
 
-{ #category : #'tests - single bytecode - push inst var' }
+{ #category : 'tests - single bytecode - push inst var' }
 VMSimpleStackBasedCogitBytecodeTest >> testPushReceiverVariableBytecodeZeroPushesSixthVariable [
 
 	self testPushReceiverVariableBytecodeZeroPushesVariableAt: 6
 ]
 
-{ #category : #'tests - single bytecode - push inst var' }
+{ #category : 'tests - single bytecode - push inst var' }
 VMSimpleStackBasedCogitBytecodeTest >> testPushReceiverVariableBytecodeZeroPushesTenthVariable [
 
 	self testPushReceiverVariableBytecodeZeroPushesVariableAt: 10
 ]
 
-{ #category : #'tests - single bytecode - push inst var' }
+{ #category : 'tests - single bytecode - push inst var' }
 VMSimpleStackBasedCogitBytecodeTest >> testPushReceiverVariableBytecodeZeroPushesThirdVariable [
 
 	self testPushReceiverVariableBytecodeZeroPushesVariableAt: 3
 ]
 
-{ #category : #'tests - single bytecode - push inst var' }
+{ #category : 'tests - single bytecode - push inst var' }
 VMSimpleStackBasedCogitBytecodeTest >> testPushReceiverVariableBytecodeZeroPushesThirteenthVariable [
 
 	self testPushReceiverVariableBytecodeZeroPushesVariableAt: 13
 ]
 
-{ #category : #'tests - single bytecode - push inst var' }
+{ #category : 'tests - single bytecode - push inst var' }
 VMSimpleStackBasedCogitBytecodeTest >> testPushReceiverVariableBytecodeZeroPushesTwelfthVariable [
 
 	self testPushReceiverVariableBytecodeZeroPushesVariableAt: 12
 ]
 
-{ #category : #'tests - single bytecode - push inst var' }
+{ #category : 'tests - single bytecode - push inst var' }
 VMSimpleStackBasedCogitBytecodeTest >> testPushReceiverVariableBytecodeZeroPushesVariableAt: instanceVariableToWrite [
 
 	"Create an object with at least `instanceVariableToWrite` instance variables.
@@ -813,19 +815,19 @@ VMSimpleStackBasedCogitBytecodeTest >> testPushReceiverVariableBytecodeZeroPushe
 	self assert: self popAddress equals: memory falseObject
 ]
 
-{ #category : #'tests - single bytecode - push temp' }
+{ #category : 'tests - single bytecode - push temp' }
 VMSimpleStackBasedCogitBytecodeTest >> testPushSecondTempVariablePushesVariable [
 
 	self testPushTempVariablePushesVariableAt: 2
 ]
 
-{ #category : #'tests - single bytecode - push temp - arg' }
+{ #category : 'tests - single bytecode - push temp - arg' }
 VMSimpleStackBasedCogitBytecodeTest >> testPushSecondTempVariableWithArgumentsPushesArgument [
 
 	self testPushTempVariablePushesArgumentAt: 2
 ]
 
-{ #category : #'tests - single bytecode - push temp - arg' }
+{ #category : 'tests - single bytecode - push temp - arg' }
 VMSimpleStackBasedCogitBytecodeTest >> testPushTempVariablePushesArgumentAt: tempVariableUnderTest [
 
 	| arguments |
@@ -848,7 +850,7 @@ VMSimpleStackBasedCogitBytecodeTest >> testPushTempVariablePushesArgumentAt: tem
 	self assert: self popAddress equals: memory falseObject
 ]
 
-{ #category : #'tests - single bytecode - push temp' }
+{ #category : 'tests - single bytecode - push temp' }
 VMSimpleStackBasedCogitBytecodeTest >> testPushTempVariablePushesVariableAt: tempVariableUnderTest [
 
 	| temporaries |
@@ -873,13 +875,13 @@ VMSimpleStackBasedCogitBytecodeTest >> testPushTempVariablePushesVariableAt: tem
 	self assert: self popAddress equals: memory falseObject
 ]
 
-{ #category : #'tests - single bytecode - push temp' }
+{ #category : 'tests - single bytecode - push temp' }
 VMSimpleStackBasedCogitBytecodeTest >> testPushThirdTempVariablePushesVariable [
 
 	self testPushTempVariablePushesVariableAt: 3
 ]
 
-{ #category : #'tests - thisContext' }
+{ #category : 'tests - thisContext' }
 VMSimpleStackBasedCogitBytecodeTest >> testPushThisContextForFullBlockWithFullFrameCallsLargeFullBlockTrampoline [
 
 	| numberOfArguments methodObject method |
@@ -918,7 +920,7 @@ VMSimpleStackBasedCogitBytecodeTest >> testPushThisContextForFullBlockWithFullFr
 		equals: numberOfArguments
 ]
 
-{ #category : #'tests - thisContext' }
+{ #category : 'tests - thisContext' }
 VMSimpleStackBasedCogitBytecodeTest >> testPushThisContextForFullBlockWithSmallFrameCallsLargeFullBlockTrampoline [
 
 	| numberOfArguments methodObject method |
@@ -956,7 +958,7 @@ VMSimpleStackBasedCogitBytecodeTest >> testPushThisContextForFullBlockWithSmallF
 		equals: numberOfArguments
 ]
 
-{ #category : #'tests - thisContext' }
+{ #category : 'tests - thisContext' }
 VMSimpleStackBasedCogitBytecodeTest >> testPushThisContextForMethodWithLargeFrameCallsLargeMethodTrampoline [
 
 	| numberOfArguments methodObject method |
@@ -993,7 +995,7 @@ VMSimpleStackBasedCogitBytecodeTest >> testPushThisContextForMethodWithLargeFram
 		equals: numberOfArguments
 ]
 
-{ #category : #'tests - thisContext' }
+{ #category : 'tests - thisContext' }
 VMSimpleStackBasedCogitBytecodeTest >> testPushThisContextForMethodWithSmallFrameCallsSmallMethodTrampoline [
 
 	| numberOfArguments methodObject method |
@@ -1030,13 +1032,13 @@ VMSimpleStackBasedCogitBytecodeTest >> testPushThisContextForMethodWithSmallFram
 		equals: numberOfArguments
 ]
 
-{ #category : #'tests - single bytecode - return' }
+{ #category : 'tests - single bytecode - return' }
 VMSimpleStackBasedCogitBytecodeTest >> testReturnNilFramefulCleansStack [
 
 	self doTestReturnCleansStackWithFrame: true onBlock: [ cogit genReturnNil ]
 ]
 
-{ #category : #'tests - single bytecode - return' }
+{ #category : 'tests - single bytecode - return' }
 VMSimpleStackBasedCogitBytecodeTest >> testReturnNilFramefulLeavesNilInReturnRegister [
 
 	self
@@ -1045,19 +1047,19 @@ VMSimpleStackBasedCogitBytecodeTest >> testReturnNilFramefulLeavesNilInReturnReg
 		onBlock: [ cogit genReturnNil ]
 ]
 
-{ #category : #'tests - single bytecode - return' }
+{ #category : 'tests - single bytecode - return' }
 VMSimpleStackBasedCogitBytecodeTest >> testReturnNilFramefulReturnsToCaller [
 
 	self doTestReturnReturnsToCallerWithFrame: true onBlock: [ cogit genReturnNil ]
 ]
 
-{ #category : #'tests - single bytecode - return' }
+{ #category : 'tests - single bytecode - return' }
 VMSimpleStackBasedCogitBytecodeTest >> testReturnNilFramelessCleansStack [
 
 	self doTestReturnCleansStackWithFrame: false onBlock: [ cogit genReturnNil ]
 ]
 
-{ #category : #'tests - single bytecode - return' }
+{ #category : 'tests - single bytecode - return' }
 VMSimpleStackBasedCogitBytecodeTest >> testReturnNilFramelessLeavesNilInReturnRegister [
 
 	self
@@ -1066,13 +1068,13 @@ VMSimpleStackBasedCogitBytecodeTest >> testReturnNilFramelessLeavesNilInReturnRe
 		onBlock: [ cogit genReturnNil ]
 ]
 
-{ #category : #'tests - single bytecode - return' }
+{ #category : 'tests - single bytecode - return' }
 VMSimpleStackBasedCogitBytecodeTest >> testReturnNilFramelessReturnsToCaller [
 
 	self doTestReturnReturnsToCallerWithFrame: false onBlock: [ cogit genReturnNil ]
 ]
 
-{ #category : #'tests - single bytecode - return' }
+{ #category : 'tests - single bytecode - return' }
 VMSimpleStackBasedCogitBytecodeTest >> testReturnTopFramefulLeavesTopObjectInReturnRegister [
 
 	self
@@ -1083,7 +1085,7 @@ VMSimpleStackBasedCogitBytecodeTest >> testReturnTopFramefulLeavesTopObjectInRet
 			cogit genReturnTopFromMethod ]
 ]
 
-{ #category : #'tests - single bytecode - return' }
+{ #category : 'tests - single bytecode - return' }
 VMSimpleStackBasedCogitBytecodeTest >> testReturnTopFramefullCleansStack [
 
 	self doTestReturnCleansStackWithFrame: true onBlock: [ 
@@ -1091,7 +1093,7 @@ VMSimpleStackBasedCogitBytecodeTest >> testReturnTopFramefullCleansStack [
 		cogit genReturnTopFromMethod ]
 ]
 
-{ #category : #'tests - single bytecode - return' }
+{ #category : 'tests - single bytecode - return' }
 VMSimpleStackBasedCogitBytecodeTest >> testReturnTopFramefullReturnsToCaller [
 
 	self doTestReturnReturnsToCallerWithFrame: true onBlock: [ 
@@ -1099,7 +1101,7 @@ VMSimpleStackBasedCogitBytecodeTest >> testReturnTopFramefullReturnsToCaller [
 		cogit genReturnTopFromMethod ]
 ]
 
-{ #category : #'tests - single bytecode - return' }
+{ #category : 'tests - single bytecode - return' }
 VMSimpleStackBasedCogitBytecodeTest >> testReturnTopFramelesCleansStack [
 
 	self doTestReturnCleansStackWithFrame: false onBlock: [ 
@@ -1107,7 +1109,7 @@ VMSimpleStackBasedCogitBytecodeTest >> testReturnTopFramelesCleansStack [
 		cogit genReturnTopFromMethod ]
 ]
 
-{ #category : #'tests - single bytecode - return' }
+{ #category : 'tests - single bytecode - return' }
 VMSimpleStackBasedCogitBytecodeTest >> testReturnTopFramelessLeavesTopObjectInReturnRegister [
 
 	self
@@ -1118,7 +1120,7 @@ VMSimpleStackBasedCogitBytecodeTest >> testReturnTopFramelessLeavesTopObjectInRe
 			cogit genReturnTopFromMethod ]
 ]
 
-{ #category : #'tests - single bytecode - return' }
+{ #category : 'tests - single bytecode - return' }
 VMSimpleStackBasedCogitBytecodeTest >> testReturnTopFramelessReturnsToCaller [
 
 	self doTestReturnReturnsToCallerWithFrame: false onBlock: [ 
@@ -1126,7 +1128,7 @@ VMSimpleStackBasedCogitBytecodeTest >> testReturnTopFramelessReturnsToCaller [
 		cogit genReturnTopFromMethod ]
 ]
 
-{ #category : #'tests - single bytecode - return' }
+{ #category : 'tests - single bytecode - return' }
 VMSimpleStackBasedCogitBytecodeTest >> testReturnTrueFramefulCleansStack [
 
 	self
@@ -1134,7 +1136,7 @@ VMSimpleStackBasedCogitBytecodeTest >> testReturnTrueFramefulCleansStack [
 		onBlock: [ cogit genReturnTrue ]
 ]
 
-{ #category : #'tests - single bytecode - return' }
+{ #category : 'tests - single bytecode - return' }
 VMSimpleStackBasedCogitBytecodeTest >> testReturnTrueFramefulLeavesTrueObjectInReturnRegister [
 
 	self
@@ -1144,7 +1146,7 @@ VMSimpleStackBasedCogitBytecodeTest >> testReturnTrueFramefulLeavesTrueObjectInR
 			cogit genReturnTrue ]
 ]
 
-{ #category : #'tests - single bytecode - return' }
+{ #category : 'tests - single bytecode - return' }
 VMSimpleStackBasedCogitBytecodeTest >> testReturnTrueFramefulReturnsToCaller [
 
 	self
@@ -1152,7 +1154,7 @@ VMSimpleStackBasedCogitBytecodeTest >> testReturnTrueFramefulReturnsToCaller [
 		onBlock: [ cogit genReturnTrue ]
 ]
 
-{ #category : #'tests - single bytecode - return' }
+{ #category : 'tests - single bytecode - return' }
 VMSimpleStackBasedCogitBytecodeTest >> testReturnTrueFramelessCleansStack [
 
 	self
@@ -1160,7 +1162,7 @@ VMSimpleStackBasedCogitBytecodeTest >> testReturnTrueFramelessCleansStack [
 		onBlock: [ cogit genReturnTrue ]
 ]
 
-{ #category : #'tests - single bytecode - return' }
+{ #category : 'tests - single bytecode - return' }
 VMSimpleStackBasedCogitBytecodeTest >> testReturnTrueFramelessLeavesTrueObjectInReturnRegister [
 
 	self
@@ -1170,7 +1172,7 @@ VMSimpleStackBasedCogitBytecodeTest >> testReturnTrueFramelessLeavesTrueObjectIn
 			cogit genReturnTrue ]
 ]
 
-{ #category : #'tests - single bytecode - return' }
+{ #category : 'tests - single bytecode - return' }
 VMSimpleStackBasedCogitBytecodeTest >> testReturnTrueFramelessReturnsToCaller [
 
 	self
@@ -1178,7 +1180,7 @@ VMSimpleStackBasedCogitBytecodeTest >> testReturnTrueFramelessReturnsToCaller [
 		onBlock: [ cogit genReturnTrue ]
 ]
 
-{ #category : #'tests - special sends' }
+{ #category : 'tests - special sends' }
 VMSimpleStackBasedCogitBytecodeTest >> testSendEqualsEqualsWithIdenticalObjectsPushesTrue [
 
 	sendAddress := self compile: [ cogit genSpecialSelectorEqualsEquals ].
@@ -1192,7 +1194,7 @@ VMSimpleStackBasedCogitBytecodeTest >> testSendEqualsEqualsWithIdenticalObjectsP
 		equals: memory trueObject
 ]
 
-{ #category : #'tests - special sends' }
+{ #category : 'tests - special sends' }
 VMSimpleStackBasedCogitBytecodeTest >> testSendEqualsEqualsWithNonIdenticalObjectsPushesFalse [
 
 	sendAddress := self compile: [ cogit genSpecialSelectorEqualsEquals ].
@@ -1207,7 +1209,7 @@ VMSimpleStackBasedCogitBytecodeTest >> testSendEqualsEqualsWithNonIdenticalObjec
 		equals: memory falseObject
 ]
 
-{ #category : #'tests - sends' }
+{ #category : 'tests - sends' }
 VMSimpleStackBasedCogitBytecodeTest >> testSendLiteralOneWithZeroArgsMovesSelectorIndexClassRegisterIn64bits [
 
 	| selector literalIndex |
@@ -1244,7 +1246,7 @@ VMSimpleStackBasedCogitBytecodeTest >> testSendLiteralOneWithZeroArgsMovesSelect
 	self assert: machineSimulator classRegisterValue equals: literalIndex
 ]
 
-{ #category : #'tests - sends' }
+{ #category : 'tests - sends' }
 VMSimpleStackBasedCogitBytecodeTest >> testSendLiteralOneWithZeroArgsMovesSelectorIntoClassRegisterIn32bits [
 
 	| selector literalIndex |
@@ -1272,7 +1274,7 @@ VMSimpleStackBasedCogitBytecodeTest >> testSendLiteralOneWithZeroArgsMovesSelect
 	self assert: machineSimulator classRegisterValue equals: selector
 ]
 
-{ #category : #'tests - sends' }
+{ #category : 'tests - sends' }
 VMSimpleStackBasedCogitBytecodeTest >> testSendLiteralZeroWithZeroArgsMovesReceiverFromStackTopIntoReceiverRegister [
 
 	sendTrampolineAddress := self compile: [ cogit RetN: 0 ].
@@ -1296,7 +1298,7 @@ VMSimpleStackBasedCogitBytecodeTest >> testSendLiteralZeroWithZeroArgsMovesRecei
 		equals: memory falseObject
 ]
 
-{ #category : #'tests - sends' }
+{ #category : 'tests - sends' }
 VMSimpleStackBasedCogitBytecodeTest >> testSendLiteralZeroWithZeroArgsMovesSelectorIndexClassRegisterIn64bits [
 
 	| selector literalIndex |
@@ -1323,7 +1325,7 @@ VMSimpleStackBasedCogitBytecodeTest >> testSendLiteralZeroWithZeroArgsMovesSelec
 	self assert: machineSimulator classRegisterValue equals: literalIndex
 ]
 
-{ #category : #'tests - sends' }
+{ #category : 'tests - sends' }
 VMSimpleStackBasedCogitBytecodeTest >> testSendLiteralZeroWithZeroArgsMovesSelectorIntoClassRegisterIn32bits [
 
 	| selector |
@@ -1350,7 +1352,7 @@ VMSimpleStackBasedCogitBytecodeTest >> testSendLiteralZeroWithZeroArgsMovesSelec
 	self assert: machineSimulator classRegisterValue equals: selector
 ]
 
-{ #category : #'tests - sends' }
+{ #category : 'tests - sends' }
 VMSimpleStackBasedCogitBytecodeTest >> testSendLiteralZeroWithZeroArgsPushesReturnValueFromReceiverRegisterAfterReturn [
 
 	sendTrampolineAddress := self compile: [ cogit RetN: 0 ].
@@ -1379,7 +1381,7 @@ VMSimpleStackBasedCogitBytecodeTest >> testSendLiteralZeroWithZeroArgsPushesRetu
 	self assert: self popAddress equals: (memory integerObjectOf: 42)
 ]
 
-{ #category : #'tests - special sends' }
+{ #category : 'tests - special sends' }
 VMSimpleStackBasedCogitBytecodeTest >> testSendNotEqualsEqualsWithIdenticalObjectsPushesFalse [
 
 	sendAddress := self compile: [ cogit genSpecialSelectorNotEqualsEquals ].
@@ -1394,7 +1396,7 @@ VMSimpleStackBasedCogitBytecodeTest >> testSendNotEqualsEqualsWithIdenticalObjec
 		equals: memory falseObject
 ]
 
-{ #category : #'tests - special sends' }
+{ #category : 'tests - special sends' }
 VMSimpleStackBasedCogitBytecodeTest >> testSendNotEqualsEqualsWithNonIdenticalObjectsPushesTrue [
 
 	sendAddress := self compile: [ cogit genSpecialSelectorNotEqualsEquals ].
@@ -1409,7 +1411,7 @@ VMSimpleStackBasedCogitBytecodeTest >> testSendNotEqualsEqualsWithNonIdenticalOb
 		equals: memory trueObject
 ]
 
-{ #category : #'tests - special sends' }
+{ #category : 'tests - special sends' }
 VMSimpleStackBasedCogitBytecodeTest >> testSendOneArgSpecialMessageDoesNotMovesIntoSendNumArgsRegister [
 	
 	| previousValue |
@@ -1429,7 +1431,7 @@ VMSimpleStackBasedCogitBytecodeTest >> testSendOneArgSpecialMessageDoesNotMovesI
 		equals: previousValue
 ]
 
-{ #category : #'tests - special sends' }
+{ #category : 'tests - special sends' }
 VMSimpleStackBasedCogitBytecodeTest >> testSendOneArgSpecialMessageMovesNegatedSelectorIndexIntoClassRegisterIn64bits [
 	
 	| signed |
@@ -1454,7 +1456,7 @@ VMSimpleStackBasedCogitBytecodeTest >> testSendOneArgSpecialMessageMovesNegatedS
 		equals: (selectorIndex + 1 / 2) negated
 ]
 
-{ #category : #'tests - special sends' }
+{ #category : 'tests - special sends' }
 VMSimpleStackBasedCogitBytecodeTest >> testSendOneArgSpecialMessageMovesReceiverFromStackTopIntoReceiverRegister [
 
 	sentSelector := #+.
@@ -1469,7 +1471,7 @@ VMSimpleStackBasedCogitBytecodeTest >> testSendOneArgSpecialMessageMovesReceiver
 	self assert: machineSimulator receiverRegisterValue equals: memory falseObject
 ]
 
-{ #category : #'tests - special sends' }
+{ #category : 'tests - special sends' }
 VMSimpleStackBasedCogitBytecodeTest >> testSendOneArgSpecialMessageMovesSelectorIntoClassRegisterIn32bits [
 	
 	self wordSize = 8 ifTrue: [ self skip ].
@@ -1488,7 +1490,7 @@ VMSimpleStackBasedCogitBytecodeTest >> testSendOneArgSpecialMessageMovesSelector
 		equals: selectorAtIndex
 ]
 
-{ #category : #'tests - special sends' }
+{ #category : 'tests - special sends' }
 VMSimpleStackBasedCogitBytecodeTest >> testSendOneArgSpecialMessagePushesReturnValueFromReceiverRegisterAfterReturn [
 	
 	sentSelector := #+.
@@ -1507,7 +1509,7 @@ VMSimpleStackBasedCogitBytecodeTest >> testSendOneArgSpecialMessagePushesReturnV
 	self assert: self popAddress equals: (memory integerObjectOf: 42).
 ]
 
-{ #category : #'tests - special sends' }
+{ #category : 'tests - special sends' }
 VMSimpleStackBasedCogitBytecodeTest >> testSendTwoArgSpecialMessageDoesNotMovesIntoSendNumArgsRegister [
 	
 	| previousValue |
@@ -1528,7 +1530,7 @@ VMSimpleStackBasedCogitBytecodeTest >> testSendTwoArgSpecialMessageDoesNotMovesI
 		equals: previousValue
 ]
 
-{ #category : #'tests - special sends' }
+{ #category : 'tests - special sends' }
 VMSimpleStackBasedCogitBytecodeTest >> testSendTwoArgSpecialMessageMovesNegatedSelectorIndexIntoClassRegisterIn64bits [
 	
 	| signed |
@@ -1554,7 +1556,7 @@ VMSimpleStackBasedCogitBytecodeTest >> testSendTwoArgSpecialMessageMovesNegatedS
 		equals: (selectorIndex + 1 / 2) negated
 ]
 
-{ #category : #'tests - special sends' }
+{ #category : 'tests - special sends' }
 VMSimpleStackBasedCogitBytecodeTest >> testSendTwoArgSpecialMessageMovesReceiverFromStackTopIntoReceiverRegister [
 	
 	sentSelector := #at:put:.
@@ -1570,7 +1572,7 @@ VMSimpleStackBasedCogitBytecodeTest >> testSendTwoArgSpecialMessageMovesReceiver
 	self assert: machineSimulator receiverRegisterValue equals: memory falseObject
 ]
 
-{ #category : #'tests - special sends' }
+{ #category : 'tests - special sends' }
 VMSimpleStackBasedCogitBytecodeTest >> testSendTwoArgSpecialMessageMovesSelectorIntoClassRegisterIn32bits [
 	
 	| signed |
@@ -1596,7 +1598,7 @@ VMSimpleStackBasedCogitBytecodeTest >> testSendTwoArgSpecialMessageMovesSelector
 		equals: (selectorIndex + 1 / 2) negated
 ]
 
-{ #category : #'tests - special sends' }
+{ #category : 'tests - special sends' }
 VMSimpleStackBasedCogitBytecodeTest >> testSendTwoArgSpecialMessagePushesReturnValueFromReceiverRegisterAfterReturn [
 	
 	sentSelector := #at:put:.
@@ -1616,7 +1618,7 @@ VMSimpleStackBasedCogitBytecodeTest >> testSendTwoArgSpecialMessagePushesReturnV
 	self assert: self popAddress equals: (memory integerObjectOf: 42).
 ]
 
-{ #category : #'tests - special sends' }
+{ #category : 'tests - special sends' }
 VMSimpleStackBasedCogitBytecodeTest >> testSendZeroArgSpecialMessageDoesNotMovesIntoSendNumArgsRegister [
 	
 	| previousValue |
@@ -1635,7 +1637,7 @@ VMSimpleStackBasedCogitBytecodeTest >> testSendZeroArgSpecialMessageDoesNotMoves
 		equals: previousValue
 ]
 
-{ #category : #'tests - special sends' }
+{ #category : 'tests - special sends' }
 VMSimpleStackBasedCogitBytecodeTest >> testSendZeroArgSpecialMessageMovesNegatedSelectorIndexIntoClassRegisterIn64Bits [
 	
 	| signed |
@@ -1659,7 +1661,7 @@ VMSimpleStackBasedCogitBytecodeTest >> testSendZeroArgSpecialMessageMovesNegated
 		equals: (selectorIndex + 1 / 2) negated
 ]
 
-{ #category : #'tests - special sends' }
+{ #category : 'tests - special sends' }
 VMSimpleStackBasedCogitBytecodeTest >> testSendZeroArgSpecialMessageMovesReceiverFromStackTopIntoReceiverRegister [
 	
 	sentSelector := #atEnd.
@@ -1673,7 +1675,7 @@ VMSimpleStackBasedCogitBytecodeTest >> testSendZeroArgSpecialMessageMovesReceive
 	self assert: machineSimulator receiverRegisterValue equals: memory falseObject
 ]
 
-{ #category : #'tests - special sends' }
+{ #category : 'tests - special sends' }
 VMSimpleStackBasedCogitBytecodeTest >> testSendZeroArgSpecialMessageMovesSelectorIntoClassRegisterIn32Bits [
 	
 	self wordSize = 8 ifTrue: [ self skip ].
@@ -1691,7 +1693,7 @@ VMSimpleStackBasedCogitBytecodeTest >> testSendZeroArgSpecialMessageMovesSelecto
 		equals: selectorAtIndex
 ]
 
-{ #category : #'tests - special sends' }
+{ #category : 'tests - special sends' }
 VMSimpleStackBasedCogitBytecodeTest >> testSendZeroArgSpecialMessagePushesReturnValueFromReceiverRegisterAfterReturn [
 	
 	sentSelector := #atEnd.

@@ -7,15 +7,13 @@ self classPool declare: #Foo from: StackInterpreter classPool
 	[:k| self classPool declare: k from: ObjectMemory classPool]
 "
 Class {
-	#name : #VMObjectIndices,
-	#superclass : #SharedPool,
+	#name : 'VMObjectIndices',
+	#superclass : 'SharedPool',
 	#classVars : [
 		'ActiveProcessIndex',
 		'CharacterValueIndex',
 		'ClassArray',
 		'ClassBitmap',
-		'ClassBlockClosure',
-		'ClassBlockContext',
 		'ClassByteArray',
 		'ClassByteString',
 		'ClassCharacter',
@@ -33,9 +31,7 @@ Class {
 		'ClassSemaphore',
 		'ClassSmallInteger',
 		'ClassString',
-		'ClassWeakFinalizer',
 		'ClosureIndex',
-		'CompactClasses',
 		'ConstMinusOne',
 		'ConstOne',
 		'ConstTwo',
@@ -44,7 +40,6 @@ Class {
 		'ExternalObjectsArray',
 		'FalseObject',
 		'FirstLinkIndex',
-		'ForeignCallbackProcess',
 		'FullClosureCompiledBlockIndex',
 		'FullClosureFirstCopiedValueIndex',
 		'FullClosureNumArgsIndex',
@@ -69,6 +64,7 @@ Class {
 		'PriorityIndex',
 		'ProcessInExternalCodeTag',
 		'ProcessListsIndex',
+		'ProcessShouldOverflowIndex',
 		'ProcessSignalingLowSpace',
 		'ReceiverIndex',
 		'SchedulerAssociation',
@@ -78,10 +74,10 @@ Class {
 		'SelectorCannotReturn',
 		'SelectorCounterTripped',
 		'SelectorDoesNotUnderstand',
-		'SelectorInvokeCallback',
 		'SelectorMustBeBoolean',
 		'SelectorRunWithIn',
 		'SelectorSistaTrap',
+		'SelectorStackOverflow',
 		'SelectorStart',
 		'SelectorUnknownBytecode',
 		'SenderIndex',
@@ -99,5 +95,6 @@ Class {
 		'XIndex',
 		'YIndex'
 	],
-	#category : #Melchor
+	#category : 'Melchor',
+	#package : 'Melchor'
 }

@@ -1,13 +1,14 @@
 Class {
-	#name : #VMAbstractFFITest,
-	#superclass : #VMAbstractPrimitiveTest,
+	#name : 'VMAbstractFFITest',
+	#superclass : 'VMAbstractPrimitiveTest',
 	#pools : [
 		'LibFFIConstants'
 	],
-	#category : #VMMakerTests
+	#category : 'VMMakerTests',
+	#package : 'VMMakerTests'
 }
 
-{ #category : #helpers }
+{ #category : 'helpers' }
 VMAbstractFFITest >> createExternalFunctionFor: aBlock withArgumentTypes: argumentTypes withReturnType: returnType [
 
 	| functionAddress tfExternalFunction functionExternalAddress tfFunctionDefinition cif cifExternalAddress |
@@ -31,7 +32,7 @@ VMAbstractFFITest >> createExternalFunctionFor: aBlock withArgumentTypes: argume
 	^ tfExternalFunction
 ]
 
-{ #category : #helpers }
+{ #category : 'helpers' }
 VMAbstractFFITest >> createReturnFloatExternalFunctionFor: aBlock [
 
 	^ self
@@ -40,7 +41,7 @@ VMAbstractFFITest >> createReturnFloatExternalFunctionFor: aBlock [
 		withReturnType: interpreter libFFI float
 ]
 
-{ #category : #helpers }
+{ #category : 'helpers' }
 VMAbstractFFITest >> createReturnFloatExternalFunctionFor: aBlock withArgumentTypes: argumentTypes [
 
 	^ self
@@ -49,20 +50,20 @@ VMAbstractFFITest >> createReturnFloatExternalFunctionFor: aBlock withArgumentTy
 		withReturnType: interpreter libFFI float
 ]
 
-{ #category : #helpers }
+{ #category : 'helpers' }
 VMAbstractFFITest >> initializationOptions [
 
 	^ super initializationOptions , { 
 		#FEATURE_FFI . true }
 ]
 
-{ #category : #helpers }
+{ #category : 'helpers' }
 VMAbstractFFITest >> interpreterClass [
 	
 	^ VMTestMockInterpreter
 ]
 
-{ #category : #helpers }
+{ #category : 'helpers' }
 VMAbstractFFITest >> newExternalAddress: anInteger [
 
 	| anExternalAddress |
@@ -75,7 +76,7 @@ VMAbstractFFITest >> newExternalAddress: anInteger [
 	^ anExternalAddress
 ]
 
-{ #category : #helpers }
+{ #category : 'helpers' }
 VMAbstractFFITest >> readyProcesses [
 	
 	| collection |
@@ -84,7 +85,7 @@ VMAbstractFFITest >> readyProcesses [
 	^ collection
 ]
 
-{ #category : #initialization }
+{ #category : 'initialization' }
 VMAbstractFFITest >> setUp [ 
 
 	super setUp.

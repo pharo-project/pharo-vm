@@ -1,39 +1,41 @@
 Class {
-	#name : #ReadOnlyArrayWrapper,
-	#superclass : #Object,
+	#name : 'ReadOnlyArrayWrapper',
+	#superclass : 'Object',
 	#instVars : [
 		'theArray'
 	],
-	#category : #'VMMaker-InterpreterSimulation'
+	#category : 'VMMaker-InterpreterSimulation',
+	#package : 'VMMaker',
+	#tag : 'InterpreterSimulation'
 }
 
-{ #category : #'instance creation' }
+{ #category : 'instance creation' }
 ReadOnlyArrayWrapper class >> around: anArray [
 	^self new array: anArray; yourself
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 ReadOnlyArrayWrapper >> array [
 	^theArray
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 ReadOnlyArrayWrapper >> array: anArray [
 	theArray := anArray
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 ReadOnlyArrayWrapper >> at: index [
 	^theArray at: index
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 ReadOnlyArrayWrapper >> at: index put: value [
 	"Oh where is imutability when you need it??"
 	self error: 'attempt to modify memory!!'
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 ReadOnlyArrayWrapper >> size [
 	^theArray size
 ]

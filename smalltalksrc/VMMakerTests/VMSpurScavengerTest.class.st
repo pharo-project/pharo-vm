@@ -1,17 +1,19 @@
 Class {
-	#name : #VMSpurScavengerTest,
-	#superclass : #VMSpurInitializedOldSpaceTest,
-	#category : #'VMMakerTests-MemoryTests'
+	#name : 'VMSpurScavengerTest',
+	#superclass : 'VMSpurInitializedOldSpaceTest',
+	#category : 'VMMakerTests-MemoryTests',
+	#package : 'VMMakerTests',
+	#tag : 'MemoryTests'
 }
 
-{ #category : #asserting }
+{ #category : 'asserting' }
 VMSpurScavengerTest >> assertPastSpaceIsEmpty [
 	self
 		assert: memory pastSpaceStart
 		equals: memory scavenger pastSpace start
 ]
 
-{ #category : #helpers }
+{ #category : 'helpers' }
 VMSpurScavengerTest >> fullNewSpace [
 
 	| rootObjectAddress referencedObjectAddress freeStartAtBeginning |
@@ -37,7 +39,7 @@ VMSpurScavengerTest >> fullNewSpace [
 	self error: 'New space is not full!'
 ]
 
-{ #category : #helpers }
+{ #category : 'helpers' }
 VMSpurScavengerTest >> makeBaseFrameWithMethod: aMethodOop context: aContextOop receiver: aReceiverOop args: argsOops andStack: stackOops [
 	
 	| page pointer |
@@ -85,7 +87,7 @@ VMSpurScavengerTest >> makeBaseFrameWithMethod: aMethodOop context: aContextOop 
 			withValue: (memory coInterpreter withSmallIntegerTags: page baseFP) ]
 ]
 
-{ #category : #'tests-4-scavenge-stack' }
+{ #category : 'tests-4-scavenge-stack' }
 VMSpurScavengerTest >> testAllocatingObjectsBelowThresholdDoesNotScheduleScavenge [
 
 	| times |
@@ -97,7 +99,7 @@ VMSpurScavengerTest >> testAllocatingObjectsBelowThresholdDoesNotScheduleScaveng
 	self deny: memory needGCFlag
 ]
 
-{ #category : #'tests-4-scavenge-stack' }
+{ #category : 'tests-4-scavenge-stack' }
 VMSpurScavengerTest >> testAllocatingObjectsBelowThresholdShouldBeYoung [
 
 	| times anObjectOop |
@@ -108,7 +110,7 @@ VMSpurScavengerTest >> testAllocatingObjectsBelowThresholdShouldBeYoung [
 	self assert: (memory getMemoryMap isYoungObject: anObjectOop)
 ]
 
-{ #category : #'tests-4-scavenge-stack' }
+{ #category : 'tests-4-scavenge-stack' }
 VMSpurScavengerTest >> testAllocatingObjectsOverThresholdShouldBeOld [
 
 	| times anObject |
@@ -126,7 +128,7 @@ VMSpurScavengerTest >> testAllocatingObjectsOverThresholdShouldBeOld [
 	self assert: (memory getMemoryMap isOldObject: anObject)
 ]
 
-{ #category : #'tests-4-scavenge-stack' }
+{ #category : 'tests-4-scavenge-stack' }
 VMSpurScavengerTest >> testAllocatingObjectsOverThresholdShouldScheduleScavenge [
 
 	| times |
@@ -144,7 +146,7 @@ VMSpurScavengerTest >> testAllocatingObjectsOverThresholdShouldScheduleScavenge 
 	self assert: memory needGCFlag
 ]
 
-{ #category : #'tests-4-scavenge-stack' }
+{ #category : 'tests-4-scavenge-stack' }
 VMSpurScavengerTest >> testArgumentInStackShouldSurviveScanvenge [
 
 	| newObjectOop newObjectHash newObjectAddress |	
@@ -165,7 +167,7 @@ VMSpurScavengerTest >> testArgumentInStackShouldSurviveScanvenge [
 	self assert: (memory hashBitsOf: newObjectAddress) equals: newObjectHash
 ]
 
-{ #category : #'tests-8-scavenge-tenuring' }
+{ #category : 'tests-8-scavenge-tenuring' }
 VMSpurScavengerTest >> testComputeTenuringThresholdWithFewSurvivors [
 
 	| rootObjectAddress |
@@ -181,7 +183,7 @@ VMSpurScavengerTest >> testComputeTenuringThresholdWithFewSurvivors [
 	self assert: memory scavenger scavengerTenuringProportion closeTo: 0 "Past space keep not full -> Not tenure next pass"
 ]
 
-{ #category : #'tests-8-scavenge-tenuring' }
+{ #category : 'tests-8-scavenge-tenuring' }
 VMSpurScavengerTest >> testComputeTenuringThresholdWithManySurvivors [
 
 	| rootObjectAddress |
@@ -196,7 +198,7 @@ VMSpurScavengerTest >> testComputeTenuringThresholdWithManySurvivors [
 	self assert: memory scavenger scavengerTenuringProportion closeTo: 0.1 "Past space is full -> Tenure next pass"
 ]
 
-{ #category : #'tests-4-scavenge-stack' }
+{ #category : 'tests-4-scavenge-stack' }
 VMSpurScavengerTest >> testContextInStackShouldSurviveScanvenge [
 
 	| newObjectOop newObjectHash newObjectAddress |
@@ -219,7 +221,7 @@ VMSpurScavengerTest >> testContextInStackShouldSurviveScanvenge [
 		equals: newObjectHash
 ]
 
-{ #category : #'tests-5-scavenge-specialObjects' }
+{ #category : 'tests-5-scavenge-specialObjects' }
 VMSpurScavengerTest >> testInterpreterMethodShouldSurviveScanvenge [
 
 	| newObjectOop newObjectHash newObjectAddress |	
@@ -238,7 +240,7 @@ VMSpurScavengerTest >> testInterpreterMethodShouldSurviveScanvenge [
 	self assert: (memory hashBitsOf: newObjectAddress) equals: newObjectHash
 ]
 
-{ #category : #'tests-5-scavenge-specialObjects' }
+{ #category : 'tests-5-scavenge-specialObjects' }
 VMSpurScavengerTest >> testInterpreterNewMethodShouldSurviveScanvenge [
 
 	| newObjectOop newObjectHash newObjectAddress |	
@@ -257,7 +259,7 @@ VMSpurScavengerTest >> testInterpreterNewMethodShouldSurviveScanvenge [
 	self assert: (memory hashBitsOf: newObjectAddress) equals: newObjectHash
 ]
 
-{ #category : #'tests-5-scavenge-specialObjects' }
+{ #category : 'tests-5-scavenge-specialObjects' }
 VMSpurScavengerTest >> testInterpreterProfileMethodShouldSurviveScanvenge [
 
 	| newObjectOop newObjectHash newObjectAddress |	
@@ -276,7 +278,7 @@ VMSpurScavengerTest >> testInterpreterProfileMethodShouldSurviveScanvenge [
 	self assert: (memory hashBitsOf: newObjectAddress) equals: newObjectHash
 ]
 
-{ #category : #'tests-5-scavenge-specialObjects' }
+{ #category : 'tests-5-scavenge-specialObjects' }
 VMSpurScavengerTest >> testInterpreterProfileProcessShouldSurviveScanvenge [
 
 	| newObjectOop newObjectHash newObjectAddress |	
@@ -295,7 +297,7 @@ VMSpurScavengerTest >> testInterpreterProfileProcessShouldSurviveScanvenge [
 	self assert: (memory hashBitsOf: newObjectAddress) equals: newObjectHash
 ]
 
-{ #category : #'tests-5-scavenge-specialObjects' }
+{ #category : 'tests-5-scavenge-specialObjects' }
 VMSpurScavengerTest >> testInterpreterProfileSemaphoreShouldSurviveScanvenge [
 
 	| newObjectOop newObjectHash newObjectAddress |
@@ -314,7 +316,7 @@ VMSpurScavengerTest >> testInterpreterProfileSemaphoreShouldSurviveScanvenge [
 	self assert: (memory hashBitsOf: newObjectAddress) equals: newObjectHash
 ]
 
-{ #category : #'tests-4-scavenge-stack' }
+{ #category : 'tests-4-scavenge-stack' }
 VMSpurScavengerTest >> testMethodInStackShouldSurviveScanvenge [
 
 	| newObjectOop newObjectHash newObjectAddress |
@@ -336,7 +338,7 @@ VMSpurScavengerTest >> testMethodInStackShouldSurviveScanvenge [
 	self assert: (memory hashBitsOf: newObjectAddress) equals: newObjectHash
 ]
 
-{ #category : #'tests-3-scavenge-basic' }
+{ #category : 'tests-3-scavenge-basic' }
 VMSpurScavengerTest >> testMovingReferencedObjectShouldUpdateReference [
 
 	| rootObjectAddress newRootObjectAddress referencedObjectAddress referencedObjectHash |
@@ -359,7 +361,7 @@ VMSpurScavengerTest >> testMovingReferencedObjectShouldUpdateReference [
 		equals: referencedObjectHash
 ]
 
-{ #category : #'tests-4-scavenge-stack' }
+{ #category : 'tests-4-scavenge-stack' }
 VMSpurScavengerTest >> testObjectInStackShouldSurviveScanvenge [
 
 	| newObjectOop newObjectHash newObjectAddress |
@@ -379,7 +381,7 @@ VMSpurScavengerTest >> testObjectInStackShouldSurviveScanvenge [
 	self assert: (memory hashBitsOf: newObjectAddress) equals: newObjectHash
 ]
 
-{ #category : #'tests-6-scavenge-rememberedset' }
+{ #category : 'tests-6-scavenge-rememberedset' }
 VMSpurScavengerTest >> testOldObjectReferenceToYoungObjectShouldBeRemappedAfterScanvenge [
 
 	| oldObjectAddress rememberedObjectAddress rememberedObjectHash newRememberedObjectAddress maybeMappedReferenceToYoungObject |
@@ -399,7 +401,7 @@ VMSpurScavengerTest >> testOldObjectReferenceToYoungObjectShouldBeRemappedAfterS
 	self assert: maybeMappedReferenceToYoungObject equals: newRememberedObjectAddress
 ]
 
-{ #category : #'tests-6-scavenge-rememberedset' }
+{ #category : 'tests-6-scavenge-rememberedset' }
 VMSpurScavengerTest >> testPermObjectInRemeberedSetShouldBeKeptWhenTheReferencedObjectIsInTheOldSpace [
 
 	| permObjectAddress youngObject otherOldObjectAddress |
@@ -426,7 +428,7 @@ VMSpurScavengerTest >> testPermObjectInRemeberedSetShouldBeKeptWhenTheReferenced
 
 ]
 
-{ #category : #'tests-6-scavenge-rememberedset' }
+{ #category : 'tests-6-scavenge-rememberedset' }
 VMSpurScavengerTest >> testPermObjectInRemeberedSetShouldBeRemovedFromPermSpaceWhenMutatedToPointAPermObject [
 
 	| permObjectAddress youngObject otherPermObjectAddress |
@@ -450,7 +452,7 @@ VMSpurScavengerTest >> testPermObjectInRemeberedSetShouldBeRemovedFromPermSpaceW
 
 ]
 
-{ #category : #'tests-4-scavenge-stack' }
+{ #category : 'tests-4-scavenge-stack' }
 VMSpurScavengerTest >> testReceiverInStackShouldSurviveScanvenge [
 
 	| newObjectOop newObjectHash newObjectAddress |
@@ -470,7 +472,7 @@ VMSpurScavengerTest >> testReceiverInStackShouldSurviveScanvenge [
 	self assert: (memory hashBitsOf: newObjectAddress) equals: newObjectHash
 ]
 
-{ #category : #'tests-3-scavenge-basic' }
+{ #category : 'tests-3-scavenge-basic' }
 VMSpurScavengerTest >> testReferencedObjectShouldSurviveScavenge [
 
 	| rootObjectAddress rootObjectHash newRootObjectAddress referencedObjectAddress referencedObjectHash newReferencedObjectAddress |
@@ -493,7 +495,7 @@ VMSpurScavengerTest >> testReferencedObjectShouldSurviveScavenge [
 	self assert: (memory hashBitsOf: newReferencedObjectAddress) equals: referencedObjectHash
 ]
 
-{ #category : #'tests-6-scavenge-rememberedset' }
+{ #category : 'tests-6-scavenge-rememberedset' }
 VMSpurScavengerTest >> testScanvengeTenureByAgeWithRSInRedZoneShouldShrink [
 
 	| youngObjectAddress oneOldObjectAddress otherOldObjectAddress |
@@ -518,7 +520,7 @@ VMSpurScavengerTest >> testScanvengeTenureByAgeWithRSInRedZoneShouldShrink [
 
 ]
 
-{ #category : #'tests-3-scavenge-basic' }
+{ #category : 'tests-3-scavenge-basic' }
 VMSpurScavengerTest >> testScavengeEmptyMemoryShouldExchangePastAndFutureSpaces [
 
 	| oldPastSpaceStart oldFutureSpaceStart |
@@ -531,7 +533,7 @@ VMSpurScavengerTest >> testScavengeEmptyMemoryShouldExchangePastAndFutureSpaces 
 	self assert: memory scavenger futureSpace start equals: oldPastSpaceStart.
 ]
 
-{ #category : #'tests-3-scavenge-basic' }
+{ #category : 'tests-3-scavenge-basic' }
 VMSpurScavengerTest >> testScavengeNonSurvivorShouldEmptyEden [
 	"Nil should survive."
 	"A new object not referenced should not survive."
@@ -542,7 +544,7 @@ VMSpurScavengerTest >> testScavengeNonSurvivorShouldEmptyEden [
 	self assert: memory freeStart equals: memory scavenger eden start
 ]
 
-{ #category : #'tests-3-scavenge-basic' }
+{ #category : 'tests-3-scavenge-basic' }
 VMSpurScavengerTest >> testScavengeNonSurvivorShouldOnlyCopySurvivorObjectToPastSpace [
 
 	"Only Nil should survive."
@@ -554,7 +556,7 @@ VMSpurScavengerTest >> testScavengeNonSurvivorShouldOnlyCopySurvivorObjectToPast
 	self assertPastSpaceIsEmpty
 ]
 
-{ #category : #'tests-7-scavenge-order' }
+{ #category : 'tests-7-scavenge-order' }
 VMSpurScavengerTest >> testScavengeObjectInRememberedSetShouldBeInvertedToBeBeforeObjectInStack [
 
 	| objectInTheStack oldObjectAddress objectInRememberedSet |
@@ -579,7 +581,7 @@ VMSpurScavengerTest >> testScavengeObjectInRememberedSetShouldBeInvertedToBeBefo
 	self assert: (memory remapObj: objectInRememberedSet) < (memory remapObj: objectInTheStack)
 ]
 
-{ #category : #'tests-7-scavenge-order' }
+{ #category : 'tests-7-scavenge-order' }
 VMSpurScavengerTest >> testScavengeObjectInRemembererdSetShouldBeBeforeObjectInStack [
 
 	| objectInTheStack oldObjectAddress objectInRememberedSet |
@@ -604,7 +606,7 @@ VMSpurScavengerTest >> testScavengeObjectInRemembererdSetShouldBeBeforeObjectInS
 	self assert: (memory remapObj: objectInRememberedSet) < (memory remapObj: objectInTheStack)
 ]
 
-{ #category : #'tests-7-scavenge-order' }
+{ #category : 'tests-7-scavenge-order' }
 VMSpurScavengerTest >> testScavengeObjectInStackShouldBeBeforeObjectInSpecialVariable [
 
 	| objectInTheStack objectInSpecialVariable |
@@ -621,7 +623,7 @@ VMSpurScavengerTest >> testScavengeObjectInStackShouldBeBeforeObjectInSpecialVar
 	self assert: (memory remapObj: objectInTheStack) < (memory remapObj: objectInSpecialVariable)
 ]
 
-{ #category : #'tests-7-scavenge-order' }
+{ #category : 'tests-7-scavenge-order' }
 VMSpurScavengerTest >> testScavengeObjectInStackShouldBeInvertedToBeBeforeObjectInSpecialVariable [
 
 	| objectInTheStack objectInSpecialVariable |
@@ -638,7 +640,7 @@ VMSpurScavengerTest >> testScavengeObjectInStackShouldBeInvertedToBeBeforeObject
 	self assert: (memory remapObj: objectInTheStack) < (memory remapObj: objectInSpecialVariable)
 ]
 
-{ #category : #'tests-3-scavenge-basic' }
+{ #category : 'tests-3-scavenge-basic' }
 VMSpurScavengerTest >> testScavengeShouldCopySurvivorObjectToPastSpace [	
 	"Nil should survive.
 	It is referenced by the roots because many of their slots are nilled."
@@ -647,7 +649,7 @@ VMSpurScavengerTest >> testScavengeShouldCopySurvivorObjectToPastSpace [
 	self assertPastSpaceIsEmpty
 ]
 
-{ #category : #'tests-3-scavenge-basic' }
+{ #category : 'tests-3-scavenge-basic' }
 VMSpurScavengerTest >> testScavengeSurvivorShouldEmptyEden [
 
 	memory doScavenge: 1 "TenureByAge".
@@ -655,7 +657,7 @@ VMSpurScavengerTest >> testScavengeSurvivorShouldEmptyEden [
 	self assert: memory freeStart equals: memory scavenger eden start
 ]
 
-{ #category : #'tests-3-scavenge-basic' }
+{ #category : 'tests-3-scavenge-basic' }
 VMSpurScavengerTest >> testScavengeTwiceShouldExchangePastAndFutureSpacesBackAndForth [
 
 	| oldPastSpaceStart oldFutureSpaceStart |	
@@ -668,7 +670,7 @@ VMSpurScavengerTest >> testScavengeTwiceShouldExchangePastAndFutureSpacesBackAnd
 	self assert: memory scavenger futureSpace start equals: oldFutureSpaceStart.
 ]
 
-{ #category : #'tests-7-scavenge-order' }
+{ #category : 'tests-7-scavenge-order' }
 VMSpurScavengerTest >> testScavengedObjectsShouldBeCopiedInInstanceVariableOrder [
 
 	| rootObjectAddress objectThatShouldGoSecond objectThatShouldGoFirst |
@@ -686,7 +688,7 @@ VMSpurScavengerTest >> testScavengedObjectsShouldBeCopiedInInstanceVariableOrder
 	self assert: (memory remapObj: objectThatShouldGoFirst) < (memory remapObj: objectThatShouldGoSecond)
 ]
 
-{ #category : #'tests-7-scavenge-order' }
+{ #category : 'tests-7-scavenge-order' }
 VMSpurScavengerTest >> testScavengedRootObjectsShouldBeCopiedBeforeOtherObjects [
 
 	| firstRootObjectAddress nonRootObjectAddress secondRootObjectAddress |
@@ -704,7 +706,7 @@ VMSpurScavengerTest >> testScavengedRootObjectsShouldBeCopiedBeforeOtherObjects 
 	self assert: (memory remapObj: secondRootObjectAddress) < (memory remapObj: nonRootObjectAddress)
 ]
 
-{ #category : #'tests-8-scavenge-tenuring' }
+{ #category : 'tests-8-scavenge-tenuring' }
 VMSpurScavengerTest >> testShouldTenureBasedOnTheThreshold [
 
 	| firstObjectAddress secondObjectAddress |
@@ -736,7 +738,7 @@ VMSpurScavengerTest >> testShouldTenureBasedOnTheThreshold [
 
 ]
 
-{ #category : #'tests-8-scavenge-tenuring' }
+{ #category : 'tests-8-scavenge-tenuring' }
 VMSpurScavengerTest >> testShouldTenureObjectsWhenPastSpaceIsFull [
 
 	| rootObjectAddress newRootObjectAddress |
@@ -760,7 +762,7 @@ VMSpurScavengerTest >> testShouldTenureObjectsWhenPastSpaceIsFull [
 	self assert: (memory isInOldSpace: newRootObjectAddress)
 ]
 
-{ #category : #'tests-3-scavenge-basic' }
+{ #category : 'tests-3-scavenge-basic' }
 VMSpurScavengerTest >> testUnreferencedObjectCycleShouldNotSurviveScavenge [
 	| objectA objectB |
 	objectA := self newObjectWithSlots: 1.
@@ -779,7 +781,7 @@ VMSpurScavengerTest >> testUnreferencedObjectCycleShouldNotSurviveScavenge [
 	self assertPastSpaceIsEmpty
 ]
 
-{ #category : #'tests-3-scavenge-basic' }
+{ #category : 'tests-3-scavenge-basic' }
 VMSpurScavengerTest >> testUnreferencedObjectGraphShouldNotSurviveScavenge [
 	| unreferencedRootObjectAddress referencedObjectAddress |
 	unreferencedRootObjectAddress := self newObjectWithSlots: 1.
@@ -794,7 +796,7 @@ VMSpurScavengerTest >> testUnreferencedObjectGraphShouldNotSurviveScavenge [
 	self assertPastSpaceIsEmpty
 ]
 
-{ #category : #'tests-6-scavenge-rememberedset' }
+{ #category : 'tests-6-scavenge-rememberedset' }
 VMSpurScavengerTest >> testYoungObjectRememberedFromOldObjectShouldSurviveScanvenge [
 
 	| oldObjectAddress rememberedObjectAddress rememberedObjectHash newRememberedObjectAddress |
@@ -812,7 +814,7 @@ VMSpurScavengerTest >> testYoungObjectRememberedFromOldObjectShouldSurviveScanve
 	self assert: (memory hashBitsOf: newRememberedObjectAddress) equals: rememberedObjectHash
 ]
 
-{ #category : #'tests-6-scavenge-rememberedset' }
+{ #category : 'tests-6-scavenge-rememberedset' }
 VMSpurScavengerTest >> testYoungObjectRememberedFromPermanentObjectShouldSurviveScanvenge [
 
 	| permObjectAddress rememberedObjectAddress rememberedObjectHash newRememberedObjectAddress |
@@ -830,7 +832,7 @@ VMSpurScavengerTest >> testYoungObjectRememberedFromPermanentObjectShouldSurvive
 	self assert: (memory hashBitsOf: newRememberedObjectAddress) equals: rememberedObjectHash
 ]
 
-{ #category : #'tests-3-scavenge-basic' }
+{ #category : 'tests-3-scavenge-basic' }
 VMSpurScavengerTest >> testYoungObjectsFromPermanentSpaceAreRemapped [
 
 	| newObjectOop newObjectHash permObject newObjectAddress |

@@ -1,13 +1,15 @@
 Class {
-	#name : #VMX64InstructionTest,
-	#superclass : #VMSimpleStackBasedCogitAbstractTest,
+	#name : 'VMX64InstructionTest',
+	#superclass : 'VMSimpleStackBasedCogitAbstractTest',
 	#pools : [
 		'CogRTLOpcodes'
 	],
-	#category : #'VMMakerTests-JitTests'
+	#category : 'VMMakerTests-JitTests',
+	#package : 'VMMakerTests',
+	#tag : 'JitTests'
 }
 
-{ #category : #'building suites' }
+{ #category : 'building suites' }
 VMX64InstructionTest class >> wordSizeParameters [ 
 
 	^ ParametrizedTestMatrix new
@@ -15,13 +17,13 @@ VMX64InstructionTest class >> wordSizeParameters [
 		yourself
 ]
 
-{ #category : #configuration }
+{ #category : 'configuration' }
 VMX64InstructionTest >> generateCaptureCStackPointers [
 	
 	^ false
 ]
 
-{ #category : #tests }
+{ #category : 'tests' }
 VMX64InstructionTest >> testDupAndStoreFromVectorRegister [
 
 	| mem |
@@ -45,7 +47,7 @@ VMX64InstructionTest >> testDupAndStoreFromVectorRegister [
 
 ]
 
-{ #category : #tests }
+{ #category : 'tests' }
 VMX64InstructionTest >> testDupAndStoreFromVectorRegisterUnAligned [
 
 	| mem |
@@ -70,7 +72,7 @@ VMX64InstructionTest >> testDupAndStoreFromVectorRegisterUnAligned [
 
 ]
 
-{ #category : #tests }
+{ #category : 'tests' }
 VMX64InstructionTest >> testDupSRVr [
 
 
@@ -86,7 +88,7 @@ VMX64InstructionTest >> testDupSRVr [
 
 ]
 
-{ #category : #tests }
+{ #category : 'tests' }
 VMX64InstructionTest >> testFaddSRvRvRv [
 
 	| result |
@@ -105,7 +107,7 @@ VMX64InstructionTest >> testFaddSRvRvRv [
 	self assert: (result doubleAt: 9) equals: 3.0.	
 ]
 
-{ #category : #tests }
+{ #category : 'tests' }
 VMX64InstructionTest >> testFaddSRvRvRvWithThreeDifferentRegisters [
 
 	| result |
@@ -124,7 +126,7 @@ VMX64InstructionTest >> testFaddSRvRvRvWithThreeDifferentRegisters [
 	self assert: (result doubleAt: 9) equals: 3.0.	
 ]
 
-{ #category : #tests }
+{ #category : 'tests' }
 VMX64InstructionTest >> testFsubSRvRvRv [
 
 	| result |
@@ -143,7 +145,7 @@ VMX64InstructionTest >> testFsubSRvRvRv [
 	self assert: (result doubleAt: 9) equals: -1.0.	
 ]
 
-{ #category : #tests }
+{ #category : 'tests' }
 VMX64InstructionTest >> testFsubSRvRvRvWithThreeDifferentRegisters [
 
 	| result |
@@ -160,4 +162,76 @@ VMX64InstructionTest >> testFsubSRvRvRvWithThreeDifferentRegisters [
 	result := machineSimulator xmm2.
 	self assert: (result doubleAt: 1) equals: -1.0.	
 	self assert: (result doubleAt: 9) equals: -1.0.	
+]
+
+{ #category : 'tests' }
+VMX64InstructionTest >> testLoadCloseAddressAheadOfBaseIntoSPFails [
+
+	| distance addressToLoad from end |
+	distance := (0.5 "MB" * 1024 * 1024) asInteger.
+	addressToLoad := cogit varBaseAddress + distance.
+
+	from := self compile: [
+		        cogit MoveAw: addressToLoad R: SPReg.
+		        end := cogit Stop ].
+
+	machineSimulator baseRegisterValue: cogit varBaseAddress.
+	cogit simulatedVariableAt: addressToLoad put: 17.
+
+	self runFrom: from until: end address.
+
+	self assert: machineSimulator stackPointerRegisterValue equals: 17
+]
+
+{ #category : 'tests' }
+VMX64InstructionTest >> testLoadCloseAddressBehindOfBaseIntoSPFails [
+
+	| distance addressToLoad from end |
+	distance := (-0.5 "MB" * 1024 * 1024) asInteger.
+	addressToLoad := cogit varBaseAddress + distance.
+
+	from := self compile: [
+		        cogit MoveAw: addressToLoad R: SPReg.
+		        end := cogit Stop ].
+
+	machineSimulator baseRegisterValue: cogit varBaseAddress.
+	cogit simulatedVariableAt: addressToLoad put: 17.
+
+	self runFrom: from until: end address.
+
+	self assert: machineSimulator stackPointerRegisterValue equals: 17
+]
+
+{ #category : 'tests' }
+VMX64InstructionTest >> testLoadVeryFarAddressAheadOfBaseIntoSPFails [
+
+	| distance addressToLoad |
+	distance := 5 "MB" * 1024 * 1024.
+	addressToLoad := cogit varBaseAddress + distance.
+
+	[
+		self compile: [ cogit MoveAw: addressToLoad R: SPReg].
+		
+		"Should not execute successfully"
+		self fail.
+	] on: Error do: [ :error |
+		self assert: error messageText equals: 'Cannot compile store into SP from far address' ]
+
+]
+
+{ #category : 'tests' }
+VMX64InstructionTest >> testLoadVeryFarAddressBehindOfBaseIntoSPFails [
+
+	| distance addressToLoad |
+	distance := -5 "MB" * 1024 * 1024.
+	addressToLoad := cogit varBaseAddress + distance.
+
+	[
+		self compile: [ cogit MoveAw: addressToLoad R: SPReg].
+		
+		"Should not execute successfully"
+		self fail.
+	] on: Error do: [ :error |
+		self assert: error messageText equals: 'Cannot compile store into SP from far address' ]
+
 ]

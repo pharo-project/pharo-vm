@@ -1,6 +1,6 @@
 Class {
-	#name : #LibFFI,
-	#superclass : #VMClass,
+	#name : 'LibFFI',
+	#superclass : 'VMClass',
 	#instVars : [
 		'nextAddress',
 		'cifs',
@@ -11,36 +11,38 @@ Class {
 	#pools : [
 		'LibFFIConstants'
 	],
-	#category : #'VMMaker-FFI'
+	#category : 'VMMaker-FFI',
+	#package : 'VMMaker',
+	#tag : 'FFI'
 }
 
-{ #category : #translation }
+{ #category : 'translation' }
 LibFFI class >> ancilliaryClasses [ 
 
 	^ { LibFFICIF. LibFFIType. LibFFIWorkerTask }
 ]
 
-{ #category : #'type constants' }
+{ #category : 'type constants' }
 LibFFI >> char [
 	<doNotGenerate>
 	
 	^ self uint8
 ]
 
-{ #category : #'call simulations' }
+{ #category : 'call simulations' }
 LibFFI >> cifAtAddress: anInteger [
 	<doNotGenerate>
 	^ cifs at: anInteger
 ]
 
-{ #category : #'type constants' }
+{ #category : 'type constants' }
 LibFFI >> double [
 	<doNotGenerate>
 	
 	^ LibFFIType type: FFI_TYPE_DOUBLE size: 8 on: self.
 ]
 
-{ #category : #'call simulations' }
+{ #category : 'call simulations' }
 LibFFI >> ffiCall: aCif _: externalFunctionAddress _: returnHolder _: parameters [
 
 	<doNotGenerate>
@@ -51,14 +53,14 @@ LibFFI >> ffiCall: aCif _: externalFunctionAddress _: returnHolder _: parameters
 	^ aCif returnType fromSmalltalk: retValue putInto: returnHolder
 ]
 
-{ #category : #'type constants' }
+{ #category : 'type constants' }
 LibFFI >> float [
 	<doNotGenerate>
 	
 	^ LibFFIType type: FFI_TYPE_FLOAT size: 4 on: self.
 ]
 
-{ #category : #'instance creation' }
+{ #category : 'instance creation' }
 LibFFI >> initialize [
 
 	super initialize.
@@ -68,19 +70,19 @@ LibFFI >> initialize [
 
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 LibFFI >> interpreter [
 	<doNotGenerate>	
 	^ interpreter
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 LibFFI >> interpreter: anInterpreter [ 
 	<doNotGenerate>	
 	interpreter := anInterpreter
 ]
 
-{ #category : #'instance creation' }
+{ #category : 'instance creation' }
 LibFFI >> newCif [
 	<doNotGenerate>	
 
@@ -95,7 +97,7 @@ LibFFI >> newCif [
 	^ cif
 ]
 
-{ #category : #'type constants' }
+{ #category : 'type constants' }
 LibFFI >> pointer [
 
 	<doNotGenerate>
@@ -103,7 +105,7 @@ LibFFI >> pointer [
 	^ LibFFIType type: FFI_TYPE_POINTER size: interpreter objectMemory wordSize on: self
 ]
 
-{ #category : #'registering functions' }
+{ #category : 'registering functions' }
 LibFFI >> registerFunction: aBlockClosure [ 
 	<doNotGenerate>	
 	
@@ -116,7 +118,7 @@ LibFFI >> registerFunction: aBlockClosure [
 	^ functionAddress
 ]
 
-{ #category : #'type constants' }
+{ #category : 'type constants' }
 LibFFI >> sint16 [
 
 	<doNotGenerate>
@@ -124,7 +126,7 @@ LibFFI >> sint16 [
 	^ LibFFIType type: FFI_TYPE_SINT16 size: 2 on: self
 ]
 
-{ #category : #'type constants' }
+{ #category : 'type constants' }
 LibFFI >> sint32 [
 
 	<doNotGenerate>
@@ -132,7 +134,7 @@ LibFFI >> sint32 [
 	^ LibFFIType type: FFI_TYPE_SINT32 size: 4 on: self
 ]
 
-{ #category : #'type constants' }
+{ #category : 'type constants' }
 LibFFI >> sint64 [
 
 	<doNotGenerate>
@@ -140,7 +142,7 @@ LibFFI >> sint64 [
 	^ LibFFIType type: FFI_TYPE_SINT64 size: 8 on: self
 ]
 
-{ #category : #'type constants' }
+{ #category : 'type constants' }
 LibFFI >> sint8 [
 
 	<doNotGenerate>
@@ -148,7 +150,7 @@ LibFFI >> sint8 [
 	^ LibFFIType type: FFI_TYPE_SINT8 size: 1 on: self
 ]
 
-{ #category : #'type constants' }
+{ #category : 'type constants' }
 LibFFI >> structWith: anArrayOfTypes [
 
 	| size |
@@ -163,14 +165,14 @@ LibFFI >> structWith: anArrayOfTypes [
 	
 ]
 
-{ #category : #testing }
+{ #category : 'testing' }
 LibFFI >> testWorker [
 	<doNotGenerate>
 	
 	^ testWorker ifNil: [ testWorker := LibFFITestWorker new ]
 ]
 
-{ #category : #'type constants' }
+{ #category : 'type constants' }
 LibFFI >> uint16 [
 
 	<doNotGenerate>
@@ -178,7 +180,7 @@ LibFFI >> uint16 [
 	^ LibFFIType type: FFI_TYPE_UINT16 size: 2 on: self
 ]
 
-{ #category : #'type constants' }
+{ #category : 'type constants' }
 LibFFI >> uint32 [
 
 	<doNotGenerate>
@@ -186,7 +188,7 @@ LibFFI >> uint32 [
 	^ LibFFIType type: FFI_TYPE_UINT32 size: 4 on: self
 ]
 
-{ #category : #'type constants' }
+{ #category : 'type constants' }
 LibFFI >> uint64 [
 
 	<doNotGenerate>
@@ -194,7 +196,7 @@ LibFFI >> uint64 [
 	^ LibFFIType type: FFI_TYPE_UINT64 size: 8 on: self
 ]
 
-{ #category : #'type constants' }
+{ #category : 'type constants' }
 LibFFI >> uint8 [
 
 	<doNotGenerate>
@@ -202,7 +204,7 @@ LibFFI >> uint8 [
 	^ LibFFIType type: FFI_TYPE_UINT8 size: 1 on: self
 ]
 
-{ #category : #'type constants' }
+{ #category : 'type constants' }
 LibFFI >> void [
 
 	<doNotGenerate>

@@ -2,47 +2,49 @@
 I am used to simulate the indexed access to any object during plugin simulation.
 "
 Class {
-	#name : #CObjectAccessor,
-	#superclass : #Object,
+	#name : 'CObjectAccessor',
+	#superclass : 'Object',
 	#instVars : [
 		'object',
 		'offset'
 	],
-	#category : #'Slang-Types'
+	#category : 'Slang-Types',
+	#package : 'Slang',
+	#tag : 'Types'
 }
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 CObjectAccessor class >> alignedByteSizeOf: aCObjectAccessor forClient: aVMClass [
 	"Hack; this only works if the object is actually bytes."
 	^aCObjectAccessor object size
 ]
 
-{ #category : #'instance creation' }
+{ #category : 'instance creation' }
 CObjectAccessor class >> on: anObject [
 	^self new setObject: anObject
 ]
 
-{ #category : #'pointer arithmetic' }
+{ #category : 'pointer arithmetic' }
 CObjectAccessor >> + increment [
 	^self shallowCopy += increment
 ]
 
-{ #category : #'pointer arithmetic' }
+{ #category : 'pointer arithmetic' }
 CObjectAccessor >> += increment [
 	offset := offset + increment
 ]
 
-{ #category : #'pointer arithmetic' }
+{ #category : 'pointer arithmetic' }
 CObjectAccessor >> - decrement [
 	^self shallowCopy -= decrement
 ]
 
-{ #category : #'pointer arithmetic' }
+{ #category : 'pointer arithmetic' }
 CObjectAccessor >> -= decrement [
 	offset := offset - decrement
 ]
 
-{ #category : #converting }
+{ #category : 'converting' }
 CObjectAccessor >> asDoubleAccessor [
 
 	^ self asPluggableAccessor
@@ -50,7 +52,7 @@ CObjectAccessor >> asDoubleAccessor [
 		atPutBlock: [:obj :index :value | obj doubleAt: index put: value]
 ]
 
-{ #category : #converting }
+{ #category : 'converting' }
 CObjectAccessor >> asFloatAccessor [
 
 	^ self asPluggableAccessor
@@ -58,7 +60,7 @@ CObjectAccessor >> asFloatAccessor [
 		atPutBlock: [:obj :index :value | obj floatAt: index put: value]
 ]
 
-{ #category : #converting }
+{ #category : 'converting' }
 CObjectAccessor >> asIntAccessor [
 
 	^ self asPluggableAccessor
@@ -66,7 +68,7 @@ CObjectAccessor >> asIntAccessor [
 		atPutBlock: [:obj :index :value | obj intAt: index put: value]
 ]
 
-{ #category : #transformation }
+{ #category : 'transformation' }
 CObjectAccessor >> asIntAccessorOfSize: byteSize signed: isSigned [ 
 
 	^ self asPluggableAccessor
@@ -74,13 +76,13 @@ CObjectAccessor >> asIntAccessorOfSize: byteSize signed: isSigned [
 		atPutBlock: [:obj :index :value | obj integerAt: index put: value size: byteSize signed: isSigned ]
 ]
 
-{ #category : #converting }
+{ #category : 'converting' }
 CObjectAccessor >> asInteger [
 
 	^ self
 ]
 
-{ #category : #converting }
+{ #category : 'converting' }
 CObjectAccessor >> asOop: aClass [
 
 	(aClass ccgCanConvertFrom: object)
@@ -88,19 +90,19 @@ CObjectAccessor >> asOop: aClass [
 	^object
 ]
 
-{ #category : #converting }
+{ #category : 'converting' }
 CObjectAccessor >> asPluggableAccessor [
 	^ (CPluggableAccessor on: object) += offset
 ]
 
-{ #category : #converting }
+{ #category : 'converting' }
 CObjectAccessor >> asPluggableAccessor: accessorArray [
 	^((CPluggableAccessor on: object) += offset)
 		atBlock: accessorArray first
 		atPutBlock: accessorArray last
 ]
 
-{ #category : #converting }
+{ #category : 'converting' }
 CObjectAccessor >> asPointerAccessor: wordSize [
 
 	^ self asPluggableAccessor
@@ -108,17 +110,17 @@ CObjectAccessor >> asPointerAccessor: wordSize [
 		atPutBlock: [ :obj :index :value | obj integerAt: index put: value size: wordSize signed: false ]
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 CObjectAccessor >> at: index [
 	^object instVarAt: index + offset + 1
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 CObjectAccessor >> at: index put: value [
 	^object instVarAt: index + offset + 1 put: value
 ]
 
-{ #category : #converting }
+{ #category : 'converting' }
 CObjectAccessor >> coerceTo: cTypeString sim: interpreterSimulator [
 
 	cTypeString caseOf: {
@@ -140,49 +142,49 @@ CObjectAccessor >> coerceTo: cTypeString sim: interpreterSimulator [
 	^ self
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 CObjectAccessor >> first [
 	^self at: 0
 ]
 
-{ #category : #private }
+{ #category : 'private' }
 CObjectAccessor >> getObject [
 	^object
 ]
 
-{ #category : #testing }
+{ #category : 'testing' }
 CObjectAccessor >> isCArray [
 	"Answer a boolean indicating whether the receiver responds to the CArray interface"
 
 	^true
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 CObjectAccessor >> isCObjectAccessor [
 
 	^ true
 ]
 
-{ #category : #'initialize-release' }
+{ #category : 'initialize-release' }
 CObjectAccessor >> memory: anObject offset: baseIndex [
 	object := anObject.
 	offset := baseIndex
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 CObjectAccessor >> object [
 
 	^ object
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 CObjectAccessor >> offset [
 
 	^ offset
 
 ]
 
-{ #category : #printing }
+{ #category : 'printing' }
 CObjectAccessor >> printOn: aStream [
 	super printOn: aStream.
 	aStream
@@ -190,7 +192,7 @@ CObjectAccessor >> printOn: aStream [
 		print: object.
 ]
 
-{ #category : #private }
+{ #category : 'private' }
 CObjectAccessor >> setObject: anObject [
 	object := anObject.
 	offset := 0.

@@ -43,6 +43,7 @@ EXPORT(int) isLogDebug(){
 
 void error(char *errorMessage){
     logError(errorMessage);
+	logError("Aborting the execution of the VM");
 	printStatusAfterError();
     abort();
 }

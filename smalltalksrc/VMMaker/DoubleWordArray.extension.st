@@ -1,6 +1,6 @@
-Extension { #name : #DoubleWordArray }
+Extension { #name : 'DoubleWordArray' }
 
-{ #category : #'*VMMaker-JITSimulation' }
+{ #category : '*VMMaker-JITSimulation' }
 DoubleWordArray >> byteAt: byteAddress [
 	"Extract a byte from a DoubleWordArray (little-endian version)"
 	| lowBits |
@@ -10,7 +10,7 @@ DoubleWordArray >> byteAt: byteAddress [
 		bitAnd: 16rFF
 ]
 
-{ #category : #'*VMMaker-JITSimulation' }
+{ #category : '*VMMaker-JITSimulation' }
 DoubleWordArray >> long64At: byteIndex [
 	| lowBits wordIndex value high low |
 
@@ -29,7 +29,7 @@ DoubleWordArray >> long64At: byteIndex [
 		ifFalse: [value - 16r10000000000000000]
 ]
 
-{ #category : #'*VMMaker-JITSimulation' }
+{ #category : '*VMMaker-JITSimulation' }
 DoubleWordArray >> long64At: byteIndex put: aValue [
 	"Compatiblity with the ByteArray & Alien methods of the same name."
 	| wordIndex lowBits mask allOnes |
@@ -45,7 +45,7 @@ DoubleWordArray >> long64At: byteIndex put: aValue [
 	^aValue
 ]
 
-{ #category : #'*VMMaker-JITSimulation' }
+{ #category : '*VMMaker-JITSimulation' }
 DoubleWordArray >> longAt: byteIndex [
 	"Compatiblity with the ByteArray & Alien methods of the same name."
 	| wordIndex lowBits word hiWord |
@@ -61,7 +61,7 @@ DoubleWordArray >> longAt: byteIndex [
 	^word
 ]
 
-{ #category : #'*VMMaker-JITSimulation' }
+{ #category : '*VMMaker-JITSimulation' }
 DoubleWordArray >> longAt: byteIndex bigEndian: bigEndian [
 	"Compatiblity with the ByteArray & Alien methods of the same name."
 	| wordIndex lowBits word hiWord |
@@ -82,7 +82,7 @@ DoubleWordArray >> longAt: byteIndex bigEndian: bigEndian [
 	^word
 ]
 
-{ #category : #'*VMMaker-JITSimulation' }
+{ #category : '*VMMaker-JITSimulation' }
 DoubleWordArray >> longAt: byteIndex put: aValue [
 	"Compatiblity with the ByteArray & Alien methods of the same name."
 	| wordIndex lowBits word allOnes loMask hiMask |
@@ -107,7 +107,7 @@ DoubleWordArray >> longAt: byteIndex put: aValue [
 	^aValue
 ]
 
-{ #category : #'*VMMaker-JITSimulation' }
+{ #category : '*VMMaker-JITSimulation' }
 DoubleWordArray >> unsignedByteAt: byteAddress [
 	"Extract a byte from a 64-bit word array (little-endian version)"
 	| lowBits |
@@ -117,7 +117,7 @@ DoubleWordArray >> unsignedByteAt: byteAddress [
 		bitAnd: 16rFF
 ]
 
-{ #category : #'*VMMaker-JITSimulation' }
+{ #category : '*VMMaker-JITSimulation' }
 DoubleWordArray >> unsignedByteAt: byteAddress put: byte [
 	"Insert a byte into a 64-bit word (little-endian version)"
 	| longWord shift lowBits longAddr |
@@ -132,7 +132,7 @@ DoubleWordArray >> unsignedByteAt: byteAddress put: byte [
 	^byte
 ]
 
-{ #category : #'*VMMaker-JITSimulation' }
+{ #category : '*VMMaker-JITSimulation' }
 DoubleWordArray >> unsignedLong64At: byteIndex [
 	"Compatiblity with the ByteArray & Alien methods of the same name."
 	| wordIndex lowBits high low |
@@ -144,7 +144,7 @@ DoubleWordArray >> unsignedLong64At: byteIndex [
 	^high = 0 ifTrue: [low] ifFalse: [high + low]
 ]
 
-{ #category : #'*VMMaker-JITSimulation' }
+{ #category : '*VMMaker-JITSimulation' }
 DoubleWordArray >> unsignedLong64At: byteIndex put: aValue [
 	"Compatiblity with the ByteArray & Alien methods of the same name."
 	| wordIndex lowBits mask allOnes |
@@ -159,7 +159,7 @@ DoubleWordArray >> unsignedLong64At: byteIndex put: aValue [
 	^aValue
 ]
 
-{ #category : #'*VMMaker-JITSimulation' }
+{ #category : '*VMMaker-JITSimulation' }
 DoubleWordArray >> unsignedLongAt: byteIndex [
 	"Compatiblity with the ByteArray & Alien methods of the same name."
 	| wordIndex lowBits word hiWord |
@@ -172,7 +172,7 @@ DoubleWordArray >> unsignedLongAt: byteIndex [
 	^word bitAnd: 16rFFFFFFFF
 ]
 
-{ #category : #'*VMMaker-JITSimulation' }
+{ #category : '*VMMaker-JITSimulation' }
 DoubleWordArray >> unsignedLongAt: byteIndex put: aValue [
 	"Compatiblity with the ByteArray & Alien methods of the same name."
 	| wordIndex lowBits word allOnes loMask hiMask |
@@ -197,7 +197,7 @@ DoubleWordArray >> unsignedLongAt: byteIndex put: aValue [
 	^aValue
 ]
 
-{ #category : #'*VMMaker-JITSimulation' }
+{ #category : '*VMMaker-JITSimulation' }
 DoubleWordArray >> unsignedShortAt: byteIndex [
 	"Compatiblity with the ByteArray & Alien methods of the same name."
 	| zi word |
@@ -210,7 +210,7 @@ DoubleWordArray >> unsignedShortAt: byteIndex [
 	^word bitAnd: 16rFFFF
 ]
 
-{ #category : #'*VMMaker-JITSimulation' }
+{ #category : '*VMMaker-JITSimulation' }
 DoubleWordArray >> unsignedShortAt: byteAddress put: short [
 	"Insert a double byte into a 64-bit word (little-endian version)"
 	| longWord shift lowBits longAddr |

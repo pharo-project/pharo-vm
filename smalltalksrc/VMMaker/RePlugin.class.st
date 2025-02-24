@@ -33,8 +33,8 @@ void  (*pcre_free)(void *) = rePluginFree;
 
 "
 Class {
-	#name : #RePlugin,
-	#superclass : #SmartSyntaxInterpreterPlugin,
+	#name : 'RePlugin',
+	#superclass : 'SmartSyntaxInterpreterPlugin',
 	#instVars : [
 		'netMemory',
 		'numAllocs',
@@ -51,10 +51,12 @@ Class {
 		'patternStrPtr',
 		'errorStrBuffer'
 	],
-	#category : #'VMMaker-Plugins'
+	#category : 'VMMaker-Plugins',
+	#package : 'VMMaker',
+	#tag : 'Plugins'
 }
 
-{ #category : #'plugin code generation' }
+{ #category : 'plugin code generation' }
 RePlugin class >> declareCVarsIn: cg [
 
 	cg addHeaderFile:'"rePlugin.h"'.
@@ -70,25 +72,25 @@ RePlugin class >> declareCVarsIn: cg [
 	cg var: 'errorStrBuffer'	type: 'const char * '.
 ]
 
-{ #category : #'plugin code generation' }
+{ #category : 'plugin code generation' }
 RePlugin class >> hasHeaderFile [
 	"If there is a single intrinsic header file to be associated with the plugin, here is where you want to flag"
 	^true
 ]
 
-{ #category : #translation }
+{ #category : 'translation' }
 RePlugin class >> moduleName [
 
 	^'RePlugin'
 ]
 
-{ #category : #'plugin code generation' }
+{ #category : 'plugin code generation' }
 RePlugin class >> requiresCrossPlatformFiles [
 	"default is ok for most, any plugin needing cross platform files must say so"
 	^true
 ]
 
-{ #category : #'rcvr linkage' }
+{ #category : 'rcvr linkage' }
 RePlugin >> allocateByteArrayAndSetRcvrExtraPtrFrom: anExtraPtr [
 
 	| extraObject extraByteArrayPtr |
@@ -114,7 +116,7 @@ RePlugin >> allocateByteArrayAndSetRcvrExtraPtrFrom: anExtraPtr [
 
 ]
 
-{ #category : #'rcvr linkage' }
+{ #category : 'rcvr linkage' }
 RePlugin >> allocateByteArrayAndSetRcvrPCREPtrFromPCRE: aPCREPtr [
 
 	| patObject patByteArrayPtr |
@@ -137,7 +139,7 @@ RePlugin >> allocateByteArrayAndSetRcvrPCREPtrFromPCRE: aPCREPtr [
 
 ]
 
-{ #category : #'rcvr linkage' }
+{ #category : 'rcvr linkage' }
 RePlugin >> allocateStringAndSetRcvrErrorStrFromCStr: aCStrBuffer [
 
 	|length errorStrObj errorStrObjPtr |
@@ -159,7 +161,7 @@ RePlugin >> allocateStringAndSetRcvrErrorStrFromCStr: aCStrBuffer [
 	^errorStrObj.
 ]
 
-{ #category : #'rcvr linkage' }
+{ #category : 'rcvr linkage' }
 RePlugin >> loadRcvrFromStackAt: stackInteger [
 
 	<inline:true>
@@ -167,7 +169,7 @@ RePlugin >> loadRcvrFromStackAt: stackInteger [
 
 ]
 
-{ #category : #'memory management' }
+{ #category : 'memory management' }
 RePlugin >> primLastAlloc [
 	
 	<export: true>
@@ -175,7 +177,7 @@ RePlugin >> primLastAlloc [
 
 ]
 
-{ #category : #'memory management' }
+{ #category : 'memory management' }
 RePlugin >> primNetMemory [ 
 	
 	<export: true>
@@ -183,7 +185,7 @@ RePlugin >> primNetMemory [
 
 ]
 
-{ #category : #'memory management' }
+{ #category : 'memory management' }
 RePlugin >> primNumAllocs [
 
 	<export: true>
@@ -191,7 +193,7 @@ RePlugin >> primNumAllocs [
 
 ]
 
-{ #category : #'memory management' }
+{ #category : 'memory management' }
 RePlugin >> primNumFrees [ 
 	
 	<export: true>
@@ -199,7 +201,7 @@ RePlugin >> primNumFrees [
 
 ]
 
-{ #category : #'re primitives' }
+{ #category : 're primitives' }
 RePlugin >> primPCRECompile [
 
 "<rcvr primPCRECompile>, where rcvr is an object with instance variables:
@@ -232,7 +234,7 @@ Compile the regular expression in patternStr, and if the compilation is successf
 			interpreterProxy pop: 1 thenPush: errorStr].
 ]
 
-{ #category : #'re primitives' }
+{ #category : 're primitives' }
 RePlugin >> primPCREExec [
 
 "<rcvr primPCREExec: searchObject>, where rcvr is an object with instance variables:
@@ -271,7 +273,7 @@ Apply the regular expression (stored in <pcrePtr> and <extratr>, generated from 
 
 ]
 
-{ #category : #'re primitives' }
+{ #category : 're primitives' }
 RePlugin >> primPCREExecfromto [
 
 "<rcvr primPCREExec: searchObject from: fromInteger to: toInteger>, where rcvr is an object with instance variables:
@@ -321,7 +323,7 @@ Apply the regular expression (stored in <pcrePtr> and <extratr>, generated from 
 
 ]
 
-{ #category : #'re primitives' }
+{ #category : 're primitives' }
 RePlugin >> primPCRENumSubPatterns [
 
 "<rcvr primPCRENumSubPatterns>, where rcvr is an object with instance variables:
@@ -342,7 +344,7 @@ Return the number of subpatterns captured by the compiled pattern."
 
 ]
 
-{ #category : #'rcvr linkage' }
+{ #category : 'rcvr linkage' }
 RePlugin >> rcvrCompileFlags [
 
 	<inline:true>
@@ -350,7 +352,7 @@ RePlugin >> rcvrCompileFlags [
 
 ]
 
-{ #category : #'rcvr linkage' }
+{ #category : 'rcvr linkage' }
 RePlugin >> rcvrErrorOffsetFrom: anInteger [
 
 	<inline: true>
@@ -358,7 +360,7 @@ RePlugin >> rcvrErrorOffsetFrom: anInteger [
 
 ]
 
-{ #category : #'rcvr linkage' }
+{ #category : 'rcvr linkage' }
 RePlugin >> rcvrErrorStrFrom: aString [
 
 	<inline: true>
@@ -369,7 +371,7 @@ RePlugin >> rcvrErrorStrFrom: aString [
 
 ]
 
-{ #category : #'rcvr linkage' }
+{ #category : 'rcvr linkage' }
 RePlugin >> rcvrExtraPtr [
 
 	|extraObj|
@@ -382,7 +384,7 @@ RePlugin >> rcvrExtraPtr [
 		to: #sqInt
 ]
 
-{ #category : #'rcvr linkage' }
+{ #category : 'rcvr linkage' }
 RePlugin >> rcvrExtraPtrFrom: aByteArrayOrNilObject [
 
 	<inline: true>
@@ -392,7 +394,7 @@ RePlugin >> rcvrExtraPtrFrom: aByteArrayOrNilObject [
 		withValue: aByteArrayOrNilObject
 ]
 
-{ #category : #'rcvr linkage' }
+{ #category : 'rcvr linkage' }
 RePlugin >> rcvrMatchFlags [
 
 	<inline: true>
@@ -400,7 +402,7 @@ RePlugin >> rcvrMatchFlags [
 
 ]
 
-{ #category : #'rcvr linkage' }
+{ #category : 'rcvr linkage' }
 RePlugin >> rcvrMatchSpacePtr [
 
 	<inline: true>
@@ -410,14 +412,14 @@ RePlugin >> rcvrMatchSpacePtr [
 		to: 'int *'.
 ]
 
-{ #category : #'rcvr linkage' }
+{ #category : 'rcvr linkage' }
 RePlugin >> rcvrMatchSpaceSize [
 
 	<inline: true>
 	^(interpreterProxy byteSizeOf: (interpreterProxy fetchPointer: 7 ofObject: rcvr))//4.
 ]
 
-{ #category : #'rcvr linkage' }
+{ #category : 'rcvr linkage' }
 RePlugin >> rcvrPCREBufferFrom: aByteArray [
 
 	<inline: true>
@@ -427,7 +429,7 @@ RePlugin >> rcvrPCREBufferFrom: aByteArray [
 		withValue: aByteArray
 ]
 
-{ #category : #'rcvr linkage' }
+{ #category : 'rcvr linkage' }
 RePlugin >> rcvrPCREBufferPtr [
 	<inline: true>
 	^self
@@ -435,7 +437,7 @@ RePlugin >> rcvrPCREBufferPtr [
 		to: #sqInt
 ]
 
-{ #category : #'rcvr linkage' }
+{ #category : 'rcvr linkage' }
 RePlugin >> rcvrPatternStrPtr [
 
 	<inline: true>
@@ -445,7 +447,7 @@ RePlugin >> rcvrPatternStrPtr [
 		to: 'char *'.
 ]
 
-{ #category : #'memory management' }
+{ #category : 'memory management' }
 RePlugin >> rePluginFree: aPointer [
 	"Free a block of fixed memory allocated with rePluginMalloc.  Instrumented version of C free() to facilitate leak analysis from Smalltalk.   OS-specific variations on malloc/free, such as with MacOS, are handled by adding a C macro to the header file redefining malloc/free -- see the class comment"
 
@@ -457,7 +459,7 @@ RePlugin >> rePluginFree: aPointer [
 	aPointer notNil ifTrue: [self free: aPointer]	
 ]
 
-{ #category : #'memory management' }
+{ #category : 'memory management' }
 RePlugin >> rePluginMalloc: anInteger [
 	"Allocate a block of fixed memory using C calls to malloc().  Instrumented to facilitate leak analysis from Smalltalk.  Set global lastAlloc to anInteger.  OS-specific variations on malloc/free, such as with MacOS, are handled by adding a C macro to the header file redefining malloc/free -- see the class comment"
 

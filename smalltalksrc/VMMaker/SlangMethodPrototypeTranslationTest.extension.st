@@ -1,6 +1,6 @@
-Extension { #name : #SlangMethodPrototypeTranslationTest }
+Extension { #name : 'SlangMethodPrototypeTranslationTest' }
 
-{ #category : #'*VMMaker' }
+{ #category : '*VMMaker' }
 SlangMethodPrototypeTranslationTest >> setUp [
 
 	super setUp.

@@ -1,31 +1,33 @@
 Class {
-	#name : #CNewArrayAccessor,
-	#superclass : #CArrayAccessor,
+	#name : 'CNewArrayAccessor',
+	#superclass : 'CArrayAccessor',
 	#instVars : [
 		'address'
 	],
-	#category : #'Slang-Types'
+	#category : 'Slang-Types',
+	#package : 'Slang',
+	#tag : 'Types'
 }
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 CNewArrayAccessor >> address [
 
 	^ address
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 CNewArrayAccessor >> address: anObject [
 
 	address := anObject
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 CNewArrayAccessor >> asInteger [
 	
 	^ address
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 CNewArrayAccessor >> at: index [
 
 	^ object byteAt: index + 1

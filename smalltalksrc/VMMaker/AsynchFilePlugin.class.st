@@ -2,34 +2,61 @@
 Implements the asynchronous file primitives available on a few platforms. See the platform specific files in platforms- {your platform} - plugins - Asynchplugin
 "
 Class {
-	#name : #AsynchFilePlugin,
-	#superclass : #SmartSyntaxInterpreterPlugin,
-	#instVars : [
-		'sCOAFfn'
-	],
-	#category : #'VMMaker-Plugins'
+	#name : 'AsynchFilePlugin',
+	#superclass : 'SmartSyntaxInterpreterPlugin',
+	#category : 'VMMaker-Plugins',
+	#package : 'VMMaker',
+	#tag : 'Plugins'
 }
 
-{ #category : #translation }
+{ #category : 'translation' }
 AsynchFilePlugin class >> declareCVarsIn: cg [
 	super declareCVarsIn: cg.
 	cg var: #sCOAFfn type: #'void *'.
 
 ]
 
-{ #category : #translation }
+{ #category : 'translation' }
 AsynchFilePlugin class >> hasHeaderFile [
 	"If there is a single intrinsic header file to be associated with the plugin, here is where you want to flag"
 	^true
 ]
 
-{ #category : #translation }
+{ #category : 'translation' }
 AsynchFilePlugin class >> requiresPlatformFiles [
 	"this plugin requires platform specific files in order to work"
 	^true
 ]
 
-{ #category : #primitives }
+{ #category : 'primitives' }
+AsynchFilePlugin >> async: f File: fPosition Write: bufferPtr Start: count [
+
+	<doNotGenerate>
+	self notYetImplemented
+]
+
+{ #category : 'primitives' }
+AsynchFilePlugin >> asyncFile: f Read: bufferPtr Result: count [
+
+	<doNotGenerate>
+	self notYetImplemented
+]
+
+{ #category : 'primitives' }
+AsynchFilePlugin >> asyncFile: f Read: fPosition Start: count [
+
+	<doNotGenerate>
+	self notYetImplemented
+]
+
+{ #category : 'primitives' }
+AsynchFilePlugin >> asyncFileClose: f [
+
+	<doNotGenerate>
+	self notYetImplemented
+]
+
+{ #category : 'primitives' }
 AsynchFilePlugin >> asyncFileValueOf: oop [
 	"Answer a pointer to the first byte of the async file record within the given
 	 Smalltalk bytes object, or fail and answer nil if oop is not an async file record."
@@ -42,26 +69,22 @@ AsynchFilePlugin >> asyncFileValueOf: oop [
 	^nil
 ]
 
-{ #category : #'initialize-release' }
+{ #category : 'primitives' }
+AsynchFilePlugin >> asyncFileWriteResult: f [
+
+	<doNotGenerate>
+	self notYetImplemented
+]
+
+{ #category : 'initialize-release' }
 AsynchFilePlugin >> initialiseModule [
 	"Initialise the module"
+
 	<export: true>
-	sCOAFfn := interpreterProxy ioLoadFunction: 'secCanOpenAsyncFileOfSizeWritable' From: 'SecurityPlugin'.
-	^self cCode: 'asyncFileInit()' inSmalltalk:[true]
+	^ self cCode: 'asyncFileInit()' inSmalltalk: [ true ]
 ]
 
-{ #category : #'initialize-release' }
-AsynchFilePlugin >> moduleUnloaded: aModuleName [ 
-	"The module with the given name was just unloaded. 
-	Make sure we have no dangling references."
-	<export: true>
-	<var: #aModuleName type: 'char *'>
-	(aModuleName strcmp: 'SecurityPlugin') = 0
-		ifTrue: ["The security plugin just shut down. How odd. Zero the function pointer we have into it"
-			sCOAFfn := 0]
-]
-
-{ #category : #primitives }
+{ #category : 'primitives' }
 AsynchFilePlugin >> primitiveAsyncFileClose: fh [ 
 	| f |
 	<var: #f type: 'AsyncFile *'>
@@ -71,19 +94,14 @@ AsynchFilePlugin >> primitiveAsyncFileClose: fh [
 	self asyncFileClose: f
 ]
 
-{ #category : #primitives }
+{ #category : 'primitives' }
 AsynchFilePlugin >> primitiveAsyncFileOpen: fileName forWrite: writeFlag semaIndex: semaIndex [ 
-	| fileNameSize fOop f okToOpen |
+	| fileNameSize fOop f |
 	<var: #f type: 'AsyncFile *'>
 	self primitive: 'primitiveAsyncFileOpen' parameters: #(#String #Boolean #SmallInteger ).
 	fileNameSize := interpreterProxy byteSizeOf: (fileName asOop: String).
 	"If the security plugin can be loaded, use it to check for permission.
 	If not, assume it's ok"
-	sCOAFfn ~= 0 ifTrue:
-		[okToOpen := self cCode: '((sqInt (*) (char *, sqInt, sqInt)) sCOAFfn)(fileName, fileNameSize, writeFlag)'
-							inSmalltalk: [true].
-		 okToOpen ifFalse:
-			[^interpreterProxy primitiveFail]].
 	fOop := interpreterProxy
 				instantiateClass: interpreterProxy classByteArray
 				indexableSize: (self sizeof: #AsyncFile).
@@ -93,7 +111,7 @@ AsynchFilePlugin >> primitiveAsyncFileOpen: fileName forWrite: writeFlag semaInd
 	^fOop
 ]
 
-{ #category : #primitives }
+{ #category : 'primitives' }
 AsynchFilePlugin >> primitiveAsyncFileReadResult: fhandle intoBuffer: buffer at: start count: num [ 
 	| bufferSize bufferPtr r f count startIndex |
 	<var: #f type: 'AsyncFile *'>
@@ -116,7 +134,7 @@ AsynchFilePlugin >> primitiveAsyncFileReadResult: fhandle intoBuffer: buffer at:
 	^r asOop: SmallInteger
 ]
 
-{ #category : #primitives }
+{ #category : 'primitives' }
 AsynchFilePlugin >> primitiveAsyncFileReadStart: fHandle fPosition: fPosition count: count [
 	| f |
 	<var: #f type: 'AsyncFile *'>
@@ -126,7 +144,7 @@ AsynchFilePlugin >> primitiveAsyncFileReadStart: fHandle fPosition: fPosition co
 	self asyncFile: f Read: fPosition Start: count
 ]
 
-{ #category : #primitives }
+{ #category : 'primitives' }
 AsynchFilePlugin >> primitiveAsyncFileWriteResult: fHandle [
 	| f r |
 	<var: #f type: 'AsyncFile *'>
@@ -138,7 +156,7 @@ AsynchFilePlugin >> primitiveAsyncFileWriteResult: fHandle [
 	^r asOop: SmallInteger
 ]
 
-{ #category : #primitives }
+{ #category : 'primitives' }
 AsynchFilePlugin >> primitiveAsyncFileWriteStart: fHandle fPosition: fPosition fromBuffer: buffer at: start count: num [ 
 	| f bufferSize bufferPtr count startIndex |
 	<var: #f type: 'AsyncFile *'>
@@ -159,14 +177,14 @@ AsynchFilePlugin >> primitiveAsyncFileWriteStart: fHandle fPosition: fPosition f
 	self async: f File: fPosition Write: bufferPtr asVoidPointer Start: count
 ]
 
-{ #category : #'initialize-release' }
+{ #category : 'initialize-release' }
 AsynchFilePlugin >> shutdownModule [
 	"Initialise the module"
 	<export: true>
 	^self cCode: 'asyncFileShutdown()' inSmalltalk:[true]
 ]
 
-{ #category : #simulation }
+{ #category : 'simulation' }
 AsynchFilePlugin >> sizeof: objectSymbolOrClass [
 	<doNotGenerate>
 	objectSymbolOrClass isInteger ifTrue:

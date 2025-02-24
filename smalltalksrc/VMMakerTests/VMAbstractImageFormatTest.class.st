@@ -1,41 +1,44 @@
 Class {
-	#name : #VMAbstractImageFormatTest,
-	#superclass : #VMSpurInitializedOldSpaceTest,
+	#name : 'VMAbstractImageFormatTest',
+	#superclass : 'VMSpurInitializedOldSpaceTest',
 	#instVars : [
-		'imageReader'
+		'imageReader',
+		'imageReaderClass',
+		'imageWriterClass'
 	],
-	#category : #'VMMakerTests-ImageFormat'
+	#category : 'VMMakerTests-ImageFormat',
+	#package : 'VMMakerTests',
+	#tag : 'ImageFormat'
 }
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 VMAbstractImageFormatTest >> defaultTimeLimit [
 
 	^ 30 seconds
 ]
 
-{ #category : #tests }
+{ #category : 'tests' }
 VMAbstractImageFormatTest >> imageFileName [
 
 	^ 'lala.image'
 ]
 
-{ #category : #tests }
+{ #category : 'tests' }
 VMAbstractImageFormatTest >> readHeader [
 
 	^ imageReader readHeaderFromImage: self imageFileName
 ]
 
-{ #category : #actions }
+{ #category : 'actions' }
 VMAbstractImageFormatTest >> saveImage [
 	
 	interpreter writeImageFileIO.
 
 ]
 
-{ #category : #running }
+{ #category : 'running' }
 VMAbstractImageFormatTest >> setUp [
 
-	| imageReaderClass |
 	super setUp.
 	
 	"Objects should be registerd in Special Object Array, as they are validated while loading"
@@ -51,13 +54,15 @@ VMAbstractImageFormatTest >> setUp [
 	imageReaderClass := useComposedImageFormat ifTrue: [ ComposedImageReader ] ifFalse: [ SpurImageReader ].
 	imageReader := imageReaderClass newWithMemory: memory andInterpreter: interpreter.
 	
+	interpreter imageReaderWriter useComposedImageFormatAsDefault: useComposedImageFormat.
+	
 	"ByteArrayClass is asserted while loading image"
 	memory classByteArray: (self newClassInOldSpaceWithSlots: 0 instSpec: (memory byteFormatForNumBytes: 0)).
 	memory ensureBehaviorHash: memory classByteArray.
 
 ]
 
-{ #category : #ston }
+{ #category : 'ston' }
 VMAbstractImageFormatTest >> stonPretty: anObject [ 
 
 	^ String streamContents: [ :s |
@@ -68,7 +73,7 @@ VMAbstractImageFormatTest >> stonPretty: anObject [
 		 ]
 ]
 
-{ #category : #running }
+{ #category : 'running' }
 VMAbstractImageFormatTest >> tearDown [
 
 	self imageFileName asFileReference ensureDeleteAll.

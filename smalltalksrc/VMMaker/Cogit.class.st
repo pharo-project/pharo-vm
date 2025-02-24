@@ -110,8 +110,8 @@ methodZoneBase <Integer>
 
 "
 Class {
-	#name : #Cogit,
-	#superclass : #VMClass,
+	#name : 'Cogit',
+	#superclass : 'VMClass',
 	#instVars : [
 		'coInterpreter',
 		'objectMemory',
@@ -222,9 +222,6 @@ Class {
 		'superSendTrampolines',
 		'directedSuperSendTrampolines',
 		'directedSuperBindingSendTrampolines',
-		'dynamicSuperSendTrampolines',
-		'outerSendTrampolines',
-		'selfSendTrampolines',
 		'firstSend',
 		'lastSend',
 		'realCEEnterCogCodePopReceiverReg',
@@ -242,13 +239,8 @@ Class {
 		'extB',
 		'numExtB',
 		'tempOop',
-		'numIRCs',
-		'indexOfIRC',
-		'theIRCs',
 		'receiverTags',
-		'implicitReceiverSendTrampolines',
 		'cogMethodSurrogateClass',
-		'cogBlockMethodSurrogateClass',
 		'CStackPointer',
 		'CFramePointer',
 		'cPICPrototype',
@@ -298,11 +290,9 @@ Class {
 		'MaxNumberOfAbstractOpcodes',
 		'MaxX2NDisplacement',
 		'NumObjRefsInRuntime',
-		'NumOopsPerNSC',
 		'NumSpecialSelectors',
 		'NumTrampolines',
-		'ProcessorClass',
-		'RRRName'
+		'ProcessorClass'
 	],
 	#pools : [
 		'CogAbstractRegisters',
@@ -318,21 +308,27 @@ Class {
 		'generatorTable',
 		'primitiveTable'
 	],
-	#category : #'VMMaker-JIT'
+	#category : 'VMMaker-JIT',
+	#package : 'VMMaker',
+	#tag : 'JIT'
 }
 
-{ #category : #translation }
+{ #category : 'translation' }
 Cogit class >> activeCompilerClass [
-	^InitializationOptions
-		at: #CogCompilerClass
-		ifPresent: [:compilerClassName| Smalltalk classNamed: compilerClassName]
-		ifAbsent:
-			[(CogAbstractInstruction subclasses detect:
-				[:compilerClass|
-				 compilerClass ISA == (InitializationOptions at: #ISA ifAbsent: [#IA32])]) defaultCompilerClass]
+
+	^ InitializationOptions
+		  at: #CogCompilerClass
+		  ifPresent: [ :compilerClassName |
+		  Smalltalk classNamed: compilerClassName ]
+		  ifAbsent: [
+			  (CogAbstractInstruction allSubclasses detect: [ :compilerClass |
+				   compilerClass isAbstract not and: [
+					   compilerClass ISA
+					   == (InitializationOptions at: #ISA ifAbsent: [ #IA32 ]) ] ])
+				  defaultCompilerClass ]
 ]
 
-{ #category : #translation }
+{ #category : 'translation' }
 Cogit class >> additionalHeadersDo: aBinaryBlock [
 	"Evaluate aBinaryBlock with the names and contents of
 	 any additional header files that need to be generated."
@@ -342,12 +338,12 @@ Cogit class >> additionalHeadersDo: aBinaryBlock [
 		value: CogMethod cogMethodHeader
 ]
 
-{ #category : #translation }
+{ #category : 'translation' }
 Cogit class >> additionalSelectorTables [
 	^self tableFunctions
 ]
 
-{ #category : #translation }
+{ #category : 'translation' }
 Cogit class >> ancilliaryClasses [
 	"Answer any extra classes to be included in the translation."
 	ProcessorClass ifNil:
@@ -365,18 +361,18 @@ Cogit class >> ancilliaryClasses [
 		ifFalse: [#()])
 ]
 
-{ #category : #'class initialization' }
+{ #category : 'class initialization' }
 Cogit class >> annotationConstantNames [
 	"for printing..."
 	^AnnotationConstantNames
 ]
 
-{ #category : #translation }
+{ #category : 'translation' }
 Cogit class >> apiExportHeaderName [
 	^'cogit.h'
 ]
 
-{ #category : #'in-image compilation support' }
+{ #category : 'in-image compilation support' }
 Cogit class >> asOptionsDictionary: optionsDictionaryOrArray [
 	optionsDictionaryOrArray isArray ifTrue:
 		[| dict |
@@ -391,7 +387,7 @@ Cogit class >> asOptionsDictionary: optionsDictionaryOrArray [
 	^optionsDictionaryOrArray
 ]
 
-{ #category : #documentation }
+{ #category : 'documentation' }
 Cogit class >> assumptions [
 	"Byte architecture; no 9-bit bit bytes etc.
 
@@ -414,70 +410,13 @@ Cogit class >> assumptions [
 	 64k of code per method more than enough"
 ]
 
-{ #category : #'in-image compilation support' }
-Cogit class >> attemptToComputeInstVarNamesFor: aCompiledMethod [
-	(aCompiledMethod methodClass instSize > 0) ifTrue:
-		[InitializationOptions
-			at: #instVarNames
-			put: (aCompiledMethod methodClass allInstVarNames)]
-]
-
-{ #category : #'in-image compilation support' }
-Cogit class >> attemptToComputeTempNamesFor: aCompiledMethod [
-	(aCompiledMethod respondsTo: #tempNames) ifTrue:
-		[| schematicTemps blocks |
-		 schematicTemps := aCompiledMethod methodNode schematicTempNamesString.
-		 blocks := aCompiledMethod embeddedBlockClosures.
-		 InitializationOptions
-			at: #tempNames
-			put: (Dictionary newFrom: {aCompiledMethod initialPC -> (self decomposeSchematicTemps: (schematicTemps copyUpTo: $[))},
-				(blocks
-					ifEmpty: [#()]
-					ifNotEmpty:
-						[aCompiledMethod embeddedBlockClosures
-							with: (schematicTemps first = $[
-									ifTrue: [schematicTemps piecesCutWhere: [:a :b| b = $[]]
-									ifFalse: [(schematicTemps piecesCutWhere: [:a :b| b = $[]) allButFirst])
-							collect: [:c :s| c startpc -> (self decomposeSchematicTemps: (s copyWithoutAll: '[]'))]]))]
-]
-
-{ #category : #'accessing class hierarchy' }
+{ #category : 'accessing class hierarchy' }
 Cogit class >> chooseCogitClass [
 	^Smalltalk at: ([:choices| choices at: (UIManager default chooseFrom: choices) ifAbsent: [^nil]]
 						value: (Cogit allSubclasses collect: [:ea| ea  name]) sorted)
 ]
 
-{ #category : #'in-image compilation' }
-Cogit class >> cog: aCompiledMethod [
-	^self cog: aCompiledMethod options: #()
-]
-
-{ #category : #'in-image compilation' }
-Cogit class >> cog: aCompiledMethod options: optionsArray [
-	^self cog: aCompiledMethod selectorOrNumCopied: aCompiledMethod selector options: optionsArray
-]
-
-{ #category : #'in-image compilation' }
-Cogit class >> cog: aCompiledMethod selector: aSelector [
-	^self cog: aCompiledMethod selectorOrNumCopied: aSelector options: #()
-]
-
-{ #category : #'in-image compilation' }
-Cogit class >> cog: aCompiledMethod selectorOrNumCopied: selectorOrNumCopied options: optionsDictionaryOrArray [
-	"StackToRegisterMappingCogit cog: (Integer >> #benchFib) selector: #benchFib options: #()"
-	| cogit coInterpreter |
-	cogit := self initializedInstanceForTests: optionsDictionaryOrArray.
-	coInterpreter := cogit coInterpreter.
-	self attemptToComputeTempNamesFor: aCompiledMethod.
-	self attemptToComputeInstVarNamesFor: aCompiledMethod.
-	^{ coInterpreter.
-		cogit.
-		selectorOrNumCopied isInteger
-			ifTrue: [ cogit cogFullBlockMethod: (coInterpreter oopForObject: aCompiledMethod) numCopied: selectorOrNumCopied ]
-			ifFalse: [ cogit cog: (coInterpreter oopForObject: aCompiledMethod) selector: (coInterpreter oopForObject: selectorOrNumCopied) ] }
-]
-
-{ #category : #documentation }
+{ #category : 'documentation' }
 Cogit class >> cogToBytecodeMethodMapping [
 	"When first written the VM maintained a one-to-one mapping between bytecoded methods and cog methods.
 	The map is implemented with a direct reference form the methodObject field of a CogMethod to the bytecoded
@@ -494,23 +433,17 @@ Cogit class >> cogToBytecodeMethodMapping [
 	to reset the bytecoded method's header if it is referring to the freed CogMethod."
 ]
 
-{ #category : #translation }
+{ #category : 'translation' }
 Cogit class >> declareCVarsIn: aCCodeGenerator [
 
 	#( 'coInterpreter' 'objectMemory' 'methodZone' 'objectRepresentation'
-	   'cogBlockMethodSurrogateClass' 'cogMethodSurrogateClass'
+	   'cogMethodSurrogateClass'
 	   'processor' 'lastNInstructions' 'simulatedAddresses'
 	   'simulatedTrampolines' 'simulatedVariableGetters'
 	   'simulatedVariableSetters' 'printRegisters' 'printInstructions'
 	   'clickConfirm' 'singleStep' ) do: [
 		:simulationVariableNotNeededForRealVM |
 		aCCodeGenerator removeVariable: simulationVariableNotNeededForRealVM ].
-	#( 'selfSendTrampolines' 'dynamicSuperSendTrampolines'
-	   'implicitReceiverSendTrampolines'
-	   'outerSendTrampolines' 'ceEnclosingObjectTrampoline'
-	   'numIRCs' 'indexOfIRC' 'theIRCs' ) do: [
-		:variableNotNeededInNormalVM |
-		aCCodeGenerator removeVariable: variableNotNeededInNormalVM ].
 
 	aCCodeGenerator
 		addHeaderFile: '<stddef.h>';
@@ -616,28 +549,14 @@ Cogit class >> declareCVarsIn: aCCodeGenerator [
 	"In C the abstract opcode names clash with the Smalltak generator syntactic sugar.
 	 Most of the syntactic sugar is inlined, but alas some remains.  Rename the syntactic
 	 sugar to avoid the clash."
-	(self organization listAtCategoryNamed:
-		 #'abstract instructions') do: [ :s |
+	(self selectorsInProtocol: #'abstract instructions') do: [ :s |
 		aCCodeGenerator
 			addSelectorTranslation: s
 			to: 'g' , (aCCodeGenerator cFunctionNameFor: s) ].
 	aCCodeGenerator addSelectorTranslation: #halt: to: 'haltmsg'
 ]
 
-{ #category : #'in-image compilation support' }
-Cogit class >> decomposeSchematicTemps: aString [
-	^Array streamContents:
-		[:ws| | rs |
-		rs := aString readStream.
-		[rs atEnd] whileFalse:
-			[ws nextPut: (rs peek = $(
-						ifTrue: [[rs upThrough: $)]
-									on: MessageNotUnderstood
-									do: [:ex| (rs upTo: $)), ')']]
-						ifFalse: [rs upTo: Character space])]]
-]
-
-{ #category : #'C translation' }
+{ #category : 'translation' }
 Cogit class >> defineAtCompileTime: anObject [
 	"Override to define at translation time those variables that need to
 	 be defined at compile time only in plugins, but not in the main VM,
@@ -649,21 +568,13 @@ Cogit class >> defineAtCompileTime: anObject [
 	^VMBasicConstants namesDefinedAtCompileTime includes: anObject
 ]
 
-{ #category : #translation }
+{ #category : 'translation' }
 Cogit class >> doInlining [
 	"inline only those methods that are marked with <inline: true>"
 	^#asSpecifiedOrQuick
 ]
 
-{ #category : #'in-image compilation' }
-Cogit class >> genAndDisPICoptions: optionsDictionaryOrArray [
-	"StackToRegisterMappingCogit genAndDisPICoptions: #(ISA ARMv5 CogCompilerClass CogOutOfLineLiteralsARMCompiler)"
-	| cogit |
-	cogit := self initializedInstanceForTests: optionsDictionaryOrArray.
-	cogit disassembleFrom: cogit cPICPrototype + (cogit sizeof: CogMethod) to: cogit cPICPrototype + cogit closedPICSize
-]
-
-{ #category : #translation }
+{ #category : 'translation' }
 Cogit class >> generateCodeStringForCogitDotC [
 	"Generate a skeletal cogit.c that includes the relevant cogitFOO.c
 	 for the appropriate subclasses of CogAbstractInstruction.
@@ -705,12 +616,12 @@ Cogit class >> generateCodeStringForCogitDotC [
 	^string copyReplaceFrom: insertPosition to: insertPosition - 1 with: defaultDef
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 Cogit class >> generatorTable [
 	^generatorTable
 ]
 
-{ #category : #'class initialization' }
+{ #category : 'class initialization' }
 Cogit class >> generatorTableFrom: anArray [
 	generatorTable := CArrayAccessor on: (Array new: 256).
 	anArray do:
@@ -758,18 +669,18 @@ Cogit class >> generatorTableFrom: anArray [
 	^generatorTable
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 Cogit class >> guardPageSize [
 	^1024
 ]
 
-{ #category : #translation }
+{ #category : 'translation' }
 Cogit class >> implicitReturnTypeFor: aSelector [
 	"Answer the return type for methods that don't have an explicit return."
 	^#void
 ]
 
-{ #category : #'class initialization' }
+{ #category : 'class initialization' }
 Cogit class >> initializeAnnotationConstants [
 	"These form the method map for a cog method.  The map defines which addresses
 	 in a machine code method are ones with important functions, such as being a send
@@ -863,7 +774,7 @@ Cogit class >> initializeAnnotationConstants [
 										{'IsRelativeCall:\HasBytecodePC' withCRs}
 ]
 
-{ #category : #'class initialization' }
+{ #category : 'class initialization' }
 Cogit class >> initializeBytecodeTable [
 
 	"SimpleStackBasedCogit initializeBytecodeTableWith: Dictionary new"
@@ -881,12 +792,12 @@ Cogit class >> initializeBytecodeTable [
 		cogitClass perform: initializer ]
 ]
 
-{ #category : #'class initialization' }
+{ #category : 'class initialization' }
 Cogit class >> initializeCogMethodConstants [
 	CMMegamorphicIC := 1 + (CMPolymorphicIC := 1 + (CMMethod := 1 + (CMFree := 1)))
 ]
 
-{ #category : #'class initialization' }
+{ #category : 'class initialization' }
 Cogit class >> initializeErrorCodes [
 	"External errors, returned to or from cog:selector:"
 	NotFullyInitialized := -1.
@@ -905,7 +816,7 @@ Cogit class >> initializeErrorCodes [
 	CompletePrimitive := 4 "Answered by a primitive generator that does not bneed to fall back on the interpreter primitive except for an error code."
 ]
 
-{ #category : #'class initialization' }
+{ #category : 'class initialization' }
 Cogit class >> initializeMiscConstants [
 	super initializeMiscConstants.
 	Debug := InitializationOptions at: #Debug ifAbsent: [false].
@@ -937,14 +848,14 @@ Cogit class >> initializeMiscConstants [
 	MaxNumberOfAbstractOpcodes := 32768.
 ]
 
-{ #category : #'class initialization' }
+{ #category : 'class initialization' }
 Cogit class >> initializeNumTrampolines [
 	NumTrampolines := self numTrampolines
 						+ self objectRepresentationClass numTrampolines
 						+ (BytecodeSetHasDirectedSuperSend ifTrue: [NumSendTrampolines * 2] ifFalse: [0])
 ]
 
-{ #category : #'class initialization' }
+{ #category : 'class initialization' }
 Cogit class >> initializePrimitiveTable [
 	"Initialize the table of primitive generators.  This does not include normal primitives implemented in the coInterpreter.
 	 N.B. primitives that don't have an explicit arg count (the integer following the generator) may be variadic."
@@ -1151,6 +1062,8 @@ Cogit class >> initializePrimitiveTable [
 
 		"(221 genPrimitiveClosureValue	0)" "valueNoContextSwitch"
 		"(222 genPrimitiveClosureValue	1)" "valueNoContextSwitch:"
+			
+		(231 genPrimitiveFormat 0)                                                                     "AVERRRRRRRRRRRRRRRR"
 
 		"SmallFloat primitives (540-559)"
 		(541 genPrimitiveSmallFloatAdd				1)
@@ -1252,55 +1165,24 @@ Cogit class >> initializeWithOptions: optionsDictionary [
 	self initializePrimitiveTable
 ]
 
-{ #category : #'in-image compilation support' }
-Cogit class >> initializedInstanceForTests: optionsDictionaryOrArray [
-	"Answer an instance of a Cogit suitable for running tests that has initialized
-	 its method zone (generated trampolines etc)"
-	| cogit coInterpreter |
-	cogit := self instanceForTests: optionsDictionaryOrArray.
-	coInterpreter := CurrentImageCoInterpreterFacade forCogit: cogit.
-	[cogit
-		setInterpreter: coInterpreter;
-		singleStep: true;
-		initializeCodeZoneFrom: 1024 upTo: coInterpreter memory size.
-	 cogit methodZone freeStart: (cogit methodZone freeStart roundUpTo: 1024)]
-		on: Notification
-		do: [:ex|
-			(ex messageText beginsWith: 'cannot find receiver for') ifTrue:
-				[ex resume: coInterpreter].
-			ex pass].
-	^cogit
-]
-
-{ #category : #'in-image compilation support' }
-Cogit class >> instanceForTests: optionsDictionaryOrArray [
-	"Initialize all the relevant classes from the options and answer a new instance of me."
-	| initOptions |
-	initOptions := self asOptionsDictionary: optionsDictionaryOrArray.
-	CoInterpreter initializeWithOptions: initOptions.
-	CoInterpreter objectMemoryClass initializeWithOptions: initOptions.
-	self initializeWithOptions: initOptions.
-	^self new
-]
-
-{ #category : #translation }
+{ #category : 'translation' }
 Cogit class >> isAcceptableAncilliaryClass: aClass [
 	^aClass ~~ CogSSBytecodeFixup
 ]
 
-{ #category : #translation }
+{ #category : 'translation' }
 Cogit class >> isCogitClass [
 	^true
 ]
 
-{ #category : #translation }
+{ #category : 'translation' }
 Cogit class >> isNonArgumentImplicitReceiverVariableName: aString [
 	^#('cogit' 'coInterpreter'
 		'methodZone' 'literalsManager'
 		'objectMemory' 'objectRepresentation' 'manager') includes: aString
 ]
 
-{ #category : #'in-image compilation support' }
+{ #category : 'in-image compilation support' }
 Cogit class >> isSistaMessage: aMessageOrSelector unimplementedIn: aClass [
 	| selector |
 	selector := aMessageOrSelector selector.
@@ -1308,41 +1190,45 @@ Cogit class >> isSistaMessage: aMessageOrSelector unimplementedIn: aClass [
 	   and: [(aClass includesSelector: selector) not]
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 Cogit class >> maxNegativeErrorCode [
 	^MaxNegativeErrorCode
 ]
 
-{ #category : #'accessing class hierarchy' }
+{ #category : 'accessing class hierarchy' }
 Cogit class >> methodZoneClass [
 	^CogMethodZone
 ]
 
-{ #category : #translation }
+{ #category : 'translation' }
 Cogit class >> mustBeGlobal: var [
 	"Answer if a variable must be global and exported.  Used for inst vars that are accessed from VM
 	 support code.  include cePositive32BitIntegerTrampoline as a hack to prevent it being inlined (it is
 	 only used outside of Cogit by the object representation).  Include CFramePointer CStackPointer as
 	 a hack to get them declared at all."
-	^#(	'ceBaseFrameReturnTrampoline' #ceCaptureCStackPointers 'ceCheckForInterruptTrampoline'
-		ceEnterCogCodePopReceiverReg realCEEnterCogCodePopReceiverReg
-		ceCallCogCodePopReceiverReg realCECallCogCodePopReceiverReg
-		ceCallCogCodePopReceiverAndClassRegs realCECallCogCodePopReceiverAndClassRegs
-		'ceReturnToInterpreterTrampoline' 'ceCannotResumeTrampoline'
-		ceTryLockVMOwner ceUnlockVMOwner
-		'cmEntryOffset' 'cmNoCheckEntryOffset' 'cmDynSuperEntryOffset' 'cmSelfSendEntryOffset'
-		'missOffset' 'cbEntryOffset' 'cbNoSwitchEntryOffset' 'blockNoContextSwitchOffset' breakPC
-		CFramePointer CStackPointer 'cFramePointerInUse' ceGetFP ceGetSP
-		traceFlags 'traceStores' debugPrimCallStackOffset)
-			includes: var
+
+	^ #( 'ceBaseFrameReturnTrampoline' #ceCaptureCStackPointers
+	     'ceCheckForInterruptTrampoline' ceEnterCogCodePopReceiverReg
+	     realCEEnterCogCodePopReceiverReg
+	     ceCallCogCodePopReceiverReg realCECallCogCodePopReceiverReg
+	     ceCallCogCodePopReceiverAndClassRegs
+	     realCECallCogCodePopReceiverAndClassRegs
+	     'ceReturnToInterpreterTrampoline'
+	     'ceCannotResumeTrampoline' ceTryLockVMOwner ceUnlockVMOwner
+	     'cmEntryOffset' 'cmNoCheckEntryOffset' 'cmDynSuperEntryOffset'
+	     'cmSelfSendEntryOffset' 'missOffset' 'cbEntryOffset'
+	     'cbNoSwitchEntryOffset' 'blockNoContextSwitchOffset'
+	     CFramePointer CStackPointer 'cFramePointerInUse'
+	     ceGetFP ceGetSP traceFlags 'traceStores' debugPrimCallStackOffset )
+		  includes: var
 ]
 
-{ #category : #translation }
+{ #category : 'translation' }
 Cogit class >> namesOfVariablesToLocalize [
 	^#()
 ]
 
-{ #category : #documentation }
+{ #category : 'documentation' }
 Cogit class >> notesAndQueries [
 	"Mitigating cost of bytecode to machinecode pc mapping.
 		HPS's scheme is to allow contexts to contain machine-code pcs in the form of negative pc values.
@@ -1359,14 +1245,14 @@ Cogit class >> notesAndQueries [
 		inconvenience since we scan anyway to divorce or widow married contexts."
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 Cogit class >> numTrampolines [
 	^39 "31 + 4 each for self and super sends"
 
 	"self withAllSubclasses collect: [:c| {c. (c instVarNames select: [:ea| ea beginsWith: 'ce']) size}]"
 ]
 
-{ #category : #translation }
+{ #category : 'translation' }
 Cogit class >> preGenerationHook: aCCodeGenerator [
 	"Perform any last-minute changes to the code generator immediately
 	 before it performs code analysis and generation.  In this case, make
@@ -1380,23 +1266,23 @@ Cogit class >> preGenerationHook: aCCodeGenerator [
 					[m static: true]]]
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 Cogit class >> primitiveTable [
 	^primitiveTable
 ]
 
-{ #category : #translation }
+{ #category : 'translation' }
 Cogit class >> processorSpecificSourceFileName [
 	^self activeCompilerClass moduleName, '.c'
 ]
 
-{ #category : #translation }
+{ #category : 'translation' }
 Cogit class >> requiredMethodNames: options [
 	"self requiredMethodNames"
 	^self tableFunctions
 ]
 
-{ #category : #documentation }
+{ #category : 'documentation' }
 Cogit class >> runtime [
 	"Generated machine code makes use of a number of run-time routines for support, for executing certain primitives,
 	 and for event handling.  These run-time entry points all begin with ce, for ``code entry''.  They are called from
@@ -1480,24 +1366,24 @@ Cogit class >> runtime [
 		ceSendAbort:to:numArgs: not a code entry.  Used by ceCannotResume, ceSendMustBeBoolean et al to execute their sends"
 ]
 
-{ #category : #translation }
+{ #category : 'translation' }
 Cogit class >> shouldGenerateTypedefFor: aStructClass [
 	"Hack to work-around mutliple definitions.  Sometimes a type has been defined in an include."
 	^({ CogMethod. SistaCogMethod } includes: aStructClass) not
 ]
 
-{ #category : #translation }
+{ #category : 'translation' }
 Cogit class >> sourceFileName [
 	^'cogit.c'
 ]
 
-{ #category : #translation }
+{ #category : 'translation' }
 Cogit class >> specialValueForConstant: constantName default: defaultValue [
 	constantName = 'Debug' ifTrue: [^'DEBUGVM'].
 	^CoInterpreter specialValueForConstant: constantName default: defaultValue
 ]
 
-{ #category : #tests }
+{ #category : 'tests' }
 Cogit class >> structureOfACogMethod [
 	"A CogMethod is the machine code for executable code in the Cog VM, and in the simulator these are
 	 instances of CogMethod.  In actuality they are structures in memory in the CogMethodZone..  There
@@ -1529,7 +1415,7 @@ Cogit class >> structureOfACogMethod [
 	 machine code pcs by scanning both bytecode and machine code looking for matching points in the map."
 ]
 
-{ #category : #translation }
+{ #category : 'translation' }
 Cogit class >> tableFunctions [
 	"self tableFunctions"
 	self cogitClass ~= self ifTrue: [^Set new].
@@ -1550,7 +1436,7 @@ Cogit class >> tableFunctions [
 		asSortedCollection: [:a :b| a caseInsensitiveLessOrEqual: b]
 ]
 
-{ #category : #translation }
+{ #category : 'translation' }
 Cogit class >> tableInitializerFor: aTable in: aCCodeGenerator [
 	^String streamContents:
 		[:s|
@@ -1563,7 +1449,7 @@ Cogit class >> tableInitializerFor: aTable in: aCCodeGenerator [
 		s cr; nextPut: $}]
 ]
 
-{ #category : #documentation }
+{ #category : 'documentation' }
 Cogit class >> trampolines [
 	"Trampolines are called from machine-code for a number of tasks (e.g. doing an unlinked send,
 	 creating a closure, doing a non-local return, etc, etc.
@@ -1643,7 +1529,7 @@ ceTraceStoreTrampoline
 	return pc left on stack because ceTraceStore always returns directly"
 ]
 
-{ #category : #translation }
+{ #category : 'translation' }
 Cogit class >> translateableInstructionSubclassesAndInstalledOptionsDo: aBlock [
 	"Evaluate aBlock with the translateable subclass and its options installed, being careful to clean-up afterwards."
 	CogAbstractInstruction translateableSubclassesAndOptions do:
@@ -1660,61 +1546,61 @@ Cogit class >> translateableInstructionSubclassesAndInstalledOptionsDo: aBlock [
 			valueWithArguments: pair]
 ]
 
-{ #category : #translation }
+{ #category : 'translation' }
 Cogit class >> typeForSelf [
 	^#implicit
 ]
 
-{ #category : #'abstract instructions' }
+{ #category : 'abstract instructions' }
 Cogit >> AddCq: quickConstant R: reg [
 	<inline: true>
 	<returnTypeC: #'AbstractInstruction *'>
 	^self gen: AddCqR quickConstant: quickConstant operand: reg
 ]
 
-{ #category : #'abstract instructions' }
+{ #category : 'abstract instructions' }
 Cogit >> AddCw: wordConstant R: reg [
 	<inline: true>
 	<returnTypeC: #'AbstractInstruction *'>
 	^self gen: AddCwR literal: wordConstant operand: reg
 ]
 
-{ #category : #'abstract instructions' }
+{ #category : 'abstract instructions' }
 Cogit >> AddR: reg1 R: reg2 [
 	<inline: true>
 	<returnTypeC: #'AbstractInstruction *'>
 	^self gen: AddRR operand: reg1 operand: reg2
 ]
 
-{ #category : #'abstract instructions' }
+{ #category : 'abstract instructions' }
 Cogit >> AddRd: dpreg1 Rd: dpreg2 [
 	<inline: true>
 	<returnTypeC: #'AbstractInstruction *'>
 	^self gen: AddRdRd operand: dpreg1 operand: dpreg2
 ]
 
-{ #category : #'abstract instructions' }
+{ #category : 'abstract instructions' }
 Cogit >> AddRs: dpreg1 Rs: dpreg2 [
 	<inline: true>
 	<returnTypeC: #'AbstractInstruction *'>
 	^self gen: AddRsRs operand: dpreg1 operand: dpreg2
 ]
 
-{ #category : #'abstract instructions' }
+{ #category : 'abstract instructions' }
 Cogit >> AddcCq: quickConstant R: reg [
 	<inline: true>
 	<returnTypeC: #'AbstractInstruction *'>
 	^self gen: AddcCqR quickConstant: quickConstant operand: reg
 ]
 
-{ #category : #'abstract instructions' }
+{ #category : 'abstract instructions' }
 Cogit >> AddcR: reg1 R: reg2 [
 	<inline: true>
 	<returnTypeC: #'AbstractInstruction *'>
 	^self gen: AddcRR operand: reg1 operand: reg2
 ]
 
-{ #category : #'abstract instructions' }
+{ #category : 'abstract instructions' }
 Cogit >> AlignedSt1S: aSize Vr: aVectorRegister R: aMemoryRegister Mw: anOffset [ 
 	^ self
 		  gen: AlignedSt1VrRMw
@@ -1724,21 +1610,21 @@ Cogit >> AlignedSt1S: aSize Vr: aVectorRegister R: aMemoryRegister Mw: anOffset 
 		  operand: anOffset 
 ]
 
-{ #category : #'abstract instructions' }
+{ #category : 'abstract instructions' }
 Cogit >> AlignmentNops: alignment [
 	<inline: true>
 	<returnTypeC: #'AbstractInstruction *'>
 	^self gen: AlignmentNops operand: alignment
 ]
 
-{ #category : #'abstract instructions' }
+{ #category : 'abstract instructions' }
 Cogit >> AndCq: quickConstant R: reg [
 	<inline: true>
 	<returnTypeC: #'AbstractInstruction *'>
 	^self gen: AndCqR quickConstant: quickConstant operand: reg
 ]
 
-{ #category : #'abstract instructions' }
+{ #category : 'abstract instructions' }
 Cogit >> AndCq: quickConstant R: srcReg R: destReg [
 	<inline: false>
 	<returnTypeC: #'AbstractInstruction *'>
@@ -1753,49 +1639,49 @@ Cogit >> AndCq: quickConstant R: srcReg R: destReg [
 	^first
 ]
 
-{ #category : #'abstract instructions' }
+{ #category : 'abstract instructions' }
 Cogit >> AndCw: wordConstant R: reg [
 	<inline: true>
 	<returnTypeC: #'AbstractInstruction *'>
 	^self gen: AndCwR literal: wordConstant operand: reg
 ]
 
-{ #category : #'abstract instructions' }
+{ #category : 'abstract instructions' }
 Cogit >> AndR: reg1 R: reg2 [
 	<inline: true>
 	<returnTypeC: #'AbstractInstruction *'>
 	^self gen: AndRR operand: reg1 operand: reg2
 ]
 
-{ #category : #'abstract instructions' }
+{ #category : 'abstract instructions' }
 Cogit >> ArithmeticShiftRightCq: quickConstant R: reg [
 	<inline: true>
 	<returnTypeC: #'AbstractInstruction *'>
 	^self gen: ArithmeticShiftRightCqR operand: quickConstant operand: reg
 ]
 
-{ #category : #'abstract instructions' }
+{ #category : 'abstract instructions' }
 Cogit >> ArithmeticShiftRightR: reg1 R: reg2 [
 	<inline: true>
 	<returnTypeC: #'AbstractInstruction *'>
 	^self gen: ArithmeticShiftRightRR operand: reg1 operand: reg2
 ]
 
-{ #category : #'abstract instructions' }
+{ #category : 'abstract instructions' }
 Cogit >> Call: callTarget [ 
 	<inline: true>
 	<returnTypeC: #'AbstractInstruction *'>
 	^self gen: Call operand: callTarget
 ]
 
-{ #category : #'abstract instructions' }
+{ #category : 'abstract instructions' }
 Cogit >> CallFull: jumpTarget [
 	<inline: true>
 	<returnTypeC: #'AbstractInstruction *'>
 	^self gen: CallFull literal: jumpTarget
 ]
 
-{ #category : #'method map' }
+{ #category : 'method map' }
 Cogit >> CallFullRT: callTarget [
 	"Big assumption here that calls and jumps look the same as regards their displacement.
 	 This works on at least x86, ARM and x86_64.
@@ -1808,7 +1694,7 @@ Cogit >> CallFullRT: callTarget [
 		ifFalse: [self CallFull: callTarget]
 ]
 
-{ #category : #'compile abstract instructions' }
+{ #category : 'compile abstract instructions' }
 Cogit >> CallFullRT: callTarget registersToBeSavedMask: registersToBeSaved [
 	<returnTypeC: #'AbstractInstruction *'>
 	| callerSavedRegsToBeSaved lastInst reg registersToBePushed |
@@ -1839,14 +1725,14 @@ Cogit >> CallFullRT: callTarget registersToBeSavedMask: registersToBeSaved [
 			 ^lastInst]
 ]
 
-{ #category : #'abstract instructions' }
+{ #category : 'abstract instructions' }
 Cogit >> CallR: callTarget [ 
 	<inline: true>
 	<returnTypeC: #'AbstractInstruction *'>
 	^self gen: CallR operand: callTarget
 ]
 
-{ #category : #'method map' }
+{ #category : 'method map' }
 Cogit >> CallRT: callTarget [
 	"Big assumption here that calls and jumps look the same as regards their displacement.
 	 This works on at least x86, ARM and x86_64."
@@ -1855,7 +1741,7 @@ Cogit >> CallRT: callTarget [
 	^self annotateCall: (self Call: callTarget)
 ]
 
-{ #category : #'compile abstract instructions' }
+{ #category : 'compile abstract instructions' }
 Cogit >> CallRT: callTarget registersToBeSavedMask: registersToBeSaved [
 	<returnTypeC: #'AbstractInstruction *'>
 	| callerSavedRegsToBeSaved lastInst reg registersToBePushed |
@@ -1886,7 +1772,7 @@ Cogit >> CallRT: callTarget registersToBeSavedMask: registersToBeSaved [
 			 ^lastInst]
 ]
 
-{ #category : #'abstract instructions' }
+{ #category : 'abstract instructions' }
 Cogit >> CmpC32: wordConstant R: reg [
 	"Generate a CmpC32R instruction to compare a 32-bit constant with a
 	 register.  If this is a 32-bit platform, simply generate a CmpCwR instruction,
@@ -1901,84 +1787,84 @@ Cogit >> CmpC32: wordConstant R: reg [
 		operand: reg
 ]
 
-{ #category : #'abstract instructions' }
+{ #category : 'abstract instructions' }
 Cogit >> CmpCq: quickConstant R: reg [
 	<inline: true>
 	<returnTypeC: #'AbstractInstruction *'>
 	^self gen: CmpCqR quickConstant: quickConstant operand: reg
 ]
 
-{ #category : #'abstract instructions' }
+{ #category : 'abstract instructions' }
 Cogit >> CmpCw: wordConstant R: reg [
 	<inline: true>
 	<returnTypeC: #'AbstractInstruction *'>
 	^self gen: CmpCwR literal: wordConstant operand: reg
 ]
 
-{ #category : #'abstract instructions' }
+{ #category : 'abstract instructions' }
 Cogit >> CmpR: reg1 R: reg2 [
 	<inline: true>
 	<returnTypeC: #'AbstractInstruction *'>
 	^self gen: CmpRR operand: reg1 operand: reg2
 ]
 
-{ #category : #'abstract instructions' }
+{ #category : 'abstract instructions' }
 Cogit >> CmpRd: dpreg1 Rd: dpreg2 [
 	<inline: true>
 	<returnTypeC: #'AbstractInstruction *'>
 	^self gen: CmpRdRd operand: dpreg1 operand: dpreg2
 ]
 
-{ #category : #'abstract instructions' }
+{ #category : 'abstract instructions' }
 Cogit >> CmpRs: dpreg1 Rs: dpreg2 [
 	<inline: true>
 	<returnTypeC: #'AbstractInstruction *'>
 	^self gen: CmpRsRs operand: dpreg1 operand: dpreg2
 ]
 
-{ #category : #'abstract instructions' }
+{ #category : 'abstract instructions' }
 Cogit >> ConvertR: reg1 Rd: dpreg2 [
 	<inline: true>
 	<returnTypeC: #'AbstractInstruction *'>
 	^self gen: ConvertRRd operand: reg1 operand: dpreg2
 ]
 
-{ #category : #'abstract instructions' }
+{ #category : 'abstract instructions' }
 Cogit >> ConvertR: reg1 Rs: dpreg2 [
 	<inline: true>
 	<returnTypeC: #'AbstractInstruction *'>
 	^self gen: ConvertRRs operand: reg1 operand: dpreg2
 ]
 
-{ #category : #'abstract instructions' }
+{ #category : 'abstract instructions' }
 Cogit >> ConvertRd: reg1 R: dpreg2 [
 	<inline: true>
 	<returnTypeC: #'AbstractInstruction *'>
 	^self gen: ConvertRdR operand: reg1 operand: dpreg2
 ]
 
-{ #category : #'abstract instructions' }
+{ #category : 'abstract instructions' }
 Cogit >> ConvertRd: reg1 Rs: dpreg2 [
 	<inline: true>
 	<returnTypeC: #'AbstractInstruction *'>
 	^self gen: ConvertRdRs operand: reg1 operand: dpreg2
 ]
 
-{ #category : #'abstract instructions' }
+{ #category : 'abstract instructions' }
 Cogit >> ConvertRs: reg1 R: dpreg2 [
 	<inline: true>
 	<returnTypeC: #'AbstractInstruction *'>
 	^self gen: ConvertRsR operand: reg1 operand: dpreg2
 ]
 
-{ #category : #'abstract instructions' }
+{ #category : 'abstract instructions' }
 Cogit >> ConvertRs: reg1 Rd: dpreg2 [
 	<inline: true>
 	<returnTypeC: #'AbstractInstruction *'>
 	^self gen: ConvertRsRd operand: reg1 operand: dpreg2
 ]
 
-{ #category : #'abstract instructions' }
+{ #category : 'abstract instructions' }
 Cogit >> DivR: rDivisor R: rDividend Quo: rQuotient Rem: rRemainder [
 	"Division is a little weird on some processors.  Defer to the backEnd
 	 to allow it to generate any special code it may need to."
@@ -1988,21 +1874,21 @@ Cogit >> DivR: rDivisor R: rDividend Quo: rQuotient Rem: rRemainder [
 	^self abstractInstructionAt: opcodeIndex - 1
 ]
 
-{ #category : #'abstract instructions' }
+{ #category : 'abstract instructions' }
 Cogit >> DivRd: dpreg1 Rd: dpreg2 [
 	<inline: true>
 	<returnTypeC: #'AbstractInstruction *'>
 	^self gen: DivRdRd operand: dpreg1 operand: dpreg2
 ]
 
-{ #category : #'abstract instructions' }
+{ #category : 'abstract instructions' }
 Cogit >> DivRs: dpreg1 Rs: dpreg2 [
 	<inline: true>
 	<returnTypeC: #'AbstractInstruction *'>
 	^self gen: DivRsRs operand: dpreg1 operand: dpreg2
 ]
 
-{ #category : #'abstract instructions' }
+{ #category : 'abstract instructions' }
 Cogit >> DupS: aSize R: aGeneralRegister Vr: aVectorRegister [
 
 	^ self
@@ -2012,7 +1898,7 @@ Cogit >> DupS: aSize R: aGeneralRegister Vr: aVectorRegister [
 		  operand: aVectorRegister
 ]
 
-{ #category : #'abstract instructions' }
+{ #category : 'abstract instructions' }
 Cogit >> FaddS: aSize Rv: vectorRegister1 Rv: vectorRegister2 Rv: vectorRegisterSum [ 
 	^ self
 		  gen: FaddSRvRvRv
@@ -2022,14 +1908,14 @@ Cogit >> FaddS: aSize Rv: vectorRegister1 Rv: vectorRegister2 Rv: vectorRegister
 		  operand: vectorRegisterSum
 ]
 
-{ #category : #'abstract instructions' }
+{ #category : 'abstract instructions' }
 Cogit >> Fill32: value [
 	<inline: true>
 	<returnTypeC: #'AbstractInstruction *'>
 	^self gen: Fill32 operand: value
 ]
 
-{ #category : #'abstract instructions' }
+{ #category : 'abstract instructions' }
 Cogit >> FsubS: aSize Rv: minuendVectorRegister Rv: subtrahendVectorRegister Rv: vectorRegisterSum [ 
 	^ self
 		  gen: FsubSRvRvRv
@@ -2039,7 +1925,7 @@ Cogit >> FsubS: aSize Rv: minuendVectorRegister Rv: subtrahendVectorRegister Rv:
 		  operand: vectorRegisterSum
 ]
 
-{ #category : #'abstract instructions' }
+{ #category : 'abstract instructions' }
 Cogit >> Jump: jumpTarget [
 	<inline: true>
 	<returnTypeC: #'AbstractInstruction *'>
@@ -2047,7 +1933,7 @@ Cogit >> Jump: jumpTarget [
 	^self gen: Jump operand: jumpTarget asInteger
 ]
 
-{ #category : #'abstract instructions' }
+{ #category : 'abstract instructions' }
 Cogit >> JumpAbove: jumpTarget [
 	<inline: true>
 	<returnTypeC: #'AbstractInstruction *'>
@@ -2055,7 +1941,7 @@ Cogit >> JumpAbove: jumpTarget [
 	^self genConditionalBranch: JumpAbove operand: jumpTarget asInteger
 ]
 
-{ #category : #'abstract instructions' }
+{ #category : 'abstract instructions' }
 Cogit >> JumpAboveOrEqual: jumpTarget [
 	<inline: true>
 	<returnTypeC: #'AbstractInstruction *'>
@@ -2063,7 +1949,7 @@ Cogit >> JumpAboveOrEqual: jumpTarget [
 	^self genConditionalBranch: JumpAboveOrEqual operand: jumpTarget asInteger
 ]
 
-{ #category : #'abstract instructions' }
+{ #category : 'abstract instructions' }
 Cogit >> JumpBelow: jumpTarget [
 	<inline: true>
 	<returnTypeC: #'AbstractInstruction *'>
@@ -2071,7 +1957,7 @@ Cogit >> JumpBelow: jumpTarget [
 	^self genConditionalBranch: JumpBelow operand: jumpTarget asInteger
 ]
 
-{ #category : #'abstract instructions' }
+{ #category : 'abstract instructions' }
 Cogit >> JumpBelowOrEqual: jumpTarget [
 	<inline: true>
 	<returnTypeC: #'AbstractInstruction *'>
@@ -2079,7 +1965,7 @@ Cogit >> JumpBelowOrEqual: jumpTarget [
 	^self genConditionalBranch: JumpBelowOrEqual operand: jumpTarget asInteger
 ]
 
-{ #category : #'abstract instructions' }
+{ #category : 'abstract instructions' }
 Cogit >> JumpCarry: jumpTarget [
 	<inline: true>
 	<returnTypeC: #'AbstractInstruction *'>
@@ -2087,7 +1973,7 @@ Cogit >> JumpCarry: jumpTarget [
 	^self genConditionalBranch: JumpCarry operand: jumpTarget asInteger
 ]
 
-{ #category : #'abstract instructions' }
+{ #category : 'abstract instructions' }
 Cogit >> JumpFPEqual: jumpTarget [
 	"Floating-point jumps are a little weird on some processors.  Defer to
 	 the backEnd to allow it to generate any special code it may need to."
@@ -2097,7 +1983,7 @@ Cogit >> JumpFPEqual: jumpTarget [
 	^backEnd genJumpFPEqual: jumpTarget
 ]
 
-{ #category : #'abstract instructions' }
+{ #category : 'abstract instructions' }
 Cogit >> JumpFPGreater: jumpTarget [
 	"Floating-point jumps are a little weird on some processors.  Defer to
 	 the backEnd to allow it to generate any special code it may need to."
@@ -2107,7 +1993,7 @@ Cogit >> JumpFPGreater: jumpTarget [
 	^backEnd genJumpFPGreater: jumpTarget
 ]
 
-{ #category : #'abstract instructions' }
+{ #category : 'abstract instructions' }
 Cogit >> JumpFPGreaterOrEqual: jumpTarget [
 	"Floating-point jumps are a little weird on some processors.  Defer to
 	 the backEnd to allow it to generate any special code it may need to."
@@ -2117,7 +2003,7 @@ Cogit >> JumpFPGreaterOrEqual: jumpTarget [
 	^backEnd genJumpFPGreaterOrEqual: jumpTarget
 ]
 
-{ #category : #'abstract instructions' }
+{ #category : 'abstract instructions' }
 Cogit >> JumpFPLess: jumpTarget [
 	"Floating-point jumps are a little weird on some processors.  Defer to
 	 the backEnd to allow it to generate any special code it may need to."
@@ -2127,7 +2013,7 @@ Cogit >> JumpFPLess: jumpTarget [
 	^backEnd genJumpFPLess: jumpTarget
 ]
 
-{ #category : #'abstract instructions' }
+{ #category : 'abstract instructions' }
 Cogit >> JumpFPLessOrEqual: jumpTarget [
 	"Floating-point jumps are a little weird on some processors.  Defer to
 	 the backEnd to allow it to generate any special code it may need to."
@@ -2137,7 +2023,7 @@ Cogit >> JumpFPLessOrEqual: jumpTarget [
 	^backEnd genJumpFPLessOrEqual: jumpTarget
 ]
 
-{ #category : #'abstract instructions' }
+{ #category : 'abstract instructions' }
 Cogit >> JumpFPNotEqual: jumpTarget [
 	"Floating-point jumps are a little weird on some processors.  Defer to
 	 the backEnd to allow it to generate any special code it may need to."
@@ -2147,14 +2033,14 @@ Cogit >> JumpFPNotEqual: jumpTarget [
 	^backEnd genJumpFPNotEqual: jumpTarget
 ]
 
-{ #category : #'abstract instructions' }
+{ #category : 'abstract instructions' }
 Cogit >> JumpFull: jumpTarget [
 	<inline: true>
 	<returnTypeC: #'AbstractInstruction *'>
 	^self gen: JumpFull literal: jumpTarget asInteger
 ]
 
-{ #category : #'method map' }
+{ #category : 'method map' }
 Cogit >> JumpFullRT: callTarget [
 	"Big assumption here that calls and jumps look the same as regards their displacement.
 	 This works on at least x86, ARM and x86_64.
@@ -2167,7 +2053,7 @@ Cogit >> JumpFullRT: callTarget [
 		ifFalse: [self JumpFull: callTarget]
 ]
 
-{ #category : #'abstract instructions' }
+{ #category : 'abstract instructions' }
 Cogit >> JumpGreater: jumpTarget [
 	<inline: true>
 	<returnTypeC: #'AbstractInstruction *'>
@@ -2175,7 +2061,7 @@ Cogit >> JumpGreater: jumpTarget [
 	^self genConditionalBranch: JumpGreater operand: jumpTarget asInteger
 ]
 
-{ #category : #'abstract instructions' }
+{ #category : 'abstract instructions' }
 Cogit >> JumpGreaterOrEqual: jumpTarget [
 	<inline: true>
 	<returnTypeC: #'AbstractInstruction *'>
@@ -2183,7 +2069,7 @@ Cogit >> JumpGreaterOrEqual: jumpTarget [
 	^self genConditionalBranch: JumpGreaterOrEqual operand: jumpTarget asInteger
 ]
 
-{ #category : #'abstract instructions' }
+{ #category : 'abstract instructions' }
 Cogit >> JumpLess: jumpTarget [
 	<inline: true>
 	<returnTypeC: #'AbstractInstruction *'>
@@ -2191,7 +2077,7 @@ Cogit >> JumpLess: jumpTarget [
 	^self genConditionalBranch: JumpLess operand: jumpTarget asInteger
 ]
 
-{ #category : #'abstract instructions' }
+{ #category : 'abstract instructions' }
 Cogit >> JumpLessOrEqual: jumpTarget [
 	<inline: true>
 	<returnTypeC: #'AbstractInstruction *'>
@@ -2199,21 +2085,21 @@ Cogit >> JumpLessOrEqual: jumpTarget [
 	^self genConditionalBranch: JumpLessOrEqual operand: jumpTarget asInteger
 ]
 
-{ #category : #'abstract instructions' }
+{ #category : 'abstract instructions' }
 Cogit >> JumpLong: jumpTarget [
 	<inline: true>
 	<returnTypeC: #'AbstractInstruction *'>
 	^self gen: JumpLong operand: jumpTarget
 ]
 
-{ #category : #'abstract instructions' }
+{ #category : 'abstract instructions' }
 Cogit >> JumpLongNonZero: jumpTarget [
 	<inline: true>
 	<returnTypeC: #'AbstractInstruction *'>
 	^self genConditionalBranch: JumpLongNonZero operand: jumpTarget asInteger
 ]
 
-{ #category : #'abstract instructions' }
+{ #category : 'abstract instructions' }
 Cogit >> JumpLongZero: jumpTarget [
 	<inline: true>
 	<returnTypeC: #'AbstractInstruction *'>
@@ -2236,7 +2122,7 @@ Cogit >> JumpMultiplyOverflow: jumpTarget [
 	^ backEnd genJumpMultiplyOverflow: jumpTarget
 ]
 
-{ #category : #'abstract instructions' }
+{ #category : 'abstract instructions' }
 Cogit >> JumpNegative: jumpTarget [
 	<inline: true>
 	<returnTypeC: #'AbstractInstruction *'>
@@ -2244,7 +2130,7 @@ Cogit >> JumpNegative: jumpTarget [
 	^self genConditionalBranch: JumpNegative operand: jumpTarget asInteger
 ]
 
-{ #category : #'abstract instructions' }
+{ #category : 'abstract instructions' }
 Cogit >> JumpNoCarry: jumpTarget [
 	<inline: true>
 	<returnTypeC: #'AbstractInstruction *'>
@@ -2252,7 +2138,7 @@ Cogit >> JumpNoCarry: jumpTarget [
 	^self genConditionalBranch: JumpNoCarry operand: jumpTarget asInteger
 ]
 
-{ #category : #'abstract instructions' }
+{ #category : 'abstract instructions' }
 Cogit >> JumpNoOverflow: jumpTarget [
 	<inline: true>
 	<returnTypeC: #'AbstractInstruction *'>
@@ -2260,7 +2146,7 @@ Cogit >> JumpNoOverflow: jumpTarget [
 	^self genConditionalBranch: JumpNoOverflow operand: jumpTarget asInteger
 ]
 
-{ #category : #'abstract instructions' }
+{ #category : 'abstract instructions' }
 Cogit >> JumpNonNegative: jumpTarget [
 	<inline: true>
 	<returnTypeC: #'AbstractInstruction *'>
@@ -2268,7 +2154,7 @@ Cogit >> JumpNonNegative: jumpTarget [
 	^self genConditionalBranch: JumpNonNegative operand: jumpTarget asInteger
 ]
 
-{ #category : #'abstract instructions' }
+{ #category : 'abstract instructions' }
 Cogit >> JumpNonZero: jumpTarget [
 	<inline: true>
 	<returnTypeC: #'AbstractInstruction *'>
@@ -2276,7 +2162,7 @@ Cogit >> JumpNonZero: jumpTarget [
 	^self genConditionalBranch: JumpNonZero operand: jumpTarget asInteger
 ]
 
-{ #category : #'abstract instructions' }
+{ #category : 'abstract instructions' }
 Cogit >> JumpOverflow: jumpTarget [
 	<inline: true>
 	<returnTypeC: #'AbstractInstruction *'>
@@ -2284,14 +2170,14 @@ Cogit >> JumpOverflow: jumpTarget [
 	^self genConditionalBranch: JumpOverflow operand: jumpTarget asInteger
 ]
 
-{ #category : #'abstract instructions' }
+{ #category : 'abstract instructions' }
 Cogit >> JumpR: reg [
 	<inline: true>
 	<returnTypeC: #'AbstractInstruction *'>
 	^self gen: JumpR operand: reg
 ]
 
-{ #category : #'abstract instructions' }
+{ #category : 'abstract instructions' }
 Cogit >> JumpZero: jumpTarget [
 	<inline: true>
 	<returnTypeC: #'AbstractInstruction *'>
@@ -2299,14 +2185,14 @@ Cogit >> JumpZero: jumpTarget [
 	^self genConditionalBranch: JumpZero operand: jumpTarget asInteger
 ]
 
-{ #category : #'abstract instructions' }
+{ #category : 'abstract instructions' }
 Cogit >> Label [
 	<inline: true>
 	<returnTypeC: #'AbstractInstruction *'>
 	^self gen: Label operand: (labelCounter := labelCounter + 1) operand: bytecodePC
 ]
 
-{ #category : #'abstract instructions' }
+{ #category : 'abstract instructions' }
 Cogit >> Ld1S: aSize Vr: aVectorRegister R: aMemoryRegister Mw: anOffset [ 
 	^ self
 		  gen: Ld1VrRMw
@@ -2316,42 +2202,42 @@ Cogit >> Ld1S: aSize Vr: aVectorRegister R: aMemoryRegister Mw: anOffset [
 		  operand: anOffset 
 ]
 
-{ #category : #'abstract instructions' }
+{ #category : 'abstract instructions' }
 Cogit >> LoadEffectiveAddressMw: offset r: baseReg R: destReg [
 	<inline: true>
 	<returnTypeC: #'AbstractInstruction *'>
 	^self gen: LoadEffectiveAddressMwrR quickConstant: offset operand: baseReg operand: destReg
 ]
 
-{ #category : #'abstract instructions' }
+{ #category : 'abstract instructions' }
 Cogit >> LogicalShiftLeftCq: quickConstant R: reg [
 	<inline: true>
 	<returnTypeC: #'AbstractInstruction *'>
 	^self gen: LogicalShiftLeftCqR operand: quickConstant operand: reg
 ]
 
-{ #category : #'abstract instructions' }
+{ #category : 'abstract instructions' }
 Cogit >> LogicalShiftLeftR: reg1 R: reg2 [
 	<inline: true>
 	<returnTypeC: #'AbstractInstruction *'>
 	^self gen: LogicalShiftLeftRR operand: reg1 operand: reg2
 ]
 
-{ #category : #'abstract instructions' }
+{ #category : 'abstract instructions' }
 Cogit >> LogicalShiftRightCq: quickConstant R: reg [
 	<inline: true>
 	<returnTypeC: #'AbstractInstruction *'>
 	^self gen: LogicalShiftRightCqR operand: quickConstant operand: reg
 ]
 
-{ #category : #'abstract instructions' }
+{ #category : 'abstract instructions' }
 Cogit >> LogicalShiftRightR: reg1 R: reg2 [
 	<inline: true>
 	<returnTypeC: #'AbstractInstruction *'>
 	^self gen: LogicalShiftRightRR operand: reg1 operand: reg2
 ]
 
-{ #category : #'abstract instructions' }
+{ #category : 'abstract instructions' }
 Cogit >> MoveA32: address R: reg [ 
 	<inline: true>
 	<returnTypeC: #'AbstractInstruction *'>
@@ -2362,21 +2248,21 @@ Cogit >> MoveA32: address R: reg [
 		operand: reg
 ]
 
-{ #category : #'abstract instructions' }
+{ #category : 'abstract instructions' }
 Cogit >> MoveAb: address R: reg [ 
 	<inline: true>
 	<returnTypeC: #'AbstractInstruction *'>
 	^self gen: MoveAbR literal: address operand: reg
 ]
 
-{ #category : #'abstract instructions' }
+{ #category : 'abstract instructions' }
 Cogit >> MoveAw: address R: reg [ 
 	<inline: true>
 	<returnTypeC: #'AbstractInstruction *'>
 	^self gen: MoveAwR literal: address operand: reg
 ]
 
-{ #category : #'abstract instructions' }
+{ #category : 'abstract instructions' }
 Cogit >> MoveC32: wordConstant R: reg [
 	"Generate a MoveC32R instruction to move a 32-bit constant into a register.
 	 If this is a 32-bit platform, simply generate a MoveCwR instruction, to avoid
@@ -2391,7 +2277,7 @@ Cogit >> MoveC32: wordConstant R: reg [
 		operand: reg
 ]
 
-{ #category : #'abstract instructions' }
+{ #category : 'abstract instructions' }
 Cogit >> MoveCf32: constantFloat32 Rs: reg [
 	<inline: true>
 	<var: #constantFloat32 type: #float>
@@ -2399,7 +2285,7 @@ Cogit >> MoveCf32: constantFloat32 Rs: reg [
 	^ backEnd genMoveCf32: constantFloat32 Rs: reg
 ]
 
-{ #category : #'abstract instructions' }
+{ #category : 'abstract instructions' }
 Cogit >> MoveCf64: constantFloat64 Rd: reg [
 	<inline: true>
 	<returnTypeC: #'AbstractInstruction *'>
@@ -2407,42 +2293,44 @@ Cogit >> MoveCf64: constantFloat64 Rd: reg [
 	^ backEnd genMoveCf64: constantFloat64 Rd: reg
 ]
 
-{ #category : #'abstract instructions' }
+{ #category : 'abstract instructions' }
 Cogit >> MoveCq: quickConstant R: reg [
 	<inline: true>
 	<returnTypeC: #'AbstractInstruction *'>
 	^self gen: MoveCqR quickConstant: quickConstant operand: reg
 ]
 
-{ #category : #'abstract instructions' }
+{ #category : 'abstract instructions' }
 Cogit >> MoveCw: wordConstant R: reg [
 	<inline: true>
 	<returnTypeC: #'AbstractInstruction *'>
 	^self gen: MoveCwR literal: wordConstant operand: reg
 ]
 
-{ #category : #'abstract instructions' }
+{ #category : 'abstract instructions' }
 Cogit >> MoveM16: offset r: baseReg R: destReg [
 	<inline: true>
 	<returnTypeC: #'AbstractInstruction *'>
 	^self gen: MoveM16rR quickConstant: offset operand: baseReg operand: destReg
 ]
 
-{ #category : #'abstract instructions' }
+{ #category : 'abstract instructions' }
 Cogit >> MoveM32: offset r: baseReg R: destReg [
 	<inline: true>
 	<returnTypeC: #'AbstractInstruction *'>
-	^self gen: MoveM32rR quickConstant: offset operand: baseReg operand: destReg
+	^ backEnd genMoveM32: offset r: baseReg R: destReg
+	
+
 ]
 
-{ #category : #'abstract instructions' }
+{ #category : 'abstract instructions' }
 Cogit >> MoveM32: offset r: baseReg Rs: destDPReg [
 	<inline: true>
 	<returnTypeC: #'AbstractInstruction *'>
 	^self gen: MoveM32rRs quickConstant: offset operand: baseReg operand: destDPReg
 ]
 
-{ #category : #'abstract instructions' }
+{ #category : 'abstract instructions' }
 Cogit >> MoveM64: offset r: baseReg R: destReg [
 	<inline: true>
 	<returnTypeC: #'AbstractInstruction *'>
@@ -2451,21 +2339,21 @@ Cogit >> MoveM64: offset r: baseReg R: destReg [
 
 ]
 
-{ #category : #'abstract instructions' }
+{ #category : 'abstract instructions' }
 Cogit >> MoveM64: offset r: baseReg Rd: destDPReg [
 	<inline: true>
 	<returnTypeC: #'AbstractInstruction *'>
 	^self gen: MoveM64rRd quickConstant: offset operand: baseReg operand: destDPReg
 ]
 
-{ #category : #'abstract instructions' }
+{ #category : 'abstract instructions' }
 Cogit >> MoveM8: offset r: baseReg R: destReg [
 	<inline: true>
 	<returnTypeC: #'AbstractInstruction *'>
 	^self gen: MoveM8rR quickConstant: offset operand: baseReg operand: destReg
 ]
 
-{ #category : #'abstract instructions' }
+{ #category : 'abstract instructions' }
 Cogit >> MoveMb: offset r: baseReg R: destReg [
 	"N.B.  This instruction is guaranteed to zero-extend the byte into destReg."
 	<inline: true>
@@ -2473,7 +2361,7 @@ Cogit >> MoveMb: offset r: baseReg R: destReg [
 	^self gen: MoveMbrR quickConstant: offset operand: baseReg operand: destReg
 ]
 
-{ #category : #'abstract instructions' }
+{ #category : 'abstract instructions' }
 Cogit >> MoveMw: offset r: baseReg R: destReg [
 
 	<inline: true>
@@ -2490,7 +2378,7 @@ Cogit >> MoveMw: offset r: baseReg R: destReg [
 			^ self genMoveMw: 0 r: destReg R: destReg ]
 ]
 
-{ #category : #'abstract instructions' }
+{ #category : 'abstract instructions' }
 Cogit >> MovePatcheableC32: wordConstant R: reg [
 	"Generate a MoveC32R instruction to move a 32-bit constant into a register.
 	 If the backEnd is using out-of-line literals then those for inline caches cannot be shared,
@@ -2518,7 +2406,7 @@ Cogit >> MovePatcheableC32: wordConstant R: reg [
 			operand: reg ]"
 ]
 
-{ #category : #'abstract instructions' }
+{ #category : 'abstract instructions' }
 Cogit >> MoveR: reg A32: address [
 	<inline: true>
 	<returnTypeC: #'AbstractInstruction *'>
@@ -2529,35 +2417,35 @@ Cogit >> MoveR: reg A32: address [
 		literal: address
 ]
 
-{ #category : #'abstract instructions' }
+{ #category : 'abstract instructions' }
 Cogit >> MoveR: reg Ab: address [
 	<inline: true>
 	<returnTypeC: #'AbstractInstruction *'>
 	^self gen: MoveRAb operand: reg literal: address
 ]
 
-{ #category : #'abstract instructions' }
+{ #category : 'abstract instructions' }
 Cogit >> MoveR: reg Aw: address [
 	<inline: true>
 	<returnTypeC: #'AbstractInstruction *'>
 	^self gen: MoveRAw operand: reg literal: address
 ]
 
-{ #category : #'abstract instructions' }
+{ #category : 'abstract instructions' }
 Cogit >> MoveR: srcReg M16: offset r: baseReg [
 	<inline: true>
 	<returnTypeC: #'AbstractInstruction *'>
 	^self gen: MoveRM16r operand: srcReg quickConstant: offset operand: baseReg
 ]
 
-{ #category : #'abstract instructions' }
+{ #category : 'abstract instructions' }
 Cogit >> MoveR: sourceReg M32: offset r: baseReg [ 
 	<inline: true>
 	<returnTypeC: #'AbstractInstruction *'>
 	^self gen: MoveRM32r operand: sourceReg quickConstant: offset operand: baseReg
 ]
 
-{ #category : #'abstract instructions' }
+{ #category : 'abstract instructions' }
 Cogit >> MoveR: sourceReg M64: offset r: baseReg [ 
 	<inline: true>
 	<var: 'result' type: #'AbstractInstruction *'>
@@ -2570,35 +2458,35 @@ Cogit >> MoveR: sourceReg M64: offset r: baseReg [
 	^ result
 ]
 
-{ #category : #'abstract instructions' }
+{ #category : 'abstract instructions' }
 Cogit >> MoveR: sourceReg M8: offset r: baseReg [ 
 	<inline: true>
 	<returnTypeC: #'AbstractInstruction *'>
 	^self gen: MoveRM8r operand: sourceReg quickConstant: offset operand: baseReg
 ]
 
-{ #category : #'abstract instructions' }
+{ #category : 'abstract instructions' }
 Cogit >> MoveR: sourceReg Mb: offset r: baseReg [ 
 	<inline: true>
 	<returnTypeC: #'AbstractInstruction *'>
 	^self gen: MoveRMbr operand: sourceReg quickConstant: offset operand: baseReg
 ]
 
-{ #category : #'abstract instructions' }
+{ #category : 'abstract instructions' }
 Cogit >> MoveR: sourceReg Mw: offset r: baseReg [ 
 	<inline: true>
 	<returnTypeC: #'AbstractInstruction *'>
 	^self gen: MoveRMwr operand: sourceReg quickConstant: offset operand: baseReg
 ]
 
-{ #category : #'abstract instructions' }
+{ #category : 'abstract instructions' }
 Cogit >> MoveR: reg1 R: reg2 [
 	<inline: true>
 	<returnTypeC: #'AbstractInstruction *'>
 	^self gen: MoveRR operand: reg1 operand: reg2
 ]
 
-{ #category : #'abstract instructions' }
+{ #category : 'abstract instructions' }
 Cogit >> MoveR: srcReg Rd: destDPReg [
 	<inline: true>
 	<returnTypeC: #'AbstractInstruction *'>
@@ -2606,35 +2494,35 @@ Cogit >> MoveR: srcReg Rd: destDPReg [
 	^self gen: MoveRRd operand: srcReg operand: destDPReg
 ]
 
-{ #category : #'abstract instructions' }
+{ #category : 'abstract instructions' }
 Cogit >> MoveR: sourceReg X32r: indexReg R: baseReg [
 	<inline: true>
 	<returnTypeC: #'AbstractInstruction *'>
 	^self gen: MoveRX32rR operand: sourceReg operand: indexReg operand: baseReg
 ]
 
-{ #category : #'abstract instructions' }
+{ #category : 'abstract instructions' }
 Cogit >> MoveR: srcReg Xbr: indexReg R: baseReg [
 	<inline: true>
 	<returnTypeC: #'AbstractInstruction *'>
 	^self gen: MoveRXbrR operand: srcReg operand: indexReg operand: baseReg
 ]
 
-{ #category : #'abstract instructions' }
+{ #category : 'abstract instructions' }
 Cogit >> MoveR: sourceReg Xwr: indexReg R: baseReg [
 	<inline: true>
 	<returnTypeC: #'AbstractInstruction *'>
 	^self gen: MoveRXwrR operand: sourceReg operand: indexReg operand: baseReg
 ]
 
-{ #category : #'abstract instructions' }
+{ #category : 'abstract instructions' }
 Cogit >> MoveRd: sourceDPReg M64: offset r: baseReg [
 	<inline: true>
 	<returnTypeC: #'AbstractInstruction *'>
 	^self gen: MoveRdM64r operand: sourceDPReg quickConstant: offset operand: baseReg
 ]
 
-{ #category : #'abstract instructions' }
+{ #category : 'abstract instructions' }
 Cogit >> MoveRd: srcDPReg R: destReg [
 	<inline: true>
 	<returnTypeC: #'AbstractInstruction *'>
@@ -2642,28 +2530,28 @@ Cogit >> MoveRd: srcDPReg R: destReg [
 	^self gen: MoveRdR operand: srcDPReg operand: destReg
 ]
 
-{ #category : #'abstract instructions' }
+{ #category : 'abstract instructions' }
 Cogit >> MoveRd: dpreg1 Rd: dpreg2 [
 	<inline: true>
 	<returnTypeC: #'AbstractInstruction *'>
 	^self gen: MoveRdRd operand: dpreg1 operand: dpreg2
 ]
 
-{ #category : #'abstract instructions' }
+{ #category : 'abstract instructions' }
 Cogit >> MoveRs: sourceDPReg M32: offset r: baseReg [
 	<inline: true>
 	<returnTypeC: #'AbstractInstruction *'>
 	^self gen: MoveRsM32r operand: sourceDPReg quickConstant: offset operand: baseReg
 ]
 
-{ #category : #'abstract instructions' }
+{ #category : 'abstract instructions' }
 Cogit >> MoveRs: dpreg1 Rs: dpreg2 [
 	<inline: true>
 	<returnTypeC: #'AbstractInstruction *'>
 	^self gen: MoveRsRs operand: dpreg1 operand: dpreg2
 ]
 
-{ #category : #'abstract instructions' }
+{ #category : 'abstract instructions' }
 Cogit >> MoveUniqueCw: wordConstant R: reg [
 	"If the backEnd is using out-of-line literals then those for inline caches cannot be shared, and
 	 this method ensures the instruction has its own unique label.  If the backEnd is using
@@ -2673,28 +2561,28 @@ Cogit >> MoveUniqueCw: wordConstant R: reg [
 	^self gen: MoveCwR uniqueLiteral: wordConstant operand: reg
 ]
 
-{ #category : #'abstract instructions' }
+{ #category : 'abstract instructions' }
 Cogit >> MoveX32r: indexReg R: baseReg R: destReg [
 	<inline: true>
 	<returnTypeC: #'AbstractInstruction *'>
 	^self gen: MoveX32rRR operand: indexReg operand: baseReg operand: destReg
 ]
 
-{ #category : #'abstract instructions' }
+{ #category : 'abstract instructions' }
 Cogit >> MoveXbr: indexReg R: baseReg R: destReg [
 	<inline: true>
 	<returnTypeC: #'AbstractInstruction *'>
 	^self gen: MoveXbrRR operand: indexReg operand: baseReg operand: destReg
 ]
 
-{ #category : #'abstract instructions' }
+{ #category : 'abstract instructions' }
 Cogit >> MoveXwr: indexReg R: baseReg R: destReg [
 	<inline: true>
 	<returnTypeC: #'AbstractInstruction *'>
 	^self gen: MoveXwrRR operand: indexReg operand: baseReg operand: destReg
 ]
 
-{ #category : #'abstract instructions' }
+{ #category : 'abstract instructions' }
 Cogit >> MulR: reg1 R: reg2 [
 	"Multiplication is a little weird on some processors.  Defer to the backEnd
 	 to allow it to generate any special code it may need to."
@@ -2702,91 +2590,91 @@ Cogit >> MulR: reg1 R: reg2 [
 	^backEnd genMulR: reg1 R: reg2
 ]
 
-{ #category : #'abstract instructions' }
+{ #category : 'abstract instructions' }
 Cogit >> MulRd: dpreg1 Rd: dpreg2 [
 	<inline: true>
 	<returnTypeC: #'AbstractInstruction *'>
 	^self gen: MulRdRd operand: dpreg1 operand: dpreg2
 ]
 
-{ #category : #'abstract instructions' }
+{ #category : 'abstract instructions' }
 Cogit >> MulRs: dpreg1 Rs: dpreg2 [
 	<inline: true>
 	<returnTypeC: #'AbstractInstruction *'>
 	^self gen: MulRsRs operand: dpreg1 operand: dpreg2
 ]
 
-{ #category : #'abstract instructions' }
+{ #category : 'abstract instructions' }
 Cogit >> NegateR: reg [
 	<inline: true>
 	<returnTypeC: #'AbstractInstruction *'>
 	^self gen: NegateR operand: reg
 ]
 
-{ #category : #'abstract instructions' }
+{ #category : 'abstract instructions' }
 Cogit >> Nop [
 	<inline: true>
 	<returnTypeC: #'AbstractInstruction *'>
 	^self gen: Nop
 ]
 
-{ #category : #'abstract instructions' }
+{ #category : 'abstract instructions' }
 Cogit >> NotR: reg [
 	<inline: true>
 	<returnTypeC: #'AbstractInstruction *'>
 	^self gen: NotR operand: reg
 ]
 
-{ #category : #'abstract instructions' }
+{ #category : 'abstract instructions' }
 Cogit >> OrCq: quickConstant R: reg [
 	<inline: true>
 	<returnTypeC: #'AbstractInstruction *'>
 	^self gen: OrCqR quickConstant: quickConstant operand: reg
 ]
 
-{ #category : #'abstract instructions' }
+{ #category : 'abstract instructions' }
 Cogit >> OrCw: wordConstant R: reg [
 	<inline: true>
 	<returnTypeC: #'AbstractInstruction *'>
 	^self gen: OrCwR literal: wordConstant operand: reg
 ]
 
-{ #category : #'abstract instructions' }
+{ #category : 'abstract instructions' }
 Cogit >> OrR: reg1 R: reg2 [
 	<inline: true>
 	<returnTypeC: #'AbstractInstruction *'>
 	^self gen: OrRR operand: reg1 operand: reg2
 ]
 
-{ #category : #'abstract instructions' }
+{ #category : 'abstract instructions' }
 Cogit >> PopR: reg [
 	<inline: true>
 	<returnTypeC: #'AbstractInstruction *'>
 	^self gen: PopR operand: reg
 ]
 
-{ #category : #'abstract instructions' }
+{ #category : 'abstract instructions' }
 Cogit >> PopRd: reg [
 	<inline: true>
 	<returnTypeC: #'AbstractInstruction *'>
 	^ backEnd genPopRd: reg
 ]
 
-{ #category : #'abstract instructions' }
+{ #category : 'abstract instructions' }
 Cogit >> PopRs: reg [
 	<inline: true>
 	<returnTypeC: #'AbstractInstruction *'>
 	^ backEnd genPopRs: reg
 ]
 
-{ #category : #'abstract instructions' }
+{ #category : 'abstract instructions' }
 Cogit >> PrefetchAw: address [
 	<inline: true>
 	<returnTypeC: #'AbstractInstruction *'>
 	^self gen: PrefetchAw literal: address
 ]
 
-{ #category : #'abstract instructions' }
+{ #category : 'abstract instructions' }
 Cogit >> PushC64: constant64Bits [
 	<inline: true>
 	<var: #constant64Bits type: #sqLong>
@@ -2794,63 +2682,63 @@ Cogit >> PushC64: constant64Bits [
 	^ backEnd genPushC64: constant64Bits
 ]
 
-{ #category : #'abstract instructions' }
+{ #category : 'abstract instructions' }
 Cogit >> PushCq: wordConstant [
 	<inline: true>
 	<returnTypeC: #'AbstractInstruction *'>
 	^self gen: PushCq quickConstant: wordConstant
 ]
 
-{ #category : #'abstract instructions' }
+{ #category : 'abstract instructions' }
 Cogit >> PushCw: wordConstant [
 	<inline: true>
 	<returnTypeC: #'AbstractInstruction *'>
 	^self gen: PushCw literal: wordConstant
 ]
 
-{ #category : #'abstract instructions' }
+{ #category : 'abstract instructions' }
 Cogit >> PushR: reg [
 	<inline: true>
 	<returnTypeC: #'AbstractInstruction *'>
 	^self gen: PushR operand: reg
 ]
 
-{ #category : #'abstract instructions' }
+{ #category : 'abstract instructions' }
 Cogit >> PushRd: reg [
 	<inline: true>
 	<returnTypeC: #'AbstractInstruction *'>
 	^ backEnd genPushRd: reg
 ]
 
-{ #category : #'abstract instructions' }
+{ #category : 'abstract instructions' }
 Cogit >> PushRs: reg [
 	<inline: true>
 	<returnTypeC: #'AbstractInstruction *'>
 	^ backEnd genPushRs: reg
 ]
 
-{ #category : #'abstract instructions' }
+{ #category : 'abstract instructions' }
 Cogit >> RetN: offset [
 	<inline: true>
 	<returnTypeC: #'AbstractInstruction *'>
 	^self gen: RetN operand: offset
 ]
 
-{ #category : #'abstract instructions' }
+{ #category : 'abstract instructions' }
 Cogit >> RotateLeftCq: quickConstant R: reg [
 	<inline: true>
 	<returnTypeC: #'AbstractInstruction *'>
 	^self gen: RotateLeftCqR operand: quickConstant operand: reg
 ]
 
-{ #category : #'abstract instructions' }
+{ #category : 'abstract instructions' }
 Cogit >> RotateRightCq: quickConstant R: reg [
 	<inline: true>
 	<returnTypeC: #'AbstractInstruction *'>
 	^self gen: RotateRightCqR operand: quickConstant operand: reg
 ]
 
-{ #category : #'abstract instructions' }
+{ #category : 'abstract instructions' }
 Cogit >> SignExtend16R: reg1 R: reg2 [
 	<inline: true>
 	<returnTypeC: #'AbstractInstruction *'>
@@ -2868,7 +2756,7 @@ Cogit >> SignExtend16R: reg1 R: reg2 [
 			^first]
 ]
 
-{ #category : #'abstract instructions' }
+{ #category : 'abstract instructions' }
 Cogit >> SignExtend32R: reg1 R: reg2 [
 	<inline: true>
 	<returnTypeC: #'AbstractInstruction *'>
@@ -2886,7 +2774,7 @@ Cogit >> SignExtend32R: reg1 R: reg2 [
 			^first]
 ]
 
-{ #category : #'abstract instructions' }
+{ #category : 'abstract instructions' }
 Cogit >> SignExtend8R: reg1 R: reg2 [
 	<inline: true>
 	<returnTypeC: #'AbstractInstruction *'>
@@ -2904,21 +2792,21 @@ Cogit >> SignExtend8R: reg1 R: reg2 [
 			^first]
 ]
 
-{ #category : #'abstract instructions' }
+{ #category : 'abstract instructions' }
 Cogit >> SqrtRd: dpreg [
 	<inline: true>
 	<returnTypeC: #'AbstractInstruction *'>
 	^self gen: SqrtRd operand: dpreg
 ]
 
-{ #category : #'abstract instructions' }
+{ #category : 'abstract instructions' }
 Cogit >> SqrtRs: dpreg [
 	<inline: true>
 	<returnTypeC: #'AbstractInstruction *'>
 	^self gen: SqrtRs operand: dpreg
 ]
 
-{ #category : #'abstract instructions' }
+{ #category : 'abstract instructions' }
 Cogit >> St1S: aSize Vr: aVectorRegister R: aMemoryRegister Mw: anOffset [ 
 	^ self
 		  gen: St1VrRMw
@@ -2928,104 +2816,104 @@ Cogit >> St1S: aSize Vr: aVectorRegister R: aMemoryRegister Mw: anOffset [
 		  operand: anOffset 
 ]
 
-{ #category : #'abstract instructions' }
+{ #category : 'abstract instructions' }
 Cogit >> Stop [
 	<inline: true>
 	<returnTypeC: #'AbstractInstruction *'>
 	^self gen: Stop
 ]
 
-{ #category : #'abstract instructions' }
+{ #category : 'abstract instructions' }
 Cogit >> SubCq: quickConstant R: reg [
 	<inline: true>
 	<returnTypeC: #'AbstractInstruction *'>
 	^self gen: SubCqR quickConstant: quickConstant operand: reg
 ]
 
-{ #category : #'abstract instructions' }
+{ #category : 'abstract instructions' }
 Cogit >> SubCw: wordConstant R: reg [
 	<inline: true>
 	<returnTypeC: #'AbstractInstruction *'>
 	^self gen: SubCwR literal: wordConstant operand: reg
 ]
 
-{ #category : #'abstract instructions' }
+{ #category : 'abstract instructions' }
 Cogit >> SubR: reg1 R: reg2 [
 	<inline: true>
 	<returnTypeC: #'AbstractInstruction *'>
 	^self gen: SubRR operand: reg1 operand: reg2
 ]
 
-{ #category : #'abstract instructions' }
+{ #category : 'abstract instructions' }
 Cogit >> SubRd: dpreg1 Rd: dpreg2 [
 	<inline: true>
 	<returnTypeC: #'AbstractInstruction *'>
 	^self gen: SubRdRd operand: dpreg1 operand: dpreg2
 ]
 
-{ #category : #'abstract instructions' }
+{ #category : 'abstract instructions' }
 Cogit >> SubRs: dpreg1 Rs: dpreg2 [
 	<inline: true>
 	<returnTypeC: #'AbstractInstruction *'>
 	^self gen: SubRsRs operand: dpreg1 operand: dpreg2
 ]
 
-{ #category : #'abstract instructions' }
+{ #category : 'abstract instructions' }
 Cogit >> SubbCq: quickConstant R: reg [
 	<inline: true>
 	<returnTypeC: #'AbstractInstruction *'>
 	^self gen: SubbCqR quickConstant: quickConstant operand: reg
 ]
 
-{ #category : #'abstract instructions' }
+{ #category : 'abstract instructions' }
 Cogit >> SubbR: reg1 R: reg2 [
 	<inline: true>
 	<returnTypeC: #'AbstractInstruction *'>
 	^self gen: SubbRR operand: reg1 operand: reg2
 ]
 
-{ #category : #'abstract instructions' }
+{ #category : 'abstract instructions' }
 Cogit >> SwapR: regA R: regB Scratch: regTmp [
 	<returnTypeC: #'AbstractInstruction *'>
 	^backEnd genSwapR: regA R: regB Scratch: regTmp
 ]
 
-{ #category : #'abstract instructions' }
+{ #category : 'abstract instructions' }
 Cogit >> TstCq: quickConstant R: reg [
 	<inline: true>
 	<returnTypeC: #'AbstractInstruction *'>
 	^self gen: TstCqR quickConstant: quickConstant operand: reg
 ]
 
-{ #category : #'abstract instructions' }
+{ #category : 'abstract instructions' }
 Cogit >> XorCw: wordConstant R: reg [
 	<inline: true>
 	<returnTypeC: #'AbstractInstruction *'>
 	^self gen: XorCwR literal: wordConstant operand: reg
 ]
 
-{ #category : #'abstract instructions' }
+{ #category : 'abstract instructions' }
 Cogit >> XorR: reg1 R: reg2 [
 	<inline: true>
 	<returnTypeC: #'AbstractInstruction *'>
 	^self gen: XorRR operand: reg1 operand: reg2
 ]
 
-{ #category : #'abstract instructions' }
+{ #category : 'abstract instructions' }
 Cogit >> XorRd: reg1 Rd: reg2 [
 	<inline: true>
 	<returnTypeC: #'AbstractInstruction *'>
 	^self gen: XorRdRd operand: reg1 operand: reg2
 ]
 
-{ #category : #'abstract instructions' }
+{ #category : 'abstract instructions' }
 Cogit >> XorRs: reg1 Rs: reg2 [
 	<inline: true>
 	<returnTypeC: #'AbstractInstruction *'>
 	^self gen: XorRsRs operand: reg1 operand: reg2
 ]
 
-{ #category : #'abstract instructions' }
+{ #category : 'abstract instructions' }
 Cogit >> ZeroExtend16R: reg1 R: reg2 [
 	<inline: true>
 	<returnTypeC: #'AbstractInstruction *'>
@@ -3043,7 +2931,7 @@ Cogit >> ZeroExtend16R: reg1 R: reg2 [
 			^first]
 ]
 
-{ #category : #'abstract instructions' }
+{ #category : 'abstract instructions' }
 Cogit >> ZeroExtend32R: reg1 R: reg2 [
 	<inline: true>
 	<returnTypeC: #'AbstractInstruction *'>
@@ -3061,7 +2949,7 @@ Cogit >> ZeroExtend32R: reg1 R: reg2 [
 			^first]
 ]
 
-{ #category : #'abstract instructions' }
+{ #category : 'abstract instructions' }
 Cogit >> ZeroExtend8R: reg1 R: reg2 [
 	<inline: true>
 	<returnTypeC: #'AbstractInstruction *'>
@@ -3079,43 +2967,41 @@ Cogit >> ZeroExtend8R: reg1 R: reg2 [
 			^first]
 ]
 
-{ #category : #'in-line cacheing' }
+{ #category : 'in-line cacheing' }
 Cogit >> abortOffset [
 	<api>
 	^missOffset
 ]
 
-{ #category : #testing }
+{ #category : 'testing' }
 Cogit >> abstractInstruction: theAbstractInstruction follows: anAbstractInstruction [
 	<var: #theAbstractInstruction type: #'AbstractInstruction *'>
 	<var: #anAbstractInstruction  type: #'AbstractInstruction *'>
 	^theAbstractInstruction > anAbstractInstruction
 ]
 
-{ #category : #'compile abstract instructions' }
+{ #category : 'compile abstract instructions' }
 Cogit >> abstractInstructionAt: index [
 	<cmacro: '(index) (&abstractOpcodes[index])'>
 	<returnTypeC: #'AbstractInstruction *'>
-	((debugOpcodeIndices includes: index)
-	 and: [breakMethod isNil or: [methodObj = breakMethod]]) ifTrue:
-		[self halt].
+
 	^abstractOpcodes at: index
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 Cogit >> abstractOpcodes [
 	"For CogAbstractInstruction>>#>, which in turn is for Cogit>>abstractInstruction:follows:"
 	<doNotGenerate>
 	^abstractOpcodes
 ]
 
-{ #category : #'jit - api' }
+{ #category : 'jit - api' }
 Cogit >> addAllToYoungReferrers [
 	<doNotGenerate>
 	methodZone addAllToYoungReferrers
 ]
 
-{ #category : #debugging }
+{ #category : 'debugging' }
 Cogit >> addCogMethodsToHeapMap [
 	<api>
 	"Perform an integrity/leak check using the heapMap.
@@ -3129,64 +3015,53 @@ Cogit >> addCogMethodsToHeapMap [
 		cogMethod := methodZone methodAfter: cogMethod]
 ]
 
-{ #category : #'method map' }
+{ #category : 'method map' }
 Cogit >> addToMap: annotation instruction: instruction byte: byte at: address for: mcpc [
+
 	<inline: true>
-	objectMemory byteAt: address put: byte.
-	self cCode: [] inSmalltalk:
-		[| s bytecode |
-		(compilationTrace anyMask: 64) ifTrue:
-			[(s := coInterpreter transcript)
-				newLine;
-				print: annotation; nextPut: $/; nextPutAll: byte hex; space;
-				nextPutAll: address hex; space; nextPutAll: mcpc hex; space;
-				nextPutAll: (AnnotationConstantNames detect: [:name| (Cogit classPool at: name ifAbsent: []) = annotation]); cr; flush.
-			 (instruction notNil
-			  and: [instruction bcpc isInteger]) ifTrue:
-				[s tab; print: instruction bcpc; nextPut: $/.
-				 instruction bcpc printOn: s base: 16.
-				 s space.
-				 instruction printStateOn: s.
-				 s space.
-				 bytecode := objectMemory fetchByte: instruction bcpc ofObject: methodObj.
-				 bytecode := bytecode.
-				 (self generatorAt: bytecode) printStateOn: s.
-				 s cr; flush]]]
+	objectMemory byteAt: address put: byte
 ]
 
-{ #category : #testing }
+{ #category : 'testing' }
 Cogit >> addressIsInCodeZone: address [
 	<inline: true>
 	^address asUnsignedInteger >= codeBase
 	  and: [address < methodZone zoneEnd]
 ]
 
-{ #category : #testing }
+{ #category : 'testing' }
 Cogit >> addressIsInCurrentCompilation: address [
 	<inline: true>
 	^address asUnsignedInteger >= methodLabel address
 	  and: [address asUnsignedInteger < methodZone youngReferrers]
 ]
 
-{ #category : #testing }
+{ #category : 'testing' }
 Cogit >> addressIsInFixups: address [
+	"Hardcode renaming to _address"
+
 	<var: #address type: #'BytecodeFixup *'>
-	^self cCode: '(BytecodeFixup *)address >= fixups && (BytecodeFixup *)address < (fixups + numAbstractOpcodes)'
-		inSmalltalk:
-			[fixups notNil
-			 and: [(fixups object identityIndexOf: address) between: 1 and: numAbstractOpcodes]]
+	^ self
+		  cCode:
+		  '(BytecodeFixup *)_address >= fixups && (BytecodeFixup *)_address < (fixups + numAbstractOpcodes)'
+		  inSmalltalk: [
+			  fixups notNil and: [
+				  (fixups object identityIndexOf: address)
+					  between: 1
+					  and: numAbstractOpcodes ] ]
 ]
 
-{ #category : #testing }
+{ #category : 'testing' }
 Cogit >> addressIsInInstructions: address [
 	<var: #address type: #'AbstractInstruction *'>
-	^self cCode: '!((usqInt)(address) & BytesPerWord-1) \
-				&& (address) >= &abstractOpcodes[0] \
-				&& (address) < &abstractOpcodes[opcodeIndex]'
+	"Hardcode renaming to _address"
+	^self cCode: '!((usqInt)(_address) & BytesPerWord-1) \
+				&& (_address) >= &abstractOpcodes[0] \
+				&& (_address) < &abstractOpcodes[opcodeIndex]'
 		inSmalltalk: [(abstractOpcodes object identityIndexOf: address) between: 1 and: opcodeIndex]
 ]
 
-{ #category : #'in-line cacheing' }
+{ #category : 'in-line cacheing' }
 Cogit >> addressOfEndOfCase: n inCPIC: cPIC [ 
 	"calculate the end of the n'th case statement - which is complicated because we have case 1 right at the top of our CPIC and then build up from the last one. Yes I know this sounds strange, but trust me - I'm an Engineer, we do things backwards all the emit"
 
@@ -3197,26 +3072,26 @@ Cogit >> addressOfEndOfCase: n inCPIC: cPIC [
 		ifFalse: [cPIC asInteger + firstCPICCaseOffset + (MaxCPICCases + 1 - n * cPICCaseSize)]
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 Cogit >> addressSpaceMask [
 	<doNotGenerate>
 	"Quad-byte-align, because the ARM requires 4-byte aligned jump & call targets."
 	^((1 << (8 * objectMemory wordSize)) - 1) bitAnd: -4
 ]
 
-{ #category : #'generate machine code' }
+{ #category : 'generate machine code' }
 Cogit >> alignUptoRoutineBoundary: anAddress [ 
 	^anAddress + 7 bitClear: 7
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 Cogit >> allButTopBitOfAddressSpaceMask [
 	<doNotGenerate>
 	"Quad-byte-align, because the ARM requires 4-byte aligned jump & call targets."
 	^((1 << (8 * objectMemory wordSize - 1)) - 1) bitAnd: -4
 ]
 
-{ #category : #'garbage collection' }
+{ #category : 'garbage collection' }
 Cogit >> allMachineCodeObjectReferencesValid [
 	"Check that all methods have valid selectors, and that all linked sends are to valid targets and have valid cache tags"
 	| ok cogMethod |
@@ -3248,7 +3123,7 @@ Cogit >> allMachineCodeObjectReferencesValid [
 	^ok
 ]
 
-{ #category : #'garbage collection' }
+{ #category : 'garbage collection' }
 Cogit >> allMethodsHaveCorrectHeader [
 	| cogMethod |
 	<var: #cogMethod type: #'CogMethod *'>
@@ -3261,7 +3136,7 @@ Cogit >> allMethodsHaveCorrectHeader [
 	^true
 ]
 
-{ #category : #initialization }
+{ #category : 'initialization' }
 Cogit >> allocateOpcodes: numberOfAbstractOpcodes bytecodes: numberOfBytecodes [
 	"Allocate the various arrays needed to compile abstract instructions.
 	 Notionally we only need as many fixups as there are bytecodes.  But we
@@ -3275,7 +3150,7 @@ Cogit >> allocateOpcodes: numberOfAbstractOpcodes bytecodes: numberOfBytecodes [
 		ifFail: [ self error: 'Cannot allocate requested opcodes' ]
 ]
 
-{ #category : #initialization }
+{ #category : 'initialization' }
 Cogit >> allocateOpcodes: numberOfAbstractOpcodes bytecodes: numberOfBytecodes ifFail: failBlock [
 	"Allocate the various arrays needed to compile abstract instructions, failing if the size
 	 needed is considered too high.  Notionally we only need as many fixups as there are
@@ -3291,13 +3166,13 @@ Cogit >> allocateOpcodes: numberOfAbstractOpcodes bytecodes: numberOfBytecodes i
 	labelCounter := 0
 ]
 
-{ #category : #'in-line cacheing' }
-Cogit >> allowEarlyOpenPICPromotion [
+{ #category : 'in-line cacheing' }
+Cogit >> allowEarlyPromotionToMegamorphicIC [
 	<inline: true>
 	^ true
 ]
 
-{ #category : #'method map' }
+{ #category : 'method map' }
 Cogit >> annotate: abstractInstruction objRef: anOop [
 	<var: #abstractInstruction type: #'AbstractInstruction *'>
 	<returnTypeC: #'AbstractInstruction *'>
@@ -3308,7 +3183,7 @@ Cogit >> annotate: abstractInstruction objRef: anOop [
 	^abstractInstruction
 ]
 
-{ #category : #'method map' }
+{ #category : 'method map' }
 Cogit >> annotateAbsolutePCRef: abstractInstruction [
 	<var: #abstractInstruction type: #'AbstractInstruction *'>
 	<returnTypeC: #'AbstractInstruction *'>
@@ -3317,7 +3192,7 @@ Cogit >> annotateAbsolutePCRef: abstractInstruction [
 	^abstractInstruction
 ]
 
-{ #category : #'method map' }
+{ #category : 'method map' }
 Cogit >> annotateBytecode: abstractInstruction [
 	<var: #abstractInstruction type: #'AbstractInstruction *'>
 	<returnTypeC: #'AbstractInstruction *'>
@@ -3326,7 +3201,7 @@ Cogit >> annotateBytecode: abstractInstruction [
 	^abstractInstruction
 ]
 
-{ #category : #'method map' }
+{ #category : 'method map' }
 Cogit >> annotateCall: abstractInstruction [
 	<var: #abstractInstruction type: #'AbstractInstruction *'>
 	<returnTypeC: #'AbstractInstruction *'>
@@ -3335,7 +3210,7 @@ Cogit >> annotateCall: abstractInstruction [
 	^abstractInstruction
 ]
 
-{ #category : #'method map' }
+{ #category : 'method map' }
 Cogit >> annotationForMcpc: mcpc in: cogHomeMethod [
 	"Answer the annotation for mcpc in cogHomeMethod's map, or 0 if no entry exists."
 	<var: #cogHomeMethod type: #'CogMethod *'>
@@ -3352,7 +3227,7 @@ Cogit >> annotationForMcpc: mcpc in: cogHomeMethod [
 	^annotation
 ]
 
-{ #category : #'in-line cacheing' }
+{ #category : 'in-line cacheing' }
 Cogit >> annotationIsForUncheckedEntryPoint: annotation [
 	<inline: true>
 	^annotation = IsSuperSend
@@ -3362,7 +3237,7 @@ Cogit >> annotationIsForUncheckedEntryPoint: annotation [
 					and: IsDirectedSuperBindingSend]]
 ]
 
-{ #category : #'simulation only' }
+{ #category : 'simulation only' }
 Cogit >> assertCStackWellAligned [
 	"Check alignment of the C stack.  This is a simulation only facsimilie.
 	 See platforms/Cross/vm/sqCogStackAlignment.h for the real code."
@@ -3371,7 +3246,7 @@ Cogit >> assertCStackWellAligned [
 	self assert: processor fp \\ cStackAlignment = expectedFPAlignment
 ]
 
-{ #category : #'compile abstract instructions' }
+{ #category : 'compile abstract instructions' }
 Cogit >> assertExtsAreConsumed: descriptor [
 	 "extended bytecodes must consume their extensions"
 	 <inline: true>
@@ -3379,7 +3254,7 @@ Cogit >> assertExtsAreConsumed: descriptor [
 		[self assert: (extA = 0 and: [extB = 0 and: [numExtB = 0]])].
 ]
 
-{ #category : #debugging }
+{ #category : 'debugging' }
 Cogit >> assertSaneJumpTarget: jumpTarget [
 	<var: #jumpTarget type: #'AbstractInstruction *'>
 
@@ -3406,13 +3281,13 @@ Cogit >> backEnd [
 	^backEnd
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 Cogit >> backend [
 	<doNotGenerate>
 	^ backEnd
 ]
 
-{ #category : #'tests-method map' }
+{ #category : 'tests-method map' }
 Cogit >> bcpcsAndDescriptorsFor: aMethod bsOffset: bsOffset do: quaternaryBlock [
 	"Evaluate quaternaryBlock with the pc, byte, descriptor and numExtensions for
 	 all the bytecodes in aMethod.  Evaluate with byte, descriptor and numExtensions
@@ -3445,7 +3320,7 @@ Cogit >> bcpcsAndDescriptorsFor: aMethod bsOffset: bsOffset do: quaternaryBlock 
 		nExts := descriptor isExtension ifTrue: [nExts + 1] ifFalse: [0]]
 ]
 
-{ #category : #'tests-method map' }
+{ #category : 'tests-method map' }
 Cogit >> bcpcsDescriptorsAndStartpcsFor: aMethod bsOffset: bsOffset do: quinternaryBlock [
 	"Evaluate quinternaryBlock with the pc, byte, descriptor and numExtensions for
 	 all the bytecodes in aMethod.  Evaluate with byte, descriptor and numExtensions
@@ -3485,7 +3360,7 @@ Cogit >> bcpcsDescriptorsAndStartpcsFor: aMethod bsOffset: bsOffset do: quintern
 		nExts := descriptor isExtension ifTrue: [nExts + 1] ifFalse: [0]]
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 Cogit >> blockAlignment [
 	"Block method headers must be aligned on the correct boundary, just like non-block method headers.
 	 This is because the CoInterpreter encodes flags in the least significant three bits of the method field."
@@ -3495,7 +3370,7 @@ Cogit >> blockAlignment [
 	^8
 ]
 
-{ #category : #disassembly }
+{ #category : 'disassembly' }
 Cogit >> blockDispatchFor: cogMethod perform: quaternaryFunction arg: arg [
 	"Evaluate quaternaryFunction with the block start mcpc, prev pc in block
 	 dispatch, current pc in block dispatch and the supplied arg for each entry
@@ -3527,7 +3402,7 @@ Cogit >> blockDispatchFor: cogMethod perform: quaternaryFunction arg: arg [
 	^0
 ]
 
-{ #category : #'method map' }
+{ #category : 'method map' }
 Cogit >> blockDispatchTargetsFor: cogMethod perform: binaryFunction arg: arg [
 	"Evaluate binaryFunction with the block start mcpc and supplied arg for each
 	 entry in the block dispatch.  If the function answers non-zero answer the value
@@ -3553,61 +3428,20 @@ Cogit >> blockDispatchTargetsFor: cogMethod perform: binaryFunction arg: arg [
 	^0
 ]
 
-{ #category : #'simulation only' }
-Cogit >> breakAt: address [
-	((breakPC isBreakpointFor: address)
-	 and: [breakBlock shouldStopIfAtPC: address]) ifTrue:
-		[coInterpreter changed: #byteCountText.
-		 self halt: 'machine code breakpoint at ', address]
-]
-
-{ #category : #'simulation only' }
-Cogit >> breakBlock [
-	<doNotGenerate>
-	^breakBlock
-]
-
-{ #category : #'simulation only' }
-Cogit >> breakBlock: aBlock [
-	<doNotGenerate>
-	breakBlock := aBlock.
-	breakPC ifNil: [breakPC := true].
-	singleStep := singleStep or: [breakPC singleStepRequiredToTriggerIn: self]
-]
-
-{ #category : #'simulation only' }
-Cogit >> breakMethod [
-	<doNotGenerate>
-	^breakMethod
-]
-
-{ #category : #debugging }
+{ #category : 'debugging' }
 Cogit >> breakOnImplicitReceiver [
 	<api>
 	<cmacro: '() (traceFlags & 64)'>
 	^(traceFlags bitAnd: 64) ~= 0
 ]
 
-{ #category : #'simulation only' }
-Cogit >> breakPC [
-	<doNotGenerate>
-	^breakPC
-]
-
-{ #category : #'simulation only' }
-Cogit >> breakPC: anAddressArrayOrNil [
-	<doNotGenerate>
-	breakPC := anAddressArrayOrNil.
-	singleStep := singleStep or: [anAddressArrayOrNil singleStepRequiredToTriggerIn: self]
-]
-
-{ #category : #accessing }
+{ #category : 'accessing' }
 Cogit >> byte1: anInteger [
 	<doNotGenerate>
 	byte1 := anInteger
 ]
 
-{ #category : #'simulation only' }
+{ #category : 'simulation only' }
 Cogit >> bytecodeFixupClass [
 	self subclassResponsibility
 ]
@@ -3630,7 +3464,7 @@ Cogit >> bytecodePCFor: mcpc startBcpc: startbcpc in: cogMethod [
 		arg: mcpc asVoidPointer
 ]
 
-{ #category : #'simulation only' }
+{ #category : 'simulation only' }
 Cogit >> cCoerce: value to: cTypeString [
 	"Type coercion. For translation a cast will be emmitted. When running in Smalltalk
 	  answer a suitable wrapper for correct indexing."
@@ -3640,7 +3474,7 @@ Cogit >> cCoerce: value to: cTypeString [
 		ifNotNil: [value coerceTo: cTypeString sim: objectMemory]
 ]
 
-{ #category : #'translation support' }
+{ #category : 'translation support' }
 Cogit >> cCoerceSimple: value to: cTypeString [
 	<doNotGenerate>
 	cTypeString last == $* ifTrue:
@@ -3656,7 +3490,7 @@ Cogit >> cCoerceSimple: value to: cTypeString [
 	^super cCoerceSimple: value to: cTypeString
 ]
 
-{ #category : #'trampoline support' }
+{ #category : 'trampoline support' }
 Cogit >> cFramePointerAddress [
 	<cmacro: '() ((usqIntptr_t)&CFramePointer)'>
 	^(backEnd wantsNearAddressFor: #CFramePointer)
@@ -3664,7 +3498,7 @@ Cogit >> cFramePointerAddress [
 		ifFalse: [coInterpreter inMemoryCFramePointerAddress]
 ]
 
-{ #category : #'in-line cacheing' }
+{ #category : 'in-line cacheing' }
 Cogit >> cPIC: cPIC HasTarget: targetMethod [
 	"Are any of the jumps from this CPIC to targetMethod?"
 	<var: #cPIC type: #'CogMethod *'>
@@ -3685,7 +3519,7 @@ Cogit >> cPIC: cPIC HasTarget: targetMethod [
 	^false
 ]
 
-{ #category : #'in-line cacheing' }
+{ #category : 'in-line cacheing' }
 Cogit >> cPICCompactAndIsNowEmpty: cPIC [
 	"Scan the CPIC for target methods that have been freed and eliminate them.
 	 Since the first entry cannot be eliminated, answer that the PIC should be
@@ -3735,14 +3569,14 @@ Cogit >> cPICCompactAndIsNowEmpty: cPIC [
 	1 to: used - 1 do:
 		[:i|
 		 pc := self addressOfEndOfCase: i + 1 inCPIC: cPIC.
-		 self rewriteCPICCaseAt: pc tag: (tags at: i) objRef: (methods at: i) target: (targets at: i)].
+		 self rewritePICCaseAt: pc tag: (tags at: i) objRef: (methods at: i) target: (targets at: i)].
 
 	"finally, rewrite the jump 3 instr  before firstCPICCaseOffset to jump to the beginning of this new case"
 	self rewriteCPIC: cPIC caseJumpTo: pc - cPICCaseSize.
 	^false
 ]
 
-{ #category : #'in-line cacheing' }
+{ #category : 'in-line cacheing' }
 Cogit >> cPICHasForwardedClass: cPIC [ 
 	"The first case in a CPIC doesn't have a class reference so we need only step over actually usd subsequent cases."
 	| pc |
@@ -3760,7 +3594,7 @@ Cogit >> cPICHasForwardedClass: cPIC [
 	^ false
 ]
 
-{ #category : #'in-line cacheing' }
+{ #category : 'in-line cacheing' }
 Cogit >> cPICHasFreedTargets: cPIC [
 	"scan the CPIC for target methods that have been freed. "
 	<var: #cPIC type: #'CogMethod *'>
@@ -3782,21 +3616,21 @@ Cogit >> cPICHasFreedTargets: cPIC [
 	^false
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 Cogit >> cPICPrototype [
 	"For Cogit clas>>#genAndDisPICoptions:"
 	<doNotGenerate>
 	^cPICPrototype
 ]
 
-{ #category : #'in-line cacheing' }
+{ #category : 'in-line cacheing' }
 Cogit >> cPICPrototypeCaseOffset [
 	"Whimsey; we want 16rCA5E10 + cPICPrototypeCaseOffset to be somewhere in the middle of the zone."
 	<inline: true>
 	^methodZoneBase + methodZone youngReferrers / 2 - 16rCA5E10
 ]
 
-{ #category : #'trampoline support' }
+{ #category : 'trampoline support' }
 Cogit >> cStackPointerAddress [
 	<cmacro: '() ((usqIntptr_t)&CStackPointer)'>
 	^(backEnd wantsNearAddressFor: #CStackPointer)
@@ -3804,38 +3638,38 @@ Cogit >> cStackPointerAddress [
 		ifFalse: [coInterpreter inMemoryCStackPointerAddress]
 ]
 
-{ #category : #debugging }
+{ #category : 'debugging' }
 Cogit >> callCogCodePopReceiver [
 	"This is a static version of ceCallCogCodePopReceiverReg
 	 for break-pointing when debugging in C."
 	<api>
 	<inline: false>
 	"This exists only for break-pointing."
-	self cCode: [self realCECallCogCodePopReceiverReg]
+	self cCode: [self cCall: 'realCECallCogCodePopReceiverReg']
 		inSmalltalk: [self ceCallCogCodePopReceiverReg].
 	"(and this exists only to reference Debug)"
 	Debug ifFalse: [self error: 'what??']
 ]
 
-{ #category : #debugging }
+{ #category : 'debugging' }
 Cogit >> callCogCodePopReceiverAndClassRegs [
 	"This is a static version of ceCallCogCodePopReceiverAndClassRegs
 	 for break-pointing when debugging in C."
 	<api>
 	<inline: false>
 	"This exists only for break-pointing."
-	self cCode: [self realCECallCogCodePopReceiverAndClassRegs]
+	self cCode: [self cCall: 'realCECallCogCodePopReceiverAndClassRegs']
 		inSmalltalk: [self ceCallCogCodePopReceiverAndClassRegs]
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 Cogit >> ceBaseFrameReturnPC [
 	<api>
 	<cmacro: '() ceBaseFrameReturnTrampoline'>
 	^ceBaseFrameReturnTrampoline
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 Cogit >> ceBaseFrameReturnTrampoline: anInteger [ 
 
 	<doNotGenerate>
@@ -3843,7 +3677,7 @@ Cogit >> ceBaseFrameReturnTrampoline: anInteger [
 	ceBaseFrameReturnTrampoline := anInteger
 ]
 
-{ #category : #'in-line cacheing' }
+{ #category : 'in-line cacheing' }
 Cogit >> ceCPICMiss: cPIC receiver: receiver [
 	"Code entry closed PIC miss.  A send has fallen
 	 through a closed (finite) polymorphic inline cache.
@@ -3852,73 +3686,95 @@ Cogit >> ceCPICMiss: cPIC receiver: receiver [
 			receiver
 			args
 	  sp=>	sender return address"
-	<var: #cPIC type: #'CogMethod *'>
+
 	<api>
-	| outerReturn newTargetMethodOrNil errorSelectorOrNil cacheTag result |
-	self cCode: ''
-		inSmalltalk:
-			[cPIC isInteger ifTrue:
-				[^self ceCPICMiss: (self cogMethodSurrogateAt: cPIC) receiver: receiver]].
-	(objectMemory isOopForwarded: receiver) ifTrue:
-		[^coInterpreter ceSendFromInLineCacheMiss: cPIC].
-	outerReturn := coInterpreter stackTop.
-	self deny: (backEnd inlineCacheTagAt: outerReturn) = self picAbortDiscriminatorValue. 
-	cPIC cPICNumCases < MaxCPICCases
-		ifTrue:
-			[self lookup: cPIC selector
-				for: receiver
-				methodAndErrorSelectorInto:
-					[:method :errsel|
-					newTargetMethodOrNil := method.
-					errorSelectorOrNil := errsel]]
-		ifFalse: [newTargetMethodOrNil := errorSelectorOrNil := nil].
-	"We assume lookupAndCog:for: will *not* reclaim the method zone"
-	self assert: outerReturn = coInterpreter stackTop.
-	cacheTag := objectRepresentation inlineCacheTagForInstance: receiver.
-	(cPIC cPICNumCases >= MaxCPICCases
-	 or: [(errorSelectorOrNil notNil and: [errorSelectorOrNil ~= SelectorDoesNotUnderstand])
-	 or: [(objectRepresentation inlineCacheTagIsYoung: cacheTag)
-	 or: [newTargetMethodOrNil isNil
-	 or: [objectMemory isYoung: newTargetMethodOrNil]]]]) ifTrue:
-		[result := self patchToOpenPICFor: cPIC selector
-					numArgs: cPIC cmNumArgs
-					receiver: receiver.
-		 self assert: result not. "If patchToOpenPICFor:.. returns we're out of code memory"
-		 ^coInterpreter ceSendFromInLineCacheMiss: cPIC].
-	"Now extend the PIC with the new case."
-	self cogExtendPIC: cPIC
+	<story: #pic>
+	<var: #cPIC type: #'CogMethod *'>
+	| callerReturnAddress newTargetMethodOrNil errorSelectorOrNil |
+	self simulationOnly: [
+		cPIC isInteger ifTrue: [
+			^ self
+				  ceCPICMiss: (self cogMethodSurrogateAt: cPIC)
+				  receiver: receiver ] ].
+
+	(objectMemory isOopForwarded: receiver) ifTrue: [
+		^ coInterpreter ceSendFromInLineCacheMiss: cPIC ].
+
+	callerReturnAddress := coInterpreter stackTop.
+	self deny: (backEnd inlineCacheTagAt: callerReturnAddress)
+		= self isMNUPicAbortDiscriminatorValue.
+
+	"Transition to megamorphic if the PIC is full"
+	MaxCPICCases <= cPIC cPICNumCases ifTrue: [
+		self
+			patchToMegamorphicICFor: cPIC selector
+			numArgs: cPIC cmNumArgs
+			receiver: receiver.
+		^ coInterpreter ceSendFromInLineCacheMiss: cPIC ].
+
+	self
+		lookup: cPIC selector
+		for: receiver
+		methodAndErrorSelectorInto: [ :method :errsel |
+			newTargetMethodOrNil := method.
+			errorSelectorOrNil := errsel ].
+
+	"      method | errorSelector             | situation
+	 -------------+---------------------------+-------------------------------------------------------------
+	          nil | SelectorCannotInterpret   | There was an error during the lookup (ill-formed class)
+	          nil | SelectorDoesNotUnderstand | Didn't find the method nor the DNU implementation
+	  foundMethod | SelectorCannotInterpret   | Found something that isn't a CompiledMethod (#run:with:in:)
+	  foundMethod | *                         | foundMethod is young (may not be a CompiledMethod!)"
+	(errorSelectorOrNil = SelectorCannotInterpret or: [
+		 newTargetMethodOrNil isNil or: [
+			 objectMemory isYoung: newTargetMethodOrNil ] ]) ifTrue: [
+		self
+			patchToMegamorphicICFor: cPIC selector
+			numArgs: cPIC cmNumArgs
+			receiver: receiver.
+		^ coInterpreter ceSendFromInLineCacheMiss: cPIC ].
+
+	"      method | errorSelector             | situation
+	 -------------+---------------------------+---------------------------------------------------------
+	  foundMethod | SelectorDoesNotUnderstand | Didn't find the method but found the DNU implementation
+	  foundMethod | nil                       | Found the method
+
+	Now extend the PIC with the new case."
+	self
+		cogExtendPIC: cPIC
 		CaseNMethod: newTargetMethodOrNil
-		tag: cacheTag
+		tag: (objectRepresentation inlineCacheTagForInstance: receiver)
 		isMNUCase: errorSelectorOrNil = SelectorDoesNotUnderstand.
+
 	"Jump back into the pic at its entry in case this is an MNU."
 	coInterpreter
 		executeCogPIC: cPIC
 		fromLinkedSendWithReceiver: receiver
-		andCacheTag: (backEnd inlineCacheTagAt: outerReturn).
+		andCacheTag: (backEnd inlineCacheTagAt: callerReturnAddress).
 	self unreachable
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 Cogit >> ceCPICMissTrampoline [
 	<doNotGenerate>
 	^ ceCPICMissTrampoline
 ]
 
-{ #category : #'simulation only' }
+{ #category : 'simulation only' }
 Cogit >> ceCallCogCodePopReceiverAndClassRegs [
 	<api: 'extern void (*ceCallCogCodePopReceiverAndClassRegs)()'>
 	<doNotGenerate>
 	self simulateEnilopmart: ceCallCogCodePopReceiverAndClassRegs numArgs: 2
 ]
 
-{ #category : #'simulation only' }
+{ #category : 'simulation only' }
 Cogit >> ceCallCogCodePopReceiverReg [
 	<api: 'extern void (*ceCallCogCodePopReceiverReg)()'>
 	<doNotGenerate>
 	self simulateEnilopmart: ceCallCogCodePopReceiverReg numArgs: 1
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 Cogit >> ceCannotResumePC [
 	<api>
 	<cmacro: '() ((usqInt)ceCannotResumeTrampoline)'>
@@ -3926,7 +3782,7 @@ Cogit >> ceCannotResumePC [
 	^ceCannotResumeTrampoline
 ]
 
-{ #category : #'jit - api' }
+{ #category : 'jit - api' }
 Cogit >> ceCaptureCStackPointers [
 	<api: 'extern void (*ceCaptureCStackPointers)()'>
 	<doNotGenerate>
@@ -3935,21 +3791,21 @@ Cogit >> ceCaptureCStackPointers [
 	self simulateLeafCallOf: ceCaptureCStackPointers
 ]
 
-{ #category : #testing }
+{ #category : 'testing' }
 Cogit >> ceCheckFeatures [
 	<cmacro: '() ceCheckFeaturesFunction()'>
 
 	^self simulateLeafCallOf: ceCheckFeaturesFunction
 ]
 
-{ #category : #testing }
+{ #category : 'testing' }
 Cogit >> ceCheckFeaturesFunction: anAddress [
 	<doNotGenerate> 
 
 	ceCheckFeaturesFunction := anAddress 
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 Cogit >> ceCheckForInterruptTrampoline: anInteger [ 
 	<doNotGenerate>
 
@@ -3975,61 +3831,61 @@ Cogit >> ceDereferenceSelectorIndex [
 	^ objectRepresentation selectorIndexDereferenceRoutine
 ]
 
-{ #category : #'as yet unclassified' }
+{ #category : 'accessing' }
 Cogit >> ceDereferenceSelectorIndex: anInteger [ 
 	
 	<doNotGenerate>
 	objectRepresentation selectorIndexDereferenceRoutine: anInteger
 ]
 
-{ #category : #'simulation only' }
+{ #category : 'simulation only' }
 Cogit >> ceEnterCogCodePopReceiverReg [
 	<api: 'extern void (*ceEnterCogCodePopReceiverReg)()'>
 	<doNotGenerate>
 	self simulateEnilopmart: ceEnterCogCodePopReceiverReg numArgs: 1
 ]
 
-{ #category : #'simulation only' }
+{ #category : 'simulation only' }
 Cogit >> ceEnterCogCodePopReceiverRegEnilopmart [
 	<doNotGenerate>
 	^ ceEnterCogCodePopReceiverReg
 ]
 
-{ #category : #'trampoline support' }
+{ #category : 'trampoline support' }
 Cogit >> ceFree: pointer [
 	<api>
 	<var: #pointer type: #'void*'>
 	self free: pointer
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 Cogit >> ceLargeActiveContextInFullBlockTrampoline [
 
 	<doNotGenerate>
 	^ objectRepresentation ceLargeActiveContextInFullBlockTrampoline
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 Cogit >> ceLargeActiveContextInFullBlockTrampoline: anAddress [
 
 	<doNotGenerate>
 	objectRepresentation ceLargeActiveContextInFullBlockTrampoline: anAddress
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 Cogit >> ceLargeActiveContextInMethodTrampoline [
 	<doNotGenerate>
 	^ objectRepresentation ceLargeActiveContextInMethodTrampoline
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 Cogit >> ceLargeActiveContextInMethodTrampoline: anAddress [
 
 	<doNotGenerate>
 	objectRepresentation ceLargeActiveContextInMethodTrampoline: anAddress
 ]
 
-{ #category : #'trampoline support' }
+{ #category : 'trampoline support' }
 Cogit >> ceMalloc: size [
 	<api>
 	<var: #size type: #'size_t'>
@@ -4037,31 +3893,31 @@ Cogit >> ceMalloc: size [
 	^ self malloc: size
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 Cogit >> ceMethodAbortTrampoline [
 	<doNotGenerate>
 	^ ceMethodAbortTrampoline
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 Cogit >> ceMethodAbortTrampoline: anInteger [ 
 	<doNotGenerate>
 	ceMethodAbortTrampoline := anInteger
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 Cogit >> cePICAbortTrampoline [
 	<doNotGenerate>
 	^ cePICAbortTrampoline
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 Cogit >> cePICAbortTrampoline: anInteger [ 
 	<doNotGenerate>
 	cePICAbortTrampoline := anInteger
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 Cogit >> ceReturnToInterpreterPC [
 	<api>
 	<cmacro: '() ((usqInt)ceReturnToInterpreterTrampoline)'>
@@ -4069,13 +3925,13 @@ Cogit >> ceReturnToInterpreterPC [
 	^ceReturnToInterpreterTrampoline
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 Cogit >> ceReturnToInterpreterTrampoline: anInteger [ 
 	<doNotGenerate>
 	ceReturnToInterpreterTrampoline := anInteger
 ]
 
-{ #category : #'in-line cacheing' }
+{ #category : 'in-line cacheing' }
 Cogit >> ceSICMiss: receiver [
 	"An in-line cache check in a method has failed.  The failing entry check has jumped
 	 to the ceMethodAbort abort call at the start of the method which has called this routine.
@@ -4088,98 +3944,140 @@ Cogit >> ceSICMiss: receiver [
 	 So we can find the method that did the failing entry check at
 		ceMethodAbort call return address - missOffset
 	 and we can find the send site from the outer return address."
+
 	<api>
-	| pic innerReturn outerReturn entryPoint targetMethod newTargetMethodOrNil errorSelectorOrNil cacheTag extent result |
-	<var: #pic type: #'CogMethod *'>
-	<var: #targetMethod type: #'CogMethod *'>
+	<story: #pic>
+	<var: #inlineCache type: #'CogMethod *'>
+	| inlineCache missedTargetReturnAddress callerReturnAddress missedTargetCogMethod newTargetMethodOrNil errorSelectorOrNil cacheTag linkingSucceeded |
+	missedTargetReturnAddress := coInterpreter popStack asUnsignedInteger.
 	"Whether we can relink to a PIC or not we need to pop off the inner return and identify the target method."
-	innerReturn := coInterpreter popStack asUnsignedInteger.
-	targetMethod := self cCoerceSimple: innerReturn - missOffset to: #'CogMethod *'.
-	(objectMemory isOopForwarded: receiver) ifTrue:
-		[^coInterpreter ceSendFromInLineCacheMiss: targetMethod].
-	outerReturn := coInterpreter stackTop asUnsignedInteger.
-	self assert: (outerReturn between: methodZoneBase and: methodZone freeStart).
-	entryPoint := backEnd callTargetFromReturnAddress: outerReturn.
+	missedTargetCogMethod := self
+		                         cCoerceSimple:
+		                         missedTargetReturnAddress - missOffset
+		                         to: #'CogMethod *'.
+	(objectMemory isOopForwarded: receiver) ifTrue: [
+		^ coInterpreter ceSendFromInLineCacheMiss: missedTargetCogMethod ].
 
-	self assert: targetMethod selector ~= objectMemory nilObject.
-	self assert: targetMethod asInteger + cmEntryOffset = entryPoint.
+	callerReturnAddress := coInterpreter stackTop asUnsignedInteger.
 
-	self lookup: targetMethod selector
+	self assert:
+		(callerReturnAddress
+			 between: methodZoneBase
+			 and: methodZone freeStart).
+	self assert: missedTargetCogMethod selector ~= objectMemory nilObject.
+	self assert: missedTargetCogMethod asInteger + cmEntryOffset
+		= (backEnd callTargetFromReturnAddress: callerReturnAddress).
+
+	"FIXME: What does this check mean?"
+	(backEnd inlineCacheTagAt: callerReturnAddress)
+	= self isMNUPicAbortDiscriminatorValue ifTrue: [
+		self
+			patchToMegamorphicICFor: missedTargetCogMethod selector
+			numArgs: missedTargetCogMethod cmNumArgs
+			receiver: receiver.
+		^ coInterpreter ceSendFromInLineCacheMiss: missedTargetCogMethod ].
+
+	self
+		lookup: missedTargetCogMethod selector
 		for: receiver
-		methodAndErrorSelectorInto:
-			[:method :errsel|
+		methodAndErrorSelectorInto: [ :method :errsel |
 			newTargetMethodOrNil := method.
-			errorSelectorOrNil := errsel].
-	"We assume lookupAndCog:for: will *not* reclaim the method zone"
-	self assert: outerReturn = coInterpreter stackTop.
+			errorSelectorOrNil := errsel ].
+
+	"      method | errorSelector             | situation
+	 -------------+---------------------------+-------------------------------------------------------------
+	          nil | SelectorCannotInterpret   | There was an error during the lookup (ill-formed class)
+	          nil | SelectorDoesNotUnderstand | Didn't find the method nor the DNU implementation
+	  foundMethod | SelectorCannotInterpret   | Found something that isn't a CompiledMethod (#run:with:in:)
+	  foundMethod | *                         | foundMethod is young (may not be a CompiledMethod!)"
 	cacheTag := objectRepresentation inlineCacheTagForInstance: receiver.
-	((errorSelectorOrNil notNil and: [errorSelectorOrNil ~= SelectorDoesNotUnderstand])
-	 or: [(objectRepresentation inlineCacheTagIsYoung: cacheTag)
-	 or: [(backEnd inlineCacheTagAt: outerReturn) = self picAbortDiscriminatorValue
-	 or: [newTargetMethodOrNil isNil
-	 or: [objectMemory isYoung: newTargetMethodOrNil]]]]) ifTrue:
-		[result := self patchToOpenPICFor: targetMethod selector
-					numArgs: targetMethod cmNumArgs
-					receiver: receiver.
-		 self assert: result not. "If patchToOpenPICFor:.. returns we're out of code memory"
-		 ^coInterpreter ceSendFromInLineCacheMiss: targetMethod].
-	"See if an Open PIC is already available."
-	pic := methodZone openPICWithSelector: targetMethod selector.
-	(pic isNil or: [self allowEarlyOpenPICPromotion not]) ifTrue:
-		["otherwise attempt to create a closed PIC for the two cases."
+	(errorSelectorOrNil = SelectorCannotInterpret or: [
+		 newTargetMethodOrNil isNil or: [
+			 objectMemory isYoung: newTargetMethodOrNil ] ]) ifTrue: [
+		self
+			patchToMegamorphicICFor: missedTargetCogMethod selector
+			numArgs: missedTargetCogMethod cmNumArgs
+			receiver: receiver.
+		^ coInterpreter ceSendFromInLineCacheMiss: missedTargetCogMethod ].
 
-		self 
-			enableCodeZoneWriteDuring: [  
-				 pic := self cogPICSelector: targetMethod selector
-							numArgs: targetMethod cmNumArgs
-							Case0Method: targetMethod
-							Case1Method: newTargetMethodOrNil
-							tag: cacheTag
-							isMNUCase: errorSelectorOrNil = SelectorDoesNotUnderstand]
-			flushingCacheWith: [ 
-				(pic asInteger between: MaxNegativeErrorCode and: -1) ifFalse: [
-					self flushICacheFrom: pic asUnsignedInteger to: pic asUnsignedInteger + closedPICSize]] ].
+	"If early promotion is allowed check if anyone else saw this selector turn megamorphic"
+	self allowEarlyPromotionToMegamorphicIC
+		ifFalse: [ inlineCache := nil ]
+		ifTrue: [
+			| extent |
+			inlineCache := methodZone openPICWithSelector:
+				               missedTargetCogMethod selector.
+			linkingSucceeded := inlineCache isNotNil.
+			inlineCache ifNotNil: [
+				self
+					enableCodeZoneWriteDuring: [ "Link the sendsite.
+					Because we are on a megamorphic sendsite put the selector as tag for the
+					benefit of the cacheTag assert check in checkIfValidOopRef:pc:cogMethod:
+					et al."
+						extent := backEnd
+							          rewriteInlineCacheAt: callerReturnAddress
+							          tag: (self
+									           inlineCacheValueForSelector:
+									           missedTargetCogMethod selector
+									           in: coInterpreter mframeHomeMethodExport
+									           at: callerReturnAddress)
+							          target: inlineCache asInteger + cmEntryOffset ]
+					flushingCacheWith: [
+						self
+							flushICacheFrom: callerReturnAddress asUnsignedInteger - extent
+							to: callerReturnAddress asUnsignedInteger ] ] ].
+	inlineCache ifNil: [
+			| extent |
+			"      method | errorSelector             | situation
+			 -------------+---------------------------+---------------------------------------------------------
+			  foundMethod | SelectorDoesNotUnderstand | Didn't find the method but found the DNU implementation
+			  foundMethod | nil                       | Found the method"
+			self
+				enableCodeZoneWriteDuring: [
+					inlineCache := self
+						               cogPICSelector: missedTargetCogMethod selector
+						               numArgs: missedTargetCogMethod cmNumArgs
+						               Case0Method: missedTargetCogMethod
+						               Case1Method: newTargetMethodOrNil
+						               tag: cacheTag
+						               isMNUCase:
+						               errorSelectorOrNil = SelectorDoesNotUnderstand.
+					linkingSucceeded := (inlineCache asInteger
+						                     between: MaxNegativeErrorCode
+						                     and: -1) not.
+					linkingSucceeded ifTrue: [ "Link the send site to the pic."
+						extent := backEnd
+							          rewriteCallAt: callerReturnAddress
+							          target: inlineCache asInteger + cmEntryOffset ] ]
+				flushingCacheWith: [
+					linkingSucceeded ifTrue: [
+						self
+							flushICacheFrom: inlineCache asUnsignedInteger
+							to: inlineCache asUnsignedInteger + closedPICSize.
+						self
+							flushICacheFrom: callerReturnAddress asUnsignedInteger - extent
+							to: callerReturnAddress asUnsignedInteger ] ] ].
 
-		 (pic asInteger between: MaxNegativeErrorCode and: -1) ifTrue:
-			["For some reason the PIC couldn't be generated, most likely a lack of code memory.
-			  Continue as if this is an unlinked send."
-			 pic asInteger = InsufficientCodeSpace ifTrue:
-				[coInterpreter callForCogCompiledCodeCompaction].
-			^coInterpreter ceSendFromInLineCacheMiss: targetMethod].
-		 
-	"Relink the send site to the pic.  If to an open PIC then reset the cache tag to the selector,
-	 for the benefit of the cacheTag assert check in checkIfValidOopRef:pc:cogMethod: et al."
+	linkingSucceeded ifTrue: [ "Jump back into the pic at its entry in case this is an MNU (newTargetMethodOrNil is nil)"
+		coInterpreter
+			executeCogPIC: inlineCache
+			fromLinkedSendWithReceiver: receiver
+			andCacheTag: (backEnd inlineCacheTagAt: callerReturnAddress) ].
 
-	self enableCodeZoneWriteDuring: [   
-		extent := pic cmType = CMMegamorphicIC
-					ifTrue:
-						[backEnd
-							rewriteInlineCacheAt: outerReturn
-							tag: (self inlineCacheValueForSelector: targetMethod selector
-									  in: coInterpreter mframeHomeMethodExport
-									  at: outerReturn)
-							target: pic asInteger + cmEntryOffset]
-					ifFalse:
-						[backEnd
-							rewriteCallAt: outerReturn
-							target: pic asInteger + cmEntryOffset]]
-		flushingCacheWith: [ self flushICacheFrom: outerReturn asUnsignedInteger - extent to: outerReturn asUnsignedInteger].
-		
-	"Jump back into the pic at its entry in case this is an MNU (newTargetMethodOrNil is nil)"
-	coInterpreter
-		executeCogPIC: pic
-		fromLinkedSendWithReceiver: receiver
-		andCacheTag: (backEnd inlineCacheTagAt: outerReturn).
-	^self unreachable
+	"For some reason the PIC couldn't be generated, most likely lack of code memory or a promotion to megamorphic.
+	 Continue as if this is an unlinked send."
+	inlineCache asInteger = InsufficientCodeSpace ifTrue: [
+		coInterpreter callForCogCompiledCodeCompaction ].
+	^ coInterpreter ceSendFromInLineCacheMiss: missedTargetCogMethod
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 Cogit >> ceScheduleScavengeTrampoline: anInteger [ 
 
 	objectRepresentation 	ceScheduleScavengeTrampoline: anInteger
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 Cogit >> ceSendMustBeBooleanAddFalseTrampoline: anInteger [
 
 	<doNotGenerate>
@@ -4187,7 +4085,7 @@ Cogit >> ceSendMustBeBooleanAddFalseTrampoline: anInteger [
 	ceSendMustBeBooleanAddFalseTrampoline := anInteger
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 Cogit >> ceSendMustBeBooleanAddTrueTrampoline: anInteger [ 
 
 	<doNotGenerate>
@@ -4209,27 +4107,27 @@ Cogit >> ceSmallActiveContextInFullBlockTrampoline [
 	^ objectRepresentation ceSmallActiveContextInFullBlockTrampoline
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 Cogit >> ceSmallActiveContextInFullBlockTrampoline: anAddress [
 
 	<doNotGenerate>
 	objectRepresentation ceSmallActiveContextInFullBlockTrampoline: anAddress
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 Cogit >> ceSmallActiveContextInMethodTrampoline [
 	<doNotGenerate>
 	^ objectRepresentation ceSmallActiveContextInMethodTrampoline
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 Cogit >> ceSmallActiveContextInMethodTrampoline: anAddress [
 
 	<doNotGenerate>
 	objectRepresentation ceSmallActiveContextInMethodTrampoline: anAddress
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 Cogit >> ceStoreCheckTrampoline: anAddress [ 
 	
 	self objectRepresentation ceStoreCheckTrampoline: anAddress
@@ -4237,7 +4135,7 @@ Cogit >> ceStoreCheckTrampoline: anAddress [
 
 ]
 
-{ #category : #debugging }
+{ #category : 'debugging' }
 Cogit >> checkAssertsEnabledInCogit [
 	<api>
 	| assertsAreEnabledInCogit |
@@ -4245,7 +4143,7 @@ Cogit >> checkAssertsEnabledInCogit [
 	self assert: assertsAreEnabledInCogit
 ]
 
-{ #category : #initialization }
+{ #category : 'initialization' }
 Cogit >> checkCFramePointerInUse [
 	| currentCSP result |
 	
@@ -4288,14 +4186,14 @@ Cogit >> checkCFramePointerInUse [
 	^ result
 ]
 
-{ #category : #debugging }
+{ #category : 'debugging' }
 Cogit >> checkEnoughOpcodes [
 	<inline: true>
 	opcodeIndex > numAbstractOpcodes ifTrue:
 		[self error: 'Cog JIT internal error. Too many abstract opcodes.  Num opcodes heuristic is too optimistic.']
 ]
 
-{ #category : #'garbage collection' }
+{ #category : 'garbage collection' }
 Cogit >> checkIfValidOopRef: annotation pc: mcpc cogMethod: cogMethod [
 	"Check for a valid object reference, if any, at a map entry.  Answer a code unique to each error for debugging."
 	<var: #mcpc type: #'char *'>
@@ -4333,7 +4231,7 @@ Cogit >> checkIfValidOopRef: annotation pc: mcpc cogMethod: cogMethod [
 	^0 "keep scanning"
 ]
 
-{ #category : #'garbage collection' }
+{ #category : 'garbage collection' }
 Cogit >> checkIfValidOopRefAndTarget: annotation pc: mcpc cogMethod: cogMethod [
 	"Check for a valid object reference, if any, at a map entry.  Answer a code unique to each error for debugging."
 	<var: #mcpc type: #'char *'>
@@ -4391,7 +4289,7 @@ Cogit >> checkIfValidOopRefAndTarget: annotation pc: mcpc cogMethod: cogMethod [
 	^0 "keep scanning"
 ]
 
-{ #category : #debugging }
+{ #category : 'debugging' }
 Cogit >> checkIntegrityOfObjectReferencesInCode: gcModes [
 	<api>
 	"Answer if all references to objects in machine-code are valid."	
@@ -4445,7 +4343,7 @@ Cogit >> checkIntegrityOfObjectReferencesInCode: gcModes [
 	^ok
 ]
 
-{ #category : #'garbage collection' }
+{ #category : 'garbage collection' }
 Cogit >> checkMaybeObjRefInClosedPIC: maybeObject [
 	maybeObject = 0 ifTrue:
 		[^true].
@@ -4454,13 +4352,13 @@ Cogit >> checkMaybeObjRefInClosedPIC: maybeObject [
 	^objectRepresentation checkValidObjectReference: maybeObject
 ]
 
-{ #category : #debugging }
+{ #category : 'debugging' }
 Cogit >> checkStackDepthOnSend [
 	<doNotGenerate>
 	^(traceFlags bitAnd: 128) ~= 0
 ]
 
-{ #category : #'garbage collection' }
+{ #category : 'garbage collection' }
 Cogit >> checkValidObjectReferencesInClosedPIC: cPIC [
 	<var: #cPIC type: #'CogMethod *'>
 	| ok pc |
@@ -4493,7 +4391,7 @@ Cogit >> checkValidObjectReferencesInClosedPIC: cPIC [
 	^ok
 ]
 
-{ #category : #'profiling primitives' }
+{ #category : 'profiling primitives' }
 Cogit >> cleanUpFailingCogCodeConstituents: cogMethodArg [
 	<var: #cogMethodArg type: #'CogMethod *'>
 	<inline: #never> "i.e. this should never be called, so keep it out of the main path."
@@ -4510,7 +4408,7 @@ Cogit >> cleanUpFailingCogCodeConstituents: cogMethodArg [
 	^nil
 ]
 
-{ #category : #'garbage collection' }
+{ #category : 'garbage collection' }
 Cogit >> closedPICRefersToUnmarkedObject: cPIC [
 	"Answer if the ClosedPIC refers to any unmarked objects or freed/freeable target methods,
 	 applying markAndTraceOrFreeCogMethod:firstVisit: to those targets to determine if freed/freeable."
@@ -4551,20 +4449,20 @@ Cogit >> closedPICRefersToUnmarkedObject: cPIC [
 	^false
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 Cogit >> closedPICSize [
 	"For Cogit clas>>#genAndDisPICoptions:"
 	<doNotGenerate>
 	^closedPICSize
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 Cogit >> coInterpreter [
 	<doNotGenerate>
 	^coInterpreter
 ]
 
-{ #category : #debugging }
+{ #category : 'debugging' }
 Cogit >> codeEntryFor: address [
 	<api>
 	<returnTypeC: #'char *'>
@@ -4577,7 +4475,7 @@ Cogit >> codeEntryFor: address [
 	^nil
 ]
 
-{ #category : #debugging }
+{ #category : 'debugging' }
 Cogit >> codeEntryNameFor: address [
 	<api>
 	<returnTypeC: #'char *'>
@@ -4590,7 +4488,7 @@ Cogit >> codeEntryNameFor: address [
 	^nil
 ]
 
-{ #category : #'jit - api' }
+{ #category : 'jit - api' }
 Cogit >> cog: aMethodObj selector: aSelectorOop [
 	"Attempt to produce a machine code method for the bytecode method
 	 object aMethodObj.  N.B. If there is no code memory available do *NOT*
@@ -4613,13 +4511,6 @@ Cogit >> cog: aMethodObj selector: aSelectorOop [
 	selector := aSelectorOop = objectMemory nilObject
 					ifTrue: [coInterpreter maybeSelectorOfMethod: aMethodObj]
 					ifFalse: [aSelectorOop].
-	"coInterpreter stringOf: selector"
-	selector ifNotNil:
-		[coInterpreter
-			compilationBreak: selector
-			point: (objectMemory lengthOf: selector)
-			isMNUCase: false].
-	aMethodObj = breakMethod ifTrue: [self halt: 'Compilation of breakMethod'].
 
 	objectRepresentation ensureNoForwardedLiteralsIn: aMethodObj.
 	methodObj := aMethodObj.
@@ -4632,9 +4523,6 @@ Cogit >> cog: aMethodObj selector: aSelectorOop [
 		coInterpreter maybeFlagMethodAsInterpreted: aMethodObj.
 		cogMethod asInteger = InsufficientCodeSpace ifTrue:
 			[coInterpreter callForCogCompiledCodeCompaction].
-		 self maybeFreeCounters.
-		 "Right now no errors should be reported, so nothing more to do."
-		 "self reportError: (self cCoerceSimple: cogMethod to: #sqInt)."
 		 ^nil].
 		
 	statCompileMethodCount := statCompileMethodCount + 1.
@@ -4643,20 +4531,20 @@ Cogit >> cog: aMethodObj selector: aSelectorOop [
 	^cogMethod
 ]
 
-{ #category : #disassembly }
+{ #category : 'disassembly' }
 Cogit >> cogCodeBase [
 	<api>
 	^codeBase
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 Cogit >> cogCodeBase: anInteger [ 
 	<doNotGenerate>
 	codeBase := anInteger
 	
 ]
 
-{ #category : #'profiling primitives' }
+{ #category : 'profiling primitives' }
 Cogit >> cogCodeConstituents: withDetails [
 
 	"Answer the contents of the code zone as an array of pair-wise element, address in ascending address order.
@@ -4765,7 +4653,7 @@ Cogit >> cogCodeConstituents: withDetails [
 	^ constituents
 ]
 
-{ #category : #'in-line cacheing' }
+{ #category : 'in-line cacheing' }
 Cogit >> cogExtendPIC: cPIC CaseNMethod: caseNMethod tag: caseNTag isMNUCase: isMNUCase [
 	"Extend the cPIC with the supplied case.  If caseNMethod is cogged dispatch direct to
 	 its unchecked entry-point.  If caseNMethod is not cogged, jump to the fast interpreter
@@ -4773,14 +4661,6 @@ Cogit >> cogExtendPIC: cPIC CaseNMethod: caseNMethod tag: caseNTag isMNUCase: is
 	 having the MNU case for cache flushing."
  	<var: #cPIC type: #'CogMethod *'>
 	| operand target address |
-
-	coInterpreter
-		compilationBreak: cPIC selector
-		point: (objectMemory numBytesOf: cPIC selector)
-		isMNUCase: isMNUCase.
-
-	self assert: (objectRepresentation inlineCacheTagIsYoung: caseNTag) not.
-
 	self enableCodeZoneWriteDuring: [  
 			"Caller patches to open pic if caseNMethod is young."
 			self assert: (caseNMethod notNil and: [(objectMemory isYoung: caseNMethod) not]).
@@ -4793,14 +4673,14 @@ Cogit >> cogExtendPIC: cPIC CaseNMethod: caseNMethod tag: caseNTag isMNUCase: is
 					 isMNUCase
 						ifTrue: "this is an MNU so tag the CPIC header and setup a jump to the MNUAbort"
 							[cPIC cpicHasMNUCase: true.
-							 target := cPIC asInteger + (self sizeof: CogMethod)]
-						ifFalse: "setup a jump to the interpretAborth so we can cog the target method"
+							 target := self picAbortAddress: cPIC]
+						ifFalse: "setup a jump to the interpretAbort so we can cog the target method"
 							[target := cPIC asInteger + self picInterpretAbortOffset]].
 
 			"find the end address of the new case"
 			address := self addressOfEndOfCase: cPIC cPICNumCases +1 inCPIC: cPIC.
 			
-			self rewriteCPICCaseAt: address tag: caseNTag objRef: operand target: target.
+			self rewritePICCaseAt: address tag: caseNTag objRef: operand target: target.
 
 			"finally, rewrite the jump 3 instr  before firstCPICCaseOffset to jump to the beginning of this new case"
 			self rewriteCPIC: cPIC caseJumpTo: address - cPICCaseSize. 
@@ -4813,7 +4693,7 @@ Cogit >> cogExtendPIC: cPIC CaseNMethod: caseNMethod tag: caseNTag isMNUCase: is
 	^0
 ]
 
-{ #category : #'jit - api' }
+{ #category : 'jit - api' }
 Cogit >> cogFullBlockMethod: aMethodObj numCopied: numCopied [
 	"Attempt to produce a machine code method for the bytecode method
 	 object aMethodObj.  N.B. If there is no code memory available do *NOT*
@@ -4838,7 +4718,6 @@ Cogit >> cogFullBlockMethod: aMethodObj numCopied: numCopied [
 	self deny: (objectMemory isForwarded: ultimateLiteral).
 	self deny: (coInterpreter methodHasCogMethod: aMethodObj).
 	self assert: (objectMemory isOopCompiledMethod: ultimateLiteral).
-	aMethodObj = breakMethod ifTrue: [self halt: 'Compilation of breakMethod'].
 
 	methodObj := aMethodObj.
 	methodHeader := objectMemory methodHeaderOf: aMethodObj.
@@ -4847,17 +4726,7 @@ Cogit >> cogFullBlockMethod: aMethodObj numCopied: numCopied [
 	(cogMethod asInteger between: MaxNegativeErrorCode and: -1) ifTrue:
 		[cogMethod asInteger = InsufficientCodeSpace ifTrue:
 			[coInterpreter callForCogCompiledCodeCompaction].
-		 self maybeFreeCounters.
-		 "Right now no errors should be reported, so nothing more to do."
-		 "self reportError: (self cCoerceSimple: cogMethod to: #sqInt)."
 		 ^nil].
-	"self cCode: ''
-		inSmalltalk:
-			[coInterpreter printCogMethod: cogMethod.
-			 ""coInterpreter symbolicMethod: aMethodObj.""
-			 self assertValidMethodMap: cogMethod."
-			 "self disassembleMethod: cogMethod."
-			 "printInstructions := clickConfirm := true""]."
 
 	statCompileFullBlockCount := statCompileFullBlockCount + 1.
 	statCompileFullBlockUsecs := statCompileFullBlockUsecs + (coInterpreter ioUTCMicrosecondsNow - startTime).		
@@ -4865,54 +4734,50 @@ Cogit >> cogFullBlockMethod: aMethodObj numCopied: numCopied [
 	^cogMethod
 ]
 
-{ #category : #'in-line cacheing' }
+{ #category : 'in-line cacheing' }
 Cogit >> cogMNUPICSelector: selector receiver: rcvr methodOperand: methodOperand numArgs: numArgs [
-	<api>
 	"Attempt to create a one-case PIC for an MNU.
 	 The tag for the case is at the send site and so doesn't need to be generated."
+
+	<api>
 	<returnTypeC: #'CogMethod *'>
 	| startAddress pic |
-	((objectMemory isYoung: selector)
-	 or: [(objectRepresentation inlineCacheTagForInstance: rcvr) = self picAbortDiscriminatorValue]) ifTrue:
-		[^0].
-	coInterpreter
-		compilationBreak: selector
-		point: (objectMemory numBytesOf: selector)
-		isMNUCase: true.
+	((objectMemory isYoung: selector) or: [
+		 (objectRepresentation inlineCacheTagForInstance: rcvr)
+		 = self isMNUPicAbortDiscriminatorValue ]) ifTrue: [ ^ 0 ].
+
 	self assert: endCPICCase0 notNil.
 	"get memory in the code zone for the CPIC; if that fails we return an error code for the sender to use to work out how to blow up"
 	startAddress := methodZone allocate: closedPICSize.
-	startAddress = 0 ifTrue:
-		[coInterpreter callForCogCompiledCodeCompaction.
-		 ^0].
+	startAddress = 0 ifTrue: [
+		coInterpreter callForCogCompiledCodeCompaction.
+		^ 0 ].
 
-	self 
-		enableCodeZoneWriteDuring: [   
-			"memcpy the prototype across to our allocated space; because anything else would be silly"
-			objectMemory
-				memcpy: (self cCoerceSimple: startAddress to: #'CogMethod *')
-				_: (self cCoerceSimple: cPICPrototype to: #'CogMethod *')
-				_: closedPICSize.
-			
-			self configureMNUCPIC: (self cCoerceSimple: startAddress to: #'CogMethod *')
-				methodOperand: methodOperand
-				numArgs: numArgs
-				delta: startAddress - cPICPrototype.
+	pic := self cCoerceSimple: startAddress to: #'CogMethod *'.
+	self
+		enableCodeZoneWriteDuring: [ "memcpy the prototype across to our allocated space; because anything else would be silly"
+			self
+				initializePIC: pic
+				atDelta: startAddress - cPICPrototype
+				numArgs: numArgs.
 
-			pic := self
-				fillInCPICHeader: (self cCoerceSimple: startAddress to: #'CogMethod *')
+			self configureMNUCPIC: pic methodOperand: methodOperand.
+
+			self
+				fillInCPICHeader: pic
 				numArgs: numArgs
 				numCases: 1
 				hasMNUCase: true
 				selector: selector ]
-		
-		flushingCacheWith: [ 	self flushICacheFrom: pic asUnsignedInteger to: pic asUnsignedInteger + closedPICSize ].
-	
+		flushingCacheWith: [
+			self
+				flushICacheFrom: pic asUnsignedInteger
+				to: pic asUnsignedInteger + closedPICSize ].
+
 	^ pic
-	
 ]
 
-{ #category : #debugging }
+{ #category : 'debugging' }
 Cogit >> cogMethodDoesntLookKosher: cogMethod [
 	"Check that the header fields onf a non-free method are consistent with
 	 the type. Answer 0 if it is ok, otherwise answer a code for the error."
@@ -4970,7 +4835,17 @@ Cogit >> cogMethodDoesntLookKosher: cogMethod [
 	^9
 ]
 
-{ #category : #'simulation only' }
+{ #category : 'in-line cacheing' }
+Cogit >> cogMethodIfPossible: methodOrSelectorIndex selector: selector [
+	<api>
+
+	((coInterpreter methodHasCogMethod: methodOrSelectorIndex) not and: [
+		 coInterpreter methodShouldBeCogged: methodOrSelectorIndex ])
+		ifTrue: [ "We assume cog:selector: will *not* reclaim the method zone"
+			self cog: methodOrSelectorIndex selector: selector ]
+]
+
+{ #category : 'simulation only' }
 Cogit >> cogMethodSurrogateAt: address [
 	<doNotGenerate>
 	self assert: (address < 0 or: [(address bitAnd: objectMemory wordSize - 1) = 0]).
@@ -4980,23 +4855,19 @@ Cogit >> cogMethodSurrogateAt: address [
 		cogit: self
 ]
 
-{ #category : #'simulation only' }
+{ #category : 'simulation only' }
 Cogit >> cogMethodSurrogateClass [
 	<doNotGenerate>
 	^cogMethodSurrogateClass
 ]
 
-{ #category : #'in-line cacheing' }
+{ #category : 'in-line cacheing' }
 Cogit >> cogOpenPICSelector: selector numArgs: numArgs [
 	"Create an Open PIC.  Temporarily create a direct call of ceSendFromOpenPIC:.
 	 Should become a probe of the first-level method lookup cache followed by a
 	 call of ceSendFromOpenPIC: if the probe fails."
 	<returnTypeC: #'CogMethod *'>
 	| startAddress codeSize mapSize end pic |
-	coInterpreter
-		compilationBreak: selector
-		point: (objectMemory numBytesOf: selector)
-		isMNUCase: false.
 	startAddress := methodZone allocate: openPICSize.
 	startAddress = 0 ifTrue:
 		[^self cCoerceSimple: InsufficientCodeSpace to: #'CogMethod *'].
@@ -5023,9 +4894,8 @@ Cogit >> cogOpenPICSelector: selector numArgs: numArgs [
 	^ pic
 ]
 
-{ #category : #'in-line cacheing' }
+{ #category : 'in-line cacheing' }
 Cogit >> cogPICSelector: selector numArgs: numArgs Case0Method: case0CogMethod Case1Method: case1MethodOrNil tag: case1Tag isMNUCase: isMNUCase [
-
 	"Attempt to create a two-case PIC for case0CogMethod and  case1Method,case1Tag.
 	 The tag for case0CogMethod is at the send site and so doesn't need to be generated.
 	 case1Method may be any of
@@ -5033,55 +4903,48 @@ Cogit >> cogPICSelector: selector numArgs: numArgs Case0Method: case0CogMethod C
 		- a CompiledMethod; link to ceInterpretMethodFromPIC:
 		- a CompiledMethod; link to ceMNUFromPICMNUMethod:receiver:"
 
+	<var: #pic type: #'CogMethod*'>
 	<var: #case0CogMethod type: #'CogMethod *'>
 	<returnTypeC: #'CogMethod *'>
 	| startAddress pic |
-	(objectMemory isYoung: selector) ifTrue: [ 
+	(objectMemory isYoung: selector) ifTrue: [
 		^ self cCoerceSimple: YoungSelectorInPIC to: #'CogMethod *' ].
-	coInterpreter
-		compilationBreak: selector
-		point: (objectMemory numBytesOf: selector)
-		isMNUCase: isMNUCase.
 
 	"get memory in the code zone for the CPIC; if that fails we return an error code for the sender to use to work out how to blow up"
 	startAddress := methodZone allocate: closedPICSize.
-	startAddress = 0 ifTrue: [ 
+	pic := self cCoerceSimple: startAddress to: #'CogMethod *'.
+	startAddress = 0 ifTrue: [
 		^ self cCoerceSimple: InsufficientCodeSpace to: #'CogMethod *' ].
 
-	"memcpy the prototype across to our allocated space; because anything else would be silly"
-	objectMemory
-		memcpy: (self cCoerceSimple: startAddress to: #'CogMethod *')
-		_: (self cCoerceSimple: cPICPrototype to: #'CogMethod *')
-		_: closedPICSize.
-
 	self
-		configureCPIC: (self cCoerceSimple: startAddress to: #'CogMethod *')
+		initializePIC: pic
+		atDelta: startAddress - cPICPrototype
+		numArgs: numArgs.
+	self
+		configureCPIC: pic
 		Case0: case0CogMethod
 		Case1Method: case1MethodOrNil
 		tag: case1Tag
-		isMNUCase: isMNUCase
-		numArgs: numArgs
-		delta: startAddress - cPICPrototype.
+		isMNUCase: isMNUCase.
 
-	pic := self
-		       fillInCPICHeader:
-		       (self cCoerceSimple: startAddress to: #'CogMethod *')
-		       numArgs: numArgs
-		       numCases: 2
-		       hasMNUCase: isMNUCase
-		       selector: selector.
+	self
+		fillInCPICHeader: pic
+		numArgs: numArgs
+		numCases: 2
+		hasMNUCase: isMNUCase
+		selector: selector.
 
 	^ pic
 ]
 
-{ #category : #'simulation only' }
+{ #category : 'simulation only' }
 Cogit >> cogit [
 	"This is for the sizeof: CogMethod hook that allows different cogit classes to use differet CogMethod variants."
 	<doNotGenerate>
 	^self
 ]
 
-{ #category : #'jit - api' }
+{ #category : 'jit - api' }
 Cogit >> cogitPostGCAction: gcMode [
 
 	<api>
@@ -5098,7 +4961,7 @@ Cogit >> cogitPostGCAction: gcMode [
 			 methodZone kosherYoungReferrers ])
 ]
 
-{ #category : #'multi-threading' }
+{ #category : 'multi-threading' }
 Cogit >> cogitTryLockVMOwner [
 	<api>
 		"ceTryLockVMOwner does an atomic swap of the lock with 1 and
@@ -5108,14 +4971,14 @@ Cogit >> cogitTryLockVMOwner [
 	^(self simulateLeafCallOf: ceTryLockVMOwner) ~= 0
 ]
 
-{ #category : #'multi-threading' }
+{ #category : 'multi-threading' }
 Cogit >> cogitUnlockVMOwner [
 	<api>
 	<cmacro: '() ceUnlockVMOwner()'>
 	^self simulateLeafCallOf: ceUnlockVMOwner
 ]
 
-{ #category : #'profiling primitives' }
+{ #category : 'profiling primitives' }
 Cogit >> collectCogConstituentFor: descriptor Annotation: isBackwardBranchAndAnnotation Mcpc: mcpc Bcpc: bcpc Method: cogMethodArg [
 	<var: #descriptor type: #'BytecodeDescriptor *'>
 	<var: #mcpc type: #'char *'>
@@ -5149,7 +5012,7 @@ Cogit >> collectCogConstituentFor: descriptor Annotation: isBackwardBranchAndAnn
 	^0
 ]
 
-{ #category : #'profiling primitives' }
+{ #category : 'profiling primitives' }
 Cogit >> collectCogMethodConstituent: cogMethod [
 	"Answer a description of the mapping between machine code pointers and bytecode pointers for the Cog Method.
 	 First value is the address of the cog method.
@@ -5184,7 +5047,7 @@ Cogit >> collectCogMethodConstituent: cogMethod [
 	^coInterpreter popRemappableOop.
 ]
 
-{ #category : #disassembly }
+{ #category : 'disassembly' }
 Cogit >> collectMapEntry: annotation address: mcpc into: aDictionary [
 	<doNotGenerate>
 	aDictionary
@@ -5198,7 +5061,7 @@ Cogit >> collectMapEntry: annotation address: mcpc into: aDictionary [
 	^0
 ]
 
-{ #category : #'jit - api' }
+{ #category : 'jit - api' }
 Cogit >> compactCogCompiledCode [
 	<api>
 
@@ -5220,7 +5083,7 @@ Cogit >> compactCogCompiledCode [
 			to: methodZone youngReferrers asUnsignedInteger]
 ]
 
-{ #category : #compaction }
+{ #category : 'compaction' }
 Cogit >> compactPICsWithFreedTargets [
 	| cogMethod count |
 	<var: #cogMethod type: #'CogMethod *'>
@@ -5235,12 +5098,12 @@ Cogit >> compactPICsWithFreedTargets [
 	self assert: count = methodZone numMethods
 ]
 
-{ #category : #'simulation only' }
+{ #category : 'simulation only' }
 Cogit >> compilationTrace [
 	^compilationTrace
 ]
 
-{ #category : #'simulation only' }
+{ #category : 'simulation only' }
 Cogit >> compilationTrace: anInteger [
 	"  1 = method/block compilation
 	   2 = bytecode descriptor.
@@ -5252,7 +5115,7 @@ Cogit >> compilationTrace: anInteger [
 	compilationTrace := anInteger
 ]
 
-{ #category : #'compile abstract instructions' }
+{ #category : 'compile abstract instructions' }
 Cogit >> compileAbort [
 	"The start of a CogMethod has a call to a run-time abort routine that either
 	 handles an in-line cache failure or a stack overflow.  The routine selects the
@@ -5275,7 +5138,7 @@ Cogit >> compileAbort [
 			[^sendMiss := self Call: (self methodAbortTrampolineFor: methodOrBlockNumArgs)]
 ]
 
-{ #category : #'compile abstract instructions' }
+{ #category : 'compile abstract instructions' }
 Cogit >> compileAbstractInstructionsFrom: start through: end [
 	"Loop over bytecodes, dispatching to the generator for each bytecode, handling fixups in due course."
 	| nextOpcodeIndex descriptor fixup result nExts |
@@ -5284,8 +5147,7 @@ Cogit >> compileAbstractInstructionsFrom: start through: end [
 	bytecodePC := start.
 	nExts := result := 0.
 	descriptor := nil.
-	[self maybeHaltIfDebugPC.
-	 descriptor := self loadBytesAndGetDescriptor.
+	[descriptor := self loadBytesAndGetDescriptor.
 	 nextOpcodeIndex := opcodeIndex.
 	 result := self perform: descriptor generator.
 	 self assertExtsAreConsumed: descriptor.
@@ -5300,7 +5162,7 @@ Cogit >> compileAbstractInstructionsFrom: start through: end [
 	^result
 ]
 
-{ #category : #'in-line cacheing' }
+{ #category : 'in-line cacheing' }
 Cogit >> compileCPICEntry [
 	<returnTypeC: #'AbstractInstruction *'>
 	"Compile the cache tag computation and the first comparison.  Answer the address of that comparison."
@@ -5309,7 +5171,7 @@ Cogit >> compileCPICEntry [
 	^self JumpNonZero: 0
 ]
 
-{ #category : #initialization }
+{ #category : 'initialization' }
 Cogit >> compileCallFor: aRoutine numArgs: numArgs arg: regOrConst0 arg: regOrConst1 arg: regOrConst2 arg: regOrConst3 floatResultReg: resultRegOrNone regsToSave: regMask [
 	"Generate a call to aRoutine with up to 4 arguments.  If resultRegOrNone is not
 	 NoReg assign the C result to resultRegOrNone.  If saveRegs, save all registers.
@@ -5337,7 +5199,7 @@ Cogit >> compileCallFor: aRoutine numArgs: numArgs arg: regOrConst0 arg: regOrCo
 	backEnd genRestoreRegs: regsToSave
 ]
 
-{ #category : #initialization }
+{ #category : 'initialization' }
 Cogit >> compileCallFor: aRoutine numArgs: numArgs arg: regOrConst0 arg: regOrConst1 arg: regOrConst2 arg: regOrConst3 resultReg: resultRegOrNone regsToSave: regMask [
 	"Generate a call to aRoutine with up to 4 arguments.  If resultRegOrNone is not
 	 NoReg assign the C result to resultRegOrNone.  If saveRegs, save all registers.
@@ -5365,7 +5227,7 @@ Cogit >> compileCallFor: aRoutine numArgs: numArgs arg: regOrConst0 arg: regOrCo
 	backEnd genRestoreRegs: regsToSave
 ]
 
-{ #category : #initialization }
+{ #category : 'initialization' }
 Cogit >> compileCallFor: aRoutine numArgs: numArgs arg: regOrConst0 arg: regOrConst1 arg: regOrConst2 arg: regOrConst3 resultReg: resultRegOrNone resultReg: resultReg2OrNone regsToSave: regMask [
 	"Generate a call to aRoutine with up to 4 arguments.  If resultRegOrNone is not
 	 NoReg assign the C result to resultRegOrNone.  If saveRegs, save all registers.
@@ -5395,78 +5257,7 @@ Cogit >> compileCallFor: aRoutine numArgs: numArgs arg: regOrConst0 arg: regOrCo
 	backEnd genRestoreRegs: regsToSave
 ]
 
-{ #category : #'in-line cacheing' }
-Cogit >> compileClosedPICPrototype [
-	"Compile the abstract instructions for a full closed PIC, used to generate the chunk of code
-	 which is copied to form each closed PIC.  A Closed Polymorphic Inline Cache is a small jump
-	 table used to optimize sends with a limited degree of polymorphism (currently up to 6 cases).
-	 We call it closed because it deals only with a finite number of cases, as opposed to an Open PIC.
-	 When a monomorphic linked send (a send with a single case, linking direct to the checked entry
-	 point of a CogMethod) fails a class check, the Cogit attempts to create a two-entry PIC that will
-	 handle jumping to the original target for the original class and the relevant target for the new
-	 class.  This jump table will be extended on subsequent failures up to a limit (6).
-
-	 We avoid extending CPICs to Open PICs by linking the send site to an Open PIC if one already
-	 exists with the send's selector, a good policy since measurements show that sends of mega-
-	 morphic selectors usually become megamorphic at all send sites.  Hence the Open PIC list.
-
-	 A CPIC also optimizes MNUs and interpret-only methods.  Each case can load SendNumArgs with
-	 the oop of a method, or will load SendNumArgs with 0 if not.  MNUs are optimized by jumping to
-	 the mnuAbort in the CPIC, which calls code that creates the Message, thereby avoiding looking up
-	 the original message which will not be found, and either looks up doesNotUnderstand: or directly
-	 activates the method loaded into SendNumArgs, hence avoiding looking up doesNotUnderstand:.
-	 Interpret-only methods are handled by jumping to the picInterpretAbort, which enters the
-	 interpreter activating the method loaded in SendNumArgs.
-
-	 CPICs look like the following, where rClass is set at the original send site for the 1st case, and #Foo
-	 is some constant, either an oop, a class tag or an instruction address.
-
-		rTemp := (rRecever bitAnd: TagMask) = 0 ifTrue: [rReceiver class] ifFalse: [rRecever bitAnd: TagMask].
-		rTemp = rClass ifFalse:
-			[self goto: #Label].
-		rSendNumArgs := #MethodForCase1Or0.
-		self goto: #TargetForCase1.
-	 #Label
-		rTemp = #ClassTagForCase6 ifTrue:
-			[rSendNumArgs := #MethodForCase6Or0.
-			 self goto: #TargetForCase6].
-		...cases 5, 4 & 3
-		rTemp = #ClassTagForCase2 ifTrue:
-			[rSendNumArgs := #MethodForCase2Or0.
-			 self goto: #TargetForCase2].
-		self goto: #CPICMissTrampoline
-		literals (if out-of-line literals)
-
-	 where we short-cut as many cases as needed by making the self goto: #Label skip as many cases
-	 as needed."
-	<inline: true>
-	| numArgs jumpNext |
-	<var: #jumpNext type: #'AbstractInstruction *'>
-	self compilePICAbort: (numArgs := 0). "Will get rewritten to appropriate arity when configuring."
-	jumpNext := self compileCPICEntry.
-	"At the end of the entry code we need to jump to the first case code, which is actually the last chunk.
-	 On each entension we must update this jump to move back one case."
-	self MoveUniqueCw: self firstPrototypeMethodOop R: SendNumArgsReg.
-	self JumpLong: self cPICPrototypeCaseOffset + 16rCA5E10.
-	endCPICCase0 := self Label.
-	1 to: MaxCPICCases - 1 do:
-		[:h|
-		h = (MaxCPICCases - 1) ifTrue:
-			[jumpNext jmpTarget: self Label]. "this is where we jump to for the first case"
-		self MoveUniqueCw: self subsequentPrototypeMethodOop + h R: SendNumArgsReg.
-		"16rBABE1F15+h is the class tag for the Nth case"
-		self CmpC32: 16rBABE1F15+h R: TempReg.
-		self JumpLongZero: self cPICPrototypeCaseOffset + 16rCA5E10 + (h * 16).
-		h = 1 ifTrue:
-			[endCPICCase1 := self Label]].
-	self MoveCw: methodLabel address R: ClassReg.
-	self JumpLong: (self cPICMissTrampolineFor: numArgs).	"Will get rewritten to appropriate arity when configuring."
-	cPICEndOfCodeLabel := self Label.
-	literalsManager dumpLiterals: false.
-	^0
-]
-
-{ #category : #'compile abstract instructions' }
+{ #category : 'compile abstract instructions' }
 Cogit >> compileCogFullBlockMethod: numCopied [
 	<returnTypeC: #'CogMethod *'>
 	<option: #SistaV1BytecodeSet>
@@ -5476,7 +5267,6 @@ Cogit >> compileCogFullBlockMethod: numCopied [
 	inBlock := InFullBlock.
 	postCompileHook := nil.
 	maxLitIndex := -1.
-	self assert: (coInterpreter primitiveIndexOf: methodObj) = 0.
 	initialPC := coInterpreter startPCOfMethod: methodObj.
 	"initial estimate.  Actual endPC is determined in scanMethod."
 	endPC := objectMemory numBytesOf: methodObj.
@@ -5499,7 +5289,7 @@ Cogit >> compileCogFullBlockMethod: numCopied [
 	^self generateCogFullBlock
 ]
 
-{ #category : #'compile abstract instructions' }
+{ #category : 'compile abstract instructions' }
 Cogit >> compileCogMethod: selector [
 	<returnTypeC: #'CogMethod *'>
 	| numBytecodes successScan result extra |
@@ -5539,7 +5329,7 @@ Cogit >> compileCogMethod: selector [
 	^self generateCogMethod: selector
 ]
 
-{ #category : #'compile abstract instructions' }
+{ #category : 'compile abstract instructions' }
 Cogit >> compileEntireFullBlockMethod: numCopied [
 	"Compile the abstract instructions for the entire full block method."
 	<option: #SistaV1BytecodeSet>
@@ -5555,7 +5345,7 @@ Cogit >> compileEntireFullBlockMethod: numCopied [
 	^0
 ]
 
-{ #category : #'compile abstract instructions' }
+{ #category : 'compile abstract instructions' }
 Cogit >> compileEntireMethod [
 	"Compile the abstract instructions for the entire method, including blocks."
 	| result |
@@ -5568,8 +5358,9 @@ Cogit >> compileEntireMethod [
 	^ self compileMethodBody
 ]
 
-{ #category : #'compile abstract instructions' }
+{ #category : 'compile abstract instructions' }
 Cogit >> compileEntry [
+	<story: #pic>
 	"The entry code to a method checks that the class of the current receiver matches
 	 that in the inline cache.  Other non-obvious elements are that its alignment must be
 	 different from the alignment of the noCheckEntry so that the method map machinery
@@ -5584,12 +5375,12 @@ Cogit >> compileEntry [
 			[self CallRT: ceTraceLinkedSendTrampoline]]
 ]
 
-{ #category : #'compile abstract instructions' }
+{ #category : 'compile abstract instructions' }
 Cogit >> compileFrameBuild [
 	self subclassResponsibility
 ]
 
-{ #category : #'compile abstract instructions' }
+{ #category : 'compile abstract instructions' }
 Cogit >> compileFullBlockEntry [
 	<option: #SistaV1BytecodeSet>
 	"Compile the abstract instructions for the entire method, including blocks."
@@ -5616,7 +5407,7 @@ Cogit >> compileFullBlockEntry [
 	^0
 ]
 
-{ #category : #'compile abstract instructions' }
+{ #category : 'compile abstract instructions' }
 Cogit >> compileMethodBody [
 	"Compile the top-level method body."
 	<inline: true>
@@ -5629,7 +5420,7 @@ Cogit >> compileMethodBody [
 		through: endPC
 ]
 
-{ #category : #'in-line cacheing' }
+{ #category : 'in-line cacheing' }
 Cogit >> compileOpenPIC: selector numArgs: numArgs [
 	"Compile the code for an open PIC.  Perform a probe of the first-level method
 	 lookup cache followed by a call of ceSendFromOpenPIC: if the probe fails.
@@ -5638,7 +5429,7 @@ Cogit >> compileOpenPIC: selector numArgs: numArgs [
 	self subclassResponsibility
 ]
 
-{ #category : #'in-line cacheing' }
+{ #category : 'in-line cacheing' }
 Cogit >> compilePICAbort: numArgs [
 	"The start of a PIC has a call to a run-time abort routine that either handles a dispatch to an
 	 interpreted method or a dispatch of an MNU case.  The routine selects the path by testing
@@ -5649,7 +5440,7 @@ Cogit >> compilePICAbort: numArgs [
 
 	 N.B. This code must match that in compileAbort so that the offset of the return address of
 	 the call is the same in methods and closed PICs."
-	picMNUAbort := self MoveCq: self picAbortDiscriminatorValue R: ClassReg.
+	picMNUAbort := self MoveCq: self isMNUPicAbortDiscriminatorValue R: ClassReg.
 	backEnd hasLinkRegister
 		ifTrue:
 			["If there is a link register it must be saved (pushed onto the stack) before it
@@ -5661,14 +5452,84 @@ Cogit >> compilePICAbort: numArgs [
 	^0
 ]
 
-{ #category : #debugging }
+{ #category : 'in-line cacheing' }
+Cogit >> compilePolymorphicICPrototype [
+	"Compile the abstract instructions for a PIC, used to generate the chunk of code
+	 which is copied to form each PIC.  A Polymorphic Inline Cache is a small jump
+	 table used to optimize sends with a limited degree of polymorphism (currently up to 6 cases).
+	 When a monomorphic linked send (a send with a single case, linking direct to the checked entry
+	 point of a CogMethod) fails a class check, the Cogit attempts to create a two-entry PIC that will
+	 handle jumping to the original target for the original class and the relevant target for the new
+	 class.  This jump table will be extended on subsequent failures up to a limit (6).
+
+	 We avoid extending PICs to Megamorphic ICs by linking the send site to a Megamorphic IC if one already
+	 exists with the send's selector, a good policy since measurements show that sends of mega-
+	 morphic selectors usually become megamorphic at all send sites.  Hence the Megamorphic IC list.
+
+	 A PIC also optimizes MNUs and interpret-only methods.  Each case can load SendNumArgs with
+	 the oop of a method, or will load SendNumArgs with 0 if not.  MNUs are optimized by jumping to
+	 the mnuAbort in the PIC, which calls code that creates the Message, thereby avoiding looking up
+	 the original message which will not be found, and either looks up doesNotUnderstand: or directly
+	 activates the method loaded into SendNumArgs, hence avoiding looking up doesNotUnderstand:.
+	 Interpret-only methods are handled by jumping to the picInterpretAbort, which enters the
+	 interpreter activating the method loaded in SendNumArgs.
+
+	 PICs look like the following, where rClass is set at the original send site for the 1st case, and #Foo
+	 is some constant, either an oop, a class tag or an instruction address.
+
+		rTemp := (rRecever bitAnd: TagMask) = 0 ifTrue: [rReceiver class] ifFalse: [rRecever bitAnd: TagMask].
+		rTemp = rClass ifFalse:
+			[self goto: #Label].
+		rSendNumArgs := #MethodForCase1Or0.
+		self goto: #TargetForCase1.
+	 #Label
+		rTemp = #ClassTagForCase6 ifTrue:
+			[rSendNumArgs := #MethodForCase6Or0.
+			 self goto: #TargetForCase6].
+		...cases 5, 4 & 3
+		rTemp = #ClassTagForCase2 ifTrue:
+			[rSendNumArgs := #MethodForCase2Or0.
+			 self goto: #TargetForCase2].
+		self goto: #PICMissTrampoline
+		literals (if out-of-line literals)
+
+	 where we short-cut as many cases as needed by making the self goto: #Label skip as many cases
+	 as needed."
+	<inline: true>
+	| numArgs jumpNext |
+	<var: #jumpNext type: #'AbstractInstruction *'>
+	self compilePICAbort: (numArgs := 0). "Will get rewritten to appropriate arity when configuring."
+	jumpNext := self compileCPICEntry.
+	"At the end of the entry code we need to jump to the first case code, which is actually the last chunk.
+	 On each entension we must update this jump to move back one case."
+	self MoveUniqueCw: self firstPrototypeMethodOop R: SendNumArgsReg.
+	self JumpLong: self cPICPrototypeCaseOffset + 16rCA5E10.
+	endCPICCase0 := self Label.
+	1 to: MaxCPICCases - 1 do:
+		[:h|
+		h = (MaxCPICCases - 1) ifTrue:
+			[jumpNext jmpTarget: self Label]. "this is where we jump to for the first case"
+		self MoveUniqueCw: self subsequentPrototypeMethodOop + h R: SendNumArgsReg.
+		"16rBABE1F15+h is the class tag for the Nth case"
+		self CmpC32: 16rBABE1F15+h R: TempReg.
+		self JumpLongZero: self cPICPrototypeCaseOffset + 16rCA5E10 + (h * 16).
+		h = 1 ifTrue:
+			[endCPICCase1 := self Label]].
+	self MoveCw: methodLabel address R: ClassReg.
+	self JumpLong: (self cPICMissTrampolineFor: numArgs).	"Will get rewritten to appropriate arity when configuring."
+	cPICEndOfCodeLabel := self Label.
+	literalsManager dumpLiterals: false.
+	^0
+]
+
+{ #category : 'debugging' }
 Cogit >> compileSendTrace [
 	"2 is trace sends; 256+2 is traceLinkedSends, so one can trace just unlinked sends using 2"
 	<cmacro: '() ((traceFlags & 258) == 258)'>
 	^traceFlags allMask: 256 + 2
 ]
 
-{ #category : #initialization }
+{ #category : 'initialization' }
 Cogit >> compileTrampolineFor: aRoutine numArgs: numArgs arg: regOrConst0 arg: regOrConst1 arg: regOrConst2 arg: regOrConst3 regsToSave: regMask pushLinkReg: pushLinkReg floatResultReg: resultRegOrNone [
 	"Generate a trampoline with up to four arguments.  Generate either a call or a jump to aRoutine
 	 as requested by callJumpBar.  If generating a call and resultRegOrNone is not NoReg pass the C
@@ -5696,7 +5557,7 @@ Cogit >> compileTrampolineFor: aRoutine numArgs: numArgs arg: regOrConst0 arg: r
 		ifFalse: [self RetN: 0]
 ]
 
-{ #category : #initialization }
+{ #category : 'initialization' }
 Cogit >> compileTrampolineFor: aRoutine numArgs: numArgs arg: regOrConst0 arg: regOrConst1 arg: regOrConst2 arg: regOrConst3 regsToSave: regMask pushLinkReg: pushLinkReg resultReg: resultRegOrNone [
 	"Generate a trampoline with up to four arguments.  Generate either a call or a jump to aRoutine
 	 as requested by callJumpBar.  If generating a call and resultRegOrNone is not NoReg pass the C
@@ -5724,7 +5585,7 @@ Cogit >> compileTrampolineFor: aRoutine numArgs: numArgs arg: regOrConst0 arg: r
 		ifFalse: [self RetN: 0]
 ]
 
-{ #category : #initialization }
+{ #category : 'initialization' }
 Cogit >> compileTrampolineFor: aRoutine numArgs: numArgs arg: regOrConst0 arg: regOrConst1 arg: regOrConst2 arg: regOrConst3 regsToSave: regMask pushLinkReg: pushLinkReg resultReg: resultRegOrNone resultReg: resultReg2OrNone [
 	"Generate a trampoline with up to four arguments.  Generate either a call or a jump to aRoutine
 	 as requested by callJumpBar.  If generating a call and resultRegOrNone is not NoReg pass the C
@@ -5753,7 +5614,7 @@ Cogit >> compileTrampolineFor: aRoutine numArgs: numArgs arg: regOrConst0 arg: r
 		ifFalse: [self RetN: 0]
 ]
 
-{ #category : #initialization }
+{ #category : 'initialization' }
 Cogit >> computeEntryOffsets [
 	"Generate the entry code for a method to determine cmEntryOffset and cmNoCheckEntryOffset.  We
 	 need cmNoCheckEntryOffset up front to be able to generate the map starting from cmNoCheckEntryOffset"
@@ -5783,7 +5644,7 @@ Cogit >> computeEntryOffsets [
 	self assert: checkedEntryAlignment ~= uncheckedEntryAlignment
 ]
 
-{ #category : #initialization }
+{ #category : 'initialization' }
 Cogit >> computeFullBlockEntryOffsets [
 	"Generate the entry code for a method to determine cmEntryOffset and cmNoCheckEntryOffset.  We
 	 need cmNoCheckEntryOffset up front to be able to generate the map starting from cmNoCheckEntryOffset"
@@ -5799,7 +5660,7 @@ Cogit >> computeFullBlockEntryOffsets [
 		 cbNoSwitchEntryOffset := fullBlockNoContextSwitchEntry address - methodZoneBase]
 ]
 
-{ #category : #'generate machine code' }
+{ #category : 'generate machine code' }
 Cogit >> computeMaximumSizes [
 	"This pass assigns maximum sizes to all abstract instructions and eliminates jump fixups.
 	 It hence assigns the maximum address an instruction will occur at which allows the next
@@ -5818,8 +5679,8 @@ Cogit >> computeMaximumSizes [
 		relativeAddress := relativeAddress + abstractInstruction maxSize]
 ]
 
-{ #category : #'in-line cacheing' }
-Cogit >> configureCPIC: cPIC Case0: case0CogMethod Case1Method: case1Method tag: case1Tag isMNUCase: isMNUCase numArgs: numArgs delta: addrDelta [
+{ #category : 'in-line cacheing' }
+Cogit >> configureCPIC: aPIC Case0: case0CogMethod Case1Method: case1Method tag: case1Tag isMNUCase: isMNUCase [
 	"Configure a copy of the prototype CPIC for a two-case PIC for 
 	case0CogMethod and
 	case1Method
@@ -5831,88 +5692,84 @@ Cogit >> configureCPIC: cPIC Case0: case0CogMethod Case1Method: case1Method tag:
 		- nil; call ceMNUFromPIC
 	addDelta is the address change from the prototype to the new CPIC location, needed
 	because the loading of the CPIC label at the end may use a literal instead of a pc relative load."
+
 	"self disassembleFrom: cPIC asInteger + (self sizeof: CogMethod) to: cPIC asInteger + closedPICSize"
-	<var: #cPIC type: #'CogMethod *'>
+
+	<var: #aPIC type: #'CogMethod *'>
 	<var: #case0CogMethod type: #'CogMethod *'>
 	| operand targetEntry caseEndAddress |
 	self assert: case1Method notNil.
 
-	"adjust the call at missOffset, the ceAbortXArgs"
-	backEnd rewriteCallAt: cPIC asInteger + missOffset target: (self picAbortTrampolineFor: numArgs).
-	
-	self assert: (objectRepresentation inlineCacheTagIsYoung: case1Tag) not.
-	(isMNUCase not
-	 and: [coInterpreter methodHasCogMethod: case1Method])
-		ifTrue:
-			[operand := 0.
-			 targetEntry := (coInterpreter cogMethodOf: case1Method) asInteger + cmNoCheckEntryOffset]
-		ifFalse: "We do not scavenge PICs, hence we cannot cache the MNU method if it is in new space."
-			[operand := (case1Method isNil or: [objectMemory getMemoryMap isYoungObject: case1Method])
-							ifTrue: [0]
-							ifFalse: [case1Method].
-			 targetEntry := case1Method ifNil: [cPIC asInteger + (self sizeof: CogMethod)] ifNotNil: [cPIC asInteger + self picInterpretAbortOffset]].
-
+	"We do not scavenge PICs, hence we cannot cache the MNU method if it is in new space."
+	(isMNUCase not and: [ coInterpreter methodHasCogMethod: case1Method ])
+		ifTrue: [
+			operand := 0.
+			targetEntry := (coInterpreter cogMethodOf: case1Method) asInteger
+			               + cmNoCheckEntryOffset ]
+		ifFalse: [
+			operand := (case1Method isNil or: [
+				            objectMemory getMemoryMap isYoungObject: case1Method ])
+				           ifTrue: [ 0 ]
+				           ifFalse: [ case1Method ].
+			targetEntry := case1Method
+				               ifNil: [ self picAbortAddress: aPIC ]
+				               ifNotNil: [
+				               aPIC asInteger + self picInterpretAbortOffset ] ].
 	"set the jump to the case0 method"
-	backEnd rewriteJumpLongAt: cPIC asInteger + firstCPICCaseOffset target: case0CogMethod asInteger + cmNoCheckEntryOffset.
-
-	caseEndAddress := self addressOfEndOfCase: 2 inCPIC: cPIC.
-
+	backEnd
+		rewriteJumpLongAt: aPIC asInteger + firstCPICCaseOffset
+		target: case0CogMethod asInteger + cmNoCheckEntryOffset.
+	
 	"update the cpic case"
+	caseEndAddress := self addressOfEndOfCase: 2 inCPIC: aPIC.
 	self
-		rewriteCPICCaseAt: caseEndAddress
+		rewritePICCaseAt: caseEndAddress
 		tag: case1Tag
 		objRef: operand
-		target: (isMNUCase ifTrue: [cPIC asInteger + (self sizeof: CogMethod)] ifFalse: [targetEntry]) asInteger.
-
-	"update the loading of the CPIC address"
-	backEnd relocateMethodReferenceBeforeAddress: cPIC asInteger + cPICEndOfCodeOffset - backEnd jumpLongByteSize by: addrDelta.
-
-	"write the final desperate jump to cePICMissXArgs"
-	backEnd rewriteJumpLongAt: cPIC asInteger + cPICEndOfCodeOffset target: (self cPICMissTrampolineFor: numArgs).
-	^0
-	"self disassembleFrom: cPIC + (self sizeof: CogMethod) to: cPIC + closedPICSize - 1."
+		target: (isMNUCase
+				 ifTrue: [ self picAbortAddress: aPIC ]
+				 ifFalse: [ targetEntry ]) asInteger.
+	^ 0
 ]
 
-{ #category : #'in-line cacheing' }
-Cogit >> configureMNUCPIC: cPIC methodOperand: methodOperand numArgs: numArgs delta: addrDelta [
+{ #category : 'in-line cacheing' }
+Cogit >> configureMNUCPIC: aPIC methodOperand: methodOop [
 	"Configure a copy of the prototype CPIC for a one-case MNU CPIC that calls ceMNUFromPIC for
 	 case0Tag The tag for case0 is at the send site and so doesn't need to be generated.
 	 addDelta is the address change from the prototype to the new CPIC location, needed
 	 because the loading of the CPIC label at the end may be a literal instead of a pc-relative load."
-	<var: #cPIC type: #'CogMethod *'>
-	| operand |
 
-	"adjust the jump at missOffset, the ceAbortXArgs"
-	backEnd rewriteCallAt: cPIC asInteger + missOffset target: (self picAbortTrampolineFor: numArgs).
-	
+	<var: #aPIC type: #'CogMethod *'>
+	| operand |	
 	"We do not scavenge PICs, hence we cannot cache the MNU method if it is in new space."
-	operand := (methodOperand isNil or: [objectMemory getMemoryMap isYoungObject: methodOperand])
-					ifTrue: [0]
-					ifFalse: [methodOperand].
+	operand := (methodOop isNil or: [
+		            objectMemory getMemoryMap isYoungObject: methodOop ])
+		           ifTrue: [ 0 ]
+		           ifFalse: [ methodOop ].
+
 	"set the jump to the case0 method"
-	backEnd rewriteJumpLongAt: cPIC asInteger + firstCPICCaseOffset target: cPIC asInteger + (self sizeof: CogMethod) .
-
-	backEnd storeLiteral: operand beforeFollowingAddress: cPIC asInteger + firstCPICCaseOffset - backEnd jumpLongByteSize.
-
-	"rewrite the final desperate jump to cePICMissXArgs"
-	backEnd rewriteJumpLongAt: cPIC asInteger + cPICEndOfCodeOffset target: (self cPICMissTrampolineFor: numArgs).	
-
-	"update the loading of the CPIC label address"
-	backEnd relocateMethodReferenceBeforeAddress: cPIC asInteger + cPICEndOfCodeOffset - backEnd jumpLongByteSize by: addrDelta.
+	backEnd
+		rewriteJumpLongAt: aPIC asInteger + firstCPICCaseOffset
+		target: (self picAbortAddress: aPIC).
 
 	"finally, rewrite the jump 3 instr before firstCPICCaseOffset to jump to the end of case 2, missing the actual case"
-	self rewriteCPIC: cPIC caseJumpTo: (self addressOfEndOfCase: 2 inCPIC: cPIC). 
-
-	^0
+	backEnd
+		storeLiteral: operand
+		beforeFollowingAddress:
+		aPIC asInteger + firstCPICCaseOffset - backEnd jumpLongByteSize.
+	self
+		rewriteCPIC: aPIC
+		caseJumpTo: (self addressOfEndOfCase: 2 inCPIC: aPIC).
+	^ 0
 ]
 
-{ #category : #printing }
+{ #category : 'printing' }
 Cogit >> cr [
 	<cmacro: '() putchar(''\n'')'>
 	coInterpreter transcript cr; flush
 ]
 
-{ #category : #'profiling primitives' }
+{ #category : 'profiling primitives' }
 Cogit >> createCPICData: cPIC [
 	"Answer an Array of the PIC's selector, followed by class and targetMethod/doesNotUnderstand: for each entry in the PIC."
 	<var: #cPIC type: #'CogMethod *'>
@@ -5950,7 +5807,7 @@ Cogit >> createCPICData: cPIC [
 	^picData
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 Cogit >> defaultCogCodeSize [
 	"Return the default number of bytes to allocate for native code at startup.
 	 The actual value can be set via vmParameterAt: and/or a preference in the ini file."
@@ -5958,7 +5815,7 @@ Cogit >> defaultCogCodeSize [
 	^backEnd getDefaultCogCodeSize
 ]
 
-{ #category : #'compile abstract instructions' }
+{ #category : 'compile abstract instructions' }
 Cogit >> deltaToSkipPrimAndErrorStoreIn: aMethodObj header: aMethodHeader [
 	"Answer the number of bytecodes to skip to get to the first bytecode
 	 past the primitive call and any store of the error code."
@@ -5988,63 +5845,12 @@ Cogit >> disableCodeZoneWrite [
 	
 	self 
 		cppIf: #'READ_ONLY_CODE_ZONE'
-		ifTrue:[	self pthread_jit_write_protect_np: true ].
+		ifTrue:[	self cCall: 'pthread_jit_write_protect_np' withArguments: {true} ].
 	
 	jitCodeZoneWriteEnabled := false
 ]
 
-{ #category : #disassembly }
-Cogit >> disassembleFrom: startAddress to: endAddress [
-	<doNotGenerate>
-	self disassembleFrom: startAddress to: endAddress labels: Dictionary new on: coInterpreter transcript
-]
-
-{ #category : #disassembly }
-Cogit >> disassembleFrom: startAddress to: endAddress labels: labelDictionary on: aStream [
-	<doNotGenerate>
-	| previousTVP |
-	aStream ensureCr.
-	previousTVP := processor class printTempNames.
-	processor class
-		printTempNames: (self class initializationOptions includesKey: #tempNames);
-		setReceiverResultReg: ((self class initializationOptions includesKey: #instVarNames) ifTrue:
-									[ReceiverResultReg]).
-	[processor
-		disassembleFrom: startAddress
-		to: endAddress
-		in: coInterpreter memory
-		for: self
-		labels: labelDictionary
-		on: aStream] ensure:
-			[processor class
-				printTempNames: previousTVP;
-				setReceiverResultReg: nil].
-	aStream flush
-]
-
-{ #category : #disassembly }
-Cogit >> disassembleTrampolineFor: pc [
-	<doNotGenerate>
-	| limit |
-	limit := methodZoneBase - 1.
-	pc > methodZoneBase ifTrue: [^self].
-	trampolineTableIndex - 1 to: 0 by: -2 do:
-		[:i| | addr |
-		pc >= (addr := (trampolineAddresses at: i) asInteger) ifTrue:
-			[^self disassembleFrom: addr to: limit].
-		limit := addr - 1]
-]
-
-{ #category : #debugging }
-Cogit >> disassembleTrampolineTable [
-	<doNotGenerate>
-	0 to: trampolineTableIndex - 1 by: 2 do:
-		[:i|
-		self disassembleTrampolineFor: (trampolineAddresses at: i + 1) asInteger.
-		coInterpreter transcript newLine]
-]
-
-{ #category : #'simulation only' }
+{ #category : 'simulation only' }
 Cogit >> doesNotUnderstand: aMessage [
 	(aMessage selector beginsWith: 'print') ifTrue:
 		[(coInterpreter respondsTo: aMessage selector) ifTrue:
@@ -6056,13 +5862,13 @@ Cogit >> doesNotUnderstand: aMessage [
 	^super doesNotUnderstand: aMessage
 ]
 
-{ #category : #'register management' }
+{ #category : 'register management' }
 Cogit >> emptyRegisterMask [
 	<inline: true>
 	^0
 ]
 
-{ #category : #'code generation' }
+{ #category : 'code generation' }
 Cogit >> enableCodeZoneWrite [
 
 	<inline: true>
@@ -6071,19 +5877,19 @@ Cogit >> enableCodeZoneWrite [
 	
 	self 
 		cppIf: #'READ_ONLY_CODE_ZONE'
-		ifTrue:[	self pthread_jit_write_protect_np: false ].
+		ifTrue:[	self cCall: 'pthread_jit_write_protect_np' withArguments: {false} ].
 			
 	jitCodeZoneWriteEnabled := true.
 
 ]
 
-{ #category : #'code generation' }
+{ #category : 'code generation' }
 Cogit >> enableCodeZoneWriteDuring: codeGenerationBlock [ 
 
 	self enableCodeZoneWriteDuring: codeGenerationBlock flushingCacheWith: [  ]
 ]
 
-{ #category : #'code generation' }
+{ #category : 'code generation' }
 Cogit >> enableCodeZoneWriteDuring: codeGenerationBlock flushingCacheWith: flushBlock [
 
 	self enableCodeZoneWrite.
@@ -6093,7 +5899,7 @@ Cogit >> enableCodeZoneWriteDuring: codeGenerationBlock flushingCacheWith: flush
 	flushBlock value	
 ]
 
-{ #category : #'compiled methods' }
+{ #category : 'compiled methods' }
 Cogit >> endPCOf: aMethod [
 	<var: #descriptor type: #'BytecodeDescriptor *'>
 	| pc end latestContinuation descriptor prim distance targetPC byte nExts |
@@ -6124,11 +5930,13 @@ Cogit >> endPCOf: aMethod [
 { #category : #initialization }
 Cogit >> ensureAndClearAbstractOpcodes: numberOfAbstractOpcodes numberOfBytecodes: numberOfBytecodes [
 
-	| opcodeBytes fixupBytes allocBytes clearFixupsBytes clearOpcodesBytes|
+	| opcodeBytes fixupBytes allocBytes clearFixupsBytes clearOpcodesBytes |
 	numAbstractOpcodes := numberOfAbstractOpcodes.
-	
-	opcodeBytes := (self sizeof: CogAbstractInstruction) * MaxNumberOfAbstractOpcodes.
-	fixupBytes := (self sizeof: CogBytecodeFixup) * MaxNumberOfAbstractOpcodes.
+
+	opcodeBytes := (self sizeof: CogAbstractInstruction)
+	               * MaxNumberOfAbstractOpcodes.
+	fixupBytes := (self sizeof: CogBytecodeFixup)
+	              * MaxNumberOfAbstractOpcodes.
 	allocBytes := opcodeBytes + fixupBytes.
 	
 	clearOpcodesBytes := (self sizeof: CogAbstractInstruction) * numberOfAbstractOpcodes.
@@ -6145,9 +5953,34 @@ Cogit >> ensureAndClearAbstractOpcodes: numberOfAbstractOpcodes numberOfBytecode
 			[abstractOpcodes := CArrayAccessor on: ((1 to: numAbstractOpcodes) collect: [:ign| CogCompilerClass for: self]).
 			 fixups := CArrayAccessor on: ((1 to: numAbstractOpcodes) collect: [:ign| self bytecodeFixupClass for: self])].
 
+	clearOpcodesBytes := (self sizeof: CogAbstractInstruction)
+	                     * numberOfAbstractOpcodes.
+	clearFixupsBytes := (self sizeof: CogBytecodeFixup)
+	                    * numberOfAbstractOpcodes.
+
+	self
+		cCode: [
+			abstractOpcodes ifNil: [
+				abstractOpcodes := self malloc: allocBytes.
+				fixups := (abstractOpcodes asUnsignedInteger + opcodeBytes)
+					          asVoidPointer ].
+
+			self cCall: 'bzero' withArguments: {
+					abstractOpcodes.
+					clearOpcodesBytes }.
+			self cCall: 'bzero' withArguments: {
+					fixups.
+					clearFixupsBytes } ]
+		inSmalltalk: [
+			abstractOpcodes := CArrayAccessor on:
+				                   ((1 to: numAbstractOpcodes) collect: [ :ign |
+					                    CogCompilerClass for: self ]).
+			fixups := CArrayAccessor on:
+				          ((1 to: numAbstractOpcodes) collect: [ :ign |
+					           self bytecodeFixupClass for: self ]) ]
 ]
 
-{ #category : #'compile abstract instructions' }
+{ #category : 'compile abstract instructions' }
 Cogit >> ensureFixupAt: targetPC [
 	"Make sure there's a flagged fixup at the target pc in fixups.
 	 Initially a fixup's target is just a flag.  Later on it is replaced with a proper instruction."
@@ -6161,20 +5994,20 @@ Cogit >> ensureFixupAt: targetPC [
 	^fixup
 ]
 
-{ #category : #debugging }
+{ #category : 'debugging' }
 Cogit >> enterCogCodePopReceiver [
 	"This is a static version of ceEnterCogCodePopReceiverReg
 	 for break-pointing when debugging in C."
 	<api>
 	<inline: false>
 	"This exists only for break-pointing."
-	self cCode: [self realCEEnterCogCodePopReceiverReg]
+	self cCode: [self cCall: 'realCEEnterCogCodePopReceiverReg']
 		inSmalltalk: [self ceEnterCogCodePopReceiverReg].
 	"(and this exists only to reference Debug)"
 	Debug ifFalse: [self error: 'what??']
 ]
 
-{ #category : #'in-line cacheing' }
+{ #category : 'in-line cacheing' }
 Cogit >> entryCacheTagAndCouldBeObjectAt: mcpc annotation: annotation into: trinaryBlock [
 	"Evaluate trinaryBlock with the entryPoint, inline cache tag and whether the cache
 	 tag could be an object, for the send at mcpc with annotation annotation."
@@ -6197,14 +6030,14 @@ Cogit >> entryCacheTagAndCouldBeObjectAt: mcpc annotation: annotation into: trin
 		value: tagCouldBeObj
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 Cogit >> entryOffset [
 	<api>
 	<cmacro>
 	^cmEntryOffset
 ]
 
-{ #category : #'in-line cacheing' }
+{ #category : 'in-line cacheing' }
 Cogit >> entryPointTagIsSelector: entryPoint [
 	"Answer if the entryPoint's tag is expected to be a selector reference, as opposed to a class tag."
 	^entryPoint < methodZoneBase
@@ -6213,14 +6046,14 @@ Cogit >> entryPointTagIsSelector: entryPoint [
 		and: [(self cCoerceSimple: entryPoint - cmEntryOffset to: #'CogMethod *') cmType = CMMegamorphicIC]]]
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 Cogit >> estimateOfAbstractOpcodesPerBytecodes [
 	<inline: true>
 	"Bump number of estimated bytecodes for Druid compilation"
 	^ 47
 ]
 
-{ #category : #'simulation only' }
+{ #category : 'simulation only' }
 Cogit >> exclude: aMethodObj [
 	"For debugging, allow excluding methods based on selector or methodClass.  Answer if the mehtod should be excluded."
 	<inline: true>
@@ -6246,7 +6079,7 @@ Cogit >> exclude: aMethodObj [
 	^false
 ]
 
-{ #category : #'simulation only' }
+{ #category : 'simulation only' }
 Cogit >> exclude: aMethodObj selector: aSelectorOop [
 	"For debugging, allow excluding methods based on selector or methodClass.  Answer if the mehtod should be excluded."
 	<inline: true>
@@ -6276,7 +6109,7 @@ Cogit >> exclude: aMethodObj selector: aSelectorOop [
 	^false
 ]
 
-{ #category : #'in-line cacheing' }
+{ #category : 'in-line cacheing' }
 Cogit >> expectedClosedPICPrototype: cPIC [
 
 	"Use asserts to check if the ClosedPICPrototype is as expected from compileClosedPICPrototype,
@@ -6326,7 +6159,7 @@ Cogit >> expectedClosedPICPrototype: cPIC [
 
 		"change case via rewriteCPICCaseAt:tag:objRef:target:"
 		self
-			rewriteCPICCaseAt: pc
+			rewritePICCaseAt: pc
 			tag: (classTag bitXor: 16r5A5A5A5A)
 			objRef: (object bitXor: 16rA5A5A5A5)
 			target: (entryPoint bitXor: 16r5AA50). "don't xor least 4 bits to leave instruction alignment undisturbed"
@@ -6349,7 +6182,7 @@ Cogit >> expectedClosedPICPrototype: cPIC [
 
 		"finally restore case to the original state"
 		self
-			rewriteCPICCaseAt: pc
+			rewritePICCaseAt: pc
 			tag: (classTag bitXor: 16r5A5A5A5A)
 			objRef: (object bitXor: 16rA5A5A5A5)
 			target: (entryPoint bitXor: 16r5AA50) ].
@@ -6362,14 +6195,14 @@ Cogit >> expectedClosedPICPrototype: cPIC [
 	^ errors
 ]
 
-{ #category : #'bytecode generators' }
+{ #category : 'bytecode generators' }
 Cogit >> extABytecode [
 	"224		11100000	aaaaaaaa	Extend A (Ext A = Ext A prev * 256 + Ext A)"
 	extA := (extA bitShift: 8) + byte1.
 	^0
 ]
 
-{ #category : #'bytecode generators' }
+{ #category : 'bytecode generators' }
 Cogit >> extBBytecode [
 	"225		11100001	sbbbbbbb	Extend B (Ext B = Ext B prev * 256 + Ext B)"
 	extB := (numExtB = 0 and: [byte1 > 127])
@@ -6379,7 +6212,7 @@ Cogit >> extBBytecode [
 	^0
 ]
 
-{ #category : #initialization }
+{ #category : 'initialization' }
 Cogit >> fakeAddressFor: anObject index: index [
 	"Answer a fake address for some variable based on some index.
 	 The index will usually be the size of simulatedAddresses, but
@@ -6393,21 +6226,21 @@ Cogit >> fakeAddressFor: anObject index: index [
 					ifFalse: [self allButTopBitOfAddressSpaceMask])
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 Cogit >> fakeVarBaseAddress [
 	"We expect simulatedAddresses to have around 40 entries.  48 is hopefully a good maximum."
 	<doNotGenerate>
 	^self fakeAddressFor: nil index: 48
 ]
 
-{ #category : #concretize }
+{ #category : 'concretize' }
 Cogit >> fillFrom: startMemoryAddr until: endMemoryAddr with: fillReg usingVr: vectorRegister [
 
 	<doNotGenerate>
 	backEnd fillFrom: startMemoryAddr until: endMemoryAddr with: fillReg usingVr: vectorRegister
 ]
 
-{ #category : #'generate machine code' }
+{ #category : 'generate machine code' }
 Cogit >> fillInCPICHeader: pic numArgs: numArgs numCases: numCases hasMNUCase: hasMNUCase selector: selector [
 	<returnTypeC: #'CogMethod *'>
 	<var: #pic type: #'CogMethod *'>
@@ -6431,11 +6264,10 @@ Cogit >> fillInCPICHeader: pic numArgs: numArgs numCases: numCases hasMNUCase: h
 	self assert: pic cPICNumCases = numCases.
 	self assert: (backEnd callTargetFromReturnAddress: pic asInteger + missOffset) = (self picAbortTrampolineFor: numArgs).
 	self assert: closedPICSize = (methodZone roundUpLength: closedPICSize).
-	self maybeEnableSingleStep.
 	^pic
 ]
 
-{ #category : #'generate machine code' }
+{ #category : 'generate machine code' }
 Cogit >> fillInMethodHeader: method size: size selector: selector [
 	<returnTypeC: #'CogMethod *'>
 	<var: #method type: #'CogMethod *'>
@@ -6474,11 +6306,10 @@ Cogit >> fillInMethodHeader: method size: size selector: selector [
 	self assert: (backEnd callTargetFromReturnAddress: method asInteger + missOffset)
 				= (self methodAbortTrampolineFor: method cmNumArgs).
 	self assert: size = (methodZone roundUpLength: size).
-	self maybeEnableSingleStep.
 	^method
 ]
 
-{ #category : #'generate machine code' }
+{ #category : 'generate machine code' }
 Cogit >> fillInOPICHeader: pic numArgs: numArgs selector: selector [
 	<returnTypeC: #'CogMethod *'>
 	<var: #pic type: #'CogMethod *'>
@@ -6502,11 +6333,10 @@ Cogit >> fillInOPICHeader: pic numArgs: numArgs selector: selector [
 	self assert: pic cmNumArgs = numArgs.
 	self assert: (backEnd callTargetFromReturnAddress: pic asInteger + missOffset) = (self picAbortTrampolineFor: numArgs).
 	self assert: openPICSize = (methodZone roundUpLength: openPICSize).
-	self maybeEnableSingleStep.
 	^pic
 ]
 
-{ #category : #'method map' }
+{ #category : 'method map' }
 Cogit >> find: descriptor IsBackwardBranch: isBackwardBranchAndAnnotation Mcpc: mcpc Bcpc: bcpc MatchingBcpc: targetBcpc [
 	<var: #descriptor type: #'BytecodeDescriptor *'>
 	<var: #mcpc type: #'char *'>
@@ -6519,7 +6349,7 @@ Cogit >> find: descriptor IsBackwardBranch: isBackwardBranchAndAnnotation Mcpc: 
 		ifFalse: [0]
 ]
 
-{ #category : #'method map' }
+{ #category : 'method map' }
 Cogit >> find: descriptor IsBackwardBranch: isBackwardBranchAndAnnotation Mcpc: mcpc Bcpc: bcpc MatchingMcpc: targetMcpc [
 	<var: #descriptor type: #'BytecodeDescriptor *'>
 	<var: #mcpc type: #'char *'>
@@ -6534,7 +6364,7 @@ Cogit >> find: descriptor IsBackwardBranch: isBackwardBranchAndAnnotation Mcpc: 
 		ifFalse: [0]
 ]
 
-{ #category : #'method map' }
+{ #category : 'method map' }
 Cogit >> findBackwardBranch: descriptor IsBackwardBranch: isBackwardBranchAndAnnotation Mcpc: mcpc Bcpc: bcpc MatchingBcpc: targetBcpc [
 	<var: #descriptor type: #'BytecodeDescriptor *'>
 	<var: #mcpc type: #'char *'>
@@ -6545,7 +6375,7 @@ Cogit >> findBackwardBranch: descriptor IsBackwardBranch: isBackwardBranchAndAnn
 		ifFalse: [0]
 ]
 
-{ #category : #'method map' }
+{ #category : 'method map' }
 Cogit >> findMapLocationForMcpc: targetMcpc inMethod: cogMethod [
 	<var: #targetMcpc type: #usqInt>
 	<var: #cogMethod type: #'CogMethod *'>
@@ -6572,7 +6402,7 @@ Cogit >> findMapLocationForMcpc: targetMcpc inMethod: cogMethod [
 	^0
 ]
 
-{ #category : #'method map' }
+{ #category : 'method map' }
 Cogit >> firstMappedPCFor: cogMethod [
 	<var: #cogMethod type: #'CogMethod *'>
 	<inline: true>
@@ -6581,7 +6411,7 @@ Cogit >> firstMappedPCFor: cogMethod [
 		ifFalse: [cogMethod asUnsignedInteger + cmNoCheckEntryOffset]
 ]
 
-{ #category : #'in-line cacheing' }
+{ #category : 'in-line cacheing' }
 Cogit >> firstPrototypeMethodOop [
 	"Answer a fake value for the first method oop in the PIC prototype.
 	 Since we use MoveUniqueCw:R: it must not be confused with a method-relative address."
@@ -6591,13 +6421,13 @@ Cogit >> firstPrototypeMethodOop [
 		ifFalse: [16r5EAF00D]
 ]
 
-{ #category : #'compile abstract instructions' }
+{ #category : 'compile abstract instructions' }
 Cogit >> fixupAt: fixupPC [
 	<inline: true>
 	^self fixupAtIndex: fixupPC - initialPC
 ]
 
-{ #category : #'compile abstract instructions' }
+{ #category : 'compile abstract instructions' }
 Cogit >> fixupAtIndex: index [
 	"The fixups Array maps to bytecode pcs such that initialPC maps to index 0.
 	 fixupAt: does the conversion."
@@ -6606,7 +6436,7 @@ Cogit >> fixupAtIndex: index [
 	^self addressOf: (fixups at: index)
 ]
 
-{ #category : #'jit - api' }
+{ #category : 'jit - api' }
 Cogit >> flushICacheFrom: startAddress "<Integer>" to: endAddress [ "<Integer>"
 
 	"Defined in jit/jit.h"	
@@ -6614,7 +6444,7 @@ Cogit >> flushICacheFrom: startAddress "<Integer>" to: endAddress [ "<Integer>"
 	^ processor flushICacheFrom: startAddress to: endAddress
 ]
 
-{ #category : #'garbage collection' }
+{ #category : 'garbage collection' }
 Cogit >> followForwardedLiteralsIn: cogMethod [
 
 	<api>
@@ -6634,7 +6464,7 @@ Cogit >> followForwardedLiteralsIn: cogMethod [
 			arg: 0 ]
 ]
 
-{ #category : #'garbage collection' }
+{ #category : 'garbage collection' }
 Cogit >> followForwardedMethods [
 
 	<api>
@@ -6669,7 +6499,7 @@ Cogit >> followForwardedMethods [
 			[self flushICacheFrom: methodZoneBase asUnsignedInteger to: methodZone limitZony asUnsignedInteger]]
 ]
 
-{ #category : #'garbage collection' }
+{ #category : 'garbage collection' }
 Cogit >> followMaybeObjRefInClosedPICAt: mcpc [
 	"Follow a potential object reference from a closed PIC.
 	 This may be a method reference or null.
@@ -6688,7 +6518,7 @@ Cogit >> followMaybeObjRefInClosedPICAt: mcpc [
 	^objectMemory getMemoryMap isYoungObject: subject
 ]
 
-{ #category : #'garbage collection' }
+{ #category : 'garbage collection' }
 Cogit >> followMethodReferencesInClosedPIC: cPIC [
 	"Remap all object references in the closed PIC.  Answer if any references are young.
 	Set codeModified if any modifications are made."
@@ -6711,20 +6541,20 @@ Cogit >> followMethodReferencesInClosedPIC: cPIC [
 	^refersToYoung
 ]
 
-{ #category : #'simulation only' }
+{ #category : 'simulation only' }
 Cogit >> framePointerAddress [
 	"redirect for the backEnd's genSaveStackPointers"
 	<doNotGenerate>
 	^coInterpreter framePointerAddress
 ]
 
-{ #category : #'jit - api' }
+{ #category : 'jit - api' }
 Cogit >> freeMethod: cogMethod [
 	<doNotGenerate>
 	methodZone freeMethod: cogMethod
 ]
 
-{ #category : #compaction }
+{ #category : 'compaction' }
 Cogit >> freePICsWithFreedTargets [
 	| cogMethod count |
 	<var: #cogMethod type: #'CogMethod *'>
@@ -6739,7 +6569,7 @@ Cogit >> freePICsWithFreedTargets [
 	self assert: count = methodZone numMethods
 ]
 
-{ #category : #'jit - api' }
+{ #category : 'jit - api' }
 Cogit >> freeUnmarkedMachineCode [
 	"Free machine-code methods whose compiled methods are unmarked
 	 and open PICs whose selectors are not marked, and closed PICs that
@@ -6774,7 +6604,7 @@ Cogit >> freeUnmarkedMachineCode [
 			[self flushICacheFrom: methodZoneBase asUnsignedInteger to: methodZone limitZony asUnsignedInteger]]
 ]
 
-{ #category : #'compile abstract instructions' }
+{ #category : 'compile abstract instructions' }
 Cogit >> gen: opcode [ "<Integer>"
 	| abstractInstruction |
 	<inline: false>
@@ -6796,7 +6626,7 @@ Cogit >> gen: opcode [ "<Integer>"
 	^abstractInstruction
 ]
 
-{ #category : #'compile abstract instructions' }
+{ #category : 'compile abstract instructions' }
 Cogit >> gen: opcode "<Integer>" literal: operand [ "<Integer|CogAbstractInstruction>"
 	"Literals are constants that either represent objects on the heap that may get updated by
 	 the garbage collector, or pc-relative spans that may get changed by code compaction, and
@@ -6808,7 +6638,7 @@ Cogit >> gen: opcode "<Integer>" literal: operand [ "<Integer|CogAbstractInstruc
 		forInstruction: (self gen: opcode operand: operand)
 ]
 
-{ #category : #'compile abstract instructions' }
+{ #category : 'compile abstract instructions' }
 Cogit >> gen: opcode "<Integer>" literal: operandOne "<Integer>" operand: operandTwo [ "<Integer|CogAbstractInstruction>"
 	"Literals are constants that either represent objects on the heap that may get updated by
 	 the garbage collector, or pc-relative spans that may get changed by code compaction, and
@@ -6833,7 +6663,7 @@ Cogit >> gen: opcode operand: operand [
 	^ abstractInstruction
 ]
 
-{ #category : #'compile abstract instructions' }
+{ #category : 'compile abstract instructions' }
 Cogit >> gen: opcode "<Integer>" operand: operandOne "<Integer|CogAbstractInstruction>" literal: operandTwo [ "<Integer>"
 	"Literals are constants that either represent objects on the heap that may get updated by
 	 the garbage collector, or pc-relative spans that may get changed by code compaction, and
@@ -6891,7 +6721,7 @@ Cogit >> gen: opcode operand: operandOne operand: operandTwo operand: operandThr
 	^ abstractInstruction
 ]
 
-{ #category : #'compile abstract instructions' }
+{ #category : 'compile abstract instructions' }
 Cogit >> gen: opcode "<Integer>" operand: operandOne "<Integer|CogAbstractInstruction>" quickConstant: operandTwo [ "Integer>"
 	"Quick constants are those the back end is free to encode as compactly as possible."
 	<inline: true>
@@ -6901,7 +6731,7 @@ Cogit >> gen: opcode "<Integer>" operand: operandOne "<Integer|CogAbstractInstru
 		forInstruction: (self gen: opcode operand: operandOne operand: operandTwo)
 ]
 
-{ #category : #'compile abstract instructions' }
+{ #category : 'compile abstract instructions' }
 Cogit >> gen: opcode "<Integer>" operand: operandOne "<Integer|CogAbstractInstruction>" quickConstant: operandTwo "<Integer>" operand: operandThree [ "<Integer|CogAbstractInstruction>"
 	"Quick constants are those the back end is free to encode as compactly as possible.""<Integer|CogAbstractInstruction>"
 	<inline: true>
@@ -6911,7 +6741,7 @@ Cogit >> gen: opcode "<Integer>" operand: operandOne "<Integer|CogAbstractInstru
 		forInstruction: (self gen: opcode operand: operandOne operand: operandTwo operand: operandThree)
 ]
 
-{ #category : #'compile abstract instructions' }
+{ #category : 'compile abstract instructions' }
 Cogit >> gen: opcode "<Integer>" quickConstant: operand [ "<Integer>"
 	"Quick constants are those the back end is free to encode as compactly as possible."
 	<inline: true>
@@ -6921,7 +6751,7 @@ Cogit >> gen: opcode "<Integer>" quickConstant: operand [ "<Integer>"
 		forInstruction: (self gen: opcode operand: operand)
 ]
 
-{ #category : #'compile abstract instructions' }
+{ #category : 'compile abstract instructions' }
 Cogit >> gen: opcode "<Integer>" quickConstant: operandOne "<Integer>" operand: operandTwo [ "<Integer|CogAbstractInstruction>"
 	"Quick constants are those the back end is free to encode as compactly as possible."
 	<inline: true>
@@ -6931,7 +6761,7 @@ Cogit >> gen: opcode "<Integer>" quickConstant: operandOne "<Integer>" operand: 
 		forInstruction: (self gen: opcode operand: operandOne operand: operandTwo)
 ]
 
-{ #category : #'compile abstract instructions' }
+{ #category : 'compile abstract instructions' }
 Cogit >> gen: opcode "<Integer>" quickConstant: operandOne "<Integer>" operand: operandTwo "<Integer|CogAbstractInstruction>" operand: operandThree [ "<Integer|CogAbstractInstruction>"
 	"Quick constants are those the back end is free to encode as compactly as possible.""<Integer|CogAbstractInstruction>"
 	<inline: true>
@@ -6941,7 +6771,7 @@ Cogit >> gen: opcode "<Integer>" quickConstant: operandOne "<Integer>" operand: 
 		forInstruction: (self gen: opcode operand: operandOne operand: operandTwo operand: operandThree)
 ]
 
-{ #category : #'compile abstract instructions' }
+{ #category : 'compile abstract instructions' }
 Cogit >> gen: opcode "<Integer>" uniqueLiteral: operandOne "<Integer>" operand: operandTwo [ "<Integer|CogAbstractInstruction>"
 	"Literals are constants that either represent objects on the heap that may get updated by
 	 the garbage collector, or pc-relative spans that may get changed by code compaction, and
@@ -6953,7 +6783,7 @@ Cogit >> gen: opcode "<Integer>" uniqueLiteral: operandOne "<Integer>" operand: 
 		forInstruction: (self gen: opcode operand: operandOne operand: operandTwo)
 ]
 
-{ #category : #'trampoline support' }
+{ #category : 'trampoline support' }
 Cogit >> genCallMustBeBooleanFor: boolean [
 	"Call ceSendMustBeBooleanTo: via the relevant trampoline."
 	^self CallRT: (boolean = objectMemory falseObject
@@ -6961,7 +6791,7 @@ Cogit >> genCallMustBeBooleanFor: boolean [
 					ifFalse: [ceSendMustBeBooleanAddTrueTrampoline])
 ]
 
-{ #category : #initialization }
+{ #category : 'initialization' }
 Cogit >> genCheckForInterruptsTrampoline [
 	self zeroOpcodeIndex.
 	"if we have a link register we will assume that it does not get automatically pushed onto the stack
@@ -6985,12 +6815,12 @@ Cogit >> genCheckForInterruptsTrampoline [
 		appendOpcodes: true
 ]
 
-{ #category : #'compile abstract instructions' }
+{ #category : 'compile abstract instructions' }
 Cogit >> genConditionalBranch: opcode operand: operandOne [
 	^self previousInstruction noteFollowingConditionalBranch: (self gen: opcode operand: operandOne)
 ]
 
-{ #category : #initialization }
+{ #category : 'initialization' }
 Cogit >> genEnilopmartFor: regArg1 and: regArg2OrNone and: regArg3OrNone forCall: forCall called: trampolineName [
 	"An enilopmart (the reverse of a trampoline) is a piece of code that makes
 	 the system-call-like transition from the C runtime into generated machine
@@ -7029,19 +6859,19 @@ Cogit >> genEnilopmartFor: regArg1 and: regArg2OrNone and: regArg3OrNone forCall
 	^self cCoerceSimple: enilopmart to: #'void (*)(void)'
 ]
 
-{ #category : #initialization }
+{ #category : 'initialization' }
 Cogit >> genEnilopmartFor: regArg1 and: regArg2 forCall: forCall called: trampolineName [
 	<inline: true>
 	^self genEnilopmartFor: regArg1 and: regArg2 and: NoReg forCall: forCall called: trampolineName
 ]
 
-{ #category : #initialization }
+{ #category : 'initialization' }
 Cogit >> genEnilopmartFor: regArg1 forCall: forCall called: trampolineName [
 	<inline: true>
 	^self genEnilopmartFor: regArg1 and: NoReg and: NoReg forCall: forCall called: trampolineName
 ]
 
-{ #category : #initialization }
+{ #category : 'initialization' }
 Cogit >> genEnilopmartReturn: forCall [
 	"An enilopmart (the reverse of a trampoline) is a piece of code that makes
 	 the system-call-like transition from the C runtime into generated machine
@@ -7076,7 +6906,7 @@ Cogit >> genEnilopmartReturn: forCall [
 			[self RetN: 0]
 ]
 
-{ #category : #'trampoline support' }
+{ #category : 'trampoline support' }
 Cogit >> genExternalizePointersForPrimitiveCall [
 	self MoveR: FPReg Aw: coInterpreter framePointerAddress.
 	backEnd hasLinkRegister
@@ -7092,7 +6922,7 @@ Cogit >> genExternalizePointersForPrimitiveCall [
 	^0
 ]
 
-{ #category : #initialization }
+{ #category : 'initialization' }
 Cogit >> genGetLeafCallStackPointer [
 	"Generate a routine that answers the stack pointer immedately
 	 after a leaf call, used for checking stack pointer alignment."
@@ -7117,7 +6947,7 @@ Cogit >> genGetLeafCallStackPointer [
 	ceGetSP := self cCoerceSimple: startAddress to: #'usqIntptr_t (*)(void)'
 ]
 
-{ #category : #initialization }
+{ #category : 'initialization' }
 Cogit >> genInnerPICAbortTrampoline: name [
 	"Generate the abort for a PIC.  This abort performs either a call of
 	 ceInterpretMethodFromPIC:receiver: to handle invoking an uncogged target
@@ -7132,7 +6962,7 @@ Cogit >> genInnerPICAbortTrampoline: name [
 	<var: #name type: #'char *'>
 	| jumpMNUCase |
 	<var: #jumpMNUCase type: #'AbstractInstruction *'>
-	self CmpCq: self picAbortDiscriminatorValue R: ClassReg.
+	self CmpCq: self isMNUPicAbortDiscriminatorValue R: ClassReg.
 	jumpMNUCase := self JumpZero: 0.
 	self compileTrampolineFor: #ceInterpretMethodFromPIC:receiver:
 		numArgs: 2
@@ -7157,7 +6987,7 @@ Cogit >> genInnerPICAbortTrampoline: name [
 		appendOpcodes: true
 ]
 
-{ #category : #'trampoline support' }
+{ #category : 'trampoline support' }
 Cogit >> genLoadCStackPointersForPrimCall [
 	debugPrimCallStackOffset = 0
 		ifTrue:
@@ -7171,8 +7001,11 @@ Cogit >> genLoadCStackPointersForPrimCall [
 	^0
 ]
 
-{ #category : #'in-line cacheing' }
+{ #category : 'in-line cacheing' }
 Cogit >> genLoadInlineCacheWithSelector: selectorIndex [
+
+	<story: #pic>
+
 	"The in-line cache for a send is implemented as a constant load into ClassReg.
 	 We always use a 32-bit load, even in 64-bits.
 
@@ -7209,7 +7042,7 @@ Cogit >> genLoadInlineCacheWithSelector: selectorIndex [
 	self MovePatcheableC32: cacheValue R: ClassReg
 ]
 
-{ #category : #initialization }
+{ #category : 'initialization' }
 Cogit >> genMethodAbortTrampoline [
 	"Generate the abort for a method.  This abort performs either a call of ceSICMiss:
 	 to handle a single-in-line cache miss or a call of ceStackOverflow: to handle a
@@ -7282,7 +7115,7 @@ Cogit >> genNonLocalReturnTrampoline [
 		appendOpcodes: true
 ]
 
-{ #category : #initialization }
+{ #category : 'initialization' }
 Cogit >> genPICAbortTrampoline [
 	"Generate the abort for a PIC.  This abort performs either a call of
 	 ceInterpretMethodFromPIC:receiver: to handle invoking an uncogged
@@ -7295,7 +7128,7 @@ Cogit >> genPICAbortTrampoline [
 	^self genInnerPICAbortTrampoline: 'cePICAbort'
 ]
 
-{ #category : #initialization }
+{ #category : 'initialization' }
 Cogit >> genReturnTrampolineFor: aRoutine  called: aString arg: regOrConst0 [
 	"Generate a trampoline for a routine used as a return address, that has one argument.
 	 Hack: a negative value indicates an abstract register, a non-negative value indicates a constant."
@@ -7357,7 +7190,7 @@ Cogit >> genSmalltalkToCStackSwitch: pushLinkReg [
 	^0
 ]
 
-{ #category : #initialization }
+{ #category : 'initialization' }
 Cogit >> genTrampolineFor: aRoutine called: aString [
 	"Generate a trampoline with no arguments"
 	<var: #aRoutine type: #'void *'>
@@ -7376,7 +7209,7 @@ Cogit >> genTrampolineFor: aRoutine called: aString [
 		appendOpcodes: false
 ]
 
-{ #category : #initialization }
+{ #category : 'initialization' }
 Cogit >> genTrampolineFor: aRoutine  called: aString arg: regOrConst0 [
 	"Generate a trampoline with one argument.
 	 Hack: a negative value indicates an abstract register, a non-negative value indicates a constant."
@@ -7396,7 +7229,7 @@ Cogit >> genTrampolineFor: aRoutine  called: aString arg: regOrConst0 [
 		appendOpcodes: false
 ]
 
-{ #category : #initialization }
+{ #category : 'initialization' }
 Cogit >> genTrampolineFor: aRoutine called: aString arg: regOrConst0 arg: regOrConst1 [
 	"Generate a trampoline with two arguments.
 	 Hack: a negative value indicates an abstract register, a non-negative value indicates a constant."
@@ -7416,7 +7249,7 @@ Cogit >> genTrampolineFor: aRoutine called: aString arg: regOrConst0 arg: regOrC
 		appendOpcodes: false
 ]
 
-{ #category : #initialization }
+{ #category : 'initialization' }
 Cogit >> genTrampolineFor: aRoutine called: aString arg: regOrConst0 arg: regOrConst1 arg: regOrConst2 [
 	"Generate a trampoline with three arguments.
 	 Hack: a negative value indicates an abstract register, a non-negative value indicates a constant."
@@ -7436,7 +7269,7 @@ Cogit >> genTrampolineFor: aRoutine called: aString arg: regOrConst0 arg: regOrC
 		appendOpcodes: false
 ]
 
-{ #category : #initialization }
+{ #category : 'initialization' }
 Cogit >> genTrampolineFor: aRoutine called: aString arg: regOrConst0 arg: regOrConst1 arg: regOrConst2 arg: regOrConst3 [
 	"Generate a trampoline with four arguments.
 	 Hack: a negative value indicates an abstract register, a non-negative value indicates a constant."
@@ -7456,7 +7289,7 @@ Cogit >> genTrampolineFor: aRoutine called: aString arg: regOrConst0 arg: regOrC
 		appendOpcodes: false
 ]
 
-{ #category : #initialization }
+{ #category : 'initialization' }
 Cogit >> genTrampolineFor: aRoutine called: aString arg: regOrConst0 arg: regOrConst1 arg: regOrConst2 result: resultReg [
 	"Generate a trampoline with two arguments that answers a result.
 	 Hack: a negative value indicates an abstract register, a non-negative value indicates a constant."
@@ -7476,7 +7309,7 @@ Cogit >> genTrampolineFor: aRoutine called: aString arg: regOrConst0 arg: regOrC
 		appendOpcodes: false
 ]
 
-{ #category : #initialization }
+{ #category : 'initialization' }
 Cogit >> genTrampolineFor: aRoutine called: aString arg: regOrConst0 arg: regOrConst1 regsToSave: regMask [
 	"Generate a trampoline with two arguments.
 	 Hack: a negative value indicates an abstract register, a non-negative value indicates a constant."
@@ -7496,7 +7329,7 @@ Cogit >> genTrampolineFor: aRoutine called: aString arg: regOrConst0 arg: regOrC
 		appendOpcodes: false
 ]
 
-{ #category : #initialization }
+{ #category : 'initialization' }
 Cogit >> genTrampolineFor: aRoutine called: aString arg: regOrConst0 arg: regOrConst1 result: resultReg [
 	"Generate a trampoline with two arguments that answers a result.
 	 Hack: a negative value indicates an abstract register, a non-negative value indicates a constant."
@@ -7516,7 +7349,7 @@ Cogit >> genTrampolineFor: aRoutine called: aString arg: regOrConst0 arg: regOrC
 		appendOpcodes: false
 ]
 
-{ #category : #initialization }
+{ #category : 'initialization' }
 Cogit >> genTrampolineFor: aRoutine called: aString arg: regOrConst0 floatResult: resultReg [
 	"Generate a trampoline with one argument that answers a result.
 	 Hack: a negative value indicates an abstract register, a non-negative value indicates a constant."
@@ -7536,7 +7369,7 @@ Cogit >> genTrampolineFor: aRoutine called: aString arg: regOrConst0 floatResult
 		appendOpcodes: false
 ]
 
-{ #category : #initialization }
+{ #category : 'initialization' }
 Cogit >> genTrampolineFor: aRoutine  called: aString arg: regOrConst0 regsToSave: regMask [
 	"Generate a trampoline with one argument.
 	 Hack: a negative value indicates an abstract register, a non-negative value indicates a constant."
@@ -7556,7 +7389,7 @@ Cogit >> genTrampolineFor: aRoutine  called: aString arg: regOrConst0 regsToSave
 		appendOpcodes: false
 ]
 
-{ #category : #initialization }
+{ #category : 'initialization' }
 Cogit >> genTrampolineFor: aRoutine called: aString arg: regOrConst0 regsToSave: regMask result: resultReg [
 	"Generate a trampoline with one argument that answers a result.
 	 Hack: a negative value indicates an abstract register, a non-negative value indicates a constant."
@@ -7576,7 +7409,7 @@ Cogit >> genTrampolineFor: aRoutine called: aString arg: regOrConst0 regsToSave:
 		appendOpcodes: false
 ]
 
-{ #category : #initialization }
+{ #category : 'initialization' }
 Cogit >> genTrampolineFor: aRoutine called: aString arg: regOrConst0 result: resultReg [
 	"Generate a trampoline with one argument that answers a result.
 	 Hack: a negative value indicates an abstract register, a non-negative value indicates a constant."
@@ -7596,7 +7429,7 @@ Cogit >> genTrampolineFor: aRoutine called: aString arg: regOrConst0 result: res
 		appendOpcodes: false
 ]
 
-{ #category : #initialization }
+{ #category : 'initialization' }
 Cogit >> genTrampolineFor: aRoutine called: aString floatArg: regOrConst0 result: resultReg [
 	"Generate a trampoline with one argument that answers a result.
 	 Hack: a negative value indicates an abstract register, a non-negative value indicates a constant."
@@ -7616,7 +7449,7 @@ Cogit >> genTrampolineFor: aRoutine called: aString floatArg: regOrConst0 result
 		appendOpcodes: false
 ]
 
-{ #category : #initialization }
+{ #category : 'initialization' }
 Cogit >> genTrampolineFor: aRoutine called: trampolineName numArgs: numArgs arg: regOrConst0 arg: regOrConst1 arg: regOrConst2 arg: regOrConst3 regsToSave: regMask pushLinkReg: pushLinkReg floatResultReg: resultRegOrNone appendOpcodes: appendBoolean [
 	"Generate a trampoline with up to four arguments.  Generate either a call or a jump to aRoutineOrNil
 	 as requested by callJumpBar.  If generating a call and resultRegOrNone is not NoReg pass the C result
@@ -7644,7 +7477,7 @@ Cogit >> genTrampolineFor: aRoutine called: trampolineName numArgs: numArgs arg:
 	^startAddress
 ]
 
-{ #category : #initialization }
+{ #category : 'initialization' }
 Cogit >> genTrampolineFor: aRoutine called: trampolineName numArgs: numArgs arg: regOrConst0 arg: regOrConst1 arg: regOrConst2 arg: regOrConst3 regsToSave: regMask pushLinkReg: pushLinkReg resultReg: resultRegOrNone appendOpcodes: appendBoolean [
 	"Generate a trampoline with up to four arguments.  Generate either a call or a jump to aRoutineOrNil
 	 as requested by callJumpBar.  If generating a call and resultRegOrNone is not NoReg pass the C result
@@ -7672,7 +7505,7 @@ Cogit >> genTrampolineFor: aRoutine called: trampolineName numArgs: numArgs arg:
 	^startAddress
 ]
 
-{ #category : #initialization }
+{ #category : 'initialization' }
 Cogit >> genTrampolineFor: aRoutine called: trampolineName numArgs: numArgs arg: regOrConst0 arg: regOrConst1 arg: regOrConst2 arg: regOrConst3 regsToSave: regMask pushLinkReg: pushLinkReg resultReg: resultRegOrNone resultReg: resultReg2OrNone appendOpcodes: appendBoolean [
 	"Generate a trampoline with up to four arguments.  Generate either a call or a jump to aRoutineOrNil
 	 as requested by callJumpBar.  If generating a call and resultRegOrNone is not NoReg pass the C result
@@ -7701,7 +7534,7 @@ Cogit >> genTrampolineFor: aRoutine called: trampolineName numArgs: numArgs arg:
 	^startAddress
 ]
 
-{ #category : #initialization }
+{ #category : 'initialization' }
 Cogit >> genTrampolineFor: aRoutine called: aString regsToSave: regMask [
 	"Generate a trampoline with no arguments"
 	<var: #aRoutine type: #'void *'>
@@ -7720,7 +7553,7 @@ Cogit >> genTrampolineFor: aRoutine called: aString regsToSave: regMask [
 		appendOpcodes: false
 ]
 
-{ #category : #initialization }
+{ #category : 'initialization' }
 Cogit >> generateCaptureCStackPointers: captureFramePointer [
 	"Generate the routine that writes the current values of the C frame and stack pointers into
 	 variables.  These are used to establish the C stack in trampolines back into the C run-time.
@@ -7745,7 +7578,7 @@ Cogit >> generateCaptureCStackPointers: captureFramePointer [
 	ceCaptureCStackPointers := self cCoerceSimple: startAddress to: #'void (*)(void)'
 ]
 
-{ #category : #initialization }
+{ #category : 'initialization' }
 Cogit >> generateClosedPICPrototype [
 	"Generate the prototype ClosedPIC to determine how much space as full PIC takes.
 	 When we first allocate a closed PIC it only has one or two cases and we want to grow it.
@@ -7756,7 +7589,7 @@ Cogit >> generateClosedPICPrototype [
 	 are effectively garbage collected on return."
 	self allocateOpcodes: MaxCPICCases * 9 bytecodes: 0.
 	methodLabel address: methodZoneBase; dependent: nil. "for pc-relative MoveCw: cPIC R: ClassReg"
-	self compileClosedPICPrototype.
+	self compilePolymorphicICPrototype.
 	self computeMaximumSizes.
 	cPIC := (self cCoerceSimple: methodZoneBase to: #'CogMethod *').
 	closedPICSize := (self sizeof: CogMethod) + (self generateInstructionsAt: methodZoneBase + (self sizeof: CogMethod)).
@@ -7785,7 +7618,7 @@ Cogit >> generateClosedPICPrototype [
 			 self halt]"
 ]
 
-{ #category : #'generate machine code' }
+{ #category : 'generate machine code' }
 Cogit >> generateCogFullBlock [
 	"We handle jump sizing simply.  First we make a pass that asks each
 	 instruction to compute its maximum size.  Then we make a pass that
@@ -7844,7 +7677,7 @@ Cogit >> generateCogFullBlock [
 	^method
 ]
 
-{ #category : #'generate machine code' }
+{ #category : 'generate machine code' }
 Cogit >> generateCogMethod: selector [
 	"We handle jump sizing simply.  First we make a pass that asks each
 	 instruction to compute its maximum size.  Then we make a pass that
@@ -7897,7 +7730,7 @@ Cogit >> generateCogMethod: selector [
 	^method
 ]
 
-{ #category : #initialization }
+{ #category : 'initialization' }
 Cogit >> generateEnilopmarts [
 	"Enilopmarts transfer control from C into machine code (backwards trampolines)."
 	self cppIf: Debug
@@ -7930,19 +7763,19 @@ Cogit >> generateEnilopmarts [
 					and: ClassReg
 					forCall: true
 					called: 'ceCallCogCodePopReceiverAndClassRegs'].
-
+	
 	self genPrimReturnEnterCogCodeEnilopmart: false.
 	cePrimReturnEnterCogCode := methodZoneBase.
 	self outputInstructionsForGeneratedRuntimeAt: cePrimReturnEnterCogCode.
 	self recordGeneratedRunTime: 'cePrimReturnEnterCogCode' address: cePrimReturnEnterCogCode.
-
+	
 	self genPrimReturnEnterCogCodeEnilopmart: true.
 	cePrimReturnEnterCogCodeProfiling := methodZoneBase.
 	self outputInstructionsForGeneratedRuntimeAt: cePrimReturnEnterCogCodeProfiling.
 	self recordGeneratedRunTime: 'cePrimReturnEnterCogCodeProfiling' address: cePrimReturnEnterCogCodeProfiling
 ]
 
-{ #category : #'generate machine code' }
+{ #category : 'generate machine code' }
 Cogit >> generateInstructionsAt: eventualAbsoluteAddress [
 	"Size pc-dependent instructions and assign eventual addresses to all instructions.
 	 Answer the size of the code.
@@ -7958,7 +7791,6 @@ Cogit >> generateInstructionsAt: eventualAbsoluteAddress [
 	pcDependentIndex := 0.
 	0 to: opcodeIndex - 1 do:
 		[:i|
-		self maybeBreakGeneratingAt: absoluteAddress.
 		abstractInstruction := self abstractInstructionAt: i.
 		abstractInstruction isPCDependent
 			ifTrue:
@@ -7973,12 +7805,11 @@ Cogit >> generateInstructionsAt: eventualAbsoluteAddress [
 		[:j|
 		fixup := self fixupAtIndex: j.
 		abstractInstruction := self abstractInstructionAt: fixup instructionIndex.
-		self maybeBreakGeneratingAt: abstractInstruction address.
 		abstractInstruction concretizeAt: abstractInstruction address].
 	^absoluteAddress - eventualAbsoluteAddress
 ]
 
-{ #category : #'method map' }
+{ #category : 'method map' }
 Cogit >> generateMapAt: addressOrNull start: startAddress [
 	"Generate the method map at addressrNull (or compute it if addressOrNull is null).
 	 Answer the length of the map in byes.  Each entry in the map is in two parts.  In the
@@ -8025,7 +7856,7 @@ Cogit >> generateMapAt: addressOrNull start: startAddress [
 	^length + 1
 ]
 
-{ #category : #initialization }
+{ #category : 'initialization' }
 Cogit >> generateMissAbortTrampolines [
 	"Generate the run-time entries for the various method and PIC entry misses and aborts.
 	 Read the class-side method trampolines for documentation on the various trampolines"
@@ -8033,7 +7864,7 @@ Cogit >> generateMissAbortTrampolines [
 	self subclassResponsibility
 ]
 
-{ #category : #initialization }
+{ #category : 'initialization' }
 Cogit >> generateOpenPICPrototype [
 	"Generate the prototype ClosedPIC to determine how much space as full PIC takes.
 	 When we first allocate a closed PIC it only has one or two cases and we want to grow it.
@@ -8065,7 +7896,7 @@ Cogit >> generateOpenPICPrototype [
 			 self halt]"
 ]
 
-{ #category : #initialization }
+{ #category : 'initialization' }
 Cogit >> generateReturnToInterpreterPCTrampoline [
 
 	ceReturnToInterpreterTrampoline := self
@@ -8076,7 +7907,7 @@ Cogit >> generateReturnToInterpreterPCTrampoline [
 		                                   arg: ReceiverResultReg
 ]
 
-{ #category : #initialization }
+{ #category : 'initialization' }
 Cogit >> generateRunTimeTrampolines [
 
 	"Generate the run-time entries at the base of the native code zone and update the base."
@@ -8140,7 +7971,7 @@ Cogit >> generateRunTimeTrampolines [
 		                    arg: ReceiverResultReg
 ]
 
-{ #category : #initialization }
+{ #category : 'initialization' }
 Cogit >> generateSendTrampolines [
 
 	0 to: NumSendTrampolines - 1 do: [ :numArgs |
@@ -8186,7 +8017,7 @@ Cogit >> generateSendTrampolines [
 	lastSend := superSendTrampolines at: NumSendTrampolines - 1
 ]
 
-{ #category : #initialization }
+{ #category : 'initialization' }
 Cogit >> generateStackPointerCapture [
 	"Generate a routine ceCaptureCStackPointers that will capture the C stack pointer,
 	 and, if it is in use, the C frame pointer.  These are used in trampolines to call
@@ -8206,7 +8037,7 @@ Cogit >> generateStackPointerCapture [
 	self assertCStackWellAligned.
 ]
 
-{ #category : #initialization }
+{ #category : 'initialization' }
 Cogit >> generateTrampolines [
 	"Generate the run-time entries and exits at the base of the native code zone and update the base.
 	 Read the class-side method trampolines for documentation on the various trampolines"
@@ -8232,27 +8063,27 @@ Cogit >> generateTrampolines [
 
 ]
 
-{ #category : #'compile abstract instructions' }
+{ #category : 'compile abstract instructions' }
 Cogit >> generatorAt: index [
 	<cmacro: '(index) (&generatorTable[index])'>
 	<returnTypeC: #'BytecodeDescriptor *'>
 	^generatorTable at: index
 ]
 
-{ #category : #'compile abstract instructions' }
+{ #category : 'compile abstract instructions' }
 Cogit >> generatorForPC: pc [
 	<returnTypeC: #'BytecodeDescriptor *'>
 	<inline: true>
 	^self generatorAt: (objectMemory fetchByte: pc ofObject: methodObj)
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 Cogit >> generatorTable [
 	<doNotGenerate>
 	^generatorTable
 ]
 
-{ #category : #statistics }
+{ #category : 'statistics' }
 Cogit >> getBlockCompilationCount [
 
 	<api>
@@ -8260,7 +8091,7 @@ Cogit >> getBlockCompilationCount [
 	^ objectMemory integerObjectOf: statCompileFullBlockCount 
 ]
 
-{ #category : #statistics }
+{ #category : 'statistics' }
 Cogit >> getBlockCompilationMSecs [
 
 	<api>
@@ -8285,7 +8116,7 @@ Cogit >> getCFramePointer [
 		ifFalse: [(objectMemory longAt: coInterpreter inMemoryCFramePointerAddress) asVoidPointer]
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 Cogit >> getCStackPointer [
 	<api>
 	<cmacro: '() CStackPointer'>
@@ -8308,20 +8139,20 @@ Cogit >> getIsObjectReference [
 	^IsObjectReference
 ]
 
-{ #category : #'compile abstract instructions' }
+{ #category : 'compile abstract instructions' }
 Cogit >> getLiteral: litIndex [
 	maxLitIndex < litIndex ifTrue:
 		[maxLitIndex := litIndex].
 	^coInterpreter literal: litIndex ofMethod: methodObj
 ]
 
-{ #category : #statistics }
+{ #category : 'statistics' }
 Cogit >> getMethodCompilationCount [
 	<api>
 	^ objectMemory integerObjectOf: statCompileMethodCount 
 ]
 
-{ #category : #statistics }
+{ #category : 'statistics' }
 Cogit >> getMethodCompilationMSecs [
 	<api>
 	^ objectMemory integerObjectOf: statCompileMethodUsecs  + 500 // 1000
@@ -8339,39 +8170,39 @@ Cogit >> getOpcodeIndex [
 	^opcodeIndex
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 Cogit >> getPrimitiveIndex [
 	"Access for the object representation primitive generation routines."
 	^primitiveIndex
 ]
 
-{ #category : #'as yet unclassified' }
+{ #category : 'accessing' }
 Cogit >> guardPageSize: anInteger [ 
 
 	<doNotGenerate>
 	guardPageSize := anInteger
 ]
 
-{ #category : #'translation support' }
+{ #category : 'translation support' }
 Cogit >> halt [
 	<cmacro: '() warning("halt")'>
 	Halt signal
 ]
 
-{ #category : #'translation support' }
+{ #category : 'translation support' }
 Cogit >> halt: aString [
 	<cmacro: '(msg) warning("halt: " msg)'>
 	Halt new signal: aString
 ]
 
-{ #category : #halting }
+{ #category : 'halting' }
 Cogit >> haltIf: aBlock [
 
 	aBlock value ifTrue: [ self halt ]
 
 ]
 
-{ #category : #'simulation only' }
+{ #category : 'simulation only' }
 Cogit >> handleABICallOrJumpSimulationTrap: aProcessorSimulationTrap evaluable: evaluable [
 	<doNotGenerate>
 
@@ -8397,7 +8228,7 @@ Cogit >> handleABICallOrJumpSimulationTrap: aProcessorSimulationTrap evaluable: 
 	processor pc: addressToReturn
 ]
 
-{ #category : #'simulation only' }
+{ #category : 'simulation only' }
 Cogit >> handleCallOrJumpSimulationTrap: aProcessorSimulationTrap [
 	<doNotGenerate>
 	| evaluable function memory result savedFramePointer savedStackPointer savedArgumentCount rpc |
@@ -8491,7 +8322,7 @@ Cogit >> handleCallOrJumpSimulationTrap: aProcessorSimulationTrap [
 		 coInterpreter tab; printHex: (coInterpreter longAt: sp); cr]"
 ]
 
-{ #category : #'simulation only' }
+{ #category : 'simulation only' }
 Cogit >> handleReadSimulationTrap: aProcessorSimulationTrap [
 	<doNotGenerate>
 	| variableValue accessor |
@@ -8512,7 +8343,7 @@ Cogit >> handleReadSimulationTrap: aProcessorSimulationTrap [
 		[processor pc: aProcessorSimulationTrap nextpc]
 ]
 
-{ #category : #'simulation only' }
+{ #category : 'simulation only' }
 Cogit >> handleSimulationTrap: aProcessorSimulationTrap [
 	<doNotGenerate>
 	aProcessorSimulationTrap type caseOf:
@@ -8522,7 +8353,7 @@ Cogit >> handleSimulationTrap: aProcessorSimulationTrap [
 		  [#jump] -> [self handleCallOrJumpSimulationTrap: aProcessorSimulationTrap] }
 ]
 
-{ #category : #'simulation only' }
+{ #category : 'simulation only' }
 Cogit >> handleWriteSimulationTrap: aProcessorSimulationTrap [ 
 	<doNotGenerate>
 	| variableValue |
@@ -8534,7 +8365,7 @@ Cogit >> handleWriteSimulationTrap: aProcessorSimulationTrap [
 	processor pc: aProcessorSimulationTrap nextpc
 ]
 
-{ #category : #testing }
+{ #category : 'testing' }
 Cogit >> hasMachineCodeMethodForwardedLiterals: aCogMethod [ 
 	
 	<doNotGenerate>
@@ -8558,7 +8389,7 @@ Cogit >> hasMachineCodeMethodForwardedLiterals: aCogMethod [
 	^ result
 ]
 
-{ #category : #compaction }
+{ #category : 'compaction' }
 Cogit >> incrementUsageOfTargetIfLinkedSend: annotation mcpc: mcpc ignored: superfluity [
 	<var: #mcpc type: #'char *'>
 	| entryPoint |
@@ -8574,7 +8405,7 @@ Cogit >> incrementUsageOfTargetIfLinkedSend: annotation mcpc: mcpc ignored: supe
 	^0 "keep scanning"
 ]
 
-{ #category : #'in-line cacheing' }
+{ #category : 'in-line cacheing' }
 Cogit >> indexForSelector: selector in: cogMethod at: mcpc [
 
 	"Answer the value to put in an inline-cache that is being loaded with the selector.
@@ -8624,13 +8455,13 @@ Cogit >> indexForSelector: selector in: cogMethod at: mcpc [
 	^ 0
 ]
 
-{ #category : #'generate machine code' }
+{ #category : 'generate machine code' }
 Cogit >> initialClosedPICUsageCount [
 	"Answer a usage count that reflects likely long-term usage."
 	^CMMaxUsageCount // 2
 ]
 
-{ #category : #'generate machine code' }
+{ #category : 'generate machine code' }
 Cogit >> initialMethodUsageCount [
 	"Answer a usage count that reflects likely long-term usage.
 	 Answer 1 for non-primitives or quick primitives (inst var accessors),
@@ -8643,13 +8474,13 @@ Cogit >> initialMethodUsageCount [
 	^3
 ]
 
-{ #category : #'generate machine code' }
+{ #category : 'generate machine code' }
 Cogit >> initialOpenPICUsageCount [
 	"Answer a usage count that reflects likely long-term usage."
 	^CMMaxUsageCount - 1
 ]
 
-{ #category : #initialization }
+{ #category : 'initialization' }
 Cogit >> initialize [
 	| wordSize |
 	initialPC := 0.
@@ -8667,7 +8498,7 @@ Cogit >> initialize [
 	jitCodeZoneWriteEnabled := false.
 ]
 
-{ #category : #initialization }
+{ #category : 'initialization' }
 Cogit >> initializeBackend [
 	methodLabel machineCodeSize: 0.
 	methodLabel opcode: Label.
@@ -8678,21 +8509,27 @@ Cogit >> initializeBackend [
 	literalsManager allocateLiterals: 4; resetLiterals
 ]
 
-{ #category : #initialization }
+{ #category : 'initialization' }
 Cogit >> initializeCodeZoneFrom: startAddress upTo: endAddress [
+
 	<api>
 	self initializeBackend.
-	
-	self enableCodeZoneWriteDuring: [backEnd stopsFrom: startAddress to: endAddress - 1].
 
-	self cCode: [self sqMakeMemoryExecutableFrom: startAddress To: endAddress]
-		inSmalltalk:
-			[startAddress = self class guardPageSize ifTrue:
-				[backEnd stopsFrom: 0 to: endAddress - 1].
-			 self initializeProcessor].
+	self enableCodeZoneWriteDuring: [
+		backEnd stopsFrom: startAddress to: endAddress - 1 ].
+
+	self
+		cCode: [
+			self cCall: 'sqMakeMemoryExecutableFromTo' withArguments: {
+					startAddress.
+					endAddress } ]
+		inSmalltalk: [
+			startAddress = self class guardPageSize ifTrue: [
+				backEnd stopsFrom: 0 to: endAddress - 1 ].
+			self initializeProcessor ].
 	codeBase := methodZoneBase := startAddress.
 	minValidCallAddress := (codeBase min: coInterpreter interpretAddress)
-								min: coInterpreter primitiveFailAddress.
+		                       min: coInterpreter primitiveFailAddress.
 	methodZone manageFrom: methodZoneBase to: endAddress.
 	self enableCodeZoneWriteDuring: [
 		self maybeGenerateCheckFeatures.
@@ -8710,7 +8547,7 @@ Cogit >> initializeCodeZoneFrom: startAddress upTo: endAddress [
 	self generateOpenPICPrototype
 ]
 
-{ #category : #'compile abstract instructions' }
+{ #category : 'compile abstract instructions' }
 Cogit >> initializeFixupAt: targetPC [
 	"Make sure there's a flagged fixup at the targetPC in fixups.
 	 Initially a fixup's target is just a flag.  Later on it is replaced with a proper instruction."
@@ -8719,7 +8556,31 @@ Cogit >> initializeFixupAt: targetPC [
 	(self fixupAt: targetPC) becomeFixup
 ]
 
-{ #category : #initialization }
+{ #category : 'in-line cacheing' }
+Cogit >> initializePIC: aPIC atDelta: addrDelta numArgs: numArgs [
+
+	objectMemory
+		memcpy: aPIC
+		_: (self cCoerceSimple: cPICPrototype to: #'CogMethod *')
+		_: closedPICSize.
+
+	backEnd
+		rewriteCallAt: aPIC asInteger + missOffset
+		target: (self picAbortTrampolineFor: numArgs). "adjust the call at missOffset, the ceAbortXArgs"
+
+	"update the loading of the CPIC address"
+	backEnd
+		relocateMethodReferenceBeforeAddress:
+		aPIC asInteger + cPICEndOfCodeOffset - backEnd jumpLongByteSize
+		by: addrDelta.
+
+	"write the final desperate jump to cePICMissXArgs"
+	backEnd
+		rewriteJumpLongAt: aPIC asInteger + cPICEndOfCodeOffset
+		target: (self cPICMissTrampolineFor: numArgs)
+]
+
+{ #category : 'initialization' }
 Cogit >> initializeProcessor [
 	"Initialize the simulation processor, arranging that its initial stack is somewhere on the rump C stack."
 	<doNotGenerate>
@@ -8732,7 +8593,7 @@ Cogit >> initializeProcessor [
 
 ]
 
-{ #category : #initialization }
+{ #category : 'initialization' }
 Cogit >> initializeProcessorStack: rumpCStackAddress [
 	"Initialize the simulation processor's stack pointers, arranging that they are somewhere on the rump C stack."
 	<doNotGenerate>
@@ -8745,13 +8606,13 @@ Cogit >> initializeProcessorStack: rumpCStackAddress [
 	processor setFramePointer: cFramePointer stackPointer: cStackPointer
 ]
 
-{ #category : #testing }
+{ #category : 'testing' }
 Cogit >> initialized [
 	<doNotGenerate>
 	^openPICSize isInteger
 ]
 
-{ #category : #'in-line cacheing' }
+{ #category : 'in-line cacheing' }
 Cogit >> inlineCacheTagsAreIndexes [
 	"The Cogit always generates 32-bit inline caches.  This implies that in 64-bits there is no room
 	 in an unlinked inline cache for a selector oop.  Instead it contains a signed 32-bit index, positive
@@ -8761,7 +8622,7 @@ Cogit >> inlineCacheTagsAreIndexes [
 	^objectMemory wordSize = 8
 ]
 
-{ #category : #'in-line cacheing' }
+{ #category : 'in-line cacheing' }
 Cogit >> inlineCacheValueForSelector: selector in: aCogMethod at: mcpc [
 	"Answer the value to put in an inline-cache that is being loaded with the selector.
 	 Usually this is simply the selector, but in 64-bits the cache is only 32-bits wide
@@ -8773,7 +8634,7 @@ Cogit >> inlineCacheValueForSelector: selector in: aCogMethod at: mcpc [
 		ifFalse: [selector]
 ]
 
-{ #category : #'tests-method map' }
+{ #category : 'tests-method map' }
 Cogit >> innermostSubMethodFor: bcpc in: subMethods startingAt: index [
 	<doNotGenerate>
 	| subMethod |
@@ -8788,14 +8649,14 @@ Cogit >> innermostSubMethodFor: bcpc in: subMethods startingAt: index [
 				[self innermostSubMethodFor: bcpc in: subMethods startingAt: index + 1]]
 ]
 
-{ #category : #'in-line cacheing' }
+{ #category : 'in-line cacheing' }
 Cogit >> interpretOffset [
 	<api>
 	<cmacro: '() missOffset'>
 	^missOffset
 ]
 
-{ #category : #'compile abstract instructions' }
+{ #category : 'compile abstract instructions' }
 Cogit >> inverseBranchFor: opcode [
 	opcode caseOf: {
 		[JumpLongZero]		->	[^JumpLongNonZero].
@@ -8820,7 +8681,7 @@ Cogit >> inverseBranchFor: opcode [
 	^0
 ]
 
-{ #category : #'compile abstract instructions' }
+{ #category : 'compile abstract instructions' }
 Cogit >> isBackwardBranch: descriptor at: pc exts: nExts in: aMethodObj [
 	"Answer if the branch bytecode with the given descriptor is a backward branch."
 	<inline: true>
@@ -8834,13 +8695,13 @@ Cogit >> isBackwardBranch: descriptor at: pc exts: nExts in: aMethodObj [
 		with: aMethodObj) < 0
 ]
 
-{ #category : #initialization }
+{ #category : 'initialization' }
 Cogit >> isCFramePointerInUse [
 	<doNotGenerate>
 	^ cFramePointerInUse
 ]
 
-{ #category : #'bytecode generator support' }
+{ #category : 'bytecode generator support' }
 Cogit >> isDirectedSuper: descriptor extA: exta extB: extb [
 	"235	(1)	11101011	iiiiijjj	ExtendB < 64
 										ifTrue: [Send To Superclass
@@ -8855,7 +8716,14 @@ Cogit >> isDirectedSuper: descriptor extA: exta extB: extb [
 	  and: [extb >= 64]]
 ]
 
-{ #category : #'jit - api' }
+{ #category : 'accessing' }
+Cogit >> isMNUPicAbortDiscriminatorValue [
+	"This value is used to decide between MNU processing
+	 or interpretation in the closed PIC aborts."
+	^0
+]
+
+{ #category : 'jit - api' }
 Cogit >> isNonLocalReturnPC: retpc [
 	<doNotGenerate>
 	"Answer if the instruction preceding retpc is a call instruction."
@@ -8863,14 +8731,14 @@ Cogit >> isNonLocalReturnPC: retpc [
 	 and: [(backEnd callTargetFromReturnAddress: retpc) = ceNonLocalReturnTrampoline]
 ]
 
-{ #category : #'method map' }
+{ #category : 'method map' }
 Cogit >> isPCMappedAnnotation: annotation [
 	"See Cogit class>>initializeAnnotationConstants"
 	<inline: true>
 	^annotation >= HasBytecodePC
 ]
 
-{ #category : #disassembly }
+{ #category : 'disassembly' }
 Cogit >> isPCWithinMethodZone: address [
 	<api>
 	<var: #address type: #'void *'>
@@ -8879,26 +8747,26 @@ Cogit >> isPCWithinMethodZone: address [
 		and: methodZone freeStart
 ]
 
-{ #category : #testing }
+{ #category : 'testing' }
 Cogit >> isPrimitiveRunningInSmalltalkStack: aSelector [
 
 	^ aSelector = #mcprimHashMultiply:
 
 ]
 
-{ #category : #'method map' }
+{ #category : 'method map' }
 Cogit >> isPureSendAnnotation: annotation [
 	<inline: true>
 	^annotation >= IsSendCall
 ]
 
-{ #category : #'method map' }
+{ #category : 'method map' }
 Cogit >> isSendAnnotation: annotation [
 	<inline: true>
 	^annotation >= IsSendCall
 ]
 
-{ #category : #'jit - api' }
+{ #category : 'jit - api' }
 Cogit >> isSendReturnPC: retpc [
 	<api>
 	"Answer if the instruction preceding retpc is a call instruction."
@@ -8910,21 +8778,21 @@ Cogit >> isSendReturnPC: retpc [
 	   or: [target between: methodZoneBase and: methodZone freeStart]
 ]
 
-{ #category : #initialization }
+{ #category : 'initialization' }
 Cogit >> isTrampolineArgConstant: n [
 	"Test for true and false and 0 to N encoded via trampolineArgConstant:"
 	<inline: true>
 	^n < NoReg
 ]
 
-{ #category : #disassembly }
+{ #category : 'disassembly' }
 Cogit >> labelForPC: address [
 	<doNotGenerate>
 	^address < methodZoneBase ifTrue:
 		[self lookupAddress: address]
 ]
 
-{ #category : #'simulation only' }
+{ #category : 'simulation only' }
 Cogit >> labelForSimulationAccessor: blockOrMessageSendOrSelector [
 	<doNotGenerate>
 	^'&', (blockOrMessageSendOrSelector isBlock
@@ -8934,20 +8802,20 @@ Cogit >> labelForSimulationAccessor: blockOrMessageSendOrSelector [
 						ifFalse: [blockOrMessageSendOrSelector]])
 ]
 
-{ #category : #'as yet unclassified' }
+{ #category : 'accessing' }
 Cogit >> lastNInstructions: aCollection [ 
 	<doNotGenerate>
 	lastNInstructions := aCollection
 ]
 
-{ #category : #'compile abstract instructions' }
+{ #category : 'compile abstract instructions' }
 Cogit >> lastOpcode [
 	<returnTypeC: #'AbstractInstruction *'>
 	self assert: opcodeIndex > 0.
 	^self abstractInstructionAt: opcodeIndex - 1
 ]
 
-{ #category : #'compile abstract instructions' }
+{ #category : 'compile abstract instructions' }
 Cogit >> latestContinuationPCFor: descriptor at: pc exts: nExts in: aMethodObj [
 	"Assuming the descriptor is that for a branch or block,
 	 answer the furthest reachable pc for this bytecode."
@@ -8958,7 +8826,7 @@ Cogit >> latestContinuationPCFor: descriptor at: pc exts: nExts in: aMethodObj [
 	^pc + descriptor numBytes + (distance max: 0)
 ]
 
-{ #category : #'in-line cacheing' }
+{ #category : 'in-line cacheing' }
 Cogit >> linkSendAt: callSiteReturnAddress in: sendingMethod to: targetMethod offset: theEntryOffset receiver: receiver [
 	<api>
 	<var: #sendingMethod type: #'CogMethod *'>
@@ -8969,8 +8837,6 @@ Cogit >> linkSendAt: callSiteReturnAddress in: sendingMethod to: targetMethod of
 	inlineCacheTag := theEntryOffset = cmNoCheckEntryOffset
 						ifTrue: [targetMethod selector "i.e. no change"]
 						ifFalse: [objectRepresentation inlineCacheTagForInstance: receiver].
-	(objectRepresentation inlineCacheTagIsYoung: inlineCacheTag) ifTrue:
-		[methodZone ensureInYoungReferrers: sendingMethod].
 	address := targetMethod asInteger + theEntryOffset.
 
 	self 
@@ -8986,7 +8852,7 @@ Cogit >> linkSendAt: callSiteReturnAddress in: sendingMethod to: targetMethod of
 				to: callSiteReturnAddress asUnsignedInteger ].
 ]
 
-{ #category : #analysis }
+{ #category : 'analysis' }
 Cogit >> linkedSuperSendCacheTags [
 	"An example; answer the cache tags for linked super sends.  They should all be
 	 selectors because super sends don't have their cache tag rewritten when linked."
@@ -9009,7 +8875,7 @@ Cogit >> linkedSuperSendCacheTags [
 	^cacheTags
 ]
 
-{ #category : #'compile abstract instructions' }
+{ #category : 'compile abstract instructions' }
 Cogit >> loadBytesAndGetDescriptor [
 	<var: #descriptor type: #'BytecodeDescriptor *'>
 	| descriptor |
@@ -9021,7 +8887,7 @@ Cogit >> loadBytesAndGetDescriptor [
 	
 ]
 
-{ #category : #'compile abstract instructions' }
+{ #category : 'compile abstract instructions' }
 Cogit >> loadSubsequentBytesForDescriptor: descriptor at: pc [
 	<var: #descriptor type: #'BytecodeDescriptor *'>
 	descriptor numBytes > 1 ifTrue:
@@ -9034,41 +8900,64 @@ Cogit >> loadSubsequentBytesForDescriptor: descriptor at: pc [
 					[self notYetImplemented]]]]
 ]
 
-{ #category : #'in-line cacheing' }
+{ #category : 'in-line cacheing' }
 Cogit >> lookup: selector for: receiver methodAndErrorSelectorInto: binaryBlock [
-	"Lookup selector in the class of receiver.  If found, evaluate binaryBlock with the
-	 method, cogged if appropriate..  If not found, due to MNU, lookup the DNU selector
-	 and evaluate binaryBlock with the MNU method, cogged if appropriate..  If not found
-	 due to cannot interpret, evaluate binaryBlock with a nil method and the error selector."
-	| methodOrSelectorIndex |
+	"Lookup selector in the class of receiver:
+	   - Found: Evaluate binaryBlock with the method, cogged if appropriate
+	   - Not found (MNU): Lookup the DNU selector. Evaluate binaryBlock with the MNU method, cogged if appropriate
+	   - Not found (cannot interpret): evaluate binaryBlock with a nil method and the error selector
 
+	       method | errorSelector             | situation
+	 -------------+---------------------------+-------------------------------------------------------------
+	          nil | SelectorCannotInterpret   | There was an error during the lookup (ill-formed class)
+	          nil | SelectorDoesNotUnderstand | Didn't find the method nor the DNU implementation
+	  foundMethod | SelectorDoesNotUnderstand | Didn't find the method but found the DNU implementation
+	  foundMethod | SelectorCannotInterpret   | Found something that isn't a CompiledMethod (#run:with:in:)
+	  foundMethod | nil                       | Found the method"
+
+	| methodOrSelectorIndex |
 	methodOrSelectorIndex := coInterpreter
-									lookupOrdinary: selector
-									receiver: receiver.
-	methodOrSelectorIndex asUnsignedInteger > coInterpreter maxLookupNoMNUErrorCode ifTrue:
-		[(objectMemory isOopCompiledMethod: methodOrSelectorIndex) ifFalse:
-			[^binaryBlock value: methodOrSelectorIndex value: SelectorCannotInterpret].
-		 ((coInterpreter methodHasCogMethod: methodOrSelectorIndex) not
-		  and: [coInterpreter methodShouldBeCogged: methodOrSelectorIndex]) ifTrue:
-			["We assume cog:selector: will *not* reclaim the method zone"
-			 self cog: methodOrSelectorIndex selector: selector].
-		^binaryBlock value: methodOrSelectorIndex value: nil].
-	methodOrSelectorIndex = SelectorDoesNotUnderstand ifTrue:
-		[methodOrSelectorIndex := coInterpreter
-										lookupMNU: (objectMemory splObj: SelectorDoesNotUnderstand)
-										receiver: receiver.
-		 methodOrSelectorIndex asUnsignedInteger > coInterpreter maxLookupNoMNUErrorCode ifTrue:
-			[self assert: (objectMemory isOopCompiledMethod: methodOrSelectorIndex).
-			 ((coInterpreter methodHasCogMethod: methodOrSelectorIndex) not
-			  and: [coInterpreter methodShouldBeCogged: methodOrSelectorIndex]) ifTrue:
-				["We assume cog:selector: will *not* reclaim the method zone"
-				 self cog: methodOrSelectorIndex selector: (objectMemory splObj: SelectorDoesNotUnderstand)].
-			^binaryBlock value: methodOrSelectorIndex value: SelectorDoesNotUnderstand].
-		^binaryBlock value: nil value: SelectorDoesNotUnderstand].
-	^binaryBlock value: nil value: methodOrSelectorIndex
+		                         lookupMethodWithoutMNUProcessingForSelector: selector
+		                         receiver: receiver.
+
+	methodOrSelectorIndex = SelectorCannotInterpret ifTrue: [
+		^ binaryBlock value: nil value: SelectorCannotInterpret ].
+
+	methodOrSelectorIndex = SelectorDoesNotUnderstand ifTrue: [
+		methodOrSelectorIndex := coInterpreter
+			                         lookupMethodWithoutMNUProcessingForSelector:
+			                         (objectMemory splObj:
+				                          SelectorDoesNotUnderstand)
+			                         receiver: receiver.
+
+		methodOrSelectorIndex asUnsignedInteger
+		<= coInterpreter maxLookupNoMNUErrorCode ifTrue: [
+			^ binaryBlock value: nil value: SelectorDoesNotUnderstand ].
+
+		"NOTE: This assertion is wrong (we should probably allow #run:with:in for #doesNotUnderstand)"
+		self assert:
+			(objectMemory isOopCompiledMethod: methodOrSelectorIndex).
+		self
+			cogMethodIfPossible: methodOrSelectorIndex
+			selector: (objectMemory splObj: SelectorDoesNotUnderstand).
+		^ binaryBlock
+			  value: methodOrSelectorIndex
+			  value: SelectorDoesNotUnderstand ].
+
+	"NOTE: Should we support having #run:with:in: implementations on literal values?"
+	self assert: (objectRepresentation couldBeObject:
+			 methodOrSelectorIndex asUnsignedInteger).
+
+	(objectMemory isOopCompiledMethod: methodOrSelectorIndex) ifFalse: [
+		^ binaryBlock
+			  value: methodOrSelectorIndex
+			  value: SelectorCannotInterpret ].
+
+	self cogMethodIfPossible: methodOrSelectorIndex selector: selector.
+	^ binaryBlock value: methodOrSelectorIndex value: nil
 ]
 
-{ #category : #disassembly }
+{ #category : 'disassembly' }
 Cogit >> lookupAddress: address [
 	<doNotGenerate>
 	| cogMethod |
@@ -9093,7 +8982,7 @@ Cogit >> lookupAddress: address [
 	^coInterpreter lookupAddress: address
 ]
 
-{ #category : #disassembly }
+{ #category : 'disassembly' }
 Cogit >> lookupCHexString: aCHexString [ 
 	<doNotGenerate>
 	| pastLastZero shortened address |
@@ -9118,7 +9007,7 @@ Cogit >> lookupCHexString: aCHexString [
 		ifNil: [shortened]
 ]
 
-{ #category : #disassembly }
+{ #category : 'disassembly' }
 Cogit >> lookupFrameOffset: anInteger [
 	<doNotGenerate>
 	(self class initializationOptions at: #tempNames ifAbsent: nil) ifNotNil:
@@ -9137,7 +9026,7 @@ Cogit >> lookupFrameOffset: anInteger [
 	^nil
 ]
 
-{ #category : #disassembly }
+{ #category : 'disassembly' }
 Cogit >> lookupInstVarOffset: offset [
 	^offset \\ objectMemory bytesPerOop = 0 ifTrue:
 		[(self class initializationOptions at: #instVarNames ifAbsent: nil) ifNotNil:
@@ -9147,7 +9036,7 @@ Cogit >> lookupInstVarOffset: offset [
 				ifAbsent: nil]]
 ]
 
-{ #category : #'method map' }
+{ #category : 'method map' }
 Cogit >> mapEndFor: cogMethod [
 	"Answer the address of the null byte at the end of the method map."
 	<var: #cogMethod type: #'CogMethod *'>
@@ -9160,7 +9049,7 @@ Cogit >> mapEndFor: cogMethod [
 	^end
 ]
 
-{ #category : #'method map' }
+{ #category : 'method map' }
 Cogit >> mapFor: cogMethod bcpc: startbcpc performUntil: functionSymbol arg: arg [
 	"Machine-code <-> bytecode pc mapping support.  Evaluate functionSymbol
 	 for each mcpc, bcpc pair in the map until the function returns non-zero,
@@ -9263,13 +9152,13 @@ Cogit >> mapFor: cogMethod bcpc: startbcpc performUntil: functionSymbol arg: arg
 	^0
 ]
 
-{ #category : #'method map' }
+{ #category : 'method map' }
 Cogit >> mapFor: cogMethod do: aBlock [
 	<doNotGenerate>
 	self mapFor: cogMethod performUntil: #withAnnotation:pc:evaluate: arg: aBlock
 ]
 
-{ #category : #'method map' }
+{ #category : 'method map' }
 Cogit >> mapFor: cogMethod performAllMapEntriesUntil: functionSymbol arg: arg [
 	"Analysis support"
 	<doNotGenerate>
@@ -9293,7 +9182,7 @@ Cogit >> mapFor: cogMethod performAllMapEntriesUntil: functionSymbol arg: arg [
 	^0
 ]
 
-{ #category : #'method map' }
+{ #category : 'method map' }
 Cogit >> mapFor: cogMethod performUntil: functionSymbol arg: arg [
 	"Unlinking/GC/Disassembly support"
 	<var: #cogMethod type: #'CogMethod *'>
@@ -9326,7 +9215,7 @@ Cogit >> mapFor: cogMethod performUntil: functionSymbol arg: arg [
 	^0
 ]
 
-{ #category : #'garbage collection' }
+{ #category : 'garbage collection' }
 Cogit >> mapObjectReferencesInClosedPIC: cPIC [
 	"Remap all object references in the closed PIC.  Answer if any references are young.
 	Set codeModified if any modifications are made."
@@ -9353,7 +9242,7 @@ Cogit >> mapObjectReferencesInClosedPIC: cPIC [
 	^refersToYoung
 ]
 
-{ #category : #'garbage collection' }
+{ #category : 'garbage collection' }
 Cogit >> mapObjectReferencesInGeneratedRuntime [
 	"Update all references to objects in the generated runtime."
 	0 to: runtimeObjectRefIndex - 1 do:
@@ -9366,7 +9255,7 @@ Cogit >> mapObjectReferencesInGeneratedRuntime [
 			 codeModified := true]]
 ]
 
-{ #category : #'jit - api' }
+{ #category : 'jit - api' }
 Cogit >> mapObjectReferencesInMachineCode: gcMode [
 	<api>
 	"Update all references to objects in machine code."
@@ -9379,7 +9268,7 @@ Cogit >> mapObjectReferencesInMachineCode: gcMode [
 		[self error: 'youngReferrers list overflowed']
 ]
 
-{ #category : #'garbage collection' }
+{ #category : 'garbage collection' }
 Cogit >> mapObjectReferencesInMachineCodeForBecome [
 	"Update all references to objects in machine code for a become.
 	 Unlike incrementalGC or fullGC a method that does not refer to young may
@@ -9467,7 +9356,7 @@ Cogit >> mapObjectReferencesInMachineCodeForBecome [
 	
 ]
 
-{ #category : #'garbage collection' }
+{ #category : 'garbage collection' }
 Cogit >> mapObjectReferencesInMachineCodeForFullGC [
 	"Update all references to objects in machine code for a full gc.  Since
 	 the current (New)ObjectMemory GC makes everything old in a full GC
@@ -9506,7 +9395,7 @@ Cogit >> mapObjectReferencesInMachineCodeForFullGC [
 
 ]
 
-{ #category : #'garbage collection' }
+{ #category : 'garbage collection' }
 Cogit >> mapObjectReferencesInMachineCodeForYoungGC [
 	"Update all references to objects in machine code for either a Spur scavenging gc
 	 or a Squeak V3 incremental GC.  Avoid scanning all code by using the youngReferrers
@@ -9552,7 +9441,7 @@ Cogit >> mapObjectReferencesInMachineCodeForYoungGC [
 
 ]
 
-{ #category : #'simulation only' }
+{ #category : 'simulation only' }
 Cogit >> mapPrimitive: primitiveRoutine "<Symbol>" withIndexToUniqueAddress: primIndex [ "<SmallInteger>"
 	| uniqueAddress |
 
@@ -9575,7 +9464,7 @@ Cogit >> mapPrimitive: primitiveRoutine "<Symbol>" withIndexToUniqueAddress: pri
 	^uniqueAddress
 ]
 
-{ #category : #'method map' }
+{ #category : 'method map' }
 Cogit >> mapStartFor: cogMethod [
 	"Answer the address of the first byte of the method map."
 	<var: #cogMethod type: #'CogMethod *'>
@@ -9583,7 +9472,7 @@ Cogit >> mapStartFor: cogMethod [
 	^cogMethod asUnsignedInteger + cogMethod blockSize - 1
 ]
 
-{ #category : #'garbage collection' }
+{ #category : 'garbage collection' }
 Cogit >> markAndTraceLiteralsIn: cogMethod [
 	<option: #SpurObjectMemory>
 	"Unlink sends that have unmarked classes in inline caches or freed/freeable targets.
@@ -9608,7 +9497,7 @@ Cogit >> markAndTraceLiteralsIn: cogMethod [
 		 arg: cogMethod asInteger
 ]
 
-{ #category : #'jit - api' }
+{ #category : 'jit - api' }
 Cogit >> markAndTraceMachineCodeForNewSpaceGC [
 	"Free any methods that refer to unmarked objects, unlinking sends to freed methods."
 	| pointer cogMethod |
@@ -9616,7 +9505,7 @@ Cogit >> markAndTraceMachineCodeForNewSpaceGC [
 	
 	self enableCodeZoneWriteDuring: [ 
 		objectMemory leakCheckNewSpaceGC ifTrue:
-			[self asserta: self allMachineCodeObjectReferencesValid].
+			[self assert: self allMachineCodeObjectReferencesValid].
 		codeModified := false.
 		pointer := methodZone youngReferrers.
 		[pointer < methodZone zoneEnd] whileTrue:
@@ -9633,7 +9522,7 @@ Cogit >> markAndTraceMachineCodeForNewSpaceGC [
 					self markYoungObjectsIn: cogMethod]].
 			 pointer := pointer + objectMemory wordSize].
 		objectMemory leakCheckNewSpaceGC ifTrue:
-			[self asserta: self allMachineCodeObjectReferencesValid].
+			[self assert: self allMachineCodeObjectReferencesValid].
 
 	] flushingCacheWith: 	[ 		
 		codeModified ifTrue: "After updating oops in inline caches we need to flush the icache."
@@ -9641,7 +9530,7 @@ Cogit >> markAndTraceMachineCodeForNewSpaceGC [
 
 ]
 
-{ #category : #'jit - api' }
+{ #category : 'jit - api' }
 Cogit >> markAndTraceMachineCodeOfMarkedMethods [
 	"Mark objects in machine-code of marked methods (or open PICs with marked selectors)."
 	<api>
@@ -9651,7 +9540,7 @@ Cogit >> markAndTraceMachineCodeOfMarkedMethods [
 	
 	self enableCodeZoneWriteDuring: [  
 		objectMemory leakCheckFullGC ifTrue:
-			[self asserta: self allMachineCodeObjectReferencesValid].
+			[self assert: self allMachineCodeObjectReferencesValid].
 		codeModified := false.
 		self markAndTraceObjectReferencesInGeneratedRuntime.
 		cogMethod := self cCoerceSimple: methodZoneBase to: #'CogMethod *'.
@@ -9665,14 +9554,14 @@ Cogit >> markAndTraceMachineCodeOfMarkedMethods [
 				[self markAndTraceLiteralsIn: cogMethod].
 			 cogMethod := methodZone methodAfter: cogMethod].
 		objectMemory leakCheckFullGC ifTrue:
-			[self asserta: self allMachineCodeObjectReferencesValid]
+			[self assert: self allMachineCodeObjectReferencesValid]
 	] flushingCacheWith: 	[ 		
 		codeModified ifTrue: "After updating oops in inline caches we need to flush the icache."
 			[self flushICacheFrom: codeBase asUnsignedInteger to: methodZone limitZony asUnsignedInteger] ]
 	
 ]
 
-{ #category : #'jit - api' }
+{ #category : 'jit - api' }
 Cogit >> markAndTraceObjectReferencesInGeneratedRuntime [
 	"Mark and trace any object references in the generated run-time."
 	0 to: runtimeObjectRefIndex - 1 do:
@@ -9685,7 +9574,7 @@ Cogit >> markAndTraceObjectReferencesInGeneratedRuntime [
 			atpc: mcpc asUnsignedInteger]
 ]
 
-{ #category : #'garbage collection' }
+{ #category : 'garbage collection' }
 Cogit >> markAndTraceOrFreeCogMethod: cogMethod firstVisit: firstVisit [
 	"Mark and trace objects in the argument and free if it is appropriate.
 	 Answer if the method has been freed.  firstVisit is a hint used to avoid
@@ -9726,7 +9615,7 @@ Cogit >> markAndTraceOrFreeCogMethod: cogMethod firstVisit: firstVisit [
 	^false
 ]
 
-{ #category : #'jit - api' }
+{ #category : 'jit - api' }
 Cogit >> markAndTraceOrFreeMachineCodeForFullGC [
 	"Free any methods that refer to unmarked objects, unlinking sends to freed methods."
 	| cogMethod |
@@ -9734,7 +9623,7 @@ Cogit >> markAndTraceOrFreeMachineCodeForFullGC [
 	
 	self enableCodeZoneWriteDuring: [ 
 		objectMemory leakCheckFullGC ifTrue:
-			[self asserta: self allMachineCodeObjectReferencesValid].
+			[self assert: self allMachineCodeObjectReferencesValid].
 		codeModified := false.
 		self markAndTraceObjectReferencesInGeneratedRuntime.
 		cogMethod := self cCoerceSimple: methodZoneBase to: #'CogMethod *'.
@@ -9742,7 +9631,7 @@ Cogit >> markAndTraceOrFreeMachineCodeForFullGC [
 			[self markAndTraceOrFreeCogMethod: cogMethod firstVisit: true.
 			 cogMethod := methodZone methodAfter: cogMethod].
 		objectMemory leakCheckFullGC ifTrue:
-			[self asserta: self allMachineCodeObjectReferencesValid].
+			[self assert: self allMachineCodeObjectReferencesValid].
 
 	] flushingCacheWith: 	[ 		
 		codeModified ifTrue: "After updating oops in inline caches we need to flush the icache."
@@ -9750,7 +9639,7 @@ Cogit >> markAndTraceOrFreeMachineCodeForFullGC [
 	
 ]
 
-{ #category : #'garbage collection' }
+{ #category : 'garbage collection' }
 Cogit >> markAndTraceOrFreePICTarget: entryPoint in: cPIC [
 	"If entryPoint is that of some method, then mark and trace objects in it and free if it is appropriate.
 	 Answer if the method has been freed."
@@ -9766,7 +9655,7 @@ Cogit >> markAndTraceOrFreePICTarget: entryPoint in: cPIC [
 		  firstVisit: targetMethod asUnsignedInteger > cPIC asUnsignedInteger
 ]
 
-{ #category : #'garbage collection' }
+{ #category : 'garbage collection' }
 Cogit >> markLiterals: annotation pc: mcpc method: cogMethod [
 	"Mark and trace literals."
 	<var: #mcpc type: #'char *'>
@@ -9792,7 +9681,7 @@ Cogit >> markLiterals: annotation pc: mcpc method: cogMethod [
 	^0 "keep scanning"
 ]
 
-{ #category : #'garbage collection' }
+{ #category : 'garbage collection' }
 Cogit >> markLiteralsAndUnlinkIfUnmarkedSend: annotation pc: mcpc method: cogMethod [
 	"Mark and trace literals.  Unlink sends that have unmarked cache tags or targets."
 	<var: #mcpc type: #'char *'>
@@ -9833,7 +9722,7 @@ Cogit >> markLiteralsAndUnlinkIfUnmarkedSend: annotation pc: mcpc method: cogMet
 	^0 "keep scanning"
 ]
 
-{ #category : #'garbage collection' }
+{ #category : 'garbage collection' }
 Cogit >> markLiteralsAndUnlinkUnmarkedSendsIn: cogMethod [
 	"Unlink sends that have unmarked classes in inline caches or freed/freeable targets.
 	 Nil-out inline caches linked to open PICs.
@@ -9854,7 +9743,7 @@ Cogit >> markLiteralsAndUnlinkUnmarkedSendsIn: cogMethod [
 		 arg: cogMethod asInteger
 ]
 
-{ #category : #'jit - api' }
+{ #category : 'jit - api' }
 Cogit >> markMethodAndReferents: aCogMethod [
 	<api>
 	<var: #aCogMethod type: #'CogMethod *'>
@@ -9865,7 +9754,7 @@ Cogit >> markMethodAndReferents: aCogMethod [
 		arg: 0
 ]
 
-{ #category : #'garbage collection' }
+{ #category : 'garbage collection' }
 Cogit >> markYoungObjects: annotation pc: mcpc method: cogMethod [
 	"Mark and trace young literals."
 	<var: #mcpc type: #'char *'>
@@ -9883,7 +9772,7 @@ Cogit >> markYoungObjects: annotation pc: mcpc method: cogMethod [
 	^0 "keep scanning"
 ]
 
-{ #category : #'garbage collection' }
+{ #category : 'garbage collection' }
 Cogit >> markYoungObjectsIn: cogMethod [
 	"Mark young literals in the method."
 	<var: #cogMethod type: #'CogMethod *'>
@@ -9900,7 +9789,7 @@ Cogit >> markYoungObjectsIn: cogMethod [
 		 arg: cogMethod asInteger
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 Cogit >> maxCogCodeSize [
 	"We restrict the maximum size of the code zone to 16Mb to allow inter-method
 	 calls and jumps to use small offset call and jump instructions if appropriate."
@@ -9909,52 +9798,32 @@ Cogit >> maxCogCodeSize [
 	^16*1024*1024
 ]
 
-{ #category : #debugging }
+{ #category : 'debugging' }
 Cogit >> maxCogMethodAddress [
 	<api>
 	<returnTypeC: #usqInt>
 	^methodZone limitZony asUnsignedInteger
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 Cogit >> maxLitIndex: anInteger [ 
 	<doNotGenerate>
 	maxLitIndex := anInteger
 ]
 
-{ #category : #'compile abstract instructions' }
+{ #category : 'compile abstract instructions' }
 Cogit >> maybeAllocAndInitCounters [
 	"No-op in the non-Sista Cogits..."
 	^true
 ]
 
-{ #category : #'simulation only' }
-Cogit >> maybeBreakAt: address [
-	<doNotGenerate>
-	((breakPC isBreakpointFor: address)
-	 and: [breakBlock shouldStopIfAtPC: address]) ifTrue:
-		[coInterpreter changed: #byteCountText.
-		 self halt: 'machine code breakpoint at ', address hex, ' in ', thisContext sender selector]
-]
-
-{ #category : #'simulation only' }
-Cogit >> maybeBreakGeneratingAt: address [
-	"Variation on maybeBreakAt: that only works for integer breakPCs,
-	 so we can have break blocks that stop at any pc, except when generating."
-	<cmacro: '(address) 0'> "Simulation only; void in C"
-	(breakPC = address
-	 and: [breakBlock shouldStopIfAtPC: address]) ifTrue:
-		[coInterpreter changed: #byteCountText.
-		 self halt: 'machine code generation at ', address hex, ' in ', thisContext sender selector]
-]
-
-{ #category : #'compile abstract instructions' }
+{ #category : 'compile abstract instructions' }
 Cogit >> maybeDealWithUnsafeJumpForDescriptor: descriptor pc: pc latestContinuation: latestContinuation [
 	<inline: true>
 	^ latestContinuation
 ]
 
-{ #category : #'compile abstract instructions' }
+{ #category : 'compile abstract instructions' }
 Cogit >> maybeDumpLiterals: descriptor [
 	<inline: true>
 	<var: #descriptor type: #'BytecodeDescriptor *'>
@@ -9965,14 +9834,7 @@ Cogit >> maybeDumpLiterals: descriptor [
 										or: [descriptor isReturn]) not]
 ]
 
-{ #category : #'simulation only' }
-Cogit >> maybeEnableSingleStep [
-	<inline: true>
-	self cCode: '' inSmalltalk:
-		[singleStep ifFalse: [singleStep := breakPC singleStepRequiredToTriggerIn: self]]
-]
-
-{ #category : #debugging }
+{ #category : 'debugging' }
 Cogit >> maybeFreeCogMethodDoesntLookKosher: cogMethod [
 	"Check that the header fields are consistent with the type.
 	 Answer 0 if it is ok, otherwise answer a code for the error."
@@ -9982,19 +9844,14 @@ Cogit >> maybeFreeCogMethodDoesntLookKosher: cogMethod [
 	^result = 2 ifTrue: [0] ifFalse: [result]
 ]
 
-{ #category : #'compile abstract instructions' }
-Cogit >> maybeFreeCounters [
-	"No-op in the non-Sista Cogits..."
-]
-
-{ #category : #compaction }
+{ #category : 'compaction' }
 Cogit >> maybeFreeCountersOf: aCogMethod [
 	"Sista allocates counters out-of-line that need to be freed later on.
 	 This is the hook Sista uses.  By default do nothing."
 	<inline: true>
 ]
 
-{ #category : #initialization }
+{ #category : 'initialization' }
 Cogit >> maybeGenerateCheckFeatures [
 	| startAddress |
 	<inline: true>
@@ -10007,7 +9864,7 @@ Cogit >> maybeGenerateCheckFeatures [
 		 ceCheckFeaturesFunction := self cCoerceSimple: startAddress to: #'usqIntptr_t (*)(void)']
 ]
 
-{ #category : #initialization }
+{ #category : 'initialization' }
 Cogit >> maybeGenerateICacheFlush [
 	| startAddress |
 	<inline: true>
@@ -10020,22 +9877,14 @@ Cogit >> maybeGenerateICacheFlush [
 		 ceFlushICache := self cCoerceSimple: startAddress to: #'void (*)(usqIntptr_t,usqIntptr_t)']
 ]
 
-{ #category : #'compile abstract instructions' }
-Cogit >> maybeHaltIfDebugPC [ 
-	<cmacro: '() 0'> "Simulation only; void in C"
-	((debugBytecodePointers includes: bytecodePC)
-	 and: [breakMethod isNil or: [methodObj = breakMethod]]) ifTrue:
-		[self halt: ' at bcpc ', bytecodePC printString, '/', (bytecodePC + 1) printString]
-]
-
-{ #category : #'garbage collection' }
+{ #category : 'garbage collection' }
 Cogit >> maybeMarkCountersIn: cogMethod [
 	"In SIsta Spur counters are held on the heap in pinned objects which must be marked
 	 to avoid them being garbage collected.  This is the hook through which that happens."
 	<var: #cogMethod type: #'CogMethod *'>
 ]
 
-{ #category : #disassembly }
+{ #category : 'disassembly' }
 Cogit >> maybeNoteStartpcFor: thing [ "<CogBlockStart|CogCodeRange>"
 	<doNotGenerate>
 	(self class initializationOptions at: #tempNames ifAbsent: nil) ifNotNil:
@@ -10046,7 +9895,7 @@ Cogit >> maybeNoteStartpcFor: thing [ "<CogBlockStart|CogCodeRange>"
 									do: [:ex| thing numArgs])] "CogBlockStart"
 ]
 
-{ #category : #'compile abstract instructions' }
+{ #category : 'compile abstract instructions' }
 Cogit >> maybeUnsafeJumpContinuation: latestContinuation at: bcpc for: descriptor in: aMethodObj [
 	<inline: true>
 	^ latestContinuation
@@ -10077,7 +9926,7 @@ Cogit >> mclassIsSmallInteger [
 	^objectMemory isIntegerObject: receiverTags
 ]
 
-{ #category : #'garbage collection' }
+{ #category : 'garbage collection' }
 Cogit >> method: methodA hasSameCodeAs: methodB [
 	"For the purposes of become: see if the two methods are similar, i.e. can be safely becommed.
 	 This is pretty strict.  All literals and bytecodes must be identical.  Only trailer bytes and header
@@ -10105,7 +9954,7 @@ Cogit >> method: methodA hasSameCodeAs: methodB [
 	^true
 ]
 
-{ #category : #'garbage collection' }
+{ #category : 'garbage collection' }
 Cogit >> method: methodA hasSameCodeAs: methodB checkPenultimate: comparePenultimateLiteral [
 	"For the purposes of become: see if the two methods are similar, i.e. can be safely becommed.
 	 This is pretty strict.  All literals and bytecodes must be identical.  Only trailer bytes and header
@@ -10135,72 +9984,72 @@ Cogit >> method: methodA hasSameCodeAs: methodB checkPenultimate: comparePenulti
 	^true
 ]
 
-{ #category : #testing }
+{ #category : 'testing' }
 Cogit >> methodFoundInvalidPostScan [
 	"This is a hook for subclasses to filter out methods they can't deal with."
 	<inline: true>
 	^false
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 Cogit >> methodLabel [
 	<cmacro: '() methodLabel'>
 	^methodLabel
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 Cogit >> methodNumArgs [
 	^methodOrBlockNumArgs
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 Cogit >> methodObj [
 	<doNotGenerate>
 	^ methodObj
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 Cogit >> methodObj: anObject [
 	<doNotGenerate>
 	methodObj := anObject
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 Cogit >> methodZone [
 	^methodZone
 ]
 
-{ #category : #'trampoline support' }
+{ #category : 'trampoline support' }
 Cogit >> methodZoneBase [
 	<cmacro: '() methodZoneBase'>
 	^methodZoneBase
 ]
 
-{ #category : #'*VMMaker-Tests' }
+{ #category : 'accessing' }
 Cogit >> methodZoneBase: anInteger [ 
 	<doNotGenerate>
 	methodZoneBase := anInteger
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 Cogit >> minCallAddress [
 	<cmacro: '() minValidCallAddress'>
 	^minValidCallAddress
 ]
 
-{ #category : #debugging }
+{ #category : 'debugging' }
 Cogit >> minCogMethodAddress [
 	<api>
 	^methodZoneBase
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 Cogit >> missOffset [
 	<doNotGenerate>
 	^ missOffset
 ]
 
-{ #category : #'in-line cacheing' }
+{ #category : 'in-line cacheing' }
 Cogit >> mnuOffset [
 	<api>
 	^missOffset
@@ -10216,17 +10065,17 @@ Cogit >> needsFrameIfImmutability: stackDelta [
 	^ IMMUTABILITY
 ]
 
-{ #category : #'compile abstract instructions' }
+{ #category : 'compile abstract instructions' }
 Cogit >> needsFrameIfInBlock: stackDelta [
 	^inBlock > 0
 ]
 
-{ #category : #'compile abstract instructions' }
+{ #category : 'compile abstract instructions' }
 Cogit >> needsFrameNever: stackDelta [
 	^false
 ]
 
-{ #category : #'compile abstract instructions' }
+{ #category : 'compile abstract instructions' }
 Cogit >> nextBytecodePCFor: descriptor at: pc exts: nExts in: aMethodObj [
 	"Compute the distance to the logically subsequent bytecode, i.e. skip over blocks."
 	<var: #descriptor type: #'BytecodeDescriptor *'>
@@ -10234,14 +10083,14 @@ Cogit >> nextBytecodePCFor: descriptor at: pc exts: nExts in: aMethodObj [
 	^pc + descriptor numBytes
 ]
 
-{ #category : #'compile abstract instructions' }
+{ #category : 'compile abstract instructions' }
 Cogit >> nextBytecodePCFor: descriptor exts: nExts [
 	<inline: true>
 	<var: #descriptor type: #'BytecodeDescriptor *'>
 	 ^ self nextBytecodePCFor: descriptor at: bytecodePC exts: nExts in: methodObj
 ]
 
-{ #category : #'bytecode generator support' }
+{ #category : 'bytecode generator support' }
 Cogit >> nextDescriptorExtensionsAndNextPCInto: aQuaternaryBlock [
 	"Peek ahead and deliver the next descriptor, extension bytes and next pc."
 
@@ -10267,21 +10116,21 @@ Cogit >> nextDescriptorExtensionsAndNextPCInto: aQuaternaryBlock [
 	 true] whileTrue
 ]
 
-{ #category : #debugging }
+{ #category : 'debugging' }
 Cogit >> noAssertMethodClassAssociationOf: methodPointer [
 	^coInterpreter
 		literal: (objectMemory literalCountOfMethodHeader: (coInterpreter noAssertHeaderOf: methodPointer)) - 1
 		ofMethod: methodPointer
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 Cogit >> noCheckEntryOffset [
 	<api>
 	<cmacro>
 	^cmNoCheckEntryOffset
 ]
 
-{ #category : #compaction }
+{ #category : 'compaction' }
 Cogit >> noCogMethodsMaximallyMarked [
 	"Check that no method is maximally marked.  A maximal mark is an indication the
 	 method has been scanned to increase the usage count of its referent methods."
@@ -10296,14 +10145,14 @@ Cogit >> noCogMethodsMaximallyMarked [
 	^true
 ]
 
-{ #category : #compaction }
+{ #category : 'compaction' }
 Cogit >> noTargetsFreeInClosedPIC: cPIC [
 	"Answer if all targets in the PIC are in-use methods."
 	<var: #cPIC type: #'CogMethod *'>
 	^(self cPICHasFreedTargets: cPIC) not
 ]
 
-{ #category : #initialization }
+{ #category : 'initialization' }
 Cogit >> numArgsOrSendNumArgsReg: numArgs [
 	"The send trampolines have different versions for different arg counts, with special
 	 cases for 0 through NumSendTrampolines - 2, and a general case for more, passing
@@ -10327,7 +10176,7 @@ Cogit >> objectMemory [
 	^objectMemory
 ]
 
-{ #category : #'simulation only' }
+{ #category : 'simulation only' }
 Cogit >> objectRepresentation [
 	<doNotGenerate>
 	^objectRepresentation
@@ -10353,7 +10202,7 @@ Cogit >> offset: aClass of: fieldSymbol [
 		{ [CogMethod] -> [cogMethodSurrogateClass offsetOf: fieldSymbol] }
 ]
 
-{ #category : #'in-line cacheing' }
+{ #category : 'in-line cacheing' }
 Cogit >> offsetAndSendTableFor: entryPoint annotation: annotation into: binaryBlock [
 	"Find the relevant sendTable for a linked-send to entryPoint.  Do this based on the
 	 annotation.  c.f. annotationForSendTable:"
@@ -10398,14 +10247,14 @@ Cogit >> openPICSize [
 	^ openPICSize
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 Cogit >> ordinarySendTrampolineAt: anInteger put: aTrampolineAddress [ 
 	<doNotGenerate>
 	
 	ordinarySendTrampolines at: anInteger put: aTrampolineAddress
 ]
 
-{ #category : #'generate machine code' }
+{ #category : 'generate machine code' }
 Cogit >> outputInstructionsAt: startAddress [
 	"Store the generated machine code, answering the last address"
 	| absoluteAddress |
@@ -10420,7 +10269,7 @@ Cogit >> outputInstructionsAt: startAddress [
 	^absoluteAddress
 ]
 
-{ #category : #initialization }
+{ #category : 'initialization' }
 Cogit >> outputInstructionsForGeneratedRuntimeAt: startAddress [
 	"Output instructions generated for one of the generated run-time routines, a trampoline, etc"
 	| size endAddress |
@@ -10436,7 +10285,7 @@ Cogit >> outputInstructionsForGeneratedRuntimeAt: startAddress [
 	^startAddress
 ]
 
-{ #category : #'compile abstract instructions' }
+{ #category : 'compile abstract instructions' }
 Cogit >> patchFixupTargetIfNeeded: fixup nextOpcodeIndex: nextOpcodeIndex [
 	<var: #fixup type: #'BytecodeFixup *'>
 	<inline: true>
@@ -10447,15 +10296,18 @@ Cogit >> patchFixupTargetIfNeeded: fixup nextOpcodeIndex: nextOpcodeIndex [
 		 fixup targetInstruction: (self abstractInstructionAt: nextOpcodeIndex)].
 ]
 
-{ #category : #'in-line cacheing' }
-Cogit >> patchToOpenPICFor: selector numArgs: numArgs receiver: receiver [
-	"Code entry closed PIC full or miss to an instance of a young class or to a young target method.
-	 Attempt to patch the send site to an open PIC.  Answer if the attempt succeeded; in fact it will
-	 only return if the attempt failed.
-	 The stack looks like:
+{ #category : 'in-line cacheing' }
+Cogit >> patchToMegamorphicICFor: selector numArgs: numArgs receiver: receiver [
+	"Code entry PIC full or miss to an instance of a young class or to a young target method.
+	Attempt to patch the send site to an megamorphic PIC.
+	Answer if the attempt succeeded; in fact it will
+	
+	Only return if the attempt failed.
+	The stack looks like:
 			receiver
 			args
 	 sp=>	sender return address"
+
 	<api>
 	| oPIC outerReturn extent |
 	<var: #oPIC type: #'CogMethod *'>
@@ -10497,14 +10349,15 @@ Cogit >> patchToOpenPICFor: selector numArgs: numArgs receiver: receiver [
 	^self unreachable
 ]
 
-{ #category : #accessing }
-Cogit >> picAbortDiscriminatorValue [
-	"This value is used to decide between MNU processing
-	 or interpretation in the closed PIC aborts."
-	^0
+{ #category : 'in-line cacheing' }
+Cogit >> picAbortAddress: cPIC [
+	"The PIC starts with a header of meta-data followed by machine code.
+	The first thing in the machine code stream is the abort section."
+
+	^ cPIC asInteger + (self sizeof: CogMethod)
 ]
 
-{ #category : #debugging }
+{ #category : 'debugging' }
 Cogit >> picInterpretAbortOffset [
 	"Answer the start of the abort sequence for invoking the interpreter in a closed PIC."
 	^self interpretOffset
@@ -10513,7 +10366,7 @@ Cogit >> picInterpretAbortOffset [
 		ifFalse: [backEnd callInstructionByteSize])
 ]
 
-{ #category : #'profiling primitives' }
+{ #category : 'profiling primitives' }
 Cogit >> positiveMachineIntegerFor: value [
 	<var: #value type: #'usqIntptr_t'>
 	<inline: true>
@@ -10522,7 +10375,7 @@ Cogit >> positiveMachineIntegerFor: value [
 		ifFalse: [coInterpreter positive32BitIntegerFor: value]
 ]
 
-{ #category : #'compile abstract instructions' }
+{ #category : 'compile abstract instructions' }
 Cogit >> preenMethodLabel [
 	"The methodLabel serves as the reference to the start of the current code object
 	 being produced (CMMethod, CMClosedPIC etc), but it also carries type flags for
@@ -10532,20 +10385,20 @@ Cogit >> preenMethodLabel [
 	methodLabel setLabelOffset: 0
 ]
 
-{ #category : #'compile abstract instructions' }
+{ #category : 'compile abstract instructions' }
 Cogit >> previousInstruction [
 	<returnTypeC: #'AbstractInstruction *'>
 	self assert: opcodeIndex > 0.
 	^self abstractInstructionAt: opcodeIndex - 1
 ]
 
-{ #category : #printing }
+{ #category : 'printing' }
 Cogit >> print: aString [
 	<cmacro: '(aString) vm_printf("%s", aString)'>
 	coInterpreter transcript print: aString
 ]
 
-{ #category : #'method map' }
+{ #category : 'method map' }
 Cogit >> print: descriptor IsBackwardBranch: isBackwardBranch Mcpc: mcpc Bcpc: bcpc on: aStream [
 	<doNotGenerate>
 	aStream newLine.
@@ -10557,7 +10410,7 @@ Cogit >> print: descriptor IsBackwardBranch: isBackwardBranch Mcpc: mcpc Bcpc: b
 	^0
 ]
 
-{ #category : #printing }
+{ #category : 'printing' }
 Cogit >> printCogMethodFor: address [
 	<api>
 	<var: #address type: #'void *'>
@@ -10571,7 +10424,7 @@ Cogit >> printCogMethodFor: address [
 		ifFalse: [coInterpreter printCogMethod: cogMethod]
 ]
 
-{ #category : #printing }
+{ #category : 'printing' }
 Cogit >> printCogMethodHeaderFor: address [
 	<doNotGenerate>
 	| cogMethod |
@@ -10582,158 +10435,224 @@ Cogit >> printCogMethodHeaderFor: address [
 		ifFalse: [self printMethodHeader: cogMethod on: coInterpreter transcript]
 ]
 
-{ #category : #disassembly }
+{ #category : 'disassembly' }
 Cogit >> printInstructions [
 	<doNotGenerate>
 	^printInstructions
 ]
 
-{ #category : #disassembly }
+{ #category : 'disassembly' }
 Cogit >> printInstructions: aBoolean [
 	<doNotGenerate>
 	printInstructions := aBoolean.
 	singleStep := singleStep or: [aBoolean]
 ]
 
-{ #category : #disassembly }
+{ #category : 'disassembly' }
 Cogit >> printMethodHeader: cogMethod on: aStream [
+
 	<doNotGenerate>
-	self cCode: ''
-		inSmalltalk:
-			[cogMethod isInteger ifTrue:
-				[^self printMethodHeader: (self cogMethodSurrogateAt: cogMethod) on: aStream]].
+	self cCode: '' inSmalltalk: [
+		cogMethod isInteger ifTrue: [
+			^ self
+				  printMethodHeader: (self cogMethodSurrogateAt: cogMethod)
+				  on: aStream ] ].
 	aStream newLine.
 	cogMethod asInteger printOn: aStream base: 16.
-	cogMethod cmType = CMMethod ifTrue:
-		[aStream newLine; tab; nextPutAll: 'objhdr: '.
-		cogMethod objectHeader printOn: aStream base: 16].
+	cogMethod cmType = CMMethod ifTrue: [
+		aStream
+			newLine;
+			tab;
+			nextPutAll: 'objhdr: '.
+		cogMethod objectHeader printOn: aStream base: 16 ].
 	aStream
-		newLine; tab; nextPutAll: 'nArgs: ';	print: cogMethod cmNumArgs;
-		tab;    nextPutAll: 'type: ';	print: cogMethod cmType.
-	(cogMethod cmType ~= 0) ifTrue:
-		[aStream newLine; tab; nextPutAll: 'blksiz: '.
+		newLine;
+		tab;
+		nextPutAll: 'nArgs: ';
+		print: cogMethod cmNumArgs;
+		tab;
+		nextPutAll: 'type: ';
+		print: cogMethod cmType.
+	cogMethod cmType ~= 0 ifTrue: [
+		aStream
+			newLine;
+			tab;
+			nextPutAll: 'blksiz: '.
 		cogMethod blockSize printOn: aStream base: 16.
-		cogMethod cmType = CMMethod ifTrue:
-			[aStream newLine; tab; nextPutAll: 'method: '.
-			 cogMethod methodObject printOn: aStream base: 16.
-			 aStream newLine; tab; nextPutAll: 'mthhdr: '.
-			 cogMethod methodHeader printOn: aStream base: 16].
-		aStream newLine; tab; nextPutAll: 'selctr: '.
+		cogMethod cmType = CMMethod ifTrue: [
+			aStream
+				newLine;
+				tab;
+				nextPutAll: 'method: '.
+			cogMethod methodObject printOn: aStream base: 16.
+			aStream
+				newLine;
+				tab;
+				nextPutAll: 'mthhdr: '.
+			cogMethod methodHeader printOn: aStream base: 16 ].
+		aStream
+			newLine;
+			tab;
+			nextPutAll: 'selctr: '.
 		cogMethod selector printOn: aStream base: 16.
-		(coInterpreter lookupAddress: cogMethod selector) ifNotNil:
-			[:string| aStream nextPut: $=; nextPutAll: string].
-		cogMethod selector = objectMemory nilObject ifTrue:
-			[aStream space; nextPut: $(; nextPutAll: (coInterpreter stringOf: (coInterpreter maybeSelectorOfMethod: cogMethod methodObject)); nextPut: $)]. 
-		cogMethod cmType = CMMethod ifTrue:
-			[aStream newLine; tab; nextPutAll: 'blkentry: '.
-			 cogMethod picUsage printOn: aStream base: 16.
-			 cogMethod picUsage ~= 0 ifTrue:
-				[aStream nextPutAll: ' => '.
-				 cogMethod asInteger + cogMethod picUsage printOn: aStream base: 16]]].
+		(coInterpreter lookupAddress: cogMethod selector) ifNotNil: [
+			:string |
+			aStream
+				nextPut: $=;
+				nextPutAll: string ].
+		cogMethod selector = objectMemory nilObject ifTrue: [
+			aStream
+				space;
+				nextPut: $(;
+				nextPutAll: (coInterpreter stringOf:
+							 (coInterpreter maybeSelectorOfMethod: cogMethod methodObject));
+				nextPut: $) ].
+		cogMethod cmType = CMMethod ifTrue: [
+			aStream
+				newLine;
+				tab;
+				nextPutAll: 'blkentry: '.
+			cogMethod picUsage printOn: aStream base: 16.
+			cogMethod picUsage ~= 0 ifTrue: [
+				aStream nextPutAll: ' => '.
+				cogMethod asInteger + cogMethod picUsage printOn: aStream base: 16 ] ] ].
 	cogMethod cmType = CMPolymorphicIC
-		ifTrue:
-			[aStream newLine; tab; nextPutAll: 'cPICNumCases: '.
-			 cogMethod cPICNumCases printOn: aStream base: 16.
-			 aStream tab; nextPutAll: 'cpicHasMNUCase: ';
-			 nextPutAll: (cogMethod cpicHasMNUCase ifTrue: ['yes'] ifFalse: ['no'])]
-		ifFalse:
-			[aStream newLine; tab; nextPutAll: 'stackCheckOffset: '.
-			 cogMethod stackCheckOffset printOn: aStream base: 16.
-			 cogMethod stackCheckOffset > 0 ifTrue:
-				[aStream nextPut: $/.
-				 cogMethod asInteger + cogMethod stackCheckOffset printOn: aStream base: 16].
-				 aStream
-						newLine; tab;
-						nextPutAll: 'cmRefersToYoung: ';
-						nextPutAll: (cogMethod cmRefersToYoung ifTrue: ['yes'] ifFalse: ['no']);
+		ifTrue: [
+			aStream
+				newLine;
+				tab;
+				nextPutAll: 'cPICNumCases: '.
+			cogMethod cPICNumCases printOn: aStream base: 16.
+			aStream
+				tab;
+				nextPutAll: 'cpicHasMNUCase: ';
+				nextPutAll: (cogMethod cpicHasMNUCase
+						 ifTrue: [ 'yes' ]
+						 ifFalse: [ 'no' ]) ]
+		ifFalse: [
+			aStream
+				newLine;
+				tab;
+				nextPutAll: 'stackCheckOffset: '.
+			cogMethod stackCheckOffset printOn: aStream base: 16.
+			cogMethod stackCheckOffset > 0 ifTrue: [
+				aStream nextPut: $/.
+				cogMethod asInteger + cogMethod stackCheckOffset
+					printOn: aStream
+					base: 16 ].
+			aStream
+				newLine;
+				tab;
+				nextPutAll: 'cmRefersToYoung: ';
+				nextPutAll: (cogMethod cmRefersToYoung
+						 ifTrue: [ 'yes' ]
+						 ifFalse: [ 'no' ]);
+				tab;
+				nextPutAll: 'cmIsFullBlock: ';
+				nextPutAll: (cogMethod cmIsFullBlock
+						 ifTrue: [ 'yes' ]
+						 ifFalse: [ 'no' ]).
+			cogMethod cmType = CMMethod ifTrue: [
+				([ cogMethod counters ]
+					 on: MessageNotUnderstood
+					 do: [ :ex | nil ]) ifNotNil: [ :cntrs |
+					aStream
+						newLine;
 						tab;
-						nextPutAll: 'cmIsFullBlock: ';
-						nextPutAll: (cogMethod cmIsFullBlock ifTrue: ['yes'] ifFalse: ['no']).
-			cogMethod cmType = CMMethod ifTrue:
-				[([cogMethod nextMethodOrIRCs] on: MessageNotUnderstood do: [:ex| nil]) ifNotNil:
-					[:nmoircs| aStream newLine; tab; nextPutAll: 'nextMethodOrIRCs: '.
-						nmoircs = 0 ifTrue: [aStream print: nmoircs] ifFalse: [coInterpreter printHex: nmoircs]].
-				 ([cogMethod counters] on: MessageNotUnderstood do: [:ex| nil]) ifNotNil:
-					[:cntrs| aStream newLine; tab; nextPutAll: 'counters: '.
-						cntrs = 0 ifTrue: [aStream print: cntrs] ifFalse: [coInterpreter printHex: cntrs]]]].
-	aStream cr; flush
+						nextPutAll: 'counters: '.
+					cntrs = 0
+						ifTrue: [ aStream print: cntrs ]
+						ifFalse: [ coInterpreter printHex: cntrs ] ] ] ].
+	aStream
+		cr;
+		flush
 ]
 
-{ #category : #printing }
+{ #category : 'printing' }
 Cogit >> printNum: n [
 	<cmacro: '(n) vm_printf("%" PRIdSQINT, (sqInt) (n))'>
 	coInterpreter transcript printNum: n
 ]
 
-{ #category : #debugging }
+{ #category : 'debugging' }
 Cogit >> printOnTrace [
 	<api>
 	<cmacro: '() (traceFlags & 1)'>
 	^(traceFlags bitAnd: 1) ~= 0
 ]
 
-{ #category : #'method map' }
+{ #category : 'method map' }
 Cogit >> printPCMapPairsFor: cogMethod [
-	<doNotGenerate>
 	"<api>
 	<var: 'cogMethod' type: #'CogMethod *'>
 	<var: 'mapByte' type: #'unsigned char'>"
+
+	<doNotGenerate>
 	| mcpc map mapByte annotation value |
 	mcpc := self firstMappedPCFor: cogMethod.
 	map := self mapStartFor: cogMethod.
-	[(mapByte := objectMemory byteAt: map) ~= MapEnd] whileTrue:
-		[annotation := mapByte >> AnnotationShift.
-		 annotation = IsAnnotationExtension
-			ifTrue:
-				[value := (mapByte bitAnd: DisplacementMask) + IsSendCall]
-			ifFalse:
-				[value := annotation.
-				 mcpc := mcpc + (backEnd codeGranularity
-									* (annotation = IsDisplacementX2N
-										ifTrue: [mapByte - DisplacementX2N << AnnotationShift]
-										ifFalse: [mapByte bitAnd: DisplacementMask]))].
-		 coInterpreter
+	[ (mapByte := objectMemory byteAt: map) ~= MapEnd ] whileTrue: [
+		annotation := mapByte >> AnnotationShift.
+		annotation = IsAnnotationExtension
+			ifTrue: [ value := (mapByte bitAnd: DisplacementMask) + IsSendCall ]
+			ifFalse: [
+				value := annotation.
+				mcpc := mcpc
+				        +
+					        (backEnd codeGranularity
+					         * (annotation = IsDisplacementX2N
+							          ifTrue: [
+							          mapByte - DisplacementX2N << AnnotationShift ]
+							          ifFalse: [ mapByte bitAnd: DisplacementMask ])) ].
+		coInterpreter
 			printHexnp: map;
-		 	print: ': '.
-		 self
-			cCode: [self print: '%02x' f: mapByte]
-			inSmalltalk:
-				[mapByte < 16 ifTrue:
-					[coInterpreter putchar: $0].
-				 coInterpreter printHexnp: mapByte].
-		 coInterpreter
-		 	printChar: $ ;
+			print: ': '.
+		self cCode: [ '%02x' printf: mapByte ] inSmalltalk: [
+			mapByte < 16 ifTrue: [ coInterpreter putchar: $0 ].
+			coInterpreter printHexnp: mapByte ].
+		coInterpreter
+			printChar: $ ;
 			printNum: annotation;
 			print: ' ('.
-		 (BytecodeSetHasDirectedSuperSend
-		    and: [value between: IsDirectedSuperSend and: IsDirectedSuperBindingSend]) ifTrue:
-			[value
-				caseOf: {
-					[IsDirectedSuperSend]			->	[coInterpreter print: 'DirectedSuperSend'].
-					[IsDirectedSuperBindingSend]	->	[coInterpreter print: 'DirectedSuperBindingSend'] }] ifFalse:
-		 [value
-			caseOf: {
-				[IsDisplacementX2N]		->	[coInterpreter print: 'DisplacementX2N'].
-				[IsAnnotationExtension]	->	[coInterpreter print: 'AnnotationExtension'].
-				[IsObjectReference]			->	[coInterpreter print: 'ObjectReference'].
-				[IsAbsPCReference]			->	[coInterpreter print: 'AbsPCReference'].
-				[HasBytecodePC]			->	[coInterpreter print: 'HasBytecodePC'].
-				[IsRelativeCall]				->	[coInterpreter print: 'RelativeCall'].
-				[IsSendCall]				->	[coInterpreter print: 'SendCall'].
-				[IsSuperSend]				->	[coInterpreter print: 'SuperSend'] }
-			otherwise: [coInterpreter print: '??? '; printHexnp: value]].
-		 coInterpreter
+		(BytecodeSetHasDirectedSuperSend and: [
+			 value between: IsDirectedSuperSend and: IsDirectedSuperBindingSend ])
+			ifTrue: [
+				value caseOf: {
+						([ IsDirectedSuperSend ]
+						 -> [ coInterpreter print: 'DirectedSuperSend' ]).
+						([ IsDirectedSuperBindingSend ]
+						 -> [ coInterpreter print: 'DirectedSuperBindingSend' ]) } ]
+			ifFalse: [
+				value
+					caseOf: {
+							([ IsDisplacementX2N ]
+							 -> [ coInterpreter print: 'DisplacementX2N' ]).
+							([ IsAnnotationExtension ]
+							 -> [ coInterpreter print: 'AnnotationExtension' ]).
+							([ IsObjectReference ]
+							 -> [ coInterpreter print: 'ObjectReference' ]).
+							([ IsAbsPCReference ]
+							 -> [ coInterpreter print: 'AbsPCReference' ]).
+							([ HasBytecodePC ] -> [ coInterpreter print: 'HasBytecodePC' ]).
+							([ IsRelativeCall ] -> [ coInterpreter print: 'RelativeCall' ]).
+							([ IsSendCall ] -> [ coInterpreter print: 'SendCall' ]).
+							([ IsSuperSend ] -> [ coInterpreter print: 'SuperSend' ]) }
+					otherwise: [
+						coInterpreter
+							print: '??? ';
+							printHexnp: value ] ].
+		coInterpreter
 			print: ') ';
 			printHexnp: (mapByte bitAnd: DisplacementMask);
 			printChar: $ ;
 			printChar: $@;
-		 printHex: mcpc;
-		 cr;
-		 flush.
-		 map := map - 1]
+			printHex: mcpc;
+			cr;
+			flush.
+		map := map - 1 ]
 ]
 
-{ #category : #'method map' }
+{ #category : 'method map' }
 Cogit >> printPCMapPairsFor: cogMethod on: aStream [
 	<doNotGenerate>
 	<inline: true>
@@ -10762,7 +10681,7 @@ Cogit >> printPCMapPairsFor: cogMethod on: aStream [
 		 map := map - 1]
 ]
 
-{ #category : #disassembly }
+{ #category : 'disassembly' }
 Cogit >> printRegisterMapOn: aStream [
 	<doNotGenerate>
 	| map n |
@@ -10776,19 +10695,19 @@ Cogit >> printRegisterMapOn: aStream [
 	aStream cr; flush
 ]
 
-{ #category : #debugging }
+{ #category : 'debugging' }
 Cogit >> printRegisters [
 	<doNotGenerate>
 	^printRegisters
 ]
 
-{ #category : #debugging }
+{ #category : 'debugging' }
 Cogit >> printRegisters: aBoolean [
 	<doNotGenerate>
 	printRegisters := aBoolean
 ]
 
-{ #category : #debugging }
+{ #category : 'debugging' }
 Cogit >> printTrampolineTable [
 	<api>
 	0 to: trampolineTableIndex - 1 by: 2 do:
@@ -10800,7 +10719,7 @@ Cogit >> printTrampolineTable [
 			cr]
 ]
 
-{ #category : #disassembly }
+{ #category : 'disassembly' }
 Cogit >> printWhereIs: address [
 
 	<api>
@@ -10850,30 +10769,30 @@ Cogit >> printWhereIs: address [
 				cr ]
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 Cogit >> processor [
 	<doNotGenerate>
 	^processor
 ]
 
-{ #category : #initialization }
+{ #category : 'initialization' }
 Cogit >> processorHasDivQuoRemAndMClassIsSmallInteger [
 	^backEnd canDivQuoRem and: [self mclassIsSmallInteger]
 ]
 
-{ #category : #initialization }
+{ #category : 'initialization' }
 Cogit >> processorHasDoublePrecisionFloatingPointSupport [
 	<option: #DPFPReg0>
 	<inline: true>
 	^backEnd hasDoublePrecisionFloatingPointSupport
 ]
 
-{ #category : #initialization }
+{ #category : 'initialization' }
 Cogit >> processorHasMultiplyAndMClassIsSmallInteger [
 	^backEnd canMulRR and: [self mclassIsSmallInteger]
 ]
 
-{ #category : #'profiling primitives' }
+{ #category : 'profiling primitives' }
 Cogit >> profileDataFor: cogMethod withDetails: withDetails [
 	"Answers characteristic data for the type of the cogMethod, answering
 		a CompiledMethod for a compiled method,
@@ -10888,52 +10807,26 @@ Cogit >> profileDataFor: cogMethod withDetails: withDetails [
 					ifFalse: [cogMethod selector]]
 ]
 
-{ #category : #'simulation only' }
-Cogit >> promptForBreakPC [
-	<doNotGenerate>
-	| s first pc |
-	s := UIManager default request: 'Break pc (hex, + to add, - to remove)'.
-	s := s withBlanksTrimmed.
-	s isEmpty ifTrue: [^self].
-	('+-' includes: s first) ifTrue: [first := s first. s := s allButFirst].
-	(s isEmpty and: [first = $-]) ifTrue:
-		[^self breakPC: nil].
-	pc := (s includes: $r)
-			ifTrue:
-				[Number readFrom: s readStream]
-			ifFalse:
-				[(#('0x' '-0x') detect: [:prefix| s beginsWith: prefix] ifNone: []) ifNotNil:
-					[:prefix|
-					s := s allButFirst: prefix size.
-					prefix first = $- ifTrue: [s := '-', s]].
-				Integer readFrom: s readStream base: 16].
-	first = $+ ifTrue:
-		[^self breakPC: (breakPC addBreakpoint: pc)].
-	first = $- ifTrue:
-		[^self breakPC: (breakPC removeBreakpoint: pc)].
-	self breakPC: pc
-]
-
-{ #category : #'as yet unclassified' }
+{ #category : 'accessing' }
 Cogit >> receiverTags: anInteger [ 
 	receiverTags := anInteger
 ]
 
-{ #category : #debugging }
+{ #category : 'debugging' }
 Cogit >> recordBlockTrace [
 	<api>
 	<cmacro: '() (traceFlags & 4)'>
 	^(traceFlags bitAnd: 4) ~= 0
 ]
 
-{ #category : #debugging }
+{ #category : 'debugging' }
 Cogit >> recordEventTrace [
 	<api>
 	<cmacro: '() (traceFlags & 16)'>
 	^(traceFlags bitAnd: 16) ~= 0
 ]
 
-{ #category : #initialization }
+{ #category : 'initialization' }
 Cogit >> recordGeneratedRunTime: aString address: address [
 	<var: #aString type: #'char *'>
 	
@@ -10948,7 +10841,7 @@ Cogit >> recordGeneratedRunTime: aString address: address [
 	trampolineTableIndex := trampolineTableIndex + 2
 ]
 
-{ #category : #'simulation only' }
+{ #category : 'simulation only' }
 Cogit >> recordInstruction: thing [
 	<doNotGenerate>
 	lastNInstructions addLast: thing.
@@ -10959,78 +10852,35 @@ Cogit >> recordInstruction: thing [
 	^thing
 ]
 
-{ #category : #'simulation only' }
-Cogit >> recordLastInstruction [
-	<doNotGenerate>
-	| inst pc |
-	(EagerInstructionDecoration or: [printInstructions])
-		ifTrue:
-			[inst := processor
-						disassembleNextInstructionIn: coInterpreter memory
-						for: self.
-			 printInstructions ifTrue:
-				[pc := Integer readFrom: (ReadStream on: inst from: 1 to: (inst indexOf: $:) - 1) base: 16.
-				 (self relativeLabelForPC: pc) ifNotNil:
-					[:label| inst := inst, ' ', label]]]
-		ifFalse:
-			[inst := processor
-						disassembleNextInstructionIn: coInterpreter memory
-						for: nil].
-	^self recordInstruction: inst
-]
-
-{ #category : #debugging }
+{ #category : 'debugging' }
 Cogit >> recordOverflowTrace [
 	<api>
 	<cmacro: '() (traceFlags & 32)'>
 	^(traceFlags bitAnd: 32) ~= 0
 ]
 
-{ #category : #debugging }
+{ #category : 'debugging' }
 Cogit >> recordPrimTrace [
 	<api>
 	<cmacro: '() (traceFlags & 8)'>
 	^(traceFlags bitAnd: 8) ~= 0
 ]
 
-{ #category : #debugging }
+{ #category : 'debugging' }
 Cogit >> recordPrimTraceFunc [
 	"This one for C support code."
 	<api>
 	^self recordPrimTrace
 ]
 
-{ #category : #'simulation only' }
-Cogit >> recordProcessing [
-	| inst |
-	self recordRegisters.
-	inst := self recordLastInstruction.
-	"Set RRRName ito the selector that accesses ReceiverResultReg (RRR) to alter instruction printing to add the value of RRR as a suffix
-		(RRRName := #rdx)
-		(RRRName := #edx)
-		(RRRName := nil)"
-	printRegisters ifTrue:
-		[RRRName ifNil: [processor printRegistersOn: coInterpreter transcript].
-		 printInstructions ifFalse:
-			[coInterpreter transcript cr]].
-	printInstructions ifTrue:
-		[printRegisters ifTrue:
-			[coInterpreter transcript cr].
-		 coInterpreter transcript nextPutAll: inst.
-		 RRRName ifNotNil:
-			[coInterpreter transcript space; nextPutAll: RRRName; space.
-			 (processor perform: RRRName) printOn: coInterpreter transcript base: 16 length: 8 padded: false].
-		 coInterpreter transcript cr; flush]
-]
-
-{ #category : #'simulation only' }
+{ #category : 'simulation only' }
 Cogit >> recordRegisters [
 	<doNotGenerate>
 	self recordInstruction: processor integerRegisterState
 	"self recordInstruction: processor registerState"
 ]
 
-{ #category : #initialization }
+{ #category : 'initialization' }
 Cogit >> recordRunTimeObjectReferences [
 	<var: #instruction type: #'AbstractInstruction *'>
 	0 to: opcodeIndex - 1 do:
@@ -11047,81 +10897,81 @@ Cogit >> recordRunTimeObjectReferences [
 			 runtimeObjectRefIndex := runtimeObjectRefIndex + 1]]
 ]
 
-{ #category : #debugging }
+{ #category : 'debugging' }
 Cogit >> recordSendTrace [
 	<api>
 	<cmacro: '() (traceFlags & 2)'>
 	^(traceFlags bitAnd: 2) ~= 0
 ]
 
-{ #category : #'register management' }
+{ #category : 'register management' }
 Cogit >> registerMaskFor: reg [
 	<inline: true>
 	^1 << reg
 ]
 
-{ #category : #'register management' }
+{ #category : 'register management' }
 Cogit >> registerMaskFor: reg1 and: reg2 [
 	<inline: true>
 	^1 << reg1 bitOr: 1 << reg2
 ]
 
-{ #category : #'register management' }
+{ #category : 'register management' }
 Cogit >> registerMaskFor: reg1 and: reg2 and: reg3 [
 	<inline: true>
 	^(1 << reg1 bitOr: 1 << reg2) bitOr: 1 << reg3
 ]
 
-{ #category : #'register management' }
+{ #category : 'register management' }
 Cogit >> registerMaskFor: reg1 and: reg2 and: reg3 and: reg4 [
 	<inline: true>
 	^((1 << reg1 bitOr: 1 << reg2) bitOr: 1 << reg3) bitOr: 1 << reg4
 ]
 
-{ #category : #'register management' }
+{ #category : 'register management' }
 Cogit >> registerMaskFor: reg1 and: reg2 and: reg3 and: reg4 and: reg5 [
 	<inline: true>
 	^(((1 << reg1 bitOr: 1 << reg2) bitOr: 1 << reg3) bitOr: 1 << reg4) bitOr: 1 << reg5
 ]
 
-{ #category : #'register management' }
+{ #category : 'register management' }
 Cogit >> registerMaskFor: reg1 and: reg2 and: reg3 and: reg4 and: reg5 and: reg6 [
 	<inline: true>
 	^((((1 << reg1 bitOr: 1 << reg2) bitOr: 1 << reg3) bitOr: 1 << reg4) bitOr: 1 << reg5) bitOr: 1 << reg6
 ]
 
-{ #category : #'register management' }
+{ #category : 'register management' }
 Cogit >> registerMaskFor: reg1 and: reg2 and: reg3 and: reg4 and: reg5 and: reg6 and: reg7 [
 	<inline: true>
 	^(((((1 << reg1 bitOr: 1 << reg2) bitOr: 1 << reg3) bitOr: 1 << reg4) bitOr: 1 << reg5) bitOr: 1 << reg6) bitOr: 1 << reg7
 ]
 
-{ #category : #'register management' }
+{ #category : 'register management' }
 Cogit >> registerMaskFor: reg1 and: reg2 and: reg3 and: reg4 and: reg5 and: reg6 and: reg7 and: reg8 [
 	<inline: true>
 	^((((((1 << reg1 bitOr: 1 << reg2) bitOr: 1 << reg3) bitOr: 1 << reg4) bitOr: 1 << reg5) bitOr: 1 << reg6) bitOr: 1 << reg7) bitOr: 1 << reg8
 ]
 
-{ #category : #'register management' }
+{ #category : 'register management' }
 Cogit >> registerMaskFor: reg1 and: reg2 and: reg3 and: reg4 and: reg5 and: reg6 and: reg7 and: reg8 and: reg9 [
 	<inline: true>
 	^(((((((1 << reg1 bitOr: 1 << reg2) bitOr: 1 << reg3) bitOr: 1 << reg4) bitOr: 1 << reg5) bitOr: 1 << reg6) bitOr: 1 << reg7) bitOr: 1 << reg8) bitOr: 1 << reg9
 ]
 
-{ #category : #'register management' }
+{ #category : 'register management' }
 Cogit >> registerMaskFor: reg1 and: reg2 and: reg3 and: reg4 and: reg5 and: reg6 and: reg7 and: reg8 and: reg9 and: reg10 [
 	<inline: true>
 	^((((((((1 << reg1 bitOr: 1 << reg2) bitOr: 1 << reg3) bitOr: 1 << reg4) bitOr: 1 << reg5) bitOr: 1 << reg6) bitOr: 1 << reg7) bitOr: 1 << reg8) bitOr: 1 << reg9) bitOr: 1 << reg10
 ]
 
-{ #category : #disassembly }
+{ #category : 'disassembly' }
 Cogit >> relativeBaseForDisassemblyInto: aBlock [
 	<doNotGenerate>
 	disassemblingMethod ifNotNil:
 		[aBlock value: disassemblingMethod asInteger value: '.']
 ]
 
-{ #category : #disassembly }
+{ #category : 'disassembly' }
 Cogit >> relativeLabelForPC: pc [ 
 	<doNotGenerate>
 	pc < methodZone limitZony ifFalse:
@@ -11132,7 +10982,7 @@ Cogit >> relativeLabelForPC: pc [
 	^self lookupAddress: pc
 ]
 
-{ #category : #compaction }
+{ #category : 'compaction' }
 Cogit >> relocateCallsAndSelfReferencesInMethod: cogMethod [
 	<var: #cogMethod type: #'CogMethod *'>
 	| refDelta callDelta |
@@ -11150,7 +11000,7 @@ Cogit >> relocateCallsAndSelfReferencesInMethod: cogMethod [
 		arg: refDelta
 ]
 
-{ #category : #compaction }
+{ #category : 'compaction' }
 Cogit >> relocateCallsInClosedPIC: cPIC [
 	<var: #cPIC type: #'CogMethod *'>
 	| refDelta callDelta pc entryPoint targetMethod |
@@ -11199,53 +11049,77 @@ Cogit >> relocateCallsInClosedPIC: cPIC [
 	backEnd relocateJumpLongBeforeFollowingAddress: cPIC asInteger + cPICEndOfCodeOffset by: callDelta negated
 ]
 
-{ #category : #compaction }
+{ #category : 'compaction' }
 Cogit >> relocateIfCallOrMethodReference: annotation mcpc: mcpc delta: refDelta [
+
 	<var: #mcpc type: #'char *'>
 	<var: #targetMethod type: #'CogMethod *'>
-	
 	| callDelta entryPoint targetMethod unlinkedRoutine |
+	callDelta := backEnd zoneCallsAreRelative
+		             ifTrue: [ refDelta ]
+		             ifFalse: [ 0 ].
 
-	callDelta := backEnd zoneCallsAreRelative ifTrue: [refDelta] ifFalse: [0].
+	(self isPureSendAnnotation: annotation) ifTrue: [
+		entryPoint := backEnd callTargetFromReturnAddress: mcpc asInteger.
+		entryPoint <= methodZoneBase ifTrue: [ "
+			send is not linked; just relocate"
+			backEnd
+				relocateCallBeforeReturnPC: mcpc asInteger
+				by: callDelta negated.
+			^ 0 ].
 
-	(self isPureSendAnnotation: annotation) ifTrue:
-		[entryPoint := backEnd callTargetFromReturnAddress: mcpc asInteger.
-		entryPoint <= methodZoneBase ifTrue: "send is not linked; just relocate"
-			[backEnd relocateCallBeforeReturnPC: mcpc asInteger by: callDelta negated.
-			 ^0].
 		"It's a linked send; find which kind."
 		self
 			offsetAndSendTableFor: entryPoint
 			annotation: annotation
-			into: [:offset :sendTable|
-				 targetMethod := self cCoerceSimple: entryPoint - offset to: #'CogMethod *'.
-				 targetMethod cmType ~= CMFree ifTrue: "send target not freed; just relocate."
-					[backEnd
+			into: [ :offset :sendTable |
+				targetMethod := self
+					                cCoerceSimple: entryPoint - offset
+					                to: #'CogMethod *'.
+
+				"Target not freed; just relocate."
+				targetMethod cmType ~= CMFree ifTrue: [
+					backEnd
 						relocateCallBeforeReturnPC: mcpc asInteger
 						by: (callDelta - targetMethod objectHeader) negated.
-					 SistaVM ifTrue: "See comment in planCompaction"
-						[methodZone restorePICUsageCount: targetMethod].
-					 ^0].
-				 "Target was freed; map back to an unlinked send; but include this method's reocation"
-				 unlinkedRoutine := sendTable at: (targetMethod cmNumArgs min: NumSendTrampolines - 1).
-				 unlinkedRoutine := unlinkedRoutine - callDelta.
-				 backEnd
+					SistaVM ifTrue: [ "
+						See comment in planCompaction"
+						methodZone restorePICUsageCount: targetMethod ].
+					^ 0 ].
+
+				"Target was freed; map back to an unlinked send."
+				unlinkedRoutine := sendTable at:
+					                   (targetMethod cmNumArgs min:
+						                    NumSendTrampolines - 1).
+
+				"NOTE: This assumes that underlying instruction to be patched uses relative addressing.
+				 Otherwise we should pass both the target and the pointer that's used as a reference
+				 when doing PC-relative jumps"
+				backEnd
 					rewriteInlineCacheAt: mcpc asInteger
-					tag: (self inlineCacheValueForSelector: targetMethod selector in: enumeratingCogMethod at: mcpc)
-					target: unlinkedRoutine.
-				 ^0]].
+					tag: (self
+							 inlineCacheValueForSelector: targetMethod selector
+							 in: enumeratingCogMethod
+							 at: mcpc)
+					target: unlinkedRoutine - callDelta.
+				^ 0 ] ].
 
-	annotation = IsRelativeCall ifTrue:
-		[backEnd relocateCallBeforeReturnPC: mcpc asInteger by: callDelta negated.
-		 ^0].
+	annotation = IsRelativeCall ifTrue: [
+		backEnd
+			relocateCallBeforeReturnPC: mcpc asInteger
+			by: callDelta negated.
+		^ 0 ].
 
-	annotation = IsAbsPCReference ifTrue:
-		[backEnd relocateMethodReferenceBeforeAddress: mcpc asInteger by: refDelta].
+	annotation = IsAbsPCReference ifTrue: [
+		backEnd
+			relocateMethodReferenceBeforeAddress: mcpc asInteger
+			by: refDelta.
+		^ 0 ].
 
-	^0 "keep scanning"
+	^ 0 "keep scanning"
 ]
 
-{ #category : #'garbage collection' }
+{ #category : 'garbage collection' }
 Cogit >> remapIfObjectRef: annotation pc: mcpc hasYoung: hasYoungPtr [
 	<var: #mcpc type: #'char *'>
 	<var: #targetMethod type: #'CogMethod *'>
@@ -11285,7 +11159,7 @@ Cogit >> remapIfObjectRef: annotation pc: mcpc hasYoung: hasYoungPtr [
 	^0 "keep scanning"
 ]
 
-{ #category : #'garbage collection' }
+{ #category : 'garbage collection' }
 Cogit >> remapMaybeObjRefInClosedPICAt: mcpc [
 	"Remap a potential object reference from a closed PIC.
 	 This may be an object reference, an inline cache tag or null.
@@ -11303,63 +11177,13 @@ Cogit >> remapMaybeObjRefInClosedPICAt: mcpc [
 	^objectMemory getMemoryMap isYoungObject: subject
 ]
 
-{ #category : #'translation support' }
+{ #category : 'translation support' }
 Cogit >> reportError: anInteger [
 	<cmacro: '(n) warning("compilation error")'>
 	self halt: 'Compilation error ', anInteger printString
 ]
 
-{ #category : #debugging }
-Cogit >> reportLastNInstructions [
-	<doNotGenerate>
-	| skipNext printInst |
-	skipNext := false.
-	printInst := [:inst|
-				coInterpreter transcript nextPutAll:
-					(EagerInstructionDecoration
-						ifTrue: [inst]
-						ifFalse: [processor
-									decorateDisassembly: inst
-									for: self
-									fromAddress: ((inst at: 3) = $r
-													ifTrue: [Integer readFrom: inst readStream]
-													ifFalse: [Integer readFrom: inst readStream base: 16])]); cr].
-	lastNInstructions withIndexDo:
-		[:thing :idx| | next pc label |
-		skipNext
-			ifTrue: [skipNext := false]
-			ifFalse:
-				[thing isArray
-					ifTrue:
-						[thing first isString "i.e. { '(simulated return to '. processor retpcIn: coInterpreter memory. ')'}"
-							ifTrue:
-								[thing do:
-									[:stringOrNumber|
-									coInterpreter transcript nextPutAll: (stringOrNumber isString
-															ifTrue: [stringOrNumber]
-															ifFalse: [stringOrNumber hex])].
-									coInterpreter transcript cr]
-							ifFalse: "if possible, add the label to the instruction line to condense the output"
-								[coInterpreter transcript cr.
-								 pc := thing at: processor registerStatePCIndex.
-								 label := self relativeLabelForPC: pc.
-								 ((next := lastNInstructions at: idx + 1 ifAbsent: []) notNil
-								  and: [next isString
-								  and: [(Integer readFrom: next readStream radix: 16) = pc]])
-									ifTrue: "Decorate instruction and eliminate pc line"
-										[skipNext := true.
-										 processor printRegisterStateExceptPC: thing on: coInterpreter transcript.
-										 label ifNotNil: [coInterpreter transcript nextPutAll: label; space].
-										 printInst value: next]
-									ifFalse:
-										[label ifNotNil: [coInterpreter transcript nextPutAll: label; nextPut: $:; cr].
-										 processor printRegisterState: thing on: coInterpreter transcript]]]
-					ifFalse:
-						[printInst value: thing]]].
-	coInterpreter transcript flush
-]
-
-{ #category : #'tests-method map' }
+{ #category : 'tests-method map' }
 Cogit >> resolveToOopOrNil: proxyOrSpecialSelector [
 	"Answer the oop of a proxy or a special selector.  When testing pc mapping on simulation
 	 methods (as opposed to CurrentImageFacades) selectorForSendBefore:in: answers either
@@ -11373,15 +11197,15 @@ Cogit >> resolveToOopOrNil: proxyOrSpecialSelector [
 		[coInterpreter specialSelector: index - 1 // 2]
 ]
 
-{ #category : #'in-line cacheing' }
+{ #category : 'in-line cacheing' }
 Cogit >> rewriteCPIC: cPIC caseJumpTo: target [ 
 	"adding a new CPIC case, or making an MNU CPIC, requires altering the jump that takes us to the first case to be used"
 	<inline: true>
 	backEnd rewriteCPICJumpAt: cPIC asInteger + firstCPICCaseOffset - backEnd jumpLongByteSize - backEnd loadLiteralByteSize target: target
 ]
 
-{ #category : #'in-line cacheing' }
-Cogit >> rewriteCPICCaseAt: followingAddress tag: newTag objRef: newObjRef target: newTarget [
+{ #category : 'in-line cacheing' }
+Cogit >> rewritePICCaseAt: followingAddress tag: newTag objRef: newObjRef target: newTarget [
 	"Rewrite the three values involved in a CPIC case.  Used by the initialize & extend CPICs.
 	 c.f. expectedClosedPICPrototype:"
 
@@ -11398,7 +11222,7 @@ Cogit >> rewriteCPICCaseAt: followingAddress tag: newTag objRef: newObjRef targe
 	backEnd rewriteJumpLongAt: followingAddress target: newTarget
 ]
 
-{ #category : #'jit - api' }
+{ #category : 'jit - api' }
 Cogit >> safeFreeMethod: cogMethod [
 	
 	<api>
@@ -11408,7 +11232,7 @@ Cogit >> safeFreeMethod: cogMethod [
 		self freeMethod: cogMethod ]
 ]
 
-{ #category : #'compile abstract instructions' }
+{ #category : 'compile abstract instructions' }
 Cogit >> scanMethod [
 	"Scan the method (and all embedded blocks) to determine
 		- what the last bytecode is; extra bytes at the end of a method are used to encode things like source pointers or temp names
@@ -11455,7 +11279,7 @@ Cogit >> scanMethod [
 	^ 0
 ]
 
-{ #category : #'simulation only' }
+{ #category : 'simulation only' }
 Cogit >> selectorForSendBefore: bcpc in: aCompiledMethod [
 	<doNotGenerate>
 	| is sel |
@@ -11465,7 +11289,7 @@ Cogit >> selectorForSendBefore: bcpc in: aCompiledMethod [
 	^(sel := is selectorToSendOrSelf) ~~ is ifTrue: [sel]
 ]
 
-{ #category : #'in-line cacheing' }
+{ #category : 'in-line cacheing' }
 Cogit >> selectorFromSelectorIndex: selectorIndex in: aCompiledMethod [
 	<inline: true>
 	^selectorIndex < 0
@@ -11473,7 +11297,7 @@ Cogit >> selectorFromSelectorIndex: selectorIndex in: aCompiledMethod [
 		ifFalse: [coInterpreter literal: selectorIndex ofMethod: aCompiledMethod]
 ]
 
-{ #category : #analysis }
+{ #category : 'analysis' }
 Cogit >> sendSitesIn: cogMethod do: binaryBlock [
 	"Evaluate binaryBlock with the annotation and mcpc for each send site in cogMethod"
 	<doNotGenerate>
@@ -11482,13 +11306,13 @@ Cogit >> sendSitesIn: cogMethod do: binaryBlock [
 		 arg: [:ann :mcpc | (self isSendAnnotation: ann) ifTrue: [binaryBlock value: ann value: mcpc]]
 ]
 
-{ #category : #debugging }
+{ #category : 'debugging' }
 Cogit >> sendTrace [
 	<doNotGenerate>
 	^traceFlags
 ]
 
-{ #category : #debugging }
+{ #category : 'debugging' }
 Cogit >> sendTrace: aBooleanOrInteger [
 	<doNotGenerate>
 	"traceFlags is a set of flags.
@@ -11506,13 +11330,7 @@ Cogit >> sendTrace: aBooleanOrInteger [
 							ifFalse: [aBooleanOrInteger ifTrue: [6] ifFalse: [0]]
 ]
 
-{ #category : #debugging }
-Cogit >> setBreakMethod: anObj [
-	<api>
-	breakMethod := anObj
-]
-
-{ #category : #accessing }
+{ #category : 'accessing' }
 Cogit >> setCFramePointer: aFramePointer [
 	<api>
 	<cmacro: '(theFP) (CFramePointer = (void *)(theFP))'>
@@ -11524,7 +11342,7 @@ Cogit >> setCFramePointer: aFramePointer [
 					put: aFramePointer) asVoidPointer]
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 Cogit >> setCStackPointer: aStackPointer [
 	<api>
 	<cmacro: '(theSP) (CStackPointer = (void *)(theSP))'>
@@ -11536,11 +11354,12 @@ Cogit >> setCStackPointer: aStackPointer [
 					put: aStackPointer) asVoidPointer]
 ]
 
-{ #category : #initialization }
+{ #category : 'initialization' }
 Cogit >> setInterpreter: aCoInterpreter [
 	"Initialization of the code generator in the simulator.
 	 These objects already exist in the generated C VM
 	 or are used only in the simulation."
+
 	<doNotGenerate>
 	coInterpreter := aCoInterpreter.
 	objectMemory := aCoInterpreter objectMemory.
@@ -11557,53 +11376,65 @@ Cogit >> setInterpreter: aCoInterpreter [
 	simulatedVariableGetters := Dictionary new.
 	simulatedVariableSetters := Dictionary new.
 	traceStores := 0.
-	traceFlags := (self class initializationOptions at: #recordPrimTrace ifAbsent: [true])
-					ifTrue: [8] "record prim trace on by default (see Cogit class>>decareCVarsIn:)"
-					ifFalse: [0].
+	traceFlags := (self class initializationOptions
+		               at: #recordPrimTrace
+		               ifAbsent: [ true ])
+		              ifTrue: [ "record prim trace on by default (see Cogit class>>decareCVarsIn:)"
+			              8 ]
+		              ifFalse: [ 0 ].
 	debugPrimCallStackOffset := 0.
 	singleStep := printRegisters := printInstructions := clickConfirm := false.
 	backEnd := CogCompilerClass for: self.
 	methodLabel := CogCompilerClass for: self.
-	(literalsManager := backEnd class literalsManagerClass new) cogit: self.
-	ordinarySendTrampolines := CArrayAccessor on: (Array new: NumSendTrampolines).
-	superSendTrampolines := CArrayAccessor on: (Array new: NumSendTrampolines).
-	BytecodeSetHasDirectedSuperSend ifTrue:
-		[directedSuperSendTrampolines := CArrayAccessor on: (Array new: NumSendTrampolines).
-		 directedSuperBindingSendTrampolines := CArrayAccessor on: (Array new: NumSendTrampolines).
-		 directedSendUsesBinding := false].
+	(literalsManager := backEnd class literalsManagerClass new) cogit:
+		self.
+	ordinarySendTrampolines := CArrayAccessor on:
+		                           (Array new: NumSendTrampolines).
+	superSendTrampolines := CArrayAccessor on:
+		                        (Array new: NumSendTrampolines).
+	BytecodeSetHasDirectedSuperSend ifTrue: [
+		directedSuperSendTrampolines := CArrayAccessor on:
+			                                (Array new: NumSendTrampolines).
+		directedSuperBindingSendTrampolines := CArrayAccessor on:
+			                                       (Array new:
+				                                        NumSendTrampolines).
+		directedSendUsesBinding := false ].
 	"debug metadata"
-	objectReferencesInRuntime := CArrayAccessor on: (Array new: NumObjRefsInRuntime).
+	objectReferencesInRuntime := CArrayAccessor on:
+		                             (Array new: NumObjRefsInRuntime).
 	runtimeObjectRefIndex := 0.
 	"debug metadata"
-	trampolineAddresses := CArrayAccessor on: (Array new: NumTrampolines * 2).
+	trampolineAddresses := CArrayAccessor on:
+		                       (Array new: NumTrampolines * 2).
 	trampolineTableIndex := 0.
 
 	extA := numExtB := extB := 0.
 
-	compilationTrace ifNil: [compilationTrace := self class initializationOptions at: #compilationTrace ifAbsent: [0]].
-	debugOpcodeIndices := self class initializationOptions at: #debugOpcodeIndices ifAbsent: [Set new].
-	debugBytecodePointers := self class initializationOptions at: #debugBytecodePointers ifAbsent: [Set new].
-	self class initializationOptions at: #breakPC ifPresent: [:pc| breakPC := pc]
+	compilationTrace ifNil: [
+		compilationTrace := self class initializationOptions
+			                    at: #compilationTrace
+			                    ifAbsent: [ 0 ] ].
+	debugOpcodeIndices := self class initializationOptions
+		                      at: #debugOpcodeIndices
+		                      ifAbsent: [ Set new ].
+	debugBytecodePointers := self class initializationOptions
+		                         at: #debugBytecodePointers
+		                         ifAbsent: [ Set new ]
 ]
 
-{ #category : #'jit - api' }
+{ #category : 'jit - api' }
 Cogit >> setPostCompileHook: aFunction [
 	<api>
 	<var: #aFunction declareC: #'void (*aFunction)(CogMethod *)'>
 	postCompileHook := aFunction
 ]
 
-{ #category : #'jit - api' }
+{ #category : 'jit - api' }
 Cogit >> setSelectorOf: cogMethod to: aSelectorOop [
 	<api>
 	"If a method is compiled to machine code via a block entry it won't have a selector.
 	 A subsequent send can find the method and hence fill in the selector."
 	<var: #cogMethod type: #'CogMethod *'>
-	"self disassembleMethod: cogMethod"
-	coInterpreter
-		compilationBreak: aSelectorOop
-		point: (objectMemory numBytesOf: aSelectorOop)
-		isMNUCase: false.
 	self assert: cogMethod cmType = CMMethod.
 
 	self enableCodeZoneWriteDuring: [   
@@ -11612,7 +11443,7 @@ Cogit >> setSelectorOf: cogMethod to: aSelectorOop [
 			[methodZone ensureInYoungReferrers: cogMethod] ].
 ]
 
-{ #category : #initialization }
+{ #category : 'initialization' }
 Cogit >> setStackAlignment: stackAlignment expectedSPOffset: spOffset expectedFPOffset: fpOffset [
 	"Spcific platform ABIs mandate specific stack frame alignments.  We capture
 	 these constraints in the variables here and test they are adhered to via
@@ -11625,7 +11456,7 @@ Cogit >> setStackAlignment: stackAlignment expectedSPOffset: spOffset expectedFP
 
 ]
 
-{ #category : #'simulation only' }
+{ #category : 'simulation only' }
 Cogit >> shortcutTrampoline: aProcessorSimulationTrap to: aBlock [
 	<doNotGenerate>
 	backEnd hasLinkRegister ifTrue:
@@ -11649,39 +11480,35 @@ Cogit >> shortcutTrampoline: aProcessorSimulationTrap to: aBlock [
 		[processor lr: (processor popWordIn: coInterpreter memory)]
 ]
 
-{ #category : #'bytecode generator support' }
+{ #category : 'bytecode generator support' }
 Cogit >> shouldBeImplemented [
 	"In the production VM we can continue in the interpreter..."
 	self cCode: [coInterpreter warning: 'bytecode should be implemented; interpreting']
 		inSmalltalk: [super shouldBeImplemented]
 ]
 
-{ #category : #'simulation processor access' }
+{ #category : 'simulation processor access' }
 Cogit >> simulateCallOf: address nextpc: nextpc memory: aMemory [
 	<doNotGenerate>
-	self assertCorrectProcessorOwnership.
+
 	^processor simulateCallOf: address nextpc: nextpc memory: aMemory
 ]
 
-{ #category : #'simulation only' }
+{ #category : 'simulation only' }
 Cogit >> simulateCogCodeAt: address [
-
 	"<Integer>"
 
 	<doNotGenerate>
 	processor pc: address.
-	[ 
-	[ 
+	[
+	[
 	singleStep
-		ifTrue: [ 
-			[ 
-			self recordProcessing.
-			self maybeBreakAt: processor pc ] value. "So that the Debugger's Over steps over all this"
+		ifTrue: [
 			processor
 				singleStepIn: coInterpreter memory
 				minimumAddress: guardPageSize
 				readOnlyBelow: methodZone zoneEnd ]
-		ifFalse: [ 
+		ifFalse: [
 			processor
 				runInMemory: nil
 				minimumAddress: guardPageSize
@@ -11690,7 +11517,7 @@ Cogit >> simulateCogCodeAt: address [
 	true ] whileTrue
 ]
 
-{ #category : #'simulation only' }
+{ #category : 'simulation only' }
 Cogit >> simulateEnilopmart: enilopmartAddress numArgs: n [
 	<doNotGenerate>
 	"Enter Cog code, popping the class reg and receiver from the stack
@@ -11721,13 +11548,13 @@ Cogit >> simulateEnilopmart: enilopmartAddress numArgs: n [
 	self unreachable
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 Cogit >> simulateFPInUse: aBoolean [
 	<doNotGenerate>
 	simulateFPInUse := aBoolean
 ]
 
-{ #category : #'simulation only' }
+{ #category : 'simulation only' }
 Cogit >> simulateLeafCallOf: someFunction [
 	"Simulate execution of machine code that leaf-calls someFunction,
 	 answering the result returned by someFunction."
@@ -11754,14 +11581,13 @@ Cogit >> simulateLeafCallOf: someFunction [
 	^processor cResultRegister
 ]
 
-{ #category : #'simulation processor access' }
+{ #category : 'simulation processor access' }
 Cogit >> simulateLeafReturnIn: aMemory [
 	<doNotGenerate>
-	self assertCorrectProcessorOwnership.
 	^processor simulateLeafReturnIn: aMemory
 ]
 
-{ #category : #initialization }
+{ #category : 'initialization' }
 Cogit >> simulatedAddressFor: anObject [
 	"Answer a simulated address for a block or a symbol.  This is an address that
 	 can be called, read or written by generated machine code, and will be mapped
@@ -11776,7 +11602,7 @@ Cogit >> simulatedAddressFor: anObject [
 		ifAbsentPut: [self fakeAddressFor: anObject index: simulatedAddresses size]
 ]
 
-{ #category : #initialization }
+{ #category : 'initialization' }
 Cogit >> simulatedReadWriteVariableAddress: getter in: receiver [
 	"Answer a simulated variable.  This is a variable whose value can be read
 	 and written by generated machine code."
@@ -11794,7 +11620,7 @@ Cogit >> simulatedReadWriteVariableAddress: getter in: receiver [
 	^address
 ]
 
-{ #category : #initialization }
+{ #category : 'initialization' }
 Cogit >> simulatedTrampolineFor: selectorOrAddress [
 	"Set a simulated trampoline.  This is a method in the cogit, coInterpreter
 	 or objectMemory that is called from a machine code trampoline."
@@ -11823,13 +11649,13 @@ Cogit >> simulatedTrampolineFor: selectorOrAddress [
 	^address
 ]
 
-{ #category : #initialization }
+{ #category : 'initialization' }
 Cogit >> simulatedTrampolines [
 	<doNotGenerate>
 	^simulatedTrampolines
 ]
 
-{ #category : #initialization }
+{ #category : 'initialization' }
 Cogit >> simulatedVariableAddress: getter in: receiver [
 	"Answer a simulated variable.  This is a variable whose value can be read
 	 by generated machine code."
@@ -11842,7 +11668,7 @@ Cogit >> simulatedVariableAddress: getter in: receiver [
 	^address
 ]
 
-{ #category : #initialization }
+{ #category : 'initialization' }
 Cogit >> simulatedVariableAt: address [
 	"Answer a simulated variable's value for handling the push/pop tracer."
 	<doNotGenerate>
@@ -11851,19 +11677,27 @@ Cogit >> simulatedVariableAt: address [
 		ifAbsent:[0]) value
 ]
 
-{ #category : #debugging }
+{ #category : 'initialization' }
+Cogit >> simulatedVariableAt: address put: value [
+	"Answer a simulated variable's value for handling the push/pop tracer."
+
+	<doNotGenerate>
+	^ simulatedVariableGetters at: address put: value
+]
+
+{ #category : 'debugging' }
 Cogit >> singleStep [
 	<doNotGenerate>
 	^singleStep
 ]
 
-{ #category : #debugging }
+{ #category : 'debugging' }
 Cogit >> singleStep: aBoolean [
 	<doNotGenerate>
 	singleStep := aBoolean
 ]
 
-{ #category : #debugging }
+{ #category : 'debugging' }
 Cogit >> sizeOfTrampoline: address [
 
 	<api>
@@ -11877,7 +11711,7 @@ Cogit >> sizeOfTrampoline: address [
 	^ 0
 ]
 
-{ #category : #'translation support' }
+{ #category : 'translation support' }
 Cogit >> sizeof: aCType [
 	<doNotGenerate>
 	| bfc |
@@ -11887,7 +11721,7 @@ Cogit >> sizeof: aCType [
 	^super sizeof: aCType
 ]
 
-{ #category : #'compile abstract instructions' }
+{ #category : 'compile abstract instructions' }
 Cogit >> spanFor: descriptor at: pc exts: nExts in: aMethodObj [
 	"Compute the span (jump distance) for a particular bytecode, e.g. a backward branch or a block."
 	<inline: true>
@@ -11900,20 +11734,20 @@ Cogit >> spanFor: descriptor at: pc exts: nExts in: aMethodObj [
 		with: aMethodObj
 ]
 
-{ #category : #'simulation only' }
+{ #category : 'simulation only' }
 Cogit >> stackPointerAddress [
 	"redirect for the backEnd's genSaveStackPointers"
 	<doNotGenerate>
 	^coInterpreter stackPointerAddress
 ]
 
-{ #category : #'as yet unclassified' }
+{ #category : 'accessing' }
 Cogit >> stackPointerAlignment [
 	<doNotGenerate>
 	^ backEnd stackPointerAlignment
 ]
 
-{ #category : #literals }
+{ #category : 'literals' }
 Cogit >> storeLiteral: objOop atAnnotatedAddress: address [ 
 	
 	<inline: true>
@@ -11921,7 +11755,7 @@ Cogit >> storeLiteral: objOop atAnnotatedAddress: address [
 	
 ]
 
-{ #category : #'in-line cacheing' }
+{ #category : 'in-line cacheing' }
 Cogit >> subsequentPrototypeMethodOop [
 	"Answer a fake value for the method oop in other than the first case in the PIC prototype.
 	 Since we use MoveUniqueCw:R: it must not be confused with a method-relative address."
@@ -11931,14 +11765,14 @@ Cogit >> subsequentPrototypeMethodOop [
 		ifFalse: [16rBADA550]
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 Cogit >> superSendTrampolineAt: anInteger put: aTrampolineAddress [ 
 	<doNotGenerate>
 	
 	superSendTrampolines at: anInteger put: aTrampolineAddress
 ]
 
-{ #category : #'in-line cacheing' }
+{ #category : 'in-line cacheing' }
 Cogit >> targetMethodAndSendTableFor: entryPoint annotation: annotation into: binaryBlock [
 	"Evaluate binaryBlock with the targetMethod and relevant send table for a linked-send
 	 to entryPoint.  Do so based on the alignment of entryPoint."
@@ -11954,7 +11788,7 @@ Cogit >> targetMethodAndSendTableFor: entryPoint annotation: annotation into: bi
 			binaryBlock value: targetCogCode value: sendTable ]
 ]
 
-{ #category : #debugging }
+{ #category : 'debugging' }
 Cogit >> traceLinkedSendOffset [
 	<api>
 	^cmNoCheckEntryOffset
@@ -11964,7 +11798,7 @@ Cogit >> traceLinkedSendOffset [
 		ifFalse: [0])
 ]
 
-{ #category : #debugging }
+{ #category : 'debugging' }
 Cogit >> traceStores: aBooleanOrInteger [
 	<doNotGenerate>
 	traceStores := aBooleanOrInteger isInteger
@@ -11972,7 +11806,7 @@ Cogit >> traceStores: aBooleanOrInteger [
 							ifFalse: [aBooleanOrInteger ifTrue: [1] ifFalse: [0]]
 ]
 
-{ #category : #initialization }
+{ #category : 'initialization' }
 Cogit >> trampolineArgConstant: booleanOrInteger [
 	"Encode true and false and 0 to N such that they can't be confused for register numbers (including NoReg)
 	 and can be tested for by isTrampolineArgConstant: and decoded by trampolineArgValue:"
@@ -11983,44 +11817,53 @@ Cogit >> trampolineArgConstant: booleanOrInteger [
 	^-2 - booleanOrInteger "0...N => -2...-(N+2)"
 ]
 
-{ #category : #initialization }
+{ #category : 'initialization' }
 Cogit >> trampolineArgValue: n [
 	"Decode true and false and 0 to N to their C equivalents from the encoding by trampolineArgConstant:"
 	<inline: true>
 	^-2 - n
 ]
 
-{ #category : #initialization }
+{ #category : 'initialization' }
 Cogit >> trampolineName: routinePrefix numArgs: numArgs [
 	<returnTypeC: #'char *'>
 	<var: #routinePrefix type: #'char *'>
 	^self trampolineName: routinePrefix numArgs: numArgs limit: NumSendTrampolines - 2
 ]
 
-{ #category : #initialization }
+{ #category : 'initialization' }
 Cogit >> trampolineName: routinePrefix numArgs: numArgs limit: argsLimit [
 	"Malloc a string with the contents for the trampoline table"
+
 	<inline: true>
 	<returnTypeC: #'char *'>
 	<var: #routinePrefix type: #'char *'>
 	<var: #numArgs type: #int>
-	| theString |
 	<var: #theString type: #'char *'>
-	self cCode: '' inSmalltalk:
-		[^routinePrefix, (numArgs <= argsLimit ifTrue: [numArgs printString] ifFalse: ['N']), 'Args'].
+	| theString |
+	self cCode: '' inSmalltalk: [
+		^ routinePrefix , (numArgs <= argsLimit
+			   ifTrue: [ numArgs printString ]
+			   ifFalse: [ 'N' ]) , 'Args' ].
 	theString := self malloc: (self strlen: routinePrefix) + 6.
-	self s: theString pr: '%s%cArgs' in: routinePrefix tf: (numArgs <= argsLimit ifTrue: [$0 + numArgs] ifFalse: [$N]).
-	^theString
+	self cCall: 'sprintf' withArguments: {
+			theString.
+			'%s%cArgs'.
+			routinePrefix.
+			(numArgs <= argsLimit
+				 ifTrue: [ $0 + numArgs ]
+				 ifFalse: [ $N ]) }.
+	^ theString
 ]
 
-{ #category : #initialization }
+{ #category : 'initialization' }
 Cogit >> trampolineName: routinePrefix numRegArgs: numArgs [
 	<returnTypeC: #'char *'>
 	<var: #routinePrefix type: #'char *'>
 	^self trampolineName: routinePrefix numArgs: numArgs limit: self numRegArgs
 ]
 
-{ #category : #'bytecode generators' }
+{ #category : 'bytecode generators' }
 Cogit >> unknownBytecode [
 
 	PartialCompilation ifTrue: [
@@ -12029,7 +11872,7 @@ Cogit >> unknownBytecode [
 	^ EncounteredUnknownBytecode
 ]
 
-{ #category : #'jit - api' }
+{ #category : 'jit - api' }
 Cogit >> unlinkAllSends [
 	<api>
 	"Unlink all sends in cog methods."
@@ -12058,7 +11901,7 @@ Cogit >> unlinkAllSends [
 		 ]
 ]
 
-{ #category : #'in-line cacheing' }
+{ #category : 'in-line cacheing' }
 Cogit >> unlinkIfFreeOrLinkedSend: annotation pc: mcpc of: theSelector [
 	<var: #mcpc type: #'char *'>
 	| entryPoint |
@@ -12076,7 +11919,7 @@ Cogit >> unlinkIfFreeOrLinkedSend: annotation pc: mcpc of: theSelector [
 	^0 "keep scanning"
 ]
 
-{ #category : #'in-line cacheing' }
+{ #category : 'in-line cacheing' }
 Cogit >> unlinkIfInvalidClassSend: annotation pc: mcpc ignored: superfluity [
 	<var: #mcpc type: #'char *'>
 	| entryPoint |
@@ -12094,7 +11937,7 @@ Cogit >> unlinkIfInvalidClassSend: annotation pc: mcpc ignored: superfluity [
 	^0 "keep scanning"
 ]
 
-{ #category : #'in-line cacheing' }
+{ #category : 'in-line cacheing' }
 Cogit >> unlinkIfLinkedSend: annotation pc: mcpc ignored: superfluity [
 	<var: #mcpc type: #'char *'>
 	| entryPoint |
@@ -12110,7 +11953,7 @@ Cogit >> unlinkIfLinkedSend: annotation pc: mcpc ignored: superfluity [
 	^0 "keep scanning"
 ]
 
-{ #category : #'in-line cacheing' }
+{ #category : 'in-line cacheing' }
 Cogit >> unlinkIfLinkedSend: annotation pc: mcpc of: theSelector [
 	<var: #mcpc type: #'char *'>
 	| entryPoint |
@@ -12127,7 +11970,7 @@ Cogit >> unlinkIfLinkedSend: annotation pc: mcpc of: theSelector [
 	^0 "keep scanning"
 ]
 
-{ #category : #'in-line cacheing' }
+{ #category : 'in-line cacheing' }
 Cogit >> unlinkIfLinkedSend: annotation pc: mcpc to: theCogMethod [
 	<var: #mcpc type: #'char *'>
 	| entryPoint |
@@ -12144,7 +11987,7 @@ Cogit >> unlinkIfLinkedSend: annotation pc: mcpc to: theCogMethod [
 	^0 "keep scanning"
 ]
 
-{ #category : #'in-line cacheing' }
+{ #category : 'in-line cacheing' }
 Cogit >> unlinkIfLinkedSendToFree: annotation pc: mcpc ignored: superfluity [
 	<var: #mcpc type: #'char *'>
 	| entryPoint |
@@ -12160,7 +12003,7 @@ Cogit >> unlinkIfLinkedSendToFree: annotation pc: mcpc ignored: superfluity [
 	^0 "keep scanning"
 ]
 
-{ #category : #'in-line cacheing' }
+{ #category : 'in-line cacheing' }
 Cogit >> unlinkSendAt: mcpc targetMethod: targetMethod sendTable: sendTable [
 	<inline: true>
 	| unlinkedRoutine |
@@ -12172,7 +12015,7 @@ Cogit >> unlinkSendAt: mcpc targetMethod: targetMethod sendTable: sendTable [
 	codeModified := true
 ]
 
-{ #category : #'jit - api' }
+{ #category : 'jit - api' }
 Cogit >> unlinkSendsLinkedForInvalidClasses [
 	<api>
 	<option: #SpurObjectMemory>
@@ -12203,7 +12046,7 @@ self enableCodeZoneWriteDuring:  [
 			[self flushICacheFrom: methodZoneBase asUnsignedInteger to: methodZone limitZony asUnsignedInteger] ].
 ]
 
-{ #category : #'jit - api' }
+{ #category : 'jit - api' }
 Cogit >> unlinkSendsOf: selector isMNUSelector: isMNUSelector [
 	<api>
 	"Unlink all sends in cog methods. Free all Closed PICs with the selector,
@@ -12259,7 +12102,7 @@ Cogit >> unlinkSendsOf: selector isMNUSelector: isMNUSelector [
 				[self flushICacheFrom: methodZoneBase asUnsignedInteger to: methodZone limitZony asUnsignedInteger]]
 ]
 
-{ #category : #'jit - api' }
+{ #category : 'jit - api' }
 Cogit >> unlinkSendsTo: targetMethodObject andFreeIf: freeIfTrue [
 	<api>
 	"Unlink all sends in cog methods to a particular target method.
@@ -12297,7 +12140,7 @@ Cogit >> unlinkSendsTo: targetMethodObject andFreeIf: freeIfTrue [
 		
 ]
 
-{ #category : #'garbage collection' }
+{ #category : 'garbage collection' }
 Cogit >> unlinkSendsToFree [
 
 	"Unlink all sends in cog methods to free methods and/or pics."
@@ -12322,63 +12165,39 @@ Cogit >> unlinkSendsToFree [
 		cogMethod := methodZone methodAfter: cogMethod]
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 Cogit >> varBaseAddress [
 	"This is for disassembly decoration by the processor aliens.  they don't know aboud objectMemory hence forward..."
 	<doNotGenerate>
 	^coInterpreter varBaseAddress
 ]
 
-{ #category : #'jit - api' }
+{ #category : 'jit - api' }
 Cogit >> voidCogCompiledCode [
 	<api>
 	methodZone clearCogCompiledCode
 ]
 
-{ #category : #'in-line cacheing' }
-Cogit >> voidNSSendCache: nsSendCache [
-	<inline: true>
-	nsSendCache classTag: objectRepresentation illegalClassTag; enclosingObject: 0; target: 0
-]
-
-{ #category : #'debug printing' }
-Cogit >> warnMultiple: cogMethod selectors: aSelectorOop [
-	<inline: true>
-	<var: 'cogMethod' type: #'CogMethod *'>
-	self cCode:
-			[self fp: #stderr
-				r: 'Warning, attempt to use method with selector %.*s and selector %.*s\n'
-				i: (self cCoerceSimple: (objectMemory numBytesOf: cogMethod selector) to: #int)
-				n: (self cCoerceSimple: (objectMemory firstIndexableField: cogMethod selector) to: #'char *')
-				t: (self cCoerceSimple: (objectMemory numBytesOf: aSelectorOop) to: #int)
-				f: (self cCoerceSimple: (objectMemory firstIndexableField: aSelectorOop) to: #'char *')]
-		inSmalltalk:
-			[self warn: 'Warning, attempt to use method with selector ',
-						(coInterpreter stringOf: cogMethod selector),
-						' and selector ',
-						(coInterpreter stringOf: aSelectorOop)]
-]
-
-{ #category : #'debug printing' }
+{ #category : 'debug printing' }
 Cogit >> whereIsMaybeCodeThing: anOop [
 	<doNotGenerate>
 	^methodZone whereIsMaybeCodeThing: anOop
 ]
 
-{ #category : #analysis }
+{ #category : 'analysis' }
 Cogit >> withAnnotation: annotation mcpc: mcpc evaluate: binaryBlock [
 	<doNotGenerate>
 	binaryBlock value: annotation value: mcpc.
 	^0 "keep scanning"
 ]
 
-{ #category : #'garbage collection' }
+{ #category : 'garbage collection' }
 Cogit >> withAnnotation: annotation pc: mcpc evaluate: aBinaryBlock [
 	<doNotGenerate>
 	^(aBinaryBlock value: annotation value: mcpc) ifTrue: [1] ifFalse: [0]
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 Cogit >> zeroOpcodeIndex [
 	"Access for the object representations when they need to prepend code to trampolines."
 	"Eliminate stale dependent info."
@@ -12387,7 +12206,7 @@ Cogit >> zeroOpcodeIndex [
 	self zeroOpcodeIndexForNewOpcodes
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 Cogit >> zeroOpcodeIndexForNewOpcodes [
 	"Access for the object representations when they need to prepend code to trampolines."
 	opcodeIndex := 0.

@@ -1,41 +1,42 @@
 Class {
-	#name : #CGLREnumNode,
-	#superclass : #CGLRAbstractNode,
+	#name : 'CGLREnumNode',
+	#superclass : 'CGLRAbstractNode',
 	#instVars : [
 		'enumerators',
 		'identifier'
 	],
-	#category : #CAST
+	#category : 'CAST',
+	#package : 'CAST'
 }
 
-{ #category : #generated }
+{ #category : 'generated' }
 CGLREnumNode >> acceptVisitor: anAbstractVisitor [
 	^ anAbstractVisitor visitEnum: self
 ]
 
-{ #category : #generated }
+{ #category : 'generated' }
 CGLREnumNode >> compositeNodeVariables [
 	^ #(#enumerators)
 ]
 
-{ #category : #generated }
+{ #category : 'generated' }
 CGLREnumNode >> enumerators [
 	^ enumerators
 ]
 
-{ #category : #generated }
+{ #category : 'generated' }
 CGLREnumNode >> enumerators: anOrderedCollection [
 	self setParents: self enumerators to: nil.
 	enumerators := anOrderedCollection.
 	self setParents: self enumerators to: self
 ]
 
-{ #category : #generated }
+{ #category : 'generated' }
 CGLREnumNode >> identifier [
 	^ identifier
 ]
 
-{ #category : #generated }
+{ #category : 'generated' }
 CGLREnumNode >> identifier: aCGLRIdentifierNode [
 	self identifier notNil
 		ifTrue: [ self identifier parent: nil ].
@@ -44,13 +45,13 @@ CGLREnumNode >> identifier: aCGLRIdentifierNode [
 		ifTrue: [ self identifier parent: self ]
 ]
 
-{ #category : #'generated-initialize-release' }
+{ #category : 'generated-initialize-release' }
 CGLREnumNode >> initialize [
 	super initialize.
 	enumerators := OrderedCollection new: 2.
 ]
 
-{ #category : #generated }
+{ #category : 'generated' }
 CGLREnumNode >> nodeVariables [
 	^ #(#identifier)
 ]

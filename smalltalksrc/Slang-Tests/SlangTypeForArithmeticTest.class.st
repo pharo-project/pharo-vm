@@ -1,21 +1,22 @@
 Class {
-	#name : #SlangTypeForArithmeticTest,
-	#superclass : #SlangAbstractTestCase,
+	#name : 'SlangTypeForArithmeticTest',
+	#superclass : 'SlangAbstractTestCase',
 	#instVars : [
 		'visitor',
 		'propertyName'
 	],
-	#category : #'Slang-Tests'
+	#category : 'Slang-Tests',
+	#package : 'Slang-Tests'
 }
 
-{ #category : #running }
+{ #category : 'running' }
 SlangTypeForArithmeticTest >> setUp [
 	super setUp.
 	ccg addClass: SlangTypeForDereferenceTestClass.
 	ccg inferTypes.
 ]
 
-{ #category : #tests }
+{ #category : 'tests' }
 SlangTypeForArithmeticTest >> testAtOnMatrix [
 	| tMethod |
 	tMethod := ccg methodNamed: #aMethodReturningAnAtOnAMatrix.

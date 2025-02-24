@@ -1,13 +1,14 @@
 Class {
-	#name : #MLAccessorDepthCalculator,
-	#superclass : #Object,
+	#name : 'MLAccessorDepthCalculator',
+	#superclass : 'Object',
 	#instVars : [
 		'codeGenerator'
 	],
-	#category : #Melchor
+	#category : 'Melchor',
+	#package : 'Melchor'
 }
 
-{ #category : #'as yet unclassified' }
+{ #category : 'as yet unclassified' }
 MLAccessorDepthCalculator class >> forCodeGenerator: aCodeGenerator [
 
 	^ self new
@@ -15,7 +16,7 @@ MLAccessorDepthCalculator class >> forCodeGenerator: aCodeGenerator [
 		yourself
 ]
 
-{ #category : #'spur primitive compilation' }
+{ #category : 'spur primitive compilation' }
 MLAccessorDepthCalculator >> accessorChainsForMethod: method interpreterClass: interpreterClass [
 
 	"Answer a set of access paths from arguments through objects, in the method, assuming
@@ -89,12 +90,12 @@ MLAccessorDepthCalculator >> accessorChainsForMethod: method interpreterClass: i
 	^ chains
 ]
 
-{ #category : #'spur primitive compilation' }
+{ #category : 'spur primitive compilation' }
 MLAccessorDepthCalculator >> accessorDepthDeterminationFollowsSelfSends [
 	^false
 ]
 
-{ #category : #'spur primitive compilation' }
+{ #category : 'spur primitive compilation' }
 MLAccessorDepthCalculator >> accessorDepthForChain: chain [ "OrderedCollection"
 	"Answer the actual number of accessors in the access chain, filtering out assignments of variables to variables."
 	| accessorDepth |
@@ -107,7 +108,7 @@ MLAccessorDepthCalculator >> accessorDepthForChain: chain [ "OrderedCollection"
 	^accessorDepth
 ]
 
-{ #category : #'spur primitive compilation' }
+{ #category : 'spur primitive compilation' }
 MLAccessorDepthCalculator >> accessorDepthForMethod: method [
 	"Compute the depth the method traverses object structure, assuming it is a primitive.
 	 This is in support of Spur's lazy become.  A primitive may fail because it may encounter
@@ -134,7 +135,7 @@ MLAccessorDepthCalculator >> accessorDepthForMethod: method [
 		ifNotNil: [:pragma| pragma arguments first]
 ]
 
-{ #category : #'spur primitive compilation' }
+{ #category : 'spur primitive compilation' }
 MLAccessorDepthCalculator >> accessorDepthForSelector: selector [
 	^(selector = #initialiseModule
 	   or: [codeGenerator vmmakerConfiguration interpreterPluginClass includesSelector: selector]) ifFalse:
@@ -142,65 +143,63 @@ MLAccessorDepthCalculator >> accessorDepthForSelector: selector [
 			[:m| self accessorDepthForMethod: m]]
 ]
 
-{ #category : #'spur primitive compilation' }
+{ #category : 'spur primitive compilation' }
 MLAccessorDepthCalculator >> accessorsAndAssignmentsForMethod: method actuals: actualParameters depth: depth interpreterClass: interpreterClass into: aTrinaryBlock [
-
 	"Evaluate aTrinaryBlock with the root accessor sends, accessor sends and assignments in the method."
 
 	| accessors assignments roots |
 	accessors := Set new.
 	assignments := Set new.
 	roots := Set new.
-	actualParameters with: method args do: [ :actual :argName | 
-		(actual isVariable or: [ actual isSend ]) ifTrue: [ 
-			(actual isSend and: [ 
-				 self isStackAccessor: actual selector given: interpreterClass ]) 
+	actualParameters with: method args do: [ :actual :argName |
+		(actual isVariable or: [ actual isSend ]) ifTrue: [
+			(actual isSend and: [
+				 self isStackAccessor: actual selector given: interpreterClass ])
 				ifTrue: [ roots add: actual ].
 			assignments add: (TAssignmentNode new
 					 setVariable: (TVariableNode new setName: argName)
 					 expression: actual) ] ].
-	method parseTree nodesDo: [ :node | 
-		node isSend ifTrue: [ 
-			(self isStackAccessor: node selector given: interpreterClass) 
+	method parseTree nodesDo: [ :node |
+		node isSend ifTrue: [
+			(self isStackAccessor: node selector given: interpreterClass)
 				ifTrue: [ roots add: node ].
-			(self isObjectAccessor: node selector given: interpreterClass) 
+			(self isObjectAccessor: node selector given: interpreterClass)
 				ifTrue: [ accessors add: node ].
-			(self accessorDepthDeterminationFollowsSelfSends and: [ 
-				 node receiver isVariable and: [ 
-					 node receiver name = 'self' and: [ 
-						 roots isEmpty or: [ 
-							 node arguments anySatisfy: [ :arg | 
-								 (roots includes: arg) or: [ 
-									 (accessors includes: arg) or: [ 
-										 assignments anySatisfy: [ :assignment | 
-											 assignment variable isSameAs: arg ] ] ] ] ] ] ] ]) 
-				ifTrue: [ 
+			(self accessorDepthDeterminationFollowsSelfSends and: [
+				 node receiver isVariable and: [
+					 node receiver name = 'self' and: [
+						 roots isEmpty or: [
+							 node arguments anySatisfy: [ :arg |
+								 (roots includes: arg) or: [
+									 (accessors includes: arg) or: [
+										 assignments anySatisfy: [ :assignment |
+											 assignment variable isSameAs: arg ] ] ] ] ] ] ] ])
+				ifTrue: [
 					self
 						accessorsAndAssignmentsForSubMethodNamed: node selector
 						actuals: node arguments
 						depth: depth + 1
 						interpreterClass: interpreterClass
-						into: [ :subRoots :subAccessors :subAssignments | 
-							(subRoots isEmpty and: [ 
-								 subAccessors isEmpty and: [ subAssignments isEmpty ] ]) 
-								ifFalse: [ 
+						into: [ :subRoots :subAccessors :subAssignments |
+							(subRoots isEmpty and: [
+								 subAccessors isEmpty and: [ subAssignments isEmpty ] ])
+								ifFalse: [
 									roots addAll: subRoots.
 									accessors add: node.
 									accessors addAll: subAccessors.
 									assignments addAll: subAssignments ] ] ] ].
-		(node isAssignment and: [ 
-			 (node expression isSend and: [ 
-				  codeGenerator vmmakerConfiguration baseObjectMemoryManagerClass 
-					  isTerminalObjectAccessor: node expression selector ]) not and: [ 
-				 (roots includes: node expression) or: [ 
-					 (accessors includes: node expression) or: [ 
-						 node expression isVariable and: [ 
-							 node expression name ~= 'nil' ] ] ] ] ]) ifTrue: [ 
+		(node isAssignment and: [
+			 (node expression isSend and: [
+				  codeGenerator vmmakerConfiguration baseObjectMemoryManagerClass
+					  isTerminalObjectAccessor: node expression selector ]) not and: [
+				 (roots includes: node expression) or: [
+					 (accessors includes: node expression) or: [
+						 node expression isVariable ] ] ] ]) ifTrue: [
 			assignments add: node ] ].
 	^ aTrinaryBlock value: roots value: accessors value: assignments
 ]
 
-{ #category : #'spur primitive compilation' }
+{ #category : 'spur primitive compilation' }
 MLAccessorDepthCalculator >> actualsForMethod: aTMethod [
 	"Normal primitives have no arguments, but translated primitives do.
 	 This class doesn't handle translated primitives and so smply answers an empty array.
@@ -208,22 +207,22 @@ MLAccessorDepthCalculator >> actualsForMethod: aTMethod [
 	^#()
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 MLAccessorDepthCalculator >> codeGenerator [
 	^ codeGenerator
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 MLAccessorDepthCalculator >> codeGenerator: anObject [
 	codeGenerator := anObject
 ]
 
-{ #category : #'spur primitive compilation' }
+{ #category : 'spur primitive compilation' }
 MLAccessorDepthCalculator >> isObjectAccessor: selector given: interpreterClass [
 	^interpreterClass isObjectAccessor: selector
 ]
 
-{ #category : #'spur primitive compilation' }
+{ #category : 'spur primitive compilation' }
 MLAccessorDepthCalculator >> isStackAccessor: selector given: interpreterClass [
 	^interpreterClass isStackAccessor: selector
 ]

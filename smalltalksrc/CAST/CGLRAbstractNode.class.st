@@ -1,18 +1,16 @@
 Class {
-	#name : #CGLRAbstractNode,
-	#superclass : #SmaCCParseNode,
-	#instVars : [
-		'needsSeparator'
-	],
-	#category : #CAST
+	#name : 'CGLRAbstractNode',
+	#superclass : 'SmaCCParseNode',
+	#category : 'CAST',
+	#package : 'CAST'
 }
 
-{ #category : #generated }
+{ #category : 'generated' }
 CGLRAbstractNode >> acceptVisitor: anAbstractVisitor [
 	^ anAbstractVisitor visitAbstract: self
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 CGLRAbstractNode >> ambiguous: aNode [
 	(aNode class == self class
 		and: [ self children size = aNode children size ])
@@ -24,136 +22,126 @@ CGLRAbstractNode >> ambiguous: aNode [
 				do: [ :n1 :n2 | n1 ambiguous: n2 ] ]
 ]
 
-{ #category : #asserting }
+{ #category : 'asserting' }
 CGLRAbstractNode >> assertExpression: aNode [
 
 	self assert: aNode isExpression
 ]
 
-{ #category : #asserting }
+{ #category : 'asserting' }
 CGLRAbstractNode >> assertListOfExpressions: aCollection [ 
 	
 	self assert: (aCollection allSatisfy: [ :e | e isExpression ])
 ]
 
-{ #category : #testing }
+{ #category : 'testing' }
 CGLRAbstractNode >> comments [
 
 	^ super comments ifNil: [ #() ]
 ]
 
-{ #category : #testing }
-CGLRAbstractNode >> initialize [
-
-	super initialize.
-	needsSeparator := true
-]
-
-{ #category : #testing }
+{ #category : 'testing' }
 CGLRAbstractNode >> isBinaryOperation [
 	
 	^ false
 ]
 
-{ #category : #testing }
+{ #category : 'testing' }
 CGLRAbstractNode >> isCastExpression [
 
 	^ false
 ]
 
-{ #category : #testing }
+{ #category : 'testing' }
+CGLRAbstractNode >> isComment [ 
+	^ false
+]
+
+{ #category : 'testing' }
 CGLRAbstractNode >> isCompoundStatement [
 	
 	^ false
 ]
 
-{ #category : #testing }
+{ #category : 'testing' }
 CGLRAbstractNode >> isConstant [
 	
 	^ false
 ]
 
-{ #category : #testing }
+{ #category : 'testing' }
+CGLRAbstractNode >> isDoWhile [
+	^ false
+]
+
+{ #category : 'testing' }
 CGLRAbstractNode >> isEmpty [
 	
 	^ false
 ]
 
-{ #category : #testing }
+{ #category : 'testing' }
 CGLRAbstractNode >> isEmptyStatement [
 	
 	^ false
 ]
 
-{ #category : #testing }
+{ #category : 'testing' }
 CGLRAbstractNode >> isExpression [
 
 	^ false
 ]
 
-{ #category : #testing }
+{ #category : 'testing' }
 CGLRAbstractNode >> isFunctionCall [
 	
 	^ false
 ]
 
-{ #category : #testing }
+{ #category : 'testing' }
 CGLRAbstractNode >> isFunctionDeclarator [
 	
 	^ false
 ]
 
-{ #category : #testing }
+{ #category : 'testing' }
 CGLRAbstractNode >> isIdentifier [
 	
 	^ false
 ]
 
-{ #category : #testing }
+{ #category : 'testing' }
+CGLRAbstractNode >> isIf [
+	^ false
+]
+
+{ #category : 'testing' }
 CGLRAbstractNode >> isLeaf [
 	
 	^ false
 ]
 
-{ #category : #testing }
+{ #category : 'testing' }
 CGLRAbstractNode >> isReturn [
 	
 	^ false
 ]
 
-{ #category : #testing }
+{ #category : 'testing' }
 CGLRAbstractNode >> isUnaryOperation [
 	
 	^ false
 ]
 
-{ #category : #rewriting }
+{ #category : 'rewriting' }
 CGLRAbstractNode >> last [
 	"I'm the last statement of myself"
 	^ self
 ]
 
-{ #category : #rewriting }
+{ #category : 'rewriting' }
 CGLRAbstractNode >> last: aReplacement [
 	
 	"I replace myself by the node as argument"
 	^ aReplacement
-]
-
-{ #category : #accessing }
-CGLRAbstractNode >> needsSeparator [
-
-	^ needsSeparator
-]
-
-{ #category : #accessing }
-CGLRAbstractNode >> needsSeparator: aBoolean [
-
-	needsSeparator := aBoolean
-]
-
-{ #category : #testing }
-CGLRAbstractNode >> needsTrailingSemicolon [ 
-	
-	^ true
 ]

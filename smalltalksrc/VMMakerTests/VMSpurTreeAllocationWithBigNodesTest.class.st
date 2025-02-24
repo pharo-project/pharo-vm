@@ -1,20 +1,22 @@
 Class {
-	#name : #VMSpurTreeAllocationWithBigNodesTest,
-	#superclass : #VMSpurInitializedOldSpaceTest,
+	#name : 'VMSpurTreeAllocationWithBigNodesTest',
+	#superclass : 'VMSpurInitializedOldSpaceTest',
 	#instVars : [
 		'sizesInBreadthFirstOrder',
 		'chunkAddresses'
 	],
-	#category : #'VMMakerTests-MemoryTests'
+	#category : 'VMMakerTests-MemoryTests',
+	#package : 'VMMakerTests',
+	#tag : 'MemoryTests'
 }
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 VMSpurTreeAllocationWithBigNodesTest >> addressOfChunkOf: aSize [
 
 	^ chunkAddresses at: aSize
 ]
 
-{ #category : #running }
+{ #category : 'running' }
 VMSpurTreeAllocationWithBigNodesTest >> setUp [
 
 	" Allocate a tree that has a large child large enough so a remainder could still be larger than the root
@@ -45,13 +47,13 @@ VMSpurTreeAllocationWithBigNodesTest >> setUp [
 	self assert: (memory bytesInObject: (self largerNodeOf: parent)) equals: (sizesInBreadthFirstOrder at: childNumber * 2 + 1).
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 VMSpurTreeAllocationWithBigNodesTest >> sizeOfChildInBreadthFirstOrder: anInteger [ 
 
 	^ sizesInBreadthFirstOrder at: anInteger
 ]
 
-{ #category : #tests }
+{ #category : 'tests' }
 VMSpurTreeAllocationWithBigNodesTest >> test01LargeLeftoverSmallerThanRootShouldBeInsertedInSmaller [
 
 	memory allocateOldSpaceChunkOfBytes: 16.
@@ -60,7 +62,7 @@ VMSpurTreeAllocationWithBigNodesTest >> test01LargeLeftoverSmallerThanRootShould
 	self assert: (memory bytesInObject: (self smallerNodeOf: self freeTreeRootOop)) equals: 1008
 ]
 
-{ #category : #tests }
+{ #category : 'tests' }
 VMSpurTreeAllocationWithBigNodesTest >> test02LargeLeftoverSmallerThanLargerShouldBeInsertedInLarger [
 
 	memory allocateOldSpaceChunkOfBytes: (self sizeOfChildInBreadthFirstOrder: 1) + 16.
@@ -69,7 +71,7 @@ VMSpurTreeAllocationWithBigNodesTest >> test02LargeLeftoverSmallerThanLargerShou
 	self assert: (memory bytesInObject: (self largerNodeOf: self freeTreeRootOop)) equals: 4080
 ]
 
-{ #category : #tests }
+{ #category : 'tests' }
 VMSpurTreeAllocationWithBigNodesTest >> test03LargeLeftoverSmallerThanRootShouldBeInsertedInSmaller [
 
 	memory allocateOldSpaceChunkOfBytes: (self sizeOfChildInBreadthFirstOrder: 1) * 2 + 16.

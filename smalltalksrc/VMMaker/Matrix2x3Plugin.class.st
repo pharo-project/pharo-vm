@@ -1,16 +1,18 @@
 Class {
-	#name : #Matrix2x3Plugin,
-	#superclass : #InterpreterPlugin,
+	#name : 'Matrix2x3Plugin',
+	#superclass : 'InterpreterPlugin',
 	#instVars : [
 		'm23ResultX',
 		'm23ResultY',
 		'm23ArgX',
 		'm23ArgY'
 	],
-	#category : #'VMMaker-Plugins'
+	#category : 'VMMaker-Plugins',
+	#package : 'VMMaker',
+	#tag : 'Plugins'
 }
 
-{ #category : #'class initialization' }
+{ #category : 'class initialization' }
 Matrix2x3Plugin class >> declareCVarsIn: cg [ 
 	cg var: #m23ResultX type: #double.
 	cg var: #m23ResultY type: #double.
@@ -18,12 +20,12 @@ Matrix2x3Plugin class >> declareCVarsIn: cg [
 	cg var: #m23ArgY type: #double
 ]
 
-{ #category : #simulation }
+{ #category : 'simulation' }
 Matrix2x3Plugin class >> simulatorClass [
 	^Matrix2x3PluginSimulator
 ]
 
-{ #category : #private }
+{ #category : 'private' }
 Matrix2x3Plugin >> loadArgumentMatrix: matrix [
 	"Load the argument matrix"
 	<returnTypeC: #'float *'>
@@ -34,7 +36,7 @@ Matrix2x3Plugin >> loadArgumentMatrix: matrix [
 	^self cCoerce: (interpreterProxy firstIndexableField: matrix) to: #'float *'
 ]
 
-{ #category : #private }
+{ #category : 'private' }
 Matrix2x3Plugin >> loadArgumentPoint: point [
 	"Load the argument point into m23ArgX and m23ArgY"
 	| oop |
@@ -59,7 +61,7 @@ Matrix2x3Plugin >> loadArgumentPoint: point [
 				ifFalse: [interpreterProxy primitiveFail]]
 ]
 
-{ #category : #transforming }
+{ #category : 'transforming' }
 Matrix2x3Plugin >> matrix2x3ComposeMatrix: m1 with: m2 into: m3 [
 	"Multiply matrix m1 with m2 and store the result into m3."
 	| a11 a12 a13 a21 a22 a23 |
@@ -88,7 +90,7 @@ Matrix2x3Plugin >> matrix2x3ComposeMatrix: m1 with: m2 into: m3 [
 	m3 at: 5 put: (self cCoerce: a23 to: #float)
 ]
 
-{ #category : #transforming }
+{ #category : 'transforming' }
 Matrix2x3Plugin >> matrix2x3InvertPoint: m [
 	"Invert the pre-loaded argument point by the given matrix"
 	| x y det detX detY |
@@ -110,7 +112,7 @@ Matrix2x3Plugin >> matrix2x3InvertPoint: m [
 	m23ResultY := detY * det.
 ]
 
-{ #category : #transforming }
+{ #category : 'transforming' }
 Matrix2x3Plugin >> matrix2x3TransformPoint: m [
 	"Transform the pre-loaded argument point by the given matrix"
 	<var: #m type: 'float *'>
@@ -118,13 +120,13 @@ Matrix2x3Plugin >> matrix2x3TransformPoint: m [
 	m23ResultY := (m23ArgX * (m at: 3)) + (m23ArgY * (m at: 4)) + (m at: 5).
 ]
 
-{ #category : #private }
+{ #category : 'private' }
 Matrix2x3Plugin >> okayIntValue: value [
 	^(value >= interpreterProxy minSmallInteger asFloat
 	  and: [value <= interpreterProxy maxSmallInteger asFloat])
 ]
 
-{ #category : #primitives }
+{ #category : 'primitives' }
 Matrix2x3Plugin >> primitiveComposeMatrix [
 	<export: true>
 	| m1 m2 m3 result |
@@ -139,7 +141,7 @@ Matrix2x3Plugin >> primitiveComposeMatrix [
 		 interpreterProxy pop: 3 thenPush: result]
 ]
 
-{ #category : #primitives }
+{ #category : 'primitives' }
 Matrix2x3Plugin >> primitiveInvertPoint [
 	<export: true>
 	| matrix |
@@ -151,7 +153,7 @@ Matrix2x3Plugin >> primitiveInvertPoint [
 	interpreterProxy failed ifFalse:[self roundAndStoreResultPoint: 2]
 ]
 
-{ #category : #primitives }
+{ #category : 'primitives' }
 Matrix2x3Plugin >> primitiveInvertRectInto [
 	<export: true>
 	| matrix srcOop dstOop originX originY cornerX cornerY minX maxX minY maxY |
@@ -218,7 +220,7 @@ Matrix2x3Plugin >> primitiveInvertRectInto [
 		[interpreterProxy pop: 3 thenPush: dstOop]
 ]
 
-{ #category : #primitives }
+{ #category : 'primitives' }
 Matrix2x3Plugin >> primitiveIsIdentity [
 	<export: true>
 	| matrix |
@@ -234,7 +236,7 @@ Matrix2x3Plugin >> primitiveIsIdentity [
 			((matrix at: 5) = (self cCoerce: 0.0 to: #float)) ] ] ] ] ]) ]
 ]
 
-{ #category : #primitives }
+{ #category : 'primitives' }
 Matrix2x3Plugin >> primitiveIsPureTranslation [
 	<export: true>
 	| matrix |
@@ -248,7 +250,7 @@ Matrix2x3Plugin >> primitiveIsPureTranslation [
 			((matrix at: 4) = (self cCoerce: 1.0 to: #float)) ] ] ])]
 ]
 
-{ #category : #primitives }
+{ #category : 'primitives' }
 Matrix2x3Plugin >> primitiveTransformPoint [
 	<export: true>
 	| matrix |
@@ -260,7 +262,7 @@ Matrix2x3Plugin >> primitiveTransformPoint [
 		 self roundAndStoreResultPoint: 2]
 ]
 
-{ #category : #primitives }
+{ #category : 'primitives' }
 Matrix2x3Plugin >> primitiveTransformRectInto [
 	<export: true>
 	| matrix srcOop dstOop originX originY cornerX cornerY minX maxX minY maxY |
@@ -328,7 +330,7 @@ Matrix2x3Plugin >> primitiveTransformRectInto [
 
 ]
 
-{ #category : #private }
+{ #category : 'private' }
 Matrix2x3Plugin >> roundAndStoreResultPoint: nItemsToPop [
 	"Store the result of a previous operation.
 	Fail if we cannot represent the result as SmallInteger"
@@ -344,7 +346,7 @@ Matrix2x3Plugin >> roundAndStoreResultPoint: nItemsToPop [
 					yValue: m23ResultY asInteger)
 ]
 
-{ #category : #private }
+{ #category : 'private' }
 Matrix2x3Plugin >> roundAndStoreResultRect: dstOop x0: x0 y0: y0 x1: x1 y1: y1 [
 	"Check, round and store the result of a rectangle operation"
 	<var: #x0 type: #double>

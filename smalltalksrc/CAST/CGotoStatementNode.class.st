@@ -1,13 +1,15 @@
 Class {
-	#name : #CGotoStatementNode,
-	#superclass : #CGLRAbstractNode,
+	#name : 'CGotoStatementNode',
+	#superclass : 'CGLRAbstractNode',
 	#instVars : [
 		'label'
 	],
-	#category : #'CAST-Nodes'
+	#category : 'CAST-Nodes',
+	#package : 'CAST',
+	#tag : 'Nodes'
 }
 
-{ #category : #generated }
+{ #category : 'generated' }
 CGotoStatementNode class >> identifier: id [
 
 	^ self new
@@ -15,7 +17,7 @@ CGotoStatementNode class >> identifier: id [
 		  yourself
 ]
 
-{ #category : #comparing }
+{ #category : 'comparing' }
 CGotoStatementNode >> = anObject [
 
 	"Answer whether the receiver and anObject represent the same object."
@@ -25,12 +27,12 @@ CGotoStatementNode >> = anObject [
 	^ label = anObject label
 ]
 
-{ #category : #generated }
+{ #category : 'generated' }
 CGotoStatementNode >> acceptVisitor: anAbstractVisitor [
 	^ anAbstractVisitor visitGotoStatement: self
 ]
 
-{ #category : #comparing }
+{ #category : 'comparing' }
 CGotoStatementNode >> hash [
 
 	"Answer an integer value that is related to the identity of the receiver."
@@ -38,17 +40,17 @@ CGotoStatementNode >> hash [
 	^ label hash
 ]
 
-{ #category : #testing }
+{ #category : 'testing' }
 CGotoStatementNode >> isGoTo [
 	^ true.
 ]
 
-{ #category : #generated }
+{ #category : 'generated' }
 CGotoStatementNode >> label [
 	^ label
 ]
 
-{ #category : #generated }
+{ #category : 'generated' }
 CGotoStatementNode >> label: aCGLRIdentifierNode [
 	self label notNil
 		ifTrue: [ self label parent: nil ].

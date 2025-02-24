@@ -1,22 +1,23 @@
 Class {
-	#name : #VMFFIReturnMarshallingTest,
-	#superclass : #VMAbstractFFITest,
-	#category : #VMMakerTests
+	#name : 'VMFFIReturnMarshallingTest',
+	#superclass : 'VMAbstractFFITest',
+	#category : 'VMMakerTests',
+	#package : 'VMMakerTests'
 }
 
-{ #category : #private }
+{ #category : 'private' }
 VMFFIReturnMarshallingTest class >> isAbstract [ 
 
 	^ self = VMFFIReturnMarshallingTest
 ]
 
-{ #category : #'tests - marshalling return' }
+{ #category : 'tests - marshalling return' }
 VMFFIReturnMarshallingTest >> doTestCalloutWithReturnType: aLibFFIType returnValue: valueToReturn asserting: aBlock [
 	
 	self subclassResponsibility
 ]
 
-{ #category : #utils }
+{ #category : 'utils' }
 VMFFIReturnMarshallingTest >> doTestCalloutWithReturnType: aLibFFIType returnValue: valueToReturn expectedLargeIntegerValue: expectedValue [ 
 
 	self
@@ -36,7 +37,7 @@ VMFFIReturnMarshallingTest >> doTestCalloutWithReturnType: aLibFFIType returnVal
 
 ]
 
-{ #category : #'tests - marshalling return' }
+{ #category : 'tests - marshalling return' }
 VMFFIReturnMarshallingTest >> doTestCalloutWithReturnType: aLibFFIType returnValue: valueToReturn expectedSmalltalkValue: expectedValue [
 
 	self
@@ -50,7 +51,7 @@ VMFFIReturnMarshallingTest >> doTestCalloutWithReturnType: aLibFFIType returnVal
 
 ]
 
-{ #category : #'tests - marshalling return' }
+{ #category : 'tests - marshalling return' }
 VMFFIReturnMarshallingTest >> testPrimitiveCalloutReturningAnStructPushesAByteArray [
 
 	| valueToReturn |
@@ -72,7 +73,7 @@ VMFFIReturnMarshallingTest >> testPrimitiveCalloutReturningAnStructPushesAByteAr
 		
 ]
 
-{ #category : #'tests - marshalling return' }
+{ #category : 'tests - marshalling return' }
 VMFFIReturnMarshallingTest >> testPrimitiveCalloutReturningDoublePushSmallFloatInStack [
 
 	self
@@ -84,7 +85,7 @@ VMFFIReturnMarshallingTest >> testPrimitiveCalloutReturningDoublePushSmallFloatI
 
 ]
 
-{ #category : #'tests - marshalling return' }
+{ #category : 'tests - marshalling return' }
 VMFFIReturnMarshallingTest >> testPrimitiveCalloutReturningFloatPushSmallFloatInStack [
 
 	self
@@ -96,7 +97,7 @@ VMFFIReturnMarshallingTest >> testPrimitiveCalloutReturningFloatPushSmallFloatIn
 
 ]
 
-{ #category : #'tests - marshalling return' }
+{ #category : 'tests - marshalling return' }
 VMFFIReturnMarshallingTest >> testPrimitiveCalloutReturningPointerPushesAnExternalAddress [
 
 
@@ -110,7 +111,7 @@ VMFFIReturnMarshallingTest >> testPrimitiveCalloutReturningPointerPushesAnExtern
 
 ]
 
-{ #category : #'tests - marshalling return' }
+{ #category : 'tests - marshalling return' }
 VMFFIReturnMarshallingTest >> testPrimitiveCalloutReturningSINT16PushSmallInteger [
 
 	self
@@ -119,7 +120,7 @@ VMFFIReturnMarshallingTest >> testPrimitiveCalloutReturningSINT16PushSmallIntege
 		expectedSmalltalkValue: INT16_MAX - 1
 ]
 
-{ #category : #'tests - marshalling return' }
+{ #category : 'tests - marshalling return' }
 VMFFIReturnMarshallingTest >> testPrimitiveCalloutReturningSINT32PushLargeInteger [
 
 	| value |
@@ -131,7 +132,7 @@ VMFFIReturnMarshallingTest >> testPrimitiveCalloutReturningSINT32PushLargeIntege
 		expectedLargeIntegerValue: INT32_MAX - 1
 ]
 
-{ #category : #'tests - marshalling return' }
+{ #category : 'tests - marshalling return' }
 VMFFIReturnMarshallingTest >> testPrimitiveCalloutReturningSINT32PushSmallInteger [
 
 	| value |
@@ -145,7 +146,7 @@ VMFFIReturnMarshallingTest >> testPrimitiveCalloutReturningSINT32PushSmallIntege
 		expectedSmalltalkValue: value
 ]
 
-{ #category : #'tests - marshalling return' }
+{ #category : 'tests - marshalling return' }
 VMFFIReturnMarshallingTest >> testPrimitiveCalloutReturningSINT64PushLargeInteger [
 
 	self
@@ -154,7 +155,7 @@ VMFFIReturnMarshallingTest >> testPrimitiveCalloutReturningSINT64PushLargeIntege
 		expectedLargeIntegerValue: INT64_MAX - 1
 ]
 
-{ #category : #'tests - marshalling return' }
+{ #category : 'tests - marshalling return' }
 VMFFIReturnMarshallingTest >> testPrimitiveCalloutReturningSINT64PushSmallInteger [
 
 	self
@@ -163,7 +164,7 @@ VMFFIReturnMarshallingTest >> testPrimitiveCalloutReturningSINT64PushSmallIntege
 		expectedSmalltalkValue: memory maxSmallInteger
 ]
 
-{ #category : #'tests - marshalling return' }
+{ #category : 'tests - marshalling return' }
 VMFFIReturnMarshallingTest >> testPrimitiveCalloutReturningSINT8PushSmallInteger [
 
 	self
@@ -172,7 +173,7 @@ VMFFIReturnMarshallingTest >> testPrimitiveCalloutReturningSINT8PushSmallInteger
 		expectedSmalltalkValue: INT8_MAX - 1
 ]
 
-{ #category : #'tests - marshalling return' }
+{ #category : 'tests - marshalling return' }
 VMFFIReturnMarshallingTest >> testPrimitiveCalloutReturningUINT16PushSmallInteger [
 
 	self
@@ -181,7 +182,7 @@ VMFFIReturnMarshallingTest >> testPrimitiveCalloutReturningUINT16PushSmallIntege
 		expectedSmalltalkValue: INT16_MAX - 1
 ]
 
-{ #category : #'tests - marshalling return' }
+{ #category : 'tests - marshalling return' }
 VMFFIReturnMarshallingTest >> testPrimitiveCalloutReturningUINT32PushLargeInteger [
 
 	| value |
@@ -193,7 +194,7 @@ VMFFIReturnMarshallingTest >> testPrimitiveCalloutReturningUINT32PushLargeIntege
 		expectedLargeIntegerValue: INT32_MAX - 1
 ]
 
-{ #category : #'tests - marshalling return' }
+{ #category : 'tests - marshalling return' }
 VMFFIReturnMarshallingTest >> testPrimitiveCalloutReturningUINT32PushSmallInteger [
 
 	| value |
@@ -207,7 +208,7 @@ VMFFIReturnMarshallingTest >> testPrimitiveCalloutReturningUINT32PushSmallIntege
 		expectedSmalltalkValue: value
 ]
 
-{ #category : #'tests - marshalling return' }
+{ #category : 'tests - marshalling return' }
 VMFFIReturnMarshallingTest >> testPrimitiveCalloutReturningUINT64PushLargeInteger [
 
 	self
@@ -216,7 +217,7 @@ VMFFIReturnMarshallingTest >> testPrimitiveCalloutReturningUINT64PushLargeIntege
 		expectedLargeIntegerValue:  INT64_MAX 
 ]
 
-{ #category : #'tests - marshalling return' }
+{ #category : 'tests - marshalling return' }
 VMFFIReturnMarshallingTest >> testPrimitiveCalloutReturningUINT64PushSmallInteger [
 
 	self
@@ -225,7 +226,7 @@ VMFFIReturnMarshallingTest >> testPrimitiveCalloutReturningUINT64PushSmallIntege
 		expectedSmalltalkValue:  memory maxSmallInteger 
 ]
 
-{ #category : #'tests - marshalling return' }
+{ #category : 'tests - marshalling return' }
 VMFFIReturnMarshallingTest >> testPrimitiveCalloutReturningUINT8PushSmallInteger [
 
 	self

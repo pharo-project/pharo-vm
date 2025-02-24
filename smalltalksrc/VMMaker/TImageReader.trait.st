@@ -1,9 +1,11 @@
 Trait {
-	#name : #TImageReader,
-	#category : #'VMMaker-ImageFormat'
+	#name : 'TImageReader',
+	#category : 'VMMaker-ImageFormat',
+	#package : 'VMMaker',
+	#tag : 'ImageFormat'
 }
 
-{ #category : #translation }
+{ #category : 'translation' }
 TImageReader classSide >> staticallyResolvedSelectors [
 
 	^ super staticallyResolvedSelectors
@@ -13,7 +15,7 @@ TImageReader classSide >> staticallyResolvedSelectors [
 		     #doLoadImageFromFile:withHeader: )
 ]
 
-{ #category : #api }
+{ #category : 'api' }
 TImageReader >> doLoadImageFromFile: imageFile withHeader: header [
 
 	"read in the image in bulk, then swap the bytes if necessary"

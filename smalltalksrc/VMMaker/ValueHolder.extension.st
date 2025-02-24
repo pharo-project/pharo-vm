@@ -1,6 +1,6 @@
-Extension { #name : #ValueHolder }
+Extension { #name : 'ValueHolder' }
 
-{ #category : #'*VMMaker' }
+{ #category : '*VMMaker' }
 ValueHolder >> coerceTo: cTypeString sim: interpreterSimulator [
 	
 	^ self

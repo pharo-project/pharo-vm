@@ -1,12 +1,12 @@
-Extension { #name : #Float32Array }
+Extension { #name : 'Float32Array' }
 
-{ #category : #'*VMMaker' }
+{ #category : '*VMMaker' }
 Float32Array >> ccg: cg prolog: aBlock expr: aString index: anInteger [
 
 	^cg ccgLoad: aBlock expr: aString asWBFloatPtrFrom: anInteger
 ]
 
-{ #category : #'*VMMaker' }
+{ #category : '*VMMaker' }
 Float32Array >> ccgDeclareCForVar: aSymbolOrString [
 
 	^'float *', aSymbolOrString
