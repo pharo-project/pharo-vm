@@ -1247,7 +1247,6 @@ CCodeGenerator >> emitCMethods: methodList on: aStream [
 				bar value: i.
 				(m isRealMethod and: [ self shouldGenerateMethod: m ]) ifTrue: [
 					| cast |
-					(m hasProperty: #halt) ifTrue: [self halt].
 					cast := m asCASTIn: self.
 					cast prettyPrintOn: aStream ] ] ]
 ]

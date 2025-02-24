@@ -18,6 +18,31 @@ SLDeadCodeEliminationVisitor >> codeGenerator: aCodeGen [
 	codeGenerator := aCodeGen
 ]
 
+{ #category : 'helper' }
+SLDeadCodeEliminationVisitor >> handleIterativeAndConditionalSend: aSendNode [
+	"return true if the node has been visited"
+
+	(aSendNode isConditionalSend or: [ aSendNode isBinaryIterativeSend ])
+		ifTrue: [
+			| receiver |
+			receiver := aSendNode receiver.
+			(receiver isStatementList and: [ receiver statements size > 1 ])
+				ifTrue: [ self visitStatementListNodeExceptLast: receiver ].
+			aSendNode arguments do: [ :subNode | self visit: subNode ].
+			^ true ].
+	aSendNode isDoIterativeSend ifTrue: [
+		self visit: (aSendNode arguments at: 3) ].
+	aSendNode isUnaryIterativeSend ifTrue: [
+		self visit: aSendNode receiver.
+		^ true ].
+
+	aSendNode isUnaryIterativeSendWithImportantLastStatement ifTrue: [
+		self visitStatementListNodeExceptLast: aSendNode receiver.
+		^ true ].
+	
+	^ false
+]
+
 { #category : 'testing' }
 SLDeadCodeEliminationVisitor >> isStructAccessorWithNoSideEffect: aSendNode [
 
@@ -48,6 +73,33 @@ SLDeadCodeEliminationVisitor >> visit: aNode [
 
 { #category : 'visiting' }
 SLDeadCodeEliminationVisitor >> visitAssignmentNode: anAssignmentNode [
+	"handle assignement that end up being assignement to itself"
+
+	| var expr |
+	var := anAssignmentNode variable.
+	expr := anAssignmentNode expression.
+	"var := var"
+	(anAssignmentNode variable isSameAs: expr) ifTrue: [
+		self removeUnusedNodesInBranch: anAssignmentNode ].
+
+	"a node like var := [ :arg | self method:arg. arg ] value: var -> [ :arg | self method:arg ] value: var,
+					 var := [ :arg :arg2 | self method:arg. self method:arg2. arg2 ] value: var2 value: var -> [ :arg :arg2 | self method:arg. self method:arg2 ] value: var2 value: var"
+	(expr isSend and: [ expr isValueExpansion ]) ifTrue: [ "check if var is in the arguments of the value: selector and its place in it"
+		expr arguments doWithIndex: [ :arg :index |
+			(arg isSameAs: var) ifTrue: [
+				| lastStmt |
+				"expr receiver is the block"
+				lastStmt := expr receiver lastNonCommentStatement.
+				"check if lastStmt is the arguments which has the value of var"
+				(lastStmt isVariable and: [
+					 lastStmt name = (expr receiver arguments at: index) ]) ifTrue: [ "directly replace the assignement by the block itself and remove the variable at the end of the block"
+					anAssignmentNode parent replaceChild: anAssignmentNode with: expr.
+					self removeUnusedNodesInBranch: lastStmt ] ] ] ]
+]
+
+{ #category : 'visiting' }
+SLDeadCodeEliminationVisitor >> visitCaseStatementNode: aCaseStatementNode [
+	"nothing for now"
 ]
 
 { #category : 'visiting' }
@@ -75,12 +127,12 @@ SLDeadCodeEliminationVisitor >> visitReturnNode: aReturnNode [
 { #category : 'visiting' }
 SLDeadCodeEliminationVisitor >> visitSendNode: aSendNode [
 
-	aSendNode isConditionalSend ifTrue: [
-		aSendNode arguments do: [ :subNode | self visit: subNode ].
-		^ self ].
+	(self handleIterativeAndConditionalSend: aSendNode) ifTrue: [ ^ self ].
+
 	(aSendNode selector beginsWith: #cCoerce) ifTrue: [
 		self visit: aSendNode arguments first.
 		^ self ].
+
 	(self isStructAccessorWithNoSideEffect: aSendNode) ifTrue: [
 		self removeUnusedNodesInBranch: aSendNode ]
 ]
@@ -89,6 +141,21 @@ SLDeadCodeEliminationVisitor >> visitSendNode: aSendNode [
 SLDeadCodeEliminationVisitor >> visitStatementListNode: aStatementListNode [
 
 	aStatementListNode children do: [ :subNode | self visit: subNode ]
+]
+
+{ #category : 'helper' }
+SLDeadCodeEliminationVisitor >> visitStatementListNodeExceptLast: aStatementListNode [
+	"useful for whileTrue as the last statements is actually not dead code and for whileTrue: as the receiver might be a statements list"
+
+	| statements |
+	statements := aStatementListNode children.
+
+	statements size < 2 ifTrue: [
+		self removeUnusedNodesInBranch: aStatementListNode ].
+
+	1 to:
+	(statements indexOf: aStatementListNode lastNonCommentStatement) - 1
+	do: [ :i | self visit: (statements at: i) ]
 ]
 
 { #category : 'visiting' }
@@ -101,6 +168,5 @@ SLDeadCodeEliminationVisitor >> visitSwitchStatementNode: aSwitchStatementNode [
 
 { #category : 'visiting' }
 SLDeadCodeEliminationVisitor >> visitVariableNode: aVariableNode [
-
 	self removeUnusedNodesInBranch: aVariableNode
 ]

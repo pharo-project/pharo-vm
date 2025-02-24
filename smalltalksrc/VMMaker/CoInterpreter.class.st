@@ -1006,9 +1006,6 @@ CoInterpreter >> ceBaseFrameReturn: returnValue [
 					to: contextToReturnTo
 					returnValue: returnValue.
 				^self externalCannotReturn: returnValue from: contextToReturnFrom].
-			 "void the instructionPointer to stop it being incorrectly updated in a code
-			 compaction in makeBaseFrameFor:."
-			 instructionPointer := 0.
 			 thePage := self makeBaseFrameFor: contextToReturnTo.
 			 self setStackPointersFromPage: thePage].
 	self setStackPageAndLimit: thePage.
@@ -4904,9 +4901,6 @@ CoInterpreter >> tearDownAndRebuildFrameForCannotReturnBaseFrameReturnFrom: cont
 	objectMemory
 		storePointer: SenderIndex ofObject: contextToReturnFrom withValue: contextToReturnTo;
 		storePointer: InstructionPointerIndex ofObject: contextToReturnFrom withValue: HasBeenReturnedFromMCPCOop.
-	"void the instructionPointer to stop it being incorrectly updated in a code
-	 compaction in makeBaseFrameFor:."
-	instructionPointer := 0.
 	newPage := self makeBaseFrameFor: contextToReturnFrom.
 	self assert: stackPage = newPage.
 	self setStackPageAndLimit: newPage.

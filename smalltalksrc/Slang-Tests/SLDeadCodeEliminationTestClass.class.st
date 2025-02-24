@@ -65,6 +65,51 @@ SLDeadCodeEliminationTestClass >> methodWithAddInCoerce [
 	self cCoerce: 4 + 8 to: #type
 ]
 
+{ #category : 'variable-assign-to-itself' }
+SLDeadCodeEliminationTestClass >> methodWithBlockValueAssignmentIntoSameVariableInArguments [
+	"produce a self assignation at translation time"
+
+	<returnTypeC: #void>
+	| var |
+	var := [ :arg |
+	       self method: arg.
+	       arg ] value: var
+]
+
+{ #category : 'variable-not-assign-to-itself' }
+SLDeadCodeEliminationTestClass >> methodWithBlockValueAssignmentNotIntoSameVariableInArguments [
+
+	<returnTypeC: #void>
+	| var var2 |
+	var := [ :arg |
+	       self method: arg.
+	       arg ] value: var2
+]
+
+{ #category : 'variable-assign-to-itself' }
+SLDeadCodeEliminationTestClass >> methodWithBlockValueValueAssignmentIntoSameVariableInArguments [
+	"produce a self assignation at translation time"
+
+	<returnTypeC: #void>
+	| var var2 |
+	var := [ :arg :arg2 |
+	       self method: arg.
+	       self method: arg2.
+	       arg.
+	       arg2 ] value: var2 value: var
+]
+
+{ #category : 'variable-not-assign-to-itself' }
+SLDeadCodeEliminationTestClass >> methodWithBlockValueValueAssignmentNotIntoSameVariableInArguments [
+
+	<returnTypeC: #void>
+	| var var2 |
+	var := [ :arg :arg2 |
+	       self method: arg.
+	       self method: arg2.
+	       arg2 ] value: var value: var2
+]
+
 { #category : 'method-in-c-coerce' }
 SLDeadCodeEliminationTestClass >> methodWithCallInCoerce [
 
@@ -85,6 +130,110 @@ SLDeadCodeEliminationTestClass >> methodWithConstantInAssignment [
 SLDeadCodeEliminationTestClass >> methodWithConstantInReturn [
 	5.
 	^ 5 
+]
+
+{ #category : 'dead-code-in-unary-iterative' }
+SLDeadCodeEliminationTestClass >> methodWithDeadCodeInRepeat [
+
+	<returnTypeC: #void>
+	| var |
+	[
+	var := var.
+	self method ] repeat
+]
+
+{ #category : 'dead-code-in-binary-iterative' }
+SLDeadCodeEliminationTestClass >> methodWithDeadCodeInTimesRepeat [
+	| var |
+	3 timesRepeat: [ :elm | 5. instancesVariable. var. self method: elm ]
+]
+
+{ #category : 'dead-code-in-do-iterative' }
+SLDeadCodeEliminationTestClass >> methodWithDeadCodeInToByDo [
+
+	| var |
+	1 to: 4 by: 2 do: [ :index |
+		5.
+		instancesVariable.
+		var.
+		self method: index ]
+]
+
+{ #category : 'dead-code-in-do-iterative' }
+SLDeadCodeEliminationTestClass >> methodWithDeadCodeInToDo [
+
+	| var |
+	1 to: 4 do: [ :index |
+		5.
+		instancesVariable.
+		var.
+		self method: index ]
+]
+
+{ #category : 'dead-code-in-binary-iterative' }
+SLDeadCodeEliminationTestClass >> methodWithDeadCodeInWhileFalseBinaryNoSendInReceiver [
+
+	<returnTypeC: #void>
+	| var |
+	[ var = true ] whileFalse: [
+		var := var.
+		self method.
+		false ]
+]
+
+{ #category : 'dead-code-in-binary-iterative' }
+SLDeadCodeEliminationTestClass >> methodWithDeadCodeInWhileFalseBinarySendInReceiver [
+
+	<returnTypeC: #void>
+	| var |
+	[ self method ] whileFalse: [
+		var := var.
+		self method.
+		false ]
+]
+
+{ #category : 'dead-code-in-unary-iterative' }
+SLDeadCodeEliminationTestClass >> methodWithDeadCodeInWhileFalseLastExpressionIsLeaf [
+
+	<returnTypeC: #void>
+	| expr var |
+	[
+	var := var.
+	self method.
+	true ] whileFalse
+]
+
+{ #category : 'dead-code-in-binary-iterative' }
+SLDeadCodeEliminationTestClass >> methodWithDeadCodeInWhileTrueBinaryNoSendInReceiver [
+
+	<returnTypeC: #void>
+	| var |
+	[var = false ] whileTrue: [
+		var := var.
+		self method.
+		true ]
+]
+
+{ #category : 'dead-code-in-binary-iterative' }
+SLDeadCodeEliminationTestClass >> methodWithDeadCodeInWhileTrueBinarySendInReceiver [
+
+	<returnTypeC: #void>
+	| var |
+	[self method ] whileTrue: [
+		var := var.
+		self method.
+		true ]
+]
+
+{ #category : 'dead-code-in-unary-iterative' }
+SLDeadCodeEliminationTestClass >> methodWithDeadCodeInWhileTrueLastExpressionIsLeaf [
+
+	<returnTypeC: #void>
+	| expr var |
+	[
+	var := var.
+	self method.
+	true ] whileTrue
 ]
 
 { #category : 'empty-switch-no-send-in-expression' }
@@ -273,6 +422,34 @@ SLDeadCodeEliminationTestClass >> methodWithEmptyIfTrueInIfTrueIfFalseAndSendInR
 		ifFalse: [ i := 5 ]
 ]
 
+{ #category : 'dead-code-in-unary-iterative' }
+SLDeadCodeEliminationTestClass >> methodWithEmptyWhileFalseNoSendInCondition [
+
+	<returnTypeC: #void>
+	[ true ] whileFalse
+]
+
+{ #category : 'dead-code-in-unary-iterative' }
+SLDeadCodeEliminationTestClass >> methodWithEmptyWhileFalseSendInCondition [
+
+	<returnTypeC: #void>
+	[ self method ] whileFalse
+]
+
+{ #category : 'dead-code-in-unary-iterative' }
+SLDeadCodeEliminationTestClass >> methodWithEmptyWhileTrueNoSendInCondition [
+
+	<returnTypeC: #void>
+	[ true ] whileTrue
+]
+
+{ #category : 'dead-code-in-unary-iterative' }
+SLDeadCodeEliminationTestClass >> methodWithEmptyWhileTrueSendInCondition [
+
+	<returnTypeC: #void>
+	[ self method ] whileTrue
+]
+
 { #category : 'reduce-nil-conditional-no-send-in-receiver' }
 SLDeadCodeEliminationTestClass >> methodWithEmptyifNilInIfNilIfNotNilAndNoSendInReceiver [
 
@@ -353,11 +530,104 @@ SLDeadCodeEliminationTestClass >> methodWithInstanceVariableInReturn [
 	^ instancesVariable
 ]
 
+{ #category : 'variable-assign-to-itself' }
+SLDeadCodeEliminationTestClass >> methodWithOnlyBlockValueAssignmentIntoSameVariableInArguments [
+	"produce a self assignation at translation time"
+
+	<returnTypeC: #void>
+	| var |
+	var := [ :arg | arg ] value: var
+]
+
+{ #category : 'variable-not-assign-to-itself' }
+SLDeadCodeEliminationTestClass >> methodWithOnlyBlockValueAssignmentNotIntoSameVariableInArguments [
+
+	<returnTypeC: #void>
+	| var var2 |
+	var := [ :arg | arg ] value: var2
+]
+
 { #category : 'only-comment' }
 SLDeadCodeEliminationTestClass >> methodWithOnlyComment [
 
 	<returnTypeC: #void>
 	self method
+]
+
+{ #category : 'dead-code-in-unary-iterative' }
+SLDeadCodeEliminationTestClass >> methodWithOnlyDeadCodeInRepeat [
+
+	<returnTypeC: #void>
+	| var |
+	[ var := var ] repeat
+]
+
+{ #category : 'dead-code-in-unary-iterative' }
+SLDeadCodeEliminationTestClass >> methodWithOnlyDeadCodeInWhileFalse [
+
+	<returnTypeC: #void>
+	| var |
+	[
+	var := var.
+	true ] whileFalse
+]
+
+{ #category : 'dead-code-in-binary-iterative' }
+SLDeadCodeEliminationTestClass >> methodWithOnlyDeadCodeInWhileFalseBinaryNoSendInReceiver [
+
+	<returnTypeC: #void>
+	| var |
+	[ var = false ] whileFalse: [
+		var := var.
+		false ]
+]
+
+{ #category : 'dead-code-in-binary-iterative' }
+SLDeadCodeEliminationTestClass >> methodWithOnlyDeadCodeInWhileFalseBinarySendInReceiver [
+
+	<returnTypeC: #void>
+	| var |
+	[ self method ] whileFalse: [
+		var := var.
+		false ]
+]
+
+{ #category : 'dead-code-in-unary-iterative' }
+SLDeadCodeEliminationTestClass >> methodWithOnlyDeadCodeInWhileTrue [
+
+	<returnTypeC: #void>
+	| var |
+	[
+	var := var.
+	true ] whileTrue
+]
+
+{ #category : 'dead-code-in-binary-iterative' }
+SLDeadCodeEliminationTestClass >> methodWithOnlyDeadCodeInWhileTrueBinaryNoSendInReceiver [
+
+	<returnTypeC: #void>
+	| var |
+	[ var = true ] whileTrue: [
+		var := var.
+		3 ]
+]
+
+{ #category : 'dead-code-in-binary-iterative' }
+SLDeadCodeEliminationTestClass >> methodWithOnlyDeadCodeInWhileTrueBinarySendInReceiver [
+
+	<returnTypeC: #void>
+	| var |
+	[ self method ] whileTrue: [
+		var := var.
+		3 ]
+]
+
+{ #category : 'variable-assign-to-itself' }
+SLDeadCodeEliminationTestClass >> methodWithSelfAssign [
+
+	<returnTypeC: #void>
+	| var |
+	var := var
 ]
 
 { #category : 'unused-leaf' }

@@ -145,6 +145,13 @@ TParseNode >> collect: aBlock [
 	^nodes
 ]
 
+{ #category : 'dead-code-elimination' }
+TParseNode >> collectSendInSelf: sendToCollect [
+	"used to rearrange sends in a sendNode (with no side effects) receiver after the arguments have been found empty"
+
+	^ self
+]
+
 { #category : 'accessing' }
 TParseNode >> comment [
 	^comment
@@ -202,13 +209,6 @@ TParseNode >> hasExplicitReturn [
 ]
 
 { #category : 'testing' }
-TParseNode >> hasNothingButComments [
-	"an alternative to isEmpty related to inlining"
-
-	^ self children allSatisfy: [ :child | child isComment ]
-]
-
-{ #category : 'testing' }
 TParseNode >> hasSideEffect [
 	"Answer if the parse tree rooted at this node has a side-effect or not.  By default assume it has.  Nodes that don't override."
 	^true
@@ -253,6 +253,13 @@ TParseNode >> isConstant [
 TParseNode >> isDefine [
 
 	^false
+]
+
+{ #category : 'testing' }
+TParseNode >> isEmptyOrHasNothingButComments [
+	"an alternative to isEmpty related to inlining, return true ifthe node is empty or has only comment"
+
+	^ self children allSatisfy: [ :child | child isComment ]
 ]
 
 { #category : 'testing' }
@@ -474,7 +481,7 @@ TParseNode >> removeUnusedNodesInBranch: aChild [
 	"this method should be only called when cleaning an AST tree after an unused expression was found"
 
 	self children remove: aChild.
-	(self children isEmpty or: [ self hasNothingButComments ]) ifTrue: [
+	(self children isEmpty or: [ self isEmptyOrHasNothingButComments ]) ifTrue: [
 		self parent removeUnusedNodesInBranch: self ]
 ]
 

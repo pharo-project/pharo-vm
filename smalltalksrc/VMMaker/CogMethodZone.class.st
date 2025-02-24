@@ -156,10 +156,7 @@ CogMethodZone >> allocate: numBytes [
 	allocation := mzFreeStart.
 	mzFreeStart := mzFreeStart + roundedBytes.
 	methodCount := methodCount + 1.
-	self cCode: '' inSmalltalk:
-		[(cogit breakPC isInteger
-		   and: [cogit breakPC between: allocation and: mzFreeStart]) ifTrue:
-			[cogit singleStep: true]].
+
 	^allocation
 ]
 

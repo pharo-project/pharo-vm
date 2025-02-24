@@ -2281,9 +2281,6 @@ StackInterpreter >> baseFrameReturn [
 						  fetchPointer: InstructionPointerIndex
 						  ofObject: contextToReturnTo) ]) ifFalse: [
 				^ self baseFrameCannotReturnTo: contextToReturnTo ].
-			"We must void the instructionPointer to stop it being updated if makeBaseFrameFor:
-			  cogs a method, which may cause a code compaction."
-			instructionPointer := 0.
 			thePage := self makeBaseFrameFor: contextToReturnTo.
 			theFP := thePage headFP ].
 	theSP := thePage headSP.
@@ -8968,9 +8965,17 @@ StackInterpreter >> lookupSelector: selector inClass: class [
 
 { #category : 'frame access' }
 StackInterpreter >> makeBaseFrameFor: aContext [
-	"Marry aContext with the base frame of a new stack page.  Build the base
-	 frame to reflect the context's state.  Answer the new page.
-	Simply hold the caller context in the first word of the stack."
+	"
+	Allocate a new stack page, create a base frame for the argument context.
+	Return the allocated page.
+	
+	This method ignores (and destroys) the instructionPointer variable.
+	Callers must make sure that the instruction pointer is saved/stored in suspended frames.
+	
+	Postconditions:
+	 - The frame and context are married.
+	 - The instruction pointer of the frame is the top of the stack and must be popped by the caller when resuming
+	"
 
 	<returnTypeC: #'StackPage *'>
 	<inline: false>
@@ -8980,6 +8985,12 @@ StackInterpreter >> makeBaseFrameFor: aContext [
 	self assert: (objectMemory isContext: aContext).
 	self assert: (self isSingleContext: aContext).
 	self assert: (objectMemory goodContextSize: aContext).
+
+	"Void the instructionPointer to stop it being updated if we
+	compile a method and cause a code compaction.
+	We are in the state where a new page is on its initialization,
+	so we want to avoid code compaction to touch the stack."
+	instructionPointer := 0.
 
 	page := stackPages newStackPage.
 	"Initialize the stack pointer above the base address.
@@ -14703,18 +14714,12 @@ StackInterpreter >> stackPageByteSize [
 	 Room for 256 slots for frames gives around 40 frames a page which is a
 	 good compromise between overflow rate and latency in divorcing a page."
 	<inline: false>
-	| pageBytes largeSize smallSize |
+	| pageBytes |
 	pageBytes := self stackPageFrameBytes + self stackLimitOffset + self stackPageHeadroom.
 	(pageBytes bitAnd: pageBytes - 1) = 0 ifTrue: "= 0 => a power of two"
 		[^pageBytes].
-	"round up or round down; that is the question.  If rounding down reduces
-	 the size by no more than 1/8th round down, otherwise roundup."
-	largeSize := 1 << pageBytes highBit.
-	smallSize := 1 << (pageBytes highBit - 1).
-	self assert: (largeSize > pageBytes and: [pageBytes > smallSize]).
-	^(pageBytes - smallSize) <= (smallSize / 8)
-		ifTrue: [smallSize]
-		ifFalse: [largeSize]
+	"round up to be a power of 2"
+	^ 1 << pageBytes highBit
 ]
 
 { #category : 'stack pages' }

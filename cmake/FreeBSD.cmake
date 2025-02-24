@@ -12,32 +12,25 @@ endif()
 function(add_platform_headers)
 target_include_directories(${VM_LIBRARY_NAME}
 PUBLIC
-    ${CMAKE_CURRENT_SOURCE_DIR}/extracted/vm/include/unix
-    ${CMAKE_CURRENT_SOURCE_DIR}/extracted/vm/include/common
+    ${CMAKE_CURRENT_SOURCE_DIR}/include/unix
+    ${CMAKE_CURRENT_SOURCE_DIR}/include/common
 )
 endfunction() #add_platform_headers
 
 set(EXTRACTED_SOURCES
-#Common sources
-    ${CMAKE_CURRENT_SOURCE_DIR}/extracted/vm/src/common/sqHeapMap.c
-    ${CMAKE_CURRENT_SOURCE_DIR}/extracted/vm/src/common/sqVirtualMachine.c
-    ${CMAKE_CURRENT_SOURCE_DIR}/extracted/vm/src/common/sqNamedPrims.c
-    ${CMAKE_CURRENT_SOURCE_DIR}/extracted/vm/src/common/sqExternalSemaphores.c
-    ${CMAKE_CURRENT_SOURCE_DIR}/extracted/vm/src/common/sqTicker.c
-
 #Platform sources
-    ${CMAKE_CURRENT_SOURCE_DIR}/extracted/vm/src/unix/aio.c
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/debugUnix.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/unix/aio.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/unix/debugUnix.c
 
 #Virtual Memory functions
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/memoryUnix.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/unix/memoryUnix.c
 
 # Support sources
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/fileDialogUnix.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/unix/fileDialogUnix.c
 )
 
 set(VM_FRONTEND_SOURCES
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/unixMain.c)
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/unix/unixMain.c)
 
 
 macro(add_third_party_dependencies_per_platform)
@@ -86,7 +79,7 @@ macro(configure_installables INSTALL_COMPONENT)
 
 
 	install(
-	    DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/extracted/vm/include/unix/"
+	    DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/include/unix/"
 	    DESTINATION include/pharovm
 	    COMPONENT include
 	    FILES_MATCHING PATTERN *.h)

@@ -1,5 +1,19 @@
 # Change log
 
+## v10.3.3
+
+* Fixes for 10.3.2 by @guillep in https://github.com/pharo-project/pharo-vm/pull/885
+* Enhancement(versionning): Extract full semantic version from git by @guillep in https://github.com/pharo-project/pharo-vm/pull/884
+* Fix linking of UnixOSProcessPlugin - Remove dead code by @guillep in https://github.com/pharo-project/pharo-vm/pull/888
+* Fix failing tests by @guillep in https://github.com/pharo-project/pharo-vm/pull/887
+* fixing-classTag-tests by @tesonep in https://github.com/pharo-project/pharo-vm/pull/886
+* fix C warnings related to self assignments by @RenaudFondeur in https://github.com/pharo-project/pharo-vm/pull/894
+* Build on old linux server by @guillep in https://github.com/pharo-project/pharo-vm/pull/898
+* force non-shallow checkout on CI by @guillep in https://github.com/pharo-project/pharo-vm/pull/899
+* Update build and dev VM and image to latest pharo 12 release by @guillep in https://github.com/pharo-project/pharo-vm/pull/900
+
+**Full Changelog**: https://github.com/pharo-project/pharo-vm/compare/v10.3.2...v10.3.3
+
 ## v10.3.2
 
 * Improving Implementation of CompositeImageFormat and PermanentSpace by @tesonep in https://github.com/pharo-project/pharo-vm/pull/855
