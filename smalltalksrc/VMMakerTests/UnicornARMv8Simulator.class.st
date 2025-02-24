@@ -485,37 +485,37 @@ UnicornARMv8Simulator >> x20 [
 	^ self readRegister: UcARM64Registers x20
 ]
 
-{ #category : #'accessing-registers-physical' }
+{ #category : 'accessing-registers-physical' }
 UnicornARMv8Simulator >> x20: anInteger [ 
 	
 	self writeRegister: UcARM64Registers x20 value: anInteger
 ]
 
-{ #category : #'accessing-registers-physical' }
+{ #category : 'accessing-registers-physical' }
 UnicornARMv8Simulator >> x21 [
 
 	^ self readRegister: UcARM64Registers x21
 ]
 
-{ #category : #'accessing-registers-physical' }
+{ #category : 'accessing-registers-physical' }
 UnicornARMv8Simulator >> x21: anInteger [ 
 	
 	self writeRegister: UcARM64Registers x21 value: anInteger
 ]
 
-{ #category : #'accessing-registers-physical' }
+{ #category : 'accessing-registers-physical' }
 UnicornARMv8Simulator >> x22 [
 	
 	^ self readRegister: UcARM64Registers x22
 ]
 
-{ #category : #'accessing-registers-physical' }
+{ #category : 'accessing-registers-physical' }
 UnicornARMv8Simulator >> x22: anInteger [ 
 	
 	self writeRegister: UcARM64Registers x22 value: anInteger
 ]
 
-{ #category : #'accessing-registers-physical' }
+{ #category : 'accessing-registers-physical' }
 UnicornARMv8Simulator >> x23 [
 
 	^ self readRegister: UcARM64Registers x23
@@ -551,31 +551,31 @@ UnicornARMv8Simulator >> x25: anInteger [
 	self writeRegister: UcARM64Registers x25 value: anInteger
 ]
 
-{ #category : #'accessing-registers-physical' }
+{ #category : 'accessing-registers-physical' }
 UnicornARMv8Simulator >> x26 [
 
 	^ self readRegister: UcARM64Registers x26
 ]
 
-{ #category : #'accessing-registers-physical' }
+{ #category : 'accessing-registers-physical' }
 UnicornARMv8Simulator >> x26: anInteger [
 
 	self writeRegister: UcARM64Registers x26 value: anInteger
 ]
 
-{ #category : #'accessing-registers-physical' }
+{ #category : 'accessing-registers-physical' }
 UnicornARMv8Simulator >> x27 [
 
 	^ self readRegister: UcARM64Registers x27
 ]
 
-{ #category : #'accessing-registers-physical' }
+{ #category : 'accessing-registers-physical' }
 UnicornARMv8Simulator >> x27: anInteger [
 
 	self writeRegister: UcARM64Registers x27 value: anInteger
 ]
 
-{ #category : #'accessing-registers-physical' }
+{ #category : 'accessing-registers-physical' }
 UnicornARMv8Simulator >> x28 [
 
 	^ self readRegister: UcARM64Registers x28

@@ -92,12 +92,12 @@ VMFrameBuilder >> argumentSize: anObject [
 	argumentSize := anObject
 ]
 
-{ #category : #configuring }
+{ #category : 'configuring' }
 VMFrameBuilder >> beActive [
 	isSuspended := false
 ]
 
-{ #category : #configuring }
+{ #category : 'configuring' }
 VMFrameBuilder >> beSuspended [
 	isSuspended := true
 ]

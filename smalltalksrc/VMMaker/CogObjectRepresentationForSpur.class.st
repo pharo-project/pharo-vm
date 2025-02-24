@@ -475,7 +475,7 @@ CogObjectRepresentationForSpur >> genConvertSmallIntegerToCharacterInReg: reg [
 	self subclassResponsibility
 ]
 
-{ #category : #'bytecode generator support' }
+{ #category : 'bytecode generator support' }
 CogObjectRepresentationForSpur >> genCreateFullClosureInIndex: anIndex numCopied: numCopied ignoreContext: ignoreContext contextNumArgs: contextNumArgs large: contextIsLarge inBlock: contextIsBlock intoRegister: destinationRegister [
 	"Create a full closure with the given values."
 

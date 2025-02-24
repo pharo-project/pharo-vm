@@ -388,7 +388,7 @@ VMMemoryMap >> fixedPermSpaceStart [
 	^ memoryMapConfiguration permSpaceInitialAddress
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 VMMemoryMap >> getNewSpaceMask [
 
 	<api>
@@ -396,7 +396,7 @@ VMMemoryMap >> getNewSpaceMask [
 	^ self newSpaceMask 
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 VMMemoryMap >> getNewSpaceStart [
 
 	<api>
@@ -404,7 +404,7 @@ VMMemoryMap >> getNewSpaceStart [
 	^ self newSpaceStart 
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 VMMemoryMap >> getOldSpaceMask [
 
 	<api>
@@ -412,7 +412,7 @@ VMMemoryMap >> getOldSpaceMask [
 	^ self oldSpaceMask 
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 VMMemoryMap >> getOldSpaceStart [
 
 	<api>
@@ -420,7 +420,7 @@ VMMemoryMap >> getOldSpaceStart [
 	^ self oldSpaceStart 
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 VMMemoryMap >> getPermSpaceMask [
 
 	<api>
@@ -428,7 +428,7 @@ VMMemoryMap >> getPermSpaceMask [
 	^ self permSpaceMask 
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 VMMemoryMap >> getSpaceMaskToUse [
 
 	<api>
@@ -436,7 +436,7 @@ VMMemoryMap >> getSpaceMaskToUse [
 	^ self spaceMaskToUse 
 ]
 
-{ #category : #simulation }
+{ #category : 'simulation' }
 VMMemoryMap >> getpagesize [
 
 	<doNotGenerate>

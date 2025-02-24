@@ -27,14 +27,14 @@ ByteArray >> coerceTo: cTypeString sim: interpreterSimulator [
 	^CLiteralArray on: self
 ]
 
-{ #category : #'*VMMaker' }
+{ #category : '*VMMaker' }
 ByteArray >> forMemory: aMemory inMethod: anObject [
 
 	^ aMemory newByteArrayWith: (self collect: [ :anElement | 
 			   anElement forMemory: aMemory inMethod: nil ])
 ]
 
-{ #category : #'*VMMaker-accessing' }
+{ #category : '*VMMaker-accessing' }
 ByteArray >> long64At: index [
 	"Answer a 64-bit integer in Smalltalk order (little-endian)."
 	^self integerAt: index size: 8 signed: true

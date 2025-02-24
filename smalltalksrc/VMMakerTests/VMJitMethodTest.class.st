@@ -132,13 +132,13 @@ VMJitMethodTest >> initialCodeSize [
 	^ 16 * 1024
 ]
 
-{ #category : #tests }
+{ #category : 'tests' }
 VMJitMethodTest >> printInstructions [
 
 	^ self printInstructionsAt: cogInitialAddress
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 VMJitMethodTest >> printInstructionsAt: anAddress [
 
 	| debuggerInstructions |
@@ -152,7 +152,7 @@ VMJitMethodTest >> printInstructionsAt: anAddress [
 	^ Character cr join: (debuggerInstructions collect: #assemblyCodeString)
 ]
 
-{ #category : #running }
+{ #category : 'running' }
 VMJitMethodTest >> setUp [ 
 
 	super setUp.

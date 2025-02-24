@@ -1,6 +1,6 @@
 Class {
-	#name : #SimpleDruidJIT,
-	#superclass : #SimpleStackBasedCogit,
+	#name : 'SimpleDruidJIT',
+	#superclass : 'SimpleStackBasedCogit',
 	#instVars : [
 		'ceDereferenceSelectorIndex',
 		'ceStoreTrampolines',
@@ -18,10 +18,12 @@ Class {
 		'CheckRememberedInTrampoline',
 		'NumStoreTrampolines'
 	],
-	#category : #'VMMaker-JIT'
+	#category : 'VMMaker-JIT',
+	#package : 'VMMaker',
+	#tag : 'JIT'
 }
 
-{ #category : #'class initialization' }
+{ #category : 'class initialization' }
 SimpleDruidJIT class >> bytecodeTable [
 
 	<generated>
@@ -285,7 +287,7 @@ SimpleDruidJIT class >> bytecodeTable [
 		  { 3. 255. 255. #unknownBytecode } }
 ]
 
-{ #category : #translation }
+{ #category : 'translation' }
 SimpleDruidJIT class >> declareCVarsIn: aCodeGen [
 	"Deal wuth the fact that the number of trampolines depends on IMMUTABILITY
 	 and that IMMUTABILITY can be defined at compile time.  Yes, this is a mess."
@@ -307,13 +309,13 @@ SimpleDruidJIT class >> declareCVarsIn: aCodeGen [
 		declareC: ('#if IMMUTABILITY\sqInt ceStoreTrampolines[', NumStoreTrampolines printString, '];\#endif') withCRs
 ]
 
-{ #category : #initialization }
+{ #category : 'initialization' }
 SimpleDruidJIT class >> initialize [
 	
 	NumStoreTrampolines := 5
 ]
 
-{ #category : #'class initialization' }
+{ #category : 'class initialization' }
 SimpleDruidJIT class >> initializeBytecodeTableForSistaV1 [
 
 	<generated>
@@ -326,7 +328,7 @@ SimpleDruidJIT class >> initializeBytecodeTableForSistaV1 [
 	self generatorTableFrom: self bytecodeTable
 ]
 
-{ #category : #'class initialization' }
+{ #category : 'class initialization' }
 SimpleDruidJIT class >> initializePrimitiveTable [
 
 	<generated>
@@ -337,18 +339,18 @@ SimpleDruidJIT class >> initializePrimitiveTable [
 	^ primitiveTable
 ]
 
-{ #category : #translation }
+{ #category : 'translation' }
 SimpleDruidJIT class >> objectRepresentationAncilliaryClasses [
 
 	^ Array empty
 ]
 
-{ #category : #'accessing class hierarchy' }
+{ #category : 'accessing class hierarchy' }
 SimpleDruidJIT class >> objectRepresentationClass [
 
 ]
 
-{ #category : #'class initialization' }
+{ #category : 'class initialization' }
 SimpleDruidJIT class >> primitiveTableArray [
 
 	<generated>
@@ -424,12 +426,12 @@ SimpleDruidJIT class >> primitiveTableArray [
 		  1 } }
 ]
 
-{ #category : #'trait candidates' }
+{ #category : 'trait candidates' }
 SimpleDruidJIT >> allYoungObjectsAgeInFullGC [
 	^false
 ]
 
-{ #category : #'trait candidates' }
+{ #category : 'trait candidates' }
 SimpleDruidJIT >> bitAndByteOffsetOfIsFullBlockBitInto: aBlock [
 
 	"This supplies the bitmask for the isFullBlock bit, and the offset of the byte containing
@@ -440,7 +442,7 @@ SimpleDruidJIT >> bitAndByteOffsetOfIsFullBlockBitInto: aBlock [
 	aBlock value: 16 value: objectMemory baseHeaderSize + 1 "zero-relative"
 ]
 
-{ #category : #'trait candidates' }
+{ #category : 'trait candidates' }
 SimpleDruidJIT >> cacheTagIsMarked: cacheTag [
 	"Answer if the cacheTag is not unmarked, i.e. answer true for compact class
 	 indices and immediates; only answer false for unmarked objects.  In Spur
@@ -448,44 +450,44 @@ SimpleDruidJIT >> cacheTagIsMarked: cacheTag [
 	^true
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 SimpleDruidJIT >> ceNewHashTrampoline: anInteger [
 
 	<doNotGenerate>
 	ceNewHashTrampoline := anInteger
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 SimpleDruidJIT >> ceStoreCheckTrampoline: anAddress [
 
 	<doNotGenerate>
 	ceStoreCheckTrampoline := anAddress
 ]
 
-{ #category : #'trait candidates' }
+{ #category : 'trait candidates' }
 SimpleDruidJIT >> checkValidObjectReference: anOop [
 	^(objectMemory isImmediate: anOop) not
 	   and: [(objectMemory heapMapAtWord: (self pointerForOop: anOop)) ~= 0]
 ]
 
-{ #category : #'trait candidates' }
+{ #category : 'trait candidates' }
 SimpleDruidJIT >> checkValidOopReference: anOop [
 	^(objectMemory isImmediate: anOop)
 	   or: [(objectMemory heapMapAtWord: (self pointerForOop: anOop)) ~= 0]
 ]
 
-{ #category : #'trait candidates' }
+{ #category : 'trait candidates' }
 SimpleDruidJIT >> classForInlineCacheTag: classIndex [
 	^objectMemory classOrNilAtIndex: classIndex
 ]
 
-{ #category : #'trait candidates' }
+{ #category : 'trait candidates' }
 SimpleDruidJIT >> couldBeObject: literal [
 	^(objectMemory isNonImmediate: literal)
 	  and: [self oop: literal isGreaterThanOrEqualTo: objectMemory getMemoryMap startOfObjectMemory]
 ]
 
-{ #category : #'trait candidates' }
+{ #category : 'trait candidates' }
 SimpleDruidJIT >> genActiveContextTrampolineLarge: isLarge inBlock: isInBlock called: aString [
 	<var: #aString type: #'char *'>
 	"Create a trampoline to answer the active context that will
@@ -501,7 +503,7 @@ SimpleDruidJIT >> genActiveContextTrampolineLarge: isLarge inBlock: isInBlock ca
 	^startAddress
 ]
 
-{ #category : #'trait candidates' }
+{ #category : 'trait candidates' }
 SimpleDruidJIT >> genCheckObjectPosition: destReg scratchReg: scratchReg valueReg: valueReg results: resultBlock [ 
 
 	| isDestYoung isOldAndOld isPermAndPerm recvIsPerm exit valueIsMachineCode| 
@@ -533,7 +535,7 @@ SimpleDruidJIT >> genCheckObjectPosition: destReg scratchReg: scratchReg valueRe
 	^ 0 
 ]
 
-{ #category : #'trait candidates' }
+{ #category : 'trait candidates' }
 SimpleDruidJIT >> genCheckRememberedBitOf: objReg scratch: scratchReg [
 	"Check the remembered bit of the object in objReg; answer the jump taken if the bit is already set.
 	 Only need to fetch the byte containing it, which reduces the size of the mask constant."
@@ -547,7 +549,7 @@ SimpleDruidJIT >> genCheckRememberedBitOf: objReg scratch: scratchReg [
 	^self JumpNonZero: 0
 ]
 
-{ #category : #'trait candidates' }
+{ #category : 'trait candidates' }
 SimpleDruidJIT >> genConvertIntegerToSmallIntegerInReg: reg [
 
 	self LogicalShiftLeftCq: objectMemory numTagBits R: reg.
@@ -555,7 +557,7 @@ SimpleDruidJIT >> genConvertIntegerToSmallIntegerInReg: reg [
 	^0
 ]
 
-{ #category : #'trait candidates' }
+{ #category : 'trait candidates' }
 SimpleDruidJIT >> genCreateFullClosureInIndex: anIndex numCopied: numCopied ignoreContext: ignoreContext contextNumArgs: contextNumArgs large: contextIsLarge inBlock: contextIsBlock intoRegister: destinationRegister [
 	"Create a full closure with the given values."
 
@@ -613,7 +615,7 @@ SimpleDruidJIT >> genCreateFullClosureInIndex: anIndex numCopied: numCopied igno
 	^ 0
 ]
 
-{ #category : #'trait candidates' }
+{ #category : 'trait candidates' }
 SimpleDruidJIT >> genEnsureObjInRegNotForwarded: reg scratchReg: scratch [
 	"Make sure that the object in reg is not forwarded.  This routine assumes the object will
 	 never be forwarded to an immediate, as it is used to unforward  literal variables (associations). 
@@ -638,7 +640,7 @@ SimpleDruidJIT >> genEnsureObjInRegNotForwarded: reg scratchReg: scratch [
 	^0
 ]
 
-{ #category : #'trait candidates' }
+{ #category : 'trait candidates' }
 SimpleDruidJIT >> genEnsureOopInRegNotForwarded: reg scratchReg: scratch [
 	^ self 
 		genEnsureOopInRegNotForwarded: reg 
@@ -646,7 +648,7 @@ SimpleDruidJIT >> genEnsureOopInRegNotForwarded: reg scratchReg: scratch [
 		jumpBackTo: self Label "label is just before the forwarder check"
 ]
 
-{ #category : #'trait candidates' }
+{ #category : 'trait candidates' }
 SimpleDruidJIT >> genEnsureOopInRegNotForwarded: reg scratchReg: scratch ifForwarder: fwdJumpTarget ifNotForwarder: nonFwdJumpTargetOrZero [
 	"Make sure that the oop in reg is not forwarded.  
 	 Use the fact that isForwardedObjectClassIndexPun is a power of two to save an instruction."
@@ -671,7 +673,7 @@ SimpleDruidJIT >> genEnsureOopInRegNotForwarded: reg scratchReg: scratch ifForwa
 	^0
 ]
 
-{ #category : #'trait candidates' }
+{ #category : 'trait candidates' }
 SimpleDruidJIT >> genEnsureOopInRegNotForwarded: reg scratchReg: scratch jumpBackTo: instruction [
 	<var: #instruction type: #'AbstractInstruction *'>
 	<inline: true>
@@ -682,7 +684,7 @@ SimpleDruidJIT >> genEnsureOopInRegNotForwarded: reg scratchReg: scratch jumpBac
 		ifNotForwarder: 0
 ]
 
-{ #category : #'trait candidates' }
+{ #category : 'trait candidates' }
 SimpleDruidJIT >> genEnsureOopInRegNotForwarded: reg scratchReg: scratch updatingSlot: index in: objReg [
 	"Make sure that the oop in reg is not forwarded, updating the slot in objReg with the value."
 	| loop imm ok |
@@ -719,7 +721,7 @@ SimpleDruidJIT >> genEnsureOopInRegNotForwarded: reg scratchReg: scratch updatin
 	^0
 ]
 
-{ #category : #'trait candidates' }
+{ #category : 'trait candidates' }
 SimpleDruidJIT >> genGetActiveContextLarge: isLarge inBlock: isInBlock [
 	"Create a trampoline to answer the active context that will
 	 answer it if a frame is already married, and create it otherwise.
@@ -873,7 +875,7 @@ SimpleDruidJIT >> genGetActiveContextLarge: isLarge inBlock: isInBlock [
 	^0
 ]
 
-{ #category : #'trait candidates' }
+{ #category : 'trait candidates' }
 SimpleDruidJIT >> genGetActiveContextNumArgs: numArgs large: isLargeContext inBlock: isInBlock [
 	"Get the active context into ReceiverResultReg, creating it if necessary."
 	| routine |
@@ -890,7 +892,7 @@ SimpleDruidJIT >> genGetActiveContextNumArgs: numArgs large: isLargeContext inBl
 	^0
 ]
 
-{ #category : #'trait candidates' }
+{ #category : 'trait candidates' }
 SimpleDruidJIT >> genGetClassObjectOf: instReg into: destReg scratchReg: scratchReg instRegIsReceiver: instRegIsReceiver [
 	"Fetch the instance's class into destReg.  If the instance is not the receiver and is forwarded, follow forwarding."
 	| jumpIsImm jumpNotForwarded loop |
@@ -929,7 +931,7 @@ SimpleDruidJIT >> genGetClassObjectOf: instReg into: destReg scratchReg: scratch
 	^0
 ]
 
-{ #category : #'trait candidates' }
+{ #category : 'trait candidates' }
 SimpleDruidJIT >> genGetClassObjectOfClassIndex: instReg into: destReg scratchReg: scratchReg [
 	"Fetch the class object whose index is in instReg into destReg.
 	 It is non-obvious, but the Cogit assumes loading a class does not involve
@@ -955,12 +957,12 @@ SimpleDruidJIT >> genGetClassObjectOfClassIndex: instReg into: destReg scratchRe
 	^0
 ]
 
-{ #category : #'trait candidates' }
+{ #category : 'trait candidates' }
 SimpleDruidJIT >> genGetClassTagOf: instReg into: destReg scratchReg: scratchReg [
 	^self genGetInlineCacheClassTagFrom: instReg into: destReg forEntry: true
 ]
 
-{ #category : #'trait candidates' }
+{ #category : 'trait candidates' }
 SimpleDruidJIT >> genGetInlineCacheClassTagFrom: sourceReg into: destReg forEntry: forEntry [
 	"Extract the inline cache tag for the object in sourceReg into destReg. The inline
 	 cache tag for a given object is the value loaded in inline caches to distinguish
@@ -998,14 +1000,14 @@ SimpleDruidJIT >> genGetInlineCacheClassTagFrom: sourceReg into: destReg forEntr
 	^entryLabel
 ]
 
-{ #category : #'trait candidates' }
+{ #category : 'trait candidates' }
 SimpleDruidJIT >> genInlinedIdenticalOrNotIfGuts: orNot [
 	<inline: true>
 
 	^ self genForwardersInlinedIdenticalOrNotIf: orNot
 ]
 
-{ #category : #'trait candidates' }
+{ #category : 'trait candidates' }
 SimpleDruidJIT >> genJumpBaseHeaderImmutable: baseHeaderReg [
 	"baseHeader holds at least the least significant 32 bits of the object"
 	<returnTypeC: #'AbstractInstruction *'>
@@ -1016,7 +1018,7 @@ SimpleDruidJIT >> genJumpBaseHeaderImmutable: baseHeaderReg [
 	^ self JumpNonZero: 0
 ]
 
-{ #category : #'trait candidates' }
+{ #category : 'trait candidates' }
 SimpleDruidJIT >> genJumpBaseHeaderMutable: baseHeaderReg [
 	"baseHeader holds at least the least significant 32 bits of the object"
 	<returnTypeC: #'AbstractInstruction *'>
@@ -1026,7 +1028,7 @@ SimpleDruidJIT >> genJumpBaseHeaderMutable: baseHeaderReg [
 	^ self JumpZero: 0
 ]
 
-{ #category : #'trait candidates' }
+{ #category : 'trait candidates' }
 SimpleDruidJIT >> genJumpImmediate: aRegister [
 	<returnTypeC: #'AbstractInstruction *'>
 
@@ -1034,7 +1036,7 @@ SimpleDruidJIT >> genJumpImmediate: aRegister [
 	^ self JumpNonZero: 0
 ]
 
-{ #category : #'trait candidates' }
+{ #category : 'trait candidates' }
 SimpleDruidJIT >> genJumpImmutable: sourceReg scratchReg: scratchReg [
 	<returnTypeC: #'AbstractInstruction *'>
 	<option: #IMMUTABILITY>
@@ -1042,7 +1044,7 @@ SimpleDruidJIT >> genJumpImmutable: sourceReg scratchReg: scratchReg [
 	^ self genJumpBaseHeaderImmutable: scratchReg
 ]
 
-{ #category : #'trait candidates' }
+{ #category : 'trait candidates' }
 SimpleDruidJIT >> genJumpInOldSpace: reg [
 	"Jump if reg is old."
 	<inline: true>
@@ -1051,7 +1053,7 @@ SimpleDruidJIT >> genJumpInOldSpace: reg [
 		JumpAboveOrEqual: 0
 ]
 
-{ #category : #'trait candidates' }
+{ #category : 'trait candidates' }
 SimpleDruidJIT >> genJumpMutable: sourceReg scratchReg: scratchReg [
 	<returnTypeC: #'AbstractInstruction *'>
 	<option: #IMMUTABILITY>
@@ -1060,7 +1062,7 @@ SimpleDruidJIT >> genJumpMutable: sourceReg scratchReg: scratchReg [
 	^ self genJumpBaseHeaderMutable: scratchReg
 ]
 
-{ #category : #'trait candidates' }
+{ #category : 'trait candidates' }
 SimpleDruidJIT >> genJumpNotSmallInteger: reg [
 	"Generate a compare and branch to test if aRegister contains other than a SmallInteger."
 	^ self
@@ -1068,13 +1070,13 @@ SimpleDruidJIT >> genJumpNotSmallInteger: reg [
 		JumpZero: 0
 ]
 
-{ #category : #'trait candidates' }
+{ #category : 'trait candidates' }
 SimpleDruidJIT >> genJumpNotSmallIntegerInScratchReg: aRegister [
 	<inline: true>
 	^self genJumpNotSmallInteger: aRegister
 ]
 
-{ #category : #'trait candidates' }
+{ #category : 'trait candidates' }
 SimpleDruidJIT >> genJumpNotSmallIntegersIn: aRegister and: bRegister scratch: scratchRegister [
 	"Generate a compare and branch to test if aRegister and bRegister contains other than SmallIntegers,
 	 i.e. don't branch if both aRegister and bRegister contain SmallIntegers.
@@ -1087,7 +1089,7 @@ SimpleDruidJIT >> genJumpNotSmallIntegersIn: aRegister and: bRegister scratch: s
 	^self genJumpNotSmallIntegerInScratchReg: scratchRegister
 ]
 
-{ #category : #'primitive generators' }
+{ #category : 'primitive generators' }
 SimpleDruidJIT >> genLoadArg: index spilled: nSpilled into: reg [
 
 	| argSlot stackSlot |
@@ -1097,7 +1099,7 @@ SimpleDruidJIT >> genLoadArg: index spilled: nSpilled into: reg [
 	self genLoadArgAtDepth: stackSlot into: reg
 ]
 
-{ #category : #'trait candidates' }
+{ #category : 'trait candidates' }
 SimpleDruidJIT >> genLoadSlot: index sourceReg: sourceReg destReg: destReg [
 	
 	self
@@ -1107,7 +1109,7 @@ SimpleDruidJIT >> genLoadSlot: index sourceReg: sourceReg destReg: destReg [
 	^0
 ]
 
-{ #category : #'trait candidates' }
+{ #category : 'trait candidates' }
 SimpleDruidJIT >> genNewArrayOfSize: size initialized: initialized [
 	"Generate a call to code that allocates a new Array of size.
 	 The Array should be initialized with nils iff initialized is true.
@@ -1138,7 +1140,7 @@ SimpleDruidJIT >> genNewArrayOfSize: size initialized: initialized [
 	^0
 ]
 
-{ #category : #'trait candidates' }
+{ #category : 'trait candidates' }
 SimpleDruidJIT >> genNewHashTrampoline: saveRegs called: name [
 	"In non sista VM this is used only from the identityHash primitive, hence only the result of the trampoline, the hash, should be in ReceiverResultReg, other registers can just be ignored.
 	In the sista VM, the inlined hash operation requires registers to be saved"
@@ -1159,20 +1161,20 @@ SimpleDruidJIT >> genNewHashTrampoline: saveRegs called: name [
 		appendOpcodes: false
 ]
 
-{ #category : #'trait candidates' }
+{ #category : 'trait candidates' }
 SimpleDruidJIT >> genRemoveSmallIntegerTagsInScratchReg: scratchReg [
 
 	self SubCq: 1 R: scratchReg.
 	^0
 ]
 
-{ #category : #'trait candidates' }
+{ #category : 'trait candidates' }
 SimpleDruidJIT >> genSetSmallIntegerTagsIn: scratchReg [
 	self OrCq: 1 R: scratchReg.
 	^0
 ]
 
-{ #category : #'trait candidates' }
+{ #category : 'trait candidates' }
 SimpleDruidJIT >> genStoreCheckContextReceiverTrampoline [
 	"Create a trampoline to store-check the update of the receiver in a closure's
 	 outerContext in compileBlockFrameBuild:."
@@ -1187,7 +1189,7 @@ SimpleDruidJIT >> genStoreCheckContextReceiverTrampoline [
 	^startAddress
 ]
 
-{ #category : #'trait candidates' }
+{ #category : 'trait candidates' }
 SimpleDruidJIT >> genStoreCheckReceiverReg: destReg valueReg: valueReg scratchReg: scratchReg inFrame: inFrame [
 	"Generate the code for a store check of valueReg into destReg."
 
@@ -1235,7 +1237,7 @@ SimpleDruidJIT >> genStoreCheckReceiverReg: destReg valueReg: valueReg scratchRe
 	^0
 ]
 
-{ #category : #'trait candidates' }
+{ #category : 'trait candidates' }
 SimpleDruidJIT >> genStoreCheckTrampoline [
 	| jumpSC |
 	<var: #jumpSC type: #'AbstractInstruction *'>
@@ -1262,7 +1264,7 @@ SimpleDruidJIT >> genStoreCheckTrampoline [
 		appendOpcodes: CheckRememberedInTrampoline
 ]
 
-{ #category : #'trait candidates' }
+{ #category : 'trait candidates' }
 SimpleDruidJIT >> genStoreHeader: header intoNewInstance: rcvrReg using: scratchReg [
 	"Generate the instructions to move the constant header into a new instance pointed to by rcvrReg."
 	<inline: true>
@@ -1271,7 +1273,7 @@ SimpleDruidJIT >> genStoreHeader: header intoNewInstance: rcvrReg using: scratch
 		MoveR: scratchReg Mw: 0 r: rcvrReg
 ]
 
-{ #category : #'trait candidates' }
+{ #category : 'trait candidates' }
 SimpleDruidJIT >> genStoreSourceReg: sourceReg slotIndex: index destReg: destReg scratchReg: scratchReg inFrame: inFrame [
 	<inline: true>
 	self 
@@ -1294,7 +1296,7 @@ SimpleDruidJIT >> genStoreSourceReg: sourceReg slotIndex: index destReg: destReg
 				needsStoreCheck: true ]
 ]
 
-{ #category : #'trait candidates' }
+{ #category : 'trait candidates' }
 SimpleDruidJIT >> genStoreSourceReg: sourceReg slotIndex: index destReg: destReg scratchReg: scratchReg inFrame: inFrame needsStoreCheck: needsStoreCheck [
 	
 	self genTraceStores.
@@ -1312,7 +1314,7 @@ SimpleDruidJIT >> genStoreSourceReg: sourceReg slotIndex: index destReg: destReg
 	^ 0
 ]
 
-{ #category : #'trait candidates' }
+{ #category : 'trait candidates' }
 SimpleDruidJIT >> genStoreSourceReg: sourceReg slotIndex: index intoNewObjectInDestReg: destReg [
 	"This method is used for unchecked stores in objects after their creation (typically, inlined creation of Array, closures and some temp vectors). 
 	Currently there is no need to do the immutability check here"
@@ -1323,7 +1325,7 @@ SimpleDruidJIT >> genStoreSourceReg: sourceReg slotIndex: index intoNewObjectInD
 	^ 0
 ]
 
-{ #category : #'trait candidates' }
+{ #category : 'trait candidates' }
 SimpleDruidJIT >> genStoreTrampolineCall: instVarIndex [
 	<inline: true>
 	self assert: IMMUTABILITY.
@@ -1336,7 +1338,7 @@ SimpleDruidJIT >> genStoreTrampolineCall: instVarIndex [
 	 self annotateBytecode: self Label
 ]
 
-{ #category : #'trait candidates' }
+{ #category : 'trait candidates' }
 SimpleDruidJIT >> genStoreTrampolineCalled: trampolineName instVarIndex: instVarIndex [
 	"Convention:
 	- RcvrResultReg holds the object mutated.
@@ -1399,7 +1401,7 @@ SimpleDruidJIT >> genStoreTrampolineCalled: trampolineName instVarIndex: instVar
 		appendOpcodes: true
 ]
 
-{ #category : #'trait candidates' }
+{ #category : 'trait candidates' }
 SimpleDruidJIT >> genStoreWithImmutabilityAndStoreCheckSourceReg: sourceReg slotIndex: index destReg: destReg scratchReg: scratchReg needRestoreRcvr: needRestoreRcvr [ 
 	"Store check code is duplicated to use a single trampoline"
 	<option: #IMMUTABILITY>
@@ -1456,7 +1458,7 @@ SimpleDruidJIT >> genStoreWithImmutabilityAndStoreCheckSourceReg: sourceReg slot
 	^ 0
 ]
 
-{ #category : #'trait candidates' }
+{ #category : 'trait candidates' }
 SimpleDruidJIT >> genStoreWithImmutabilityButNoStoreCheckSourceReg: sourceReg slotIndex: index destReg: destReg scratchReg: scratchReg needRestoreRcvr: needRestoreRcvr [
 	"Gen an immutability check with no store check (e.g. assigning an immediate literal)"
 	<option: #IMMUTABILITY>
@@ -1485,7 +1487,7 @@ SimpleDruidJIT >> genStoreWithImmutabilityButNoStoreCheckSourceReg: sourceReg sl
 	^ 0
 ]
 
-{ #category : #'trait candidates' }
+{ #category : 'trait candidates' }
 SimpleDruidJIT >> genStoreWithImmutabilityCheckSourceReg: sourceReg slotIndex: index destReg: destReg scratchReg: scratchReg needsStoreCheck: needsStoreCheck needRestoreRcvr: needRestoreRcvr [
 	<option: #IMMUTABILITY>
 	"We know there is a frame as immutability check requires a frame"
@@ -1515,7 +1517,7 @@ SimpleDruidJIT >> genStoreWithImmutabilityCheckSourceReg: sourceReg slotIndex: i
 	^ 0
 ]
 
-{ #category : #generated }
+{ #category : 'generated' }
 SimpleDruidJIT >> gen_BytecodePrimAdd [
 	"AutoGenerated by Druid"
 
@@ -1524,7 +1526,7 @@ SimpleDruidJIT >> gen_BytecodePrimAdd [
 	^ 0
 ]
 
-{ #category : #generated }
+{ #category : 'generated' }
 SimpleDruidJIT >> gen_BytecodePrimAt [
 	"AutoGenerated by Druid"
 
@@ -1533,7 +1535,7 @@ SimpleDruidJIT >> gen_BytecodePrimAt [
 	^ 0
 ]
 
-{ #category : #generated }
+{ #category : 'generated' }
 SimpleDruidJIT >> gen_BytecodePrimAtEnd [
 	"AutoGenerated by Druid"
 
@@ -1542,7 +1544,7 @@ SimpleDruidJIT >> gen_BytecodePrimAtEnd [
 	^ 0
 ]
 
-{ #category : #generated }
+{ #category : 'generated' }
 SimpleDruidJIT >> gen_BytecodePrimAtPut [
 	"AutoGenerated by Druid"
 
@@ -1551,7 +1553,7 @@ SimpleDruidJIT >> gen_BytecodePrimAtPut [
 	^ 0
 ]
 
-{ #category : #generated }
+{ #category : 'generated' }
 SimpleDruidJIT >> gen_BytecodePrimBitAnd [
 	"AutoGenerated by Druid"
 
@@ -1560,7 +1562,7 @@ SimpleDruidJIT >> gen_BytecodePrimBitAnd [
 	^ 0
 ]
 
-{ #category : #generated }
+{ #category : 'generated' }
 SimpleDruidJIT >> gen_BytecodePrimBitOr [
 	"AutoGenerated by Druid"
 
@@ -1569,7 +1571,7 @@ SimpleDruidJIT >> gen_BytecodePrimBitOr [
 	^ 0
 ]
 
-{ #category : #generated }
+{ #category : 'generated' }
 SimpleDruidJIT >> gen_BytecodePrimBitShift [
 	"AutoGenerated by Druid"
 
@@ -1578,7 +1580,7 @@ SimpleDruidJIT >> gen_BytecodePrimBitShift [
 	^ 0
 ]
 
-{ #category : #generated }
+{ #category : 'generated' }
 SimpleDruidJIT >> gen_BytecodePrimClass [
 	"AutoGenerated by Druid"
 
@@ -1687,7 +1689,7 @@ SimpleDruidJIT >> gen_BytecodePrimClass [
 	^ 0
 ]
 
-{ #category : #generated }
+{ #category : 'generated' }
 SimpleDruidJIT >> gen_BytecodePrimDiv [
 	"AutoGenerated by Druid"
 
@@ -1696,7 +1698,7 @@ SimpleDruidJIT >> gen_BytecodePrimDiv [
 	^ 0
 ]
 
-{ #category : #generated }
+{ #category : 'generated' }
 SimpleDruidJIT >> gen_BytecodePrimDivide [
 	"AutoGenerated by Druid"
 
@@ -1705,7 +1707,7 @@ SimpleDruidJIT >> gen_BytecodePrimDivide [
 	^ 0
 ]
 
-{ #category : #generated }
+{ #category : 'generated' }
 SimpleDruidJIT >> gen_BytecodePrimDo [
 	"AutoGenerated by Druid"
 
@@ -1714,7 +1716,7 @@ SimpleDruidJIT >> gen_BytecodePrimDo [
 	^ 0
 ]
 
-{ #category : #generated }
+{ #category : 'generated' }
 SimpleDruidJIT >> gen_BytecodePrimEqualSistaV1 [
 	"AutoGenerated by Druid"
 
@@ -1723,7 +1725,7 @@ SimpleDruidJIT >> gen_BytecodePrimEqualSistaV1 [
 	^ 0
 ]
 
-{ #category : #generated }
+{ #category : 'generated' }
 SimpleDruidJIT >> gen_BytecodePrimGreaterOrEqualSistaV1 [
 	"AutoGenerated by Druid"
 
@@ -1732,7 +1734,7 @@ SimpleDruidJIT >> gen_BytecodePrimGreaterOrEqualSistaV1 [
 	^ 0
 ]
 
-{ #category : #generated }
+{ #category : 'generated' }
 SimpleDruidJIT >> gen_BytecodePrimGreaterThanSistaV1 [
 	"AutoGenerated by Druid"
 
@@ -1741,7 +1743,7 @@ SimpleDruidJIT >> gen_BytecodePrimGreaterThanSistaV1 [
 	^ 0
 ]
 
-{ #category : #generated }
+{ #category : 'generated' }
 SimpleDruidJIT >> gen_BytecodePrimIdenticalSistaV1 [
 	"AutoGenerated by Druid"
 
@@ -1869,7 +1871,7 @@ SimpleDruidJIT >> gen_BytecodePrimIdenticalSistaV1 [
 	^ 0
 ]
 
-{ #category : #generated }
+{ #category : 'generated' }
 SimpleDruidJIT >> gen_BytecodePrimLessOrEqualSistaV1 [
 	"AutoGenerated by Druid"
 
@@ -1878,7 +1880,7 @@ SimpleDruidJIT >> gen_BytecodePrimLessOrEqualSistaV1 [
 	^ 0
 ]
 
-{ #category : #generated }
+{ #category : 'generated' }
 SimpleDruidJIT >> gen_BytecodePrimLessThanSistaV1 [
 	"AutoGenerated by Druid"
 
@@ -1887,7 +1889,7 @@ SimpleDruidJIT >> gen_BytecodePrimLessThanSistaV1 [
 	^ 0
 ]
 
-{ #category : #generated }
+{ #category : 'generated' }
 SimpleDruidJIT >> gen_BytecodePrimMakePoint [
 	"AutoGenerated by Druid"
 
@@ -1896,7 +1898,7 @@ SimpleDruidJIT >> gen_BytecodePrimMakePoint [
 	^ 0
 ]
 
-{ #category : #generated }
+{ #category : 'generated' }
 SimpleDruidJIT >> gen_BytecodePrimMod [
 	"AutoGenerated by Druid"
 
@@ -1905,7 +1907,7 @@ SimpleDruidJIT >> gen_BytecodePrimMod [
 	^ 0
 ]
 
-{ #category : #generated }
+{ #category : 'generated' }
 SimpleDruidJIT >> gen_BytecodePrimMultiply [
 	"AutoGenerated by Druid"
 
@@ -1914,7 +1916,7 @@ SimpleDruidJIT >> gen_BytecodePrimMultiply [
 	^ 0
 ]
 
-{ #category : #generated }
+{ #category : 'generated' }
 SimpleDruidJIT >> gen_BytecodePrimNew [
 	"AutoGenerated by Druid"
 
@@ -1923,7 +1925,7 @@ SimpleDruidJIT >> gen_BytecodePrimNew [
 	^ 0
 ]
 
-{ #category : #generated }
+{ #category : 'generated' }
 SimpleDruidJIT >> gen_BytecodePrimNewWithArg [
 	"AutoGenerated by Druid"
 
@@ -1932,7 +1934,7 @@ SimpleDruidJIT >> gen_BytecodePrimNewWithArg [
 	^ 0
 ]
 
-{ #category : #generated }
+{ #category : 'generated' }
 SimpleDruidJIT >> gen_BytecodePrimNext [
 	"AutoGenerated by Druid"
 
@@ -1941,7 +1943,7 @@ SimpleDruidJIT >> gen_BytecodePrimNext [
 	^ 0
 ]
 
-{ #category : #generated }
+{ #category : 'generated' }
 SimpleDruidJIT >> gen_BytecodePrimNextPut [
 	"AutoGenerated by Druid"
 
@@ -1950,7 +1952,7 @@ SimpleDruidJIT >> gen_BytecodePrimNextPut [
 	^ 0
 ]
 
-{ #category : #generated }
+{ #category : 'generated' }
 SimpleDruidJIT >> gen_BytecodePrimNotEqualSistaV1 [
 	"AutoGenerated by Druid"
 
@@ -1959,7 +1961,7 @@ SimpleDruidJIT >> gen_BytecodePrimNotEqualSistaV1 [
 	^ 0
 ]
 
-{ #category : #generated }
+{ #category : 'generated' }
 SimpleDruidJIT >> gen_BytecodePrimNotIdenticalSistaV1 [
 	"AutoGenerated by Druid"
 
@@ -2087,7 +2089,7 @@ SimpleDruidJIT >> gen_BytecodePrimNotIdenticalSistaV1 [
 	^ 0
 ]
 
-{ #category : #generated }
+{ #category : 'generated' }
 SimpleDruidJIT >> gen_BytecodePrimPointX [
 	"AutoGenerated by Druid"
 
@@ -2096,7 +2098,7 @@ SimpleDruidJIT >> gen_BytecodePrimPointX [
 	^ 0
 ]
 
-{ #category : #generated }
+{ #category : 'generated' }
 SimpleDruidJIT >> gen_BytecodePrimPointY [
 	"AutoGenerated by Druid"
 
@@ -2105,7 +2107,7 @@ SimpleDruidJIT >> gen_BytecodePrimPointY [
 	^ 0
 ]
 
-{ #category : #generated }
+{ #category : 'generated' }
 SimpleDruidJIT >> gen_BytecodePrimSize [
 	"AutoGenerated by Druid"
 
@@ -2114,7 +2116,7 @@ SimpleDruidJIT >> gen_BytecodePrimSize [
 	^ 0
 ]
 
-{ #category : #generated }
+{ #category : 'generated' }
 SimpleDruidJIT >> gen_BytecodePrimSubtract [
 	"AutoGenerated by Druid"
 
@@ -2123,7 +2125,7 @@ SimpleDruidJIT >> gen_BytecodePrimSubtract [
 	^ 0
 ]
 
-{ #category : #generated }
+{ #category : 'generated' }
 SimpleDruidJIT >> gen_BytecodePrimValue [
 	"AutoGenerated by Druid"
 
@@ -2132,7 +2134,7 @@ SimpleDruidJIT >> gen_BytecodePrimValue [
 	^ 0
 ]
 
-{ #category : #generated }
+{ #category : 'generated' }
 SimpleDruidJIT >> gen_BytecodePrimValueWithArg [
 	"AutoGenerated by Druid"
 
@@ -2141,7 +2143,7 @@ SimpleDruidJIT >> gen_BytecodePrimValueWithArg [
 	^ 0
 ]
 
-{ #category : #generated }
+{ #category : 'generated' }
 SimpleDruidJIT >> gen_CallPrimitiveBytecode [
 	"AutoGenerated by Druid"
 
@@ -2149,7 +2151,7 @@ SimpleDruidJIT >> gen_CallPrimitiveBytecode [
 	^ 0
 ]
 
-{ #category : #generated }
+{ #category : 'generated' }
 SimpleDruidJIT >> gen_DuplicateTopBytecode [
 	"AutoGenerated by Druid"
 
@@ -2160,7 +2162,7 @@ SimpleDruidJIT >> gen_DuplicateTopBytecode [
 	^ 0
 ]
 
-{ #category : #generated }
+{ #category : 'generated' }
 SimpleDruidJIT >> gen_ExtABytecode [
 	"AutoGenerated by Druid"
 
@@ -2173,7 +2175,7 @@ SimpleDruidJIT >> gen_ExtABytecode [
 	^ 0
 ]
 
-{ #category : #generated }
+{ #category : 'generated' }
 SimpleDruidJIT >> gen_ExtBBytecode [
 	"AutoGenerated by Druid"
 
@@ -2211,7 +2213,7 @@ SimpleDruidJIT >> gen_ExtBBytecode [
 	^ 0
 ]
 
-{ #category : #generated }
+{ #category : 'generated' }
 SimpleDruidJIT >> gen_ExtJumpIfFalse [
 	"AutoGenerated by Druid"
 
@@ -2248,7 +2250,7 @@ SimpleDruidJIT >> gen_ExtJumpIfFalse [
 	^ 0
 ]
 
-{ #category : #generated }
+{ #category : 'generated' }
 SimpleDruidJIT >> gen_ExtJumpIfTrue [
 	"AutoGenerated by Druid"
 
@@ -2285,7 +2287,7 @@ SimpleDruidJIT >> gen_ExtJumpIfTrue [
 	^ 0
 ]
 
-{ #category : #generated }
+{ #category : 'generated' }
 SimpleDruidJIT >> gen_ExtNopBytecode [
 	"AutoGenerated by Druid"
 
@@ -2296,7 +2298,7 @@ SimpleDruidJIT >> gen_ExtNopBytecode [
 	^ 0
 ]
 
-{ #category : #generated }
+{ #category : 'generated' }
 SimpleDruidJIT >> gen_ExtPushCharacterBytecode [
 	"AutoGenerated by Druid"
 
@@ -2313,7 +2315,7 @@ SimpleDruidJIT >> gen_ExtPushCharacterBytecode [
 	^ 0
 ]
 
-{ #category : #generated }
+{ #category : 'generated' }
 SimpleDruidJIT >> gen_ExtPushFullClosureBytecode [
 	"AutoGenerated by Druid"
 
@@ -2375,7 +2377,7 @@ SimpleDruidJIT >> gen_ExtPushFullClosureBytecode [
 	^ 0
 ]
 
-{ #category : #generated }
+{ #category : 'generated' }
 SimpleDruidJIT >> gen_ExtPushIntegerBytecode [
 	"AutoGenerated by Druid"
 
@@ -2393,7 +2395,7 @@ SimpleDruidJIT >> gen_ExtPushIntegerBytecode [
 	^ 0
 ]
 
-{ #category : #generated }
+{ #category : 'generated' }
 SimpleDruidJIT >> gen_ExtPushLiteralBytecode [
 	"AutoGenerated by Druid"
 
@@ -2414,7 +2416,7 @@ SimpleDruidJIT >> gen_ExtPushLiteralBytecode [
 	^ 0
 ]
 
-{ #category : #generated }
+{ #category : 'generated' }
 SimpleDruidJIT >> gen_ExtPushLiteralVariableBytecode [
 	"AutoGenerated by Druid"
 
@@ -2466,7 +2468,7 @@ SimpleDruidJIT >> gen_ExtPushLiteralVariableBytecode [
 	^ 0
 ]
 
-{ #category : #generated }
+{ #category : 'generated' }
 SimpleDruidJIT >> gen_ExtPushReceiverVariableBytecode [
 	"AutoGenerated by Druid"
 
@@ -2511,7 +2513,7 @@ SimpleDruidJIT >> gen_ExtPushReceiverVariableBytecode [
 	^ 0
 ]
 
-{ #category : #generated }
+{ #category : 'generated' }
 SimpleDruidJIT >> gen_ExtSendBytecode [
 	"AutoGenerated by Druid"
 
@@ -2532,7 +2534,7 @@ SimpleDruidJIT >> gen_ExtSendBytecode [
 	^ 0
 ]
 
-{ #category : #generated }
+{ #category : 'generated' }
 SimpleDruidJIT >> gen_ExtSendSuperBytecode [
 	"AutoGenerated by Druid"
 
@@ -2568,7 +2570,7 @@ SimpleDruidJIT >> gen_ExtSendSuperBytecode [
 	^ 0
 ]
 
-{ #category : #generated }
+{ #category : 'generated' }
 SimpleDruidJIT >> gen_ExtStoreAndPopLiteralVariableBytecode [
 	"AutoGenerated by Druid"
 
@@ -2699,7 +2701,7 @@ SimpleDruidJIT >> gen_ExtStoreAndPopLiteralVariableBytecode [
 	^ 0
 ]
 
-{ #category : #generated }
+{ #category : 'generated' }
 SimpleDruidJIT >> gen_ExtStoreAndPopReceiverVariableBytecode [
 	"AutoGenerated by Druid"
 
@@ -2880,7 +2882,7 @@ SimpleDruidJIT >> gen_ExtStoreAndPopReceiverVariableBytecode [
 	^ 0
 ]
 
-{ #category : #generated }
+{ #category : 'generated' }
 SimpleDruidJIT >> gen_ExtStoreLiteralVariableBytecode [
 	"AutoGenerated by Druid"
 
@@ -3010,7 +3012,7 @@ SimpleDruidJIT >> gen_ExtStoreLiteralVariableBytecode [
 	^ 0
 ]
 
-{ #category : #generated }
+{ #category : 'generated' }
 SimpleDruidJIT >> gen_ExtStoreReceiverVariableBytecode [
 	"AutoGenerated by Druid"
 
@@ -3188,7 +3190,7 @@ SimpleDruidJIT >> gen_ExtStoreReceiverVariableBytecode [
 	^ 0
 ]
 
-{ #category : #generated }
+{ #category : 'generated' }
 SimpleDruidJIT >> gen_ExtUnconditionalJump [
 	"AutoGenerated by Druid"
 
@@ -3258,7 +3260,7 @@ SimpleDruidJIT >> gen_ExtUnconditionalJump [
 	^ 0
 ]
 
-{ #category : #generated }
+{ #category : 'generated' }
 SimpleDruidJIT >> gen_LongPushTemporaryVariableBytecode [
 	"AutoGenerated by Druid"
 
@@ -3272,7 +3274,7 @@ SimpleDruidJIT >> gen_LongPushTemporaryVariableBytecode [
 	^ 0
 ]
 
-{ #category : #generated }
+{ #category : 'generated' }
 SimpleDruidJIT >> gen_LongStoreAndPopTemporaryVariableBytecode [
 	"AutoGenerated by Druid"
 
@@ -3284,7 +3286,7 @@ SimpleDruidJIT >> gen_LongStoreAndPopTemporaryVariableBytecode [
 	^ 0
 ]
 
-{ #category : #generated }
+{ #category : 'generated' }
 SimpleDruidJIT >> gen_LongStoreTemporaryVariableBytecode [
 	"AutoGenerated by Druid"
 
@@ -3295,7 +3297,7 @@ SimpleDruidJIT >> gen_LongStoreTemporaryVariableBytecode [
 	^ 0
 ]
 
-{ #category : #generated }
+{ #category : 'generated' }
 SimpleDruidJIT >> gen_PopStackBytecode [
 	"AutoGenerated by Druid"
 
@@ -3304,7 +3306,7 @@ SimpleDruidJIT >> gen_PopStackBytecode [
 	^ 0
 ]
 
-{ #category : #generated }
+{ #category : 'generated' }
 SimpleDruidJIT >> gen_PrimitiveAdd [
 	"AutoGenerated by Druid"
 
@@ -3325,7 +3327,7 @@ SimpleDruidJIT >> gen_PrimitiveAdd [
 	^ 0
 ]
 
-{ #category : #generated }
+{ #category : 'generated' }
 SimpleDruidJIT >> gen_PrimitiveAsCharacter [
 	"AutoGenerated by Druid"
 
@@ -3373,7 +3375,7 @@ SimpleDruidJIT >> gen_PrimitiveAsCharacter [
 	^ 0
 ]
 
-{ #category : #generated }
+{ #category : 'generated' }
 SimpleDruidJIT >> gen_PrimitiveAsFloat [
 	"AutoGenerated by Druid"
 
@@ -3444,7 +3446,7 @@ SimpleDruidJIT >> gen_PrimitiveAsFloat [
 	^ 0
 ]
 
-{ #category : #generated }
+{ #category : 'generated' }
 SimpleDruidJIT >> gen_PrimitiveAt [
 	"AutoGenerated by Druid"
 
@@ -3724,7 +3726,7 @@ SimpleDruidJIT >> gen_PrimitiveAt [
 	^ 0
 ]
 
-{ #category : #generated }
+{ #category : 'generated' }
 SimpleDruidJIT >> gen_PrimitiveAtPut [
 	"AutoGenerated by Druid"
 
@@ -4066,7 +4068,7 @@ SimpleDruidJIT >> gen_PrimitiveAtPut [
 	^ 0
 ]
 
-{ #category : #generated }
+{ #category : 'generated' }
 SimpleDruidJIT >> gen_PrimitiveBitAnd [
 	"AutoGenerated by Druid"
 
@@ -4085,7 +4087,7 @@ SimpleDruidJIT >> gen_PrimitiveBitAnd [
 	^ 0
 ]
 
-{ #category : #generated }
+{ #category : 'generated' }
 SimpleDruidJIT >> gen_PrimitiveBitOr [
 	"AutoGenerated by Druid"
 
@@ -4104,7 +4106,7 @@ SimpleDruidJIT >> gen_PrimitiveBitOr [
 	^ 0
 ]
 
-{ #category : #generated }
+{ #category : 'generated' }
 SimpleDruidJIT >> gen_PrimitiveBitShift [
 	"AutoGenerated by Druid"
 
@@ -4212,7 +4214,7 @@ SimpleDruidJIT >> gen_PrimitiveBitShift [
 	^ 0
 ]
 
-{ #category : #generated }
+{ #category : 'generated' }
 SimpleDruidJIT >> gen_PrimitiveBitXor [
 	"AutoGenerated by Druid"
 
@@ -4233,7 +4235,7 @@ SimpleDruidJIT >> gen_PrimitiveBitXor [
 	^ 0
 ]
 
-{ #category : #generated }
+{ #category : 'generated' }
 SimpleDruidJIT >> gen_PrimitiveClass [
 	"AutoGenerated by Druid"
 
@@ -4391,7 +4393,7 @@ SimpleDruidJIT >> gen_PrimitiveClass [
 	^ 0
 ]
 
-{ #category : #generated }
+{ #category : 'generated' }
 SimpleDruidJIT >> gen_PrimitiveDiv [
 	"AutoGenerated by Druid"
 
@@ -4497,7 +4499,7 @@ SimpleDruidJIT >> gen_PrimitiveDiv [
 	^ 0
 ]
 
-{ #category : #generated }
+{ #category : 'generated' }
 SimpleDruidJIT >> gen_PrimitiveDivide [
 	"AutoGenerated by Druid"
 
@@ -4544,7 +4546,7 @@ SimpleDruidJIT >> gen_PrimitiveDivide [
 	^ 0
 ]
 
-{ #category : #generated }
+{ #category : 'generated' }
 SimpleDruidJIT >> gen_PrimitiveEqual [
 	"AutoGenerated by Druid"
 
@@ -4573,7 +4575,7 @@ SimpleDruidJIT >> gen_PrimitiveEqual [
 	^ 0
 ]
 
-{ #category : #generated }
+{ #category : 'generated' }
 SimpleDruidJIT >> gen_PrimitiveFloatAdd [
 	"AutoGenerated by Druid"
 
@@ -4756,7 +4758,7 @@ SimpleDruidJIT >> gen_PrimitiveFloatAdd [
 	^ 0
 ]
 
-{ #category : #generated }
+{ #category : 'generated' }
 SimpleDruidJIT >> gen_PrimitiveFloatEqual [
 	"AutoGenerated by Druid"
 
@@ -4874,7 +4876,7 @@ SimpleDruidJIT >> gen_PrimitiveFloatEqual [
 	^ 0
 ]
 
-{ #category : #generated }
+{ #category : 'generated' }
 SimpleDruidJIT >> gen_PrimitiveFloatGreaterOrEqual [
 	"AutoGenerated by Druid"
 
@@ -4992,7 +4994,7 @@ SimpleDruidJIT >> gen_PrimitiveFloatGreaterOrEqual [
 	^ 0
 ]
 
-{ #category : #generated }
+{ #category : 'generated' }
 SimpleDruidJIT >> gen_PrimitiveFloatGreaterThan [
 	"AutoGenerated by Druid"
 
@@ -5110,7 +5112,7 @@ SimpleDruidJIT >> gen_PrimitiveFloatGreaterThan [
 	^ 0
 ]
 
-{ #category : #generated }
+{ #category : 'generated' }
 SimpleDruidJIT >> gen_PrimitiveFloatLessOrEqual [
 	"AutoGenerated by Druid"
 
@@ -5228,7 +5230,7 @@ SimpleDruidJIT >> gen_PrimitiveFloatLessOrEqual [
 	^ 0
 ]
 
-{ #category : #generated }
+{ #category : 'generated' }
 SimpleDruidJIT >> gen_PrimitiveFloatLessThan [
 	"AutoGenerated by Druid"
 
@@ -5346,7 +5348,7 @@ SimpleDruidJIT >> gen_PrimitiveFloatLessThan [
 	^ 0
 ]
 
-{ #category : #generated }
+{ #category : 'generated' }
 SimpleDruidJIT >> gen_PrimitiveFloatMultiply [
 	"AutoGenerated by Druid"
 
@@ -5529,7 +5531,7 @@ SimpleDruidJIT >> gen_PrimitiveFloatMultiply [
 	^ 0
 ]
 
-{ #category : #generated }
+{ #category : 'generated' }
 SimpleDruidJIT >> gen_PrimitiveFloatNotEqual [
 	"AutoGenerated by Druid"
 
@@ -5647,7 +5649,7 @@ SimpleDruidJIT >> gen_PrimitiveFloatNotEqual [
 	^ 0
 ]
 
-{ #category : #generated }
+{ #category : 'generated' }
 SimpleDruidJIT >> gen_PrimitiveFloatSubtract [
 	"AutoGenerated by Druid"
 
@@ -5830,7 +5832,7 @@ SimpleDruidJIT >> gen_PrimitiveFloatSubtract [
 	^ 0
 ]
 
-{ #category : #generated }
+{ #category : 'generated' }
 SimpleDruidJIT >> gen_PrimitiveFullClosureValue [
 	"AutoGenerated by Druid"
 
@@ -5937,7 +5939,7 @@ SimpleDruidJIT >> gen_PrimitiveFullClosureValue [
 	^ 0
 ]
 
-{ #category : #generated }
+{ #category : 'generated' }
 SimpleDruidJIT >> gen_PrimitiveFullClosureValueNoContextSwitch [
 	"AutoGenerated by Druid"
 
@@ -6044,7 +6046,7 @@ SimpleDruidJIT >> gen_PrimitiveFullClosureValueNoContextSwitch [
 	^ 0
 ]
 
-{ #category : #generated }
+{ #category : 'generated' }
 SimpleDruidJIT >> gen_PrimitiveGreaterOrEqual [
 	"AutoGenerated by Druid"
 
@@ -6073,7 +6075,7 @@ SimpleDruidJIT >> gen_PrimitiveGreaterOrEqual [
 	^ 0
 ]
 
-{ #category : #generated }
+{ #category : 'generated' }
 SimpleDruidJIT >> gen_PrimitiveGreaterThan [
 	"AutoGenerated by Druid"
 
@@ -6102,7 +6104,7 @@ SimpleDruidJIT >> gen_PrimitiveGreaterThan [
 	^ 0
 ]
 
-{ #category : #generated }
+{ #category : 'generated' }
 SimpleDruidJIT >> gen_PrimitiveIdentical [
 	"AutoGenerated by Druid"
 
@@ -6187,7 +6189,7 @@ SimpleDruidJIT >> gen_PrimitiveIdentical [
 	^ CompletePrimitive
 ]
 
-{ #category : #generated }
+{ #category : 'generated' }
 SimpleDruidJIT >> gen_PrimitiveIdentityHash [
 	"AutoGenerated by Druid"
 
@@ -6223,7 +6225,7 @@ SimpleDruidJIT >> gen_PrimitiveIdentityHash [
 	^ 0
 ]
 
-{ #category : #generated }
+{ #category : 'generated' }
 SimpleDruidJIT >> gen_PrimitiveImmediateAsInteger [
 	"AutoGenerated by Druid"
 
@@ -6321,7 +6323,7 @@ SimpleDruidJIT >> gen_PrimitiveImmediateAsInteger [
 	^ 0
 ]
 
-{ #category : #generated }
+{ #category : 'generated' }
 SimpleDruidJIT >> gen_PrimitiveLessOrEqual [
 	"AutoGenerated by Druid"
 
@@ -6350,7 +6352,7 @@ SimpleDruidJIT >> gen_PrimitiveLessOrEqual [
 	^ 0
 ]
 
-{ #category : #generated }
+{ #category : 'generated' }
 SimpleDruidJIT >> gen_PrimitiveLessThan [
 	"AutoGenerated by Druid"
 
@@ -6379,7 +6381,7 @@ SimpleDruidJIT >> gen_PrimitiveLessThan [
 	^ 0
 ]
 
-{ #category : #generated }
+{ #category : 'generated' }
 SimpleDruidJIT >> gen_PrimitiveMod [
 	"AutoGenerated by Druid"
 
@@ -6452,7 +6454,7 @@ SimpleDruidJIT >> gen_PrimitiveMod [
 	^ 0
 ]
 
-{ #category : #generated }
+{ #category : 'generated' }
 SimpleDruidJIT >> gen_PrimitiveMultiply [
 	"AutoGenerated by Druid"
 
@@ -6477,7 +6479,7 @@ SimpleDruidJIT >> gen_PrimitiveMultiply [
 	^ 0
 ]
 
-{ #category : #generated }
+{ #category : 'generated' }
 SimpleDruidJIT >> gen_PrimitiveNew [
 	"AutoGenerated by Druid"
 
@@ -6602,7 +6604,7 @@ SimpleDruidJIT >> gen_PrimitiveNew [
 	^ 0
 ]
 
-{ #category : #generated }
+{ #category : 'generated' }
 SimpleDruidJIT >> gen_PrimitiveNewWithArg [
 	"AutoGenerated by Druid"
 
@@ -6884,7 +6886,7 @@ SimpleDruidJIT >> gen_PrimitiveNewWithArg [
 	^ 0
 ]
 
-{ #category : #generated }
+{ #category : 'generated' }
 SimpleDruidJIT >> gen_PrimitiveNotEqual [
 	"AutoGenerated by Druid"
 
@@ -6913,7 +6915,7 @@ SimpleDruidJIT >> gen_PrimitiveNotEqual [
 	^ 0
 ]
 
-{ #category : #generated }
+{ #category : 'generated' }
 SimpleDruidJIT >> gen_PrimitiveNotIdentical [
 	"AutoGenerated by Druid"
 
@@ -6998,7 +7000,7 @@ SimpleDruidJIT >> gen_PrimitiveNotIdentical [
 	^ CompletePrimitive
 ]
 
-{ #category : #generated }
+{ #category : 'generated' }
 SimpleDruidJIT >> gen_PrimitiveQuo [
 	"AutoGenerated by Druid"
 
@@ -7096,7 +7098,7 @@ SimpleDruidJIT >> gen_PrimitiveQuo [
 	^ 0
 ]
 
-{ #category : #generated }
+{ #category : 'generated' }
 SimpleDruidJIT >> gen_PrimitiveSize [
 	"AutoGenerated by Druid"
 
@@ -7314,7 +7316,7 @@ SimpleDruidJIT >> gen_PrimitiveSize [
 	^ 0
 ]
 
-{ #category : #generated }
+{ #category : 'generated' }
 SimpleDruidJIT >> gen_PrimitiveSmallFloatAdd [
 	"AutoGenerated by Druid"
 
@@ -7498,7 +7500,7 @@ SimpleDruidJIT >> gen_PrimitiveSmallFloatAdd [
 	^ 0
 ]
 
-{ #category : #generated }
+{ #category : 'generated' }
 SimpleDruidJIT >> gen_PrimitiveSmallFloatDivide [
 	"AutoGenerated by Druid"
 
@@ -7687,7 +7689,7 @@ SimpleDruidJIT >> gen_PrimitiveSmallFloatDivide [
 	^ 0
 ]
 
-{ #category : #generated }
+{ #category : 'generated' }
 SimpleDruidJIT >> gen_PrimitiveSmallFloatEqual [
 	"AutoGenerated by Druid"
 
@@ -7806,7 +7808,7 @@ SimpleDruidJIT >> gen_PrimitiveSmallFloatEqual [
 	^ 0
 ]
 
-{ #category : #generated }
+{ #category : 'generated' }
 SimpleDruidJIT >> gen_PrimitiveSmallFloatGreaterOrEqual [
 	"AutoGenerated by Druid"
 
@@ -7925,7 +7927,7 @@ SimpleDruidJIT >> gen_PrimitiveSmallFloatGreaterOrEqual [
 	^ 0
 ]
 
-{ #category : #generated }
+{ #category : 'generated' }
 SimpleDruidJIT >> gen_PrimitiveSmallFloatGreaterThan [
 	"AutoGenerated by Druid"
 
@@ -8044,7 +8046,7 @@ SimpleDruidJIT >> gen_PrimitiveSmallFloatGreaterThan [
 	^ 0
 ]
 
-{ #category : #generated }
+{ #category : 'generated' }
 SimpleDruidJIT >> gen_PrimitiveSmallFloatLessOrEqual [
 	"AutoGenerated by Druid"
 
@@ -8163,7 +8165,7 @@ SimpleDruidJIT >> gen_PrimitiveSmallFloatLessOrEqual [
 	^ 0
 ]
 
-{ #category : #generated }
+{ #category : 'generated' }
 SimpleDruidJIT >> gen_PrimitiveSmallFloatLessThan [
 	"AutoGenerated by Druid"
 
@@ -8282,7 +8284,7 @@ SimpleDruidJIT >> gen_PrimitiveSmallFloatLessThan [
 	^ 0
 ]
 
-{ #category : #generated }
+{ #category : 'generated' }
 SimpleDruidJIT >> gen_PrimitiveSmallFloatMultiply [
 	"AutoGenerated by Druid"
 
@@ -8466,7 +8468,7 @@ SimpleDruidJIT >> gen_PrimitiveSmallFloatMultiply [
 	^ 0
 ]
 
-{ #category : #generated }
+{ #category : 'generated' }
 SimpleDruidJIT >> gen_PrimitiveSmallFloatNotEqual [
 	"AutoGenerated by Druid"
 
@@ -8585,7 +8587,7 @@ SimpleDruidJIT >> gen_PrimitiveSmallFloatNotEqual [
 	^ 0
 ]
 
-{ #category : #generated }
+{ #category : 'generated' }
 SimpleDruidJIT >> gen_PrimitiveSmallFloatSubtract [
 	"AutoGenerated by Druid"
 
@@ -8769,7 +8771,7 @@ SimpleDruidJIT >> gen_PrimitiveSmallFloatSubtract [
 	^ 0
 ]
 
-{ #category : #generated }
+{ #category : 'generated' }
 SimpleDruidJIT >> gen_PrimitiveStringAt [
 	"AutoGenerated by Druid"
 
@@ -9058,7 +9060,7 @@ SimpleDruidJIT >> gen_PrimitiveStringAt [
 	^ 0
 ]
 
-{ #category : #generated }
+{ #category : 'generated' }
 SimpleDruidJIT >> gen_PrimitiveSubtract [
 	"AutoGenerated by Druid"
 
@@ -9081,7 +9083,7 @@ SimpleDruidJIT >> gen_PrimitiveSubtract [
 	^ 0
 ]
 
-{ #category : #generated }
+{ #category : 'generated' }
 SimpleDruidJIT >> gen_PushConstantFalseBytecode [
 	"AutoGenerated by Druid"
 
@@ -9091,7 +9093,7 @@ SimpleDruidJIT >> gen_PushConstantFalseBytecode [
 	^ 0
 ]
 
-{ #category : #generated }
+{ #category : 'generated' }
 SimpleDruidJIT >> gen_PushConstantNilBytecode [
 	"AutoGenerated by Druid"
 
@@ -9101,7 +9103,7 @@ SimpleDruidJIT >> gen_PushConstantNilBytecode [
 	^ 0
 ]
 
-{ #category : #generated }
+{ #category : 'generated' }
 SimpleDruidJIT >> gen_PushConstantOneBytecode [
 	"AutoGenerated by Druid"
 
@@ -9111,7 +9113,7 @@ SimpleDruidJIT >> gen_PushConstantOneBytecode [
 	^ 0
 ]
 
-{ #category : #generated }
+{ #category : 'generated' }
 SimpleDruidJIT >> gen_PushConstantTrueBytecode [
 	"AutoGenerated by Druid"
 
@@ -9121,7 +9123,7 @@ SimpleDruidJIT >> gen_PushConstantTrueBytecode [
 	^ 0
 ]
 
-{ #category : #generated }
+{ #category : 'generated' }
 SimpleDruidJIT >> gen_PushConstantZeroBytecode [
 	"AutoGenerated by Druid"
 
@@ -9131,7 +9133,7 @@ SimpleDruidJIT >> gen_PushConstantZeroBytecode [
 	^ 0
 ]
 
-{ #category : #generated }
+{ #category : 'generated' }
 SimpleDruidJIT >> gen_PushLiteralConstantBytecode0 [
 	"AutoGenerated by Druid"
 
@@ -9146,7 +9148,7 @@ SimpleDruidJIT >> gen_PushLiteralConstantBytecode0 [
 	^ 0
 ]
 
-{ #category : #generated }
+{ #category : 'generated' }
 SimpleDruidJIT >> gen_PushLiteralConstantBytecode1 [
 	"AutoGenerated by Druid"
 
@@ -9162,7 +9164,7 @@ SimpleDruidJIT >> gen_PushLiteralConstantBytecode1 [
 	^ 0
 ]
 
-{ #category : #generated }
+{ #category : 'generated' }
 SimpleDruidJIT >> gen_PushLiteralConstantBytecode10 [
 	"AutoGenerated by Druid"
 
@@ -9178,7 +9180,7 @@ SimpleDruidJIT >> gen_PushLiteralConstantBytecode10 [
 	^ 0
 ]
 
-{ #category : #generated }
+{ #category : 'generated' }
 SimpleDruidJIT >> gen_PushLiteralConstantBytecode11 [
 	"AutoGenerated by Druid"
 
@@ -9194,7 +9196,7 @@ SimpleDruidJIT >> gen_PushLiteralConstantBytecode11 [
 	^ 0
 ]
 
-{ #category : #generated }
+{ #category : 'generated' }
 SimpleDruidJIT >> gen_PushLiteralConstantBytecode12 [
 	"AutoGenerated by Druid"
 
@@ -9210,7 +9212,7 @@ SimpleDruidJIT >> gen_PushLiteralConstantBytecode12 [
 	^ 0
 ]
 
-{ #category : #generated }
+{ #category : 'generated' }
 SimpleDruidJIT >> gen_PushLiteralConstantBytecode13 [
 	"AutoGenerated by Druid"
 
@@ -9226,7 +9228,7 @@ SimpleDruidJIT >> gen_PushLiteralConstantBytecode13 [
 	^ 0
 ]
 
-{ #category : #generated }
+{ #category : 'generated' }
 SimpleDruidJIT >> gen_PushLiteralConstantBytecode14 [
 	"AutoGenerated by Druid"
 
@@ -9242,7 +9244,7 @@ SimpleDruidJIT >> gen_PushLiteralConstantBytecode14 [
 	^ 0
 ]
 
-{ #category : #generated }
+{ #category : 'generated' }
 SimpleDruidJIT >> gen_PushLiteralConstantBytecode15 [
 	"AutoGenerated by Druid"
 
@@ -9258,7 +9260,7 @@ SimpleDruidJIT >> gen_PushLiteralConstantBytecode15 [
 	^ 0
 ]
 
-{ #category : #generated }
+{ #category : 'generated' }
 SimpleDruidJIT >> gen_PushLiteralConstantBytecode16 [
 	"AutoGenerated by Druid"
 
@@ -9274,7 +9276,7 @@ SimpleDruidJIT >> gen_PushLiteralConstantBytecode16 [
 	^ 0
 ]
 
-{ #category : #generated }
+{ #category : 'generated' }
 SimpleDruidJIT >> gen_PushLiteralConstantBytecode17 [
 	"AutoGenerated by Druid"
 
@@ -9290,7 +9292,7 @@ SimpleDruidJIT >> gen_PushLiteralConstantBytecode17 [
 	^ 0
 ]
 
-{ #category : #generated }
+{ #category : 'generated' }
 SimpleDruidJIT >> gen_PushLiteralConstantBytecode18 [
 	"AutoGenerated by Druid"
 
@@ -9306,7 +9308,7 @@ SimpleDruidJIT >> gen_PushLiteralConstantBytecode18 [
 	^ 0
 ]
 
-{ #category : #generated }
+{ #category : 'generated' }
 SimpleDruidJIT >> gen_PushLiteralConstantBytecode19 [
 	"AutoGenerated by Druid"
 
@@ -9322,7 +9324,7 @@ SimpleDruidJIT >> gen_PushLiteralConstantBytecode19 [
 	^ 0
 ]
 
-{ #category : #generated }
+{ #category : 'generated' }
 SimpleDruidJIT >> gen_PushLiteralConstantBytecode2 [
 	"AutoGenerated by Druid"
 
@@ -9338,7 +9340,7 @@ SimpleDruidJIT >> gen_PushLiteralConstantBytecode2 [
 	^ 0
 ]
 
-{ #category : #generated }
+{ #category : 'generated' }
 SimpleDruidJIT >> gen_PushLiteralConstantBytecode20 [
 	"AutoGenerated by Druid"
 
@@ -9354,7 +9356,7 @@ SimpleDruidJIT >> gen_PushLiteralConstantBytecode20 [
 	^ 0
 ]
 
-{ #category : #generated }
+{ #category : 'generated' }
 SimpleDruidJIT >> gen_PushLiteralConstantBytecode21 [
 	"AutoGenerated by Druid"
 
@@ -9370,7 +9372,7 @@ SimpleDruidJIT >> gen_PushLiteralConstantBytecode21 [
 	^ 0
 ]
 
-{ #category : #generated }
+{ #category : 'generated' }
 SimpleDruidJIT >> gen_PushLiteralConstantBytecode22 [
 	"AutoGenerated by Druid"
 
@@ -9386,7 +9388,7 @@ SimpleDruidJIT >> gen_PushLiteralConstantBytecode22 [
 	^ 0
 ]
 
-{ #category : #generated }
+{ #category : 'generated' }
 SimpleDruidJIT >> gen_PushLiteralConstantBytecode23 [
 	"AutoGenerated by Druid"
 
@@ -9402,7 +9404,7 @@ SimpleDruidJIT >> gen_PushLiteralConstantBytecode23 [
 	^ 0
 ]
 
-{ #category : #generated }
+{ #category : 'generated' }
 SimpleDruidJIT >> gen_PushLiteralConstantBytecode24 [
 	"AutoGenerated by Druid"
 
@@ -9418,7 +9420,7 @@ SimpleDruidJIT >> gen_PushLiteralConstantBytecode24 [
 	^ 0
 ]
 
-{ #category : #generated }
+{ #category : 'generated' }
 SimpleDruidJIT >> gen_PushLiteralConstantBytecode25 [
 	"AutoGenerated by Druid"
 
@@ -9434,7 +9436,7 @@ SimpleDruidJIT >> gen_PushLiteralConstantBytecode25 [
 	^ 0
 ]
 
-{ #category : #generated }
+{ #category : 'generated' }
 SimpleDruidJIT >> gen_PushLiteralConstantBytecode26 [
 	"AutoGenerated by Druid"
 
@@ -9450,7 +9452,7 @@ SimpleDruidJIT >> gen_PushLiteralConstantBytecode26 [
 	^ 0
 ]
 
-{ #category : #generated }
+{ #category : 'generated' }
 SimpleDruidJIT >> gen_PushLiteralConstantBytecode27 [
 	"AutoGenerated by Druid"
 
@@ -9466,7 +9468,7 @@ SimpleDruidJIT >> gen_PushLiteralConstantBytecode27 [
 	^ 0
 ]
 
-{ #category : #generated }
+{ #category : 'generated' }
 SimpleDruidJIT >> gen_PushLiteralConstantBytecode28 [
 	"AutoGenerated by Druid"
 
@@ -9482,7 +9484,7 @@ SimpleDruidJIT >> gen_PushLiteralConstantBytecode28 [
 	^ 0
 ]
 
-{ #category : #generated }
+{ #category : 'generated' }
 SimpleDruidJIT >> gen_PushLiteralConstantBytecode29 [
 	"AutoGenerated by Druid"
 
@@ -9498,7 +9500,7 @@ SimpleDruidJIT >> gen_PushLiteralConstantBytecode29 [
 	^ 0
 ]
 
-{ #category : #generated }
+{ #category : 'generated' }
 SimpleDruidJIT >> gen_PushLiteralConstantBytecode3 [
 	"AutoGenerated by Druid"
 
@@ -9514,7 +9516,7 @@ SimpleDruidJIT >> gen_PushLiteralConstantBytecode3 [
 	^ 0
 ]
 
-{ #category : #generated }
+{ #category : 'generated' }
 SimpleDruidJIT >> gen_PushLiteralConstantBytecode30 [
 	"AutoGenerated by Druid"
 
@@ -9530,7 +9532,7 @@ SimpleDruidJIT >> gen_PushLiteralConstantBytecode30 [
 	^ 0
 ]
 
-{ #category : #generated }
+{ #category : 'generated' }
 SimpleDruidJIT >> gen_PushLiteralConstantBytecode31 [
 	"AutoGenerated by Druid"
 
@@ -9546,7 +9548,7 @@ SimpleDruidJIT >> gen_PushLiteralConstantBytecode31 [
 	^ 0
 ]
 
-{ #category : #generated }
+{ #category : 'generated' }
 SimpleDruidJIT >> gen_PushLiteralConstantBytecode4 [
 	"AutoGenerated by Druid"
 
@@ -9562,7 +9564,7 @@ SimpleDruidJIT >> gen_PushLiteralConstantBytecode4 [
 	^ 0
 ]
 
-{ #category : #generated }
+{ #category : 'generated' }
 SimpleDruidJIT >> gen_PushLiteralConstantBytecode5 [
 	"AutoGenerated by Druid"
 
@@ -9578,7 +9580,7 @@ SimpleDruidJIT >> gen_PushLiteralConstantBytecode5 [
 	^ 0
 ]
 
-{ #category : #generated }
+{ #category : 'generated' }
 SimpleDruidJIT >> gen_PushLiteralConstantBytecode6 [
 	"AutoGenerated by Druid"
 
@@ -9594,7 +9596,7 @@ SimpleDruidJIT >> gen_PushLiteralConstantBytecode6 [
 	^ 0
 ]
 
-{ #category : #generated }
+{ #category : 'generated' }
 SimpleDruidJIT >> gen_PushLiteralConstantBytecode7 [
 	"AutoGenerated by Druid"
 
@@ -9610,7 +9612,7 @@ SimpleDruidJIT >> gen_PushLiteralConstantBytecode7 [
 	^ 0
 ]
 
-{ #category : #generated }
+{ #category : 'generated' }
 SimpleDruidJIT >> gen_PushLiteralConstantBytecode8 [
 	"AutoGenerated by Druid"
 
@@ -9626,7 +9628,7 @@ SimpleDruidJIT >> gen_PushLiteralConstantBytecode8 [
 	^ 0
 ]
 
-{ #category : #generated }
+{ #category : 'generated' }
 SimpleDruidJIT >> gen_PushLiteralConstantBytecode9 [
 	"AutoGenerated by Druid"
 
@@ -9642,7 +9644,7 @@ SimpleDruidJIT >> gen_PushLiteralConstantBytecode9 [
 	^ 0
 ]
 
-{ #category : #generated }
+{ #category : 'generated' }
 SimpleDruidJIT >> gen_PushLiteralVariable16CasesBytecode0 [
 	"AutoGenerated by Druid"
 
@@ -9688,7 +9690,7 @@ SimpleDruidJIT >> gen_PushLiteralVariable16CasesBytecode0 [
 	^ 0
 ]
 
-{ #category : #generated }
+{ #category : 'generated' }
 SimpleDruidJIT >> gen_PushLiteralVariable16CasesBytecode1 [
 	"AutoGenerated by Druid"
 
@@ -9735,7 +9737,7 @@ SimpleDruidJIT >> gen_PushLiteralVariable16CasesBytecode1 [
 	^ 0
 ]
 
-{ #category : #generated }
+{ #category : 'generated' }
 SimpleDruidJIT >> gen_PushLiteralVariable16CasesBytecode10 [
 	"AutoGenerated by Druid"
 
@@ -9782,7 +9784,7 @@ SimpleDruidJIT >> gen_PushLiteralVariable16CasesBytecode10 [
 	^ 0
 ]
 
-{ #category : #generated }
+{ #category : 'generated' }
 SimpleDruidJIT >> gen_PushLiteralVariable16CasesBytecode11 [
 	"AutoGenerated by Druid"
 
@@ -9829,7 +9831,7 @@ SimpleDruidJIT >> gen_PushLiteralVariable16CasesBytecode11 [
 	^ 0
 ]
 
-{ #category : #generated }
+{ #category : 'generated' }
 SimpleDruidJIT >> gen_PushLiteralVariable16CasesBytecode12 [
 	"AutoGenerated by Druid"
 
@@ -9876,7 +9878,7 @@ SimpleDruidJIT >> gen_PushLiteralVariable16CasesBytecode12 [
 	^ 0
 ]
 
-{ #category : #generated }
+{ #category : 'generated' }
 SimpleDruidJIT >> gen_PushLiteralVariable16CasesBytecode13 [
 	"AutoGenerated by Druid"
 
@@ -9923,7 +9925,7 @@ SimpleDruidJIT >> gen_PushLiteralVariable16CasesBytecode13 [
 	^ 0
 ]
 
-{ #category : #generated }
+{ #category : 'generated' }
 SimpleDruidJIT >> gen_PushLiteralVariable16CasesBytecode14 [
 	"AutoGenerated by Druid"
 
@@ -9970,7 +9972,7 @@ SimpleDruidJIT >> gen_PushLiteralVariable16CasesBytecode14 [
 	^ 0
 ]
 
-{ #category : #generated }
+{ #category : 'generated' }
 SimpleDruidJIT >> gen_PushLiteralVariable16CasesBytecode15 [
 	"AutoGenerated by Druid"
 
@@ -10017,7 +10019,7 @@ SimpleDruidJIT >> gen_PushLiteralVariable16CasesBytecode15 [
 	^ 0
 ]
 
-{ #category : #generated }
+{ #category : 'generated' }
 SimpleDruidJIT >> gen_PushLiteralVariable16CasesBytecode2 [
 	"AutoGenerated by Druid"
 
@@ -10064,7 +10066,7 @@ SimpleDruidJIT >> gen_PushLiteralVariable16CasesBytecode2 [
 	^ 0
 ]
 
-{ #category : #generated }
+{ #category : 'generated' }
 SimpleDruidJIT >> gen_PushLiteralVariable16CasesBytecode3 [
 	"AutoGenerated by Druid"
 
@@ -10111,7 +10113,7 @@ SimpleDruidJIT >> gen_PushLiteralVariable16CasesBytecode3 [
 	^ 0
 ]
 
-{ #category : #generated }
+{ #category : 'generated' }
 SimpleDruidJIT >> gen_PushLiteralVariable16CasesBytecode4 [
 	"AutoGenerated by Druid"
 
@@ -10158,7 +10160,7 @@ SimpleDruidJIT >> gen_PushLiteralVariable16CasesBytecode4 [
 	^ 0
 ]
 
-{ #category : #generated }
+{ #category : 'generated' }
 SimpleDruidJIT >> gen_PushLiteralVariable16CasesBytecode5 [
 	"AutoGenerated by Druid"
 
@@ -10205,7 +10207,7 @@ SimpleDruidJIT >> gen_PushLiteralVariable16CasesBytecode5 [
 	^ 0
 ]
 
-{ #category : #generated }
+{ #category : 'generated' }
 SimpleDruidJIT >> gen_PushLiteralVariable16CasesBytecode6 [
 	"AutoGenerated by Druid"
 
@@ -10252,7 +10254,7 @@ SimpleDruidJIT >> gen_PushLiteralVariable16CasesBytecode6 [
 	^ 0
 ]
 
-{ #category : #generated }
+{ #category : 'generated' }
 SimpleDruidJIT >> gen_PushLiteralVariable16CasesBytecode7 [
 	"AutoGenerated by Druid"
 
@@ -10299,7 +10301,7 @@ SimpleDruidJIT >> gen_PushLiteralVariable16CasesBytecode7 [
 	^ 0
 ]
 
-{ #category : #generated }
+{ #category : 'generated' }
 SimpleDruidJIT >> gen_PushLiteralVariable16CasesBytecode8 [
 	"AutoGenerated by Druid"
 
@@ -10346,7 +10348,7 @@ SimpleDruidJIT >> gen_PushLiteralVariable16CasesBytecode8 [
 	^ 0
 ]
 
-{ #category : #generated }
+{ #category : 'generated' }
 SimpleDruidJIT >> gen_PushLiteralVariable16CasesBytecode9 [
 	"AutoGenerated by Druid"
 
@@ -10393,7 +10395,7 @@ SimpleDruidJIT >> gen_PushLiteralVariable16CasesBytecode9 [
 	^ 0
 ]
 
-{ #category : #generated }
+{ #category : 'generated' }
 SimpleDruidJIT >> gen_PushNewArrayBytecode [
 	"AutoGenerated by Druid"
 
@@ -10523,7 +10525,7 @@ SimpleDruidJIT >> gen_PushNewArrayBytecode [
 	^ 0
 ]
 
-{ #category : #generated }
+{ #category : 'generated' }
 SimpleDruidJIT >> gen_PushReceiverBytecode [
 	"AutoGenerated by Druid"
 
@@ -10536,7 +10538,7 @@ SimpleDruidJIT >> gen_PushReceiverBytecode [
 	^ 0
 ]
 
-{ #category : #generated }
+{ #category : 'generated' }
 SimpleDruidJIT >> gen_PushReceiverVariableBytecode0 [
 	"AutoGenerated by Druid"
 
@@ -10550,7 +10552,7 @@ SimpleDruidJIT >> gen_PushReceiverVariableBytecode0 [
 	^ 0
 ]
 
-{ #category : #generated }
+{ #category : 'generated' }
 SimpleDruidJIT >> gen_PushReceiverVariableBytecode1 [
 	"AutoGenerated by Druid"
 
@@ -10564,7 +10566,7 @@ SimpleDruidJIT >> gen_PushReceiverVariableBytecode1 [
 	^ 0
 ]
 
-{ #category : #generated }
+{ #category : 'generated' }
 SimpleDruidJIT >> gen_PushReceiverVariableBytecode10 [
 	"AutoGenerated by Druid"
 
@@ -10578,7 +10580,7 @@ SimpleDruidJIT >> gen_PushReceiverVariableBytecode10 [
 	^ 0
 ]
 
-{ #category : #generated }
+{ #category : 'generated' }
 SimpleDruidJIT >> gen_PushReceiverVariableBytecode11 [
 	"AutoGenerated by Druid"
 
@@ -10592,7 +10594,7 @@ SimpleDruidJIT >> gen_PushReceiverVariableBytecode11 [
 	^ 0
 ]
 
-{ #category : #generated }
+{ #category : 'generated' }
 SimpleDruidJIT >> gen_PushReceiverVariableBytecode12 [
 	"AutoGenerated by Druid"
 
@@ -10606,7 +10608,7 @@ SimpleDruidJIT >> gen_PushReceiverVariableBytecode12 [
 	^ 0
 ]
 
-{ #category : #generated }
+{ #category : 'generated' }
 SimpleDruidJIT >> gen_PushReceiverVariableBytecode13 [
 	"AutoGenerated by Druid"
 
@@ -10620,7 +10622,7 @@ SimpleDruidJIT >> gen_PushReceiverVariableBytecode13 [
 	^ 0
 ]
 
-{ #category : #generated }
+{ #category : 'generated' }
 SimpleDruidJIT >> gen_PushReceiverVariableBytecode14 [
 	"AutoGenerated by Druid"
 
@@ -10634,7 +10636,7 @@ SimpleDruidJIT >> gen_PushReceiverVariableBytecode14 [
 	^ 0
 ]
 
-{ #category : #generated }
+{ #category : 'generated' }
 SimpleDruidJIT >> gen_PushReceiverVariableBytecode15 [
 	"AutoGenerated by Druid"
 
@@ -10648,7 +10650,7 @@ SimpleDruidJIT >> gen_PushReceiverVariableBytecode15 [
 	^ 0
 ]
 
-{ #category : #generated }
+{ #category : 'generated' }
 SimpleDruidJIT >> gen_PushReceiverVariableBytecode2 [
 	"AutoGenerated by Druid"
 
@@ -10662,7 +10664,7 @@ SimpleDruidJIT >> gen_PushReceiverVariableBytecode2 [
 	^ 0
 ]
 
-{ #category : #generated }
+{ #category : 'generated' }
 SimpleDruidJIT >> gen_PushReceiverVariableBytecode3 [
 	"AutoGenerated by Druid"
 
@@ -10676,7 +10678,7 @@ SimpleDruidJIT >> gen_PushReceiverVariableBytecode3 [
 	^ 0
 ]
 
-{ #category : #generated }
+{ #category : 'generated' }
 SimpleDruidJIT >> gen_PushReceiverVariableBytecode4 [
 	"AutoGenerated by Druid"
 
@@ -10690,7 +10692,7 @@ SimpleDruidJIT >> gen_PushReceiverVariableBytecode4 [
 	^ 0
 ]
 
-{ #category : #generated }
+{ #category : 'generated' }
 SimpleDruidJIT >> gen_PushReceiverVariableBytecode5 [
 	"AutoGenerated by Druid"
 
@@ -10704,7 +10706,7 @@ SimpleDruidJIT >> gen_PushReceiverVariableBytecode5 [
 	^ 0
 ]
 
-{ #category : #generated }
+{ #category : 'generated' }
 SimpleDruidJIT >> gen_PushReceiverVariableBytecode6 [
 	"AutoGenerated by Druid"
 
@@ -10718,7 +10720,7 @@ SimpleDruidJIT >> gen_PushReceiverVariableBytecode6 [
 	^ 0
 ]
 
-{ #category : #generated }
+{ #category : 'generated' }
 SimpleDruidJIT >> gen_PushReceiverVariableBytecode7 [
 	"AutoGenerated by Druid"
 
@@ -10732,7 +10734,7 @@ SimpleDruidJIT >> gen_PushReceiverVariableBytecode7 [
 	^ 0
 ]
 
-{ #category : #generated }
+{ #category : 'generated' }
 SimpleDruidJIT >> gen_PushReceiverVariableBytecode8 [
 	"AutoGenerated by Druid"
 
@@ -10746,7 +10748,7 @@ SimpleDruidJIT >> gen_PushReceiverVariableBytecode8 [
 	^ 0
 ]
 
-{ #category : #generated }
+{ #category : 'generated' }
 SimpleDruidJIT >> gen_PushReceiverVariableBytecode9 [
 	"AutoGenerated by Druid"
 
@@ -10760,7 +10762,7 @@ SimpleDruidJIT >> gen_PushReceiverVariableBytecode9 [
 	^ 0
 ]
 
-{ #category : #generated }
+{ #category : 'generated' }
 SimpleDruidJIT >> gen_PushRemoteTempLongBytecode [
 	"AutoGenerated by Druid"
 
@@ -10817,7 +10819,7 @@ SimpleDruidJIT >> gen_PushRemoteTempLongBytecode [
 	^ 0
 ]
 
-{ #category : #generated }
+{ #category : 'generated' }
 SimpleDruidJIT >> gen_PushTemporaryVariableBytecode0 [
 	"AutoGenerated by Druid"
 
@@ -10828,7 +10830,7 @@ SimpleDruidJIT >> gen_PushTemporaryVariableBytecode0 [
 	^ 0
 ]
 
-{ #category : #generated }
+{ #category : 'generated' }
 SimpleDruidJIT >> gen_PushTemporaryVariableBytecode1 [
 	"AutoGenerated by Druid"
 
@@ -10839,7 +10841,7 @@ SimpleDruidJIT >> gen_PushTemporaryVariableBytecode1 [
 	^ 0
 ]
 
-{ #category : #generated }
+{ #category : 'generated' }
 SimpleDruidJIT >> gen_PushTemporaryVariableBytecode10 [
 	"AutoGenerated by Druid"
 
@@ -10850,7 +10852,7 @@ SimpleDruidJIT >> gen_PushTemporaryVariableBytecode10 [
 	^ 0
 ]
 
-{ #category : #generated }
+{ #category : 'generated' }
 SimpleDruidJIT >> gen_PushTemporaryVariableBytecode11 [
 	"AutoGenerated by Druid"
 
@@ -10861,7 +10863,7 @@ SimpleDruidJIT >> gen_PushTemporaryVariableBytecode11 [
 	^ 0
 ]
 
-{ #category : #generated }
+{ #category : 'generated' }
 SimpleDruidJIT >> gen_PushTemporaryVariableBytecode2 [
 	"AutoGenerated by Druid"
 
@@ -10872,7 +10874,7 @@ SimpleDruidJIT >> gen_PushTemporaryVariableBytecode2 [
 	^ 0
 ]
 
-{ #category : #generated }
+{ #category : 'generated' }
 SimpleDruidJIT >> gen_PushTemporaryVariableBytecode3 [
 	"AutoGenerated by Druid"
 
@@ -10883,7 +10885,7 @@ SimpleDruidJIT >> gen_PushTemporaryVariableBytecode3 [
 	^ 0
 ]
 
-{ #category : #generated }
+{ #category : 'generated' }
 SimpleDruidJIT >> gen_PushTemporaryVariableBytecode4 [
 	"AutoGenerated by Druid"
 
@@ -10894,7 +10896,7 @@ SimpleDruidJIT >> gen_PushTemporaryVariableBytecode4 [
 	^ 0
 ]
 
-{ #category : #generated }
+{ #category : 'generated' }
 SimpleDruidJIT >> gen_PushTemporaryVariableBytecode5 [
 	"AutoGenerated by Druid"
 
@@ -10905,7 +10907,7 @@ SimpleDruidJIT >> gen_PushTemporaryVariableBytecode5 [
 	^ 0
 ]
 
-{ #category : #generated }
+{ #category : 'generated' }
 SimpleDruidJIT >> gen_PushTemporaryVariableBytecode6 [
 	"AutoGenerated by Druid"
 
@@ -10916,7 +10918,7 @@ SimpleDruidJIT >> gen_PushTemporaryVariableBytecode6 [
 	^ 0
 ]
 
-{ #category : #generated }
+{ #category : 'generated' }
 SimpleDruidJIT >> gen_PushTemporaryVariableBytecode7 [
 	"AutoGenerated by Druid"
 
@@ -10927,7 +10929,7 @@ SimpleDruidJIT >> gen_PushTemporaryVariableBytecode7 [
 	^ 0
 ]
 
-{ #category : #generated }
+{ #category : 'generated' }
 SimpleDruidJIT >> gen_PushTemporaryVariableBytecode8 [
 	"AutoGenerated by Druid"
 
@@ -10938,7 +10940,7 @@ SimpleDruidJIT >> gen_PushTemporaryVariableBytecode8 [
 	^ 0
 ]
 
-{ #category : #generated }
+{ #category : 'generated' }
 SimpleDruidJIT >> gen_PushTemporaryVariableBytecode9 [
 	"AutoGenerated by Druid"
 
@@ -10949,7 +10951,7 @@ SimpleDruidJIT >> gen_PushTemporaryVariableBytecode9 [
 	^ 0
 ]
 
-{ #category : #generated }
+{ #category : 'generated' }
 SimpleDruidJIT >> gen_ReturnFalse [
 	"AutoGenerated by Druid"
 
@@ -10960,7 +10962,7 @@ SimpleDruidJIT >> gen_ReturnFalse [
 	^ 0
 ]
 
-{ #category : #generated }
+{ #category : 'generated' }
 SimpleDruidJIT >> gen_ReturnNil [
 	"AutoGenerated by Druid"
 
@@ -10971,7 +10973,7 @@ SimpleDruidJIT >> gen_ReturnNil [
 	^ 0
 ]
 
-{ #category : #generated }
+{ #category : 'generated' }
 SimpleDruidJIT >> gen_ReturnNilFromBlock [
 	"AutoGenerated by Druid"
 
@@ -10982,7 +10984,7 @@ SimpleDruidJIT >> gen_ReturnNilFromBlock [
 	^ 0
 ]
 
-{ #category : #generated }
+{ #category : 'generated' }
 SimpleDruidJIT >> gen_ReturnReceiver [
 	"AutoGenerated by Druid"
 
@@ -10996,7 +10998,7 @@ SimpleDruidJIT >> gen_ReturnReceiver [
 	^ 0
 ]
 
-{ #category : #generated }
+{ #category : 'generated' }
 SimpleDruidJIT >> gen_ReturnTopFromBlock [
 	"AutoGenerated by Druid"
 
@@ -11009,7 +11011,7 @@ SimpleDruidJIT >> gen_ReturnTopFromBlock [
 	^ 0
 ]
 
-{ #category : #generated }
+{ #category : 'generated' }
 SimpleDruidJIT >> gen_ReturnTopFromMethod [
 	"AutoGenerated by Druid"
 
@@ -11022,7 +11024,7 @@ SimpleDruidJIT >> gen_ReturnTopFromMethod [
 	^ 0
 ]
 
-{ #category : #generated }
+{ #category : 'generated' }
 SimpleDruidJIT >> gen_ReturnTrue [
 	"AutoGenerated by Druid"
 
@@ -11033,7 +11035,7 @@ SimpleDruidJIT >> gen_ReturnTrue [
 	^ 0
 ]
 
-{ #category : #generated }
+{ #category : 'generated' }
 SimpleDruidJIT >> gen_SendLiteralSelector0ArgsBytecode0 [
 	"AutoGenerated by Druid"
 
@@ -11042,7 +11044,7 @@ SimpleDruidJIT >> gen_SendLiteralSelector0ArgsBytecode0 [
 	^ 0
 ]
 
-{ #category : #generated }
+{ #category : 'generated' }
 SimpleDruidJIT >> gen_SendLiteralSelector0ArgsBytecode1 [
 	"AutoGenerated by Druid"
 
@@ -11051,7 +11053,7 @@ SimpleDruidJIT >> gen_SendLiteralSelector0ArgsBytecode1 [
 	^ 0
 ]
 
-{ #category : #generated }
+{ #category : 'generated' }
 SimpleDruidJIT >> gen_SendLiteralSelector0ArgsBytecode10 [
 	"AutoGenerated by Druid"
 
@@ -11060,7 +11062,7 @@ SimpleDruidJIT >> gen_SendLiteralSelector0ArgsBytecode10 [
 	^ 0
 ]
 
-{ #category : #generated }
+{ #category : 'generated' }
 SimpleDruidJIT >> gen_SendLiteralSelector0ArgsBytecode11 [
 	"AutoGenerated by Druid"
 
@@ -11069,7 +11071,7 @@ SimpleDruidJIT >> gen_SendLiteralSelector0ArgsBytecode11 [
 	^ 0
 ]
 
-{ #category : #generated }
+{ #category : 'generated' }
 SimpleDruidJIT >> gen_SendLiteralSelector0ArgsBytecode12 [
 	"AutoGenerated by Druid"
 
@@ -11078,7 +11080,7 @@ SimpleDruidJIT >> gen_SendLiteralSelector0ArgsBytecode12 [
 	^ 0
 ]
 
-{ #category : #generated }
+{ #category : 'generated' }
 SimpleDruidJIT >> gen_SendLiteralSelector0ArgsBytecode13 [
 	"AutoGenerated by Druid"
 
@@ -11087,7 +11089,7 @@ SimpleDruidJIT >> gen_SendLiteralSelector0ArgsBytecode13 [
 	^ 0
 ]
 
-{ #category : #generated }
+{ #category : 'generated' }
 SimpleDruidJIT >> gen_SendLiteralSelector0ArgsBytecode14 [
 	"AutoGenerated by Druid"
 
@@ -11096,7 +11098,7 @@ SimpleDruidJIT >> gen_SendLiteralSelector0ArgsBytecode14 [
 	^ 0
 ]
 
-{ #category : #generated }
+{ #category : 'generated' }
 SimpleDruidJIT >> gen_SendLiteralSelector0ArgsBytecode15 [
 	"AutoGenerated by Druid"
 
@@ -11105,7 +11107,7 @@ SimpleDruidJIT >> gen_SendLiteralSelector0ArgsBytecode15 [
 	^ 0
 ]
 
-{ #category : #generated }
+{ #category : 'generated' }
 SimpleDruidJIT >> gen_SendLiteralSelector0ArgsBytecode2 [
 	"AutoGenerated by Druid"
 
@@ -11114,7 +11116,7 @@ SimpleDruidJIT >> gen_SendLiteralSelector0ArgsBytecode2 [
 	^ 0
 ]
 
-{ #category : #generated }
+{ #category : 'generated' }
 SimpleDruidJIT >> gen_SendLiteralSelector0ArgsBytecode3 [
 	"AutoGenerated by Druid"
 
@@ -11123,7 +11125,7 @@ SimpleDruidJIT >> gen_SendLiteralSelector0ArgsBytecode3 [
 	^ 0
 ]
 
-{ #category : #generated }
+{ #category : 'generated' }
 SimpleDruidJIT >> gen_SendLiteralSelector0ArgsBytecode4 [
 	"AutoGenerated by Druid"
 
@@ -11132,7 +11134,7 @@ SimpleDruidJIT >> gen_SendLiteralSelector0ArgsBytecode4 [
 	^ 0
 ]
 
-{ #category : #generated }
+{ #category : 'generated' }
 SimpleDruidJIT >> gen_SendLiteralSelector0ArgsBytecode5 [
 	"AutoGenerated by Druid"
 
@@ -11141,7 +11143,7 @@ SimpleDruidJIT >> gen_SendLiteralSelector0ArgsBytecode5 [
 	^ 0
 ]
 
-{ #category : #generated }
+{ #category : 'generated' }
 SimpleDruidJIT >> gen_SendLiteralSelector0ArgsBytecode6 [
 	"AutoGenerated by Druid"
 
@@ -11150,7 +11152,7 @@ SimpleDruidJIT >> gen_SendLiteralSelector0ArgsBytecode6 [
 	^ 0
 ]
 
-{ #category : #generated }
+{ #category : 'generated' }
 SimpleDruidJIT >> gen_SendLiteralSelector0ArgsBytecode7 [
 	"AutoGenerated by Druid"
 
@@ -11159,7 +11161,7 @@ SimpleDruidJIT >> gen_SendLiteralSelector0ArgsBytecode7 [
 	^ 0
 ]
 
-{ #category : #generated }
+{ #category : 'generated' }
 SimpleDruidJIT >> gen_SendLiteralSelector0ArgsBytecode8 [
 	"AutoGenerated by Druid"
 
@@ -11168,7 +11170,7 @@ SimpleDruidJIT >> gen_SendLiteralSelector0ArgsBytecode8 [
 	^ 0
 ]
 
-{ #category : #generated }
+{ #category : 'generated' }
 SimpleDruidJIT >> gen_SendLiteralSelector0ArgsBytecode9 [
 	"AutoGenerated by Druid"
 
@@ -11177,7 +11179,7 @@ SimpleDruidJIT >> gen_SendLiteralSelector0ArgsBytecode9 [
 	^ 0
 ]
 
-{ #category : #generated }
+{ #category : 'generated' }
 SimpleDruidJIT >> gen_SendLiteralSelector1ArgBytecode0 [
 	"AutoGenerated by Druid"
 
@@ -11186,7 +11188,7 @@ SimpleDruidJIT >> gen_SendLiteralSelector1ArgBytecode0 [
 	^ 0
 ]
 
-{ #category : #generated }
+{ #category : 'generated' }
 SimpleDruidJIT >> gen_SendLiteralSelector1ArgBytecode1 [
 	"AutoGenerated by Druid"
 
@@ -11195,7 +11197,7 @@ SimpleDruidJIT >> gen_SendLiteralSelector1ArgBytecode1 [
 	^ 0
 ]
 
-{ #category : #generated }
+{ #category : 'generated' }
 SimpleDruidJIT >> gen_SendLiteralSelector1ArgBytecode10 [
 	"AutoGenerated by Druid"
 
@@ -11204,7 +11206,7 @@ SimpleDruidJIT >> gen_SendLiteralSelector1ArgBytecode10 [
 	^ 0
 ]
 
-{ #category : #generated }
+{ #category : 'generated' }
 SimpleDruidJIT >> gen_SendLiteralSelector1ArgBytecode11 [
 	"AutoGenerated by Druid"
 
@@ -11213,7 +11215,7 @@ SimpleDruidJIT >> gen_SendLiteralSelector1ArgBytecode11 [
 	^ 0
 ]
 
-{ #category : #generated }
+{ #category : 'generated' }
 SimpleDruidJIT >> gen_SendLiteralSelector1ArgBytecode12 [
 	"AutoGenerated by Druid"
 
@@ -11222,7 +11224,7 @@ SimpleDruidJIT >> gen_SendLiteralSelector1ArgBytecode12 [
 	^ 0
 ]
 
-{ #category : #generated }
+{ #category : 'generated' }
 SimpleDruidJIT >> gen_SendLiteralSelector1ArgBytecode13 [
 	"AutoGenerated by Druid"
 
@@ -11231,7 +11233,7 @@ SimpleDruidJIT >> gen_SendLiteralSelector1ArgBytecode13 [
 	^ 0
 ]
 
-{ #category : #generated }
+{ #category : 'generated' }
 SimpleDruidJIT >> gen_SendLiteralSelector1ArgBytecode14 [
 	"AutoGenerated by Druid"
 
@@ -11240,7 +11242,7 @@ SimpleDruidJIT >> gen_SendLiteralSelector1ArgBytecode14 [
 	^ 0
 ]
 
-{ #category : #generated }
+{ #category : 'generated' }
 SimpleDruidJIT >> gen_SendLiteralSelector1ArgBytecode15 [
 	"AutoGenerated by Druid"
 
@@ -11249,7 +11251,7 @@ SimpleDruidJIT >> gen_SendLiteralSelector1ArgBytecode15 [
 	^ 0
 ]
 
-{ #category : #generated }
+{ #category : 'generated' }
 SimpleDruidJIT >> gen_SendLiteralSelector1ArgBytecode2 [
 	"AutoGenerated by Druid"
 
@@ -11258,7 +11260,7 @@ SimpleDruidJIT >> gen_SendLiteralSelector1ArgBytecode2 [
 	^ 0
 ]
 
-{ #category : #generated }
+{ #category : 'generated' }
 SimpleDruidJIT >> gen_SendLiteralSelector1ArgBytecode3 [
 	"AutoGenerated by Druid"
 
@@ -11267,7 +11269,7 @@ SimpleDruidJIT >> gen_SendLiteralSelector1ArgBytecode3 [
 	^ 0
 ]
 
-{ #category : #generated }
+{ #category : 'generated' }
 SimpleDruidJIT >> gen_SendLiteralSelector1ArgBytecode4 [
 	"AutoGenerated by Druid"
 
@@ -11276,7 +11278,7 @@ SimpleDruidJIT >> gen_SendLiteralSelector1ArgBytecode4 [
 	^ 0
 ]
 
-{ #category : #generated }
+{ #category : 'generated' }
 SimpleDruidJIT >> gen_SendLiteralSelector1ArgBytecode5 [
 	"AutoGenerated by Druid"
 
@@ -11285,7 +11287,7 @@ SimpleDruidJIT >> gen_SendLiteralSelector1ArgBytecode5 [
 	^ 0
 ]
 
-{ #category : #generated }
+{ #category : 'generated' }
 SimpleDruidJIT >> gen_SendLiteralSelector1ArgBytecode6 [
 	"AutoGenerated by Druid"
 
@@ -11294,7 +11296,7 @@ SimpleDruidJIT >> gen_SendLiteralSelector1ArgBytecode6 [
 	^ 0
 ]
 
-{ #category : #generated }
+{ #category : 'generated' }
 SimpleDruidJIT >> gen_SendLiteralSelector1ArgBytecode7 [
 	"AutoGenerated by Druid"
 
@@ -11303,7 +11305,7 @@ SimpleDruidJIT >> gen_SendLiteralSelector1ArgBytecode7 [
 	^ 0
 ]
 
-{ #category : #generated }
+{ #category : 'generated' }
 SimpleDruidJIT >> gen_SendLiteralSelector1ArgBytecode8 [
 	"AutoGenerated by Druid"
 
@@ -11312,7 +11314,7 @@ SimpleDruidJIT >> gen_SendLiteralSelector1ArgBytecode8 [
 	^ 0
 ]
 
-{ #category : #generated }
+{ #category : 'generated' }
 SimpleDruidJIT >> gen_SendLiteralSelector1ArgBytecode9 [
 	"AutoGenerated by Druid"
 
@@ -11321,7 +11323,7 @@ SimpleDruidJIT >> gen_SendLiteralSelector1ArgBytecode9 [
 	^ 0
 ]
 
-{ #category : #generated }
+{ #category : 'generated' }
 SimpleDruidJIT >> gen_SendLiteralSelector2ArgsBytecode0 [
 	"AutoGenerated by Druid"
 
@@ -11330,7 +11332,7 @@ SimpleDruidJIT >> gen_SendLiteralSelector2ArgsBytecode0 [
 	^ 0
 ]
 
-{ #category : #generated }
+{ #category : 'generated' }
 SimpleDruidJIT >> gen_SendLiteralSelector2ArgsBytecode1 [
 	"AutoGenerated by Druid"
 
@@ -11339,7 +11341,7 @@ SimpleDruidJIT >> gen_SendLiteralSelector2ArgsBytecode1 [
 	^ 0
 ]
 
-{ #category : #generated }
+{ #category : 'generated' }
 SimpleDruidJIT >> gen_SendLiteralSelector2ArgsBytecode10 [
 	"AutoGenerated by Druid"
 
@@ -11348,7 +11350,7 @@ SimpleDruidJIT >> gen_SendLiteralSelector2ArgsBytecode10 [
 	^ 0
 ]
 
-{ #category : #generated }
+{ #category : 'generated' }
 SimpleDruidJIT >> gen_SendLiteralSelector2ArgsBytecode11 [
 	"AutoGenerated by Druid"
 
@@ -11357,7 +11359,7 @@ SimpleDruidJIT >> gen_SendLiteralSelector2ArgsBytecode11 [
 	^ 0
 ]
 
-{ #category : #generated }
+{ #category : 'generated' }
 SimpleDruidJIT >> gen_SendLiteralSelector2ArgsBytecode12 [
 	"AutoGenerated by Druid"
 
@@ -11366,7 +11368,7 @@ SimpleDruidJIT >> gen_SendLiteralSelector2ArgsBytecode12 [
 	^ 0
 ]
 
-{ #category : #generated }
+{ #category : 'generated' }
 SimpleDruidJIT >> gen_SendLiteralSelector2ArgsBytecode13 [
 	"AutoGenerated by Druid"
 
@@ -11375,7 +11377,7 @@ SimpleDruidJIT >> gen_SendLiteralSelector2ArgsBytecode13 [
 	^ 0
 ]
 
-{ #category : #generated }
+{ #category : 'generated' }
 SimpleDruidJIT >> gen_SendLiteralSelector2ArgsBytecode14 [
 	"AutoGenerated by Druid"
 
@@ -11384,7 +11386,7 @@ SimpleDruidJIT >> gen_SendLiteralSelector2ArgsBytecode14 [
 	^ 0
 ]
 
-{ #category : #generated }
+{ #category : 'generated' }
 SimpleDruidJIT >> gen_SendLiteralSelector2ArgsBytecode15 [
 	"AutoGenerated by Druid"
 
@@ -11393,7 +11395,7 @@ SimpleDruidJIT >> gen_SendLiteralSelector2ArgsBytecode15 [
 	^ 0
 ]
 
-{ #category : #generated }
+{ #category : 'generated' }
 SimpleDruidJIT >> gen_SendLiteralSelector2ArgsBytecode2 [
 	"AutoGenerated by Druid"
 
@@ -11402,7 +11404,7 @@ SimpleDruidJIT >> gen_SendLiteralSelector2ArgsBytecode2 [
 	^ 0
 ]
 
-{ #category : #generated }
+{ #category : 'generated' }
 SimpleDruidJIT >> gen_SendLiteralSelector2ArgsBytecode3 [
 	"AutoGenerated by Druid"
 
@@ -11411,7 +11413,7 @@ SimpleDruidJIT >> gen_SendLiteralSelector2ArgsBytecode3 [
 	^ 0
 ]
 
-{ #category : #generated }
+{ #category : 'generated' }
 SimpleDruidJIT >> gen_SendLiteralSelector2ArgsBytecode4 [
 	"AutoGenerated by Druid"
 
@@ -11420,7 +11422,7 @@ SimpleDruidJIT >> gen_SendLiteralSelector2ArgsBytecode4 [
 	^ 0
 ]
 
-{ #category : #generated }
+{ #category : 'generated' }
 SimpleDruidJIT >> gen_SendLiteralSelector2ArgsBytecode5 [
 	"AutoGenerated by Druid"
 
@@ -11429,7 +11431,7 @@ SimpleDruidJIT >> gen_SendLiteralSelector2ArgsBytecode5 [
 	^ 0
 ]
 
-{ #category : #generated }
+{ #category : 'generated' }
 SimpleDruidJIT >> gen_SendLiteralSelector2ArgsBytecode6 [
 	"AutoGenerated by Druid"
 
@@ -11438,7 +11440,7 @@ SimpleDruidJIT >> gen_SendLiteralSelector2ArgsBytecode6 [
 	^ 0
 ]
 
-{ #category : #generated }
+{ #category : 'generated' }
 SimpleDruidJIT >> gen_SendLiteralSelector2ArgsBytecode7 [
 	"AutoGenerated by Druid"
 
@@ -11447,7 +11449,7 @@ SimpleDruidJIT >> gen_SendLiteralSelector2ArgsBytecode7 [
 	^ 0
 ]
 
-{ #category : #generated }
+{ #category : 'generated' }
 SimpleDruidJIT >> gen_SendLiteralSelector2ArgsBytecode8 [
 	"AutoGenerated by Druid"
 
@@ -11456,7 +11458,7 @@ SimpleDruidJIT >> gen_SendLiteralSelector2ArgsBytecode8 [
 	^ 0
 ]
 
-{ #category : #generated }
+{ #category : 'generated' }
 SimpleDruidJIT >> gen_SendLiteralSelector2ArgsBytecode9 [
 	"AutoGenerated by Druid"
 
@@ -11465,7 +11467,7 @@ SimpleDruidJIT >> gen_SendLiteralSelector2ArgsBytecode9 [
 	^ 0
 ]
 
-{ #category : #generated }
+{ #category : 'generated' }
 SimpleDruidJIT >> gen_ShortConditionalJumpFalse0 [
 	"AutoGenerated by Druid"
 
@@ -11494,7 +11496,7 @@ SimpleDruidJIT >> gen_ShortConditionalJumpFalse0 [
 	^ 0
 ]
 
-{ #category : #generated }
+{ #category : 'generated' }
 SimpleDruidJIT >> gen_ShortConditionalJumpFalse1 [
 	"AutoGenerated by Druid"
 
@@ -11523,7 +11525,7 @@ SimpleDruidJIT >> gen_ShortConditionalJumpFalse1 [
 	^ 0
 ]
 
-{ #category : #generated }
+{ #category : 'generated' }
 SimpleDruidJIT >> gen_ShortConditionalJumpFalse2 [
 	"AutoGenerated by Druid"
 
@@ -11552,7 +11554,7 @@ SimpleDruidJIT >> gen_ShortConditionalJumpFalse2 [
 	^ 0
 ]
 
-{ #category : #generated }
+{ #category : 'generated' }
 SimpleDruidJIT >> gen_ShortConditionalJumpFalse3 [
 	"AutoGenerated by Druid"
 
@@ -11581,7 +11583,7 @@ SimpleDruidJIT >> gen_ShortConditionalJumpFalse3 [
 	^ 0
 ]
 
-{ #category : #generated }
+{ #category : 'generated' }
 SimpleDruidJIT >> gen_ShortConditionalJumpFalse4 [
 	"AutoGenerated by Druid"
 
@@ -11610,7 +11612,7 @@ SimpleDruidJIT >> gen_ShortConditionalJumpFalse4 [
 	^ 0
 ]
 
-{ #category : #generated }
+{ #category : 'generated' }
 SimpleDruidJIT >> gen_ShortConditionalJumpFalse5 [
 	"AutoGenerated by Druid"
 
@@ -11639,7 +11641,7 @@ SimpleDruidJIT >> gen_ShortConditionalJumpFalse5 [
 	^ 0
 ]
 
-{ #category : #generated }
+{ #category : 'generated' }
 SimpleDruidJIT >> gen_ShortConditionalJumpFalse6 [
 	"AutoGenerated by Druid"
 
@@ -11668,7 +11670,7 @@ SimpleDruidJIT >> gen_ShortConditionalJumpFalse6 [
 	^ 0
 ]
 
-{ #category : #generated }
+{ #category : 'generated' }
 SimpleDruidJIT >> gen_ShortConditionalJumpFalse7 [
 	"AutoGenerated by Druid"
 
@@ -11697,7 +11699,7 @@ SimpleDruidJIT >> gen_ShortConditionalJumpFalse7 [
 	^ 0
 ]
 
-{ #category : #generated }
+{ #category : 'generated' }
 SimpleDruidJIT >> gen_ShortConditionalJumpTrue0 [
 	"AutoGenerated by Druid"
 
@@ -11726,7 +11728,7 @@ SimpleDruidJIT >> gen_ShortConditionalJumpTrue0 [
 	^ 0
 ]
 
-{ #category : #generated }
+{ #category : 'generated' }
 SimpleDruidJIT >> gen_ShortConditionalJumpTrue1 [
 	"AutoGenerated by Druid"
 
@@ -11755,7 +11757,7 @@ SimpleDruidJIT >> gen_ShortConditionalJumpTrue1 [
 	^ 0
 ]
 
-{ #category : #generated }
+{ #category : 'generated' }
 SimpleDruidJIT >> gen_ShortConditionalJumpTrue2 [
 	"AutoGenerated by Druid"
 
@@ -11784,7 +11786,7 @@ SimpleDruidJIT >> gen_ShortConditionalJumpTrue2 [
 	^ 0
 ]
 
-{ #category : #generated }
+{ #category : 'generated' }
 SimpleDruidJIT >> gen_ShortConditionalJumpTrue3 [
 	"AutoGenerated by Druid"
 
@@ -11813,7 +11815,7 @@ SimpleDruidJIT >> gen_ShortConditionalJumpTrue3 [
 	^ 0
 ]
 
-{ #category : #generated }
+{ #category : 'generated' }
 SimpleDruidJIT >> gen_ShortConditionalJumpTrue4 [
 	"AutoGenerated by Druid"
 
@@ -11842,7 +11844,7 @@ SimpleDruidJIT >> gen_ShortConditionalJumpTrue4 [
 	^ 0
 ]
 
-{ #category : #generated }
+{ #category : 'generated' }
 SimpleDruidJIT >> gen_ShortConditionalJumpTrue5 [
 	"AutoGenerated by Druid"
 
@@ -11871,7 +11873,7 @@ SimpleDruidJIT >> gen_ShortConditionalJumpTrue5 [
 	^ 0
 ]
 
-{ #category : #generated }
+{ #category : 'generated' }
 SimpleDruidJIT >> gen_ShortConditionalJumpTrue6 [
 	"AutoGenerated by Druid"
 
@@ -11900,7 +11902,7 @@ SimpleDruidJIT >> gen_ShortConditionalJumpTrue6 [
 	^ 0
 ]
 
-{ #category : #generated }
+{ #category : 'generated' }
 SimpleDruidJIT >> gen_ShortConditionalJumpTrue7 [
 	"AutoGenerated by Druid"
 
@@ -11929,7 +11931,7 @@ SimpleDruidJIT >> gen_ShortConditionalJumpTrue7 [
 	^ 0
 ]
 
-{ #category : #generated }
+{ #category : 'generated' }
 SimpleDruidJIT >> gen_ShortUnconditionalJump0 [
 	"AutoGenerated by Druid"
 
@@ -11940,7 +11942,7 @@ SimpleDruidJIT >> gen_ShortUnconditionalJump0 [
 	^ 0
 ]
 
-{ #category : #generated }
+{ #category : 'generated' }
 SimpleDruidJIT >> gen_ShortUnconditionalJump1 [
 	"AutoGenerated by Druid"
 
@@ -11951,7 +11953,7 @@ SimpleDruidJIT >> gen_ShortUnconditionalJump1 [
 	^ 0
 ]
 
-{ #category : #generated }
+{ #category : 'generated' }
 SimpleDruidJIT >> gen_ShortUnconditionalJump2 [
 	"AutoGenerated by Druid"
 
@@ -11962,7 +11964,7 @@ SimpleDruidJIT >> gen_ShortUnconditionalJump2 [
 	^ 0
 ]
 
-{ #category : #generated }
+{ #category : 'generated' }
 SimpleDruidJIT >> gen_ShortUnconditionalJump3 [
 	"AutoGenerated by Druid"
 
@@ -11973,7 +11975,7 @@ SimpleDruidJIT >> gen_ShortUnconditionalJump3 [
 	^ 0
 ]
 
-{ #category : #generated }
+{ #category : 'generated' }
 SimpleDruidJIT >> gen_ShortUnconditionalJump4 [
 	"AutoGenerated by Druid"
 
@@ -11984,7 +11986,7 @@ SimpleDruidJIT >> gen_ShortUnconditionalJump4 [
 	^ 0
 ]
 
-{ #category : #generated }
+{ #category : 'generated' }
 SimpleDruidJIT >> gen_ShortUnconditionalJump5 [
 	"AutoGenerated by Druid"
 
@@ -11995,7 +11997,7 @@ SimpleDruidJIT >> gen_ShortUnconditionalJump5 [
 	^ 0
 ]
 
-{ #category : #generated }
+{ #category : 'generated' }
 SimpleDruidJIT >> gen_ShortUnconditionalJump6 [
 	"AutoGenerated by Druid"
 
@@ -12006,7 +12008,7 @@ SimpleDruidJIT >> gen_ShortUnconditionalJump6 [
 	^ 0
 ]
 
-{ #category : #generated }
+{ #category : 'generated' }
 SimpleDruidJIT >> gen_ShortUnconditionalJump7 [
 	"AutoGenerated by Druid"
 
@@ -12017,7 +12019,7 @@ SimpleDruidJIT >> gen_ShortUnconditionalJump7 [
 	^ 0
 ]
 
-{ #category : #generated }
+{ #category : 'generated' }
 SimpleDruidJIT >> gen_StoreAndPopReceiverVariableBytecode0 [
 	"AutoGenerated by Druid"
 
@@ -12096,7 +12098,7 @@ SimpleDruidJIT >> gen_StoreAndPopReceiverVariableBytecode0 [
 	^ 0
 ]
 
-{ #category : #generated }
+{ #category : 'generated' }
 SimpleDruidJIT >> gen_StoreAndPopReceiverVariableBytecode1 [
 	"AutoGenerated by Druid"
 
@@ -12175,7 +12177,7 @@ SimpleDruidJIT >> gen_StoreAndPopReceiverVariableBytecode1 [
 	^ 0
 ]
 
-{ #category : #generated }
+{ #category : 'generated' }
 SimpleDruidJIT >> gen_StoreAndPopReceiverVariableBytecode2 [
 	"AutoGenerated by Druid"
 
@@ -12254,7 +12256,7 @@ SimpleDruidJIT >> gen_StoreAndPopReceiverVariableBytecode2 [
 	^ 0
 ]
 
-{ #category : #generated }
+{ #category : 'generated' }
 SimpleDruidJIT >> gen_StoreAndPopReceiverVariableBytecode3 [
 	"AutoGenerated by Druid"
 
@@ -12333,7 +12335,7 @@ SimpleDruidJIT >> gen_StoreAndPopReceiverVariableBytecode3 [
 	^ 0
 ]
 
-{ #category : #generated }
+{ #category : 'generated' }
 SimpleDruidJIT >> gen_StoreAndPopReceiverVariableBytecode4 [
 	"AutoGenerated by Druid"
 
@@ -12412,7 +12414,7 @@ SimpleDruidJIT >> gen_StoreAndPopReceiverVariableBytecode4 [
 	^ 0
 ]
 
-{ #category : #generated }
+{ #category : 'generated' }
 SimpleDruidJIT >> gen_StoreAndPopReceiverVariableBytecode5 [
 	"AutoGenerated by Druid"
 
@@ -12491,7 +12493,7 @@ SimpleDruidJIT >> gen_StoreAndPopReceiverVariableBytecode5 [
 	^ 0
 ]
 
-{ #category : #generated }
+{ #category : 'generated' }
 SimpleDruidJIT >> gen_StoreAndPopReceiverVariableBytecode6 [
 	"AutoGenerated by Druid"
 
@@ -12570,7 +12572,7 @@ SimpleDruidJIT >> gen_StoreAndPopReceiverVariableBytecode6 [
 	^ 0
 ]
 
-{ #category : #generated }
+{ #category : 'generated' }
 SimpleDruidJIT >> gen_StoreAndPopReceiverVariableBytecode7 [
 	"AutoGenerated by Druid"
 
@@ -12649,7 +12651,7 @@ SimpleDruidJIT >> gen_StoreAndPopReceiverVariableBytecode7 [
 	^ 0
 ]
 
-{ #category : #generated }
+{ #category : 'generated' }
 SimpleDruidJIT >> gen_StoreAndPopRemoteTempLongBytecode [
 	"AutoGenerated by Druid"
 
@@ -12836,7 +12838,7 @@ SimpleDruidJIT >> gen_StoreAndPopRemoteTempLongBytecode [
 	^ 0
 ]
 
-{ #category : #generated }
+{ #category : 'generated' }
 SimpleDruidJIT >> gen_StoreAndPopTemporaryVariableBytecode0 [
 	"AutoGenerated by Druid"
 
@@ -12848,7 +12850,7 @@ SimpleDruidJIT >> gen_StoreAndPopTemporaryVariableBytecode0 [
 	^ 0
 ]
 
-{ #category : #generated }
+{ #category : 'generated' }
 SimpleDruidJIT >> gen_StoreAndPopTemporaryVariableBytecode1 [
 	"AutoGenerated by Druid"
 
@@ -12860,7 +12862,7 @@ SimpleDruidJIT >> gen_StoreAndPopTemporaryVariableBytecode1 [
 	^ 0
 ]
 
-{ #category : #generated }
+{ #category : 'generated' }
 SimpleDruidJIT >> gen_StoreAndPopTemporaryVariableBytecode2 [
 	"AutoGenerated by Druid"
 
@@ -12872,7 +12874,7 @@ SimpleDruidJIT >> gen_StoreAndPopTemporaryVariableBytecode2 [
 	^ 0
 ]
 
-{ #category : #generated }
+{ #category : 'generated' }
 SimpleDruidJIT >> gen_StoreAndPopTemporaryVariableBytecode3 [
 	"AutoGenerated by Druid"
 
@@ -12884,7 +12886,7 @@ SimpleDruidJIT >> gen_StoreAndPopTemporaryVariableBytecode3 [
 	^ 0
 ]
 
-{ #category : #generated }
+{ #category : 'generated' }
 SimpleDruidJIT >> gen_StoreAndPopTemporaryVariableBytecode4 [
 	"AutoGenerated by Druid"
 
@@ -12896,7 +12898,7 @@ SimpleDruidJIT >> gen_StoreAndPopTemporaryVariableBytecode4 [
 	^ 0
 ]
 
-{ #category : #generated }
+{ #category : 'generated' }
 SimpleDruidJIT >> gen_StoreAndPopTemporaryVariableBytecode5 [
 	"AutoGenerated by Druid"
 
@@ -12908,7 +12910,7 @@ SimpleDruidJIT >> gen_StoreAndPopTemporaryVariableBytecode5 [
 	^ 0
 ]
 
-{ #category : #generated }
+{ #category : 'generated' }
 SimpleDruidJIT >> gen_StoreAndPopTemporaryVariableBytecode6 [
 	"AutoGenerated by Druid"
 
@@ -12920,7 +12922,7 @@ SimpleDruidJIT >> gen_StoreAndPopTemporaryVariableBytecode6 [
 	^ 0
 ]
 
-{ #category : #generated }
+{ #category : 'generated' }
 SimpleDruidJIT >> gen_StoreAndPopTemporaryVariableBytecode7 [
 	"AutoGenerated by Druid"
 
@@ -12932,7 +12934,7 @@ SimpleDruidJIT >> gen_StoreAndPopTemporaryVariableBytecode7 [
 	^ 0
 ]
 
-{ #category : #generated }
+{ #category : 'generated' }
 SimpleDruidJIT >> gen_StoreRemoteTempLongBytecode [
 	"AutoGenerated by Druid"
 
@@ -13117,7 +13119,7 @@ SimpleDruidJIT >> gen_StoreRemoteTempLongBytecode [
 	^ 0
 ]
 
-{ #category : #'trait candidates' }
+{ #category : 'trait candidates' }
 SimpleDruidJIT >> generateObjectRepresentationTrampolines [
 	"Do the store check.  Answer the argument for the benefit of the code generator;
 	 ReceiverResultReg may be caller-saved and hence smashed by this call.  Answering
@@ -13155,21 +13157,21 @@ SimpleDruidJIT >> generateObjectRepresentationTrampolines [
 		[ceLargeActiveContextInFullBlockTrampoline := self genActiveContextTrampolineLarge: true inBlock: InFullBlock called: 'ceLargeFullBlockContext'].
 ]
 
-{ #category : #'trait candidates' }
+{ #category : 'trait candidates' }
 SimpleDruidJIT >> getActiveContextAllocatesInMachineCode [
 	"Make sure SendNumArgsReg and ClassReg are available in addition to
 	 ReceiverResultReg and TempReg in genGetActiveContextNumArgs:large:inBlock:."
 	^true
 ]
 
-{ #category : #'trait candidates' }
+{ #category : 'trait candidates' }
 SimpleDruidJIT >> hasValidHeaderPostGC: cogMethod [
 	<var: #cogMethod type: #'CogMethod *'>
 	<inline: true>
 	^cogMethod objectHeader = objectMemory nullHeaderForMachineCodeMethod
 ]
 
-{ #category : #'trait candidates' }
+{ #category : 'trait candidates' }
 SimpleDruidJIT >> initialize [
 
 	<doNotGenerate>
@@ -13178,7 +13180,7 @@ SimpleDruidJIT >> initialize [
 	ceStoreTrampolines := (CArrayAccessor on: (Array new: NumStoreTrampolines))
 ]
 
-{ #category : #'trait candidates' }
+{ #category : 'trait candidates' }
 SimpleDruidJIT >> inlineCacheTagForInstance: oop [
 	"Answer the relevant inline cache tag for an instance.
 	 c.f. getInlineCacheClassTagFrom:into: & inlineCacheTagForClass:"
@@ -13187,14 +13189,14 @@ SimpleDruidJIT >> inlineCacheTagForInstance: oop [
 		ifFalse: [objectMemory classIndexOf: oop]
 ]
 
-{ #category : #'trait candidates' }
+{ #category : 'trait candidates' }
 SimpleDruidJIT >> inlineCacheTagIsYoung: cacheTag [
 	"Since all cache tags in Spur are class indices none of
 	 them are young or have to be updated in a scavenge."
 	^false
 ]
 
-{ #category : #'trait candidates' }
+{ #category : 'trait candidates' }
 SimpleDruidJIT >> isUnannotatableConstant: simStackEntry [
 	<inline: true>
 	<var: 'simStackEntry' type: #'CogSimStackEntry *'>
@@ -13203,12 +13205,12 @@ SimpleDruidJIT >> isUnannotatableConstant: simStackEntry [
 		or: [(self shouldAnnotateObjectReference: simStackEntry constant) not]]
 ]
 
-{ #category : #'trait candidates' }
+{ #category : 'trait candidates' }
 SimpleDruidJIT >> log2BytesPerWord [
 	^3
 ]
 
-{ #category : #'trait candidates' }
+{ #category : 'trait candidates' }
 SimpleDruidJIT >> markAndTraceCacheTagLiteral: literal in: cogMethodOrNil atpc: address [
 	"Mark and trace a literal in an inline cache preceding address in cogMethodOrNil.
 	 Answer if code was modified.  In 64-bit Spur, cache tags are either selector
@@ -13219,7 +13221,7 @@ SimpleDruidJIT >> markAndTraceCacheTagLiteral: literal in: cogMethodOrNil atpc: 
 	^false
 ]
 
-{ #category : #'trait candidates' }
+{ #category : 'trait candidates' }
 SimpleDruidJIT >> markAndTraceLiteral: literal in: cogMethod at: address [
 	"Mark and trace a literal in a sqInt variable of cogMethod."
 	<var: #cogMethod type: #'CogMethod *'>
@@ -13236,7 +13238,7 @@ SimpleDruidJIT >> markAndTraceLiteral: literal in: cogMethod at: address [
 	self markAndTraceUpdatedLiteral: objOop in: cogMethod
 ]
 
-{ #category : #'trait candidates' }
+{ #category : 'trait candidates' }
 SimpleDruidJIT >> markAndTraceLiteral: literal in: cogMethodOrNil atpc: address [
 	"Mark and trace a literal in a machine code instruction preceding address in cogMethodOrNil.
 	 Answer if code was modified."
@@ -13256,7 +13258,7 @@ SimpleDruidJIT >> markAndTraceLiteral: literal in: cogMethodOrNil atpc: address 
 	^true
 ]
 
-{ #category : #'trait candidates' }
+{ #category : 'trait candidates' }
 SimpleDruidJIT >> markAndTraceUpdatedLiteral: objOop in: cogMethodOrNil [
 	"Common code to mark a literal in cogMethod and add
 	 the cogMethod to youngReferrers if the literal is young."
@@ -13268,7 +13270,7 @@ SimpleDruidJIT >> markAndTraceUpdatedLiteral: objOop in: cogMethodOrNil [
 		 objectMemory markAndTrace: objOop]
 ]
 
-{ #category : #'trait candidates' }
+{ #category : 'trait candidates' }
 SimpleDruidJIT >> maybeCompileRetryOnPrimitiveFail: primIndex [
 	"If primIndex has an accessorDepth and fails, or it is external and fails with PrimErrNoMemory,
 	 call ceCheckAndMaybeRetryPrimitive if so  If ceCheck.... answers true, retry the primitive."
@@ -13300,7 +13302,7 @@ SimpleDruidJIT >> maybeCompileRetryOnPrimitiveFail: primIndex [
 	^0
 ]
 
-{ #category : #'trait candidates' }
+{ #category : 'trait candidates' }
 SimpleDruidJIT >> maybeGenerateSelectorIndexDereferenceRoutine [
 	"Generate the routine that converts selector indices into selector objects.
 	 It is called from the send trampolines.
@@ -13356,7 +13358,7 @@ SimpleDruidJIT >> maybeGenerateSelectorIndexDereferenceRoutine [
 		recordRunTimeObjectReferences
 ]
 
-{ #category : #'trait candidates' }
+{ #category : 'trait candidates' }
 SimpleDruidJIT >> maybeShiftClassTagRegisterForMethodCacheProbe: classTagReg [
 	"Generate a shift of the register containing the class tag in a method cache probe.
 	 c.f. SpurMemoryManager>>methodCacheHashOf:with:"
@@ -13365,7 +13367,7 @@ SimpleDruidJIT >> maybeShiftClassTagRegisterForMethodCacheProbe: classTagReg [
 	^0
 ]
 
-{ #category : #'trait candidates' }
+{ #category : 'trait candidates' }
 SimpleDruidJIT >> numRegArgs [
 	"Define how many register arguments a StackToRegisterMappingCogit can
 	 and should use with the receiver.  The value must be 0, 1 or 2.  Note that a
@@ -13380,7 +13382,7 @@ SimpleDruidJIT >> numRegArgs [
 	^2
 ]
 
-{ #category : #'trait candidates' }
+{ #category : 'trait candidates' }
 SimpleDruidJIT >> remapObject: objOop [
 	self assert: (objectMemory addressCouldBeObj: objOop).
 	^(objectMemory shouldRemapObj: objOop)
@@ -13388,21 +13390,21 @@ SimpleDruidJIT >> remapObject: objOop [
 		ifFalse: [objOop]
 ]
 
-{ #category : #'trait candidates' }
+{ #category : 'trait candidates' }
 SimpleDruidJIT >> remapOop: objOop [
 	^(objectMemory shouldRemapOop: objOop)
 		ifTrue: [objectMemory remapObj: objOop]
 		ifFalse: [objOop]
 ]
 
-{ #category : #'trait candidates' }
+{ #category : 'trait candidates' }
 SimpleDruidJIT >> selectorIndexDereferenceRoutine [
 	"If the object representation is 64-bits, selectors must be accessed via indices in the inline caches.
 	 Answer the routine that will map from indices to selector objects if so, otherwise nil."
 	^ceDereferenceSelectorIndex
 ]
 
-{ #category : #'trait candidates' }
+{ #category : 'trait candidates' }
 SimpleDruidJIT >> shouldAnnotateObjectReference: anOop [
 	"Objects in newSpace or oldSpace except nil, true, false & classTableRootObj need to be annotated."
 	^(objectMemory isNonImmediate: anOop)
@@ -13410,12 +13412,12 @@ SimpleDruidJIT >> shouldAnnotateObjectReference: anOop [
 		or: [self oop: anOop isLessThan: objectMemory nilObject]]
 ]
 
-{ #category : #'trait candidates' }
+{ #category : 'trait candidates' }
 SimpleDruidJIT >> slotOffsetOfInstVarIndex: index [
 	^index * objectMemory wordSize + objectMemory baseHeaderSize
 ]
 
-{ #category : #'trait candidates' }
+{ #category : 'trait candidates' }
 SimpleDruidJIT >> validInlineCacheTag: classIndexOrTagPattern [
 	"The three valid tag patterns are 1 (SmallInteger), 2 (Character) and 3 (SmallFloat64)."
 	^(classIndexOrTagPattern >= 1
@@ -13423,7 +13425,7 @@ SimpleDruidJIT >> validInlineCacheTag: classIndexOrTagPattern [
 	  or: [(objectMemory classAtIndex: classIndexOrTagPattern) notNil]
 ]
 
-{ #category : #'trait candidates' }
+{ #category : 'trait candidates' }
 SimpleDruidJIT >> valueOfAssociation: associationOop [
 	| association |
 	association := associationOop.

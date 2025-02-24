@@ -1037,7 +1037,7 @@ StackInterpreterSimulator >> primitiveIdentityHash [
 	^super primitiveIdentityHash
 ]
 
-{ #category : #'control primitives' }
+{ #category : 'control primitives' }
 StackInterpreterSimulator >> primitiveObject: actualReceiver perform: selector withArguments: argumentArray lookedUpIn: lookupClass [
 	"Override to allow simulator to filter start-up items to avoid as-yet unsimulatable plugins."
 
@@ -1046,7 +1046,7 @@ StackInterpreterSimulator >> primitiveObject: actualReceiver perform: selector w
 	^super primitiveObject: actualReceiver perform: selector withArguments: argumentArray lookedUpIn: lookupClass
 ]
 
-{ #category : #'object access primitives' }
+{ #category : 'object access primitives' }
 StackInterpreterSimulator >> primitiveObjectPointsTo [
 	"self halt."
 	^super primitiveObjectPointsTo
@@ -1058,15 +1058,6 @@ StackInterpreterSimulator >> primitiveStoreStackp [
 	self halt."
 	super primitiveStoreStackp.
 	"self printContext: self stackTop"
-]
-
-{ #category : 'system control primitives' }
-StackInterpreterSimulator >> primitiveVMParameter [
-	
-	(self stackTop = (objectMemory integerObjectOf: 9)
-	 or: [self stackTop = (objectMemory integerObjectOf: 52)]) ifTrue:
-		[self halt].
-	^super primitiveVMParameter
 ]
 
 { #category : 'debugging traps' }

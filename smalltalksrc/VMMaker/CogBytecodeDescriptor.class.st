@@ -121,7 +121,7 @@ CogBytecodeDescriptor >> isBranchTrue: anObject [
 	^isBranchTrue := anObject
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 CogBytecodeDescriptor >> isConditionalBranch [
 	<inline: true>
 	^isBranchTrue or: [isBranchFalse]

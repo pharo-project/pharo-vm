@@ -484,19 +484,19 @@ StackInterpreter class >> ancilliaryClasses [
 		VMImageReaderWriter} , VMImageReaderWriter ancilliaryClasses
 ]
 
-{ #category : #constants }
+{ #category : 'constants' }
 StackInterpreter class >> basicPrimitiveTable [
 	
 	^ PrimitiveTable
 ]
 
-{ #category : #constants }
+{ #category : 'constants' }
 StackInterpreter class >> bytecodeTable [
 
 	^ BytecodeTable
 ]
 
-{ #category : #initialization }
+{ #category : 'initialization' }
 StackInterpreter class >> bytecodeTableArray [
 
 	"TODO: Fix comments"
@@ -577,7 +577,7 @@ StackInterpreter class >> bytecodeTableArray [
 	"3 byte bytecodes" "was extPushClosureBytecode"
 ]
 
-{ #category : #'C translation' }
+{ #category : 'C translation' }
 StackInterpreter class >> declareCVarsIn: aCCodeGenerator [
 
 	| vmClass |
@@ -2278,7 +2278,13 @@ StackInterpreter >> baseFrameReturn [
 	^ self fetchNextBytecode
 ]
 
-{ #category : #initialization }
+{ #category : 'frame access' }
+StackInterpreter >> baseFrameSavedCallerIP [
+
+	^ objectMemory nilObject
+]
+
+{ #category : 'initialization' }
 StackInterpreter >> basicInitialize [
 	"The primary responsibility of this method is to allocate
 	 Smalltalk Arrays for variables that will be declared as statically-allocated
@@ -2304,12 +2310,6 @@ StackInterpreter >> basicInitialize [
 	numStackPages := self defaultNumStackPages. 
 
 	suppressHeartbeatFlag := false.
-]
-
-{ #category : 'frame access' }
-StackInterpreter >> baseFrameSavedCallerIP [
-
-	^ objectMemory nilObject
 ]
 
 { #category : 'frame access' }
@@ -2611,7 +2611,7 @@ StackInterpreter >> binarySmiCompInlinePrimitive: primIndex [
 	self pop: 1; stackTopPut: (objectMemory booleanObjectOf: result)
 ]
 
-{ #category : #utilities }
+{ #category : 'utilities' }
 StackInterpreter >> booleanCheatFalseSistaV1 [
 	"cheat the interpreter out of the pleasure of handling the next bytecode IFF it is a jump-on-boolean. Which it is, often enough when the current bytecode is something like bytecodePrimEqual"
 
@@ -2877,7 +2877,7 @@ StackInterpreter >> bytecodePrimDiv [
 	self normalSendSpecialSelector: 13 argumentCount: 1
 ]
 
-{ #category : #'common selector sends' }
+{ #category : 'common selector sends' }
 StackInterpreter >> bytecodePrimDivide [
 
 	<compilationInfo: #isMapped>
@@ -2905,7 +2905,7 @@ StackInterpreter >> bytecodePrimDivide [
 	self normalSendSpecialSelector: 9 argumentCount: 1
 ]
 
-{ #category : #'common selector sends' }
+{ #category : 'common selector sends' }
 StackInterpreter >> bytecodePrimDo [
 
 	<compilationInfo: #isMapped>
@@ -3154,7 +3154,7 @@ StackInterpreter >> bytecodePrimNext [
 	self normalSendSpecialSelector: 19 argumentCount: 0
 ]
 
-{ #category : #'common selector sends' }
+{ #category : 'common selector sends' }
 StackInterpreter >> bytecodePrimNextPut [
 
 	<compilationInfo: #isMapped>
@@ -3447,7 +3447,7 @@ StackInterpreter >> cannotAssign: resultObj to: targetObj withIndex: index [
 	^ self normalSend
 ]
 
-{ #category : #'indexing primitive support' }
+{ #category : 'indexing primitive support' }
 StackInterpreter >> characterForAscii: ascii [
 	"Above ObjectMemory, arg must lie in range 0-255!"
 
@@ -4100,14 +4100,14 @@ StackInterpreter >> commonCallerReturn [
 	self stackTopPut: localReturnValue
 ]
 
-{ #category : #'return bytecodes' }
+{ #category : 'return bytecodes' }
 StackInterpreter >> commonCallerReturn: value [
 
 	localReturnValue := value.
 	self commonCallerReturn
 ]
 
-{ #category : #'return bytecodes' }
+{ #category : 'return bytecodes' }
 StackInterpreter >> commonReturn [
 	"Do an ^-return (return from method), checking for unwinds if this is a block activation.
 	 Note: Assumed to be inlined into the dispatch loop."
@@ -4241,14 +4241,14 @@ StackInterpreter >> commonReturn [
 	self stackTopPut: localReturnValue
 ]
 
-{ #category : #'return bytecodes' }
+{ #category : 'return bytecodes' }
 StackInterpreter >> commonReturn: value [
 
 	localReturnValue := value.
 	self commonReturn
 ]
 
-{ #category : #'send bytecodes' }
+{ #category : 'send bytecodes' }
 StackInterpreter >> commonSendOrdinary [
 	"Send a message, starting lookup with the receiver's class."
 
@@ -4545,7 +4545,7 @@ StackInterpreter >> createActualMessageTo: lookupClass [
 	argumentCount := 1
 ]
 
-{ #category : #'stack bytecodes' }
+{ #category : 'stack bytecodes' }
 StackInterpreter >> createFullClosureInIndex: compiledBlockLiteralIndex numCopied: numCopied ignoreContext: ignoreContext [
 	"The compiler has pushed the values to be copied, if any. The receiver has been pushed on stack before if specified. 
 	 Create a Closure with space for the copiedValues and pop numCopied values off the stack into the closure.
@@ -4575,14 +4575,14 @@ StackInterpreter >> createFullClosureInIndex: compiledBlockLiteralIndex numCopie
 	^ newClosure
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 StackInterpreter >> currentBytecode [
 
 	<doNotGenerate>
 	^ currentBytecode
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 StackInterpreter >> currentBytecode: anInteger [ 
 	<doNotGenerate>
 	currentBytecode := anInteger
@@ -6517,7 +6517,7 @@ StackInterpreter >> frameMethodField: theFP [
 	^stackPages unsignedLongAt: theFP + FoxMethod
 ]
 
-{ #category : #'frame access' }
+{ #category : 'frame access' }
 StackInterpreter >> frameMethodField: theFP put: aValue [
 	<inline: true>
 	<var: #theFP type: #'char *'>
@@ -6525,7 +6525,7 @@ StackInterpreter >> frameMethodField: theFP put: aValue [
 	^stackPages unsignedLongAt: theFP + FoxMethod put: aValue
 ]
 
-{ #category : #'frame access' }
+{ #category : 'frame access' }
 StackInterpreter >> frameMethodObject: theFP [
 
 	<inline: true>
@@ -6726,7 +6726,7 @@ StackInterpreter >> getBlockCompilationMSecs [
 	^objectMemory nilObject
 ]
 
-{ #category : #statistics }
+{ #category : 'statistics' }
 StackInterpreter >> getBlockCompilationSize [
 	"This is nil in the StackVM"
 	^objectMemory nilObject
@@ -6892,13 +6892,13 @@ StackInterpreter >> getMethodCompilationMSecs [
 	^objectMemory nilObject
 ]
 
-{ #category : #statistics }
+{ #category : 'statistics' }
 StackInterpreter >> getMethodCompilationSize [
 	"This is nil in the StackVM"
 	^objectMemory nilObject
 ]
 
-{ #category : #'plugin primitive support' }
+{ #category : 'plugin primitive support' }
 StackInterpreter >> getNextWakeupUsecs [
 	<api>
 	<returnTypeC: #usqLong>
@@ -7417,13 +7417,13 @@ StackInterpreter >> initialize [
 	imageVersionNumber := 0.
 ]
 
-{ #category : #initialization }
+{ #category : 'initialization' }
 StackInterpreter >> initializeAtCache [
 
 	atCache := Array new: AtCacheTotalSize.
 ]
 
-{ #category : #initialization }
+{ #category : 'initialization' }
 StackInterpreter >> initializeExtraClassInstVarIndices [
 	"Initialize metaclassNumSlots and thisClassIndex which are used in debug printing, and
 	 classNameIndex which is used not only for debug printing but for is:KindOf: & is:MemberOf:
@@ -7710,7 +7710,7 @@ StackInterpreter >> internalAboutToReturn: resultOop through: aContext [
 	^self normalSend
 ]
 
-{ #category : #'return bytecodes' }
+{ #category : 'return bytecodes' }
 StackInterpreter >> internalMustBeBoolean: aBoolean [
 	<inline: true>
 	
@@ -10209,7 +10209,7 @@ StackInterpreter >> noMarkedContextsOnPage: thePage [
 	^ true
 ]
 
-{ #category : #'send bytecodes' }
+{ #category : 'send bytecodes' }
 StackInterpreter >> normalLiteralSelectorAt: selectorIndex argumentCount: theArgumentCount [
 
 	messageSelector := self literal: selectorIndex.
@@ -10217,7 +10217,7 @@ StackInterpreter >> normalLiteralSelectorAt: selectorIndex argumentCount: theArg
 	self normalSend
 ]
 
-{ #category : #'send bytecodes' }
+{ #category : 'send bytecodes' }
 StackInterpreter >> normalSend [
 	"Send a message, starting lookup with the receiver's class."
 	"Assume: messageSelector and argumentCount have been set, and that 
@@ -10231,7 +10231,7 @@ StackInterpreter >> normalSend [
 	self commonSendOrdinary
 ]
 
-{ #category : #'common selector sends' }
+{ #category : 'common selector sends' }
 StackInterpreter >> normalSendSpecialSelector: specialSelectorIndex argumentCount: theArgumentCount [
 
 	messageSelector := self specialSelector: specialSelectorIndex.
@@ -10239,7 +10239,7 @@ StackInterpreter >> normalSendSpecialSelector: specialSelectorIndex argumentCoun
 	self normalSend
 ]
 
-{ #category : #'sista bytecodes' }
+{ #category : 'sista bytecodes' }
 StackInterpreter >> nullaryInlinePrimitive: primIndex [
 	<option: #SistaVM>
 	self unknownInlinePrimitive
@@ -12546,7 +12546,7 @@ StackInterpreter >> pushFloat: f [
 	self push: (objectMemory floatObjectOf: f).
 ]
 
-{ #category : #'internal interpreter access' }
+{ #category : 'internal interpreter access' }
 StackInterpreter >> pushInteger: integerValue [
 	self push: (objectMemory integerObjectOf: integerValue).
 	^nil
@@ -13318,7 +13318,7 @@ StackInterpreter >> sendCannotReturn: resultOop [
 	^self normalSend
 ]
 
-{ #category : #'send bytecodes' }
+{ #category : 'send bytecodes' }
 StackInterpreter >> sendDirectSuper: selectorIndex numArgs: numArgs [
 
 	messageSelector := self literal: selectorIndex.
@@ -13326,7 +13326,7 @@ StackInterpreter >> sendDirectSuper: selectorIndex numArgs: numArgs [
 	self directedSuperclassSend
 ]
 
-{ #category : #'send bytecodes' }
+{ #category : 'send bytecodes' }
 StackInterpreter >> sendLiteralSelector0ArgsBytecode [
 	"Can use any of the first 16 literals for the selector."
 
@@ -13362,7 +13362,7 @@ StackInterpreter >> sendLiteralSelector2ArgsBytecode [
 		argumentCount: 2
 ]
 
-{ #category : #'send bytecodes' }
+{ #category : 'send bytecodes' }
 StackInterpreter >> sendSuper: selectorIndex numArgs: numArgs [
 
 	messageSelector := self literal: selectorIndex.
@@ -14464,7 +14464,7 @@ StackInterpreter >> specialSelectorNumArgs: index [
 			   ofObject: (objectMemory splObj: SpecialSelectors))
 ]
 
-{ #category : #'indexing primitive support' }
+{ #category : 'indexing primitive support' }
 StackInterpreter >> stContext: context at: index format: format fixedFields: fixedFields [
 
 	| stSize |
@@ -14480,7 +14480,7 @@ StackInterpreter >> stContext: context at: index format: format fixedFields: fix
 	^ self stObject: context at: index format: format fixedFields: fixedFields size: stSize.
 ]
 
-{ #category : #'indexing primitive support' }
+{ #category : 'indexing primitive support' }
 StackInterpreter >> stObject: array at: index [
 	"Return what ST would return for <obj> at: index."
 
@@ -14500,7 +14500,7 @@ StackInterpreter >> stObject: array at: index [
 	^ self stObject: array at: index format: fmt fixedFields: fixedFields size: stSize.
 ]
 
-{ #category : #'indexing primitive support' }
+{ #category : 'indexing primitive support' }
 StackInterpreter >> stObject: array at: index format: format fixedFields: fixedFields size: stSize [
 
 	<inline: true>
@@ -14520,7 +14520,7 @@ StackInterpreter >> stObject: array at: index format: format fixedFields: fixedF
 	^ 0
 ]
 
-{ #category : #'indexing primitive support' }
+{ #category : 'indexing primitive support' }
 StackInterpreter >> stObject: array at: index put: value [
   "Do what ST would return for <obj> at: index put: value."
   | fmt totalLength fixedFields stSize |
@@ -14934,7 +14934,7 @@ StackInterpreter >> storeMaybeContextReceiverVariable: fieldIndex withValue: anO
 
 ]
 
-{ #category : #'stack bytecodes' }
+{ #category : 'stack bytecodes' }
 StackInterpreter >> storePopMaybeContext: obj receiverVariable: fieldIndex withValue: anOop [
 	"Must trap accesses to married and widowed contexts.
 	 But don't want to check on all inst var accesses.  This
@@ -14962,7 +14962,7 @@ StackInterpreter >> storePopMaybeContext: obj receiverVariable: fieldIndex withV
 
 ]
 
-{ #category : #'stack bytecodes' }
+{ #category : 'stack bytecodes' }
 StackInterpreter >> storePopMaybeContextReceiverVariable: fieldIndex withValue: anObject [
 	"Must trap accesses to married and widowed contexts.
 	 But don't want to check on all inst var accesses.  This
@@ -14971,7 +14971,7 @@ StackInterpreter >> storePopMaybeContextReceiverVariable: fieldIndex withValue: 
 
 ]
 
-{ #category : #'stack bytecodes' }
+{ #category : 'stack bytecodes' }
 StackInterpreter >> storeRemoteTemp: index inVectorAt: tempVectorIndex [
 
 	| tempVector |
@@ -15280,13 +15280,13 @@ StackInterpreter >> thisClassIndex [
 	^thisClassIndex
 ]
 
-{ #category : #simulation }
+{ #category : 'simulation' }
 StackInterpreter >> threadManager [
 	<doNotGenerate>
 	^nil
 ]
 
-{ #category : #simulation }
+{ #category : 'simulation' }
 StackInterpreter >> time: aString [ 
 	<doNotGenerate>
 	^ 0

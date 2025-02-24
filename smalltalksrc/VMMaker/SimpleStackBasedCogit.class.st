@@ -192,14 +192,14 @@ SimpleStackBasedCogit class >> initializeBytecodeTableForSistaV1 [
 		(3 254 255	unknownBytecode))
 ]
 
-{ #category : #translation }
+{ #category : 'translation' }
 SimpleStackBasedCogit class >> objectRepresentationAncilliaryClasses [
 
 	^ (self objectRepresentationClass withAllSuperclasses copyUpThrough:
 		   CogObjectRepresentation) reverse
 ]
 
-{ #category : #'class initialization' }
+{ #category : 'class initialization' }
 SimpleStackBasedCogit class >> table: primArray from: specArray [ 
 	"Fill in the specified entries in the primitive table."
 	specArray do:
@@ -220,14 +220,14 @@ SimpleStackBasedCogit class >> table: primArray from: specArray [
 				primMayCallBack: false]]
 ]
 
-{ #category : #'bytecode generators' }
+{ #category : 'bytecode generators' }
 SimpleStackBasedCogit >> PopN: n [
 
 	self AddCq: n * objectMemory wordSize R: SPReg.
 	^ 0
 ]
 
-{ #category : #'primitive generators' }
+{ #category : 'primitive generators' }
 SimpleStackBasedCogit >> adjustArgumentsForPerform: numArgs [
 	"e.g.	Receiver				Receiver	or	Receiver				Receiver	(RISC)
 			Selector/Arg0	=>		Arg1			Selector/Arg0	=>		Arg1
@@ -990,13 +990,13 @@ SimpleStackBasedCogit >> compilePrimitive [
 	^ self compileInterpreterPrimitive: primitiveRoutine flags: flags
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 SimpleStackBasedCogit >> deadCode: aBoolean [ 
 	
 	"Nothing, compatibility with Stack to register based cogit"
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 SimpleStackBasedCogit >> directedBindingSuperSendTrampolineAt: anAddress put: aTrampolineAddress [
 	
 	directedSuperBindingSendTrampolines at: anAddress put: aTrampolineAddress
@@ -1009,7 +1009,7 @@ SimpleStackBasedCogit >> directedBindingSuperSendTrampolines [
 	^ directedSuperBindingSendTrampolines
 ]
 
-{ #category : #'span functions' }
+{ #category : 'span functions' }
 SimpleStackBasedCogit >> distanceForShortForwardBranch: pc inMethod: aMethodObj [
 	"N.B.  This serves for both BlueBook/V3 and V4 short jumps."
 	<inline: true>
@@ -1046,16 +1046,16 @@ SimpleStackBasedCogit >> evaluateTrampolineCallBlock: block protectLinkRegIfNot:
 			[ block value ].
 ]
 
-{ #category : #'bytecode generators' }
-SimpleStackBasedCogit >> extBSpecifiesMaybeContext [
-	<inline: true>
-	^ extB anyMask: 2
-]
-
 { #category : 'accessing' }
 SimpleStackBasedCogit >> extA: anInteger [ 
 	<doNotGenerate>
 	extA := anInteger
+]
+
+{ #category : 'bytecode generators' }
+SimpleStackBasedCogit >> extBSpecifiesMaybeContext [
+	<inline: true>
+	^ extB anyMask: 2
 ]
 
 { #category : 'bytecode generators' }
@@ -1072,7 +1072,7 @@ SimpleStackBasedCogit >> extendedPushBytecode [
 	^self genPushLiteralVariable: variableIndex
 ]
 
-{ #category : #'bytecode generator support' }
+{ #category : 'bytecode generator support' }
 SimpleStackBasedCogit >> firstSpecialSelectorBytecodeOffset [
 	<inline: true>
 	
@@ -1296,7 +1296,7 @@ SimpleStackBasedCogit >> genExtPushReceiverVariableBytecode [
 		ifFalse: [self genPushReceiverVariable: index]
 ]
 
-{ #category : #'bytecode generators' }
+{ #category : 'bytecode generators' }
 SimpleStackBasedCogit >> genExtReturnTopFromBlock [
 	"218		11011010		Return Stack Top From Block [* return from enclosing block N, N = Extend A]
 	 If extA is zero, return to the caller of the current block activation.
@@ -1356,7 +1356,7 @@ SimpleStackBasedCogit >> genExtStoreAndPopReceiverVariableBytecode [
 		ifFalse: [self genStorePop: true ReceiverVariable: index]
 ]
 
-{ #category : #'bytecode generators' }
+{ #category : 'bytecode generators' }
 SimpleStackBasedCogit >> genExtStoreLiteralVariableBytecode [
 	"233		11101001	i i i i i i i i	Store Literal Variable #iiiiiiii (+ Extend A * 256)"
 	| index |
@@ -1365,7 +1365,7 @@ SimpleStackBasedCogit >> genExtStoreLiteralVariableBytecode [
 	^self genStorePop: false LiteralVariable: index
 ]
 
-{ #category : #'bytecode generators' }
+{ #category : 'bytecode generators' }
 SimpleStackBasedCogit >> genExtStoreReceiverVariableBytecode [
 	"232		11101000	i i i i i i i i	Store Receiver Variable #iiiiiii (+ Extend A * 256)"
 	| index |
@@ -1376,7 +1376,7 @@ SimpleStackBasedCogit >> genExtStoreReceiverVariableBytecode [
 		ifFalse: [self genStorePop: false ReceiverVariable: index]
 ]
 
-{ #category : #'bytecode generators' }
+{ #category : 'bytecode generators' }
 SimpleStackBasedCogit >> genExtTrapIfNotInstanceOfBehaviorsBytecode [
 	"SistaV1: *	236		11101100	iiiiiiii		Trap If Not Instance Of Behavior/Array Of Behavior #iiiiiiii (+ Extend A * 256, where Extend A >= 0)"
 	"This really only makes sense for the optimizing JITs"
@@ -1502,13 +1502,13 @@ SimpleStackBasedCogit >> genJumpTo: targetBytecodePC [
 	^0
 ]
 
-{ #category : #'primitive generators' }
+{ #category : 'primitive generators' }
 SimpleStackBasedCogit >> genLoadArg: n into: reg [
 
 	self genLoadArgAtDepth: (methodOrBlockNumArgs - n - 1) into: reg
 ]
 
-{ #category : #'primitive generators' }
+{ #category : 'primitive generators' }
 SimpleStackBasedCogit >> genLoadArgAtDepth: n into: reg [
 	"Load an argument at depth from top-of-stack (0 relative) into a register.
 	 The actual offset depends on whether there's a link register or not."
@@ -1517,7 +1517,7 @@ SimpleStackBasedCogit >> genLoadArgAtDepth: n into: reg [
 		R: reg
 ]
 
-{ #category : #'bytecode generators' }
+{ #category : 'bytecode generators' }
 SimpleStackBasedCogit >> genLongPushTemporaryVariableBytecode [
 	"230		11100110	i i i i i i i i	Push Temporary Variable #iiiiiiii"
 	^self genPushTemporaryVariable: byte1
@@ -1535,7 +1535,7 @@ SimpleStackBasedCogit >> genLongStoreTemporaryVariableBytecode [
 	^self genStorePop: false TemporaryVariable: byte1
 ]
 
-{ #category : #'bytecode generators' }
+{ #category : 'bytecode generators' }
 SimpleStackBasedCogit >> genLongUnconditionalForwardJump [
 	| distance targetpc |
 	distance := self v3: (self generatorAt: byte0)
@@ -1633,7 +1633,7 @@ SimpleStackBasedCogit >> genMoveTrueR: reg [
 	
 ]
 
-{ #category : #initialization }
+{ #category : 'initialization' }
 SimpleStackBasedCogit >> genMustBeBooleanTrampolineCalled: trampolineName [
 	<var: #trampolineName type: #'char *'>
 	<inline: false>
@@ -1651,7 +1651,7 @@ SimpleStackBasedCogit >> genMustBeBooleanTrampolineCalled: trampolineName [
 		appendOpcodes: true
 ]
 
-{ #category : #initialization }
+{ #category : 'initialization' }
 SimpleStackBasedCogit >> genMustBeBooleanTrampolineFor: boolean called: trampolineName [
 	<var: #trampolineName type: #'char *'>
 	<inline: false>
@@ -2474,7 +2474,7 @@ SimpleStackBasedCogit >> genStorePop: popBoolean ReceiverVariable: slotIndex [
 	^0
 ]
 
-{ #category : #'bytecode generator support' }
+{ #category : 'bytecode generator support' }
 SimpleStackBasedCogit >> genStorePop: popBoolean RemoteTemp: slotIndex At: remoteTempIndex [
 	<inline: false>
 	"The only reason we assert needsFrame here is that in a frameless method
@@ -2727,14 +2727,14 @@ SimpleStackBasedCogit >> minCallAddress: anInteger [
 	minValidCallAddress:=anInteger
 ]
 
-{ #category : #'compile abstract instructions' }
+{ #category : 'compile abstract instructions' }
 SimpleStackBasedCogit >> needsFrameIfMod16GENumArgs: stackDelta [
 	"We need a frame if it is accessing to a temporal variable (not an argument)"
 
 	^ byte0 \\ 16 >= methodOrBlockNumArgs
 ]
 
-{ #category : #'compile abstract instructions' }
+{ #category : 'compile abstract instructions' }
 SimpleStackBasedCogit >> needsFrameIfStackGreaterThanOne: stackDelta [
 	"As of August 2013, the code generator can't deal with spills in frameless methods (the
 	 issue is to do with the stack offset to get at an argument, which is changed when there's a spill).
@@ -2745,7 +2745,7 @@ SimpleStackBasedCogit >> needsFrameIfStackGreaterThanOne: stackDelta [
 	^stackDelta > 1
 ]
 
-{ #category : #testing }
+{ #category : 'testing' }
 SimpleStackBasedCogit >> numRegArgs [
 	<api>
 	^0
@@ -2827,7 +2827,7 @@ SimpleStackBasedCogit >> picAbortTrampolineFor: numArgs [
 	^cePICAbortTrampoline
 ]
 
-{ #category : #'method introspection' }
+{ #category : 'method introspection' }
 SimpleStackBasedCogit >> populate: tuple withPICInfoFor: cPIC firstCacheTag: firstCacheTag [
 	"Populate tuple (which must be large enough) with the ClosedPIC's target method class pairs.
 	 The first entry in tuple contains the bytecode pc for the send, so skip the tuple's first field."
@@ -2856,7 +2856,7 @@ SimpleStackBasedCogit >> populate: tuple withPICInfoFor: cPIC firstCacheTag: fir
 		objectMemory storePointer: i * 2 ofObject: tuple withValue: value ]
 ]
 
-{ #category : #'primitive generators' }
+{ #category : 'primitive generators' }
 SimpleStackBasedCogit >> primitiveDescriptor [
 	"If there is a generator for the current primitive then answer it;
 	 otherwise answer nil."
@@ -2914,7 +2914,7 @@ SimpleStackBasedCogit >> primitivePropertyFlags: primIndex primitiveDescriptor: 
 	^baseFlags
 ]
 
-{ #category : #'method introspection' }
+{ #category : 'method introspection' }
 SimpleStackBasedCogit >> profilingDataFor: descriptor Annotation: isBackwardBranchAndAnnotation Mcpc: mcpc Bcpc: bcpc Method: cogMethodArg [
 	<var: #descriptor type: #'BytecodeDescriptor *'>
 	<var: #mcpc type: #'char *'>
@@ -2979,7 +2979,7 @@ SimpleStackBasedCogit >> profilingDataFor: descriptor Annotation: isBackwardBran
 	^0
 ]
 
-{ #category : #'method introspection' }
+{ #category : 'method introspection' }
 SimpleStackBasedCogit >> profilingDataFor: cogMethod into: arrayObj [
 
 	"Collect the branch and send data for cogMethod, storing it into arrayObj."
@@ -3003,14 +3003,14 @@ SimpleStackBasedCogit >> profilingDataFor: cogMethod into: arrayObj [
 	^ introspectionDataIndex
 ]
 
-{ #category : #'method introspection' }
+{ #category : 'method introspection' }
 SimpleStackBasedCogit >> profilingDataForCounter: counter at: bcpc [
 	"Undefined by now, do nothing"
 
 	^ 0
 ]
 
-{ #category : #'method introspection' }
+{ #category : 'method introspection' }
 SimpleStackBasedCogit >> profilingDataForSendTo: cogCodeSendTarget methodClassIfSuper: methodClassOrNil at: sendMcpc bcpc: sendBcpc [
 	"Answer a tuple with the send data for a linked send to cogMethod.
 	 If the target is a CogMethod (monomorphic send) answer
@@ -3060,7 +3060,7 @@ SimpleStackBasedCogit >> profilingDataForSendTo: cogCodeSendTarget methodClassIf
 	^0 "to get Slang to type this method as answering sqInt"
 ]
 
-{ #category : #'bytecode generator support' }
+{ #category : 'bytecode generator support' }
 SimpleStackBasedCogit >> putSelfInReceiverResultReg [
 	<inline: true>
 	self MoveMw: FoxMFReceiver r: FPReg R: ReceiverResultReg
@@ -3227,7 +3227,7 @@ SimpleStackBasedCogit >> v3: descriptor LongForward: pc Branch: nExts Distance: 
 	 + (objectMemory fetchByte: pc + 1 ofObject: aMethodObj)
 ]
 
-{ #category : #'span functions' }
+{ #category : 'span functions' }
 SimpleStackBasedCogit >> v3: unusedButKeptForPolymorphism ShortForward: pc Branch: unusedButKeptForPolymorphism2 Distance: aMethodObj [
 	
 	^ self distanceForShortForwardBranch: pc inMethod: aMethodObj
@@ -3297,7 +3297,7 @@ SimpleStackBasedCogit >> voidReceiverOptStatus [
 	<inline: true>
 ]
 
-{ #category : #'bytecode generator support' }
+{ #category : 'bytecode generator support' }
 SimpleStackBasedCogit >> voidReceiverResultRegContainsSelf [
 
 	"Nothing. Just compatibility with subclasses"

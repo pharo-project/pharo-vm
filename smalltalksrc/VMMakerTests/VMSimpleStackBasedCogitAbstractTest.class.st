@@ -79,13 +79,13 @@ VMSimpleStackBasedCogitAbstractTest >> abstractInstructions [
 		collect: [ :i | cogit abstractOpcodes at: i ]
 ]
 
-{ #category : #testing }
+{ #category : 'testing' }
 VMSimpleStackBasedCogitAbstractTest >> argumentsOnRegisters [
 
 	^ cogit isKindOf: StackToRegisterMappingCogit
 ]
 
-{ #category : #helpers }
+{ #category : 'helpers' }
 VMSimpleStackBasedCogitAbstractTest >> assertPushed: anOop after: aBlockClosure [
 	
 	| before after |
@@ -412,7 +412,7 @@ VMSimpleStackBasedCogitAbstractTest >> disassembleFrom: anIndex opcodes: numberO
 		pc: 0
 ]
 
-{ #category : #helpers }
+{ #category : 'helpers' }
 VMSimpleStackBasedCogitAbstractTest >> executeMethodWithReceiver: receiverOop withArguments: aCollection [
 	"Simulate a primitive execution having an object as receiver and a single argument
 	  - the receiver goes to the receiver register
@@ -428,25 +428,25 @@ VMSimpleStackBasedCogitAbstractTest >> executeMethodWithReceiver: receiverOop wi
 	self runUntilReturn
 ]
 
-{ #category : #helpers }
+{ #category : 'helpers' }
 VMSimpleStackBasedCogitAbstractTest >> executePrimitiveWithReceiver: receiverOop [
 	
 	^ self executePrimitiveWithReceiver: receiverOop withArguments: { }
 ]
 
-{ #category : #helpers }
+{ #category : 'helpers' }
 VMSimpleStackBasedCogitAbstractTest >> executePrimitiveWithReceiver: receiverOop withArgument: argumentOop [
 	
 	^ self executePrimitiveWithReceiver: receiverOop withArguments: { argumentOop }
 ]
 
-{ #category : #helpers }
+{ #category : 'helpers' }
 VMSimpleStackBasedCogitAbstractTest >> executePrimitiveWithReceiver: receiverOop withArgument: firstArgumentOop and: secondArgumentOop [ 
 
 	^ self executePrimitiveWithReceiver: receiverOop withArguments:  { firstArgumentOop. secondArgumentOop }.
 ]
 
-{ #category : #helpers }
+{ #category : 'helpers' }
 VMSimpleStackBasedCogitAbstractTest >> executePrimitiveWithReceiver: receiverOop withArguments: aCollection [
 
 	self
@@ -455,7 +455,7 @@ VMSimpleStackBasedCogitAbstractTest >> executePrimitiveWithReceiver: receiverOop
 		method: 0
 ]
 
-{ #category : #helpers }
+{ #category : 'helpers' }
 VMSimpleStackBasedCogitAbstractTest >> executePrimitiveWithReceiver: receiverOop withArguments: aCollection method: aMethod [
 
 	"Simulate a primitive execution having an object as receiver and a single argument
@@ -472,7 +472,7 @@ VMSimpleStackBasedCogitAbstractTest >> executePrimitiveWithReceiver: receiverOop
 	self runUntilReturn
 ]
 
-{ #category : #'helpers - registers' }
+{ #category : 'helpers - registers' }
 VMSimpleStackBasedCogitAbstractTest >> framePointerRegisterValue [
 
 	^ machineSimulator framePointerRegisterValue
@@ -680,7 +680,7 @@ VMSimpleStackBasedCogitAbstractTest >> prepareCall [
 			self pushAddress: callerAddress ].
 ]
 
-{ #category : #helpers }
+{ #category : 'helpers' }
 VMSimpleStackBasedCogitAbstractTest >> prepareStackForPrimitiveReceiver: aReceiver arguments: arguments method: aMethod [
 
 	machineSimulator baseRegisterValue: cogit varBaseAddress.
@@ -712,13 +712,13 @@ VMSimpleStackBasedCogitAbstractTest >> prepareStackForSendReceiver: aReceiver [
 	self prepareStackForSendReceiver: aReceiver arguments: #()
 ]
 
-{ #category : #helpers }
+{ #category : 'helpers' }
 VMSimpleStackBasedCogitAbstractTest >> prepareStackForSendReceiver: aReceiver arguments: arguments [
 	
 	self prepareStackForSendReceiver: aReceiver arguments: arguments method: 0 "No method by default"
 ]
 
-{ #category : #helpers }
+{ #category : 'helpers' }
 VMSimpleStackBasedCogitAbstractTest >> prepareStackForSendReceiver: aReceiver arguments: arguments method: aMethod [
 
 	machineSimulator baseRegisterValue: cogit varBaseAddress.
@@ -1024,13 +1024,13 @@ VMSimpleStackBasedCogitAbstractTest >> topAddress [
 	^ self top integerAt: 1 size: self wordSize signed: false
 ]
 
-{ #category : #helpers }
+{ #category : 'helpers' }
 VMSimpleStackBasedCogitAbstractTest >> twoComplementFor: aNumber [
 
 	^ aNumber twoComplementOfBitSize: self wordSize * 8
 ]
 
-{ #category : #'helpers - registers' }
+{ #category : 'helpers - registers' }
 VMSimpleStackBasedCogitAbstractTest >> writeRegister: aRegister value: anInteger [ 
 
 	| value |

@@ -321,7 +321,7 @@ CoInterpreter class >> initializePrimitiveTable [
 		at: 217 + 1 put: #primitiveMethodProfilingData
 ]
 
-{ #category : #'class initialization' }
+{ #category : 'class initialization' }
 CoInterpreter class >> initializeWithOptions: optionsDictionaryOrArray objectMemoryClass: objectMemoryClassOrNil [
 
 	super initializeWithOptions: optionsDictionaryOrArray objectMemoryClass: objectMemoryClassOrNil.
@@ -330,7 +330,7 @@ CoInterpreter class >> initializeWithOptions: optionsDictionaryOrArray objectMem
 		[:c| c initializeWithOptions: InitializationOptions]
 ]
 
-{ #category : #documentation }
+{ #category : 'documentation' }
 CoInterpreter class >> interpreterMachineCodeTransitions [
 	"The CoInterpreter only asks the Cog compiler to generate machine-code methods
 	 when a bytecoded method has been found in the cache, or block value has tried to
@@ -526,7 +526,7 @@ CoInterpreter >> activateNewFullClosure: blockClosure method: theMethod numArgs:
 		methodHeader: methodHeader
 ]
 
-{ #category : #'control primitives' }
+{ #category : 'control primitives' }
 CoInterpreter >> activateNewFullClosure: blockClosure method: theMethod numArgs: numArgs mayContextSwitch: mayContextSwitch methodHeader: aMethodHeader [
 
 	<druidExitPoint>
@@ -842,7 +842,13 @@ CoInterpreter >> baseFrameCannotReturnTo: contextToReturnTo [
 		  from: contextToReturnFrom
 ]
 
-{ #category : #initialization }
+{ #category : 'frame access' }
+CoInterpreter >> baseFrameSavedCallerIP [
+
+	^ cogit ceBaseFrameReturnPC
+]
+
+{ #category : 'initialization' }
 CoInterpreter >> basicInitialize [
 	"Initialize the CogVMSimulator when running the interpreter inside Smalltalk.  The
 	 primary responsibility of this method is to allocate Smalltalk Arrays for variables
@@ -875,12 +881,6 @@ CoInterpreter >> basicInitialize [
 	statCodeCompactionCount := 0.
 	statCodeCompactionUsecs := 0.
 
-]
-
-{ #category : 'frame access' }
-CoInterpreter >> baseFrameSavedCallerIP [
-
-	^ cogit ceBaseFrameReturnPC
 ]
 
 { #category : 'hooks' }
@@ -1247,7 +1247,7 @@ CoInterpreter >> ceCounterTripped: condition [
 	^true
 ]
 
-{ #category : #trampolines }
+{ #category : 'trampolines' }
 CoInterpreter >> ceDeoptimiseOnBytecode: bytecodePC [
 
 	<api>
@@ -1298,7 +1298,7 @@ CoInterpreter >> ceDeoptimiseOnBytecode: bytecodePC [
 	self unreachable
 ]
 
-{ #category : #trampolines }
+{ #category : 'trampolines' }
 CoInterpreter >> ceInterpretMethodFromPIC: aMethodObj receiver: rcvr [
 	<api>
 	| pic primitiveIndex |
@@ -3253,7 +3253,7 @@ CoInterpreter >> iframeBackwardBranchByte: theFP put: aByte [
 		put: aByte
 ]
 
-{ #category : #'frame access' }
+{ #category : 'frame access' }
 CoInterpreter >> iframeFlags: theFP [
 	"See encodeFrameFieldHasContext:numArgs:"
 	<inline: true>
@@ -3261,7 +3261,7 @@ CoInterpreter >> iframeFlags: theFP [
 	^stackPages unsignedLongAt: theFP + FoxIFrameFlags
 ]
 
-{ #category : #'frame access' }
+{ #category : 'frame access' }
 CoInterpreter >> iframeFlags: theFP put: flags [
 	"See encodeFrameFieldHasContext:numArgs:"
 	<inline: true>
@@ -3269,7 +3269,7 @@ CoInterpreter >> iframeFlags: theFP put: flags [
 	^stackPages unsignedLongAt: theFP + FoxIFrameFlags put: flags
 ]
 
-{ #category : #'frame access' }
+{ #category : 'frame access' }
 CoInterpreter >> iframeHasContext: theFP [
 	"See encodeFrameFieldHasContext:numArgs:"
 	<inline: true>
@@ -3277,14 +3277,14 @@ CoInterpreter >> iframeHasContext: theFP [
 	^(stackPages byteAt: theFP + FoxIFrameFlags + 2) ~= 0
 ]
 
-{ #category : #'frame access' }
+{ #category : 'frame access' }
 CoInterpreter >> iframeIsBlockActivation: theFP [ "<Integer>"
 	<inline: true>
 	<var: #theFP type: #'char *'>
 	^(stackPages byteAt: theFP + FoxIFrameFlags + 3) ~= 0
 ]
 
-{ #category : #'frame access' }
+{ #category : 'frame access' }
 CoInterpreter >> iframeNumArgs: theFP [
 	"See encodeFrameFieldHasContext:numArgs:"
 	<inline: true>
@@ -3292,14 +3292,14 @@ CoInterpreter >> iframeNumArgs: theFP [
 	^stackPages byteAt: theFP + FoxIFrameFlags + 1
 ]
 
-{ #category : #'frame access' }
+{ #category : 'frame access' }
 CoInterpreter >> iframeReceiver: theFP [
 	<inline: true>
 	<var: #theFP type: #'char *'>
 	^stackPages unsignedLongAt: theFP + FoxIFReceiver
 ]
 
-{ #category : #'frame access' }
+{ #category : 'frame access' }
 CoInterpreter >> iframeReceiverLocation: theFP [
 
 	<inline: true>
@@ -3307,7 +3307,7 @@ CoInterpreter >> iframeReceiverLocation: theFP [
 	^ theFP + FoxIFReceiver
 ]
 
-{ #category : #'frame access' }
+{ #category : 'frame access' }
 CoInterpreter >> iframeSavedIP: theFP [
 	<var: #theFP type: #'char *'>
 	^stackPages unsignedLongAt: theFP + FoxIFSavedIP
@@ -3329,13 +3329,13 @@ CoInterpreter >> initStackPagesAndInterpret [
 	^ super initStackPagesAndInterpret
 ]
 
-{ #category : #initialization }
+{ #category : 'initialization' }
 CoInterpreter >> initializeAtCache [
 
 	"CoInterpreter does not have atCache"
 ]
 
-{ #category : #'frame access' }
+{ #category : 'frame access' }
 CoInterpreter >> instVar: offset ofContext: aContext [
 	"Fetch an instance variable from a maybe married context.
 	 If the context is still married compute the value of the
@@ -3533,7 +3533,7 @@ CoInterpreter >> isMachineCodeIP: anInstrPointer [
 	^anInstrPointer asUnsignedInteger < objectMemory getMemoryMap startOfObjectMemory
 ]
 
-{ #category : #'compiled methods' }
+{ #category : 'compiled methods' }
 CoInterpreter >> isMaybeFlagMethodAsInterpreted: aMethodHeader [
 	"The flag bit can be used to flag methods that are interpreted, if it has been requested
 	 from the image header flags."
@@ -3542,7 +3542,7 @@ CoInterpreter >> isMaybeFlagMethodAsInterpreted: aMethodHeader [
 	  >> MethodHeaderFlagBitPosition anyMask: 1
 ]
 
-{ #category : #'message sending' }
+{ #category : 'message sending' }
 CoInterpreter >> justActivateNewMethod: mustBeInterpreterFrame [
 
 	<var: #cogMethod type: #'CogMethod *'>
@@ -3617,7 +3617,7 @@ CoInterpreter >> justActivateNewMethod: mustBeInterpreterFrame [
 	^ methodHeader
 ]
 
-{ #category : #simulation }
+{ #category : 'simulation' }
 CoInterpreter >> lookupAddress: address [
 	"If address appears to be that of a Symbol or a few well-known objects (such as classes) answer it, otherwise answer nil.
 	 For code disassembly"
@@ -4988,14 +4988,14 @@ CoInterpreter >> rewriteMethodCacheEntryForExternalPrimitiveToFunction: localPri
 		localPrimAddress
 ]
 
-{ #category : #'rump c stack' }
+{ #category : 'rump c stack' }
 CoInterpreter >> rumpCStackAddress [
 	<doNotGenerate>
 	rumpCStackBase ifNil: [ rumpCStackBase := memoryManager allocate: self rumpCStackSize  ].
  	^ rumpCStackBase + self rumpCStackSize
 ]
 
-{ #category : #'rump c stack' }
+{ #category : 'rump c stack' }
 CoInterpreter >> rumpCStackSize [
 	"Allocate a rump C stack for simulation.  This stack is used for C calls, i.e. calls
 	 made into the simulated C run-time, typically of routines in CoInterpreter.
@@ -5009,7 +5009,7 @@ CoInterpreter >> rumpCStackSize [
 		ifNotNil: [:threadManager| RumpCStackSize * (threadManager maxNumThreads + 1)]
 ]
 
-{ #category : #'callback support' }
+{ #category : 'callback support' }
 CoInterpreter >> saveCStackStateForCallbackContext: vmCallbackContext [
 	<var: #vmCallbackContext type: #'VMCallbackContext *'>
 	vmCallbackContext

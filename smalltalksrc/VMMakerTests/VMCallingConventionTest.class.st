@@ -1,10 +1,12 @@
 Class {
-	#name : #VMCallingConventionTest,
-	#superclass : #VMStackToRegisterMappingCogitTest,
-	#category : #'VMMakerTests-JitTests'
+	#name : 'VMCallingConventionTest',
+	#superclass : 'VMStackToRegisterMappingCogitTest',
+	#category : 'VMMakerTests-JitTests',
+	#package : 'VMMakerTests',
+	#tag : 'JitTests'
 }
 
-{ #category : #tests }
+{ #category : 'tests' }
 VMCallingConventionTest >> testSendShouldSpillAboveReceiver [
 
 	| stop method |
@@ -29,7 +31,7 @@ VMCallingConventionTest >> testSendShouldSpillAboveReceiver [
 	self assert: (memory integerValueOf: self machineSimulator popWord) equals: 0
 ]
 
-{ #category : #tests }
+{ #category : 'tests' }
 VMCallingConventionTest >> testSendShouldSpillReceiver [
 
 	| stop method |

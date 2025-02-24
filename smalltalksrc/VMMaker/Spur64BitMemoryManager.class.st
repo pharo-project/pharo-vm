@@ -252,7 +252,7 @@ Spur64BitMemoryManager >> fillObj: objOop numSlots: numSlots with: fillValue [
 		do: [:p| self uint64At: p put: fillValue]
 ]
 
-{ #category : #'interpreter access' }
+{ #category : 'interpreter access' }
 Spur64BitMemoryManager >> floatFromRawBits: bits [
 	"Answer the C double precision floating point value of the argument"
 
@@ -541,7 +541,7 @@ Spur64BitMemoryManager >> isImmediateFloat: oop [
 	^oop anyMask: self smallFloatTag
 ]
 
-{ #category : #'interpreter access' }
+{ #category : 'interpreter access' }
 Spur64BitMemoryManager >> isIntegerValue: intValue [
 	"Answer if the given value can be represented as a Smalltalk integer value.
 	 In 64-bits we use a 3 bit tag which leaves 61 bits for 2's complement signed
@@ -804,7 +804,7 @@ Spur64BitMemoryManager >> positiveSmallFloatZero [
 	^self smallFloatTag
 ]
 
-{ #category : #'interpreter access' }
+{ #category : 'interpreter access' }
 Spur64BitMemoryManager >> rawFloatBitsOf: aFloat [
 
 	<var: #rawFloat type: #usqLong>
@@ -821,7 +821,7 @@ Spur64BitMemoryManager >> rawFloatBitsOf: aFloat [
 	^ rawFloat
 ]
 
-{ #category : #'object access' }
+{ #category : 'object access' }
 Spur64BitMemoryManager >> rawOverflowSlotsOf: objOop [
 	<returnTypeC: #usqLong>
 	<inline: true>
@@ -846,7 +846,7 @@ Spur64BitMemoryManager >> rotateLeft: anInteger [
 	^ self rotateLeft: anInteger by: 1
 ]
 
-{ #category : #'interpreter access' }
+{ #category : 'interpreter access' }
 Spur64BitMemoryManager >> rotateLeft: anInteger by: anOffset [
 
 	^ (anInteger >> (64 - anOffset) bitAnd: anOffset) + ((self
@@ -1190,13 +1190,13 @@ Spur64BitMemoryManager >> unsignedLongAt: anAddress put: aValue [
 	^ self unsignedLong64At: anAddress put: aValue
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 Spur64BitMemoryManager >> wordAt: address [
 
 	^ self uint64At: address
 ]
 
-{ #category : #'header formats' }
+{ #category : 'header formats' }
 Spur64BitMemoryManager >> wordIndexableFormat [
 	^self sixtyFourBitIndexableFormat
 ]

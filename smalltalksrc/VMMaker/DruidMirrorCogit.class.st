@@ -1,10 +1,12 @@
 Class {
-	#name : #DruidMirrorCogit,
-	#superclass : #StackToRegisterMappingCogit,
-	#category : #'VMMaker-JIT'
+	#name : 'DruidMirrorCogit',
+	#superclass : 'StackToRegisterMappingCogit',
+	#category : 'VMMaker-JIT',
+	#package : 'VMMaker',
+	#tag : 'JIT'
 }
 
-{ #category : #'class initialization' }
+{ #category : 'class initialization' }
 DruidMirrorCogit class >> bytecodeTable [
 
 	| found |
@@ -22,7 +24,7 @@ DruidMirrorCogit class >> bytecodeTable [
 					  copy ] ] ]
 ]
 
-{ #category : #initialization }
+{ #category : 'initialization' }
 DruidMirrorCogit class >> initializeBytecodeTableForSistaV1 [
 
 	self flag: #TODO. "Move this code to superclass (the posta)"
@@ -35,7 +37,7 @@ DruidMirrorCogit class >> initializeBytecodeTableForSistaV1 [
 	self generatorTableFrom: self bytecodeTable
 ]
 
-{ #category : #initialization }
+{ #category : 'initialization' }
 DruidMirrorCogit class >> initializePrimitiveTable [
 
 	<generated>
@@ -44,7 +46,7 @@ DruidMirrorCogit class >> initializePrimitiveTable [
 	self table: primitiveTable from: self primitiveTableArray
 ]
 
-{ #category : #'class initialization' }
+{ #category : 'class initialization' }
 DruidMirrorCogit class >> primitiveTableArray [
 
 	^ DruidJIT primitiveTableArray collect: [ :entry | "Replace just the primitive's name"

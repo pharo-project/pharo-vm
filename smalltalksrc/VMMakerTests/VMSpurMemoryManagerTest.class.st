@@ -816,7 +816,7 @@ VMSpurMemoryManagerTest >> setUp [
 	memory lastHash: 1.
 ]
 
-{ #category : #tests }
+{ #category : 'tests' }
 VMSpurMemoryManagerTest >> setUpContextClass [
 
 	| contextClass |
@@ -833,7 +833,7 @@ VMSpurMemoryManagerTest >> setUpContextClass [
 
 ]
 
-{ #category : #running }
+{ #category : 'running' }
 VMSpurMemoryManagerTest >> setUpScheduler [
 	
 	"The ScheduleAssocation should be initialized to a valid Processor object"

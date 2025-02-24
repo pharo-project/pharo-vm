@@ -262,14 +262,14 @@ Spur64BitMMLECoSimulator >> runLeakCheckerFor: gcModes excludeUnmarkedObjs: excl
 		  classIndicesShouldBeValid: classIndicesShouldBeValid
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 Spur64BitMMLECoSimulator >> scavengeThreshold: anAddress [
 
 	<doNotGenerate>
 	scavengeThreshold := anAddress
 ]
 
-{ #category : #'gc - global' }
+{ #category : 'gc - global' }
 Spur64BitMMLECoSimulator >> scavengingGCTenuringIf: tenuringCriterion [
 	"If we're /not/ a clone, clone the VM and push it over the cliff.
 	 If it survives, destroy the clone and continue.  We should be OK until next time."

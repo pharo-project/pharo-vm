@@ -29,7 +29,7 @@ SequenceableCollection >> copyReplaceAll: oldSubstring with: newSubstring tokeni
 
 ]
 
-{ #category : #'*VMMaker' }
+{ #category : '*VMMaker' }
 SequenceableCollection >> copyReplaceAt: index with: blockTransform [
 
 	^ self

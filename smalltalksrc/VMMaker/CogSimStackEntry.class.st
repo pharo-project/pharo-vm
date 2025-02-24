@@ -184,7 +184,7 @@ CogSimStackEntry >> floatRegisterMask [
 	^ 0
 ]
 
-{ #category : #'code-generation' }
+{ #category : 'code-generation' }
 CogSimStackEntry >> generatePush [
 
 	self assert: spilled not.
@@ -201,7 +201,7 @@ CogSimStackEntry >> generatePush [
 					cogit PushR: registerr ] ]
 ]
 
-{ #category : #comparing }
+{ #category : 'comparing' }
 CogSimStackEntry >> isFrameSimSelf [
 	"Answer if the receiver is self.  This only works in a frameful method, hence the weird name."
 	<inline: true>
@@ -347,7 +347,7 @@ CogSimStackEntry >> registerr: anObject [
 	^registerr := anObject
 ]
 
-{ #category : #spilling }
+{ #category : 'spilling' }
 CogSimStackEntry >> silentlyEnsureSpilled [
 
 	spilled ifTrue: [ ^ self ].
@@ -355,7 +355,7 @@ CogSimStackEntry >> silentlyEnsureSpilled [
 	self generatePush
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 CogSimStackEntry >> spilled [
 	"Answer the value of spilled"
 

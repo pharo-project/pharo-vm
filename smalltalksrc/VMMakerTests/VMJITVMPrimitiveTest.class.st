@@ -62,7 +62,7 @@ VMJITVMPrimitiveTest >> testPrimitiveMethodXRayShouldNotCompile [
 	"This test is only valid as far as the method is the same.
 	It should be a method with so many literals that the compiler does not even try to compile it."
 	target := (CogARMv8Compiler class>>#initialize).
-	self assert: target bytecodes hash equals: 46085044.
+	self assert: target bytecodes hash equals: 77341444.
 	
 	methodToXray := self createMethodOopFromHostMethod: target.
 	interpreter push: methodToXray.

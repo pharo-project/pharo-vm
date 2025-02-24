@@ -1153,7 +1153,7 @@ Cogit class >> initializePrimitiveTable [
 	)
 ]
 
-{ #category : #initialization }
+{ #category : 'initialization' }
 Cogit class >> initializeWithOptions: optionsDictionary [
 	super initializeWithOptions: optionsDictionary.
 	self initializeMiscConstants. "must precede other initialization."
@@ -2106,7 +2106,7 @@ Cogit >> JumpLongZero: jumpTarget [
 	^self genConditionalBranch: JumpLongZero operand: jumpTarget asInteger
 ]
 
-{ #category : #'abstract instructions' }
+{ #category : 'abstract instructions' }
 Cogit >> JumpMultiplyNoOverflow: jumpTarget [
 	<inline: true>
 	<returnTypeC: #'AbstractInstruction *'>
@@ -2114,7 +2114,7 @@ Cogit >> JumpMultiplyNoOverflow: jumpTarget [
 	^ backEnd genJumpMultiplyNoOverflow: jumpTarget
 ]
 
-{ #category : #'abstract instructions' }
+{ #category : 'abstract instructions' }
 Cogit >> JumpMultiplyOverflow: jumpTarget [
 	<inline: true>
 	<returnTypeC: #'AbstractInstruction *'>
@@ -3266,7 +3266,7 @@ Cogit >> assertSaneJumpTarget: jumpTarget [
 					and: methodZone limitZony asInteger + (closedPICSize max: openPICSize))]]])
 ]
 
-{ #category : #initialization }
+{ #category : 'initialization' }
 Cogit >> b: anArray zero: bytes [
 
 	<doNotGenerate>
@@ -3275,7 +3275,7 @@ Cogit >> b: anArray zero: bytes [
 		anArray at: i - 1 put: 0 ]
 ]
 
-{ #category : #'trampoline support' }
+{ #category : 'trampoline support' }
 Cogit >> backEnd [
 	<cmacro: '() backEnd'>
 	^backEnd
@@ -3446,12 +3446,12 @@ Cogit >> bytecodeFixupClass [
 	self subclassResponsibility
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 Cogit >> bytecodePC [
 	^ bytecodePC
 ]
 
-{ #category : #'method map' }
+{ #category : 'method map' }
 Cogit >> bytecodePCFor: mcpc startBcpc: startbcpc in: cogMethod [
 	"Answer the zero-relative bytecode pc matching the machine code pc argument in
 	 cogMethod, given the start of the bytecodes for cogMethod's method object."
@@ -3812,19 +3812,19 @@ Cogit >> ceCheckForInterruptTrampoline: anInteger [
 	ceCheckForInterruptTrampoline := anInteger
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 Cogit >> ceDeoptimiseFrameTrampoline [
 
 	^ ceDeoptimiseFrameTrampoline
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 Cogit >> ceDeoptimiseFrameTrampoline: anObject [
 
 	ceDeoptimiseFrameTrampoline := anObject
 ]
 
-{ #category : #'as yet unclassified' }
+{ #category : 'as yet unclassified' }
 Cogit >> ceDereferenceSelectorIndex [
 	
 	<doNotGenerate>
@@ -4094,13 +4094,13 @@ Cogit >> ceSendMustBeBooleanAddTrueTrampoline: anInteger [
 
 ]
 
-{ #category : #initialization }
+{ #category : 'initialization' }
 Cogit >> ceSendMustBeBooleanTrampoline: aTrampolineAddress [
 
 	ceSendMustBeBooleanTrampoline := aTrampolineAddress
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 Cogit >> ceSmallActiveContextInFullBlockTrampoline [
 
 	<doNotGenerate>
@@ -5825,7 +5825,7 @@ Cogit >> deltaToSkipPrimAndErrorStoreIn: aMethodObj header: aMethodHeader [
 		ifFalse: [0]
 ]
 
-{ #category : #'bytecode generators' }
+{ #category : 'bytecode generators' }
 Cogit >> deoptimize [
 
 	self
@@ -5838,7 +5838,7 @@ Cogit >> deoptimize [
 	^ 0
 ]
 
-{ #category : #'code generation' }
+{ #category : 'code generation' }
 Cogit >> disableCodeZoneWrite [
 
 	<inline: true>
@@ -5927,7 +5927,7 @@ Cogit >> endPCOf: aMethod [
 	^end
 ]
 
-{ #category : #initialization }
+{ #category : 'initialization' }
 Cogit >> ensureAndClearAbstractOpcodes: numberOfAbstractOpcodes numberOfBytecodes: numberOfBytecodes [
 
 	| opcodeBytes fixupBytes allocBytes clearFixupsBytes clearOpcodesBytes |
@@ -6650,7 +6650,7 @@ Cogit >> gen: opcode "<Integer>" literal: operandOne "<Integer>" operand: operan
 		forInstruction: (self gen: opcode operand: operandOne operand: operandTwo)
 ]
 
-{ #category : #'compile abstract instructions' }
+{ #category : 'compile abstract instructions' }
 Cogit >> gen: opcode operand: operand [
 	"<Integer|CogAbstractInstruction>"
 
@@ -6675,7 +6675,7 @@ Cogit >> gen: opcode "<Integer>" operand: operandOne "<Integer|CogAbstractInstru
 		forInstruction: (self gen: opcode operand: operandOne operand: operandTwo)
 ]
 
-{ #category : #'compile abstract instructions' }
+{ #category : 'compile abstract instructions' }
 Cogit >> gen: opcode operand: operandOne operand: operandTwo [
 	"<Integer|CogAbstractInstruction>"
 
@@ -6688,7 +6688,7 @@ Cogit >> gen: opcode operand: operandOne operand: operandTwo [
 	^ abstractInstruction
 ]
 
-{ #category : #'compile abstract instructions' }
+{ #category : 'compile abstract instructions' }
 Cogit >> gen: opcode operand: operandOne operand: operandTwo operand: operandThree [
 	"<Integer|CogAbstractInstruction>"
 
@@ -6704,7 +6704,7 @@ Cogit >> gen: opcode operand: operandOne operand: operandTwo operand: operandThr
 	^ abstractInstruction
 ]
 
-{ #category : #'compile abstract instructions' }
+{ #category : 'compile abstract instructions' }
 Cogit >> gen: opcode operand: operandOne operand: operandTwo operand: operandThree operand: operandFour [
 	"<Integer|CogAbstractInstruction>"
 
@@ -7083,14 +7083,14 @@ Cogit >> genMethodAbortTrampoline [
 		appendOpcodes: true
 ]
 
-{ #category : #'abstract instructions' }
+{ #category : 'abstract instructions' }
 Cogit >> genMoveMw: offset r: baseReg R: destReg [
 	<inline: true>
 	<returnTypeC: #'AbstractInstruction *'>
 	^self gen: MoveMwrR quickConstant: offset operand: baseReg operand: destReg
 ]
 
-{ #category : #initialization }
+{ #category : 'initialization' }
 Cogit >> genNonLocalReturnTrampoline [
 	self zeroOpcodeIndex.
 	"write the return address to the coInterpreter instructionPointerAddress;
@@ -7148,7 +7148,7 @@ Cogit >> genReturnTrampolineFor: aRoutine  called: aString arg: regOrConst0 [
 		appendOpcodes: false
 ]
 
-{ #category : #initialization }
+{ #category : 'initialization' }
 Cogit >> genSendTrampolineFor: aRoutine called: aString arg: regOrConst0 arg: regOrConst1 arg: regOrConst2 arg: regOrConst3 [
 	"Generate a trampoline with four arguments.
 	 Hack: a negative value indicates an abstract register, a non-negative value indicates a constant."
@@ -7177,7 +7177,7 @@ Cogit >> genSendTrampolineFor: aRoutine called: aString arg: regOrConst0 arg: re
 	^ startAddress
 ]
 
-{ #category : #'trampoline support' }
+{ #category : 'trampoline support' }
 Cogit >> genSmalltalkToCStackSwitch: pushLinkReg [
 	"If the client requires, then on an ARM-like RISC processor, the return address needs to
 	 be pushed to the stack so that the interpreter sees the same stack layout as on CISC."
@@ -8098,7 +8098,7 @@ Cogit >> getBlockCompilationMSecs [
 	^ objectMemory integerObjectOf: statCompileFullBlockUsecs  + 500 // 1000
 ]
 
-{ #category : #statistics }
+{ #category : 'statistics' }
 Cogit >> getBlockCompilationSize [
 
 	<api>
@@ -8106,7 +8106,7 @@ Cogit >> getBlockCompilationSize [
 	^ objectMemory integerObjectOf: statCompileFullBlockSize 
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 Cogit >> getCFramePointer [
 	<api>
 	<cmacro: '() CFramePointer'>
@@ -8126,14 +8126,14 @@ Cogit >> getCStackPointer [
 		ifFalse: [(objectMemory longAt: coInterpreter inMemoryCStackPointerAddress) asVoidPointer]
 ]
 
-{ #category : #'method map' }
+{ #category : 'method map' }
 Cogit >> getIsBytecodePCReference [
 
 	<cmacro>
 	^ HasBytecodePC
 ]
 
-{ #category : #'method map' }
+{ #category : 'method map' }
 Cogit >> getIsObjectReference [
 	<cmacro>
 	^IsObjectReference
@@ -8158,13 +8158,13 @@ Cogit >> getMethodCompilationMSecs [
 	^ objectMemory integerObjectOf: statCompileMethodUsecs  + 500 // 1000
 ]
 
-{ #category : #statistics }
+{ #category : 'statistics' }
 Cogit >> getMethodCompilationSize [
 	<api>
 	^ objectMemory integerObjectOf: statCompileMethodSize 
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 Cogit >> getOpcodeIndex [
 	"Access for the literal manager."
 	^opcodeIndex
@@ -9901,7 +9901,7 @@ Cogit >> maybeUnsafeJumpContinuation: latestContinuation at: bcpc for: descripto
 	^ latestContinuation
 ]
 
-{ #category : #'method map' }
+{ #category : 'method map' }
 Cogit >> mcPCForBackwardBranch: bcpc startBcpc: startbcpc in: cogMethod [
 	"Answer the absolute machine code pc matching the zero-relative
 	 bytecode pc of a backward branch in cogMethod, given the start
@@ -9916,12 +9916,12 @@ Cogit >> mcPCForBackwardBranch: bcpc startBcpc: startbcpc in: cogMethod [
 		arg: bcpc asVoidPointer
 ]
 
-{ #category : #initialization }
+{ #category : 'initialization' }
 Cogit >> mclassIsSmallFloat [
 	^objectMemory isImmediateFloat: receiverTags
 ]
 
-{ #category : #initialization }
+{ #category : 'initialization' }
 Cogit >> mclassIsSmallInteger [
 	^objectMemory isIntegerObject: receiverTags
 ]
@@ -10055,12 +10055,12 @@ Cogit >> mnuOffset [
 	^missOffset
 ]
 
-{ #category : #'compile abstract instructions' }
+{ #category : 'compile abstract instructions' }
 Cogit >> needsFrameAlways: stackDelta [
 	^true
 ]
 
-{ #category : #'compile abstract instructions' }
+{ #category : 'compile abstract instructions' }
 Cogit >> needsFrameIfImmutability: stackDelta [
 	^ IMMUTABILITY
 ]
@@ -10163,14 +10163,14 @@ Cogit >> numArgsOrSendNumArgsReg: numArgs [
 		ifFalse: [SendNumArgsReg]
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 Cogit >> numExtB [
 
 	<doNotGenerate>
 	^ numExtB
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 Cogit >> objectMemory [
 	<doNotGenerate>
 	^objectMemory
@@ -10182,19 +10182,19 @@ Cogit >> objectRepresentation [
 	^objectRepresentation
 ]
 
-{ #category : #'simulation only' }
+{ #category : 'simulation only' }
 Cogit >> objectRepresentation: anObjectRepresentation [
 	<doNotGenerate>
 	objectRepresentation := anObjectRepresentation
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 Cogit >> objectRepresentationClass [
 	<doNotGenerate>
 	^objectMemory objectRepresentationClass
 ]
 
-{ #category : #'simulation only' }
+{ #category : 'simulation only' }
 Cogit >> offset: aClass of: fieldSymbol [
 	"This is implemented by stddef's offsetof macro."
 	<doNotGenerate>
@@ -10227,12 +10227,12 @@ Cogit >> offsetAndSendTableFor: entryPoint annotation: annotation into: binaryBl
 		value: sendTable
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 Cogit >> opcodeIndex [
 	^ opcodeIndex
 ]
 
-{ #category : #'debug printing' }
+{ #category : 'debug printing' }
 Cogit >> opcodePrintStringFrom: startIndex to: stopIndex [
 	^(String streamContents:
 		[:s|
@@ -10241,7 +10241,7 @@ Cogit >> opcodePrintStringFrom: startIndex to: stopIndex [
 			(abstractOpcodes at: i) printStateOn: s]]) allButFirst
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 Cogit >> openPICSize [
 	<doNotGenerate>
 	^ openPICSize

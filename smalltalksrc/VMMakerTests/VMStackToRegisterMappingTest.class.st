@@ -251,7 +251,7 @@ VMStackToRegisterMappingTest >> testTopOfEmptyIsSimSelf [
 	self assert: cogit ssTop equals: cogit simSelf
 ]
 
-{ #category : #tests }
+{ #category : 'tests' }
 VMStackToRegisterMappingTest >> testUnspillSpilledGeneratesPop [
 
 	sendAddress := self compile: [
@@ -274,7 +274,7 @@ VMStackToRegisterMappingTest >> testUnspillSpilledGeneratesPop [
 	self assert: machineSimulator receiverRegisterValue equals: 1
 ]
 
-{ #category : #tests }
+{ #category : 'tests' }
 VMStackToRegisterMappingTest >> testUnspillUnspilled [
 
 	cogit ssPushRegister: TempReg.
@@ -283,7 +283,7 @@ VMStackToRegisterMappingTest >> testUnspillUnspilled [
 	self deny: (cogit ssValue: 0) spilled
 ]
 
-{ #category : #tests }
+{ #category : 'tests' }
 VMStackToRegisterMappingTest >> testUnspillUnspilledDoesNotGeneratePop [
 
 	sendAddress := self compile: [

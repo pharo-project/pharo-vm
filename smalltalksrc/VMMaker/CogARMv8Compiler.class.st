@@ -1778,7 +1778,7 @@ CogARMv8Compiler >> concretizeConvertRRd [
 	^ machineCodeSize := 4
 ]
 
-{ #category : #'generate machine code - concretize' }
+{ #category : 'generate machine code - concretize' }
 CogARMv8Compiler >> concretizeConvertRdR [
 
 	"Convert a double precision float to a single precision float in a register"
@@ -1796,7 +1796,7 @@ CogARMv8Compiler >> concretizeConvertRdR [
 	^ machineCodeSize := 4
 ]
 
-{ #category : #'generate machine code - concretize' }
+{ #category : 'generate machine code - concretize' }
 CogARMv8Compiler >> concretizeConvertRdRs [
 
 	"Convert a double precision float to a single precision float in a register"
@@ -3771,7 +3771,7 @@ CogARMv8Compiler >> fConvertSourceRegister: sourceRegister toRegister: destRegis
 
 ]
 
-{ #category : #assembler }
+{ #category : 'assembler' }
 CogARMv8Compiler >> fConvertSourceRegisterFP: sourceRegister ofPrecision: precision toRegisterScalarRoundingTowardsZero: destRegister signed: signedBit [ 
 	
 	"C7.2.92 FCVTZS (scalar, integer)
@@ -3791,7 +3791,7 @@ CogARMv8Compiler >> fConvertSourceRegisterFP: sourceRegister ofPrecision: precis
 
 ]
 
-{ #category : #assembler }
+{ #category : 'assembler' }
 CogARMv8Compiler >> fDivFirstRegister: registerA secondRegister: registerB destinationRegister: destinationRegister [ 
 
 	"C7.2.98 FDIV (scalar)
@@ -4080,7 +4080,7 @@ CogARMv8Compiler >> genDivR: abstractRegDenominator R: abstractRegNumerator Quo:
 
 ]
 
-{ #category : #'abstract instructions' }
+{ #category : 'abstract instructions' }
 CogARMv8Compiler >> genJumpMultiplyNoOverflow: jumpTarget [
 	<inline: true>
 	<returnTypeC: #'AbstractInstruction *'>
@@ -4088,7 +4088,7 @@ CogARMv8Compiler >> genJumpMultiplyNoOverflow: jumpTarget [
 	^cogit JumpZero: jumpTarget
 ]
 
-{ #category : #'abstract instructions' }
+{ #category : 'abstract instructions' }
 CogARMv8Compiler >> genJumpMultiplyOverflow: jumpTarget [
 	<inline: true>
 	<returnTypeC: #'AbstractInstruction *'>
@@ -5154,7 +5154,7 @@ CogARMv8Compiler >> logicalShiftLeftSize: is64Bits sourceRegister: sourceRegiste
 		destinationRegister: destinationRegister
 ]
 
-{ #category : #assembler }
+{ #category : 'assembler' }
 CogARMv8Compiler >> logicalShiftRightSize: is64bits sourceRegister: sourceRegister shiftRegister: shiftRegister destinationRegister: destinationRegister [ 
 	
 	"C6.2.180 LSR (register)
@@ -5172,7 +5172,7 @@ CogARMv8Compiler >> logicalShiftRightSize: is64bits sourceRegister: sourceRegist
 	
 ]
 
-{ #category : #'as yet unclassified' }
+{ #category : 'as yet unclassified' }
 CogARMv8Compiler >> logicalShiftRightSize: is64Bits sourceRegister: sourceRegister shiftValue: shiftValue destinationRegister: destinationRegister [
 	
 	"C6.2.181 LSR (immediate)

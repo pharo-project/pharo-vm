@@ -2715,13 +2715,14 @@ SpurMemoryManager >> baseHeaderSize [
 ]
 
 { #category : 'store check' }
-SpurMemoryManager >> beRootIfOld: oop [ 
+SpurMemoryManager >> beRootIfOld: oop [
 	"If this object is old, mark it as a root (because a new object
 	 may be stored into it)."
+
 	<api>
 	<inline: false>
-	(memoryMap isOldObject: oop) ifTrue:"No, oop is an old object"
-		[self possibleOldObjectStoreInto: oop]
+	(memoryMap isOldObject: oop) ifTrue: [
+		self possibleOldObjectStoreInto: oop ]
 ]
 
 { #category : 'plugin support' }
@@ -3714,12 +3715,12 @@ SpurMemoryManager >> classFormatFromInstFormat: instFormat [
 	^instFormat bitAnd: -4
 ]
 
-{ #category : #'plugin support' }
+{ #category : 'plugin support' }
 SpurMemoryManager >> classFullBlockClosureCompactIndex [
 	^ ClassFullBlockClosureCompactIndex 
 ]
 
-{ #category : #'header format' }
+{ #category : 'header format' }
 SpurMemoryManager >> classIndexFieldWidth [
 	<api>
 	"22-bit class mask => ~ 4M classes"
@@ -4968,7 +4969,7 @@ SpurMemoryManager >> enterIntoClassTable: aBehavior [
 		[^PrimErrLimitExceeded]] repeat
 ]
 
-{ #category : #'class table' }
+{ #category : 'class table' }
 SpurMemoryManager >> enterPossibleBehaviorIntoClassTable: aPossibleBehavior [
 
 	<druidExitPoint>
@@ -4983,7 +4984,7 @@ SpurMemoryManager >> enterPossibleBehaviorIntoClassTable: aPossibleBehavior [
 				  ifFalse: [ self rawHashBitsOf: aPossibleBehavior ] ]
 ]
 
-{ #category : #'header formats' }
+{ #category : 'header formats' }
 SpurMemoryManager >> ephemeronFormat [
 	^5
 ]
@@ -9686,7 +9687,7 @@ SpurMemoryManager >> newArrayWith: aCollection [
 	^ array
 ]
 
-{ #category : #'as yet unclassified' }
+{ #category : 'as yet unclassified' }
 SpurMemoryManager >> newByteArrayWith: aCollection [
 	<doNotGenerate>
 	| array |
@@ -9701,7 +9702,7 @@ SpurMemoryManager >> newByteArrayWith: aCollection [
 	^ array
 ]
 
-{ #category : #'ffi - helpers' }
+{ #category : 'ffi - helpers' }
 SpurMemoryManager >> newExternalAddressWithValue: aPointer [
 	| ptr oop |
 	<var: #ptr type:'void **'>
@@ -12941,7 +12942,7 @@ SpurMemoryManager >> storePointerUnchecked: fieldIndex ofObject: objOop withValu
 		put: valuePointer
 ]
 
-{ #category : #'object access' }
+{ #category : 'object access' }
 SpurMemoryManager >> storePopPointerImmutabilityCheck: fieldIndex ofObject: objOop withValue: valuePointer [
 	"Note must check here for stores of young objects into old ones."
 
@@ -12963,7 +12964,7 @@ SpurMemoryManager >> storePopPointerImmutabilityCheck: fieldIndex ofObject: objO
 	
 ]
 
-{ #category : #'object access' }
+{ #category : 'object access' }
 SpurMemoryManager >> storeShort16: shortIndex ofObject: objOop withValue: value [
 	^self
 		shortAt: objOop + self baseHeaderSize + (shortIndex << 1)
@@ -13288,7 +13289,7 @@ SpurMemoryManager >> trueObject: anOop [
 	trueObj := anOop
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 SpurMemoryManager >> uint16At: address [
 
 	<inline: true>
@@ -13296,7 +13297,7 @@ SpurMemoryManager >> uint16At: address [
 	^ self shortAt: address
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 SpurMemoryManager >> uint16At: address put: aValue [
 
 	<inline: true>
@@ -13304,7 +13305,7 @@ SpurMemoryManager >> uint16At: address put: aValue [
 	^ self shortAt: address put: aValue
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 SpurMemoryManager >> uint32At: address [
 
 	<inline: true>
@@ -13312,7 +13313,7 @@ SpurMemoryManager >> uint32At: address [
 	^ self long32At: address
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 SpurMemoryManager >> uint32At: address put: aValue [
 
 	<inline: true>
@@ -13320,7 +13321,7 @@ SpurMemoryManager >> uint32At: address put: aValue [
 	^ self long32At: address put: aValue
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 SpurMemoryManager >> uint64At: address [
 
 	<inline: true>
@@ -13328,7 +13329,7 @@ SpurMemoryManager >> uint64At: address [
 	^ self long64At: address
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 SpurMemoryManager >> uint64At: address put: aValue [
 
 	<inline: true>
@@ -13336,14 +13337,14 @@ SpurMemoryManager >> uint64At: address put: aValue [
 	^ self long64At: address put: aValue
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 SpurMemoryManager >> uint8At: address [
 
 	<inline: true>
 	^ self byteAt: address
 ]
 
-{ #category : #simulation }
+{ #category : 'simulation' }
 SpurMemoryManager >> unalignedLong32At: index [
 
 	<cmacro: '(addr) long32At(addr)'>
@@ -13828,14 +13829,6 @@ SpurMemoryManager >> validObjStacks [
 	  and: [mournQueue = nilObj or: [self isValidObjStack: mournQueue]]]
 ]
 
-{ #category : #allocation }
-SpurMemoryManager >> validateRoomInEdenOrDie: bytes [
-	<druidExitPoint>
-	freeStart + bytes > scavenger eden limit ifTrue: [ 
-		self error:
-			'no room in eden for allocateSmallNewSpaceSlots:format:classIndex:' ]
-]
-
 { #category : 'validations' }
 SpurMemoryManager >> validateObjectMemory [
 	<api>
@@ -13843,6 +13836,14 @@ SpurMemoryManager >> validateObjectMemory [
 	
 	self doValidateObjectMemory
 		ifFalse: [ self logError: 'Error in validating object memory' ].
+]
+
+{ #category : 'allocation' }
+SpurMemoryManager >> validateRoomInEdenOrDie: bytes [
+	<druidExitPoint>
+	freeStart + bytes > scavenger eden limit ifTrue: [ 
+		self error:
+			'no room in eden for allocateSmallNewSpaceSlots:format:classIndex:' ]
 ]
 
 { #category : 'gc - scavenge/compact' }
@@ -13947,14 +13948,14 @@ SpurMemoryManager >> withSimulatorFetchPointerMovedAsideDo: aBlock [
 			withMethod: theMethod]
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 SpurMemoryManager >> wordAt: address [
 
 	<doNotGenerate>
 	^ self subclassResponsibility
 ]
 
-{ #category : #'header formats' }
+{ #category : 'header formats' }
 SpurMemoryManager >> wordIndexableFormat [
 	"Either firstLongFormat or sixtyFourBitIndexableFormat"
 	^self subclassResponsibility

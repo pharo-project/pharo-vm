@@ -296,14 +296,14 @@ VMClass class >> renameSelectorIfStaticallyResolved: aString [
 		  ifFalse: [ ^ aString ]
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 VMClass class >> resetInitializationOptions [
 
 	self release.
 	InitializationOptions := nil
 ]
 
-{ #category : #translation }
+{ #category : 'translation' }
 VMClass class >> shouldGenerateTypedefFor: aStructClass [
 	"Hack to work-around multiple definitions.  Sometimes a type has been defined in an include."
 	^aStructClass shouldBeGenerated
@@ -559,26 +559,26 @@ VMClass >> defined: aSymbol [
 		ifNotNil: [:binding| binding value ~~ #undefined]
 ]
 
-{ #category : #'druid support' }
+{ #category : 'druid support' }
 VMClass >> druidExitPoint [
 
 	"Mark an exit point. From this point on, the current execution branch should not be compiled"
 	<druidExitPoint>
 ]
 
-{ #category : #'druid support' }
+{ #category : 'druid support' }
 VMClass >> druidFail [
 
 	self error
 ]
 
-{ #category : #'miscellaneous bytecodes' }
+{ #category : 'miscellaneous bytecodes' }
 VMClass >> druidForceIntepretation [
 	"Tell the compiler we should execute the code below this point compiled but interpreted"
 	"Ignore in the interpreter"
 ]
 
-{ #category : #'druid support' }
+{ #category : 'druid support' }
 VMClass >> druidIf: conditionToCompile do: aBlock [
 
 	"Execute the block during interpretation, ignore it during compilation unless the compile option is given.
@@ -586,7 +586,7 @@ VMClass >> druidIf: conditionToCompile do: aBlock [
 	^ aBlock value
 ]
 
-{ #category : #'druid support' }
+{ #category : 'druid support' }
 VMClass >> druidIgnore: aBlock [
 
 	"Execute the block during interpretation, ignore it during compilation.
@@ -594,7 +594,7 @@ VMClass >> druidIgnore: aBlock [
 	^ aBlock value
 ]
 
-{ #category : #'druid support' }
+{ #category : 'druid support' }
 VMClass >> druidStageable: aBlock [
 
 	"Execute the block during interpretation, stage it during compilation.
@@ -602,7 +602,7 @@ VMClass >> druidStageable: aBlock [
 	^ aBlock value
 ]
 
-{ #category : #'memory access' }
+{ #category : 'memory access' }
 VMClass >> fetchSingleFloatAtPointer: pointer into: aFloat [
 	"This gets implemented by Macros in C, where its types will also be checked.
 	 pointer is a raw address, and aFloat is a 32-bit single precision float."
@@ -731,7 +731,7 @@ VMClass >> int8AtPointer: pointer put: value [
 	^self at: pointer put: value
 ]
 
-{ #category : #'druid support' }
+{ #category : 'druid support' }
 VMClass >> interpreterIgnore: aBlock [
 
 	"Ignore the block during interpretation, consider it during compilation.
@@ -739,7 +739,7 @@ VMClass >> interpreterIgnore: aBlock [
 	
 ]
 
-{ #category : #'plugin support' }
+{ #category : 'plugin support' }
 VMClass >> isInterpreterProxy [
 	<doNotGenerate>
 	"Return false since I am a real Interpreter simulation"

@@ -188,25 +188,25 @@ UnicornProcessor >> r11: anInteger [
 	machineSimulator r11: anInteger
 ]
 
-{ #category : #registers }
+{ #category : 'registers' }
 UnicornProcessor >> r12: anInteger [ 
 
 	machineSimulator r12: anInteger
 ]
 
-{ #category : #registers }
+{ #category : 'registers' }
 UnicornProcessor >> r13: anInteger [ 
 	
 	^ machineSimulator r13: anInteger 
 ]
 
-{ #category : #registers }
+{ #category : 'registers' }
 UnicornProcessor >> r14: anInteger [ 
 	
 	^ machineSimulator r14: anInteger 
 ]
 
-{ #category : #registers }
+{ #category : 'registers' }
 UnicornProcessor >> r1: anInteger [ 
 	
 	^ machineSimulator r1: anInteger 
@@ -419,25 +419,25 @@ UnicornProcessor >> x1: anInteger [
 	machineSimulator x1: anInteger
 ]
 
-{ #category : #visiting }
+{ #category : 'visiting' }
 UnicornProcessor >> x20: anInteger [ 
 	
 	machineSimulator x20: anInteger
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 UnicornProcessor >> x21: anInteger [
 
 	machineSimulator x21: anInteger
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 UnicornProcessor >> x22: anInteger [
 	
 	machineSimulator x22: anInteger
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 UnicornProcessor >> x23: anInteger [ 
 	
 	machineSimulator x23: anInteger
@@ -455,13 +455,13 @@ UnicornProcessor >> x25: anInteger [
 	machineSimulator x25: anInteger
 ]
 
-{ #category : #registers }
+{ #category : 'registers' }
 UnicornProcessor >> x26: anInteger [ 
 
 	machineSimulator x26: anInteger
 ]
 
-{ #category : #'as yet unclassified' }
+{ #category : 'as yet unclassified' }
 UnicornProcessor >> x28: anInteger [ 
 	
 	machineSimulator x28: anInteger

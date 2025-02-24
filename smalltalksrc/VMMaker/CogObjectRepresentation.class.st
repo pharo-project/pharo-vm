@@ -901,14 +901,14 @@ CogObjectRepresentation >> genPrimitiveFullClosureValue [
 	^cogit genPrimitiveFullClosureValue
 ]
 
-{ #category : #'primitive generators' }
+{ #category : 'primitive generators' }
 CogObjectRepresentation >> genPrimitiveFullClosureValueNoContextSwitch [
 	"Defer to the cogit for this one, to match the split for genPrimitiveClosureValue."
 	<option: #SistaV1BytecodeSet>
 	^self genPrimitiveFullClosureValue
 ]
 
-{ #category : #'primitive generators' }
+{ #category : 'primitive generators' }
 CogObjectRepresentation >> genPrimitiveGreaterOrEqual [
 	^self 
 		genSmallIntegerComparison: JumpGreaterOrEqual

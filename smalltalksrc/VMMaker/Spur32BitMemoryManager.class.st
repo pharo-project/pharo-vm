@@ -470,7 +470,7 @@ Spur32BitMemoryManager >> isImmediateFloat: oop [
 	^false
 ]
 
-{ #category : #'interpreter access' }
+{ #category : 'interpreter access' }
 Spur32BitMemoryManager >> isIntegerValue: intValue [
 	"Answer if the given value can be represented as a Smalltalk integer value.
 	 In C, use a shift and XOR to set the sign bit if and only if the top two bits of the given
@@ -909,13 +909,13 @@ Spur32BitMemoryManager >> unsignedLongAt: anAddress put: aValue [
 	^ self uint32AtPointer: anAddress put: aValue
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 Spur32BitMemoryManager >> wordAt: address [
 
 	^ self uint32At: address
 ]
 
-{ #category : #'header formats' }
+{ #category : 'header formats' }
 Spur32BitMemoryManager >> wordIndexableFormat [
 	^self firstLongFormat
 ]

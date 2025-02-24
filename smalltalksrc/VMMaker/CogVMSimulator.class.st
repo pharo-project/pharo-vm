@@ -1431,14 +1431,6 @@ CogVMSimulator >> primitiveThatDoNothingWithOneArgument [
 ]
 
 { #category : 'system control primitives' }
-CogVMSimulator >> primitiveVMParameter [
-	(argumentCount = 2
-	 and: [(self stackValue: 1) = (objectMemory integerObjectOf: 34)]) ifTrue:
-		[self halt].
-	^super primitiveVMParameter
-]
-
-{ #category : 'system control primitives' }
 CogVMSimulator >> primitiveVoidVMState [
 	self halt.
 	^super primitiveVoidVMState
@@ -1677,7 +1669,7 @@ CogVMSimulator >> rewriteMethodCacheEntryForExternalPrimitiveToFunction: localPr
 			put: (self cCoerce: localPrimAddress to: #sqIntptr_t) ]
 ]
 
-{ #category : #'rump c stack' }
+{ #category : 'rump c stack' }
 CogVMSimulator >> rumpCStackSize [
 	"Allocate a rump C stack for simulation.  This stack is used for C calls, i.e. calls
 	 made into the simulated C run-time, typically of routines in CoInterpreter.

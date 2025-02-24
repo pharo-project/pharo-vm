@@ -524,7 +524,7 @@ InterpreterPrimitives >> maybeInlinePositive32BitValueOf: oop [
 			^self cCoerceSimple: (objectMemory byteSwapped32IfBigEndian: (objectMemory fetchLong32: 0 ofObject: oop)) to: #'unsigned int']
 ]
 
-{ #category : #arithmetic }
+{ #category : 'arithmetic' }
 InterpreterPrimitives >> multiplySmallInteger: anInteger withSmallInteger: anotherInteger ifOverflow: aBlock [
 
 	"Multiply two signed integers and detect signed overflow"
@@ -549,7 +549,7 @@ InterpreterPrimitives >> multiplySmallInteger: anInteger withSmallInteger: anoth
 	^ objectMemory integerObjectOf: result
 ]
 
-{ #category : #'simulation support' }
+{ #category : 'simulation support' }
 InterpreterPrimitives >> newMethod: oop [
 	<doNotGenerate>
 	newMethod := oop
@@ -2741,12 +2741,6 @@ InterpreterPrimitives >> primitiveNew [
 	<numberOfArguments: 0>
 	(objectMemory instantiateClass: self stackTop)
 		ifNotNil: [ :obj | self pop: argumentCount + 1 thenPush: obj ]
-		ifNil: [ 
-			self druidExitPoint.
-			self primitiveFailFor: ((objectMemory isFixedSizePointerFormat:
-					  (objectMemory instSpecOfClass: self stackTop))
-					 ifTrue: [ PrimErrNoMemory ]
-					 ifFalse: [ PrimErrBadReceiver ]) ]
 ]
 
 { #category : 'compiled methods' }
@@ -4143,7 +4137,7 @@ InterpreterPrimitives >> primitiveSubtract [
 	self pop: 2 thenPush: result
 ]
 
-{ #category : #'arithmetic integer primitives' }
+{ #category : 'arithmetic integer primitives' }
 InterpreterPrimitives >> primitiveSubtract2 [
 	<numberOfArguments:1>
 	| argumentOop receiverOop result |
@@ -4675,7 +4669,7 @@ InterpreterPrimitives >> stackIntegerValue: aValue [
 	self subclassResponsibility
 ]
 
-{ #category : #arithmetic }
+{ #category : 'arithmetic' }
 InterpreterPrimitives >> subSmallInteger: anInteger withSmallInteger: anotherInteger ifOverflow: aBlock [
 
 	"Subtract two signed integers and detect signed overflow"
@@ -4689,7 +4683,7 @@ InterpreterPrimitives >> subSmallInteger: anInteger withSmallInteger: anotherInt
 	^ objectMemory integerObjectOf: result
 ]
 
-{ #category : #'primitive support' }
+{ #category : 'primitive support' }
 InterpreterPrimitives >> success: successBoolean [
 	"Set the state of the primitive failure code/success flag, iff successBoolean
 	 is false. If primFailCode is non-zero a primitive has failed.  If primFailCode
@@ -4715,7 +4709,7 @@ InterpreterPrimitives >> successful [
 	^ primFailCode = 0
 ]
 
-{ #category : #arithmetic }
+{ #category : 'arithmetic' }
 InterpreterPrimitives >> sumSmallInteger: anInteger withSmallInteger: anotherInteger ifNotOverflow: aBlock [
 
 	"Sum two signed integers and detect signed overflow"
@@ -4731,7 +4725,7 @@ InterpreterPrimitives >> sumSmallInteger: anInteger withSmallInteger: anotherInt
 	^ aBlock value: (objectMemory integerObjectOf: result)
 ]
 
-{ #category : #arithmetic }
+{ #category : 'arithmetic' }
 InterpreterPrimitives >> sumSmallInteger: anInteger withSmallInteger: anotherInteger ifOverflow: aBlock [
 
 	"Sum two signed integers and detect signed overflow"
