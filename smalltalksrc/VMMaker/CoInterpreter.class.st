@@ -531,7 +531,7 @@ CoInterpreter >> activateNewFullClosure: blockClosure method: theMethod numArgs:
 CoInterpreter >> activateNewFullClosure: blockClosure method: theMethod numArgs: numArgs mayContextSwitch: mayContextSwitch methodHeader: aMethodHeader [
 
 	<druidExitPoint>
-	| numCopied inInterpreter methodHeader numTemps switched |
+	| numCopied inInterpreter methodHeader |
 	methodHeader := aMethodHeader.
 	numCopied := self copiedValueCountOfFullClosure: blockClosure.
 	"How do we know when to compile a block method?
