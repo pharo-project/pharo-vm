@@ -1246,6 +1246,39 @@ methodCallingAssertingMethod(void)
 ]
 
 { #category : 'tests-inlinemethod' }
+SlangBasicTranslationTest >> testInlineAssertsInsideIf [
+	"the cast is still in an expression, so inlining does not supress it"
+
+	| translation tMethod |
+	tMethod := self getTMethodFrom:
+		           #methodCallingAssertAndValidate.
+	tMethod recordDeclarationsIn: generator.
+
+	generator doBasicInlining: true.
+
+	translation := self translate: tMethod.
+	translation := translation trimBoth.
+
+	self
+		assert: translation
+		equals:
+			'/* SlangBasicTranslationTestClass>>#methodCallingAssertAndValidate */
+static sqInt
+methodCallingAssertAndValidate(void)
+{
+	/* begin assertAndValidate */
+	int assertAndValidate_ret;
+	assertInlined(1, "methodCallingAssertAndValidate > assertAndValidate");
+	assertAndValidate_ret = 1;
+	/* end assertAndValidate */
+	if (assertAndValidate_ret) {
+		return 1;
+	}
+	return 0;
+}'
+]
+
+{ #category : 'tests-inlinemethod' }
 SlangBasicTranslationTest >> testInlineInlinedAsserts [
 	"the cast is still in an expression, so inlining does not supress it"
 

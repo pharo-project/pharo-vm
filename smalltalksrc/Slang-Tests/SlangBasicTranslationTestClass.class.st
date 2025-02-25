@@ -24,6 +24,13 @@ SlangBasicTranslationTestClass class >> objectMemoryClass [
 ]
 
 { #category : 'inline' }
+SlangBasicTranslationTestClass >> assertAndValidate [
+
+	self assert: true.
+	^ 1
+]
+
+{ #category : 'inline' }
 SlangBasicTranslationTestClass >> assertingMethod [
 
 	'receiver' assert: true
@@ -54,6 +61,12 @@ SlangBasicTranslationTestClass >> increment: x [
 SlangBasicTranslationTestClass >> initializationOptions [
 
 	^ nil
+]
+
+{ #category : 'inline' }
+SlangBasicTranslationTestClass >> methodCallingAssertAndValidate [
+
+	self assertAndValidate ifTrue: [ ^ 1 ]
 ]
 
 { #category : 'inline' }
