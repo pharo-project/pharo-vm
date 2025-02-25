@@ -3479,7 +3479,7 @@ CCodeGenerator >> isActualType: actualTypeOrNil compatibleWithFormalType: formal
 
 { #category : 'inlining' }
 CCodeGenerator >> isAssertSelector: selector [
-	^#(assert: asserta: assert:l: asserta:l: deny: eassert: assert:Includes:) includes: selector
+	^#(assert: asserta: assert:l: asserta:l: deny: eassert: assert:Inlined:) includes: selector
 ]
 
 { #category : 'utilities' }

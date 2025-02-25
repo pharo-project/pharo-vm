@@ -26,7 +26,7 @@ SlangBasicTranslationTestClass class >> objectMemoryClass [
 { #category : 'inline' }
 SlangBasicTranslationTestClass >> assertingMethod [
 
-	self assert: true
+	'receiver' assert: true
 ]
 
 { #category : 'inline' }
