@@ -1452,6 +1452,7 @@ TMethod >> inlineFunctionCall: aSendNode in: aCodeGen [
 		meth statements removeFirst ].
 	meth renameVarsForInliningInto: self except: doNotRename in: aCodeGen.
 	meth renameLabelsForInliningInto: self.
+	meth processAssertionsForInliningInto: self.
 	self addVarsDeclarationsAndLabelsOf: meth except: doNotRename.
 	substitutionDict := Dictionary new: meth args size * 2.
 	meth args with: argsForInlining do: [ :argName :exprNode |
@@ -1531,6 +1532,7 @@ TMethod >> inlineMethod: meth inCaseStatement: stmtNode [
 			labels add: exitLabel ]
 		ifFalse: [ exitLabel := nil ].
 	meth renameLabelsForInliningInto: self.
+	meth processAssertionsForInliningInto: self.
 	labels addAll: meth labels.
 
 	newStatements := stmtNode statements asOrderedCollection allButFirst.
@@ -1659,7 +1661,7 @@ TMethod >> inlineSend: aSendNode directReturn: directReturn exitVar: exitVar in:
 
 	callee renameVarsForInliningInto: self except: omittedParameters in: aCodeGen.
 	callee renameLabelsForInliningInto: self.
-	callee markAssertionsAsInlinedFrom: self selector.
+	callee processAssertionsForInliningInto: self.
 	self addVarsDeclarationsAndLabelsOf: callee except: omittedParameters.
 	callee hasReturn ifTrue: [
 		directReturn ifFalse: [
@@ -2103,33 +2105,6 @@ TMethod >> mapSendsFromSelfToInterpreterProxy: selectors [
 			[node receiver: interpreterProxyNode]]
 ]
 
-{ #category : 'inlining' }
-TMethod >> markAssertionsAsInlinedFrom: callerSelector [
-
-	"Rewrites
-	    <expr-1> assert: <expr-2>
-	 to
-	    <expr-1> assert: <expr-2> Inlined: 'method1 > method2 > ... > methodN'
-
-	 This enables the use of debug logs to understand where a given assertion fails"
-
-	| toRewrite inlinedStack |
-	toRewrite := OrderedCollection new.
-	parseTree nodesDo: [ :node | node isAssertion ifTrue: [ toRewrite add: node ] ].
-
-	toRewrite do: [ :assertion |
-		assertion selector = #assert:Inlined: ifTrue: [
-			inlinedStack := TConstantNode value:
-				                callerSelector asString , ' > '
-				                , assertion arguments second value.
-			assertion arguments at: 2 put: inlinedStack ].
-		assertion selector = #assert: ifTrue: [
-			inlinedStack := TConstantNode value:
-				                callerSelector asString , ' > ' , self selector.
-			assertion selector: #assert:Inlined:.
-			assertion arguments: assertion arguments , { inlinedStack } ] ]
-]
-
 { #category : 'accessing' }
 TMethod >> mayBeInlined [
 	^inline == true or: [inline == nil or: [inline == #always]]
@@ -2462,6 +2437,33 @@ TMethod >> printSingleComment: aString on: aStream indent: indent tabWidth: tabW
 TMethod >> printTempsAndVar: varName on: aStream [ 
 	"add the required temps and the varname to the stream"
 	aStream nextPutAll: '| rcvr stackPointer interpreterProxy ' , varName , ' |'; cr
+]
+
+{ #category : 'inlining' }
+TMethod >> processAssertionsForInliningInto: caller [
+
+	"Rewrites
+	    <expr-1> assert: <expr-2>
+	 to
+	    <expr-1> assert: <expr-2> Inlined: 'method1 > method2 > ... > methodN'
+
+	 This enables the use of debug logs to understand where a given assertion fails"
+
+	| toRewrite inlinedStack |
+	toRewrite := OrderedCollection new.
+	parseTree nodesDo: [ :node | node isAssertion ifTrue: [ toRewrite add: node ] ].
+
+	toRewrite do: [ :assertion |
+		assertion selector = #assert:Inlined: ifTrue: [
+			inlinedStack := TConstantNode value:
+				                caller selector asString , ' > '
+				                , assertion arguments second value.
+			assertion arguments at: 2 put: inlinedStack ].
+		assertion selector = #assert: ifTrue: [
+			inlinedStack := TConstantNode value:
+				                caller selector asString , ' > ' , self selector.
+			assertion selector: #assert:Inlined:.
+			assertion arguments: assertion arguments , { inlinedStack } ] ]
 ]
 
 { #category : 'inlining support' }
