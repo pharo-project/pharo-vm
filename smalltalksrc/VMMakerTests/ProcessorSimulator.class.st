@@ -730,6 +730,18 @@ ProcessorSimulator >> smalltalkStackPointerRegisterValue: aValue [
 	self writeRegister: self smalltalkStackPointerRegister value: aValue
 ]
 
+{ #category : 'accessing' }
+ProcessorSimulator >> smalltalkStackPointerValue [
+
+	^ self wordAt: self smalltalkStackPointerRegisterValue
+]
+
+{ #category : 'accessing' }
+ProcessorSimulator >> smalltalkStackPointerValueAt: index [
+
+	^ self wordAt: self smalltalkStackPointerRegisterValue + (index * self wordSize)
+]
+
 { #category : 'simulation-support' }
 ProcessorSimulator >> smashRegisterAccessors [
 

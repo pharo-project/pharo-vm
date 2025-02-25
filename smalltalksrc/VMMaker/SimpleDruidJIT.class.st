@@ -319,8 +319,6 @@ SimpleDruidJIT class >> initialize [
 SimpleDruidJIT class >> initializeBytecodeTableForSistaV1 [
 
 	<generated>
-	numPushNilsFunction := #sistaV1:Num:Push:Nils:.
-	pushNilSizeFunction := #sistaV1PushNilSize:numInitialNils:.
 	BytecodeSetHasDirectedSuperSend := true.
 	BytecodeSetHasExtensions := true.
 	FirstSpecialSelector := 96.

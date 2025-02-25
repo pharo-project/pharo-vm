@@ -10798,6 +10798,7 @@ SpurMemoryManager >> primitiveFail [
 SpurMemoryManager >> primitiveFailFor: reasonCode [
 	"hack around the CoInterpreter/ObjectMemory split refactoring"
 	<doNotGenerate>
+	<druidExitPoint>
 	^coInterpreter primitiveFailFor: reasonCode
 ]
 

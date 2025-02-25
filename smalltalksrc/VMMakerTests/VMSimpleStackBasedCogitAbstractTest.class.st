@@ -859,6 +859,16 @@ VMSimpleStackBasedCogitAbstractTest >> runGeneratedCode [
 ]
 
 { #category : 'helpers' }
+VMSimpleStackBasedCogitAbstractTest >> runUntil: address [
+
+	machineSimulator startAt: cogInitialAddress
+		until: address
+		timeout: 0
+		count: 3000.
+
+]
+
+{ #category : 'helpers' }
 VMSimpleStackBasedCogitAbstractTest >> runUntilReturn [
 
 	machineSimulator startAt: cogInitialAddress
