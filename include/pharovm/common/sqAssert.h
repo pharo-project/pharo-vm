@@ -28,10 +28,9 @@
 #ifdef NDEBUG /* compatible with Mac OS X (FreeBSD) /usr/include/assert.h */
 # define assert(expr) (void) 0 /* hack disabling of asserts.  Better in makefile? */
 # define asserta(expr) (expr)
-# define assertf(msg) (void) 0
 # define assertl(expr,line) (void) 0
 # define assertal(expr,line) (expr)
-# define assertfl(msg,line) (void) 0
+# define assertInlined(expr, inlinedStack) (void) 0
 # define eassert(expr) (void) 0 /* hack disabling of asserts.  Better in makefile? */
 
 # define PRODUCTION 1
@@ -40,10 +39,9 @@
 
 # define assert(expr)  ((expr)||(logAssert(__FILENAME__, __FUNCTION__, __LINE__, #expr),0))
 # define asserta(expr) assert(expr)
-# define assertf(msg)  (logAssert(__FILENAME__, __FUNCTION__, __LINE__, #msg),0)
 # define assertl(expr,line)  ((expr)||(logAssert(__FILENAME__, __FUNCTION__, line, #expr),0))
 # define assertal(expr,line) assertl(expr,line)
-# define assertfl(msg,line)  (logAssert(__FILENAME__, __FUNCTION__, line, #msg),0)
+# define assertInlined(expr, inlinedStack)  ((expr)||(logAssertInlined(__FILENAME__, __FUNCTION__, __LINE__, inlinedStack, #expr),0))
 
 extern char expensiveAsserts;
 

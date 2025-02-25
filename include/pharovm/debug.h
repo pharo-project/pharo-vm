@@ -18,6 +18,7 @@ EXPORT(int) getLogLevel();
 
 EXPORT(void) logMessage(int level, const char* fileName, const char* functionName, int line, ...);
 EXPORT(void) logAssert(const char* fileName, const char* functionName, int line, char* msg);
+EXPORT(void) logAssertInlined(const char* fileName, const char* functionName, int line, const char* inlinedStack, char* msg);
 
 EXPORT(void) registerCurrentThreadToHandleExceptions();
 EXPORT(void) installErrorHandlers();
