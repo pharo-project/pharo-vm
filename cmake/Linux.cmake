@@ -1,3 +1,5 @@
+option(READ_ONLY_CODE_ZONE "Makes Cogit's code zone never writeable and executable at the same time" OFF)
+
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wl,-rpath=.")
 set(PHARO_BIN_LOCATION "default" CACHE STRING "The default location of the PHARO bin, used by the launch.sh.in")
 
@@ -98,6 +100,9 @@ macro(configure_installables INSTALL_COMPONENT)
 endmacro()
 
 macro(add_required_libs_per_platform)
+  if(READ_ONLY_CODE_ZONE)
+    target_compile_definitions(${VM_LIBRARY_NAME} PRIVATE READ_ONLY_CODE_ZONE=1)
+  endif()
   target_link_libraries(${VM_LIBRARY_NAME} dl)
   target_link_libraries(${VM_LIBRARY_NAME} m)
   target_link_libraries(${VM_LIBRARY_NAME} pthread)

@@ -5764,11 +5764,16 @@ Cogit >> deltaToSkipPrimAndErrorStoreIn: aMethodObj header: aMethodHeader [
 Cogit >> disableCodeZoneWrite [
 
 	<inline: true>
-	
-	self 
-		cppIf: #'READ_ONLY_CODE_ZONE'
-		ifTrue:[	self cCall: 'pthread_jit_write_protect_np' withArguments: {true} ].
-	
+	self cppIf: #READ_ONLY_CODE_ZONE ifTrue: [
+		self
+			cppIf: #__APPLE__
+			ifTrue: [
+			self cCall: 'pthread_jit_write_protect_np' withArguments: { true } ]
+			ifFalse: [
+				self cCall: 'sqMakeMemoryExecutableFromTo' withArguments: {
+						objectMemory codeStart.
+						objectMemory codeEnd } ] ].
+
 	jitCodeZoneWriteEnabled := false
 ]
 
@@ -5794,15 +5799,20 @@ Cogit >> emptyRegisterMask [
 Cogit >> enableCodeZoneWrite [
 
 	<inline: true>
+	jitCodeZoneWriteEnabled ifTrue: [
+		self error: 'Code zone writing is not reentrant' ].
 
-	jitCodeZoneWriteEnabled ifTrue: [ self error: 'Code zone writing is not reentrant' ].
-	
-	self 
-		cppIf: #'READ_ONLY_CODE_ZONE'
-		ifTrue:[	self cCall: 'pthread_jit_write_protect_np' withArguments: {false} ].
-			
-	jitCodeZoneWriteEnabled := true.
+	self cppIf: #READ_ONLY_CODE_ZONE ifTrue: [
+		self
+			cppIf: #__APPLE__
+			ifTrue: [
+				self cCall: 'pthread_jit_write_protect_np' withArguments: { false } ]
+			ifFalse: [
+				self cCall: 'sqMakeMemoryNotExecutableFromTo' withArguments: {
+						objectMemory codeStart.
+						objectMemory codeEnd } ] ].
 
+	jitCodeZoneWriteEnabled := true
 ]
 
 { #category : 'code generation' }
@@ -8346,11 +8356,7 @@ Cogit >> initializeCodeZoneFrom: startAddress upTo: endAddress [
 		backEnd stopsFrom: startAddress to: endAddress - 1 ].
 
 	self
-		cCode: [
-			self cCall: 'sqMakeMemoryExecutableFromTo' withArguments: {
-					startAddress.
-					endAddress } ]
-		inSmalltalk: [
+		simulationOnly: [
 			startAddress = self class guardPageSize ifTrue: [
 				backEnd stopsFrom: 0 to: endAddress - 1 ].
 			self initializeProcessor ].

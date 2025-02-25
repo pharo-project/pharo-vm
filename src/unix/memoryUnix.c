@@ -65,28 +65,27 @@ int mmapErrno = 0;
 void
 sqMakeMemoryExecutableFromTo(unsigned long startAddr, unsigned long endAddr)
 {
-//	sqInt firstPage = roundDownToPage(startAddr);
-//	if (mprotect((void *)firstPage,
-//				 endAddr - firstPage + 1,
-//				 PROT_READ | PROT_WRITE | PROT_EXEC) < 0){
-//		logError("mprotect(x,y,PROT_READ | PROT_WRITE | PROT_EXEC)");
-//		logError("ERRNO: %d\n", errno);
-//		exit(1);
-//	}
+	sqInt firstPage = roundDownToPage(startAddr);
+	if (mprotect((void *)firstPage,
+				 endAddr - firstPage,
+				 PROT_READ | PROT_EXEC) < 0){
+		logError("mprotect(x,y,PROT_READ | PROT_EXEC)");
+		logError("ERRNO: %d\n", errno);
+		exit(1);
+	}
 }
 
 void
 sqMakeMemoryNotExecutableFromTo(unsigned long startAddr, unsigned long endAddr)
 {
-//	sqInt firstPage = roundDownToPage(startAddr);
-	/* Arguably this is pointless since allocated memory always does include
-	 * write permission.  Annoyingly the mprotect call fails on both linux &
-	 * mac os x.  So make the whole thing a nop.
-	 */
-//	if (mprotect((void *)firstPage,
-//				 endAddr - firstPage + 1,
-//				 PROT_READ | PROT_WRITE) < 0)
-//		logErrorFromErrno("mprotect(x,y,PROT_READ | PROT_WRITE)");
+	sqInt firstPage = roundDownToPage(startAddr);
+	if (mprotect((void *)firstPage,
+				 endAddr - firstPage,
+				 PROT_READ | PROT_WRITE) < 0) {
+		logErrorFromErrno("mprotect(x,y,PROT_READ | PROT_WRITE)");
+		logError("ERRNO: %d\n", errno);
+		exit(1);
+	}
 }
 
 
@@ -96,19 +95,23 @@ void* allocateJITMemory(usqInt desiredSize, usqInt desiredPosition){
 
 	usqInt alignedSize = valign(max(desiredSize, 1));
 	usqInt desiredBaseAddressAligned = valign(desiredPosition);
-	void* result;
 
-#if __APPLE__	
+#if __APPLE__
 	int additionalFlags = MAP_JIT;
+	int prot = PROT_READ | PROT_WRITE | PROT_EXEC;
 #else
 	int additionalFlags = desiredPosition ? MAP_FIXED : 0;
+#	if READ_ONLY_CODE_ZONE
+		int prot = PROT_READ | PROT_EXEC;
+#	else
+		int prot = PROT_READ | PROT_WRITE | PROT_EXEC;
+#	endif
 #endif
 
 	logDebug("Trying to allocate JIT memory in %p\n", (void* )desiredBaseAddressAligned);
 
-	if (MAP_FAILED == (result = mmap((void*) desiredBaseAddressAligned, alignedSize, 
-			PROT_READ | PROT_WRITE | PROT_EXEC, 
-			MAP_FLAGS | additionalFlags, -1, 0))) {
+	void* result = mmap((void*) desiredBaseAddressAligned, alignedSize, prot, MAP_FLAGS | additionalFlags, -1, 0);
+	if (MAP_FAILED == result) {
 		logErrorFromErrno("Could not allocate JIT memory");
 		exit(1);
 	}

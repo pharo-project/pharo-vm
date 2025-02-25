@@ -7485,12 +7485,7 @@ StackInterpreter >> initStackPages [
 	stackPages
 		initializeStack: theStackMemory
 		numSlots: stackPagesBytes / objectMemory wordSize
-		pageSize: stackPageBytes / objectMemory wordSize.
-
-	self
-		stackPagesInitializedAt: theStackMemory
-		totalSize: stackPagesBytes
-		pageSize: stackPageBytes
+		pageSize: stackPageBytes / objectMemory wordSize
 ]
 
 { #category : 'initialization' }
@@ -14754,12 +14749,6 @@ StackInterpreter >> stackPagesClass [
 	^VMBIGENDIAN
 		ifTrue: [VMStackPagesMSB]
 		ifFalse: [VMStackPagesLSB]
-]
-
-{ #category : 'initialization' }
-StackInterpreter >> stackPagesInitializedAt: theStackMemory totalSize: stackPagesBytes pageSize: stackPageBytes [
-
-	"Nothing to do, a nice hook for CoInterpreter"
 ]
 
 { #category : 'accessing' }

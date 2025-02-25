@@ -3108,15 +3108,6 @@ CoInterpreter >> iframeSavedIP: theFP put: savedIP [
 	stackPages unsignedLongAt: theFP + FoxIFSavedIP put: savedIP
 ]
 
-{ #category : 'initialization' }
-CoInterpreter >> initStackPagesAndInterpret [
-
-	self sqMakeMemoryNotExecutableFrom: objectMemory getMemoryMap startOfObjectMemory asUnsignedInteger
-		To: objectMemory getMemoryMap oldSpaceEnd asUnsignedInteger.
-
-	^ super initStackPagesAndInterpret
-]
-
 { #category : 'frame access' }
 CoInterpreter >> instVar: offset ofContext: aContext [
 	"Fetch an instance variable from a maybe married context.
@@ -4851,17 +4842,6 @@ CoInterpreter >> stackPageHeadroom [
 	 Defer to the platform for this one."
 	<inline: true>
 	^self osCogStackPageHeadroom
-]
-
-{ #category : 'initialization' }
-CoInterpreter >> stackPagesInitializedAt: theStackMemory totalSize: stackPagesBytes pageSize: stackPageBytes [
-
-	<inline: true>
-
-	self sqMakeMemoryNotExecutableFrom: theStackMemory asUnsignedInteger
-		To: theStackMemory asUnsignedInteger + stackPagesBytes.
-
-	self assert: self minimumUnusedHeadroom = stackPageBytes.
 ]
 
 { #category : 'trampoline support' }
