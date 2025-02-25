@@ -1659,6 +1659,7 @@ TMethod >> inlineSend: aSendNode directReturn: directReturn exitVar: exitVar in:
 
 	callee renameVarsForInliningInto: self except: omittedParameters in: aCodeGen.
 	callee renameLabelsForInliningInto: self.
+	callee markAssertionsAsInlinedFrom: self selector.
 	self addVarsDeclarationsAndLabelsOf: callee except: omittedParameters.
 	callee hasReturn ifTrue: [
 		directReturn ifFalse: [
@@ -1800,7 +1801,8 @@ TMethod >> isAPIMethod [
 
 { #category : 'testing' }
 TMethod >> isAssertion [
-	^(selector beginsWith: 'assert') or: [selector beginsWith: 'verify']
+
+	^ selector beginsWith: 'assert'
 ]
 
 { #category : 'accessing' }
@@ -2099,6 +2101,33 @@ TMethod >> mapSendsFromSelfToInterpreterProxy: selectors [
 		and: [node receiver name = 'self'
 		and: [selectors includes: node selector]]]) ifTrue:
 			[node receiver: interpreterProxyNode]]
+]
+
+{ #category : 'inlining' }
+TMethod >> markAssertionsAsInlinedFrom: callerSelector [
+
+	"Rewrites
+	    <expr-1> assert: <expr-2>
+	 to
+	    <expr-1> assert: <expr-2> Inlined: 'method1 > method2 > ... > methodN'
+
+	 This enables the use of debug logs to understand where a given assertion fails"
+
+	| toRewrite inlinedStack |
+	toRewrite := OrderedCollection new.
+	parseTree nodesDo: [ :node | node isAssertion ifTrue: [ toRewrite add: node ] ].
+
+	toRewrite do: [ :assertion |
+		assertion selector = #assert:Inlined: ifTrue: [
+			inlinedStack := TConstantNode value:
+				                callerSelector asString , ' > '
+				                , assertion arguments second value.
+			assertion arguments at: 2 put: inlinedStack ].
+		assertion selector = #assert: ifTrue: [
+			inlinedStack := TConstantNode value:
+				                callerSelector asString , ' > ' , self selector.
+			assertion selector: #assert:Inlined:.
+			assertion arguments: assertion arguments , { inlinedStack } ] ]
 ]
 
 { #category : 'accessing' }

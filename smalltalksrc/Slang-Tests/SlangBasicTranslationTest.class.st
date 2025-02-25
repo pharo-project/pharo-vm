@@ -1218,6 +1218,64 @@ SlangBasicTranslationTest >> testGoto [
 ]
 
 { #category : 'tests-inlinemethod' }
+SlangBasicTranslationTest >> testInlineAsserts [
+	"the cast is still in an expression, so inlining does not supress it"
+
+	| translation tMethod |
+	tMethod := self getTMethodFrom:
+		           #methodCallingAssertingMethod.
+	tMethod recordDeclarationsIn: generator.
+
+	generator doBasicInlining: true.
+
+	translation := self translate: tMethod.
+	translation := translation trimBoth.
+
+	self
+		assert: translation
+		equals:
+			'/* SlangBasicTranslationTestClass>>#methodCallingAssertingMethod */
+static sqInt
+methodCallingAssertingMethod(void)
+{
+	/* begin assertingMethod */
+	assertInlined(1, "methodCallingAssertingMethod > assertingMethod");
+	/* end assertingMethod */
+	return 0;
+}'
+]
+
+{ #category : 'tests-inlinemethod' }
+SlangBasicTranslationTest >> testInlineInlinedAsserts [
+	"the cast is still in an expression, so inlining does not supress it"
+
+	| translation tMethod |
+	tMethod := self getTMethodFrom:
+		           #methodCallingMethodCallingAssertingMethod.
+	tMethod recordDeclarationsIn: generator.
+
+	generator doBasicInlining: true.
+
+	translation := self translate: tMethod.
+	translation := translation trimBoth.
+
+	self
+		assert: translation
+		equals:
+			'/* SlangBasicTranslationTestClass>>#methodCallingMethodCallingAssertingMethod */
+static sqInt
+methodCallingMethodCallingAssertingMethod(void)
+{
+	/* begin methodCallingAssertingMethod */
+	/* begin assertingMethod */
+	assertInlined(1, "methodCallingMethodCallingAssertingMethod > methodCallingAssertingMethod > assertingMethod");
+	/* end assertingMethod */
+	/* end methodCallingAssertingMethod */
+	return 0;
+}'
+]
+
+{ #category : 'tests-inlinemethod' }
 SlangBasicTranslationTest >> testInlineMethodIfExpressionWithShiftRight [
 
 	| translation codeGenerator inlinedMethod cast printedString |

@@ -24,6 +24,12 @@ SlangBasicTranslationTestClass class >> objectMemoryClass [
 ]
 
 { #category : 'inline' }
+SlangBasicTranslationTestClass >> assertingMethod [
+
+	self assert: true
+]
+
+{ #category : 'inline' }
 SlangBasicTranslationTestClass >> continue [
 	"reserved name selector"
 ]
@@ -48,6 +54,12 @@ SlangBasicTranslationTestClass >> increment: x [
 SlangBasicTranslationTestClass >> initializationOptions [
 
 	^ nil
+]
+
+{ #category : 'inline' }
+SlangBasicTranslationTestClass >> methodCallingAssertingMethod [
+
+	self assertingMethod
 ]
 
 { #category : 'inline' }
@@ -76,6 +88,12 @@ SlangBasicTranslationTestClass >> methodCallingInReturnMethodWithCCoerceInReturn
 SlangBasicTranslationTestClass >> methodCallingInSendMethodWithCCoerceInReturn [
 
 	self method: self methodWithCCoerceInReturn
+]
+
+{ #category : 'inline' }
+SlangBasicTranslationTestClass >> methodCallingMethodCallingAssertingMethod [
+
+	self methodCallingAssertingMethod
 ]
 
 { #category : 'inline-comment' }
