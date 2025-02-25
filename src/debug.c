@@ -56,7 +56,7 @@ EXPORT(void) logAssert(const char* fileName, const char* functionName, int line,
 
 
 EXPORT(void) logAssertInlined(const char* fileName, const char* functionName, int line, const char* inlinedStack, char* msg){
-	logMessage(LOG_WARN, fileName, functionName, line, "%s - %s", inlinedStack, msg);
+	logMessage(LOG_WARN, fileName, functionName, line, "%s > %s", inlinedStack, msg);
 }
 
 void logMessageFromErrno(int level, const char* msg, const char* fileName, const char* functionName, int line){
