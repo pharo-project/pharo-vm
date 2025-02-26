@@ -378,7 +378,7 @@ methodWithDeadCodeInRepeat(SLDeadCodeEliminationTestClass * self_in_methodWithDe
 {
 	while (1) {
 		method(self_in_methodWithDeadCodeInRepeat);
-	};
+	}
 	{
 		return;
 	}
@@ -444,7 +444,7 @@ methodWithDeadCodeInToByDo(SLDeadCodeEliminationTestClass * self_in_methodWithDe
 
 	for (index = 1; index <= 4; index += 2) {
 		method(self_in_methodWithDeadCodeInToByDo, index);
-	};
+	}
 	return self_in_methodWithDeadCodeInToByDo;
 }'
 ]
@@ -472,7 +472,7 @@ methodWithDeadCodeInToDo(SLDeadCodeEliminationTestClass * self_in_methodWithDead
 
 	for (index = 1; index <= 4; index += 1) {
 		method(self_in_methodWithDeadCodeInToDo, index);
-	};
+	}
 	return self_in_methodWithDeadCodeInToDo;
 }'
 ]
@@ -496,9 +496,9 @@ SLDeadCodeEliminationTest >> testMethodWithDeadCodeInWhileFalse [
 static void
 methodWithDeadCodeInWhileFalseLastExpressionIsLeaf(SLDeadCodeEliminationTestClass * self_in_methodWithDeadCodeInWhileFalseLastExpressionIsLeaf)
 {
-	do{
+	do {
 		method(self_in_methodWithDeadCodeInWhileFalseLastExpressionIsLeaf);
-	}while(!1);
+	} while (!1);
 	{
 		return;
 	}
@@ -530,7 +530,7 @@ methodWithDeadCodeInWhileFalseBinaryNoSendInReceiver(SLDeadCodeEliminationTestCl
 	var = 0;
 	while (!(var == 1)) {
 		method(self_in_methodWithDeadCodeInWhileFalseBinaryNoSendInReceiver);
-	};
+	}
 	{
 		return;
 	}
@@ -559,7 +559,7 @@ methodWithDeadCodeInWhileFalseBinarySendInReceiver(SLDeadCodeEliminationTestClas
 {
 	while (!(method(self_in_methodWithDeadCodeInWhileFalseBinarySendInReceiver))) {
 		method(self_in_methodWithDeadCodeInWhileFalseBinarySendInReceiver);
-	};
+	}
 	{
 		return;
 	}
@@ -585,9 +585,9 @@ SLDeadCodeEliminationTest >> testMethodWithDeadCodeInWhileTrue [
 static void
 methodWithDeadCodeInWhileTrueLastExpressionIsLeaf(SLDeadCodeEliminationTestClass * self_in_methodWithDeadCodeInWhileTrueLastExpressionIsLeaf)
 {
-	do{
+	do {
 		method(self_in_methodWithDeadCodeInWhileTrueLastExpressionIsLeaf);
-	}while(1);
+	} while (1);
 	{
 		return;
 	}
@@ -618,7 +618,7 @@ methodWithDeadCodeInWhileTrueBinaryNoSendInReceiver(SLDeadCodeEliminationTestCla
 	var = 0;
 	while (var == 0) {
 		method(self_in_methodWithDeadCodeInWhileTrueBinaryNoSendInReceiver);
-	};
+	}
 	{
 		return;
 	}
@@ -647,7 +647,7 @@ methodWithDeadCodeInWhileTrueBinarySendInReceiver(SLDeadCodeEliminationTestClass
 {
 	while (method(self_in_methodWithDeadCodeInWhileTrueBinarySendInReceiver)) {
 		method(self_in_methodWithDeadCodeInWhileTrueBinarySendInReceiver);
-	};
+	}
 	{
 		return;
 	}

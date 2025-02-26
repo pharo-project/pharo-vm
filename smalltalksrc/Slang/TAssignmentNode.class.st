@@ -184,7 +184,10 @@ TAssignmentNode >> children [
 { #category : 'displaying' }
 TAssignmentNode >> displayString [
 
-	^ ' := '
+	| prefix postfix |
+	prefix := variable ifNotNil: [ variable displayString ] ifNil: [ '' ].
+	postfix := expression ifNotNil: [ expression displayString ] ifNil: [ '' ].
+	^ prefix, ' := ', postfix
 ]
 
 { #category : 'accessing' }

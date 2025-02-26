@@ -267,7 +267,7 @@ VMMaker >> buildCodeGeneratorForCogit [
 		initializeClasses: true
 ]
 
-{ #category : #'generate sources' }
+{ #category : 'generate sources' }
 VMMaker >> buildCodeGeneratorForCogit: cogitClass includeAPIMethods: getAPIMethods initializeClasses: initializeClasses [
 	"Answer the code generator for translating the cogit."
 
@@ -1185,14 +1185,14 @@ VMMaker >> sourceFilePathFor: sourceFileName [
 	^ self coreVMDirectory / sourceFileName
 ]
 
-{ #category : #'error notification' }
+{ #category : 'error notification' }
 VMMaker >> stopOnErrors [
 
 	^ stopOnErrors
 		ifNil: [ stopOnErrors := true ]
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 VMMaker >> stopOnErrors: aValue [
 
 	stopOnErrors := aValue

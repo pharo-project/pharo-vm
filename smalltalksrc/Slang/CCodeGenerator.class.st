@@ -1505,14 +1505,14 @@ CCodeGenerator >> generateCASTAsLong: tast [
 	^ self generateCASTAs: tast type:  'long'
 ]
 
-{ #category : #'CAST translation' }
+{ #category : 'CAST translation' }
 CCodeGenerator >> generateCASTAsObjectReference: aTSendNode [ 
 	
 	"Just ignore the object reference cast, it's a hint for the JIT compiler"
 	^ aTSendNode receiver asCASTExpressionIn: self
 ]
 
-{ #category : #'CAST translation' }
+{ #category : 'CAST translation' }
 CCodeGenerator >> generateCASTAsSymbol: tast [
 
 	^ CIdentifierNode name:
@@ -3139,7 +3139,7 @@ CCodeGenerator >> includeAPIFrom: aCCodeGenerator [
 	apiVariables := aCCodeGenerator selectAPIVariables
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 CCodeGenerator >> inferTypes [
 	
 	(SlangTyper on: self)
@@ -4960,7 +4960,7 @@ CCodeGenerator >> stepExpressionIsNegative: aNode [
 	^false
 ]
 
-{ #category : #'error notification' }
+{ #category : 'error notification' }
 CCodeGenerator >> stopOnErrors [
 	"Answer <true> if we should stop on errors during generation"
 
@@ -4968,7 +4968,7 @@ CCodeGenerator >> stopOnErrors [
 		ifNil: [ stopOnErrors := true ]
 ]
 
-{ #category : #utilities }
+{ #category : 'utilities' }
 CCodeGenerator >> stopOnErrors: aBoolean [
 	stopOnErrors := aBoolean
 ]
