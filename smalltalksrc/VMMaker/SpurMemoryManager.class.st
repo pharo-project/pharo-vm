@@ -4802,6 +4802,8 @@ SpurMemoryManager >> ensureMemoryManager [
 { #category : 'initialization' }
 SpurMemoryManager >> ensureMemoryMap [ 
 
+	<returnTypeC: #void>
+
 	memoryMap ifNotNil: [ ^ self ].
 
 	self 

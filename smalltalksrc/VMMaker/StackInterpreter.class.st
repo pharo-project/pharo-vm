@@ -1782,6 +1782,7 @@ StackInterpreter >> activateNewFullClosure: blockClosure method: theMethod numAr
 	"Similar to activateNewMethod but for Closure and newMethod."
 	| numCopied methodHeader numTemps inInterpreter switched |
 	<inline: true>
+	<returnTypeC: #void>
 	self assert: theMethod = (objectMemory fetchPointer: FullClosureCompiledBlockIndex ofObject: blockClosure).
 	
 	inInterpreter := self isInstructionPointerInInterpreter: instructionPointer.

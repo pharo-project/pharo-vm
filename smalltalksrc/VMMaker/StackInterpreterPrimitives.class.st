@@ -4045,5 +4045,5 @@ StackInterpreterPrimitives >> writeAddress: anOop to: aValue [
 	(objectMemory is: anOop KindOfClass: objectMemory classExternalAddress)
 		ifFalse: [ self primitiveFail. ^ nil ].
 
-	^ objectMemory storePointer: 0 ofObject: anOop withValue: (self cCoerce: aValue to: #sqInt).
+	objectMemory storePointer: 0 ofObject: anOop withValue: (self cCoerce: aValue to: #sqInt).
 ]
