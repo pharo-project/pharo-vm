@@ -345,10 +345,11 @@ TCaseStmtNode >> processSharedCodeBlocks: caseTree forCase: caseIndex in: codeGe
 					  that will be converted into a goto and control will continue to that code,  If the bytecode does
 					  /not/ end with a message that has a lastCase (and lastLabel) then control should not continue to
 					  that shared case.  expandViaFallThrough captures this, true for the former, false for the latter."
-					| expandViaFallThrough |
+					| expandViaFallThrough lastStatement |
 					expandViaFallThrough := false.
-					caseMethod statements last isSend ifTrue: [ 
-						(codeGen methodNamed: caseMethod statements last selector) 
+					lastStatement := (caseMethod statements reject: [ :n | n isComment ]) last.
+					lastStatement isSend ifTrue: [ 
+						(codeGen methodNamed: lastStatement selector) 
 							ifNotNil: [ :m | expandViaFallThrough := m sharedCase notNil ] ].
 					seen add: meth sharedLabel.
 					map at: node put: (expandViaFallThrough
