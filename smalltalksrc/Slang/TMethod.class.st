@@ -2063,6 +2063,12 @@ TMethod >> last [
 	^ parseTree last
 ]
 
+{ #category : 'accessing' }
+TMethod >> lastNonCommentStatement [
+
+	^ parseTree lastNonCommentStatement
+]
+
 { #category : 'inlining' }
 TMethod >> localizeVariables: localizationCandidates [
 

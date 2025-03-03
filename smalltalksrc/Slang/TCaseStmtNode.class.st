@@ -347,7 +347,7 @@ TCaseStmtNode >> processSharedCodeBlocks: caseTree forCase: caseIndex in: codeGe
 					  that shared case.  expandViaFallThrough captures this, true for the former, false for the latter."
 					| expandViaFallThrough lastStatement |
 					expandViaFallThrough := false.
-					lastStatement := (caseMethod statements reject: [ :n | n isComment ]) last.
+					lastStatement := caseMethod lastNonCommentStatement.
 					lastStatement isSend ifTrue: [ 
 						(codeGen methodNamed: lastStatement selector) 
 							ifNotNil: [ :m | expandViaFallThrough := m sharedCase notNil ] ].
