@@ -11151,6 +11151,18 @@ Cogit >> setCStackPointer: aStackPointer [
 					put: aStackPointer) asVoidPointer]
 ]
 
+{ #category : 'jit - api' }
+Cogit >> setHeaderOopOf: cogMethod to: aMethodHeaderOop [
+	"Change a JIT'ed method's header, enabling code zone wrote."
+
+	<api>
+	<var: #cogMethod type: #'CogMethod *'>
+	self assert: cogMethod cmType = CMMethod.
+
+	self enableCodeZoneWriteDuring: [
+		cogMethod methodHeader: aMethodHeaderOop ]
+]
+
 { #category : 'initialization' }
 Cogit >> setInterpreter: aCoInterpreter [
 	"Initialization of the code generator in the simulator.
