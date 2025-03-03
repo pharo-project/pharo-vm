@@ -187,87 +187,255 @@ DruidJIT class >> bytecodeTable [
 	     #( 1 94 94 #gen_ReturnTopFromBlock #return #needsFrameNever:
 	         -1 )
 	     #( 1 95 95 #gen_ExtNopBytecode #needsFrameNever:
-	        0 ) #( 1 96 96 #unknownBytecode )
-	     #( 1 97 97 #unknownBytecode ) #( 1 98 98 #unknownBytecode )
-	     #( 1 99 99 #unknownBytecode ) #( 1 100 100 #unknownBytecode )
-	     #( 1 101 101 #unknownBytecode ) #( 1 102 102 #unknownBytecode )
-	     #( 1 103 103 #unknownBytecode ) #( 1 104 104 #unknownBytecode )
-	     #( 1 105 105 #unknownBytecode ) #( 1 106 106 #unknownBytecode )
-	     #( 1 107 107 #unknownBytecode ) #( 1 108 108 #unknownBytecode )
-	     #( 1 109 109 #unknownBytecode ) #( 1 110 110 #unknownBytecode )
-	     #( 1 111 111 #unknownBytecode ) #( 1 112 112 #unknownBytecode )
-	     #( 1 113 113 #unknownBytecode ) #( 1 114 114 #unknownBytecode )
-	     #( 1 115 115 #unknownBytecode ) #( 1 116 116 #unknownBytecode )
-	     #( 1 117 117 #unknownBytecode ) #( 1 118 118 #unknownBytecode )
-	     #( 1 119 119 #unknownBytecode ) #( 1 120 120 #unknownBytecode )
-	     #( 1 121 121 #unknownBytecode ) #( 1 122 122 #unknownBytecode )
-	     #( 1 123 123 #unknownBytecode ) #( 1 124 124 #unknownBytecode )
-	     #( 1 125 125 #unknownBytecode ) #( 1 126 126 #unknownBytecode )
-	     #( 1 127 127 #unknownBytecode ) #( 1 128 128 #unknownBytecode )
-	     #( 1 129 129 #unknownBytecode ) #( 1 130 130 #unknownBytecode )
-	     #( 1 131 131 #unknownBytecode ) #( 1 132 132 #unknownBytecode )
-	     #( 1 133 133 #unknownBytecode ) #( 1 134 134 #unknownBytecode )
-	     #( 1 135 135 #unknownBytecode ) #( 1 136 136 #unknownBytecode )
-	     #( 1 137 137 #unknownBytecode ) #( 1 138 138 #unknownBytecode )
-	     #( 1 139 139 #unknownBytecode ) #( 1 140 140 #unknownBytecode )
-	     #( 1 141 141 #unknownBytecode ) #( 1 142 142 #unknownBytecode )
-	     #( 1 143 143 #unknownBytecode ) #( 1 144 144 #unknownBytecode )
-	     #( 1 145 145 #unknownBytecode ) #( 1 146 146 #unknownBytecode )
-	     #( 1 147 147 #unknownBytecode ) #( 1 148 148 #unknownBytecode )
-	     #( 1 149 149 #unknownBytecode ) #( 1 150 150 #unknownBytecode )
-	     #( 1 151 151 #unknownBytecode ) #( 1 152 152 #unknownBytecode )
-	     #( 1 153 153 #unknownBytecode ) #( 1 154 154 #unknownBytecode )
-	     #( 1 155 155 #unknownBytecode ) #( 1 156 156 #unknownBytecode )
-	     #( 1 157 157 #unknownBytecode ) #( 1 158 158 #unknownBytecode )
-	     #( 1 159 159 #unknownBytecode ) #( 1 160 160 #unknownBytecode )
-	     #( 1 161 161 #unknownBytecode ) #( 1 162 162 #unknownBytecode )
-	     #( 1 163 163 #unknownBytecode ) #( 1 164 164 #unknownBytecode )
-	     #( 1 165 165 #unknownBytecode ) #( 1 166 166 #unknownBytecode )
-	     #( 1 167 167 #unknownBytecode ) #( 1 168 168 #unknownBytecode )
-	     #( 1 169 169 #unknownBytecode ) #( 1 170 170 #unknownBytecode )
-	     #( 1 171 171 #unknownBytecode ) #( 1 172 172 #unknownBytecode )
-	     #( 1 173 173 #unknownBytecode ) #( 1 174 174 #unknownBytecode )
-	     #( 1 175 175 #unknownBytecode ) #( 1 176 176 #unknownBytecode )
-	     #( 1 177 177 #unknownBytecode ) #( 1 178 178 #unknownBytecode )
-	     #( 1 179 179 #unknownBytecode ) #( 1 180 180 #unknownBytecode )
-	     #( 1 181 181 #unknownBytecode ) #( 1 182 182 #unknownBytecode )
-	     #( 1 183 183 #unknownBytecode ) #( 1 184 184 #unknownBytecode )
-	     #( 1 185 185 #unknownBytecode ) #( 1 186 186 #unknownBytecode )
-	     #( 1 187 187 #unknownBytecode ) #( 1 188 188 #unknownBytecode )
-	     #( 1 189 189 #unknownBytecode ) #( 1 190 190 #unknownBytecode )
-	     #( 1 191 191 #unknownBytecode ) #( 1 192 192 #unknownBytecode )
-	     #( 1 193 193 #unknownBytecode ) #( 1 194 194 #unknownBytecode )
-	     #( 1 195 195 #unknownBytecode ) #( 1 196 196 #unknownBytecode )
-	     #( 1 197 197 #unknownBytecode ) #( 1 198 198 #unknownBytecode )
-	     #( 1 199 199 #unknownBytecode ) #( 1 200 200 #unknownBytecode )
-	     #( 1 201 201 #unknownBytecode ) #( 1 202 202 #unknownBytecode )
-	     #( 1 203 203 #unknownBytecode ) #( 1 204 204 #unknownBytecode )
-	     #( 1 205 205 #unknownBytecode ) #( 1 206 206 #unknownBytecode )
-	     #( 1 207 207 #unknownBytecode ) #( 1 208 208 #unknownBytecode )
-	     #( 1 209 209 #unknownBytecode ) #( 1 210 210 #unknownBytecode )
-	     #( 1 211 211 #unknownBytecode ) #( 1 212 212 #unknownBytecode )
-	     #( 1 213 213 #unknownBytecode ) #( 1 214 214 #unknownBytecode )
-	     #( 1 215 215 #unknownBytecode ) #( 1 216 216 #unknownBytecode )
+	        0 ) #( 1 96 96 #gen_BytecodePrimAdd #isMapped )
+	     #( 1 97 97 #gen_BytecodePrimSubtract #isMapped )
+	     #( 1 98 98 #gen_BytecodePrimLessThanSistaV1
+	        #isMapped ) #( 1 99 99 #gen_BytecodePrimGreaterThanSistaV1
+	        #isMapped ) #( 1 100 100 #gen_BytecodePrimLessOrEqualSistaV1
+	        #isMapped ) #( 1 101 101 #gen_BytecodePrimGreaterOrEqualSistaV1
+	        #isMapped )
+	     #( 1 102 102 #gen_BytecodePrimEqualSistaV1
+	        #isMapped ) #( 1 103 103 #gen_BytecodePrimNotEqualSistaV1
+	        #isMapped ) #( 1 104 104 #gen_BytecodePrimMultiply
+	        #isMapped )
+	     #( 1 105 105 #gen_BytecodePrimDivide #isMapped )
+	     #( 1 106 106 #gen_BytecodePrimMod #isMapped )
+	     #( 1 107 107 #gen_BytecodePrimMakePoint
+	        #isMapped )
+	     #( 1 108 108 #gen_BytecodePrimBitShift #isMapped )
+	     #( 1 109 109 #gen_BytecodePrimDiv #isMapped )
+	     #( 1 110 110 #gen_BytecodePrimBitAnd #isMapped )
+	     #( 1 111 111 #gen_BytecodePrimBitOr #isMapped )
+	     #( 1 112 112 #gen_BytecodePrimAt #isMapped )
+	     #( 1 113 113 #gen_BytecodePrimAtPut #isMapped )
+	     #( 1 114 114 #gen_BytecodePrimSize #isMapped )
+	     #( 1 115 115 #gen_BytecodePrimNext #isMapped )
+	     #( 1 116 116 #gen_BytecodePrimNextPut #isMapped )
+	     #( 1 117 117 #gen_BytecodePrimAtEnd #isMapped )
+	     #( 1 118 118 #gen_BytecodePrimIdenticalSistaV1 )
+	     #( 1 119 119 #gen_BytecodePrimClass #isMapped )
+	     #( 1 120 120 #gen_BytecodePrimNotIdenticalSistaV1 )
+	     #( 1 121 121 #gen_BytecodePrimValue #isMapped )
+	     #( 1 122 122 #gen_BytecodePrimValueWithArg
+	        #isMapped ) #( 1 123 123 #gen_BytecodePrimDo
+	        #isMapped ) #( 1 124 124 #gen_BytecodePrimNew
+	        #isMapped ) #( 1 125 125 #gen_BytecodePrimNewWithArg
+	        #isMapped )
+	     #( 1 126 126 #gen_BytecodePrimPointX #isMapped )
+	     #( 1 127 127 #gen_BytecodePrimPointY #isMapped )
+	     #( 1 128 128 #gen_SendLiteralSelector0ArgsBytecode0
+	        #isMapped )
+	     #( 1 129 129 #gen_SendLiteralSelector0ArgsBytecode1
+	        #isMapped )
+	     #( 1 130 130 #gen_SendLiteralSelector0ArgsBytecode2
+	        #isMapped )
+	     #( 1 131 131 #gen_SendLiteralSelector0ArgsBytecode3
+	        #isMapped )
+	     #( 1 132 132 #gen_SendLiteralSelector0ArgsBytecode4
+	        #isMapped )
+	     #( 1 133 133 #gen_SendLiteralSelector0ArgsBytecode5
+	        #isMapped )
+	     #( 1 134 134 #gen_SendLiteralSelector0ArgsBytecode6
+	        #isMapped )
+	     #( 1 135 135 #gen_SendLiteralSelector0ArgsBytecode7
+	        #isMapped )
+	     #( 1 136 136 #gen_SendLiteralSelector0ArgsBytecode8
+	        #isMapped )
+	     #( 1 137 137 #gen_SendLiteralSelector0ArgsBytecode9
+	        #isMapped )
+	     #( 1 138 138 #gen_SendLiteralSelector0ArgsBytecode10
+	        #isMapped )
+	     #( 1 139 139 #gen_SendLiteralSelector0ArgsBytecode11
+	        #isMapped )
+	     #( 1 140 140 #gen_SendLiteralSelector0ArgsBytecode12
+	        #isMapped )
+	     #( 1 141 141 #gen_SendLiteralSelector0ArgsBytecode13
+	        #isMapped )
+	     #( 1 142 142 #gen_SendLiteralSelector0ArgsBytecode14
+	        #isMapped )
+	     #( 1 143 143 #gen_SendLiteralSelector0ArgsBytecode15
+	        #isMapped )
+	     #( 1 144 144 #gen_SendLiteralSelector1ArgBytecode0
+	        #isMapped )
+	     #( 1 145 145 #gen_SendLiteralSelector1ArgBytecode1
+	        #isMapped )
+	     #( 1 146 146 #gen_SendLiteralSelector1ArgBytecode2
+	        #isMapped )
+	     #( 1 147 147 #gen_SendLiteralSelector1ArgBytecode3
+	        #isMapped )
+	     #( 1 148 148 #gen_SendLiteralSelector1ArgBytecode4
+	        #isMapped )
+	     #( 1 149 149 #gen_SendLiteralSelector1ArgBytecode5
+	        #isMapped )
+	     #( 1 150 150 #gen_SendLiteralSelector1ArgBytecode6
+	        #isMapped )
+	     #( 1 151 151 #gen_SendLiteralSelector1ArgBytecode7
+	        #isMapped )
+	     #( 1 152 152 #gen_SendLiteralSelector1ArgBytecode8
+	        #isMapped )
+	     #( 1 153 153 #gen_SendLiteralSelector1ArgBytecode9
+	        #isMapped )
+	     #( 1 154 154 #gen_SendLiteralSelector1ArgBytecode10
+	        #isMapped )
+	     #( 1 155 155 #gen_SendLiteralSelector1ArgBytecode11
+	        #isMapped )
+	     #( 1 156 156 #gen_SendLiteralSelector1ArgBytecode12
+	        #isMapped )
+	     #( 1 157 157 #gen_SendLiteralSelector1ArgBytecode13
+	        #isMapped )
+	     #( 1 158 158 #gen_SendLiteralSelector1ArgBytecode14
+	        #isMapped )
+	     #( 1 159 159 #gen_SendLiteralSelector1ArgBytecode15
+	        #isMapped )
+	     #( 1 160 160 #gen_SendLiteralSelector2ArgsBytecode0
+	        #isMapped )
+	     #( 1 161 161 #gen_SendLiteralSelector2ArgsBytecode1
+	        #isMapped )
+	     #( 1 162 162 #gen_SendLiteralSelector2ArgsBytecode2
+	        #isMapped )
+	     #( 1 163 163 #gen_SendLiteralSelector2ArgsBytecode3
+	        #isMapped )
+	     #( 1 164 164 #gen_SendLiteralSelector2ArgsBytecode4
+	        #isMapped )
+	     #( 1 165 165 #gen_SendLiteralSelector2ArgsBytecode5
+	        #isMapped )
+	     #( 1 166 166 #gen_SendLiteralSelector2ArgsBytecode6
+	        #isMapped )
+	     #( 1 167 167 #gen_SendLiteralSelector2ArgsBytecode7
+	        #isMapped )
+	     #( 1 168 168 #gen_SendLiteralSelector2ArgsBytecode8
+	        #isMapped )
+	     #( 1 169 169 #gen_SendLiteralSelector2ArgsBytecode9
+	        #isMapped )
+	     #( 1 170 170 #gen_SendLiteralSelector2ArgsBytecode10
+	        #isMapped )
+	     #( 1 171 171 #gen_SendLiteralSelector2ArgsBytecode11
+	        #isMapped )
+	     #( 1 172 172 #gen_SendLiteralSelector2ArgsBytecode12
+	        #isMapped )
+	     #( 1 173 173 #gen_SendLiteralSelector2ArgsBytecode13
+	        #isMapped )
+	     #( 1 174 174 #gen_SendLiteralSelector2ArgsBytecode14
+	        #isMapped )
+	     #( 1 175 175 #gen_SendLiteralSelector2ArgsBytecode15
+	        #isMapped )
+	     #( 1 176 176 #gen_ShortUnconditionalJump0
+	        #branch #v3:ShortForward:Branch:Distance: )
+	     #( 1 177 177 #gen_ShortUnconditionalJump1
+	        #branch #v3:ShortForward:Branch:Distance: )
+	     #( 1 178 178 #gen_ShortUnconditionalJump2
+	        #branch #v3:ShortForward:Branch:Distance: )
+	     #( 1 179 179 #gen_ShortUnconditionalJump3
+	        #branch #v3:ShortForward:Branch:Distance: )
+	     #( 1 180 180 #gen_ShortUnconditionalJump4
+	        #branch #v3:ShortForward:Branch:Distance: )
+	     #( 1 181 181 #gen_ShortUnconditionalJump5
+	        #branch #v3:ShortForward:Branch:Distance: )
+	     #( 1 182 182 #gen_ShortUnconditionalJump6
+	        #branch #v3:ShortForward:Branch:Distance: )
+	     #( 1 183 183 #gen_ShortUnconditionalJump7
+	        #branch #v3:ShortForward:Branch:Distance: )
+	     #( 1 184 184 #gen_ShortConditionalJumpTrue0
+	        #branch #isBranchTrue #isMapped #v3:ShortForward:Branch:Distance: )
+	     #( 1 185 185 #gen_ShortConditionalJumpTrue1
+	        #branch #isBranchTrue #isMapped #v3:ShortForward:Branch:Distance: )
+	     #( 1 186 186 #gen_ShortConditionalJumpTrue2
+	        #branch #isBranchTrue #isMapped #v3:ShortForward:Branch:Distance: )
+	     #( 1 187 187 #gen_ShortConditionalJumpTrue3
+	        #branch #isBranchTrue #isMapped #v3:ShortForward:Branch:Distance: )
+	     #( 1 188 188 #gen_ShortConditionalJumpTrue4
+	        #branch #isBranchTrue #isMapped #v3:ShortForward:Branch:Distance: )
+	     #( 1 189 189 #gen_ShortConditionalJumpTrue5
+	        #branch #isBranchTrue #isMapped #v3:ShortForward:Branch:Distance: )
+	     #( 1 190 190 #gen_ShortConditionalJumpTrue6
+	        #branch #isBranchTrue #isMapped #v3:ShortForward:Branch:Distance: )
+	     #( 1 191 191 #gen_ShortConditionalJumpTrue7
+	        #branch #isBranchTrue #isMapped #v3:ShortForward:Branch:Distance: )
+	     #( 1 192 192 #gen_ShortConditionalJumpFalse0
+	        #branch #isBranchFalse #isMapped #v3:ShortForward:Branch:Distance: )
+	     #( 1 193 193 #gen_ShortConditionalJumpFalse1
+	        #branch #isBranchFalse #isMapped #v3:ShortForward:Branch:Distance: )
+	     #( 1 194 194 #gen_ShortConditionalJumpFalse2
+	        #branch #isBranchFalse #isMapped #v3:ShortForward:Branch:Distance: )
+	     #( 1 195 195 #gen_ShortConditionalJumpFalse3
+	        #branch #isBranchFalse #isMapped #v3:ShortForward:Branch:Distance: )
+	     #( 1 196 196 #gen_ShortConditionalJumpFalse4
+	        #branch #isBranchFalse #isMapped #v3:ShortForward:Branch:Distance: )
+	     #( 1 197 197 #gen_ShortConditionalJumpFalse5
+	        #branch #isBranchFalse #isMapped #v3:ShortForward:Branch:Distance: )
+	     #( 1 198 198 #gen_ShortConditionalJumpFalse6
+	        #branch #isBranchFalse #isMapped #v3:ShortForward:Branch:Distance: )
+	     #( 1 199 199 #gen_ShortConditionalJumpFalse7
+	        #branch #isBranchFalse #isMapped #v3:ShortForward:Branch:Distance: )
+	     #( 1 200 200 #gen_StoreAndPopReceiverVariableBytecode0
+	        #isInstVarRef #isMapped )
+	     #( 1 201 201 #gen_StoreAndPopReceiverVariableBytecode1
+	        #isInstVarRef #isMapped )
+	     #( 1 202 202 #gen_StoreAndPopReceiverVariableBytecode2
+	        #isInstVarRef #isMapped )
+	     #( 1 203 203 #gen_StoreAndPopReceiverVariableBytecode3
+	        #isInstVarRef #isMapped )
+	     #( 1 204 204 #gen_StoreAndPopReceiverVariableBytecode4
+	        #isInstVarRef #isMapped )
+	     #( 1 205 205 #gen_StoreAndPopReceiverVariableBytecode5
+	        #isInstVarRef #isMapped )
+	     #( 1 206 206 #gen_StoreAndPopReceiverVariableBytecode6
+	        #isInstVarRef #isMapped )
+	     #( 1 207 207 #gen_StoreAndPopReceiverVariableBytecode7
+	        #isInstVarRef #isMapped )
+	     #( 1 208 208 #gen_StoreAndPopTemporaryVariableBytecode0 )
+	     #( 1 209 209 #gen_StoreAndPopTemporaryVariableBytecode1 )
+	     #( 1 210 210 #gen_StoreAndPopTemporaryVariableBytecode2 )
+	     #( 1 211 211 #gen_StoreAndPopTemporaryVariableBytecode3 )
+	     #( 1 212 212 #gen_StoreAndPopTemporaryVariableBytecode4 )
+	     #( 1 213 213 #gen_StoreAndPopTemporaryVariableBytecode5 )
+	     #( 1 214 214 #gen_StoreAndPopTemporaryVariableBytecode6 )
+	     #( 1 215 215 #gen_StoreAndPopTemporaryVariableBytecode7 )
+	     #( 1 216 216 #gen_PopStackBytecode #needsFrameNever:
+	         -1 )
 	     #( 1 217 217 #unknownBytecode ) #( 1 218 218 #unknownBytecode )
 	     #( 1 219 219 #unknownBytecode ) #( 1 220 220 #unknownBytecode )
 	     #( 1 221 221 #unknownBytecode ) #( 1 222 222 #unknownBytecode )
-	     #( 1 223 223 #unknownBytecode ) #( 2 224 224 #unknownBytecode )
-	     #( 2 225 225 #unknownBytecode ) #( 2 226 226 #unknownBytecode )
-	     #( 2 227 227 #unknownBytecode ) #( 2 228 228 #unknownBytecode )
-	     #( 2 229 229 #unknownBytecode ) #( 2 230 230 #unknownBytecode )
-	     #( 2 231 231 #unknownBytecode ) #( 2 232 232 #unknownBytecode )
-	     #( 2 233 233 #unknownBytecode ) #( 2 234 234 #unknownBytecode )
-	     #( 2 235 235 #unknownBytecode ) #( 2 236 236 #unknownBytecode )
-	     #( 2 237 237 #unknownBytecode ) #( 2 238 238 #unknownBytecode )
-	     #( 2 239 239 #unknownBytecode ) #( 2 240 240 #unknownBytecode )
-	     #( 2 241 241 #unknownBytecode ) #( 2 242 242 #unknownBytecode )
-	     #( 2 243 243 #unknownBytecode ) #( 2 244 244 #unknownBytecode )
-	     #( 2 245 245 #unknownBytecode ) #( 2 246 246 #unknownBytecode )
-	     #( 2 247 247 #unknownBytecode ) #( 3 248 248 #unknownBytecode )
-	     #( 3 249 249 #unknownBytecode ) #( 3 250 250 #unknownBytecode )
-	     #( 3 251 251 #unknownBytecode ) #( 3 252 252 #unknownBytecode )
-	     #( 3 253 253 #unknownBytecode ) #( 3 254 254 #unknownBytecode )
-	     #( 3 255 255 #unknownBytecode ) )
+	     #( 1 223 223 #unknownBytecode ) #( 2 224 224 #gen_ExtABytecode
+	        #extension ) #( 2 225 225 #gen_ExtBBytecode #extension )
+	     #( 2 226 226 #gen_ExtPushReceiverVariableBytecode
+	        #isInstVarRef )
+	     #( 2 227 227 #gen_ExtPushLiteralVariableBytecode
+	        #needsFrameNever: 1 )
+	     #( 2 228 228 #gen_ExtPushLiteralBytecode
+	        #needsFrameNever: 1 )
+	     #( 2 229 229 #gen_LongPushTemporaryVariableBytecode )
+	     #( 2 230 230 #unknownBytecode ) #( 2 231 231 #gen_PushNewArrayBytecode )
+	     #( 2 232 232 #gen_ExtPushIntegerBytecode
+	        #needsFrameNever: 1 )
+	     #( 2 233 233 #gen_ExtPushCharacterBytecode
+	        #needsFrameNever: 1 )
+	     #( 2 234 234 #gen_ExtSendBytecode #isMapped )
+	     #( 2 235 235 #gen_ExtSendSuperBytecode #isMapped )
+	     #( 2 236 236 #unknownBytecode ) #( 2 237 237 #gen_ExtUnconditionalJump
+	        #branch #isMapped #v4:Long:Branch:Distance: )
+	     #( 2 238 238 #gen_ExtJumpIfTrue #branch #isBranchTrue
+	        #isMapped #v4:Long:Branch:Distance: )
+	     #( 2 239 239 #gen_ExtJumpIfFalse #branch #isBranchFalse
+	        #isMapped #v4:Long:Branch:Distance: )
+	     #( 2 240 240 #gen_ExtStoreAndPopReceiverVariableBytecode
+	        #isInstVarRef #isMapped )
+	     #( 2 241 241 #gen_ExtStoreAndPopLiteralVariableBytecode
+	        #isMapped )
+	     #( 2 242 242 #gen_LongStoreAndPopTemporaryVariableBytecode )
+	     #( 2 243 243 #gen_ExtStoreReceiverVariableBytecode
+	        #isInstVarRef #isMapped )
+	     #( 2 244 244 #gen_ExtStoreLiteralVariableBytecode
+	        #isMapped )
+	     #( 2 245 245 #gen_LongStoreTemporaryVariableBytecode )
+	     #( 2 246 246 #unknownBytecode ) #( 2 247 247 #unknownBytecode )
+	     #( 3 248 248 #gen_CallPrimitiveBytecode )
+	     #( 3 249 249 #gen_ExtPushFullClosureBytecode )
+	     #( 3 250 250 #unknownBytecode ) #( 3 251 251 #gen_PushRemoteTempLongBytecode )
+	     #( 3 252 252 #gen_StoreRemoteTempLongBytecode
+	        #isMapped ) #( 3 253 253 #gen_StoreAndPopRemoteTempLongBytecode
+	        #isMapped )
+	     #( 3 254 254 #unknownBytecode ) #( 3 255 255 #unknownBytecode ) )
 ]
 
 { #category : 'translation' }
@@ -4563,8 +4731,9 @@ DruidJIT >> gen_PrimitiveDiv [
 	self
 		DivR: SendNumArgsReg
 		R: ClassReg
-		Quo: SendNumArgsReg
-		Rem: Extra0Reg.
+		Quo: Extra0Reg
+		Rem: SendNumArgsReg.
+	self MoveR: Extra0Reg R: SendNumArgsReg.
 	jump5 := self Jump: 0.
 	currentBlock := self Label.
 	jump4 jmpTarget: currentBlock.
@@ -4672,18 +4841,18 @@ DruidJIT >> gen_PrimitiveDivide [
 	self
 		DivR: SendNumArgsReg
 		R: ClassReg
-		Quo: Extra0Reg
-		Rem: Extra1Reg.
-	self MoveR: Extra0Reg R: Extra1Reg.
-	self LogicalShiftRightCq: 60 R: Extra1Reg.
-	self AddCq: 1 R: Extra1Reg.
-	self AndCq: 15 R: Extra1Reg.
-	self CmpCq: 1 R: Extra1Reg.
+		Quo: Extra1Reg
+		Rem: Extra0Reg.
+	self MoveR: Extra1Reg R: Extra0Reg.
+	self LogicalShiftRightCq: 60 R: Extra0Reg.
+	self AddCq: 1 R: Extra0Reg.
+	self AndCq: 15 R: Extra0Reg.
+	self CmpCq: 1 R: Extra0Reg.
 	jump5 := self JumpAbove: 0.
-	self MoveR: Extra0Reg R: Extra1Reg.
-	self LogicalShiftLeftCq: 3 R: Extra1Reg.
-	self AddCq: 1 R: Extra1Reg.
-	self MoveR: Extra1Reg R: ReceiverResultReg.
+	self MoveR: Extra1Reg R: Extra0Reg.
+	self LogicalShiftLeftCq: 3 R: Extra0Reg.
+	self AddCq: 1 R: Extra0Reg.
+	self MoveR: Extra0Reg R: ReceiverResultReg.
 	self genPrimReturn.
 	currentBlock := self Label.
 	jump1 jmpTarget: currentBlock.
@@ -6547,27 +6716,31 @@ DruidJIT >> gen_PrimitiveMod [
 	self
 		DivR: SendNumArgsReg
 		R: ClassReg
-		Quo: Extra0Reg
-		Rem: ClassReg.
+		Quo: ClassReg
+		Rem: Extra0Reg.
 	self CmpCq: 0 R: SendNumArgsReg.
 	jump3 := self JumpGreaterOrEqual: 0.
-	self CmpCq: 0 R: ClassReg.
+	self CmpCq: 0 R: Extra0Reg.
 	jump4 := self JumpLessOrEqual: 0.
-	self AddR: SendNumArgsReg R: ClassReg.
+	self AddR: SendNumArgsReg R: Extra0Reg.
+	self MoveR: Extra0Reg R: ClassReg.
 	jump5 := self Jump: 0.
 	currentBlock := self Label.
 	jump4 jmpTarget: currentBlock.
+	self MoveR: Extra0Reg R: ClassReg.
 	currentBlock := self Label.
 	jump5 jmpTarget: currentBlock.
 	jump5 := self Jump: 0.
 	currentBlock := self Label.
 	jump3 jmpTarget: currentBlock.
-	self CmpCq: 0 R: ClassReg.
+	self CmpCq: 0 R: Extra0Reg.
 	jump3 := self JumpGreaterOrEqual: 0.
-	self AddR: SendNumArgsReg R: ClassReg.
+	self AddR: SendNumArgsReg R: Extra0Reg.
+	self MoveR: Extra0Reg R: ClassReg.
 	jump4 := self Jump: 0.
 	currentBlock := self Label.
 	jump3 jmpTarget: currentBlock.
+	self MoveR: Extra0Reg R: ClassReg.
 	currentBlock := self Label.
 	jump4 jmpTarget: currentBlock.
 	currentBlock := self Label.
@@ -6966,31 +7139,30 @@ DruidJIT >> gen_PrimitiveNewWithArg [
 	self
 		DivR: Extra0Reg
 		R: ClassReg
-		Quo: ClassReg
-		Rem: Extra0Reg.
+		Quo: Extra0Reg
+		Rem: ClassReg.
 	self AndCq: 1 R: SendNumArgsReg.
 	self AddR: SendNumArgsReg R: Extra1Reg.
 	self CmpCq: 0 R: Extra2Reg.
 	jump17 := self JumpNonZero: 0.
-	self MoveCq: s116 R: Extra0Reg.
-	self MoveR: ClassReg R: SendNumArgsReg.
+	self MoveCq: s116 R: ClassReg.
 	jump19 := self Jump: 0.
 	currentBlock := self Label.
 	jump17 jmpTarget: currentBlock.
-	self MoveCq: s116 R: SendNumArgsReg.
+	self MoveCq: s116 R: ClassReg.
 	jump17 := self Jump: 0.
 	currentBlock := self Label.
 	jump8 jmpTarget: currentBlock.
 	s133 := 0.
 	self CmpCq: 12 R: Extra1Reg.
 	jump8 := self JumpNonZero: 0.
-	self MoveR: SendNumArgsReg R: ClassReg.
-	self AddCq: 3 R: ClassReg.
+	self MoveR: SendNumArgsReg R: Extra0Reg.
+	self AddCq: 3 R: Extra0Reg.
 	s137 := 4.
-	self MoveCq: s137 R: Extra0Reg.
+	self MoveCq: s137 R: ClassReg.
 	self
-		DivR: Extra0Reg
-		R: ClassReg
+		DivR: ClassReg
+		R: Extra0Reg
 		Quo: ClassReg
 		Rem: Extra0Reg.
 	s140 := 4.
@@ -7001,23 +7173,25 @@ DruidJIT >> gen_PrimitiveNewWithArg [
 	self CmpCq: 0 R: Extra2Reg.
 	jump20 := self JumpNonZero: 0.
 	self MoveCq: s133 R: Extra0Reg.
+	self MoveR: ClassReg R: SendNumArgsReg.
 	jump21 := self Jump: 0.
 	currentBlock := self Label.
 	jump20 jmpTarget: currentBlock.
-	self MoveCq: s133 R: Extra0Reg.
+	self MoveCq: s133 R: SendNumArgsReg.
+	self MoveR: ClassReg R: Extra0Reg.
 	jump20 := self Jump: 0.
 	currentBlock := self Label.
 	jump8 jmpTarget: currentBlock.
 	s154 := 0.
 	self CmpCq: 16 R: Extra1Reg.
 	jump8 := self JumpNonZero: 0.
-	self MoveR: SendNumArgsReg R: ClassReg.
-	self AddCq: 7 R: ClassReg.
+	self MoveR: SendNumArgsReg R: Extra0Reg.
+	self AddCq: 7 R: Extra0Reg.
 	s158 := 8.
-	self MoveCq: s158 R: Extra0Reg.
+	self MoveCq: s158 R: ClassReg.
 	self
-		DivR: Extra0Reg
-		R: ClassReg
+		DivR: ClassReg
+		R: Extra0Reg
 		Quo: Extra0Reg
 		Rem: ClassReg.
 	s161 := 8.
@@ -7033,7 +7207,6 @@ DruidJIT >> gen_PrimitiveNewWithArg [
 	currentBlock := self Label.
 	jump22 jmpTarget: currentBlock.
 	self MoveCq: s154 R: ClassReg.
-	self MoveR: Extra0Reg R: SendNumArgsReg.
 	jump22 := self Jump: 0.
 	currentBlock := self Label.
 	jump8 jmpTarget: currentBlock.
@@ -7052,14 +7225,12 @@ DruidJIT >> gen_PrimitiveNewWithArg [
 	currentBlock := self Label.
 	jump23 jmpTarget: currentBlock.
 	self MoveR: ClassReg R: Extra0Reg.
-	self MoveR: SendNumArgsReg R: ClassReg.
 	currentBlock := self Label.
 	jump21 jmpTarget: currentBlock.
-	self MoveR: ClassReg R: SendNumArgsReg.
-	currentBlock := self Label.
-	jump19 jmpTarget: currentBlock.
 	self MoveR: Extra0Reg R: ClassReg.
 	self MoveR: SendNumArgsReg R: Extra0Reg.
+	currentBlock := self Label.
+	jump19 jmpTarget: currentBlock.
 	self MoveMw: 0 r: SPReg R: Extra3Reg.
 	self MoveR: Extra3Reg R: Extra2Reg.
 	self MoveMw: 0 r: SPReg R: Extra3Reg.
@@ -7125,16 +7296,16 @@ DruidJIT >> gen_PrimitiveNewWithArg [
 	self MoveR: Extra0Reg R: SendNumArgsReg.
 	currentBlock := self Label.
 	jump15 jmpTarget: currentBlock.
+	self MoveR: SendNumArgsReg R: Extra0Reg.
 	currentBlock := self Label.
 	jump22 jmpTarget: currentBlock.
-	self MoveR: ClassReg R: Extra0Reg.
-	self MoveR: SendNumArgsReg R: ClassReg.
+	self MoveR: ClassReg R: SendNumArgsReg.
 	currentBlock := self Label.
 	jump20 jmpTarget: currentBlock.
-	self MoveR: Extra0Reg R: SendNumArgsReg.
+	self MoveR: SendNumArgsReg R: ClassReg.
 	currentBlock := self Label.
 	jump17 jmpTarget: currentBlock.
-	self MoveR: ClassReg R: Extra0Reg.
+	self MoveR: ClassReg R: SendNumArgsReg.
 	self MoveMw: 0 r: SPReg R: Extra3Reg.
 	self MoveR: Extra3Reg R: ClassReg.
 	currentBlock := self Label.
@@ -7395,9 +7566,8 @@ DruidJIT >> gen_PrimitiveQuo [
 	self
 		DivR: SendNumArgsReg
 		R: ClassReg
-		Quo: SendNumArgsReg
-		Rem: ClassReg.
-	self MoveR: SendNumArgsReg R: ClassReg.
+		Quo: ClassReg
+		Rem: SendNumArgsReg.
 	jump6 := self Jump: 0.
 	currentBlock := self Label.
 	jump5 jmpTarget: currentBlock.
@@ -7444,9 +7614,8 @@ DruidJIT >> gen_PrimitiveQuo [
 	self
 		DivR: ClassReg
 		R: Extra0Reg
-		Quo: ClassReg
-		Rem: Extra0Reg.
-	self MoveR: ClassReg R: Extra0Reg.
+		Quo: Extra0Reg
+		Rem: ClassReg.
 	currentBlock := self Label.
 	jump5 jmpTarget: currentBlock.
 	currentBlock := self Label.
@@ -9250,13 +9419,12 @@ DruidJIT >> gen_PrimitiveStringAt [
 	currentBlock := self Label.
 	jump6 jmpTarget: currentBlock.
 	s73 := 0.
-	self MoveCq: s73 R: SendNumArgsReg.
+	self MoveCq: s73 R: Extra2Reg.
 	jump6 := self Jump: 0.
 	currentBlock := self Label.
 	jump9 jmpTarget: currentBlock.
 	self CmpCq: 2 R: Extra1Reg.
 	jump9 := self JumpAboveOrEqual: 0.
-	self MoveR: Extra2Reg R: SendNumArgsReg.
 	self MoveR: Extra2Reg R: ClassReg.
 	jump7 := self Jump: 0.
 	currentBlock := self Label.
@@ -9309,6 +9477,7 @@ DruidJIT >> gen_PrimitiveStringAt [
 	self ArithmeticShiftRightCq: 3 R: SendNumArgsReg.
 	self AndCq: 16rFFFF R: SendNumArgsReg.
 	self MoveR: Extra2Reg R: ClassReg.
+	self MoveR: SendNumArgsReg R: Extra2Reg.
 	currentBlock := self Label.
 	jump6 jmpTarget: currentBlock.
 	jump7 jmpTarget: currentBlock.
@@ -9319,7 +9488,7 @@ DruidJIT >> gen_PrimitiveStringAt [
 	jump6 := self JumpZero: 0.
 	currentBlock := self Label.
 	jump7 jmpTarget: currentBlock.
-	self SubR: SendNumArgsReg R: ClassReg.
+	self SubR: Extra2Reg R: ClassReg.
 	self CmpCq: 24 R: Extra1Reg.
 	jump7 := self JumpAboveOrEqual: 0.
 	self MoveMw: 8 r: SPReg R: Extra3Reg.
@@ -9329,7 +9498,7 @@ DruidJIT >> gen_PrimitiveStringAt [
 	self CmpR: ClassReg R: Extra3Reg.
 	jump4 := self JumpAbove: 0.
 	self MoveMw: 8 r: SPReg R: Extra3Reg.
-	self AddR: SendNumArgsReg R: Extra3Reg.
+	self AddR: Extra2Reg R: Extra3Reg.
 	self MoveR: Extra3Reg Mw: 8 r: SPReg.
 	self CmpCq: 5 R: Extra1Reg.
 	jump9 := self JumpAbove: 0.
