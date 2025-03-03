@@ -2136,14 +2136,6 @@ StackToRegisterMappingCogit >> genPrimReturn [
 ]
 
 { #category : 'primitive generators' }
-StackToRegisterMappingCogit >> genPrimitiveFullClosureValue [
-	"Override to push the register args first."
-	<option: #SistaV1BytecodeSet>
-	self genPushRegisterArgs.
-	^super genPrimitiveFullClosureValue
-]
-
-{ #category : 'primitive generators' }
 StackToRegisterMappingCogit >> genPrimitivePerform [
 	"Generate an in-line perform primitive.  The lookup code requires the selector to be in Arg0Reg.
 	 adjustArgumentsForPerform: adjusts the arguments once genLookupForPerformNumArgs:

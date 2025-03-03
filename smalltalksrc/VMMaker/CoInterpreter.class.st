@@ -2528,11 +2528,9 @@ CoInterpreter >> executeFullCogBlock: cogMethod closure: closure mayContextSwitc
 		s: stackPointer.
 	self ensurePushedInstructionPointer.
 
-
-"
-	""If arguments fit on registers, they should not be passed on the stack.
-	Call the trampoline that is on charge of pop'ing them to respect the machine code calling convention""
-	cogit numRegArgs > 0 ifTrue: [ ""dont use and: so as to get Slang to inline cogit numRegArgs > 0""
+	"If arguments fit on registers, they should not be passed on the stack.
+	Call the trampoline that is on charge of pop'ing them to respect the machine code calling convention"
+	cogit numRegArgs > 0 ifTrue: [ "dont use and: so as to get Slang to inline cogit numRegArgs > 0"
 		cogMethod cmNumArgs <= cogit numRegArgs ifTrue: [
 			self
 				callRegisterArgCogMethod: cogMethod
@@ -2541,9 +2539,6 @@ CoInterpreter >> executeFullCogBlock: cogMethod closure: closure mayContextSwitc
 						 ifFalse: [ cogit fullBlockNoContextSwitchEntryOffset ])
 				receiver: closure.
 			self unreachable ] ].
-
-"
-
 
 	self push: cogMethod asInteger + (mayContextSwitch
 			 ifTrue: [ cogit fullBlockEntryOffset ]
