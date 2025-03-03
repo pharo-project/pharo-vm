@@ -166,6 +166,17 @@ PharoVMMaker >> generateCoInterpreter [
 
 ]
 
+{ #category : 'as yet unclassified' }
+PharoVMMaker >> generateDruidVM [
+
+	options := #( PartialCompilation false ).
+
+	self
+		generate: CoInterpreter
+		memoryManager: Spur64BitCoMemoryManager
+		compilerClass: DruidJIT
+]
+
 { #category : 'accessing' }
 PharoVMMaker >> generatePlugins [
 
