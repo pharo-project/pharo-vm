@@ -50,7 +50,6 @@ SLDeadCodeEliminationAlgoTest >> testInlineInSwitchRemovesReturnStatement [
 	sLDeadCodeElimination currentMethod: method.
 	ccg currentMethod: method.
 	sLDeadCodeElimination removeDeadCodeInCurrentMethod.
-	method removeUnusedTempsAndNilIfRequiredIn: ccg.
 
 
 	translation := self translate: method.

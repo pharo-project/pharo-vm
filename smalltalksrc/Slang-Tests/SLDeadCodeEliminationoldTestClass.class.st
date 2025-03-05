@@ -1,5 +1,5 @@
 Class {
-	#name : 'SLDeadCodeEliminationTestClass',
+	#name : 'SLDeadCodeEliminationoldTestClass',
 	#superclass : 'SlangStructType',
 	#instVars : [
 		'instancesVariable'
@@ -9,7 +9,7 @@ Class {
 }
 
 { #category : 'translation' }
-SLDeadCodeEliminationTestClass class >> instVarNamesAndTypesForTranslationDo: aBinaryBlock [
+SLDeadCodeEliminationoldTestClass class >> instVarNamesAndTypesForTranslationDo: aBinaryBlock [
 
 	self filteredInstVarNames do: [ :ivn |
 		aBinaryBlock value: ivn value: (ivn
@@ -18,7 +18,7 @@ SLDeadCodeEliminationTestClass class >> instVarNamesAndTypesForTranslationDo: aB
 ]
 
 { #category : 'only-comment' }
-SLDeadCodeEliminationTestClass >> conditionalWithOnlyCommentNoSendInReceiver [
+SLDeadCodeEliminationoldTestClass >> conditionalWithOnlyCommentNoSendInReceiver [
 
 	<returnTypeC: #void>
 	true
@@ -27,7 +27,7 @@ SLDeadCodeEliminationTestClass >> conditionalWithOnlyCommentNoSendInReceiver [
 ]
 
 { #category : 'only-comment' }
-SLDeadCodeEliminationTestClass >> conditionalWithOnlyCommentSendInReceiver [
+SLDeadCodeEliminationoldTestClass >> conditionalWithOnlyCommentSendInReceiver [
 
 	<returnTypeC: #void>
 	(self method: self method)
@@ -36,30 +36,37 @@ SLDeadCodeEliminationTestClass >> conditionalWithOnlyCommentSendInReceiver [
 ]
 
 { #category : 'accessing' }
-SLDeadCodeEliminationTestClass >> instancesVariable [
+SLDeadCodeEliminationoldTestClass >> instancesVariable [
 	^ instancesVariable
 ]
 
 { #category : 'helpers' }
-SLDeadCodeEliminationTestClass >> method [
+SLDeadCodeEliminationoldTestClass >> method [
 
 	<inline: true>
 	
 ]
 
 { #category : 'helpers' }
-SLDeadCodeEliminationTestClass >> method: arg [
+SLDeadCodeEliminationoldTestClass >> method: arg [
 ]
 
 { #category : 'method-in-c-coerce' }
-SLDeadCodeEliminationTestClass >> methodAddingCallInCoerce [
+SLDeadCodeEliminationoldTestClass >> methodAddingCallInCoerce [
 
 	<returnTypeC: #void>
 	self cCoerce: self method + self method to: #type
 ]
 
+{ #category : 'as yet unclassified' }
+SLDeadCodeEliminationoldTestClass >> methodWithAddInCoerce [
+
+	<returnTypeC: #void>
+	self cCoerce: 4 + 8 to: #type
+]
+
 { #category : 'variable-assign-to-itself' }
-SLDeadCodeEliminationTestClass >> methodWithBlockValueAssignmentIntoSameVariableInArguments [
+SLDeadCodeEliminationoldTestClass >> methodWithBlockValueAssignmentIntoSameVariableInArguments [
 	"produce a self assignation at translation time"
 
 	<returnTypeC: #void>
@@ -70,7 +77,7 @@ SLDeadCodeEliminationTestClass >> methodWithBlockValueAssignmentIntoSameVariable
 ]
 
 { #category : 'variable-not-assign-to-itself' }
-SLDeadCodeEliminationTestClass >> methodWithBlockValueAssignmentNotIntoSameVariableInArguments [
+SLDeadCodeEliminationoldTestClass >> methodWithBlockValueAssignmentNotIntoSameVariableInArguments [
 
 	<returnTypeC: #void>
 	| var var2 |
@@ -80,7 +87,7 @@ SLDeadCodeEliminationTestClass >> methodWithBlockValueAssignmentNotIntoSameVaria
 ]
 
 { #category : 'variable-assign-to-itself' }
-SLDeadCodeEliminationTestClass >> methodWithBlockValueValueAssignmentIntoSameVariableInArguments [
+SLDeadCodeEliminationoldTestClass >> methodWithBlockValueValueAssignmentIntoSameVariableInArguments [
 	"produce a self assignation at translation time"
 
 	<returnTypeC: #void>
@@ -93,7 +100,7 @@ SLDeadCodeEliminationTestClass >> methodWithBlockValueValueAssignmentIntoSameVar
 ]
 
 { #category : 'variable-not-assign-to-itself' }
-SLDeadCodeEliminationTestClass >> methodWithBlockValueValueAssignmentNotIntoSameVariableInArguments [
+SLDeadCodeEliminationoldTestClass >> methodWithBlockValueValueAssignmentNotIntoSameVariableInArguments [
 
 	<returnTypeC: #void>
 	| var var2 |
@@ -104,29 +111,29 @@ SLDeadCodeEliminationTestClass >> methodWithBlockValueValueAssignmentNotIntoSame
 ]
 
 { #category : 'method-in-c-coerce' }
-SLDeadCodeEliminationTestClass >> methodWithCallInCoerce [
+SLDeadCodeEliminationoldTestClass >> methodWithCallInCoerce [
 
 	<returnTypeC: #void>
 	self cCoerce: self method to: #type
 ]
 
 { #category : 'used-leaf-in-assignment' }
-SLDeadCodeEliminationTestClass >> methodWithConstantInAssignment [
+SLDeadCodeEliminationoldTestClass >> methodWithConstantInAssignment [
 
+	<returnTypeC: #void>
 	| i |
 	5.
-	i := 5.
-	^ i
+	i := 5
 ]
 
 { #category : 'used-leaf-in-return' }
-SLDeadCodeEliminationTestClass >> methodWithConstantInReturn [
+SLDeadCodeEliminationoldTestClass >> methodWithConstantInReturn [
 	5.
 	^ 5 
 ]
 
 { #category : 'dead-code-in-unary-iterative' }
-SLDeadCodeEliminationTestClass >> methodWithDeadCodeInRepeat [
+SLDeadCodeEliminationoldTestClass >> methodWithDeadCodeInRepeat [
 
 	<returnTypeC: #void>
 	| var |
@@ -136,13 +143,13 @@ SLDeadCodeEliminationTestClass >> methodWithDeadCodeInRepeat [
 ]
 
 { #category : 'dead-code-in-binary-iterative' }
-SLDeadCodeEliminationTestClass >> methodWithDeadCodeInTimesRepeat [
+SLDeadCodeEliminationoldTestClass >> methodWithDeadCodeInTimesRepeat [
 	| var |
 	3 timesRepeat: [ :elm | 5. instancesVariable. var. self method: elm ]
 ]
 
 { #category : 'dead-code-in-do-iterative' }
-SLDeadCodeEliminationTestClass >> methodWithDeadCodeInToByDo [
+SLDeadCodeEliminationoldTestClass >> methodWithDeadCodeInToByDo [
 
 	| var |
 	1 to: 4 by: 2 do: [ :index |
@@ -153,7 +160,7 @@ SLDeadCodeEliminationTestClass >> methodWithDeadCodeInToByDo [
 ]
 
 { #category : 'dead-code-in-do-iterative' }
-SLDeadCodeEliminationTestClass >> methodWithDeadCodeInToDo [
+SLDeadCodeEliminationoldTestClass >> methodWithDeadCodeInToDo [
 
 	| var |
 	1 to: 4 do: [ :index |
@@ -164,7 +171,7 @@ SLDeadCodeEliminationTestClass >> methodWithDeadCodeInToDo [
 ]
 
 { #category : 'dead-code-in-binary-iterative' }
-SLDeadCodeEliminationTestClass >> methodWithDeadCodeInWhileFalseBinaryNoSendInReceiver [
+SLDeadCodeEliminationoldTestClass >> methodWithDeadCodeInWhileFalseBinaryNoSendInReceiver [
 
 	<returnTypeC: #void>
 	| var |
@@ -175,7 +182,7 @@ SLDeadCodeEliminationTestClass >> methodWithDeadCodeInWhileFalseBinaryNoSendInRe
 ]
 
 { #category : 'dead-code-in-binary-iterative' }
-SLDeadCodeEliminationTestClass >> methodWithDeadCodeInWhileFalseBinarySendInReceiver [
+SLDeadCodeEliminationoldTestClass >> methodWithDeadCodeInWhileFalseBinarySendInReceiver [
 
 	<returnTypeC: #void>
 	| var |
@@ -186,7 +193,7 @@ SLDeadCodeEliminationTestClass >> methodWithDeadCodeInWhileFalseBinarySendInRece
 ]
 
 { #category : 'dead-code-in-unary-iterative' }
-SLDeadCodeEliminationTestClass >> methodWithDeadCodeInWhileFalseLastExpressionIsLeaf [
+SLDeadCodeEliminationoldTestClass >> methodWithDeadCodeInWhileFalseLastExpressionIsLeaf [
 
 	<returnTypeC: #void>
 	| expr var |
@@ -197,7 +204,7 @@ SLDeadCodeEliminationTestClass >> methodWithDeadCodeInWhileFalseLastExpressionIs
 ]
 
 { #category : 'dead-code-in-binary-iterative' }
-SLDeadCodeEliminationTestClass >> methodWithDeadCodeInWhileTrueBinaryNoSendInReceiver [
+SLDeadCodeEliminationoldTestClass >> methodWithDeadCodeInWhileTrueBinaryNoSendInReceiver [
 
 	<returnTypeC: #void>
 	| var |
@@ -208,7 +215,7 @@ SLDeadCodeEliminationTestClass >> methodWithDeadCodeInWhileTrueBinaryNoSendInRec
 ]
 
 { #category : 'dead-code-in-binary-iterative' }
-SLDeadCodeEliminationTestClass >> methodWithDeadCodeInWhileTrueBinarySendInReceiver [
+SLDeadCodeEliminationoldTestClass >> methodWithDeadCodeInWhileTrueBinarySendInReceiver [
 
 	<returnTypeC: #void>
 	| var |
@@ -219,7 +226,7 @@ SLDeadCodeEliminationTestClass >> methodWithDeadCodeInWhileTrueBinarySendInRecei
 ]
 
 { #category : 'dead-code-in-unary-iterative' }
-SLDeadCodeEliminationTestClass >> methodWithDeadCodeInWhileTrueLastExpressionIsLeaf [
+SLDeadCodeEliminationoldTestClass >> methodWithDeadCodeInWhileTrueLastExpressionIsLeaf [
 
 	<returnTypeC: #void>
 	| expr var |
@@ -230,7 +237,7 @@ SLDeadCodeEliminationTestClass >> methodWithDeadCodeInWhileTrueLastExpressionIsL
 ]
 
 { #category : 'empty-switch-no-send-in-expression' }
-SLDeadCodeEliminationTestClass >> methodWithEmptyCaseOfNoSendInReceiver: anInt [
+SLDeadCodeEliminationoldTestClass >> methodWithEmptyCaseOfNoSendInReceiver: anInt [
 
 	<returnTypeC: #void>
 	anInt caseOf: {
@@ -239,7 +246,7 @@ SLDeadCodeEliminationTestClass >> methodWithEmptyCaseOfNoSendInReceiver: anInt [
 ]
 
 { #category : 'empty-switch-no-send-in-expression' }
-SLDeadCodeEliminationTestClass >> methodWithEmptyCaseOfOtherwiseNoSendInReceiver: anInt [
+SLDeadCodeEliminationoldTestClass >> methodWithEmptyCaseOfOtherwiseNoSendInReceiver: anInt [
 
 	<returnTypeC: #void>
 	anInt
@@ -250,7 +257,7 @@ SLDeadCodeEliminationTestClass >> methodWithEmptyCaseOfOtherwiseNoSendInReceiver
 ]
 
 { #category : 'empty-switch-send-in-expression' }
-SLDeadCodeEliminationTestClass >> methodWithEmptyCaseOfOtherwiseSendInReceiver [
+SLDeadCodeEliminationoldTestClass >> methodWithEmptyCaseOfOtherwiseSendInReceiver [
 
 	<returnTypeC: #void>
 	(self method: 2)
@@ -261,7 +268,7 @@ SLDeadCodeEliminationTestClass >> methodWithEmptyCaseOfOtherwiseSendInReceiver [
 ]
 
 { #category : 'empty-switch-send-in-expression' }
-SLDeadCodeEliminationTestClass >> methodWithEmptyCaseOfSendInReceiver [
+SLDeadCodeEliminationoldTestClass >> methodWithEmptyCaseOfSendInReceiver [
 
 	<returnTypeC: #void>
 	self method caseOf: {
@@ -270,7 +277,7 @@ SLDeadCodeEliminationTestClass >> methodWithEmptyCaseOfSendInReceiver [
 ]
 
 { #category : 'reduce-boolean-conditional-no-send-in-receiver' }
-SLDeadCodeEliminationTestClass >> methodWithEmptyIfFalseIfTrueAndNoSendInReceiver [
+SLDeadCodeEliminationoldTestClass >> methodWithEmptyIfFalseIfTrueAndNoSendInReceiver [
 
 	<returnTypeC: #void>
 	true
@@ -279,7 +286,7 @@ SLDeadCodeEliminationTestClass >> methodWithEmptyIfFalseIfTrueAndNoSendInReceive
 ]
 
 { #category : 'reduce-boolean-conditional-send-in-receiver' }
-SLDeadCodeEliminationTestClass >> methodWithEmptyIfFalseIfTrueAndSendInReceiver [
+SLDeadCodeEliminationoldTestClass >> methodWithEmptyIfFalseIfTrueAndSendInReceiver [
 
 	<returnTypeC: #void>
 	self method > 0 >= (self method: 1) < 5 <= self method = 5
@@ -289,7 +296,7 @@ SLDeadCodeEliminationTestClass >> methodWithEmptyIfFalseIfTrueAndSendInReceiver 
 ]
 
 { #category : 'reduce-boolean-conditional-no-send-in-receiver' }
-SLDeadCodeEliminationTestClass >> methodWithEmptyIfFalseInIfFalseIfTrueAndNoSendInReceiver [
+SLDeadCodeEliminationoldTestClass >> methodWithEmptyIfFalseInIfFalseIfTrueAndNoSendInReceiver [
 
 	<returnTypeC: #void>
 	| i |
@@ -299,7 +306,7 @@ SLDeadCodeEliminationTestClass >> methodWithEmptyIfFalseInIfFalseIfTrueAndNoSend
 ]
 
 { #category : 'reduce-boolean-conditional-send-in-receiver' }
-SLDeadCodeEliminationTestClass >> methodWithEmptyIfFalseInIfFalseIfTrueAndSendInReceiver [
+SLDeadCodeEliminationoldTestClass >> methodWithEmptyIfFalseInIfFalseIfTrueAndSendInReceiver [
 
 	<returnTypeC: #void>
 	| i |
@@ -309,7 +316,7 @@ SLDeadCodeEliminationTestClass >> methodWithEmptyIfFalseInIfFalseIfTrueAndSendIn
 ]
 
 { #category : 'reduce-boolean-conditional-no-send-in-receiver' }
-SLDeadCodeEliminationTestClass >> methodWithEmptyIfFalseInIfTrueIfFalseAndNoSendInReceiver [
+SLDeadCodeEliminationoldTestClass >> methodWithEmptyIfFalseInIfTrueIfFalseAndNoSendInReceiver [
 
 	<returnTypeC: #void>
 	| i |
@@ -319,7 +326,7 @@ SLDeadCodeEliminationTestClass >> methodWithEmptyIfFalseInIfTrueIfFalseAndNoSend
 ]
 
 { #category : 'reduce-boolean-conditional-send-in-receiver' }
-SLDeadCodeEliminationTestClass >> methodWithEmptyIfFalseInIfTrueIfFalseAndSendInReceiver [
+SLDeadCodeEliminationoldTestClass >> methodWithEmptyIfFalseInIfTrueIfFalseAndSendInReceiver [
 
 	<returnTypeC: #void>
 	| i |
@@ -329,35 +336,35 @@ SLDeadCodeEliminationTestClass >> methodWithEmptyIfFalseInIfTrueIfFalseAndSendIn
 ]
 
 { #category : 'reduce-nil-conditional-no-send-in-receiver' }
-SLDeadCodeEliminationTestClass >> methodWithEmptyIfNilIfNotNilAndNoSendInReceiver [
+SLDeadCodeEliminationoldTestClass >> methodWithEmptyIfNilIfNotNilAndNoSendInReceiver [
 
 	<returnTypeC: #void>
 	nil ifNotNil: [  ] ifNil: [  ]
 ]
 
 { #category : 'reduce-nil-conditional-send-in-receiver' }
-SLDeadCodeEliminationTestClass >> methodWithEmptyIfNilIfNotNilAndSendInReceiver [
+SLDeadCodeEliminationoldTestClass >> methodWithEmptyIfNilIfNotNilAndSendInReceiver [
 
 	<returnTypeC: #void>
 	self method ifNotNil: [  ] ifNil: [  ]
 ]
 
 { #category : 'reduce-nil-conditional-no-send-in-receiver' }
-SLDeadCodeEliminationTestClass >> methodWithEmptyIfNotNilIfNilAndNoSendInReceiver [
+SLDeadCodeEliminationoldTestClass >> methodWithEmptyIfNotNilIfNilAndNoSendInReceiver [
 
 	<returnTypeC: #void>
 	nil ifNotNil: [  ] ifNil: [  ]
 ]
 
 { #category : 'reduce-nil-conditional-send-in-receiver' }
-SLDeadCodeEliminationTestClass >> methodWithEmptyIfNotNilIfNilAndSendInReceiver [
+SLDeadCodeEliminationoldTestClass >> methodWithEmptyIfNotNilIfNilAndSendInReceiver [
 
 	<returnTypeC: #void>
 	self method ifNotNil: [  ] ifNil: [  ]
 ]
 
 { #category : 'reduce-boolean-conditional-no-send-in-receiver' }
-SLDeadCodeEliminationTestClass >> methodWithEmptyIfTrueIfFalseAndNoSendInReceiver [
+SLDeadCodeEliminationoldTestClass >> methodWithEmptyIfTrueIfFalseAndNoSendInReceiver [
 
 	<returnTypeC: #void>
 	true
@@ -366,7 +373,7 @@ SLDeadCodeEliminationTestClass >> methodWithEmptyIfTrueIfFalseAndNoSendInReceive
 ]
 
 { #category : 'reduce-boolean-conditional-send-in-receiver' }
-SLDeadCodeEliminationTestClass >> methodWithEmptyIfTrueIfFalseAndSendInReceiver [
+SLDeadCodeEliminationoldTestClass >> methodWithEmptyIfTrueIfFalseAndSendInReceiver [
 
 	<returnTypeC: #void>
 	self method > 0 >= (self method: 1) < 5 <= self method = 5
@@ -376,7 +383,7 @@ SLDeadCodeEliminationTestClass >> methodWithEmptyIfTrueIfFalseAndSendInReceiver 
 ]
 
 { #category : 'reduce-boolean-conditional-no-send-in-receiver' }
-SLDeadCodeEliminationTestClass >> methodWithEmptyIfTrueInIfFalseIfTrueAndNoSendInReceiver [
+SLDeadCodeEliminationoldTestClass >> methodWithEmptyIfTrueInIfFalseIfTrueAndNoSendInReceiver [
 
 	<returnTypeC: #void>
 	| i |
@@ -386,7 +393,7 @@ SLDeadCodeEliminationTestClass >> methodWithEmptyIfTrueInIfFalseIfTrueAndNoSendI
 ]
 
 { #category : 'reduce-boolean-conditional-send-in-receiver' }
-SLDeadCodeEliminationTestClass >> methodWithEmptyIfTrueInIfFalseIfTrueAndSendInReceiver [
+SLDeadCodeEliminationoldTestClass >> methodWithEmptyIfTrueInIfFalseIfTrueAndSendInReceiver [
 
 	<returnTypeC: #void>
 	| i |
@@ -396,7 +403,7 @@ SLDeadCodeEliminationTestClass >> methodWithEmptyIfTrueInIfFalseIfTrueAndSendInR
 ]
 
 { #category : 'reduce-boolean-conditional-no-send-in-receiver' }
-SLDeadCodeEliminationTestClass >> methodWithEmptyIfTrueInIfTrueIfFalseAndNoSendInReceiver [
+SLDeadCodeEliminationoldTestClass >> methodWithEmptyIfTrueInIfTrueIfFalseAndNoSendInReceiver [
 
 	<returnTypeC: #void>
 	| i |
@@ -406,7 +413,7 @@ SLDeadCodeEliminationTestClass >> methodWithEmptyIfTrueInIfTrueIfFalseAndNoSendI
 ]
 
 { #category : 'reduce-boolean-conditional-send-in-receiver' }
-SLDeadCodeEliminationTestClass >> methodWithEmptyIfTrueInIfTrueIfFalseAndSendInReceiver [
+SLDeadCodeEliminationoldTestClass >> methodWithEmptyIfTrueInIfTrueIfFalseAndSendInReceiver [
 
 	<returnTypeC: #void>
 	| i |
@@ -416,35 +423,35 @@ SLDeadCodeEliminationTestClass >> methodWithEmptyIfTrueInIfTrueIfFalseAndSendInR
 ]
 
 { #category : 'dead-code-in-unary-iterative' }
-SLDeadCodeEliminationTestClass >> methodWithEmptyWhileFalseNoSendInCondition [
+SLDeadCodeEliminationoldTestClass >> methodWithEmptyWhileFalseNoSendInCondition [
 
 	<returnTypeC: #void>
 	[ true ] whileFalse
 ]
 
 { #category : 'dead-code-in-unary-iterative' }
-SLDeadCodeEliminationTestClass >> methodWithEmptyWhileFalseSendInCondition [
+SLDeadCodeEliminationoldTestClass >> methodWithEmptyWhileFalseSendInCondition [
 
 	<returnTypeC: #void>
 	[ self method ] whileFalse
 ]
 
 { #category : 'dead-code-in-unary-iterative' }
-SLDeadCodeEliminationTestClass >> methodWithEmptyWhileTrueNoSendInCondition [
+SLDeadCodeEliminationoldTestClass >> methodWithEmptyWhileTrueNoSendInCondition [
 
 	<returnTypeC: #void>
 	[ true ] whileTrue
 ]
 
 { #category : 'dead-code-in-unary-iterative' }
-SLDeadCodeEliminationTestClass >> methodWithEmptyWhileTrueSendInCondition [
+SLDeadCodeEliminationoldTestClass >> methodWithEmptyWhileTrueSendInCondition [
 
 	<returnTypeC: #void>
 	[ self method ] whileTrue
 ]
 
 { #category : 'reduce-nil-conditional-no-send-in-receiver' }
-SLDeadCodeEliminationTestClass >> methodWithEmptyifNilInIfNilIfNotNilAndNoSendInReceiver [
+SLDeadCodeEliminationoldTestClass >> methodWithEmptyifNilInIfNilIfNotNilAndNoSendInReceiver [
 
 	<returnTypeC: #void>
 	| i |
@@ -452,7 +459,7 @@ SLDeadCodeEliminationTestClass >> methodWithEmptyifNilInIfNilIfNotNilAndNoSendIn
 ]
 
 { #category : 'reduce-nil-conditional-send-in-receiver' }
-SLDeadCodeEliminationTestClass >> methodWithEmptyifNilInIfNilIfNotNilAndSendInReceiver [
+SLDeadCodeEliminationoldTestClass >> methodWithEmptyifNilInIfNilIfNotNilAndSendInReceiver [
 
 	<returnTypeC: #void>
 	| i |
@@ -460,7 +467,7 @@ SLDeadCodeEliminationTestClass >> methodWithEmptyifNilInIfNilIfNotNilAndSendInRe
 ]
 
 { #category : 'reduce-nil-conditional-no-send-in-receiver' }
-SLDeadCodeEliminationTestClass >> methodWithEmptyifNilInIfNotNilIfNilAndNoSendInReceiver [
+SLDeadCodeEliminationoldTestClass >> methodWithEmptyifNilInIfNotNilIfNilAndNoSendInReceiver [
 
 	<returnTypeC: #void>
 	| i |
@@ -468,7 +475,7 @@ SLDeadCodeEliminationTestClass >> methodWithEmptyifNilInIfNotNilIfNilAndNoSendIn
 ]
 
 { #category : 'reduce-nil-conditional-send-in-receiver' }
-SLDeadCodeEliminationTestClass >> methodWithEmptyifNilInIfNotNilIfNilAndSendInReceiver [
+SLDeadCodeEliminationoldTestClass >> methodWithEmptyifNilInIfNotNilIfNilAndSendInReceiver [
 
 	<returnTypeC: #void>
 	| i |
@@ -476,7 +483,7 @@ SLDeadCodeEliminationTestClass >> methodWithEmptyifNilInIfNotNilIfNilAndSendInRe
 ]
 
 { #category : 'reduce-nil-conditional-no-send-in-receiver' }
-SLDeadCodeEliminationTestClass >> methodWithEmptyifNotNilInIfNilIfNotNilAndNoSendInReceiver [
+SLDeadCodeEliminationoldTestClass >> methodWithEmptyifNotNilInIfNilIfNotNilAndNoSendInReceiver [
 
 	<returnTypeC: #void>
 	| i |
@@ -484,7 +491,7 @@ SLDeadCodeEliminationTestClass >> methodWithEmptyifNotNilInIfNilIfNotNilAndNoSen
 ]
 
 { #category : 'reduce-nil-conditional-send-in-receiver' }
-SLDeadCodeEliminationTestClass >> methodWithEmptyifNotNilInIfNilIfNotNilAndSendInReceiver [
+SLDeadCodeEliminationoldTestClass >> methodWithEmptyifNotNilInIfNilIfNotNilAndSendInReceiver [
 
 	<returnTypeC: #void>
 	| i |
@@ -492,7 +499,7 @@ SLDeadCodeEliminationTestClass >> methodWithEmptyifNotNilInIfNilIfNotNilAndSendI
 ]
 
 { #category : 'reduce-nil-conditional-no-send-in-receiver' }
-SLDeadCodeEliminationTestClass >> methodWithEmptyifNotNilInIfNotNilIfNilAndNoSendInReceiver [
+SLDeadCodeEliminationoldTestClass >> methodWithEmptyifNotNilInIfNotNilIfNilAndNoSendInReceiver [
 
 	<returnTypeC: #void>
 	| i |
@@ -500,7 +507,7 @@ SLDeadCodeEliminationTestClass >> methodWithEmptyifNotNilInIfNotNilIfNilAndNoSen
 ]
 
 { #category : 'reduce-nil-conditional-send-in-receiver' }
-SLDeadCodeEliminationTestClass >> methodWithEmptyifNotNilInIfNotNilIfNilAndSendInReceiver [
+SLDeadCodeEliminationoldTestClass >> methodWithEmptyifNotNilInIfNotNilIfNilAndSendInReceiver [
 
 	<returnTypeC: #void>
 	| i |
@@ -508,7 +515,7 @@ SLDeadCodeEliminationTestClass >> methodWithEmptyifNotNilInIfNotNilIfNilAndSendI
 ]
 
 { #category : 'used-leaf-in-assignment' }
-SLDeadCodeEliminationTestClass >> methodWithInstanceVariableInAssignment [
+SLDeadCodeEliminationoldTestClass >> methodWithInstanceVariableInAssignment [
 
 	<returnTypeC: #void>
 	| i |
@@ -517,14 +524,14 @@ SLDeadCodeEliminationTestClass >> methodWithInstanceVariableInAssignment [
 ]
 
 { #category : 'used-leaf-in-return' }
-SLDeadCodeEliminationTestClass >> methodWithInstanceVariableInReturn [
+SLDeadCodeEliminationoldTestClass >> methodWithInstanceVariableInReturn [
 
 	instancesVariable.
 	^ instancesVariable
 ]
 
 { #category : 'variable-assign-to-itself' }
-SLDeadCodeEliminationTestClass >> methodWithOnlyBlockValueAssignmentIntoSameVariableInArguments [
+SLDeadCodeEliminationoldTestClass >> methodWithOnlyBlockValueAssignmentIntoSameVariableInArguments [
 	"produce a self assignation at translation time"
 
 	<returnTypeC: #void>
@@ -533,7 +540,7 @@ SLDeadCodeEliminationTestClass >> methodWithOnlyBlockValueAssignmentIntoSameVari
 ]
 
 { #category : 'variable-not-assign-to-itself' }
-SLDeadCodeEliminationTestClass >> methodWithOnlyBlockValueAssignmentNotIntoSameVariableInArguments [
+SLDeadCodeEliminationoldTestClass >> methodWithOnlyBlockValueAssignmentNotIntoSameVariableInArguments [
 
 	<returnTypeC: #void>
 	| var var2 |
@@ -541,14 +548,14 @@ SLDeadCodeEliminationTestClass >> methodWithOnlyBlockValueAssignmentNotIntoSameV
 ]
 
 { #category : 'only-comment' }
-SLDeadCodeEliminationTestClass >> methodWithOnlyComment [
+SLDeadCodeEliminationoldTestClass >> methodWithOnlyComment [
 
 	<returnTypeC: #void>
 	self method
 ]
 
 { #category : 'dead-code-in-unary-iterative' }
-SLDeadCodeEliminationTestClass >> methodWithOnlyDeadCodeInRepeat [
+SLDeadCodeEliminationoldTestClass >> methodWithOnlyDeadCodeInRepeat [
 
 	<returnTypeC: #void>
 	| var |
@@ -556,7 +563,7 @@ SLDeadCodeEliminationTestClass >> methodWithOnlyDeadCodeInRepeat [
 ]
 
 { #category : 'dead-code-in-unary-iterative' }
-SLDeadCodeEliminationTestClass >> methodWithOnlyDeadCodeInWhileFalse [
+SLDeadCodeEliminationoldTestClass >> methodWithOnlyDeadCodeInWhileFalse [
 
 	<returnTypeC: #void>
 	| var |
@@ -566,7 +573,7 @@ SLDeadCodeEliminationTestClass >> methodWithOnlyDeadCodeInWhileFalse [
 ]
 
 { #category : 'dead-code-in-binary-iterative' }
-SLDeadCodeEliminationTestClass >> methodWithOnlyDeadCodeInWhileFalseBinaryNoSendInReceiver [
+SLDeadCodeEliminationoldTestClass >> methodWithOnlyDeadCodeInWhileFalseBinaryNoSendInReceiver [
 
 	<returnTypeC: #void>
 	| var |
@@ -576,7 +583,7 @@ SLDeadCodeEliminationTestClass >> methodWithOnlyDeadCodeInWhileFalseBinaryNoSend
 ]
 
 { #category : 'dead-code-in-binary-iterative' }
-SLDeadCodeEliminationTestClass >> methodWithOnlyDeadCodeInWhileFalseBinarySendInReceiver [
+SLDeadCodeEliminationoldTestClass >> methodWithOnlyDeadCodeInWhileFalseBinarySendInReceiver [
 
 	<returnTypeC: #void>
 	| var |
@@ -586,7 +593,7 @@ SLDeadCodeEliminationTestClass >> methodWithOnlyDeadCodeInWhileFalseBinarySendIn
 ]
 
 { #category : 'dead-code-in-unary-iterative' }
-SLDeadCodeEliminationTestClass >> methodWithOnlyDeadCodeInWhileTrue [
+SLDeadCodeEliminationoldTestClass >> methodWithOnlyDeadCodeInWhileTrue [
 
 	<returnTypeC: #void>
 	| var |
@@ -596,7 +603,7 @@ SLDeadCodeEliminationTestClass >> methodWithOnlyDeadCodeInWhileTrue [
 ]
 
 { #category : 'dead-code-in-binary-iterative' }
-SLDeadCodeEliminationTestClass >> methodWithOnlyDeadCodeInWhileTrueBinaryNoSendInReceiver [
+SLDeadCodeEliminationoldTestClass >> methodWithOnlyDeadCodeInWhileTrueBinaryNoSendInReceiver [
 
 	<returnTypeC: #void>
 	| var |
@@ -606,7 +613,7 @@ SLDeadCodeEliminationTestClass >> methodWithOnlyDeadCodeInWhileTrueBinaryNoSendI
 ]
 
 { #category : 'dead-code-in-binary-iterative' }
-SLDeadCodeEliminationTestClass >> methodWithOnlyDeadCodeInWhileTrueBinarySendInReceiver [
+SLDeadCodeEliminationoldTestClass >> methodWithOnlyDeadCodeInWhileTrueBinarySendInReceiver [
 
 	<returnTypeC: #void>
 	| var |
@@ -616,7 +623,7 @@ SLDeadCodeEliminationTestClass >> methodWithOnlyDeadCodeInWhileTrueBinarySendInR
 ]
 
 { #category : 'variable-assign-to-itself' }
-SLDeadCodeEliminationTestClass >> methodWithSelfAssign [
+SLDeadCodeEliminationoldTestClass >> methodWithSelfAssign [
 
 	<returnTypeC: #void>
 	| var |
@@ -624,22 +631,15 @@ SLDeadCodeEliminationTestClass >> methodWithSelfAssign [
 	^ var
 ]
 
-{ #category : 'method-in-c-coerce' }
-SLDeadCodeEliminationTestClass >> methodWithSendWithNoSideEffectInCoerce [
-
-	<returnTypeC: #void>
-	self cCoerce: 4 + 8 to: #type
-]
-
 { #category : 'unused-leaf' }
-SLDeadCodeEliminationTestClass >> methodWithUnusedConstant [
+SLDeadCodeEliminationoldTestClass >> methodWithUnusedConstant [
 
 	<returnTypeC: #void>
 	5
 ]
 
 { #category : 'unused-leaf-in-switch-no-send-in-expression' }
-SLDeadCodeEliminationTestClass >> methodWithUnusedConstantAndReturnInCaseOfNoSendInExpression: anInt [
+SLDeadCodeEliminationoldTestClass >> methodWithUnusedConstantAndReturnInCaseOfNoSendInExpression: anInt [
 
 	<returnTypeC: #void>
 	anInt caseOf: {
@@ -648,7 +648,7 @@ SLDeadCodeEliminationTestClass >> methodWithUnusedConstantAndReturnInCaseOfNoSen
 ]
 
 { #category : 'unused-leaf-in-switch-send-in-expression' }
-SLDeadCodeEliminationTestClass >> methodWithUnusedConstantAndReturnInCaseOfSendInExpression [
+SLDeadCodeEliminationoldTestClass >> methodWithUnusedConstantAndReturnInCaseOfSendInExpression [
 
 	<returnTypeC: #void>
 	(self method: 3) caseOf: {
@@ -659,7 +659,7 @@ SLDeadCodeEliminationTestClass >> methodWithUnusedConstantAndReturnInCaseOfSendI
 ]
 
 { #category : 'unused-leaf-in-switch-no-send-in-expression' }
-SLDeadCodeEliminationTestClass >> methodWithUnusedConstantInCaseOfAndReturnInOtherwiseNoSendInExpression: anInt [
+SLDeadCodeEliminationoldTestClass >> methodWithUnusedConstantInCaseOfAndReturnInOtherwiseNoSendInExpression: anInt [
 
 	<returnTypeC: #void>
 	anInt
@@ -672,7 +672,7 @@ SLDeadCodeEliminationTestClass >> methodWithUnusedConstantInCaseOfAndReturnInOth
 ]
 
 { #category : 'unused-leaf-in-switch-send-in-expression' }
-SLDeadCodeEliminationTestClass >> methodWithUnusedConstantInCaseOfAndReturnInOtherwiseSendInExpression [
+SLDeadCodeEliminationoldTestClass >> methodWithUnusedConstantInCaseOfAndReturnInOtherwiseSendInExpression [
 
 	<returnTypeC: #void>
 	(self method: 3)
@@ -685,7 +685,7 @@ SLDeadCodeEliminationTestClass >> methodWithUnusedConstantInCaseOfAndReturnInOth
 ]
 
 { #category : 'unused-leaf-in-switch-no-send-in-expression' }
-SLDeadCodeEliminationTestClass >> methodWithUnusedConstantInCaseOfAndUnusedConstantInOtherwiseNoSendInExpression: anInt [
+SLDeadCodeEliminationoldTestClass >> methodWithUnusedConstantInCaseOfAndUnusedConstantInOtherwiseNoSendInExpression: anInt [
 
 	<returnTypeC: #void>
 	anInt caseOf: {
@@ -695,7 +695,7 @@ SLDeadCodeEliminationTestClass >> methodWithUnusedConstantInCaseOfAndUnusedConst
 ]
 
 { #category : 'unused-leaf-in-switch-send-in-expression' }
-SLDeadCodeEliminationTestClass >> methodWithUnusedConstantInCaseOfAndUnusedConstantInOtherwiseSendInExpression [
+SLDeadCodeEliminationoldTestClass >> methodWithUnusedConstantInCaseOfAndUnusedConstantInOtherwiseSendInExpression [
 
 	<returnTypeC: #void>
 	(self method: 3)
@@ -706,28 +706,28 @@ SLDeadCodeEliminationTestClass >> methodWithUnusedConstantInCaseOfAndUnusedConst
 ]
 
 { #category : 'unused-leaf-in-switch-no-send-in-expression' }
-SLDeadCodeEliminationTestClass >> methodWithUnusedConstantInCaseOfNoSendInExpression: anInt [
+SLDeadCodeEliminationoldTestClass >> methodWithUnusedConstantInCaseOfNoSendInExpression: anInt [
 
 	<returnTypeC: #void>
 	anInt caseOf: { ([ 5 ] -> [ 1 ]) }
 ]
 
 { #category : 'unused-leaf-in-switch-send-in-expression' }
-SLDeadCodeEliminationTestClass >> methodWithUnusedConstantInCaseOfSendInExpression [
+SLDeadCodeEliminationoldTestClass >> methodWithUnusedConstantInCaseOfSendInExpression [
 
 	<returnTypeC: #void>
 	(self method: 3) caseOf: { ([ 5 ] -> [ 1 ]) }
 ]
 
 { #category : 'unused-leaf-in-c-coerce' }
-SLDeadCodeEliminationTestClass >> methodWithUnusedConstantInCoerce [
+SLDeadCodeEliminationoldTestClass >> methodWithUnusedConstantInCoerce [
 
 	<returnTypeC: #void>
 	self cCoerce: 5 to: #type
 ]
 
 { #category : 'unused-leaf-in-conditional-no-send-in-receiver' }
-SLDeadCodeEliminationTestClass >> methodWithUnusedConstantInIfFalseIfTrueNoSendInReceiver [
+SLDeadCodeEliminationoldTestClass >> methodWithUnusedConstantInIfFalseIfTrueNoSendInReceiver [
 
 	<returnTypeC: #void>
 	true
@@ -736,7 +736,7 @@ SLDeadCodeEliminationTestClass >> methodWithUnusedConstantInIfFalseIfTrueNoSendI
 ]
 
 { #category : 'unused-leaf-in-conditional-send-in-receiver' }
-SLDeadCodeEliminationTestClass >> methodWithUnusedConstantInIfFalseIfTrueSendInReceiver [
+SLDeadCodeEliminationoldTestClass >> methodWithUnusedConstantInIfFalseIfTrueSendInReceiver [
 
 	<returnTypeC: #void>
 	self method > 0 <= (self method: 3) = (self method: self method)
@@ -745,14 +745,14 @@ SLDeadCodeEliminationTestClass >> methodWithUnusedConstantInIfFalseIfTrueSendInR
 ]
 
 { #category : 'unused-leaf-in-conditional-no-send-in-receiver' }
-SLDeadCodeEliminationTestClass >> methodWithUnusedConstantInIfFalseNoSendInReceiver [
+SLDeadCodeEliminationoldTestClass >> methodWithUnusedConstantInIfFalseNoSendInReceiver [
 
 	<returnTypeC: #void>
 	true ifFalse: [ 5 ]
 ]
 
 { #category : 'unused-leaf-in-conditional-send-in-receiver' }
-SLDeadCodeEliminationTestClass >> methodWithUnusedConstantInIfFalseSendInReceiver [
+SLDeadCodeEliminationoldTestClass >> methodWithUnusedConstantInIfFalseSendInReceiver [
 
 	<returnTypeC: #void>
 	self method > 0 <= (self method: 3) = (self method: self method)
@@ -760,14 +760,14 @@ SLDeadCodeEliminationTestClass >> methodWithUnusedConstantInIfFalseSendInReceive
 ]
 
 { #category : 'unused-leaf-in-conditional-no-send-in-receiver' }
-SLDeadCodeEliminationTestClass >> methodWithUnusedConstantInIfNilIfNotNilNoSendInReceiver [
+SLDeadCodeEliminationoldTestClass >> methodWithUnusedConstantInIfNilIfNotNilNoSendInReceiver [
 
 	<returnTypeC: #void>
 	nil ifNil: [ 5 ] ifNotNil: [ 5 ]
 ]
 
 { #category : 'unused-leaf-in-conditional-send-in-receiver' }
-SLDeadCodeEliminationTestClass >> methodWithUnusedConstantInIfNilIfNotNilSendInReceiver [
+SLDeadCodeEliminationoldTestClass >> methodWithUnusedConstantInIfNilIfNotNilSendInReceiver [
 
 	<returnTypeC: #void>
 	(self method: self method)
@@ -776,49 +776,49 @@ SLDeadCodeEliminationTestClass >> methodWithUnusedConstantInIfNilIfNotNilSendInR
 ]
 
 { #category : 'unused-leaf-in-conditional-no-send-in-receiver' }
-SLDeadCodeEliminationTestClass >> methodWithUnusedConstantInIfNilNoSendInReceiver [
+SLDeadCodeEliminationoldTestClass >> methodWithUnusedConstantInIfNilNoSendInReceiver [
 
 	<returnTypeC: #void>
 	nil ifNil: [ 5 ]
 ]
 
 { #category : 'unused-leaf-in-conditional-send-in-receiver' }
-SLDeadCodeEliminationTestClass >> methodWithUnusedConstantInIfNilSendInReceiver [
+SLDeadCodeEliminationoldTestClass >> methodWithUnusedConstantInIfNilSendInReceiver [
 
 	<returnTypeC: #void>
 	(self method: self method) ifNil: [ 5 ]
 ]
 
 { #category : 'unused-leaf-in-conditional-no-send-in-receiver' }
-SLDeadCodeEliminationTestClass >> methodWithUnusedConstantInIfNotNilIfNilNoSendInReceiver [
+SLDeadCodeEliminationoldTestClass >> methodWithUnusedConstantInIfNotNilIfNilNoSendInReceiver [
 
 	<returnTypeC: #void>
 	nil ifNotNil: [ 5 ] ifNil: [ 5 ]
 ]
 
 { #category : 'unused-leaf-in-conditional-send-in-receiver' }
-SLDeadCodeEliminationTestClass >> methodWithUnusedConstantInIfNotNilIfNilSendInReceiver [
+SLDeadCodeEliminationoldTestClass >> methodWithUnusedConstantInIfNotNilIfNilSendInReceiver [
 
 	<returnTypeC: #void>
 	(self method: self method) ifNotNil: [ 5 ] ifNil: [ 5 ]
 ]
 
 { #category : 'unused-leaf-in-conditional-no-send-in-receiver' }
-SLDeadCodeEliminationTestClass >> methodWithUnusedConstantInIfNotNilNoSendInReceiver [
+SLDeadCodeEliminationoldTestClass >> methodWithUnusedConstantInIfNotNilNoSendInReceiver [
 
 	<returnTypeC: #void>
 	nil ifNotNil: [ 5 ]
 ]
 
 { #category : 'unused-leaf-in-conditional-send-in-receiver' }
-SLDeadCodeEliminationTestClass >> methodWithUnusedConstantInIfNotNilSendInReceiver [
+SLDeadCodeEliminationoldTestClass >> methodWithUnusedConstantInIfNotNilSendInReceiver [
 
 	<returnTypeC: #void>
 	(self method: self method) ifNotNil: [ 5 ]
 ]
 
 { #category : 'unused-leaf-in-conditional-no-send-in-receiver' }
-SLDeadCodeEliminationTestClass >> methodWithUnusedConstantInIfTrueIfFalseNoSendInReceiver [
+SLDeadCodeEliminationoldTestClass >> methodWithUnusedConstantInIfTrueIfFalseNoSendInReceiver [
 
 	<returnTypeC: #void>
 	true
@@ -827,7 +827,7 @@ SLDeadCodeEliminationTestClass >> methodWithUnusedConstantInIfTrueIfFalseNoSendI
 ]
 
 { #category : 'unused-leaf-in-conditional-send-in-receiver' }
-SLDeadCodeEliminationTestClass >> methodWithUnusedConstantInIfTrueIfFalseSendInReceiver [
+SLDeadCodeEliminationoldTestClass >> methodWithUnusedConstantInIfTrueIfFalseSendInReceiver [
 
 	<returnTypeC: #void>
 	self method > 0 <= (self method: 3) = (self method: self method)
@@ -836,14 +836,14 @@ SLDeadCodeEliminationTestClass >> methodWithUnusedConstantInIfTrueIfFalseSendInR
 ]
 
 { #category : 'unused-leaf-in-conditional-no-send-in-receiver' }
-SLDeadCodeEliminationTestClass >> methodWithUnusedConstantInIfTrueNoSendInReceiver [
+SLDeadCodeEliminationoldTestClass >> methodWithUnusedConstantInIfTrueNoSendInReceiver [
 
 	<returnTypeC: #void>
 	true ifTrue: [ 5 ]
 ]
 
 { #category : 'unused-leaf-in-conditional-send-in-receiver' }
-SLDeadCodeEliminationTestClass >> methodWithUnusedConstantInIfTrueSendInReceiver [
+SLDeadCodeEliminationoldTestClass >> methodWithUnusedConstantInIfTrueSendInReceiver [
 
 	<returnTypeC: #void>
 	self method > 0 <= (self method: 3) = (self method: self method)
@@ -851,7 +851,7 @@ SLDeadCodeEliminationTestClass >> methodWithUnusedConstantInIfTrueSendInReceiver
 ]
 
 { #category : 'unused-leaf-in-switch-no-send-in-expression' }
-SLDeadCodeEliminationTestClass >> methodWithUnusedConstantReturnInCaseOfAndUnusedConstantInOtherwiseNoSendInExpression: anInt [
+SLDeadCodeEliminationoldTestClass >> methodWithUnusedConstantReturnInCaseOfAndUnusedConstantInOtherwiseNoSendInExpression: anInt [
 
 	<returnTypeC: #void>
 	anInt
@@ -864,7 +864,7 @@ SLDeadCodeEliminationTestClass >> methodWithUnusedConstantReturnInCaseOfAndUnuse
 ]
 
 { #category : 'unused-leaf-in-switch-send-in-expression' }
-SLDeadCodeEliminationTestClass >> methodWithUnusedConstantReturnInCaseOfAndUnusedConstantInOtherwiseSendInExpression [
+SLDeadCodeEliminationoldTestClass >> methodWithUnusedConstantReturnInCaseOfAndUnusedConstantInOtherwiseSendInExpression [
 
 	<returnTypeC: #void>
 	(self method: 3)
@@ -877,14 +877,14 @@ SLDeadCodeEliminationTestClass >> methodWithUnusedConstantReturnInCaseOfAndUnuse
 ]
 
 { #category : 'unused-leaf' }
-SLDeadCodeEliminationTestClass >> methodWithUnusedInstanceVariable [
+SLDeadCodeEliminationoldTestClass >> methodWithUnusedInstanceVariable [
 
 	<returnTypeC: #void>
 	instancesVariable
 ]
 
 { #category : 'unused-leaf-in-switch-no-send-in-expression' }
-SLDeadCodeEliminationTestClass >> methodWithUnusedInstanceVariableAndReturnInCaseOfNoSendInExpression: anInt [
+SLDeadCodeEliminationoldTestClass >> methodWithUnusedInstanceVariableAndReturnInCaseOfNoSendInExpression: anInt [
 
 	<returnTypeC: #void>
 	anInt caseOf: {
@@ -895,7 +895,7 @@ SLDeadCodeEliminationTestClass >> methodWithUnusedInstanceVariableAndReturnInCas
 ]
 
 { #category : 'unused-leaf-in-switch-send-in-expression' }
-SLDeadCodeEliminationTestClass >> methodWithUnusedInstanceVariableAndReturnInCaseOfSendInExpression [
+SLDeadCodeEliminationoldTestClass >> methodWithUnusedInstanceVariableAndReturnInCaseOfSendInExpression [
 
 	<returnTypeC: #void>
 	(self method: 3) caseOf: {
@@ -906,7 +906,7 @@ SLDeadCodeEliminationTestClass >> methodWithUnusedInstanceVariableAndReturnInCas
 ]
 
 { #category : 'unused-leaf-in-switch-no-send-in-expression' }
-SLDeadCodeEliminationTestClass >> methodWithUnusedInstanceVariableInCaseOfAndReturnInOtherwiseNoSendInExpression: anInt [
+SLDeadCodeEliminationoldTestClass >> methodWithUnusedInstanceVariableInCaseOfAndReturnInOtherwiseNoSendInExpression: anInt [
 
 	<returnTypeC: #void>
 	anInt
@@ -919,7 +919,7 @@ SLDeadCodeEliminationTestClass >> methodWithUnusedInstanceVariableInCaseOfAndRet
 ]
 
 { #category : 'unused-leaf-in-switch-send-in-expression' }
-SLDeadCodeEliminationTestClass >> methodWithUnusedInstanceVariableInCaseOfAndReturnInOtherwiseSendInExpression [
+SLDeadCodeEliminationoldTestClass >> methodWithUnusedInstanceVariableInCaseOfAndReturnInOtherwiseSendInExpression [
 
 	<returnTypeC: #void>
 	(self method: 3)
@@ -932,7 +932,7 @@ SLDeadCodeEliminationTestClass >> methodWithUnusedInstanceVariableInCaseOfAndRet
 ]
 
 { #category : 'unused-leaf-in-switch-no-send-in-expression' }
-SLDeadCodeEliminationTestClass >> methodWithUnusedInstanceVariableInCaseOfAndUnusedInstanceVariableInOtherwiseNoSendInExpression: anInt [
+SLDeadCodeEliminationoldTestClass >> methodWithUnusedInstanceVariableInCaseOfAndUnusedInstanceVariableInOtherwiseNoSendInExpression: anInt [
 
 	<returnTypeC: #void>
 	anInt
@@ -943,7 +943,7 @@ SLDeadCodeEliminationTestClass >> methodWithUnusedInstanceVariableInCaseOfAndUnu
 ]
 
 { #category : 'unused-leaf-in-switch-send-in-expression' }
-SLDeadCodeEliminationTestClass >> methodWithUnusedInstanceVariableInCaseOfAndUnusedInstanceVariableInOtherwiseSendInExpression [
+SLDeadCodeEliminationoldTestClass >> methodWithUnusedInstanceVariableInCaseOfAndUnusedInstanceVariableInOtherwiseSendInExpression [
 
 	<returnTypeC: #void>
 	(self method: 3)
@@ -954,28 +954,28 @@ SLDeadCodeEliminationTestClass >> methodWithUnusedInstanceVariableInCaseOfAndUnu
 ]
 
 { #category : 'unused-leaf-in-switch-no-send-in-expression' }
-SLDeadCodeEliminationTestClass >> methodWithUnusedInstanceVariableInCaseOfNoSendInExpression: anInt [
+SLDeadCodeEliminationoldTestClass >> methodWithUnusedInstanceVariableInCaseOfNoSendInExpression: anInt [
 
 	<returnTypeC: #void>
 	anInt caseOf: { ([ 5 ] -> [ instancesVariable ]) }
 ]
 
 { #category : 'unused-leaf-in-switch-send-in-expression' }
-SLDeadCodeEliminationTestClass >> methodWithUnusedInstanceVariableInCaseOfSendInExpression [
+SLDeadCodeEliminationoldTestClass >> methodWithUnusedInstanceVariableInCaseOfSendInExpression [
 
 	<returnTypeC: #void>
 	(self method: 3) caseOf: { ([ 5 ] -> [ instancesVariable ]) }
 ]
 
 { #category : 'unused-leaf-in-c-coerce' }
-SLDeadCodeEliminationTestClass >> methodWithUnusedInstanceVariableInCoerce [
+SLDeadCodeEliminationoldTestClass >> methodWithUnusedInstanceVariableInCoerce [
 
 	<returnTypeC: #void>
 	self cCoerce: instancesVariable to: #type
 ]
 
 { #category : 'unused-leaf-in-conditional-no-send-in-receiver' }
-SLDeadCodeEliminationTestClass >> methodWithUnusedInstanceVariableInIfFalseIfTrueNoSendInReceiver [
+SLDeadCodeEliminationoldTestClass >> methodWithUnusedInstanceVariableInIfFalseIfTrueNoSendInReceiver [
 
 	<returnTypeC: #void>
 	true
@@ -984,7 +984,7 @@ SLDeadCodeEliminationTestClass >> methodWithUnusedInstanceVariableInIfFalseIfTru
 ]
 
 { #category : 'unused-leaf-in-conditional-send-in-receiver' }
-SLDeadCodeEliminationTestClass >> methodWithUnusedInstanceVariableInIfFalseIfTrueSendInReceiver [
+SLDeadCodeEliminationoldTestClass >> methodWithUnusedInstanceVariableInIfFalseIfTrueSendInReceiver [
 
 	<returnTypeC: #void>
 	self method > 0 <= (self method: 3) = (self method: self method)
@@ -993,14 +993,14 @@ SLDeadCodeEliminationTestClass >> methodWithUnusedInstanceVariableInIfFalseIfTru
 ]
 
 { #category : 'unused-leaf-in-conditional-no-send-in-receiver' }
-SLDeadCodeEliminationTestClass >> methodWithUnusedInstanceVariableInIfFalseNoSendInReceiver [
+SLDeadCodeEliminationoldTestClass >> methodWithUnusedInstanceVariableInIfFalseNoSendInReceiver [
 
 	<returnTypeC: #void>
 	true ifFalse: [ instancesVariable ]
 ]
 
 { #category : 'unused-leaf-in-conditional-send-in-receiver' }
-SLDeadCodeEliminationTestClass >> methodWithUnusedInstanceVariableInIfFalseSendInReceiver [
+SLDeadCodeEliminationoldTestClass >> methodWithUnusedInstanceVariableInIfFalseSendInReceiver [
 
 	<returnTypeC: #void>
 	self method > 0 <= (self method: 3) = (self method: self method)
@@ -1008,14 +1008,14 @@ SLDeadCodeEliminationTestClass >> methodWithUnusedInstanceVariableInIfFalseSendI
 ]
 
 { #category : 'unused-leaf-in-conditional-no-send-in-receiver' }
-SLDeadCodeEliminationTestClass >> methodWithUnusedInstanceVariableInIfNilIfNotNilNoSendInReceiver [
+SLDeadCodeEliminationoldTestClass >> methodWithUnusedInstanceVariableInIfNilIfNotNilNoSendInReceiver [
 
 	<returnTypeC: #void>
 	nil ifNil: [ instancesVariable ] ifNotNil: [ instancesVariable ]
 ]
 
 { #category : 'unused-leaf-in-conditional-send-in-receiver' }
-SLDeadCodeEliminationTestClass >> methodWithUnusedInstanceVariableInIfNilIfNotNilSendInReceiver [
+SLDeadCodeEliminationoldTestClass >> methodWithUnusedInstanceVariableInIfNilIfNotNilSendInReceiver [
 
 	<returnTypeC: #void>
 	(self method: self method)
@@ -1024,28 +1024,28 @@ SLDeadCodeEliminationTestClass >> methodWithUnusedInstanceVariableInIfNilIfNotNi
 ]
 
 { #category : 'unused-leaf-in-conditional-no-send-in-receiver' }
-SLDeadCodeEliminationTestClass >> methodWithUnusedInstanceVariableInIfNilNoSendInReceiver [
+SLDeadCodeEliminationoldTestClass >> methodWithUnusedInstanceVariableInIfNilNoSendInReceiver [
 
 	<returnTypeC: #void>
 	nil ifNil: [ instancesVariable ]
 ]
 
 { #category : 'unused-leaf-in-conditional-send-in-receiver' }
-SLDeadCodeEliminationTestClass >> methodWithUnusedInstanceVariableInIfNilSendInReceiver [
+SLDeadCodeEliminationoldTestClass >> methodWithUnusedInstanceVariableInIfNilSendInReceiver [
 
 	<returnTypeC: #void>
 	(self method: self method) ifNil: [ instancesVariable ]
 ]
 
 { #category : 'unused-leaf-in-conditional-no-send-in-receiver' }
-SLDeadCodeEliminationTestClass >> methodWithUnusedInstanceVariableInIfNotNilIfNilNoSendInReceiver [
+SLDeadCodeEliminationoldTestClass >> methodWithUnusedInstanceVariableInIfNotNilIfNilNoSendInReceiver [
 
 	<returnTypeC: #void>
 	nil ifNotNil: [ instancesVariable ] ifNil: [ instancesVariable ]
 ]
 
 { #category : 'unused-leaf-in-conditional-send-in-receiver' }
-SLDeadCodeEliminationTestClass >> methodWithUnusedInstanceVariableInIfNotNilIfNilSendInReceiver [
+SLDeadCodeEliminationoldTestClass >> methodWithUnusedInstanceVariableInIfNotNilIfNilSendInReceiver [
 
 	<returnTypeC: #void>
 	(self method: self method)
@@ -1054,21 +1054,21 @@ SLDeadCodeEliminationTestClass >> methodWithUnusedInstanceVariableInIfNotNilIfNi
 ]
 
 { #category : 'unused-leaf-in-conditional-no-send-in-receiver' }
-SLDeadCodeEliminationTestClass >> methodWithUnusedInstanceVariableInIfNotNilNoSendInReceiver [
+SLDeadCodeEliminationoldTestClass >> methodWithUnusedInstanceVariableInIfNotNilNoSendInReceiver [
 
 	<returnTypeC: #void>
 	nil ifNotNil: [ instancesVariable ]
 ]
 
 { #category : 'unused-leaf-in-conditional-send-in-receiver' }
-SLDeadCodeEliminationTestClass >> methodWithUnusedInstanceVariableInIfNotNilSendInReceiver [
+SLDeadCodeEliminationoldTestClass >> methodWithUnusedInstanceVariableInIfNotNilSendInReceiver [
 
 	<returnTypeC: #void>
 	(self method: self method) ifNotNil: [ instancesVariable ]
 ]
 
 { #category : 'unused-leaf-in-conditional-no-send-in-receiver' }
-SLDeadCodeEliminationTestClass >> methodWithUnusedInstanceVariableInIfTrueIfFalseNoSendInReceiver [
+SLDeadCodeEliminationoldTestClass >> methodWithUnusedInstanceVariableInIfTrueIfFalseNoSendInReceiver [
 
 	<returnTypeC: #void>
 	true
@@ -1077,7 +1077,7 @@ SLDeadCodeEliminationTestClass >> methodWithUnusedInstanceVariableInIfTrueIfFals
 ]
 
 { #category : 'unused-leaf-in-conditional-send-in-receiver' }
-SLDeadCodeEliminationTestClass >> methodWithUnusedInstanceVariableInIfTrueIfFalseSendInReceiver [
+SLDeadCodeEliminationoldTestClass >> methodWithUnusedInstanceVariableInIfTrueIfFalseSendInReceiver [
 
 	<returnTypeC: #void>
 	self method > 0 <= (self method: 3) = (self method: self method)
@@ -1086,14 +1086,14 @@ SLDeadCodeEliminationTestClass >> methodWithUnusedInstanceVariableInIfTrueIfFals
 ]
 
 { #category : 'unused-leaf-in-conditional-no-send-in-receiver' }
-SLDeadCodeEliminationTestClass >> methodWithUnusedInstanceVariableInIfTrueNoSendInReceiver [
+SLDeadCodeEliminationoldTestClass >> methodWithUnusedInstanceVariableInIfTrueNoSendInReceiver [
 
 	<returnTypeC: #void>
 	true ifTrue: [ instancesVariable ]
 ]
 
 { #category : 'unused-leaf-in-conditional-send-in-receiver' }
-SLDeadCodeEliminationTestClass >> methodWithUnusedInstanceVariableInIfTrueSendInReceiver [
+SLDeadCodeEliminationoldTestClass >> methodWithUnusedInstanceVariableInIfTrueSendInReceiver [
 
 	<returnTypeC: #void>
 	self method > 0 <= (self method: 3) = (self method: self method)
@@ -1101,7 +1101,7 @@ SLDeadCodeEliminationTestClass >> methodWithUnusedInstanceVariableInIfTrueSendIn
 ]
 
 { #category : 'unused-leaf-in-switch-no-send-in-expression' }
-SLDeadCodeEliminationTestClass >> methodWithUnusedInstanceVariableReturnInCaseOfAndUnusedInstanceVariableInOtherwiseNoSendInExpression: anInt [
+SLDeadCodeEliminationoldTestClass >> methodWithUnusedInstanceVariableReturnInCaseOfAndUnusedInstanceVariableInOtherwiseNoSendInExpression: anInt [
 
 	<returnTypeC: #void>
 	anInt
@@ -1114,7 +1114,7 @@ SLDeadCodeEliminationTestClass >> methodWithUnusedInstanceVariableReturnInCaseOf
 ]
 
 { #category : 'unused-leaf-in-switch-send-in-expression' }
-SLDeadCodeEliminationTestClass >> methodWithUnusedInstanceVariableReturnInCaseOfAndUnusedInstanceVariableInOtherwiseSendInExpression [
+SLDeadCodeEliminationoldTestClass >> methodWithUnusedInstanceVariableReturnInCaseOfAndUnusedInstanceVariableInOtherwiseSendInExpression [
 
 	<returnTypeC: #void>
 	(self method: 3)
@@ -1127,7 +1127,7 @@ SLDeadCodeEliminationTestClass >> methodWithUnusedInstanceVariableReturnInCaseOf
 ]
 
 { #category : 'unused-leaf' }
-SLDeadCodeEliminationTestClass >> methodWithUnusedVariable [
+SLDeadCodeEliminationoldTestClass >> methodWithUnusedVariable [
 
 	<returnTypeC: #void>
 	| i |
@@ -1135,7 +1135,7 @@ SLDeadCodeEliminationTestClass >> methodWithUnusedVariable [
 ]
 
 { #category : 'unused-leaf-in-switch-no-send-in-expression' }
-SLDeadCodeEliminationTestClass >> methodWithUnusedVariableAndReturnInCaseOfNoSendInExpression: anInt [
+SLDeadCodeEliminationoldTestClass >> methodWithUnusedVariableAndReturnInCaseOfNoSendInExpression: anInt [
 
 	<returnTypeC: #void>
 	| i |
@@ -1147,7 +1147,7 @@ SLDeadCodeEliminationTestClass >> methodWithUnusedVariableAndReturnInCaseOfNoSen
 ]
 
 { #category : 'unused-leaf-in-switch-send-in-expression' }
-SLDeadCodeEliminationTestClass >> methodWithUnusedVariableAndReturnInCaseOfSendInExpression [
+SLDeadCodeEliminationoldTestClass >> methodWithUnusedVariableAndReturnInCaseOfSendInExpression [
 
 	<returnTypeC: #void>
 	| i |
@@ -1159,7 +1159,7 @@ SLDeadCodeEliminationTestClass >> methodWithUnusedVariableAndReturnInCaseOfSendI
 ]
 
 { #category : 'unused-leaf-in-switch-no-send-in-expression' }
-SLDeadCodeEliminationTestClass >> methodWithUnusedVariableInCaseOfAndReturnInOtherwiseNoSendInExpression: anInt [
+SLDeadCodeEliminationoldTestClass >> methodWithUnusedVariableInCaseOfAndReturnInOtherwiseNoSendInExpression: anInt [
 
 	<returnTypeC: #void>
 	| i |
@@ -1173,7 +1173,7 @@ SLDeadCodeEliminationTestClass >> methodWithUnusedVariableInCaseOfAndReturnInOth
 ]
 
 { #category : 'unused-leaf-in-switch-send-in-expression' }
-SLDeadCodeEliminationTestClass >> methodWithUnusedVariableInCaseOfAndReturnInOtherwiseSendInExpression [
+SLDeadCodeEliminationoldTestClass >> methodWithUnusedVariableInCaseOfAndReturnInOtherwiseSendInExpression [
 
 	<returnTypeC: #void>
 	| i |
@@ -1187,7 +1187,7 @@ SLDeadCodeEliminationTestClass >> methodWithUnusedVariableInCaseOfAndReturnInOth
 ]
 
 { #category : 'unused-leaf-in-switch-no-send-in-expression' }
-SLDeadCodeEliminationTestClass >> methodWithUnusedVariableInCaseOfAndUnusedVariableInOtherwiseNoSendInExpression: anInt [
+SLDeadCodeEliminationoldTestClass >> methodWithUnusedVariableInCaseOfAndUnusedVariableInOtherwiseNoSendInExpression: anInt [
 
 	<returnTypeC: #void>
 	| i |
@@ -1199,7 +1199,7 @@ SLDeadCodeEliminationTestClass >> methodWithUnusedVariableInCaseOfAndUnusedVaria
 ]
 
 { #category : 'unused-leaf-in-switch-send-in-expression' }
-SLDeadCodeEliminationTestClass >> methodWithUnusedVariableInCaseOfAndUnusedVariableInOtherwiseSendInExpression [
+SLDeadCodeEliminationoldTestClass >> methodWithUnusedVariableInCaseOfAndUnusedVariableInOtherwiseSendInExpression [
 
 	<returnTypeC: #void>
 	| i |
@@ -1211,7 +1211,7 @@ SLDeadCodeEliminationTestClass >> methodWithUnusedVariableInCaseOfAndUnusedVaria
 ]
 
 { #category : 'unused-leaf-in-switch-no-send-in-expression' }
-SLDeadCodeEliminationTestClass >> methodWithUnusedVariableInCaseOfNoSendInExpression: anInt [
+SLDeadCodeEliminationoldTestClass >> methodWithUnusedVariableInCaseOfNoSendInExpression: anInt [
 
 	<returnTypeC: #void>
 	| i |
@@ -1219,7 +1219,7 @@ SLDeadCodeEliminationTestClass >> methodWithUnusedVariableInCaseOfNoSendInExpres
 ]
 
 { #category : 'unused-leaf-in-switch-send-in-expression' }
-SLDeadCodeEliminationTestClass >> methodWithUnusedVariableInCaseOfSendInExpression [
+SLDeadCodeEliminationoldTestClass >> methodWithUnusedVariableInCaseOfSendInExpression [
 
 	<returnTypeC: #void>
 	| i |
@@ -1227,7 +1227,7 @@ SLDeadCodeEliminationTestClass >> methodWithUnusedVariableInCaseOfSendInExpressi
 ]
 
 { #category : 'unused-leaf-in-c-coerce' }
-SLDeadCodeEliminationTestClass >> methodWithUnusedVariableInCoerce [
+SLDeadCodeEliminationoldTestClass >> methodWithUnusedVariableInCoerce [
 
 	<returnTypeC: #void>
 	| i |
@@ -1235,7 +1235,7 @@ SLDeadCodeEliminationTestClass >> methodWithUnusedVariableInCoerce [
 ]
 
 { #category : 'unused-leaf-in-conditional-no-send-in-receiver' }
-SLDeadCodeEliminationTestClass >> methodWithUnusedVariableInIfFalseIfTrueNoSendInReceiver [
+SLDeadCodeEliminationoldTestClass >> methodWithUnusedVariableInIfFalseIfTrueNoSendInReceiver [
 
 	<returnTypeC: #void>
 	| i |
@@ -1245,7 +1245,7 @@ SLDeadCodeEliminationTestClass >> methodWithUnusedVariableInIfFalseIfTrueNoSendI
 ]
 
 { #category : 'unused-leaf-in-conditional-send-in-receiver' }
-SLDeadCodeEliminationTestClass >> methodWithUnusedVariableInIfFalseIfTrueSendInReceiver [
+SLDeadCodeEliminationoldTestClass >> methodWithUnusedVariableInIfFalseIfTrueSendInReceiver [
 
 	<returnTypeC: #void>
 	| i |
@@ -1255,7 +1255,7 @@ SLDeadCodeEliminationTestClass >> methodWithUnusedVariableInIfFalseIfTrueSendInR
 ]
 
 { #category : 'unused-leaf-in-conditional-no-send-in-receiver' }
-SLDeadCodeEliminationTestClass >> methodWithUnusedVariableInIfFalseNoSendInReceiver [
+SLDeadCodeEliminationoldTestClass >> methodWithUnusedVariableInIfFalseNoSendInReceiver [
 
 	<returnTypeC: #void>
 	| i |
@@ -1263,7 +1263,7 @@ SLDeadCodeEliminationTestClass >> methodWithUnusedVariableInIfFalseNoSendInRecei
 ]
 
 { #category : 'unused-leaf-in-conditional-send-in-receiver' }
-SLDeadCodeEliminationTestClass >> methodWithUnusedVariableInIfFalseSendInReceiver [
+SLDeadCodeEliminationoldTestClass >> methodWithUnusedVariableInIfFalseSendInReceiver [
 
 	<returnTypeC: #void>
 	| i |
@@ -1272,7 +1272,7 @@ SLDeadCodeEliminationTestClass >> methodWithUnusedVariableInIfFalseSendInReceive
 ]
 
 { #category : 'unused-leaf-in-conditional-no-send-in-receiver' }
-SLDeadCodeEliminationTestClass >> methodWithUnusedVariableInIfNilIfNotNilNoSendInReceiver [
+SLDeadCodeEliminationoldTestClass >> methodWithUnusedVariableInIfNilIfNotNilNoSendInReceiver [
 
 	<returnTypeC: #void>
 	| i |
@@ -1280,7 +1280,7 @@ SLDeadCodeEliminationTestClass >> methodWithUnusedVariableInIfNilIfNotNilNoSendI
 ]
 
 { #category : 'unused-leaf-in-conditional-send-in-receiver' }
-SLDeadCodeEliminationTestClass >> methodWithUnusedVariableInIfNilIfNotNilSendInReceiver [
+SLDeadCodeEliminationoldTestClass >> methodWithUnusedVariableInIfNilIfNotNilSendInReceiver [
 
 	<returnTypeC: #void>
 	| i |
@@ -1290,7 +1290,7 @@ SLDeadCodeEliminationTestClass >> methodWithUnusedVariableInIfNilIfNotNilSendInR
 ]
 
 { #category : 'unused-leaf-in-conditional-no-send-in-receiver' }
-SLDeadCodeEliminationTestClass >> methodWithUnusedVariableInIfNilNoSendInReceiver [
+SLDeadCodeEliminationoldTestClass >> methodWithUnusedVariableInIfNilNoSendInReceiver [
 
 	<returnTypeC: #void>
 	| i |
@@ -1298,7 +1298,7 @@ SLDeadCodeEliminationTestClass >> methodWithUnusedVariableInIfNilNoSendInReceive
 ]
 
 { #category : 'unused-leaf-in-conditional-send-in-receiver' }
-SLDeadCodeEliminationTestClass >> methodWithUnusedVariableInIfNilSendInReceiver [
+SLDeadCodeEliminationoldTestClass >> methodWithUnusedVariableInIfNilSendInReceiver [
 
 	<returnTypeC: #void>
 	| i |
@@ -1306,7 +1306,7 @@ SLDeadCodeEliminationTestClass >> methodWithUnusedVariableInIfNilSendInReceiver 
 ]
 
 { #category : 'unused-leaf-in-conditional-no-send-in-receiver' }
-SLDeadCodeEliminationTestClass >> methodWithUnusedVariableInIfNotNilIfNilNoSendInReceiver [
+SLDeadCodeEliminationoldTestClass >> methodWithUnusedVariableInIfNotNilIfNilNoSendInReceiver [
 
 	<returnTypeC: #void>
 	| i |
@@ -1314,7 +1314,7 @@ SLDeadCodeEliminationTestClass >> methodWithUnusedVariableInIfNotNilIfNilNoSendI
 ]
 
 { #category : 'unused-leaf-in-conditional-send-in-receiver' }
-SLDeadCodeEliminationTestClass >> methodWithUnusedVariableInIfNotNilIfNilSendInReceiver [
+SLDeadCodeEliminationoldTestClass >> methodWithUnusedVariableInIfNotNilIfNilSendInReceiver [
 
 	<returnTypeC: #void>
 	| i |
@@ -1324,7 +1324,7 @@ SLDeadCodeEliminationTestClass >> methodWithUnusedVariableInIfNotNilIfNilSendInR
 ]
 
 { #category : 'unused-leaf-in-conditional-no-send-in-receiver' }
-SLDeadCodeEliminationTestClass >> methodWithUnusedVariableInIfNotNilNoSendInReceiver [
+SLDeadCodeEliminationoldTestClass >> methodWithUnusedVariableInIfNotNilNoSendInReceiver [
 
 	<returnTypeC: #void>
 	| i |
@@ -1332,7 +1332,7 @@ SLDeadCodeEliminationTestClass >> methodWithUnusedVariableInIfNotNilNoSendInRece
 ]
 
 { #category : 'unused-leaf-in-conditional-send-in-receiver' }
-SLDeadCodeEliminationTestClass >> methodWithUnusedVariableInIfNotNilSendInReceiver [
+SLDeadCodeEliminationoldTestClass >> methodWithUnusedVariableInIfNotNilSendInReceiver [
 
 	<returnTypeC: #void>
 	| i |
@@ -1341,7 +1341,7 @@ SLDeadCodeEliminationTestClass >> methodWithUnusedVariableInIfNotNilSendInReceiv
 ]
 
 { #category : 'unused-leaf-in-conditional-no-send-in-receiver' }
-SLDeadCodeEliminationTestClass >> methodWithUnusedVariableInIfTrueIfFalseNoSendInReceiver [
+SLDeadCodeEliminationoldTestClass >> methodWithUnusedVariableInIfTrueIfFalseNoSendInReceiver [
 
 	<returnTypeC: #void>
 	| i |
@@ -1351,7 +1351,7 @@ SLDeadCodeEliminationTestClass >> methodWithUnusedVariableInIfTrueIfFalseNoSendI
 ]
 
 { #category : 'unused-leaf-in-conditional-send-in-receiver' }
-SLDeadCodeEliminationTestClass >> methodWithUnusedVariableInIfTrueIfFalseSendInReceiver [
+SLDeadCodeEliminationoldTestClass >> methodWithUnusedVariableInIfTrueIfFalseSendInReceiver [
 
 	<returnTypeC: #void>
 	| i |
@@ -1361,7 +1361,7 @@ SLDeadCodeEliminationTestClass >> methodWithUnusedVariableInIfTrueIfFalseSendInR
 ]
 
 { #category : 'unused-leaf-in-conditional-no-send-in-receiver' }
-SLDeadCodeEliminationTestClass >> methodWithUnusedVariableInIfTrueNoSendInReceiver [
+SLDeadCodeEliminationoldTestClass >> methodWithUnusedVariableInIfTrueNoSendInReceiver [
 
 	<returnTypeC: #void>
 	| i |
@@ -1369,7 +1369,7 @@ SLDeadCodeEliminationTestClass >> methodWithUnusedVariableInIfTrueNoSendInReceiv
 ]
 
 { #category : 'unused-leaf-in-conditional-send-in-receiver' }
-SLDeadCodeEliminationTestClass >> methodWithUnusedVariableInIfTrueSendInReceiver [
+SLDeadCodeEliminationoldTestClass >> methodWithUnusedVariableInIfTrueSendInReceiver [
 
 	<returnTypeC: #void>
 	| i |
@@ -1378,7 +1378,7 @@ SLDeadCodeEliminationTestClass >> methodWithUnusedVariableInIfTrueSendInReceiver
 ]
 
 { #category : 'unused-leaf-in-switch-no-send-in-expression' }
-SLDeadCodeEliminationTestClass >> methodWithUnusedVariableReturnInCaseOfAndUnusedVariableInOtherwiseNoSendInExpression: anInt [
+SLDeadCodeEliminationoldTestClass >> methodWithUnusedVariableReturnInCaseOfAndUnusedVariableInOtherwiseNoSendInExpression: anInt [
 
 	<returnTypeC: #void>
 	| i |
@@ -1392,7 +1392,7 @@ SLDeadCodeEliminationTestClass >> methodWithUnusedVariableReturnInCaseOfAndUnuse
 ]
 
 { #category : 'unused-leaf-in-switch-send-in-expression' }
-SLDeadCodeEliminationTestClass >> methodWithUnusedVariableReturnInCaseOfAndUnusedVariableInOtherwiseSendInExpression [
+SLDeadCodeEliminationoldTestClass >> methodWithUnusedVariableReturnInCaseOfAndUnusedVariableInOtherwiseSendInExpression [
 
 	<returnTypeC: #void>
 	| i |
@@ -1406,7 +1406,7 @@ SLDeadCodeEliminationTestClass >> methodWithUnusedVariableReturnInCaseOfAndUnuse
 ]
 
 { #category : 'used-leaf-in-assignment' }
-SLDeadCodeEliminationTestClass >> methodWithVariableInAssignment [
+SLDeadCodeEliminationoldTestClass >> methodWithVariableInAssignment [
 
 	<returnTypeC: #void>
 	| i j |
@@ -1416,7 +1416,7 @@ SLDeadCodeEliminationTestClass >> methodWithVariableInAssignment [
 ]
 
 { #category : 'used-leaf-in-return' }
-SLDeadCodeEliminationTestClass >> methodWithVariableInReturn [
+SLDeadCodeEliminationoldTestClass >> methodWithVariableInReturn [
 
 	| i |
 	i.
@@ -1424,7 +1424,7 @@ SLDeadCodeEliminationTestClass >> methodWithVariableInReturn [
 ]
 
 { #category : 'only-comment' }
-SLDeadCodeEliminationTestClass >> switchWithOnlyCommentNoSendInReceiver: anInt [
+SLDeadCodeEliminationoldTestClass >> switchWithOnlyCommentNoSendInReceiver: anInt [
 
 	<returnTypeC: #void>
 	anInt
@@ -1435,7 +1435,7 @@ SLDeadCodeEliminationTestClass >> switchWithOnlyCommentNoSendInReceiver: anInt [
 ]
 
 { #category : 'only-comment' }
-SLDeadCodeEliminationTestClass >> switchWithOnlyCommentSendInReceiver [
+SLDeadCodeEliminationoldTestClass >> switchWithOnlyCommentSendInReceiver [
 
 	<returnTypeC: #void>
 	(self method: self method)

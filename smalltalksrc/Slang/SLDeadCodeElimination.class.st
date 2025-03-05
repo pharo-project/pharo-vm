@@ -212,7 +212,9 @@ SLDeadCodeElimination >> initMarkAndWorkList [
 
 		node isGoTo ifTrue: [ self markAsStatementAndAddToWorkList: node ].
 
-		node isLabel ifTrue: [ self markAsStatementAndAddToWorkList: node ] ]
+		node isLabel ifTrue: [ self markAsStatementAndAddToWorkList: node ].
+
+		node isSwitch ifTrue: [ self markAsStatementAndAddToWorkList: node ] ]
 ]
 
 { #category : 'initialization' }
@@ -304,6 +306,7 @@ SLDeadCodeElimination >> removeDeadCodeInCurrentMethod [
 
 	| i |
 	currentMethod expandAST.
+	self halt.
 	self initMarkAndWorkList.
 	[ workList isEmpty ] whileFalse: [
 		i := workList removeFirst.
@@ -347,7 +350,7 @@ SLDeadCodeElimination >> visitAssignmentNode: anAssignmentNode [
 { #category : 'mark' }
 SLDeadCodeElimination >> visitCaseStatementNode: aCaseStmtNode [
 
-	self markAsStatement: aCaseStmtNode.
+	self markAsStatementAndAddToWorkList: aCaseStmtNode.
 	self markAsExpressionAndAddToWorkList: aCaseStmtNode expression.
 
 	aCaseStmtNode cases do: [ :case |
@@ -371,7 +374,7 @@ SLDeadCodeElimination >> visitGoToNode: aTGotoNode [
 { #category : 'mark' }
 SLDeadCodeElimination >> visitInlineNode: anInlineNode [
 
-	self markAsStatement: anInlineNode.
+	self markAsStatementAndAddToWorkList: anInlineNode.
 	(markedElementsAsExpression includes: self) ifTrue: [
 		self markAsExpressionAndAddToWorkList: anInlineNode method parseTree ]
 ]
@@ -426,7 +429,16 @@ SLDeadCodeElimination >> visitStatementListNode: aStatementsListNode [
 { #category : 'mark' }
 SLDeadCodeElimination >> visitSwitchStatementNode: aSwitchStatementNode [
 
-	self markAsStatement: aSwitchStatementNode.
+	| otherwiseOrNil expressionOrStatementSend |
+	otherwiseOrNil := aSwitchStatementNode otherwiseOrNil.
+	expressionOrStatementSend := (markedElementsAsExpression includes:
+		                              aSwitchStatementNode)
+		                             ifTrue: [
+		                             #markAsExpressionAndAddToWorkList: ]
+		                             ifFalse: [
+		                             #markAsStatementAndAddToWorkList: ].
+
+	self markAsStatementAndAddToWorkList: aSwitchStatementNode.
 	self markAsExpressionAndAddToWorkList:
 		aSwitchStatementNode expression.
 
@@ -436,11 +448,14 @@ SLDeadCodeElimination >> visitSwitchStatementNode: aSwitchStatementNode [
 		caseStatements := c second.
 		caseLabels do: [ :label |
 			self markAsExpressionAndAddToWorkList: label ].
-		self markAsExpressionAndAddToWorkList: caseStatements ].
+		self
+			perform: expressionOrStatementSend asSymbol
+			withArguments: { caseStatements } ].
 
-	aSwitchStatementNode otherwiseOrNil ifNotNil: [
-		self markAsExpressionAndAddToWorkList:
-			aSwitchStatementNode otherwiseOrNil ]
+	otherwiseOrNil ifNotNil: [
+		self
+			perform: expressionOrStatementSend asSymbol
+			withArguments: { otherwiseOrNil } ]
 ]
 
 { #category : 'mark' }

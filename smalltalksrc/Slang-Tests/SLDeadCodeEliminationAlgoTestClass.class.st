@@ -1,6 +1,6 @@
 Class {
 	#name : 'SLDeadCodeEliminationAlgoTestClass',
-	#superclass : 'SlangClass',
+	#superclass : 'SlangStructType',
 	#category : 'Slang-Tests',
 	#package : 'Slang-Tests'
 }
@@ -89,10 +89,10 @@ SLDeadCodeEliminationAlgoTestClass >> methodWithCCoerceInExpression [
 { #category : 'useless-switch' }
 SLDeadCodeEliminationAlgoTestClass >> methodWithEmptyCaseOfSendInReceiver [
 
-	<returnTypeC: #void>
 	self method caseOf: {
 			([ 4 ] -> [ ^ 5 ]).
-			([ 6 ] -> [  ]) }
+			([ 6 ] -> [  ]) }.
+	^ 6
 ]
 
 { #category : 'never-used-locals' }
