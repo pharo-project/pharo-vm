@@ -646,6 +646,8 @@ TSendNode >> removeUnusedNodesInBranch: aChild [
 
 	| branchIndex |
 	branchIndex := arguments indexOf: aChild.
+	"the receiver will be handle after the suppression of all arguments"
+	branchIndex = 0 ifTrue: [ ^ self ].
 	self arguments: (arguments select: [ :e | e ~= aChild ]).
 	self argumentsIsEmptyOrHasNothingButComments
 		ifTrue: [
@@ -824,9 +826,11 @@ TSendNode >> transformReceiverAfterEmptyArguments [
 	sendToCollect := OrderedCollection new.
 	receiver collectSendInSelf: sendToCollect.
 	sendToCollect isNotEmpty ifTrue: [
-		self parent
-			replaceChild: self
-			with: (TStatementListNode statements: sendToCollect) ]
+		| replacement |
+		replacement := TStatementListNode statements: sendToCollect.
+		self parent replaceChild: self with: replacement.
+		^ replacement ].
+	^ nil
 ]
 
 { #category : 'type inference' }

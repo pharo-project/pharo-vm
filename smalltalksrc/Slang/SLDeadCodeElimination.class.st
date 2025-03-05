@@ -182,14 +182,64 @@ SLDeadCodeElimination >> findAndHandleStatementsVariablesIn: aNode [
 ]
 
 { #category : 'mark' }
-SLDeadCodeElimination >> handleConditionalSend: aSendNode [
+SLDeadCodeElimination >> handleBinaryIterativeSend: aSendNode [
+	"directly reduce send like '[self methodWithSideEffect] whileTrue as self methodWithSideEffect' since the algorithm won't detect this case as useless code, it will however detect it for send like '[true] whileTrue' (which will be supress the send) or '[var. self methodWithSideEffect] whileTrue' (which will trigger the optimisation later by removing var)"
 
-	aSendNode isConditionalSend ifFalse: [ ^ false ].
+	| stmts |
+	aSendNode isBinaryIterativeSend ifFalse: [ ^ false ].
+	stmts := aSendNode receiver statements.
+	aSendNode receiver statements size > 1
+		ifTrue: [
+			self markAsStatementAndAddToWorkList: aSendNode.
+			self markAsExpressionAndAddToWorkList: aSendNode receiver.
+			(markedElementsAsExpression includes: aSendNode) ifTrue: [
+				aSendNode arguments do: [ :arg |
+					self markAsExpressionAndAddToWorkList: arg ] ] ]
+		ifFalse: [
+			aSendNode transformReceiverAfterEmptyArguments
+				ifNotNil: [ :replacement |
+					replacement statements do: [ :stmt |
+						self markAsExpressionAndAddToWorkList: stmt ] ]
+				ifNil: [ aSendNode parent removeUnusedNodesInBranch: aSendNode ] ].
+
+	^ true
+]
+
+{ #category : 'mark' }
+SLDeadCodeElimination >> handleConditionalAndBinaryIterativeSend: aSendNode [
+
+	(aSendNode isConditionalSend or: [ aSendNode isBinaryIterativeSend ])
+		ifFalse: [ ^ false ].
 	self markAsStatementAndAddToWorkList: aSendNode.
 	self markAsExpressionAndAddToWorkList: aSendNode receiver.
 	(markedElementsAsExpression includes: aSendNode) ifTrue: [
 		aSendNode arguments do: [ :arg |
 			self markAsExpressionAndAddToWorkList: arg ] ].
+	^ true
+]
+
+{ #category : 'mark' }
+SLDeadCodeElimination >> handleUnaryIterativeSend: aSendNode [
+	"directly reduce send like '[self methodWithSideEffect] whileTrue as self methodWithSideEffect' since the algorithm won't detect this case as useless code, it will however detect it for send like '[true] whileTrue' (which will be supress the send) or '[var. self methodWithSideEffect] whileTrue' (which will trigger the optimisation later by removing var)"
+
+	| stmts |
+	aSendNode isUnaryIterativeSendWithImportantLastStatement ifFalse: [
+		^ false ].
+	stmts := aSendNode receiver statements.
+	aSendNode receiver statements size > 1
+		ifTrue: [
+			self markAsStatementAndAddToWorkList: aSendNode.
+			self markAsExpressionAndAddToWorkList: aSendNode receiver.
+			(markedElementsAsExpression includes: aSendNode) ifTrue: [
+				aSendNode arguments do: [ :arg |
+					self markAsExpressionAndAddToWorkList: arg ] ] ]
+		ifFalse: [
+			aSendNode transformReceiverAfterEmptyArguments
+				ifNotNil: [ :replacement |
+					replacement statements do: [ :stmt |
+						self markAsExpressionAndAddToWorkList: stmt ] ]
+				ifNil: [ aSendNode parent removeUnusedNodesInBranch: aSendNode ] ].
+
 	^ true
 ]
 
@@ -306,7 +356,6 @@ SLDeadCodeElimination >> removeDeadCodeInCurrentMethod [
 
 	| i |
 	currentMethod expandAST.
-	self halt.
 	self initMarkAndWorkList.
 	[ workList isEmpty ] whileFalse: [
 		i := workList removeFirst.
@@ -396,7 +445,8 @@ SLDeadCodeElimination >> visitReturnNode: aReturnNode [
 { #category : 'mark' }
 SLDeadCodeElimination >> visitSendNode: aSendNode [
 
-	(self handleConditionalSend: aSendNode) ifTrue: [ ^ self ].
+	(self handleConditionalAndBinaryIterativeSend: aSendNode) ifTrue: [ ^ self ].
+		(self handleUnaryIterativeSend: aSendNode) ifTrue: [ ^ self ].
 	self markAsStatementAndAddToWorkList: aSendNode.
 	self markAsExpressionAndAddToWorkList: aSendNode receiver.
 
