@@ -130,10 +130,13 @@ Class {
 		'printInstructions',
 		'compilationTrace',
 		'clickConfirm',
+		'breakPC',
+		'breakBlock',
 		'singleStep',
 		'guardPageSize',
 		'traceFlags',
 		'traceStores',
+		'breakMethod',
 		'methodObj',
 		'enumeratingCogMethod',
 		'methodHeader',
@@ -2299,7 +2302,9 @@ Cogit >> MoveM16: offset r: baseReg R: destReg [
 Cogit >> MoveM32: offset r: baseReg R: destReg [
 	<inline: true>
 	<returnTypeC: #'AbstractInstruction *'>
-	^self gen: MoveM32rR quickConstant: offset operand: baseReg operand: destReg
+	^ backEnd genMoveM32: offset r: baseReg R: destReg
+	
+
 ]
 
 { #category : 'abstract instructions' }
@@ -5759,11 +5764,16 @@ Cogit >> deltaToSkipPrimAndErrorStoreIn: aMethodObj header: aMethodHeader [
 Cogit >> disableCodeZoneWrite [
 
 	<inline: true>
-	
-	self 
-		cppIf: #'READ_ONLY_CODE_ZONE'
-		ifTrue:[	self cCall: 'pthread_jit_write_protect_np' withArguments: {true} ].
-	
+	self cppIf: #READ_ONLY_CODE_ZONE ifTrue: [
+		self
+			cppIf: #__APPLE__
+			ifTrue: [
+			self cCall: 'pthread_jit_write_protect_np' withArguments: { true } ]
+			ifFalse: [
+				self cCall: 'sqMakeMemoryExecutableFromTo' withArguments: {
+						objectMemory codeStart.
+						objectMemory codeEnd } ] ].
+
 	jitCodeZoneWriteEnabled := false
 ]
 
@@ -5789,15 +5799,20 @@ Cogit >> emptyRegisterMask [
 Cogit >> enableCodeZoneWrite [
 
 	<inline: true>
+	jitCodeZoneWriteEnabled ifTrue: [
+		self error: 'Code zone writing is not reentrant' ].
 
-	jitCodeZoneWriteEnabled ifTrue: [ self error: 'Code zone writing is not reentrant' ].
-	
-	self 
-		cppIf: #'READ_ONLY_CODE_ZONE'
-		ifTrue:[	self cCall: 'pthread_jit_write_protect_np' withArguments: {false} ].
-			
-	jitCodeZoneWriteEnabled := true.
+	self cppIf: #READ_ONLY_CODE_ZONE ifTrue: [
+		self
+			cppIf: #__APPLE__
+			ifTrue: [
+				self cCall: 'pthread_jit_write_protect_np' withArguments: { false } ]
+			ifFalse: [
+				self cCall: 'sqMakeMemoryNotExecutableFromTo' withArguments: {
+						objectMemory codeStart.
+						objectMemory codeEnd } ] ].
 
+	jitCodeZoneWriteEnabled := true
 ]
 
 { #category : 'code generation' }
@@ -8341,11 +8356,7 @@ Cogit >> initializeCodeZoneFrom: startAddress upTo: endAddress [
 		backEnd stopsFrom: startAddress to: endAddress - 1 ].
 
 	self
-		cCode: [
-			self cCall: 'sqMakeMemoryExecutableFromTo' withArguments: {
-					startAddress.
-					endAddress } ]
-		inSmalltalk: [
+		simulationOnly: [
 			startAddress = self class guardPageSize ifTrue: [
 				backEnd stopsFrom: 0 to: endAddress - 1 ].
 			self initializeProcessor ].
@@ -11138,6 +11149,18 @@ Cogit >> setCStackPointer: aStackPointer [
 		ifFalse: [(objectMemory
 					longAt: coInterpreter inMemoryCStackPointerAddress
 					put: aStackPointer) asVoidPointer]
+]
+
+{ #category : 'jit - api' }
+Cogit >> setHeaderOopOf: cogMethod to: aMethodHeaderOop [
+	"Change a JIT'ed method's header, enabling code zone wrote."
+
+	<api>
+	<var: #cogMethod type: #'CogMethod *'>
+	self assert: cogMethod cmType = CMMethod.
+
+	self enableCodeZoneWriteDuring: [
+		cogMethod methodHeader: aMethodHeaderOop ]
 ]
 
 { #category : 'initialization' }
