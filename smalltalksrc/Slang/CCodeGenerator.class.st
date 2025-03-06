@@ -1072,7 +1072,7 @@ CCodeGenerator >> emitCCodeOn: aStream doInlining: inlineFlag doAssertions: asse
 			checkForGlobalUsage: (m removeUnusedTempsAndNilIfRequiredIn: self)
 			in: m ].
 	self localizeGlobalVariables.
-	SLDeadCodeElimination new removeDeadCodeUsing: self.
+"	SLDeadCodeElimination new removeDeadCodeUsing: self."
 	"code generation"
 
 	"If we're outputting the VM put the main interpreter loop first for two reasons.
