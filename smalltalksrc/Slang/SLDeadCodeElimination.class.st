@@ -356,12 +356,12 @@ SLDeadCodeElimination >> removeDeadCodeInCurrentMethod [
 
 	| i |
 	currentMethod expandAST.
-	"self initMarkAndWorkList.
+	self initMarkAndWorkList.
 	[ workList isEmpty ] whileFalse: [
 		i := workList removeFirst.
 		self propagateMarkedElement: i ].
 	self clean.
-	self initialize"
+	self initialize
 ]
 
 { #category : 'dead-code-elimination' }
@@ -445,8 +445,9 @@ SLDeadCodeElimination >> visitReturnNode: aReturnNode [
 { #category : 'mark' }
 SLDeadCodeElimination >> visitSendNode: aSendNode [
 
-	(self handleConditionalAndBinaryIterativeSend: aSendNode) ifTrue: [ ^ self ].
-		(self handleUnaryIterativeSend: aSendNode) ifTrue: [ ^ self ].
+	"(self handleConditionalAndBinaryIterativeSend: aSendNode) ifTrue: [
+		^ self ].
+	(self handleUnaryIterativeSend: aSendNode) ifTrue: [ ^ self ]."
 	self markAsStatementAndAddToWorkList: aSendNode.
 	self markAsExpressionAndAddToWorkList: aSendNode receiver.
 
