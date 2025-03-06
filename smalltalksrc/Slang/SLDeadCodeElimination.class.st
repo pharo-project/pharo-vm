@@ -326,12 +326,12 @@ SLDeadCodeElimination >> mayMarkAssignementNode: anAssignmentNode [
 { #category : 'init-mark-and-worklist' }
 SLDeadCodeElimination >> mayMarkSendNode: aSendNode [
 
-	(aSendNode hasSideEffect not or: [
+	"(aSendNode hasSideEffect not or: [
 		 aSendNode isConditionalSend or: [
 			 aSendNode isIterativeSend or: [
 				 (self isStructAccessorWithNoSideEffect: aSendNode) or: [
 					 aSendNode selector beginsWith: #cCoerce ] ] ] ]) ifTrue: [
-		^ self ].
+		^ self ]."
 	self visitSendNode: aSendNode
 ]
 
@@ -445,9 +445,9 @@ SLDeadCodeElimination >> visitReturnNode: aReturnNode [
 { #category : 'mark' }
 SLDeadCodeElimination >> visitSendNode: aSendNode [
 
-	"(self handleConditionalAndBinaryIterativeSend: aSendNode) ifTrue: [
+	(self handleConditionalAndBinaryIterativeSend: aSendNode) ifTrue: [
 		^ self ].
-	(self handleUnaryIterativeSend: aSendNode) ifTrue: [ ^ self ]."
+	(self handleUnaryIterativeSend: aSendNode) ifTrue: [ ^ self ].
 	self markAsStatementAndAddToWorkList: aSendNode.
 	self markAsExpressionAndAddToWorkList: aSendNode receiver.
 
