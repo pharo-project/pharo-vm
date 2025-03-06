@@ -120,12 +120,12 @@ SLDeadCodeElimination >> clean [
 { #category : 'cleaning' }
 SLDeadCodeElimination >> cleanUnusedVariableDeclaration [
 
-	variableOccurences associationsDo: [ :assocNameStmtDict |
+	"variableOccurences associationsDo: [ :assocNameStmtDict |
 		| varName |
 		varName := assocNameStmtDict key.
 		assocNameStmtDict value associationsDo: [ :assocStmtCounter |
 			assocStmtCounter value <= 0 ifTrue: [
-				assocStmtCounter key removeLocal: varName ] ] ]
+				assocStmtCounter key removeLocal: varName ] ] ]"
 ]
 
 { #category : 'accessing' }
@@ -326,12 +326,12 @@ SLDeadCodeElimination >> mayMarkAssignementNode: anAssignmentNode [
 { #category : 'init-mark-and-worklist' }
 SLDeadCodeElimination >> mayMarkSendNode: aSendNode [
 
-	"(aSendNode hasSideEffect not or: [
+	(aSendNode hasSideEffect not or: [
 		 aSendNode isConditionalSend or: [
 			 aSendNode isIterativeSend or: [
 				 (self isStructAccessorWithNoSideEffect: aSendNode) or: [
 					 aSendNode selector beginsWith: #cCoerce ] ] ] ]) ifTrue: [
-		^ self ]."
+		^ self ].
 	self visitSendNode: aSendNode
 ]
 
