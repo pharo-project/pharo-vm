@@ -82,11 +82,11 @@ SLDeadCodeEliminationTestClass >> methodWithBlockValueAssignmentIntoSameVariable
 { #category : 'variable-not-assign-to-itself' }
 SLDeadCodeEliminationTestClass >> methodWithBlockValueAssignmentNotIntoSameVariableInArguments [
 
-	<returnTypeC: #void>
 	| var var2 |
 	var := [ :arg |
 	       self method: arg.
-	       arg ] value: var2
+	       arg ] value: var2.
+	^ var
 ]
 
 { #category : 'variable-assign-to-itself' }

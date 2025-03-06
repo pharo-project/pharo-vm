@@ -316,10 +316,12 @@ SLDeadCodeElimination >> markAsStatementAndAddToWorkList: aNode [
 { #category : 'init-mark-and-worklist' }
 SLDeadCodeElimination >> mayMarkAssignementNode: anAssignmentNode [
 
-	| variable |
+	| variable varName |
 	variable := anAssignmentNode variable.
+	varName := variable name.
 	self addDefinitionsFor: anAssignmentNode.
-	(variable name beginsWith: '_') ifTrue: [ ^ self ].
+	((varName beginsWith: '_') or: [
+		 currentMethod locals includes: varName ]) ifTrue: [ ^ self ].
 	self visitAssignmentNode: anAssignmentNode
 ]
 

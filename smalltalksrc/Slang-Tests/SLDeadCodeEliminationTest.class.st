@@ -174,18 +174,18 @@ SLDeadCodeEliminationTest >> testMethodWithBlockValueAssignmentNotIntoSameVariab
 		assert: translation
 		equals:
 			'/* SLDeadCodeEliminationTestClass>>#methodWithBlockValueAssignmentNotIntoSameVariableInArguments */
-static void
+static sqInt
 methodWithBlockValueAssignmentNotIntoSameVariableInArguments(SLDeadCodeEliminationTestClass * self_in_methodWithBlockValueAssignmentNotIntoSameVariableInArguments)
 {
+	sqInt var;
 	sqInt var2;
 
 	var2 = 0;
 	{
 		method(self_in_methodWithBlockValueAssignmentNotIntoSameVariableInArguments, var2);
+		var = var2;
 	}
-	{
-		return;
-	}
+	return var;
 }'
 ]
 
