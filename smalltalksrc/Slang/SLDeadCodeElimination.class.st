@@ -120,12 +120,12 @@ SLDeadCodeElimination >> clean [
 { #category : 'cleaning' }
 SLDeadCodeElimination >> cleanUnusedVariableDeclaration [
 
-	"variableOccurences associationsDo: [ :assocNameStmtDict |
+	variableOccurences associationsDo: [ :assocNameStmtDict |
 		| varName |
 		varName := assocNameStmtDict key.
 		assocNameStmtDict value associationsDo: [ :assocStmtCounter |
 			assocStmtCounter value <= 0 ifTrue: [
-				assocStmtCounter key removeLocal: varName ] ] ]"
+				assocStmtCounter key removeLocal: varName ] ] ]
 ]
 
 { #category : 'accessing' }
@@ -319,7 +319,7 @@ SLDeadCodeElimination >> mayMarkAssignementNode: anAssignmentNode [
 	| variable |
 	variable := anAssignmentNode variable.
 	self addDefinitionsFor: anAssignmentNode.
-	(currentMethod locals includes: variable name) ifTrue: [ ^ self ].
+	(variable name beginsWith: '_') ifTrue: [ ^ self ].
 	self visitAssignmentNode: anAssignmentNode
 ]
 
@@ -437,7 +437,7 @@ SLDeadCodeElimination >> visitLabeledCommentNode: aLabeledCommentNode [
 
 { #category : 'mark' }
 SLDeadCodeElimination >> visitReturnNode: aReturnNode [
-	"should't be called : return are handled in the first pass of the algorithm"
+	"nothing to do for an already marked returnNode"
 
 	
 ]
