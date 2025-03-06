@@ -356,12 +356,12 @@ SLDeadCodeElimination >> removeDeadCodeInCurrentMethod [
 
 	| i |
 	currentMethod expandAST.
-	self initMarkAndWorkList.
+	"self initMarkAndWorkList.
 	[ workList isEmpty ] whileFalse: [
 		i := workList removeFirst.
 		self propagateMarkedElement: i ].
 	self clean.
-	self initialize
+	self initialize"
 ]
 
 { #category : 'dead-code-elimination' }
