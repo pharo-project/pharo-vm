@@ -101,7 +101,7 @@ SLDeadCodeElimination >> addStmtListLocalsAndSuppressRedundantDeclarationIn: aSt
 	localVariableScope do: [ :assoc | allLocals addAll: assoc value ].
 	aStmtListNode locals do: [ :stmtLocal |
 		(allLocals includes: stmtLocal)
-			ifTrue: [ aStmtListNode removeLocal: stmtLocal ]
+			ifTrue: [ "aStmtListNode removeLocal: stmtLocal" ]
 			ifFalse: [
 			self addOcurrencesFor: stmtLocal in: aStmtListNode init: true ] ]
 ]
@@ -362,7 +362,7 @@ SLDeadCodeElimination >> removeDeadCodeInCurrentMethod [
 	[ workList isEmpty ] whileFalse: [
 		i := workList removeFirst.
 		self propagateMarkedElement: i ].
-	"self clean."
+	self clean.
 	self initialize
 ]
 
