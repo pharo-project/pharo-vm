@@ -362,7 +362,7 @@ SLDeadCodeElimination >> removeDeadCodeInCurrentMethod [
 	[ workList isEmpty ] whileFalse: [
 		i := workList removeFirst.
 		self propagateMarkedElement: i ].
-	self clean.
+	"self clean."
 	self initialize
 ]
 
