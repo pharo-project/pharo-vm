@@ -80,6 +80,7 @@ TInlineNode >> method [
 { #category : 'accessing' }
 TInlineNode >> method: aTMethod [
 	method := aTMethod.
+	
 	aTMethod parseTree parent: self
 ]
 

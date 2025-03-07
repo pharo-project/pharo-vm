@@ -437,6 +437,18 @@ TMethod >> asInlineNode [
 ]
 
 { #category : 'transformations' }
+TMethod >> asInlineNodeIn: aCodeGen [
+	^TInlineNode new method: self
+]
+
+{ #category : 'transformations' }
+TMethod >> asInlineNodeInto: atMethod in: aCodeGen [
+
+	self renameVarsForInliningInto: atMethod except: Set new in: aCodeGen.
+	^ TInlineNode new method: self
+]
+
+{ #category : 'transformations' }
 TMethod >> bindClassVariablesIn: constantDictionary [
 	"Class variables are used as constants. This method replaces all references to class variables in the body of this method with the corresponding constant looked up in the class pool dictionary of the source class. The source class class variables should be initialized before this method is called."
 
@@ -1360,7 +1372,7 @@ TMethod >> inlineCaseStatementBranchesIn: aCodeGen [
 					(meth := aCodeGen methodNamed: stmt selector) ifNotNil: [ 
 						(meth hasUnrenamableCCode not and: [ meth args isEmpty ]) 
 							ifTrue: [ 
-							self inlineMethod: meth copy inCaseStatement: stmtNode ] ] ] ] ] ]
+							self inlineMethod: meth copy inCaseStatement: stmtNode in: aCodeGen ] ] ] ] ] ]
 ]
 
 { #category : 'inlining' }
@@ -1511,7 +1523,7 @@ TMethod >> inlineGuardingConditional: aSendNode in: aCodeGen [
 ]
 
 { #category : 'inlining' }
-TMethod >> inlineMethod: meth inCaseStatement: stmtNode [
+TMethod >> inlineMethod: meth inCaseStatement: stmtNode in: aCodeGen [
 
 	| exitLabel newStatements |
 	"Perform the main inlining"
@@ -1529,7 +1541,7 @@ TMethod >> inlineMethod: meth inCaseStatement: stmtNode [
 		newStatements addFirst:
 			(TLabeledCommentNode new setLabel: exitLabel comment: 'end case') ].
 	newStatements
-		addFirst: meth asInlineNode;
+		addFirst: (meth asInlineNodeInto: self in: aCodeGen);
 		addFirst: (TLabeledCommentNode new setComment: meth selector).
 
 	stmtNode statements: newStatements
