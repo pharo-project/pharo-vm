@@ -52,7 +52,7 @@ SLDeadCodeElimination >> addDefinitionsFor: anAssignmentNode [
 { #category : 'init-variable-data' }
 SLDeadCodeElimination >> addLocalDefinitionFor: aStmtListNode [
 
-	self addStmtListLocalsAndSuppressRedundantDeclarationIn:
+	self addStmtListLocalsDeclarationIn:
 		aStmtListNode.
 
 	localVariableScope push: aStmtListNode -> aStmtListNode locals.
@@ -93,17 +93,14 @@ SLDeadCodeElimination >> addOcurrencesFor: varName in: definingStmt init: aBoole
 ]
 
 { #category : 'init-variable-data' }
-SLDeadCodeElimination >> addStmtListLocalsAndSuppressRedundantDeclarationIn: aStmtListNode [
-	"eliminate redundancy in variable declarations and init occurences for locals that was not seen at the method scope"
+SLDeadCodeElimination >> addStmtListLocalsDeclarationIn: aStmtListNode [
+	"init locals that were not seen at the method scope"
 
 	| allLocals |
-	allLocals := Dictionary new.
-	localVariableScope do: [ :assoc |
-		assoc value do: [ :local | allLocals at: local put: assoc key ] ].
+	allLocals := Set new.
+	localVariableScope do: [ :assoc | allLocals addAll: assoc value ].
 	aStmtListNode locals do: [ :stmtLocal |
-		(allLocals keys includes: stmtLocal)
-			ifTrue: [ (allLocals at: stmtLocal) removeLocal: stmtLocal ]
-			ifFalse: [
+		(allLocals includes: stmtLocal) ifFalse: [
 			self addOcurrencesFor: stmtLocal in: aStmtListNode init: true ] ]
 ]
 
