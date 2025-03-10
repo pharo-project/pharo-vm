@@ -644,8 +644,6 @@ StackInterpreter class >> initializeBytecodeTableForSistaV1 [
 	"StackInterpreter initializeBytecodeTableForSistaV1"
 	"Note: This table will be used to generate a C switch statement."
 
-	InitializationOptions at: #SistaV1BytecodeSet put: (SistaV1BytecodeSet := true).
-
 	BytecodeTable := Array new: 256.
 	BytecodeEncoderClassName := #EncoderForSistaV1.
 	BytecodeSetHasDirectedSuperSend := true.
