@@ -132,7 +132,6 @@ sqInt
 signalSemaphoreWithIndex(sqInt index)
 {
 	int i = index - 1;
-	int v;
 
 #if !defined(_WIN32)
     sigset_t blockedSignalSet;
@@ -265,7 +264,6 @@ doSignalExternalSemaphores(sqInt externalSemaphoreTableSize)
 void waitOnExternalSemaphoreIndex(sqInt semaphoreIndex){
 
     sqInt aSemaphoreOop;
-    sqInt xArray;
 
     aSemaphoreOop = getExternalSemaphoreWithIndex(semaphoreIndex);
     doWaitSemaphore(aSemaphoreOop);
