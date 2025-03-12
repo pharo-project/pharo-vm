@@ -187,9 +187,7 @@ CogMethod >> cbUsesInstVars: anObject [
 CogMethod >> cmIsFullBlock [
 	"Answer the value of cpicHasMNUCaseOrCMIsFullBlock"
 	<inline: true>
-	^SistaV1BytecodeSet
-		ifTrue: [self cpicHasMNUCaseOrCMIsFullBlock]
-		ifFalse: [false]
+	^ self cpicHasMNUCaseOrCMIsFullBlock
 ]
 
 { #category : 'accessing' }
@@ -280,9 +278,7 @@ CogMethod >> cpicHasMNUCase [
 	"Answer if the receiver has an MNU case."
 	<inline: true>
 
-	^SistaV1BytecodeSet
-		ifTrue: [self cpicHasMNUCaseOrCMIsFullBlock and: [self cmType = CMPolymorphicIC]]
-		ifFalse: [cpicHasMNUCaseOrCMIsFullBlock]
+	^ self cpicHasMNUCaseOrCMIsFullBlock and: [self cmType = CMPolymorphicIC]
 ]
 
 { #category : 'accessing' }

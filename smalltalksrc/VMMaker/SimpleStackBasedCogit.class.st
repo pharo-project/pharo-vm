@@ -1870,7 +1870,6 @@ SimpleStackBasedCogit >> genPrimitiveFullClosureValue [
 	 block entry or the no-context-switch entry, as appropriate, and we're done.  If not,
 	 invoke the interpreter primitive."
 
-	<option: #SistaV1BytecodeSet>
 	<var: #jumpFailImmediateMethod type: #'AbstractInstruction *'>
 	<var: #jumpFail4 type: #'AbstractInstruction *'>
 	<var: #jumpFailNArgs type: #'AbstractInstruction *'>
