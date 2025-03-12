@@ -578,6 +578,16 @@ SLDeadCodeEliminationTestClass >> methodWithNeverUsedLocalsFromBlockasArguments 
 	self method: self methodReturnValueFromBlock
 ]
 
+{ #category : 'redundant-local-definition' }
+SLDeadCodeEliminationTestClass >> methodWithNoRedundantLocalDefinition [
+
+	| var index |
+	index := 0.
+	var := index.
+	super methodWithToDo: var.
+	^ var
+]
+
 { #category : 'variable-assign-to-itself' }
 SLDeadCodeEliminationTestClass >> methodWithOnlyBlockValueAssignmentIntoSameVariableInArguments [
 	"produce a self assignation at translation time"

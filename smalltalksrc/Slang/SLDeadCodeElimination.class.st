@@ -23,9 +23,11 @@ SLDeadCodeElimination >> addDefiningStatementFor: aTVariableNode [
 	varName := aTVariableNode name.
 	localVariableScope do: [ :assoc |
 		assoc value do: [ :localName |
-			localName = varName ifTrue: [ definingStmt := assoc key ] ] ].
-	variableDefiningStmtList at: aTVariableNode put: definingStmt.
-	self addOcurrencesFor: varName in: definingStmt
+			localName = varName ifTrue: [
+				definingStmt := assoc key.
+				variableDefiningStmtList at: aTVariableNode put: definingStmt.
+				self addOcurrencesFor: varName in: definingStmt.
+				^ self ] ] ]
 ]
 
 { #category : 'init-variable-data' }
@@ -96,12 +98,8 @@ SLDeadCodeElimination >> addOcurrencesFor: varName in: definingStmt init: aBoole
 SLDeadCodeElimination >> addStmtListLocalsDeclarationIn: aStmtListNode [
 	"init locals that were not seen at the method scope"
 
-	| allLocals |
-	allLocals := Set new.
-	localVariableScope do: [ :assoc | allLocals addAll: assoc value ].
 	aStmtListNode locals do: [ :stmtLocal |
-		(allLocals includes: stmtLocal) ifFalse: [
-			self addOcurrencesFor: stmtLocal in: aStmtListNode init: true ] ]
+		self addOcurrencesFor: stmtLocal in: aStmtListNode init: true ]
 ]
 
 { #category : 'cleaning' }
@@ -154,8 +152,7 @@ SLDeadCodeElimination >> currentMethod: aTMethod [
 SLDeadCodeElimination >> decreaseVariableOcurencesFor: aTVariableNode [
 
 	| definingStmtList |
-	definingStmtList := variableDefiningStmtList at: aTVariableNode.
-	definingStmtList ifNil: [ ^ self ].
+	definingStmtList := variableDefiningStmtList at: aTVariableNode ifAbsent: [^ self].
 	(variableOccurences at: aTVariableNode name)
 		at: definingStmtList
 		update: [ :counter | counter - 1 ]

@@ -1886,6 +1886,44 @@ methodWithNeverUsedLocalsFromBlockasArguments(SLDeadCodeEliminationTestClass * s
 }'
 ]
 
+{ #category : 'redundant-local-definition' }
+SLDeadCodeEliminationTest >> testMethodWithNoRedundantLocalDefinition [
+
+	| translation tMethod |
+	tMethod := ccg methodNamed: #methodWithNoRedundantLocalDefinition.
+
+	sLDeadCodeElimination currentMethod: tMethod.
+	ccg currentMethod: tMethod.
+	sLDeadCodeElimination removeDeadCodeInCurrentMethod.
+
+	translation := self translate: tMethod.
+	translation := translation trimBoth.
+
+	self
+		assert: translation
+		equals:
+			'/* SLDeadCodeEliminationTestClass>>#methodWithNoRedundantLocalDefinition */
+static sqInt
+methodWithNoRedundantLocalDefinition(SLDeadCodeEliminationTestClass * self_in_methodWithNoRedundantLocalDefinition)
+{
+	int index;
+	sqInt var;
+
+	index = 0;
+	var = index;
+	{
+		sqInt index2;
+
+		if (var == 1) {
+			for (index2 = 1; index2 <= 5; index2 += 1) {
+				method(self_in_methodWithNoRedundantLocalDefinition, index2);
+			}
+		}
+	}
+	return var;
+}'
+]
+
 { #category : 'variable-assign-to-itself' }
 SLDeadCodeEliminationTest >> testMethodWithOnlyBlockValueAssignmentIntoSameVariableInArguments [
 	"all of the body is dead code"
@@ -2258,7 +2296,6 @@ SLDeadCodeEliminationTest >> testMethodWithRedundantLocalDefinition [
 static sqInt
 methodWithRedundantLocalDefinition(SLDeadCodeEliminationTestClass * self_in_methodWithRedundantLocalDefinition)
 {
-	sqInt index;
 	int var;
 
 	var = 0;
