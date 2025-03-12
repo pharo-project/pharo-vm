@@ -437,11 +437,6 @@ TMethod >> asInlineNode [
 ]
 
 { #category : 'transformations' }
-TMethod >> asInlineNodeIn: aCodeGen [
-	^TInlineNode new method: self
-]
-
-{ #category : 'transformations' }
 TMethod >> asInlineNodeInto: atMethod in: aCodeGen [
 
 	self renameVarsForInliningInto: atMethod except: Set new in: aCodeGen.
