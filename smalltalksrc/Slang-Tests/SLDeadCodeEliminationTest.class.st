@@ -2238,6 +2238,43 @@ methodWithOnlyUselessAssignment(SLDeadCodeEliminationTestClass * self_in_methodW
 }'
 ]
 
+{ #category : 'redundant-local-definition' }
+SLDeadCodeEliminationTest >> testMethodWithRedundantLocalDefinition [
+
+	| translation tMethod |
+	tMethod := ccg methodNamed: #methodWithRedundantLocalDefinition.
+
+	sLDeadCodeElimination currentMethod: tMethod.
+	ccg currentMethod: tMethod.
+	sLDeadCodeElimination removeDeadCodeInCurrentMethod.
+
+	translation := self translate: tMethod.
+	translation := translation trimBoth.
+
+	self
+		assert: translation
+		equals:
+			'/* SLDeadCodeEliminationTestClass>>#methodWithRedundantLocalDefinition */
+static sqInt
+methodWithRedundantLocalDefinition(SLDeadCodeEliminationTestClass * self_in_methodWithRedundantLocalDefinition)
+{
+	sqInt index;
+	int var;
+
+	var = 0;
+	{
+		sqInt index;
+
+		if (var == 1) {
+			for (index = 1; index <= 5; index += 1) {
+				method(self_in_methodWithRedundantLocalDefinition, index);
+			}
+		}
+	}
+	return var;
+}'
+]
+
 { #category : 'variable-assign-to-itself' }
 SLDeadCodeEliminationTest >> testMethodWithSelfAssign [
 	"happens because of polymorphisme or inlining"

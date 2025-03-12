@@ -1,6 +1,6 @@
 Class {
 	#name : 'SLDeadCodeEliminationTestClass',
-	#superclass : 'SlangStructType',
+	#superclass : 'SLSuperDeadCodeEliminationTestClass',
 	#instVars : [
 		'instancesVariable',
 		'instancesVariable2'
@@ -687,6 +687,15 @@ SLDeadCodeEliminationTestClass >> methodWithOnlyUselessAssignment [
 	| i j |
 	i := 5.
 	j := i
+]
+
+{ #category : 'redundant-local-definition' }
+SLDeadCodeEliminationTestClass >> methodWithRedundantLocalDefinition [
+
+	| var |
+	var := 0.
+	super methodWithToDo: var.
+	^ var
 ]
 
 { #category : 'variable-assign-to-itself' }

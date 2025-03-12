@@ -153,40 +153,38 @@ SlangTyper >> inferTypesForImplicitlyTypedVariablesAndMethods [
 	 done here."
 
 	"Iterate over all methods, inferring #void return types, until we reach a fixed point."
+
 	| allMethods |
 	allMethods := codeGenerator apiMethods
-					ifNil: [codeGenerator methods]
-					ifNotNil: [(Set withAll: codeGenerator methods)
-								addAll: codeGenerator apiMethods;
-								yourself].
+		              ifNil: [ codeGenerator methods ]
+		              ifNotNil: [
+			              (Set withAll: codeGenerator methods)
+				              addAll: codeGenerator apiMethods;
+				              yourself ].
 	"Make an initial pass to assign the return types of all simple methods that return constants,
-	 or those that have explicit return types."						
-	allMethods do:
-		[:m|
+	 or those that have explicit return types."
+	allMethods do: [ :m |
 		m removeFinalSelfReturnIn: codeGenerator. "must precede recordDeclarationsIn: because it may set returnType"
 		m recordDeclarationsIn: codeGenerator.
-		(m returnType isNil
-		 and: [m isReturnConstant]) ifTrue:
-			[self inferReturnTypeOf: m]].
+		(m returnType isNil and: [ m isReturnConstant ]) ifTrue: [
+			self inferReturnTypeOf: m ] ].
 
 	"now iterate until we reach a fixed point"
-	[| changedReturnType |
-	 changedReturnType := false.
-	 allMethods do:
-		[:m|
+	[
+	| changedReturnType |
+	changedReturnType := false.
+	allMethods do: [ :m |
 		self inferTypesForImplicitlyTypedVariablesIn: m.
-		 (self inferReturnTypeOf: m) ifTrue:
-			[changedReturnType := true]].
-	 changedReturnType] whileTrue.
+		(self inferReturnTypeOf: m) ifTrue: [ changedReturnType := true ] ].
+	changedReturnType ] whileTrue.
 
 	"Type all as-yet-untyped methods as the default"
-	codeGenerator methods do:
-		[:m|
-		m returnType ifNil:
-			[m returnType: (m returnsExpression
-								ifTrue: [codeGenerator defaultType]
-								ifFalse: [codeGenerator implicitReturnTypeFor: m])].
-		m transformReturns].
+	codeGenerator methods do: [ :m |
+		m returnType ifNil: [
+			m returnType: (m returnsExpression
+					 ifTrue: [ codeGenerator defaultType ]
+					 ifFalse: [ codeGenerator implicitReturnTypeFor: m ]) ].
+		m transformReturns ].
 
 	"Make a final pass to type anything assigned from the default type"
 	allMethods do: [ :m |
