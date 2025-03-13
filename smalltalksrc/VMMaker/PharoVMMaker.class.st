@@ -169,12 +169,40 @@ PharoVMMaker >> generateCoInterpreter [
 { #category : 'as yet unclassified' }
 PharoVMMaker >> generateDruidVM [
 
+	self generateDruidVMFullCompilation
+]
+
+{ #category : 'as yet unclassified' }
+PharoVMMaker >> generateDruidVMFullCompilation [
+
 	options := #( PartialCompilation false ).
 
 	self
 		generate: CoInterpreter
 		memoryManager: Spur64BitCoMemoryManager
 		compilerClass: DruidJIT
+]
+
+{ #category : 'as yet unclassified' }
+PharoVMMaker >> generateDruidVMPartialCompilation [
+
+	options := #( PartialCompilation true ).
+
+	self
+		generate: CoInterpreter
+		memoryManager: Spur64BitCoMemoryManager
+		compilerClass: DruidJIT
+]
+
+{ #category : 'as yet unclassified' }
+PharoVMMaker >> generateDruidVMStaticTypePrediction [
+
+	options := #( PartialCompilation false ).
+
+	self
+		generate: CoInterpreter
+		memoryManager: Spur64BitCoMemoryManager
+		compilerClass: DruidStaticTypePredictionJIT
 ]
 
 { #category : 'accessing' }
@@ -187,6 +215,35 @@ PharoVMMaker >> generatePlugins [
 PharoVMMaker >> generatePlugins: anObject [
 
 	generatePlugins := anObject
+]
+
+{ #category : 'as yet unclassified' }
+PharoVMMaker >> generateSimple [
+
+	self
+		generate: CoInterpreter
+		memoryManager: Spur64BitCoMemoryManager
+		compilerClass: SimpleStackBasedCogit
+]
+
+{ #category : 'as yet unclassified' }
+PharoVMMaker >> generateSimpleDruid [
+
+	self
+		generate: CoInterpreter
+		memoryManager: Spur64BitCoMemoryManager
+		compilerClass: SimpleDruidJIT
+]
+
+{ #category : 'as yet unclassified' }
+PharoVMMaker >> generateSimpleDruidVMStaticTypePrediction [
+
+	options := #( PartialCompilation false ).
+
+	self
+		generate: CoInterpreter
+		memoryManager: Spur64BitCoMemoryManager
+		compilerClass: SimpleDruidStaticTypePredictionJIT
 ]
 
 { #category : 'generation' }
