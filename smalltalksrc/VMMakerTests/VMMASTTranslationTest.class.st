@@ -409,7 +409,7 @@ VMMASTTranslationTest >> testMethodWithConditionInLoopLimitHasLimitVariable [
 	translation := method asTranslationMethodOfClass: TMethod.
 
 	loop := translation statements first.
-	self assert: loop arguments size equals: 4
+	self assert: loop arguments size equals: 5
 ]
 
 { #category : 'tests' }
@@ -420,7 +420,7 @@ VMMASTTranslationTest >> testMethodWithConstantConditionInLoopHasNoLimitVariable
 	translation := method asTranslationMethodOfClass: TMethod.
 
 	loop := translation statements first.
-	self assert: loop arguments size equals: 6
+	self assert: loop arguments size equals: 4
 ]
 
 { #category : 'tests' }

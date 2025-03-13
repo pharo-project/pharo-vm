@@ -277,8 +277,6 @@ findImageNameIndex(int argc, const char** argv)
 
 static VMErrorCode
 fillUpImageName(int argc, const char** argv, VMParameters* parameters){
-	
-	VMErrorCode error;
 		
 	int imageNameIndex = findImageNameIndex(argc, argv);
 

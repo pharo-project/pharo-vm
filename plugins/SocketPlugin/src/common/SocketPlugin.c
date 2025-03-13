@@ -1496,7 +1496,6 @@ primitiveSocketListenOnPortBacklogInterface(void)
 	sqInt addr;
 	sqInt backlog;
 	char *ifAddr;
-	sqInt okToListen;
 	sqInt port;
 	SocketPtr s;
 	sqInt socket;

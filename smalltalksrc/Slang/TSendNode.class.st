@@ -280,12 +280,6 @@ TSendNode >> children [
 ]
 
 { #category : 'dead-code-elimination' }
-TSendNode >> collectSendInArguments: sendToCollect [
-
-	arguments do: [ :arg | arg collectSendInSelf: sendToCollect ]
-]
-
-{ #category : 'dead-code-elimination' }
 TSendNode >> collectSendInSelf: sendToCollect [
 	"collect send message in the receiver of a conditional send, in we encounter a comparaison operator, we split it and iterate through its left and right values to avoid having unused expression result"
 
@@ -293,7 +287,7 @@ TSendNode >> collectSendInSelf: sendToCollect [
 		ifFalse: [ sendToCollect add: self ]
 		ifTrue: [
 			receiver collectSendInSelf: sendToCollect.
-			self collectSendInArguments: sendToCollect ]
+			arguments do: [ :arg | arg collectSendInSelf: sendToCollect ] ]
 ]
 
 { #category : 'accessing' }
@@ -350,10 +344,48 @@ TSendNode >> endsWithReturn [
 	^self isReturningIf
 ]
 
+{ #category : 'transformations' }
+TSendNode >> expandASTIn: aTMethod [
+	"Reduce [:formal ... :formalN| body ] value: actual ... value: actualN
+	 to body with formals substituted for by actuals."
+
+	| substitution substitutionDict newLabels |
+	self assert: self receiver isStatementList.
+	self assert: self receiver arguments size = self arguments size.
+
+	substitution := self receiver copy.
+	substitution renameLabelsForInliningInto: aTMethod.
+	substitutionDict := Dictionary new: self arguments size * 2.
+	self receiver arguments
+		with: self arguments
+		do: [ :argName :exprNode |
+			(exprNode isLeaf or: [ parent isSend or: [ parent isReturn ] ])
+				ifTrue: [ substitutionDict at: argName put: exprNode ]
+				ifFalse: [
+					substitution addFirst:
+						(TAssignmentNode variableNamed: argName expression: exprNode)
+					"self noteUsedVariableName: argName ?" ] ].
+	newLabels := Set withAll: aTMethod labels.
+	substitution nodesDo: [ :node |
+		node isLabel ifTrue: [
+			node label ifNotNil: [ :label | newLabels add: label ] ] ].
+	"now add the new labels so that a subsequent inline of
+	 the same block will be renamed with different labels."
+	aTMethod labels: newLabels.
+	substitution bindVariablesIn: substitutionDict.
+	substitution setArguments: #(  ). "no more parameters"
+	parent replaceChild: self with: substitution
+]
+
 { #category : 'testing' }
 TSendNode >> hasSideEffect [
 	"Answer if the parse tree rooted at this node has a side-effect or not."
-	^(#(#+ #- #* #/ #// #\\ #= #== #~= #~~) includes: selector) not
+
+	| sends |
+	sends := OrderedCollection new.
+	self collectSendInSelf: sends.
+	sends isNotEmpty ifTrue: [ ^ true ].
+	^ false
 ]
 
 { #category : 'testing' }
@@ -398,6 +430,15 @@ TSendNode >> isExpression [
 	^ true
 ]
 
+{ #category : 'dead-code-elimination' }
+TSendNode >> isIterativeSend [
+
+	^ self isBinaryIterativeSend or: [
+		  self isDoIterativeSend or: [
+			  self isUnaryIterativeSend or:
+				  self isUnaryIterativeSendWithImportantLastStatement ] ]
+]
+
 { #category : 'testing' }
 TSendNode >> isLiteralArrayDeclaration [
 	^selector == #cCoerce:to:
@@ -439,7 +480,9 @@ TSendNode >> isSameAs: aTParseNode [
 
 { #category : 'dead-code-elimination' }
 TSendNode >> isSelectorWithNoSideEffect [
-	^ #(#= #== #< #<= #> #>=) includes: selector
+
+	^ #( #+ #- #* #/ #'//' #'\\' #= #'==' #'~=' #'~~' #< #'<=' #> #'>='
+	     #and: #or: #negated #'<<' #'>>' #'>>>' ) includes: selector
 ]
 
 { #category : 'C code generation' }
@@ -603,7 +646,9 @@ TSendNode >> removeUnusedNodesInBranch: aChild [
 
 	| branchIndex |
 	branchIndex := arguments indexOf: aChild.
-	arguments := arguments select: [ :e | e ~= aChild ].
+	"the receiver will be handle after the suppression of all arguments"
+	branchIndex = 0 ifTrue: [ ^ self ].
+	self arguments: (arguments select: [ :e | e ~= aChild ]).
 	self argumentsIsEmptyOrHasNothingButComments
 		ifTrue: [
 			self transformReceiverAfterEmptyArguments.
@@ -663,10 +708,14 @@ TSendNode >> replaceChild: aNode with: aReplacementNode [
 { #category : 'transformations' }
 TSendNode >> replaceNodesIn: aDictionary [
 
-	^aDictionary at: self ifAbsent: [
-		self receiver: (receiver replaceNodesIn: aDictionary).
-		self arguments: (arguments collect: [ :a | a replaceNodesIn: aDictionary ]).
-		self]
+	| aDictionaryAtSelf |
+	aDictionaryAtSelf := aDictionary at: self ifAbsent: [ nil ].
+	aDictionaryAtSelf ifNotNil: [ ^ aDictionaryAtSelf copy ].
+
+	self receiver: (receiver replaceNodesIn: aDictionary).
+	self arguments:
+		(arguments collect: [ :a | a replaceNodesIn: aDictionary ]).
+	^ self
 ]
 
 { #category : 'accessing' }
@@ -777,9 +826,11 @@ TSendNode >> transformReceiverAfterEmptyArguments [
 	sendToCollect := OrderedCollection new.
 	receiver collectSendInSelf: sendToCollect.
 	sendToCollect isNotEmpty ifTrue: [
-		self parent
-			replaceChild: self
-			with: (TStatementListNode statements: sendToCollect) ]
+		| replacement |
+		replacement := TStatementListNode statements: sendToCollect.
+		self parent replaceChild: self with: replacement.
+		^ replacement ].
+	^ nil
 ]
 
 { #category : 'type inference' }

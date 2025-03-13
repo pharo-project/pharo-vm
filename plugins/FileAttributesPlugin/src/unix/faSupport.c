@@ -465,7 +465,6 @@ sqInt faFileStatAttributes(fapath *aFaPath, int lStat, sqInt attributeArray)
 {
 faStatStruct	statBuf;
 int		status;
-int		mode;
 sqInt		targetOop;
 char		targetFile[FA_PATH_MAX];
 

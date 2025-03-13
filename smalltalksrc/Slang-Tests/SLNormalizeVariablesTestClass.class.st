@@ -61,7 +61,7 @@ SLNormalizeVariablesTestClass >> methodWithReservedLocalsName [
 	self_in_methodWithReservedLocalsName.
 	super.
 	cascade.
-	"reserved name for MLVMCCodeGenerator"
+	"reserved name since vmClass is nil"
 	interpreterProxy.
 	var1.
 	var2

@@ -378,7 +378,6 @@ void reportStackState(const char *msg, char *date, int printAll, ucontext_t *uap
 {
 #if !defined(NOEXECINFO)
 	void *addrs[BACKTRACE_DEPTH];
-	void *pc;
 	int depth;
 #endif
 	/* flag prevents recursive error when trying to print a broken stack */

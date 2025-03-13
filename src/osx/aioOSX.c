@@ -261,7 +261,6 @@ aioPoll(long microSeconds){
  */
 EXPORT(void)
 aioInterruptPoll(){
-	int n;
 	struct kevent userEvent;
 
 	sqLowLevelMFence();

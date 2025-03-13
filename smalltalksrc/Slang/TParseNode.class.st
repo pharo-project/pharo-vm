@@ -507,7 +507,11 @@ TParseNode >> replaceChild: aNode with: aReplacementNode [
 { #category : 'transformations' }
 TParseNode >> replaceNodesIn: aDictionary [
 
-	^aDictionary at: self ifAbsent: [self]
+	| aDictionaryAtSelf |
+	aDictionaryAtSelf := aDictionary at: self ifAbsent: [ nil ].
+	aDictionaryAtSelf ifNotNil: [ ^ aDictionaryAtSelf copy ].
+
+	^ self
 ]
 
 { #category : 'enumerating' }
