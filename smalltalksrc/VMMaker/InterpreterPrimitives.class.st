@@ -1894,14 +1894,15 @@ InterpreterPrimitives >> primitiveGetAttribute [
 	index := self stackIntegerValue: 0.
 	self successful ifTrue: [
 		sz := self attributeSize: index.
-		s := objectMemory
-			     instantiateClass: (objectMemory splObj: ClassByteString)
-			     indexableSize: sz.
-		self
-			getAttribute: index
-			Into: s + objectMemory baseHeaderSize
-			Length: sz.
-		self pop: 2 thenPush: s ]
+		self successful ifTrue: [
+			s := objectMemory
+				     instantiateClass: (objectMemory splObj: ClassByteString)
+				     indexableSize: sz.
+			self
+				getAttribute: index
+				Into: s + objectMemory baseHeaderSize
+				Length: sz.
+			self pop: 2 thenPush: s ] ]
 ]
 
 { #category : 'object access primitives' }
