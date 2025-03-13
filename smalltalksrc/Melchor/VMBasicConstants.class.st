@@ -34,7 +34,6 @@ Class {
 		'HashMultiplyMask',
 		'IMMUTABILITY',
 		'PRIdSQINT',
-		'PharoVM',
 		'PrimErrBadArgument',
 		'PrimErrBadIndex',
 		'PrimErrBadMethod',

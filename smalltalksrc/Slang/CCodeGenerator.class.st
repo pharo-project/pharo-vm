@@ -3738,8 +3738,7 @@ CCodeGenerator >> localizeGlobalVariables [
 												[:s|
 												 s nextPutAll: newDeclaration; nextPutAll: ' = '.
 												(initializerNode asCASTIn: self) prettyPrintOn: s ]].
-					procedure declarationAt: key put: newDeclaration.
-					variableDeclarations removeKey: key ifAbsent: []]]]].
+					procedure declarationAt: key put: newDeclaration ]]]].
 	logger ifNotNil:
 		[localized keys asSortedCollection do:
 			[:name|
@@ -3747,7 +3746,7 @@ CCodeGenerator >> localizeGlobalVariables [
 				[:var|
 				logger newLine; show: var, ' localised to ', name; cr]]].
 
-	variables removeAllFoundIn: elected
+	elected do: [ :var | self removeVariable: var ]
 ]
 
 { #category : 'inlining' }

@@ -191,7 +191,6 @@ FilePlugin >> makeDirEntryName: entryName size: entryNameSize
 FilePlugin >> makeDirEntryName: entryName size: entryNameSize createDate: createDate modDate: modifiedDate isDir: dirFlag fileSize: fileSize posixPermissions: posixPermissions isSymlink: symlinkFlag [
 	<var: 'entryName' type: #'char *'>
 	<var: 'fileSize' type: #squeakFileOffsetType>
-	<option: #PharoVM>
 	| modDateOop createDateOop nameString results stringPtr posixPermissionsOop fileSizeOop |
 	<var: 'stringPtr' type: #'char *'>
 
@@ -441,66 +440,63 @@ FilePlugin >> primitiveDirectoryGetMacTypeAndCreator [
 { #category : 'directory primitives' }
 FilePlugin >> primitiveDirectoryLookup [
 
-	| index pathName pathNameIndex pathNameSize status entryName entryNameSize createDate modifiedDate dirFlag symlinkFlag posixPermissions fileSize |
-	
 	<var: 'entryName' declareC: 'char entryName[256]'>
 	<var: 'pathNameIndex' type: 'char *'>
 	<var: 'fileSize' type: 'squeakFileOffsetType'>
 	<export: true>
-
+	| index pathName pathNameIndex pathNameSize status entryName entryNameSize createDate modifiedDate dirFlag symlinkFlag posixPermissions fileSize |
 	index := interpreterProxy stackIntegerValue: 0.
 	pathName := interpreterProxy stackValue: 1.
-	(interpreterProxy isBytes: pathName)
-		ifFalse: [^interpreterProxy primitiveFail].
+	(interpreterProxy isBytes: pathName) ifFalse: [
+		^ interpreterProxy primitiveFail ].
 	pathNameIndex := interpreterProxy firstIndexableField: pathName.
 	pathNameSize := interpreterProxy byteSizeOf: pathName.
-	self cCode: '' inSmalltalk:
-		[entryName := ByteString new: 256.
-		 entryNameSize := createDate := modifiedDate := dirFlag := fileSize := posixPermissions := symlinkFlag := nil].
+	self cCode: '' inSmalltalk: [
+		entryName := ByteString new: 256.
+		entryNameSize := createDate := modifiedDate := dirFlag := fileSize := posixPermissions := symlinkFlag := nil ].
 	"If the security plugin can be loaded, use it to check for permission. 
 	If not, assume it's ok"
-	status := self dir_Lookup: pathNameIndex _: pathNameSize
-					_: index
-					_: entryName _: (self addressOf: entryNameSize put: [:v| entryNameSize := v])
-					_: (self addressOf: createDate put: [:v| createDate := v])
-					_: (self addressOf: modifiedDate put: [:v| modifiedDate := v])
-					_: (self addressOf: dirFlag put: [:v| dirFlag := v])
-					_: (self addressOf: fileSize put: [:v| fileSize := v])
-					_: (self addressOf: posixPermissions put: [:v| posixPermissions := v])
-					_: (self addressOf: symlinkFlag put: [:v| symlinkFlag := v]).
-					
-	interpreterProxy failed ifTrue:
-		[^nil].
-	status = DirNoMoreEntries ifTrue: "no more entries; return nil"
-		[interpreterProxy "pop pathName, index, rcvr"
-			pop: 3 thenPush: interpreterProxy nilObject.
-		^nil].
-	status = DirBadPath ifTrue:
-		[^interpreterProxy primitiveFail]."bad path"
+	status := self
+		          dir_Lookup: pathNameIndex
+		          _: pathNameSize
+		          _: index
+		          _: entryName
+		          _:
+		          (self
+			           addressOf: entryNameSize
+			           put: [ :v | entryNameSize := v ])
+		          _:
+		          (self addressOf: createDate put: [ :v | createDate := v ])
+		          _:
+		          (self
+			           addressOf: modifiedDate
+			           put: [ :v | modifiedDate := v ])
+		          _: (self addressOf: dirFlag put: [ :v | dirFlag := v ])
+		          _: (self addressOf: fileSize put: [ :v | fileSize := v ])
+		          _:
+		          (self
+			           addressOf: posixPermissions
+			           put: [ :v | posixPermissions := v ])
+		          _:
+		          (self
+			           addressOf: symlinkFlag
+			           put: [ :v | symlinkFlag := v ]).
 
-	interpreterProxy 
-		pop: 3	"pop pathName, index, rcvr" 
-		thenPush:
-			(self 
-				cppIf: PharoVM 
-				ifTrue:
-					[self
-						makeDirEntryName: entryName
-						size: entryNameSize
-						createDate: createDate
-						modDate: modifiedDate
-						isDir: dirFlag
-						fileSize: fileSize
-						posixPermissions: posixPermissions
-						isSymlink: symlinkFlag]
-				ifFalse:
-					[self
-						makeDirEntryName: entryName
-						size: entryNameSize
-						createDate: createDate
-						modDate: modifiedDate
-						isDir: dirFlag
-						fileSize: fileSize])
+	interpreterProxy failed ifTrue: [ ^ nil ].
+	status = DirNoMoreEntries ifTrue: [ "no more entries; return nil"
+		interpreterProxy pop: 3 thenPush: interpreterProxy nilObject. "pop pathName, index, rcvr"
+		^ nil ].
+	status = DirBadPath ifTrue: [ ^ interpreterProxy primitiveFail ]. "bad path"
+
+	interpreterProxy pop: 3 thenPush: (self
+			 makeDirEntryName: entryName
+			 size: entryNameSize
+			 createDate: createDate
+			 modDate: modifiedDate
+			 isDir: dirFlag
+			 fileSize: fileSize
+			 posixPermissions: posixPermissions
+			 isSymlink: symlinkFlag) "pop pathName, index, rcvr"
 ]
 
 { #category : 'directory primitives' }

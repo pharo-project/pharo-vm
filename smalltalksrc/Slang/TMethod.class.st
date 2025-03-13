@@ -92,7 +92,8 @@ TMethod >> addLabelsTo: aTMethod [
 TMethod >> addLocal: aString [
 
 	cachedLocals := nil.
-	self locals add: aString
+	self locals add: aString.
+	^ aString
 ]
 
 { #category : 'adding' }
