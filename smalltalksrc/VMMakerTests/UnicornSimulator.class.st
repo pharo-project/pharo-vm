@@ -73,6 +73,20 @@ UnicornSimulator >> doStartAt: startAddress until: until timeout: timeout count:
 				ifTrue: [ ^ result ]]
 ]
 
+{ #category : 'as yet unclassified' }
+UnicornSimulator >> doublePrecisionFloatingPointRegisterRaw: anInteger [ 
+	
+	| reg |
+	anInteger = 1 ifTrue: [ reg := self doublePrecisionFloatingPointRegister0 ].
+	anInteger = 2 ifTrue: [ reg := self doublePrecisionFloatingPointRegister1 ].
+	anInteger = 3 ifTrue: [ reg := self doublePrecisionFloatingPointRegister2 ].	
+	anInteger = 4 ifTrue: [ reg := self doublePrecisionFloatingPointRegister3 ].	
+	
+	reg ifNil: [ self error: 'I can handle up to 4 registers' ].
+	
+	^ self readRawRegister: reg size: 8
+]
+
 { #category : 'stack-access' }
 UnicornSimulator >> finishMappingMemory [
 

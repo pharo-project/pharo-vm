@@ -705,11 +705,12 @@ VMJitFFISameThreadCalloutTest >> testNonOptimizedFunctionVoidToPointer [
 { #category : 'tests - double to void' }
 VMJitFFISameThreadCalloutTest >> testOptimizedFunctionDoubleToVoid [
 
-	| compiledMethod cogMethod tfExternalFunction aByteArray called receivedArgument |
+	| compiledMethod cogMethod tfExternalFunction aByteArray called receivedArguments argumentTypes |
 
 	isa = #IA32 ifTrue: [ ^ self skip ].
 
 	called := false.
+	argumentTypes := { interpreter libFFI double }.
 
 	"I need to return 0 in the function, even if it is void, as the simulation cannot identify when it is a 
 	void returning function "
@@ -717,9 +718,9 @@ VMJitFFISameThreadCalloutTest >> testOptimizedFunctionDoubleToVoid [
 		                      createExternalFunctionFor: [:arg | 
 										self assertIsOptimizedCall: tfExternalFunction.
 										called := true.
-										receivedArgument := machineSimulator doublePrecisionFloatingPointRegister0Value.
+										receivedArguments := machineSimulator fetchArgumentsOfTypes: argumentTypes.
 										0 ]
-		                      withArgumentTypes: { interpreter libFFI double }
+		                      withArgumentTypes: argumentTypes
 		                      withReturnType: interpreter libFFI void
 									flags: FFI_FLAG_USE_OPTIMIZED_VERSION.
 
@@ -749,7 +750,7 @@ VMJitFFISameThreadCalloutTest >> testOptimizedFunctionDoubleToVoid [
 	self assert: machineSimulator pc equals: callerAddress.
 	self assert: machineSimulator receiverRegisterValue equals: (memory integerObjectOf: 23).
 	self assert: called.
-	self assert: receivedArgument equals: 23.5
+	self assert: receivedArguments first equals: 23.5
 ]
 
 { #category : 'tests - pointer double double double double void' }

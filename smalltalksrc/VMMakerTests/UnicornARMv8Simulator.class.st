@@ -140,6 +140,29 @@ UnicornARMv8Simulator >> extractDestinationRegisterFromAssembly: aLLVMInstructio
 	^ (aLLVMInstruction assemblyCodeString substrings: String tab, ',') second trimBoth.
 ]
 
+{ #category : 'simulating' }
+UnicornARMv8Simulator >> fetchArgumentsOfTypes: argumentTypes [ 
+
+	| byteArray doubleIndex integerIndex |
+
+	doubleIndex := integerIndex := 0.
+
+	^ argumentTypes collect: [ :type  | 
+		doubleIndex = 5 ifTrue: [ self halt ].
+		integerIndex = 5 ifTrue: [ self halt ].
+
+		byteArray := type isFloatType 
+			ifTrue: [ 
+				doubleIndex := doubleIndex + 1.
+				self doublePrecisionFloatingPointRegisterRaw: doubleIndex  ]
+			ifFalse: [ 
+				integerIndex := integerIndex + 1.
+				self cArgRegisterRaw: integerIndex ].
+		
+		type marshallToSmalltalkFromByteArray: byteArray
+	]
+]
+
 { #category : 'accessing-registers-abstract' }
 UnicornARMv8Simulator >> framePointerRegister [
 	

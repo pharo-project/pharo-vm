@@ -13,21 +13,6 @@ Class {
 }
 
 { #category : 'tests' }
-VMJittedLookupTest >> installSelector: aSelectorOop method: aMethodOop inMethodDictionary: aMethodDictionary [
-	
-	| anArrayOfMethods |
-	anArrayOfMethods := memory fetchPointer: MethodArrayIndex ofObject: aMethodDictionary.
-	memory
-		storePointer: (memory methodDictionaryHash: aSelectorOop mask: 11) + 2
-		ofObject: aMethodDictionary
-		withValue: aSelectorOop.
-	memory
-		storePointer: (memory methodDictionaryHash: aSelectorOop mask: 11)
-		ofObject: anArrayOfMethods
-		withValue: aMethodOop
-]
-
-{ #category : 'tests' }
 VMJittedLookupTest >> setArrayClassIntoClassTable [
 	| aClass |
 	aClass := self
@@ -63,33 +48,6 @@ VMJittedLookupTest >> setUpClassAndMethod [
 		instSpec: memory nonIndexablePointerFormat.
 	receiver := memory integerObjectOf: 56.
 	receiverClass := self setSmallIntegerClassIntoClassTable
-]
-
-{ #category : 'tests' }
-VMJittedLookupTest >> setUpMethodDictionaryIn: aClass [
-	"2 instances variables the array of methods and the tally
-	and 12 entries to put elemetns of the collection"
-	
-	| aMethodDictionary anArrayOfMethods |
-	aMethodDictionary := self
-		newObjectWithSlots: 2 + 12
-		format: MethodDictionary instSpec
-		classIndex: memory arrayClassIndexPun.
-	anArrayOfMethods := self
-		newObjectWithSlots: 12
-		format: Array instSpec
-		classIndex: memory arrayClassIndexPun.
-	memory
-		storePointer: MethodDictionaryIndex
-		ofObject: aClass
-		withValue: aMethodDictionary.
-	memory
-		storePointer: MethodArrayIndex
-		ofObject: aMethodDictionary
-		withValue: anArrayOfMethods.
-		
-	
-
 ]
 
 { #category : 'tests' }
