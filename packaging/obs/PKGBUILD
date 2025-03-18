@@ -7,7 +7,7 @@ url="https://github.com/pharo-project/pharo-vm"
 license=('MIT')
 makedepends=(gcc clang cmake openssl-1.1 libutil-linux util-linux-libs libffi)
 provides=(pharo)
-source=("${pkgname}-${pkgver}.tar.gz")
+source=("PharoVM-v${pkgver}.tar.gz")
 md5sums=("SKIP")
 libdir="/usr/lib"
 destdir="${libdir}/${pkgname}"
@@ -23,7 +23,7 @@ build() {
   make install
 }
 
-package_pharo() {
+package() {
   depends=('openssl>1.0' 'libutil-linux' 'util-linux-libs' 'libffi>=3.3')
   
   mkdir -p ${pkgdir}${destdir}/bin
