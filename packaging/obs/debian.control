@@ -6,7 +6,7 @@ Build-Depends: debhelper (>= 8.0.0)
 Standards-Version: 3.9.4
 Homepage: https://github.com/pharo-project/opensmalltalk-vm
 
-Package: pharo
+Package: pharo-vm-@PharoVM_VERSION_MAJOR@
 Architecture: amd64 arm64 armhf
 Depends: ${shlibs:Depends}, ${misc:Depends}
 Description: Pharo is a pure object-oriented programming language and a powerful environment, focused on simplicity and immediate feedback (think IDE and OS rolled into one).
