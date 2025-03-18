@@ -16,6 +16,21 @@ UnicornSimulator class >> supportsISA: isa [
 	^ #( #ARMv5 #ARMv8 #IA32 #X64 #aarch64 #riscv64 ) includes: isa
 ]
 
+{ #category : 'accessing' }
+UnicornSimulator >> cArgRegisterRaw: anInteger [ 
+	
+	| reg |
+
+	anInteger = 1 ifTrue: [ reg := self carg0Register ].
+	anInteger = 2 ifTrue: [ reg := self carg1Register ].
+	anInteger = 3 ifTrue: [ reg := self carg2Register ].	
+	anInteger = 4 ifTrue: [ reg := self carg3Register ].	
+	
+	reg ifNil: [ self error: 'I can handle up to 4 registers' ].
+	
+	^ self readRawRegister: reg size: self wordSize 
+]
+
 { #category : 'initialization' }
 UnicornSimulator >> createUnicorn [
 

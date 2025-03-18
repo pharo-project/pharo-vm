@@ -756,11 +756,13 @@ VMJitFFISameThreadCalloutTest >> testOptimizedFunctionDoubleToVoid [
 { #category : 'tests - pointer double double double double void' }
 VMJitFFISameThreadCalloutTest >> testOptimizedFunctionPointerDoubleDoubleDoubleDoubleToVoid [
 
-	| compiledMethod cogMethod tfExternalFunction called receivedArgument1 receivedArgument2 receivedArgument3 anExternalAddress receivedArgument4 receivedArgument5 |
+	| compiledMethod cogMethod tfExternalFunction called receivedArguments argumentTypes anExternalAddress |
 
 	isa = #IA32 ifTrue: [ ^ self skip ].
 
 	called := false.
+
+	argumentTypes := { interpreter libFFI pointer. interpreter libFFI double. interpreter libFFI double. interpreter libFFI double. interpreter libFFI double }.
 
 	"I need to return 0 in the function, even if it is void, as the simulation cannot identify when it is a 
 	void returning function "
@@ -768,13 +770,9 @@ VMJitFFISameThreadCalloutTest >> testOptimizedFunctionPointerDoubleDoubleDoubleD
 		                      createExternalFunctionFor: [:ptr ":dbl1 :dbl2 :dbl3 :dbl4 Double Parameters are not handled by our simulation"  | 
 										self assertIsOptimizedCall: tfExternalFunction.
 										called := true.
-										receivedArgument1 := ptr.
-										receivedArgument2 := machineSimulator doublePrecisionFloatingPointRegister0Value.
-										receivedArgument3 := machineSimulator doublePrecisionFloatingPointRegister1Value.
-										receivedArgument4 := machineSimulator doublePrecisionFloatingPointRegister2Value.
-										receivedArgument5 := machineSimulator doublePrecisionFloatingPointRegister3Value.
+										receivedArguments := machineSimulator fetchArgumentsOfTypes: argumentTypes.
 										0 ]
-		                      withArgumentTypes: { interpreter libFFI pointer. interpreter libFFI double. interpreter libFFI double. interpreter libFFI double. interpreter libFFI double }
+		                      withArgumentTypes: argumentTypes
 		                      withReturnType: interpreter libFFI void
 									flags: FFI_FLAG_USE_OPTIMIZED_VERSION | FFI_FLAG_POINTERS_MIGHT_BE_EXTERNAL_ADDRESSES.
 	
@@ -813,11 +811,11 @@ VMJitFFISameThreadCalloutTest >> testOptimizedFunctionPointerDoubleDoubleDoubleD
 	self assert: machineSimulator pc equals: callerAddress.
 	self assert: machineSimulator receiverRegisterValue equals: (memory integerObjectOf: 23).
 	self assert: called.
-	self assert: receivedArgument1 equals: 17.
-	self assert: receivedArgument2 equals: 23.5.
-	self assert: receivedArgument3 equals: 42.0.
-	self assert: receivedArgument4 equals: 99.5.
-	self assert: receivedArgument5 equals: 55.0.
+	self assert: receivedArguments first equals: 17.
+	self assert: receivedArguments second equals: 23.5.
+	self assert: receivedArguments third equals: 42.0.
+	self assert: receivedArguments fourth equals: 99.5.
+	self assert: receivedArguments fifth equals: 55.0.
 ]
 
 { #category : 'tests - pointer double double double void' }

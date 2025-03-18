@@ -162,7 +162,7 @@ LibFFIType >> marshallToSmalltalkFromByteArray: aByteArray [
 	^ [ type ] 
 		caseOf: { 
 			[ FFI_TYPE_DOUBLE ] -> [ aByteArray float64AtOffset: 0 ].
-			[ FFI_TYPE_POINTER ] -> [ self halt ].		
+			[ FFI_TYPE_POINTER ] -> [ aByteArray integerAt: 1 size: size signed: false  ].		
 		} 
 		otherwise: [ self halt ]
 

@@ -116,11 +116,14 @@ UnicornX64Simulator >> fetchArgumentsOfTypes: argumentTypes [
 	| byteArray |
 
 	^ argumentTypes withIndexCollect: [ :type :index | 
-		index = 5 ifTrue: [ self halt ].
-		byteArray := type isFloatType 
-			ifTrue: [ self doublePrecisionFloatingPointRegisterRaw: index  ]
-			ifFalse: [ self cArgRegisterRaw: index ].
-		
+		index <= 4 ifTrue: [  
+			byteArray := type isFloatType 
+				ifTrue: [ self doublePrecisionFloatingPointRegisterRaw: index  ]
+				ifFalse: [ self cArgRegisterRaw: index ]]
+		ifFalse: [  
+			index = 6 ifTrue: [ self halt ].
+			byteArray := self stackValueBytesAt: 0.
+		].
 		type marshallToSmalltalkFromByteArray: byteArray
 	]
 ]
