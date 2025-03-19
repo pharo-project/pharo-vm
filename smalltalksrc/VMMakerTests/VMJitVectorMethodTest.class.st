@@ -12,7 +12,7 @@ Class {
 { #category : 'building suites' }
 VMJitVectorMethodTest class >> wordSizeParameters [
 
-	^ self wordSize64SIMDParameters 
+	^ self wordSize64SIMDParameters
 ]
 
 { #category : 'as yet unclassified' }
@@ -31,7 +31,7 @@ VMJitVectorMethodTest >> addVector: arg1 with: arg2 intoVector: arg3 [
 VMJitVectorMethodTest >> initStack [
 
 	self createBaseFrame.
-	
+
 	"Initialize Stack to the correct pointers in the selected page"
 	machineSimulator smalltalkStackPointerRegisterValue: interpreter stackPointer.
 	machineSimulator framePointerRegisterValue: interpreter framePointer.
@@ -54,7 +54,7 @@ VMJitVectorMethodTest >> setUp [
 VMJitVectorMethodTest >> setUpTrampolines [
 
 	super setUpTrampolines.
-	
+
 	cogit ceSendMustBeBooleanAddFalseTrampoline: (self compileTrampoline: [ cogit RetN: 0 ] named:#ceSendMustBeBooleanAddFalseTrampoline).
 	cogit ceSendMustBeBooleanAddTrueTrampoline: (self compileTrampoline: [ cogit RetN: 0 ] named:#ceSendMustBeBooleanAddTrueTrampoline).
 
@@ -66,14 +66,14 @@ VMJitVectorMethodTest >> setUpTrampolines [
 VMJitVectorMethodTest >> testJitCompiledFloat32VectorAddition [
 
 	| callingMethod cm x y z |
-	
+
 	x := self new32BitIndexableFromArray: #(1.0 2.0 3.0 4.0 5.0 6.0 7.0 8.0).
 	y := self new32BitIndexableFromArray: #(10.0 20.0 30.0 40.0 50.0 60.0 70.0 80.0).
 	z := self new32BitIndexableOfSize: 8.
-		
+
 	cm := IRBuilder buildMethod: [ :builder |"TODO handle arrays with an odd number of elements"
 		builder
-				numArgs: 3; 		
+				numArgs: 3;
 				addTemps: { #firstVector. #secondVector. #thirdVector. #i. #end };
 				pushLiteral: 0;
 				storeTemp: #i;
@@ -107,7 +107,7 @@ VMJitVectorMethodTest >> testJitCompiledFloat32VectorAddition [
 				pushTemp: #thirdVector;
 				returnTop
 		 ].
-	
+
 	self class addSelector: #addVector:with:intoVector: withMethod: cm.
 
 	callingMethod := self jitMethod: (self findMethod: #addVector:with:intoVector:).
@@ -116,12 +116,12 @@ VMJitVectorMethodTest >> testJitCompiledFloat32VectorAddition [
 
 	self initStack.
 
-	self 
-		callCogMethod: callingMethod 
-		receiver: memory nilObject 
+	self
+		callCogMethod: callingMethod
+		receiver: memory nilObject
 		arguments: {x. y. z}
 		returnAddress: callerAddress.
-	
+
 	self assert: machineSimulator receiverRegisterValue equals: z.
 	self assert: (memory fetchFloat32: 0 ofObject: z) equals: 11.0.
 	self assert: (memory fetchFloat32: 1 ofObject: z) equals: 22.0.
@@ -130,9 +130,9 @@ VMJitVectorMethodTest >> testJitCompiledFloat32VectorAddition [
 	self assert: (memory fetchFloat32: 4 ofObject: z) equals: 55.0.
 	self assert: (memory fetchFloat32: 5 ofObject: z) equals: 66.0.
 	self assert: (memory fetchFloat32: 6 ofObject: z) equals: 77.0.
-	self assert: (memory fetchFloat32: 7 ofObject: z) equals: 88.0.		
-	
-	
+	self assert: (memory fetchFloat32: 7 ofObject: z) equals: 88.0.
+
+
 
 ]
 
@@ -197,7 +197,7 @@ VMJitVectorMethodTest >> testJitCompiledFloat64VectorAddition [
 	self
 		callCogMethod: callingMethod
 		receiver: memory nilObject
-		arguments: { 
+		arguments: {
 				x.
 				y.
 				z }
@@ -211,13 +211,13 @@ VMJitVectorMethodTest >> testJitCompiledFloat64VectorAddition [
 { #category : 'tests' }
 VMJitVectorMethodTest >> testOnStackReplacementForLongRunningVectorAddMethod [
 	| callingMethod cm x y z firstTerm size frame |
-	
+
 	cogit setCStackPointer: interpreter rumpCStackAddress.
-	cogit setCFramePointer: interpreter rumpCStackAddress.	
-	
+	cogit setCFramePointer: interpreter rumpCStackAddress.
+
 	firstTerm := 1.0 to: 2.0.
 	size := firstTerm size.
-	
+
 	x := self new64BitIndexableFromArray: firstTerm.
 	y := self new64BitIndexableFromArray:
 		     (firstTerm collect: [ :i | i * 10 ]).
@@ -261,7 +261,7 @@ VMJitVectorMethodTest >> testOnStackReplacementForLongRunningVectorAddMethod [
 			      returnTop ].
 
 	self class addSelector: #addVector:with:intoVector: withMethod: cm.
-	
+
 	callingMethod := self createMethodOopFromHostMethod:
 		                 (self findMethod: #addVector:with:intoVector:).
 
@@ -274,12 +274,12 @@ VMJitVectorMethodTest >> testOnStackReplacementForLongRunningVectorAddMethod [
 	frame := stackBuilder
 		         args: { x };
 		         addNewFrame.
-	frame stack: { 
+	frame stack: {
 			x.
 			y.
 			z };
 			method: callingMethod.
-	
+
 	"We need to set the first context to the base of the current page"
 	stackBuilder createStackPage.
 	stackBuilder preparePage.
@@ -290,6 +290,7 @@ VMJitVectorMethodTest >> testOnStackReplacementForLongRunningVectorAddMethod [
 	stackBuilder setInterpreterVariables.
 
 	cogit generateReturnToInterpreterPCTrampoline.
+	interpreter argumentCount: 3.
 	interpreter newMethod: callingMethod.
 	interpreter activateNewMethod.
 	"Set the backwards branch count to 3 so it trips in the first iteration.
@@ -298,8 +299,8 @@ VMJitVectorMethodTest >> testOnStackReplacementForLongRunningVectorAddMethod [
 		iframeBackwardBranchByte: interpreter framePointer
 		put: 3.
 	interpreter sigset: nil jmp: 0.
-	
-	[interpreter interpretUntilReturn.] on: ReenterInterpreter do: [ :notification | 
+
+	[interpreter interpretUntilReturn.] on: ReenterInterpreter do: [ :notification |
 		"Stop when returning from compiled method to interpreter"
 	].
 
