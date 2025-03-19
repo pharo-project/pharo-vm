@@ -757,7 +757,7 @@ CogAbstractInstruction >> genJumpFPEqual: jumpTarget [
 	<inline: true>
 	<returnTypeC: #'AbstractInstruction *'>
 	<var: #jumpTarget type: #'void *'>
-	^cogit gen: JumpFPEqual operand: jumpTarget asInteger
+	^cogit genConditionalBranch: JumpFPEqual operand: jumpTarget asInteger
 ]
 
 { #category : 'abstract instructions' }
@@ -765,7 +765,7 @@ CogAbstractInstruction >> genJumpFPGreater: jumpTarget [
 	<inline: true>
 	<returnTypeC: #'AbstractInstruction *'>
 	<var: #jumpTarget type: #'void *'>
-	^cogit gen: JumpFPGreater operand: jumpTarget asInteger
+	^cogit genConditionalBranch: JumpFPGreater operand: jumpTarget asInteger
 ]
 
 { #category : 'abstract instructions' }
@@ -773,7 +773,7 @@ CogAbstractInstruction >> genJumpFPGreaterOrEqual: jumpTarget [
 	<inline: true>
 	<returnTypeC: #'AbstractInstruction *'>
 	<var: #jumpTarget type: #'void *'>
-	^cogit gen: JumpFPGreaterOrEqual operand: jumpTarget asInteger
+	^cogit genConditionalBranch: JumpFPGreaterOrEqual operand: jumpTarget asInteger
 ]
 
 { #category : 'abstract instructions' }
@@ -781,7 +781,7 @@ CogAbstractInstruction >> genJumpFPLess: jumpTarget [
 	<inline: true>
 	<returnTypeC: #'AbstractInstruction *'>
 	<var: #jumpTarget type: #'void *'>
-	^cogit gen: JumpFPLess operand: jumpTarget asInteger
+	^cogit genConditionalBranch: JumpFPLess operand: jumpTarget asInteger
 ]
 
 { #category : 'abstract instructions' }
@@ -789,7 +789,7 @@ CogAbstractInstruction >> genJumpFPLessOrEqual: jumpTarget [
 	<inline: true>
 	<returnTypeC: #'AbstractInstruction *'>
 	<var: #jumpTarget type: #'void *'>
-	^cogit gen: JumpFPLessOrEqual operand: jumpTarget asInteger
+	^cogit genConditionalBranch: JumpFPLessOrEqual operand: jumpTarget asInteger
 ]
 
 { #category : 'abstract instructions' }
@@ -797,7 +797,7 @@ CogAbstractInstruction >> genJumpFPNotEqual: jumpTarget [
 	<inline: true>
 	<returnTypeC: #'AbstractInstruction *'>
 	<var: #jumpTarget type: #'void *'>
-	^cogit gen: JumpFPNotEqual operand: jumpTarget asInteger
+	^cogit genConditionalBranch: JumpFPNotEqual operand: jumpTarget asInteger
 ]
 
 { #category : 'abstract instructions' }

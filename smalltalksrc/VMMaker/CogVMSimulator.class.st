@@ -76,8 +76,7 @@ Class {
 		'expecting',
 		'bootstrapping',
 		'primitiveFailCount',
-		'initialAddress',
-		'rumpCStackBase'
+		'initialAddress'
 	],
 	#classVars : [
 		'ByteCountsPerMicrosecond',
