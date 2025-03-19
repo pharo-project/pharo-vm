@@ -29,7 +29,6 @@ SLExpandASTVisitor >> initTranslationDictionary [
 	pairs := #( 
 		f:printf: #expandPrintfIn:
 		
-		#value	 #expandASTIn:
 		#value: #expandASTIn:
 		#value:value: #expandASTIn:
 		#value:value:value: #expandASTIn:
