@@ -99,7 +99,10 @@ SLExpandASTVisitor >> visitSendNode: aSendNode [
 	action := translationDictionary
 		          at: aSendNode selector
 		          ifAbsent: [ nil ].
+
+	self visit: aSendNode receiver.
 	aSendNode arguments do: [ :arg | self visit: arg ].
+
 	action ifNotNil: [ aSendNode perform: action with: currentTMethod ]
 ]
 
