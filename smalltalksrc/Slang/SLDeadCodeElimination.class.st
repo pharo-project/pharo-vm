@@ -356,7 +356,7 @@ SLDeadCodeElimination >> propagateMarkedElement: node [
 SLDeadCodeElimination >> removeDeadCodeInCurrentMethod [
 
 	| i |
-	currentMethod expandAST.
+	sLExpandASTVisitor expandASTInCurrentMethod.
 	self initMarkAndWorkList.
 	[ workList isEmpty ] whileFalse: [
 		i := workList removeFirst.

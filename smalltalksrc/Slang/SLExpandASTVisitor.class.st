@@ -15,6 +15,12 @@ SLExpandASTVisitor >> currentMethod: aTMethod [
 	currentTMethod := aTMethod
 ]
 
+{ #category : 'transformation' }
+SLExpandASTVisitor >> expandASTInCurrentMethod [
+
+	self visit: currentTMethod parseTree
+]
+
 { #category : 'initialization' }
 SLExpandASTVisitor >> initTranslationDictionary [
 	
@@ -93,8 +99,9 @@ SLExpandASTVisitor >> visitSendNode: aSendNode [
 	| action |
 	action := translationDictionary
 		          at: aSendNode selector
-		          ifAbsent: [ ^ self ].
-	^ aSendNode perform: action with: currentTMethod
+		          ifAbsent: [ nil ].
+	aSendNode arguments do: [ :arg | self visit: arg ].
+	action ifNotNil: [ aSendNode perform: action with: currentTMethod ]
 ]
 
 { #category : 'visiting' }
@@ -107,7 +114,7 @@ SLExpandASTVisitor >> visitStatementListNode: aStatementListNode [
 SLExpandASTVisitor >> visitSwitchStatementNode: aSwitchStatmentNode [
 
 	self visit: aSwitchStatmentNode expression.
-	aSwitchStatmentNode cases: [ :cases | self visit: cases second ]
+	aSwitchStatmentNode cases do: [ :cases | self visit: cases second ]
 ]
 
 { #category : 'visiting' }

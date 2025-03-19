@@ -1,6 +1,9 @@
 Class {
 	#name : 'SLASTTransformationTest',
 	#superclass : 'SLAbstractTranslationTestCase',
+	#instVars : [
+		'sLExpandASTVisitor'
+	],
 	#category : 'Slang-Tests',
 	#package : 'Slang-Tests'
 }
@@ -12,7 +15,8 @@ SLASTTransformationTest >> setUp [
 	ccg addClass: SLASTTransformationTestClass.
 	"necessary to get the type of sqInt"
 	SpurMemoryManager initBytesPerWord: 8.
-	ccg inferTypes
+	ccg inferTypes.
+	sLExpandASTVisitor := SLExpandASTVisitor new
 ]
 
 { #category : 'send-transformation' }
@@ -21,7 +25,8 @@ SLASTTransformationTest >> testMethodWithBlockValue [
 	| translation tMethod |
 	tMethod := ccg methodNamed: #methodWithBlockValue.
 
-	tMethod expandAST.
+	sLExpandASTVisitor currentMethod: tMethod .
+	sLExpandASTVisitor expandASTInCurrentMethod.
 
 	translation := self translate: tMethod.
 	translation := translation trimBoth.
@@ -47,7 +52,8 @@ SLASTTransformationTest >> testMethodWithBlockValueValue [
 	| translation tMethod |
 	tMethod := ccg methodNamed: #methodWithBlockValueValue.
 
-	tMethod expandAST.
+	sLExpandASTVisitor currentMethod: tMethod.
+	sLExpandASTVisitor expandASTInCurrentMethod.
 
 	translation := self translate: tMethod.
 	translation := translation trimBoth.
@@ -75,7 +81,8 @@ SLASTTransformationTest >> testMethodWithBockInAssignment [
 	| translation tMethod |
 	tMethod := ccg methodNamed: #methodWithBockInAssignment.
 
-	tMethod expandAST.
+	sLExpandASTVisitor currentMethod: tMethod.
+	sLExpandASTVisitor expandASTInCurrentMethod.
 
 	translation := self translate: tMethod.
 	translation := translation trimBoth.
@@ -103,7 +110,8 @@ SLASTTransformationTest >> testMethodWithBockValueInAssignment [
 	| translation tMethod |
 	tMethod := ccg methodNamed: #methodWithBockValueInAssignment.
 
-	tMethod expandAST.
+	sLExpandASTVisitor currentMethod: tMethod.
+	sLExpandASTVisitor expandASTInCurrentMethod.
 
 	translation := self translate: tMethod.
 	translation := translation trimBoth.
@@ -132,7 +140,8 @@ SLASTTransformationTest >> testMethodWithBockValueValueInAssignment [
 	| translation tMethod |
 	tMethod := ccg methodNamed: #methodWithBockValueValueInAssignment.
 
-	tMethod expandAST.
+	sLExpandASTVisitor currentMethod: tMethod.
+	sLExpandASTVisitor expandASTInCurrentMethod.
 
 	translation := self translate: tMethod.
 	translation := translation trimBoth.
@@ -163,7 +172,8 @@ SLASTTransformationTest >> testMethodWithFPrintF [
 	| translation tMethod |
 	tMethod := ccg methodNamed: #methodWithFPrintF.
 
-	tMethod expandAST.
+	sLExpandASTVisitor currentMethod: tMethod.
+	sLExpandASTVisitor expandASTInCurrentMethod.
 
 	translation := self translate: tMethod.
 	translation := translation trimBoth.
