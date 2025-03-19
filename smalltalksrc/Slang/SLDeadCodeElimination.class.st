@@ -2,6 +2,7 @@ Class {
 	#name : 'SLDeadCodeElimination',
 	#superclass : 'Object',
 	#instVars : [
+		'sLExpandASTVisitor',
 		'codeGenerator',
 		'workList',
 		'markedElements',
@@ -145,7 +146,9 @@ SLDeadCodeElimination >> currentMethod [
 { #category : 'accessing' }
 SLDeadCodeElimination >> currentMethod: aTMethod [
 
-	currentMethod := aTMethod
+	currentMethod := aTMethod.
+	sLExpandASTVisitor currentMethod: aTMethod.
+	codeGenerator currentMethod: aTMethod
 ]
 
 { #category : 'cleaning' }
@@ -271,7 +274,8 @@ SLDeadCodeElimination >> initialize [
 	variableOccurences := Dictionary new: 100.
 	variableDefinitions := Dictionary new: 100.
 	variableDefiningStmtList := Dictionary new: 100.
-	localVariableScope := Stack new
+	localVariableScope := Stack new.
+	sLExpandASTVisitor := SLExpandASTVisitor new
 ]
 
 { #category : 'testing' }
@@ -372,8 +376,7 @@ SLDeadCodeElimination >> removeDeadCodeUsing: aCodeGen [
 		during: [ :bar |
 			codeGenerator methods doWithIndex: [ :m :i |
 				bar value: i.
-				currentMethod := m.
-				codeGenerator currentMethod: m.
+				self currentMethod: m.
 				self removeDeadCodeInCurrentMethod ] ]
 ]
 
@@ -448,10 +451,9 @@ SLDeadCodeElimination >> visitSendNode: aSendNode [
 	self markAsStatementAndAddToWorkList: aSendNode.
 	self markAsExpressionAndAddToWorkList: aSendNode receiver.
 
-	(#( #cCall:withArguments: f:printf: ) includes: aSendNode selector)
-		ifTrue: [
-			(aSendNode arguments at: 2) statements do: [ :stmt |
-				self markAsExpressionAndAddToWorkList: stmt ] ].
+	(#( #cCall:withArguments: ) includes: aSendNode selector) ifTrue: [
+		(aSendNode arguments at: 2) statements do: [ :stmt |
+			self markAsExpressionAndAddToWorkList: stmt ] ].
 
 
 
