@@ -333,7 +333,7 @@ CCodeGeneratorGlobalStructure >> localizeGlobalVariables [
 			globalsToDelete add: assoc key ] ].
 
 	variables do: [ :var |
-		(globalVariableUsage includes: var) ifFalse: [
+		(globalVariableUsage keys includes: var) ifFalse: [
 			globalsToDelete add: var ] ].
 
 	globalsToDelete do: [ :var |
