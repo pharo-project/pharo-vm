@@ -1,30 +1,32 @@
 Class {
-	#name : #CogOutOfLineLiteralsX64Compiler,
-	#superclass : #CogX64Compiler,
-	#category : #'VMMaker-JIT'
+	#name : 'CogOutOfLineLiteralsX64Compiler',
+	#superclass : 'CogX64Compiler',
+	#category : 'VMMaker-JIT',
+	#package : 'VMMaker',
+	#tag : 'JIT'
 }
 
-{ #category : #'class initialization' }
+{ #category : 'class initialization' }
 CogOutOfLineLiteralsX64Compiler class >> initializeAbstractRegistersSysV [
 	"Assign the abstract registers with the identities/indices of the relevant concrete registers."
 	super initializeAbstractRegistersSysV.
 	Extra6Reg := R8
 ]
 
-{ #category : #'class initialization' }
+{ #category : 'class initialization' }
 CogOutOfLineLiteralsX64Compiler class >> initializeAbstractRegistersWin64 [
 	"Assign the abstract registers with the identities/indices of the relevant concrete registers."
 	super initializeAbstractRegistersWin64.
 	Extra6Reg := R11
 ]
 
-{ #category : #testing }
+{ #category : 'testing' }
 CogOutOfLineLiteralsX64Compiler class >> isRISCTempRegister: reg [
 	"For tests to filter-out bogus values left in the RISCTempRegister, if any."
 	^false
 ]
 
-{ #category : #'register allocation' }
+{ #category : 'register allocation' }
 CogOutOfLineLiteralsX64Compiler >> availableRegisterOrNoneFor: liveRegsMask [
 	"Answer an unused abstract register in the liveRegMask.
 	 Subclasses with more registers can override to answer them.
@@ -35,7 +37,7 @@ CogOutOfLineLiteralsX64Compiler >> availableRegisterOrNoneFor: liveRegsMask [
 	^super availableRegisterOrNoneFor: liveRegsMask
 ]
 
-{ #category : #testing }
+{ #category : 'testing' }
 CogOutOfLineLiteralsX64Compiler >> isPCDependent [
 	"Answer if the receiver is a pc-dependent instruction.  With out-of-line literals any instruction
 	 that refers to a literal depends on the address of the literal, so add them in addition to the jumps."

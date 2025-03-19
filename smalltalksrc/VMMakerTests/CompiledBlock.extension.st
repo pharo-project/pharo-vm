@@ -1,6 +1,6 @@
-Extension { #name : #CompiledBlock }
+Extension { #name : 'CompiledBlock' }
 
-{ #category : #'*VMMakerTests' }
+{ #category : '*VMMakerTests' }
 CompiledBlock >> forMemory: memory inMethod: aMethodBuilder [ 
 
 	| methodBuilder |

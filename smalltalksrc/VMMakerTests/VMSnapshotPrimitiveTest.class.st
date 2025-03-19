@@ -1,6 +1,6 @@
 Class {
-	#name : #VMSnapshotPrimitiveTest,
-	#superclass : #VMInterpreterTests,
+	#name : 'VMSnapshotPrimitiveTest',
+	#superclass : 'VMInterpreterTests',
 	#instVars : [
 		'imageName'
 	],
@@ -9,10 +9,12 @@ Class {
 		'VMBytecodeConstants',
 		'VMObjectIndices'
 	],
-	#category : #'VMMakerTests-InterpreterTests'
+	#category : 'VMMakerTests-InterpreterTests',
+	#package : 'VMMakerTests',
+	#tag : 'InterpreterTests'
 }
 
-{ #category : #running }
+{ #category : 'running' }
 VMSnapshotPrimitiveTest >> setUp [
 	super setUp.
 
@@ -25,14 +27,14 @@ VMSnapshotPrimitiveTest >> setUp [
 	imageName := self class name
 ]
 
-{ #category : #running }
+{ #category : 'running' }
 VMSnapshotPrimitiveTest >> tearDown [
 
 	imageName ifNotNil: [ imageName asFileReference ensureDeleteAll ].
 	super tearDown
 ]
 
-{ #category : #'tests - snapshot' }
+{ #category : 'tests - snapshot' }
 VMSnapshotPrimitiveTest >> testPrimitiveSnapshotContextsShouldBeTenured [
 
 	| method frame contextOop contextIdentityHash suspendedContext |
@@ -62,7 +64,7 @@ VMSnapshotPrimitiveTest >> testPrimitiveSnapshotContextsShouldBeTenured [
 		equals: contextIdentityHash
 ]
 
-{ #category : #'tests - snapshot' }
+{ #category : 'tests - snapshot' }
 VMSnapshotPrimitiveTest >> testPrimitiveSnapshotCreateImage [
 
 	| method |
@@ -81,7 +83,7 @@ VMSnapshotPrimitiveTest >> testPrimitiveSnapshotCreateImage [
 	interpreter imageReaderWriter validateImage: imageName 
 ]
 
-{ #category : #'tests - snapshot' }
+{ #category : 'tests - snapshot' }
 VMSnapshotPrimitiveTest >> testPrimitiveSnapshotHandlesFormatToUse [
 
 	| method |
@@ -104,7 +106,7 @@ VMSnapshotPrimitiveTest >> testPrimitiveSnapshotHandlesFormatToUse [
 	interpreter imageReaderWriter validateImage: imageName 
 ]
 
-{ #category : #'tests - snapshot' }
+{ #category : 'tests - snapshot' }
 VMSnapshotPrimitiveTest >> testPrimitiveSnapshotNewKeptObjectShouldBeTenured [
 
 	| method object objectHash |

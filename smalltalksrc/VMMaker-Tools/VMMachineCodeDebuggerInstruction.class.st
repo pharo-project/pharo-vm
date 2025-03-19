@@ -1,45 +1,46 @@
 Class {
-	#name : #VMMachineCodeDebuggerInstruction,
-	#superclass : #Object,
+	#name : 'VMMachineCodeDebuggerInstruction',
+	#superclass : 'Object',
 	#instVars : [
 		'instruction',
 		'bytes',
 		'machineSimulator',
 		'debugger'
 	],
-	#category : #'VMMaker-Tools'
+	#category : 'VMMaker-Tools',
+	#package : 'VMMaker-Tools'
 }
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 VMMachineCodeDebuggerInstruction >> address [
 	
 	^ instruction address
 ]
 
-{ #category : #printing }
+{ #category : 'printing' }
 VMMachineCodeDebuggerInstruction >> addressString [
 	
 	^ instruction address hex
 ]
 
-{ #category : #printing }
+{ #category : 'printing' }
 VMMachineCodeDebuggerInstruction >> assemblyCodeString [
 
 	^ instruction assemblyCodeString 
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 VMMachineCodeDebuggerInstruction >> branchTargetAddress [
 	
 	^ instruction branchTargetAddress
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 VMMachineCodeDebuggerInstruction >> bytes: aByteArray [ 
 	bytes := aByteArray
 ]
 
-{ #category : #printing }
+{ #category : 'printing' }
 VMMachineCodeDebuggerInstruction >> bytesString [
 
 	^ String streamContents: [ :aStream |
@@ -52,13 +53,13 @@ VMMachineCodeDebuggerInstruction >> bytesString [
 
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 VMMachineCodeDebuggerInstruction >> debugger: aVMMachineCodeDebugger [ 
 	
 	debugger := aVMMachineCodeDebugger
 ]
 
-{ #category : #showing }
+{ #category : 'showing' }
 VMMachineCodeDebuggerInstruction >> icon [
 
 	self address = machineSimulator instructionPointerRegisterValue 
@@ -72,23 +73,23 @@ VMMachineCodeDebuggerInstruction >> icon [
 	^ nil
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 VMMachineCodeDebuggerInstruction >> instruction: aLLVMInstruction [ 
 	instruction := aLLVMInstruction
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 VMMachineCodeDebuggerInstruction >> machineSimulator [ 
 
 	^ machineSimulator
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 VMMachineCodeDebuggerInstruction >> machineSimulator: aProcessorSimulator [ 
 	machineSimulator := aProcessorSimulator
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 VMMachineCodeDebuggerInstruction >> usedRegisters [
 	"Detect any register name from an asm instruction"
 

@@ -1,10 +1,11 @@
 Class {
-	#name : #VMFFICallbacksTest,
-	#superclass : #VMAbstractFFITest,
-	#category : #VMMakerTests
+	#name : 'VMFFICallbacksTest',
+	#superclass : 'VMAbstractFFITest',
+	#category : 'VMMakerTests',
+	#package : 'VMMakerTests'
 }
 
-{ #category : #'tests - callbacks' }
+{ #category : 'tests - callbacks' }
 VMFFICallbacksTest >> doCallout: tfExternalFunction with: parametersArray [
 	
 	interpreter push: memory nilObject.
@@ -16,7 +17,7 @@ VMFFICallbacksTest >> doCallout: tfExternalFunction with: parametersArray [
 
 ]
 
-{ #category : #'tests - callbacks' }
+{ #category : 'tests - callbacks' }
 VMFFICallbacksTest >> testPrimitiveSameThreadCallbackInCalloutSuspendsActiveProcess [
 
 	| parametersArray tfExternalFunction oldActiveProcess callbackContext |
@@ -51,7 +52,7 @@ VMFFICallbacksTest >> testPrimitiveSameThreadCallbackInCalloutSuspendsActiveProc
 	interpreter primitiveSameThreadCallout.
 ]
 
-{ #category : #'tests - callbacks' }
+{ #category : 'tests - callbacks' }
 VMFFICallbacksTest >> testPrimitiveSameThreadCallbackReturnKeepsAllOtherProcessesInReady [
 
 	| parametersArray tfExternalFunction callbackContext processBefore |
@@ -77,7 +78,7 @@ VMFFICallbacksTest >> testPrimitiveSameThreadCallbackReturnKeepsAllOtherProcesse
 	self assertCollection: self readyProcesses hasSameElements: processBefore
 ]
 
-{ #category : #'tests - callbacks' }
+{ #category : 'tests - callbacks' }
 VMFFICallbacksTest >> testPrimitiveSameThreadCallbackReturnResumesCalloutProcess [
 
 	| parametersArray tfExternalFunction oldActiveProcess callbackContext |
@@ -104,7 +105,7 @@ VMFFICallbacksTest >> testPrimitiveSameThreadCallbackReturnResumesCalloutProcess
 	self assert: interpreter activeProcess equals: oldActiveProcess.
 ]
 
-{ #category : #'tests - callbacks' }
+{ #category : 'tests - callbacks' }
 VMFFICallbacksTest >> testPrimitiveSameThreadReentrantCallbackRestoresCalloutProcess [
 
 	| parametersArray tfExternalFunction oldActiveProcess callbackContext numberOfCallbacks innerCallbackContext tfExternalFunction2 |

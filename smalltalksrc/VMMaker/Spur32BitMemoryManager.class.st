@@ -1,10 +1,12 @@
 Class {
-	#name : #Spur32BitMemoryManager,
-	#superclass : #SpurMemoryManager,
-	#category : #'VMMaker-SpurMemoryManager'
+	#name : 'Spur32BitMemoryManager',
+	#superclass : 'SpurMemoryManager',
+	#category : 'VMMaker-SpurMemoryManager',
+	#package : 'VMMaker',
+	#tag : 'SpurMemoryManager'
 }
 
-{ #category : #'class initialization' }
+{ #category : 'class initialization' }
 Spur32BitMemoryManager class >> initializeWithOptions: optionsDictionary [
 	"SpurMemoryManager initializeWithOptions: Dictionary new"
 
@@ -12,40 +14,40 @@ Spur32BitMemoryManager class >> initializeWithOptions: optionsDictionary [
 	super initializeWithOptions: optionsDictionary
 ]
 
-{ #category : #'simulation only' }
+{ #category : 'simulation only' }
 Spur32BitMemoryManager class >> isImmediate: anObject [
 	^anObject class == SmallInteger
 	  or: [anObject class == Character]
 ]
 
-{ #category : #translation }
+{ #category : 'translation' }
 Spur32BitMemoryManager class >> maxSmallInteger [
 	^16r3FFFFFFF
 ]
 
-{ #category : #translation }
+{ #category : 'translation' }
 Spur32BitMemoryManager class >> minSmallInteger [
 	^-16r40000000
 ]
 
-{ #category : #'simulation only' }
+{ #category : 'simulation only' }
 Spur32BitMemoryManager class >> numSmallIntegerTagBits [
 	^1
 ]
 
-{ #category : #'simulation only' }
+{ #category : 'simulation only' }
 Spur32BitMemoryManager class >> simulatorClass [
 	^ Spur32BitMMLESimulator
 ]
 
-{ #category : #'word size' }
+{ #category : 'word size' }
 Spur32BitMemoryManager class >> wordSize [
 	"Answer the manager's word size, which is the size of an oop, and which
 	 is assumed to be equivalent to the underlying machine's word size."
 	^4
 ]
 
-{ #category : #'object enumeration' }
+{ #category : 'object enumeration' }
 Spur32BitMemoryManager >> addressAfter: objOop [
 	"Answer the address immediately following an object."
 	<returnTypeC: #usqInt>
@@ -57,13 +59,7 @@ Spur32BitMemoryManager >> addressAfter: objOop [
 	^objOop + self baseHeaderSize + (numSlots + (numSlots bitAnd: 1) bitShift: self shiftForWord)
 ]
 
-{ #category : #'type-support' }
-Spur32BitMemoryManager >> asSignedPlatformInteger: anInteger [ 
-	
-	^ anInteger signedIntFromLong
-]
-
-{ #category : #snapshot }
+{ #category : 'snapshot' }
 Spur32BitMemoryManager >> byteSwapped: w [
 	"Answer the given integer with its bytes in the reverse order."
 	<api>
@@ -71,7 +67,7 @@ Spur32BitMemoryManager >> byteSwapped: w [
 	^w byteSwap32
 ]
 
-{ #category : #'object enumeration' }
+{ #category : 'object enumeration' }
 Spur32BitMemoryManager >> bytesInObject: objOop [
 	"Answer the total number of bytes in an object including header and possible overflow size header."
 	<returnTypeC: #usqInt>
@@ -86,7 +82,7 @@ Spur32BitMemoryManager >> bytesInObject: objOop [
 		ifFalse: [self baseHeaderSize])
 ]
 
-{ #category : #'object enumeration' }
+{ #category : 'object enumeration' }
 Spur32BitMemoryManager >> bytesInObject: objOop given: rawNumSotsOfObjOop [
 	"Answer the total number of bytes in an object including header and possible overflow size header, given the value of the object's numSlots field."
 	<returnTypeC: #usqInt>
@@ -101,80 +97,12 @@ Spur32BitMemoryManager >> bytesInObject: objOop given: rawNumSotsOfObjOop [
 		ifFalse: [self baseHeaderSize])
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 Spur32BitMemoryManager >> bytesPerOop [
 	^4
 ]
 
-{ #category : #'interpreter access' }
-Spur32BitMemoryManager >> changeClassOf: rcvr to: argClass [
-	"Attempt to change the class of the receiver to the argument given that the
-	 format of the receiver matches the format of the argument.  If successful,
-	 answer 0, otherwise answer an error code indicating the reason for failure. 
-	 Fail if the format of the receiver is incompatible with the format of the argument,
-	 or if the argument is a fixed class and the receiver's size differs from the size
-	 that an instance of the argument should have."
-	<inline: false>
-	| classFormat fixedFields instFormat newFormat classIndex instSlots instBytes |
-	(self isObjImmutable: rcvr) ifTrue:
-		[^PrimErrNoModification].
-	classFormat := self formatOfClass: argClass.
-	fixedFields := self fixedFieldsOfClassFormat: classFormat.
-	classFormat := self instSpecOfClassFormat: classFormat.
-	instFormat := self formatOf: rcvr.
-
-	"Fail for inability to access classIndex before making contexts snapshot-safe."
-	(classIndex := self ensureBehaviorHash: argClass) < 0 ifTrue:
-		[^classIndex negated].
-
-	"Now check the instance for compatibility and compute odd bits if necessary."
-	classFormat <= self lastPointerFormat
-		ifTrue:
-			[instFormat > self lastPointerFormat ifTrue:
-				[^PrimErrInappropriate].
-			 ((instSlots := self numSlotsOf: rcvr) < fixedFields
-			  or: [instSlots > fixedFields and: [self isFixedSizePointerFormat: classFormat]]) ifTrue:
-				[^PrimErrBadReceiver].
-			 (instFormat = self indexablePointersFormat
-			  and: [self isContextNonImm: rcvr]) ifTrue:
-				[coInterpreter makeContextSnapshotSafe: rcvr].
-			 newFormat := classFormat]
-		ifFalse:
-			["Fail if the class's format is somehow invalid."
-			 classFormat ~= (self classFormatForInstanceFormat: classFormat) ifTrue:
-				[^PrimErrBadArgument].
-
-			 instBytes := self numBytesOf: rcvr.
-			 classFormat
-				caseOf: {
-				[self sixtyFourBitIndexableFormat]
-					-> [(instBytes anyMask: 7) ifTrue: [^PrimErrBadReceiver].
-						newFormat := classFormat].
-				[self firstLongFormat] 		
-					-> [(instBytes anyMask: 3) ifTrue: [^PrimErrBadReceiver].
-						newFormat := classFormat].
-				[self firstShortFormat] 		
-					-> [(instBytes anyMask: 1) ifTrue: [^PrimErrBadReceiver].
-						newFormat := classFormat + (2 - (instBytes >> 1) bitAnd: 1)].
-				[self firstByteFormat]
-					-> [newFormat := classFormat + (4 - instBytes bitAnd: 3)].
-				[self firstCompiledMethodFormat]
-					-> [classFormat ~= self firstCompiledMethodFormat ifTrue:
-							[^PrimErrInappropriate].
-						newFormat := instFormat] }
-				otherwise: "bits instances cannot be adopted by pointer-like classes..."
-					[^PrimErrInappropriate]].
-
-	self set: rcvr classIndexTo: classIndex formatTo: newFormat.
-
-	self assert: (self numBytesOf: rcvr) = (classFormat <= self lastPointerFormat
-											ifTrue: [instSlots * self bytesPerOop]
-											ifFalse: [instBytes]).
-	"ok"
-	^0
-]
-
-{ #category : #'gc - global' }
+{ #category : 'gc - global' }
 Spur32BitMemoryManager >> coalesce: obj1 and: obj2 [
 	| header1NumSlots header2NumSlots obj2slots newNumSlots |
 	header1NumSlots := self rawNumSlotsOf: obj1.
@@ -217,7 +145,7 @@ Spur32BitMemoryManager >> coalesce: obj1 and: obj2 [
 	^obj1 + self baseHeaderSize
 ]
 
-{ #category : #'interpreter access' }
+{ #category : 'interpreter access' }
 Spur32BitMemoryManager >> dbgFloatValueOf: oop [
 	"Answer the C double precision floating point value of the argument,
 	 or if it is not, answer 0."
@@ -233,7 +161,7 @@ Spur32BitMemoryManager >> dbgFloatValueOf: oop [
 	^0.0
 ]
 
-{ #category : #snapshot }
+{ #category : 'snapshot' }
 Spur32BitMemoryManager >> defaultEdenBytes [
 	"Answer the default amount of memory to allocate for the eden space.
 	 The actual value can be set via vmParameterAt: and/or a preference in the ini file.
@@ -263,7 +191,7 @@ Spur32BitMemoryManager >> defaultEdenBytes [
 		 and: [self isIntegerValue: (coInterpreter signed64BitValueOf: o)]]) ifTrue: [l := l + 1]]. l"
 ]
 
-{ #category : #'interpreter access' }
+{ #category : 'interpreter access' }
 Spur32BitMemoryManager >> fetchClassTagOf: oop [
 	<api>
 	| tagBits |
@@ -272,14 +200,14 @@ Spur32BitMemoryManager >> fetchClassTagOf: oop [
 		ifFalse: [self classIndexOf: oop]
 ]
 
-{ #category : #'object access' }
+{ #category : 'object access' }
 Spur32BitMemoryManager >> fetchLong32: fieldIndex ofFloatObject: oop [
 	"index by word size, and return a pointer as long as the word size"
 	<inline: true>
 	^self fetchLong32: fieldIndex ofObject: oop
 ]
 
-{ #category : #instantiation }
+{ #category : 'instantiation' }
 Spur32BitMemoryManager >> fillObj: objOop numSlots: numSlots with: fillValue [
 	<inline: true>
 	<var: #p type: #usqInt>
@@ -293,7 +221,7 @@ Spur32BitMemoryManager >> fillObj: objOop numSlots: numSlots with: fillValue [
 				uint32At: p + 4 put: fillValue]
 ]
 
-{ #category : #'interpreter access' }
+{ #category : 'interpreter access' }
 Spur32BitMemoryManager >> floatObjectOf: aFloat [
 	<inline: false>
 	<var: #aFloat type: #double>
@@ -301,7 +229,7 @@ Spur32BitMemoryManager >> floatObjectOf: aFloat [
 	^ self boxedFloatObjectOf: aFloat
 ]
 
-{ #category : #'interpreter access' }
+{ #category : 'interpreter access' }
 Spur32BitMemoryManager >> floatValueOf: oop [
 	"Answer the C double precision floating point value of the argument,
 	 or fail if it is not a Float, and answer 0.
@@ -319,14 +247,14 @@ Spur32BitMemoryManager >> floatValueOf: oop [
 	^0.0
 ]
 
-{ #category : #'interpreter access' }
+{ #category : 'interpreter access' }
 Spur32BitMemoryManager >> hasSixtyFourBitImmediates [
 	"The V3 64-bit memory manager has 64-bit oops, but its SmallIntegers only have
 	 31 bits of precision.  The Spur 64-bit memory manager has 61-bit immediates."
 	^false
 ]
 
-{ #category : #immediates }
+{ #category : 'immediates' }
 Spur32BitMemoryManager >> imageFormatVersion [
 	"Return a magic constant that changes when the image format changes.
 	 Since the image reading code uses this to detect byte ordering, one
@@ -335,7 +263,7 @@ Spur32BitMemoryManager >> imageFormatVersion [
 	^6521
 ]
 
-{ #category : #'free space' }
+{ #category : 'free space' }
 Spur32BitMemoryManager >> initFreeChunkWithBytes: numBytes at: address [
 	<var: #numBytes type: #usqLong>
 	| numSlots |
@@ -359,7 +287,7 @@ Spur32BitMemoryManager >> initFreeChunkWithBytes: numBytes at: address [
 	^address
 ]
 
-{ #category : #segments }
+{ #category : 'segments' }
 Spur32BitMemoryManager >> initSegmentBridgeWithBytes: numBytes at: address [
 	<var: #numBytes type: #usqLong>
 	| numSlots |
@@ -384,13 +312,16 @@ Spur32BitMemoryManager >> initSegmentBridgeWithBytes: numBytes at: address [
 										+ (1 << self markedBitHalfShift)]
 ]
 
-{ #category : #instantiation }
+{ #category : 'instantiation' }
 Spur32BitMemoryManager >> instantiateClass: classObj indexableSize: nElements isPinned: isPinned isOldSpace: isOldSpace [
 	<api>
 	<var: #nElements type: #usqInt>
 	"Allocate an instance of a variable class, excepting CompiledMethod."
 	| instSpec classFormat numSlots classIndex newObj fillValue |
-	classFormat := self formatOfClass: classObj.
+	classFormat := self formatOfClassSafe: classObj.
+	classFormat == -1 ifTrue:
+		[self primitiveFailFor: PrimErrBadReceiver. "no format"
+		 ^nil].
 	instSpec := self instSpecOfClassFormat: classFormat.
 	classIndex := self rawHashBitsOf: classObj.
 	fillValue := 0.
@@ -427,7 +358,8 @@ Spur32BitMemoryManager >> instantiateClass: classObj indexableSize: nElements is
 			  this method.
 			  Hence allow fixed classes to be instantiated here iff nElements = 0."
 			 (nElements ~= 0 or: [instSpec > self lastPointerFormat]) ifTrue:
-				[^nil].
+				[coInterpreter primitiveFailFor: PrimErrBadReceiver.
+				 ^nil].
 			 numSlots := self fixedFieldsOfClassFormat: classFormat.
 			 fillValue := nilObj].
 	classIndex = 0 ifTrue:
@@ -448,11 +380,12 @@ Spur32BitMemoryManager >> instantiateClass: classObj indexableSize: nElements is
 		ifFalse:
 			[newObj := self allocateSlots: numSlots format: instSpec classIndex: classIndex].
 	newObj ifNotNil:
-		[self fillObj: newObj numSlots: numSlots with: fillValue].
+		[self fillObj: newObj numSlots: numSlots with: fillValue]
+		ifNil: [ self primitiveFailFor: PrimErrNoMemory ].
 	^newObj
 ]
 
-{ #category : #instantiation }
+{ #category : 'instantiation' }
 Spur32BitMemoryManager >> instantiateCompiledMethodClass: classObj indexableSize: nElements [
 	<var: #nElements type: #usqInt>
 	"Allocate an instance of a CompiledMethod class."
@@ -480,7 +413,7 @@ Spur32BitMemoryManager >> instantiateCompiledMethodClass: classObj indexableSize
 	^newObj
 ]
 
-{ #category : #immediates }
+{ #category : 'immediates' }
 Spur32BitMemoryManager >> integerObjectOf: value [
 	"Convert the integer value, assumed to be in SmallInteger range, into a tagged SmallInteger object.
 	 In C, use a shift and an add to set the tag bit.
@@ -493,13 +426,13 @@ Spur32BitMemoryManager >> integerObjectOf: value [
 						ifFalse: [16r80000000 + value << 1 + 1]]
 ]
 
-{ #category : #immediates }
+{ #category : 'immediates' }
 Spur32BitMemoryManager >> integerObjectOfCharacterObject: oop [
 	"Immediate characters are unsigned"
 	^(self cCoerceSimple: oop to: #usqInt) >> 1
 ]
 
-{ #category : #immediates }
+{ #category : 'immediates' }
 Spur32BitMemoryManager >> integerValueOf: oop [
 	"Translator produces 'oop >> 1'"
 	^(oop bitShift: -31) = 1 "tests top bit"
@@ -509,14 +442,14 @@ Spur32BitMemoryManager >> integerValueOf: oop [
 			[oop bitShift: -1]
 ]
 
-{ #category : #'interpreter access' }
+{ #category : 'interpreter access' }
 Spur32BitMemoryManager >> isFloatInstance: oop [
 	<inline: true>
 	^(self isNonImmediate: oop)
 	  and: [(self classIndexOf: oop) = ClassFloatCompactIndex]
 ]
 
-{ #category : #'interpreter access' }
+{ #category : 'interpreter access' }
 Spur32BitMemoryManager >> isFloatOrInt: anOop [
 	"Answer if anOop is either a SmallInteger or a Float."
 
@@ -526,18 +459,18 @@ Spur32BitMemoryManager >> isFloatOrInt: anOop [
 		ifFalse: [(self classIndexOf: anOop) = ClassFloatCompactIndex]
 ]
 
-{ #category : #'object testing' }
+{ #category : 'object testing' }
 Spur32BitMemoryManager >> isImmediateCharacter: oop [
 	<inline: true>
 	^(oop bitAnd: self tagMask) = self characterTag
 ]
 
-{ #category : #'interpreter access' }
+{ #category : 'interpreter access' }
 Spur32BitMemoryManager >> isImmediateFloat: oop [
 	^false
 ]
 
-{ #category : #'interpreter access' }
+{ #category : 'interpreter access' }
 Spur32BitMemoryManager >> isIntegerValue: intValue [
 	"Answer if the given value can be represented as a Smalltalk integer value.
 	 In C, use a shift and XOR to set the sign bit if and only if the top two bits of the given
@@ -549,39 +482,39 @@ Spur32BitMemoryManager >> isIntegerValue: intValue [
 		inSmalltalk: [intValue >= self minSmallInteger and: [intValue <= self maxSmallInteger]]
 ]
 
-{ #category : #'free space' }
+{ #category : 'free space' }
 Spur32BitMemoryManager >> isLilliputianSize: chunkBytes [
 	"Allocation unit, the minimum size, is enough for 2 pointers"
 	^ false
 ]
 
-{ #category : #'header access' }
+{ #category : 'header access' }
 Spur32BitMemoryManager >> isMarked: objOop [
 	<api>
 	self flag: #endianness.
 	^((self longAt: objOop + 4) >> self markedBitHalfShift bitAnd: 1) ~= 0
 ]
 
-{ #category : #'object testing' }
+{ #category : 'object testing' }
 Spur32BitMemoryManager >> isNonIntegerObject: oop [
 	^(oop bitAnd: 1) = 0
 ]
 
-{ #category : #'as yet unclassified' }
+{ #category : 'as yet unclassified' }
 Spur32BitMemoryManager >> isSmallFloatValue: aNumber [ 
 	
 	"32 bits images does not have small float"
 	^ false.
 ]
 
-{ #category : #'object testing' }
+{ #category : 'object testing' }
 Spur32BitMemoryManager >> isWordsNonImm: objOop [
 	"Answer if the argument contains only indexable words (no oops). See comment in formatOf:"
 
 	^(self formatOf: objOop) = self firstLongFormat
 ]
 
-{ #category : #allocation }
+{ #category : 'allocation' }
 Spur32BitMemoryManager >> largeObjectBytesForSlots: numSlots [
 	"Answer the total number of bytes in an object with an overflow header, including header bytes."
 	<returnTypeC: #usqInt>
@@ -589,7 +522,7 @@ Spur32BitMemoryManager >> largeObjectBytesForSlots: numSlots [
 	+ (numSlots + (numSlots bitAnd: 1) * self bytesPerOop) "roundTo allocationUnit"
 ]
 
-{ #category : #'object access' }
+{ #category : 'object access' }
 Spur32BitMemoryManager >> lengthOf: objOop format: fmt [
 	"Answer the number of indexable units in the given object.
 	 For a CompiledMethod, the size of the method header (in bytes)
@@ -611,7 +544,7 @@ Spur32BitMemoryManager >> lengthOf: objOop format: fmt [
 	^0
 ]
 
-{ #category : #'interpreter access' }
+{ #category : 'interpreter access' }
 Spur32BitMemoryManager >> loadFloatOrIntFrom: floatOrInt [
 	"If floatOrInt is an integer, then convert it to a C double float and return it.
 	 If it is a Float, then load its value and return it.
@@ -625,34 +558,29 @@ Spur32BitMemoryManager >> loadFloatOrIntFrom: floatOrInt [
 	^self floatValueOf: floatOrInt
 ]
 
-{ #category : #'header format' }
+{ #category : 'header format' }
 Spur32BitMemoryManager >> logBytesPerOop [
 	^2
 ]
 
-{ #category : #'interpreter access' }
+{ #category : 'interpreter access' }
 Spur32BitMemoryManager >> maxCInteger [
 	^16rFFFFFFFF
 ]
 
-{ #category : #'interpreter access' }
-Spur32BitMemoryManager >> maxCSignedInteger [
-	^16r7FFFFFFF
-]
-
-{ #category : #instantiation }
+{ #category : 'instantiation' }
 Spur32BitMemoryManager >> maxSlotsForAlloc [
 	"Answer the maximum number of slots we are willing to attempt to allocate in an object.
 	 Must fit in 32-bits; c.f. bytesInObject:. Chosen so that maxSlotsForAlloc * self bytesPerWord is +ve."
 	^512*1024*1024-1
 ]
 
-{ #category : #'interpreter access' }
+{ #category : 'interpreter access' }
 Spur32BitMemoryManager >> maxSmallInteger [
 	^16r3FFFFFFF
 ]
 
-{ #category : #'interpreter access' }
+{ #category : 'interpreter access' }
 Spur32BitMemoryManager >> methodDictionaryHash: oop mask: mask [
 	<inline: true>
 	^mask bitAnd: ((self isImmediate: oop)
@@ -662,12 +590,12 @@ Spur32BitMemoryManager >> methodDictionaryHash: oop mask: mask [
 						ifFalse: [self rawHashBitsOf: oop]) "If no hash then it isn't in the dictionary..."
 ]
 
-{ #category : #'interpreter access' }
+{ #category : 'interpreter access' }
 Spur32BitMemoryManager >> minSmallInteger [
 	^-16r40000000
 ]
 
-{ #category : #'free space' }
+{ #category : 'free space' }
 Spur32BitMemoryManager >> numFreeLists [
 	"Answer the number of free lists.  We use freeListsMask, a bitmap, to avoid
 	 reading empty list heads.  This should fit in a machine word to end up in a
@@ -675,7 +603,7 @@ Spur32BitMemoryManager >> numFreeLists [
 	^32
 ]
 
-{ #category : #allocation }
+{ #category : 'allocation' }
 Spur32BitMemoryManager >> numSlotsForShortening: objOop toIndexableSize: indexableSize [
 	<inline: true>
 	^(self formatOf: objOop) caseOf:
@@ -683,24 +611,24 @@ Spur32BitMemoryManager >> numSlotsForShortening: objOop toIndexableSize: indexab
 		  [self firstLongFormat]		-> [self numSlotsForBytes: indexableSize * 4] }
 ]
 
-{ #category : #'interpreter access' }
+{ #category : 'interpreter access' }
 Spur32BitMemoryManager >> numSmallIntegerBits [
 	^31
 ]
 
-{ #category : #'interpreter access' }
+{ #category : 'interpreter access' }
 Spur32BitMemoryManager >> numSmallIntegerTagBits [
 	^1
 ]
 
-{ #category : #'object access' }
+{ #category : 'object access' }
 Spur32BitMemoryManager >> numTagBits [
 	<api>
 	<cmacro>
 	^2
 ]
 
-{ #category : #'object enumeration' }
+{ #category : 'object enumeration' }
 Spur32BitMemoryManager >> objectAfter: objOop limit: limit [
 	"Object parsing.
 	1. all objects have at least a word following the header, for a forwarding pointer.
@@ -719,7 +647,7 @@ Spur32BitMemoryManager >> objectAfter: objOop limit: limit [
 		ifFalse: [followingWordAddress]
 ]
 
-{ #category : #'object enumeration' }
+{ #category : 'object enumeration' }
 Spur32BitMemoryManager >> objectBytesForSlots: numSlots [
 	"Answer the total number of bytes in an object with the given
 	 number of slots, including header and possible overflow size header."
@@ -733,7 +661,7 @@ Spur32BitMemoryManager >> objectBytesForSlots: numSlots [
 					ifFalse: [self baseHeaderSize])]
 ]
 
-{ #category : #'object access' }
+{ #category : 'object access' }
 Spur32BitMemoryManager >> oldRawNumSlotsOf: objOop [
 	<returnTypeC: #usqInt>
 	<inline: true>
@@ -741,7 +669,7 @@ Spur32BitMemoryManager >> oldRawNumSlotsOf: objOop [
 	^(self longAt: objOop + 4) asUnsignedInteger >> self numSlotsHalfShift
 ]
 
-{ #category : #'object access' }
+{ #category : 'object access' }
 Spur32BitMemoryManager >> rawOverflowSlotsOf: objOop [
 	<returnTypeC: #usqInt>
 	<inline: true>
@@ -749,7 +677,7 @@ Spur32BitMemoryManager >> rawOverflowSlotsOf: objOop [
 	^self longAt: objOop - self baseHeaderSize
 ]
 
-{ #category : #'object access' }
+{ #category : 'object access' }
 Spur32BitMemoryManager >> rawOverflowSlotsOf: objOop put: numSlots [
 	<returnTypeC: #usqInt>
 	<inline: true>
@@ -757,7 +685,7 @@ Spur32BitMemoryManager >> rawOverflowSlotsOf: objOop put: numSlots [
 	^self longAt: objOop - self baseHeaderSize put: numSlots
 ]
 
-{ #category : #'header access' }
+{ #category : 'header access' }
 Spur32BitMemoryManager >> rtRefCountOf: obj put: refCount [
 	"Set the rt reference count of obj; this is the three bit field comprised
 	 of isGrey,isPinned,isRemembered.  See computeRefCountToShrinkRT."
@@ -769,7 +697,7 @@ Spur32BitMemoryManager >> rtRefCountOf: obj put: refCount [
 	self longAt: obj put: header
 ]
 
-{ #category : #'header access' }
+{ #category : 'header access' }
 Spur32BitMemoryManager >> set: objOop classIndexTo: classIndex formatTo: format [
 	"0 = 0 sized objects (UndefinedObject True False et al)
 	 1 = non-indexable objects with inst vars (Point et al)
@@ -795,7 +723,7 @@ Spur32BitMemoryManager >> set: objOop classIndexTo: classIndex formatTo: format 
 			+  (format << self formatShift))
 ]
 
-{ #category : #'header access' }
+{ #category : 'header access' }
 Spur32BitMemoryManager >> setClassIndexOf: objOop to: classIndex [
 	self assert: (classIndex between: 0 and: self classIndexMask).
 	self flag: #endianness.
@@ -804,7 +732,7 @@ Spur32BitMemoryManager >> setClassIndexOf: objOop to: classIndex [
 			+ classIndex
 ]
 
-{ #category : #'header access' }
+{ #category : 'header access' }
 Spur32BitMemoryManager >> setFormatOf: objOop to: format [
 	"0 = 0 sized objects (UndefinedObject True False et al)
 	 1 = non-indexable objects with inst vars (Point et al)
@@ -827,7 +755,7 @@ Spur32BitMemoryManager >> setFormatOf: objOop to: format [
 			+ (format << self formatShift)
 ]
 
-{ #category : #'header access' }
+{ #category : 'header access' }
 Spur32BitMemoryManager >> setIsGreyOf: objOop to: aBoolean [
 	self flag: #endianness.
 	self longAt: objOop
@@ -836,7 +764,7 @@ Spur32BitMemoryManager >> setIsGreyOf: objOop to: aBoolean [
 				ifFalse: [(self longAt: objOop) bitAnd: (1 << self greyBitShift) bitInvert32])
 ]
 
-{ #category : #'header access' }
+{ #category : 'header access' }
 Spur32BitMemoryManager >> setIsImmutableOf: objOop to: aBoolean [
 	self flag: #endianness.
 	self longAt: objOop
@@ -845,7 +773,7 @@ Spur32BitMemoryManager >> setIsImmutableOf: objOop to: aBoolean [
 				ifFalse: [(self longAt: objOop) bitAnd: (1 << self immutableBitShift) bitInvert32])
 ]
 
-{ #category : #'header access' }
+{ #category : 'header access' }
 Spur32BitMemoryManager >> setIsMarkedOf: objOop to: aBoolean [
 	self assert: (self isFreeObject: objOop) not.
 	
@@ -856,7 +784,7 @@ Spur32BitMemoryManager >> setIsMarkedOf: objOop to: aBoolean [
 				ifFalse: [(self unsignedLongAt: objOop + 4) bitAnd: (1 << self markedBitHalfShift) bitInvert32])
 ]
 
-{ #category : #'header access' }
+{ #category : 'header access' }
 Spur32BitMemoryManager >> setIsPinnedOf: objOop to: aBoolean [
 	self flag: #endianness.
 	self longAt: objOop
@@ -865,7 +793,7 @@ Spur32BitMemoryManager >> setIsPinnedOf: objOop to: aBoolean [
 				ifFalse: [(self longAt: objOop) bitAnd: (1 << self pinnedBitShift) bitInvert32])
 ]
 
-{ #category : #'header access' }
+{ #category : 'header access' }
 Spur32BitMemoryManager >> setIsRememberedOf: objOop to: aBoolean [
 	self flag: #endianness.
 	self longAt: objOop
@@ -874,14 +802,14 @@ Spur32BitMemoryManager >> setIsRememberedOf: objOop to: aBoolean [
 				ifFalse: [(self longAt: objOop) bitAnd: (1 << self rememberedBitShift) bitInvert32])
 ]
 
-{ #category : #'word size' }
+{ #category : 'word size' }
 Spur32BitMemoryManager >> shiftForWord [
 	<api>
 	<cmacro>
 	^2
 ]
 
-{ #category : #allocation }
+{ #category : 'allocation' }
 Spur32BitMemoryManager >> shorten: objOop toIndexableSize: indexableSize [
 	"Reduce the number of indexable fields in objOop, a pointer object, to nSlots. Convert the
 	 unused residual to a free chunk. Without changes to numSlotsForShortening:toIndexableSize:
@@ -942,14 +870,14 @@ Spur32BitMemoryManager >> shorten: objOop toIndexableSize: indexableSize [
 	^delta
 ]
 
-{ #category : #'cog jit support' }
+{ #category : 'cog jit support' }
 Spur32BitMemoryManager >> smallIntegerTag [
 	"Beware, SmallInteger tags are 1 or 3.  But SmallInteger's identityHash is 1."
 	<cmacro>
 	^1
 ]
 
-{ #category : #allocation }
+{ #category : 'allocation' }
 Spur32BitMemoryManager >> smallObjectBytesForSlots: numSlots [
 	"Answer the total number of bytes in an object without an overflow header, including header bytes."
 	<api>
@@ -960,39 +888,39 @@ Spur32BitMemoryManager >> smallObjectBytesForSlots: numSlots [
 		ifFalse: [numSlots + (numSlots bitAnd: 1) * self bytesPerOop]) "round up to allocationUnit"
 ]
 
-{ #category : #'word size' }
+{ #category : 'word size' }
 Spur32BitMemoryManager >> tagMask [
 	<api>
 	<cmacro>
 	^3
 ]
 
-{ #category : #'memory access' }
+{ #category : 'memory access' }
 Spur32BitMemoryManager >> unsignedLongAt: anAddress [
 
 	<doNotGenerate>
 	^ self uint32AtPointer: anAddress
 ]
 
-{ #category : #'memory access' }
+{ #category : 'memory access' }
 Spur32BitMemoryManager >> unsignedLongAt: anAddress put: aValue [
 
 	<doNotGenerate>
 	^ self uint32AtPointer: anAddress put: aValue
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 Spur32BitMemoryManager >> wordAt: address [
 
 	^ self uint32At: address
 ]
 
-{ #category : #'header formats' }
+{ #category : 'header formats' }
 Spur32BitMemoryManager >> wordIndexableFormat [
 	^self firstLongFormat
 ]
 
-{ #category : #'word size' }
+{ #category : 'word size' }
 Spur32BitMemoryManager >> wordSize [
 	"Answer the manager's word size, which is the size of an oop, and which
 	 is assumed to be equivalent to the underlying machine's word size."
@@ -1001,7 +929,7 @@ Spur32BitMemoryManager >> wordSize [
 	^4
 ]
 
-{ #category : #'class table' }
+{ #category : 'class table' }
 Spur32BitMemoryManager >> wordSizeClassIndexPun [
 	^self thirtyTwoBitLongsClassIndexPun
 ]

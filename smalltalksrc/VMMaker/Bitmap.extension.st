@@ -1,12 +1,12 @@
-Extension { #name : #Bitmap }
+Extension { #name : 'Bitmap' }
 
-{ #category : #'*VMMaker-interpreter simulator' }
+{ #category : '*VMMaker-interpreter simulator' }
 Bitmap >> coerceTo: cTypeString sim: interpreter [
 
 	^ self
 ]
 
-{ #category : #'*VMMaker-JITSimulation' }
+{ #category : '*VMMaker-JITSimulation' }
 Bitmap >> long64At: byteAddress [
 	| lowBits hiWord loWord midWord mask wordIndex result signBit |
 	wordIndex := byteAddress - 1 // 4 + 1.
@@ -32,7 +32,7 @@ Bitmap >> long64At: byteAddress [
 	^result
 ]
 
-{ #category : #'*VMMaker-JITSimulation' }
+{ #category : '*VMMaker-JITSimulation' }
 Bitmap >> long64At: byteIndex put: aValue [
 	| lowBits mask wordIndex |
 	(lowBits := byteIndex - 1 \\ 4) = 0 ifTrue:
@@ -57,7 +57,7 @@ Bitmap >> long64At: byteIndex put: aValue [
 	^aValue
 ]
 
-{ #category : #'*VMMaker-JITSimulation' }
+{ #category : '*VMMaker-JITSimulation' }
 Bitmap >> longAt: byteIndex [
 	"Default bigEndian access"
 	| lowBits wordIndex value word0 word1 |
@@ -75,7 +75,7 @@ Bitmap >> longAt: byteIndex [
 	^value
 ]
 
-{ #category : #'*VMMaker-JITSimulation' }
+{ #category : '*VMMaker-JITSimulation' }
 Bitmap >> longAt: byteIndex bigEndian: bigEndian [
 	"Compatibility with the ByteArray method of the same name."
 	| lowBits wordIndex value word0 word1 |
@@ -112,7 +112,7 @@ Bitmap >> longAt: byteIndex bigEndian: bigEndian [
 			[:i| { i. (bm longAt: i bigEndian: false) hex. (ba longAt: i bigEndian: false) hex}])"
 ]
 
-{ #category : #'*VMMaker-JITSimulation' }
+{ #category : '*VMMaker-JITSimulation' }
 Bitmap >> longAt: byteIndex put: aValue [
 	"Default bigEndian access"
 	| lowBits wordIndex value mask |
@@ -135,7 +135,7 @@ Bitmap >> longAt: byteIndex put: aValue [
 	^aValue
 ]
 
-{ #category : #'*VMMaker-JITSimulation' }
+{ #category : '*VMMaker-JITSimulation' }
 Bitmap >> longAt: byteIndex put: aValue bigEndian: bigEndian [
 	"Compatibility with the ByteArray method of the same name."
 	| lowBits wordIndex value mask |
@@ -180,7 +180,7 @@ Bitmap >> longAt: byteIndex put: aValue bigEndian: bigEndian [
 		{ (bm at: 1) hex. (bm at: 2) hex }]"
 ]
 
-{ #category : #'*VMMaker-JITSimulation' }
+{ #category : '*VMMaker-JITSimulation' }
 Bitmap >> unsignedByteAt: byteAddress [
 	"Compatibility with the ByteArray and Alien methods of the same name."
 	| lowBits |
@@ -190,7 +190,7 @@ Bitmap >> unsignedByteAt: byteAddress [
 		bitAnd: 16rFF
 ]
 
-{ #category : #'*VMMaker-JITSimulation' }
+{ #category : '*VMMaker-JITSimulation' }
 Bitmap >> unsignedByteAt: byteAddress put: byte [
 	"Compatibility with the ByteArray and Alien methods of the same name."
 	| longWord shift lowBits longAddr |
@@ -204,7 +204,7 @@ Bitmap >> unsignedByteAt: byteAddress put: byte [
 	^ byte
 ]
 
-{ #category : #'*VMMaker-JITSimulation' }
+{ #category : '*VMMaker-JITSimulation' }
 Bitmap >> unsignedLong64At: byteAddress [
 	"memory is a Bitmap, a 32-bit indexable array of bits"
 	| lowBits hiWord loWord midWord mask wordIndex result |
@@ -228,7 +228,7 @@ Bitmap >> unsignedLong64At: byteAddress [
 	^result
 ]
 
-{ #category : #'*VMMaker-JITSimulation' }
+{ #category : '*VMMaker-JITSimulation' }
 Bitmap >> unsignedLong64At: byteIndex put: aValue [
 	| lowBits mask wordIndex |
 	(lowBits := byteIndex - 1 \\ 4) = 0 ifTrue:
@@ -248,7 +248,7 @@ Bitmap >> unsignedLong64At: byteIndex put: aValue [
 	^aValue
 ]
 
-{ #category : #'*VMMaker-JITSimulation' }
+{ #category : '*VMMaker-JITSimulation' }
 Bitmap >> unsignedLongAt: byteIndex [
 	"Compatiblity with the ByteArray & Alien methods of the same name."
 	^(byteIndex - 1 bitAnd: 3) = 0
@@ -256,7 +256,7 @@ Bitmap >> unsignedLongAt: byteIndex [
 		ifFalse: [self unsignedLongAt: byteIndex bigEndian: true]
 ]
 
-{ #category : #'*VMMaker-JITSimulation' }
+{ #category : '*VMMaker-JITSimulation' }
 Bitmap >> unsignedLongAt: byteIndex bigEndian: bigEndian [
 	"Compatiblity with the ByteArray method of the same name."
 	| lowBits wordIndex value word0 word1 |
@@ -291,7 +291,7 @@ Bitmap >> unsignedLongAt: byteIndex bigEndian: bigEndian [
 			[:i| { i. (bm unsignedLongAt: i bigEndian: false) hex. (ba unsignedLongAt: i bigEndian: false) hex}])"
 ]
 
-{ #category : #'*VMMaker-JITSimulation' }
+{ #category : '*VMMaker-JITSimulation' }
 Bitmap >> unsignedLongAt: byteIndex put: aValue [
 	"Compatiblity with the ByteArray & Alien methods of the same name."
 	| lowBits mask wordIndex |

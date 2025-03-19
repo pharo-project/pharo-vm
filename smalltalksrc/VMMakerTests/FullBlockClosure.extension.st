@@ -1,6 +1,6 @@
-Extension { #name : #FullBlockClosure }
+Extension { #name : 'FullBlockClosure' }
 
-{ #category : #'*VMMakerTests' }
+{ #category : '*VMMakerTests' }
 FullBlockClosure >> forMemory: aMemory inMethod: builder [
 
 	| closure |

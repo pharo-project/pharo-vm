@@ -1,28 +1,30 @@
 Class {
-	#name : #CLiteralArray,
-	#superclass : #Object,
+	#name : 'CLiteralArray',
+	#superclass : 'Object',
 	#instVars : [
 		'object'
 	],
-	#category : #'Slang-Types'
+	#category : 'Slang-Types',
+	#package : 'Slang',
+	#tag : 'Types'
 }
 
-{ #category : #'instance creation' }
+{ #category : 'instance creation' }
 CLiteralArray class >> on: anArrayLiteral [
 	^self new setObject: anArrayLiteral; yourself
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 CLiteralArray >> at: offset [
 	^object at: offset + 1
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 CLiteralArray >> at: offset put: val [
 	^object at: offset + 1 put: val
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 CLiteralArray >> setObject: anArrayLiteral [
 	object := anArrayLiteral
 ]

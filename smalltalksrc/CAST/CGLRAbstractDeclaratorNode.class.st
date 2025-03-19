@@ -1,25 +1,26 @@
 Class {
-	#name : #CGLRAbstractDeclaratorNode,
-	#superclass : #CGLRAbstractNode,
+	#name : 'CGLRAbstractDeclaratorNode',
+	#superclass : 'CGLRAbstractNode',
 	#instVars : [
 		'pointers',
 		'qualifiers',
 		'direct'
 	],
-	#category : #CAST
+	#category : 'CAST',
+	#package : 'CAST'
 }
 
-{ #category : #generated }
+{ #category : 'generated' }
 CGLRAbstractDeclaratorNode >> acceptVisitor: anAbstractVisitor [
 	^ anAbstractVisitor visitAbstractDeclarator: self
 ]
 
-{ #category : #generated }
+{ #category : 'generated' }
 CGLRAbstractDeclaratorNode >> direct [
 	^ direct
 ]
 
-{ #category : #generated }
+{ #category : 'generated' }
 CGLRAbstractDeclaratorNode >> direct: aCGLRAbstractNode [
 	self direct notNil
 		ifTrue: [ self direct parent: nil ].
@@ -28,29 +29,29 @@ CGLRAbstractDeclaratorNode >> direct: aCGLRAbstractNode [
 		ifTrue: [ self direct parent: self ]
 ]
 
-{ #category : #'generated-initialize-release' }
+{ #category : 'generated-initialize-release' }
 CGLRAbstractDeclaratorNode >> initialize [
 	super initialize.
 	pointers := OrderedCollection new: 2.
 	qualifiers := OrderedCollection new: 2.
 ]
 
-{ #category : #generated }
+{ #category : 'generated' }
 CGLRAbstractDeclaratorNode >> pointers [
 	^ pointers
 ]
 
-{ #category : #generated }
+{ #category : 'generated' }
 CGLRAbstractDeclaratorNode >> pointers: anOrderedCollection [
 	pointers := anOrderedCollection
 ]
 
-{ #category : #generated }
+{ #category : 'generated' }
 CGLRAbstractDeclaratorNode >> qualifiers [
 	^ qualifiers
 ]
 
-{ #category : #generated }
+{ #category : 'generated' }
 CGLRAbstractDeclaratorNode >> qualifiers: anOrderedCollection [
 	qualifiers := anOrderedCollection
 ]

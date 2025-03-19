@@ -1,10 +1,12 @@
 Class {
-	#name : #CFunctionPointerDeclaratorNode,
-	#superclass : #CAbstractDeclaratorNode,
-	#category : #'CAST-Nodes'
+	#name : 'CFunctionPointerDeclaratorNode',
+	#superclass : 'CAbstractDeclaratorNode',
+	#category : 'CAST-Nodes',
+	#package : 'CAST',
+	#tag : 'Nodes'
 }
 
-{ #category : #comparing }
+{ #category : 'comparing' }
 CFunctionPointerDeclaratorNode >> = anObject [
 
 	"Answer whether the receiver and anObject represent the same object."
@@ -14,18 +16,18 @@ CFunctionPointerDeclaratorNode >> = anObject [
 	^ declarator = anObject declarator2
 ]
 
-{ #category : #generated }
+{ #category : 'generated' }
 CFunctionPointerDeclaratorNode >> acceptVisitor: anAbstractVisitor [
 	^ anAbstractVisitor visitFunctionPointerDeclarator: self
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 CFunctionPointerDeclaratorNode >> declarator2 [
 
 	^ declarator
 ]
 
-{ #category : #comparing }
+{ #category : 'comparing' }
 CFunctionPointerDeclaratorNode >> hash [
 
 	"Answer an integer value that is related to the identity of the receiver."

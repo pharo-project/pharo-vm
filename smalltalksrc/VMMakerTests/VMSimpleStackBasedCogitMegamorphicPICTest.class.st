@@ -1,13 +1,15 @@
 Class {
-	#name : #VMSimpleStackBasedCogitMegamorphicPICTest,
-	#superclass : #VMSimpleStackBasedCogitAbstractTest,
+	#name : 'VMSimpleStackBasedCogitMegamorphicPICTest',
+	#superclass : 'VMSimpleStackBasedCogitAbstractTest',
 	#pools : [
 		'VMMethodCacheConstants'
 	],
-	#category : #'VMMakerTests-JitTests'
+	#category : 'VMMakerTests-JitTests',
+	#package : 'VMMakerTests',
+	#tag : 'JitTests'
 }
 
-{ #category : #'tests - PIC' }
+{ #category : 'tests - PIC' }
 VMSimpleStackBasedCogitMegamorphicPICTest >> setUp [
 
 	| specialSelectorsArray |
@@ -25,7 +27,7 @@ VMSimpleStackBasedCogitMegamorphicPICTest >> setUp [
 	cogit generateOpenPICPrototype.
 ]
 
-{ #category : #'tests - PIC' }
+{ #category : 'tests - PIC' }
 VMSimpleStackBasedCogitMegamorphicPICTest >> testLookupExistingMegamorphicPICReturnsPIC [
 
 	| selector createdPic specialObjectsArray |
@@ -36,13 +38,13 @@ VMSimpleStackBasedCogitMegamorphicPICTest >> testLookupExistingMegamorphicPICRet
 	self assert: (cogit methodZone openPICWithSelector: selector) equals: createdPic.
 ]
 
-{ #category : #'tests - PIC' }
+{ #category : 'tests - PIC' }
 VMSimpleStackBasedCogitMegamorphicPICTest >> testLookupNonExistingMegamorphicPICReturnsNil [
 
 	self assert: (cogit methodZone openPICWithSelector: memory trueObject) equals: nil
 ]
 
-{ #category : #'tests - PIC' }
+{ #category : 'tests - PIC' }
 VMSimpleStackBasedCogitMegamorphicPICTest >> testMiss [
 
 	"We have to call the pic and see if it reaches the abort trampoline"
@@ -74,7 +76,7 @@ VMSimpleStackBasedCogitMegamorphicPICTest >> testMiss [
 	self assert: machineSimulator sendNumberOfArgumentsRegisterValue equals: createdPic address
 ]
 
-{ #category : #'tests - metadata' }
+{ #category : 'tests - metadata' }
 VMSimpleStackBasedCogitMegamorphicPICTest >> testNewMegamorphicPICHasTheCorrectPicAbortTrampoline [
 
 	| createdPic selector |
@@ -87,7 +89,7 @@ VMSimpleStackBasedCogitMegamorphicPICTest >> testNewMegamorphicPICHasTheCorrectP
 		equals: (cogit picAbortTrampolineFor: 1)
 ]
 
-{ #category : #'tests - metadata' }
+{ #category : 'tests - metadata' }
 VMSimpleStackBasedCogitMegamorphicPICTest >> testNewMegamorphicPICNumArgs: numArgs [
 
 	| selector createdPic |
@@ -96,43 +98,43 @@ VMSimpleStackBasedCogitMegamorphicPICTest >> testNewMegamorphicPICNumArgs: numAr
 	self assert: createdPic cmNumArgs equals: numArgs
 ]
 
-{ #category : #'tests - metadata' }
+{ #category : 'tests - metadata' }
 VMSimpleStackBasedCogitMegamorphicPICTest >> testNewMegamorphicPICNumArgsWith1 [
 
 	self testNewMegamorphicPICNumArgs: 1
 ]
 
-{ #category : #'tests - metadata' }
+{ #category : 'tests - metadata' }
 VMSimpleStackBasedCogitMegamorphicPICTest >> testNewMegamorphicPICNumArgsWith16 [
 
 	self testNewMegamorphicPICNumArgs: 16
 ]
 
-{ #category : #'tests - metadata' }
+{ #category : 'tests - metadata' }
 VMSimpleStackBasedCogitMegamorphicPICTest >> testNewMegamorphicPICNumArgsWith2 [
 
 	self testNewMegamorphicPICNumArgs: 2
 ]
 
-{ #category : #'tests - metadata' }
+{ #category : 'tests - metadata' }
 VMSimpleStackBasedCogitMegamorphicPICTest >> testNewMegamorphicPICNumArgsWith4 [
 
 	self testNewMegamorphicPICNumArgs: 4
 ]
 
-{ #category : #'tests - metadata' }
+{ #category : 'tests - metadata' }
 VMSimpleStackBasedCogitMegamorphicPICTest >> testNewMegamorphicPICNumArgsWith8 [
 
 	self testNewMegamorphicPICNumArgs: 8
 ]
 
-{ #category : #'tests - metadata' }
+{ #category : 'tests - metadata' }
 VMSimpleStackBasedCogitMegamorphicPICTest >> testNewMegamorphicPICNumArgsWithoutArgs [
 
 	self testNewMegamorphicPICNumArgs: 0
 ]
 
-{ #category : #'tests - metadata' }
+{ #category : 'tests - metadata' }
 VMSimpleStackBasedCogitMegamorphicPICTest >> testNewMegamorphicPICSelector [
 	| createdPic selector |
 
@@ -141,7 +143,7 @@ VMSimpleStackBasedCogitMegamorphicPICTest >> testNewMegamorphicPICSelector [
 	self assert: createdPic selector equals: selector
 ]
 
-{ #category : #'tests - metadata' }
+{ #category : 'tests - metadata' }
 VMSimpleStackBasedCogitMegamorphicPICTest >> testNewMegamorphicPICSize [
 	| createdPic selector |
 
@@ -150,7 +152,7 @@ VMSimpleStackBasedCogitMegamorphicPICTest >> testNewMegamorphicPICSize [
 	self assert: createdPic blockSize equals: cogit openPICSize.
 ]
 
-{ #category : #'tests - metadata' }
+{ #category : 'tests - metadata' }
 VMSimpleStackBasedCogitMegamorphicPICTest >> testNewMegamorphicPICType [
 
 	| selector createdPic |
@@ -160,7 +162,7 @@ VMSimpleStackBasedCogitMegamorphicPICTest >> testNewMegamorphicPICType [
 
 ]
 
-{ #category : #'tests - PIC' }
+{ #category : 'tests - PIC' }
 VMSimpleStackBasedCogitMegamorphicPICTest >> testRelinkCallSiteToMegamorphicPICCallsNewPIC [
 
 	| selector literalIndex method createdPic returnAfterCallAddress patchedCogMethod startAddress |

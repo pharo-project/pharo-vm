@@ -1,15 +1,17 @@
 Class {
-	#name : #VMPermanentSpacePrimitiveTest,
-	#superclass : #VMAbstractPrimitiveTest,
+	#name : 'VMPermanentSpacePrimitiveTest',
+	#superclass : 'VMAbstractPrimitiveTest',
 	#pools : [
 		'VMBasicConstants',
 		'VMBytecodeConstants',
 		'VMObjectIndices'
 	],
-	#category : #'VMMakerTests-PermSpace'
+	#category : 'VMMakerTests-PermSpace',
+	#package : 'VMMakerTests',
+	#tag : 'PermSpace'
 }
 
-{ #category : #configuring }
+{ #category : 'configuring' }
 VMPermanentSpacePrimitiveTest >> configureEnvironmentBuilder [ 
 
 	super configureEnvironmentBuilder.
@@ -17,7 +19,7 @@ VMPermanentSpacePrimitiveTest >> configureEnvironmentBuilder [
 	environmentBuilder permSpaceSize: 10*1024*1024.
 ]
 
-{ #category : #initialization }
+{ #category : 'initialization' }
 VMPermanentSpacePrimitiveTest >> setUp [ 
 	
 	super setUp.
@@ -25,7 +27,7 @@ VMPermanentSpacePrimitiveTest >> setUp [
 	self createWeakArrayClass.
 ]
 
-{ #category : #tests }
+{ #category : 'tests' }
 VMPermanentSpacePrimitiveTest >> testIsInmmediateInPermSpace [
 
 	interpreter push: (memory integerObjectOf: 42).
@@ -35,7 +37,7 @@ VMPermanentSpacePrimitiveTest >> testIsInmmediateInPermSpace [
 	self assert: interpreter stackTop equals: memory falseObject
 ]
 
-{ #category : #tests }
+{ #category : 'tests' }
 VMPermanentSpacePrimitiveTest >> testIsNewObjectInPermSpace [
 
 	interpreter push: (self newZeroSizedObject).
@@ -45,7 +47,7 @@ VMPermanentSpacePrimitiveTest >> testIsNewObjectInPermSpace [
 	self assert: interpreter stackTop equals: memory falseObject
 ]
 
-{ #category : #tests }
+{ #category : 'tests' }
 VMPermanentSpacePrimitiveTest >> testIsOldObjectInPermSpace [
 
 	interpreter push: (self newOldSpaceObjectWithSlots: 0).
@@ -55,7 +57,7 @@ VMPermanentSpacePrimitiveTest >> testIsOldObjectInPermSpace [
 	self assert: interpreter stackTop equals: memory falseObject
 ]
 
-{ #category : #tests }
+{ #category : 'tests' }
 VMPermanentSpacePrimitiveTest >> testIsPermObjectInPermSpace [
 
 	| oldObj permObject |
@@ -69,7 +71,7 @@ VMPermanentSpacePrimitiveTest >> testIsPermObjectInPermSpace [
 	self assert: interpreter stackTop equals: memory trueObject
 ]
 
-{ #category : #tests }
+{ #category : 'tests' }
 VMPermanentSpacePrimitiveTest >> testMoveToPermSpaceFailsOnEphemeron [
 
 	| oldObject |
@@ -84,7 +86,7 @@ VMPermanentSpacePrimitiveTest >> testMoveToPermSpaceFailsOnEphemeron [
 	self assert: interpreter primFailCode equals: PrimErrBadReceiver
 ]
 
-{ #category : #tests }
+{ #category : 'tests' }
 VMPermanentSpacePrimitiveTest >> testMoveToPermSpaceFailsOnWeakObject [
 
 	| oldObject |
@@ -99,7 +101,7 @@ VMPermanentSpacePrimitiveTest >> testMoveToPermSpaceFailsOnWeakObject [
 	self assert: interpreter primFailCode equals: PrimErrBadReceiver
 ]
 
-{ #category : #tests }
+{ #category : 'tests' }
 VMPermanentSpacePrimitiveTest >> testMoveToPermSpaceWorksOnNewPointerObject [
 
 	| newObject |
@@ -114,7 +116,7 @@ VMPermanentSpacePrimitiveTest >> testMoveToPermSpaceWorksOnNewPointerObject [
 	self assert: interpreter primFailCode equals: 0
 ]
 
-{ #category : #tests }
+{ #category : 'tests' }
 VMPermanentSpacePrimitiveTest >> testMoveToPermSpaceWorksOnOldPointerObject [
 
 	| oldObject |
@@ -129,7 +131,7 @@ VMPermanentSpacePrimitiveTest >> testMoveToPermSpaceWorksOnOldPointerObject [
 	self assert: interpreter primFailCode equals: 0
 ]
 
-{ #category : #tests }
+{ #category : 'tests' }
 VMPermanentSpacePrimitiveTest >> testMoveToPermSpaceWorksWithByteArray [
 
 	| oldObject |

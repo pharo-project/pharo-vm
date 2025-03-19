@@ -1,10 +1,11 @@
 Class {
-	#name : #VMFFISameThreadReturnMarshallingTest,
-	#superclass : #VMFFIReturnMarshallingTest,
-	#category : #VMMakerTests
+	#name : 'VMFFISameThreadReturnMarshallingTest',
+	#superclass : 'VMFFIReturnMarshallingTest',
+	#category : 'VMMakerTests',
+	#package : 'VMMakerTests'
 }
 
-{ #category : #'tests - marshalling return' }
+{ #category : 'tests - marshalling return' }
 VMFFISameThreadReturnMarshallingTest >> doTestCalloutWithReturnType: aLibFFIType returnValue: valueToReturn asserting: aBlock [
 
 	| parametersArray tfExternalFunction |
@@ -26,7 +27,7 @@ VMFFISameThreadReturnMarshallingTest >> doTestCalloutWithReturnType: aLibFFIType
 	aBlock value
 ]
 
-{ #category : #'tests - marshalling return' }
+{ #category : 'tests - marshalling return' }
 VMFFISameThreadReturnMarshallingTest >> testPrimitiveCalloutReturningVoidPushesTheReceiver [
 
 	self 

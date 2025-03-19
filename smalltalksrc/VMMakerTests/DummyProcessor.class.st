@@ -1,6 +1,6 @@
 Class {
-	#name : #DummyProcessor,
-	#superclass : #Object,
+	#name : 'DummyProcessor',
+	#superclass : 'Object',
 	#instVars : [
 		'stackPointer',
 		'framePointer',
@@ -10,149 +10,151 @@ Class {
 		'linkRegisterValue',
 		'receiverRegisterValue'
 	],
-	#category : #'VMMakerTests-JitTests'
+	#category : 'VMMakerTests-JitTests',
+	#package : 'VMMakerTests',
+	#tag : 'JitTests'
 }
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 DummyProcessor >> baseRegisterValue: anInteger [ 
 	
 	baseRegisterValue := anInteger
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 DummyProcessor >> cResultRegister [
 	
 	^ nil
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 DummyProcessor >> disassembler [
 	
 	^ LLVMDisassembler aarch64
 ]
 
-{ #category : #operations }
+{ #category : 'operations' }
 DummyProcessor >> flushICacheFrom: anInteger to: anInteger2 [ 
 	
 	
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 DummyProcessor >> fp [
 	
 	^ framePointer 
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 DummyProcessor >> fp: anInteger [ 
 	
 	framePointer := anInteger 
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 DummyProcessor >> framePointerRegisterValue: anInteger [ 
 
 	framePointer := anInteger 
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 DummyProcessor >> hasLinkRegister [
 	
 	^ true
 ]
 
-{ #category : #initialization }
+{ #category : 'initialization' }
 DummyProcessor >> initializeStackFor: aSimpleStackBasedCogit [ 
 
 	"We are dummy...."
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 DummyProcessor >> instructionPointerRegisterValue [
 	
 	^ programCounter 
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 DummyProcessor >> integerRegisterState [
 	
 	^ #()
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 DummyProcessor >> linkRegisterValue: anInteger [ 
 
 	linkRegisterValue := anInteger 
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 DummyProcessor >> machineSimulator [
 	
 	^ self
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 DummyProcessor >> memoryAt: anInteger write: aCollection size: anInteger3 [ 
 
 	
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 DummyProcessor >> pc [
 	
 	^ programCounter
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 DummyProcessor >> pc: anInteger [ 
 	
 	programCounter := anInteger
 ]
 
-{ #category : #operations }
+{ #category : 'operations' }
 DummyProcessor >> pushWord: anInteger [ 
 
 	stackPointer := stackPointer - 8
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 DummyProcessor >> receiverRegisterValue: anInteger [ 
 
 	receiverRegisterValue := anInteger 
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 DummyProcessor >> runUntil: anInteger [ 
 	
 	programCounter := anInteger
 	
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 DummyProcessor >> setFramePointer: aFPValue stackPointer: aSPValue [
  
 	stackPointer := aSPValue.
 	framePointer := aFPValue 
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 DummyProcessor >> simulateLeafCallOf: anInteger nextpc: anInteger2 memory: anUndefinedObject [ 
 
 	
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 DummyProcessor >> smalltalkStackPointerRegisterValue [
 	^ smalltalkStackPointerRegisterValue
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 DummyProcessor >> smalltalkStackPointerRegisterValue: anInteger [ 
 
 	smalltalkStackPointerRegisterValue := anInteger 	
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 DummyProcessor >> sp [
 	
 	^ stackPointer 

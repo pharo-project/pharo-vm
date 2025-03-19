@@ -1,16 +1,18 @@
 Class {
-	#name : #CForStatementNode,
-	#superclass : #CGLRAbstractNode,
+	#name : 'CForStatementNode',
+	#superclass : 'CGLRAbstractNode',
 	#instVars : [
 		'init',
 		'until',
 		'statement',
 		'step'
 	],
-	#category : #'CAST-Nodes'
+	#category : 'CAST-Nodes',
+	#package : 'CAST',
+	#tag : 'Nodes'
 }
 
-{ #category : #'instance creation' }
+{ #category : 'instance creation' }
 CForStatementNode class >> init: initialization until: condition step: aStep statement: aStatement [
 
 	^ self new
@@ -21,17 +23,17 @@ CForStatementNode class >> init: initialization until: condition step: aStep sta
 		  yourself
 ]
 
-{ #category : #generated }
+{ #category : 'generated' }
 CForStatementNode >> acceptVisitor: anAbstractVisitor [
 	^ anAbstractVisitor visitForStatement: self
 ]
 
-{ #category : #generated }
+{ #category : 'generated' }
 CForStatementNode >> init [
 	^ init
 ]
 
-{ #category : #generated }
+{ #category : 'generated' }
 CForStatementNode >> init: anOrderedCollection [
 	self assertListOfExpressions: anOrderedCollection.
 	
@@ -40,18 +42,18 @@ CForStatementNode >> init: anOrderedCollection [
 	self setParents: self init to: self
 ]
 
-{ #category : #testing }
+{ #category : 'testing' }
 CForStatementNode >> isForStatement [
 
 	^true
 ]
 
-{ #category : #generated }
+{ #category : 'generated' }
 CForStatementNode >> statement [
 	^ statement
 ]
 
-{ #category : #generated }
+{ #category : 'generated' }
 CForStatementNode >> statement: aCGLRAbstractNode [
 	self statement notNil
 		ifTrue: [ self statement parent: nil ].
@@ -60,12 +62,12 @@ CForStatementNode >> statement: aCGLRAbstractNode [
 		ifTrue: [ self statement parent: self ]
 ]
 
-{ #category : #generated }
+{ #category : 'generated' }
 CForStatementNode >> step [
 	^ step
 ]
 
-{ #category : #generated }
+{ #category : 'generated' }
 CForStatementNode >> step: anOrderedCollection [
 	self assertListOfExpressions: anOrderedCollection.
 	
@@ -74,12 +76,12 @@ CForStatementNode >> step: anOrderedCollection [
 	self setParents: self step to: self
 ]
 
-{ #category : #generated }
+{ #category : 'generated' }
 CForStatementNode >> until [
 	^ until
 ]
 
-{ #category : #generated }
+{ #category : 'generated' }
 CForStatementNode >> until: aCGLRExpressionStatementNode [
 	self assertExpression: aCGLRExpressionStatementNode.
 

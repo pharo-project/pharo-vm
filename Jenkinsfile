@@ -1,3 +1,12 @@
+def doCheckout(){
+	return checkout([
+		$class: 'GitSCM',
+		branches: scm.branches,
+		extensions: scm.extensions + [[$class: 'CloneOption', noTags: false, reference: '', shallow: false]],
+		userRemoteConfigs: scm.userRemoteConfigs
+	])
+}
+
 def isWindows(){
   //If NODE_LABELS environment variable is null, we assume we are on master unix machine
   if (env.NODE_LABELS == null) {
@@ -65,7 +74,7 @@ def buildGTKBundle(){
 		cleanWs()
 		stage("build-GTK-bundle"){
 
-			def commitHash = checkout(scm).GIT_COMMIT
+			def commitHash = doCheckout().GIT_COMMIT
 
 			unstash name: "packages-Windows-x86_64-CoInterpreter"
 			def shortGitHash = commitHash.substring(0,8)
@@ -84,14 +93,14 @@ def buildGTKBundle(){
 				archiveArtifacts artifacts: "${gtkBundleName}"
 				
 				if(!isPullRequest() && isMainBranch()){
-					sshagent (credentials: ['b5248b59-a193-4457-8459-e28e9eb29ed7']) {
+					sshagent (credentials: ['files-pharo-org-inria']) {
 						sh "scp -o StrictHostKeyChecking=no \
 						${gtkBundleName} \
-						pharoorgde@ssh.cluster023.hosting.ovh.net:/home/pharoorgde/files/vm/pharo-spur64-headless/win/${gtkBundleName}"
+						pharo-ci@files.pharo.org:vm/pharo-spur64-headless/win/${gtkBundleName}"
 
 						sh "scp -o StrictHostKeyChecking=no \
 						${gtkBundleName} \
-						pharoorgde@ssh.cluster023.hosting.ovh.net:/home/pharoorgde/files/vm/pharo-spur64-headless/win/latest${mainBranchVersion()}-win64-GTK.zip"
+						pharo-ci@files.pharo.org:vm/pharo-spur64-headless/win/latest${mainBranchVersion()}-win64-GTK.zip"
 					}
 				}
 			}
@@ -111,7 +120,6 @@ def runBuild(platformName, configuration, headless = true, someAdditionalParamet
 	def additionalParameters = someAdditionalParameters
 	
 	additionalParameters += headless ? "" : " -DALWAYS_INTERACTIVE=1 "
-	additionalParameters += isRelease() ? " -DBUILD_IS_RELEASE=ON " : " -DBUILD_IS_RELEASE=OFF "
 
 	if(configuration == 'StackVM'){
 		additionalParameters += " -DFEATURE_MESSAGE_COUNT=TRUE "
@@ -121,7 +129,7 @@ def runBuild(platformName, configuration, headless = true, someAdditionalParamet
 
 	stage("Checkout-${platform}"){
 		dir('repository') {
-			checkout scm
+			doCheckout()
 		}
 	}
   
@@ -182,49 +190,48 @@ def runBuildFromSources(platformName, configuration, headless = true){
 }
 
 def runUnitTests(platform){
-  cleanWs()
+	cleanWs()
 
-  stage("VM Unit Tests"){
-    dir('repository') {
-      checkout scm
-		//We stash the docker files so we can create docker images without checkout
-		stash includes: "docker/**", name: "dockerfiles"
-		
-		//We register if the build is a stable release, we get the metadata from the repository and we stash it
-		saveIsReleaseFlag()
-    }
+	stage("VM Unit Tests"){
+		dir('repository') {
+			doCheckout()
+			//We stash the docker files so we can create docker images without checkout
+			stash includes: "docker/**", name: "dockerfiles"
 
-    cmakeBuild generator: "Unix Makefiles", sourceDir: "repository", buildDir: "runTests", installation: "InSearchPath", cmakeArgs: "-DPHARO_DEPENDENCIES_PREFER_DOWNLOAD_BINARIES=TRUE -DICEBERG_DEFAULT_REMOTE=httpsUrl"
-    dir("runTests"){
-      shell "VERBOSE=1 make vmmaker"
-      dir("build/vmmaker"){
-        shell "wget https://files.pharo.org/vm/pharo-spur64/Darwin-x86_64/third-party/libllvm-full.zip"
-        shell "unzip libllvm-full.zip -d ./vm/Contents/MacOS/Plugins"
-        shell "wget https://files.pharo.org/vm/pharo-spur64/Darwin-x86_64/third-party/libunicorn.2.zip"
-        shell "unzip libunicorn.2.zip  -d ./vm/Contents/MacOS/Plugins"
+			//We register if the build is a stable release, we get the metadata from the repository and we stash it
+			saveIsReleaseFlag()
+    	}
 
-        timeout(20){
-          shell "PHARO_CI_TESTING_ENVIRONMENT=true  ./vm/Contents/MacOS/Pharo --headless --logLevel=4 ./image/VMMaker.image test --junit-xml-output 'VMMakerTests'"
-          shell "PHARO_CI_TESTING_ENVIRONMENT=true  ./vm/Contents/MacOS/Pharo --headless --logLevel=4 ./image/VMMaker.image test --junit-xml-output 'Slang-Tests'"
-         } 
+		cmakeBuild generator: "Unix Makefiles", sourceDir: "repository", buildDir: "runTests", installation: "InSearchPath", cmakeArgs: "-DPHARO_DEPENDENCIES_PREFER_DOWNLOAD_BINARIES=TRUE -DICEBERG_DEFAULT_REMOTE=httpsUrl"
+		dir("runTests"){
+			shell "VERBOSE=1 make vmmaker"
+			dir("build/vmmaker"){
+				shell "wget https://files.pharo.org/vm/pharo-spur64/Darwin-x86_64/third-party/libllvm-full.zip"
+				shell "unzip libllvm-full.zip -d ./vm/Contents/MacOS/Plugins"
+				shell "wget https://files.pharo.org/vm/pharo-spur64/Darwin-x86_64/third-party/libunicorn.2.zip"
+				shell "unzip libunicorn.2.zip  -d ./vm/Contents/MacOS/Plugins"
 
-        shell "zip ./VMMaker-Image.zip ./image/VMMaker.*"
-        archiveArtifacts artifacts: 'VMMaker-Image.zip'
+				timeout(20){
+					shell "PHARO_CI_TESTING_ENVIRONMENT=true  ./vm/Contents/MacOS/Pharo --headless --logLevel=4 ./image/VMMaker.image test --junit-xml-output 'VMMakerTests'"
+					shell "PHARO_CI_TESTING_ENVIRONMENT=true  ./vm/Contents/MacOS/Pharo --headless --logLevel=4 ./image/VMMaker.image test --junit-xml-output 'Slang-Tests'"
+				}
 
-        // Stop if tests fail
-        // Archive xml reports either case
-        try {
-          junit allowEmptyResults: true, testResults: "*.xml"
-        } catch (ex) {
-          if (currentBuild.result == 'UNSTABLE'){
-            currentBuild.result = 'FAILURE'
-          }
-          archiveArtifacts artifacts: '*.xml'
-        }
-        
-      }
-    }
-  }
+				shell "zip ./VMMaker-Image.zip ./image/VMMaker.*"
+				archiveArtifacts artifacts: 'VMMaker-Image.zip'
+
+				// Stop if tests fail
+				// Archive xml reports either case
+				try {
+					junit allowEmptyResults: true, testResults: "*.xml"
+				} catch (ex) {
+					if (currentBuild.result == 'UNSTABLE'){
+						currentBuild.result = 'FAILURE'
+					}
+					archiveArtifacts artifacts: '*.xml'
+				}
+			}
+		}
+	}
 }
 
 def runTests(platform, configuration, packages, withWorker, additionalParameters = ""){
@@ -239,8 +246,8 @@ def runTests(platform, configuration, packages, withWorker, additionalParameters
 		shell "mkdir runTests"
 		dir("runTests"){
 			try{
-				shell "wget -O - get.pharo.org/64/110 | bash "
-				shell "echo 110 > pharo.version"
+				shell "wget -O - get.pharo.org/64/120 | bash "
+				shell "echo 120 > pharo.version"
           
 				if(isWindows()){
 					runInCygwin "cd runTests && unzip ../build/build/packages/PharoVM-*-${platform}-bin.zip -d ."
@@ -303,41 +310,41 @@ def upload(platform, configuration, archiveName, isStableRelease = false) {
 	def expandedCSourceTarName = sh(returnStdout: true, script: "ls build/build/packages/PharoVM-*-${archiveName}-c-src.tar.gz").trim()
 	def expandedHeadersFileName = sh(returnStdout: true, script: "ls build/build/packages/PharoVM-*-${archiveName}-include.zip").trim()
 
-	sshagent (credentials: ['b5248b59-a193-4457-8459-e28e9eb29ed7']) {
+	sshagent (credentials: ['files-pharo-org-inria']) {
 		sh "scp -o StrictHostKeyChecking=no \
 		${expandedBinaryFileName} \
-		pharoorgde@ssh.cluster023.hosting.ovh.net:/home/pharoorgde/files/vm/pharo-spur${wordSize}-headless/${platform}"
+		pharo-ci@files.pharo.org:vm/pharo-spur${wordSize}-headless/${platform}"
 		sh "scp -o StrictHostKeyChecking=no \
 		${expandedBinaryFileName} \
-		pharoorgde@ssh.cluster023.hosting.ovh.net:/home/pharoorgde/files/vm/pharo-spur${wordSize}-headless/${platform}/latest${mainBranchVersion()}.zip"
+		pharo-ci@files.pharo.org:vm/pharo-spur${wordSize}-headless/${platform}/latest${mainBranchVersion()}.zip"
 
 		sh "scp -o StrictHostKeyChecking=no \
 		${expandedHeadersFileName} \
-		pharoorgde@ssh.cluster023.hosting.ovh.net:/home/pharoorgde/files/vm/pharo-spur${wordSize}-headless/${platform}/include"
+		pharo-ci@files.pharo.org:vm/pharo-spur${wordSize}-headless/${platform}/include"
 		sh "scp -o StrictHostKeyChecking=no \
 		${expandedHeadersFileName} \
-		pharoorgde@ssh.cluster023.hosting.ovh.net:/home/pharoorgde/files/vm/pharo-spur${wordSize}-headless/${platform}/include/latest${mainBranchVersion()}.zip"
+		pharo-ci@files.pharo.org:vm/pharo-spur${wordSize}-headless/${platform}/include/latest${mainBranchVersion()}.zip"
 
 		// Upload Souces ZIP 
 		sh "scp -o StrictHostKeyChecking=no \
 		${expandedCSourceFileName} \
-		pharoorgde@ssh.cluster023.hosting.ovh.net:/home/pharoorgde/files/vm/pharo-spur${wordSize}-headless/${platform}/source"
+		pharo-ci@files.pharo.org:vm/pharo-spur${wordSize}-headless/${platform}/source"
 		sh "scp -o StrictHostKeyChecking=no \
 		${expandedCSourceFileName} \
-		pharoorgde@ssh.cluster023.hosting.ovh.net:/home/pharoorgde/files/vm/pharo-spur${wordSize}-headless/${platform}/source/latest${mainBranchVersion()}.zip"
+		pharo-ci@files.pharo.org:vm/pharo-spur${wordSize}-headless/${platform}/source/latest${mainBranchVersion()}.zip"
 
 		// Upload Sources TAR.GZ
 		sh "scp -o StrictHostKeyChecking=no \
 		${expandedCSourceTarName} \
-		pharoorgde@ssh.cluster023.hosting.ovh.net:/home/pharoorgde/files/vm/pharo-spur${wordSize}-headless/${platform}/source"
+		pharo-ci@files.pharo.org:vm/pharo-spur${wordSize}-headless/${platform}/source"
 		sh "scp -o StrictHostKeyChecking=no \
 		${expandedCSourceTarName} \
-		pharoorgde@ssh.cluster023.hosting.ovh.net:/home/pharoorgde/files/vm/pharo-spur${wordSize}-headless/${platform}/source/latest${mainBranchVersion()}.tar.gz"
+		pharo-ci@files.pharo.org:vm/pharo-spur${wordSize}-headless/${platform}/source/latest${mainBranchVersion()}.tar.gz"
 		
 		if(isStableRelease){
 			sh "scp -o StrictHostKeyChecking=no \
 			${expandedBinaryFileName} \
-			pharoorgde@ssh.cluster023.hosting.ovh.net:/home/pharoorgde/files/vm/pharo-spur${wordSize}-headless/${platform}/stable${mainBranchVersion()}.zip"
+			pharo-ci@files.pharo.org:vm/pharo-spur${wordSize}-headless/${platform}/stable${mainBranchVersion()}.zip"
 		}
 	}
 }
@@ -351,18 +358,18 @@ def uploadStockReplacement(platform, configuration, archiveName, isStableRelease
 	def wordSize = is32Bits(platform) ? "32" : "64"
 	def expandedBinaryFileName = sh(returnStdout: true, script: "ls build-stockReplacement/build/packages/PharoVM-*-${archiveName}-bin.zip").trim()
 
-	sshagent (credentials: ['b5248b59-a193-4457-8459-e28e9eb29ed7']) {
+	sshagent (credentials: ['files-pharo-org-inria']) {
 		sh "scp -o StrictHostKeyChecking=no \
 		${expandedBinaryFileName} \
-		pharoorgde@ssh.cluster023.hosting.ovh.net:/home/pharoorgde/files/vm/pharo-spur${wordSize}/${platform}"
+		pharo-ci@files.pharo.org:vm/pharo-spur${wordSize}/${platform}"
 		sh "scp -o StrictHostKeyChecking=no \
 		${expandedBinaryFileName} \
-		pharoorgde@ssh.cluster023.hosting.ovh.net:/home/pharoorgde/files/vm/pharo-spur${wordSize}/${platform}/latestReplacement${mainBranchVersion()}.zip"
+		pharo-ci@files.pharo.org:vm/pharo-spur${wordSize}/${platform}/latestReplacement${mainBranchVersion()}.zip"
 
 		if(isStableRelease){
 			sh "scp -o StrictHostKeyChecking=no \
 			${expandedBinaryFileName} \
-			pharoorgde@ssh.cluster023.hosting.ovh.net:/home/pharoorgde/files/vm/pharo-spur${wordSize}/${platform}/stable${mainBranchVersion()}.zip"
+			pharo-ci@files.pharo.org:vm/pharo-spur${wordSize}/${platform}/stable${mainBranchVersion()}.zip"
 		}
 	}
 }
@@ -382,18 +389,18 @@ def uploadStackVM(platform, configuration, archiveName, isStableRelease = false)
 	
 	sh(script: "cp ${oldName} ${expandedBinaryFileName}")
 	
-	sshagent (credentials: ['b5248b59-a193-4457-8459-e28e9eb29ed7']) {
+	sshagent (credentials: ['files-pharo-org-inria']) {
 		sh "scp -o StrictHostKeyChecking=no \
 		${expandedBinaryFileName} \
-		pharoorgde@ssh.cluster023.hosting.ovh.net:/home/pharoorgde/files/vm/pharo-spur${wordSize}-headless/${platform}"
+		pharo-ci@files.pharo.org:vm/pharo-spur${wordSize}-headless/${platform}"
 		sh "scp -o StrictHostKeyChecking=no \
 		${expandedBinaryFileName} \
-		pharoorgde@ssh.cluster023.hosting.ovh.net:/home/pharoorgde/files/vm/pharo-spur${wordSize}-headless/${platform}/latestStackVM${mainBranchVersion()}.zip"
+		pharo-ci@files.pharo.org:vm/pharo-spur${wordSize}-headless/${platform}/latestStackVM${mainBranchVersion()}.zip"
 
 		if(isStableRelease){
 			sh "scp -o StrictHostKeyChecking=no \
 			${expandedBinaryFileName} \
-			pharoorgde@ssh.cluster023.hosting.ovh.net:/home/pharoorgde/files/vm/pharo-spur${wordSize}-headless/${platform}/stableStackVM${mainBranchVersion()}.zip"
+			pharo-ci@files.pharo.org:vm/pharo-spur${wordSize}-headless/${platform}/stableStackVM${mainBranchVersion()}.zip"
 		}
 	}
 }
@@ -480,7 +487,11 @@ try{
 		def platform = platf
 		
 		builders[platform] = {
-			node(platform){
+            def nodeName = platform
+            if (nodeName == 'Linux-x86_64'){
+                nodeName = 'old-linux-vm-build'
+            }
+			node(nodeName){
 				timeout(40){
 					runBuild(platform, "CoInterpreter")
 				}

@@ -1,13 +1,15 @@
 Class {
-	#name : #CInitDeclaratorNode,
-	#superclass : #CAbstractDeclaratorNode,
+	#name : 'CInitDeclaratorNode',
+	#superclass : 'CAbstractDeclaratorNode',
 	#instVars : [
 		'initializer'
 	],
-	#category : #'CAST-Nodes'
+	#category : 'CAST-Nodes',
+	#package : 'CAST',
+	#tag : 'Nodes'
 }
 
-{ #category : #'instance creation' }
+{ #category : 'instance creation' }
 CInitDeclaratorNode class >> declarator: aDeclarator initializer: anInitializer [
 	
 	^ self new
@@ -16,7 +18,7 @@ CInitDeclaratorNode class >> declarator: aDeclarator initializer: anInitializer 
 		yourself
 ]
 
-{ #category : #comparing }
+{ #category : 'comparing' }
 CInitDeclaratorNode >> = anObject [
 
 	"Answer whether the receiver and anObject represent the same object."
@@ -27,12 +29,12 @@ CInitDeclaratorNode >> = anObject [
 		  declarator = anObject declarator ]
 ]
 
-{ #category : #generated }
+{ #category : 'generated' }
 CInitDeclaratorNode >> acceptVisitor: anAbstractVisitor [
 	^ anAbstractVisitor visitInitDeclarator: self
 ]
 
-{ #category : #comparing }
+{ #category : 'comparing' }
 CInitDeclaratorNode >> hash [
 
 	"Answer an integer value that is related to the identity of the receiver."
@@ -40,12 +42,12 @@ CInitDeclaratorNode >> hash [
 	^ initializer hash bitXor: declarator hash
 ]
 
-{ #category : #generated }
+{ #category : 'generated' }
 CInitDeclaratorNode >> initializer [
 	^ initializer
 ]
 
-{ #category : #generated }
+{ #category : 'generated' }
 CInitDeclaratorNode >> initializer: aCGLRAbstractNode [
 	self initializer notNil
 		ifTrue: [ self initializer parent: nil ].
@@ -54,7 +56,7 @@ CInitDeclaratorNode >> initializer: aCGLRAbstractNode [
 		ifTrue: [ self initializer parent: self ]
 ]
 
-{ #category : #testing }
+{ #category : 'testing' }
 CInitDeclaratorNode >> isInitializerDeclarator [
 	
 	^ true

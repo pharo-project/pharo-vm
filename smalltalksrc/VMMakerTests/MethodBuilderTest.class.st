@@ -1,6 +1,6 @@
 Class {
-	#name : #MethodBuilderTest,
-	#superclass : #VMInterpreterTests,
+	#name : 'MethodBuilderTest',
+	#superclass : 'VMInterpreterTests',
 	#instVars : [
 		'literals',
 		'numberOfArguments',
@@ -11,17 +11,19 @@ Class {
 		'methodHeader',
 		'method'
 	],
-	#category : #'VMMakerTests-InterpreterTests'
+	#category : 'VMMakerTests-InterpreterTests',
+	#package : 'VMMakerTests',
+	#tag : 'InterpreterTests'
 }
 
-{ #category : #running }
+{ #category : 'running' }
 MethodBuilderTest >> testAddingBytecodesDoesntOverrideHeader [
 	method := methodBuilder newMethod buildMethod.
 	
 	self assert: methodBuilder buildMethodHeader equals: (memory integerValueOf: (memory fetchPointer: 0 ofObject: method)).
 ]
 
-{ #category : #running }
+{ #category : 'running' }
 MethodBuilderTest >> testAllocatingMethodDoesntOverflows [
 	method := methodBuilder newMethod; buildMethod.
 
@@ -33,14 +35,14 @@ MethodBuilderTest >> testAllocatingMethodDoesntOverflows [
 	self shouldnt:[ methodBuilder newMethod; buildMethod ] raise: AssertionFailure
 ]
 
-{ #category : #running }
+{ #category : 'running' }
 MethodBuilderTest >> testBuildEmptyMethodIsCompiledMethod [
 	"checking the format"
 	method := methodBuilder newMethod; buildMethod.
 	self assert: (memory isCompiledMethod: method)
 ]
 
-{ #category : #running }
+{ #category : 'running' }
 MethodBuilderTest >> testBytecodeAtForMethodWithNoLiteral [
 	| bytecodeAddress |
 	literals := { }.
@@ -54,7 +56,7 @@ MethodBuilderTest >> testBytecodeAtForMethodWithNoLiteral [
 	self assert: (memory byteAt: bytecodeAddress) equals: 1
 ]
 
-{ #category : #running }
+{ #category : 'running' }
 MethodBuilderTest >> testBytecodeAtForMethodWithOneLiteral [
 
 	| bytecodeAddress |
@@ -69,7 +71,7 @@ MethodBuilderTest >> testBytecodeAtForMethodWithOneLiteral [
 	self assert: (memory byteAt: bytecodeAddress) equals: 1
 ]
 
-{ #category : #running }
+{ #category : 'running' }
 MethodBuilderTest >> testBytecodeAtForMethodWithTwoLiteral [
 
 	| bytecodeAddress |
@@ -84,13 +86,13 @@ MethodBuilderTest >> testBytecodeAtForMethodWithTwoLiteral [
 	self assert: (memory byteAt: bytecodeAddress) equals: 1
 ]
 
-{ #category : #running }
+{ #category : 'running' }
 MethodBuilderTest >> testClassOfCompiledMethodIsCompiledMethod [
 	
 	self assert: (memory fetchClassOf: methodBuilder newMethod buildMethod) equals: (memory splObj: 16).
 ]
 
-{ #category : #running }
+{ #category : 'running' }
 MethodBuilderTest >> testGeneratingCompiledMethod [
 
 	method := methodBuilder newMethod
@@ -99,7 +101,7 @@ MethodBuilderTest >> testGeneratingCompiledMethod [
 	self assert: (memory isCompiledMethod: method)
 ]
 
-{ #category : #running }
+{ #category : 'running' }
 MethodBuilderTest >> testInstanciateMethodShouldTakeOneSlotForEightBytecodes [
 
 	| numberOfByteCode |
@@ -114,7 +116,7 @@ MethodBuilderTest >> testInstanciateMethodShouldTakeOneSlotForEightBytecodes [
 		equals: 1 + (numberOfByteCode / wordSize) ceiling
 ]
 
-{ #category : #running }
+{ #category : 'running' }
 MethodBuilderTest >> testInstanciateMethodShouldTakeTwoSlotForNineBytecodes [
 
 	| numberOfByteCode |
@@ -129,7 +131,7 @@ MethodBuilderTest >> testInstanciateMethodShouldTakeTwoSlotForNineBytecodes [
 		equals: 1 + (numberOfByteCode / wordSize) ceiling
 ]
 
-{ #category : #running }
+{ #category : 'running' }
 MethodBuilderTest >> testSecondBytecodeAtForMethodWithOneLiteral [
 
 	| bytecodeAddress |

@@ -1,15 +1,20 @@
 Class {
-	#name : #VMPrimitiveTest,
-	#superclass : #VMInterpreterTests,
+	#name : 'VMPrimitiveTest',
+	#superclass : 'VMInterpreterTests',
+	#instVars : [
+		'imageName'
+	],
 	#pools : [
 		'VMBasicConstants',
 		'VMBytecodeConstants',
 		'VMObjectIndices'
 	],
-	#category : #'VMMakerTests-InterpreterTests'
+	#category : 'VMMakerTests-InterpreterTests',
+	#package : 'VMMakerTests',
+	#tag : 'InterpreterTests'
 }
 
-{ #category : #asserting }
+{ #category : 'asserting' }
 VMPrimitiveTest >> assert: anOop contentEquals: oopToCompare [ 
 
 	| numSlotOop numSlotOopToCompare |
@@ -23,7 +28,7 @@ VMPrimitiveTest >> assert: anOop contentEquals: oopToCompare [
 	
 ]
 
-{ #category : #'as yet unclassified' }
+{ #category : 'as yet unclassified' }
 VMPrimitiveTest >> fillNewSpace [
 
 	"Allocate enough space to generate a full new space"
@@ -35,7 +40,7 @@ VMPrimitiveTest >> fillNewSpace [
 			 classIndex: memory arrayClassIndexPun) isNotNil
 ]
 
-{ #category : #'instance creation' }
+{ #category : 'instance creation' }
 VMPrimitiveTest >> newArrayWith: aCollection [ 
 	| array |
 	array := self newObjectWithSlots: aCollection size format: memory arrayFormat classIndex: memory arrayClassIndexPun.
@@ -46,7 +51,7 @@ VMPrimitiveTest >> newArrayWith: aCollection [
 	
 ]
 
-{ #category : #'tests - primitiveAt' }
+{ #category : 'tests - primitiveAt' }
 VMPrimitiveTest >> newContextWithTemps: temps [
 
 	| method topFrame |
@@ -64,7 +69,7 @@ VMPrimitiveTest >> newContextWithTemps: temps [
 	^ stackBuilder buildStack marryToContext
 ]
 
-{ #category : #running }
+{ #category : 'running' }
 VMPrimitiveTest >> setUp [
 
 	"taken from VMSimpleStackBasedCogitBytecodeTest >> #setup"
@@ -93,7 +98,7 @@ VMPrimitiveTest >> setUp [
 	imageName := VMPrimitiveTest name
 ]
 
-{ #category : #'tests - primitiveIdentical' }
+{ #category : 'tests - primitiveIdentical' }
 VMPrimitiveTest >> setUpForwardedObjects [
 
 	| class1 class2 object1 object2 array1 array2 |
@@ -121,7 +126,7 @@ VMPrimitiveTest >> setUpForwardedObjects [
 	^ object1
 ]
 
-{ #category : #'tests - primitiveAdd' }
+{ #category : 'tests - primitiveAdd' }
 VMPrimitiveTest >> testAddTwoIntegersOverflow [
 
 	interpreter push: (self memory integerObjectOf: self memory maxSmallInteger).
@@ -131,7 +136,7 @@ VMPrimitiveTest >> testAddTwoIntegersOverflow [
 	self assert: interpreter failed
 ]
 
-{ #category : #'tests - primitiveAdd' }
+{ #category : 'tests - primitiveAdd' }
 VMPrimitiveTest >> testAddTwoIntegersOverflowDoesNotPopArguments [
 
 	"Marker"
@@ -147,7 +152,7 @@ VMPrimitiveTest >> testAddTwoIntegersOverflowDoesNotPopArguments [
 	self assert: interpreter popStack equals: marker
 ]
 
-{ #category : #'tests - primitiveAdd' }
+{ #category : 'tests - primitiveAdd' }
 VMPrimitiveTest >> testAddTwoIntegersPopsArguments [
 	| marker |
 	"Marker"
@@ -157,14 +162,9 @@ VMPrimitiveTest >> testAddTwoIntegersPopsArguments [
 	interpreter push: (self memory integerObjectOf: 1).
 	interpreter push: (self memory integerObjectOf: 2).
 	interpreter primitiveAdd.
-	
-	"Pop result"
-	interpreter popStack.
-
-	self assert: interpreter popStack equals: marker
 ]
 
-{ #category : #'tests - primitiveAdd' }
+{ #category : 'tests - primitiveAdd' }
 VMPrimitiveTest >> testAddTwoIntegersResult [
 
 	interpreter push: (self memory integerObjectOf: 1).
@@ -175,7 +175,7 @@ VMPrimitiveTest >> testAddTwoIntegersResult [
 	self assert: (self memory integerValueOf: interpreter popStack) equals: 3
 ]
 
-{ #category : #'tests - primitiveAdd' }
+{ #category : 'tests - primitiveAdd' }
 VMPrimitiveTest >> testAddTwoNegativeIntegersPopsArguments [
 	| marker |
 	"Marker"
@@ -192,7 +192,7 @@ VMPrimitiveTest >> testAddTwoNegativeIntegersPopsArguments [
 	self assert: interpreter popStack equals: marker
 ]
 
-{ #category : #'tests - primitiveAdd' }
+{ #category : 'tests - primitiveAdd' }
 VMPrimitiveTest >> testAddTwoNegativeIntegersResult [
 
 	interpreter push: (self memory integerObjectOf: -1).
@@ -203,7 +203,7 @@ VMPrimitiveTest >> testAddTwoNegativeIntegersResult [
 	self assert: (self memory integerValueOf: interpreter popStack) equals: -3
 ]
 
-{ #category : #'tests - primitiveAdd' }
+{ #category : 'tests - primitiveAdd' }
 VMPrimitiveTest >> testAddTwoNegativeIntegersUnderflow [
 
 	interpreter push: (self memory integerObjectOf: self memory minSmallInteger).
@@ -213,7 +213,7 @@ VMPrimitiveTest >> testAddTwoNegativeIntegersUnderflow [
 	self assert: interpreter failed
 ]
 
-{ #category : #'tests - primitiveAdd' }
+{ #category : 'tests - primitiveAdd' }
 VMPrimitiveTest >> testAddTwoNegativeIntegersUnderflowDoesNotPopArguments [
 
 	"Marker"
@@ -229,7 +229,37 @@ VMPrimitiveTest >> testAddTwoNegativeIntegersUnderflowDoesNotPopArguments [
 	self assert: interpreter popStack equals: marker
 ]
 
-{ #category : #'tests - become' }
+{ #category : 'tests - primitiveAdd' }
+VMPrimitiveTest >> testPrimitiveAddFailsWithTypeErrorPreservesStack [
+	| string |
+	
+	string := self newString: '42'.
+	interpreter push: string. 
+	interpreter push: (memory integerObjectOf: 2).
+	
+	interpreter primitiveAdd. 
+	
+	self assert: interpreter stackTop equals: (memory integerObjectOf: 2). 
+	self assert: (interpreter stackValue: 1) equals: string
+]
+
+{ #category : 'tests - primitiveAdd' }
+VMPrimitiveTest >> testPrimitiveAddWithOverflowPreservesStack [
+	
+	| maxSmallInt |
+	
+	maxSmallInt:= (memory integerObjectOf: memory maxSmallInteger). 
+	
+	interpreter push: maxSmallInt. 
+	interpreter push: (memory integerObjectOf: 2).
+	
+	interpreter primitiveAdd. 
+	
+	self assert: interpreter stackTop equals: (memory integerObjectOf: 2). 
+	self assert: (interpreter stackValue: 1) equals: maxSmallInt.
+]
+
+{ #category : 'tests - become' }
 VMPrimitiveTest >> testPrimitiveArrayBecomeCreatesForwardersForObjectsOfDifferentSize [
 	| class1 class2 object1 object2 array1 array2 |
 	class1 := self newClassInOldSpaceWithSlots: 1 instSpec: memory nonIndexablePointerFormat.
@@ -250,7 +280,7 @@ VMPrimitiveTest >> testPrimitiveArrayBecomeCreatesForwardersForObjectsOfDifferen
 	self assert: (memory isForwarded: object2) equals: true
 ]
 
-{ #category : #'tests - become' }
+{ #category : 'tests - become' }
 VMPrimitiveTest >> testPrimitiveArrayBecomeExchangesClass [
 	| class1 class2 object1 object2 array1 array2 |
 	class1 := self newClassInOldSpaceWithSlots: 1 instSpec: memory nonIndexablePointerFormat.
@@ -271,7 +301,7 @@ VMPrimitiveTest >> testPrimitiveArrayBecomeExchangesClass [
 	self assert: (memory fetchClassOf: object2) equals: class1
 ]
 
-{ #category : #'tests - become' }
+{ #category : 'tests - become' }
 VMPrimitiveTest >> testPrimitiveArrayBecomeExchangesClassForObjectsOfDifferentSize [
 	| class1 class2 object1 object2 array1 array2 |
 	class1 := self newClassInOldSpaceWithSlots: 1 instSpec: memory nonIndexablePointerFormat.
@@ -292,7 +322,7 @@ VMPrimitiveTest >> testPrimitiveArrayBecomeExchangesClassForObjectsOfDifferentSi
 	self assert: (memory fetchClassOf: (memory followForwarded: object2)) equals: class1
 ]
 
-{ #category : #'tests - become' }
+{ #category : 'tests - become' }
 VMPrimitiveTest >> testPrimitiveArrayBecomeExchangesContents [
 	| class object1 object2 array1 array2 |
 	class := self newClassInOldSpaceWithSlots: 1 instSpec: memory nonIndexablePointerFormat.
@@ -314,7 +344,7 @@ VMPrimitiveTest >> testPrimitiveArrayBecomeExchangesContents [
 	self assert: (memory fetchInteger: 0 ofObject: object2) equals: 42.
 ]
 
-{ #category : #'tests - become' }
+{ #category : 'tests - become' }
 VMPrimitiveTest >> testPrimitiveArrayBecomeExchangesContentsForObjectsOfDifferentSize [
 	| class1 class2 object1 object2 array1 array2 |
 	class1 := self newClassInOldSpaceWithSlots: 1 instSpec: memory nonIndexablePointerFormat.
@@ -340,7 +370,7 @@ VMPrimitiveTest >> testPrimitiveArrayBecomeExchangesContentsForObjectsOfDifferen
 	self assert: (memory fetchInteger: 0 ofObject: (memory followForwarded: object2)) equals: 42
 ]
 
-{ #category : #'tests - become' }
+{ #category : 'tests - become' }
 VMPrimitiveTest >> testPrimitiveArrayBecomeExchangesIdentityHash [
 	| class object1 object2 hash1 hash2 array1 array2 |
 	class := self newClassInOldSpaceWithSlots: 1 instSpec: memory nonIndexablePointerFormat.
@@ -363,7 +393,7 @@ VMPrimitiveTest >> testPrimitiveArrayBecomeExchangesIdentityHash [
 	self assert: (memory rawHashBitsOf: object2) equals: hash1
 ]
 
-{ #category : #'tests - become' }
+{ #category : 'tests - become' }
 VMPrimitiveTest >> testPrimitiveArrayBecomeExchangesIdentityHashForObjectsOfDifferentSize [
 	| class1 class2 object1 object2 hash1 hash2 array1 array2 |
 	class1 := self newClassInOldSpaceWithSlots: 1 instSpec: memory nonIndexablePointerFormat.
@@ -387,7 +417,7 @@ VMPrimitiveTest >> testPrimitiveArrayBecomeExchangesIdentityHashForObjectsOfDiff
 	self assert: (memory rawHashBitsOf: (memory followForwarded: object2)) equals: hash1
 ]
 
-{ #category : #'tests - become' }
+{ #category : 'tests - become' }
 VMPrimitiveTest >> testPrimitiveArrayBecomeFailsForImmediates [
 	| class immediate array1 array2 |
 	class := self newClassInOldSpaceWithSlots: 1 instSpec: memory nonIndexablePointerFormat.
@@ -406,7 +436,7 @@ VMPrimitiveTest >> testPrimitiveArrayBecomeFailsForImmediates [
 	
 ]
 
-{ #category : #'tests - become' }
+{ #category : 'tests - become' }
 VMPrimitiveTest >> testPrimitiveArrayBecomeFailsForImmutableObject [
 	| class object1 object2 array1 array2 |
 	class := self newClassInOldSpaceWithSlots: 1 instSpec: memory nonIndexablePointerFormat.
@@ -427,7 +457,7 @@ VMPrimitiveTest >> testPrimitiveArrayBecomeFailsForImmutableObject [
 	self assert: interpreter primFailCode equals: PrimErrNoModification
 ]
 
-{ #category : #'tests - become' }
+{ #category : 'tests - become' }
 VMPrimitiveTest >> testPrimitiveArrayBecomeFailsForPinnedObject [
 	| class object1 object2 array1 array2 |
 	class := self newClassInOldSpaceWithSlots: 1 instSpec: memory nonIndexablePointerFormat.
@@ -447,7 +477,7 @@ VMPrimitiveTest >> testPrimitiveArrayBecomeFailsForPinnedObject [
 	self assert: interpreter primFailCode equals: PrimErrObjectIsPinned
 ]
 
-{ #category : #'tests - become' }
+{ #category : 'tests - become' }
 VMPrimitiveTest >> testPrimitiveArrayBecomeOneWayCopyHashIfCopyHasIsFalseDoesNotCopyHash [
 	| class object1 object2 hash2BeforeBecome array1 array2 object2FromForwarder |
 	class := self
@@ -470,7 +500,7 @@ VMPrimitiveTest >> testPrimitiveArrayBecomeOneWayCopyHashIfCopyHasIsFalseDoesNot
 	self assert: (memory hashBitsOf: object2) equals: hash2BeforeBecome
 ]
 
-{ #category : #'tests - become' }
+{ #category : 'tests - become' }
 VMPrimitiveTest >> testPrimitiveArrayBecomeOneWayCopyHashIfCopyHasIsTrueCopiesHash [
 	| class object1 object2 hash1 hash2 array1 array2 |
 	class := self newClassInOldSpaceWithSlots: 1 instSpec: memory nonIndexablePointerFormat.
@@ -493,7 +523,7 @@ VMPrimitiveTest >> testPrimitiveArrayBecomeOneWayCopyHashIfCopyHasIsTrueCopiesHa
 	self deny: (memory hashBitsOf: object2) equals: hash2
 ]
 
-{ #category : #'tests - become' }
+{ #category : 'tests - become' }
 VMPrimitiveTest >> testPrimitiveArrayBecomeOneWayCreatesForwardThatPointsToOriginalObject [
 	| class object1 object2 array1 array2 |
 	class := self newClassInOldSpaceWithSlots: 1 instSpec: memory nonIndexablePointerFormat.
@@ -513,7 +543,7 @@ VMPrimitiveTest >> testPrimitiveArrayBecomeOneWayCreatesForwardThatPointsToOrigi
 	self assert: (memory followForwarded: object1)  equals: object2
 ]
 
-{ #category : #'tests - primitiveAsCharacter' }
+{ #category : 'tests - primitiveAsCharacter' }
 VMPrimitiveTest >> testPrimitiveAsCharacter [
 	interpreter push: (memory integerObjectOf: 65).
 	
@@ -523,7 +553,7 @@ VMPrimitiveTest >> testPrimitiveAsCharacter [
 	self assert: interpreter stackTop equals: (memory characterObjectOf: 65). 
 ]
 
-{ #category : #'tests - primitiveAsCharacter' }
+{ #category : 'tests - primitiveAsCharacter' }
 VMPrimitiveTest >> testPrimitiveAsCharacterFailsForOutOfRangeArg [
 
 	| invalidNumber |
@@ -542,7 +572,7 @@ VMPrimitiveTest >> testPrimitiveAsCharacterFailsForOutOfRangeArg [
 	self assert: interpreter primFailCode equals: PrimErrBadReceiver.
 ]
 
-{ #category : #'tests - primitiveAsCharacter' }
+{ #category : 'tests - primitiveAsCharacter' }
 VMPrimitiveTest >> testPrimitiveAsCharacterFailsWithNonIntObject [
 	
 	interpreter push: memory trueObject. 
@@ -553,7 +583,7 @@ VMPrimitiveTest >> testPrimitiveAsCharacterFailsWithNonIntObject [
 	self assert: interpreter primFailCode equals: PrimErrBadReceiver. 
 ]
 
-{ #category : #'tests - primitiveAt' }
+{ #category : 'tests - primitiveAt' }
 VMPrimitiveTest >> testPrimitiveAtDoesntFailsIfObjectIsImmutable [
 
 	| class object slotIndex objectToPutInSlot |
@@ -577,7 +607,7 @@ VMPrimitiveTest >> testPrimitiveAtDoesntFailsIfObjectIsImmutable [
 self assert: (memory fetchPointer: 0 ofObject: object) equals: interpreter stackTop. 
 ]
 
-{ #category : #'tests - primitiveAt' }
+{ #category : 'tests - primitiveAt' }
 VMPrimitiveTest >> testPrimitiveAtFailsForImmediate [
 
 	interpreter push: (memory integerObjectOf: 32).
@@ -588,7 +618,7 @@ VMPrimitiveTest >> testPrimitiveAtFailsForImmediate [
 	self assert: interpreter primFailCode equals: PrimErrInappropriate. 
 ]
 
-{ #category : #'tests - primitiveAt' }
+{ #category : 'tests - primitiveAt' }
 VMPrimitiveTest >> testPrimitiveAtFailsForNonIndexableObject [
 	| class object |
 	class := self newClassInOldSpaceWithSlots: 0 instSpec: memory nonIndexablePointerFormat.
@@ -603,7 +633,7 @@ VMPrimitiveTest >> testPrimitiveAtFailsForNonIndexableObject [
 	self assert: interpreter primFailCode equals: PrimErrBadReceiver. 
 ]
 
-{ #category : #'tests - primitiveAt' }
+{ #category : 'tests - primitiveAt' }
 VMPrimitiveTest >> testPrimitiveAtFailsForNonIntegerArgument [
 	| class objectInstance |
 	class := self newClassInOldSpaceWithSlots: 0 instSpec: memory nonIndexablePointerFormat.
@@ -617,7 +647,7 @@ VMPrimitiveTest >> testPrimitiveAtFailsForNonIntegerArgument [
 	self assert: interpreter primFailCode equals: PrimErrBadArgument. 
 ]
 
-{ #category : #'tests - primitiveAt' }
+{ #category : 'tests - primitiveAt' }
 VMPrimitiveTest >> testPrimitiveAtForDivorcedContext [
 
 	| context |
@@ -636,7 +666,7 @@ VMPrimitiveTest >> testPrimitiveAtForDivorcedContext [
 	self assert: interpreter stackTop equals: memory falseObject. 
 ]
 
-{ #category : #'tests - primitiveAt' }
+{ #category : 'tests - primitiveAt' }
 VMPrimitiveTest >> testPrimitiveAtForMarriedContext [
 
 	| context |
@@ -650,7 +680,7 @@ VMPrimitiveTest >> testPrimitiveAtForMarriedContext [
 	self assert: interpreter stackTop equals: memory falseObject. 
 ]
 
-{ #category : #'tests - primitiveAt' }
+{ #category : 'tests - primitiveAt' }
 VMPrimitiveTest >> testPrimitiveAtForWidowedContext [
 
 	| context |
@@ -667,7 +697,7 @@ VMPrimitiveTest >> testPrimitiveAtForWidowedContext [
 	self assert: interpreter failed
 ]
 
-{ #category : #'tests - primitiveAtPut' }
+{ #category : 'tests - primitiveAtPut' }
 VMPrimitiveTest >> testPrimitiveAtPutFailsForForwardedReceiver [
 	| class objectInstance biggerClass objectForwarded array1 array2 |
 	"Forwarding an object happens when becoming it with a bigger object"
@@ -697,7 +727,7 @@ VMPrimitiveTest >> testPrimitiveAtPutFailsForForwardedReceiver [
 	self assert: interpreter primFailCode equals: PrimErrBadArgument. 
 ]
 
-{ #category : #'tests - primitiveAtPut' }
+{ #category : 'tests - primitiveAtPut' }
 VMPrimitiveTest >> testPrimitiveAtPutFailsForImmediate [
 
 	interpreter push: (memory integerObjectOf: 32).
@@ -709,7 +739,7 @@ VMPrimitiveTest >> testPrimitiveAtPutFailsForImmediate [
 	self assert: interpreter primFailCode equals: PrimErrInappropriate. 
 ]
 
-{ #category : #'tests - primitiveAtPut' }
+{ #category : 'tests - primitiveAtPut' }
 VMPrimitiveTest >> testPrimitiveAtPutFailsForMoreThanTwoArguments [
 	| class objectInstance |
 	"We push receiver then 3 arguments"
@@ -727,7 +757,7 @@ VMPrimitiveTest >> testPrimitiveAtPutFailsForMoreThanTwoArguments [
 	self assert: interpreter primFailCode equals: PrimErrInappropriate. 
 ]
 
-{ #category : #'tests - primitiveAtPut' }
+{ #category : 'tests - primitiveAtPut' }
 VMPrimitiveTest >> testPrimitiveAtPutFailsForNonIndexableObject [
 	| class object |
 	class := self newClassInOldSpaceWithSlots: 0 instSpec: memory nonIndexablePointerFormat.
@@ -743,7 +773,7 @@ VMPrimitiveTest >> testPrimitiveAtPutFailsForNonIndexableObject [
 	self assert: interpreter primFailCode equals: PrimErrBadReceiver. 
 ]
 
-{ #category : #'tests - primitiveAtPut' }
+{ #category : 'tests - primitiveAtPut' }
 VMPrimitiveTest >> testPrimitiveAtPutFailsForNonIntegerArgument [
 	| class objectInstance |
 	class := self newClassInOldSpaceWithSlots: 0 instSpec: memory nonIndexablePointerFormat.
@@ -758,7 +788,7 @@ VMPrimitiveTest >> testPrimitiveAtPutFailsForNonIntegerArgument [
 	self assert: interpreter primFailCode equals: PrimErrBadArgument. 
 ]
 
-{ #category : #'tests - primitiveImmutability' }
+{ #category : 'tests - primitiveImmutability' }
 VMPrimitiveTest >> testPrimitiveAtPutFailsIfObjectIsContext [
 
 	| class object slotIndex objectToPutInSlot |
@@ -781,7 +811,7 @@ VMPrimitiveTest >> testPrimitiveAtPutFailsIfObjectIsContext [
 	self assert: interpreter primFailCode equals: 2. 
 ]
 
-{ #category : #'tests - primitiveAtPut' }
+{ #category : 'tests - primitiveAtPut' }
 VMPrimitiveTest >> testPrimitiveAtPutFailsIfObjectIsImmutable [
 
 	| class object slotIndex objectToPutInSlot |
@@ -805,7 +835,7 @@ VMPrimitiveTest >> testPrimitiveAtPutFailsIfObjectIsImmutable [
 	self assert: interpreter primFailCode equals: PrimErrNoModification. 
 ]
 
-{ #category : #'tests - primitiveAtPut' }
+{ #category : 'tests - primitiveAtPut' }
 VMPrimitiveTest >> testPrimitiveAtPutPutsTheValueForAnIndexableObject [
 	| class object |
 	class := self newClassInOldSpaceWithSlots: 0 instSpec: memory arrayFormat.
@@ -821,7 +851,7 @@ VMPrimitiveTest >> testPrimitiveAtPutPutsTheValueForAnIndexableObject [
 	self assert: (memory fetchPointer: 0 ofObject: object) equals: memory falseObject.
 ]
 
-{ #category : #'tests - primitiveAt' }
+{ #category : 'tests - primitiveAt' }
 VMPrimitiveTest >> testPrimitiveAtReturnsTheValueForAnIndexableObject [
 	| class object |
 	class := self newClassInOldSpaceWithSlots: 0 instSpec: memory arrayFormat.
@@ -844,7 +874,7 @@ VMPrimitiveTest >> testPrimitiveAtReturnsTheValueForAnIndexableObject [
 	self assert: interpreter stackTop equals: memory falseObject. 
 ]
 
-{ #category : #'tests - primitiveBitShift' }
+{ #category : 'tests - primitiveBitShift' }
 VMPrimitiveTest >> testPrimitiveBifShitBorderCase [
 
 	interpreter push: (memory integerObjectOf: (memory maxSmallInteger >> memory numSmallIntegerTagBits)).
@@ -855,7 +885,7 @@ VMPrimitiveTest >> testPrimitiveBifShitBorderCase [
 	self assert: interpreter stackTop equals: (memory integerObjectOf: 0).
 ]
 
-{ #category : #'tests - primitiveBitAnd' }
+{ #category : 'tests - primitiveBitAnd' }
 VMPrimitiveTest >> testPrimitiveBitAnd1 [
 
 	interpreter push: (memory integerObjectOf: 16r1).
@@ -866,7 +896,7 @@ VMPrimitiveTest >> testPrimitiveBitAnd1 [
 	self assert: interpreter stackTop equals: (memory integerObjectOf: 1). 
 ]
 
-{ #category : #'tests - primitiveBitAnd' }
+{ #category : 'tests - primitiveBitAnd' }
 VMPrimitiveTest >> testPrimitiveBitAnd2 [
 
 	interpreter push: (memory integerObjectOf: 16r1).
@@ -877,7 +907,7 @@ VMPrimitiveTest >> testPrimitiveBitAnd2 [
 	self assert: interpreter stackTop equals: (memory integerObjectOf: 0). 
 ]
 
-{ #category : #'tests - primitiveBitAnd' }
+{ #category : 'tests - primitiveBitAnd' }
 VMPrimitiveTest >> testPrimitiveBitAndFailsPreservesStack [
 	
 	| string |
@@ -894,7 +924,7 @@ VMPrimitiveTest >> testPrimitiveBitAndFailsPreservesStack [
 	self assert: (interpreter stackValue: 1) equals: string. 
 ]
 
-{ #category : #'tests - primitiveBitAnd' }
+{ #category : 'tests - primitiveBitAnd' }
 VMPrimitiveTest >> testPrimitiveBitAndFailsWithTypeErrorOnFirstOperand [
 	
 	| string |
@@ -908,7 +938,7 @@ VMPrimitiveTest >> testPrimitiveBitAndFailsWithTypeErrorOnFirstOperand [
 	self assert: interpreter failed.
 ]
 
-{ #category : #'tests - primitiveBitAnd' }
+{ #category : 'tests - primitiveBitAnd' }
 VMPrimitiveTest >> testPrimitiveBitAndFailsWithTypeErrorOnSecondOperand [
 	
 	interpreter push: (memory integerObjectOf: 2).
@@ -919,7 +949,7 @@ VMPrimitiveTest >> testPrimitiveBitAndFailsWithTypeErrorOnSecondOperand [
 	self assert: interpreter failed.
 ]
 
-{ #category : #'tests - primitiveBitAnd' }
+{ #category : 'tests - primitiveBitAnd' }
 VMPrimitiveTest >> testPrimitiveBitAndWithMaxBitIntWithNoDataLoss [
 	"This insures the fact that no data is lost during the processing of usqInt by the primitive"
 
@@ -935,7 +965,7 @@ VMPrimitiveTest >> testPrimitiveBitAndWithMaxBitIntWithNoDataLoss [
 	self assert: interpreter stackTop equals: (memory integerObjectOf: (num - 1)).
 ]
 
-{ #category : #'tests - primitiveBitAnd' }
+{ #category : 'tests - primitiveBitAnd' }
 VMPrimitiveTest >> testPrimitiveBitAndWithNegativNumbers [
 "111... 010110 -> -42
  000... 010110 ->  21"""
@@ -948,7 +978,7 @@ VMPrimitiveTest >> testPrimitiveBitAndWithNegativNumbers [
 	self assert: interpreter stackTop equals: (memory integerObjectOf: (-42 bitAnd: 21)). 
 ]
 
-{ #category : #'tests - primitiveBitOr' }
+{ #category : 'tests - primitiveBitOr' }
 VMPrimitiveTest >> testPrimitiveBitOr1 [ 
 
 	interpreter push: (memory integerObjectOf: 16r1).
@@ -959,7 +989,7 @@ VMPrimitiveTest >> testPrimitiveBitOr1 [
 	self assert: interpreter stackTop equals: (memory integerObjectOf: 1). 
 ]
 
-{ #category : #'tests - primitiveBitOr' }
+{ #category : 'tests - primitiveBitOr' }
 VMPrimitiveTest >> testPrimitiveBitOr2 [
 
 	interpreter push: (memory integerObjectOf: 16r1).
@@ -974,7 +1004,7 @@ VMPrimitiveTest >> testPrimitiveBitOr2 [
 	
 ]
 
-{ #category : #'tests - primitiveBitOr' }
+{ #category : 'tests - primitiveBitOr' }
 VMPrimitiveTest >> testPrimitiveBitOr3 [
 
 	interpreter push: (memory integerObjectOf: 16r0).
@@ -989,7 +1019,7 @@ VMPrimitiveTest >> testPrimitiveBitOr3 [
 	
 ]
 
-{ #category : #'tests - primitiveBitOr' }
+{ #category : 'tests - primitiveBitOr' }
 VMPrimitiveTest >> testPrimitiveBitOr4 [
 
 	"This is to insure that primitiveBitOr executes a logical Or and not an XOr"
@@ -1005,7 +1035,7 @@ VMPrimitiveTest >> testPrimitiveBitOr4 [
 	
 ]
 
-{ #category : #'tests - primitiveBitOr' }
+{ #category : 'tests - primitiveBitOr' }
 VMPrimitiveTest >> testPrimitiveBitOrFailsPreservesStack [
 	
 	interpreter push: memory trueObject.
@@ -1019,7 +1049,7 @@ VMPrimitiveTest >> testPrimitiveBitOrFailsPreservesStack [
 	self assert: (interpreter stackValue: 1) equals: memory trueObject.
 ]
 
-{ #category : #'tests - primitiveBitOr' }
+{ #category : 'tests - primitiveBitOr' }
 VMPrimitiveTest >> testPrimitiveBitOrFailsWithTypeErrorOnFirstOperand [
 	
 	interpreter push: memory trueObject.
@@ -1030,7 +1060,7 @@ VMPrimitiveTest >> testPrimitiveBitOrFailsWithTypeErrorOnFirstOperand [
 	self assert: interpreter failed.
 ]
 
-{ #category : #'tests - primitiveBitOr' }
+{ #category : 'tests - primitiveBitOr' }
 VMPrimitiveTest >> testPrimitiveBitOrFailsWithTypeErrorOnSecondOperand [
 	
 	interpreter push: (memory integerObjectOf: 2).
@@ -1041,7 +1071,7 @@ VMPrimitiveTest >> testPrimitiveBitOrFailsWithTypeErrorOnSecondOperand [
 	self assert: interpreter failed.
 ]
 
-{ #category : #'tests - primitiveBitOr' }
+{ #category : 'tests - primitiveBitOr' }
 VMPrimitiveTest >> testPrimitiveBitOrWithMaxBitIntWithNoDataLoss [
 	"This insure the fact that no data is lost during the processing of usqInt by the primitive"
 
@@ -1057,7 +1087,7 @@ VMPrimitiveTest >> testPrimitiveBitOrWithMaxBitIntWithNoDataLoss [
 	self assert: interpreter stackTop equals: (memory integerObjectOf: (num bitOr: num - 1)).
 ]
 
-{ #category : #'tests - primitiveBitOr' }
+{ #category : 'tests - primitiveBitOr' }
 VMPrimitiveTest >> testPrimitiveBitOrWithNegativNumbers [
 
 	interpreter push: (memory integerObjectOf: -73).
@@ -1068,7 +1098,7 @@ VMPrimitiveTest >> testPrimitiveBitOrWithNegativNumbers [
 	self assert: interpreter stackTop equals: (memory integerObjectOf: (-73 bitOr: (memory maxCInteger >> memory numSmallIntegerTagBits) - 1)).
 ]
 
-{ #category : #'tests - primitiveBitShift' }
+{ #category : 'tests - primitiveBitShift' }
 VMPrimitiveTest >> testPrimitiveBitShift1 [
 
 	interpreter push: (memory integerObjectOf: 2).
@@ -1079,7 +1109,7 @@ VMPrimitiveTest >> testPrimitiveBitShift1 [
 	self assert: interpreter stackTop equals: (memory integerObjectOf: 0). 
 ]
 
-{ #category : #'tests - primitiveBitShift' }
+{ #category : 'tests - primitiveBitShift' }
 VMPrimitiveTest >> testPrimitiveBitShiftFailsWithTypeErrorOnFirstOperand [
 
 	interpreter push: memory trueObject. 
@@ -1092,7 +1122,7 @@ VMPrimitiveTest >> testPrimitiveBitShiftFailsWithTypeErrorOnFirstOperand [
 		
 ]
 
-{ #category : #'tests - primitiveBitShift' }
+{ #category : 'tests - primitiveBitShift' }
 VMPrimitiveTest >> testPrimitiveBitShiftFailsWithTypeErrorOnSecondOperand [
 	
 	interpreter push: (memory integerObjectOf: (memory maxSmallInteger)).
@@ -1105,7 +1135,7 @@ VMPrimitiveTest >> testPrimitiveBitShiftFailsWithTypeErrorOnSecondOperand [
 		
 ]
 
-{ #category : #'tests - primitiveBitShift' }
+{ #category : 'tests - primitiveBitShift' }
 VMPrimitiveTest >> testPrimitiveBitShiftFailsWithTypeErrorPreservesStack [
 
 	interpreter push: memory trueObject. 
@@ -1118,7 +1148,7 @@ VMPrimitiveTest >> testPrimitiveBitShiftFailsWithTypeErrorPreservesStack [
 		
 ]
 
-{ #category : #'tests - primitiveBitShift' }
+{ #category : 'tests - primitiveBitShift' }
 VMPrimitiveTest >> testPrimitiveBitShiftLeft [
 
 	interpreter push: (memory integerObjectOf: 16). 
@@ -1129,7 +1159,7 @@ VMPrimitiveTest >> testPrimitiveBitShiftLeft [
 	self assert: interpreter stackTop equals: (memory integerObjectOf: 32). 
 ]
 
-{ #category : #'tests - primitiveBitShift' }
+{ #category : 'tests - primitiveBitShift' }
 VMPrimitiveTest >> testPrimitiveBitShiftRight [
 
 	interpreter push: (memory integerObjectOf: 16). 
@@ -1140,7 +1170,7 @@ VMPrimitiveTest >> testPrimitiveBitShiftRight [
 	self assert: interpreter stackTop equals: (memory integerObjectOf: 8). 
 ]
 
-{ #category : #'tests - primitiveBitShift' }
+{ #category : 'tests - primitiveBitShift' }
 VMPrimitiveTest >> testPrimitiveBitShiftWithNegativNumbers [
 
 	memory wordSize = 8 ifFalse: [ ^ self ]. "The 32 bits version of the primitive doesn't handle the negativ number case"
@@ -1152,7 +1182,7 @@ VMPrimitiveTest >> testPrimitiveBitShiftWithNegativNumbers [
 		equals: (memory integerObjectOf: 16r1C00000000000000)
 ]
 
-{ #category : #'tests - primitiveBitShift' }
+{ #category : 'tests - primitiveBitShift' }
 VMPrimitiveTest >> testPrimitiveBitShiftWithOverflow [
 "Insures no data is lost when bitshift overflows the integer type."
 
@@ -1164,7 +1194,7 @@ VMPrimitiveTest >> testPrimitiveBitShiftWithOverflow [
 	self assert: (interpreter stackTop) > (memory maxSmallInteger).
 ]
 
-{ #category : #'tests - primitiveBitXor' }
+{ #category : 'tests - primitiveBitXor' }
 VMPrimitiveTest >> testPrimitiveBitXor1 [
 
 	interpreter push: (memory integerObjectOf: 16r1).
@@ -1175,7 +1205,7 @@ VMPrimitiveTest >> testPrimitiveBitXor1 [
 	self assert: interpreter stackTop equals: (memory integerObjectOf: 0). 
 ]
 
-{ #category : #'tests - primitiveBitXor' }
+{ #category : 'tests - primitiveBitXor' }
 VMPrimitiveTest >> testPrimitiveBitXor2 [
 
 	interpreter push: (memory integerObjectOf: 16r0).
@@ -1186,7 +1216,7 @@ VMPrimitiveTest >> testPrimitiveBitXor2 [
 	self assert: interpreter stackTop equals: (memory integerObjectOf: 1). 
 ]
 
-{ #category : #'tests - primitiveBitXor' }
+{ #category : 'tests - primitiveBitXor' }
 VMPrimitiveTest >> testPrimitiveBitXor3 [
 
 	interpreter push: (memory integerObjectOf: 16r1).
@@ -1197,7 +1227,7 @@ VMPrimitiveTest >> testPrimitiveBitXor3 [
 	self assert: interpreter stackTop equals: (memory integerObjectOf: 1). 
 ]
 
-{ #category : #'tests - primitiveBitXor' }
+{ #category : 'tests - primitiveBitXor' }
 VMPrimitiveTest >> testPrimitiveBitXor4 [
 
 	interpreter push: (memory integerObjectOf: 16r0).
@@ -1208,7 +1238,7 @@ VMPrimitiveTest >> testPrimitiveBitXor4 [
 	self assert: interpreter stackTop equals: (memory integerObjectOf: 0). 
 ]
 
-{ #category : #'tests - primitiveBitXor' }
+{ #category : 'tests - primitiveBitXor' }
 VMPrimitiveTest >> testPrimitiveBitXorFailsPreservesStack [
 	
 	interpreter push: memory trueObject.
@@ -1222,7 +1252,7 @@ VMPrimitiveTest >> testPrimitiveBitXorFailsPreservesStack [
 	self assert: (interpreter stackValue: 1) equals: memory trueObject.
 ]
 
-{ #category : #'tests - primitiveBitXor' }
+{ #category : 'tests - primitiveBitXor' }
 VMPrimitiveTest >> testPrimitiveBitXorFailsWithTypeErrorOnFirstOperand [
 	
 	interpreter push: memory trueObject.
@@ -1233,7 +1263,7 @@ VMPrimitiveTest >> testPrimitiveBitXorFailsWithTypeErrorOnFirstOperand [
 	self assert: interpreter failed.
 ]
 
-{ #category : #'tests - primitiveBitXor' }
+{ #category : 'tests - primitiveBitXor' }
 VMPrimitiveTest >> testPrimitiveBitXorFailsWithTypeErrorOnSecondOperand [
 	
 	interpreter push: (memory integerObjectOf: 2).
@@ -1244,7 +1274,7 @@ VMPrimitiveTest >> testPrimitiveBitXorFailsWithTypeErrorOnSecondOperand [
 	self assert: interpreter failed.
 ]
 
-{ #category : #'tests - primitiveBitXor' }
+{ #category : 'tests - primitiveBitXor' }
 VMPrimitiveTest >> testPrimitiveBitXorWithMaxBitIntWithNoDataLoss [
 	"This guarantees the fact that no data is lost during the processing of usqInt by the primitive"
 	"111... 111
@@ -1264,7 +1294,7 @@ VMPrimitiveTest >> testPrimitiveBitXorWithMaxBitIntWithNoDataLoss [
 	self assert: interpreter stackTop equals: (memory integerObjectOf: ((memory maxCInteger >> (memory numSmallIntegerTagBits + 1)))).
 ]
 
-{ #category : #'tests - primitiveBitXor' }
+{ #category : 'tests - primitiveBitXor' }
 VMPrimitiveTest >> testPrimitiveBitXorWithNegativNumbers [
 
 	interpreter push: (memory integerObjectOf: -42).
@@ -1275,7 +1305,7 @@ VMPrimitiveTest >> testPrimitiveBitXorWithNegativNumbers [
 	self assert: (interpreter stackTop) equals: (memory integerObjectOf: 40).
 ]
 
-{ #category : #'tests - primitiveClass' }
+{ #category : 'tests - primitiveClass' }
 VMPrimitiveTest >> testPrimitiveClassDoesntFailsForForwardedObjectAndArgCountEqualsZero [
 	
 	interpreter push: self setUpForwardedObjects. 
@@ -1289,7 +1319,7 @@ VMPrimitiveTest >> testPrimitiveClassDoesntFailsForForwardedObjectAndArgCountEqu
 	
 ]
 
-{ #category : #'tests - primitiveClass' }
+{ #category : 'tests - primitiveClass' }
 VMPrimitiveTest >> testPrimitiveClassFailsForForwardedObjectAndArgCountMoreThanZero [
 	
 	interpreter push: self setUpForwardedObjects. 
@@ -1304,7 +1334,7 @@ VMPrimitiveTest >> testPrimitiveClassFailsForForwardedObjectAndArgCountMoreThanZ
 	
 ]
 
-{ #category : #'tests - primitiveClass' }
+{ #category : 'tests - primitiveClass' }
 VMPrimitiveTest >> testPrimitiveClassReturnsAClass [
 
 	interpreter push: memory trueObject.
@@ -1316,7 +1346,272 @@ VMPrimitiveTest >> testPrimitiveClassReturnsAClass [
 	
 ]
 
-{ #category : #'tests - primitiveDiv' }
+{ #category : 'tests - primitiveCompareBytes' }
+VMPrimitiveTest >> testPrimitiveCompareBytesArgCountLessThanOne [
+
+	| array1 size |
+	size := 1.
+	array1 := self new8BitIndexableOfSize: size.
+
+	1 to: size do: [ :i |
+	memory storeByte: i - 1 ofObject: array1 withValue: 0 ].
+
+	interpreter push: array1.
+
+	interpreter argumentCount: 0.
+	interpreter primitiveCompareBytes.
+
+	self assert: interpreter failed
+]
+
+{ #category : 'tests - primitiveCompareBytes' }
+VMPrimitiveTest >> testPrimitiveCompareBytesEmpty [
+
+	| array1 array2 |
+	array1 := self new8BitIndexableOfSize: 0.
+	array2 := self new8BitIndexableOfSize: 0.
+
+	interpreter push: array1.
+	interpreter push: array2.
+
+	interpreter argumentCount: 1.
+	interpreter primitiveCompareBytes.
+
+	self assert: interpreter stackTop equals: memory trueObject
+]
+
+{ #category : 'tests - primitiveCompareBytes' }
+VMPrimitiveTest >> testPrimitiveCompareBytesIdentity [
+
+	| array1 size |
+	size := 1.
+	array1 := self new8BitIndexableOfSize: size.
+
+	1 to: size do: [ :i |
+	memory storeByte: i - 1 ofObject: array1 withValue: 0 ].
+
+	interpreter push: array1.
+	interpreter push: array1.
+
+	interpreter argumentCount: 1.
+
+	interpreter primitiveCompareBytes.
+
+	self assert: interpreter stackTop equals: memory trueObject
+]
+
+{ #category : 'tests - primitiveCompareBytes' }
+VMPrimitiveTest >> testPrimitiveCompareBytesWithDifferentSize1 [
+
+	| array1 array2 size |
+	size := 1.
+	array1 := self new8BitIndexableOfSize: size.
+	array2 := self new8BitIndexableOfSize: size + 1.
+
+	1 to: size do: [ :i |
+		memory storeByte: i - 1 ofObject: array1 withValue: 0.
+		memory storeByte: i - 1 ofObject: array2 withValue: 0 ].
+	memory storeByte: size - 1 ofObject: array2 withValue: 0.
+
+	"Arg > Receiver"
+	interpreter push: array1.
+	interpreter push: array2.
+
+	interpreter argumentCount: 1.
+	interpreter primitiveCompareBytes.
+
+	self assert: interpreter stackTop equals: memory falseObject
+]
+
+{ #category : 'tests - primitiveCompareBytes' }
+VMPrimitiveTest >> testPrimitiveCompareBytesWithDifferentSize2 [
+
+	| array1 array2 size |
+	size := 1.
+	array1 := self new8BitIndexableOfSize: size.
+	array2 := self new8BitIndexableOfSize: size + 1.
+
+	1 to: size do: [ :i |
+		memory storeByte: i - 1 ofObject: array1 withValue: 0.
+		memory storeByte: i - 1 ofObject: array2 withValue: 0 ].
+	memory storeByte: size - 1 ofObject: array2 withValue: 0.
+
+	"Receiver > Arg"
+	interpreter push: array2.
+	interpreter push: array1.
+
+	interpreter argumentCount: 1.
+	interpreter primitiveCompareBytes.
+
+	self assert: interpreter stackTop equals: memory falseObject
+]
+
+{ #category : 'tests - primitiveCompareBytes' }
+VMPrimitiveTest >> testPrimitiveCompareBytesWithDifferentValues [
+
+	| array1 array2 size |
+	size := 2.
+	array1 := self new8BitIndexableOfSize: size.
+	array2 := self new8BitIndexableOfSize: size.
+
+	1 to: size do: [ :i |
+		memory storeByte: i - 1 ofObject: array1 withValue: 0.
+		memory storeByte: i - 1 ofObject: array2 withValue: 1 ].
+
+	interpreter push: array1.
+	interpreter push: array2.
+
+	interpreter argumentCount: 1.
+	interpreter primitiveCompareBytes.
+
+	self assert: interpreter stackTop equals: memory falseObject
+]
+
+{ #category : 'tests - primitiveCompareBytes' }
+VMPrimitiveTest >> testPrimitiveCompareBytesWithLastDifferentValue [
+
+	| array1 array2 size |
+	size := 2.
+	array1 := self new8BitIndexableOfSize: size.
+	array2 := self new8BitIndexableOfSize: size.
+
+	1 to: size do: [ :i |
+		memory storeByte: i - 1 ofObject: array1 withValue: 0.
+		memory storeByte: i - 1 ofObject: array2 withValue: 0 ].
+	memory storeByte: size - 1 ofObject: array2 withValue: 1.
+
+	interpreter push: array1.
+	interpreter push: array2.
+
+	interpreter argumentCount: 1.
+	interpreter primitiveCompareBytes.
+
+	self assert: interpreter stackTop equals: memory falseObject
+]
+
+{ #category : 'tests - primitiveCompareBytes' }
+VMPrimitiveTest >> testPrimitiveCompareBytesWithNonByteArgument [
+
+	| array1 size nilClass |
+	size := 2.
+	array1 := self new8BitIndexableOfSize: size.
+	nilClass := self newClassInOldSpaceWithSlots: 0 instSpec: memory zeroSlotsNonIndexablePointerFormat.
+	memory setClassIndexOf: memory nilObject to: (memory ensureBehaviorHash: nilClass).
+
+	1 to: size do: [ :i |
+	memory storeByte: i - 1 ofObject: array1 withValue: 0 ].
+
+	interpreter push: array1.
+	interpreter push: memory nilObject.
+
+	interpreter argumentCount: 1.
+	interpreter primitiveCompareBytes.
+
+	self assert: interpreter failed 
+]
+
+{ #category : 'tests - primitiveCompareBytes' }
+VMPrimitiveTest >> testPrimitiveCompareBytesWithNonByteReceiver [
+
+	| array1 size nilClass |
+	size := 2.
+	array1 := self new8BitIndexableOfSize: size.
+	nilClass := self newClassInOldSpaceWithSlots: 0 instSpec: memory zeroSlotsNonIndexablePointerFormat.
+	memory setClassIndexOf: memory nilObject to: (memory ensureBehaviorHash: nilClass).
+
+
+	1 to: size do: [ :i |
+	memory storeByte: i - 1 ofObject: array1 withValue: 0 ].
+
+	interpreter push: memory nilObject.
+	interpreter push: array1.
+
+	interpreter argumentCount: 1.
+	interpreter primitiveCompareBytes.
+
+	self assert: interpreter failed 
+]
+
+{ #category : 'tests - primitiveCompareBytes' }
+VMPrimitiveTest >> testPrimitiveCompareBytesWithNonByteReceiverShouldLeaveTheSameStack [
+
+	| array1 size nilClass |
+	size := 2.
+	array1 := self new8BitIndexableOfSize: size.
+	nilClass := self newClassInOldSpaceWithSlots: 0 instSpec: memory zeroSlotsNonIndexablePointerFormat.
+	memory setClassIndexOf: memory nilObject to: (memory ensureBehaviorHash: nilClass).
+
+
+	1 to: size do: [ :i |
+	memory storeByte: i - 1 ofObject: array1 withValue: 0 ].
+
+	interpreter push: memory nilObject.
+	interpreter push: array1.
+
+	interpreter argumentCount: 1.
+	interpreter primitiveCompareBytes.
+
+	self assert: (interpreter stackValue: 0) equals: array1.
+	self assert: (interpreter stackValue: 1) equals: memory nilObject
+]
+
+{ #category : 'tests - primitiveCompareBytes' }
+VMPrimitiveTest >> testPrimitiveCompareBytesWithSize [
+
+	| array1 array2 size |
+	size := 1.
+	array1 := self new8BitIndexableOfSize: size.
+	array2 := self new8BitIndexableOfSize: size.
+
+	1 to: size do: [ :i |
+		memory storeByte: i - 1 ofObject: array1 withValue: 0.
+		memory storeByte: i - 1 ofObject: array2 withValue: 0 ].
+
+	interpreter push: array1.
+	interpreter push: array2.
+
+	interpreter argumentCount: 1.
+	interpreter primitiveCompareBytes.
+
+	self assert: interpreter stackTop equals: memory trueObject
+]
+
+{ #category : 'tests - primitiveCompareBytes' }
+VMPrimitiveTest >> testPrimitiveCompareBytesWithWordArgument [
+
+	| array1 array2 size |
+	size := 1.
+	"Both will be 8 bytes long"
+	array1 := self new8BitIndexableOfSize: size * 8.
+	array2 := self new64BitIndexableOfSize: size.
+
+	interpreter push: array1.
+	interpreter push: array2.
+
+	interpreter argumentCount: 1.
+	interpreter primitiveCompareBytes.
+
+	"Should fail because they don't have the same type"
+	self assert: interpreter failed
+]
+
+{ #category : 'tests - primitiveCompareBytes' }
+VMPrimitiveTest >> testPrimitiveCompareWordsEmpty [
+
+	| array1 array2 |
+	array1 := self new64BitIndexableOfSize: 0.
+	array2 := self new64BitIndexableOfSize: 0.
+
+	interpreter push: array1.
+	interpreter push: array2.
+
+	interpreter argumentCount: 1.
+	interpreter primitiveCompareBytes.
+
+	self assert: interpreter stackTop equals: memory trueObject
+]
+
+{ #category : 'tests - primitiveDiv' }
 VMPrimitiveTest >> testPrimitiveDiv [
 
 	interpreter push: (memory integerObjectOf: 15).
@@ -1329,7 +1624,7 @@ VMPrimitiveTest >> testPrimitiveDiv [
 	self assert: (interpreter stackTop) equals: (memory integerObjectOf: 7). 
 ]
 
-{ #category : #'tests - primitiveDiv' }
+{ #category : 'tests - primitiveDiv' }
 VMPrimitiveTest >> testPrimitiveDivFailPreservesStack [
 	
 	interpreter push: (memory trueObject).
@@ -1342,7 +1637,7 @@ VMPrimitiveTest >> testPrimitiveDivFailPreservesStack [
 	self assert: (interpreter stackValue: 1) equals: (memory trueObject).
 ]
 
-{ #category : #'tests - primitiveDiv' }
+{ #category : 'tests - primitiveDiv' }
 VMPrimitiveTest >> testPrimitiveDivFailsWithTypeErrorOnFirstOperand [
 	
 	interpreter push: memory trueObject.
@@ -1353,7 +1648,7 @@ VMPrimitiveTest >> testPrimitiveDivFailsWithTypeErrorOnFirstOperand [
 	self assert: interpreter failed.
 ]
 
-{ #category : #'tests - primitiveDiv' }
+{ #category : 'tests - primitiveDiv' }
 VMPrimitiveTest >> testPrimitiveDivFailsWithTypeErrorOnSecondOperand [
 	
 	interpreter push: (memory integerObjectOf: 2).
@@ -1364,7 +1659,7 @@ VMPrimitiveTest >> testPrimitiveDivFailsWithTypeErrorOnSecondOperand [
 	self assert: interpreter failed.
 ]
 
-{ #category : #'tests - primitiveDiv' }
+{ #category : 'tests - primitiveDiv' }
 VMPrimitiveTest >> testPrimitiveDivOnNonIntegerResultRoundsAndDoesntFail [
 "In the primitive implementation of quo, it doesnt push the rest of the operation on the stack"
 
@@ -1376,7 +1671,7 @@ VMPrimitiveTest >> testPrimitiveDivOnNonIntegerResultRoundsAndDoesntFail [
 	self assert: (interpreter stackTop) equals: (memory integerObjectOf: 10). 
 ]
 
-{ #category : #'tests - primitiveDiv' }
+{ #category : 'tests - primitiveDiv' }
 VMPrimitiveTest >> testPrimitiveDivWith0DivisionOnFirstOperand [
 
 	interpreter push: (memory integerObjectOf: 0).
@@ -1387,7 +1682,7 @@ VMPrimitiveTest >> testPrimitiveDivWith0DivisionOnFirstOperand [
 	self assert: (interpreter stackTop) equals: (memory integerObjectOf: 0). 
 ]
 
-{ #category : #'tests - primitiveDiv' }
+{ #category : 'tests - primitiveDiv' }
 VMPrimitiveTest >> testPrimitiveDivWith0DivisionOnSecondOperand [
 
 	interpreter push: (memory integerObjectOf: 4).
@@ -1398,7 +1693,7 @@ VMPrimitiveTest >> testPrimitiveDivWith0DivisionOnSecondOperand [
 	self assert: interpreter failed.
 ]
 
-{ #category : #'tests - primitiveDiv' }
+{ #category : 'tests - primitiveDiv' }
 VMPrimitiveTest >> testPrimitiveDivWithNegativeNumbers [
 	
 	interpreter push: (memory integerObjectOf: 4).
@@ -1409,7 +1704,7 @@ VMPrimitiveTest >> testPrimitiveDivWithNegativeNumbers [
 	self assert: (interpreter stackTop) equals: (memory integerObjectOf: -2). 
 ]
 
-{ #category : #'tests - primitiveDiv' }
+{ #category : 'tests - primitiveDiv' }
 VMPrimitiveTest >> testPrimitiveDivWithNegativeNumbers2 [
 	
 	interpreter push: (memory integerObjectOf: -9).
@@ -1420,7 +1715,7 @@ VMPrimitiveTest >> testPrimitiveDivWithNegativeNumbers2 [
 	self assert: (interpreter stackTop) equals: (memory integerObjectOf: -3). 
 ]
 
-{ #category : #'tests - primitiveDiv' }
+{ #category : 'tests - primitiveDiv' }
 VMPrimitiveTest >> testPrimitiveDivWithNoErrorPopsOperands [
 	
 	interpreter push: (memory integerObjectOf: 42). "Marker"
@@ -1435,7 +1730,7 @@ VMPrimitiveTest >> testPrimitiveDivWithNoErrorPopsOperands [
 	self assert: interpreter stackTop equals: (memory integerObjectOf: 42). 
 ]
 
-{ #category : #'tests - primitiveDivide' }
+{ #category : 'tests - primitiveDivide' }
 VMPrimitiveTest >> testPrimitiveDivide [
 
 	interpreter push: (memory integerObjectOf: 4).
@@ -1446,7 +1741,7 @@ VMPrimitiveTest >> testPrimitiveDivide [
 	self assert: (interpreter stackTop) equals: (memory integerObjectOf: 2). 
 ]
 
-{ #category : #'tests - primitiveDivide' }
+{ #category : 'tests - primitiveDivide' }
 VMPrimitiveTest >> testPrimitiveDivideFailPreservesStack [
 	
 	interpreter push: (memory trueObject).
@@ -1458,7 +1753,7 @@ VMPrimitiveTest >> testPrimitiveDivideFailPreservesStack [
 	self assert: (interpreter stackValue: 1) equals: (memory trueObject).
 ]
 
-{ #category : #'tests - primitiveDivide' }
+{ #category : 'tests - primitiveDivide' }
 VMPrimitiveTest >> testPrimitiveDivideFailsOnFloatResult [
 	"The interpreter fails because 42%4 != 0"
 	
@@ -1472,7 +1767,7 @@ VMPrimitiveTest >> testPrimitiveDivideFailsOnFloatResult [
 
 ]
 
-{ #category : #'tests - primitiveDivide' }
+{ #category : 'tests - primitiveDivide' }
 VMPrimitiveTest >> testPrimitiveDivideFailsWithTypeErrorOnFirstOperand [
 	
 	interpreter push: memory trueObject.
@@ -1483,7 +1778,7 @@ VMPrimitiveTest >> testPrimitiveDivideFailsWithTypeErrorOnFirstOperand [
 	self assert: interpreter failed.
 ]
 
-{ #category : #'tests - primitiveDivide' }
+{ #category : 'tests - primitiveDivide' }
 VMPrimitiveTest >> testPrimitiveDivideFailsWithTypeErrorOnSecondOperand [
 	
 	interpreter push: (memory integerObjectOf: 2).
@@ -1494,7 +1789,7 @@ VMPrimitiveTest >> testPrimitiveDivideFailsWithTypeErrorOnSecondOperand [
 	self assert: interpreter failed.
 ]
 
-{ #category : #'tests - primitiveDivide' }
+{ #category : 'tests - primitiveDivide' }
 VMPrimitiveTest >> testPrimitiveDivideWith0DivisionOnFirstOperand [
 
 	interpreter push: (memory integerObjectOf: 0).
@@ -1505,7 +1800,7 @@ VMPrimitiveTest >> testPrimitiveDivideWith0DivisionOnFirstOperand [
 	self assert: (interpreter stackTop) equals: (memory integerObjectOf: 0). 
 ]
 
-{ #category : #'tests - primitiveDivide' }
+{ #category : 'tests - primitiveDivide' }
 VMPrimitiveTest >> testPrimitiveDivideWith0DivisionOnSecondOperand [
 
 	interpreter push: (memory integerObjectOf: 4).
@@ -1516,7 +1811,7 @@ VMPrimitiveTest >> testPrimitiveDivideWith0DivisionOnSecondOperand [
 	self assert: interpreter failed.
 ]
 
-{ #category : #'tests - primitiveDivide' }
+{ #category : 'tests - primitiveDivide' }
 VMPrimitiveTest >> testPrimitiveDivideWithNegativeNumbers [
 	
 	interpreter push: (memory integerObjectOf: 6).
@@ -1527,7 +1822,7 @@ VMPrimitiveTest >> testPrimitiveDivideWithNegativeNumbers [
 	self assert: (interpreter stackTop) equals: (memory integerObjectOf: -3). 
 ]
 
-{ #category : #'tests - primitiveDivide' }
+{ #category : 'tests - primitiveDivide' }
 VMPrimitiveTest >> testPrimitiveDivideWithNegativeNumbers2 [
 	
 	interpreter push: (memory integerObjectOf: -42).
@@ -1538,7 +1833,7 @@ VMPrimitiveTest >> testPrimitiveDivideWithNegativeNumbers2 [
 	self assert: (interpreter stackTop) equals: (memory integerObjectOf: -21). 
 ]
 
-{ #category : #'tests - primitiveEqual' }
+{ #category : 'tests - primitiveEqual' }
 VMPrimitiveTest >> testPrimitiveEqualFailsWithFloat [
 
 	self installFloatClass.
@@ -1551,7 +1846,7 @@ VMPrimitiveTest >> testPrimitiveEqualFailsWithFloat [
 	self assert: interpreter failed
 ]
 
-{ #category : #'tests - primitiveEqual' }
+{ #category : 'tests - primitiveEqual' }
 VMPrimitiveTest >> testPrimitiveEqualWithNegativeNumbers [
 
 	interpreter push: (memory integerObjectOf: -13).
@@ -1562,7 +1857,7 @@ VMPrimitiveTest >> testPrimitiveEqualWithNegativeNumbers [
 	self deny: interpreter failed. 
 ]
 
-{ #category : #'tests - primitiveEqual' }
+{ #category : 'tests - primitiveEqual' }
 VMPrimitiveTest >> testPrimitiveEqualWithNoError1 [
 
 	interpreter push: (memory integerObjectOf: 15).
@@ -1573,7 +1868,7 @@ VMPrimitiveTest >> testPrimitiveEqualWithNoError1 [
 	self assert: interpreter stackTop equals: (memory trueObject). 
 ]
 
-{ #category : #'tests - primitiveEqual' }
+{ #category : 'tests - primitiveEqual' }
 VMPrimitiveTest >> testPrimitiveEqualWithNoError2 [
 
 	interpreter push: (memory integerObjectOf: 15).
@@ -1584,7 +1879,7 @@ VMPrimitiveTest >> testPrimitiveEqualWithNoError2 [
 	self assert: interpreter stackTop equals: (memory falseObject). 
 ]
 
-{ #category : #'tests - primitiveEqual' }
+{ #category : 'tests - primitiveEqual' }
 VMPrimitiveTest >> testPrimitiveEqualWithNoErrorPopsOperands [
 
 	interpreter push: (memory integerObjectOf: 42). "Marker"
@@ -1599,7 +1894,7 @@ VMPrimitiveTest >> testPrimitiveEqualWithNoErrorPopsOperands [
 	self assert: interpreter stackTop equals: (memory integerObjectOf: 42). 
 ]
 
-{ #category : #'tests - primitiveEqual' }
+{ #category : 'tests - primitiveEqual' }
 VMPrimitiveTest >> testPrimitiveEqualWithTypeErrorOnFirstOperand [
 
 	interpreter push: (memory falseObject).
@@ -1610,7 +1905,7 @@ VMPrimitiveTest >> testPrimitiveEqualWithTypeErrorOnFirstOperand [
 	self assert: interpreter failed. 
 ]
 
-{ #category : #'tests - primitiveEqual' }
+{ #category : 'tests - primitiveEqual' }
 VMPrimitiveTest >> testPrimitiveEqualWithTypeErrorOnSecondOperand [
 
 	interpreter push: (memory integerObjectOf: 16).
@@ -1621,7 +1916,7 @@ VMPrimitiveTest >> testPrimitiveEqualWithTypeErrorOnSecondOperand [
 	self assert: interpreter failed. 
 ]
 
-{ #category : #'tests - primitiveAdd - Float64Array' }
+{ #category : 'tests - primitiveAdd - Float64Array' }
 VMPrimitiveTest >> testPrimitiveFloat64ArrayAdd [
 
 	| x y z result firstTerm size |
@@ -1645,7 +1940,7 @@ VMPrimitiveTest >> testPrimitiveFloat64ArrayAdd [
 	self assert: (memory fetchFloat64: 1 ofObject: result) equals: 22.0.
 ]
 
-{ #category : #'tests - primitiveAtPut' }
+{ #category : 'tests - primitiveAtPut' }
 VMPrimitiveTest >> testPrimitiveFormat [
 
 	| object |
@@ -1663,7 +1958,110 @@ VMPrimitiveTest >> testPrimitiveFormat [
 		equals: (memory integerObjectOf: memory ephemeronFormat)
 ]
 
-{ #category : #'tests - primitiveImmutability' }
+{ #category : 'tests - primitiveAtPut' }
+VMPrimitiveTest >> testPrimitiveFormatShouldFail [
+
+	| object |
+	object := 42.
+
+	"primitiveFloat doesn't support immediates as receiver, so this should fail:"
+	interpreter push: object.
+	interpreter primitiveFormat.
+
+	self assert: interpreter failed
+]
+
+{ #category : 'tests - primitiveAtPut' }
+VMPrimitiveTest >> testPrimitiveFormatWithArray [
+
+	| object |
+	object := self
+		          newObjectWithSlots: 0
+		          format: memory arrayFormat
+		          classIndex: memory arrayClassIndexPun.
+
+	interpreter push: object.
+	interpreter primitiveFormat.
+
+	self deny: interpreter failed.
+	self
+		assert: interpreter stackTop
+		equals: (memory integerObjectOf: memory arrayFormat)
+]
+
+{ #category : 'tests - primitiveAtPut' }
+VMPrimitiveTest >> testPrimitiveFormatWithByteFormat [
+
+	| object |
+	object := self
+		          newObjectWithSlots: 0
+		          format: memory firstByteFormat
+		          classIndex: memory arrayClassIndexPun.
+
+	interpreter push: object.
+	interpreter primitiveFormat.
+
+	self deny: interpreter failed.
+	self
+		assert: interpreter stackTop
+		equals: (memory integerObjectOf: memory firstByteFormat)
+]
+
+{ #category : 'tests - primitiveAtPut' }
+VMPrimitiveTest >> testPrimitiveFormatWithCompiledMethod [
+
+	| object |
+	object := self
+		          newObjectWithSlots: 0
+		          format: memory firstCompiledMethodFormat
+		          classIndex: memory arrayClassIndexPun.
+
+	interpreter push: object.
+	interpreter primitiveFormat.
+
+	self deny: interpreter failed.
+	self
+		assert: interpreter stackTop
+		equals: (memory integerObjectOf: memory firstCompiledMethodFormat)
+]
+
+{ #category : 'tests - primitiveAtPut' }
+VMPrimitiveTest >> testPrimitiveFormatWithEphemeron [
+
+	| object |
+	object := self
+		          newObjectWithSlots: 0
+		          format: memory ephemeronFormat
+		          classIndex: memory arrayClassIndexPun.
+
+	interpreter push: object.
+	interpreter primitiveFormat.
+
+	self deny: interpreter failed.
+	self
+		assert: interpreter stackTop
+		equals: (memory integerObjectOf: memory ephemeronFormat)
+]
+
+{ #category : 'tests - primitiveAtPut' }
+VMPrimitiveTest >> testPrimitiveFormatWithWeakArray [
+
+	| object |
+	object := self
+		          newObjectWithSlots: 0
+		          format: memory weakArrayFormat
+		          classIndex: memory arrayClassIndexPun.
+
+	interpreter push: object.
+	interpreter primitiveFormat.
+
+	self deny: interpreter failed.
+	self
+		assert: interpreter stackTop
+		equals: (memory integerObjectOf: memory weakArrayFormat)
+]
+
+{ #category : 'tests - primitiveImmutability' }
 VMPrimitiveTest >> testPrimitiveGetImmutabilityOfImmediateReturnsTrue [
 
 	interpreter push: (memory integerObjectOf: 1).
@@ -1672,7 +2070,7 @@ VMPrimitiveTest >> testPrimitiveGetImmutabilityOfImmediateReturnsTrue [
 	self assert: interpreter stackTop equals: memory trueObject
 ]
 
-{ #category : #'tests - primitiveImmutability' }
+{ #category : 'tests - primitiveImmutability' }
 VMPrimitiveTest >> testPrimitiveGetImmutabilityOnANewObjectIsFalse [
 	| class object |
 	class := self newClassInOldSpaceWithSlots: 0 instSpec: memory nonIndexablePointerFormat.
@@ -1685,7 +2083,7 @@ VMPrimitiveTest >> testPrimitiveGetImmutabilityOnANewObjectIsFalse [
 	self assert: interpreter stackTop equals: memory falseObject
 ]
 
-{ #category : #'tests - primitiveImmutability' }
+{ #category : 'tests - primitiveImmutability' }
 VMPrimitiveTest >> testPrimitiveGetImmutabilityReturnsTrueIfObjectIsImmutable [
 	| class object |
 	class := self newClassInOldSpaceWithSlots: 0 instSpec: memory nonIndexablePointerFormat.
@@ -1699,7 +2097,7 @@ VMPrimitiveTest >> testPrimitiveGetImmutabilityReturnsTrueIfObjectIsImmutable [
 	self assert: interpreter stackTop equals: memory trueObject
 ]
 
-{ #category : #'tests - primitiveGreaterOrEqual' }
+{ #category : 'tests - primitiveGreaterOrEqual' }
 VMPrimitiveTest >> testPrimitiveGreaterOrEqualFailsWithFloat [
 
 	"This simulated classFloat class is necessary because the 32bits VM cannot instanciate boxed floats by itself"
@@ -1713,7 +2111,7 @@ VMPrimitiveTest >> testPrimitiveGreaterOrEqualFailsWithFloat [
 	self assert: interpreter failed
 ]
 
-{ #category : #'tests - primitiveGreaterOrEqual' }
+{ #category : 'tests - primitiveGreaterOrEqual' }
 VMPrimitiveTest >> testPrimitiveGreaterOrEqualFailsWithTypeErrorOnFirstOperand [
 	
 	interpreter push: (memory trueObject).
@@ -1724,7 +2122,7 @@ VMPrimitiveTest >> testPrimitiveGreaterOrEqualFailsWithTypeErrorOnFirstOperand [
 	self assert: interpreter failed. 
 ]
 
-{ #category : #'tests - primitiveGreaterOrEqual' }
+{ #category : 'tests - primitiveGreaterOrEqual' }
 VMPrimitiveTest >> testPrimitiveGreaterOrEqualFailsWithTypeErrorOnSecondOperand [
 	
 	interpreter push: (memory integerObjectOf: 2).
@@ -1735,7 +2133,7 @@ VMPrimitiveTest >> testPrimitiveGreaterOrEqualFailsWithTypeErrorOnSecondOperand 
 	self assert: interpreter failed. 
 ]
 
-{ #category : #'tests - primitiveGreaterOrEqual' }
+{ #category : 'tests - primitiveGreaterOrEqual' }
 VMPrimitiveTest >> testPrimitiveGreaterOrEqualWithNegativeNumbers [
 
 	interpreter push: (memory integerObjectOf: -13).
@@ -1746,7 +2144,7 @@ VMPrimitiveTest >> testPrimitiveGreaterOrEqualWithNegativeNumbers [
 	self deny: interpreter failed. 
 ]
 
-{ #category : #'tests - primitiveGreaterOrEqual' }
+{ #category : 'tests - primitiveGreaterOrEqual' }
 VMPrimitiveTest >> testPrimitiveGreaterOrEqualWithNoError1 [
 
 	interpreter push: (memory integerObjectOf: 42).
@@ -1757,7 +2155,7 @@ VMPrimitiveTest >> testPrimitiveGreaterOrEqualWithNoError1 [
 	self assert: interpreter stackTop equals: (memory trueObject). 
 ]
 
-{ #category : #'tests - primitiveGreaterOrEqual' }
+{ #category : 'tests - primitiveGreaterOrEqual' }
 VMPrimitiveTest >> testPrimitiveGreaterOrEqualWithNoError2 [
 	
 	interpreter push: (memory integerObjectOf: 16).
@@ -1768,7 +2166,7 @@ VMPrimitiveTest >> testPrimitiveGreaterOrEqualWithNoError2 [
 	self assert: interpreter stackTop equals: (memory falseObject). 
 ]
 
-{ #category : #'tests - primitiveGreaterOrEqual' }
+{ #category : 'tests - primitiveGreaterOrEqual' }
 VMPrimitiveTest >> testPrimitiveGreaterOrEqualWithNoErrorEquals [
 	
 	interpreter push: (memory integerObjectOf: 0).
@@ -1779,7 +2177,7 @@ VMPrimitiveTest >> testPrimitiveGreaterOrEqualWithNoErrorEquals [
 	self assert: interpreter stackTop equals: (memory trueObject). 
 ]
 
-{ #category : #'tests - primitiveGreaterOrEqual' }
+{ #category : 'tests - primitiveGreaterOrEqual' }
 VMPrimitiveTest >> testPrimitiveGreaterOrEqualWithNoErrorPopsOperands [
 	
 	interpreter push: (memory integerObjectOf: 42). "Marker"
@@ -1794,7 +2192,7 @@ VMPrimitiveTest >> testPrimitiveGreaterOrEqualWithNoErrorPopsOperands [
 	self assert: interpreter stackTop equals: (memory integerObjectOf: 42). 
 ]
 
-{ #category : #'tests - primitiveGreaterThan' }
+{ #category : 'tests - primitiveGreaterThan' }
 VMPrimitiveTest >> testPrimitiveGreaterThanFailsWithFloat [
 
 	"This simulated classFloat class is necessary because the 32bits VM cannot instanciate boxed floats by itself"
@@ -1805,7 +2203,7 @@ VMPrimitiveTest >> testPrimitiveGreaterThanFailsWithFloat [
 	self assert: interpreter failed
 ]
 
-{ #category : #'tests - primitiveGreaterThan' }
+{ #category : 'tests - primitiveGreaterThan' }
 VMPrimitiveTest >> testPrimitiveGreaterThanFailsWithTypeErrorOnFirstOperand [
 	
 	interpreter push: (memory trueObject).
@@ -1816,7 +2214,7 @@ VMPrimitiveTest >> testPrimitiveGreaterThanFailsWithTypeErrorOnFirstOperand [
 	self assert: interpreter failed. 
 ]
 
-{ #category : #'tests - primitiveGreaterThan' }
+{ #category : 'tests - primitiveGreaterThan' }
 VMPrimitiveTest >> testPrimitiveGreaterThanFailsWithTypeErrorOnSecondOperand [
 	
 	interpreter push: (memory integerObjectOf: 2).
@@ -1827,7 +2225,7 @@ VMPrimitiveTest >> testPrimitiveGreaterThanFailsWithTypeErrorOnSecondOperand [
 	self assert: interpreter failed. 
 ]
 
-{ #category : #'tests - primitiveGreaterThan' }
+{ #category : 'tests - primitiveGreaterThan' }
 VMPrimitiveTest >> testPrimitiveGreaterThanWithNegativeNumbers [
 
 	interpreter push: (memory integerObjectOf: -13).
@@ -1838,7 +2236,7 @@ VMPrimitiveTest >> testPrimitiveGreaterThanWithNegativeNumbers [
 	self deny: interpreter failed. 
 ]
 
-{ #category : #'tests - primitiveGreaterThan' }
+{ #category : 'tests - primitiveGreaterThan' }
 VMPrimitiveTest >> testPrimitiveGreaterThanWithNoError1 [
 	
 	interpreter push: (memory integerObjectOf: 42).
@@ -1849,7 +2247,7 @@ VMPrimitiveTest >> testPrimitiveGreaterThanWithNoError1 [
 	self assert: interpreter stackTop equals: (memory trueObject). 
 ]
 
-{ #category : #'tests - primitiveGreaterThan' }
+{ #category : 'tests - primitiveGreaterThan' }
 VMPrimitiveTest >> testPrimitiveGreaterThanWithNoError2 [
 	
 	interpreter push: (memory integerObjectOf: -1000).
@@ -1860,7 +2258,7 @@ VMPrimitiveTest >> testPrimitiveGreaterThanWithNoError2 [
 	self assert: interpreter stackTop equals: (memory falseObject). 
 ]
 
-{ #category : #'tests - primitiveGreaterThan' }
+{ #category : 'tests - primitiveGreaterThan' }
 VMPrimitiveTest >> testPrimitiveGreaterThanWithNoErrorEquals [
 	
 	interpreter push: (memory integerObjectOf: 0).
@@ -1871,7 +2269,7 @@ VMPrimitiveTest >> testPrimitiveGreaterThanWithNoErrorEquals [
 	self assert: interpreter stackTop equals: (memory falseObject). 
 ]
 
-{ #category : #'tests - primitiveGreaterThan' }
+{ #category : 'tests - primitiveGreaterThan' }
 VMPrimitiveTest >> testPrimitiveGreaterThanWithNoErrorPopsOperands [
 	
 	interpreter push: (memory integerObjectOf: 42). "Marker"
@@ -1886,7 +2284,7 @@ VMPrimitiveTest >> testPrimitiveGreaterThanWithNoErrorPopsOperands [
 	self assert: interpreter stackTop equals: (memory integerObjectOf: 42).
 ]
 
-{ #category : #'tests - primitiveIdentical' }
+{ #category : 'tests - primitiveIdentical' }
 VMPrimitiveTest >> testPrimitiveIdenticalDoesntFailForForwardedOopOnOtherObjectWithArgCountLessThanOne [
 	|object1|
 	"Tests the case where objectArg = 1 and: isOopFowarded: stackTop"
@@ -1903,7 +2301,7 @@ VMPrimitiveTest >> testPrimitiveIdenticalDoesntFailForForwardedOopOnOtherObjectW
 	self deny: interpreter failed. 
 ]
 
-{ #category : #'tests - primitiveIdentical' }
+{ #category : 'tests - primitiveIdentical' }
 VMPrimitiveTest >> testPrimitiveIdenticalFailsNonIdenticalObjectsWithForwarderArgument [
 	|object1|
 	"Tests the case where objectArg > 1 and: isOopFowarded: stackTop"
@@ -1920,7 +2318,7 @@ VMPrimitiveTest >> testPrimitiveIdenticalFailsNonIdenticalObjectsWithForwarderAr
 	self deny: (memory booleanValueOf: interpreter popStack)
 ]
 
-{ #category : #'tests - primitiveIdentical' }
+{ #category : 'tests - primitiveIdentical' }
 VMPrimitiveTest >> testPrimitiveIdenticalFailsNonIdenticalObjectsWithForwarderReceiver [
 	|object1|
 	"Tests the case where objectArg > 1 and: isOopFowarded: stackTop"
@@ -1937,7 +2335,7 @@ VMPrimitiveTest >> testPrimitiveIdenticalFailsNonIdenticalObjectsWithForwarderRe
 	self deny: (memory booleanValueOf: interpreter popStack)
 ]
 
-{ #category : #'tests - primitiveIdentical' }
+{ #category : 'tests - primitiveIdentical' }
 VMPrimitiveTest >> testPrimitiveIdenticalReturnsBool [
 
 	interpreter push: memory trueObject.
@@ -1949,7 +2347,7 @@ VMPrimitiveTest >> testPrimitiveIdenticalReturnsBool [
 	
 ]
 
-{ #category : #'tests - primitiveIdentical' }
+{ #category : 'tests - primitiveIdentical' }
 VMPrimitiveTest >> testPrimitiveIdenticalReturnsFalseForObjectsWithSameValueButDifferentType [
 	| object1 object2 |
 	
@@ -1968,7 +2366,7 @@ VMPrimitiveTest >> testPrimitiveIdenticalReturnsFalseForObjectsWithSameValueButD
 	
 ]
 
-{ #category : #'tests - primitiveIdentical' }
+{ #category : 'tests - primitiveIdentical' }
 VMPrimitiveTest >> testPrimitiveIdenticalReturnsFalseWithWrongArgCount [
 	| object |
 	
@@ -1984,7 +2382,7 @@ VMPrimitiveTest >> testPrimitiveIdenticalReturnsFalseWithWrongArgCount [
 	
 ]
 
-{ #category : #'tests - primitiveIdentical' }
+{ #category : 'tests - primitiveIdentical' }
 VMPrimitiveTest >> testPrimitiveIdenticalReturnsTrueForIdenticalObject [
 	| object |
 	
@@ -1998,7 +2396,7 @@ VMPrimitiveTest >> testPrimitiveIdenticalReturnsTrueForIdenticalObject [
 	
 ]
 
-{ #category : #'tests - primitiveIdentical' }
+{ #category : 'tests - primitiveIdentical' }
 VMPrimitiveTest >> testPrimitiveIdenticalReturnsTrueForImmediateObjectsWithSameValue [
 	| object1 object2 |
 	
@@ -2014,7 +2412,7 @@ VMPrimitiveTest >> testPrimitiveIdenticalReturnsTrueForImmediateObjectsWithSameV
 	
 ]
 
-{ #category : #'tests - primitiveIdentical' }
+{ #category : 'tests - primitiveIdentical' }
 VMPrimitiveTest >> testPrimitiveIdenticalSuccessIdenticalObjectsWithForwarderArgument [
 	|object1|
 	"Tests the case where objectArg > 1 and: isOopFowarded: stackTop"
@@ -2031,7 +2429,7 @@ VMPrimitiveTest >> testPrimitiveIdenticalSuccessIdenticalObjectsWithForwarderArg
 	self assert: (memory booleanValueOf: interpreter popStack)
 ]
 
-{ #category : #'tests - primitiveIdentical' }
+{ #category : 'tests - primitiveIdentical' }
 VMPrimitiveTest >> testPrimitiveIdenticalSuccessIdenticalObjectsWithForwarderBothOperands [
 	|object1|
 	"Tests the case where objectArg > 1 and: isOopFowarded: stackTop"
@@ -2048,7 +2446,7 @@ VMPrimitiveTest >> testPrimitiveIdenticalSuccessIdenticalObjectsWithForwarderBot
 	self assert: (memory booleanValueOf: interpreter popStack)
 ]
 
-{ #category : #'tests - primitiveIdentical' }
+{ #category : 'tests - primitiveIdentical' }
 VMPrimitiveTest >> testPrimitiveIdenticalSuccessIdenticalObjectsWithForwarderReceiver [
 	|object1|
 	"Tests the case where objectArg > 1 and: isOopFowarded: stackTop"
@@ -2065,7 +2463,7 @@ VMPrimitiveTest >> testPrimitiveIdenticalSuccessIdenticalObjectsWithForwarderRec
 	self assert: (memory booleanValueOf: interpreter popStack)
 ]
 
-{ #category : #'tests - primitiveImmediateAsInteger' }
+{ #category : 'tests - primitiveImmediateAsInteger' }
 VMPrimitiveTest >> testPrimitiveImmediateAsIntegerFailsWithTypeError [
 
 	interpreter push: (memory trueObject).
@@ -2078,7 +2476,7 @@ VMPrimitiveTest >> testPrimitiveImmediateAsIntegerFailsWithTypeError [
 	
 ]
 
-{ #category : #'tests - primitiveImmediateAsInteger' }
+{ #category : 'tests - primitiveImmediateAsInteger' }
 VMPrimitiveTest >> testPrimitiveImmediateAsIntegerWithChar [
 
 	interpreter push: (memory characterObjectOf: 66).
@@ -2091,7 +2489,7 @@ VMPrimitiveTest >> testPrimitiveImmediateAsIntegerWithChar [
 	
 ]
 
-{ #category : #'tests - primitiveImmediateAsInteger' }
+{ #category : 'tests - primitiveImmediateAsInteger' }
 VMPrimitiveTest >> testPrimitiveImmediateAsIntegerWithFloat [
 
 	interpreter push: (memory integerObjectOf: 0). 
@@ -2104,7 +2502,7 @@ VMPrimitiveTest >> testPrimitiveImmediateAsIntegerWithFloat [
 	
 ]
 
-{ #category : #'tests - primitiveImmediateAsInteger' }
+{ #category : 'tests - primitiveImmediateAsInteger' }
 VMPrimitiveTest >> testPrimitiveImmediateAsIntegerWithInt [
 
 	interpreter push: (memory integerObjectOf: memory maxSmallInteger).
@@ -2117,7 +2515,7 @@ VMPrimitiveTest >> testPrimitiveImmediateAsIntegerWithInt [
 	
 ]
 
-{ #category : #'tests - primitiveAt' }
+{ #category : 'tests - primitiveAt' }
 VMPrimitiveTest >> testPrimitiveInstVarAtOverBoundShouldFailForIndexable [
 	| class object |
 	class := self newClassInOldSpaceWithSlots: 1 instSpec: memory arrayFormat.
@@ -2132,7 +2530,7 @@ VMPrimitiveTest >> testPrimitiveInstVarAtOverBoundShouldFailForIndexable [
 	self assert: interpreter primFailCode equals: PrimErrBadIndex. 
 ]
 
-{ #category : #'tests - primitiveAt' }
+{ #category : 'tests - primitiveAt' }
 VMPrimitiveTest >> testPrimitiveInstVarAtOverBoundShouldFailForNonIndexable [
 	| class object |
 	class := self newClassInOldSpaceWithSlots: 1 instSpec: memory nonIndexablePointerFormat.
@@ -2147,7 +2545,7 @@ VMPrimitiveTest >> testPrimitiveInstVarAtOverBoundShouldFailForNonIndexable [
 	self assert: interpreter primFailCode equals: PrimErrBadIndex.
 ]
 
-{ #category : #'tests - primitiveAtPut' }
+{ #category : 'tests - primitiveAtPut' }
 VMPrimitiveTest >> testPrimitiveInstVarAtPutOverBoundShouldFailForIndexable [
 	| class object |
 	class := self newClassInOldSpaceWithSlots: 1 instSpec: memory arrayFormat .
@@ -2163,7 +2561,7 @@ VMPrimitiveTest >> testPrimitiveInstVarAtPutOverBoundShouldFailForIndexable [
 	self assert: interpreter primFailCode equals: PrimErrBadIndex. 
 ]
 
-{ #category : #'tests - primitiveAtPut' }
+{ #category : 'tests - primitiveAtPut' }
 VMPrimitiveTest >> testPrimitiveInstVarAtPutOverBoundShouldFailNonIndexable [
 	| class object |
 	class := self newClassInOldSpaceWithSlots: 1 instSpec: memory nonIndexablePointerFormat.
@@ -2179,7 +2577,7 @@ VMPrimitiveTest >> testPrimitiveInstVarAtPutOverBoundShouldFailNonIndexable [
 	self assert: interpreter primFailCode equals: PrimErrBadIndex.
 ]
 
-{ #category : #'tests - primitiveAtPut' }
+{ #category : 'tests - primitiveAtPut' }
 VMPrimitiveTest >> testPrimitiveInstVarAtPutPutsTheValueForNonIndexable [
 	| class object |
 	class := self newClassInOldSpaceWithSlots: 1 instSpec: memory nonIndexablePointerFormat.
@@ -2195,7 +2593,7 @@ VMPrimitiveTest >> testPrimitiveInstVarAtPutPutsTheValueForNonIndexable [
 	self assert: (memory fetchPointer: 0 ofObject: object) equals: memory falseObject.
 ]
 
-{ #category : #'tests - primitiveAt' }
+{ #category : 'tests - primitiveAt' }
 VMPrimitiveTest >> testPrimitiveInstVarAtReturnsTheValueForNonIndexable [
 	| class object |
 	class := self newClassInOldSpaceWithSlots: 1 instSpec: memory nonIndexablePointerFormat.
@@ -2220,7 +2618,7 @@ VMPrimitiveTest >> testPrimitiveInstVarAtReturnsTheValueForNonIndexable [
 	self assert: interpreter stackTop equals: memory falseObject.
 ]
 
-{ #category : #'tests - primitiveIsPinned' }
+{ #category : 'tests - primitiveIsPinned' }
 VMPrimitiveTest >> testPrimitiveIsPinnedBool [
 
 	interpreter push: (memory trueObject). 
@@ -2231,7 +2629,7 @@ VMPrimitiveTest >> testPrimitiveIsPinnedBool [
 	self assert: interpreter stackTop equals: memory falseObject. 
 ]
 
-{ #category : #'tests - primitiveIsPinned' }
+{ #category : 'tests - primitiveIsPinned' }
 VMPrimitiveTest >> testPrimitiveIsPinnedFailsForForwardedObjects [
 
 	interpreter push: self setUpForwardedObjects. 
@@ -2242,7 +2640,7 @@ VMPrimitiveTest >> testPrimitiveIsPinnedFailsForForwardedObjects [
 	self assert: interpreter primFailCode equals: PrimErrBadReceiver. 
 ]
 
-{ #category : #'tests - primitiveIsPinned' }
+{ #category : 'tests - primitiveIsPinned' }
 VMPrimitiveTest >> testPrimitiveIsPinnedFailsForImmediateObjects [
 
 	interpreter push: (memory integerObjectOf: 16). 
@@ -2253,7 +2651,7 @@ VMPrimitiveTest >> testPrimitiveIsPinnedFailsForImmediateObjects [
 	self assert: interpreter primFailCode equals: PrimErrBadReceiver. 
 ]
 
-{ #category : #'tests - primitiveLessOrEqual' }
+{ #category : 'tests - primitiveLessOrEqual' }
 VMPrimitiveTest >> testPrimitiveLessOrEqualFailsWithFloat [
 
 	"This simulated classFloat class is necessary because the 32bits VM cannot instanciate boxed floats by itself"
@@ -2264,7 +2662,7 @@ VMPrimitiveTest >> testPrimitiveLessOrEqualFailsWithFloat [
 	self assert: interpreter failed
 ]
 
-{ #category : #'tests - primitiveLessOrEqual' }
+{ #category : 'tests - primitiveLessOrEqual' }
 VMPrimitiveTest >> testPrimitiveLessOrEqualWithNegativeNumbers [
 
 	interpreter push: (memory integerObjectOf: -13).
@@ -2275,7 +2673,7 @@ VMPrimitiveTest >> testPrimitiveLessOrEqualWithNegativeNumbers [
 	self deny: interpreter failed. 
 ]
 
-{ #category : #'tests - primitiveLessOrEqual' }
+{ #category : 'tests - primitiveLessOrEqual' }
 VMPrimitiveTest >> testPrimitiveLessOrEqualWithNoError1 [
 	
 	interpreter push: (memory integerObjectOf: 42).
@@ -2286,7 +2684,7 @@ VMPrimitiveTest >> testPrimitiveLessOrEqualWithNoError1 [
 	self assert: interpreter stackTop equals: (memory falseObject). 
 ]
 
-{ #category : #'tests - primitiveLessOrEqual' }
+{ #category : 'tests - primitiveLessOrEqual' }
 VMPrimitiveTest >> testPrimitiveLessOrEqualWithNoError2 [
 	
 	interpreter push: (memory integerObjectOf: 16).
@@ -2297,7 +2695,7 @@ VMPrimitiveTest >> testPrimitiveLessOrEqualWithNoError2 [
 	self assert: interpreter stackTop equals: (memory trueObject). 
 ]
 
-{ #category : #'tests - primitiveLessOrEqual' }
+{ #category : 'tests - primitiveLessOrEqual' }
 VMPrimitiveTest >> testPrimitiveLessOrEqualWithNoErrorEquals [
 	
 	interpreter push: (memory integerObjectOf: 0).
@@ -2308,7 +2706,7 @@ VMPrimitiveTest >> testPrimitiveLessOrEqualWithNoErrorEquals [
 	self assert: interpreter stackTop equals: (memory trueObject). 
 ]
 
-{ #category : #'tests - primitiveLessOrEqual' }
+{ #category : 'tests - primitiveLessOrEqual' }
 VMPrimitiveTest >> testPrimitiveLessOrEqualWithNoErrorPopsOperands [
 	
 	interpreter push: (memory integerObjectOf: 42). "Marker"
@@ -2323,7 +2721,7 @@ VMPrimitiveTest >> testPrimitiveLessOrEqualWithNoErrorPopsOperands [
 	self assert: interpreter stackTop equals: (memory integerObjectOf: 42).
 ]
 
-{ #category : #'tests - primitiveLessOrEqual' }
+{ #category : 'tests - primitiveLessOrEqual' }
 VMPrimitiveTest >> testPrimitiveLessOrEqualsFailsWithTypeErrorOnFirstOperand [
 	
 	interpreter push: (memory trueObject).
@@ -2334,7 +2732,7 @@ VMPrimitiveTest >> testPrimitiveLessOrEqualsFailsWithTypeErrorOnFirstOperand [
 	self assert: interpreter failed. 
 ]
 
-{ #category : #'tests - primitiveLessOrEqual' }
+{ #category : 'tests - primitiveLessOrEqual' }
 VMPrimitiveTest >> testPrimitiveLessOrEqualsFailsWithTypeErrorOnSecondOperand [
 	
 	interpreter push: (memory trueObject).
@@ -2345,7 +2743,7 @@ VMPrimitiveTest >> testPrimitiveLessOrEqualsFailsWithTypeErrorOnSecondOperand [
 	self assert: interpreter failed. 
 ]
 
-{ #category : #'tests - primitiveLessThan' }
+{ #category : 'tests - primitiveLessThan' }
 VMPrimitiveTest >> testPrimitiveLessThanFailsWithFloat [
 
 	"This simulated classFloat class is necessary because the 32bits VM cannot instanciate boxed floats by itself"
@@ -2356,7 +2754,7 @@ VMPrimitiveTest >> testPrimitiveLessThanFailsWithFloat [
 	self assert: interpreter failed
 ]
 
-{ #category : #'tests - primitiveLessThan' }
+{ #category : 'tests - primitiveLessThan' }
 VMPrimitiveTest >> testPrimitiveLessThanFailsWithTypeErrorOnFirstOperand [
 	
 	interpreter push: (memory trueObject).
@@ -2367,7 +2765,7 @@ VMPrimitiveTest >> testPrimitiveLessThanFailsWithTypeErrorOnFirstOperand [
 	self assert: interpreter failed. 
 ]
 
-{ #category : #'tests - primitiveLessThan' }
+{ #category : 'tests - primitiveLessThan' }
 VMPrimitiveTest >> testPrimitiveLessThanFailsWithTypeErrorOnSecondOperand [
 	
 	interpreter push: (memory integerObjectOf: 2).
@@ -2378,7 +2776,7 @@ VMPrimitiveTest >> testPrimitiveLessThanFailsWithTypeErrorOnSecondOperand [
 	self assert: interpreter failed. 
 ]
 
-{ #category : #'tests - primitiveLessThan' }
+{ #category : 'tests - primitiveLessThan' }
 VMPrimitiveTest >> testPrimitiveLessThanWithNegativeNumbers [
 
 	interpreter push: (memory integerObjectOf: -13).
@@ -2389,7 +2787,7 @@ VMPrimitiveTest >> testPrimitiveLessThanWithNegativeNumbers [
 	self deny: interpreter failed. 
 ]
 
-{ #category : #'tests - primitiveLessThan' }
+{ #category : 'tests - primitiveLessThan' }
 VMPrimitiveTest >> testPrimitiveLessThanWithNoError1 [
 	
 	interpreter push: (memory integerObjectOf: 42).
@@ -2400,7 +2798,7 @@ VMPrimitiveTest >> testPrimitiveLessThanWithNoError1 [
 	self assert: interpreter stackTop equals: (memory falseObject). 
 ]
 
-{ #category : #'tests - primitiveLessThan' }
+{ #category : 'tests - primitiveLessThan' }
 VMPrimitiveTest >> testPrimitiveLessThanWithNoError2 [
 	
 	interpreter push: (memory integerObjectOf: 16).
@@ -2411,7 +2809,7 @@ VMPrimitiveTest >> testPrimitiveLessThanWithNoError2 [
 	self assert: interpreter stackTop equals: (memory trueObject). 
 ]
 
-{ #category : #'tests - primitiveLessThan' }
+{ #category : 'tests - primitiveLessThan' }
 VMPrimitiveTest >> testPrimitiveLessThanWithNoErrorEquals [
 	
 	interpreter push: (memory integerObjectOf: 0).
@@ -2422,7 +2820,7 @@ VMPrimitiveTest >> testPrimitiveLessThanWithNoErrorEquals [
 	self assert: interpreter stackTop equals: (memory falseObject). 
 ]
 
-{ #category : #'tests - primitiveLessThan' }
+{ #category : 'tests - primitiveLessThan' }
 VMPrimitiveTest >> testPrimitiveLessThanWithNoErrorPopsOperands [
 	
 	interpreter push: (memory integerObjectOf: 42). "Marker"
@@ -2437,7 +2835,7 @@ VMPrimitiveTest >> testPrimitiveLessThanWithNoErrorPopsOperands [
 	self assert: interpreter stackTop equals: (memory integerObjectOf: 42). 
 ]
 
-{ #category : #'tests - primitiveFloat64' }
+{ #category : 'tests - primitiveFloat64' }
 VMPrimitiveTest >> testPrimitiveLoadFloat64FromBytesFrom64BitArrays [
 
 	| class array |
@@ -2457,7 +2855,7 @@ VMPrimitiveTest >> testPrimitiveLoadFloat64FromBytesFrom64BitArrays [
 	self assert: (memory floatValueOf: interpreter stackTop) equals: 42.0. 
 ]
 
-{ #category : #'tests - primitiveFloat64' }
+{ #category : 'tests - primitiveFloat64' }
 VMPrimitiveTest >> testPrimitiveLoadFloat64FromBytesFrom64BitEmptyArrays [
 
 	| class array |
@@ -2475,7 +2873,7 @@ VMPrimitiveTest >> testPrimitiveLoadFloat64FromBytesFrom64BitEmptyArrays [
 	self assert: (memory floatValueOf: interpreter stackTop) equals: 0.0. 
 ]
 
-{ #category : #'tests - primitiveFloat64' }
+{ #category : 'tests - primitiveFloat64' }
 VMPrimitiveTest >> testPrimitiveLoadFloat64FromBytesFromByteArrays [
 
 	| class array |
@@ -2495,7 +2893,7 @@ VMPrimitiveTest >> testPrimitiveLoadFloat64FromBytesFromByteArrays [
 	self assert: (memory floatValueOf: interpreter stackTop) equals: 42.0. 
 ]
 
-{ #category : #'tests - primitiveFloat64' }
+{ #category : 'tests - primitiveFloat64' }
 VMPrimitiveTest >> testPrimitiveLoadFloat64FromBytesFromInteger16Arrays [
 
 	| class array |
@@ -2515,7 +2913,7 @@ VMPrimitiveTest >> testPrimitiveLoadFloat64FromBytesFromInteger16Arrays [
 	self assert: (memory floatValueOf: interpreter stackTop) equals: 42.0. 
 ]
 
-{ #category : #'tests - primitiveFloat64' }
+{ #category : 'tests - primitiveFloat64' }
 VMPrimitiveTest >> testPrimitiveLoadFloat64FromBytesFromInteger32Arrays [
 
 	| class array |
@@ -2535,7 +2933,7 @@ VMPrimitiveTest >> testPrimitiveLoadFloat64FromBytesFromInteger32Arrays [
 	self assert: (memory floatValueOf: interpreter stackTop) equals: 42.0. 
 ]
 
-{ #category : #'tests - primitiveFloat64' }
+{ #category : 'tests - primitiveFloat64' }
 VMPrimitiveTest >> testPrimitiveLoadFloat64FromBytesNegativeIndex [
 
 	| class array |
@@ -2555,7 +2953,7 @@ VMPrimitiveTest >> testPrimitiveLoadFloat64FromBytesNegativeIndex [
 	self assert: interpreter stackTop equals: 42
 ]
 
-{ #category : #'tests - primitiveFloat64' }
+{ #category : 'tests - primitiveFloat64' }
 VMPrimitiveTest >> testPrimitiveLoadFloat64FromBytesOverflowIndex [
 
 	| class array |
@@ -2575,7 +2973,7 @@ VMPrimitiveTest >> testPrimitiveLoadFloat64FromBytesOverflowIndex [
 	self assert: interpreter stackTop equals: 42
 ]
 
-{ #category : #'tests - primitiveFloat64' }
+{ #category : 'tests - primitiveFloat64' }
 VMPrimitiveTest >> testPrimitiveLoadFloat64FromBytesSecondBytes [
 
 	| class array |
@@ -2597,7 +2995,7 @@ VMPrimitiveTest >> testPrimitiveLoadFloat64FromBytesSecondBytes [
 	self assert: (memory floatValueOf: interpreter stackTop) equals: 42.0. 
 ]
 
-{ #category : #'tests - primitiveMod' }
+{ #category : 'tests - primitiveMod' }
 VMPrimitiveTest >> testPrimitiveMod [
 
 	interpreter push: (memory integerObjectOf: 16).
@@ -2610,7 +3008,7 @@ VMPrimitiveTest >> testPrimitiveMod [
 	self assert: interpreter stackTop equals: (memory integerObjectOf: 0). 
 ]
 
-{ #category : #'tests - primitiveMod' }
+{ #category : 'tests - primitiveMod' }
 VMPrimitiveTest >> testPrimitiveModFailPreservesStack [
 
 	interpreter push: (memory trueObject).
@@ -2625,7 +3023,7 @@ VMPrimitiveTest >> testPrimitiveModFailPreservesStack [
 	self assert: (interpreter stackValue: 1) equals: (memory trueObject).
 ]
 
-{ #category : #'tests - primitiveMod' }
+{ #category : 'tests - primitiveMod' }
 VMPrimitiveTest >> testPrimitiveModFailsWithTypeErrorOnFirstOperand [
 
 	interpreter push: (memory trueObject).
@@ -2636,7 +3034,7 @@ VMPrimitiveTest >> testPrimitiveModFailsWithTypeErrorOnFirstOperand [
 	self assert: interpreter failed.
 ]
 
-{ #category : #'tests - primitiveMod' }
+{ #category : 'tests - primitiveMod' }
 VMPrimitiveTest >> testPrimitiveModFailsWithTypeErrorOnSecondOperand [
 
 	interpreter push: (memory integerObjectOf: 42).
@@ -2648,7 +3046,7 @@ VMPrimitiveTest >> testPrimitiveModFailsWithTypeErrorOnSecondOperand [
 	self assert: interpreter failed.
 ]
 
-{ #category : #'tests - primitiveMod' }
+{ #category : 'tests - primitiveMod' }
 VMPrimitiveTest >> testPrimitiveModNegativeValue [
 
 	interpreter push: (memory integerObjectOf: 16).
@@ -2661,7 +3059,7 @@ VMPrimitiveTest >> testPrimitiveModNegativeValue [
 	self assert: interpreter stackTop equals: (memory integerObjectOf: 0). 
 ]
 
-{ #category : #'tests - primitiveMultiply' }
+{ #category : 'tests - primitiveMultiply' }
 VMPrimitiveTest >> testPrimitiveMultiplyBy0AsArgument [
 
 	interpreter push: (memory integerObjectOf: memory maxCInteger >> memory numSmallIntegerTagBits).
@@ -2674,7 +3072,7 @@ VMPrimitiveTest >> testPrimitiveMultiplyBy0AsArgument [
 	self assert: interpreter stackTop equals: (memory integerObjectOf: 0). 
 ]
 
-{ #category : #'tests - primitiveMultiply' }
+{ #category : 'tests - primitiveMultiply' }
 VMPrimitiveTest >> testPrimitiveMultiplyBy0AsReceiver [
 
 	interpreter push: (memory integerObjectOf: 0).
@@ -2687,7 +3085,7 @@ VMPrimitiveTest >> testPrimitiveMultiplyBy0AsReceiver [
 	self assert: interpreter stackTop equals: (memory integerObjectOf: 0). 
 ]
 
-{ #category : #'tests - primitiveMultiply' }
+{ #category : 'tests - primitiveMultiply' }
 VMPrimitiveTest >> testPrimitiveMultiplyFailsWithArgumentTypeErrorPreservesStack [
 
 	interpreter push: (memory integerObjectOf: 2).
@@ -2701,7 +3099,7 @@ VMPrimitiveTest >> testPrimitiveMultiplyFailsWithArgumentTypeErrorPreservesStack
 		equals: (memory integerObjectOf: 2)
 ]
 
-{ #category : #'tests - primitiveMultiply' }
+{ #category : 'tests - primitiveMultiply' }
 VMPrimitiveTest >> testPrimitiveMultiplyFailsWithReceiverTypeErrorPreservesStack [
 
 	interpreter push: memory trueObject.
@@ -2713,7 +3111,7 @@ VMPrimitiveTest >> testPrimitiveMultiplyFailsWithReceiverTypeErrorPreservesStack
 	self assert: (interpreter stackValue: 1) equals: memory trueObject
 ]
 
-{ #category : #'tests - primitiveMultiply' }
+{ #category : 'tests - primitiveMultiply' }
 VMPrimitiveTest >> testPrimitiveMultiplyFailsWithTypeErrorOnFirstOperand [
 
 	interpreter push: memory trueObject.
@@ -2724,7 +3122,7 @@ VMPrimitiveTest >> testPrimitiveMultiplyFailsWithTypeErrorOnFirstOperand [
 	self assert: interpreter failed.
 ]
 
-{ #category : #'tests - primitiveMultiply' }
+{ #category : 'tests - primitiveMultiply' }
 VMPrimitiveTest >> testPrimitiveMultiplyFailsWithTypeErrorOnSecondOperand [
 	
 	interpreter push: (memory integerObjectOf: 2).
@@ -2735,7 +3133,7 @@ VMPrimitiveTest >> testPrimitiveMultiplyFailsWithTypeErrorOnSecondOperand [
 	self assert: interpreter failed.
 ]
 
-{ #category : #'tests - primitiveMultiply' }
+{ #category : 'tests - primitiveMultiply' }
 VMPrimitiveTest >> testPrimitiveMultiplyWithNoOverflow [
 
 	interpreter push: (memory integerObjectOf: 16).
@@ -2748,7 +3146,7 @@ VMPrimitiveTest >> testPrimitiveMultiplyWithNoOverflow [
 	self assert: interpreter stackTop equals: (memory integerObjectOf: 32). 
 ]
 
-{ #category : #'tests - primitiveMultiply' }
+{ #category : 'tests - primitiveMultiply' }
 VMPrimitiveTest >> testPrimitiveMultiplyWithNoOverflowPopsOperands [
 
 	interpreter push: (memory integerObjectOf: 42). "Marker"
@@ -2765,7 +3163,7 @@ VMPrimitiveTest >> testPrimitiveMultiplyWithNoOverflowPopsOperands [
 		equals: (memory integerObjectOf: 42)
 ]
 
-{ #category : #'tests - primitiveMultiply' }
+{ #category : 'tests - primitiveMultiply' }
 VMPrimitiveTest >> testPrimitiveMultiplyWithOverflow [
 
 	interpreter push: (memory integerObjectOf: memory maxSmallInteger).
@@ -2776,7 +3174,7 @@ VMPrimitiveTest >> testPrimitiveMultiplyWithOverflow [
 	self assert: interpreter failed
 ]
 
-{ #category : #'tests - primitiveMultiply' }
+{ #category : 'tests - primitiveMultiply' }
 VMPrimitiveTest >> testPrimitiveMultiplyWithOverflowNegativeWithNegative [
 
 	interpreter push: (memory integerObjectOf: memory minSmallInteger).
@@ -2787,7 +3185,7 @@ VMPrimitiveTest >> testPrimitiveMultiplyWithOverflowNegativeWithNegative [
 	self assert: interpreter failed
 ]
 
-{ #category : #'tests - primitiveMultiply' }
+{ #category : 'tests - primitiveMultiply' }
 VMPrimitiveTest >> testPrimitiveMultiplyWithOverflowNegativeWithPositive [
 
 	interpreter push: (memory integerObjectOf: memory minSmallInteger).
@@ -2798,7 +3196,7 @@ VMPrimitiveTest >> testPrimitiveMultiplyWithOverflowNegativeWithPositive [
 	self assert: interpreter failed
 ]
 
-{ #category : #'tests - primitiveMultiply' }
+{ #category : 'tests - primitiveMultiply' }
 VMPrimitiveTest >> testPrimitiveMultiplyWithOverflowPositiveWithNegative [
 
 	interpreter push: (memory integerObjectOf: memory maxSmallInteger).
@@ -2809,7 +3207,7 @@ VMPrimitiveTest >> testPrimitiveMultiplyWithOverflowPositiveWithNegative [
 	self assert: interpreter failed
 ]
 
-{ #category : #'tests - primitiveMultiply' }
+{ #category : 'tests - primitiveMultiply' }
 VMPrimitiveTest >> testPrimitiveMultiplyWithOverflowPositiveWithPositive [
 
 	interpreter push: (memory integerObjectOf: memory maxSmallInteger).
@@ -2820,7 +3218,7 @@ VMPrimitiveTest >> testPrimitiveMultiplyWithOverflowPositiveWithPositive [
 	self assert: interpreter failed
 ]
 
-{ #category : #'tests - primitiveMultiply' }
+{ #category : 'tests - primitiveMultiply' }
 VMPrimitiveTest >> testPrimitiveMultiplyWithOverflowPreservesStack [
 
 	interpreter push: (memory integerObjectOf: 16).
@@ -2832,7 +3230,7 @@ VMPrimitiveTest >> testPrimitiveMultiplyWithOverflowPreservesStack [
 	self assert: (interpreter stackValue: 2) equals: (memory integerObjectOf: 16). 
 ]
 
-{ #category : #'tests - primitiveNew' }
+{ #category : 'tests - primitiveNew' }
 VMPrimitiveTest >> testPrimitiveNewCreatesTheObjectInYoungSpace [
 	| class |
 	class := self newClassInOldSpaceWithSlots: 0 instSpec: memory nonIndexablePointerFormat.
@@ -2844,7 +3242,7 @@ VMPrimitiveTest >> testPrimitiveNewCreatesTheObjectInYoungSpace [
 	self assert: (memory isYoung: interpreter stackTop)
 ]
 
-{ #category : #'tests - primitiveNew' }
+{ #category : 'tests - primitiveNew' }
 VMPrimitiveTest >> testPrimitiveNewCreatesTheObjectWithCorrectSize [
 	| class |
 	class := self newClassInOldSpaceWithSlots: 4 instSpec: memory nonIndexablePointerFormat.
@@ -2855,7 +3253,7 @@ VMPrimitiveTest >> testPrimitiveNewCreatesTheObjectWithCorrectSize [
 	self assert: (memory numSlotsOf: interpreter stackTop) equals: 4
 ]
 
-{ #category : #'tests - primitiveNew' }
+{ #category : 'tests - primitiveNew' }
 VMPrimitiveTest >> testPrimitiveNewInFullNewSpaceAllocatesInOldSpace [
 	| class |
 
@@ -2869,7 +3267,7 @@ VMPrimitiveTest >> testPrimitiveNewInFullNewSpaceAllocatesInOldSpace [
 	self deny: (memory isYoung: interpreter stackTop)
 ]
 
-{ #category : #'tests - primitiveNew' }
+{ #category : 'tests - primitiveNew' }
 VMPrimitiveTest >> testPrimitiveNewInFullNewSpaceScheduleGC [
 	| class |
 
@@ -2883,7 +3281,7 @@ VMPrimitiveTest >> testPrimitiveNewInFullNewSpaceScheduleGC [
 	self assert: memory needGCFlag
 ]
 
-{ #category : #'tests - primitiveNewWithArgs' }
+{ #category : 'tests - primitiveNewWithArgs' }
 VMPrimitiveTest >> testPrimitiveNewIsNotPinned [
 	| class |
 	class := self newClassInOldSpaceWithSlots: 0 instSpec: memory nonIndexablePointerFormat.
@@ -2894,7 +3292,7 @@ VMPrimitiveTest >> testPrimitiveNewIsNotPinned [
 	self deny: (memory isPinned: interpreter stackTop)
 ]
 
-{ #category : #'tests - primitiveNewOldSpace' }
+{ #category : 'tests - primitiveNewOldSpace' }
 VMPrimitiveTest >> testPrimitiveNewOldCreatesTheObjectInOldSpace [
 	| class |
 	class := self newClassInOldSpaceWithSlots: 0 instSpec: memory nonIndexablePointerFormat.
@@ -2907,7 +3305,7 @@ VMPrimitiveTest >> testPrimitiveNewOldCreatesTheObjectInOldSpace [
 	self assert: (memory isOld: interpreter stackTop)
 ]
 
-{ #category : #'tests - primitiveNewOldSpace' }
+{ #category : 'tests - primitiveNewOldSpace' }
 VMPrimitiveTest >> testPrimitiveNewOldSpaceObjectInFullNewSpaceIsSchedulingGC [
 	| class |
 	class := self newClassInOldSpaceWithSlots: 3 instSpec: memory nonIndexablePointerFormat.
@@ -2923,7 +3321,7 @@ VMPrimitiveTest >> testPrimitiveNewOldSpaceObjectInFullNewSpaceIsSchedulingGC [
 	self assert: memory needGCFlag 
 ]
 
-{ #category : #'tests - primitiveNewOldSpace' }
+{ #category : 'tests - primitiveNewOldSpace' }
 VMPrimitiveTest >> testPrimitiveNewOldSpaceObjectIsNotSchedulingGC [
 	| class |
 	class := self newClassInOldSpaceWithSlots: 0 instSpec: memory nonIndexablePointerFormat.
@@ -2935,7 +3333,7 @@ VMPrimitiveTest >> testPrimitiveNewOldSpaceObjectIsNotSchedulingGC [
 	self deny: memory needGCFlag 
 ]
 
-{ #category : #'tests - primitiveNewOldSpace' }
+{ #category : 'tests - primitiveNewOldSpace' }
 VMPrimitiveTest >> testPrimitiveNewOldSpaceWithArgsCreatesTheObjectInOldSpace [
 	| class |
 	class := self newClassInOldSpaceWithSlots: 0 instSpec: memory arrayFormat.
@@ -2949,7 +3347,7 @@ VMPrimitiveTest >> testPrimitiveNewOldSpaceWithArgsCreatesTheObjectInOldSpace [
 	self assert: (memory isOld: interpreter stackTop)
 ]
 
-{ #category : #'tests - primitiveNewOldSpace' }
+{ #category : 'tests - primitiveNewOldSpace' }
 VMPrimitiveTest >> testPrimitiveNewOldSpaceWithArgsObjectIsNotSchedulingGC [
 	| class |
 	class := self newClassInOldSpaceWithSlots: 0 instSpec: memory arrayFormat.
@@ -2962,7 +3360,7 @@ VMPrimitiveTest >> testPrimitiveNewOldSpaceWithArgsObjectIsNotSchedulingGC [
 	self deny: memory needGCFlag 
 ]
 
-{ #category : #'tests - primitiveNewPinned' }
+{ #category : 'tests - primitiveNewPinned' }
 VMPrimitiveTest >> testPrimitiveNewPinnedCreatesTheObjectInOldSpace [
 	| class |
 	class := self newClassInOldSpaceWithSlots: 0 instSpec: memory nonIndexablePointerFormat.
@@ -2974,7 +3372,7 @@ VMPrimitiveTest >> testPrimitiveNewPinnedCreatesTheObjectInOldSpace [
 	self deny: (memory isYoung: interpreter stackTop)
 ]
 
-{ #category : #'tests - primitiveNewPinned' }
+{ #category : 'tests - primitiveNewPinned' }
 VMPrimitiveTest >> testPrimitiveNewPinnedObjectInFullNewSpaceIsSchedulingGC [
 	| class |
 	class := self newClassInOldSpaceWithSlots: 3 instSpec: memory nonIndexablePointerFormat.
@@ -2990,7 +3388,7 @@ VMPrimitiveTest >> testPrimitiveNewPinnedObjectInFullNewSpaceIsSchedulingGC [
 	self assert: memory needGCFlag 
 ]
 
-{ #category : #'tests - primitiveNewPinned' }
+{ #category : 'tests - primitiveNewPinned' }
 VMPrimitiveTest >> testPrimitiveNewPinnedObjectIsNotSchedulingGC [
 	| class |
 	class := self newClassInOldSpaceWithSlots: 0 instSpec: memory nonIndexablePointerFormat.
@@ -3002,7 +3400,7 @@ VMPrimitiveTest >> testPrimitiveNewPinnedObjectIsNotSchedulingGC [
 	self deny: memory needGCFlag 
 ]
 
-{ #category : #'tests - primitiveNewPinned' }
+{ #category : 'tests - primitiveNewPinned' }
 VMPrimitiveTest >> testPrimitiveNewPinnedObjectIsPinned [
 	| class |
 	class := self newClassInOldSpaceWithSlots: 0 instSpec: memory nonIndexablePointerFormat.
@@ -3014,7 +3412,7 @@ VMPrimitiveTest >> testPrimitiveNewPinnedObjectIsPinned [
 	self assert: (memory isPinned: interpreter stackTop)
 ]
 
-{ #category : #'tests - primitiveNewPinned' }
+{ #category : 'tests - primitiveNewPinned' }
 VMPrimitiveTest >> testPrimitiveNewPinnedWithArgsCreatesTheObjectInOldSpace [
 	| class |
 	class := self newClassInOldSpaceWithSlots: 0 instSpec: memory arrayFormat.
@@ -3027,7 +3425,7 @@ VMPrimitiveTest >> testPrimitiveNewPinnedWithArgsCreatesTheObjectInOldSpace [
 	self deny: (memory isYoung: interpreter stackTop)
 ]
 
-{ #category : #'tests - primitiveNewPinned' }
+{ #category : 'tests - primitiveNewPinned' }
 VMPrimitiveTest >> testPrimitiveNewPinnedWithArgsObjectIsNotSchedulingGC [
 	| class |
 	class := self newClassInOldSpaceWithSlots: 0 instSpec: memory arrayFormat.
@@ -3040,7 +3438,7 @@ VMPrimitiveTest >> testPrimitiveNewPinnedWithArgsObjectIsNotSchedulingGC [
 	self deny: memory needGCFlag 
 ]
 
-{ #category : #'tests - primitiveNewPinned' }
+{ #category : 'tests - primitiveNewPinned' }
 VMPrimitiveTest >> testPrimitiveNewPinnedWithArgsObjectIsPinned [
 	| class |
 	class := self newClassInOldSpaceWithSlots: 0 instSpec: memory arrayFormat.
@@ -3053,7 +3451,7 @@ VMPrimitiveTest >> testPrimitiveNewPinnedWithArgsObjectIsPinned [
 	self assert: (memory isPinned: interpreter stackTop)
 ]
 
-{ #category : #'tests - primitiveNewWithArgs' }
+{ #category : 'tests - primitiveNewWithArgs' }
 VMPrimitiveTest >> testPrimitiveNewWithArgCreatesTheObjectInYoungSpace [
 	| newObj class |
 
@@ -3070,7 +3468,7 @@ VMPrimitiveTest >> testPrimitiveNewWithArgCreatesTheObjectInYoungSpace [
 	self assert: (memory isYoung: newObj)
 ]
 
-{ #category : #'tests - primitiveNewWithArgs' }
+{ #category : 'tests - primitiveNewWithArgs' }
 VMPrimitiveTest >> testPrimitiveNewWithArgCreatesTheObjectWithCorrectSize [
 	| newObj class |
 
@@ -3086,7 +3484,7 @@ VMPrimitiveTest >> testPrimitiveNewWithArgCreatesTheObjectWithCorrectSize [
 	self assert: (memory numSlotsOf: newObj) equals: 7
 ]
 
-{ #category : #'tests - primitiveNewWithArgs' }
+{ #category : 'tests - primitiveNewWithArgs' }
 VMPrimitiveTest >> testPrimitiveNewWithArgInFullNewSpaceAllocatesInOldSpace [
 	| newObj class |
 
@@ -3104,7 +3502,7 @@ VMPrimitiveTest >> testPrimitiveNewWithArgInFullNewSpaceAllocatesInOldSpace [
 	self assert: (memory getMemoryMap isOldObject: newObj)
 ]
 
-{ #category : #'tests - primitiveNewWithArgs' }
+{ #category : 'tests - primitiveNewWithArgs' }
 VMPrimitiveTest >> testPrimitiveNewWithArgInFullNewSpaceScheduleGC [
 	| class |
 
@@ -3120,7 +3518,7 @@ VMPrimitiveTest >> testPrimitiveNewWithArgInFullNewSpaceScheduleGC [
 	self assert: memory needGCFlag
 ]
 
-{ #category : #'tests - primitiveNewWithArgs' }
+{ #category : 'tests - primitiveNewWithArgs' }
 VMPrimitiveTest >> testPrimitiveNewWithArgWithInvalidClassFails [
 	| class |
 
@@ -3134,7 +3532,38 @@ VMPrimitiveTest >> testPrimitiveNewWithArgWithInvalidClassFails [
 	self assert: interpreter primFailCode equals: PrimErrBadReceiver
 ]
 
-{ #category : #'tests - primitiveNewWithArgs' }
+{ #category : 'tests - primitiveNewWithArgs' }
+VMPrimitiveTest >> testPrimitiveNewWithArgWithInvalidClassFails2 [
+	| class |
+
+	"class object with no slots, so no format"
+	class := self newObjectWithSlots: 0.
+
+	interpreter push: class.
+	interpreter push: (memory integerObjectOf: 256).
+
+	interpreter primitiveNewWithArg.
+
+	self assert: interpreter primFailCode equals: PrimErrBadReceiver
+]
+
+{ #category : 'tests - primitiveNewWithArgs' }
+VMPrimitiveTest >> testPrimitiveNewWithArgWithInvalidClassFails3 [
+	| class |
+
+	"class with nil as format"
+	class := self newClassInOldSpaceWithSlots: 0 instSpec: memory nonIndexablePointerFormat.
+	memory storePointer: 2 ofObject: class withValue: memory nilObject.
+
+	interpreter push: class.
+	interpreter push: (memory integerObjectOf: 256).
+
+	interpreter primitiveNewWithArg.
+
+	self assert: interpreter primFailCode equals: PrimErrBadReceiver
+]
+
+{ #category : 'tests - primitiveNewWithArgs' }
 VMPrimitiveTest >> testPrimitiveNewWithArgWithNegativeArgumentFails [
 	| class |
 
@@ -3148,7 +3577,7 @@ VMPrimitiveTest >> testPrimitiveNewWithArgWithNegativeArgumentFails [
 	self assert: interpreter primFailCode equals: PrimErrBadArgument
 ]
 
-{ #category : #'tests - primitiveNew' }
+{ #category : 'tests - primitiveNew' }
 VMPrimitiveTest >> testPrimitiveNewWithInvalidClassFails [
 	| class |
 	class := self newClassInOldSpaceWithSlots: 0 instSpec: memory arrayFormat.
@@ -3159,7 +3588,32 @@ VMPrimitiveTest >> testPrimitiveNewWithInvalidClassFails [
 	self assert: interpreter primFailCode equals: PrimErrBadReceiver
 ]
 
-{ #category : #'tests - primitiveNotEqual' }
+{ #category : 'tests - primitiveNew' }
+VMPrimitiveTest >> testPrimitiveNewWithInvalidClassFails2 [
+	| class |
+	"class object with no slots, so no format"
+	class := self newObjectWithSlots: 0.
+
+	interpreter push: class.
+	interpreter primitiveNew.
+
+	self assert: interpreter primFailCode equals: PrimErrBadReceiver
+]
+
+{ #category : 'tests - primitiveNew' }
+VMPrimitiveTest >> testPrimitiveNewWithInvalidClassFails3 [
+	| class |
+	"class with nil used as format"
+	class := self newClassInOldSpaceWithSlots: 0 instSpec: memory nonIndexablePointerFormat.
+	memory storePointer: 2 ofObject: class withValue: memory nilObject.
+	
+	interpreter push: class.
+	interpreter primitiveNew.
+
+	self assert: interpreter primFailCode equals: PrimErrBadReceiver
+]
+
+{ #category : 'tests - primitiveNotEqual' }
 VMPrimitiveTest >> testPrimitiveNotEqualFailsWithFloat [
 
 	"This simulated classFloat class is necessary because the 32bits VM cannot instanciate boxed floats by itself"
@@ -3170,7 +3624,7 @@ VMPrimitiveTest >> testPrimitiveNotEqualFailsWithFloat [
 	self assert: interpreter failed
 ]
 
-{ #category : #'tests - primitiveNotEqual' }
+{ #category : 'tests - primitiveNotEqual' }
 VMPrimitiveTest >> testPrimitiveNotEqualWithNegativeNumbers [
 
 	interpreter push: (memory integerObjectOf: -13).
@@ -3181,7 +3635,7 @@ VMPrimitiveTest >> testPrimitiveNotEqualWithNegativeNumbers [
 	self deny: interpreter failed. 
 ]
 
-{ #category : #'tests - primitiveNotEqual' }
+{ #category : 'tests - primitiveNotEqual' }
 VMPrimitiveTest >> testPrimitiveNotEqualWithNoError1 [
 
 	interpreter push: (memory integerObjectOf: 16).
@@ -3192,7 +3646,7 @@ VMPrimitiveTest >> testPrimitiveNotEqualWithNoError1 [
 	self assert: interpreter stackTop equals: (memory falseObject). 
 ]
 
-{ #category : #'tests - primitiveNotEqual' }
+{ #category : 'tests - primitiveNotEqual' }
 VMPrimitiveTest >> testPrimitiveNotEqualWithNoError2 [
 
 	interpreter push: (memory integerObjectOf: 16).
@@ -3203,7 +3657,7 @@ VMPrimitiveTest >> testPrimitiveNotEqualWithNoError2 [
 	self assert: interpreter stackTop equals: (memory trueObject). 
 ]
 
-{ #category : #'tests - primitiveNotEqual' }
+{ #category : 'tests - primitiveNotEqual' }
 VMPrimitiveTest >> testPrimitiveNotEqualWithNoErrorPopsOperands [
 
 	interpreter push: (memory integerObjectOf: 42). "Marker"
@@ -3218,7 +3672,7 @@ VMPrimitiveTest >> testPrimitiveNotEqualWithNoErrorPopsOperands [
 	self assert: interpreter stackTop equals: (memory integerObjectOf: 42).
 ]
 
-{ #category : #'tests - primitiveNotEqual' }
+{ #category : 'tests - primitiveNotEqual' }
 VMPrimitiveTest >> testPrimitiveNotEqualWithTypeErrorOnFirstOperand [
 
 	interpreter push: (memory trueObject).
@@ -3229,7 +3683,7 @@ VMPrimitiveTest >> testPrimitiveNotEqualWithTypeErrorOnFirstOperand [
 	self assert: interpreter failed. 
 ]
 
-{ #category : #'tests - primitiveNotEqual' }
+{ #category : 'tests - primitiveNotEqual' }
 VMPrimitiveTest >> testPrimitiveNotEqualWithTypeErrorOnSecondOperand [
 
 	interpreter push: (memory integerObjectOf: 16).
@@ -3240,7 +3694,7 @@ VMPrimitiveTest >> testPrimitiveNotEqualWithTypeErrorOnSecondOperand [
 	self assert: interpreter failed. 
 ]
 
-{ #category : #'tests - primitivePin' }
+{ #category : 'tests - primitivePin' }
 VMPrimitiveTest >> testPrimitivePinFailsForForwardedObjects [
 
 	interpreter push: self setUpForwardedObjects. 
@@ -3251,7 +3705,7 @@ VMPrimitiveTest >> testPrimitivePinFailsForForwardedObjects [
 	self assert: interpreter primFailCode equals: PrimErrBadArgument. 
 ]
 
-{ #category : #'tests - primitivePin' }
+{ #category : 'tests - primitivePin' }
 VMPrimitiveTest >> testPrimitivePinFailsForImmediate [
 
 	interpreter push: (memory integerObjectOf: 16).
@@ -3262,7 +3716,7 @@ VMPrimitiveTest >> testPrimitivePinFailsForImmediate [
 	self assert: interpreter primFailCode equals: PrimErrBadReceiver. 
 ]
 
-{ #category : #'tests - primitivePin' }
+{ #category : 'tests - primitivePin' }
 VMPrimitiveTest >> testPrimitivePinFailsForNOnBoolOnSecondArg [
 
 	interpreter push: (memory instantiateClass: (self newClassInOldSpaceWithSlots: 1 instSpec: memory nonIndexablePointerFormat)).
@@ -3274,7 +3728,7 @@ VMPrimitiveTest >> testPrimitivePinFailsForNOnBoolOnSecondArg [
 	self assert: interpreter primFailCode equals: PrimErrBadArgument. 
 ]
 
-{ #category : #'tests - primitivePin' }
+{ #category : 'tests - primitivePin' }
 VMPrimitiveTest >> testPrimitivePinPinsObjectCreatedInNewSpace [
 	|object object2|
 	
@@ -3293,7 +3747,7 @@ VMPrimitiveTest >> testPrimitivePinPinsObjectCreatedInNewSpace [
 	self assert: (memory isPinned: object2). 
 ]
 
-{ #category : #'tests - primitivePin' }
+{ #category : 'tests - primitivePin' }
 VMPrimitiveTest >> testPrimitivePinPinsObjectCreatedInOldSpace [
 	|object|
 	
@@ -3313,7 +3767,7 @@ VMPrimitiveTest >> testPrimitivePinPinsObjectCreatedInOldSpace [
 	
 ]
 
-{ #category : #'tests - primitivePin' }
+{ #category : 'tests - primitivePin' }
 VMPrimitiveTest >> testPrimitivePinReturnsBoolean [
 	|object|
 	
@@ -3333,7 +3787,7 @@ VMPrimitiveTest >> testPrimitivePinReturnsBoolean [
 	
 ]
 
-{ #category : #'tests - primitiveQuo' }
+{ #category : 'tests - primitiveQuo' }
 VMPrimitiveTest >> testPrimitiveQuo [
 
 	interpreter push: (memory integerObjectOf: 15).
@@ -3343,7 +3797,7 @@ VMPrimitiveTest >> testPrimitiveQuo [
 	self assert: (interpreter stackTop) equals: (memory integerObjectOf: 7). 
 ]
 
-{ #category : #'tests - primitiveQuo' }
+{ #category : 'tests - primitiveQuo' }
 VMPrimitiveTest >> testPrimitiveQuoFailPreservesStack [
 	
 	interpreter push: (memory trueObject).
@@ -3356,7 +3810,7 @@ VMPrimitiveTest >> testPrimitiveQuoFailPreservesStack [
 	self assert: (interpreter stackValue: 1) equals: (memory trueObject).
 ]
 
-{ #category : #'tests - primitiveQuo' }
+{ #category : 'tests - primitiveQuo' }
 VMPrimitiveTest >> testPrimitiveQuoFailsWithTypeErrorOnFirstOperand [
 	
 	interpreter push: memory trueObject.
@@ -3367,7 +3821,7 @@ VMPrimitiveTest >> testPrimitiveQuoFailsWithTypeErrorOnFirstOperand [
 	self assert: interpreter failed.
 ]
 
-{ #category : #'tests - primitiveQuo' }
+{ #category : 'tests - primitiveQuo' }
 VMPrimitiveTest >> testPrimitiveQuoFailsWithTypeErrorOnSecondOperand [
 	
 	interpreter push: (memory integerObjectOf: 2).
@@ -3378,7 +3832,7 @@ VMPrimitiveTest >> testPrimitiveQuoFailsWithTypeErrorOnSecondOperand [
 	self assert: interpreter failed.
 ]
 
-{ #category : #'tests - primitiveQuo' }
+{ #category : 'tests - primitiveQuo' }
 VMPrimitiveTest >> testPrimitiveQuoOnFloatResultDoesntReturnRest [
 "Tests that the rest of the integer division is not pushed into the stack, as this is not expected in a primitive behavior"
 	interpreter push: (memory integerObjectOf: 16).
@@ -3390,7 +3844,7 @@ VMPrimitiveTest >> testPrimitiveQuoOnFloatResultDoesntReturnRest [
 	self assert: (interpreter stackValue: 1) equals: (memory integerObjectOf: 16). 
 ]
 
-{ #category : #'tests - primitiveQuo' }
+{ #category : 'tests - primitiveQuo' }
 VMPrimitiveTest >> testPrimitiveQuoOnFloatResultRoundsAndDoesntFail [
 
 	interpreter push: (memory integerObjectOf: 42).
@@ -3401,7 +3855,7 @@ VMPrimitiveTest >> testPrimitiveQuoOnFloatResultRoundsAndDoesntFail [
 	self assert: (interpreter stackTop) equals: (memory integerObjectOf: 10). 
 ]
 
-{ #category : #'tests - primitiveQuo' }
+{ #category : 'tests - primitiveQuo' }
 VMPrimitiveTest >> testPrimitiveQuoWith0DivisionOnFirstOperand [
 
 	interpreter push: (memory integerObjectOf: 0).
@@ -3412,7 +3866,7 @@ VMPrimitiveTest >> testPrimitiveQuoWith0DivisionOnFirstOperand [
 	self assert: (interpreter stackTop) equals: (memory integerObjectOf: 0). 
 ]
 
-{ #category : #'tests - primitiveQuo' }
+{ #category : 'tests - primitiveQuo' }
 VMPrimitiveTest >> testPrimitiveQuoWith0DivisionOnSecondOperand [
 	
 	interpreter push: (memory integerObjectOf: 4).
@@ -3423,7 +3877,7 @@ VMPrimitiveTest >> testPrimitiveQuoWith0DivisionOnSecondOperand [
 	self assert: (interpreter stackTop) equals: (memory integerObjectOf: 0). 
 ]
 
-{ #category : #'tests - primitiveQuo' }
+{ #category : 'tests - primitiveQuo' }
 VMPrimitiveTest >> testPrimitiveQuoWithNegativeNumbers1 [
 
 	interpreter push: (memory integerObjectOf: -13).
@@ -3434,7 +3888,7 @@ VMPrimitiveTest >> testPrimitiveQuoWithNegativeNumbers1 [
 	self assert: interpreter stackTop equals: (memory integerObjectOf: 6). 
 ]
 
-{ #category : #'tests - primitiveQuo' }
+{ #category : 'tests - primitiveQuo' }
 VMPrimitiveTest >> testPrimitiveQuoWithNegativeNumbers2 [
 
 	interpreter push: (memory integerObjectOf: -9).
@@ -3445,7 +3899,7 @@ VMPrimitiveTest >> testPrimitiveQuoWithNegativeNumbers2 [
 	self assert: interpreter stackTop equals: (memory integerObjectOf: -2). 
 ]
 
-{ #category : #'tests - primitiveQuo' }
+{ #category : 'tests - primitiveQuo' }
 VMPrimitiveTest >> testPrimitiveQuoWithNoErrorPopsOperands [
 	
 	interpreter push: (memory integerObjectOf: 42). "Marker"
@@ -3460,7 +3914,7 @@ VMPrimitiveTest >> testPrimitiveQuoWithNoErrorPopsOperands [
 	self assert: interpreter stackTop equals: (memory integerObjectOf: 42). 
 ]
 
-{ #category : #'tests - primitiveImmutability' }
+{ #category : 'tests - primitiveImmutability' }
 VMPrimitiveTest >> testPrimitiveSetImmutabilityOfImmediateShouldFail [
 
 	interpreter push: (memory integerObjectOf: 1).
@@ -3470,7 +3924,7 @@ VMPrimitiveTest >> testPrimitiveSetImmutabilityOfImmediateShouldFail [
 	self assert: interpreter failed
 ]
 
-{ #category : #'tests - primitiveImmutability' }
+{ #category : 'tests - primitiveImmutability' }
 VMPrimitiveTest >> testPrimitiveSetImmutabilityOfObjectAsTrueSetsImmutability [
 
 	| class object |
@@ -3485,7 +3939,7 @@ VMPrimitiveTest >> testPrimitiveSetImmutabilityOfObjectAsTrueSetsImmutability [
 	self assert: (memory isImmutable: object)
 ]
 
-{ #category : #'tests - primitiveSize' }
+{ #category : 'tests - primitiveSize' }
 VMPrimitiveTest >> testPrimitiveSizeAnswersCorrectSizeForContext [
 
 	| method |
@@ -3500,7 +3954,7 @@ VMPrimitiveTest >> testPrimitiveSizeAnswersCorrectSizeForContext [
 		equals: (memory integerObjectOf: 10 + wordSize)
 ]
 
-{ #category : #'tests - primitiveSize' }
+{ #category : 'tests - primitiveSize' }
 VMPrimitiveTest >> testPrimitiveSizeAnswersCorrectSizeForIndexableObject [
 
 	| array1 |
@@ -3513,7 +3967,7 @@ VMPrimitiveTest >> testPrimitiveSizeAnswersCorrectSizeForIndexableObject [
 
 ]
 
-{ #category : #'tests - primitiveSize' }
+{ #category : 'tests - primitiveSize' }
 VMPrimitiveTest >> testPrimitiveSizeAnswersCorrectSizeForMethod [
 
 	| method |
@@ -3528,7 +3982,7 @@ VMPrimitiveTest >> testPrimitiveSizeAnswersCorrectSizeForMethod [
 		equals: (memory integerObjectOf: 10 + wordSize)
 ]
 
-{ #category : #'tests - primitiveSize' }
+{ #category : 'tests - primitiveSize' }
 VMPrimitiveTest >> testPrimitiveSizeFailsForForwardedObject [
 
 	| array1 array2 arrayForwarder arrayForwardee |
@@ -3553,7 +4007,7 @@ VMPrimitiveTest >> testPrimitiveSizeFailsForForwardedObject [
 
 ]
 
-{ #category : #'tests - primitiveSize' }
+{ #category : 'tests - primitiveSize' }
 VMPrimitiveTest >> testPrimitiveSizeFailsForForwardedObjectThenCallForwarderResolutionAndCallPrimitiveAgain [
 
 	| array1 array2 arrayForwarder arrayForwardee |
@@ -3580,7 +4034,7 @@ VMPrimitiveTest >> testPrimitiveSizeFailsForForwardedObjectThenCallForwarderReso
 
 ]
 
-{ #category : #'tests - primitiveSize' }
+{ #category : 'tests - primitiveSize' }
 VMPrimitiveTest >> testPrimitiveSizeFailsForNonIndexable [
 	| class objectInstance |
 	"Forwarding an object happens when becoming it with a bigger object"
@@ -3596,7 +4050,7 @@ VMPrimitiveTest >> testPrimitiveSizeFailsForNonIndexable [
 	self assert: interpreter primFailCode equals: PrimErrBadReceiver. 
 ]
 
-{ #category : #'tests - primitiveAt' }
+{ #category : 'tests - primitiveAt' }
 VMPrimitiveTest >> testPrimitiveSlotAtOverBoundShouldFailForIndexable [
 	| class object |
 	class := self newClassInOldSpaceWithSlots: 1 instSpec: memory arrayFormat.
@@ -3611,7 +4065,7 @@ VMPrimitiveTest >> testPrimitiveSlotAtOverBoundShouldFailForIndexable [
 	self assert: interpreter primFailCode equals: PrimErrBadIndex. 
 ]
 
-{ #category : #'tests - primitiveAt' }
+{ #category : 'tests - primitiveAt' }
 VMPrimitiveTest >> testPrimitiveSlotAtOverBoundShouldFailNonIndexable [
 	| class object |
 	class := self newClassInOldSpaceWithSlots: 1 instSpec: memory nonIndexablePointerFormat.
@@ -3626,7 +4080,7 @@ VMPrimitiveTest >> testPrimitiveSlotAtOverBoundShouldFailNonIndexable [
 	self assert: interpreter primFailCode equals: PrimErrBadIndex.
 ]
 
-{ #category : #'tests - primitiveAtPut' }
+{ #category : 'tests - primitiveAtPut' }
 VMPrimitiveTest >> testPrimitiveSlotAtPutOverBoundShouldFailForIndexable [
 	| class object |
 	class := self newClassInOldSpaceWithSlots: 1 instSpec: memory arrayFormat.
@@ -3642,7 +4096,7 @@ VMPrimitiveTest >> testPrimitiveSlotAtPutOverBoundShouldFailForIndexable [
 	self assert: interpreter primFailCode equals: PrimErrBadIndex. 
 ]
 
-{ #category : #'tests - primitiveAtPut' }
+{ #category : 'tests - primitiveAtPut' }
 VMPrimitiveTest >> testPrimitiveSlotAtPutOverBoundShouldFailNonIndexable [
 	| class object |
 	class := self newClassInOldSpaceWithSlots: 1 instSpec: memory nonIndexablePointerFormat.
@@ -3658,7 +4112,7 @@ VMPrimitiveTest >> testPrimitiveSlotAtPutOverBoundShouldFailNonIndexable [
 	self assert: interpreter primFailCode equals: PrimErrBadIndex.
 ]
 
-{ #category : #'tests - primitiveAtPut' }
+{ #category : 'tests - primitiveAtPut' }
 VMPrimitiveTest >> testPrimitiveSlotAtPutPutsTheValueForNonIndexable [
 	| class object |
 	class := self newClassInOldSpaceWithSlots: 1 instSpec: memory nonIndexablePointerFormat.
@@ -3674,7 +4128,7 @@ VMPrimitiveTest >> testPrimitiveSlotAtPutPutsTheValueForNonIndexable [
 	self assert: (memory fetchPointer: 0 ofObject: object) equals: memory falseObject.
 ]
 
-{ #category : #'tests - primitiveAt' }
+{ #category : 'tests - primitiveAt' }
 VMPrimitiveTest >> testPrimitiveSlotAtPutsTheValueForNonIndexable [
 	| class object |
 	class := self newClassInOldSpaceWithSlots: 1 instSpec: memory nonIndexablePointerFormat.
@@ -3696,7 +4150,7 @@ VMPrimitiveTest >> testPrimitiveSlotAtPutsTheValueForNonIndexable [
 	self assert: interpreter stackTop equals: memory falseObject.
 ]
 
-{ #category : #'tests - primitiveAdd - SmallFloat' }
+{ #category : 'tests - primitiveAdd - SmallFloat' }
 VMPrimitiveTest >> testPrimitiveSmallFloatAdd [
 
 	self wordSize = 8 ifFalse: [ ^ self skip].
@@ -3713,7 +4167,7 @@ VMPrimitiveTest >> testPrimitiveSmallFloatAdd [
 		equals: (memory smallFloatObjectOf: 10.0)
 ]
 
-{ #category : #'tests - primitiveAdd - SmallFloat' }
+{ #category : 'tests - primitiveAdd - SmallFloat' }
 VMPrimitiveTest >> testPrimitiveSmallFloatAddFailsOnFirstOperandWithTypeErrorPreservesStack [
 
 	self wordSize = 8 ifFalse: [ ^ self skip].
@@ -3730,7 +4184,7 @@ VMPrimitiveTest >> testPrimitiveSmallFloatAddFailsOnFirstOperandWithTypeErrorPre
 	self assert: (interpreter stackValue: 1) equals: memory trueObject.
 ]
 
-{ #category : #'tests - primitiveAdd - SmallFloat' }
+{ #category : 'tests - primitiveAdd - SmallFloat' }
 VMPrimitiveTest >> testPrimitiveSmallFloatAddFailsOnSecondOperandWithTypeErrorPreservesStack [
 
 	self wordSize = 8 ifFalse: [ ^ self skip].
@@ -3747,7 +4201,7 @@ VMPrimitiveTest >> testPrimitiveSmallFloatAddFailsOnSecondOperandWithTypeErrorPr
 	self assert: (interpreter stackValue: 1) equals:  (memory smallFloatObjectOf: 2.0).
 ]
 
-{ #category : #'tests - primitiveAdd - SmallFloat' }
+{ #category : 'tests - primitiveAdd - SmallFloat' }
 VMPrimitiveTest >> testPrimitiveSmallFloatAddFailsWithTypeErrorOnFirstOperand [
 
 	self wordSize = 8 ifFalse: [ ^ self skip].
@@ -3761,7 +4215,7 @@ VMPrimitiveTest >> testPrimitiveSmallFloatAddFailsWithTypeErrorOnFirstOperand [
 	self assert: interpreter failed.
 ]
 
-{ #category : #'tests - primitiveAdd - SmallFloat' }
+{ #category : 'tests - primitiveAdd - SmallFloat' }
 VMPrimitiveTest >> testPrimitiveSmallFloatAddFailsWithTypeErrorOnSecondOperand [
 
 	self wordSize = 8 ifFalse: [ ^ self skip].
@@ -3775,7 +4229,7 @@ VMPrimitiveTest >> testPrimitiveSmallFloatAddFailsWithTypeErrorOnSecondOperand [
 	self assert: interpreter failed.
 ]
 
-{ #category : #'tests - primitiveAdd - SmallFloat' }
+{ #category : 'tests - primitiveAdd - SmallFloat' }
 VMPrimitiveTest >> testPrimitiveSmallFloatAddPopsOperands [
 
 	self wordSize = 8 ifFalse: [ ^ self skip].
@@ -3793,7 +4247,7 @@ VMPrimitiveTest >> testPrimitiveSmallFloatAddPopsOperands [
 	self assert: (interpreter stackTop) equals: (memory integerObjectOf: 42).
 ]
 
-{ #category : #'tests - primitiveDivide - SmallFloat' }
+{ #category : 'tests - primitiveDivide - SmallFloat' }
 VMPrimitiveTest >> testPrimitiveSmallFloatDivide [
 
 	self wordSize = 8 ifFalse: [ ^ self skip].
@@ -3810,7 +4264,7 @@ VMPrimitiveTest >> testPrimitiveSmallFloatDivide [
 		equals: (memory smallFloatObjectOf: 1.0)
 ]
 
-{ #category : #'tests - primitiveDivide - SmallFloat' }
+{ #category : 'tests - primitiveDivide - SmallFloat' }
 VMPrimitiveTest >> testPrimitiveSmallFloatDivideFailsOnFirstOperandWithTypeErrorPreservesStack [
 
 	self wordSize = 8 ifFalse: [ ^ self skip].
@@ -3827,7 +4281,7 @@ VMPrimitiveTest >> testPrimitiveSmallFloatDivideFailsOnFirstOperandWithTypeError
 	self assert: interpreter stackTop equals: (memory smallFloatObjectOf: 2.0).
 ]
 
-{ #category : #'tests - primitiveDivide - SmallFloat' }
+{ #category : 'tests - primitiveDivide - SmallFloat' }
 VMPrimitiveTest >> testPrimitiveSmallFloatDivideFailsOnSecondOperandWithTypeErrorPreservesStack [
 
 	self wordSize = 8 ifFalse: [ ^ self skip].
@@ -3844,7 +4298,7 @@ VMPrimitiveTest >> testPrimitiveSmallFloatDivideFailsOnSecondOperandWithTypeErro
 	self assert: (interpreter stackValue: 1) equals:  (memory smallFloatObjectOf: 2.0).
 ]
 
-{ #category : #'tests - primitiveDivide - SmallFloat' }
+{ #category : 'tests - primitiveDivide - SmallFloat' }
 VMPrimitiveTest >> testPrimitiveSmallFloatDivideFailsOnZeroDivisionPreservesStack [
 
 	self wordSize = 8 ifFalse: [ ^ self skip].
@@ -3862,7 +4316,7 @@ VMPrimitiveTest >> testPrimitiveSmallFloatDivideFailsOnZeroDivisionPreservesStac
 	self assert: interpreter stackTop equals: (memory smallFloatObjectOf: 0.0).
 ]
 
-{ #category : #'tests - primitiveDivide - SmallFloat' }
+{ #category : 'tests - primitiveDivide - SmallFloat' }
 VMPrimitiveTest >> testPrimitiveSmallFloatDivideFailsWithTypeErrorOnFirstOperand [
 
 	self wordSize = 8 ifFalse: [ ^ self skip].
@@ -3876,7 +4330,7 @@ VMPrimitiveTest >> testPrimitiveSmallFloatDivideFailsWithTypeErrorOnFirstOperand
 	self assert: interpreter failed.
 ]
 
-{ #category : #'tests - primitiveDivide - SmallFloat' }
+{ #category : 'tests - primitiveDivide - SmallFloat' }
 VMPrimitiveTest >> testPrimitiveSmallFloatDivideFailsWithTypeErrorOnSecondOperand [
 
 	self wordSize = 8 ifFalse: [ ^ self skip].
@@ -3890,7 +4344,7 @@ VMPrimitiveTest >> testPrimitiveSmallFloatDivideFailsWithTypeErrorOnSecondOperan
 	self assert: interpreter failed.
 ]
 
-{ #category : #'tests - primitiveDivide - SmallFloat' }
+{ #category : 'tests - primitiveDivide - SmallFloat' }
 VMPrimitiveTest >> testPrimitiveSmallFloatDivideFailsWithZeroDivision [
 
 	self wordSize = 8 ifFalse: [ ^ self skip].
@@ -3903,7 +4357,7 @@ VMPrimitiveTest >> testPrimitiveSmallFloatDivideFailsWithZeroDivision [
 	self assert: interpreter failed.
 ]
 
-{ #category : #'tests - primitiveDivide - SmallFloat' }
+{ #category : 'tests - primitiveDivide - SmallFloat' }
 VMPrimitiveTest >> testPrimitiveSmallFloatDividePopsOperands [
 
 	self wordSize = 8 ifFalse: [ ^ self skip].
@@ -3921,7 +4375,7 @@ VMPrimitiveTest >> testPrimitiveSmallFloatDividePopsOperands [
 	self assert: (interpreter stackTop) equals: (memory integerObjectOf: 42).
 ]
 
-{ #category : #'tests - primitiveEqual - SmallFloat' }
+{ #category : 'tests - primitiveEqual - SmallFloat' }
 VMPrimitiveTest >> testPrimitiveSmallFloatEqual [
 
 	self wordSize = 8 ifFalse: [ ^ self skip].
@@ -3936,7 +4390,7 @@ VMPrimitiveTest >> testPrimitiveSmallFloatEqual [
 	self assert: interpreter stackTop equals: memory falseObject.
 ]
 
-{ #category : #'tests - primitiveEqual - SmallFloat' }
+{ #category : 'tests - primitiveEqual - SmallFloat' }
 VMPrimitiveTest >> testPrimitiveSmallFloatEqualEqualEquality [
 
 	self wordSize = 8 ifFalse: [ ^ self skip].
@@ -3951,7 +4405,7 @@ VMPrimitiveTest >> testPrimitiveSmallFloatEqualEqualEquality [
 	self assert: interpreter stackTop equals: memory trueObject.
 ]
 
-{ #category : #'tests - primitiveEqual - SmallFloat' }
+{ #category : 'tests - primitiveEqual - SmallFloat' }
 VMPrimitiveTest >> testPrimitiveSmallFloatEqualFailsWithTypeErrorOnFirstOperand [
 
 	self wordSize = 8 ifFalse: [ ^ self skip].
@@ -3965,7 +4419,7 @@ VMPrimitiveTest >> testPrimitiveSmallFloatEqualFailsWithTypeErrorOnFirstOperand 
 	self assert: interpreter failed.
 ]
 
-{ #category : #'tests - primitiveEqual - SmallFloat' }
+{ #category : 'tests - primitiveEqual - SmallFloat' }
 VMPrimitiveTest >> testPrimitiveSmallFloatEqualFailsWithTypeErrorOnSecondOperand [
 
 	self wordSize = 8 ifFalse: [ ^ self skip].
@@ -3979,7 +4433,7 @@ VMPrimitiveTest >> testPrimitiveSmallFloatEqualFailsWithTypeErrorOnSecondOperand
 	self assert: interpreter failed.
 ]
 
-{ #category : #'tests - primitiveEqual - SmallFloat' }
+{ #category : 'tests - primitiveEqual - SmallFloat' }
 VMPrimitiveTest >> testPrimitiveSmallFloatEqualFailsWithTypeErrorPreservesStack [
 
 	self wordSize = 8 ifFalse: [ ^ self skip].
@@ -3996,7 +4450,7 @@ VMPrimitiveTest >> testPrimitiveSmallFloatEqualFailsWithTypeErrorPreservesStack 
 	self assert: (interpreter stackValue: 1) equals:  (memory smallFloatObjectOf: 2.0).
 ]
 
-{ #category : #'tests - primitiveEqual - SmallFloat' }
+{ #category : 'tests - primitiveEqual - SmallFloat' }
 VMPrimitiveTest >> testPrimitiveSmallFloatEqualPopsOperands [
 
 	self wordSize = 8 ifFalse: [ ^ self skip].
@@ -4015,7 +4469,7 @@ VMPrimitiveTest >> testPrimitiveSmallFloatEqualPopsOperands [
 	self assert: (interpreter stackTop) equals: (memory integerObjectOf: 42).
 ]
 
-{ #category : #'tests - primitiveEqual - SmallFloat' }
+{ #category : 'tests - primitiveEqual - SmallFloat' }
 VMPrimitiveTest >> testPrimitiveSmallFloatEqualtWithNegativeNumbers [
 
 	self wordSize = 8 ifFalse: [ ^ self skip].
@@ -4030,7 +4484,7 @@ VMPrimitiveTest >> testPrimitiveSmallFloatEqualtWithNegativeNumbers [
 	self assert: interpreter stackTop equals: memory falseObject.
 ]
 
-{ #category : #'tests - primitiveGreaterOrEqual - SmallFloat' }
+{ #category : 'tests - primitiveGreaterOrEqual - SmallFloat' }
 VMPrimitiveTest >> testPrimitiveSmallFloatGreaterOrEqual [
 
 	self wordSize = 8 ifFalse: [ ^ self skip].
@@ -4045,7 +4499,7 @@ VMPrimitiveTest >> testPrimitiveSmallFloatGreaterOrEqual [
 	self assert: interpreter stackTop equals: memory trueObject.
 ]
 
-{ #category : #'tests - primitiveGreaterOrEqual - SmallFloat' }
+{ #category : 'tests - primitiveGreaterOrEqual - SmallFloat' }
 VMPrimitiveTest >> testPrimitiveSmallFloatGreaterOrEqualEquality [
 
 	self wordSize = 8 ifFalse: [ ^ self skip].
@@ -4062,7 +4516,7 @@ VMPrimitiveTest >> testPrimitiveSmallFloatGreaterOrEqualEquality [
 	
 ]
 
-{ #category : #'tests - primitiveGreaterOrEqual - SmallFloat' }
+{ #category : 'tests - primitiveGreaterOrEqual - SmallFloat' }
 VMPrimitiveTest >> testPrimitiveSmallFloatGreaterOrEqualFailsOnFirstOperandWithTypeErrorPreservesStack [
 
 	self wordSize = 8 ifFalse: [ ^ self skip].
@@ -4079,7 +4533,7 @@ VMPrimitiveTest >> testPrimitiveSmallFloatGreaterOrEqualFailsOnFirstOperandWithT
 	self assert: (interpreter stackValue: 1) equals:  memory trueObject.
 ]
 
-{ #category : #'tests - primitiveGreaterOrEqual - SmallFloat' }
+{ #category : 'tests - primitiveGreaterOrEqual - SmallFloat' }
 VMPrimitiveTest >> testPrimitiveSmallFloatGreaterOrEqualFailsOnSecondOperandWithTypeErrorPreservesStack [
 
 	self wordSize = 8 ifFalse: [ ^ self skip].
@@ -4096,7 +4550,7 @@ VMPrimitiveTest >> testPrimitiveSmallFloatGreaterOrEqualFailsOnSecondOperandWith
 	self assert: (interpreter stackValue: 1) equals:  (memory smallFloatObjectOf: 2.0).
 ]
 
-{ #category : #'tests - primitiveGreaterOrEqual - SmallFloat' }
+{ #category : 'tests - primitiveGreaterOrEqual - SmallFloat' }
 VMPrimitiveTest >> testPrimitiveSmallFloatGreaterOrEqualFailsWithTypeErrorOnFirstOperand [
 
 	self wordSize = 8 ifFalse: [ ^ self skip].
@@ -4110,7 +4564,7 @@ VMPrimitiveTest >> testPrimitiveSmallFloatGreaterOrEqualFailsWithTypeErrorOnFirs
 	self assert: interpreter failed.
 ]
 
-{ #category : #'tests - primitiveGreaterOrEqual - SmallFloat' }
+{ #category : 'tests - primitiveGreaterOrEqual - SmallFloat' }
 VMPrimitiveTest >> testPrimitiveSmallFloatGreaterOrEqualFailsWithTypeErrorOnSecondOperand [
 
 	self wordSize = 8 ifFalse: [ ^ self skip].
@@ -4124,7 +4578,7 @@ VMPrimitiveTest >> testPrimitiveSmallFloatGreaterOrEqualFailsWithTypeErrorOnSeco
 	self assert: interpreter failed.
 ]
 
-{ #category : #'tests - primitiveGreaterOrEqual - SmallFloat' }
+{ #category : 'tests - primitiveGreaterOrEqual - SmallFloat' }
 VMPrimitiveTest >> testPrimitiveSmallFloatGreaterOrEqualPopsOperands [
 
 	self wordSize = 8 ifFalse: [ ^ self skip].
@@ -4144,7 +4598,7 @@ VMPrimitiveTest >> testPrimitiveSmallFloatGreaterOrEqualPopsOperands [
 	self assert: (interpreter stackTop) equals: (memory integerObjectOf: 42).
 ]
 
-{ #category : #'tests - primitiveGreaterOrEqual - SmallFloat' }
+{ #category : 'tests - primitiveGreaterOrEqual - SmallFloat' }
 VMPrimitiveTest >> testPrimitiveSmallFloatGreaterOrEqualtWithNegativeNumbers [
 
 	self wordSize = 8 ifFalse: [ ^ self skip].
@@ -4159,7 +4613,7 @@ VMPrimitiveTest >> testPrimitiveSmallFloatGreaterOrEqualtWithNegativeNumbers [
 	self assert: interpreter stackTop equals: memory trueObject.
 ]
 
-{ #category : #'tests - primitiveGreaterThan - SmallFloat' }
+{ #category : 'tests - primitiveGreaterThan - SmallFloat' }
 VMPrimitiveTest >> testPrimitiveSmallFloatGreaterThan [
 
 	self wordSize = 8 ifFalse: [ ^ self skip].
@@ -4174,7 +4628,7 @@ VMPrimitiveTest >> testPrimitiveSmallFloatGreaterThan [
 	self assert: interpreter stackTop equals: memory trueObject.
 ]
 
-{ #category : #'tests - primitiveGreaterThan - SmallFloat' }
+{ #category : 'tests - primitiveGreaterThan - SmallFloat' }
 VMPrimitiveTest >> testPrimitiveSmallFloatGreaterThanFailsOnFirstOperandWithTypeErrorPreservesStack [
 
 	self wordSize = 8 ifFalse: [ ^ self skip].
@@ -4191,7 +4645,7 @@ VMPrimitiveTest >> testPrimitiveSmallFloatGreaterThanFailsOnFirstOperandWithType
 	self assert: (interpreter stackValue: 1) equals: memory trueObject.
 ]
 
-{ #category : #'tests - primitiveGreaterThan - SmallFloat' }
+{ #category : 'tests - primitiveGreaterThan - SmallFloat' }
 VMPrimitiveTest >> testPrimitiveSmallFloatGreaterThanFailsOnSecondOperandWithTypeErrorPreservesStack [
 
 	self wordSize = 8 ifFalse: [ ^ self skip].
@@ -4208,7 +4662,7 @@ VMPrimitiveTest >> testPrimitiveSmallFloatGreaterThanFailsOnSecondOperandWithTyp
 	self assert: (interpreter stackValue: 1) equals: (memory smallFloatObjectOf: 2.0).
 ]
 
-{ #category : #'tests - primitiveGreaterThan - SmallFloat' }
+{ #category : 'tests - primitiveGreaterThan - SmallFloat' }
 VMPrimitiveTest >> testPrimitiveSmallFloatGreaterThanFailsWithTypeErrorOnFirstOperand [
 
 	self wordSize = 8 ifFalse: [ ^ self skip].
@@ -4222,7 +4676,7 @@ VMPrimitiveTest >> testPrimitiveSmallFloatGreaterThanFailsWithTypeErrorOnFirstOp
 	self assert: interpreter failed.
 ]
 
-{ #category : #'tests - primitiveGreaterThan - SmallFloat' }
+{ #category : 'tests - primitiveGreaterThan - SmallFloat' }
 VMPrimitiveTest >> testPrimitiveSmallFloatGreaterThanFailsWithTypeErrorOnSecondOperand [
 
 	self wordSize = 8 ifFalse: [ ^ self skip].
@@ -4236,7 +4690,7 @@ VMPrimitiveTest >> testPrimitiveSmallFloatGreaterThanFailsWithTypeErrorOnSecondO
 	self assert: interpreter failed.
 ]
 
-{ #category : #'tests - primitiveGreaterThan - SmallFloat' }
+{ #category : 'tests - primitiveGreaterThan - SmallFloat' }
 VMPrimitiveTest >> testPrimitiveSmallFloatGreaterThanPopsOperands [
 
 	self wordSize = 8 ifFalse: [ ^ self skip].
@@ -4255,7 +4709,7 @@ VMPrimitiveTest >> testPrimitiveSmallFloatGreaterThanPopsOperands [
 	self assert: (interpreter stackTop) equals: (memory integerObjectOf: 42).
 ]
 
-{ #category : #'tests - primitiveGreaterThan - SmallFloat' }
+{ #category : 'tests - primitiveGreaterThan - SmallFloat' }
 VMPrimitiveTest >> testPrimitiveSmallFloatGreaterThantWithNegativeNumbers [
 
 	self wordSize = 8 ifFalse: [ ^ self skip].
@@ -4270,7 +4724,7 @@ VMPrimitiveTest >> testPrimitiveSmallFloatGreaterThantWithNegativeNumbers [
 	self assert: interpreter stackTop equals: memory trueObject. 
 ]
 
-{ #category : #'tests - primitiveLessOrEqual - SmallFloat' }
+{ #category : 'tests - primitiveLessOrEqual - SmallFloat' }
 VMPrimitiveTest >> testPrimitiveSmallFloatLessOrEqual [
 
 	self wordSize = 8 ifFalse: [ ^ self skip].
@@ -4285,7 +4739,7 @@ VMPrimitiveTest >> testPrimitiveSmallFloatLessOrEqual [
 	self assert: interpreter stackTop equals: memory falseObject.
 ]
 
-{ #category : #'tests - primitiveLessOrEqual - SmallFloat' }
+{ #category : 'tests - primitiveLessOrEqual - SmallFloat' }
 VMPrimitiveTest >> testPrimitiveSmallFloatLessOrEqualEquality [
 
 	self wordSize = 8 ifFalse: [ ^ self skip].
@@ -4300,7 +4754,7 @@ VMPrimitiveTest >> testPrimitiveSmallFloatLessOrEqualEquality [
 	self assert: interpreter stackTop equals: memory trueObject.
 ]
 
-{ #category : #'tests - primitiveLessOrEqual - SmallFloat' }
+{ #category : 'tests - primitiveLessOrEqual - SmallFloat' }
 VMPrimitiveTest >> testPrimitiveSmallFloatLessOrEqualFailsOnFirstOperandWithTypeErrorPreservesStack [
 
 	self wordSize = 8 ifFalse: [ ^ self skip].
@@ -4317,7 +4771,7 @@ VMPrimitiveTest >> testPrimitiveSmallFloatLessOrEqualFailsOnFirstOperandWithType
 	self assert: (interpreter stackValue: 1) equals: memory trueObject.
 ]
 
-{ #category : #'tests - primitiveLessOrEqual - SmallFloat' }
+{ #category : 'tests - primitiveLessOrEqual - SmallFloat' }
 VMPrimitiveTest >> testPrimitiveSmallFloatLessOrEqualFailsOnSecondOperandWithTypeErrorPreservesStack [
 
 	self wordSize = 8 ifFalse: [ ^ self skip].
@@ -4334,7 +4788,7 @@ VMPrimitiveTest >> testPrimitiveSmallFloatLessOrEqualFailsOnSecondOperandWithTyp
 	self assert: (interpreter stackValue: 1) equals:  (memory smallFloatObjectOf: 2.0).
 ]
 
-{ #category : #'tests - primitiveLessOrEqual - SmallFloat' }
+{ #category : 'tests - primitiveLessOrEqual - SmallFloat' }
 VMPrimitiveTest >> testPrimitiveSmallFloatLessOrEqualFailsWithTypeErrorOnFirstOperand [
 
 	self wordSize = 8 ifFalse: [ ^ self skip].
@@ -4348,7 +4802,7 @@ VMPrimitiveTest >> testPrimitiveSmallFloatLessOrEqualFailsWithTypeErrorOnFirstOp
 	self assert: interpreter failed.
 ]
 
-{ #category : #'tests - primitiveLessOrEqual - SmallFloat' }
+{ #category : 'tests - primitiveLessOrEqual - SmallFloat' }
 VMPrimitiveTest >> testPrimitiveSmallFloatLessOrEqualFailsWithTypeErrorOnSecondOperand [
 
 	self wordSize = 8 ifFalse: [ ^ self skip].
@@ -4362,7 +4816,7 @@ VMPrimitiveTest >> testPrimitiveSmallFloatLessOrEqualFailsWithTypeErrorOnSecondO
 	self assert: interpreter failed.
 ]
 
-{ #category : #'tests - primitiveLessOrEqual - SmallFloat' }
+{ #category : 'tests - primitiveLessOrEqual - SmallFloat' }
 VMPrimitiveTest >> testPrimitiveSmallFloatLessOrEqualPopsOperands [
 
 	self wordSize = 8 ifFalse: [ ^ self skip].
@@ -4381,7 +4835,7 @@ VMPrimitiveTest >> testPrimitiveSmallFloatLessOrEqualPopsOperands [
 	self assert: (interpreter stackTop) equals: (memory integerObjectOf: 42).
 ]
 
-{ #category : #'tests - primitiveLessOrEqual - SmallFloat' }
+{ #category : 'tests - primitiveLessOrEqual - SmallFloat' }
 VMPrimitiveTest >> testPrimitiveSmallFloatLessOrEqualtWithNegativeNumbers [
 
 	self wordSize = 8 ifFalse: [ ^ self skip].
@@ -4396,7 +4850,7 @@ VMPrimitiveTest >> testPrimitiveSmallFloatLessOrEqualtWithNegativeNumbers [
 	self assert: interpreter stackTop equals: memory falseObject.
 ]
 
-{ #category : #'tests - primitiveLessThan - SmallFloat' }
+{ #category : 'tests - primitiveLessThan - SmallFloat' }
 VMPrimitiveTest >> testPrimitiveSmallFloatLessThan [
 
 	self wordSize = 8 ifFalse: [ ^ self skip].
@@ -4413,7 +4867,7 @@ VMPrimitiveTest >> testPrimitiveSmallFloatLessThan [
 	
 ]
 
-{ #category : #'tests - primitiveLessThan - SmallFloat' }
+{ #category : 'tests - primitiveLessThan - SmallFloat' }
 VMPrimitiveTest >> testPrimitiveSmallFloatLessThanFailsWithTypeErrorOnFirstOperand [
 
 	self wordSize = 8 ifFalse: [ ^ self skip].
@@ -4429,7 +4883,7 @@ VMPrimitiveTest >> testPrimitiveSmallFloatLessThanFailsWithTypeErrorOnFirstOpera
 	
 ]
 
-{ #category : #'tests - primitiveLessThan - SmallFloat' }
+{ #category : 'tests - primitiveLessThan - SmallFloat' }
 VMPrimitiveTest >> testPrimitiveSmallFloatLessThanFailsWithTypeErrorOnSecondOperand [
 
 	self wordSize = 8 ifFalse: [ ^ self skip].
@@ -4445,7 +4899,7 @@ VMPrimitiveTest >> testPrimitiveSmallFloatLessThanFailsWithTypeErrorOnSecondOper
 	
 ]
 
-{ #category : #'tests - primitiveLessThan - SmallFloat' }
+{ #category : 'tests - primitiveLessThan - SmallFloat' }
 VMPrimitiveTest >> testPrimitiveSmallFloatLessThanFailsWithTypeErrorPreservesStack [
 
 	self wordSize = 8 ifFalse: [ ^ self skip].
@@ -4464,7 +4918,7 @@ VMPrimitiveTest >> testPrimitiveSmallFloatLessThanFailsWithTypeErrorPreservesSta
 	
 ]
 
-{ #category : #'tests - primitiveLessThan - SmallFloat' }
+{ #category : 'tests - primitiveLessThan - SmallFloat' }
 VMPrimitiveTest >> testPrimitiveSmallFloatLessThanPopsOperands [
 
 	self wordSize = 8 ifFalse: [ ^ self skip].
@@ -4486,7 +4940,7 @@ VMPrimitiveTest >> testPrimitiveSmallFloatLessThanPopsOperands [
 	
 ]
 
-{ #category : #'tests - primitiveLessThan - SmallFloat' }
+{ #category : 'tests - primitiveLessThan - SmallFloat' }
 VMPrimitiveTest >> testPrimitiveSmallFloatLessThantWithNegativeNumbers [
 
 	self wordSize = 8 ifFalse: [ ^ self skip].
@@ -4502,7 +4956,7 @@ VMPrimitiveTest >> testPrimitiveSmallFloatLessThantWithNegativeNumbers [
 	
 ]
 
-{ #category : #'tests - primitiveMultiply - SmallFloat' }
+{ #category : 'tests - primitiveMultiply - SmallFloat' }
 VMPrimitiveTest >> testPrimitiveSmallFloatMultiply [
 
 	self wordSize = 8 ifFalse: [ ^ self skip].
@@ -4519,7 +4973,7 @@ VMPrimitiveTest >> testPrimitiveSmallFloatMultiply [
 		equals: (memory smallFloatObjectOf: 100.0)
 ]
 
-{ #category : #'tests - primitiveMultiply - SmallFloat' }
+{ #category : 'tests - primitiveMultiply - SmallFloat' }
 VMPrimitiveTest >> testPrimitiveSmallFloatMultiplyFailsOnFirstOperandWithTypeErrorPreservesStack [
 
 	self wordSize = 8 ifFalse: [ ^ self skip].
@@ -4538,7 +4992,7 @@ VMPrimitiveTest >> testPrimitiveSmallFloatMultiplyFailsOnFirstOperandWithTypeErr
 	
 ]
 
-{ #category : #'tests - primitiveMultiply - SmallFloat' }
+{ #category : 'tests - primitiveMultiply - SmallFloat' }
 VMPrimitiveTest >> testPrimitiveSmallFloatMultiplyFailsOnSecondOperandWithTypeErrorPreservesStack [
 
 	self wordSize = 8 ifFalse: [ ^ self skip].
@@ -4557,7 +5011,7 @@ VMPrimitiveTest >> testPrimitiveSmallFloatMultiplyFailsOnSecondOperandWithTypeEr
 	
 ]
 
-{ #category : #'tests - primitiveMultiply - SmallFloat' }
+{ #category : 'tests - primitiveMultiply - SmallFloat' }
 VMPrimitiveTest >> testPrimitiveSmallFloatMultiplyFailsWithTypeErrorOnFirstOperand [
 
 	self wordSize = 8 ifFalse: [ ^ self skip].
@@ -4571,7 +5025,7 @@ VMPrimitiveTest >> testPrimitiveSmallFloatMultiplyFailsWithTypeErrorOnFirstOpera
 	self assert: interpreter failed.
 ]
 
-{ #category : #'tests - primitiveMultiply - SmallFloat' }
+{ #category : 'tests - primitiveMultiply - SmallFloat' }
 VMPrimitiveTest >> testPrimitiveSmallFloatMultiplyFailsWithTypeErrorOnSecondOperand [
 
 	self wordSize = 8 ifFalse: [ ^ self skip].
@@ -4585,7 +5039,7 @@ VMPrimitiveTest >> testPrimitiveSmallFloatMultiplyFailsWithTypeErrorOnSecondOper
 	self assert: interpreter failed.
 ]
 
-{ #category : #'tests - primitiveMultiply - SmallFloat' }
+{ #category : 'tests - primitiveMultiply - SmallFloat' }
 VMPrimitiveTest >> testPrimitiveSmallFloatMultiplyPopsOperands [
 
 	self wordSize = 8 ifFalse: [ ^ self skip].
@@ -4603,7 +5057,7 @@ VMPrimitiveTest >> testPrimitiveSmallFloatMultiplyPopsOperands [
 	self assert: (interpreter stackTop) equals: (memory integerObjectOf: 42).
 ]
 
-{ #category : #'tests - primitiveNotEqual - SmallFloat' }
+{ #category : 'tests - primitiveNotEqual - SmallFloat' }
 VMPrimitiveTest >> testPrimitiveSmallFloatNotEqual [
 
 	self wordSize = 8 ifFalse: [ ^ self skip].
@@ -4618,7 +5072,7 @@ VMPrimitiveTest >> testPrimitiveSmallFloatNotEqual [
 	self assert: interpreter stackTop equals: memory trueObject.
 ]
 
-{ #category : #'tests - primitiveNotEqual - SmallFloat' }
+{ #category : 'tests - primitiveNotEqual - SmallFloat' }
 VMPrimitiveTest >> testPrimitiveSmallFloatNotEqualEqual [
 
 	self wordSize = 8 ifFalse: [ ^ self skip].
@@ -4633,7 +5087,7 @@ VMPrimitiveTest >> testPrimitiveSmallFloatNotEqualEqual [
 	self assert: interpreter stackTop equals: memory falseObject.
 ]
 
-{ #category : #'tests - primitiveNotEqual - SmallFloat' }
+{ #category : 'tests - primitiveNotEqual - SmallFloat' }
 VMPrimitiveTest >> testPrimitiveSmallFloatNotEqualFailsOnFirstOperandWithTypeErrorPreservesStack [
 
 	self wordSize = 8 ifFalse: [ ^ self skip].
@@ -4650,7 +5104,7 @@ VMPrimitiveTest >> testPrimitiveSmallFloatNotEqualFailsOnFirstOperandWithTypeErr
 	self assert: (interpreter stackValue: 1) equals: memory trueObject.
 ]
 
-{ #category : #'tests - primitiveNotEqual - SmallFloat' }
+{ #category : 'tests - primitiveNotEqual - SmallFloat' }
 VMPrimitiveTest >> testPrimitiveSmallFloatNotEqualFailsOnSecondOperandWithTypeErrorPreservesStack [
 
 	self wordSize = 8 ifFalse: [ ^ self skip].
@@ -4667,7 +5121,7 @@ VMPrimitiveTest >> testPrimitiveSmallFloatNotEqualFailsOnSecondOperandWithTypeEr
 	self assert: (interpreter stackValue: 1) equals:  (memory smallFloatObjectOf: 2.0).
 ]
 
-{ #category : #'tests - primitiveNotEqual - SmallFloat' }
+{ #category : 'tests - primitiveNotEqual - SmallFloat' }
 VMPrimitiveTest >> testPrimitiveSmallFloatNotEqualFailsWithTypeErrorOnFirstOperand [
 
 	self wordSize = 8 ifFalse: [ ^ self skip].
@@ -4681,7 +5135,7 @@ VMPrimitiveTest >> testPrimitiveSmallFloatNotEqualFailsWithTypeErrorOnFirstOpera
 	self assert: interpreter failed.
 ]
 
-{ #category : #'tests - primitiveNotEqual - SmallFloat' }
+{ #category : 'tests - primitiveNotEqual - SmallFloat' }
 VMPrimitiveTest >> testPrimitiveSmallFloatNotEqualFailsWithTypeErrorOnSecondOperand [
 
 	self wordSize = 8 ifFalse: [ ^ self skip].
@@ -4695,7 +5149,7 @@ VMPrimitiveTest >> testPrimitiveSmallFloatNotEqualFailsWithTypeErrorOnSecondOper
 	self assert: interpreter failed.
 ]
 
-{ #category : #'tests - primitiveNotEqual - SmallFloat' }
+{ #category : 'tests - primitiveNotEqual - SmallFloat' }
 VMPrimitiveTest >> testPrimitiveSmallFloatNotEqualPopsOperands [
 
 	self wordSize = 8 ifFalse: [ ^ self skip].
@@ -4714,7 +5168,7 @@ VMPrimitiveTest >> testPrimitiveSmallFloatNotEqualPopsOperands [
 	self assert: (interpreter stackTop) equals: (memory integerObjectOf: 42).
 ]
 
-{ #category : #'tests - primitiveNotEqual - SmallFloat' }
+{ #category : 'tests - primitiveNotEqual - SmallFloat' }
 VMPrimitiveTest >> testPrimitiveSmallFloatNotEqualtWithNegativeNumbers [
 
 	self wordSize = 8 ifFalse: [ ^ self skip].
@@ -4729,7 +5183,7 @@ VMPrimitiveTest >> testPrimitiveSmallFloatNotEqualtWithNegativeNumbers [
 	self assert: interpreter stackTop equals: memory trueObject.
 ]
 
-{ #category : #'tests - primitiveSubtract - SmallFloat' }
+{ #category : 'tests - primitiveSubtract - SmallFloat' }
 VMPrimitiveTest >> testPrimitiveSmallFloatSubtract [
 
 	self wordSize = 8 ifFalse: [ ^ self skip].
@@ -4744,7 +5198,7 @@ VMPrimitiveTest >> testPrimitiveSmallFloatSubtract [
 	self assert: interpreter stackTop equals: (memory smallFloatObjectOf: 2.0).
 ]
 
-{ #category : #'tests - primitiveSubtract - SmallFloat' }
+{ #category : 'tests - primitiveSubtract - SmallFloat' }
 VMPrimitiveTest >> testPrimitiveSmallFloatSubtractFailsOnSecondOperandWithTypeErrorPreservesStack [
 
 	self wordSize = 8 ifFalse: [ ^ self skip].
@@ -4761,7 +5215,7 @@ VMPrimitiveTest >> testPrimitiveSmallFloatSubtractFailsOnSecondOperandWithTypeEr
 	self assert: (interpreter stackValue: 1) equals:  (memory smallFloatObjectOf: 2.0).
 ]
 
-{ #category : #'tests - primitiveSubtract - SmallFloat' }
+{ #category : 'tests - primitiveSubtract - SmallFloat' }
 VMPrimitiveTest >> testPrimitiveSmallFloatSubtractFailsWithTypeErrorOnFirstOperand [
 
 	self wordSize = 8 ifFalse: [ ^ self skip].
@@ -4775,7 +5229,7 @@ VMPrimitiveTest >> testPrimitiveSmallFloatSubtractFailsWithTypeErrorOnFirstOpera
 	self assert: interpreter failed.
 ]
 
-{ #category : #'tests - primitiveSubtract - SmallFloat' }
+{ #category : 'tests - primitiveSubtract - SmallFloat' }
 VMPrimitiveTest >> testPrimitiveSmallFloatSubtractFailsWithTypeErrorOnSecondOperand [
 
 	self wordSize = 8 ifFalse: [ ^ self skip].
@@ -4789,7 +5243,7 @@ VMPrimitiveTest >> testPrimitiveSmallFloatSubtractFailsWithTypeErrorOnSecondOper
 	self assert: interpreter failed.
 ]
 
-{ #category : #'tests - primitiveSubtract - SmallFloat' }
+{ #category : 'tests - primitiveSubtract - SmallFloat' }
 VMPrimitiveTest >> testPrimitiveSmallFloatSubtractPopsOperands [
 	
 	self wordSize = 8 ifFalse: [ ^ self skip].
@@ -4808,7 +5262,7 @@ VMPrimitiveTest >> testPrimitiveSmallFloatSubtractPopsOperands [
 	self assert: (interpreter stackTop) equals: (memory integerObjectOf: 42).
 ]
 
-{ #category : #'tests - primitiveFloat64' }
+{ #category : 'tests - primitiveFloat64' }
 VMPrimitiveTest >> testPrimitiveStoreFloat64FromBytesNegativeIndex [
 
 	| class array |
@@ -4829,7 +5283,7 @@ VMPrimitiveTest >> testPrimitiveStoreFloat64FromBytesNegativeIndex [
 	self assert: interpreter stackTop equals: 42
 ]
 
-{ #category : #'tests - primitiveFloat64' }
+{ #category : 'tests - primitiveFloat64' }
 VMPrimitiveTest >> testPrimitiveStoreFloat64FromBytesOverflowIndex [
 
 	| class array |
@@ -4850,7 +5304,7 @@ VMPrimitiveTest >> testPrimitiveStoreFloat64FromBytesOverflowIndex [
 	self assert: interpreter stackTop equals: 42
 ]
 
-{ #category : #'tests - primitiveFloat64' }
+{ #category : 'tests - primitiveFloat64' }
 VMPrimitiveTest >> testPrimitiveStoreFloat64IntoBytesFor64BitArrays [
 
 	| class array |
@@ -4869,7 +5323,7 @@ VMPrimitiveTest >> testPrimitiveStoreFloat64IntoBytesFor64BitArrays [
 
 ]
 
-{ #category : #'tests - primitiveFloat64' }
+{ #category : 'tests - primitiveFloat64' }
 VMPrimitiveTest >> testPrimitiveStoreFloat64IntoBytesForByteArrays [
 
 	| class array |
@@ -4888,7 +5342,7 @@ VMPrimitiveTest >> testPrimitiveStoreFloat64IntoBytesForByteArrays [
 
 ]
 
-{ #category : #'tests - primitiveFloat64' }
+{ #category : 'tests - primitiveFloat64' }
 VMPrimitiveTest >> testPrimitiveStoreFloat64IntoBytesForInteger16Arrays [
 
 	| class array |
@@ -4907,7 +5361,7 @@ VMPrimitiveTest >> testPrimitiveStoreFloat64IntoBytesForInteger16Arrays [
 
 ]
 
-{ #category : #'tests - primitiveFloat64' }
+{ #category : 'tests - primitiveFloat64' }
 VMPrimitiveTest >> testPrimitiveStoreFloat64IntoBytesForInteger32Arrays [
 
 	| class array |
@@ -4926,7 +5380,7 @@ VMPrimitiveTest >> testPrimitiveStoreFloat64IntoBytesForInteger32Arrays [
 
 ]
 
-{ #category : #'tests - primitiveFloat64' }
+{ #category : 'tests - primitiveFloat64' }
 VMPrimitiveTest >> testPrimitiveStoreFloat64IntoBytesForSecondSlotArrays [
 
 	| class array |
@@ -4945,7 +5399,7 @@ VMPrimitiveTest >> testPrimitiveStoreFloat64IntoBytesForSecondSlotArrays [
 
 ]
 
-{ #category : #'tests - primitiveAtPut' }
+{ #category : 'tests - primitiveAtPut' }
 VMPrimitiveTest >> testPrimitiveStringAtPutShouldFailForNonCharacterArgument [
 	"Every other test is common with at:put:"
 	| objectInstance |
@@ -4961,7 +5415,7 @@ VMPrimitiveTest >> testPrimitiveStringAtPutShouldFailForNonCharacterArgument [
 
 ]
 
-{ #category : #'tests - primitiveAtPut' }
+{ #category : 'tests - primitiveAtPut' }
 VMPrimitiveTest >> testPrimitiveStringAtPutShouldNotFailWhenReceiverIsAString [
 	"Every other test is common with at:put:"
 	| string |
@@ -4978,7 +5432,7 @@ VMPrimitiveTest >> testPrimitiveStringAtPutShouldNotFailWhenReceiverIsAString [
 
 ]
 
-{ #category : #'tests - primitiveAtPut' }
+{ #category : 'tests - primitiveAtPut' }
 VMPrimitiveTest >> testPrimitiveStringAtPutShouldNotModifyStringIfFailedWhenNonCharacterArgument [
 	"Every other test is common with at:put:"
 
@@ -4996,7 +5450,7 @@ VMPrimitiveTest >> testPrimitiveStringAtPutShouldNotModifyStringIfFailedWhenNonC
 	self assert: string contentEquals: (self newString: 'po')
 ]
 
-{ #category : #'tests - primitiveAt' }
+{ #category : 'tests - primitiveAt' }
 VMPrimitiveTest >> testPrimitiveStringAtShouldFailForNonCharacterArgument [
 	"Every other test is common with at:put:"
 	| objectInstance |
@@ -5011,7 +5465,7 @@ VMPrimitiveTest >> testPrimitiveStringAtShouldFailForNonCharacterArgument [
 
 ]
 
-{ #category : #'tests - primitiveAt' }
+{ #category : 'tests - primitiveAt' }
 VMPrimitiveTest >> testPrimitiveStringAtShouldNotFailWhenReceiverIsAString [
 	"Every other test is common with at:put:"
 	| string |
@@ -5034,7 +5488,7 @@ VMPrimitiveTest >> testPrimitiveStringAtShouldNotFailWhenReceiverIsAString [
 
 ]
 
-{ #category : #'tests - primitiveAt' }
+{ #category : 'tests - primitiveAt' }
 VMPrimitiveTest >> testPrimitiveStringAtShouldNotModifyStringIfFailedWhenNonCharacterArgument [
 	"Every other test is common with at:put:"
 
@@ -5052,7 +5506,7 @@ VMPrimitiveTest >> testPrimitiveStringAtShouldNotModifyStringIfFailedWhenNonChar
 	self assert: string contentEquals: (self newString: 'po')
 ]
 
-{ #category : #'tests - primitiveStringCompare' }
+{ #category : 'tests - primitiveStringCompare' }
 VMPrimitiveTest >> testPrimitiveStringCompareWithHigherSymbol [
 
 	| asciiOrder aByteSymbol bByteSymbol |
@@ -5072,7 +5526,7 @@ VMPrimitiveTest >> testPrimitiveStringCompareWithHigherSymbol [
 	self assert: interpreter stackTop equals: (memory integerObjectOf: 1)
 ]
 
-{ #category : #'tests - primitiveStringCompare' }
+{ #category : 'tests - primitiveStringCompare' }
 VMPrimitiveTest >> testPrimitiveStringCompareWithIsNotCaseSensitive [
 
 	| nonCaseSensitiveOrder lowerByteSymbol upperByteSymbol |
@@ -5092,7 +5546,7 @@ VMPrimitiveTest >> testPrimitiveStringCompareWithIsNotCaseSensitive [
 	self assert: interpreter stackTop equals: (memory integerObjectOf: 0)
 ]
 
-{ #category : #'tests - primitiveStringCompare' }
+{ #category : 'tests - primitiveStringCompare' }
 VMPrimitiveTest >> testPrimitiveStringCompareWithLimitCaseRegretion [
 
 	| nonCaseSensitiveOrder lowerByteSymbol upperByteSymbol |
@@ -5112,7 +5566,7 @@ VMPrimitiveTest >> testPrimitiveStringCompareWithLimitCaseRegretion [
 	self assert: interpreter stackTop equals: (memory integerObjectOf: 0)
 ]
 
-{ #category : #'tests - primitiveStringCompare' }
+{ #category : 'tests - primitiveStringCompare' }
 VMPrimitiveTest >> testPrimitiveStringCompareWithLowerSymbol [
 
 	| asciiOrder aByteSymbol bByteSymbol |
@@ -5132,7 +5586,7 @@ VMPrimitiveTest >> testPrimitiveStringCompareWithLowerSymbol [
 	self assert: interpreter stackTop equals: (memory integerObjectOf: -1)
 ]
 
-{ #category : #'tests - primitiveStringCompare' }
+{ #category : 'tests - primitiveStringCompare' }
 VMPrimitiveTest >> testPrimitiveStringCompareWithTheSameSymbol [
 
 	| byteSymbol asciiOrder |
@@ -5151,18 +5605,109 @@ VMPrimitiveTest >> testPrimitiveStringCompareWithTheSameSymbol [
 	self assert: interpreter stackTop equals: (memory integerObjectOf: 0)
 ]
 
-{ #category : #'tests - primitiveSubtract' }
+{ #category : 'tests - primitiveSubtract' }
 VMPrimitiveTest >> testPrimitiveSubtracFailsWithTypeErrorOnFirstOperand [
 	
 	interpreter push: memory trueObject.
 	interpreter push: (memory integerObjectOf: 2).
 	
 	interpreter primitiveSubtract. 
-		
-	self assert: interpreter failed
+
+	self assert: interpreter failed.
+	
+	
 ]
 
-{ #category : #'tests - primitiveVMParameter' }
+{ #category : 'tests - primitiveSubtract' }
+VMPrimitiveTest >> testPrimitiveSubtracFailsWithTypeErrorOnSecondOperand [
+	
+	interpreter push: (memory integerObjectOf: 2).
+	interpreter push: memory trueObject.
+	
+	interpreter primitiveSubtract. 
+
+	self assert: interpreter failed.
+	
+	
+]
+
+{ #category : 'tests - primitiveSubtract' }
+VMPrimitiveTest >> testPrimitiveSubtractFailsWithTypeErrorPreservesStack [
+
+	| string |
+	
+	string := self newString: '42'.
+	interpreter push: string. 
+	interpreter push: (memory integerObjectOf: 2).
+	
+	interpreter primitiveSubtract. 
+	
+	self assert: interpreter stackTop equals: (memory integerObjectOf: 2). 
+	self assert: (interpreter stackValue: 1) equals: string.
+]
+
+{ #category : 'tests - primitiveSubtract' }
+VMPrimitiveTest >> testPrimitiveSubtractWithNoOverflow [
+
+	interpreter push: (memory integerObjectOf: 2).
+	interpreter push: (memory integerObjectOf: 1).
+	
+	interpreter primitiveSubtract. 
+	
+	self deny: interpreter failed.
+	
+	self assert: interpreter stackTop equals: (memory integerObjectOf: 1). 
+	
+	
+]
+
+{ #category : 'tests - primitiveSubtract' }
+VMPrimitiveTest >> testPrimitiveSubtractWithNoOverflowPopsOperands [
+
+	interpreter push: (memory integerObjectOf: 42). "Marker"
+	interpreter push: (memory integerObjectOf: 10).
+	interpreter push: (memory integerObjectOf: 20).
+	
+	interpreter primitiveSubtract. 
+	
+	interpreter popStack. 
+	"The previous lines pop the result of primiviteSubtract (1 2) for us to check that 1 and 2 were poped from the Stack by checking that the next value is our marker, for instance 42"
+	
+	self assert: interpreter stackTop equals: (memory integerObjectOf: 42). 
+	
+	
+]
+
+{ #category : 'tests - primitiveSubtract' }
+VMPrimitiveTest >> testPrimitiveSubtractWithOverflow [
+
+	interpreter push: (memory integerObjectOf: memory minSmallInteger).
+	interpreter push: (memory integerObjectOf: 2).
+	
+	interpreter primitiveSubtract. 
+	
+	self assert: interpreter failed.
+]
+
+{ #category : 'tests - primitiveSubtract' }
+VMPrimitiveTest >> testPrimitiveSubtractWithOverflowPreservesStack [
+
+	| minSmallInt |
+	
+	minSmallInt:= (memory integerObjectOf: memory minSmallInteger). 
+	
+	interpreter push: minSmallInt. 
+	interpreter push: (memory integerObjectOf: 2).
+	
+	interpreter primitiveSubtract. 
+	
+	self assert: interpreter stackTop equals: (memory integerObjectOf: 2). 
+	self assert: (interpreter stackValue: 1) equals: minSmallInt.
+	
+	
+]
+
+{ #category : 'tests - primitiveVMParameter' }
 VMPrimitiveTest >> testPrimitiveVMParameterGetsImageVersion [
 
 	interpreter setImageVersion: 110.
@@ -5177,7 +5722,7 @@ VMPrimitiveTest >> testPrimitiveVMParameterGetsImageVersion [
 	self assert: interpreter stackTop equals: (memory integerObjectOf: 110)
 ]
 
-{ #category : #'tests - primitiveVMParameter' }
+{ #category : 'tests - primitiveVMParameter' }
 VMPrimitiveTest >> testPrimitiveVMParameterReturnsArrayOfOops [
 
 	| slots |
@@ -5194,16 +5739,16 @@ VMPrimitiveTest >> testPrimitiveVMParameterReturnsArrayOfOops [
 	interpreter preemptionYields: true.
 	interpreter primitiveVMParameter.
 	
-	"Check this is an array that has 85 OOP entries"
+	"Check this is an array that has 86 OOP entries"
 	self assert: (memory isArray: interpreter stackTop).
 	slots := memory numSlotsOf: interpreter stackTop.
-	self assert: slots equals: 87.
+	self assert: slots equals: 88.
 	
 	0 to: slots - 1 do: [ :i |
 		memory okayOop: (memory fetchPointer: i ofObject: interpreter stackTop) ]
 ]
 
-{ #category : #'tests - primitiveVMParameter' }
+{ #category : 'tests - primitiveVMParameter' }
 VMPrimitiveTest >> testPrimitiveVMParameterSetsImageVersion [
 
 	interpreter push: memory nilObject.
@@ -5217,7 +5762,7 @@ VMPrimitiveTest >> testPrimitiveVMParameterSetsImageVersion [
 	self assert: interpreter getImageVersion equals: 110.
 ]
 
-{ #category : #'tests - primitiveSubtract' }
+{ #category : 'tests - primitiveSubtract' }
 VMPrimitiveTest >> testSubtractTwoIntegersOverflow [
 
 	interpreter push: (self memory integerObjectOf: self memory maxSmallInteger).
@@ -5228,7 +5773,7 @@ VMPrimitiveTest >> testSubtractTwoIntegersOverflow [
 	self assert: interpreter failed
 ]
 
-{ #category : #'tests - primitiveSubtract' }
+{ #category : 'tests - primitiveSubtract' }
 VMPrimitiveTest >> testSubtractTwoIntegersOverflowDoesNotPopArguments [
 
 	"Marker"
@@ -5244,7 +5789,7 @@ VMPrimitiveTest >> testSubtractTwoIntegersOverflowDoesNotPopArguments [
 	self assert: interpreter popStack equals: marker
 ]
 
-{ #category : #'tests - primitiveSubtract' }
+{ #category : 'tests - primitiveSubtract' }
 VMPrimitiveTest >> testSubtractTwoIntegersPopsArguments [
 	| marker |
 	"Marker"
@@ -5261,7 +5806,7 @@ VMPrimitiveTest >> testSubtractTwoIntegersPopsArguments [
 	self assert: interpreter popStack equals: marker
 ]
 
-{ #category : #'tests - primitiveSubtract' }
+{ #category : 'tests - primitiveSubtract' }
 VMPrimitiveTest >> testSubtractTwoIntegersResult [
 
 	interpreter push: (self memory integerObjectOf: 1).
@@ -5272,7 +5817,7 @@ VMPrimitiveTest >> testSubtractTwoIntegersResult [
 	self assert: (self memory integerValueOf: interpreter popStack) equals: -1
 ]
 
-{ #category : #'tests - primitiveSubtract' }
+{ #category : 'tests - primitiveSubtract' }
 VMPrimitiveTest >> testSubtractTwoNegativeIntegersPopsArguments [
 	| marker |
 	"Marker"
@@ -5289,7 +5834,7 @@ VMPrimitiveTest >> testSubtractTwoNegativeIntegersPopsArguments [
 	self assert: interpreter popStack equals: marker
 ]
 
-{ #category : #'tests - primitiveSubtract' }
+{ #category : 'tests - primitiveSubtract' }
 VMPrimitiveTest >> testSubtractTwoNegativeIntegersResult [
 
 	interpreter push: (self memory integerObjectOf: -1).
@@ -5300,7 +5845,7 @@ VMPrimitiveTest >> testSubtractTwoNegativeIntegersResult [
 	self assert: (self memory integerValueOf: interpreter popStack) equals: 1
 ]
 
-{ #category : #'tests - primitiveSubtract' }
+{ #category : 'tests - primitiveSubtract' }
 VMPrimitiveTest >> testSubtractTwoNegativeIntegersUnderflow [
 
 	interpreter push: (self memory integerObjectOf: self memory minSmallInteger).
@@ -5310,7 +5855,7 @@ VMPrimitiveTest >> testSubtractTwoNegativeIntegersUnderflow [
 	self assert: interpreter failed
 ]
 
-{ #category : #'tests - primitiveSubtract' }
+{ #category : 'tests - primitiveSubtract' }
 VMPrimitiveTest >> testSubtractTwoNegativeIntegersUnderflowDoesNotPopArguments [
 
 	"Marker"
@@ -5326,7 +5871,7 @@ VMPrimitiveTest >> testSubtractTwoNegativeIntegersUnderflowDoesNotPopArguments [
 	self assert: interpreter popStack equals: marker
 ]
 
-{ #category : #running }
+{ #category : 'running' }
 VMPrimitiveTest >> testSumSmallIntegersWithOverflow [
 
 
@@ -5340,7 +5885,7 @@ VMPrimitiveTest >> testSumSmallIntegersWithOverflow [
 	self assert: result equals: ifOverflowValue
 ]
 
-{ #category : #running }
+{ #category : 'running' }
 VMPrimitiveTest >> testSumSmallIntegersWithoutOverflow [
 	| a b ifOverflowValue expectedResult result |
 	a := memory integerObjectOf: 42.

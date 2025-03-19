@@ -1,6 +1,6 @@
 Class {
-	#name : #SpurScavengeLogRecord,
-	#superclass : #VMStructType,
+	#name : 'SpurScavengeLogRecord',
+	#superclass : 'VMStructType',
 	#instVars : [
 		'sEdenBytes',
 		'sPastBytes',
@@ -15,10 +15,12 @@ Class {
 		'eRememberedSetSize',
 		'eStatTenures'
 	],
-	#category : #'VMMaker-SpurMemoryManager'
+	#category : 'VMMaker-SpurMemoryManager',
+	#package : 'VMMaker',
+	#tag : 'SpurMemoryManager'
 }
 
-{ #category : #translation }
+{ #category : 'translation' }
 SpurScavengeLogRecord class >> instVarNamesAndTypesForTranslationDo: aBinaryBlock [
 	self allInstVarNames do:
 		[:ivn|
@@ -26,168 +28,168 @@ SpurScavengeLogRecord class >> instVarNamesAndTypesForTranslationDo: aBinaryBloc
 			[aBinaryBlock value: ivn value: #usqInt]]
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 SpurScavengeLogRecord >> eRememberedSetSize [
 	
 	^ eRememberedSetSize
 
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 SpurScavengeLogRecord >> eRememberedSetSize: anObject [
 	
 	^ eRememberedSetSize := anObject.
 
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 SpurScavengeLogRecord >> eStatTenures [
 	
 	^ eStatTenures
 
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 SpurScavengeLogRecord >> eStatTenures: anObject [
 	
 	^ eStatTenures := anObject.
 
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 SpurScavengeLogRecord >> eSurvivorBytes [
 	
 	^ eSurvivorBytes
 
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 SpurScavengeLogRecord >> eSurvivorBytes: anObject [
 	
 	^ eSurvivorBytes := anObject.
 
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 SpurScavengeLogRecord >> sEdenBytes [
 	
 	^ sEdenBytes
 
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 SpurScavengeLogRecord >> sEdenBytes: anObject [
 	
 	^ sEdenBytes := anObject.
 
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 SpurScavengeLogRecord >> sPastBytes [
 	
 	^ sPastBytes
 
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 SpurScavengeLogRecord >> sPastBytes: anObject [
 	
 	^ sPastBytes := anObject.
 
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 SpurScavengeLogRecord >> sRememberedSetLimit [
 	
 	^ sRememberedSetLimit
 
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 SpurScavengeLogRecord >> sRememberedSetLimit: anObject [
 	
 	^ sRememberedSetLimit := anObject.
 
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 SpurScavengeLogRecord >> sRememberedSetRedZone [
 	
 	^ sRememberedSetRedZone
 
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 SpurScavengeLogRecord >> sRememberedSetRedZone: anObject [
 	
 	^ sRememberedSetRedZone := anObject.
 
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 SpurScavengeLogRecord >> sRememberedSetSize [
 	
 	^ sRememberedSetSize
 
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 SpurScavengeLogRecord >> sRememberedSetSize: anObject [
 	
 	^ sRememberedSetSize := anObject.
 
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 SpurScavengeLogRecord >> sStatTenures [
 	
 	^ sStatTenures
 
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 SpurScavengeLogRecord >> sStatTenures: anObject [
 	
 	^ sStatTenures := anObject.
 
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 SpurScavengeLogRecord >> tRefCountToShrinkRT [
 	
 	^ tRefCountToShrinkRT
 
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 SpurScavengeLogRecord >> tRefCountToShrinkRT: anObject [
 	
 	^ tRefCountToShrinkRT := anObject.
 
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 SpurScavengeLogRecord >> tTenureCriterion [
 	
 	^ tTenureCriterion
 
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 SpurScavengeLogRecord >> tTenureCriterion: anObject [
 	
 	^ tTenureCriterion := anObject.
 
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 SpurScavengeLogRecord >> tTenureThreshold [
 	
 	^ tTenureThreshold
 
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 SpurScavengeLogRecord >> tTenureThreshold: anObject [
 	
 	^ tTenureThreshold := anObject.

@@ -1,6 +1,6 @@
 Class {
-	#name : #LibFFIConstants,
-	#superclass : #SharedPool,
+	#name : 'LibFFIConstants',
+	#superclass : 'SharedPool',
 	#classVars : [
 		'FFI_TYPE_DOUBLE',
 		'FFI_TYPE_FLOAT',
@@ -30,10 +30,12 @@ Class {
 		'UINT64_MAX',
 		'UINT8_MAX'
 	],
-	#category : #'VMMaker-FFI'
+	#category : 'VMMaker-FFI',
+	#package : 'VMMaker',
+	#tag : 'FFI'
 }
 
-{ #category : #'class initialization' }
+{ #category : 'class initialization' }
 LibFFIConstants class >> initialize [
 
 	<script: 'self initialize'>

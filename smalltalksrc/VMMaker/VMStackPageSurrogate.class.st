@@ -1,6 +1,6 @@
 Class {
-	#name : #VMStackPageSurrogate,
-	#superclass : #Object,
+	#name : 'VMStackPageSurrogate',
+	#superclass : 'Object',
 	#instVars : [
 		'address',
 		'stackPages',
@@ -8,21 +8,23 @@ Class {
 		'zoneBase',
 		'zoneLimit'
 	],
-	#category : #'VMMaker-InterpreterSimulation'
+	#category : 'VMMaker-InterpreterSimulation',
+	#package : 'VMMaker',
+	#tag : 'InterpreterSimulation'
 }
 
-{ #category : #comparing }
+{ #category : 'comparing' }
 VMStackPageSurrogate >> = aThing [
 	^aThing class = self class
 	and: [aThing address = address]
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 VMStackPageSurrogate >> address [
 	^address
 ]
 
-{ #category : #'instance initialization' }
+{ #category : 'instance initialization' }
 VMStackPageSurrogate >> address: theAddress simulator: aCoInterpreterSimulator zoneBase: base zoneLimit: limit [
 	address := theAddress.
 	stackPages := aCoInterpreterSimulator stackPages.
@@ -31,43 +33,43 @@ VMStackPageSurrogate >> address: theAddress simulator: aCoInterpreterSimulator z
 	zoneLimit := limit
 ]
 
-{ #category : #testing }
+{ #category : 'testing' }
 VMStackPageSurrogate >> addressIsInPage: address [
 	"For assert-checking"
 	^self lastAddress < address and: [address < self baseAddress]
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 VMStackPageSurrogate >> asInteger [
 	^address
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 VMStackPageSurrogate >> asIntegerPtr [
 	^address
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 VMStackPageSurrogate >> asUnsignedInteger [
 	^address
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 VMStackPageSurrogate >> asUnsignedIntegerPtr [
 	^address
 ]
 
-{ #category : #comparing }
+{ #category : 'comparing' }
 VMStackPageSurrogate >> hash [
 	^address hash
 ]
 
-{ #category : #testing }
+{ #category : 'testing' }
 VMStackPageSurrogate >> isFree [
 	^self baseFP = 0
 ]
 
-{ #category : #printing }
+{ #category : 'printing' }
 VMStackPageSurrogate >> printOn: aStream [
 	super printOn: aStream.
 	aStream nextPut: $@; print: address; nextPut: $/.

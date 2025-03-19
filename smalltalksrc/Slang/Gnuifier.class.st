@@ -18,23 +18,25 @@ Structure:
 I can attempt to undo my damage with #deGnuify.
 "
 Class {
-	#name : #Gnuifier,
-	#superclass : #Object,
+	#name : 'Gnuifier',
+	#superclass : 'Object',
 	#instVars : [
 		'directory',
 		'interpreterFilename',
 		'shouldCleanupOldFile'
 	],
-	#category : #'Slang-PostProcessing'
+	#category : 'Slang-PostProcessing',
+	#package : 'Slang',
+	#tag : 'PostProcessing'
 }
 
-{ #category : #'as yet unclassified' }
+{ #category : 'as yet unclassified' }
 Gnuifier class >> on: aFilePathStringOrDirectory [
 
 	^self new setDirectory: aFilePathStringOrDirectory asFileReference
 ]
 
-{ #category : #'as yet unclassified' }
+{ #category : 'as yet unclassified' }
 Gnuifier >> copyFrom: inFileStream to: outFileStream [
 
 "convert interp.c to use GNU features"
@@ -48,18 +50,18 @@ Gnuifier >> copyFrom: inFileStream to: outFileStream [
 	outFileStream close
 ]
 
-{ #category : #'as yet unclassified' }
+{ #category : 'as yet unclassified' }
 Gnuifier >> doCleanupOldFile [
 	
 	self doCleanupOldFile: true
 ]
 
-{ #category : #'as yet unclassified' }
+{ #category : 'as yet unclassified' }
 Gnuifier >> doCleanupOldFile: aBoolean [
 	shouldCleanupOldFile := aBoolean
 ]
 
-{ #category : #'as yet unclassified' }
+{ #category : 'as yet unclassified' }
 Gnuifier >> gnuify [
 	"This Gnuifier produces a file compatible with gcc 3.x and gcc 4.x.
 	 We label the gnuified VM so one can identify the valid gcc version.
@@ -76,7 +78,7 @@ Gnuifier >> gnuify [
 		ifTrue: [ (directory / interpreterFilename) ensureDelete ]
 ]
 
-{ #category : #'as yet unclassified' }
+{ #category : 'as yet unclassified' }
 Gnuifier >> gnuifyFrom: inputFile to: outFileStream [
 
 	"convert interp.c to use GNU features"
@@ -184,24 +186,24 @@ Gnuifier >> gnuifyFrom: inputFile to: outFileStream [
 	outFileStream close
 ]
 
-{ #category : #'as yet unclassified' }
+{ #category : 'as yet unclassified' }
 Gnuifier >> initialize [
 	super initialize.
 	shouldCleanupOldFile := false
 ]
 
-{ #category : #'as yet unclassified' }
+{ #category : 'as yet unclassified' }
 Gnuifier >> interpreterFilename: aString [
 	interpreterFilename := aString
 ]
 
-{ #category : #'as yet unclassified' }
+{ #category : 'as yet unclassified' }
 Gnuifier >> setDirectory: aFileDirectory [
 
 	directory := aFileDirectory
 ]
 
-{ #category : #'as yet unclassified' }
+{ #category : 'as yet unclassified' }
 Gnuifier >> shouldCleanupOldFile [
 	
 	^ shouldCleanupOldFile

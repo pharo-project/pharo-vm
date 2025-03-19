@@ -1,15 +1,17 @@
 Class {
-	#name : #SpurPlanningCompactorSimulator,
-	#superclass : #SpurPlanningCompactor,
+	#name : 'SpurPlanningCompactorSimulator',
+	#superclass : 'SpurPlanningCompactor',
 	#instVars : [
 		'interestingObj',
 		'relocationMap',
 		'sffsMode'
 	],
-	#category : #'VMMaker-SpurMemoryManagerSimulation'
+	#category : 'VMMaker-SpurMemoryManagerSimulation',
+	#package : 'VMMaker',
+	#tag : 'SpurMemoryManagerSimulation'
 }
 
-{ #category : #private }
+{ #category : 'private' }
 SpurPlanningCompactorSimulator >> check: obj [
 	<inline: true>
 	sffsMode ifNotNil: [self deny: ((manager isGrey: obj) or: [(manager isImmutable: obj)  or: [manager isRemembered: obj]])].
@@ -19,27 +21,27 @@ SpurPlanningCompactorSimulator >> check: obj [
 		[self deny: ((manager isEnumerableObject: obj) and: [(manager heapMapAtWord: obj) = 0])]"
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 SpurPlanningCompactorSimulator >> forceMultiPass [
 	sffsMode := #multiPass
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 SpurPlanningCompactorSimulator >> interestingObj: obj [
 	interestingObj := obj
 ]
 
-{ #category : #private }
+{ #category : 'private' }
 SpurPlanningCompactorSimulator >> recordMovementOf: o to: toFinger savedFirstFieldPtr: savedFirstFieldPtr [
 	relocationMap ifNotNil: [:rm| rm at: o put: savedFirstFieldPtr]
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 SpurPlanningCompactorSimulator >> recordMovements [
 	relocationMap := Dictionary new
 ]
 
-{ #category : #'space management' }
+{ #category : 'space management' }
 SpurPlanningCompactorSimulator >> selectSavedFirstFieldsSpace [
 	"Override to make savedFirstFieldsSpace small enough for multi-pass compaction, if desired (for testing)."
 	super selectSavedFirstFieldsSpace.

@@ -1,30 +1,31 @@
 Class {
-	#name : #CGLRTranslationUnitNode,
-	#superclass : #CGLRAbstractNode,
+	#name : 'CGLRTranslationUnitNode',
+	#superclass : 'CGLRAbstractNode',
 	#instVars : [
 		'declarations'
 	],
-	#category : #CAST
+	#category : 'CAST',
+	#package : 'CAST'
 }
 
-{ #category : #generated }
+{ #category : 'generated' }
 CGLRTranslationUnitNode >> acceptVisitor: anAbstractVisitor [
 	^ anAbstractVisitor visitTranslationUnit: self
 ]
 
-{ #category : #generated }
+{ #category : 'generated' }
 CGLRTranslationUnitNode >> declarations [
 	^ declarations
 ]
 
-{ #category : #generated }
+{ #category : 'generated' }
 CGLRTranslationUnitNode >> declarations: anOrderedCollection [
 	self setParents: self declarations to: nil.
 	declarations := anOrderedCollection.
 	self setParents: self declarations to: self
 ]
 
-{ #category : #'generated-initialize-release' }
+{ #category : 'generated-initialize-release' }
 CGLRTranslationUnitNode >> initialize [
 	super initialize.
 	declarations := OrderedCollection new: 2.

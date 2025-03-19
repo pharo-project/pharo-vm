@@ -8,8 +8,8 @@ self classPool declare: #BaseHeaderSize from: VMSqueakV3ObjectRepresentationCons
 	[:k| self classPool declare: k from: ObjectMemory classPool]
 "
 Class {
-	#name : #VMBasicConstants,
-	#superclass : #SharedPool,
+	#name : 'VMBasicConstants',
+	#superclass : 'SharedPool',
 	#classVars : [
 		'BaseHeaderSize',
 		'BytecodeSetHasExtensions',
@@ -66,22 +66,23 @@ Class {
 		'VMBIGENDIAN',
 		'WIN32'
 	],
-	#category : #Melchor
+	#category : 'Melchor',
+	#package : 'Melchor'
 }
 
-{ #category : #'C translation' }
+{ #category : 'C translation' }
 VMBasicConstants class >> defineAtCompileTime: anObject [
 	^anObject isSymbol
 	 and: [self namesDefinedAtCompileTime includes: anObject]
 ]
 
-{ #category : #'C translation' }
+{ #category : 'C translation' }
 VMBasicConstants class >> mostBasicConstantNames [
 	"c.f. mostBasicConstantSelectors"
 	^#(BaseHeaderSize BytesPerWord BytesPerOop ShiftForWord BytesPerWord)
 ]
 
-{ #category : #'C translation' }
+{ #category : 'C translation' }
 VMBasicConstants class >> mostBasicConstantSelectors [
 	"c.f. mostBasicConstantNames"
 	^#(	baseHeaderSize wordSize bytesPerOop shiftForWord
@@ -89,7 +90,7 @@ VMBasicConstants class >> mostBasicConstantSelectors [
 		minSmallInteger maxSmallInteger)
 ]
 
-{ #category : #'C translation' }
+{ #category : 'C translation' }
 VMBasicConstants class >> namesDefinedAtCompileTime [
 	"Answer the set of names for variables that should be defined at compile time.
 	 Some of these get default values during simulation, and hence get defaulted in
@@ -127,7 +128,7 @@ VMBasicConstants class >> namesDefinedAtCompileTime [
 		FEATURE_MESSAGE_COUNT)
 ]
 
-{ #category : #'C translation' }
+{ #category : 'C translation' }
 VMBasicConstants class >> valueOfBasicSelector: selector [
 	"Answer the numberic value of a basic constant accessed via the selector.
 	 Answer nil if selector is not a basic constant accessor."

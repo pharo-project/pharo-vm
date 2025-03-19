@@ -1,27 +1,29 @@
 Class {
-	#name : #VMSpurInitializedOldSpaceTest,
-	#superclass : #VMSpurMemoryManagerTest,
-	#category : #'VMMakerTests-MemoryTests'
+	#name : 'VMSpurInitializedOldSpaceTest',
+	#superclass : 'VMSpurMemoryManagerTest',
+	#category : 'VMMakerTests-MemoryTests',
+	#package : 'VMMakerTests',
+	#tag : 'MemoryTests'
 }
 
-{ #category : #testing }
+{ #category : 'testing' }
 VMSpurInitializedOldSpaceTest class >> isAbstract [
 
 	^ self == VMSpurInitializedOldSpaceTest
 ]
 
-{ #category : #helpers }
+{ #category : 'helpers' }
 VMSpurInitializedOldSpaceTest >> assertFreeListEmpty: aFreeListOop [
 
 	self assert: aFreeListOop equals: 0
 ]
 
-{ #category : #helpers }
+{ #category : 'helpers' }
 VMSpurInitializedOldSpaceTest >> createEphemeronClass [
 	ourEphemeronClass := self createEphemeronClassForSlots: 3
 ]
 
-{ #category : #helpers }
+{ #category : 'helpers' }
 VMSpurInitializedOldSpaceTest >> createEphemeronClassForSlots: fixedSlots [
 
 	| theNewClass formatWithSlots hash |
@@ -38,7 +40,7 @@ VMSpurInitializedOldSpaceTest >> createEphemeronClassForSlots: fixedSlots [
 	^ theNewClass
 ]
 
-{ #category : #helpers }
+{ #category : 'helpers' }
 VMSpurInitializedOldSpaceTest >> createFreeChunkOfSize: aSize [
 
 	| address |
@@ -47,24 +49,24 @@ VMSpurInitializedOldSpaceTest >> createFreeChunkOfSize: aSize [
 	^ address
 ]
 
-{ #category : #helpers }
+{ #category : 'helpers' }
 VMSpurInitializedOldSpaceTest >> denyFreeListEmpty: aFreeListOop [
 
 	self deny: aFreeListOop equals: 0
 ]
 
-{ #category : #tests }
+{ #category : 'tests' }
 VMSpurInitializedOldSpaceTest >> forgetObject3 [
 	memory coInterpreter profileMethod: memory nilObject
 ]
 
-{ #category : #helpers }
+{ #category : 'helpers' }
 VMSpurInitializedOldSpaceTest >> freeListForSize: allocationSize [
 	
 	^ memory freeLists at: allocationSize / memory allocationUnit
 ]
 
-{ #category : #helpers }
+{ #category : 'helpers' }
 VMSpurInitializedOldSpaceTest >> freeTreeRootOop [
 
 	"Initially the old space has a single big chunk of free memory and no small free chunks.
@@ -77,7 +79,7 @@ VMSpurInitializedOldSpaceTest >> freeTreeRootOop [
 	^ memory freeLists at: 0
 ]
 
-{ #category : #helpers }
+{ #category : 'helpers' }
 VMSpurInitializedOldSpaceTest >> freeTreeRootStartAddress [
 
 	"The free tree lists stores the oop of free tree nodes.
@@ -88,7 +90,7 @@ VMSpurInitializedOldSpaceTest >> freeTreeRootStartAddress [
 	^ memory startOfObject: self freeTreeRootOop
 ]
 
-{ #category : #helpers }
+{ #category : 'helpers' }
 VMSpurInitializedOldSpaceTest >> largerNodeOf: aNode [
 
 	^ memory
@@ -96,7 +98,7 @@ VMSpurInitializedOldSpaceTest >> largerNodeOf: aNode [
 		ofFreeChunk: aNode
 ]
 
-{ #category : #helpers }
+{ #category : 'helpers' }
 VMSpurInitializedOldSpaceTest >> newEphemeronObjectWithSlots: slots [
 
 	| class |
@@ -107,14 +109,14 @@ VMSpurInitializedOldSpaceTest >> newEphemeronObjectWithSlots: slots [
 		classIndex: (memory ensureBehaviorHash: class)
 ]
 
-{ #category : #helpers }
+{ #category : 'helpers' }
 VMSpurInitializedOldSpaceTest >> newOldEphemeronObject [
 
 	"In pharo Ephemerons have 3 slots"
 	^ self newOldEphemeronObjectWithSlots: 3
 ]
 
-{ #category : #helpers }
+{ #category : 'helpers' }
 VMSpurInitializedOldSpaceTest >> newOldEphemeronObjectWithSlots: slots [
 
 	| class |
@@ -125,7 +127,7 @@ VMSpurInitializedOldSpaceTest >> newOldEphemeronObjectWithSlots: slots [
 		classIndex: (memory ensureBehaviorHash: class)
 ]
 
-{ #category : #'instance creation' }
+{ #category : 'instance creation' }
 VMSpurInitializedOldSpaceTest >> newPermanentByteObjectOfSize: byteSize [
 	
 	| oop numSlots instSpec |
@@ -144,7 +146,7 @@ VMSpurInitializedOldSpaceTest >> newPermanentByteObjectOfSize: byteSize [
 	^ oop
 ]
 
-{ #category : #helpers }
+{ #category : 'helpers' }
 VMSpurInitializedOldSpaceTest >> nextNodeOf: aNode [
 
 	^ memory
@@ -152,7 +154,7 @@ VMSpurInitializedOldSpaceTest >> nextNodeOf: aNode [
 		ofFreeChunk: aNode
 ]
 
-{ #category : #helpers }
+{ #category : 'helpers' }
 VMSpurInitializedOldSpaceTest >> parentNodeOf: aNode [
 
 	^ memory
@@ -160,7 +162,7 @@ VMSpurInitializedOldSpaceTest >> parentNodeOf: aNode [
 		ofFreeChunk: aNode
 ]
 
-{ #category : #helpers }
+{ #category : 'helpers' }
 VMSpurInitializedOldSpaceTest >> previousNodeOf: aNode [
 
 	^ memory
@@ -168,7 +170,7 @@ VMSpurInitializedOldSpaceTest >> previousNodeOf: aNode [
 		ofFreeChunk: aNode
 ]
 
-{ #category : #running }
+{ #category : 'running' }
 VMSpurInitializedOldSpaceTest >> setUp [
 
 	super setUp.
@@ -178,7 +180,7 @@ VMSpurInitializedOldSpaceTest >> setUp [
 	memory classByteArray: (self newClassInOldSpaceWithSlots: 0 instSpec: (memory byteFormatForNumBytes: 0)).
 ]
 
-{ #category : #helpers }
+{ #category : 'helpers' }
 VMSpurInitializedOldSpaceTest >> smallerNodeOf: aNode [
 
 	^ memory

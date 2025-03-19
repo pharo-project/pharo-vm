@@ -1,6 +1,6 @@
 Class {
-	#name : #VMCogitHelpersTest,
-	#superclass : #VMSimpleStackBasedCogitAbstractTest,
+	#name : 'VMCogitHelpersTest',
+	#superclass : 'VMSimpleStackBasedCogitAbstractTest',
 	#instVars : [
 		'checkIsSmallInteger',
 		'checkNotSmallInteger'
@@ -9,10 +9,12 @@ Class {
 		'CogAbstractRegisters',
 		'CogRTLOpcodes'
 	],
-	#category : #'VMMakerTests-JitTests'
+	#category : 'VMMakerTests-JitTests',
+	#package : 'VMMakerTests',
+	#tag : 'JitTests'
 }
 
-{ #category : #'as yet unclassified' }
+{ #category : 'as yet unclassified' }
 VMCogitHelpersTest >> assertIsInSmallIntegerRange: anInteger [
 
 	machineSimulator classRegisterValue: anInteger.
@@ -22,7 +24,7 @@ VMCogitHelpersTest >> assertIsInSmallIntegerRange: anInteger [
 	self assert: machineSimulator classRegisterValue equals: 0
 ]
 
-{ #category : #'as yet unclassified' }
+{ #category : 'as yet unclassified' }
 VMCogitHelpersTest >> assertNotInSmallIntegerRange: anInteger [
 
 	machineSimulator classRegisterValue: anInteger.
@@ -32,7 +34,7 @@ VMCogitHelpersTest >> assertNotInSmallIntegerRange: anInteger [
 	self assert: machineSimulator classRegisterValue equals: 0
 ]
 
-{ #category : #'as yet unclassified' }
+{ #category : 'as yet unclassified' }
 VMCogitHelpersTest >> denyIsInSmallIntegerRange: anInteger [
 
 	machineSimulator classRegisterValue: anInteger.
@@ -42,7 +44,7 @@ VMCogitHelpersTest >> denyIsInSmallIntegerRange: anInteger [
 	self assert: machineSimulator classRegisterValue equals: 1
 ]
 
-{ #category : #'as yet unclassified' }
+{ #category : 'as yet unclassified' }
 VMCogitHelpersTest >> denyIsNotInSmallIntegerRange: anInteger [
 
 	machineSimulator classRegisterValue: anInteger.
@@ -52,14 +54,14 @@ VMCogitHelpersTest >> denyIsNotInSmallIntegerRange: anInteger [
 	self assert: machineSimulator classRegisterValue equals: 1
 ]
 
-{ #category : #'as yet unclassified' }
+{ #category : 'as yet unclassified' }
 VMCogitHelpersTest >> runUntilReturnFrom: anAddress [
 	
 	self prepareCall.
 	super runUntilReturnFrom: anAddress
 ]
 
-{ #category : #'as yet unclassified' }
+{ #category : 'as yet unclassified' }
 VMCogitHelpersTest >> setUp [
 
 	super setUp.
@@ -90,7 +92,7 @@ VMCogitHelpersTest >> setUp [
 	].
 ]
 
-{ #category : #'as yet unclassified' }
+{ #category : 'as yet unclassified' }
 VMCogitHelpersTest >> testCheckNotSmallIntegerWithNonValidSmallIntegers [
 
 	self assertNotInSmallIntegerRange: memory maxSmallInteger + 1.
@@ -101,14 +103,14 @@ VMCogitHelpersTest >> testCheckNotSmallIntegerWithNonValidSmallIntegers [
 	]
 ]
 
-{ #category : #'as yet unclassified' }
+{ #category : 'as yet unclassified' }
 VMCogitHelpersTest >> testCheckNotSmallIntegerWithValidSmallIntegers [
 
 	self denyIsNotInSmallIntegerRange: 0.
 	self denyIsNotInSmallIntegerRange: memory maxSmallInteger.
 ]
 
-{ #category : #'as yet unclassified' }
+{ #category : 'as yet unclassified' }
 VMCogitHelpersTest >> testCheckSmallIntegerWithNonValidSmallIntegers [
 
 	self denyIsInSmallIntegerRange: memory maxSmallInteger + 1.
@@ -119,9 +121,55 @@ VMCogitHelpersTest >> testCheckSmallIntegerWithNonValidSmallIntegers [
 	]
 ]
 
-{ #category : #'as yet unclassified' }
+{ #category : 'as yet unclassified' }
 VMCogitHelpersTest >> testCheckSmallIntegerWithValidSmallIntegers [
 
 	self assertIsInSmallIntegerRange: 0.
 	self assertIsInSmallIntegerRange: memory maxSmallInteger
+]
+
+{ #category : 'testing' }
+VMCogitHelpersTest >> testLoadHigh32BitsZeroExtends [
+
+	| object stub |
+	object := self newObjectWithSlots: 2.
+	memory storeLong64: 0 ofObject: object withValue: 16r88888888FFFFFFFF.
+	"Some noise in the second slot"
+	memory storeLong64: 1 ofObject: object withValue: 16r7777777777777777.
+
+	self assert: (memory fetchLong32: 0 ofObject: object) equals: 16rFFFFFFFF.
+	self assert: (memory fetchLong32: 1 ofObject: object) equals: 16r88888888.
+	
+	machineSimulator receiverRegisterValue: object.
+	
+	stub := self compile: [ 
+		cogit MoveM32: 8 r: ReceiverResultReg R: ReceiverResultReg.
+		cogit RetN: 0 ].
+	
+	self runUntilReturnFrom: stub.
+
+	self assert: (machineSimulator receiverRegisterValue) equals: 16rFFFFFFFF
+]
+
+{ #category : 'testing' }
+VMCogitHelpersTest >> testLoadLow32BitsZeroExtends [
+
+	| object stub |
+	object := self newObjectWithSlots: 2.
+	memory storeLong64: 0 ofObject: object withValue: 16r88888888FFFFFFFF.
+	"Some noise in the second slot"
+	memory storeLong64: 1 ofObject: object withValue: 16r7777777777777777.
+	
+	self assert: (memory fetchLong32: 0 ofObject: object) equals: 16rFFFFFFFF.
+	self assert: (memory fetchLong32: 1 ofObject: object) equals: 16r88888888.
+	
+	machineSimulator receiverRegisterValue: object.
+	
+	stub := self compile: [ 
+		cogit MoveM32: 8 "header" + 4 "slot offset" r: ReceiverResultReg R: ReceiverResultReg.
+		cogit RetN: 0 ].
+	
+	self runUntilReturnFrom: stub.
+
+	self assert: (machineSimulator receiverRegisterValue) equals: 16r88888888
 ]

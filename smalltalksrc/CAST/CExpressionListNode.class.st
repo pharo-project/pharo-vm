@@ -1,32 +1,34 @@
 Class {
-	#name : #CExpressionListNode,
-	#superclass : #CExpressionNode,
+	#name : 'CExpressionListNode',
+	#superclass : 'CExpressionNode',
 	#instVars : [
 		'expressions',
 		'printOnMultipleLines'
 	],
-	#category : #'CAST-Nodes'
+	#category : 'CAST-Nodes',
+	#package : 'CAST',
+	#tag : 'Nodes'
 }
 
-{ #category : #adding }
+{ #category : 'adding' }
 CExpressionListNode >> , anotherExpression [
 	
 	self add: anotherExpression.
 	^ self
 ]
 
-{ #category : #adding }
+{ #category : 'adding' }
 CExpressionListNode >> acceptVisitor: anAbstractVisitor [
 	^ anAbstractVisitor visitExpressionList: self
 ]
 
-{ #category : #adding }
+{ #category : 'adding' }
 CExpressionListNode >> add: anExpression [
 	
 	expressions add: anExpression
 ]
 
-{ #category : #adding }
+{ #category : 'adding' }
 CExpressionListNode >> combineWithExpression: firstExpression [
 	
 	| result |
@@ -39,12 +41,12 @@ CExpressionListNode >> combineWithExpression: firstExpression [
 	^ result
 ]
 
-{ #category : #generated }
+{ #category : 'generated' }
 CExpressionListNode >> expressions [
 	^ expressions
 ]
 
-{ #category : #generated }
+{ #category : 'generated' }
 CExpressionListNode >> expressions: anOrderedCollection [
 	self assertListOfExpressions: anOrderedCollection.
 
@@ -53,26 +55,26 @@ CExpressionListNode >> expressions: anOrderedCollection [
 	self setParents: self expressions to: self
 ]
 
-{ #category : #'generated-initialize-release' }
+{ #category : 'generated-initialize-release' }
 CExpressionListNode >> initialize [
 	super initialize.
 	expressions := OrderedCollection new: 2.
 	printOnMultipleLines := false.
 ]
 
-{ #category : #testing }
+{ #category : 'testing' }
 CExpressionListNode >> isCommaSeparatedExpression [
 
 	^ true
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 CExpressionListNode >> printOnMultipleLines [
 
 	^ printOnMultipleLines
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 CExpressionListNode >> printOnMultipleLines: aBoolean [
 
 	printOnMultipleLines := aBoolean

@@ -2,12 +2,14 @@
 I am a place to hang various pieces of translation support.
 "
 Class {
-	#name : #CogClass,
-	#superclass : #VMClass,
-	#category : #'VMMaker-JIT'
+	#name : 'CogClass',
+	#superclass : 'VMClass',
+	#category : 'VMMaker-JIT',
+	#package : 'VMMaker',
+	#tag : 'JIT'
 }
 
-{ #category : #'translation support' }
+{ #category : 'translation support' }
 CogClass >> cCoerceSimple: value to: cTypeString [
 
 	"Type coercion for translation and simulation.

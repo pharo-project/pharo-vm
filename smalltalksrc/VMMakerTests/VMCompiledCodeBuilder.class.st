@@ -1,6 +1,6 @@
 Class {
-	#name : #VMCompiledCodeBuilder,
-	#superclass : #VMAbstractBuilder,
+	#name : 'VMCompiledCodeBuilder',
+	#superclass : 'VMAbstractBuilder',
 	#instVars : [
 		'slotSize',
 		'numberOfTemporaries',
@@ -15,16 +15,18 @@ Class {
 	#pools : [
 		'VMObjectIndices'
 	],
-	#category : #'VMMakerTests-Builders'
+	#category : 'VMMakerTests-Builders',
+	#package : 'VMMakerTests',
+	#tag : 'Builders'
 }
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 VMCompiledCodeBuilder >> address [
 	
 	^ method
 ]
 
-{ #category : #deprecated }
+{ #category : 'deprecated' }
 VMCompiledCodeBuilder >> build [
 
 	self
@@ -34,14 +36,14 @@ VMCompiledCodeBuilder >> build [
 	^ self buildMethod
 ]
 
-{ #category : #building }
+{ #category : 'building' }
 VMCompiledCodeBuilder >> buildMethod [
 	self instantiateMethod.
 	self fillMethod.
 	^ method
 ]
 
-{ #category : #building }
+{ #category : 'building' }
 VMCompiledCodeBuilder >> buildMethodHeader [
 
 	^  (numberOfArguments bitShift: 24)
@@ -51,7 +53,7 @@ VMCompiledCodeBuilder >> buildMethodHeader [
 		+ (isPrimitive asBit << 16)
 ]
 
-{ #category : #helper }
+{ #category : 'helper' }
 VMCompiledCodeBuilder >> bytecodeAt: anIndex forMethod: aMethodOop [
 	| methodHeader |
 	"1 based"
@@ -61,17 +63,17 @@ VMCompiledCodeBuilder >> bytecodeAt: anIndex forMethod: aMethodOop [
 
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 VMCompiledCodeBuilder >> bytecodes [
 	^ bytecodes
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 VMCompiledCodeBuilder >> bytecodes: anObject [
 	bytecodes := anObject
 ]
 
-{ #category : #filling }
+{ #category : 'filling' }
 VMCompiledCodeBuilder >> classIndexToUse [
 	| newClass |
 	memory nilObject = (memory splObj: 16) ifTrue: [
@@ -88,7 +90,7 @@ VMCompiledCodeBuilder >> classIndexToUse [
 	^ memory classTagForClass: (memory splObj: 16)
 ]
 
-{ #category : #filling }
+{ #category : 'filling' }
 VMCompiledCodeBuilder >> fillFromPharoMethod: aCompiledMethod [
 
 	self newMethod.
@@ -99,7 +101,7 @@ VMCompiledCodeBuilder >> fillFromPharoMethod: aCompiledMethod [
 	self fillLiteralsFromPharo: aCompiledMethod allLiterals
 ]
 
-{ #category : #filling }
+{ #category : 'filling' }
 VMCompiledCodeBuilder >> fillLiteralsFromPharo: pharoLiterals [
 
 	originalLiterals := pharoLiterals copy.
@@ -107,14 +109,14 @@ VMCompiledCodeBuilder >> fillLiteralsFromPharo: pharoLiterals [
 
 ]
 
-{ #category : #filling }
+{ #category : 'filling' }
 VMCompiledCodeBuilder >> fillMethod [
 	self putHeaderInMethod.
 	self putLiteralInMethod.
 	self putBytecodesInMethod.
 ]
 
-{ #category : #initialization }
+{ #category : 'initialization' }
 VMCompiledCodeBuilder >> initialize [
 	bytecodes := #[1 2 3 4 5 6 7 8 9 0].
 	literals := OrderedCollection new. 
@@ -129,7 +131,7 @@ VMCompiledCodeBuilder >> initialize [
 	slotSize := nil.
 ]
 
-{ #category : #inspecting }
+{ #category : 'inspecting' }
 VMCompiledCodeBuilder >> inspectMethodIn: aBuilder [
 	<inspectorPresentationOrder: 0 title: 'Items'> 
 
@@ -157,7 +159,7 @@ VMCompiledCodeBuilder >> inspectMethodIn: aBuilder [
 		yourself
 ]
 
-{ #category : #building }
+{ #category : 'building' }
 VMCompiledCodeBuilder >> instantiateMethod [
 	slotSize := literals size 
 			+ (bytecodes size / memory wordSize) ceiling
@@ -170,73 +172,73 @@ VMCompiledCodeBuilder >> instantiateMethod [
 	method ifNotNil: [ memory fillObj: method numSlots: slotSize with: memory nilObject ].
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 VMCompiledCodeBuilder >> isPrimitive [
 	^ isPrimitive
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 VMCompiledCodeBuilder >> isPrimitive: anObject [
 	isPrimitive := anObject
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 VMCompiledCodeBuilder >> isSmall [
 	^ isSmall
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 VMCompiledCodeBuilder >> isSmall: anObject [
 	isSmall := anObject
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 VMCompiledCodeBuilder >> literalAt: anIndex put: anOop [
 	self collection: literals at: anIndex put: anOop
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 VMCompiledCodeBuilder >> literals [
 	^ literals
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 VMCompiledCodeBuilder >> literals: anObject [
 	literals := anObject.
 
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 VMCompiledCodeBuilder >> method [
 	^ method
 ]
 
-{ #category : #building }
+{ #category : 'building' }
 VMCompiledCodeBuilder >> newMethod [
 	self initialize.
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 VMCompiledCodeBuilder >> numberOfArguments [
 	^ numberOfArguments
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 VMCompiledCodeBuilder >> numberOfArguments: anObject [
 	numberOfArguments := anObject
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 VMCompiledCodeBuilder >> numberOfTemporaries [
 	^ numberOfTemporaries
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 VMCompiledCodeBuilder >> numberOfTemporaries: anObject [
 	numberOfTemporaries := anObject
 ]
 
-{ #category : #filling }
+{ #category : 'filling' }
 VMCompiledCodeBuilder >> putBytecodesInMethod [
 	bytecodes doWithIndex:[ :aBytecode :anIndex | 
 		memory storeByte: 
@@ -249,7 +251,7 @@ VMCompiledCodeBuilder >> putBytecodesInMethod [
 		]
 ]
 
-{ #category : #filling }
+{ #category : 'filling' }
 VMCompiledCodeBuilder >> putHeaderInMethod [
 	memory storePointer: 0 
 		ofObject: method
@@ -257,7 +259,7 @@ VMCompiledCodeBuilder >> putHeaderInMethod [
 
 ]
 
-{ #category : #filling }
+{ #category : 'filling' }
 VMCompiledCodeBuilder >> putLiteralInMethod [
 
 	originalLiterals doWithIndex: [ :aLiteral :anIndex | 
@@ -275,7 +277,7 @@ VMCompiledCodeBuilder >> putLiteralInMethod [
 		memory storePointer: anIndex ofObject: method withValue: aLiteral ]
 ]
 
-{ #category : #filling }
+{ #category : 'filling' }
 VMCompiledCodeBuilder >> setOuterCode: aVMCompiledCodeBuilder [ 
 
 	"In the case of CompiledBlocks we need to put the outerCode object (the last literal).
@@ -284,7 +286,7 @@ VMCompiledCodeBuilder >> setOuterCode: aVMCompiledCodeBuilder [
 	literals at: literals size put: aVMCompiledCodeBuilder address
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 VMCompiledCodeBuilder >> slotSize [
 	"Do not set by hand !"
 	^ slotSize

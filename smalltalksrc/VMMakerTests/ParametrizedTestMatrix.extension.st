@@ -1,6 +1,6 @@
-Extension { #name : #ParametrizedTestMatrix }
+Extension { #name : 'ParametrizedTestMatrix' }
 
-{ #category : #'*VMMakerTests' }
+{ #category : '*VMMakerTests' }
 ParametrizedTestMatrix >> + aParametrizedTestMatrix [
 
 	| newMatrix |

@@ -1,25 +1,26 @@
 Class {
-	#name : #MLPluginAccessorDepthCalculator,
-	#superclass : #MLAccessorDepthCalculator,
+	#name : 'MLPluginAccessorDepthCalculator',
+	#superclass : 'MLAccessorDepthCalculator',
 	#instVars : [
 		'inProgressSelectors'
 	],
-	#category : #Melchor
+	#category : 'Melchor',
+	#package : 'Melchor'
 }
 
-{ #category : #'spur primitive compilation' }
+{ #category : 'spur primitive compilation' }
 MLPluginAccessorDepthCalculator >> accessorChainsForMethod: method interpreterClass: interpreterClass [
 	inProgressSelectors := Set new.
 	^[super accessorChainsForMethod: method interpreterClass: interpreterClass] ensure:
 		[inProgressSelectors := nil]
 ]
 
-{ #category : #'spur primitive compilation' }
+{ #category : 'spur primitive compilation' }
 MLPluginAccessorDepthCalculator >> accessorDepthDeterminationFollowsSelfSends [
 	^true
 ]
 
-{ #category : #'spur primitive compilation' }
+{ #category : 'spur primitive compilation' }
 MLPluginAccessorDepthCalculator >> accessorsAndAssignmentsForSubMethodNamed: selector actuals: actualParameters depth: depth interpreterClass: interpreterClass into: aTrinaryBlock [
 	"Evaluate aTrinaryBlock with the root accessor sends, accessor sends and assignments in the sub-method named selector."
 
@@ -40,7 +41,7 @@ MLPluginAccessorDepthCalculator >> accessorsAndAssignmentsForSubMethodNamed: sel
 		into: aTrinaryBlock
 ]
 
-{ #category : #'spur primitive compilation' }
+{ #category : 'spur primitive compilation' }
 MLPluginAccessorDepthCalculator >> actualsForMethod: aTMethod [
 	"Normal primitives have no arguments, but translated primitives do.
 	 Override to answer actuals for translated primitives."
@@ -52,7 +53,7 @@ MLPluginAccessorDepthCalculator >> actualsForMethod: aTMethod [
 			arguments: {TConstantNode value: i}]
 ]
 
-{ #category : #'spur primitive compilation' }
+{ #category : 'spur primitive compilation' }
 MLPluginAccessorDepthCalculator >> isObjectAccessor: selector given: interpreterClass [
 	"Override to include the selectors transformed into accessors for translated primitives.
 	 InterpreterPlugin browseTranslatedPrimitives"

@@ -2,64 +2,66 @@
 I am used to simulate the indexed access to arrays during plugin simulation.
 "
 Class {
-	#name : #CArrayAccessor,
-	#superclass : #CObjectAccessor,
-	#category : #'Slang-Types'
+	#name : 'CArrayAccessor',
+	#superclass : 'CObjectAccessor',
+	#category : 'Slang-Types',
+	#package : 'Slang',
+	#tag : 'Types'
 }
 
-{ #category : #comparing }
+{ #category : 'comparing' }
 CArrayAccessor >> < other [
 
 	^ (object == other object) and: [offset < other offset].
 ]
 
-{ #category : #comparing }
+{ #category : 'comparing' }
 CArrayAccessor >> <= other [
 
 	^ (object == other object) and: [offset <= other offset].
 ]
 
-{ #category : #comparing }
+{ #category : 'comparing' }
 CArrayAccessor >> > other [
 
 	^ (object == other object) and: [offset > other offset].
 ]
 
-{ #category : #comparing }
+{ #category : 'comparing' }
 CArrayAccessor >> >= other [
 
 	^ (object == other object) and: [offset >= other offset].
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 CArrayAccessor >> at: index [
 	^object at: index + offset + 1
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 CArrayAccessor >> at: index ifAbsent: aBlock [
 	"This is a simulation-time-only convenience..."
 	^object at: index + offset + 1 ifAbsent: aBlock
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 CArrayAccessor >> at: index put: value [
 	^object at: index + offset + 1 put: value
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 CArrayAccessor >> byteAt: index [
 	^object byteAt: index + offset + 1
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 CArrayAccessor >> cPtrAsOop [
 
 	offset = 0 ifFalse: [self error: 'offset must be zero'].
 	^object
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 CArrayAccessor >> floatAt: index [ 
 	^ (self at: index) isFloat
 		ifTrue: [self at: index]
@@ -68,13 +70,13 @@ CArrayAccessor >> floatAt: index [
 
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 CArrayAccessor >> includes: anObject [
 
 	^ object includes: anObject
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 CArrayAccessor >> long32At: index [
 	| idx |
 	idx := (offset + index) // 4 + 1.
@@ -83,12 +85,12 @@ CArrayAccessor >> long32At: index [
 	^object basicAt: idx
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 CArrayAccessor >> long32At: index put: value [
 	^object basicAt: (offset + index) // 4 + 1 put: value
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 CArrayAccessor >> longAt: index [
 	| idx |
 	idx := (offset + index) // 4 + 1.
@@ -97,12 +99,12 @@ CArrayAccessor >> longAt: index [
 	^object basicAt: idx
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 CArrayAccessor >> longAt: index put: value [
 	^object basicAt: (offset + index) // 4 + 1 put: value
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 CArrayAccessor >> next [
 
 	|val|
@@ -111,7 +113,7 @@ CArrayAccessor >> next [
 	^val
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 CArrayAccessor >> size [
 
 	^object size

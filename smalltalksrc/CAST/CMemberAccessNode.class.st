@@ -1,14 +1,16 @@
 Class {
-	#name : #CMemberAccessNode,
-	#superclass : #CExpressionNode,
+	#name : 'CMemberAccessNode',
+	#superclass : 'CExpressionNode',
 	#instVars : [
 		'object',
 		'member'
 	],
-	#category : #'CAST-Nodes'
+	#category : 'CAST-Nodes',
+	#package : 'CAST',
+	#tag : 'Nodes'
 }
 
-{ #category : #'instance creation' }
+{ #category : 'instance creation' }
 CMemberAccessNode class >> object: anObject member: aMember [
 
 	^ self new
@@ -17,23 +19,23 @@ CMemberAccessNode class >> object: anObject member: aMember [
 		  yourself
 ]
 
-{ #category : #generated }
+{ #category : 'generated' }
 CMemberAccessNode >> acceptVisitor: anAbstractVisitor [
 	^ anAbstractVisitor visitPoint: self
 ]
 
-{ #category : #testing }
+{ #category : 'testing' }
 CMemberAccessNode >> isMemberAccess [
 	
 	^ true
 ]
 
-{ #category : #generated }
+{ #category : 'generated' }
 CMemberAccessNode >> member [
 	^ member
 ]
 
-{ #category : #generated }
+{ #category : 'generated' }
 CMemberAccessNode >> member: aCGLRIdentifierNode [
 	self member notNil
 		ifTrue: [ self member parent: nil ].
@@ -42,12 +44,12 @@ CMemberAccessNode >> member: aCGLRIdentifierNode [
 		ifTrue: [ self member parent: self ]
 ]
 
-{ #category : #generated }
+{ #category : 'generated' }
 CMemberAccessNode >> object [
 	^ object
 ]
 
-{ #category : #generated }
+{ #category : 'generated' }
 CMemberAccessNode >> object: aCGLRAbstractNode [
 
 	self assertExpression: aCGLRAbstractNode.

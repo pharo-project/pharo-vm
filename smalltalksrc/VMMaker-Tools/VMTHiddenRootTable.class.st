@@ -1,13 +1,14 @@
 Class {
-	#name : #VMTHiddenRootTable,
-	#superclass : #Object,
+	#name : 'VMTHiddenRootTable',
+	#superclass : 'Object',
 	#instVars : [
 		'memory'
 	],
-	#category : #'VMMaker-Tools'
+	#category : 'VMMaker-Tools',
+	#package : 'VMMaker-Tools'
 }
 
-{ #category : #'instance-creation' }
+{ #category : 'instance-creation' }
 VMTHiddenRootTable class >> on: aMemory [ 
 
 	^ self new
@@ -15,7 +16,7 @@ VMTHiddenRootTable class >> on: aMemory [
 		yourself
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 VMTHiddenRootTable >> children [
 	| roots |
 	roots := OrderedCollection new.
@@ -60,7 +61,7 @@ VMTHiddenRootTable >> children [
 	^ roots
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 VMTHiddenRootTable >> memory: aMemory [ 
 	memory := aMemory
 ]

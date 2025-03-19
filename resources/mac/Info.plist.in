@@ -17,9 +17,9 @@
 	<key>CFBundlePackageType</key>
 	<string>APPL</string>
 	<key>CFBundleShortVersionString</key>
-	<string>@VERSION_MAJOR@.@VERSION_MINOR@.@VERSION_PATCH@</string>
+	<string>@PharoVM_VERSION@</string>
 	<key>CFBundleVersion</key>
-	<string>@VERSION_MAJOR@.@VERSION_MINOR@.@VERSION_PATCH@-@GIT_COMMIT_HASH@</string>
+	<string>@PharoVM_VERSION_FULL@</string>
 	<key>NSHighResolutionCapable</key>
 	<true/>
 	<key>CFBundleDevelopmentRegion</key>

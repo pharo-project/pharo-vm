@@ -48,8 +48,8 @@ savedFirstFieldsSpaceWasAllocated
 	- if true, the memory for savedFirstFieldsSpace was obtained via a call of sqAllocateMemorySegmentOfSize:Above:AllocatedSizeInto:
 "
 Class {
-	#name : #SpurPlanningCompactor,
-	#superclass : #SpurCompactor,
+	#name : 'SpurPlanningCompactor',
+	#superclass : 'SpurCompactor',
 	#instVars : [
 		'anomaly',
 		'biasForGC',
@@ -68,10 +68,12 @@ Class {
 	#pools : [
 		'VMBytecodeConstants'
 	],
-	#category : #'VMMaker-SpurMemoryManager'
+	#category : 'VMMaker-SpurMemoryManager',
+	#package : 'VMMaker',
+	#tag : 'SpurMemoryManager'
 }
 
-{ #category : #translation }
+{ #category : 'translation' }
 SpurPlanningCompactor class >> declareCVarsIn: aCCodeGenerator [
 	super declareCVarsIn: aCCodeGenerator.
 	self declareCAsOop: (self instVarNames select: [:iv| iv endsWith: 'Object']) in: aCCodeGenerator.
@@ -79,29 +81,29 @@ SpurPlanningCompactor class >> declareCVarsIn: aCCodeGenerator [
 		var: 'savedFirstFieldsSpace' type: #SpurContiguousObjStack
 ]
 
-{ #category : #simulation }
+{ #category : 'simulation' }
 SpurPlanningCompactor class >> simulatorClass [
 	^SpurPlanningCompactorSimulator
 ]
 
-{ #category : #'compaction - api' }
+{ #category : 'compaction - api' }
 SpurPlanningCompactor >> biasForGC [
 	<inline: true>
 	biasForGC := true
 ]
 
-{ #category : #'compaction - api' }
+{ #category : 'compaction - api' }
 SpurPlanningCompactor >> biasForSnapshot [
 	biasForGC := false
 ]
 
-{ #category : #private }
+{ #category : 'private' }
 SpurPlanningCompactor >> check: obj [
 	"No-op in the real class."
 	<inline: true>
 ]
 
-{ #category : #private }
+{ #category : 'private' }
 SpurPlanningCompactor >> coalesceFrom: maybeStartOfFree [
 	"manager printOopsFrom: maybeStartOfFree to: manager getMemoryMap oldSpaceEnd"
 	<var: 'maybeStartOfFree' type: #usqInt>
@@ -124,7 +126,7 @@ SpurPlanningCompactor >> coalesceFrom: maybeStartOfFree [
 				[obj := next]]
 ]
 
-{ #category : #'compaction - api' }
+{ #category : 'compaction - api' }
 SpurPlanningCompactor >> compact [
 	"Sweep all of old space, sliding unpinned marked objects down over free and unmarked objects.
 	 Let the segmentManager mark which segments contain pinned objects via notePinned:."
@@ -165,7 +167,7 @@ SpurPlanningCompactor >> compact [
 	self endCompaction
 ]
 
-{ #category : #'space management' }
+{ #category : 'space management' }
 SpurPlanningCompactor >> configureSavedFirstFieldsSpaceStart: theStart limit: theLimit isOldSpace: isOldSpace [
 	"Use teden to hold the savedFirstFieldsSpace."
 
@@ -182,7 +184,7 @@ SpurPlanningCompactor >> configureSavedFirstFieldsSpaceStart: theStart limit: th
 	savedFirstFieldsSpaceNotInOldSpace := isOldSpace not
 ]
 
-{ #category : #compaction }
+{ #category : 'compaction' }
 SpurPlanningCompactor >> copyAndUnmark: firstPass [
 	"Sweep the heap, unmarking all objects and moving mobile objects to their correct positions,
 	 restoring their savedFirstFields."
@@ -198,7 +200,7 @@ SpurPlanningCompactor >> copyAndUnmark: firstPass [
 		[self unmarkObjectsFromFirstFreeObject]
 ]
 
-{ #category : #compaction }
+{ #category : 'compaction' }
 SpurPlanningCompactor >> copyAndUnmarkMobileObjects [
 	"Sweep the mobile portion of the heap, moving objects to their eventual locations, and clearing their marked bits.
 	 Remember to update the savedFirstFields of pointer objects, as these have been forwarded.
@@ -281,7 +283,7 @@ SpurPlanningCompactor >> copyAndUnmarkMobileObjects [
 	^true
 ]
 
-{ #category : #compaction }
+{ #category : 'compaction' }
 SpurPlanningCompactor >> copyAndUnmarkObject: o to: toFinger bytes: bytes firstField: firstField [
 	"Copy the object to toFinger, clearing its mark bit both in the target and the corpse,
 	 and restoring its firstField, which was overwritten with a forwarding pointer."
@@ -299,7 +301,7 @@ SpurPlanningCompactor >> copyAndUnmarkObject: o to: toFinger bytes: bytes firstF
 		storePointerUnchecked: 0 ofObject: destObj withValue: firstField
 ]
 
-{ #category : #compaction }
+{ #category : 'compaction' }
 SpurPlanningCompactor >> endCompaction [
 	manager
 		unmarkSurvivingObjectsForCompact;
@@ -308,7 +310,7 @@ SpurPlanningCompactor >> endCompaction [
 	self releaseSavedFirstFieldsSpace
 ]
 
-{ #category : #'space management' }
+{ #category : 'space management' }
 SpurPlanningCompactor >> findHighestSuitableFreeBlock: spaceEstimate [
 	"If a freeBlock of size at least spaceEstimate exists high enough in the heap, choose it.
 	 Ignoring pinned objects for now, the total ammount of shrinkage is expected to be
@@ -324,7 +326,7 @@ SpurPlanningCompactor >> findHighestSuitableFreeBlock: spaceEstimate [
 	^nil
 ]
 
-{ #category : #private }
+{ #category : 'private' }
 SpurPlanningCompactor >> forwardMobileObject: o to: toFinger savedFirstFieldPtr: savedFirstFieldPtr [
 	"Forward a mobile object to some new location, saving its first field through savedFirstFieldPtr.
 	 Don't use forward:to:; we dont want to alter the object in any way other than by setting the forwarding pointer."
@@ -341,7 +343,7 @@ SpurPlanningCompactor >> forwardMobileObject: o to: toFinger savedFirstFieldPtr:
 	self recordMovementOf: o to: toFinger savedFirstFieldPtr: savedFirstFieldPtr
 ]
 
-{ #category : #private }
+{ #category : 'private' }
 SpurPlanningCompactor >> freeFrom: initialToFinger upTo: limit nextObject: nextObject [
 	"Free from toFinger up to limit, dealing with possible intervening pinned objects."
 	<inline: false>
@@ -371,7 +373,7 @@ SpurPlanningCompactor >> freeFrom: initialToFinger upTo: limit nextObject: nextO
 		[manager addFreeChunkWithBytes: limit - toFinger at: toFinger]
 ]
 
-{ #category : #initialization }
+{ #category : 'initialization' }
 SpurPlanningCompactor >> initialize [
 	biasForGC := true.
 	savedFirstFieldsSpace := SpurContiguousObjStack new.
@@ -379,7 +381,7 @@ SpurPlanningCompactor >> initialize [
 	savedFirstFieldSpaceMaxSlots := nil.
 ]
 
-{ #category : #compaction }
+{ #category : 'compaction' }
 SpurPlanningCompactor >> initializeCompaction [
 	manager checkFreeSpace: GCModeFull.
 	self selectSavedFirstFieldsSpace.
@@ -393,7 +395,7 @@ SpurPlanningCompactor >> initializeCompaction [
 	savedFirstFieldsSpace top: savedFirstFieldsSpace start - manager bytesPerOop
 ]
 
-{ #category : #compaction }
+{ #category : 'compaction' }
 SpurPlanningCompactor >> initializeScanCheckingForFullyCompactedHeap [
 
 	"Return if the heap is fully compacted.
@@ -416,26 +418,26 @@ SpurPlanningCompactor >> initializeScanCheckingForFullyCompactedHeap [
 	^firstMobileObject >= manager getMemoryMap oldSpaceEnd 
 ]
 
-{ #category : #private }
+{ #category : 'private' }
 SpurPlanningCompactor >> isMobile: obj [
 	<inline: true>
 	^(self oop: obj isGreaterThanOrEqualTo: mobileStart andLessThanOrEqualTo: lastMobileObject)
 	 and: [(manager isPinned: obj) not]
 ]
 
-{ #category : #private }
+{ #category : 'private' }
 SpurPlanningCompactor >> isPostMobile: obj [
 	"For asserts"
 	^self oop: obj isGreaterThanOrEqualTo: mobileStart andLessThanOrEqualTo: lastMobileObject
 ]
 
-{ #category : #private }
+{ #category : 'private' }
 SpurPlanningCompactor >> logPhase: phaseName [
 	<inline: true>
 	self cCode: '' inSmalltalk: [coInterpreter transcript nextPutAll: phaseName; flush].
 ]
 
-{ #category : #private }
+{ #category : 'private' }
 SpurPlanningCompactor >> numPointerSlotsWhileCompactingOf: obj withFormat: fmt savedFirstFieldPointer: firstFieldPtr [
 	"This is a version of SpurMemoryManager>>numPointerSlotsOf: that deals with the
 	 possibility of obj being a CompiledMethod whose header is in savedFirstFieldsSpace.
@@ -460,7 +462,7 @@ SpurPlanningCompactor >> numPointerSlotsWhileCompactingOf: obj withFormat: fmt s
 	^numLiterals + LiteralStart
 ]
 
-{ #category : #compaction }
+{ #category : 'compaction' }
 SpurPlanningCompactor >> planCompactSavingForwarders [
 	"Sweep the heap from firstFreeObject forwarding marked objects to where they
 	 can be moved to, saving their forwarding pointer in savedFirstFieldsSpace.
@@ -538,7 +540,7 @@ SpurPlanningCompactor >> planCompactSavingForwarders [
 	^true
 ]
 
-{ #category : #'debug support' }
+{ #category : 'debug support' }
 SpurPlanningCompactor >> printTheBogons: aBogon [
 	<inline: true>
 	coInterpreter
@@ -546,13 +548,13 @@ SpurPlanningCompactor >> printTheBogons: aBogon [
 		print: 'anomaly '; printHexnp: anomaly; cr
 ]
 
-{ #category : #private }
+{ #category : 'private' }
 SpurPlanningCompactor >> recordMovementOf: o to: toFinger savedFirstFieldPtr: savedFirstFieldPtr [
 	"No-op in the real class."
 	<inline: true>
 ]
 
-{ #category : #compaction }
+{ #category : 'compaction' }
 SpurPlanningCompactor >> reinitializeScanFrom: initialObject [
 	"Search for firstFreeObject and firstMobileObject from initialObject, which is the
 	 hiddenRootsObject on the first pass, and the objectAfterLastMobileObject on
@@ -571,7 +573,7 @@ SpurPlanningCompactor >> reinitializeScanFrom: initialObject [
 		 firstMobileObject := objectAfterLastMobileObject]
 ]
 
-{ #category : #'space management' }
+{ #category : 'space management' }
 SpurPlanningCompactor >> releaseSavedFirstFieldsSpace [
 	<inline: true>
 	self savedFirstFieldsSpaceWasAllocated ifTrue:
@@ -580,7 +582,7 @@ SpurPlanningCompactor >> releaseSavedFirstFieldsSpace [
 			OfSize: savedFirstFieldsSpace limit - savedFirstFieldsSpace start]
 ]
 
-{ #category : #compaction }
+{ #category : 'compaction' }
 SpurPlanningCompactor >> relocateObjectsInHeapEntity: heapEntity from: startIndex to: finishIndex [
 	"Sweep the fields in some non-pointer heap entity (objStackPage, rememberedSet),
 	 updating all references to mobile objects to their eventual locations.  Answer the
@@ -599,7 +601,7 @@ SpurPlanningCompactor >> relocateObjectsInHeapEntity: heapEntity from: startInde
 		ifFalse: [heapEntity]
 ]
 
-{ #category : #'gc - scavenge/compact' }
+{ #category : 'gc - scavenge/compact' }
 SpurPlanningCompactor >> remapObj: objOop [
 	"Scavenge or simply follow objOop.  Answer the new location of objOop.
 	 The send should have been guarded by a send of shouldRemapOop:.
@@ -609,7 +611,7 @@ SpurPlanningCompactor >> remapObj: objOop [
 	^manager slidingCompactionRemapObj: objOop
 ]
 
-{ #category : #private }
+{ #category : 'private' }
 SpurPlanningCompactor >> repinRememberedSet [
 	<inline: true>
 	manager getFromOldSpaceRememberedSet rememberedSetSize > 0 ifTrue:
@@ -628,27 +630,27 @@ SpurPlanningCompactor >> repinRememberedSet [
 	manager getFromPermToNewSpaceRememberedSet relocateRememberedSet
 ]
 
-{ #category : #'space management' }
+{ #category : 'space management' }
 SpurPlanningCompactor >> savedFirstFieldSpaceMaxSlots: aNumber [
 
 	savedFirstFieldSpaceMaxSlots := aNumber
 ]
 
-{ #category : #'space management' }
+{ #category : 'space management' }
 SpurPlanningCompactor >> savedFirstFieldsSpaceInFreeChunk [
 	<inline: true>
 	^savedFirstFieldsSpaceNotInOldSpace not
 	 and: [self oop: savedFirstFieldsSpace start isGreaterThan: manager nilObject]
 ]
 
-{ #category : #'space management' }
+{ #category : 'space management' }
 SpurPlanningCompactor >> savedFirstFieldsSpaceWasAllocated [
 	<inline: true>
 	^savedFirstFieldsSpaceNotInOldSpace
 	 and: [self oop: savedFirstFieldsSpace start isGreaterThan: manager nilObject]
 ]
 
-{ #category : #compaction }
+{ #category : 'compaction' }
 SpurPlanningCompactor >> scanForFirstFreeAndFirstMobileObjectFrom: initialObject [
 	"Scan from initialObject, setting firstMobileObject to the first marked object after
 	 the first free object found. Answer the first free object found, or nil if none."
@@ -667,7 +669,7 @@ SpurPlanningCompactor >> scanForFirstFreeAndFirstMobileObjectFrom: initialObject
 	^firstFree
 ]
 
-{ #category : #'space management' }
+{ #category : 'space management' }
 SpurPlanningCompactor >> selectSavedFirstFieldsSpace [
 	"To compact the heap the algorithm must save the first field (used for the forwarding pointer)
 	 of all moved objects. This is done in savedFirstFieldsSpace, a contiguous block of memory borrowed
@@ -695,7 +697,7 @@ SpurPlanningCompactor >> selectSavedFirstFieldsSpace [
 	self useEdenForSavedFirstFieldsSpace
 ]
 
-{ #category : #'gc - scavenge/compact' }
+{ #category : 'gc - scavenge/compact' }
 SpurPlanningCompactor >> shouldRemapObj: objOop [
 	"Answer if the obj should be scavenged, or simply followed. Sent via the compactor
 	 from shouldRemapObj:.  We test for being already scavenged because mapStackPages
@@ -707,19 +709,19 @@ SpurPlanningCompactor >> shouldRemapObj: objOop [
 	^manager slidingCompactionShouldRemapObj: objOop
 ]
 
-{ #category : #private }
+{ #category : 'private' }
 SpurPlanningCompactor >> thereAreObjectsToMove [
 	<inline: true>
 	^lastMobileObject notNil
 ]
 
-{ #category : #compaction }
+{ #category : 'compaction' }
 SpurPlanningCompactor >> unmarkInitialImmobileObjects [
 	
 	self unmarkInitialImmobileObjectsFreeUnmarked: false
 ]
 
-{ #category : #compaction }
+{ #category : 'compaction' }
 SpurPlanningCompactor >> unmarkInitialImmobileObjectsFreeUnmarked: freeUnmarked [
 	"Sweep the initial immobile heap, unmarking all objects up to the first mobile object.
 	
@@ -738,7 +740,7 @@ SpurPlanningCompactor >> unmarkInitialImmobileObjectsFreeUnmarked: freeUnmarked 
 				ifFalse: [ manager setIsMarkedOf: o to: false ]]
 ]
 
-{ #category : #compaction }
+{ #category : 'compaction' }
 SpurPlanningCompactor >> unmarkObjectsFromFirstFreeObject [
 	"Sweep the final immobile heap, freeing and coalescing unmarked and free objects,
 	 and unmarking all marked objects up to the end of memory."
@@ -763,13 +765,13 @@ SpurPlanningCompactor >> unmarkObjectsFromFirstFreeObject [
 		[manager addFreeChunkWithBytes: freeBytes at: startOfFree].
 ]
 
-{ #category : #compaction }
+{ #category : 'compaction' }
 SpurPlanningCompactor >> unmarkObjectsInFullyCompactedHeap [
 	self unmarkInitialImmobileObjectsFreeUnmarked: true.
 	manager unmarkSurvivingObjectsForCompact
 ]
 
-{ #category : #private }
+{ #category : 'private' }
 SpurPlanningCompactor >> unmarkPinned: pinnedObj [
 	<inline: true>
 	(manager isSegmentBridge: pinnedObj) ifFalse:
@@ -777,7 +779,7 @@ SpurPlanningCompactor >> unmarkPinned: pinnedObj [
 		 manager segmentManager notePinned: pinnedObj]
 ]
 
-{ #category : #private }
+{ #category : 'private' }
 SpurPlanningCompactor >> unpinRememberedSet [
 	<inline: true>
 	firstFieldOfRememberedSet := manager fetchPointer: 0 ofObject: manager oldRememberedSetObj.
@@ -792,7 +794,7 @@ SpurPlanningCompactor >> unpinRememberedSet [
 
 ]
 
-{ #category : #compaction }
+{ #category : 'compaction' }
 SpurPlanningCompactor >> updatePointer: i in: obj [
 	"Sweep the pointer i-th field in obj, updating its possible reference to a mobile object to its eventual location."
 	<inline: true>
@@ -808,7 +810,7 @@ SpurPlanningCompactor >> updatePointer: i in: obj [
 		 manager storePointerUnchecked: i ofObject: obj withValue: fwd]
 ]
 
-{ #category : #compaction }
+{ #category : 'compaction' }
 SpurPlanningCompactor >> updatePointers [
 	"Sweep the heap, updating all objects to their eventual locations.
 	 Remember to update the savedFirstFields of pointer objects, as these have been forwarded."
@@ -828,7 +830,7 @@ SpurPlanningCompactor >> updatePointers [
 		[self updatePointersInObjectsOverflowingSavedFirstFieldsSpace]
 ]
 
-{ #category : #compaction }
+{ #category : 'compaction' }
 SpurPlanningCompactor >> updatePointersIn: obj [
 	"Sweep the pointer fields in obj, updating all references to mobile objects to their eventual locations."
 	<inline: true>
@@ -838,7 +840,7 @@ SpurPlanningCompactor >> updatePointersIn: obj [
 		[:i| self updatePointer: i in: obj ]
 ]
 
-{ #category : #compaction }
+{ #category : 'compaction' }
 SpurPlanningCompactor >> updatePointersIn: obj savedFirstFieldPointer: firstFieldPtr [
 	"Sweep the pointer fields in obj, updating all references to mobile objects to their eventual locations.
 	 firstFieldPtr is supplied for mobile objects so that the saved first field can be updated, and so that
@@ -862,7 +864,7 @@ SpurPlanningCompactor >> updatePointersIn: obj savedFirstFieldPointer: firstFiel
 		[:i| self updatePointer: i in: obj ]
 ]
 
-{ #category : #compaction }
+{ #category : 'compaction' }
 SpurPlanningCompactor >> updatePointersInInitialImmobileObjects [
 	"Sweep the initial immobile heap, updating all references to mobile objects to their eventual locations."
 	manager allOldSpaceObjectsFrom: manager firstObject do:
@@ -874,7 +876,7 @@ SpurPlanningCompactor >> updatePointersInInitialImmobileObjects [
 		self updatePointersIn: o]
 ]
 
-{ #category : #compaction }
+{ #category : 'compaction' }
 SpurPlanningCompactor >> updatePointersInManagerHeapEntities [
 	"The special non-pointer objects containing pointers, which are the objStacks and the rememberedSet,
 	 must be updated manually since they will not be recognized as containing pointers in the normal sweep."
@@ -927,7 +929,7 @@ SpurPlanningCompactor >> updatePointersInManagerHeapEntities [
 	self assert: manager allPermSpaceObjectsUnmarked.
 ]
 
-{ #category : #compaction }
+{ #category : 'compaction' }
 SpurPlanningCompactor >> updatePointersInMobileObjects [
 	"Sweep the mobile portion of the heap, updating all references to objects to their eventual locations.
 	 Remember to update the savedFirstFields of pointer objects, as these have been forwarded.
@@ -995,7 +997,7 @@ SpurPlanningCompactor >> updatePointersInMobileObjects [
 	^true
 ]
 
-{ #category : #compaction }
+{ #category : 'compaction' }
 SpurPlanningCompactor >> updatePointersInObjectsOverflowingSavedFirstFieldsSpace [
 	"Sweep the final immobile heap, is any (those objects with no room in savedFirstFieldsSpace
 	 in the current pass) updating all references to mobile objects to their eventual locations."
@@ -1006,7 +1008,7 @@ SpurPlanningCompactor >> updatePointersInObjectsOverflowingSavedFirstFieldsSpace
 			[self updatePointersIn: o]]
 ]
 
-{ #category : #compaction }
+{ #category : 'compaction' }
 SpurPlanningCompactor >> updatePointersInSurvivingObjects [
 	"Sweep pastSpace, updating all references to mobile objects to their eventual locations."
 	manager allPastSpaceObjectsDo:
@@ -1016,7 +1018,7 @@ SpurPlanningCompactor >> updatePointersInSurvivingObjects [
 		self updatePointersIn: o]
 ]
 
-{ #category : #'space management' }
+{ #category : 'space management' }
 SpurPlanningCompactor >> updateSavedFirstFieldsSpaceIfNecessary [
 	"If savedFirstFieldsSpace is a free chunk then it may need to be repositioned if there is more than one pass."
 	<inline: true>
@@ -1032,7 +1034,7 @@ SpurPlanningCompactor >> updateSavedFirstFieldsSpaceIfNecessary [
 	savedFirstFieldsSpace top: savedFirstFieldsSpace start - manager bytesPerOop
 ]
 
-{ #category : #'space management' }
+{ #category : 'space management' }
 SpurPlanningCompactor >> useEdenForSavedFirstFieldsSpace [
 	"Use teden to hold the savedFirstFieldsSpace."
 
@@ -1044,7 +1046,7 @@ SpurPlanningCompactor >> useEdenForSavedFirstFieldsSpace [
 	self deny: self savedFirstFieldsSpaceWasAllocated
 ]
 
-{ #category : #'space management' }
+{ #category : 'space management' }
 SpurPlanningCompactor >> useFreeChunkForSavedFirstFieldsSpace: highestSuitableFreeBlock [
 	"Use the supplied free chunk to hold the savedFirstFieldsSpace. Invoked when
 	 eden is found not to be big enough for the job. Avoid the first few fields so as
@@ -1060,7 +1062,7 @@ SpurPlanningCompactor >> useFreeChunkForSavedFirstFieldsSpace: highestSuitableFr
 	self deny: self savedFirstFieldsSpaceWasAllocated
 ]
 
-{ #category : #'space management' }
+{ #category : 'space management' }
 SpurPlanningCompactor >> useSegmentForSavedFirstFieldsSpace: spaceEstimate [
 	"Attempt to allocate a memory segment large enough to hold the savedFirstFieldsSpace.
 	 Invoked when neither eden nor a large free chunk are found to be big enough for the job."
@@ -1083,7 +1085,7 @@ SpurPlanningCompactor >> useSegmentForSavedFirstFieldsSpace: spaceEstimate [
 	^false
 ]
 
-{ #category : #private }
+{ #category : 'private' }
 SpurPlanningCompactor >> validRelocationPlanInPass: onePass [
 	"Answer 0 if all the mobile objects from firstMobileObject to lastMobileObject
 	 have sane forwarding addresses, and that savedFirstFieldsSpace is of

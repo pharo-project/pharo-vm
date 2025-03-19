@@ -1,6 +1,6 @@
 Class {
-	#name : #VMTrampolineTest,
-	#superclass : #VMSimpleStackBasedCogitAbstractTest,
+	#name : 'VMTrampolineTest',
+	#superclass : 'VMSimpleStackBasedCogitAbstractTest',
 	#instVars : [
 		'registerMask',
 		'isAligned',
@@ -10,10 +10,12 @@ Class {
 		'CogAbstractRegisters',
 		'VMClassIndices'
 	],
-	#category : #'VMMakerTests-JitTests'
+	#category : 'VMMakerTests-JitTests',
+	#package : 'VMMakerTests',
+	#tag : 'JitTests'
 }
 
-{ #category : #'building suites' }
+{ #category : 'building suites' }
 VMTrampolineTest class >> testParameters [ 
 
 	^ super testParameters * { 
@@ -22,25 +24,25 @@ VMTrampolineTest class >> testParameters [
 	}
 ]
 
-{ #category : #tests }
+{ #category : 'tests' }
 VMTrampolineTest >> isAligned [
 
 	^ isAligned
 ]
 
-{ #category : #tests }
+{ #category : 'tests' }
 VMTrampolineTest >> isAligned: aBoolean [
 
 	isAligned := aBoolean
 ]
 
-{ #category : #tests }
+{ #category : 'tests' }
 VMTrampolineTest >> jitCompilerClass [
 
 	^ StackToRegisterMappingCogit
 ]
 
-{ #category : #tests }
+{ #category : 'tests' }
 VMTrampolineTest >> setUp [
 
 	super setUp.
@@ -60,7 +62,7 @@ VMTrampolineTest >> setUp [
 	]
 ]
 
-{ #category : #tests }
+{ #category : 'tests' }
 VMTrampolineTest >> testCallEnilopmartSucceedsExecution [
 
 	| inc baseMethod baseMethodIP ctx page |
@@ -123,7 +125,7 @@ VMTrampolineTest >> testCallEnilopmartSucceedsExecution [
 		equals: (memory integerObjectOf: 3)
 ]
 
-{ #category : #tests }
+{ #category : 'tests' }
 VMTrampolineTest >> testDetectFrameNotPointerInUse [
 
 	"The code in generateStackPointerCapture detects if the C Frame pointer is in use.
@@ -138,7 +140,7 @@ VMTrampolineTest >> testDetectFrameNotPointerInUse [
 	self deny: cogit isCFramePointerInUse
 ]
 
-{ #category : #tests }
+{ #category : 'tests' }
 VMTrampolineTest >> testDetectFramePointerInUse [
 
 	"The code in generateStackPointerCapture detects if the C Frame pointer is in use.
@@ -153,7 +155,7 @@ VMTrampolineTest >> testDetectFramePointerInUse [
 	self assert: cogit isCFramePointerInUse
 ]
 
-{ #category : #tests }
+{ #category : 'tests' }
 VMTrampolineTest >> testLoadStackPointersShouldLoadFramePointer [
 	
 	self compile: [ cogit backend genLoadStackPointers ].
@@ -171,7 +173,7 @@ VMTrampolineTest >> testLoadStackPointersShouldLoadFramePointer [
 	self assert: self framePointerRegisterValue equals: 42
 ]
 
-{ #category : #tests }
+{ #category : 'tests' }
 VMTrampolineTest >> testLoadStackPointersShouldLoadStackPointer [
 	
 	self compile: [ cogit backend genLoadStackPointers ].
@@ -189,7 +191,7 @@ VMTrampolineTest >> testLoadStackPointersShouldLoadStackPointer [
 	self assert: machineSimulator smalltalkStackPointerRegisterValue equals: 17
 ]
 
-{ #category : #tests }
+{ #category : 'tests' }
 VMTrampolineTest >> testRestoreRegistersProducesAlignedStackPointer [
 
 	| initialStackPointer |
@@ -207,7 +209,7 @@ VMTrampolineTest >> testRestoreRegistersProducesAlignedStackPointer [
 	self assert: self stackPointerRegisterValue equals: initialStackPointer
 ]
 
-{ #category : #tests }
+{ #category : 'tests' }
 VMTrampolineTest >> testSendTrampolineShouldNotOverrideLinkRegisterWhenCallDereferenceSelectorRoutine [
 	
 	| dereferenceRoutine previousLinkRegister trampoline |
@@ -238,7 +240,7 @@ VMTrampolineTest >> testSendTrampolineShouldNotOverrideLinkRegisterWhenCallDeref
 	self assert: self interpreter stackTop equals: previousLinkRegister
 ]
 
-{ #category : #tests }
+{ #category : 'tests' }
 VMTrampolineTest >> testSmalltalkToCStackShouldLoadCFramePointer [
 	
 	self compile: [ cogit genSmalltalkToCStackSwitch: false "do not push link register" ].
@@ -252,7 +254,7 @@ VMTrampolineTest >> testSmalltalkToCStackShouldLoadCFramePointer [
 	self assert: machineSimulator framePointerRegisterValue equals: 888
 ]
 
-{ #category : #tests }
+{ #category : 'tests' }
 VMTrampolineTest >> testSmalltalkToCStackShouldLoadCStackPointer [
 	
 	self compile: [ cogit genSmalltalkToCStackSwitch: false "do not push link register" ].
@@ -266,7 +268,7 @@ VMTrampolineTest >> testSmalltalkToCStackShouldLoadCStackPointer [
 	self assert: machineSimulator stackPointerRegisterValue equals: 777
 ]
 
-{ #category : #tests }
+{ #category : 'tests' }
 VMTrampolineTest >> testSmalltalkToCStackShouldPushLinkRegister [
 
 	cogit backend hasLinkRegister ifFalse: [ ^ self skip ].
@@ -282,7 +284,7 @@ VMTrampolineTest >> testSmalltalkToCStackShouldPushLinkRegister [
 	self assert: self interpreter stackTop equals: 42
 ]
 
-{ #category : #tests }
+{ #category : 'tests' }
 VMTrampolineTest >> testSmalltalkToCStackSwitchShouldUpdateInterpreterFramePointer [
 	
 	self compile: [ cogit genSmalltalkToCStackSwitch: false "do not push link register" ].
@@ -299,7 +301,7 @@ VMTrampolineTest >> testSmalltalkToCStackSwitchShouldUpdateInterpreterFramePoint
 	self assert: self interpreter framePointer equals: 42
 ]
 
-{ #category : #tests }
+{ #category : 'tests' }
 VMTrampolineTest >> testSmalltalkToCStackSwitchShouldUpdateInterpreterStackPointer [
 	
 	self compile: [ cogit genSmalltalkToCStackSwitch: false "do not push link register" ].
@@ -316,7 +318,7 @@ VMTrampolineTest >> testSmalltalkToCStackSwitchShouldUpdateInterpreterStackPoint
 	self assert: self interpreter stackPointer equals: 42
 ]
 
-{ #category : #tests }
+{ #category : 'tests' }
 VMTrampolineTest >> testStoreRegistersProducesAlignedStackPointer [
 
 	"Some architectures such as ARMv8 require that the SP is always aligned to some value even in between calls.
@@ -329,7 +331,7 @@ VMTrampolineTest >> testStoreRegistersProducesAlignedStackPointer [
 	self assert: self stackPointerRegisterValue \\ cogit stackPointerAlignment equals: 0
 ]
 
-{ #category : #tests }
+{ #category : 'tests' }
 VMTrampolineTest >> testStoreRegistersPushesValuesToStack [
 
 	| initialStackPointer actualPushedBytes |

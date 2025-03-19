@@ -1,24 +1,26 @@
 Class {
-	#name : #CExpressionNode,
-	#superclass : #CGLRAbstractNode,
+	#name : 'CExpressionNode',
+	#superclass : 'CGLRAbstractNode',
 	#instVars : [
 		'needsParentheses'
 	],
-	#category : #'CAST-Nodes'
+	#category : 'CAST-Nodes',
+	#package : 'CAST',
+	#tag : 'Nodes'
 }
 
-{ #category : #combining }
+{ #category : 'combining' }
 CExpressionNode >> , anotherExpression [
 	
 	^ anotherExpression combineWithExpression: self
 ]
 
-{ #category : #generated }
+{ #category : 'generated' }
 CExpressionNode >> acceptVisitor: anAbstractVisitor [
 	^ anAbstractVisitor visitExpression: self
 ]
 
-{ #category : #combining }
+{ #category : 'combining' }
 CExpressionNode >> combineWithExpression: firstExpression [
 	
 	| result |
@@ -30,25 +32,25 @@ CExpressionNode >> combineWithExpression: firstExpression [
 	^ result
 ]
 
-{ #category : #initialization }
+{ #category : 'initialization' }
 CExpressionNode >> initialize [
 	super initialize.
 	needsParentheses := false
 ]
 
-{ #category : #testing }
+{ #category : 'testing' }
 CExpressionNode >> isExpression [
 
 	^ true
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 CExpressionNode >> needsParentheses [
 
 	^ needsParentheses
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 CExpressionNode >> needsParentheses: aBoolean [
 
 	needsParentheses := aBoolean

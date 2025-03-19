@@ -1,10 +1,12 @@
 Class {
-	#name : #JITZeroCogit,
-	#superclass : #DruidMirrorCogit,
-	#category : #'VMMaker-JIT'
+	#name : 'JITZeroCogit',
+	#superclass : 'DruidMirrorCogit',
+	#category : 'VMMaker-JIT',
+	#package : 'VMMaker',
+	#tag : 'JIT'
 }
 
-{ #category : #constants }
+{ #category : 'constants' }
 JITZeroCogit class >> bytecodeTable [
 
 	^ {
@@ -13,7 +15,7 @@ JITZeroCogit class >> bytecodeTable [
 		  #( 3 248 255 unknownBytecode ) }
 ]
 
-{ #category : #'class initialization' }
+{ #category : 'class initialization' }
 JITZeroCogit class >> primitiveTableArray [
 	"Only keeps mandatory entries. All marked as non implemented."
 

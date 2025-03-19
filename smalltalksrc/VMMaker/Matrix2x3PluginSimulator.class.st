@@ -1,10 +1,12 @@
 Class {
-	#name : #Matrix2x3PluginSimulator,
-	#superclass : #Matrix2x3Plugin,
-	#category : #'VMMaker-Plugins'
+	#name : 'Matrix2x3PluginSimulator',
+	#superclass : 'Matrix2x3Plugin',
+	#category : 'VMMaker-Plugins',
+	#package : 'VMMaker',
+	#tag : 'Plugins'
 }
 
-{ #category : #primitives }
+{ #category : 'primitives' }
 Matrix2x3PluginSimulator >> primitiveComposeMatrix [
 	| m1 m2 m3 |
 	m2 := self stackMatrixValue: 1.
@@ -15,7 +17,7 @@ Matrix2x3PluginSimulator >> primitiveComposeMatrix [
 		 self assert: m3 = (m1 composedWithLocal: m2)]
 ]
 
-{ #category : #'simulation support' }
+{ #category : 'simulation support' }
 Matrix2x3PluginSimulator >> stackMatrixValue: n [
 	| maybeMatrixOop |
 	maybeMatrixOop := interpreterProxy stackValue: n.

@@ -1,6 +1,6 @@
-Extension { #name : #Association }
+Extension { #name : 'Association' }
 
-{ #category : #'*VMMakerTests' }
+{ #category : '*VMMakerTests' }
 Association >> forMemory: aMemory inMethod: aMethod [
 
 	| association |

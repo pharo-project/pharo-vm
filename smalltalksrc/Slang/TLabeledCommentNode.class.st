@@ -2,16 +2,18 @@
 some comment
 "
 Class {
-	#name : #TLabeledCommentNode,
-	#superclass : #TParseNode,
+	#name : 'TLabeledCommentNode',
+	#superclass : 'TParseNode',
 	#instVars : [
 		'label',
 		'asmLabel'
 	],
-	#category : #'Slang-AST'
+	#category : 'Slang-AST',
+	#package : 'Slang',
+	#tag : 'AST'
 }
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 TLabeledCommentNode class >> label: aLabel [
 
 	^ self new
@@ -19,7 +21,7 @@ TLabeledCommentNode class >> label: aLabel [
 		yourself
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 TLabeledCommentNode class >> withComment: aComment [
 
 	^ self new
@@ -27,95 +29,102 @@ TLabeledCommentNode class >> withComment: aComment [
 		yourself
 ]
 
-{ #category : #visiting }
+{ #category : 'visiting' }
 TLabeledCommentNode >> accept: aVisitor [
 	
 	^ aVisitor visitLabeledCommentNode: self
 ]
 
-{ #category : #tranforming }
+{ #category : 'tranforming' }
 TLabeledCommentNode >> asCASTIn: aBuilder [
 
-	| result |
-	result := CCompoundStatementNode new.
-	result needsBrackets: false.
+	| statements |
+	statements := OrderedCollection new.
 
-	label ifNotNil: [ 	| labelledNode |
-		labelledNode := CLabeledStatementNode new.		
+	label ifNotNil: [
+		| labelledNode |
+		labelledNode := CLabeledStatementNode new.
 		labelledNode label: (CIdentifierNode name: label).
 		labelledNode statement: CEmptyStatementNode new.
-		result add: labelledNode ].	
+		statements add: labelledNode ].
 
 
-	comment ifNotNil: [ | commentNode |
-		(aBuilder previousCommentMarksInlining: (label isNil and: [asmLabel isNil and: [comment beginsWith: 'begin ']]))
-			ifTrue: [ ^ result ].
-		commentNode := CEmptyStatementNode new.
-		commentNode comments: { self comment }.
-		commentNode needsSeparator: false.
-		result add: commentNode.
-		aBuilder previousCommenter: self].
+	comment ifNotNil: [
+		| commentNode |
+		commentNode := CCommentNode new.
+		commentNode comment: (String streamContents: [ :s |
+				 s space.
+				 s nextPutAll: self comment.
+				 s space ]).
+		statements add: commentNode.
+		aBuilder previousCommenter: self ].
 
-	(asmLabel notNil "only output labels in the interpret function."
-	 and: [aBuilder currentMethod selector == #interpret]) ifTrue: [ | asmLabelNode |
+	(asmLabel notNil and: [
+		 aBuilder currentMethod selector == #interpret ]) ifTrue: [
+		| asmLabelNode |
 		asmLabelNode := aBuilder asmLabelNodeFor: asmLabel.
-		result add: asmLabelNode
-	].	
+		statements add: asmLabelNode ]. "only output labels in the interpret function."
 
-	^ result
+	statements size = 1
+		ifTrue: [ ^ statements first ].
+
+	^ CCompoundStatementNode new
+		statements: statements;
+		needsBrackets: false;
+		yourself.
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 TLabeledCommentNode >> asmLabel [
 
 	^asmLabel
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 TLabeledCommentNode >> asmLabel: labelString [
 
 	asmLabel := labelString
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 TLabeledCommentNode >> children [
 	
 	^ #()
 ]
 
-{ #category : #testing }
+{ #category : 'testing' }
 TLabeledCommentNode >> isComment [
 	"Answer true if the receiver is just a comment (i.e., it has no label)."
 
 	^label = nil
 ]
 
-{ #category : #testing }
+{ #category : 'testing' }
 TLabeledCommentNode >> isLabel [
 
 	^true
 ]
 
-{ #category : #testing }
+{ #category : 'testing' }
 TLabeledCommentNode >> isLeaf [
 
 	^true
 ]
 
-{ #category : #comparing }
+{ #category : 'comparing' }
 TLabeledCommentNode >> isSameAs: anotherNode [ 
 	
 	^anotherNode isLabel
 	 and: [comment = anotherNode comment]
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 TLabeledCommentNode >> label [
 
 	^label
 ]
 
-{ #category : #testing }
+{ #category : 'testing' }
 TLabeledCommentNode >> needsTrailingSemicolon [
 	"Answer if, when emitted as a statement (in particular in a TStmtList), the
 	 receiver needs a trailing semicolon.  Comments do not.  You'd think that
@@ -124,12 +133,12 @@ TLabeledCommentNode >> needsTrailingSemicolon [
 	^self isComment not
 ]
 
-{ #category : #enumerating }
+{ #category : 'enumerating' }
 TLabeledCommentNode >> nodesDo: aBlock parent: parent [
 	aBlock value: self value: parent
 ]
 
-{ #category : #printing }
+{ #category : 'printing' }
 TLabeledCommentNode >> printOn: aStream level: level [
 
 	self printOptionalLabelOn: aStream.
@@ -139,7 +148,7 @@ TLabeledCommentNode >> printOn: aStream level: level [
 		 aStream nextPut: $"]
 ]
 
-{ #category : #printing }
+{ #category : 'printing' }
 TLabeledCommentNode >> printOptionalLabelOn: aStream [
 
 	label ifNotNil: [ 
@@ -151,27 +160,27 @@ TLabeledCommentNode >> printOptionalLabelOn: aStream [
 			nextPut: $; ]
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 TLabeledCommentNode >> setComment: commentString [
 
 	label := nil.
 	comment := commentString.
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 TLabeledCommentNode >> setLabel: labelString [
 
 	label := labelString.
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 TLabeledCommentNode >> setLabel: labelString comment: commentString [
 
 	label := labelString.
 	comment := commentString.
 ]
 
-{ #category : #'C code generation' }
+{ #category : 'C code generation' }
 TLabeledCommentNode >> unindentTabs: aStream [
 	"Remove all but one tab up to the beginning of line from the given stream if possible."
 

@@ -1,10 +1,12 @@
 Class {
-	#name : #VMPrimitiveCallingTest,
-	#superclass : #VMInterpreterTests,
-	#category : #'VMMakerTests-InterpreterTests'
+	#name : 'VMPrimitiveCallingTest',
+	#superclass : 'VMInterpreterTests',
+	#category : 'VMMakerTests-InterpreterTests',
+	#package : 'VMMakerTests',
+	#tag : 'InterpreterTests'
 }
 
-{ #category : #tests }
+{ #category : 'tests' }
 VMPrimitiveCallingTest >> testPrimitiveFailingDoesNotSetErrorCodeInOtherTemp [
 
 	"The method has two temporaries. The first one is the error code, the second one is a user defined temp."
@@ -26,7 +28,7 @@ VMPrimitiveCallingTest >> testPrimitiveFailingDoesNotSetErrorCodeInOtherTemp [
 	self assert: (interpreter temporary: 1 in: interpreter framePointer) equals: memory nilObject
 ]
 
-{ #category : #tests }
+{ #category : 'tests' }
 VMPrimitiveCallingTest >> testPrimitiveFailingDoesNotSkipSecondBytecodeIfNotLongStore [
 
 	"The method has two temporaries. The first one is the error code, the second one is a user defined temp."
@@ -48,7 +50,7 @@ VMPrimitiveCallingTest >> testPrimitiveFailingDoesNotSkipSecondBytecodeIfNotLong
 	self assert: interpreter fetchByte equals: 16rF4
 ]
 
-{ #category : #tests }
+{ #category : 'tests' }
 VMPrimitiveCallingTest >> testPrimitiveFailingSetsErrorCodeInCorrectTemp [
 
 	"The method has two temporaries. The first one is the error code, the second one is a user defined temp."
@@ -70,7 +72,7 @@ VMPrimitiveCallingTest >> testPrimitiveFailingSetsErrorCodeInCorrectTemp [
 	self assert: (interpreter temporary: 0 in: interpreter framePointer) equals: (memory integerObjectOf: -1)
 ]
 
-{ #category : #tests }
+{ #category : 'tests' }
 VMPrimitiveCallingTest >> testPrimitiveFailingSetsErrorCodeInCorrectTempWithInternalActivation [
 
 	"The method has two temporaries. The first one is the error code, the second one is a user defined temp."

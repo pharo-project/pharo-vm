@@ -1,6 +1,6 @@
-Extension { #name : #String }
+Extension { #name : 'String' }
 
-{ #category : #'*VMMaker-plugin generation' }
+{ #category : '*VMMaker-plugin generation' }
 String class >> ccg: cg prolog: aBlock expr: aString index: anInteger [
 
 	^cg 
@@ -10,18 +10,18 @@ String class >> ccg: cg prolog: aBlock expr: aString index: anInteger [
 		andThen: (cg ccgValBlock: 'isBytes')
 ]
 
-{ #category : #'*VMMaker-plugin generation' }
+{ #category : '*VMMaker-plugin generation' }
 String class >> ccgDeclareCForVar: aSymbolOrString [
 
 	^'char *', aSymbolOrString
 ]
 
-{ #category : #'*VMMaker-translation support' }
+{ #category : '*VMMaker-translation support' }
 String >> indexOfWord: aSubString [
 	^self indexOfWord: aSubString startingAt: 1
 ]
 
-{ #category : #'*VMMaker-translation support' }
+{ #category : '*VMMaker-translation support' }
 String >> indexOfWord: aSubString startingAt: startIndex [
 	| index |
 	index := startIndex.

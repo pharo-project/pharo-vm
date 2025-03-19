@@ -5,22 +5,24 @@ I keep inside a cache of (selector -> list of free variables).
 I can be called many times and i will cut as soon as i finds a method found in a previous invocation.
 "
 Class {
-	#name : #SLCallGraphFreeVariableCollector,
-	#superclass : #SLCallGraphVisitor,
+	#name : 'SLCallGraphFreeVariableCollector',
+	#superclass : 'SLCallGraphVisitor',
 	#instVars : [
 		'accumulatedFreeVariables',
 		'freeVariablesPerMethod'
 	],
-	#category : #'Slang-Optimizations'
+	#category : 'Slang-Optimizations',
+	#package : 'Slang',
+	#tag : 'Optimizations'
 }
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 SLCallGraphFreeVariableCollector >> freeVariablesUsedByMethodNamed: aSelector [
 
 	^ freeVariablesPerMethod at: aSelector ifAbsent: [ ^ #() ]
 ]
 
-{ #category : #initialization }
+{ #category : 'initialization' }
 SLCallGraphFreeVariableCollector >> initialize [
 
 	super initialize.
@@ -28,7 +30,7 @@ SLCallGraphFreeVariableCollector >> initialize [
 	accumulatedFreeVariables := OrderedCollection new.
 ]
 
-{ #category : #private }
+{ #category : 'private' }
 SLCallGraphFreeVariableCollector >> internalVisitMethod: aTMethod [
 
 	"If we already visited this method, 
@@ -42,7 +44,7 @@ SLCallGraphFreeVariableCollector >> internalVisitMethod: aTMethod [
 	^ super internalVisitMethod: aTMethod
 ]
 
-{ #category : #hooks }
+{ #category : 'hooks' }
 SLCallGraphFreeVariableCollector >> postVisitMethod: aMethod [
 
 	"This are all variables accessed by this method and its children"
@@ -58,7 +60,7 @@ SLCallGraphFreeVariableCollector >> postVisitMethod: aMethod [
 	parentVariables value addAll: myVariables value
 ]
 
-{ #category : #hooks }
+{ #category : 'hooks' }
 SLCallGraphFreeVariableCollector >> preVisitMethod: aMethod [
 
 	"Work as a cache to make this instance reusable.

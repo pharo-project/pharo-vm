@@ -1,10 +1,12 @@
 Class {
-	#name : #VMPermanentSpaceMemoryTest,
-	#superclass : #VMSpurInitializedOldSpaceTest,
-	#category : #'VMMakerTests-PermSpace'
+	#name : 'VMPermanentSpaceMemoryTest',
+	#superclass : 'VMSpurInitializedOldSpaceTest',
+	#category : 'VMMakerTests-PermSpace',
+	#package : 'VMMakerTests',
+	#tag : 'PermSpace'
 }
 
-{ #category : #running }
+{ #category : 'running' }
 VMPermanentSpaceMemoryTest >> setUp [
 
 	super setUp.
@@ -12,7 +14,7 @@ VMPermanentSpaceMemoryTest >> setUp [
 	self createWeakArrayClass
 ]
 
-{ #category : #'tests - allocation' }
+{ #category : 'tests - allocation' }
 VMPermanentSpaceMemoryTest >> testAllInstancesReturnsObjectsInPermSpace [
 
 	| permanentObject allInstances |
@@ -25,34 +27,631 @@ VMPermanentSpaceMemoryTest >> testAllInstancesReturnsObjectsInPermSpace [
 	self assert: (memory fetchPointer: 0 ofObject: allInstances) equals: permanentObject.
 ]
 
-{ #category : #'tests - allocation' }
-VMPermanentSpaceMemoryTest >> testBecomingOfPermanentObjectFails [
+{ #category : 'tests - become' }
+VMPermanentSpaceMemoryTest >> testBecomingOneWayOfPermanentObjectWithOldObject [
 
-	| permanentObject oldObject youngReplacement arrFrom arrTo ec |
+	| permanentObject oldReplacement arrFrom arrTo ec youngObjectReferencingPermanent oldObjectReferencingPermanent permanentObjectReferencingPermanent |
 	
-	permanentObject := self newPermanentObjectWithSlots:  1.
-	oldObject := self newOldSpaceObjectWithSlots: 0.
-	memory storePointer: 0 ofObject: permanentObject withValue: oldObject.
+	permanentObject := self newPermanentObjectWithSlots: 1.
+	memory storePointer: 0 ofObject: permanentObject withValue: (self newOldSpaceObjectWithSlots: 0).
+
+	youngObjectReferencingPermanent := self newObjectWithSlots: 1.
+	memory storePointer: 0 ofObject: youngObjectReferencingPermanent withValue: permanentObject.
+	self keepObjectInVMVariable1: youngObjectReferencingPermanent.
+	
+	oldObjectReferencingPermanent := self newOldSpaceObjectWithSlots: 1.
+	memory storePointer: 0 ofObject: oldObjectReferencingPermanent withValue: permanentObject.
+	self keepObjectInVMVariable2: oldObjectReferencingPermanent.
+
+	permanentObjectReferencingPermanent := self newPermanentObjectWithSlots: 1.
+	memory storePointer: 0 ofObject: permanentObjectReferencingPermanent withValue: permanentObject.
 	
 	memory fullGC.
-	self assert: (memory getFromPermToOldSpaceRememberedSet isInRememberedSet: permanentObject).
-	
-	youngReplacement := self newObjectWithSlots: 2.
-	memory storePointer: 0 ofObject: youngReplacement withValue: oldObject.
 
-	self keepObjectInVMVariable1: youngReplacement.
+	youngObjectReferencingPermanent := self keptObjectInVMVariable1.
+	oldObjectReferencingPermanent := self keptObjectInVMVariable2.
+
+	self assert: (memory getFromPermToOldSpaceRememberedSet isInRememberedSet: permanentObject).
+	self assert: (memory fetchPointer: 0 ofObject: oldObjectReferencingPermanent) equals: permanentObject.
+	self assert: (memory fetchPointer: 0 ofObject: permanentObjectReferencingPermanent) equals: permanentObject.
+	self assert: (memory fetchPointer: 0 ofObject: youngObjectReferencingPermanent) equals: permanentObject.
+	
+	oldReplacement := self newOldSpaceObjectWithSlots: 0.
+	self keepObjectInVMVariable3: oldReplacement.
+	
+	arrFrom := self newArrayWithSlots: 1.
+	arrTo := self newArrayWithSlots: 1.
+
+	memory storePointer: 0 ofObject: arrFrom withValue: permanentObject.
+	memory storePointer: 0 ofObject: arrTo withValue: oldReplacement.
+	ec := memory become: arrFrom with: arrTo twoWay: false copyHash: false.
+
+	self assert: ec equals: PrimNoErr.
+	
+	"The initial permanent object is now forwarded"	
+	self assert: (memory isForwarded: permanentObject).
+	"Old and New objects still points to it"
+	self assert: (memory fetchPointer: 0 ofObject: oldObjectReferencingPermanent) equals: permanentObject.
+	self assert: (memory fetchPointer: 0 ofObject: youngObjectReferencingPermanent) equals: permanentObject.
+
+	"Perm objects still points to the result"
+	self assert: (memory fetchPointer: 0 ofObject: permanentObjectReferencingPermanent) equals: oldReplacement.
+	
+	"The forwarded object is not in any remembered set"
+	self assert: (memory getFromPermToOldSpaceRememberedSet isInRememberedSet: permanentObject).
+	self deny: (memory getFromPermToNewSpaceRememberedSet isInRememberedSet: permanentObject).
+	
+	self assert: (memory getFromPermToOldSpaceRememberedSet isInRememberedSet: permanentObjectReferencingPermanent).
+	self deny: (memory getFromPermToNewSpaceRememberedSet isInRememberedSet: permanentObjectReferencingPermanent).
+	
+	memory fullGC.
+	
+	youngObjectReferencingPermanent := self keptObjectInVMVariable1.
+	oldObjectReferencingPermanent := self keptObjectInVMVariable2.
+	oldReplacement := self keptObjectInVMVariable3.
+	
+	"After GC nobody points to the forwarded object"
+	self assert: (memory fetchPointer: 0 ofObject: oldObjectReferencingPermanent) equals: oldReplacement.
+	self assert: (memory fetchPointer: 0 ofObject: youngObjectReferencingPermanent) equals: oldReplacement.
+	self assert: (memory fetchPointer: 0 ofObject: permanentObjectReferencingPermanent) equals: oldReplacement.
+]
+
+{ #category : 'tests - become' }
+VMPermanentSpaceMemoryTest >> testBecomingOneWayOfPermanentObjectWithPermanentObject [
+
+	| permanentObject permanentReplacement arrFrom arrTo ec youngObjectReferencingPermanent oldObjectReferencingPermanent permanentObjectReferencingPermanent |
+	
+	permanentObject := self newPermanentObjectWithSlots: 1.
+	memory storePointer: 0 ofObject: permanentObject withValue: (self newOldSpaceObjectWithSlots: 0).
+
+	youngObjectReferencingPermanent := self newObjectWithSlots: 1.
+	memory storePointer: 0 ofObject: youngObjectReferencingPermanent withValue: permanentObject.
+	self keepObjectInVMVariable1: youngObjectReferencingPermanent.
+	
+	oldObjectReferencingPermanent := self newOldSpaceObjectWithSlots: 1.
+	memory storePointer: 0 ofObject: oldObjectReferencingPermanent withValue: permanentObject.
+	self keepObjectInVMVariable2: oldObjectReferencingPermanent.
+
+	permanentObjectReferencingPermanent := self newPermanentObjectWithSlots: 1.
+	memory storePointer: 0 ofObject: permanentObjectReferencingPermanent withValue: permanentObject.
+	
+	memory fullGC.
+
+	youngObjectReferencingPermanent := self keptObjectInVMVariable1.
+	oldObjectReferencingPermanent := self keptObjectInVMVariable2.
+
+	self assert: (memory getFromPermToOldSpaceRememberedSet isInRememberedSet: permanentObject).
+	self assert: (memory fetchPointer: 0 ofObject: oldObjectReferencingPermanent) equals: permanentObject.
+	self assert: (memory fetchPointer: 0 ofObject: permanentObjectReferencingPermanent) equals: permanentObject.
+	self assert: (memory fetchPointer: 0 ofObject: youngObjectReferencingPermanent) equals: permanentObject.
+	
+	permanentReplacement := self newPermanentObjectWithSlots: 0.
+	
+	arrFrom := self newArrayWithSlots: 1.
+	arrTo := self newArrayWithSlots: 1.
+
+	memory storePointer: 0 ofObject: arrFrom withValue: permanentObject.
+	memory storePointer: 0 ofObject: arrTo withValue: permanentReplacement.
+	ec := memory become: arrFrom with: arrTo twoWay: false copyHash: false.
+
+	self assert: ec equals: PrimNoErr.
+	
+	"The initial permanent object is now forwarded"	
+	self assert: (memory isForwarded: permanentObject).
+	"Old and New objects still points to it"
+	self assert: (memory fetchPointer: 0 ofObject: oldObjectReferencingPermanent) equals: permanentObject.
+	self assert: (memory fetchPointer: 0 ofObject: youngObjectReferencingPermanent) equals: permanentObject.
+
+	"Perm objects still points to the result"
+	self assert: (memory fetchPointer: 0 ofObject: permanentObjectReferencingPermanent) equals: permanentReplacement.
+	
+	"The forwarded object is not in any remembered set"
+	self deny: (memory getFromPermToOldSpaceRememberedSet isInRememberedSet: permanentObject).
+	self deny: (memory getFromPermToNewSpaceRememberedSet isInRememberedSet: permanentObject).
+	
+	memory fullGC.
+	
+	youngObjectReferencingPermanent := self keptObjectInVMVariable1.
+	oldObjectReferencingPermanent := self keptObjectInVMVariable2.
+	
+	
+	"After GC nobody points to the forwarded object"
+	self assert: (memory fetchPointer: 0 ofObject: oldObjectReferencingPermanent) equals: permanentReplacement.
+	self assert: (memory fetchPointer: 0 ofObject: youngObjectReferencingPermanent) equals: permanentReplacement.
+	self assert: (memory fetchPointer: 0 ofObject: permanentObjectReferencingPermanent) equals: permanentReplacement.
+]
+
+{ #category : 'tests - become' }
+VMPermanentSpaceMemoryTest >> testBecomingOneWayOfPermanentObjectWithYoungObject [
+
+	| permanentObject oldReplacement arrFrom arrTo ec youngObjectReferencingPermanent oldObjectReferencingPermanent permanentObjectReferencingPermanent |
+	
+	permanentObject := self newPermanentObjectWithSlots: 1.
+	memory storePointer: 0 ofObject: permanentObject withValue: (self newOldSpaceObjectWithSlots: 0).
+
+	youngObjectReferencingPermanent := self newObjectWithSlots: 1.
+	memory storePointer: 0 ofObject: youngObjectReferencingPermanent withValue: permanentObject.
+	self keepObjectInVMVariable1: youngObjectReferencingPermanent.
+	
+	oldObjectReferencingPermanent := self newOldSpaceObjectWithSlots: 1.
+	memory storePointer: 0 ofObject: oldObjectReferencingPermanent withValue: permanentObject.
+	self keepObjectInVMVariable2: oldObjectReferencingPermanent.
+
+	permanentObjectReferencingPermanent := self newPermanentObjectWithSlots: 1.
+	memory storePointer: 0 ofObject: permanentObjectReferencingPermanent withValue: permanentObject.
+	
+	memory fullGC.
+
+	youngObjectReferencingPermanent := self keptObjectInVMVariable1.
+	oldObjectReferencingPermanent := self keptObjectInVMVariable2.
+
+	self assert: (memory getFromPermToOldSpaceRememberedSet isInRememberedSet: permanentObject).
+	self assert: (memory fetchPointer: 0 ofObject: oldObjectReferencingPermanent) equals: permanentObject.
+	self assert: (memory fetchPointer: 0 ofObject: permanentObjectReferencingPermanent) equals: permanentObject.
+	self assert: (memory fetchPointer: 0 ofObject: youngObjectReferencingPermanent) equals: permanentObject.
+	
+	oldReplacement := self newObjectWithSlots: 0.
+	self keepObjectInVMVariable3: oldReplacement.
+	
+	arrFrom := self newArrayWithSlots: 1.
+	arrTo := self newArrayWithSlots: 1.
+
+	memory storePointer: 0 ofObject: arrFrom withValue: permanentObject.
+	memory storePointer: 0 ofObject: arrTo withValue: oldReplacement.
+	ec := memory become: arrFrom with: arrTo twoWay: false copyHash: false.
+
+	self assert: ec equals: PrimNoErr.
+	
+	"The initial permanent object is now forwarded"	
+	self assert: (memory isForwarded: permanentObject).
+	"Old and New objects still points to it"
+	self assert: (memory fetchPointer: 0 ofObject: oldObjectReferencingPermanent) equals: permanentObject.
+	self assert: (memory fetchPointer: 0 ofObject: youngObjectReferencingPermanent) equals: permanentObject.
+
+	"Perm objects still points to the result"
+	self assert: (memory fetchPointer: 0 ofObject: permanentObjectReferencingPermanent) equals: oldReplacement.
+	
+	self deny: (memory getFromPermToOldSpaceRememberedSet isInRememberedSet: permanentObject).
+	self assert: (memory getFromPermToNewSpaceRememberedSet isInRememberedSet: permanentObject).
+	
+	self deny: (memory getFromPermToOldSpaceRememberedSet isInRememberedSet: permanentObjectReferencingPermanent).
+	self assert: (memory getFromPermToNewSpaceRememberedSet isInRememberedSet: permanentObjectReferencingPermanent).
+	
+	memory fullGC.
+	
+	youngObjectReferencingPermanent := self keptObjectInVMVariable1.
+	oldObjectReferencingPermanent := self keptObjectInVMVariable2.
+	oldReplacement := self keptObjectInVMVariable3.
+	
+	"After GC nobody points to the forwarded object"
+	self assert: (memory fetchPointer: 0 ofObject: oldObjectReferencingPermanent) equals: oldReplacement.
+	self assert: (memory fetchPointer: 0 ofObject: youngObjectReferencingPermanent) equals: oldReplacement.
+	self assert: (memory fetchPointer: 0 ofObject: permanentObjectReferencingPermanent) equals: oldReplacement.
+]
+
+{ #category : 'tests - become' }
+VMPermanentSpaceMemoryTest >> testBecomingTwoWayOfPermanentObjectWithOldObjectLeavingForwarded [
+
+	| permanentObject oldReplacement arrFrom arrTo ec youngObjectReferencingPermanent oldObjectReferencingPermanent permanentObjectReferencingPermanent |
+	
+	permanentObject := self newPermanentObjectWithSlots: 1.
+	memory storePointer: 0 ofObject: permanentObject withValue: (self newOldSpaceObjectWithSlots: 0).
+
+	youngObjectReferencingPermanent := self newObjectWithSlots: 1.
+	memory storePointer: 0 ofObject: youngObjectReferencingPermanent withValue: permanentObject.
+	self keepObjectInVMVariable1: youngObjectReferencingPermanent.
+	
+	oldObjectReferencingPermanent := self newOldSpaceObjectWithSlots: 1.
+	memory storePointer: 0 ofObject: oldObjectReferencingPermanent withValue: permanentObject.
+	self keepObjectInVMVariable2: oldObjectReferencingPermanent.
+
+	permanentObjectReferencingPermanent := self newPermanentObjectWithSlots: 1.
+	memory storePointer: 0 ofObject: permanentObjectReferencingPermanent withValue: permanentObject.
+	
+	memory fullGC.
+
+	youngObjectReferencingPermanent := self keptObjectInVMVariable1.
+	oldObjectReferencingPermanent := self keptObjectInVMVariable2.
+
+	self assert: (memory getFromPermToOldSpaceRememberedSet isInRememberedSet: permanentObject).
+	self assert: (memory fetchPointer: 0 ofObject: oldObjectReferencingPermanent) equals: permanentObject.
+	self assert: (memory fetchPointer: 0 ofObject: permanentObjectReferencingPermanent) equals: permanentObject.
+	self assert: (memory fetchPointer: 0 ofObject: youngObjectReferencingPermanent) equals: permanentObject.
+	
+	oldReplacement := self newOldSpaceObjectWithSlots: 0.
+	
+	arrFrom := self newArrayWithSlots: 1.
+	arrTo := self newArrayWithSlots: 1.
+
+	memory storePointer: 0 ofObject: arrFrom withValue: permanentObject.
+	memory storePointer: 0 ofObject: arrTo withValue: oldReplacement.
+	ec := memory become: arrFrom with: arrTo twoWay: true copyHash: false.
+
+	self assert: ec equals: PrimNoErr.
+	
+	self keepObjectInVMVariable3: (memory followForwarded: permanentObject).
+	self assert: (memory isPermanent: (memory followForwarded: oldReplacement)).
+	
+	"The initial permanent object is now forwarded"	
+	self assert: (memory isForwarded: permanentObject).
+	"Old and New objects still points to it"
+	self assert: (memory fetchPointer: 0 ofObject: oldObjectReferencingPermanent) equals: permanentObject.
+	self assert: (memory fetchPointer: 0 ofObject: youngObjectReferencingPermanent) equals: permanentObject.
+
+	"Perm objects still points to the result"
+	self assert: (memory fetchPointer: 0 ofObject: permanentObjectReferencingPermanent) equals: self keptObjectInVMVariable3.
+	
+	self deny: (memory getFromPermToOldSpaceRememberedSet isInRememberedSet: permanentObject).
+	self assert: (memory getFromPermToNewSpaceRememberedSet isInRememberedSet: permanentObject).
+	
+	memory fullGC.
+	
+	youngObjectReferencingPermanent := self keptObjectInVMVariable1.
+	oldObjectReferencingPermanent := self keptObjectInVMVariable2.
+	
+	
+	"After GC nobody points to the forwarded object"
+	self assert: (memory fetchPointer: 0 ofObject: oldObjectReferencingPermanent) equals: self keptObjectInVMVariable3.
+	self assert: (memory fetchPointer: 0 ofObject: youngObjectReferencingPermanent) equals: self keptObjectInVMVariable3.
+	self assert: (memory fetchPointer: 0 ofObject: permanentObjectReferencingPermanent) equals: self keptObjectInVMVariable3.
+	
+	self assert: memory isPermSpaceRememberedSetSane.
+]
+
+{ #category : 'tests - become' }
+VMPermanentSpaceMemoryTest >> testBecomingTwoWayOfPermanentObjectWithOldObjectNotLeavingForwarded [
+
+	| permanentObject oldReplacement arrFrom arrTo ec youngObjectReferencingPermanent oldObjectReferencingPermanent permanentObjectReferencingPermanent oldValue newValue |
+	
+	permanentObject := self newPermanentObjectWithSlots: 1.
+	memory storePointer: 0 ofObject: permanentObject withValue: (oldValue := self newOldSpaceObjectWithSlots: 0).
+
+	youngObjectReferencingPermanent := self newObjectWithSlots: 1.
+	memory storePointer: 0 ofObject: youngObjectReferencingPermanent withValue: permanentObject.
+	self keepObjectInVMVariable1: youngObjectReferencingPermanent.
+	
+	oldObjectReferencingPermanent := self newOldSpaceObjectWithSlots: 1.
+	memory storePointer: 0 ofObject: oldObjectReferencingPermanent withValue: permanentObject.
+	self keepObjectInVMVariable2: oldObjectReferencingPermanent.
+
+	permanentObjectReferencingPermanent := self newPermanentObjectWithSlots: 1.
+	memory storePointer: 0 ofObject: permanentObjectReferencingPermanent withValue: permanentObject.
+	
+	memory fullGC.
+
+	youngObjectReferencingPermanent := self keptObjectInVMVariable1.
+	oldObjectReferencingPermanent := self keptObjectInVMVariable2.
+
+	self assert: (memory getFromPermToOldSpaceRememberedSet isInRememberedSet: permanentObject).
+	self assert: (memory fetchPointer: 0 ofObject: oldObjectReferencingPermanent) equals: permanentObject.
+	self assert: (memory fetchPointer: 0 ofObject: permanentObjectReferencingPermanent) equals: permanentObject.
+	self assert: (memory fetchPointer: 0 ofObject: youngObjectReferencingPermanent) equals: permanentObject.
+	
+	oldReplacement := self newOldSpaceObjectWithSlots: 1.
+	memory storePointer: 0 ofObject: oldReplacement withValue: (newValue := self newObjectWithSlots: 0).
+
+	self keepObjectInVMVariable3: oldReplacement.
+	
+	arrFrom := self newArrayWithSlots: 1.
+	arrTo := self newArrayWithSlots: 1.
+
+	memory storePointer: 0 ofObject: arrFrom withValue: permanentObject.
+	memory storePointer: 0 ofObject: arrTo withValue: oldReplacement.
+	ec := memory become: arrFrom with: arrTo twoWay: true copyHash: false.
+
+	self assert: ec equals: PrimNoErr.
+		
+	"The initial permanent object is in place changed, so it is the same address"	
+	self deny: (memory isForwarded: permanentObject).
+	"Old and New objects still points to it"
+	self assert: (memory fetchPointer: 0 ofObject: oldObjectReferencingPermanent) equals: permanentObject.
+	self assert: (memory fetchPointer: 0 ofObject: youngObjectReferencingPermanent) equals: permanentObject.
+
+	"Perm objects still points to the result"
+	self assert: (memory fetchPointer: 0 ofObject: permanentObjectReferencingPermanent) equals: permanentObject.
+	
+	"The forwarded object is not in any remembered set"
+	self deny: (memory getFromPermToOldSpaceRememberedSet isInRememberedSet: permanentObject).
+	self assert: (memory getFromPermToNewSpaceRememberedSet isInRememberedSet: permanentObject).
+
+	self assert: (memory fetchPointer: 0 ofObject: permanentObject) equals: newValue.
+	
+	memory fullGC.
+	
+	youngObjectReferencingPermanent := self keptObjectInVMVariable1.
+	oldObjectReferencingPermanent := self keptObjectInVMVariable2.	
+	
+	"After GC nobody points to the forwarded object"
+	self assert: (memory fetchPointer: 0 ofObject: oldObjectReferencingPermanent) equals: permanentObject.
+	self assert: (memory fetchPointer: 0 ofObject: youngObjectReferencingPermanent) equals: permanentObject.
+	self assert: (memory fetchPointer: 0 ofObject: permanentObjectReferencingPermanent) equals: permanentObject.
+	
+	self assert: memory isPermSpaceRememberedSetSane.
+]
+
+{ #category : 'tests - become' }
+VMPermanentSpaceMemoryTest >> testBecomingTwoWayOfPermanentObjectWithPermanentObjectLeavingForwarded [
+
+	| permanentObject permanentReplacement arrFrom arrTo ec youngObjectReferencingPermanent oldObjectReferencingPermanent permanentObjectReferencingPermanent |
+	
+	permanentObject := self newPermanentObjectWithSlots: 1.
+	memory storePointer: 0 ofObject: permanentObject withValue: (self newOldSpaceObjectWithSlots: 0).
+
+	youngObjectReferencingPermanent := self newObjectWithSlots: 1.
+	memory storePointer: 0 ofObject: youngObjectReferencingPermanent withValue: permanentObject.
+	self keepObjectInVMVariable1: youngObjectReferencingPermanent.
+	
+	oldObjectReferencingPermanent := self newOldSpaceObjectWithSlots: 1.
+	memory storePointer: 0 ofObject: oldObjectReferencingPermanent withValue: permanentObject.
+	self keepObjectInVMVariable2: oldObjectReferencingPermanent.
+
+	permanentObjectReferencingPermanent := self newPermanentObjectWithSlots: 1.
+	memory storePointer: 0 ofObject: permanentObjectReferencingPermanent withValue: permanentObject.
+	
+	memory fullGC.
+
+	youngObjectReferencingPermanent := self keptObjectInVMVariable1.
+	oldObjectReferencingPermanent := self keptObjectInVMVariable2.
+
+	self assert: (memory getFromPermToOldSpaceRememberedSet isInRememberedSet: permanentObject).
+	self assert: (memory fetchPointer: 0 ofObject: oldObjectReferencingPermanent) equals: permanentObject.
+	self assert: (memory fetchPointer: 0 ofObject: permanentObjectReferencingPermanent) equals: permanentObject.
+	self assert: (memory fetchPointer: 0 ofObject: youngObjectReferencingPermanent) equals: permanentObject.
+	
+	permanentReplacement := self newPermanentObjectWithSlots: 0.
+	
+	arrFrom := self newArrayWithSlots: 1.
+	arrTo := self newArrayWithSlots: 1.
+
+	memory storePointer: 0 ofObject: arrFrom withValue: permanentObject.
+	memory storePointer: 0 ofObject: arrTo withValue: permanentReplacement.
+	ec := memory become: arrFrom with: arrTo twoWay: true copyHash: false.
+
+	self assert: ec equals: PrimNoErr.
+	
+	self keepObjectInVMVariable3: (memory followForwarded: permanentObject).
+	
+	self assert: (memory isPermanent: (memory followForwarded: permanentReplacement)).
+	
+	"The initial permanent object is now forwarded"	
+	self assert: (memory isForwarded: permanentObject).
+	"Old and New objects still points to it"
+	self assert: (memory fetchPointer: 0 ofObject: oldObjectReferencingPermanent) equals: permanentObject.
+	self assert: (memory fetchPointer: 0 ofObject: youngObjectReferencingPermanent) equals: permanentObject.
+
+	"Perm objects still points to the result"
+	self assert: (memory fetchPointer: 0 ofObject: permanentObjectReferencingPermanent) equals: self keptObjectInVMVariable3.
+	
+	"The forwarded object is not in any remembered set"
+	self deny: (memory getFromPermToOldSpaceRememberedSet isInRememberedSet: permanentObject).
+	self deny: (memory getFromPermToNewSpaceRememberedSet isInRememberedSet: permanentObject).
+	
+	memory fullGC.
+	
+	youngObjectReferencingPermanent := self keptObjectInVMVariable1.
+	oldObjectReferencingPermanent := self keptObjectInVMVariable2.
+	
+	
+	"After GC nobody points to the forwarded object"
+	self assert: (memory fetchPointer: 0 ofObject: oldObjectReferencingPermanent) equals: self keptObjectInVMVariable3.
+	self assert: (memory fetchPointer: 0 ofObject: youngObjectReferencingPermanent) equals: self keptObjectInVMVariable3.
+	self assert: (memory fetchPointer: 0 ofObject: permanentObjectReferencingPermanent) equals: self keptObjectInVMVariable3.
+	
+	self assert: memory isPermSpaceRememberedSetSane.
+]
+
+{ #category : 'tests - become' }
+VMPermanentSpaceMemoryTest >> testBecomingTwoWayOfPermanentObjectWithPermanentObjectNotLeavingForwarded [
+
+	| permanentObject oldReplacement arrFrom arrTo ec youngObjectReferencingPermanent oldObjectReferencingPermanent permanentObjectReferencingPermanent oldValue newValue |
+	
+	permanentObject := self newPermanentObjectWithSlots: 1.
+	memory storePointer: 0 ofObject: permanentObject withValue: (oldValue := self newOldSpaceObjectWithSlots: 0).
+
+	youngObjectReferencingPermanent := self newObjectWithSlots: 1.
+	memory storePointer: 0 ofObject: youngObjectReferencingPermanent withValue: permanentObject.
+	self keepObjectInVMVariable1: youngObjectReferencingPermanent.
+	
+	oldObjectReferencingPermanent := self newOldSpaceObjectWithSlots: 1.
+	memory storePointer: 0 ofObject: oldObjectReferencingPermanent withValue: permanentObject.
+	self keepObjectInVMVariable2: oldObjectReferencingPermanent.
+
+	permanentObjectReferencingPermanent := self newPermanentObjectWithSlots: 1.
+	memory storePointer: 0 ofObject: permanentObjectReferencingPermanent withValue: permanentObject.
+	
+	memory fullGC.
+
+	youngObjectReferencingPermanent := self keptObjectInVMVariable1.
+	oldObjectReferencingPermanent := self keptObjectInVMVariable2.
+
+	self assert: (memory getFromPermToOldSpaceRememberedSet isInRememberedSet: permanentObject).
+	self assert: (memory fetchPointer: 0 ofObject: oldObjectReferencingPermanent) equals: permanentObject.
+	self assert: (memory fetchPointer: 0 ofObject: permanentObjectReferencingPermanent) equals: permanentObject.
+	self assert: (memory fetchPointer: 0 ofObject: youngObjectReferencingPermanent) equals: permanentObject.
+	
+	oldReplacement := self newPermanentObjectWithSlots: 1.
+	memory storePointer: 0 ofObject: oldReplacement withValue: (newValue := self newObjectWithSlots: 0).
+
+	self keepObjectInVMVariable3: oldReplacement.
+	
+	arrFrom := self newArrayWithSlots: 1.
+	arrTo := self newArrayWithSlots: 1.
+
+	memory storePointer: 0 ofObject: arrFrom withValue: permanentObject.
+	memory storePointer: 0 ofObject: arrTo withValue: oldReplacement.
+	ec := memory become: arrFrom with: arrTo twoWay: true copyHash: false.
+
+	self assert: ec equals: PrimNoErr.
+		
+	"The initial permanent object is in place changed, so it is the same address"	
+	self deny: (memory isForwarded: permanentObject).
+	"Old and New objects still points to it"
+	self assert: (memory fetchPointer: 0 ofObject: oldObjectReferencingPermanent) equals: permanentObject.
+	self assert: (memory fetchPointer: 0 ofObject: youngObjectReferencingPermanent) equals: permanentObject.
+
+	"Perm objects still points to the result"
+	self assert: (memory fetchPointer: 0 ofObject: permanentObjectReferencingPermanent) equals: permanentObject.
+	
+	"The forwarded object is not in any remembered set"
+	self deny: (memory getFromPermToOldSpaceRememberedSet isInRememberedSet: permanentObject).
+	self assert: (memory getFromPermToNewSpaceRememberedSet isInRememberedSet: permanentObject).
+
+	self assert: (memory fetchPointer: 0 ofObject: permanentObject) equals: newValue.
+	
+	memory fullGC.
+	
+	youngObjectReferencingPermanent := self keptObjectInVMVariable1.
+	oldObjectReferencingPermanent := self keptObjectInVMVariable2.	
+	
+	"After GC nobody points to the forwarded object"
+	self assert: (memory fetchPointer: 0 ofObject: oldObjectReferencingPermanent) equals: permanentObject.
+	self assert: (memory fetchPointer: 0 ofObject: youngObjectReferencingPermanent) equals: permanentObject.
+	self assert: (memory fetchPointer: 0 ofObject: permanentObjectReferencingPermanent) equals: permanentObject.
+	
+	self assert: memory isPermSpaceRememberedSetSane.
+]
+
+{ #category : 'tests - become' }
+VMPermanentSpaceMemoryTest >> testBecomingTwoWayOfPermanentObjectWithYoungObjectLeavingForwarded [
+
+	| permanentObject youngReplacement arrFrom arrTo ec youngObjectReferencingPermanent oldObjectReferencingPermanent permanentObjectReferencingPermanent |
+	
+	permanentObject := self newPermanentObjectWithSlots: 1.
+	memory storePointer: 0 ofObject: permanentObject withValue: (self newOldSpaceObjectWithSlots: 0).
+
+	youngObjectReferencingPermanent := self newObjectWithSlots: 1.
+	memory storePointer: 0 ofObject: youngObjectReferencingPermanent withValue: permanentObject.
+	self keepObjectInVMVariable1: youngObjectReferencingPermanent.
+	
+	oldObjectReferencingPermanent := self newOldSpaceObjectWithSlots: 1.
+	memory storePointer: 0 ofObject: oldObjectReferencingPermanent withValue: permanentObject.
+	self keepObjectInVMVariable2: oldObjectReferencingPermanent.
+
+	permanentObjectReferencingPermanent := self newPermanentObjectWithSlots: 1.
+	memory storePointer: 0 ofObject: permanentObjectReferencingPermanent withValue: permanentObject.
+	
+	memory fullGC.
+
+	youngObjectReferencingPermanent := self keptObjectInVMVariable1.
+	oldObjectReferencingPermanent := self keptObjectInVMVariable2.
+
+	self assert: (memory getFromPermToOldSpaceRememberedSet isInRememberedSet: permanentObject).
+	self assert: (memory fetchPointer: 0 ofObject: oldObjectReferencingPermanent) equals: permanentObject.
+	self assert: (memory fetchPointer: 0 ofObject: permanentObjectReferencingPermanent) equals: permanentObject.
+	self assert: (memory fetchPointer: 0 ofObject: youngObjectReferencingPermanent) equals: permanentObject.
+	
+	youngReplacement := self newObjectWithSlots: 0.
 	
 	arrFrom := self newArrayWithSlots: 1.
 	arrTo := self newArrayWithSlots: 1.
 
 	memory storePointer: 0 ofObject: arrFrom withValue: permanentObject.
 	memory storePointer: 0 ofObject: arrTo withValue: youngReplacement.
-	ec := memory become: arrFrom with: arrTo twoWay: false copyHash: false.
+	ec := memory become: arrFrom with: arrTo twoWay: true copyHash: false.
 
-	self deny: ec equals: PrimNoErr
+	self assert: ec equals: PrimNoErr.
+	
+	self keepObjectInVMVariable3: (memory followForwarded: permanentObject).
+	self assert: (memory isPermanent: (memory followForwarded: youngReplacement)).
+	
+	"The initial permanent object is now forwarded"	
+	self assert: (memory isForwarded: permanentObject).
+	"Old and New objects still points to it"
+	self assert: (memory fetchPointer: 0 ofObject: oldObjectReferencingPermanent) equals: permanentObject.
+	self assert: (memory fetchPointer: 0 ofObject: youngObjectReferencingPermanent) equals: permanentObject.
+
+	"Perm objects still points to the result"
+	self assert: (memory fetchPointer: 0 ofObject: permanentObjectReferencingPermanent) equals: self keptObjectInVMVariable3.
+	
+	self deny: (memory getFromPermToOldSpaceRememberedSet isInRememberedSet: permanentObject).
+	self assert: (memory getFromPermToNewSpaceRememberedSet isInRememberedSet: permanentObject).
+	
+	memory fullGC.
+	
+	youngObjectReferencingPermanent := self keptObjectInVMVariable1.
+	oldObjectReferencingPermanent := self keptObjectInVMVariable2.
+	
+	
+	"After GC nobody points to the forwarded object"
+	self assert: (memory fetchPointer: 0 ofObject: oldObjectReferencingPermanent) equals: self keptObjectInVMVariable3.
+	self assert: (memory fetchPointer: 0 ofObject: youngObjectReferencingPermanent) equals: self keptObjectInVMVariable3.
+	self assert: (memory fetchPointer: 0 ofObject: permanentObjectReferencingPermanent) equals: self keptObjectInVMVariable3.
+	
+	self assert: memory isPermSpaceRememberedSetSane.
 ]
 
-{ #category : #'test - moving' }
+{ #category : 'tests - become' }
+VMPermanentSpaceMemoryTest >> testBecomingTwoWayOfPermanentObjectWithYoungObjectNotLeavingForwarded [
+
+	| permanentObject youngReplacement arrFrom arrTo ec youngObjectReferencingPermanent oldObjectReferencingPermanent permanentObjectReferencingPermanent oldValue newValue |
+	
+	permanentObject := self newPermanentObjectWithSlots: 1.
+	memory storePointer: 0 ofObject: permanentObject withValue: (oldValue := self newOldSpaceObjectWithSlots: 0).
+
+	youngObjectReferencingPermanent := self newObjectWithSlots: 1.
+	memory storePointer: 0 ofObject: youngObjectReferencingPermanent withValue: permanentObject.
+	self keepObjectInVMVariable1: youngObjectReferencingPermanent.
+	
+	oldObjectReferencingPermanent := self newOldSpaceObjectWithSlots: 1.
+	memory storePointer: 0 ofObject: oldObjectReferencingPermanent withValue: permanentObject.
+	self keepObjectInVMVariable2: oldObjectReferencingPermanent.
+
+	permanentObjectReferencingPermanent := self newPermanentObjectWithSlots: 1.
+	memory storePointer: 0 ofObject: permanentObjectReferencingPermanent withValue: permanentObject.
+	
+	memory fullGC.
+
+	youngObjectReferencingPermanent := self keptObjectInVMVariable1.
+	oldObjectReferencingPermanent := self keptObjectInVMVariable2.
+
+	self assert: (memory getFromPermToOldSpaceRememberedSet isInRememberedSet: permanentObject).
+	self assert: (memory fetchPointer: 0 ofObject: oldObjectReferencingPermanent) equals: permanentObject.
+	self assert: (memory fetchPointer: 0 ofObject: permanentObjectReferencingPermanent) equals: permanentObject.
+	self assert: (memory fetchPointer: 0 ofObject: youngObjectReferencingPermanent) equals: permanentObject.
+	
+	youngReplacement := self newObjectWithSlots: 1.
+	memory storePointer: 0 ofObject: youngReplacement withValue: (newValue := self newObjectWithSlots: 0).
+
+	self keepObjectInVMVariable3: youngReplacement.
+	
+	arrFrom := self newArrayWithSlots: 1.
+	arrTo := self newArrayWithSlots: 1.
+
+	memory storePointer: 0 ofObject: arrFrom withValue: permanentObject.
+	memory storePointer: 0 ofObject: arrTo withValue: youngReplacement.
+	ec := memory become: arrFrom with: arrTo twoWay: true copyHash: false.
+
+	self assert: ec equals: PrimNoErr.
+		
+	"The initial permanent object is in place changed, so it is the same address"	
+	self deny: (memory isForwarded: permanentObject).
+	"Old and New objects still points to it"
+	self assert: (memory fetchPointer: 0 ofObject: oldObjectReferencingPermanent) equals: permanentObject.
+	self assert: (memory fetchPointer: 0 ofObject: youngObjectReferencingPermanent) equals: permanentObject.
+
+	"Perm objects still points to the result"
+	self assert: (memory fetchPointer: 0 ofObject: permanentObjectReferencingPermanent) equals: permanentObject.
+	
+	"The forwarded object is not in any remembered set"
+	self deny: (memory getFromPermToOldSpaceRememberedSet isInRememberedSet: permanentObject).
+	self assert: (memory getFromPermToNewSpaceRememberedSet isInRememberedSet: permanentObject).
+
+	self assert: (memory fetchPointer: 0 ofObject: permanentObject) equals: newValue.
+	
+	memory fullGC.
+	
+	youngObjectReferencingPermanent := self keptObjectInVMVariable1.
+	oldObjectReferencingPermanent := self keptObjectInVMVariable2.	
+	
+	"After GC nobody points to the forwarded object"
+	self assert: (memory fetchPointer: 0 ofObject: oldObjectReferencingPermanent) equals: permanentObject.
+	self assert: (memory fetchPointer: 0 ofObject: youngObjectReferencingPermanent) equals: permanentObject.
+	self assert: (memory fetchPointer: 0 ofObject: permanentObjectReferencingPermanent) equals: permanentObject.
+	
+	self assert: memory isPermSpaceRememberedSetSane.
+]
+
+{ #category : 'test - moving' }
 VMPermanentSpaceMemoryTest >> testCompiledMethodWithMachineCodeIsNotRememberedWhenModified [
 
 	| oldObject1 permanentObject1 |
@@ -73,7 +672,7 @@ VMPermanentSpaceMemoryTest >> testCompiledMethodWithMachineCodeIsNotRememberedWh
 			 permanentObject1)
 ]
 
-{ #category : #'test - moving' }
+{ #category : 'test - moving' }
 VMPermanentSpaceMemoryTest >> testCompiledMethodWithMachineCodeIsNotRememberedWhenMoving [
 
 	| oldObject1 permanentObject1 |
@@ -94,7 +693,7 @@ VMPermanentSpaceMemoryTest >> testCompiledMethodWithMachineCodeIsNotRememberedWh
 			 permanentObject1)
 ]
 
-{ #category : #'tests - allocation' }
+{ #category : 'tests - allocation' }
 VMPermanentSpaceMemoryTest >> testMarkingNewSpaceDoesNotMarkPermSpace [
 
 	| permanentObject newObject |
@@ -112,7 +711,7 @@ VMPermanentSpaceMemoryTest >> testMarkingNewSpaceDoesNotMarkPermSpace [
 	self deny: (memory isMarked: permanentObject)
 ]
 
-{ #category : #'tests - allocation' }
+{ #category : 'tests - allocation' }
 VMPermanentSpaceMemoryTest >> testMarkingOldSpaceDoesNotMarkPermSpace [
 
 	| permanentObject oldObject |
@@ -130,7 +729,7 @@ VMPermanentSpaceMemoryTest >> testMarkingOldSpaceDoesNotMarkPermSpace [
 	self deny: (memory isMarked: permanentObject)
 ]
 
-{ #category : #'test - moving' }
+{ #category : 'test - moving' }
 VMPermanentSpaceMemoryTest >> testMoveOldObjectInRememberedSetIsMovedFromSet [
 
 	| oldObject youngObject permanentObject |
@@ -159,7 +758,7 @@ VMPermanentSpaceMemoryTest >> testMoveOldObjectInRememberedSetIsMovedFromSet [
 
 ]
 
-{ #category : #'test - moving' }
+{ #category : 'test - moving' }
 VMPermanentSpaceMemoryTest >> testMovingAnObjectReferencingAYoungOnePutsInRememberedSet [
 
 	| permanentObject youngObject rootObject|
@@ -175,7 +774,7 @@ VMPermanentSpaceMemoryTest >> testMovingAnObjectReferencingAYoungOnePutsInRememb
 	self assert: (memory getFromPermToNewSpaceRememberedSet isInRememberedSet: permanentObject).
 ]
 
-{ #category : #'test - moving' }
+{ #category : 'test - moving' }
 VMPermanentSpaceMemoryTest >> testMovingAnObjectReferencingAnOldOnePutsInRememberedSet [
 
 	| permanentObject oldObject rootObject|
@@ -192,7 +791,7 @@ VMPermanentSpaceMemoryTest >> testMovingAnObjectReferencingAnOldOnePutsInRemembe
 	self assert: (memory getFromPermToOldSpaceRememberedSet isInRememberedSet: permanentObject).
 ]
 
-{ #category : #'test - moving' }
+{ #category : 'test - moving' }
 VMPermanentSpaceMemoryTest >> testMovingOldObjectToPermSpaceIsCorrectlyForwarded [
 
 	| permanentObject oldObject rootObject|
@@ -215,7 +814,7 @@ VMPermanentSpaceMemoryTest >> testMovingOldObjectToPermSpaceIsCorrectlyForwarded
 
 ]
 
-{ #category : #'test - moving' }
+{ #category : 'test - moving' }
 VMPermanentSpaceMemoryTest >> testMovingOldObjectToPermSpaceLeavesForwarder [
 
 	| permanentObject oldObject |
@@ -230,7 +829,7 @@ VMPermanentSpaceMemoryTest >> testMovingOldObjectToPermSpaceLeavesForwarder [
 
 ]
 
-{ #category : #'test - moving' }
+{ #category : 'test - moving' }
 VMPermanentSpaceMemoryTest >> testMovingTwoObjectsPutBothInPermSpaceAndUpdatesArray [
 
 	| permanentObject youngObject rootObject anArray|
@@ -254,7 +853,7 @@ VMPermanentSpaceMemoryTest >> testMovingTwoObjectsPutBothInPermSpaceAndUpdatesAr
 	self assert: (memory getMemoryMap isPermanentObject: youngObject).	
 ]
 
-{ #category : #'tests - allocation' }
+{ #category : 'tests - allocation' }
 VMPermanentSpaceMemoryTest >> testNewPermanentByteArrayIsCorrectlyAllocated [
 
 	| permanentObject |
@@ -264,7 +863,7 @@ VMPermanentSpaceMemoryTest >> testNewPermanentByteArrayIsCorrectlyAllocated [
 	self assert: permanentObject equals: memory getMemoryMap permSpaceStart + 16 "There is a zero-slot objects always in the perm space"
 ]
 
-{ #category : #'tests - allocation' }
+{ #category : 'tests - allocation' }
 VMPermanentSpaceMemoryTest >> testNewPermanentByteArrayIsNonYoungObject [
 
 	| permanentObject |
@@ -274,7 +873,7 @@ VMPermanentSpaceMemoryTest >> testNewPermanentByteArrayIsNonYoungObject [
 	self deny: (memory getMemoryMap isYoungObject: permanentObject)
 ]
 
-{ #category : #'tests - allocation' }
+{ #category : 'tests - allocation' }
 VMPermanentSpaceMemoryTest >> testNewPermanentByteArrayIsNotAnOldObject [
 
 	| permanentObject |
@@ -284,7 +883,7 @@ VMPermanentSpaceMemoryTest >> testNewPermanentByteArrayIsNotAnOldObject [
 	self deny: (memory getMemoryMap isOldObject: permanentObject)
 ]
 
-{ #category : #'tests - allocation' }
+{ #category : 'tests - allocation' }
 VMPermanentSpaceMemoryTest >> testNewPermanentByteArrayIsPermanentObject [
 
 	| permanentObject |
@@ -294,7 +893,7 @@ VMPermanentSpaceMemoryTest >> testNewPermanentByteArrayIsPermanentObject [
 	self assert: (memory getMemoryMap isPermanentObject: permanentObject)
 ]
 
-{ #category : #'tests - allocation' }
+{ #category : 'tests - allocation' }
 VMPermanentSpaceMemoryTest >> testNextObjectIsReturningAGoodValue [
 
 	| permanentObject nextObject |
@@ -306,7 +905,7 @@ VMPermanentSpaceMemoryTest >> testNextObjectIsReturningAGoodValue [
 	
 ]
 
-{ #category : #'test - moving' }
+{ #category : 'test - moving' }
 VMPermanentSpaceMemoryTest >> testObjectInBothRememberedSetIsCorrectlyUpdated [
 
 	| oldObject1 permanentObject1 oldObject2 youngObject |
@@ -343,7 +942,7 @@ VMPermanentSpaceMemoryTest >> testObjectInBothRememberedSetIsCorrectlyUpdated [
 	
 ]
 
-{ #category : #'tests - allocation' }
+{ #category : 'tests - allocation' }
 VMPermanentSpaceMemoryTest >> testObjectReferencingOldIsAddedToCorrectRememberedSetAndThenRemoved [
 
 	| oldObject1 oldObject2 permObject2 |
@@ -367,7 +966,7 @@ VMPermanentSpaceMemoryTest >> testObjectReferencingOldIsAddedToCorrectRemembered
 	self assert: memory getFromPermToNewSpaceRememberedSet rememberedSetSize equals: 0.
 ]
 
-{ #category : #'test - moving' }
+{ #category : 'test - moving' }
 VMPermanentSpaceMemoryTest >> testObjectWithForwarderIsCorrectlyResolved [
 
 	
@@ -385,7 +984,7 @@ VMPermanentSpaceMemoryTest >> testObjectWithForwarderIsCorrectlyResolved [
 
 ]
 
-{ #category : #'test - moving' }
+{ #category : 'test - moving' }
 VMPermanentSpaceMemoryTest >> testPassingObjectInBulkToPermSpaceKeepsFirstInRememberedSet [
 
 	| oldObject1 permanentObject1 oldObject2 array |
@@ -406,7 +1005,7 @@ VMPermanentSpaceMemoryTest >> testPassingObjectInBulkToPermSpaceKeepsFirstInReme
 
 ]
 
-{ #category : #'test - moving' }
+{ #category : 'test - moving' }
 VMPermanentSpaceMemoryTest >> testPassingObjectsInBulkPreservesObjectAlreadyInTheRememberedSet [
 
 	| oldObject1 permanentObject1 oldObject2 permanentObject2 array youngObject |
@@ -438,7 +1037,7 @@ VMPermanentSpaceMemoryTest >> testPassingObjectsInBulkPreservesObjectAlreadyInTh
 
 ]
 
-{ #category : #'test - moving' }
+{ #category : 'test - moving' }
 VMPermanentSpaceMemoryTest >> testPassingTwoObjectsInBulkToPermSpaceIsRemovedFromRememberedSet [
 
 	| oldObject1 permanentObject1 oldObject2 permanentObject2 array |
@@ -461,7 +1060,7 @@ VMPermanentSpaceMemoryTest >> testPassingTwoObjectsInBulkToPermSpaceIsRemovedFro
 	self deny: (memory getFromPermToOldSpaceRememberedSet isInRememberedSet: permanentObject1).		
 ]
 
-{ #category : #'test - moving' }
+{ #category : 'test - moving' }
 VMPermanentSpaceMemoryTest >> testPassingTwoObjectsToPermSpaceIsRemovedFromRememberedSet [
 
 	| oldObject1 permanentObject1 oldObject2 permanentObject2 |
@@ -481,7 +1080,7 @@ VMPermanentSpaceMemoryTest >> testPassingTwoObjectsToPermSpaceIsRemovedFromRemem
 	self deny: (memory getFromPermToOldSpaceRememberedSet isInRememberedSet: permanentObject1).		
 ]
 
-{ #category : #'test - moving' }
+{ #category : 'test - moving' }
 VMPermanentSpaceMemoryTest >> testPassingTwoObjectsToPermSpaceKeepsFirstInRememberedSet [
 
 	| oldObject1 permanentObject1 oldObject2 permanentObject2 |
@@ -499,7 +1098,7 @@ VMPermanentSpaceMemoryTest >> testPassingTwoObjectsToPermSpaceKeepsFirstInRememb
 
 ]
 
-{ #category : #'test - moving' }
+{ #category : 'test - moving' }
 VMPermanentSpaceMemoryTest >> testPassingTwoObjectsToPermSpaceKeepsPointerToForwarderInOldSpace [
 
 	| oldObject1 permanentObject1 oldObject2 permanentObject2 |
@@ -514,7 +1113,7 @@ VMPermanentSpaceMemoryTest >> testPassingTwoObjectsToPermSpaceKeepsPointerToForw
 	self assert: (memory fetchPointer: 0 ofObject: permanentObject1) equals: oldObject2
 ]
 
-{ #category : #'test - moving' }
+{ #category : 'test - moving' }
 VMPermanentSpaceMemoryTest >> testPassingTwoObjectsToPermSpaceNotUpdatesForwarderInScanvenge [
 
 	| oldObject1 permanentObject1 oldObject2 permanentObject2 |
@@ -531,7 +1130,7 @@ VMPermanentSpaceMemoryTest >> testPassingTwoObjectsToPermSpaceNotUpdatesForwarde
 	self deny: (memory fetchPointer: 0 ofObject: permanentObject1) equals: permanentObject2
 ]
 
-{ #category : #'test - moving' }
+{ #category : 'test - moving' }
 VMPermanentSpaceMemoryTest >> testPassingTwoObjectsToPermSpaceUpdatesForwarderInGC [
 
 	| oldObject1 permanentObject1 oldObject2 permanentObject2 |
@@ -548,7 +1147,7 @@ VMPermanentSpaceMemoryTest >> testPassingTwoObjectsToPermSpaceUpdatesForwarderIn
 	self assert: (memory fetchPointer: 0 ofObject: permanentObject1) equals: permanentObject2
 ]
 
-{ #category : #'test - moving' }
+{ #category : 'test - moving' }
 VMPermanentSpaceMemoryTest >> testPermObjectPointingToOldSpaceIsUpdatedWhenCompactingForSaving [
 
 	| oldObject1 permanentObject1 oldObject2 oldObject2Hash |
@@ -572,7 +1171,7 @@ VMPermanentSpaceMemoryTest >> testPermObjectPointingToOldSpaceIsUpdatedWhenCompa
 	self assert: (memory hashBitsOf: (memory fetchPointer: 0 ofObject: permanentObject1)) equals: oldObject2Hash 
 ]
 
-{ #category : #'test - moving' }
+{ #category : 'test - moving' }
 VMPermanentSpaceMemoryTest >> testPermanentObjectMarksItsOldClass [
 
 	| permanentObject oldObject oldClass oldClassHash found |
@@ -598,7 +1197,7 @@ VMPermanentSpaceMemoryTest >> testPermanentObjectMarksItsOldClass [
 	self assert: found
 ]
 
-{ #category : #'test - moving' }
+{ #category : 'test - moving' }
 VMPermanentSpaceMemoryTest >> testPermanentObjectPointingToFalseIsNotRemembered [
 
 	
@@ -611,7 +1210,7 @@ VMPermanentSpaceMemoryTest >> testPermanentObjectPointingToFalseIsNotRemembered 
 	self deny: (memory getFromPermToOldSpaceRememberedSet isInRememberedSet: permanentObject ).	
 ]
 
-{ #category : #'test - moving' }
+{ #category : 'test - moving' }
 VMPermanentSpaceMemoryTest >> testPermanentObjectPointingToMachineCodeIsNotRemembered [
 
 	
@@ -624,7 +1223,7 @@ VMPermanentSpaceMemoryTest >> testPermanentObjectPointingToMachineCodeIsNotRemem
 	self deny: (memory getFromPermToOldSpaceRememberedSet isInRememberedSet: permanentObject ).	
 ]
 
-{ #category : #'test - moving' }
+{ #category : 'test - moving' }
 VMPermanentSpaceMemoryTest >> testPermanentObjectPointingToNilIsNotRemembered [
 
 	
@@ -636,7 +1235,7 @@ VMPermanentSpaceMemoryTest >> testPermanentObjectPointingToNilIsNotRemembered [
 	self deny: (memory getFromPermToOldSpaceRememberedSet isInRememberedSet: permanentObject ).	
 ]
 
-{ #category : #'test - moving' }
+{ #category : 'test - moving' }
 VMPermanentSpaceMemoryTest >> testPermanentObjectPointingToTrueIsNotRemembered [
 
 	
@@ -649,7 +1248,7 @@ VMPermanentSpaceMemoryTest >> testPermanentObjectPointingToTrueIsNotRemembered [
 	self deny: (memory getFromPermToOldSpaceRememberedSet isInRememberedSet: permanentObject ).	
 ]
 
-{ #category : #'test - moving' }
+{ #category : 'test - moving' }
 VMPermanentSpaceMemoryTest >> testPermanentObjectPointingToYoungObjectIsRemovedWhenPointingToMachineCodeMethod [
 
 	
@@ -680,7 +1279,7 @@ VMPermanentSpaceMemoryTest >> testPermanentObjectPointingToYoungObjectIsRemovedW
 	self assert: (memory fetchPointer: 0 ofObject: permanentObject ) equals: fakeMachineCodeMethod.
 ]
 
-{ #category : #'test - moving' }
+{ #category : 'test - moving' }
 VMPermanentSpaceMemoryTest >> testPermanentObjectUpdatedToTrueIsRemovedFromRememberedSet [
 
 	
@@ -702,7 +1301,7 @@ VMPermanentSpaceMemoryTest >> testPermanentObjectUpdatedToTrueIsRemovedFromRemem
 
 ]
 
-{ #category : #'test - moving' }
+{ #category : 'test - moving' }
 VMPermanentSpaceMemoryTest >> testReferencingAnObjectFromOldEphemeronIsNotFired [
 
 	| permanentObject oldObject ephemeronObject |
@@ -728,7 +1327,7 @@ VMPermanentSpaceMemoryTest >> testReferencingAnObjectFromOldEphemeronIsNotFired 
 
 ]
 
-{ #category : #'test - moving' }
+{ #category : 'test - moving' }
 VMPermanentSpaceMemoryTest >> testReferencingAnObjectFromOldWeakObjectIsNotNilled [
 
 	| permanentObject oldObject weakObject |
@@ -757,7 +1356,7 @@ VMPermanentSpaceMemoryTest >> testReferencingAnObjectFromOldWeakObjectIsNotNille
 
 ]
 
-{ #category : #'test - moving' }
+{ #category : 'test - moving' }
 VMPermanentSpaceMemoryTest >> testReferencingAnObjectFromYoungEphemeronIsNotFired [
 
 	| permanentObject oldObject ephemeronObject |
@@ -780,7 +1379,7 @@ VMPermanentSpaceMemoryTest >> testReferencingAnObjectFromYoungEphemeronIsNotFire
 
 ]
 
-{ #category : #'test - moving' }
+{ #category : 'test - moving' }
 VMPermanentSpaceMemoryTest >> testReferencingAnObjectFromYoungWeakObjectIsNotNilled [
 
 	| permanentObject oldObject weakObject |

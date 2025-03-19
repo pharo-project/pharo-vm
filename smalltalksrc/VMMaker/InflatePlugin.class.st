@@ -2,8 +2,8 @@
 This plugin implements the one crucial function for efficiently decompressing streams.
 "
 Class {
-	#name : #InflatePlugin,
-	#superclass : #InterpreterPlugin,
+	#name : 'InflatePlugin',
+	#superclass : 'InterpreterPlugin',
 	#instVars : [
 		'zipCollection',
 		'zipReadLimit',
@@ -25,10 +25,12 @@ Class {
 		'MaxBits',
 		'StateNoMoreData'
 	],
-	#category : #'VMMaker-Plugins'
+	#category : 'VMMaker-Plugins',
+	#package : 'VMMaker',
+	#tag : 'Plugins'
 }
 
-{ #category : #translation }
+{ #category : 'translation' }
 InflatePlugin class >> declareCVarsIn: cg [
 	cg var: #zipCollection type: #'unsigned char*'.
 	cg var: #zipSource type: #'unsigned char*'.
@@ -36,25 +38,25 @@ InflatePlugin class >> declareCVarsIn: cg [
 	cg var: #zipDistTable type: #'unsigned int*'
 ]
 
-{ #category : #'class initialization' }
+{ #category : 'class initialization' }
 InflatePlugin class >> initialize [
 	"InflatePlugin initialize"
 	MaxBits := 16.
 	StateNoMoreData := 1.
 ]
 
-{ #category : #translation }
+{ #category : 'translation' }
 InflatePlugin class >> moduleName [
 	^'ZipPlugin'
 ]
 
-{ #category : #translation }
+{ #category : 'translation' }
 InflatePlugin class >> shouldBeTranslated [
 "InflatePlugin should not be translated but its subclass should since it is incorporated within that class's translation process"
 	^self ~= InflatePlugin
 ]
 
-{ #category : #simulation }
+{ #category : 'simulation' }
 InflatePlugin class >> simulatorClass [
 	"For running from Smalltalk - answer a class that can be used to simulate the receiver,
 	 or nil if you want the primitives in this module to always fail, causing simulation to fall
@@ -63,7 +65,7 @@ InflatePlugin class >> simulatorClass [
 	^DeflatePlugin
 ]
 
-{ #category : #'primitive support' }
+{ #category : 'primitive support' }
 InflatePlugin >> determineSizeOfReadStream: rcvr [
 	"Determine the inst size of the class above DeflateStream by
 	 looking for the first class whose inst size is less than 13."
@@ -78,12 +80,12 @@ InflatePlugin >> determineSizeOfReadStream: rcvr [
 	^true
 ]
 
-{ #category : #'initialize-release' }
+{ #category : 'initialize-release' }
 InflatePlugin >> initialize [
 	readStreamInstSize := 0
 ]
 
-{ #category : #primitives }
+{ #category : 'primitives' }
 InflatePlugin >> primitiveInflateDecompressBlock [
 	"Primitive. Inflate a single block."
 	| oop rcvr |
@@ -155,7 +157,7 @@ InflatePlugin >> primitiveInflateDecompressBlock [
 		interpreterProxy pop: 2]
 ]
 
-{ #category : #inflating }
+{ #category : 'inflating' }
 InflatePlugin >> zipDecodeValueFrom: table size: tableSize [
 	"Decode the next value in the receiver using the given huffman table."
 	| bits bitsNeeded tableIndex value index |
@@ -176,7 +178,7 @@ InflatePlugin >> zipDecodeValueFrom: table size: tableSize [
 	^0
 ]
 
-{ #category : #inflating }
+{ #category : 'inflating' }
 InflatePlugin >> zipDecompressBlock [
 	| value extra length distance oldPos oldBits oldBitPos dstPos srcPos max |
 	<inline: false>
@@ -216,7 +218,7 @@ InflatePlugin >> zipDecompressBlock [
 	].
 ]
 
-{ #category : #inflating }
+{ #category : 'inflating' }
 InflatePlugin >> zipNextBits: n [
 	| bits byte |
 	<inline: true>

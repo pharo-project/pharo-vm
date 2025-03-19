@@ -1,14 +1,16 @@
 Class {
-	#name : #CWhileStatementNode,
-	#superclass : #CGLRAbstractNode,
+	#name : 'CWhileStatementNode',
+	#superclass : 'CGLRAbstractNode',
 	#instVars : [
 		'statement',
 		'while'
 	],
-	#category : #'CAST-Nodes'
+	#category : 'CAST-Nodes',
+	#package : 'CAST',
+	#tag : 'Nodes'
 }
 
-{ #category : #'instance creation' }
+{ #category : 'instance creation' }
 CWhileStatementNode class >> while: aBooleanExpression statement: aStatement [
 
 	^ self new
@@ -17,23 +19,23 @@ CWhileStatementNode class >> while: aBooleanExpression statement: aStatement [
 		  yourself
 ]
 
-{ #category : #generated }
+{ #category : 'generated' }
 CWhileStatementNode >> acceptVisitor: anAbstractVisitor [
 	^ anAbstractVisitor visitWhileStatement: self
 ]
 
-{ #category : #testing }
+{ #category : 'testing' }
 CWhileStatementNode >> isWhile [
 	
 	^ true
 ]
 
-{ #category : #generated }
+{ #category : 'generated' }
 CWhileStatementNode >> statement [
 	^ statement
 ]
 
-{ #category : #generated }
+{ #category : 'generated' }
 CWhileStatementNode >> statement: aCGLRAbstractNode [
 	self statement notNil
 		ifTrue: [ self statement parent: nil ].
@@ -42,12 +44,12 @@ CWhileStatementNode >> statement: aCGLRAbstractNode [
 		ifTrue: [ self statement parent: self ]
 ]
 
-{ #category : #generated }
+{ #category : 'generated' }
 CWhileStatementNode >> while [
 	^ while
 ]
 
-{ #category : #generated }
+{ #category : 'generated' }
 CWhileStatementNode >> while: aCGLRExpressionNode [
 	self assertExpression: aCGLRExpressionNode.
 	

@@ -9,8 +9,8 @@ pages
 
 "
 Class {
-	#name : #CogCheck32BitHeapMap,
-	#superclass : #Object,
+	#name : 'CogCheck32BitHeapMap',
+	#superclass : 'Object',
 	#instVars : [
 		'pages'
 	],
@@ -21,10 +21,12 @@ Class {
 		'PageShift',
 		'PageSize'
 	],
-	#category : #'VMMaker-InterpreterSimulation'
+	#category : 'VMMaker-InterpreterSimulation',
+	#package : 'VMMaker',
+	#tag : 'InterpreterSimulation'
 }
 
-{ #category : #'class initialization' }
+{ #category : 'class initialization' }
 CogCheck32BitHeapMap class >> initialize [
 	"self initialize"
 	| wordSize bitsPerByte |
@@ -37,23 +39,23 @@ CogCheck32BitHeapMap class >> initialize [
 	ByteShift := -5 "1 bit per 4 bytes, 8 bits per byte = 32 bytes of address space per map byte"
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 CogCheck32BitHeapMap >> bitIndex: address [
 	^(address bitShift: -2) bitAnd: 7
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 CogCheck32BitHeapMap >> byteIndex: address [ 
 	^((address bitShift: ByteShift) bitAnd: PageMask) + 1
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 CogCheck32BitHeapMap >> clearHeapMap [
 	pages do:
 		[:p| p ifNotNil: [p atAllPut: 0]]
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 CogCheck32BitHeapMap >> heapMapAtWord: address [
 	"answer the bit corresponding to address aBit in the map"
 	^ pages at: (self pageIndex: address)
@@ -65,7 +67,7 @@ CogCheck32BitHeapMap >> heapMapAtWord: address [
 
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 CogCheck32BitHeapMap >> heapMapAtWord: address Put: aBit [
 	"set the bit corresponding to address in the map to aBit"
 	| pageIndex page bitIndex byte byteIndex |
@@ -80,19 +82,19 @@ CogCheck32BitHeapMap >> heapMapAtWord: address Put: aBit [
 	page at: byteIndex put: byte
 ]
 
-{ #category : #initialization }
+{ #category : 'initialization' }
 CogCheck32BitHeapMap >> initialize [
 	
 	super initialize.
 	pages := Dictionary new
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 CogCheck32BitHeapMap >> pageIndex: address [
 	^(address bitShift: PageShift) + 1 "32 - (pageSize log: 2)"
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 CogCheck32BitHeapMap >> pageSize [
 	self shouldBeImplemented
 ]

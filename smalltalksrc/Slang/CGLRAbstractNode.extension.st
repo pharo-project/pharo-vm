@@ -1,6 +1,6 @@
-Extension { #name : #CGLRAbstractNode }
+Extension { #name : 'CGLRAbstractNode' }
 
-{ #category : #'*Slang' }
+{ #category : '*Slang' }
 CGLRAbstractNode >> prettyPrintOn: aStream [
 
 	| prettyPrinter |

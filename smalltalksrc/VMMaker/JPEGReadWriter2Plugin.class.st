@@ -66,30 +66,32 @@ jinclude.h
 
 "
 Class {
-	#name : #JPEGReadWriter2Plugin,
-	#superclass : #SmartSyntaxInterpreterPlugin,
-	#category : #'VMMaker-Plugins'
+	#name : 'JPEGReadWriter2Plugin',
+	#superclass : 'SmartSyntaxInterpreterPlugin',
+	#category : 'VMMaker-Plugins',
+	#package : 'VMMaker',
+	#tag : 'Plugins'
 }
 
-{ #category : #translation }
+{ #category : 'translation' }
 JPEGReadWriter2Plugin class >> hasHeaderFile [
 	"If there is a single intrinsic header file to be associated with the plugin, here is where you want to flag"
 	^true
 ]
 
-{ #category : #translation }
+{ #category : 'translation' }
 JPEGReadWriter2Plugin class >> requiresCrossPlatformFiles [
 	"default is ok for most, any plugin needing cross platform files must say so"
 	^true
 ]
 
-{ #category : #translation }
+{ #category : 'translation' }
 JPEGReadWriter2Plugin class >> requiresPlatformFiles [
 	"default is ok for most, any plugin needing platform specific files must say so"
 	^true
 ]
 
-{ #category : #'plugin support' }
+{ #category : 'plugin support' }
 JPEGReadWriter2Plugin >> compressStructSize [
 	<inline: #always>
 	^self
@@ -97,7 +99,7 @@ JPEGReadWriter2Plugin >> compressStructSize [
 		inSmalltalk: [JPEGReadWriter2 new primJPEGCompressStructSize]
 ]
 
-{ #category : #'plugin support' }
+{ #category : 'plugin support' }
 JPEGReadWriter2Plugin >> decompressStructSize [
 	<inline: #always>
 	^self
@@ -105,7 +107,7 @@ JPEGReadWriter2Plugin >> decompressStructSize [
 		inSmalltalk: [JPEGReadWriter2 new primJPEGDecompressStructSize]
 ]
 
-{ #category : #'plugin support' }
+{ #category : 'plugin support' }
 JPEGReadWriter2Plugin >> errorMgr2StructSize [
 	<inline: #always>
 	^self
@@ -113,25 +115,25 @@ JPEGReadWriter2Plugin >> errorMgr2StructSize [
 		inSmalltalk: [JPEGReadWriter2 new primJPEGErrorMgr2StructSize]
 ]
 
-{ #category : #'plugin support' }
+{ #category : 'plugin support' }
 JPEGReadWriter2Plugin >> isValidCompressionStruct: aByteArray [
 	<inline: #always>
 	^(interpreterProxy byteSizeOf: aByteArray cPtrAsOop) >= self compressStructSize
 ]
 
-{ #category : #'plugin support' }
+{ #category : 'plugin support' }
 JPEGReadWriter2Plugin >> isValidDecompressionStruct: aByteArray [
 	<inline: #always>
 	^(interpreterProxy byteSizeOf: aByteArray cPtrAsOop) >= self decompressStructSize
 ]
 
-{ #category : #'plugin support' }
+{ #category : 'plugin support' }
 JPEGReadWriter2Plugin >> isValidErrorMessageStruct: aByteArray [
 	<inline: #always>
 	^(interpreterProxy byteSizeOf: aByteArray cPtrAsOop) >= self errorMgr2StructSize
 ]
 
-{ #category : #primitives }
+{ #category : 'primitives' }
 JPEGReadWriter2Plugin >> primImageHeight: aJPEGDecompressStruct [
 	<export: true>
 	self primitive: 'primImageHeight' parameters: #(ByteArray).
@@ -146,7 +148,7 @@ JPEGReadWriter2Plugin >> primImageHeight: aJPEGDecompressStruct [
 			asOop: SmallInteger
 ]
 
-{ #category : #primitives }
+{ #category : 'primitives' }
 JPEGReadWriter2Plugin >> primImageNumComponents: aJPEGDecompressStruct [
 	<export: true>
 	self primitive: 'primImageNumComponents' parameters: #(ByteArray).
@@ -161,7 +163,7 @@ JPEGReadWriter2Plugin >> primImageNumComponents: aJPEGDecompressStruct [
 			asOop: SmallInteger
 ]
 
-{ #category : #primitives }
+{ #category : 'primitives' }
 JPEGReadWriter2Plugin >> primImageWidth: aJPEGDecompressStruct [
 	<export: true>
 	self primitive: 'primImageWidth' parameters: #(ByteArray).
@@ -176,7 +178,7 @@ JPEGReadWriter2Plugin >> primImageWidth: aJPEGDecompressStruct [
 			asOop: SmallInteger
 ]
 
-{ #category : #primitives }
+{ #category : 'primitives' }
 JPEGReadWriter2Plugin >> primJPEGCompressStructSize [
 	<export: true>
 	self primitive: #primJPEGCompressStructSize parameters: #().
@@ -184,7 +186,7 @@ JPEGReadWriter2Plugin >> primJPEGCompressStructSize [
 	^self compressStructSize asOop: SmallInteger
 ]
 
-{ #category : #primitives }
+{ #category : 'primitives' }
 JPEGReadWriter2Plugin >> primJPEGDecompressStructSize [
 	<export: true>
 	self primitive: #primJPEGDecompressStructSize parameters: #().
@@ -192,7 +194,7 @@ JPEGReadWriter2Plugin >> primJPEGDecompressStructSize [
 	^self decompressStructSize asOop: SmallInteger
 ]
 
-{ #category : #primitives }
+{ #category : 'primitives' }
 JPEGReadWriter2Plugin >> primJPEGErrorMgr2StructSize [
 	<export: true>
 	self primitive: #primJPEGErrorMgr2StructSize parameters: #().
@@ -200,7 +202,7 @@ JPEGReadWriter2Plugin >> primJPEGErrorMgr2StructSize [
 	^self errorMgr2StructSize asOop: SmallInteger
 ]
 
-{ #category : #primitives }
+{ #category : 'primitives' }
 JPEGReadWriter2Plugin >> primJPEGPluginIsPresent [
 	<export: true>
 	self primitive: #primJPEGPluginIsPresent parameters: #().
@@ -208,7 +210,7 @@ JPEGReadWriter2Plugin >> primJPEGPluginIsPresent [
 	^(self cCode: [true] inSmalltalk: [JPEGReadWriter2 primJPEGPluginIsPresent]) asOop: Boolean
 ]
 
-{ #category : #primitives }
+{ #category : 'primitives' }
 JPEGReadWriter2Plugin >> primJPEGReadHeader: aJPEGDecompressStruct fromByteArray: source errorMgr: aJPEGErrorMgr2Struct [
 	<export: true>
 	
@@ -230,7 +232,7 @@ JPEGReadWriter2Plugin >> primJPEGReadHeader: aJPEGDecompressStruct fromByteArray
 			errorMgrReadHeader: aJPEGErrorMgr2Struct]
 ]
 
-{ #category : #simulation }
+{ #category : 'simulation' }
 JPEGReadWriter2Plugin >> primJPEGReadHeader: jpegDecompressStruct fromByteArray: source size: sourceSize errorMgrReadHeader: jpegErrorMgr2Struct [
 	"void primJPEGReadHeaderfromByteArraysizeerrorMgrReadHeader(
 			char* jpegDecompressStruct,
@@ -254,7 +256,7 @@ JPEGReadWriter2Plugin >> primJPEGReadHeader: jpegDecompressStruct fromByteArray:
 	^nil
 ]
 
-{ #category : #primitives }
+{ #category : 'primitives' }
 JPEGReadWriter2Plugin >> primJPEGReadImage: aJPEGDecompressStruct fromByteArray: source onForm: form doDithering: ditherFlag errorMgr: aJPEGErrorMgr2Struct [
 	<export: true>
 	| formBitmap formNativeDepth formDepth formWidth formHeight pixelsPerWord formPitch formBitmapSizeInBytes sourceSize formBitmapOOP formComponentBitSize formComponents wordsPerRow |
@@ -305,7 +307,7 @@ JPEGReadWriter2Plugin >> primJPEGReadImage: aJPEGDecompressStruct fromByteArray:
 																			    		_: formNativeDepth
 ]
 
-{ #category : #simulation }
+{ #category : 'simulation' }
 JPEGReadWriter2Plugin >> primJPEGReadImagefromByteArrayonFormdoDitheringerrorMgrReadScanlines: jpegDecompressStruct _: jpegErrorMgr2Struct _: source _: sourceSize _: ditherFlag _: formBitmap _: pixelsPerWord _: wordsPerRow _: formNativeDepth [
 	"void primJPEGReadImagefromByteArrayonFormdoDitheringerrorMgrReadScanlines(
 		    char* jpegDecompressStruct,
@@ -341,7 +343,7 @@ JPEGReadWriter2Plugin >> primJPEGReadImagefromByteArrayonFormdoDitheringerrorMgr
 	^nil
 ]
 
-{ #category : #primitives }
+{ #category : 'primitives' }
 JPEGReadWriter2Plugin >> primJPEGWriteImage: aJPEGCompressStruct onByteArray: destination form: form quality: quality progressiveJPEG: progressiveFlag errorMgr: aJPEGErrorMgr2Struct [
 
 	| formBitmap formWidth formHeight formNativeDepth formDepth destinationSize pixelsPerWord wordsPerRow formPitch formBitmapSizeInBytes formBitmapOOP formComponentBitSize formComponents |
@@ -395,7 +397,7 @@ JPEGReadWriter2Plugin >> primJPEGWriteImage: aJPEGCompressStruct onByteArray: de
 	^destinationSize asOop: SmallInteger
 ]
 
-{ #category : #simulation }
+{ #category : 'simulation' }
 JPEGReadWriter2Plugin >> primJPEGWriteImageonByteArrayformqualityprogressiveJPEGerrorMgrWriteScanlines: width _: height _: nativeDepth _: bitmap _: jpegCompressStruct _: jpegErrorMgr2Struct _: quality _: progressiveFlag _: pixelsPerWord _: wordsPerRow _: destination _: destinationSizePtr [
 	"void primJPEGWriteImageonByteArrayformqualityprogressiveJPEGerrorMgrWriteScanlines(
 			unsigned int width,
@@ -433,7 +435,7 @@ JPEGReadWriter2Plugin >> primJPEGWriteImageonByteArrayformqualityprogressiveJPEG
 	^nil
 ]
 
-{ #category : #primitives }
+{ #category : 'primitives' }
 JPEGReadWriter2Plugin >> primSupports8BitGrayscaleJPEGs [
 	<export: true>
 	self

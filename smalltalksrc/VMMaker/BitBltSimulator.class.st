@@ -20,8 +20,8 @@ destinationHashes
 	  and comparing against results in the regressed version.
 "
 Class {
-	#name : #BitBltSimulator,
-	#superclass : #BitBltSimulation,
+	#name : 'BitBltSimulator',
+	#superclass : 'BitBltSimulation',
 	#instVars : [
 		'destinationHashes',
 		'copyBitsCount',
@@ -37,34 +37,36 @@ Class {
 		'dither8Lookup',
 		'isInitialised'
 	],
-	#category : #'VMMaker-InterpreterSimulation'
+	#category : 'VMMaker-InterpreterSimulation',
+	#package : 'VMMaker',
+	#tag : 'InterpreterSimulation'
 }
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 BitBltSimulator class >> dither8Lookup [
 
 	^ dither8Lookup
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 BitBltSimulator class >> ditherMatrix4x4 [
 
 	^ ditherMatrix4x4
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 BitBltSimulator class >> ditherThresholds16 [
 
 	^ ditherThresholds16
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 BitBltSimulator class >> ditherValues16 [
 
 	^ ditherValues16
 ]
 
-{ #category : #'class initialization' }
+{ #category : 'class initialization' }
 BitBltSimulator class >> initialize [
 	"self initialize"
 	super initialize.
@@ -72,42 +74,42 @@ BitBltSimulator class >> initialize [
 
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 BitBltSimulator class >> isInitialised [
 
 	^ isInitialised
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 BitBltSimulator class >> maskTable [
 
 	^ maskTable
 ]
 
-{ #category : #'instance creation' }
+{ #category : 'instance creation' }
 BitBltSimulator class >> new [
 	^super new
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 BitBltSimulator class >> setInitialised [
 
 	isInitialised := true.
 ]
 
-{ #category : #translation }
+{ #category : 'translation' }
 BitBltSimulator class >> shouldBeTranslated [
 "This class should not be translated "
 	^false
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 BitBltSimulator class >> warpBitShiftTable [
 
 	^ warpBitShiftTable
 ]
 
-{ #category : #'debug support' }
+{ #category : 'debug support' }
 BitBltSimulator >> copyBits [
 	(destinationHashes notNil and: [copyBitsCount + 1 = copyBitsBreakCount]) ifTrue:
 		[self halt: 'reached copyBitsBreakCount ', copyBitsBreakCount printString].
@@ -123,31 +125,31 @@ BitBltSimulator >> copyBits [
 				[destinationHashes addLast: self destinationHash]]
 ]
 
-{ #category : #'debug support' }
+{ #category : 'debug support' }
 BitBltSimulator >> copyBitsBreakCount [
 
 	^ copyBitsBreakCount
 ]
 
-{ #category : #'debug support' }
+{ #category : 'debug support' }
 BitBltSimulator >> copyBitsBreakCount: anObject [
 
 	copyBitsBreakCount := anObject
 ]
 
-{ #category : #'debug support' }
+{ #category : 'debug support' }
 BitBltSimulator >> copyBitsCount [
 
 	^ copyBitsCount
 ]
 
-{ #category : #'debug support' }
+{ #category : 'debug support' }
 BitBltSimulator >> copyBitsCount: anObject [
 
 	copyBitsCount := anObject
 ]
 
-{ #category : #'translation support' }
+{ #category : 'translation support' }
 BitBltSimulator >> cppIf: conditionBlockOrSymbolValue ifTrue: trueExpressionOrBlock ifFalse: falseExpressionOrBlockOrNil [
 	"The simulator does not have fast blt defines"
 	^ conditionBlockOrSymbolValue == #'ENABLE_FAST_BLT'
@@ -158,7 +160,7 @@ BitBltSimulator >> cppIf: conditionBlockOrSymbolValue ifTrue: trueExpressionOrBl
 					ifFalse: falseExpressionOrBlockOrNil]
 ]
 
-{ #category : #'debug support' }
+{ #category : 'debug support' }
 BitBltSimulator >> destinationHash [
 	| mem bits |
 	mem := interpreterProxy memory.
@@ -169,13 +171,13 @@ BitBltSimulator >> destinationHash [
 	^bits hash
 ]
 
-{ #category : #'debug support' }
+{ #category : 'debug support' }
 BitBltSimulator >> destinationHashes [
 
 	^ destinationHashes
 ]
 
-{ #category : #'debug support' }
+{ #category : 'debug support' }
 BitBltSimulator >> destinationHashes: anObject [
 
 	destinationHashes := anObject.
@@ -183,28 +185,28 @@ BitBltSimulator >> destinationHashes: anObject [
 	copyBitsBreakCount ifNil: [copyBitsBreakCount := -1]
 ]
 
-{ #category : #'debug support' }
+{ #category : 'debug support' }
 BitBltSimulator >> dstLongAt: dstIndex [
 	interpreterProxy isInterpreterProxy ifTrue:
 		[^dstIndex long32At: 0].
 	^super dstLongAt: dstIndex
 ]
 
-{ #category : #'debug support' }
+{ #category : 'debug support' }
 BitBltSimulator >> dstLongAt: dstIndex put: value [
 	interpreterProxy isInterpreterProxy ifTrue:
 		[^dstIndex long32At: 0 put: value].
 	^super dstLongAt: dstIndex put: value
 ]
 
-{ #category : #'memory access' }
+{ #category : 'memory access' }
 BitBltSimulator >> halftoneAt: idx [
 	interpreterProxy isInterpreterProxy ifTrue:
 		[^(halftoneBase + (idx \\ halftoneHeight * 4)) long32At: 0].
 	^super halftoneAt: idx
 ]
 
-{ #category : #'memory access' }
+{ #category : 'memory access' }
 BitBltSimulator >> incDestIndex: offset [
 	"if offset is a CObject, this avoids a copy, making the simulation massively faster"
 	^ destIndex isCObjectAccessor
@@ -213,7 +215,7 @@ BitBltSimulator >> incDestIndex: offset [
 
 ]
 
-{ #category : #'memory access' }
+{ #category : 'memory access' }
 BitBltSimulator >> incSrcIndex: offset [
 	"if offset is a CObject, this avoids a copy, making the simulation massively faster"
 	^ sourceIndex isCObjectAccessor
@@ -222,7 +224,7 @@ BitBltSimulator >> incSrcIndex: offset [
 
 ]
 
-{ #category : #simulation }
+{ #category : 'simulation' }
 BitBltSimulator >> initBBOpTable [
 	opTable := OpTable.
 	maskTable := Array new: 32.
@@ -231,7 +233,7 @@ BitBltSimulator >> initBBOpTable [
 	warpBitShiftTable := CArrayAccessor on: (Array new: 32).
 ]
 
-{ #category : #'initialize-release' }
+{ #category : 'initialize-release' }
 BitBltSimulator >> initialiseModule [
 
 	self class isInitialised ifFalse: [| ivars |
@@ -249,7 +251,7 @@ BitBltSimulator >> initialiseModule [
 	^true
 ]
 
-{ #category : #simulation }
+{ #category : 'simulation' }
 BitBltSimulator >> initializeDitherTables [
 	ditherMatrix4x4 := CArrayAccessor on:
 		#(	0	8	2	10
@@ -263,22 +265,22 @@ BitBltSimulator >> initializeDitherTables [
 	dither8Lookup := CArrayAccessor on: (Array new: 4096).
 ]
 
-{ #category : #'memory access' }
+{ #category : 'memory access' }
 BitBltSimulator >> long32At: byteAddress [
 	^interpreterProxy long32At: byteAddress
 ]
 
-{ #category : #'memory access' }
+{ #category : 'memory access' }
 BitBltSimulator >> long32At: byteAddress put: a32BitValue [
 	^interpreterProxy long32At: byteAddress put: a32BitValue
 ]
 
-{ #category : #simulation }
+{ #category : 'simulation' }
 BitBltSimulator >> mergeFn: arg1 with: arg2 [
 	^ self perform: (opTable at: combinationRule+1) with: arg1 with: arg2
 ]
 
-{ #category : #simulation }
+{ #category : 'simulation' }
 BitBltSimulator >> primitive: primitiveName parameters: parameterTypesArray receiver: rcvrType [
 	"This exists just to check the set of methods that use smart syntax for which
 	 marshallers have been written.  If a case cannot be found you'll have to write
@@ -293,7 +295,7 @@ BitBltSimulator >> primitive: primitiveName parameters: parameterTypesArray rece
 		['primitiveCompareColors']	-> [^self] }
 ]
 
-{ #category : #primitives }
+{ #category : 'primitives' }
 BitBltSimulator >> primitiveCompareColors [
 	"This is a hack to mimic the SmartSyntaxPlugin support for primitive:parameters:receiver:
 	 which is hacked here at BitBltSimulator>>primitive:parameters:receiver:"
@@ -310,7 +312,7 @@ BitBltSimulator >> primitiveCompareColors [
 		[self primitiveCompareColorA: colorA to: colorB test: testID]
 ]
 
-{ #category : #primitives }
+{ #category : 'primitives' }
 BitBltSimulator >> primitiveCopyBits [
 	"Override to provide a convenience to investigate primitive failures.
 	 Comment out the first statement to be able to loop, examining e.g. why a BitBlt fails to load."
@@ -321,7 +323,7 @@ BitBltSimulator >> primitiveCopyBits [
 		[self halt. interpreterProxy coInterpreter initPrimCall]
 ]
 
-{ #category : #primitives }
+{ #category : 'primitives' }
 BitBltSimulator >> primitivePixelValueAt [
 	"This is a hack to mimic the SmartSyntaxPlugin support for primitive:parameters:receiver:
 	 which is hacked here at BitBltSimulator>>primitive:parameters:receiver:"
@@ -332,7 +334,7 @@ BitBltSimulator >> primitivePixelValueAt [
 		[self primitivePixelValueAtX: xVal y: yVal]
 ]
 
-{ #category : #'debug support' }
+{ #category : 'debug support' }
 BitBltSimulator >> srcLongAt: srcIndex [
 	interpreterProxy isInterpreterProxy ifTrue:
 		[^srcIndex long32At: 0].

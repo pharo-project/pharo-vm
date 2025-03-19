@@ -27,23 +27,25 @@ Types are not the exact types used.
 
 "
 Class {
-	#name : #VMStackBuilder,
-	#superclass : #VMAbstractBuilder,
+	#name : 'VMStackBuilder',
+	#superclass : 'VMAbstractBuilder',
 	#instVars : [
 		'page',
 		'frames',
 		'args',
 		'methodBuilder'
 	],
-	#category : #'VMMakerTests-Builders'
+	#category : 'VMMakerTests-Builders',
+	#package : 'VMMakerTests',
+	#tag : 'Builders'
 }
 
-{ #category : #frames }
+{ #category : 'frames' }
 VMStackBuilder >> addFrame: aFrame [
 	frames add: aFrame
 ]
 
-{ #category : #frames }
+{ #category : 'frames' }
 VMStackBuilder >> addNewFrame [
 	| frame |
 	"'add' a new frame in the sense of an OrderedCollection, which will be iterated with #do:
@@ -53,17 +55,17 @@ VMStackBuilder >> addNewFrame [
 	^ frame "the frame is then configured by the caller"
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 VMStackBuilder >> args [
 	^ args
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 VMStackBuilder >> args: anObject [
 	args := anObject
 ]
 
-{ #category : #build }
+{ #category : 'build' }
 VMStackBuilder >> buildStack [
 	self createStackPage.
 	self preparePage.
@@ -72,7 +74,7 @@ VMStackBuilder >> buildStack [
 	^ frames last
 ]
 
-{ #category : #stack }
+{ #category : 'stack' }
 VMStackBuilder >> createStackPage [
 	| sp |
 	frames ifEmpty:[ self error ].
@@ -83,17 +85,17 @@ VMStackBuilder >> createStackPage [
 	interpreter stackPointer: sp.
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 VMStackBuilder >> frames [
 	^ frames
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 VMStackBuilder >> frames: anObject [
 	frames := anObject
 ]
 
-{ #category : #initialization }
+{ #category : 'initialization' }
 VMStackBuilder >> initialize [
 	super initialize.
 	frames := OrderedCollection new. "will be treated in reverse"
@@ -103,35 +105,35 @@ VMStackBuilder >> initialize [
 	page := nil.
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 VMStackBuilder >> lastFrame [
 	
 	^ frames last
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 VMStackBuilder >> methodBuilder [
 
 	^ methodBuilder
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 VMStackBuilder >> methodBuilder: anObject [
 
 	methodBuilder := anObject
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 VMStackBuilder >> page [
 	^ page
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 VMStackBuilder >> page: anObject [
 	page := anObject
 ]
 
-{ #category : #build }
+{ #category : 'build' }
 VMStackBuilder >> preparePage [
 	"Page setup before the base frame"
 	interpreter push: memory nilObject.	"receiver"
@@ -142,7 +144,7 @@ VMStackBuilder >> preparePage [
 
 ]
 
-{ #category : #build }
+{ #category : 'build' }
 VMStackBuilder >> pushAllButFirstFrames [
 	2 to: frames size do: [ :anIndex | | aFrame |
 			aFrame := frames at: anIndex.
@@ -156,19 +158,19 @@ VMStackBuilder >> pushAllButFirstFrames [
 			]
 ]
 
-{ #category : #initialization }
+{ #category : 'initialization' }
 VMStackBuilder >> pushArgs [
 	args do: [ :anArg | interpreter push: anArg ]
 ]
 
-{ #category : #build }
+{ #category : 'build' }
 VMStackBuilder >> pushBaseFrame [
 	frames first previousFrameArgsSize: args size.
 	self pushFrame: frames first.
 
 ]
 
-{ #category : #build }
+{ #category : 'build' }
 VMStackBuilder >> pushFrame: aFrame [
 	
 	interpreter framePointer: interpreter stackPointer.
@@ -178,18 +180,18 @@ VMStackBuilder >> pushFrame: aFrame [
 	page headSP: interpreter stackPointer.
 ]
 
-{ #category : #build }
+{ #category : 'build' }
 VMStackBuilder >> pushFrames [
 	self pushBaseFrame.
 	self pushAllButFirstFrames.
 ]
 
-{ #category : #'as yet unclassified' }
+{ #category : 'as yet unclassified' }
 VMStackBuilder >> reset [
 	self initialize.
 ]
 
-{ #category : #build }
+{ #category : 'build' }
 VMStackBuilder >> setInterpreterVariables [
 	| lastFrame |
 	interpreter setStackPageAndLimit: page.
@@ -204,7 +206,7 @@ VMStackBuilder >> setInterpreterVariables [
 
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 VMStackBuilder >> topFrame [
 	^ frames last
 ]

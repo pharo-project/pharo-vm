@@ -1,10 +1,12 @@
 Class {
-	#name : #VMSistaTrampolineTest,
-	#superclass : #VMTrampolineTest,
-	#category : #'VMMakerTests-JitTests'
+	#name : 'VMSistaTrampolineTest',
+	#superclass : 'VMTrampolineTest',
+	#category : 'VMMakerTests-JitTests',
+	#package : 'VMMakerTests',
+	#tag : 'JitTests'
 }
 
-{ #category : #running }
+{ #category : 'running' }
 VMSistaTrampolineTest >> jitOptions [
 
 	^ super jitOptions
@@ -12,7 +14,7 @@ VMSistaTrampolineTest >> jitOptions [
 		  yourself
 ]
 
-{ #category : #tests }
+{ #category : 'tests' }
 VMSistaTrampolineTest >> testSendTrampolineWithFourArguments [
 	
 	| trampolineStart receiver |

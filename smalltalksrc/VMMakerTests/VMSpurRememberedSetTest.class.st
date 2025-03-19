@@ -1,10 +1,12 @@
 Class {
-	#name : #VMSpurRememberedSetTest,
-	#superclass : #VMSpurInitializedOldSpaceTest,
-	#category : #'VMMakerTests-MemoryTests'
+	#name : 'VMSpurRememberedSetTest',
+	#superclass : 'VMSpurInitializedOldSpaceTest',
+	#category : 'VMMakerTests-MemoryTests',
+	#package : 'VMMakerTests',
+	#tag : 'MemoryTests'
 }
 
-{ #category : #'tests - from old to new' }
+{ #category : 'tests - from old to new' }
 VMSpurRememberedSetTest >> testFreeRememberedOldObjectShouldForgetIt [
 
 	| oldObjectAddress rememberedObjectAddress |
@@ -22,7 +24,7 @@ VMSpurRememberedSetTest >> testFreeRememberedOldObjectShouldForgetIt [
 
 ]
 
-{ #category : #'tests - from old to perm' }
+{ #category : 'tests - from old to perm' }
 VMSpurRememberedSetTest >> testMoveToPermSpaceObjectWithOldObjectShouldNotUseNewRememberedSet [
 
 	| oldObjectAddress permObjectAddress referencedOldObjectAddress |
@@ -40,7 +42,7 @@ VMSpurRememberedSetTest >> testMoveToPermSpaceObjectWithOldObjectShouldNotUseNew
 
 ]
 
-{ #category : #'tests - from perm to old' }
+{ #category : 'tests - from perm to old' }
 VMSpurRememberedSetTest >> testMoveToPermSpaceObjectWithOldObjectShouldRememberPermObject [
 
 	| permObjectAddress oldObjectAddress referencedOldObjectAddress |
@@ -63,7 +65,7 @@ VMSpurRememberedSetTest >> testMoveToPermSpaceObjectWithOldObjectShouldRememberP
 
 ]
 
-{ #category : #'tests - from perm to old' }
+{ #category : 'tests - from perm to old' }
 VMSpurRememberedSetTest >> testMoveToPermSpaceObjectWithOldObjectShouldUpdateOldRememberedSet [
 
 	| oldObjectAddress permObjectAddress referencedOldObjectAddress |
@@ -82,7 +84,7 @@ VMSpurRememberedSetTest >> testMoveToPermSpaceObjectWithOldObjectShouldUpdateOld
 
 ]
 
-{ #category : #'tests - from perm to new' }
+{ #category : 'tests - from perm to new' }
 VMSpurRememberedSetTest >> testMoveToPermSpaceRememberedObjectShouldBeRememberedToo [
 
 	| oldObjectAddress rememberedObjectAddress permObjectAddress |
@@ -99,7 +101,7 @@ VMSpurRememberedSetTest >> testMoveToPermSpaceRememberedObjectShouldBeRemembered
 
 ]
 
-{ #category : #'tests - from perm to new' }
+{ #category : 'tests - from perm to new' }
 VMSpurRememberedSetTest >> testMoveToPermSpaceRememberedObjectShouldUpdateNewRememberedSet [
 
 	| oldObjectAddress rememberedObjectAddress permObjectAddress |
@@ -117,7 +119,7 @@ VMSpurRememberedSetTest >> testMoveToPermSpaceRememberedObjectShouldUpdateNewRem
 
 ]
 
-{ #category : #tests }
+{ #category : 'tests' }
 VMSpurRememberedSetTest >> testOldObjectIsNotRemembered [
 
 	| oldObjectAddress |
@@ -126,7 +128,7 @@ VMSpurRememberedSetTest >> testOldObjectIsNotRemembered [
 	self deny: (memory isRemembered: oldObjectAddress).
 ]
 
-{ #category : #tests }
+{ #category : 'tests' }
 VMSpurRememberedSetTest >> testOverflowRememberedSetShouldMakeItGrow [
 
 	| oldObjectRootAddress originalLimit youngObjectAddress |
@@ -156,7 +158,7 @@ VMSpurRememberedSetTest >> testOverflowRememberedSetShouldMakeItGrow [
 	self assert: memory getFromOldSpaceRememberedSet rememberedSetLimit equals: originalLimit * 2
 ]
 
-{ #category : #tests }
+{ #category : 'tests' }
 VMSpurRememberedSetTest >> testStoreOldObjectInOldObjectShouldNotRememberAnyone [
 
 	| oldObjectAddress storedOldObjectAddress |
@@ -170,7 +172,7 @@ VMSpurRememberedSetTest >> testStoreOldObjectInOldObjectShouldNotRememberAnyone 
 	self deny: (memory isRemembered: storedOldObjectAddress).
 ]
 
-{ #category : #'tests - from perm to old' }
+{ #category : 'tests - from perm to old' }
 VMSpurRememberedSetTest >> testStoreOldObjectInPermObjectShouldRememberPermObject [
 
 	| permObjectAddress oldObjectAddress |
@@ -186,7 +188,7 @@ VMSpurRememberedSetTest >> testStoreOldObjectInPermObjectShouldRememberPermObjec
 	self deny: (memory isRemembered: oldObjectAddress).
 ]
 
-{ #category : #tests }
+{ #category : 'tests' }
 VMSpurRememberedSetTest >> testStoreOldObjectInYoungObjectShouldNotRememberAnyone [
 
 	| oldObjectAddress youngObjectAddress |
@@ -200,7 +202,7 @@ VMSpurRememberedSetTest >> testStoreOldObjectInYoungObjectShouldNotRememberAnyon
 	self deny: (memory isRemembered: youngObjectAddress).
 ]
 
-{ #category : #'tests - from old to perm' }
+{ #category : 'tests - from old to perm' }
 VMSpurRememberedSetTest >> testStorePermObjectInOldObjectShouldNotRememberAnyone [
 
 	| permObjectAddress oldObjectAddress |
@@ -214,7 +216,7 @@ VMSpurRememberedSetTest >> testStorePermObjectInOldObjectShouldNotRememberAnyone
 	self deny: (memory isRemembered: oldObjectAddress).
 ]
 
-{ #category : #'tests - from perm to perm' }
+{ #category : 'tests - from perm to perm' }
 VMSpurRememberedSetTest >> testStorePermObjectInPermObjectShouldNotRememberAnyone [
 
 	| permObjectAddress referencedPermObjectAddress |
@@ -228,7 +230,7 @@ VMSpurRememberedSetTest >> testStorePermObjectInPermObjectShouldNotRememberAnyon
 	self deny: (memory isRemembered: referencedPermObjectAddress).
 ]
 
-{ #category : #'tests - from new to perm' }
+{ #category : 'tests - from new to perm' }
 VMSpurRememberedSetTest >> testStorePermObjectInYoungObjectShouldNotRememberAnyone [
 
 	| permObjectAddress youngObjectAddress |
@@ -242,7 +244,7 @@ VMSpurRememberedSetTest >> testStorePermObjectInYoungObjectShouldNotRememberAnyo
 	self deny: (memory isRemembered: youngObjectAddress).
 ]
 
-{ #category : #tests }
+{ #category : 'tests' }
 VMSpurRememberedSetTest >> testStoreYoungAndOldObjectInPermObjectShouldRememberPermObject [
 
 	| permObjectAddress oldObjectAddress youngObjectAddress |
@@ -267,7 +269,7 @@ VMSpurRememberedSetTest >> testStoreYoungAndOldObjectInPermObjectShouldRememberP
 
 ]
 
-{ #category : #tests }
+{ #category : 'tests' }
 VMSpurRememberedSetTest >> testStoreYoungObjectInOldObjectShouldRememberOldObject [
 
 	| oldObjectAddress youngObjectAddress |
@@ -281,7 +283,7 @@ VMSpurRememberedSetTest >> testStoreYoungObjectInOldObjectShouldRememberOldObjec
 	self deny: (memory isRemembered: youngObjectAddress).
 ]
 
-{ #category : #tests }
+{ #category : 'tests' }
 VMSpurRememberedSetTest >> testStoreYoungObjectInPermObjectShouldRememberPermObject [
 
 	| permObjectAddress youngObjectAddress |
@@ -295,7 +297,7 @@ VMSpurRememberedSetTest >> testStoreYoungObjectInPermObjectShouldRememberPermObj
 	self deny: (memory isRemembered: youngObjectAddress).
 ]
 
-{ #category : #tests }
+{ #category : 'tests' }
 VMSpurRememberedSetTest >> testStoreYoungObjectInYoungObjectShouldNotRememberAnyone [
 
 	| youngObjectAddress storedYoungObjectAddress |
@@ -309,7 +311,7 @@ VMSpurRememberedSetTest >> testStoreYoungObjectInYoungObjectShouldNotRememberAny
 	self deny: (memory isRemembered: youngObjectAddress).
 ]
 
-{ #category : #tests }
+{ #category : 'tests' }
 VMSpurRememberedSetTest >> testYoungObjectIsNotRemembered [
 
 	| newObjectAddress |

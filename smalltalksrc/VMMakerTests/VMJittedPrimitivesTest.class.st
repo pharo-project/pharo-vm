@@ -1,39 +1,35 @@
 Class {
-	#name : #VMJittedPrimitivesTest,
-	#superclass : #VMSimpleStackBasedCogitAbstractTest,
+	#name : 'VMJittedPrimitivesTest',
+	#superclass : 'VMSimpleStackBasedCogitAbstractTest',
 	#instVars : [
 		'classFloat'
 	],
 	#pools : [
 		'CogRTLOpcodes'
 	],
-	#category : #'VMMakerTests-JitTests'
+	#category : 'VMMakerTests-JitTests',
+	#package : 'VMMakerTests',
+	#tag : 'JitTests'
 }
 
-{ #category : #private }
+{ #category : 'private' }
 VMJittedPrimitivesTest class >> isAbstract [
 	^ self == VMJittedPrimitivesTest
 ]
 
-{ #category : #helpers }
-VMJittedPrimitivesTest >> new16BitIndexableOfSize: aSize [
-
-	^ self newBitIndexableOfSize: aSize bytesPerSlot: 2 format: memory firstShortFormat
-]
-
-{ #category : #helpers }
+{ #category : 'helpers' }
 VMJittedPrimitivesTest >> new32BitIndexableOfSize: aSize [
 
 	^ self newBitIndexableOfSize: aSize bytesPerSlot: 4 format: memory firstLongFormat
 ]
 
-{ #category : #helpers }
+{ #category : 'helpers' }
 VMJittedPrimitivesTest >> new64BitIndexableOfSize: aSize [
 
 	^ self newBitIndexableOfSize: aSize bytesPerSlot: 8 format: memory sixtyFourBitIndexableFormat
 ]
 
-{ #category : #helpers }
+{ #category : 'helpers' }
 VMJittedPrimitivesTest >> setUp [
 
 	super setUp.
