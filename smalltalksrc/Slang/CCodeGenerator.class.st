@@ -3748,7 +3748,9 @@ CCodeGenerator >> localizeGlobalVariables [
 					show: var , ' localised to ' , name;
 					cr ] ] ].
 
-	elected do: [ :var | self removeVariable: var ]
+	elected do: [ :var |
+		self removeVariable: var.
+		globalVariableUsage removeKey: var ]
 ]
 
 { #category : 'inlining' }
