@@ -54,10 +54,10 @@ VMTrampolineTest >> setUp [
 	pushedBytes := cogit stackPointerAlignment.
 	self isAligned ifFalse: [
 		pushedBytes := pushedBytes + self wordSize ].
-
 	registerMask := 0.
-	self wordSize to: pushedBytes by: self wordSize do: [ :i | | registerIndex |
-		registerIndex := i / self wordSize.
+	self wordSize to: pushedBytes by: self wordSize do: [ :i | 
+		| registerIndex |
+		registerIndex := i / self wordSize + cogit backend cResultRegister.
 		registerMask := registerMask bitOr: (cogit registerMaskFor: registerIndex).
 	]
 ]
