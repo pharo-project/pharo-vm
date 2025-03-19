@@ -322,7 +322,8 @@ actually what will happen is the folding code will fold these variables into the
 
 	| globalsToDelete globalVariableUsageKeys |
 	super localizeGlobalVariables.
-	globalVariableUsage := globalVariableUsage select: [ :e | e size > 1 ].
+	globalVariableUsage := globalVariableUsage select: [ :e |
+		                       e size > 1 or: [ self mustBeGlobal: e ] ].
 	globalVariableUsageKeys := globalVariableUsage keys.
 	globalsToDelete := variables reject: [ :var |
 		                   (globalVariableUsageKeys includes: var) or: [

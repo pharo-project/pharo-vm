@@ -3707,44 +3707,46 @@ CCodeGenerator >> isVoidPointer: aCType [ "<String>"
 
 { #category : 'utilities' }
 CCodeGenerator >> localizeGlobalVariables [
-	| candidates elected localized |
 
+	| candidates elected localized |
 	"find all globals used in only one method"
-	candidates := globalVariableUsage select: [:e | e size = 1].
-	"Don't localize globals; nor those that are only assigned to; they're for debugging..."
-	(candidates keys select: [:k| (self mustBeGlobal: k)
-								or: [(self methodNamed: (globalVariableUsage at: k) anyOne)
-										ifNil: [false]
-										ifNotNil: [:m| (m readsVariable: k) not]]]) do:
-		[:k| candidates removeKey: k].
-	
+	candidates := globalVariableUsage select: [ :e | e size = 1 ].
+	"Don't localize globals"
+	(candidates keys select: [ :k | self mustBeGlobal: k ]) do: [ :k |
+		candidates removeKey: k ].
 	elected := Set new.
 	localized := Dictionary new. "for an ordered report"
 	"move any suitable global to be local to the single method using it"
-	candidates keysAndValuesDo:
-		[:key :targets |
-		targets do:
-			[:name |
-			(methods at: name ifAbsent: []) ifNotNil:
-				[:procedure | | newDeclaration |
-				(procedure isRealMethod
-				 and: [self shouldGenerateMethod: procedure]) ifTrue:
-					[(localized at: name ifAbsentPut: [SortedCollection new]) add: key.
+	candidates keysAndValuesDo: [ :key :targets |
+		targets do: [ :name |
+			(methods at: name ifAbsent: [  ]) ifNotNil: [ :procedure |
+				| newDeclaration |
+				(procedure isRealMethod and: [
+					 self shouldGenerateMethod: procedure ]) ifTrue: [
+					(localized at: name ifAbsentPut: [ SortedCollection new ]) add:
+						key.
 					elected add: (procedure addLocal: key).
-					newDeclaration := variableDeclarations at: key ifAbsent: ['sqInt ', key].
-					(self initializerForInstVar: key inStartClass: procedure definingClass) ifNotNil:
-						[:initializerNode|
-						newDeclaration := String streamContents:
-												[:s|
-												 s nextPutAll: newDeclaration; nextPutAll: ' = '.
-												(initializerNode asCASTIn: self) prettyPrintOn: s ]].
-					procedure declarationAt: key put: newDeclaration ]]]].
-	logger ifNotNil:
-		[localized keys asSortedCollection do:
-			[:name|
-			(localized at: name) do:
-				[:var|
-				logger newLine; show: var, ' localised to ', name; cr]]].
+					newDeclaration := variableDeclarations
+						                  at: key
+						                  ifAbsent: [ 'sqInt ' , key ].
+					(self
+						 initializerForInstVar: key
+						 inStartClass: procedure definingClass) ifNotNil: [
+						:initializerNode |
+						newDeclaration := String streamContents: [ :s |
+							                  s
+								                  nextPutAll: newDeclaration;
+								                  nextPutAll: ' = '.
+							                  (initializerNode asCASTIn: self)
+								                  prettyPrintOn: s ] ].
+					procedure declarationAt: key put: newDeclaration ] ] ] ].
+	logger ifNotNil: [
+		localized keys asSortedCollection do: [ :name |
+			(localized at: name) do: [ :var |
+				logger
+					newLine;
+					show: var , ' localised to ' , name;
+					cr ] ] ].
 
 	elected do: [ :var | self removeVariable: var ]
 ]
