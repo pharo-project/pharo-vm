@@ -317,12 +317,18 @@ CCodeGeneratorGlobalStructure >> isGlobalStructureBuild [
 
 { #category : 'utilities' }
 CCodeGeneratorGlobalStructure >> localizeGlobalVariables [
-"TPR - remove all the global vars destined for the structure that are only used once - not worth the space,
+	"TPR - remove all the global vars destined for the structure that are only used once - not worth the space,
 actually what will happen is the folding code will fold these variables into the method"
 
+	| globalsToDelete globalVariableUsageKeys |
 	super localizeGlobalVariables.
-	globalVariableUsage := globalVariableUsage select: [:e | e size > 1].
-
+	globalVariableUsage := globalVariableUsage select: [ :e | e size > 1 ].
+	globalVariableUsageKeys := globalVariableUsage keys.
+	globalsToDelete := variables reject: [ :var |
+		                   (globalVariableUsageKeys includes: var) or: [
+			                   ((variableDeclarations at: var ifAbsent: [ '' ])
+				                    beginsWith: 'extern') or: [ var = #sendTrace ] ] ].
+	globalsToDelete do: [ :var | self removeVariable: var ]
 ]
 
 { #category : 'C code generator' }
