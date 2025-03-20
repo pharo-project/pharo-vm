@@ -351,7 +351,52 @@ void * printRegisterState(ucontext_t *uap, FILE* output)
             uap->uc_mcontext.sp,
             uap->uc_mcontext.pc,
             uap->uc_mcontext.pstate);
-    return (void*)uap->uc_mcontext.pc; 
+    return (void*)uap->uc_mcontext.pc;
+
+#elif __linux__ && defined(__riscv)
+	/* Note: %0x16llx supposes 64-bit registers*/
+	fprintf_impl(output,
+		"\t PC  0x%016llx RA  0x%016llx SP  0x%016llx GP  0x%016llx\n"
+		"\t TP  0x%016llx T0  0x%016llx T1  0x%016llx T2  0x%016llx\n"
+		"\t FP  0x%016llx S1  0x%016llx A0  0x%016llx A1  0x%016llx\n"
+		"\t A2  0x%016llx A3  0x%016llx A4  0x%016llx A5  0x%016llx\n"
+		"\t A6  0x%016llx A7  0x%016llx S2  0x%016llx S3  0x%016llx\n"
+		"\t S4  0x%016llx S5  0x%016llx S6  0x%016llx S7  0x%016llx\n"
+		"\t S8  0x%016llx S9  0x%016llx S10 0x%016llx S11 0x%016llx\n"
+		"\t T3  0x%016llx T4  0x%016llx T5  0x%016llx T6  0x%016llx\n",
+				uap->uc_mcontext.__gregs[0],  // pc
+				uap->uc_mcontext.__gregs[1],  // ra
+				uap->uc_mcontext.__gregs[2],  // sp
+				uap->uc_mcontext.__gregs[3],  // gp
+				uap->uc_mcontext.__gregs[4],  // tp
+				uap->uc_mcontext.__gregs[5],  // t0
+				uap->uc_mcontext.__gregs[6],  // t1
+				uap->uc_mcontext.__gregs[7],  // t2
+				uap->uc_mcontext.__gregs[8],  // fp
+				uap->uc_mcontext.__gregs[9],  // s1
+				uap->uc_mcontext.__gregs[10], // a0
+				uap->uc_mcontext.__gregs[11], // a1
+				uap->uc_mcontext.__gregs[12], // a2
+				uap->uc_mcontext.__gregs[13], // a3
+				uap->uc_mcontext.__gregs[14], // a4
+				uap->uc_mcontext.__gregs[15], // a5
+				uap->uc_mcontext.__gregs[16], // a6
+				uap->uc_mcontext.__gregs[17], // a7
+				uap->uc_mcontext.__gregs[18], // s2
+				uap->uc_mcontext.__gregs[19], // s3
+				uap->uc_mcontext.__gregs[20], // s4
+				uap->uc_mcontext.__gregs[21], // s5
+				uap->uc_mcontext.__gregs[22], // s6
+				uap->uc_mcontext.__gregs[23], // s7
+				uap->uc_mcontext.__gregs[24], // s8
+				uap->uc_mcontext.__gregs[25], // s9
+				uap->uc_mcontext.__gregs[26], // s10
+				uap->uc_mcontext.__gregs[27], // s11
+				uap->uc_mcontext.__gregs[28], // t3
+				uap->uc_mcontext.__gregs[29], // t4
+				uap->uc_mcontext.__gregs[30], // t5
+				uap->uc_mcontext.__gregs[31]); // t6
+		return uap->uc_mcontext.__gregs[0]; // return pc
 #else
 	fprintf_impl(output,"don't know how to derive register state from a ucontext_t on this platform\n");
 	return 0;
@@ -456,6 +501,9 @@ void reportStackState(const char *msg, char *date, int printAll, ucontext_t *uap
 # elif defined(__aarch64__)
 			void *fp = (void *)(uap ? uap->uc_mcontext.regs[29]: 0); // This is the Register that we are using for the FramePointer
 			void *sp = (void *)(uap ? uap->uc_mcontext.sp: 0);
+# elif defined(__riscv)
+			void *fp = (void *)(uap ? uap->uc_mcontext.__gregs[8] : 0); // X8 is the fp
+			void *sp = (void *)(uap ? uap->uc_mcontext.__gregs[2] : 0); // X2 is the sp
 # else
 #	error need to implement extracting pc from a ucontext_t on this system
 # endif
