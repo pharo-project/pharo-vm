@@ -2,7 +2,8 @@ Class {
 	#name : 'VMJitFFISameThreadCalloutTest',
 	#superclass : 'VMStackToRegisterMappingCogitTest',
 	#instVars : [
-		'jitCompilerClass'
+		'jitCompilerClass',
+		'abi'
 	],
 	#pools : [
 		'LibFFIConstants'
@@ -11,6 +12,22 @@ Class {
 	#package : 'VMMakerTests',
 	#tag : 'JitTests'
 }
+
+{ #category : 'building suites' }
+VMJitFFISameThreadCalloutTest class >> wordSize64Parameters [
+
+	^ ParametrizedTestMatrix new
+		addCase: { #ISA -> #'aarch64'. #wordSize -> 8};
+		addCase: { #ISA -> #'X64'. #wordSize -> 8. #ABI -> #'_WIN64' };
+		addCase: { #ISA -> #'X64'. #wordSize -> 8. #ABI -> #SysV };		
+		yourself
+]
+
+{ #category : 'as yet unclassified' }
+VMJitFFISameThreadCalloutTest >> ABI: anAbi [
+
+	abi := anAbi
+]
 
 { #category : 'helpers' }
 VMJitFFISameThreadCalloutTest >> assertIsNonOptimizedCall: aTFFunctionDefinition [
@@ -43,6 +60,19 @@ VMJitFFISameThreadCalloutTest >> jitCompilerClass [
 VMJitFFISameThreadCalloutTest >> jitCompilerClass: aValue [
 
 	jitCompilerClass := aValue
+]
+
+{ #category : 'running' }
+VMJitFFISameThreadCalloutTest >> jitOptions [ 
+	
+	| options |
+	
+	options := super jitOptions.
+	
+	^ abi 
+		ifNotNil: [ options at: #ABI put: abi; yourself ]
+		ifNil: [ options ]
+	
 ]
 
 { #category : 'running' }

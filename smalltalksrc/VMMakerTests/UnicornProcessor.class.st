@@ -104,7 +104,11 @@ UnicornProcessor >> hasLinkRegister [
 UnicornProcessor >> initializeStackFor: aCompiler [
 	
 	"Initialize the machine code simulator"
-	machineSimulator := UnicornSimulator perform: aCompiler backend class ISA asSymbol.
+	| isa abi |
+	isa := aCompiler backend class ISA asSymbol.
+	abi := aCompiler backend class ABI.
+	
+	machineSimulator := ProcessorSimulator simulatorForISA: isa andABI: abi.
 	machineSimulator memory: aCompiler objectMemory.
 	machineSimulator mapMemoryInManager: aCompiler objectMemory memoryManager.
 

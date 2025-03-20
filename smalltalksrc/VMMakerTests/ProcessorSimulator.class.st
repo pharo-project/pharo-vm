@@ -12,48 +12,19 @@ Class {
 	#tag : 'Unicorn'
 }
 
-{ #category : 'instance creation' }
-ProcessorSimulator class >> ARMv5 [
+{ #category : 'as yet unclassified' }
+ProcessorSimulator class >> simulatorForISA: isa andABI: abi [
 
-	^ UnicornARMv5Simulator new
+	^ self allSubclasses 
+		detect: [ :e | e supportISA: isa andAbi: abi ]
+		ifFound: [ :aSubclass | aSubclass new ]
+		ifNone: [ self error: ('Could not found simulator for ISA {1} and ABI {2}' format: { isa. abi }) ]
 ]
 
-{ #category : 'instance creation' }
-ProcessorSimulator class >> ARMv8 [
-
-	^ UnicornARMv8Simulator new
-]
-
-{ #category : 'instance creation' }
-ProcessorSimulator class >> IA32 [
-
-	^ UnicornI386Simulator new
-]
-
-{ #category : 'instance creation' }
-ProcessorSimulator class >> X64 [
-
-	^ UnicornX64Simulator new
-]
-
-{ #category : 'instance creation' }
-ProcessorSimulator class >> aarch64 [
-
-	^ UnicornARMv8Simulator new
-]
-
-{ #category : 'instance creation' }
-ProcessorSimulator class >> riscv64 [
-
-	"TODO: Add riscv32 and possibly two subclasses for the RISCV simulator"
-	^ UnicornRISCVSimulator new
-	"^ SpikeRISCVSimulator new"
-]
-
-{ #category : 'instance creation' }
-ProcessorSimulator class >> simulatorFor: isa [
-
-	^ (self subclasses detect: [ :each | each supportsISA: isa ]) perform: isa asSymbol
+{ #category : 'as yet unclassified' }
+ProcessorSimulator class >> supportISA: isa andAbi: abi [ 
+	
+	^ false
 ]
 
 { #category : 'accessing' }

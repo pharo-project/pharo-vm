@@ -6,6 +6,12 @@ Class {
 	#tag : 'Unicorn'
 }
 
+{ #category : 'as yet unclassified' }
+UnicornI386Simulator class >> supportISA: isa andAbi: abi [ 
+	
+	^ isa = #IA32
+]
+
 { #category : 'registers' }
 UnicornI386Simulator >> arg0Register [
 	

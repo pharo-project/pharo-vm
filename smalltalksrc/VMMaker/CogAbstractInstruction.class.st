@@ -74,6 +74,12 @@ Class {
 	#tag : 'JIT'
 }
 
+{ #category : 'accessing' }
+CogAbstractInstruction class >> ABI [
+	
+	^ self initializationOptions at: #ABI ifAbsent: [ #default ]
+]
+
 { #category : 'translation' }
 CogAbstractInstruction class >> ISA [
 	"Answer the name of the ISA the receiver's subclass implements."

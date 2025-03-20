@@ -6,6 +6,12 @@ Class {
 	#tag : 'Unicorn'
 }
 
+{ #category : 'as yet unclassified' }
+UnicornARMv5Simulator class >> supportISA: isa andAbi: abi [ 
+	
+	^ isa = #ARMv5
+]
+
 { #category : 'registers' }
 UnicornARMv5Simulator >> arg0Register [
 	

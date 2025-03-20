@@ -8139,12 +8139,14 @@ Cogit >> handleCallOrJumpSimulationTrap: aProcessorSimulationTrap [
 	(function beginsWith: 'ceShort') ifTrue:
 		[^self perform: function with: aProcessorSimulationTrap].
 	
+	memory := coInterpreter objectMemory.
+	
 	aProcessorSimulationTrap type == #call
 		ifTrue:
 			[processor
 				simulateCallOf: aProcessorSimulationTrap address
 				nextpc: aProcessorSimulationTrap nextpc
-				memory: (memory := coInterpreter memory).
+				memory: memory.
 			 self recordInstruction: {'(simulated call of '. aProcessorSimulationTrap address. '/'. function. ')'}]
 		ifFalse:
 			[processor

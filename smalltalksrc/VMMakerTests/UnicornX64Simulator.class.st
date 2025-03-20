@@ -6,6 +6,12 @@ Class {
 	#tag : 'Unicorn'
 }
 
+{ #category : 'as yet unclassified' }
+UnicornX64Simulator class >> supportISA: isa andAbi: abi [ 
+	
+	^ isa = #X64 and: [ abi = #default or: [ abi = #SysV ] ]
+]
+
 { #category : 'registers' }
 UnicornX64Simulator >> arg0Register [
 	
@@ -108,26 +114,6 @@ UnicornX64Simulator >> extractDestinationRegisterFromAssembly: aLLVMInstruction 
 	(registerName beginsWith: '%')
 		ifTrue: [ registerName := registerName allButFirst ].
 	^ registerName
-]
-
-{ #category : 'as yet unclassified' }
-UnicornX64Simulator >> fetchArgumentsOfTypes: argumentTypes [
-
-	| byteArray |
-
-	^ super fetchArgumentsOfTypes: argumentTypes 
-
-"	^ argumentTypes withIndexCollect: [ :type :index | 
-		index <= 4 ifTrue: [  
-			byteArray := type isFloatType 
-				ifTrue: [ self doublePrecisionFloatingPointRegisterRaw: index  ]
-				ifFalse: [ self cArgRegisterRaw: index ]]
-		ifFalse: [  
-			index = 6 ifTrue: [ self halt ].
-			byteArray := self stackValueBytesAt: 0.
-		].
-		type marshallToSmalltalkFromByteArray: byteArray
-	]"
 ]
 
 { #category : 'virtual-registers' }
@@ -490,7 +476,7 @@ UnicornX64Simulator >> smashCallerSavedRegistersWithValuesFrom: base by: step in
 			 #(rcx rdx r8 r9) withIndexDo:
 				[:getter :index|
 				 aMemory
-					unsignedLong64At: self rbp + 9 + (index * 8) "skip saved fp and retpc; aMemory is 1-relative"
+					unsignedLong64At: self rbp + 8 + (index * 8) "skip saved fp and retpc"
 					put: (self perform: getter)]].
 	volatileRegisters withIndexDo:
 		[:setter :index|

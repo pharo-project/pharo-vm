@@ -6,6 +6,12 @@ Class {
 	#tag : 'Unicorn'
 }
 
+{ #category : 'as yet unclassified' }
+UnicornRISCVSimulator class >> supportISA: isa andAbi: abi [ 
+	
+	^ isa = #riscv64 
+]
+
 { #category : 'registers' }
 UnicornRISCVSimulator >> arg0Register [
 

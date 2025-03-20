@@ -10,12 +10,6 @@ Class {
 	#tag : 'Unicorn'
 }
 
-{ #category : 'instance creation' }
-UnicornSimulator class >> supportsISA: isa [
-
-	^ #( #ARMv5 #ARMv8 #IA32 #X64 #aarch64 #riscv64 ) includes: isa
-]
-
 { #category : 'accessing' }
 UnicornSimulator >> cArgRegisterRaw: anInteger [ 
 	

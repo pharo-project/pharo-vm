@@ -6,6 +6,12 @@ Class {
 	#tag : 'Unicorn'
 }
 
+{ #category : 'as yet unclassified' }
+UnicornARMv8Simulator class >> supportISA: isa andAbi: abi [ 
+	
+	^ isa = #aarch64
+]
+
 { #category : 'accessing-registers-abstract' }
 UnicornARMv8Simulator >> arg0Register [
 	
