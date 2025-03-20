@@ -12813,6 +12813,7 @@ StackInterpreter >> quinaryInlinePrimitive: primIndex [
 { #category : 'compiled methods' }
 StackInterpreter >> rawHeaderOf: methodPointer [
 	<doNotGenerate>
+	<druidNotIgnore>
 	^objectMemory rawHeaderOf: methodPointer
 ]
 
