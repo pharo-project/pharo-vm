@@ -102,6 +102,29 @@ UnicornSimulator >> doublePrecisionFloatingPointRegisterRaw: anInteger [
 	^ self readRawRegister: reg size: 8
 ]
 
+{ #category : 'simulating' }
+UnicornSimulator >> fetchArgumentsOfTypes: argumentTypes [ 
+
+	| byteArray doubleIndex integerIndex |
+
+	doubleIndex := integerIndex := 0.
+
+	^ argumentTypes collect: [ :type  | 
+		doubleIndex = 5 ifTrue: [ self halt ].
+		integerIndex = 5 ifTrue: [ self halt ].
+
+		byteArray := type isFloatType 
+			ifTrue: [ 
+				doubleIndex := doubleIndex + 1.
+				self doublePrecisionFloatingPointRegisterRaw: doubleIndex  ]
+			ifFalse: [ 
+				integerIndex := integerIndex + 1.
+				self cArgRegisterRaw: integerIndex ].
+		
+		type marshallToSmalltalkFromByteArray: byteArray
+	]
+]
+
 { #category : 'stack-access' }
 UnicornSimulator >> finishMappingMemory [
 

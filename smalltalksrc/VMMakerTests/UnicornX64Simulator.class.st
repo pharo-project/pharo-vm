@@ -111,11 +111,13 @@ UnicornX64Simulator >> extractDestinationRegisterFromAssembly: aLLVMInstruction 
 ]
 
 { #category : 'as yet unclassified' }
-UnicornX64Simulator >> fetchArgumentsOfTypes: argumentTypes [ 
+UnicornX64Simulator >> fetchArgumentsOfTypes: argumentTypes [
 
 	| byteArray |
 
-	^ argumentTypes withIndexCollect: [ :type :index | 
+	^ super fetchArgumentsOfTypes: argumentTypes 
+
+"	^ argumentTypes withIndexCollect: [ :type :index | 
 		index <= 4 ifTrue: [  
 			byteArray := type isFloatType 
 				ifTrue: [ self doublePrecisionFloatingPointRegisterRaw: index  ]
@@ -125,7 +127,7 @@ UnicornX64Simulator >> fetchArgumentsOfTypes: argumentTypes [
 			byteArray := self stackValueBytesAt: 0.
 		].
 		type marshallToSmalltalkFromByteArray: byteArray
-	]
+	]"
 ]
 
 { #category : 'virtual-registers' }
