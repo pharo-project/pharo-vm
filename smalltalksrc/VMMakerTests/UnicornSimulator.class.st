@@ -99,7 +99,7 @@ UnicornSimulator >> doublePrecisionFloatingPointRegisterRaw: anInteger [
 	
 	reg ifNil: [ self error: 'I can handle up to 4 registers' ].
 	
-	^ self readRawRegister: reg size: 8
+	^ self readRawRegister: reg size: 32
 ]
 
 { #category : 'simulating' }

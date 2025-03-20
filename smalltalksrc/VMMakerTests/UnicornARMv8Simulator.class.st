@@ -320,19 +320,19 @@ UnicornARMv8Simulator >> temporaryRegister [
 { #category : 'accessing-registers-physical' }
 UnicornARMv8Simulator >> v0 [
 
-	^ self readRawRegister: UcARM64Registers v0 size: 16
+	^ self readRawRegister: UcARM64Registers v0 size: 32
 ]
 
 { #category : 'accessing-registers-physical' }
 UnicornARMv8Simulator >> v1 [
 
-	^ self readRawRegister: UcARM64Registers v1 size: 16
+	^ self readRawRegister: UcARM64Registers v1 size: 32
 ]
 
 { #category : 'accessing-registers-physical' }
 UnicornARMv8Simulator >> v2 [
 
-	^ self readRawRegister: UcARM64Registers v2 size: 16
+	^ self readRawRegister: UcARM64Registers v2 size: 32
 ]
 
 { #category : 'accessing-registers-abstract' }
