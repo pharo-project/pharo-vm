@@ -191,9 +191,7 @@ The Socket plugin uses this value as a limit for the FQDN (Fully Qualified Domai
 #define LINGER_SECS		 1
 
 volatile static int thisNetSession = 0;
-static int one= 1;
-
-static char   localHostName[MAXHOSTNAMELEN];
+static int one = 1;
 
 /*
  * The ERROR constants are different in Windows and in Unix.

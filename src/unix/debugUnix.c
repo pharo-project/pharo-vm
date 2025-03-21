@@ -82,9 +82,6 @@ void sigusr1(int sig, siginfo_t *info, ucontext_t *uap)
 	errno = saved_errno;
 }
 
-
-static int inFault = 0;
-
 void sigsegv(int sig, siginfo_t *info, ucontext_t *uap)
 {
 	char *fault = strsignal(sig);
