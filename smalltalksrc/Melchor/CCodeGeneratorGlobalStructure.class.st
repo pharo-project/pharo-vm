@@ -329,12 +329,10 @@ CCodeGeneratorGlobalStructure >> localizeGlobalVariables [
 		(assoc value size = 1 and: [
 			 (self mustBeGlobal: var) not and: [
 				 ((variableDeclarations at: var ifAbsent: [ '' ]) beginsWith:
-					  'extern') not and: [ var ~= #sendTrace ] ] ]) ifTrue: [
-			globalsToDelete add: assoc key ] ].
-
+					  'extern') not ] ]) ifTrue: [ globalsToDelete add: assoc key ] ].
 	variables do: [ :var |
-		(globalVariableUsage keys includes: var) ifFalse: [
-			globalsToDelete add: var ] ].
+		((globalVariableUsage keys includes: var) or: [ var = #sendTrace ])
+			ifFalse: [ globalsToDelete add: var ] ].
 
 	globalsToDelete do: [ :var |
 		self removeVariable: var.
