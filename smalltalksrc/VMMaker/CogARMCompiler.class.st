@@ -445,6 +445,27 @@ CogARMCompiler >> cArg0Register [
 	^R0
 ]
 
+{ #category : 'accessing' }
+CogARMCompiler >> cArg1Register [
+
+	<inline: true>
+	^R1
+]
+
+{ #category : 'accessing' }
+CogARMCompiler >> cArg2Register [
+
+	<inline: true>
+	^R2
+]
+
+{ #category : 'accessing' }
+CogARMCompiler >> cArg3Register [
+
+	<inline: true>
+	^R3
+]
+
 { #category : 'abi' }
 CogARMCompiler >> cResultRegister [
 	"Answer the register through which C funcitons return integral results."
