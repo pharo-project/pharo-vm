@@ -363,6 +363,13 @@ CogX64Compiler >> cArg0Register [
 	^ Arg0Reg
 ]
 
+{ #category : 'accessing' }
+CogX64Compiler >> cArg1Register [
+
+	<inline: true>
+	^ Arg1Reg
+]
+
 { #category : 'abi' }
 CogX64Compiler >> cFloatResultToRd: reg [
 	XMM0L ~= reg ifTrue: [ 
@@ -3747,6 +3754,37 @@ CogX64Compiler >> genLoadStackPointers [
 	^0
 ]
 
+{ #category : 'sameThread callout - optimizations' }
+CogX64Compiler >> genMarshallDoubleArgumentIndex: index fullIndex: fullIndex errorRoutineLabel: errorRoutine withFlags: flags [
+
+	| reg indexToUse jumpIfNotFloat |
+	
+	"In SysV, the register index used depends on the type, in Windows we need to use the full index".
+	
+	"In windows, if we are sending a four Double arguments, but the fourth is in the fifth position, we need to pass it in the stack. For doing so, we are going to use XMM0 to hold it, and then we will push it. This is a HACK, we need to improve this marshalling for more cases"
+	
+	(SysV not and: [ index = 4 and: [ fullIndex = 5 ] ])
+		ifTrue: [	
+			cogit ssPopTopToReg: Extra0Reg.
+			jumpIfNotFloat := objectRepresentation 
+				genBoxedOrSmallFloat: Extra0Reg 
+				scratchReg: Extra1Reg into: DPFPReg0.
+			jumpIfNotFloat jmpTarget: errorRoutine.
+			^ self ].
+	
+	indexToUse := SysV ifTrue: [ index ] ifFalse: [ fullIndex ].
+	
+	indexToUse = 1 ifTrue: [ reg := DPFPReg0 ].
+	indexToUse = 2 ifTrue: [ reg := DPFPReg1 ].
+	indexToUse = 3 ifTrue: [ reg := DPFPReg2 ].
+	indexToUse = 4 ifTrue: [ reg := DPFPReg3 ].
+
+	^ self
+		  genMarshallDoubleArgumentInReg: reg
+		  errorRoutineLabel: errorRoutine
+		  withFlags: flags
+]
+
 { #category : 'abi' }
 CogX64Compiler >> genMarshallNArgs: numArgs arg: regOrConst0 arg: regOrConst1 arg: regOrConst2 arg: regOrConst3 [
 	"Generate the code to pass up to four arguments in a C run-time call.  Hack: each argument is
@@ -3867,6 +3905,26 @@ CogX64Compiler >> genMarshallNArgs: numArgs floatArg: regOrConst0 floatArg: regO
 						[cogit MoveR: regOrConst3 R: XMM3L]].
 
 	self assert: numArgs <= 4
+]
+
+{ #category : 'sameThread callout - optimizations' }
+CogX64Compiler >> genMarshallPointerArgumentIndex: typeIndex fullIndex: fullIndex errorRoutineLabel: errorRoutine withFlags: flags [
+
+	| reg indexToUse |
+
+	"In SysV, the register index used depends on the type, in Windows we need to use the full index".
+	
+	indexToUse := SysV ifTrue: [ typeIndex ] ifFalse: [ fullIndex ].
+
+	indexToUse = 1 ifTrue: [ reg := self cArg0Register ].
+	indexToUse = 2 ifTrue: [ reg := self cArg1Register ].
+	indexToUse = 3 ifTrue: [ reg := self cArg2Register ].
+	indexToUse = 4 ifTrue: [ reg := self cArg3Register ].
+
+	^ self
+		  genMarshallPointerArgumentInReg: reg
+		  errorRoutineLabel: errorRoutine
+		  withFlags: flags
 ]
 
 { #category : 'abstract instructions' }
@@ -4480,10 +4538,21 @@ CogX64Compiler >> padIfPossibleWithStopsFrom: startAddr to: endAddr [
 ]
 
 { #category : 'sameThread callout - optimizations' }
-CogX64Compiler >> prepareStackForFFICall [
+CogX64Compiler >> prepareStackForFFICall: handlesExtraDoubleArgument [
 
 	"WIN64 ABI allways reserve shadow space on the stack for callee to save up to 4 register parameters"
-	SysV ifFalse: [ cogit SubCq: 32 R: RSP ]
+	SysV ifTrue: [ ^ self ].
+	
+	handlesExtraDoubleArgument ifFalse: [ 
+		cogit SubCq: 32 R: RSP.
+		^ self ].
+	
+	"If we are handling an extra double argument, we need to push it in the stack.
+	We leave space in the stack for 16 bytes, as we are moving the XMM0 that is 16 bytes wide"
+	
+	cogit SubCq: 56 R: RSP.
+	cogit MoveRd: XMM0L M64: 32 r: RSP.
+
 ]
 
 { #category : 'calling C function in Smalltalk stack' }

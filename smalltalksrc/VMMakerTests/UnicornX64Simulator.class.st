@@ -152,6 +152,12 @@ UnicornX64Simulator >> instructionPointerRegister [
 ]
 
 { #category : 'as yet unclassified' }
+UnicornX64Simulator >> instructionPointerValue [
+	
+	^ self instructionPointerRegister value
+]
+
+{ #category : 'as yet unclassified' }
 UnicornX64Simulator >> integerRegisterState [
 	
 	^ #()

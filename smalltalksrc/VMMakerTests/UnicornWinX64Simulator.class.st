@@ -48,7 +48,8 @@ UnicornWinX64Simulator >> fetchArgumentsOfTypes: argumentTypes [
 				ifFalse: [ self cArgRegisterRaw: index ]]
 		ifFalse: [  
 			index = 6 ifTrue: [ self halt ].
-			byteArray := self stackValueBytesAt: 0.
+			"The fifth argument is in the 6th position, we have the return address, and the FP"
+			byteArray := self stackValueBytesAt: 6.
 		].
 		type marshallToSmalltalkFromByteArray: byteArray
 	]

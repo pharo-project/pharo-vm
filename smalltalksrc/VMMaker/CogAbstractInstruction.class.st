@@ -549,6 +549,27 @@ CogAbstractInstruction >> cArg0Register [
 ]
 
 { #category : 'accessing' }
+CogAbstractInstruction >> cArg1Register [
+
+	<inline: true>
+	^ self subclassResponsibility 
+]
+
+{ #category : 'accessing' }
+CogAbstractInstruction >> cArg2Register [
+
+	<inline: true>
+	^ self subclassResponsibility 
+]
+
+{ #category : 'accessing' }
+CogAbstractInstruction >> cArg3Register [
+
+	<inline: true>
+	^ self subclassResponsibility 
+]
+
+{ #category : 'accessing' }
 CogAbstractInstruction >> cResultRegister [
 	"Answer the register through which C funcitons return integral results."
 	<inline: true>
@@ -782,12 +803,20 @@ CogAbstractInstruction >> genFFIFallbackCall [
 ]
 
 { #category : 'sameThread callout - optimizations' }
-CogAbstractInstruction >> genFFISameThreadCall: anExternalFunctionAddress [.
+CogAbstractInstruction >> genFFISameThreadCall: anExternalFunctionAddress [
+
+	^ self
+		genFFISameThreadCall: anExternalFunctionAddress
+		handlesExtraDoubleArgument: false
+]
+
+{ #category : 'sameThread callout - optimizations' }
+CogAbstractInstruction >> genFFISameThreadCall: anExternalFunctionAddress handlesExtraDoubleArgument: handlesExtraDoubleArgument [
 	
 	"Change to C Stack, pushing LinkRegistry if needed"
 	cogit genSmalltalkToCStackSwitch: true.
 	
-	self prepareStackForFFICall.
+	self prepareStackForFFICall: handlesExtraDoubleArgument.
 
 	cogit CallFullRT: anExternalFunctionAddress.	
 
@@ -878,14 +907,28 @@ CogAbstractInstruction >> genLoadStackPointers [
 { #category : 'sameThread callout - optimizations' }
 CogAbstractInstruction >> genMarshallDoubleArgumentInReg: reg errorRoutineLabel: errorRoutine withFlags: flags [
 		
-	| mightBeOOp mightBeExternalAddress jumpIfNotFloat |
+	| jumpIfNotFloat |
 	
-	mightBeOOp := (flags bitAnd: FFI_FLAG_POINTERS_MIGHT_BE_OBJECTS) ~= 0.
-	mightBeExternalAddress := (flags bitAnd: FFI_FLAG_POINTERS_MIGHT_BE_EXTERNAL_ADDRESSES) ~= 0. 
-
 	cogit ssPopTopToReg: Extra0Reg.
 	jumpIfNotFloat := objectRepresentation genBoxedOrSmallFloat: Extra0Reg scratchReg: Extra1Reg into: reg.
 	jumpIfNotFloat jmpTarget: errorRoutine 
+]
+
+{ #category : 'sameThread callout - optimizations' }
+CogAbstractInstruction >> genMarshallDoubleArgumentIndex: index fullIndex: total errorRoutineLabel: errorRoutine withFlags: flags [
+
+	"We marshall directly using the registers. In Windows X64 we are going to do it differently"
+
+	| reg |
+	index = 1 ifTrue: [ reg := DPFPReg0 ].
+	index = 2 ifTrue: [ reg := DPFPReg1 ].
+	index = 3 ifTrue: [ reg := DPFPReg2 ].
+	index = 4 ifTrue: [ reg := DPFPReg3 ].
+
+	^ self
+		  genMarshallDoubleArgumentInReg: reg
+		  errorRoutineLabel: errorRoutine
+		  withFlags: flags
 ]
 
 { #category : 'abi' }
@@ -972,6 +1015,22 @@ CogAbstractInstruction >> genMarshallPointerArgumentInReg: reg errorRoutineLabel
 ]
 
 { #category : 'sameThread callout - optimizations' }
+CogAbstractInstruction >> genMarshallPointerArgumentIndex: typeIndex fullIndex: fullIndex errorRoutineLabel: errorRoutine withFlags: flags [
+
+	| reg |
+
+	typeIndex = 1 ifTrue: [ reg := self cArg0Register ].
+	typeIndex = 2 ifTrue: [ reg := self cArg1Register ].
+	typeIndex = 3 ifTrue: [ reg := self cArg2Register ].
+	typeIndex = 4 ifTrue: [ reg := self cArg3Register ].
+
+	^ self
+		  genMarshallPointerArgumentInReg: reg
+		  errorRoutineLabel: errorRoutine
+		  withFlags: flags
+]
+
+{ #category : 'sameThread callout - optimizations' }
 CogAbstractInstruction >> genMarshallReturnPointer: errorRoutineLabel [
 
 	| jumpFailAlloc |
@@ -1006,7 +1065,7 @@ CogAbstractInstruction >> genOptimizedSameThreadCalloutDoubleVoidFor: anExternal
 
 	errorRoutine := self genFFIFallbackCall.
 
-	self genMarshallDoubleArgumentInReg: DPFPReg0 errorRoutineLabel: errorRoutine withFlags: flags. 
+	self genMarshallDoubleArgumentIndex: 1 fullIndex: 1 errorRoutineLabel: errorRoutine withFlags: flags.
 		
 	self genFFISameThreadCall: anExternalFunctionAddress.
 
@@ -1059,13 +1118,19 @@ CogAbstractInstruction >> genOptimizedSameThreadCalloutPointerDoubleDoubleDouble
 
 	errorRoutine := self genFFIFallbackCall.
 
-	self genMarshallDoubleArgumentInReg: DPFPReg3 errorRoutineLabel: errorRoutine withFlags: flags. 
-	self genMarshallDoubleArgumentInReg: DPFPReg2 errorRoutineLabel: errorRoutine withFlags: flags. 
-	self genMarshallDoubleArgumentInReg: DPFPReg1 errorRoutineLabel: errorRoutine withFlags: flags. 
-	self genMarshallDoubleArgumentInReg: DPFPReg0 errorRoutineLabel: errorRoutine withFlags: flags. 
-	self genMarshallPointerArgumentInReg: self cArg0Register errorRoutineLabel: errorRoutine withFlags: flags. 
+	self genMarshallDoubleArgumentIndex: 4 fullIndex: 5 errorRoutineLabel: errorRoutine withFlags: flags.
 
-	self genFFISameThreadCall: anExternalFunctionAddress.
+	self genMarshallDoubleArgumentIndex: 3 fullIndex: 4 errorRoutineLabel: errorRoutine withFlags: flags.
+
+	self genMarshallDoubleArgumentIndex: 2 fullIndex: 3 errorRoutineLabel: errorRoutine withFlags: flags.
+
+	self genMarshallDoubleArgumentIndex: 1 fullIndex: 2 errorRoutineLabel: errorRoutine withFlags: flags.
+	
+	self genMarshallPointerArgumentIndex: 1 fullIndex: 1 errorRoutineLabel: errorRoutine withFlags: flags.
+	
+	self 
+		genFFISameThreadCall: anExternalFunctionAddress
+		handlesExtraDoubleArgument: true.
 
 	^ true
 ]
@@ -1077,11 +1142,11 @@ CogAbstractInstruction >> genOptimizedSameThreadCalloutPointerDoubleDoubleDouble
 	cogit ssFlushStack.
 
 	errorRoutine := self genFFIFallbackCall.
-
-	self genMarshallDoubleArgumentInReg: DPFPReg2 errorRoutineLabel: errorRoutine withFlags: flags. 
-	self genMarshallDoubleArgumentInReg: DPFPReg1 errorRoutineLabel: errorRoutine withFlags: flags. 
-	self genMarshallDoubleArgumentInReg: DPFPReg0 errorRoutineLabel: errorRoutine withFlags: flags. 
-	self genMarshallPointerArgumentInReg: self cArg0Register errorRoutineLabel: errorRoutine withFlags: flags. 
+	
+	self genMarshallDoubleArgumentIndex: 3 fullIndex: 4 errorRoutineLabel: errorRoutine withFlags: flags.
+	self genMarshallDoubleArgumentIndex: 2 fullIndex: 3 errorRoutineLabel: errorRoutine withFlags: flags.
+	self genMarshallDoubleArgumentIndex: 1 fullIndex: 2 errorRoutineLabel: errorRoutine withFlags: flags.
+	self genMarshallPointerArgumentIndex: 1 fullIndex: 1 errorRoutineLabel: errorRoutine withFlags: flags.
 
 	self genFFISameThreadCall: anExternalFunctionAddress.
 
@@ -1096,9 +1161,11 @@ CogAbstractInstruction >> genOptimizedSameThreadCalloutPointerDoubleDoubleVoidFo
 
 	errorRoutine := self genFFIFallbackCall.
 
-	self genMarshallDoubleArgumentInReg: DPFPReg1 errorRoutineLabel: errorRoutine withFlags: flags. 
-	self genMarshallDoubleArgumentInReg: DPFPReg0 errorRoutineLabel: errorRoutine withFlags: flags. 
-	self genMarshallPointerArgumentInReg: self cArg0Register errorRoutineLabel: errorRoutine withFlags: flags. 
+	self genMarshallDoubleArgumentIndex: 2 fullIndex: 3 errorRoutineLabel: errorRoutine withFlags: flags.
+	
+	self genMarshallDoubleArgumentIndex: 1 fullIndex: 2 errorRoutineLabel: errorRoutine withFlags: flags.
+	 
+	self genMarshallPointerArgumentIndex: 1 fullIndex: 1 errorRoutineLabel: errorRoutine withFlags: flags.
 
 	self genFFISameThreadCall: anExternalFunctionAddress.
 
@@ -1113,7 +1180,7 @@ CogAbstractInstruction >> genOptimizedSameThreadCalloutPointerPointerFor: anExte
 
 	errorRoutine := self genFFIFallbackCall.
 
-	self genMarshallPointerArgumentInReg: self cArg0Register errorRoutineLabel: errorRoutine withFlags: flags. 
+	self genMarshallPointerArgumentIndex: 1 fullIndex: 1 errorRoutineLabel: errorRoutine withFlags: flags.
 		
 	self genFFISameThreadCall: anExternalFunctionAddress.
 	
@@ -1130,7 +1197,7 @@ CogAbstractInstruction >> genOptimizedSameThreadCalloutPointerVoidFor: anExterna
 
 	errorRoutine := self genFFIFallbackCall.
 
-	self genMarshallPointerArgumentInReg: self cArg0Register errorRoutineLabel: errorRoutine withFlags: flags. 
+	self genMarshallPointerArgumentIndex: 1 fullIndex: 1 errorRoutineLabel: errorRoutine withFlags: flags. 
 		
 	self genFFISameThreadCall: anExternalFunctionAddress.
 
@@ -1809,7 +1876,7 @@ CogAbstractInstruction >> outputMachineCodeAt: targetAddress [
 ]
 
 { #category : 'sameThread callout - optimizations' }
-CogAbstractInstruction >> prepareStackForFFICall [
+CogAbstractInstruction >> prepareStackForFFICall: handlesExtraDoubleArgument [
 		
 	
 ]

@@ -748,7 +748,8 @@ VMJitFFISameThreadCalloutTest >> testOptimizedFunctionDoubleToVoid [
 		                      createExternalFunctionFor: [:arg | 
 										self assertIsOptimizedCall: tfExternalFunction.
 										called := true.
-										receivedArguments := machineSimulator fetchArgumentsOfTypes: argumentTypes.
+										receivedArguments := machineSimulator
+														 fetchArgumentsOfTypes: argumentTypes.
 										0 ]
 		                      withArgumentTypes: argumentTypes
 		                      withReturnType: interpreter libFFI void
@@ -800,7 +801,8 @@ VMJitFFISameThreadCalloutTest >> testOptimizedFunctionPointerDoubleDoubleDoubleD
 		                      createExternalFunctionFor: [:ptr ":dbl1 :dbl2 :dbl3 :dbl4 Double Parameters are not handled by our simulation"  | 
 										self assertIsOptimizedCall: tfExternalFunction.
 										called := true.
-										receivedArguments := machineSimulator fetchArgumentsOfTypes: argumentTypes.
+										receivedArguments := machineSimulator 
+													fetchArgumentsOfTypes: argumentTypes.
 										0 ]
 		                      withArgumentTypes: argumentTypes
 		                      withReturnType: interpreter libFFI void
@@ -851,11 +853,13 @@ VMJitFFISameThreadCalloutTest >> testOptimizedFunctionPointerDoubleDoubleDoubleD
 { #category : 'tests - pointer double double double void' }
 VMJitFFISameThreadCalloutTest >> testOptimizedFunctionPointerDoubleDoubleDoubleToVoid [
 
-	| compiledMethod cogMethod tfExternalFunction called receivedArgument1 receivedArgument2 receivedArgument3 anExternalAddress receivedArgument4 |
+	| compiledMethod cogMethod tfExternalFunction called receivedArguments argumentTypes anExternalAddress |
 
 	isa = #IA32 ifTrue: [ ^ self skip ].
 
 	called := false.
+
+	argumentTypes := { interpreter libFFI pointer. interpreter libFFI double. interpreter libFFI double. interpreter libFFI double }.
 
 	"I need to return 0 in the function, even if it is void, as the simulation cannot identify when it is a 
 	void returning function "
@@ -863,12 +867,10 @@ VMJitFFISameThreadCalloutTest >> testOptimizedFunctionPointerDoubleDoubleDoubleT
 		                      createExternalFunctionFor: [:ptr :dbl1 :dbl2 :dbl3 | 
 										self assertIsOptimizedCall: tfExternalFunction.
 										called := true.
-										receivedArgument1 := ptr.
-										receivedArgument2 := machineSimulator doublePrecisionFloatingPointRegister0Value.
-										receivedArgument3 := machineSimulator doublePrecisionFloatingPointRegister1Value.
-										receivedArgument4 := machineSimulator doublePrecisionFloatingPointRegister2Value.
+										receivedArguments := machineSimulator 
+													fetchArgumentsOfTypes: argumentTypes.
 										0 ]
-		                      withArgumentTypes: { interpreter libFFI pointer. interpreter libFFI double. interpreter libFFI double. interpreter libFFI double }
+		                      withArgumentTypes: argumentTypes 
 		                      withReturnType: interpreter libFFI void
 									flags: FFI_FLAG_USE_OPTIMIZED_VERSION | FFI_FLAG_POINTERS_MIGHT_BE_EXTERNAL_ADDRESSES.
 
@@ -904,21 +906,23 @@ VMJitFFISameThreadCalloutTest >> testOptimizedFunctionPointerDoubleDoubleDoubleT
 	self assert: machineSimulator pc equals: callerAddress.
 	self assert: machineSimulator receiverRegisterValue equals: (memory integerObjectOf: 23).
 	self assert: called.
-	self assert: receivedArgument1 equals: 17.
-	self assert: receivedArgument2 equals: 23.5.
-	self assert: receivedArgument3 equals: 42.0.
-	self assert: receivedArgument4 equals: 99.5.
+	self assert: receivedArguments first equals: 17.
+	self assert: receivedArguments second equals: 23.5.
+	self assert: receivedArguments third equals: 42.0.
+	self assert: receivedArguments fourth equals: 99.5.
 
 ]
 
 { #category : 'tests - pointer double double to void' }
 VMJitFFISameThreadCalloutTest >> testOptimizedFunctionPointerDoubleDoubleToVoid [
 
-	| compiledMethod cogMethod tfExternalFunction called receivedArgument1 receivedArgument2 receivedArgument3 anExternalAddress |
+	| compiledMethod cogMethod tfExternalFunction called receivedArguments anExternalAddress argumentTypes |
 
 	isa = #IA32 ifTrue: [ ^ self skip ].
 
 	called := false.
+
+	argumentTypes :={ interpreter libFFI pointer. interpreter libFFI double. interpreter libFFI double }.
 
 	"I need to return 0 in the function, even if it is void, as the simulation cannot identify when it is a 
 	void returning function "
@@ -926,11 +930,11 @@ VMJitFFISameThreadCalloutTest >> testOptimizedFunctionPointerDoubleDoubleToVoid 
 		                      createExternalFunctionFor: [:ptr :dbl1 :dbl2 | 
 										self assertIsOptimizedCall: tfExternalFunction.
 										called := true.
-										receivedArgument1 := ptr.
-										receivedArgument2 := machineSimulator doublePrecisionFloatingPointRegister0Value.
-										receivedArgument3 := machineSimulator doublePrecisionFloatingPointRegister1Value.
+										receivedArguments := machineSimulator 
+													fetchArgumentsOfTypes: argumentTypes.
+
 										0 ]
-		                      withArgumentTypes: { interpreter libFFI pointer. interpreter libFFI double. interpreter libFFI double }
+		                      withArgumentTypes: argumentTypes 
 		                      withReturnType: interpreter libFFI void
 									flags: FFI_FLAG_USE_OPTIMIZED_VERSION | FFI_FLAG_POINTERS_MIGHT_BE_EXTERNAL_ADDRESSES.
 
@@ -964,9 +968,9 @@ VMJitFFISameThreadCalloutTest >> testOptimizedFunctionPointerDoubleDoubleToVoid 
 	self assert: machineSimulator pc equals: callerAddress.
 	self assert: machineSimulator receiverRegisterValue equals: (memory integerObjectOf: 23).
 	self assert: called.
-	self assert: receivedArgument1 equals: 17.
-	self assert: receivedArgument2 equals: 23.5.
-	self assert: receivedArgument3 equals: 42.0.		
+	self assert: receivedArguments first equals: 17.
+	self assert: receivedArguments second equals: 23.5.
+	self assert: receivedArguments third equals: 42.0.		
 ]
 
 { #category : 'tests - pointer to pointer' }
@@ -1020,11 +1024,13 @@ VMJitFFISameThreadCalloutTest >> testOptimizedFunctionPointerToPointer [
 { #category : 'tests - pointer to void (Opt)' }
 VMJitFFISameThreadCalloutTest >> testOptimizedFunctionPointerToVoidAllowinOopsWithOopAsParameter [
 
-	| compiledMethod cogMethod tfExternalFunction aByteArray called receivedArgument |
+	| compiledMethod cogMethod tfExternalFunction aByteArray called receivedArguments argumentTypes |
 
 	isa = #IA32 ifTrue: [ ^ self skip ].
 
 	called := false.
+
+	argumentTypes := { interpreter libFFI pointer }.
 
 	"I need to return 0 in the function, even if it is void, as the simulation cannot identify when it is a 
 	void returning function "
@@ -1032,9 +1038,11 @@ VMJitFFISameThreadCalloutTest >> testOptimizedFunctionPointerToVoidAllowinOopsWi
 		                      createExternalFunctionFor: [:arg | 
 										self assertIsOptimizedCall: tfExternalFunction.
 										called := true.
-										receivedArgument := arg.
+										receivedArguments := machineSimulator 
+													fetchArgumentsOfTypes: argumentTypes.
+
 										0 ]
-		                      withArgumentTypes: { interpreter libFFI pointer }
+		                      withArgumentTypes: argumentTypes
 		                      withReturnType: interpreter libFFI void
 									flags: FFI_FLAG_USE_OPTIMIZED_VERSION | FFI_FLAG_POINTERS_MIGHT_BE_OBJECTS.		
 
@@ -1064,7 +1072,7 @@ VMJitFFISameThreadCalloutTest >> testOptimizedFunctionPointerToVoidAllowinOopsWi
 	self assert: machineSimulator pc equals: callerAddress.
 	self assert: machineSimulator receiverRegisterValue equals: (memory integerObjectOf: 23).
 	self assert: called.
-	self assert: receivedArgument equals: aByteArray + BaseHeaderSize 
+	self assert: receivedArguments first equals: aByteArray + BaseHeaderSize 
 ]
 
 { #category : 'tests - pointer to void (Opt)' }
@@ -1117,21 +1125,24 @@ VMJitFFISameThreadCalloutTest >> testOptimizedFunctionPointerToVoidChangesStack 
 { #category : 'tests - pointer to void (Opt)' }
 VMJitFFISameThreadCalloutTest >> testOptimizedFunctionPointerToVoidWithExternalAddressAsParameter [
 
-	| compiledMethod cogMethod tfExternalFunction called receivedArgument anExternalAddress |
+	| compiledMethod cogMethod tfExternalFunction called receivedArguments anExternalAddress argumentTypes |
 
 	isa = #IA32 ifTrue: [ ^ self skip ].
 
 	called := false.
 
+	argumentTypes := { interpreter libFFI pointer }.
+	
 	"I need to return 0 in the function, even if it is void, as the simulation cannot identify when it is a 
 	void returning function "
 	tfExternalFunction := self
 		                      createExternalFunctionFor: [:arg | 
 										self assertIsOptimizedCall: tfExternalFunction.
 										called := true.
-										receivedArgument := arg.
+										receivedArguments := machineSimulator 
+													fetchArgumentsOfTypes: argumentTypes.
 										0 ]
-		                      withArgumentTypes: { interpreter libFFI pointer }
+		                      withArgumentTypes: argumentTypes
 		                      withReturnType: interpreter libFFI void
 									flags: FFI_FLAG_USE_OPTIMIZED_VERSION | FFI_FLAG_POINTERS_MIGHT_BE_EXTERNAL_ADDRESSES.
 
@@ -1161,17 +1172,18 @@ VMJitFFISameThreadCalloutTest >> testOptimizedFunctionPointerToVoidWithExternalA
 	self assert: machineSimulator pc equals: callerAddress.
 	self assert: machineSimulator receiverRegisterValue equals: (memory integerObjectOf: 23).
 	self assert: called.
-	self assert: receivedArgument equals: 17
+	self assert: receivedArguments first equals: 17
 ]
 
 { #category : 'tests - pointer to void (Opt)' }
 VMJitFFISameThreadCalloutTest >> testOptimizedFunctionPointerToVoidWithNilAsParameterShouldFail [
 
-	| compiledMethod cogMethod tfExternalFunction aByteArray called receivedArgument |
+	| compiledMethod cogMethod tfExternalFunction aByteArray called receivedArguments argumentTypes |
 	
 	isa = #IA32 ifTrue: [ ^ self skip ].
 		
 	called := false.
+	argumentTypes := { interpreter libFFI pointer }.
 
 	"I need to return 0 in the function, even if it is void, as the simulation cannot identify when it is a 
 	void returning function "
@@ -1179,9 +1191,10 @@ VMJitFFISameThreadCalloutTest >> testOptimizedFunctionPointerToVoidWithNilAsPara
 		                      createExternalFunctionFor: [:arg | 
 										self assertIsOptimizedCall: tfExternalFunction.
 										called := true.
-										receivedArgument := arg.
+										receivedArguments := machineSimulator 
+													fetchArgumentsOfTypes: argumentTypes.
 										0 ]
-		                      withArgumentTypes: { interpreter libFFI pointer }
+		                      withArgumentTypes: argumentTypes
 		                      withReturnType: interpreter libFFI void
 									flags: FFI_FLAG_USE_OPTIMIZED_VERSION | FFI_FLAG_POINTERS_MIGHT_BE_EXTERNAL_ADDRESSES.		
 
@@ -1216,11 +1229,12 @@ VMJitFFISameThreadCalloutTest >> testOptimizedFunctionPointerToVoidWithNilAsPara
 { #category : 'tests - pointer to void (Opt)' }
 VMJitFFISameThreadCalloutTest >> testOptimizedFunctionPointerToVoidWithOopAsParameterShouldFail [
 
-	| compiledMethod cogMethod tfExternalFunction aByteArray called receivedArgument |
+	| compiledMethod cogMethod tfExternalFunction aByteArray called receivedArguments argumentTypes |
 
 	isa = #IA32 ifTrue: [ ^ self skip ].
 	
 	called := false.
+	argumentTypes := { interpreter libFFI pointer }. 
 
 	"I need to return 0 in the function, even if it is void, as the simulation cannot identify when it is a 
 	void returning function "
@@ -1228,9 +1242,11 @@ VMJitFFISameThreadCalloutTest >> testOptimizedFunctionPointerToVoidWithOopAsPara
 		                      createExternalFunctionFor: [:arg | 
 										self assertIsOptimizedCall: tfExternalFunction.
 										called := true.
-										receivedArgument := arg.
+										receivedArguments := machineSimulator 
+													fetchArgumentsOfTypes: argumentTypes.
+
 										0 ]
-		                      withArgumentTypes: { interpreter libFFI pointer }
+		                      withArgumentTypes: argumentTypes
 		                      withReturnType: interpreter libFFI void
 									flags: FFI_FLAG_USE_OPTIMIZED_VERSION | FFI_FLAG_POINTERS_MIGHT_BE_EXTERNAL_ADDRESSES.		
 
@@ -1265,7 +1281,7 @@ VMJitFFISameThreadCalloutTest >> testOptimizedFunctionPointerToVoidWithOopAsPara
 { #category : 'tests - pointer to void (Opt)' }
 VMJitFFISameThreadCalloutTest >> testOptimizedFunctionPointerToVoidWithSmallIntegerAsParameterShouldFail [
 
-	| compiledMethod cogMethod tfExternalFunction called receivedArgument |
+	| compiledMethod cogMethod tfExternalFunction called |
 
 	isa = #IA32 ifTrue: [ ^ self skip ].
 
@@ -1277,7 +1293,6 @@ VMJitFFISameThreadCalloutTest >> testOptimizedFunctionPointerToVoidWithSmallInte
 		                      createExternalFunctionFor: [:arg | 
 										self assertIsOptimizedCall: tfExternalFunction.
 										called := true.
-										receivedArgument := arg.
 										0 ]
 		                      withArgumentTypes: { interpreter libFFI pointer }
 		                      withReturnType: interpreter libFFI void
