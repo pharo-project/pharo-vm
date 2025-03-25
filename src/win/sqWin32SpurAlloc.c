@@ -62,6 +62,10 @@ void* allocateJITMemory(usqInt desiredSize, usqInt desiredPosition){
 		logErrorFromErrno("Could not allocate JIT memory");
 		exit(1);
 	}
+
+	// Make memory executable
+	sqMakeMemoryExecutableFromTo(alloc, alloc + allocBytes);
+
 	return alloc;
 }
 
