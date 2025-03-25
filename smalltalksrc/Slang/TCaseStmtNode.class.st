@@ -411,10 +411,13 @@ TCaseStmtNode >> renameLocalVariablesGivenClassVariables: classVariables globalV
 { #category : 'transformations' }
 TCaseStmtNode >> replaceNodesIn: aDictionary [
 
-	^aDictionary at: self ifAbsent: [
-		self expression: (expression replaceNodesIn: aDictionary).
-		self cases: (cases collect: [ :c | c replaceNodesIn: aDictionary ]).
-		self]
+	| aDictionaryAtSelf |
+	aDictionaryAtSelf := aDictionary at: self ifAbsent: [ nil ].
+	aDictionaryAtSelf ifNotNil: [ ^ aDictionaryAtSelf copy ].
+
+	self expression: (expression replaceNodesIn: aDictionary).
+	self cases: (cases collect: [ :c | c replaceNodesIn: aDictionary ]).
+	^ self
 ]
 
 { #category : 'private' }

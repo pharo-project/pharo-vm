@@ -174,13 +174,16 @@ TSwitchStmtNode >> asCASTIn: aBuilder addToEndOfCases: aNodeToPrependOrNil [
 
 { #category : 'transformations' }
 TSwitchStmtNode >> bindVariableUsesIn: aDictionary [
-	expression := expression bindVariableUsesIn: aDictionary.
-	cases := (cases collect:
-				[:pair| "<Array with: <Array with: ParseTreeNode> with: TStmtListNode"
-				{ pair first collect: [:labelNode| labelNode bindVariableUsesIn: aDictionary].
-				   pair last bindVariableUsesIn: aDictionary }]).
+
+	self expression: (expression bindVariableUsesIn: aDictionary).
+	self cases:
+		(cases collect: [ :pair | "<Array with: <Array with: ParseTreeNode> with: TStmtListNode"
+			 {
+				 (pair first collect: [ :labelNode |
+					  labelNode bindVariableUsesIn: aDictionary ]).
+				 (pair last bindVariableUsesIn: aDictionary) } ]).
 	otherwiseOrNil ifNotNil:
-		[otherwiseOrNil := otherwiseOrNil bindVariableUsesIn: aDictionary]
+		[self otherwiseOrNil: (otherwiseOrNil bindVariableUsesIn: aDictionary)]
 ]
 
 { #category : 'transformations' }
@@ -208,26 +211,26 @@ TSwitchStmtNode >> bindVariableUsesIn: aDictionary andConstantFoldIf: constantFo
 
 { #category : 'transformations' }
 TSwitchStmtNode >> bindVariablesIn: aDictionary [
-	expression := expression bindVariablesIn: aDictionary.
-	cases := (cases collect:
+	self expression: (expression bindVariablesIn: aDictionary).
+	self cases: (cases collect:
 				[:pair| "<Array with: <Array with: ParseTreeNode> with: TStmtListNode"
 				{ pair first collect: [:labelNode| labelNode bindVariablesIn: aDictionary].
 				   pair last bindVariablesIn: aDictionary }]).
 	otherwiseOrNil ifNotNil:
-		[otherwiseOrNil := otherwiseOrNil bindVariablesIn: aDictionary]
+		[self otherwiseOrNil: (otherwiseOrNil bindVariablesIn: aDictionary)]
 ]
 
 { #category : 'transformations' }
 TSwitchStmtNode >> bindVariablesIn: aDictionary unless: cautionaryBlock [
 
 	(cautionaryBlock value: self) ifTrue: [^self].
-	expression := expression bindVariablesIn: aDictionary unless: cautionaryBlock.
-	cases := (cases collect:
+	self expression: (expression bindVariablesIn: aDictionary unless: cautionaryBlock).
+	self cases: (cases collect:
 				[:pair| "<Array with: <Array with: ParseTreeNode> with: TStmtListNode"
 				{ pair first collect: [:labelNode| labelNode bindVariablesIn: aDictionary unless: cautionaryBlock].
 				   pair last bindVariablesIn: aDictionary unless: cautionaryBlock }]).
 	otherwiseOrNil ifNotNil:
-		[otherwiseOrNil := otherwiseOrNil bindVariablesIn: aDictionary unless: cautionaryBlock]
+		[self otherwiseOrNil: (otherwiseOrNil bindVariablesIn: aDictionary unless: cautionaryBlock)]
 ]
 
 { #category : 'accessing' }
@@ -239,9 +242,18 @@ TSwitchStmtNode >> cases [
 
 { #category : 'accessing' }
 TSwitchStmtNode >> cases: anObject [
-	"Set the value of cases"
 
+	anObject do: [ :case |
+		case first do: [ :n | n parent: self ].
+		case second parent: self ].
 	cases := anObject
+]
+
+{ #category : 'testing' }
+TSwitchStmtNode >> casesAreEmpty [
+	"related to dead code elimination and inlining, see if the cases has nothing but comment meaning they are empty"
+
+	^ cases allSatisfy: [ :case | case second isEmptyStmtListNode ]
 ]
 
 { #category : 'testing' }
@@ -284,7 +296,6 @@ TSwitchStmtNode >> createCasesFromBraceNode: aTBraceNode [
 						(labels collect: [ :ea | ea statements first ]).
 						case }.
 				case parent: self ] ].
-
 	^ newCases
 ]
 
@@ -299,6 +310,7 @@ TSwitchStmtNode >> expression [
 TSwitchStmtNode >> expression: anObject [
 	"Set the value of expression"
 
+	anObject parent: self.
 	expression := anObject
 ]
 
@@ -411,13 +423,12 @@ TSwitchStmtNode >> otherwiseOrNil: anObject [
 
 { #category : 'copying' }
 TSwitchStmtNode >> postCopy [
-	expression := expression copy.
-	cases := (cases collect:
+	self expression: expression copy.
+	self cases: (cases collect:
 				[:pair| "<Array with: <Array with: ParseTreeNode> with: TStmtListNode"
 				{ pair first collect: [:labelNode| labelNode copy].
 				   (pair last copy parent: self) }]).
-	otherwiseOrNil := otherwiseOrNil copy.
-	otherwiseOrNil ifNotNil: [ otherwiseOrNil parent: self ]
+	self otherwiseOrNil: otherwiseOrNil copy.
 ]
 
 { #category : 'printing' }
@@ -465,11 +476,9 @@ TSwitchStmtNode >> removeAssertions [
 
 { #category : 'dead-code-elimination' }
 TSwitchStmtNode >> removeUnusedNodesInBranch: aChild [
-	"when removing a node from a switch, we have to be careful of if it comes from a caseOf: or a caseOf:otherwise:. if it comes from a caseOf:, otherwise is nil and must be kept it will be translated as a no case found error. To indicate that otherwise does nothing Slang use an empty TStatementListNode, hence the following code"
+	"when removing a switch, we have to be careful of if it comes from a caseOf: or a caseOf:otherwise:. if it comes from a caseOf:, otherwise is nil and must be kept it will be translated as a no case found error. To indicate that otherwise does nothing otherwise will be an empty TStatementListNode, hence the following code"
 
-	cases := cases select: [ :each | each second ~~ aChild ].
-	(cases isEmpty or: [ self casesHasNothingButComments ]) ifFalse: [
-		^ self ].
+	self casesAreEmpty ifFalse: [ ^ self ].
 	"we're from a caseOf: so we keep the node"
 	otherwiseOrNil ifNil: [ ^ self ].
 	"otherwiseOrNil may have been empty from the start or during the cleaning process, either way the node is now completely empty so we can supress it"
@@ -513,17 +522,21 @@ TSwitchStmtNode >> renameLocalVariablesGivenClassVariables: classVariables globa
 
 { #category : 'transformations' }
 TSwitchStmtNode >> replaceNodesIn: aDictionary [
-	^aDictionary
-		at: self
-		ifAbsent:
-			[expression := expression replaceNodesIn: aDictionary.
-			 cases := (cases collect:
-						[:pair| "<Array with: <Array with: ParseTreeNode> with: TStmtListNode"
-						{ pair first collect: [:labelNode| labelNode replaceNodesIn: aDictionary].
-						   pair last replaceNodesIn: aDictionary }]).
-			 otherwiseOrNil ifNotNil:
-				[otherwiseOrNil := otherwiseOrNil replaceNodesIn: aDictionary].
-			 self]
+
+	| aDictionaryAtSelf |
+	aDictionaryAtSelf := aDictionary at: self ifAbsent: [ nil ].
+	aDictionaryAtSelf ifNotNil: [ ^ aDictionaryAtSelf copy ].
+
+	self expression: (expression replaceNodesIn: aDictionary).
+	self cases:
+		(cases collect: [ :pair | "<Array with: <Array with: ParseTreeNode> with: TStmtListNode"
+			 {
+				 (pair first collect: [ :labelNode |
+					  labelNode replaceNodesIn: aDictionary ]).
+				 (pair last replaceNodesIn: aDictionary) } ]).
+	otherwiseOrNil ifNotNil: [
+		self otherwiseOrNil: (otherwiseOrNil replaceNodesIn: aDictionary) ].
+	^ self
 ]
 
 { #category : 'accessing' }

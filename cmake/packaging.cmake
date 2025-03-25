@@ -24,7 +24,7 @@ install(
     FILES_MATCHING PATTERN *.h)
 
 install(
-    DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/extracted/vm/include/common/"
+    DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/include/common/"
     DESTINATION include/pharovm
     USE_SOURCE_PERMISSIONS
     COMPONENT include
@@ -32,7 +32,6 @@ install(
 
 install(DIRECTORY
     "${CMAKE_CURRENT_SOURCE_DIR}/cmake"
-    "${CMAKE_CURRENT_SOURCE_DIR}/extracted"
     "${CMAKE_CURRENT_SOURCE_DIR}/include"
     "${CMAKE_CURRENT_SOURCE_DIR}/packaging"
     "${CMAKE_CURRENT_SOURCE_DIR}/plugins"
@@ -40,8 +39,6 @@ install(DIRECTORY
     "${CMAKE_CURRENT_SOURCE_DIR}/scripts"
     "${CMAKE_CURRENT_SOURCE_DIR}/src"
     "${CMAKE_CURRENT_SOURCE_DIR}/ffiTestLibrary"
-    "${CMAKE_CURRENT_SOURCE_DIR}/ffi"
-    "${CMAKE_CURRENT_SOURCE_DIR}/tty"
     DESTINATION pharo-vm
     USE_SOURCE_PERMISSIONS
     COMPONENT c-src

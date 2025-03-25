@@ -12,7 +12,6 @@ Class {
 		'CtxtTempFrameStart',
 		'LargeContextBit',
 		'LargeContextSlots',
-		'SistaV1BytecodeSet',
 		'SmallContextSlots'
 	],
 	#pools : [
@@ -25,7 +24,7 @@ Class {
 
 { #category : 'simulator initialization' }
 VMBytecodeConstants class >> falsifyBytecodeSetFlags: initializationOptions [
-	SistaV1BytecodeSet.
+
 	classPool keys do:
 		[:k|
 		(k endsWith: 'BytecodeSet') ifTrue:

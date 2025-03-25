@@ -23,8 +23,8 @@ TInlineNode >> asCASTIn: aBuilder [
 
 { #category : 'transformations' }
 TInlineNode >> bindVariableUsesIn: aDictionary [
-	method := method bindVariableUsesIn: aDictionary.
 
+	self method: (method bindVariableUsesIn: aDictionary)
 ]
 
 { #category : 'transformations' }
@@ -42,16 +42,15 @@ TInlineNode >> bindVariableUsesIn: aDictionary andConstantFoldIf: constantFold i
 { #category : 'transformations' }
 TInlineNode >> bindVariablesIn: aDictionary [
 
-	method := method bindVariablesIn: aDictionary.
-
+	self method: (method bindVariablesIn: aDictionary)
 ]
 
 { #category : 'transformations' }
 TInlineNode >> bindVariablesIn: aDictionary unless: cautionaryBlock [
 
-	(cautionaryBlock value: self) ifTrue: [^self].
-	method := method bindVariablesIn: aDictionary unless: cautionaryBlock.
-
+	(cautionaryBlock value: self) ifTrue: [ ^ self ].
+	self method:
+		(method bindVariablesIn: aDictionary unless: cautionaryBlock)
 ]
 
 { #category : 'accessing' }
@@ -80,7 +79,9 @@ TInlineNode >> method [
 
 { #category : 'accessing' }
 TInlineNode >> method: aTMethod [
-	method := aTMethod
+	method := aTMethod.
+	
+	aTMethod parseTree parent: self
 ]
 
 { #category : 'enumerating' }
@@ -118,7 +119,7 @@ TInlineNode >> nodesDo: aBlock unless: cautionaryBlock [
 { #category : 'copying' }
 TInlineNode >> postCopy [
 
-	method := method copy
+	self method: method copy
 ]
 
 { #category : 'printing' }
@@ -138,10 +139,14 @@ TInlineNode >> renameLocalVariablesGivenClassVariables: classVariables globalVar
 ]
 
 { #category : 'transformations' }
-TInlineNode >> replaceNodesIn: map [
-	^map at: self ifAbsent: [
-		method replaceNodesIn: map.
-		self]
+TInlineNode >> replaceNodesIn: aDictionary [
+
+	| aDictionaryAtSelf |
+	aDictionaryAtSelf := aDictionary at: self ifAbsent: [ nil ].
+	aDictionaryAtSelf ifNotNil: [ ^ aDictionaryAtSelf copy ].
+
+	self method: (method replaceNodesIn: aDictionary).
+	^ self
 ]
 
 { #category : 'inlining' }

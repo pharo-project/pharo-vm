@@ -1,3 +1,12 @@
+def doCheckout(){
+	return checkout([
+		$class: 'GitSCM',
+		branches: scm.branches,
+		extensions: scm.extensions + [[$class: 'CloneOption', noTags: false, reference: '', shallow: false]],
+		userRemoteConfigs: scm.userRemoteConfigs
+	])
+}
+
 def isWindows(){
   //If NODE_LABELS environment variable is null, we assume we are on master unix machine
   if (env.NODE_LABELS == null) {
@@ -65,7 +74,7 @@ def buildGTKBundle(){
 		cleanWs()
 		stage("build-GTK-bundle"){
 
-			def commitHash = checkout(scm).GIT_COMMIT
+			def commitHash = doCheckout().GIT_COMMIT
 
 			unstash name: "packages-Windows-x86_64-CoInterpreter"
 			def shortGitHash = commitHash.substring(0,8)
@@ -120,7 +129,7 @@ def runBuild(platformName, configuration, headless = true, someAdditionalParamet
 
 	stage("Checkout-${platform}"){
 		dir('repository') {
-			checkout scm
+			doCheckout()
 		}
 	}
   
@@ -181,49 +190,48 @@ def runBuildFromSources(platformName, configuration, headless = true){
 }
 
 def runUnitTests(platform){
-  cleanWs()
+	cleanWs()
 
-  stage("VM Unit Tests"){
-    dir('repository') {
-      checkout scm
-		//We stash the docker files so we can create docker images without checkout
-		stash includes: "docker/**", name: "dockerfiles"
-		
-		//We register if the build is a stable release, we get the metadata from the repository and we stash it
-		saveIsReleaseFlag()
-    }
+	stage("VM Unit Tests"){
+		dir('repository') {
+			doCheckout()
+			//We stash the docker files so we can create docker images without checkout
+			stash includes: "docker/**", name: "dockerfiles"
 
-    cmakeBuild generator: "Unix Makefiles", sourceDir: "repository", buildDir: "runTests", installation: "InSearchPath", cmakeArgs: "-DPHARO_DEPENDENCIES_PREFER_DOWNLOAD_BINARIES=TRUE -DICEBERG_DEFAULT_REMOTE=httpsUrl"
-    dir("runTests"){
-      shell "VERBOSE=1 make vmmaker"
-      dir("build/vmmaker"){
-        shell "wget https://files.pharo.org/vm/pharo-spur64/Darwin-x86_64/third-party/libllvm-full.zip"
-        shell "unzip libllvm-full.zip -d ./vm/Contents/MacOS/Plugins"
-        shell "wget https://files.pharo.org/vm/pharo-spur64/Darwin-x86_64/third-party/libunicorn.2.zip"
-        shell "unzip libunicorn.2.zip  -d ./vm/Contents/MacOS/Plugins"
+			//We register if the build is a stable release, we get the metadata from the repository and we stash it
+			saveIsReleaseFlag()
+    	}
 
-        timeout(20){
-          shell "PHARO_CI_TESTING_ENVIRONMENT=true  ./vm/Contents/MacOS/Pharo --headless --logLevel=4 ./image/VMMaker.image test --junit-xml-output 'VMMakerTests'"
-          shell "PHARO_CI_TESTING_ENVIRONMENT=true  ./vm/Contents/MacOS/Pharo --headless --logLevel=4 ./image/VMMaker.image test --junit-xml-output 'Slang-Tests'"
-         } 
+		cmakeBuild generator: "Unix Makefiles", sourceDir: "repository", buildDir: "runTests", installation: "InSearchPath", cmakeArgs: "-DPHARO_DEPENDENCIES_PREFER_DOWNLOAD_BINARIES=TRUE -DICEBERG_DEFAULT_REMOTE=httpsUrl"
+		dir("runTests"){
+			shell "VERBOSE=1 make vmmaker"
+			dir("build/vmmaker"){
+				shell "wget https://files.pharo.org/vm/pharo-spur64/Darwin-x86_64/third-party/libllvm-full.zip"
+				shell "unzip libllvm-full.zip -d ./vm/Contents/MacOS/Plugins"
+				shell "wget https://files.pharo.org/vm/pharo-spur64/Darwin-x86_64/third-party/libunicorn.2.zip"
+				shell "unzip libunicorn.2.zip  -d ./vm/Contents/MacOS/Plugins"
 
-        shell "zip ./VMMaker-Image.zip ./image/VMMaker.*"
-        archiveArtifacts artifacts: 'VMMaker-Image.zip'
+				timeout(20){
+					shell "PHARO_CI_TESTING_ENVIRONMENT=true  ./vm/Contents/MacOS/Pharo --headless --logLevel=4 ./image/VMMaker.image test --junit-xml-output 'VMMakerTests'"
+					shell "PHARO_CI_TESTING_ENVIRONMENT=true  ./vm/Contents/MacOS/Pharo --headless --logLevel=4 ./image/VMMaker.image test --junit-xml-output 'Slang-Tests'"
+				}
 
-        // Stop if tests fail
-        // Archive xml reports either case
-        try {
-          junit allowEmptyResults: true, testResults: "*.xml"
-        } catch (ex) {
-          if (currentBuild.result == 'UNSTABLE'){
-            currentBuild.result = 'FAILURE'
-          }
-          archiveArtifacts artifacts: '*.xml'
-        }
-        
-      }
-    }
-  }
+				shell "zip ./VMMaker-Image.zip ./image/VMMaker.*"
+				archiveArtifacts artifacts: 'VMMaker-Image.zip'
+
+				// Stop if tests fail
+				// Archive xml reports either case
+				try {
+					junit allowEmptyResults: true, testResults: "*.xml"
+				} catch (ex) {
+					if (currentBuild.result == 'UNSTABLE'){
+						currentBuild.result = 'FAILURE'
+					}
+					archiveArtifacts artifacts: '*.xml'
+				}
+			}
+		}
+	}
 }
 
 def runTests(platform, configuration, packages, withWorker, additionalParameters = ""){
@@ -479,7 +487,11 @@ try{
 		def platform = platf
 		
 		builders[platform] = {
-			node(platform){
+            def nodeName = platform
+            if (nodeName == 'Linux-x86_64'){
+                nodeName = 'old-linux-vm-build'
+            }
+			node(nodeName){
 				timeout(40){
 					runBuild(platform, "CoInterpreter")
 				}

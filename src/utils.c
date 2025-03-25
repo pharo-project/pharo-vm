@@ -67,6 +67,14 @@ static const char* systemSearchPaths[] = {
 char** pluginPaths = NULL;
 char* emptyPaths[] = {NULL};
 
+sqInt
+ioProcessEvents(void)
+{
+    aioPoll(0);
+    return 0;
+}
+
+
 EXPORT(const char*) getSourceVersion(){
 	return VM_BUILD_SOURCE_STRING;
 }
@@ -471,50 +479,9 @@ isCFramePointerInUse()
 }
 #endif // COGVM
 
-/* Answer an approximation of the size of the redzone (if any).  Do so by
- * sending a signal to the process and computing the difference between the
- * stack pointer in the signal handler and that in the caller. Assumes stacks
- * descend.
- */
-
-static char * volatile redZoneTestEndPointer = 0;
-
-
-#ifdef SIGPROF
-static void redZoneTestSigHandler(int sig, siginfo_t *info, void *uap)
-{
-	redZoneTestEndPointer = (char *)&sig;
-}
-#else
-static void redZoneTestSigHandler(int sig)
-{
-	redZoneTestEndPointer = (char *)&sig;
-}
-#endif
-
 #ifndef _WIN32
 static long int min(long int x, long int y) { return (x < y) ? x : y; }
 #endif
-
-static int getRedZoneSize()
-{
-#if defined(SIGPROF) /* cygwin */
-	struct sigaction handler_action, old;
-	handler_action.sa_sigaction = redZoneTestSigHandler;
-	handler_action.sa_flags = SA_NODEFER | SA_SIGINFO;
-	sigemptyset(&handler_action.sa_mask);
-	(void)sigaction(SIGPROF, &handler_action, &old);
-
-	do kill(getpid(),SIGPROF); while (!redZoneTestEndPointer);
-	(void)sigaction(SIGPROF, &old, 0);
-	return (int)min((usqInt)&old,(usqInt)&handler_action) - sizeof(struct sigaction) - (usqInt)redZoneTestEndPointer;
-#else /* cygwin */
-	void (*old)(int) = signal(SIGBREAK, redZoneTestSigHandler);
-
-	do raise(SIGBREAK); while (!redZoneTestEndPointer);
-	return (int) ((char *)&old - redZoneTestEndPointer);
-#endif /* cygwin */
-}
 
 sqInt reportStackHeadroom;
 static int stackPageHeadroom;
@@ -528,8 +495,14 @@ static int stackPageHeadroom;
 int
 osCogStackPageHeadroom()
 {
-	if (!stackPageHeadroom)
-		stackPageHeadroom = getRedZoneSize() + 1024;
+	if (!stackPageHeadroom){
+		#if defined(SIGSTKSZ) /* posix */
+		stackPageHeadroom = SIGSTKSZ + 1024;
+		#else // Non-posix, possibly mingw using exception, use 4k as stack size
+		stackPageHeadroom = 4096 + 1024;
+		#endif
+	}
+		
 	return stackPageHeadroom;
 }
 

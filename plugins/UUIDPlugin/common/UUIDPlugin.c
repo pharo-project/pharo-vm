@@ -105,8 +105,6 @@ int sqUUIDShutdown(void)
 
 EXPORT(sqInt) setInterpreter(struct VirtualMachine *anInterpreter)
 {
-    sqInt ok;
-
 	interpreterProxy = anInterpreter;
 	
 	return 1;

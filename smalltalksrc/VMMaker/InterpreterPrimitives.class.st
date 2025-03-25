@@ -1685,7 +1685,6 @@ InterpreterPrimitives >> primitiveFractionalPart [
 
 { #category : 'control primitives' }
 InterpreterPrimitives >> primitiveFullClosureValue [
-	<option: #SistaV1BytecodeSet>
 	| blockClosure numArgs closureMethod |
 	blockClosure := self stackValue: argumentCount.
 	numArgs := self argumentCountOfClosure: blockClosure.
@@ -1705,7 +1704,6 @@ InterpreterPrimitives >> primitiveFullClosureValueNoContextSwitch [
 	 check for interrupts on stack overflow.  It may invoke the garbage collector
 	 but will not switch processes.  See checkForInterruptsMayContextSwitch:"
 	<api>
-	<option: #SistaV1BytecodeSet>
 	| blockClosure numArgs closureMethod |
 	blockClosure := self stackValue: argumentCount.
 	numArgs := self argumentCountOfClosure: blockClosure.
@@ -1721,7 +1719,6 @@ InterpreterPrimitives >> primitiveFullClosureValueNoContextSwitch [
 
 { #category : 'control primitives' }
 InterpreterPrimitives >> primitiveFullClosureValueWithArgs [
-	<option: #SistaV1BytecodeSet>
 	| argumentArray arraySize blockClosure numArgs closureMethod index |
 	argumentArray := self stackTop.
 	(objectMemory isArray: argumentArray) ifFalse:
