@@ -26,6 +26,7 @@ SLNormalizeVariablesTest >> setUp [
 
 	super setUp.
 	SLNormalizeVariablesTestClass initializeGlobals.
+	ccg vmClass: nil.
 	ccg addClass: SLNormalizeVariablesTestClass.
 	ccg removeConstant: #ConstantWithReplacementShouldNotBeGenerated.
 	ccg removeConstant:

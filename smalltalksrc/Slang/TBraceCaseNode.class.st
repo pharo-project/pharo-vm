@@ -79,6 +79,12 @@ TBraceCaseNode >> cases: anObject [
 	cases do: [ :e | e parent: self ]
 ]
 
+{ #category : 'accessing' }
+TBraceCaseNode >> children [
+
+	^ self caseLabels , self cases
+]
+
 { #category : 'enumerating' }
 TBraceCaseNode >> nodesDo: aBlock [
 	"Apply aBlock to all nodes in the receiver.
@@ -142,13 +148,18 @@ TBraceCaseNode >> renameLocalVariablesGivenClassVariables: classVariables global
 				 collectingChangesIn: changedVariables ])
 ]
 
-{ #category : 'enumerating' }
+{ #category : 'transformations' }
 TBraceCaseNode >> replaceNodesIn: aDictionary [
 
-	^aDictionary at: self ifAbsent: [
-		self caseLabels: (caseLabels collect: [:node| node replaceNodesIn: aDictionary]).
-		self cases: (cases collect: [:node| node replaceNodesIn: aDictionary]).
-		self]
+	| aDictionaryAtSelf |
+	aDictionaryAtSelf := aDictionary at: self ifAbsent: [ nil ].
+	aDictionaryAtSelf ifNotNil: [ ^ aDictionaryAtSelf copy ].
+
+	self caseLabels:
+		(caseLabels collect: [ :node | node replaceNodesIn: aDictionary ]).
+	self cases:
+		(cases collect: [ :node | node replaceNodesIn: aDictionary ]).
+	^ self
 ]
 
 { #category : 'type inference' }

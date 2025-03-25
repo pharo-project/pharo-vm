@@ -1,32 +1,29 @@
+set(CMAKE_INSTALL_RPATH "@executable_path/Plugins")
+set(CMAKE_BUILD_WITH_INSTALL_RPATH TRUE)
+
 function(add_platform_headers)
   target_include_directories(${VM_LIBRARY_NAME}
     PUBLIC
-      ${CMAKE_CURRENT_SOURCE_DIR}/extracted/vm/include/osx
-      ${CMAKE_CURRENT_SOURCE_DIR}/extracted/vm/include/unix
-      ${CMAKE_CURRENT_SOURCE_DIR}/extracted/vm/include/common
+      ${CMAKE_CURRENT_SOURCE_DIR}/include/pharovm/osx
+      ${CMAKE_CURRENT_SOURCE_DIR}/include/pharovm/unix
+      ${CMAKE_CURRENT_SOURCE_DIR}/include/pharovm/common
     )
 endfunction() #add_platform_headers
 
+
+
 set(EXTRACTED_SOURCES
-#Common sources
-    ${CMAKE_CURRENT_SOURCE_DIR}/extracted/vm/src/common/sqHeapMap.c
-    ${CMAKE_CURRENT_SOURCE_DIR}/extracted/vm/src/common/sqVirtualMachine.c
-    ${CMAKE_CURRENT_SOURCE_DIR}/extracted/vm/src/common/sqNamedPrims.c
-    ${CMAKE_CURRENT_SOURCE_DIR}/extracted/vm/src/common/sqExternalSemaphores.c
-    ${CMAKE_CURRENT_SOURCE_DIR}/extracted/vm/src/common/sqTicker.c
+    #Platform sources
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/osx/aioOSX.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/osx/utilsMac.mm
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/unix/debugUnix.c
 
-#Platform sources
-    ${CMAKE_CURRENT_SOURCE_DIR}/extracted/vm/src/osx/aioOSX.c
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/debugUnix.c
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/utilsMac.mm
-
-# Support sources
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/fileDialogMac.m
+    # Support sources
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/osx/fileDialogMac.m
     ${CMAKE_CURRENT_SOURCE_DIR}/src/parameters/parameters.m
     
-
-#Virtual Memory functions
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/memoryUnix.c
+    #Virtual Memory functions
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/unix/memoryUnix.c
 )
 
 set_source_files_properties(
@@ -39,7 +36,7 @@ set_source_files_properties(
 )
 
 set(VM_FRONTEND_SOURCES
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/unixMain.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/unix/unixMain.c
     "${CMAKE_CURRENT_SOURCE_DIR}/resources/mac/${APPNAME}.icns"
     "${CMAKE_CURRENT_SOURCE_DIR}/resources/mac/${APPNAME}Changes.icns"
     "${CMAKE_CURRENT_SOURCE_DIR}/resources/mac/${APPNAME}Image.icns"
@@ -83,7 +80,7 @@ macro(configure_installables INSTALL_COMPONENT)
     COMPONENT ${INSTALL_COMPONENT})
 
 	install(
-	    DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/extracted/vm/include/osx/"
+	    DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/include/osx/"
 	    DESTINATION include/pharovm
 	    COMPONENT include
 	    FILES_MATCHING PATTERN *.h)

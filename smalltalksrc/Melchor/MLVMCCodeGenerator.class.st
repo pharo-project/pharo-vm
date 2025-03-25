@@ -360,10 +360,11 @@ MLVMCCodeGenerator >> isAcceptableAncilliaryClass: class [
 { #category : 'C code generator' }
 MLVMCCodeGenerator >> isNonArgumentImplicitReceiverVariableName: aString [
 
-	^ (super isNonArgumentImplicitReceiverVariableName: aString)
-	    or: [self vmClass
-			ifNil: [#('interpreterProxy' 'self') includes: aString]
-	 		ifNotNil: [self vmClass isNonArgumentImplicitReceiverVariableName: aString]]
+	^ (super isNonArgumentImplicitReceiverVariableName: aString) or: [
+		  self vmClass
+			  ifNil: [ #( 'interpreterProxy' 'self' ) includes: aString ]
+			  ifNotNil: [
+			  self vmClass isNonArgumentImplicitReceiverVariableName: aString ] ]
 ]
 
 { #category : 'C code generator' }

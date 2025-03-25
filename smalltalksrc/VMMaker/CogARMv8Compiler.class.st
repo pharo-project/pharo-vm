@@ -4737,11 +4737,13 @@ CogARMv8Compiler >> ldrSize: is64Bits baseRegister: baseReg unsignedOffset: imme
 	
 	LDR <Xt>, [<Xn|SP>{, #<pimm>}]"
 	
+	self assert: (is64Bits = 0 or: [ is64Bits = 1 ]).
 	self assert: immediate12bitValue >= 0.
 	^ 1 << 31
 		bitOr: ((is64Bits bitAnd: 1) << 30
 		bitOr: (2r11100101 << 22
-		bitOr: ((immediate12bitValue / 8 bitAnd: 2r111111111111) << 10
+		bitOr: ((immediate12bitValue /
+			(is64Bits = 1 ifTrue: [8] ifFalse: [4]) bitAnd: 2r111111111111) << 10
 		bitOr:((baseReg bitAnd: 2r11111) << 5
 		bitOr: (destinationRegister bitAnd: 2r11111)))))
 ]

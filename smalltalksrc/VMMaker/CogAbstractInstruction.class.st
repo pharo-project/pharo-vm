@@ -1050,6 +1050,16 @@ CogAbstractInstruction >> genMarshallReturnPointer: errorRoutineLabel [
 ]
 
 { #category : 'abstract instructions' }
+CogAbstractInstruction >> genMoveM32: offset r: baseReg R: destReg [
+
+	^ cogit
+		  gen: MoveM32rR
+		  quickConstant: offset
+		  operand: baseReg
+		  operand: destReg
+]
+
+{ #category : 'abstract instructions' }
 CogAbstractInstruction >> genMulR: regSource R: regDest [
 	"Generate whatever code necessary to do a bytesPerOop x bytesPerOop multiplication,
 	 answering the first instruction uin the sequence."

@@ -60,6 +60,10 @@ VMSpurOldSpaceGarbageCollectorTest >> setUp [
 
 	objectStackLimit :=  10.
 	super setUp.
+	"[HACK]
+	 When the GC checks for stack integrity we should have *something* resembling a stack.
+	 For now adding a dummy frame works well enough :)"
+	stackBuilder addNewFrame; buildStack.
 ]
 
 { #category : 'tests-OldSpaceSize' }
@@ -627,6 +631,38 @@ VMSpurOldSpaceGarbageCollectorTest >> testEphemeronWithImmediateKeyShouldNotFail
 		assert:
 		(memory fetchInteger: 0 ofObject: self keptObjectInVMVariable1)
 		equals: 15
+]
+
+{ #category : 'tests' }
+VMSpurOldSpaceGarbageCollectorTest >> testEphemeronsWithSameKeyNewSpaceOldSpace [
+
+	| ephemeronObjectOopOne ephemeronObjectOopTwo nonEphemeronObjectOop |
+	"set up"
+	memory initializeMournQueue.
+	self createEphemeronClass.
+	
+	ephemeronObjectOopOne := self newEphemeronObject.
+	ephemeronObjectOopTwo := self newEphemeronObject.
+	nonEphemeronObjectOop := self newOldSpaceObjectWithSlots: 0.
+
+	"Both ephemerons share the same key"
+	memory storePointer: 0
+		ofObject: ephemeronObjectOopOne
+		withValue: nonEphemeronObjectOop.
+	memory storePointer: 0
+		ofObject: ephemeronObjectOopTwo
+		withValue: nonEphemeronObjectOop.
+
+	self keepObjectInVMVariable1: ephemeronObjectOopOne.
+	self keepObjectInVMVariable2: ephemeronObjectOopTwo.
+
+	"Collect non ephemeron object"
+	memory fullGC.
+	ephemeronObjectOopOne := memory remapObj: ephemeronObjectOopOne.
+	ephemeronObjectOopTwo := memory remapObj: ephemeronObjectOopTwo.
+
+	self assert: ({ ephemeronObjectOopOne. ephemeronObjectOopTwo } includes: memory dequeueMourner).
+	self assert: ({ ephemeronObjectOopOne. ephemeronObjectOopTwo } includes: memory dequeueMourner)
 ]
 
 { #category : 'tests' }

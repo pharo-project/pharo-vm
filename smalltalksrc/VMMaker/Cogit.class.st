@@ -130,13 +130,10 @@ Class {
 		'printInstructions',
 		'compilationTrace',
 		'clickConfirm',
-		'breakPC',
-		'breakBlock',
 		'singleStep',
 		'guardPageSize',
 		'traceFlags',
 		'traceStores',
-		'breakMethod',
 		'methodObj',
 		'enumeratingCogMethod',
 		'methodHeader',
@@ -1201,17 +1198,21 @@ Cogit class >> mustBeGlobal: var [
 	 support code.  include cePositive32BitIntegerTrampoline as a hack to prevent it being inlined (it is
 	 only used outside of Cogit by the object representation).  Include CFramePointer CStackPointer as
 	 a hack to get them declared at all."
-	^#(	'ceBaseFrameReturnTrampoline' #ceCaptureCStackPointers 'ceCheckForInterruptTrampoline'
-		ceEnterCogCodePopReceiverReg realCEEnterCogCodePopReceiverReg
-		ceCallCogCodePopReceiverReg realCECallCogCodePopReceiverReg
-		ceCallCogCodePopReceiverAndClassRegs realCECallCogCodePopReceiverAndClassRegs
-		'ceReturnToInterpreterTrampoline' 'ceCannotResumeTrampoline'
-		ceTryLockVMOwner ceUnlockVMOwner
-		'cmEntryOffset' 'cmNoCheckEntryOffset' 'cmDynSuperEntryOffset' 'cmSelfSendEntryOffset'
-		'missOffset' 'cbEntryOffset' 'cbNoSwitchEntryOffset' 'blockNoContextSwitchOffset' breakPC
-		CFramePointer CStackPointer 'cFramePointerInUse' ceGetFP ceGetSP
-		traceFlags 'traceStores' debugPrimCallStackOffset)
-			includes: var
+
+	^ #( 'ceBaseFrameReturnTrampoline' #ceCaptureCStackPointers
+	     'ceCheckForInterruptTrampoline' ceEnterCogCodePopReceiverReg
+	     realCEEnterCogCodePopReceiverReg
+	     ceCallCogCodePopReceiverReg realCECallCogCodePopReceiverReg
+	     ceCallCogCodePopReceiverAndClassRegs
+	     realCECallCogCodePopReceiverAndClassRegs
+	     'ceReturnToInterpreterTrampoline'
+	     'ceCannotResumeTrampoline' ceTryLockVMOwner ceUnlockVMOwner
+	     'cmEntryOffset' 'cmNoCheckEntryOffset' 'cmDynSuperEntryOffset'
+	     'cmSelfSendEntryOffset' 'missOffset' 'cbEntryOffset'
+	     'cbNoSwitchEntryOffset' 'blockNoContextSwitchOffset'
+	     CFramePointer CStackPointer 'cFramePointerInUse'
+	     ceGetFP ceGetSP traceFlags 'traceStores' debugPrimCallStackOffset )
+		  includes: var
 ]
 
 { #category : 'translation' }
@@ -2301,7 +2302,9 @@ Cogit >> MoveM16: offset r: baseReg R: destReg [
 Cogit >> MoveM32: offset r: baseReg R: destReg [
 	<inline: true>
 	<returnTypeC: #'AbstractInstruction *'>
-	^self gen: MoveM32rR quickConstant: offset operand: baseReg operand: destReg
+	^ backEnd genMoveM32: offset r: baseReg R: destReg
+	
+
 ]
 
 { #category : 'abstract instructions' }
@@ -2950,9 +2953,7 @@ Cogit >> abstractInstruction: theAbstractInstruction follows: anAbstractInstruct
 Cogit >> abstractInstructionAt: index [
 	<cmacro: '(index) (&abstractOpcodes[index])'>
 	<returnTypeC: #'AbstractInstruction *'>
-	((debugOpcodeIndices includes: index)
-	 and: [breakMethod isNil or: [methodObj = breakMethod]]) ifTrue:
-		[self halt].
+
 	^abstractOpcodes at: index
 ]
 
@@ -3389,52 +3390,11 @@ Cogit >> blockDispatchTargetsFor: cogMethod perform: binaryFunction arg: arg [
 	^0
 ]
 
-{ #category : 'simulation only' }
-Cogit >> breakAt: address [
-	((breakPC isBreakpointFor: address)
-	 and: [breakBlock shouldStopIfAtPC: address]) ifTrue:
-		[coInterpreter changed: #byteCountText.
-		 self halt: 'machine code breakpoint at ', address]
-]
-
-{ #category : 'simulation only' }
-Cogit >> breakBlock [
-	<doNotGenerate>
-	^breakBlock
-]
-
-{ #category : 'simulation only' }
-Cogit >> breakBlock: aBlock [
-	<doNotGenerate>
-	breakBlock := aBlock.
-	breakPC ifNil: [breakPC := true].
-	singleStep := singleStep or: [breakPC singleStepRequiredToTriggerIn: self]
-]
-
-{ #category : 'simulation only' }
-Cogit >> breakMethod [
-	<doNotGenerate>
-	^breakMethod
-]
-
 { #category : 'debugging' }
 Cogit >> breakOnImplicitReceiver [
 	<api>
 	<cmacro: '() (traceFlags & 64)'>
 	^(traceFlags bitAnd: 64) ~= 0
-]
-
-{ #category : 'simulation only' }
-Cogit >> breakPC [
-	<doNotGenerate>
-	^breakPC
-]
-
-{ #category : 'simulation only' }
-Cogit >> breakPC: anAddressArrayOrNil [
-	<doNotGenerate>
-	breakPC := anAddressArrayOrNil.
-	singleStep := singleStep or: [anAddressArrayOrNil singleStepRequiredToTriggerIn: self]
 ]
 
 { #category : 'accessing' }
@@ -4499,9 +4459,6 @@ Cogit >> cog: aMethodObj selector: aSelectorOop [
 	(cogMethod asInteger between: MaxNegativeErrorCode and: -1) ifTrue:
 		[cogMethod asInteger = InsufficientCodeSpace ifTrue:
 			[coInterpreter callForCogCompiledCodeCompaction].
-		 self maybeFreeCounters.
-		 "Right now no errors should be reported, so nothing more to do."
-		 "self reportError: (self cCoerceSimple: cogMethod to: #sqInt)."
 		 ^nil].
 		
 	statCompileMethodCount := statCompileMethodCount + 1.
@@ -4680,7 +4637,6 @@ Cogit >> cogFullBlockMethod: aMethodObj numCopied: numCopied [
 	 depend on the zone remaining constant across method generation."
 
 	<api>
-	<option: #SistaV1BytecodeSet>
 	<returnTypeC: #'CogMethod *'>
 	<var: #startTime type: #usqLong>
 	<var: #cogMethod type: #'CogMethod *'>
@@ -4697,7 +4653,6 @@ Cogit >> cogFullBlockMethod: aMethodObj numCopied: numCopied [
 	self deny: (objectMemory isForwarded: ultimateLiteral).
 	self deny: (coInterpreter methodHasCogMethod: aMethodObj).
 	self assert: (objectMemory isOopCompiledMethod: ultimateLiteral).
-	aMethodObj = breakMethod ifTrue: [self halt: 'Compilation of breakMethod'].
 
 	methodObj := aMethodObj.
 	methodHeader := objectMemory methodHeaderOf: aMethodObj.
@@ -4706,17 +4661,7 @@ Cogit >> cogFullBlockMethod: aMethodObj numCopied: numCopied [
 	(cogMethod asInteger between: MaxNegativeErrorCode and: -1) ifTrue:
 		[cogMethod asInteger = InsufficientCodeSpace ifTrue:
 			[coInterpreter callForCogCompiledCodeCompaction].
-		 self maybeFreeCounters.
-		 "Right now no errors should be reported, so nothing more to do."
-		 "self reportError: (self cCoerceSimple: cogMethod to: #sqInt)."
 		 ^nil].
-	"self cCode: ''
-		inSmalltalk:
-			[coInterpreter printCogMethod: cogMethod.
-			 ""coInterpreter symbolicMethod: aMethodObj.""
-			 self assertValidMethodMap: cogMethod."
-			 "self disassembleMethod: cogMethod."
-			 "printInstructions := clickConfirm := true""]."
 
 	statCompileFullBlockCount := statCompileFullBlockCount + 1.
 	statCompileFullBlockUsecs := statCompileFullBlockUsecs + (coInterpreter ioUTCMicrosecondsNow - startTime).		
@@ -5137,8 +5082,7 @@ Cogit >> compileAbstractInstructionsFrom: start through: end [
 	bytecodePC := start.
 	nExts := result := 0.
 	descriptor := nil.
-	[self maybeHaltIfDebugPC.
-	 descriptor := self loadBytesAndGetDescriptor.
+	[descriptor := self loadBytesAndGetDescriptor.
 	 nextOpcodeIndex := opcodeIndex.
 	 result := self perform: descriptor generator.
 	 self assertExtsAreConsumed: descriptor.
@@ -5251,14 +5195,12 @@ Cogit >> compileCallFor: aRoutine numArgs: numArgs arg: regOrConst0 arg: regOrCo
 { #category : 'compile abstract instructions' }
 Cogit >> compileCogFullBlockMethod: numCopied [
 	<returnTypeC: #'CogMethod *'>
-	<option: #SistaV1BytecodeSet>
 	| numBytecodes successScan result |
 	hasYoungReferent := (objectMemory getMemoryMap isYoungObject: methodObj).
 	methodOrBlockNumArgs := coInterpreter argumentCountOf: methodObj.
 	inBlock := InFullBlock.
 	postCompileHook := nil.
 	maxLitIndex := -1.
-	self assert: (coInterpreter primitiveIndexOf: methodObj) = 0.
 	initialPC := coInterpreter startPCOfMethod: methodObj.
 	"initial estimate.  Actual endPC is determined in scanMethod."
 	endPC := objectMemory numBytesOf: methodObj.
@@ -5323,7 +5265,6 @@ Cogit >> compileCogMethod: selector [
 { #category : 'compile abstract instructions' }
 Cogit >> compileEntireFullBlockMethod: numCopied [
 	"Compile the abstract instructions for the entire full block method."
-	<option: #SistaV1BytecodeSet>
 	| result |
 	self preenMethodLabel.
 	self compileFullBlockEntry.
@@ -5373,7 +5314,6 @@ Cogit >> compileFrameBuild [
 
 { #category : 'compile abstract instructions' }
 Cogit >> compileFullBlockEntry [
-	<option: #SistaV1BytecodeSet>
 	"Compile the abstract instructions for the entire method, including blocks."
 	| jumpNoContextSwitch |
 
@@ -5641,14 +5581,14 @@ Cogit >> computeFullBlockEntryOffsets [
 	 need cmNoCheckEntryOffset up front to be able to generate the map starting from cmNoCheckEntryOffset"
 	"stack allocate the various collections so that they
 	 are effectively garbage collected on return."
-	SistaV1BytecodeSet ifTrue:
-		[self allocateOpcodes: 24 bytecodes: 0.
-		 methodOrBlockNumArgs := 0.
-		 self compileFullBlockEntry.
-		 self computeMaximumSizes.
-		 self enableCodeZoneWriteDuring: [self generateInstructionsAt: methodZoneBase + (self sizeof: CogMethod)].
-		 cbEntryOffset := fullBlockEntry address - methodZoneBase.
-		 cbNoSwitchEntryOffset := fullBlockNoContextSwitchEntry address - methodZoneBase]
+	self allocateOpcodes: 24 bytecodes: 0.
+	methodOrBlockNumArgs := 0.
+	self compileFullBlockEntry.
+	self computeMaximumSizes.
+	self enableCodeZoneWriteDuring: [
+		self generateInstructionsAt: methodZoneBase + (self sizeof: CogMethod)].
+	cbEntryOffset := fullBlockEntry address - methodZoneBase.
+	cbNoSwitchEntryOffset := fullBlockNoContextSwitchEntry address - methodZoneBase
 ]
 
 { #category : 'generate machine code' }
@@ -5820,11 +5760,16 @@ Cogit >> deltaToSkipPrimAndErrorStoreIn: aMethodObj header: aMethodHeader [
 Cogit >> disableCodeZoneWrite [
 
 	<inline: true>
-	
-	self 
-		cppIf: #'READ_ONLY_CODE_ZONE'
-		ifTrue:[	self cCall: 'pthread_jit_write_protect_np' withArguments: {true} ].
-	
+	self cppIf: #READ_ONLY_CODE_ZONE ifTrue: [
+		self
+			cppIf: #__APPLE__
+			ifTrue: [
+			self cCall: 'pthread_jit_write_protect_np' withArguments: { true } ]
+			ifFalse: [
+				self cCall: 'sqMakeMemoryExecutableFromTo' withArguments: {
+						objectMemory codeStart.
+						objectMemory codeEnd } ] ].
+
 	jitCodeZoneWriteEnabled := false
 ]
 
@@ -5850,15 +5795,20 @@ Cogit >> emptyRegisterMask [
 Cogit >> enableCodeZoneWrite [
 
 	<inline: true>
+	jitCodeZoneWriteEnabled ifTrue: [
+		self error: 'Code zone writing is not reentrant' ].
 
-	jitCodeZoneWriteEnabled ifTrue: [ self error: 'Code zone writing is not reentrant' ].
-	
-	self 
-		cppIf: #'READ_ONLY_CODE_ZONE'
-		ifTrue:[	self cCall: 'pthread_jit_write_protect_np' withArguments: {false} ].
-			
-	jitCodeZoneWriteEnabled := true.
+	self cppIf: #READ_ONLY_CODE_ZONE ifTrue: [
+		self
+			cppIf: #__APPLE__
+			ifTrue: [
+				self cCall: 'pthread_jit_write_protect_np' withArguments: { false } ]
+			ifFalse: [
+				self cCall: 'sqMakeMemoryNotExecutableFromTo' withArguments: {
+						objectMemory codeStart.
+						objectMemory codeEnd } ] ].
 
+	jitCodeZoneWriteEnabled := true
 ]
 
 { #category : 'code generation' }
@@ -6227,7 +6177,6 @@ Cogit >> fillInCPICHeader: pic numArgs: numArgs numCases: numCases hasMNUCase: h
 	self assert: pic cPICNumCases = numCases.
 	self assert: (backEnd callTargetFromReturnAddress: pic asInteger + missOffset) = (self picAbortTrampolineFor: numArgs).
 	self assert: closedPICSize = (methodZone roundUpLength: closedPICSize).
-	self maybeEnableSingleStep.
 	^pic
 ]
 
@@ -6270,7 +6219,6 @@ Cogit >> fillInMethodHeader: method size: size selector: selector [
 	self assert: (backEnd callTargetFromReturnAddress: method asInteger + missOffset)
 				= (self methodAbortTrampolineFor: method cmNumArgs).
 	self assert: size = (methodZone roundUpLength: size).
-	self maybeEnableSingleStep.
 	^method
 ]
 
@@ -6298,7 +6246,6 @@ Cogit >> fillInOPICHeader: pic numArgs: numArgs selector: selector [
 	self assert: pic cmNumArgs = numArgs.
 	self assert: (backEnd callTargetFromReturnAddress: pic asInteger + missOffset) = (self picAbortTrampolineFor: numArgs).
 	self assert: openPICSize = (methodZone roundUpLength: openPICSize).
-	self maybeEnableSingleStep.
 	^pic
 ]
 
@@ -7555,7 +7502,6 @@ Cogit >> generateCogFullBlock [
 	 that fixes up jumps.  When fixing up a jump the jump is not allowed to
 	 choose a smaller offset but must stick to the size set in the second pass."
 	<returnTypeC: #'CogMethod *'>
-	<option: #SistaV1BytecodeSet>
 	| codeSize headerSize mapSize totalSize startAddress result method |
 	<var: #method type: #'CogMethod *'>
 	headerSize := self sizeof: CogMethod.
@@ -7704,7 +7650,6 @@ Cogit >> generateInstructionsAt: eventualAbsoluteAddress [
 	pcDependentIndex := 0.
 	0 to: opcodeIndex - 1 do:
 		[:i|
-		self maybeBreakGeneratingAt: absoluteAddress.
 		abstractInstruction := self abstractInstructionAt: i.
 		abstractInstruction isPCDependent
 			ifTrue:
@@ -7719,7 +7664,6 @@ Cogit >> generateInstructionsAt: eventualAbsoluteAddress [
 		[:j|
 		fixup := self fixupAtIndex: j.
 		abstractInstruction := self abstractInstructionAt: fixup instructionIndex.
-		self maybeBreakGeneratingAt: abstractInstruction address.
 		abstractInstruction concretizeAt: abstractInstruction address].
 	^absoluteAddress - eventualAbsoluteAddress
 ]
@@ -8409,11 +8353,7 @@ Cogit >> initializeCodeZoneFrom: startAddress upTo: endAddress [
 		backEnd stopsFrom: startAddress to: endAddress - 1 ].
 
 	self
-		cCode: [
-			self cCall: 'sqMakeMemoryExecutableFromTo' withArguments: {
-					startAddress.
-					endAddress } ]
-		inSmalltalk: [
+		simulationOnly: [
 			startAddress = self class guardPageSize ifTrue: [
 				backEnd stopsFrom: 0 to: endAddress - 1 ].
 			self initializeProcessor ].
@@ -9707,26 +9647,6 @@ Cogit >> maybeAllocAndInitCounters [
 	^true
 ]
 
-{ #category : 'simulation only' }
-Cogit >> maybeBreakAt: address [
-	<doNotGenerate>
-	((breakPC isBreakpointFor: address)
-	 and: [breakBlock shouldStopIfAtPC: address]) ifTrue:
-		[coInterpreter changed: #byteCountText.
-		 self halt: 'machine code breakpoint at ', address hex, ' in ', thisContext sender selector]
-]
-
-{ #category : 'simulation only' }
-Cogit >> maybeBreakGeneratingAt: address [
-	"Variation on maybeBreakAt: that only works for integer breakPCs,
-	 so we can have break blocks that stop at any pc, except when generating."
-	<cmacro: '(address) 0'> "Simulation only; void in C"
-	(breakPC = address
-	 and: [breakBlock shouldStopIfAtPC: address]) ifTrue:
-		[coInterpreter changed: #byteCountText.
-		 self halt: 'machine code generation at ', address hex, ' in ', thisContext sender selector]
-]
-
 { #category : 'compile abstract instructions' }
 Cogit >> maybeDealWithUnsafeJumpForDescriptor: descriptor pc: pc latestContinuation: latestContinuation [
 	<inline: true>
@@ -9744,13 +9664,6 @@ Cogit >> maybeDumpLiterals: descriptor [
 										or: [descriptor isReturn]) not]
 ]
 
-{ #category : 'simulation only' }
-Cogit >> maybeEnableSingleStep [
-	<inline: true>
-	self cCode: '' inSmalltalk:
-		[singleStep ifFalse: [singleStep := breakPC singleStepRequiredToTriggerIn: self]]
-]
-
 { #category : 'debugging' }
 Cogit >> maybeFreeCogMethodDoesntLookKosher: cogMethod [
 	"Check that the header fields are consistent with the type.
@@ -9759,11 +9672,6 @@ Cogit >> maybeFreeCogMethodDoesntLookKosher: cogMethod [
 	| result |
 	result := self cogMethodDoesntLookKosher: cogMethod.
 	^result = 2 ifTrue: [0] ifFalse: [result]
-]
-
-{ #category : 'compile abstract instructions' }
-Cogit >> maybeFreeCounters [
-	"No-op in the non-Sista Cogits..."
 ]
 
 { #category : 'compaction' }
@@ -9797,14 +9705,6 @@ Cogit >> maybeGenerateICacheFlush [
 		 self outputInstructionsForGeneratedRuntimeAt: startAddress.
 		 self recordGeneratedRunTime: 'ceFlushICache' address: startAddress.
 		 ceFlushICache := self cCoerceSimple: startAddress to: #'void (*)(usqIntptr_t,usqIntptr_t)']
-]
-
-{ #category : 'compile abstract instructions' }
-Cogit >> maybeHaltIfDebugPC [ 
-	<cmacro: '() 0'> "Simulation only; void in C"
-	((debugBytecodePointers includes: bytecodePC)
-	 and: [breakMethod isNil or: [methodObj = breakMethod]]) ifTrue:
-		[self halt: ' at bcpc ', bytecodePC printString, '/', (bytecodePC + 1) printString]
 ]
 
 { #category : 'garbage collection' }
@@ -10707,32 +10607,6 @@ Cogit >> profileDataFor: cogMethod withDetails: withDetails [
 					ifFalse: [cogMethod selector]]
 ]
 
-{ #category : 'simulation only' }
-Cogit >> promptForBreakPC [
-	<doNotGenerate>
-	| s first pc |
-	s := UIManager default request: 'Break pc (hex, + to add, - to remove)'.
-	s := s trimBoth.
-	s isEmpty ifTrue: [^self].
-	('+-' includes: s first) ifTrue: [first := s first. s := s allButFirst].
-	(s isEmpty and: [first = $-]) ifTrue:
-		[^self breakPC: nil].
-	pc := (s includes: $r)
-			ifTrue:
-				[Number readFrom: s readStream]
-			ifFalse:
-				[(#('0x' '-0x') detect: [:prefix| s beginsWith: prefix] ifNone: []) ifNotNil:
-					[:prefix|
-					s := s allButFirst: prefix size.
-					prefix first = $- ifTrue: [s := '-', s]].
-				Integer readFrom: s readStream base: 16].
-	first = $+ ifTrue:
-		[^self breakPC: (breakPC addBreakpoint: pc)].
-	first = $- ifTrue:
-		[^self breakPC: (breakPC removeBreakpoint: pc)].
-	self breakPC: pc
-]
-
 { #category : 'accessing' }
 Cogit >> receiverTags: anInteger [ 
 	receiverTags := anInteger
@@ -11250,12 +11124,6 @@ Cogit >> sendTrace: aBooleanOrInteger [
 							ifFalse: [aBooleanOrInteger ifTrue: [6] ifFalse: [0]]
 ]
 
-{ #category : 'debugging' }
-Cogit >> setBreakMethod: anObj [
-	<api>
-	breakMethod := anObj
-]
-
 { #category : 'accessing' }
 Cogit >> setCFramePointer: aFramePointer [
 	<api>
@@ -11280,20 +11148,35 @@ Cogit >> setCStackPointer: aStackPointer [
 					put: aStackPointer) asVoidPointer]
 ]
 
+{ #category : 'jit - api' }
+Cogit >> setHeaderOopOf: cogMethod to: aMethodHeaderOop [
+	"Change a JIT'ed method's header, enabling code zone wrote."
+
+	<api>
+	<var: #cogMethod type: #'CogMethod *'>
+	self assert: cogMethod cmType = CMMethod.
+
+	self enableCodeZoneWriteDuring: [
+		cogMethod methodHeader: aMethodHeaderOop ]
+]
+
 { #category : 'initialization' }
 Cogit >> setInterpreter: aCoInterpreter [
 	"Initialization of the code generator in the simulator.
 	 These objects already exist in the generated C VM
 	 or are used only in the simulation."
+
 	<doNotGenerate>
 	coInterpreter := aCoInterpreter.
 	objectMemory := aCoInterpreter objectMemory.
 	methodZone := self class methodZoneClass new.
 	objectRepresentation := objectMemory objectRepresentationClass
-								forCogit: self methodZone: methodZone.
-	methodZone setInterpreter: aCoInterpreter
-				objectRepresentation: objectRepresentation
-				cogit: self.
+		                        forCogit: self
+		                        methodZone: methodZone.
+	methodZone
+		setInterpreter: aCoInterpreter
+		objectRepresentation: objectRepresentation
+		cogit: self.
 	generatorTable := self class generatorTable.
 	processor := ProcessorClass new.
 	simulatedAddresses := Dictionary new.
@@ -11301,33 +11184,50 @@ Cogit >> setInterpreter: aCoInterpreter [
 	simulatedVariableGetters := Dictionary new.
 	simulatedVariableSetters := Dictionary new.
 	traceStores := 0.
-	traceFlags := (self class initializationOptions at: #recordPrimTrace ifAbsent: [true])
-					ifTrue: [8] "record prim trace on by default (see Cogit class>>decareCVarsIn:)"
-					ifFalse: [0].
+	traceFlags := (self class initializationOptions
+		               at: #recordPrimTrace
+		               ifAbsent: [ true ])
+		              ifTrue: [ "record prim trace on by default (see Cogit class>>decareCVarsIn:)"
+			              8 ]
+		              ifFalse: [ 0 ].
 	debugPrimCallStackOffset := 0.
 	singleStep := printRegisters := printInstructions := clickConfirm := false.
 	backEnd := CogCompilerClass for: self.
 	methodLabel := CogCompilerClass for: self.
-	(literalsManager := backEnd class literalsManagerClass new) cogit: self.
-	ordinarySendTrampolines := CArrayAccessor on: (Array new: NumSendTrampolines).
-	superSendTrampolines := CArrayAccessor on: (Array new: NumSendTrampolines).
-	BytecodeSetHasDirectedSuperSend ifTrue:
-		[directedSuperSendTrampolines := CArrayAccessor on: (Array new: NumSendTrampolines).
-		 directedSuperBindingSendTrampolines := CArrayAccessor on: (Array new: NumSendTrampolines).
-		 directedSendUsesBinding := false].
+	(literalsManager := backEnd class literalsManagerClass new) cogit:
+		self.
+	ordinarySendTrampolines := CArrayAccessor on:
+		                           (Array new: NumSendTrampolines).
+	superSendTrampolines := CArrayAccessor on:
+		                        (Array new: NumSendTrampolines).
+	BytecodeSetHasDirectedSuperSend ifTrue: [
+		directedSuperSendTrampolines := CArrayAccessor on:
+			                                (Array new: NumSendTrampolines).
+		directedSuperBindingSendTrampolines := CArrayAccessor on:
+			                                       (Array new:
+				                                        NumSendTrampolines).
+		directedSendUsesBinding := false ].
 	"debug metadata"
-	objectReferencesInRuntime := CArrayAccessor on: (Array new: NumObjRefsInRuntime).
+	objectReferencesInRuntime := CArrayAccessor on:
+		                             (Array new: NumObjRefsInRuntime).
 	runtimeObjectRefIndex := 0.
 	"debug metadata"
-	trampolineAddresses := CArrayAccessor on: (Array new: NumTrampolines * 2).
+	trampolineAddresses := CArrayAccessor on:
+		                       (Array new: NumTrampolines * 2).
 	trampolineTableIndex := 0.
 
 	extA := numExtB := extB := 0.
 
-	compilationTrace ifNil: [compilationTrace := self class initializationOptions at: #compilationTrace ifAbsent: [0]].
-	debugOpcodeIndices := self class initializationOptions at: #debugOpcodeIndices ifAbsent: [Set new].
-	debugBytecodePointers := self class initializationOptions at: #debugBytecodePointers ifAbsent: [Set new].
-	self class initializationOptions at: #breakPC ifPresent: [:pc| breakPC := pc]
+	compilationTrace ifNil: [
+		compilationTrace := self class initializationOptions
+			                    at: #compilationTrace
+			                    ifAbsent: [ 0 ] ].
+	debugOpcodeIndices := self class initializationOptions
+		                      at: #debugOpcodeIndices
+		                      ifAbsent: [ Set new ].
+	debugBytecodePointers := self class initializationOptions
+		                         at: #debugBytecodePointers
+		                         ifAbsent: [ Set new ]
 ]
 
 { #category : 'jit - api' }
@@ -11412,7 +11312,6 @@ Cogit >> simulateCogCodeAt: address [
 	[
 	singleStep
 		ifTrue: [
-			[ self maybeBreakAt: processor pc ] value. "So that the Debugger's Over steps over all this"
 			processor
 				singleStepIn: coInterpreter memory
 				minimumAddress: guardPageSize

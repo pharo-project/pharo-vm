@@ -61,11 +61,8 @@ CogObjectRepresentationForSpur class >> initializeMiscConstants [
 { #category : 'accessing' }
 CogObjectRepresentationForSpur class >> numTrampolines [
 	^super numTrampolines
-		 + (SistaV1BytecodeSet
-			ifTrue: [9] "(small,large)x(method,block,fullBlock) context creation,
+		 + 9 "(small,large)x(method,block,fullBlock) context creation,
 						 ceNewHashTrampoline, ceStoreCheckContextReceiverTrampoline and ceScheduleScavengeTrampoline"
-			ifFalse: [7] "(small,large)x(method,block) context creation, 
-						 ceNewHashTrampoline, ceStoreCheckContextReceiverTrampoline and ceScheduleScavengeTrampoline")
 		 + NumStoreTrampolines
 		 + (SistaVM
 			ifTrue: [1] "inline newHash"
@@ -3005,11 +3002,9 @@ CogObjectRepresentationForSpur >> generateObjectRepresentationTrampolines [
 											called: 'ceScheduleScavengeTrampoline'
 											regsToSave: CallerSavedRegisterMask.
 	ceSmallActiveContextInMethodTrampoline := self genActiveContextTrampolineLarge: false inBlock: 0 called: 'ceSmallMethodContext'.
-	SistaV1BytecodeSet ifTrue:
-		[ceSmallActiveContextInFullBlockTrampoline := self genActiveContextTrampolineLarge: false inBlock: InFullBlock called: 'ceSmallFullBlockContext'].
+	ceSmallActiveContextInFullBlockTrampoline := self genActiveContextTrampolineLarge: false inBlock: InFullBlock called: 'ceSmallFullBlockContext'.
 	ceLargeActiveContextInMethodTrampoline := self genActiveContextTrampolineLarge: true inBlock: 0 called: 'ceLargeMethodContext'.
-	SistaV1BytecodeSet ifTrue:
-		[ceLargeActiveContextInFullBlockTrampoline := self genActiveContextTrampolineLarge: true inBlock: InFullBlock called: 'ceLargeFullBlockContext'].
+	ceLargeActiveContextInFullBlockTrampoline := self genActiveContextTrampolineLarge: true inBlock: InFullBlock called: 'ceLargeFullBlockContext'.
 ]
 
 { #category : 'bytecode generator support' }

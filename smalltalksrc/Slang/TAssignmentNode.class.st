@@ -47,9 +47,9 @@ TAssignmentNode >> asCASTExpressionIn: aCodeGen [
 TAssignmentNode >> asCASTIn: aBuilder [
 
 	| type |
-	expression isSwitch ifTrue: [ 
+	expression isSwitch ifTrue: [
 		^ expression asCASTIn: aBuilder addToEndOfCases: self ].
-	expression isLiteralArrayDeclaration ifTrue: [ 
+	expression isLiteralArrayDeclaration ifTrue: [
 		| literalArrayNode |
 		type := expression arguments last value.
 		self assert: type last = $*.
@@ -57,11 +57,11 @@ TAssignmentNode >> asCASTIn: aBuilder [
 		"Transform the literal array declaration to a C block containing:
 		  - a static literal array declaration
 	 	  - an assigment from this literal array to the assigned variable "
-		literalArrayNode := expression arguments first value collect: [ :e | 
+		literalArrayNode := expression arguments first value collect: [ :e |
 			                    CConstantNode value: e ].
 		^ CCompoundStatementNode
 			  declarations: { (CDeclarationNode
-					   specifiers: { 
+					   specifiers: {
 							   'static'.
 							   type allButLast }
 					   declarator: (CInitDeclaratorNode
@@ -72,18 +72,18 @@ TAssignmentNode >> asCASTIn: aBuilder [
 			  statements: { (CAssignmentNode
 					   lvalue: (CIdentifierNode name: variable name)
 					   rvalue: (CIdentifierNode name: 'aLiteralArray')) } ].
-
-	(expression isStatementList and: [ expression statements size > 1 ]) 
-		ifTrue: [ 
+	(expression isStatementList and: [ expression statements size > 1 ])
+		ifTrue: [
 			^ expression copy
 				  assignLastExpressionTo: variable;
 				  asCASTIn: aBuilder ].
-	self isVariableUpdatingAssignment ifTrue: [ 
+	self isVariableUpdatingAssignment ifTrue: [
 		^ CAssignmentNode
 			  lvalue: (variable asCASTIn: aBuilder)
 			  operator: expression selector , '='
 			  rvalue: (expression arguments first asCASTExpressionIn: aBuilder) ].
-	(expression isSend and: [ expression isValueExpansion ]) ifTrue: [ 
+		
+	(expression isSend and: [ expression isValueExpansion ]) ifTrue: [
 		^ self asCASTValueExpansionIn: aBuilder ].
 
 	^ CAssignmentNode
@@ -93,7 +93,7 @@ TAssignmentNode >> asCASTIn: aBuilder [
 
 { #category : 'C code generation' }
 TAssignmentNode >> asCASTStatementListExpansionAsExpression: aCodeGen [
-
+"	self halt."
 	(variable isSameAs: expression lastNonCommentStatement) ifTrue: [
 		^ expression asCASTExpressionIn: aCodeGen ].
 	^ expression copy
@@ -103,6 +103,53 @@ TAssignmentNode >> asCASTStatementListExpansionAsExpression: aCodeGen [
 
 { #category : 'C code generation' }
 TAssignmentNode >> asCASTValueExpansionIn: aCodeGen [
+
+	| stmtList lastStmt copy |
+"	self halt."
+	"Transform assignments of the form:
+	
+	var := [ a . block . lastexpression ] value.
+	
+	into:
+	
+	[ a . block . var := lastExpression ] value.
+	
+	Takes into account variants of #value and #value:.
+	"
+	self assert: (expression isSend and: [ expression isValueExpansion ]).
+
+	stmtList := expression receiver.
+	lastStmt := stmtList lastNonCommentStatement.
+
+	"Optimization. If the expression looks like:
+	
+	var := [ ... var ] value.
+	
+	Emit directly the block without the last statement, as the assignment has no impact in the translation.
+	"
+	(variable isSameAs: lastStmt) ifTrue: [
+		^ expression asCASTIn: aCodeGen ].
+	copy := stmtList copy.
+	copy statements
+		at: (stmtList statements indexOf: lastStmt)
+		put:
+		(TAssignmentNode new setVariable: variable expression: lastStmt).
+	^ (TSendNode new
+		   setSelector: expression selector
+		   receiver: copy
+		   arguments: expression arguments) asCASTIn: aCodeGen
+]
+
+{ #category : 'tranforming' }
+TAssignmentNode >> asStatementListExpansionAsExpression [
+
+	(variable isSameAs: expression lastNonCommentStatement) ifTrue: [
+		^ expression ].
+	^ expression copy assignLastExpressionTo: variable
+]
+
+{ #category : 'tranforming' }
+TAssignmentNode >> asValueExpansion [
 
 	| stmtList lastStmt copy |
 	"Transform assignments of the form:
@@ -126,16 +173,16 @@ TAssignmentNode >> asCASTValueExpansionIn: aCodeGen [
 	
 	Emit directly the block without the last statement, as the assignment has no impact in the translation.
 	"
-	lastStmt = variable ifTrue: [ ^ expression asCASTIn: aCodeGen ].
+	(variable isSameAs: lastStmt) ifTrue: [ ^ expression ].
 	copy := stmtList copy.
 	copy statements
 		at: (stmtList statements indexOf: lastStmt)
 		put:
 		(TAssignmentNode new setVariable: variable expression: lastStmt).
-	^ (TSendNode new
-		   setSelector: expression selector
-		   receiver: copy
-		   arguments: expression arguments) asCASTIn: aCodeGen
+	^ TSendNode new
+		  setSelector: expression selector
+		  receiver: copy
+		  arguments: expression arguments
 ]
 
 { #category : 'transformations' }
@@ -186,6 +233,20 @@ TAssignmentNode >> displayString [
 	^ ' := '
 ]
 
+{ #category : 'tranforming' }
+TAssignmentNode >> expandASTIn: atMethod [
+
+	| replacement |
+	expression isStatementList ifTrue: [
+		replacement := self asStatementListExpansionAsExpression ].
+
+	(expression isSend and: [ expression isValueExpansion ]) ifTrue: [
+		expression expandASTIn: atMethod.
+		replacement := self asStatementListExpansionAsExpression ].
+
+	replacement ifNotNil: [ parent replaceChild: self with: replacement ]
+]
+
 { #category : 'accessing' }
 TAssignmentNode >> expression [
 
@@ -216,6 +277,12 @@ TAssignmentNode >> isSameAs: aTParseNode [
 	^aTParseNode isAssignment
 	 and: [(variable isSameAs: aTParseNode variable)
 	 and: [expression isSameAs: aTParseNode expression]]
+]
+
+{ #category : 'dead-code-elimination' }
+TAssignmentNode >> isSelfAssign [
+
+	^ variable isSameAs: expression
 ]
 
 { #category : 'testing' }
@@ -299,6 +366,11 @@ TAssignmentNode >> removeAssertions [
 	expression removeAssertions
 ]
 
+{ #category : 'dead-code-elimination' }
+TAssignmentNode >> removeUnusedNodesInBranch: aChild [
+	
+]
+
 { #category : 'transformations' }
 TAssignmentNode >> renameLocalVariablesGivenClassVariables: classVariables globalVariables: globalsVariables classNames: classNames inCodeGenerator: aCodeGen collectingChangesIn: changedVariables [
 	"bind the variables in the left and in the right of the assignment, it is the equivalent of what happened previously with bindVariablesIn:, the class variables can change in value and the globals had no name change i.e: assuming every reference to a global is meant"
@@ -329,10 +401,13 @@ TAssignmentNode >> replaceChild: aNode with: aReplacementNode [
 { #category : 'transformations' }
 TAssignmentNode >> replaceNodesIn: aDictionary [
 
-	^aDictionary at: self ifAbsent: [
-		self variable: (variable replaceNodesIn: aDictionary).
-		self expression: (expression replaceNodesIn: aDictionary).
-		self]
+	| aDictionaryAtSelf |
+	aDictionaryAtSelf := aDictionary at: self ifAbsent: [ nil ].
+	aDictionaryAtSelf ifNotNil: [ ^ aDictionaryAtSelf copy ].
+
+	self variable: (variable replaceNodesIn: aDictionary).
+	self expression: (expression replaceNodesIn: aDictionary).
+	^ self
 ]
 
 { #category : 'accessing' }

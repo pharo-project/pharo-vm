@@ -1060,12 +1060,19 @@ CCodeGenerator >> emitCCodeOn: aStream doInlining: inlineFlag doAssertions: asse
 	self renameKeywordsConflicts.
 
 	self doInlining: inlineFlag.
-	SLDeadCodeEliminationVisitor new removeDeadCodeUsing: self.
 
 	SLAutomaticLocalization new
 		codeGenerator: self;
 		applyMethodNamed: #interpret.
 
+	"clean out no longer valid variable names and then
+	 handle any global variable usage in each method"
+	methods do: [ :m |
+		self
+			checkForGlobalUsage: (m removeUnusedTempsAndNilIfRequiredIn: self)
+			in: m ].
+	self localizeGlobalVariables.
+	SLDeadCodeElimination new removeDeadCodeUsing: self.
 	"code generation"
 
 	"If we're outputting the VM put the main interpreter loop first for two reasons.
@@ -1078,13 +1085,6 @@ CCodeGenerator >> emitCCodeOn: aStream doInlining: inlineFlag doAssertions: asse
 	(methods includesKey: #interpret) ifTrue: [
 		methodList := { (methods at: #interpret) }
 		              , (methodList copyWithout: (methods at: #interpret)) ].
-	"clean out no longer valid variable names and then
-	 handle any global variable usage in each method"
-	methodList do: [ :m |
-		self
-			checkForGlobalUsage: (m removeUnusedTempsAndNilIfRequiredIn: self)
-			in: m ].
-	self localizeGlobalVariables.
 
 
 
@@ -1247,7 +1247,6 @@ CCodeGenerator >> emitCMethods: methodList on: aStream [
 				bar value: i.
 				(m isRealMethod and: [ self shouldGenerateMethod: m ]) ifTrue: [
 					| cast |
-					(m hasProperty: #halt) ifTrue: [self halt].
 					cast := m asCASTIn: self.
 					cast prettyPrintOn: aStream ] ] ]
 ]
@@ -2814,7 +2813,7 @@ CCodeGenerator >> generateCASTToByDo: tast [
 			 lvalue: (CIdentifierNode name: iterationVar)
 			 rvalue: (tast receiver asCASTExpressionIn: self)).
 	self noteUsedVariableName: iterationVar.
-	mayHaveSideEffects := tast arguments size = 4.
+	mayHaveSideEffects := tast arguments size = 5.
 	mayHaveSideEffects ifTrue: [ 
 		limitVar := tast arguments last.
 		inits add: (CAssignmentNode
@@ -2868,6 +2867,7 @@ CCodeGenerator >> generateCASTToByDoUntil: limitExpr iterativeVariable: itVar ne
 CCodeGenerator >> generateCASTToDo: tast [
 
 	| iterationVar init until step |
+"	self halt."
 	tast arguments last arguments size = 1 ifFalse: [ 
 		self error: 'wrong number of block arguments' ].
 	iterationVar := tast arguments last arguments first.
@@ -2927,6 +2927,7 @@ CCodeGenerator >> generateCASTValue: tast [
 	 to body with formals substituted for by actuals."
 
 	| substitution substitutionDict newLabels castStatements |
+"	self halt."
 	self assert: tast receiver isStatementList.
 	self assert: tast receiver arguments size = tast arguments size.
 	castStatements := CCompoundStatementNode statements:
@@ -2966,6 +2967,7 @@ CCodeGenerator >> generateCASTValueAsArgument: tast [
 	 to body with formals substituted for by actuals."
 
 	| substitution substitutionDict newLabels |
+"	self halt."
 	self assert: tast receiver isStatementList.
 	self assert: tast receiver arguments size = tast arguments size.
 	substitution := tast receiver copy.

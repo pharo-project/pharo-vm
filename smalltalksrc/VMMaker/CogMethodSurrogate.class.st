@@ -134,9 +134,7 @@ CogMethodSurrogate >> cPICNumCases: n [
 CogMethodSurrogate >> cmIsFullBlock [
 	"Answer the value of cpicHasMNUCaseOrCMIsFullBlock"
 
-	^SistaV1BytecodeSet
-		ifTrue: [self cpicHasMNUCaseOrCMIsFullBlock]
-		ifFalse: [false]
+	^ self cpicHasMNUCaseOrCMIsFullBlock
 ]
 
 { #category : 'testing' }
@@ -150,9 +148,7 @@ CogMethodSurrogate >> cpicHasMNUCase [
 	"Answer if the receiver has an MNU case."
 	<inline: true>
 
-	^SistaV1BytecodeSet
-		ifTrue: [self cpicHasMNUCaseOrCMIsFullBlock and: [self cmType = CMPolymorphicIC]]
-		ifFalse: [self cpicHasMNUCaseOrCMIsFullBlock]
+	^ self cpicHasMNUCaseOrCMIsFullBlock and: [self cmType = CMPolymorphicIC]
 ]
 
 { #category : 'accessing' }

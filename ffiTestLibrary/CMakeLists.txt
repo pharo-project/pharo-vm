@@ -1,6 +1,6 @@
 project(TestLibrary)
 
-include(../macros.cmake)
+include(../cmake/macros.cmake)
 
 set(TestLibrary_SOURCES	
 	${CMAKE_CURRENT_SOURCE_DIR}/src/basic_types.c
