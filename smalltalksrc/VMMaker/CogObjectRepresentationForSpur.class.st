@@ -936,7 +936,8 @@ CogObjectRepresentationForSpur >> genGetClassObjectOfClassIndex: classIndexRegis
 
 { #category : 'compile abstract instructions' }
 CogObjectRepresentationForSpur >> genGetClassTagOf: instReg into: destReg scratchReg: scratchReg [
-	^self genGetInlineCacheClassTagFrom: instReg into: destReg forEntry: true
+
+	^ self genGetInlineCacheClassTagFrom: instReg into: destReg
 ]
 
 { #category : 'compile abstract instructions' }
