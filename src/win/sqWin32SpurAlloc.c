@@ -45,6 +45,7 @@ void* allocateJITMemory(usqInt desiredSize, usqInt desiredPosition){
 	usqIntptr_t alignment;
 	sqInt allocBytes;
 	SYSTEM_INFO sysInfo;
+	DWORD previousPermissions;
 
 	/* determine page boundaries & available address space */
 	GetSystemInfo(&sysInfo);
@@ -63,8 +64,10 @@ void* allocateJITMemory(usqInt desiredSize, usqInt desiredPosition){
 		exit(1);
 	}
 
-	// Make memory executable
-	sqMakeMemoryExecutableFromTo(alloc, alloc + allocBytes);
+	if (!VirtualProtect(alloc, allocBytes, PAGE_EXECUTE_READWRITE, &previousPermissions)) {
+		logErrorFromErrno("Could not make JIT memory executable");
+		exit(1);
+	}
 
 	return alloc;
 }
