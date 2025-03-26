@@ -111,11 +111,14 @@ VMClass class >> declareCAsUSqLong: arrayOfVariableNames in: aCCodeGenerator [
 ]
 
 { #category : 'translation' }
-VMClass class >> declareCVarsIn: aCCodeGenerator [ 
+VMClass class >> declareCVarsIn: aCCodeGenerator [
 	"Declare any additional variables and/or add type declarations for existing variables."
+
 	aCCodeGenerator
 		var: #expensiveAsserts
-		declareC: 'char expensiveAsserts = 0'
+		declareC: 'char expensiveAsserts = 0'.
+
+	aCCodeGenerator declareVar: 'memoryManager' type: #implicit
 ]
 
 { #category : 'translation' }

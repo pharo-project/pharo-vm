@@ -577,10 +577,6 @@ If ffi is put as a separate header, slang will sort the header and put it outsid
 		declareC:
 			'void (*externalPrimitiveTable[MaxExternalPrimitiveTableSize + 1 /* '
 			, (MaxExternalPrimitiveTableSize + 1) printString , ' */])(void)';
-		var: #interruptCheckChain
-		declareC: 'void (*interruptCheckChain)(void) = 0';
-		var: #showSurfaceFn
-		declareC: 'int (*showSurfaceFn)(sqIntptr_t, int, int, int, int)';
 		var: #jmpBuf
 		declareC:
 			'jmp_buf jmpBuf[MaxJumpBuf + 1 /* ' , (MaxJumpBuf + 1) printString
@@ -605,8 +601,6 @@ If ffi is put as a separate header, slang will sort the header and put it outsid
 	aCCodeGenerator
 		var: #reenterInterpreter
 		declareC: 'jmp_buf reenterInterpreter; /* private export */'.
-
-	aCCodeGenerator var: #messageCount type: #usqInt.
 
 	aCCodeGenerator removeVariable: #libFFI.
 	LibFFIConstants classVariables do: [ :e |
@@ -1484,20 +1478,14 @@ StackInterpreter class >> isStackAccessor: selector [
 
 { #category : 'translation' }
 StackInterpreter class >> mustBeGlobal: var [
-
 	"Answer if a variable must be global and exported.  Used for inst vars that are accessed from VM support code."
 
-	^ (super mustBeGlobal: var) or: [ 
-		  (self objectMemoryClass mustBeGlobal: var) or: [ 
-			  #( 'interpreterProxy' 'interpreterVersion' 'inIOProcessEvents'
-			     'sendWheelEvents' 'deferDisplayUpdates' 'extraVMMemory'
-			     'showSurfaceFn' 'displayBits' 'displayWidth' 'displayHeight'
-			     'displayDepth' 'desiredNumStackPages' 'desiredEdenBytes'
-			     'breakLookupClassTag' 'breakSelector' 'breakSelectorLength'
-			     'sendTrace' 'checkAllocFiller' 'checkedPluginName'
-			     'reenterInterpreter' 'suppressHeartbeatFlag'
-			     'ffiExceptionResponse' 'debugCallbackInvokes'
-			     'debugCallbackPath' 'debugCallbackReturns' ) includes: var ] ]
+	^ (super mustBeGlobal: var) or: [
+		  (self objectMemoryClass mustBeGlobal: var) or: [
+			  #( 'interpreterProxy' 'interpreterVersion' 'extraVMMemory'
+			     'desiredNumStackPages' 'desiredEdenBytes' 'sendTrace'
+			     'checkAllocFiller' 'checkedPluginName' 'reenterInterpreter'
+			     'suppressHeartbeatFlag' 'ffiExceptionResponse' ) includes: var ] ]
 ]
 
 { #category : 'translation' }

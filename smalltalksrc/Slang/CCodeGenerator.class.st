@@ -986,6 +986,7 @@ CCodeGenerator >> declareModuleName: nameString [
 { #category : 'public' }
 CCodeGenerator >> declareVar: varName type: type [
 	"This both creates a varable and provides its type"
+
 	self var: (variables add: varName asString) type: type
 ]
 
@@ -3758,15 +3759,14 @@ CCodeGenerator >> localizeVariables: varsList inMethod: m [
 
 	self validateLocalizationOfGlobals: varsList exceptMethod: m selector.
 	m localizeVariables: varsList.
-	varsList do: [ :v | 
+	varsList do: [ :v |
 		| varString |
 		varString := v asString.
-		variables remove: varString ifAbsent: [  ].
-		(variableDeclarations includesKey: varString) ifTrue: [ 
+		(variableDeclarations includesKey: varString) ifTrue: [
 			m
 				declarationAt: v asString
-				put: (variableDeclarations at: varString).
-			variableDeclarations removeKey: varString ] ]
+				put: (variableDeclarations at: varString) ].
+		self removeVariable: varString ]
 ]
 
 { #category : 'utilities' }
