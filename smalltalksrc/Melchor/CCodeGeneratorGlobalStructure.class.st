@@ -317,7 +317,7 @@ CCodeGeneratorGlobalStructure >> isGlobalStructureBuild [
 
 { #category : 'utilities' }
 CCodeGeneratorGlobalStructure >> localizeGlobalVariables [
-	"TPR - remove all the global vars destined for the structure that are only used once, also supress variables which have 0 global usage"
+	"TPR - remove all the global vars destined for the structure that are only used once, also supress global variables which have 0 usage"
 
 	| globalsToDelete |
 	super localizeGlobalVariables.
@@ -331,8 +331,8 @@ CCodeGeneratorGlobalStructure >> localizeGlobalVariables [
 				 ((variableDeclarations at: var ifAbsent: [ '' ]) beginsWith:
 					  'extern') not ] ]) ifTrue: [ globalsToDelete add: assoc key ] ].
 	variables do: [ :var |
-		((globalVariableUsage keys includes: var) or: [ var = #sendTrace ])
-			ifFalse: [ globalsToDelete add: var ] ].
+		((globalVariableUsage keys includes: var) or: [
+			 self mustBeGlobal: var ]) ifFalse: [ globalsToDelete add: var ] ].
 
 	globalsToDelete do: [ :var |
 		self removeVariable: var.
