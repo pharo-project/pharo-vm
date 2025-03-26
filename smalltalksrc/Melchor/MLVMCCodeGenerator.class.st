@@ -200,7 +200,6 @@ MLVMCCodeGenerator >> emitCHeaderOn: aStream [
 { #category : 'C code generator' }
 MLVMCCodeGenerator >> emitCVariableDeclarationFor: aDeclaration andVarString: varString on: aStream [
 	| declaration |
-	self haltIf: [varString = #memoryManager].
 	declaration := aDeclaration.
 	self isGeneratingPluginCode
 		ifTrue: [ 
@@ -381,7 +380,7 @@ MLVMCCodeGenerator >> localizeGlobalVariables [
 	| globalsToDelete |
 	super localizeGlobalVariables.
 	globalsToDelete := Set new.
-
+"	self haltIf: [ variables includes: #aMethodLabel ]."
 	globalVariableUsage associationsDo: [ :assoc |
 		| var |
 		var := assoc key.

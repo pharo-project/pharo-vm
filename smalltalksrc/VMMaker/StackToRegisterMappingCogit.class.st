@@ -430,7 +430,7 @@ StackToRegisterMappingCogit class >> mustBeGlobal: var [
 		     'realCECallCogCodePopReceiverArg0Regs'
 		     'realCECallCogCodePopReceiverArg1Arg0Regs'
 		     'ceCall0ArgsPIC' 'ceCall1ArgsPIC' 'ceCall2ArgsPIC'
-		     'generatorTable' ) includes: var ]
+		     'generatorTable' 'aMethodLabel' ) includes: var ]
 ]
 
 { #category : 'accessing' }
