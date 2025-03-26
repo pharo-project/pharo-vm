@@ -315,30 +315,6 @@ CCodeGeneratorGlobalStructure >> isGlobalStructureBuild [
 	^true
 ]
 
-{ #category : 'utilities' }
-CCodeGeneratorGlobalStructure >> localizeGlobalVariables [
-	"TPR - remove all the global vars destined for the structure that are only used once, also supress global variables which have 0 usage"
-
-	| globalsToDelete |
-	super localizeGlobalVariables.
-	globalsToDelete := Set new.
-
-	globalVariableUsage associationsDo: [ :assoc |
-		| var |
-		var := assoc key.
-		(assoc value size = 1 and: [
-			 (self mustBeGlobal: var) not and: [
-				 ((variableDeclarations at: var ifAbsent: [ '' ]) beginsWith:
-					  'extern') not ] ]) ifTrue: [ globalsToDelete add: assoc key ] ].
-	variables do: [ :var |
-		((globalVariableUsage keys includes: var) or: [
-			 self mustBeGlobal: var ]) ifFalse: [ globalsToDelete add: var ] ].
-
-	globalsToDelete do: [ :var |
-		self removeVariable: var.
-		globalVariableUsage removeKey: var ifAbsent: [  ] ]
-]
-
 { #category : 'C code generator' }
 CCodeGeneratorGlobalStructure >> placeInStructure: var [
 	"See if we should put this array into a structure.

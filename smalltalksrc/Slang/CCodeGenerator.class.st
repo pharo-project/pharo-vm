@@ -3758,9 +3758,7 @@ CCodeGenerator >> localizeGlobalVariables [
 					show: var , ' localised to ' , name;
 					cr ] ] ].
 
-	elected do: [ :var |
-		self removeVariable: var.
-		globalVariableUsage removeKey: var ]
+	elected do: [ :var | self removeVariable: var ]
 ]
 
 { #category : 'inlining' }
@@ -4518,8 +4516,10 @@ CCodeGenerator >> removeVariable: aName [
 { #category : 'utilities' }
 CCodeGenerator >> removeVariable: aName ifAbsent: ifAbsentBlock [
 	"Remove the given (instance) variable from the code base."
-	variableDeclarations removeKey: aName ifAbsent: [].
-	^variables remove: aName ifAbsent: ifAbsentBlock
+
+	variableDeclarations removeKey: aName ifAbsent: [  ].
+	globalVariableUsage removeKey: aName ifAbsent: [  ].
+	^ variables remove: aName ifAbsent: ifAbsentBlock
 ]
 
 { #category : 'renaming' }
