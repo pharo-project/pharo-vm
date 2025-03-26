@@ -421,16 +421,22 @@ StackToRegisterMappingCogit class >> isAcceptableAncilliaryClass: aClass [
 ]
 
 { #category : 'translation' }
-StackToRegisterMappingCogit class >> mustBeGlobal: var [
+StackToRegisterMappingCogit class >> mustBeGlobalAndExport: var [
 	"Answer if a variable must be global and exported.  Used for inst vars that are accessed from VM support code."
 
-	^ (super mustBeGlobal: var) or: [
+	^ (super mustBeGlobalAndExport: var) or: [
 		  #( 'ceCallCogCodePopReceiverArg0Regs'
 		     'ceCallCogCodePopReceiverArg1Arg0Regs'
 		     'realCECallCogCodePopReceiverArg0Regs'
 		     'realCECallCogCodePopReceiverArg1Arg0Regs'
-		     'ceCall0ArgsPIC' 'ceCall1ArgsPIC' 'ceCall2ArgsPIC'
-		     'generatorTable' 'aMethodLabel' ) includes: var ]
+		     'ceCall0ArgsPIC' 'ceCall1ArgsPIC' 'ceCall2ArgsPIC' ) includes:
+			  var ]
+]
+
+{ #category : 'translation' }
+StackToRegisterMappingCogit class >> mustBeGlobalInFile: var [
+
+	^ #( #aMethodLabel #generatorTable ) includes: var
 ]
 
 { #category : 'accessing' }

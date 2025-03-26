@@ -370,10 +370,10 @@ CoInterpreter class >> isNonArgumentImplicitReceiverVariableName: aString [
 ]
 
 { #category : 'translation' }
-CoInterpreter class >> mustBeGlobal: var [
+CoInterpreter class >> mustBeGlobalAndExport: var [
 	"Answer if a variable must be global and exported.  Used for inst vars that are accessed from VM support code."
 
-	^(super mustBeGlobal: var)
+	^(super mustBeGlobalAndExport: var)
 	   or: [#('desiredCogCodeSize' 'heapBase'
 			'maxLiteralCountForCompile' 'minBackwardJumpCountForCompile') includes: var]
 ]

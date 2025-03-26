@@ -3722,7 +3722,7 @@ CCodeGenerator >> localizeGlobalVariables [
 	"find all globals used in only one method"
 	candidates := globalVariableUsage select: [ :e | e size = 1 ].
 	"Don't localize globals"
-	(candidates keys select: [ :k | self mustBeGlobal: k ]) do: [ :k |
+	(candidates keys select: [ :k | self mustBeGlobalAndExport: k ]) do: [ :k |
 		candidates removeKey: k ].
 	elected := Set new.
 	localized := Dictionary new. "for an ordered report"
@@ -3921,7 +3921,7 @@ CCodeGenerator >> mostBasicConstantSelectors [
 ]
 
 { #category : 'utilities' }
-CCodeGenerator >> mustBeGlobal: aName [
+CCodeGenerator >> mustBeGlobalAndExport: aName [
 	^ false
 ]
 

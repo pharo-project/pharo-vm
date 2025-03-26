@@ -210,7 +210,7 @@ MLVMCCodeGenerator >> emitCVariableDeclarationFor: aDeclaration andVarString: va
 					(declaration beginsWith: 'static') ifFalse: [ 
 						aStream nextPutAll: 'static ' ] ] ]
 		ifFalse: [ 
-			(self vmClass mustBeGlobal: varString)
+			(self vmClass mustBeGlobalAndExport: varString)
 				ifTrue: [ 
 					(declaration beginsWith: 'static ') ifTrue: [ 
 						declaration := declaration allButFirst: 7 ] ]
@@ -274,7 +274,7 @@ MLVMCCodeGenerator >> emitGlobalCVariablesOn: aStream [
 
 	aStream newLine; nextPutAll: '/*** Global Variables ***/'; newLine.
 	
-	(self sortStrings: (variables select: [:v| self vmClass mustBeGlobal: v])) do:
+	(self sortStrings: (variables select: [:v| self vmClass mustBeGlobalAndExport: v])) do:
 		[:var | | varString decl |
 		varString := var asString.
 		decl := variableDeclarations at: varString ifAbsent: ['sqInt ' , varString].
@@ -380,7 +380,7 @@ MLVMCCodeGenerator >> localizeGlobalVariables [
 	| globalsToDelete |
 	super localizeGlobalVariables.
 	globalsToDelete := Set new.
-"	self haltIf: [ variables includes: #aMethodLabel ]."
+	"	self haltIf: [ variables includes: #aMethodLabel ]."
 	globalVariableUsage associationsDo: [ :assoc |
 		| var |
 		var := assoc key.
@@ -420,7 +420,20 @@ MLVMCCodeGenerator >> mostBasicConstantSelectors [
 
 { #category : 'inlining' }
 MLVMCCodeGenerator >> mustBeGlobal: aName [
-	^ self vmClass mustBeGlobal: aName
+
+	^ (self mustBeGlobalAndExport: aName) or: [
+		  self mustBeGlobalInFile: aName ]
+]
+
+{ #category : 'inlining' }
+MLVMCCodeGenerator >> mustBeGlobalAndExport: aName [
+	^ self vmClass mustBeGlobalAndExport: aName
+]
+
+{ #category : 'inlining' }
+MLVMCCodeGenerator >> mustBeGlobalInFile: aName [
+
+	^ self vmClass mustBeGlobalInFile: aName
 ]
 
 { #category : 'C code generator' }

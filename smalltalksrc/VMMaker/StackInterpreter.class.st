@@ -1477,11 +1477,11 @@ StackInterpreter class >> isStackAccessor: selector [
 ]
 
 { #category : 'translation' }
-StackInterpreter class >> mustBeGlobal: var [
+StackInterpreter class >> mustBeGlobalAndExport: var [
 	"Answer if a variable must be global and exported.  Used for inst vars that are accessed from VM support code."
 
-	^ (super mustBeGlobal: var) or: [
-		  (self objectMemoryClass mustBeGlobal: var) or: [
+	^ (super mustBeGlobalAndExport: var) or: [
+		  (self objectMemoryClass mustBeGlobalAndExport: var) or: [
 			  #( 'interpreterProxy' 'interpreterVersion' 'extraVMMemory'
 			     'desiredNumStackPages' 'desiredEdenBytes' 'sendTrace'
 			     'checkAllocFiller' 'checkedPluginName' 'reenterInterpreter'

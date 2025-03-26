@@ -7,5 +7,6 @@ SLLocalizationTest >> setUp [
 	ccg declareVar: #globalWithNoUsage type: #int.
 	ccg declareVar: #globalWithUsage type: #int.
 	ccg declareVar: #globalToLocalize type: #int.
-	ccg declareVar: #globalMustBeGlobal type: #int
+	ccg declareVar: #globalMustBeGlobal type: #int.
+	ccg addClass: SLLocalizationTestClass
 ]

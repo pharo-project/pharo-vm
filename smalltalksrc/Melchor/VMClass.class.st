@@ -265,10 +265,15 @@ VMClass class >> monticelloDescription [
 ]
 
 { #category : 'translation' }
-VMClass class >> mustBeGlobal: var [
+VMClass class >> mustBeGlobalAndExport: var [
 	"Answer if a variable must be global and exported.  Used for inst vars that are accessed from VM support code."
 
 	^var = #expensiveAsserts
+]
+
+{ #category : 'translation' }
+VMClass class >> mustBeGlobalInFile: var [ 
+	^ false
 ]
 
 { #category : 'translation' }
