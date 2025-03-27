@@ -6,6 +6,12 @@ Class {
 	#tag : 'JIT'
 }
 
+{ #category : 'translation' }
+CoInterpreterPrimitives class >> mustBeGlobalInFile: var [
+
+	^ #( #composedImageWriter #spurImageWriter ) includes: var
+]
+
 { #category : 'arithmetic primitives' }
 CoInterpreterPrimitives >> mcprimHashMultiply: receiverArg [
 	"Machine code primitive for hash multiply. c.f. primitiveHashMultiply.

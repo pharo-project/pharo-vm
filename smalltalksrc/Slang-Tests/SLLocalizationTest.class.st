@@ -24,3 +24,14 @@ SLLocalizationTest >> testGlobalLocalized [
 		(ccg globalsAsSet includes: #instanceVariableToLocalize) not.
 	self assert: (tMethod locals includes: #instanceVariableToLocalize)
 ]
+
+{ #category : 'instance-variables' }
+SLLocalizationTest >> testGlobalMustBeGlobalEvenWithNoUsage [
+
+	ccg localizeGlobalVariables.
+
+	self assert: ccg globalsAsSet size equals: 2.
+	self assert: (ccg globalsAsSet includes: #globalMustBeGlobal).
+	self assert:
+		(ccg globalsAsSet includes: #instanceVariableMustBeGlobal)
+]
