@@ -1642,7 +1642,7 @@ SimpleStackBasedCogit >> genLookupForPerformNumArgs: numArgs [
 
 	"N.B.  Can't assume TempReg already contains the tag because a method can
 	 of course be invoked via the unchecked entry-point, e.g. as does perform:."
-	objectRepresentation genGetInlineCacheClassTagFrom: ReceiverResultReg into: SendNumArgsReg forEntry: false.
+	objectRepresentation genGetInlineCacheClassTagFrom: ReceiverResultReg into: SendNumArgsReg.
 
 	cacheBaseReg := NoReg.
 	(backEnd isWithinMwOffsetRange: coInterpreter methodCacheAddress) ifFalse:
