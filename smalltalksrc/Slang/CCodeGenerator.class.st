@@ -3921,6 +3921,12 @@ CCodeGenerator >> mostBasicConstantSelectors [
 ]
 
 { #category : 'utilities' }
+CCodeGenerator >> mustBeGlobal: aName [
+
+	^ false
+]
+
+{ #category : 'utilities' }
 CCodeGenerator >> mustBeGlobalAndExport: aName [
 	^ false
 ]

@@ -10,6 +10,12 @@ Class {
 	#tag : 'Interpreter'
 }
 
+{ #category : 'translation' }
+StackInterpreterPrimitives class >> mustBeGlobalInFile: var [
+
+	^ #( #composedImageWriter #spurImageWriter ) includes: var
+]
+
 { #category : 'initialization' }
 StackInterpreterPrimitives >> allocateParameters: anInteger using: allocationBlock [
 	<inline: #always>
