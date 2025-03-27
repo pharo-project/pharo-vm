@@ -380,7 +380,7 @@ MLVMCCodeGenerator >> localizeGlobalVariables [
 	| globalsToDelete |
 	super localizeGlobalVariables.
 	globalsToDelete := Set new.
-	"	self haltIf: [ variables includes: #aMethodLabel ]."
+
 	globalVariableUsage associationsDo: [ :assoc |
 		| var |
 		var := assoc key.

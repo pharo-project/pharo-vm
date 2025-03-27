@@ -13,8 +13,9 @@ Class {
 
 { #category : 'instance-variables' }
 SLLocalizationTestClass >> methodWithInstanceVariableMustBeGlobal [
-	"even if the variable can be localized or have no sender in Slang, it should remain a global.
-	See the 'sendTrace' case or 'generatorTable' cases (only use in macros)"
+	"Even if the variable can be localized or have no sender in Slang, it should remain a global.
+	Happens because some cases are undetected by Slang.
+	See the 'sendTrace' case and 'generatorTable' cases (only use in macros) or 'aMethodLabel' (only use to set up other globals)"
 
 	instanceVariableMustBeGlobal.
 	instanceVariableWithUsage
@@ -22,8 +23,9 @@ SLLocalizationTestClass >> methodWithInstanceVariableMustBeGlobal [
 
 { #category : 'instance-variables' }
 SLLocalizationTestClass >> methodWithInstanceVariableMustBeGlobalBis [
-	"even if the variable can be localized or have no sender in Slang, it should remain a global.
-	See the 'sendTrace' case or 'generatorTable' cases (only use in macros)"
+	"Even if the variable can be localized or have no sender in Slang, it should remain a global.
+	Happens because some cases are undetected by Slang.
+	See the 'sendTrace' case and 'generatorTable' cases (only use in macros) or 'aMethodLabel' (only use to set up other globals)"
 
 	instanceVariableMustBeGlobal.
 	instanceVariableWithUsage
