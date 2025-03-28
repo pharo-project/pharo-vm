@@ -17,6 +17,13 @@ VMRISCV64CallJumpOffsetTest class >> wordSizeParameters [
 { #category : 'running' }
 VMRISCV64CallJumpOffsetTest >> testCallBigPositiveOffset [
 
+	"RISC-V uses one single way to express immediate values: ALWAYS sign-extending them through their default
+	 12-bit size. This means that when a larger immediate needs to be used (e.g. in a call), 
+	 the sign bit has to be correctly handled if it is activated.
+	
+	 This test uses a 12-bit value with the 12th (sign) bit activated.
+	 see concretizeCall for more details on how it is handled in practice."
+
 	| callInstruction |
 	self compile: [		 
 		callInstruction := cogit Call: cogInitialAddress + 16rBE8 ].
@@ -34,6 +41,13 @@ VMRISCV64CallJumpOffsetTest >> testCallBigPositiveOffset [
 
 { #category : 'running' }
 VMRISCV64CallJumpOffsetTest >> testCallNegativeOffset [
+
+	"RISC-V uses one single way to express immediate values: ALWAYS sign-extending them through their default
+	 12-bit size. This means that when a larger immediate needs to be used (e.g. in a call), 
+	 the sign bit has to be correctly handled if it is activated.
+	
+	 We check here that a negative offset call is correctly handled as well.
+	 See concretizeCall for more details on how it is handled in practice."
 
 	| callInstruction |
 	self compile: [		 
@@ -54,6 +68,13 @@ VMRISCV64CallJumpOffsetTest >> testCallNegativeOffset [
 { #category : 'running' }
 VMRISCV64CallJumpOffsetTest >> testCallNegativeOffsetRewriting [
 
+	"RISC-V uses one single way to express immediate values: ALWAYS sign-extending them through their default
+	 12-bit size. This means that when a larger immediate needs to be used (e.g. in a call), 
+	 the sign bit has to be correctly handled if it is activated.
+	
+	 The encoding of those instruction is performed at concretization time and has to be reversed at extraction
+	 time, then performed again for the new offset. See rewriteCallAt:target: for more details."
+
 	| callInstruction |
 	self compile: [	
 		cogit Nop. cogit Nop. cogit Nop. cogit Nop. cogit Nop.
@@ -68,6 +89,13 @@ VMRISCV64CallJumpOffsetTest >> testCallNegativeOffsetRewriting [
 
 { #category : 'running' }
 VMRISCV64CallJumpOffsetTest >> testCallPositiveOffset [
+
+	"RISC-V uses one single way to express immediate values: ALWAYS sign-extending them through their default
+	 12-bit size. This means that when a larger immediate needs to be used (e.g. in a call), 
+	 the sign bit has to be correctly handled if it is activated.
+	 
+	 This test uses a positive call offset < 12-bit.
+	 See concretizeCall for more details on how it is handled in practice."
 
 	| callInstruction |
 	self compile: [		 
@@ -87,6 +115,13 @@ VMRISCV64CallJumpOffsetTest >> testCallPositiveOffset [
 { #category : 'running' }
 VMRISCV64CallJumpOffsetTest >> testCallPositiveOffsetExtraction [
 
+	"RISC-V uses one single way to express immediate values: ALWAYS sign-extending them through their default
+	 12-bit size. This means that when a larger immediate needs to be used (e.g. in a call), 
+	 the sign bit has to be correctly handled if it is activated.
+	
+	 The encoding of those instruction is performed at concretization time and has to be reversed at extraction
+	 time. See extractOffsetFromCall for more details."
+
 	| callInstruction |
 	self compile: [		 
 		callInstruction := cogit Call: (cogInitialAddress + 16rE8) ].
@@ -96,6 +131,13 @@ VMRISCV64CallJumpOffsetTest >> testCallPositiveOffsetExtraction [
 
 { #category : 'running' }
 VMRISCV64CallJumpOffsetTest >> testCallPositiveOffsetRewriting [
+
+	"RISC-V uses one single way to express immediate values: ALWAYS sign-extending them through their default
+	 12-bit size. This means that when a larger immediate needs to be used (e.g. in a call), 
+	 the sign bit has to be correctly handled if it is activated.
+	
+	 The encoding of those instruction is performed at concretization time and has to be reversed at extraction
+	 time, then performed again for the new offset. See rewriteCallAt:target: for more details."
 
 	| callInstruction |
 	self compile: [		 
@@ -110,6 +152,14 @@ VMRISCV64CallJumpOffsetTest >> testCallPositiveOffsetRewriting [
 
 { #category : 'running' }
 VMRISCV64CallJumpOffsetTest >> testJumpLongBigPositiveOffset [
+
+	"RISC-V uses one single way to express immediate values: ALWAYS sign-extending them through their default
+	 12-bit size. This means that when a larger immediate needs to be used (e.g. in a jump long), 
+	 the sign bit has to be correctly handled if it is activated.
+	 
+	 Long jumps are calls without links, the same 
+	 This test uses a positive call offset < 12-bit with the sign bit active.
+	 See concretizeJumpLong for more details on how it is handled in practice."
 
 	| callInstruction |
 	self compile: [		 
@@ -127,6 +177,13 @@ VMRISCV64CallJumpOffsetTest >> testJumpLongBigPositiveOffset [
 { #category : 'running' }
 VMRISCV64CallJumpOffsetTest >> testJumpLongBigPositiveOffsetExtraction [
 
+	"RISC-V uses one single way to express immediate values: ALWAYS sign-extending them through their default
+	 12-bit size. This means that when a larger immediate needs to be used (e.g. in a call), 
+	 the sign bit has to be correctly handled if it is activated.
+	
+	 The encoding of those instruction is performed at concretization time and has to be reversed at extraction
+	 time. It uses the same logic as callTargetFromReturnAddress"
+
 	| callInstruction |
 	self compile: [		 
 		callInstruction := cogit JumpLong: (cogInitialAddress + 16rBE8) ].
@@ -137,6 +194,14 @@ VMRISCV64CallJumpOffsetTest >> testJumpLongBigPositiveOffsetExtraction [
 
 { #category : 'running' }
 VMRISCV64CallJumpOffsetTest >> testJumpLongPositiveOffset [
+
+	"RISC-V uses one single way to express immediate values: ALWAYS sign-extending them through their default
+	 12-bit size. This means that when a larger immediate needs to be used (e.g. in a jump long), 
+	 the sign bit has to be correctly handled if it is activated.
+	 
+	 Long jumps are calls without links, the same 
+	 This test uses a positive jump offset < 12-bit.
+	 See concretizeJumpLong for more details on how it is handled in practice."
 
 	| callInstruction |
 	self compile: [		 
@@ -154,6 +219,13 @@ VMRISCV64CallJumpOffsetTest >> testJumpLongPositiveOffset [
 { #category : 'running' }
 VMRISCV64CallJumpOffsetTest >> testJumpLongPositiveOffsetExtraction [
 
+	"RISC-V uses one single way to express immediate values: ALWAYS sign-extending them through their default
+	 12-bit size. This means that when a larger immediate needs to be used (e.g. in a call), 
+	 the sign bit has to be correctly handled if it is activated.
+	
+	 The encoding of those instruction is performed at concretization time and has to be reversed at extraction
+	 time. It uses the same logic as callTargetFromReturnAddress"
+
 	| callInstruction |
 	self compile: [		 
 		callInstruction := cogit JumpLong: (cogInitialAddress + 16rE8) ].
@@ -164,6 +236,13 @@ VMRISCV64CallJumpOffsetTest >> testJumpLongPositiveOffsetExtraction [
 
 { #category : 'running' }
 VMRISCV64CallJumpOffsetTest >> testJumpLongPositiveOffsetRewriting [
+
+	"RISC-V uses one single way to express immediate values: ALWAYS sign-extending them through their default
+	 12-bit size. This means that when a larger immediate needs to be used (e.g. in a call), 
+	 the sign bit has to be correctly handled if it is activated.
+	
+	 The encoding of those instruction is performed at concretization time and has to be reversed at extraction
+	 time, then performed again for the new offset. See rewriteJumpLongAt:target: for more details."
 
 	| callInstruction |
 	self compile: [		 
