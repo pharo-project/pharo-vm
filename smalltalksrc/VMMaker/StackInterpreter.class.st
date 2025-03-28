@@ -1864,7 +1864,9 @@ StackInterpreter >> activateNewMethodInterpreted [
 	If mustBeInterpreterFrame is true, force it to be an interpreter frame regardless of the method being compiled"
 
 	<inline: true>
-	self saveCallerFrameStateCallingNewInterpreterFrame: true.
+	self push: instructionPointer.
+	self push: framePointer.
+	framePointer := stackPointer.
 	^ self setupFrameForNewMethodInterpreted
 ]
 
@@ -9025,17 +9027,12 @@ StackInterpreter >> makeBaseFrameFor: aContext [
 			ofObject: aContext
 			withValue: objectMemory nilObject ].
 
-	instructionPointer := self baseFrameSavedCallerIP.
-	"base frame's saved fp is null"
-	framePointer := 0.
-	self saveCallerFrameStateCallingNewInterpreterFrame: true.
+	"Push the caller IP for the base frame.
+	Then the frame pointer which is null for the base frame"
+	self push: self baseFrameSavedCallerIP.
+	self push: 0. "FP"
+	framePointer := stackPointer.
 
-	"We finished pushing all the meta-data required for the base-frame to work.
-	Proceed to start a new frame"
-	"Create either a machine code frame or an interpreter frame based on the pc.  If the pc is negative
-	 it is a machine code pc and so we produce a machine code frame.  If positive an interpreter frame.
-	 N.B. Do *not* change this to try and map from a bytecode pc to a machine code frame under
-	 any circumstances.  See ensureContextIsExecutionSafeAfterAssignToStackPointer:"
 	theInstructionPointer := self
 		                         setupFrameFixedPart: theMethod
 		                         withHeader:
