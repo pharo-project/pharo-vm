@@ -1327,6 +1327,7 @@ CogOutOfLineLiteralsRiscV64Compiler >> concretizeAddCheckOverflowCqR [
                                           || (src >= 0) && (src + imm < t0)   case 0 1 (overflow)
 
 	(look at concretizeAddCheckOverflowRR for info on overflow checking between two registers)"
+	<var: #cq type: #sqInt>
 	<inline: true>
 	| cq srcReg destReg loadOffset |
 	cq := operands at: 0.
@@ -2634,7 +2635,6 @@ CogOutOfLineLiteralsRiscV64Compiler >> concretizeMoveM16rR [
 	 Expands to: lh rs2, offset(rs1)"
 
 	<inline: true>
-	<var: #cq type: #sqInt>
 	| baseReg offset destReg instrOffset |
 	offset := operands at: 0.
 	baseReg := operands at: 1.
@@ -2669,7 +2669,6 @@ CogOutOfLineLiteralsRiscV64Compiler >> concretizeMoveM32rR [
 	 Expands to: lw rs2, offset(rs1)"
 
 	<inline: true>
-	<var: #cq type: #sqInt>
 	| baseReg offset destReg instrOffset |
 	offset := operands at: 0.
 	baseReg := operands at: 1.
@@ -3097,7 +3096,7 @@ CogOutOfLineLiteralsRiscV64Compiler >> concretizeMoveRXbrR [
 
 	"Write the byte in R(src) into memory at address (base + word size * index)"
 
-		<inline: true>
+	<inline: true>
 	| indexReg baseReg srcReg |
 	srcReg := operands at: 0.
 	indexReg := operands at: 1. "index is number of words = size of word * bytes, in 64 bits -> * 8"
@@ -5032,7 +5031,6 @@ CogOutOfLineLiteralsRiscV64Compiler >> isInImmediateJumpRange: operand [
 { #category : 'testing' }
 CogOutOfLineLiteralsRiscV64Compiler >> isInLongJumpCallRange: offset [
 	"RISC-V calls and jumps can use values of max size 32 bits through auipc / jal|jalr"
-	<var: #operand type: #'usqIntptr_t'>
 	^ self value: offset isContainedIn: 32
 ]
 
@@ -6169,8 +6167,8 @@ CogOutOfLineLiteralsRiscV64Compiler >> rewriteJumpLongAt: jumpReturnAddress targ
 	"Rewrite a jump instruction to call a different target.  This variant is used to link PICs 
 	 in ceSendMiss et al, and to rewrite jumps in CPICs.
 	 Answer the extent of the code change which is used to compute the range of the icache to flush."
-	<var: #callSiteReturnAddress type: #usqInt>
-	<var: #callTargetAddress type: #usqInt>
+	<var: #jumpReturnAddress type: #usqInt>
+	<var: #jumpTargetAddress type: #usqInt>
 	| jumpDistance offsetLow offsetHigh instr |
 	jumpTargetAddress >= cogit minCallAddress
 		ifFalse: [self error: 'linking callsite to invalid address'].
@@ -6853,7 +6851,6 @@ CogOutOfLineLiteralsRiscV64Compiler >> usesOutOfLineLiteral [
 	
 	 Note that it will provide the 'dependent' in concretization"
 	
-	<var: #offset type: 'sqInt'>
 	opcode
 		caseOf: {
 		[CallFull]		   -> [^true].
