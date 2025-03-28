@@ -91,7 +91,8 @@ Class {
 		'flagInterpretedMethods',
 		'maxLiteralCountForCompile',
 		'minBackwardJumpCountForCompile',
-		'initialMemoryAddress'
+		'initialMemoryAddress',
+		'rumpCStackBase'
 	],
 	#classVars : [
 		'HasBeenReturnedFromMCPC',
@@ -4666,18 +4667,6 @@ CoInterpreter >> saveCStackStateForCallbackContext: vmCallbackContext [
 		savedCStackPointer: cogit getCStackPointer;
 		savedCFramePointer: cogit getCFramePointer.
 	super saveCStackStateForCallbackContext: vmCallbackContext
-]
-
-{ #category : 'message sending' }
-CoInterpreter >> saveCallerFrameStateCallingNewInterpreterFrame: isInterpreterFrame [
-
-	(isInterpreterFrame not and: [
-		 self isInstructionPointerInInterpreter: instructionPointer ])
-		ifTrue: [
-			self iframeSavedIP: framePointer put: instructionPointer.
-			instructionPointer := cogit ceReturnToInterpreterPC ].
-	
-	super saveCallerFrameStateCallingNewInterpreterFrame: isInterpreterFrame
 ]
 
 { #category : 'object memory support' }
