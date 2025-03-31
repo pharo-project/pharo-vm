@@ -1679,6 +1679,9 @@ copyBitsRule41Test(void)
 void
 copyBitsFallback(operation_t *op, unsigned int flags)
 {
+
+#  if ENABLE_FAST_BLT
+
 	sqInt done;
 	sqInt dxLowBits;
 	sqInt endBits;
@@ -1689,9 +1692,6 @@ copyBitsFallback(operation_t *op, unsigned int flags)
 	sqInt startBits1;
 	sqInt sxLowBits;
 	sqInt t;
-
-	
-#  if ENABLE_FAST_BLT
 
 	/* recover values from the operation struct used by the fast ARM code */
 	
@@ -5018,7 +5018,6 @@ primitiveCompareColors(void)
 	sqInt rcvr;
 	sqInt testID;
 	sqInt val;
-	sqInt _return_value;
 
 	val = 0;
 	if (!((isPositiveMachineIntegerObject(stackValue(2)))
@@ -5040,6 +5039,9 @@ primitiveCompareColors(void)
 	}
 	
 #  if ENABLE_FAST_BLT
+
+	sqInt _return_value;
+
 	if (!(loadBitBltFromwarping(rcvr, 0))) {
 		primitiveFail();
 		return null;

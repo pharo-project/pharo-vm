@@ -92,7 +92,8 @@ TMethod >> addLabelsTo: aTMethod [
 TMethod >> addLocal: aString [
 
 	cachedLocals := nil.
-	self locals add: aString
+	self locals add: aString.
+	^ aString
 ]
 
 { #category : 'adding' }
@@ -1017,16 +1018,6 @@ TMethod >> exitVar: exitVar label: exitLabel [
 			list := node lastNonCommentStatement statements.
 			node replaceChild: node lastNonCommentStatement withList: list ] ].
 	^ labelUsed
-]
-
-{ #category : 'transformations' }
-TMethod >> expandAST [
-	"the order is important, expanding assignment can/will modify the value selector"
-
-	parseTree nodesDo: [ :node |
-		node isAssignment ifTrue: [ node expandASTIn: self ].
-		(node isSend and: [ node isValueExpansion ]) ifTrue: [
-			node expandASTIn: self ] ]
 ]
 
 { #category : 'accessing' }

@@ -377,6 +377,18 @@ TSendNode >> expandASTIn: aTMethod [
 	parent replaceChild: self with: substitution
 ]
 
+{ #category : 'transformations' }
+TSendNode >> expandPrintfIn: aTMethod [
+
+	| flatArgs |
+	selector = #f:printf: ifFalse: [ ^ self ].
+	flatArgs := OrderedCollection new
+		            add: (arguments at: 1);
+		            yourself.
+	(arguments at: 2) statements do: [ :stmt | flatArgs add: stmt ].
+	self arguments: flatArgs
+]
+
 { #category : 'testing' }
 TSendNode >> hasSideEffect [
 	"Answer if the parse tree rooted at this node has a side-effect or not."

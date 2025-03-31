@@ -17,11 +17,11 @@ BaselineOfVMMaker >> baseline: spec [
 				package: 'CAST' with: [ spec requires: #('SmaCC-GLR' ) ];
 				package: 'CAST-Tests' with: [ spec requires: #('CAST') ];
 				package: 'Slang' with: [ spec requires: #('CAST') ];
-				package: 'Slang-Tests' with: [ spec requires: #('Slang') ].
+				package: 'Slang-Tests' with: [ spec requires: #('Slang' 'Melchor') ].
 			
 			"Melchor is a VM-oriented Slang"
 			spec package: 'Melchor' with: [
-				spec requires: #('Slang' 'Slang-Tests') ].
+				spec requires: #('Slang') ].
 			
 			"External Dependencies"
 			spec baseline: 'SmaCC-GLR' with: [ 

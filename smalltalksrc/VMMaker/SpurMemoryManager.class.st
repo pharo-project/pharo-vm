@@ -960,7 +960,7 @@ SpurMemoryManager class >> memoryManagerVersion [
 ]
 
 { #category : 'translation' }
-SpurMemoryManager class >> mustBeGlobal: var [
+SpurMemoryManager class >> mustBeGlobalAndExport: var [
 	"Answer if a variable must be global and exported.  Used for inst vars that are accessed from VM support code."
 
 	^#('checkForLeaks' 'maxOldSpaceSize') includes: var

@@ -1187,7 +1187,7 @@ Cogit class >> methodZoneClass [
 ]
 
 { #category : 'translation' }
-Cogit class >> mustBeGlobal: var [
+Cogit class >> mustBeGlobalAndExport: var [
 	"Answer if a variable must be global and exported.  Used for inst vars that are accessed from VM
 	 support code.  include cePositive32BitIntegerTrampoline as a hack to prevent it being inlined (it is
 	 only used outside of Cogit by the object representation).  Include CFramePointer CStackPointer as

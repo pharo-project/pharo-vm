@@ -706,10 +706,11 @@ primitiveFileMasks(void)
 EXPORT(sqInt)
 primitiveLogicalDrives(void)
 {
-    unsigned int mask;
-
 	
 #  if defined(_WIN32)
+
+	unsigned int mask;
+
 	mask = GetLogicalDrives();
 	if (mask != 0) {
 		popthenPush(1, positive32BitIntegerFor(mask));

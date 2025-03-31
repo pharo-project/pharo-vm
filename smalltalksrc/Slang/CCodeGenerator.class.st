@@ -769,18 +769,27 @@ CCodeGenerator >> checkClassForNameConflicts: aClass [
 ]
 
 { #category : 'utilities' }
-CCodeGenerator >> checkForGlobalUsage: vars in: aTMethod [ 
-	vars do:
-		[:var |
-		(variables includes: var) ifTrue: "find the set of method names using this global var"
-			[(globalVariableUsage at: var ifAbsentPut: [Set new])
-				add: aTMethod selector]].
+CCodeGenerator >> checkForGlobalUsage: vars in: aTMethod [
+
+	vars do: [ :var |
+		(variables includes: var) ifTrue: [
+			((variableDeclarations at: var ifAbsent: [ '' ]) beginsWith:
+				 #implicit) ifFalse: [ "find the set of method names using this global var"
+				(globalVariableUsage at: var ifAbsentPut: [ Set new ]) add:
+					aTMethod selector ] ] ].
 	aTMethod clearReferencesToGlobalStruct.
-	(aTMethod allLocals select: [:l| self reservedWords includes: l]) do:
-		[:l| | em |
-		em := aTMethod definingClass name, '>>', aTMethod smalltalkSelector, ' has variable that is a C reserved word: ', l.
-		self error: em.
-		self logger cr; nextPutAll: em; cr; flush]
+	(aTMethod allLocals select: [ :l | self reservedWords includes: l ])
+		do: [ :l |
+			| em |
+			em := aTMethod definingClass name , '>>'
+			      , aTMethod smalltalkSelector
+			      , ' has variable that is a C reserved word: ' , l.
+			self error: em.
+			self logger
+				cr;
+				nextPutAll: em;
+				cr;
+				flush ]
 ]
 
 { #category : 'error notification' }
@@ -986,6 +995,7 @@ CCodeGenerator >> declareModuleName: nameString [
 { #category : 'public' }
 CCodeGenerator >> declareVar: varName type: type [
 	"This both creates a varable and provides its type"
+
 	self var: (variables add: varName asString) type: type
 ]
 
@@ -3707,47 +3717,48 @@ CCodeGenerator >> isVoidPointer: aCType [ "<String>"
 
 { #category : 'utilities' }
 CCodeGenerator >> localizeGlobalVariables [
-	| candidates elected localized |
 
+	| candidates elected localized |
 	"find all globals used in only one method"
-	candidates := globalVariableUsage select: [:e | e size = 1].
-	"Don't localize globals; nor those that are only assigned to; they're for debugging..."
-	(candidates keys select: [:k| (self mustBeGlobal: k)
-								or: [(self methodNamed: (globalVariableUsage at: k) anyOne)
-										ifNil: [false]
-										ifNotNil: [:m| (m readsVariable: k) not]]]) do:
-		[:k| candidates removeKey: k].
-	
+	candidates := globalVariableUsage select: [ :e | e size = 1 ].
+	"Don't localize globals"
+	(candidates keys select: [ :k | self mustBeGlobal: k ]) do: [ :k |
+		candidates removeKey: k ].
 	elected := Set new.
 	localized := Dictionary new. "for an ordered report"
 	"move any suitable global to be local to the single method using it"
-	candidates keysAndValuesDo:
-		[:key :targets |
-		targets do:
-			[:name |
-			(methods at: name ifAbsent: []) ifNotNil:
-				[:procedure | | newDeclaration |
-				(procedure isRealMethod
-				 and: [self shouldGenerateMethod: procedure]) ifTrue:
-					[(localized at: name ifAbsentPut: [SortedCollection new]) add: key.
+	candidates keysAndValuesDo: [ :key :targets |
+		targets do: [ :name |
+			(methods at: name ifAbsent: [  ]) ifNotNil: [ :procedure |
+				| newDeclaration |
+				(procedure isRealMethod and: [
+					 self shouldGenerateMethod: procedure ]) ifTrue: [
+					(localized at: name ifAbsentPut: [ SortedCollection new ]) add:
+						key.
 					elected add: (procedure addLocal: key).
-					newDeclaration := variableDeclarations at: key ifAbsent: ['sqInt ', key].
-					(self initializerForInstVar: key inStartClass: procedure definingClass) ifNotNil:
-						[:initializerNode|
-						newDeclaration := String streamContents:
-												[:s|
-												 s nextPutAll: newDeclaration; nextPutAll: ' = '.
-												(initializerNode asCASTIn: self) prettyPrintOn: s ]].
-					procedure declarationAt: key put: newDeclaration.
-					variableDeclarations removeKey: key ifAbsent: []]]]].
-	logger ifNotNil:
-		[localized keys asSortedCollection do:
-			[:name|
-			(localized at: name) do:
-				[:var|
-				logger newLine; show: var, ' localised to ', name; cr]]].
+					newDeclaration := variableDeclarations
+						                  at: key
+						                  ifAbsent: [ 'sqInt ' , key ].
+					(self
+						 initializerForInstVar: key
+						 inStartClass: procedure definingClass) ifNotNil: [
+						:initializerNode |
+						newDeclaration := String streamContents: [ :s |
+							                  s
+								                  nextPutAll: newDeclaration;
+								                  nextPutAll: ' = '.
+							                  (initializerNode asCASTIn: self)
+								                  prettyPrintOn: s ] ].
+					procedure declarationAt: key put: newDeclaration ] ] ] ].
+	logger ifNotNil: [
+		localized keys asSortedCollection do: [ :name |
+			(localized at: name) do: [ :var |
+				logger
+					newLine;
+					show: var , ' localised to ' , name;
+					cr ] ] ].
 
-	variables removeAllFoundIn: elected
+	elected do: [ :var | self removeVariable: var ]
 ]
 
 { #category : 'inlining' }
@@ -3755,15 +3766,14 @@ CCodeGenerator >> localizeVariables: varsList inMethod: m [
 
 	self validateLocalizationOfGlobals: varsList exceptMethod: m selector.
 	m localizeVariables: varsList.
-	varsList do: [ :v | 
+	varsList do: [ :v |
 		| varString |
 		varString := v asString.
-		variables remove: varString ifAbsent: [  ].
-		(variableDeclarations includesKey: varString) ifTrue: [ 
+		(variableDeclarations includesKey: varString) ifTrue: [
 			m
 				declarationAt: v asString
-				put: (variableDeclarations at: varString).
-			variableDeclarations removeKey: varString ] ]
+				put: (variableDeclarations at: varString) ].
+		self removeVariable: varString ]
 ]
 
 { #category : 'utilities' }
@@ -3912,6 +3922,12 @@ CCodeGenerator >> mostBasicConstantSelectors [
 
 { #category : 'utilities' }
 CCodeGenerator >> mustBeGlobal: aName [
+
+	^ false
+]
+
+{ #category : 'utilities' }
+CCodeGenerator >> mustBeGlobalAndExport: aName [
 	^ false
 ]
 
@@ -4506,8 +4522,10 @@ CCodeGenerator >> removeVariable: aName [
 { #category : 'utilities' }
 CCodeGenerator >> removeVariable: aName ifAbsent: ifAbsentBlock [
 	"Remove the given (instance) variable from the code base."
-	variableDeclarations removeKey: aName ifAbsent: [].
-	^variables remove: aName ifAbsent: ifAbsentBlock
+
+	variableDeclarations removeKey: aName ifAbsent: [  ].
+	globalVariableUsage removeKey: aName ifAbsent: [  ].
+	^ variables remove: aName ifAbsent: ifAbsentBlock
 ]
 
 { #category : 'renaming' }
