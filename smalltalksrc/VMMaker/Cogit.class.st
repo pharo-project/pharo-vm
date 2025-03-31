@@ -242,8 +242,6 @@ Class {
 		'cPICEndOfCodeLabel',
 		'ceMallocTrampoline',
 		'ceFreeTrampoline',
-		'debugBytecodePointers',
-		'debugOpcodeIndices',
 		'disassemblingMethod',
 		'cogConstituentIndex',
 		'directedSendUsesBinding',
@@ -1200,20 +1198,18 @@ Cogit class >> mustBeGlobalAndExport: var [
 	 only used outside of Cogit by the object representation).  Include CFramePointer CStackPointer as
 	 a hack to get them declared at all."
 
-	^ #( 'ceBaseFrameReturnTrampoline' #ceCaptureCStackPointers
-	     'ceCheckForInterruptTrampoline' ceEnterCogCodePopReceiverReg
-	     realCEEnterCogCodePopReceiverReg
-	     ceCallCogCodePopReceiverReg realCECallCogCodePopReceiverReg
-	     ceCallCogCodePopReceiverAndClassRegs
-	     realCECallCogCodePopReceiverAndClassRegs
-	     'ceReturnToInterpreterTrampoline'
-	     'ceCannotResumeTrampoline' ceTryLockVMOwner ceUnlockVMOwner
-	     'cmEntryOffset' 'cmNoCheckEntryOffset' 'cmDynSuperEntryOffset'
-	     'cmSelfSendEntryOffset' 'missOffset' 'cbEntryOffset'
-	     'cbNoSwitchEntryOffset' 'blockNoContextSwitchOffset'
-	     CFramePointer CStackPointer 'cFramePointerInUse'
-	     ceGetFP ceGetSP traceFlags 'traceStores' debugPrimCallStackOffset )
-		  includes: var
+	^#(	'ceBaseFrameReturnTrampoline' #ceCaptureCStackPointers 'ceCheckForInterruptTrampoline'
+		ceEnterCogCodePopReceiverReg realCEEnterCogCodePopReceiverReg
+		ceCallCogCodePopReceiverReg realCECallCogCodePopReceiverReg
+		ceCallCogCodePopReceiverAndClassRegs realCECallCogCodePopReceiverAndClassRegs
+		'ceReturnToInterpreterTrampoline' 'ceCannotResumeTrampoline'
+		ceTryLockVMOwner ceUnlockVMOwner
+		'cmEntryOffset' 'cmNoCheckEntryOffset' 'cmDynSuperEntryOffset' 'cmSelfSendEntryOffset'
+		'missOffset' 'cbEntryOffset' 'cbNoSwitchEntryOffset' 'blockNoContextSwitchOffset'
+		CFramePointer CStackPointer 'cFramePointerInUse' ceGetFP ceGetSP
+		traceFlags 'traceStores' debugPrimCallStackOffset)
+			includes: var
+
 ]
 
 { #category : 'translation' }
@@ -5215,6 +5211,7 @@ Cogit >> compileCogFullBlockMethod: numCopied [
 	inBlock := InFullBlock.
 	postCompileHook := nil.
 	maxLitIndex := -1.
+
 	initialPC := coInterpreter startPCOfMethod: methodObj.
 	"initial estimate.  Actual endPC is determined in scanMethod."
 	endPC := objectMemory numBytesOf: methodObj.
@@ -7643,8 +7640,8 @@ Cogit >> generateInstructionsAt: eventualAbsoluteAddress [
 	<var: #fixup type: #'BytecodeFixup *'>
 	absoluteAddress := eventualAbsoluteAddress.
 	pcDependentIndex := 0.
-	0 to: opcodeIndex - 1 do:
-		[:i|
+
+	0 to: opcodeIndex - 1 do: [:i|
 		abstractInstruction := self abstractInstructionAt: i.
 		abstractInstruction isPCDependent
 			ifTrue:
@@ -7655,8 +7652,7 @@ Cogit >> generateInstructionsAt: eventualAbsoluteAddress [
 				 absoluteAddress := absoluteAddress + abstractInstruction machineCodeSize]
 			ifFalse:
 				[absoluteAddress := abstractInstruction concretizeAt: absoluteAddress]].
-	0 to: pcDependentIndex - 1 do:
-		[:j|
+	0 to: pcDependentIndex - 1 do: [:j|
 		fixup := self fixupAtIndex: j.
 		abstractInstruction := self abstractInstructionAt: fixup instructionIndex.
 		abstractInstruction concretizeAt: abstractInstruction address].
@@ -11214,16 +11210,7 @@ Cogit >> setInterpreter: aCoInterpreter [
 
 	extA := numExtB := extB := 0.
 
-	compilationTrace ifNil: [
-		compilationTrace := self class initializationOptions
-			                    at: #compilationTrace
-			                    ifAbsent: [ 0 ] ].
-	debugOpcodeIndices := self class initializationOptions
-		                      at: #debugOpcodeIndices
-		                      ifAbsent: [ Set new ].
-	debugBytecodePointers := self class initializationOptions
-		                         at: #debugBytecodePointers
-		                         ifAbsent: [ Set new ]
+	compilationTrace ifNil: [compilationTrace := self class initializationOptions at: #compilationTrace ifAbsent: [0]]
 ]
 
 { #category : 'jit - api' }
