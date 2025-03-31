@@ -237,6 +237,10 @@ ioHighResClock(void)
 		https://developer.arm.com/documentation/ddi0460/c/Events-and-Performance-Monitor/Performance-monitoring-registers/c9--Count-Enable-Set-Register
 		https://github.com/google/benchmark/blob/v1.1.0/src/cycleclock.h#L116
 	 */
+#elif (defined(__riscv) && (defined(__riscv_xlen) && (__riscv_xlen == 64)))
+	/* On RISC-V, the time control status register is read through the rdtime instruction */
+	/* If the performance counter needs to be used, use rdcycle instead */
+	__asm__ __volatile__("rdtime %0" : "=r"(value));
 #elif defined(_WIN32)
 	value = __rdtsc();
 #else
