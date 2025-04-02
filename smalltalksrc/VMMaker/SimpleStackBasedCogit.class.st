@@ -189,6 +189,12 @@ SimpleStackBasedCogit class >> initializeBytecodeTableForSistaV1 [
 		(3 254 255	unknownBytecode))
 ]
 
+{ #category : 'translation' }
+SimpleStackBasedCogit class >> mustBeGlobalInFile: var [
+
+	^ #( #aMethodLabel #generatorTable ) includes: var
+]
+
 { #category : 'class initialization' }
 SimpleStackBasedCogit class >> table: primArray from: specArray [ 
 	"Fill in the specified entries in the primitive table."

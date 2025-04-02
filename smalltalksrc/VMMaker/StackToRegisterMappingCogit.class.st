@@ -433,12 +433,6 @@ StackToRegisterMappingCogit class >> mustBeGlobalAndExport: var [
 			  var ]
 ]
 
-{ #category : 'translation' }
-StackToRegisterMappingCogit class >> mustBeGlobalInFile: var [
-
-	^ #( #aMethodLabel #generatorTable ) includes: var
-]
-
 { #category : 'accessing' }
 StackToRegisterMappingCogit class >> numPushNilsFunction [
 	"Answer the value of numPushNilsFunction"
