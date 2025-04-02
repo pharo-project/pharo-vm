@@ -171,6 +171,14 @@ PharoVMMaker >> generatePlugins: anObject [
 ]
 
 { #category : 'generation' }
+PharoVMMaker >> generateSimple [
+
+	self generates64Bits ifTrue: [ self generate: CoInterpreter memoryManager: Spur64BitCoMemoryManager compilerClass: SimpleStackBasedCogit ].
+	self generates32Bits ifTrue: [ self generate: CoInterpreter memoryManager: Spur32BitCoMemoryManager compilerClass: SimpleStackBasedCogit ].
+
+]
+
+{ #category : 'generation' }
 PharoVMMaker >> generateStackVM [
 
 	self generates64Bits ifTrue: [self generate: StackInterpreter memoryManager: Spur64BitMemoryManager].
