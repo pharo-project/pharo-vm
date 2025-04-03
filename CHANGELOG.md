@@ -1,5 +1,12 @@
 # Change log
 
+## v10.3.4
+
+* Add windows support for non ASCII filenames in basicImageFileExists by @demarey in https://github.com/pharo-project/pharo-vm/pull/926
+* Fix signal handler signature by @guillep in https://github.com/pharo-project/pharo-vm/pull/940
+
+**Full Changelog**: https://github.com/pharo-project/pharo-vm/compare/v10.3.3...v10.3.4
+
 ## v10.3.3
 
 * Fixes for 10.3.2 by @guillep in https://github.com/pharo-project/pharo-vm/pull/885
