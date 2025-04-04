@@ -531,7 +531,7 @@ If ffi is put as a separate header, slang will sort the header and put it outsid
 		declareC:
 		#( instructionPointer stackPointer framePointer stackLimit
 		   breakSelector )
-		as: #'char *'
+		as: #'sqIntptr_t'
 		in: aCCodeGenerator.
 	aCCodeGenerator
 		var: #breakSelectorLength
