@@ -8370,6 +8370,7 @@ Cogit >> initializeFixupAt: targetPC [
 { #category : 'in-line cacheing' }
 Cogit >> initializePIC: aPIC atDelta: addrDelta numArgs: numArgs [
 
+	<var: #aPIC type: #'CogMethod *'>
 	objectMemory
 		memcpy: aPIC
 		_: (self cCoerceSimple: cPICPrototype to: #'CogMethod *')
@@ -10132,6 +10133,8 @@ Cogit >> patchToMegamorphicICFor: selector numArgs: numArgs receiver: receiver [
 
 { #category : 'in-line cacheing' }
 Cogit >> picAbortAddress: cPIC [
+
+	<var: #cPIC type: #'CogMethod *'>
 	"The PIC starts with a header of meta-data followed by machine code.
 	The first thing in the machine code stream is the abort section."
 
@@ -10513,12 +10516,12 @@ Cogit >> printWhereIs: address [
 			trampAddr := self codeEntryFor: address.
 			trampAddr ifNil: [ 
 					coInterpreter
-						printHex: address;
+						printHex: (self cCoerceSimple: address to: #sqInt);
 						print: ' not in the code zone';
 						cr ]
 				ifNotNil: [ 
 					coInterpreter
-						printHex: address;
+						printHex: (self cCoerceSimple: address to: #sqInt);
 						print: ' in trampoline ';
 						print: (self codeEntryNameFor: address);
 						print: ' (starting at address ';
@@ -10527,7 +10530,7 @@ Cogit >> printWhereIs: address [
 						cr ] ]
 		ifFalse: [ 
 			coInterpreter
-				printHex: address;
+				printHex: (self cCoerceSimple: address to: #sqInt);
 				print: ' in cog method '.
 			"Handle selector"
 			cogMethod selector = objectMemory nilObject
