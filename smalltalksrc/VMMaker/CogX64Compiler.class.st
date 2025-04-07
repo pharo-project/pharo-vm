@@ -1526,7 +1526,11 @@ CogX64Compiler >> concretizeJump [
 	(self isAnInstruction: jumpTarget) ifTrue:
 		[jumpTarget := cogit cCoerceSimple: jumpTarget address to: #'AbstractInstruction *'].
 	self assert: jumpTarget ~= 0.
-	offset := jumpTarget signedIntFromLong - (address + 2) signedIntFromLong.
+	
+	offset := jumpTarget signedIntFromLong64 - (address + 2) signedIntFromLong64.
+	(offset >> 32) = 0 ifTrue: [ 
+		self error: 'Cannot jump to distances larger than 32 bits' ].
+
 	(machineCodeSize = 0 "size not determined because no sizeJump pass; generating initial trampolines"
 		ifTrue: [self isQuick: offset]
 		ifFalse: [machineCodeSize = 2]) ifTrue:
@@ -1534,7 +1538,11 @@ CogX64Compiler >> concretizeJump [
 			at: 0 put: 16rEB;
 			at: 1 put: (offset bitAnd: 16rFF).
 		 ^machineCodeSize := 2].
-	offset := jumpTarget signedIntFromLong - (address + 5) signedIntFromLong.
+	
+	offset := jumpTarget signedIntFromLong64 - (address + 5) signedIntFromLong64.
+	(offset >> 32) = 0 ifTrue: [ 
+		self error: 'Cannot jump to distances larger than 32 bits' ].
+
 	machineCode
 		at: 0 put: 16rE9;
 		at: 1 put: (offset bitAnd: 16rFF);
@@ -1582,7 +1590,12 @@ CogX64Compiler >> concretizeJumpLong [
 	(self isAnInstruction: jumpTarget) ifTrue:
 		[jumpTarget := cogit cCoerceSimple: jumpTarget address to: #'AbstractInstruction *'].
 	self assert: jumpTarget ~= 0.
-	offset := jumpTarget signedIntFromLong - (address + 5) signedIntFromLong.
+	
+	offset := jumpTarget signedIntFromLong64 - (address + 5) signedIntFromLong64.
+	
+	(offset >> 32) = 0 ifTrue: [ 
+		self error: 'Cannot jump to distances larger than 32 bits' ].
+	
 	machineCode
 		at: 0 put: 16rE9;
 		at: 1 put: (offset bitAnd: 16rFF);
