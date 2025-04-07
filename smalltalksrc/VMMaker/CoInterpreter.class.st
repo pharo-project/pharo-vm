@@ -2976,8 +2976,8 @@ CoInterpreter >> handleUnlinkedSendFor: maybeForwardedSelector to: receiver isSu
 					           cogMNUPICSelector: messageSelector
 					           receiver: receiver
 					           methodOperand: (self mnuMethodOrNilFor: receiver)
-					           numArgs: argumentCount) asUnsignedInteger.
-				mnuPIC > cogit minCogMethodAddress ifTrue: [
+					           numArgs: argumentCount).
+				mnuPIC asUnsignedIntegerPtr > cogit minCogMethodAddress ifTrue: [
 					cogit
 						linkSendAt: (stackPages longAt: stackPointer)
 						in: (self mframeHomeMethod: framePointer)
