@@ -994,7 +994,7 @@ CCodeGenerator >> declareModuleName: nameString [
 
 { #category : 'public' }
 CCodeGenerator >> declareVar: varName type: type [
-	"This both creates a varable and provides its type"
+	"This both creates a variable and provides its type"
 
 	self var: (variables add: varName asString) type: type
 ]
