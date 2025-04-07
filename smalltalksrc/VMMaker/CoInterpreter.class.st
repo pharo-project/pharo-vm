@@ -1940,7 +1940,7 @@ CoInterpreter >> commenceCogCompiledCodeCompaction [
 	 because only the top one will be relocated."
 	instructionPointer ~= 0 ifTrue:
 		["better not have already been pushed"
-		 self assert: self stackTop asUnsignedInteger ~= instructionPointer.
+		 self assert: self stackTop asUnsignedIntegerPtr ~= instructionPointer asUnsignedIntegerPtr.
 		 self push: instructionPointer.
 		 self writeBackHeadStackPointer].
 	
