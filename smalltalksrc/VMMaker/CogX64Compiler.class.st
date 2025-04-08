@@ -433,6 +433,13 @@ CogX64Compiler >> canZeroExtend [
 	^true
 ]
 
+{ #category : 'testing' }
+CogX64Compiler >> checkOffSetJumpIsAnInt: offset [
+
+	offset >> 32 = 0 ifFalse: [
+		self error: 'Cannot jump to distances larger than 32 bits' ]
+]
+
 { #category : 'accessing' }
 CogX64Compiler >> cmpC32RTempByteSize [
 	^5
@@ -1528,8 +1535,7 @@ CogX64Compiler >> concretizeJump [
 	self assert: jumpTarget ~= 0.
 	
 	offset := jumpTarget signedIntFromLong64 - (address + 2) signedIntFromLong64.
-	(offset >> 32) = 0 ifTrue: [ 
-		self error: 'Cannot jump to distances larger than 32 bits' ].
+	self checkOffSetJumpIsAnInt: offset.
 
 	(machineCodeSize = 0 "size not determined because no sizeJump pass; generating initial trampolines"
 		ifTrue: [self isQuick: offset]
@@ -1540,8 +1546,7 @@ CogX64Compiler >> concretizeJump [
 		 ^machineCodeSize := 2].
 	
 	offset := jumpTarget signedIntFromLong64 - (address + 5) signedIntFromLong64.
-	(offset >> 32) = 0 ifTrue: [ 
-		self error: 'Cannot jump to distances larger than 32 bits' ].
+	self checkOffSetJumpIsAnInt: offset.
 
 	machineCode
 		at: 0 put: 16rE9;
@@ -1592,9 +1597,7 @@ CogX64Compiler >> concretizeJumpLong [
 	self assert: jumpTarget ~= 0.
 	
 	offset := jumpTarget signedIntFromLong64 - (address + 5) signedIntFromLong64.
-	
-	(offset >> 32) = 0 ifTrue: [ 
-		self error: 'Cannot jump to distances larger than 32 bits' ].
+	self checkOffSetJumpIsAnInt: offset.
 	
 	machineCode
 		at: 0 put: 16rE9;
