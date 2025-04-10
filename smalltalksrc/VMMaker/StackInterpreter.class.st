@@ -6063,8 +6063,6 @@ StackInterpreter >> findNewMethodOrdinary [
 StackInterpreter >> findNewMethodOrdinaryIfFound: aBlock [
 	"Find the compiled method to be run when the current messageSelector is sent to the class 'lkupClass', setting the values of 'newMethod' and 'primitiveIndex'."
 
-	| classTag |
-	classTag := lkupClassTag.
 	^ self findNewMethodInClassTag: lkupClassTag ifFound: aBlock
 ]
 
