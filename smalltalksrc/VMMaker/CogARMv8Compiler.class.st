@@ -3302,17 +3302,31 @@ CogARMv8Compiler >> concretizeTstCqR [
 	"Will get inlined into concretizeAt: switch."
 	<var: #word type: #sqInt>
 	<inline: true>
-	| word |
+	| word register |
 	word := operands at: 0.
+	register := (operands at: 1).
+
 	self
 		encodeLogicalImmediate: word
 		registerSize: 64
 		ifPossible: [ :immediate13LogicalValue |
 			self
 				machineCodeAt: 0
-				put: (self tstSize: 1 immediate13bitValue: immediate13LogicalValue register: (operands at: 1)).
+				put: (self tstSize: 1 immediate13bitValue: immediate13LogicalValue register: register).
 			^ machineCodeSize := 4 ]
-		ifNotPossible: [ self notYetImplemented ].
+		ifNotPossible: [
+			self moveCw: word intoR: ConcreteIPReg.
+			self
+				machineCodeAt: 4
+				put: (self
+					andSetFlagsSize: 1
+					shiftedRegister: ConcreteIPReg
+					shiftType: 0
+					shiftValue: 0
+					withRegister: register
+					destinationRegister: ConcreteIPReg).
+			^ machineCodeSize := 8 "A move and an AND"
+		].
 	^ 0	"to keep Slang happy"
 ]
 
