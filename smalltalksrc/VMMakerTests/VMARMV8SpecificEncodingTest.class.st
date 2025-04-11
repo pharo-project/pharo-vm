@@ -404,3 +404,35 @@ VMARMV8SpecificEncodingTest >> testEncodeOrCqRWithNonEncodableConstant [
 	
 	self assert: machineSimulator receiverRegisterValue equals: (16r12345678 bitOr: 16r100)
 ]
+
+{ #category : 'tests - tstCqR' }
+VMARMV8SpecificEncodingTest >> testEncodeTstCqRNonEncodeable12BitConstantNonZeroResult [
+
+	| constant |
+	constant := 32768 << 3 + 1.
+	self compile: [		 
+		cogit TstCq: constant R: ReceiverResultReg ].
+	
+	machineSimulator receiverRegisterValue: 1.
+
+	self runGeneratedCode.
+	
+	"Assert result was zero"
+	self assert: machineSimulator zero not
+]
+
+{ #category : 'tests - tstCqR' }
+VMARMV8SpecificEncodingTest >> testEncodeTstCqRNonEncodeable12BitConstantZeroResult [
+
+	| constant |
+	constant := 32768 << 3 + 1.
+	self compile: [		 
+		cogit TstCq: constant R: ReceiverResultReg ].
+	
+	machineSimulator receiverRegisterValue: 2.
+
+	self runGeneratedCode.
+	
+	"Assert result was zero"
+	self assert: machineSimulator zero
+]
