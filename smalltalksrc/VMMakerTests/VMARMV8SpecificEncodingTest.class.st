@@ -409,7 +409,7 @@ VMARMV8SpecificEncodingTest >> testEncodeOrCqRWithNonEncodableConstant [
 VMARMV8SpecificEncodingTest >> testEncodeTstCqRNonEncodeable12BitConstantNonZeroResult [
 
 	| constant |
-	constant := 32768 << 3 + 1.
+	constant := 1 << 18 + 1.
 	self compile: [		 
 		cogit TstCq: constant R: ReceiverResultReg ].
 	
@@ -425,7 +425,7 @@ VMARMV8SpecificEncodingTest >> testEncodeTstCqRNonEncodeable12BitConstantNonZero
 VMARMV8SpecificEncodingTest >> testEncodeTstCqRNonEncodeable12BitConstantZeroResult [
 
 	| constant |
-	constant := 32768 << 3 + 1.
+	constant := 1 << 18 + 1.
 	self compile: [		 
 		cogit TstCq: constant R: ReceiverResultReg ].
 	
