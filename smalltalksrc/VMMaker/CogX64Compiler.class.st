@@ -433,13 +433,6 @@ CogX64Compiler >> canZeroExtend [
 	^true
 ]
 
-{ #category : 'testing' }
-CogX64Compiler >> checkOffSetJumpIsAnInt: offset [
-
-	offset >> 32 = 0 ifFalse: [
-		self error: 'Cannot jump to distances larger than 32 bits' ]
-]
-
 { #category : 'accessing' }
 CogX64Compiler >> cmpC32RTempByteSize [
 	^5
@@ -1535,7 +1528,7 @@ CogX64Compiler >> concretizeJump [
 	self assert: jumpTarget ~= 0.
 	
 	offset := jumpTarget signedIntFromLong64 - (address + 2) signedIntFromLong64.
-	self checkOffSetJumpIsAnInt: offset.
+	self is32bit: offset.
 
 	(machineCodeSize = 0 "size not determined because no sizeJump pass; generating initial trampolines"
 		ifTrue: [self isQuick: offset]
@@ -1546,7 +1539,7 @@ CogX64Compiler >> concretizeJump [
 		 ^machineCodeSize := 2].
 	
 	offset := jumpTarget signedIntFromLong64 - (address + 5) signedIntFromLong64.
-	self checkOffSetJumpIsAnInt: offset.
+	self is32bit: offset.
 
 	machineCode
 		at: 0 put: 16rE9;
@@ -1597,7 +1590,7 @@ CogX64Compiler >> concretizeJumpLong [
 	self assert: jumpTarget ~= 0.
 	
 	offset := jumpTarget signedIntFromLong64 - (address + 5) signedIntFromLong64.
-	self checkOffSetJumpIsAnInt: offset.
+	self is32bit: offset.
 	
 	machineCode
 		at: 0 put: 16rE9;
@@ -4281,6 +4274,13 @@ CogX64Compiler >> is32BitSignedImmediate: a64BitUnsignedOperand [
 	"Top 32 bits all the same as the bottom 32 bits' sign bit implies we can use a sign-extended 4 byte offset."
 	^self cCode: [(self cCoerceSimple: a64BitUnsignedOperand to: #int) = (self cCoerceSimple: a64BitUnsignedOperand to: #sqLong)]
 		inSmalltalk: [((a64BitUnsignedOperand >> 32) signedIntFromLong + 1 bitXor: 1) = (a64BitUnsignedOperand >> 31 bitAnd: 1)]
+]
+
+{ #category : 'testing' }
+CogX64Compiler >> is32bit: offset [
+
+	(offset between: -2147483648 and: 2147483647) ifFalse: [
+		self error: 'Cannot jump to distances larger than 32 bits' ]
 ]
 
 { #category : 'testing' }
