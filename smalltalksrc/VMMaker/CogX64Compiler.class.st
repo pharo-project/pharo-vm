@@ -1528,7 +1528,7 @@ CogX64Compiler >> concretizeJump [
 	self assert: jumpTarget ~= 0.
 	
 	offset := jumpTarget signedIntFromLong64 - (address + 2) signedIntFromLong64.
-	self is32bit: offset.
+	self checkIs32bit: offset.
 
 	(machineCodeSize = 0 "size not determined because no sizeJump pass; generating initial trampolines"
 		ifTrue: [self isQuick: offset]
