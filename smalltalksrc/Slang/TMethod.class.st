@@ -629,6 +629,13 @@ TMethod >> compiledMethod [
 		ifAbsent: [definingClass compiledMethodAt: properties selector]
 ]
 
+{ #category : 'accessing' }
+TMethod >> complete: aBoolean [
+
+	complete := aBoolean.
+	^ aBoolean
+]
+
 { #category : 'inlining support' }
 TMethod >> computePossibleSideEffectsInto: writtenToVars visited: visitedSelectors in: aCodeGen [
 	"Add all variables written to by this method and its callees to writtenToVars.
@@ -655,7 +662,7 @@ TMethod >> computePossibleSideEffectsInto: writtenToVars visited: visitedSelecto
 						computePossibleSideEffectsInto: writtenToVars
 						visited: visitedSelectors
 						in: aCodeGen]]].
-	writtenToGlobalVarsCache := writtenToVars copy
+	self writtenToGlobalVarsCache: writtenToVars copy
 ]
 
 { #category : 'accessing' }
@@ -3423,4 +3430,10 @@ TMethod >> variablesAssignedTo [
 TMethod >> vmNameString [
 	"return the string to use as the vm name in code generated for this method"
 	^'self'
+]
+
+{ #category : 'accessing' }
+TMethod >> writtenToGlobalVarsCache: value [
+
+	writtenToGlobalVarsCache := value
 ]
