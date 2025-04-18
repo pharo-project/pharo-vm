@@ -1539,7 +1539,7 @@ CogX64Compiler >> concretizeJump [
 		 ^machineCodeSize := 2].
 	
 	offset := jumpTarget signedIntFromLong64 - (address + 5) signedIntFromLong64.
-	self is32bit: offset.
+	self checkIs32bit: offset.
 
 	machineCode
 		at: 0 put: 16rE9;
@@ -1590,7 +1590,7 @@ CogX64Compiler >> concretizeJumpLong [
 	self assert: jumpTarget ~= 0.
 	
 	offset := jumpTarget signedIntFromLong64 - (address + 5) signedIntFromLong64.
-	self is32bit: offset.
+	self checkIs32bit: offset.
 	
 	machineCode
 		at: 0 put: 16rE9;
@@ -4277,7 +4277,7 @@ CogX64Compiler >> is32BitSignedImmediate: a64BitUnsignedOperand [
 ]
 
 { #category : 'testing' }
-CogX64Compiler >> is32bit: offset [
+CogX64Compiler >> checkIs32bit: offset [
 
 	(offset between: -2147483648 and: 2147483647) ifFalse: [
 		self error: 'Cannot jump to distances larger than 32 bits' ]
