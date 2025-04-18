@@ -1026,8 +1026,12 @@ CCodeGenerator >> doBasicInlining: inlineFlagOrSymbol [
 	"Inline the bodies of all methods that are suitable for inlining.
 	This method does only the basic inlining suitable for both the core VM and plugins - no bytecode inlining etc"
 
-	| pass progress |
+	| pass progress inliner |
 	self collectInlineList: inlineFlagOrSymbol.
+	inliner := SLInliner
+		           new
+		           codeGenerator: self;
+		           yourself.
 	pass := 0.
 	progress := true.
 	[ progress ] whileTrue: [ "repeatedly attempt to inline methods until no further progress is made"
@@ -1041,7 +1045,9 @@ CCodeGenerator >> doBasicInlining: inlineFlagOrSymbol [
 				(self sortMethods: methods) doWithIndex: [ :m :i |
 					bar value: i.
 					self currentMethod: m.
-					(m tryToInlineMethodsIn: self) ifTrue: [ progress := true ] ] ] ]
+					inliner currentMethod: m.
+					inliner tryToInlineMethodsInCurrentMethod ifTrue: [
+						progress := true ] ] ] ]
 ]
 
 { #category : 'inlining' }
