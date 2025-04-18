@@ -499,16 +499,19 @@ CoInterpreter >> activateCoggedNewMethod: inInterpreter [
 { #category : 'control primitives' }
 CoInterpreter >> activateNewFullClosure: blockClosure method: theMethod numArgs: numArgs mayContextSwitch: mayContextSwitch [
 	"Similar to activateNewMethod but for Closure and newMethod."
-	| numCopied methodHeader inInterpreter |
+
 	<inline: true>
 	<returnTypeC: #void>
-	self assert: theMethod = (objectMemory fetchPointer: FullClosureCompiledBlockIndex ofObject: blockClosure).
+	| numCopied methodHeader inInterpreter |
+	self assert: theMethod = (objectMemory
+			 fetchPointer: FullClosureCompiledBlockIndex
+			 ofObject: blockClosure).
 	methodHeader := self rawHeaderOf: theMethod.
-	(self isCogMethodReference: methodHeader) ifTrue:
-		[^self
-			executeFullCogBlock: (self cogMethodOf: theMethod)
-			closure: blockClosure
-			mayContextSwitch: mayContextSwitch].
+	(self isCogMethodReference: methodHeader) ifTrue: [
+		^ self
+			  executeFullCogBlock: (self cogMethodOf: theMethod)
+			  closure: blockClosure
+			  mayContextSwitch: mayContextSwitch ].
 
 	"How do we know when to compile a block method?
 	 One simple criterion is to check if the block is running within its inner context,
@@ -518,23 +521,22 @@ CoInterpreter >> activateNewFullClosure: blockClosure method: theMethod numArgs:
 	 method unless we try and remember which ones can't be cogged.  So also record
 	 the last block method we failed to compile and avoid recompiling it."
 	(self methodWithHeaderShouldBeCogged: methodHeader)
-		ifTrue:
-			[((self isInstructionPointerInInterpreter: instructionPointer) not "If from machine code (via value primitive) attempt jitting"
-			  or: [theMethod = lastCoggableInterpretedBlockMethod]) "If from interpreter and repeat block, attempt jitting"
-				ifTrue:
-					[theMethod ~= lastUncoggableInterpretedBlockMethod ifTrue: [
+		ifTrue: [
+			((self isInstructionPointerInInterpreter: instructionPointer) not
+				 or: [ theMethod = lastCoggableInterpretedBlockMethod ])
+				ifTrue: [
+					theMethod ~= lastUncoggableInterpretedBlockMethod ifTrue: [
 						numCopied := self copiedValueCountOfFullClosure: blockClosure.
 						cogit cogFullBlockMethod: theMethod numCopied: numCopied.
-						 (self methodHasCogMethod: theMethod) ifTrue:
-							[^self executeFullCogBlock: (self cogMethodOf: theMethod)
-								closure: blockClosure
-								mayContextSwitch: mayContextSwitch].
-						 cogCompiledCodeCompactionCalledFor ifFalse:
-							[lastUncoggableInterpretedBlockMethod := theMethod]]]
-				ifFalse:
-					[lastCoggableInterpretedBlockMethod := theMethod]]
-		ifFalse:
-			[self maybeFlagMethodAsInterpreted: theMethod].
+						(self methodHasCogMethod: theMethod) ifTrue: [
+							^ self
+								  executeFullCogBlock: (self cogMethodOf: theMethod)
+								  closure: blockClosure
+								  mayContextSwitch: mayContextSwitch ].
+						cogCompiledCodeCompactionCalledFor ifFalse: [
+							lastUncoggableInterpretedBlockMethod := theMethod ] ] ]
+				ifFalse: [ lastCoggableInterpretedBlockMethod := theMethod ] "If from machine code (via value primitive) attempt jitting" "If from interpreter and repeat block, attempt jitting" ]
+		ifFalse: [ self maybeFlagMethodAsInterpreted: theMethod ].
 
 	self assert: (self methodHasCogMethod: theMethod) not.
 	"Because this is an uncogged method we need to continue via the interpreter.
@@ -546,11 +548,17 @@ CoInterpreter >> activateNewFullClosure: blockClosure method: theMethod numArgs:
 	 then make sure we restore the saved instruction pointer and avoid pushing
 	 ceReturnToInterpreterPC which is only valid between an interpreter caller
 	 frame and a machine code callee frame."
-	(inInterpreter := self isInstructionPointerInInterpreter: instructionPointer) ifFalse:
-		[instructionPointer = cogit ceReturnToInterpreterPC ifTrue:
-			[instructionPointer := self iframeSavedIP: framePointer]].
-	
-	^ super activateNewFullClosure: blockClosure method: theMethod numArgs: numArgs mayContextSwitch: mayContextSwitch
+	(inInterpreter := self isInstructionPointerInInterpreter:
+		                  instructionPointer) ifFalse: [
+		instructionPointer asUnsignedIntegerPtr
+		= cogit ceReturnToInterpreterPC ifTrue: [
+			instructionPointer := self iframeSavedIP: framePointer ] ].
+
+	^ super
+		  activateNewFullClosure: blockClosure
+		  method: theMethod
+		  numArgs: numArgs
+		  mayContextSwitch: mayContextSwitch
 ]
 
 { #category : 'message sending' }
@@ -952,23 +960,31 @@ CoInterpreter >> ceBaseFrameReturn: returnValue [
 	 its state as soon as the stack pointer has been cut-back beyond the return pc.  So to have
 	 a context to send the cannotReturn: message to we also store the base frame's context
 	 in the second word of the stack page."
+
 	<api>
-	| contextToReturnTo contextToReturnFrom isAContext thePage newPage frameAbove |
 	<var: #thePage type: #'StackPage *'>
 	<var: #newPage type: #'StackPage *'>
 	<var: #frameAbove type: #'char *'>
+	| contextToReturnTo contextToReturnFrom isAContext thePage newPage frameAbove |
 	self assert: (stackPages stackPageFor: stackPointer) = stackPage.
 	self assert: stackPages mostRecentlyUsedPage = stackPage.
 	cogit assertCStackWellAligned.
 	self assert: framePointer = 0.
-	self assert: stackPointer <= (stackPage baseAddress - objectMemory wordSize).
-	self assert: stackPage baseFP + (2 * objectMemory wordSize) < stackPage baseAddress.
+	self assert:
+		stackPointer <= (stackPage baseAddress - objectMemory wordSize).
+	self assert:
+		stackPage baseFP + (2 * objectMemory wordSize)
+		< stackPage baseAddress.
 	"We would like to use the following assert but we can't since the stack pointer will be above the
 	 base frame pointer in the base frame return and hence the 0 a base frame pointer points at could
 	 be overwritten which will cause the isBaseFrame assert in frameCallerContext: to fail."
 	"self assert: (self frameCallerContext: stackPage baseFP) = (stackPages longAt: stackPage baseAddress)."
-	self assert: ((objectMemory addressCouldBeObj: (stackPages longAt: stackPage baseAddress - objectMemory wordSize))
-				and: [objectMemory isContext: (stackPages longAt: stackPage baseAddress - objectMemory wordSize)]).
+	self assert: ((objectMemory addressCouldBeObj:
+			  (stackPages longAt: stackPage baseAddress - objectMemory wordSize))
+			 and: [
+				 objectMemory isContext:
+					 (stackPages longAt:
+						  stackPage baseAddress - objectMemory wordSize) ]).
 	contextToReturnTo := stackPages longAt: stackPage baseAddress.
 	self assert: (objectMemory addressCouldBeObj: contextToReturnTo).
 
@@ -980,49 +996,55 @@ CoInterpreter >> ceBaseFrameReturn: returnValue [
 	 ordering invariant, use the assert-free version."
 	stackPages freeStackPageNoAssert: stackPage.
 	isAContext := objectMemory isContext: contextToReturnTo.
-	(isAContext
-	 and: [self isStillMarriedContext: contextToReturnTo])
-		ifTrue:
-			[framePointer := self frameOfMarriedContext: contextToReturnTo.
-			 thePage := stackPages stackPageFor: framePointer.
-			 framePointer = thePage headFP
-				ifTrue:
-					[stackPointer := thePage headSP]
-				ifFalse:
-					["Returning to some interior frame, presumably because of a sender assignment.
+	(isAContext and: [ self isStillMarriedContext: contextToReturnTo ])
+		ifTrue: [
+			framePointer := self frameOfMarriedContext: contextToReturnTo.
+			thePage := stackPages stackPageFor: framePointer.
+			framePointer = thePage headFP
+				ifTrue: [ stackPointer := thePage headSP ]
+				ifFalse: [ "Returning to some interior frame, presumably because of a sender assignment.
 					  Move the frames above to another page (they may be in use, e.g. via coroutining).
 					  Make the interior frame the top frame."
-					 frameAbove := self findFrameAbove: framePointer inPage: thePage.
-					 "Since we've just deallocated a page we know that newStackPage won't deallocate an existing one."
-					 newPage := stackPages newStackPage.
-					 self assert: newPage = stackPage.
-					 self moveFramesIn: thePage through: frameAbove toPage: newPage.
-					 stackPages markStackPageMostRecentlyUsed: newPage.
-					 self setStackPointersFromPage: thePage]]
-		ifFalse:
-			[(isAContext
-			  and: [objectMemory isIntegerObject: (objectMemory fetchPointer: InstructionPointerIndex ofObject: contextToReturnTo)]) ifFalse:
-				[contextToReturnFrom := stackPages longAt: stackPage baseAddress - objectMemory wordSize.
-				 self tearDownAndRebuildFrameForCannotReturnBaseFrameReturnFrom: contextToReturnFrom
+					frameAbove := self findFrameAbove: framePointer inPage: thePage.
+					"Since we've just deallocated a page we know that newStackPage won't deallocate an existing one."
+					newPage := stackPages newStackPage.
+					self assert: newPage = stackPage.
+					self moveFramesIn: thePage through: frameAbove toPage: newPage.
+					stackPages markStackPageMostRecentlyUsed: newPage.
+					self setStackPointersFromPage: thePage ] ]
+		ifFalse: [
+			(isAContext and: [
+				 objectMemory isIntegerObject: (objectMemory
+						  fetchPointer: InstructionPointerIndex
+						  ofObject: contextToReturnTo) ]) ifFalse: [
+				contextToReturnFrom := stackPages longAt:
+					                       stackPage baseAddress
+					                       - objectMemory wordSize.
+				self
+					tearDownAndRebuildFrameForCannotReturnBaseFrameReturnFrom:
+					contextToReturnFrom
 					to: contextToReturnTo
 					returnValue: returnValue.
-				^self externalCannotReturn: returnValue from: contextToReturnFrom].
-			 thePage := self makeBaseFrameFor: contextToReturnTo.
-			 self setStackPointersFromPage: thePage].
+				^ self externalCannotReturn: returnValue from: contextToReturnFrom ].
+			thePage := self makeBaseFrameFor: contextToReturnTo.
+			self setStackPointersFromPage: thePage ].
 	self setStackPageAndLimit: thePage.
 	self assert: (stackPages stackPageFor: framePointer) = stackPage.
-	(self isMachineCodeFrame: framePointer) ifTrue:
-		[self push: returnValue.
-		 self callEnilopmart: #ceEnterCogCodePopReceiverReg.
-		 self unreachable].
+	(self isMachineCodeFrame: framePointer) ifTrue: [
+		self push: returnValue.
+		self callEnilopmart: #ceEnterCogCodePopReceiverReg.
+		self unreachable ].
 	instructionPointer := self stackTop.
-	instructionPointer = cogit ceReturnToInterpreterPC ifTrue:
-		[instructionPointer := self iframeSavedIP: framePointer].
+	instructionPointer asUnsignedIntegerPtr
+	= cogit ceReturnToInterpreterPC ifTrue: [
+		instructionPointer := self iframeSavedIP: framePointer ].
 	self setMethod: (self iframeMethod: framePointer).
 	self stackTopPut: returnValue. "a.k.a. pop saved ip then push result"
-	self assert: (self checkIsStillMarriedContext: contextToReturnTo currentFP: framePointer).
+	self assert: (self
+			 checkIsStillMarriedContext: contextToReturnTo
+			 currentFP: framePointer).
 	self siglong: reenterInterpreter jmp: ReturnToInterpreter.
-	^self unreachable
+	^ self unreachable
 ]
 
 { #category : 'trampolines' }
@@ -1918,7 +1940,7 @@ CoInterpreter >> commenceCogCompiledCodeCompaction [
 	 because only the top one will be relocated."
 	instructionPointer ~= 0 ifTrue:
 		["better not have already been pushed"
-		 self assert: self stackTop asUnsignedInteger ~= instructionPointer.
+		 self assert: self stackTop asUnsignedIntegerPtr ~= instructionPointer asUnsignedIntegerPtr.
 		 self push: instructionPointer.
 		 self writeBackHeadStackPointer].
 	
@@ -2284,20 +2306,27 @@ CoInterpreter >> enterSmalltalkExecutiveImplementation [
 	 pointers so that calls from machine-code into the C run-time occur at this level.
 	 This is the actual implementation, separated from enterSmalltalkExecutive so the
 	 simulator can wrap it in an exception handler and hence simulate the setjmp/longjmp."
+
 	<inline: false>
 	cogit assertCStackWellAligned.
 	cogit ceCaptureCStackPointers.
 	"Setjmp for reentry into interpreter from elsewhere, e.g. machine-code trampolines."
 	self sigset: reenterInterpreter jmp: 0.
-	(self isMachineCodeFrame: framePointer) ifTrue:
-		[self returnToExecutive: false postContextSwitch: true.
-		 self unreachable].
+	(self isMachineCodeFrame: framePointer) ifTrue: [
+		self returnToExecutive: false postContextSwitch: true.
+		self unreachable ].
 	self setMethod: (self iframeMethod: framePointer).
-	instructionPointer = cogit ceReturnToInterpreterPC ifTrue:
-		[instructionPointer := self iframeSavedIP: framePointer].
-	self assertValidExecutionPointe: instructionPointer r: framePointer s: stackPointer imbar: true line: #'__LINE__'.
+	instructionPointer asUnsignedIntegerPtr
+	= cogit ceReturnToInterpreterPC ifTrue: [
+		instructionPointer := self iframeSavedIP: framePointer ].
+	self
+		assertValidExecutionPointe: instructionPointer
+		r: framePointer
+		s: stackPointer
+		imbar: true
+		line: #__LINE__.
 	self interpret.
-	^0
+	^ 0
 ]
 
 { #category : 'enilopmarts' }
@@ -2947,8 +2976,8 @@ CoInterpreter >> handleUnlinkedSendFor: maybeForwardedSelector to: receiver isSu
 					           cogMNUPICSelector: messageSelector
 					           receiver: receiver
 					           methodOperand: (self mnuMethodOrNilFor: receiver)
-					           numArgs: argumentCount) asUnsignedInteger.
-				mnuPIC > cogit minCogMethodAddress ifTrue: [
+					           numArgs: argumentCount).
+				mnuPIC asUnsignedIntegerPtr > cogit minCogMethodAddress ifTrue: [
 					cogit
 						linkSendAt: (stackPages longAt: stackPointer)
 						in: (self mframeHomeMethod: framePointer)
@@ -4545,21 +4574,31 @@ CoInterpreter >> return: returnValue toExecutive: inInterpreter [
 	 longjmp-ing back to the interpreter or simply returning, depending on where we are."
 
 	cogit assertCStackWellAligned.
-	(self isMachineCodeFrame: framePointer) ifTrue:
-		[self assertValidExecutionPointe: instructionPointer r: framePointer s: stackPointer imbar: false line: #'__LINE__'.
-		 self push: instructionPointer.
-		 self push: returnValue.
-		 self callEnilopmart: #ceEnterCogCodePopReceiverReg.
-		 self unreachable].
+	(self isMachineCodeFrame: framePointer) ifTrue: [
+		self
+			assertValidExecutionPointe: instructionPointer
+			r: framePointer
+			s: stackPointer
+			imbar: false
+			line: #__LINE__.
+		self push: instructionPointer.
+		self push: returnValue.
+		self callEnilopmart: #ceEnterCogCodePopReceiverReg.
+		self unreachable ].
 	self push: returnValue.
 	self setMethod: (self iframeMethod: framePointer).
-	self assertValidExecutionPointe: instructionPointer r: framePointer s: stackPointer imbar: true line: #'__LINE__'.
-	instructionPointer = cogit ceReturnToInterpreterPC ifTrue:
-		[instructionPointer := self iframeSavedIP: framePointer].
-	inInterpreter ifTrue:
-		[^nil].
+	self
+		assertValidExecutionPointe: instructionPointer
+		r: framePointer
+		s: stackPointer
+		imbar: true
+		line: #__LINE__.
+	instructionPointer asUnsignedIntegerPtr
+	= cogit ceReturnToInterpreterPC ifTrue: [
+		instructionPointer := self iframeSavedIP: framePointer ].
+	inInterpreter ifTrue: [ ^ nil ].
 	self siglong: reenterInterpreter jmp: ReturnToInterpreter.
-	^self unreachable
+	^ self unreachable
 ]
 
 { #category : 'trampolines' }
@@ -4577,44 +4616,59 @@ CoInterpreter >> returnToExecutive: inInterpreter postContextSwitch: switchedCon
 	 machine code.  The instructionPointer tells us where from.  If it is above startOfMemory we're
 	 in the interpreter.  If it is below, then we are in machine-code unless it is ceReturnToInterpreterPC,
 	 in which case we're in a machine-code primitive called from the interpreter."
-	<inline: false>
-	| cogMethod retValue fullyInInterpreter |
-	<var: #cogMethod type: #'CogMethod *'>
 
+	<inline: false>
+	<var: #cogMethod type: #'CogMethod *'>
+	| cogMethod retValue fullyInInterpreter |
 	cogit assertCStackWellAligned.
-	(self isMachineCodeFrame: framePointer) ifTrue:
-		[self assertValidExecutionPointe: instructionPointer r: framePointer s: stackPointer imbar: false line: #'__LINE__'.
-		 "If returning after a context switch then a result may have to be popped from the stack.
+	(self isMachineCodeFrame: framePointer) ifTrue: [
+		self
+			assertValidExecutionPointe: instructionPointer
+			r: framePointer
+			s: stackPointer
+			imbar: false
+			line: #__LINE__.
+		"If returning after a context switch then a result may have to be popped from the stack.
 		  If the process is suspended at a send then the result of the primitive in which the
 		  process was suspended is still on the stack and must be popped into ReceiverResultReg.
 		  If not, nothing should be popped and ReceiverResultReg gets the receiver."
-		 switchedContext
-			ifTrue:
-				[cogMethod := self mframeCogMethod: framePointer.
-				self assert: (instructionPointer asUnsignedInteger > cogit minCogMethodAddress 
-							and: [instructionPointer asUnsignedInteger < cogit maxCogMethodAddress]).
-				 (instructionPointer ~= (cogMethod asInteger + cogMethod stackCheckOffset)
-				  and: [cogit isSendReturnPC: instructionPointer])
-					ifTrue:
-						[self assert: (objectMemory addressCouldBeOop: self stackTop).
-						 retValue := self popStack]
-					ifFalse:
-						[retValue := self mframeReceiver: framePointer]]
-			ifFalse: [retValue := self mframeReceiver: framePointer].
-		 self push: instructionPointer.
-		 self push: retValue.
-		 self callEnilopmart: #ceEnterCogCodePopReceiverReg.
-		 self unreachable].
+		switchedContext
+			ifTrue: [
+				cogMethod := self mframeCogMethod: framePointer.
+				self assert:
+					(instructionPointer asUnsignedIntegerPtr
+					 > cogit minCogMethodAddress and: [
+						 instructionPointer asUnsignedIntegerPtr
+						 < cogit maxCogMethodAddress ]).
+				(instructionPointer asUnsignedIntegerPtr
+				 ~= (cogMethod asInteger + cogMethod stackCheckOffset) and: [
+					 cogit isSendReturnPC: instructionPointer ])
+					ifTrue: [
+						self assert: (objectMemory addressCouldBeOop: self stackTop).
+						retValue := self popStack ]
+					ifFalse: [ retValue := self mframeReceiver: framePointer ] ]
+			ifFalse: [ retValue := self mframeReceiver: framePointer ].
+		self push: instructionPointer.
+		self push: retValue.
+		self callEnilopmart: #ceEnterCogCodePopReceiverReg.
+		self unreachable ].
 	self setMethod: (self iframeMethod: framePointer).
 	fullyInInterpreter := inInterpreter.
-	instructionPointer = cogit ceReturnToInterpreterPC ifTrue:
-		[instructionPointer := (self iframeSavedIP: framePointer) asUnsignedInteger.
-		 fullyInInterpreter := false].
-	self assertValidExecutionPointe: instructionPointer r: framePointer s: stackPointer imbar: true line: #'__LINE__'.
-	fullyInInterpreter ifFalse:
-		[self siglong: reenterInterpreter jmp: ReturnToInterpreter.
-		 self unreachable].
-	^nil
+	instructionPointer asUnsignedIntegerPtr
+	= cogit ceReturnToInterpreterPC ifTrue: [
+		instructionPointer := (self iframeSavedIP: framePointer)
+			                      asUnsignedIntegerPtr.
+		fullyInInterpreter := false ].
+	self
+		assertValidExecutionPointe: instructionPointer
+		r: framePointer
+		s: stackPointer
+		imbar: true
+		line: #__LINE__.
+	fullyInInterpreter ifFalse: [
+		self siglong: reenterInterpreter jmp: ReturnToInterpreter.
+		self unreachable ].
+	^ nil
 ]
 
 { #category : 'return bytecodes' }
