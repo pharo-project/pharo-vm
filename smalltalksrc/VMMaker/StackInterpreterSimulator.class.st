@@ -551,9 +551,8 @@ StackInterpreterSimulator >> framePointer [
 ]
 
 { #category : 'interpreter shell' }
-StackInterpreterSimulator >> functionPointerFor: primIndex inClass: lookupClass [
-	"Override Interpreter to handle the external primitives caching.  See also
-	 internalExecuteNewMethod."
+StackInterpreterSimulator >> functionPointerFor: primIndex [
+	"Override Interpreter to handle the external primitives caching."
 
 	^(primIndex between: 1 and: MaxPrimitiveIndex)
 		ifTrue: [primitiveTable at: primIndex + 1]
