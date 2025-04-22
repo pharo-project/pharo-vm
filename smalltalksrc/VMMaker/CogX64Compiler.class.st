@@ -1526,7 +1526,10 @@ CogX64Compiler >> concretizeJump [
 	(self isAnInstruction: jumpTarget) ifTrue:
 		[jumpTarget := cogit cCoerceSimple: jumpTarget address to: #'AbstractInstruction *'].
 	self assert: jumpTarget ~= 0.
-	offset := jumpTarget signedIntFromLong - (address + 2) signedIntFromLong.
+	
+	offset := jumpTarget signedIntFromLong64 - (address + 2) signedIntFromLong64.
+	self checkIs32bit: offset.
+
 	(machineCodeSize = 0 "size not determined because no sizeJump pass; generating initial trampolines"
 		ifTrue: [self isQuick: offset]
 		ifFalse: [machineCodeSize = 2]) ifTrue:
@@ -1534,7 +1537,10 @@ CogX64Compiler >> concretizeJump [
 			at: 0 put: 16rEB;
 			at: 1 put: (offset bitAnd: 16rFF).
 		 ^machineCodeSize := 2].
-	offset := jumpTarget signedIntFromLong - (address + 5) signedIntFromLong.
+	
+	offset := jumpTarget signedIntFromLong64 - (address + 5) signedIntFromLong64.
+	self checkIs32bit: offset.
+
 	machineCode
 		at: 0 put: 16rE9;
 		at: 1 put: (offset bitAnd: 16rFF);
@@ -1582,7 +1588,10 @@ CogX64Compiler >> concretizeJumpLong [
 	(self isAnInstruction: jumpTarget) ifTrue:
 		[jumpTarget := cogit cCoerceSimple: jumpTarget address to: #'AbstractInstruction *'].
 	self assert: jumpTarget ~= 0.
-	offset := jumpTarget signedIntFromLong - (address + 5) signedIntFromLong.
+	
+	offset := jumpTarget signedIntFromLong64 - (address + 5) signedIntFromLong64.
+	self checkIs32bit: offset.
+	
 	machineCode
 		at: 0 put: 16rE9;
 		at: 1 put: (offset bitAnd: 16rFF);
@@ -4265,6 +4274,13 @@ CogX64Compiler >> is32BitSignedImmediate: a64BitUnsignedOperand [
 	"Top 32 bits all the same as the bottom 32 bits' sign bit implies we can use a sign-extended 4 byte offset."
 	^self cCode: [(self cCoerceSimple: a64BitUnsignedOperand to: #int) = (self cCoerceSimple: a64BitUnsignedOperand to: #sqLong)]
 		inSmalltalk: [((a64BitUnsignedOperand >> 32) signedIntFromLong + 1 bitXor: 1) = (a64BitUnsignedOperand >> 31 bitAnd: 1)]
+]
+
+{ #category : 'testing' }
+CogX64Compiler >> checkIs32bit: offset [
+
+	(offset between: -2147483648 and: 2147483647) ifFalse: [
+		self error: 'Cannot jump to distances larger than 32 bits' ]
 ]
 
 { #category : 'testing' }

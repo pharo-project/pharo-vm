@@ -2205,6 +2205,8 @@ StackInterpreter >> assertValidStackLimits: ln [
 StackInterpreter >> baseFrameArguments: baseFrameFP inPage: thePage do: aBlock [
 	"Iterate the arguments of the base frame of a given page."
 
+	<var: #baseFrameFP type: 'char *'>
+	
 	| baseFrameArgumentSP |
 	"Skip the caller saved IP slot containing the caller context"
 	baseFrameArgumentSP := baseFrameFP + FoxCallerSavedIP
@@ -14786,8 +14788,9 @@ StackInterpreter >> stackPointerIndexForFrame: theFP [
 { #category : 'frame access' }
 StackInterpreter >> stackPointerIndexForFrame: theFP WithSP: theSP [
 	"Return the 1-based index rel to the given frame"
-
 	"In the StackInterpreter stacks grow down."
+
+	<returnTypeC: #usqInt>
 
 	^ (self frameReceiverLocation: theFP) - theSP
 	  >> objectMemory shiftForWord + (self frameNumArgs: theFP)

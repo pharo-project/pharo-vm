@@ -1755,10 +1755,10 @@ CogAbstractInstruction >> unalignedLongAt: byteAddress [
 	self
 		cCode: [
 			| readValue |
-			self
-				memcpy: (self addressOf: readValue)
-				_: byteAddress
-				_: (self sizeof: readValue).
+			self cCall: 'memcpy' withArguments: {
+					(self addressOf: readValue).
+					byteAddress.
+					(self sizeof: readValue) }.
 			^ readValue ]
 		inSmalltalk: [ ^ objectMemory unalignedLongAt: byteAddress ]
 ]
