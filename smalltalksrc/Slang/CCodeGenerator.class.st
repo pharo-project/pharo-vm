@@ -3523,9 +3523,6 @@ CCodeGenerator >> isConstantNode: aNode valueInto: aBlock [
 			ifTrue: [ ^ false ].
 		aBlock value: aNode value.
 		^ true ].
-	(aNode isVariable and: [ aNode name = #nil ]) ifTrue: [ 
-		aBlock value: nil.
-		^ true ].
 	aNode isSend ifTrue: [ 
 		(self anyMethodNamed: aNode selector)
 			ifNil: [ 

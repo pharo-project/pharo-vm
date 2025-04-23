@@ -207,15 +207,17 @@ AbstractComposedImageAccess >> readLineFrom: file into: lineBuffer ofSize: buffe
 { #category : 'segments' }
 AbstractComposedImageAccess >> segmentDataFile: segmentIndex inImage: imageFileName [
 
-	<inline: true>
+	<inline: #always>
 	<var: #buffer declareC: 'char buffer[255]'>
-
 	| buffer |
-		
 	self simulationOnly: [ buffer := nil ].
-		
-	^ self segmentFileName: segmentIndex withExtension: '.data' inImage: imageFileName into: buffer bufferSize: 255.
 
+	^ self
+		  segmentFileName: segmentIndex
+		  withExtension: '.data'
+		  inImage: imageFileName
+		  into: buffer
+		  bufferSize: 255
 ]
 
 { #category : 'segments' }

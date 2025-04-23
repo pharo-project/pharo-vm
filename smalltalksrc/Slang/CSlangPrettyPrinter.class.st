@@ -32,40 +32,45 @@ CSlangPrettyPrinter >> expressionListHasNonCommentStatementAfter: expressions fu
 ]
 
 { #category : 'testing' }
-CSlangPrettyPrinter >> expressionListNeedAComma: expressions current: e futureIndex: futureIndex commentSeries: commentSeries [
-	"handle space, comma and comment in visitExpressionList, comments only comes from inlining in an expressionList. ensure comments are not considered as element of the list and are linked to theirs respective methods. if the list contains an empty inlined method we can have a potential series of comments  that shouldn't be considered as element, hence the boolean commentSeries. Return if a comma is needed and if the comment series continue/start.
-	"
+CSlangPrettyPrinter >> expressionListNeedAComma: expressions current: currentExpression futureIndex: futureIndex commentSeries: inCommentSeries [
+	"handle space, comma and comment in visitExpressionList, comments only comes from inlining in an expressionList. ensure comments are not considered as element of the list and are linked to their respective methods. if the list contains an empty inlined method we can have a potential series of comments  that shouldn't be considered as element, hence the boolean isCommentSeries. Return if a comma is needed and if the comment series continue/start."
 
-	| next currentRequiredEndSeparator futureRequireBeginningSeparator continueCommentSeries currentIsEndComment nextIsBeginComment |
+	| nextExpression futureRequireBeginningSeparator continueCommentSeries currentExpressionIsBeginComment currentExpressionIsEndComment nextExpressionIsBeginComment |
 	futureIndex > expressions size ifTrue: [ ^ { false. false } ].
-	next := expressions at: futureIndex.
 
-	currentIsEndComment := e isComment and: [
-		                       e comment beginsWith: #' end' ].
-	nextIsBeginComment := next isComment and: [
-		                      next comment beginsWith: #' begin' ].
+	nextExpression := expressions at: futureIndex.
 
-	(currentIsEndComment and: [
-		 nextIsBeginComment and: [ commentSeries ] ]) ifTrue: [
+	currentExpressionIsEndComment := currentExpression isComment and: [
+		                                 currentExpression comment
+			                                 beginsWith: #' end' ].
+	currentExpressionIsBeginComment := currentExpression isComment and: [
+		                                   currentExpression comment
+			                                   beginsWith: #' begin' ].
+
+	nextExpressionIsBeginComment := nextExpression isComment and: [
+		                                nextExpression comment beginsWith:
+			                                #' begin' ].
+
+	(currentExpressionIsEndComment and: [
+		 nextExpressionIsBeginComment and: [ inCommentSeries ] ]) ifTrue: [
 		^ { false. true } ].
 
-	continueCommentSeries := (commentSeries and: [
-		                          e isComment and: [ next isComment ] ])
-		                         or: [ nextIsBeginComment ].
-	currentRequiredEndSeparator := e isEmpty not and: [
-		                               e isComment not or: [
-			                               currentIsEndComment ] ].
-	futureRequireBeginningSeparator := next isEmpty not and: [
-		                                   next isComment not or: [
-			                                   nextIsBeginComment and: [
+	continueCommentSeries := (inCommentSeries and: [
+		                          currentExpression isComment ]) or: [
+		                         inCommentSeries not and: [
+			                         currentExpressionIsBeginComment ] ].
+
+
+	futureRequireBeginningSeparator := nextExpression isComment not or: [
+		                                   nextExpressionIsBeginComment
+			                                   and: [
 				                                   self
 					                                   expressionListHasNonCommentStatementAfter:
 					                                   expressions
-					                                   futureIndex: futureIndex ] ] ].
+					                                   futureIndex: futureIndex ] ].
 
 	^ {
-		  (currentRequiredEndSeparator and: [
-			   futureRequireBeginningSeparator ]).
+		  (continueCommentSeries not and: [ futureRequireBeginningSeparator ]).
 		  continueCommentSeries }
 ]
 
@@ -319,11 +324,11 @@ CSlangPrettyPrinter >> visitEmptyStatement: anEmptyStatement [
 { #category : 'generated' }
 CSlangPrettyPrinter >> visitExpressionList: anExpressionList [
 
-	| needCommaAndCommentSeries futureIndex expressions commentSeries |
+	| needCommaAndCommentSeries futureIndex expressions inCommentSeries |
 	stream nextPut: $(.
 	futureIndex := 1.
 	expressions := anExpressionList expressions.
-	commentSeries := true.
+	inCommentSeries := true.
 	expressions
 		do: [ :e |
 			e acceptVisitor: self.
@@ -332,8 +337,8 @@ CSlangPrettyPrinter >> visitExpressionList: anExpressionList [
 				                             expressionListNeedAComma: expressions
 				                             current: e
 				                             futureIndex: futureIndex
-				                             commentSeries: commentSeries.
-			commentSeries := needCommaAndCommentSeries second ]
+				                             commentSeries: inCommentSeries.
+			inCommentSeries := needCommaAndCommentSeries second ]
 		separatedBy: [
 			needCommaAndCommentSeries first
 				ifFalse: [ stream nextPutAll: ' ' ]
