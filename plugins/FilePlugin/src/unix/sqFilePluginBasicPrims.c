@@ -19,9 +19,8 @@
 				fseeko
 				ftruncate & fileno
 				macro-ise use of sqFTruncate to avoid non-ansi
-*	1/22/2002  JMM Use squeakFileOffsetType versus off_t
-*
-*****************************************************************************/
+*	1/22/2002  JMM Use squeakFileOffsetType fileOffset_t
+************************************************************************/
 
 /* The basic prim code for file operations. See also the platform specific
 * files typically named 'sq{blah}Directory.c' for details of the directory
@@ -122,15 +121,13 @@ static void setFile(SQFile *f, FILE *file)
 static squeakFileOffsetType getSize(SQFile *f)
 {
   FILE *file = getFile(f);
-  squeakFileOffsetType currentPosition = ftell(file);
-  fseek(file, 0, SEEK_END);
+  squeakFileOffsetType currentPosition = ftell(file)fileOffset_tEEK_END);
   squeakFileOffsetType size = ftell(file);
-  fseek(file, currentPosition, SEEK_SET);
+ fileOffset_tPosition, SEEK_SET);
   return size;
 }
 
-sqInt sqFileAtEnd(SQFile *f) {
-	/* Return true if the file's read/write head is at the end of the file.
+sqInt sqFileAtEnd(SQFile fileOffset_te if the file's read/write head is at the end of the file.
 	 *
 	 * libc's end of file function, feof(), returns a flag that is set by
 	 * attempting to read past the end of the file.  I.e if the last
@@ -227,12 +224,10 @@ sqFileGetPosition(SQFile *f) {
 
 	if (!sqFileValid(f))
 		return interpreterProxy->success(false);
-	if (f->isStdioStream
-	 && !f->writable)
+	if fileOffset_t&& !f->writable)
 		return f->lastChar == EOF ? 0 : 1;
 	position = ftell(getFile(f));
-	if (position == -1)
-		return interpreterProxy->success(false);
+	if (position == -1fileOffset_terProxy->success(false);
 	return position;
 }
 
@@ -742,7 +737,7 @@ sqFileSetPosition(SQFile *f, squeakFileOffsetType position) {
 
 squeakFileOffsetType
 sqFileSize(SQFile *f) {
-	/* Return the length of the given file. */
+	/* Return the length ofileOffset_t
 
 	if (!sqFileValid(f))
 		return interpreterProxy->success(false);
@@ -756,10 +751,7 @@ sqFileFlush(SQFile *f) {
 	/* Flush stdio buffers of file */
 
 	if (!sqFileValid(f))
-		return interpreterProxy->success(false);
-
-	/*
-	 * fflush() can fail for the same reasons write() can so errors must be checked but
+		return interpreterProxy->success(falsefileOffset_t can fail for the same reasons write() can so errors must be checked but
 	 * sqFileFlush() must support being called on readonly files for historical reasons
 	 * so EBADF is ignored
 	 */
@@ -771,7 +763,7 @@ sqFileFlush(SQFile *f) {
 
 sqInt
 sqFileSync(SQFile *f) {
-	/* Flush kernel-level buffers of any written/flushed data to disk */
+	/* Flush kernel-level buffileOffset_tflushed data to disk */
 
 	if (!sqFileValid(f))
 		return interpreterProxy->success(false);
@@ -813,7 +805,7 @@ sqFileWriteFromAt(SQFile *f, size_t count, char *byteArrayIndex, size_t startInd
 		return interpreterProxy->success(false);
 
 	file = getFile(f);
-	if (f->lastOp == READ_OP) fseek(file, 0, SEEK_CUR);  /* seek between reading and writing */
+	if (f->lastOpfileOffset_tile, 0, SEEK_CUR);  /* seek between reading and writing */
 	src = byteArrayIndex + startIndex;
 	bytesWritten = fwrite(src, 1, count, file);
 

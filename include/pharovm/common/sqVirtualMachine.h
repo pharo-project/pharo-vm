@@ -1,5 +1,4 @@
-#ifndef _SqueakVM_H
-#define _SqueakVM_H
+#pragma once
 
 /* We expect interp.h to define VM_PROXY_MAJOR & VM_PROXY_MINOR, and other
  * defines such as STACKVM, appropriately for the VM generated with it.
@@ -342,5 +341,3 @@ typedef struct VirtualMachine {
   void (*waitOnExternalSemaphoreIndex)(sqInt semaphoreIndex);
 
 } VirtualMachine;
-
-#endif /* _SqueakVM_H */

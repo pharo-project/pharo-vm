@@ -4,7 +4,6 @@
   /* For Apple's OS X versions of darwin */
 # include <MacTypes.h>
 #endif
-#define macintoshSqueak 1
 
 # if defined(SQ_CONFIG_DONE)
 #   error configuration conflict

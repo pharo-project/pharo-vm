@@ -3712,13 +3712,6 @@ InterpreterPrimitives >> primitiveSquareRoot [
 		ifFalse: [self primitiveFail]
 ]
 
-{ #category : 'process primitives' }
-InterpreterPrimitives >> primitiveStartVMProfiling [
-	"Primitive. Start the VM profiler."
-	self cCode: 'ioControlProfile(1,0,0,0,0)'.
-	self pop: argumentCount
-]
-
 { #category : 'indexing primitives' }
 InterpreterPrimitives >> primitiveStringAt [
 

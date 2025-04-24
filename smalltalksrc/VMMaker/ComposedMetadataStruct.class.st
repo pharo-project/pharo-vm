@@ -23,11 +23,11 @@ ComposedMetadataStruct class >> instVarNamesAndTypesForTranslationDo: aBinaryBlo
 	"enumerate aBinaryBlock with the names and C type strings for the inst vars to include in a struct of this type."
 
 	<var: #dataSize type: #size_t>
-	<var: #startAddress type: #squeakFileOffsetType>
+	<var: #startAddress type: #fileOffset_t>
 
 	aBinaryBlock
 		value: 'dataSize' value:'size_t';
-		value: 'startAddress' value:'squeakFileOffsetType'.
+		value: 'startAddress' value:'fileOffset_t'.
 	
 
 ]

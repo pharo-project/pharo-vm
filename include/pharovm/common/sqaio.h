@@ -5,7 +5,7 @@
  *   All rights reserved.
  *   
  *   This file is part of Unix Squeak.
- * 
+ *
  *   Permission is hereby granted, free of charge, to any person obtaining a
  *   copy of this software and associated documentation files (the "Software"),
  *   to deal in the Software without restriction, including without limitation
@@ -28,8 +28,7 @@
 /* author: ian.piumarta@inria.fr
  */
 
-#ifndef __sqaio_h
-#define __sqaio_h
+#pragma once
 
 #define AIO_X	(1<<0)	/* handle for exceptions */
 #define AIO_R	(1<<1)	/* handle for read */
@@ -125,5 +124,3 @@ EXPORT(void) aioWaitIfInPoll();
 #else /* !DEBUG */
 # define FPRINTF(X)
 #endif
-
-#endif /* __sqaio_h */

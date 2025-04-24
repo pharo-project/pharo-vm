@@ -156,7 +156,7 @@ typedef union {
     DWORD dwLow;
     DWORD dwHigh;
   };
-  squeakFileOffsetType offset;
+  fileOffset_t offset;
 } win32FileOffset;
 
 DWORD convertToSqueakTime(SYSTEMTIME st)
@@ -193,7 +193,7 @@ sqInt dir_Delimitor(void) { return '\\'; }
 
 sqInt dir_Lookup(char *pathString, sqInt pathLength, sqInt index,
 /* outputs: */ char *name, sqInt *nameLength, sqInt *creationDate, sqInt *modificationDate,
-               sqInt *isDirectory, squeakFileOffsetType *sizeIfFile, sqInt *posixPermissions, sqInt *isSymlink)
+               sqInt *isDirectory, fileOffset_t *sizeIfFile, sqInt *posixPermissions, sqInt *isSymlink)
 {
   /* Lookup the index-th entry of the directory with the given path, starting
      at the root of the file system. Set the name, name length, creation date,
@@ -354,7 +354,7 @@ sqInt dir_Lookup(char *pathString, sqInt pathLength, sqInt index,
 
 sqInt dir_EntryLookup(char *pathString, sqInt pathLength, char* nameString, sqInt nameStringLength,
 /* outputs: */ char *name, sqInt *nameLength, sqInt *creationDate, sqInt *modificationDate,
-                    sqInt *isDirectory, squeakFileOffsetType *sizeIfFile, sqInt *posixPermissions, sqInt *isSymlink)
+                    sqInt *isDirectory, fileOffset_t *sizeIfFile, sqInt *posixPermissions, sqInt *isSymlink)
 {
   /* Lookup a given file in a given named directory.
      Set the name, name length, creation date,

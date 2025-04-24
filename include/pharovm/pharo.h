@@ -25,9 +25,6 @@
 
 EXPORT(const char*) getSourceVersion();
 EXPORT(const char*) getVMVersion();
-EXPORT(char*) getVMName();
-
-EXPORT(void) setVMName(const char* name);
 
 EXPORT(void) setVMPath(const char* path);
 

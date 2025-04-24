@@ -1,7 +1,6 @@
 #ifndef __SQ_WIN32_ALLOC_H
 #define __SQ_WIN32_ALLOC_H
 
-#ifndef NO_VIRTUAL_MEMORY
 #include "sqMemoryAccess.h"
 
 /*
@@ -28,5 +27,4 @@ sqAllocateMemory(minimumMemory, heapSize, baseAddress)
 
 int sqMemoryExtraBytesLeft(int includingSwap);
 
-#endif /* NO_VIRTUAL_MEMORY */
 #endif /* __SQ_WIN32_ALLOC_H */

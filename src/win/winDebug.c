@@ -95,7 +95,7 @@ isExceptionAReasonForCrashing(LPEXCEPTION_POINTERS exp) {
 		return 0;
 
 	switch(exp->ExceptionRecord->ExceptionCode){
-		case EXCEPTION_ACCESS_VIOLATION:
+		case STATUS_ACCESS_VIOLATION:
 		case EXCEPTION_ARRAY_BOUNDS_EXCEEDED:
 		case EXCEPTION_BREAKPOINT:
 		case EXCEPTION_DATATYPE_MISALIGNMENT:
@@ -172,7 +172,7 @@ EXPORT(void) printCrashDebugInformation(LPEXCEPTION_POINTERS exp){
 
 char* getExceptionMessage(LPEXCEPTION_POINTERS exp){
 	switch(exp->ExceptionRecord->ExceptionCode){
-		case EXCEPTION_ACCESS_VIOLATION: return (char*)"EXCEPTION_ACCESS_VIOLATION";
+		case STATUS_ACCESS_VIOLATION: return (char*)"STATUS_ACCESS_VIOLATION";
 		case EXCEPTION_ARRAY_BOUNDS_EXCEEDED: return (char*)"EXCEPTION_ARRAY_BOUNDS_EXCEEDED";
 		case EXCEPTION_BREAKPOINT: return (char*)"EXCEPTION_BREAKPOINT";
 		case EXCEPTION_DATATYPE_MISALIGNMENT: return (char*)"EXCEPTION_DATATYPE_MISALIGNMENT";
@@ -237,7 +237,7 @@ void captureStack(PCONTEXT context, STACKFRAME64* frames, int framePointersSize,
 
 	STACKFRAME64 frame;
 
-	ZeroMemory(&frame, sizeof(frame));
+	memset(&frame, 0, sizeof(frame))
 	frame.AddrPC.Mode = AddrModeFlat;
 	frame.AddrFrame.Mode = AddrModeFlat;
 	frame.AddrStack.Mode = AddrModeFlat;
@@ -328,7 +328,7 @@ void printSymbolInfo(STACKFRAME64 *frame, FILE* output){
 EXPORT(void) printMachineCallStack(PCONTEXT ctx, FILE* output){
 
 	STACKFRAME64 frames[NUMBER_OF_STACKS];
-	ZeroMemory(frames, sizeof(STACKFRAME64) * NUMBER_OF_STACKS);
+	memset(frames, 0, sizeof(STACKFRAME64) * NUMBER_OF_STACKS)
 
 	captureStack(ctx, frames, NUMBER_OF_STACKS, 6);
 

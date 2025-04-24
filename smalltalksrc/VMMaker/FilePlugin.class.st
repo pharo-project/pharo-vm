@@ -153,7 +153,7 @@ FilePlugin >> makeDirEntryName: entryName size: entryNameSize
 	createDate: createDate modDate: modifiedDate
 		isDir: dirFlag fileSize: fileSize [
 	<var: 'entryName' type: #'char *'>
-	<var: 'fileSize' type: #squeakFileOffsetType>
+	<var: 'fileSize' type: #fileOffset_t>
 	| modDateOop createDateOop nameString results stringPtr fileSizeOop |
 	<var: 'stringPtr' type: #'char *'>
 
@@ -190,7 +190,7 @@ FilePlugin >> makeDirEntryName: entryName size: entryNameSize
 { #category : 'directory primitives' }
 FilePlugin >> makeDirEntryName: entryName size: entryNameSize createDate: createDate modDate: modifiedDate isDir: dirFlag fileSize: fileSize posixPermissions: posixPermissions isSymlink: symlinkFlag [
 	<var: 'entryName' type: #'char *'>
-	<var: 'fileSize' type: #squeakFileOffsetType>
+	<var: 'fileSize' type: #fileOffset_t>
 	| modDateOop createDateOop nameString results stringPtr posixPermissionsOop fileSizeOop |
 	<var: 'stringPtr' type: #'char *'>
 
@@ -354,7 +354,7 @@ FilePlugin >> primitiveDirectoryEntry [
 	<var: 'entryName' declareC: 'char entryName[256]'>
 	<var: 'pathNameIndex' type: 'char *'>
 	<var: 'reqNameIndex' type: 'char *'>
-	<var: 'fileSize' type: 'squeakFileOffsetType'>
+	<var: 'fileSize' type: 'fileOffset_t'>
 	<export: true>
 
 	requestedName := interpreterProxy stackValue: 0.
@@ -442,7 +442,7 @@ FilePlugin >> primitiveDirectoryLookup [
 
 	<var: 'entryName' declareC: 'char entryName[256]'>
 	<var: 'pathNameIndex' type: 'char *'>
-	<var: 'fileSize' type: 'squeakFileOffsetType'>
+	<var: 'fileSize' type: 'fileOffset_t'>
 	<export: true>
 	| index pathName pathNameIndex pathNameSize status entryName entryNameSize createDate modifiedDate dirFlag symlinkFlag posixPermissions fileSize |
 	index := interpreterProxy stackIntegerValue: 0.
@@ -608,7 +608,7 @@ FilePlugin >> primitiveFileFlush [
 FilePlugin >> primitiveFileGetPosition [
 	| file position |
 	<var: 'file' type: 'SQFile *'>
-	<var: 'position' type: 'squeakFileOffsetType'>
+	<var: 'position' type: 'fileOffset_t'>
 	<export: true>
 	file := self fileValueOf: (interpreterProxy stackValue: 0).
 	interpreterProxy failed ifFalse: [position := self sqFileGetPosition: file].
@@ -716,9 +716,9 @@ FilePlugin >> primitiveFileRename [
 FilePlugin >> primitiveFileSetPosition [
 	| newPosition file |
 	<var: 'file' type: 'SQFile *'>
-	<var: 'newPosition' type: 'squeakFileOffsetType'>
+	<var: 'newPosition' type: 'fileOffset_t'>
 	<export: true>
-	(interpreterProxy byteSizeOf: (interpreterProxy stackValue: 0)) > (self sizeof: #squeakFileOffsetType) ifTrue:
+	(interpreterProxy byteSizeOf: (interpreterProxy stackValue: 0)) > (self sizeof: #fileOffset_t) ifTrue:
 		[^interpreterProxy primitiveFail].
 	newPosition := interpreterProxy positive64BitValueOf: (interpreterProxy stackValue: 0).
 	file := self fileValueOf: (interpreterProxy stackValue: 1).
@@ -732,7 +732,7 @@ FilePlugin >> primitiveFileSetPosition [
 FilePlugin >> primitiveFileSize [
 	| file size |
 	<var: 'file' type: 'SQFile *'>
-	<var: 'size' type: 'squeakFileOffsetType'>
+	<var: 'size' type: 'fileOffset_t'>
 	<export: true>
 	file := self fileValueOf: (interpreterProxy stackValue: 0).
 	interpreterProxy failed ifFalse:[size := self sqFileSize: file].
@@ -795,10 +795,10 @@ FilePlugin >> primitiveFileTruncate [
 "ftruncate is not an ansi function so we have a macro to point to a suitable platform implementation" 
 	| truncatePosition file |
 	<var: 'file' type: #'SQFile *'>
-	<var: 'truncatePosition' type: #squeakFileOffsetType>
+	<var: 'truncatePosition' type: #fileOffset_t>
 	<export: true>
 	(interpreterProxy isIntegerObject: (interpreterProxy stackValue: 0)) ifFalse:
-		[(interpreterProxy byteSizeOf: (interpreterProxy stackValue: 0)) > (self sizeof: #squeakFileOffsetType) ifTrue:
+		[(interpreterProxy byteSizeOf: (interpreterProxy stackValue: 0)) > (self sizeof: #fileOffset_t) ifTrue:
 			[^interpreterProxy primitiveFail]].
 	truncatePosition := interpreterProxy positive64BitValueOf: (interpreterProxy stackValue: 0).
 	file := self fileValueOf: (interpreterProxy stackValue: 1).
