@@ -19,7 +19,7 @@ static char __buildInfo[] = "JPEGReaderPlugin VMMaker.oscog-eem.2480 uuid: bb3ff
 
 /* Do not include the entire sq.h file but just those parts needed. */
 #include "sqConfig.h"			/* Configuration options */
-#include "sqVirtualMachine.h"	/*  The virtual machine proxy definition */
+#include "virtualMachine.h"	/*  The virtual machine proxy definition */
 #include "sqPlatformSpecific.h"	/* Platform specific definitions */
 
 #define true 1
@@ -30,7 +30,7 @@ static char __buildInfo[] = "JPEGReaderPlugin VMMaker.oscog-eem.2480 uuid: bb3ff
 # define EXPORT(returnType) static returnType
 #endif
 
-#include "sqMemoryAccess.h"
+#include "memoryAccess.h"
 
 
 /*** Constants ***/

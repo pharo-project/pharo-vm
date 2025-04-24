@@ -131,7 +131,8 @@ address_space_used(char *address, usqInt bytes)
 		return 1;
 	}
 	if (!VirtualQuery(address, &info, sizeof(info))){
-		logErrorFromGetLastError("Unable to VirtualQuery range [%p, %p)", address, (char *)address + bytes);
+		logError("Unable to VirtualQuery range [%p, %p)", address, (char *)address + bytes);
+		logErrorFromGetLastError("Unable to VirtualQuery range");
 		exit(1);
 	}
 
@@ -168,7 +169,7 @@ sqAllocateMemorySegmentOfSizeAboveAllocatedSizeInto(sqInt size, void *minAddress
 			return alloc;
 		}
 		if (!alloc) {
-			logWarn("Unable to VirtualAlloc committed memory at desired address (%lld bytes requested at %p, above %p)", bytes, address, minAddress);
+			logError("Unable to VirtualAlloc committed memory at desired address (%lld bytes requested at %p, above %p)", bytes, address, minAddress);
 			logErrorFromGetLastError("Unable to VirtualAlloc committed memory at desired address");
 			return 0;
 		}
@@ -193,7 +194,8 @@ void
 sqDeallocateMemorySegmentAtOfSize(void *addr, sqInt sz)
 {
 	if (!VirtualFree(addr, SizeForRelease(sz), MEM_RELEASE)){
-		logErrorFromGetLastError("Unable to VirtualFree committed memory (%"PRIuSQINT" bytes requested)", sz);
+		logError("Unable to VirtualFree committed memory (%"PRIuSQINT" bytes requested)", sz);
+		logErrorFromGetLastError("Unable to VirtualFree committed memory");
 		exit(1);
 	}
 }

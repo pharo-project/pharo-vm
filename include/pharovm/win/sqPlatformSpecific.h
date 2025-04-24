@@ -14,7 +14,7 @@
 /* Override necessary definitions */
 # undef putchar
 # include "sqWin32Alloc.h"
-#include "sqMemoryAccess.h"
+#include "memoryAccess.h"
 
 
 # include <windows.h>

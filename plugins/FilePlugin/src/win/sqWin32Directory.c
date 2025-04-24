@@ -305,11 +305,7 @@ sqInt dir_Lookup(char *pathString, sqInt pathLength, sqInt index,
   if (findHandle == INVALID_HANDLE_VALUE) {
     /* Directory could be empty, so we must check for that */
     DWORD dwErr = GetLastError();
-#ifdef PharoVM
     return (dwErr == ERROR_NO_MORE_FILES || dwErr == ERROR_ACCESS_DENIED) ? NO_MORE_ENTRIES : BAD_PATH;
-#else
-    return (dwErr == ERROR_NO_MORE_FILES) ? NO_MORE_ENTRIES : BAD_PATH;
-#endif
   }
   while (1) {
     /* check for '.' or '..' directories */
@@ -431,15 +427,11 @@ sqInt dir_EntryLookup(char *pathString, sqInt pathLength, char* nameString, sqIn
   ALLOC_WIN32_PATH(win32Path, fullPath, fullPathLength);
   
   if (!GetFileAttributesExW(win32Path, 0, &winAttrs)) {
-#ifdef PharoVM
     if (GetLastError() == ERROR_SHARING_VIOLATION) {
       if (!findFileFallbackOnSharingViolation(win32Path, &winAttrs)) return NO_MORE_ENTRIES;
     } else {
       return NO_MORE_ENTRIES;
     }
-#else
-      return NO_MORE_ENTRIES;
-#endif
   }
 
   memcpy(name, nameString, nameStringLength);

@@ -6,7 +6,7 @@
 *			 Atomic 32-bit increment (e.g. for signalSemaphoreWithIndex:).
 *				sqAtomicAddConst(var,n)
 *				sqCompareAndSwap(var,old,new)
-*   FILE:    sqAtomicOps.h
+*   FILE:    atomic.h
 *
 *   AUTHOR:  Eliot Miranda
 *   EMAIL:   eliot@teleplace.com
@@ -139,7 +139,7 @@ AtomicGet(uint64_t *target)
  * can only depend on global variables being correctly aligned on systems
  * such as Mac OS X, which aligns the stack on a 128-bit boundary.
  */
-#	include "sqAssert.h"
+#	include "assert.h"
 
 #	define lo32(x) (*(((unsigned long *)&(x))+0))
 #	define hi32(x) (*(((unsigned long *)&(x))+1))
@@ -223,7 +223,7 @@ AtomicGet(unsigned long long *target)
 # endif
 
 #else /* neither IS_64_BIT_ARCH nor IS_32_BIT_ARCH */
-# error Could not infer if architecture is 32 or 64 bits. Please modify sqAtomicOps.h inference rules.
+# error Could not infer if architecture is 32 or 64 bits. Please modify atomic.h inference rules.
 #endif
 
 #if defined(__GNUC__)

@@ -19,7 +19,7 @@ static char __buildInfo[] = "SqueakSSLPlugin VMMaker.oscog-eem.2480 uuid: bb3ffd
 
 /* Do not include the entire sq.h file but just those parts needed. */
 #include "sqConfig.h"			/* Configuration options */
-#include "sqVirtualMachine.h"	/*  The virtual machine proxy definition */
+#include "virtualMachine.h"	/*  The virtual machine proxy definition */
 #include "sqPlatformSpecific.h"	/* Platform specific definitions */
 
 #define true 1
@@ -31,7 +31,7 @@ static char __buildInfo[] = "SqueakSSLPlugin VMMaker.oscog-eem.2480 uuid: bb3ffd
 #endif
 
 #include "SqueakSSL.h"
-#include "sqMemoryAccess.h"
+#include "memoryAccess.h"
 
 
 /*** Function Prototypes ***/

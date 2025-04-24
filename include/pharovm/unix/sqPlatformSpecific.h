@@ -30,7 +30,7 @@
 
 #include "pharovm/exportDefinition.h"
 
-#include "sqMemoryAccess.h"
+#include "memoryAccess.h"
 
 extern usqInt sqAllocateMemory(usqInt minHeapSize, usqInt desiredHeapSize, usqInt baseAddress);
 extern void* allocateJITMemory(usqInt desiredSize, usqInt desiredPosition);

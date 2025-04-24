@@ -24,7 +24,7 @@
 typedef int mode_t;
 #endif
 
-#include "sqMemoryAccess.h"
+#include "memoryAccess.h"
 
 /* squeak file record; see sqFilePrims.c for details */
 typedef struct {

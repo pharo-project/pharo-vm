@@ -23,8 +23,8 @@
 #include <time.h>
 #include <limits.h>
 
-#include "sqMemoryAccess.h"
-#include "sqVirtualMachine.h"
+#include "memoryAccess.h"
+#include "virtualMachine.h"
 
 
 #define true	1
@@ -34,13 +34,12 @@
 #include "pharovm/semaphores/platformSemaphore.h"
 
 
-#if SPURVM
 /* Allocate a region of memory of al least sz bytes, at or above minAddr.
  * If the attempt fails, answer null.  If the attempt succeeds, answer the
  * start of the region and assign its size through asp.
  */
 extern void sqDeallocateMemorySegmentAtOfSize(void *addr, sqInt sz);
-#endif /* SPURVM */
+
 /* Platform-dependent memory size adjustment macro. */
 
 /* Note: This macro can be redefined to allows platforms with a
@@ -294,11 +293,9 @@ sqInt getAttributeIntoLength(sqInt indexNumber, sqInt byteArrayIndex, sqInt leng
 void *ioLoadExternalFunctionOfLengthFromModuleOfLength
 		(sqInt functionNameIndex, sqInt functionNameLength,
 		 sqInt moduleNameIndex, sqInt moduleNameLength);
-#if SPURVM
 void *ioLoadExternalFunctionOfLengthFromModuleOfLengthAccessorDepthInto
 	(sqInt functionNameIndex, sqInt functionNameLength,
 	 sqInt moduleNameIndex,   sqInt moduleNameLength, sqInt *accessorDepthPtr);
-#endif
 sqInt  ioUnloadModuleOfLength(sqInt moduleNameIndex, sqInt moduleNameLength);
 void  *ioLoadFunctionFrom(char *functionName, char *pluginName);
 sqInt  ioShutdownAllModules(void);
@@ -324,12 +321,8 @@ void *ioLoadModule(char *pluginName);
 	WARNING: never primitiveFail() within, just return 0.
 	Note in Spur takes an extra parameter which is defaulted to 0.
 */
-#if SPURVM
 void *ioFindExternalFunctionInAccessorDepthInto(char *lookupName, void *moduleHandle, sqInt *accessorDepthPtr);
-# define ioFindExternalFunctionIn(ln,mh) ioFindExternalFunctionInAccessorDepthInto(ln,mh,0)
-#else
-void *ioFindExternalFunctionIn(char *lookupName, void *moduleHandle);
-#endif
+#define ioFindExternalFunctionIn(ln,mh) ioFindExternalFunctionInAccessorDepthInto(ln,mh,0)
 
 /* ioFreeModule:
 	Free the module with the associated handle.
@@ -341,5 +334,7 @@ sqInt ioFreeModule(void *moduleHandle);
 extern const char *interpreterVersion;
 
 void warning(char* msg);
+
+EXPORT(int) ioGetCurrentWorkingDirectorymaxLength(char * aCString, size_t maxLength);
 
 #endif /* _SQ_H */

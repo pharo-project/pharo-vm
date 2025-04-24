@@ -30,7 +30,7 @@
 #include "sqWin32File.h"
 
 #include "pharovm/debug.h"
-#include "sqaio.h"
+#include "aio.h"
 
 extern struct VirtualMachine *interpreterProxy;
 

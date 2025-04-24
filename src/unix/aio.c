@@ -35,8 +35,8 @@
 
 #include "pharovm/debug.h"
 #include "pharovm/semaphores/platformSemaphore.h"
-#include "sqMemoryFence.h"
-#include "sqaio.h"
+#include "memoryFence.h"
+#include "aio.h"
 
 #include <sys/types.h>
 #include <sys/socket.h>

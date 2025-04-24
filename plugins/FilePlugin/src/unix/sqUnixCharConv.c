@@ -30,7 +30,7 @@
  */
 
 #if !defined(__MACH__)
-# include "sqMemoryAccess.h"
+# include "memoryAccess.h"
 #endif
 #include "sqUnixCharConv.h"
 
@@ -60,7 +60,7 @@ static int convertCopy(char *from, int fromLen, char *to, int toLen, int term)
 // - the free libiconv cannot handle the canonical decomposition used in HFS+
 
 # include <CoreFoundation/CoreFoundation.h>
-# include "sqMemoryAccess.h"
+# include "memoryAccess.h"
 
 typedef struct
 {

@@ -154,7 +154,7 @@ VMClass class >> initialize [
 { #category : 'initialization' }
 VMClass class >> initializePrimitiveErrorCodes [
 	"Define the VM's primitive error codes.  N.B. these are
-	 replicated in platforms/Cross/vm/sqVirtualMachine.h."
+	 replicated in platforms/Cross/vm/virtualMachine.h."
 	"VMClass initializePrimitiveErrorCodes"
 	| pet |
 	PrimErrTableIndex := 51. "Zero-relative"

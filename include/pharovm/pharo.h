@@ -15,7 +15,7 @@
 #include "interpreter.h"
 
 #include "debug.h"
-#include "sqAssert.h"
+#include "assert.h"
 
 #ifdef _WIN32
 
