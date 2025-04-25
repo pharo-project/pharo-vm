@@ -567,6 +567,14 @@ VMStackPages >> surrogateAtAddress: anAddress [
 ]
 
 { #category : 'memory access' }
+VMStackPages >> uint8At: pointer [
+    <doNotGenerate>
+    "Read an unsigned 8-bit value from memory."
+    self assert: (pointer >= minStackAddress and: [pointer < maxStackAddress]).
+    ^objectMemory byteAt: pointer
+]
+
+{ #category : 'memory access' }
 VMStackPages >> unsignedLongAt: anInteger [ 
 
 	<doNotGenerate>
