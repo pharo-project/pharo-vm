@@ -2689,11 +2689,6 @@ CoInterpreter >> functionPointerForCompiledMethod: methodObj primitiveIndex: pri
 	^functionPointer
 ]
 
-{ #category : 'object memory support' }
-CoInterpreter >> gcMode [
-	^gcMode
-]
-
 { #category : 'as yet unclassified' }
 CoInterpreter >> gcMode: anInteger [ 
 
