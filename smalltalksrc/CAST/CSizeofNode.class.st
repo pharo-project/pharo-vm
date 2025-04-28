@@ -31,7 +31,7 @@ CSizeofNode >> child [
 
 { #category : 'accessing' }
 CSizeofNode >> child: anObject [
-	self assert: (anObject isExpression or: anObject isTypeNode).
+	self assert: (anObject isExpression or: [ anObject isTypeNode ]).
 	
 	child := anObject
 ]
