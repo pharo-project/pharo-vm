@@ -1588,6 +1588,8 @@ Cogit >> AddcR: reg1 R: reg2 [
 
 { #category : 'abstract instructions' }
 Cogit >> AlignedSt1S: aSize Vr: aVectorRegister R: aMemoryRegister Mw: anOffset [ 
+
+	<option: #FEATURE_JIT_SIMD>
 	^ self
 		  gen: AlignedSt1VrRMw
 		  operand: aSize 
@@ -1877,6 +1879,7 @@ Cogit >> DivRs: dpreg1 Rs: dpreg2 [
 { #category : 'abstract instructions' }
 Cogit >> DupS: aSize R: aGeneralRegister Vr: aVectorRegister [
 
+	<option: #FEATURE_JIT_SIMD>
 	^ self
 		  gen: DupRVr
 		  operand: aSize
@@ -2771,6 +2774,8 @@ Cogit >> SqrtRs: dpreg [
 
 { #category : 'abstract instructions' }
 Cogit >> St1S: aSize Vr: aVectorRegister R: aMemoryRegister Mw: anOffset [ 
+
+	<option: #FEATURE_JIT_SIMD>
 	^ self
 		  gen: St1VrRMw
 		  operand: aSize 

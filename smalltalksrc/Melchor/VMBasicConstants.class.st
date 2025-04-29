@@ -99,6 +99,7 @@ VMBasicConstants class >> namesDefinedAtCompileTime [
 	 will be emitted within #if defined(ANameDefinedAtCompileTime)...#endif."
 	^#(	VMBIGENDIAN
 		IMMUTABILITY
+		FEATURE_JIT_SIMD
 		STACKVM COGVM SPURVM
 		PharoVM								"Pharo vs Squeak"
 		CheckRememberedInTrampoline		"IMMUTABILITY"
