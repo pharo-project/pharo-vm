@@ -7,12 +7,6 @@ Class {
 }
 
 { #category : 'memory access' }
-VMStackPagesLSB >> byteAt: byteAddress [
-
-	^ objectMemory byteAt: byteAddress
-]
-
-{ #category : 'memory access' }
 VMStackPagesLSB >> byteAt: byteAddress put: byte [
 
 	^ objectMemory byteAt: byteAddress put: byte

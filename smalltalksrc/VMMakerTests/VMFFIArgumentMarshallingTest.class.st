@@ -40,7 +40,7 @@ VMFFIArgumentMarshallingTest >> newLargeIntegerForValue: aValue [
 		memory
 			storeByte: i
 			ofObject: newLargeInteger
-			withValue: (aValue byteAt: i + 1) ].
+			withValue: (aValue uint8At: i + 1) ].
 	^ newLargeInteger
 ]
 
@@ -217,7 +217,7 @@ VMFFIArgumentMarshallingTest >> testCalloutWithSINT64ArgumentWithLargePositiveHi
 							numSlots: (aValue size / memory bytesPerOop) ceiling asInteger.
 
 	0 to: 8 do: [ :i | 
-		memory storeByte: i ofObject: newLargeInteger withValue: (aValue byteAt: i + 1) ].
+		memory storeByte: i ofObject: newLargeInteger withValue: (aValue uint8At: i + 1) ].
 
 	self
 		doTestFuntionWithArgumentType: interpreter libFFI sint64
@@ -429,7 +429,7 @@ VMFFIArgumentMarshallingTest >> testCalloutWithUINT64ArgumentWithLargePositiveHi
 							numSlots: (aValue size / memory bytesPerOop) ceiling asInteger.
 
 	0 to: 8 do: [ :i | 
-		memory storeByte: i ofObject: newLargeInteger withValue: (aValue byteAt: i + 1) ].
+		memory storeByte: i ofObject: newLargeInteger withValue: (aValue uint8At: i + 1) ].
 
 	self
 		doTestFuntionWithArgumentType: interpreter libFFI uint64

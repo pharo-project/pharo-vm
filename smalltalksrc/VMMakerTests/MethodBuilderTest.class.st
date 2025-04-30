@@ -53,7 +53,7 @@ MethodBuilderTest >> testBytecodeAtForMethodWithNoLiteral [
 
 	bytecodeAddress := methodBuilder bytecodeAt: 1 forMethod: method.
 	
-	self assert: (memory byteAt: bytecodeAddress) equals: 1
+	self assert: (memory uint8At: bytecodeAddress) equals: 1
 ]
 
 { #category : 'running' }
@@ -68,7 +68,7 @@ MethodBuilderTest >> testBytecodeAtForMethodWithOneLiteral [
 
 	bytecodeAddress := methodBuilder bytecodeAt: 1 forMethod: method.
 
-	self assert: (memory byteAt: bytecodeAddress) equals: 1
+	self assert: (memory uint8At: bytecodeAddress) equals: 1
 ]
 
 { #category : 'running' }
@@ -83,7 +83,7 @@ MethodBuilderTest >> testBytecodeAtForMethodWithTwoLiteral [
 
 	bytecodeAddress := methodBuilder bytecodeAt: 1 forMethod: method.
 
-	self assert: (memory byteAt: bytecodeAddress) equals: 1
+	self assert: (memory uint8At: bytecodeAddress) equals: 1
 ]
 
 { #category : 'running' }
@@ -143,5 +143,5 @@ MethodBuilderTest >> testSecondBytecodeAtForMethodWithOneLiteral [
 
 	bytecodeAddress := methodBuilder bytecodeAt: 2 forMethod: method.
 
-	self assert: (memory byteAt: bytecodeAddress) equals: 2
+	self assert: (memory uint8At: bytecodeAddress) equals: 2
 ]

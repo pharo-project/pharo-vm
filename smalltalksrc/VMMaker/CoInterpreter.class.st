@@ -2815,7 +2815,7 @@ CoInterpreter >> getCurrentBytecode [
 
 	^((stackPages couldBeFramePointer: framePointer)
 	   and: [(self isMachineCodeFrame: framePointer) not])
-		ifTrue: [objectMemory byteAt: instructionPointer]
+		ifTrue: [objectMemory uint8At: instructionPointer]
 		ifFalse: [-1]
 ]
 
@@ -3112,7 +3112,7 @@ CoInterpreter >> iframeBackwardBranchByte: theFP [
 	"See encodeFrameFieldHasContext:numArgs: and ifBackwardsCheckForEvents:"
 	<inline: true>
 	<var: #theFP type: #'char *'>
-	^stackPages byteAt: theFP + (VMBIGENDIAN ifTrue: [FoxIFrameFlags + objectMemory wordSize - 1] ifFalse: [FoxIFrameFlags])
+	^stackPages uint8At: theFP + (VMBIGENDIAN ifTrue: [FoxIFrameFlags + objectMemory wordSize - 1] ifFalse: [FoxIFrameFlags])
 ]
 
 { #category : 'frame access' }
@@ -3794,7 +3794,7 @@ CoInterpreter >> mnuCompilationBreak: selectorOop point: selectorLength [
 	breakSelectorLength negated = selectorLength ifTrue:
 		[i := breakSelectorLength negated.
 		 [i > 0] whileTrue:
-			[(objectMemory byteAt: selectorOop + i + objectMemory baseHeaderSize - 1) = (breakSelector at: i) asInteger
+			[(objectMemory uint8At: selectorOop + i + objectMemory baseHeaderSize - 1) = (breakSelector at: i) asInteger
 				ifTrue: [(i := i - 1) = 0 ifTrue:
 							[self mnuCompilationBreakpointFor: selectorOop]]
 				ifFalse: [i := 0]]]

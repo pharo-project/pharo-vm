@@ -5074,7 +5074,7 @@ SpurMemoryManager >> falseObject: anOop [
 { #category : 'object access' }
 SpurMemoryManager >> fetchByte: byteIndex ofObject: objOop [
 	<api>
-	^self byteAt: objOop + self baseHeaderSize + byteIndex
+	^self uint8At: objOop + self baseHeaderSize + byteIndex
 ]
 
 { #category : 'object access' }
@@ -11457,7 +11457,7 @@ SpurMemoryManager >> rawNumSlotsOf: objOop [
 	<returnTypeC: #usqInt>
 	<inline: true>
 	self flag: #endian.
-	^self byteAt: objOop + 7
+	^self uint8At: objOop + 7
 ]
 
 { #category : 'object access' }

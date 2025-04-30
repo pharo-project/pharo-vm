@@ -247,13 +247,6 @@ StackInterpreterSimulator >> breakCount [
 	^breakCount
 ]
 
-{ #category : 'memory access' }
-StackInterpreterSimulator >> byteAt: byteAddress [
-	"This is really only for the C library simulations memcpy:_:_: et al in VMClass.
-	 Use objectMemory byteAt: directly where possible."
-	^objectMemory byteAt: byteAddress
-]
-
 { #category : 'debug support' }
 StackInterpreterSimulator >> byteCount [
 	"So you can call this from temp debug statements in, eg, Interpreter, such as
@@ -525,7 +518,7 @@ StackInterpreterSimulator >> endPCOf: aMethod [
 
 { #category : 'interpreter shell' }
 StackInterpreterSimulator >> fetchByte [
-	^objectMemory byteAt: (instructionPointer := instructionPointer + 1).
+	^objectMemory uint8At: (instructionPointer := instructionPointer + 1).
 ]
 
 { #category : 'memory access' }
@@ -611,7 +604,7 @@ StackInterpreterSimulator >> imageNamePut: p Length: sz [
 	1 to: sz do: [ :i | 
 		newName
 			at: i
-			put: (Character value: (objectMemory byteAt: p + i - 1)) ].
+			put: (Character value: (objectMemory uint8At: p + i - 1)) ].
 	imageName := newName
 ]
 

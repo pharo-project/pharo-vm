@@ -193,7 +193,7 @@ CogInLineLiteralsX64Compiler >> literalBeforeFollowingAddress: followingAddress 
 	 a (self mod: ModReg RM: rX RO: rY) ending the ArithCwR sequence, which is at least 16rC0."
 
 	| lastByte base |
-	lastByte := objectMemory byteAt: followingAddress - 1.
+	lastByte := objectMemory uint8At: followingAddress - 1.
 	base := followingAddress - (lastByte = 16r90
 		         ifTrue: [ "MoveCwR" 9 ]
 		         ifFalse: [
@@ -284,7 +284,7 @@ CogInLineLiteralsX64Compiler >> storeLiteral: literal beforeFollowingAddress: fo
 	 nop following the literal load in MoveCwR, a 16r50 + reg ending the PushCw sequence, and
 	 a (self mod: ModReg RM: rX RO: rY) ending the CmpCwR sequence, which is at least 16rC0."
 	| lastByte base |
-	lastByte := objectMemory byteAt: followingAddress - 1.
+	lastByte := objectMemory uint8At: followingAddress - 1.
 	base := followingAddress - (lastByte <= 16r90
 									ifTrue:
 										[lastByte = 16r90

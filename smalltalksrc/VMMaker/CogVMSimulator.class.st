@@ -291,13 +291,6 @@ CogVMSimulator >> breakCount [
 ]
 
 { #category : 'memory access' }
-CogVMSimulator >> byteAt: byteAddress [
-	"This is really only for the C library simulations memcpy:_:_: et al in VMClass.
-	 Use objectMemory byteAt: directly where possible."
-	^objectMemory byteAt: byteAddress
-]
-
-{ #category : 'memory access' }
 CogVMSimulator >> byteAt: byteAddress put: byte [
 	^objectMemory byteAt: byteAddress put: byte
 ]
@@ -572,7 +565,7 @@ CogVMSimulator >> expectSends: anArray [
 
 { #category : 'interpreter shell' }
 CogVMSimulator >> fetchByte [
-	^objectMemory byteAt: (instructionPointer := instructionPointer + 1)
+	^objectMemory uint8At: (instructionPointer := instructionPointer + 1)
 ]
 
 { #category : 'interpreter access' }
@@ -687,7 +680,7 @@ CogVMSimulator >> imageNamePut: p Length: sz [
 	1 to: sz do: [ :i | 
 		newName
 			at: i
-			put: (Character value: (objectMemory byteAt: p + i - 1)) ].
+			put: (Character value: (objectMemory uint8At: p + i - 1)) ].
 	imageName := newName
 ]
 
