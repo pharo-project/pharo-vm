@@ -117,7 +117,7 @@ SLInliner >> inlineCodeOrNilForStatement: aNode returningNodes: returningNodes [
 	^ nil
 ]
 
-{ #category : 'inlining-support' }
+{ #category : 'inlining-support-condtional' }
 SLInliner >> inlineConditional: aSendNode [
 	"If possible answer the inlining of a conditional, otherwise answer nil.
 	 Currently the only pattern we support is
@@ -130,6 +130,35 @@ SLInliner >> inlineConditional: aSendNode [
 		   aSendNode arguments first statements first isReturn ])
 		  ifTrue: [ self inlineReturningConditional: aSendNode ]
 		  ifFalse: [ self inlineGuardingConditional: aSendNode ]
+]
+
+{ #category : 'inlining-support-condtional' }
+SLInliner >> inlineConditionalGuardingOrConditionalInit: aSendNode isGuarding: isGuarding [
+	"init data for inlining conditional"
+
+	| data |
+	self assert: currentMethod == codeGenerator currentMethod.
+	self assert: (self isInlineableConditional: aSendNode).
+	codeGenerator maybeBreakForInlineOf: aSendNode in: self.
+
+	data := Dictionary new.
+	data at: #isIfTrue put: aSendNode selector = #ifTrue:.
+	
+	data
+		at: #method
+		put: (codeGenerator methodNamed: aSendNode receiver selector) copy.
+	
+	data at: #replacementTree put: ((data at: #method)
+			 inlineFunctionCall: aSendNode receiver
+			 in: codeGenerator).
+	
+	data at: #returnReplacement put: (isGuarding
+			 ifTrue: [
+				 TLabeledCommentNode new setLabel:
+					 (currentMethod unusedLabelForInlining: (data at: #method)) ]
+			 ifFalse: [ aSendNode arguments first ]).
+
+	^ data
 ]
 
 { #category : 'inlining-support' }
@@ -174,30 +203,27 @@ SLInliner >> inlineFunctionCall: aSendNode [
 		  ifFalse: [ meth parseTree ]
 ]
 
-{ #category : 'inlining-support' }
+{ #category : 'inlining-support-condtional' }
 SLInliner >> inlineGuardingConditional: aSendNode [
 	"Inline
 		aSend ifTrue:/ifFalse: [statements]
 	 where aSend is inlineable and always answers booleans.  We convert
 	 the boolean returns in aSend to jumps."
 
-	| evaluateIfTrue replacementTree map lastNode evaluateLabel skipLabel method |
-	self assert: currentMethod == codeGenerator currentMethod.
-	self assert: (self isInlineableConditional: aSendNode).
-	codeGenerator maybeBreakForInlineOf: aSendNode in: self.
-	evaluateIfTrue := aSendNode selector = #ifTrue:.
-	method := (codeGenerator methodNamed: aSendNode receiver selector)
-		          copy.
-	replacementTree := method
-		                   inlineFunctionCall: aSendNode receiver
-		                   in: codeGenerator.
+	| data evaluateIfTrue replacementTree map lastNode evaluateLabel skipLabel |
+	data := self
+		        inlineConditionalGuardingOrConditionalInit: aSendNode
+		        isGuarding: true.
+	evaluateIfTrue := data at: #isIfTrue.
+	replacementTree := data at: #replacementTree.
+	skipLabel := data at: #returnReplacement.
 	map := Dictionary new.
+
 	(replacementTree lastNonCommentStatement isReturn and: [
 		 replacementTree lastNonCommentStatement expression value
 		 = evaluateIfTrue ]) ifTrue: [
 		lastNode := replacementTree lastNonCommentStatement ].
-	skipLabel := TLabeledCommentNode new setLabel:
-		             (currentMethod unusedLabelForInlining: method).
+
 	replacementTree nodesDo: [ :node |
 		| expr |
 		node isReturn ifTrue: [
@@ -215,14 +241,12 @@ SLInliner >> inlineGuardingConditional: aSendNode [
 								 evaluateLabel ifNil: [
 									 evaluateLabel := TLabeledCommentNode new setLabel:
 										                  (currentMethod unusedLabelForInlining:
-											                   method) ].
+											                   (data at: #method)) ].
 								 TGoToNode label: evaluateLabel label ] ]) ] ].
-	replacementTree replaceNodesIn: map.
-	replacementTree comment:
-		{ ('inline ' , aSendNode receiver selector) }.
-	currentMethod
-		addVarsDeclarationsAndLabelsOf: method
-		except: method args.
+
+	data at: #map put: map.
+	self replaceNodeIn: aSendNode with: data.
+
 	^ TStatementListNode new
 		  setArguments: #(  )
 		  statements: (evaluateLabel
@@ -234,25 +258,22 @@ SLInliner >> inlineGuardingConditional: aSendNode [
 					   , aSendNode arguments first statements , { skipLabel } ])
 ]
 
-{ #category : 'inlining-support' }
+{ #category : 'inlining-support-condtional' }
 SLInliner >> inlineReturningConditional: aSendNode [
 	"Inline
 		aSend ifTrue:/ifFalse: [^expr]
 	 where aSend is inlineable and always answers booleans.  We inline ^expr
 	 into aSend."
 
-	| returnIfTrue returnNode replacementTree map lastNode label method |
-	self assert: currentMethod == codeGenerator currentMethod.
-	self assert: (self isInlineableConditional: aSendNode).
-	codeGenerator maybeBreakForInlineOf: aSendNode receiver in: self.
-	returnIfTrue := aSendNode selector = #ifTrue:.
-	returnNode := aSendNode arguments first.
-	method := (codeGenerator methodNamed: aSendNode receiver selector)
-		          copy.
-	replacementTree := method
-		                   inlineFunctionCall: aSendNode receiver
-		                   in: codeGenerator.
+	| data returnIfTrue returnNode replacementTree map lastNode label |
+	data := self
+		        inlineConditionalGuardingOrConditionalInit: aSendNode
+		        isGuarding: false.
+	returnIfTrue := data at: #isIfTrue.
+	replacementTree := data at: #replacementTree.
+	returnNode := data at: #returnReplacement.
 	map := Dictionary new.
+
 	"The last node is either a return or a boolean constant."
 	lastNode := replacementTree lastNonCommentStatement.
 	lastNode isReturn
@@ -281,14 +302,12 @@ SLInliner >> inlineReturningConditional: aSendNode [
 							 ifFalse: [
 								 label ifNil: [
 									 label := TLabeledCommentNode new setLabel:
-										          (currentMethod unusedLabelForInlining: method) ].
+										          (currentMethod unusedLabelForInlining: (data at: #method)) ].
 								 TGoToNode label: label label ] ]) ] ].
-	replacementTree replaceNodesIn: map.
-	currentMethod
-		addVarsDeclarationsAndLabelsOf: method
-		except: method args.
-	replacementTree comment:
-		{ ('inline ' , aSendNode receiver selector) }.
+				
+	data at: #map put: map.
+	self replaceNodeIn: aSendNode with: data.
+
 	^ label ifNil: [ replacementTree ] ifNotNil: [
 		  TStatementListNode new setArguments: #(  ) statements: {
 				  replacementTree.
@@ -396,7 +415,7 @@ SLInliner >> inlineSend: aSendNode directReturn: directReturn exitVar: exitVar [
 		self assert: inlineStmts first isComment.
 		self assert: inlineStmts second isComment.
 		inlineStmts removeFirst.
-		inlineStmts removeLast ].
+		inlineStmts removeFirst ].
 
 	^ inlineStmts
 ]
@@ -516,6 +535,21 @@ SLInliner >> isSubstitutableNode: aNode intoMethod: targetMeth [
 			ifFalse: [ ^ false ] ].
 
 	^ true
+]
+
+{ #category : 'inlining-support-condtional' }
+SLInliner >> replaceNodeIn: aSendNode with: data [
+
+	| replacementTree method |
+	replacementTree := data at: #replacementTree.
+	method := data at: #method.
+
+	replacementTree replaceNodesIn: (data at: #map).
+	replacementTree comment:
+		{ ('inline ' , aSendNode receiver selector) }.
+	currentMethod
+		addVarsDeclarationsAndLabelsOf: method
+		except: method args
 ]
 
 { #category : 'inlining-preparation' }
