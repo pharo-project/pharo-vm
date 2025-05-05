@@ -4419,7 +4419,7 @@ setSigChldHandler(void)
 		sigchldHandlerAction.sa_flags |= SA_ONSTACK;
 	}
 	sigemptyset(&sigchldHandlerAction.sa_mask);
-	if ((sigaction(SIGCHLD, &sigchldHandlerAction, 0)) == (sigErrorNumber())) {
+	if ((sigaction(SIGCHLD, (usqIntptr_t) &sigchldHandlerAction, 0)) == (sigErrorNumber())) {
 		logErrorFromErrno("signal");
 	}
 #  else /* defined(SA_NOCLDSTOP) */
@@ -4462,7 +4462,7 @@ setSignalNumberhandler(sqInt signalNumber, void *signalHandlerAddress)
 	sigHandlerAction.sa_sigaction = signalHandlerAddress;
 	sigHandlerAction.sa_flags = SA_ONSTACK | SA_RESTART;
 	sigemptyset(&sigHandlerAction.sa_mask);
-	if ((sigaction(signalNumber, (&sigHandlerAction), (&oldHandlerAction))) == (sigErrorNumber())) {
+	if ((sigaction(signalNumber, (&sigHandlerAction), (&oldHandlerAction))) == (usqIntptr_t) (sigErrorNumber())) {
 		logErrorFromErrno("signal");
 	}
 	return oldHandlerAction.sa_sigaction;
