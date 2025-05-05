@@ -494,7 +494,7 @@ TSendNode >> isSameAs: aTParseNode [
 TSendNode >> isSelectorWithNoSideEffect [
 
 	^ #( #+ #- #* #/ #'//' #'\\' #= #'==' #'~=' #'~~' #< #'<=' #> #'>='
-	     #and: #or: #negated #not #'<<' #'>>' #'>>>' ) includes: selector
+	     #and: #or: #negated #'<<' #'>>' #'>>>' ) includes: selector
 ]
 
 { #category : 'C code generation' }
