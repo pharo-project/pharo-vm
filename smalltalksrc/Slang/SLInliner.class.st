@@ -9,6 +9,15 @@ Class {
 	#package : 'Slang'
 }
 
+{ #category : 'inlining-support' }
+SLInliner >> checkForFlagIn: aTMethod [
+
+	(aTMethod parseTree sizeWithoutComments > 1 and: [
+		 aTMethod parseTree firstNonCommentStatement isSend and: [
+			 aTMethod parseTree firstNonCommentStatement selector == #flag: ] ])
+		ifTrue: [ aTMethod parseTree removeFirst ]
+]
+
 { #category : 'accessing' }
 SLInliner >> codeGenerator [
 
@@ -58,6 +67,26 @@ SLInliner >> ensureConditionalAssignmentsAreTransformedInCurrentMethod [
 ]
 
 { #category : 'inlining-support' }
+SLInliner >> getReturningNodesIn: aTMethod [
+		| returningNodes |
+	returningNodes := Set new.
+	aTMethod parseTree nodesDo: [ :node |
+		node isReturn ifTrue: [
+			returningNodes add: node expression.
+			node expression isConditionalSend ifTrue: [
+				returningNodes addAll:
+					(node expression arguments collect: [ :stmtList |
+						 stmtList lastNonCommentStatement ]) ] ] ].
+	^ returningNodes
+]
+
+{ #category : 'inlining-support' }
+SLInliner >> getReturningNodesInCurrentMethod [
+
+	^ self getReturningNodesIn: currentMethod
+]
+
+{ #category : 'inlining-support' }
 SLInliner >> inlineBuiltin: aSendNode [
 
 	| sel meth inlinedReplacement |
@@ -67,10 +96,7 @@ SLInliner >> inlineBuiltin: aSendNode [
 	meth := codeGenerator methodNamed: sel.
 	(meth notNil and: [ meth inline == true ]) ifFalse: [ ^ nil ].
 	(meth isFunctionalIn: codeGenerator) ifTrue: [
-		inlinedReplacement := (codeGenerator methodNamed:
-			                       aSendNode receiver selector) copy
-			                      inlineFunctionCall: aSendNode receiver
-			                      in: codeGenerator.
+		inlinedReplacement := self inlineFunctionCall: aSendNode receiver.
 		^ TSendNode new
 			  setSelector: aSendNode selector
 			  receiver: inlinedReplacement
@@ -87,20 +113,17 @@ SLInliner >> inlineCodeOrNilForStatement: aNode returningNodes: returningNodes [
 	| stmts |
 	(aNode isReturn and: [ self isInlineableSend: aNode expression ])
 		ifTrue: [
-			| last indexOfLast |
+			| last |
 			stmts := self
 				         inlineSend: aNode expression
 				         directReturn: true
 				         exitVar: nil.
 
 			"the last statements may be comments"
-			last := stmts last.
-			indexOfLast := stmts size.
-			[ last isComment ] whileTrue: [
-				indexOfLast := indexOfLast - 1.
-				last := stmts at: indexOfLast ].
-			last endsWithReturn ifFalse: [
-				stmts at: indexOfLast put: last asReturnNode ].
+			stmts isStatementList ifTrue: [
+				last := stmts lastNonCommentStatement.
+				last endsWithReturn ifFalse: [
+					stmts replaceChild: last with: last asReturnNode ] ].
 			^ stmts ].
 
 	(aNode isAssignment and: [ self isInlineableSend: aNode expression ])
@@ -179,10 +202,7 @@ SLInliner >> inlineFunctionCall: aSendNode [
 	meth args with: argsForInlining do: [ :argName :exprNode |
 		exprNode isLeaf ifTrue: [
 			parametersToReplaceByArgument add: argName ] ].
-	(meth statements size = 2 and: [
-		 meth statements first isSend and: [
-			 meth statements first selector == #flag: ] ]) ifTrue: [
-		meth statements removeFirst ].
+	self checkForFlagIn: meth.
 	meth
 		renameVarsForInliningInto: currentMethod
 		except: parametersToReplaceByArgument
@@ -328,9 +348,10 @@ SLInliner >> inlineSend: aSendNode directReturn: directReturn exitVar: exitVar [
 	| sel callee calleeParameters exitLabel inlineStmts label exitType omittedParameters |
 	sel := aSendNode selector.
 	callee := codeGenerator methodNamed: sel.
-	calleeParameters := callee args.
+
 	"convenient for debugging..."
 	codeGenerator maybeBreakForInlineOf: aSendNode in: self.
+	calleeParameters := callee args.
 	omittedParameters := #(  ).
 	(calleeParameters notEmpty and: [
 		 calleeParameters first beginsWith: 'self_in_' ]) ifTrue: [ "If the first arg is not used we can and should elide it."
@@ -342,10 +363,7 @@ SLInliner >> inlineSend: aSendNode directReturn: directReturn exitVar: exitVar [
 	calleeParameters size = aSendNode arguments size ifFalse: [ ^ nil ].
 	callee := callee copy.
 
-	(callee statements size > 1 and: [
-		 callee statements first isSend and: [
-			 callee statements first selector == #flag: ] ]) ifTrue: [
-		callee statements removeFirst ].
+	self checkForFlagIn: callee.
 
 	"Propagate the return type of an inlined method"
 	(directReturn or: [ exitVar notNil ]) ifTrue: [
@@ -410,12 +428,9 @@ SLInliner >> inlineSend: aSendNode directReturn: directReturn exitVar: exitVar [
 				(TLabeledCommentNode new setLabel: exitLabel comment: 'end ' , sel) ]
 		ifNil: [
 		inlineStmts add: (TLabeledCommentNode new setComment: 'end ' , sel) ].
-
-	inlineStmts size = 2 ifTrue: [ "Nuke empty methods; e.g. override of flushAtCache"
-		self assert: inlineStmts first isComment.
-		self assert: inlineStmts second isComment.
-		inlineStmts removeFirst.
-		inlineStmts removeFirst ].
+	inlineStmts := TStatementListNode statements: inlineStmts.
+	inlineStmts isComment ifTrue: [ "Nuke empty methods; e.g. override of flushAtCache"
+		inlineStmts statements: OrderedCollection new ].
 
 	^ inlineStmts
 ]
@@ -482,11 +497,17 @@ SLInliner >> isInlineableFunctionCall: aNode [
 
 { #category : 'inlining-decision' }
 SLInliner >> isInlineableSend: aNode [
-	"Answer if the given send node is a call to a method that can be inlined."
+	"Answer if the given expresssion node is a call to a method that can be inlined.
+	handle the fact that multiple inlining might have already happened"
 
-	| m |
+	| m stmt |
 	codeGenerator maybeBreakForTestToInline: aNode in: self.
-	aNode isSend ifFalse: [ ^ false ].
+	aNode isSend ifFalse: [
+		aNode isStatementList
+			ifTrue: [
+				stmt := aNode lastNonCommentStatement.
+				^ self isInlineableSend: stmt ]
+			ifFalse: [ ^ false ] ].
 	m := codeGenerator methodNamed: aNode selector. "nil if builtin or external function"
 	^ m isNotNil and: [
 		  m ~~ self and: [
@@ -646,13 +667,14 @@ SLInliner >> tryToInlineMethodExpressionsInCurrentMethod [
 		currentMethod parseTree
 			nodesDo: [ :node |
 				(self isInlineableFunctionCall: node) ifTrue: [
-					(self inlineFunctionCall: node) ifNotNil: [
-						:replacement |
-						(replacement isConstant and: [
-							 replacement isDefine not and: [
-								 replacement value isNumber and: [ replacement comment isNil ] ] ])
-							ifTrue: [ replacement comment: node selector ].
-						sendsToInline at: node put: replacement ] ] ]
+					(self
+						inlineFunctionCall: node)
+						ifNotNil: [ :replacement |
+							(replacement isConstant and: [
+								 replacement isDefine not and: [
+									 replacement value isNumber and: [ replacement comment isNil ] ] ])
+								ifTrue: [ replacement comment: node selector ].
+							sendsToInline at: node put: replacement ] ] ]
 			unless: [ :node | "Don't inline the arguments to asserts to keep the asserts readable"
 				node isSend and: [
 					node selector == #cCode:inSmalltalk: or: [
@@ -670,26 +692,21 @@ SLInliner >> tryToInlineMethodStatementsListsInto: aBlock [
 
 	| stmtLists didSomething newStatements returningNodes |
 	didSomething := false.
-	returningNodes := Set new.
-	currentMethod parseTree nodesDo: [ :node |
-		node isReturn ifTrue: [
-			returningNodes add: node expression.
-			node expression isConditionalSend ifTrue: [
-				returningNodes addAll:
-					(node expression arguments collect: [ :stmtList |
-						 stmtList statements last ]) ] ] ].
+	returningNodes := self getReturningNodesInCurrentMethod.
+
 	stmtLists := self statementsListsForInliningInCurrentMethod.
 	stmtLists do: [ :stmtList |
-		newStatements := OrderedCollection new: stmtList statements size.
+		newStatements := TStatementListNode statements:
+			                 (OrderedCollection new: stmtList statements size).
 		stmtList statements do: [ :stmt |
 			(self
 				 inlineCodeOrNilForStatement: stmt
 				 returningNodes: returningNodes)
-				ifNil: [ newStatements addLast: stmt ]
+				ifNil: [ newStatements addAllLast: { stmt } ]
 				ifNotNil: [ :inlinedStmts |
 					didSomething := true.
-					newStatements addAllLast: inlinedStmts ] ].
-		stmtList statements: newStatements asArray ].
+					newStatements addAllLast: inlinedStmts statements ] ].
+		stmtList statements: newStatements statements asArray ].
 
 
 

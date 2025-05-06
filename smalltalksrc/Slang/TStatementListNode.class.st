@@ -90,25 +90,9 @@ TStatementListNode >> addAllFirst: aListOfStatement [
 { #category : 'adding' }
 TStatementListNode >> addAllLast: aListOfStatement [
 
-	(statements isNotEmpty and: [ statements last isComment ])
-		ifFalse: [
-			self statements: (statements
-					 addAllLast: aListOfStatement;
-					 yourself) ]
-		ifTrue: [
-			| actualLast actualLastMet allWithoutEndComment endComment |
-			actualLast := self lastNonCommentStatement.
-			allWithoutEndComment := OrderedCollection new.
-			endComment := OrderedCollection new.
-			actualLastMet := false.
-			statements do: [ :e |
-				actualLastMet
-					ifFalse: [
-						allWithoutEndComment add: e.
-						actualLastMet := e == actualLast ]
-					ifTrue: [ endComment add: e ] ].
-			self statements:
-				allWithoutEndComment , aListOfStatement , endComment ]
+	self statements: (statements
+			 addAllLast: aListOfStatement;
+			 yourself)
 ]
 
 { #category : 'declarations' }
@@ -658,6 +642,14 @@ TStatementListNode >> removeAssertions [
 ]
 
 { #category : 'transformations' }
+TStatementListNode >> removeFirst [
+
+	| first |
+	first := self firstNonCommentStatement.
+	statements := statements select: [ :e | e ~= first ]
+]
+
+{ #category : 'transformations' }
 TStatementListNode >> removeLast [
 	"the last statement can be a comment if the TStatementList has been through inlining, remove the actual last statement"
 
@@ -801,6 +793,16 @@ TStatementListNode >> setStatements: stmtList [
 { #category : 'inlining' }
 TStatementListNode >> shouldExpand [
 	^(statements detect: [:stmt| stmt isInline]) shouldExpand
+]
+
+{ #category : 'accessing' }
+TStatementListNode >> sizeWithoutComments [
+
+	| size |
+	size := 0.
+	statements do: [ :stmt |
+		stmt isComment ifFalse: [ size := size + 1 ] ].
+	^ size
 ]
 
 { #category : 'accessing' }

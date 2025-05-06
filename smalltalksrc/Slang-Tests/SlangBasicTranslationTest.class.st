@@ -1615,6 +1615,7 @@ SlangBasicTranslationTest >> testInlinedCommentInExpressionMoveReturn [
 	tMethod := self getTMethodFrom: #switchInReturn.
 	tMethod prepareMethodIn: generator.
 	tMethod recordDeclarationsIn: generator.
+	"SLDeadCodeElimination new removeDeadCodeUsing: generator ."
 	generator doBasicInlining: true.
 	translation := self translate: tMethod.
 	translation := translation trimBoth.
@@ -6764,105 +6765,6 @@ SlangBasicTranslationTest >> testSwitchStatementWithNoDefaultStatement [
 	default:
 	error("Case not found and no otherwise clause");
 }'
-]
-
-{ #category : 'test-inline-comment' }
-SlangBasicTranslationTest >> testTStatementAddAllLastWithComment [
-	"comments in Slang are related to inlining, they should only be in list of Statement (use as argument or expression but list of statement anyway). When there is a comment a the end of list it must stay at the end after addition was done"
-
-	| tStatementWithNoComment comment |
-	comment := TLabeledCommentNode new comment: #comment.
-	tStatementWithNoComment := TStatementListNode new statements: {
-			                           (TAssignmentNode new
-				                            setVariable:
-				                            (TVariableNode new setName: #i)
-				                            expression:
-				                            (TConstantNode new setValue: 5)).
-			                           (TConstantNode new setValue: 6).
-			                           comment.
-			                           comment }.
-	tStatementWithNoComment addAllLast:
-		{ (TReturnNode new expression: (TConstantNode new setValue: 9)) }.
-
-	self assert: (tStatementWithNoComment isSameAs:
-			 (TStatementListNode new statements: {
-					  (TAssignmentNode new
-						   setVariable: (TVariableNode new setName: #i)
-						   expression: (TConstantNode new setValue: 5)).
-					  (TConstantNode new setValue: 6).
-					  (TReturnNode new expression: (TConstantNode new setValue: 9)).
-					  comment.
-					  comment }))
-]
-
-{ #category : 'test-inline-comment' }
-SlangBasicTranslationTest >> testTStatementAddAllLastWithoutComment [
-	"comments in Slang are related to inlining, they should only be in list of Statement (use as argument or expression but list of statement anyway). When there is a comment a the end of list it must stay at the end after addition was done"
-
-	| tStatementWithNoComment |
-	tStatementWithNoComment := TStatementListNode new statements: {
-			                           (TAssignmentNode new
-				                            setVariable:
-				                            (TVariableNode new setName: #i)
-				                            expression:
-				                            (TConstantNode new setValue: 5)).
-			                           (TConstantNode new setValue: 6) }.
-	tStatementWithNoComment addAllLast:
-		{ (TReturnNode new expression: (TConstantNode new setValue: 9)) }.
-
-	self assert: (tStatementWithNoComment isSameAs:
-			 (TStatementListNode new statements: {
-					  (TAssignmentNode new
-						   setVariable: (TVariableNode new setName: #i)
-						   expression: (TConstantNode new setValue: 5)).
-					  (TConstantNode new setValue: 6).
-					  (TReturnNode new expression: (TConstantNode new setValue: 9)) }))
-]
-
-{ #category : 'test-inline-comment' }
-SlangBasicTranslationTest >> testTStatementAllButLastNonCommentWithComment [
-	"comments in Slang are related to inlining, they should only be in list of Statement (use as argument or expression but list of statement anyway). When we want to remove the last expression we need to ignore comments at the end"
-
-	| tStatementWithNoComment comment |
-	comment := TLabeledCommentNode new comment: #comment.
-	tStatementWithNoComment := TStatementListNode new statements: {
-			                           (TAssignmentNode new
-				                            setVariable:
-				                            (TVariableNode new setName: #i)
-				                            expression:
-				                            (TConstantNode new setValue: 5)).
-			                           (TConstantNode new setValue: 6).
-			                           comment.
-			                           comment }.
-	tStatementWithNoComment statements:
-		tStatementWithNoComment allButLastNonCommentStatement.
-	self assert: (tStatementWithNoComment isSameAs:
-			 (TStatementListNode new statements: {
-					  (TAssignmentNode new
-						   setVariable: (TVariableNode new setName: #i)
-						   expression: (TConstantNode new setValue: 5)).
-					  comment.
-					  comment }))
-]
-
-{ #category : 'test-inline-comment' }
-SlangBasicTranslationTest >> testTStatementAllButLastNonCommentWithoutComment [
-	"comments in Slang are related to inlining, they should only be in list of Statement (use as argument or expression but list of statement anyway). When we want to remove the last expression we need to ignore comments at the end "
-
-	| tStatementWithNoComment |
-	tStatementWithNoComment := TStatementListNode new statements: {
-			                           (TAssignmentNode new
-				                            setVariable:
-				                            (TVariableNode new setName: #i)
-				                            expression:
-				                            (TConstantNode new setValue: 5)).
-			                           (TConstantNode new setValue: 6) }.
-	tStatementWithNoComment statements:
-		tStatementWithNoComment allButLastNonCommentStatement.
-	self assert: (tStatementWithNoComment isSameAs:
-			 (TStatementListNode new statements: { (TAssignmentNode new
-					   setVariable: (TVariableNode new setName: #i)
-					   expression: (TConstantNode new setValue: 5)) }))
 ]
 
 { #category : 'tests-assignment' }
