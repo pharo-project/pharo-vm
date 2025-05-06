@@ -1838,22 +1838,22 @@ TMethod >> isFunctionalIn: aCodeGen [
 	 Answer false for methods with return types other than the simple
 	 integer types to work around bugs in the inliner."
 
-	parseTree statements size = 1 ifFalse:
-		[(parseTree statements size = 2
-		  and: [parseTree statements first isSend
-		  and: [parseTree statements first selector == #flag:
-			or: [(aCodeGen isAssertSelector: parseTree statements first selector)
-				and: [parseTree statements first selector ~~ #asserta:]]]]) ifFalse:
-			[^false]].
-	parseTree lastNonCommentStatement isReturn ifFalse:
-		[^false].
-	parseTree lastNonCommentStatement expression nodesDo:
-		[ :n | n isReturn ifTrue: [^false]].
-	^#(int #'unsigned int' #long #'unsigned long' #'long long' #'unsigned long long'
-		sqInt usqInt #'sqIntptr_t' #'usqIntptr_t' sqLong usqLong
-		#'int *' #'unsigned int *' #'sqInt *' #'usqInt *' #'sqLong *' #'usqLong *' #'char *'
-		#'CogMethod *' #'AbstractInstruction *'
-		#'FILE *') includes: returnType
+	parseTree sizeWithoutComments = 1 ifFalse: [
+		(parseTree sizeWithoutComments = 2 and: [
+			 parseTree firstNonCommentStatement isSend and: [
+				 parseTree firstNonCommentStatement selector == #flag: or: [
+					 (aCodeGen isAssertSelector:
+						  parseTree firstNonCommentStatement selector) and: [
+						 parseTree firstNonCommentStatement selector ~~ #asserta: ] ] ] ])
+			ifFalse: [ ^ false ] ].
+	parseTree lastNonCommentStatement isReturn ifFalse: [ ^ false ].
+	parseTree lastNonCommentStatement expression nodesDo: [ :n |
+		n isReturn ifTrue: [ ^ false ] ].
+	^ #( int #'unsigned int' #long #'unsigned long' #'long long'
+	     #'unsigned long long' sqInt usqInt #sqIntptr_t #usqIntptr_t
+	     sqLong usqLong #'int *' #'unsigned int *' #'sqInt *' #'usqInt *'
+	     #'sqLong *' #'usqLong *' #'char *' #'CogMethod *' #'AbstractInstruction *'
+	     #'FILE *' ) includes: returnType
 ]
 
 { #category : 'inlining' }
