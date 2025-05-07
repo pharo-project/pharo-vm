@@ -1381,15 +1381,6 @@ StackInterpreterSimulator >> singleStep [
 	self incrementByteCount
 ]
 
-{ #category : 'primitive support' }
-StackInterpreterSimulator >> slowPrimitiveResponse [
-	primTraceLog ifNotNil:
-		[primTraceLog size > 127 ifTrue:
-			[primTraceLog removeFirst].
-		 primTraceLog addLast: primitiveFunctionPointer].
-	^super slowPrimitiveResponse
-]
-
 { #category : 'debug printing' }
 StackInterpreterSimulator >> space [
 
