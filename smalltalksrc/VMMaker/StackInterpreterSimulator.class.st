@@ -999,26 +999,6 @@ StackInterpreterSimulator >> primitiveContextAt [
 ]
 
 { #category : 'debugging traps' }
-StackInterpreterSimulator >> primitiveDoPrimitiveWithArgs [
-	self halt.
-	^super primitiveDoPrimitiveWithArgs
-]
-
-{ #category : 'control primitives' }
-StackInterpreterSimulator >> primitiveExecuteMethod [
-	self halt: thisContext selector.
-	^super primitiveExecuteMethod
-]
-
-{ #category : 'control primitives' }
-StackInterpreterSimulator >> primitiveExecuteMethodArgsArray [
-	self halt: thisContext selector.
-	"(objectMemory isOopCompiledMethod: self stackTop) ifFalse:
-		[self halt]."
-	^super primitiveExecuteMethodArgsArray
-]
-
-{ #category : 'debugging traps' }
 StackInterpreterSimulator >> primitiveFailFor: reasonCode [
 	"self halt."
 	^super primitiveFailFor: reasonCode
@@ -1088,31 +1068,6 @@ StackInterpreterSimulator >> primitiveNewWithArg [
 StackInterpreterSimulator >> primitiveObjectPointsTo [
 	"self halt."
 	^super primitiveObjectPointsTo
-]
-
-{ #category : 'object access primitives' }
-StackInterpreterSimulator >> primitiveStoreStackp [
-	"self printContext: (self stackValue: 1).
-	self halt."
-	super primitiveStoreStackp.
-	"self printContext: self stackTop"
-]
-
-{ #category : 'system control primitives' }
-StackInterpreterSimulator >> primitiveVMParameter [
-	
-	(self stackTop = (objectMemory integerObjectOf: 9)
-	 or: [self stackTop = (objectMemory integerObjectOf: 52)]) ifTrue:
-		[self halt].
-	^super primitiveVMParameter
-]
-
-{ #category : 'debugging traps' }
-StackInterpreterSimulator >> primitiveWait [
-	"Catch errors before we start the whole morphic error process"
-
-	"byteCount > 1000000 ifTrue: [self halt]."  "Ignore early process activity"
-	^ super primitiveWait
 ]
 
 { #category : 'debug printing' }
