@@ -585,13 +585,7 @@ SLInliner >> statementsListsForInliningInCurrentMethod [
 	stmtLists := OrderedCollection new: 10.
 	currentMethod parseTree
 		nodesDo: [ :node |
-		node isStatementList ifTrue: [ stmtLists add: node ] ]
-		unless: [ :node |
-			node isSend and: [
-				node selector == #cCode:inSmalltalk: or: [
-					node selector == #cCall: or: [
-						node selector == #cCall:withArguments: or: [
-							codeGenerator isAssertSelector: node selector ] ] ] ] ].
+		node isStatementList ifTrue: [ stmtLists add: node ] ].
 	currentMethod parseTree nodesDo: [ :node |
 		node isSend ifTrue: [
 			node selector = #cCode:inSmalltalk: ifTrue: [
@@ -686,7 +680,7 @@ SLInliner >> tryToInlineMethodExpressionsInCurrentMethod [
 ]
 
 { #category : 'inlining' }
-SLInliner >> tryToInlineMethodStatementsListsInto: aBlock [
+SLInliner >> tryToInlineMethodStatementsListsInCurrentMethod [
 	"Expand any (complete) inline methods sent by this method as top-level statements.
 	 Answer if anything was inlined."
 
@@ -722,8 +716,6 @@ SLInliner >> tryToInlineMethodStatementsListsInto: aBlock [
 						at: index
 						put: alternativeNode copyWithoutReturn ] ] ] ].
 
-	aBlock value: stmtLists.
-
 	^ didSomething
 ]
 
@@ -733,14 +725,13 @@ SLInliner >> tryToInlineMethodsInCurrentMethod [
 	 Set the complete flag when all inlining has been done.
 	 Answer if something was inlined."
 
-	| didSomething statementLists |
+	| didSomething |
 	currentMethod definedAsMacro ifTrue: [
 		currentMethod isComplete ifTrue: [ ^ false ].
 		^ currentMethod complete: true ].
 
 	self ensureConditionalAssignmentsAreTransformedInCurrentMethod.
-	didSomething := self tryToInlineMethodStatementsListsInto: [
-		                :stmtLists | statementLists := stmtLists ].
+	didSomething := self tryToInlineMethodStatementsListsInCurrentMethod.
 	didSomething := self tryToInlineMethodExpressionsInCurrentMethod or: [
 		                didSomething ].
 

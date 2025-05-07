@@ -1,25 +1,17 @@
 Class {
 	#name : 'SlangInliningTest',
-	#superclass : 'SlangAbstractTestCase',
+	#superclass : 'SLAbstractTranslationTestCase',
+	#instVars : [
+		'sLInliner'
+	],
 	#category : 'Slang-Tests',
 	#package : 'Slang-Tests'
 }
 
-{ #category : 'helpers' }
-SlangInliningTest >> astTranslate: tast inStream: aWriteStream [ 
-	
-	| cAST prettyPrinter |
-	cAST := tast asCASTIn: ccg.
-	prettyPrinter := CSlangPrettyPrinter new.
-	prettyPrinter writeStream: aWriteStream.
-	cAST acceptVisitor: prettyPrinter.
-]
-
-{ #category : 'tests' }
+{ #category : 'simple-inlining' }
 SlangInliningTest >> test2ChainInlining [
 
-	| method sends sendStatements translation  |
-	ccg addClass: SLMockInliningTestClass.
+	| method translation  |
 	ccg doBasicInlining: true.
 
 	method := ccg methodNamed: #methodC.
@@ -45,7 +37,21 @@ methodC(void)
 }'
 ]
 
-{ #category : 'tests' }
+{ #category : 'collect-statements-for-inlining' }
+SlangInliningTest >> testCollectStatementsForInliningInMethodWithAvoidedSelector [
+	"this method collect statements list for inlining, some specific selectors have special comportment regarding inlining strategy like avoiding inlining he receiver or the some arguments"
+
+	| method statementsForInlining |
+	method := ccg methodNamed: #methodWithAvoidedSelectors.
+	sLInliner currentMethod: method.
+	sLInliner codeGenerator: ccg.
+
+	statementsForInlining := sLInliner
+		                         statementsListsForInliningInCurrentMethod.
+	self assert: statementsForInlining size equals: 6.
+]
+
+{ #category : 'simple-inlining' }
 SlangInliningTest >> testInlineInSwitchRemovesReturnStatement [
 
 	| method codeGenerator methodToBeInlined theSwitch firstCaseConstantExpression firstCase firstCaseLabels |
@@ -72,27 +78,18 @@ SlangInliningTest >> testInlineInSwitchRemovesReturnStatement [
 	self assert: firstCaseConstantExpression parent equals: theSwitch
 ]
 
-{ #category : 'tests' }
+{ #category : 'simple-inlining' }
 SlangInliningTest >> testSimpleInlining [
 
-	| method sends sendStatements |
-	ccg addClass: SLMockInliningTestClass.
+	| method sendStatements |
 	ccg doBasicInlining: true.
 
 	method := ccg methodNamed: #methodA.
 	
-	method parseTree collectSendInSelf: (sends := OrderedCollection new).
 	sendStatements := method parseTree statements select: #isSend.
 	self assert: sendStatements size equals: 2.
 	self assert: sendStatements first selector equals: #+.
 	self assert: sendStatements second selector equals: #+
 		
 
-]
-
-{ #category : 'helpers' }
-SlangInliningTest >> translate: tast [
-
-	^ String streamContents: [ :str |
-		  self astTranslate: tast inStream: str ]
 ]
