@@ -5483,6 +5483,30 @@ VMPrimitiveTest >> testPrimitiveSubtractWithOverflowPreservesStack [
 	
 ]
 
+{ #category : 'tests - primitiveAdd' }
+VMPrimitiveTest >> testPrimitiveTryPrimitiveShouldInvokeAddition [
+	" Call the primitive plus reflectively
+	17 tryPrimitive: 1 withArgs: #( 42 )
+		=> 59"
+
+	| arguments |
+	interpreter initializePluginEntries.
+	
+	interpreter push: (memory integerObjectOf: 17).
+	interpreter push: (memory integerObjectOf: 1).
+	
+	arguments := self newArrayWithSlots: 1.
+	memory storePointer: 0 ofObject: arguments withValue: (memory integerObjectOf: 42).
+	interpreter push: arguments.
+	
+	"Simulate calling the method tryPrimitive:withArgs:"
+	interpreter argumentCount: 2.
+	interpreter primitiveDoPrimitiveWithArgs. 
+	
+	self deny: interpreter failed.
+	self assert: interpreter popStack equals: ((memory integerObjectOf: 59))
+]
+
 { #category : 'tests - primitiveVMParameter' }
 VMPrimitiveTest >> testPrimitiveVMParameterGetsImageVersion [
 
