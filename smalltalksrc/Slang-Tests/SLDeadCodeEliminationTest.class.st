@@ -29,6 +29,7 @@ SLDeadCodeEliminationTest >> testConditionalWithOnlyCommentNoSendInReceiver [
 	tMethod := ccg methodNamed:
 		           #conditionalWithOnlyCommentNoSendInReceiver.
 
+	ccg prepareMethods.
 	ccg doBasicInlining: true.
 
 	sLDeadCodeElimination currentMethod: tMethod.
@@ -55,11 +56,11 @@ SLDeadCodeEliminationTest >> testConditionalWithOnlyCommentSendInReceiver [
 	"currently the only way to get comments in a methods is through inlining, having only comments is equivalent to being empty so it shouldn't change the behavior of the dead code elimination process"
 
 	| translation tMethod |
-	tMethod := ccg methodNamed:
-		           #conditionalWithOnlyCommentSendInReceiver.
+	tMethod := ccg methodNamed: #conditionalWithOnlyCommentSendInReceiver.
 
+	ccg prepareMethods.
 	ccg doBasicInlining: true.
-	
+
 	sLDeadCodeElimination currentMethod: tMethod.
 	sLDeadCodeElimination removeDeadCodeInCurrentMethod.
 
@@ -1795,7 +1796,8 @@ SLDeadCodeEliminationTest >> testMethodWithNeverUsedLocalsFromBlockasArguments [
 	| translation tMethod |
 	tMethod := ccg methodNamed:
 		           #methodWithNeverUsedLocalsFromBlockasArguments.
-	tMethod prepareMethodIn: ccg.
+
+	ccg prepareMethods.
 	ccg doBasicInlining: true.
 
 	sLDeadCodeElimination currentMethod: tMethod.
@@ -1920,7 +1922,9 @@ SLDeadCodeEliminationTest >> testMethodWithOnlyComment [
 	| translation tMethod |
 	tMethod := ccg methodNamed: #methodWithOnlyComment.
 
+	ccg prepareMethods.
 	ccg doBasicInlining: true.
+
 	sLDeadCodeElimination currentMethod: tMethod.
 	sLDeadCodeElimination removeDeadCodeInCurrentMethod.
 
@@ -5192,7 +5196,8 @@ SLDeadCodeEliminationTest >> testSwitchWithOnlyCommentNoSendInReceiver [
 
 	| translation tMethod |
 	tMethod := ccg methodNamed: #switchWithOnlyCommentNoSendInReceiver:.
-	tMethod prepareMethodIn: ccg.
+
+	ccg prepareMethods.
 	ccg doBasicInlining: true.
 
 	sLDeadCodeElimination currentMethod: tMethod.
@@ -5207,7 +5212,7 @@ SLDeadCodeEliminationTest >> testSwitchWithOnlyCommentNoSendInReceiver [
 		equals:
 			'/* SLDeadCodeEliminationTestClass>>#switchWithOnlyCommentNoSendInReceiver: */
 static void
-switchWithOnlyCommentNoSendInReceiver(SLDeadCodeEliminationTestClass * self_in_switchWithOnlyCommentNoSendInReceiver, sqInt anInt)
+switchWithOnlyCommentNoSendInReceiver(SLDeadCodeEliminationTestClass * self_in_switchWithOnlyCommentNoSendInReceiver, sqInt _anInt)
 {
 	{
 		return;
@@ -5221,7 +5226,8 @@ SLDeadCodeEliminationTest >> testSwitchWithOnlyCommentSendInReceiver [
 
 	| translation tMethod |
 	tMethod := ccg methodNamed: #switchWithOnlyCommentSendInReceiver.
-	tMethod prepareMethodIn: ccg.
+
+	ccg prepareMethods.
 	ccg doBasicInlining: true.
 
 	sLDeadCodeElimination currentMethod: tMethod.

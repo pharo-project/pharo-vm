@@ -4,7 +4,7 @@ Class {
 	#instVars : [
 		'codeGenerator',
 		'currentMethod',
-		'sLStatementOrExpressionAnnotator'
+		'sLNodeAnnotatorVisitor'
 	],
 	#category : 'Slang',
 	#package : 'Slang'
@@ -90,8 +90,8 @@ SLInliner >> getReturningNodesInCurrentMethod [
 { #category : 'initialization' }
 SLInliner >> initialize [
 
-	sLStatementOrExpressionAnnotator := SLNodeAnnotatorVisitor
-		                                    new
+	super initialize.
+	sLNodeAnnotatorVisitor := SLNodeAnnotatorVisitor new
 ]
 
 { #category : 'inlining-support' }
@@ -347,9 +347,9 @@ SLInliner >> inlineSend: aSendNode [
 	sel := aSendNode selector.
 	callee := codeGenerator methodNamed: sel.
 
-	directReturn := sLStatementOrExpressionAnnotator isDirectReturn:
+	directReturn := sLNodeAnnotatorVisitor isDirectReturn:
 		                aSendNode.
-	exitVar := (sLStatementOrExpressionAnnotator exitVarFor: aSendNode)
+	exitVar := (sLNodeAnnotatorVisitor exitVarFor: aSendNode)
 		           ifNotNil: [ :var | var name ].
 
 	"convenient for debugging..."
@@ -660,7 +660,7 @@ SLInliner >> tryToInlineMethodExpressionsInCurrentMethod [
 
 	| sendsToInline |
 	sendsToInline := Dictionary new: 100.
-	sLStatementOrExpressionAnnotator visit: currentMethod parseTree.
+	sLNodeAnnotatorVisitor visit: currentMethod parseTree.
 
 	codeGenerator pushScope: currentMethod while: [
 		currentMethod parseTree
@@ -675,6 +675,7 @@ SLInliner >> tryToInlineMethodExpressionsInCurrentMethod [
 
 	sendsToInline isEmpty ifTrue: [ ^ false ].
 	currentMethod replaceNodesIn: sendsToInline.
+	sLNodeAnnotatorVisitor cleanInfo.
 	^ true
 ]
 
@@ -688,7 +689,7 @@ SLInliner >> tryToInlineMethodStatementsListsInCurrentMethod [
 	returningNodes := self getReturningNodesInCurrentMethod.
 
 	stmtLists := self statementsListsForInliningInCurrentMethod.
-	sLStatementOrExpressionAnnotator visit: currentMethod parseTree.
+	sLNodeAnnotatorVisitor visit: currentMethod parseTree.
 	stmtLists do: [ :stmtList |
 		newStatements := TStatementListNode statements:
 			                 (OrderedCollection new: stmtList statements size).
@@ -713,7 +714,7 @@ SLInliner >> tryToInlineMethodStatementsListsInCurrentMethod [
 					returningNode arguments
 						at: index
 						put: alternativeNode copyWithoutReturn ] ] ] ].
-
+	sLNodeAnnotatorVisitor cleanInfo.
 	^ didSomething
 ]
 
