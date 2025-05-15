@@ -11,18 +11,17 @@ Class {
 { #category : 'simple-inlining' }
 SlangInliningTest >> test2ChainInlining [
 
-	| method translation  |
+	| method translation |
 	ccg doBasicInlining: true.
 
 	method := ccg methodNamed: #methodC.
-	
+
 	translation := self translate: method.
 	translation := translation trimBoth.
 
 	self
 		assert: translation
-		equals:
-			'/* SLMockInliningTestClass>>#methodC */
+		equals: '/* SLMockInliningTestClass>>#methodC */
 static sqInt
 methodC(void)
 {
@@ -33,7 +32,71 @@ methodC(void)
 	2 + 2;
 	/* end methodB */
 	/* end methodA */
-	return self;
+	return 0;
+}'
+]
+
+{ #category : 'simple-inlining' }
+SlangInliningTest >> test2ChainInlining2 [
+
+	| method translation |
+	ccg doBasicInlining: true.
+
+	method := ccg methodNamed: #methodCReturnOnAssignment.
+
+	translation := self translate: method.
+	translation := translation trimBoth.
+
+	self
+		assert: translation
+		equals: '/* SLMockInliningTestClass>>#methodCReturnOnAssignment */
+static sqInt
+methodCReturnOnAssignment(void)
+{
+	sqInt var;
+	int var2;
+	sqInt x;
+
+	3 + 3;
+	/* begin methodAReturnOnAssignment */
+	1 + 1;
+	/* begin methodBReturnOnAssignment: */
+	var2 = 2 + 2;
+	return (var = var2);
+	/* end methodBReturnOnAssignment: */
+	/* end methodAReturnOnAssignment */
+}'
+]
+
+{ #category : 'simple-inlining' }
+SlangInliningTest >> test2ChainInlining3 [
+
+	| method translation |
+	ccg doBasicInlining: true.
+
+	method := ccg methodNamed: #methodCReturnOnAssignment.
+
+	translation := self translate: method.
+	translation := translation trimBoth.
+
+	self
+		assert: translation
+		equals: '/* SLMockInliningTestClass>>#methodCReturnOnAssignment */
+static sqInt
+methodCReturnOnAssignment(void)
+{
+	sqInt var;
+	int var2;
+	sqInt x;
+
+	3 + 3;
+	/* begin methodAReturnOnAssignment */
+	1 + 1;
+	/* begin methodBReturnOnAssignment: */
+	var2 = 2 + 2;
+	return (var = var2);
+	/* end methodBReturnOnAssignment: */
+	/* end methodAReturnOnAssignment */
 }'
 ]
 

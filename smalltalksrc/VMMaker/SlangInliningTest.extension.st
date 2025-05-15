@@ -5,5 +5,6 @@ SlangInliningTest >> setUp [
 
 	super setUp.
 	ccg addClass: SLMockInliningTestClass.
+	ccg inferTypes.
 	sLInliner := SLInliner new
 ]

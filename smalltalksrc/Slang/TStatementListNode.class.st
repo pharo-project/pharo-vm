@@ -808,7 +808,7 @@ TStatementListNode >> sizeWithoutComments [
 { #category : 'accessing' }
 TStatementListNode >> statements [
 
-	^statements
+	^ statements
 ]
 
 { #category : 'accessing' }

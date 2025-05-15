@@ -68,6 +68,16 @@ TReturnNode >> asReturnNode [
 ]
 
 { #category : 'transformations' }
+TReturnNode >> assignLastExpressionTo: aTVariableNode [
+	
+	" ^ exp => ^ var := exp "
+
+	^ TReturnNode new expression: (TAssignmentNode new
+			   setVariable: aTVariableNode
+			   expression: expression)
+]
+
+{ #category : 'transformations' }
 TReturnNode >> bindVariableUsesIn: aDictionary [
 
 	self expression: (expression bindVariableUsesIn: aDictionary)
