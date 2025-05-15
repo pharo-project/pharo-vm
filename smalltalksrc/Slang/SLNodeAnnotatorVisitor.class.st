@@ -29,6 +29,7 @@ SLNodeAnnotatorVisitor >> addToExitVar: aNode [
 SLNodeAnnotatorVisitor >> addToReturn: aNode [
 	"mark the given node has being inside a return expression, it doesn't mean that the node itself is an expression>
 	true or false on the stack indicate if the node is the a direct return and is the returning expression or not"
+
 	| entry |
 	returnStack isEmpty ifTrue: [ ^ self ].
 
@@ -68,15 +69,22 @@ SLNodeAnnotatorVisitor >> annotateNodeState: aNode [
 	self addToExitVar: aNode
 ]
 
+{ #category : 'cleanup' }
+SLNodeAnnotatorVisitor >> cleanInfo [
+
+	self initialize
+]
+
 { #category : 'accessing' }
 SLNodeAnnotatorVisitor >> currendMethod: aTmethod [
 
 	currentMethod := aTmethod
 ]
 
-{ #category : 'initialization' }
-SLNodeAnnotatorVisitor >> ensureEntryInInfoDictFor: aNode [ 
-	info at: aNode ifAbsentPut: [Dictionary new ]
+{ #category : 'helpers-annotate' }
+SLNodeAnnotatorVisitor >> ensureEntryInInfoDictFor: aNode [
+
+	info at: aNode ifAbsentPut: [ IdentityDictionary new ]
 ]
 
 { #category : 'testing' }
@@ -194,7 +202,7 @@ SLNodeAnnotatorVisitor >> visit: aNode [
 	aNode accept: self.
 	self assert: exitVarStack isEmpty.
 	self assert: returnStack isEmpty.
-	self assert: annotatorStack isEmpty
+	self assert: annotatorStack isEmpty.
 ]
 
 { #category : 'visiting' }
