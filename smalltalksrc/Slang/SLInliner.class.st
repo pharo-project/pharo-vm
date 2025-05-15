@@ -3,7 +3,8 @@ Class {
 	#superclass : 'Object',
 	#instVars : [
 		'codeGenerator',
-		'currentMethod'
+		'currentMethod',
+		'sLStatementOrExpressionAnnotator'
 	],
 	#category : 'Slang',
 	#package : 'Slang'
@@ -86,6 +87,13 @@ SLInliner >> getReturningNodesInCurrentMethod [
 	^ self getReturningNodesIn: currentMethod
 ]
 
+{ #category : 'initialization' }
+SLInliner >> initialize [
+
+	sLStatementOrExpressionAnnotator := SLNodeAnnotatorVisitor
+		                                    new
+]
+
 { #category : 'inlining-support' }
 SLInliner >> inlineBuiltin: aSendNode [
 
@@ -107,17 +115,14 @@ SLInliner >> inlineBuiltin: aSendNode [
 ]
 
 { #category : 'inlining-support' }
-SLInliner >> inlineCodeOrNilForStatement: aNode returningNodes: returningNodes [
+SLInliner >> inlineCodeOrNilForStatement: aNode [
 	"If the given statement node can be inlined, answer the statements that replace it. Otherwise, answer nil."
 
 	| stmts |
 	(aNode isReturn and: [ self isInlineableSend: aNode expression ])
 		ifTrue: [
 			| last |
-			stmts := self
-				         inlineSend: aNode expression
-				         directReturn: true
-				         exitVar: nil.
+			stmts := self inlineSend: aNode expression.
 
 			"the last statements may be comments"
 			stmts isStatementList ifTrue: [
@@ -127,16 +132,9 @@ SLInliner >> inlineCodeOrNilForStatement: aNode returningNodes: returningNodes [
 			^ stmts ].
 
 	(aNode isAssignment and: [ self isInlineableSend: aNode expression ])
-		ifTrue: [
-			^ self
-				  inlineSend: aNode expression
-				  directReturn: false
-				  exitVar: aNode variable name ].
+		ifTrue: [ ^ self inlineSend: aNode expression ].
 	(aNode isSend and: [ self isInlineableSend: aNode ]) ifTrue: [
-		^ self
-			  inlineSend: aNode
-			  directReturn: (returningNodes includes: aNode)
-			  exitVar: nil ].
+		^ self inlineSend: aNode ].
 	^ nil
 ]
 
@@ -335,7 +333,7 @@ SLInliner >> inlineReturningConditional: aSendNode [
 ]
 
 { #category : 'inlining-support' }
-SLInliner >> inlineSend: aSendNode directReturn: directReturn exitVar: exitVar [
+SLInliner >> inlineSend: aSendNode [
 	"Answer a collection of statements to replace the given send.  directReturn indicates
 	 that the send is the expression in a return statement, so returns can be left in the
 	 body of the inlined method. If exitVar is nil, the value returned by the send is not
@@ -345,9 +343,14 @@ SLInliner >> inlineSend: aSendNode directReturn: directReturn exitVar: exitVar [
 	 otherwise the assignee variable type must match the return type of the inlinee.  Return
 	 types are not propagated."
 
-	| sel callee calleeParameters exitLabel inlineStmts label exitType omittedParameters |
+	| sel callee calleeParameters exitLabel inlineStmts label exitType omittedParameters exitVar directReturn |
 	sel := aSendNode selector.
 	callee := codeGenerator methodNamed: sel.
+
+	directReturn := sLStatementOrExpressionAnnotator isDirectReturn:
+		                aSendNode.
+	exitVar := (sLStatementOrExpressionAnnotator exitVarFor: aSendNode)
+		           ifNotNil: [ :var | var name ].
 
 	"convenient for debugging..."
 	codeGenerator maybeBreakForInlineOf: aSendNode in: self.
@@ -431,7 +434,6 @@ SLInliner >> inlineSend: aSendNode directReturn: directReturn exitVar: exitVar [
 	inlineStmts := TStatementListNode statements: inlineStmts.
 	inlineStmts isComment ifTrue: [ "Nuke empty methods; e.g. override of flushAtCache"
 		inlineStmts statements: OrderedCollection new ].
-
 	^ inlineStmts
 ]
 
@@ -466,7 +468,7 @@ SLInliner >> isInlineableConditional: aSendNode [
 			  (method := codeGenerator anyMethodNamed:
 				             aSendNode receiver selector) notNil and: [
 				  method inline == true and: [
-					  method parseTree statements last isReturn and: [
+					  method parseTree lastNonCommentStatement isReturn and: [
 						  method parseTree allSatisfy: [ :node |
 							  node isReturn not or: [
 								  node expression isConstant and: [
@@ -497,17 +499,11 @@ SLInliner >> isInlineableFunctionCall: aNode [
 
 { #category : 'inlining-decision' }
 SLInliner >> isInlineableSend: aNode [
-	"Answer if the given expresssion node is a call to a method that can be inlined.
-	handle the fact that multiple inlining might have already happened"
+	"Answer if the given expresssion node is a call to a method that can be inlined."
 
-	| m stmt |
+	| m |
 	codeGenerator maybeBreakForTestToInline: aNode in: self.
-	aNode isSend ifFalse: [
-		aNode isStatementList
-			ifTrue: [
-				stmt := aNode lastNonCommentStatement.
-				^ self isInlineableSend: stmt ]
-			ifFalse: [ ^ false ] ].
+	aNode isSend ifFalse: [ ^ false ].
 	m := codeGenerator methodNamed: aNode selector. "nil if builtin or external function"
 	^ m isNotNil and: [
 		  m ~~ self and: [
@@ -527,7 +523,7 @@ SLInliner >> isSubstitutableNode: aNode intoMethod: targetMeth [
 		var := aNode name.
 		((currentMethod locals includes: var) or: [
 			 currentMethod args includes: var ]) ifTrue: [ ^ true ].
-		(#( self true false nil ) includes: var) ifTrue: [ ^ true ].
+		var = #self ifTrue: [ ^ true ].
 		(targetMeth maySubstituteGlobal: var in: codeGenerator) ifTrue: [
 			^ true ] ].
 
@@ -542,14 +538,14 @@ SLInliner >> isSubstitutableNode: aNode intoMethod: targetMeth [
 	"scan expression tree; must contain only constants, builtin ops, and inlineable vars"
 	aNode nodesDo: [ :node |
 		node isSend ifTrue: [
-			(node isBuiltinOperator or: [
+			((codeGenerator isBuiltinSelector: node selector) or: [
 				 node numArgs = 0 and: [ codeGenerator isStructSend: node ] ])
 				ifFalse: [ ^ false ] ].
 		node isVariable ifTrue: [
 			var := node name.
 			((currentMethod locals includes: var) or: [
 				 (currentMethod args includes: var) or: [
-					 (#( self true false nil ) includes: var) or: [
+					 var = #self or: [
 						 targetMeth maySubstituteGlobal: var in: codeGenerator ] ] ])
 				ifFalse: [ ^ false ] ].
 		(node isConstant or: [ node isVariable or: [ node isSend ] ])
@@ -583,9 +579,16 @@ SLInliner >> statementsListsForInliningInCurrentMethod [
 
 	| stmtLists |
 	stmtLists := OrderedCollection new: 10.
+
 	currentMethod parseTree
 		nodesDo: [ :node |
-		node isStatementList ifTrue: [ stmtLists add: node ] ].
+		node isStatementList ifTrue: [ stmtLists add: node ] ]
+		unless: [ :node |
+			node isSend and: [
+				node selector == #cCode:inSmalltalk: or: [
+					node selector == #cCall: or: [
+						node selector == #cCall:withArguments: or: [
+							codeGenerator isAssertSelector: node selector ] ] ] ] ].
 	currentMethod parseTree nodesDo: [ :node |
 		node isSend ifTrue: [
 			node selector = #cCode:inSmalltalk: ifTrue: [
@@ -612,7 +615,7 @@ SLInliner >> statementsListsForInliningInCurrentMethod [
 				 node selector) ifTrue: [ "Allow inlining if it is a [...] whileTrue/whileFalse.
 				This is identified by having more than one statement in the 
 				receiver block in which case the C code wouldn't work anyways"
-				node receiver statements size = 1 ifTrue: [
+				node receiver sizeWithoutComments = 1 ifTrue: [
 					stmtLists remove: node receiver ifAbsent: [  ] ] ].
 			node selector = #to:do: ifTrue: [
 				stmtLists remove: node receiver ifAbsent: [  ].
@@ -657,18 +660,14 @@ SLInliner >> tryToInlineMethodExpressionsInCurrentMethod [
 
 	| sendsToInline |
 	sendsToInline := Dictionary new: 100.
+	sLStatementOrExpressionAnnotator visit: currentMethod parseTree.
+
 	codeGenerator pushScope: currentMethod while: [
 		currentMethod parseTree
 			nodesDo: [ :node |
 				(self isInlineableFunctionCall: node) ifTrue: [
-					(self
-						inlineFunctionCall: node)
-						ifNotNil: [ :replacement |
-							(replacement isConstant and: [
-								 replacement isDefine not and: [
-									 replacement value isNumber and: [ replacement comment isNil ] ] ])
-								ifTrue: [ replacement comment: node selector ].
-							sendsToInline at: node put: replacement ] ] ]
+					(self inlineFunctionCall: node) ifNotNil: [ :replacement |
+						sendsToInline at: node put: replacement ] ] ]
 			unless: [ :node | "Don't inline the arguments to asserts to keep the asserts readable"
 				node isSend and: [
 					node selector == #cCode:inSmalltalk: or: [
@@ -689,18 +688,17 @@ SLInliner >> tryToInlineMethodStatementsListsInCurrentMethod [
 	returningNodes := self getReturningNodesInCurrentMethod.
 
 	stmtLists := self statementsListsForInliningInCurrentMethod.
+	sLStatementOrExpressionAnnotator visit: currentMethod parseTree.
 	stmtLists do: [ :stmtList |
 		newStatements := TStatementListNode statements:
 			                 (OrderedCollection new: stmtList statements size).
 		stmtList statements do: [ :stmt |
-			(self
-				 inlineCodeOrNilForStatement: stmt
-				 returningNodes: returningNodes)
+			(self inlineCodeOrNilForStatement: stmt)
 				ifNil: [ newStatements addAllLast: { stmt } ]
 				ifNotNil: [ :inlinedStmts |
 					didSomething := true.
 					newStatements addAllLast: inlinedStmts statements ] ].
-		stmtList statements: newStatements statements asArray ].
+		stmtList statements: newStatements statements ].
 
 
 
