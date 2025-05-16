@@ -433,6 +433,13 @@ CogX64Compiler >> canZeroExtend [
 	^true
 ]
 
+{ #category : 'testing' }
+CogX64Compiler >> checkIs32bit: offset [
+
+	(offset between: -2147483648 and: 2147483647) ifFalse: [
+		self error: 'Cannot jump to distances larger than 32 bits' ]
+]
+
 { #category : 'accessing' }
 CogX64Compiler >> cmpC32RTempByteSize [
 	^5
@@ -4274,13 +4281,6 @@ CogX64Compiler >> is32BitSignedImmediate: a64BitUnsignedOperand [
 	"Top 32 bits all the same as the bottom 32 bits' sign bit implies we can use a sign-extended 4 byte offset."
 	^self cCode: [(self cCoerceSimple: a64BitUnsignedOperand to: #int) = (self cCoerceSimple: a64BitUnsignedOperand to: #sqLong)]
 		inSmalltalk: [((a64BitUnsignedOperand >> 32) signedIntFromLong + 1 bitXor: 1) = (a64BitUnsignedOperand >> 31 bitAnd: 1)]
-]
-
-{ #category : 'testing' }
-CogX64Compiler >> checkIs32bit: offset [
-
-	(offset between: -2147483648 and: 2147483647) ifFalse: [
-		self error: 'Cannot jump to distances larger than 32 bits' ]
 ]
 
 { #category : 'testing' }
