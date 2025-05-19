@@ -30,14 +30,15 @@ SLNodeAnnotatorVisitor >> addToReturn: aNode [
 	"mark the given node has being inside a return expression, it doesn't mean that the node itself is an expression>
 	true or false on the stack indicate if the node is the a direct return and is the returning expression or not"
 
-	| entry |
+	| entry assoc |
 	returnStack isEmpty ifTrue: [ ^ self ].
 
 	entry := info at: aNode.
-	entry at: self returnString put: returnStack top.
+	assoc := returnStack top.
+	entry at: self returnString put: assoc.
 	returnStack pop.
 	"no longer the direct return"
-	returnStack push: false
+	returnStack push: false -> assoc value
 ]
 
 { #category : 'helpers-annotate' }
@@ -155,7 +156,10 @@ SLNodeAnnotatorVisitor >> initialize [
 { #category : 'testing' }
 SLNodeAnnotatorVisitor >> isDirectReturn: aNode [
 
-	^ (info at: aNode) at: self returnString ifAbsent: [ false ]
+	^ (info at: aNode)
+		  at: self returnString
+		  ifPresent: [ :assoc | assoc key ]
+		  ifAbsent: [ false ]
 ]
 
 { #category : 'testing' }
@@ -177,6 +181,15 @@ SLNodeAnnotatorVisitor >> isInReturn: aNode [
 SLNodeAnnotatorVisitor >> returnString [
 
 	^ #return
+]
+
+{ #category : 'testing' }
+SLNodeAnnotatorVisitor >> returningParentFor: aNode [
+
+	^ (info at: aNode)
+		  at: self returnString
+		  ifPresent: [ :assoc | assoc value ]
+		  ifAbsent: [ nil ]
 ]
 
 { #category : 'helpers' }
@@ -277,7 +290,7 @@ SLNodeAnnotatorVisitor >> visitReturnNode: aReturnNode [
 	self annotateNodeState: aReturnNode.
 
 	annotatorStack push: self expressionString.
-	returnStack push: true.
+	returnStack push: true -> aReturnNode.
 
 	aReturnNode expression accept: self.
 

@@ -118,6 +118,7 @@ TReturnNode >> children [
 { #category : 'transformations' }
 TReturnNode >> copyWithoutReturn [
 
+	expression parent: parent.
 	^ expression
 ]
 
