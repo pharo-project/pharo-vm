@@ -385,7 +385,7 @@ TStatementListNode >> copyWithoutReturn [
 	| newStmtsListNode |
 	self assert: self endsWithReturn.
 
-	statements size = 1 ifTrue: [
+	(statements size = 1 and: [ parent isConditionalSend not ]) ifTrue: [
 		^ statements last copyWithoutReturn
 			  parent: self parent;
 			  yourself ].

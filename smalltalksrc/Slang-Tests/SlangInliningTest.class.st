@@ -37,7 +37,146 @@ methodC(void)
 ]
 
 { #category : 'simple-inlining' }
-SlangInliningTest >> test2ChainInlining2 [
+SlangInliningTest >> test2ChainInliningAssignOnReturn [
+
+	| method translation |
+	ccg doBasicInlining: true.
+
+	method := ccg methodNamed: #methodCAssignOnReturn.
+
+	translation := self translate: method.
+	translation := translation trimBoth.
+
+	self
+		assert: translation
+		equals: '/* SLMockInliningTestClass>>#methodCAssignOnReturn */
+static sqInt
+methodCAssignOnReturn(void)
+{
+	sqInt a;
+
+	3 + 3;
+	/* begin methodAAssignOnReturn */
+	1 + 1;
+	a = 2 + 2;
+	/* end methodAAssignOnReturn */
+	return 0;
+}'
+]
+
+{ #category : 'jump-inlining' }
+SlangInliningTest >> test2ChainInliningMultipleReturn [
+
+	| method translation |
+	ccg doBasicInlining: true.
+
+	method := ccg methodNamed: #methodAMultipleReturn.
+
+	translation := self translate: method.
+	translation := translation trimBoth.
+
+	self
+		assert: translation
+		equals: '/* SLMockInliningTestClass>>#methodAMultipleReturn */
+static sqInt
+methodAMultipleReturn(void)
+{
+	/* begin methodBMultipleReturn */
+	if (methodB()) {
+		goto l3;
+	}
+	/* begin methodCMultipleReturn */
+	if (methodC()) {
+		goto l2;
+	}
+	3 + 3;
+	l2:
+	;
+	/* end methodCMultipleReturn */
+	2 + 2;
+	l3:
+	;
+	/* end methodBMultipleReturn */
+	return 1 + 1;
+}'
+]
+
+{ #category : 'jump-inlining' }
+SlangInliningTest >> test2ChainInliningMultipleReturnAsAssignmentExpression [
+
+	| method translation |
+	ccg doBasicInlining: true.
+
+	method := ccg methodNamed:
+		          #methodAMultipleReturnAsAssignmentExpression.
+
+	translation := self translate: method.
+	translation := translation trimBoth.
+
+	self
+		assert: translation
+		equals:
+			'/* SLMockInliningTestClass>>#methodAMultipleReturnAsAssignmentExpression */
+static sqInt
+methodAMultipleReturnAsAssignmentExpression(void)
+{
+	sqInt x;
+
+	/* begin methodBMultipleReturn */
+	if (methodB()) {
+		x = 0;
+		goto l3;
+	}
+	/* begin methodCMultipleReturn */
+	if (methodC()) {
+		goto l2;
+	}
+	3 + 3;
+	l2:
+	;
+	/* end methodCMultipleReturn */
+	x = 2 + 2;
+	l3:
+	;
+	/* end methodBMultipleReturn */
+	return 0;
+}'
+]
+
+{ #category : 'jump-inlining' }
+SlangInliningTest >> test2ChainInliningMultipleReturnAsReturnExpressionAndStatement [
+
+	| method translation |
+	ccg doBasicInlining: true.
+
+	method := ccg methodNamed:
+		          #methodAMultipleReturnAsReturnExpressionAndStatement.
+		
+	translation := self translate: method.
+	translation := translation trimBoth.
+
+	self
+		assert: translation
+		equals:
+			'/* SLMockInliningTestClass>>#methodAMultipleReturnAsReturnExpressionAndStatement */
+static sqInt
+methodAMultipleReturnAsReturnExpressionAndStatement(void)
+{
+	if (methodB()) {
+	} else {
+		/* begin methodCMultipleReturn */
+		if (methodC()) {
+			return 1;
+		}
+		return 3 + 3;
+		/* end methodCMultipleReturn */
+	}
+	return 0;
+}'
+]
+
+{ #category : 'simple-inlining' }
+SlangInliningTest >> test2ChainInliningReturnOnAssignment [
 
 	| method translation |
 	ccg doBasicInlining: true.
@@ -68,35 +207,28 @@ methodCReturnOnAssignment(void)
 }'
 ]
 
-{ #category : 'simple-inlining' }
-SlangInliningTest >> test2ChainInlining3 [
+{ #category : 'jump-inlining' }
+SlangInliningTest >> test2ChainInliningSimpleReturn [
 
 	| method translation |
 	ccg doBasicInlining: true.
 
-	method := ccg methodNamed: #methodCReturnOnAssignment.
+	method := ccg methodNamed: #methodASimpleReturn.
 
 	translation := self translate: method.
 	translation := translation trimBoth.
 
 	self
 		assert: translation
-		equals: '/* SLMockInliningTestClass>>#methodCReturnOnAssignment */
+		equals: '/* SLMockInliningTestClass>>#methodASimpleReturn */
 static sqInt
-methodCReturnOnAssignment(void)
+methodASimpleReturn(void)
 {
-	sqInt var;
-	int var2;
-	sqInt x;
-
+	/* begin methodBSimpleReturn */
 	3 + 3;
-	/* begin methodAReturnOnAssignment */
-	1 + 1;
-	/* begin methodBReturnOnAssignment: */
-	var2 = 2 + 2;
-	return (var = var2);
-	/* end methodBReturnOnAssignment: */
-	/* end methodAReturnOnAssignment */
+	2 + 2;
+	/* end methodBSimpleReturn */
+	return 1 + 1;
 }'
 ]
 
