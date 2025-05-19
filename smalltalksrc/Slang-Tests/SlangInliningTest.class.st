@@ -144,6 +144,41 @@ methodAMultipleReturnAsAssignmentExpression(void)
 ]
 
 { #category : 'jump-inlining' }
+SlangInliningTest >> test2ChainInliningMultipleReturnAsReturnExpression [
+
+	| method translation |
+	ccg doBasicInlining: true.
+
+	method := ccg methodNamed: #methodAMultipleReturnAsReturnExpression.
+
+	translation := self translate: method.
+	translation := translation trimBoth.
+
+	self
+		assert: translation
+		equals:
+			'/* SLMockInliningTestClass>>#methodAMultipleReturnAsReturnExpression */
+static sqInt
+methodAMultipleReturnAsReturnExpression(void)
+{
+	/* begin methodBMultipleReturn */
+	if (methodB()) {
+		return 0;
+	}
+	/* begin methodCMultipleReturn */
+	if (methodC()) {
+		goto l2;
+	}
+	3 + 3;
+	l2:
+	;
+	/* end methodCMultipleReturn */
+	return 2 + 2;
+	/* end methodBMultipleReturn */
+}'
+]
+
+{ #category : 'jump-inlining' }
 SlangInliningTest >> test2ChainInliningMultipleReturnAsReturnExpressionAndStatement [
 
 	| method translation |
