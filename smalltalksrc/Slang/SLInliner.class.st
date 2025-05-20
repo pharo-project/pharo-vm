@@ -32,7 +32,8 @@ SLInliner >> codeGenerator: aCodeGenerator [
 ]
 
 { #category : 'accessing' }
-SLInliner >> currentMethod [ 
+SLInliner >> currentMethod [
+
 	^ currentMethod
 ]
 
@@ -147,8 +148,8 @@ SLInliner >> inlineConditional: aSendNode [
 
 	self assert: (self isInlineableConditional: aSendNode).
 	self assert: aSendNode arguments first isStatementList.
-	^ (aSendNode arguments first statements size = 1 and: [
-		   aSendNode arguments first statements first isReturn ])
+	^ (aSendNode arguments first sizeWithoutComments = 1 and: [
+		   aSendNode arguments first lastNonCommentStatement isReturn ])
 		  ifTrue: [ self inlineReturningConditional: aSendNode ]
 		  ifFalse: [ self inlineGuardingConditional: aSendNode ]
 ]
@@ -164,15 +165,15 @@ SLInliner >> inlineConditionalGuardingOrConditionalInit: aSendNode isGuarding: i
 
 	data := Dictionary new.
 	data at: #isIfTrue put: aSendNode selector = #ifTrue:.
-	
+
 	data
 		at: #method
 		put: (codeGenerator methodNamed: aSendNode receiver selector) copy.
-	
-	data at: #replacementTree put: ((data at: #method)
-			 inlineFunctionCall: aSendNode receiver
-			 in: codeGenerator).
-	
+
+	data
+		at: #replacementTree
+		put: (self inlineFunctionCall: aSendNode receiver).
+
 	data at: #returnReplacement put: (isGuarding
 			 ifTrue: [
 				 TLabeledCommentNode new setLabel:

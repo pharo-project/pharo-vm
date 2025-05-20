@@ -64,6 +64,42 @@ methodCAssignOnReturn(void)
 }'
 ]
 
+{ #category : 'inline-arguments' }
+SlangInliningTest >> test2ChainInliningMethodAWithSimpleArgumentsInlined [
+	"a bug present since old version, vm works but it would be nice to fix it one day"
+
+	| method translation |
+	ccg doBasicInlining: true.
+
+	method := ccg methodNamed: #methodAWithSimpleArgumentsInlined.
+
+	translation := self translate: method.
+	translation := translation trimBoth.
+
+	self
+		assert: translation
+		equals:
+			'/* SLMockInliningTestClass>>#methodAWithSimpleArgumentsInlined */
+static sqInt
+methodAWithSimpleArgumentsInlined(void)
+{
+	sqInt arg;
+
+	/* begin emptyMethod: */
+	/* begin methodC */
+	3 + 3;
+	/* begin methodA */
+	1 + 1;
+	/* begin methodB */
+	2 + 2;
+	/* end methodB */
+	/* end methodA */
+	/* end methodC */
+	/* end emptyMethod: */
+	return 0;
+}'
+]
+
 { #category : 'jump-inlining' }
 SlangInliningTest >> test2ChainInliningMultipleReturn [
 

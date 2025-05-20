@@ -5,6 +5,12 @@ Class {
 	#package : 'Slang-Tests'
 }
 
+{ #category : 'helpers' }
+SLMockInliningTestClass >> emptyMethod: arg [
+
+	
+]
+
 { #category : 'simple-inlining' }
 SLMockInliningTestClass >> methodA [
 
@@ -67,6 +73,12 @@ SLMockInliningTestClass >> methodASimpleReturn [
 
 	self methodBSimpleReturn.
 	^ 1 + 1
+]
+
+{ #category : 'inlining-arguments' }
+SLMockInliningTestClass >> methodAWithSimpleArgumentsInlined [
+
+	self emptyMethod: self methodC
 ]
 
 { #category : 'simple-inlining-helpers' }
