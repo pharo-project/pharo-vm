@@ -1615,7 +1615,7 @@ SlangBasicTranslationTest >> testInlinedCommentInExpressionMoveReturn [
 	tMethod := self getTMethodFrom: #switchInReturn.
 	tMethod prepareMethodIn: generator.
 	tMethod recordDeclarationsIn: generator.
-	"SLDeadCodeElimination new removeDeadCodeUsing: generator ."
+
 	generator doBasicInlining: true.
 	translation := self translate: tMethod.
 	translation := translation trimBoth.

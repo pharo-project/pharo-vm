@@ -43,7 +43,8 @@ Class {
 		'castTranslationDict',
 		'castAsArgumentTranslationDict',
 		'wordSize',
-		'structInstanceVariableTranslations'
+		'structInstanceVariableTranslations',
+		'inlineStrategy'
 	],
 	#classVars : [
 		'NoRegParmsInAssertVMs'
@@ -1028,7 +1029,7 @@ CCodeGenerator >> doBasicInlining: inlineFlagOrSymbol [
 
 	| pass progress inliner |
 	self collectInlineList: inlineFlagOrSymbol.
-	inliner := SLInliner new
+	inliner := SLOldInlineStrategy new
 		           codeGenerator: self;
 		           yourself.
 	pass := 0.
@@ -1044,9 +1045,7 @@ CCodeGenerator >> doBasicInlining: inlineFlagOrSymbol [
 				(self sortMethods: methods) doWithIndex: [ :m :i |
 					bar value: i.
 					self currentMethod: m.
-					inliner currentMethod: m.
-					inliner tryToInlineMethodsInCurrentMethod ifTrue: [
-						progress := true ] ] ] ]
+					(inliner doInliningIn: m) ifTrue: [ progress := true ] ] ] ]
 ]
 
 { #category : 'inlining' }
@@ -3443,6 +3442,12 @@ CCodeGenerator >> inlineDispatchesInMethodNamed: selector [
 				customizeShortCasesForDispatchVar: 'currentBytecode'
 				in: self
 				method: m ] ]
+]
+
+{ #category : 'inlining' }
+CCodeGenerator >> inlineStrategy: aSLInlineStrategy [
+
+	inlineStrategy := aSLInlineStrategy
 ]
 
 { #category : 'utilities' }
