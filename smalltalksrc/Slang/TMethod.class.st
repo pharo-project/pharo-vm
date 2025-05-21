@@ -1838,16 +1838,16 @@ TMethod >> isFunctionalIn: aCodeGen [
 	 Answer false for methods with return types other than the simple
 	 integer types to work around bugs in the inliner."
 
-	parseTree sizeWithoutComments = 1 ifFalse: [
-		(parseTree sizeWithoutComments = 2 and: [
-			 parseTree firstNonCommentStatement isSend and: [
-				 parseTree firstNonCommentStatement selector == #flag: or: [
+	parseTree statements size = 1 ifFalse: [
+		(parseTree statements size = 2 and: [
+			 parseTree first isSend and: [
+				 parseTree first selector == #flag: or: [
 					 (aCodeGen isAssertSelector:
-						  parseTree firstNonCommentStatement selector) and: [
-						 parseTree firstNonCommentStatement selector ~~ #asserta: ] ] ] ])
+						  parseTree first selector) and: [
+						 parseTree first selector ~~ #asserta: ] ] ] ])
 			ifFalse: [ ^ false ] ].
-	parseTree lastNonCommentStatement isReturn ifFalse: [ ^ false ].
-	parseTree lastNonCommentStatement expression nodesDo: [ :n |
+	parseTree last isReturn ifFalse: [ ^ false ].
+	parseTree last expression nodesDo: [ :n |
 		n isReturn ifTrue: [ ^ false ] ].
 	^ #( int #'unsigned int' #long #'unsigned long' #'long long'
 	     #'unsigned long long' sqInt usqInt #sqIntptr_t #usqIntptr_t

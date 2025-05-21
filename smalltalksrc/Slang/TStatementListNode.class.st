@@ -393,6 +393,7 @@ TStatementListNode >> copyWithoutReturn [
 	newStmtsListNode := self class new setArguments: arguments.
 	statements last isComment
 		ifFalse: [
+			newStmtsListNode parent: parent.
 			newStmtsListNode statements:
 				statements allButLast , { statements last copyWithoutReturn } ]
 		ifTrue: [
