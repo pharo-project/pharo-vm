@@ -385,7 +385,7 @@ TStatementListNode >> copyWithoutReturn [
 	| newStmtsListNode |
 	self assert: self endsWithReturn.
 
-	(statements size = 1 and: [ parent isConditionalSend not ]) ifTrue: [
+	statements size = 1 ifTrue: [
 		^ statements last copyWithoutReturn
 			  parent: self parent;
 			  yourself ].
@@ -393,7 +393,6 @@ TStatementListNode >> copyWithoutReturn [
 	newStmtsListNode := self class new setArguments: arguments.
 	statements last isComment
 		ifFalse: [
-			newStmtsListNode parent: parent.
 			newStmtsListNode statements:
 				statements allButLast , { statements last copyWithoutReturn } ]
 		ifTrue: [
@@ -403,6 +402,7 @@ TStatementListNode >> copyWithoutReturn [
 			newStmtsListNode
 				replaceChild: actualLast
 				with: actualLast copyWithoutReturn ].
+	newStmtsListNode parent: parent.
 	^ newStmtsListNode
 ]
 
