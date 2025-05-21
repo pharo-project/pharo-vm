@@ -8,7 +8,7 @@ Class {
 	#package : 'Slang-Tests'
 }
 
-{ #category : 'simple-inlining' }
+{ #category : 'inlining-simple' }
 SlangInliningTest >> test2ChainInlining [
 
 	| method translation |
@@ -36,7 +36,7 @@ methodC(void)
 }'
 ]
 
-{ #category : 'simple-inlining' }
+{ #category : 'inlining-simple' }
 SlangInliningTest >> test2ChainInliningAssignOnReturn [
 
 	| method translation |
@@ -65,8 +65,147 @@ methodCAssignOnReturn(void)
 ]
 
 { #category : 'inline-arguments' }
-SlangInliningTest >> test2ChainInliningMethodAWithSimpleArgumentsInlined [
+SlangInliningTest >> test2ChainInliningEmptyMethodAWithArgumentsInlined [
 	"a bug present since old version, vm works but it would be nice to fix it one day"
+
+	| method translation |
+	ccg doBasicInlining: true.
+
+	method := ccg methodNamed: #emptyMethodAWithArgumentsInlined.
+
+	translation := self translate: method.
+	translation := translation trimBoth.
+
+	self
+		assert: translation
+		equals:
+			'/* SLMockInliningTestClass>>#emptyMethodAWithArgumentsInlined */
+static sqInt
+emptyMethodAWithArgumentsInlined(void)
+{
+	sqInt arg;
+
+	/* begin emptyMethod: */
+	/* begin methodCAlwaysInlined */
+	3 + 3;
+	/* begin methodA */
+	1 + 1;
+	/* begin methodB */
+	2 + 2;
+	/* end methodB */
+	/* end methodA */
+	/* end methodCAlwaysInlined */
+	/* end emptyMethod: */
+	return 0;
+}'
+]
+
+{ #category : 'inline-arguments' }
+SlangInliningTest >> test2ChainInliningEmptyMethodAWithSimpleArgumentsInlined [
+
+	| method translation |
+	ccg doBasicInlining: true.
+
+	method := ccg methodNamed: #emptyMethodAWithSimpleArgumentsInlined.
+
+	translation := self translate: method.
+	translation := translation trimBoth.
+
+	self
+		assert: translation
+		equals:
+			'/* SLMockInliningTestClass>>#emptyMethodAWithSimpleArgumentsInlined */
+static sqInt
+emptyMethodAWithSimpleArgumentsInlined(void)
+{
+	sqInt arg;
+
+	/* begin emptyMethod: */
+	arg = 2 + 2;
+	/* end emptyMethod: */
+	return 0;
+}'
+]
+
+{ #category : 'inline-arguments' }
+SlangInliningTest >> test2ChainInliningMethodAWithArgumentsInlined [
+
+	| method translation |
+	ccg doBasicInlining: true.
+
+	method := ccg methodNamed: #methodAWithArgumentsInlined.
+
+	translation := self translate: method.
+	translation := translation trimBoth.
+
+	self
+		assert: translation
+		equals:
+			'/* SLMockInliningTestClass>>#methodAWithArgumentsInlined */
+static sqInt
+methodAWithArgumentsInlined(void)
+{
+	return methodB((3 + 3, /* begin methodA */ 1 + 1, /* begin methodB */ 2 + 2 /* end methodB */ /* end methodA */));
+}'
+]
+
+{ #category : 'inline-arguments' }
+SlangInliningTest >> test2ChainInliningMethodAWithReturningSendArgumentsInlined [
+
+	| method translation |
+	ccg doBasicInlining: true.
+
+	method := ccg methodNamed: #methodAWithReturningSendArgumentsInlined.
+
+	translation := self translate: method.
+	translation := translation trimBoth.
+
+	self
+		assert: translation
+		equals:
+			'/* SLMockInliningTestClass>>#methodAWithReturningSendArgumentsInlined */
+static sqInt
+methodAWithReturningSendArgumentsInlined(void)
+{
+	return methodB((3 + 3, /* begin methodA */ 1 + 1, /* begin methodB */ 2 + 2 /* end methodB */ /* end methodA */));
+}'
+]
+
+{ #category : 'inlining-returning-arguments' }
+SlangInliningTest >> test2ChainInliningMethodAWithReturningSendReturningArgumentsInlined [
+
+	| method translation |
+	ccg doBasicInlining: true.
+
+	method := ccg methodNamed:
+		          #methodAWithReturningSendReturningArgumentsInlined.
+
+	translation := self translate: method.
+	translation := translation trimBoth.
+
+	self assert: translation equals: 'incorrect
+			/* SLMockInliningTestClass>>#methodAWithReturningSendReturningArgumentsInlined */
+static sqInt
+methodAWithReturningSendReturningArgumentsInlined(void)
+{
+	return methodB((/* begin methodBMultipleReturn */ ((methodB())
+		 ? (goto l3;
+)
+		 : 0), /* begin methodCMultipleReturn */ ((methodC())
+		 ? (goto l2;
+)
+		 : 0), 3 + 3, l2:
+	;
+	/* end methodCMultipleReturn */
+, 2 + 2, l3:
+	;
+	/* end methodBMultipleReturn */
+, 1 + 1));
+}'
+]
+
+{ #category : 'inline-arguments' }
+SlangInliningTest >> test2ChainInliningMethodAWithSimpleArgumentsInlined [
 
 	| method translation |
 	ccg doBasicInlining: true.
@@ -83,24 +222,12 @@ SlangInliningTest >> test2ChainInliningMethodAWithSimpleArgumentsInlined [
 static sqInt
 methodAWithSimpleArgumentsInlined(void)
 {
-	sqInt arg;
-
-	/* begin emptyMethod: */
-	/* begin methodC */
-	3 + 3;
-	/* begin methodA */
-	1 + 1;
-	/* begin methodB */
-	2 + 2;
-	/* end methodB */
-	/* end methodA */
-	/* end methodC */
-	/* end emptyMethod: */
+	methodB(2 + 2);
 	return 0;
 }'
 ]
 
-{ #category : 'jump-inlining' }
+{ #category : 'inlining-jump' }
 SlangInliningTest >> test2ChainInliningMultipleReturn [
 
 	| method translation |
@@ -137,7 +264,7 @@ methodAMultipleReturn(void)
 }'
 ]
 
-{ #category : 'jump-inlining' }
+{ #category : 'inlining-jump' }
 SlangInliningTest >> test2ChainInliningMultipleReturnAsAssignmentExpression [
 
 	| method translation |
@@ -179,7 +306,7 @@ methodAMultipleReturnAsAssignmentExpression(void)
 }'
 ]
 
-{ #category : 'jump-inlining' }
+{ #category : 'inlining-jump' }
 SlangInliningTest >> test2ChainInliningMultipleReturnAsReturnExpression [
 
 	| method translation |
@@ -214,7 +341,7 @@ methodAMultipleReturnAsReturnExpression(void)
 }'
 ]
 
-{ #category : 'jump-inlining' }
+{ #category : 'inlining-jump' }
 SlangInliningTest >> test2ChainInliningMultipleReturnAsReturnExpressionAndStatement [
 
 	| method translation |
@@ -246,7 +373,7 @@ methodAMultipleReturnAsReturnExpressionAndStatement(void)
 }'
 ]
 
-{ #category : 'simple-inlining' }
+{ #category : 'inlining-simple' }
 SlangInliningTest >> test2ChainInliningReturnOnAssignment [
 
 	| method translation |
@@ -278,7 +405,7 @@ methodCReturnOnAssignment(void)
 }'
 ]
 
-{ #category : 'jump-inlining' }
+{ #category : 'inlining-jump' }
 SlangInliningTest >> test2ChainInliningSimpleReturn [
 
 	| method translation |
@@ -317,7 +444,7 @@ SlangInliningTest >> testCollectStatementsForInliningInMethodWithAvoidedSelector
 	self assert: statementsForInlining size equals: 6.
 ]
 
-{ #category : 'simple-inlining' }
+{ #category : 'inlining-simple' }
 SlangInliningTest >> testInlineInSwitchRemovesReturnStatement [
 
 	| method codeGenerator methodToBeInlined theSwitch firstCaseConstantExpression firstCase firstCaseLabels |
@@ -344,7 +471,7 @@ SlangInliningTest >> testInlineInSwitchRemovesReturnStatement [
 	self assert: firstCaseConstantExpression parent equals: theSwitch
 ]
 
-{ #category : 'simple-inlining' }
+{ #category : 'inlining-simple' }
 SlangInliningTest >> testSimpleInlining [
 
 	| method sendStatements |

@@ -11,54 +11,74 @@ SLMockInliningTestClass >> emptyMethod: arg [
 	
 ]
 
-{ #category : 'simple-inlining' }
+{ #category : 'inlining-arguments' }
+SLMockInliningTestClass >> emptyMethodAWithArgumentsInlined [
+
+	self emptyMethod: self methodCAlwaysInlined
+]
+
+{ #category : 'inlining-arguments' }
+SLMockInliningTestClass >> emptyMethodAWithSimpleArgumentsInlined [
+
+	self emptyMethod: self methodBAlwaysInlined
+]
+
+{ #category : 'inlining-simple' }
 SLMockInliningTestClass >> methodA [
 
 	1 + 1.
 	self methodB
 ]
 
-{ #category : 'simple-inlining' }
+{ #category : 'inlining-simple' }
 SLMockInliningTestClass >> methodAAssignOnReturn [
 
 	1 + 1.
 	^ self methodBAssignOnReturn
 ]
 
-{ #category : 'jump-inlining' }
+{ #category : 'inlining-jump' }
 SLMockInliningTestClass >> methodAMultipleReturn [
 
 	self methodBMultipleReturn.
 	^ 1 + 1
 ]
 
-{ #category : 'jump-inlining' }
+{ #category : 'inlining-jump' }
+SLMockInliningTestClass >> methodAMultipleReturnAlwaysInlined [
+
+	<inline: #always>
+	self methodBMultipleReturn.
+	^ 1 + 1
+]
+
+{ #category : 'inlining-jump' }
 SLMockInliningTestClass >> methodAMultipleReturnAsAssignmentExpression [
 
 	| x |
 	x := self methodBMultipleReturn
 ]
 
-{ #category : 'jump-inlining' }
+{ #category : 'inlining-jump' }
 SLMockInliningTestClass >> methodAMultipleReturnAsReturnExpression [
 
 	^ self methodBMultipleReturn
 ]
 
-{ #category : 'jump-inlining' }
+{ #category : 'inlining-jump' }
 SLMockInliningTestClass >> methodAMultipleReturnAsReturnExpressionAndStatement [
 
 	^ self methodBMultipleReturnExpressionAndStatement
 ]
 
-{ #category : 'jump-inlining' }
+{ #category : 'inlining-jump' }
 SLMockInliningTestClass >> methodAMultipleReturnExpression [
 
 	self methodBMultipleReturn.
 	^ 1 + 1
 ]
 
-{ #category : 'simple-inlining' }
+{ #category : 'inlining-simple' }
 SLMockInliningTestClass >> methodAReturnOnAssignment [
 
 	| var |
@@ -68,7 +88,7 @@ SLMockInliningTestClass >> methodAReturnOnAssignment [
 		 ]
 ]
 
-{ #category : 'jump-inlining' }
+{ #category : 'inlining-jump' }
 SLMockInliningTestClass >> methodASimpleReturn [
 
 	self methodBSimpleReturn.
@@ -76,24 +96,56 @@ SLMockInliningTestClass >> methodASimpleReturn [
 ]
 
 { #category : 'inlining-arguments' }
-SLMockInliningTestClass >> methodAWithSimpleArgumentsInlined [
+SLMockInliningTestClass >> methodAWithArgumentsInlined [
 
-	self emptyMethod: self methodC
+	^ self methodB: self methodCAlwaysInlined
 ]
 
-{ #category : 'simple-inlining-helpers' }
+{ #category : 'inlining-arguments' }
+SLMockInliningTestClass >> methodAWithReturningSendArgumentsInlined [
+
+	^ self methodB: self methodCAlwaysInlined
+]
+
+{ #category : 'inlining-returning-arguments' }
+SLMockInliningTestClass >> methodAWithReturningSendReturningArgumentsInlined [
+
+	^ self methodB: self methodAMultipleReturnAlwaysInlined
+]
+
+{ #category : 'inlining-arguments' }
+SLMockInliningTestClass >> methodAWithSimpleArgumentsInlined [
+
+	self methodB: self methodBAlwaysInlined
+]
+
+{ #category : 'inlining-simple-helpers' }
 SLMockInliningTestClass >> methodB [
 
 	2 + 2
 ]
 
-{ #category : 'simple-inlining-helpers' }
+{ #category : 'inlining-arguments-helpers' }
+SLMockInliningTestClass >> methodB: anArg [
+
+	<inline: #never>
+	^ anArg
+]
+
+{ #category : 'inlining-arguments-helpers' }
+SLMockInliningTestClass >> methodBAlwaysInlined [
+
+	<inline: #always>
+	2 + 2
+]
+
+{ #category : 'inlining-simple-helpers' }
 SLMockInliningTestClass >> methodBAssignOnReturn [
 
 	^ 2 + 2
 ]
 
-{ #category : 'jump-inlining-helpers' }
+{ #category : 'inlining-jump-helpers' }
 SLMockInliningTestClass >> methodBMultipleReturn [
 
 	self methodB ifTrue: [ ^ 0 ].
@@ -101,7 +153,7 @@ SLMockInliningTestClass >> methodBMultipleReturn [
 	^ 2 + 2
 ]
 
-{ #category : 'jump-inlining-helpers' }
+{ #category : 'inlining-jump-helpers' }
 SLMockInliningTestClass >> methodBMultipleReturnExpressionAndStatement [
 
 	^ self methodB
@@ -109,14 +161,14 @@ SLMockInliningTestClass >> methodBMultipleReturnExpressionAndStatement [
 		  ifFalse: [ self methodCMultipleReturn ]
 ]
 
-{ #category : 'simple-inlining-helpers' }
+{ #category : 'inlining-simple-helpers' }
 SLMockInliningTestClass >> methodBReturnOnAssignment [
 
 	| var |
 	var := 2 + 2
 ]
 
-{ #category : 'simple-inlining-helpers' }
+{ #category : 'inlining-simple-helpers' }
 SLMockInliningTestClass >> methodBReturnOnAssignment: aBlock [
 
 	| var |
@@ -124,40 +176,49 @@ SLMockInliningTestClass >> methodBReturnOnAssignment: aBlock [
 	^ aBlock value: var
 ]
 
-{ #category : 'jump-inlining-helpers' }
+{ #category : 'inlining-jump-helpers' }
 SLMockInliningTestClass >> methodBSimpleReturn [
 
 	self methodCSimpleReturn.
 	^ 2 + 2
 ]
 
-{ #category : 'simple-inlining-helpers' }
+{ #category : 'inlining-simple-helpers' }
 SLMockInliningTestClass >> methodC [
+
 	3 + 3.
-	self methodA 
+	self methodA
 ]
 
-{ #category : 'simple-inlining-helpers' }
+{ #category : 'inlining-arguments-helpers' }
+SLMockInliningTestClass >> methodCAlwaysInlined [
+
+	<inline: #always>
+	3 + 3.
+	self methodA
+]
+
+{ #category : 'inlining-simple-helpers' }
 SLMockInliningTestClass >> methodCAssignOnReturn [
 	| a |
 	3 + 3.
 	a := self methodAAssignOnReturn
 ]
 
-{ #category : 'jump-inlining-helpers' }
+{ #category : 'inlining-jump-helpers' }
 SLMockInliningTestClass >> methodCMultipleReturn [
 
 	self methodC ifTrue: [ ^ 1 ].
 	^ 3 + 3
 ]
 
-{ #category : 'simple-inlining-helpers' }
+{ #category : 'inlining-simple-helpers' }
 SLMockInliningTestClass >> methodCReturnOnAssignment [
 	3 + 3.
 	^ self methodAReturnOnAssignment
 ]
 
-{ #category : 'jump-inlining-helpers' }
+{ #category : 'inlining-jump-helpers' }
 SLMockInliningTestClass >> methodCSimpleReturn [
 
 	^ 3 + 3
