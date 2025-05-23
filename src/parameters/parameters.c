@@ -356,6 +356,7 @@ logParameters(const VMParameters* parameters)
 	logDebug("Image file name: %s", parameters->imageFileName);
 	logDebug("Is default Image: %s", parameters->isDefaultImage ? "yes" : "no");
 	logDebug("Is interactive session: %s", parameters->isInteractiveSession ? "yes" : "no");
+	logDebug("Is in worker mode: %s", parameters->isWorker ? "yes" : "no");
 
 	logParameterVector("vmParameters", &parameters->vmParameters);
 	logParameterVector("imageParameters", &parameters->imageParameters);
