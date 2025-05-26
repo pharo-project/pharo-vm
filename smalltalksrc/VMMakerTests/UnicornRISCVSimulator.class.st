@@ -159,7 +159,6 @@ UnicornRISCVSimulator >> doublePrecisionFloatingPointRegister2 [
 	^ UcRISCVRegisters f2
 ]
 
-<<<<<<< HEAD
 { #category : 'as yet unclassified' }
 UnicornRISCVSimulator >> doublePrecisionFloatingPointRegister3 [
 
