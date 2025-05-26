@@ -76,8 +76,7 @@ Class {
 		'expecting',
 		'bootstrapping',
 		'primitiveFailCount',
-		'initialAddress',
-		'rumpCStackBase'
+		'initialAddress'
 	],
 	#classVars : [
 		'ByteCountsPerMicrosecond',
@@ -618,7 +617,7 @@ CogVMSimulator >> functionForPrimitiveExternalCall: methodObj [
 ]
 
 { #category : 'interpreter shell' }
-CogVMSimulator >> functionPointerFor: primIndex inClass: lookupClass [
+CogVMSimulator >> functionPointerFor: primIndex [
 	"Override Interpreter to handle the external primitives caching.  See also
 	 internalExecuteNewMethod."
 
@@ -1337,7 +1336,7 @@ CogVMSimulator >> primitiveContextAtPut [
 CogVMSimulator >> primitiveDoPrimitiveWithArgs [
 	| primIndex |
 	primIndex := objectMemory integerValueOf: (self stackValue: 1).
-	transcript nextPutAll: 'DO PRIMITIVE: '; print: (self functionPointerFor: primIndex inClass: nil); cr; flush.
+	transcript nextPutAll: 'DO PRIMITIVE: '; print: (self functionPointerFor: primIndex); cr; flush.
 	(#(76 "primitiveStoreStackp" 188 189 "eval method") includes: primIndex) ifTrue:
 		[self halt].
 	^super primitiveDoPrimitiveWithArgs
@@ -1726,7 +1725,7 @@ CogVMSimulator >> saneFunctionPointerForFailureOfPrimIndex: primIndex [
 	and: [self isPrimitiveFunctionPointerAnIndex not
 	and: [primIndex ~= PrimNumberExternalCall
 	and: [(self isMetaPrimitiveIndex: primIndex) not]]]) ifTrue:
-		[basePrimitive := self functionPointerFor: primIndex inClass: objectMemory nilObject.
+		[basePrimitive := self functionPointerFor: primIndex.
 		 ^(cogit lookupAddress: primitiveFunctionPointer) endsWith: basePrimitive].
 
 	^super saneFunctionPointerForFailureOfPrimIndex: primIndex

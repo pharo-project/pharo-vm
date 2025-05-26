@@ -95,10 +95,8 @@ static int *acTable;
 static sqInt acTableSize;
 static int *cbBlocks[128];
 static int cbComponent[11];
-static sqInt cbSampleStream;
 static int *crBlocks[128];
 static int crComponent[11];
-static sqInt crSampleStream;
 static int *dcTable;
 static sqInt dcTableSize;
 static sqInt ditherMask;
@@ -165,8 +163,6 @@ static const char *moduleName =
 static int *residuals;
 static int *yBlocks[128];
 static int yComponent[11];
-static sqInt ySampleStream;
-
 
 	/* JPEGReaderPlugin>>#cbColorComponentFrom: */
 static sqInt

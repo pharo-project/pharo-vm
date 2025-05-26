@@ -422,13 +422,22 @@ StackToRegisterMappingCogit class >> isAcceptableAncilliaryClass: aClass [
 ]
 
 { #category : 'translation' }
-StackToRegisterMappingCogit class >> mustBeGlobal: var [
+StackToRegisterMappingCogit class >> mustBeGlobalAndExport: var [
 	"Answer if a variable must be global and exported.  Used for inst vars that are accessed from VM support code."
 
-	^(super mustBeGlobal: var)
-	   or: [#('ceCallCogCodePopReceiverArg0Regs' 'ceCallCogCodePopReceiverArg1Arg0Regs'
-			'realCECallCogCodePopReceiverArg0Regs' 'realCECallCogCodePopReceiverArg1Arg0Regs'
-			'ceCall0ArgsPIC' 'ceCall1ArgsPIC' 'ceCall2ArgsPIC') includes: var]
+	^ (super mustBeGlobalAndExport: var) or: [
+		  #( 'ceCallCogCodePopReceiverArg0Regs'
+		     'ceCallCogCodePopReceiverArg1Arg0Regs'
+		     'realCECallCogCodePopReceiverArg0Regs'
+		     'realCECallCogCodePopReceiverArg1Arg0Regs'
+		     'ceCall0ArgsPIC' 'ceCall1ArgsPIC' 'ceCall2ArgsPIC' ) includes:
+			  var ]
+]
+
+{ #category : 'translation' }
+StackToRegisterMappingCogit class >> mustBeGlobalInFile: var [
+
+	^ #( #aMethodLabel #generatorTable ) includes: var
 ]
 
 { #category : 'accessing' }
@@ -913,15 +922,6 @@ StackToRegisterMappingCogit >> ceCallCogCodePopReceiverArg1Arg0Regs [
 	<api: 'extern void (*ceCallCogCodePopReceiverArg1Arg0Regs)()'>
 	<doNotGenerate>
 	self simulateEnilopmart: ceCallCogCodePopReceiverArg1Arg0Regs numArgs: 3
-]
-
-{ #category : 'simulation only' }
-StackToRegisterMappingCogit >> ceShortCutTraceStore: aProcessorSimulationTrap [
-	<doNotGenerate>
-	self shortcutTrampoline: aProcessorSimulationTrap
-		to: [coInterpreter
-				ceTraceStoreOf: (processor registerAt: TempReg)
-				into: (processor registerAt: ReceiverResultReg)]
 ]
 
 { #category : 'accessing' }
@@ -3778,7 +3778,7 @@ StackToRegisterMappingCogit >> populate: tuple withPICInfoFor: cPIC firstCacheTa
 		picCaseMachineCodePC := self addressOfEndOfCase: i inCPIC: cPIC.
 		cacheTag := i = 1
 						ifTrue: [firstCacheTag]
-						ifFalse: [backEnd literalBeforeFollowingAddress: picCaseMachineCodePC - backEnd jumpLongConditionalByteSize].
+						ifFalse: [backEnd literal32BeforeFollowingAddress: picCaseMachineCodePC - backEnd jumpLongConditionalByteSize].
 		
 		classOop := objectRepresentation classForInlineCacheTag: cacheTag.
 		objectMemory storePointer: i * 2 - 1 ofObject: tuple withValue: classOop.

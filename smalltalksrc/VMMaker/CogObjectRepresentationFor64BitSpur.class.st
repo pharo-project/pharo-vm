@@ -505,7 +505,7 @@ CogObjectRepresentationFor64BitSpur >> genGetHashFieldNonImmOf: instReg into: de
 ]
 
 { #category : 'compile abstract instructions' }
-CogObjectRepresentationFor64BitSpur >> genGetInlineCacheClassTagFrom: sourceReg into: destReg forEntry: forEntry [
+CogObjectRepresentationFor64BitSpur >> genGetInlineCacheClassTagFrom: sourceReg into: destReg [
 	"Extract the inline cache tag for the object in sourceReg into destReg. The inline
 	 cache tag for a given object is the value loaded in inline caches to distinguish
 	 objects of different classes.  In Spur this is either the tags for immediates, or
@@ -513,8 +513,6 @@ CogObjectRepresentationFor64BitSpur >> genGetInlineCacheClassTagFrom: sourceReg 
 	| jumpImm entryLabel |
 	<var: #jumpImm type: #'AbstractInstruction *'>
 	<var: #entryLabel type: #'AbstractInstruction *'>
-	forEntry ifTrue:
-		[cogit AlignmentNops: objectMemory wordSize].
 	entryLabel := cogit Label.
 	cogit AndCq: objectMemory tagMask R: sourceReg R: destReg.
 	jumpImm := cogit JumpNonZero: 0.
@@ -522,24 +520,8 @@ CogObjectRepresentationFor64BitSpur >> genGetInlineCacheClassTagFrom: sourceReg 
 	self flag: #endianness.
 	cogit MoveMw: 0 r: sourceReg R: destReg.
 	cogit AndCq: objectMemory classIndexMask R: destReg.
-
-	"The entry and the noCheckEntry (that will generated after) need to be aligned differently.
-	We do that by forcing some odd number of extra Nop operations here.
-	One Nop is not enough because that causes x86-64 entries to have the same allignment.
-	
-	In ARM64 all instructions are 4 byte long, thus 3 Nops make 
-	   - the entry to be aligned to 8 bytes and
-	   - the no check entry aligned to 4 bytes.
-	
-	In x86-64 instruction size is variable, and 3 Nops take 3 bytes."
-	forEntry ifTrue: [ 
-		cogit Nop.
-		cogit Nop.
-		cogit Nop.
-	].
-
 	jumpImm jmpTarget: cogit Label.
-	^entryLabel
+	^ entryLabel
 ]
 
 { #category : 'compile abstract instructions' }

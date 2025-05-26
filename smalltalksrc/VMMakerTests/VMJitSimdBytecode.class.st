@@ -9,7 +9,7 @@ Class {
 { #category : 'tests' }
 VMJitSimdBytecode class >> wordSizeParameters [ 
 
-	^ self wordSize64Parameters 
+	^ self wordSize64SIMDParameters 
 ]
 
 { #category : 'running' }

@@ -577,10 +577,6 @@ If ffi is put as a separate header, slang will sort the header and put it outsid
 		declareC:
 			'void (*externalPrimitiveTable[MaxExternalPrimitiveTableSize + 1 /* '
 			, (MaxExternalPrimitiveTableSize + 1) printString , ' */])(void)';
-		var: #interruptCheckChain
-		declareC: 'void (*interruptCheckChain)(void) = 0';
-		var: #showSurfaceFn
-		declareC: 'int (*showSurfaceFn)(sqIntptr_t, int, int, int, int)';
 		var: #jmpBuf
 		declareC:
 			'jmp_buf jmpBuf[MaxJumpBuf + 1 /* ' , (MaxJumpBuf + 1) printString
@@ -605,8 +601,6 @@ If ffi is put as a separate header, slang will sort the header and put it outsid
 	aCCodeGenerator
 		var: #reenterInterpreter
 		declareC: 'jmp_buf reenterInterpreter; /* private export */'.
-
-	aCCodeGenerator var: #messageCount type: #usqInt.
 
 	aCCodeGenerator removeVariable: #libFFI.
 	LibFFIConstants classVariables do: [ :e |
@@ -1484,21 +1478,15 @@ StackInterpreter class >> isStackAccessor: selector [
 ]
 
 { #category : 'translation' }
-StackInterpreter class >> mustBeGlobal: var [
-
+StackInterpreter class >> mustBeGlobalAndExport: var [
 	"Answer if a variable must be global and exported.  Used for inst vars that are accessed from VM support code."
 
-	^ (super mustBeGlobal: var) or: [ 
-		  (self objectMemoryClass mustBeGlobal: var) or: [ 
-			  #( 'interpreterProxy' 'interpreterVersion' 'inIOProcessEvents'
-			     'sendWheelEvents' 'deferDisplayUpdates' 'extraVMMemory'
-			     'showSurfaceFn' 'displayBits' 'displayWidth' 'displayHeight'
-			     'displayDepth' 'desiredNumStackPages' 'desiredEdenBytes'
-			     'breakLookupClassTag' 'breakSelector' 'breakSelectorLength'
-			     'sendTrace' 'checkAllocFiller' 'checkedPluginName'
-			     'reenterInterpreter' 'suppressHeartbeatFlag'
-			     'ffiExceptionResponse' 'debugCallbackInvokes'
-			     'debugCallbackPath' 'debugCallbackReturns' ) includes: var ] ]
+	^ (super mustBeGlobalAndExport: var) or: [
+		  (self objectMemoryClass mustBeGlobalAndExport: var) or: [
+			  #( 'interpreterProxy' 'interpreterVersion' 'extraVMMemory'
+			     'desiredNumStackPages' 'desiredEdenBytes' 'sendTrace'
+			     'checkAllocFiller' 'checkedPluginName' 'reenterInterpreter'
+			     'suppressHeartbeatFlag' 'ffiExceptionResponse' ) includes: var ] ]
 ]
 
 { #category : 'translation' }
@@ -1865,7 +1853,9 @@ StackInterpreter >> activateNewMethodInterpreted [
 	If mustBeInterpreterFrame is true, force it to be an interpreter frame regardless of the method being compiled"
 
 	<inline: true>
-	self saveCallerFrameStateCallingNewInterpreterFrame: true.
+	self push: instructionPointer.
+	self push: framePointer.
+	framePointer := stackPointer.
 	^ self setupFrameForNewMethodInterpreted
 ]
 
@@ -1986,7 +1976,7 @@ StackInterpreter >> addNewMethodToCache: classObj [
 	(objectMemory isOopCompiledMethod: newMethod)
 		ifTrue:
 			[primitiveIndex := self primitiveIndexOf: newMethod.
-			 primitiveFunctionPointer := self functionPointerFor: primitiveIndex inClass: classObj]
+			 primitiveFunctionPointer := self functionPointerFor: primitiveIndex]
 		ifFalse:
 			[self assert: ((objectMemory isNonImmediate: newMethod)
 						  and: [objectMemory isForwarded: newMethod]) not.
@@ -2216,6 +2206,8 @@ StackInterpreter >> assertValidStackLimits: ln [
 StackInterpreter >> baseFrameArguments: baseFrameFP inPage: thePage do: aBlock [
 	"Iterate the arguments of the base frame of a given page."
 
+	<var: #baseFrameFP type: 'char *'>
+	
 	| baseFrameArgumentSP |
 	"Skip the caller saved IP slot containing the caller context"
 	baseFrameArgumentSP := baseFrameFP + FoxCallerSavedIP
@@ -6939,12 +6931,12 @@ StackInterpreter >> functionForPrimitiveCallout [
 ]
 
 { #category : 'method lookup cache' }
-StackInterpreter >> functionPointerFor: primIdx inClass: theClass [
+StackInterpreter >> functionPointerFor: primIdx [
 	"Find an actual function pointer for this primitiveIndex.  This is an
 	opportunity to specialise the prim for the relevant class (format for
 	example).  Default for now is simply the entry in the base primitiveTable."
 	<api>
-	<returnTypeC: 'void (*functionPointerForinClass(sqInt primIdx,sqInt theClass))(void)'>
+	<returnTypeC: 'void (*functionPointerForinClass(sqInt primIdx))(void)'>
 	^primIdx > MaxPrimitiveIndex ifTrue: [0] ifFalse: [primitiveTable at: primIdx]
 ]
 
@@ -9128,17 +9120,12 @@ StackInterpreter >> makeBaseFrameFor: aContext [
 			ofObject: aContext
 			withValue: objectMemory nilObject ].
 
-	instructionPointer := self baseFrameSavedCallerIP.
-	"base frame's saved fp is null"
-	framePointer := 0.
-	self saveCallerFrameStateCallingNewInterpreterFrame: true.
+	"Push the caller IP for the base frame.
+	Then the frame pointer which is null for the base frame"
+	self push: self baseFrameSavedCallerIP.
+	self push: 0. "FP"
+	framePointer := stackPointer.
 
-	"We finished pushing all the meta-data required for the base-frame to work.
-	Proceed to start a new frame"
-	"Create either a machine code frame or an interpreter frame based on the pc.  If the pc is negative
-	 it is a machine code pc and so we produce a machine code frame.  If positive an interpreter frame.
-	 N.B. Do *not* change this to try and map from a bytecode pc to a machine code frame under
-	 any circumstances.  See ensureContextIsExecutionSafeAfterAssignToStackPointer:"
 	theInstructionPointer := self
 		                         setupFrameFixedPart: theMethod
 		                         withHeader:
@@ -9391,7 +9378,7 @@ StackInterpreter >> mappedDirectCall [
 	localPrimIndex := self primitiveIndexOfMethod: newMethod header: methodHeader.
 	argumentCount := self argumentCountOfMethodHeader: methodHeader.
 	"The primitive function pointer is not cached in the interpreter, but it's called quickly in the JIT"
-	primitiveFunctionPointer := self functionPointerFor: localPrimIndex inClass: objectMemory nilObject..
+	primitiveFunctionPointer := self functionPointerFor: localPrimIndex.
 	self activateNewMethod
 ]
 
@@ -13505,7 +13492,7 @@ StackInterpreter >> sameThreadCalloutBytecode [
 StackInterpreter >> saneFunctionPointerForFailureOfPrimIndex: primIndex [
 	| basePrimitive |
 	<var: 'basePrimitive' declareC: 'void (*basePrimitive)(void)'>
-	basePrimitive := self functionPointerFor: primIndex inClass: objectMemory nilObject.
+	basePrimitive := self functionPointerFor: primIndex.
 	^primitiveFunctionPointer = basePrimitive
 	  or: [(basePrimitive = #primitiveExternalCall and: [self isPrimitiveFunctionPointerAnIndex not]) 
 	  or: [(self isMetaPrimitiveIndex: primIndex) and: [metaAccessorDepth > -2]]]
@@ -14942,10 +14929,9 @@ StackInterpreter >> stackPointerIndexForFrame: theFP [
 { #category : 'frame access' }
 StackInterpreter >> stackPointerIndexForFrame: theFP WithSP: theSP [
 	"Return the 1-based index rel to the given frame"
-
 	"In the StackInterpreter stacks grow down."
 
-	<returnTypeC: #sqInt>
+	<returnTypeC: #usqInt>
 
 	^ (self frameReceiverLocation: theFP) - theSP
 	  >> objectMemory shiftForWord + (self frameNumArgs: theFP)

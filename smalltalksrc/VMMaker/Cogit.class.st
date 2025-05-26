@@ -152,9 +152,6 @@ Class {
 		'stackOverflowCall',
 		'sendMiss',
 		'missOffset',
-		'entryPointMask',
-		'checkedEntryAlignment',
-		'uncheckedEntryAlignment',
 		'cmEntryOffset',
 		'entry',
 		'cmNoCheckEntryOffset',
@@ -1193,7 +1190,7 @@ Cogit class >> methodZoneClass [
 ]
 
 { #category : 'translation' }
-Cogit class >> mustBeGlobal: var [
+Cogit class >> mustBeGlobalAndExport: var [
 	"Answer if a variable must be global and exported.  Used for inst vars that are accessed from VM
 	 support code.  include cePositive32BitIntegerTrampoline as a hack to prevent it being inlined (it is
 	 only used outside of Cogit by the object representation).  Include CFramePointer CStackPointer as
@@ -3595,6 +3592,14 @@ Cogit >> cStackPointerAddress [
 		ifFalse: [coInterpreter inMemoryCStackPointerAddress]
 ]
 
+{ #category : 'in-line cacheing' }
+Cogit >> cacheTagIsSelectorForAnnotation: annotation andEntryPoint: entryPoint [
+	"in-line cache tags are selectors on unlinked sends, super sends and megamorphically linked sends"
+	^ entryPoint < methodZoneBase "Unlinked sends"
+	 or: [ (self annotationIsForUncheckedEntryPoint: annotation) "Super sends"
+	 or: [ (self cCoerceSimple: entryPoint - cmEntryOffset to: #'CogMethod *') cmType = CMMegamorphicIC ] ] "Megamorphic sends"
+]
+
 { #category : 'debugging' }
 Cogit >> callCogCodePopReceiver [
 	"This is a static version of ceCallCogCodePopReceiverReg
@@ -4205,7 +4210,7 @@ Cogit >> checkIfValidOopRefAndTarget: annotation pc: mcpc cogMethod: cogMethod [
 							[^6]]]
 				ifFalse:
 					[(self inlineCacheTagsAreIndexes
-					  and: [self entryPointTagIsSelector: entryPoint])
+					  and: [self cacheTagIsSelectorForAnnotation: annotation andEntryPoint: entryPoint])
 						ifTrue:
 							[cacheTag signedIntFromLong < 0
 								ifTrue:
@@ -5101,7 +5106,7 @@ Cogit >> compileAbstractInstructionsFrom: start through: end [
 Cogit >> compileCPICEntry [
 	<returnTypeC: #'AbstractInstruction *'>
 	"Compile the cache tag computation and the first comparison.  Answer the address of that comparison."
-	entry := objectRepresentation genGetInlineCacheClassTagFrom: ReceiverResultReg into: TempReg forEntry: true.
+	entry := objectRepresentation genGetInlineCacheClassTagFrom: ReceiverResultReg into: TempReg.
 	self CmpR: ClassReg R: TempReg.
 	^self JumpNonZero: 0
 ]
@@ -5298,7 +5303,7 @@ Cogit >> compileEntry [
 	 different from the alignment of the noCheckEntry so that the method map machinery
 	 can distinguish normal and super sends (super sends bind to the noCheckEntry)."
 
-	entry := objectRepresentation genGetInlineCacheClassTagFrom: ReceiverResultReg into: TempReg forEntry: true.
+	entry := objectRepresentation genGetInlineCacheClassTagFrom: ReceiverResultReg into: TempReg.
 	self CmpR: ClassReg R: TempReg.
 	self JumpNonZero: sendMiss.
 	noCheckEntry := self Label.
@@ -5564,15 +5569,7 @@ Cogit >> computeEntryOffsets [
 	
 	cmEntryOffset := entry address - methodZoneBase.
 	cmNoCheckEntryOffset := noCheckEntry address - methodZoneBase.
-	missOffset := sendMissCall address + sendMissCall machineCodeSize - methodZoneBase.
-	entryPointMask := objectMemory wordSize - 1.
-	[(cmEntryOffset bitAnd: entryPointMask) = (cmNoCheckEntryOffset bitAnd: entryPointMask)] whileTrue:
-		[entryPointMask := entryPointMask + entryPointMask + 1].
-	entryPointMask >= (methodZone roundUpLength: 1) ifTrue:
-		[self error: 'cannot differentiate checked and unchecked entry-points with current cog method alignment'].
-	checkedEntryAlignment := cmEntryOffset bitAnd: entryPointMask.
-	uncheckedEntryAlignment := cmNoCheckEntryOffset bitAnd: entryPointMask.
-	self assert: checkedEntryAlignment ~= uncheckedEntryAlignment
+	missOffset := sendMissCall address + sendMissCall machineCodeSize - methodZoneBase
 ]
 
 { #category : 'initialization' }
@@ -5936,12 +5933,10 @@ Cogit >> entryCacheTagAndCouldBeObjectAt: mcpc annotation: annotation into: trin
 	 Note that selectors can be immediate so there is no guarantee that they
 	 are markable/remappable objects."
 	tagCouldBeObj := self inlineCacheTagsAreIndexes not
-						and: [objectRepresentation inlineCacheTagsMayBeObjects
-							or: [self entryPointTagIsSelector: entryPoint]].
-	trinaryBlock
-		value: entryPoint
-		value: cacheTag
-		value: tagCouldBeObj
+		and: [
+			objectRepresentation inlineCacheTagsMayBeObjects
+			or: [ self cacheTagIsSelectorForAnnotation: annotation andEntryPoint: entryPoint ] ].
+	trinaryBlock value: entryPoint value: cacheTag value: tagCouldBeObj
 ]
 
 { #category : 'accessing' }
@@ -5949,15 +5944,6 @@ Cogit >> entryOffset [
 	<api>
 	<cmacro>
 	^cmEntryOffset
-]
-
-{ #category : 'in-line cacheing' }
-Cogit >> entryPointTagIsSelector: entryPoint [
-	"Answer if the entryPoint's tag is expected to be a selector reference, as opposed to a class tag."
-	^entryPoint < methodZoneBase
-	 or: [(entryPoint bitAnd: entryPointMask) = uncheckedEntryAlignment
-	 or: [(entryPoint bitAnd: entryPointMask) = checkedEntryAlignment
-		and: [(self cCoerceSimple: entryPoint - cmEntryOffset to: #'CogMethod *') cmType = CMMegamorphicIC]]]
 ]
 
 { #category : 'accessing' }
@@ -8389,6 +8375,7 @@ Cogit >> initializeFixupAt: targetPC [
 { #category : 'in-line cacheing' }
 Cogit >> initializePIC: aPIC atDelta: addrDelta numArgs: numArgs [
 
+	<var: #aPIC type: #'CogMethod *'>
 	objectMemory
 		memcpy: aPIC
 		_: (self cCoerceSimple: cPICPrototype to: #'CogMethod *')
@@ -10151,6 +10138,8 @@ Cogit >> patchToMegamorphicICFor: selector numArgs: numArgs receiver: receiver [
 
 { #category : 'in-line cacheing' }
 Cogit >> picAbortAddress: cPIC [
+
+	<var: #cPIC type: #'CogMethod *'>
 	"The PIC starts with a header of meta-data followed by machine code.
 	The first thing in the machine code stream is the abort section."
 
@@ -10532,12 +10521,12 @@ Cogit >> printWhereIs: address [
 			trampAddr := self codeEntryFor: address.
 			trampAddr ifNil: [ 
 					coInterpreter
-						printHex: address;
+						printHex: (self cCoerceSimple: address to: #sqInt);
 						print: ' not in the code zone';
 						cr ]
 				ifNotNil: [ 
 					coInterpreter
-						printHex: address;
+						printHex: (self cCoerceSimple: address to: #sqInt);
 						print: ' in trampoline ';
 						print: (self codeEntryNameFor: address);
 						print: ' (starting at address ';
@@ -10546,7 +10535,7 @@ Cogit >> printWhereIs: address [
 						cr ] ]
 		ifFalse: [ 
 			coInterpreter
-				printHex: address;
+				printHex: (self cCoerceSimple: address to: #sqInt);
 				print: ' in cog method '.
 			"Handle selector"
 			cogMethod selector = objectMemory nilObject

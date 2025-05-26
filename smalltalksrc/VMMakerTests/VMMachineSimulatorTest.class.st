@@ -13,13 +13,14 @@ Class {
 VMMachineSimulatorTest >> testInstructionExceptionHasCorrectInstructionAddress [
 
 	| label lastInstruction subInstruction breakInstruction |
-	self compile: [ 
+	self compile: [
 		cogit MoveCq: 0 R: TempReg.
 		cogit MoveCq: 5 R: ClassReg.
 		label := cogit Label.
 		cogit AddCq: 1 R: TempReg.
-		subInstruction := cogit SubCq: 1 R: ClassReg.
 		breakInstruction := cogit Stop.
+		"Note: for RISCV, a jump will look for the previous instruction and wont understand a Stop"
+		subInstruction := cogit SubCq: 1 R: ClassReg.
 		cogit JumpNonZero: label.
 
 		"This instruction should not be called"
@@ -30,10 +31,10 @@ VMMachineSimulatorTest >> testInstructionExceptionHasCorrectInstructionAddress [
 			until: lastInstruction address
 			timeout: 0
 			count: 0.
-	] on: UnicornError do: [ :e | 
-		self assert: self machineSimulator lastExecutedInstructionAddress equals: breakInstruction address.	
+	] on: UnicornError do: [ :e |
+		self assert: self machineSimulator lastExecutedInstructionAddress equals: breakInstruction address.
 		^ self ].
-	
+
 	self fail.
 
 ]
@@ -42,13 +43,14 @@ VMMachineSimulatorTest >> testInstructionExceptionHasCorrectInstructionAddress [
 VMMachineSimulatorTest >> testInstructionExceptionIsRaisedAsUnicornError [
 
 	| label lastInstruction subInstruction breakInstruction |
-	self compile: [ 
+	self compile: [
 		cogit MoveCq: 0 R: TempReg.
 		cogit MoveCq: 5 R: ClassReg.
 		label := cogit Label.
 		cogit AddCq: 1 R: TempReg.
-		subInstruction := cogit SubCq: 1 R: ClassReg.
 		breakInstruction := cogit Stop.
+		"Note: for RISCV, a jump will look for the previous instruction and wont understand a Stop"
+		subInstruction := cogit SubCq: 1 R: ClassReg.
 		cogit JumpNonZero: label.
 
 		"This instruction should not be called"
@@ -59,10 +61,10 @@ VMMachineSimulatorTest >> testInstructionExceptionIsRaisedAsUnicornError [
 			until: lastInstruction address
 			timeout: 0
 			count: 0.
-	] on: Error do: [ :e | 
-		self assert: e class equals: UnicornError.	
+	] on: Error do: [ :e |
+		self assert: e class equals: UnicornError.
 		^ self ].
-	
+
 	self fail.
 
 ]
@@ -71,21 +73,21 @@ VMMachineSimulatorTest >> testInstructionExceptionIsRaisedAsUnicornError [
 VMMachineSimulatorTest >> testMemoryAccessExceptionComesWithCorrectAddress [
 
 	| lastInstruction invalidAccessInstruction invalidAddressHandled |
-	self compile: [ 
+	self compile: [
 		cogit MoveCq: 16rFFFF0000 R: TempReg.
 		invalidAccessInstruction := cogit MoveMb: 0 r: TempReg R: ClassReg.
 		"This instruction should not be called"
 		lastInstruction := cogit Call: cogit methodZoneBase + 16rFFFFF0.  ].
-	
+
 	invalidAddressHandled := false.
-	
-	self machineSimulator invalidAccessHandler: [:invalidAccess | 
+
+	self machineSimulator invalidAccessHandler: [:invalidAccess |
 		invalidAddressHandled := true.
-		self 
-			assert: invalidAccess address 
+		self
+			assert: invalidAccess address
 			equals: 16rFFFF0000.
 		false ].
-	
+
 	self
 		runFrom: cogInitialAddress
 		until: lastInstruction address
@@ -98,14 +100,14 @@ VMMachineSimulatorTest >> testMemoryAccessExceptionComesWithCorrectAddress [
 { #category : 'tests - memory access exception' }
 VMMachineSimulatorTest >> testMemoryAccessExceptionHandledCountIsRespected [
 
-	| label lastInstruction invalidAddressHandled addInstruction jumpInstruction |
+	| label lastInstruction invalidAddressHandled addInstruction instrCount jumpIndex jumpInstruction expectedAddress address |
 
 	self timeLimit: 30 minutes.
 
-	self compile: [ 
+	address := self compile: [
 		cogit MoveCq: 0 R: TempReg.
 		cogit MoveCq: 16rFFFF0000 R: ClassReg.
-		cogit MoveMb: 0 r: ClassReg R: ReceiverResultReg. 
+		cogit MoveMb: 0 r: ClassReg R: ReceiverResultReg.
 
 		label := cogit Label.
 		addInstruction := cogit AddCq: 1 R: TempReg.
@@ -113,25 +115,34 @@ VMMachineSimulatorTest >> testMemoryAccessExceptionHandledCountIsRespected [
 		"This instruction is never reach"
 		lastInstruction := cogit RetN: 0 ].
 
-	self machineSimulator invalidAccessHandler: [:invalidAccess | 
+	"Count the number of generated machine instructions up to the jump.
+	 This is needed because the RISC-V backend generates more machine code
+	 instructions than the number of IR instructions, making the count wrong"
+	jumpIndex := 6.
+	instrCount := ((1 to: jumpIndex) sum: [ :i | (cogit abstractOpcodes at: i) machineCodeSize ]) // 4.
+
+	self machineSimulator invalidAccessHandler: [:invalidAccess |
 		invalidAddressHandled := true.
-		self 
-			assert: invalidAccess address 
+		self
+			assert: invalidAccess address
 			equals: 16rFFFF0000.
-			
+
 		self machineSimulator receiverRegisterValue: 1.
 		"Continue executing after exception"
 		true ].
-	
+
 
 	self machineSimulator
 		startAt: cogInitialAddress
 		until: lastInstruction address
 		timeout: 0
-		count: 10. 
+		count: instrCount + 5.
 
-	self 
-		assert: self machineSimulator instructionPointerRegisterValue 
+	expectedAddress := jumpInstruction address.
+
+
+	self
+		assert: self machineSimulator instructionPointerRegisterValue
 		equals: jumpInstruction address
 ]
 
@@ -156,7 +167,7 @@ VMMachineSimulatorTest >> testMemoryAccessExceptionHandledTimeoutIsRespected [
 		lastInstruction := cogit RetN: 0 ].
 
 
-	self machineSimulator invalidAccessHandler: [ :invalidAccess | 
+	self machineSimulator invalidAccessHandler: [ :invalidAccess |
 		invalidAddressHandled := true.
 		self assert: invalidAccess address equals: 16rFFFF0000.
 
@@ -165,7 +176,7 @@ VMMachineSimulatorTest >> testMemoryAccessExceptionHandledTimeoutIsRespected [
 
 	"If the code exits because of a timeout exception, then good.
 	If it exists because the counter reaches 0, not good"
-	[ 
+	[
 	self
 		runFrom: cogInitialAddress
 		until: lastInstruction address
@@ -173,7 +184,7 @@ VMMachineSimulatorTest >> testMemoryAccessExceptionHandledTimeoutIsRespected [
 	"If the code exists because the counter reaches 0, not good"
 	self fail ]
 		on: UnicornTimeout
-		do: [ :e | 
+		do: [ :e |
 			"If the code exits because of a timeout exception, then good."
 			self assert: e messageText equals: ''.
 			^ self ]
@@ -184,10 +195,10 @@ VMMachineSimulatorTest >> testMemoryAccessExceptionHandledUntilAddressIsRespecte
 
 	| label invalidAddressHandled addInstruction jumpInstruction |
 
-	self compile: [ 
+	self compile: [
 		cogit MoveCq: 0 R: TempReg.
 		cogit MoveCq: 16rFFFF0000 R: ClassReg.
-		cogit MoveMb: 0 r: ClassReg R: ReceiverResultReg. 
+		cogit MoveMb: 0 r: ClassReg R: ReceiverResultReg.
 
 		label := cogit Label.
 		addInstruction := cogit AddCq: 1 R: TempReg.
@@ -195,23 +206,23 @@ VMMachineSimulatorTest >> testMemoryAccessExceptionHandledUntilAddressIsRespecte
 		"This instruction is never reach"
 		cogit RetN: 0 ].
 
-	self machineSimulator invalidAccessHandler: [:invalidAccess | 
+	self machineSimulator invalidAccessHandler: [:invalidAccess |
 		invalidAddressHandled := true.
-		self 
-			assert: invalidAccess address 
+		self
+			assert: invalidAccess address
 			equals: 16rFFFF0000.
-			
+
 		self machineSimulator receiverRegisterValue: 1.
 		"Continue executing after exception"
 		true ].
-	
+
 
 	self machineSimulator
 		startAt: cogInitialAddress
 		until: jumpInstruction address
 		timeout: 100000 "microseconds = 100ms"
 		count: 0.
-	
+
 	self assert: self temporaryRegisterValue equals: 1
 ]
 
@@ -220,10 +231,10 @@ VMMachineSimulatorTest >> testMemoryAccessExceptionHandledUntilAddressIsRespecte
 
 	| label invalidAddressHandled addInstruction jumpInstruction |
 
-	self compile: [ 
+	self compile: [
 		cogit MoveCq: 0 R: TempReg.
 		cogit MoveCq: 16rFFFF0000 R: ClassReg.
-		cogit MoveMb: 0 r: ClassReg R: ReceiverResultReg. 
+		cogit MoveMb: 0 r: ClassReg R: ReceiverResultReg.
 
 		label := cogit Label.
 		addInstruction := cogit AddCq: 1 R: TempReg.
@@ -231,23 +242,23 @@ VMMachineSimulatorTest >> testMemoryAccessExceptionHandledUntilAddressIsRespecte
 		"This instruction is never reach"
 		cogit RetN: 0 ].
 
-	self machineSimulator invalidAccessHandler: [:invalidAccess | 
+	self machineSimulator invalidAccessHandler: [:invalidAccess |
 		invalidAddressHandled := true.
-		self 
-			assert: invalidAccess address 
+		self
+			assert: invalidAccess address
 			equals: 16rFFFF0000.
-			
+
 		self machineSimulator receiverRegisterValue: 1.
 		"Continue executing after exception"
 		true ].
-	
+
 
 	self machineSimulator
 		startAt: cogInitialAddress
 		until: jumpInstruction address
 		timeout: 100000 "microseconds = 100ms"
 		count: 0.
-	
+
 	self assert: self machineSimulator instructionPointerRegisterValue equals: jumpInstruction address
 ]
 
@@ -255,15 +266,15 @@ VMMachineSimulatorTest >> testMemoryAccessExceptionHandledUntilAddressIsRespecte
 VMMachineSimulatorTest >> testMemoryAccessExceptionInCallContinuesToCorrectPC [
 
 	| lastInstruction invalidAddressHandled returningPoint |
-	self compile: [ 
-		cogit MoveCq: 0 R: TempReg. 
+	self compile: [
+		cogit MoveCq: 0 R: TempReg.
 		cogit CallFull: 16r7FFF0000.
-		returningPoint := cogit MoveCq: 99 R: TempReg. 
+		returningPoint := cogit MoveCq: 99 R: TempReg.
 		lastInstruction := cogit RetN: 0].
-	
+
 	invalidAddressHandled := false.
-	
-	self machineSimulator invalidAccessHandler: [:invalidAccess | 
+
+	self machineSimulator invalidAccessHandler: [:invalidAccess |
 		invalidAddressHandled := true.
 		self machineSimulator instructionPointerRegisterValue: returningPoint address.
 		true].
@@ -282,19 +293,19 @@ VMMachineSimulatorTest >> testMemoryAccessExceptionInCallContinuesToCorrectPC [
 VMMachineSimulatorTest >> testMemoryAccessExceptionInCallHasUpdatedPC [
 
 	| lastInstruction invalidAddressHandled |
-	self compile: [ 
+	self compile: [
 		cogit CallFull: 16r7FFF0000.
 		lastInstruction := cogit RetN: 0].
-	
+
 	invalidAddressHandled := false.
-	
-	self machineSimulator invalidAccessHandler: [:invalidAccess | 
-		self 
-			assert: self machineSimulator instructionPointerRegisterValue 
+
+	self machineSimulator invalidAccessHandler: [:invalidAccess |
+		self
+			assert: self machineSimulator instructionPointerRegisterValue
 			equals: 16r7FFF0000.
 		invalidAddressHandled := true.
 		false].
-	
+
 	self
 		runFrom: cogInitialAddress
 		until: lastInstruction address
@@ -308,19 +319,19 @@ VMMachineSimulatorTest >> testMemoryAccessExceptionInCallHasUpdatedPC [
 VMMachineSimulatorTest >> testMemoryAccessExceptionInJumpContinuesToCorrectPC [
 
 	| lastInstruction invalidAddressHandled returningPoint |
-	self compile: [ 
-		cogit MoveCq: 0 R: TempReg. 
+	self compile: [
+		cogit MoveCq: 0 R: TempReg.
 		cogit JumpFull: 16r7FFF0000.
-		returningPoint := cogit MoveCq: 99 R: TempReg. 
+		returningPoint := cogit MoveCq: 99 R: TempReg.
 		lastInstruction := cogit RetN: 0].
-	
+
 	invalidAddressHandled := false.
-	
-	self machineSimulator invalidAccessHandler: [:invalidAccess | 
+
+	self machineSimulator invalidAccessHandler: [:invalidAccess |
 		invalidAddressHandled := true.
 		self machineSimulator instructionPointerRegisterValue: returningPoint address.
 		true].
-	
+
 	self
 		runFrom: cogInitialAddress
 		until: lastInstruction address
@@ -335,19 +346,19 @@ VMMachineSimulatorTest >> testMemoryAccessExceptionInJumpContinuesToCorrectPC [
 VMMachineSimulatorTest >> testMemoryAccessExceptionInJumpHasUpdatedPC [
 
 	| lastInstruction invalidAddressHandled |
-	self compile: [ 
+	self compile: [
 		cogit JumpFull: 16r7FFF0000.
 		lastInstruction := cogit RetN: 0].
-	
+
 	invalidAddressHandled := false.
-	
-	self machineSimulator invalidAccessHandler: [:invalidAccess | 
-		self 
-			assert: self machineSimulator instructionPointerRegisterValue 
+
+	self machineSimulator invalidAccessHandler: [:invalidAccess |
+		self
+			assert: self machineSimulator instructionPointerRegisterValue
 			equals: 16r7FFF0000.
 		invalidAddressHandled := true.
 		false].
-	
+
 	self
 		runFrom: cogInitialAddress
 		until: lastInstruction address
@@ -363,23 +374,23 @@ VMMachineSimulatorTest >> testMemoryAccessExceptionInstructionPointerInCorrectAd
 	| lastInstruction invalidAccessInstruction invalidAddressHandled |
 	self timeLimit: 30 minutes.
 
-	self compile: [ 
+	self compile: [
 		cogit MoveCq: 16rFFFF0000 R: TempReg.
 		cogit MoveCq: 0 R: ClassReg.
 
 		invalidAccessInstruction := cogit MoveMb: 0 r: TempReg R: ClassReg.
 		"This instruction should not be called"
 		lastInstruction := cogit Call: cogit methodZoneBase + 16rFFFFF0.  ].
-	
+
 	invalidAddressHandled := false.
 
-	self machineSimulator invalidAccessHandler: [:invalidAccess | 
+	self machineSimulator invalidAccessHandler: [:invalidAccess |
 		invalidAddressHandled := true.
-		self 
-			assert: self machineSimulator lastExecutedInstructionAddress 
+		self
+			assert: self machineSimulator lastExecutedInstructionAddress
 			equals: invalidAccessInstruction address.
 		false ].
-	
+
 	self
 		runFrom: cogInitialAddress
 		until: lastInstruction address
@@ -392,7 +403,7 @@ VMMachineSimulatorTest >> testMemoryAccessExceptionInstructionPointerInCorrectAd
 VMMachineSimulatorTest >> testNormalExecutionCountIsRespected [
 
 	| label lastInstruction subInstruction |
-	self compile: [ 
+	self compile: [
 		cogit MoveCq: 0 R: TempReg.
 		cogit MoveCq: 5 R: ClassReg.
 		label := cogit Label.
@@ -418,7 +429,7 @@ VMMachineSimulatorTest >> testNormalExecutionCountIsRespected [
 VMMachineSimulatorTest >> testNormalExecutionCountIsRespectedAndHasCorrectInstructionPointer [
 
 	| label lastInstruction subInstruction jumpInstruction |
-	self compile: [ 
+	self compile: [
 		cogit MoveCq: 0 R: TempReg.
 		cogit MoveCq: 5 R: ClassReg.
 		label := cogit Label.
@@ -443,7 +454,7 @@ VMMachineSimulatorTest >> testNormalExecutionCountIsRespectedAndHasCorrectInstru
 VMMachineSimulatorTest >> testNormalExecutionRespectTimeout [
 
 	| label lastInstruction |
-	self compile: [ 
+	self compile: [
 		cogit MoveCq: 0 R: TempReg.
 		label := cogit Label.
 		cogit AddCq: 1 R: TempReg.
@@ -457,7 +468,7 @@ VMMachineSimulatorTest >> testNormalExecutionRespectTimeout [
 		timeout: 100000 "microseconds = 100ms" ]
 			on: UnicornTimeout
 			do: [ :e | self assert: e messageText equals: ''. ^ self ].
-			
+
 	self fail.
 ]
 
@@ -465,7 +476,7 @@ VMMachineSimulatorTest >> testNormalExecutionRespectTimeout [
 VMMachineSimulatorTest >> testNormalExecutionRespectTimeoutUpdatesInstructionPointer [
 
 	| label lastInstruction |
-	self compile: [ 
+	self compile: [
 		cogit MoveCq: 0 R: TempReg.
 		label := cogit Label.
 		cogit AddCq: 1 R: TempReg.
@@ -478,10 +489,10 @@ VMMachineSimulatorTest >> testNormalExecutionRespectTimeoutUpdatesInstructionPoi
 		until: lastInstruction address
 		timeout: 100000 "microseconds = 100ms" ]
 			on: UnicornTimeout
-			do: [ :e | 
+			do: [ :e |
 				self deny: self machineSimulator instructionPointerRegisterValue equals: cogInitialAddress.
 				self assert: e messageText equals: ''. ^ self ].
-			
+
 	self fail.
 ]
 
@@ -489,7 +500,7 @@ VMMachineSimulatorTest >> testNormalExecutionRespectTimeoutUpdatesInstructionPoi
 VMMachineSimulatorTest >> testNormalExecutionUntilAddressIsRespected [
 
 	| label lastInstruction |
-	self compile: [ 
+	self compile: [
 		cogit MoveCq: 0 R: TempReg.
 		cogit MoveCq: 5 R: ClassReg.
 		label := cogit Label.

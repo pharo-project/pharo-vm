@@ -362,7 +362,7 @@ CogObjectRepresentation >> genGetFormatOf: srcReg into: destReg [
 ]
 
 { #category : 'compile abstract instructions' }
-CogObjectRepresentation >> genGetInlineCacheClassTagFrom: sourceReg into: destReg forEntry: forEntry [
+CogObjectRepresentation >> genGetInlineCacheClassTagFrom: sourceReg into: destReg [
 	"Extract the inline cache tag for the object in sourceReg into destReg. The inline cache tag
 	 for a given object is the value loaded in inline caches to distinguish objects of different
 	 classes. If forEntry is true answer the entry label at which control is to enter (cmEntryOffset).

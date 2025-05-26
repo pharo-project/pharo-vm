@@ -10,6 +10,12 @@ Class {
 }
 
 { #category : 'as yet unclassified' }
+UnicornProcessor >> a4: anInteger [ 
+	
+	machineSimulator a4: anInteger
+]
+
+{ #category : 'as yet unclassified' }
 UnicornProcessor >> cResultRegister [
 	
 	^ machineSimulator cResultRegisterValue
@@ -252,6 +258,12 @@ UnicornProcessor >> r9b: anInteger [
 	machineSimulator r9b: anInteger
 ]
 
+{ #category : 'as yet unclassified' }
+UnicornProcessor >> ra: anInteger [ 
+	
+	machineSimulator ra: anInteger
+]
+
 { #category : 'registers' }
 UnicornProcessor >> rax: anInteger [ 
 	
@@ -317,6 +329,42 @@ UnicornProcessor >> runUntil: anAddress [
 		until: anAddress
 		timeout: 100000 "microseconds = 100ms"
 		count: 0
+]
+
+{ #category : 'as yet unclassified' }
+UnicornProcessor >> s0: anInteger [ 
+	
+	machineSimulator s0: anInteger
+]
+
+{ #category : 'as yet unclassified' }
+UnicornProcessor >> s1: anInteger [ 
+	
+	machineSimulator s1: anInteger
+]
+
+{ #category : 'as yet unclassified' }
+UnicornProcessor >> s2: anInteger [ 
+	
+	machineSimulator s2: anInteger
+]
+
+{ #category : 'as yet unclassified' }
+UnicornProcessor >> s6: anInteger [ 
+	
+	machineSimulator s6: anInteger
+]
+
+{ #category : 'as yet unclassified' }
+UnicornProcessor >> s8: anInteger [ 
+	
+	machineSimulator s8: anInteger
+]
+
+{ #category : 'as yet unclassified' }
+UnicornProcessor >> s9: anInteger [ 
+	
+	machineSimulator s9: anInteger
 ]
 
 { #category : 'initialization' }

@@ -534,7 +534,7 @@ sqInt sqConnectSSL(sqInt handle, char* srcBuf, sqInt srcLen, char* dstBuf,
     OSStatus status;
     sqSSL* ssl = sqSSLFromHandle(handle);
 
-    logTrace("sqConnectSSL: %x\n", (int)ssl);
+    logTrace("sqConnectSSL: %x\n", (intptr_t)ssl);
 
     /* Verify state of session */
     if (ssl == NULL

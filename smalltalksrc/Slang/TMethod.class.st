@@ -92,7 +92,8 @@ TMethod >> addLabelsTo: aTMethod [
 TMethod >> addLocal: aString [
 
 	cachedLocals := nil.
-	self locals add: aString
+	self locals add: aString.
+	^ aString
 ]
 
 { #category : 'adding' }
@@ -958,8 +959,8 @@ TMethod >> exitVar: exitVar label: exitLabel [
 	eliminateReturnSelfs := ((definingClass inheritsFrom: SlangClass)
 		                         and: [ definingClass isStructClass ]) not
 		                        and: [
-		                        returnType = #void or: [
-			                        returnType = #sqInt ] ].
+		                        #( #void #sqInt ) includes: returnType ].
+
 	parseTree nodesDo: [ :node |
 		| replacement |
 		node isReturn ifTrue: [
@@ -1017,16 +1018,6 @@ TMethod >> exitVar: exitVar label: exitLabel [
 			list := node lastNonCommentStatement statements.
 			node replaceChild: node lastNonCommentStatement withList: list ] ].
 	^ labelUsed
-]
-
-{ #category : 'transformations' }
-TMethod >> expandAST [
-	"the order is important, expanding assignment can/will modify the value selector"
-
-	parseTree nodesDo: [ :node |
-		node isAssignment ifTrue: [ node expandASTIn: self ].
-		(node isSend and: [ node isValueExpansion ]) ifTrue: [
-			node expandASTIn: self ] ]
 ]
 
 { #category : 'accessing' }
@@ -1435,26 +1426,26 @@ TMethod >> inlineFunctionCall: aSendNode in: aCodeGen [
 		1. the method arguments are all substitutable nodes, and
 		2. the method to be inlined contains no additional embedded returns."
 
-	| sel meth doNotRename argsForInlining substitutionDict |
+	| sel meth parametersToReplaceByArgument argsForInlining substitutionDict |
 	sel := aSendNode selector.
 	meth := (aCodeGen methodNamed: sel) copy.
 	meth ifNil: [ ^ self inlineBuiltin: aSendNode in: aCodeGen ].
-	doNotRename := Set withAll: args.
+	parametersToReplaceByArgument := Set withAll: args.
 	argsForInlining := aSendNode argumentsForInliningCodeGenerator:
 		                   aCodeGen.
 	meth args with: argsForInlining do: [ :argName :exprNode |
-		exprNode isLeaf ifTrue: [ doNotRename add: argName ] ].
+		exprNode isLeaf ifTrue: [ parametersToReplaceByArgument add: argName ] ].
 	(meth statements size = 2 and: [
 		 meth statements first isSend and: [
 			 meth statements first selector == #flag: ] ]) ifTrue: [
 		meth statements removeFirst ].
-	meth renameVarsForInliningInto: self except: doNotRename in: aCodeGen.
+	meth renameVarsForInliningInto: self except: parametersToReplaceByArgument in: aCodeGen.
 	meth renameLabelsForInliningInto: self.
-	self addVarsDeclarationsAndLabelsOf: meth except: doNotRename.
+	self addVarsDeclarationsAndLabelsOf: meth except: parametersToReplaceByArgument.
 	substitutionDict := Dictionary new: meth args size * 2.
 	meth args with: argsForInlining do: [ :argName :exprNode |
 		substitutionDict at: argName put: exprNode.
-		(doNotRename includes: argName) ifFalse: [
+		(parametersToReplaceByArgument includes: argName) ifFalse: [
 			self removeLocal: argName ] ].
 	meth parseTree bindVariablesIn: substitutionDict.
 	meth parseTree parent: aSendNode parent.
@@ -1481,9 +1472,9 @@ TMethod >> inlineGuardingConditional: aSendNode in: aCodeGen [
 		                   inlineFunctionCall: aSendNode receiver
 		                   in: aCodeGen.
 	map := Dictionary new.
-	(replacementTree statements last isReturn and: [ 
-		 replacementTree statements last expression value = evaluateIfTrue ]) 
-		ifTrue: [ lastNode := replacementTree statements last ].
+	(replacementTree lastNonCommentStatement isReturn and: [ 
+		 replacementTree lastNonCommentStatement expression value = evaluateIfTrue ]) 
+		ifTrue: [ lastNode := replacementTree lastNonCommentStatement ].
 	skipLabel := TLabeledCommentNode new setLabel:
 		             (self unusedLabelForInlining: method).
 	replacementTree nodesDo: [ :node | 
@@ -1561,10 +1552,10 @@ TMethod >> inlineReturningConditional: aSendNode in: aCodeGen [
 		                   in: aCodeGen.
 	map := Dictionary new.
 	"The last node is either a return or a boolean constant."
-	lastNode := replacementTree statements last.
-	replacementTree statements last isReturn
+	lastNode := replacementTree lastNonCommentStatement.
+	lastNode isReturn
 		ifTrue: [
-			replacementTree statements last expression value == returnIfTrue
+			lastNode expression value == returnIfTrue
 				ifTrue: [
 					lastNode := nil "i.e. take the fall-through path and /don't/ return" ] ]
 		ifFalse: [
@@ -1810,22 +1801,21 @@ TMethod >> isComplete [
 
 { #category : 'inlining' }
 TMethod >> isConditionalToBeTransformedForAssignment: aSend in: aCodeGen [
-
 	"Answer if a send is of the form
 		e1
 			ifTrue: [e2 ifTrue: [self m1] ifFalse: [self m2]]
 			ifFalse: [self m3]
 	 such that at least one of the sends mN may be inlined.."
 
-	^ (#( #ifTrue:ifFalse: #ifFalse:ifTrue: ) includes: aSend selector) 
-		  and: [ 
-			  aSend arguments anySatisfy: [ :arg | 
+	^ (#( #ifTrue:ifFalse: #ifFalse:ifTrue: ) includes: aSend selector)
+		  and: [
+			  aSend arguments anySatisfy: [ :arg |
 				  | stmt |
 				  self assert: arg isStatementList.
-				  arg statements size > 1 or: [ 
-					  (stmt := arg statements first) isSwitch or: [ 
-						  stmt isSend and: [ 
-							  (aCodeGen mayInline: stmt selector) or: [ 
+				  arg statements size > 1 or: [
+					  (stmt := arg firstNonCommentStatement) isSwitch or: [
+						  stmt isSend and: [
+							  (aCodeGen mayInline: stmt selector) or: [
 								  self
 									  isConditionalToBeTransformedForAssignment: stmt
 									  in: aCodeGen ] ] ] ] ] ]
@@ -2130,7 +2120,7 @@ TMethod >> mergePropertiesOfSuperMethod: superTMethod [
 TMethod >> methodIsEffectivelyComplete: selector in: aCodeGen [
 	"Answer if selector is effectively not inlineable in the receiver.
 	 This is tricky because block inlining requires that certain methods must be inlined, which
-	 can be at odds wuth the opportunistic strategy the inliner takes.  Since the inliner only
+	 can be at odds with the opportunistic strategy the inliner takes.  Since the inliner only
 	 inlines complete methods and certain methods may never be marked as complete (e.g.
 	 recursive methods) we have to short-cut certain kinds of send.  In particular, short-cut
 	 sends that turn into jumps in the interpret routine (sharedCase and sharedLabel below)."

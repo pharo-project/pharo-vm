@@ -103,9 +103,8 @@ void freeEncoding(void *encoding) { }
 void setEncoding(void **encoding, char *rawName)
 {
   char *name= strdup(rawName);
-  int   len= strlen(name);
+  int   len = strlen(name);
   int   i;
-  int   utf8= 0;
   alias *ap= encodings;
   for (i= 0;  i < len;  ++i)
     name[i]= toupper(name[i]);
@@ -130,7 +129,7 @@ void setNEncoding(void **encoding, char *rawName, int n)
 
 int convertChars(char *from, int fromLen, void *fromCode, char *to, int toLen, void *toCode, int norm, int term)
 {
-  CFStringRef	     cfs= CFStringCreateWithBytes(NULL, (unsigned char *)from, fromLen, (CFStringEncoding)fromCode, 0);
+  CFStringRef	     cfs= CFStringCreateWithBytes(NULL, (unsigned char *)from, fromLen, (CFStringEncoding)(usqIntptr_t) fromCode, 0);
   CFMutableStringRef str= CFStringCreateMutableCopy(NULL, 0, cfs);
   CFRelease(cfs);
   // HFS+ imposes Unicode2.1 decomposed UTF-8 encoding on all path elements
@@ -141,7 +140,7 @@ int convertChars(char *from, int fromLen, void *fromCode, char *to, int toLen, v
   {
     CFRange rng= CFRangeMake(0, CFStringGetLength(str));
     CFIndex len= 0;
-    CFIndex num= CFStringGetBytes(str, rng, (CFStringEncoding)toCode, '?', 0, (UInt8 *)to, toLen - term, &len);
+    CFIndex num= CFStringGetBytes(str, rng, (CFStringEncoding)(usqIntptr_t) toCode, '?', 0, (UInt8 *)to, toLen - term, &len);
     CFRelease(str);
     if (!num)
       return convertCopy(from, fromLen, to, toLen, term);

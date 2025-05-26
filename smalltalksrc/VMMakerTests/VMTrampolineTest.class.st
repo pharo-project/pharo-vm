@@ -54,10 +54,12 @@ VMTrampolineTest >> setUp [
 	pushedBytes := cogit stackPointerAlignment.
 	self isAligned ifFalse: [
 		pushedBytes := pushedBytes + self wordSize ].
-
 	registerMask := 0.
-	self wordSize to: pushedBytes by: self wordSize do: [ :i | | registerIndex |
-		registerIndex := i / self wordSize.
+	"The register mask defines a mask for register 1 and 2 as a test example. The offset using cResultRegister 
+	 is added because on the RISC-V architecture, x1 and x2 are the link register and stack pointer respectively."
+	self wordSize to: pushedBytes by: self wordSize do: [ :i | 
+		| registerIndex |
+		registerIndex := i / self wordSize + cogit backend cResultRegister.
 		registerMask := registerMask bitOr: (cogit registerMaskFor: registerIndex).
 	]
 ]
