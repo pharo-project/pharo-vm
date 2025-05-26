@@ -164,12 +164,12 @@ UnicornRISCVSimulator >> doublePrecisionFloatingPointRegister2 [
 UnicornRISCVSimulator >> doublePrecisionFloatingPointRegister3 [
 
 	^ UcRISCVRegisters f3
-=======
+]
+
 { #category : 'disassembling' }
 UnicornRISCVSimulator >> extractDestinationRegisterFromAssembly: aLLVMInstruction [
 
 	^ (aLLVMInstruction assemblyCodeString substrings: String tab, ',') second trimBoth.
->>>>>>> pharo-12
 ]
 
 { #category : 'machine registers' }
