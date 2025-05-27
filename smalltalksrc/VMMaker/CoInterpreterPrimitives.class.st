@@ -248,8 +248,8 @@ CoInterpreterPrimitives >> primitiveGetVMParameter: index [
 								objectMemory getFromPermToNewSpaceRememberedSet rememberedSetLimit].
 			[86] ->  [^objectMemory getAvoidSearchingSegmentsWithPinnedObjects ifTrue: [ objectMemory trueObject ] ifFalse: [objectMemory falseObject]].
 			[87] ->  [^cogit getStatTotalHeaderSize ].
-		   [88] ->  [^cogit getStatTotalCodeSize ].
-	      [89] ->  [^cogit getStatTotalMapSize ].
+			[88] ->  [^cogit getStatTotalCodeSize ].
+	    	[89] ->  [^cogit getStatTotalMapSize ].
 		}
 		otherwise: [^nil]
 ]
