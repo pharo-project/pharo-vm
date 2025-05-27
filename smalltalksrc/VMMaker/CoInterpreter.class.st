@@ -2819,24 +2819,6 @@ CoInterpreter >> getMethodCompilationMSecs [
 	^ cogit getMethodCompilationMSecs
 ]
 
-{ #category : 'internal interpreter access' }
-CoInterpreter >> getStatTotalCodeSize [
-
-	^ cogit getStatTotalCodeSize
-]
-
-{ #category : 'internal interpreter access' }
-CoInterpreter >> getStatTotalHeaderSize [ 
-
-	^ cogit getStatTotalHeaderSize
-]
-
-{ #category : 'internal interpreter access' }
-CoInterpreter >> getStatTotalMapSize [
-
-	^ cogit getStatTotalMapSize
-]
-
 { #category : 'message sending' }
 CoInterpreter >> handleForwardedSendFaultForReceiver: forwardedReceiver rcvrStackOffsetFromTop: rcvrStackIndex [
 	"Handle a send fault that may be due to a send to a forwarded object.
