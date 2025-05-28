@@ -76,6 +76,7 @@ static VMErrorCode processMaxCodeSpaceSizeOption(const char *argument, VMParamet
 static VMErrorCode processEdenSizeOption(const char *argument, VMParameters * params);
 static VMErrorCode processWorkerOption(const char *argument, VMParameters * params);
 static VMErrorCode processMinPermSpaceSizeOption(const char *argument, VMParameters * params);
+static VMErrorCode processMaxSlotsForNewSpaceAlloc(const char *argument, VMParameters * params);
 static VMErrorCode processWorkingDirectory(const char *argument, VMParameters * params);
 static VMErrorCode processAvoidSearchingSegmentsWithPinnedObjects(const char *argument, VMParameters * params);
 
@@ -96,6 +97,7 @@ static const VMParameterSpec vm_parameters_spec[] =
   {.name = "codeSize", .hasArgument = true, .function = processMaxCodeSpaceSizeOption},
   {.name = "edenSize", .hasArgument = true, .function = processEdenSizeOption},
   {.name = "minPermSpaceSize", .hasArgument = true, .function = processMinPermSpaceSizeOption},
+  {.name = "maxSlotsForNewSpaceAlloc", .hasArgument = true, .function = processMaxSlotsForNewSpaceAlloc},
 
   {.name = "workingDirectory", .hasArgument = true, .function = processWorkingDirectory},
 
@@ -441,7 +443,8 @@ vm_printUsageTo(FILE *out)
 "                                       It is possible to use k(kB), M(MB) and G(GB).\n"
 "  --edenSize=<size>[mk]                Sets the size of eden\n"
 "                                       It is possible to use k(kB), M(MB) and G(GB).\n"
-"  --minPermSpaceSize=<size>[mk]        Sets the size of eden\n"
+"  --maxSlotsForNewSpaceAlloc=<words>	The max numbers of slots to allow allocating in a single young indexable object"
+"  --minPermSpaceSize=<size>[mk]        Sets the min size of the permanent space (default: 0k)\n"
 "                                       It is possible to use k(kB), M(MB) and G(GB).\n"
 "  --workingDirectory=<dir>				It sets the working directory for the running image.\n"
 "\n"
@@ -547,6 +550,23 @@ processMinPermSpaceSizeOption(const char* originalArgument, VMParameters * param
 }
 
 static VMErrorCode
+processMaxSlotsForNewSpaceAlloc(const char* originalArgument, VMParameters * params)
+{
+	long long intValue = strtoll(originalArgument, NULL, 10);
+
+	if(intValue < 0)
+	{
+		logError("Invalid option for max slots for new space allocation: %s\n", originalArgument);
+		vm_printUsageTo(stderr);
+		return VM_ERROR_INVALID_PARAMETER_VALUE;
+	}
+
+	params->maxSlotsForNewSpaceAlloc = intValue;
+
+	return VM_SUCCESS;
+}
+
+static VMErrorCode
 processWorkingDirectory(const char* originalArgument, VMParameters * params)
 {
 
@@ -566,6 +586,14 @@ processEdenSizeOption(const char* originalArgument, VMParameters * params)
 	if(intValue < 0)
 	{
 		logError("Invalid option for eden: %s\n", originalArgument);
+		vm_printUsageTo(stderr);
+		return VM_ERROR_INVALID_PARAMETER_VALUE;
+	}
+
+	//The max value for the edenSize is 1GB check #nextCorpseOffset: for restriction details.
+	if(intValue > 1024 * 1024 * 1024)
+	{
+		logError("The max value for eden is 1G: %s\n", originalArgument);
 		vm_printUsageTo(stderr);
 		return VM_ERROR_INVALID_PARAMETER_VALUE;
 	}
@@ -750,6 +778,7 @@ vm_parameters_init(VMParameters *parameters){
 	parameters->maxStackFramesToPrint = 0;
 	parameters->maxCodeSize = 0;
 	parameters->maxOldSpaceSize = 0;
+	parameters->maxSlotsForNewSpaceAlloc = 0;
 	parameters->edenSize = 0;
 	parameters->minPermSpaceSize = 0;
 	parameters->imageFileName = NULL;
