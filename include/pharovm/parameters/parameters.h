@@ -123,6 +123,9 @@ typedef struct VMParameters_
 	//The minimal Permanent Space Size
 	long long minPermSpaceSize;
 
+	//The max slots in a single indexable young object
+	long long maxSlotsForNewSpaceAlloc;
+
 	// FIXME: Why passing this is needed when we have the separated vectors?
 	int processArgc;
 	const char** processArgv;
