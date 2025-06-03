@@ -1,5 +1,18 @@
 # Change log
 
+
+## v10.3.5
+
+* Removed unused temp in `findNewMethodOrdinaryIfFound:` by @kumom in https://github.com/pharo-project/pharo-vm/pull/951
+* Remove set cursor C code #210 by @kumom in https://github.com/pharo-project/pharo-vm/pull/952
+* fix PharoWorker value when coming from plist file by @demarey in https://github.com/pharo-project/pharo-vm/pull/972
+* log worker mode by @demarey in https://github.com/pharo-project/pharo-vm/pull/971
+* Updating SDL2 to 2.32.6 for Windows (x86_64) and MacOS (ARM and Intel) by @tesonep in https://github.com/pharo-project/pharo-vm/pull/977
+* Set the size of larger indexable object allocated in the young space by @tesonep in https://github.com/pharo-project/pharo-vm/pull/975
+
+
+**Full Changelog**: https://github.com/pharo-project/pharo-vm/compare/v10.3.4...v10.3.5
+
 ## v10.3.4
 
 * Add windows support for non ASCII filenames in basicImageFileExists by @demarey in https://github.com/pharo-project/pharo-vm/pull/926
