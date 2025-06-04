@@ -1268,6 +1268,15 @@ VMClass >> uint64AtPointer: pointer put: value [
 ]
 
 { #category : 'memory access' }
+VMClass >> uint8At: pointer [
+	"This gets implemented by Macros in C, where its types will also be checked.
+	 pointer is a raw address, and the result is an 32 bit integer."
+	<doNotGenerate>
+
+	^memoryManager readIntegerAt: pointer size: 1 signed: false
+]
+
+{ #category : 'memory access' }
 VMClass >> uint8AtPointer: pointer [
 	"This gets implemented by Macros in C, where its types will also be checked.
 	 pointer is a raw address, and the result is an 16 bit integer."

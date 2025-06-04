@@ -3183,10 +3183,10 @@ Cogit >> annotationForMcpc: mcpc in: cogHomeMethod [
 	mapLocation := self findMapLocationForMcpc: mcpc inMethod: cogHomeMethod.
 	mapLocation = 0 ifTrue:
 		[^0].
-	mapByte := objectMemory byteAt: mapLocation.
+	mapByte := objectMemory uint8At: mapLocation.
 	annotation := mapByte >> AnnotationShift.
 	annotation = IsSendCall ifTrue:
-		[mapByte := objectMemory byteAt: mapLocation - 1.
+		[mapByte := objectMemory uint8At: mapLocation - 1.
 		 mapByte >> AnnotationShift = IsAnnotationExtension ifTrue:
 			[annotation := annotation + (mapByte bitAnd: DisplacementMask)]].
 	^annotation
@@ -6279,7 +6279,7 @@ Cogit >> findMapLocationForMcpc: targetMcpc inMethod: cogMethod [
 	mcpc := self firstMappedPCFor: cogMethod.
 	map := self mapStartFor: cogMethod.
 	mcpc = targetMcpc ifTrue: [^map].
-	[(mapByte := objectMemory byteAt: map) ~= MapEnd] whileTrue:
+	[(mapByte := objectMemory uint8At: map) ~= MapEnd] whileTrue:
 		[annotation := mapByte >> AnnotationShift.
 		 annotation ~= IsAnnotationExtension ifTrue:
 			[mcpc := mcpc + (backEnd codeGranularity
@@ -6290,7 +6290,7 @@ Cogit >> findMapLocationForMcpc: targetMcpc inMethod: cogMethod [
 			[self assert: mcpc = targetMcpc.
 			 annotation = IsDisplacementX2N ifTrue:
 				[map := map - 1.
-				 mapByte := objectMemory byteAt: map.
+				 mapByte := objectMemory uint8At: map.
 				 annotation := mapByte >> AnnotationShift.
 				 self assert: annotation > IsAnnotationExtension].
 			 ^map].
@@ -8855,7 +8855,7 @@ Cogit >> mapEndFor: cogMethod [
 	<inline: true>
 	| end |
 	end := self mapStartFor: cogMethod.
-	[(objectMemory byteAt: end) ~= MapEnd] whileTrue:
+	[(objectMemory uint8At: end) ~= MapEnd] whileTrue:
 		[end := end - 1.
 		 self assert: end > (self firstMappedPCFor: cogMethod)].
 	^end
@@ -8897,7 +8897,7 @@ Cogit >> mapFor: cogMethod bcpc: startbcpc performUntil: functionSymbol arg: arg
 	 homeMethod := self cCoerceSimple: cogMethod to: #'CogMethod *'.
 	 self assert: startbcpc = (coInterpreter startPCOfMethodHeader: homeMethod methodHeader).
 	 map := self mapStartFor: homeMethod.
-	 annotation := (objectMemory byteAt: map) >> AnnotationShift.
+	 annotation := (objectMemory uint8At: map) >> AnnotationShift.
 	 self assert: (annotation = IsAbsPCReference
 				 or: [annotation = IsObjectReference
 				 or: [annotation = IsRelativeCall
@@ -8913,10 +8913,10 @@ Cogit >> mapFor: cogMethod bcpc: startbcpc performUntil: functionSymbol arg: arg
 	self inlineCacheTagsAreIndexes ifTrue:
 		[enumeratingCogMethod := homeMethod].
 	"Now skip up through the bytecode pc map entry for the stack check." 
-	[(objectMemory byteAt: map) >> AnnotationShift ~= HasBytecodePC] whileTrue:
+	[(objectMemory uint8At: map) >> AnnotationShift ~= HasBytecodePC] whileTrue:
 		[map := map - 1].
 	map := map - 1.
-	[(mapByte := objectMemory byteAt: map) ~= MapEnd] whileTrue: "defensive; we exit on bcpc"
+	[(mapByte := objectMemory uint8At: map) ~= MapEnd] whileTrue: "defensive; we exit on bcpc"
 		[mapByte >= FirstAnnotation
 			ifTrue:
 				[| nextBcpc isBackwardBranch |
@@ -8924,7 +8924,7 @@ Cogit >> mapFor: cogMethod bcpc: startbcpc performUntil: functionSymbol arg: arg
 				mcpc := mcpc + ((mapByte bitAnd: DisplacementMask) * backEnd codeGranularity).
 				(self isPCMappedAnnotation: annotation) ifTrue:
 					[(annotation = IsSendCall
-					  and: [(mapByte := objectMemory byteAt: map - 1) >> AnnotationShift = IsAnnotationExtension]) ifTrue:
+					  and: [(mapByte := objectMemory uint8At: map - 1) >> AnnotationShift = IsAnnotationExtension]) ifTrue:
 						[annotation := annotation + (mapByte bitAnd: DisplacementMask).
 						 map := map - 1].
 					 [byte := objectMemory fetchByte: bcpc ofObject: aMethodObj.
@@ -8977,7 +8977,7 @@ Cogit >> mapFor: cogMethod performAllMapEntriesUntil: functionSymbol arg: arg [
 	| mcpc map mapByte result |
 	mcpc := self firstMappedPCFor: cogMethod.
 	map := self mapStartFor: cogMethod.
-	[(mapByte := objectMemory byteAt: map) ~= MapEnd] whileTrue:
+	[(mapByte := objectMemory uint8At: map) ~= MapEnd] whileTrue:
 		[mapByte >= FirstAnnotation
 			ifTrue:
 				[mcpc := mcpc + ((mapByte bitAnd: DisplacementMask) * backEnd codeGranularity)]
@@ -9005,13 +9005,13 @@ Cogit >> mapFor: cogMethod performUntil: functionSymbol arg: arg [
 	map := self mapStartFor: cogMethod.
 	self inlineCacheTagsAreIndexes ifTrue:
 		[enumeratingCogMethod := cogMethod].
-	[(mapByte := objectMemory byteAt: map) ~= MapEnd] whileTrue:
+	[(mapByte := objectMemory uint8At: map) ~= MapEnd] whileTrue:
 		[mapByte >= FirstAnnotation
 			ifTrue:
 				[mcpc := mcpc + ((mapByte bitAnd: DisplacementMask) * backEnd codeGranularity).
 				 "If this is an IsSendCall annotation, peek ahead for an IsAnnotationExtension, and consume it."
 				 ((annotation := mapByte >> AnnotationShift) = IsSendCall
-				  and: [(mapByte := objectMemory byteAt: map - 1) >> AnnotationShift = IsAnnotationExtension]) ifTrue:
+				  and: [(mapByte := objectMemory uint8At: map - 1) >> AnnotationShift = IsAnnotationExtension]) ifTrue:
 					[annotation := annotation + (mapByte bitAnd: DisplacementMask).
 					 map := map - 1].
 				 result := self perform: functionSymbol
@@ -10375,7 +10375,7 @@ Cogit >> printPCMapPairsFor: cogMethod [
 	| mcpc map mapByte annotation value |
 	mcpc := self firstMappedPCFor: cogMethod.
 	map := self mapStartFor: cogMethod.
-	[ (mapByte := objectMemory byteAt: map) ~= MapEnd ] whileTrue: [
+	[ (mapByte := objectMemory uint8At: map) ~= MapEnd ] whileTrue: [
 		annotation := mapByte >> AnnotationShift.
 		annotation = IsAnnotationExtension
 			ifTrue: [ value := (mapByte bitAnd: DisplacementMask) + IsSendCall ]
@@ -10443,7 +10443,7 @@ Cogit >> printPCMapPairsFor: cogMethod on: aStream [
 	| mcpc map mapByte annotation |
 	mcpc := self firstMappedPCFor: cogMethod.
 	map := self mapStartFor: cogMethod.
-	[(mapByte := objectMemory byteAt: map) ~= MapEnd] whileTrue:
+	[(mapByte := objectMemory uint8At: map) ~= MapEnd] whileTrue:
 		[annotation := mapByte >> AnnotationShift.
 		 annotation ~= IsAnnotationExtension ifTrue:
 			[mcpc := mcpc + (backEnd codeGranularity

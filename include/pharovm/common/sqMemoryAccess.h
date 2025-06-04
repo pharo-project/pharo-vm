@@ -161,7 +161,7 @@ typedef unsigned long long usqIntptr_t;
   static inline char *pointerForOop(usqInt oop)			{ return sqMemoryBase + oop; }
   static inline sqInt oopForPointer(void *ptr)			{ return (sqInt)(ptr - sqMemoryBase); }
 # endif
-  static inline sqInt byteAt(sqInt oop)				{ return byteAtPointer(pointerForOop(oop)); }
+  static inline sqInt uint8At(sqInt oop)				{ return byteAtPointer(pointerForOop(oop)); }
   static inline sqInt byteAtput(sqInt oop, int val)		{ return byteAtPointerput(pointerForOop(oop), val); }
   static inline sqInt shortAt(sqInt oop)			{ return shortAtPointer(pointerForOop(oop)); }
   static inline sqInt shortAtput(sqInt oop, int val)		{ return shortAtPointerput(pointerForOop(oop), val); }
@@ -239,7 +239,7 @@ typedef unsigned long long usqIntptr_t;
 #  define oopForPointer(ptr)		((sqInt)(((char *)(ptr)) - (sqMemoryBase)))
 #  define atPointerArg(oop)			sqMemoryBase + (usqInt)(oop)
 # endif
-# define byteAt(oop)				byteAtPointer(atPointerArg(oop))
+# define uint8At(oop)				byteAtPointer(atPointerArg(oop))
 # define byteAtput(oop,val)			byteAtPointerput(atPointerArg(oop), val)
 # define shortAt(oop)				shortAtPointer(atPointerArg(oop))
 # define shortAtput(oop,val)		shortAtPointerput(atPointerArg(oop), val)

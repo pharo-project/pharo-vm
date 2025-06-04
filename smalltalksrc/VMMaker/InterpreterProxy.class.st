@@ -63,18 +63,8 @@ InterpreterProxy >> booleanValueOf: obj [
 ]
 
 { #category : 'private' }
-InterpreterProxy >> byteAt: accessor [
-	^accessor byteAt: 0
-]
-
-{ #category : 'private' }
 InterpreterProxy >> byteAt: accessor put: value [
 	^accessor byteAt: 0 put: value
-]
-
-{ #category : 'private' }
-InterpreterProxy >> byteAtPointer: accessor [
-	^ self byteAt: accessor
 ]
 
 { #category : 'object access' }

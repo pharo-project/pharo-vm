@@ -1267,7 +1267,7 @@ StackInterpreterPrimitives >> primitiveFFIIntegerAt [
 	byteSize <= 2
 		ifTrue:
 			[byteSize = 1
-				ifTrue: [value := self cCoerce: (objectMemory byteAt: addr) to: #'unsigned char']
+				ifTrue: [value := self cCoerce: (objectMemory uint8At: addr) to: #'unsigned char']
 				ifFalse: [value := self cCoerce: (objectMemory unalignedShortAt: addr) to: #'unsigned short']]
 		ifFalse:
 			[byteSize = 4

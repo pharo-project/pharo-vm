@@ -4245,7 +4245,7 @@ CogX64Compiler >> instructionSizeAt: pc [
 	 to decode the jumps in block dispatch to discover where block methods
 	 occur within a larger method.   This is very far from a full decode."
 	| op |
-	op := objectMemory byteAt: pc.
+	op := objectMemory uint8At: pc.
 	(op bitAnd: 16rF8) = 16r48 ifTrue:
 		[^1 + (self instructionSizeAt: pc + 1)].
 	^op caseOf:
@@ -4304,22 +4304,22 @@ CogX64Compiler >> isBigEndian [
 { #category : 'testing' }
 CogX64Compiler >> isCallPrecedingReturnPC: mcpc [
 	"Assuming mcpc is a send return pc answer if the instruction before it is a call (not a CallFull)."
-	^(objectMemory byteAt: mcpc - 5) = 16rE8
+	^(objectMemory uint8At: mcpc - 5) = 16rE8
 ]
 
 { #category : 'disassembly' }
 CogX64Compiler >> isJumpAt: pc [
 	| op |
-	op := objectMemory byteAt: pc.
+	op := objectMemory uint8At: pc.
 	^  (op between: 16r70 and: 16r7F) "short conditional jumps"
 	or: [op = 16rE9 "long unconditional jump"
 	or: [op = 16rEB "short unconditional jump"
 	or: [(op = 16r0F "long conditional jumps"
-		and: [(objectMemory byteAt: pc + 1) between: 16r80 and: 16r8F])
+		and: [(objectMemory uint8At: pc + 1) between: 16r80 and: 16r8F])
 	or: [op = 16r48 "full unconditional jumps"
-		and: [(objectMemory byteAt: pc + 1) = 16rA1
-		and: [(objectMemory byteAt: pc + 10) = 16rFF
-		and: [(objectMemory byteAt: pc + 11) = 16rE0]]]]]]]
+		and: [(objectMemory uint8At: pc + 1) = 16rA1
+		and: [(objectMemory uint8At: pc + 10) = 16rFF
+		and: [(objectMemory uint8At: pc + 11) = 16rE0]]]]]]]
 ]
 
 { #category : 'testing' }
@@ -4382,14 +4382,14 @@ CogX64Compiler >> jumpTargetPCAt: pc [
 	size := self instructionSizeAt: pc.
 	size = 2
 		ifTrue:
-			[byte := objectMemory byteAt: pc + 1.
+			[byte := objectMemory uint8At: pc + 1.
 			 offset := (byte bitAnd: 16r80) = 0 ifTrue: [byte] ifFalse: [byte - 256]]
 		ifFalse:
-			[byte := objectMemory byteAt: pc + size - 1.
+			[byte := objectMemory uint8At: pc + size - 1.
 			 offset := (byte bitAnd: 16r80) = 0 ifTrue: [byte] ifFalse: [byte - 256].
-			 offset := offset << 8 + (objectMemory byteAt: pc + size - 2).
-			 offset := offset << 8 + (objectMemory byteAt: pc + size - 3).
-			 offset := offset << 8 + (objectMemory byteAt: pc + size - 4)].
+			 offset := offset << 8 + (objectMemory uint8At: pc + size - 2).
+			 offset := offset << 8 + (objectMemory uint8At: pc + size - 3).
+			 offset := offset << 8 + (objectMemory uint8At: pc + size - 4)].
 	^pc + size + offset
 ]
 
@@ -4507,10 +4507,10 @@ CogX64Compiler >> pushCwByteSize [
 CogX64Compiler >> relocateCallBeforeReturnPC: retpc by: delta [
 	| distance |
 	delta ~= 0 ifTrue:
-		[distance :=    ((objectMemory byteAt: retpc - 1) << 24)
-					+  ((objectMemory byteAt: retpc - 2) << 16)
-					+  ((objectMemory byteAt: retpc - 3) << 8)
-					+   (objectMemory byteAt: retpc - 4).
+		[distance :=    ((objectMemory uint8At: retpc - 1) << 24)
+					+  ((objectMemory uint8At: retpc - 2) << 16)
+					+  ((objectMemory uint8At: retpc - 3) << 8)
+					+   (objectMemory uint8At: retpc - 4).
 		 distance := distance + delta.
 		 objectMemory
 			byteAt: retpc - 1 put: (distance >> 24 bitAnd: 16rFF);
@@ -4525,10 +4525,10 @@ CogX64Compiler >> relocateMethodReferenceBeforeAddress: pc by: delta [
 	 Simply check that rip-relative addressing is being used. c.f.
 	 concretizeMoveCwR"
 	<inline: true>
-	self assert: (((objectMemory byteAt: pc - 6) = 16r8D "move"
-				and: [((objectMemory byteAt: pc - 5) bitOr: (self mod: 0 RM: 0 RO: 7)) = (self mod: ModRegInd RM: 5 RO: 7)])
-				or: [(objectMemory byteAt: pc - 8) = 16r8D "push"
-				and: [((objectMemory byteAt: pc - 7) bitOr: (self mod: 0 RM: 0 RO: 7)) = (self mod: ModRegInd RM: 5 RO: 7)]])
+	self assert: (((objectMemory uint8At: pc - 6) = 16r8D "move"
+				and: [((objectMemory uint8At: pc - 5) bitOr: (self mod: 0 RM: 0 RO: 7)) = (self mod: ModRegInd RM: 5 RO: 7)])
+				or: [(objectMemory uint8At: pc - 8) = 16r8D "push"
+				and: [((objectMemory uint8At: pc - 7) bitOr: (self mod: 0 RM: 0 RO: 7)) = (self mod: ModRegInd RM: 5 RO: 7)]])
 ]
 
 { #category : 'calling C function in Smalltalk stack' }
@@ -4587,7 +4587,7 @@ CogX64Compiler >> rewriteCallFullAt: callSiteReturnAddress target: callTargetAdd
 	 On x64 this is a rewrite of
 		movq #64bits, %rax : 48 A1 b0 b1 b2 b3 b4 b5 b6 b7
 		jmp %rax : FF E0 "
-	self assert: (objectMemory byteAt: callSiteReturnAddress - 12) = 16r48.
+	self assert: (objectMemory uint8At: callSiteReturnAddress - 12) = 16r48.
 	objectMemory unalignedLongAt: callSiteReturnAddress - 10 put: callTargetAddress.
 	self assert: (self callFullTargetFromReturnAddress: callSiteReturnAddress) signedIntToLong64 = callTargetAddress.
 	"self cCode: ''
@@ -4714,7 +4714,7 @@ CogX64Compiler >> sixtyFourBitLiteralBefore: followingAddress [
 { #category : 'disassembly' }
 CogX64Compiler >> sizeHasModrm: op at: pc [
 	| modrm mod ro rm |
-	modrm := objectMemory byteAt: pc + 1.
+	modrm := objectMemory uint8At: pc + 1.
 	mod := modrm >> 6.
 	ro := modrm >> 3 bitAnd: 7.
 	rm := modrm bitAnd: 7.
@@ -4735,7 +4735,7 @@ CogX64Compiler >> sizeHasModrm: op at: pc [
 CogX64Compiler >> sizeImmediateGroup1: op at: pc [
 	"see [1] p A-7, p A-13"
 	| modrm mod ro rm |
-	modrm := objectMemory byteAt: pc + 1.
+	modrm := objectMemory uint8At: pc + 1.
 	mod := modrm >> 6.
 	ro := modrm >> 3 bitAnd: 7.
 	rm := modrm bitAnd: 7.
@@ -4794,7 +4794,7 @@ CogX64Compiler >> storeLiteral32: literal beforeFollowingAddress: followingAddre
 { #category : 'disassembly' }
 CogX64Compiler >> twoByteInstructionSizeAt: pc [
 	| op |
-	op := objectMemory byteAt: pc + 1. 
+	op := objectMemory uint8At: pc + 1. 
 	^(op bitAnd: 16rF0) caseOf:
 		{	[16r80]	->	[6 "long conditional jumps"] }
 ]
@@ -4813,10 +4813,10 @@ CogX64Compiler >> unalignedLong32At: byteAddress [
 				_: (self sizeof: readValue).
 			^ readValue ]
 		inSmalltalk: [
-			^ (objectMemory byteAt: byteAddress + 3) << 24
-			  + ((objectMemory byteAt: byteAddress + 2) << 16)
-			  + ((objectMemory byteAt: byteAddress + 1) << 8)
-			  + (objectMemory byteAt: byteAddress) ]
+			^ (objectMemory uint8At: byteAddress + 3) << 24
+			  + ((objectMemory uint8At: byteAddress + 2) << 16)
+			  + ((objectMemory uint8At: byteAddress + 1) << 8)
+			  + (objectMemory uint8At: byteAddress) ]
 ]
 
 { #category : 'memory access' }

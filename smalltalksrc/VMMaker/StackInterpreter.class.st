@@ -6684,7 +6684,7 @@ StackInterpreter >> frameNumArgs: theFP [
 	"See encodeFrameFieldHasContext:numArgs:"
 	<inline: true>
 	<var: #theFP type: #'char *'>
-	^stackPages byteAt: theFP + FoxIFrameFlags + 1
+	^stackPages uint8At: theFP + FoxIFrameFlags + 1
 ]
 
 { #category : 'frame access' }
@@ -6934,7 +6934,7 @@ StackInterpreter >> getCogVMFlags [
 StackInterpreter >> getCurrentBytecode [
 	"currentBytecode will be private to the main dispatch loop in the generated code. This method allows the currentBytecode to be retrieved from global variables."
 
-	^objectMemory byteAt: instructionPointer
+	^objectMemory uint8At: instructionPointer
 ]
 
 { #category : 'internal interpreter access' }
@@ -7341,7 +7341,7 @@ StackInterpreter >> iframeHasContext: theFP [
 	"See encodeFrameFieldHasContext:numArgs:"
 	<inline: true>
 	<var: #theFP type: #'char *'>
-	^(stackPages byteAt: theFP + FoxIFrameFlags + 2) ~= 0
+	^(stackPages uint8At: theFP + FoxIFrameFlags + 2) ~= 0
 ]
 
 { #category : 'frame access' }
@@ -7356,7 +7356,7 @@ StackInterpreter >> iframeInstructionPointerForIndex: ip method: aMethod [
 StackInterpreter >> iframeIsBlockActivation: theFP [ "<Integer>"
 	<inline: true>
 	<var: #theFP type: #'char *'>
-	^(stackPages byteAt: theFP + FoxIFrameFlags + 3) ~= 0
+	^(stackPages uint8At: theFP + FoxIFrameFlags + 3) ~= 0
 ]
 
 { #category : 'frame access' }
@@ -7372,7 +7372,7 @@ StackInterpreter >> iframeNumArgs: theFP [
 	"See encodeFrameFieldHasContext:numArgs:"
 	<inline: true>
 	<var: #theFP type: #'char *'>
-	^stackPages byteAt: theFP + FoxIFrameFlags + 1
+	^stackPages uint8At: theFP + FoxIFrameFlags + 1
 ]
 
 { #category : 'frame access' }
@@ -7912,9 +7912,9 @@ StackInterpreter >> ioLoadExternalFunction: functionName OfLength: functionLengt
 	<doNotGenerate>
 	| pluginString functionString |
 	pluginString := String new: moduleLength.
-	1 to: moduleLength do:[:i| pluginString byteAt: i put: (objectMemory byteAt: moduleName+i-1)].
+	1 to: moduleLength do:[:i| pluginString byteAt: i put: (objectMemory uint8At: moduleName+i-1)].
 	functionString := String new: functionLength.
-	1 to: functionLength do:[:i| functionString byteAt: i put: (objectMemory byteAt: functionName+i-1)].
+	1 to: functionLength do:[:i| functionString byteAt: i put: (objectMemory uint8At: functionName+i-1)].
 	^self ioLoadFunction: functionString From: pluginString
 ]
 
@@ -7925,9 +7925,9 @@ StackInterpreter >> ioLoadExternalFunction: functionName OfLength: functionLengt
 	<doNotGenerate>
 	| pluginString functionString |
 	pluginString := String new: moduleLength.
-	(1 to: moduleLength) do:[:i| pluginString byteAt: i put: (objectMemory byteAt: moduleName+i-1)].
+	(1 to: moduleLength) do:[:i| pluginString byteAt: i put: (objectMemory uint8At: moduleName+i-1)].
 	functionString := String new: functionLength.
-	(1 to: functionLength) do:[:i| functionString byteAt: i put: (objectMemory byteAt: functionName+i-1)].
+	(1 to: functionLength) do:[:i| functionString byteAt: i put: (objectMemory uint8At: functionName+i-1)].
 	"We used to ignore loads of the SqueakFFIPrims plugin, but that means doing without integerAt:[put:]size:signed:
 	 which is too much of a limitation (not that these simulate unaligned accesses yet)."
 	
@@ -10965,8 +10965,8 @@ StackInterpreter >> primitiveIndexOfMethod: theMethod header: methodHeader [
 			  firstBytecode := self
 				                   firstBytecodeOfAlternateHeader: methodHeader
 				                   method: theMethod.
-			  (objectMemory byteAt: firstBytecode + 1)
-			  + ((objectMemory byteAt: firstBytecode + 2) << 8) ]
+			  (objectMemory uint8At: firstBytecode + 1)
+			  + ((objectMemory uint8At: firstBytecode + 2) << 8) ]
 		  ifFalse: [ 0 ]
 ]
 
@@ -12969,10 +12969,10 @@ StackInterpreter >> reapAndResetErrorCodeTo: theFP header: methodHeader [
 	self assert: primFailCode ~= 0.
 	initialPC := (self initialIPForHeader: methodHeader method: newMethod)
 	             + (self sizeOfCallPrimitiveBytecode: methodHeader).
-	(objectMemory byteAt: initialPC)
+	(objectMemory uint8At: initialPC)
 	= (self longStoreBytecodeForHeader: methodHeader) ifTrue: [ 
 		| temporaryIndex |
-		temporaryIndex := objectMemory byteAt: initialPC + 1.
+		temporaryIndex := objectMemory uint8At: initialPC + 1.
 		self
 			temporary: temporaryIndex
 			in: theFP
@@ -13416,7 +13416,7 @@ StackInterpreter >> sendBreak: selectorString point: selectorLength receiver: re
 	breakSelectorLength = selectorLength ifTrue:
 		[i := breakSelectorLength.
 		 [i > 0] whileTrue:
-			[(objectMemory byteAt: selectorString + i - 1) = (breakSelector at: i) asInteger
+			[(objectMemory uint8At: selectorString + i - 1) = (breakSelector at: i) asInteger
 				ifTrue: [(i := i - 1) = 0 ifTrue:
 							[self changed: #byteCountText.
 							 self halt: 'Send of '

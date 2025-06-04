@@ -257,11 +257,11 @@ FilePluginSimulator >> sqFile: file Write: count From: byteArrayIndexArg At: sta
 	file isBinary
 		ifTrue:
 			[startIndex to: startIndex + count - 1 do:
-				[ :i | file nextPut: (interpreterProxy byteAt: byteArrayIndex + i)]]
+				[ :i | file nextPut: (interpreterProxy uint8At: byteArrayIndex + i)]]
 		ifFalse:
 			[startIndex to: startIndex + count - 1 do:
 				[ :i | | byte |
-				byte := interpreterProxy byteAt: byteArrayIndex + i.
+				byte := interpreterProxy uint8At: byteArrayIndex + i.
 				file nextPut: (Character value: (byte == 12 "lf" ifTrue: [15"cr"] ifFalse: [byte]))]].
 	self recordStateOf: file.
 	^count
