@@ -252,6 +252,9 @@ Class {
 		'statCompileFullBlockUsecs',
 		'statCompileMethodCount',
 		'statCompileMethodUsecs',
+		'statTotalCodeSize',
+		'statTotalHeaderSize',
+		'statTotalMapSize',
 		'jitCodeZoneWriteEnabled'
 	],
 	#classVars : [
@@ -7545,6 +7548,9 @@ Cogit >> generateCogMethod: selector [
 	self enableCodeZoneWriteDuring: [ 
 		codeSize := self generateInstructionsAt: methodLabel address + headerSize.
 		mapSize := self generateMapAt: nil start: methodLabel address + cmNoCheckEntryOffset].
+		statTotalCodeSize := statTotalCodeSize + codeSize.
+		statTotalMapSize := statTotalMapSize + mapSize.
+		statTotalHeaderSize := statTotalHeaderSize + headerSize.
 
 	totalSize := methodZone roundUpLength: headerSize + codeSize + mapSize.
 	totalSize > MaxMethodSize ifTrue:
@@ -7993,6 +7999,24 @@ Cogit >> getPrimitiveIndex [
 	^primitiveIndex
 ]
 
+{ #category : 'statistics' }
+Cogit >> getStatTotalCodeSize [
+	<api>
+	^ statTotalCodeSize 
+]
+
+{ #category : 'statistics' }
+Cogit >> getStatTotalHeaderSize [
+	<api>
+	^ statTotalHeaderSize 
+]
+
+{ #category : 'statistics' }
+Cogit >> getStatTotalMapSize [
+	<api>
+	^ statTotalMapSize 
+]
+
 { #category : 'accessing' }
 Cogit >> guardPageSize: anInteger [ 
 
@@ -8310,6 +8334,9 @@ Cogit >> initialize [
 	statCompileFullBlockUsecs := 0.
 	statCompileMethodCount := 0.
 	statCompileMethodUsecs := 0.
+	statTotalHeaderSize := 0.
+	statTotalCodeSize := 0.
+	statTotalMapSize := 0.
 	jitCodeZoneWriteEnabled := false.
 ]
 
