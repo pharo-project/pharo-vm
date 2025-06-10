@@ -46,10 +46,65 @@ VMJittedPrimitivePerform >> setUp [
 
 	cogInitialAddress := self compile: [
 		"The perform has one argument: the selector"
-		cogit methodOrBlockNumArgs: 1.
+		cogit methodOrBlockNumArgs: 2.
 		cogit objectRepresentation genPrimitivePerform.
 		stop := cogit Stop ]
 	bytecodes: 10
+]
+
+{ #category : 'tests' }
+VMJittedPrimitivePerform >> setUpCompiledMethodWithArity: numberOfArguments [
+
+	| machineCodeMethod method |
+	method := methodBuilder
+		          numberOfArguments: numberOfArguments;
+		          buildMethod.
+	machineCodeMethod := targetMethodAddress.
+	(cogit cogMethodSurrogateAt: machineCodeMethod)
+		objectHeader: memory nullHeaderForMachineCodeMethod;
+		methodObject: method;
+		cmNumArgs: numberOfArguments;
+		methodHeader: (interpreter rawHeaderOf: method).
+	interpreter rawHeaderOf: method put: machineCodeMethod.
+	^ method
+]
+
+{ #category : 'tests' }
+VMJittedPrimitivePerform >> testPrimitivePerformFailsIfMethodFoundHasHigherArity [
+
+	| receiver selector method numberOfArguments |
+	"The target method has 1 argument, the perform callsite does not provide it
+		=> we expect check fail"
+	receiver := memory nilObject.
+	selector := memory integerObjectOf: 2.
+	
+	numberOfArguments := 2.
+	method := self setUpCompiledMethodWithArity: numberOfArguments.
+	
+	interpreter messageSelector: selector.
+	interpreter newMethod: method.
+	interpreter addNewMethodToCache: (memory fetchClassOf: receiver).
+	self prepareStackForSendReceiver: receiver arguments: { selector }.
+	self runFrom: cogInitialAddress until: stop address
+]
+
+{ #category : 'tests' }
+VMJittedPrimitivePerform >> testPrimitivePerformFailsIfMethodFoundHasLowerArity [
+
+	| receiver selector method numberOfArguments |
+	"The target method has 1 argument, the perform callsite does not provide it
+		=> we expect check fail"
+	receiver := memory nilObject.
+	selector := memory integerObjectOf: 2.
+	
+	numberOfArguments := 0.
+	method := self setUpCompiledMethodWithArity: numberOfArguments.
+	
+	interpreter messageSelector: selector.
+	interpreter newMethod: method.
+	interpreter addNewMethodToCache: (memory fetchClassOf: receiver).
+	self prepareStackForSendReceiver: receiver arguments: { selector }.
+	self runFrom: cogInitialAddress until: stop address
 ]
 
 { #category : 'tests' }
@@ -60,33 +115,6 @@ VMJittedPrimitivePerform >> testPrimitivePerformFailsIfMethodFoundIsNotJITCompil
 	selector := memory integerObjectOf: 2.
 
 	method := methodBuilder buildMethod.
-	interpreter messageSelector: selector.
-	interpreter newMethod: method.
-	interpreter addNewMethodToCache: (memory fetchClassOf: receiver).
-
-	self prepareStackForSendReceiver: receiver arguments: { selector }.
-
-	self runFrom: cogInitialAddress until: stop address
-]
-
-{ #category : 'tests' }
-VMJittedPrimitivePerform >> testPrimitivePerformFailsIfMethodFoundIsNotRightArity [
-
-	| receiver selector method machineCodeMethod |
-	receiver := memory nilObject.
-	selector := memory integerObjectOf: 2.
-
-	"The target method has 1 argument, the perform callsite does not provide it
-		=> we expect check fail"
-	method := methodBuilder numberOfArguments: 1; buildMethod.
-	machineCodeMethod := targetMethodAddress.
-	(cogit cogMethodSurrogateAt: machineCodeMethod)
-		objectHeader: memory nullHeaderForMachineCodeMethod;
-		methodObject: method;
-		cmNumArgs: 1;
-		methodHeader: (interpreter rawHeaderOf: method).
-	interpreter rawHeaderOf: method put: machineCodeMethod.
-	
 	interpreter messageSelector: selector.
 	interpreter newMethod: method.
 	interpreter addNewMethodToCache: (memory fetchClassOf: receiver).
@@ -112,16 +140,12 @@ VMJittedPrimitivePerform >> testPrimitivePerformFailsIfMethodNotInCache [
 { #category : 'tests' }
 VMJittedPrimitivePerform >> testPrimitivePerformJumpsToMethodIfCompiled [
 
-	| receiver selector method machineCodeMethod |
+	| receiver selector method numberOfArguments |
 	receiver := memory nilObject.
 	selector := memory integerObjectOf: 2.
 
-	machineCodeMethod := targetMethodAddress.
-	method := methodBuilder numberOfArguments:0; buildMethod.
-	(cogit cogMethodSurrogateAt: machineCodeMethod)
-		methodObject: method;
-		objectHeader: memory nullHeaderForMachineCodeMethod.
-	interpreter rawHeaderOf: method put: machineCodeMethod.
+	numberOfArguments := 1.
+	method := self setUpCompiledMethodWithArity: numberOfArguments.
 	
 	interpreter messageSelector: selector.
 	interpreter newMethod: method.
