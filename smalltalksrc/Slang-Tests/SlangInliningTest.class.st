@@ -349,7 +349,7 @@ SlangInliningTest >> test2ChainInliningMultipleReturnAsReturnExpressionAndStatem
 
 	method := ccg methodNamed:
 		          #methodAMultipleReturnAsReturnExpressionAndStatement.
-		
+
 	translation := self translate: method.
 	translation := translation trimBoth.
 
@@ -361,6 +361,7 @@ static sqInt
 methodAMultipleReturnAsReturnExpressionAndStatement(void)
 {
 	if (methodB()) {
+		return 2;
 	} else {
 		/* begin methodCMultipleReturn */
 		if (methodC()) {
@@ -369,7 +370,6 @@ methodAMultipleReturnAsReturnExpressionAndStatement(void)
 		return 3 + 3;
 		/* end methodCMultipleReturn */
 	}
-	return 0;
 }'
 ]
 
@@ -469,6 +469,74 @@ SlangInliningTest >> testInlineInSwitchRemovesReturnStatement [
 	self assert: firstCaseLabels size equals: 1.
 	firstCaseConstantExpression := firstCaseLabels first.
 	self assert: firstCaseConstantExpression parent equals: theSwitch
+]
+
+{ #category : 'inlining-returning-conditional' }
+SlangInliningTest >> testMethodAInlineMultipleIfFalseReturningIfTrue [
+
+	| method translation |
+	ccg doBasicInlining: true.
+
+	method := ccg methodNamed:
+		          #methodAInlineMultipleIfFalseReturningIfTrue.
+
+	translation := self translate: method.
+	translation := translation trimBoth.
+
+	self
+		assert: translation
+		equals:
+			'/* SLMockInliningTestClass>>#methodAInlineMultipleIfFalseReturningIfTrue */
+static sqInt
+methodAInlineMultipleIfFalseReturningIfTrue(void)
+{
+	if (methodB()) {
+		/* begin methodBIfFalseReturningIfTrue */
+		if (methodB()) {
+			return 0;
+		} else {
+		}
+		return 1;
+		/* end methodBIfFalseReturningIfTrue */
+	}
+ else {
+		/* begin methodBIfFalseReturningIfTrue */
+		if (methodB()) {
+			return 0;
+		} else {
+		}
+		return 1;
+		/* end methodBIfFalseReturningIfTrue */
+	}
+}'
+]
+
+{ #category : 'inlining-returning-conditional' }
+SlangInliningTest >> testMethodAInlineifFalseReturningIfTrue [
+
+	| method translation |
+	ccg doBasicInlining: true.
+
+	method := ccg methodNamed: #methodAInlineIfFalseReturningIfTrue.
+
+	translation := self translate: method.
+	translation := translation trimBoth.
+
+	self
+		assert: translation
+		equals:
+			'/* SLMockInliningTestClass>>#methodAInlineIfFalseReturningIfTrue */
+static sqInt
+methodAInlineIfFalseReturningIfTrue(void)
+{
+	/* begin methodBIfFalseReturningIfTrue */
+	if (methodB()) {
+		return 0;
+	} else {
+	}
+	return 1;
+	/* end methodBIfFalseReturningIfTrue */
+}'
 ]
 
 { #category : 'inlining-simple' }

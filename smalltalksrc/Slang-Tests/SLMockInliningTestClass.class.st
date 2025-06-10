@@ -37,6 +37,22 @@ SLMockInliningTestClass >> methodAAssignOnReturn [
 	^ self methodBAssignOnReturn
 ]
 
+{ #category : 'inlining-returning-conditional' }
+SLMockInliningTestClass >> methodAInlineIfFalseReturningIfTrue [
+
+	^ self methodBIfFalseReturningIfTrue
+]
+
+{ #category : 'inlining-returning-conditional' }
+SLMockInliningTestClass >> methodAInlineMultipleIfFalseReturningIfTrue [
+
+	^ self methodB
+		  ifFalse: [ self methodBIfFalseReturningIfTrue ]
+		  ifTrue: [
+			  5.
+			  self methodBIfFalseReturningIfTrue ]
+]
+
 { #category : 'inlining-jump' }
 SLMockInliningTestClass >> methodAMultipleReturn [
 
@@ -143,6 +159,15 @@ SLMockInliningTestClass >> methodBAlwaysInlined [
 SLMockInliningTestClass >> methodBAssignOnReturn [
 
 	^ 2 + 2
+]
+
+{ #category : 'inlining-returning-conditional-helpers' }
+SLMockInliningTestClass >> methodBIfFalseReturningIfTrue [
+
+	self methodB
+		ifFalse: [ true ]
+		ifTrue: [ ^ false ].
+	^ true
 ]
 
 { #category : 'inlining-jump-helpers' }

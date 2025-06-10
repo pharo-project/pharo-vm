@@ -38,7 +38,7 @@ SLInliner >> checkForCompletenessFor: aTMethod [
 	foundIncompleteSend ifFalse: [ aTMethod complete: true ]
 ]
 
-{ #category : 'inlining-support' }
+{ #category : 'testing' }
 SLInliner >> checkForFlagIn: aTMethod [
 
 	(aTMethod parseTree sizeWithoutComments > 1 and: [
@@ -94,26 +94,6 @@ SLInliner >> ensureConditionalAssignmentsAreTransformedInCurrentMethod [
 	transformedAssignments notEmpty and: [
 		currentMethod replaceNodesIn: transformedAssignments.
 		true ] ] whileTrue
-]
-
-{ #category : 'inlining-support' }
-SLInliner >> getReturningNodesIn: aTMethod [
-		| returningNodes |
-	returningNodes := Set new.
-	aTMethod parseTree nodesDo: [ :node |
-		node isReturn ifTrue: [
-			returningNodes add: node expression.
-			node expression isConditionalSend ifTrue: [
-				returningNodes addAll:
-					(node expression arguments collect: [ :stmtList |
-						 stmtList lastNonCommentStatement ]) ] ] ].
-	^ returningNodes
-]
-
-{ #category : 'inlining-support' }
-SLInliner >> getReturningNodesInCurrentMethod [
-
-	^ self getReturningNodesIn: currentMethod
 ]
 
 { #category : 'initialization' }
@@ -378,8 +358,7 @@ SLInliner >> inlineSend: aSendNode [
 	omittedParameters := res first.
 	calleeParameters := res second ] value:
 		(self trimArgumentsIn: callee).
-	calleeParameters size = aSendNode arguments size
-		ifFalse: [ ^ nil ].
+	calleeParameters size = aSendNode arguments size ifFalse: [ ^ nil ].
 	callee := callee copy.
 
 	self checkForFlagIn: callee.
@@ -409,18 +388,13 @@ SLInliner >> inlineSend: aSendNode [
 			(callee exitVar: exitVar label: exitLabel)
 				ifTrue: [ currentMethod labels add: exitLabel ]
 				ifFalse: [ "is label used?" exitLabel := nil ] ].
-		(sLNodeAnnotatorVisitor isInReturn: aSendNode) ifTrue: [
-			| returningParent |
-			returningParent := sLNodeAnnotatorVisitor returningParentFor:
-				                   aSendNode.
-			returningParent parent
-				replaceChild: returningParent
-				with: returningParent expression.
-			sLNodeAnnotatorVisitor cleanInfo.
-			sLNodeAnnotatorVisitor visit: currentMethod parseTree.
-			directReturn := sLNodeAnnotatorVisitor isDirectReturn: aSendNode.
-			exitVar := (sLNodeAnnotatorVisitor exitVarFor: aSendNode)
-				           ifNotNil: [ :var | var name ] ] ].
+
+		sLNodeAnnotatorVisitor removeReturningParentFrom: aSendNode.
+		sLNodeAnnotatorVisitor visit: currentMethod parseTree.
+		directReturn := sLNodeAnnotatorVisitor isDirectReturn: aSendNode.
+		exitVar := (sLNodeAnnotatorVisitor exitVarFor: aSendNode) ifNotNil: [
+			           :var | var name ] ].
+
 	(inlineStmts := OrderedCollection new:
 			                callee statements size + callee args size + 2)
 		add: (label := TLabeledCommentNode new setComment: 'begin ' , sel);
@@ -565,7 +539,7 @@ SLInliner >> isSubstitutableNode: aNode intoMethod: targetMeth [
 	^ true
 ]
 
-{ #category : 'inlining-support' }
+{ #category : 'transformation' }
 SLInliner >> propagateArgumentTypeArguments: calleeParameters in: callee from: aSendNode [
 	"Propagate any unusual argument types to untyped argument variables"
 
@@ -581,7 +555,7 @@ SLInliner >> propagateArgumentTypeArguments: calleeParameters in: callee from: a
 							 ifFalse: [ type , ' ' , formal ]) ] ] ] ]
 ]
 
-{ #category : 'inlining-support' }
+{ #category : 'transformation' }
 SLInliner >> propagateReturnTypeDirectReturn: directReturn exitVar: exitVar callee: callee [
 	"Propagate the return type of an inlined method"
 
@@ -695,7 +669,7 @@ SLInliner >> transformConditionalAssignment: node [
 				  yourself ]
 ]
 
-{ #category : 'inlining-support' }
+{ #category : 'transformation' }
 SLInliner >> trimArgumentsIn: aTMethod [
 
 	| calleeParameters omittedParameters varNode |
@@ -750,10 +724,8 @@ SLInliner >> tryToInlineMethodStatementsListsInCurrentMethod [
 	"Expand any (complete) inline methods sent by this method as top-level statements.
 	 Answer if anything was inlined."
 
-	| stmtLists didSomething newStatements returningNodes |
+	| stmtLists didSomething newStatements |
 	didSomething := false.
-	returningNodes := self getReturningNodesInCurrentMethod.
-
 	stmtLists := self statementsListsForInliningInCurrentMethod.
 	sLNodeAnnotatorVisitor visit: currentMethod parseTree.
 
@@ -768,19 +740,6 @@ SLInliner >> tryToInlineMethodStatementsListsInCurrentMethod [
 					newStatements addAllLast: inlinedStmts statements ] ].
 		stmtList statements: newStatements statements ].
 
-
-
-	"""This is a hack; forgive me. The inlining above tends to keep return statements in statement lists.
-	 In the case of returning ifs we don't want the returns in case the returning if is generated as an expression.""
-	returningNodes do: [ :returningNode |
-		(returningNode isConditionalSend and: [
-			 returningNode arguments anySatisfy: [ :alternativeNode |
-				 alternativeNode endsWithReturn ] ]) ifTrue: [
-			returningNode arguments withIndexDo: [ :alternativeNode :index |
-				alternativeNode endsWithReturn ifTrue: [
-					returningNode arguments
-						at: index
-						put: alternativeNode copyWithoutReturn ] ] ] ]."
 	sLNodeAnnotatorVisitor cleanInfo.
 	^ didSomething
 ]

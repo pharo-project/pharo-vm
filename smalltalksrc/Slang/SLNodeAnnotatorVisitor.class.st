@@ -103,13 +103,13 @@ SLNodeAnnotatorVisitor >> exitVarFor: aNode [
 	^ (info at: aNode) at: self exitVarString ifAbsent: [ nil ]
 ]
 
-{ #category : 'helpers' }
+{ #category : 'helpers-constant' }
 SLNodeAnnotatorVisitor >> exitVarString [
 
 	^ #exitVar
 ]
 
-{ #category : 'helpers' }
+{ #category : 'helpers-constant' }
 SLNodeAnnotatorVisitor >> expressionString [
 
 	^ #expression
@@ -143,7 +143,7 @@ SLNodeAnnotatorVisitor >> handleConditionalSendVisit: aSendNode [
 	self annotateNodeState: aSendNode
 ]
 
-{ #category : 'helpers' }
+{ #category : 'helpers-constant' }
 SLNodeAnnotatorVisitor >> inExpressionString [
 	"value doesn't actually matter, but the stack need elements"
 
@@ -203,7 +203,25 @@ SLNodeAnnotatorVisitor >> isInReturn: aNode [
 		  ifAbsent: [ false ]
 ]
 
-{ #category : 'helpers' }
+{ #category : 'transformation' }
+SLNodeAnnotatorVisitor >> removeReturningParentFrom: aSendNode [
+	"use in inlining for redondant return : return {return exp} -> {return exp}, clean all the info as a side effect, it needs to be recalculated"
+
+	| returningParent |
+	(self isInReturn: aSendNode) ifFalse: [ ^ self ].
+
+	returningParent := self returningParentFor: aSendNode.
+
+	self transformDirectReturnFrom: returningParent.
+
+	returningParent parent
+		replaceChild: returningParent
+		with: returningParent expression.
+
+	self cleanInfo
+]
+
+{ #category : 'helpers-constant' }
 SLNodeAnnotatorVisitor >> returnString [
 
 	^ #return
@@ -218,10 +236,22 @@ SLNodeAnnotatorVisitor >> returningParentFor: aNode [
 		  ifAbsent: [ nil ]
 ]
 
-{ #category : 'helpers' }
+{ #category : 'helpers-constant' }
 SLNodeAnnotatorVisitor >> statementString [
 
 	^ #statement
+]
+
+{ #category : 'transformation' }
+SLNodeAnnotatorVisitor >> transformDirectReturnFrom: parentNode [
+	"recursively go throught the ast to transfrom directReturn
+	^ exp ifTrue: [exp] ifFalse [exp] -> ifTrue: [^exp] ifFalse [^exp]"
+
+	parentNode children do: [ :child |
+		(self isDirectReturn: child)
+			ifTrue: [
+			child parent replaceChild: child with: child asReturnNode ]
+			ifFalse: [ self transformDirectReturnFrom: child ] ]
 ]
 
 { #category : 'accessing' }
