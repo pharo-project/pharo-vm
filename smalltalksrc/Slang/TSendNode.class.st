@@ -504,7 +504,7 @@ TSendNode >> isSameAs: aTParseNode [
 TSendNode >> isSelectorWithNoSideEffect [
 
 	^ #( #+ #- #* #/ #'//' #'\\' #= #'==' #'~=' #'~~' #< #'<=' #> #'>='
-	     #and: #or: #negated #'<<' #'>>' #'>>>' ) includes: selector
+	     #and: #or: #negated #not #'<<' #'>>' #'>>>' ) includes: selector
 ]
 
 { #category : 'C code generation' }
@@ -517,6 +517,12 @@ TSendNode >> isSelfReference: varNode in: aCodeGen [
 TSendNode >> isSend [
 
 	^true
+]
+
+{ #category : 'testing' }
+TSendNode >> isStructAccessorWithNoSideEffectIn: aCodeGenerator [
+
+	^ self numArgs = 0 and: [ aCodeGenerator isStructSend: self ]
 ]
 
 { #category : 'C code generation' }

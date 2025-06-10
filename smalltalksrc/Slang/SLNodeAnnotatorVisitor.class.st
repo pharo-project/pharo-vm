@@ -162,6 +162,15 @@ SLNodeAnnotatorVisitor >> initialize [
 ]
 
 { #category : 'testing' }
+SLNodeAnnotatorVisitor >> isDirectExpression: aNode [
+
+	^ (info at: aNode)
+		  at: self expressionString
+		  ifPresent: [ true ]
+		  ifAbsent: [ false ]
+]
+
+{ #category : 'testing' }
 SLNodeAnnotatorVisitor >> isDirectReturn: aNode [
 
 	^ (info at: aNode)
