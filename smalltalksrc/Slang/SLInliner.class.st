@@ -10,6 +10,34 @@ Class {
 	#package : 'Slang'
 }
 
+{ #category : 'testing' }
+SLInliner >> checkForCompletenessFor: aTMethod [
+	"Set the complete flag if the parse tree contains no further candidates for inlining."
+
+	| foundIncompleteSend |
+	codeGenerator maybeBreakForTestOfInliningOf: aTMethod selector.
+
+	foundIncompleteSend := false.
+
+	aTMethod parseTree
+		nodesDo: [ :node |
+			node isSend ifTrue: [
+				(aTMethod
+					 methodIsEffectivelyComplete: node selector
+					 in: codeGenerator)
+					ifTrue: [
+						(self isInlineableFunctionCall: node) ifTrue: [
+							aTMethod complete: false. "more inlining to do"
+							^ self ] ]
+					ifFalse: [ foundIncompleteSend := true ] ] ]
+		unless: [ :node |
+			node isSend and: [
+				node selector == #cCode:inSmalltalk: or: [
+					codeGenerator isAssertSelector: node selector ] ] ].
+
+	foundIncompleteSend ifFalse: [ aTMethod complete: true ]
+]
+
 { #category : 'inlining-support' }
 SLInliner >> checkForFlagIn: aTMethod [
 
@@ -119,21 +147,12 @@ SLInliner >> inlineBuiltin: aSendNode [
 SLInliner >> inlineCodeOrNilForStatement: aNode [
 	"If the given statement node can be inlined, answer the statements that replace it. Otherwise, answer nil."
 
-	| stmts |
 	(aNode isReturn and: [ self isInlineableSend: aNode expression ])
-		ifTrue: [
-			| last |
-			stmts := self inlineSend: aNode expression.
-
-"			""the last statements may be comments""
-			stmts isStatementList ifTrue: [
-				last := stmts lastNonCommentStatement.
-				last endsWithReturn ifFalse: [
-					stmts replaceChild: last with: last asReturnNode ] ]."
-			^ stmts ].
+		ifTrue: [ ^ self inlineSend: aNode expression ].
 
 	(aNode isAssignment and: [ self isInlineableSend: aNode expression ])
 		ifTrue: [ ^ self inlineSend: aNode expression ].
+
 	(aNode isSend and: [ self isInlineableSend: aNode ]) ifTrue: [
 		^ self inlineSend: aNode ].
 	^ nil
@@ -344,7 +363,7 @@ SLInliner >> inlineSend: aSendNode [
 	 otherwise the assignee variable type must match the return type of the inlinee.  Return
 	 types are not propagated."
 
-	| sel callee calleeParameters exitLabel inlineStmts label omittedParameters exitVar directReturn |
+	| sel callee exitLabel inlineStmts label omittedParameters calleeParameters exitVar directReturn |
 	sel := aSendNode selector.
 	callee := codeGenerator methodNamed: sel.
 
@@ -355,9 +374,12 @@ SLInliner >> inlineSend: aSendNode [
 	"convenient for debugging..."
 	codeGenerator maybeBreakForInlineOf: aSendNode in: self.
 
-	omittedParameters := self trimArgumentsIn: callee.
-	callee args size = aSendNode arguments size ifFalse: [ ^ nil ].
-	calleeParameters := callee args.
+	[ :res |
+	omittedParameters := res first.
+	calleeParameters := res second ] value:
+		(self trimArgumentsIn: callee).
+	calleeParameters size = aSendNode arguments size
+		ifFalse: [ ^ nil ].
 	callee := callee copy.
 
 	self checkForFlagIn: callee.
@@ -381,7 +403,7 @@ SLInliner >> inlineSend: aSendNode [
 		except: omittedParameters.
 
 	callee hasReturn ifTrue: [
-		(sLNodeAnnotatorVisitor isInExpression: aSendNode) ifFalse: [
+		directReturn ifFalse: [
 			exitLabel := currentMethod unusedLabelForInliningInto:
 				             currentMethod.
 			(callee exitVar: exitVar label: exitLabel)
@@ -521,14 +543,14 @@ SLInliner >> isSubstitutableNode: aNode intoMethod: targetMeth [
 	aNode isStatementList ifTrue: [ ^ true ].
 
 	(aNode isSend and: [
-		 aNode numArgs = 0 and: [ codeGenerator isStructSend: aNode ] ])
-		ifTrue: [ ^ true ].
+		 aNode isStructAccessorWithNoSideEffectIn: codeGenerator ]) ifTrue: [
+		^ true ].
 
 	"scan expression tree; must contain only constants, builtin ops, and inlineable vars"
 	aNode nodesDo: [ :node |
 		node isSend ifTrue: [
 			((codeGenerator isBuiltinSelector: node selector) or: [
-				 node numArgs = 0 and: [ codeGenerator isStructSend: node ] ])
+				 node isStructAccessorWithNoSideEffectIn: codeGenerator ])
 				ifFalse: [ ^ false ] ].
 		node isVariable ifTrue: [
 			var := node name.
@@ -681,13 +703,20 @@ SLInliner >> trimArgumentsIn: aTMethod [
 	omittedParameters := #(  ).
 	(calleeParameters notEmpty and: [
 		 calleeParameters first beginsWith: 'self_in_' ]) ifFalse: [
-		^ omittedParameters ].
-	
+		^ OrderedCollection new
+			  add: omittedParameters;
+			  add: calleeParameters;
+			  yourself ].
+	"If the first arg is not used we can and should elide it."
 	varNode := TVariableNode new setName: calleeParameters first.
 	(aTMethod parseTree noneSatisfy: [ :node | varNode isSameAs: node ])
 		ifTrue: [ omittedParameters := { calleeParameters first } ].
+
 	calleeParameters := calleeParameters allButFirst.
-	^ omittedParameters
+	^ OrderedCollection new
+		  add: omittedParameters;
+		  add: calleeParameters;
+		  yourself
 ]
 
 { #category : 'inlining' }
@@ -776,7 +805,7 @@ SLInliner >> tryToInlineMethodsInCurrentMethod [
 
 	"marking a method complete is progress"
 	currentMethod isComplete ifFalse: [
-		currentMethod checkForCompletenessIn: codeGenerator.
+		self checkForCompletenessFor: currentMethod.
 		currentMethod isComplete ifTrue: [ didSomething := true ] ]. "marking a method complete is progress"
 	^ didSomething
 ]
