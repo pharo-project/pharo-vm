@@ -2408,7 +2408,12 @@ SimpleStackBasedCogit >> genLookupForPerformNumArgs: numArgs [
 	objectRepresentation genLoadSlot: HeaderIndex sourceReg: SendNumArgsReg destReg: ClassReg.
 	jumpInterpret := objectRepresentation genJumpImmediate: ClassReg.
 	
-	"We are in machine code, we need to check arity!"
+	"We are in machine code, we need to check arity!
+	Load the target method number of arguments (zero extended by hand if needed).
+	Then compare it to the callsite one.
+	Jump to fail if not equal"
+	self backEnd byteReadsZeroExtend ifFalse:
+		[self MoveCq: 0 R: SendNumArgsReg].
 	self MoveMb: (self offset: CogMethod of: #cmNumArgs) r: ClassReg R: SendNumArgsReg.
 	"numArgs contains the number of arguments of perform, which contains the selector."
 	self CmpCq: numArgs - 1 R: SendNumArgsReg.
