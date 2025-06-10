@@ -7,30 +7,31 @@ They obviously *should not* be used for implementing runtime behavior.
 VMOops are also indented to be robust and capable of dealing with corrupted things (because we rarely debug uncorrupted memory), or during low-level operations (durring GC for instance).
 "
 Class {
-	#name : #VMOop,
-	#superclass : #Object,
+	#name : 'VMOop',
+	#superclass : 'Object',
 	#instVars : [
 		'oop',
 		'memory'
 	],
-	#category : #'VMMaker-Tools'
+	#category : 'VMMaker-Tools',
+	#package : 'VMMaker-Tools'
 }
 
-{ #category : #'object access' }
+{ #category : 'object access' }
 VMOop >> bytes [
 
 	self ifBroken: [ ^ nil ].
 	^ memory bytesInObject: oop
 ]
 
-{ #category : #'object access' }
+{ #category : 'object access' }
 VMOop >> classIndex [
 
 	self ifBroken: [ ^ nil ].
 	^ memory classIndexOf: oop
 ]
 
-{ #category : #printing }
+{ #category : 'printing' }
 VMOop >> flags [
 
 	self ifBroken: [ ^ 'broken' ].
@@ -41,7 +42,7 @@ VMOop >> flags [
 			 ((memory isRemembered: oop) ifTrue: ['r'] ifFalse: ['.'])
 ]
 
-{ #category : #printing }
+{ #category : 'printing' }
 VMOop >> format [
 
 	self ifBroken: [ ^ 'broken' ].
@@ -51,64 +52,64 @@ VMOop >> format [
 
 ]
 
-{ #category : #testing }
+{ #category : 'testing' }
 VMOop >> ifBroken: aBlock [
 
 	^ self isBroken ifTrue: aBlock.
 ]
 
-{ #category : #testing }
+{ #category : 'testing' }
 VMOop >> isBroken [
 
 	oop ifNil: [ ^true ].
 	^ (memory memoryManager isValidAddress: oop) not.
 ]
 
-{ #category : #printing }
+{ #category : 'printing' }
 VMOop >> label [
 
 	self ifBroken: [ ^ 'broken' ].
 	^ memory labelOfOop: oop
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 VMOop >> memory [
 
 	^ memory
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 VMOop >> memory: anObject [
 
 	memory := anObject
 ]
 
-{ #category : #'object access' }
+{ #category : 'object access' }
 VMOop >> numSlots [
 
 	self ifBroken: [ ^ nil ].
 	^ memory numSlotsOfAny: oop
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 VMOop >> oop [
 
 	^ oop
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 VMOop >> oop: anObject [
 
 	oop := anObject
 ]
 
-{ #category : #'object access' }
+{ #category : 'object access' }
 VMOop >> pointer: idx [
 
 	^ memory asVMOop: (self rawPointer: idx)
 ]
 
-{ #category : #'object access' }
+{ #category : 'object access' }
 VMOop >> pointers [
 
 	"Return a collection of all pointed `VMOop` (in slots)"
@@ -120,20 +121,20 @@ VMOop >> pointers [
 	^ (1 to: n) collect: [ :i | self pointer: i-1 ].
 ]
 
-{ #category : #printing }
+{ #category : 'printing' }
 VMOop >> printOn: aStream [
 
 	^ aStream print: oop
 ]
 
-{ #category : #'object access' }
+{ #category : 'object access' }
 VMOop >> rawNumSlots [
 
 	self ifBroken: [ ^ nil ].
 	^ memory rawNumSlotsOf: oop
 ]
 
-{ #category : #'object access' }
+{ #category : 'object access' }
 VMOop >> rawPointer: idx [
 
 	"0 based pointer, as a classic integer oop"
@@ -146,7 +147,7 @@ VMOop >> rawPointer: idx [
 
 ]
 
-{ #category : #printing }
+{ #category : 'printing' }
 VMOop >> type [
 
 	self ifBroken: [ ^ 'broken' ].

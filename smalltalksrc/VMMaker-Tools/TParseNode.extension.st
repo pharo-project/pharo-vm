@@ -1,6 +1,6 @@
-Extension { #name : #TParseNode }
+Extension { #name : 'TParseNode' }
 
-{ #category : #'*VMMaker-Tools' }
+{ #category : '*VMMaker-Tools' }
 TParseNode >> inspectionTree [
 	<inspectorPresentationOrder: 35 title: 'Tree'>
 

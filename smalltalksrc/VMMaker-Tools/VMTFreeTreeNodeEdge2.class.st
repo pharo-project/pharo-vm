@@ -1,5 +1,6 @@
 Class {
-	#name : #VMTFreeTreeNodeEdge2,
-	#superclass : #VMTFreeListNodeEdge,
-	#category : #'VMMaker-Tools'
+	#name : 'VMTFreeTreeNodeEdge2',
+	#superclass : 'VMTFreeListNodeEdge',
+	#category : 'VMMaker-Tools',
+	#package : 'VMMaker-Tools'
 }
