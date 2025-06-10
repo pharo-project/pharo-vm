@@ -1634,7 +1634,7 @@ SimpleStackBasedCogit >> genLookupForPerformNumArgs: numArgs [
 	"Compile the code for a probe of the first-level method cache for a perform primtiive.
 	 The selector is assumed to be in Arg0Reg.  Defer to adjustArgumentsForPerform: to
 	 adjust the arguments before the jump to the method."
-	| jumpSelectorMiss jumpClassMiss jumpInterpret itsAHit cacheBaseReg |
+	| jumpSelectorMiss jumpClassMiss jumpInterpret itsAHit cacheBaseReg jumpWrongArity |
 	<var: #jumpSelectorMiss type: #'AbstractInstruction *'>
 	<var: #jumpClassMiss type: #'AbstractInstruction *'>
 	<var: #jumpInterpret type: #'AbstractInstruction *'>
@@ -1662,6 +1662,13 @@ SimpleStackBasedCogit >> genLookupForPerformNumArgs: numArgs [
 	"If the method is not compiled fall back on the interpreter primitive."
 	objectRepresentation genLoadSlot: HeaderIndex sourceReg: SendNumArgsReg destReg: ClassReg.
 	jumpInterpret := objectRepresentation genJumpImmediate: ClassReg.
+	
+	"We are in machine code, we need to check arity!"
+	self MoveMb: (self offset: CogMethod of: #cmNumArgs) r: ClassReg R: SendNumArgsReg.
+	"numArgs contains the number of arguments of perform, which contains the selector."
+	self CmpCq: numArgs - 1 R: SendNumArgsReg.
+	jumpWrongArity := self JumpNonZero: 0.
+	
 	"Adjust arguments and jump to the method's unchecked entry-point."
 	self AddCq: cmNoCheckEntryOffset R: ClassReg.
 	self adjustArgumentsForPerform: numArgs.
@@ -1679,7 +1686,7 @@ SimpleStackBasedCogit >> genLookupForPerformNumArgs: numArgs [
 
 	"Last probe missed.  Caller will generate the call to fall back on the interpreter primitive."
 	jumpSelectorMiss jmpTarget:
-	(jumpInterpret jmpTarget: self Label).
+	(jumpInterpret jmpTarget: (jumpWrongArity jmpTarget: self Label)).
 	^0
 ]
 
