@@ -344,7 +344,7 @@ SLInliner >> inlineSend: aSendNode [
 	 otherwise the assignee variable type must match the return type of the inlinee.  Return
 	 types are not propagated."
 
-	| sel callee calleeParameters exitLabel inlineStmts label exitType omittedParameters exitVar directReturn |
+	| sel callee calleeParameters exitLabel inlineStmts label omittedParameters exitVar directReturn |
 	sel := aSendNode selector.
 	callee := codeGenerator methodNamed: sel.
 
@@ -354,41 +354,22 @@ SLInliner >> inlineSend: aSendNode [
 
 	"convenient for debugging..."
 	codeGenerator maybeBreakForInlineOf: aSendNode in: self.
+
+	omittedParameters := self trimArgumentsIn: callee.
+	callee args size = aSendNode arguments size ifFalse: [ ^ nil ].
 	calleeParameters := callee args.
-	omittedParameters := #(  ).
-	(calleeParameters notEmpty and: [
-		 calleeParameters first beginsWith: 'self_in_' ]) ifTrue: [ "If the first arg is not used we can and should elide it."
-		| varNode |
-		varNode := TVariableNode new setName: calleeParameters first.
-		(callee parseTree noneSatisfy: [ :node | varNode isSameAs: node ])
-			ifTrue: [ omittedParameters := { calleeParameters first } ].
-		calleeParameters := calleeParameters allButFirst ].
-	calleeParameters size = aSendNode arguments size ifFalse: [ ^ nil ].
 	callee := callee copy.
 
 	self checkForFlagIn: callee.
 
-	"Propagate the return type of an inlined method"
-	(directReturn or: [ exitVar notNil ]) ifTrue: [
-		exitType := directReturn
-			            ifTrue: [ currentMethod returnType ]
-			            ifFalse: [
-				            (currentMethod typeFor: exitVar in: codeGenerator)
-					            ifNil: [ #sqInt ] ].
-		(exitType = #void or: [ exitType = callee returnType ]) ifFalse: [
-			callee propagateReturnIn: codeGenerator ] ].
-
-	"Propagate any unusual argument types to untyped argument variables"
-	calleeParameters with: aSendNode arguments do: [ :formal :actual |
-		(callee declarationAt: formal ifAbsent: nil) ifNil: [
-			| type |
-			(actual isVariable and: [
-				 (type := currentMethod typeFor: actual name in: codeGenerator)
-					 notNil ]) ifTrue: [
-				type ~= #sqInt ifTrue: [
-					callee declarationAt: formal put: (type last = $*
-							 ifTrue: [ type , formal ]
-							 ifFalse: [ type , ' ' , formal ]) ] ] ] ].
+	self
+		propagateReturnTypeDirectReturn: directReturn
+		exitVar: exitVar
+		callee: callee.
+	self
+		propagateArgumentTypeArguments: calleeParameters
+		in: callee
+		from: aSendNode.
 
 	callee
 		renameVarsForInliningInto: currentMethod
@@ -398,26 +379,26 @@ SLInliner >> inlineSend: aSendNode [
 	currentMethod
 		addVarsDeclarationsAndLabelsOf: callee
 		except: omittedParameters.
+
 	callee hasReturn ifTrue: [
-		(sLNodeAnnotatorVisitor isInReturn: aSendNode)
-			ifFalse: [
-				exitLabel := currentMethod unusedLabelForInliningInto:
-					             currentMethod.
-				(callee exitVar: exitVar label: exitLabel)
-					ifTrue: [ currentMethod labels add: exitLabel ]
-					ifFalse: [ "is label used?" exitLabel := nil ] ]
-			ifTrue: [
-				| returningParent |
-				returningParent := sLNodeAnnotatorVisitor returningParentFor:
-					                   aSendNode.
-				returningParent parent
-					replaceChild: returningParent
-					with: returningParent expression.
-				sLNodeAnnotatorVisitor cleanInfo.
-				sLNodeAnnotatorVisitor visit: currentMethod parseTree.
-				directReturn := sLNodeAnnotatorVisitor isDirectReturn: aSendNode.
-				exitVar := (sLNodeAnnotatorVisitor exitVarFor: aSendNode)
-					           ifNotNil: [ :var | var name ] ] ].
+		(sLNodeAnnotatorVisitor isInExpression: aSendNode) ifFalse: [
+			exitLabel := currentMethod unusedLabelForInliningInto:
+				             currentMethod.
+			(callee exitVar: exitVar label: exitLabel)
+				ifTrue: [ currentMethod labels add: exitLabel ]
+				ifFalse: [ "is label used?" exitLabel := nil ] ].
+		(sLNodeAnnotatorVisitor isInReturn: aSendNode) ifTrue: [
+			| returningParent |
+			returningParent := sLNodeAnnotatorVisitor returningParentFor:
+				                   aSendNode.
+			returningParent parent
+				replaceChild: returningParent
+				with: returningParent expression.
+			sLNodeAnnotatorVisitor cleanInfo.
+			sLNodeAnnotatorVisitor visit: currentMethod parseTree.
+			directReturn := sLNodeAnnotatorVisitor isDirectReturn: aSendNode.
+			exitVar := (sLNodeAnnotatorVisitor exitVarFor: aSendNode)
+				           ifNotNil: [ :var | var name ] ] ].
 	(inlineStmts := OrderedCollection new:
 			                callee statements size + callee args size + 2)
 		add: (label := TLabeledCommentNode new setComment: 'begin ' , sel);
@@ -562,6 +543,37 @@ SLInliner >> isSubstitutableNode: aNode intoMethod: targetMeth [
 	^ true
 ]
 
+{ #category : 'inlining-support' }
+SLInliner >> propagateArgumentTypeArguments: calleeParameters in: callee from: aSendNode [
+	"Propagate any unusual argument types to untyped argument variables"
+
+	calleeParameters with: aSendNode arguments do: [ :formal :actual |
+		(callee declarationAt: formal ifAbsent: nil) ifNil: [
+			| type |
+			(actual isVariable and: [
+				 (type := currentMethod typeFor: actual name in: codeGenerator)
+					 notNil ]) ifTrue: [
+				type ~= #sqInt ifTrue: [
+					callee declarationAt: formal put: (type last = $*
+							 ifTrue: [ type , formal ]
+							 ifFalse: [ type , ' ' , formal ]) ] ] ] ]
+]
+
+{ #category : 'inlining-support' }
+SLInliner >> propagateReturnTypeDirectReturn: directReturn exitVar: exitVar callee: callee [
+	"Propagate the return type of an inlined method"
+
+	| exitType |
+	(directReturn or: [ exitVar notNil ]) ifFalse: [ ^ self ].
+	exitType := directReturn
+		            ifTrue: [ currentMethod returnType ]
+		            ifFalse: [
+			            (currentMethod typeFor: exitVar in: codeGenerator)
+				            ifNil: [ #sqInt ] ].
+	(exitType = #void or: [ exitType = callee returnType ]) ifFalse: [
+		callee propagateReturnIn: codeGenerator ]
+]
+
 { #category : 'inlining-support-condtional' }
 SLInliner >> replaceNodeIn: aSendNode with: data [
 
@@ -659,6 +671,23 @@ SLInliner >> transformConditionalAssignment: node [
 				  arguments: (expr arguments collect: [ :stmtList |
 							   stmtList copy assignLastExpressionTo: node variable ]);
 				  yourself ]
+]
+
+{ #category : 'inlining-support' }
+SLInliner >> trimArgumentsIn: aTMethod [
+
+	| calleeParameters omittedParameters varNode |
+	calleeParameters := aTMethod args.
+	omittedParameters := #(  ).
+	(calleeParameters notEmpty and: [
+		 calleeParameters first beginsWith: 'self_in_' ]) ifFalse: [
+		^ omittedParameters ].
+	
+	varNode := TVariableNode new setName: calleeParameters first.
+	(aTMethod parseTree noneSatisfy: [ :node | varNode isSameAs: node ])
+		ifTrue: [ omittedParameters := { calleeParameters first } ].
+	calleeParameters := calleeParameters allButFirst.
+	^ omittedParameters
 ]
 
 { #category : 'inlining' }
