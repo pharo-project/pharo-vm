@@ -2,11 +2,12 @@ Class {
 	#name : 'SLNodeAnnotatorVisitor',
 	#superclass : 'Object',
 	#instVars : [
-		'annotatorStack',
 		'returnStack',
 		'exitVarStack',
 		'currentMethod',
-		'info'
+		'info',
+		'useAsExpressionStack',
+		'inExpressionStack'
 	],
 	#category : 'Slang',
 	#package : 'Slang'
@@ -23,6 +24,13 @@ SLNodeAnnotatorVisitor >> addToExitVar: aNode [
 	entry at: self exitVarString put: exitVarStack top.
 	exitVarStack pop.
 	exitVarStack push: nil
+]
+
+{ #category : 'helpers-annotate' }
+SLNodeAnnotatorVisitor >> addToInExpression: aNode [
+
+	inExpressionStack isEmpty ifTrue: [ ^ self ].
+	(info at: aNode) at: self inExpressionString put: true
 ]
 
 { #category : 'helpers-annotate' }
@@ -46,8 +54,8 @@ SLNodeAnnotatorVisitor >> addToStatementOrExpression: aNode [
 
 	| entry |
 	entry := info at: aNode.
-	(annotatorStack isNotEmpty and: [
-		 annotatorStack top = self expressionString ])
+	(useAsExpressionStack isNotEmpty and: [
+		 useAsExpressionStack top = self expressionString ])
 		ifTrue: [
 			entry at: self expressionString put: true.
 			aNode isAnExpression: true ]
@@ -56,7 +64,7 @@ SLNodeAnnotatorVisitor >> addToStatementOrExpression: aNode [
 			aNode isAnExpression: false ].
 
 	"default to a statement by default"
-	annotatorStack isEmpty ifFalse: [ ^ self ].
+	useAsExpressionStack isEmpty ifFalse: [ ^ self ].
 	entry at: self expressionString put: false.
 	aNode isAnExpression: false
 ]
@@ -67,7 +75,8 @@ SLNodeAnnotatorVisitor >> annotateNodeState: aNode [
 	self ensureEntryInInfoDictFor: aNode.
 	self addToStatementOrExpression: aNode.
 	self addToReturn: aNode.
-	self addToExitVar: aNode
+	self addToExitVar: aNode.
+	self addToInExpression: aNode
 ]
 
 { #category : 'cleanup' }
@@ -88,7 +97,7 @@ SLNodeAnnotatorVisitor >> ensureEntryInInfoDictFor: aNode [
 	info at: aNode ifAbsentPut: [ IdentityDictionary new ]
 ]
 
-{ #category : 'testing' }
+{ #category : 'accessing' }
 SLNodeAnnotatorVisitor >> exitVarFor: aNode [
 
 	^ (info at: aNode) at: self exitVarString ifAbsent: [ nil ]
@@ -106,22 +115,12 @@ SLNodeAnnotatorVisitor >> expressionString [
 	^ #expression
 ]
 
-{ #category : 'accessing' }
-SLNodeAnnotatorVisitor >> expressions [
-
-	| expressions |
-	expressions := IdentitySet new.
-	info associationsDo: [ :assoc |
-		(assoc value at: self expressionString) ifTrue: [
-			expressions add: assoc key ] ].
-	^ expressions
-]
-
 { #category : 'helpers-visiting' }
 SLNodeAnnotatorVisitor >> handleConditionalSendVisit: aSendNode [
 
 	| returnTop exitVarTop size |
-	annotatorStack push: self expressionString.
+	useAsExpressionStack push: self expressionString.
+	inExpressionStack push: self inExpressionString.
 
 	size := aSendNode arguments size.
 	aSendNode arguments doWithIndex: [ :arg :index |
@@ -138,18 +137,27 @@ SLNodeAnnotatorVisitor >> handleConditionalSendVisit: aSendNode [
 
 	aSendNode receiver accept: self.
 
-	annotatorStack pop.
+	inExpressionStack pop.
+	useAsExpressionStack pop.
 
 	self annotateNodeState: aSendNode
+]
+
+{ #category : 'helpers' }
+SLNodeAnnotatorVisitor >> inExpressionString [
+	"value doesn't actually matter, but the stack need elements"
+
+	^ #inExpression
 ]
 
 { #category : 'initialization' }
 SLNodeAnnotatorVisitor >> initialize [
 
 	super initialize.
-	annotatorStack := Stack new.
+	useAsExpressionStack := Stack new.
 	returnStack := Stack new.
 	exitVarStack := Stack new.
+	inExpressionStack := Stack new.
 	info := IdentityDictionary new
 ]
 
@@ -169,6 +177,15 @@ SLNodeAnnotatorVisitor >> isInAssignment: aNode [
 ]
 
 { #category : 'testing' }
+SLNodeAnnotatorVisitor >> isInExpression: aNode [
+
+	^ (info at: aNode)
+		  at: self inExpressionString
+		  ifPresent: [ true ]
+		  ifAbsent: [ false ]
+]
+
+{ #category : 'testing' }
 SLNodeAnnotatorVisitor >> isInReturn: aNode [
 
 	^ (info at: aNode)
@@ -183,7 +200,7 @@ SLNodeAnnotatorVisitor >> returnString [
 	^ #return
 ]
 
-{ #category : 'testing' }
+{ #category : 'accessing' }
 SLNodeAnnotatorVisitor >> returningParentFor: aNode [
 
 	^ (info at: aNode)
@@ -199,7 +216,18 @@ SLNodeAnnotatorVisitor >> statementString [
 ]
 
 { #category : 'accessing' }
-SLNodeAnnotatorVisitor >> statements [
+SLNodeAnnotatorVisitor >> useAsExpressionsSet [
+
+	| expressions |
+	expressions := IdentitySet new.
+	info associationsDo: [ :assoc |
+		(assoc value at: self expressionString) ifTrue: [
+			expressions add: assoc key ] ].
+	^ expressions
+]
+
+{ #category : 'accessing' }
+SLNodeAnnotatorVisitor >> useAsStatementsSet [
 
 	| statements |
 	statements := IdentitySet new.
@@ -215,7 +243,8 @@ SLNodeAnnotatorVisitor >> visit: aNode [
 	aNode accept: self.
 	self assert: exitVarStack isEmpty.
 	self assert: returnStack isEmpty.
-	self assert: annotatorStack isEmpty.
+	self assert: useAsExpressionStack isEmpty.
+	self assert: inExpressionStack isEmpty
 ]
 
 { #category : 'visiting' }
@@ -223,13 +252,16 @@ SLNodeAnnotatorVisitor >> visitAssignmentNode: anAssignmentNode [
 
 	self annotateNodeState: anAssignmentNode.
 
-	annotatorStack push: self expressionString.
+	useAsExpressionStack push: self expressionString.
+	inExpressionStack push: self inExpressionString.
+
 	exitVarStack push: anAssignmentNode variable.
 
 	anAssignmentNode expression accept: self.
 	anAssignmentNode variable accept: self.
 
-	annotatorStack pop.
+	inExpressionStack pop.
+	useAsExpressionStack pop.
 	exitVarStack pop
 ]
 
@@ -246,12 +278,14 @@ SLNodeAnnotatorVisitor >> visitCaseStatementNode: aCaseStmtNode [
 
 	self annotateNodeState: aCaseStmtNode.
 
-	annotatorStack push: self expressionString.
-	
+	useAsExpressionStack push: self expressionString.
+	inExpressionStack push: self inExpressionString.
+
 	aCaseStmtNode expression accept: self.
 	aCaseStmtNode cases do: [ :case | case accept: self ].
-	
-	annotatorStack pop
+
+	inExpressionStack pop.
+	useAsExpressionStack pop
 ]
 
 { #category : 'visiting' }
@@ -268,14 +302,10 @@ SLNodeAnnotatorVisitor >> visitGoToNode: aTGotoNode [
 
 { #category : 'visiting' }
 SLNodeAnnotatorVisitor >> visitInlineNode: anInlineNode [
-	
+
 	self annotateNodeState: anInlineNode.
-	
-	annotatorStack push: self expressionString.
-	
-	anInlineNode method parseTree accept: self.
-	
-	annotatorStack pop
+
+	anInlineNode method parseTree accept: self
 ]
 
 { #category : 'visiting' }
@@ -289,12 +319,14 @@ SLNodeAnnotatorVisitor >> visitReturnNode: aReturnNode [
 
 	self annotateNodeState: aReturnNode.
 
-	annotatorStack push: self expressionString.
+	useAsExpressionStack push: self expressionString.
 	returnStack push: true -> aReturnNode.
+	inExpressionStack push: self inExpressionString.
 
 	aReturnNode expression accept: self.
 
-	annotatorStack pop.
+	inExpressionStack pop.
+	useAsExpressionStack pop.
 	returnStack pop
 ]
 
@@ -307,12 +339,14 @@ SLNodeAnnotatorVisitor >> visitSendNode: aSendNode [
 
 	self annotateNodeState: aSendNode.
 
-	annotatorStack push: self expressionString.
+	useAsExpressionStack push: self expressionString.
+	inExpressionStack push: self inExpressionString.
 
 	aSendNode receiver accept: self.
 	aSendNode arguments do: [ :arg | arg accept: self ].
 
-	annotatorStack pop
+	inExpressionStack pop.
+	useAsExpressionStack pop
 ]
 
 { #category : 'visiting' }
@@ -327,11 +361,11 @@ SLNodeAnnotatorVisitor >> visitStatementListNode: aStatementsListNode [
 
 	self annotateNodeState: aStatementsListNode.
 
-	annotatorStack push: self statementString.
+	useAsExpressionStack push: self statementString.
 
 	stmts do: [ :stmt | stmt accept: self ].
 
-	annotatorStack pop
+	useAsExpressionStack pop
 ]
 
 { #category : 'visiting' }
@@ -344,18 +378,20 @@ SLNodeAnnotatorVisitor >> visitSwitchStatementNode: aSwitchStatementNode [
 		caseLabels := case first.
 		caseStatements := case second.
 		caseLabels do: [ :label |
-			annotatorStack push: self statementString.
+			useAsExpressionStack push: self statementString.
 			label accept: self.
-			annotatorStack pop.
+			useAsExpressionStack pop.
 
 			caseStatements accept: self ] ].
 
-	annotatorStack push: self expressionString.
+	useAsExpressionStack push: self expressionString.
+	inExpressionStack push: self inExpressionString.
 
 	aSwitchStatementNode expression accept: self.
 	aSwitchStatementNode otherwiseOrNil ifNotNil: [ :o | o accept: self ].
 
-	annotatorStack pop
+	inExpressionStack pop.
+	useAsExpressionStack pop
 ]
 
 { #category : 'visiting' }

@@ -29,8 +29,8 @@ SLAnnotatorVisitorTest >> testMethodWithAssignment [
 
 	sLNodeAnnotatorVisitor visit: tMethod parseTree.
 
-	statements := sLNodeAnnotatorVisitor statements.
-	expressions := sLNodeAnnotatorVisitor expressions.
+	statements := sLNodeAnnotatorVisitor useAsStatementsSet.
+	expressions := sLNodeAnnotatorVisitor useAsExpressionsSet.
 
 	constantSetExpression := self getValueOfConstantNodeInSet:
 		                         expressions.
@@ -73,8 +73,8 @@ SLAnnotatorVisitorTest >> testMethodWithBlockReturn [
 
 	sLNodeAnnotatorVisitor visit: tMethod parseTree.
 
-	statements := sLNodeAnnotatorVisitor statements.
-	expressions := sLNodeAnnotatorVisitor expressions.
+	statements := sLNodeAnnotatorVisitor useAsStatementsSet.
+	expressions := sLNodeAnnotatorVisitor useAsExpressionsSet.
 
 	constantSetExpression := self getValueOfConstantNodeInSet:
 		                         expressions.
@@ -118,8 +118,9 @@ SLAnnotatorVisitorTest >> testMethodWithConditionalAssignment [
 	| tMethod statements expressions constantSetExpression |
 	tMethod := ccg methodNamed: #methodWithConditionalAssignment.
 	sLNodeAnnotatorVisitor visit: tMethod parseTree.
-	statements := sLNodeAnnotatorVisitor statements.
-	expressions := sLNodeAnnotatorVisitor expressions.
+	
+	statements := sLNodeAnnotatorVisitor useAsStatementsSet.
+	expressions := sLNodeAnnotatorVisitor useAsExpressionsSet.
 	constantSetExpression := self getValueOfConstantNodeInSet:
 		                         expressions.
 	self assert: statements size equals: 2.
@@ -153,8 +154,8 @@ SLAnnotatorVisitorTest >> testMethodWithConstant [
 
 	sLNodeAnnotatorVisitor visit: tMethod parseTree.
 
-	statements := sLNodeAnnotatorVisitor statements.
-	expressions := sLNodeAnnotatorVisitor expressions.
+	statements := sLNodeAnnotatorVisitor useAsStatementsSet.
+	expressions := sLNodeAnnotatorVisitor useAsExpressionsSet.
 
 	constantSetStatement := self getValueOfConstantNodeInSet: statements.
 	constantSetExpression := self getValueOfConstantNodeInSet:
@@ -197,8 +198,8 @@ SLAnnotatorVisitorTest >> testMethodWithReturn [
 
 	sLNodeAnnotatorVisitor visit: tMethod parseTree.
 
-	statements := sLNodeAnnotatorVisitor statements.
-	expressions := sLNodeAnnotatorVisitor expressions.
+	statements := sLNodeAnnotatorVisitor useAsStatementsSet.
+	expressions := sLNodeAnnotatorVisitor useAsExpressionsSet.
 
 	constantSetExpression := self getValueOfConstantNodeInSet:
 		                         expressions.
@@ -225,8 +226,8 @@ SLAnnotatorVisitorTest >> testMethodWithReturnInConditional [
 
 	sLNodeAnnotatorVisitor visit: tMethod parseTree.
 
-	statements := sLNodeAnnotatorVisitor statements.
-	expressions := sLNodeAnnotatorVisitor expressions.
+	statements := sLNodeAnnotatorVisitor useAsStatementsSet.
+	expressions := sLNodeAnnotatorVisitor useAsExpressionsSet.
 
 	constantSetExpression := self getValueOfConstantNodeInSet:
 		                         expressions.
@@ -256,8 +257,9 @@ SLAnnotatorVisitorTest >> testMethodWithReturningConditional [
 	| tMethod statements expressions constantSetExpression |
 	tMethod := ccg methodNamed: #methodWithReturningConditional.
 	sLNodeAnnotatorVisitor visit: tMethod parseTree.
-	statements := sLNodeAnnotatorVisitor statements.
-	expressions := sLNodeAnnotatorVisitor expressions.
+	
+	statements := sLNodeAnnotatorVisitor useAsStatementsSet.
+	expressions := sLNodeAnnotatorVisitor useAsExpressionsSet.
 	constantSetExpression := self getValueOfConstantNodeInSet:
 		                         expressions.
 	self assert: statements size equals: 2.
@@ -291,8 +293,8 @@ SLAnnotatorVisitorTest >> testMethodWithSendAsExpression [
 
 	sLNodeAnnotatorVisitor visit: tMethod parseTree.
 
-	statements := sLNodeAnnotatorVisitor statements.
-	expressions := sLNodeAnnotatorVisitor expressions.
+	statements := sLNodeAnnotatorVisitor useAsStatementsSet.
+	expressions := sLNodeAnnotatorVisitor useAsExpressionsSet.
 
 	constantSetStatement := self getValueOfConstantNodeInSet: statements.
 
@@ -339,8 +341,8 @@ SLAnnotatorVisitorTest >> testMethodWithSendAsStatement [
 
 	sLNodeAnnotatorVisitor visit: tMethod parseTree.
 
-	statements := sLNodeAnnotatorVisitor statements.
-	expressions := sLNodeAnnotatorVisitor expressions.
+	statements := sLNodeAnnotatorVisitor useAsStatementsSet.
+	expressions := sLNodeAnnotatorVisitor useAsExpressionsSet.
 
 	constantSetExpression := self getValueOfConstantNodeInSet:
 		                         expressions.
@@ -375,8 +377,8 @@ SLAnnotatorVisitorTest >> testMethodWithStatementList [
 
 	sLNodeAnnotatorVisitor visit: tMethod parseTree.
 
-	statements := sLNodeAnnotatorVisitor statements.
-	expressions := sLNodeAnnotatorVisitor expressions.
+	statements := sLNodeAnnotatorVisitor useAsStatementsSet.
+	expressions := sLNodeAnnotatorVisitor useAsExpressionsSet.
 
 	constantSetStatement := self getValueOfConstantNodeInSet: statements.
 	constantSetExpression := self getValueOfConstantNodeInSet:
@@ -417,8 +419,8 @@ SLAnnotatorVisitorTest >> testMethodWithSwitchAsExpression [
 
 	sLNodeAnnotatorVisitor visit: tMethod parseTree.
 
-	statements := sLNodeAnnotatorVisitor statements.
-	expressions := sLNodeAnnotatorVisitor expressions.
+	statements := sLNodeAnnotatorVisitor useAsStatementsSet.
+	expressions := sLNodeAnnotatorVisitor useAsExpressionsSet.
 
 	constantSetStatement := self getValueOfConstantNodeInSet: statements.
 	constantSetExpression := self getValueOfConstantNodeInSet:
@@ -444,8 +446,8 @@ SLAnnotatorVisitorTest >> testMethodWithSwitchAsStatement [
 
 	sLNodeAnnotatorVisitor visit: tMethod parseTree.
 
-	statements := sLNodeAnnotatorVisitor statements.
-	expressions := sLNodeAnnotatorVisitor expressions.
+	statements := sLNodeAnnotatorVisitor useAsStatementsSet.
+	expressions := sLNodeAnnotatorVisitor useAsExpressionsSet.
 
 	constantSetStatement := self getValueOfConstantNodeInSet: statements.
 	constantSetExpression := self getValueOfConstantNodeInSet:
