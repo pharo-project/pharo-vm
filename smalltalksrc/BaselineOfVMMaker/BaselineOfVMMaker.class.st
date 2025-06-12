@@ -30,6 +30,7 @@ BaselineOfVMMaker >> baseline: spec [
 
 			"Main VMMaker packages"
 			spec
+				package: #'Printf';
 				package: #'VMMakerCompatibilityForPharo6';
 				package: #'Balloon-Engine-Pools';
 				package: #'BytecodeSets';
