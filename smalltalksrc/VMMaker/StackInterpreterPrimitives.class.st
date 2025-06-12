@@ -1541,7 +1541,7 @@ StackInterpreterPrimitives >> primitiveGetVMParameter: index [
 			[9]  ->	[^objectMemory integerObjectOf: objectMemory statScavenges].
 			[10] ->	[^objectMemory integerObjectOf: objectMemory statScavengeGCUsecs + 500 // 1000].
 			[11] ->	[^objectMemory integerObjectOf: objectMemory statTenures].
-			[12] ->	[^ConstZero]. "Was JITTER VM info"
+			[12] ->	[^objectMemory integerObjectOf: objectMemory maxSlotsForNewSpaceAlloc ]. 
 			[13] ->	[^ConstZero]. "Was JITTER VM info"
 			[14] ->	[^ConstZero]. "Was JITTER VM info"
 			[15] ->	[^ConstZero]. "Was JITTER VM info"
@@ -2662,6 +2662,9 @@ StackInterpreterPrimitives >> primitiveSetVMParameter: index arg: argOop [
 					[result := objectMemory integerObjectOf: objectMemory statTenures.
 					 objectMemory statTenures: arg.
 					 self initPrimCall]].
+		[12] ->	[result := objectMemory integerObjectOf: objectMemory maxSlotsForNewSpaceAlloc.
+					 objectMemory setMaxSlotsForNewSpaceAlloc: arg.
+					 self initPrimCall ]. 			
 		[17] ->	[(SistaVM and: [self isCog]) ifTrue:
 					[result := objectMemory floatObjectOf: self getCogCodeZoneThreshold.
 					 primFailCode := self setCogCodeZoneThreshold: (self noInlineLoadFloatOrIntFrom: argOop)]].
