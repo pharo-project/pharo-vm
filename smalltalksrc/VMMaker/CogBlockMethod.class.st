@@ -146,7 +146,7 @@ CogBlockMethod class >> instVarNamesAndTypesForTranslationDo: aBinaryBlock [
 								['objectHeader']			-> [self objectMemoryClass baseHeaderSize = 8
 																ifTrue: [#sqLong]
 																ifFalse: [#sqInt]].
-								['cmNumArgs']				-> [#(unsigned ' : 8')].		"SqueakV3 needs only 5 bits"
+								['cmNumArgs']				-> [#'unsigned char'].
 								['cmType']					-> [#(unsigned ' : 3')].
 								['cmRefersToYoung']		-> [#(unsigned #Boolean ' : 1')].
 								['cpicHasMNUCaseOrCMIsFullBlock']
