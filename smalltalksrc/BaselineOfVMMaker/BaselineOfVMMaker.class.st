@@ -10,9 +10,11 @@ BaselineOfVMMaker >> baseline: spec [
 	spec
 		for: #common
 		do: [
-			"Initial VMMaker package for handling Pharo 6"
+			"Initial VMMaker package for handling Pharo 6 and Pharo 8"
 			spec
-				package: #'VMMakerCompatibilityForPharo6'.
+				package: #'VMMakerCompatibilityForPharo6';
+				package: #'VMMakerCompatibilityForPharo8'.
+			
 
 			"Dependencies from other repositories"
 			spec
