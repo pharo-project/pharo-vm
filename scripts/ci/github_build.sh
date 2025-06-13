@@ -9,6 +9,7 @@ function build_linux_amd64() {
   		gcc-9 \
   		curl \
   		libssl-dev \
+  		libcurl4-openssl-dev \
   		libx11-dev \
   		libsdl2-dev
 
