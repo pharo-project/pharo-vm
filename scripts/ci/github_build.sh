@@ -11,6 +11,7 @@ function build_linux_amd64() {
   		curl \
   		libssl-dev \
   		libcurl4-openssl-dev \
+  		libssh2-1-dev \
   		libx11-dev \
   		libsdl2-dev
 
