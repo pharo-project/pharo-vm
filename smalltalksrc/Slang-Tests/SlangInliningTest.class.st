@@ -36,7 +36,7 @@ methodC(void)
 }'
 ]
 
-{ #category : 'inlining-simple' }
+{ #category : 'inlining-assignment' }
 SlangInliningTest >> test2ChainInliningAssignOnReturn [
 
 	| method translation |
@@ -91,7 +91,7 @@ emptyMethodAWithArgumentsInlined(void)
 	/* begin methodA */
 	1 + 1;
 	/* begin methodB */
-	2 + 2;
+	arg = 2 + 2;
 	/* end methodB */
 	/* end methodA */
 	/* end methodCAlwaysInlined */
@@ -183,7 +183,7 @@ SlangInliningTest >> test2ChainInliningMethodAWithReturningSendReturningArgument
 	translation := self translate: method.
 	translation := translation trimBoth.
 
-	self assert: translation equals: 'incorrect
+	self assert: translation equals: 'incorrect?
 			/* SLMockInliningTestClass>>#methodAWithReturningSendReturningArgumentsInlined */
 static sqInt
 methodAWithReturningSendReturningArgumentsInlined(void)
@@ -373,7 +373,7 @@ methodAMultipleReturnAsReturnExpressionAndStatement(void)
 }'
 ]
 
-{ #category : 'inlining-simple' }
+{ #category : 'inlining-assignment' }
 SlangInliningTest >> test2ChainInliningReturnOnAssignment [
 
 	| method translation |
@@ -536,6 +536,53 @@ methodAInlineIfFalseReturningIfTrue(void)
 	}
 	return 1;
 	/* end methodBIfFalseReturningIfTrue */
+}'
+]
+
+{ #category : 'inlining-assignment' }
+SlangInliningTest >> testMethodAReturnAssignment [
+
+	| method translation |
+	ccg doBasicInlining: true.
+
+	method := ccg methodNamed: #methodAReturnAssignment.
+
+	translation := self translate: method.
+	translation := translation trimBoth.
+
+	self
+		assert: translation
+		equals: '/* SLMockInliningTestClass>>#methodAReturnAssignment */
+static sqInt
+methodAReturnAssignment(void)
+{
+	sqInt a;
+
+	return (a = methodB());
+}'
+]
+
+{ #category : 'inlining-assignment' }
+SlangInliningTest >> testMethodAReturnBlockAssignment [
+
+	| method translation |
+	ccg doBasicInlining: true.
+
+	method := ccg methodNamed: #methodAReturnBlockAssignment.
+
+	translation := self translate: method.
+	translation := translation trimBoth.
+
+	self
+		assert: translation
+		equals:
+			'/* SLMockInliningTestClass>>#methodAReturnBlockAssignment */
+static sqInt
+methodAReturnBlockAssignment(void)
+{
+	sqInt a;
+
+	return (/* begin methodB */ (a = 2 + 2) /* end methodB */);
 }'
 ]
 
