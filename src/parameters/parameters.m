@@ -82,7 +82,7 @@ EXPORT(void) fillParametersFromPList(VMParameters* parameters){
 	
 	workerRef = CFBundleGetValueForInfoDictionaryKey(mainBundle, CFSTR("PharoWorker"));	
 	if(workerRef != NULL){
-		parameters->isWorker = !CFBooleanGetValue(workerRef);
+		parameters->isWorker = CFBooleanGetValue(workerRef);
 	}
 
 	maxFramesToLogRef = CFBundleGetValueForInfoDictionaryKey(mainBundle, CFSTR("PharoMaxFramesToLog"));
