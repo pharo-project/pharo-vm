@@ -8361,6 +8361,21 @@ Cogit >> initializeBackend [
 ]
 
 { #category : 'initialization' }
+Cogit >> initializeCodeOnlyZoneFrom: startAddress upTo: endAddress [
+	<api>
+
+	self enableCodeZoneWriteDuring: [
+		backEnd stopsFrom: startAddress to: endAddress - 1 ].
+
+	self
+		simulationOnly: [
+			startAddress = self class guardPageSize ifTrue: [
+				backEnd stopsFrom: 0 to: endAddress - 1 ].
+			"self initializeProcessor" ].
+	methodZone cozFreeStart: startAddress.
+]
+
+{ #category : 'initialization' }
 Cogit >> initializeCodeZoneFrom: startAddress upTo: endAddress [
 
 	<api>
@@ -8375,9 +8390,6 @@ Cogit >> initializeCodeZoneFrom: startAddress upTo: endAddress [
 				backEnd stopsFrom: 0 to: endAddress - 1 ].
 			self initializeProcessor ].
 	codeBase := methodZoneBase := startAddress.
-	
-	"SH: code only zone"
-	methodZone cozFreeStart: methodZone codeZoneEnd.
 	
 	minValidCallAddress := (codeBase min: coInterpreter interpretAddress)
 		                       min: coInterpreter primitiveFailAddress.

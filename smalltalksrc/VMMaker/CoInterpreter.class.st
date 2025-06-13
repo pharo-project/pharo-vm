@@ -614,15 +614,19 @@ CoInterpreter >> allocateMemoryForImage: f withHeader: header [
 
 	cogCodeSize := cogCodeSize min: cogit maxCogCodeSize.
 
-	"SH: codeOnlyZone"
 	objectMemory getMemoryMap initialCodeZoneSize: cogCodeSize.
-	objectMemory getMemoryMap initialCodeOnlyZoneSize: cogCodeSize.
+	objectMemory getMemoryMap initialCodeOnlyZoneSize: cogCodeSize. "SH: code only zone"
 	super allocateMemoryForImage: f withHeader: header.
 	self beforeCodeZoneInitialization.
 
 	cogit
 		initializeCodeZoneFrom: objectMemory getMemoryMap codeZoneStart
-		upTo: objectMemory getMemoryMap codeZoneEnd
+		upTo: objectMemory getMemoryMap codeZoneEnd.
+		
+	"SH: code only zone"
+	cogit
+		initializeCodeOnlyZoneFrom: objectMemory getMemoryMap codeOnlyZoneStart
+		upTo: objectMemory getMemoryMap codeOnlyZoneEnd.
 ]
 
 { #category : 'trampoline support' }
