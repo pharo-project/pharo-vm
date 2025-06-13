@@ -807,7 +807,6 @@ SLInliner >> tryToInlineMethodExpressionsInCurrentMethod [
 
 	| sendsToInline |
 	sendsToInline := Dictionary new: 100.
-	sLNodeAnnotatorVisitor visit: currentMethod parseTree.
 
 	codeGenerator pushScope: currentMethod while: [
 		currentMethod parseTree
@@ -822,7 +821,7 @@ SLInliner >> tryToInlineMethodExpressionsInCurrentMethod [
 
 	sendsToInline isEmpty ifTrue: [ ^ false ].
 	currentMethod replaceNodesIn: sendsToInline.
-	sLNodeAnnotatorVisitor cleanInfo.
+
 	^ true
 ]
 
