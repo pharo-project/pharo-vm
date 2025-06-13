@@ -1,5 +1,5 @@
 Class {
-	#name : 'SLInlineStrategy',
+	#name : 'SLAbstractInlineStrategy',
 	#superclass : 'Object',
 	#instVars : [
 		'codeGenerator'
@@ -9,7 +9,7 @@ Class {
 }
 
 { #category : 'accessing' }
-SLInlineStrategy class >> codeGenerator: aCodeGenerator [
+SLAbstractInlineStrategy class >> codeGenerator: aCodeGenerator [
 
 	^ self new
 		  codeGenerator: aCodeGenerator;
@@ -17,13 +17,13 @@ SLInlineStrategy class >> codeGenerator: aCodeGenerator [
 ]
 
 { #category : 'accessing' }
-SLInlineStrategy >> codeGenerator: aCodeGenerator [
+SLAbstractInlineStrategy >> codeGenerator: aCodeGenerator [
 
 	codeGenerator := aCodeGenerator
 ]
 
 { #category : 'inlining' }
-SLInlineStrategy >> doInliningIn: aTMethod [
+SLAbstractInlineStrategy >> doInliningIn: aTMethod [
 
 	self subclassResponsibility
 ]

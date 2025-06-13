@@ -96,13 +96,6 @@ SLInliner >> ensureConditionalAssignmentsAreTransformedInCurrentMethod [
 		true ] ] whileTrue
 ]
 
-{ #category : 'initialization' }
-SLInliner >> initialize [
-
-	super initialize.
-	sLNodeAnnotatorVisitor := SLNodeAnnotatorVisitor new
-]
-
 { #category : 'inlining-support' }
 SLInliner >> inlineBuiltin: aSendNode [
 
@@ -120,21 +113,6 @@ SLInliner >> inlineBuiltin: aSendNode [
 			  arguments: aSendNode arguments copy ].
 	(self isInlineableConditional: aSendNode) ifTrue: [
 		^ self inlineConditional: aSendNode ].
-	^ nil
-]
-
-{ #category : 'inlining-support' }
-SLInliner >> inlineCodeOrNilForStatement: aNode [
-	"If the given statement node can be inlined, answer the statements that replace it. Otherwise, answer nil."
-
-	(aNode isReturn and: [ self isInlineableSend: aNode expression ])
-		ifTrue: [ ^ self inlineSend: aNode expression ].
-
-	(aNode isAssignment and: [ self isInlineableSend: aNode expression ])
-		ifTrue: [ ^ self inlineSend: aNode expression ].
-
-	(aNode isSend and: [ self isInlineableSend: aNode ]) ifTrue: [
-		^ self inlineSend: aNode ].
 	^ nil
 ]
 
@@ -356,96 +334,6 @@ SLInliner >> inlineReturningConditional: aSendNode [
 		  TStatementListNode new setArguments: #(  ) statements: {
 				  replacementTree.
 				  label } ]
-]
-
-{ #category : 'inlining-support' }
-SLInliner >> inlineSend: aSendNode [
-	"Answer a collection of statements to replace the given send.  directReturn indicates
-	 that the send is the expression in a return statement, so returns can be left in the
-	 body of the inlined method. If exitVar is nil, the value returned by the send is not
-	 used; thus, returns need not assign to the output variable.
-
-	 Types are propagated to as-yet-untyped variables when inlining a send that is assigned,
-	 otherwise the assignee variable type must match the return type of the inlinee.  Return
-	 types are not propagated."
-
-	| sel callee exitLabel inlineStmts label omittedParameters calleeParameters exitVar directReturn |
-	sel := aSendNode selector.
-	callee := codeGenerator methodNamed: sel.
-
-	directReturn := sLNodeAnnotatorVisitor isDirectReturn: aSendNode.
-	exitVar := (sLNodeAnnotatorVisitor exitVarFor: aSendNode) ifNotNil: [
-		           :var | var name ].
-
-	"convenient for debugging..."
-	codeGenerator maybeBreakForInlineOf: aSendNode in: self.
-
-	[ :res |
-	omittedParameters := res first.
-	calleeParameters := res second ] value:
-		(self trimArgumentsIn: callee).
-	calleeParameters size = aSendNode arguments size ifFalse: [ ^ nil ].
-	callee := callee copy.
-
-	self checkForFlagIn: callee.
-
-	self
-		propagateReturnTypeDirectReturn: directReturn
-		exitVar: exitVar
-		callee: callee.
-	self
-		propagateArgumentTypeArguments: calleeParameters
-		in: callee
-		from: aSendNode.
-
-	callee
-		renameVarsForInliningInto: currentMethod
-		except: omittedParameters
-		in: codeGenerator.
-	callee renameLabelsForInliningInto: currentMethod.
-	currentMethod
-		addVarsDeclarationsAndLabelsOf: callee
-		except: omittedParameters.
-
-	callee hasReturn ifTrue: [
-		directReturn ifFalse: [
-			exitLabel := currentMethod unusedLabelForInliningInto:
-				             currentMethod.
-			(callee exitVar: exitVar label: exitLabel)
-				ifTrue: [ currentMethod labels add: exitLabel ]
-				ifFalse: [ "is label used?" exitLabel := nil ] ].
-
-		sLNodeAnnotatorVisitor removeReturningParentFrom: aSendNode.
-		sLNodeAnnotatorVisitor visit: currentMethod parseTree.
-		directReturn := sLNodeAnnotatorVisitor isDirectReturn: aSendNode.
-		exitVar := (sLNodeAnnotatorVisitor exitVarFor: aSendNode) ifNotNil: [
-			           :var | var name ] ].
-
-	(inlineStmts := OrderedCollection new:
-			                callee statements size + callee args size + 2)
-		add: (label := TLabeledCommentNode new setComment: 'begin ' , sel);
-		addAll: (currentMethod
-				 argAssignmentsFor: callee
-				 send: aSendNode
-				 except: omittedParameters
-				 in: codeGenerator);
-		addAll: callee statements. "method body"
-	exitLabel
-		ifNotNil: [
-			inlineStmts add:
-				(TLabeledCommentNode new setLabel: exitLabel comment: 'end ' , sel) ]
-		ifNil: [
-		inlineStmts add: (TLabeledCommentNode new setComment: 'end ' , sel) ].
-	inlineStmts := TStatementListNode statements: inlineStmts.
-
-	directReturn ifTrue: [
-		callee endsWithReturn ifTrue: [
-			callee parseTree parent: aSendNode parent.
-			exitVar ifNotNil: [ inlineStmts := inlineStmts copyWithoutReturn ] ] ].
-
-	inlineStmts isComment ifTrue: [ "Nuke empty methods; e.g. override of flushAtCache"
-		inlineStmts statements: OrderedCollection new ].
-	^ inlineStmts
 ]
 
 { #category : 'inlining-support' }
@@ -844,7 +732,7 @@ SLInliner >> tryToInlineMethodStatementsListsInCurrentMethod [
 
 	stmtLists do: [ :stmtList |
 		newStatements := TStatementListNode statements:
-			                 (OrderedCollection new: stmtList statements size).
+			                 OrderedCollection new.
 		stmtList statements do: [ :stmt |
 			(self
 				 inlineCodeOrNilForStatement: stmt

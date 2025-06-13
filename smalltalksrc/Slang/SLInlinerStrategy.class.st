@@ -1,6 +1,6 @@
 Class {
 	#name : 'SLInlinerStrategy',
-	#superclass : 'SLInlineStrategy',
+	#superclass : 'SLAbstractInlineStrategy',
 	#instVars : [
 		'sLInliner'
 	],

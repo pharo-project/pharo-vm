@@ -1,6 +1,6 @@
 Class {
 	#name : 'SLOldInlineStrategy',
-	#superclass : 'SLInlineStrategy',
+	#superclass : 'SLAbstractInlineStrategy',
 	#category : 'Slang',
 	#package : 'Slang'
 }
