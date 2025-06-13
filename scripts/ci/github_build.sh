@@ -5,6 +5,7 @@ set -xe
 SRC_DIR=$(realpath "$(dirname ${BASH_SOURCE[0]})/../..")
 
 function build_linux_amd64() {
+	sudo apt-get update
 	sudo apt-get -y install \
   		gcc-9 \
   		curl \
