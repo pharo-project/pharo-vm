@@ -1940,6 +1940,7 @@ SpurMemoryManager >> allocateMemoryOfSize: memoryBytes newSpaceSize: newSpaceByt
 		initialNewSpaceSize: newSpaceBytes;
 		initialHeadroom: 0;
 		initialCodeZoneSize: codeBytes;
+		initialCodeOnlyZoneSize: codeBytes;  "SH: codeOnlyZone"
 		initialPermSpaceSize: permSpaceSize;
 		allocateHeap.
 		

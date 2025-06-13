@@ -25,7 +25,10 @@ Class {
 		'objectMemory',
 		'spaceMaskToUse',
 		'permSpaceMask',
-		'newSpaceMask'
+		'newSpaceMask',
+		'initialCodeOnlyZoneSize',
+		'codeOnlyZoneStart',
+		'codeOnlyZoneEnd'
 	],
 	#pools : [
 		'VMBasicConstants'
@@ -81,7 +84,7 @@ VMMemoryMap class >> shouldBeGenerated [
 { #category : 'private' }
 VMMemoryMap >> allocateCodeZone [
 	
-	initialCodeZoneSize = 0 ifTrue: [ ^ self ].
+	(initialCodeZoneSize = 0 or: initialCodeOnlyZoneSize = 0) ifTrue: [ ^ self ].
 	
 	self codeZoneStart: (self allocateJITMemory: initialCodeZoneSize _: memoryMapConfiguration codeZoneInitialAddress).
 	self codeZoneStart ifNil: [ self insufficientMemoryAvailableError ].
@@ -92,6 +95,18 @@ VMMemoryMap >> allocateCodeZone [
 			self error: 'Error allocating' ].
 	
 	self codeZoneEnd: codeZoneStart + initialCodeZoneSize.
+	
+	"SH: codeOnlyZone"
+	self codeOnlyZoneStart: (self allocateJITMemory: initialCodeOnlyZoneSize _: self codeZoneEnd).
+	self codeOnlyZoneStart ifNil: [ self insufficientMemoryAvailableError ].
+
+	self codeOnlyZoneStart = codeZoneEnd
+		ifFalse: [ 
+			self logError: 'Could not allocate codeOnlyZone in the expected place (%p), got %p' _: codeZoneEnd _: self codeOnlyZoneStart.
+			self error: 'Error allocating' ].
+	
+	self codeOnlyZoneEnd: codeOnlyZoneStart + initialCodeOnlyZoneSize.
+	
 ]
 
 { #category : 'allocating' }
@@ -280,6 +295,26 @@ VMMemoryMap >> calculateMaskToUse [
 ]
 
 { #category : 'accessing' }
+VMMemoryMap >> codeOnlyZoneEnd [
+	^codeOnlyZoneEnd
+]
+
+{ #category : 'accessing' }
+VMMemoryMap >> codeOnlyZoneEnd: anInteger [ 
+	codeOnlyZoneEnd := anInteger
+]
+
+{ #category : 'accessing' }
+VMMemoryMap >> codeOnlyZoneStart [
+	^ codeOnlyZoneStart
+]
+
+{ #category : 'accessing' }
+VMMemoryMap >> codeOnlyZoneStart: anInteger [ 
+	codeOnlyZoneStart := anInteger
+]
+
+{ #category : 'accessing' }
 VMMemoryMap >> codeZoneEnd [
 
 	^ codeZoneEnd
@@ -410,6 +445,18 @@ VMMemoryMap >> getpagesize [
 	<doNotGenerate>
 	
 	^ 4096
+]
+
+{ #category : 'accessing' }
+VMMemoryMap >> initialCodeOnlyZoneSize [
+
+	^ initialCodeOnlyZoneSize
+]
+
+{ #category : 'accessing' }
+VMMemoryMap >> initialCodeOnlyZoneSize: aValue [
+
+	initialCodeOnlyZoneSize := aValue
 ]
 
 { #category : 'accessing' }

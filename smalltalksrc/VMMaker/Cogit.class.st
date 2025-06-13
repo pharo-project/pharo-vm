@@ -7537,7 +7537,7 @@ Cogit >> generateCogMethod: selector [
 	 that fixes up jumps.  When fixing up a jump the jump is not allowed to
 	 choose a smaller offset but must stick to the size set in the second pass."
 	<returnTypeC: #'CogMethod *'>
-	| codeSize headerSize mapSize totalSize startAddress result method |
+	| codeSize headerSize mapSize totalSize startAddress result method codeStartAddress codeResult |
 	<var: #method type: #'CogMethod *'>
 
 	headerSize := self sizeof: CogMethod.
@@ -7548,9 +7548,10 @@ Cogit >> generateCogMethod: selector [
 	self enableCodeZoneWriteDuring: [ 
 		codeSize := self generateInstructionsAt: methodLabel address + headerSize.
 		mapSize := self generateMapAt: nil start: methodLabel address + cmNoCheckEntryOffset].
-		statTotalCodeSize := statTotalCodeSize + codeSize.
-		statTotalMapSize := statTotalMapSize + mapSize.
-		statTotalHeaderSize := statTotalHeaderSize + headerSize.
+	
+	statTotalCodeSize := statTotalCodeSize + codeSize.
+	statTotalMapSize := statTotalMapSize + mapSize.
+	statTotalHeaderSize := statTotalHeaderSize + headerSize.
 
 	totalSize := methodZone roundUpLength: headerSize + codeSize + mapSize.
 	totalSize > MaxMethodSize ifTrue:
@@ -7572,7 +7573,14 @@ Cogit >> generateCogMethod: selector [
 							selector: selector.
 			postCompileHook ifNotNil:
 				[self perform: postCompileHook with: method.
-				 postCompileHook := nil]]  
+				 postCompileHook := nil].
+			"SH: codeOnlyZone"
+			codeStartAddress := methodZone cozFreeStart.
+			codeResult := self outputInstructionsAt: codeStartAddress.
+			self assert: codeStartAddress + codeSize = codeResult.
+			backEnd padIfPossibleWithStopsFrom: codeResult to: codeStartAddress + codeSize - 1.
+			methodZone cozFreeStart: codeStartAddress + codeSize.
+			]  
 		flushingCacheWith: [self flushICacheFrom: method asUnsignedInteger to: method asUnsignedInteger + totalSize].
 
 	^method

@@ -614,7 +614,9 @@ CoInterpreter >> allocateMemoryForImage: f withHeader: header [
 
 	cogCodeSize := cogCodeSize min: cogit maxCogCodeSize.
 
+	"SH: codeOnlyZone"
 	objectMemory getMemoryMap initialCodeZoneSize: cogCodeSize.
+	objectMemory getMemoryMap initialCodeOnlyZoneSize: cogCodeSize.
 	super allocateMemoryForImage: f withHeader: header.
 	self beforeCodeZoneInitialization.
 

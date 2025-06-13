@@ -69,7 +69,8 @@ Class {
 		'objectRepresentation',
 		'cogit',
 		'objectMemory',
-		'percentageToEnsureRelease'
+		'percentageToEnsureRelease',
+		'cozFreeStart'
 	],
 	#pools : [
 		'CogMethodConstants',
@@ -297,6 +298,20 @@ CogMethodZone >> compactCompiledCode [
 { #category : 'accessing' }
 CogMethodZone >> compactionInProgress [
 	^compactionInProgress
+]
+
+{ #category : 'accessing' }
+CogMethodZone >> cozFreeStart [
+   "SH: code only zone"
+   "Next available address of the code only zone"
+	^cozFreeStart
+]
+
+{ #category : 'accessing' }
+CogMethodZone >> cozFreeStart: anInteger [
+   "SH: code only zone"
+   "Next available address of the code only zone"
+	cozFreeStart := anInteger.
 ]
 
 { #category : 'allocating' }
