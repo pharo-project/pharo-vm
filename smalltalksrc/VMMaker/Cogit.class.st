@@ -255,7 +255,8 @@ Class {
 		'statTotalCodeSize',
 		'statTotalHeaderSize',
 		'statTotalMapSize',
-		'jitCodeZoneWriteEnabled'
+		'jitCodeZoneWriteEnabled',
+		'codeOnlyZoneBase'
 	],
 	#classVars : [
 		'AnnotationConstantNames',
@@ -8374,6 +8375,10 @@ Cogit >> initializeCodeZoneFrom: startAddress upTo: endAddress [
 				backEnd stopsFrom: 0 to: endAddress - 1 ].
 			self initializeProcessor ].
 	codeBase := methodZoneBase := startAddress.
+	
+	"SH: code only zone"
+	methodZone cozFreeStart: methodZone codeZoneEnd.
+	
 	minValidCallAddress := (codeBase min: coInterpreter interpretAddress)
 		                       min: coInterpreter primitiveFailAddress.
 	methodZone manageFrom: methodZoneBase to: endAddress.
