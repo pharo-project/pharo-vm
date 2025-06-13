@@ -27,7 +27,7 @@ if [ -z "$CC" ]; then
 		fi
 	done
 	if [ -z "$CC" ]; then
-		echo "No suitable GCC found (need gcc 8 or older). You may want to set CC variable manually."
+		echo "No suitable GCC found (need gcc 9 or older). You may want to set CC variable manually."
 		exit 1
 	fi
 else
