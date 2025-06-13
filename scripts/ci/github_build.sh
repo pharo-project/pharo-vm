@@ -6,7 +6,7 @@ SRC_DIR=$(realpath "$(dirname ${BASH_SOURCE[0]})/../..")
 
 function build_linux_amd64() {
 	sudo apt-get -y install \
-  		gcc-8 \
+  		gcc-9 \
   		curl \
   		libssl-dev \
   		libx11-dev \

@@ -20,7 +20,7 @@ set -e
 #
 if [ -z "$CC" ]; then
 	# No $CC set, autodetect suitable GCC
-	for ver in 8 7 6 5; do
+	for ver in 9 8 7 6 5; do
 		if which gcc-$ver > /dev/null; then
 			CC=gcc-$ver
 			break;
@@ -35,8 +35,8 @@ else
 	case $($CC --version | head -n 1) in
 		*gcc*)
 			ver=$($CC -dumpversion | sed -e 's#\..*$##g')
-			if [ "$ver" -gt 8 ]; then
-				echo "Need GCC 8 or older, not GCC $ver"
+			if [ "$ver" -gt 9 ]; then
+				echo "Need GCC 9 or older, not GCC $ver"
 				exit 1
 			fi
 			break
@@ -56,6 +56,7 @@ fi
 echo "THIRDPARTYLIBS=$THIRDPARTYLIBS"
 echo "INSTALLDIR=$INSTALLDIR"
 echo "OPT=$OPT"
+echo "CC=$CC"
 
 if ../../../scripts/checkSCCSversion ; then exit 1; fi
 echo -n "clean (Y/n)? "
