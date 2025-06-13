@@ -3738,7 +3738,7 @@ StackToRegisterMappingCogit >> populate: tuple withPICInfoFor: cPIC firstCacheTa
 		picCaseMachineCodePC := self addressOfEndOfCase: i inCPIC: cPIC.
 		cacheTag := i = 1
 						ifTrue: [firstCacheTag]
-						ifFalse: [backEnd literalBeforeFollowingAddress: picCaseMachineCodePC - backEnd jumpLongConditionalByteSize].
+						ifFalse: [backEnd literal32BeforeFollowingAddress: picCaseMachineCodePC - backEnd jumpLongConditionalByteSize].
 		
 		classOop := objectRepresentation classForInlineCacheTag: cacheTag.
 		objectMemory storePointer: i * 2 - 1 ofObject: tuple withValue: classOop.
