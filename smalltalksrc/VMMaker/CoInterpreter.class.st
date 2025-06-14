@@ -888,7 +888,8 @@ CoInterpreter >> callEnilopmart: anElinopmart [
 { #category : 'cog jit support' }
 CoInterpreter >> callForCogCompiledCodeCompaction [
 	<api>
-	cogCompiledCodeCompactionCalledFor := true.
+	cogCompiledCodeCompactionCalledFor := false.
+	"SH: Skip compaction for now"
 	self forceInterruptCheck
 ]
 
