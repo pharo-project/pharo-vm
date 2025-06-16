@@ -1,0 +1,32 @@
+name: Build
+
+on:
+  pull_request:
+    branches:
+      - 'pharo-8'
+
+  workflow_dispatch:
+
+
+jobs:
+  build:
+    name: "Regenerate & build (${{matrix.os}})"
+    # The type of runner that the job will run on
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os:
+          - ubuntu-22.04
+
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Add MSYS2 to PATH (Windows only)
+        if: matrix.os == 'windows-latest'
+        run: echo "C:\msys64\usr\bin" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
+
+      - name: Fetch commits so that Iceberg doesn't crash
+        run: git fetch --unshallow
+
+      - name: "Regenerate & build"
+        run: ./scripts/ci/github_build.sh -g
