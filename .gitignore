@@ -262,3 +262,11 @@ platforms/unix/config/autom4te.cache/
 /products/debug/*
 *.cer
 *.p12
+
+# /scripts
+/scripts/GNUmakefile.local
+/scripts/PharoDebug.log
+/scripts/bin
+/scripts/lib
+/scripts/pharo
+/scripts/pharo-local/

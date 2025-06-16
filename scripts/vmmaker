@@ -1,0 +1,40 @@
+#!/usr/bin/make -f
+PROJECT=VMMaker
+
+all: build
+
+../makefiles/%.gmk:
+	git submodule update --init --recursive $(dir $@)
+
+-include GNUmakefile.local
+include ../makefiles/pharo.gmk
+include ../makefiles/git.gmk
+
+build: prereq $(PROJECT).image
+	@echo ""
+	@echo "To open $(PROJECT) image run:"
+	@echo ""
+	@echo "    $(PHARO_VM) $(PROJECT).image"
+	@echo ""
+
+
+$(PROJECT).image: ../smalltalksrc/*/*.st
+	$(call pharo-copy-image, $(PHARO_IMAGE), $@)
+	$(PHARO_VM_HEADLESS) $(PROJECT).image eval --save "     \
+	Deprecation activateTransformations: false.             \
+	Deprecation showWarning: false.                         \
+	Deprecation raiseWarning: false.                        "
+	$(call pharo-load-local, $@, $(PROJECT), ../smalltalksrc)
+
+generate: prereq $(PROJECT).image
+	$(PHARO_VM_HEADLESS) $(PROJECT).image eval "            \
+	[                                                       \
+		VMMaker generateSqueakSpurCog64VM               \
+	] on: ProvideAnswerNotification do: [:notification |    \
+		notification resume: true                       \
+	]                                                       "
+
+clean::
+	rm -f $(PROJECT).image $(PROJECT).changes
+
+mrproper:: clean

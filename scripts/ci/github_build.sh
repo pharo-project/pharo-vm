@@ -28,6 +28,38 @@ function build_linux_amd64() {
   	popd
 }
 
+#
+# (Re)generate VM sources
+#
+function generate() {
+	pushd "$SRC_DIR/scripts"
+	./vmmaker generate
+	echo "==== VM sources generated ===="
+	git diff
+	echo "=============================="
+	popd
+}
+
+
+usage() {
+	echo "Usage: $0 [-g]
+
+-g    (re)generate VM sources from VMMaker
+" 1>&2; exit 1; }
+
+while getopts ":gh" o; do
+    case "${o}" in
+        g)
+            generate
+            ;;
+        h)
+            usage
+            ;;
+    esac
+done
+shift $((OPTIND-1))
+
+
 case "$(uname)-$(uname -m)" in
 	Linux-x86_64 )
 		build_linux_amd64

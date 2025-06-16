@@ -1,13 +1,9 @@
-name: Test
+name: Build
 
 on:
   push:
     branches:
-      - 'pharo-*'
-
-  pull_request:
-    branches:
-      - 'pharo-*'
+      - 'pharo-8'
 
   workflow_dispatch:
 

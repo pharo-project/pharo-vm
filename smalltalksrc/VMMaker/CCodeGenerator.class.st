@@ -65,12 +65,25 @@ CCodeGenerator class >> isVarargsSelector: aSymbol [
 { #category : #'C code generator' }
 CCodeGenerator class >> monticelloDescriptionFor: aClass [
 	"Answer a suitable Monticello package stamp to include in the header."
-	| pkgInfo pkg uuid |
+	| pkgInfo pkg repo commitId |
+
+	"This method is hacked to report Git commit id instead of (random?)
+	 fabricated UUIDs. This is not only more useful but also reduces noise
+	 when re-generating sources."
+
 	pkgInfo := PackageOrganizer default packageOfClass: aClass.
 	pkg := MCWorkingCopy allManagers detect: [:ea| ea packageName = pkgInfo packageName].
-	pkg ancestry ancestors isEmpty ifFalse:
-		[uuid := pkg ancestry ancestors first id].
-	^aClass name, (pkg modified ifTrue: [' * '] ifFalse: [' ']), pkg ancestry ancestorString, ' uuid: ', uuid asString
+
+	repo := IceRepository registeredRepositoryIncludingPackage: aClass package.
+	repo notNil ifTrue:[ repo workingCopy referenceCommit id ].
+
+	^aClass name, 
+		(pkg modified ifTrue: [' dirty commit '] ifFalse: [' commit ']),
+			(repo notNil ifTrue:[ repo workingCopy referenceCommit id ] ifFalse:['???'])
+
+	"
+	CCodeGenerator monticelloDescriptionFor: CCodeGenerator
+	"
 ]
 
 { #category : #'removing from system' }
@@ -92,7 +105,7 @@ CCodeGenerator class >> shortMonticelloDescriptionForClass: aClass [
 	mdesc := [self monticelloDescriptionFor: aClass]
 				on: Error
 				do: [:ex| ^' ', Date today asString].
-	^mdesc copyFrom: 1 to: (mdesc indexOfSubCollection: ' uuid:') - 1
+	^mdesc
 ]
 
 { #category : #accessing }
