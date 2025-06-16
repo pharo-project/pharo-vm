@@ -14,6 +14,8 @@ Class {
 	#name : 'CogX64Compiler',
 	#superclass : 'CogX86Compiler',
 	#classVars : [
+		'Arg2Reg',
+		'Arg3Reg',
 		'CDQ',
 		'CLD',
 		'CMPXCHGAwR',
@@ -258,6 +260,9 @@ CogX64Compiler class >> initializeAbstractRegistersSysV [
 	FPReg					:= RBP.
 	Arg0Reg				:= RDI. "So as to agree with C ABI arg 0"
 	Arg1Reg				:= RSI. "So as to agree with C ABI arg 1"
+	Arg2Reg				:= RDX. "These registers are for using when marshalling to C function, they collide with the other usages"
+	Arg3Reg				:= RCX. "These registers are for using when marshalling to C function, they collide with the other usages"
+
 	VarBaseReg			:= RBX. "Must be callee saved"
 	"R8 is either RISCTempReg or Extra6Reg depending on subclass."
 	Extra0Reg				:= R10.
@@ -296,6 +301,9 @@ CogX64Compiler class >> initializeAbstractRegistersWin64 [
 	FPReg					:= RBP.
 	Arg0Reg				:= RCX. "So as to agree with C ABI arg 0"
 	Arg1Reg				:= RDX. "So as to agree with C ABI arg 1"
+	Arg2Reg				:= R8. "These registers are for using when marshalling to C function, they collide with the other usages"
+	Arg3Reg				:= R9. "These registers are for using when marshalling to C function, they collide with the other usages"
+					
 	VarBaseReg			:= RBX. "Must be callee saved"
 	"R11 is either RISCTempReg or Extra6Reg depending on subclass."
 	Extra0Reg				:= RDI.
@@ -368,6 +376,20 @@ CogX64Compiler >> cArg1Register [
 
 	<inline: true>
 	^ Arg1Reg
+]
+
+{ #category : 'accessing' }
+CogX64Compiler >> cArg2Register [
+
+	<inline: true>
+	^ Arg2Reg
+]
+
+{ #category : 'accessing' }
+CogX64Compiler >> cArg3Register [
+
+	<inline: true>
+	^ Arg3Reg
 ]
 
 { #category : 'abi' }

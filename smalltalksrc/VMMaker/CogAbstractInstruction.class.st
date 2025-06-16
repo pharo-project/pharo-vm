@@ -1091,23 +1091,47 @@ CogAbstractInstruction >> genOptimizedSameThreadCalloutFor: cif flags: flags and
 	(flags bitAnd: FFI_FLAG_USE_OPTIMIZED_VERSION) = 0 
 		ifTrue: [ ^ false ].
 
-	self if: cif returnType: FFI_TYPE_POINTER do: [ ^ self genOptimizedSameThreadCalloutVoidPointerFor: externalFunctionAddress withFlags: flags ].	
-	self if: cif hasArgType: FFI_TYPE_DOUBLE returnType: FFI_TYPE_VOID do: [ ^ self genOptimizedSameThreadCalloutDoubleVoidFor: externalFunctionAddress withFlags: flags ].
-	self if: cif hasArgType: FFI_TYPE_POINTER returnType: FFI_TYPE_VOID do: [ ^ self genOptimizedSameThreadCalloutPointerVoidFor: externalFunctionAddress withFlags: flags ].
-	self if: cif hasArgType: FFI_TYPE_POINTER returnType: FFI_TYPE_POINTER do: [ ^ self genOptimizedSameThreadCalloutPointerPointerFor: externalFunctionAddress withFlags: flags ].
+	self if: cif 
+		returnType: FFI_TYPE_POINTER 
+		do: [ ^ self genOptimizedSameThreadCalloutVoidPointerFor: externalFunctionAddress withFlags: flags ].	
+	
+	self if: cif 
+		hasArgType: FFI_TYPE_DOUBLE 
+		returnType: FFI_TYPE_VOID 
+		do: [ ^ self genOptimizedSameThreadCalloutDoubleVoidFor: externalFunctionAddress withFlags: flags ].
+		
+	self if: cif 
+		hasArgType: FFI_TYPE_POINTER 
+		returnType: FFI_TYPE_VOID 
+		do: [ ^ self genOptimizedSameThreadCalloutPointerVoidFor: externalFunctionAddress withFlags: flags ].
+	
+	self if: cif 
+		hasArgType: FFI_TYPE_POINTER 
+		returnType: FFI_TYPE_POINTER 
+		do: [ ^ self genOptimizedSameThreadCalloutPointerPointerFor: externalFunctionAddress withFlags: flags ].
 
 	self if: cif 
 		hasArgType: FFI_TYPE_POINTER
 		and: FFI_TYPE_DOUBLE 
 		and: FFI_TYPE_DOUBLE
-		returnType: FFI_TYPE_VOID do: [ ^ self genOptimizedSameThreadCalloutPointerDoubleDoubleVoidFor: externalFunctionAddress withFlags: flags ].
+		returnType: FFI_TYPE_VOID 
+		do: [ ^ self genOptimizedSameThreadCalloutPointerDoubleDoubleVoidFor: externalFunctionAddress withFlags: flags ].
+
+	self if: cif 
+		hasArgType: FFI_TYPE_POINTER
+		and: FFI_TYPE_POINTER 
+		and: FFI_TYPE_POINTER
+		and: FFI_TYPE_POINTER 
+		returnType: FFI_TYPE_VOID 
+		do: [ ^ self genOptimizedSameThreadCalloutPointerPointerPointerPointerVoidFor: externalFunctionAddress withFlags: flags ].
 
 	self if: cif 
 		hasArgType: FFI_TYPE_POINTER
 		and: FFI_TYPE_DOUBLE 
 		and: FFI_TYPE_DOUBLE
 		and: FFI_TYPE_DOUBLE 
-		returnType: FFI_TYPE_VOID do: [ ^ self genOptimizedSameThreadCalloutPointerDoubleDoubleDoubleVoidFor: externalFunctionAddress withFlags: flags ].
+		returnType: FFI_TYPE_VOID 
+		do: [ ^ self genOptimizedSameThreadCalloutPointerDoubleDoubleDoubleVoidFor: externalFunctionAddress withFlags: flags ].
 
 	self if: cif 
 		hasArgType: FFI_TYPE_POINTER
@@ -1115,7 +1139,8 @@ CogAbstractInstruction >> genOptimizedSameThreadCalloutFor: cif flags: flags and
 		and: FFI_TYPE_DOUBLE
 		and: FFI_TYPE_DOUBLE 
 		and: FFI_TYPE_DOUBLE
-		returnType: FFI_TYPE_VOID do: [ ^ self genOptimizedSameThreadCalloutPointerDoubleDoubleDoubleDoubleVoidFor: externalFunctionAddress withFlags: flags ].
+		returnType: FFI_TYPE_VOID 
+		do: [ ^ self genOptimizedSameThreadCalloutPointerDoubleDoubleDoubleDoubleVoidFor: externalFunctionAddress withFlags: flags ].
 
 	^ false
 ]
@@ -1197,6 +1222,24 @@ CogAbstractInstruction >> genOptimizedSameThreadCalloutPointerPointerFor: anExte
 	self genMarshallReturnPointer: errorRoutine.
 
 	^ true.
+]
+
+{ #category : 'sameThread callout - optimizations' }
+CogAbstractInstruction >> genOptimizedSameThreadCalloutPointerPointerPointerPointerVoidFor: anExternalFunctionAddress withFlags: flags [
+
+	| errorRoutine |
+	cogit ssFlushStack.
+
+	errorRoutine := self genFFIFallbackCall.
+
+	self genMarshallPointerArgumentIndex: 4 fullIndex: 4 errorRoutineLabel: errorRoutine withFlags: flags.
+	self genMarshallPointerArgumentIndex: 3 fullIndex: 3 errorRoutineLabel: errorRoutine withFlags: flags.
+	self genMarshallPointerArgumentIndex: 2 fullIndex: 2 errorRoutineLabel: errorRoutine withFlags: flags.	 
+	self genMarshallPointerArgumentIndex: 1 fullIndex: 1 errorRoutineLabel: errorRoutine withFlags: flags.
+
+	self genFFISameThreadCall: anExternalFunctionAddress.
+
+	^ true
 ]
 
 { #category : 'sameThread callout - optimizations' }
