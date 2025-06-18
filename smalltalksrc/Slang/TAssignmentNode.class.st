@@ -3,7 +3,8 @@ Class {
 	#superclass : 'TParseNode',
 	#instVars : [
 		'variable',
-		'expression'
+		'expression',
+		'metInInlining'
 	],
 	#category : 'Slang-AST',
 	#package : 'Slang',
@@ -258,6 +259,13 @@ TAssignmentNode >> expression: anExpression [
 
 	expression := anExpression.
 	expression parent: self.
+]
+
+{ #category : 'initialization' }
+TAssignmentNode >> initialize [
+
+	super initialize.
+	metInInlining := false
 ]
 
 { #category : 'testing' }
