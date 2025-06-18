@@ -16,15 +16,21 @@ Class {
 
 { #category : 'helpers-annotate' }
 SLNodeAnnotatorVisitor >> addToExitVar: aNode [
-	"when an assignment has been met, all of the expression is in it but regarding exitVar, we only want the top level expression node to have the exitVar, the sub node if they exist have exitvar to nil and are still considered inside an assignment"
+	"when an assignment has been met, the effective exitVar is not all of the nodes in it, often it is just a single node (or more if conditionals) the nodes have a link to theirs assignment
+	true or nil on the stack indicate if the node is the effective exitVar"
 
-	| entry |
+	| entry top |
 	exitVarStack isEmpty ifTrue: [ ^ self ].
 
+	top := exitVarStack top.
 	entry := info at: aNode.
-	entry at: self exitVarString put: exitVarStack top.
+	"we are just above a jump thus the node is an exitVar"
+	(jumpMetStack isNotEmpty and: [ jumpMetStack top ]) ifTrue: [
+		top := true -> top value ].
+
+	entry at: self exitVarString put: top.
 	exitVarStack pop.
-	exitVarStack push: nil
+	exitVarStack push: nil -> top value
 ]
 
 { #category : 'helpers-annotate' }
@@ -241,6 +247,30 @@ SLNodeAnnotatorVisitor >> isInReturn: aNode [
 ]
 
 { #category : 'transformation' }
+SLNodeAnnotatorVisitor >> removeAssigningParentFrom: aSendNode [
+	"use in inlining to put assignment down the ast : x = { ... exp} -> {x = ... exp}, clean all the info as a side effect, it needs to be recalculated
+	answer if something was done"
+
+	| assignment exitVar |
+	exitVar := self getAssignmentForExitVar: aSendNode.
+	exitVar ifNil: [ ^ false ].
+
+	assignment := exitVar parent.
+
+	"necessary because of the inlining hack"
+	self cleanInfo.
+	self visit: assignment tMethod parseTree.
+	self transformToAssignmentFrom: assignment exitVar: exitVar.
+
+	assignment parent
+		replaceChild: assignment
+		with: assignment expression.
+
+	self cleanInfo.
+	^ true
+]
+
+{ #category : 'transformation' }
 SLNodeAnnotatorVisitor >> removeReturningParentFrom: aSendNode [
 	"use in inlining for redondant return : return {return exp} -> {return exp}, clean all the info as a side effect, it needs to be recalculated
 	answer if anything was done"
@@ -396,7 +426,12 @@ SLNodeAnnotatorVisitor >> visitConstantNode: aConstantNode [
 { #category : 'visiting' }
 SLNodeAnnotatorVisitor >> visitGoToNode: aTGotoNode [
 
-	self annotateNodeState: aTGotoNode
+	self annotateNodeState: aTGotoNode canBeAnExpression: false.
+
+	aTGotoNode haveBeenMetInInlining ifTrue: [ ^ self ].
+	jumpMetStack pop.
+	jumpMetStack push: true.
+	aTGotoNode metInInlining
 ]
 
 { #category : 'visiting' }
