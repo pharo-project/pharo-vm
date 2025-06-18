@@ -37,20 +37,90 @@ SLMockInliningTestClass >> methodAAssignOnReturn [
 	^ self methodBAssignOnReturn
 ]
 
+{ #category : 'inlining-assignment' }
+SLMockInliningTestClass >> methodAInlineIfFalseReturningIfTrueInAssignement [
+
+	| a |
+	a := self methodBIfFalseReturningIfTrue
+]
+
 { #category : 'inlining-returning-conditional' }
-SLMockInliningTestClass >> methodAInlineIfFalseReturningIfTrue [
+SLMockInliningTestClass >> methodAInlineIfFalseReturningIfTrueInReturn [
 
 	^ self methodBIfFalseReturningIfTrue
 ]
 
+{ #category : 'inlining-assignment' }
+SLMockInliningTestClass >> methodAInlineMultipleIfFalseReturningIfTrueInAssignment [
+
+	| a |
+	a := self methodB
+		  ifFalse: [ self methodBIfFalseReturningIfTrue ]
+		  ifTrue: [
+			  5.
+			  self methodBIfFalseReturningIfTrue ]
+]
+
 { #category : 'inlining-returning-conditional' }
-SLMockInliningTestClass >> methodAInlineMultipleIfFalseReturningIfTrue [
+SLMockInliningTestClass >> methodAInlineMultipleIfFalseReturningIfTrueInReturn [
 
 	^ self methodB
 		  ifFalse: [ self methodBIfFalseReturningIfTrue ]
 		  ifTrue: [
 			  5.
 			  self methodBIfFalseReturningIfTrue ]
+]
+
+{ #category : 'inlining-assignment' }
+SLMockInliningTestClass >> methodAInlineReturningIfTrueIfFalseInAssignment [
+
+	| a |
+	a := self methodBReturningIfTrueIfFalse
+]
+
+{ #category : 'inlining-returning-conditional' }
+SLMockInliningTestClass >> methodAInlineReturningIfTrueIfFalseInReturn [
+
+	^ self methodBReturningIfTrueIfFalse
+]
+
+{ #category : 'inlining-assignment' }
+SLMockInliningTestClass >> methodAInlineReturningIfTrueInAssignment [
+
+	| a |
+	a := self methodBReturningIfTrue
+]
+
+{ #category : 'inlining-returning-conditional' }
+SLMockInliningTestClass >> methodAInlineReturningIfTrueInReturn [
+
+	^ self methodBReturningIfTrue
+]
+
+{ #category : 'inlining-assignment' }
+SLMockInliningTestClass >> methodAInlineReturningInlinedIfTrueIfFalseInAssignment [
+
+	| a |
+	a := self methodBReturningInlinedIfTrueIfFalse
+]
+
+{ #category : 'inlining-returning-conditional' }
+SLMockInliningTestClass >> methodAInlineReturningInlinedIfTrueIfFalseInReturn [
+
+	^ self methodBReturningInlinedIfTrueIfFalse
+]
+
+{ #category : 'inlining-assignment' }
+SLMockInliningTestClass >> methodAInlineReturningInlinedIfTrueInAssignment [
+
+	| a |
+	a := self methodBReturningInlinedIfTrue
+]
+
+{ #category : 'inlining-returning-conditional' }
+SLMockInliningTestClass >> methodAInlineReturningInlinedIfTrueInReturn [
+
+	^ self methodBReturningInlinedIfTrue
 ]
 
 { #category : 'inlining-jump' }
@@ -213,6 +283,30 @@ SLMockInliningTestClass >> methodBReturnOnAssignment: aBlock [
 	| var |
 	var := 2 + 2.
 	^ aBlock value: var
+]
+
+{ #category : 'inlining-returning-conditional-helpers' }
+SLMockInliningTestClass >> methodBReturningIfTrue [
+
+	^ self methodB ifTrue: [ true ]
+]
+
+{ #category : 'inlining-returning-conditional-helpers' }
+SLMockInliningTestClass >> methodBReturningIfTrueIfFalse [
+
+	^ self methodB ifTrue: [ 1 ] ifFalse: [ 2 ]
+]
+
+{ #category : 'inlining-returning-conditional-helpers' }
+SLMockInliningTestClass >> methodBReturningInlinedIfTrue [
+
+	^ self methodB ifTrue: [ self methodB ]
+]
+
+{ #category : 'inlining-returning-conditional-helpers' }
+SLMockInliningTestClass >> methodBReturningInlinedIfTrueIfFalse [
+
+	^ self methodB ifTrue: [ self methodB ] ifFalse: [ self methodA ]
 ]
 
 { #category : 'inlining-jump-helpers' }
