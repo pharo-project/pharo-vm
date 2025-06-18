@@ -3804,6 +3804,12 @@ CogIA32Compiler >> mod: mod RM: regMode RO: regOpcode [
 	^mod << 6 + (regOpcode << 3) + regMode
 ]
 
+{ #category : 'testing' }
+CogIA32Compiler >> needsFFIFullCallInRegisterTrampoline [
+	
+	^ false
+]
+
 { #category : 'feature detection' }
 CogIA32Compiler >> numCheckFeaturesOpcodes [
 	"Answer the number of opcodes required to compile the CPUID call to extract the extended features information."

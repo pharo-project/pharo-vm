@@ -539,7 +539,8 @@ CogARMCompiler >> computeMaximumSize [
 		[Fill32]					-> [^4].
 		[Nop]					-> [^4].
 		"Control"
-		[Call]					-> [^4].
+		[Call]						-> [^4].
+	   [CallR]					-> [^4].
 		[CallFull]				-> [^self literalLoadInstructionBytes + 4].
 		[JumpR]					-> [^4].
 		[Jump]					-> [^4].
@@ -888,6 +889,15 @@ CogARMCompiler >> concretizeCallFull [
 	self machineCodeAt: instrOffset put: (self blx: ConcreteIPReg).
 	self assert: instrOffset = self literalLoadInstructionBytes.
 	^machineCodeSize := instrOffset + 4
+]
+
+{ #category : 'generate machine code - concretize' }
+CogARMCompiler >> concretizeCallR [
+
+	<inline: true>
+
+	self machineCodeAt: 0 put: (self blx: (operands at: 0)).
+	^ machineCodeSize := 4
 ]
 
 { #category : 'generate machine code - concretize' }
@@ -1935,6 +1945,7 @@ CogARMCompiler >> dispatchConcretize [
 		"Control"
 		[Call]						-> [^self concretizeCall]. "call code within code space"
 		[CallFull]					-> [^self concretizeCallFull]. "call code anywhere in address space"
+		[CallR]                  -> [^self concretizeCallR].
 		[JumpR]						-> [^self concretizeJumpR].
 		[JumpFull]					-> [^self concretizeJumpFull]."jump within address space"
 		[JumpLong]					-> [^self concretizeConditionalJump: AL]."jumps witihn code space"
@@ -3006,6 +3017,12 @@ CogARMCompiler >> nameForRegister: reg [ "<Integer>"
 				ifNone: [default]]
 		ifFalse:
 			[default]
+]
+
+{ #category : 'testing' }
+CogARMCompiler >> needsFFIFullCallInRegisterTrampoline [
+	
+	^ true
 ]
 
 { #category : 'inline cacheing' }

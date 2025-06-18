@@ -813,16 +813,18 @@ CogAbstractInstruction >> genFFISameThreadCall: anExternalFunctionAddress [
 { #category : 'sameThread callout - optimizations' }
 CogAbstractInstruction >> genFFISameThreadCall: anExternalFunctionAddress handlesExtraDoubleArgument: handlesExtraDoubleArgument [
 	
-	"Change to C Stack, pushing LinkRegistry if needed"
-	cogit genSmalltalkToCStackSwitch: true.
-	
-	self prepareStackForFFICall: handlesExtraDoubleArgument.
+	"This trampoline is used to have a fixed point where all the calls to FFI methods can return.
+	This is needed because if we do a FFI call that is reentrant in the interpreter, the machine code method that has perform the call might move or disappear.
+	Producing a crash when returning from the FFI call.
+	As the affected return address is in the C stack, it will not be handled by the code compaction code. 
+	So, we need a trampoline, so the return IP is in the top of a Machine Code Pharo Stack, and it is correctly patched."
 
-	cogit CallFullRT: anExternalFunctionAddress.	
+	"Check SimpleStackBasedCogit>>#generateSameThreadCalloutTrampolines"
 
-	self genLoadStackPointers.
-	self hasLinkRegister
-		ifTrue: [cogit PopR: LinkReg].
+	cogit MoveCw: anExternalFunctionAddress R: Extra0Reg.
+	cogit CallFullRT: (cogit getFFIFullCallInRegisterTrampoline: handlesExtraDoubleArgument).	
+
+
 ]
 
 { #category : 'abstract instructions' }

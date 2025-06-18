@@ -131,7 +131,7 @@ VMSimpleStackBasedCogitAbstractTest >> callCogMethod: callingMethod receiver: re
 	
 	self prepareCall.
 	machineSimulator instructionPointerRegisterValue: callingMethod address + cogit noCheckEntryOffset. 
-
+	
 	self runFrom: callingMethod address + cogit noCheckEntryOffset until: returnAddress.
 
 ]

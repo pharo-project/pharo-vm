@@ -4553,6 +4553,12 @@ CogX64Compiler >> nameForRegister: reg [ "<Integer>"
 		ifFalse: [default]
 ]
 
+{ #category : 'testing' }
+CogX64Compiler >> needsFFIFullCallInRegisterTrampoline [
+	
+	^ true
+]
+
 { #category : 'accessing' }
 CogX64Compiler >> numIntRegArgs [
 	^SysV ifTrue: [6] ifFalse: [4]
