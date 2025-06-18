@@ -2,7 +2,8 @@ Class {
 	#name : 'TGoToNode',
 	#superclass : 'TParseNode',
 	#instVars : [
-		'label'
+		'label',
+		'metInInlining'
 	],
 	#category : 'Slang-AST',
 	#package : 'Slang',
@@ -39,6 +40,19 @@ TGoToNode >> children [
 	^ #()
 ]
 
+{ #category : 'accessing' }
+TGoToNode >> haveBeenMetInInlining [
+
+	^ metInInlining
+]
+
+{ #category : 'initialization' }
+TGoToNode >> initialize [
+
+	super initialize.
+	metInInlining := false
+]
+
 { #category : 'testing' }
 TGoToNode >> isGoTo [
 
@@ -56,6 +70,12 @@ TGoToNode >> isSameAs: aTGoToNode [
 TGoToNode >> label [
 
 	^label
+]
+
+{ #category : 'accessing' }
+TGoToNode >> metInInlining [
+
+	metInInlining := true
 ]
 
 { #category : 'enumerating' }

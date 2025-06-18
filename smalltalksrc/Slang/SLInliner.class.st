@@ -343,13 +343,13 @@ SLInliner >> inlineSend: aSendNode [
 	 otherwise the assignee variable type must match the return type of the inlinee.  Return
 	 types are not propagated."
 
-	| sel callee exitLabel inlineStmts label omittedParameters calleeParameters exitVar directReturn |
+	| sel callee exitLabel inlineStmts label omittedParameters calleeParameters exitVar directReturn assignDirectReturnAndExitVarBlock |
 	sel := aSendNode selector.
 	callee := codeGenerator methodNamed: sel.
 
-	directReturn := sLNodeAnnotatorVisitor isDirectReturn: aSendNode.
-	exitVar := (sLNodeAnnotatorVisitor exitVarFor: aSendNode) ifNotNil: [
-		           :var | var name ].
+	assignDirectReturnAndExitVarBlock := [ :res |
+	                                     directReturn := res first.
+	                                     exitVar := res second ].
 
 	"convenient for debugging..."
 	codeGenerator maybeBreakForInlineOf: aSendNode in: self.
@@ -362,6 +362,9 @@ SLInliner >> inlineSend: aSendNode [
 	callee := callee copy.
 
 	self checkForFlagIn: callee.
+
+	assignDirectReturnAndExitVarBlock value:
+		(self setDirectReturnAndExitVar: aSendNode).
 
 	self
 		propagateReturnTypeDirectReturn: directReturn
@@ -380,20 +383,29 @@ SLInliner >> inlineSend: aSendNode [
 	currentMethod
 		addVarsDeclarationsAndLabelsOf: callee
 		except: omittedParameters.
-
 	callee hasReturn ifTrue: [
 		directReturn ifFalse: [
 			exitLabel := currentMethod unusedLabelForInliningInto:
 				             currentMethod.
-			(callee exitVar: exitVar label: exitLabel)
+			(callee exitVar: nil label: exitLabel)
 				ifTrue: [ currentMethod labels add: exitLabel ]
-				ifFalse: [ "is label used?" exitLabel := nil ] ].
+				ifFalse: [ "is label used?" exitLabel := nil ] ] ].
 
-		sLNodeAnnotatorVisitor removeReturningParentFrom: aSendNode.
-		sLNodeAnnotatorVisitor visit: currentMethod parseTree.
-		directReturn := sLNodeAnnotatorVisitor isDirectReturn: aSendNode.
-		exitVar := (sLNodeAnnotatorVisitor exitVarFor: aSendNode) ifNotNil: [
-			           :var | var name ] ].
+	(sLNodeAnnotatorVisitor removeReturningParentFrom: aSendNode)
+		ifTrue: [
+			assignDirectReturnAndExitVarBlock value:
+				(self setDirectReturnAndExitVar: aSendNode) ].
+
+	"little hack to move assignment to the lowest part of the ast"
+	aSendNode parent replaceChild: aSendNode with: callee parseTree.
+	(sLNodeAnnotatorVisitor removeAssigningParentFrom: aSendNode)
+		ifTrue: [
+			aSendNode parent parent
+				replaceChild: callee parseTree
+				with: aSendNode.
+			assignDirectReturnAndExitVarBlock value:
+				(self setDirectReturnAndExitVar: aSendNode) ].
+
 
 	(inlineStmts := OrderedCollection new:
 			                callee statements size + callee args size + 2)
@@ -585,6 +597,20 @@ SLInliner >> replaceNodeIn: aSendNode with: data [
 		except: method args
 ]
 
+{ #category : 'inlining-support' }
+SLInliner >> setDirectReturnAndExitVar: aSendNode [
+
+	| directReturn exitVar |
+	sLNodeAnnotatorVisitor visit: currentMethod parseTree.
+	directReturn := sLNodeAnnotatorVisitor isDirectReturn: aSendNode.
+	exitVar := (sLNodeAnnotatorVisitor getAssignmentForExitVar: aSendNode) ifNotNil: [
+		           :var | var name ].
+	^ OrderedCollection new
+		  add: directReturn;
+		  add: exitVar;
+		  yourself
+]
+
 { #category : 'inlining-preparation' }
 SLInliner >> statementsListsForInliningInCurrentMethod [
 	"Answer a collection of statement list nodes that are candidates for inlining.
@@ -727,7 +753,6 @@ SLInliner >> tryToInlineMethodStatementsListsInCurrentMethod [
 	| stmtLists didSomething newStatements |
 	didSomething := false.
 	stmtLists := self statementsListsForInliningInCurrentMethod.
-	sLNodeAnnotatorVisitor visit: currentMethod parseTree.
 
 	stmtLists do: [ :stmtList |
 		newStatements := TStatementListNode statements:

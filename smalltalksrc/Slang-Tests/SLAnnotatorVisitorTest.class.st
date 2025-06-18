@@ -45,19 +45,19 @@ SLAnnotatorVisitorTest >> testMethodWithAssignment [
 	self assert: ((expressions select: [ :node |
 			  node isConstant and: [ node value = 1 ] ]) allSatisfy: [ :node |
 			 (sLNodeAnnotatorVisitor isInAssignment: node) and: [
-				 (sLNodeAnnotatorVisitor exitVarFor: node) name = #x and: [
+				 (sLNodeAnnotatorVisitor getAssignmentForExitVar: node) name = #x and: [
 					 (sLNodeAnnotatorVisitor isInReturn: node) not ] ] ]).
 
 	self assert: ((expressions select: [ :node |
 			  node isConstant and: [ node value ~= 1 ] ]) allSatisfy: [ :node |
 			 (sLNodeAnnotatorVisitor isInAssignment: node) and: [
-				 (sLNodeAnnotatorVisitor exitVarFor: node) isNil and: [
+				 (sLNodeAnnotatorVisitor getAssignmentForExitVar: node) isNil and: [
 					 (sLNodeAnnotatorVisitor isInReturn: node) not ] ] ]).
 
 	self assert:
 		((expressions select: [ :node | node isSend ]) allSatisfy: [ :node |
 			 (sLNodeAnnotatorVisitor isInAssignment: node) and: [
-				 (sLNodeAnnotatorVisitor exitVarFor: node) name = #y and: [
+				 (sLNodeAnnotatorVisitor getAssignmentForExitVar: node) name = #y and: [
 					 (sLNodeAnnotatorVisitor isInReturn: node) not ] ] ]).
 
 	self assert: (statements allSatisfy: [ :node |
@@ -133,13 +133,13 @@ SLAnnotatorVisitorTest >> testMethodWithConditionalAssignment [
 			 :node |
 			 (sLNodeAnnotatorVisitor isInReturn: node) not and: [
 				 (sLNodeAnnotatorVisitor isInAssignment: node) and: [
-					 (sLNodeAnnotatorVisitor exitVarFor: node) name = #x ] ] ]).
+					 (sLNodeAnnotatorVisitor getAssignmentForExitVar: node) name = #x ] ] ]).
 	self assert:
 		((expressions reject: [ :node | node isConstant ]) allSatisfy: [
 			 :node |
 			 (sLNodeAnnotatorVisitor isInReturn: node) not and: [
 				 (sLNodeAnnotatorVisitor isInAssignment: node) and: [
-					 (sLNodeAnnotatorVisitor exitVarFor: node) isNil ] ] ]).
+					 (sLNodeAnnotatorVisitor getAssignmentForExitVar: node) isNil ] ] ]).
 
 	self assert: (statements allSatisfy: [ :node |
 			 (sLNodeAnnotatorVisitor isInReturn: node) not and: [
@@ -318,18 +318,18 @@ SLAnnotatorVisitorTest >> testMethodWithSendAsExpression [
 
 	self assert:
 		((sLNodeAnnotatorVisitor isInAssignment: firstSend) and: [
-			 (sLNodeAnnotatorVisitor exitVarFor: firstSend) name = #x and: [
+			 (sLNodeAnnotatorVisitor getAssignmentForExitVar: firstSend) name = #x and: [
 				 (sLNodeAnnotatorVisitor isInReturn: firstSend) not ] ]).
 
 
 	self assert:
 		((sLNodeAnnotatorVisitor isInAssignment: secondSend) and: [
-			 (sLNodeAnnotatorVisitor exitVarFor: secondSend) isNil and: [
+			 (sLNodeAnnotatorVisitor getAssignmentForExitVar: secondSend) isNil and: [
 				 (sLNodeAnnotatorVisitor isInReturn: secondSend) not ] ]).
 
 	self assert:
 		((sLNodeAnnotatorVisitor isInAssignment: thirdSend) and: [
-			 (sLNodeAnnotatorVisitor exitVarFor: thirdSend) name = #y and: [
+			 (sLNodeAnnotatorVisitor getAssignmentForExitVar: thirdSend) name = #y and: [
 				 (sLNodeAnnotatorVisitor isInReturn: thirdSend) not ] ])
 ]
 
