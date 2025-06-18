@@ -533,6 +533,22 @@ TStatementListNode >> last [
 ]
 
 { #category : 'accessing' }
+TStatementListNode >> lastNonCommentOrGoToOrLabelStatement [
+	"the last statement can be a comment if the TStatementList has been through inlining, return the actual last statement"
+
+	| last indexOfLast |
+	last := statements last.
+	indexOfLast := statements size.
+	[ last isComment or: [ last isGoTo or: [ last isLabel ] ] ]
+		whileTrue: [
+			indexOfLast := indexOfLast - 1.
+			indexOfLast = 0 ifTrue: [ ^ nil ].
+			last := statements at: indexOfLast ].
+
+	^ last
+]
+
+{ #category : 'accessing' }
 TStatementListNode >> lastNonCommentStatement [
 	"the last statement can be a comment if the TStatementList has been through inlining, return the actual last statement"
 

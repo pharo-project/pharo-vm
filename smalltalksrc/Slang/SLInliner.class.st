@@ -400,9 +400,10 @@ SLInliner >> inlineSend: aSendNode [
 	aSendNode parent replaceChild: aSendNode with: callee parseTree.
 	(sLNodeAnnotatorVisitor removeAssigningParentFrom: aSendNode)
 		ifTrue: [
-			aSendNode parent parent
+			callee parseTree parent
 				replaceChild: callee parseTree
 				with: aSendNode.
+			callee parseTree parent: callee.
 			assignDirectReturnAndExitVarBlock value:
 				(self setDirectReturnAndExitVar: aSendNode) ].
 

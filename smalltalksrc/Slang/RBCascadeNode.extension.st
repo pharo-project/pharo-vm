@@ -21,6 +21,6 @@ RBCascadeNode >> asTranslatorNodeIn: aTMethod [
 								expression: receiverNode).
 					receiverNode := varNode].
 				messages do:
-					[ :msg | s nextPut: ((msg asTranslatorNodeIn: aTMethod) receiver: receiverNode)]]);
+					[ :msg | s nextPut: ((msg asTranslatorNodeIn: aTMethod) receiver: receiverNode copy)]]);
 		comment: self commentOrNil
 ]

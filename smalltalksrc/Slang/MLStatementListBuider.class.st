@@ -65,23 +65,30 @@ MLStatementListBuider >> addStatement: aStatement [
 ]
 
 { #category : 'transforming' }
-MLStatementListBuider >> assignLastExpressionOf: aNode toVariable: aTVariableNode [ 
-	
+MLStatementListBuider >> assignLastExpressionOf: aNode toVariable: aTVariableNode [
 	"We need to take the expression and find its last expression recursively.
 	We should rewrite it to add an assignment to its last expression"
-	
+
 	| worklist |
 	worklist := OrderedCollection with: aNode.
-	[ worklist isEmpty ] whileFalse: [ | current |
+	[ worklist isEmpty ] whileFalse: [
+		| current |
 		current := worklist removeLast.
-		current isStatementList ifTrue: [ 
-				worklist add: current lastNonCommentStatement 
-			] ifFalse: [ | replacement parentBeforeReplacement |
+		current isStatementList
+			ifTrue: [
+			worklist add: current lastNonCommentOrGoToOrLabelStatement ]
+			ifFalse: [
+				| replacement parentBeforeReplacement |
 				self flag: #polymorphism.
 				parentBeforeReplacement := current parent.
 				replacement := (current isSend and: [ current isConditionalSend ])
-					ifTrue: [ self transformControlFlowNodeForValue: current withVariable: aTVariableNode copy ]
-					ifFalse: [ current assignLastExpressionTo: aTVariableNode copy ].
+					               ifTrue: [
+						               self
+							               transformControlFlowNodeForValue: current
+							               withVariable: aTVariableNode copy ]
+					               ifFalse: [
+					               current assignLastExpressionTo:
+						               aTVariableNode copy ].
 				parentBeforeReplacement replaceChild: current with: replacement ] ].
 	^ aNode
 ]

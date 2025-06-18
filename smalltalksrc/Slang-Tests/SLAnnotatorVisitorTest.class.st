@@ -80,8 +80,8 @@ SLAnnotatorVisitorTest >> testMethodWithBlockReturn [
 		                         expressions.
 	constantSetStatement := self getValueOfConstantNodeInSet: statements.
 
-	self assert: statements size equals: 4.
-	self assert: expressions size equals: 2.
+	self assert: statements size equals: 5.
+	self assert: expressions size equals: 1.
 
 	self assert: constantSetExpression size equals: 1.
 	self assert: (constantSetExpression includes: 4).
@@ -89,13 +89,6 @@ SLAnnotatorVisitorTest >> testMethodWithBlockReturn [
 	self assert: constantSetStatement size equals: 2.
 	self assert: (constantSetStatement includes: 2).
 	self assert: (constantSetStatement includes: 3).
-
-	self assert:
-		((expressions select: [ :node | node isConstant not ]) allSatisfy: [
-			 :node |
-			 (sLNodeAnnotatorVisitor isInReturn: node) and: [
-				 (sLNodeAnnotatorVisitor isDirectReturn: node) not and: [
-					 (sLNodeAnnotatorVisitor isInAssignment: node) not ] ] ]).
 
 	self assert:
 		((expressions select: [ :node | node isConstant ]) allSatisfy: [
@@ -123,8 +116,8 @@ SLAnnotatorVisitorTest >> testMethodWithConditionalAssignment [
 	expressions := sLNodeAnnotatorVisitor useAsExpressionsSet.
 	constantSetExpression := self getValueOfConstantNodeInSet:
 		                         expressions.
-	self assert: statements size equals: 2.
-	self assert: expressions size equals: 7.
+	self assert: statements size equals: 5.
+	self assert: expressions size equals: 4.
 	self assert: (constantSetExpression includes: 1).
 	self assert: (constantSetExpression includes: 2).
 	self assert: constantSetExpression size equals: 3.
@@ -161,15 +154,15 @@ SLAnnotatorVisitorTest >> testMethodWithConstant [
 	constantSetExpression := self getValueOfConstantNodeInSet:
 		                         expressions.
 
-	self assert: statements size equals: 7.
-	self assert: expressions size equals: 5.
+	self assert: statements size equals: 10.
+	self assert: expressions size equals: 2.
 
 	self assert: (constantSetStatement includes: 1).
 	self assert: (constantSetStatement includes: 2).
 	self assert: (constantSetStatement includes: 3).
 	self assert: (constantSetStatement includes: 4).
+	self assert: (constantSetStatement includes: true).
 
-	self assert: (constantSetExpression includes: true).
 	self assert: (constantSetExpression includes: 5).
 	self assert: (constantSetExpression includes: 6).
 
@@ -232,12 +225,12 @@ SLAnnotatorVisitorTest >> testMethodWithReturnInConditional [
 	constantSetExpression := self getValueOfConstantNodeInSet:
 		                         expressions.
 
-	self assert: statements size equals: 2.
-	self assert: expressions size equals: 7.
+	self assert: statements size equals: 7.
+	self assert: expressions size equals: 2.
 
 	self assert: (constantSetExpression includes: 2).
 	self assert: (constantSetExpression includes: 4).
-	self assert: constantSetExpression size equals: 3.
+	self assert: constantSetExpression size equals: 2.
 
 	self assert: ((expressions select: [ :node |
 			  node isConstant and: [ node value isInteger ] ]) allSatisfy: [
