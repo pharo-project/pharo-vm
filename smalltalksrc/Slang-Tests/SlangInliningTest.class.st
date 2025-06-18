@@ -570,9 +570,9 @@ SlangInliningTest >> testMethodAInlineMultipleIfFalseReturningIfTrueInReturn [
 	self
 		assert: translation
 		equals:
-			'/* SLMockInliningTestClass>>#methodAInlineMultipleIfFalseReturningIfTrue */
+			'/* SLMockInliningTestClass>>#methodAInlineMultipleIfFalseReturningIfTrueInReturn */
 static sqInt
-methodAInlineMultipleIfFalseReturningIfTrue(void)
+methodAInlineMultipleIfFalseReturningIfTrueInReturn(void)
 {
 	if (methodB()) {
 		/* begin methodBIfFalseReturningIfTrue */
