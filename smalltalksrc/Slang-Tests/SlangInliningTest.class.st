@@ -471,14 +471,98 @@ SlangInliningTest >> testInlineInSwitchRemovesReturnStatement [
 	self assert: firstCaseConstantExpression parent equals: theSwitch
 ]
 
-{ #category : 'inlining-returning-conditional' }
-SlangInliningTest >> testMethodAInlineMultipleIfFalseReturningIfTrue [
+{ #category : 'inlining-assignment' }
+SlangInliningTest >> testMethodAInlineIfFalseReturningIfTrueInAssignement [
 
 	| method translation |
 	ccg doBasicInlining: true.
 
 	method := ccg methodNamed:
-		          #methodAInlineMultipleIfFalseReturningIfTrue.
+		          #methodAInlineIfFalseReturningIfTrueInAssignement.
+
+	translation := self translate: method.
+	translation := translation trimBoth.
+
+	self
+		assert: translation
+		equals:
+			'/* SLMockInliningTestClass>>#methodAInlineIfFalseReturningIfTrueInAssignement */
+static sqInt
+methodAInlineIfFalseReturningIfTrueInAssignement(void)
+{
+	sqInt a;
+
+	/* begin methodBIfFalseReturningIfTrue */
+	if (methodB()) {
+		a = 0;
+		goto l2;
+	} else {
+	}
+	a = 1;
+	l2:
+	;
+	/* end methodBIfFalseReturningIfTrue */
+	return 0;
+}'
+]
+
+{ #category : 'inlining-assignment' }
+SlangInliningTest >> testMethodAInlineMultipleIfFalseReturningIfTrueInAssignment [
+
+	| method translation |
+	ccg doBasicInlining: true.
+
+	method := ccg methodNamed:
+		          #methodAInlineMultipleIfFalseReturningIfTrueInAssignment.
+
+	translation := self translate: method.
+	translation := translation trimBoth.
+
+	self
+		assert: translation
+		equals:
+			'/* SLMockInliningTestClass>>#methodAInlineMultipleIfFalseReturningIfTrueInAssignment */
+static sqInt
+methodAInlineMultipleIfFalseReturningIfTrueInAssignment(void)
+{
+	sqInt a;
+
+	if (methodB()) {
+		/* begin methodBIfFalseReturningIfTrue */
+		if (methodB()) {
+			a = 0;
+			goto l3;
+		} else {
+		}
+		a = 1;
+		l3:
+		;
+		/* end methodBIfFalseReturningIfTrue */
+	}
+ else {
+		/* begin methodBIfFalseReturningIfTrue */
+		if (methodB()) {
+			a = 0;
+			goto l2;
+		} else {
+		}
+		a = 1;
+		l2:
+		;
+		/* end methodBIfFalseReturningIfTrue */
+	}
+	return 0;
+}'
+]
+
+{ #category : 'inlining-returning-conditional' }
+SlangInliningTest >> testMethodAInlineMultipleIfFalseReturningIfTrueInReturn [
+
+	| method translation |
+	ccg doBasicInlining: true.
+
+	method := ccg methodNamed:
+		          #methodAInlineMultipleIfFalseReturningIfTrueInReturn.
 
 	translation := self translate: method.
 	translation := translation trimBoth.
@@ -512,12 +596,12 @@ methodAInlineMultipleIfFalseReturningIfTrue(void)
 ]
 
 { #category : 'inlining-returning-conditional' }
-SlangInliningTest >> testMethodAInlineifFalseReturningIfTrue [
+SlangInliningTest >> testMethodAInlineReturningIfTrue [
 
 	| method translation |
 	ccg doBasicInlining: true.
 
-	method := ccg methodNamed: #methodAInlineIfFalseReturningIfTrue.
+	method := ccg methodNamed: #methodAInlineReturningIfTrueInReturn.
 
 	translation := self translate: method.
 	translation := translation trimBoth.
@@ -525,9 +609,230 @@ SlangInliningTest >> testMethodAInlineifFalseReturningIfTrue [
 	self
 		assert: translation
 		equals:
-			'/* SLMockInliningTestClass>>#methodAInlineIfFalseReturningIfTrue */
+			'/* SLMockInliningTestClass>>#methodAInlineReturningIfTrueInReturn */
 static sqInt
-methodAInlineIfFalseReturningIfTrue(void)
+methodAInlineReturningIfTrueInReturn(void)
+{
+	return ((methodB())
+		 ? 1
+		 : 0);
+}'
+]
+
+{ #category : 'inlining-assignment' }
+SlangInliningTest >> testMethodAInlineReturningIfTrueIfFalseInAssignment [
+
+	| method translation |
+	ccg doBasicInlining: true.
+
+	method := ccg methodNamed:
+		          #methodAInlineReturningIfTrueIfFalseInAssignment.
+
+	translation := self translate: method.
+	translation := translation trimBoth.
+
+	self
+		assert: translation
+		equals:
+			'/* SLMockInliningTestClass>>#methodAInlineReturningIfTrueIfFalseInAssignment */
+static sqInt
+methodAInlineReturningIfTrueIfFalseInAssignment(void)
+{
+	sqInt a;
+
+	a = ((methodB())
+		 ? 1
+		 : 2);
+	return 0;
+}'
+]
+
+{ #category : 'inlining-returning-conditional' }
+SlangInliningTest >> testMethodAInlineReturningIfTrueIfFalseInReturn [
+
+	| method translation |
+	ccg doBasicInlining: true.
+
+	method := ccg methodNamed:
+		          #methodAInlineReturningIfTrueIfFalseInReturn.
+
+	translation := self translate: method.
+	translation := translation trimBoth.
+
+	self
+		assert: translation
+		equals:
+			'/* SLMockInliningTestClass>>#methodAInlineReturningIfTrueIfFalseInReturn */
+static sqInt
+methodAInlineReturningIfTrueIfFalseInReturn(void)
+{
+	return ((methodB())
+		 ? 1
+		 : 2);
+}'
+]
+
+{ #category : 'inlining-assignment' }
+SlangInliningTest >> testMethodAInlineReturningIfTrueInAssignment [
+
+	| method translation |
+	ccg doBasicInlining: true.
+
+	method := ccg methodNamed:
+		          #methodAInlineReturningIfTrueInAssignment.
+
+	translation := self translate: method.
+	translation := translation trimBoth.
+
+	self
+		assert: translation
+		equals:
+			'/* SLMockInliningTestClass>>#methodAInlineReturningIfTrueInAssignment */
+static sqInt
+methodAInlineReturningIfTrueInAssignment(void)
+{
+	sqInt a;
+
+	a = ((methodB())
+		 ? 1
+		 : 0);
+	return 0;
+}'
+]
+
+{ #category : 'inlining-assignment' }
+SlangInliningTest >> testMethodAInlineReturningInlinedIfTrueIfFalseInAssignment [
+
+	| method translation |
+	ccg doBasicInlining: true.
+
+	method := ccg methodNamed:
+		          #methodAInlineReturningInlinedIfTrueIfFalseInAssignment.
+
+	translation := self translate: method.
+	translation := translation trimBoth.
+
+	self
+		assert: translation
+		equals:
+			'/* SLMockInliningTestClass>>#methodAInlineReturningInlinedIfTrueIfFalseInAssignment */
+static sqInt
+methodAInlineReturningInlinedIfTrueIfFalseInAssignment(void)
+{
+	sqInt a;
+
+	if (methodB()) {
+		/* begin methodB */
+		a = 2 + 2;
+		/* end methodB */
+	} else {
+		/* begin methodA */
+		1 + 1;
+		/* begin methodB */
+		a = 2 + 2;
+		/* end methodB */
+		/* end methodA */
+	}
+	return 0;
+}'
+]
+
+{ #category : 'inlining-returning-conditional' }
+SlangInliningTest >> testMethodAInlineReturningInlinedIfTrueIfFalseInReturn [
+
+	| method translation |
+	ccg doBasicInlining: true.
+
+	method := ccg methodNamed:
+		          #methodAInlineReturningInlinedIfTrueIfFalseInReturn.
+
+	translation := self translate: method.
+	translation := translation trimBoth.
+
+	self
+		assert: translation
+		equals:
+			'/* SLMockInliningTestClass>>#methodAInlineReturningInlinedIfTrueIfFalseInReturn */
+static sqInt
+methodAInlineReturningInlinedIfTrueIfFalseInReturn(void)
+{
+	return ((methodB())
+		 ? (/* begin methodB */ 2 + 2 /* end methodB */)
+		 : (/* begin methodA */ 1 + 1, /* begin methodB */ 2 + 2 /* end methodB */ /* end methodA */));
+}'
+]
+
+{ #category : 'inlining-assignment' }
+SlangInliningTest >> testMethodAInlineReturningInlinedIfTrueInAssignment [
+
+	| method translation |
+	ccg doBasicInlining: true.
+
+	method := ccg methodNamed:
+		          #methodAInlineReturningInlinedIfTrueInAssignment.
+
+	translation := self translate: method.
+	translation := translation trimBoth.
+
+	self
+		assert: translation
+		equals:
+			'/* SLMockInliningTestClass>>#methodAInlineReturningInlinedIfTrueInAssignment */
+static sqInt
+methodAInlineReturningInlinedIfTrueInAssignment(void)
+{
+	sqInt a;
+
+	a = ((methodB())
+		 ? (/* begin methodB */ 2 + 2 /* end methodB */)
+		 : 0);
+	return 0;
+}'
+]
+
+{ #category : 'inlining-returning-conditional' }
+SlangInliningTest >> testMethodAInlineReturningInlinedIfTrueInReturn [
+
+	| method translation |
+	ccg doBasicInlining: true.
+
+	method := ccg methodNamed:
+		          #methodAInlineReturningInlinedIfTrueInReturn.
+
+	translation := self translate: method.
+	translation := translation trimBoth.
+
+	self
+		assert: translation
+		equals:
+			'/* SLMockInliningTestClass>>#methodAInlineReturningInlinedIfTrueInReturn */
+static sqInt
+methodAInlineReturningInlinedIfTrueInReturn(void)
+{
+	return ((methodB())
+		 ? (/* begin methodB */ 2 + 2 /* end methodB */)
+		 : 0);
+}'
+]
+
+{ #category : 'inlining-returning-conditional' }
+SlangInliningTest >> testMethodAInlineifFalseReturningIfTrueInReturn [
+
+	| method translation |
+	ccg doBasicInlining: true.
+
+	method := ccg methodNamed:
+		          #methodAInlineIfFalseReturningIfTrueInReturn.
+
+	translation := self translate: method.
+	translation := translation trimBoth.
+
+	self
+		assert: translation
+		equals:
+			'/* SLMockInliningTestClass>>#methodAInlineIfFalseReturningIfTrueInReturn */
+static sqInt
+methodAInlineIfFalseReturningIfTrueInReturn(void)
 {
 	/* begin methodBIfFalseReturningIfTrue */
 	if (methodB()) {
