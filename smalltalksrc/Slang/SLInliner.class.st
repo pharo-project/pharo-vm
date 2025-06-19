@@ -414,9 +414,13 @@ SLInliner >> inlineSend: aSendNode directReturn: directReturn exitVar: exitVar [
 	inlineStmts := TStatementListNode statements: inlineStmts.
 
 	directReturn ifTrue: [
-		callee endsWithReturn ifTrue: [
-			callee parseTree parent: aSendNode parent.
-			exitVar ifNotNil: [ inlineStmts := inlineStmts copyWithoutReturn ] ] ].
+		callee endsWithReturn
+			ifTrue: [
+				callee parseTree parent: aSendNode parent.
+				exitVar ifNotNil: [ inlineStmts := inlineStmts copyWithoutReturn ] ]
+			ifFalse: [
+				inlineStmts addAllLastKeepingEndComments:
+					{ (TConstantNode new setValue: nil) } ] ].
 
 	inlineStmts isComment ifTrue: [ "Nuke empty methods; e.g. override of flushAtCache"
 		inlineStmts statements: OrderedCollection new ].
