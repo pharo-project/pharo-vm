@@ -216,18 +216,6 @@ TParseNode >> hasSideEffect [
 ]
 
 { #category : 'testing' }
-TParseNode >> isAnExpression [
-
-	^ isExpression
-]
-
-{ #category : 'accessing' }
-TParseNode >> isAnExpression: aBoolean [
-
-	isExpression := aBoolean
-]
-
-{ #category : 'testing' }
 TParseNode >> isAssertion [
 	^false
 ]

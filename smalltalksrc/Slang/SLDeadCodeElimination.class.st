@@ -324,7 +324,7 @@ SLDeadCodeElimination >> mayMarkSendNode: aSendNode [
 	(aSendNode hasSideEffect not or: [
 		 aSendNode isConditionalSend or: [
 			 aSendNode isIterativeSend or: [
-				 (aSendNode isStructAccessorWithNoSideEffectIn: codeGenerator)
+				 (codeGenerator isStructAccessorWithNoSideEffect: aSendNode)
 					 or: [ aSendNode selector beginsWith: #cCoerce ] ] ] ]) ifTrue: [
 		^ self ].
 	self visitSendNode: aSendNode

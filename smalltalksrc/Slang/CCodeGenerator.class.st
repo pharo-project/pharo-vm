@@ -1029,7 +1029,7 @@ CCodeGenerator >> doBasicInlining: inlineFlagOrSymbol [
 
 	| pass progress inliner |
 	self collectInlineList: inlineFlagOrSymbol.
-	inliner := SLInlinerStrategy new
+	inliner := SLInliner new
 		           codeGenerator: self;
 		           yourself.
 	pass := 0.
@@ -3695,6 +3695,13 @@ CCodeGenerator >> isSimpleType: aType [
 CCodeGenerator >> isSpecialSelector: aSelector [
 		
 	^ castTranslationDict includesKey: aSelector
+]
+
+{ #category : 'testing' }
+CCodeGenerator >> isStructAccessorWithNoSideEffect: aSendNode [
+	"a non-bug free check for now"
+
+	^ aSendNode numArgs = 0 and: [ self isStructSend: aSendNode ]
 ]
 
 { #category : 'utilities' }

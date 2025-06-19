@@ -1835,14 +1835,13 @@ TMethod >> isFunctionalIn: aCodeGen [
 
 	parseTree statements size = 1 ifFalse: [
 		(parseTree statements size = 2 and: [
-			 parseTree first isSend and: [
-				 parseTree first selector == #flag: or: [
-					 (aCodeGen isAssertSelector:
-						  parseTree first selector) and: [
-						 parseTree first selector ~~ #asserta: ] ] ] ])
+			 parseTree statements first isSend and: [
+				 parseTree statements first selector == #flag: or: [
+					 (aCodeGen isAssertSelector: parseTree statements first selector)
+						 and: [ parseTree statements first selector ~~ #asserta: ] ] ] ])
 			ifFalse: [ ^ false ] ].
-	parseTree last isReturn ifFalse: [ ^ false ].
-	parseTree last expression nodesDo: [ :n |
+	parseTree lastNonCommentStatement isReturn ifFalse: [ ^ false ].
+	parseTree lastNonCommentStatement expression nodesDo: [ :n |
 		n isReturn ifTrue: [ ^ false ] ].
 	^ #( int #'unsigned int' #long #'unsigned long' #'long long'
 	     #'unsigned long long' sqInt usqInt #sqIntptr_t #usqIntptr_t
@@ -2119,14 +2118,14 @@ TMethod >> mergePropertiesOfSuperMethod: superTMethod [
 ]
 
 { #category : 'inlining support' }
-TMethod >> methodIsEffectivelyComplete: sel in: aCodeGen [
+TMethod >> methodIsEffectivelyComplete: aSelector in: aCodeGen [
 	"Answer if selector is effectively not inlineable in the receiver.
 	 This is tricky because block inlining requires that certain methods must be inlined, which
 	 can be at odds with the opportunistic strategy the inliner takes.  Since the inliner only
 	 inlines complete methods and certain methods may never be marked as complete (e.g.
 	 recursive methods) we have to short-cut certain kinds of send.  In particular, short-cut
 	 sends that turn into jumps in the interpret routine (sharedCase and sharedLabel below)."
-	^(aCodeGen methodNamed: sel)
+	^(aCodeGen methodNamed: aSelector)
 		ifNil: [true] "builtins or externals are not inlineable"
 		ifNotNil:
 			[:m|

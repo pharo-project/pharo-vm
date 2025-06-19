@@ -643,7 +643,7 @@ TStatementListNode >> removeAssertions [
 ]
 
 { #category : 'transformations' }
-TStatementListNode >> removeFirst [
+TStatementListNode >> removeFirstNonCommentStatement [
 
 	| first |
 	first := self firstNonCommentStatement.
