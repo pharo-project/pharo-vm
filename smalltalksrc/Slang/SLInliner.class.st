@@ -1,10 +1,8 @@
 Class {
 	#name : 'SLInliner',
-	#superclass : 'Object',
+	#superclass : 'SLAbstractInlineStrategy',
 	#instVars : [
-		'codeGenerator',
-		'currentMethod',
-		'sLNodeAnnotatorVisitor'
+		'currentMethod'
 	],
 	#category : 'Slang',
 	#package : 'Slang'
@@ -44,7 +42,7 @@ SLInliner >> checkForFlagIn: aTMethod [
 	(aTMethod parseTree sizeWithoutComments > 1 and: [
 		 aTMethod parseTree firstNonCommentStatement isSend and: [
 			 aTMethod parseTree firstNonCommentStatement selector == #flag: ] ])
-		ifTrue: [ aTMethod parseTree removeFirst ]
+		ifTrue: [ aTMethod parseTree removeFirstNonCommentStatement ]
 ]
 
 { #category : 'accessing' }
@@ -69,6 +67,14 @@ SLInliner >> currentMethod [
 SLInliner >> currentMethod: aTMethod [
 
 	currentMethod := aTMethod
+]
+
+{ #category : 'inlining' }
+SLInliner >> doInliningIn: aTMethod [
+
+	self currentMethod: aTMethod.
+	self codeGenerator: codeGenerator.
+	^ self tryToInlineMethodsInCurrentMethod
 ]
 
 { #category : 'inlining-preparation' }
@@ -512,14 +518,14 @@ SLInliner >> isSubstitutableNode: aNode intoMethod: targetMeth [
 	aNode isStatementList ifTrue: [ ^ true ].
 
 	(aNode isSend and: [
-		 aNode isStructAccessorWithNoSideEffectIn: codeGenerator ]) ifTrue: [
+		 codeGenerator isStructAccessorWithNoSideEffect: aNode ]) ifTrue: [
 		^ true ].
 
 	"scan expression tree; must contain only constants, builtin ops, and inlineable vars"
 	aNode nodesDo: [ :node |
 		node isSend ifTrue: [
 			((codeGenerator isBuiltinSelector: node selector) or: [
-				 node isStructAccessorWithNoSideEffectIn: codeGenerator ])
+				 codeGenerator isStructAccessorWithNoSideEffect: node ])
 				ifFalse: [ ^ false ] ].
 		node isVariable ifTrue: [
 			var := node name.
