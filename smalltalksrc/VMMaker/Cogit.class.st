@@ -257,7 +257,7 @@ Class {
 		'statTotalMapSize',
 		'jitCodeZoneWriteEnabled',
 		'codeOnlyZoneBase',
-		'JITenabled'
+		'jitEnabled'
 	],
 	#classVars : [
 		'AnnotationConstantNames',
@@ -508,6 +508,8 @@ Cogit class >> declareCVarsIn: aCCodeGenerator [
 	aCCodeGenerator
 		var: #jitCodeZoneWriteEnabled
 		declareC: 'int jitCodeZoneWriteEnabled = 0';
+		var: #jitEnabled
+		declareC: 'int jitEnabled = 1';
 		var: #ordinarySendTrampolines
 		declareC: 'sqInt ordinarySendTrampolines[NumSendTrampolines]';
 		var: #superSendTrampolines
@@ -4451,7 +4453,7 @@ Cogit >> cog: aMethodObj selector: aSelectorOop [
 	
 	| selector cogMethod startTime |
 	<var: #cogMethod type: #'CogMethod *'>
-	((self exclude: aMethodObj selector: aSelectorOop) or: JITenabled not) ifTrue:
+	((self exclude: aMethodObj selector: aSelectorOop) or: jitEnabled not) ifTrue:
 		[^nil].
 	
 	startTime := coInterpreter ioUTCMicrosecondsNow.		
@@ -4470,7 +4472,7 @@ Cogit >> cog: aMethodObj selector: aSelectorOop [
 	cogMethod := self compileCogMethod: aSelectorOop.
 	(cogMethod asInteger between: MaxNegativeErrorCode and: -1) ifTrue:
 		[(cogMethod asInteger = InsufficientCodeSpace) ifTrue:
-			[self disableJITForDebug
+			[self disableJitForDebug
 			 "SH: line above should be removed later"
 			 "coInterpreter callForCogCompiledCodeCompaction"].
 		 ^nil].
@@ -5780,9 +5782,9 @@ Cogit >> disableCodeZoneWrite [
 ]
 
 { #category : 'cog jit support' }
-Cogit >> disableJITForDebug [
+Cogit >> disableJitForDebug [
 	<api>
-	JITenabled := false.
+	jitEnabled := false.
 ]
 
 { #category : 'simulation only' }
@@ -8361,7 +8363,7 @@ Cogit >> initialize [
 	statTotalCodeSize := 0.
 	statTotalMapSize := 0.
 	jitCodeZoneWriteEnabled := false.
-	JITenabled := true.
+	jitEnabled := true.
 ]
 
 { #category : 'initialization' }
