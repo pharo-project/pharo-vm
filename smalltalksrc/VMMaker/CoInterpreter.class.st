@@ -794,7 +794,6 @@ CoInterpreter >> attemptToSwitchToMachineCode: bcpc [
 	| cogMethod pc cls |
 	<inline: false>
 	<var: #cogMethod type: #'CogMethod *'>
-	(cogit JITenabled) ifFalse: [ ^self ].
 	(self methodHasCogMethod: method)
 		ifTrue:[cogMethod := self cogMethodOf: method.
 		 	pc := self convertToMachineCodeFrame: cogMethod bcpc: bcpc.

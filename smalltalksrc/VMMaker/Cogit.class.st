@@ -4451,7 +4451,7 @@ Cogit >> cog: aMethodObj selector: aSelectorOop [
 	
 	| selector cogMethod startTime |
 	<var: #cogMethod type: #'CogMethod *'>
-	(self exclude: aMethodObj selector: aSelectorOop) ifTrue:
+	((self exclude: aMethodObj selector: aSelectorOop) or: JITenabled not) ifTrue:
 		[^nil].
 	
 	startTime := coInterpreter ioUTCMicrosecondsNow.		
