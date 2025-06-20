@@ -794,21 +794,21 @@ CoInterpreter >> attemptToSwitchToMachineCode: bcpc [
 	| cogMethod pc cls |
 	<inline: false>
 	<var: #cogMethod type: #'CogMethod *'>
+	(cogit JITenabled) ifFalse: [ ^self ].
 	(self methodHasCogMethod: method)
+		ifTrue:[cogMethod := self cogMethodOf: method.
+		 	pc := self convertToMachineCodeFrame: cogMethod bcpc: bcpc.
+		 	self assertValidMachineCodeFrame: pc.
+		 	self push: pc.
+		 	self push: objectMemory nilObject.
+		 	self callEnilopmart: #ceEnterCogCodePopReceiverReg]
 		ifFalse: [
 			(self iframeIsBlockActivation: framePointer)
 				ifTrue: [ "Compiled block / full closure"
 					cls := self frameStackedReceiver: framePointer numArgs: (self frameNumArgs: framePointer).
 					cogit cogFullBlockMethod: method numCopied: (objectMemory numPointerSlotsOf: cls) - FullClosureFirstCopiedValueIndex]
 				ifFalse: [ "Compiled method"
-					cogit cog: method selector: objectMemory nilObject ] ].
-	(self methodHasCogMethod: method) ifTrue:
-		[cogMethod := self cogMethodOf: method.
-		 pc := self convertToMachineCodeFrame: cogMethod bcpc: bcpc.
-		 self assertValidMachineCodeFrame: pc.
-		 self push: pc.
-		 self push: objectMemory nilObject.
-		 self callEnilopmart: #ceEnterCogCodePopReceiverReg]
+					cogit cog: method selector: objectMemory nilObject ] ]
 ]
 
 { #category : 'return bytecodes' }
@@ -888,8 +888,7 @@ CoInterpreter >> callEnilopmart: anElinopmart [
 { #category : 'cog jit support' }
 CoInterpreter >> callForCogCompiledCodeCompaction [
 	<api>
-	cogCompiledCodeCompactionCalledFor := false.
-	"SH: Skip compaction for now"
+	cogCompiledCodeCompactionCalledFor := true.
 	self forceInterruptCheck
 ]
 

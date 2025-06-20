@@ -256,7 +256,8 @@ Class {
 		'statTotalHeaderSize',
 		'statTotalMapSize',
 		'jitCodeZoneWriteEnabled',
-		'codeOnlyZoneBase'
+		'codeOnlyZoneBase',
+		'JITenabled'
 	],
 	#classVars : [
 		'AnnotationConstantNames',
@@ -1913,6 +1914,11 @@ Cogit >> FsubS: aSize Rv: minuendVectorRegister Rv: subtrahendVectorRegister Rv:
 		  operand: minuendVectorRegister
 		  operand: subtrahendVectorRegister 
 		  operand: vectorRegisterSum
+]
+
+{ #category : 'cog jit support' }
+Cogit >> JITenabled [
+	^JITenabled
 ]
 
 { #category : 'abstract instructions' }
@@ -4463,8 +4469,10 @@ Cogit >> cog: aMethodObj selector: aSelectorOop [
 	receiverTags := objectMemory receiverTagBitsForMethod: methodObj.
 	cogMethod := self compileCogMethod: aSelectorOop.
 	(cogMethod asInteger between: MaxNegativeErrorCode and: -1) ifTrue:
-		[cogMethod asInteger = InsufficientCodeSpace ifTrue:
-			[coInterpreter callForCogCompiledCodeCompaction].
+		[(cogMethod asInteger = InsufficientCodeSpace and: JITenabled) ifTrue:
+			[self disableJITForDebug
+			 "SH: line above should be removed later"
+			 "coInterpreter callForCogCompiledCodeCompaction"].
 		 ^nil].
 		
 	statCompileMethodCount := statCompileMethodCount + 1.
@@ -5769,6 +5777,12 @@ Cogit >> disableCodeZoneWrite [
 						objectMemory codeEnd } ] ].
 
 	jitCodeZoneWriteEnabled := false
+]
+
+{ #category : 'cog jit support' }
+Cogit >> disableJITForDebug [
+	<api>
+	JITenabled := false.
 ]
 
 { #category : 'simulation only' }
@@ -8347,6 +8361,7 @@ Cogit >> initialize [
 	statTotalCodeSize := 0.
 	statTotalMapSize := 0.
 	jitCodeZoneWriteEnabled := false.
+	JITenabled := true.
 ]
 
 { #category : 'initialization' }
