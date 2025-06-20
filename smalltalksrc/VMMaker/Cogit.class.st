@@ -4469,7 +4469,7 @@ Cogit >> cog: aMethodObj selector: aSelectorOop [
 	receiverTags := objectMemory receiverTagBitsForMethod: methodObj.
 	cogMethod := self compileCogMethod: aSelectorOop.
 	(cogMethod asInteger between: MaxNegativeErrorCode and: -1) ifTrue:
-		[(cogMethod asInteger = InsufficientCodeSpace and: JITenabled) ifTrue:
+		[(cogMethod asInteger = InsufficientCodeSpace) ifTrue:
 			[self disableJITForDebug
 			 "SH: line above should be removed later"
 			 "coInterpreter callForCogCompiledCodeCompaction"].
