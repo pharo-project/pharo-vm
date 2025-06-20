@@ -1918,11 +1918,6 @@ Cogit >> FsubS: aSize Rv: minuendVectorRegister Rv: subtrahendVectorRegister Rv:
 		  operand: vectorRegisterSum
 ]
 
-{ #category : 'cog jit support' }
-Cogit >> JITenabled [
-	^JITenabled
-]
-
 { #category : 'abstract instructions' }
 Cogit >> Jump: jumpTarget [
 	<inline: true>
