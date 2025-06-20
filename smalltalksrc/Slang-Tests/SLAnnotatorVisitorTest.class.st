@@ -29,8 +29,8 @@ SLAnnotatorVisitorTest >> testMethodWithAssignment [
 
 	sLNodeAnnotatorVisitor visit: tMethod parseTree.
 
-	statements := sLNodeAnnotatorVisitor useAsStatementsSet.
-	expressions := sLNodeAnnotatorVisitor useAsExpressionsSet.
+	statements := sLNodeAnnotatorVisitor nonEffectiveExpressionOrStatementSet.
+	expressions := sLNodeAnnotatorVisitor effectiveExpressionValueSet.
 
 	constantSetExpression := self getValueOfConstantNodeInSet:
 		                         expressions.
@@ -45,19 +45,19 @@ SLAnnotatorVisitorTest >> testMethodWithAssignment [
 	self assert: ((expressions select: [ :node |
 			  node isConstant and: [ node value = 1 ] ]) allSatisfy: [ :node |
 			 (sLNodeAnnotatorVisitor isInAssignment: node) and: [
-				 (sLNodeAnnotatorVisitor getAssignmentForExitVar: node) name = #x and: [
+				 (sLNodeAnnotatorVisitor getAssigningParentFor: node) name = #x and: [
 					 (sLNodeAnnotatorVisitor isInReturn: node) not ] ] ]).
 
 	self assert: ((expressions select: [ :node |
 			  node isConstant and: [ node value ~= 1 ] ]) allSatisfy: [ :node |
 			 (sLNodeAnnotatorVisitor isInAssignment: node) and: [
-				 (sLNodeAnnotatorVisitor getAssignmentForExitVar: node) isNil and: [
+				 (sLNodeAnnotatorVisitor getAssigningParentFor: node) isNil and: [
 					 (sLNodeAnnotatorVisitor isInReturn: node) not ] ] ]).
 
 	self assert:
 		((expressions select: [ :node | node isSend ]) allSatisfy: [ :node |
 			 (sLNodeAnnotatorVisitor isInAssignment: node) and: [
-				 (sLNodeAnnotatorVisitor getAssignmentForExitVar: node) name = #y and: [
+				 (sLNodeAnnotatorVisitor getAssigningParentFor: node) name = #y and: [
 					 (sLNodeAnnotatorVisitor isInReturn: node) not ] ] ]).
 
 	self assert: (statements allSatisfy: [ :node |
@@ -73,8 +73,8 @@ SLAnnotatorVisitorTest >> testMethodWithBlockReturn [
 
 	sLNodeAnnotatorVisitor visit: tMethod parseTree.
 
-	statements := sLNodeAnnotatorVisitor useAsStatementsSet.
-	expressions := sLNodeAnnotatorVisitor useAsExpressionsSet.
+	statements := sLNodeAnnotatorVisitor nonEffectiveExpressionOrStatementSet.
+	expressions := sLNodeAnnotatorVisitor effectiveExpressionValueSet.
 
 	constantSetExpression := self getValueOfConstantNodeInSet:
 		                         expressions.
@@ -112,8 +112,8 @@ SLAnnotatorVisitorTest >> testMethodWithConditionalAssignment [
 	tMethod := ccg methodNamed: #methodWithConditionalAssignment.
 	sLNodeAnnotatorVisitor visit: tMethod parseTree.
 	
-	statements := sLNodeAnnotatorVisitor useAsStatementsSet.
-	expressions := sLNodeAnnotatorVisitor useAsExpressionsSet.
+	statements := sLNodeAnnotatorVisitor nonEffectiveExpressionOrStatementSet.
+	expressions := sLNodeAnnotatorVisitor effectiveExpressionValueSet.
 	constantSetExpression := self getValueOfConstantNodeInSet:
 		                         expressions.
 	self assert: statements size equals: 5.
@@ -126,13 +126,13 @@ SLAnnotatorVisitorTest >> testMethodWithConditionalAssignment [
 			 :node |
 			 (sLNodeAnnotatorVisitor isInReturn: node) not and: [
 				 (sLNodeAnnotatorVisitor isInAssignment: node) and: [
-					 (sLNodeAnnotatorVisitor getAssignmentForExitVar: node) name = #x ] ] ]).
+					 (sLNodeAnnotatorVisitor getAssigningParentFor: node) name = #x ] ] ]).
 	self assert:
 		((expressions reject: [ :node | node isConstant ]) allSatisfy: [
 			 :node |
 			 (sLNodeAnnotatorVisitor isInReturn: node) not and: [
 				 (sLNodeAnnotatorVisitor isInAssignment: node) and: [
-					 (sLNodeAnnotatorVisitor getAssignmentForExitVar: node) isNil ] ] ]).
+					 (sLNodeAnnotatorVisitor getAssigningParentFor: node) isNil ] ] ]).
 
 	self assert: (statements allSatisfy: [ :node |
 			 (sLNodeAnnotatorVisitor isInReturn: node) not and: [
@@ -147,8 +147,8 @@ SLAnnotatorVisitorTest >> testMethodWithConstant [
 
 	sLNodeAnnotatorVisitor visit: tMethod parseTree.
 
-	statements := sLNodeAnnotatorVisitor useAsStatementsSet.
-	expressions := sLNodeAnnotatorVisitor useAsExpressionsSet.
+	statements := sLNodeAnnotatorVisitor nonEffectiveExpressionOrStatementSet.
+	expressions := sLNodeAnnotatorVisitor effectiveExpressionValueSet.
 
 	constantSetStatement := self getValueOfConstantNodeInSet: statements.
 	constantSetExpression := self getValueOfConstantNodeInSet:
@@ -191,8 +191,8 @@ SLAnnotatorVisitorTest >> testMethodWithReturn [
 
 	sLNodeAnnotatorVisitor visit: tMethod parseTree.
 
-	statements := sLNodeAnnotatorVisitor useAsStatementsSet.
-	expressions := sLNodeAnnotatorVisitor useAsExpressionsSet.
+	statements := sLNodeAnnotatorVisitor nonEffectiveExpressionOrStatementSet.
+	expressions := sLNodeAnnotatorVisitor effectiveExpressionValueSet.
 
 	constantSetExpression := self getValueOfConstantNodeInSet:
 		                         expressions.
@@ -219,8 +219,8 @@ SLAnnotatorVisitorTest >> testMethodWithReturnInConditional [
 
 	sLNodeAnnotatorVisitor visit: tMethod parseTree.
 
-	statements := sLNodeAnnotatorVisitor useAsStatementsSet.
-	expressions := sLNodeAnnotatorVisitor useAsExpressionsSet.
+	statements := sLNodeAnnotatorVisitor nonEffectiveExpressionOrStatementSet.
+	expressions := sLNodeAnnotatorVisitor effectiveExpressionValueSet.
 
 	constantSetExpression := self getValueOfConstantNodeInSet:
 		                         expressions.
@@ -247,33 +247,38 @@ SLAnnotatorVisitorTest >> testMethodWithReturnInConditional [
 { #category : 'return' }
 SLAnnotatorVisitorTest >> testMethodWithReturningConditional [
 
-	| tMethod statements expressions constantSetExpression |
+	| tMethod nonEffectiveExpressionOrStatementSet effectiveExpressionValueSet effectiveConstantExpressionValueSet |
 	tMethod := ccg methodNamed: #methodWithReturningConditional.
 	sLNodeAnnotatorVisitor visit: tMethod parseTree.
-	
-	statements := sLNodeAnnotatorVisitor useAsStatementsSet.
-	expressions := sLNodeAnnotatorVisitor useAsExpressionsSet.
-	constantSetExpression := self getValueOfConstantNodeInSet:
-		                         expressions.
-	self assert: statements size equals: 2.
-	self assert: expressions size equals: 6.
-	self assert: (constantSetExpression includes: 2).
-	self assert: (constantSetExpression includes: 4).
-	self assert: constantSetExpression size equals: 3.
-	self assert: ((expressions select: [ :node |
+
+	nonEffectiveExpressionOrStatementSet := sLNodeAnnotatorVisitor
+		                                        nonEffectiveExpressionOrStatementSet.
+	effectiveExpressionValueSet := sLNodeAnnotatorVisitor
+		                               effectiveExpressionValueSet.
+	effectiveConstantExpressionValueSet := self
+		                                       getValueOfConstantNodeInSet:
+		                                       effectiveExpressionValueSet.
+	self assert: nonEffectiveExpressionOrStatementSet size equals: 5.
+	self assert: effectiveExpressionValueSet size equals: 3.
+	self assert: (effectiveConstantExpressionValueSet includes: 2).
+	self assert: (effectiveConstantExpressionValueSet includes: 4).
+	self assert: effectiveConstantExpressionValueSet size equals: 3.
+
+	self assert: ((effectiveExpressionValueSet select: [ :node |
 			  node isConstant and: [ node value isInteger ] ]) allSatisfy: [
 			 :node |
 			 (sLNodeAnnotatorVisitor isInReturn: node) and: [
 				 (sLNodeAnnotatorVisitor isDirectReturn: node) and: [
 					 (sLNodeAnnotatorVisitor isInAssignment: node) not ] ] ]).
 	self assert:
-		((expressions reject: [ :node | node isConstant ]) allSatisfy: [
-			 :node |
-			 (sLNodeAnnotatorVisitor isInReturn: node) and: [
-				 (sLNodeAnnotatorVisitor isDirectReturn: node) not and: [
-					 (sLNodeAnnotatorVisitor isInAssignment: node) not ] ] ]).
-
-	self assert: (statements allSatisfy: [ :node |
+		((effectiveExpressionValueSet reject: [ :node | node isConstant ])
+			 allSatisfy: [ :node |
+				 (sLNodeAnnotatorVisitor isInReturn: node) and: [
+					 (sLNodeAnnotatorVisitor isDirectReturn: node) not and: [
+						 (sLNodeAnnotatorVisitor isInAssignment: node) not ] ] ]).
+	self halt.
+	self assert:
+		(nonEffectiveExpressionOrStatementSet allSatisfy: [ :node |
 			 (sLNodeAnnotatorVisitor isInReturn: node) not and: [
 				 (sLNodeAnnotatorVisitor isInAssignment: node) not ] ])
 ]
@@ -286,8 +291,8 @@ SLAnnotatorVisitorTest >> testMethodWithSendAsExpression [
 
 	sLNodeAnnotatorVisitor visit: tMethod parseTree.
 
-	statements := sLNodeAnnotatorVisitor useAsStatementsSet.
-	expressions := sLNodeAnnotatorVisitor useAsExpressionsSet.
+	statements := sLNodeAnnotatorVisitor nonEffectiveExpressionOrStatementSet.
+	expressions := sLNodeAnnotatorVisitor effectiveExpressionValueSet.
 
 	constantSetStatement := self getValueOfConstantNodeInSet: statements.
 
@@ -311,18 +316,18 @@ SLAnnotatorVisitorTest >> testMethodWithSendAsExpression [
 
 	self assert:
 		((sLNodeAnnotatorVisitor isInAssignment: firstSend) and: [
-			 (sLNodeAnnotatorVisitor getAssignmentForExitVar: firstSend) name = #x and: [
+			 (sLNodeAnnotatorVisitor getAssigningParentFor: firstSend) name = #x and: [
 				 (sLNodeAnnotatorVisitor isInReturn: firstSend) not ] ]).
 
 
 	self assert:
 		((sLNodeAnnotatorVisitor isInAssignment: secondSend) and: [
-			 (sLNodeAnnotatorVisitor getAssignmentForExitVar: secondSend) isNil and: [
+			 (sLNodeAnnotatorVisitor getAssigningParentFor: secondSend) isNil and: [
 				 (sLNodeAnnotatorVisitor isInReturn: secondSend) not ] ]).
 
 	self assert:
 		((sLNodeAnnotatorVisitor isInAssignment: thirdSend) and: [
-			 (sLNodeAnnotatorVisitor getAssignmentForExitVar: thirdSend) name = #y and: [
+			 (sLNodeAnnotatorVisitor getAssigningParentFor: thirdSend) name = #y and: [
 				 (sLNodeAnnotatorVisitor isInReturn: thirdSend) not ] ])
 ]
 
@@ -334,8 +339,8 @@ SLAnnotatorVisitorTest >> testMethodWithSendAsStatement [
 
 	sLNodeAnnotatorVisitor visit: tMethod parseTree.
 
-	statements := sLNodeAnnotatorVisitor useAsStatementsSet.
-	expressions := sLNodeAnnotatorVisitor useAsExpressionsSet.
+	statements := sLNodeAnnotatorVisitor nonEffectiveExpressionOrStatementSet.
+	expressions := sLNodeAnnotatorVisitor effectiveExpressionValueSet.
 
 	constantSetExpression := self getValueOfConstantNodeInSet:
 		                         expressions.
@@ -370,8 +375,8 @@ SLAnnotatorVisitorTest >> testMethodWithStatementList [
 
 	sLNodeAnnotatorVisitor visit: tMethod parseTree.
 
-	statements := sLNodeAnnotatorVisitor useAsStatementsSet.
-	expressions := sLNodeAnnotatorVisitor useAsExpressionsSet.
+	statements := sLNodeAnnotatorVisitor nonEffectiveExpressionOrStatementSet.
+	expressions := sLNodeAnnotatorVisitor effectiveExpressionValueSet.
 
 	constantSetStatement := self getValueOfConstantNodeInSet: statements.
 	constantSetExpression := self getValueOfConstantNodeInSet:
@@ -412,8 +417,8 @@ SLAnnotatorVisitorTest >> testMethodWithSwitchAsExpression [
 
 	sLNodeAnnotatorVisitor visit: tMethod parseTree.
 
-	statements := sLNodeAnnotatorVisitor useAsStatementsSet.
-	expressions := sLNodeAnnotatorVisitor useAsExpressionsSet.
+	statements := sLNodeAnnotatorVisitor nonEffectiveExpressionOrStatementSet.
+	expressions := sLNodeAnnotatorVisitor effectiveExpressionValueSet.
 
 	constantSetStatement := self getValueOfConstantNodeInSet: statements.
 	constantSetExpression := self getValueOfConstantNodeInSet:
@@ -439,8 +444,8 @@ SLAnnotatorVisitorTest >> testMethodWithSwitchAsStatement [
 
 	sLNodeAnnotatorVisitor visit: tMethod parseTree.
 
-	statements := sLNodeAnnotatorVisitor useAsStatementsSet.
-	expressions := sLNodeAnnotatorVisitor useAsExpressionsSet.
+	statements := sLNodeAnnotatorVisitor nonEffectiveExpressionOrStatementSet.
+	expressions := sLNodeAnnotatorVisitor effectiveExpressionValueSet.
 
 	constantSetStatement := self getValueOfConstantNodeInSet: statements.
 	constantSetExpression := self getValueOfConstantNodeInSet:

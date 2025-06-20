@@ -756,9 +756,18 @@ SlangInliningTest >> testMethodAInlineReturningInlinedIfTrueIfFalseInReturn [
 static sqInt
 methodAInlineReturningInlinedIfTrueIfFalseInReturn(void)
 {
-	return ((methodB())
-		 ? (/* begin methodB */ 2 + 2 /* end methodB */)
-		 : (/* begin methodA */ 1 + 1, /* begin methodB */ 2 + 2 /* end methodB */ /* end methodA */));
+	if (methodB()) {
+		/* begin methodB */
+		return 2 + 2;
+		/* end methodB */
+	} else {
+		/* begin methodA */
+		1 + 1;
+		/* begin methodB */
+		return 2 + 2;
+		/* end methodB */
+		/* end methodA */
+	}
 }'
 ]
 
@@ -783,9 +792,11 @@ methodAInlineReturningInlinedIfTrueInAssignment(void)
 {
 	sqInt a;
 
-	a = ((methodB())
-		 ? (/* begin methodB */ 2 + 2 /* end methodB */)
-		 : 0);
+	if (methodB()) {
+		/* begin methodB */
+		a = 2 + 2;
+		/* end methodB */
+	}
 	return 0;
 }'
 ]
@@ -809,9 +820,12 @@ SlangInliningTest >> testMethodAInlineReturningInlinedIfTrueInReturn [
 static sqInt
 methodAInlineReturningInlinedIfTrueInReturn(void)
 {
-	return ((methodB())
-		 ? (/* begin methodB */ 2 + 2 /* end methodB */)
-		 : 0);
+	if (methodB()) {
+		/* begin methodB */
+		return 2 + 2;
+		/* end methodB */
+	}
+	return 0;
 }'
 ]
 

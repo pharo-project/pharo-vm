@@ -383,6 +383,7 @@ SLInliner >> inlineSend: aSendNode [
 	currentMethod
 		addVarsDeclarationsAndLabelsOf: callee
 		except: omittedParameters.
+
 	callee hasReturn ifTrue: [
 		directReturn ifFalse: [
 			exitLabel := currentMethod unusedLabelForInliningInto:
@@ -391,12 +392,18 @@ SLInliner >> inlineSend: aSendNode [
 				ifTrue: [ currentMethod labels add: exitLabel ]
 				ifFalse: [ "is label used?" exitLabel := nil ] ] ].
 
+	"little hack to move returns to the lowest part of the ast"
+	aSendNode parent replaceChild: aSendNode with: callee parseTree.
 	(sLNodeAnnotatorVisitor removeReturningParentFrom: aSendNode)
 		ifTrue: [
+			callee parseTree parent
+				replaceChild: callee parseTree
+				with: aSendNode.
+			callee parseTree parent: callee.
 			assignDirectReturnAndExitVarBlock value:
 				(self setDirectReturnAndExitVar: aSendNode) ].
 
-	"little hack to move assignment to the lowest part of the ast"
+	"little hack to move assignments to the lowest part of the ast"
 	aSendNode parent replaceChild: aSendNode with: callee parseTree.
 	(sLNodeAnnotatorVisitor removeAssigningParentFrom: aSendNode)
 		ifTrue: [
@@ -604,7 +611,7 @@ SLInliner >> setDirectReturnAndExitVar: aSendNode [
 	| directReturn exitVar |
 	sLNodeAnnotatorVisitor visit: currentMethod parseTree.
 	directReturn := sLNodeAnnotatorVisitor isDirectReturn: aSendNode.
-	exitVar := (sLNodeAnnotatorVisitor getAssignmentForExitVar: aSendNode) ifNotNil: [
+	exitVar := (sLNodeAnnotatorVisitor getAssigningParentFor: aSendNode) ifNotNil: [
 		           :var | var name ].
 	^ OrderedCollection new
 		  add: directReturn;

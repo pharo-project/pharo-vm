@@ -2,17 +2,39 @@ Class {
 	#name : 'SLNodeAnnotatorVisitor',
 	#superclass : 'Object',
 	#instVars : [
-		'returnStack',
-		'exitVarStack',
 		'currentMethod',
 		'info',
-		'useAsExpressionStack',
 		'inExpressionStack',
-		'jumpMetStack'
+		'searchForAssignValueStack',
+		'searchForReturnValueStack',
+		'searchForExpressionValueStack',
+		'searchForStmtListValue',
+		'currentShouldBePartiallyIgnored'
 	],
 	#category : 'Slang',
 	#package : 'Slang'
 }
+
+{ #category : 'helpers-annotate' }
+SLNodeAnnotatorVisitor >> addReturnInfoFor: aNode [
+	"mark the given node has being inside a return expression, it doesn't mean that the node itself is the exit value
+	true or false on the stack only indicate if the node is the effective value of the returning expression or not"
+
+	| entry assoc |
+	searchForReturnValueStack isEmpty ifTrue: [ ^ self ].
+
+	entry := info at: aNode.
+	assoc := searchForReturnValueStack top.
+
+	"we are just above a jump (or just in need for an expression value in a StmtList) thus the node is an exitValue"
+	(searchForStmtListValue isNotEmpty and: [ searchForStmtListValue top ]) ifTrue: [
+		assoc := true -> assoc value ].
+
+	entry at: self returnString put: assoc.
+	searchForReturnValueStack pop.
+	"no longer the direct return"
+	searchForReturnValueStack push: false -> assoc value
+]
 
 { #category : 'helpers-annotate' }
 SLNodeAnnotatorVisitor >> addToExitVar: aNode [
@@ -20,17 +42,17 @@ SLNodeAnnotatorVisitor >> addToExitVar: aNode [
 	true or nil on the stack indicate if the node is the effective exitVar"
 
 	| entry top |
-	exitVarStack isEmpty ifTrue: [ ^ self ].
+	searchForAssignValueStack isEmpty ifTrue: [ ^ self ].
 
-	top := exitVarStack top.
+	top := searchForAssignValueStack top.
 	entry := info at: aNode.
 	"we are just above a jump thus the node is an exitVar"
-	(jumpMetStack isNotEmpty and: [ jumpMetStack top ]) ifTrue: [
+	(searchForStmtListValue isNotEmpty and: [ searchForStmtListValue top ]) ifTrue: [
 		top := true -> top value ].
 
 	entry at: self exitVarString put: top.
-	exitVarStack pop.
-	exitVarStack push: nil -> top value
+	searchForAssignValueStack pop.
+	searchForAssignValueStack push: false -> top value
 ]
 
 { #category : 'helpers-annotate' }
@@ -38,27 +60,6 @@ SLNodeAnnotatorVisitor >> addToInExpression: aNode [
 
 	inExpressionStack isEmpty ifTrue: [ ^ self ].
 	(info at: aNode) at: self inExpressionString put: true
-]
-
-{ #category : 'helpers-annotate' }
-SLNodeAnnotatorVisitor >> addToReturn: aNode [
-	"mark the given node has being inside a return expression, it doesn't mean that the node itself is the exit value
-	true or false on the stack only indicate if the node is the effective value of the returning expression or not"
-
-	| entry assoc |
-	returnStack isEmpty ifTrue: [ ^ self ].
-
-	entry := info at: aNode.
-	assoc := returnStack top.
-
-	"we are just above a jump thus the node is an exitValue"
-	(jumpMetStack isNotEmpty and: [ jumpMetStack top ]) ifTrue: [
-		assoc := true -> assoc value ].
-
-	entry at: self returnString put: assoc.
-	returnStack pop.
-	"no longer the direct return"
-	returnStack push: false -> assoc value
 ]
 
 { #category : 'helpers-annotate' }
@@ -70,8 +71,8 @@ SLNodeAnnotatorVisitor >> addToStatementOrExpression: aNode [
 		entry at: self expressionString put: true.
 		aNode isAnExpression: true.
 		^ self ].
-	(useAsExpressionStack isNotEmpty and: [
-		 useAsExpressionStack top = self expressionString ])
+	(searchForExpressionValueStack isNotEmpty and: [
+		 searchForExpressionValueStack top ])
 		ifTrue: [
 			entry at: self expressionString put: true.
 			aNode isAnExpression: true ]
@@ -80,9 +81,8 @@ SLNodeAnnotatorVisitor >> addToStatementOrExpression: aNode [
 			aNode isAnExpression: false ].
 
 	"default to a statement by default"
-	useAsExpressionStack isEmpty ifFalse: [ ^ self ].
+	searchForExpressionValueStack isEmpty ifFalse: [ ^ self ].
 	entry at: self expressionString put: false.
-	aNode isAnExpression: false
 ]
 
 { #category : 'helpers-annotate' }
@@ -102,19 +102,19 @@ SLNodeAnnotatorVisitor >> annotateNodeState: aNode canBeAnExpression: aBoolean [
 	so if we may be looking for an exitValue, the node should be ignored
 	and we can mark it as statement"
 	aBoolean ifFalse: [
-		useAsExpressionStack push: self statementString.
+		searchForExpressionValueStack push: false.
 		self addToStatementOrExpression: aNode.
-		useAsExpressionStack pop.
+		searchForExpressionValueStack pop.
 		^ self ].
 
-	self addToReturn: aNode.
+	self addReturnInfoFor: aNode.
 	self addToExitVar: aNode.
 	self addToStatementOrExpression: aNode.
 
-	(jumpMetStack isNotEmpty and: [ jumpMetStack top ]) ifFalse: [
+	(searchForStmtListValue isNotEmpty and: [ searchForStmtListValue top ]) ifFalse: [
 		^ self ].
-	jumpMetStack pop.
-	jumpMetStack push: false
+	searchForStmtListValue pop.
+	searchForStmtListValue push: false
 ]
 
 { #category : 'cleanup' }
@@ -129,32 +129,43 @@ SLNodeAnnotatorVisitor >> currendMethod: aTmethod [
 	currentMethod := aTmethod
 ]
 
+{ #category : 'accessing' }
+SLNodeAnnotatorVisitor >> effectiveExpressionValueSet [
+
+	| expressions |
+	expressions := IdentitySet new.
+	info associationsDo: [ :assoc |
+		(assoc value at: self expressionString) ifTrue: [
+			expressions add: assoc key ] ].
+	^ expressions
+]
+
 { #category : 'helpers-annotate' }
 SLNodeAnnotatorVisitor >> ensureEntryInInfoDictFor: aNode [
 
 	info at: aNode ifAbsentPut: [ IdentityDictionary new ]
 ]
 
-{ #category : 'helpers-constant' }
+{ #category : 'helpers-string-constant' }
 SLNodeAnnotatorVisitor >> exitVarString [
 
 	^ #exitVar
 ]
 
-{ #category : 'helpers-constant' }
+{ #category : 'helpers-string-constant' }
 SLNodeAnnotatorVisitor >> expressionString [
 
 	^ #expression
 ]
 
 { #category : 'accessing' }
-SLNodeAnnotatorVisitor >> getAssignmentForExitVar: aNode [
+SLNodeAnnotatorVisitor >> getAssigningParentFor: aNode [
 
 	| assignmentNode |
 	assignmentNode := (info at: aNode)
 		                  at: self exitVarString
 		                  ifAbsent: [ nil ].
-	(assignmentNode isNil or: [ assignmentNode key isNil ]) ifTrue: [
+	(assignmentNode isNil or: [ assignmentNode key not ]) ifTrue: [
 		^ nil ].
 	^ assignmentNode value
 ]
@@ -162,23 +173,23 @@ SLNodeAnnotatorVisitor >> getAssignmentForExitVar: aNode [
 { #category : 'helpers-visiting' }
 SLNodeAnnotatorVisitor >> handleConditionalSendVisit: aSendNode [
 	
-	"conditionals are handle like they would be in C, they are not considered as expression like other sends comming from pharo"
+	"conditionals are handle a bit like they would be in C, they are control-flow node"
 	| returnTop exitVarTop size |
-	inExpressionStack push: self inExpressionString.
+	inExpressionStack push: true.
 
 	size := aSendNode arguments size.
 	"re give the informations for each branch after using it"
 	aSendNode arguments doWithIndex: [ :arg :index |
-		returnTop := returnStack isEmpty ifFalse: [ returnStack top ].
-		exitVarTop := exitVarStack isEmpty ifFalse: [ exitVarStack top ].
+		returnTop := searchForReturnValueStack isEmpty ifFalse: [ searchForReturnValueStack top ].
+		exitVarTop := searchForAssignValueStack isEmpty ifFalse: [ searchForAssignValueStack top ].
 		arg accept: self.
 		index ~= size ifTrue: [
 			returnTop ifNotNil: [
-				returnStack pop.
-				returnStack push: returnTop ].
+				searchForReturnValueStack pop.
+				searchForReturnValueStack push: returnTop ].
 			exitVarTop ifNotNil: [
-				exitVarStack pop.
-				exitVarStack push: exitVarTop ] ] ].
+				searchForAssignValueStack pop.
+				searchForAssignValueStack push: exitVarTop ] ] ].
 	
 	"can't be a exitValue, but the information have been taken by the arguments"
 	aSendNode receiver accept: self.
@@ -189,7 +200,7 @@ SLNodeAnnotatorVisitor >> handleConditionalSendVisit: aSendNode [
 	self annotateNodeState: aSendNode canBeAnExpression: false
 ]
 
-{ #category : 'helpers-constant' }
+{ #category : 'helpers-string-constant' }
 SLNodeAnnotatorVisitor >> inExpressionString [
 	"value doesn't actually matter, but the stack need elements"
 
@@ -200,18 +211,32 @@ SLNodeAnnotatorVisitor >> inExpressionString [
 SLNodeAnnotatorVisitor >> initialize [
 
 	super initialize.
-	useAsExpressionStack := Stack new.
-	returnStack := Stack new.
-	exitVarStack := Stack new.
+
+	"empty, true or false on top depending of if the parent needs an expression as a dependance"
+	searchForExpressionValueStack := Stack new.
+	"either empty or have true on top depending if the children are in the expression of one of their parents"
 	inExpressionStack := Stack new.
-	jumpMetStack := Stack new.
+
+	"empty or true/false -> returningParent on top depending of if the parent has found its return value or not"
+	searchForReturnValueStack := Stack new.
+
+	"empty or true/false -> assigningParent on top depending of if the parent has found its assigning value or not"
+	searchForAssignValueStack := Stack new.
+
+	"StmtList throught jump can end up having multiple value point, this stack is re updated when crossing goToNode and is a boolean stack"
+	searchForStmtListValue := Stack new.
+
+	"when searching for the deepest node that give the expression value, some nodes can be pass through like conditionals and stmtLists or statement (goTos, comments or labels"
+	currentShouldBePartiallyIgnored := Stack new.
+
+	"collect all the informations gathered for a given node"
 	info := IdentityDictionary new
 ]
 
 { #category : 'testing' }
 SLNodeAnnotatorVisitor >> isDirectExpression: aNode [
 
-	^ (self isDirectReturn: aNode) or: [ (self getAssignmentForExitVar: aNode) isNotNil ]
+	^ (self isDirectReturn: aNode) or: [ (self getAssigningParentFor: aNode) isNotNil ]
 ]
 
 { #category : 'testing' }
@@ -247,17 +272,27 @@ SLNodeAnnotatorVisitor >> isInReturn: aNode [
 		  ifAbsent: [ false ]
 ]
 
+{ #category : 'accessing' }
+SLNodeAnnotatorVisitor >> nonEffectiveExpressionOrStatementSet [
+
+	| statements |
+	statements := IdentitySet new.
+	info associationsDo: [ :assoc |
+		(assoc value at: self expressionString) ifFalse: [
+			statements add: assoc key ] ].
+	^ statements
+]
+
 { #category : 'transformation' }
 SLNodeAnnotatorVisitor >> removeAssigningParentFrom: aSendNode [
 	"use in inlining to put assignment down the ast : x = { ... exp} -> {x = ... exp}, clean all the info as a side effect, it needs to be recalculated
 	answer if something was done"
 
 	| assignment exitVar |
-	exitVar := self getAssignmentForExitVar: aSendNode.
+	exitVar := self getAssigningParentFor: aSendNode.
 	exitVar ifNil: [ ^ false ].
 
 	assignment := exitVar parent.
-	self haltIf: [ assignment isAssignment not ].
 	"necessary because of the inlining hack"
 	self cleanInfo.
 	self visit: assignment tMethod parseTree.
@@ -280,7 +315,9 @@ SLNodeAnnotatorVisitor >> removeReturningParentFrom: aSendNode [
 	(self isDirectReturn: aSendNode) ifFalse: [ ^ false ].
 
 	returningParent := self returningParentFor: aSendNode.
-
+	"necessary because of the inlining hack"
+	self cleanInfo.
+	self visit: returningParent tMethod parseTree.
 	self transformDirectReturnFrom: returningParent.
 
 	returningParent parent
@@ -291,7 +328,7 @@ SLNodeAnnotatorVisitor >> removeReturningParentFrom: aSendNode [
 	^ true
 ]
 
-{ #category : 'helpers-constant' }
+{ #category : 'helpers-string-constant' }
 SLNodeAnnotatorVisitor >> returnString [
 
 	^ #return
@@ -306,7 +343,7 @@ SLNodeAnnotatorVisitor >> returningParentFor: aNode [
 		  ifAbsent: [ nil ]
 ]
 
-{ #category : 'helpers-constant' }
+{ #category : 'helpers-string-constant' }
 SLNodeAnnotatorVisitor >> statementString [
 
 	^ #statement
@@ -321,7 +358,10 @@ SLNodeAnnotatorVisitor >> transformDirectReturnFrom: parentNode [
 		(self isDirectReturn: child)
 			ifTrue: [
 			child parent replaceChild: child with: child asReturnNode ]
-			ifFalse: [ self transformDirectReturnFrom: child ] ]
+			ifFalse: [
+				child isReturn ifTrue: [ "already got a return for this branch"
+					^ self ].
+				self transformDirectReturnFrom: child ] ]
 ]
 
 { #category : 'transformation' }
@@ -330,7 +370,7 @@ SLNodeAnnotatorVisitor >> transformToAssignmentFrom: parentNode exitVar: exitVar
 	a = exp ifTrue: [exp] ifFalse [exp] -> ifTrue: [a = exp] ifFalse [a = exp]"
 
 	parentNode children do: [ :child |
-		(self getAssignmentForExitVar: child) == exitVar
+		(self getAssigningParentFor: child) == exitVar
 			ifTrue: [
 				child parent replaceChild: child with: (TAssignmentNode new
 						 variable: exitVar;
@@ -339,37 +379,15 @@ SLNodeAnnotatorVisitor >> transformToAssignmentFrom: parentNode exitVar: exitVar
 			ifFalse: [ self transformToAssignmentFrom: child exitVar: exitVar ] ]
 ]
 
-{ #category : 'accessing' }
-SLNodeAnnotatorVisitor >> useAsExpressionsSet [
-
-	| expressions |
-	expressions := IdentitySet new.
-	info associationsDo: [ :assoc |
-		(assoc value at: self expressionString) ifTrue: [
-			expressions add: assoc key ] ].
-	^ expressions
-]
-
-{ #category : 'accessing' }
-SLNodeAnnotatorVisitor >> useAsStatementsSet [
-
-	| statements |
-	statements := IdentitySet new.
-	info associationsDo: [ :assoc |
-		(assoc value at: self expressionString) ifFalse: [
-			statements add: assoc key ] ].
-	^ statements
-]
-
 { #category : 'visiting' }
 SLNodeAnnotatorVisitor >> visit: aNode [
 
 	aNode accept: self.
-	self assert: exitVarStack isEmpty.
-	self assert: returnStack isEmpty.
-	self assert: useAsExpressionStack isEmpty.
+	self assert: searchForAssignValueStack isEmpty.
+	self assert: searchForReturnValueStack isEmpty.
+	self assert: searchForExpressionValueStack isEmpty.
 	self assert: inExpressionStack isEmpty.
-	self assert: jumpMetStack isEmpty
+	self assert: searchForStmtListValue isEmpty
 ]
 
 { #category : 'visiting' }
@@ -377,18 +395,18 @@ SLNodeAnnotatorVisitor >> visitAssignmentNode: anAssignmentNode [
 
 	self annotateNodeState: anAssignmentNode.
 
-	useAsExpressionStack push: self expressionString.
-	inExpressionStack push: self inExpressionString.
+	searchForExpressionValueStack push: true.
+	inExpressionStack push: true.
 
-	exitVarStack push: true -> anAssignmentNode variable.
+	searchForAssignValueStack push: true -> anAssignmentNode variable.
 
 	anAssignmentNode expression accept: self.
 	anAssignmentNode variable accept: self.
 
 	inExpressionStack pop.
-	useAsExpressionStack pop.
+	searchForExpressionValueStack pop.
 
-	exitVarStack pop
+	searchForAssignValueStack pop
 ]
 
 { #category : 'visiting' }
@@ -404,14 +422,14 @@ SLNodeAnnotatorVisitor >> visitCaseStatementNode: aCaseStmtNode [
 
 	self annotateNodeState: aCaseStmtNode.
 
-	useAsExpressionStack push: self expressionString.
-	inExpressionStack push: self inExpressionString.
+	searchForExpressionValueStack push: true.
+	inExpressionStack push: true.
 
 	aCaseStmtNode expression accept: self.
 	aCaseStmtNode cases do: [ :case | case accept: self ].
 
 	inExpressionStack pop.
-	useAsExpressionStack pop
+	searchForExpressionValueStack pop
 ]
 
 { #category : 'visiting' }
@@ -426,8 +444,8 @@ SLNodeAnnotatorVisitor >> visitGoToNode: aTGotoNode [
 	self annotateNodeState: aTGotoNode canBeAnExpression: false.
 
 	aTGotoNode haveBeenMetInInlining ifTrue: [ ^ self ].
-	jumpMetStack pop.
-	jumpMetStack push: true.
+	searchForStmtListValue pop.
+	searchForStmtListValue push: true.
 	aTGotoNode metInInlining
 ]
 
@@ -450,15 +468,15 @@ SLNodeAnnotatorVisitor >> visitReturnNode: aReturnNode [
 
 	self annotateNodeState: aReturnNode.
 
-	useAsExpressionStack push: self expressionString.
-	returnStack push: true -> aReturnNode.
-	inExpressionStack push: self inExpressionString.
+	searchForExpressionValueStack push: true.
+	searchForReturnValueStack push: true -> aReturnNode.
+	inExpressionStack push: true.
 
 	aReturnNode expression accept: self.
 
 	inExpressionStack pop.
-	useAsExpressionStack pop.
-	returnStack pop
+	searchForExpressionValueStack pop.
+	searchForReturnValueStack pop
 ]
 
 { #category : 'visiting' }
@@ -470,14 +488,14 @@ SLNodeAnnotatorVisitor >> visitSendNode: aSendNode [
 
 	self annotateNodeState: aSendNode.
 
-	inExpressionStack push: self inExpressionString.
-	useAsExpressionStack push: self expressionString.
+	searchForExpressionValueStack push: true.
+	inExpressionStack push: true.
 
 	aSendNode receiver accept: self.
 	aSendNode arguments do: [ :arg | arg accept: self ].
 
-	inExpressionStack pop.
-	useAsExpressionStack pop
+	searchForExpressionValueStack pop.
+	inExpressionStack pop
 ]
 
 { #category : 'visiting' }
@@ -485,16 +503,16 @@ SLNodeAnnotatorVisitor >> visitStatementListNode: aStatementsListNode [
 
 	| stmts needExitValue |
 	stmts := aStatementsListNode statements.
-	needExitValue := useAsExpressionStack isEmpty
+	needExitValue := searchForExpressionValueStack isEmpty
 		                 ifTrue: [ false ]
-		                 ifFalse: [
-		                 useAsExpressionStack top = self expressionString ].
-	useAsExpressionStack push: self statementString.
-	jumpMetStack push: needExitValue.
+		                 ifFalse: [ searchForExpressionValueStack top ].
+
+	searchForExpressionValueStack push: false.
+	searchForStmtListValue push: needExitValue.
 	stmts reverse do: [ :stmt | stmt accept: self ].
 
-	useAsExpressionStack pop.
-	jumpMetStack pop.
+	searchForExpressionValueStack pop.
+	searchForStmtListValue pop.
 	self annotateNodeState: aStatementsListNode canBeAnExpression: false
 ]
 
@@ -508,20 +526,20 @@ SLNodeAnnotatorVisitor >> visitSwitchStatementNode: aSwitchStatementNode [
 		caseLabels := case first.
 		caseStatements := case second.
 		caseLabels do: [ :label |
-			useAsExpressionStack push: self statementString.
+			searchForExpressionValueStack push: false.
 			label accept: self.
-			useAsExpressionStack pop.
+			searchForExpressionValueStack pop.
 
 			caseStatements accept: self ] ].
 
-	useAsExpressionStack push: self expressionString.
-	inExpressionStack push: self inExpressionString.
+	searchForExpressionValueStack push: true.
+	inExpressionStack push: true.
 
 	aSwitchStatementNode expression accept: self.
 	aSwitchStatementNode otherwiseOrNil ifNotNil: [ :o | o accept: self ].
 
 	inExpressionStack pop.
-	useAsExpressionStack pop
+	searchForExpressionValueStack pop
 ]
 
 { #category : 'visiting' }
