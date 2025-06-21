@@ -5275,21 +5275,6 @@ Cogit >> compileCogMethod: selector [
 ]
 
 { #category : 'compile abstract instructions' }
-Cogit >> compileEntireFullBlockMethod: numCopied [
-	"Compile the abstract instructions for the entire full block method."
-	| result |
-	self preenMethodLabel.
-	self compileFullBlockEntry.
-
-	"Frame build"
-	self compileFullBlockMethodFrameBuild: numCopied.
-	"Method body"
-	(result := self compileMethodBody) < 0 ifTrue:
-		[^result].
-	^0
-]
-
-{ #category : 'compile abstract instructions' }
 Cogit >> compileEntireMethod [
 	"Compile the abstract instructions for the entire method, including blocks."
 	| result |
@@ -6189,6 +6174,7 @@ Cogit >> fillInMethodHeader: method size: size codeSize: codeSize selector: sele
 	method cmType: CMMethod.
 	method objectHeader: objectMemory nullHeaderForMachineCodeMethod.
 	method blockSize: size.
+	method codeSize: codeSize.
 	method methodObject: methodObj.
 	rawHeader := coInterpreter rawHeaderOf: methodObj.
 	"If the method has already been cogged then

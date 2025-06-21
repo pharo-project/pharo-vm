@@ -263,6 +263,7 @@ CogMethod >> cmUsesPenultimateLit: anObject [
 
 { #category : 'accessing' }
 CogMethod >> codeSize: anInteger [
+	<feature: #codeOnlyZone>
 	"Set the value of the size of the code only zone"
 
 	^codeSize := anInteger

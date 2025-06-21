@@ -972,6 +972,21 @@ StackToRegisterMappingCogit >> compileCogMethod: selector [
 ]
 
 { #category : 'compile abstract instructions' }
+StackToRegisterMappingCogit >> compileEntireFullBlockMethod: numCopied [
+	"Compile the abstract instructions for the entire full block method."
+	| result |
+	self preenMethodLabel.
+	self compileFullBlockEntry.
+
+	"Frame build"
+	self compileFullBlockMethodFrameBuild: numCopied.
+	"Method body"
+	(result := self compileMethodBody) < 0 ifTrue:
+		[^result].
+	^0
+]
+
+{ #category : 'compile abstract instructions' }
 StackToRegisterMappingCogit >> compileEntireMethod [
 	"Compile the abstract instructions for the entire method, including blocks."
 	regArgsHaveBeenPushed := false.
