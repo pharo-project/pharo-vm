@@ -4445,6 +4445,7 @@ Cogit >> cog: aMethodObj selector: aSelectorOop [
 	<api>
 	<returnTypeC: #'CogMethod *'>
 	<var: #startTime type: #usqLong>
+	<feature: #codeOnlyZone>
 	
 	| selector cogMethod startTime |
 	<var: #cogMethod type: #'CogMethod *'>
@@ -6179,11 +6180,12 @@ Cogit >> fillInCPICHeader: pic numArgs: numArgs numCases: numCases hasMNUCase: h
 ]
 
 { #category : 'generate machine code' }
-Cogit >> fillInMethodHeader: method size: size selector: selector [
+Cogit >> fillInMethodHeader: method size: size codeSize: codeSize selector: selector [
 	<returnTypeC: #'CogMethod *'>
 	<var: #method type: #'CogMethod *'>
 	| originalMethod rawHeader |
 	<var: #originalMethod type: #'CogMethod *'>
+	<feature: #codeOnlyZone>
 	method cmType: CMMethod.
 	method objectHeader: objectMemory nullHeaderForMachineCodeMethod.
 	method blockSize: size.
@@ -7531,6 +7533,7 @@ Cogit >> generateCogFullBlock [
 			It could be of the same size, but maybe the cmType could be different and the selector could be ignored." 
 			method := self fillInMethodHeader: (self cCoerceSimple: startAddress to: #'CogMethod *')
 							size: totalSize
+							codeSize: codeSize
 							selector: objectMemory nilObject.
 			method cpicHasMNUCaseOrCMIsFullBlock: true.
 			postCompileHook ifNotNil:
@@ -7551,6 +7554,7 @@ Cogit >> generateCogMethod: selector [
 	<returnTypeC: #'CogMethod *'>
 	| codeSize headerSize mapSize totalSize startAddress result method codeStartAddress codeResult |
 	<var: #method type: #'CogMethod *'>
+	<feature: #codeOnlyZone>
 
 	headerSize := self sizeof: CogMethod.
 	methodLabel address: methodZone freeStart.
@@ -7582,6 +7586,7 @@ Cogit >> generateCogMethod: selector [
 			self generateMapAt: startAddress + totalSize - 1 start: startAddress + cmNoCheckEntryOffset.
 			method := self fillInMethodHeader: (self cCoerceSimple: startAddress to: #'CogMethod *')
 							size: totalSize
+							codeSize: codeSize
 							selector: selector.
 			postCompileHook ifNotNil:
 				[self perform: postCompileHook with: method.

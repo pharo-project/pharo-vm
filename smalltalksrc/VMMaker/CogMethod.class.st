@@ -46,7 +46,8 @@ Class {
 		'picUsage',
 		'methodObject',
 		'methodHeader',
-		'selector'
+		'selector',
+		'codeSize'
 	],
 	#pools : [
 		'CogMethodConstants',
@@ -258,6 +259,13 @@ CogMethod >> cmUsesPenultimateLit: anObject [
 	"Set the value of cmUsesPenultimateLit"
 
 	^cmUsesPenultimateLit := anObject
+]
+
+{ #category : 'accessing' }
+CogMethod >> codeSize: anInteger [
+	"Set the value of the size of the code only zone"
+
+	^codeSize := anInteger
 ]
 
 { #category : 'testing' }

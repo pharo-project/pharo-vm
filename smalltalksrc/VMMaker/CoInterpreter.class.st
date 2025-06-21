@@ -601,6 +601,7 @@ CoInterpreter >> addNewMethodToCache: classObj [
 
 { #category : 'image save/restore' }
 CoInterpreter >> allocateMemoryForImage: f withHeader: header [
+	<feature: #codeOnlyZone>
 
 	<var: #f type: #sqImageFile>
 	<var: #header type: #SpurImageHeaderStruct>

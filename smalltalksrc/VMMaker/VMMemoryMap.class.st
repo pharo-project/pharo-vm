@@ -82,22 +82,12 @@ VMMemoryMap class >> shouldBeGenerated [
 ]
 
 { #category : 'private' }
-VMMemoryMap >> allocateCodeZone [
+VMMemoryMap >> allocateCodeOnlyZone [
+	<feature: #codeOnlyZone>
 	
-	(initialCodeZoneSize = 0 or: initialCodeOnlyZoneSize = 0) ifTrue: [ ^ self ].
+	initialCodeOnlyZoneSize = 0 ifTrue: [ ^ self ].
 	
-	self codeZoneStart: (self allocateJITMemory: initialCodeZoneSize _: memoryMapConfiguration codeZoneInitialAddress).
-	self codeZoneStart ifNil: [ self insufficientMemoryAvailableError ].
-
-	self codeZoneStart = memoryMapConfiguration codeZoneInitialAddress 
-		ifFalse: [ 
-			self logError: 'Could not allocate codeZone in the expected place (%p), got %p' _: memoryMapConfiguration codeZoneInitialAddress _: self codeZoneStart.
-			self error: 'Error allocating' ].
-	
-	self codeZoneEnd: codeZoneStart + initialCodeZoneSize.
-	
-	"SH: codeOnlyZone"
-	self codeOnlyZoneStart: (self allocateJITMemory: initialCodeOnlyZoneSize _: self codeZoneEnd).
+	self codeOnlyZoneStart: (self allocateJITMemory: initialCodeOnlyZoneSize _: codeZoneEnd).
 	self codeOnlyZoneStart ifNil: [ self insufficientMemoryAvailableError ].
 
 	self codeOnlyZoneStart = codeZoneEnd
@@ -109,11 +99,30 @@ VMMemoryMap >> allocateCodeZone [
 	
 ]
 
+{ #category : 'private' }
+VMMemoryMap >> allocateCodeZone [
+	
+	initialCodeZoneSize = 0 ifTrue: [ ^ self ].
+	
+	self codeZoneStart: (self allocateJITMemory: initialCodeZoneSize _: memoryMapConfiguration codeZoneInitialAddress).
+	self codeZoneStart ifNil: [ self insufficientMemoryAvailableError ].
+
+	self codeZoneStart = memoryMapConfiguration codeZoneInitialAddress 
+		ifFalse: [ 
+			self logError: 'Could not allocate codeZone in the expected place (%p), got %p' _: memoryMapConfiguration codeZoneInitialAddress _: self codeZoneStart.
+			self error: 'Error allocating' ].
+	
+	self codeZoneEnd: codeZoneStart + initialCodeZoneSize.
+	
+]
+
 { #category : 'allocating' }
 VMMemoryMap >> allocateHeap [
 	<inline: false>
+	<feature: #codeOnlyZone>
 	
 	self allocateCodeZone.
+	self allocateCodeOnlyZone.
 	self allocateNewObjectsSpace.
 	self allocateOldObjectsSpace.
 	self allocatePermObjectsSpace.
@@ -449,12 +458,14 @@ VMMemoryMap >> getpagesize [
 
 { #category : 'accessing' }
 VMMemoryMap >> initialCodeOnlyZoneSize [
+	<feature: #codeOnlyZone>
 
 	^ initialCodeOnlyZoneSize
 ]
 
 { #category : 'accessing' }
 VMMemoryMap >> initialCodeOnlyZoneSize: aValue [
+	<feature: #codeOnlyZone>
 
 	initialCodeOnlyZoneSize := aValue
 ]

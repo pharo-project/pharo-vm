@@ -302,14 +302,14 @@ CogMethodZone >> compactionInProgress [
 
 { #category : 'accessing' }
 CogMethodZone >> cozFreeStart [
-   "SH: code only zone"
+	<feature: #codeOnlyZone>
    "Next available address of the code only zone"
 	^cozFreeStart
 ]
 
 { #category : 'accessing' }
 CogMethodZone >> cozFreeStart: anInteger [
-   "SH: code only zone"
+	<feature: #codeOnlyZone>
    "Next available address of the code only zone"
 	cozFreeStart := anInteger.
 ]
