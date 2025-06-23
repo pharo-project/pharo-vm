@@ -194,9 +194,7 @@ TSendNode >> asTransformedConstantPerform [
 			               receiver: receiver
 			               arguments: arguments allButFirst
 			               isBuiltInOp: isBuiltinOperator ].
-	replacement ifNotNil: [ :node |
-		node isAnExpression: isExpression.
-		node parent: parent ].
+	replacement ifNotNil: [ :node | node parent: parent ].
 	^ replacement
 ]
 

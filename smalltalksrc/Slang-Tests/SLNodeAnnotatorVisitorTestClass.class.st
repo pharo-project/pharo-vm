@@ -99,7 +99,7 @@ SLNodeAnnotatorVisitorTestClass >> methodWithStatementList [
 ]
 
 { #category : 'switch' }
-SLNodeAnnotatorVisitorTestClass >> methodWithSwitchAsExpression [
+SLNodeAnnotatorVisitorTestClass >> methodWithSwitchAsAssignmentExpression [
 
 	| x |
 	x := 3 caseOf: {
