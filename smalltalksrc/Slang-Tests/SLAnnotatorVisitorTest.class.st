@@ -122,7 +122,7 @@ SLAnnotatorVisitorTest >> testMethodWithBlockReturn [
 { #category : 'assignment' }
 SLAnnotatorVisitorTest >> testMethodWithConditionalAssignment [
 
-	| tMethod nonEffectiveExpressionOrStatementSet effectiveExpressionValueSet nonEffectiveExpressionOrStatementConstantSet |
+	| tMethod nonEffectiveExpressionOrStatementSet effectiveExpressionValueSet effectiveConstantExpressionValueSet firstStmtList |
 	tMethod := ccg methodNamed: #methodWithConditionalAssignment.
 	sLNodeAnnotatorVisitor visit: tMethod parseTree.
 
@@ -130,18 +130,16 @@ SLAnnotatorVisitorTest >> testMethodWithConditionalAssignment [
 		                                        nonEffectiveExpressionOrStatementSet.
 	effectiveExpressionValueSet := sLNodeAnnotatorVisitor
 		                               effectiveExpressionValueSet.
-	nonEffectiveExpressionOrStatementConstantSet := self
-		                                                getValueOfConstantNodeInSet:
-		                                                effectiveExpressionValueSet.
+	effectiveConstantExpressionValueSet := self
+		                                       getValueOfConstantNodeInSet:
+		                                       effectiveExpressionValueSet.
 	self assert: nonEffectiveExpressionOrStatementSet size equals: 5.
 	self assert: effectiveExpressionValueSet size equals: 4.
-	self assert:
-		(nonEffectiveExpressionOrStatementConstantSet includes: 1).
-	self assert:
-		(nonEffectiveExpressionOrStatementConstantSet includes: 2).
-	self
-		assert: nonEffectiveExpressionOrStatementConstantSet size
-		equals: 3.
+
+	self assert: (effectiveConstantExpressionValueSet includes: 1).
+	self assert: (effectiveConstantExpressionValueSet includes: 2).
+	self assert: effectiveConstantExpressionValueSet size equals: 3.
+
 	self assert: ((effectiveExpressionValueSet select: [ :node |
 			  node isConstant and: [ node value isInteger ] ]) allSatisfy: [
 			 :node |
@@ -155,10 +153,20 @@ SLAnnotatorVisitorTest >> testMethodWithConditionalAssignment [
 					 (sLNodeAnnotatorVisitor isInAssignment: node) and: [
 						 (sLNodeAnnotatorVisitor getAssigningVariableFor: node) isNil ] ] ]).
 
+	firstStmtList := tMethod parseTree.
 	self assert:
-		(nonEffectiveExpressionOrStatementSet allSatisfy: [ :node |
-			 (sLNodeAnnotatorVisitor isInReturn: node) not and: [
-				 (sLNodeAnnotatorVisitor isInAssignment: node) not ] ])
+		((nonEffectiveExpressionOrStatementSet select: [ :node |
+			  node isAssignment not and: [ node ~= firstStmtList ] ])
+			 allSatisfy: [ :node |
+				 (sLNodeAnnotatorVisitor isInReturn: node) not and: [
+					 sLNodeAnnotatorVisitor isInAssignment: node ] ]).
+
+	self assert:
+		((nonEffectiveExpressionOrStatementSet reject: [ :node |
+			  node isAssignment not and: [ node ~= firstStmtList ] ])
+			 allSatisfy: [ :node |
+				 (sLNodeAnnotatorVisitor isInReturn: node) not and: [
+					 (sLNodeAnnotatorVisitor isInAssignment: node) not ] ])
 ]
 
 { #category : 'constant' }
@@ -523,7 +531,82 @@ SLAnnotatorVisitorTest >> testMethodWithSwitchAsAssignmentExpression [
 			 (sLNodeAnnotatorVisitor getAssigningVariableFor: node) name = #x ]).
 	self assert: ((effectiveExpressionValueSet select: [ :node |
 			  node isConstant and: [ node value = 3 ] ]) allSatisfy: [ :node |
-			 (sLNodeAnnotatorVisitor getAssigningVariableFor: node) isNil ])
+			 (sLNodeAnnotatorVisitor getAssigningVariableFor: node) isNil ]).
+
+	self assert:
+		(nonEffectiveExpressionOrStatementSet allSatisfy: [ :node |
+			 (sLNodeAnnotatorVisitor getAssigningVariableFor: node) isNil ]).
+
+	self assert: ((effectiveExpressionValueSet
+			  addAll: nonEffectiveExpressionOrStatementSet;
+			  yourself) allSatisfy: [ :node |
+			 (sLNodeAnnotatorVisitor isInReturn: node) not and: [
+				 (sLNodeAnnotatorVisitor isDirectReturn: node) not  ] ])
+]
+
+{ #category : 'switch' }
+SLAnnotatorVisitorTest >> testMethodWithSwitchAsReturnExpression [
+
+	| tMethod nonEffectiveExpressionOrStatementSet effectiveExpressionValueSet nonEffectiveExpressionOrStatementConstantSet effectiveConstantExpressionValueSet firstStmtList |
+	tMethod := ccg methodNamed: #methodWithSwitchAsReturnExpression.
+	tMethod prepareMethodIn: ccg.
+
+	sLNodeAnnotatorVisitor visit: tMethod parseTree.
+
+	nonEffectiveExpressionOrStatementSet := sLNodeAnnotatorVisitor
+		                                        nonEffectiveExpressionOrStatementSet.
+	effectiveExpressionValueSet := sLNodeAnnotatorVisitor
+		                               effectiveExpressionValueSet.
+
+	nonEffectiveExpressionOrStatementConstantSet := self
+		                                                getValueOfConstantNodeInSet:
+		                                                nonEffectiveExpressionOrStatementSet.
+	effectiveConstantExpressionValueSet := self
+		                                       getValueOfConstantNodeInSet:
+		                                       effectiveExpressionValueSet.
+
+	self assert: nonEffectiveExpressionOrStatementSet size equals: 7.
+	self assert: effectiveExpressionValueSet size equals: 3.
+
+	self assert:
+		(nonEffectiveExpressionOrStatementConstantSet includes: 4).
+	self assert:
+		(nonEffectiveExpressionOrStatementConstantSet includes: 5).
+
+	self assert: (effectiveConstantExpressionValueSet includes: 3).
+	self assert: (effectiveConstantExpressionValueSet includes: 6).
+	self assert: (effectiveConstantExpressionValueSet includes: 7).
+
+	self assert: ((effectiveExpressionValueSet select: [ :node |
+			  node isConstant and: [ node value ~= 3 ] ]) allSatisfy: [ :node |
+			 (sLNodeAnnotatorVisitor isInReturn: node) and: [
+				 sLNodeAnnotatorVisitor isDirectReturn: node ] ]).
+	self assert: ((effectiveExpressionValueSet select: [ :node |
+			  node isConstant and: [ node value = 3 ] ]) allSatisfy: [ :node |
+			 (sLNodeAnnotatorVisitor isInReturn: node) and: [
+				 (sLNodeAnnotatorVisitor isDirectReturn: node) not ] ]).
+
+	firstStmtList := tMethod parseTree.
+
+	self assert:
+		((nonEffectiveExpressionOrStatementSet select: [ :node |
+			  node isReturn not and: node ~= firstStmtList ]) allSatisfy: [
+			 :node |
+			 (sLNodeAnnotatorVisitor isInReturn: node) and: [
+				 (sLNodeAnnotatorVisitor isDirectReturn: node) not ] ]).
+
+	self assert:
+		((nonEffectiveExpressionOrStatementSet reject: [ :node |
+			  node isReturn not and: node ~= firstStmtList ]) allSatisfy: [
+			 :node |
+			 (sLNodeAnnotatorVisitor isInReturn: node) not and: [
+				 (sLNodeAnnotatorVisitor isDirectReturn: node) not ] ]).
+
+	self assert: ((effectiveExpressionValueSet
+			  addAll: nonEffectiveExpressionOrStatementSet;
+			  yourself) allSatisfy: [ :node |
+			 (sLNodeAnnotatorVisitor isInAssignment: node) not and: [
+				 (sLNodeAnnotatorVisitor getAssigningVariableFor: node) isNil ] ])
 ]
 
 { #category : 'switch' }

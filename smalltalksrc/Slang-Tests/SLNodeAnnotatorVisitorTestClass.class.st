@@ -108,6 +108,14 @@ SLNodeAnnotatorVisitorTestClass >> methodWithSwitchAsAssignmentExpression [
 ]
 
 { #category : 'switch' }
+SLNodeAnnotatorVisitorTestClass >> methodWithSwitchAsReturnExpression [
+
+	^ 3 caseOf: {
+			  ([ 4 ] -> [ 6 ]).
+			  ([ 5 ] -> [ 7 ]) }
+]
+
+{ #category : 'switch' }
 SLNodeAnnotatorVisitorTestClass >> methodWithSwitchAsStatement [
 
 	3 caseOf: {
