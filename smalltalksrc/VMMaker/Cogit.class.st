@@ -256,7 +256,6 @@ Class {
 		'statTotalHeaderSize',
 		'statTotalMapSize',
 		'jitCodeZoneWriteEnabled',
-		'codeOnlyZoneBase',
 		'jitEnabled'
 	],
 	#classVars : [

@@ -5,7 +5,8 @@ Class {
 		'address',
 		'memory',
 		'baseHeaderSize',
-		'cogit'
+		'cogit',
+		'codeSize'
 	],
 	#pools : [
 		'CogMethodConstants',
@@ -135,6 +136,14 @@ CogMethodSurrogate >> cmIsFullBlock [
 	"Answer the value of cpicHasMNUCaseOrCMIsFullBlock"
 
 	^ self cpicHasMNUCaseOrCMIsFullBlock
+]
+
+{ #category : 'accessing' }
+CogMethodSurrogate >> codeSize: anInteger [
+	<feature: #codeOnlyZone>
+	"Set the value of the size of the code only zone"
+
+	^codeSize := anInteger
 ]
 
 { #category : 'testing' }
