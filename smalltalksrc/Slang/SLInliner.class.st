@@ -610,8 +610,8 @@ SLInliner >> setDirectReturnAndExitVar: aSendNode [
 
 	| directReturn exitVar |
 	sLNodeAnnotatorVisitor visit: currentMethod parseTree.
-	directReturn := sLNodeAnnotatorVisitor isDirectReturn: aSendNode.
-	exitVar := (sLNodeAnnotatorVisitor getAssigningVariableFor: aSendNode) ifNotNil: [
+	directReturn := sLNodeAnnotatorVisitor isEffectiveReturnValue: aSendNode.
+	exitVar := (sLNodeAnnotatorVisitor assigningParentFor: aSendNode) ifNotNil: [
 		           :var | var name ].
 	^ OrderedCollection new
 		  add: directReturn;

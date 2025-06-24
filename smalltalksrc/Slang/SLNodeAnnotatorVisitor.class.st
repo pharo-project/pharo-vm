@@ -22,7 +22,7 @@ SLNodeAnnotatorVisitor >> addAssignmentInfoFor: aNode [
 	self
 		processValueSourceFor: aNode
 		from: searchForAssignValueStack
-		constantString: self exitVarString
+		constantString: self assignmentString
 ]
 
 { #category : 'helpers-annotate' }
@@ -77,6 +77,45 @@ SLNodeAnnotatorVisitor >> annotateNodeState: aNode [
 	searchForStmtListValue push: false
 ]
 
+{ #category : 'accessing' }
+SLNodeAnnotatorVisitor >> assigningParentFor: aNode [
+
+	^ self associationValueInfoFor: aNode entry: self assignmentString
+]
+
+{ #category : 'helpers-string-constant' }
+SLNodeAnnotatorVisitor >> assignmentString [
+
+	^ #exitVar
+]
+
+{ #category : 'helpers' }
+SLNodeAnnotatorVisitor >> associationKeyInfoFor: aNode entry: aString [
+
+	^ (info at: aNode)
+		  at: aString
+		  ifPresent: [ :assoc | assoc key ]
+		  ifAbsent: [ false ]
+]
+
+{ #category : 'helpers' }
+SLNodeAnnotatorVisitor >> associationValueInfoFor: aNode entry: aString [
+
+	^ (info at: aNode)
+		  at: aString
+		  ifPresent: [ :assoc | assoc value ]
+		  ifAbsent: [ nil ]
+]
+
+{ #category : 'helpers' }
+SLNodeAnnotatorVisitor >> booleanInfoFor: aNode entry: aString [
+
+	^ (info at: aNode)
+		  at: aString
+		  ifPresent: [ true ]
+		  ifAbsent: [ false ]
+]
+
 { #category : 'cleanup' }
 SLNodeAnnotatorVisitor >> cleanInfo [
 
@@ -101,27 +140,9 @@ SLNodeAnnotatorVisitor >> ensureEntryInInfoDictFor: aNode [
 ]
 
 { #category : 'helpers-string-constant' }
-SLNodeAnnotatorVisitor >> exitVarString [
-
-	^ #exitVar
-]
-
-{ #category : 'helpers-string-constant' }
 SLNodeAnnotatorVisitor >> expressionString [
 
 	^ #expression
-]
-
-{ #category : 'accessing' }
-SLNodeAnnotatorVisitor >> getAssigningVariableFor: aNode [
-
-	| assignmentNode |
-	assignmentNode := (info at: aNode)
-		                  at: self exitVarString
-		                  ifAbsent: [ nil ].
-	(assignmentNode isNil or: [ assignmentNode key not ]) ifTrue: [
-		^ nil ].
-	^ assignmentNode value
 ]
 
 { #category : 'helpers-visiting' }
@@ -143,18 +164,20 @@ SLNodeAnnotatorVisitor >> giveStacksInfoForMultipleBranches: aCollectionOfNode [
 
 { #category : 'helpers-visiting' }
 SLNodeAnnotatorVisitor >> handleConditionalSendVisit: aSendNode [
-	"conditionals are handle a bit like they would be in C, they are control-flow node"
+	"conditionals are control-flow node and thus treated differently from the other sends"
+
+	currentShouldBePartiallyIgnored push: true.
+	self annotateNodeState: aSendNode.
 
 	inExpressionStack push: true.
 
 	self giveStacksInfoForMultipleBranches: aSendNode arguments.
 
+	searchForExpressionValueStack push: true.
 	aSendNode receiver accept: self.
+	searchForExpressionValueStack pop.
 
-	inExpressionStack pop.
-
-	currentShouldBePartiallyIgnored push: true.
-	self annotateNodeState: aSendNode
+	inExpressionStack pop
 ]
 
 { #category : 'helpers-string-constant' }
@@ -192,42 +215,41 @@ SLNodeAnnotatorVisitor >> initialize [
 ]
 
 { #category : 'testing' }
-SLNodeAnnotatorVisitor >> isDirectReturn: aNode [
+SLNodeAnnotatorVisitor >> isEffectiveAssignmentValue: aNode [
 
-	^ (info at: aNode)
-		  at: self returnString
-		  ifPresent: [ :assoc | assoc key ]
-		  ifAbsent: [ false ]
+	^ self associationKeyInfoFor: aNode entry: self assignmentString
 ]
 
 { #category : 'testing' }
 SLNodeAnnotatorVisitor >> isEffectiveExpression: aNode [
 
-	^ (self isDirectReturn: aNode) or: [ (self getAssigningVariableFor: aNode) isNotNil ]
+	^ (self isEffectiveReturnValue: aNode) or: [
+		  (self assigningParentFor: aNode) isNotNil or: [
+			  self booleanInfoFor: aNode entry: self expressionString ] ]
 ]
 
 { #category : 'testing' }
-SLNodeAnnotatorVisitor >> isInAssignment: aNode [ 
-	
-	^ (info at: aNode) at: self exitVarString ifPresent: [ true ] ifAbsent: [ false ]
+SLNodeAnnotatorVisitor >> isEffectiveReturnValue: aNode [
+
+	^ self associationKeyInfoFor: aNode entry: self returnString
+]
+
+{ #category : 'testing' }
+SLNodeAnnotatorVisitor >> isInAssignment: aNode [
+
+	^ self booleanInfoFor: aNode entry: self assignmentString
 ]
 
 { #category : 'testing' }
 SLNodeAnnotatorVisitor >> isInExpression: aNode [
 
-	^ (info at: aNode)
-		  at: self inExpressionString
-		  ifPresent: [ true ]
-		  ifAbsent: [ false ]
+	^ self booleanInfoFor: aNode entry: self inExpressionString
 ]
 
 { #category : 'testing' }
 SLNodeAnnotatorVisitor >> isInReturn: aNode [
 
-	^ (info at: aNode)
-		  at: self returnString
-		  ifPresent: [ true ]
-		  ifAbsent: [ false ]
+	^ self booleanInfoFor: aNode entry: self returnString
 ]
 
 { #category : 'accessing' }
@@ -268,7 +290,7 @@ SLNodeAnnotatorVisitor >> removeAssigningParentFrom: aSendNode [
 	answer if something was done"
 
 	| assignment exitVar |
-	exitVar := self getAssigningVariableFor: aSendNode.
+	exitVar := self assigningParentFor: aSendNode.
 	exitVar ifNil: [ ^ false ].
 
 	assignment := exitVar parent.
@@ -291,7 +313,7 @@ SLNodeAnnotatorVisitor >> removeReturningParentFrom: aSendNode [
 	answer if anything was done"
 
 	| returningParent |
-	(self isDirectReturn: aSendNode) ifFalse: [ ^ false ].
+	(self isEffectiveReturnValue: aSendNode) ifFalse: [ ^ false ].
 
 	returningParent := self returningParentFor: aSendNode.
 	"necessary because of the inlining hack"
@@ -315,11 +337,8 @@ SLNodeAnnotatorVisitor >> returnString [
 
 { #category : 'accessing' }
 SLNodeAnnotatorVisitor >> returningParentFor: aNode [
-	"if the node is in a return give the returningParent even if the node is not the exitvalue itself"
-	^ (info at: aNode)
-		  at: self returnString
-		  ifPresent: [ :assoc | assoc value ]
-		  ifAbsent: [ nil ]
+
+	^ self associationValueInfoFor: aNode entry: self returnString
 ]
 
 { #category : 'accessing' }
@@ -328,12 +347,6 @@ SLNodeAnnotatorVisitor >> stacksForSpecificValueHolder [
 	^ {
 		  searchForAssignValueStack.
 		  searchForReturnValueStack }
-]
-
-{ #category : 'helpers-string-constant' }
-SLNodeAnnotatorVisitor >> statementString [
-
-	^ #statement
 ]
 
 { #category : 'helpers' }
@@ -349,7 +362,7 @@ SLNodeAnnotatorVisitor >> transformDirectReturnFrom: parentNode [
 	^ exp ifTrue: [exp] ifFalse [exp] -> ifTrue: [^exp] ifFalse [^exp]"
 
 	parentNode children do: [ :child |
-		(self isDirectReturn: child)
+		(self isEffectiveReturnValue: child)
 			ifTrue: [
 			child parent replaceChild: child with: child asReturnNode ]
 			ifFalse: [
@@ -364,7 +377,7 @@ SLNodeAnnotatorVisitor >> transformToAssignmentFrom: parentNode exitVar: exitVar
 	a = exp ifTrue: [exp] ifFalse [exp] -> ifTrue: [a = exp] ifFalse [a = exp]"
 
 	parentNode children do: [ :child |
-		(self getAssigningVariableFor: child) == exitVar
+		(self assigningParentFor: child) == exitVar
 			ifTrue: [
 				child parent replaceChild: child with: (TAssignmentNode new
 						 variable: exitVar;
@@ -392,7 +405,7 @@ SLNodeAnnotatorVisitor >> visitAssignmentNode: anAssignmentNode [
 	searchForExpressionValueStack push: true.
 	inExpressionStack push: true.
 
-	searchForAssignValueStack push: true -> anAssignmentNode variable.
+	searchForAssignValueStack push: true -> anAssignmentNode.
 
 	anAssignmentNode expression accept: self.
 	anAssignmentNode variable accept: self.
@@ -405,7 +418,7 @@ SLNodeAnnotatorVisitor >> visitAssignmentNode: anAssignmentNode [
 
 { #category : 'visiting' }
 SLNodeAnnotatorVisitor >> visitBraceCaseNode: aTBraceCaseNode [
-	"shouldn't be reachable in real condition, TBraceCaseNode are translated to switch before going throught any operation.
+	"shouldn't be reachable in real condition, TBraceCaseNode are translated to switch before going through any operation.
 	it can be reach throught tests as a side effect since inlining goes for all knowned methods in the codeGenerator even if they are not the tests focuss"
 
 	
