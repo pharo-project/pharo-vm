@@ -20,5 +20,5 @@ SLInlinerStrategy >> doInliningIn: aTMethod [
 SLInlinerStrategy >> initialize [
 
 	super initialize.
-	sLInliner := SLInliner new
+	sLInliner := SLInlinerWithAnnotation new
 ]

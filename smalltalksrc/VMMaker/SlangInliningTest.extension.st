@@ -8,5 +8,5 @@ SlangInliningTest >> setUp [
 	"necessary to get the type of sqInt"
 	SpurMemoryManager initBytesPerWord: 8.
 	ccg inferTypes.
-	sLInliner := SLInliner new
+	sLInliner := SLInlinerWithAnnotation new
 ]
