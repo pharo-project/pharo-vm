@@ -621,7 +621,7 @@ CogMethodZone >> printCogMethods [
 	nu > 0 ifTrue:
 		[coInterpreter print: ' UNKNOWN '; printNum: nu].
 	coInterpreter print: ' total '; printNum: nm+nc+no+nf+nu; cr.
-	coInterpreter print: 'Total code size '; printNum: cogit getStatTotalCodeSize; print: 'Total map size '; printNum: cogit getStatTotalMapSize; print: 'Total header size '; printNum: cogit getStatTotalHeaderSize; cr
+	coInterpreter print: 'Total code size '; printNum: cogit getStatTotalCodeSize; print: ' Total map size '; printNum: cogit getStatTotalMapSize; print: ' Total header size '; printNum: cogit getStatTotalHeaderSize; cr
 ]
 
 { #category : 'printing' }
