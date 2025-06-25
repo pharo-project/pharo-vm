@@ -635,7 +635,8 @@ CogMethodZone >> printCogMethods [
 	coInterpreter print: 'CMMethod '; printNum: nm;  print: ' CMClosedPIC '; printNum: nc;  print: ' CMOpenPIC '; printNum: no;  print: ' CMFree '; printNum: nf.
 	nu > 0 ifTrue:
 		[coInterpreter print: ' UNKNOWN '; printNum: nu].
-	coInterpreter print: ' total '; printNum: nm+nc+no+nf+nu; cr
+	coInterpreter print: ' total '; printNum: nm+nc+no+nf+nu; cr.
+	coInterpreter print: 'Total code size '; printNum: cogit getStatTotalCodeSize; print: ' Total map size '; printNum: cogit getStatTotalMapSize; print: ' Total header size '; printNum: cogit getStatTotalHeaderSize; cr
 ]
 
 { #category : 'printing' }
