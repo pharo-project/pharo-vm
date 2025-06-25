@@ -86,7 +86,7 @@ SLNodeAnnotatorVisitor >> assigningParentFor: aNode [
 { #category : 'helpers-string-constant' }
 SLNodeAnnotatorVisitor >> assignmentString [
 
-	^ #exitVar
+	^ #assignment
 ]
 
 { #category : 'helpers' }
