@@ -112,7 +112,7 @@ SLNodeAnnotatorVisitor >> booleanInfoFor: aNode entry: aString [
 
 	^ (info at: aNode)
 		  at: aString
-		  ifPresent: [ true ]
+		  ifPresent: [ :bool | bool ]
 		  ifAbsent: [ false ]
 ]
 
@@ -120,17 +120,6 @@ SLNodeAnnotatorVisitor >> booleanInfoFor: aNode entry: aString [
 SLNodeAnnotatorVisitor >> cleanInfo [
 
 	self initialize
-]
-
-{ #category : 'accessing' }
-SLNodeAnnotatorVisitor >> effectiveExpressionValueSet [
-
-	| expressions |
-	expressions := IdentitySet new.
-	info associationsDo: [ :assoc |
-		(assoc value at: self expressionString) ifTrue: [
-			expressions add: assoc key ] ].
-	^ expressions
 ]
 
 { #category : 'helpers-annotate' }
@@ -169,7 +158,7 @@ SLNodeAnnotatorVisitor >> handleConditionalSendVisit: aSendNode [
 	currentShouldBePartiallyIgnored push: true.
 	self annotateNodeState: aSendNode.
 
-	inExpressionStack push: true.
+	self pushInExpressionStack.
 
 	self giveStacksInfoForMultipleBranches: aSendNode arguments.
 
@@ -194,7 +183,7 @@ SLNodeAnnotatorVisitor >> initialize [
 
 	"empty, true or false on top depending of if the parent needs an expression as a dependance"
 	searchForExpressionValueStack := Stack new.
-	"either empty or have true on top depending if the children are in the expression of one of their parents"
+	"either empty or have somethin on top depending if the children are in the expression of one of their parents"
 	inExpressionStack := Stack new.
 
 	"empty or true/false -> returningParent on top depending of if the parent has found its return value or not"
@@ -224,7 +213,7 @@ SLNodeAnnotatorVisitor >> isEffectiveAssignmentValue: aNode [
 SLNodeAnnotatorVisitor >> isEffectiveExpression: aNode [
 
 	^ (self isEffectiveReturnValue: aNode) or: [
-		  (self assigningParentFor: aNode) isNotNil or: [
+		  (self isEffectiveAssignmentValue: aNode) or: [
 			  self booleanInfoFor: aNode entry: self expressionString ] ]
 ]
 
@@ -237,30 +226,28 @@ SLNodeAnnotatorVisitor >> isEffectiveReturnValue: aNode [
 { #category : 'testing' }
 SLNodeAnnotatorVisitor >> isInAssignment: aNode [
 
-	^ self booleanInfoFor: aNode entry: self assignmentString
+	^ self presenceInfoFor: aNode entry: self assignmentString
 ]
 
 { #category : 'testing' }
 SLNodeAnnotatorVisitor >> isInExpression: aNode [
 
-	^ self booleanInfoFor: aNode entry: self inExpressionString
+	^ self presenceInfoFor: aNode entry: self inExpressionString
 ]
 
 { #category : 'testing' }
 SLNodeAnnotatorVisitor >> isInReturn: aNode [
 
-	^ self booleanInfoFor: aNode entry: self returnString
+	^ self presenceInfoFor: aNode entry: self returnString
 ]
 
-{ #category : 'accessing' }
-SLNodeAnnotatorVisitor >> nonEffectiveExpressionOrStatementSet [
+{ #category : 'helpers' }
+SLNodeAnnotatorVisitor >> presenceInfoFor: aNode entry: aString [
 
-	| statements |
-	statements := IdentitySet new.
-	info associationsDo: [ :assoc |
-		(assoc value at: self expressionString) ifFalse: [
-			statements add: assoc key ] ].
-	^ statements
+	^ (info at: aNode)
+		  at: aString
+		  ifPresent: [ true ]
+		  ifAbsent: [ false ]
 ]
 
 { #category : 'helpers-annotate' }
@@ -282,6 +269,13 @@ SLNodeAnnotatorVisitor >> processValueSourceFor: aNode from: aStack constantStri
 			aStack push: false -> assoc value ].
 
 	entry at: aString put: assoc
+]
+
+{ #category : 'helpers' }
+SLNodeAnnotatorVisitor >> pushInExpressionStack [
+	"value doesn't matter for this stack "
+
+	inExpressionStack push: true
 ]
 
 { #category : 'transformation' }
@@ -403,7 +397,7 @@ SLNodeAnnotatorVisitor >> visitAssignmentNode: anAssignmentNode [
 	self annotateNodeState: anAssignmentNode.
 
 	searchForExpressionValueStack push: true.
-	inExpressionStack push: true.
+	self pushInExpressionStack.
 
 	searchForAssignValueStack push: true -> anAssignmentNode.
 
@@ -477,10 +471,11 @@ SLNodeAnnotatorVisitor >> visitLabeledCommentNode: aLabeledCommentNode [
 SLNodeAnnotatorVisitor >> visitReturnNode: aReturnNode [
 
 	self annotateNodeState: aReturnNode.
-
+	
+	"line might be unecessary"
 	searchForExpressionValueStack push: true.
 	searchForReturnValueStack push: true -> aReturnNode.
-	inExpressionStack push: true.
+	self pushInExpressionStack.
 
 	aReturnNode expression accept: self.
 
@@ -499,7 +494,7 @@ SLNodeAnnotatorVisitor >> visitSendNode: aSendNode [
 	self annotateNodeState: aSendNode.
 
 	searchForExpressionValueStack push: true.
-	inExpressionStack push: true.
+	self pushInExpressionStack.
 
 	aSendNode receiver accept: self.
 	aSendNode arguments do: [ :arg | arg accept: self ].
@@ -534,7 +529,6 @@ SLNodeAnnotatorVisitor >> visitSwitchStatementNode: aSwitchStatementNode [
 	currentShouldBePartiallyIgnored push: true.
 	self annotateNodeState: aSwitchStatementNode.
 
-	caseStatementsAndOtherWiseOrNilCollection := OrderedCollection new.
 	caseStatementsAndOtherWiseOrNilCollection := aSwitchStatementNode
 		                                             cases collect: [ :case |
 		                                             case second ].
@@ -542,7 +536,7 @@ SLNodeAnnotatorVisitor >> visitSwitchStatementNode: aSwitchStatementNode [
 		caseStatementsAndOtherWiseOrNilCollection add: o ].
 
 	searchForExpressionValueStack push: true.
-	inExpressionStack push: true.
+	self pushInExpressionStack.
 	self giveStacksInfoForMultipleBranches:
 		caseStatementsAndOtherWiseOrNilCollection.
 
@@ -550,10 +544,7 @@ SLNodeAnnotatorVisitor >> visitSwitchStatementNode: aSwitchStatementNode [
 		| caseLabels |
 		caseLabels := case first.
 
-		caseLabels do: [ :label |
-			searchForExpressionValueStack push: false.
-			label accept: self.
-			searchForExpressionValueStack pop ] ].
+		caseLabels do: [ :label | label accept: self ] ].
 
 
 	aSwitchStatementNode expression accept: self.

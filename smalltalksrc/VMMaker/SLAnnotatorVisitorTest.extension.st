@@ -4,8 +4,9 @@ Extension { #name : 'SLAnnotatorVisitorTest' }
 SLAnnotatorVisitorTest >> setUp [
 
 	super setUp.
-	sLNodeAnnotatorVisitor := SLNodeAnnotatorVisitor
-		                                    new.
+	sLNodeAnnotatorVisitor := SLNodeAnnotatorVisitor new.
 	ccg addClass: SLNodeAnnotatorVisitorTestClass.
+	nonEffectiveExpressionOrStatementCollection := OrderedCollection new.
+	effectiveExpressionValueCollection := OrderedCollection new.
 	ccg inferTypes
 ]
