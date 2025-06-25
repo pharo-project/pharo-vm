@@ -1549,9 +1549,6 @@ StackInterpreterPrimitives >> primitiveGetVMParameter: index [
 			[85] ->  [^objectMemory integerObjectOf: 
 								objectMemory getFromPermToNewSpaceRememberedSet rememberedSetLimit].
 			[86] ->  [^objectMemory getAvoidSearchingSegmentsWithPinnedObjects ifTrue: [ objectMemory trueObject ] ifFalse: [objectMemory falseObject]].
-			[87] ->  [^objectMemory integerObjectOf: cogit getStatTotalHeaderSize ].
-			[88] ->  [^objectMemory integerObjectOf: cogit getStatTotalCodeSize ].
-			[89] ->  [^objectMemory integerObjectOf: cogit getStatTotalMapSize ].
 		}
 		otherwise: [^nil]
 ]
