@@ -279,19 +279,18 @@ SLNodeAnnotatorVisitor >> pushInExpressionStack [
 ]
 
 { #category : 'transformation' }
-SLNodeAnnotatorVisitor >> removeAssigningParentFrom: aSendNode [
+SLNodeAnnotatorVisitor >> removeAssigningParentFrom: aNode [
 	"use in inlining to put assignment down the ast : x = { ... exp} -> {x = ... exp}, clean all the info as a side effect, it needs to be recalculated
 	answer if something was done"
 
-	| assignment exitVar |
-	exitVar := self assigningParentFor: aSendNode.
-	exitVar ifNil: [ ^ false ].
+	| assignment |
+	assignment := self assigningParentFor: aNode.
+	assignment ifNil: [ ^ false ].
 
-	assignment := exitVar parent.
-	"necessary because of the inlining hack"
+	"necessary because in inlining we switched the send node with its replacement"
 	self cleanInfo.
 	self visit: assignment tMethod parseTree.
-	self transformToAssignmentFrom: assignment exitVar: exitVar.
+	self transformToAssignmentFrom: assignment assignment: assignment.
 
 	assignment parent
 		replaceChild: assignment
@@ -310,7 +309,7 @@ SLNodeAnnotatorVisitor >> removeReturningParentFrom: aSendNode [
 	(self isEffectiveReturnValue: aSendNode) ifFalse: [ ^ false ].
 
 	returningParent := self returningParentFor: aSendNode.
-	"necessary because of the inlining hack"
+	"necessary because in inlining we switched the send node with its replacement"
 	self cleanInfo.
 	self visit: returningParent tMethod parseTree.
 	self transformDirectReturnFrom: returningParent.
@@ -366,18 +365,20 @@ SLNodeAnnotatorVisitor >> transformDirectReturnFrom: parentNode [
 ]
 
 { #category : 'transformation' }
-SLNodeAnnotatorVisitor >> transformToAssignmentFrom: parentNode exitVar: exitVar [
+SLNodeAnnotatorVisitor >> transformToAssignmentFrom: parentNode assignment: assignment [
 	"recursively go throught the ast to transfrom expression of assignment
 	a = exp ifTrue: [exp] ifFalse [exp] -> ifTrue: [a = exp] ifFalse [a = exp]"
 
 	parentNode children do: [ :child |
-		(self assigningParentFor: child) == exitVar
+		((self isEffectiveAssignmentValue: child) and: [
+			 (self assigningParentFor: child) == assignment ])
 			ifTrue: [
 				child parent replaceChild: child with: (TAssignmentNode new
-						 variable: exitVar;
+						 variable: assignment variable;
 						 expression: child;
 						 yourself) ]
-			ifFalse: [ self transformToAssignmentFrom: child exitVar: exitVar ] ]
+			ifFalse: [
+			self transformToAssignmentFrom: child assignment: assignment ] ]
 ]
 
 { #category : 'visiting' }

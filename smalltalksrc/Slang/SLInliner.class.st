@@ -392,27 +392,10 @@ SLInliner >> inlineSend: aSendNode [
 				ifTrue: [ currentMethod labels add: exitLabel ]
 				ifFalse: [ "is label used?" exitLabel := nil ] ] ].
 
-	"little hack to move returns to the lowest part of the ast"
-	aSendNode parent replaceChild: aSendNode with: callee parseTree.
-	(sLNodeAnnotatorVisitor removeReturningParentFrom: aSendNode)
-		ifTrue: [
-			callee parseTree parent
-				replaceChild: callee parseTree
-				with: aSendNode.
-			callee parseTree parent: callee.
-			assignDirectReturnAndExitVarBlock value:
-				(self setDirectReturnAndExitVar: aSendNode) ].
-
-	"little hack to move assignments to the lowest part of the ast"
-	aSendNode parent replaceChild: aSendNode with: callee parseTree.
-	(sLNodeAnnotatorVisitor removeAssigningParentFrom: aSendNode)
-		ifTrue: [
-			callee parseTree parent
-				replaceChild: callee parseTree
-				with: aSendNode.
-			callee parseTree parent: callee.
-			assignDirectReturnAndExitVarBlock value:
-				(self setDirectReturnAndExitVar: aSendNode) ].
+	self
+		moveDownReturnsAndAssignmentsFor: aSendNode
+		including: callee
+		resetInfoBlock: assignDirectReturnAndExitVarBlock.
 
 
 	(inlineStmts := OrderedCollection new:
@@ -440,6 +423,12 @@ SLInliner >> inlineSend: aSendNode [
 	inlineStmts isComment ifTrue: [ "Nuke empty methods; e.g. override of flushAtCache"
 		inlineStmts statements: OrderedCollection new ].
 	^ inlineStmts
+]
+
+{ #category : 'transformation' }
+SLInliner >> invert: aSendNode replacement: aTMethod [
+
+	aSendNode parent replaceChild: aSendNode with: aTMethod parseTree
 ]
 
 { #category : 'inlining-decision' }
@@ -560,6 +549,27 @@ SLInliner >> isSubstitutableNode: aNode intoMethod: targetMeth [
 ]
 
 { #category : 'transformation' }
+SLInliner >> moveDownReturnsAndAssignmentsFor: aSendNode including: aTMethodReplacement resetInfoBlock: aBlock [
+
+	| needToResetData |
+	"move returns to the lowest part of the ast including in aTMethodReplacement"
+	self invert: aSendNode replacement: aTMethodReplacement.
+	needToResetData := sLNodeAnnotatorVisitor removeReturningParentFrom:
+		                   aSendNode.
+	self revert: aSendNode replacement: aTMethodReplacement.
+	needToResetData ifTrue: [
+		aBlock value: (self setDirectReturnAndExitVar: aSendNode) ].
+
+	"move assignments to the lowest part of the ast including in callee"
+	self invert: aSendNode replacement: aTMethodReplacement.
+	needToResetData := sLNodeAnnotatorVisitor removeAssigningParentFrom:
+		                   aSendNode.
+	self revert: aSendNode replacement: aTMethodReplacement.
+	needToResetData ifFalse: [ ^ self ].
+	aBlock value: (self setDirectReturnAndExitVar: aSendNode)
+]
+
+{ #category : 'transformation' }
 SLInliner >> propagateArgumentTypeArguments: calleeParameters in: callee from: aSendNode [
 	"Propagate any unusual argument types to untyped argument variables"
 
@@ -603,6 +613,15 @@ SLInliner >> replaceNodeIn: aSendNode with: data [
 	currentMethod
 		addVarsDeclarationsAndLabelsOf: method
 		except: method args
+]
+
+{ #category : 'transformation' }
+SLInliner >> revert: aSendNode replacement: aTMethod [
+
+	aTMethod parseTree parent
+		replaceChild: aTMethod parseTree
+		with: aSendNode.
+	aTMethod parseTree parent: aTMethod
 ]
 
 { #category : 'inlining-support' }
