@@ -122,3 +122,14 @@ SLNodeAnnotatorVisitorTestClass >> methodWithSwitchAsStatement [
 			([ 4 ] -> [ 6 ]).
 			([ 5 ] -> [ 7 ]) }
 ]
+
+{ #category : 'switch' }
+SLNodeAnnotatorVisitorTestClass >> methodWithSwitchWithOtherwiseAsAssignmentExpression [
+
+	| x |
+	x := 3
+		     caseOf: {
+				     ([ 4 ] -> [ 6 ]).
+				     ([ 5 ] -> [ 7 ]) }
+		     otherwise: [ 8 ]
+]
