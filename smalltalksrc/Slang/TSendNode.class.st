@@ -192,8 +192,7 @@ TSendNode >> asTransformedConstantPerform [
 		               self class new
 			               setSelector: arguments first value
 			               receiver: receiver
-			               arguments: arguments allButFirst
-			               isBuiltInOp: isBuiltinOperator ].
+			               arguments: arguments allButFirst ].
 	replacement ifNotNil: [ :node | node parent: parent ].
 	^ replacement
 ]
@@ -515,12 +514,6 @@ TSendNode >> isSelfReference: varNode in: aCodeGen [
 TSendNode >> isSend [
 
 	^true
-]
-
-{ #category : 'testing' }
-TSendNode >> isStructAccessorWithNoSideEffectIn: aCodeGenerator [
-
-	^ self numArgs = 0 and: [ aCodeGenerator isStructSend: self ]
 ]
 
 { #category : 'C code generation' }

@@ -2,8 +2,7 @@ Class {
 	#name : 'SLInliner',
 	#superclass : 'SLAbstractInlineStrategy',
 	#instVars : [
-		'currentMethod',
-		'sLNodeAnnotatorVisitor'
+		'currentMethod'
 	],
 	#category : 'Slang',
 	#package : 'Slang'
@@ -43,7 +42,7 @@ SLInliner >> checkForFlagIn: aTMethod [
 	(aTMethod parseTree sizeWithoutComments > 1 and: [
 		 aTMethod parseTree firstNonCommentStatement isSend and: [
 			 aTMethod parseTree firstNonCommentStatement selector == #flag: ] ])
-		ifTrue: [ aTMethod parseTree removeFirst ]
+		ifTrue: [ aTMethod parseTree removeFirstNonCommentStatement ]
 ]
 
 { #category : 'accessing' }
@@ -96,13 +95,6 @@ SLInliner >> ensureConditionalAssignmentsAreTransformedInCurrentMethod [
 		true ] ] whileTrue
 ]
 
-{ #category : 'initialization' }
-SLInliner >> initialize [
-
-	super initialize.
-	sLNodeAnnotatorVisitor := SLNodeAnnotatorVisitor new
-]
-
 { #category : 'inlining-support' }
 SLInliner >> inlineBuiltin: aSendNode [
 
@@ -124,17 +116,28 @@ SLInliner >> inlineBuiltin: aSendNode [
 ]
 
 { #category : 'inlining-support' }
-SLInliner >> inlineCodeOrNilForStatement: aNode [
+SLInliner >> inlineCodeOrNilForStatement: aNode returningNodes: returningNodes [
 	"If the given statement node can be inlined, answer the statements that replace it. Otherwise, answer nil."
 
 	(aNode isReturn and: [ self isInlineableSend: aNode expression ])
-		ifTrue: [ ^ self inlineSend: aNode expression ].
+		ifTrue: [
+			^ (self
+				   inlineSend: aNode expression
+				   directReturn: true
+				   exitVar: nil) asReturnNode ].
 
 	(aNode isAssignment and: [ self isInlineableSend: aNode expression ])
-		ifTrue: [ ^ self inlineSend: aNode expression ].
+		ifTrue: [
+			^ self
+				  inlineSend: aNode expression
+				  directReturn: false
+				  exitVar: aNode variable name ].
 
 	(aNode isSend and: [ self isInlineableSend: aNode ]) ifTrue: [
-		^ self inlineSend: aNode ].
+		^ self
+			  inlineSend: aNode
+			  directReturn: (returningNodes includes: aNode)
+			  exitVar: nil ].
 	^ nil
 ]
 
@@ -333,7 +336,7 @@ SLInliner >> inlineReturningConditional: aSendNode [
 ]
 
 { #category : 'inlining-support' }
-SLInliner >> inlineSend: aSendNode [
+SLInliner >> inlineSend: aSendNode directReturn: directReturn exitVar: exitVar [
 	"Answer a collection of statements to replace the given send.  directReturn indicates
 	 that the send is the expression in a return statement, so returns can be left in the
 	 body of the inlined method. If exitVar is nil, the value returned by the send is not
@@ -343,13 +346,10 @@ SLInliner >> inlineSend: aSendNode [
 	 otherwise the assignee variable type must match the return type of the inlinee.  Return
 	 types are not propagated."
 
-	| sel callee exitLabel inlineStmts label omittedParameters calleeParameters exitVar directReturn assignDirectReturnAndExitVarBlock |
+	| sel callee exitLabel inlineStmts label omittedParameters calleeParameters |
 	sel := aSendNode selector.
 	callee := codeGenerator methodNamed: sel.
 
-	assignDirectReturnAndExitVarBlock := [ :res |
-	                                     directReturn := res first.
-	                                     exitVar := res second ].
 
 	"convenient for debugging..."
 	codeGenerator maybeBreakForInlineOf: aSendNode in: self.
@@ -392,12 +392,6 @@ SLInliner >> inlineSend: aSendNode [
 				ifTrue: [ currentMethod labels add: exitLabel ]
 				ifFalse: [ "is label used?" exitLabel := nil ] ] ].
 
-	self
-		moveDownReturnsAndAssignmentsFor: aSendNode
-		including: callee
-		resetInfoBlock: assignDirectReturnAndExitVarBlock.
-
-
 	(inlineStmts := OrderedCollection new:
 			                callee statements size + callee args size + 2)
 		add: (label := TLabeledCommentNode new setComment: 'begin ' , sel);
@@ -416,9 +410,13 @@ SLInliner >> inlineSend: aSendNode [
 	inlineStmts := TStatementListNode statements: inlineStmts.
 
 	directReturn ifTrue: [
-		callee endsWithReturn ifTrue: [
-			callee parseTree parent: aSendNode parent.
-			exitVar ifNotNil: [ inlineStmts := inlineStmts copyWithoutReturn ] ] ].
+		callee endsWithReturn
+			ifTrue: [
+				callee parseTree parent: aSendNode parent.
+				exitVar ifNotNil: [ inlineStmts := inlineStmts copyWithoutReturn ] ]
+			ifFalse: [
+				inlineStmts addAllLastKeepingEndComments:
+					{ (TConstantNode new setValue: nil) } ] ].
 
 	inlineStmts isComment ifTrue: [ "Nuke empty methods; e.g. override of flushAtCache"
 		inlineStmts statements: OrderedCollection new ].
@@ -526,14 +524,14 @@ SLInliner >> isSubstitutableNode: aNode intoMethod: targetMeth [
 	aNode isStatementList ifTrue: [ ^ true ].
 
 	(aNode isSend and: [
-		 aNode isStructAccessorWithNoSideEffectIn: codeGenerator ]) ifTrue: [
+		 codeGenerator isStructAccessorWithNoSideEffect: aNode ]) ifTrue: [
 		^ true ].
 
 	"scan expression tree; must contain only constants, builtin ops, and inlineable vars"
 	aNode nodesDo: [ :node |
 		node isSend ifTrue: [
 			((codeGenerator isBuiltinSelector: node selector) or: [
-				 node isStructAccessorWithNoSideEffectIn: codeGenerator ])
+				 codeGenerator isStructAccessorWithNoSideEffect: node ])
 				ifFalse: [ ^ false ] ].
 		node isVariable ifTrue: [
 			var := node name.
@@ -754,7 +752,6 @@ SLInliner >> tryToInlineMethodExpressionsInCurrentMethod [
 
 	| sendsToInline |
 	sendsToInline := Dictionary new: 100.
-	sLNodeAnnotatorVisitor visit: currentMethod parseTree.
 
 	codeGenerator pushScope: currentMethod while: [
 		currentMethod parseTree
@@ -769,7 +766,7 @@ SLInliner >> tryToInlineMethodExpressionsInCurrentMethod [
 
 	sendsToInline isEmpty ifTrue: [ ^ false ].
 	currentMethod replaceNodesIn: sendsToInline.
-	sLNodeAnnotatorVisitor cleanInfo.
+
 	^ true
 ]
 
@@ -778,22 +775,43 @@ SLInliner >> tryToInlineMethodStatementsListsInCurrentMethod [
 	"Expand any (complete) inline methods sent by this method as top-level statements.
 	 Answer if anything was inlined."
 
-	| stmtLists didSomething newStatements |
+	| stmtLists didSomething newStatements returningNodes |
 	didSomething := false.
+	returningNodes := Set new.
+	currentMethod parseTree nodesDo: [ :node |
+		node isReturn ifTrue: [
+			returningNodes add: node expression.
+			node expression isConditionalSend ifTrue: [
+				returningNodes addAll:
+					(node expression arguments collect: [ :stmtList |
+						 stmtList statements last ]) ] ] ].
 	stmtLists := self statementsListsForInliningInCurrentMethod.
 
 	stmtLists do: [ :stmtList |
 		newStatements := TStatementListNode statements:
-			                 (OrderedCollection new: stmtList statements size).
+			                 OrderedCollection new.
 		stmtList statements do: [ :stmt |
-			(self inlineCodeOrNilForStatement: stmt)
+			(self
+				 inlineCodeOrNilForStatement: stmt
+				 returningNodes: returningNodes)
 				ifNil: [ newStatements addAllLast: { stmt } ]
 				ifNotNil: [ :inlinedStmts |
 					didSomething := true.
 					newStatements addAllLast: inlinedStmts statements ] ].
 		stmtList statements: newStatements statements ].
 
-	sLNodeAnnotatorVisitor cleanInfo.
+	"This is a hack; forgive me. The inlining above tends to keep return statements in statement lists.
+	 In the case of returning ifs we don't want the returns in case the returning if is generated as an expression."
+	returningNodes do: [ :returningNode |
+		(returningNode isConditionalSend and: [
+			 returningNode arguments anySatisfy: [ :alternativeNode |
+				 alternativeNode endsWithReturn ] ]) ifTrue: [
+			returningNode arguments withIndexDo: [ :alternativeNode :index |
+				alternativeNode endsWithReturn ifTrue: [
+					returningNode arguments
+						at: index
+						put: alternativeNode copyWithoutReturn ] ] ] ].
+
 	^ didSomething
 ]
 

@@ -95,6 +95,30 @@ TStatementListNode >> addAllLast: aListOfStatement [
 			 yourself)
 ]
 
+{ #category : 'adding' }
+TStatementListNode >> addAllLastKeepingEndComments: aListOfStatement [
+
+	(statements isNotEmpty and: [ statements last isComment ])
+		ifFalse: [
+			self statements: (statements
+					 addAllLast: aListOfStatement;
+					 yourself) ]
+		ifTrue: [
+			| actualLast actualLastMet allWithoutEndComment endComment |
+			actualLast := self lastNonCommentStatement.
+			allWithoutEndComment := OrderedCollection new.
+			endComment := OrderedCollection new.
+			actualLastMet := false.
+			statements do: [ :e |
+				actualLastMet
+					ifFalse: [
+						allWithoutEndComment add: e.
+						actualLastMet := e == actualLast ]
+					ifTrue: [ endComment add: e ] ].
+			self statements:
+				allWithoutEndComment , aListOfStatement , endComment ]
+]
+
 { #category : 'declarations' }
 TStatementListNode >> addDeclarations: aCollection [ 
 	
@@ -659,7 +683,7 @@ TStatementListNode >> removeAssertions [
 ]
 
 { #category : 'transformations' }
-TStatementListNode >> removeFirst [
+TStatementListNode >> removeFirstNonCommentStatement [
 
 	| first |
 	first := self firstNonCommentStatement.
