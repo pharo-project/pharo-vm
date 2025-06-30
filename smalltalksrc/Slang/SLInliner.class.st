@@ -363,9 +363,6 @@ SLInliner >> inlineSend: aSendNode directReturn: directReturn exitVar: exitVar [
 
 	self checkForFlagIn: callee.
 
-	assignDirectReturnAndExitVarBlock value:
-		(self setDirectReturnAndExitVar: aSendNode).
-
 	self
 		propagateReturnTypeDirectReturn: directReturn
 		exitVar: exitVar
@@ -388,7 +385,7 @@ SLInliner >> inlineSend: aSendNode directReturn: directReturn exitVar: exitVar [
 		directReturn ifFalse: [
 			exitLabel := currentMethod unusedLabelForInliningInto:
 				             currentMethod.
-			(callee exitVar: nil label: exitLabel)
+			(callee exitVar: exitVar label: exitLabel)
 				ifTrue: [ currentMethod labels add: exitLabel ]
 				ifFalse: [ "is label used?" exitLabel := nil ] ] ].
 
@@ -547,27 +544,6 @@ SLInliner >> isSubstitutableNode: aNode intoMethod: targetMeth [
 ]
 
 { #category : 'transformation' }
-SLInliner >> moveDownReturnsAndAssignmentsFor: aSendNode including: aTMethodReplacement resetInfoBlock: aBlock [
-
-	| needToResetData |
-	"move returns to the lowest part of the ast including in aTMethodReplacement"
-	self invert: aSendNode replacement: aTMethodReplacement.
-	needToResetData := sLNodeAnnotatorVisitor removeReturningParentFrom:
-		                   aSendNode.
-	self revert: aSendNode replacement: aTMethodReplacement.
-	needToResetData ifTrue: [
-		aBlock value: (self setDirectReturnAndExitVar: aSendNode) ].
-
-	"move assignments to the lowest part of the ast including in callee"
-	self invert: aSendNode replacement: aTMethodReplacement.
-	needToResetData := sLNodeAnnotatorVisitor removeAssigningParentFrom:
-		                   aSendNode.
-	self revert: aSendNode replacement: aTMethodReplacement.
-	needToResetData ifFalse: [ ^ self ].
-	aBlock value: (self setDirectReturnAndExitVar: aSendNode)
-]
-
-{ #category : 'transformation' }
 SLInliner >> propagateArgumentTypeArguments: calleeParameters in: callee from: aSendNode [
 	"Propagate any unusual argument types to untyped argument variables"
 
@@ -611,30 +587,6 @@ SLInliner >> replaceNodeIn: aSendNode with: data [
 	currentMethod
 		addVarsDeclarationsAndLabelsOf: method
 		except: method args
-]
-
-{ #category : 'transformation' }
-SLInliner >> revert: aSendNode replacement: aTMethod [
-
-	aTMethod parseTree parent
-		replaceChild: aTMethod parseTree
-		with: aSendNode.
-	aTMethod parseTree parent: aTMethod
-]
-
-{ #category : 'inlining-support' }
-SLInliner >> setDirectReturnAndExitVar: aSendNode [
-
-	| directReturn exitVar |
-	sLNodeAnnotatorVisitor visit: currentMethod parseTree.
-	directReturn := sLNodeAnnotatorVisitor isEffectiveReturnValue:
-		                aSendNode.
-	exitVar := (sLNodeAnnotatorVisitor assigningParentFor: aSendNode)
-		           ifNotNil: [ :assignment | assignment variable name ].
-	^ OrderedCollection new
-		  add: directReturn;
-		  add: exitVar;
-		  yourself
 ]
 
 { #category : 'inlining-preparation' }
