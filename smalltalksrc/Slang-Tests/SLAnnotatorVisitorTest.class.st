@@ -714,7 +714,8 @@ SLAnnotatorVisitorTest >> testMethodWithStatementList [
 		((nonEffectiveExpressionOrStatementCollection select: [ :node |
 			  node ~= blockNodeInReturn and: [ node ~= constant10 ] ])
 			 allSatisfy: [ :node |
-			 (sLNodeAnnotatorVisitor isInReturn: node) not ]).
+				 (sLNodeAnnotatorVisitor isInReturn: node) not and: [
+					 (sLNodeAnnotatorVisitor returningParentFor: node) isNil ] ]).
 
 	nonEffectiveExpressionOrStatementCollection do: [ :node |
 		self assert:
