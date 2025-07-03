@@ -102,6 +102,17 @@ macro(add_third_party_dependency NAME)
     add_third_party_dependency_with_baseurl(${NAME} ${BASE_URL})
 endmacro()
 
+macro(add_third_party_dependency_sdl NAME)
+    if(SIZEOF_VOID_P EQUAL 8)
+        set(ARCH 64)
+    else()
+        set(ARCH 32)
+    endif()
+    get_platform_name(PLATNAME)
+    set(BASE_URL "https://github.com/libsdl-org/SDL/releases/download/release-2.32.8/")
+    add_third_party_dependency_with_baseurl(${NAME} ${BASE_URL})
+endmacro()
+
 
 #
 # Compatibility with old CMAKE versions to remove, as fast as posible
