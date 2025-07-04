@@ -466,7 +466,8 @@ SLInliner >> isInlineableConditional: aSendNode [
 
 { #category : 'inlining-decision' }
 SLInliner >> isInlineableFunctionCall: aNode [
-	"Answer if the given send node is a call to a 'functional' method--a method whose body is a single return statement of some expression and whose actual parameters can all be directly substituted."
+	"Answer if the given send node is a call to a 'functional' method--a method whose body is a single return statement of some expression and whose actual parameters can all be directly substituted.
+	if a method is marked as always inlined and complete, the method also returns true"
 
 	codeGenerator maybeBreakForTestToInline: aNode in: self.
 	aNode isSend ifFalse: [ ^ false ].
@@ -495,7 +496,7 @@ SLInliner >> isInlineableSend: aNode [
 	aNode isSend ifFalse: [ ^ false ].
 	m := codeGenerator methodNamed: aNode selector. "nil if builtin or external function"
 	^ m isNotNil and: [
-		  m ~~ self and: [
+		  m ~~ currentMethod and: [
 			  m mayBeInlined and: [
 				  (m isComplete and: [ codeGenerator mayInline: m selector ]) or: [
 					  m checkForRequiredInlinability ] ] ] ]
