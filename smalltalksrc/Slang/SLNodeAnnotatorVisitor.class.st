@@ -4,6 +4,7 @@ Class {
 	#instVars : [
 		'info',
 		'inExpressionStack',
+		'inSendStack',
 		'searchForAssignValueStack',
 		'searchForReturnValueStack',
 		'searchForExpressionValueStack',
@@ -14,7 +15,13 @@ Class {
 	#package : 'Slang'
 }
 
-{ #category : 'helpers-annotate' }
+{ #category : 'helpers-stack-operation' }
+SLNodeAnnotatorVisitor >> activateCurrentSouldBePartiallyIgnored [
+	
+	currentShouldBePartiallyIgnored := true
+]
+
+{ #category : 'annotate' }
 SLNodeAnnotatorVisitor >> addAssignmentInfoFor: aNode [
 	"when an assignment has been met, the effective exitVar is not all of the nodes in it, often it is just a single node (or more if conditionals) the nodes have a link to theirs assignment
 	true or nil on the stack indicate if the node is the effective exitVar"
@@ -25,7 +32,7 @@ SLNodeAnnotatorVisitor >> addAssignmentInfoFor: aNode [
 		constantString: self assignmentString
 ]
 
-{ #category : 'helpers-annotate' }
+{ #category : 'annotate' }
 SLNodeAnnotatorVisitor >> addReturnInfoFor: aNode [
 	"mark the given node has being inside a return expression, it doesn't mean that the node itself is the exit value
 	true or false on the stack only indicate if the node is the effective value of the returning expression or not"
@@ -36,45 +43,63 @@ SLNodeAnnotatorVisitor >> addReturnInfoFor: aNode [
 		constantString: self returnString
 ]
 
-{ #category : 'helpers-annotate' }
+{ #category : 'annotate' }
 SLNodeAnnotatorVisitor >> addToEffectiveExpressionOrNot: aNode [
 
 	| entry isAnEffectiveExpression |
 	entry := info at: aNode.
 	isAnEffectiveExpression := false.
 
-	((self topOfBooleanStack: currentShouldBePartiallyIgnored) not and: [
-		 (self topOfBooleanStack: searchForExpressionValueStack) or: [
+	((currentShouldBePartiallyIgnored) not and: [
+		 (self topOfStack: searchForExpressionValueStack) or: [
 			 self isEffectiveExpression: aNode ] ]) ifTrue: [
 		isAnEffectiveExpression := true ].
 
 	entry at: self expressionString put: isAnEffectiveExpression
 ]
 
-{ #category : 'helpers-annotate' }
+{ #category : 'annotate' }
 SLNodeAnnotatorVisitor >> addToInExpression: aNode [
 
-	inExpressionStack isEmpty ifTrue: [ ^ self ].
-	(info at: aNode) at: self inExpressionString put: true
+	self
+		addToInStack: aNode
+		stack: inExpressionStack
+		entry: self inExpressionString
+]
+
+{ #category : 'annotate' }
+SLNodeAnnotatorVisitor >> addToInSend: aNode [
+
+	self addToInStack: aNode stack: inSendStack entry: self inSendString
 ]
 
 { #category : 'helpers-annotate' }
+SLNodeAnnotatorVisitor >> addToInStack: aNode stack: aStack entry: aString [
+
+	aStack isEmpty ifTrue: [ ^ self ].
+	(info at: aNode) at: aString put: true
+]
+
+{ #category : 'annotate' }
 SLNodeAnnotatorVisitor >> annotateNodeState: aNode [
 
+	| top |
 	self ensureEntryInInfoDictFor: aNode.
 
 	self addToInExpression: aNode.
+	self addToInSend: aNode.
 
 	self addReturnInfoFor: aNode.
 	self addAssignmentInfoFor: aNode.
 	self addToEffectiveExpressionOrNot: aNode.
 
-	(self topOfBooleanStack: currentShouldBePartiallyIgnored) ifTrue: [
-		currentShouldBePartiallyIgnored pop.
+	currentShouldBePartiallyIgnored ifTrue: [
+		self deActivateCurrentSouldBePartiallyIgnored.
 		^ self ].
-	(self topOfBooleanStack: searchForStmtListValue) ifFalse: [ ^ self ].
-	searchForStmtListValue pop.
-	searchForStmtListValue push: false
+	(self topOfStack: searchForStmtListValue) value ifFalse: [
+		^ self ].
+	top := searchForStmtListValue pop.
+	searchForStmtListValue push: false -> top value
 ]
 
 { #category : 'accessing' }
@@ -89,7 +114,7 @@ SLNodeAnnotatorVisitor >> assignmentString [
 	^ #assignment
 ]
 
-{ #category : 'helpers' }
+{ #category : 'helpers-accessing-info' }
 SLNodeAnnotatorVisitor >> associationKeyInfoFor: aNode entry: aString [
 
 	^ (info at: aNode)
@@ -98,7 +123,7 @@ SLNodeAnnotatorVisitor >> associationKeyInfoFor: aNode entry: aString [
 		  ifAbsent: [ false ]
 ]
 
-{ #category : 'helpers' }
+{ #category : 'helpers-accessing-info' }
 SLNodeAnnotatorVisitor >> associationValueInfoFor: aNode entry: aString [
 
 	^ (info at: aNode)
@@ -107,7 +132,7 @@ SLNodeAnnotatorVisitor >> associationValueInfoFor: aNode entry: aString [
 		  ifAbsent: [ nil ]
 ]
 
-{ #category : 'helpers' }
+{ #category : 'helpers-accessing-info' }
 SLNodeAnnotatorVisitor >> booleanInfoFor: aNode entry: aString [
 
 	^ (info at: aNode)
@@ -117,9 +142,22 @@ SLNodeAnnotatorVisitor >> booleanInfoFor: aNode entry: aString [
 ]
 
 { #category : 'cleanup' }
+SLNodeAnnotatorVisitor >> cleanBranchInfoFrom: aNode [
+
+	aNode children do: [ :child |
+		child nodesDo: [ :node | info at: node put: IdentityDictionary new ] ]
+]
+
+{ #category : 'cleanup' }
 SLNodeAnnotatorVisitor >> cleanInfo [
 
 	self initialize
+]
+
+{ #category : 'helpers-stack-operation' }
+SLNodeAnnotatorVisitor >> deActivateCurrentSouldBePartiallyIgnored [
+
+	currentShouldBePartiallyIgnored := false
 ]
 
 { #category : 'helpers-annotate' }
@@ -132,6 +170,12 @@ SLNodeAnnotatorVisitor >> ensureEntryInInfoDictFor: aNode [
 SLNodeAnnotatorVisitor >> expressionString [
 
 	^ #expression
+]
+
+{ #category : 'helpers-string-constant' }
+SLNodeAnnotatorVisitor >> fromStatementListString [
+
+	^ #fromStatementList
 ]
 
 { #category : 'helpers-visiting' }
@@ -155,7 +199,7 @@ SLNodeAnnotatorVisitor >> giveStacksInfoForMultipleBranches: aCollectionOfNode [
 SLNodeAnnotatorVisitor >> handleConditionalSendVisit: aSendNode [
 	"conditionals are control-flow node and thus treated differently from the other sends"
 
-	currentShouldBePartiallyIgnored push: true.
+	self activateCurrentSouldBePartiallyIgnored.
 	self annotateNodeState: aSendNode.
 
 	self pushInExpressionStack.
@@ -176,6 +220,12 @@ SLNodeAnnotatorVisitor >> inExpressionString [
 	^ #inExpression
 ]
 
+{ #category : 'helpers-string-constant' }
+SLNodeAnnotatorVisitor >> inSendString [
+
+	^ #inSend
+]
+
 { #category : 'initialization' }
 SLNodeAnnotatorVisitor >> initialize [
 
@@ -183,21 +233,25 @@ SLNodeAnnotatorVisitor >> initialize [
 
 	"empty, true or false on top depending of if the parent needs an expression as a dependance"
 	searchForExpressionValueStack := Stack new.
-	"either empty or have somethin on top depending if the children are in the expression of one of their parents"
+	"either empty or have something on top depending if the children are in the expression of one of their parents"
 	inExpressionStack := Stack new.
 
-	"empty or true/false -> returningParent on top depending of if the parent has found its return value or not"
+	"similar to inExpression but specific to send"
+	inSendStack := Stack new.
+
+	"empty or true/false -> returningParent on top depending on if the parent has found its return value or not"
 	searchForReturnValueStack := Stack new.
 
-	"empty or true/false -> assigningParent on top depending of if the parent has found its assigning value or not"
+	"empty or true/false -> assigningParent on top depending on if the parent has found its assigning value or not"
 	searchForAssignValueStack := Stack new.
 
-	"StmtList throught jump can end up having multiple value point, this stack is re updated when crossing goToNode and is a boolean stack"
+	"StmtList through jump can end up having multiple value point, this stack is re updated when crossing goToNode.
+	it has true/false -> true/false on top depending on if we are currently searching for one of the values the second boolean indicate if the value of the stmtList is use in the first place so we do not re update the stack if not necessary"
 	searchForStmtListValue := Stack new.
 
 	"when searching for the deepest node that give the expression value, some nodes can be pass through like conditionals and stmtLists or statement only node (goTos, comments or labels)
 	inactivate the search... stack"
-	currentShouldBePartiallyIgnored := Stack new.
+	currentShouldBePartiallyIgnored := false.
 
 	"collect all the informations gathered for a given node"
 	info := IdentityDictionary new
@@ -241,7 +295,13 @@ SLNodeAnnotatorVisitor >> isInReturn: aNode [
 	^ self presenceInfoFor: aNode entry: self returnString
 ]
 
-{ #category : 'helpers' }
+{ #category : 'testing' }
+SLNodeAnnotatorVisitor >> isInSend: aNode [
+
+	^ self presenceInfoFor: aNode entry: self inSendString
+]
+
+{ #category : 'helpers-accessing-info' }
 SLNodeAnnotatorVisitor >> presenceInfoFor: aNode entry: aString [
 
 	^ (info at: aNode)
@@ -259,10 +319,10 @@ SLNodeAnnotatorVisitor >> processValueSourceFor: aNode from: aStack constantStri
 	assoc := aStack top copy.
 	entry := info at: aNode.
 
-	(self topOfBooleanStack: searchForStmtListValue) ifTrue: [
+	(self topOfStack: searchForStmtListValue) key ifTrue: [
 		assoc := true -> assoc value ].
 
-	(self topOfBooleanStack: currentShouldBePartiallyIgnored)
+	currentShouldBePartiallyIgnored
 		ifTrue: [ assoc := false -> assoc value ]
 		ifFalse: [
 			aStack pop.
@@ -271,11 +331,18 @@ SLNodeAnnotatorVisitor >> processValueSourceFor: aNode from: aStack constantStri
 	entry at: aString put: assoc
 ]
 
-{ #category : 'helpers' }
+{ #category : 'helpers-stack-operation' }
 SLNodeAnnotatorVisitor >> pushInExpressionStack [
 	"value doesn't matter for this stack "
 
 	inExpressionStack push: true
+]
+
+{ #category : 'helpers-stack-operation' }
+SLNodeAnnotatorVisitor >> pushInSendStack [
+	"value doesn't matter for this stack "
+
+	inSendStack push: true
 ]
 
 { #category : 'transformation' }
@@ -288,8 +355,7 @@ SLNodeAnnotatorVisitor >> removeAssigningParentFrom: aNode [
 	assignment ifNil: [ ^ false ].
 
 	"necessary because in inlining we switched the send node with its replacement"
-	self cleanInfo.
-	self visit: assignment tMethod parseTree.
+	self visitFromBranchStartingAt: aNode.
 	self transformToAssignmentFrom: assignment assignment: assignment.
 
 	assignment parent
@@ -301,25 +367,58 @@ SLNodeAnnotatorVisitor >> removeAssigningParentFrom: aNode [
 ]
 
 { #category : 'transformation' }
-SLNodeAnnotatorVisitor >> removeReturningParentFrom: aSendNode [
+SLNodeAnnotatorVisitor >> removeReturningParentFrom: aNode [
 	"use in inlining for redondant return : return {return exp} -> {return exp}, clean all the info as a side effect, it needs to be recalculated
 	answer if anything was done"
 
 	| returningParent |
-	(self isEffectiveReturnValue: aSendNode) ifFalse: [ ^ false ].
+	returningParent := self returningParentFor: aNode.
+	returningParent ifNil: [ ^ false ].
 
-	returningParent := self returningParentFor: aSendNode.
 	"necessary because in inlining we switched the send node with its replacement"
-	self cleanInfo.
-	self visit: returningParent tMethod parseTree.
+	self visitFromBranchStartingAt: aNode.
 	self transformDirectReturnFrom: returningParent.
 
 	returningParent parent
 		replaceChild: returningParent
 		with: returningParent expression.
 
-	self cleanInfo.
+	self visitFromBranchStartingAt: returningParent parent.
 	^ true
+]
+
+{ #category : 'helpers-stack-restoration' }
+SLNodeAnnotatorVisitor >> restoreInSomeThingStacksFrom: aNode [
+
+	(self presenceInfoFor: aNode entry: self inExpressionString) ifTrue: [
+		self pushInExpressionStack ].
+
+	(self presenceInfoFor: aNode entry: self inSendString) ifTrue: [
+		self pushInSendStack ]
+]
+
+{ #category : 'helpers-stack-restoration' }
+SLNodeAnnotatorVisitor >> restoreSearchForSimpleInfoStacksFrom: aNode [
+
+	(self isInReturn: aNode) ifTrue: [
+		searchForReturnValueStack push:
+			(self isEffectiveReturnValue: aNode)
+			-> (self returningParentFor: aNode) ].
+
+	(self isInAssignment: aNode) ifTrue: [
+		searchForReturnValueStack push:
+			(self isEffectiveAssignmentValue: aNode)
+			-> (self assigningParentFor: aNode) ]
+]
+
+{ #category : 'visiting-main-API-helpers' }
+SLNodeAnnotatorVisitor >> restoreStackStateFrom: aNode [
+	"to just revisit a branch and not the whole AST, we need to restore the different stacks using the info dictionary"
+
+	self restoreInSomeThingStacksFrom: aNode.
+	self restoreSearchForSimpleInfoStacksFrom: aNode.
+	self searchSomeThingStacksCollection.
+	1 halt
 ]
 
 { #category : 'helpers-string-constant' }
@@ -334,6 +433,17 @@ SLNodeAnnotatorVisitor >> returningParentFor: aNode [
 	^ self associationValueInfoFor: aNode entry: self returnString
 ]
 
+{ #category : 'helpers-stack-restoration' }
+SLNodeAnnotatorVisitor >> searchSomeThingStacksCollection [
+
+	| stackCollection |
+	stackCollection := OrderedCollection new.
+	stackCollection
+		add: searchForAssignValueStack -> self assignmentString;
+		add: searchForReturnValueStack -> self returnString.
+	^ stackCollection
+]
+
 { #category : 'accessing' }
 SLNodeAnnotatorVisitor >> stacksForSpecificValueHolder [
 
@@ -342,8 +452,8 @@ SLNodeAnnotatorVisitor >> stacksForSpecificValueHolder [
 		  searchForReturnValueStack }
 ]
 
-{ #category : 'helpers' }
-SLNodeAnnotatorVisitor >> topOfBooleanStack: aStack [
+{ #category : 'helpers-stack-operation' }
+SLNodeAnnotatorVisitor >> topOfStack: aStack [
 	"return the top value of a boolean stack"
 
 	^ aStack isNotEmpty and: [ aStack top ]
@@ -381,7 +491,7 @@ SLNodeAnnotatorVisitor >> transformToAssignmentFrom: parentNode assignment: assi
 			self transformToAssignmentFrom: child assignment: assignment ] ]
 ]
 
-{ #category : 'visiting' }
+{ #category : 'visiting-main-API' }
 SLNodeAnnotatorVisitor >> visit: aNode [
 
 	aNode accept: self.
@@ -422,7 +532,7 @@ SLNodeAnnotatorVisitor >> visitBraceCaseNode: aTBraceCaseNode [
 { #category : 'visiting' }
 SLNodeAnnotatorVisitor >> visitCaseStatementNode: aCaseStmtNode [
 
-	currentShouldBePartiallyIgnored push: true.
+	self activateCurrentSouldBePartiallyIgnored.
 	self annotateNodeState: aCaseStmtNode.
 
 	searchForExpressionValueStack push: true.
@@ -441,13 +551,21 @@ SLNodeAnnotatorVisitor >> visitConstantNode: aConstantNode [
 	self annotateNodeState: aConstantNode
 ]
 
+{ #category : 'visiting-main-API' }
+SLNodeAnnotatorVisitor >> visitFromBranchStartingAt: aNode [
+
+	self cleanBranchInfoFrom: aNode.
+	self restoreStackStateFrom: aNode.
+	self visit: aNode
+]
+
 { #category : 'visiting' }
 SLNodeAnnotatorVisitor >> visitGoToNode: aTGotoNode [
 
-	currentShouldBePartiallyIgnored push: true.
+	self activateCurrentSouldBePartiallyIgnored.
 	self annotateNodeState: aTGotoNode.
-	
-	
+
+
 	"goTo only comes from inlining to keep the execution flow correct where a return was.
 	since inlining goes through multiple phases, static analysis may become flawed, for example :
 		'a := [... methodWithReturn … b]' gives 'a = [... c . goTo l ... l ... b]' is equivalent (and should be transform to) '[ ... c . goTo l ... l ... a := b]'
@@ -456,8 +574,8 @@ SLNodeAnnotatorVisitor >> visitGoToNode: aTGotoNode [
 	"the current implementation might be subject to bugs, the tests regardings goTo are all working properly but the AST should be invalidate AFTER an inlining phases and not during which is something we do
 	so the last line should be moved"
 	aTGotoNode haveBeenMetInInlining ifTrue: [ ^ self ].
-	searchForStmtListValue pop.
-	searchForStmtListValue push: true.
+	searchForStmtListValue top value ifTrue: [
+		searchForStmtListValue push: true -> true ].
 	aTGotoNode metInInlining
 ]
 
@@ -472,7 +590,7 @@ SLNodeAnnotatorVisitor >> visitInlineNode: anInlineNode [
 { #category : 'visiting' }
 SLNodeAnnotatorVisitor >> visitLabeledCommentNode: aLabeledCommentNode [
 
-	currentShouldBePartiallyIgnored push: true.
+	self activateCurrentSouldBePartiallyIgnored.
 	self annotateNodeState: aLabeledCommentNode
 ]
 
@@ -504,12 +622,14 @@ SLNodeAnnotatorVisitor >> visitSendNode: aSendNode [
 
 	searchForExpressionValueStack push: true.
 	self pushInExpressionStack.
+	self pushInSendStack.
 
 	aSendNode receiver accept: self.
 	aSendNode arguments do: [ :arg | arg accept: self ].
 
 	searchForExpressionValueStack pop.
-	inExpressionStack pop
+	inExpressionStack pop.
+	inSendStack pop
 ]
 
 { #category : 'visiting' }
@@ -517,17 +637,17 @@ SLNodeAnnotatorVisitor >> visitStatementListNode: aStatementsListNode [
 
 	| stmts needExitValue |
 	stmts := aStatementsListNode statements.
-	needExitValue := self topOfBooleanStack:
+	needExitValue := self topOfStack:
 		                 searchForExpressionValueStack.
 
 	searchForExpressionValueStack push: false.
-	searchForStmtListValue push: needExitValue.
+	searchForStmtListValue push: needExitValue -> needExitValue.
 	stmts reverse do: [ :stmt | stmt accept: self ].
 
 	searchForExpressionValueStack pop.
 	searchForStmtListValue pop.
 
-	currentShouldBePartiallyIgnored push: true.
+	self activateCurrentSouldBePartiallyIgnored.
 	self annotateNodeState: aStatementsListNode
 ]
 
@@ -535,7 +655,7 @@ SLNodeAnnotatorVisitor >> visitStatementListNode: aStatementsListNode [
 SLNodeAnnotatorVisitor >> visitSwitchStatementNode: aSwitchStatementNode [
 
 	| caseStatementsAndOtherWiseOrNilCollection |
-	currentShouldBePartiallyIgnored push: true.
+	self activateCurrentSouldBePartiallyIgnored.
 	self annotateNodeState: aSwitchStatementNode.
 
 	caseStatementsAndOtherWiseOrNilCollection := aSwitchStatementNode

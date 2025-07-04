@@ -209,6 +209,24 @@ TParseNode >> hasExplicitReturn [
 	^false
 ]
 
+{ #category : 'utilities' }
+TParseNode >> hasGoTo [
+
+	self nodesDo: [ :node | node isGoTo ifTrue: [ ^ true ] ].
+	^ false
+]
+
+{ #category : 'utilities' }
+TParseNode >> hasMultipleReturns [
+
+	| returnCount |
+	returnCount := 0.
+	self nodesDo: [ :node |
+		node isReturn ifTrue: [ returnCount := returnCount + 1 ].
+		returnCount > 1 ifTrue: [ ^ true ] ].
+	^ false
+]
+
 { #category : 'testing' }
 TParseNode >> hasSideEffect [
 	"Answer if the parse tree rooted at this node has a side-effect or not.  By default assume it has.  Nodes that don't override."

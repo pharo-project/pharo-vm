@@ -625,6 +625,15 @@ SLAnnotatorVisitorTest >> testMethodWithSendAsStatement [
 	self assert: selfs size equals: 2.
 	selfs do: [ :node | self assert: node name equals: 'self' ].
 
+	selfs := effectiveExpressionValueCollection select: [ :node |
+		         node isVariable ].
+	selfs do: [ :node |
+		self assert: (sLNodeAnnotatorVisitor isInSend: node) ].
+
+	constant1 := (effectiveExpressionValueCollection select: [ :node |
+		              node isConstant ]) first.
+	self assert: (sLNodeAnnotatorVisitor isInSend: constant1).
+
 	effectiveExpressionValueCollection do: [ :node |
 		self assert: ((sLNodeAnnotatorVisitor isInReturn: node) not and: [
 				 (sLNodeAnnotatorVisitor isInAssignment: node) not and: [

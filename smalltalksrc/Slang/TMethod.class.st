@@ -1276,6 +1276,18 @@ TMethod >> functionAttributes: aString [
 ]
 
 { #category : 'testing' }
+TMethod >> hasGoTo [
+
+	^ self parseTree hasGoTo
+]
+
+{ #category : 'testing' }
+TMethod >> hasMultipleReturns [
+
+	^ self parseTree hasMultipleReturns
+]
+
+{ #category : 'testing' }
 TMethod >> hasProperties [
 	^properties notNil and: [properties notEmpty]
 ]
@@ -1698,24 +1710,24 @@ TMethod >> inlineSend: aSendNode directReturn: directReturn exitVar: exitVar in:
 
 { #category : 'inlining' }
 TMethod >> inlineableFunctionCall: aNode in: aCodeGen [
-
-	"Answer if the given send node is a call to a 'functional' method--a method whose body is a single return statement of some expression and whose actual parameters can all be directly substituted."
+	"Answer if the given send node is a call to a 'functional' method--a method whose body is a single return statement of some expression and whose actual parameters can all be directly substituted.
+	if a method is marked as always inlined and complete, the method also returns true"
 
 	aCodeGen maybeBreakForTestToInline: aNode in: self.
 	aNode isSend ifFalse: [ ^ false ].
 	^ (aCodeGen methodNamed: aNode selector)
-		  ifNil: [ 
+		  ifNil: [
 			  aNode asTransformedConstantPerform
 				  ifNil: [ self isInlineableConditional: aNode in: aCodeGen ]
 				  ifNotNil: [ :n | self inlineableFunctionCall: n in: aCodeGen ] ]
-		  ifNotNil: [ :m | 
-			  (m ~~ self and: [ 
-				   ((m isFunctionalIn: aCodeGen) or: [ 
-					    m mustBeInlined and: [ m isComplete ] ]) and: [ 
-					   m mayBeInlined and: [ 
-						   (aCodeGen mayInline: m selector) and: [ 
-							   aNode arguments allSatisfy: [ :a | 
-								   self isSubstitutableNode: a intoMethod: m in: aCodeGen ] ] ] ] ]) 
+		  ifNotNil: [ :m |
+			  (m ~~ self and: [
+				   ((m isFunctionalIn: aCodeGen) or: [
+					    m mustBeInlined and: [ m isComplete ] ]) and: [
+					   m mayBeInlined and: [
+						   (aCodeGen mayInline: m selector) and: [
+							   aNode arguments allSatisfy: [ :a |
+								   self isSubstitutableNode: a intoMethod: m in: aCodeGen ] ] ] ] ])
 				  or: [ m checkForRequiredInlinability ] ]
 ]
 
