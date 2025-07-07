@@ -46,16 +46,38 @@ SLNodeAnnotatorVisitor >> addReturnInfoFor: aNode [
 { #category : 'annotate' }
 SLNodeAnnotatorVisitor >> addToEffectiveExpressionOrNot: aNode [
 
-	| entry isAnEffectiveExpression |
+	| entry isAnEffectiveExpression isEffectivelyIgnored |
 	entry := info at: aNode.
 	isAnEffectiveExpression := false.
+	isEffectivelyIgnored := false.
 
-	((currentShouldBePartiallyIgnored) not and: [
+	(currentShouldBePartiallyIgnored not and: [
 		 (self topOfStack: searchForExpressionValueStack) or: [
 			 self isEffectiveExpression: aNode ] ]) ifTrue: [
 		isAnEffectiveExpression := true ].
 
+	(searchForStmtListValue isNotEmpty and: [
+		 searchForStmtListValue top key ]) ifTrue: [
+		isAnEffectiveExpression := true ].
+
+	"for stacks restoration"
+	(currentShouldBePartiallyIgnored and: [
+		 self topOfStack: searchForExpressionValueStack ]) ifTrue: [
+		isEffectivelyIgnored := true ].
+
+	entry at: self isEffectivelyIgnoredString put: isEffectivelyIgnored.
 	entry at: self expressionString put: isAnEffectiveExpression
+]
+
+{ #category : 'annotate' }
+SLNodeAnnotatorVisitor >> addToFromSearchStmtList: aNode [
+	"for stacks restoration only, indicate if we are in a statement list and if we are indicate if the statement list was a used expression"
+
+	(info at: aNode)
+		at: self fromSearchStmtListString
+		put: (searchForStmtListValue isEmpty
+				 ifTrue: [ nil ]
+				 ifFalse: [ searchForStmtListValue top value ])
 ]
 
 { #category : 'annotate' }
@@ -93,13 +115,26 @@ SLNodeAnnotatorVisitor >> annotateNodeState: aNode [
 	self addAssignmentInfoFor: aNode.
 	self addToEffectiveExpressionOrNot: aNode.
 
+	self addToFromSearchStmtList: aNode.
+
 	currentShouldBePartiallyIgnored ifTrue: [
 		self deActivateCurrentSouldBePartiallyIgnored.
 		^ self ].
-	(self topOfStack: searchForStmtListValue) value ifFalse: [
-		^ self ].
+
+	searchForStmtListValue isEmpty ifTrue: [ ^ self ].
 	top := searchForStmtListValue pop.
 	searchForStmtListValue push: false -> top value
+]
+
+{ #category : 'visiting-main-API-helpers' }
+SLNodeAnnotatorVisitor >> assertStacksAreEmpty [
+
+	self assert: searchForAssignValueStack isEmpty.
+	self assert: searchForReturnValueStack isEmpty.
+	self assert: searchForExpressionValueStack isEmpty.
+	self assert: inExpressionStack isEmpty.
+	self assert: inSendStack isEmpty.
+	self assert: searchForStmtListValue isEmpty
 ]
 
 { #category : 'accessing' }
@@ -154,6 +189,12 @@ SLNodeAnnotatorVisitor >> cleanInfo [
 	self initialize
 ]
 
+{ #category : 'cleanup' }
+SLNodeAnnotatorVisitor >> cleanInfoFrom: aNode [
+
+	info at: aNode put: IdentityDictionary new
+]
+
 { #category : 'helpers-stack-operation' }
 SLNodeAnnotatorVisitor >> deActivateCurrentSouldBePartiallyIgnored [
 
@@ -173,9 +214,10 @@ SLNodeAnnotatorVisitor >> expressionString [
 ]
 
 { #category : 'helpers-string-constant' }
-SLNodeAnnotatorVisitor >> fromStatementListString [
+SLNodeAnnotatorVisitor >> fromSearchStmtListString [
+	"use for restoration only"
 
-	^ #fromStatementList
+	^ #fromSearchStmtList
 ]
 
 { #category : 'helpers-visiting' }
@@ -277,6 +319,19 @@ SLNodeAnnotatorVisitor >> isEffectiveReturnValue: aNode [
 	^ self associationKeyInfoFor: aNode entry: self returnString
 ]
 
+{ #category : 'testing-stack-restoration' }
+SLNodeAnnotatorVisitor >> isEffectivelyIgnored: aNode [
+	"for stack restoration"
+
+	^ self booleanInfoFor: aNode entry: self isEffectivelyIgnoredString
+]
+
+{ #category : 'helpers-string-constant' }
+SLNodeAnnotatorVisitor >> isEffectivelyIgnoredString [
+
+	^ #isEffectivelyIgnored
+]
+
 { #category : 'testing' }
 SLNodeAnnotatorVisitor >> isInAssignment: aNode [
 
@@ -319,7 +374,8 @@ SLNodeAnnotatorVisitor >> processValueSourceFor: aNode from: aStack constantStri
 	assoc := aStack top copy.
 	entry := info at: aNode.
 
-	(self topOfStack: searchForStmtListValue) key ifTrue: [
+	(searchForStmtListValue isNotEmpty and: [
+		 searchForStmtListValue top key ]) ifTrue: [
 		assoc := true -> assoc value ].
 
 	currentShouldBePartiallyIgnored
@@ -353,16 +409,18 @@ SLNodeAnnotatorVisitor >> removeAssigningParentFrom: aNode [
 	| assignment |
 	assignment := self assigningParentFor: aNode.
 	assignment ifNil: [ ^ false ].
+	1 haltIf: [ aNode tMethod selector = #methodAReturnBlockAssignment ].
 
 	"necessary because in inlining we switched the send node with its replacement"
-	self visitFromBranchStartingAt: aNode.
+	self visitFromBranchStartingAt: aNode parent.
 	self transformToAssignmentFrom: assignment assignment: assignment.
 
 	assignment parent
 		replaceChild: assignment
 		with: assignment expression.
+	self cleanInfoFrom: assignment.
 
-	self cleanInfo.
+	self visitFromBranchStartingAt: assignment parent.
 	^ true
 ]
 
@@ -374,15 +432,16 @@ SLNodeAnnotatorVisitor >> removeReturningParentFrom: aNode [
 	| returningParent |
 	returningParent := self returningParentFor: aNode.
 	returningParent ifNil: [ ^ false ].
-
+	1 haltIf: [ aNode tMethod selector = #methodAReturnBlockAssignment ].
 	"necessary because in inlining we switched the send node with its replacement"
-	self visitFromBranchStartingAt: aNode.
+	self visitFromBranchStartingAt: aNode parent.
 	self transformDirectReturnFrom: returningParent.
 
 	returningParent parent
 		replaceChild: returningParent
 		with: returningParent expression.
-
+	self cleanInfoFrom: returningParent.
+	
 	self visitFromBranchStartingAt: returningParent parent.
 	^ true
 ]
@@ -390,35 +449,74 @@ SLNodeAnnotatorVisitor >> removeReturningParentFrom: aNode [
 { #category : 'helpers-stack-restoration' }
 SLNodeAnnotatorVisitor >> restoreInSomeThingStacksFrom: aNode [
 
+	| restoredStacks |
+	restoredStacks := OrderedCollection new.
 	(self presenceInfoFor: aNode entry: self inExpressionString) ifTrue: [
-		self pushInExpressionStack ].
+		self pushInExpressionStack.
+		restoredStacks add: inExpressionStack ].
 
 	(self presenceInfoFor: aNode entry: self inSendString) ifTrue: [
-		self pushInSendStack ]
+		self pushInSendStack.
+		restoredStacks add: inSendStack ].
+
+	^ restoredStacks
 ]
 
 { #category : 'helpers-stack-restoration' }
 SLNodeAnnotatorVisitor >> restoreSearchForSimpleInfoStacksFrom: aNode [
 
+	| restoredStacks |
+	restoredStacks := OrderedCollection new.
 	(self isInReturn: aNode) ifTrue: [
 		searchForReturnValueStack push:
 			(self isEffectiveReturnValue: aNode)
-			-> (self returningParentFor: aNode) ].
+			-> (self returningParentFor: aNode).
+		restoredStacks add: searchForReturnValueStack ].
 
 	(self isInAssignment: aNode) ifTrue: [
-		searchForReturnValueStack push:
+		searchForAssignValueStack push:
 			(self isEffectiveAssignmentValue: aNode)
-			-> (self assigningParentFor: aNode) ]
+			-> (self assigningParentFor: aNode).
+		restoredStacks add: searchForAssignValueStack ].
+
+	^ restoredStacks
+]
+
+{ #category : 'helpers-stack-restoration' }
+SLNodeAnnotatorVisitor >> restoreSearchSomeThingStacksFrom: aNode [
+
+	| entry restoredStacks |
+	restoredStacks := OrderedCollection new.
+	((self isEffectiveExpression: aNode) or: [
+		 self isEffectivelyIgnored: aNode ]) ifTrue: [
+		searchForExpressionValueStack push: true.
+		restoredStacks add: searchForExpressionValueStack ].
+
+	entry := (info at: aNode) at: self fromSearchStmtListString.
+	entry ifNil: [ ^ restoredStacks ].
+	searchForStmtListValue push:
+		(self topOfStack: searchForExpressionValueStack) -> entry.
+	searchForExpressionValueStack isNotEmpty
+		ifTrue: [ searchForExpressionValueStack pop ]
+		ifFalse: [ restoredStacks add: searchForExpressionValueStack ].
+	searchForExpressionValueStack push: false.
+	restoredStacks add: searchForStmtListValue.
+
+	^ restoredStacks
 ]
 
 { #category : 'visiting-main-API-helpers' }
 SLNodeAnnotatorVisitor >> restoreStackStateFrom: aNode [
 	"to just revisit a branch and not the whole AST, we need to restore the different stacks using the info dictionary"
 
-	self restoreInSomeThingStacksFrom: aNode.
-	self restoreSearchForSimpleInfoStacksFrom: aNode.
-	self searchSomeThingStacksCollection.
-	1 halt
+	| restoredStacks |
+	restoredStacks := OrderedCollection new.
+	restoredStacks addAll: (self restoreInSomeThingStacksFrom: aNode).
+	restoredStacks addAll:
+		(self restoreSearchForSimpleInfoStacksFrom: aNode).
+	restoredStacks addAll: (self restoreSearchSomeThingStacksFrom: aNode).
+"	1 halt."
+	^ restoredStacks
 ]
 
 { #category : 'helpers-string-constant' }
@@ -431,17 +529,6 @@ SLNodeAnnotatorVisitor >> returnString [
 SLNodeAnnotatorVisitor >> returningParentFor: aNode [
 
 	^ self associationValueInfoFor: aNode entry: self returnString
-]
-
-{ #category : 'helpers-stack-restoration' }
-SLNodeAnnotatorVisitor >> searchSomeThingStacksCollection [
-
-	| stackCollection |
-	stackCollection := OrderedCollection new.
-	stackCollection
-		add: searchForAssignValueStack -> self assignmentString;
-		add: searchForReturnValueStack -> self returnString.
-	^ stackCollection
 ]
 
 { #category : 'accessing' }
@@ -467,7 +554,9 @@ SLNodeAnnotatorVisitor >> transformDirectReturnFrom: parentNode [
 	parentNode children do: [ :child |
 		(self isEffectiveReturnValue: child)
 			ifTrue: [
-			child parent replaceChild: child with: child asReturnNode ]
+				1 haltIf: [
+					child tMethod selector = #methodAReturnBlockAssignment ].
+				child parent replaceChild: child with: child asReturnNode ]
 			ifFalse: [
 				child isReturn ifTrue: [ "already got a return for this branch"
 					^ self ].
@@ -495,11 +584,7 @@ SLNodeAnnotatorVisitor >> transformToAssignmentFrom: parentNode assignment: assi
 SLNodeAnnotatorVisitor >> visit: aNode [
 
 	aNode accept: self.
-	self assert: searchForAssignValueStack isEmpty.
-	self assert: searchForReturnValueStack isEmpty.
-	self assert: searchForExpressionValueStack isEmpty.
-	self assert: inExpressionStack isEmpty.
-	self assert: searchForStmtListValue isEmpty
+	self assertStacksAreEmpty
 ]
 
 { #category : 'visiting' }
@@ -554,9 +639,13 @@ SLNodeAnnotatorVisitor >> visitConstantNode: aConstantNode [
 { #category : 'visiting-main-API' }
 SLNodeAnnotatorVisitor >> visitFromBranchStartingAt: aNode [
 
+	| restoredStacks |
 	self cleanBranchInfoFrom: aNode.
-	self restoreStackStateFrom: aNode.
-	self visit: aNode
+	restoredStacks := self restoreStackStateFrom: aNode.
+	self cleanInfoFrom: aNode.
+	aNode accept: self.
+	restoredStacks do: [ :stack | stack pop ].
+	self assertStacksAreEmpty
 ]
 
 { #category : 'visiting' }
@@ -664,10 +753,11 @@ SLNodeAnnotatorVisitor >> visitSwitchStatementNode: aSwitchStatementNode [
 	aSwitchStatementNode otherwiseOrNil ifNotNil: [ :o |
 		caseStatementsAndOtherWiseOrNilCollection add: o ].
 
-	searchForExpressionValueStack push: true.
-	self pushInExpressionStack.
 	self giveStacksInfoForMultipleBranches:
 		caseStatementsAndOtherWiseOrNilCollection.
+
+	searchForExpressionValueStack push: true.
+	self pushInExpressionStack.
 
 	aSwitchStatementNode cases do: [ :case |
 		| caseLabels |

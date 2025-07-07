@@ -506,15 +506,16 @@ SLInlinerWithAnnotation >> isInlineableFunctionCall: aNode transformedConstantFr
 						  isInlineableFunctionCall: n
 						  transformedConstantFrom: nodeForVisitorInfo ] ]
 		  ifNotNil: [ :m |
-			  (self canBeInlineInExpression: nodeForVisitorInfo replacement: m)
-				  ifFalse: [ ^ false ].
 			  (m ~~ currentMethod and: [
 				   ((m isFunctionalIn: codeGenerator) or: [
 					    m mustBeInlined and: [ m isComplete ] ]) and: [
 					   m mayBeInlined and: [
 						   (codeGenerator mayInline: m selector) and: [
 							   aNode arguments allSatisfy: [ :a |
-								   self isSubstitutableNode: a intoMethod: m ] ] ] ] ]) or: [
+								   (self isSubstitutableNode: a intoMethod: m) and: [
+									   self
+										   canBeInlineInExpression: nodeForVisitorInfo
+										   replacement: m ] ] ] ] ] ]) or: [
 				  m checkForRequiredInlinability ] ]
 ]
 
@@ -527,11 +528,11 @@ SLInlinerWithAnnotation >> isInlineableSend: aNode [
 	aNode isSend ifFalse: [ ^ false ].
 	m := codeGenerator methodNamed: aNode selector. "nil if builtin or external function"
 	m ifNil: [ ^ false ].
-	(self canBeInlineInExpression: aNode replacement: m) ifFalse: [
-		^ false ].
 	^ m ~~ currentMethod and: [
 		  m mayBeInlined and: [
-			  (m isComplete and: [ codeGenerator mayInline: m selector ]) or: [
+			  (m isComplete and: [
+				   (codeGenerator mayInline: m selector) and: [
+					   self canBeInlineInExpression: aNode replacement: m ] ]) or: [
 				  m checkForRequiredInlinability ] ] ]
 ]
 
@@ -592,7 +593,7 @@ SLInlinerWithAnnotation >> moveDownReturnsAndAssignmentsFor: aSendNode including
 
 	"move assignments to the lowest part of the ast including in callee"
 	self invert: aSendNode replacement: aTMethodReplacement.
-	"the visitor is not re used after for in this call of inlineSend: so we do not revisit the AST"
+	"the visitor is not re used after for in this call of inlineSend: so we do not set aBlock value"
 	sLNodeAnnotatorVisitor removeAssigningParentFrom: aSendNode.
 	self revert: aSendNode replacement: aTMethodReplacement
 ]
