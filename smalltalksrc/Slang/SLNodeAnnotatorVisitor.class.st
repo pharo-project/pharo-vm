@@ -182,7 +182,8 @@ SLNodeAnnotatorVisitor >> booleanInfoFor: aNode entry: aString [
 SLNodeAnnotatorVisitor >> cleanBranchInfoFrom: aNode [
 
 	aNode children do: [ :child |
-		child nodesDo: [ :node | info at: node put: IdentityDictionary new ] ]
+		child nodesDo: [ :node |
+			info at: node ifPresent: [ info removeKey: node ] ] ]
 ]
 
 { #category : 'cleanup' }
@@ -398,28 +399,6 @@ SLNodeAnnotatorVisitor >> presenceInfoFor: aNode entry: aString [
 ]
 
 { #category : 'helpers-annotate' }
-SLNodeAnnotatorVisitor >> processValueSourceFor: aNode from: aStack constantString: aString [
-
-	| entry assoc |
-	aStack isEmpty ifTrue: [ ^ self ].
-
-	assoc := aStack top copy.
-	entry := info at: aNode.
-
-	(searchForStmtListValue isNotEmpty and: [
-		 searchForStmtListValue top key ]) ifTrue: [
-		assoc := true -> assoc value ].
-
-	currentShouldBePartiallyIgnored
-		ifTrue: [ assoc := false -> assoc value ]
-		ifFalse: [
-			aStack pop.
-			aStack push: false -> assoc value ].
-
-	entry at: aString put: assoc
-]
-
-{ #category : 'helpers-annotate' }
 SLNodeAnnotatorVisitor >> processValueSourceFor: aNode from: aStack constantString: constantString ignoredString: ignoredString [
 
 	| entry assoc isEffectivelyIgnored |
@@ -429,12 +408,19 @@ SLNodeAnnotatorVisitor >> processValueSourceFor: aNode from: aStack constantStri
 	entry := info at: aNode.
 	isEffectivelyIgnored := false.
 
-	(searchForStmtListValue isNotEmpty and: [
-		 searchForStmtListValue top key ]) ifTrue: [
-		assoc := true -> assoc value ].
+
+	searchForStmtListValue isNotEmpty ifTrue: [
+		searchForStmtListValue top key ifTrue: [
+			assoc := true -> assoc value ].
+		searchForStmtListValue top value ifTrue: [
+			isEffectivelyIgnored := true ] ].
 
 	currentShouldBePartiallyIgnored
 		ifTrue: [
+			"1 haltIf: [
+				aNode tMethod isNotNil and: [
+					aNode tMethod selector
+					= #methodAInlineIfFalseReturningIfTrueInAssignement ] ]".
 			assoc key ifTrue: [
 				assoc := false -> assoc value.
 				isEffectivelyIgnored := true ] ]
@@ -468,8 +454,9 @@ SLNodeAnnotatorVisitor >> removeAssigningParentFrom: aNode [
 	| assignment |
 	assignment := self assigningParentFor: aNode.
 	assignment ifNil: [ ^ false ].
-	1 haltIf: [ aNode tMethod selector = #methodAReturnBlockAssignment ].
-
+"	1 haltIf: [
+		assignment tMethod selector
+		= #methodAInlineIfFalseReturningIfTrueInAssignement ]."
 	"necessary because in inlining we switched the send node with its replacement"
 	self visitFromBranchStartingAt: aNode parent.
 	self transformToAssignmentFrom: assignment assignment: assignment.
@@ -477,9 +464,9 @@ SLNodeAnnotatorVisitor >> removeAssigningParentFrom: aNode [
 	assignment parent
 		replaceChild: assignment
 		with: assignment expression.
+
 	self cleanInfoFrom: assignment.
 
-	self visitFromBranchStartingAt: assignment parent.
 	^ true
 ]
 
@@ -491,7 +478,7 @@ SLNodeAnnotatorVisitor >> removeReturningParentFrom: aNode [
 	| returningParent |
 	returningParent := self returningParentFor: aNode.
 	returningParent ifNil: [ ^ false ].
-	1 haltIf: [ aNode tMethod selector = #methodAReturnBlockAssignment ].
+
 	"necessary because in inlining we switched the send node with its replacement"
 	self visitFromBranchStartingAt: aNode parent.
 	self transformDirectReturnFrom: returningParent.
@@ -499,9 +486,9 @@ SLNodeAnnotatorVisitor >> removeReturningParentFrom: aNode [
 	returningParent parent
 		replaceChild: returningParent
 		with: returningParent expression.
+
 	self cleanInfoFrom: returningParent.
-	
-	self visitFromBranchStartingAt: returningParent parent.
+
 	^ true
 ]
 
@@ -533,12 +520,15 @@ SLNodeAnnotatorVisitor >> restoreSearchFoGeneralValueStacksFrom: aNode [
 
 	entry := (info at: aNode) at: self fromSearchStmtListString.
 	entry ifNil: [ ^ restoredStacks ].
-	searchForStmtListValue push:
-		(self topOfStack: searchForExpressionValueStack) -> entry.
-	searchForExpressionValueStack isNotEmpty
-		ifTrue: [ searchForExpressionValueStack pop ]
-		ifFalse: [ restoredStacks add: searchForExpressionValueStack ].
-	searchForExpressionValueStack push: false.
+	entry
+		ifFalse: [ searchForStmtListValue push: false -> entry ]
+		ifTrue: [
+			searchForStmtListValue push:
+				(self topOfStack: searchForExpressionValueStack) -> entry.
+			searchForExpressionValueStack isNotEmpty
+				ifTrue: [ searchForExpressionValueStack pop ]
+				ifFalse: [ restoredStacks add: searchForExpressionValueStack ].
+			searchForExpressionValueStack push: false ].
 	restoredStacks add: searchForStmtListValue.
 
 	^ restoredStacks
@@ -556,10 +546,10 @@ SLNodeAnnotatorVisitor >> restoreSearchForSpecificValueStacksFrom: aNode [
 			-> (self returningParentFor: aNode).
 		restoredStacks add: searchForReturnValueStack ].
 
-	((self isInAssignment: aNode) or: [
-		 self isEffectivelyIgnoredInAssignment: aNode ]) ifTrue: [
+	(self isInAssignment: aNode) ifTrue: [
 		searchForAssignValueStack push:
-			(self isEffectiveAssignmentValue: aNode)
+			((self isEffectiveAssignmentValue: aNode) or: [
+				 self isEffectivelyIgnoredInAssignment: aNode ])
 			-> (self assigningParentFor: aNode).
 		restoredStacks add: searchForAssignValueStack ].
 
@@ -615,9 +605,7 @@ SLNodeAnnotatorVisitor >> transformDirectReturnFrom: parentNode [
 	parentNode children do: [ :child |
 		(self isEffectiveReturnValue: child)
 			ifTrue: [
-				1 haltIf: [
-					child tMethod selector = #methodAReturnBlockAssignment ].
-				child parent replaceChild: child with: child asReturnNode ]
+			child parent replaceChild: child with: child asReturnNode ]
 			ifFalse: [
 				child isReturn ifTrue: [ "already got a return for this branch"
 					^ self ].
@@ -721,12 +709,11 @@ SLNodeAnnotatorVisitor >> visitGoToNode: aTGotoNode [
 		'a := [... methodWithReturn … b]' gives 'a = [... c . goTo l ... l ... b]' is equivalent (and should be transform to) '[ ... c . goTo l ... l ... a := b]'
 		'a := methodeWithMultipleReturn' gives 'a = [... c . goTo l ... l ... b]' is equivalent (and should be transform to) '[ ... a := c . goTo l ... l ... a := b]'
 	so after an inlining phases we invalidate goTo generated so that they do not 'indicate an active exit point anymore'"
-	"the current implementation might be subject to bugs, the tests regardings goTo are all working properly but the AST should be invalidate AFTER an inlining phases and not during which is something we do
-	so the last line should be moved"
-	aTGotoNode haveBeenMetInInlining ifTrue: [ ^ self ].
-	searchForStmtListValue top value ifTrue: [
-		searchForStmtListValue push: true -> true ].
-	aTGotoNode metInInlining
+	(aTGotoNode haveBeenMetInInlining or: [
+		 searchForStmtListValue top value not ]) ifTrue: [ ^ self ].
+
+	searchForStmtListValue pop.
+	searchForStmtListValue push: true -> true
 ]
 
 { #category : 'visiting' }
@@ -785,20 +772,27 @@ SLNodeAnnotatorVisitor >> visitSendNode: aSendNode [
 { #category : 'visiting' }
 SLNodeAnnotatorVisitor >> visitStatementListNode: aStatementsListNode [
 
-	| stmts needExitValue |
+	| stmts searchForValue searchForStmtListValueEntry inUsedStmtList |
+	self activateCurrentSouldBePartiallyIgnored.
+	self annotateNodeState: aStatementsListNode.
+
 	stmts := aStatementsListNode statements.
-	needExitValue := self topOfStack:
-		                 searchForExpressionValueStack.
+
+	searchForStmtListValueEntry := false -> false.
+	searchForStmtListValue isNotEmpty ifTrue: [
+		searchForStmtListValueEntry := searchForStmtListValue top ].
+	searchForValue := (self topOfStack: searchForExpressionValueStack)
+		                  or: [ searchForStmtListValueEntry key ].
+	"if we are going to met a goTo"
+	inUsedStmtList := searchForStmtListValueEntry value or:
+		                  searchForValue.
 
 	searchForExpressionValueStack push: false.
-	searchForStmtListValue push: needExitValue -> needExitValue.
+	searchForStmtListValue push: searchForValue -> inUsedStmtList.
 	stmts reverse do: [ :stmt | stmt accept: self ].
 
 	searchForExpressionValueStack pop.
-	searchForStmtListValue pop.
-
-	self activateCurrentSouldBePartiallyIgnored.
-	self annotateNodeState: aStatementsListNode
+	searchForStmtListValue pop
 ]
 
 { #category : 'visiting' }

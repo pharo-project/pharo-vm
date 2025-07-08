@@ -588,13 +588,15 @@ SLInlinerWithAnnotation >> moveDownReturnsAndAssignmentsFor: aSendNode including
 		                   aSendNode.
 	self revert: aSendNode replacement: aTMethodReplacement.
 	needToResetData ifTrue: [
-		self annotateCurrentMethod.
+		sLNodeAnnotatorVisitor visitFromBranchStartingAt: aSendNode parent.
 		aBlock value: (self setDirectReturnAndExitVar: aSendNode) ].
 
 	"move returns to the lowest part of the ast including in aTMethodReplacement"
 	self invert: aSendNode replacement: aTMethodReplacement.
 	"the visitor is not re used after for in this call of inlineSend: so we do not set aBlock value"
 	sLNodeAnnotatorVisitor removeReturningParentFrom: aSendNode.
+	sLNodeAnnotatorVisitor cleanBranchInfoFrom:
+		aTMethodReplacement parseTree parent.
 	self revert: aSendNode replacement: aTMethodReplacement
 ]
 
@@ -821,6 +823,8 @@ SLInlinerWithAnnotation >> tryToInlineMethodStatementsListsInCurrentMethod [
 					newStatements addAllLast: inlinedStmts statements ] ].
 		stmtList statements: newStatements statements ].
 
+	currentMethod parseTree nodesDo: [ :node |
+		node isGoTo ifTrue: [ node metInInlining ] ].
 	sLNodeAnnotatorVisitor cleanInfo.
 	^ didSomething
 ]
