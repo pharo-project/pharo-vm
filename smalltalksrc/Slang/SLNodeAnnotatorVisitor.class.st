@@ -417,10 +417,6 @@ SLNodeAnnotatorVisitor >> processValueSourceFor: aNode from: aStack constantStri
 
 	currentShouldBePartiallyIgnored
 		ifTrue: [
-			"1 haltIf: [
-				aNode tMethod isNotNil and: [
-					aNode tMethod selector
-					= #methodAInlineIfFalseReturningIfTrueInAssignement ] ]".
 			assoc key ifTrue: [
 				assoc := false -> assoc value.
 				isEffectivelyIgnored := true ] ]
@@ -454,9 +450,7 @@ SLNodeAnnotatorVisitor >> removeAssigningParentFrom: aNode [
 	| assignment |
 	assignment := self assigningParentFor: aNode.
 	assignment ifNil: [ ^ false ].
-"	1 haltIf: [
-		assignment tMethod selector
-		= #methodAInlineIfFalseReturningIfTrueInAssignement ]."
+
 	"necessary because in inlining we switched the send node with its replacement"
 	self visitFromBranchStartingAt: aNode parent.
 	self transformToAssignmentFrom: assignment assignment: assignment.
