@@ -30,6 +30,7 @@ SLNodeAnnotatorVisitor >> addAssignmentInfoFor: aNode [
 		processValueSourceFor: aNode
 		from: searchForAssignValueStack
 		constantString: self assignmentString
+		ignoredString: self isEffectivelyIgnoredInAssignmentString
 ]
 
 { #category : 'annotate' }
@@ -41,6 +42,7 @@ SLNodeAnnotatorVisitor >> addReturnInfoFor: aNode [
 		processValueSourceFor: aNode
 		from: searchForReturnValueStack
 		constantString: self returnString
+		ignoredString: self isEffectivelyIgnoredInReturnString
 ]
 
 { #category : 'annotate' }
@@ -143,7 +145,7 @@ SLNodeAnnotatorVisitor >> assigningParentFor: aNode [
 	^ self associationValueInfoFor: aNode entry: self assignmentString
 ]
 
-{ #category : 'helpers-string-constant' }
+{ #category : 'helpers-info-entry-string' }
 SLNodeAnnotatorVisitor >> assignmentString [
 
 	^ #assignment
@@ -192,7 +194,7 @@ SLNodeAnnotatorVisitor >> cleanInfo [
 { #category : 'cleanup' }
 SLNodeAnnotatorVisitor >> cleanInfoFrom: aNode [
 
-	info at: aNode put: IdentityDictionary new
+	info removeKey: aNode 
 ]
 
 { #category : 'helpers-stack-operation' }
@@ -207,13 +209,13 @@ SLNodeAnnotatorVisitor >> ensureEntryInInfoDictFor: aNode [
 	info at: aNode ifAbsentPut: [ IdentityDictionary new ]
 ]
 
-{ #category : 'helpers-string-constant' }
+{ #category : 'helpers-info-entry-string' }
 SLNodeAnnotatorVisitor >> expressionString [
 
 	^ #expression
 ]
 
-{ #category : 'helpers-string-constant' }
+{ #category : 'helpers-info-entry-stack-restoration' }
 SLNodeAnnotatorVisitor >> fromSearchStmtListString [
 	"use for restoration only"
 
@@ -255,14 +257,14 @@ SLNodeAnnotatorVisitor >> handleConditionalSendVisit: aSendNode [
 	inExpressionStack pop
 ]
 
-{ #category : 'helpers-string-constant' }
+{ #category : 'helpers-info-entry-string' }
 SLNodeAnnotatorVisitor >> inExpressionString [
 	"value doesn't actually matter, but the stack need elements"
 
 	^ #inExpression
 ]
 
-{ #category : 'helpers-string-constant' }
+{ #category : 'helpers-info-entry-string' }
 SLNodeAnnotatorVisitor >> inSendString [
 
 	^ #inSend
@@ -326,7 +328,37 @@ SLNodeAnnotatorVisitor >> isEffectivelyIgnored: aNode [
 	^ self booleanInfoFor: aNode entry: self isEffectivelyIgnoredString
 ]
 
-{ #category : 'helpers-string-constant' }
+{ #category : 'testing-stack-restoration' }
+SLNodeAnnotatorVisitor >> isEffectivelyIgnoredInAssignment: aNode [
+	"for stack restoration"
+
+	^ self
+		  booleanInfoFor: aNode
+		  entry: self isEffectivelyIgnoredInAssignmentString
+]
+
+{ #category : 'helpers-info-entry-stack-restoration' }
+SLNodeAnnotatorVisitor >> isEffectivelyIgnoredInAssignmentString [
+
+	^ #isEffectivelyIgnoredInAssignment
+]
+
+{ #category : 'testing-stack-restoration' }
+SLNodeAnnotatorVisitor >> isEffectivelyIgnoredInReturn: aNode [
+	"for stack restoration"
+
+	^ self
+		  booleanInfoFor: aNode
+		  entry: self isEffectivelyIgnoredInReturnString
+]
+
+{ #category : 'helpers-info-entry-stack-restoration' }
+SLNodeAnnotatorVisitor >> isEffectivelyIgnoredInReturnString [
+
+	^ #isEffectivelyIgnoredInReturn
+]
+
+{ #category : 'helpers-info-entry-stack-restoration' }
 SLNodeAnnotatorVisitor >> isEffectivelyIgnoredString [
 
 	^ #isEffectivelyIgnored
@@ -385,6 +417,33 @@ SLNodeAnnotatorVisitor >> processValueSourceFor: aNode from: aStack constantStri
 			aStack push: false -> assoc value ].
 
 	entry at: aString put: assoc
+]
+
+{ #category : 'helpers-annotate' }
+SLNodeAnnotatorVisitor >> processValueSourceFor: aNode from: aStack constantString: constantString ignoredString: ignoredString [
+
+	| entry assoc isEffectivelyIgnored |
+	aStack isEmpty ifTrue: [ ^ self ].
+
+	assoc := aStack top copy.
+	entry := info at: aNode.
+	isEffectivelyIgnored := false.
+
+	(searchForStmtListValue isNotEmpty and: [
+		 searchForStmtListValue top key ]) ifTrue: [
+		assoc := true -> assoc value ].
+
+	currentShouldBePartiallyIgnored
+		ifTrue: [
+			assoc key ifTrue: [
+				assoc := false -> assoc value.
+				isEffectivelyIgnored := true ] ]
+		ifFalse: [
+			aStack pop.
+			aStack push: false -> assoc value ].
+
+	entry at: ignoredString put: isEffectivelyIgnored.
+	entry at: constantString put: assoc
 ]
 
 { #category : 'helpers-stack-operation' }
@@ -447,7 +506,7 @@ SLNodeAnnotatorVisitor >> removeReturningParentFrom: aNode [
 ]
 
 { #category : 'helpers-stack-restoration' }
-SLNodeAnnotatorVisitor >> restoreInSomeThingStacksFrom: aNode [
+SLNodeAnnotatorVisitor >> restoreInStacksFrom: aNode [
 
 	| restoredStacks |
 	restoredStacks := OrderedCollection new.
@@ -463,27 +522,7 @@ SLNodeAnnotatorVisitor >> restoreInSomeThingStacksFrom: aNode [
 ]
 
 { #category : 'helpers-stack-restoration' }
-SLNodeAnnotatorVisitor >> restoreSearchForSimpleInfoStacksFrom: aNode [
-
-	| restoredStacks |
-	restoredStacks := OrderedCollection new.
-	(self isInReturn: aNode) ifTrue: [
-		searchForReturnValueStack push:
-			(self isEffectiveReturnValue: aNode)
-			-> (self returningParentFor: aNode).
-		restoredStacks add: searchForReturnValueStack ].
-
-	(self isInAssignment: aNode) ifTrue: [
-		searchForAssignValueStack push:
-			(self isEffectiveAssignmentValue: aNode)
-			-> (self assigningParentFor: aNode).
-		restoredStacks add: searchForAssignValueStack ].
-
-	^ restoredStacks
-]
-
-{ #category : 'helpers-stack-restoration' }
-SLNodeAnnotatorVisitor >> restoreSearchSomeThingStacksFrom: aNode [
+SLNodeAnnotatorVisitor >> restoreSearchFoGeneralValueStacksFrom: aNode [
 
 	| entry restoredStacks |
 	restoredStacks := OrderedCollection new.
@@ -505,21 +544,43 @@ SLNodeAnnotatorVisitor >> restoreSearchSomeThingStacksFrom: aNode [
 	^ restoredStacks
 ]
 
+{ #category : 'helpers-stack-restoration' }
+SLNodeAnnotatorVisitor >> restoreSearchForSpecificValueStacksFrom: aNode [
+
+	| restoredStacks |
+	restoredStacks := OrderedCollection new.
+	(self isInReturn: aNode) ifTrue: [
+		searchForReturnValueStack push:
+			((self isEffectiveReturnValue: aNode) or: [
+				 self isEffectivelyIgnoredInReturn: aNode ])
+			-> (self returningParentFor: aNode).
+		restoredStacks add: searchForReturnValueStack ].
+
+	((self isInAssignment: aNode) or: [
+		 self isEffectivelyIgnoredInAssignment: aNode ]) ifTrue: [
+		searchForAssignValueStack push:
+			(self isEffectiveAssignmentValue: aNode)
+			-> (self assigningParentFor: aNode).
+		restoredStacks add: searchForAssignValueStack ].
+
+	^ restoredStacks
+]
+
 { #category : 'visiting-main-API-helpers' }
 SLNodeAnnotatorVisitor >> restoreStackStateFrom: aNode [
 	"to just revisit a branch and not the whole AST, we need to restore the different stacks using the info dictionary"
 
 	| restoredStacks |
 	restoredStacks := OrderedCollection new.
-	restoredStacks addAll: (self restoreInSomeThingStacksFrom: aNode).
+	restoredStacks addAll: (self restoreInStacksFrom: aNode).
 	restoredStacks addAll:
-		(self restoreSearchForSimpleInfoStacksFrom: aNode).
-	restoredStacks addAll: (self restoreSearchSomeThingStacksFrom: aNode).
+		(self restoreSearchForSpecificValueStacksFrom: aNode).
+	restoredStacks addAll: (self restoreSearchFoGeneralValueStacksFrom: aNode).
 "	1 halt."
 	^ restoredStacks
 ]
 
-{ #category : 'helpers-string-constant' }
+{ #category : 'helpers-info-entry-string' }
 SLNodeAnnotatorVisitor >> returnString [
 
 	^ #return

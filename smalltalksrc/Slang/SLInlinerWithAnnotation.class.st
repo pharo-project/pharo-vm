@@ -582,19 +582,19 @@ SLInlinerWithAnnotation >> isSubstitutableNode: aNode intoMethod: targetMeth [
 SLInlinerWithAnnotation >> moveDownReturnsAndAssignmentsFor: aSendNode including: aTMethodReplacement resetInfoBlock: aBlock [
 
 	| needToResetData |
-	"move returns to the lowest part of the ast including in aTMethodReplacement"
+	"move assignments to the lowest part of the ast including in callee"
 	self invert: aSendNode replacement: aTMethodReplacement.
-	needToResetData := sLNodeAnnotatorVisitor removeReturningParentFrom:
+	needToResetData := sLNodeAnnotatorVisitor removeAssigningParentFrom:
 		                   aSendNode.
 	self revert: aSendNode replacement: aTMethodReplacement.
 	needToResetData ifTrue: [
 		self annotateCurrentMethod.
 		aBlock value: (self setDirectReturnAndExitVar: aSendNode) ].
 
-	"move assignments to the lowest part of the ast including in callee"
+	"move returns to the lowest part of the ast including in aTMethodReplacement"
 	self invert: aSendNode replacement: aTMethodReplacement.
 	"the visitor is not re used after for in this call of inlineSend: so we do not set aBlock value"
-	sLNodeAnnotatorVisitor removeAssigningParentFrom: aSendNode.
+	sLNodeAnnotatorVisitor removeReturningParentFrom: aSendNode.
 	self revert: aSendNode replacement: aTMethodReplacement
 ]
 

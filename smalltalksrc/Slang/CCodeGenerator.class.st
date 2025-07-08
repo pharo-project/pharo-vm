@@ -1029,7 +1029,7 @@ CCodeGenerator >> doBasicInlining: inlineFlagOrSymbol [
 
 	| pass progress inliner |
 	self collectInlineList: inlineFlagOrSymbol.
-	inliner := SLInlinerWithAnnotation new
+	inliner := SLInliner new
 		           codeGenerator: self;
 		           yourself.
 	pass := 0.
