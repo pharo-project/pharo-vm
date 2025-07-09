@@ -437,6 +437,12 @@ TSendNode >> isConditionalSend [
 		ifNil:ifNotNil: ifNotNil:ifNil: ifNil: ifNotNil:) includes: selector
 ]
 
+{ #category : 'testing' }
+TSendNode >> isCppConditional [
+
+	^ selector beginsWith: #cppIf:
+]
+
 { #category : 'dead-code-elimination' }
 TSendNode >> isDoIterativeSend [
 

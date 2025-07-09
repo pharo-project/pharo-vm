@@ -6,8 +6,7 @@ Class {
 	#superclass : 'Object',
 	#instVars : [
 		'parent',
-		'comment',
-		'isExpression'
+		'comment'
 	],
 	#category : 'Slang-AST',
 	#package : 'Slang',
@@ -207,24 +206,6 @@ TParseNode >> hasExplicitReturn [
 		node isReturn ifTrue: [ ^true ].
 	].
 	^false
-]
-
-{ #category : 'utilities' }
-TParseNode >> hasGoTo [
-
-	self nodesDo: [ :node | node isGoTo ifTrue: [ ^ true ] ].
-	^ false
-]
-
-{ #category : 'utilities' }
-TParseNode >> hasMultipleReturns [
-
-	| returnCount |
-	returnCount := 0.
-	self nodesDo: [ :node |
-		node isReturn ifTrue: [ returnCount := returnCount + 1 ].
-		returnCount > 1 ifTrue: [ ^ true ] ].
-	^ false
 ]
 
 { #category : 'testing' }

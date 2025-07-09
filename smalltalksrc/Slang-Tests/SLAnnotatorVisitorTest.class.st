@@ -217,7 +217,8 @@ SLAnnotatorVisitorTest >> testMethodWithConditionalAssignment [
 		self assert: ((sLNodeAnnotatorVisitor isInReturn: node) not and: [
 				 (sLNodeAnnotatorVisitor isInAssignment: node) and: [
 					 (sLNodeAnnotatorVisitor assigningParentFor: node)
-					 = assignmentNode ] ]) ].
+					 = assignmentNode and: [
+						 (sLNodeAnnotatorVisitor isInSend: node) not ] ] ]) ].
 
 	firstStmtList := tMethod parseTree.
 
@@ -228,7 +229,8 @@ SLAnnotatorVisitorTest >> testMethodWithConditionalAssignment [
 				 (sLNodeAnnotatorVisitor isInAssignment: node) and: [
 					 (sLNodeAnnotatorVisitor assigningParentFor: node)
 					 = assignmentNode and: [
-						 sLNodeAnnotatorVisitor isInExpression: node ] ] ]).
+						 (sLNodeAnnotatorVisitor isInExpression: node) and: [
+							 (sLNodeAnnotatorVisitor isInSend: node) not ] ] ] ]).
 	{
 		firstStmtList.
 		assignmentNode } do: [ :node |
@@ -333,6 +335,63 @@ SLAnnotatorVisitorTest >> testMethodWithConstant [
 		 stmtListOfIfTrueAndConstant4AndAndReturn5 includes: node ]) do: [
 		:node |
 		self assert: (sLNodeAnnotatorVisitor isInExpression: node) not ].
+
+	self assert: self checkNonEffectiveExpressionOrStatementCollection.
+	self assert: self checkEffectiveExpressionValueCollection
+]
+
+{ #category : 'iterative' }
+SLAnnotatorVisitorTest >> testMethodWithDo [
+	"for this method, the AST is modified by asTranslatorNodeIn: for assignment which push down the assignment inside a block                            "
+
+	| tMethod nonEffectiveExpressionOrStatementSendSet effectiveExpressionValueSendSet doSend blockNode eVariable doReceiver |
+	tMethod := ccg methodNamed: #methodWithDo.
+
+	sLNodeAnnotatorVisitor visit: tMethod parseTree.
+
+	self fillCollectionValue: tMethod.
+
+	nonEffectiveExpressionOrStatementSendSet := self getSendNodeIn:
+		                                            nonEffectiveExpressionOrStatementCollection.
+	effectiveExpressionValueSendSet := self getSendNodeIn:
+		                                   effectiveExpressionValueCollection.
+
+	doSend := tMethod parseTree statements first.
+	blockNode := doSend arguments first.
+	eVariable := blockNode statements first.
+	doReceiver := doSend receiver.
+
+	self
+		assert: nonEffectiveExpressionOrStatementCollection size
+		equals: 3.
+	self assert: effectiveExpressionValueCollection size equals: 2.
+
+	self assert: effectiveExpressionValueSendSet isEmpty.
+
+	self assert: nonEffectiveExpressionOrStatementSendSet size equals: 1.
+	self assert:
+		(nonEffectiveExpressionOrStatementSendSet includes: doSend).
+
+
+	{
+		doReceiver.
+		eVariable } do: [ :node |
+		self assert: (effectiveExpressionValueCollection includes: node) ].
+
+	self assert: (sLNodeAnnotatorVisitor isInSend: blockNode).
+
+	effectiveExpressionValueCollection do: [ :node |
+		self assert: ((sLNodeAnnotatorVisitor isInReturn: node) not and: [
+				 (sLNodeAnnotatorVisitor isInAssignment: node) not and: [
+					 (sLNodeAnnotatorVisitor assigningParentFor: node) isNil and: [
+						 (sLNodeAnnotatorVisitor returningParentFor: node) isNil ] ] ]) ].
+
+	nonEffectiveExpressionOrStatementCollection do: [ :node |
+		self assert:
+			((sLNodeAnnotatorVisitor isInAssignment: node) not and: [
+				 (sLNodeAnnotatorVisitor assigningParentFor: node) isNil and: [
+					 (sLNodeAnnotatorVisitor isInReturn: node) not and: [
+						(sLNodeAnnotatorVisitor returningParentFor: node) isNil ] ] ]) ].
 
 	self assert: self checkNonEffectiveExpressionOrStatementCollection.
 	self assert: self checkEffectiveExpressionValueCollection
@@ -581,7 +640,8 @@ SLAnnotatorVisitorTest >> testMethodWithSendAsExpression [
 			(sLNodeAnnotatorVisitor isEffectiveAssignmentValue: node) ].
 
 	self assert:
-		(sLNodeAnnotatorVisitor isEffectiveAssignmentValue: secondSend) not.
+		((sLNodeAnnotatorVisitor isEffectiveAssignmentValue: secondSend) not
+			 and: [ sLNodeAnnotatorVisitor isInSend: secondSend ]).
 
 	effectiveExpressionValueCollection do: [ :node |
 		self assert: ((sLNodeAnnotatorVisitor isInReturn: node) not and: [

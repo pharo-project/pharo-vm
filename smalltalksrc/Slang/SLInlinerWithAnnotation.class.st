@@ -18,9 +18,13 @@ SLInlinerWithAnnotation >> annotateCurrentMethod [
 { #category : 'inlining-decision' }
 SLInlinerWithAnnotation >> canBeInlineInExpression: aNode replacement: aTMethod [
 
-	((sLNodeAnnotatorVisitor isInSend: aNode) and: [
-		 aTMethod hasMultipleReturns or: [ aTMethod hasGoTo ] ]) ifTrue: [
-		^ false ].
+	| returnCount |
+	(sLNodeAnnotatorVisitor isInSend: aNode) ifFalse: [ ^ true ].
+	returnCount := 0.
+	aTMethod parseTree nodesDo: [ :node |
+		(node isGoTo or: [ returnCount > 1 ]) ifTrue: [ ^ false ].
+		node isReturn ifTrue: [ returnCount := returnCount + 1 ] ].
+
 	^ true
 ]
 
@@ -142,12 +146,15 @@ SLInlinerWithAnnotation >> inlineBuiltin: aSendNode [
 SLInlinerWithAnnotation >> inlineCodeOrNilForStatement: aNode [
 	"If the given statement node can be inlined, answer the statements that replace it. Otherwise, answer nil."
 
-	self annotateCurrentMethod.
 	(aNode isReturn and: [ self isInlineableSend: aNode expression ])
 		ifTrue: [ ^ self inlineSend: aNode expression ].
 
 	(aNode isAssignment and: [ self isInlineableSend: aNode expression ])
-		ifTrue: [ ^ self inlineSend: aNode expression ].
+		ifTrue: [
+			1 haltIf: [
+				aNode variable name = #_numBytes and:
+					aNode expression selector = #smallObjectBytesForSlots: ].
+			^ self inlineSend: aNode expression ].
 
 	(aNode isSend and: [ self isInlineableSend: aNode ]) ifTrue: [
 		^ self inlineSend: aNode ].
@@ -232,6 +239,11 @@ SLInlinerWithAnnotation >> inlineFunctionCall: aSendNode [
 			currentMethod removeLocal: argName ] ].
 	meth parseTree bindVariablesIn: substitutionDict.
 	meth parseTree parent: aSendNode parent.
+	1 haltIf: [
+		sel = #smallObjectBytesForSlots: and: [
+			aSendNode parent isAssignment and: [
+				aSendNode parent parent isStatementList and: [
+					aSendNode parent parent statements size = 9 ] ] ] ].
 	^ meth parseTree endsWithReturn
 		  ifTrue: [ meth parseTree copyWithoutReturn ]
 		  ifFalse: [ meth parseTree ]
@@ -408,11 +420,7 @@ SLInlinerWithAnnotation >> inlineSend: aSendNode [
 				ifTrue: [ currentMethod labels add: exitLabel ]
 				ifFalse: [ "is label used?" exitLabel := nil ] ] ].
 
-	self
-		moveDownReturnsAndAssignmentsFor: aSendNode
-		including: callee
-		resetInfoBlock: assignDirectReturnAndExitVarBlock.
-
+	self moveDownReturnsAndAssignmentsFor: aSendNode including: callee.
 
 	(inlineStmts := OrderedCollection new:
 			                callee statements size + callee args size + 2)
@@ -437,9 +445,9 @@ SLInlinerWithAnnotation >> inlineSend: aSendNode [
 ]
 
 { #category : 'transformation' }
-SLInlinerWithAnnotation >> invert: aSendNode replacement: aTMethod [
+SLInlinerWithAnnotation >> invert: aSendNode replacement: aNode [
 
-	aSendNode parent replaceChild: aSendNode with: aTMethod parseTree
+	aSendNode parent replaceChild: aSendNode with: aNode
 ]
 
 { #category : 'inlining-decision' }
@@ -511,11 +519,11 @@ SLInlinerWithAnnotation >> isInlineableFunctionCall: aNode transformedConstantFr
 					    m mustBeInlined and: [ m isComplete ] ]) and: [
 					   m mayBeInlined and: [
 						   (codeGenerator mayInline: m selector) and: [
-							   aNode arguments allSatisfy: [ :a |
-								   (self isSubstitutableNode: a intoMethod: m) and: [
-									   self
-										   canBeInlineInExpression: nodeForVisitorInfo
-										   replacement: m ] ] ] ] ] ]) or: [
+							   (aNode arguments allSatisfy: [ :a |
+								    self isSubstitutableNode: a intoMethod: m ]) and: [
+								   self
+									   canBeInlineInExpression: nodeForVisitorInfo
+									   replacement: m ] ] ] ] ]) or: [
 				  m checkForRequiredInlinability ] ]
 ]
 
@@ -532,8 +540,9 @@ SLInlinerWithAnnotation >> isInlineableSend: aNode [
 		  m mayBeInlined and: [
 			  (m isComplete and: [
 				   (codeGenerator mayInline: m selector) and: [
-					   self canBeInlineInExpression: aNode replacement: m ] ]) or: [
-				  m checkForRequiredInlinability ] ] ]
+					   self
+						   canBeInlineInExpression: aNode
+						   replacement: m ] ]) or: [ m checkForRequiredInlinability ] ] ]
 ]
 
 { #category : 'inlining-decision' }
@@ -579,24 +588,23 @@ SLInlinerWithAnnotation >> isSubstitutableNode: aNode intoMethod: targetMeth [
 ]
 
 { #category : 'transformation' }
-SLInlinerWithAnnotation >> moveDownReturnsAndAssignmentsFor: aSendNode including: aTMethodReplacement resetInfoBlock: aBlock [
+SLInlinerWithAnnotation >> moveDownReturnsAndAssignmentsFor: aSendNode including: aTMethodReplacement [
 
-	| needToResetData |
-	"move assignments to the lowest part of the ast including in callee"
-	self invert: aSendNode replacement: aTMethodReplacement.
-	needToResetData := sLNodeAnnotatorVisitor removeAssigningParentFrom:
-		                   aSendNode.
-	self revert: aSendNode replacement: aTMethodReplacement.
-	needToResetData ifTrue: [
-		sLNodeAnnotatorVisitor visitFromBranchStartingAt: aSendNode parent.
-		aBlock value: (self setDirectReturnAndExitVar: aSendNode) ].
+	| replacementParseTree |
+	replacementParseTree := aTMethodReplacement parseTree.
 
-	"move returns to the lowest part of the ast including in aTMethodReplacement"
-	self invert: aSendNode replacement: aTMethodReplacement.
+	self invert: aSendNode replacement: replacementParseTree.
+	sLNodeAnnotatorVisitor
+		visitFromBranchStartingAt: aSendNode
+		replacement: replacementParseTree.
+		
+	sLNodeAnnotatorVisitor removeAssigningParentFrom:
+		replacementParseTree.
+	sLNodeAnnotatorVisitor removeReturningParentFrom:
+		replacementParseTree.
+
 	"the visitor is not re used after for in this call of inlineSend: so we do not set aBlock value"
-	sLNodeAnnotatorVisitor removeReturningParentFrom: aSendNode.
-	sLNodeAnnotatorVisitor cleanBranchInfoFrom:
-		aTMethodReplacement parseTree parent.
+	sLNodeAnnotatorVisitor cleanBranchInfoFrom: replacementParseTree.
 	self revert: aSendNode replacement: aTMethodReplacement
 ]
 
@@ -799,7 +807,7 @@ SLInlinerWithAnnotation >> tryToInlineMethodExpressionsInCurrentMethod [
 
 	sendsToInline isEmpty ifTrue: [ ^ false ].
 	currentMethod replaceNodesIn: sendsToInline.
-
+	sLNodeAnnotatorVisitor cleanInfo.
 	^ true
 ]
 
@@ -812,6 +820,7 @@ SLInlinerWithAnnotation >> tryToInlineMethodStatementsListsInCurrentMethod [
 	didSomething := false.
 	stmtLists := self statementsListsForInliningInCurrentMethod.
 
+	self annotateCurrentMethod.
 	stmtLists do: [ :stmtList |
 		newStatements := TStatementListNode statements:
 			                 (OrderedCollection new: stmtList statements size).

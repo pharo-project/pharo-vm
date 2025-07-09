@@ -240,24 +240,6 @@ SLNodeAnnotatorVisitor >> giveStacksInfoForMultipleBranches: aCollectionOfNode [
 				assoc value push: assoc key ] ] ]
 ]
 
-{ #category : 'helpers-visiting' }
-SLNodeAnnotatorVisitor >> handleConditionalSendVisit: aSendNode [
-	"conditionals are control-flow node and thus treated differently from the other sends"
-
-	self activateCurrentSouldBePartiallyIgnored.
-	self annotateNodeState: aSendNode.
-
-	self pushInExpressionStack.
-
-	self giveStacksInfoForMultipleBranches: aSendNode arguments.
-
-	searchForExpressionValueStack push: true.
-	aSendNode receiver accept: self.
-	searchForExpressionValueStack pop.
-
-	inExpressionStack pop
-]
-
 { #category : 'helpers-info-entry-string' }
 SLNodeAnnotatorVisitor >> inExpressionString [
 	"value doesn't actually matter, but the stack need elements"
@@ -449,19 +431,17 @@ SLNodeAnnotatorVisitor >> removeAssigningParentFrom: aNode [
 
 	| assignment |
 	assignment := self assigningParentFor: aNode.
-	assignment ifNil: [ ^ false ].
+	assignment ifNil: [ ^ self ].
 
-	"necessary because in inlining we switched the send node with its replacement"
-	self visitFromBranchStartingAt: aNode parent.
 	self transformToAssignmentFrom: assignment assignment: assignment.
 
 	assignment parent
 		replaceChild: assignment
 		with: assignment expression.
 
-	self cleanInfoFrom: assignment.
-
-	^ true
+	self
+		visitFromBranchStartingAt: assignment
+		replacement: assignment expression
 ]
 
 { #category : 'transformation' }
@@ -471,19 +451,19 @@ SLNodeAnnotatorVisitor >> removeReturningParentFrom: aNode [
 
 	| returningParent |
 	returningParent := self returningParentFor: aNode.
-	returningParent ifNil: [ ^ false ].
+	returningParent ifNil: [ ^ self ].
 
-	"necessary because in inlining we switched the send node with its replacement"
-	self visitFromBranchStartingAt: aNode parent.
-	self transformDirectReturnFrom: returningParent.
+	self
+		transformDirectReturnFrom: returningParent
+		return: returningParent.
 
 	returningParent parent
 		replaceChild: returningParent
 		with: returningParent expression.
 
-	self cleanInfoFrom: returningParent.
-
-	^ true
+	self
+		visitFromBranchStartingAt: returningParent
+		replacement: returningParent expression
 ]
 
 { #category : 'helpers-stack-restoration' }
@@ -592,35 +572,36 @@ SLNodeAnnotatorVisitor >> topOfStack: aStack [
 ]
 
 { #category : 'transformation' }
-SLNodeAnnotatorVisitor >> transformDirectReturnFrom: parentNode [
+SLNodeAnnotatorVisitor >> transformDirectReturnFrom: parentNode return: returnNode [
 	"recursively go throught the ast to transfrom directReturn
 	^ exp ifTrue: [exp] ifFalse [exp] -> ifTrue: [^exp] ifFalse [^exp]"
 
 	parentNode children do: [ :child |
-		(self isEffectiveReturnValue: child)
+		((self isEffectiveReturnValue: child) and: [
+			 (self returningParentFor: child) = returnNode ])
 			ifTrue: [
 			child parent replaceChild: child with: child asReturnNode ]
 			ifFalse: [
 				child isReturn ifTrue: [ "already got a return for this branch"
 					^ self ].
-				self transformDirectReturnFrom: child ] ]
+				self transformDirectReturnFrom: child return: returnNode ] ]
 ]
 
 { #category : 'transformation' }
-SLNodeAnnotatorVisitor >> transformToAssignmentFrom: parentNode assignment: assignment [
+SLNodeAnnotatorVisitor >> transformToAssignmentFrom: parentNode assignment: assignmentNode [
 	"recursively go throught the ast to transfrom expression of assignment
 	a = exp ifTrue: [exp] ifFalse [exp] -> ifTrue: [a = exp] ifFalse [a = exp]"
 
 	parentNode children do: [ :child |
 		((self isEffectiveAssignmentValue: child) and: [
-			 (self assigningParentFor: child) == assignment ])
+			 (self assigningParentFor: child) == assignmentNode ])
 			ifTrue: [
 				child parent replaceChild: child with: (TAssignmentNode new
-						 variable: assignment variable;
+						 variable: assignmentNode variable;
 						 expression: child;
 						 yourself) ]
 			ifFalse: [
-			self transformToAssignmentFrom: child assignment: assignment ] ]
+			self transformToAssignmentFrom: child assignment: assignmentNode ] ]
 ]
 
 { #category : 'visiting-main-API' }
@@ -673,10 +654,49 @@ SLNodeAnnotatorVisitor >> visitCaseStatementNode: aCaseStmtNode [
 	searchForExpressionValueStack pop
 ]
 
+{ #category : 'helpers-visiting' }
+SLNodeAnnotatorVisitor >> visitConditionalSendVisit: aSendNode [
+	"conditionals are control-flow node and thus treated differently from the other sends"
+
+	self activateCurrentSouldBePartiallyIgnored.
+	self annotateNodeState: aSendNode.
+
+	self pushInExpressionStack.
+
+	self giveStacksInfoForMultipleBranches: aSendNode arguments.
+
+	searchForExpressionValueStack push: true.
+	aSendNode receiver accept: self.
+	searchForExpressionValueStack pop.
+
+	inExpressionStack pop
+]
+
 { #category : 'visiting' }
 SLNodeAnnotatorVisitor >> visitConstantNode: aConstantNode [
 
 	self annotateNodeState: aConstantNode
+]
+
+{ #category : 'helpers-visiting' }
+SLNodeAnnotatorVisitor >> visitCppConditional: aSendNode [
+	"conditionals are control-flow node and thus treated differently from the other sends"
+
+	| arguments |
+	self activateCurrentSouldBePartiallyIgnored.
+	self annotateNodeState: aSendNode.
+
+	self pushInExpressionStack.
+
+	arguments := aSendNode arguments.
+	self giveStacksInfoForMultipleBranches: arguments allButFirst.
+
+	searchForExpressionValueStack push: true.
+	aSendNode receiver accept: self.
+	arguments first accept: self.
+	searchForExpressionValueStack pop.
+
+	inExpressionStack pop
 ]
 
 { #category : 'visiting-main-API' }
@@ -687,6 +707,18 @@ SLNodeAnnotatorVisitor >> visitFromBranchStartingAt: aNode [
 	restoredStacks := self restoreStackStateFrom: aNode.
 	self cleanInfoFrom: aNode.
 	aNode accept: self.
+	restoredStacks do: [ :stack | stack pop ].
+	self assertStacksAreEmpty
+]
+
+{ #category : 'visiting-main-API' }
+SLNodeAnnotatorVisitor >> visitFromBranchStartingAt: aNode replacement: aReplacementNode [
+
+	| restoredStacks |
+	self cleanBranchInfoFrom: aNode.
+	restoredStacks := self restoreStackStateFrom: aNode.
+	self cleanInfoFrom: aNode.
+	aReplacementNode accept: self.
 	restoredStacks do: [ :stack | stack pop ].
 	self assertStacksAreEmpty
 ]
@@ -745,22 +777,28 @@ SLNodeAnnotatorVisitor >> visitReturnNode: aReturnNode [
 { #category : 'visiting' }
 SLNodeAnnotatorVisitor >> visitSendNode: aSendNode [
 
+	| inSend |
 	aSendNode isConditionalSend ifTrue: [
-		self handleConditionalSendVisit: aSendNode.
+		self visitConditionalSendVisit: aSendNode.
+		^ self ].
+
+	aSendNode isCppConditional ifTrue: [
+		self visitCppConditional: aSendNode.
 		^ self ].
 
 	self annotateNodeState: aSendNode.
 
 	searchForExpressionValueStack push: true.
 	self pushInExpressionStack.
-	self pushInSendStack.
+	inSend := aSendNode isIterativeSend.
+	inSend ifFalse: [ self pushInSendStack ].
 
 	aSendNode receiver accept: self.
 	aSendNode arguments do: [ :arg | arg accept: self ].
 
 	searchForExpressionValueStack pop.
 	inExpressionStack pop.
-	inSendStack pop
+	inSend ifFalse: [ inSendStack pop ]
 ]
 
 { #category : 'visiting' }

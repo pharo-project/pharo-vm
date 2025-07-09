@@ -420,12 +420,6 @@ SLInliner >> inlineSend: aSendNode directReturn: directReturn exitVar: exitVar [
 	^ inlineStmts
 ]
 
-{ #category : 'transformation' }
-SLInliner >> invert: aSendNode replacement: aTMethod [
-
-	aSendNode parent replaceChild: aSendNode with: aTMethod parseTree
-]
-
 { #category : 'inlining-decision' }
 SLInliner >> isConditionalToBeTransformedForAssignment: aSend [
 	"Answer if a send is of the form

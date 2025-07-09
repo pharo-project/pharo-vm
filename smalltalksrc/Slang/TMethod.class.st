@@ -1276,18 +1276,6 @@ TMethod >> functionAttributes: aString [
 ]
 
 { #category : 'testing' }
-TMethod >> hasGoTo [
-
-	^ self parseTree hasGoTo
-]
-
-{ #category : 'testing' }
-TMethod >> hasMultipleReturns [
-
-	^ self parseTree hasMultipleReturns
-]
-
-{ #category : 'testing' }
 TMethod >> hasProperties [
 	^properties notNil and: [properties notEmpty]
 ]

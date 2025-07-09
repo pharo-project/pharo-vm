@@ -131,14 +131,6 @@ SLMockInliningTestClass >> methodAMultipleReturn [
 ]
 
 { #category : 'inlining-jump' }
-SLMockInliningTestClass >> methodAMultipleReturnAlwaysInlined [
-
-	<inline: #always>
-	self methodBMultipleReturn.
-	^ 1 + 1
-]
-
-{ #category : 'inlining-jump' }
 SLMockInliningTestClass >> methodAMultipleReturnAsAssignmentExpression [
 
 	| x |
@@ -159,6 +151,13 @@ SLMockInliningTestClass >> methodAMultipleReturnAsReturnExpressionAndStatement [
 
 { #category : 'inlining-jump' }
 SLMockInliningTestClass >> methodAMultipleReturnExpression [
+
+	self methodBMultipleReturn.
+	^ 1 + 1
+]
+
+{ #category : 'inlining-jump' }
+SLMockInliningTestClass >> methodAMultipleReturnInlined [
 
 	self methodBMultipleReturn.
 	^ 1 + 1
@@ -208,9 +207,27 @@ SLMockInliningTestClass >> methodAWithReturningSendArgumentsInlined [
 ]
 
 { #category : 'inlining-returning-arguments' }
-SLMockInliningTestClass >> methodAWithReturningSendReturningArgumentsInlined [
+SLMockInliningTestClass >> methodAWithReturningSendWithMethodWithMultipleReturnInArgumentsInlined [
 
-	^ self methodB: self methodAMultipleReturnAlwaysInlined
+	^ self methodB: self methodAMultipleReturnInlined
+]
+
+{ #category : 'inlining-returning-arguments' }
+SLMockInliningTestClass >> methodAWithReturningSendWithMethodWithMultipleReturnInBlockArgumentsInlined [
+
+	^ self methodB: {self methodAMultipleReturnInlined}
+]
+
+{ #category : 'inlining-returning-arguments' }
+SLMockInliningTestClass >> methodAWithReturningSendWithReturningIfInArgumentsInlined [
+
+	^ self methodB: self methodBReturningIfTrueIfFalseInSend
+]
+
+{ #category : 'inlining-returning-arguments' }
+SLMockInliningTestClass >> methodAWithReturningSendWithReturningIfInSendInArgumentsInlined [
+
+	^ self methodB: self methodBReturningIfTrueIfFalseInSend
 ]
 
 { #category : 'inlining-arguments' }
@@ -295,6 +312,14 @@ SLMockInliningTestClass >> methodBReturningIfTrue [
 SLMockInliningTestClass >> methodBReturningIfTrueIfFalse [
 
 	^ self methodB ifTrue: [ 1 ] ifFalse: [ 2 ]
+]
+
+{ #category : 'inlining-returning-arguments-helpers' }
+SLMockInliningTestClass >> methodBReturningIfTrueIfFalseInSend [
+
+	^ self methodB: (self methodB
+			   ifTrue: [ 1 ]
+			   ifFalse: [ 2 ])
 ]
 
 { #category : 'inlining-returning-conditional-helpers' }

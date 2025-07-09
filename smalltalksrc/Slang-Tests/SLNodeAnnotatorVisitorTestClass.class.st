@@ -51,6 +51,12 @@ SLNodeAnnotatorVisitorTestClass >> methodWithConstant [
 	^ 6
 ]
 
+{ #category : 'iterative' }
+SLNodeAnnotatorVisitorTestClass >> methodWithDo [
+
+	#(  ) do: [ :e | e ]
+]
+
 { #category : 'return' }
 SLNodeAnnotatorVisitorTestClass >> methodWithReturn [
 
