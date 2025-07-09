@@ -215,7 +215,7 @@ SLMockInliningTestClass >> methodAWithReturningSendWithMethodWithMultipleReturnI
 { #category : 'inlining-returning-arguments' }
 SLMockInliningTestClass >> methodAWithReturningSendWithMethodWithMultipleReturnInBlockArgumentsInlined [
 
-	^ self methodB: {self methodAMultipleReturnInlined}
+	^ self methodB: self methodAMultipleReturnInlined
 ]
 
 { #category : 'inlining-returning-arguments' }

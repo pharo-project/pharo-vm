@@ -910,7 +910,7 @@ SlangInliningTest >> testMethodAWithReturningSendWithMethodWithMultipleReturnInB
 	self
 		assert: translation
 		equals:
-			'/* SLMockInliningTestClass>>#methodAWithReturningSendWithMethodWithMultipleReturnInBlockArgumentsInlined */
+			'a fix /* SLMockInliningTestClass>>#methodAWithReturningSendWithMethodWithMultipleReturnInBlockArgumentsInlined */
 static sqInt
 methodAWithReturningSendWithMethodWithMultipleReturnInBlockArgumentsInlined(void)
 {

@@ -760,8 +760,9 @@ SLNodeAnnotatorVisitor >> visitLabeledCommentNode: aLabeledCommentNode [
 { #category : 'visiting' }
 SLNodeAnnotatorVisitor >> visitReturnNode: aReturnNode [
 
+	self activateCurrentSouldBePartiallyIgnored.
 	self annotateNodeState: aReturnNode.
-	
+
 	"line might be unecessary"
 	searchForExpressionValueStack push: true.
 	searchForReturnValueStack push: true -> aReturnNode.
