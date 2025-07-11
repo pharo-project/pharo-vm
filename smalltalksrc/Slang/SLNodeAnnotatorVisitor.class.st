@@ -284,6 +284,27 @@ SLNodeAnnotatorVisitor >> initialize [
 	info := IdentityDictionary new
 ]
 
+{ #category : 'helpers-stack-operation' }
+SLNodeAnnotatorVisitor >> invalidateSearchStacksAfterReturn [
+	"in an expression like a := exp1 ifTrue: [^ exp2] ifFalse: [exp3], the return node must not be simply ignored, it must correct the stacks so the exploration of exp2 does not mark nodes as used expression for  the node a := ...
+	the stack for return and general expression are already being given new elements from the return node so it is not necessary to modify them"
+
+	| top |
+	searchForAssignValueStack isNotEmpty ifTrue: [
+		top := searchForAssignValueStack pop.
+		searchForAssignValueStack push: false -> top value ].
+
+	searchForReturnValueStack isNotEmpty ifTrue: [
+		top := searchForReturnValueStack pop.
+		searchForReturnValueStack push: false -> top value ].
+
+	searchForStmtListValue isNotEmpty ifFalse: [ ^ false ].
+	top := searchForStmtListValue pop.
+	searchForStmtListValue push: false -> false.
+
+	^ top value
+]
+
 { #category : 'testing' }
 SLNodeAnnotatorVisitor >> isEffectiveAssignmentValue: aNode [
 
@@ -464,6 +485,17 @@ SLNodeAnnotatorVisitor >> removeReturningParentFrom: aNode [
 	self
 		visitFromBranchStartingAt: returningParent
 		replacement: returningParent expression
+]
+
+{ #category : 'helpers-stack-operation' }
+SLNodeAnnotatorVisitor >> resetSearchStacksAfterReturn: hasInvalidateAStmtSearch [
+	"unlike other nodes, search in statementList are from bottom to top, so after invalidating the stacks for a return exploration, we need to undo the modification done, meaning we might repush a false -> true on the stmtList stack, true indicating an active search, false indicating that the next node is not an used expression (we're waiting for a jump)"
+
+	| top |
+	hasInvalidateAStmtSearch ifFalse: [ ^ self ].
+
+	top := searchForStmtListValue pop.
+	searchForStmtListValue push: false -> true
 ]
 
 { #category : 'helpers-stack-restoration' }
@@ -658,6 +690,10 @@ SLNodeAnnotatorVisitor >> visitCaseStatementNode: aCaseStmtNode [
 SLNodeAnnotatorVisitor >> visitConditionalSendVisit: aSendNode [
 	"conditionals are control-flow node and thus treated differently from the other sends"
 
+	1 haltIf: [
+		aSendNode tMethod selector
+		= #eeInstantiateSmallClassIndex:format:numSlots: and: [
+			aSendNode selector = #ifTrue:ifFalse: ] ].
 	self activateCurrentSouldBePartiallyIgnored.
 	self annotateNodeState: aSendNode.
 
@@ -760,10 +796,13 @@ SLNodeAnnotatorVisitor >> visitLabeledCommentNode: aLabeledCommentNode [
 { #category : 'visiting' }
 SLNodeAnnotatorVisitor >> visitReturnNode: aReturnNode [
 
+	| hasInvalidateAStmtSearch |
 	self activateCurrentSouldBePartiallyIgnored.
 	self annotateNodeState: aReturnNode.
 
-	"line might be unecessary"
+	hasInvalidateAStmtSearch := self invalidateSearchStacksAfterReturn.
+	searchForAssignValueStack isNotEmpty ifTrue: [  ].
+
 	searchForExpressionValueStack push: true.
 	searchForReturnValueStack push: true -> aReturnNode.
 	self pushInExpressionStack.
@@ -772,7 +811,8 @@ SLNodeAnnotatorVisitor >> visitReturnNode: aReturnNode [
 
 	inExpressionStack pop.
 	searchForExpressionValueStack pop.
-	searchForReturnValueStack pop
+	searchForReturnValueStack pop.
+	self resetSearchStacksAfterReturn: hasInvalidateAStmtSearch
 ]
 
 { #category : 'visiting' }

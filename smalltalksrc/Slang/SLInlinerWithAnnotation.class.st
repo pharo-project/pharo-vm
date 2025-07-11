@@ -115,87 +115,6 @@ SLInlinerWithAnnotation >> ensureConditionalAssignmentsAreTransformedInCurrentMe
 		true ] ] whileTrue
 ]
 
-{ #category : 'transformation' }
-SLInlinerWithAnnotation >> exitVar: exitVar label: exitLabel for: aTMethod [
-	"Replace each return statement in this method with an assignment to the
-	 exit variable followed by either a return or a goto to the given label.
-	 Answer if a goto was generated."
-
-	"Optimization: If exitVar is nil, the return value of the inlined method is not being used, so don't add the assignment statement."
-
-	| labelUsed map elisions eliminateReturnSelfs definingClass |
-	labelUsed := false.
-	map := Dictionary new.
-	elisions := Set new.
-	"Conceivably one might ^self from a struct class and mean it.  In most cases though
-	 ^self means `get me outta here, fast'.  So unless this method is from a VMStruct class,
-	 elide any ^self's"
-	definingClass := aTMethod definingClass.
-	eliminateReturnSelfs := ((definingClass inheritsFrom: SlangClass)
-		                         and: [ definingClass isStructClass ]) not
-		                        and: [
-		                        #( #void #sqInt ) includes:
-			                        aTMethod returnType ].
-
-	aTMethod parseTree nodesDo: [ :node |
-		| replacement |
-		node isReturn ifTrue: [
-			aTMethod
-				transformReturnSubExpression: node
-				toAssignmentOf: exitVar
-				andGoto: exitLabel
-				unless: eliminateReturnSelfs
-				into: [ :rep :labelWasUsed |
-					replacement := rep.
-					labelWasUsed ifTrue: [ labelUsed := true ] ].
-			"replaceNodesIn: is strictly top-down, so any replacement for ^expr ifTrue: [...^fu...] ifFalse: [...^bar...]
-			 will prevent replacement of either ^fu or ^bar. The corollary is that ^expr ifTrue: [foo] ifFalse: [^bar]
-			 must be transformed into expr ifTrue: [^foo] ifFalse: [^bar]"
-			(node expression isConditionalSend and: [
-				 node expression hasExplicitReturn ])
-				ifTrue: [
-					elisions add: node.
-					(node expression arguments reject: [ :arg | arg endsWithReturn ])
-						do: [ :nodeNeedingReturn |
-							aTMethod
-								transformReturnSubExpression:
-								nodeNeedingReturn lastNonCommentStatement
-								toAssignmentOf: exitVar
-								andGoto: exitLabel
-								unless: eliminateReturnSelfs
-								into: [ :rep :labelWasUsed |
-									replacement := rep.
-									labelWasUsed ifTrue: [ labelUsed := true ] ].
-							map
-								at: nodeNeedingReturn lastNonCommentStatement
-								put: replacement ] ]
-				ifFalse: [
-					map at: node put: (replacement ifNil: [
-							 TLabeledCommentNode new setComment:
-								 'return ' , node expression printString ]) ] ] ].
-	map isEmpty ifTrue: [
-		aTMethod deny: labelUsed.
-		^ false ].
-	"Now do a top-down replacement for all returns that should be mapped to assignments and gotos"
-	aTMethod parseTree replaceNodesIn: map.
-	"Now it is safe to eliminate the returning ifs..."
-	elisions isEmpty ifFalse: [
-		| elisionMap |
-		elisionMap := Dictionary new.
-		elisions do: [ :returnNode |
-			elisionMap at: returnNode put: returnNode expression ].
-		aTMethod parseTree replaceNodesIn: elisionMap ].
-	"Now flatten any new statement lists..."
-	aTMethod parseTree nodesDo: [ :node |
-		| list |
-		(node isStatementList and: [
-			 node statements notEmpty and: [
-				 node lastNonCommentStatement isStatementList ] ]) ifTrue: [
-			list := node lastNonCommentStatement statements.
-			node replaceChild: node lastNonCommentStatement withList: list ] ].
-	^ labelUsed
-]
-
 { #category : 'initialization' }
 SLInlinerWithAnnotation >> initialize [
 
@@ -485,15 +404,19 @@ SLInlinerWithAnnotation >> inlineSend: aSendNode [
 		addVarsDeclarationsAndLabelsOf: callee
 		except: omittedParameters.
 
-	self moveDownReturnsAndAssignmentsFor: aSendNode including: callee.
-
 	callee hasReturn ifTrue: [
 		directReturn ifFalse: [
 			exitLabel := currentMethod unusedLabelForInliningInto:
 				             currentMethod.
-			(self exitVar: nil label: exitLabel for: callee)
+			(self label: exitLabel for: callee)
 				ifTrue: [ currentMethod labels add: exitLabel ]
 				ifFalse: [ "is label used?" exitLabel := nil ] ] ].
+
+	1 haltIf: [
+		currentMethod selector
+		= #eeInstantiateSmallClassIndex:format:numSlots: and: [
+			sel = #allocateSmallNewSpaceSlots:format:classIndex: ] ].
+	self moveDownReturnsAndAssignmentsFor: aSendNode including: callee.
 
 	(inlineStmts := OrderedCollection new:
 			                callee statements size + callee args size + 2)
@@ -658,6 +581,60 @@ SLInlinerWithAnnotation >> isSubstitutableNode: aNode intoMethod: targetMeth [
 			ifFalse: [ ^ false ] ].
 
 	^ true
+]
+
+{ #category : 'transformation' }
+SLInlinerWithAnnotation >> label: exitLabel for: aTMethod [
+	"Replace each return statement in this method with an assignment to the
+	 exit variable followed by either a return or a goto to the given label.
+	 Answer if a goto was generated."
+
+	"Optimization: If exitVar is nil, the return value of the inlined method is not being used, so don't add the assignment statement."
+
+	| labelUsed map eliminateReturnSelfs definingClass |
+	labelUsed := false.
+	map := Dictionary new.
+
+	"Conceivably one might ^self from a struct class and mean it.  In most cases though
+	 ^self means `get me outta here, fast'.  So unless this method is from a VMStruct class,
+	 elide any ^self's"
+	definingClass := aTMethod definingClass.
+	eliminateReturnSelfs := ((definingClass inheritsFrom: SlangClass)
+		                         and: [ definingClass isStructClass ]) not
+		                        and: [
+		                        #( #void #sqInt ) includes:
+			                        aTMethod returnType ].
+
+	aTMethod parseTree nodesDo: [ :node |
+		| replacement |
+		node isReturn ifTrue: [
+			aTMethod 
+				transformReturnSubExpression: node
+				toAssignmentOf: nil
+				andGoto: exitLabel
+				unless: eliminateReturnSelfs
+				into: [ :rep :labelWasUsed |
+					replacement := rep.
+					labelWasUsed ifTrue: [ labelUsed := true ] ].
+
+			map at: node put: (replacement ifNil: [
+					 TLabeledCommentNode new setComment:
+						 'return ' , node expression printString ]) ] ].
+	map isEmpty ifTrue: [
+		aTMethod deny: labelUsed.
+		^ false ].
+	"Now do a top-down replacement for all returns that should be mapped to assignments and gotos"
+	aTMethod parseTree replaceNodesIn: map.
+
+	"Now flatten any new statement lists..."
+	aTMethod parseTree nodesDo: [ :node |
+		| list |
+		(node isStatementList and: [
+			 node statements notEmpty and: [
+				 node lastNonCommentStatement isStatementList ] ]) ifTrue: [
+			list := node lastNonCommentStatement statements.
+			node replaceChild: node lastNonCommentStatement withList: list ] ].
+	^ labelUsed
 ]
 
 { #category : 'transformation' }
@@ -933,9 +910,6 @@ SLInlinerWithAnnotation >> tryToInlineMethodsInCurrentMethod [
 	currentMethod isComplete ifFalse: [
 		self checkForCompletenessFor: currentMethod.
 		currentMethod isComplete ifTrue: [ didSomething := true ] ]. "marking a method complete is progress"
-	1 haltIf: [
-		didSomething and: [
-			currentMethod selector
-			= #eeInstantiateSmallClassIndex:format:numSlots: ] ].
+
 	^ didSomething
 ]

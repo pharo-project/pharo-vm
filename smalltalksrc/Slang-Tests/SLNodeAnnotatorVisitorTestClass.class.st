@@ -30,6 +30,14 @@ SLNodeAnnotatorVisitorTestClass >> methodWithBlockReturn [
 	  4 ]
 ]
 
+{ #category : 'return' }
+SLNodeAnnotatorVisitorTestClass >> methodWithBlockwithExpressionReturn [
+
+	^ [
+	  self emptyMethod: 1.
+	  2 ]
+]
+
 { #category : 'assignment' }
 SLNodeAnnotatorVisitorTestClass >> methodWithConditionalAssignment [
 
