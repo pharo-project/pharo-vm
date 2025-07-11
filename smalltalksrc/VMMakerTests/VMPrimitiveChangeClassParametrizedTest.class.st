@@ -1,6 +1,6 @@
 Class {
 	#name : 'VMPrimitiveChangeClassParametrizedTest',
-	#superclass : 'VMPrimitiveTest',
+	#superclass : 'VMBasicPrimitiveTest',
 	#instVars : [
 		'originBytes',
 		'destinationBytes',

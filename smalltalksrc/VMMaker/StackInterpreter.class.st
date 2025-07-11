@@ -3801,7 +3801,11 @@ StackInterpreter >> checkForAndFollowForwardedPrimitiveState [
 	| primIndex |
 	self assert: self failed.
 	primIndex := self primitiveIndexOf: newMethod.
-	self assert: (argumentCount = (self argumentCountOf: newMethod) or: [ self isMetaPrimitiveIndex: primIndex ]).
+
+	"Check that the argument count is correct.
+	But ignore the check in meta primitives, they modify the VM state and we don't have the info to verify"
+	self assert: ((self isMetaPrimitiveIndex: primIndex) or: [argumentCount = (self argumentCountOf: newMethod)]).
+	
 	^ self checkForAndFollowForwardedPrimitiveState: primIndex
 ]
 
