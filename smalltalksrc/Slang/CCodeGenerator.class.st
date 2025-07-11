@@ -44,7 +44,8 @@ Class {
 		'castAsArgumentTranslationDict',
 		'wordSize',
 		'structInstanceVariableTranslations',
-		'inlineStrategy'
+		'inlineStrategy',
+		'inliner'
 	],
 	#classVars : [
 		'NoRegParmsInAssertVMs'
@@ -1027,11 +1028,9 @@ CCodeGenerator >> doBasicInlining: inlineFlagOrSymbol [
 	"Inline the bodies of all methods that are suitable for inlining.
 	This method does only the basic inlining suitable for both the core VM and plugins - no bytecode inlining etc"
 
-	| pass progress inliner |
+	| pass progress |
 	self collectInlineList: inlineFlagOrSymbol.
-	inliner := SLInliner new
-		           codeGenerator: self;
-		           yourself.
+
 	pass := 0.
 	progress := true.
 	[ progress ] whileTrue: [ "repeatedly attempt to inline methods until no further progress is made"
@@ -3202,7 +3201,11 @@ CCodeGenerator >> initialize [
 	breakDestInlineSelectors := IdentitySet new.
 	
 	stopOnErrors := false.
-	wordSize := 4
+	wordSize := 4.
+	
+	inliner := SLInliner new
+		           codeGenerator: self;
+		           yourself.
 ]
 
 { #category : 'C translation support' }
@@ -3448,6 +3451,11 @@ CCodeGenerator >> inlineDispatchesInMethodNamed: selector [
 CCodeGenerator >> inlineStrategy: aSLInlineStrategy [
 
 	inlineStrategy := aSLInlineStrategy
+]
+
+{ #category : 'accessing' }
+CCodeGenerator >> inliner: anInlineStrategy [ 
+	inliner := anInlineStrategy
 ]
 
 { #category : 'utilities' }

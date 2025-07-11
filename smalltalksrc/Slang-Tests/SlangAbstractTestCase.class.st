@@ -1,6 +1,6 @@
 Class {
 	#name : 'SlangAbstractTestCase',
-	#superclass : 'TestCase',
+	#superclass : 'ParametrizedTestCase',
 	#instVars : [
 		'ccg'
 	],

@@ -1,9 +1,13 @@
-Extension { #name : 'SlangInliningTest' }
+Extension { #name : 'SLInliningTest' }
 
 { #category : '*VMMaker' }
-SlangInliningTest >> setUp [
-
-	super setUp.
+SLInliningTest >> setUp [
+	super setUp.	
+	
+	self perform: inliningStrategy.
+	inliner codeGenerator: ccg.
+	ccg inliner: inliner.
+	
 	ccg addClass: SLMockInliningTestClass.
 	"necessary to get the type of sqInt"
 	SpurMemoryManager initBytesPerWord: 8.
