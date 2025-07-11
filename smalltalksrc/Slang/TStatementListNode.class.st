@@ -98,6 +98,8 @@ TStatementListNode >> addAllLast: aListOfStatement [
 { #category : 'adding' }
 TStatementListNode >> addAllLastKeepingEndComments: aListOfStatement [
 
+	"This method adds the statements in the argument to this statement list, guaranteeing that comments at the end remain at the end."
+
 	(statements isNotEmpty and: [ statements last isComment ])
 		ifFalse: [
 			self statements: (statements

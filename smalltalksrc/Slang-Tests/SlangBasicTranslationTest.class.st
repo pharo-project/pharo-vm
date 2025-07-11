@@ -6769,7 +6769,6 @@ SlangBasicTranslationTest >> testSwitchStatementWithNoDefaultStatement [
 
 { #category : 'test-inline-comment' }
 SlangBasicTranslationTest >> testTStatementAddAllLastWithComment [
-	"comments in Slang are related to inlining, they should only be in list of Statement (use as argument or expression but list of statement anyway). When there is a comments a the end of the list, we might wwanr them to stay at the end after addition was done"
 
 	| tStatementWithNoComment comment |
 	comment := TLabeledCommentNode new comment: #comment.
@@ -6798,7 +6797,6 @@ SlangBasicTranslationTest >> testTStatementAddAllLastWithComment [
 
 { #category : 'test-inline-comment' }
 SlangBasicTranslationTest >> testTStatementAddAllLastWithoutComment [
-	"comments in Slang are related to inlining, they should only be in list of Statement (use as argument or expression but list of statement anyway). When there is a comments a the end of the list, we might wwanr them to stay at the end after addition was done"
 
 	| tStatementWithNoComment |
 	tStatementWithNoComment := TStatementListNode new statements: {
@@ -6822,7 +6820,6 @@ SlangBasicTranslationTest >> testTStatementAddAllLastWithoutComment [
 
 { #category : 'test-inline-comment' }
 SlangBasicTranslationTest >> testTStatementAllButLastNonCommentWithComment [
-	"comments in Slang are related to inlining, they should only be in list of Statement (use as argument or expression but list of statement anyway). When we want to remove the last expression we might want to ignore comments at the end"
 
 	| tStatementWithNoComment comment |
 	comment := TLabeledCommentNode new comment: #comment.
@@ -6848,7 +6845,6 @@ SlangBasicTranslationTest >> testTStatementAllButLastNonCommentWithComment [
 
 { #category : 'test-inline-comment' }
 SlangBasicTranslationTest >> testTStatementAllButLastNonCommentWithoutComment [
-	"comments in Slang are related to inlining, they should only be in list of Statement (use as argument or expression but list of statement anyway). When we want to remove the last expression we might want to ignore comments at the end "
 
 	| tStatementWithNoComment |
 	tStatementWithNoComment := TStatementListNode new statements: {

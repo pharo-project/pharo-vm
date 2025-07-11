@@ -43,8 +43,7 @@ Class {
 		'castTranslationDict',
 		'castAsArgumentTranslationDict',
 		'wordSize',
-		'structInstanceVariableTranslations',
-		'inlineStrategy'
+		'structInstanceVariableTranslations'
 	],
 	#classVars : [
 		'NoRegParmsInAssertVMs'
@@ -3442,12 +3441,6 @@ CCodeGenerator >> inlineDispatchesInMethodNamed: selector [
 				customizeShortCasesForDispatchVar: 'currentBytecode'
 				in: self
 				method: m ] ]
-]
-
-{ #category : 'inlining' }
-CCodeGenerator >> inlineStrategy: aSLInlineStrategy [
-
-	inlineStrategy := aSLInlineStrategy
 ]
 
 { #category : 'utilities' }
