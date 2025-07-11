@@ -976,7 +976,7 @@ StackInterpreterPrimitives >> primitiveDoPrimitiveWithArgs [
 
 	"Pop primIndex and argArray, then push args in place..."
 	(savedNumArgs := argumentCount) = 3
-		ifTrue: [ "use first arg as receiver""...and receiver if the three arg form"
+		ifTrue: [ "...and receiver if the three arg form"
 			savedTempOop2 := tempOop2.
 			tempOop2 := self stackValue: 3. "actual receiver"
 			rcvr := self stackValue: 2. "receiver for primitive"
@@ -984,6 +984,7 @@ StackInterpreterPrimitives >> primitiveDoPrimitiveWithArgs [
 				rcvr := objectMemory followForwarded: rcvr ].
 			self
 				pop: 4;
+				"use first arg as receiver"
 				push: rcvr ]
 		ifFalse: [ self pop: 2 ].
 	argumentCount := arraySize.
