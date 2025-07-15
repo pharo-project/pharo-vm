@@ -3206,7 +3206,7 @@ CCodeGenerator >> initialize [
 	stopOnErrors := false.
 	wordSize := 4.
 
-	inliner := SLInlinerWithAnnotation new
+	inliner := SLInliner new
 		           codeGenerator: self;
 		           yourself
 ]
