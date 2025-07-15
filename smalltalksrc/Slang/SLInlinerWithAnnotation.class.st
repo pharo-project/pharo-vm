@@ -19,6 +19,8 @@ SLInlinerWithAnnotation >> annotateCurrentMethod [
 SLInlinerWithAnnotation >> canBeInlineInExpression: aNode replacement: aTMethod [
 
 	| returnCount |
+	"for now"
+	aTMethod inline = #always ifTrue: [ ^ true ].
 	(sLNodeAnnotatorVisitor isInSend: aNode) ifFalse: [ ^ true ].
 	returnCount := 0.
 	aTMethod parseTree nodesDo: [ :node |
