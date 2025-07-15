@@ -281,6 +281,22 @@ SLMockInliningTestClass >> methodBMultipleReturnExpressionAndStatement [
 		  ifFalse: [ self methodCMultipleReturn ]
 ]
 
+{ #category : 'inlining-jump-helpers' }
+SLMockInliningTestClass >> methodBMultipleReturningIfWithReturnPartiallyPushedDown [
+
+	^ self methodB
+		  ifTrue: [ ^ [ 2 ] ]
+		  ifFalse: [ 3 ]
+]
+
+{ #category : 'inlining-jump-helpers' }
+SLMockInliningTestClass >> methodBMultipleReturningIfWithReturnPushedDown [
+
+	self methodB
+		ifTrue: [ ^ 2 ]
+		ifFalse: [ ^ 3 ]
+]
+
 { #category : 'inlining-assignment-helpers' }
 SLMockInliningTestClass >> methodBReturnOnAssignment [
 
@@ -429,6 +445,19 @@ SLMockInliningTestClass >> methodWithAvoidedSelectors [
 SLMockInliningTestClass >> methodWithRepeat [
 
 	[ self methodB ifTrue: [ ^ 5 ] ] repeat
+]
+
+{ #category : 'inlining-jump' }
+SLMockInliningTestClass >> methodWithReturningIfWithReturnPartiallyPushedDownInlined [
+
+	self methodB:
+		self methodBMultipleReturningIfWithReturnPartiallyPushedDown
+]
+
+{ #category : 'inlining-jump' }
+SLMockInliningTestClass >> methodWithReturningIfWithReturnPushedDownInlined [
+
+	self methodB: self methodBMultipleReturningIfWithReturnPushedDown
 ]
 
 { #category : 'inlining-iterative-helpers' }

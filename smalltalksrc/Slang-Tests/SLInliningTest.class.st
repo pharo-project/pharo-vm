@@ -1142,6 +1142,68 @@ methodWithAssignmentOnWhileTrueInlined(void)
 }'
 ]
 
+{ #category : 'inlining-jump' }
+SLInliningTest >> testMethodWithReturningIfWithReturnPartiallyPushedDownInlined [
+
+	| method translation |
+	ccg doBasicInlining: true.
+
+	method := ccg methodNamed:
+		          #methodWithReturningIfWithReturnPartiallyPushedDownInlined.
+
+	translation := self translate: method.
+	translation := translation trimBoth.
+
+	self
+		assert: translation
+		equals:
+			'/* SLMockInliningTestClass>>#methodWithReturningIfWithReturnPartiallyPushedDownInlined */
+static sqInt
+methodWithReturningIfWithReturnPartiallyPushedDownInlined(void)
+{
+	methodB(((methodB())
+		 ? 2
+		 : 3));
+	return 0;
+}'
+]
+
+{ #category : 'inlining-jump' }
+SLInliningTest >> testMethodWithReturningIfWithReturnPushedDownInlined [
+
+	| method translation |
+	ccg doBasicInlining: true.
+
+	method := ccg methodNamed:
+		          #methodWithReturningIfWithReturnPushedDownInlined.
+
+	translation := self translate: method.
+	translation := translation trimBoth.
+
+	self
+		assert: translation
+		equals:
+			'/* SLMockInliningTestClass>>#methodWithReturningIfWithReturnPushedDownInlined */
+static sqInt
+methodWithReturningIfWithReturnPushedDownInlined(void)
+{
+	sqInt a;
+
+	/* begin methodBMultipleReturningIfWithReturnPushedDown */
+	if (methodB()) {
+		a = 2;
+		goto l2;
+	} else {
+		a = 3;
+		goto l2;
+	}
+	l2:
+	;
+	/* end methodBMultipleReturningIfWithReturnPushedDown */
+	return 0;
+}'
+]
+
 { #category : 'inlining-simple' }
 SLInliningTest >> testSimpleInlining [
 

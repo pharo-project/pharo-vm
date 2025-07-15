@@ -783,6 +783,7 @@ SLInliner >> tryToInlineMethodsInCurrentMethod [
 	"marking a method complete is progress"
 	currentMethod isComplete ifFalse: [
 		self checkForCompletenessFor: currentMethod.
-		currentMethod isComplete ifTrue: [ didSomething := true ] ]. "marking a method complete is progress"
+		currentMethod isComplete ifTrue: [ didSomething := true ] ].
+
 	^ didSomething
 ]
