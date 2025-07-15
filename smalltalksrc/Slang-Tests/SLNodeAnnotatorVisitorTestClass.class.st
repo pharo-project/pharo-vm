@@ -33,8 +33,11 @@ SLNodeAnnotatorVisitorTestClass >> methodWithBlockReturn [
 { #category : 'return' }
 SLNodeAnnotatorVisitorTestClass >> methodWithBlockwithExpressionReturn [
 
+	| a |
 	^ [
-	  self emptyMethod: 1.
+	  a := true
+		       ifTrue: [ 3 ]
+		       ifFalse: [ 4 ].
 	  2 ]
 ]
 

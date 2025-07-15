@@ -3177,6 +3177,7 @@ CCodeGenerator >> initAutoLocalizationOfVariablesIn: selector [
 
 { #category : 'initialize-release' }
 CCodeGenerator >> initialize [
+
 	translationDict := Dictionary new.
 	inlineList := Array new.
 	constants := Dictionary new: 100.
@@ -3190,7 +3191,9 @@ CCodeGenerator >> initialize [
 	useSymbolicConstants := true.
 	generateDeadCode := true.
 	scopeStack := OrderedCollection new.
-	logger := (ProvideAnswerNotification new tag: #logger; signal) ifNil: [Transcript].
+	logger := (ProvideAnswerNotification new
+		           tag: #logger;
+		           signal) ifNil: [ Transcript ].
 	pools := IdentitySet new.
 	selectorTranslations := IdentityDictionary new.
 	structInstanceVariableTranslations := IdentityDictionary new.
@@ -3199,13 +3202,13 @@ CCodeGenerator >> initialize [
 	previousCommenter := nil.
 	breakSrcInlineSelectors := IdentitySet new.
 	breakDestInlineSelectors := IdentitySet new.
-	
+
 	stopOnErrors := false.
 	wordSize := 4.
-	
-	inliner := SLInliner new
+
+	inliner := SLInlinerWithAnnotation new
 		           codeGenerator: self;
-		           yourself.
+		           yourself
 ]
 
 { #category : 'C translation support' }

@@ -412,10 +412,6 @@ SLInlinerWithAnnotation >> inlineSend: aSendNode [
 				ifTrue: [ currentMethod labels add: exitLabel ]
 				ifFalse: [ "is label used?" exitLabel := nil ] ] ].
 
-	1 haltIf: [
-		currentMethod selector
-		= #eeInstantiateSmallClassIndex:format:numSlots: and: [
-			sel = #allocateSmallNewSpaceSlots:format:classIndex: ] ].
 	self moveDownReturnsAndAssignmentsFor: aSendNode including: callee.
 
 	(inlineStmts := OrderedCollection new:

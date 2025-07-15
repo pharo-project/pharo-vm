@@ -412,11 +412,11 @@ SLNodeAnnotatorVisitor >> processValueSourceFor: aNode from: aStack constantStri
 	isEffectivelyIgnored := false.
 
 
-	searchForStmtListValue isNotEmpty ifTrue: [
+	"searchForStmtListValue isNotEmpty ifTrue: [
 		searchForStmtListValue top key ifTrue: [
 			assoc := true -> assoc value ].
 		searchForStmtListValue top value ifTrue: [
-			isEffectivelyIgnored := true ] ].
+			isEffectivelyIgnored := true ] ]."
 
 	currentShouldBePartiallyIgnored
 		ifTrue: [
@@ -662,6 +662,23 @@ SLNodeAnnotatorVisitor >> visitAssignmentNode: anAssignmentNode [
 	searchForAssignValueStack pop
 ]
 
+{ #category : 'helpers-visiting' }
+SLNodeAnnotatorVisitor >> visitBinaryIterativeSend: aSendNode [
+	"in Slang, iterative are not considered as expression but rather as statement to be closer to C"
+
+	self activateCurrentSouldBePartiallyIgnored.
+	self annotateNodeState: aSendNode.
+
+	self pushInExpressionStack.
+	searchForExpressionValueStack push: true.
+
+	aSendNode arguments first accept: self.
+	aSendNode receiver accept: self.
+
+	searchForExpressionValueStack pop.
+	inExpressionStack pop
+]
+
 { #category : 'visiting' }
 SLNodeAnnotatorVisitor >> visitBraceCaseNode: aTBraceCaseNode [
 	"shouldn't be reachable in real condition, TBraceCaseNode are translated to switch before going through any operation.
@@ -687,13 +704,9 @@ SLNodeAnnotatorVisitor >> visitCaseStatementNode: aCaseStmtNode [
 ]
 
 { #category : 'helpers-visiting' }
-SLNodeAnnotatorVisitor >> visitConditionalSendVisit: aSendNode [
+SLNodeAnnotatorVisitor >> visitConditionalSend: aSendNode [
 	"conditionals are control-flow node and thus treated differently from the other sends"
 
-	1 haltIf: [
-		aSendNode tMethod selector
-		= #eeInstantiateSmallClassIndex:format:numSlots: and: [
-			aSendNode selector = #ifTrue:ifFalse: ] ].
 	self activateCurrentSouldBePartiallyIgnored.
 	self annotateNodeState: aSendNode.
 
@@ -732,6 +745,26 @@ SLNodeAnnotatorVisitor >> visitCppConditional: aSendNode [
 	arguments first accept: self.
 	searchForExpressionValueStack pop.
 
+	inExpressionStack pop
+]
+
+{ #category : 'helpers-visiting' }
+SLNodeAnnotatorVisitor >> visitDoIterativeSend: aSendNode [
+	"in Slang, iterative are not considered as expression but rather as statement to be closer to C"
+
+	| arguments |
+	self activateCurrentSouldBePartiallyIgnored.
+	self annotateNodeState: aSendNode.
+
+	self pushInExpressionStack.
+	searchForExpressionValueStack push: true.
+
+	arguments := aSendNode arguments.
+	arguments last accept: self.
+	arguments allButLast do: [ :node | node accept: self ].
+	aSendNode receiver accept: self.
+
+	searchForExpressionValueStack pop.
 	inExpressionStack pop
 ]
 
@@ -774,8 +807,15 @@ SLNodeAnnotatorVisitor >> visitGoToNode: aTGotoNode [
 	(aTGotoNode haveBeenMetInInlining or: [
 		 searchForStmtListValue top value not ]) ifTrue: [ ^ self ].
 
-	searchForStmtListValue pop.
-	searchForStmtListValue push: true -> true
+	searchForStmtListValue top value ifTrue: [
+		searchForStmtListValue pop.
+		searchForStmtListValue push: true -> true ].
+
+	self stacksForSpecificValueHolder do: [ :stack |
+		stack isNotEmpty ifTrue: [
+			| top |
+			top := stack pop.
+			stack push: true -> top value ] ]
 ]
 
 { #category : 'visiting' }
@@ -818,28 +858,50 @@ SLNodeAnnotatorVisitor >> visitReturnNode: aReturnNode [
 { #category : 'visiting' }
 SLNodeAnnotatorVisitor >> visitSendNode: aSendNode [
 
-	| inSend |
-	aSendNode isConditionalSend ifTrue: [
-		self visitConditionalSendVisit: aSendNode.
-		^ self ].
-
-	aSendNode isCppConditional ifTrue: [
-		self visitCppConditional: aSendNode.
-		^ self ].
+	(self visitSpecialSend: aSendNode) ifTrue: [ ^ self ].
 
 	self annotateNodeState: aSendNode.
 
 	searchForExpressionValueStack push: true.
 	self pushInExpressionStack.
-	inSend := aSendNode isIterativeSend.
-	inSend ifFalse: [ self pushInSendStack ].
+	self pushInSendStack.
 
 	aSendNode receiver accept: self.
 	aSendNode arguments do: [ :arg | arg accept: self ].
 
 	searchForExpressionValueStack pop.
 	inExpressionStack pop.
-	inSend ifFalse: [ inSendStack pop ]
+	inSendStack pop
+]
+
+{ #category : 'helpers-visiting' }
+SLNodeAnnotatorVisitor >> visitSpecialSend: aSendNode [
+
+	aSendNode isConditionalSend ifTrue: [
+		self visitConditionalSend: aSendNode.
+		^ true ].
+
+	aSendNode isCppConditional ifTrue: [
+		self visitCppConditional: aSendNode.
+		^ true ].
+
+	aSendNode isUnaryIterativeSend ifTrue: [
+		self visitUnaryIterativeSend: aSendNode.
+		^ true ].
+
+	aSendNode isUnaryIterativeSendWithImportantLastStatement ifTrue: [
+		self visitUnaryIterativeSendWithImportantLastStatement: aSendNode.
+		^ true ].
+
+	aSendNode isBinaryIterativeSend ifTrue: [
+		self visitBinaryIterativeSend: aSendNode.
+		^ true ].
+
+	aSendNode isDoIterativeSend ifTrue: [
+		self visitDoIterativeSend: aSendNode.
+		^ true ].
+
+	^ false
 ]
 
 { #category : 'visiting' }
@@ -898,6 +960,48 @@ SLNodeAnnotatorVisitor >> visitSwitchStatementNode: aSwitchStatementNode [
 
 	inExpressionStack pop.
 	searchForExpressionValueStack pop
+]
+
+{ #category : 'helpers-visiting' }
+SLNodeAnnotatorVisitor >> visitUnaryIterativeSend: aSendNode [
+	"in Slang, iterative are not considered as expression but rather as statement to be closer to C"
+
+	self activateCurrentSouldBePartiallyIgnored.
+	self annotateNodeState: aSendNode.
+
+	self pushInExpressionStack.
+	searchForExpressionValueStack push: true.
+
+	aSendNode receiver accept: self.
+
+	searchForExpressionValueStack pop.
+	inExpressionStack pop
+]
+
+{ #category : 'helpers-visiting' }
+SLNodeAnnotatorVisitor >> visitUnaryIterativeSendWithImportantLastStatement: aSendNode [
+	"for a 'a := [[ exp . condition ] whileTrue]' case (obtained through inlining for example), the last expression of the block is a condition not the expression value of a := ..."
+
+	| block condition |
+	self activateCurrentSouldBePartiallyIgnored.
+	self annotateNodeState: aSendNode.
+
+	"to not interpret the condition as the effective value, we move the condition to the top"
+	block := aSendNode receiver.
+	condition := block lastNonCommentStatement.
+	block removeLast.
+	block addAllFirst: { condition }.
+
+	self pushInExpressionStack.
+	searchForExpressionValueStack push: true.
+
+	aSendNode receiver accept: self.
+
+	searchForExpressionValueStack pop.
+	inExpressionStack pop.
+
+	block removeFirstNonCommentStatement.
+	block addAllLastKeepingEndComments: {condition}
 ]
 
 { #category : 'visiting' }

@@ -232,7 +232,7 @@ SLAnnotatorVisitorTest >> testMethodWithBlockwithExpressionReturn [
 	sendNode := (nonEffectiveExpressionOrStatementCollection select: [
 		             :node | node isSend ]) first.
 
-
+ 1 halt.
 	firstStmtList := tMethod parseTree.
 	{
 		firstStmtList.
