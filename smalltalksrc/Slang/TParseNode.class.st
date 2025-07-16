@@ -34,6 +34,16 @@ TParseNode >> allCalls [
 	^calls
 ]
 
+{ #category : 'utilities' }
+TParseNode >> allReturns [
+	"Answer a collection of returns in this parse tree."
+
+	| returns |
+	returns := Set new: 32.
+	self nodesDo: [ :node | node isReturn ifTrue: [ returns add: node ] ].
+	^ returns
+]
+
 { #category : 'enumerating' }
 TParseNode >> allSatisfy: aBlock [
 	self nodesDo: [:n| (aBlock value: n) ifFalse: [^false]].

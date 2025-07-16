@@ -12,22 +12,22 @@ Class {
 { #category : 'inlining-preparation' }
 SLInlinerWithAnnotation >> annotateCurrentMethod [
 
+	sLNodeAnnotatorVisitor cleanInfo.
 	sLNodeAnnotatorVisitor visit: currentMethod parseTree
 ]
 
 { #category : 'inlining-decision' }
 SLInlinerWithAnnotation >> canBeInlineInExpression: aNode replacement: aTMethod [
-
-	| returnCount |
 	"for now"
+
+	| parseTree |
 	aTMethod inline = #always ifTrue: [ ^ true ].
 	(sLNodeAnnotatorVisitor isInSend: aNode) ifFalse: [ ^ true ].
-	returnCount := 0.
-	aTMethod parseTree nodesDo: [ :node |
-		(node isGoTo or: [ returnCount > 1 ]) ifTrue: [ ^ false ].
-		node isReturn ifTrue: [ returnCount := returnCount + 1 ] ].
-
-	^ true
+	parseTree := aTMethod parseTree.
+	^ sLNodeAnnotatorVisitor
+		  do: [
+		  (sLNodeAnnotatorVisitor hasGotoOrMultipleReturn: parseTree) not ]
+		  visit: parseTree
 ]
 
 { #category : 'testing' }
@@ -38,7 +38,6 @@ SLInlinerWithAnnotation >> checkForCompletenessFor: aTMethod [
 	codeGenerator maybeBreakForTestOfInliningOf: aTMethod selector.
 
 	foundIncompleteSend := false.
-	self annotateCurrentMethod.
 	aTMethod parseTree
 		nodesDo: [ :node |
 			node isSend ifTrue: [
@@ -54,7 +53,6 @@ SLInlinerWithAnnotation >> checkForCompletenessFor: aTMethod [
 			node isSend and: [
 				node selector == #cCode:inSmalltalk: or: [
 					codeGenerator isAssertSelector: node selector ] ] ].
-	sLNodeAnnotatorVisitor cleanInfo.
 	foundIncompleteSend ifFalse: [ aTMethod complete: true ]
 ]
 
@@ -133,7 +131,7 @@ SLInlinerWithAnnotation >> inlineBuiltin: aSendNode [
 	sel := aSendNode receiver selector.
 	meth := codeGenerator methodNamed: sel.
 	(meth notNil and: [ meth inline == true ]) ifFalse: [ ^ nil ].
-	(meth isFunctionalIn: codeGenerator) ifTrue: [
+	(self isFunctional: meth) ifTrue: [
 		inlinedReplacement := self inlineFunctionCall: aSendNode receiver.
 		^ TSendNode new
 			  setSelector: aSendNode selector
@@ -236,11 +234,12 @@ SLInlinerWithAnnotation >> inlineFunctionCall: aSendNode [
 		(parametersToReplaceByArgument includes: argName) ifFalse: [
 			currentMethod removeLocal: argName ] ].
 	meth parseTree bindVariablesIn: substitutionDict.
-	meth parseTree parent: aSendNode parent.
 
-	^ meth parseTree endsWithReturn
-		  ifTrue: [ meth parseTree copyWithoutReturn ]
-		  ifFalse: [ meth parseTree ]
+	sLNodeAnnotatorVisitor copyWithoutReturn: meth.
+	"same 'optimization' as before"
+	meth parseTree children size = 1 ifTrue: [
+		meth parseTree: meth parseTree last ].
+	^ meth parseTree
 ]
 
 { #category : 'inlining-support-condtional' }
@@ -435,6 +434,7 @@ SLInlinerWithAnnotation >> inlineSend: aSendNode [
 
 	inlineStmts isComment ifTrue: [ "Nuke empty methods; e.g. override of flushAtCache"
 		inlineStmts statements: OrderedCollection new ].
+	
 	^ inlineStmts
 ]
 
@@ -462,6 +462,38 @@ SLInlinerWithAnnotation >> isConditionalToBeTransformedForAssignment: aSend [
 						  stmt isSend and: [
 							  (codeGenerator mayInline: stmt selector) or: [
 								  self isConditionalToBeTransformedForAssignment: stmt ] ] ] ] ] ]
+]
+
+{ #category : 'testing' }
+SLInlinerWithAnnotation >> isFunctional: aTMethod [
+	"Answer if the receiver is a functional method. That is, if it
+	 consists of a single return statement of an expression  or an assert or flag followed by
+	 such a statement.
+
+	 Answer false for methods with return types other than the simple
+	 integer types to work around bugs in the inliner."
+
+	| parseTree last |
+	parseTree := aTMethod parseTree.
+	parseTree statements size = 1 ifFalse: [
+		(parseTree statements size = 2 and: [
+			 parseTree statements first isSend and: [
+				 parseTree statements first selector == #flag: or: [
+					 (codeGenerator isAssertSelector:
+						  parseTree statements first selector) and: [
+						 parseTree statements first selector ~~ #asserta: ] ] ] ])
+			ifFalse: [ ^ false ] ].
+	last := parseTree lastNonCommentStatement.
+	(last isReturn or: [
+		 sLNodeAnnotatorVisitor
+			 do: [ sLNodeAnnotatorVisitor isReturningIf: last ]
+			 visit: last ]) ifFalse: [ ^ false ].
+
+	^ #( int #'unsigned int' #long #'unsigned long' #'long long'
+	     #'unsigned long long' sqInt usqInt #sqIntptr_t #usqIntptr_t
+	     sqLong usqLong #'int *' #'unsigned int *' #'sqInt *' #'usqInt *'
+	     #'sqLong *' #'usqLong *' #'char *' #'CogMethod *' #'AbstractInstruction *'
+	     #'FILE *' ) includes: aTMethod returnType
 ]
 
 { #category : 'inlining-decision' }
@@ -509,7 +541,7 @@ SLInlinerWithAnnotation >> isInlineableFunctionCall: aNode transformedConstantFr
 						  transformedConstantFrom: nodeForVisitorInfo ] ]
 		  ifNotNil: [ :m |
 			  (m ~~ currentMethod and: [
-				   ((m isFunctionalIn: codeGenerator) or: [
+				   ((self isFunctional: m) or: [
 					    m mustBeInlined and: [ m isComplete ] ]) and: [
 					   m mayBeInlined and: [
 						   (codeGenerator mayInline: m selector) and: [
@@ -645,14 +677,14 @@ SLInlinerWithAnnotation >> moveDownReturnsAndAssignmentsFor: aSendNode including
 	sLNodeAnnotatorVisitor
 		visitFromBranchStartingAt: aSendNode
 		replacement: replacementParseTree.
-		
-	sLNodeAnnotatorVisitor removeAssigningParentFrom:
+
+	sLNodeAnnotatorVisitor moveDownAssigningParentFrom:
 		replacementParseTree.
-	sLNodeAnnotatorVisitor removeReturningParentFrom:
+	sLNodeAnnotatorVisitor moveDownReturningParentFrom:
 		replacementParseTree.
 
-	"the visitor is not re used after for in this call of inlineSend: so we do not set aBlock value"
-	sLNodeAnnotatorVisitor cleanBranchInfoFrom: replacementParseTree.
+	sLNodeAnnotatorVisitor cleanInfoAndBranchInfoFrom:
+		replacementParseTree.
 	self revert: aSendNode replacement: aTMethodReplacement
 ]
 
@@ -841,7 +873,6 @@ SLInlinerWithAnnotation >> tryToInlineMethodExpressionsInCurrentMethod [
 	| sendsToInline |
 	sendsToInline := Dictionary new: 100.
 
-	self annotateCurrentMethod.
 	codeGenerator pushScope: currentMethod while: [
 		currentMethod parseTree
 			nodesDo: [ :node |
@@ -855,7 +886,6 @@ SLInlinerWithAnnotation >> tryToInlineMethodExpressionsInCurrentMethod [
 
 	sendsToInline isEmpty ifTrue: [ ^ false ].
 	currentMethod replaceNodesIn: sendsToInline.
-	sLNodeAnnotatorVisitor cleanInfo.
 	^ true
 ]
 
@@ -868,7 +898,6 @@ SLInlinerWithAnnotation >> tryToInlineMethodStatementsListsInCurrentMethod [
 	didSomething := false.
 	stmtLists := self statementsListsForInliningInCurrentMethod.
 
-	self annotateCurrentMethod.
 	stmtLists do: [ :stmtList |
 		newStatements := TStatementListNode statements:
 			                 (OrderedCollection new: stmtList statements size).
@@ -882,7 +911,6 @@ SLInlinerWithAnnotation >> tryToInlineMethodStatementsListsInCurrentMethod [
 
 	currentMethod parseTree nodesDo: [ :node |
 		node isGoTo ifTrue: [ node metInInlining ] ].
-	sLNodeAnnotatorVisitor cleanInfo.
 	^ didSomething
 ]
 
@@ -898,9 +926,12 @@ SLInlinerWithAnnotation >> tryToInlineMethodsInCurrentMethod [
 		^ currentMethod complete: true ].
 
 	self ensureConditionalAssignmentsAreTransformedInCurrentMethod.
+	self annotateCurrentMethod.
 	didSomething := self tryToInlineMethodStatementsListsInCurrentMethod.
-	didSomething := self tryToInlineMethodExpressionsInCurrentMethod or: [
-		                didSomething ].
+	didSomething ifTrue: [ self annotateCurrentMethod ].
+	self tryToInlineMethodExpressionsInCurrentMethod ifTrue: [
+		self annotateCurrentMethod.
+		didSomething := true ].
 
 	didSomething ifTrue: [ currentMethod writtenToGlobalVarsCache: nil ].
 

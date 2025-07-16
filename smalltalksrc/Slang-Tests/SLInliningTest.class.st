@@ -1187,19 +1187,9 @@ SLInliningTest >> testMethodWithReturningIfWithReturnPushedDownInlined [
 static sqInt
 methodWithReturningIfWithReturnPushedDownInlined(void)
 {
-	sqInt a;
-
-	/* begin methodBMultipleReturningIfWithReturnPushedDown */
-	if (methodB()) {
-		a = 2;
-		goto l2;
-	} else {
-		a = 3;
-		goto l2;
-	}
-	l2:
-	;
-	/* end methodBMultipleReturningIfWithReturnPushedDown */
+	methodB(((methodB())
+		 ? 2
+		 : 3));
 	return 0;
 }'
 ]

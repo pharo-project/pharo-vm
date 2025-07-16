@@ -647,7 +647,7 @@ TStatementListNode >> parameterNames [
 TStatementListNode >> postCopy [
 
 	arguments := arguments copy.
-	self statements: (statements collect: [ :s | s copy parent: self ])
+	self statements: (statements collect: [ :s | s copy  ])
 ]
 
 { #category : 'printing' }

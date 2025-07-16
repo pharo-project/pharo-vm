@@ -193,15 +193,43 @@ SLNodeAnnotatorVisitor >> cleanInfo [
 ]
 
 { #category : 'cleanup' }
+SLNodeAnnotatorVisitor >> cleanInfoAndBranchInfoFrom: aNode [
+
+	self cleanInfoFrom: aNode.
+	self cleanBranchInfoFrom: aNode
+]
+
+{ #category : 'cleanup' }
 SLNodeAnnotatorVisitor >> cleanInfoFrom: aNode [
 
 	info removeKey: aNode 
+]
+
+{ #category : 'transformation' }
+SLNodeAnnotatorVisitor >> copyWithoutReturn: aTMethod [
+
+	| parseTree returns |
+	parseTree := aTMethod parseTree.
+	returns := parseTree allReturns.
+	returns do: [ :return |
+		return parent replaceChild: return with: return expression ]
 ]
 
 { #category : 'helpers-stack-operation' }
 SLNodeAnnotatorVisitor >> deActivateCurrentSouldBePartiallyIgnored [
 
 	currentShouldBePartiallyIgnored := false
+]
+
+{ #category : 'visiting-main-API' }
+SLNodeAnnotatorVisitor >> do: aBlock visit: aNode [
+	"do a block after visiting aNode, clean the info after"
+
+	| blockResult |
+	self visit: aNode.
+	blockResult := aBlock value.
+	self cleanInfoAndBranchInfoFrom: aNode.
+	^ blockResult
 ]
 
 { #category : 'helpers-annotate' }
@@ -238,6 +266,39 @@ SLNodeAnnotatorVisitor >> giveStacksInfoForMultipleBranches: aCollectionOfNode [
 			tops do: [ :assoc |
 				assoc value pop.
 				assoc value push: assoc key ] ] ]
+]
+
+{ #category : 'testing' }
+SLNodeAnnotatorVisitor >> hasEffectiveReturnValue: aNode [
+
+	aNode nodesDo: [ :node |
+		(self isEffectiveReturnValue: node) ifTrue: [ ^ true ] ].
+	^ false
+]
+
+{ #category : 'testing' }
+SLNodeAnnotatorVisitor >> hasGotoOrMultipleReturn: aNode [
+
+	| returnCounter |
+	returnCounter := 0.
+
+	^ self hasGotoOrMultipleReturn: aNode counterBlock: [ :bool |
+		  bool ifTrue: [ returnCounter := returnCounter + 1 ].
+		  returnCounter ]
+]
+
+{ #category : 'testing' }
+SLNodeAnnotatorVisitor >> hasGotoOrMultipleReturn: aNode counterBlock: aBlock [
+
+	| stopToExplore returnCounter |
+	aNode children reverseDo: [ :child |
+		stopToExplore := child isReturn or: [ self isReturningIf: child ].
+		returnCounter := aBlock value: stopToExplore.
+
+		(child isGoTo or: [ returnCounter > 1 ]) ifTrue: [ ^ true ].
+		stopToExplore ifFalse: [
+			^ self hasGotoOrMultipleReturn: child counterBlock: aBlock ] ].
+	^ false
 ]
 
 { #category : 'helpers-info-entry-string' }
@@ -392,6 +453,55 @@ SLNodeAnnotatorVisitor >> isInSend: aNode [
 	^ self presenceInfoFor: aNode entry: self inSendString
 ]
 
+{ #category : 'testing' }
+SLNodeAnnotatorVisitor >> isReturningIf: aNode [
+
+	^ aNode isConditionalSend and: [
+		  (self isEffectivelyIgnoredInReturn: aNode) or: [
+			  aNode arguments allSatisfy: [ :arg |
+				  self hasEffectiveReturnValue: arg ] ] ]
+]
+
+{ #category : 'transformation' }
+SLNodeAnnotatorVisitor >> moveDownAssigningParentFrom: aNode [
+	"use in inlining to put assignment down the ast : x = { ... exp} -> {x = ... exp}"
+
+	| assignment |
+	assignment := self assigningParentFor: aNode.
+	assignment ifNil: [ ^ self ].
+
+	self transformToAssignmentFrom: assignment assignment: assignment.
+
+	assignment parent
+		replaceChild: assignment
+		with: assignment expression.
+
+	self
+		visitFromBranchStartingAt: assignment
+		replacement: assignment expression
+]
+
+{ #category : 'transformation' }
+SLNodeAnnotatorVisitor >> moveDownReturningParentFrom: aNode [
+	"use in inlining for redondant return : return {return exp} -> {return exp}"
+
+	| returningParent |
+	returningParent := self returningParentFor: aNode.
+	returningParent ifNil: [ ^ self ].
+
+	self
+		transformDirectReturnFrom: returningParent
+		return: returningParent.
+
+	returningParent parent
+		replaceChild: returningParent
+		with: returningParent expression.
+
+	self
+		visitFromBranchStartingAt: returningParent
+		replacement: returningParent expression
+]
+
 { #category : 'helpers-accessing-info' }
 SLNodeAnnotatorVisitor >> presenceInfoFor: aNode entry: aString [
 
@@ -443,48 +553,6 @@ SLNodeAnnotatorVisitor >> pushInSendStack [
 	"value doesn't matter for this stack "
 
 	inSendStack push: true
-]
-
-{ #category : 'transformation' }
-SLNodeAnnotatorVisitor >> removeAssigningParentFrom: aNode [
-	"use in inlining to put assignment down the ast : x = { ... exp} -> {x = ... exp}, clean all the info as a side effect, it needs to be recalculated
-	answer if something was done"
-
-	| assignment |
-	assignment := self assigningParentFor: aNode.
-	assignment ifNil: [ ^ self ].
-
-	self transformToAssignmentFrom: assignment assignment: assignment.
-
-	assignment parent
-		replaceChild: assignment
-		with: assignment expression.
-
-	self
-		visitFromBranchStartingAt: assignment
-		replacement: assignment expression
-]
-
-{ #category : 'transformation' }
-SLNodeAnnotatorVisitor >> removeReturningParentFrom: aNode [
-	"use in inlining for redondant return : return {return exp} -> {return exp}, clean all the info as a side effect, it needs to be recalculated
-	answer if anything was done"
-
-	| returningParent |
-	returningParent := self returningParentFor: aNode.
-	returningParent ifNil: [ ^ self ].
-
-	self
-		transformDirectReturnFrom: returningParent
-		return: returningParent.
-
-	returningParent parent
-		replaceChild: returningParent
-		with: returningParent expression.
-
-	self
-		visitFromBranchStartingAt: returningParent
-		replacement: returningParent expression
 ]
 
 { #category : 'helpers-stack-operation' }
@@ -629,7 +697,7 @@ SLNodeAnnotatorVisitor >> transformToAssignmentFrom: parentNode assignment: assi
 			 (self assigningParentFor: child) == assignmentNode ])
 			ifTrue: [
 				child parent replaceChild: child with: (TAssignmentNode new
-						 variable: assignmentNode variable;
+						 variable: assignmentNode variable copy;
 						 expression: child;
 						 yourself) ]
 			ifFalse: [
