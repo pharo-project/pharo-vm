@@ -503,11 +503,17 @@ static void acceptHandler(int fd, void *data, int flags)
 	  setLinger(newSock, 1);
 	  if (pss->multiListen)
 	    {
-	      pss->acceptedSock= newSock;
+			logTrace("acceptHandler: multiListen old: %d new: %d", fd, newSock);
+			if(pss->acceptedSock > 0){
+				logWarn("Socket %d has accepted socket pending %d", pss->s, pss->acceptedSock);
+				closesocket(pss->acceptedSock);
+			}
+			pss->acceptedSock= newSock;
 	    }
 	  else /* traditional listen -- replace server with client in-place */
 	    {
-	      aioDisable(fd);
+		  logTrace("acceptHandler: traditionalListen old: %d new: %d", fd, newSock);
+  		  aioDisable(fd);
 	      closesocket(fd);
 	      pss->s= newSock;
 	      aioEnable(newSock, pss, 0);
@@ -1007,6 +1013,11 @@ void sqSocketCloseConnection(SocketPtr s)
 
   if (SOCKET(s) < 0)
     return;	/* already closed */
+
+  if(PSP(s)->acceptedSock > 0){
+	logWarn("Socket %d has accepted socket pending %d", PSP(s)->s, PSP(s)->acceptedSock);
+	closesocket(PSP(s)->acceptedSock);
+  }
 
   SOCKETSTATE(s)= ThisEndClosed;
   result = closesocket(SOCKET(s));
