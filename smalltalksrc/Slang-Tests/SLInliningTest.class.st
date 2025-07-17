@@ -1142,6 +1142,156 @@ methodWithAssignmentOnWhileTrueInlined(void)
 }'
 ]
 
+{ #category : 'inlining-block' }
+SLInliningTest >> testMethodWithBlockArgumentInlined [
+
+	| method translation |
+	ccg doBasicInlining: true.
+
+	method := ccg methodNamed: #methodWithBlockArgumentInlined.
+
+	translation := self translate: method.
+	translation := translation trimBoth.
+
+	self
+		assert: translation
+		equals:
+			'/* SLMockInliningTestClass>>#methodWithBlockArgumentInlined */
+static sqInt
+methodWithBlockArgumentInlined(void)
+{
+	sqInt a;
+
+	/* begin methodWithBlockArgument: */
+	{
+		a = 2;
+	}
+	/* end methodWithBlockArgument: */
+	return 0;
+}'
+]
+
+{ #category : 'inlining-block' }
+SLInliningTest >> testMethodWithBlockWithReturningIfArgumentInlined [
+
+	| method translation |
+	ccg doBasicInlining: true.
+
+	method := ccg methodNamed:
+		          #methodWithBlockWithReturningIfArgumentInlined.
+
+	translation := self translate: method.
+	translation := translation trimBoth.
+
+	self
+		assert: translation
+		equals:
+			'/* SLMockInliningTestClass>>#methodWithBlockWithReturningIfArgumentInlined */
+static sqInt
+methodWithBlockWithReturningIfArgumentInlined(void)
+{
+	sqInt a;
+
+	/* begin methodWithBlockArgument: */
+	{
+		if (methodB()) {
+			/* begin methodB */
+			a = 2 + 2;
+			/* end methodB */
+		} else {
+			/* begin methodA */
+			1 + 1;
+			/* begin methodB */
+			a = 2 + 2;
+			/* end methodB */
+			/* end methodA */
+		}
+	}
+	/* end methodWithBlockArgument: */
+	return 0;
+}'
+]
+
+{ #category : 'inlining-block' }
+SLInliningTest >> testMethodWithBlockWithReturningIfWithGotoInlinedArgumentInlined [
+
+	| method translation |
+	ccg doBasicInlining: true.
+
+	method := ccg methodNamed:
+		          #methodWithBlockWithReturningIfWithGotoInlinedArgumentInlined.
+
+	translation := self translate: method.
+	translation := translation trimBoth.
+
+	self
+		assert: translation
+		equals:
+			'/* SLMockInliningTestClass>>#methodWithBlockWithReturningIfWithGotoInlinedArgumentInlined */
+static sqInt
+methodWithBlockWithReturningIfWithGotoInlinedArgumentInlined(void)
+{
+	sqInt a;
+
+	/* begin methodWithBlockArgument: */
+	{
+		/* begin methodBMultipleReturn */
+		if (methodB()) {
+			a = 0;
+			goto l4;
+		}
+		/* begin methodCMultipleReturn */
+		if (methodC()) {
+			goto l5;
+		}
+		3 + 3;
+		l5:
+		;
+		/* end methodCMultipleReturn */
+		a = 2 + 2;
+		l4:
+		;
+		/* end methodBMultipleReturn */
+	}
+	/* end methodWithBlockArgument: */
+	return 0;
+}'
+]
+
+{ #category : 'inlining-block' }
+SLInliningTest >> testMethodWithBlockWithReturningIfWithInlinedArgumentInlined [
+
+	| method translation |
+	ccg doBasicInlining: true.
+
+	method := ccg methodNamed:
+		          #methodWithBlockWithReturningIfWithInlinedArgumentInlined.
+
+	translation := self translate: method.
+	translation := translation trimBoth.
+
+	self
+		assert: translation
+		equals:
+			'/* SLMockInliningTestClass>>#methodWithBlockWithReturningIfWithInlinedArgumentInlined */
+static sqInt
+methodWithBlockWithReturningIfWithInlinedArgumentInlined(void)
+{
+	sqInt a;
+
+	/* begin methodWithBlockArgument: */
+	{
+		if (methodB()) {
+			a = 2;
+		} else {
+			a = methodCMultipleReturn();
+		}
+	}
+	/* end methodWithBlockArgument: */
+	return 0;
+}'
+]
+
 { #category : 'inlining-jump' }
 SLInliningTest >> testMethodWithReturningIfWithReturnPartiallyPushedDownInlined [
 

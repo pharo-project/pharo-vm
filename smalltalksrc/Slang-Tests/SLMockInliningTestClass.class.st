@@ -282,6 +282,14 @@ SLMockInliningTestClass >> methodBMultipleReturnExpressionAndStatement [
 ]
 
 { #category : 'inlining-jump-helpers' }
+SLMockInliningTestClass >> methodBMultipleReturnExpressionAndStatementInlined [
+
+	^ self methodB
+		  ifTrue: [ 2 ]
+		  ifFalse: [ self methodBReturningInlinedIfTrueIfFalse ]
+]
+
+{ #category : 'inlining-jump-helpers' }
 SLMockInliningTestClass >> methodBMultipleReturningIfWithReturnPartiallyPushedDown [
 
 	^ self methodB
@@ -439,6 +447,39 @@ SLMockInliningTestClass >> methodWithAvoidedSelectors [
 	[ 'and receiver'. true ] and: [ 'and argument'. false ].
 	[ 'or receiver' . false ] or: [ 'or argument'. true ].
 	[ 'ifTrue receiver'. false ] ifTrue: ['ifTrue argument' . true ]
+]
+
+{ #category : 'inlining-block-helpers' }
+SLMockInliningTestClass >> methodWithBlockArgument: aBlock [
+
+	| a |
+	a := aBlock value
+]
+
+{ #category : 'inlining-block' }
+SLMockInliningTestClass >> methodWithBlockArgumentInlined [
+
+	self methodWithBlockArgument: [ 2 ]
+]
+
+{ #category : 'inlining-block' }
+SLMockInliningTestClass >> methodWithBlockWithReturningIfArgumentInlined [
+
+	self methodWithBlockArgument: [
+		self methodBReturningInlinedIfTrueIfFalse ]
+]
+
+{ #category : 'inlining-block' }
+SLMockInliningTestClass >> methodWithBlockWithReturningIfWithGotoInlinedArgumentInlined [
+
+	self methodWithBlockArgument: [ self methodBMultipleReturn ]
+]
+
+{ #category : 'inlining-block' }
+SLMockInliningTestClass >> methodWithBlockWithReturningIfWithInlinedArgumentInlined [
+
+	self methodWithBlockArgument: [
+		self methodBMultipleReturnExpressionAndStatement ]
 ]
 
 { #category : 'inlining-iterative-helpers' }

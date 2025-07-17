@@ -160,3 +160,20 @@ SLNodeAnnotatorVisitorTestClass >> methodWithSwitchWithOtherwiseAsReturnExpressi
 				  ([ 5 ] -> [ 7 ]) }
 		  otherwise: [ 8 ]
 ]
+
+{ #category : 'block' }
+SLNodeAnnotatorVisitorTestClass >> methodWithValue [ 
+	
+	| a |
+	a := [ true ifTrue: [ 2 ] ifFalse: [ 3 ] ] value.
+]
+
+{ #category : 'block' }
+SLNodeAnnotatorVisitorTestClass >> methodWithValueArgument [
+
+	| a |
+	a := [ :arg |
+	     true
+		     ifTrue: [ arg ]
+		     ifFalse: [ 3 ] ] value: 2
+]

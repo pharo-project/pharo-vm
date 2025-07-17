@@ -16,6 +16,49 @@ SLInlinerWithAnnotation >> annotateCurrentMethod [
 	sLNodeAnnotatorVisitor visit: currentMethod parseTree
 ]
 
+{ #category : 'transformation' }
+SLInlinerWithAnnotation >> argAssignmentsFor: meth send: aSendNode except: elidedArgs [
+	"Return a collection of assignment nodes that assign the given argument expressions to the formal parameter variables of the given method."
+
+	"Optimization: If the actual parameters are either constants or local variables in the target method (the receiver), substitute them directly into the body of meth. Note that global variables cannot be subsituted because the inlined method might depend on the exact ordering of side effects to the globals."
+
+	| stmtList substitutionDict argList |
+	meth args size > (argList := aSendNode arguments) size ifTrue: [
+		self assert: (meth args first beginsWith: 'self_in_').
+		argList := { aSendNode receiver } , aSendNode arguments ].
+
+	stmtList := OrderedCollection new: argList size.
+	substitutionDict := Dictionary new: argList size.
+	meth args with: argList do: [ :argName :exprNode |
+		(currentMethod
+			 isNode: exprNode
+			 substitutableFor: argName
+			 inMethod: meth
+			 in: codeGenerator)
+			ifTrue: [
+				substitutionDict at: argName put: (codeGenerator
+						 node: exprNode
+						 typeCompatibleWith: argName
+						 inliningInto: meth
+						 in: currentMethod).
+
+				currentMethod
+					removeLocal: argName
+					ifAbsent: [ self assert: (argName beginsWith: 'self_in_') ].
+				currentMethod declarations removeKey: argName ifAbsent: nil ]
+			ifFalse: [ "Add an assignment for anything except an unused self_in_foo argument"
+				(elidedArgs includes: argName) ifFalse: [
+					stmtList addLast: (TAssignmentNode new
+							 setVariable: (TVariableNode new setName: argName)
+							 expression: (codeGenerator
+									  node: exprNode copy
+									  typeCompatibleWith: argName
+									  inliningInto: meth
+									  in: currentMethod)) ] ] ].
+	self replaceVariableIn: substitutionDict for: meth.
+	^ stmtList
+]
+
 { #category : 'inlining-decision' }
 SLInlinerWithAnnotation >> canBeInlineInExpression: aNode replacement: aTMethod [
 	"for now"
@@ -364,13 +407,16 @@ SLInlinerWithAnnotation >> inlineSend: aSendNode [
 	 otherwise the assignee variable type must match the return type of the inlinee.  Return
 	 types are not propagated."
 
-	| sel callee exitLabel inlineStmts label omittedParameters calleeParameters exitVar directReturn assignDirectReturnAndExitVarBlock |
+	| sel callee exitLabel inlineStmts label omittedParameters calleeParameters exitVar directReturn isUsedExpression |
 	sel := aSendNode selector.
 	callee := codeGenerator methodNamed: sel.
 
-	assignDirectReturnAndExitVarBlock := [ :res |
-	                                     directReturn := res first.
-	                                     exitVar := res second ].
+	directReturn := sLNodeAnnotatorVisitor isEffectiveReturnValue:
+		                aSendNode.
+	exitVar := (sLNodeAnnotatorVisitor assigningParentFor: aSendNode)
+		           ifNotNil: [ :assignment | assignment variable name ].
+	isUsedExpression := sLNodeAnnotatorVisitor isEffectiveExpression:
+		                    aSendNode.
 
 	"convenient for debugging..."
 	codeGenerator maybeBreakForInlineOf: aSendNode in: self.
@@ -383,9 +429,6 @@ SLInlinerWithAnnotation >> inlineSend: aSendNode [
 	callee := callee copy.
 
 	self checkForFlagIn: callee.
-
-	assignDirectReturnAndExitVarBlock value:
-		(self setDirectReturnAndExitVar: aSendNode).
 
 	self
 		propagateReturnTypeDirectReturn: directReturn
@@ -418,11 +461,10 @@ SLInlinerWithAnnotation >> inlineSend: aSendNode [
 	(inlineStmts := OrderedCollection new:
 			                callee statements size + callee args size + 2)
 		add: (label := TLabeledCommentNode new setComment: 'begin ' , sel);
-		addAll: (currentMethod
+		addAll: (self
 				 argAssignmentsFor: callee
 				 send: aSendNode
-				 except: omittedParameters
-				 in: codeGenerator);
+				 except: omittedParameters);
 		addAll: callee statements. "method body"
 	exitLabel
 		ifNotNil: [
@@ -434,7 +476,9 @@ SLInlinerWithAnnotation >> inlineSend: aSendNode [
 
 	inlineStmts isComment ifTrue: [ "Nuke empty methods; e.g. override of flushAtCache"
 		inlineStmts statements: OrderedCollection new ].
-	
+	isUsedExpression ifFalse: [
+		inlineStmts nodesDo: [ :node |
+			node isGoTo ifTrue: [ node metInInlining ] ] ].
 	^ inlineStmts
 ]
 
@@ -681,11 +725,7 @@ SLInlinerWithAnnotation >> moveDownReturnsAndAssignmentsFor: aSendNode including
 	sLNodeAnnotatorVisitor moveDownAssigningParentFrom:
 		replacementParseTree.
 	sLNodeAnnotatorVisitor moveDownReturningParentFrom:
-		replacementParseTree.
-
-	sLNodeAnnotatorVisitor cleanInfoAndBranchInfoFrom:
-		replacementParseTree.
-	self revert: aSendNode replacement: aTMethodReplacement
+		replacementParseTree
 ]
 
 { #category : 'transformation' }
@@ -735,26 +775,31 @@ SLInlinerWithAnnotation >> replaceNodeIn: aSendNode with: data [
 ]
 
 { #category : 'transformation' }
+SLInlinerWithAnnotation >> replaceVariableIn: aReplacementDictionary for: aTMethod [
+
+	| replacement |
+	aReplacementDictionary isEmpty ifTrue: [ ^ self ].
+	aTMethod parseTree nodesDo: [ :node |
+		(node isVariable and: [
+			 aReplacementDictionary
+				 at: node name
+				 ifPresent: [ true ]
+				 ifAbsent: [ false ] ]) ifTrue: [
+			replacement := (aReplacementDictionary at: node name) copy.
+			node parent replaceChild: node with: replacement.
+			sLNodeAnnotatorVisitor
+				visitFromBranchStartingAt: node
+				replacement: replacement.
+			sLNodeAnnotatorVisitor moveDownAssigningParentFrom: replacement ] ]
+]
+
+{ #category : 'transformation' }
 SLInlinerWithAnnotation >> revert: aSendNode replacement: aTMethod [
 
 	aTMethod parseTree parent
 		replaceChild: aTMethod parseTree
 		with: aSendNode.
 	aTMethod parseTree parent: aTMethod
-]
-
-{ #category : 'inlining-support' }
-SLInlinerWithAnnotation >> setDirectReturnAndExitVar: aSendNode [
-
-	| directReturn exitVar |
-	directReturn := sLNodeAnnotatorVisitor isEffectiveReturnValue:
-		                aSendNode.
-	exitVar := (sLNodeAnnotatorVisitor assigningParentFor: aSendNode)
-		           ifNotNil: [ :assignment | assignment variable name ].
-	^ OrderedCollection new
-		  add: directReturn;
-		  add: exitVar;
-		  yourself
 ]
 
 { #category : 'inlining-preparation' }
@@ -909,8 +954,6 @@ SLInlinerWithAnnotation >> tryToInlineMethodStatementsListsInCurrentMethod [
 					newStatements addAllLast: inlinedStmts statements ] ].
 		stmtList statements: newStatements statements ].
 
-	currentMethod parseTree nodesDo: [ :node |
-		node isGoTo ifTrue: [ node metInInlining ] ].
 	^ didSomething
 ]
 

@@ -268,6 +268,43 @@ SLNodeAnnotatorVisitor >> giveStacksInfoForMultipleBranches: aCollectionOfNode [
 				assoc value push: assoc key ] ] ]
 ]
 
+{ #category : 'helpers-visiting' }
+SLNodeAnnotatorVisitor >> handleConditionalSend: aSendNode [
+
+	aSendNode isConditionalSend ifTrue: [
+		self visitConditionalSend: aSendNode.
+		^ true ].
+
+	aSendNode isCppConditional ifTrue: [
+		self visitCppConditional: aSendNode.
+		^ true ].
+
+
+	^ false
+]
+
+{ #category : 'helpers-visiting' }
+SLNodeAnnotatorVisitor >> handleIterativeSend: aSendNode [
+
+	aSendNode isUnaryIterativeSend ifTrue: [
+		self visitUnaryIterativeSend: aSendNode.
+		^ true ].
+
+	aSendNode isUnaryIterativeSendWithImportantLastStatement ifTrue: [
+		self visitUnaryIterativeSendWithImportantLastStatement: aSendNode.
+		^ true ].
+
+	aSendNode isBinaryIterativeSend ifTrue: [
+		self visitBinaryIterativeSend: aSendNode.
+		^ true ].
+
+	aSendNode isDoIterativeSend ifTrue: [
+		self visitDoIterativeSend: aSendNode.
+		^ true ].
+
+	^ false
+]
+
 { #category : 'testing' }
 SLNodeAnnotatorVisitor >> hasEffectiveReturnValue: aNode [
 
@@ -945,28 +982,13 @@ SLNodeAnnotatorVisitor >> visitSendNode: aSendNode [
 { #category : 'helpers-visiting' }
 SLNodeAnnotatorVisitor >> visitSpecialSend: aSendNode [
 
-	aSendNode isConditionalSend ifTrue: [
-		self visitConditionalSend: aSendNode.
-		^ true ].
+	(self handleConditionalSend: aSendNode) ifTrue: [ ^ true ].
 
-	aSendNode isCppConditional ifTrue: [
-		self visitCppConditional: aSendNode.
-		^ true ].
+	(self handleIterativeSend: aSendNode) ifTrue: [ ^ true ].
 
-	aSendNode isUnaryIterativeSend ifTrue: [
-		self visitUnaryIterativeSend: aSendNode.
-		^ true ].
-
-	aSendNode isUnaryIterativeSendWithImportantLastStatement ifTrue: [
-		self visitUnaryIterativeSendWithImportantLastStatement: aSendNode.
-		^ true ].
-
-	aSendNode isBinaryIterativeSend ifTrue: [
-		self visitBinaryIterativeSend: aSendNode.
-		^ true ].
-
-	aSendNode isDoIterativeSend ifTrue: [
-		self visitDoIterativeSend: aSendNode.
+	(aSendNode selector keywords allSatisfy: [ :k |
+	#( 'value' 'value:' ) includes: k ])ifTrue: [
+		self visitValueExpansionSend: aSendNode.
 		^ true ].
 
 	^ false
@@ -1070,6 +1092,24 @@ SLNodeAnnotatorVisitor >> visitUnaryIterativeSendWithImportantLastStatement: aSe
 
 	block removeFirstNonCommentStatement.
 	block addAllLastKeepingEndComments: {condition}
+]
+
+{ #category : 'helpers-visiting' }
+SLNodeAnnotatorVisitor >> visitValueExpansionSend: aSendNode [
+
+	self activateCurrentSouldBePartiallyIgnored.
+	self annotateNodeState: aSendNode.
+
+	self pushInExpressionStack.
+	self pushInSendStack.
+	searchForExpressionValueStack push: true.
+
+	aSendNode receiver accept: self.
+	aSendNode arguments do: [ :arg | arg accept: self ].
+
+	inExpressionStack pop.
+	inSendStack pop.
+	searchForExpressionValueStack pop
 ]
 
 { #category : 'visiting' }
