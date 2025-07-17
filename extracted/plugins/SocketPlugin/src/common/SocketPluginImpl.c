@@ -506,7 +506,8 @@ static void acceptHandler(int fd, void *data, int flags)
 			logTrace("acceptHandler: multiListen old: %d new: %d", fd, newSock);
 			if(pss->acceptedSock > 0){
 				logWarn("Socket %d has accepted socket pending %d", pss->s, pss->acceptedSock);
-				closesocket(pss->acceptedSock);
+    	  setLinger(pss->acceptedSock, 0);
+        closesocket(pss->acceptedSock);
 			}
 			pss->acceptedSock= newSock;
 	    }
@@ -1015,8 +1016,9 @@ void sqSocketCloseConnection(SocketPtr s)
     return;	/* already closed */
 
   if(PSP(s)->acceptedSock > 0){
-	logWarn("Socket %d has accepted socket pending %d", PSP(s)->s, PSP(s)->acceptedSock);
-	closesocket(PSP(s)->acceptedSock);
+	  logWarn("Socket %d has accepted socket pending %d", PSP(s)->s, PSP(s)->acceptedSock);
+	  setLinger(PSP(s)->acceptedSock, 0);
+    closesocket(PSP(s)->acceptedSock);
   }
 
   SOCKETSTATE(s)= ThisEndClosed;
