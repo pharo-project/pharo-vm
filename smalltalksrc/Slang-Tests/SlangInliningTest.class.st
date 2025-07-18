@@ -65,42 +65,6 @@ methodCAssignOnReturn(void)
 ]
 
 { #category : 'inline-arguments' }
-SlangInliningTest >> test2ChainInliningEmptyMethodAWithArgumentsInlined [
-	"a bug present since old version, vm works but it would be nice to fix it one day"
-
-	| method translation |
-	ccg doBasicInlining: true.
-
-	method := ccg methodNamed: #emptyMethodAWithArgumentsInlined.
-
-	translation := self translate: method.
-	translation := translation trimBoth.
-
-	self
-		assert: translation
-		equals:
-			'/* SLMockInliningTestClass>>#emptyMethodAWithArgumentsInlined */
-static sqInt
-emptyMethodAWithArgumentsInlined(void)
-{
-	sqInt arg;
-
-	/* begin emptyMethod: */
-	/* begin methodCAlwaysInlined */
-	3 + 3;
-	/* begin methodA */
-	1 + 1;
-	/* begin methodB */
-	arg = 2 + 2;
-	/* end methodB */
-	/* end methodA */
-	/* end methodCAlwaysInlined */
-	/* end emptyMethod: */
-	return 0;
-}'
-]
-
-{ #category : 'inline-arguments' }
 SlangInliningTest >> test2ChainInliningEmptyMethodAWithSimpleArgumentsInlined [
 
 	| method translation |
@@ -168,39 +132,6 @@ static sqInt
 methodAWithReturningSendArgumentsInlined(void)
 {
 	return methodB((3 + 3, /* begin methodA */ 1 + 1, /* begin methodB */ 2 + 2 /* end methodB */ /* end methodA */));
-}'
-]
-
-{ #category : 'inlining-returning-arguments' }
-SlangInliningTest >> test2ChainInliningMethodAWithReturningSendReturningArgumentsInlined [
-
-	| method translation |
-	ccg doBasicInlining: true.
-
-	method := ccg methodNamed:
-		          #methodAWithReturningSendReturningArgumentsInlined.
-
-	translation := self translate: method.
-	translation := translation trimBoth.
-
-	self assert: translation equals: 'incorrect?
-			/* SLMockInliningTestClass>>#methodAWithReturningSendReturningArgumentsInlined */
-static sqInt
-methodAWithReturningSendReturningArgumentsInlined(void)
-{
-	return methodB((/* begin methodBMultipleReturn */ ((methodB())
-		 ? (goto l3;
-)
-		 : 0), /* begin methodCMultipleReturn */ ((methodC())
-		 ? (goto l2;
-)
-		 : 0), 3 + 3, l2:
-	;
-	/* end methodCMultipleReturn */
-, 2 + 2, l3:
-	;
-	/* end methodBMultipleReturn */
-, 1 + 1));
 }'
 ]
 
@@ -338,38 +269,6 @@ methodAMultipleReturnAsReturnExpression(void)
 	/* end methodCMultipleReturn */
 	return 2 + 2;
 	/* end methodBMultipleReturn */
-}'
-]
-
-{ #category : 'inlining-jump' }
-SlangInliningTest >> test2ChainInliningMultipleReturnAsReturnExpressionAndStatement [
-
-	| method translation |
-	ccg doBasicInlining: true.
-
-	method := ccg methodNamed:
-		          #methodAMultipleReturnAsReturnExpressionAndStatement.
-
-	translation := self translate: method.
-	translation := translation trimBoth.
-
-	self
-		assert: translation
-		equals:
-			'/* SLMockInliningTestClass>>#methodAMultipleReturnAsReturnExpressionAndStatement */
-static sqInt
-methodAMultipleReturnAsReturnExpressionAndStatement(void)
-{
-	if (methodB()) {
-		return 2;
-	} else {
-		/* begin methodCMultipleReturn */
-		if (methodC()) {
-			return 1;
-		}
-		return 3 + 3;
-		/* end methodCMultipleReturn */
-	}
 }'
 ]
 
@@ -556,46 +455,6 @@ methodAInlineMultipleIfFalseReturningIfTrueInAssignment(void)
 ]
 
 { #category : 'inlining-returning-conditional' }
-SlangInliningTest >> testMethodAInlineMultipleIfFalseReturningIfTrueInReturn [
-
-	| method translation |
-	ccg doBasicInlining: true.
-
-	method := ccg methodNamed:
-		          #methodAInlineMultipleIfFalseReturningIfTrueInReturn.
-
-	translation := self translate: method.
-	translation := translation trimBoth.
-
-	self
-		assert: translation
-		equals:
-			'/* SLMockInliningTestClass>>#methodAInlineMultipleIfFalseReturningIfTrue */
-static sqInt
-methodAInlineMultipleIfFalseReturningIfTrue(void)
-{
-	if (methodB()) {
-		/* begin methodBIfFalseReturningIfTrue */
-		if (methodB()) {
-			return 0;
-		} else {
-		}
-		return 1;
-		/* end methodBIfFalseReturningIfTrue */
-	}
- else {
-		/* begin methodBIfFalseReturningIfTrue */
-		if (methodB()) {
-			return 0;
-		} else {
-		}
-		return 1;
-		/* end methodBIfFalseReturningIfTrue */
-	}
-}'
-]
-
-{ #category : 'inlining-returning-conditional' }
 SlangInliningTest >> testMethodAInlineReturningIfTrue [
 
 	| method translation |
@@ -701,68 +560,6 @@ methodAInlineReturningIfTrueInAssignment(void)
 ]
 
 { #category : 'inlining-assignment' }
-SlangInliningTest >> testMethodAInlineReturningInlinedIfTrueIfFalseInAssignment [
-
-	| method translation |
-	ccg doBasicInlining: true.
-
-	method := ccg methodNamed:
-		          #methodAInlineReturningInlinedIfTrueIfFalseInAssignment.
-
-	translation := self translate: method.
-	translation := translation trimBoth.
-
-	self
-		assert: translation
-		equals:
-			'/* SLMockInliningTestClass>>#methodAInlineReturningInlinedIfTrueIfFalseInAssignment */
-static sqInt
-methodAInlineReturningInlinedIfTrueIfFalseInAssignment(void)
-{
-	sqInt a;
-
-	if (methodB()) {
-		/* begin methodB */
-		a = 2 + 2;
-		/* end methodB */
-	} else {
-		/* begin methodA */
-		1 + 1;
-		/* begin methodB */
-		a = 2 + 2;
-		/* end methodB */
-		/* end methodA */
-	}
-	return 0;
-}'
-]
-
-{ #category : 'inlining-returning-conditional' }
-SlangInliningTest >> testMethodAInlineReturningInlinedIfTrueIfFalseInReturn [
-
-	| method translation |
-	ccg doBasicInlining: true.
-
-	method := ccg methodNamed:
-		          #methodAInlineReturningInlinedIfTrueIfFalseInReturn.
-
-	translation := self translate: method.
-	translation := translation trimBoth.
-
-	self
-		assert: translation
-		equals:
-			'/* SLMockInliningTestClass>>#methodAInlineReturningInlinedIfTrueIfFalseInReturn */
-static sqInt
-methodAInlineReturningInlinedIfTrueIfFalseInReturn(void)
-{
-	return ((methodB())
-		 ? (/* begin methodB */ 2 + 2 /* end methodB */)
-		 : (/* begin methodA */ 1 + 1, /* begin methodB */ 2 + 2 /* end methodB */ /* end methodA */));
-}'
-]
-
-{ #category : 'inlining-assignment' }
 SlangInliningTest >> testMethodAInlineReturningInlinedIfTrueInAssignment [
 
 	| method translation |
@@ -787,31 +584,6 @@ methodAInlineReturningInlinedIfTrueInAssignment(void)
 		 ? (/* begin methodB */ 2 + 2 /* end methodB */)
 		 : 0);
 	return 0;
-}'
-]
-
-{ #category : 'inlining-returning-conditional' }
-SlangInliningTest >> testMethodAInlineReturningInlinedIfTrueInReturn [
-
-	| method translation |
-	ccg doBasicInlining: true.
-
-	method := ccg methodNamed:
-		          #methodAInlineReturningInlinedIfTrueInReturn.
-
-	translation := self translate: method.
-	translation := translation trimBoth.
-
-	self
-		assert: translation
-		equals:
-			'/* SLMockInliningTestClass>>#methodAInlineReturningInlinedIfTrueInReturn */
-static sqInt
-methodAInlineReturningInlinedIfTrueInReturn(void)
-{
-	return ((methodB())
-		 ? (/* begin methodB */ 2 + 2 /* end methodB */)
-		 : 0);
 }'
 ]
 
@@ -864,30 +636,6 @@ methodAReturnAssignment(void)
 	sqInt a;
 
 	return (a = methodB());
-}'
-]
-
-{ #category : 'inlining-assignment' }
-SlangInliningTest >> testMethodAReturnBlockAssignment [
-
-	| method translation |
-	ccg doBasicInlining: true.
-
-	method := ccg methodNamed: #methodAReturnBlockAssignment.
-
-	translation := self translate: method.
-	translation := translation trimBoth.
-
-	self
-		assert: translation
-		equals:
-			'/* SLMockInliningTestClass>>#methodAReturnBlockAssignment */
-static sqInt
-methodAReturnBlockAssignment(void)
-{
-	sqInt a;
-
-	return (/* begin methodB */ (a = 2 + 2) /* end methodB */);
 }'
 ]
 

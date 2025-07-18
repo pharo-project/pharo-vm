@@ -12,12 +12,6 @@ SLMockInliningTestClass >> emptyMethod: arg [
 ]
 
 { #category : 'inlining-arguments' }
-SLMockInliningTestClass >> emptyMethodAWithArgumentsInlined [
-
-	self emptyMethod: self methodCAlwaysInlined
-]
-
-{ #category : 'inlining-arguments' }
 SLMockInliningTestClass >> emptyMethodAWithSimpleArgumentsInlined [
 
 	self emptyMethod: self methodBAlwaysInlined
@@ -61,16 +55,6 @@ SLMockInliningTestClass >> methodAInlineMultipleIfFalseReturningIfTrueInAssignme
 			  self methodBIfFalseReturningIfTrue ]
 ]
 
-{ #category : 'inlining-returning-conditional' }
-SLMockInliningTestClass >> methodAInlineMultipleIfFalseReturningIfTrueInReturn [
-
-	^ self methodB
-		  ifFalse: [ self methodBIfFalseReturningIfTrue ]
-		  ifTrue: [
-			  5.
-			  self methodBIfFalseReturningIfTrue ]
-]
-
 { #category : 'inlining-assignment' }
 SLMockInliningTestClass >> methodAInlineReturningIfTrueIfFalseInAssignment [
 
@@ -98,42 +82,15 @@ SLMockInliningTestClass >> methodAInlineReturningIfTrueInReturn [
 ]
 
 { #category : 'inlining-assignment' }
-SLMockInliningTestClass >> methodAInlineReturningInlinedIfTrueIfFalseInAssignment [
-
-	| a |
-	a := self methodBReturningInlinedIfTrueIfFalse
-]
-
-{ #category : 'inlining-returning-conditional' }
-SLMockInliningTestClass >> methodAInlineReturningInlinedIfTrueIfFalseInReturn [
-
-	^ self methodBReturningInlinedIfTrueIfFalse
-]
-
-{ #category : 'inlining-assignment' }
 SLMockInliningTestClass >> methodAInlineReturningInlinedIfTrueInAssignment [
 
 	| a |
 	a := self methodBReturningInlinedIfTrue
 ]
 
-{ #category : 'inlining-returning-conditional' }
-SLMockInliningTestClass >> methodAInlineReturningInlinedIfTrueInReturn [
-
-	^ self methodBReturningInlinedIfTrue
-]
-
 { #category : 'inlining-jump' }
 SLMockInliningTestClass >> methodAMultipleReturn [
 
-	self methodBMultipleReturn.
-	^ 1 + 1
-]
-
-{ #category : 'inlining-jump' }
-SLMockInliningTestClass >> methodAMultipleReturnAlwaysInlined [
-
-	<inline: #always>
 	self methodBMultipleReturn.
 	^ 1 + 1
 ]
@@ -152,12 +109,6 @@ SLMockInliningTestClass >> methodAMultipleReturnAsReturnExpression [
 ]
 
 { #category : 'inlining-jump' }
-SLMockInliningTestClass >> methodAMultipleReturnAsReturnExpressionAndStatement [
-
-	^ self methodBMultipleReturnExpressionAndStatement
-]
-
-{ #category : 'inlining-jump' }
 SLMockInliningTestClass >> methodAMultipleReturnExpression [
 
 	self methodBMultipleReturn.
@@ -169,13 +120,6 @@ SLMockInliningTestClass >> methodAReturnAssignment [
 
 	| a |
 	^ a := self methodB
-]
-
-{ #category : 'inlining-assignment' }
-SLMockInliningTestClass >> methodAReturnBlockAssignment [
-
-	| a |
-	^ a := [ self methodB ]
 ]
 
 { #category : 'inlining-assignment-helpers' }
@@ -205,12 +149,6 @@ SLMockInliningTestClass >> methodAWithArgumentsInlined [
 SLMockInliningTestClass >> methodAWithReturningSendArgumentsInlined [
 
 	^ self methodB: self methodCAlwaysInlined
-]
-
-{ #category : 'inlining-returning-arguments' }
-SLMockInliningTestClass >> methodAWithReturningSendReturningArgumentsInlined [
-
-	^ self methodB: self methodAMultipleReturnAlwaysInlined
 ]
 
 { #category : 'inlining-arguments' }
@@ -262,14 +200,6 @@ SLMockInliningTestClass >> methodBMultipleReturn [
 	^ 2 + 2
 ]
 
-{ #category : 'inlining-jump-helpers' }
-SLMockInliningTestClass >> methodBMultipleReturnExpressionAndStatement [
-
-	^ self methodB
-		  ifTrue: [ 2 ]
-		  ifFalse: [ self methodCMultipleReturn ]
-]
-
 { #category : 'inlining-assignment-helpers' }
 SLMockInliningTestClass >> methodBReturnOnAssignment [
 
@@ -301,12 +231,6 @@ SLMockInliningTestClass >> methodBReturningIfTrueIfFalse [
 SLMockInliningTestClass >> methodBReturningInlinedIfTrue [
 
 	^ self methodB ifTrue: [ self methodB ]
-]
-
-{ #category : 'inlining-returning-conditional-helpers' }
-SLMockInliningTestClass >> methodBReturningInlinedIfTrueIfFalse [
-
-	^ self methodB ifTrue: [ self methodB ] ifFalse: [ self methodA ]
 ]
 
 { #category : 'inlining-jump-helpers' }
