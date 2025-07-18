@@ -873,6 +873,25 @@ SLNodeAnnotatorVisitor >> visitDoIterativeSend: aSendNode [
 	inExpressionStack pop
 ]
 
+{ #category : 'helpers-visiting' }
+SLNodeAnnotatorVisitor >> visitExitPointSend: aSendNode [
+
+	self activateCurrentSouldBePartiallyIgnored.
+	self annotateNodeState: aSendNode.
+
+	self invalidateSearchStacksAfterReturn.
+	searchForExpressionValueStack push: true.
+	self pushInExpressionStack.
+	self pushInSendStack.
+
+	aSendNode receiver accept: self.
+	aSendNode arguments do: [ :arg | arg accept: self ].
+
+	searchForExpressionValueStack pop.
+	inExpressionStack pop.
+	inSendStack pop
+]
+
 { #category : 'visiting-main-API' }
 SLNodeAnnotatorVisitor >> visitFromBranchStartingAt: aNode [
 
@@ -987,9 +1006,11 @@ SLNodeAnnotatorVisitor >> visitSpecialSend: aSendNode [
 	(self handleIterativeSend: aSendNode) ifTrue: [ ^ true ].
 
 	(aSendNode selector keywords allSatisfy: [ :k |
-	#( 'value' 'value:' ) includes: k ])ifTrue: [
+		 #( 'value' 'value:' ) includes: k ]) ifTrue: [
 		self visitValueExpansionSend: aSendNode.
 		^ true ].
+
+	aSendNode isExitPoint ifTrue: [ self visitExitPointSend: aSendNode ].
 
 	^ false
 ]

@@ -450,6 +450,13 @@ TSendNode >> isDoIterativeSend [
 ]
 
 { #category : 'testing' }
+TSendNode >> isExitPoint [
+	"useful for error() or abort()"
+
+	^ #( #error: ) includes: selector
+]
+
+{ #category : 'testing' }
 TSendNode >> isExpression [
 
 	^ true
