@@ -6,7 +6,8 @@ Class {
 	#superclass : 'Object',
 	#instVars : [
 		'parent',
-		'comment'
+		'comment',
+		'isExpression'
 	],
 	#category : 'Slang-AST',
 	#package : 'Slang',
@@ -301,15 +302,6 @@ TParseNode >> isLiteralArrayDeclaration [
 TParseNode >> isNonNullCCode [
 	"overridden in TSendNode"
 	^false
-]
-
-{ #category : 'testing' }
-TParseNode >> isNotExpression [
-
-	^ parent isNil or: [
-		  parent isTMethod or: [
-			  parent isSend not and: [
-				  parent isReturn not and: [ parent isAssignment not ] ] ] ]
 ]
 
 { #category : 'testing' }

@@ -544,32 +544,27 @@ TMethod >> buildSwitchStmt: aSendNode parent: parentNode [
 { #category : 'inlining support' }
 TMethod >> checkForCompletenessIn: aCodeGen [
 	"Set the complete flag if the parse tree contains no further candidates for inlining."
-	| foundIncompleteSend incompleteSends |
+
+	| foundIncompleteSend |
 	aCodeGen maybeBreakForTestOfInliningOf: selector.
 
 	foundIncompleteSend := false.
-	incompleteSends := IdentitySet new.
 
 	parseTree
-		nodesDo:
-			[:node|
-			 node isSend ifTrue:
-				[(self methodIsEffectivelyComplete: node selector in: aCodeGen)
-					ifTrue:
-						[(self inlineableFunctionCall: node in: aCodeGen) ifTrue:
-							[complete := false.  "more inlining to do"
-							^self]]
-					ifFalse:
-						[foundIncompleteSend := true.
-						 incompleteSends add: node]]]
-		unless:
-			[:node|
-			node isSend
-			and: [node selector == #cCode:inSmalltalk:
-				or: [aCodeGen isAssertSelector: node selector]]].
+		nodesDo: [ :node |
+			node isSend ifTrue: [
+				(self methodIsEffectivelyComplete: node selector in: aCodeGen)
+					ifTrue: [
+						(self inlineableFunctionCall: node in: aCodeGen) ifTrue: [
+							complete := false. "more inlining to do"
+							^ self ] ]
+					ifFalse: [ foundIncompleteSend := true ] ] ]
+		unless: [ :node |
+			node isSend and: [
+				node selector == #cCode:inSmalltalk: or: [
+					aCodeGen isAssertSelector: node selector ] ] ].
 
-	foundIncompleteSend ifFalse:
-		[complete := true]
+	foundIncompleteSend ifFalse: [ complete := true ]
 ]
 
 { #category : 'testing' }
@@ -629,6 +624,13 @@ TMethod >> compiledMethod [
 		ifAbsent: [definingClass compiledMethodAt: properties selector]
 ]
 
+{ #category : 'accessing' }
+TMethod >> complete: aBoolean [
+
+	complete := aBoolean.
+	^ aBoolean
+]
+
 { #category : 'inlining support' }
 TMethod >> computePossibleSideEffectsInto: writtenToVars visited: visitedSelectors in: aCodeGen [
 	"Add all variables written to by this method and its callees to writtenToVars.
@@ -655,7 +657,7 @@ TMethod >> computePossibleSideEffectsInto: writtenToVars visited: visitedSelecto
 						computePossibleSideEffectsInto: writtenToVars
 						visited: visitedSelectors
 						in: aCodeGen]]].
-	writtenToGlobalVarsCache := writtenToVars copy
+	self writtenToGlobalVarsCache: writtenToVars copy
 ]
 
 { #category : 'accessing' }
@@ -1796,7 +1798,7 @@ TMethod >> isAssertion [
 TMethod >> isComplete [
 	"A method is 'complete' if it does not contain any more inline-able calls."
 
-	^complete
+	^ complete
 ]
 
 { #category : 'inlining' }
@@ -1831,22 +1833,21 @@ TMethod >> isFunctionalIn: aCodeGen [
 	 Answer false for methods with return types other than the simple
 	 integer types to work around bugs in the inliner."
 
-	parseTree statements size = 1 ifFalse:
-		[(parseTree statements size = 2
-		  and: [parseTree statements first isSend
-		  and: [parseTree statements first selector == #flag:
-			or: [(aCodeGen isAssertSelector: parseTree statements first selector)
-				and: [parseTree statements first selector ~~ #asserta:]]]]) ifFalse:
-			[^false]].
-	parseTree lastNonCommentStatement isReturn ifFalse:
-		[^false].
-	parseTree lastNonCommentStatement expression nodesDo:
-		[ :n | n isReturn ifTrue: [^false]].
-	^#(int #'unsigned int' #long #'unsigned long' #'long long' #'unsigned long long'
-		sqInt usqInt #'sqIntptr_t' #'usqIntptr_t' sqLong usqLong
-		#'int *' #'unsigned int *' #'sqInt *' #'usqInt *' #'sqLong *' #'usqLong *' #'char *'
-		#'CogMethod *' #'AbstractInstruction *'
-		#'FILE *') includes: returnType
+	parseTree statements size = 1 ifFalse: [
+		(parseTree statements size = 2 and: [
+			 parseTree statements first isSend and: [
+				 parseTree statements first selector == #flag: or: [
+					 (aCodeGen isAssertSelector: parseTree statements first selector)
+						 and: [ parseTree statements first selector ~~ #asserta: ] ] ] ])
+			ifFalse: [ ^ false ] ].
+	parseTree lastNonCommentStatement isReturn ifFalse: [ ^ false ].
+	parseTree lastNonCommentStatement expression nodesDo: [ :n |
+		n isReturn ifTrue: [ ^ false ] ].
+	^ #( int #'unsigned int' #long #'unsigned long' #'long long'
+	     #'unsigned long long' sqInt usqInt #sqIntptr_t #usqIntptr_t
+	     sqLong usqLong #'int *' #'unsigned int *' #'sqInt *' #'usqInt *'
+	     #'sqLong *' #'usqLong *' #'char *' #'CogMethod *' #'AbstractInstruction *'
+	     #'FILE *' ) includes: returnType
 ]
 
 { #category : 'inlining' }
@@ -2117,14 +2118,14 @@ TMethod >> mergePropertiesOfSuperMethod: superTMethod [
 ]
 
 { #category : 'inlining support' }
-TMethod >> methodIsEffectivelyComplete: selector in: aCodeGen [
+TMethod >> methodIsEffectivelyComplete: aSelector in: aCodeGen [
 	"Answer if selector is effectively not inlineable in the receiver.
 	 This is tricky because block inlining requires that certain methods must be inlined, which
 	 can be at odds with the opportunistic strategy the inliner takes.  Since the inliner only
 	 inlines complete methods and certain methods may never be marked as complete (e.g.
 	 recursive methods) we have to short-cut certain kinds of send.  In particular, short-cut
 	 sends that turn into jumps in the interpret routine (sharedCase and sharedLabel below)."
-	^(aCodeGen methodNamed: selector)
+	^(aCodeGen methodNamed: aSelector)
 		ifNil: [true] "builtins or externals are not inlineable"
 		ifNotNil:
 			[:m|
@@ -3423,4 +3424,10 @@ TMethod >> variablesAssignedTo [
 TMethod >> vmNameString [
 	"return the string to use as the vm name in code generated for this method"
 	^'self'
+]
+
+{ #category : 'accessing' }
+TMethod >> writtenToGlobalVarsCache: value [
+
+	writtenToGlobalVarsCache := value
 ]
