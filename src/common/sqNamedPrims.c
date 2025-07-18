@@ -31,7 +31,7 @@ typedef struct ModuleEntry {
 } ModuleEntry;
 
 
-static ModuleEntry *squeakModule = NULL;
+static ModuleEntry *intrinsicsModule = NULL;
 static ModuleEntry *firstModule = NULL;
 struct VirtualMachine *sqGetInterpreterProxy(void);
 
@@ -39,7 +39,7 @@ static void *
 findLoadedModule(char *pluginName)
 {
 	ModuleEntry *module;
-	if(!pluginName || !pluginName[0]) return squeakModule;
+	if(!pluginName || !pluginName[0]) return intrinsicsModule;
 	module = firstModule;
 	while(module) {
 		if(strcmp(module->name, pluginName) == 0) return module;
@@ -157,7 +157,7 @@ static void *
 findFunctionAndAccessorDepthIn(char *functionName, ModuleEntry *module,
 								sqInt fnameLength, sqInt *accessorDepthPtr)
 {
-	return module->handle == squeakModule->handle
+	return module->handle == intrinsicsModule->handle
 		? findInternalFunctionIn(functionName, module->name,
 								fnameLength, accessorDepthPtr)
 		: findExternalFunctionIn(functionName, module,
@@ -167,7 +167,7 @@ findFunctionAndAccessorDepthIn(char *functionName, ModuleEntry *module,
 static void *
 findFunctionIn(char *functionName, ModuleEntry *module)
 {
-	return module->handle == squeakModule->handle
+	return module->handle == intrinsicsModule->handle
 		? findInternalFunctionIn(functionName, module->name, 0, 0)
 		: findExternalFunctionIn(functionName, module, 0, 0);
 }
@@ -268,14 +268,14 @@ findAndLoadModule(char *pluginName, sqInt ffiLoad)
 	if(!handle) {
 		/* might be internal, so go looking for setInterpreter() */
 		if(findInternalFunctionIn("setInterpreter", pluginName, 0, 0))
-			handle = squeakModule->handle;
+			handle = intrinsicsModule->handle;
 		else
 			return NULL; /* PluginName_setInterpreter() not found */
 	}
 	module = addToModuleList(pluginName, handle, ffiLoad);
 	if(!callInitializersIn(module)) {
 		/* Initializers failed */
-		if(handle != squeakModule->handle) {
+		if(handle != intrinsicsModule->handle) {
 			/* physically unload module */
 			ioFreeModule(handle);
 		}
@@ -295,9 +295,9 @@ findOrLoadModule(char *pluginName, sqInt ffiLoad)
 {
 	ModuleEntry *module;
 
-	if(!squeakModule) {
+	if(!intrinsicsModule) {
 		/* Load intrinsics (if possible) */
-		squeakModule = addToModuleList("", NULL, 1);
+		intrinsicsModule = addToModuleList("", NULL, 1);
 		firstModule = NULL; /* drop off module list - will never be unloaded */
 	}
 
@@ -488,7 +488,7 @@ ioUnloadModule(char *moduleName)
 {
 	ModuleEntry *entry, *temp;
 
-	if(!squeakModule) return 0; /* Nothing has been loaded */
+	if(!intrinsicsModule) return 0; /* Nothing has been loaded */
 	if(!moduleName || !moduleName[0]) return 0; /* nope */
 
 	entry = findLoadedModule(moduleName);
@@ -513,7 +513,7 @@ ioUnloadModule(char *moduleName)
 		temp = temp->next;
 	}
 	/* And actually unload it if it isn't just the VM... */
-	if(entry->handle != squeakModule->handle)
+	if(entry->handle != intrinsicsModule->handle)
 		ioFreeModule(entry->handle);
 	removeFromList(entry);
 	free(entry); /* give back space */

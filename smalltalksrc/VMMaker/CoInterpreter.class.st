@@ -147,7 +147,7 @@ CoInterpreter class >> declareCVarsIn: aCCodeGenerator [
 	"Override to avoid repeating StackInterpreter's declarations and add our own extensions"
 	self class == thisContext methodClass ifFalse: [^self]. "Don't duplicate decls in subclasses"
 	aCCodeGenerator
-		addHeaderFile:'"sqCogStackAlignment.h"';
+		addHeaderFile:'"cogStackAlignment.h"';
 		addHeaderFile:'"cogmethod.h"'.
 	aCCodeGenerator
 		addHeaderFile: '"cointerp.h"';

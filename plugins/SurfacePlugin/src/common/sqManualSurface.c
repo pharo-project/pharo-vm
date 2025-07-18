@@ -1,6 +1,6 @@
 #include "sq.h"
 
-#include "sqVirtualMachine.h"
+#include "virtualMachine.h"
 extern struct VirtualMachine* interpreterProxy;
 
 #ifndef NULL

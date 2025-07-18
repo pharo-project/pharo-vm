@@ -19,7 +19,7 @@ static char __buildInfo[] = "JPEGReadWriter2Plugin VMMaker.oscog-eem.2493 uuid: 
 
 /* Do not include the entire sq.h file but just those parts needed. */
 #include "sqConfig.h"			/* Configuration options */
-#include "sqVirtualMachine.h"	/*  The virtual machine proxy definition */
+#include "virtualMachine.h"	/*  The virtual machine proxy definition */
 #include "sqPlatformSpecific.h"	/* Platform specific definitions */
 
 #define true 1
@@ -31,7 +31,7 @@ static char __buildInfo[] = "JPEGReadWriter2Plugin VMMaker.oscog-eem.2493 uuid: 
 #endif
 
 #include "JPEGReadWriter2Plugin.h"
-#include "sqMemoryAccess.h"
+#include "memoryAccess.h"
 
 
 /*** Constants ***/

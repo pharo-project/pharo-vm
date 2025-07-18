@@ -8,7 +8,7 @@ Class {
 
 { #category : 'C code generation' }
 TPrintfFormatStringNode >> emitCCodeOn: aStream level: level generator: aCodeGen [
-	"Transform the printf string according to the LP64/LLP64 convention in sqMemoryAccess.h."
+	"Transform the printf string according to the LP64/LLP64 convention in memoryAccess.h."
 	aStream nextPutAll: (aCodeGen cLiteralForPrintfString: value).
 	comment ifNotNil:
 		[aStream

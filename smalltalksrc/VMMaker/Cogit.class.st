@@ -439,7 +439,7 @@ Cogit class >> declareCVarsIn: aCCodeGenerator [
 		addHeaderFile: '<stddef.h>';
 		"for e.g. offsetof"addHeaderFile: '"jit/jit.h"';
 		addHeaderFile: '"debug.h"';
-		addHeaderFile: '"sqCogStackAlignment.h"';
+		addHeaderFile: '"cogStackAlignment.h"';
 		addHeaderFile: '"dispdbg.h"';
 		"must precede cointerp.h & cogit.h otherwise NoDbgRegParms gets screwed up"
 		addHeaderFile: '"cogmethod.h"'.
@@ -553,7 +553,7 @@ Cogit class >> defineAtCompileTime: anObject [
 	 because the VM generated is specific to these varables."
 	anObject isSymbol ifFalse:
 		[^false].
-	(#(STACKVM COGVM SPURVM) includes: anObject) ifTrue:
+	(#(STACKVM COGVM) includes: anObject) ifTrue:
 		[^false].
 	anObject == #FEATURE_JIT_SIMD
 		ifTrue: [ ^ true ].
@@ -3217,7 +3217,7 @@ Cogit >> annotationIsForUncheckedEntryPoint: annotation [
 { #category : 'simulation only' }
 Cogit >> assertCStackWellAligned [
 	"Check alignment of the C stack.  This is a simulation only facsimilie.
-	 See platforms/Cross/vm/sqCogStackAlignment.h for the real code."
+	 See cogStackAlignment.h for the real code."
 	<doNotGenerate>
 	self assert: processor sp \\ cStackAlignment = expectedSPAlignment.
 	self assert: processor fp \\ cStackAlignment = expectedFPAlignment

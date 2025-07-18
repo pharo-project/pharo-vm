@@ -543,7 +543,7 @@ InterpreterPlugin >> sizeof: objectSymbolOrClass [
 		objectSymbolOrClass == #SQSocket ifTrue:
 			[^8 + interpreterProxy wordSize].
 		"We assume the file offset type is always 64-bits."
-		objectSymbolOrClass == #squeakFileOffsetType ifTrue:
+		objectSymbolOrClass == #fileOffset_t ifTrue:
 			[^8].
 		(objectSymbolOrClass last == $*
 		 or: [#long == objectSymbolOrClass

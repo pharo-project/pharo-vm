@@ -200,7 +200,7 @@ BitBltSimulation class >> declareCVarsIn: aCCodeGenerator [
 
 	"add option of  fast path BitBLT code header"
 	aCCodeGenerator
-		addHeaderFile:'"sqAssert.h"';
+		addHeaderFile:'"assert.h"';
 		addHeaderFile:'#ifdef ENABLE_FAST_BLT
 #include "BitBltDispatch.h"
 #else

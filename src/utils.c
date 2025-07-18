@@ -21,17 +21,12 @@
 
 #include <signal.h>
 
-char vmName[PATH_MAX];
 char _imageName[PATH_MAX];
 char vmFullPath[PATH_MAX];
 char vmPath[PATH_MAX];
 
 #if __APPLE__
 	void fillApplicationDirectory(char* vmPath);
-#endif
-
-#ifdef _WIN32
-BOOL fIsConsole = 1;
 #endif
 
 int isVMRunOnWorkerThread(void);
@@ -167,30 +162,6 @@ sqInt getAttributeIntoLength(sqInt id, sqInt byteArrayIndex, sqInt length)
     return 0;
 }
 
-/**
- * Returns the VM Name
- */
-EXPORT(char*) getVMName(){
-	return vmName;
-}
-
-/**
- * Sets the VMName.
- * It copies the parameter to internal storage.
- */
-void setVMName(const char* name){
-#ifdef _WIN32
-	/*
-	* Unsafe version of deprecated strcpy for compatibility
-	* - does not check error code
-	* - does use count as the size of the destination buffer
-	*/
-	strcpy_s(vmName, strlen(name), name);
-#else
-	strcpy(vmName, name);
-#endif
-}
-
 char* getImageName(){
 	return _imageName;
 }
@@ -262,7 +233,7 @@ sqInt vmPathGetLength(sqInt sqVMPathIndex, sqInt length){
     count = strlen(vmPath);
     count = (length < count) ? length : count;
 
-    /* copy the file name into the Squeak string */
+    /* copy the file name into the string object */
     memcpy(stVMPath, vmPath, count);
 
     return count;
@@ -275,7 +246,7 @@ sqInt imageNameGetLength(sqInt sqImageNameIndex, sqInt length){
     count= strlen(_imageName);
     count= (length < count) ? length : count;
 
-    /* copy the file name into the Squeak string */
+    /* copy the file name into the string object */
     memcpy(sqImageName, _imageName, count);
 
     return count;
@@ -450,7 +421,6 @@ sqGetFilenameFromString(char * aCharBuffer, char * aFilenameString, sqInt filena
 
 
 #ifndef bzero
-
 //We have to provide a bzero implementation for windows as the Cog code depends on it.
 void bzero(void *s, size_t n){
 	memset(s, 0, n);
@@ -511,57 +481,6 @@ osCogStackPageHeadroom()
 /* Helper to pop up a message box with a message formatted from the         */
 /*   printf() format string and arguments                                   */
 /****************************************************************************/
-#ifdef _WIN32
-EXPORT(int) __cdecl sqMessageBox(DWORD dwFlags, const char *titleString, const char* fmt, ...)
-{ TCHAR *buf;
-  va_list args;
-  DWORD result;
-
-  buf = (TCHAR*) calloc(sizeof(TCHAR), 4096);
-  va_start(args, fmt);
-  vsnprintf(buf, 4096-1, fmt, args);
-  va_end(args);
-
-  result = MessageBox(NULL,buf,titleString,dwFlags|MB_SETFOREGROUND);
-  free(buf);
-  return result;
-}
-
-EXPORT(void) printLastError(const TCHAR *prefix) {
-  LPVOID lpMsgBuf;
-  DWORD lastError;
-
-  lastError = GetLastError();
-  FormatMessage(FORMAT_MESSAGE_ALLOCATE_BUFFER |  FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
-                NULL, GetLastError(), MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
-                (LPTSTR) &lpMsgBuf, 0, NULL );
-  wprintf(TEXT("%s (%ld) -- %s\n"), prefix, lastError, (unsigned short*)lpMsgBuf);
-  LocalFree( lpMsgBuf );
-}
-
-EXPORT(int) __cdecl abortMessage(TCHAR *fmt, ...)
-{ TCHAR *buf;
-	va_list args;
-
-	va_start(args, fmt);
-	if (fIsConsole) {
-		vfwprintf(stderr, fmt, args);
-		exit(-1);
-	}
-	buf = (TCHAR*) calloc(sizeof(TCHAR), 4096);
-
-	wvsprintf(buf, fmt, args);
-
-	va_end(args);
-
-	MessageBox(NULL,buf,TEXT(VM_NAME) TEXT("!"),MB_OK | MB_TASKMODAL | MB_SETFOREGROUND);
-	free(buf);
-	exit(-1);
-	return 0;
-}
-
-#endif
-
 EXPORT(char*) getFullPath(char const *relativePath, char* fullPath, int fullPathSize){
 #ifdef _WIN32
 
@@ -651,6 +570,7 @@ EXPORT(const char**) getProcessArgumentVector(){
 EXPORT(const char **) getProcessEnvironmentVector(){
 	return vmProcessEnvironmentVector;
 }
+
 EXPORT(int) ioGetCurrentWorkingDirectorymaxLength(char * aCString, size_t maxLength){
 	return vm_path_get_current_working_dir_into(aCString, maxLength) == VM_SUCCESS ? 0 : -1 ;
 }

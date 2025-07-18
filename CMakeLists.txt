@@ -222,7 +222,7 @@ elseif(WIN)
     SET(CMAKE_SYSTEM_NAME Windows)
 
     add_compile_definitions(WIN32_LEAN_AND_MEAN)
-    add_compile_definitions(NO_ISNAN NO_SERVICE LSB_FIRST=1 AllocationCheckFiller=0xADD4E55)
+    add_compile_definitions(NO_ISNAN LSB_FIRST=1 AllocationCheckFiller=0xADD4E55)
 
     #Setting minimal Windows Version to VISTA
     add_compile_definitions(_WIN32_WINNT=0x0600 WINVER=0x0600 NTDDI_VERSION=0x06000000 WIN64=1)
@@ -302,7 +302,6 @@ add_compile_options(
 add_compile_definitions(
     IMMUTABILITY=1
     COGMTVM=0
-    PharoVM=1
     DEBUGVM=${DEBUGVM}
     _FILE_OFFSET_BITS=64
 )
@@ -350,14 +349,6 @@ message(STATUS "int ${SIZEOF_INT}")
 message(STATUS "long ${SIZEOF_LONG}")
 message(STATUS "long long ${SIZEOF_LONG_LONG}")
 message(STATUS "void* ${SIZEOF_VOID_P}")
-
-if("${SIZEOF_LONG}" STREQUAL "8")
-	set(SQUEAK_INT64_TYPEDEF "long")
-elseif("${SIZEOF_LONG_LONG}" STREQUAL "8")
-	set(SQUEAK_INT64_TYPEDEF "long long")
-else()
-	message(FATAL_ERROR "Failed to find a 64 bits integer type.")
-endif()
 
 set(EXECUTABLE_OUTPUT_PATH "${CMAKE_CURRENT_BINARY_DIR}/build/vm/")
 

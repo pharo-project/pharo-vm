@@ -1,5 +1,5 @@
 /****************************************************************************
- *   FILE:    sqCogUnixStackAlignment.h
+ *   FILE:    cogStackAlignment.h
  *   CONTENT: Answer & check stack alignment for current plaform
  *
  *   AUTHOR:   Eliot Miranda

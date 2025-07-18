@@ -19,41 +19,31 @@
 				fseeko
 				ftruncate & fileno
 				macro-ise use of sqFTruncate to avoid non-ansi
-*	1/22/2002  JMM Use squeakFileOffsetType versus off_t
-*
-*****************************************************************************/
+*	1/22/2002  JMM Use fileOffset_t fileOffset_t
+************************************************************************/
 
 /* The basic prim code for file operations. See also the platform specific
 * files typically named 'sq{blah}Directory.c' for details of the directory
-* handling code. Note that the win32 platform #defines NO_STD_FILE_SUPPORT
-* and thus bypasses this file
+* handling code.
 */
 
 #include "sq.h"
 
 #include <errno.h>
 
-#ifndef NO_STD_FILE_SUPPORT
-
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <limits.h>
 #include <stdio.h>
 
-#ifdef _MSC_VER
-#ifndef S_ISFIFO
-#define S_ISFIFO(x) 0
-#endif
-#endif
-
-#include "sqMemoryAccess.h"
+#include "memoryAccess.h"
 #include "FilePlugin.h" /* must be included after sq.h */
-#include "sqaio.h"
+#include "aio.h"
 
 /***
 	The state of a file is kept in the following structure,
-	which is stored directly in a Squeak bytes object.
-	NOTE: The Squeak side is responsible for creating an
+	which is stored directly in a bytes object.
+	NOTE: The library side is responsible for creating an
 	object with enough room to store sizeof(SQFile) bytes.
 
 	The session ID is used to detect stale file objects--
@@ -119,12 +109,12 @@ static void setFile(SQFile *f, FILE *file)
 # define setFile(f,fileptr) ((f)->file = (fileptr))
 #endif /* OBJECTS_32BIT_ALIGNED */
 
-static squeakFileOffsetType getSize(SQFile *f)
+static fileOffset_t getSize(SQFile *f)
 {
   FILE *file = getFile(f);
-  squeakFileOffsetType currentPosition = ftell(file);
+  fileOffset_t currentPosition = ftell(file);
   fseek(file, 0, SEEK_END);
-  squeakFileOffsetType size = ftell(file);
+  fileOffset_t size = ftell(file);
   fseek(file, currentPosition, SEEK_SET);
   return size;
 }
@@ -219,16 +209,15 @@ sqFileDeleteNameSize(char *sqFileName, sqInt sqFileNameSize) {
 	return 1;
 }
 
-squeakFileOffsetType
+fileOffset_t
 sqFileGetPosition(SQFile *f) {
 	/* Return the current position of the file's read/write head. */
 
-	squeakFileOffsetType position;
+	fileOffset_t position;
 
 	if (!sqFileValid(f))
 		return interpreterProxy->success(false);
-	if (f->isStdioStream
-	 && !f->writable)
+	if (f->isStdioStream && !f->writable)
 		return f->lastChar == EOF ? 0 : 1;
 	position = ftell(getFile(f));
 	if (position == -1)
@@ -307,7 +296,7 @@ sqFileOpen(SQFile *f, char *sqFileName, sqInt sqFileNameSize, sqInt writeFlag) {
 	/* Opens the given file using the supplied sqFile structure
 	   to record its state. Fails with no side effects if f is
 	   already open. Files are always opened in binary mode;
-	   Squeak must take care of any line-end character mapping.
+	   The Library must take care of any line-end character mapping.
 	*/
 
 	char cFileName[PATH_MAX];
@@ -417,7 +406,7 @@ sqFileOpenNew(SQFile *f, char *sqFileName, sqInt sqFileNameSize, int *exists) {
 	   When failing, it sets 'exists' to true if the failure was
 	   caused by the named file already existing. Fails with no
 	   side effects (besides resetting 'exists') if f is already
-	   open. Files are always opened in binary mode; Squeak must
+	   open. Files are always opened in binary mode; the Library must
 	   take care of any line-end character mapping.
 	*/
 
@@ -591,7 +580,6 @@ sqInt sqFileDescriptorType(int fdNum) {
         /* Is this a pipe? */
         status = fstat(fdNum, &statBuf);
         if (status) return -1;
-        if (S_ISFIFO(statBuf.st_mode)) return 2;
 
         /* Must be a normal file */
         return 3;
@@ -602,7 +590,7 @@ size_t
 sqFileReadIntoAt(SQFile *f, size_t count, char *byteArrayIndex, size_t startIndex) {
 	/* Read count bytes from the given file into byteArray starting at
 	   startIndex. byteArray is the address of the first byte of a
-	   Squeak bytes object (e.g. String or ByteArray). startIndex
+	   The library bytes object (e.g. String or ByteArray). startIndex
 	   is a zero-based index; that is a startIndex of 0 starts writing
 	   at the first byte of byteArray.
 	*/
@@ -613,7 +601,7 @@ sqFileReadIntoAt(SQFile *f, size_t count, char *byteArrayIndex, size_t startInde
 #if COGMTVM
 	sqInt myThreadIndex;
 #endif
-#if COGMTVM && SPURVM
+#if COGMTVM
 	int wasPinned;
 	sqInt bufferOop = (sqInt)byteArrayIndex - BaseHeaderSize;
 #endif
@@ -630,23 +618,12 @@ sqFileReadIntoAt(SQFile *f, size_t count, char *byteArrayIndex, size_t startInde
 	dst = byteArrayIndex + startIndex;
 	if (f->isStdioStream) {
 #if COGMTVM
-# if SPURVM
 		if (!(wasPinned = interpreterProxy->isPinned(bufferOop))) {
 			if (!(bufferOop = interpreterProxy->pinObject(bufferOop)))
 				return 0;
 			dst = bufferOop + BaseHeaderSize + startIndex;
 		}
 		myThreadIndex = interpreterProxy->disownVM(0);
-# else
-		if (interpreterProxy->isInMemory((sqInt)f)
-		 && interpreterProxy->isYoung((sqInt)f)
-		 || interpreterProxy->isInMemory((sqInt)dst)
-		 && interpreterProxy->isYoung((sqInt)dst)) {
-			interpreterProxy->primitiveFailFor(PrimErrObjectMayMove);
-			return 0;
-		}
-		myThreadIndex = interpreterProxy->disownVM(DisownVMLockOutFullGC);
-# endif
 #endif
 
 		bytesRead = 0;
@@ -675,10 +652,8 @@ sqFileReadIntoAt(SQFile *f, size_t count, char *byteArrayIndex, size_t startInde
 
 #if COGMTVM
 		interpreterProxy->ownVM(myThreadIndex);
-# if SPURVM
 		if (!wasPinned)
 			interpreterProxy->unpinObject(bufferOop);
-# endif
 #endif /* COGMTVM */
 	}
 	else
@@ -715,7 +690,7 @@ sqFileRenameOldSizeNewSize(char *sqOldName, sqInt sqOldNameSize, char *sqNewName
 }
 
 sqInt
-sqFileSetPosition(SQFile *f, squeakFileOffsetType position) {
+sqFileSetPosition(SQFile *f, fileOffset_t position) {
 	/* Set the file's read/write head to the given position. */
 
 	if (!sqFileValid(f))
@@ -724,7 +699,7 @@ sqFileSetPosition(SQFile *f, squeakFileOffsetType position) {
 		/* support one character of pushback for stdio streams. */
 		if (!f->writable
 		 && f->lastChar != EOF) {
-			squeakFileOffsetType currentPos = f->lastChar == EOF ? 0 : 1;
+			fileOffset_t currentPos = f->lastChar == EOF ? 0 : 1;
 			if (currentPos == position)
 				return 1;
 			if (currentPos - 1 == position) {
@@ -740,7 +715,7 @@ sqFileSetPosition(SQFile *f, squeakFileOffsetType position) {
 	return 1;
 }
 
-squeakFileOffsetType
+fileOffset_t
 sqFileSize(SQFile *f) {
 	/* Return the length of the given file. */
 
@@ -757,7 +732,7 @@ sqFileFlush(SQFile *f) {
 
 	if (!sqFileValid(f))
 		return interpreterProxy->success(false);
-
+	
 	/*
 	 * fflush() can fail for the same reasons write() can so errors must be checked but
 	 * sqFileFlush() must support being called on readonly files for historical reasons
@@ -781,7 +756,7 @@ sqFileSync(SQFile *f) {
 }
 
 sqInt
-sqFileTruncate(SQFile *f, squeakFileOffsetType offset) {
+sqFileTruncate(SQFile *f, fileOffset_t offset) {
 	if (!sqFileValid(f))
 		return interpreterProxy->success(false);
 	fflush(getFile(f));
@@ -845,5 +820,3 @@ waitForDataonSemaphoreIndex(SQFile *file, sqInt semaphoreIndex){
 
 	return interpreterProxy->success(true);
 }
-
-#endif /* NO_STD_FILE_SUPPORT */

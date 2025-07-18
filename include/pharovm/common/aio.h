@@ -1,11 +1,11 @@
-/* sqaio.h -- asynchronous file i/o
+/* aio.h -- asynchronous file i/o
  *
  *   Copyright (C) 1996-2004 by Ian Piumarta and other authors/contributors
  *                              listed elsewhere in this file.
  *   All rights reserved.
  *   
  *   This file is part of Unix Squeak.
- * 
+ *
  *   Permission is hereby granted, free of charge, to any person obtaining a
  *   copy of this software and associated documentation files (the "Software"),
  *   to deal in the Software without restriction, including without limitation
@@ -28,8 +28,7 @@
 /* author: ian.piumarta@inria.fr
  */
 
-#ifndef __sqaio_h
-#define __sqaio_h
+#pragma once
 
 #define AIO_X	(1<<0)	/* handle for exceptions */
 #define AIO_R	(1<<1)	/* handle for read */
@@ -86,44 +85,3 @@ EXPORT(void) aioDisable(int fd);
  * handler(s) being called before returning.
  */
 EXPORT(long) aioPoll(long microSeconds);
-
-extern unsigned volatile long long ioUTCMicroseconds(void);
-extern unsigned volatile long long ioUTCMicrosecondsNow(void);
-
-/*
- * I interrupt the poll when there is an event that the VM should handle.
- * For example, when signalling a Pharo semaphore
- */
-EXPORT(void) aioInterruptPoll();
-
-/**
- * I block the caller if we are in the aioPoll
- */
-EXPORT(void) aioWaitIfInPoll();
-
-/* debugging stuff. */
-#ifdef AIO_DEBUG
-# ifdef ACORN
-#   define FPRINTF(s) \
-    do { \
-      extern os_error privateErr; \
-      extern void platReportError(os_error *e); \
-      privateErr.errnum = (bits)0; \
-      sprintf s; \
-      platReportError((os_error *)&privateErr); \
-    } while (0)
-# else /* !ACORN */
-    extern long aioLastTick, aioThisTick, ioMSecs(void);
-	extern const char *__shortFileName(const char *);
-#   define FPRINTF(X) do { \
-	aioThisTick = ioMSecs(); \
-	fprintf(stderr, "%8ld %4ld %s:%d ", aioThisTick, aioThisTick - aioLastTick,\
-			__shortFileName(__FILE__),__LINE__); \
-	aioLastTick = aioThisTick; \
-	fprintf X; } while (0)
-# endif /* ACORN */
-#else /* !DEBUG */
-# define FPRINTF(X)
-#endif
-
-#endif /* __sqaio_h */

@@ -42,7 +42,7 @@ void printCallStack();
 char* GetAttributeString(int idx);
 void reportStackState(const char *msg, char *date, int printAll, ucontext_t *uap, FILE* output);
 
-char * getVersionInfo(int verbose);
+char * getVersionInfo();
 void getCrashDumpFilenameInto(char *buf);
 void dumpPrimTraceLog();
 
@@ -430,7 +430,7 @@ void reportStackState(const char *msg, char *date, int printAll, ucontext_t *uap
 #endif
 
 	fprintf_impl(output,"\n%s%s%s\n\n", msg, date ? " " : "", date ? date : "");
-	fprintf_impl(output,"%s\n%s\n\n", GetAttributeString(0), getVersionInfo(1));
+	fprintf_impl(output,"%s\n%s\n\n", GetAttributeString(0), getVersionInfo());
 
 #if COGVM
 	/* Do not attempt to report the stack until the VM is initialized!! */
