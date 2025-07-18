@@ -3604,7 +3604,7 @@ CogX64Compiler >> dispatchConcretizeProcessorSpecific [
 CogX64Compiler >> fillFrom: startMemoryAddr until: endMemoryAddr with: fillReg usingVr: vectorRegister [
 	<inline: true>
 	
-	self cppIf: #FEATURE_JIT_SIMD
+	self cppIf: FEATURE_JIT_SIMD
 		ifTrue: [  | fillLoop |
 			cogit MoveR: fillReg Mw: 0 r: startMemoryAddr.
 			cogit AddCq: 8 R: startMemoryAddr.

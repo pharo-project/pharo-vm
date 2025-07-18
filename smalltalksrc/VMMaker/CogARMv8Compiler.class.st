@@ -3911,7 +3911,7 @@ CogARMv8Compiler >> fcmpFType: ftype leftRegister: firstRegister rightRegister: 
 CogARMv8Compiler >> fillFrom: startMemoryAddr until: endMemoryAddr with: fillReg usingVr: vectorRegister [
 	<inline: true>
 	
-	self cppIf: #FEATURE_JIT_SIMD
+	self cppIf: FEATURE_JIT_SIMD
 		ifTrue: [ | fillLoop |
 			cogit DupS: 64 R: fillReg Vr: vectorRegister.
 			"St1 copies data in 128-bit chunks. This may exceed the size of an object (that only needs to be a multiple of 64 bits).

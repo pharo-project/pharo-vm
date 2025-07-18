@@ -555,6 +555,8 @@ Cogit class >> defineAtCompileTime: anObject [
 		[^false].
 	(#(STACKVM COGVM SPURVM) includes: anObject) ifTrue:
 		[^false].
+	anObject == #FEATURE_JIT_SIMD
+		ifTrue: [ ^ true ].
 	^VMBasicConstants namesDefinedAtCompileTime includes: anObject
 ]
 
@@ -806,6 +808,11 @@ Cogit class >> initializeErrorCodes [
 Cogit class >> initializeMiscConstants [
 	super initializeMiscConstants.
 	Debug := InitializationOptions at: #Debug ifAbsent: [false].
+	
+	FEATURE_JIT_SIMD := InitializationOptions
+		at: #FEATURE_JIT_SIMD
+		ifAbsent: [ true ].
+	
 	(InitializationOptions includesKey: #EagerInstructionDecoration)
 		ifTrue:
 			[EagerInstructionDecoration := InitializationOptions at: #EagerInstructionDecoration]

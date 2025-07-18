@@ -99,7 +99,6 @@ VMBasicConstants class >> namesDefinedAtCompileTime [
 	 will be emitted within #if defined(ANameDefinedAtCompileTime)...#endif."
 	^#(	VMBIGENDIAN
 		IMMUTABILITY
-		FEATURE_JIT_SIMD
 		STACKVM COGVM SPURVM
 		PharoVM								"Pharo vs Squeak"
 		CheckRememberedInTrampoline		"IMMUTABILITY"
@@ -124,8 +123,7 @@ VMBasicConstants class >> namesDefinedAtCompileTime [
 		PRIdSQINT
 		
 		FEATURE_FFI
-		FEATURE_THREADED_FFI
-		FEATURE_MESSAGE_COUNT)
+		FEATURE_THREADED_FFI)
 ]
 
 { #category : 'C translation' }

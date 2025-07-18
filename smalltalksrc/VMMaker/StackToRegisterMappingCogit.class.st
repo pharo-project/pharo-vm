@@ -1944,7 +1944,7 @@ StackToRegisterMappingCogit >> genLoadTemp: objectIndex in: destReg [
 StackToRegisterMappingCogit >> genMappedInlinePrimitive: primIndex [
 
 	self
-		cppIf: #FEATURE_JIT_SIMD
+		cppIf: FEATURE_JIT_SIMD
 		ifTrue: [
 			| result |
 			result := primIndex
