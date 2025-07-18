@@ -1114,7 +1114,7 @@ SLNodeAnnotatorVisitor >> visitUnaryIterativeSendWithImportantLastStatement: aSe
 	inExpressionStack pop.
 
 	block removeFirstNonCommentStatement.
-	block addAllLastKeepingEndComments: {condition}
+	block addAllLastKeepingEndComments: { condition }
 ]
 
 { #category : 'helpers-visiting' }

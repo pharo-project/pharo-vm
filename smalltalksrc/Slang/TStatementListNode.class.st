@@ -80,8 +80,10 @@ TStatementListNode >> addAllFirst: aListOfStatement [
 			statements do: [ :e |
 				actualFirstMet
 					ifFalse: [
-						firstComments add: e.
-						actualFirstMet := e == actualFirst ]
+						actualFirstMet := e == actualFirst.
+						actualFirstMet
+							ifTrue: [ allWithoutFirstComments add: e ]
+							ifFalse: [ firstComments add: e ] ]
 					ifTrue: [ allWithoutFirstComments add: e ] ].
 			self statements:
 				firstComments , aListOfStatement , allWithoutFirstComments ]
