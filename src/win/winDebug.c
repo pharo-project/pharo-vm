@@ -237,7 +237,7 @@ void captureStack(PCONTEXT context, STACKFRAME64* frames, int framePointersSize,
 
 	STACKFRAME64 frame;
 
-	memset(&frame, 0, sizeof(frame))
+	memset(&frame, 0, sizeof(frame));
 	frame.AddrPC.Mode = AddrModeFlat;
 	frame.AddrFrame.Mode = AddrModeFlat;
 	frame.AddrStack.Mode = AddrModeFlat;
@@ -328,7 +328,7 @@ void printSymbolInfo(STACKFRAME64 *frame, FILE* output){
 EXPORT(void) printMachineCallStack(PCONTEXT ctx, FILE* output){
 
 	STACKFRAME64 frames[NUMBER_OF_STACKS];
-	memset(frames, 0, sizeof(STACKFRAME64) * NUMBER_OF_STACKS)
+	memset(frames, 0, sizeof(STACKFRAME64) * NUMBER_OF_STACKS);
 
 	captureStack(ctx, frames, NUMBER_OF_STACKS, 6);
 
