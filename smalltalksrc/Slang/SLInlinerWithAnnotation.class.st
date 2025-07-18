@@ -482,6 +482,7 @@ SLInlinerWithAnnotation >> inlineSend: aSendNode [
 	isUsedExpression ifFalse: [
 		inlineStmts nodesDo: [ :node |
 			node isGoTo ifTrue: [ node metInInlining ] ] ].
+
 	^ inlineStmts
 ]
 

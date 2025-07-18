@@ -876,10 +876,11 @@ SLNodeAnnotatorVisitor >> visitDoIterativeSend: aSendNode [
 { #category : 'helpers-visiting' }
 SLNodeAnnotatorVisitor >> visitExitPointSend: aSendNode [
 
+	| hasInvalidateAStmtSearch |
 	self activateCurrentSouldBePartiallyIgnored.
 	self annotateNodeState: aSendNode.
 
-	self invalidateSearchStacksAfterReturn.
+	hasInvalidateAStmtSearch := self invalidateSearchStacksAfterReturn.
 	searchForExpressionValueStack push: true.
 	self pushInExpressionStack.
 	self pushInSendStack.
@@ -889,7 +890,8 @@ SLNodeAnnotatorVisitor >> visitExitPointSend: aSendNode [
 
 	searchForExpressionValueStack pop.
 	inExpressionStack pop.
-	inSendStack pop
+	inSendStack pop.
+	self resetSearchStacksAfterReturn: hasInvalidateAStmtSearch
 ]
 
 { #category : 'visiting-main-API' }
