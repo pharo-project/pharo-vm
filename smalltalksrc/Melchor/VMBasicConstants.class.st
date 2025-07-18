@@ -123,8 +123,7 @@ VMBasicConstants class >> namesDefinedAtCompileTime [
 		PRIdSQINT
 		
 		FEATURE_FFI
-		FEATURE_THREADED_FFI
-		FEATURE_MESSAGE_COUNT)
+		FEATURE_THREADED_FFI)
 ]
 
 { #category : 'C translation' }
