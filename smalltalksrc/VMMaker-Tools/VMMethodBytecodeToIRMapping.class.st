@@ -1,15 +1,16 @@
 Class {
-	#name : #VMMethodBytecodeToIRMapping,
-	#superclass : #Object,
+	#name : 'VMMethodBytecodeToIRMapping',
+	#superclass : 'Object',
 	#instVars : [
 		'method',
 		'ir',
 		'mappingList'
 	],
-	#category : #'VMMaker-Tools'
+	#category : 'VMMaker-Tools',
+	#package : 'VMMaker-Tools'
 }
 
-{ #category : #'instance creation' }
+{ #category : 'instance creation' }
 VMMethodBytecodeToIRMapping class >> on: aMethod [
 
 	^ self new
@@ -17,7 +18,7 @@ VMMethodBytecodeToIRMapping class >> on: aMethod [
 		yourself
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 VMMethodBytecodeToIRMapping >> computeIR [
 
 	| coggedResult cogit |
@@ -33,7 +34,7 @@ VMMethodBytecodeToIRMapping >> computeIR [
 	^ ir := (0 to: cogit getOpcodeIndex - 1) collect: [ :i | cogit abstractOpcodes at: i ]
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 VMMethodBytecodeToIRMapping >> gtInspectorMappingIn: composite [
 	<gtInspectorPresentationOrder: 0>
 	^ composite fastTable
@@ -43,12 +44,12 @@ VMMethodBytecodeToIRMapping >> gtInspectorMappingIn: composite [
 		column: 'IR' evaluated: [ :aMapping | aMapping irString ]	
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 VMMethodBytecodeToIRMapping >> ir [
 	^ ir ifNil: [ self computeIR ]
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 VMMethodBytecodeToIRMapping >> mappingList [
 	
 	| irStream mappings |
@@ -71,7 +72,7 @@ VMMethodBytecodeToIRMapping >> mappingList [
 	^ mappingList := mappings
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 VMMethodBytecodeToIRMapping >> method: aMethod [
 
 	method := aMethod

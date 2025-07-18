@@ -1,47 +1,48 @@
 Class {
-	#name : #VMMachineCodeDebuggerIRInstruction,
-	#superclass : #Object,
+	#name : 'VMMachineCodeDebuggerIRInstruction',
+	#superclass : 'Object',
 	#instVars : [
 		'irinstruction',
 		'machineSimulator',
 		'debugger',
 		'operands'
 	],
-	#category : #'VMMaker-Tools'
+	#category : 'VMMaker-Tools',
+	#package : 'VMMaker-Tools'
 }
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 VMMachineCodeDebuggerIRInstruction >> address [ 
 
 	^ irinstruction address
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 VMMachineCodeDebuggerIRInstruction >> addressString [
 
 	^ irinstruction address hex
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 VMMachineCodeDebuggerIRInstruction >> debugger: aVMMachineCodeDebugger [
 
 	debugger:= aVMMachineCodeDebugger
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 VMMachineCodeDebuggerIRInstruction >> initialize [ 
 
 	super initialize.
 	operands := Array ofSize: 4.
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 VMMachineCodeDebuggerIRInstruction >> irinstruction: aCogAbstractInstruction [
 
 	irinstruction := aCogAbstractInstruction
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 VMMachineCodeDebuggerIRInstruction >> machineCodeInstructionsAddresses [ 
 
 	| startAddress endAddress |	
@@ -50,48 +51,48 @@ VMMachineCodeDebuggerIRInstruction >> machineCodeInstructionsAddresses [
 	^ (startAddress to: endAddress by: 4) collect: [ :address |  address ].
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 VMMachineCodeDebuggerIRInstruction >> machineCodeSize [ 
 
 	^ irinstruction machineCodeSize
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 VMMachineCodeDebuggerIRInstruction >> machineSimulator: aMachineSimulator [ 
 
 	machineSimulator := aMachineSimulator 
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 VMMachineCodeDebuggerIRInstruction >> opCodeName [ 
 
 	^ irinstruction class nameForOpcode: irinstruction opcode
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 VMMachineCodeDebuggerIRInstruction >> operand1 [ 
 
 	^ operands at: 1
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 VMMachineCodeDebuggerIRInstruction >> operand2 [
 
 	^ operands at: 2
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 VMMachineCodeDebuggerIRInstruction >> operand3 [
 
 	^ operands at: 3
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 VMMachineCodeDebuggerIRInstruction >> operands [
 	^ operands
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 VMMachineCodeDebuggerIRInstruction >> processOperands [ 
 
 	| format strOperands |

@@ -1,13 +1,14 @@
 Class {
-	#name : #VMTFreeLists,
-	#superclass : #Object,
+	#name : 'VMTFreeLists',
+	#superclass : 'Object',
 	#instVars : [
 		'memory'
 	],
-	#category : #'VMMaker-Tools'
+	#category : 'VMMaker-Tools',
+	#package : 'VMMaker-Tools'
 }
 
-{ #category : #'instance-creation' }
+{ #category : 'instance-creation' }
 VMTFreeLists class >> on: aMemory [
 
 	^ self new
@@ -15,7 +16,7 @@ VMTFreeLists class >> on: aMemory [
 		yourself
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 VMTFreeLists >> children [
 	
 	| children |
@@ -27,7 +28,7 @@ VMTFreeLists >> children [
 	^ children
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 VMTFreeLists >> memory: aMemory [
 	memory := aMemory
 ]
