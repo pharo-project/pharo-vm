@@ -277,7 +277,10 @@ SLInlinerWithAnnotation >> inlineFunctionCall: aSendNode [
 		(parametersToReplaceByArgument includes: argName) ifFalse: [
 			currentMethod removeLocal: argName ] ].
 	meth parseTree bindVariablesIn: substitutionDict.
-
+	"copyWithoutReturn does it implictly, avoid duplicating them and in addition if meth end up in an expressionList, they won't appear which might cause bug,
+	see asCASTIn: vs asCASTExpressionIn: for stmtList.
+	"
+	meth locals: Set new.
 	sLNodeAnnotatorVisitor copyWithoutReturn: meth.
 	"same 'optimization' as before"
 	meth parseTree children size = 1 ifTrue: [

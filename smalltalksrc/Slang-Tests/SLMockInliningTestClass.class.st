@@ -402,6 +402,12 @@ SLMockInliningTestClass >> methodCSimpleReturn [
 	^ 3 + 3
 ]
 
+{ #category : 'inlining-variable' }
+SLMockInliningTestClass >> methodInlineVariableWithSameName [
+	| a |
+	a := self methodWithVariableA.
+]
+
 { #category : 'inlining-iterative' }
 SLMockInliningTestClass >> methodWithAssignmentOnRepeatInlined [
 
@@ -511,6 +517,14 @@ SLMockInliningTestClass >> methodWithToByDo [
 SLMockInliningTestClass >> methodWithToDo [
 
 	1 to: 2 do: [:i | (self methodB: i) ifTrue: [ ^ self methodB ] ]
+]
+
+{ #category : 'inlinng-variable-helpers' }
+SLMockInliningTestClass >> methodWithVariableA [
+
+	| a |
+	a := 2.
+	^ 3
 ]
 
 { #category : 'inlining-iterative-helpers' }

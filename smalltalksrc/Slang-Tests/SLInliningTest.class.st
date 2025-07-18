@@ -963,6 +963,35 @@ methodAWithReturningSendWithReturningIfInSendInArgumentsInlined(void)
 }'
 ]
 
+{ #category : 'inlining-variable' }
+SLInliningTest >> testMethodInlineVariableWithSameName [
+
+	| method translation |
+	ccg doBasicInlining: true.
+
+	method := ccg methodNamed: #methodInlineVariableWithSameName.
+
+	translation := self translate: method.
+	translation := translation trimBoth.
+
+	self
+		assert: translation
+		equals:
+			'/* SLMockInliningTestClass>>#methodInlineVariableWithSameName */
+static sqInt
+methodInlineVariableWithSameName(void)
+{
+	sqInt a;
+	int a2;
+
+	/* begin methodWithVariableA */
+	a2 = 2;
+	a = 3;
+	/* end methodWithVariableA */
+	return 0;
+}'
+]
+
 { #category : 'inlining-iterative' }
 SLInliningTest >> testMethodWithAssignmentOnRepeatInlined [
 
