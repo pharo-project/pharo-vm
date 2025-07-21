@@ -626,6 +626,12 @@ static void closeHandler(int fd, void *data, int flags)
   privateSocketStruct *pss= (privateSocketStruct *)data;
   aioDisable(fd);
   logTrace("closeHandler(%d, %p, %d)\n", fd, data, flags);
+  int result = closesocket(fd);
+  if(result == 0){
+    logTrace("closesocket(%d): correctly closed");
+  }else{
+    logTrace("closesocket(%d): error while closing %d", getLastSocketError());
+  }
   pss->sockState= Unconnected;
   pss->s= -1;
   notify(pss, READ_NOTIFY | CONN_NOTIFY);
