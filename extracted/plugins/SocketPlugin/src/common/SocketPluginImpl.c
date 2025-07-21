@@ -503,11 +503,18 @@ static void acceptHandler(int fd, void *data, int flags)
 	  setLinger(newSock, 1);
 	  if (pss->multiListen)
 	    {
-	      pss->acceptedSock= newSock;
+			logTrace("acceptHandler: multiListen old: %d new: %d", fd, newSock);
+			if(pss->acceptedSock > 0){
+				logWarn("Socket %d has accepted socket pending %d", pss->s, pss->acceptedSock);
+    	  setLinger(pss->acceptedSock, 0);
+        closesocket(pss->acceptedSock);
+			}
+			pss->acceptedSock= newSock;
 	    }
 	  else /* traditional listen -- replace server with client in-place */
 	    {
-	      aioDisable(fd);
+		  logTrace("acceptHandler: traditionalListen old: %d new: %d", fd, newSock);
+  		  aioDisable(fd);
 	      closesocket(fd);
 	      pss->s= newSock;
 	      aioEnable(newSock, pss, 0);
@@ -619,6 +626,12 @@ static void closeHandler(int fd, void *data, int flags)
   privateSocketStruct *pss= (privateSocketStruct *)data;
   aioDisable(fd);
   logTrace("closeHandler(%d, %p, %d)\n", fd, data, flags);
+  int result = closesocket(fd);
+  if(result == 0){
+    logTrace("closesocket(%d): correctly closed");
+  }else{
+    logTrace("closesocket(%d): error while closing %d", getLastSocketError());
+  }
   pss->sockState= Unconnected;
   pss->s= -1;
   notify(pss, READ_NOTIFY | CONN_NOTIFY);
@@ -1007,6 +1020,12 @@ void sqSocketCloseConnection(SocketPtr s)
 
   if (SOCKET(s) < 0)
     return;	/* already closed */
+
+  if(PSP(s)->acceptedSock > 0){
+	  logWarn("Socket %d has accepted socket pending %d", PSP(s)->s, PSP(s)->acceptedSock);
+	  setLinger(PSP(s)->acceptedSock, 0);
+    closesocket(PSP(s)->acceptedSock);
+  }
 
   SOCKETSTATE(s)= ThisEndClosed;
   result = closesocket(SOCKET(s));
