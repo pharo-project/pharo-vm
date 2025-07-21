@@ -466,7 +466,6 @@ static void acceptHandler(int fd, void *data, int flags)
 	}
 	else /* (flags & AIO_R) -- accept() is ready */
 	{
-<<<<<<< HEAD:plugins/SocketPlugin/src/common/SocketPluginImpl.c
 		int newSock= accept(fd, 0, 0);
 		if (newSock < 0)
 		{
@@ -475,17 +474,6 @@ static void acceptHandler(int fd, void *data, int flags)
 				/* let's just pretend this never happened */
 				aioHandle(fd, acceptHandler, AIO_RX);
 				return;
-=======
-	  pss->sockState= Connected;
-	  setLinger(newSock, 1);
-	  if (pss->multiListen)
-	    {
-			logTrace("acceptHandler: multiListen old: %d new: %d", fd, newSock);
-			if(pss->acceptedSock > 0){
-				logWarn("Socket %d has accepted socket pending %d", pss->s, pss->acceptedSock);
-    	  setLinger(pss->acceptedSock, 0);
-        closesocket(pss->acceptedSock);
->>>>>>> 450e365e8e (Set Linger before closing acceptedSocket):extracted/plugins/SocketPlugin/src/common/SocketPluginImpl.c
 			}
 			
 			/* something really went wrong */
