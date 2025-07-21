@@ -1669,7 +1669,8 @@ SimpleStackBasedCogit >> genLookupForPerformNumArgs: numArgs [
 	Jump to fail if not equal"
 	self backEnd byteReadsZeroExtend ifFalse:
 		[self MoveCq: 0 R: SendNumArgsReg].
-	self MoveMb: (self offset: CogMethod of: #cmNumArgs) r: ClassReg R: SendNumArgsReg.
+	"We need the offset of cmNumArgs, but as it is a bit field, we have to get the offset of the previous element plus its size. It works because the previous one is a sqLong"
+	self MoveMb: ((self offset: CogMethod of: #objectHeader) + (self sizeof: #sqLong)) r: ClassReg R: SendNumArgsReg.
 	"numArgs contains the number of arguments of perform, which contains the selector."
 	self CmpCq: numArgs - 1 R: SendNumArgsReg.
 	jumpWrongArity := self JumpNonZero: 0.

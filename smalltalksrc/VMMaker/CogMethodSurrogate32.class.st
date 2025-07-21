@@ -41,6 +41,7 @@ CogMethodSurrogate32 class >> offsetOf: aByteSymbol [
 	baseHeaderSize := self objectMemoryClass baseHeaderSize.
 	^aByteSymbol caseOf:
 		{
+			[#objectHeader]		-> [0].
 			[#cmNumArgs]			-> [0 + baseHeaderSize].	
 			[#picUsage]			-> [6 + baseHeaderSize].
 			[#methodObject]		-> [8 + baseHeaderSize].
