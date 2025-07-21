@@ -99,7 +99,7 @@ CogMethod class >> instVarNamesAndTypesForTranslationDo: aBinaryBlock [
 								['objectHeader']			-> [VMClass objectMemoryClass baseHeaderSize = 8
 																ifTrue: [#sqLong]
 																ifFalse: [#sqInt]].
-								['cmNumArgs']				-> [#uint8_t].	
+								['cmNumArgs']				-> [#(unsigned ' : 8')].	
 								['cmType']					-> [#(unsigned ' : 3')].
 								['cmRefersToYoung']		-> [#(unsigned #Boolean ' : 1')].
 								['cpicHasMNUCaseOrCMIsFullBlock']
