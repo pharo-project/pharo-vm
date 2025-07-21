@@ -1,6 +1,6 @@
-Extension { #name : #StackInterpreter }
+Extension { #name : 'StackInterpreter' }
 
-{ #category : #'*VMMaker-Tools' }
+{ #category : '*VMMaker-Tools' }
 StackInterpreter >> stack [
 
 	framePointer = nil

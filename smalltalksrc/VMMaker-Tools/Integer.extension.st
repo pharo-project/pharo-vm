@@ -1,18 +1,18 @@
-Extension { #name : #Integer }
+Extension { #name : 'Integer' }
 
-{ #category : #'*VMMaker-Tools' }
+{ #category : '*VMMaker-Tools' }
 Integer >> aarch64Disassembled [
 	
 	^ self disassembleWith: LLVMARMDisassembler aarch64
 ]
 
-{ #category : #'*VMMaker-Tools' }
+{ #category : '*VMMaker-Tools' }
 Integer >> armv7Disassembled [
 	
 	^ self disassembleWith: LLVMARMDisassembler armv7
 ]
 
-{ #category : #'*VMMaker-Tools' }
+{ #category : '*VMMaker-Tools' }
 Integer >> disassembleWith: aLLVMDisassembler [ 
 	
 	"Create a byte array big enough to encode the instruction"

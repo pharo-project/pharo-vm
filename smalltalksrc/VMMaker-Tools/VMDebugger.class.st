@@ -1,6 +1,6 @@
 Class {
-	#name : #VMDebugger,
-	#superclass : #SpPresenter,
+	#name : 'VMDebugger',
+	#superclass : 'SpPresenter',
 	#instVars : [
 		'virtualMachine',
 		'cogit',
@@ -13,10 +13,11 @@ Class {
 		'stack',
 		'frameContainer'
 	],
-	#category : #'VMMaker-Tools'
+	#category : 'VMMaker-Tools',
+	#package : 'VMMaker-Tools'
 }
 
-{ #category : #specs }
+{ #category : 'specs' }
 VMDebugger class >> defaultSpec [
 
 	^ SpBoxLayout newHorizontal
@@ -27,7 +28,7 @@ VMDebugger class >> defaultSpec [
 		yourself
 ]
 
-{ #category : #'as yet unclassified' }
+{ #category : 'as yet unclassified' }
 VMDebugger class >> openOn: aVirtualMachine [
 
 	self new
@@ -35,17 +36,17 @@ VMDebugger class >> openOn: aVirtualMachine [
 		openWithSpec.
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 VMDebugger >> cogit [
 	^ cogit
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 VMDebugger >> cogit: anObject [
 	cogit := anObject
 ]
 
-{ #category : #initialization }
+{ #category : 'initialization' }
 VMDebugger >> connectPresenters [
 
 	| instructionsContextMenu |
@@ -73,14 +74,14 @@ VMDebugger >> connectPresenters [
 	instructions contextMenu: instructionsContextMenu
 ]
 
-{ #category : #actions }
+{ #category : 'actions' }
 VMDebugger >> disassembleAtPC [
 
 	self initialInstructionToDisassemble:  machineSimulator instructionPointerRegisterValue.
 	self refreshInstructions.
 ]
 
-{ #category : #showing }
+{ #category : 'showing' }
 VMDebugger >> initialDisassembly [
 
 	^ machineSimulator disassembler
@@ -94,26 +95,26 @@ VMDebugger >> initialDisassembly [
 		pc: machineSimulator instructionPointerRegisterValue 
 ]
 
-{ #category : #showing }
+{ #category : 'showing' }
 VMDebugger >> initialExtent [ 
 
 	^ 1000@1000
 ]
 
-{ #category : #showing }
+{ #category : 'showing' }
 VMDebugger >> initialInstructionToDisassemble [
 
 	^ initialInstructionToDisassemble
 		ifNil: [ machineSimulator instructionPointerRegisterValue ]
 ]
 
-{ #category : #showing }
+{ #category : 'showing' }
 VMDebugger >> initialInstructionToDisassemble: anInstructionAddress [
 
 	initialInstructionToDisassemble := anInstructionAddress
 ]
 
-{ #category : #initialization }
+{ #category : 'initialization' }
 VMDebugger >> initializePresenters [
 
 	machineState := self newTable.
@@ -150,17 +151,17 @@ VMDebugger >> initializePresenters [
 	disassembleAtPCButton label: 'Disassemble at PC'
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 VMDebugger >> machineSimulator [
 	^ machineSimulator
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 VMDebugger >> machineSimulator: anObject [
 	machineSimulator := anObject
 ]
 
-{ #category : #showing }
+{ #category : 'showing' }
 VMDebugger >> openWithSpec [
 
 "	self refreshRegisters.
@@ -170,25 +171,25 @@ VMDebugger >> openWithSpec [
 	super openWithSpec.
 ]
 
-{ #category : #showing }
+{ #category : 'showing' }
 VMDebugger >> refreshInstructions [
 
 	instructions items: self initialDisassembly
 ]
 
-{ #category : #showing }
+{ #category : 'showing' }
 VMDebugger >> refreshRegisters [
 
 	machineState items: machineSimulator registerDescriptors
 ]
 
-{ #category : #showing }
+{ #category : 'showing' }
 VMDebugger >> refreshStack [
 
 	stack items: virtualMachine stack
 ]
 
-{ #category : #'as yet unclassified' }
+{ #category : 'as yet unclassified' }
 VMDebugger >> runToSelectedInstruction [
 	
 	| selectedInstruction |
@@ -203,25 +204,25 @@ VMDebugger >> runToSelectedInstruction [
 	self refreshStack.
 ]
 
-{ #category : #events }
+{ #category : 'events' }
 VMDebugger >> selectFrame: aVMStackFrame [ 
 	
 	frameContainer text: aVMStackFrame sourceCode
 ]
 
-{ #category : #'as yet unclassified' }
+{ #category : 'as yet unclassified' }
 VMDebugger >> selectedInstruction [
 
 	^ instructions selection selectedItem
 ]
 
-{ #category : #actions }
+{ #category : 'actions' }
 VMDebugger >> setInstructionPointerToSelectedInstruction [
 	
 	machineSimulator instructionPointerRegisterValue: instructions selection selectedItem address
 ]
 
-{ #category : #actions }
+{ #category : 'actions' }
 VMDebugger >> step [
 
 	machineSimulator step.
@@ -229,12 +230,12 @@ VMDebugger >> step [
 	self refreshRegisters
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 VMDebugger >> virtualMachine [
 	^ virtualMachine
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 VMDebugger >> virtualMachine: anObject [
 	virtualMachine := anObject
 ]
