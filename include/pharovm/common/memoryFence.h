@@ -1,4 +1,4 @@
-/* sqMemoryFence.h
+/* memoryFence.h
  *	Support for synchronisation above weakly-ordered memory models.
  *
  *	Author: Eliot Miranda

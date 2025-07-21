@@ -1028,7 +1028,7 @@ CCodeGenerator >> doBasicInlining: inlineFlagOrSymbol [
 	"Inline the bodies of all methods that are suitable for inlining.
 	This method does only the basic inlining suitable for both the core VM and plugins - no bytecode inlining etc"
 
-	| pass progress |
+	| pass progress inliner |
 	self collectInlineList: inlineFlagOrSymbol.
 
 	pass := 0.

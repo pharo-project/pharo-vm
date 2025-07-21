@@ -19,7 +19,7 @@ static char __buildInfo[] = "LargeIntegersPlugin VMMaker.oscog-eem.2495 uuid: fc
 
 /* Do not include the entire sq.h file but just those parts needed. */
 #include "sqConfig.h"			/* Configuration options */
-#include "sqVirtualMachine.h"	/*  The virtual machine proxy definition */
+#include "virtualMachine.h"	/*  The virtual machine proxy definition */
 #include "sqPlatformSpecific.h"	/* Platform specific definitions */
 
 #define true 1
@@ -30,7 +30,7 @@ static char __buildInfo[] = "LargeIntegersPlugin VMMaker.oscog-eem.2495 uuid: fc
 # define EXPORT(returnType) static returnType
 #endif
 
-#include "sqMemoryAccess.h"
+#include "memoryAccess.h"
 
 
 /*** Constants ***/
@@ -79,7 +79,6 @@ static const int  andOpIndex = 0;
 
 # define isIntegerObject(oop) ((oop) & 1)
 
-# if SPURVM
 extern sqInt classIndexOf(sqInt);
 #	define LargeNegativeIntegerClassIndex 32
 #	define LargePositiveIntegerClassIndex 33
@@ -92,7 +91,6 @@ extern sqInt classIndexOf(sqInt);
 #	define isLargeIntegerObject(oop) (!isImmediate(oop) && (unsigned)(classIndexOf(oop) - LargeNegativeIntegerClassIndex) <= 1)
 #	define isLargeNegativeIntegerObject(oop) (!isImmediate(oop) && classIndexOf(oop) == LargeNegativeIntegerClassIndex)
 #	define isLargePositiveIntegerObject(oop) (!isImmediate(oop) && classIndexOf(oop) == LargePositiveIntegerClassIndex)
-# endif /* SPURVM */
 #endif /* defined(SQUEAK_BUILTIN_PLUGIN) */
 
 #if !defined(isKindOfInteger)
@@ -476,15 +474,8 @@ digitBitLogicwithopIndex(sqInt firstInteger, sqInt secondInteger, sqInt opIx)
 			return primitiveFail();
 		}
 		
-#if SPURVM
 		firstLarge = createLargeFromSmallInteger(firstInteger);
 
-#else /* SPURVM */
-		pushRemappableOop(secondInteger);
-		firstLarge = createLargeFromSmallInteger(firstInteger);
-		secondInteger = popRemappableOop()
-#endif /* SPURVM */
-;
 	}
 	else {
 		if (!(isLargePositiveIntegerObject(firstInteger))) {
@@ -497,15 +488,7 @@ digitBitLogicwithopIndex(sqInt firstInteger, sqInt secondInteger, sqInt opIx)
 			return primitiveFail();
 		}
 		
-#if SPURVM
 		secondLarge = createLargeFromSmallInteger(secondInteger);
-
-#else /* SPURVM */
-		pushRemappableOop(firstLarge);
-		secondLarge = createLargeFromSmallInteger(secondInteger);
-		firstLarge = popRemappableOop()
-#endif /* SPURVM */
-;
 	}
 	else {
 		if (!(isLargePositiveIntegerObject(secondInteger))) {
@@ -530,17 +513,8 @@ digitBitLogicwithopIndex(sqInt firstInteger, sqInt secondInteger, sqInt opIx)
 		longLarge = firstLarge;
 	}
 	
-#if SPURVM
 	result = instantiateClassindexableSize(classLargePositiveInteger(), longLen);
 
-#else /* SPURVM */
-	pushRemappableOop(shortLarge);
-	pushRemappableOop(longLarge);
-	result = instantiateClassindexableSize(classLargePositiveInteger(), longLen);
-	longLarge = popRemappableOop();
-	shortLarge = popRemappableOop()
-#endif /* SPURVM */
-;
 	if (!(result)) {
 		return primitiveFailFor(PrimErrNoMemory);
 	}
@@ -641,15 +615,8 @@ digitLshift(sqInt anOop, sqInt shiftCount)
 	}
 	newByteLen = ((highBit + shiftCount) + 7) / 8;
 	
-#if SPURVM
 	newOop = instantiateClassindexableSize(fetchClassOf(anOop), newByteLen);
 
-#else /* SPURVM */
-	pushRemappableOop(anOop);
-	newOop = instantiateClassindexableSize(fetchClassOf(anOop), newByteLen);
-	anOop = popRemappableOop()
-#endif /* SPURVM */
-;
 	if (!(newOop)) {
 		primitiveFailFor(PrimErrNoMemory);
 		return null;
@@ -745,15 +712,8 @@ digitRshiftlookfirst(sqInt anOop, sqInt shiftCount, sqInt a)
 	newByteLen = (newBitLen + 7) / 8;
 	newDigitLen = (newByteLen + 3) / 4;
 	
-#if SPURVM
 	newOop = instantiateClassindexableSize(fetchClassOf(anOop), newByteLen);
 
-#else /* SPURVM */
-	pushRemappableOop(anOop);
-	newOop = instantiateClassindexableSize(fetchClassOf(anOop), newByteLen);
-	anOop = popRemappableOop()
-#endif /* SPURVM */
-;
 	if (!(newOop)) {
 		return primitiveFailFor(PrimErrNoMemory);
 	}
@@ -841,24 +801,12 @@ largeIntgrowTo(sqInt aBytesObject, sqInt newByteLen)
 	unsigned int *pFrom;
 	unsigned int *pTo;
 
-	
-#if SPURVM
 	newBytes = instantiateClassindexableSize(fetchClassOf(aBytesObject), newByteLen);
 	if (!(newBytes)) {
 		primitiveFailFor(PrimErrNoMemory);
 		return null;
 	}
 
-#else /* SPURVM */
-	pushRemappableOop(aBytesObject);
-	newBytes = instantiateClassindexableSize(fetchClassOf(aBytesObject), newByteLen);
-	if (!(newBytes)) {
-		primitiveFailFor(PrimErrNoMemory);
-		return null;
-	}
-	aBytesObject = popRemappableOop()
-#endif /* SPURVM */
-;
 	newDigitLen = (newByteLen + 3) / 4;
 	/* begin digitSizeOfLargeInt: */
 	oldDigitLen = ((slotSizeOf(aBytesObject)) + 3) / 4;
@@ -1091,16 +1039,7 @@ primDigitAdd(void)
 	if (isIntegerObject(firstInteger)) {
 
 		/* convert it to a not normalized LargeInteger */
-		
-#if SPURVM
 		firstLarge = createLargeFromSmallInteger(firstInteger);
-
-#else /* SPURVM */
-		pushRemappableOop(secondInteger);
-		firstLarge = createLargeFromSmallInteger(firstInteger);
-		secondInteger = popRemappableOop()
-#endif /* SPURVM */
-;
 	}
 	else {
 		firstLarge = firstInteger;
@@ -1109,15 +1048,7 @@ primDigitAdd(void)
 
 		/* convert it to a not normalized LargeInteger */
 		
-#if SPURVM
 		secondLarge = createLargeFromSmallInteger(secondInteger);
-
-#else /* SPURVM */
-		pushRemappableOop(firstLarge);
-		secondLarge = createLargeFromSmallInteger(secondInteger);
-		firstLarge = popRemappableOop()
-#endif /* SPURVM */
-;
 	}
 	else {
 		secondLarge = secondInteger;
@@ -1140,23 +1071,11 @@ primDigitAdd(void)
 			longDigitLen = firstDigitLen;
 		}
 		
-#if SPURVM
 		/* begin createLargeIntegerNeg:digitLength: */
 		sum = instantiateClassindexableSize((neg
 			? classLargeNegativeInteger()
 			: classLargePositiveInteger()), longDigitLen * 4);
 
-#else /* SPURVM */
-		pushRemappableOop(shortInt);
-		pushRemappableOop(longInt);
-		/* begin createLargeIntegerNeg:digitLength: */
-		sum = instantiateClassindexableSize((neg
-			? classLargeNegativeInteger()
-			: classLargePositiveInteger()), longDigitLen * 4);
-		longInt = popRemappableOop();
-		shortInt = popRemappableOop()
-#endif /* SPURVM */
-;
 		if (!(sum)) {
 			_return_value = primitiveFailFor(PrimErrNoMemory);
 			goto l6;
@@ -1179,21 +1098,11 @@ primDigitAdd(void)
 
 			/* sum := sum growby: 1. */
 			
-#if SPURVM
 			/* begin createLargeIntegerNeg:byteLength: */
 			newSum = instantiateClassindexableSize((neg
 				? classLargeNegativeInteger()
 				: classLargePositiveInteger()), (longDigitLen * 4) + 1);
 
-#else /* SPURVM */
-			pushRemappableOop(sum);
-			/* begin createLargeIntegerNeg:byteLength: */
-			newSum = instantiateClassindexableSize((neg
-				? classLargeNegativeInteger()
-				: classLargePositiveInteger()), (longDigitLen * 4) + 1);
-			sum = popRemappableOop()
-#endif /* SPURVM */
-;
 			if (!(newSum)) {
 				_return_value = primitiveFailFor(PrimErrNoMemory);
 				goto l6;

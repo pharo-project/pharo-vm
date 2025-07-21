@@ -241,7 +241,6 @@ extern sqInt isYoung(sqInt);
 void addHighPriorityTickee(void (*ticker)(void), unsigned periodms);
 void addSynchronousTickee(void (*ticker)(void), unsigned periodms, unsigned roundms);
 
-#if SPURVM /* For now these are here; perhaps they're better in the VM. */
 static sqInt
 interceptFetchIntegerofObject(sqInt fieldIndex, sqInt objectPointer)
 {
@@ -251,7 +250,6 @@ interceptFetchIntegerofObject(sqInt fieldIndex, sqInt objectPointer)
 
 	return fetchIntegerofObject(fieldIndex, objectPointer);
 }
-#endif
 
 sqInt  fetchIntegerofObject(sqInt fieldIndex, sqInt objectPointer);
 struct VirtualMachine* sqGetInterpreterProxy(void)
@@ -281,11 +279,7 @@ struct VirtualMachine* sqGetInterpreterProxy(void)
 	VM->fetchArrayofObject = fetchArrayofObject;
 	VM->fetchClassOf = fetchClassOf;
 	VM->fetchFloatofObject = fetchFloatofObject;
-#if SPURVM
 	VM->fetchIntegerofObject = interceptFetchIntegerofObject;
-#else
-	VM->fetchIntegerofObject = fetchIntegerofObject;
-#endif
 	VM->fetchPointerofObject = fetchPointerofObject;
 	VM->obsoleteDontUseThisFetchWordofObject = obsoleteDontUseThisFetchWordofObject;
 	VM->firstFixedField = firstFixedField;

@@ -68,7 +68,7 @@ SpurImageReader >> getWord32FromFile: aFile swap: swapFlag [
 SpurImageReader >> readHeaderFrom: f startingAt: headerStart [
 
 	<var: #f type: #sqImageFile>
-	<var: #headerStart type: #squeakFileOffsetType>
+	<var: #headerStart type: #fileOffset_t>
 	<var: #header type: #SpurImageHeaderStruct>
 	<returnTypeC: #SpurImageHeaderStruct>
 	
@@ -148,7 +148,7 @@ SpurImageReader >> readImageFromFile: f StartingAt: headerStart [
 	 Smalltalk by invoking the image name as a command."
 
 	<var: #f type: #sqImageFile>
-	<var: #headerStart type: #'squeakFileOffsetType'>
+	<var: #headerStart type: #'fileOffset_t'>
 
 	<var: #header type: #'SpurImageHeaderStruct'>
 	

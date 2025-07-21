@@ -1,7 +1,7 @@
 #ifndef __SQ_DRAW_SURFACE_H
 #define __SQ_DRAW_SURFACE_H
 
-#include "sqMemoryAccess.h"
+#include "memoryAccess.h"
 /* v1.0 */
 #define SQ_SURFACE_MAJOR 1
 #define SQ_SURFACE_MINOR 0

@@ -6,7 +6,7 @@
  *
  */
 
-#include "sqMemoryAccess.h"
+#include "memoryAccess.h"
 #include <locale.h>
 #include "sq.h"
 

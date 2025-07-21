@@ -439,7 +439,7 @@ Cogit class >> declareCVarsIn: aCCodeGenerator [
 		addHeaderFile: '<stddef.h>';
 		"for e.g. offsetof"addHeaderFile: '"jit/jit.h"';
 		addHeaderFile: '"debug.h"';
-		addHeaderFile: '"sqCogStackAlignment.h"';
+		addHeaderFile: '"cogStackAlignment.h"';
 		addHeaderFile: '"dispdbg.h"';
 		"must precede cointerp.h & cogit.h otherwise NoDbgRegParms gets screwed up"
 		addHeaderFile: '"cogmethod.h"'.
@@ -553,8 +553,10 @@ Cogit class >> defineAtCompileTime: anObject [
 	 because the VM generated is specific to these varables."
 	anObject isSymbol ifFalse:
 		[^false].
-	(#(STACKVM COGVM SPURVM) includes: anObject) ifTrue:
+	(#(STACKVM COGVM) includes: anObject) ifTrue:
 		[^false].
+	anObject == #FEATURE_JIT_SIMD
+		ifTrue: [ ^ true ].
 	^VMBasicConstants namesDefinedAtCompileTime includes: anObject
 ]
 
@@ -806,6 +808,11 @@ Cogit class >> initializeErrorCodes [
 Cogit class >> initializeMiscConstants [
 	super initializeMiscConstants.
 	Debug := InitializationOptions at: #Debug ifAbsent: [false].
+	
+	FEATURE_JIT_SIMD := InitializationOptions
+		at: #FEATURE_JIT_SIMD
+		ifAbsent: [ true ].
+	
 	(InitializationOptions includesKey: #EagerInstructionDecoration)
 		ifTrue:
 			[EagerInstructionDecoration := InitializationOptions at: #EagerInstructionDecoration]
@@ -1588,6 +1595,8 @@ Cogit >> AddcR: reg1 R: reg2 [
 
 { #category : 'abstract instructions' }
 Cogit >> AlignedSt1S: aSize Vr: aVectorRegister R: aMemoryRegister Mw: anOffset [ 
+
+	<option: #FEATURE_JIT_SIMD>
 	^ self
 		  gen: AlignedSt1VrRMw
 		  operand: aSize 
@@ -1877,6 +1886,7 @@ Cogit >> DivRs: dpreg1 Rs: dpreg2 [
 { #category : 'abstract instructions' }
 Cogit >> DupS: aSize R: aGeneralRegister Vr: aVectorRegister [
 
+	<option: #FEATURE_JIT_SIMD>
 	^ self
 		  gen: DupRVr
 		  operand: aSize
@@ -2771,6 +2781,8 @@ Cogit >> SqrtRs: dpreg [
 
 { #category : 'abstract instructions' }
 Cogit >> St1S: aSize Vr: aVectorRegister R: aMemoryRegister Mw: anOffset [ 
+
+	<option: #FEATURE_JIT_SIMD>
 	^ self
 		  gen: St1VrRMw
 		  operand: aSize 
@@ -3205,7 +3217,7 @@ Cogit >> annotationIsForUncheckedEntryPoint: annotation [
 { #category : 'simulation only' }
 Cogit >> assertCStackWellAligned [
 	"Check alignment of the C stack.  This is a simulation only facsimilie.
-	 See platforms/Cross/vm/sqCogStackAlignment.h for the real code."
+	 See cogStackAlignment.h for the real code."
 	<doNotGenerate>
 	self assert: processor sp \\ cStackAlignment = expectedSPAlignment.
 	self assert: processor fp \\ cStackAlignment = expectedFPAlignment

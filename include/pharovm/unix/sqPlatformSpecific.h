@@ -30,7 +30,7 @@
 
 #include "pharovm/exportDefinition.h"
 
-#include "sqMemoryAccess.h"
+#include "memoryAccess.h"
 
 extern usqInt sqAllocateMemory(usqInt minHeapSize, usqInt desiredHeapSize, usqInt baseAddress);
 extern void* allocateJITMemory(usqInt desiredSize, usqInt desiredPosition);
@@ -48,7 +48,7 @@ extern void reportMinimumUnusedHeadroom(void);
 #endif
 
 /* Thread support for thread-safe signalSemaphoreWithIndex and/or the COGMTVM */
-#if STACKVM || NewspeakVM
+#if STACKVM
 # define sqLowLevelYield() sched_yield()
 /* linux's sched.h defines clone that conflicts with the interpreter's */
 # define clone NameSpacePollutant
@@ -77,7 +77,7 @@ extern const pthread_key_t tltiIndex;
 #  define ioTransferTimeslice() sched_yield()
 #  define ioMilliSleep(ms) usleep((ms) * 1000)
 # endif /* COGMTVM */
-#endif /* STACKVM || NewspeakVM */
+#endif /* STACKVM */
 
 #include <sys/types.h>
 

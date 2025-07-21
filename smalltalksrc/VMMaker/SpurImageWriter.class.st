@@ -124,7 +124,7 @@ SpurImageWriter >> writeImageFile: imageFileName fromHeader: header [
 
 	<inline: false>
 
-	<var: #headerStart type: #squeakFileOffsetType>
+	<var: #headerStart type: #fileOffset_t>
 	<var: #imageFileName declareC: 'char *imageFileName'>
 	<var: #f type: #sqImageFile>
 	<var: #header type: #SpurImageHeaderStruct>

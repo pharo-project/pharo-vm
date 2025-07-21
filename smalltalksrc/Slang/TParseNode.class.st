@@ -6,7 +6,8 @@ Class {
 	#superclass : 'Object',
 	#instVars : [
 		'parent',
-		'comment'
+		'comment',
+		'isExpression'
 	],
 	#category : 'Slang-AST',
 	#package : 'Slang',

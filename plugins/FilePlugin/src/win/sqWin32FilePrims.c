@@ -11,8 +11,6 @@
 *     1) This is a bare windows implementation *not* using any stdio stuff.
 *        It can be used instead of the standard sqFilePrims.c file on systems
 *        not having standard io libraries (e.g. WinCE)
-*     2) For using this you'll need to define WIN32_FILE_SUPPORT globally
-*        (e.g., in your compiler's project settings)
 *
 *   UPDATES:
 *     1) Support for long path names added by using UNC prefix in that case
@@ -32,11 +30,9 @@
 #include "sqWin32File.h"
 
 #include "pharovm/debug.h"
-#include "sqaio.h"
+#include "aio.h"
 
 extern struct VirtualMachine *interpreterProxy;
-
-#ifdef WIN32_FILE_SUPPORT
 
 #define true  1
 #define false 0
@@ -79,7 +75,7 @@ int hasCaseSensitiveDuplicate(WCHAR *path);
 
 typedef union {
 	LARGE_INTEGER li;
-	squeakFileOffsetType offset;
+	fileOffset_t offset;
 } win32FileOffset;
 
 
@@ -142,7 +138,7 @@ sqInt sqFileDeleteNameSize(char* fileNameIndex, sqInt fileNameSize) {
   return 1;
 }
 
-squeakFileOffsetType sqFileGetPosition(SQFile *f) {
+fileOffset_t sqFileGetPosition(SQFile *f) {
   win32FileOffset ofs;
   /* Return the current position of the file's read/write head. */
   if (!sqFileValid(f))
@@ -464,7 +460,7 @@ sqInt sqFileRenameOldSizeNewSize(char* oldNameIndex, sqInt oldNameSize, char* ne
   return 1;
 }
 
-sqInt sqFileSetPosition(SQFile *f, squeakFileOffsetType position)
+sqInt sqFileSetPosition(SQFile *f, fileOffset_t position)
 {
   win32FileOffset ofs;
   ofs.offset = position;
@@ -475,7 +471,7 @@ sqInt sqFileSetPosition(SQFile *f, squeakFileOffsetType position)
   return 1;
 }
 
-squeakFileOffsetType sqFileSize(SQFile *f) {
+fileOffset_t sqFileSize(SQFile *f) {
   /* Return the length of the given file. */
   win32FileOffset ofs;
   if (!sqFileValid(f))
@@ -501,7 +497,7 @@ sqInt sqFileSync(SQFile *f) {
   return sqFileFlush(f);
 }
 
-sqInt sqFileTruncate(SQFile *f, squeakFileOffsetType offset) {
+sqInt sqFileTruncate(SQFile *f, fileOffset_t offset) {
   win32FileOffset ofs;
   ofs.offset = offset;
   if (!sqFileValid(f))
@@ -553,5 +549,3 @@ EXPORT(sqInt)
 waitForDataonSemaphoreIndex(SQFile *file, sqInt semaphoreIndex){
 	aioEnableExternalHandler((int)FILE_HANDLE(file), FILE_HANDLE(file), (void*)semaphoreIndex, handleWaitOnStream, AIO_R);
 }
-
-#endif /* WIN32_FILE_SUPPORT */

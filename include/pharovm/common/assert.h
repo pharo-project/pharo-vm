@@ -12,18 +12,13 @@
  *
  * assertl, assertal & assertfl take a line number as an argument.
  */
+#pragma once
 
 #include "pharovm/debug.h"
-/* Include assert to ensure our macros do not get redefined by the standard ones.*/
-#include <assert.h>
 
-#undef assert
-#undef asserta
-#undef assertf
-#undef assertl
-#undef assertal
-#undef assertfl
-#undef eassert
+#ifdef assert
+#	error "Do not include system asserts"
+#endif
 
 #ifdef NDEBUG /* compatible with Mac OS X (FreeBSD) /usr/include/assert.h */
 # define assert(expr) (void) 0 /* hack disabling of asserts.  Better in makefile? */
