@@ -231,9 +231,9 @@ SLInlinerWithAnnotation >> inlineConditionalGuardingOrConditionalInit: aSendNode
 		at: #method
 		put: (codeGenerator methodNamed: aSendNode receiver selector) copy.
 
-	data
-		at: #replacementTree
-		put: (self inlineFunctionCall: aSendNode receiver).
+	data at: #replacementTree put: (self
+			 inlineFunctionCall: aSendNode receiver
+			 inInlineableConditional: true).
 
 	data at: #returnReplacement put: (isGuarding
 			 ifTrue: [
@@ -246,6 +246,12 @@ SLInlinerWithAnnotation >> inlineConditionalGuardingOrConditionalInit: aSendNode
 
 { #category : 'inlining-support' }
 SLInlinerWithAnnotation >> inlineFunctionCall: aSendNode [
+
+	^ self inlineFunctionCall: aSendNode inInlineableConditional: false
+]
+
+{ #category : 'inlining-support' }
+SLInlinerWithAnnotation >> inlineFunctionCall: aSendNode inInlineableConditional: aBoolean [
 	"Answer the body of the called function, substituting the actual
 	 parameters for the formal argument variables in the method body.
 	 Assume caller has established that:
@@ -281,10 +287,12 @@ SLInlinerWithAnnotation >> inlineFunctionCall: aSendNode [
 	see asCASTIn: vs asCASTExpressionIn: for stmtList.
 	"
 	meth locals: Set new.
-	sLNodeAnnotatorVisitor copyWithoutReturn: meth.
+	aBoolean ifFalse: [ sLNodeAnnotatorVisitor copyWithoutReturn: meth ].
+
 	"same 'optimization' as before"
 	meth parseTree children size = 1 ifTrue: [
 		meth parseTree: meth parseTree last ].
+
 	^ meth parseTree
 ]
 

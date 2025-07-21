@@ -1321,6 +1321,89 @@ methodWithBlockWithReturningIfWithInlinedArgumentInlined(void)
 }'
 ]
 
+{ #category : 'inlining-conditional-receiver' }
+SLInliningTest >> testMethodWithIfTrueReceiverInlined [
+
+	| method translation |
+	ccg doBasicInlining: true.
+
+	method := ccg methodNamed: #methodWithIfTrueReceiverInlined.
+
+	translation := self translate: method.
+	translation := translation trimBoth.
+
+	self
+		assert: translation
+		equals:
+			'/* SLMockInliningTestClass>>#methodWithIfTrueReceiverInlined */
+static sqInt
+methodWithIfTrueReceiverInlined(void)
+{
+	{
+		if (methodB()) {
+			goto l2;
+		}
+		/* begin methodCMultipleReturn */
+		if (methodC()) {
+			goto l3;
+		}
+		3 + 3;
+		l3:
+		;
+		/* end methodCMultipleReturn */
+		/* end methodWithMultipleBooleanReturn; fall through */
+		/* begin methodB */
+		2 + 2;
+		/* end methodB */
+		l2:
+		;
+	}
+	return 1;
+}'
+]
+
+{ #category : 'inlining-conditional-receiver' }
+SLInliningTest >> testMethodWithReturningIfTrueReceiverInlined [
+
+	| method translation |
+	ccg doBasicInlining: true.
+
+	method := ccg methodNamed: #methodWithReturningIfTrueReceiverInlined.
+
+	translation := self translate: method.
+	translation := translation trimBoth.
+
+	self
+		assert: translation
+		equals:
+			'/* SLMockInliningTestClass>>#methodWithReturningIfTrueReceiverInlined */
+static sqInt
+methodWithReturningIfTrueReceiverInlined(void)
+{
+	{
+		if (methodB()) {
+			goto l2;
+		}
+		/* begin methodCMultipleReturn */
+		if (methodC()) {
+			goto l3;
+		}
+		3 + 3;
+		l3:
+		;
+		/* end methodCMultipleReturn */
+		/* end methodWithMultipleBooleanReturn; fall through */
+		/* begin methodB */
+		2 + 2;
+		/* end methodB */
+		return 0;
+		l2:
+		;
+	}
+	return 1;
+}'
+]
+
 { #category : 'inlining-jump' }
 SLInliningTest >> testMethodWithReturningIfWithReturnPartiallyPushedDownInlined [
 

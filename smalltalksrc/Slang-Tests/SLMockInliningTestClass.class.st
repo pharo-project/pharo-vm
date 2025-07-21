@@ -488,10 +488,35 @@ SLMockInliningTestClass >> methodWithBlockWithReturningIfWithInlinedArgumentInli
 		self methodBMultipleReturnExpressionAndStatement ]
 ]
 
+{ #category : 'inlining-conditional-receiver' }
+SLMockInliningTestClass >> methodWithIfTrueReceiverInlined [
+
+	self methodWithMultipleBooleanReturn ifTrue: [ self methodB ].
+	^ 1
+]
+
+{ #category : 'inlining-conditional-receiver-helpers' }
+SLMockInliningTestClass >> methodWithMultipleBooleanReturn [
+
+	<inline: true>
+	self methodB ifTrue: [ ^ false ].
+	self methodCMultipleReturn.
+	^ true
+]
+
 { #category : 'inlining-iterative-helpers' }
 SLMockInliningTestClass >> methodWithRepeat [
 
 	[ self methodB ifTrue: [ ^ 5 ] ] repeat
+]
+
+{ #category : 'inlining-conditional-receiver' }
+SLMockInliningTestClass >> methodWithReturningIfTrueReceiverInlined [
+
+	self methodWithMultipleBooleanReturn ifTrue: [
+		self methodB.
+		^ 0 ].
+	^ 1
 ]
 
 { #category : 'inlining-jump' }
