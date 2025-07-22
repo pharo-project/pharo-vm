@@ -3117,8 +3117,8 @@ StackToRegisterMappingCogit >> generateInstructionsAt: eventualAbsoluteAddress [
 	<var: #fixup type: #'BytecodeFixup *'>
 	absoluteAddress := eventualAbsoluteAddress.
 	pcDependentIndex := 0.
-	0 to: opcodeIndex - 1 do:
-		[:i|
+
+	0 to: opcodeIndex - 1 do: [:i|
 		abstractInstruction := self abstractInstructionAt: i.
 		abstractInstruction isPCDependent
 			ifTrue:
@@ -3140,8 +3140,7 @@ StackToRegisterMappingCogit >> generateInstructionsAt: eventualAbsoluteAddress [
 				 absoluteAddress := absoluteAddress + abstractInstruction machineCodeSize]
 			ifFalse:
 				[absoluteAddress := abstractInstruction concretizeAt: absoluteAddress]].
-	0 to: pcDependentIndex - 1 do:
-		[:j|
+	0 to: pcDependentIndex - 1 do: [:j|
 		fixup := self fixupAtIndex: j.
 		abstractInstruction := self abstractInstructionAt: fixup instructionIndex.
 		abstractInstruction concretizeAt: abstractInstruction address].
