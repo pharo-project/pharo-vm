@@ -1071,8 +1071,8 @@ StackInterpreter class >> initializePrimitiveTable [
 		(63 primitiveStringAt)
 		(64 primitiveStringAtPut)
 		"The stream primitives no longer pay their way; normal Smalltalk code is faster."
-		(65 primitiveStartProfiling)"was primitiveNext"
-		(66 primitiveStopProfiling) "was primitiveNextPut"
+		(65 0)
+		(66 0)
 		(67 0 "a.k.a. primitiveFail but faster because primitiveFail won't even be called") "was primitiveAtEnd"
 
 		"StorageManagement Primitives (68-79)"
