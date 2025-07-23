@@ -195,7 +195,7 @@ void *worker_run(void *aWorker) {
     }
 
 
-    logWarn("Finishing Nested run: %d from %d\n", worker->nestedRuns, myRun);
+    logInfo("Finishing Nested run: %d from %d\n", worker->nestedRuns, myRun);
 
     worker->nestedRuns --;
 
