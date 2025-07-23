@@ -1,4 +1,4 @@
-/* sqMemoryAccess.h -- memory accessors (and associated type definitions)
+/* memoryAccess.h -- memory accessors (and associated type definitions)
  *
  * Author: Ian.Piumarta@squeakland.org
  *
@@ -34,7 +34,7 @@
 # define SQ_IMAGE32 0
 #endif
 
-#if (SQ_IMAGE64 || SPURVM)
+#if (SQ_IMAGE64)
 # define OBJECTS_64BIT_ALIGNED 1
 # define OBJECTS_32BIT_ALIGNED 0
 #else

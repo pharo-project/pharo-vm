@@ -5,9 +5,6 @@ To see the thing actually run, you could (after backing up this image and change
 
 	(StackInterpreterSimulator new openOn: Smalltalk imageName) test
 
-	((StackInterpreterSimulator newWithOptions: #(NewspeakVM true MULTIPLEBYTECODESETS true))
-		openOn: 'ns101.image') test
-
 and be patient both to wait for things to happen, and to accept various things that may go wrong depending on how large or unusual your image may be.  We usually do this with a small and simple benchmark image.
 
 Here's an example of what Eliot uses to launch the simulator in a window.  The bottom-right window has a menu packed with useful stuff:
@@ -999,26 +996,6 @@ StackInterpreterSimulator >> primitiveContextAt [
 ]
 
 { #category : 'debugging traps' }
-StackInterpreterSimulator >> primitiveDoPrimitiveWithArgs [
-	self halt.
-	^super primitiveDoPrimitiveWithArgs
-]
-
-{ #category : 'control primitives' }
-StackInterpreterSimulator >> primitiveExecuteMethod [
-	self halt: thisContext selector.
-	^super primitiveExecuteMethod
-]
-
-{ #category : 'control primitives' }
-StackInterpreterSimulator >> primitiveExecuteMethodArgsArray [
-	self halt: thisContext selector.
-	"(objectMemory isOopCompiledMethod: self stackTop) ifFalse:
-		[self halt]."
-	^super primitiveExecuteMethodArgsArray
-]
-
-{ #category : 'debugging traps' }
 StackInterpreterSimulator >> primitiveFailFor: reasonCode [
 	"self halt."
 	^super primitiveFailFor: reasonCode
@@ -1088,31 +1065,6 @@ StackInterpreterSimulator >> primitiveNewWithArg [
 StackInterpreterSimulator >> primitiveObjectPointsTo [
 	"self halt."
 	^super primitiveObjectPointsTo
-]
-
-{ #category : 'object access primitives' }
-StackInterpreterSimulator >> primitiveStoreStackp [
-	"self printContext: (self stackValue: 1).
-	self halt."
-	super primitiveStoreStackp.
-	"self printContext: self stackTop"
-]
-
-{ #category : 'system control primitives' }
-StackInterpreterSimulator >> primitiveVMParameter [
-	
-	(self stackTop = (objectMemory integerObjectOf: 9)
-	 or: [self stackTop = (objectMemory integerObjectOf: 52)]) ifTrue:
-		[self halt].
-	^super primitiveVMParameter
-]
-
-{ #category : 'debugging traps' }
-StackInterpreterSimulator >> primitiveWait [
-	"Catch errors before we start the whole morphic error process"
-
-	"byteCount > 1000000 ifTrue: [self halt]."  "Ignore early process activity"
-	^ super primitiveWait
 ]
 
 { #category : 'debug printing' }
@@ -1424,15 +1376,6 @@ StackInterpreterSimulator >> singleStep [
 	atEachStepBlock value. "N.B. may be nil"
 	self dispatchOn: currentBytecode in: BytecodeTable.
 	self incrementByteCount
-]
-
-{ #category : 'primitive support' }
-StackInterpreterSimulator >> slowPrimitiveResponse [
-	primTraceLog ifNotNil:
-		[primTraceLog size > 127 ifTrue:
-			[primTraceLog removeFirst].
-		 primTraceLog addLast: primitiveFunctionPointer].
-	^super slowPrimitiveResponse
 ]
 
 { #category : 'debug printing' }

@@ -156,7 +156,7 @@ typedef union {
     DWORD dwLow;
     DWORD dwHigh;
   };
-  squeakFileOffsetType offset;
+  fileOffset_t offset;
 } win32FileOffset;
 
 DWORD convertToSqueakTime(SYSTEMTIME st)
@@ -193,7 +193,7 @@ sqInt dir_Delimitor(void) { return '\\'; }
 
 sqInt dir_Lookup(char *pathString, sqInt pathLength, sqInt index,
 /* outputs: */ char *name, sqInt *nameLength, sqInt *creationDate, sqInt *modificationDate,
-               sqInt *isDirectory, squeakFileOffsetType *sizeIfFile, sqInt *posixPermissions, sqInt *isSymlink)
+               sqInt *isDirectory, fileOffset_t *sizeIfFile, sqInt *posixPermissions, sqInt *isSymlink)
 {
   /* Lookup the index-th entry of the directory with the given path, starting
      at the root of the file system. Set the name, name length, creation date,
@@ -305,11 +305,7 @@ sqInt dir_Lookup(char *pathString, sqInt pathLength, sqInt index,
   if (findHandle == INVALID_HANDLE_VALUE) {
     /* Directory could be empty, so we must check for that */
     DWORD dwErr = GetLastError();
-#ifdef PharoVM
     return (dwErr == ERROR_NO_MORE_FILES || dwErr == ERROR_ACCESS_DENIED) ? NO_MORE_ENTRIES : BAD_PATH;
-#else
-    return (dwErr == ERROR_NO_MORE_FILES) ? NO_MORE_ENTRIES : BAD_PATH;
-#endif
   }
   while (1) {
     /* check for '.' or '..' directories */
@@ -354,7 +350,7 @@ sqInt dir_Lookup(char *pathString, sqInt pathLength, sqInt index,
 
 sqInt dir_EntryLookup(char *pathString, sqInt pathLength, char* nameString, sqInt nameStringLength,
 /* outputs: */ char *name, sqInt *nameLength, sqInt *creationDate, sqInt *modificationDate,
-                    sqInt *isDirectory, squeakFileOffsetType *sizeIfFile, sqInt *posixPermissions, sqInt *isSymlink)
+                    sqInt *isDirectory, fileOffset_t *sizeIfFile, sqInt *posixPermissions, sqInt *isSymlink)
 {
   /* Lookup a given file in a given named directory.
      Set the name, name length, creation date,
@@ -431,15 +427,11 @@ sqInt dir_EntryLookup(char *pathString, sqInt pathLength, char* nameString, sqIn
   ALLOC_WIN32_PATH(win32Path, fullPath, fullPathLength);
   
   if (!GetFileAttributesExW(win32Path, 0, &winAttrs)) {
-#ifdef PharoVM
     if (GetLastError() == ERROR_SHARING_VIOLATION) {
       if (!findFileFallbackOnSharingViolation(win32Path, &winAttrs)) return NO_MORE_ENTRIES;
     } else {
       return NO_MORE_ENTRIES;
     }
-#else
-      return NO_MORE_ENTRIES;
-#endif
   }
 
   memcpy(name, nameString, nameStringLength);

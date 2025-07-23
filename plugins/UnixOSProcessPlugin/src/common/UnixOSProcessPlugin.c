@@ -35,7 +35,7 @@ static char __buildInfo[] = "UnixOSProcessPlugin VMConstruction-Plugins-OSProces
 
 /* Do not include the entire sq.h file but just those parts needed. */
 #include "sqConfig.h"			/* Configuration options */
-#include "sqVirtualMachine.h"	/*  The virtual machine proxy definition */
+#include "virtualMachine.h"	/*  The virtual machine proxy definition */
 #include "sqPlatformSpecific.h"	/* Platform specific definitions */
 
 #define true 1
@@ -50,8 +50,8 @@ static char __buildInfo[] = "UnixOSProcessPlugin VMConstruction-Plugins-OSProces
 
 #include "FilePlugin.h"
 #include "SocketPlugin.h"
-#include "sqaio.h"
-#include "sqMemoryAccess.h"
+#include "aio.h"
+#include "memoryAccess.h"
 
 
 /*** Constants ***/

@@ -1,34 +1,11 @@
-#ifndef _SqueakVM_H
-#define _SqueakVM_H
+#pragma once
 
-/* We expect interp.h to define VM_PROXY_MAJOR & VM_PROXY_MINOR, and other
- * defines such as STACKVM, appropriately for the VM generated with it.
- */
 #include "interp.h"
 
+#define VM_PROXY_MAJOR 1
+#define VM_PROXY_MINOR 15
 
-#if SPURVM
-# define VM_VERSION "5.0"
-#else
-# define VM_VERSION "4.5"
-#endif
-
-#ifndef VM_PROXY_MAJOR
-/* Increment the following number if you change the order of
-   functions listed or if you remove functions */
-# define VM_PROXY_MAJOR 1
-#endif
-
-#ifndef VM_PROXY_MINOR
-/* Increment the following number if you add functions at the end */
-# if SPURVM
-#	define VM_PROXY_MINOR 15
-# else
-#	define VM_PROXY_MINOR 12
-# endif
-#endif
-
-#include "sqMemoryAccess.h"
+#include "memoryAccess.h"
 
 #include "pharovm/semaphores/pSemaphore.h"
 
@@ -342,5 +319,3 @@ typedef struct VirtualMachine {
   void (*waitOnExternalSemaphoreIndex)(sqInt semaphoreIndex);
 
 } VirtualMachine;
-
-#endif /* _SqueakVM_H */

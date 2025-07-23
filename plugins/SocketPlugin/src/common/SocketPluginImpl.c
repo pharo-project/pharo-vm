@@ -54,7 +54,7 @@
 #include "pharovm/pharo.h"
 #include "sq.h"
 #include "SocketPlugin.h"
-#include "sqaio.h"
+#include "aio.h"
 #include "pharovm/debug.h"
 
 #ifdef ACORN
@@ -293,19 +293,6 @@ int getLastSocketError(){
 	return errno;
 #endif
 }
-
-
-#ifdef AIO_DEBUG
-char *socketHandlerName(aioHandler h)
-{
-  if (h == acceptHandler)     return "acceptHandler";
-  if (h == connectHandler)    return "connectHandler";
-  if (h == dataHandler)       return "dataHandler";
-  if (h == closeHandler)      return "closeHandler";
-  return "***unknownHandler***";
-}
-#endif
-
 
 /*** module initialisation/shutdown ***/
 

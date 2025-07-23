@@ -19,7 +19,7 @@ static char __buildInfo[] = "DSAPlugin CryptographyPlugins-eem.14 uuid: 54292ff0
 
 /* Do not include the entire sq.h file but just those parts needed. */
 #include "sqConfig.h"			/* Configuration options */
-#include "sqVirtualMachine.h"	/*  The virtual machine proxy definition */
+#include "virtualMachine.h"	/*  The virtual machine proxy definition */
 #include "sqPlatformSpecific.h"	/* Platform specific definitions */
 
 #define true 1
@@ -30,7 +30,7 @@ static char __buildInfo[] = "DSAPlugin CryptographyPlugins-eem.14 uuid: 54292ff0
 # define EXPORT(returnType) static returnType
 #endif
 
-#include "sqMemoryAccess.h"
+#include "memoryAccess.h"
 
 
 /*** Constants ***/

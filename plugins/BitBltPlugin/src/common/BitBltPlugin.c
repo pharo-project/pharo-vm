@@ -19,7 +19,7 @@ static char __buildInfo[] = "BitBltSimulation VMMaker.oscog-eem.2493 uuid: d7437
 
 /* Do not include the entire sq.h file but just those parts needed. */
 #include "sqConfig.h"			/* Configuration options */
-#include "sqVirtualMachine.h"	/*  The virtual machine proxy definition */
+#include "virtualMachine.h"	/*  The virtual machine proxy definition */
 #include "sqPlatformSpecific.h"	/* Platform specific definitions */
 
 #define true 1
@@ -30,14 +30,14 @@ static char __buildInfo[] = "BitBltSimulation VMMaker.oscog-eem.2493 uuid: d7437
 # define EXPORT(returnType) static returnType
 #endif
 
-#include "sqAssert.h"
+#include "assert.h"
 #ifdef ENABLE_FAST_BLT
 #include "BitBltDispatch.h"
 #else
 // to handle the unavoidable decl in the spec of copyBitsFallback();
 #define operation_t void
 #endif
-#include "sqMemoryAccess.h"
+#include "memoryAccess.h"
 
 
 /*** Constants ***/

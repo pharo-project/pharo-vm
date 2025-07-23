@@ -14,7 +14,7 @@
 /* Override necessary definitions */
 # undef putchar
 # include "sqWin32Alloc.h"
-#include "sqMemoryAccess.h"
+#include "memoryAccess.h"
 
 
 # include <windows.h>
@@ -49,7 +49,6 @@
 #  if _MSC_VER < 1300 /* maybe not available before MSVC 7.0 2003 ??? */
 #    define fabsf(x)    ((float)fabs((double)(x)))
 #  endif
-#  define bzero(pointer,size) ZeroMemory(pointer,size)
 #endif
 
 #ifdef __GNUC__
@@ -95,7 +94,7 @@ extern void reportMinimumUnusedHeadroom(void);
 #endif
 
 /* Thread support for thread-safe signalSemaphoreWithIndex and/or the COGMTVM */
-#if STACKVM || NewspeakVM
+#if STACKVM
 # define sqLowLevelYield() Sleep(0)
 /* these are used both in the STACKVM & the COGMTVM */
 # define sqOSThread DWORD
@@ -113,7 +112,7 @@ extern const unsigned long tltiIndex;
 #  define ioTransferTimeslice() Sleep(0)
 #  define ioMilliSleep(ms) Sleep(ms)
 # endif /* COGMTVM */
-#endif /* STACKVM || NewspeakVM */
+#endif /* STACKVMM */
 
 #if defined(__GNUC__)
 # if !defined(VM_LABEL)

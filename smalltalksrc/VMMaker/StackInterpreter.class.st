@@ -211,9 +211,6 @@ nativeSP
 nativeStackPointer
 	- Lowcode, the native (C) stack pointer (?; then why nativeSP?)
 
-nextPollUsecs
-	- if non-zero, the micosecond clock value at which to next poll for events, used to control event polling rate
-
 nextWakeupUsecs
 	- if non-zero, the micosecond clock value at which the next delay expires
 
@@ -335,7 +332,6 @@ Class {
 		'highestRunnableProcessPriority',
 		'reenterInterpreter',
 		'nextWakeupUsecs',
-		'nextPollUsecs',
 		'interruptPending',
 		'imageHeaderFlags',
 		'extraVMMemory',
@@ -502,7 +498,7 @@ StackInterpreter class >> declareCVarsIn: aCCodeGenerator [
 		addHeaderFile: '"sigjmp_support.h"';
 		addHeaderFile: '<wchar.h> /* for wint_t */';
 		addHeaderFile: '"vmCallback.h"';
-		addHeaderFile: '"sqMemoryFence.h"';
+		addHeaderFile: '"memoryFence.h"';
 		addHeaderFile: '"dispdbg.h"';
 		addHeaderFile: '"vmMemoryMap.h"';
 		addHeaderFile: '"vmRememberedSet.h"';
@@ -590,7 +586,7 @@ If ffi is put as a separate header, slang will sort the header and put it outsid
 
 	self
 		declareCAsUSqLong:
-			#( nextPollUsecs nextWakeupUsecs longRunningPrimitiveGCUsecs
+			#( nextWakeupUsecs longRunningPrimitiveGCUsecs
 			   longRunningPrimitiveStartUsecs longRunningPrimitiveStopUsecs
 	"these are high-frequency enough that they're overflowing quite quickly on modern hardware"
 			   statProcessSwitch statForceInterruptCheck
@@ -1542,11 +1538,7 @@ warningat(char *s, int l) { /* ditto with line number. */
 
 void
 invalidCompactClassError(char *s) { /* Print a (compact) class index error message and exit. */
-#if SPURVM
 	vm_printf("\nClass %s does not have the required class index\n", s);
-#else
-	vm_printf("\nClass %s does not have the required compact class index\n", s);
-#endif
 	exit(-1);
 }
 
@@ -1749,9 +1741,6 @@ StackInterpreter class >> writeVMHeaderTo: aStream bytesPerWord: bytesPerWord ge
 	(SistaVM or: [ IMMUTABILITY ]) ifTrue:
 		[aStream cr].
 	aCCodeGenerator putDefineOf: #STACKVM as: 1 on: aStream.
-	(InitializationOptions at: #SpurObjectMemory ifAbsent: false) ifTrue:
-		[aCCodeGenerator putDefineOf: #SPURVM as: 1 on: aStream].
-
 ]
 
 { #category : 'simulation' }
@@ -3801,7 +3790,11 @@ StackInterpreter >> checkForAndFollowForwardedPrimitiveState [
 	| primIndex |
 	self assert: self failed.
 	primIndex := self primitiveIndexOf: newMethod.
-	self assert: (argumentCount = (self argumentCountOf: newMethod) or: [ self isMetaPrimitiveIndex: primIndex ]).
+
+	"Check that the argument count is correct.
+	But ignore the check in meta primitives, they modify the VM state and we don't have the info to verify"
+	self assert: ((self isMetaPrimitiveIndex: primIndex) or: [argumentCount = (self argumentCountOf: newMethod)]).
+	
 	^ self checkForAndFollowForwardedPrimitiveState: primIndex
 ]
 
@@ -3889,17 +3882,8 @@ StackInterpreter >> checkForEventsMayContextSwitch: mayContextSwitch [
 		 (sema ~= objectMemory nilObject
 		  and: [self synchronousSignal: sema]) ifTrue:
 			[switched := true]].
-
-	"inIOProcessEvents prevents reentrancy into ioProcessEvents and allows disabling
-	 ioProcessEvents e.g. for native GUIs.  We would like to manage that here but can't
-	 since the platform code may choose to call ioProcessEvents itself in various places."
 	
-	(now := self ioUTCMicroseconds) >= nextPollUsecs ifTrue: [
-		self ioProcessEvents. "sets interruptPending if interrupt key pressed; may callback"
-		"msecs to wait before next call to ioProcessEvents."
-		 nextPollUsecs := now + 20000
-		 "Note that strictly speaking we might need to update 'now' at this point since
-		 ioProcessEvents could take a very long time on some platforms" ].
+	now := self ioUTCMicroseconds.
 
 	nextWakeupUsecs ~= 0 ifTrue:
 		[now >= nextWakeupUsecs ifTrue:
@@ -7531,7 +7515,6 @@ StackInterpreter >> initialize [
 	stackPage := overflowedPage := 0.
 	extraFramesToMoveOnOverflow := 0.
 	highestRunnableProcessPriority := 0.
-	nextPollUsecs := 0.
 	nextWakeupUsecs := 0.
 	tempOop := tempOop2 := theUnknownShort := 0.
 	maxStacksToPrint := 0.

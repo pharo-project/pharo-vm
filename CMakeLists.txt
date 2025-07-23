@@ -17,27 +17,35 @@ include(cmake/macros.cmake)
 message(STATUS "CMAKE_GENERATOR=${CMAKE_GENERATOR}")
 
 # Build options
-option(VERBOSE_BUILD					"Verbose Build"									OFF)
-option(FEATURE_FFI					"Enable FFI"									 ON)
-option(FEATURE_THREADED_FFI				"Enable Threaded (running in another thread) FFI"				 ON)
-option(FEATURE_MESSAGE_COUNT				"Enable the option to count messages, only valid for StackVM"			OFF)
-option(FEATURE_NETWORK					"Enable network and sockets"							 ON)
-option(FEATURE_LIB_SDL2					"Build SDL2 support"								 ON)
-option(FEATURE_LIB_CAIRO				"Build Cairo support"								 ON)
-option(FEATURE_LIB_FREETYPE2				"Build freetype2 support"							 ON)
-option(FEATURE_LIB_GIT2					"Build LibGit2 support"								 ON)
-option(FEATURE_LIB_PTHREADW32				"Windows only, link to win32 version of pthread"				OFF)
-option(GENERATE_VMMAKER					"If it generates the VMMaker image"						 ON)
-option(GENERATE_SOURCES					"If it generates the C sources"							 ON)
-option(ALWAYS_INTERACTIVE				"Be interactive by default"							OFF)
-option(BUILD_BUNDLE					"Builds a bundle with all dependencies"						 ON)
-option(FEATURE_COMPILE_GNUISATION			"Use gcc gnu extensions to compile the VM"					 ON)
-option(PHARO_DEPENDENCIES_PREFER_DOWNLOAD_BINARIES	"Prefer downloading dependencies"						OFF)
-option(FEATURE_COMPILE_INLINE_MEMORY_ACCESSORS		"Use inline memory accessors instead of macros"					 ON)
-option(PHARO_VM_IN_WORKER_THREAD			"Have support for pharo running in a different thread that the main one"	 ON)
-option(DEPENDENCIES_FORCE_BUILD         "Force build libraries" OFF)
-option(BUILD_WITH_GRAPHVIZ              "Generate dependency graphs" ON)
-option(VERSION_UPDATE_FROM_GIT              "Extract version information from git tags. Default to true. Follow vX.Y.Z-suffix" TRUE)
+option(VERBOSE_BUILD			"Verbose Build"														OFF)
+option(FEATURE_FFI				"Enable FFI"														ON)
+option(FEATURE_THREADED_FFI		"Enable Threaded (running in another thread) FFI"					ON)
+option(FEATURE_MESSAGE_COUNT	"Enable the option to count messages, only valid for StackVM"		OFF)
+option(FEATURE_NETWORK			"Enable network and sockets"										ON)
+option(FEATURE_JIT_SIMD			"Use SIMD support in JIT compilation when available"				ON)
+option(FEATURE_LIB_SDL2			"Build SDL2 support"												ON)
+option(FEATURE_LIB_CAIRO		"Build Cairo support"												ON)
+option(FEATURE_LIB_FREETYPE2	"Build freetype2 support"											ON)
+option(FEATURE_LIB_GIT2			"Build LibGit2 support"												ON)
+option(FEATURE_LIB_PTHREADW32	"Windows only, link to win32 version of pthread"					OFF)
+option(GENERATE_VMMAKER			"If it generates the VMMaker image"									ON)
+option(GENERATE_SOURCES			"If it generates the C sources"										ON)
+option(ALWAYS_INTERACTIVE		"Be interactive by default"											OFF)
+option(BUILD_BUNDLE				"Builds a bundle with all dependencies"								ON)
+option(FEATURE_COMPILE_GNUISATION
+								"Use gcc gnu extensions to compile the VM"							ON)
+option(FEATURE_COMPILE_INLINE_MEMORY_ACCESSORS
+								"Use inline memory accessors instead of macros"						ON)
+option(PHARO_DEPENDENCIES_PREFER_DOWNLOAD_BINARIES
+								"Prefer downloading dependencies"									OFF)
+option(PHARO_VM_IN_WORKER_THREAD
+								"Run the VM in a thread different that the main"					ON)
+option(DEPENDENCIES_FORCE_BUILD
+								"Force build libraries"												OFF)
+option(BUILD_WITH_GRAPHVIZ
+								"Generate dependency graphs"										ON)
+option(VERSION_UPDATE_FROM_GIT
+								"Extract version information from git tags. Default to true. Follow vX.Y.Z-suffix" ON)
 
 
 set(APPNAME			"Pharo"         CACHE STRING                 "VM Application name")
@@ -214,7 +222,7 @@ elseif(WIN)
     SET(CMAKE_SYSTEM_NAME Windows)
 
     add_compile_definitions(WIN32_LEAN_AND_MEAN)
-    add_compile_definitions(NO_ISNAN NO_SERVICE LSB_FIRST=1 AllocationCheckFiller=0xADD4E55)
+    add_compile_definitions(NO_ISNAN LSB_FIRST=1 AllocationCheckFiller=0xADD4E55)
 
     #Setting minimal Windows Version to VISTA
     add_compile_definitions(_WIN32_WINNT=0x0600 WINVER=0x0600 NTDDI_VERSION=0x06000000 WIN64=1)
@@ -246,10 +254,6 @@ if(${GENERATE_SOURCES})
     set(GENERATED_SOURCE_DIR ${CMAKE_CURRENT_BINARY_DIR})
 else()
     set(GENERATED_SOURCE_DIR ${CMAKE_CURRENT_BINARY_DIR} CACHE STRING "Source directory where to find the generated source. Default value is CMAKE_CURRENT_BINARY_DIR")
-endif()
-
-if (${FEATURE_COMPILE_INLINE_MEMORY_ACCESSORS})
-    add_compile_definitions(USE_INLINE_MEMORY_ACCESSORS=1)
 endif()
 
 set(PLUGIN_GENERATED_FILES 
@@ -298,7 +302,6 @@ add_compile_options(
 add_compile_definitions(
     IMMUTABILITY=1
     COGMTVM=0
-    PharoVM=1
     DEBUGVM=${DEBUGVM}
     _FILE_OFFSET_BITS=64
 )
@@ -346,14 +349,6 @@ message(STATUS "int ${SIZEOF_INT}")
 message(STATUS "long ${SIZEOF_LONG}")
 message(STATUS "long long ${SIZEOF_LONG_LONG}")
 message(STATUS "void* ${SIZEOF_VOID_P}")
-
-if("${SIZEOF_LONG}" STREQUAL "8")
-	set(SQUEAK_INT64_TYPEDEF "long")
-elseif("${SIZEOF_LONG_LONG}" STREQUAL "8")
-	set(SQUEAK_INT64_TYPEDEF "long long")
-else()
-	message(FATAL_ERROR "Failed to find a 64 bits integer type.")
-endif()
 
 set(EXECUTABLE_OUTPUT_PATH "${CMAKE_CURRENT_BINARY_DIR}/build/vm/")
 
@@ -469,6 +464,14 @@ set(VM_SOURCES
 
 add_executable(${VM_EXECUTABLE_NAME} ${VM_FRONTEND_APPLICATION_TYPE} ${VM_FRONTEND_SOURCES})
 addLibraryWithRPATH(${VM_LIBRARY_NAME} ${VM_SOURCES})
+
+if (${FEATURE_COMPILE_INLINE_MEMORY_ACCESSORS})
+	target_compile_definitions(${VM_LIBRARY_NAME} PRIVATE USE_INLINE_MEMORY_ACCESSORS=1) 
+endif()
+
+if(${FEATURE_JIT_SIMD})
+	target_compile_definitions(${VM_LIBRARY_NAME} PRIVATE FEATURE_JIT_SIMD=1)
+endif()
 
 #
 # LibFFI

@@ -10,9 +10,9 @@
 
 #include "pharovm/debug.h"
 #include "pharovm/semaphores/platformSemaphore.h"
-#include "sqaio.h"
-#include "sqMemoryFence.h"
-#include "sqaio.h"
+#include "aio.h"
+#include "memoryFence.h"
+#include "aio.h"
 
 #include <sys/types.h>
 #include <sys/socket.h>
