@@ -27,3 +27,11 @@ jobs:
 
       - name: Build
         run: ./scripts/ci/github_build.sh
+
+      - name: Archive artifacts
+        if: matrix.os == 'ubuntu-22.04'
+        uses: actions/upload-artifact@v4
+        with:
+          name: pharo64-linux-stable-${{ github.sha }}
+          path: products/release/phcogspur64linuxht/pharo64-linux-stable.zip
+          if-no-files-found: "error"
