@@ -622,9 +622,8 @@ SLInlinerWithAnnotation >> isInlineableSend: aNode [
 		  m mayBeInlined and: [
 			  (m isComplete and: [
 				   (codeGenerator mayInline: m selector) and: [
-					   self
-						   canBeInlineInExpression: aNode
-						   replacement: m ] ]) or: [ m checkForRequiredInlinability ] ] ]
+					   self canBeInlineInExpression: aNode replacement: m ] ]) or: [
+				  m checkForRequiredInlinability ] ] ]
 ]
 
 { #category : 'inlining-decision' }

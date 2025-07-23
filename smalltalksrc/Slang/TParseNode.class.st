@@ -261,6 +261,12 @@ TParseNode >> isConstant [
 ]
 
 { #category : 'testing' }
+TParseNode >> isCppConditional [
+
+	^ false
+]
+
+{ #category : 'testing' }
 TParseNode >> isDefine [
 
 	^false

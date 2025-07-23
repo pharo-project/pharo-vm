@@ -493,10 +493,19 @@ SLNodeAnnotatorVisitor >> isInSend: aNode [
 { #category : 'testing' }
 SLNodeAnnotatorVisitor >> isReturningIf: aNode [
 
-	^ aNode isConditionalSend and: [
-		  (self isEffectivelyIgnoredInReturn: aNode) or: [
-			  aNode arguments allSatisfy: [ :arg |
-				  self hasEffectiveReturnValue: arg ] ] ]
+	| isReturningIf |
+	isReturningIf := aNode isConditionalSend and: [
+		                 (self isEffectivelyIgnoredInReturn: aNode) or: [
+			                 aNode arguments allSatisfy: [ :arg |
+				                 self hasEffectiveReturnValue: arg ] ] ].
+
+	isReturningIf := isReturningIf or: [
+		                 aNode isCppConditional and: [
+			                 (self isEffectivelyIgnoredInReturn: aNode) or: [
+				                 aNode arguments allButFirst allSatisfy: [ :arg |
+					                 self hasEffectiveReturnValue: arg ] ] ] ].
+
+	^ isReturningIf
 ]
 
 { #category : 'transformation' }
