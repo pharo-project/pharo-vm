@@ -64,7 +64,6 @@ SLInlinerWithAnnotation >> canBeInlineInExpression: aNode replacement: aTMethod 
 	"for now"
 
 	| parseTree |
-	aTMethod inline = #always ifTrue: [ ^ true ].
 	(sLNodeAnnotatorVisitor isInSend: aNode) ifFalse: [ ^ true ].
 	parseTree := aTMethod parseTree.
 	^ sLNodeAnnotatorVisitor
