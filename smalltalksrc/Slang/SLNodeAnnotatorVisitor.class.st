@@ -1133,14 +1133,14 @@ SLNodeAnnotatorVisitor >> visitValueExpansionSend: aSendNode [
 	self annotateNodeState: aSendNode.
 
 	self pushInExpressionStack.
-	self pushInSendStack.
+
 	searchForExpressionValueStack push: true.
 
 	aSendNode receiver accept: self.
 	aSendNode arguments do: [ :arg | arg accept: self ].
 
 	inExpressionStack pop.
-	inSendStack pop.
+
 	searchForExpressionValueStack pop
 ]
 
