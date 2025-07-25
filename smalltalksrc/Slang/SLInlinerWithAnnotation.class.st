@@ -417,16 +417,23 @@ SLInlinerWithAnnotation >> inlineSend: aSendNode [
 	 otherwise the assignee variable type must match the return type of the inlinee.  Return
 	 types are not propagated."
 
-	| sel callee exitLabel inlineStmts label omittedParameters calleeParameters exitVar directReturn isUsedExpression |
+	| sel callee exitLabel inlineStmts label omittedParameters calleeParameters exitVar directReturn isUsedExpression assigningParent |
 	sel := aSendNode selector.
 	callee := codeGenerator methodNamed: sel.
-
 	directReturn := sLNodeAnnotatorVisitor isEffectiveReturnValue:
 		                aSendNode.
-	exitVar := (sLNodeAnnotatorVisitor assigningParentFor: aSendNode)
-		           ifNotNil: [ :assignment | assignment variable name ].
-	isUsedExpression := sLNodeAnnotatorVisitor isEffectiveExpression:
-		                    aSendNode.
+	(sLNodeAnnotatorVisitor isEffectiveAssignmentValue: aSendNode)
+		ifTrue: [
+			assigningParent := sLNodeAnnotatorVisitor assigningParentFor:
+				                   aSendNode.
+			exitVar := assigningParent variable name ].
+	"for goTo management"
+	isUsedExpression := (sLNodeAnnotatorVisitor isEffectiveExpression:
+		                     aSendNode) and: [
+		                    directReturn not and: [
+			                    exitVar isNil or: [
+				                    sLNodeAnnotatorVisitor isEffectiveExpression:
+					                    assigningParent ] ] ].
 
 	"convenient for debugging..."
 	codeGenerator maybeBreakForInlineOf: aSendNode in: self.
@@ -489,7 +496,6 @@ SLInlinerWithAnnotation >> inlineSend: aSendNode [
 	isUsedExpression ifFalse: [
 		inlineStmts nodesDo: [ :node |
 			node isGoTo ifTrue: [ node metInInlining ] ] ].
-
 	^ inlineStmts
 ]
 

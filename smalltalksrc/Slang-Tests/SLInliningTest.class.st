@@ -1313,7 +1313,15 @@ methodWithBlockWithReturningIfWithInlinedArgumentInlined(void)
 		if (methodB()) {
 			a = 2;
 		} else {
-			a = methodCMultipleReturn();
+			/* begin methodCMultipleReturn */
+			if (methodC()) {
+				a = 1;
+				goto l3;
+			}
+			a = 3 + 3;
+			l3:
+			;
+			/* end methodCMultipleReturn */
 		}
 	}
 	/* end methodWithBlockArgument: */
