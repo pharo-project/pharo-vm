@@ -2345,7 +2345,6 @@ methodWithUnusedConstantAndReturnInCaseOfNoSendInExpression(SLDeadCodeEliminatio
 				return;
 			}
 		}
-		break;
 		default:
 		error("Case not found and no otherwise clause");
 	}
@@ -3958,7 +3957,6 @@ methodWithUnusedInstanceVariableReturnInCaseOfAndUnusedInstanceVariableInOtherwi
 				return;
 			}
 		}
-		break;
 		default:
 		{
 		}
@@ -4002,7 +4000,6 @@ methodWithUnusedInstanceVariableReturnInCaseOfAndUnusedInstanceVariableInOtherwi
 				return;
 			}
 		}
-		break;
 		default:
 		{
 		}

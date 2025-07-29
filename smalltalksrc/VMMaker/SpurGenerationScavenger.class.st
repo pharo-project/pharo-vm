@@ -830,7 +830,7 @@ SpurGenerationScavenger >> nextCorpseOrNil: corpse [
 	listOffset := self nextCorpseOffset: corpse.
 	^ listOffset ~= 0
 		  ifTrue: [ self corpseForCorpseOffset: listOffset ]
-		  ifFalse: [ 0 ]
+		  ifFalse: [ nil ]
 ]
 
 { #category : 'weakness and ephemerality' }
