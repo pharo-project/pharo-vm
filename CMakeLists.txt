@@ -416,7 +416,12 @@ message(STATUS "C++ Compiler: ${CMAKE_CXX_COMPILER}")
 message(STATUS "Resource Compiler: ${CMAKE_RC_COMPILER}")
 
 set(VM_FRONTEND_APPLICATION_TYPE)
-include(cmake/${CMAKE_SYSTEM_NAME}.cmake)
+
+if(UNIX AND NOT OSX AND NOT WIN)
+    include(cmake/Linux.cmake)
+else()                          # WIN AND OSX
+    include(cmake/${CMAKE_SYSTEM_NAME}.cmake)
+endif()
 
 set(GENERATED_SOURCES ${VMSOURCEFILES})
 

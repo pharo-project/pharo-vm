@@ -34,7 +34,6 @@ install(DIRECTORY
     "${CMAKE_CURRENT_SOURCE_DIR}/cmake"
     "${CMAKE_CURRENT_SOURCE_DIR}/extracted"
     "${CMAKE_CURRENT_SOURCE_DIR}/include"
-    "${CMAKE_CURRENT_SOURCE_DIR}/packaging"
     "${CMAKE_CURRENT_SOURCE_DIR}/plugins"
     "${CMAKE_CURRENT_SOURCE_DIR}/resources"
     "${CMAKE_CURRENT_SOURCE_DIR}/scripts"
