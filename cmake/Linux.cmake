@@ -48,21 +48,15 @@ endmacro()
 
 macro(configure_installables INSTALL_COMPONENT)
     install(
-        DIRECTORY "${CMAKE_BINARY_DIR}/build/vm/"
-        DESTINATION "lib"
-        USE_SOURCE_PERMISSIONS
+        TARGETS ${VM_EXECUTABLE_NAME}
         COMPONENT ${INSTALL_COMPONENT})
     install(
-        DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/build/libffi/install/lib/"
-        DESTINATION "lib"
-        USE_SOURCE_PERMISSIONS
+        TARGETS ${VM_LIBRARY_NAME}
         COMPONENT ${INSTALL_COMPONENT}
-        FILES_MATCHING PATTERN *.so)
+        INCLUDES DESTINATION "include/pharovm")
     install(
-        DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/include/unix/"
-        DESTINATION include/pharovm
-        COMPONENT include
-        FILES_MATCHING PATTERN *.h)
+        TARGETS ${VM_PLUGIN_TARGETS}
+        COMPONENT ${INSTALL_COMPONENT})
 endmacro()
 
 macro(add_required_libs_per_platform)
