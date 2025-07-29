@@ -60,7 +60,6 @@ endmacro()
 
 
 macro(configure_installables INSTALL_COMPONENT)
-    set(CMAKE_INSTALL_PREFIX "${CMAKE_CURRENT_BINARY_DIR}/build/dist")
     configure_file(${CMAKE_CURRENT_SOURCE_DIR}/packaging/linux/launch.sh.in
         ${CMAKE_CURRENT_BINARY_DIR}/build/packaging/linux/${VM_EXECUTABLE_NAME} @ONLY)
     configure_file(${CMAKE_CURRENT_SOURCE_DIR}/packaging/linux/bin/launch.sh.in
