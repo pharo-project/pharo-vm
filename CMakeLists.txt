@@ -37,6 +37,7 @@ option(DEPENDENCIES_FORCE_BUILD         "Force build libraries" OFF)
 option(BUILD_WITH_GRAPHVIZ              "Generate dependency graphs" ON)
 option(VERSION_UPDATE_FROM_GIT              "Extract version information from git tags. Default to true. Follow vX.Y.Z-suffix" TRUE)
 
+option(INSTALL_C_SOURCE "Install the generated C source files to `pharo-vm'" OFF)
 
 set(APPNAME			"Pharo"         CACHE STRING                 "VM Application name")
 set(FLAVOUR			"CoInterpreter" CACHE STRING                 "The kind of VM to generate. Possible values: StackVM, CoInterpreter")
