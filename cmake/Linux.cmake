@@ -67,28 +67,26 @@ macro(configure_installables INSTALL_COMPONENT)
 
 
     install(
-      DIRECTORY "${CMAKE_BINARY_DIR}/build/packaging/linux/"
-      DESTINATION "./"
-      USE_SOURCE_PERMISSIONS
-      COMPONENT ${INSTALL_COMPONENT})
+        DIRECTORY "${CMAKE_BINARY_DIR}/build/packaging/linux/"
+        DESTINATION "./"
+        USE_SOURCE_PERMISSIONS
+        COMPONENT ${INSTALL_COMPONENT})
     install(
-      DIRECTORY "${CMAKE_BINARY_DIR}/build/vm/"
-      DESTINATION "lib"
-      USE_SOURCE_PERMISSIONS
-      COMPONENT ${INSTALL_COMPONENT})
-	install(
-		DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/build/libffi/install/lib/"
-		DESTINATION "lib"
-		USE_SOURCE_PERMISSIONS
-		COMPONENT ${INSTALL_COMPONENT}
-		FILES_MATCHING PATTERN ${DYLIB_EXT})
-
-
-	install(
-	    DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/extracted/vm/include/unix/"
-	    DESTINATION include/pharovm
-	    COMPONENT include
-	    FILES_MATCHING PATTERN *.h)
+        DIRECTORY "${CMAKE_BINARY_DIR}/build/vm/"
+        DESTINATION "lib"
+        USE_SOURCE_PERMISSIONS
+        COMPONENT ${INSTALL_COMPONENT})
+    install(
+        DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/build/libffi/install/lib/"
+        DESTINATION "lib"
+        USE_SOURCE_PERMISSIONS
+        COMPONENT ${INSTALL_COMPONENT}
+        FILES_MATCHING PATTERN ${DYLIB_EXT})
+    install(
+        DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/include/unix/"
+        DESTINATION include/pharovm
+        COMPONENT include
+        FILES_MATCHING PATTERN *.h)
 endmacro()
 
 macro(add_required_libs_per_platform)
