@@ -105,6 +105,14 @@ endif()
 #This needs to be at this point, after setting the toolchain configuration
 project(PharoVM)
 
+# Provide a default value for the installation prefix, without
+# clobbering a user-specified CMAKE_INSTALL_PREFIX.
+message(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT=${CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT})
+if(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
+    set_property(CACHE CMAKE_INSTALL_PREFIX PROPERTY VALUE
+        "${CMAKE_CURRENT_BINARY_DIR}/build/dist")
+endif()
+
 include(cmake/versionExtraction.cmake)
 
 set(BUILT_FROM "${PharoVM_VERSION_STRING_FULL} - Commit: ${PharoVM_VERSION_GIT_SHA} - Date: ${PharoVM_VERSION_GIT_COMMIT_DATE}")
