@@ -1,4 +1,4 @@
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wl,-z,wxneeded,-rpath=. -I/usr/local/include -I/usr/X11R6/include")
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -I/usr/local/include -I/usr/X11R6/include")
 set(PHARO_BIN_LOCATION "default" CACHE STRING "The default location of the PHARO bin, used by the launch.sh.in")
 
 if(${PHARO_BIN_LOCATION} STREQUAL "default")
