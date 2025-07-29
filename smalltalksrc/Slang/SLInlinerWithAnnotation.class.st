@@ -475,21 +475,22 @@ SLInlinerWithAnnotation >> inlineSend: aSendNode [
 
 	self moveDownReturnsAndAssignmentsFor: aSendNode including: callee.
 
-	(inlineStmts := OrderedCollection new:
-			                callee statements size + callee args size + 2)
-		add: (label := TLabeledCommentNode new setComment: 'begin ' , sel);
-		addAll: (self
+	inlineStmts := callee parseTree.
+	inlineStmts
+		addAllFirst: (self
 				 argAssignmentsFor: callee
 				 send: aSendNode
 				 except: omittedParameters);
-		addAll: callee statements. "method body"
+		addFirst:
+			(label := TLabeledCommentNode new setComment: 'begin ' , sel).
+
 	exitLabel
 		ifNotNil: [
-			inlineStmts add:
+			inlineStmts addLast:
 				(TLabeledCommentNode new setLabel: exitLabel comment: 'end ' , sel) ]
 		ifNil: [
-		inlineStmts add: (TLabeledCommentNode new setComment: 'end ' , sel) ].
-	inlineStmts := TStatementListNode statements: inlineStmts.
+			inlineStmts addLast:
+				(TLabeledCommentNode new setComment: 'end ' , sel) ].
 
 	inlineStmts isComment ifTrue: [ "Nuke empty methods; e.g. override of flushAtCache"
 		inlineStmts statements: OrderedCollection new ].

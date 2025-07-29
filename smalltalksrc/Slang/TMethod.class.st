@@ -2088,7 +2088,7 @@ TMethod >> removeUnusedTempsAndNilIfRequiredIn: aCodeGen [
 			                      (d beginsWith: 'extern') or: [
 				                      (d beginsWith: 'static') or: [
 					                      (d includes: $[) or: [ d includes: $= ] ] ] ].
-		parseTree addAllFirst:
+		parseTree addAllFirstKeepingFirstComments:
 			(readBeforeAssigned asSortedCollection collect: [ :var |
 				 | varNode varType zeroNode |
 				 varNode := TVariableNode new

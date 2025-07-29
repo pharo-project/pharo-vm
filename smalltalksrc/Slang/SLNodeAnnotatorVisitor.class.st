@@ -1112,7 +1112,7 @@ SLNodeAnnotatorVisitor >> visitUnaryIterativeSendWithImportantLastStatement: aSe
 	block := aSendNode receiver.
 	condition := block lastNonCommentStatement.
 	block removeLast.
-	block addAllFirst: { condition }.
+	block addAllFirstKeepingFirstComments: { condition }.
 
 	self pushInExpressionStack.
 	searchForExpressionValueStack push: true.

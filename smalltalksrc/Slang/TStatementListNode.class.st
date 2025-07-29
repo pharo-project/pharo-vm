@@ -69,6 +69,12 @@ TStatementListNode >> accept: aVisitor [
 { #category : 'adding' }
 TStatementListNode >> addAllFirst: aListOfStatement [
 
+	self statements: aListOfStatement , statements
+]
+
+{ #category : 'adding' }
+TStatementListNode >> addAllFirstKeepingFirstComments: aListOfStatement [
+
 	(statements isNotEmpty and: [ statements first isComment ])
 		ifFalse: [ self statements: aListOfStatement , statements ]
 		ifTrue: [
@@ -133,6 +139,14 @@ TStatementListNode >> addDeclarations: aCollection [
 { #category : 'adding' }
 TStatementListNode >> addFirst: aNode [ 
 	self statements: (OrderedCollection new add: aNode ; yourself) , statements 
+]
+
+{ #category : 'adding' }
+TStatementListNode >> addLast: aNode [
+
+	self statements: statements , (OrderedCollection new
+			 add: aNode;
+			 yourself)
 ]
 
 { #category : 'utilities' }
@@ -480,7 +494,7 @@ TStatementListNode >> firstNonCommentStatement [
 
 	| first indexOfFirst limitIndex |
 	first := statements first.
-	indexOfFirst := 1.
+	indexOfFirst := 0.
 	limitIndex := statements size.
 	[ first isComment ] whileTrue: [
 		indexOfFirst := indexOfFirst + 1.
