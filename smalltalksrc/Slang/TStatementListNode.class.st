@@ -478,8 +478,7 @@ TStatementListNode >> endsWithReturn [
 	"Answer true if the last statement of this lock is a return."
 
 	^ statements notEmpty and: [
-		  self lastNonCommentStatement isReturn or: [
-			  self lastNonCommentStatement isReturningIf ] ]
+		  self lastNonCommentStatement endsWithReturn ]
 ]
 
 { #category : 'accessing' }

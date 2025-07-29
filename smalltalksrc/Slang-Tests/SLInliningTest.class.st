@@ -909,7 +909,11 @@ methodAReturnBlockAssignment(void)
 {
 	sqInt a;
 
-	return (/* begin methodB */ (a = 2 + 2) /* end methodB */);
+	{
+		/* begin methodB */
+		return (a = 2 + 2);
+		/* end methodB */
+	}
 }'
 ]
 
