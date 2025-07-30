@@ -554,6 +554,15 @@ TSendNode >> isValueExpansion [
 ]
 
 { #category : 'accessing' }
+TSendNode >> lastExpression [
+
+	| lastExpressions |
+	self isConditionalSend ifFalse: [ ^ super lastExpression ].
+	lastExpressions := arguments collect: [ :arg | arg lastExpression ].
+	^ lastExpressions
+]
+
+{ #category : 'accessing' }
 TSendNode >> name [
 	
 	^ self printString
