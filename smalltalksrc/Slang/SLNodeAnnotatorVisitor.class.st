@@ -607,11 +607,13 @@ SLNodeAnnotatorVisitor >> moveDownSingleBranchConditional: aNode newBranch: anOt
 		anOtherNode expression: aNode receiver ].
 
 	newSelector ifNotNil: [
+		| newArgument last |
+		newArgument := TStatementListNode statements: { anOtherNode }.
+		last := aNode arguments first lastNonCommentStatement.
+		last isGoTo ifTrue: [ newArgument addLast: last copy ].
 		aNode
 			selector: newSelector;
-			arguments:
-				aNode arguments
-				, { (TStatementListNode statements: { anOtherNode }) } ]
+			arguments: aNode arguments , { newArgument } ]
 ]
 
 { #category : 'helpers-accessing-info' }

@@ -804,6 +804,8 @@ methodAInlineReturningInlinedIfTrueInAssignment(void)
 		/* begin methodB */
 		a = 2 + 2;
 		/* end methodB */
+	} else {
+		a = 0;
 	}
 	return 0;
 }'
@@ -1021,6 +1023,9 @@ methodWithAssignmentOnRepeatInlined(void)
 		if (methodB()) {
 			a = 5;
 			goto l2;
+		} else {
+			a = 0;
+			goto l2;
 		}
 	}
 	l2:
@@ -1132,6 +1137,9 @@ methodWithAssignmentOnWhileTrueBinaryInlined(void)
 			a = 2 + 2;
 			goto l2;
 			/* end methodB */
+		} else {
+			a = 0;
+			goto l2;
 		}
 	}
 	l2:
@@ -1165,6 +1173,9 @@ methodWithAssignmentOnWhileTrueInlined(void)
 	do {
 		if (methodB()) {
 			a = 5;
+			goto l2;
+		} else {
+			a = 0;
 			goto l2;
 		}
 	} while (1);
@@ -1494,10 +1505,4 @@ SLInliningTest >> useExtractedInlining [
 SLInliningTest >> useNewInlining [
 	
 	inliner := SLInlinerWithAnnotation new
-]
-
-{ #category : 'parameters' }
-SLInliningTest >> useOldInlining [
-	
-	inliner := SLOldInlineStrategy new
 ]
