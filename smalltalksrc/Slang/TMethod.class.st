@@ -2542,31 +2542,31 @@ TMethod >> terminateConditionalDefineFor: compileTimeOptionPragmas on: aStream [
 
 { #category : 'inlining' }
 TMethod >> transformReturnSubExpression: node toAssignmentOf: exitVar andGoto: exitLabel unless: eliminateReturnSelfs into: aBinaryBlock [
+
 	| expr replacement |
-	expr := node isReturn ifTrue: [node expression] ifFalse: [node].
-	replacement := (expr isVariable "Eliminate ^self's"
-					   and: [expr name = 'self'
-					   and: [eliminateReturnSelfs]])
-						ifTrue: [nil]
-						ifFalse:
-							[exitVar
-								ifNil: [expr]
-								ifNotNil: [TAssignmentNode new
-											setVariable: (TVariableNode new setName: exitVar)
-											expression: expr]].
-	 node == parseTree lastNonCommentStatement 
-		ifTrue:
-			[aBinaryBlock value: replacement value: false]
-		ifFalse:
-			[replacement := replacement
-								ifNil: [TGoToNode label: exitLabel]
-								ifNotNil:
-									[TStatementListNode new
-										setArguments: #()
-										statements: {replacement.
-													  TGoToNode label: exitLabel};
-										yourself].
-			 aBinaryBlock value: replacement value: true]
+	expr := node isReturn
+		        ifTrue: [ node expression ]
+		        ifFalse: [ node ].
+	replacement := (expr isVariable and: [
+		                expr name = 'self' and: [ eliminateReturnSelfs ] ])
+		               ifTrue: [ nil ]
+		               ifFalse: [
+			               exitVar ifNil: [ expr ] ifNotNil: [
+				               TAssignmentNode new
+					               setVariable: (TVariableNode new setName: exitVar)
+					               expression: expr ] ]. "Eliminate ^self's"
+	(parseTree lastExpression includes: node)
+		ifTrue: [ aBinaryBlock value: replacement value: false ]
+		ifFalse: [
+			replacement := replacement
+				               ifNil: [ TGoToNode label: exitLabel ]
+				               ifNotNil: [
+					               TStatementListNode new
+						               setArguments: #(  ) statements: {
+								               replacement.
+								               (TGoToNode label: exitLabel) };
+						               yourself ].
+			aBinaryBlock value: replacement value: true ]
 ]
 
 { #category : 'type inference' }

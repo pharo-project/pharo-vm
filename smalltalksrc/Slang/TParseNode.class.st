@@ -372,6 +372,12 @@ TParseNode >> isVariable [
 ]
 
 { #category : 'accessing' }
+TParseNode >> lastExpression [
+
+	^ { self } asIdentitySet
+]
+
+{ #category : 'accessing' }
 TParseNode >> nameOrValue [
 
 	self error: 'object is neither variable nor constant'

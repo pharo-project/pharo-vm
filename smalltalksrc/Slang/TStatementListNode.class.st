@@ -574,6 +574,12 @@ TStatementListNode >> last [
 ]
 
 { #category : 'accessing' }
+TStatementListNode >> lastExpression [
+
+	^ self lastNonCommentStatement lastExpression
+]
+
+{ #category : 'accessing' }
 TStatementListNode >> lastNonCommentOrGoToOrLabelStatement [
 	"the last statement can be a comment if the TStatementList has been through inlining, return the actual last statement"
 
