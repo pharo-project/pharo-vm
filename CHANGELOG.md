@@ -1,5 +1,13 @@
 # Change log
 
+## v10.3.6
+
+* [P10] Fix OBS Build by @tesonep in https://github.com/pharo-project/pharo-vm/pull/980
+* Fix Issue 982 - Pharo 10 branch by @guillep in https://github.com/pharo-project/pharo-vm/pull/984
+* Fix missing accept on socket by @tesonep in https://github.com/pharo-project/pharo-vm/pull/995
+* fixing-build-in-windows by @tesonep in https://github.com/pharo-project/pharo-vm/pull/997
+
+**Full Changelog**: https://github.com/pharo-project/pharo-vm/compare/v10.3.5...v10.3.6
 
 ## v10.3.5
 
