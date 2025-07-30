@@ -516,7 +516,7 @@ SLNodeAnnotatorVisitor >> moveDownAssigningParentFrom: aNode [
 	assignment := self assigningParentFor: aNode.
 	assignment ifNil: [ ^ self ].
 
-	self transformToAssignmentFrom: assignment assignment: assignment.
+	self moveDownAssignmentFrom: assignment assignment: assignment.
 
 	assignment parent
 		replaceChild: assignment
@@ -528,6 +528,45 @@ SLNodeAnnotatorVisitor >> moveDownAssigningParentFrom: aNode [
 ]
 
 { #category : 'transformation' }
+SLNodeAnnotatorVisitor >> moveDownAssignmentFrom: parentNode assignment: assignmentNode [
+	"recursively go throught the ast to transfrom expression of assignment
+	a = exp ifTrue: [exp] ifFalse [exp] -> ifTrue: [a = exp] ifFalse [a = exp]"
+
+	parentNode children do: [ :child |
+		((self isEffectiveAssignmentValue: child) and: [
+			 (self assigningParentFor: child) == assignmentNode ])
+			ifTrue: [
+				child parent replaceChild: child with: (TAssignmentNode new
+						 variable: assignmentNode variable copy;
+						 expression: child;
+						 yourself) ]
+			ifFalse: [
+				self moveDownAssignmentFrom: child assignment: assignmentNode.
+				(self isEffectivelyIgnoredInAssignment: child) ifTrue: [
+					self
+						moveDownSingleBranchConditional: child
+						newBranch: (TAssignmentNode
+								 variable: assignmentNode variable copy
+								 expression: (TConstantNode value: 0)) ] ] ]
+]
+
+{ #category : 'transformation' }
+SLNodeAnnotatorVisitor >> moveDownReturnFrom: parentNode return: returnNode [
+	"recursively go throught the ast to move down returnNode
+	^ exp ifTrue: [exp] ifFalse [exp] -> ifTrue: [^exp] ifFalse [^exp]"
+
+	parentNode children do: [ :child |
+		((self isEffectiveReturnValue: child) and: [
+			 (self returningParentFor: child) = returnNode ])
+			ifTrue: [
+			child parent replaceChild: child with: child asReturnNode ]
+			ifFalse: [
+				child isReturn ifTrue: [ "already got a return for this branch"
+					^ self ].
+				self moveDownReturnFrom: child return: returnNode ] ]
+]
+
+{ #category : 'transformation' }
 SLNodeAnnotatorVisitor >> moveDownReturningParentFrom: aNode [
 	"use in inlining for redondant return : return {return exp} -> {return exp}"
 
@@ -536,7 +575,7 @@ SLNodeAnnotatorVisitor >> moveDownReturningParentFrom: aNode [
 	returningParent ifNil: [ ^ self ].
 
 	self
-		transformDirectReturnFrom: returningParent
+		moveDownReturnFrom: returningParent
 		return: returningParent.
 
 	returningParent parent
@@ -546,6 +585,33 @@ SLNodeAnnotatorVisitor >> moveDownReturningParentFrom: aNode [
 	self
 		visitFromBranchStartingAt: returningParent
 		replacement: returningParent expression
+]
+
+{ #category : 'helpers-transformation' }
+SLNodeAnnotatorVisitor >> moveDownSingleBranchConditional: aNode newBranch: anOtherNode [
+	"does nothing is the node isnt a single branch conditional.
+	when moving down a assignment/return in a single branch conditional, we need to consider the missing branch which Slang would have consider is the conditional was still an argument, see generateCASTIfNotNilAsArgument: for exemple and the other methods related to single conditional as arguments"
+
+	| newSelector |
+	aNode isSend ifFalse: [ ^ self ].
+	aNode selector = #ifTrue: ifTrue: [ newSelector := #ifTrue:ifFalse: ].
+
+	aNode selector = #ifFalse: ifTrue: [ newSelector := #ifFalse:ifTrue: ].
+
+	aNode selector = #ifNotNil: ifTrue: [
+		newSelector := #ifNotNil:ifNil: ].
+
+
+	aNode selector = #ifNil: ifTrue: [
+		newSelector := #ifNil:ifNotNil:.
+		anOtherNode expression: aNode receiver ].
+
+	newSelector ifNotNil: [
+		aNode
+			selector: newSelector;
+			arguments:
+				aNode arguments
+				, { (TStatementListNode statements: { anOtherNode }) } ]
 ]
 
 { #category : 'helpers-accessing-info' }
@@ -715,39 +781,6 @@ SLNodeAnnotatorVisitor >> topOfStack: aStack [
 	"return the top value of a boolean stack"
 
 	^ aStack isNotEmpty and: [ aStack top ]
-]
-
-{ #category : 'transformation' }
-SLNodeAnnotatorVisitor >> transformDirectReturnFrom: parentNode return: returnNode [
-	"recursively go throught the ast to transfrom directReturn
-	^ exp ifTrue: [exp] ifFalse [exp] -> ifTrue: [^exp] ifFalse [^exp]"
-
-	parentNode children do: [ :child |
-		((self isEffectiveReturnValue: child) and: [
-			 (self returningParentFor: child) = returnNode ])
-			ifTrue: [
-			child parent replaceChild: child with: child asReturnNode ]
-			ifFalse: [
-				child isReturn ifTrue: [ "already got a return for this branch"
-					^ self ].
-				self transformDirectReturnFrom: child return: returnNode ] ]
-]
-
-{ #category : 'transformation' }
-SLNodeAnnotatorVisitor >> transformToAssignmentFrom: parentNode assignment: assignmentNode [
-	"recursively go throught the ast to transfrom expression of assignment
-	a = exp ifTrue: [exp] ifFalse [exp] -> ifTrue: [a = exp] ifFalse [a = exp]"
-
-	parentNode children do: [ :child |
-		((self isEffectiveAssignmentValue: child) and: [
-			 (self assigningParentFor: child) == assignmentNode ])
-			ifTrue: [
-				child parent replaceChild: child with: (TAssignmentNode new
-						 variable: assignmentNode variable copy;
-						 expression: child;
-						 yourself) ]
-			ifFalse: [
-			self transformToAssignmentFrom: child assignment: assignmentNode ] ]
 ]
 
 { #category : 'visiting-main-API' }

@@ -192,14 +192,12 @@ SLAnnotatorVisitorTest >> testMethodWithBlockwithExpressionReturn [
 		equals: 7.
 	self assert: effectiveExpressionValueCollection size equals: 5.
 
-
 	returnNode := (nonEffectiveExpressionOrStatementCollection select: [
 		               :node | node isReturn ]) first.
 	assignmentNode := (nonEffectiveExpressionOrStatementCollection
 		                   select: [ :node | node isAssignment ]) first.
 	constantNodes := effectiveExpressionValueCollection select: [ :node |
 		                 node isConstant ].
-
 
 	constantTrue := (constantNodes select: [ :node | node value = true ])
 		                first.
@@ -223,7 +221,6 @@ SLAnnotatorVisitorTest >> testMethodWithBlockwithExpressionReturn [
 			((sLNodeAnnotatorVisitor isEffectiveAssignmentValue: node) and: [
 				 (sLNodeAnnotatorVisitor assigningParentFor: node)
 				 = assignmentNode ]) ].
-
 
 	(effectiveExpressionValueCollection reject: [ :node |
 		 {

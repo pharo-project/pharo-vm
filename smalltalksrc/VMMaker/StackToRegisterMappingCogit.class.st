@@ -2602,11 +2602,11 @@ StackToRegisterMappingCogit >> genSpecialSelectorArithmetic [
 		[AndRR] -> [argIsConst
 						ifTrue: [self AndCq: argInt R: ReceiverResultReg]
 						ifFalse: [self AndR: Arg0Reg R: ReceiverResultReg].
-					jumpContinue := jumpNotSmallInts ifNotNil: [self Jump: 0] ifNil: [nil]].
+					jumpContinue := jumpNotSmallInts ifNotNil: [self Jump: 0]].
 		[OrRR]	-> [argIsConst
 						ifTrue: [self OrCq: argInt R: ReceiverResultReg]
 						ifFalse: [self OrR: Arg0Reg R: ReceiverResultReg].
-					jumpContinue := jumpNotSmallInts ifNotNil: [self Jump: 0] ifNil: [nil]] }.
+					jumpContinue := jumpNotSmallInts ifNotNil: [self Jump: 0]] }.
 	jumpNotSmallInts
 		ifNil: [jumpContinue ifNil: "overflow cannot happen"
 				[self annotateInstructionForBytecode.
