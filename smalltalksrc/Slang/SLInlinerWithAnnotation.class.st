@@ -257,7 +257,7 @@ SLInlinerWithAnnotation >> inlineFunctionCall: aSendNode inInlineableConditional
 		1. the method arguments are all substitutable nodes, and
 		2. the method to be inlined contains no additional embedded returns."
 
-	| sel meth parametersToReplaceByArgument argsForInlining substitutionDict |
+	| sel meth parametersToReplaceByArgument argsForInlining substitutionDict parseTree |
 	sel := aSendNode selector.
 	meth := (codeGenerator methodNamed: sel) copy.
 	meth ifNil: [ ^ self inlineBuiltin: aSendNode ].
@@ -288,9 +288,15 @@ SLInlinerWithAnnotation >> inlineFunctionCall: aSendNode inInlineableConditional
 	meth locals: Set new.
 	aBoolean ifFalse: [ sLNodeAnnotatorVisitor copyWithoutReturn: meth ].
 
-	"same 'optimization' as before"
-	meth parseTree children size = 1 ifTrue: [
-		meth parseTree: meth parseTree last ].
+	"same 'optimization' as before but with comments if possible"
+	parseTree := meth parseTree.
+	parseTree children size = 1
+		ifTrue: [ meth parseTree: parseTree last ]
+		ifFalse: [
+			parseTree addFirst:
+				(TLabeledCommentNode new setComment: 'begin ' , sel).
+			parseTree addLast:
+				(TLabeledCommentNode new setComment: 'end ' , sel) ].
 
 	^ meth parseTree
 ]
@@ -417,7 +423,7 @@ SLInlinerWithAnnotation >> inlineSend: aSendNode [
 	 otherwise the assignee variable type must match the return type of the inlinee.  Return
 	 types are not propagated."
 
-	| sel callee exitLabel inlineStmts label omittedParameters calleeParameters exitVar directReturn isUsedExpression assigningParent |
+	| sel callee exitLabel inlineStmts omittedParameters calleeParameters exitVar directReturn isUsedExpression assigningParent |
 	sel := aSendNode selector.
 	callee := codeGenerator methodNamed: sel.
 	directReturn := sLNodeAnnotatorVisitor isEffectiveReturnValue:
@@ -482,7 +488,7 @@ SLInlinerWithAnnotation >> inlineSend: aSendNode [
 				 send: aSendNode
 				 except: omittedParameters);
 		addFirst:
-			(label := TLabeledCommentNode new setComment: 'begin ' , sel).
+			(TLabeledCommentNode new setComment: 'begin ' , sel).
 
 	exitLabel
 		ifNotNil: [

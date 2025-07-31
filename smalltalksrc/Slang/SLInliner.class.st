@@ -784,6 +784,6 @@ SLInliner >> tryToInlineMethodsInCurrentMethod [
 	currentMethod isComplete ifFalse: [
 		self checkForCompletenessFor: currentMethod.
 		currentMethod isComplete ifTrue: [ didSomething := true ] ].
-
+	
 	^ didSomething
 ]
