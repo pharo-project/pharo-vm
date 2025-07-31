@@ -9,6 +9,22 @@ Class {
 	#package : 'Slang'
 }
 
+{ #category : 'transformation' }
+SLInlinerWithAnnotation >> addBeginAndEndCommentsFor: aTStatementList selector: aSelector exitLabel: aLabel [
+
+	aTStatementList addFirst:
+		(TLabeledCommentNode new setComment: 'begin ' , aSelector).
+	aLabel
+		ifNotNil: [
+			aTStatementList addLast:
+				(TLabeledCommentNode new
+					 setLabel: aLabel
+					 comment: 'end ' , aSelector) ]
+		ifNil: [
+			aTStatementList addLast:
+				(TLabeledCommentNode new setComment: 'end ' , aSelector) ]
+]
+
 { #category : 'inlining-preparation' }
 SLInlinerWithAnnotation >> annotateCurrentMethod [
 
@@ -257,9 +273,9 @@ SLInlinerWithAnnotation >> inlineFunctionCall: aSendNode inInlineableConditional
 		1. the method arguments are all substitutable nodes, and
 		2. the method to be inlined contains no additional embedded returns."
 
-	| sel meth parametersToReplaceByArgument argsForInlining substitutionDict parseTree |
-	sel := aSendNode selector.
-	meth := (codeGenerator methodNamed: sel) copy.
+	| selector meth parametersToReplaceByArgument argsForInlining substitutionDict parseTree |
+	selector := aSendNode selector.
+	meth := (codeGenerator methodNamed: selector) copy.
 	meth ifNil: [ ^ self inlineBuiltin: aSendNode ].
 	parametersToReplaceByArgument := Set withAll: currentMethod args.
 	argsForInlining := aSendNode argumentsForInliningCodeGenerator:
@@ -286,17 +302,17 @@ SLInlinerWithAnnotation >> inlineFunctionCall: aSendNode inInlineableConditional
 	see asCASTIn: vs asCASTExpressionIn: for stmtList.
 	"
 	meth locals: Set new.
-	aBoolean ifFalse: [ sLNodeAnnotatorVisitor copyWithoutReturn: meth ].
+	aBoolean ifFalse: [ SLNodeAnnotatorVisitor copyWithoutReturn: meth ].
 
 	"same 'optimization' as before but with comments if possible"
 	parseTree := meth parseTree.
 	parseTree children size = 1
 		ifTrue: [ meth parseTree: parseTree last ]
 		ifFalse: [
-			parseTree addFirst:
-				(TLabeledCommentNode new setComment: 'begin ' , sel).
-			parseTree addLast:
-				(TLabeledCommentNode new setComment: 'end ' , sel) ].
+			self
+				addBeginAndEndCommentsFor: parseTree
+				selector: selector
+				exitLabel: nil ].
 
 	^ meth parseTree
 ]
@@ -423,9 +439,9 @@ SLInlinerWithAnnotation >> inlineSend: aSendNode [
 	 otherwise the assignee variable type must match the return type of the inlinee.  Return
 	 types are not propagated."
 
-	| sel callee exitLabel inlineStmts omittedParameters calleeParameters exitVar directReturn isUsedExpression assigningParent |
-	sel := aSendNode selector.
-	callee := codeGenerator methodNamed: sel.
+	| selector callee exitLabel inlineStmts omittedParameters calleeParameters exitVar directReturn isUsedExpression assigningParent |
+	selector := aSendNode selector.
+	callee := codeGenerator methodNamed: selector.
 	directReturn := sLNodeAnnotatorVisitor isEffectiveReturnValue:
 		                aSendNode.
 	(sLNodeAnnotatorVisitor isEffectiveAssignmentValue: aSendNode)
@@ -471,32 +487,22 @@ SLInlinerWithAnnotation >> inlineSend: aSendNode [
 		addVarsDeclarationsAndLabelsOf: callee
 		except: omittedParameters.
 
-	callee hasReturn ifTrue: [
-		directReturn ifFalse: [
-			exitLabel := currentMethod unusedLabelForInliningInto:
-				             currentMethod.
-			(self label: exitLabel for: callee)
-				ifTrue: [ currentMethod labels add: exitLabel ]
-				ifFalse: [ "is label used?" exitLabel := nil ] ] ].
+	exitLabel := self
+		             replaceReturnWithGoToIfNeededIn: callee
+		             directReturn: directReturn.
 
 	self moveDownReturnsAndAssignmentsFor: aSendNode including: callee.
 
 	inlineStmts := callee parseTree.
-	inlineStmts
-		addAllFirst: (self
-				 argAssignmentsFor: callee
-				 send: aSendNode
-				 except: omittedParameters);
-		addFirst:
-			(TLabeledCommentNode new setComment: 'begin ' , sel).
+	inlineStmts addAllFirst: (self
+			 argAssignmentsFor: callee
+			 send: aSendNode
+			 except: omittedParameters).
 
-	exitLabel
-		ifNotNil: [
-			inlineStmts addLast:
-				(TLabeledCommentNode new setLabel: exitLabel comment: 'end ' , sel) ]
-		ifNil: [
-			inlineStmts addLast:
-				(TLabeledCommentNode new setComment: 'end ' , sel) ].
+	self
+		addBeginAndEndCommentsFor: inlineStmts
+		selector: selector
+		exitLabel: exitLabel.
 
 	inlineStmts isComment ifTrue: [ "Nuke empty methods; e.g. override of flushAtCache"
 		inlineStmts statements: OrderedCollection new ].
@@ -798,6 +804,20 @@ SLInlinerWithAnnotation >> replaceNodeIn: aSendNode with: data [
 ]
 
 { #category : 'transformation' }
+SLInlinerWithAnnotation >> replaceReturnWithGoToIfNeededIn: callee directReturn: directReturn [
+
+	| exitLabel |
+	callee hasReturn ifTrue: [
+		directReturn ifFalse: [
+			exitLabel := currentMethod unusedLabelForInliningInto:
+				             currentMethod.
+			(self label: exitLabel for: callee)
+				ifTrue: [ currentMethod labels add: exitLabel ]
+				ifFalse: [ "is label used?" ^ nil ] ] ].
+	^ exitLabel
+]
+
+{ #category : 'transformation' }
 SLInlinerWithAnnotation >> replaceVariableIn: aReplacementDictionary for: aTMethod [
 
 	| replacement |
@@ -814,15 +834,6 @@ SLInlinerWithAnnotation >> replaceVariableIn: aReplacementDictionary for: aTMeth
 				visitFromBranchStartingAt: node
 				replacement: replacement.
 			sLNodeAnnotatorVisitor moveDownAssigningParentFrom: replacement ] ]
-]
-
-{ #category : 'transformation' }
-SLInlinerWithAnnotation >> revert: aSendNode replacement: aTMethod [
-
-	aTMethod parseTree parent
-		replaceChild: aTMethod parseTree
-		with: aSendNode.
-	aTMethod parseTree parent: aTMethod
 ]
 
 { #category : 'inlining-preparation' }

@@ -15,6 +15,16 @@ Class {
 	#package : 'Slang'
 }
 
+{ #category : 'transformation' }
+SLNodeAnnotatorVisitor class >> copyWithoutReturn: aTMethod [
+
+	| parseTree returns |
+	parseTree := aTMethod parseTree.
+	returns := parseTree allReturns.
+	returns do: [ :return |
+		return parent replaceChild: return with: return expression ]
+]
+
 { #category : 'helpers-stack-operation' }
 SLNodeAnnotatorVisitor >> activateCurrentSouldBePartiallyIgnored [
 	
@@ -203,16 +213,6 @@ SLNodeAnnotatorVisitor >> cleanInfoAndBranchInfoFrom: aNode [
 SLNodeAnnotatorVisitor >> cleanInfoFrom: aNode [
 
 	info removeKey: aNode 
-]
-
-{ #category : 'transformation' }
-SLNodeAnnotatorVisitor >> copyWithoutReturn: aTMethod [
-
-	| parseTree returns |
-	parseTree := aTMethod parseTree.
-	returns := parseTree allReturns.
-	returns do: [ :return |
-		return parent replaceChild: return with: return expression ]
 ]
 
 { #category : 'helpers-stack-operation' }
