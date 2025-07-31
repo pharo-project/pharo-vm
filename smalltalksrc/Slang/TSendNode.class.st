@@ -558,7 +558,8 @@ TSendNode >> lastExpression [
 
 	| lastExpressions |
 	self isConditionalSend ifFalse: [ ^ super lastExpression ].
-	lastExpressions := arguments collect: [ :arg | arg lastExpression ].
+	lastExpressions := IdentitySet new.
+	arguments do: [ :arg | lastExpressions addAll: arg lastExpression ].
 	^ lastExpressions
 ]
 

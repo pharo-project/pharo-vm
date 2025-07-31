@@ -721,7 +721,7 @@ SLInlinerWithAnnotation >> label: exitLabel for: aTMethod [
 	aTMethod parseTree nodesDo: [ :node |
 		| list |
 		(node isStatementList and: [
-			 node statements notEmpty and: [
+			 node isComment not and: [
 				 node lastNonCommentStatement isStatementList ] ]) ifTrue: [
 			list := node lastNonCommentStatement statements.
 			node replaceChild: node lastNonCommentStatement withList: list ] ].
