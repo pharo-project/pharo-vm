@@ -163,7 +163,7 @@ SLInliningTest >> test2ChainInliningMethodAWithArgumentsInlined [
 static sqInt
 methodAWithArgumentsInlined(void)
 {
-	return methodB((3 + 3, /* begin methodA */ 1 + 1, /* begin methodB */ 2 + 2 /* end methodB */ /* end methodA */));
+	return methodB((/* begin methodCAlwaysInlined */ 3 + 3, /* begin methodA */ 1 + 1, /* begin methodB */ 2 + 2 /* end methodB */ /* end methodA */ /* end methodCAlwaysInlined */));
 }'
 ]
 
@@ -185,7 +185,7 @@ SLInliningTest >> test2ChainInliningMethodAWithReturningSendArgumentsInlined [
 static sqInt
 methodAWithReturningSendArgumentsInlined(void)
 {
-	return methodB((3 + 3, /* begin methodA */ 1 + 1, /* begin methodB */ 2 + 2 /* end methodB */ /* end methodA */));
+	return methodB((/* begin methodCAlwaysInlined */ 3 + 3, /* begin methodA */ 1 + 1, /* begin methodB */ 2 + 2 /* end methodB */ /* end methodA */ /* end methodCAlwaysInlined */));
 }'
 ]
 
@@ -1363,6 +1363,7 @@ static sqInt
 methodWithIfTrueReceiverInlined(void)
 {
 	{
+		/* begin methodWithMultipleBooleanReturn */
 		if (methodB()) {
 			goto l2;
 		}
@@ -1375,6 +1376,7 @@ methodWithIfTrueReceiverInlined(void)
 		;
 		/* end methodCMultipleReturn */
 		/* end methodWithMultipleBooleanReturn; fall through */
+		/* end methodWithMultipleBooleanReturn */
 		/* begin methodB */
 		2 + 2;
 		/* end methodB */
@@ -1404,6 +1406,7 @@ static sqInt
 methodWithReturningIfTrueReceiverInlined(void)
 {
 	{
+		/* begin methodWithMultipleBooleanReturn */
 		if (methodB()) {
 			goto l2;
 		}
@@ -1416,6 +1419,7 @@ methodWithReturningIfTrueReceiverInlined(void)
 		;
 		/* end methodCMultipleReturn */
 		/* end methodWithMultipleBooleanReturn; fall through */
+		/* end methodWithMultipleBooleanReturn */
 		/* begin methodB */
 		2 + 2;
 		/* end methodB */
