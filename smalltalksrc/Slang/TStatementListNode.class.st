@@ -782,10 +782,14 @@ TStatementListNode >> renameLocalVariablesGivenClassVariables: classVariables gl
 { #category : 'transformations' }
 TStatementListNode >> replaceChild: aNode with: bNode [
 
+	bNode isStatementList ifTrue: [
+		self replaceChild: aNode withList: bNode statements.
+		^ self ].
+
 	self statements: (statements collect: [ :node |
-		node == aNode
-			ifTrue: [ bNode ]
-			ifFalse: [ node ] ])
+			 node == aNode
+				 ifTrue: [ bNode ]
+				 ifFalse: [ node ] ])
 ]
 
 { #category : 'transformations' }

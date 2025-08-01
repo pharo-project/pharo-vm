@@ -107,7 +107,7 @@ SLNodeAnnotatorVisitor >> addToInSend: aNode [
 	self addToInStack: aNode stack: inSendStack entry: self inSendString
 ]
 
-{ #category : 'helpers-annotate' }
+{ #category : 'annotate-helpers' }
 SLNodeAnnotatorVisitor >> addToInStack: aNode stack: aStack entry: aString [
 
 	aStack isEmpty ifTrue: [ ^ self ].
@@ -161,7 +161,7 @@ SLNodeAnnotatorVisitor >> assignmentString [
 	^ #assignment
 ]
 
-{ #category : 'helpers-accessing-info' }
+{ #category : 'accessing-info-helpers' }
 SLNodeAnnotatorVisitor >> associationKeyInfoFor: aNode entry: aString [
 
 	^ (info at: aNode)
@@ -170,7 +170,7 @@ SLNodeAnnotatorVisitor >> associationKeyInfoFor: aNode entry: aString [
 		  ifAbsent: [ false ]
 ]
 
-{ #category : 'helpers-accessing-info' }
+{ #category : 'accessing-info-helpers' }
 SLNodeAnnotatorVisitor >> associationValueInfoFor: aNode entry: aString [
 
 	^ (info at: aNode)
@@ -179,7 +179,7 @@ SLNodeAnnotatorVisitor >> associationValueInfoFor: aNode entry: aString [
 		  ifAbsent: [ nil ]
 ]
 
-{ #category : 'helpers-accessing-info' }
+{ #category : 'accessing-info-helpers' }
 SLNodeAnnotatorVisitor >> booleanInfoFor: aNode entry: aString [
 
 	^ (info at: aNode)
@@ -232,7 +232,7 @@ SLNodeAnnotatorVisitor >> do: aBlock visit: aNode [
 	^ blockResult
 ]
 
-{ #category : 'helpers-annotate' }
+{ #category : 'annotate-helpers' }
 SLNodeAnnotatorVisitor >> ensureEntryInInfoDictFor: aNode [
 
 	info at: aNode ifAbsentPut: [ IdentityDictionary new ]
@@ -251,7 +251,7 @@ SLNodeAnnotatorVisitor >> fromSearchStmtListString [
 	^ #fromSearchStmtList
 ]
 
-{ #category : 'helpers-visiting' }
+{ #category : 'visiting-helpers' }
 SLNodeAnnotatorVisitor >> giveStacksInfoForMultipleBranches: aCollectionOfNode [
 	"re give the informations for each branch after using it"
 
@@ -268,7 +268,7 @@ SLNodeAnnotatorVisitor >> giveStacksInfoForMultipleBranches: aCollectionOfNode [
 				assoc value push: assoc key ] ] ]
 ]
 
-{ #category : 'helpers-visiting' }
+{ #category : 'visiting-helpers' }
 SLNodeAnnotatorVisitor >> handleConditionalSend: aSendNode [
 
 	aSendNode isConditionalSend ifTrue: [
@@ -283,7 +283,7 @@ SLNodeAnnotatorVisitor >> handleConditionalSend: aSendNode [
 	^ false
 ]
 
-{ #category : 'helpers-visiting' }
+{ #category : 'visiting-helpers' }
 SLNodeAnnotatorVisitor >> handleIterativeSend: aSendNode [
 
 	aSendNode isUnaryIterativeSend ifTrue: [
@@ -587,7 +587,7 @@ SLNodeAnnotatorVisitor >> moveDownReturningParentFrom: aNode [
 		replacement: returningParent expression
 ]
 
-{ #category : 'helpers-transformation' }
+{ #category : 'transformation-helpers' }
 SLNodeAnnotatorVisitor >> moveDownSingleBranchConditional: aNode newBranch: anOtherNode [
 	"does nothing is the node isnt a single branch conditional.
 	when moving down a assignment/return in a single branch conditional, we need to consider the missing branch which Slang would have consider is the conditional was still an argument, see generateCASTIfNotNilAsArgument: for exemple and the other methods related to single conditional as arguments"
@@ -616,7 +616,7 @@ SLNodeAnnotatorVisitor >> moveDownSingleBranchConditional: aNode newBranch: anOt
 			arguments: aNode arguments , { newArgument } ]
 ]
 
-{ #category : 'helpers-accessing-info' }
+{ #category : 'accessing-info-helpers' }
 SLNodeAnnotatorVisitor >> presenceInfoFor: aNode entry: aString [
 
 	^ (info at: aNode)
@@ -625,7 +625,7 @@ SLNodeAnnotatorVisitor >> presenceInfoFor: aNode entry: aString [
 		  ifAbsent: [ false ]
 ]
 
-{ #category : 'helpers-annotate' }
+{ #category : 'annotate-helpers' }
 SLNodeAnnotatorVisitor >> processValueSourceFor: aNode from: aStack constantString: constantString ignoredString: ignoredString [
 
 	| entry assoc isEffectivelyIgnored |
@@ -811,7 +811,7 @@ SLNodeAnnotatorVisitor >> visitAssignmentNode: anAssignmentNode [
 	searchForAssignValueStack pop
 ]
 
-{ #category : 'helpers-visiting' }
+{ #category : 'visiting-helpers' }
 SLNodeAnnotatorVisitor >> visitBinaryIterativeSend: aSendNode [
 	"in Slang, iterative are not considered as expression but rather as statement to be closer to C"
 
@@ -852,7 +852,7 @@ SLNodeAnnotatorVisitor >> visitCaseStatementNode: aCaseStmtNode [
 	searchForExpressionValueStack pop
 ]
 
-{ #category : 'helpers-visiting' }
+{ #category : 'visiting-helpers' }
 SLNodeAnnotatorVisitor >> visitConditionalSend: aSendNode [
 	"conditionals are control-flow node and thus treated differently from the other sends"
 
@@ -876,7 +876,7 @@ SLNodeAnnotatorVisitor >> visitConstantNode: aConstantNode [
 	self annotateNodeState: aConstantNode
 ]
 
-{ #category : 'helpers-visiting' }
+{ #category : 'visiting-helpers' }
 SLNodeAnnotatorVisitor >> visitCppConditional: aSendNode [
 	"conditionals are control-flow node and thus treated differently from the other sends"
 
@@ -897,7 +897,7 @@ SLNodeAnnotatorVisitor >> visitCppConditional: aSendNode [
 	inExpressionStack pop
 ]
 
-{ #category : 'helpers-visiting' }
+{ #category : 'visiting-helpers' }
 SLNodeAnnotatorVisitor >> visitDoIterativeSend: aSendNode [
 	"in Slang, iterative are not considered as expression but rather as statement to be closer to C"
 
@@ -917,7 +917,7 @@ SLNodeAnnotatorVisitor >> visitDoIterativeSend: aSendNode [
 	inExpressionStack pop
 ]
 
-{ #category : 'helpers-visiting' }
+{ #category : 'visiting-helpers' }
 SLNodeAnnotatorVisitor >> visitExitPointSend: aSendNode [
 
 	| hasInvalidateAStmtSearch |
@@ -1044,7 +1044,7 @@ SLNodeAnnotatorVisitor >> visitSendNode: aSendNode [
 	inSendStack pop
 ]
 
-{ #category : 'helpers-visiting' }
+{ #category : 'visiting-helpers' }
 SLNodeAnnotatorVisitor >> visitSpecialSend: aSendNode [
 
 	(self handleConditionalSend: aSendNode) ifTrue: [ ^ true ].
@@ -1119,7 +1119,7 @@ SLNodeAnnotatorVisitor >> visitSwitchStatementNode: aSwitchStatementNode [
 	searchForExpressionValueStack pop
 ]
 
-{ #category : 'helpers-visiting' }
+{ #category : 'visiting-helpers' }
 SLNodeAnnotatorVisitor >> visitUnaryIterativeSend: aSendNode [
 	"in Slang, iterative are not considered as expression but rather as statement to be closer to C"
 
@@ -1135,7 +1135,7 @@ SLNodeAnnotatorVisitor >> visitUnaryIterativeSend: aSendNode [
 	inExpressionStack pop
 ]
 
-{ #category : 'helpers-visiting' }
+{ #category : 'visiting-helpers' }
 SLNodeAnnotatorVisitor >> visitUnaryIterativeSendWithImportantLastStatement: aSendNode [
 	"for a 'a := [[ exp . condition ] whileTrue]' case (obtained through inlining for example), the last expression of the block is a condition not the expression value of a := ..."
 
@@ -1161,7 +1161,7 @@ SLNodeAnnotatorVisitor >> visitUnaryIterativeSendWithImportantLastStatement: aSe
 	block addAllLastKeepingEndComments: { condition }
 ]
 
-{ #category : 'helpers-visiting' }
+{ #category : 'visiting-helpers' }
 SLNodeAnnotatorVisitor >> visitValueExpansionSend: aSendNode [
 
 	self activateCurrentSouldBePartiallyIgnored.

@@ -45,9 +45,7 @@ SLDeadCodeEliminationTest >> testConditionalWithOnlyCommentNoSendInReceiver [
 static void
 conditionalWithOnlyCommentNoSendInReceiver(SLDeadCodeEliminationTestClass * self_in_conditionalWithOnlyCommentNoSendInReceiver)
 {
-	{
-		return;
-	}
+	return;
 }'
 ]
 
@@ -74,12 +72,8 @@ SLDeadCodeEliminationTest >> testConditionalWithOnlyCommentSendInReceiver [
 static void
 conditionalWithOnlyCommentSendInReceiver(SLDeadCodeEliminationTestClass * self_in_conditionalWithOnlyCommentSendInReceiver)
 {
-	{
-		method(self_in_conditionalWithOnlyCommentSendInReceiver, method(self_in_conditionalWithOnlyCommentSendInReceiver));
-	}
-	{
-		return;
-	}
+	method(self_in_conditionalWithOnlyCommentSendInReceiver, method(self_in_conditionalWithOnlyCommentSendInReceiver));
+	return;
 }'
 ]
 
@@ -103,9 +97,7 @@ static void
 methodAddingCallInCoerce(SLDeadCodeEliminationTestClass * self_in_methodAddingCallInCoerce)
 {
 	((type) ((method(self_in_methodAddingCallInCoerce)) + (method(self_in_methodAddingCallInCoerce))) );
-	{
-		return;
-	}
+	return;
 }'
 ]
 
@@ -134,9 +126,7 @@ methodWithBlockValueAssignmentIntoSameVariableInArguments(SLDeadCodeEliminationT
 	sqInt var;
 
 	var = 0;
-	{
-		method(self_in_methodWithBlockValueAssignmentIntoSameVariableInArguments, var);
-	}
+	method(self_in_methodWithBlockValueAssignmentIntoSameVariableInArguments, var);
 	return var;
 }'
 ]
@@ -167,10 +157,8 @@ methodWithBlockValueAssignmentNotIntoSameVariableInArguments(SLDeadCodeEliminati
 	sqInt var2;
 
 	var2 = 0;
-	{
-		method(self_in_methodWithBlockValueAssignmentNotIntoSameVariableInArguments, var2);
-		var = var2;
-	}
+	method(self_in_methodWithBlockValueAssignmentNotIntoSameVariableInArguments, var2);
+	var = var2;
 	return var;
 }'
 ]
@@ -204,10 +192,8 @@ methodWithBlockValueValueAssignmentIntoSameVariableInArguments(SLDeadCodeElimina
 
 	var = 0;
 	var2 = 0;
-	{
-		method(self_in_methodWithBlockValueValueAssignmentIntoSameVariableInArguments, var2);
-		method(self_in_methodWithBlockValueValueAssignmentIntoSameVariableInArguments, var);
-	}
+	method(self_in_methodWithBlockValueValueAssignmentIntoSameVariableInArguments, var2);
+	method(self_in_methodWithBlockValueValueAssignmentIntoSameVariableInArguments, var);
 	return var;
 }'
 ]
@@ -240,14 +226,10 @@ methodWithBlockValueValueAssignmentNotIntoSameVariableInArguments(SLDeadCodeElim
 
 	var = 0;
 	var2 = 0;
-	{
-		method(self_in_methodWithBlockValueValueAssignmentNotIntoSameVariableInArguments, var);
-		method(self_in_methodWithBlockValueValueAssignmentNotIntoSameVariableInArguments, var2);
-		var = var2;
-	}
-	{
-		return;
-	}
+	method(self_in_methodWithBlockValueValueAssignmentNotIntoSameVariableInArguments, var);
+	method(self_in_methodWithBlockValueValueAssignmentNotIntoSameVariableInArguments, var2);
+	var = var2;
+	return;
 }'
 ]
 
@@ -273,9 +255,7 @@ static void
 methodWithCallInCoerce(SLDeadCodeEliminationTestClass * self_in_methodWithCallInCoerce)
 {
 	((type) (method(self_in_methodWithCallInCoerce)) );
-	{
-		return;
-	}
+	return;
 }'
 ]
 
@@ -352,9 +332,7 @@ methodWithDeadCodeInRepeat(SLDeadCodeEliminationTestClass * self_in_methodWithDe
 	while (1) {
 		method(self_in_methodWithDeadCodeInRepeat);
 	}
-	{
-		return;
-	}
+	return;
 }'
 ]
 
@@ -474,9 +452,7 @@ methodWithDeadCodeInWhileFalseLastExpressionIsLeaf(SLDeadCodeEliminationTestClas
 	do {
 		method(self_in_methodWithDeadCodeInWhileFalseLastExpressionIsLeaf);
 	} while (!1);
-	{
-		return;
-	}
+	return;
 }'
 ]
 
@@ -508,9 +484,7 @@ methodWithDeadCodeInWhileFalseBinaryNoSendInReceiver(SLDeadCodeEliminationTestCl
 	while (!(var == 1)) {
 		method(self_in_methodWithDeadCodeInWhileFalseBinaryNoSendInReceiver);
 	}
-	{
-		return;
-	}
+	return;
 }'
 ]
 
@@ -537,9 +511,7 @@ methodWithDeadCodeInWhileFalseBinarySendInReceiver(SLDeadCodeEliminationTestClas
 	while (!(method(self_in_methodWithDeadCodeInWhileFalseBinarySendInReceiver))) {
 		method(self_in_methodWithDeadCodeInWhileFalseBinarySendInReceiver);
 	}
-	{
-		return;
-	}
+	return;
 }'
 ]
 
@@ -566,9 +538,7 @@ methodWithDeadCodeInWhileTrueLastExpressionIsLeaf(SLDeadCodeEliminationTestClass
 	do {
 		method(self_in_methodWithDeadCodeInWhileTrueLastExpressionIsLeaf);
 	} while (1);
-	{
-		return;
-	}
+	return;
 }'
 ]
 
@@ -600,9 +570,7 @@ methodWithDeadCodeInWhileTrueBinaryNoSendInReceiver(SLDeadCodeEliminationTestCla
 	while (var == 0) {
 		method(self_in_methodWithDeadCodeInWhileTrueBinaryNoSendInReceiver);
 	}
-	{
-		return;
-	}
+	return;
 }'
 ]
 
@@ -629,9 +597,7 @@ methodWithDeadCodeInWhileTrueBinarySendInReceiver(SLDeadCodeEliminationTestClass
 	while (method(self_in_methodWithDeadCodeInWhileTrueBinarySendInReceiver)) {
 		method(self_in_methodWithDeadCodeInWhileTrueBinarySendInReceiver);
 	}
-	{
-		return;
-	}
+	return;
 }'
 ]
 
@@ -665,9 +631,7 @@ methodWithEmptyCaseOfNoSendInReceiver(SLDeadCodeEliminationTestClass * self_in_m
 		default:
 		error("Case not found and no otherwise clause");
 	}
-	{
-		return;
-	}
+	return;
 }'
 ]
 
@@ -693,9 +657,7 @@ SLDeadCodeEliminationTest >> testMethodWithEmptyCaseOfOtherwiseNoSendInReceiver 
 static void
 methodWithEmptyCaseOfOtherwiseNoSendInReceiver(SLDeadCodeEliminationTestClass * self_in_methodWithEmptyCaseOfOtherwiseNoSendInReceiver, sqInt anInt)
 {
-	{
-		return;
-	}
+	return;
 }'
 ]
 
@@ -721,12 +683,8 @@ SLDeadCodeEliminationTest >> testMethodWithEmptyCaseOfOtherwiseSendInReceiver [
 static void
 methodWithEmptyCaseOfOtherwiseSendInReceiver(SLDeadCodeEliminationTestClass * self_in_methodWithEmptyCaseOfOtherwiseSendInReceiver)
 {
-	{
-		method(self_in_methodWithEmptyCaseOfOtherwiseSendInReceiver, 2);
-	}
-	{
-		return;
-	}
+	method(self_in_methodWithEmptyCaseOfOtherwiseSendInReceiver, 2);
+	return;
 }'
 ]
 
@@ -761,9 +719,7 @@ methodWithEmptyCaseOfSendInReceiver(SLDeadCodeEliminationTestClass * self_in_met
 		default:
 		error("Case not found and no otherwise clause");
 	}
-	{
-		return;
-	}
+	return;
 }'
 ]
 
@@ -788,9 +744,7 @@ SLDeadCodeEliminationTest >> testMethodWithEmptyIfFalseIfTrueAndNoSendInReceiver
 static void
 methodWithEmptyIfFalseIfTrueAndNoSendInReceiver(SLDeadCodeEliminationTestClass * self_in_methodWithEmptyIfFalseIfTrueAndNoSendInReceiver)
 {
-	{
-		return;
-	}
+	return;
 }'
 ]
 
@@ -815,15 +769,11 @@ SLDeadCodeEliminationTest >> testMethodWithEmptyIfFalseIfTrueAndSendInReceiver [
 static void
 methodWithEmptyIfFalseIfTrueAndSendInReceiver(SLDeadCodeEliminationTestClass * self_in_methodWithEmptyIfFalseIfTrueAndSendInReceiver)
 {
-	{
-		method(self_in_methodWithEmptyIfFalseIfTrueAndSendInReceiver);
-		method(self_in_methodWithEmptyIfFalseIfTrueAndSendInReceiver, 1);
-		method(self_in_methodWithEmptyIfFalseIfTrueAndSendInReceiver);
-		method(self_in_methodWithEmptyIfFalseIfTrueAndSendInReceiver, method(self_in_methodWithEmptyIfFalseIfTrueAndSendInReceiver));
-	}
-	{
-		return;
-	}
+	method(self_in_methodWithEmptyIfFalseIfTrueAndSendInReceiver);
+	method(self_in_methodWithEmptyIfFalseIfTrueAndSendInReceiver, 1);
+	method(self_in_methodWithEmptyIfFalseIfTrueAndSendInReceiver);
+	method(self_in_methodWithEmptyIfFalseIfTrueAndSendInReceiver, method(self_in_methodWithEmptyIfFalseIfTrueAndSendInReceiver));
+	return;
 }'
 ]
 
@@ -972,9 +922,7 @@ SLDeadCodeEliminationTest >> testMethodWithEmptyIfNilIfNotNilAndNoSendInReceiver
 static void
 methodWithEmptyIfNilIfNotNilAndNoSendInReceiver(SLDeadCodeEliminationTestClass * self_in_methodWithEmptyIfNilIfNotNilAndNoSendInReceiver)
 {
-	{
-		return;
-	}
+	return;
 }'
 ]
 
@@ -999,12 +947,8 @@ SLDeadCodeEliminationTest >> testMethodWithEmptyIfNilIfNotNilAndSendInReceiver [
 static void
 methodWithEmptyIfNilIfNotNilAndSendInReceiver(SLDeadCodeEliminationTestClass * self_in_methodWithEmptyIfNilIfNotNilAndSendInReceiver)
 {
-	{
-		method(self_in_methodWithEmptyIfNilIfNotNilAndSendInReceiver);
-	}
-	{
-		return;
-	}
+	method(self_in_methodWithEmptyIfNilIfNotNilAndSendInReceiver);
+	return;
 }'
 ]
 
@@ -1029,9 +973,7 @@ SLDeadCodeEliminationTest >> testMethodWithEmptyIfNotNilIfNilAndNoSendInReceiver
 static void
 methodWithEmptyIfNotNilIfNilAndNoSendInReceiver(SLDeadCodeEliminationTestClass * self_in_methodWithEmptyIfNotNilIfNilAndNoSendInReceiver)
 {
-	{
-		return;
-	}
+	return;
 }'
 ]
 
@@ -1056,12 +998,8 @@ SLDeadCodeEliminationTest >> testMethodWithEmptyIfNotNilIfNilAndSendInReceiver [
 static void
 methodWithEmptyIfNotNilIfNilAndSendInReceiver(SLDeadCodeEliminationTestClass * self_in_methodWithEmptyIfNotNilIfNilAndSendInReceiver)
 {
-	{
-		method(self_in_methodWithEmptyIfNotNilIfNilAndSendInReceiver);
-	}
-	{
-		return;
-	}
+	method(self_in_methodWithEmptyIfNotNilIfNilAndSendInReceiver);
+	return;
 }'
 ]
 
@@ -1086,9 +1024,7 @@ SLDeadCodeEliminationTest >> testMethodWithEmptyIfTrueIfFalseAndNoSendInReceiver
 static void
 methodWithEmptyIfTrueIfFalseAndNoSendInReceiver(SLDeadCodeEliminationTestClass * self_in_methodWithEmptyIfTrueIfFalseAndNoSendInReceiver)
 {
-	{
-		return;
-	}
+	return;
 }'
 ]
 
@@ -1113,15 +1049,11 @@ SLDeadCodeEliminationTest >> testMethodWithEmptyIfTrueIfFalseAndSendInReceiver [
 static void
 methodWithEmptyIfTrueIfFalseAndSendInReceiver(SLDeadCodeEliminationTestClass * self_in_methodWithEmptyIfTrueIfFalseAndSendInReceiver)
 {
-	{
-		method(self_in_methodWithEmptyIfTrueIfFalseAndSendInReceiver);
-		method(self_in_methodWithEmptyIfTrueIfFalseAndSendInReceiver, 1);
-		method(self_in_methodWithEmptyIfTrueIfFalseAndSendInReceiver);
-		method(self_in_methodWithEmptyIfTrueIfFalseAndSendInReceiver, method(self_in_methodWithEmptyIfTrueIfFalseAndSendInReceiver));
-	}
-	{
-		return;
-	}
+	method(self_in_methodWithEmptyIfTrueIfFalseAndSendInReceiver);
+	method(self_in_methodWithEmptyIfTrueIfFalseAndSendInReceiver, 1);
+	method(self_in_methodWithEmptyIfTrueIfFalseAndSendInReceiver);
+	method(self_in_methodWithEmptyIfTrueIfFalseAndSendInReceiver, method(self_in_methodWithEmptyIfTrueIfFalseAndSendInReceiver));
+	return;
 }'
 ]
 
@@ -1269,9 +1201,7 @@ SLDeadCodeEliminationTest >> testMethodWithEmptyWhileFalseNoSendInCondition [
 static void
 methodWithEmptyWhileFalseNoSendInCondition(SLDeadCodeEliminationTestClass * self_in_methodWithEmptyWhileFalseNoSendInCondition)
 {
-	{
-		return;
-	}
+	return;
 }'
 ]
 
@@ -1294,12 +1224,8 @@ SLDeadCodeEliminationTest >> testMethodWithEmptyWhileFalseSendInCondition [
 static void
 methodWithEmptyWhileFalseSendInCondition(SLDeadCodeEliminationTestClass * self_in_methodWithEmptyWhileFalseSendInCondition)
 {
-	{
-		method(self_in_methodWithEmptyWhileFalseSendInCondition);
-	}
-	{
-		return;
-	}
+	method(self_in_methodWithEmptyWhileFalseSendInCondition);
+	return;
 }'
 ]
 
@@ -1323,9 +1249,7 @@ SLDeadCodeEliminationTest >> testMethodWithEmptyWhileTrueNoSendInCondition [
 static void
 methodWithEmptyWhileTrueNoSendInCondition(SLDeadCodeEliminationTestClass * self_in_methodWithEmptyWhileTrueNoSendInCondition)
 {
-	{
-		return;
-	}
+	return;
 }'
 ]
 
@@ -1348,12 +1272,8 @@ SLDeadCodeEliminationTest >> testMethodWithEmptyWhileTrueSendInCondition [
 static void
 methodWithEmptyWhileTrueSendInCondition(SLDeadCodeEliminationTestClass * self_in_methodWithEmptyWhileTrueSendInCondition)
 {
-	{
-		method(self_in_methodWithEmptyWhileTrueSendInCondition);
-	}
-	{
-		return;
-	}
+	method(self_in_methodWithEmptyWhileTrueSendInCondition);
+	return;
 }'
 ]
 
@@ -1716,9 +1636,7 @@ methodWithNeverUsedLocalsFromBlock(SLDeadCodeEliminationTestClass * self_in_meth
 	int var1;
 
 	var1 = 5;
-	{
-		var1 += 1;
-	}
+	var1 += 1;
 	return var1;
 }'
 ]
@@ -1750,9 +1668,7 @@ methodWithNeverUsedLocalsFromBlockStatement(SLDeadCodeEliminationTestClass * sel
 	sqInt var2;
 
 	var1 = 4;
-	{
-		var2 = var1 + 1;
-	}
+	var2 = var1 + 1;
 	return var2;
 }'
 ]
@@ -1782,10 +1698,8 @@ methodWithNeverUsedLocalsFromBlockWithExpressionInArguments(SLDeadCodeEliminatio
 	sqInt arg1;
 	sqInt var1;
 
-	{
-		arg1 = 5 + 1;
-		var1 = arg1 + 1;
-	}
+	arg1 = 5 + 1;
+	var1 = arg1 + 1;
 	return var1;
 }'
 ]
@@ -1908,9 +1822,7 @@ methodWithOnlyBlockValueAssignmentNotIntoSameVariableInArguments(SLDeadCodeElimi
 	sqInt var2;
 
 	var2 = 0;
-	{
-		var = var2;
-	}
+	var = var2;
 	return var;
 }'
 ]
@@ -1940,9 +1852,7 @@ methodWithOnlyComment(SLDeadCodeEliminationTestClass * self_in_methodWithOnlyCom
 {
 	/* begin method */
 	/* end method */
-	{
-		return;
-	}
+	return;
 }'
 ]
 
@@ -2051,9 +1961,7 @@ methodWithOnlyDeadCodeInWhileFalseBinarySendInReceiver(SLDeadCodeEliminationTest
 	sqInt var;
 
 	var = 0;
-	{
-		method(self_in_methodWithOnlyDeadCodeInWhileFalseBinarySendInReceiver);
-	}
+	method(self_in_methodWithOnlyDeadCodeInWhileFalseBinarySendInReceiver);
 	return var;
 }'
 ]
@@ -2137,9 +2045,7 @@ methodWithOnlyDeadCodeInWhileTrueBinarySendInReceiver(SLDeadCodeEliminationTestC
 	sqInt var;
 
 	var = 0;
-	{
-		method(self_in_methodWithOnlyDeadCodeInWhileTrueBinarySendInReceiver);
-	}
+	method(self_in_methodWithOnlyDeadCodeInWhileTrueBinarySendInReceiver);
 	return var;
 }'
 ]
@@ -2192,9 +2098,7 @@ SLDeadCodeEliminationTest >> testMethodWithOnlyUselessAssignment [
 static void
 methodWithOnlyUselessAssignment(SLDeadCodeEliminationTestClass * self_in_methodWithOnlyUselessAssignment)
 {
-	{
-		return;
-	}
+	return;
 }'
 ]
 
@@ -2280,9 +2184,7 @@ SLDeadCodeEliminationTest >> testMethodWithSendWithNoSideEffectInCoerce [
 static void
 methodWithSendWithNoSideEffectInCoerce(SLDeadCodeEliminationTestClass * self_in_methodWithSendWithNoSideEffectInCoerce)
 {
-	{
-		return;
-	}
+	return;
 }'
 ]
 
@@ -2305,9 +2207,7 @@ SLDeadCodeEliminationTest >> testMethodWithUnusedConstant [
 static void
 methodWithUnusedConstant(SLDeadCodeEliminationTestClass * self_in_methodWithUnusedConstant)
 {
-	{
-		return;
-	}
+	return;
 }'
 ]
 
@@ -2341,16 +2241,12 @@ methodWithUnusedConstantAndReturnInCaseOfNoSendInExpression(SLDeadCodeEliminatio
 		break;
 		case 6:
 		{
-			{
-				return;
-			}
+			return;
 		}
 		default:
 		error("Case not found and no otherwise clause");
 	}
-	{
-		return;
-	}
+	return;
 }'
 ]
 
@@ -2526,9 +2422,7 @@ SLDeadCodeEliminationTest >> testMethodWithUnusedConstantInCaseOfAndUnusedConsta
 static sqInt
 methodWithUnusedConstantInCaseOfAndUnusedConstantInOtherwiseSendInExpression(SLDeadCodeEliminationTestClass * self_in_methodWithUnusedConstantInCaseOfAndUnusedConstantInOtherwiseSendInExpression)
 {
-	{
-		method(self_in_methodWithUnusedConstantInCaseOfAndUnusedConstantInOtherwiseSendInExpression, 3);
-	}
+	method(self_in_methodWithUnusedConstantInCaseOfAndUnusedConstantInOtherwiseSendInExpression, 3);
 	return 0;
 }'
 ]
@@ -2668,14 +2562,10 @@ SLDeadCodeEliminationTest >> testMethodWithUnusedConstantInIfFalseIfTrueSendInRe
 static void
 methodWithUnusedConstantInIfFalseIfTrueSendInReceiver(SLDeadCodeEliminationTestClass * self_in_methodWithUnusedConstantInIfFalseIfTrueSendInReceiver)
 {
-	{
-		method(self_in_methodWithUnusedConstantInIfFalseIfTrueSendInReceiver);
-		method(self_in_methodWithUnusedConstantInIfFalseIfTrueSendInReceiver, 3);
-		method(self_in_methodWithUnusedConstantInIfFalseIfTrueSendInReceiver, method(self_in_methodWithUnusedConstantInIfFalseIfTrueSendInReceiver));
-	}
-	{
-		return;
-	}
+	method(self_in_methodWithUnusedConstantInIfFalseIfTrueSendInReceiver);
+	method(self_in_methodWithUnusedConstantInIfFalseIfTrueSendInReceiver, 3);
+	method(self_in_methodWithUnusedConstantInIfFalseIfTrueSendInReceiver, method(self_in_methodWithUnusedConstantInIfFalseIfTrueSendInReceiver));
+	return;
 }'
 ]
 
@@ -2699,9 +2589,7 @@ SLDeadCodeEliminationTest >> testMethodWithUnusedConstantInIfFalseNoSendInReceiv
 static void
 methodWithUnusedConstantInIfFalseNoSendInReceiver(SLDeadCodeEliminationTestClass * self_in_methodWithUnusedConstantInIfFalseNoSendInReceiver)
 {
-	{
-		return;
-	}
+	return;
 }'
 ]
 
@@ -2725,14 +2613,10 @@ SLDeadCodeEliminationTest >> testMethodWithUnusedConstantInIfFalseSendInReceiver
 static void
 methodWithUnusedConstantInIfFalseSendInReceiver(SLDeadCodeEliminationTestClass * self_in_methodWithUnusedConstantInIfFalseSendInReceiver)
 {
-	{
-		method(self_in_methodWithUnusedConstantInIfFalseSendInReceiver);
-		method(self_in_methodWithUnusedConstantInIfFalseSendInReceiver, 3);
-		method(self_in_methodWithUnusedConstantInIfFalseSendInReceiver, method(self_in_methodWithUnusedConstantInIfFalseSendInReceiver));
-	}
-	{
-		return;
-	}
+	method(self_in_methodWithUnusedConstantInIfFalseSendInReceiver);
+	method(self_in_methodWithUnusedConstantInIfFalseSendInReceiver, 3);
+	method(self_in_methodWithUnusedConstantInIfFalseSendInReceiver, method(self_in_methodWithUnusedConstantInIfFalseSendInReceiver));
+	return;
 }'
 ]
 
@@ -2756,9 +2640,7 @@ SLDeadCodeEliminationTest >> testMethodWithUnusedConstantInIfNilIfNotNilNoSendIn
 static void
 methodWithUnusedConstantInIfNilIfNotNilNoSendInReceiver(SLDeadCodeEliminationTestClass * self_in_methodWithUnusedConstantInIfNilIfNotNilNoSendInReceiver)
 {
-	{
-		return;
-	}
+	return;
 }'
 ]
 
@@ -2782,12 +2664,8 @@ SLDeadCodeEliminationTest >> testMethodWithUnusedConstantInIfNilIfNotNillSendInR
 static void
 methodWithUnusedConstantInIfNilIfNotNilSendInReceiver(SLDeadCodeEliminationTestClass * self_in_methodWithUnusedConstantInIfNilIfNotNilSendInReceiver)
 {
-	{
-		method(self_in_methodWithUnusedConstantInIfNilIfNotNilSendInReceiver, method(self_in_methodWithUnusedConstantInIfNilIfNotNilSendInReceiver));
-	}
-	{
-		return;
-	}
+	method(self_in_methodWithUnusedConstantInIfNilIfNotNilSendInReceiver, method(self_in_methodWithUnusedConstantInIfNilIfNotNilSendInReceiver));
+	return;
 }'
 ]
 
@@ -2811,9 +2689,7 @@ SLDeadCodeEliminationTest >> testMethodWithUnusedConstantInIfNilNoSendInReceiver
 static void
 methodWithUnusedConstantInIfNilNoSendInReceiver(SLDeadCodeEliminationTestClass * self_in_methodWithUnusedConstantInIfNilNoSendInReceiver)
 {
-	{
-		return;
-	}
+	return;
 }'
 ]
 
@@ -2837,12 +2713,8 @@ SLDeadCodeEliminationTest >> testMethodWithUnusedConstantInIfNilSendInReceiver [
 static void
 methodWithUnusedConstantInIfNilSendInReceiver(SLDeadCodeEliminationTestClass * self_in_methodWithUnusedConstantInIfNilSendInReceiver)
 {
-	{
-		method(self_in_methodWithUnusedConstantInIfNilSendInReceiver, method(self_in_methodWithUnusedConstantInIfNilSendInReceiver));
-	}
-	{
-		return;
-	}
+	method(self_in_methodWithUnusedConstantInIfNilSendInReceiver, method(self_in_methodWithUnusedConstantInIfNilSendInReceiver));
+	return;
 }'
 ]
 
@@ -2866,9 +2738,7 @@ SLDeadCodeEliminationTest >> testMethodWithUnusedConstantInIfNotNilIfNilNoSendIn
 static void
 methodWithUnusedConstantInIfNotNilIfNilNoSendInReceiver(SLDeadCodeEliminationTestClass * self_in_methodWithUnusedConstantInIfNotNilIfNilNoSendInReceiver)
 {
-	{
-		return;
-	}
+	return;
 }'
 ]
 
@@ -2892,12 +2762,8 @@ SLDeadCodeEliminationTest >> testMethodWithUnusedConstantInIfNotNilIfNilSendInRe
 static void
 methodWithUnusedConstantInIfNotNilIfNilSendInReceiver(SLDeadCodeEliminationTestClass * self_in_methodWithUnusedConstantInIfNotNilIfNilSendInReceiver)
 {
-	{
-		method(self_in_methodWithUnusedConstantInIfNotNilIfNilSendInReceiver, method(self_in_methodWithUnusedConstantInIfNotNilIfNilSendInReceiver));
-	}
-	{
-		return;
-	}
+	method(self_in_methodWithUnusedConstantInIfNotNilIfNilSendInReceiver, method(self_in_methodWithUnusedConstantInIfNotNilIfNilSendInReceiver));
+	return;
 }'
 ]
 
@@ -2921,9 +2787,7 @@ SLDeadCodeEliminationTest >> testMethodWithUnusedConstantInIfNotNilNoSendInRecei
 static void
 methodWithUnusedConstantInIfNotNilNoSendInReceiver(SLDeadCodeEliminationTestClass * self_in_methodWithUnusedConstantInIfNotNilNoSendInReceiver)
 {
-	{
-		return;
-	}
+	return;
 }'
 ]
 
@@ -2947,12 +2811,8 @@ SLDeadCodeEliminationTest >> testMethodWithUnusedConstantInIfNotNilSendInReceive
 static void
 methodWithUnusedConstantInIfNotNilSendInReceiver(SLDeadCodeEliminationTestClass * self_in_methodWithUnusedConstantInIfNotNilSendInReceiver)
 {
-	{
-		method(self_in_methodWithUnusedConstantInIfNotNilSendInReceiver, method(self_in_methodWithUnusedConstantInIfNotNilSendInReceiver));
-	}
-	{
-		return;
-	}
+	method(self_in_methodWithUnusedConstantInIfNotNilSendInReceiver, method(self_in_methodWithUnusedConstantInIfNotNilSendInReceiver));
+	return;
 }'
 ]
 
@@ -2976,9 +2836,7 @@ SLDeadCodeEliminationTest >> testMethodWithUnusedConstantInIfTrueIfFalseNoSendIn
 static void
 methodWithUnusedConstantInIfTrueIfFalseNoSendInReceiver(SLDeadCodeEliminationTestClass * self_in_methodWithUnusedConstantInIfTrueIfFalseNoSendInReceiver)
 {
-	{
-		return;
-	}
+	return;
 }'
 ]
 
@@ -3002,14 +2860,10 @@ SLDeadCodeEliminationTest >> testMethodWithUnusedConstantInIfTrueIfFalseSendInRe
 static void
 methodWithUnusedConstantInIfTrueIfFalseSendInReceiver(SLDeadCodeEliminationTestClass * self_in_methodWithUnusedConstantInIfTrueIfFalseSendInReceiver)
 {
-	{
-		method(self_in_methodWithUnusedConstantInIfTrueIfFalseSendInReceiver);
-		method(self_in_methodWithUnusedConstantInIfTrueIfFalseSendInReceiver, 3);
-		method(self_in_methodWithUnusedConstantInIfTrueIfFalseSendInReceiver, method(self_in_methodWithUnusedConstantInIfTrueIfFalseSendInReceiver));
-	}
-	{
-		return;
-	}
+	method(self_in_methodWithUnusedConstantInIfTrueIfFalseSendInReceiver);
+	method(self_in_methodWithUnusedConstantInIfTrueIfFalseSendInReceiver, 3);
+	method(self_in_methodWithUnusedConstantInIfTrueIfFalseSendInReceiver, method(self_in_methodWithUnusedConstantInIfTrueIfFalseSendInReceiver));
+	return;
 }'
 ]
 
@@ -3033,9 +2887,7 @@ SLDeadCodeEliminationTest >> testMethodWithUnusedConstantInIfTrueNoSendInReceive
 static void
 methodWithUnusedConstantInIfTrueNoSendInReceiver(SLDeadCodeEliminationTestClass * self_in_methodWithUnusedConstantInIfTrueNoSendInReceiver)
 {
-	{
-		return;
-	}
+	return;
 }'
 ]
 
@@ -3059,14 +2911,10 @@ SLDeadCodeEliminationTest >> testMethodWithUnusedConstantInIfTrueSendInReceiver 
 static void
 methodWithUnusedConstantInIfTrueSendInReceiver(SLDeadCodeEliminationTestClass * self_in_methodWithUnusedConstantInIfTrueSendInReceiver)
 {
-	{
-		method(self_in_methodWithUnusedConstantInIfTrueSendInReceiver);
-		method(self_in_methodWithUnusedConstantInIfTrueSendInReceiver, 3);
-		method(self_in_methodWithUnusedConstantInIfTrueSendInReceiver, method(self_in_methodWithUnusedConstantInIfTrueSendInReceiver));
-	}
-	{
-		return;
-	}
+	method(self_in_methodWithUnusedConstantInIfTrueSendInReceiver);
+	method(self_in_methodWithUnusedConstantInIfTrueSendInReceiver, 3);
+	method(self_in_methodWithUnusedConstantInIfTrueSendInReceiver, method(self_in_methodWithUnusedConstantInIfTrueSendInReceiver));
+	return;
 }'
 ]
 
@@ -3168,9 +3016,7 @@ SLDeadCodeEliminationTest >> testMethodWithUnusedInstanceVariable [
 static void
 methodWithUnusedInstanceVariable(SLDeadCodeEliminationTestClass * self_in_methodWithUnusedInstanceVariable)
 {
-	{
-		return;
-	}
+	return;
 }'
 ]
 
@@ -3372,9 +3218,7 @@ SLDeadCodeEliminationTest >> testMethodWithUnusedInstanceVariableInCaseOfAndUnus
 static sqInt
 methodWithUnusedInstanceVariableInCaseOfAndUnusedInstanceVariableInOtherwiseSendInExpression(SLDeadCodeEliminationTestClass * self_in_methodWithUnusedInstanceVariableInCaseOfAndUnusedInstanceVariableInOtherwiseSendInExpression)
 {
-	{
-		method(self_in_methodWithUnusedInstanceVariableInCaseOfAndUnusedInstanceVariableInOtherwiseSendInExpression, 3);
-	}
+	method(self_in_methodWithUnusedInstanceVariableInCaseOfAndUnusedInstanceVariableInOtherwiseSendInExpression, 3);
 	return 0;
 }'
 ]
@@ -3409,9 +3253,7 @@ methodWithUnusedInstanceVariableInCaseOfNoSendInExpression(SLDeadCodeElimination
 		default:
 		error("Case not found and no otherwise clause");
 	}
-	{
-		return;
-	}
+	return;
 }'
 ]
 
@@ -3446,9 +3288,7 @@ methodWithUnusedInstanceVariableInCaseOfSendInExpression(SLDeadCodeEliminationTe
 		default:
 		error("Case not found and no otherwise clause");
 	}
-	{
-		return;
-	}
+	return;
 }'
 ]
 
@@ -3471,9 +3311,7 @@ SLDeadCodeEliminationTest >> testMethodWithUnusedInstanceVariableInCoerce [
 static void
 methodWithUnusedInstanceVariableInCoerce(SLDeadCodeEliminationTestClass * self_in_methodWithUnusedInstanceVariableInCoerce)
 {
-	{
-		return;
-	}
+	return;
 }'
 ]
 
@@ -3497,9 +3335,7 @@ SLDeadCodeEliminationTest >> testMethodWithUnusedInstanceVariableInIfFalseIfTrue
 static void
 methodWithUnusedInstanceVariableInIfFalseIfTrueNoSendInReceiver(SLDeadCodeEliminationTestClass * self_in_methodWithUnusedInstanceVariableInIfFalseIfTrueNoSendInReceiver)
 {
-	{
-		return;
-	}
+	return;
 }'
 ]
 
@@ -3523,14 +3359,10 @@ SLDeadCodeEliminationTest >> testMethodWithUnusedInstanceVariableInIfFalseIfTrue
 static void
 methodWithUnusedInstanceVariableInIfFalseIfTrueSendInReceiver(SLDeadCodeEliminationTestClass * self_in_methodWithUnusedInstanceVariableInIfFalseIfTrueSendInReceiver)
 {
-	{
-		method(self_in_methodWithUnusedInstanceVariableInIfFalseIfTrueSendInReceiver);
-		method(self_in_methodWithUnusedInstanceVariableInIfFalseIfTrueSendInReceiver, 3);
-		method(self_in_methodWithUnusedInstanceVariableInIfFalseIfTrueSendInReceiver, method(self_in_methodWithUnusedInstanceVariableInIfFalseIfTrueSendInReceiver));
-	}
-	{
-		return;
-	}
+	method(self_in_methodWithUnusedInstanceVariableInIfFalseIfTrueSendInReceiver);
+	method(self_in_methodWithUnusedInstanceVariableInIfFalseIfTrueSendInReceiver, 3);
+	method(self_in_methodWithUnusedInstanceVariableInIfFalseIfTrueSendInReceiver, method(self_in_methodWithUnusedInstanceVariableInIfFalseIfTrueSendInReceiver));
+	return;
 }'
 ]
 
@@ -3554,9 +3386,7 @@ SLDeadCodeEliminationTest >> testMethodWithUnusedInstanceVariableInIfFalseNoSend
 static void
 methodWithUnusedInstanceVariableInIfFalseNoSendInReceiver(SLDeadCodeEliminationTestClass * self_in_methodWithUnusedInstanceVariableInIfFalseNoSendInReceiver)
 {
-	{
-		return;
-	}
+	return;
 }'
 ]
 
@@ -3580,14 +3410,10 @@ SLDeadCodeEliminationTest >> testMethodWithUnusedInstanceVariableInIfFalseSendIn
 static void
 methodWithUnusedInstanceVariableInIfFalseSendInReceiver(SLDeadCodeEliminationTestClass * self_in_methodWithUnusedInstanceVariableInIfFalseSendInReceiver)
 {
-	{
-		method(self_in_methodWithUnusedInstanceVariableInIfFalseSendInReceiver);
-		method(self_in_methodWithUnusedInstanceVariableInIfFalseSendInReceiver, 3);
-		method(self_in_methodWithUnusedInstanceVariableInIfFalseSendInReceiver, method(self_in_methodWithUnusedInstanceVariableInIfFalseSendInReceiver));
-	}
-	{
-		return;
-	}
+	method(self_in_methodWithUnusedInstanceVariableInIfFalseSendInReceiver);
+	method(self_in_methodWithUnusedInstanceVariableInIfFalseSendInReceiver, 3);
+	method(self_in_methodWithUnusedInstanceVariableInIfFalseSendInReceiver, method(self_in_methodWithUnusedInstanceVariableInIfFalseSendInReceiver));
+	return;
 }'
 ]
 
@@ -3611,9 +3437,7 @@ SLDeadCodeEliminationTest >> testMethodWithUnusedInstanceVariableInIfNilIfNotNil
 static void
 methodWithUnusedInstanceVariableInIfNilIfNotNilNoSendInReceiver(SLDeadCodeEliminationTestClass * self_in_methodWithUnusedInstanceVariableInIfNilIfNotNilNoSendInReceiver)
 {
-	{
-		return;
-	}
+	return;
 }'
 ]
 
@@ -3637,12 +3461,8 @@ SLDeadCodeEliminationTest >> testMethodWithUnusedInstanceVariableInIfNilIfNotNil
 static void
 methodWithUnusedInstanceVariableInIfNilIfNotNilSendInReceiver(SLDeadCodeEliminationTestClass * self_in_methodWithUnusedInstanceVariableInIfNilIfNotNilSendInReceiver)
 {
-	{
-		method(self_in_methodWithUnusedInstanceVariableInIfNilIfNotNilSendInReceiver, method(self_in_methodWithUnusedInstanceVariableInIfNilIfNotNilSendInReceiver));
-	}
-	{
-		return;
-	}
+	method(self_in_methodWithUnusedInstanceVariableInIfNilIfNotNilSendInReceiver, method(self_in_methodWithUnusedInstanceVariableInIfNilIfNotNilSendInReceiver));
+	return;
 }'
 ]
 
@@ -3666,9 +3486,7 @@ SLDeadCodeEliminationTest >> testMethodWithUnusedInstanceVariableInIfNilNoSendIn
 static void
 methodWithUnusedInstanceVariableInIfNilNoSendInReceiver(SLDeadCodeEliminationTestClass * self_in_methodWithUnusedInstanceVariableInIfNilNoSendInReceiver)
 {
-	{
-		return;
-	}
+	return;
 }'
 ]
 
@@ -3692,12 +3510,8 @@ SLDeadCodeEliminationTest >> testMethodWithUnusedInstanceVariableInIfNilSendInRe
 static void
 methodWithUnusedInstanceVariableInIfNilSendInReceiver(SLDeadCodeEliminationTestClass * self_in_methodWithUnusedInstanceVariableInIfNilSendInReceiver)
 {
-	{
-		method(self_in_methodWithUnusedInstanceVariableInIfNilSendInReceiver, method(self_in_methodWithUnusedInstanceVariableInIfNilSendInReceiver));
-	}
-	{
-		return;
-	}
+	method(self_in_methodWithUnusedInstanceVariableInIfNilSendInReceiver, method(self_in_methodWithUnusedInstanceVariableInIfNilSendInReceiver));
+	return;
 }'
 ]
 
@@ -3721,9 +3535,7 @@ SLDeadCodeEliminationTest >> testMethodWithUnusedInstanceVariableInIfNotNilIfNil
 static void
 methodWithUnusedInstanceVariableInIfNotNilIfNilNoSendInReceiver(SLDeadCodeEliminationTestClass * self_in_methodWithUnusedInstanceVariableInIfNotNilIfNilNoSendInReceiver)
 {
-	{
-		return;
-	}
+	return;
 }'
 ]
 
@@ -3747,12 +3559,8 @@ SLDeadCodeEliminationTest >> testMethodWithUnusedInstanceVariableInIfNotNilIfNil
 static void
 methodWithUnusedInstanceVariableInIfNotNilIfNilSendInReceiver(SLDeadCodeEliminationTestClass * self_in_methodWithUnusedInstanceVariableInIfNotNilIfNilSendInReceiver)
 {
-	{
-		method(self_in_methodWithUnusedInstanceVariableInIfNotNilIfNilSendInReceiver, method(self_in_methodWithUnusedInstanceVariableInIfNotNilIfNilSendInReceiver));
-	}
-	{
-		return;
-	}
+	method(self_in_methodWithUnusedInstanceVariableInIfNotNilIfNilSendInReceiver, method(self_in_methodWithUnusedInstanceVariableInIfNotNilIfNilSendInReceiver));
+	return;
 }'
 ]
 
@@ -3776,9 +3584,7 @@ SLDeadCodeEliminationTest >> testMethodWithUnusedInstanceVariableInIfNotNilNoSen
 static void
 methodWithUnusedInstanceVariableInIfNotNilNoSendInReceiver(SLDeadCodeEliminationTestClass * self_in_methodWithUnusedInstanceVariableInIfNotNilNoSendInReceiver)
 {
-	{
-		return;
-	}
+	return;
 }'
 ]
 
@@ -3801,12 +3607,8 @@ SLDeadCodeEliminationTest >> testMethodWithUnusedInstanceVariableInIfNotNilSendI
 static void
 methodWithUnusedInstanceVariableInIfNotNilSendInReceiver(SLDeadCodeEliminationTestClass * self_in_methodWithUnusedInstanceVariableInIfNotNilSendInReceiver)
 {
-	{
-		method(self_in_methodWithUnusedInstanceVariableInIfNotNilSendInReceiver, method(self_in_methodWithUnusedInstanceVariableInIfNotNilSendInReceiver));
-	}
-	{
-		return;
-	}
+	method(self_in_methodWithUnusedInstanceVariableInIfNotNilSendInReceiver, method(self_in_methodWithUnusedInstanceVariableInIfNotNilSendInReceiver));
+	return;
 }'
 ]
 
@@ -3830,9 +3632,7 @@ SLDeadCodeEliminationTest >> testMethodWithUnusedInstanceVariableInIfTrueIfFalse
 static void
 methodWithUnusedInstanceVariableInIfTrueIfFalseNoSendInReceiver(SLDeadCodeEliminationTestClass * self_in_methodWithUnusedInstanceVariableInIfTrueIfFalseNoSendInReceiver)
 {
-	{
-		return;
-	}
+	return;
 }'
 ]
 
@@ -3856,14 +3656,10 @@ SLDeadCodeEliminationTest >> testMethodWithUnusedInstanceVariableInIfTrueIfFalse
 static void
 methodWithUnusedInstanceVariableInIfTrueIfFalseSendInReceiver(SLDeadCodeEliminationTestClass * self_in_methodWithUnusedInstanceVariableInIfTrueIfFalseSendInReceiver)
 {
-	{
-		method(self_in_methodWithUnusedInstanceVariableInIfTrueIfFalseSendInReceiver);
-		method(self_in_methodWithUnusedInstanceVariableInIfTrueIfFalseSendInReceiver, 3);
-		method(self_in_methodWithUnusedInstanceVariableInIfTrueIfFalseSendInReceiver, method(self_in_methodWithUnusedInstanceVariableInIfTrueIfFalseSendInReceiver));
-	}
-	{
-		return;
-	}
+	method(self_in_methodWithUnusedInstanceVariableInIfTrueIfFalseSendInReceiver);
+	method(self_in_methodWithUnusedInstanceVariableInIfTrueIfFalseSendInReceiver, 3);
+	method(self_in_methodWithUnusedInstanceVariableInIfTrueIfFalseSendInReceiver, method(self_in_methodWithUnusedInstanceVariableInIfTrueIfFalseSendInReceiver));
+	return;
 }'
 ]
 
@@ -3887,9 +3683,7 @@ SLDeadCodeEliminationTest >> testMethodWithUnusedInstanceVariableInIfTrueNoSendI
 static void
 methodWithUnusedInstanceVariableInIfTrueNoSendInReceiver(SLDeadCodeEliminationTestClass * self_in_methodWithUnusedInstanceVariableInIfTrueNoSendInReceiver)
 {
-	{
-		return;
-	}
+	return;
 }'
 ]
 
@@ -3913,14 +3707,10 @@ SLDeadCodeEliminationTest >> testMethodWithUnusedInstanceVariableInIfTrueSendInR
 static void
 methodWithUnusedInstanceVariableInIfTrueSendInReceiver(SLDeadCodeEliminationTestClass * self_in_methodWithUnusedInstanceVariableInIfTrueSendInReceiver)
 {
-	{
-		method(self_in_methodWithUnusedInstanceVariableInIfTrueSendInReceiver);
-		method(self_in_methodWithUnusedInstanceVariableInIfTrueSendInReceiver, 3);
-		method(self_in_methodWithUnusedInstanceVariableInIfTrueSendInReceiver, method(self_in_methodWithUnusedInstanceVariableInIfTrueSendInReceiver));
-	}
-	{
-		return;
-	}
+	method(self_in_methodWithUnusedInstanceVariableInIfTrueSendInReceiver);
+	method(self_in_methodWithUnusedInstanceVariableInIfTrueSendInReceiver, 3);
+	method(self_in_methodWithUnusedInstanceVariableInIfTrueSendInReceiver, method(self_in_methodWithUnusedInstanceVariableInIfTrueSendInReceiver));
+	return;
 }'
 ]
 
@@ -3953,17 +3743,13 @@ methodWithUnusedInstanceVariableReturnInCaseOfAndUnusedInstanceVariableInOtherwi
 		break;
 		case 6:
 		{
-			{
-				return;
-			}
+			return;
 		}
 		default:
 		{
 		}
 	}
-	{
-		return;
-	}
+	return;
 }'
 ]
 
@@ -3996,17 +3782,13 @@ methodWithUnusedInstanceVariableReturnInCaseOfAndUnusedInstanceVariableInOtherwi
 		break;
 		case 6:
 		{
-			{
-				return;
-			}
+			return;
 		}
 		default:
 		{
 		}
 	}
-	{
-		return;
-	}
+	return;
 }'
 ]
 
@@ -4030,9 +3812,7 @@ SLDeadCodeEliminationTest >> testMethodWithUnusedVariable [
 static void
 methodWithUnusedVariable(SLDeadCodeEliminationTestClass * self_in_methodWithUnusedVariable)
 {
-	{
-		return;
-	}
+	return;
 }'
 ]
 
@@ -4221,9 +4001,7 @@ SLDeadCodeEliminationTest >> testMethodWithUnusedVariableInCaseOfAndUnusedVariab
 static void
 methodWithUnusedVariableInCaseOfAndUnusedVariableInOtherwiseNoSendInExpression(SLDeadCodeEliminationTestClass * self_in_methodWithUnusedVariableInCaseOfAndUnusedVariableInOtherwiseNoSendInExpression, sqInt anInt)
 {
-	{
-		return;
-	}
+	return;
 }'
 ]
 
@@ -4249,12 +4027,8 @@ SLDeadCodeEliminationTest >> testMethodWithUnusedVariableInCaseOfAndUnusedVariab
 static void
 methodWithUnusedVariableInCaseOfAndUnusedVariableInOtherwiseSendInExpression(SLDeadCodeEliminationTestClass * self_in_methodWithUnusedVariableInCaseOfAndUnusedVariableInOtherwiseSendInExpression)
 {
-	{
-		method(self_in_methodWithUnusedVariableInCaseOfAndUnusedVariableInOtherwiseSendInExpression, 3);
-	}
-	{
-		return;
-	}
+	method(self_in_methodWithUnusedVariableInCaseOfAndUnusedVariableInOtherwiseSendInExpression, 3);
+	return;
 }'
 ]
 
@@ -4289,9 +4063,7 @@ methodWithUnusedVariableInCaseOfNoSendInExpression(SLDeadCodeEliminationTestClas
 		default:
 		error("Case not found and no otherwise clause");
 	}
-	{
-		return;
-	}
+	return;
 }'
 ]
 
@@ -4325,9 +4097,7 @@ methodWithUnusedVariableInCaseOfSendInExpression(SLDeadCodeEliminationTestClass 
 		default:
 		error("Case not found and no otherwise clause");
 	}
-	{
-		return;
-	}
+	return;
 }'
 ]
 
@@ -4350,9 +4120,7 @@ SLDeadCodeEliminationTest >> testMethodWithUnusedVariableInCoerce [
 static void
 methodWithUnusedVariableInCoerce(SLDeadCodeEliminationTestClass * self_in_methodWithUnusedVariableInCoerce)
 {
-	{
-		return;
-	}
+	return;
 }'
 ]
 
@@ -4376,9 +4144,7 @@ SLDeadCodeEliminationTest >> testMethodWithUnusedVariableInIfFalseIfTrueNoSendIn
 static void
 methodWithUnusedVariableInIfFalseIfTrueNoSendInReceiver(SLDeadCodeEliminationTestClass * self_in_methodWithUnusedVariableInIfFalseIfTrueNoSendInReceiver)
 {
-	{
-		return;
-	}
+	return;
 }'
 ]
 
@@ -4402,14 +4168,10 @@ SLDeadCodeEliminationTest >> testMethodWithUnusedVariableInIfFalseIfTrueSendInRe
 static void
 methodWithUnusedVariableInIfFalseIfTrueSendInReceiver(SLDeadCodeEliminationTestClass * self_in_methodWithUnusedVariableInIfFalseIfTrueSendInReceiver)
 {
-	{
-		method(self_in_methodWithUnusedVariableInIfFalseIfTrueSendInReceiver);
-		method(self_in_methodWithUnusedVariableInIfFalseIfTrueSendInReceiver, 3);
-		method(self_in_methodWithUnusedVariableInIfFalseIfTrueSendInReceiver, method(self_in_methodWithUnusedVariableInIfFalseIfTrueSendInReceiver));
-	}
-	{
-		return;
-	}
+	method(self_in_methodWithUnusedVariableInIfFalseIfTrueSendInReceiver);
+	method(self_in_methodWithUnusedVariableInIfFalseIfTrueSendInReceiver, 3);
+	method(self_in_methodWithUnusedVariableInIfFalseIfTrueSendInReceiver, method(self_in_methodWithUnusedVariableInIfFalseIfTrueSendInReceiver));
+	return;
 }'
 ]
 
@@ -4433,9 +4195,7 @@ SLDeadCodeEliminationTest >> testMethodWithUnusedVariableInIfFalseNoSendInReceiv
 static void
 methodWithUnusedVariableInIfFalseNoSendInReceiver(SLDeadCodeEliminationTestClass * self_in_methodWithUnusedVariableInIfFalseNoSendInReceiver)
 {
-	{
-		return;
-	}
+	return;
 }'
 ]
 
@@ -4459,14 +4219,10 @@ SLDeadCodeEliminationTest >> testMethodWithUnusedVariableInIfFalseSendInReceiver
 static void
 methodWithUnusedVariableInIfFalseSendInReceiver(SLDeadCodeEliminationTestClass * self_in_methodWithUnusedVariableInIfFalseSendInReceiver)
 {
-	{
-		method(self_in_methodWithUnusedVariableInIfFalseSendInReceiver);
-		method(self_in_methodWithUnusedVariableInIfFalseSendInReceiver, 3);
-		method(self_in_methodWithUnusedVariableInIfFalseSendInReceiver, method(self_in_methodWithUnusedVariableInIfFalseSendInReceiver));
-	}
-	{
-		return;
-	}
+	method(self_in_methodWithUnusedVariableInIfFalseSendInReceiver);
+	method(self_in_methodWithUnusedVariableInIfFalseSendInReceiver, 3);
+	method(self_in_methodWithUnusedVariableInIfFalseSendInReceiver, method(self_in_methodWithUnusedVariableInIfFalseSendInReceiver));
+	return;
 }'
 ]
 
@@ -4491,9 +4247,7 @@ SLDeadCodeEliminationTest >> testMethodWithUnusedVariableInIfNilIfNotNilNoSendIn
 static void
 methodWithUnusedVariableInIfNilIfNotNilNoSendInReceiver(SLDeadCodeEliminationTestClass * self_in_methodWithUnusedVariableInIfNilIfNotNilNoSendInReceiver)
 {
-	{
-		return;
-	}
+	return;
 }'
 ]
 
@@ -4517,12 +4271,8 @@ SLDeadCodeEliminationTest >> testMethodWithUnusedVariableInIfNilIfNotNilSendInRe
 static void
 methodWithUnusedVariableInIfNilIfNotNilSendInReceiver(SLDeadCodeEliminationTestClass * self_in_methodWithUnusedVariableInIfNilIfNotNilSendInReceiver)
 {
-	{
-		method(self_in_methodWithUnusedVariableInIfNilIfNotNilSendInReceiver, method(self_in_methodWithUnusedVariableInIfNilIfNotNilSendInReceiver));
-	}
-	{
-		return;
-	}
+	method(self_in_methodWithUnusedVariableInIfNilIfNotNilSendInReceiver, method(self_in_methodWithUnusedVariableInIfNilIfNotNilSendInReceiver));
+	return;
 }'
 ]
 
@@ -4546,9 +4296,7 @@ SLDeadCodeEliminationTest >> testMethodWithUnusedVariableInIfNilNoSendInReceiver
 static void
 methodWithUnusedVariableInIfNilNoSendInReceiver(SLDeadCodeEliminationTestClass * self_in_methodWithUnusedVariableInIfNilNoSendInReceiver)
 {
-	{
-		return;
-	}
+	return;
 }'
 ]
 
@@ -4572,12 +4320,8 @@ SLDeadCodeEliminationTest >> testMethodWithUnusedVariableInIfNilSendInReceiver [
 static void
 methodWithUnusedVariableInIfNilSendInReceiver(SLDeadCodeEliminationTestClass * self_in_methodWithUnusedVariableInIfNilSendInReceiver)
 {
-	{
-		method(self_in_methodWithUnusedVariableInIfNilSendInReceiver, method(self_in_methodWithUnusedVariableInIfNilSendInReceiver));
-	}
-	{
-		return;
-	}
+	method(self_in_methodWithUnusedVariableInIfNilSendInReceiver, method(self_in_methodWithUnusedVariableInIfNilSendInReceiver));
+	return;
 }'
 ]
 
@@ -4601,9 +4345,7 @@ SLDeadCodeEliminationTest >> testMethodWithUnusedVariableInIfNotNilIfNilNoSendIn
 static void
 methodWithUnusedVariableInIfNotNilIfNilNoSendInReceiver(SLDeadCodeEliminationTestClass * self_in_methodWithUnusedVariableInIfNotNilIfNilNoSendInReceiver)
 {
-	{
-		return;
-	}
+	return;
 }'
 ]
 
@@ -4627,12 +4369,8 @@ SLDeadCodeEliminationTest >> testMethodWithUnusedVariableInIfNotNilIfNilSendInRe
 static void
 methodWithUnusedVariableInIfNotNilIfNilSendInReceiver(SLDeadCodeEliminationTestClass * self_in_methodWithUnusedVariableInIfNotNilIfNilSendInReceiver)
 {
-	{
-		method(self_in_methodWithUnusedVariableInIfNotNilIfNilSendInReceiver, method(self_in_methodWithUnusedVariableInIfNotNilIfNilSendInReceiver));
-	}
-	{
-		return;
-	}
+	method(self_in_methodWithUnusedVariableInIfNotNilIfNilSendInReceiver, method(self_in_methodWithUnusedVariableInIfNotNilIfNilSendInReceiver));
+	return;
 }'
 ]
 
@@ -4656,9 +4394,7 @@ SLDeadCodeEliminationTest >> testMethodWithUnusedVariableInIfNotNilNoSendInRecei
 static void
 methodWithUnusedVariableInIfNotNilNoSendInReceiver(SLDeadCodeEliminationTestClass * self_in_methodWithUnusedVariableInIfNotNilNoSendInReceiver)
 {
-	{
-		return;
-	}
+	return;
 }'
 ]
 
@@ -4682,12 +4418,8 @@ SLDeadCodeEliminationTest >> testMethodWithUnusedVariableInIfNotNilSendInReceive
 static void
 methodWithUnusedVariableInIfNotNilSendInReceiver(SLDeadCodeEliminationTestClass * self_in_methodWithUnusedVariableInIfNotNilSendInReceiver)
 {
-	{
-		method(self_in_methodWithUnusedVariableInIfNotNilSendInReceiver, method(self_in_methodWithUnusedVariableInIfNotNilSendInReceiver));
-	}
-	{
-		return;
-	}
+	method(self_in_methodWithUnusedVariableInIfNotNilSendInReceiver, method(self_in_methodWithUnusedVariableInIfNotNilSendInReceiver));
+	return;
 }'
 ]
 
@@ -4711,9 +4443,7 @@ SLDeadCodeEliminationTest >> testMethodWithUnusedVariableInIfTrueIfFalseNoSendIn
 static void
 methodWithUnusedVariableInIfTrueIfFalseNoSendInReceiver(SLDeadCodeEliminationTestClass * self_in_methodWithUnusedVariableInIfTrueIfFalseNoSendInReceiver)
 {
-	{
-		return;
-	}
+	return;
 }'
 ]
 
@@ -4737,14 +4467,10 @@ SLDeadCodeEliminationTest >> testMethodWithUnusedVariableInIfTrueIfFalseSendInRe
 static void
 methodWithUnusedVariableInIfTrueIfFalseSendInReceiver(SLDeadCodeEliminationTestClass * self_in_methodWithUnusedVariableInIfTrueIfFalseSendInReceiver)
 {
-	{
-		method(self_in_methodWithUnusedVariableInIfTrueIfFalseSendInReceiver);
-		method(self_in_methodWithUnusedVariableInIfTrueIfFalseSendInReceiver, 3);
-		method(self_in_methodWithUnusedVariableInIfTrueIfFalseSendInReceiver, method(self_in_methodWithUnusedVariableInIfTrueIfFalseSendInReceiver));
-	}
-	{
-		return;
-	}
+	method(self_in_methodWithUnusedVariableInIfTrueIfFalseSendInReceiver);
+	method(self_in_methodWithUnusedVariableInIfTrueIfFalseSendInReceiver, 3);
+	method(self_in_methodWithUnusedVariableInIfTrueIfFalseSendInReceiver, method(self_in_methodWithUnusedVariableInIfTrueIfFalseSendInReceiver));
+	return;
 }'
 ]
 
@@ -4768,9 +4494,7 @@ SLDeadCodeEliminationTest >> testMethodWithUnusedVariableInIfTrueNoSendInReceive
 static void
 methodWithUnusedVariableInIfTrueNoSendInReceiver(SLDeadCodeEliminationTestClass * self_in_methodWithUnusedVariableInIfTrueNoSendInReceiver)
 {
-	{
-		return;
-	}
+	return;
 }'
 ]
 
@@ -4794,14 +4518,10 @@ SLDeadCodeEliminationTest >> testMethodWithUnusedVariableInIfTrueSendInReceiver 
 static void
 methodWithUnusedVariableInIfTrueSendInReceiver(SLDeadCodeEliminationTestClass * self_in_methodWithUnusedVariableInIfTrueSendInReceiver)
 {
-	{
-		method(self_in_methodWithUnusedVariableInIfTrueSendInReceiver);
-		method(self_in_methodWithUnusedVariableInIfTrueSendInReceiver, 3);
-		method(self_in_methodWithUnusedVariableInIfTrueSendInReceiver, method(self_in_methodWithUnusedVariableInIfTrueSendInReceiver));
-	}
-	{
-		return;
-	}
+	method(self_in_methodWithUnusedVariableInIfTrueSendInReceiver);
+	method(self_in_methodWithUnusedVariableInIfTrueSendInReceiver, 3);
+	method(self_in_methodWithUnusedVariableInIfTrueSendInReceiver, method(self_in_methodWithUnusedVariableInIfTrueSendInReceiver));
+	return;
 }'
 ]
 
@@ -5211,9 +4931,7 @@ SLDeadCodeEliminationTest >> testSwitchWithOnlyCommentNoSendInReceiver [
 static void
 switchWithOnlyCommentNoSendInReceiver(SLDeadCodeEliminationTestClass * self_in_switchWithOnlyCommentNoSendInReceiver, sqInt _anInt)
 {
-	{
-		return;
-	}
+	return;
 }'
 ]
 
@@ -5240,11 +4958,7 @@ SLDeadCodeEliminationTest >> testSwitchWithOnlyCommentSendInReceiver [
 static void
 switchWithOnlyCommentSendInReceiver(SLDeadCodeEliminationTestClass * self_in_switchWithOnlyCommentSendInReceiver)
 {
-	{
-		method(self_in_switchWithOnlyCommentSendInReceiver, method(self_in_switchWithOnlyCommentSendInReceiver));
-	}
-	{
-		return;
-	}
+	method(self_in_switchWithOnlyCommentSendInReceiver, method(self_in_switchWithOnlyCommentSendInReceiver));
+	return;
 }'
 ]

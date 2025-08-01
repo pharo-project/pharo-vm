@@ -25,7 +25,7 @@ SLASTTransformationTest >> testMethodWithBlockValue [
 	| translation tMethod |
 	tMethod := ccg methodNamed: #methodWithBlockValue.
 
-	sLExpandASTVisitor currentMethod: tMethod .
+	sLExpandASTVisitor currentMethod: tMethod.
 	sLExpandASTVisitor expandASTInCurrentMethod.
 
 	translation := self translate: tMethod.
@@ -39,9 +39,7 @@ methodWithBlockValue(void)
 {
 	sqInt arg;
 
-	{
-		2 + 1;
-	}
+	2 + 1;
 	return 0;
 }'
 ]
@@ -68,9 +66,7 @@ methodWithBlockValueValue(void)
 	sqInt arg1;
 	sqInt arg2;
 
-	{
-		2 + 3;
-	}
+	2 + 3;
 	return 0;
 }'
 ]
@@ -126,10 +122,8 @@ methodWithBockValueInAssignment(void)
 	sqInt arg;
 	sqInt var;
 
-	{
-		emptyMethod(1);
-		var = 5;
-	}
+	emptyMethod(1);
+	var = 5;
 	return 0;
 }'
 ]
@@ -157,11 +151,9 @@ methodWithBockValueValueInAssignment(void)
 	sqInt arg2;
 	sqInt var;
 
-	{
-		emptyMethod(1);
-		emptyMethod(2);
-		var = 5;
-	}
+	emptyMethod(1);
+	emptyMethod(2);
+	var = 5;
 	return 0;
 }'
 ]
