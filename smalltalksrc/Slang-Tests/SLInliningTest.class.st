@@ -30,9 +30,8 @@ SLInliningTest >> inliningStrategy: aString [
 SLInliningTest >> test2ChainInlining [
 
 	| method translation |
-	ccg doBasicInlining: true.
-
-	method := ccg methodNamed: #methodC.
+	method := self addMethodAndMethodCalledBy: #methodC.
+	self doInliningIn: method.
 
 	translation := self translate: method.
 	translation := translation trimBoth.
@@ -58,9 +57,8 @@ methodC(void)
 SLInliningTest >> test2ChainInliningAssignOnReturn [
 
 	| method translation |
-	ccg doBasicInlining: true.
-
-	method := ccg methodNamed: #methodCAssignOnReturn.
+	method := self addMethodAndMethodCalledBy: #methodCAssignOnReturn.
+	self doInliningIn: method.
 
 	translation := self translate: method.
 	translation := translation trimBoth.
@@ -87,9 +85,8 @@ SLInliningTest >> test2ChainInliningEmptyMethodAWithArgumentsInlined [
 	"a bug present since old version, vm works but it would be nice to fix it one day"
 
 	| method translation |
-	ccg doBasicInlining: true.
-
-	method := ccg methodNamed: #emptyMethodAWithArgumentsInlined.
+	method := self addMethodAndMethodCalledBy: #emptyMethodAWithArgumentsInlined.
+	self doInliningIn: method.
 
 	translation := self translate: method.
 	translation := translation trimBoth.
@@ -122,9 +119,9 @@ emptyMethodAWithArgumentsInlined(void)
 SLInliningTest >> test2ChainInliningEmptyMethodAWithSimpleArgumentsInlined [
 
 	| method translation |
-	ccg doBasicInlining: true.
-
-	method := ccg methodNamed: #emptyMethodAWithSimpleArgumentsInlined.
+	method := self addMethodAndMethodCalledBy:
+		          #emptyMethodAWithSimpleArgumentsInlined.
+	self doInliningIn: method.
 
 	translation := self translate: method.
 	translation := translation trimBoth.
@@ -149,9 +146,9 @@ emptyMethodAWithSimpleArgumentsInlined(void)
 SLInliningTest >> test2ChainInliningMethodAWithArgumentsInlined [
 
 	| method translation |
-	ccg doBasicInlining: true.
-
-	method := ccg methodNamed: #methodAWithArgumentsInlined.
+	method := self addMethodAndMethodCalledBy:
+		          #methodAWithArgumentsInlined.
+	self doInliningIn: method.
 
 	translation := self translate: method.
 	translation := translation trimBoth.
@@ -171,9 +168,9 @@ methodAWithArgumentsInlined(void)
 SLInliningTest >> test2ChainInliningMethodAWithReturningSendArgumentsInlined [
 
 	| method translation |
-	ccg doBasicInlining: true.
-
-	method := ccg methodNamed: #methodAWithReturningSendArgumentsInlined.
+	method := self addMethodAndMethodCalledBy:
+		          #methodAWithReturningSendArgumentsInlined.
+	self doInliningIn: method.
 
 	translation := self translate: method.
 	translation := translation trimBoth.
@@ -193,10 +190,9 @@ methodAWithReturningSendArgumentsInlined(void)
 SLInliningTest >> test2ChainInliningMethodAWithReturningSendReturningArgumentsInlined [
 
 	| method translation |
-	ccg doBasicInlining: true.
-
-	method := ccg methodNamed:
+	method := self addMethodAndMethodCalledBy:
 		          #methodAWithReturningSendWithMethodWithMultipleReturnInArgumentsInlined.
+	self doInliningIn: method.
 
 	translation := self translate: method.
 	translation := translation trimBoth.
@@ -216,9 +212,10 @@ methodAWithReturningSendWithMethodWithMultipleReturnInArgumentsInlined(void)
 SLInliningTest >> test2ChainInliningMethodAWithSimpleArgumentsInlined [
 
 	| method translation |
-	ccg doBasicInlining: true.
+	method := self addMethodAndMethodCalledBy:
+		          #methodAWithSimpleArgumentsInlined.
 
-	method := ccg methodNamed: #methodAWithSimpleArgumentsInlined.
+	self doInliningIn: method.
 
 	translation := self translate: method.
 	translation := translation trimBoth.
@@ -239,9 +236,9 @@ methodAWithSimpleArgumentsInlined(void)
 SLInliningTest >> test2ChainInliningMultipleReturn [
 
 	| method translation |
-	ccg doBasicInlining: true.
+	method := self addMethodAndMethodCalledBy: #methodAMultipleReturn.
 
-	method := ccg methodNamed: #methodAMultipleReturn.
+	self doInliningIn: method.
 
 	translation := self translate: method.
 	translation := translation trimBoth.
@@ -276,10 +273,9 @@ methodAMultipleReturn(void)
 SLInliningTest >> test2ChainInliningMultipleReturnAsAssignmentExpression [
 
 	| method translation |
-	ccg doBasicInlining: true.
-
-	method := ccg methodNamed:
+	method := self addMethodAndMethodCalledBy:
 		          #methodAMultipleReturnAsAssignmentExpression.
+	self doInliningIn: method.
 
 	translation := self translate: method.
 	translation := translation trimBoth.
@@ -318,9 +314,9 @@ methodAMultipleReturnAsAssignmentExpression(void)
 SLInliningTest >> test2ChainInliningMultipleReturnAsReturnExpression [
 
 	| method translation |
-	ccg doBasicInlining: true.
-
-	method := ccg methodNamed: #methodAMultipleReturnAsReturnExpression.
+	method := self addMethodAndMethodCalledBy:
+		          #methodAMultipleReturnAsReturnExpression.
+	self doInliningIn: method.
 
 	translation := self translate: method.
 	translation := translation trimBoth.
@@ -353,10 +349,9 @@ methodAMultipleReturnAsReturnExpression(void)
 SLInliningTest >> test2ChainInliningMultipleReturnAsReturnExpressionAndStatement [
 
 	| method translation |
-	ccg doBasicInlining: true.
-
-	method := ccg methodNamed:
+	method := self addMethodAndMethodCalledBy:
 		          #methodAMultipleReturnAsReturnExpressionAndStatement.
+	self doInliningIn: method.
 
 	translation := self translate: method.
 	translation := translation trimBoth.
@@ -385,9 +380,8 @@ methodAMultipleReturnAsReturnExpressionAndStatement(void)
 SLInliningTest >> test2ChainInliningReturnOnAssignment [
 
 	| method translation |
-	ccg doBasicInlining: true.
-
-	method := ccg methodNamed: #methodCReturnOnAssignment.
+	method := self addMethodAndMethodCalledBy: #methodCReturnOnAssignment.
+	self doInliningIn: method.
 
 	translation := self translate: method.
 	translation := translation trimBoth.
@@ -417,9 +411,8 @@ methodCReturnOnAssignment(void)
 SLInliningTest >> test2ChainInliningSimpleReturn [
 
 	| method translation |
-	ccg doBasicInlining: true.
-
-	method := ccg methodNamed: #methodASimpleReturn.
+	method := self addMethodAndMethodCalledBy: #methodASimpleReturn.
+	self doInliningIn: method.
 
 	translation := self translate: method.
 	translation := translation trimBoth.
@@ -443,13 +436,14 @@ SLInliningTest >> testCollectStatementsForInliningInMethodWithAvoidedSelector [
 	"this method collect statements list for inlining, some specific selectors have special comportment regarding inlining strategy like avoiding inlining he receiver or the some arguments"
 
 	| method statementsForInlining |
-	method := ccg methodNamed: #methodWithAvoidedSelectors.
+	method := self addMethodAndMethodCalledBy:
+		          #methodWithAvoidedSelectors.
 	sLInliner currentMethod: method.
 	sLInliner codeGenerator: ccg.
 
 	statementsForInlining := sLInliner
 		                         statementsListsForInliningInCurrentMethod.
-	self assert: statementsForInlining size equals: 6.
+	self assert: statementsForInlining size equals: 6
 ]
 
 { #category : 'inlining-simple' }
@@ -483,10 +477,9 @@ SLInliningTest >> testInlineInSwitchRemovesReturnStatement [
 SLInliningTest >> testMethodAInlineIfFalseReturningIfTrueInAssignement [
 
 	| method translation |
-	ccg doBasicInlining: true.
-
-	method := ccg methodNamed:
+	method := self addMethodAndMethodCalledBy:
 		          #methodAInlineIfFalseReturningIfTrueInAssignement.
+	self doInliningIn: method.
 
 	translation := self translate: method.
 	translation := translation trimBoth.
@@ -518,10 +511,9 @@ methodAInlineIfFalseReturningIfTrueInAssignement(void)
 SLInliningTest >> testMethodAInlineMultipleIfFalseReturningIfTrueInAssignment [
 
 	| method translation |
-	ccg doBasicInlining: true.
-
-	method := ccg methodNamed:
+	method := self addMethodAndMethodCalledBy:
 		          #methodAInlineMultipleIfFalseReturningIfTrueInAssignment.
+	self doInliningIn: method.
 
 	translation := self translate: method.
 	translation := translation trimBoth.
@@ -567,10 +559,9 @@ methodAInlineMultipleIfFalseReturningIfTrueInAssignment(void)
 SLInliningTest >> testMethodAInlineMultipleIfFalseReturningIfTrueInReturn [
 
 	| method translation |
-	ccg doBasicInlining: true.
-
-	method := ccg methodNamed:
+	method := self addMethodAndMethodCalledBy:
 		          #methodAInlineMultipleIfFalseReturningIfTrueInReturn.
+	self doInliningIn: method.
 
 	translation := self translate: method.
 	translation := translation trimBoth.
@@ -607,9 +598,9 @@ methodAInlineMultipleIfFalseReturningIfTrueInReturn(void)
 SLInliningTest >> testMethodAInlineReturningIfTrue [
 
 	| method translation |
-	ccg doBasicInlining: true.
-
-	method := ccg methodNamed: #methodAInlineReturningIfTrueInReturn.
+	method := self addMethodAndMethodCalledBy:
+		          #methodAInlineReturningIfTrueInReturn.
+	self doInliningIn: method.
 
 	translation := self translate: method.
 	translation := translation trimBoth.
@@ -631,10 +622,9 @@ methodAInlineReturningIfTrueInReturn(void)
 SLInliningTest >> testMethodAInlineReturningIfTrueIfFalseInAssignment [
 
 	| method translation |
-	ccg doBasicInlining: true.
-
-	method := ccg methodNamed:
+	method := self addMethodAndMethodCalledBy:
 		          #methodAInlineReturningIfTrueIfFalseInAssignment.
+	self doInliningIn: method.
 
 	translation := self translate: method.
 	translation := translation trimBoth.
@@ -659,10 +649,9 @@ methodAInlineReturningIfTrueIfFalseInAssignment(void)
 SLInliningTest >> testMethodAInlineReturningIfTrueIfFalseInReturn [
 
 	| method translation |
-	ccg doBasicInlining: true.
-
-	method := ccg methodNamed:
+	method := self addMethodAndMethodCalledBy:
 		          #methodAInlineReturningIfTrueIfFalseInReturn.
+	self doInliningIn: method.
 
 	translation := self translate: method.
 	translation := translation trimBoth.
@@ -684,10 +673,9 @@ methodAInlineReturningIfTrueIfFalseInReturn(void)
 SLInliningTest >> testMethodAInlineReturningIfTrueInAssignment [
 
 	| method translation |
-	ccg doBasicInlining: true.
-
-	method := ccg methodNamed:
+	method := self addMethodAndMethodCalledBy:
 		          #methodAInlineReturningIfTrueInAssignment.
+	self doInliningIn: method.
 
 	translation := self translate: method.
 	translation := translation trimBoth.
@@ -712,10 +700,9 @@ methodAInlineReturningIfTrueInAssignment(void)
 SLInliningTest >> testMethodAInlineReturningInlinedIfTrueIfFalseInAssignment [
 
 	| method translation |
-	ccg doBasicInlining: true.
-
-	method := ccg methodNamed:
+	method := self addMethodAndMethodCalledBy:
 		          #methodAInlineReturningInlinedIfTrueIfFalseInAssignment.
+	self doInliningIn: method.
 
 	translation := self translate: method.
 	translation := translation trimBoth.
@@ -749,10 +736,9 @@ methodAInlineReturningInlinedIfTrueIfFalseInAssignment(void)
 SLInliningTest >> testMethodAInlineReturningInlinedIfTrueIfFalseInReturn [
 
 	| method translation |
-	ccg doBasicInlining: true.
-
-	method := ccg methodNamed:
+	method := self addMethodAndMethodCalledBy:
 		          #methodAInlineReturningInlinedIfTrueIfFalseInReturn.
+	self doInliningIn: method.
 
 	translation := self translate: method.
 	translation := translation trimBoth.
@@ -783,10 +769,9 @@ methodAInlineReturningInlinedIfTrueIfFalseInReturn(void)
 SLInliningTest >> testMethodAInlineReturningInlinedIfTrueInAssignment [
 
 	| method translation |
-	ccg doBasicInlining: true.
-
-	method := ccg methodNamed:
+	method := self addMethodAndMethodCalledBy:
 		          #methodAInlineReturningInlinedIfTrueInAssignment.
+	self doInliningIn: method.
 
 	translation := self translate: method.
 	translation := translation trimBoth.
@@ -815,10 +800,9 @@ methodAInlineReturningInlinedIfTrueInAssignment(void)
 SLInliningTest >> testMethodAInlineReturningInlinedIfTrueInReturn [
 
 	| method translation |
-	ccg doBasicInlining: true.
-
-	method := ccg methodNamed:
+	method := self addMethodAndMethodCalledBy:
 		          #methodAInlineReturningInlinedIfTrueInReturn.
+	self doInliningIn: method.
 
 	translation := self translate: method.
 	translation := translation trimBoth.
@@ -843,10 +827,9 @@ methodAInlineReturningInlinedIfTrueInReturn(void)
 SLInliningTest >> testMethodAInlineifFalseReturningIfTrueInReturn [
 
 	| method translation |
-	ccg doBasicInlining: true.
-
-	method := ccg methodNamed:
+	method := self addMethodAndMethodCalledBy:
 		          #methodAInlineIfFalseReturningIfTrueInReturn.
+	self doInliningIn: method.
 
 	translation := self translate: method.
 	translation := translation trimBoth.
@@ -872,9 +855,8 @@ methodAInlineIfFalseReturningIfTrueInReturn(void)
 SLInliningTest >> testMethodAReturnAssignment [
 
 	| method translation |
-	ccg doBasicInlining: true.
-
-	method := ccg methodNamed: #methodAReturnAssignment.
+	method := self addMethodAndMethodCalledBy: #methodAReturnAssignment.
+	self doInliningIn: method.
 
 	translation := self translate: method.
 	translation := translation trimBoth.
@@ -895,9 +877,9 @@ methodAReturnAssignment(void)
 SLInliningTest >> testMethodAReturnBlockAssignment [
 
 	| method translation |
-	ccg doBasicInlining: true.
-
-	method := ccg methodNamed: #methodAReturnBlockAssignment.
+	method := self addMethodAndMethodCalledBy:
+		          #methodAReturnBlockAssignment.
+	self doInliningIn: method.
 
 	translation := self translate: method.
 	translation := translation trimBoth.
@@ -921,10 +903,9 @@ methodAReturnBlockAssignment(void)
 SLInliningTest >> testMethodAWithReturningSendWithReturningIfInArgumentsInlined [
 
 	| method translation |
-	ccg doBasicInlining: true.
-
-	method := ccg methodNamed:
+	method := self addMethodAndMethodCalledBy:
 		          #methodAWithReturningSendWithReturningIfInArgumentsInlined.
+	self doInliningIn: method.
 
 	translation := self translate: method.
 	translation := translation trimBoth.
@@ -946,10 +927,9 @@ methodAWithReturningSendWithReturningIfInArgumentsInlined(void)
 SLInliningTest >> testMethodAWithReturningSendWithReturningIfInSendInArgumentsInlined [
 
 	| method translation |
-	ccg doBasicInlining: true.
-
-	method := ccg methodNamed:
+	method := self addMethodAndMethodCalledBy:
 		          #methodAWithReturningSendWithReturningIfInSendInArgumentsInlined.
+	self doInliningIn: method.
 
 	translation := self translate: method.
 	translation := translation trimBoth.
@@ -971,9 +951,9 @@ methodAWithReturningSendWithReturningIfInSendInArgumentsInlined(void)
 SLInliningTest >> testMethodInlineVariableWithSameName [
 
 	| method translation |
-	ccg doBasicInlining: true.
-
-	method := ccg methodNamed: #methodInlineVariableWithSameName.
+	method := self addMethodAndMethodCalledBy:
+		          #methodInlineVariableWithSameName.
+	self doInliningIn: method.
 
 	translation := self translate: method.
 	translation := translation trimBoth.
@@ -1000,9 +980,9 @@ methodInlineVariableWithSameName(void)
 SLInliningTest >> testMethodWithAssignmentOnRepeatInlined [
 
 	| method translation |
-	ccg doBasicInlining: true.
-
-	method := ccg methodNamed: #methodWithAssignmentOnRepeatInlined.
+	method := self addMethodAndMethodCalledBy:
+		          #methodWithAssignmentOnRepeatInlined.
+	self doInliningIn: method.
 
 	translation := self translate: method.
 	translation := translation trimBoth.
@@ -1037,9 +1017,9 @@ methodWithAssignmentOnRepeatInlined(void)
 SLInliningTest >> testMethodWithAssignmentOnToByDoInlined [
 
 	| method translation |
-	ccg doBasicInlining: true.
-
-	method := ccg methodNamed: #methodWithAssignmentOnToByDoInlined.
+	method := self addMethodAndMethodCalledBy:
+		          #methodWithAssignmentOnToByDoInlined.
+	self doInliningIn: method.
 
 	translation := self translate: method.
 	translation := translation trimBoth.
@@ -1074,9 +1054,9 @@ methodWithAssignmentOnToByDoInlined(void)
 SLInliningTest >> testMethodWithAssignmentOnToDoInlined [
 
 	| method translation |
-	ccg doBasicInlining: true.
-
-	method := ccg methodNamed: #methodWithAssignmentOnToDoInlined.
+	method := self addMethodAndMethodCalledBy:
+		          #methodWithAssignmentOnToDoInlined.
+	self doInliningIn: method.
 
 	translation := self translate: method.
 	translation := translation trimBoth.
@@ -1111,10 +1091,9 @@ methodWithAssignmentOnToDoInlined(void)
 SLInliningTest >> testMethodWithAssignmentOnWhileTrueBinaryInlined [
 
 	| method translation |
-	ccg doBasicInlining: true.
-
-	method := ccg methodNamed:
+	method := self addMethodAndMethodCalledBy:
 		          #methodWithAssignmentOnWhileTrueBinaryInlined.
+	self doInliningIn: method.
 
 	translation := self translate: method.
 	translation := translation trimBoth.
@@ -1151,9 +1130,9 @@ methodWithAssignmentOnWhileTrueBinaryInlined(void)
 SLInliningTest >> testMethodWithAssignmentOnWhileTrueInlined [
 
 	| method translation |
-	ccg doBasicInlining: true.
-
-	method := ccg methodNamed: #methodWithAssignmentOnWhileTrueInlined.
+	method := self addMethodAndMethodCalledBy:
+		          #methodWithAssignmentOnWhileTrueInlined.
+	self doInliningIn: method.
 
 	translation := self translate: method.
 	translation := translation trimBoth.
@@ -1188,9 +1167,9 @@ methodWithAssignmentOnWhileTrueInlined(void)
 SLInliningTest >> testMethodWithBlockArgumentInlined [
 
 	| method translation |
-	ccg doBasicInlining: true.
-
-	method := ccg methodNamed: #methodWithBlockArgumentInlined.
+	method := self addMethodAndMethodCalledBy:
+		          #methodWithBlockArgumentInlined.
+	self doInliningIn: method.
 
 	translation := self translate: method.
 	translation := translation trimBoth.
@@ -1217,10 +1196,9 @@ methodWithBlockArgumentInlined(void)
 SLInliningTest >> testMethodWithBlockWithReturningIfArgumentInlined [
 
 	| method translation |
-	ccg doBasicInlining: true.
-
-	method := ccg methodNamed:
+	method := self addMethodAndMethodCalledBy:
 		          #methodWithBlockWithReturningIfArgumentInlined.
+	self doInliningIn: method.
 
 	translation := self translate: method.
 	translation := translation trimBoth.
@@ -1258,10 +1236,9 @@ methodWithBlockWithReturningIfArgumentInlined(void)
 SLInliningTest >> testMethodWithBlockWithReturningIfWithGotoInlinedArgumentInlined [
 
 	| method translation |
-	ccg doBasicInlining: true.
-
-	method := ccg methodNamed:
+	method := self addMethodAndMethodCalledBy:
 		          #methodWithBlockWithReturningIfWithGotoInlinedArgumentInlined.
+	self doInliningIn: method.
 
 	translation := self translate: method.
 	translation := translation trimBoth.
@@ -1304,10 +1281,9 @@ methodWithBlockWithReturningIfWithGotoInlinedArgumentInlined(void)
 SLInliningTest >> testMethodWithBlockWithReturningIfWithInlinedArgumentInlined [
 
 	| method translation |
-	ccg doBasicInlining: true.
-
-	method := ccg methodNamed:
+	method := self addMethodAndMethodCalledBy:
 		          #methodWithBlockWithReturningIfWithInlinedArgumentInlined.
+	self doInliningIn: method.
 
 	translation := self translate: method.
 	translation := translation trimBoth.
@@ -1346,9 +1322,9 @@ methodWithBlockWithReturningIfWithInlinedArgumentInlined(void)
 SLInliningTest >> testMethodWithIfTrueReceiverInlined [
 
 	| method translation |
-	ccg doBasicInlining: true.
-
-	method := ccg methodNamed: #methodWithIfTrueReceiverInlined.
+	method := self addMethodAndMethodCalledBy:
+		          #methodWithIfTrueReceiverInlined.
+	self doInliningIn: method.
 
 	translation := self translate: method.
 	translation := translation trimBoth.
@@ -1360,28 +1336,25 @@ SLInliningTest >> testMethodWithIfTrueReceiverInlined [
 static sqInt
 methodWithIfTrueReceiverInlined(void)
 {
-	{
-		/* begin methodWithMultipleBooleanReturn */
-		if (methodB()) {
-			goto l2;
-		}
-		/* begin methodCMultipleReturn */
-		if (methodC()) {
-			goto l3;
-		}
-		3 + 3;
-		l3:
-		;
-		/* end methodCMultipleReturn */
-		/* end methodWithMultipleBooleanReturn; fall through */
-		/* end methodWithMultipleBooleanReturn */
-		/* begin methodB */
-		2 + 2;
-		/* end methodB */
-		l2:
-		;
+	/* begin methodWithMultipleBooleanReturn */
+	if (methodB()) {
+		goto l2;
 	}
-	return 1;
+	/* begin methodCMultipleReturn */
+	if (methodC()) {
+		goto l3;
+	}
+	3 + 3;
+	l3:
+	;
+	/* end methodCMultipleReturn */
+	/* end methodWithMultipleBooleanReturn; fall through */
+	/* end methodWithMultipleBooleanReturn */
+	/* begin methodB */
+	2 + 2;
+	/* end methodB */
+	l2:
+		return 1;
 }'
 ]
 
@@ -1389,9 +1362,9 @@ methodWithIfTrueReceiverInlined(void)
 SLInliningTest >> testMethodWithReturningIfTrueReceiverInlined [
 
 	| method translation |
-	ccg doBasicInlining: true.
-
-	method := ccg methodNamed: #methodWithReturningIfTrueReceiverInlined.
+	method := self addMethodAndMethodCalledBy:
+		          #methodWithReturningIfTrueReceiverInlined.
+	self doInliningIn: method.
 
 	translation := self translate: method.
 	translation := translation trimBoth.
@@ -1403,29 +1376,26 @@ SLInliningTest >> testMethodWithReturningIfTrueReceiverInlined [
 static sqInt
 methodWithReturningIfTrueReceiverInlined(void)
 {
-	{
-		/* begin methodWithMultipleBooleanReturn */
-		if (methodB()) {
-			goto l2;
-		}
-		/* begin methodCMultipleReturn */
-		if (methodC()) {
-			goto l3;
-		}
-		3 + 3;
-		l3:
-		;
-		/* end methodCMultipleReturn */
-		/* end methodWithMultipleBooleanReturn; fall through */
-		/* end methodWithMultipleBooleanReturn */
-		/* begin methodB */
-		2 + 2;
-		/* end methodB */
-		return 0;
-		l2:
-		;
+	/* begin methodWithMultipleBooleanReturn */
+	if (methodB()) {
+		goto l2;
 	}
-	return 1;
+	/* begin methodCMultipleReturn */
+	if (methodC()) {
+		goto l3;
+	}
+	3 + 3;
+	l3:
+	;
+	/* end methodCMultipleReturn */
+	/* end methodWithMultipleBooleanReturn; fall through */
+	/* end methodWithMultipleBooleanReturn */
+	/* begin methodB */
+	2 + 2;
+	/* end methodB */
+	return 0;
+	l2:
+		return 1;
 }'
 ]
 
@@ -1433,10 +1403,9 @@ methodWithReturningIfTrueReceiverInlined(void)
 SLInliningTest >> testMethodWithReturningIfWithReturnPartiallyPushedDownInlined [
 
 	| method translation |
-	ccg doBasicInlining: true.
-
-	method := ccg methodNamed:
+	method := self addMethodAndMethodCalledBy:
 		          #methodWithReturningIfWithReturnPartiallyPushedDownInlined.
+	self doInliningIn: method.
 
 	translation := self translate: method.
 	translation := translation trimBoth.
@@ -1459,10 +1428,9 @@ methodWithReturningIfWithReturnPartiallyPushedDownInlined(void)
 SLInliningTest >> testMethodWithReturningIfWithReturnPushedDownInlined [
 
 	| method translation |
-	ccg doBasicInlining: true.
-
-	method := ccg methodNamed:
+	method := self addMethodAndMethodCalledBy:
 		          #methodWithReturningIfWithReturnPushedDownInlined.
+	self doInliningIn: method.
 
 	translation := self translate: method.
 	translation := translation trimBoth.
@@ -1485,16 +1453,13 @@ methodWithReturningIfWithReturnPushedDownInlined(void)
 SLInliningTest >> testSimpleInlining [
 
 	| method sendStatements |
-	ccg doBasicInlining: true.
+	method := self addMethodAndMethodCalledBy: #methodA.
+	self doInliningIn: method.
 
-	method := ccg methodNamed: #methodA.
-	
 	sendStatements := method parseTree statements select: #isSend.
 	self assert: sendStatements size equals: 2.
 	self assert: sendStatements first selector equals: #+.
 	self assert: sendStatements second selector equals: #+
-		
-
 ]
 
 { #category : 'parameters' }
