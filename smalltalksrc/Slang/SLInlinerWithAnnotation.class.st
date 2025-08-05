@@ -105,7 +105,7 @@ SLInlinerWithAnnotation >> checkForCompletenessFor: aTMethod [
 					 in: codeGenerator)
 					ifTrue: [
 						(self isInlineableFunctionCall: node) ifTrue: [
-							aTMethod complete: false. "more inlining to do"
+							 "more inlining to do"
 							^ self ] ]
 					ifFalse: [ foundIncompleteSend := true ] ] ]
 		unless: [ :node |
