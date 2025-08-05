@@ -279,7 +279,6 @@ SLNodeAnnotatorVisitor >> handleConditionalSend: aSendNode [
 		self visitCppConditional: aSendNode.
 		^ true ].
 
-
 	^ false
 ]
 

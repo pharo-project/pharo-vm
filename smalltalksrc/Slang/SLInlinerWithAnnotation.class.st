@@ -93,10 +93,12 @@ SLInlinerWithAnnotation >> canBeInlineInExpression: aNode replacement: aTMethod 
 SLInlinerWithAnnotation >> checkForCompletenessFor: aTMethod [
 	"Set the complete flag if the parse tree contains no further candidates for inlining."
 
-	| foundIncompleteSend |
+	| foundIncompleteSend stmtsForInlining |
 	codeGenerator maybeBreakForTestOfInliningOf: aTMethod selector.
-
+	stmtsForInlining := self statementsListsForInliningInCurrentMethod.
 	foundIncompleteSend := false.
+
+
 	aTMethod parseTree
 		nodesDo: [ :node |
 			node isSend ifTrue: [
@@ -104,8 +106,7 @@ SLInlinerWithAnnotation >> checkForCompletenessFor: aTMethod [
 					 methodIsEffectivelyComplete: node selector
 					 in: codeGenerator)
 					ifTrue: [
-						(self isInlineableFunctionCall: node) ifTrue: [
-							 "more inlining to do"
+						(self isInlineableFunctionCall: node) ifTrue: [ "more inlining to do"
 							^ self ] ]
 					ifFalse: [ foundIncompleteSend := true ] ] ]
 		unless: [ :node |
@@ -174,6 +175,24 @@ SLInlinerWithAnnotation >> ensureConditionalAssignmentsAreTransformedInCurrentMe
 		true ] ] whileTrue
 ]
 
+{ #category : 'inlining-preparation' }
+SLInlinerWithAnnotation >> filterStmtForInliningIn: tStmtListNodeLists [
+
+	| stmtsList |
+	stmtsList := OrderedCollection new.
+	tStmtListNodeLists do: [ :tStmtList |
+		tStmtList statements do: [ :stmt |
+			| expression |
+			expression := stmt.
+			(stmt isReturn or: [ stmt isAssignment ]) ifTrue: [
+				expression := stmt expression ].
+
+			(self isInlineableSend: expression) ifTrue: [
+				stmtsList add: expression ] ] ].
+
+	^ stmtsList
+]
+
 { #category : 'initialization' }
 SLInlinerWithAnnotation >> initialize [
 
@@ -202,26 +221,6 @@ SLInlinerWithAnnotation >> inlineBuiltin: aSendNode [
 	(self isInlineableConditional: aSendNode) ifTrue: [
 		^ self inlineConditional: aSendNode ].
 	^ nil
-]
-
-{ #category : 'inlining-support-statement' }
-SLInlinerWithAnnotation >> inlineCodeOrNilForStatement: aNode [
-	"If the given statement node can be inlined, answer if anything was done."
-
-	(aNode isReturn and: [ self isInlineableSend: aNode expression ])
-		ifTrue: [
-			self inlineSend: aNode expression.
-			^ true ].
-
-	(aNode isAssignment and: [ self isInlineableSend: aNode expression ])
-		ifTrue: [
-			self inlineSend: aNode expression.
-			^ true ].
-
-	(aNode isSend and: [ self isInlineableSend: aNode ]) ifTrue: [
-		self inlineSend: aNode.
-		^ true ].
-	^ false
 ]
 
 { #category : 'inlining-support-conditional' }
@@ -567,8 +566,7 @@ SLInlinerWithAnnotation >> inlineSend: aSendNode [
 
 	isUsedExpression ifFalse: [
 		inlineStmts nodesDo: [ :node |
-			node isGoTo ifTrue: [ node metInInlining ] ] ].
-	^ inlineStmts
+			node isGoTo ifTrue: [ node metInInlining ] ] ]
 ]
 
 { #category : 'inlining-decision' }
@@ -840,6 +838,48 @@ SLInlinerWithAnnotation >> propagateReturnTypeDirectReturn: directReturn exitVar
 		callee propagateReturnIn: codeGenerator ]
 ]
 
+{ #category : 'inlining-preparation' }
+SLInlinerWithAnnotation >> removeNonSupportedStmtForInliningIn: stmtLists [
+
+	currentMethod parseTree nodesDo: [ :node |
+		node isSend ifTrue: [
+			node selector = #cCode:inSmalltalk: ifTrue: [
+				node nodesDo: [ :ccisNode |
+					stmtLists remove: ccisNode ifAbsent: [  ] ] ].
+			node selector = #cCall: ifTrue: [
+				node nodesDo: [ :ccisNode |
+					stmtLists remove: ccisNode ifAbsent: [  ] ] ].
+			node selector = #cCall:withArguments: ifTrue: [
+				node nodesDo: [ :ccisNode |
+					stmtLists remove: ccisNode ifAbsent: [  ] ] ].
+			(#( #cppIf:ifTrue:ifFalse: #cppIf:ifTrue: ) includes: node selector)
+				ifTrue: [
+					node arguments first nodesDo: [ :inCondNode |
+						stmtLists remove: inCondNode ifAbsent: [  ] ] ].
+			(#( #and: #or: ) includes: node selector) ifTrue: [ "Note: the PP 2.3 compiler produces two arg nodes for these selectors"
+				stmtLists remove: node arguments first ifAbsent: [  ].
+				stmtLists remove: node arguments last ifAbsent: [  ] ].
+			(#( #ifTrue: #ifFalse: #ifTrue:ifFalse: #ifFalse:ifTrue:
+			    #ifNil: #ifNotNil: #ifNil:ifNotNil: #ifNotNil:ifNil: )
+				 includes: node selector) ifTrue: [
+				stmtLists remove: node receiver ifAbsent: [  ] ].
+			(#( whileTrue whileTrue: whilefalse whileFalse: ) includes:
+				 node selector) ifTrue: [ "Allow inlining if it is a [...] whileTrue/whileFalse.
+				This is identified by having more than one statement in the 
+				receiver block in which case the C code wouldn't work anyways"
+				node receiver sizeWithoutComments = 1 ifTrue: [
+					stmtLists remove: node receiver ifAbsent: [  ] ] ].
+			node selector = #to:do: ifTrue: [
+				stmtLists remove: node receiver ifAbsent: [  ].
+				stmtLists remove: node args first ifAbsent: [  ] ].
+			node selector = #to:by:do: ifTrue: [
+				stmtLists remove: node receiver ifAbsent: [  ].
+				stmtLists remove: node arguments first ifAbsent: [  ].
+				stmtLists remove: node arguments second ifAbsent: [  ] ] ].
+		node isCaseStmt ifTrue: [ "don't inline cases"
+			node cases do: [ :case | stmtLists remove: case ifAbsent: [  ] ] ] ]
+]
+
 { #category : 'inlining-support-conditional' }
 SLInlinerWithAnnotation >> replaceNodeIn: aSendNode with: data [
 
@@ -928,56 +968,22 @@ SLInlinerWithAnnotation >> statementsListsForInliningInCurrentMethod [
 	 proper block for the cCode: argument are inlined in MessageNode>>asTranslatorNodeIn:).
 	 We do not want to inline code within assert: sends (because we want the assert to read nicely)."
 
-	| stmtLists |
-	stmtLists := OrderedCollection new: 10.
+	| tStmtListNodeLists |
+	tStmtListNodeLists := OrderedCollection new: 10.
 
 	currentMethod parseTree
 		nodesDo: [ :node |
-		node isStatementList ifTrue: [ stmtLists add: node ] ]
+			node isStatementList ifTrue: [ tStmtListNodeLists add: node ] ]
 		unless: [ :node |
 			node isSend and: [
 				node selector == #cCode:inSmalltalk: or: [
 					node selector == #cCall: or: [
 						node selector == #cCall:withArguments: or: [
 							codeGenerator isAssertSelector: node selector ] ] ] ] ].
-	currentMethod parseTree nodesDo: [ :node |
-		node isSend ifTrue: [
-			node selector = #cCode:inSmalltalk: ifTrue: [
-				node nodesDo: [ :ccisNode |
-					stmtLists remove: ccisNode ifAbsent: [  ] ] ].
-			node selector = #cCall: ifTrue: [
-				node nodesDo: [ :ccisNode |
-					stmtLists remove: ccisNode ifAbsent: [  ] ] ].
-			node selector = #cCall:withArguments: ifTrue: [
-				node nodesDo: [ :ccisNode |
-					stmtLists remove: ccisNode ifAbsent: [  ] ] ].
-			(#( #cppIf:ifTrue:ifFalse: #cppIf:ifTrue: ) includes: node selector)
-				ifTrue: [
-					node arguments first nodesDo: [ :inCondNode |
-						stmtLists remove: inCondNode ifAbsent: [  ] ] ].
-			(#( #and: #or: ) includes: node selector) ifTrue: [ "Note: the PP 2.3 compiler produces two arg nodes for these selectors"
-				stmtLists remove: node arguments first ifAbsent: [  ].
-				stmtLists remove: node arguments last ifAbsent: [  ] ].
-			(#( #ifTrue: #ifFalse: #ifTrue:ifFalse: #ifFalse:ifTrue:
-			    #ifNil: #ifNotNil: #ifNil:ifNotNil: #ifNotNil:ifNil: )
-				 includes: node selector) ifTrue: [
-				stmtLists remove: node receiver ifAbsent: [  ] ].
-			(#( whileTrue whileTrue: whilefalse whileFalse: ) includes:
-				 node selector) ifTrue: [ "Allow inlining if it is a [...] whileTrue/whileFalse.
-				This is identified by having more than one statement in the 
-				receiver block in which case the C code wouldn't work anyways"
-				node receiver sizeWithoutComments = 1 ifTrue: [
-					stmtLists remove: node receiver ifAbsent: [  ] ] ].
-			node selector = #to:do: ifTrue: [
-				stmtLists remove: node receiver ifAbsent: [  ].
-				stmtLists remove: node args first ifAbsent: [  ] ].
-			node selector = #to:by:do: ifTrue: [
-				stmtLists remove: node receiver ifAbsent: [  ].
-				stmtLists remove: node arguments first ifAbsent: [  ].
-				stmtLists remove: node arguments second ifAbsent: [  ] ] ].
-		node isCaseStmt ifTrue: [ "don't inline cases"
-			node cases do: [ :case | stmtLists remove: case ifAbsent: [  ] ] ] ].
-	^ stmtLists
+
+	self removeNonSupportedStmtForInliningIn: tStmtListNodeLists.
+
+	^ self filterStmtForInliningIn: tStmtListNodeLists
 ]
 
 { #category : 'inlining-preparation' }
@@ -1050,16 +1056,13 @@ SLInlinerWithAnnotation >> tryToInlineMethodStatementsListsInCurrentMethod [
 	"Expand any (complete) inline methods sent by this method as top-level statements.
 	 Answer if anything was inlined."
 
-	| stmtLists didSomething |
-	didSomething := false.
+	| stmtLists |
 	stmtLists := self statementsListsForInliningInCurrentMethod.
+	stmtLists isEmpty ifTrue: [ ^ false ].
 
-	stmtLists do: [ :stmtList |
-		stmtList statements do: [ :stmt |
-			(self inlineCodeOrNilForStatement: stmt) ifTrue: [
-				didSomething := true ] ] ].
+	stmtLists do: [ :stmt | self inlineSend: stmt ].
 
-	^ didSomething
+	^ true
 ]
 
 { #category : 'inlining' }
@@ -1080,6 +1083,8 @@ SLInlinerWithAnnotation >> tryToInlineMethodsInCurrentMethod [
 		                didSomething ].
 
 	didSomething ifTrue: [ currentMethod writtenToGlobalVarsCache: nil ].
+
+	"1 haltIf: [ didSomething and: [ currentMethod isComplete ] ]."
 
 	"marking a method complete is progress"
 	currentMethod isComplete ifFalse: [
