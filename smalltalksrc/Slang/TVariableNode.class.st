@@ -130,6 +130,7 @@ TVariableNode >> renameLocalVariablesGivenClassVariables: classVariables globalV
 	"Answer either the receiver, if it is not a reference to one of the given variables, or the replacement if it is. classVariables is a Dictionary and globalsVariables is a collection"
 
 	"'self', 'self_in...', 'super' and 'cascade are reserved variable names"
+
 	(name = #super or: [
 		 (name beginsWith: #self) or: [ name beginsWith: #cascade ] ])
 		ifTrue: [ ^ self ].
@@ -145,7 +146,7 @@ TVariableNode >> renameLocalVariablesGivenClassVariables: classVariables globalV
 	classVariables
 		at: name
 		ifPresent: [ :replacement |
-			replacement shouldBeGenerated ifTrue: [ ^ replacement ].
+			replacement shouldBeGenerated ifTrue: [ ^ replacement copy ].
 			"in case of library name don't redefine them"
 			^ self ]
 		ifAbsent: [ "the variable is local, we update its name with an _ and add it to the changedVariables collection which will change all its appearance in the TMethods/parseTree "

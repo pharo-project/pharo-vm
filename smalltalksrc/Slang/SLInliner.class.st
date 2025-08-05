@@ -465,6 +465,7 @@ SLInliner >> isInlineableFunctionCall: aNode [
 
 	codeGenerator maybeBreakForTestToInline: aNode in: self.
 	aNode isSend ifFalse: [ ^ false ].
+
 	^ (codeGenerator methodNamed: aNode selector)
 		  ifNil: [
 			  aNode asTransformedConstantPerform
@@ -488,7 +489,9 @@ SLInliner >> isInlineableSend: aNode [
 	| m |
 	codeGenerator maybeBreakForTestToInline: aNode in: self.
 	aNode isSend ifFalse: [ ^ false ].
+
 	m := codeGenerator methodNamed: aNode selector. "nil if builtin or external function"
+
 	^ m isNotNil and: [
 		  m ~~ currentMethod and: [
 			  m mayBeInlined and: [

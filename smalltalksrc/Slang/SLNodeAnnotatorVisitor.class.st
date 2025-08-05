@@ -518,10 +518,6 @@ SLNodeAnnotatorVisitor >> moveDownAssigningParentFrom: aNode [
 
 	self moveDownAssignmentFrom: assignment assignment: assignment.
 
-	assignment parent
-		replaceChild: assignment
-		with: assignment expression.
-
 	self
 		visitFromBranchStartingAt: assignment
 		replacement: assignment expression
@@ -574,13 +570,7 @@ SLNodeAnnotatorVisitor >> moveDownReturningParentFrom: aNode [
 	returningParent := self returningParentFor: aNode.
 	returningParent ifNil: [ ^ self ].
 
-	self
-		moveDownReturnFrom: returningParent
-		return: returningParent.
-
-	returningParent parent
-		replaceChild: returningParent
-		with: returningParent expression.
+	self moveDownReturnFrom: returningParent return: returningParent.
 
 	self
 		visitFromBranchStartingAt: returningParent
@@ -954,6 +944,8 @@ SLNodeAnnotatorVisitor >> visitFromBranchStartingAt: aNode [
 SLNodeAnnotatorVisitor >> visitFromBranchStartingAt: aNode replacement: aReplacementNode [
 
 	| restoredStacks |
+	aNode parent replaceChild: aNode with: aReplacementNode.
+
 	self cleanBranchInfoFrom: aNode.
 	restoredStacks := self restoreStackStateFrom: aNode.
 	self cleanInfoFrom: aNode.
