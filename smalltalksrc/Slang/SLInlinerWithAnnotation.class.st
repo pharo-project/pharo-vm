@@ -203,7 +203,7 @@ SLInlinerWithAnnotation >> initialize [
 { #category : 'inlining-support-function-call' }
 SLInlinerWithAnnotation >> inlineBuiltin: aSendNode [
 
-	| sel meth inlinedReplacement |
+	| sel meth |
 	(aSendNode selector beginsWith: 'perform:') ifTrue: [
 		^ self
 			  inlineFunctionCall: aSendNode asTransformedConstantPerform
@@ -212,12 +212,7 @@ SLInlinerWithAnnotation >> inlineBuiltin: aSendNode [
 	sel := aSendNode receiver selector.
 	meth := codeGenerator methodNamed: sel.
 	(meth notNil and: [ meth inline == true ]) ifFalse: [ ^ nil ].
-	(self isFunctional: meth) ifTrue: [
-		inlinedReplacement := self inlineFunctionCall: aSendNode receiver.
-		^ TSendNode new
-			  setSelector: aSendNode selector
-			  receiver: inlinedReplacement
-			  arguments: aSendNode arguments copy ].
+
 	(self isInlineableConditional: aSendNode) ifTrue: [
 		^ self inlineConditional: aSendNode ].
 	^ nil
