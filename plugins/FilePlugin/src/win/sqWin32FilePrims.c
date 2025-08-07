@@ -541,7 +541,7 @@ size_t sqFileWriteFromAt(SQFile *f, size_t count, char* byteArrayIndex, size_t s
 EXPORT(void) aioEnableExternalHandler(int fd, HANDLE handle, void *clientData, aioHandler handlerFn, int mask);
 
 EXPORT(void)
-handleWaitOnStream(int fd, void *clientData, int flag){
+handleWaitOnStream(sqInt fd, void *clientData, int flag){
 	interpreterProxy->signalSemaphoreWithIndex((sqInt)clientData);
 	aioDisable(fd);
 }
