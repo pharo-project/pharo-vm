@@ -279,10 +279,10 @@ extern struct VirtualMachine *interpreterProxy;
 int setHookFn;
 
 
-static void acceptHandler(int, void *, int);
-static void connectHandler(int, void *, int);
-static void dataHandler(int, void *, int);
-static void closeHandler(int, void *, int);
+static void acceptHandler(sqInt, void *, int);
+static void connectHandler(sqInt, void *, int);
+static void dataHandler(sqInt, void *, int);
+static void closeHandler(sqInt, void *, int);
 
 /**
  * The Error reporting is different in Windows and in Unix, so we need to provide a function.
@@ -462,7 +462,7 @@ static int socketError(int s)
    and replace the server socket with the new client socket
    leaving the client socket unhandled
 */
-static void acceptHandler(int fd, void *data, int flags)
+static void acceptHandler(sqInt fd, void *data, int flags)
 {
   int lastError;
     
@@ -527,7 +527,7 @@ static void acceptHandler(int fd, void *data, int flags)
 
 /* connect() has completed: check errors, leaving the socket unhandled */
 
-static void connectHandler(int fd, void *data, int flags)
+static void connectHandler(sqInt fd, void *data, int flags)
 {
 
   int error;
@@ -576,7 +576,7 @@ static void connectHandler(int fd, void *data, int flags)
 
 /* read or write data transfer is now possible for the socket. */
 
-static void dataHandler(int fd, void *data, int flags)
+static void dataHandler(sqInt fd, void *data, int flags)
 {
   privateSocketStruct *pss= (privateSocketStruct *)data;
   logTrace("dataHandler(%d=%d, %p, %d)\n", fd, pss->s, data, flags);
@@ -621,7 +621,7 @@ static void dataHandler(int fd, void *data, int flags)
 
 /* a non-blocking close() has completed -- finish tidying up */
 
-static void closeHandler(int fd, void *data, int flags)
+static void closeHandler(sqInt fd, void *data, int flags)
 {
   privateSocketStruct *pss= (privateSocketStruct *)data;
   aioDisable(fd);
