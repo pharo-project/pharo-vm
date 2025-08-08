@@ -377,9 +377,9 @@ SLInlinerWithAnnotation >> inlineConditionalGuardingOrConditionalInit: aSendNode
 		at: #method
 		put: (codeGenerator methodNamed: aSendNode receiver selector) copy.
 
-	data at: #replacementTree put: (self
-			 inlineFunctionCall: aSendNode receiver
-			 inInlineableConditional: true).
+	self
+		inlineFunctionCall: aSendNode receiver
+		inInlineableConditional: true.
 
 	data at: #returnReplacement put: (isGuarding
 			 ifTrue: [
@@ -468,11 +468,13 @@ SLInlinerWithAnnotation >> inlineFunctionCall: aSendNode inInlineableConditional
 				selector: selector
 				exitLabel: nil ].
 
+	"visiting is done just after"
+	aBoolean ifTrue: [
+		aSendNode parent replaceChild: aSendNode with: parseTree.
+		^ self ].
 	sLNodeAnnotatorVisitor
 		visitFromBranchStartingAt: (aNodeOrNil ifNil: [ aSendNode ])
-		replacement: parseTree.
-
-	^ parseTree
+		replacement: parseTree
 ]
 
 { #category : 'conditional' }
@@ -489,7 +491,7 @@ SLInlinerWithAnnotation >> inlineGuardingConditional: aSendNode [
 		        inlineConditionalGuardingOrConditionalInit: aSendNode
 		        isGuarding: true.
 	evaluateIfTrue := data at: #isIfTrue.
-	replacementTree := data at: #replacementTree.
+	replacementTree := aSendNode receiver.
 	skipLabel := data at: #returnReplacement.
 	map := Dictionary new.
 
@@ -547,9 +549,7 @@ SLInlinerWithAnnotation >> inlineGuardingConditional: aSendNode [
 
 	sLNodeAnnotatorVisitor
 		visitFromBranchStartingAt: aSendNode
-		replacement: inlineStmts.
-
-	^ inlineStmts
+		replacement: inlineStmts
 ]
 
 { #category : 'conditional' }
@@ -565,7 +565,7 @@ SLInlinerWithAnnotation >> inlineReturningConditional: aSendNode [
 		        inlineConditionalGuardingOrConditionalInit: aSendNode
 		        isGuarding: false.
 	returnIfTrue := data at: #isIfTrue.
-	replacementTree := data at: #replacementTree.
+	replacementTree := aSendNode receiver.
 	returnNode := data at: #returnReplacement.
 	map := Dictionary new.
 
@@ -613,9 +613,7 @@ SLInlinerWithAnnotation >> inlineReturningConditional: aSendNode [
 
 	sLNodeAnnotatorVisitor
 		visitFromBranchStartingAt: aSendNode
-		replacement: inlineStmts.
-
-	^ inlineStmts
+		replacement: inlineStmts
 ]
 
 { #category : 'statement' }
@@ -1019,11 +1017,10 @@ SLInlinerWithAnnotation >> removeNonSupportedStmtForInliningIn: stmtLists [
 { #category : 'conditional' }
 SLInlinerWithAnnotation >> replaceNodeIn: aSendNode with: data [
 
-	| replacementTree method |
-	replacementTree := data at: #replacementTree.
+	| method |
 	method := data at: #method.
 
-	self replaceNodesIn: (data at: #map) for: replacementTree.
+	self replaceNodesIn: (data at: #map) for: aSendNode receiver.
 
 	currentMethod
 		addVarsDeclarationsAndLabelsOf: method
@@ -1041,10 +1038,7 @@ SLInlinerWithAnnotation >> replaceNodesIn: aReplacementDictionary for: aNode [
 			 ifPresent: [ true ]
 			 ifAbsent: [ false ]) ifTrue: [
 			replacement := (aReplacementDictionary at: node) copy.
-
-			sLNodeAnnotatorVisitor
-				visitFromBranchStartingAt: node
-				replacement: replacement ] ]
+			node parent replaceChild: node with: replacement ] ]
 ]
 
 { #category : 'transformation' }
