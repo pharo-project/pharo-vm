@@ -138,11 +138,11 @@ EXPORT(void) aioFileDescriptor_printHandlers(){
 	AioFileDescriptor* element = fileDescriptorList;
 	long count = 0;
 
-	logDebug("List of registered aioHandlers\n");
-	logDebug("==============================\n\n");
+	logError("List of registered aioHandlers\n");
+	logError("==============================\n\n");
 
 	while(element){
-		logDebug("FD: %lld Mask: %d Flags: %d ClientData %p handlerFn %p\n", element->fd, element->mask, element->flags, element->clientData, element->handlerFn);
+		logError("FD: %lld Mask: %d Flags: %d ClientData %p handlerFn %p REvent %p WEvent %p", element->fd, element->mask, element->flags, element->clientData, element->handlerFn, element->readEvent, element->writeEvent);
 		element = element->next;
 	}
 
@@ -271,6 +271,8 @@ EXPORT(void) aioEnable(sqInt fd, void *clientData, int flags){
 	sprintf(name, "R%p", (void*)fd);
 	aioFileDescriptor->readEvent = (HANDLE)CreateEventA(NULL, TRUE, FALSE, name);
 
+//	aioFileDescriptor->readEvent = (HANDLE)WSACreateEvent();
+
 	numberOfEvents++;
 
 	if(aioFileDescriptor->readEvent == WSA_INVALID_EVENT){
@@ -281,6 +283,9 @@ EXPORT(void) aioEnable(sqInt fd, void *clientData, int flags){
 	sprintf(name, "W%p", (void*)fd);
 
 	aioFileDescriptor->writeEvent = (HANDLE)CreateEventA(NULL, TRUE, FALSE, name);
+
+//	aioFileDescriptor->writeEvent = (HANDLE)WSACreateEvent();
+
 	numberOfEvents++;
 
 	if(aioFileDescriptor->writeEvent == WSA_INVALID_EVENT){
