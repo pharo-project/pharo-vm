@@ -3,7 +3,10 @@ Class {
 	#superclass : 'SLAbstractInlineStrategy',
 	#instVars : [
 		'currentMethod',
-		'sLNodeAnnotatorVisitor'
+		'sLNodeAnnotatorVisitor',
+		'sendsForInlining',
+		'conditionalForInlining',
+		'performSendForInlining'
 	],
 	#category : 'Slang',
 	#package : 'Slang'
@@ -25,7 +28,43 @@ SLInlinerWithAnnotation >> addBeginAndEndCommentsFor: aTStatementList selector: 
 				(TLabeledCommentNode new setComment: 'end ' , aSelector) ]
 ]
 
-{ #category : 'inlining-preparation' }
+{ #category : 'preparation-function-call' }
+SLInlinerWithAnnotation >> addToConditionalInlining: aSendNode [
+
+	| indexesToRemove |
+	(self isInlineableConditional: aSendNode) ifFalse: [ ^ self ].
+
+	indexesToRemove := OrderedCollection new.
+	sendsForInlining doWithIndex: [ :dictionary :index |
+		(dictionary values includes: aSendNode receiver) ifTrue: [
+			indexesToRemove add: index ] ].
+
+	sendsForInlining := sendsForInlining reject: [ :dictionary |
+		                    dictionary values includes: aSendNode receiver ].
+
+	sendsForInlining add: (IdentityDictionary new
+			 at: self conditionalInliningString put: aSendNode;
+			 yourself)
+]
+
+{ #category : 'preparation-function-call' }
+SLInlinerWithAnnotation >> addToPerformSendlInlining: aSendNode from: anOtherSendNode [
+
+	sendsForInlining add: (IdentityDictionary new
+			 at: self functionCallFromBuitinInliningString
+			 put: anOtherSendNode -> aSendNode;
+			 yourself)
+]
+
+{ #category : 'preparation-function-call' }
+SLInlinerWithAnnotation >> addToSendlInlining: aSendNode [
+
+	sendsForInlining add: (IdentityDictionary new
+			 at: self functionCallInliningString put: aSendNode;
+			 yourself)
+]
+
+{ #category : 'preparation' }
 SLInlinerWithAnnotation >> annotateCurrentMethod [
 
 	sLNodeAnnotatorVisitor cleanInfo.
@@ -76,7 +115,13 @@ SLInlinerWithAnnotation >> argAssignmentsFor: meth send: aSendNode except: elide
 	^ substitutionDict
 ]
 
-{ #category : 'inlining-decision' }
+{ #category : 'preparation-function-call-string' }
+SLInlinerWithAnnotation >> builtinString [
+
+	^ #builtinString
+]
+
+{ #category : 'testing-node' }
 SLInlinerWithAnnotation >> canBeInlineInExpression: aNode replacement: aTMethod [
 	"for now"
 
@@ -89,26 +134,26 @@ SLInlinerWithAnnotation >> canBeInlineInExpression: aNode replacement: aTMethod 
 		  visit: parseTree
 ]
 
-{ #category : 'testing' }
+{ #category : 'testing-method' }
 SLInlinerWithAnnotation >> checkForCompletenessFor: aTMethod [
 	"Set the complete flag if the parse tree contains no further candidates for inlining."
 
 	| foundIncompleteSend stmtsForInlining |
 	codeGenerator maybeBreakForTestOfInliningOf: aTMethod selector.
 	stmtsForInlining := self statementsListsForInliningInCurrentMethod.
+	self fillSendForInliningInCurrentMethod.
+	(sendsForInlining isNotEmpty or: [ stmtsForInlining isNotEmpty ])
+		ifTrue: [ ^ self ].
 	foundIncompleteSend := false.
 
 
 	aTMethod parseTree
 		nodesDo: [ :node |
-			node isSend ifTrue: [
-				(aTMethod
-					 methodIsEffectivelyComplete: node selector
-					 in: codeGenerator)
-					ifTrue: [
-						(self isInlineableFunctionCall: node) ifTrue: [ "more inlining to do"
-							^ self ] ]
-					ifFalse: [ foundIncompleteSend := true ] ] ]
+			(node isSend and: [ node selector ~= currentMethod selector ])
+				ifTrue: [
+					(aTMethod
+						 methodIsEffectivelyComplete: node selector
+						 in: codeGenerator) ifFalse: [ foundIncompleteSend := true ] ] ]
 		unless: [ :node |
 			node isSend and: [
 				node selector == #cCode:inSmalltalk: or: [
@@ -116,7 +161,7 @@ SLInlinerWithAnnotation >> checkForCompletenessFor: aTMethod [
 	foundIncompleteSend ifFalse: [ aTMethod complete: true ]
 ]
 
-{ #category : 'testing' }
+{ #category : 'testing-method' }
 SLInlinerWithAnnotation >> checkForFlagIn: aTStatementList [
 
 	(aTStatementList sizeWithoutComments > 1 and: [
@@ -129,6 +174,12 @@ SLInlinerWithAnnotation >> checkForFlagIn: aTStatementList [
 SLInlinerWithAnnotation >> codeGenerator [
 
 	^ codeGenerator
+]
+
+{ #category : 'preparation-function-call-string' }
+SLInlinerWithAnnotation >> conditionalInliningString [
+
+	^ #conditionalInliningString
 ]
 
 { #category : 'accessing' }
@@ -150,7 +201,7 @@ SLInlinerWithAnnotation >> doInliningIn: aTMethod [
 	^ self tryToInlineMethodsInCurrentMethod
 ]
 
-{ #category : 'inlining-preparation' }
+{ #category : 'preparation' }
 SLInlinerWithAnnotation >> ensureConditionalAssignmentsAreTransformedInCurrentMethod [
 	"Make passes transforming
 		foo := expr ifTrue: [a] ifFalse: [b]
@@ -175,7 +226,90 @@ SLInlinerWithAnnotation >> ensureConditionalAssignmentsAreTransformedInCurrentMe
 		true ] ] whileTrue
 ]
 
-{ #category : 'inlining-preparation' }
+{ #category : 'preparation-function-call' }
+SLInlinerWithAnnotation >> fillConditionalSendOrTryPerformSearchForInlining: aNode transformedConstantFrom: originalNodeForVisitorInfo [
+
+	aNode asTransformedConstantPerform
+		ifNil: [ self addToConditionalInlining: aNode ]
+		ifNotNil: [ :node | "when going through transformation, the new node n take the place of aNode but not in the visitor so we keep track of the old node "
+			self
+				fillSendForInlining: node
+				transformedConstantFrom: originalNodeForVisitorInfo ]
+]
+
+{ #category : 'preparation-function-call' }
+SLInlinerWithAnnotation >> fillSendForInlining: aNode [
+
+	^ self fillSendForInlining: aNode transformedConstantFrom: nil
+]
+
+{ #category : 'preparation-function-call' }
+SLInlinerWithAnnotation >> fillSendForInlining: aNode transformedConstantFrom: anOtherNodeOrNil [
+	"Answer if the given send node is a call to a 'functional' method--a method whose body is a single return statement of some expression and whose actual parameters can all be directly substituted.
+	if a method is marked as always inlined and complete, the method also returns true"
+
+	| originalNodeForVisitorInfo tMethod |
+	codeGenerator maybeBreakForTestToInline: aNode in: self.
+	aNode isSend ifFalse: [ ^ false ].
+
+	originalNodeForVisitorInfo := anOtherNodeOrNil
+		                              ifNil: [ aNode ]
+		                              ifNotNil: [ anOtherNodeOrNil ].
+	tMethod := codeGenerator methodNamed: aNode selector.
+	tMethod ifNil: [
+		self
+			fillConditionalSendOrTryPerformSearchForInlining: aNode
+			transformedConstantFrom: originalNodeForVisitorInfo.
+		^ self ].
+	self
+		fillSendOrPerformSendForInlining: aNode
+		method: tMethod
+		transformedConstantFrom: originalNodeForVisitorInfo
+]
+
+{ #category : 'preparation-function-call' }
+SLInlinerWithAnnotation >> fillSendForInliningInCurrentMethod [
+
+	sendsForInlining := OrderedCollection new.
+
+	currentMethod parseTree
+		nodesDo: [ :node | self fillSendForInlining: node ]
+		unless: [ :node | "Don't inline the arguments to asserts to keep the asserts readable"
+			node isSend and: [
+				node selector == #cCode:inSmalltalk: or: [
+					codeGenerator isAssertSelector: node selector ] ] ]
+]
+
+{ #category : 'preparation-function-call' }
+SLInlinerWithAnnotation >> fillSendOrPerformSendForInlining: aNode method: aTMethod transformedConstantFrom: originalNodeForVisitorInfo [
+
+	| isInlineableSend |
+	isInlineableSend := (aTMethod ~~ currentMethod and: [
+		                     ((self isFunctional: aTMethod) or: [
+			                      aTMethod mustBeInlined and: [
+				                      aTMethod isComplete ] ]) and: [
+			                     aTMethod mayBeInlined and: [
+				                     (codeGenerator mayInline: aTMethod selector)
+					                     and: [
+						                     (aNode arguments allSatisfy: [ :a |
+							                      self
+								                      isSubstitutableNode: a
+								                      intoMethod: aTMethod ]) and: [
+							                     self
+								                     canBeInlineInExpression:
+								                     originalNodeForVisitorInfo
+								                     replacement: aTMethod ] ] ] ] ]) or: [
+		                    aTMethod checkForRequiredInlinability ].
+	isInlineableSend ifFalse: [ ^ self ].
+	aNode == originalNodeForVisitorInfo
+		ifTrue: [ self addToSendlInlining: aNode ]
+		ifFalse: [
+			self
+				addToPerformSendlInlining: aNode
+				from: originalNodeForVisitorInfo ]
+]
+
+{ #category : 'preparation-statement' }
 SLInlinerWithAnnotation >> filterStmtForInliningIn: tStmtListNodeLists [
 
 	| stmtsList |
@@ -193,6 +327,18 @@ SLInlinerWithAnnotation >> filterStmtForInliningIn: tStmtListNodeLists [
 	^ stmtsList
 ]
 
+{ #category : 'preparation-function-call-string' }
+SLInlinerWithAnnotation >> functionCallFromBuitinInliningString [
+
+	^ #functionCallFromBuitinInliningString
+]
+
+{ #category : 'preparation-function-call-string' }
+SLInlinerWithAnnotation >> functionCallInliningString [
+
+	^ #functionCallInliningString
+]
+
 { #category : 'initialization' }
 SLInlinerWithAnnotation >> initialize [
 
@@ -200,25 +346,7 @@ SLInlinerWithAnnotation >> initialize [
 	sLNodeAnnotatorVisitor := SLNodeAnnotatorVisitor new
 ]
 
-{ #category : 'inlining-support-function-call' }
-SLInlinerWithAnnotation >> inlineBuiltin: aSendNode [
-
-	| sel meth |
-	(aSendNode selector beginsWith: 'perform:') ifTrue: [
-		^ self
-			  inlineFunctionCall: aSendNode asTransformedConstantPerform
-			  fromBuiltin: aSendNode ].
-	aSendNode receiver isSend ifFalse: [ ^ nil ].
-	sel := aSendNode receiver selector.
-	meth := codeGenerator methodNamed: sel.
-	(meth notNil and: [ meth inline == true ]) ifFalse: [ ^ nil ].
-
-	(self isInlineableConditional: aSendNode) ifTrue: [
-		^ self inlineConditional: aSendNode ].
-	^ nil
-]
-
-{ #category : 'inlining-support-conditional' }
+{ #category : 'conditional' }
 SLInlinerWithAnnotation >> inlineConditional: aSendNode [
 	"If possible answer the inlining of a conditional, otherwise answer nil.
 	 Currently the only pattern we support is
@@ -233,7 +361,7 @@ SLInlinerWithAnnotation >> inlineConditional: aSendNode [
 		  ifFalse: [ self inlineGuardingConditional: aSendNode ]
 ]
 
-{ #category : 'inlining-support-conditional' }
+{ #category : 'conditional' }
 SLInlinerWithAnnotation >> inlineConditionalGuardingOrConditionalInit: aSendNode isGuarding: isGuarding [
 	"init data for inlining conditional"
 
@@ -262,7 +390,7 @@ SLInlinerWithAnnotation >> inlineConditionalGuardingOrConditionalInit: aSendNode
 	^ data
 ]
 
-{ #category : 'inlining-support-function-call' }
+{ #category : 'function-call' }
 SLInlinerWithAnnotation >> inlineFunctionCall: aSendNode [
 
 	^ self
@@ -271,7 +399,7 @@ SLInlinerWithAnnotation >> inlineFunctionCall: aSendNode [
 		  fromBuiltin: nil
 ]
 
-{ #category : 'inlining-support-function-call' }
+{ #category : 'function-call' }
 SLInlinerWithAnnotation >> inlineFunctionCall: aSendNode fromBuiltin: aNOdeOrNil [
 
 	^ self
@@ -280,7 +408,7 @@ SLInlinerWithAnnotation >> inlineFunctionCall: aSendNode fromBuiltin: aNOdeOrNil
 		  fromBuiltin: aNOdeOrNil
 ]
 
-{ #category : 'inlining-support-function-call' }
+{ #category : 'function-call' }
 SLInlinerWithAnnotation >> inlineFunctionCall: aSendNode inInlineableConditional: aBoolean [
 
 	^ self
@@ -289,7 +417,7 @@ SLInlinerWithAnnotation >> inlineFunctionCall: aSendNode inInlineableConditional
 		  fromBuiltin: nil
 ]
 
-{ #category : 'inlining-support-function-call' }
+{ #category : 'function-call' }
 SLInlinerWithAnnotation >> inlineFunctionCall: aSendNode inInlineableConditional: aBoolean fromBuiltin: aNodeOrNil [
 	"Answer the body of the called function, substituting the actual
 	 parameters for the formal argument variables in the method body.
@@ -300,7 +428,7 @@ SLInlinerWithAnnotation >> inlineFunctionCall: aSendNode inInlineableConditional
 	| selector meth parametersToReplaceByArgument argsForInlining substitutionDict parseTree |
 	selector := aSendNode selector.
 	meth := (codeGenerator methodNamed: selector) copy.
-	meth ifNil: [ ^ self inlineBuiltin: aSendNode ].
+
 	parseTree := meth parseTree.
 	parametersToReplaceByArgument := Set withAll: currentMethod args.
 	argsForInlining := aSendNode argumentsForInliningCodeGenerator:
@@ -330,7 +458,7 @@ SLInlinerWithAnnotation >> inlineFunctionCall: aSendNode inInlineableConditional
 	aBoolean ifFalse: [ SLNodeAnnotatorVisitor copyWithoutReturn: meth ].
 
 	"same 'optimization' as before but with comments if possible"
-	parseTree children size = 1
+	(parseTree children size = 1 and: [ aBoolean not ])
 		ifTrue: [
 			meth parseTree: parseTree last.
 			parseTree := parseTree last ]
@@ -347,15 +475,16 @@ SLInlinerWithAnnotation >> inlineFunctionCall: aSendNode inInlineableConditional
 	^ parseTree
 ]
 
-{ #category : 'inlining-support-conditional' }
+{ #category : 'conditional' }
 SLInlinerWithAnnotation >> inlineGuardingConditional: aSendNode [
 	"Inline
 		aSend ifTrue:/ifFalse: [statements]
 	 where aSend is inlineable and always answers booleans.  We convert
 	 the boolean returns in aSend to jumps."
 
-	| data evaluateIfTrue replacementTree map lastNode evaluateLabel skipLabel selector inlineStmts |
+	| data evaluateIfTrue replacementTree map lastNode evaluateLabel skipLabel selector inlineStmts skipLabelStmt |
 	selector := aSendNode receiver selector.
+
 	data := self
 		        inlineConditionalGuardingOrConditionalInit: aSendNode
 		        isGuarding: true.
@@ -364,10 +493,9 @@ SLInlinerWithAnnotation >> inlineGuardingConditional: aSendNode [
 	skipLabel := data at: #returnReplacement.
 	map := Dictionary new.
 
-	(replacementTree lastNonCommentStatement isReturn and: [
-		 replacementTree lastNonCommentStatement expression value
-		 = evaluateIfTrue ]) ifTrue: [
-		lastNode := replacementTree lastNonCommentStatement ].
+	(replacementTree lastExpression allSatisfy: [ :node |
+		 node isReturn and: [ node expression value = evaluateIfTrue ] ])
+		ifTrue: [ lastNode := replacementTree lastExpression ].
 
 	replacementTree nodesDo: [ :node |
 		| expr |
@@ -378,7 +506,7 @@ SLInlinerWithAnnotation >> inlineGuardingConditional: aSendNode [
 			map at: node put: (expr value ~~ evaluateIfTrue
 					 ifTrue: [ TGoToNode label: skipLabel label ]
 					 ifFalse: [
-						 node == lastNode
+						 (lastNode isNotNil and: [ lastNode includes: node ])
 							 ifTrue: [
 								 TLabeledCommentNode new setComment:
 									 'end ' , selector , '; fall through' ]
@@ -392,17 +520,30 @@ SLInlinerWithAnnotation >> inlineGuardingConditional: aSendNode [
 	data at: #map put: map.
 	self replaceNodeIn: aSendNode with: data.
 
+	replacementTree isComment ifTrue: [
+		replacementTree statements: {  }.
+		skipLabel := nil ].
+	(replacementTree sizeWithoutComments = 1 and: [
+		 replacementTree lastNonCommentStatement label = skipLabel label ])
+		ifTrue: [
+			replacementTree statements: {  }.
+			aSendNode arguments first statements: {  }.
+			skipLabel := nil ].
+
+	skipLabelStmt := skipLabel
+		                 ifNotNil: [ { skipLabel } ]
+		                 ifNil: [ {  } ].
 	inlineStmts := TStatementListNode new
 		               setArguments: #(  )
 		               statements: (evaluateLabel
 				                ifNil: [
 					                replacementTree statements
 					                , aSendNode arguments first statements
-					                , { skipLabel } ]
+					                , skipLabelStmt ]
 				                ifNotNil: [
 					                replacementTree statements , { evaluateLabel }
 					                , aSendNode arguments first statements
-					                , { skipLabel } ]).
+					                , skipLabelStmt ]).
 
 	sLNodeAnnotatorVisitor
 		visitFromBranchStartingAt: aSendNode
@@ -411,7 +552,7 @@ SLInlinerWithAnnotation >> inlineGuardingConditional: aSendNode [
 	^ inlineStmts
 ]
 
-{ #category : 'inlining-support-conditional' }
+{ #category : 'conditional' }
 SLInlinerWithAnnotation >> inlineReturningConditional: aSendNode [
 	"Inline
 		aSend ifTrue:/ifFalse: [^expr]
@@ -477,7 +618,7 @@ SLInlinerWithAnnotation >> inlineReturningConditional: aSendNode [
 	^ inlineStmts
 ]
 
-{ #category : 'inlining-support-statement' }
+{ #category : 'statement' }
 SLInlinerWithAnnotation >> inlineSend: aSendNode [
 	"Answer a collection of statements to replace the given send.  directReturn indicates
 	 that the send is the expression in a return statement, so returns can be left in the
@@ -564,7 +705,7 @@ SLInlinerWithAnnotation >> inlineSend: aSendNode [
 			node isGoTo ifTrue: [ node metInInlining ] ] ]
 ]
 
-{ #category : 'inlining-decision' }
+{ #category : 'testing-node' }
 SLInlinerWithAnnotation >> isConditionalToBeTransformedForAssignment: aSend [
 	"Answer if a send is of the form
 		e1
@@ -584,7 +725,7 @@ SLInlinerWithAnnotation >> isConditionalToBeTransformedForAssignment: aSend [
 								  self isConditionalToBeTransformedForAssignment: stmt ] ] ] ] ] ]
 ]
 
-{ #category : 'testing' }
+{ #category : 'testing-method' }
 SLInlinerWithAnnotation >> isFunctional: aTMethod [
 	"Answer if the receiver is a functional method. That is, if it
 	 consists of a single return statement of an expression  or an assert or flag followed by
@@ -618,7 +759,7 @@ SLInlinerWithAnnotation >> isFunctional: aTMethod [
 	     #'FILE *' ) includes: aTMethod returnType
 ]
 
-{ #category : 'inlining-decision' }
+{ #category : 'testing-node' }
 SLInlinerWithAnnotation >> isInlineableConditional: aSendNode [
 	"Answer if the given send node is of the form aSend [ifTrue:|ifFalse:] [statements]
 	 where the method for aSend is marked as inline and all returns within it answer booleans."
@@ -632,17 +773,18 @@ SLInlinerWithAnnotation >> isInlineableConditional: aSendNode [
 					  method parseTree lastNonCommentStatement isReturn and: [
 						  method parseTree allSatisfy: [ :node |
 							  node isReturn not or: [
-								  node expression isConstant and: [
-									  #( true false ) includes: node expression value ] ] ] ] ] ] ] ]
+								  node expression isDefine not and: [
+									  node expression isConstant and: [
+										  #( true false ) includes: node expression value ] ] ] ] ] ] ] ] ]
 ]
 
-{ #category : 'inlining-decision' }
+{ #category : 'testing-node' }
 SLInlinerWithAnnotation >> isInlineableFunctionCall: aNode [
 
 	^ self isInlineableFunctionCall: aNode transformedConstantFrom: nil
 ]
 
-{ #category : 'inlining-decision' }
+{ #category : 'testing-node' }
 SLInlinerWithAnnotation >> isInlineableFunctionCall: aNode transformedConstantFrom: anOtherNodeOrNil [
 	"Answer if the given send node is a call to a 'functional' method--a method whose body is a single return statement of some expression and whose actual parameters can all be directly substituted.
 	if a method is marked as always inlined and complete, the method also returns true"
@@ -653,7 +795,6 @@ SLInlinerWithAnnotation >> isInlineableFunctionCall: aNode transformedConstantFr
 	nodeForVisitorInfo := anOtherNodeOrNil
 		                      ifNil: [ aNode ]
 		                      ifNotNil: [ anOtherNodeOrNil ].
-
 	^ (codeGenerator methodNamed: aNode selector)
 		  ifNil: [
 			  aNode asTransformedConstantPerform
@@ -664,7 +805,7 @@ SLInlinerWithAnnotation >> isInlineableFunctionCall: aNode transformedConstantFr
 						  transformedConstantFrom: nodeForVisitorInfo ] ]
 		  ifNotNil: [ :m |
 			  (m ~~ currentMethod and: [
-				   ((self isFunctional: m) or: [
+				   ((m isFunctionalIn: codeGenerator) or: [
 					    m mustBeInlined and: [ m isComplete ] ]) and: [
 					   m mayBeInlined and: [
 						   (codeGenerator mayInline: m selector) and: [
@@ -676,7 +817,7 @@ SLInlinerWithAnnotation >> isInlineableFunctionCall: aNode transformedConstantFr
 				  m checkForRequiredInlinability ] ]
 ]
 
-{ #category : 'inlining-decision' }
+{ #category : 'testing-node' }
 SLInlinerWithAnnotation >> isInlineableSend: aNode [
 	"Answer if the given expresssion node is a call to a method that can be inlined."
 
@@ -695,7 +836,7 @@ SLInlinerWithAnnotation >> isInlineableSend: aNode [
 				  m checkForRequiredInlinability ] ] ]
 ]
 
-{ #category : 'inlining-decision' }
+{ #category : 'testing-node' }
 SLInlinerWithAnnotation >> isSubstitutableNode: aNode intoMethod: targetMeth [
 	"Answer true if the given parameter node is either a constant, a local variable, or a formal parameter of the receiver. Such parameter nodes may be substituted directly into the body of the method during inlining. Note that global variables cannot be subsituted into methods with possible side effects (i.e., methods that may assign to global variables) because the inlined method might depend on having the value of the global variable captured when it is passed in as an argument."
 
@@ -833,7 +974,7 @@ SLInlinerWithAnnotation >> propagateReturnTypeDirectReturn: directReturn exitVar
 		callee propagateReturnIn: codeGenerator ]
 ]
 
-{ #category : 'inlining-preparation' }
+{ #category : 'preparation-statement' }
 SLInlinerWithAnnotation >> removeNonSupportedStmtForInliningIn: stmtLists [
 
 	currentMethod parseTree nodesDo: [ :node |
@@ -875,7 +1016,7 @@ SLInlinerWithAnnotation >> removeNonSupportedStmtForInliningIn: stmtLists [
 			node cases do: [ :case | stmtLists remove: case ifAbsent: [  ] ] ] ]
 ]
 
-{ #category : 'inlining-support-conditional' }
+{ #category : 'conditional' }
 SLInlinerWithAnnotation >> replaceNodeIn: aSendNode with: data [
 
 	| replacementTree method |
@@ -939,23 +1080,7 @@ SLInlinerWithAnnotation >> replaceVariableIn: aReplacementDictionary for: aTMeth
 			sLNodeAnnotatorVisitor moveDownAssigningParentFrom: replacement ] ]
 ]
 
-{ #category : 'inlining-preparation' }
-SLInlinerWithAnnotation >> sendForInliningInCurrentMethod [
-
-	| sendsForInlining |
-	sendsForInlining := OrderedCollection new: 10.
-	currentMethod parseTree
-		nodesDo: [ :node |
-			(self isInlineableFunctionCall: node) ifTrue: [
-				sendsForInlining add: node ] ]
-		unless: [ :node | "Don't inline the arguments to asserts to keep the asserts readable"
-			node isSend and: [
-				node selector == #cCode:inSmalltalk: or: [
-					codeGenerator isAssertSelector: node selector ] ] ].
-	^ sendsForInlining
-]
-
-{ #category : 'inlining-preparation' }
+{ #category : 'preparation-statement' }
 SLInlinerWithAnnotation >> statementsListsForInliningInCurrentMethod [
 	"Answer a collection of statement list nodes that are candidates for inlining.
 	 Currently, we cannot inline into the argument blocks of and: and or: messages.
@@ -981,7 +1106,7 @@ SLInlinerWithAnnotation >> statementsListsForInliningInCurrentMethod [
 	^ self filterStmtForInliningIn: tStmtListNodeLists
 ]
 
-{ #category : 'inlining-preparation' }
+{ #category : 'preparation' }
 SLInlinerWithAnnotation >> transformConditionalAssignment: node [
 	"If possible answer the transformation of code of the form
 		var := e1
@@ -1034,16 +1159,25 @@ SLInlinerWithAnnotation >> tryToInlineMethodExpressionsInCurrentMethod [
 	"Expand any (complete) inline methods sent by this method as receivers or parameters.
 	 Answer if anything was inlined."
 
-	| sendsForInlining didSomething |
-	didSomething := false.
-	sendsForInlining := self sendForInliningInCurrentMethod.
-
+	self fillSendForInliningInCurrentMethod.
+	sendsForInlining isEmpty ifTrue: [ ^ false ].
 
 	codeGenerator pushScope: currentMethod while: [
-		sendsForInlining do: [ :node |
-			(self inlineFunctionCall: node) ifNotNil: [ didSomething := true ] ] ].
+		sendsForInlining do: [ :dictionary |
+			dictionary at: self functionCallInliningString ifPresent: [
+				self inlineFunctionCall:
+					(dictionary at: self functionCallInliningString) ].
+			dictionary
+				at: self functionCallFromBuitinInliningString
+				ifPresent: [
+					| nodes |
+					nodes := dictionary at: self functionCallFromBuitinInliningString.
+					self inlineFunctionCall: nodes value fromBuiltin: nodes key ].
+			dictionary at: self conditionalInliningString ifPresent: [
+				self inlineConditional:
+					(dictionary at: self conditionalInliningString) ] ] ].
 
-	^ didSomething
+	^ true
 ]
 
 { #category : 'inlining' }
@@ -1071,6 +1205,8 @@ SLInlinerWithAnnotation >> tryToInlineMethodsInCurrentMethod [
 		currentMethod isComplete ifTrue: [ ^ false ].
 		^ currentMethod complete: true ].
 
+	currentMethod isComplete ifTrue: [ ^ false ].
+
 	self ensureConditionalAssignmentsAreTransformedInCurrentMethod.
 	self annotateCurrentMethod.
 	didSomething := self tryToInlineMethodStatementsListsInCurrentMethod.
@@ -1078,8 +1214,6 @@ SLInlinerWithAnnotation >> tryToInlineMethodsInCurrentMethod [
 		                didSomething ].
 
 	didSomething ifTrue: [ currentMethod writtenToGlobalVarsCache: nil ].
-
-	"1 haltIf: [ didSomething and: [ currentMethod isComplete ] ]."
 
 	"marking a method complete is progress"
 	currentMethod isComplete ifFalse: [
