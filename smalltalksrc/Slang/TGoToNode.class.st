@@ -3,7 +3,7 @@ Class {
 	#superclass : 'TParseNode',
 	#instVars : [
 		'label',
-		'metInInlining'
+		'indicateAnExitPointInlined'
 	],
 	#category : 'Slang-AST',
 	#package : 'Slang',
@@ -41,16 +41,22 @@ TGoToNode >> children [
 ]
 
 { #category : 'accessing' }
-TGoToNode >> haveBeenMetInInlining [
+TGoToNode >> indicateAnExitPointInlined [
 
-	^ metInInlining
+	indicateAnExitPointInlined := true
 ]
 
 { #category : 'initialization' }
 TGoToNode >> initialize [
 
 	super initialize.
-	metInInlining := false
+	indicateAnExitPointInlined := false
+]
+
+{ #category : 'accessing' }
+TGoToNode >> isAnExitPointInlined [
+
+	^ indicateAnExitPointInlined
 ]
 
 { #category : 'testing' }
@@ -70,12 +76,6 @@ TGoToNode >> isSameAs: aTGoToNode [
 TGoToNode >> label [
 
 	^label
-]
-
-{ #category : 'accessing' }
-TGoToNode >> metInInlining [
-
-	metInInlining := true
 ]
 
 { #category : 'enumerating' }

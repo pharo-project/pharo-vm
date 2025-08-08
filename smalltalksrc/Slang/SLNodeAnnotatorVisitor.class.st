@@ -965,7 +965,7 @@ SLNodeAnnotatorVisitor >> visitGoToNode: aTGotoNode [
 		'a := [... methodWithReturn … b]' gives 'a = [... c . goTo l ... l ... b]' is equivalent (and should be transform to) '[ ... c . goTo l ... l ... a := b]'
 		'a := methodeWithMultipleReturn' gives 'a = [... c . goTo l ... l ... b]' is equivalent (and should be transform to) '[ ... a := c . goTo l ... l ... a := b]'
 	so after an inlining phases we invalidate goTo generated so that they do not 'indicate an active exit point anymore'"
-	(aTGotoNode haveBeenMetInInlining or: [
+	(aTGotoNode isAnExitPointInlined or: [
 		 searchForStmtListValue top value not ]) ifTrue: [ ^ self ].
 
 	searchForStmtListValue top value ifTrue: [

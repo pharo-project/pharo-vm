@@ -700,7 +700,7 @@ SLInlinerWithAnnotation >> inlineSend: aSendNode [
 
 	isUsedExpression ifFalse: [
 		inlineStmts nodesDo: [ :node |
-			node isGoTo ifTrue: [ node metInInlining ] ] ]
+			node isGoTo ifTrue: [ node indicateAnExitPointInlined ] ] ]
 ]
 
 { #category : 'testing-node' }
