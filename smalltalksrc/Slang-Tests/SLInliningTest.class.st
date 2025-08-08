@@ -431,21 +431,6 @@ methodASimpleReturn(void)
 }'
 ]
 
-{ #category : 'collect-statements-for-inlining' }
-SLInliningTest >> testCollectStatementsForInliningInMethodWithAvoidedSelector [
-	"this method collect statements list for inlining, some specific selectors have special comportment regarding inlining strategy like avoiding inlining he receiver or the some arguments"
-
-	| method statementsForInlining |
-	method := self addMethodAndMethodCalledBy:
-		          #methodWithAvoidedSelectors.
-	sLInliner currentMethod: method.
-	sLInliner codeGenerator: ccg.
-
-	statementsForInlining := sLInliner
-		                         statementsListsForInliningInCurrentMethod.
-	self assert: statementsForInlining size equals: 6
-]
-
 { #category : 'inlining-simple' }
 SLInliningTest >> testInlineInSwitchRemovesReturnStatement [
 
@@ -1159,6 +1144,54 @@ methodWithAssignmentOnWhileTrueInlined(void)
 	l2:
 	;
 	/* end methodWithWhileTrue */
+	return 0;
+}'
+]
+
+{ #category : 'collect-statements-for-inlining' }
+SLInliningTest >> testMethodWithAvoidedSelectors [
+	"this method collect statements list for inlining, some specific selectors have special comportment regarding inlining strategy like avoiding inlining he receiver or the some arguments"
+
+	| method translation |
+	method := self addMethodAndMethodCalledBy:
+		          #methodWithAvoidedSelectors.
+	self doInliningIn: method.
+
+	translation := self translate: method.
+	translation := translation trimBoth.
+
+	self
+		assert: translation
+		equals: '/* SLMockInliningTestClass>>#methodWithAvoidedSelectors */
+static sqInt
+methodWithAvoidedSelectors(void)
+{
+	/* begin methodB */
+	2 + 2;
+	/* end methodB */
+	method();
+	method(methodB(), 2, 3);
+	
+#  if methodB()
+	{
+		/* begin methodB */
+		2 + 2;
+		/* end methodB */
+	}
+#  else /* methodB() */
+	{
+		/* begin methodB */
+		2 + 2;
+		/* end methodB */
+	}
+#  endif /* methodB() */
+	((/* begin methodB */ 2 + 2 /* end methodB */)) && 0;
+	0 || (methodB());
+	if (methodB()) {
+		/* begin methodB */
+		2 + 2;
+		/* end methodB */
+	}
 	return 0;
 }'
 ]

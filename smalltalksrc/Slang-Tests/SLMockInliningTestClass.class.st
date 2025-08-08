@@ -448,11 +448,17 @@ SLMockInliningTestClass >> methodWithAvoidedSelectors [
 
 	self cCode: [ self methodB ] inSmalltalk: [ self methodB ].
 	self cCall: 'method'.
-	self cCall: 'method' withArguments: { self methodB. 2. 3 }.
-	self cppIf: ['cppCond'. self methodB] ifTrue: [ 'in cppIfTrue'. false ] ifFalse: [ 'in cppIfFalse'. self methodB ].
-	[ 'and receiver'. self methodB ] and: [ 'and argument'. false ].
-	[ 'or receiver' . false ] or: [ 'or argument'. self methodB ].
-	[ 'ifTrue receiver'. self methodB ] ifTrue: ['ifTrue argument' . self methodB ]
+	self cCall: 'method' withArguments: {
+			self methodB.
+			2.
+			3 }.
+	self
+		cppIf: [ self methodB ]
+		ifTrue: [ self methodB ]
+		ifFalse: [ self methodB ].
+	[ self methodB ] and: [ false ].
+	[ false ] or: [ self methodB ].
+	[ self methodB ] ifTrue: [ self methodB ]
 ]
 
 { #category : 'inlining-block-helpers' }
