@@ -10,7 +10,7 @@ void heartbeat_poll_exit(long microSeconds);
 
 typedef struct _AioFileDescriptor {
 
-	int fd;
+	sqInt fd;
 	void* clientData;
 	int flags;
 	int mask;
@@ -27,6 +27,10 @@ AioFileDescriptor* fileDescriptorList = NULL;
 
 HANDLE interruptEvent;
 HANDLE interruptMultiWait;
+
+int numberOfEvents = 0;
+
+EXPORT(void) printStatus();
 
 AioFileDescriptor * aioFileDescriptor_new(){
 
@@ -48,7 +52,7 @@ AioFileDescriptor * aioFileDescriptor_new(){
 	return aNewFD;
 }
 
-AioFileDescriptor * aioFileDescriptor_find(int fd){
+AioFileDescriptor * aioFileDescriptor_find(sqInt fd){
 
 	AioFileDescriptor* found;
 
@@ -65,7 +69,7 @@ AioFileDescriptor * aioFileDescriptor_find(int fd){
 	return found;
 }
 
-void aioFileDescriptor_remove(int fd){
+void aioFileDescriptor_remove(sqInt fd){
 
 	AioFileDescriptor* found;
 	AioFileDescriptor* previous;
@@ -92,9 +96,25 @@ void aioFileDescriptor_remove(int fd){
 		previous->next = found->next;
 	}
 
+	logTrace("Close fd %p r %p w %p", found->fd, found-> readEvent, found->writeEvent);
+
+
 	if((found->flags & AIO_EXT) == 0){
-		WSACloseEvent(found->readEvent);
-		WSACloseEvent(found->writeEvent);
+		if(WSACloseEvent(found->readEvent)){
+			numberOfEvents--;
+		}
+		else{
+			int lastError = WSAGetLastError();
+			logError("Error WSACreateEvent READ: %p %ld", found->readEvent ,lastError);
+		}
+		if(WSACloseEvent(found->writeEvent)){
+			numberOfEvents--;
+		}
+		else{
+			int lastError = WSAGetLastError();
+			logError("Error WSACreateEvent READ: %p %ld", found->writeEvent ,lastError);
+		}
+
 	}
 
 	free(found);
@@ -118,11 +138,11 @@ EXPORT(void) aioFileDescriptor_printHandlers(){
 	AioFileDescriptor* element = fileDescriptorList;
 	long count = 0;
 
-	printf("List of registered aioHandlers\n");
-	printf("==============================\n\n");
+	logError("List of registered aioHandlers\n");
+	logError("==============================\n\n");
 
 	while(element){
-		printf("FD: %d Mask: %d Flags: %d ClientData %p handlerFn %p\n", element->fd, element->mask, element->flags, element->clientData, element->handlerFn);
+		logError("FD: %lld Mask: %d Flags: %d ClientData %p handlerFn %p REvent %p WEvent %p", element->fd, element->mask, element->flags, element->clientData, element->handlerFn, element->readEvent, element->writeEvent);
 		element = element->next;
 	}
 
@@ -150,6 +170,7 @@ void aioFileDescriptor_fillHandles(HANDLE* handles){
 void aioFileDescriptor_signal_withHandle(HANDLE event){
 
 	AioFileDescriptor* element = fileDescriptorList;
+	WSANETWORKEVENTS events;
 
 	while(element){
 
@@ -159,7 +180,12 @@ void aioFileDescriptor_signal_withHandle(HANDLE event){
 			 * The event should be reset once it has been processed.
 			 */
 			WSAResetEvent(element->readEvent);
-
+			
+			if(WSAEnumNetworkEvents(element->fd, element->readEvent, &events)!=0){
+				int lastError = WSAGetLastError();
+				logError("Error WSAEnumNetworkEvents READ: %ld", lastError);
+			}
+			
 			//We set the event to 0 so it is not recalled after
 			WSAEventSelect(element->fd, element->readEvent, 0);
 
@@ -174,6 +200,11 @@ void aioFileDescriptor_signal_withHandle(HANDLE event){
 			 */
 			WSAResetEvent(element->writeEvent);
 
+			if(WSAEnumNetworkEvents(element->fd, element->writeEvent, &events)!=0){
+				int lastError = WSAGetLastError();
+				logError("Error WSAEnumNetworkEvents WRITE: %ld", lastError);
+			}
+
 			//We set the event to 0 so it is not recalled after
 			WSAEventSelect(element->fd, element->writeEvent, 0);
 
@@ -186,6 +217,8 @@ void aioFileDescriptor_signal_withHandle(HANDLE event){
 }
 
 EXPORT(void) aioInit(void){
+
+
 	interruptEvent = CreateEventW(NULL, TRUE, FALSE, L"InterruptEvent");
 	if(!interruptEvent){
 		char* msg = formatMessageFromErrorCode(GetLastError());
@@ -204,13 +237,25 @@ EXPORT(void) aioInit(void){
 
 }
 
+EXPORT(void) printStatus(){
+	DWORD numberOfHandles = 0;
+
+	GetProcessHandleCount(GetCurrentProcess(), &numberOfHandles);
+
+	logError("Number of total handles: %d\n", numberOfHandles);
+	logError("Number of events: %d\n", numberOfEvents);
+	logError("Number of sockets handles: %d", aioFileDescriptor_numberOfHandles());
+
+}
+
 EXPORT(void) aioFini(void){
 	CloseHandle(interruptEvent);
 	CloseHandle(interruptMultiWait);
 }
 
-EXPORT(void) aioEnable(int fd, void *clientData, int flags){
+EXPORT(void) aioEnable(sqInt fd, void *clientData, int flags){
 	AioFileDescriptor * aioFileDescriptor;
+	char name[255];
 
 	aioFileDescriptor = aioFileDescriptor_find(fd);
 	if(!aioFileDescriptor){
@@ -218,22 +263,37 @@ EXPORT(void) aioEnable(int fd, void *clientData, int flags){
 		aioFileDescriptor->next = NULL;
 	}
 
+
 	aioFileDescriptor->fd = fd;
 	aioFileDescriptor->clientData = clientData;
 	aioFileDescriptor->flags = flags;
-	aioFileDescriptor->readEvent = (HANDLE)WSACreateEvent();
+
+	sprintf(name, "R%p", (void*)fd);
+	aioFileDescriptor->readEvent = (HANDLE)CreateEventA(NULL, TRUE, FALSE, name);
+
+//	aioFileDescriptor->readEvent = (HANDLE)WSACreateEvent();
+
+	numberOfEvents++;
 
 	if(aioFileDescriptor->readEvent == WSA_INVALID_EVENT){
 		int lastError = WSAGetLastError();
 		logError("Error WSACreateEvent READ: %ld", lastError);
 	}
 
-	aioFileDescriptor->writeEvent = (HANDLE)WSACreateEvent();
+	sprintf(name, "W%p", (void*)fd);
+
+	aioFileDescriptor->writeEvent = (HANDLE)CreateEventA(NULL, TRUE, FALSE, name);
+
+//	aioFileDescriptor->writeEvent = (HANDLE)WSACreateEvent();
+
+	numberOfEvents++;
 
 	if(aioFileDescriptor->writeEvent == WSA_INVALID_EVENT){
 		int lastError = WSAGetLastError();
 		logError("Error WSACreateEvent WRITE: %ld", lastError);
 	}
+
+	logTrace("Create fd %p r %p w %p", aioFileDescriptor->fd, aioFileDescriptor-> readEvent, aioFileDescriptor->writeEvent);
 
 	aioFileDescriptor->mask = 0;
 
@@ -251,7 +311,7 @@ EXPORT(void) aioEnable(int fd, void *clientData, int flags){
 	}
 }
 
-EXPORT(void) aioHandle(int fd, aioHandler handlerFn, int mask){
+EXPORT(void) aioHandle(sqInt fd, aioHandler handlerFn, int mask){
 	AioFileDescriptor * aioFileDescriptor;
 	char buf[100];
 
@@ -282,18 +342,18 @@ EXPORT(void) aioHandle(int fd, aioHandler handlerFn, int mask){
 
 }
 
-EXPORT(void) aioSuspend(int fd, int mask){
+EXPORT(void) aioSuspend(sqInt fd, int mask){
 	/**
 	 * TODO: It is not used, so we don't implement it now
 	 */
 	printf("No implemented");
 }
 
-EXPORT(void) aioDisable(int fd){
+EXPORT(void) aioDisable(sqInt fd){
 	aioFileDescriptor_remove(fd);
 }
 
-EXPORT(void) aioEnableExternalHandler(int fd, HANDLE handle, void *clientData, aioHandler handlerFn, int mask){
+EXPORT(void) aioEnableExternalHandler(sqInt fd, HANDLE handle, void *clientData, aioHandler handlerFn, int mask){
 
 	AioFileDescriptor * aioFileDescriptor;
 
@@ -418,7 +478,6 @@ EXPORT(long) aioPoll(long microSeconds){
 	DWORD returnValue;
 	AioFileDescriptor* signaled;
 	int hasEvents = 0;
-
 
 	/*
 	 * As we only can test for MAXIMUM_WAIT_OBJECTS in a single shot,

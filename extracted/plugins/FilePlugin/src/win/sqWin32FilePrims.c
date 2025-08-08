@@ -544,14 +544,14 @@ size_t sqFileWriteFromAt(SQFile *f, size_t count, char* byteArrayIndex, size_t s
 EXPORT(void) aioEnableExternalHandler(int fd, HANDLE handle, void *clientData, aioHandler handlerFn, int mask);
 
 EXPORT(void)
-handleWaitOnStream(int fd, void *clientData, int flag){
+handleWaitOnStream(sqInt fd, void *clientData, int flag){
 	interpreterProxy->signalSemaphoreWithIndex((sqInt)clientData);
 	aioDisable(fd);
 }
 
 EXPORT(sqInt)
 waitForDataonSemaphoreIndex(SQFile *file, sqInt semaphoreIndex){
-	aioEnableExternalHandler((int)FILE_HANDLE(file), FILE_HANDLE(file), (void*)semaphoreIndex, handleWaitOnStream, AIO_R);
+	aioEnableExternalHandler((sqInt)FILE_HANDLE(file), FILE_HANDLE(file), (void*)semaphoreIndex, handleWaitOnStream, AIO_R);
 }
 
 #endif /* WIN32_FILE_SUPPORT */
