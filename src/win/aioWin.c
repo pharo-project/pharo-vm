@@ -126,8 +126,8 @@ long aioFileDescriptor_numberOfHandles(){
 
 	while(element){
 		if(element->mask != 0){
-			if(element->readEvent != NULL) count++;
-			if(element->writeEvent != NULL) count++;
+			if((element->mask & AIO_R) && (element->readEvent != NULL)) count++;
+			if((element->mask & AIO_W) && (element->writeEvent != NULL)) count++;
 		}
 		
 		element = element->next;
@@ -156,12 +156,12 @@ void aioFileDescriptor_fillHandles(HANDLE* handles){
 
 	while(element){
 		if(element->mask != 0){
-			if(element->readEvent != NULL){
+			if((element->mask & AIO_R) && element->readEvent != NULL){
 				handles[index] = element->readEvent;
 				index++;
 			}
 
-			if(element->writeEvent != NULL){
+			if((element->mask & AIO_W) && element->writeEvent != NULL){
 				handles[index] = element->writeEvent;
 				index++;
 			}
