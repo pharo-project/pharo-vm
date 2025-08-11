@@ -125,9 +125,11 @@ long aioFileDescriptor_numberOfHandles(){
 	long count = 0;
 
 	while(element){
-		if(element->readEvent != NULL) count++;
-		if(element->writeEvent != NULL) count++;
-
+		if(element->mask != 0){
+			if((element->mask & AIO_R) && (element->readEvent != NULL)) count++;
+			if((element->mask & AIO_W) && (element->writeEvent != NULL)) count++;
+		}
+		
 		element = element->next;
 	}
 
@@ -153,14 +155,16 @@ void aioFileDescriptor_fillHandles(HANDLE* handles){
 	long index = 0;
 
 	while(element){
-		if(element->readEvent != NULL){
-			handles[index] = element->readEvent;
-			index++;
-		}
+		if(element->mask != 0){
+			if((element->mask & AIO_R) && element->readEvent != NULL){
+				handles[index] = element->readEvent;
+				index++;
+			}
 
-		if(element->writeEvent != NULL){
-			handles[index] = element->writeEvent;
-			index++;
+			if((element->mask & AIO_W) && element->writeEvent != NULL){
+				handles[index] = element->writeEvent;
+				index++;
+			}
 		}
 		element = element->next;
 	}
@@ -190,6 +194,7 @@ void aioFileDescriptor_signal_withHandle(HANDLE event){
 			WSAEventSelect(element->fd, element->readEvent, 0);
 
 			element->handlerFn(element->fd, element->clientData, AIO_R);
+			element->mask = 0;
 			return;
 		}
 
@@ -209,6 +214,7 @@ void aioFileDescriptor_signal_withHandle(HANDLE event){
 			WSAEventSelect(element->fd, element->writeEvent, 0);
 
 			element->handlerFn(element->fd, element->clientData, AIO_W);
+			element->mask = 0;
 			return;
 		}
 
