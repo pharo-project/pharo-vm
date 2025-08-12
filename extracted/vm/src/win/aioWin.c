@@ -193,8 +193,8 @@ void aioFileDescriptor_signal_withHandle(HANDLE event){
 			//We set the event to 0 so it is not recalled after
 			WSAEventSelect(element->fd, element->readEvent, 0);
 
-			element->handlerFn(element->fd, element->clientData, AIO_R);
 			element->mask = 0;
+			element->handlerFn(element->fd, element->clientData, AIO_R);
 			return;
 		}
 
@@ -213,8 +213,8 @@ void aioFileDescriptor_signal_withHandle(HANDLE event){
 			//We set the event to 0 so it is not recalled after
 			WSAEventSelect(element->fd, element->writeEvent, 0);
 
-			element->handlerFn(element->fd, element->clientData, AIO_W);
 			element->mask = 0;
+			element->handlerFn(element->fd, element->clientData, AIO_W);
 			return;
 		}
 
