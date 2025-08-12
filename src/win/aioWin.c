@@ -274,10 +274,13 @@ EXPORT(void) aioEnable(sqInt fd, void *clientData, int flags){
 	aioFileDescriptor->clientData = clientData;
 	aioFileDescriptor->flags = flags;
 
-	sprintf(name, "R%p", (void*)fd);
-	aioFileDescriptor->readEvent = (HANDLE)CreateEventA(NULL, TRUE, FALSE, name);
+//  Using named events is great for debugging, but it has an impact in speed.
+//  Use wisely.
 
-//	aioFileDescriptor->readEvent = (HANDLE)WSACreateEvent();
+//	sprintf(name, "R%p", (void*)fd);
+//	aioFileDescriptor->readEvent = (HANDLE)CreateEventA(NULL, TRUE, FALSE, name);
+
+	aioFileDescriptor->readEvent = (HANDLE)WSACreateEvent();
 
 	numberOfEvents++;
 
@@ -286,11 +289,10 @@ EXPORT(void) aioEnable(sqInt fd, void *clientData, int flags){
 		logError("Error WSACreateEvent READ: %ld", lastError);
 	}
 
-	sprintf(name, "W%p", (void*)fd);
+//	sprintf(name, "W%p", (void*)fd);
+//	aioFileDescriptor->writeEvent = (HANDLE)CreateEventA(NULL, TRUE, FALSE, name);
 
-	aioFileDescriptor->writeEvent = (HANDLE)CreateEventA(NULL, TRUE, FALSE, name);
-
-//	aioFileDescriptor->writeEvent = (HANDLE)WSACreateEvent();
+	aioFileDescriptor->writeEvent = (HANDLE)WSACreateEvent();
 
 	numberOfEvents++;
 
