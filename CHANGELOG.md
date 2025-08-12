@@ -1,10 +1,16 @@
 # Change log
 
+
+## v10.3.8
+
+* Fixing a race condition introduced in v10.3.7 by @tesonep in https://github.com/pharo-project/pharo-vm/pull/1011
+
+**Full Changelog**: https://github.com/pharo-project/pharo-vm/compare/v10.3.7...v10.3.8
+
 ## v10.3.7
 
 * Improving debugging and types of aioWin.c by @tesonep in https://github.com/pharo-project/pharo-vm/pull/1008
 * Reducing the number of handles to test by @tesonep in https://github.com/pharo-project/pharo-vm/pull/1009
-
 
 **Full Changelog**: https://github.com/pharo-project/pharo-vm/compare/v10.3.6...v10.3.7
 
