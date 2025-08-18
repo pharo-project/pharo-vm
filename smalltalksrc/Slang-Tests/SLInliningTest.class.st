@@ -1150,7 +1150,6 @@ methodWithAssignmentOnWhileTrueInlined(void)
 
 { #category : 'collect-statements-for-inlining' }
 SLInliningTest >> testMethodWithAvoidedSelectors [
-	"this method collect statements list for inlining, some specific selectors have special comportment regarding inlining strategy like avoiding inlining he receiver or the some arguments"
 
 	| method translation |
 	method := self addMethodAndMethodCalledBy:
@@ -1493,6 +1492,92 @@ SLInliningTest >> testSimpleInlining [
 	self assert: sendStatements size equals: 2.
 	self assert: sendStatements first selector equals: #+.
 	self assert: sendStatements second selector equals: #+
+]
+
+{ #category : 'inlining-perform-send' }
+SLInliningTest >> testmethodWithPerformSend [
+
+	| method translation |
+	method := self addMethodAndMethodCalledBy: #methodWithPerformSend.
+	self doInliningIn: method.
+
+	translation := self translate: method.
+	translation := translation trimBoth.
+
+	self
+		assert: translation
+		equals: '/* SLMockInliningTestClass>>#methodWithPerformSend */
+static sqInt
+methodWithPerformSend(void)
+{
+	return 4;
+}'
+]
+
+{ #category : 'inlining-perform-send' }
+SLInliningTest >> testmethodWithPerformSendAsReceiver [
+
+	| method translation |
+	method := self addMethodAndMethodCalledBy:
+		          #methodWithPerformSendAsReceiver.
+	self doInliningIn: method.
+
+	translation := self translate: method.
+	translation := translation trimBoth.
+
+	self
+		assert: translation
+		equals:
+			'/* SLMockInliningTestClass>>#methodWithPerformSendAsReceiver */
+static sqInt
+methodWithPerformSendAsReceiver(void)
+{
+	return 4 + 2;
+}'
+]
+
+{ #category : 'inlining-perform-send' }
+SLInliningTest >> testmethodWithPerformSendAsReceiverNotInlined [
+
+	| method translation |
+	method := self addMethodAndMethodCalledBy:
+		          #methodWithPerformSendAsReceiverNotInlined.
+	self doInliningIn: method.
+
+	translation := self translate: method.
+	translation := translation trimBoth.
+
+	self
+		assert: translation
+		equals:
+			'/* SLMockInliningTestClass>>#methodWithPerformSendAsReceiverNotInlined */
+static sqInt
+methodWithPerformSendAsReceiverNotInlined(void)
+{
+	return (methodB()) + 2;
+}'
+]
+
+{ #category : 'inlining-perform-send' }
+SLInliningTest >> testmethodWithPerformSendNotInlined [
+
+	| method translation |
+	method := self addMethodAndMethodCalledBy:
+		          #methodWithPerformSendNotInlined.
+	self doInliningIn: method.
+
+	translation := self translate: method.
+	translation := translation trimBoth.
+
+	self
+		assert: translation
+		equals:
+			'/* SLMockInliningTestClass>>#methodWithPerformSendNotInlined */
+static sqInt
+methodWithPerformSendNotInlined(void)
+{
+	return methodB();
+}'
 ]
 
 { #category : 'parameters' }

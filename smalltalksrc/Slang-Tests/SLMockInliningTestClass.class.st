@@ -23,6 +23,12 @@ SLMockInliningTestClass >> emptyMethodAWithSimpleArgumentsInlined [
 	self emptyMethod: self methodBAlwaysInlined
 ]
 
+{ #category : 'helpers' }
+SLMockInliningTestClass >> functionalMethod [
+
+	^ 4
+]
+
 { #category : 'inlining-simple' }
 SLMockInliningTestClass >> methodA [
 
@@ -508,6 +514,30 @@ SLMockInliningTestClass >> methodWithMultipleBooleanReturn [
 	self methodB ifTrue: [ ^ false ].
 	self methodCMultipleReturn.
 	^ true
+]
+
+{ #category : 'inlining-perform-send' }
+SLMockInliningTestClass >> methodWithPerformSend [
+
+	^ self perform: #functionalMethod
+]
+
+{ #category : 'inlining-perform-send' }
+SLMockInliningTestClass >> methodWithPerformSendAsReceiver [
+
+	^ (self perform: #functionalMethod) + 2
+]
+
+{ #category : 'inlining-perform-send' }
+SLMockInliningTestClass >> methodWithPerformSendAsReceiverNotInlined [
+
+	^ (self perform: #methodB) + 2
+]
+
+{ #category : 'inlining-perform-send' }
+SLMockInliningTestClass >> methodWithPerformSendNotInlined [
+
+	^ self perform: #methodB
 ]
 
 { #category : 'inlining-iterative-helpers' }
