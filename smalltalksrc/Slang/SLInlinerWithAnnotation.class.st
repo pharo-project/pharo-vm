@@ -636,7 +636,7 @@ SLInlinerWithAnnotation >> inlineSend: aSendNode [
 			assigningParent := sLNodeAnnotatorVisitor assigningParentFor:
 				                   aSendNode.
 			exitVar := assigningParent variable name ].
-	"for goTo management"
+	"for goTo in block management"
 	isUsedExpression := (sLNodeAnnotatorVisitor isEffectiveExpression:
 		                     aSendNode) and: [
 		                    directReturn not and: [
