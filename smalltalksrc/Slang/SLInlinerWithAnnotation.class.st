@@ -165,8 +165,10 @@ SLInlinerWithAnnotation >> checkForCompletenessFor: aTMethod [
 SLInlinerWithAnnotation >> checkForFlagIn: aTStatementList [
 
 	(aTStatementList sizeWithoutComments > 1 and: [
-		 aTStatementList firstNonCommentStatement isSend and: [
-			 aTStatementList firstNonCommentStatement selector == #flag: ] ])
+		|firstStatement|
+		firstStatement := aTStatementList firstNonCommentStatement.
+firstStatement isSend and: [
+			 firstStatement selector == #flag: ] ])
 		ifTrue: [ aTStatementList removeFirstNonCommentStatement ]
 ]
 
@@ -437,14 +439,11 @@ SLInlinerWithAnnotation >> inlineFunctionCall: aSendNode inInlineableConditional
 		exprNode isLeaf ifTrue: [
 			parametersToReplaceByArgument add: argName ] ].
 	self checkForFlagIn: parseTree.
-	meth
-		renameVarsForInliningInto: currentMethod
-		except: parametersToReplaceByArgument
-		in: codeGenerator.
-	meth renameLabelsForInliningInto: currentMethod.
-	currentMethod
-		addVarsDeclarationsAndLabelsOf: meth
+
+	self
+		renameVarsAndLabelsForInliningIntoCurrentMethodOf: meth
 		except: parametersToReplaceByArgument.
+
 	substitutionDict := Dictionary new: meth args size * 2.
 	meth args with: argsForInlining do: [ :argName :exprNode |
 		substitutionDict at: argName put: exprNode.
@@ -652,7 +651,7 @@ SLInlinerWithAnnotation >> inlineSend: aSendNode [
 	omittedParameters := res first.
 	calleeParameters := res second ] value:
 		(self trimArgumentsIn: callee).
-	calleeParameters size = aSendNode arguments size ifFalse: [ ^ nil ].
+	calleeParameters size = aSendNode arguments size ifFalse: [ ^ self ].
 	callee := callee copy.
 	inlineStmts := callee parseTree.
 
@@ -667,13 +666,8 @@ SLInlinerWithAnnotation >> inlineSend: aSendNode [
 		in: callee
 		from: aSendNode.
 
-	callee
-		renameVarsForInliningInto: currentMethod
-		except: omittedParameters
-		in: codeGenerator.
-	callee renameLabelsForInliningInto: currentMethod.
-	currentMethod
-		addVarsDeclarationsAndLabelsOf: callee
+	self
+		renameVarsAndLabelsForInliningIntoCurrentMethodOf: callee
 		except: omittedParameters.
 
 	exitLabel := self
@@ -696,7 +690,7 @@ SLInlinerWithAnnotation >> inlineSend: aSendNode [
 	self
 		moveDownReturnsAndAssignmentsFor: aSendNode
 		including: inlineStmts.
-	self replaceVariableIn: argumentsSubstitutionDict for: callee.
+	self replaceVariableIn: argumentsSubstitutionDict for: inlineStmts.
 
 	isUsedExpression ifFalse: [
 		inlineStmts nodesDo: [ :node |
@@ -1014,6 +1008,19 @@ SLInlinerWithAnnotation >> removeNonSupportedStmtForInliningIn: stmtLists [
 			node cases do: [ :case | stmtLists remove: case ifAbsent: [  ] ] ] ]
 ]
 
+{ #category : 'transformation' }
+SLInlinerWithAnnotation >> renameVarsAndLabelsForInliningIntoCurrentMethodOf: aTMethod except: varsToNotRename [
+
+	aTMethod
+		renameVarsForInliningInto: currentMethod
+		except: varsToNotRename
+		in: codeGenerator.
+	aTMethod renameLabelsForInliningInto: currentMethod.
+	currentMethod
+		addVarsDeclarationsAndLabelsOf: aTMethod
+		except: varsToNotRename
+]
+
 { #category : 'conditional' }
 SLInlinerWithAnnotation >> replaceNodeIn: aSendNode with: data [
 
@@ -1056,11 +1063,11 @@ SLInlinerWithAnnotation >> replaceReturnWithGoToIfNeededIn: callee directReturn:
 ]
 
 { #category : 'transformation' }
-SLInlinerWithAnnotation >> replaceVariableIn: aReplacementDictionary for: aTMethod [
+SLInlinerWithAnnotation >> replaceVariableIn: aReplacementDictionary for: aNode [
 
 	| replacement |
 	aReplacementDictionary isEmpty ifTrue: [ ^ self ].
-	aTMethod parseTree nodesDo: [ :node |
+	aNode nodesDo: [ :node |
 		(node isVariable and: [
 			 aReplacementDictionary
 				 at: node name
