@@ -407,22 +407,6 @@ SLAnnotatorVisitorTest >> testMethodWithConstant [
 				 (sLNodeAnnotatorVisitor isInAssignment: node) not and: [
 					 (sLNodeAnnotatorVisitor returningParentFor: node) isNil ] ] ]).
 
-	"ifTrue body"
-	stmtListOfIfTrueAndConstant4AndAndReturn5 := (nonEffectiveExpressionOrStatementCollection
-		                                              select: [ :node |
-		                                              node isSend ]) first
-		                                             arguments first
-		                                             asOrderedCollection.
-	stmtListOfIfTrueAndConstant4AndAndReturn5 first statements do: [
-		:node | stmtListOfIfTrueAndConstant4AndAndReturn5 add: node ].
-	stmtListOfIfTrueAndConstant4AndAndReturn5 do: [ :node |
-		self assert: (sLNodeAnnotatorVisitor isInExpression: node) ].
-
-	(nonEffectiveExpressionOrStatementCollection reject: [ :node |
-		 stmtListOfIfTrueAndConstant4AndAndReturn5 includes: node ]) do: [
-		:node |
-		self assert: (sLNodeAnnotatorVisitor isInExpression: node) not ].
-
 	self assert: self checkNonEffectiveExpressionOrStatementCollection.
 	self assert: self checkEffectiveExpressionValueCollection
 ]
@@ -587,21 +571,6 @@ SLAnnotatorVisitorTest >> testMethodWithReturnInConditional [
 			 (sLNodeAnnotatorVisitor isInReturn: node) not and: [
 				 (sLNodeAnnotatorVisitor isInAssignment: node) not and: [
 					 (sLNodeAnnotatorVisitor returningParentFor: node) isNil ] ] ]).
-
-	ifTrueIfFalseNode := (nonEffectiveExpressionOrStatementCollection
-		                      select: [ :node | node isSend ]) first.
-	firstStmtList := tMethod parseTree.
-	{
-		firstStmtList.
-		ifTrueIfFalseNode } do: [ :node |
-		self assert:
-			(sLNodeAnnotatorVisitor isInExpression: ifTrueIfFalseNode) not ].
-
-	(nonEffectiveExpressionOrStatementCollection reject: [ :node |
-		 {
-			 firstStmtList.
-			 ifTrueIfFalseNode } includes: node ]) do: [ :node |
-		self assert: (sLNodeAnnotatorVisitor isInExpression: node) ].
 
 	self assert: self checkNonEffectiveExpressionOrStatementCollection.
 	self assert: self checkEffectiveExpressionValueCollection

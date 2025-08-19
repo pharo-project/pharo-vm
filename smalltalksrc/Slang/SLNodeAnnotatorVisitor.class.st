@@ -848,10 +848,9 @@ SLNodeAnnotatorVisitor >> visitConditionalSend: aSendNode [
 	self activateCurrentSouldBePartiallyIgnored.
 	self annotateNodeState: aSendNode.
 
-	self pushInExpressionStack.
-
 	self giveStacksInfoForMultipleBranches: aSendNode arguments.
 
+	self pushInExpressionStack.
 	searchForExpressionValueStack push: true.
 	aSendNode receiver accept: self.
 	searchForExpressionValueStack pop.
@@ -873,11 +872,10 @@ SLNodeAnnotatorVisitor >> visitCppConditional: aSendNode [
 	self activateCurrentSouldBePartiallyIgnored.
 	self annotateNodeState: aSendNode.
 
-	self pushInExpressionStack.
-
 	arguments := aSendNode arguments.
 	self giveStacksInfoForMultipleBranches: arguments allButFirst.
 
+	self pushInExpressionStack.
 	searchForExpressionValueStack push: true.
 	aSendNode receiver accept: self.
 	arguments first accept: self.
