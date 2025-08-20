@@ -624,13 +624,6 @@ SLNodeAnnotatorVisitor >> processValueSourceFor: aNode from: aStack constantStri
 	entry := info at: aNode.
 	isEffectivelyIgnored := false.
 
-
-	"searchForStmtListValue isNotEmpty ifTrue: [
-		searchForStmtListValue top key ifTrue: [
-			assoc := true -> assoc value ].
-		searchForStmtListValue top value ifTrue: [
-			isEffectivelyIgnored := true ] ]."
-
 	currentShouldBePartiallyIgnored
 		ifTrue: [
 			assoc key ifTrue: [
