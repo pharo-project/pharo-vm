@@ -336,7 +336,7 @@ SLAnnotatorVisitorTest >> testMethodWithConditionalAssignment [
 { #category : 'constant' }
 SLAnnotatorVisitorTest >> testMethodWithConstant [
 
-	| tMethod effectiveConstantExpressionValueSet nonEffectiveExpressionOrStatementConstantSet constant5And6 constantTrue returns return5 return6 stmtListOfIfTrueAndConstant4AndAndReturn5 |
+	| tMethod effectiveConstantExpressionValueSet nonEffectiveExpressionOrStatementConstantSet constant5And6 constantTrue returns return5 return6 |
 	tMethod := ccg methodNamed: #methodWithConstant.
 
 	sLNodeAnnotatorVisitor visit: tMethod parseTree.
@@ -509,7 +509,7 @@ SLAnnotatorVisitorTest >> testMethodWithReturn [
 { #category : 'return' }
 SLAnnotatorVisitorTest >> testMethodWithReturnInConditional [
 
-	| tMethod effectiveConstantExpressionValueSet constant2And4 returnNodes return2 return4 ifTrueIfFalseNode firstStmtList constantTrue |
+	| tMethod effectiveConstantExpressionValueSet constant2And4 returnNodes return2 return4 constantTrue |
 	tMethod := ccg methodNamed: #methodWithReturnInConditional.
 
 	sLNodeAnnotatorVisitor visit: tMethod parseTree.
