@@ -383,8 +383,7 @@ SLNodeAnnotatorVisitor >> initialize [
 
 { #category : 'helpers-stack-operation' }
 SLNodeAnnotatorVisitor >> invalidateSearchStacksAfterReturn [
-	"in an expression like a := exp1 ifTrue: [^ exp2] ifFalse: [exp3], the return node must not be simply ignored, it must correct the stacks so the exploration of exp2 does not mark nodes as used expression for  the node a := ...
-	the stack for return and general expression are already being given new elements from the return node so it is not necessary to modify them"
+	"in an expression like a := exp1 ifTrue: [^ exp2] ifFalse: [exp3], the return node must not be simply ignored, it must correct the stacks so the exploration of exp2 does not mark nodes as used expression for  the node a := ..."
 
 	| top |
 	searchForAssignValueStack isNotEmpty ifTrue: [
