@@ -986,7 +986,6 @@ SLNodeAnnotatorVisitor >> visitReturnNode: aReturnNode [
 	self annotateNodeState: aReturnNode.
 
 	hasInvalidateAStmtSearch := self invalidateSearchStacksAfterReturn.
-	searchForAssignValueStack isNotEmpty ifTrue: [  ].
 
 	searchForExpressionValueStack push: true.
 	searchForReturnValueStack push: true -> aReturnNode.
