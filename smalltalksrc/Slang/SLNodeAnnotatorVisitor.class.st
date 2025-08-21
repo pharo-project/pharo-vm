@@ -388,6 +388,7 @@ SLNodeAnnotatorVisitor >> invalidateSearchStacksAfterReturn [
 	| top |
 	searchForAssignValueStack isNotEmpty ifTrue: [
 		top := searchForAssignValueStack pop.
+		"keeping the assignment does mean that if a goTo is in the return expression it will incorrectly mark it but Slang/C doesnt authorized goTo in return and will not compile so keeping it is safe"
 		searchForAssignValueStack push: false -> top value ].
 
 	searchForReturnValueStack isNotEmpty ifTrue: [
