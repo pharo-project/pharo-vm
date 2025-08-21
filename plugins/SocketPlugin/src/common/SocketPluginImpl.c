@@ -449,57 +449,67 @@ static int socketError(int s)
 */
 static void acceptHandler(int fd, void *data, int flags)
 {
-  int lastError;
-    
-  privateSocketStruct *pss= (privateSocketStruct *)data;
-  logTrace("acceptHandler(%d, %p ,%d)\n", fd, data, flags);
-  if (flags & AIO_X) /* -- exception */
-    {
-      /* error during listen() */
-      aioDisable(fd);
-      pss->sockError= socketError(fd);
-      pss->sockState= Invalid;
-      pss->s= -1;
-      closesocket(fd);
-      logTrace("acceptHandler: aborting server %d pss=%p\n", fd, pss);
-    }
-  else /* (flags & AIO_R) -- accept() is ready */
-    {
-      int newSock= accept(fd, 0, 0);
-      if (newSock < 0)
+	int lastError;
+
+	privateSocketStruct *pss= (privateSocketStruct *)data;
+	
+	logTrace("acceptHandler(%d, %p ,%d)\n", fd, data, flags);
+	if (flags & AIO_X) /* -- exception */
 	{
-	  if ((lastError = getLastSocketError()) == ECONNABORTED)
-	    {
-	      /* let's just pretend this never happened */
-	      aioHandle(fd, acceptHandler, AIO_RX);
-	      return;
-	    }
-	  /* something really went wrong */
-	  pss->sockError= lastError;
-	  pss->sockState= Invalid;
-	  logWarnFromErrno("acceptHandler");
-	  aioDisable(fd);
-	  closesocket(fd);
-	  logTrace("acceptHandler: aborting server %d pss=%p\n", fd, pss);
+		/* error during listen() */
+		aioDisable(fd);
+		pss->sockError= socketError(fd);
+		pss->sockState= Invalid;
+		pss->s= -1;
+		closesocket(fd);
+		logTrace("acceptHandler: aborting server %d pss=%p\n", fd, pss);
 	}
-      else /* newSock >= 0 -- connection accepted */
+	else /* (flags & AIO_R) -- accept() is ready */
 	{
-	  pss->sockState= Connected;
-	  setLinger(newSock, 1);
-	  if (pss->multiListen)
-	    {
-	      pss->acceptedSock= newSock;
-	    }
-	  else /* traditional listen -- replace server with client in-place */
-	    {
-	      aioDisable(fd);
-	      closesocket(fd);
-	      pss->s= newSock;
-	      aioEnable(newSock, pss, 0);
-	    }
+		int newSock= accept(fd, 0, 0);
+		if (newSock < 0)
+		{
+			if ((lastError = getLastSocketError()) == ECONNABORTED)
+			{
+				/* let's just pretend this never happened */
+				aioHandle(fd, acceptHandler, AIO_RX);
+				return;
+			}
+			
+			/* something really went wrong */
+			pss->sockError= lastError;
+			pss->sockState= Invalid;
+			logWarnFromErrno("acceptHandler");
+			aioDisable(fd);
+			closesocket(fd);
+			logTrace("acceptHandler: aborting server %d pss=%p\n", fd, pss);
+		}
+		else /* newSock >= 0 -- connection accepted */
+		{
+			pss->sockState= Connected;
+			setLinger(newSock, 1);
+
+			if (pss->multiListen)
+			{
+				logTrace("acceptHandler: multiListen old: %d new: %d", fd, newSock);
+				if(pss->acceptedSock > 0){
+					logWarn("Socket %d has accepted socket pending %d", pss->s, pss->acceptedSock);
+					setLinger(pss->acceptedSock, 0);
+					closesocket(pss->acceptedSock);
+				}
+				pss->acceptedSock= newSock;
+			}
+			else /* traditional listen -- replace server with client in-place */
+			{
+				logTrace("acceptHandler: traditionalListen old: %d new: %d", fd, newSock);
+				aioDisable(fd);
+				closesocket(fd);
+				pss->s= newSock;
+				aioEnable(newSock, pss, 0);
+			}
+		}
 	}
-    }
-  notify(pss, CONN_NOTIFY);
+	notify(pss, CONN_NOTIFY);
 }
 
 
@@ -601,12 +611,23 @@ static void dataHandler(int fd, void *data, int flags)
 
 static void closeHandler(int fd, void *data, int flags)
 {
-  privateSocketStruct *pss= (privateSocketStruct *)data;
-  aioDisable(fd);
-  logTrace("closeHandler(%d, %p, %d)\n", fd, data, flags);
-  pss->sockState= Unconnected;
-  pss->s= -1;
-  notify(pss, READ_NOTIFY | CONN_NOTIFY);
+	privateSocketStruct *pss= (privateSocketStruct *)data;
+	
+	aioDisable(fd);
+	
+	logTrace("closeHandler(%d, %p, %d)\n", fd, data, flags);
+	
+	int result = closesocket(fd);
+	
+	if(result == 0){
+		logTrace("closesocket(%d): correctly closed");
+	}else{
+		logTrace("closesocket(%d): error while closing %d", getLastSocketError());
+	}
+	
+	pss->sockState= Unconnected;
+	pss->s= -1;
+	notify(pss, READ_NOTIFY | CONN_NOTIFY);
 }
 
 
@@ -983,49 +1004,52 @@ void sqSocketAcceptFromRecvBytesSendBytesSemaIDReadSemaIDWriteSemaID(SocketPtr s
 
 void sqSocketCloseConnection(SocketPtr s)
 {
-  int result= 0;
+	int result= 0;
 
-  if (!socketValid(s))
-    return;
+	if (!socketValid(s))
+		return;
 
-  logTrace("closeConnection(%d)\n", SOCKET(s));
+	logTrace("closeConnection(%d)\n", SOCKET(s));
 
-  if (SOCKET(s) < 0)
-    return;	/* already closed */
+	if (SOCKET(s) < 0)
+ 	   return;	/* already closed */
 
-  SOCKETSTATE(s)= ThisEndClosed;
-  result = closesocket(SOCKET(s));
-  int lastError = getLastSocketError();
+	if(PSP(s)->acceptedSock > 0){
+		logWarn("Socket %d has accepted socket pending %d", PSP(s)->s, PSP(s)->acceptedSock);
+		setLinger(PSP(s)->acceptedSock, 0);
+		closesocket(PSP(s)->acceptedSock);
+	}
 
-  if ((result == -1) && (lastError != ERROR_WOULD_BLOCK))
-    {
-      /* error */
-      SOCKETSTATE(s)= Unconnected;
-      SOCKETERROR(s)= lastError;
-      aioDisable(SOCKET(s));
+	SOCKETSTATE(s)= ThisEndClosed;
+	result = closesocket(SOCKET(s));
+	int lastError = getLastSocketError();
 
-      notify(PSP(s), CONN_NOTIFY);
-      logWarnFromErrno("closeConnection");
-    }
-  else if (0 == result)
-    {
-      /* close completed synchronously */
-      SOCKETSTATE(s)= Unconnected;
-      aioDisable(SOCKET(s));
+	if ((result == -1) && (lastError != ERROR_WOULD_BLOCK))
+	{
+		/* error */
+		SOCKETSTATE(s)= Unconnected;
+		SOCKETERROR(s)= lastError;
+		aioDisable(SOCKET(s));
 
-      logTrace("closeConnection: disconnected\n");
-      SOCKET(s)= -1;
-    }
-  else
-    {
-      /* asynchronous close in progress */
+		notify(PSP(s), CONN_NOTIFY);
+		logWarnFromErrno("closeConnection");
+		
+	} else if (0 == result) {
+		/* close completed synchronously */
+		SOCKETSTATE(s)= Unconnected;
+		aioDisable(SOCKET(s));
 
-	  shutdown(SOCKET(s), SD_SEND);
+		logTrace("closeConnection: disconnected\n");
+		SOCKET(s)= -1;
+	} else {
+		/* asynchronous close in progress */
 
-      SOCKETSTATE(s)= ThisEndClosed;
-      aioHandle(SOCKET(s), closeHandler, AIO_RWX);  /* => close() done */
-      logTrace("closeConnection: deferred [aioHandle is set]\n");
-    }
+		shutdown(SOCKET(s), SD_SEND);
+
+		SOCKETSTATE(s)= ThisEndClosed;
+		aioHandle(SOCKET(s), closeHandler, AIO_RWX);  /* => close() done */
+		logTrace("closeConnection: deferred [aioHandle is set]\n");
+	}
 }
 
 
