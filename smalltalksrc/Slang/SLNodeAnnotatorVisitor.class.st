@@ -83,7 +83,7 @@ SLNodeAnnotatorVisitor >> addToEffectiveExpressionOrNot: aNode [
 
 { #category : 'annotate' }
 SLNodeAnnotatorVisitor >> addToFromSearchStmtList: aNode [
-	"for stacks restoration only, indicate if we are in a statement list and if we are indicate if the statement list was a used expression"
+	"for stacks restoration only, indicate if we are in a statement or expression list"
 
 	(info at: aNode)
 		at: self fromSearchStmtListString
@@ -284,6 +284,7 @@ SLNodeAnnotatorVisitor >> handleConditionalSend: aSendNode [
 
 { #category : 'visiting-helpers' }
 SLNodeAnnotatorVisitor >> handleIterativeSend: aSendNode [
+	"in Slang, iterative are not considered as expression but rather as statement to be closer to C"
 
 	aSendNode isUnaryIterativeSend ifTrue: [
 		self visitUnaryIterativeSend: aSendNode.
@@ -583,6 +584,7 @@ SLNodeAnnotatorVisitor >> moveDownSingleBranchConditional: aNode newBranch: anOt
 
 	| newSelector |
 	aNode isSend ifFalse: [ ^ self ].
+
 	aNode selector = #ifTrue: ifTrue: [ newSelector := #ifTrue:ifFalse: ].
 
 	aNode selector = #ifFalse: ifTrue: [ newSelector := #ifFalse:ifTrue: ].
@@ -599,7 +601,7 @@ SLNodeAnnotatorVisitor >> moveDownSingleBranchConditional: aNode newBranch: anOt
 		| newArgument last |
 		newArgument := TStatementListNode statements: { anOtherNode }.
 		last := aNode arguments first lastNonCommentStatement.
-		last isGoTo ifTrue: [ newArgument addLast: last copy ].
+		last isGoTo ifTrue: [ ^ self ].
 		aNode
 			selector: newSelector;
 			arguments: aNode arguments , { newArgument } ]
@@ -795,10 +797,12 @@ SLNodeAnnotatorVisitor >> visitAssignmentNode: anAssignmentNode [
 
 { #category : 'visiting-helpers' }
 SLNodeAnnotatorVisitor >> visitBinaryIterativeSend: aSendNode [
-	"in Slang, iterative are not considered as expression but rather as statement to be closer to C"
 
+	| hasInvalidateAStmtSearch |
 	self activateCurrentSouldBePartiallyIgnored.
 	self annotateNodeState: aSendNode.
+
+	hasInvalidateAStmtSearch := self invalidateSearchStacksAfterReturn.
 
 	self pushInExpressionStack.
 	searchForExpressionValueStack push: true.
@@ -807,7 +811,8 @@ SLNodeAnnotatorVisitor >> visitBinaryIterativeSend: aSendNode [
 	aSendNode receiver accept: self.
 
 	searchForExpressionValueStack pop.
-	inExpressionStack pop
+	inExpressionStack pop.
+	self resetSearchStacksAfterReturn: hasInvalidateAStmtSearch
 ]
 
 { #category : 'visiting' }
@@ -879,11 +884,12 @@ SLNodeAnnotatorVisitor >> visitCppConditional: aSendNode [
 
 { #category : 'visiting-helpers' }
 SLNodeAnnotatorVisitor >> visitDoIterativeSend: aSendNode [
-	"in Slang, iterative are not considered as expression but rather as statement to be closer to C"
 
-	| arguments |
+	| arguments hasInvalidateAStmtSearch |
 	self activateCurrentSouldBePartiallyIgnored.
 	self annotateNodeState: aSendNode.
+
+	hasInvalidateAStmtSearch := self invalidateSearchStacksAfterReturn.
 
 	self pushInExpressionStack.
 	searchForExpressionValueStack push: true.
@@ -894,7 +900,8 @@ SLNodeAnnotatorVisitor >> visitDoIterativeSend: aSendNode [
 	aSendNode receiver accept: self.
 
 	searchForExpressionValueStack pop.
-	inExpressionStack pop
+	inExpressionStack pop.
+	self resetSearchStacksAfterReturn: hasInvalidateAStmtSearch
 ]
 
 { #category : 'visiting-helpers' }
@@ -1096,10 +1103,12 @@ SLNodeAnnotatorVisitor >> visitSwitchStatementNode: aSwitchStatementNode [
 
 { #category : 'visiting-helpers' }
 SLNodeAnnotatorVisitor >> visitUnaryIterativeSend: aSendNode [
-	"in Slang, iterative are not considered as expression but rather as statement to be closer to C"
 
+	| hasInvalidateAStmtSearch |
 	self activateCurrentSouldBePartiallyIgnored.
 	self annotateNodeState: aSendNode.
+
+	hasInvalidateAStmtSearch := self invalidateSearchStacksAfterReturn.
 
 	self pushInExpressionStack.
 	searchForExpressionValueStack push: true.
@@ -1107,22 +1116,18 @@ SLNodeAnnotatorVisitor >> visitUnaryIterativeSend: aSendNode [
 	aSendNode receiver accept: self.
 
 	searchForExpressionValueStack pop.
-	inExpressionStack pop
+	inExpressionStack pop.
+	self resetSearchStacksAfterReturn: hasInvalidateAStmtSearch
 ]
 
 { #category : 'visiting-helpers' }
 SLNodeAnnotatorVisitor >> visitUnaryIterativeSendWithImportantLastStatement: aSendNode [
-	"for a 'a := [[ exp . condition ] whileTrue]' case (obtained through inlining for example), the last expression of the block is a condition not the expression value of a := ..."
 
-	| block condition |
+	| hasInvalidateAStmtSearch |
 	self activateCurrentSouldBePartiallyIgnored.
 	self annotateNodeState: aSendNode.
 
-	"to not interpret the condition as the effective value, we move the condition to the top"
-	block := aSendNode receiver.
-	condition := block lastNonCommentStatement.
-	block removeLast.
-	block addAllFirstKeepingFirstComments: { condition }.
+	hasInvalidateAStmtSearch := self invalidateSearchStacksAfterReturn.
 
 	self pushInExpressionStack.
 	searchForExpressionValueStack push: true.
@@ -1132,8 +1137,7 @@ SLNodeAnnotatorVisitor >> visitUnaryIterativeSendWithImportantLastStatement: aSe
 	searchForExpressionValueStack pop.
 	inExpressionStack pop.
 
-	block removeFirstNonCommentStatement.
-	block addAllLastKeepingEndComments: { condition }
+	hasInvalidateAStmtSearch := self invalidateSearchStacksAfterReturn
 ]
 
 { #category : 'visiting-helpers' }

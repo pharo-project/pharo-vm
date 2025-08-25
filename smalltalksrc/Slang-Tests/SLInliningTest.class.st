@@ -986,10 +986,10 @@ methodWithAssignmentOnRepeatInlined(void)
 		if (methodB()) {
 			a = 5;
 			goto l2;
-		} else {
-			a = 0;
-			goto l2;
 		}
+		/* begin methodB */
+		2 + 2;
+		/* end methodB */
 	}
 	l2:
 	;
@@ -1022,11 +1022,12 @@ methodWithAssignmentOnToByDoInlined(void)
 	/* begin methodWithToByDo */
 	for (i = 1; i <= 4; i += 2) {
 		if (methodB(i)) {
-			/* begin methodB */
-			a = 2 + 2;
+			a = 5;
 			goto l2;
-			/* end methodB */
 		}
+		/* begin methodB */
+		2 + 2;
+		/* end methodB */
 	}
 	l2:
 	;
@@ -1059,11 +1060,12 @@ methodWithAssignmentOnToDoInlined(void)
 	/* begin methodWithToDo */
 	for (i = 1; i <= 2; i += 1) {
 		if (methodB(i)) {
-			/* begin methodB */
-			a = 2 + 2;
+			a = 5;
 			goto l2;
-			/* end methodB */
 		}
+		/* begin methodB */
+		2 + 2;
+		/* end methodB */
 	}
 	l2:
 	;
@@ -1095,14 +1097,12 @@ methodWithAssignmentOnWhileTrueBinaryInlined(void)
 	/* begin methodWithWhileTrueBinary */
 	while (1) {
 		if (methodB()) {
-			/* begin methodB */
-			a = 2 + 2;
-			goto l2;
-			/* end methodB */
-		} else {
-			a = 0;
+			a = 5;
 			goto l2;
 		}
+		/* begin methodB */
+		2 + 2;
+		/* end methodB */
 	}
 	l2:
 	;
@@ -1136,10 +1136,10 @@ methodWithAssignmentOnWhileTrueInlined(void)
 		if (methodB()) {
 			a = 5;
 			goto l2;
-		} else {
-			a = 0;
-			goto l2;
 		}
+		/* begin methodB */
+		2 + 2;
+		/* end methodB */
 	} while (1);
 	l2:
 	;

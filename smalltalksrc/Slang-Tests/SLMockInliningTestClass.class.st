@@ -543,7 +543,9 @@ SLMockInliningTestClass >> methodWithPerformSendNotInlined [
 { #category : 'inlining-iterative-helpers' }
 SLMockInliningTestClass >> methodWithRepeat [
 
-	[ self methodB ifTrue: [ ^ 5 ] ] repeat
+	[
+	self methodB ifTrue: [ ^ 5 ].
+	self methodB ] repeat
 ]
 
 { #category : 'inlining-conditional-receiver' }
@@ -571,13 +573,17 @@ SLMockInliningTestClass >> methodWithReturningIfWithReturnPushedDownInlined [
 { #category : 'inlining-iterative-helpers' }
 SLMockInliningTestClass >> methodWithToByDo [
 
-	1 to: 4 by: 2 do: [:i | (self methodB: i)ifTrue: [ ^ self methodB ] ]
+	1 to: 4 by: 2 do: [ :i |
+		(self methodB: i) ifTrue: [ ^ 5 ].
+		self methodB ]
 ]
 
 { #category : 'inlining-iterative-helpers' }
 SLMockInliningTestClass >> methodWithToDo [
 
-	1 to: 2 do: [:i | (self methodB: i) ifTrue: [ ^ self methodB ] ]
+	1 to: 2 do: [ :i |
+		(self methodB: i) ifTrue: [ ^ 5 ].
+		self methodB ]
 ]
 
 { #category : 'inlinng-variable-helpers' }
@@ -593,11 +599,14 @@ SLMockInliningTestClass >> methodWithWhileTrue [
 
 	[
 	self methodB ifTrue: [ ^ 5 ].
+	self methodB.
 	true ] whileTrue
 ]
 
 { #category : 'inlining-iterative-helpers' }
 SLMockInliningTestClass >> methodWithWhileTrueBinary [
 
-	[ true ] whileTrue: [ self methodB ifTrue: [ ^ self methodB ] ]
+	[ true ] whileTrue: [
+		self methodB ifTrue: [ ^ 5 ].
+		self methodB ]
 ]
