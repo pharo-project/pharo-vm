@@ -85,7 +85,8 @@ SLInliningTest >> test2ChainInliningEmptyMethodAWithArgumentsInlined [
 	"a bug present since old version, vm works but it would be nice to fix it one day"
 
 	| method translation |
-	method := self addMethodAndMethodCalledBy: #emptyMethodAWithArgumentsInlined.
+	method := self addMethodAndMethodCalledBy:
+		          #emptyMethodAWithArgumentsInlined.
 	self doInliningIn: method.
 
 	translation := self translate: method.
@@ -106,9 +107,10 @@ emptyMethodAWithArgumentsInlined(void)
 	/* begin methodA */
 	1 + 1;
 	/* begin methodB */
-	arg = 2 + 2;
+	2 + 2;
 	/* end methodB */
 	/* end methodA */
+	arg = null;
 	/* end methodCAlwaysInlined */
 	/* end emptyMethod: */
 	return 0;
@@ -160,7 +162,7 @@ SLInliningTest >> test2ChainInliningMethodAWithArgumentsInlined [
 static sqInt
 methodAWithArgumentsInlined(void)
 {
-	return methodB((/* begin methodCAlwaysInlined */ 3 + 3, /* begin methodA */ 1 + 1, /* begin methodB */ 2 + 2 /* end methodB */ /* end methodA */ /* end methodCAlwaysInlined */));
+	return methodB((/* begin methodCAlwaysInlined */ 3 + 3, /* begin methodA */ 1 + 1, /* begin methodB */ 2 + 2 /* end methodB */, null /* end methodA */ /* end methodCAlwaysInlined */));
 }'
 ]
 
@@ -182,7 +184,7 @@ SLInliningTest >> test2ChainInliningMethodAWithReturningSendArgumentsInlined [
 static sqInt
 methodAWithReturningSendArgumentsInlined(void)
 {
-	return methodB((/* begin methodCAlwaysInlined */ 3 + 3, /* begin methodA */ 1 + 1, /* begin methodB */ 2 + 2 /* end methodB */ /* end methodA */ /* end methodCAlwaysInlined */));
+	return methodB((/* begin methodCAlwaysInlined */ 3 + 3, /* begin methodA */ 1 + 1, /* begin methodB */ 2 + 2 /* end methodB */, null /* end methodA */ /* end methodCAlwaysInlined */));
 }'
 ]
 
@@ -703,14 +705,16 @@ methodAInlineReturningInlinedIfTrueIfFalseInAssignment(void)
 
 	if (methodB()) {
 		/* begin methodB */
-		a = 2 + 2;
+		2 + 2;
+		a = null;
 		/* end methodB */
 	} else {
 		/* begin methodA */
 		1 + 1;
 		/* begin methodB */
-		a = 2 + 2;
+		2 + 2;
 		/* end methodB */
+		a = null;
 		/* end methodA */
 	}
 	return 0;
@@ -737,14 +741,16 @@ methodAInlineReturningInlinedIfTrueIfFalseInReturn(void)
 {
 	if (methodB()) {
 		/* begin methodB */
-		return 2 + 2;
+		2 + 2;
+		return null;
 		/* end methodB */
 	} else {
 		/* begin methodA */
 		1 + 1;
 		/* begin methodB */
-		return 2 + 2;
+		2 + 2;
 		/* end methodB */
+		return null;
 		/* end methodA */
 	}
 }'
@@ -772,7 +778,8 @@ methodAInlineReturningInlinedIfTrueInAssignment(void)
 
 	if (methodB()) {
 		/* begin methodB */
-		a = 2 + 2;
+		2 + 2;
+		a = null;
 		/* end methodB */
 	} else {
 		a = 0;
@@ -801,7 +808,8 @@ methodAInlineReturningInlinedIfTrueInReturn(void)
 {
 	if (methodB()) {
 		/* begin methodB */
-		return 2 + 2;
+		2 + 2;
+		return null;
 		/* end methodB */
 	}
 	return 0;
@@ -879,7 +887,8 @@ methodAReturnBlockAssignment(void)
 	sqInt a;
 
 	/* begin methodB */
-	return (a = 2 + 2);
+	2 + 2;
+	return (a = null);
 	/* end methodB */
 }'
 ]
@@ -1184,7 +1193,7 @@ methodWithAvoidedSelectors(void)
 		/* end methodB */
 	}
 #  endif /* methodB() */
-	((/* begin methodB */ 2 + 2 /* end methodB */)) && 0;
+	((/* begin methodB */ 2 + 2, null /* end methodB */)) && 0;
 	0 || (methodB());
 	if (methodB()) {
 		/* begin methodB */
@@ -1248,14 +1257,16 @@ methodWithBlockWithReturningIfArgumentInlined(void)
 	{
 		if (methodB()) {
 			/* begin methodB */
-			a = 2 + 2;
+			2 + 2;
+			a = null;
 			/* end methodB */
 		} else {
 			/* begin methodA */
 			1 + 1;
 			/* begin methodB */
-			a = 2 + 2;
+			2 + 2;
 			/* end methodB */
+			a = null;
 			/* end methodA */
 		}
 	}

@@ -500,6 +500,23 @@ SLMockInliningTestClass >> methodWithBlockWithReturningIfWithInlinedArgumentInli
 		self methodBMultipleReturnExpressionAndStatement ]
 ]
 
+{ #category : 'inlining-assignment-helpers' }
+SLMockInliningTestClass >> methodWithConditionalReturnPlusAssignment [
+
+	| b x y |
+	b := x > y
+		     ifTrue: [ ^ 7 ]
+		     ifFalse: [ 0 ].
+	^ b + 1
+]
+
+{ #category : 'inlining-assignment' }
+SLMockInliningTestClass >> methodWithDoubleAssignment [
+
+	| a |
+	a := self methodWithConditionalReturnPlusAssignment
+]
+
 { #category : 'inlining-conditional-receiver' }
 SLMockInliningTestClass >> methodWithIfTrueReceiverInlined [
 

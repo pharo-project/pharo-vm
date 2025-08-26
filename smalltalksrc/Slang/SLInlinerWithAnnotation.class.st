@@ -895,7 +895,7 @@ SLInlinerWithAnnotation >> label: exitLabel for: aTMethod [
 	aTMethod parseTree nodesDo: [ :node |
 		| replacement |
 		node isReturn ifTrue: [
-			aTMethod 
+			aTMethod
 				transformReturnSubExpression: node
 				toAssignmentOf: nil
 				andGoto: exitLabel
@@ -910,6 +910,7 @@ SLInlinerWithAnnotation >> label: exitLabel for: aTMethod [
 	map isEmpty ifTrue: [
 		aTMethod deny: labelUsed.
 		^ false ].
+
 	"Now do a top-down replacement for all returns that should be mapped to assignments and gotos"
 	aTMethod parseTree replaceNodesIn: map.
 
@@ -1052,13 +1053,16 @@ SLInlinerWithAnnotation >> replaceNodesIn: aReplacementDictionary for: aNode [
 SLInlinerWithAnnotation >> replaceReturnWithGoToIfNeededIn: callee directReturn: directReturn [
 
 	| exitLabel |
-	callee hasReturn ifTrue: [
-		directReturn ifFalse: [
-			exitLabel := currentMethod unusedLabelForInliningInto:
-				             currentMethod.
-			(self label: exitLabel for: callee)
-				ifTrue: [ currentMethod labels add: exitLabel ]
-				ifFalse: [ "is label used?" ^ nil ] ] ].
+	callee hasReturn
+		ifTrue: [
+			directReturn ifFalse: [
+				exitLabel := currentMethod unusedLabelForInliningInto:
+					             currentMethod.
+				(self label: exitLabel for: callee)
+					ifTrue: [ currentMethod labels add: exitLabel ]
+					ifFalse: [ "is label used?" ^ nil ] ] ]
+		ifFalse: [
+		callee parseTree addLast: (TConstantNode new setValue: nil) ].
 	^ exitLabel
 ]
 
