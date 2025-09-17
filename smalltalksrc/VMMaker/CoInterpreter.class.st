@@ -1564,8 +1564,11 @@ CoInterpreter >> ceSend: selector super: superNormalBar to: rcvr numArgs: numArg
 											methodOperand: (self mnuMethodOrNilFor: rcvr)
 											numArgs: argumentCount) asUnsignedInteger
 						> cogit minCogMethodAddress]) ifTrue:
-						[cogit
-							linkSendAt: (stackPages longAt: stackPointer)
+						[
+						|outerReturn|
+						outerReturn := self stackTop.
+						cogit
+							linkSendAt: outerReturn
 							in: (self mframeHomeMethod: framePointer)
 							to: cogMethod
 							offset: (superNormalBar = 0
@@ -1588,8 +1591,11 @@ CoInterpreter >> ceSend: selector super: superNormalBar to: rcvr numArgs: numArg
 						[:newCogMethod| cogMethod := newCogMethod]]].
 		 cogMethod selector = selector
 			ifTrue:
-				[cogit
-					linkSendAt: (stackPages longAt: stackPointer)
+				[
+				|outerReturn|
+						outerReturn := self stackTop.
+				cogit
+					linkSendAt: outerReturn
 					in: (self mframeHomeMethod: framePointer)
 					to: cogMethod
 					offset: (superNormalBar = 0
