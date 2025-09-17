@@ -1206,10 +1206,11 @@ CCodeGenerator >> emitCMethods: methodList on: aStream [
 		displayProgress: 'Writing Translated Code...'
 		from: 0
 		to: methods size
-		during: [ :bar | 
-			methodList doWithIndex: [ :m :i | 
+		during: [ :bar |
+			methodList doWithIndex: [ :m :i |
 				bar value: i.
-				(m isRealMethod and: [ self shouldGenerateMethod: m ]) ifTrue: [ | cast |
+				(m isRealMethod and: [ self shouldGenerateMethod: m ]) ifTrue: [
+					| cast |
 					cast := m asCASTIn: self.
 					cast prettyPrintOn: aStream ] ] ]
 ]

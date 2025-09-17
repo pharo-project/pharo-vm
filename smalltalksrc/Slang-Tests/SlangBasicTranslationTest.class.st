@@ -1359,68 +1359,6 @@ SlangBasicTranslationTest >> testInlineNodeWithSharedLabelInCase [
 }'
 ]
 
-{ #category : 'test-inline-comment' }
-SlangBasicTranslationTest >> testInlinedCommentInExpressionMoveReturn [
-	"comments in Slang are related to inlining, they should only be in list of Statement (use as argument or expression but list of statement anyway) at the start or end of a list of statement. Here the return need to be moved to the switch at the location of the actual last statement "
-
-	| translation tMethod |
-	tMethod := self getTMethodFrom: #switchInReturn.
-	tMethod prepareMethodIn: generator.
-	tMethod recordDeclarationsIn: generator.
-	generator doBasicInlining: true.
-	translation := self translate: tMethod.
-	translation := translation trimBoth.
-
-	self
-		assert: translation
-		equals: '/* SlangBasicTranslationTestClass>>#switchInReturn */
-static sqInt
-switchInReturn(void)
-{
-	sqInt switch0;
-
-	switch (1) {
-		case 4:
-		{
-			/* begin methodWithoutInlinePragmaAndEmptyMethodCall */
-			/* begin emptyMethod */
-			/* end emptyMethod */
-			return bodyOfMethodWithoutInlinePragma();
-			/* end methodWithoutInlinePragmaAndEmptyMethodCall */
-		}
-		default:
-		error("Case not found and no otherwise clause");
-		return -1;
-	}
-}'
-]
-
-{ #category : 'test-inline-comment' }
-SlangBasicTranslationTest >> testInlinedMethodCommentInExpression [
-	"comments in Slang are related to inlining, they should only be in list of Statement (use as argument or expression but list of statement anyway) at the start or end of a list of statement. when use as an expression we need to be careful of where to put comma to respect semantics/not produce errors "
-
-	| translation tMethod |
-	tMethod := self getTMethodFrom: #methodCallingMethodExpressionList.
-	tMethod recordDeclarationsIn: generator.
-	generator doBasicInlining: true.
-
-	translation := self translate: tMethod.
-	translation := translation trimBoth.
-
-	self
-		assert: translation
-		equals:
-			'/* SlangBasicTranslationTestClass>>#methodCallingMethodExpressionList */
-static sqInt
-methodCallingMethodExpressionList(void)
-{
-	sqInt i;
-
-	i == ((/* begin emptyMethod */ /* end emptyMethod */, bodyOfMethodWithoutInlinePragma(), /* begin methodWithoutInlinePragmaAndEmptyMethodCall */ /* begin emptyMethod */ /* end emptyMethod */, bodyOfMethodWithoutInlinePragma() /* end methodWithoutInlinePragmaAndEmptyMethodCall */, /* begin methodWithInlinePragma */ bodyOfMethodWithInlinePragma() /* end methodWithInlinePragma */));
-	return 0;
-}'
-]
-
 { #category : 'tests-inlinemethod' }
 SlangBasicTranslationTest >> testInlineWithCoerceAsArgument [
 	"the cast is still in an expression, so inlining does not supress it"
@@ -1519,6 +1457,68 @@ static sqInt
 methodCallingMethodWithCCoerceInReturn(void)
 {
 	method();
+	return 0;
+}'
+]
+
+{ #category : 'test-inline-comment' }
+SlangBasicTranslationTest >> testInlinedCommentInExpressionMoveReturn [
+	"comments in Slang are related to inlining, they should only be in list of Statement (use as argument or expression but list of statement anyway) at the start or end of a list of statement. Here the return need to be moved to the switch at the location of the actual last statement "
+
+	| translation tMethod |
+	tMethod := self getTMethodFrom: #switchInReturn.
+	tMethod prepareMethodIn: generator.
+	tMethod recordDeclarationsIn: generator.
+	generator doBasicInlining: true.
+	translation := self translate: tMethod.
+	translation := translation trimBoth.
+
+	self
+		assert: translation
+		equals: '/* SlangBasicTranslationTestClass>>#switchInReturn */
+static sqInt
+switchInReturn(void)
+{
+	sqInt switch0;
+
+	switch (1) {
+		case 4:
+		{
+			/* begin methodWithoutInlinePragmaAndEmptyMethodCall */
+			/* begin emptyMethod */
+			/* end emptyMethod */
+			return bodyOfMethodWithoutInlinePragma();
+			/* end methodWithoutInlinePragmaAndEmptyMethodCall */
+		}
+		default:
+		error("Case not found and no otherwise clause");
+		return -1;
+	}
+}'
+]
+
+{ #category : 'test-inline-comment' }
+SlangBasicTranslationTest >> testInlinedMethodCommentInExpression [
+	"comments in Slang are related to inlining, they should only be in list of Statement (use as argument or expression but list of statement anyway) at the start or end of a list of statement. when use as an expression we need to be careful of where to put comma to respect semantics/not produce errors "
+
+	| translation tMethod |
+	tMethod := self getTMethodFrom: #methodCallingMethodExpressionList.
+	tMethod recordDeclarationsIn: generator.
+	generator doBasicInlining: true.
+
+	translation := self translate: tMethod.
+	translation := translation trimBoth.
+
+	self
+		assert: translation
+		equals:
+			'/* SlangBasicTranslationTestClass>>#methodCallingMethodExpressionList */
+static sqInt
+methodCallingMethodExpressionList(void)
+{
+	sqInt i;
+
+	i == ((/* begin emptyMethod */ /* end emptyMethod */, bodyOfMethodWithoutInlinePragma(), /* begin methodWithoutInlinePragmaAndEmptyMethodCall */ /* begin emptyMethod */ /* end emptyMethod */, bodyOfMethodWithoutInlinePragma() /* end methodWithoutInlinePragmaAndEmptyMethodCall */, /* begin methodWithInlinePragma */ bodyOfMethodWithInlinePragma() /* end methodWithInlinePragma */));
 	return 0;
 }'
 ]

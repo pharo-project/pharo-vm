@@ -841,7 +841,6 @@ waitForDataonSemaphoreIndex(SQFile *file, sqInt semaphoreIndex){
 		return interpreterProxy->success(false);
 
 	aioEnable(fileno(getFile(file)), (void*) semaphoreIndex, AIO_EXT);
-	typedef void (*aioHandler)(int fd, void *clientData, int flag);
 	aioHandle(fileno(getFile(file)), signalOnDataArrival, AIO_R);
 
 	return interpreterProxy->success(true);

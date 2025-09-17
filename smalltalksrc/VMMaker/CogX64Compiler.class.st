@@ -1807,6 +1807,18 @@ CogX64Compiler >> concretizeMoveAwR [
 			at: 2 put: 0.
 		^machineCodeSize].
 	reg := operands at: 1.
+
+	"Avoid the long load sequence when loading into SP.
+	The following code will generate a sequence like:
+	
+	xchg   rsp,rax
+	movabs rax, ADDRESS
+	xchg   rsp,rax
+	
+	This makes rsp potentially (and temporarily) point to an object, breaking the invariant that SP must point to stack space.
+	If an interrupt/signal happens before SP is restored, then the interrupt may corrupt the heap."
+	reg = SPReg ifTrue: [ self error: 'Cannot compile store into SP from far address' ].
+
 	reg = RAX
 		ifTrue: [offset := 0]
 		ifFalse:
@@ -4305,13 +4317,15 @@ CogX64Compiler >> is32BitSignedImmediate: a64BitUnsignedOperand [
 
 { #category : 'testing' }
 CogX64Compiler >> isAddressRelativeToVarBase: varAddress [
-	<inline: true>
-	<var: #varAddress type: #usqInt>
 	"Support for addressing variables off the dedicated VarBaseReg.  Allow for 1Mb of variables.
 	 The x64 supports 32-bit offsets, but we choose not to address everything from VarBaseReg."
-	^varAddress notNil
-	  and: [varAddress >= cogit varBaseAddress
-	  and: [varAddress - cogit varBaseAddress < (1 << 20)]]
+
+	<inline: true>
+	<var: #varAddress type: #usqInt>
+	^ varAddress notNil and: [
+		  varAddress
+			  between: cogit varBaseAddress - (1 << 20)
+			  and: cogit varBaseAddress + (1 << 20) ]
 ]
 
 { #category : 'testing' }
@@ -4726,7 +4740,7 @@ CogX64Compiler >> shiftSetsConditionCodesFor: aConditionalJumpOpcode [
 { #category : 'inline cacheing' }
 CogX64Compiler >> sixtyFourBitLiteralBefore: followingAddress [
 	<inline: true>
-	^objectMemory unalignedLongAt: followingAddress - 8
+	^self unalignedLongAt: followingAddress - 8
 ]
 
 { #category : 'disassembly' }
@@ -4814,34 +4828,34 @@ CogX64Compiler >> twoByteInstructionSizeAt: pc [
 
 { #category : 'memory access' }
 CogX64Compiler >> unalignedLong32At: byteAddress [
-	<cmacro: '(inst,byteAddress) long32At(byteAddress)'>
-	^ ((objectMemory byteAt: byteAddress + 3) << 24)
-	+ ((objectMemory byteAt: byteAddress + 2) << 16)
-	+ ((objectMemory byteAt: byteAddress + 1) << 8)
-	+  (objectMemory byteAt: byteAddress)
+
+	<var: 'readValue' type: 'int'>
+	<returnTypeC: 'int'>
+	self
+		cCode: [
+			| readValue |
+			self
+				memcpy: (self addressOf: readValue)
+				_: byteAddress
+				_: (self sizeof: readValue).
+			^ readValue ]
+		inSmalltalk: [
+			^ (objectMemory byteAt: byteAddress + 3) << 24
+			  + ((objectMemory byteAt: byteAddress + 2) << 16)
+			  + ((objectMemory byteAt: byteAddress + 1) << 8)
+			  + (objectMemory byteAt: byteAddress) ]
 ]
 
 { #category : 'memory access' }
 CogX64Compiler >> unalignedLong32At: byteAddress put: aWord [
-	<cmacro: '(inst,byteAddress,aWord) long32Atput(byteAddress,aWord)'>
+	<cmacro: '(inst,byteAddress,aWord) memcpy((void*)byteAddress, &aWord, sizeof(int32_t))'>
+
 	objectMemory
 		byteAt: byteAddress + 0 put:  (aWord bitAnd: 16rFF);
 		byteAt: byteAddress + 1 put: ((aWord >> 8) bitAnd: 16rFF);
 		byteAt: byteAddress + 2 put: ((aWord >> 16) bitAnd: 16rFF);
 		byteAt: byteAddress + 3 put: ((aWord >> 24) bitAnd: 16rFF).
 	^aWord
-]
-
-{ #category : 'memory access' }
-CogX64Compiler >> unalignedLongAt: byteAddress [
-	<cmacro: '(byteAddress) longAt(byteAddress)'>
-	^objectMemory unalignedLongAt: byteAddress
-]
-
-{ #category : 'memory access' }
-CogX64Compiler >> unalignedLongAt: byteAddress put: aWord [
-	<cmacro: '(byteAddress,aWord) longAtput(byteAddress,aWord)'>
-	^objectMemory unalignedLongAt: byteAddress put: aWord
 ]
 
 { #category : 'testing' }

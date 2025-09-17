@@ -1,1 +1,1 @@
-Package { #name : #'VMMaker-Tools' }
+Package { #name : 'VMMaker-Tools' }

@@ -3,6 +3,7 @@ Class {
 	#superclass : 'VMStructType',
 	#instVars : [
 		'dataSize',
+		'hdrOldSpaceSize',
 		'oldBaseAddr',
 		'initialSpecialObjectsOop',
 		'headerFlags',
@@ -157,6 +158,18 @@ SpurImageHeaderStruct >> hdrNumStackPages [
 SpurImageHeaderStruct >> hdrNumStackPages: anObject [
 
 	hdrNumStackPages := anObject
+]
+
+{ #category : 'accessing' }
+SpurImageHeaderStruct >> hdrOldSpaceSize [
+
+	^ hdrOldSpaceSize
+]
+
+{ #category : 'accessing' }
+SpurImageHeaderStruct >> hdrOldSpaceSize: anObject [
+
+	hdrOldSpaceSize := anObject
 ]
 
 { #category : 'accessing' }

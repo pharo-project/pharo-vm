@@ -661,6 +661,11 @@ SpurSegmentManager >> someSegmentContainsPinned [
 SpurSegmentManager >> swizzleObj: objOop [
 	<inline: false>
 	self assert: canSwizzle.
+
+	"The permanent space is always loaded in the same place"	
+	(manager getMemoryMap isPermanentObject: objOop)
+		ifTrue: [ ^ objOop ].
+	
 	numSegments - 1 to: 1 by: -1 do:
 		[:i|
 		objOop >= (segments at: i) segStart ifTrue:

@@ -494,6 +494,14 @@ VMMemoryMap >> insufficientMemoryAvailableError [
 ]
 
 { #category : 'testing objects' }
+VMMemoryMap >> isInCodeZone: anOop [ 
+
+	<api>
+
+	^ anOop >= codeZoneStart  and: [ anOop < codeZoneEnd ]
+]
+
+{ #category : 'testing objects' }
 VMMemoryMap >> isOldObject: anOop [ 
 
 	<api>

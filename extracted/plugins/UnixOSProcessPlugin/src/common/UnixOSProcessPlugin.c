@@ -68,7 +68,6 @@ EXPORT(char**) getProcessArgumentVector();
 EXPORT(char**) getProcessEnvironmentVector();
 
 /*** Function Prototypes ***/
-static sqInt argumentAtAsType(sqInt classIdentifier);
 static void * callocWrappersize(sqInt count, sqInt objectSize);
 static sqInt copyBytesFromtolength(void *charArray1, void *charArray2, sqInt len);
 static sqInt createPipeForReaderwriter(FILEHANDLETYPE *readerIOStreamPtr, FILEHANDLETYPE *writerIOStreamPtr);
@@ -352,43 +351,6 @@ static pthread_t vmThread;
 
 /*** Macros ***/
 #define sessionIdentifierFromSqFile(sqFile) (((SQFile *)(sqFile))->sessionID)
-
-
-
-/*	Answer a string containing the OS process argument at index (an Integer)
-	in the
-	argument list.
- */
-
-	/* UnixOSProcessPlugin>>#argumentAtAsType: */
-static sqInt
-argumentAtAsType(sqInt classIdentifier)
-{
-    extern char **argVec;
-    sqInt index;
-    sqInt len;
-    sqInt newString;
-    sqInt s;
-    char *sPtr;
-
-    int argCnt = getProcessArgumentCount();
-
-	index = stackIntegerValue(0);
-	if ((index > argCnt) || (index < 1)) {
-		popthenPush(2, nilObject());
-	}
-	else {
-		sPtr = argVec[index - 1];
-		/* begin cString:asCollection: */
-		len = strlen(sPtr);
-		newString = instantiateClassindexableSize(classIdentifier, len);
-		strncpy(arrayValueOf(newString), sPtr, len);
-		s = newString;
-		popthenPush(2, s);
-	}
-	return 0;
-}
-
 
 /*	Using malloc() and calloc() is something I would like to avoid, since it
 	is likely to cause problems some time in the future if somebody redesigns
@@ -4436,7 +4398,7 @@ setInterpreter(struct VirtualMachine *anInterpreter)
 /* This wrapper is used to handle the new signature of the function */
 
 static void 
-reapChildProcessWrapper(int sigNum, struct __siginfo * sigInfo, void * userData){
+reapChildProcessWrapper(int sigNum, siginfo_t * sigInfo, void * userData){
 	reapChildProcess(sigNum);
 }
 # endif

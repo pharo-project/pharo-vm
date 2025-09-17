@@ -4,6 +4,7 @@ Class {
 	#classVars : [
 		'BecameActiveClassFlag',
 		'BecameCompiledMethodFlag',
+		'BecamePermanentObject',
 		'BecamePointerObjectFlag',
 		'OldBecameNewFlag'
 	],

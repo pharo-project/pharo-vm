@@ -9,6 +9,8 @@ extern sqInt setMaxOldSpaceSize(usqInt limit);
 extern void setDesiredCogCodeSize(sqInt anInteger);
 extern sqInt setDesiredEdenBytes(usqLong bytes);
 extern void setMinimalPermSpaceSize(sqInt min);
+extern void setAvoidSearchingSegmentsWithPinnedObjects(sqInt aValue);
+extern void setMaxSlotsForNewSpaceAlloc(usqInt aValue);
 
 #if defined(__GNUC__) && ( defined(i386) || defined(__i386) || defined(__i386__)  \
 			|| defined(i486) || defined(__i486) || defined (__i486__) \
@@ -69,6 +71,9 @@ EXPORT(int) vm_init(VMParameters* parameters)
 	setMaxOldSpaceSize(parameters->maxOldSpaceSize);
 	setDesiredEdenBytes(parameters->edenSize);
 	setMinimalPermSpaceSize(parameters->minPermSpaceSize);
+	setMaxSlotsForNewSpaceAlloc(parameters->maxSlotsForNewSpaceAlloc);
+
+	setAvoidSearchingSegmentsWithPinnedObjects(parameters->avoidSearchingSegmentsWithPinnedObjects);
 
 	if(parameters->maxCodeSize > 0) {
 #ifndef COGVM

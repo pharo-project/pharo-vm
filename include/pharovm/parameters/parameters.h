@@ -123,12 +123,21 @@ typedef struct VMParameters_
 	//The minimal Permanent Space Size
 	long long minPermSpaceSize;
 
+	//The max slots in a single indexable young object
+	long long maxSlotsForNewSpaceAlloc;
+
 	// FIXME: Why passing this is needed when we have the separated vectors?
 	int processArgc;
 	const char** processArgv;
 
 	// FIXME: Passing this environment vector seems hackish. getenv should be used instead.
 	const char** environmentVector;
+
+	// When pinning young objects, the objects are clonned into the old space.
+	// Trying to allocate it in a segment with already pinned objects
+	// Does the clonning process avoid this search and allocate the clonned object anywhere?
+	// DEFAULT: false
+	bool avoidSearchingSegmentsWithPinnedObjects;
 
 	VMParameterVector vmParameters;
 	VMParameterVector imageParameters;

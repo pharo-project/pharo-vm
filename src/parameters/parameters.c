@@ -76,6 +76,9 @@ static VMErrorCode processMaxCodeSpaceSizeOption(const char *argument, VMParamet
 static VMErrorCode processEdenSizeOption(const char *argument, VMParameters * params);
 static VMErrorCode processWorkerOption(const char *argument, VMParameters * params);
 static VMErrorCode processMinPermSpaceSizeOption(const char *argument, VMParameters * params);
+static VMErrorCode processMaxSlotsForNewSpaceAlloc(const char *argument, VMParameters * params);
+static VMErrorCode processWorkingDirectory(const char *argument, VMParameters * params);
+static VMErrorCode processAvoidSearchingSegmentsWithPinnedObjects(const char *argument, VMParameters * params);
 
 static const VMParameterSpec vm_parameters_spec[] =
 {
@@ -94,6 +97,11 @@ static const VMParameterSpec vm_parameters_spec[] =
   {.name = "codeSize", .hasArgument = true, .function = processMaxCodeSpaceSizeOption},
   {.name = "edenSize", .hasArgument = true, .function = processEdenSizeOption},
   {.name = "minPermSpaceSize", .hasArgument = true, .function = processMinPermSpaceSizeOption},
+  {.name = "maxSlotsForNewSpaceAlloc", .hasArgument = true, .function = processMaxSlotsForNewSpaceAlloc},
+
+  {.name = "workingDirectory", .hasArgument = true, .function = processWorkingDirectory},
+
+  {.name = "avoidSearchingSegmentsWithPinnedObjects", .hasArgument = false, .function = processAvoidSearchingSegmentsWithPinnedObjects},
 #ifdef __APPLE__
   // This parameter is passed by the XCode debugger.
   {.name = "NSDocumentRevisionsDebugMode", .hasArgument = false, .function = NULL},
@@ -350,6 +358,7 @@ logParameters(const VMParameters* parameters)
 	logDebug("Image file name: %s", parameters->imageFileName);
 	logDebug("Is default Image: %s", parameters->isDefaultImage ? "yes" : "no");
 	logDebug("Is interactive session: %s", parameters->isInteractiveSession ? "yes" : "no");
+	logDebug("Is in worker mode: %s", parameters->isWorker ? "yes" : "no");
 
 	logParameterVector("vmParameters", &parameters->vmParameters);
 	logParameterVector("imageParameters", &parameters->imageParameters);
@@ -434,8 +443,16 @@ vm_printUsageTo(FILE *out)
 "                                       It is possible to use k(kB), M(MB) and G(GB).\n"
 "  --edenSize=<size>[mk]                Sets the size of eden\n"
 "                                       It is possible to use k(kB), M(MB) and G(GB).\n"
-"  --minPermSpaceSize=<size>[mk]        Sets the size of eden\n"
+"  --maxSlotsForNewSpaceAlloc=<words>	The max numbers of slots to allow allocating in a single young indexable object"
+"  --minPermSpaceSize=<size>[mk]        Sets the min size of the permanent space (default: 0k)\n"
 "                                       It is possible to use k(kB), M(MB) and G(GB).\n"
+"  --workingDirectory=<dir>				It sets the working directory for the running image.\n"
+"\n"
+"  --avoidSearchingSegmentsWithPinnedObjects\n"
+"                                       When pinning young objects, the objects are clonned into the old space.\n"
+"                                       It tries to allocate the object in a segment with already pinned objects.\n"
+"	                                    Avoid the clonning process avoid this search and allocate the clonned object anywhere?\n"
+"\n"
 "\n"
 "Notes:\n"
 "\n"
@@ -533,6 +550,35 @@ processMinPermSpaceSizeOption(const char* originalArgument, VMParameters * param
 }
 
 static VMErrorCode
+processMaxSlotsForNewSpaceAlloc(const char* originalArgument, VMParameters * params)
+{
+	long long intValue = strtoll(originalArgument, NULL, 10);
+
+	if(intValue < 0)
+	{
+		logError("Invalid option for max slots for new space allocation: %s\n", originalArgument);
+		vm_printUsageTo(stderr);
+		return VM_ERROR_INVALID_PARAMETER_VALUE;
+	}
+
+	params->maxSlotsForNewSpaceAlloc = intValue;
+
+	return VM_SUCCESS;
+}
+
+static VMErrorCode
+processWorkingDirectory(const char* originalArgument, VMParameters * params)
+{
+
+	logDebug("Changing working directory to: %s", originalArgument);
+	if(chdir(originalArgument)== -1){
+		logErrorFromErrno("Error changing directory");
+	}
+
+	return VM_SUCCESS;
+}
+
+static VMErrorCode
 processEdenSizeOption(const char* originalArgument, VMParameters * params)
 {
 	long long intValue = parseByteSize(originalArgument);
@@ -540,6 +586,14 @@ processEdenSizeOption(const char* originalArgument, VMParameters * params)
 	if(intValue < 0)
 	{
 		logError("Invalid option for eden: %s\n", originalArgument);
+		vm_printUsageTo(stderr);
+		return VM_ERROR_INVALID_PARAMETER_VALUE;
+	}
+
+	//The max value for the edenSize is 1GB check #nextCorpseOffset: for restriction details.
+	if(intValue > 1024 * 1024 * 1024)
+	{
+		logError("The max value for eden is 1G: %s\n", originalArgument);
 		vm_printUsageTo(stderr);
 		return VM_ERROR_INVALID_PARAMETER_VALUE;
 	}
@@ -571,6 +625,13 @@ processPrintVersionOption(const char* argument, VMParameters * params)
 	printf("%s\n", getVMVersion());
 	printf("Built from: %s\n", getSourceVersion());
 	return VM_ERROR_EXIT_WITH_SUCCESS;
+}
+
+static VMErrorCode
+processAvoidSearchingSegmentsWithPinnedObjects(const char* argument, VMParameters * params)
+{
+	params->avoidSearchingSegmentsWithPinnedObjects = true;
+	return VM_SUCCESS;
 }
 
 static VMErrorCode
@@ -717,12 +778,14 @@ vm_parameters_init(VMParameters *parameters){
 	parameters->maxStackFramesToPrint = 0;
 	parameters->maxCodeSize = 0;
 	parameters->maxOldSpaceSize = 0;
+	parameters->maxSlotsForNewSpaceAlloc = 0;
 	parameters->edenSize = 0;
 	parameters->minPermSpaceSize = 0;
 	parameters->imageFileName = NULL;
 	parameters->isDefaultImage = false;
 	parameters->defaultImageFound = false;
 	parameters->isInteractiveSession = false;
+	parameters->avoidSearchingSegmentsWithPinnedObjects = false;
 
 	parameters->isWorker = false;
 

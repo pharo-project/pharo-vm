@@ -101,9 +101,9 @@ void* allocateJITMemory(usqInt desiredSize, usqInt desiredPosition){
 #if __APPLE__	
 	int additionalFlags = MAP_JIT;
 #else
-	int additionalFlags = 0;
+	int additionalFlags = desiredPosition ? MAP_FIXED : 0;
 #endif
-	
+
 	logDebug("Trying to allocate JIT memory in %p\n", (void* )desiredBaseAddressAligned);
 
 	if (MAP_FAILED == (result = mmap((void*) desiredBaseAddressAligned, alignedSize, 
@@ -124,6 +124,12 @@ sqAllocateMemory(usqInt minHeapSize, usqInt desiredHeapSize, usqInt desiredBaseA
     sqInt   heapSize    =  0;
     sqInt   heapLimit    =  0;
 
+#if __APPLE__
+	int additionalFlags = 0;
+#else
+	int additionalFlags = desiredBaseAddress ? MAP_FIXED : 0;
+#endif
+
 	pageSize = getpagesize();
 	pageMask = ~(pageSize - 1);
 
@@ -142,7 +148,7 @@ sqAllocateMemory(usqInt minHeapSize, usqInt desiredHeapSize, usqInt desiredBaseA
 			(void* )desiredBaseAddressAligned);
 
 	while ((!heap) && (heapLimit >= minHeapSize)) {
-		if (MAP_FAILED == (heap = mmap((void*) desiredBaseAddressAligned, heapLimit, MAP_PROT, MAP_FLAGS, devZero, 0))) {
+		if (MAP_FAILED == (heap = mmap((void*) desiredBaseAddressAligned, heapLimit, MAP_PROT, MAP_FLAGS | additionalFlags, devZero, 0))) {
 			heap = 0;
 			heapLimit = valign(heapLimit / 4 * 3);
 		}

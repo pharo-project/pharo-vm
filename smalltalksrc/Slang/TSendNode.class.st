@@ -77,8 +77,8 @@ TSendNode >> argumentsForInliningCodeGenerator: aCodeGen [
 ]
 
 { #category : 'testing' }
-TSendNode >> argumentsHasNothingButComments [
-	"related to dead code elimination and inlining, see if the cases has nothing but comment meaning they are empty"
+TSendNode >> argumentsIsEmptyOrHasNothingButComments [
+	"related to dead code elimination and inlining, see if the cases has nothing but comment meaning they are empty or dirctly empty"
 
 	^ arguments allSatisfy: [ :arg | arg isComment ]
 ]
@@ -282,8 +282,7 @@ TSendNode >> children [
 { #category : 'dead-code-elimination' }
 TSendNode >> collectSendInArguments: sendToCollect [
 
-	arguments do: [ :child |
-		child isSend ifTrue: [ child collectSendInSelf: sendToCollect ] ]
+	arguments do: [ :arg | arg collectSendInSelf: sendToCollect ]
 ]
 
 { #category : 'dead-code-elimination' }
@@ -293,8 +292,7 @@ TSendNode >> collectSendInSelf: sendToCollect [
 	self isSelectorWithNoSideEffect
 		ifFalse: [ sendToCollect add: self ]
 		ifTrue: [
-			receiver isSend ifTrue: [
-				receiver collectSendInSelf: sendToCollect ].
+			receiver collectSendInSelf: sendToCollect.
 			self collectSendInArguments: sendToCollect ]
 ]
 
@@ -363,6 +361,12 @@ TSendNode >> isAssertion [
 	^(selector beginsWith: 'assert') or: [selector beginsWith: 'verify']
 ]
 
+{ #category : 'dead-code-elimination' }
+TSendNode >> isBinaryIterativeSend [
+
+	^ #( #whileTrue: #whileFalse: #timesRepeat: ) includes: selector
+]
+
 { #category : 'testing' }
 TSendNode >> isBuiltinOperator [
 
@@ -380,6 +384,12 @@ TSendNode >> isConditionalSend [
 	"Answer if the receiver is a send of any of the conditionals, ifTrue: ifTrue:ifFalse: et al"
 	^#(	ifTrue:ifFalse: ifFalse:ifTrue: ifTrue: ifFalse:
 		ifNil:ifNotNil: ifNotNil:ifNil: ifNil: ifNotNil:) includes: selector
+]
+
+{ #category : 'dead-code-elimination' }
+TSendNode >> isDoIterativeSend [
+
+	^ #( #to:do: #to:by:do: ) includes: selector
 ]
 
 { #category : 'testing' }
@@ -441,6 +451,18 @@ TSendNode >> isSend [
 { #category : 'C code generation' }
 TSendNode >> isStructReference: varNode in: aCodeGen [
 	^(varNode structTargetKindIn: aCodeGen) notNil
+]
+
+{ #category : 'dead-code-elimination' }
+TSendNode >> isUnaryIterativeSend [
+
+	^ #( #repeat ) includes: selector
+]
+
+{ #category : 'dead-code-elimination' }
+TSendNode >> isUnaryIterativeSendWithImportantLastStatement [
+
+	^ #( #whileTrue #whileFalse ) includes: selector
 ]
 
 { #category : 'testing' }
@@ -576,14 +598,17 @@ TSendNode >> removeUnusedNodesInBranch: aChild [
 	| branchIndex |
 	branchIndex := arguments indexOf: aChild.
 	arguments := arguments select: [ :e | e ~= aChild ].
-	(arguments isEmpty or: [ self argumentsHasNothingButComments ])
+	self argumentsIsEmptyOrHasNothingButComments
 		ifTrue: [
 			self transformReceiverAfterEmptyArguments.
 			self parent removeUnusedNodesInBranch: self ]
 		ifFalse: [
-			(self selector beginsWith: #cCoerce)
-				ifTrue: [ self parent removeUnusedNodesInBranch: self ]
-				ifFalse: [ self reduceConditionalSend: branchIndex ] ]
+			((self selector beginsWith: #cCoerce) or: [ self isValueExpansion ])
+				ifTrue: [
+					self parent removeUnusedNodesInBranch: self.
+					^ self ].
+			self isConditionalSend ifTrue: [
+				self reduceConditionalSend: branchIndex ] ]
 ]
 
 { #category : 'transformations' }
@@ -713,7 +738,6 @@ TSendNode >> transformReceiverAfterEmptyArguments [
 	"keep any send that isn't a comparaison in the receiver to the parent of self. Since this method is called in a dead code cleaning processus the parent should only be a statement list or another conditional send"
 
 	| sendToCollect |
-	receiver isSend ifFalse: [ ^ self ].
 	sendToCollect := OrderedCollection new.
 	receiver collectSendInSelf: sendToCollect.
 	sendToCollect isNotEmpty ifTrue: [

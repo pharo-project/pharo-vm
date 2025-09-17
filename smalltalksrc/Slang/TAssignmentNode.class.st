@@ -126,7 +126,8 @@ TAssignmentNode >> asCASTValueExpansionIn: aCodeGen [
 	
 	Emit directly the block without the last statement, as the assignment has no impact in the translation.
 	"
-	lastStmt = variable ifTrue: [ ^ expression asCASTIn: aCodeGen ].
+	(variable isSameAs: lastStmt) ifTrue: [
+		^ expression asCASTIn: aCodeGen ].
 	copy := stmtList copy.
 	copy statements
 		at: (stmtList statements indexOf: lastStmt)

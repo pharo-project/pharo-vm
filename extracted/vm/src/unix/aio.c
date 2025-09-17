@@ -59,7 +59,7 @@
  */
 typedef struct _AioUnixDescriptor {
 
-	int fd;
+	sqInt fd;
 	void* clientData;
 	aioHandler readHandlerFn;
 	aioHandler writeHandlerFn;
@@ -76,8 +76,8 @@ AioUnixDescriptor* descriptorList = NULL;
 /*
  * I can access the elements in the list
  */
-AioUnixDescriptor* AioUnixDescriptor_find(int fd);
-void AioUnixDescriptor_remove(int fd);
+AioUnixDescriptor* AioUnixDescriptor_find(sqInt fd);
+void AioUnixDescriptor_remove(sqInt fd);
 void AioUnixDescriptor_removeAll();
 
 /*
@@ -157,7 +157,7 @@ volatile int aio_responses = 0;
  * Do not call me outside the mutex area of interruptFIFOMutex.
  */
 void
-aio_flush_pipe(int fd){
+aio_flush_pipe(sqInt fd){
 
 	int bytesRead;
 	char buf[1024];
@@ -209,7 +209,7 @@ aioPoll(long microSeconds){
 	return aio_handle_events(timeout);
 }
 
-static int addFDToEPoll(int epollDescriptor, int fd, int events, void* userData){
+static int addFDToEPoll(int epollDescriptor, sqInt fd, int events, void* userData){
 	struct epoll_event ev;
 	ev.events = events;
 	ev.data.ptr = userData;
@@ -373,7 +373,7 @@ aioInterruptPoll(){
 }
 
 void 
-aioEnable(int fd, void *clientData, int flags)
+aioEnable(sqInt fd, void *clientData, int flags)
 {
 	AioUnixDescriptor * descriptor;
 
@@ -437,7 +437,7 @@ aioEnable(int fd, void *clientData, int flags)
 /* install/change the handler for a descriptor */
 
 void 
-aioHandle(int fd, aioHandler handlerFn, int mask)
+aioHandle(sqInt fd, aioHandler handlerFn, int mask)
 {
 	AioUnixDescriptor *descriptor = AioUnixDescriptor_find(fd);
 
@@ -458,7 +458,7 @@ aioHandle(int fd, aioHandler handlerFn, int mask)
 /* temporarily suspend asynchronous notification for a descriptor */
 
 void 
-aioSuspend(int fd, int maskToSuspend)
+aioSuspend(sqInt fd, int maskToSuspend)
 {
 	AioUnixDescriptor *descriptor = AioUnixDescriptor_find(fd);
 
@@ -495,12 +495,12 @@ aioSuspend(int fd, int maskToSuspend)
 /* definitively disable asynchronous notification for a descriptor */
 
 void 
-aioDisable(int fd)
+aioDisable(sqInt fd)
 {
 	AioUnixDescriptor_remove(fd);
 }
 
-AioUnixDescriptor* AioUnixDescriptor_find(int fd){
+AioUnixDescriptor* AioUnixDescriptor_find(sqInt fd){
 	AioUnixDescriptor* found;
 
 	found = descriptorList;
@@ -513,7 +513,7 @@ AioUnixDescriptor* AioUnixDescriptor_find(int fd){
 	return NULL;
 }
 
-void AioUnixDescriptor_remove(int fd){
+void AioUnixDescriptor_remove(sqInt fd){
 	AioUnixDescriptor* found;
 	AioUnixDescriptor* prev = NULL;
 

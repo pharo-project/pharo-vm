@@ -168,6 +168,44 @@ AbstractComposedImageAccess >> permSpaceMetadataFileNameInImage: imageFileName [
 	^ self permSpaceFileName: 'permSpace.ston' inImage: imageFileName into: buffer bufferSize: 255
 ]
 
+{ #category : 'file primitives' }
+AbstractComposedImageAccess >> readLineFrom: file into: lineBuffer ofSize: bufferSize [
+
+	<var: #lineBuffer type: 'char*'>
+	<var: #file type: #sqImageFile>
+
+	self 
+		cCode: [ 
+			| idx aCharacter |
+			
+			idx := 0.
+			
+			aCharacter := self fgetc: file.
+			
+			[ aCharacter = -1 ] 
+				whileFalse: [
+					aCharacter = 10 
+						ifTrue: [ aCharacter := -1 ]
+						ifFalse: [ 
+							aCharacter = 13 
+								ifTrue: [ 
+									aCharacter := self fgetc: file.
+									aCharacter ~= 13 ifTrue: [ self ungetc: aCharacter _: file  ].
+									aCharacter := -1 ]
+								ifFalse: [ 
+									lineBuffer at: idx put: aCharacter.
+									idx := idx + 1.
+									bufferSize = (idx + 1) 
+										ifTrue: [ aCharacter := -1 ]
+										ifFalse: [ aCharacter := self fgetc: file].
+								]
+							 ]].
+			
+				lineBuffer at: idx put: 0.
+			 ]
+		inSmalltalk: [ lineBuffer contents: file nextLine].
+]
+
 { #category : 'segments' }
 AbstractComposedImageAccess >> segmentDataFile: segmentIndex inImage: imageFileName [
 
@@ -208,4 +246,32 @@ AbstractComposedImageAccess >> segmentMetadataFile: segmentIndex inImage: imageF
 
 	^ self segmentFileName: segmentIndex withExtension: '.ston' inImage: imageFileName into: buffer bufferSize: 255. 
 
+]
+
+{ #category : 'file primitives' }
+AbstractComposedImageAccess >> sscanf: aString _: format _: varHolder [
+
+	<doNotGenerate>
+	(format = self headFormat)
+		  ifTrue: [ 
+			  ^ varHolder contents: (aString substrings: ' ') first ].
+
+	self error.
+]
+
+{ #category : 'file primitives' }
+AbstractComposedImageAccess >> sscanf: line _: format _: varHolder1 _: varHolder2 [
+
+	<doNotGenerate>
+
+	(format = self fieldFormat)
+		  ifTrue: [ 
+			  | dataArray |
+			  dataArray := line substrings: '#:, '.
+			  dataArray first = '}' ifTrue: [ ^ self ].
+			  varHolder1 contents: dataArray second.
+			  varHolder2 contents: dataArray third asInteger.
+			  ^ self ].
+
+	self error
 ]

@@ -2471,7 +2471,6 @@ computeBeziersplitAt(sqInt index, double param)
 			goto l1;
 		}
 	}
-	leftViaY = leftViaY;
 	l1:	/* end assureValue:between:and: */;
 	/* begin assureValue:between:and: */
 	if (sharedY > endY) {
@@ -2494,7 +2493,6 @@ computeBeziersplitAt(sqInt index, double param)
 			goto l2;
 		}
 	}
-	rightViaY = rightViaY;
 	l2:	/* end assureValue:between:and: */;
 	/* begin allocateBezierStackEntry */
 	if (!(needAvailableSpace(6))) {
@@ -3221,10 +3219,6 @@ fillBitmapSpanAAfromtoat(sqInt bmFill, sqInt leftX, sqInt rightX, sqInt yValue)
 					xp = bmWidth - 1;
 					goto l1;
 				}
-				else {
-					xp = xp;
-					goto l1;
-				}
 			}
 	l1:	/* end clampValue:max: */;
 			/* begin clampValue:max: */
@@ -3235,10 +3229,6 @@ fillBitmapSpanAAfromtoat(sqInt bmFill, sqInt leftX, sqInt rightX, sqInt yValue)
 			else {
 				if (yp >= bmHeight) {
 					yp = bmHeight - 1;
-					goto l2;
-				}
-				else {
-					yp = yp;
 					goto l2;
 				}
 			}
@@ -3342,10 +3332,6 @@ fillBitmapSpanAAfromtoat(sqInt bmFill, sqInt leftX, sqInt rightX, sqInt yValue)
 					xp = bmWidth - 1;
 					goto l3;
 				}
-				else {
-					xp = xp;
-					goto l3;
-				}
 			}
 	l3:	/* end clampValue:max: */;
 			/* begin clampValue:max: */
@@ -3356,10 +3342,6 @@ fillBitmapSpanAAfromtoat(sqInt bmFill, sqInt leftX, sqInt rightX, sqInt yValue)
 			else {
 				if (yp >= bmHeight) {
 					yp = bmHeight - 1;
-					goto l4;
-				}
-				else {
-					yp = yp;
 					goto l4;
 				}
 			}
@@ -3464,10 +3446,6 @@ fillBitmapSpanAAfromtoat(sqInt bmFill, sqInt leftX, sqInt rightX, sqInt yValue)
 					xp = bmWidth - 1;
 					goto l5;
 				}
-				else {
-					xp = xp;
-					goto l5;
-				}
 			}
 	l5:	/* end clampValue:max: */;
 			/* begin clampValue:max: */
@@ -3478,10 +3456,6 @@ fillBitmapSpanAAfromtoat(sqInt bmFill, sqInt leftX, sqInt rightX, sqInt yValue)
 			else {
 				if (yp >= bmHeight) {
 					yp = bmHeight - 1;
-					goto l6;
-				}
-				else {
-					yp = yp;
 					goto l6;
 				}
 			}
@@ -3699,10 +3673,6 @@ fillBitmapSpanfromtoat(sqInt bmFill, sqInt leftX, sqInt rightX, sqInt yValue)
 					xp = bmWidth - 1;
 					goto l1;
 				}
-				else {
-					xp = xp;
-					goto l1;
-				}
 			}
 	l1:	/* end clampValue:max: */;
 			/* begin clampValue:max: */
@@ -3713,10 +3683,6 @@ fillBitmapSpanfromtoat(sqInt bmFill, sqInt leftX, sqInt rightX, sqInt yValue)
 			else {
 				if (yp >= bmHeight) {
 					yp = bmHeight - 1;
-					goto l2;
-				}
-				else {
-					yp = yp;
 					goto l2;
 				}
 			}

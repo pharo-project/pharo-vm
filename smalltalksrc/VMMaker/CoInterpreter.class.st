@@ -459,6 +459,7 @@ CoInterpreter >> activateCoggedNewMethod: inInterpreter [
 
 	methodHeader := self rawHeaderOf: newMethod.
 	self assert: (self isCogMethodReference: methodHeader).
+	self assert: (self cogMethodOf: newMethod) methodObject == newMethod.
 
 	cogMethod := self cCoerceSimple: methodHeader to: #'CogMethod *'.
 	methodHeader := cogMethod methodHeader.

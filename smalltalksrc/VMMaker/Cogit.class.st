@@ -11673,6 +11673,14 @@ Cogit >> simulatedVariableAt: address [
 		ifAbsent:[0]) value
 ]
 
+{ #category : 'initialization' }
+Cogit >> simulatedVariableAt: address put: value [
+	"Answer a simulated variable's value for handling the push/pop tracer."
+
+	<doNotGenerate>
+	^ simulatedVariableGetters at: address put: value
+]
+
 { #category : 'debugging' }
 Cogit >> singleStep [
 	<doNotGenerate>

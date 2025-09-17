@@ -81,6 +81,9 @@ SpurImageReader >> readHeaderFrom: f startingAt: headerStart [
 
 	header imageHeaderSize: (self getWord32FromFile: f swap: header swapBytes).
 	header dataSize: (self getLongFromFile: f swap: header swapBytes).
+	"In SpurFormat the dataSize is just the oldSpace size"
+	header hdrOldSpaceSize: header dataSize.
+
 	header oldBaseAddr: (self getLongFromFile: f swap: header swapBytes).
 	header initialSpecialObjectsOop:
 		(self getLongFromFile: f swap: header swapBytes).

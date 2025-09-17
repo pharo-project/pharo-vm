@@ -85,166 +85,6 @@ sqInt sqCopyBioSSL(sqSSL *ssl, BIO *bio, char *dstBuf, sqInt dstLen) {
 	return BIO_read(bio, dstBuf, dstLen);
 }
 
-
-enum sqMatchResult sqVerifyIP(sqSSL* ssl, X509* cert, const char* serverName, const size_t serverNameLength);
-enum sqMatchResult sqVerifyDNS(sqSSL* ssl, X509* cert, const char* serverName, const size_t serverNameLength);
-enum sqMatchResult sqVerifyNameInner(sqSSL* ssl, X509* cert, const void* serverName, const size_t serverNameLength, const int matchType);
-const char* sqVerifyFindStar(const char* sANData, size_t sANDataSize);
-sqInt sqVerifySAN(sqSSL* ssl, const GENERAL_NAME* sAN, const void* data, const size_t dataSizeIn, const int matchType);
-
-enum sqMatchResult sqVerifyIP(sqSSL* ssl, X509* cert, const char* serverName, const size_t serverNameLength) {
-	struct in6_addr addr = { 0 }; // placeholder, longest of in_addr and in6_addr
-	int af = AF_INET6;
-	size_t addrSize = sizeof(struct in6_addr);
-	int strToAddrWorked = 0;
-
-	if (serverName == NULL) { return INVALID_IP_STRING; }
-	if (memchr(serverName, '.', MIN(INET_ADDRSTRLEN, serverNameLength))) {
-		// there's a dot somewhere in the first bytes, look for IPV4
-		af = AF_INET;
-		addrSize = sizeof(struct in_addr);
-	}
-	strToAddrWorked = inet_pton(af, serverName, &addr);
-	if (strToAddrWorked != 1) { return INVALID_IP_STRING; }
-
-	return sqVerifyNameInner(ssl, cert, &addr, addrSize, GEN_IPADD);
-}
-
-
-enum sqMatchResult sqVerifyDNS(sqSSL* ssl, X509* cert, const char* serverName, const size_t serverNameLength) {
-	return sqVerifyNameInner(ssl, cert, serverName, serverNameLength, GEN_DNS);
-}
-
-enum sqMatchResult sqVerifyNameInner(sqSSL* ssl, X509* cert, const void* serverName, const size_t serverNameLength, const int matchType) {
-	enum sqMatchResult matchFound = NO_MATCH_FOUND;
-
-	STACK_OF(GENERAL_NAME)* sANs = X509_get_ext_d2i(cert, NID_subject_alt_name, NULL, NULL);
-	if (!sANs) {
-		logTrace("sqVerifyNameInner: No sAN names\n");
-		matchFound = NO_SAN_PRESENT;
-	} else {
-		int i = 0;
-		int sANCount = sk_GENERAL_NAME_num(sANs);
-		for (i = 0; i < sANCount && matchFound != MATCH_FOUND; ++i) {
-			const GENERAL_NAME* sAN = sk_GENERAL_NAME_value(sANs, i);
-			if ((sAN->type == matchType) &&
-			    sqVerifySAN(ssl, sAN, serverName, serverNameLength, matchType)) {
-				matchFound = MATCH_FOUND;
-				break;
-			}
-		}
-		sk_GENERAL_NAME_pop_free(sANs, GENERAL_NAME_free);
-	}
-	return matchFound;
-}
-
-const char* sqVerifyFindStar(const char* sANData, size_t sANDataSize) {
-	ptrdiff_t starPosition = 0;
-	char* safeptr = NULL;
-	char* label = NULL;
-	int starFound = 0;
-	size_t labelCount = 0;
-	char ptr[MAX_HOSTNAME_LENGTH + 1] = {0};
-	memcpy(ptr, sANData, MIN(MAX_HOSTNAME_LENGTH + 1, sANDataSize));
-
-#define FAIL_STAR(x) do { if (x) { return NULL; } } while (0)
-
-	for (label = strtok_r(ptr, ".", &safeptr);
-	     label != NULL;
-	     label = strtok_r(NULL, ".", &safeptr), labelCount++) {
-		char* currentStar = strchr(label, '*'); // \0-termination is guaranteed by strtok_r
-		size_t labelLength = strlen(label);  // \0-termination is guaranteed by strtok_r
-		if (currentStar != NULL) {
-			// only one star per label
-			FAIL_STAR(labelLength > 1 && (NULL != strchr(currentStar + 1, '*')));
-			// only one star per pattern
-			FAIL_STAR(starFound);
-			// cannot match partial idna
-			FAIL_STAR(0 == strncasecmp(label, "xn--", MIN(labelLength, 4)));
-			// star not permissible in non-leftmost label
-			FAIL_STAR(labelCount >= 1);
-
-			// first label, star is ok.
-			starFound = 1;
-			starPosition = currentStar - ptr;
-		}
-	}
-	// no star found, nothing to report
-	FAIL_STAR(!starFound);
-	// star in last two labels
-	FAIL_STAR(labelCount < 3);
-	return sANData + starPosition;
-#undef FAIL_STAR
-}
-
-sqInt sqVerifySAN(sqSSL* ssl, const GENERAL_NAME* sAN, const void* data, const size_t dataSizeIn, const int matchType) {
-
-	const char* sANData = ASN1_STRING_get0_data(sAN->d.ia5);
-	size_t sANDataSize = (size_t) ASN1_STRING_length(sAN->d.ia5);
-	size_t dataSize = dataSizeIn;
-
-	logTrace("sqVerifyNameInner: checking sAN %.*s\n", matchType == GEN_DNS ? (int) sANDataSize : 5 , matchType == GEN_DNS ? sANData : "an IP");
-	// For IPs, exact match only.
-	if (matchType == GEN_IPADD) {
-		return (sANDataSize == dataSize) && !memcmp(sANData, data, sANDataSize);
-	}
-
-	// Normalize dns names by dropping traling dots if any
-	if (sANData[sANDataSize - 1] == '.') { sANDataSize--; }
-	if (((char*)data)[dataSize - 1] == '.') { dataSize--; }
-
-#define NOPE(x) do { if ((x)) return 0; } while (0)
-#define YEAH(x) do { if ((x)) return 1; } while (0)
-
-	// Exact match always wins
-	YEAH((sANDataSize == dataSize) && (0 == strncasecmp(sANData, data, sANDataSize)));
-	// wildcard matching not for IPs et al.
-	NOPE(matchType != GEN_DNS);
-
-	// Malformed DNS name
-	NOPE(sANDataSize != strnlen(sANData, sANDataSize));
-
-	{
-		char* serverName = (char*) data;
-		size_t serverNameSize = dataSize;
-		const char* starPosition = NULL;
-		const char* sANDataSuffix = NULL;
-		const char* serverNameSuffix = NULL;
-		ptrdiff_t prefixLength = 0;
-		ptrdiff_t suffixLength = 0;
-		ptrdiff_t matchLength = 0;
-
-		// Contrary to general certificate machting, we are only
-		// interested in setting up an SSL connection, so we do _NOT_
-		// allow data (aka serverNames) that start with a '.'
-		NOPE(serverName[0] == '.');
-
-		starPosition = sqVerifyFindStar(sANData, sANDataSize);
-		// Since exact matches are already covered and we excluded
-		// leading '.' in the server name, we bail if no _valid_ star
-		// found in the sAN data here.
-		NOPE(starPosition == NULL);
-
-		prefixLength = starPosition - sANData;
-		suffixLength = (sANData + sANDataSize - 1) - starPosition;
-		matchLength = serverNameSize - (suffixLength + prefixLength);
-		sANDataSuffix = starPosition + 1;
-		serverNameSuffix = serverName + serverNameSize - suffixLength;
-
-		// check that prefix matches.
-		NOPE(0 != strncasecmp(sANData, serverName, (size_t) prefixLength));
-		// check that suffix matches
-		NOPE(0 != strncasecmp(sANDataSuffix, serverNameSuffix, (size_t) suffixLength));
-		// complete star labels (*.example.com) must match at least one character
-		NOPE(prefixLength == 0 && sANDataSuffix[0] == '.' && matchLength < 1);
-		// no more than one serverName label can match the star -> cannot contain periods
-		NOPE(matchLength > 0 && (NULL != memchr(serverName + prefixLength, '.', matchLength )));
-	}
-	return 1;
-#undef NOPE
-#undef YEAH
-}
-
 /* sqSetupSSL: Common SSL setup tasks */
 sqInt sqSetupSSL(sqSSL *ssl, int server) {
 	if(!initialized){
@@ -467,19 +307,13 @@ sqInt sqConnectSSL(sqInt handle, char* srcBuf, sqInt srcLen, char *dstBuf, sqInt
 
 		if (ssl->serverName) {
 			const size_t serverNameLength = strnlen(ssl->serverName, MAX_HOSTNAME_LENGTH);
-                        if (X509_check_ip_asc && X509_check_host) {
-				logTrace("sqConnectSSL: X509_check_host.");
-				/* Try IP first, expect INVALID_IP_STRING to continue with hostname */
-				matched = (enum sqMatchResult) X509_check_ip_asc(cert, ssl->serverName, 0);
-				if (matched == INVALID_IP_STRING) {
-					matched = (enum sqMatchResult) X509_check_host(cert, ssl->serverName, serverNameLength, X509_CHECK_FLAG_SINGLE_LABEL_SUBDOMAINS, NULL);
-				}
-			} else {
-				matched = sqVerifyIP(ssl, cert, ssl->serverName, serverNameLength);
-				if (matched == INVALID_IP_STRING) {
-					matched = sqVerifyDNS(ssl, cert, ssl->serverName, serverNameLength);
-				}
+			logTrace("sqConnectSSL: X509_check_host.");
+			/* Try IP first, expect INVALID_IP_STRING to continue with hostname */
+			matched = (enum sqMatchResult) X509_check_ip_asc(cert, ssl->serverName, 0);
+			if (matched == INVALID_IP_STRING) {
+				matched = (enum sqMatchResult) X509_check_host(cert, ssl->serverName, serverNameLength, X509_CHECK_FLAG_SINGLE_LABEL_SUBDOMAINS, NULL);
 			}
+
 			if (matched == MATCH_FOUND) {
 				logTrace("sqConnectSSL: check hostname OK\n");
 				ssl->peerName = strndup(ssl->serverName, serverNameLength);
@@ -651,7 +485,7 @@ sqInt sqDecryptSSL(sqInt handle, char* srcBuf, sqInt srcLen, char *dstBuf, sqInt
 		}
 		nbytes = 0;
 	} else {
-		logTrace("sqDecryptSSL: Decrypted %ld bytes\n", (long)nbytes);
+		logTrace("sqDecryptSSL: Decrypted %ld bytes srcBuf: %p len: %ld dstLen: %p len: %ld", (long)nbytes, srcBuf, srcLen, dstBuf, dstLen);
 	}
 	return nbytes;
 }

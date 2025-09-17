@@ -51,7 +51,7 @@ EXPORT(void) aioFini(void);
  * anything about its subsequent behaviour) or AIO_EXT (aio will never
  * set NBIO on `fd' or close it on behalf of the client).
  */
-EXPORT(void) aioEnable(int fd, void *clientData, int flags);
+EXPORT(void) aioEnable(sqInt fd, void *clientData, int flags);
 
 /* Declare an interest in one or more events on `fd'.  `mask' can be
  * any combination in AIO_[R][W][X].  `handlerFn' will be called the
@@ -69,17 +69,17 @@ EXPORT(void) aioEnable(int fd, void *clientData, int flags);
  * (Calls to aioHandle are cumulative: successive `mask's are ORed
  * with the mask currently in effect for `fd'.)
  */
-typedef void (*aioHandler)(int fd, void *clientData, int flag);
-EXPORT(void) aioHandle(int fd, aioHandler handlerFn, int mask);
+typedef void (*aioHandler)(sqInt fd, void *clientData, int flag);
+EXPORT(void) aioHandle(sqInt fd, aioHandler handlerFn, int mask);
 
 /* Suspend handling of the events in `mask' for `fd'.
  */
-EXPORT(void) aioSuspend(int fd, int mask);
+EXPORT(void) aioSuspend(sqInt fd, int mask);
 
 /* Disable further AIO handling of `fd'.  The descriptor is reset to its
  * default state (w.r.t. NBIO, etc.) but is NOT closed.
  */
-EXPORT(void) aioDisable(int fd);
+EXPORT(void) aioDisable(sqInt fd);
 
 /* Sleep for at most `microSeconds'.  Any event(s) arriving for
  * handled fd(s) will terminate the sleep, with the appropriate

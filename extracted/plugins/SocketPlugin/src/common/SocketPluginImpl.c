@@ -194,7 +194,6 @@ volatile static int thisNetSession = 0;
 static int one= 1;
 
 static char   localHostName[MAXHOSTNAMELEN];
-static u_long localHostAddress;	/* GROSS IPv4 ASSUMPTION! */
 
 /*
  * The ERROR constants are different in Windows and in Unix.
@@ -280,10 +279,10 @@ extern struct VirtualMachine *interpreterProxy;
 int setHookFn;
 
 
-static void acceptHandler(int, void *, int);
-static void connectHandler(int, void *, int);
-static void dataHandler(int, void *, int);
-static void closeHandler(int, void *, int);
+static void acceptHandler(sqInt, void *, int);
+static void connectHandler(sqInt, void *, int);
+static void dataHandler(sqInt, void *, int);
+static void closeHandler(sqInt, void *, int);
 
 /**
  * The Error reporting is different in Windows and in Unix, so we need to provide a function.
@@ -463,7 +462,7 @@ static int socketError(int s)
    and replace the server socket with the new client socket
    leaving the client socket unhandled
 */
-static void acceptHandler(int fd, void *data, int flags)
+static void acceptHandler(sqInt fd, void *data, int flags)
 {
   int lastError;
     
@@ -504,11 +503,18 @@ static void acceptHandler(int fd, void *data, int flags)
 	  setLinger(newSock, 1);
 	  if (pss->multiListen)
 	    {
-	      pss->acceptedSock= newSock;
+			logTrace("acceptHandler: multiListen old: %d new: %d", fd, newSock);
+			if(pss->acceptedSock > 0){
+				logWarn("Socket %d has accepted socket pending %d", pss->s, pss->acceptedSock);
+    	  setLinger(pss->acceptedSock, 0);
+        closesocket(pss->acceptedSock);
+			}
+			pss->acceptedSock= newSock;
 	    }
 	  else /* traditional listen -- replace server with client in-place */
 	    {
-	      aioDisable(fd);
+		  logTrace("acceptHandler: traditionalListen old: %d new: %d", fd, newSock);
+  		  aioDisable(fd);
 	      closesocket(fd);
 	      pss->s= newSock;
 	      aioEnable(newSock, pss, 0);
@@ -521,7 +527,7 @@ static void acceptHandler(int fd, void *data, int flags)
 
 /* connect() has completed: check errors, leaving the socket unhandled */
 
-static void connectHandler(int fd, void *data, int flags)
+static void connectHandler(sqInt fd, void *data, int flags)
 {
 
   int error;
@@ -570,7 +576,7 @@ static void connectHandler(int fd, void *data, int flags)
 
 /* read or write data transfer is now possible for the socket. */
 
-static void dataHandler(int fd, void *data, int flags)
+static void dataHandler(sqInt fd, void *data, int flags)
 {
   privateSocketStruct *pss= (privateSocketStruct *)data;
   logTrace("dataHandler(%d=%d, %p, %d)\n", fd, pss->s, data, flags);
@@ -615,11 +621,17 @@ static void dataHandler(int fd, void *data, int flags)
 
 /* a non-blocking close() has completed -- finish tidying up */
 
-static void closeHandler(int fd, void *data, int flags)
+static void closeHandler(sqInt fd, void *data, int flags)
 {
   privateSocketStruct *pss= (privateSocketStruct *)data;
   aioDisable(fd);
   logTrace("closeHandler(%d, %p, %d)\n", fd, data, flags);
+  int result = closesocket(fd);
+  if(result == 0){
+    logTrace("closesocket(%d): correctly closed");
+  }else{
+    logTrace("closesocket(%d): error while closing %d", getLastSocketError());
+  }
   pss->sockState= Unconnected;
   pss->s= -1;
   notify(pss, READ_NOTIFY | CONN_NOTIFY);
@@ -635,8 +647,6 @@ sqInt sqNetworkInit(sqInt resolverSemaIndex)
 {
   if (0 != thisNetSession)
     return 0;  /* already initialised */
-  gethostname(localHostName, MAXHOSTNAMELEN);
-  localHostAddress= nameToAddr(localHostName);
   thisNetSession= clock() + time(0);
   if (0 == thisNetSession)
     thisNetSession= 1;  /* 0 => uninitialised */
@@ -1010,6 +1020,12 @@ void sqSocketCloseConnection(SocketPtr s)
 
   if (SOCKET(s) < 0)
     return;	/* already closed */
+
+  if(PSP(s)->acceptedSock > 0){
+	  logWarn("Socket %d has accepted socket pending %d", PSP(s)->s, PSP(s)->acceptedSock);
+	  setLinger(PSP(s)->acceptedSock, 0);
+    closesocket(PSP(s)->acceptedSock);
+  }
 
   SOCKETSTATE(s)= ThisEndClosed;
   result = closesocket(SOCKET(s));
@@ -1710,7 +1726,6 @@ sqInt sqResolverLocalAddress(void) {
     sqInt address;
 
     gethostname(localHostName,MAXHOSTNAMELEN);
-
     return nameToAddr(localHostName);
 
 #endif

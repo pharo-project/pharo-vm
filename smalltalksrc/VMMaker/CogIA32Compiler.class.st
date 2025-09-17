@@ -3646,7 +3646,11 @@ CogIA32Compiler >> hasThreeAddressArithmetic [
 { #category : 'inline cacheing' }
 CogIA32Compiler >> inlineCacheTagAt: callSiteReturnAddress [
 	"Answer the inline cache tag for the return address of a send."
-	^self literalBeforeFollowingAddress: callSiteReturnAddress - 5
+
+	<returnTypeC: #usqInt>
+
+	^ (self literalBeforeFollowingAddress: callSiteReturnAddress - 5)
+		  bitAnd: 1 << objectMemory classIndexFieldWidth - 1
 ]
 
 { #category : 'disassembly' }
@@ -4204,18 +4208,6 @@ CogIA32Compiler >> twoByteInstructionSizeAt: pc [
 	op := objectMemory byteAt: pc + 1. 
 	^(op bitAnd: 16rF0) caseOf:
 		{	[16r80]	->	[6 "long conditional jumps"] }
-]
-
-{ #category : 'memory access' }
-CogIA32Compiler >> unalignedLongAt: byteAddress [
-	<cmacro: '(byteAddress) longAt(byteAddress)'>
-	^objectMemory unalignedLongAt: byteAddress
-]
-
-{ #category : 'memory access' }
-CogIA32Compiler >> unalignedLongAt: byteAddress put: aWord [
-	<cmacro: '(byteAddress,aWord) longAtput(byteAddress,aWord)'>
-	^objectMemory unalignedLongAt: byteAddress put: aWord
 ]
 
 { #category : 'accessing' }

@@ -51,6 +51,20 @@ macro(get_full_platform_name_with_osx VARNAME)
     endif()
 endmacro()
 
+macro(convert_cygwin_path_ifNeeded INPUT OUTVARNAME)
+  	# transform the path into a windows path with unix backslashes C:/bla/blu
+  	# this is the path required to send as argument to libraries outside of the control of cygwin (like pharo itself)
+	if(WIN AND NOT MSVC)
+		execute_process(
+			COMMAND cygpath ${INPUT} --mixed
+			OUTPUT_VARIABLE ${OUTVARNAME}
+			OUTPUT_STRIP_TRAILING_WHITESPACE)
+	else()
+		set(${OUTVARNAME} ${INPUT})
+	endif()
+
+endmacro()
+
 # Add a third party dependency taken from the given URL
 macro(add_third_party_dependency_with_baseurl NAME BASEURL)
 

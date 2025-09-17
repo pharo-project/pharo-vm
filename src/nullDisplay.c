@@ -6,16 +6,6 @@ void unimplementedPrimitive(const char* name){
 	logWarn("Unimplemented primitive: %s\n", name);
 }
 
-#ifdef _WIN32
-int ioSetCursorARGB(sqInt cursorBitsIndex, sqInt extentX, sqInt extentY, sqInt offsetX, sqInt offsetY)
-#else
-sqInt ioSetCursorARGB(sqInt cursorBitsIndex, sqInt extentX, sqInt extentY, sqInt offsetX, sqInt offsetY)
-#endif
-{
-	UNIMPLEMENTED
-	return 0;
-}
-
 sqInt
 ioForceDisplayUpdate(void)
 {
@@ -39,20 +29,6 @@ ioNoteDisplayChangedwidthheightdepth(void *b, int w, int h, int d)
 
 sqInt
 ioSetFullScreen(sqInt fullScreen)
-{
-	UNIMPLEMENTED
-	return 0;
-}
-
-sqInt
-ioSetCursor(sqInt cursorBitsIndex, sqInt offsetX, sqInt offsetY)
-{
-	UNIMPLEMENTED
-	return 0;
-}
-
-sqInt
-ioSetCursorWithMask(sqInt cursorBitsIndex, sqInt cursorMaskIndex, sqInt offsetX, sqInt offsetY)
 {
 	UNIMPLEMENTED
 	return 0;

@@ -33,9 +33,10 @@ option(FEATURE_COMPILE_GNUISATION			"Use gcc gnu extensions to compile the VM"		
 option(PHARO_DEPENDENCIES_PREFER_DOWNLOAD_BINARIES	"Prefer downloading dependencies"						OFF)
 option(FEATURE_COMPILE_INLINE_MEMORY_ACCESSORS		"Use inline memory accessors instead of macros"					 ON)
 option(PHARO_VM_IN_WORKER_THREAD			"Have support for pharo running in a different thread that the main one"	 ON)
-option(BUILD_IS_RELEASE					"Is this a release version?"							OFF)
 option(DEPENDENCIES_FORCE_BUILD         "Force build libraries" OFF)
 option(BUILD_WITH_GRAPHVIZ              "Generate dependency graphs" ON)
+option(VERSION_UPDATE_FROM_GIT              "Extract version information from git tags. Default to true. Follow vX.Y.Z-suffix" TRUE)
+
 
 set(APPNAME			"Pharo"         CACHE STRING                 "VM Application name")
 set(FLAVOUR			"CoInterpreter" CACHE STRING                 "The kind of VM to generate. Possible values: StackVM, CoInterpreter")
@@ -46,24 +47,6 @@ set(CMAKE_OSX_DEPLOYMENT_TARGET "11.0")
 if(VERBOSE_BUILD)
     set(CMAKE_VERBOSE_MAKEFILE TRUE)
 endif(VERBOSE_BUILD)
-
-# Extract VCS information
-include(cmake/versionExtraction.cmake)
-extractVCSInformation(GIT_COMMIT_HASH GIT_DESCRIBE GIT_COMMIT_DATE)
-
-set(VERSION_MAJOR 10)
-set(VERSION_MINOR 3)
-set(VERSION_PATCH_NUMBER 0)
-
-if(BUILD_IS_RELEASE)
-	set(VERSION_PATCH "${VERSION_PATCH_NUMBER}")
-else()
-	set(VERSION_PATCH "${VERSION_PATCH_NUMBER}-${GIT_COMMIT_HASH}")
-endif(BUILD_IS_RELEASE)
-
-message(STATUS "Building version ${VERSION_MAJOR}.${VERSION_MINOR}.${VERSION_PATCH}")
-message(STATUS "Commit hash ${GIT_COMMIT_HASH} : ${GIT_COMMIT_DATE}")
-
 
 # Visual Studio stores user build settings in file 'CmakeSettings.json'.  We would like to manage that via a project template.
 # To push out new template, update 'template_uuid' field in 'template_file' with value from https://www.uuidgenerator.net/
@@ -99,10 +82,6 @@ endif()
 # Configure CMake to load our modules
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 
-#Variable used to set the VM date
-set(BUILT_FROM "${GIT_DESCRIBE} - Commit: ${GIT_COMMIT_HASH} - Date: ${GIT_COMMIT_DATE}")
-message(STATUS ${BUILT_FROM})
-
 # Avoid using the d postfix to debug libraries
 # Otherwise, debug libraries change name and breaks FFI bindings
 set(CMAKE_DEBUG_POSTFIX "")
@@ -125,6 +104,12 @@ endif()
 #Set up the project
 #This needs to be at this point, after setting the toolchain configuration
 project(PharoVM)
+
+include(cmake/versionExtraction.cmake)
+
+set(BUILT_FROM "${PharoVM_VERSION_STRING_FULL} - Commit: ${PharoVM_VERSION_GIT_SHA} - Date: ${PharoVM_VERSION_GIT_COMMIT_DATE}")
+message(STATUS ${BUILT_FROM})
+
 
 # Correctly set the system processor under MSVC
 # This is required because CMake will set the HOST_PROCESSOR in windows
@@ -198,7 +183,6 @@ if(MSVC)
     set(OS_TYPE "Win32")
     get_platform_name(VM_TARGET_OS)
     message(STATUS "Building for ${VM_TARGET_OS}")
-    set(CMAKE_CURRENT_SOURCE_DIR_TO_OUT ${CMAKE_CURRENT_SOURCE_DIR})
     
     # Define WIN32_LEAN_AND_MEAN to exclude APIs such as Cryptography, DDE, RPC, Shell, and Windows Sockets
     # They can be included if needed
@@ -211,17 +195,6 @@ elseif(WIN)
     #Tell the system we are not in UNIX. This is required for Cygwin builds
     unset(UNIX)
     unset(UNIX CACHE)
-
-  	# transform the path into a windows path with unix backslashes C:/bla/blu
-  	# this is the path required to send as argument to libraries outside of the control of cygwin (like pharo itself)
-  	execute_process(
-          COMMAND cygpath ${CMAKE_CURRENT_SOURCE_DIR} --mixed
-          OUTPUT_VARIABLE CMAKE_CURRENT_SOURCE_DIR_TO_OUT
-          OUTPUT_STRIP_TRAILING_WHITESPACE)
-    execute_process(
-          COMMAND cygpath ${CMAKE_CURRENT_BINARY_DIR} --mixed
-          OUTPUT_VARIABLE CMAKE_CURRENT_BINARY_DIR_TO_OUT
-          OUTPUT_STRIP_TRAILING_WHITESPACE)
 
     set(CMAKE_SHARED_LIBRARY_PREFIX "")
     set(CMAKE_SHARED_LIBRARY_SUFFIX ".dll")
@@ -247,10 +220,6 @@ elseif(WIN)
 
 elseif(UNIX)
 
-    # Use the default path to send as argument of extrernal apps (like pharo itself)
-    set(CMAKE_CURRENT_SOURCE_DIR_TO_OUT ${CMAKE_CURRENT_SOURCE_DIR})
-    set(CMAKE_CURRENT_BINARY_DIR_TO_OUT ${CMAKE_CURRENT_BINARY_DIR})
-
     set(COMMON_FLAGS "-Wall -Werror=implicit-function-declaration")
 
     add_compile_definitions(LSB_FIRST=1)
@@ -273,9 +242,9 @@ endif()
 # If we are generating sources, set the binary dir as the generation source dir, as vmmaker will generate the C files here. (we do not alter the source directory)
 # Otherwise set it to by default to the current binary dir, parametrizable
 if(${GENERATE_SOURCES})
-    set(GENERATED_SOURCE_DIR ${CMAKE_CURRENT_BINARY_DIR_TO_OUT})
+    set(GENERATED_SOURCE_DIR ${CMAKE_CURRENT_BINARY_DIR})
 else()
-    set(GENERATED_SOURCE_DIR ${CMAKE_CURRENT_BINARY_DIR_TO_OUT} CACHE STRING "Source directory where to find the generated source. Default value is CMAKE_CURRENT_BINARY_DIR")
+    set(GENERATED_SOURCE_DIR ${CMAKE_CURRENT_BINARY_DIR} CACHE STRING "Source directory where to find the generated source. Default value is CMAKE_CURRENT_BINARY_DIR")
 endif()
 
 if (${FEATURE_COMPILE_INLINE_MEMORY_ACCESSORS})
@@ -311,7 +280,6 @@ endif()
 add_compile_options(
 	${OPTIMIZATION_LEVEL}
     -Wno-sometimes-uninitialized
-    -Wno-self-assign
     -Wno-unused-variable
     -Wno-unused-but-set-variable
     -Wno-int-conversion
@@ -324,7 +292,6 @@ add_compile_options(
     -Wno-deprecated-declarations
     -Wno-pointer-to-int-cast
     -Wno-compare-distinct-pointer-types
-    -Wno-unused-local-typedef
     -Wno-unknown-warning-option
 )
 

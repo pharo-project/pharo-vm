@@ -45,17 +45,6 @@ SlangBasicTranslationTestClass >> initializationOptions [
 	^ nil
 ]
 
-{ #category : 'inline-comment' }
-SlangBasicTranslationTestClass >> methodCallingMethodExpressionList [
-
-	| i |
-	i = [
-	self emptyMethod.
-	self bodyOfMethodWithoutInlinePragma.
-	self methodWithoutInlinePragmaAndEmptyMethodCall.
-	self methodWithInlinePragma ]
-]
-
 { #category : 'inline' }
 SlangBasicTranslationTestClass >> methodCallingInAssignemtMethodWithCCoerceInReturn [
 
@@ -73,6 +62,17 @@ SlangBasicTranslationTestClass >> methodCallingInReturnMethodWithCCoerceInReturn
 SlangBasicTranslationTestClass >> methodCallingInSendMethodWithCCoerceInReturn [
 
 	self method: self methodWithCCoerceInReturn
+]
+
+{ #category : 'inline-comment' }
+SlangBasicTranslationTestClass >> methodCallingMethodExpressionList [
+
+	| i |
+	i = [
+	self emptyMethod.
+	self bodyOfMethodWithoutInlinePragma.
+	self methodWithoutInlinePragmaAndEmptyMethodCall.
+	self methodWithInlinePragma ]
 ]
 
 { #category : 'inline' }

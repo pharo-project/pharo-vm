@@ -351,6 +351,12 @@ TStatementListNode >> children [
 	^ statements
 ]
 
+{ #category : 'dead-code-elimination' }
+TStatementListNode >> collectSendInSelf: sendToCollect [
+
+	statements do: [ :stmt | stmt collectSendInSelf: sendToCollect ]
+]
+
 { #category : 'transformations' }
 TStatementListNode >> copyWithoutReturn [
 
@@ -371,7 +377,8 @@ TStatementListNode >> copyWithoutReturn [
 			newStmtsListNode
 				replaceChild: actualLast
 				with: actualLast copyWithoutReturn ].
-	^ newStmtsListNode]
+	^ newStmtsListNode
+]
 
 { #category : 'declarations' }
 TStatementListNode >> declarationAt: aString ifPresent: aFullBlockClosure [ 
@@ -433,7 +440,7 @@ TStatementListNode >> initialize [
 { #category : 'testing' }
 TStatementListNode >> isComment [
 
-	^ self hasNothingButComments
+	^ self isEmptyOrHasNothingButComments
 ]
 
 { #category : 'testing' }
@@ -599,8 +606,13 @@ TStatementListNode >> removeUnusedNodesInBranch: aChild [
 	"this method should be only called when cleaning an AST tree after an unused expression was found, remove aChild from the list of statements"
 
 	statements := statements select: [ :stmt | stmt ~~ aChild ].
-	(statements isEmpty or: [ self hasNothingButComments ]) ifTrue: [
-		self parent removeUnusedNodesInBranch: self ]
+	self isEmptyOrHasNothingButComments ifTrue: [
+		self parent removeUnusedNodesInBranch: self ].
+	(statements size = 1 and: [
+		 self parent isTMethod not and: [
+			 self parent isSend and: [
+				 self parent isUnaryIterativeSendWithImportantLastStatement ] ] ])
+		ifTrue: [ self parent removeUnusedNodesInBranch: self ]
 ]
 
 { #category : 'inlining support' }

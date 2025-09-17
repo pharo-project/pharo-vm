@@ -1,40 +1,41 @@
 Class {
-	#name : #VMBytecodeToIRMapping,
-	#superclass : #Object,
+	#name : 'VMBytecodeToIRMapping',
+	#superclass : 'Object',
 	#instVars : [
 		'bytecodeInstruction',
 		'irInstruction'
 	],
-	#category : #'VMMaker-Tools'
+	#category : 'VMMaker-Tools',
+	#package : 'VMMaker-Tools'
 }
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 VMBytecodeToIRMapping >> bytecodeInstruction [
 	^ bytecodeInstruction
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 VMBytecodeToIRMapping >> bytecodeInstruction: anObject [
 	bytecodeInstruction := anObject
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 VMBytecodeToIRMapping >> bytecodeString [
 	
 	^ bytecodeInstruction asString
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 VMBytecodeToIRMapping >> irInstruction [
 	^ irInstruction
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 VMBytecodeToIRMapping >> irInstruction: anObject [
 	irInstruction := anObject
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 VMBytecodeToIRMapping >> irString [
 	
 	irInstruction ifNil: [ ^ '' ].

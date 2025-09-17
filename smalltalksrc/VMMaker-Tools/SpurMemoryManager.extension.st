@@ -1,6 +1,6 @@
-Extension { #name : #SpurMemoryManager }
+Extension { #name : 'SpurMemoryManager' }
 
-{ #category : #'*VMMaker-Tools' }
+{ #category : '*VMMaker-Tools' }
 SpurMemoryManager >> asVMOop: oop [
 	<doNotGenerate>
 
@@ -10,7 +10,7 @@ SpurMemoryManager >> asVMOop: oop [
 		yourself.
 ]
 
-{ #category : #'*VMMaker-Tools' }
+{ #category : '*VMMaker-Tools' }
 SpurMemoryManager >> inspectorEntities: composite [
 
 	<inspectorPresentationOrder: 2 title: 'Entities'>
@@ -41,7 +41,7 @@ SpurMemoryManager >> inspectorEntities: composite [
 
 ]
 
-{ #category : #'*VMMaker-Tools' }
+{ #category : '*VMMaker-Tools' }
 SpurMemoryManager >> inspectorFreeListIn: composite [
 
 	<inspectorPresentationOrder: 0 title: 'Free Lists'>
@@ -54,7 +54,7 @@ SpurMemoryManager >> inspectorFreeListIn: composite [
 
 ]
 
-{ #category : #'*VMMaker-Tools' }
+{ #category : '*VMMaker-Tools' }
 SpurMemoryManager >> inspectorHiddenRootsIn: composite [
 
 	<inspectorPresentationOrder: 0 title: 'HiddenRoots'>
@@ -67,7 +67,7 @@ SpurMemoryManager >> inspectorHiddenRootsIn: composite [
 
 ]
 
-{ #category : #'*VMMaker-Tools' }
+{ #category : '*VMMaker-Tools' }
 SpurMemoryManager >> inspectorOldSpaceEntities: composite [
 
 	<inspectorPresentationOrder: 3 title: 'Old Space Entities'>
