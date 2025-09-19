@@ -371,8 +371,8 @@ CogOutOfLineLiteralsARMv8Compiler >> rewriteInlineCacheAt: callSiteReturnAddress
 	<var: #callSiteReturnAddress type: #usqInt>
 	<var: #callTargetAddress type: #usqInt>
 	| call callDistance |
-	callTargetAddress >= cogit minCallAddress ifFalse:
-		[self error: 'linking callsite to invalid address'].
+	callTargetAddress >= cogit minCallAddress
+		ifFalse: [ self error: 'linking callsite to invalid address' ].
 	callDistance := (callTargetAddress - (callSiteReturnAddress - 4 "return offset")).
 	self assert: (self isInImmediateJumpRange: callDistance). "we don't support long call updates here"
 	call := self bl: callDistance.
