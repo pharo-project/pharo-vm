@@ -262,7 +262,7 @@ typedef struct privateSocketStruct
 #define SOCKETERROR(S)		(PSP(S)->sockError)
 #define SOCKETPEER(S)		(PSP(S)->peer)
 #define SOCKETPEERSIZE(S)	(PSP(S)->peerSize)
-#define SOCKET_WATINGTOSEND(S) (PSP(S)->waitingToSend)
+#define SOCKET_WAITINGTOSEND(S) (PSP(S)->waitingToSend)
 
 /*** Resolver state ***/
 
@@ -1252,7 +1252,7 @@ sqInt sqSocketSendDone(SocketPtr s)
     return false;
   
   if(SOCKETSTATE(s) == Connected)
-	return !SOCKET_WATINGTOSEND(s);
+	return !SOCKET_WAITINGTOSEND(s);
   
   return false;
 }
@@ -1350,7 +1350,7 @@ sqInt sqSocketSendDataBufCount(SocketPtr s, char *buf, sqInt bufSize)
 		if ((nsent == -1) && (lastError == ERROR_WOULD_BLOCK))
 			{
 			logTrace( "TCP sendData(%d, %ld) -> %d [blocked]", SOCKET(s), bufSize, nsent);
-			SOCKET_WATINGTOSEND(s) = true;
+			SOCKET_WAITINGTOSEND(s) = true;
 			aioHandle(SOCKET(s), sendHandler, AIO_WX);
 			return 0;
 			}
@@ -1359,11 +1359,11 @@ sqInt sqSocketSendDataBufCount(SocketPtr s, char *buf, sqInt bufSize)
 			/* error: most likely "connection closed by peer" */
 			SOCKETSTATE(s)= OtherEndClosed;
 			SOCKETERROR(s)= lastError;
-			SOCKET_WATINGTOSEND(s) = false;
+			SOCKET_WAITINGTOSEND(s) = false;
 
 			logWarn("errno %d\n", lastError);
 			logWarnFromErrno("write");
-			SOCKET_WATINGTOSEND(s) = false;
+			SOCKET_WAITINGTOSEND(s) = false;
 
 			return 0;
 			}
@@ -1371,7 +1371,7 @@ sqInt sqSocketSendDataBufCount(SocketPtr s, char *buf, sqInt bufSize)
     }
 	/* write completed synchronously */
 	logTrace( "sendData(%d) done = %d\n", SOCKET(s), nsent);
-	SOCKET_WATINGTOSEND(s) = false;
+	SOCKET_WAITINGTOSEND(s) = false;
 	return nsent;
 }
 
@@ -1426,14 +1426,14 @@ sqInt sqSockettoHostportSendDataBufCount(SocketPtr s, sqInt address, sqInt port,
       {
 	int nsent= sendto(SOCKET(s), buf, bufSize, 0, (struct sockaddr *)&saddr, sizeof(saddr));
 	if (nsent >= 0){
-		SOCKET_WATINGTOSEND(s) = false;
+		SOCKET_WAITINGTOSEND(s) = false;
 		return nsent;
 	}
 	
 	int lastError = getLastSocketError();
 
 	if (lastError == ERROR_WOULD_BLOCK)	{
-		  SOCKET_WATINGTOSEND(s) = true;
+		  SOCKET_WAITINGTOSEND(s) = true;
 		  aioHandle(SOCKET(s), sendHandler, AIO_WX);
 		  
 		  /* asynchronous write in progress */
