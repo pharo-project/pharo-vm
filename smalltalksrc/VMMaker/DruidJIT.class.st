@@ -18009,6 +18009,20 @@ DruidJIT >> slotOffsetOfInstVarIndex: index [
 	^index * objectMemory wordSize + objectMemory baseHeaderSize
 ]
 
+{ #category : 'generated' }
+DruidJIT >> smallFloatSpecialisedPreamble [ 
+
+	self mclassIsSmallFloat ifFalse:
+		[^UnimplementedPrimitive].
+]
+
+{ #category : 'generated' }
+DruidJIT >> smallIntegerSpecialisedPreamble [ 
+
+	self mclassIsSmallInteger ifFalse:
+		[^UnimplementedPrimitive].
+]
+
 { #category : 'trait candidates' }
 DruidJIT >> validInlineCacheTag: classIndexOrTagPattern [
 	"The three valid tag patterns are 1 (SmallInteger), 2 (Character) and 3 (SmallFloat64)."

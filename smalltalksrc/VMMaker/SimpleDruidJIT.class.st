@@ -13778,6 +13778,20 @@ SimpleDruidJIT >> slotOffsetOfInstVarIndex: index [
 	^index * objectMemory wordSize + objectMemory baseHeaderSize
 ]
 
+{ #category : 'generated' }
+SimpleDruidJIT >> smallFloatSpecialisedPreamble [ 
+
+	self mclassIsSmallFloat ifFalse:
+		[^UnimplementedPrimitive].
+]
+
+{ #category : 'generated' }
+SimpleDruidJIT >> smallIntegerSpecialisedPreamble [ 
+
+	self mclassIsSmallInteger ifFalse:
+		[^UnimplementedPrimitive].
+]
+
 { #category : 'trait candidates' }
 SimpleDruidJIT >> validInlineCacheTag: classIndexOrTagPattern [
 	"The three valid tag patterns are 1 (SmallInteger), 2 (Character) and 3 (SmallFloat64)."
