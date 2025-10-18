@@ -144,7 +144,7 @@ PharoVMMaker >> generate: interpreterClass memoryManager: memoryManager compiler
 
 		vmmaker
 				stopOnErrors: stopOnErrors;
-				internal: #() external: #(FilePlugin SurfacePlugin FloatArrayPlugin);
+				internal: #() external: #(NewFilePlugin FilePlugin SurfacePlugin FloatArrayPlugin);
 				generateInterpreterFile;
 				generateCogitFiles.
 		generatePlugins ifTrue: [ vmmaker generateExternalPlugins ]] valueSupplyingAnswer:true.]
