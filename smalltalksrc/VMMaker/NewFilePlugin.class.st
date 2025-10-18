@@ -61,6 +61,21 @@ NewFilePlugin >> primitiveFileClose [
 ]
 
 { #category : 'file primitives' }
+NewFilePlugin >> primitiveFileGetSize [
+	<export: true>
+	<var: 'filePointer' type: 'NewFile_t *'>
+	<var: 'fileSize' type: 'sqLong'>
+	
+	| fileOop filePointer fileSize |
+	fileOop := interpreterProxy stackValue: 0.
+	interpreterProxy failed ifFalse: [
+		filePointer := 	self pointerAtPointer: (interpreterProxy firstIndexableField: fileOop).
+		fileSize := self cCode: 'NewFile_getSize(filePointer)'
+	].
+	interpreterProxy failed ifFalse: [ interpreterProxy methodReturnValue: (interpreterProxy signed64BitIntegerFor: fileSize)].
+]
+
+{ #category : 'file primitives' }
 NewFilePlugin >> primitiveFileOpen [
 	<var: 'pathIndex' type: 'char *'>
 	<var: 'filePointer' type: 'void *'>
@@ -86,4 +101,19 @@ NewFilePlugin >> primitiveFileOpen [
 	interpreterProxy failed
 		ifFalse: [interpreterProxy methodReturnValue: fileOop]
 
+]
+
+{ #category : 'file primitives' }
+NewFilePlugin >> primitiveFileTell [
+	<export: true>
+	<var: 'filePointer' type: 'NewFile_t *'>
+	<var: 'fileSize' type: 'sqLong'>
+	
+	| fileOop filePointer fileSize |
+	fileOop := interpreterProxy stackValue: 0.
+	interpreterProxy failed ifFalse: [
+		filePointer := 	self pointerAtPointer: (interpreterProxy firstIndexableField: fileOop).
+		fileSize := self cCode: 'NewFile_tell(filePointer)'
+	].
+	interpreterProxy failed ifFalse: [ interpreterProxy methodReturnValue: (interpreterProxy signed64BitIntegerFor: fileSize)].
 ]
