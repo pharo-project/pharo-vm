@@ -178,6 +178,22 @@ NewFilePlugin >> primitiveFileTell [
 ]
 
 { #category : 'file primitives' }
+NewFilePlugin >> primitiveFileTruncate [
+	<export: true>
+	<var: 'filePointer' type: 'NewFile_t *'>
+	<var: 'result' type: 'bool'>
+	
+	| fileOop filePointer newFileSize result |
+	newFileSize := interpreterProxy positive64BitValueOf: (interpreterProxy stackValue: 0).
+	fileOop := interpreterProxy stackValue: 1.
+	interpreterProxy failed ifFalse: [
+		filePointer := 	self pointerAtPointer: (interpreterProxy firstIndexableField: fileOop).
+		result := self cCode: 'NewFile_truncate(filePointer, newFileSize)'
+	].
+	interpreterProxy failed ifFalse: [ interpreterProxy methodReturnBool: result ].
+]
+
+{ #category : 'file primitives' }
 NewFilePlugin >> primitiveFileWriteFrom [
 	<export: true>
 	<var: 'filePointer' type: 'NewFile_t *'>
