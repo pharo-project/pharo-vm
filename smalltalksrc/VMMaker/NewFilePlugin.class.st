@@ -49,7 +49,7 @@ NewFilePlugin >> primitiveDeleteFile [
 { #category : 'file primitives' }
 NewFilePlugin >> primitiveDirectoryClose [
 	<export: true>
-	<var: 'directoryPointer' type: 'NewFile_t *'>
+	<var: 'directoryPointer' type: 'NewDirectory_t *'>
 	
 	| directoryOop directoryPointer |
 	directoryOop := interpreterProxy stackValue: 0.
@@ -82,7 +82,7 @@ NewFilePlugin >> primitiveDirectoryCreate [
 { #category : 'file primitives' }
 NewFilePlugin >> primitiveDirectoryNext [
 	<export: true>
-	<var: 'directoryPointer' type: 'NewFile_t *'>
+	<var: 'directoryPointer' type: 'NewDirectory_t *'>
 	<var: 'stringPointer' type: 'char *'>
 	
 	| directoryOop directoryPointer stringOop stringPointer|
@@ -142,7 +142,7 @@ NewFilePlugin >> primitiveDirectoryRemoveEmpty [
 { #category : 'file primitives' }
 NewFilePlugin >> primitiveDirectoryRewind [
 	<export: true>
-	<var: 'directoryPointer' type: 'NewFile_t *'>
+	<var: 'directoryPointer' type: 'NewDirectory_t *'>
 	
 	| directoryOop directoryPointer |
 	directoryOop := interpreterProxy stackValue: 0.
