@@ -47,6 +47,113 @@ NewFilePlugin >> primitiveDeleteFile [
 ]
 
 { #category : 'file primitives' }
+NewFilePlugin >> primitiveDirectoryClose [
+	<export: true>
+	<var: 'directoryPointer' type: 'NewFile_t *'>
+	
+	| directoryOop directoryPointer |
+	directoryOop := interpreterProxy stackValue: 0.
+	interpreterProxy failed ifFalse: [
+		directoryPointer := self pointerAtPointer: (interpreterProxy firstIndexableField: directoryOop).
+		self cCode: 'NewDirectory_close(directoryPointer)'
+	].
+	interpreterProxy failed ifFalse: [ interpreterProxy pop: 1  "pop directory; leave rcvr on stack" ].
+]
+
+{ #category : 'file primitives' }
+NewFilePlugin >> primitiveDirectoryCreate [
+	<var: 'pathIndex' type: 'char *'>
+	<var: 'result' type: 'bool'>
+	<export: true>
+	| pathPointer pathIndex result pathSize |
+	pathPointer := interpreterProxy stackValue: 0.
+	(interpreterProxy isBytes: pathPointer)
+		ifFalse: [^ interpreterProxy primitiveFail].
+	pathIndex := interpreterProxy firstIndexableField: pathPointer.
+	pathSize := interpreterProxy byteSizeOf: pathPointer.
+
+	result := self cCode: 'NewDirectory_create(pathIndex, pathSize)'.
+
+	interpreterProxy failed
+		ifFalse: [interpreterProxy methodReturnBool: result]
+
+]
+
+{ #category : 'file primitives' }
+NewFilePlugin >> primitiveDirectoryNext [
+	<export: true>
+	<var: 'directoryPointer' type: 'NewFile_t *'>
+	<var: 'stringPointer' type: 'char *'>
+	
+	| directoryOop directoryPointer stringOop stringPointer|
+	directoryOop := interpreterProxy stackValue: 0.
+	stringOop := interpreterProxy instantiateClass: interpreterProxy classExternalAddress indexableSize: BytesPerWord.
+	interpreterProxy failed ifFalse: [
+		directoryPointer := self pointerAtPointer: (interpreterProxy firstIndexableField: directoryOop).
+		stringPointer := self cCode: 'NewDirectory_next(directoryPointer)'.
+		self pointerAtPointer: (interpreterProxy firstIndexableField: stringOop) put: stringPointer.
+	].
+	interpreterProxy failed ifFalse: [ interpreterProxy methodReturnValue: stringOop ].
+]
+
+{ #category : 'file primitives' }
+NewFilePlugin >> primitiveDirectoryOpen [
+	<var: 'pathIndex' type: 'char *'>
+	<var: 'directoryPointer' type: 'void *'>
+	<export: true>
+"primitiveOpen: path mode: mode creationDisposition: creationDisposition flags: flags
+	"
+	| pathPointer pathIndex directoryPointer directoryOop pathSize |
+	pathPointer := interpreterProxy stackValue: 0.
+	(interpreterProxy isBytes: pathPointer)
+		ifFalse: [^ interpreterProxy primitiveFail].
+	pathIndex := interpreterProxy firstIndexableField: pathPointer.
+	pathSize := interpreterProxy byteSizeOf: pathPointer.
+
+	directoryOop := interpreterProxy instantiateClass: interpreterProxy classExternalAddress indexableSize: BytesPerWord.
+	
+	directoryPointer := self cCode: 'NewDirectory_open(pathIndex, pathSize)'.
+	self pointerAtPointer: (interpreterProxy firstIndexableField: directoryOop) put: directoryPointer.
+
+	interpreterProxy failed
+		ifFalse: [interpreterProxy methodReturnValue: directoryOop]
+
+]
+
+{ #category : 'file primitives' }
+NewFilePlugin >> primitiveDirectoryRemoveEmpty [
+	<var: 'pathIndex' type: 'char *'>
+	<var: 'result' type: 'bool'>
+	<export: true>
+	| pathPointer pathIndex result pathSize |
+	pathPointer := interpreterProxy stackValue: 0.
+	(interpreterProxy isBytes: pathPointer)
+		ifFalse: [^ interpreterProxy primitiveFail].
+	pathIndex := interpreterProxy firstIndexableField: pathPointer.
+	pathSize := interpreterProxy byteSizeOf: pathPointer.
+
+	result := self cCode: 'NewDirectory_removeEmpty(pathIndex, pathSize)'.
+
+	interpreterProxy failed
+		ifFalse: [interpreterProxy methodReturnBool: result]
+
+]
+
+{ #category : 'file primitives' }
+NewFilePlugin >> primitiveDirectoryRewind [
+	<export: true>
+	<var: 'directoryPointer' type: 'NewFile_t *'>
+	
+	| directoryOop directoryPointer |
+	directoryOop := interpreterProxy stackValue: 0.
+	interpreterProxy failed ifFalse: [
+		directoryPointer := self pointerAtPointer: (interpreterProxy firstIndexableField: directoryOop).
+		self cCode: 'NewDirectory_rewind(directoryPointer)'
+	].
+	interpreterProxy failed ifFalse: [ interpreterProxy pop: 1  "pop directory; leave rcvr on stack" ].
+]
+
+{ #category : 'file primitives' }
 NewFilePlugin >> primitiveFileClose [
 	<export: true>
 	<var: 'filePointer' type: 'NewFile_t *'>
