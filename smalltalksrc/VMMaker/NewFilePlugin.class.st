@@ -28,6 +28,20 @@ NewFilePlugin class >> requiresPlatformFiles [
 ]
 
 { #category : 'file primitives' }
+NewFilePlugin >> primitiveFileClose [
+	<export: true>
+	<var: 'filePointer' type: 'NewFile_t *'>
+	
+	| fileOop filePointer |
+	fileOop := interpreterProxy stackValue: 0.
+	interpreterProxy failed ifFalse: [
+		filePointer := 	self pointerAtPointer: (interpreterProxy firstIndexableField: fileOop).
+		self cCode: 'NewFile_close(filePointer)'
+	].
+	interpreterProxy failed ifFalse: [ interpreterProxy pop: 1  "pop file; leave rcvr on stack" ].
+]
+
+{ #category : 'file primitives' }
 NewFilePlugin >> primitiveFileOpen [
 	<var: 'pathIndex' type: 'char *'>
 	<var: 'filePointer' type: 'void *'>
@@ -45,18 +59,12 @@ NewFilePlugin >> primitiveFileOpen [
 	pathIndex := interpreterProxy firstIndexableField: pathPointer.
 	pathSize := interpreterProxy byteSizeOf: pathPointer.
 
-	fileOop := interpreterProxy instantiateClass: interpreterProxy classExternalAddress indexableSize: self sizeOfPointer.
+	fileOop := interpreterProxy instantiateClass: interpreterProxy classExternalAddress indexableSize: BytesPerWord.
 	
 	filePointer := self cCode: 'NewFile_open(pathIndex, pathSize, mode, creationDisposition, flags)'.
+	self pointerAtPointer: (interpreterProxy firstIndexableField: fileOop) put: filePointer.
 
 	interpreterProxy failed
 		ifFalse: [interpreterProxy methodReturnValue: fileOop]
 
-]
-
-{ #category : 'private - directory' }
-NewFilePlugin >> sizeOfPointer [
-	"Return the size of a pointer (address size)"
-	<inline: #always>
-	^self sizeof: #'void *'
 ]
