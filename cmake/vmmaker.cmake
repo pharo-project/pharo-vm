@@ -40,6 +40,7 @@ endif()
 
 set(PLUGIN_GENERATED_FILES 
     ${PHARO_CURRENT_GENERATED}/plugins/src/FilePlugin/FilePlugin.c
+    ${PHARO_CURRENT_GENERATED}/plugins/src/NewFilePlugin/NewFilePlugin.c
     ${PHARO_CURRENT_GENERATED}/plugins/src/SurfacePlugin/SurfacePlugin.c
     ${PHARO_CURRENT_GENERATED}/plugins/src/FloatArrayPlugin/FloatArrayPlugin.c)
 

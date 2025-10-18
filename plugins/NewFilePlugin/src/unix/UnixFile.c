@@ -14,21 +14,38 @@ struct NewDirectory_s
     DIR *handle;
 };
 
-bool
-NewDirectory_create(const char *path)
+static char *
+makeCStringWithFixedString(const char *string, size_t stringSize)
 {
-    return mkdir(path, 0755) == 0;
+    char *cstring = malloc(stringSize + 1);
+    memcpy(cstring, string, stringSize);
+    cstring[stringSize] = 0;
+    return cstring;
 }
 
-bool NewDirectory_removeEmpty(const char *path)
+bool
+NewDirectory_create(const char *path, size_t pathSize)
 {
-    return rmdir(path) == 0;
+    char *cpath = makeCStringWithFixedString(path, pathSize);
+    bool result = mkdir(cpath, 0755) == 0;
+    free(cpath);
+    return result;
+}
+
+bool NewDirectory_removeEmpty(const char *path, size_t pathSize)
+{
+    char *cpath = makeCStringWithFixedString(path, pathSize);
+    bool result = rmdir(cpath) == 0;
+    free(cpath);
+    return result;
 }
 
 NewDirectory_t *
-NewDirectory_open(const char *path)
+NewDirectory_open(const char *path, size_t pathSize)
 {
+    char *cpath = makeCStringWithFixedString(path, pathSize);
     DIR *handle = opendir(path);
+    free(cpath);
     if(!handle)
         return NULL;
     
@@ -79,13 +96,16 @@ struct NewFile_s
 };
 
 PHARO_NEWFILE_EXPORT bool
-NewFile_deleteFile(const char *path)
+NewFile_deleteFile(const char *path, size_t pathSize)
 {
-    return unlink(path) == 0;
+    char *cpath = makeCStringWithFixedString(path, pathSize);
+    bool result = unlink(cpath) == 0;
+    free(cpath);
+    return result;
 }
 
 NewFile_t *
-NewFile_open(const char *path, NewFileOpenMode_t mode, NewFileCreationDisposition_t creationDisposition, NewFileOpenFlags_t flags)
+NewFile_open(const char *path, size_t pathSize, NewFileOpenMode_t mode, NewFileCreationDisposition_t creationDisposition, NewFileOpenFlags_t flags)
 {
     int openFlags = 0;
     int openMode = 0644;
@@ -126,8 +146,10 @@ NewFile_open(const char *path, NewFileOpenMode_t mode, NewFileCreationDispositio
     default:
         break;
     }
-
-    int fd = open(path, openFlags, openMode);
+    
+    char *cpath = makeCStringWithFixedString(path, pathSize);
+    int fd = open(cpath, openFlags, openMode);
+    free(cpath);
     if(fd < 0)
         return NULL;
 
