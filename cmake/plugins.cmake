@@ -8,6 +8,8 @@ if(WIN)
     target_compile_definitions(FilePlugin PRIVATE "-DWIN32_FILE_SUPPORT")
 endif()
 
+add_vm_plugin(NewFilePlugin TRUE TRUE)
+
 
 add_vm_plugin(FileAttributesPlugin FALSE TRUE)
 target_link_libraries(FileAttributesPlugin PRIVATE FilePlugin)
