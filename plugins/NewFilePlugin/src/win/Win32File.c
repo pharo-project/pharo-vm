@@ -29,9 +29,8 @@ struct NewFile_s
 };
 
 static WCHAR *
-NewFile_utf8ToWideChar(const char *string)
+NewFile_utf8ToWideChar(const char *string, size_t stringLen)
 {
-    size_t stringLen = strlen(string);
     int wstringSize = MultiByteToWideChar(CP_UTF8, 0, string, (int)stringLen, NULL, 0);
     if(wstringSize <= 0)
         return NULL;
@@ -58,28 +57,28 @@ NewFile_wideCharToUtf8(const WCHAR *wstring)
 }
 
 static bool
-NewFile_isAbsolutePath(const char *path)
+NewFile_isAbsolutePath(const char *path, size_t pathSize)
 {
-    return path[0] && (path[1] == ':') && (path[2] == '\\');
+    return pathSize >= 3 && (path[1] == ':') && (path[2] == '\\');
 }
 
 static WCHAR *
 NewFile_preparePath(const char *path, size_t pathSize)
 {
     // Add the \\?\ prefix to absolute paths
-    if(NewFile_isAbsolutePath(path))
+    if(NewFile_isAbsolutePath(path, pathSize))
     {
         size_t pathLength = strlen(path);
-        char *stringWithPrefix = calloc(4 + pathLength + 1, 1);
+        char *stringWithPrefix = calloc(4 + pathLength, 1);
         memcpy(stringWithPrefix, "\\\\?\\", 4);
         memcpy(stringWithPrefix + 4, path, pathLength);
         
-        WCHAR *wpath = NewFile_utf8ToWideChar(stringWithPrefix);
+        WCHAR *wpath = NewFile_utf8ToWideChar(stringWithPrefix, 4 + pathLength);
         free(stringWithPrefix);
         return wpath;
     }
 
-    return NewFile_utf8ToWideChar(path);
+    return NewFile_utf8ToWideChar(path, pathSize);
 }
 
 static WCHAR *
