@@ -104,6 +104,65 @@ NewFilePlugin >> primitiveFileOpen [
 ]
 
 { #category : 'file primitives' }
+NewFilePlugin >> primitiveFileReadInto [
+	<export: true>
+	<var: 'filePointer' type: 'NewFile_t *'>
+	<var: 'bufferPointer' type: 'void*'>
+	<var: 'readResult' type: 'sqLong'>
+	
+	| fileOop filePointer readSize bufferOffset bufferOop bufferPointer readResult |
+	readSize := interpreterProxy positiveMachineIntegerValueOf: (interpreterProxy stackValue: 0).
+	bufferOffset := interpreterProxy positiveMachineIntegerValueOf: (interpreterProxy stackValue: 1).
+	bufferOop := interpreterProxy stackValue: 2.
+	fileOop := interpreterProxy stackValue: 3.
+
+	interpreterProxy failed ifFalse: [
+		bufferPointer := interpreterProxy firstIndexableField: bufferOop.
+		filePointer := 	self pointerAtPointer: (interpreterProxy firstIndexableField: fileOop).
+		readResult := self cCode: 'NewFile_read(filePointer, bufferPointer, bufferOffset, readSize)'
+	].
+	interpreterProxy failed ifFalse: [ interpreterProxy methodReturnValue: (interpreterProxy signed64BitIntegerFor: readResult)].
+]
+
+{ #category : 'file primitives' }
+NewFilePlugin >> primitiveFileReadIntoAtFileOffset [
+	<export: true>
+	<var: 'filePointer' type: 'NewFile_t *'>
+	<var: 'bufferPointer' type: 'void*'>
+	<var: 'readResult' type: 'sqLong'>
+	
+	| fileOop filePointer fileOffset readSize bufferOffset bufferOop bufferPointer readResult |
+	fileOffset := interpreterProxy positive64BitValueOf: (interpreterProxy stackValue: 0).
+	readSize := interpreterProxy positiveMachineIntegerValueOf: (interpreterProxy stackValue: 1).
+	bufferOffset := interpreterProxy positiveMachineIntegerValueOf: (interpreterProxy stackValue: 2).
+	bufferOop := interpreterProxy stackValue: 3.
+	fileOop := interpreterProxy stackValue: 4.
+
+	interpreterProxy failed ifFalse: [
+		bufferPointer := interpreterProxy firstIndexableField: bufferOop.
+		filePointer := 	self pointerAtPointer: (interpreterProxy firstIndexableField: fileOop).
+		readResult := self cCode: 'NewFile_readAtOffset(filePointer, bufferPointer, bufferOffset, readSize, fileOffset)'
+	].
+	interpreterProxy failed ifFalse: [ interpreterProxy methodReturnValue: (interpreterProxy signed64BitIntegerFor: readResult)].
+]
+
+{ #category : 'file primitives' }
+NewFilePlugin >> primitiveFileSeek [
+	<export: true>
+	<var: 'filePointer' type: 'NewFile_t *'>
+	
+	| fileOop filePointer seekMode seekOffset |
+	seekMode := interpreterProxy positive32BitValueOf: (interpreterProxy stackValue: 0).
+	seekOffset := interpreterProxy signed64BitValueOf: (interpreterProxy stackValue: 1).
+	fileOop := interpreterProxy stackValue: 2.
+	interpreterProxy failed ifFalse: [
+		filePointer := 	self pointerAtPointer: (interpreterProxy firstIndexableField: fileOop).
+		self cCode: 'NewFile_seek(filePointer, seekOffset, seekMode)'
+	].
+	interpreterProxy failed ifFalse: [ interpreterProxy pop: 3  "pop seek mode, offset and file; leave rcvr on stack"].
+]
+
+{ #category : 'file primitives' }
 NewFilePlugin >> primitiveFileTell [
 	<export: true>
 	<var: 'filePointer' type: 'NewFile_t *'>
@@ -116,4 +175,47 @@ NewFilePlugin >> primitiveFileTell [
 		fileSize := self cCode: 'NewFile_tell(filePointer)'
 	].
 	interpreterProxy failed ifFalse: [ interpreterProxy methodReturnValue: (interpreterProxy signed64BitIntegerFor: fileSize)].
+]
+
+{ #category : 'file primitives' }
+NewFilePlugin >> primitiveFileWriteFrom [
+	<export: true>
+	<var: 'filePointer' type: 'NewFile_t *'>
+	<var: 'bufferPointer' type: 'void*'>
+	<var: 'writeResult' type: 'sqLong'>
+	
+	| fileOop filePointer writeSize bufferOffset bufferOop bufferPointer writeResult |
+	writeSize := interpreterProxy positiveMachineIntegerValueOf: (interpreterProxy stackValue: 0).
+	bufferOffset := interpreterProxy positiveMachineIntegerValueOf: (interpreterProxy stackValue: 1).
+	bufferOop := interpreterProxy stackValue: 2.
+	fileOop := interpreterProxy stackValue: 3.
+
+	interpreterProxy failed ifFalse: [
+		bufferPointer := interpreterProxy firstIndexableField: bufferOop.
+		filePointer := 	self pointerAtPointer: (interpreterProxy firstIndexableField: fileOop).
+		writeResult := self cCode: 'NewFile_write(filePointer, bufferPointer, bufferOffset, writeSize)'
+	].
+	interpreterProxy failed ifFalse: [ interpreterProxy methodReturnValue: (interpreterProxy signed64BitIntegerFor: writeResult)].
+]
+
+{ #category : 'file primitives' }
+NewFilePlugin >> primitiveFileWriteFromAtFileOffset [
+	<export: true>
+	<var: 'filePointer' type: 'NewFile_t *'>
+	<var: 'bufferPointer' type: 'void*'>
+	<var: 'writeResult' type: 'sqLong'>
+	
+	| fileOop filePointer fileOffset writeSize bufferOffset bufferOop bufferPointer writeResult |
+	fileOffset := interpreterProxy positive64BitValueOf: (interpreterProxy stackValue: 0).
+	writeSize := interpreterProxy positiveMachineIntegerValueOf: (interpreterProxy stackValue: 1).
+	bufferOffset := interpreterProxy positiveMachineIntegerValueOf: (interpreterProxy stackValue: 2).
+	bufferOop := interpreterProxy stackValue: 3.
+	fileOop := interpreterProxy stackValue: 4.
+
+	interpreterProxy failed ifFalse: [
+		bufferPointer := interpreterProxy firstIndexableField: bufferOop.
+		filePointer := 	self pointerAtPointer: (interpreterProxy firstIndexableField: fileOop).
+		writeResult := self cCode: 'NewFile_writeAtOffset(filePointer, bufferPointer, bufferOffset, writeSize, fileOffset)'
+	].
+	interpreterProxy failed ifFalse: [ interpreterProxy methodReturnValue: (interpreterProxy signed64BitIntegerFor: writeResult)].
 ]
