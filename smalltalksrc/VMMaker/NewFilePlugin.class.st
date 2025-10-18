@@ -28,6 +28,25 @@ NewFilePlugin class >> requiresPlatformFiles [
 ]
 
 { #category : 'file primitives' }
+NewFilePlugin >> primitiveDeleteFile [
+	<var: 'pathIndex' type: 'char *'>
+	<var: 'result' type: 'bool'>
+	<export: true>
+	| pathPointer pathIndex result pathSize |
+	pathPointer := interpreterProxy stackValue: 0.
+	(interpreterProxy isBytes: pathPointer)
+		ifFalse: [^ interpreterProxy primitiveFail].
+	pathIndex := interpreterProxy firstIndexableField: pathPointer.
+	pathSize := interpreterProxy byteSizeOf: pathPointer.
+
+	result := self cCode: 'NewFile_deleteFile(pathIndex, pathSize)'.
+
+	interpreterProxy failed
+		ifFalse: [interpreterProxy methodReturnBool: result]
+
+]
+
+{ #category : 'file primitives' }
 NewFilePlugin >> primitiveFileClose [
 	<export: true>
 	<var: 'filePointer' type: 'NewFile_t *'>
