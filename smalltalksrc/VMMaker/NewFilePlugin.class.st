@@ -235,3 +235,35 @@ NewFilePlugin >> primitiveFileWriteFromAtFileOffset [
 	].
 	interpreterProxy failed ifFalse: [ interpreterProxy methodReturnValue: (interpreterProxy signed64BitIntegerFor: writeResult)].
 ]
+
+{ #category : 'file primitives' }
+NewFilePlugin >> primitiveMemoryMapWithProtection [
+	<export: true>
+	<var: 'filePointer' type: 'NewFile_t *'>
+	<var: 'memoryMappedPointer' type: 'void *'>
+	
+	| fileOop filePointer protectionFlags memoryMappedPointer memoryMappedPointerOop |
+	protectionFlags := interpreterProxy positive32BitValueOf:(interpreterProxy stackValue: 0).
+	fileOop := interpreterProxy stackValue: 1.
+	memoryMappedPointerOop := interpreterProxy instantiateClass: interpreterProxy classExternalAddress indexableSize: BytesPerWord.
+	interpreterProxy failed ifFalse: [
+		filePointer := 	self pointerAtPointer: (interpreterProxy firstIndexableField: fileOop).
+		memoryMappedPointer := self cCode: 'NewFile_memoryMap(filePointer, protectionFlags)'.
+		self pointerAtPointer: (interpreterProxy firstIndexableField: memoryMappedPointerOop) put: memoryMappedPointer.
+	].
+	interpreterProxy failed ifFalse: [ interpreterProxy methodReturnValue: memoryMappedPointerOop ].
+]
+
+{ #category : 'file primitives' }
+NewFilePlugin >> primitiveMemoryUnmap [
+	<export: true>
+	<var: 'filePointer' type: 'NewFile_t *'>
+	
+	| fileOop filePointer |
+	fileOop := interpreterProxy stackValue: 0.
+	interpreterProxy failed ifFalse: [
+		filePointer := 	self pointerAtPointer: (interpreterProxy firstIndexableField: fileOop).
+		self cCode: 'NewFile_memoryUnmap(filePointer)'
+	].
+	interpreterProxy failed ifFalse: [ interpreterProxy pop: 1  "pop file; leave rcvr on stack" ].
+]
