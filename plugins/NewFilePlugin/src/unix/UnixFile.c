@@ -214,7 +214,7 @@ bool
 NewFile_truncate(NewFile_t *file, uint64_t newFileSize)
 {
     if(!file)
-        return -1;
+        return false;
     
     return ftruncate(file->fileDescriptor, newFileSize) == 0;
 }
