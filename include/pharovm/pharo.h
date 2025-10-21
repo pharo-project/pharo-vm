@@ -15,7 +15,7 @@
 #include "interpreter.h"
 
 #include "debug.h"
-#include "sqAssert.h"
+#include "assert.h"
 
 #ifdef _WIN32
 
@@ -25,9 +25,6 @@
 
 EXPORT(const char*) getSourceVersion();
 EXPORT(const char*) getVMVersion();
-EXPORT(char*) getVMName();
-
-EXPORT(void) setVMName(const char* name);
 
 EXPORT(void) setVMPath(const char* path);
 

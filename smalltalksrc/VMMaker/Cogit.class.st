@@ -242,8 +242,6 @@ Class {
 		'cPICEndOfCodeLabel',
 		'ceMallocTrampoline',
 		'ceFreeTrampoline',
-		'debugBytecodePointers',
-		'debugOpcodeIndices',
 		'disassemblingMethod',
 		'cogConstituentIndex',
 		'directedSendUsesBinding',
@@ -439,7 +437,7 @@ Cogit class >> declareCVarsIn: aCCodeGenerator [
 		addHeaderFile: '<stddef.h>';
 		"for e.g. offsetof"addHeaderFile: '"jit/jit.h"';
 		addHeaderFile: '"debug.h"';
-		addHeaderFile: '"sqCogStackAlignment.h"';
+		addHeaderFile: '"cogStackAlignment.h"';
 		addHeaderFile: '"dispdbg.h"';
 		"must precede cointerp.h & cogit.h otherwise NoDbgRegParms gets screwed up"
 		addHeaderFile: '"cogmethod.h"'.
@@ -553,8 +551,10 @@ Cogit class >> defineAtCompileTime: anObject [
 	 because the VM generated is specific to these varables."
 	anObject isSymbol ifFalse:
 		[^false].
-	(#(STACKVM COGVM SPURVM) includes: anObject) ifTrue:
+	(#(STACKVM COGVM) includes: anObject) ifTrue:
 		[^false].
+	anObject == #FEATURE_JIT_SIMD
+		ifTrue: [ ^ true ].
 	^VMBasicConstants namesDefinedAtCompileTime includes: anObject
 ]
 
@@ -806,6 +806,11 @@ Cogit class >> initializeErrorCodes [
 Cogit class >> initializeMiscConstants [
 	super initializeMiscConstants.
 	Debug := InitializationOptions at: #Debug ifAbsent: [false].
+	
+	FEATURE_JIT_SIMD := InitializationOptions
+		at: #FEATURE_JIT_SIMD
+		ifAbsent: [ true ].
+	
 	(InitializationOptions includesKey: #EagerInstructionDecoration)
 		ifTrue:
 			[EagerInstructionDecoration := InitializationOptions at: #EagerInstructionDecoration]
@@ -1193,20 +1198,18 @@ Cogit class >> mustBeGlobalAndExport: var [
 	 only used outside of Cogit by the object representation).  Include CFramePointer CStackPointer as
 	 a hack to get them declared at all."
 
-	^ #( 'ceBaseFrameReturnTrampoline' #ceCaptureCStackPointers
-	     'ceCheckForInterruptTrampoline' ceEnterCogCodePopReceiverReg
-	     realCEEnterCogCodePopReceiverReg
-	     ceCallCogCodePopReceiverReg realCECallCogCodePopReceiverReg
-	     ceCallCogCodePopReceiverAndClassRegs
-	     realCECallCogCodePopReceiverAndClassRegs
-	     'ceReturnToInterpreterTrampoline'
-	     'ceCannotResumeTrampoline' ceTryLockVMOwner ceUnlockVMOwner
-	     'cmEntryOffset' 'cmNoCheckEntryOffset' 'cmDynSuperEntryOffset'
-	     'cmSelfSendEntryOffset' 'missOffset' 'cbEntryOffset'
-	     'cbNoSwitchEntryOffset' 'blockNoContextSwitchOffset'
-	     CFramePointer CStackPointer 'cFramePointerInUse'
-	     ceGetFP ceGetSP traceFlags 'traceStores' debugPrimCallStackOffset )
-		  includes: var
+	^#(	'ceBaseFrameReturnTrampoline' #ceCaptureCStackPointers 'ceCheckForInterruptTrampoline'
+		ceEnterCogCodePopReceiverReg realCEEnterCogCodePopReceiverReg
+		ceCallCogCodePopReceiverReg realCECallCogCodePopReceiverReg
+		ceCallCogCodePopReceiverAndClassRegs realCECallCogCodePopReceiverAndClassRegs
+		'ceReturnToInterpreterTrampoline' 'ceCannotResumeTrampoline'
+		ceTryLockVMOwner ceUnlockVMOwner
+		'cmEntryOffset' 'cmNoCheckEntryOffset' 'cmDynSuperEntryOffset' 'cmSelfSendEntryOffset'
+		'missOffset' 'cbEntryOffset' 'cbNoSwitchEntryOffset' 'blockNoContextSwitchOffset'
+		CFramePointer CStackPointer 'cFramePointerInUse' ceGetFP ceGetSP
+		traceFlags 'traceStores' debugPrimCallStackOffset)
+			includes: var
+
 ]
 
 { #category : 'translation' }
@@ -1588,6 +1591,8 @@ Cogit >> AddcR: reg1 R: reg2 [
 
 { #category : 'abstract instructions' }
 Cogit >> AlignedSt1S: aSize Vr: aVectorRegister R: aMemoryRegister Mw: anOffset [ 
+
+	<option: #FEATURE_JIT_SIMD>
 	^ self
 		  gen: AlignedSt1VrRMw
 		  operand: aSize 
@@ -1877,6 +1882,7 @@ Cogit >> DivRs: dpreg1 Rs: dpreg2 [
 { #category : 'abstract instructions' }
 Cogit >> DupS: aSize R: aGeneralRegister Vr: aVectorRegister [
 
+	<option: #FEATURE_JIT_SIMD>
 	^ self
 		  gen: DupRVr
 		  operand: aSize
@@ -2771,6 +2777,8 @@ Cogit >> SqrtRs: dpreg [
 
 { #category : 'abstract instructions' }
 Cogit >> St1S: aSize Vr: aVectorRegister R: aMemoryRegister Mw: anOffset [ 
+
+	<option: #FEATURE_JIT_SIMD>
 	^ self
 		  gen: St1VrRMw
 		  operand: aSize 
@@ -3205,7 +3213,7 @@ Cogit >> annotationIsForUncheckedEntryPoint: annotation [
 { #category : 'simulation only' }
 Cogit >> assertCStackWellAligned [
 	"Check alignment of the C stack.  This is a simulation only facsimilie.
-	 See platforms/Cross/vm/sqCogStackAlignment.h for the real code."
+	 See cogStackAlignment.h for the real code."
 	<doNotGenerate>
 	self assert: processor sp \\ cStackAlignment = expectedSPAlignment.
 	self assert: processor fp \\ cStackAlignment = expectedFPAlignment
@@ -5203,6 +5211,7 @@ Cogit >> compileCogFullBlockMethod: numCopied [
 	inBlock := InFullBlock.
 	postCompileHook := nil.
 	maxLitIndex := -1.
+
 	initialPC := coInterpreter startPCOfMethod: methodObj.
 	"initial estimate.  Actual endPC is determined in scanMethod."
 	endPC := objectMemory numBytesOf: methodObj.
@@ -7631,8 +7640,8 @@ Cogit >> generateInstructionsAt: eventualAbsoluteAddress [
 	<var: #fixup type: #'BytecodeFixup *'>
 	absoluteAddress := eventualAbsoluteAddress.
 	pcDependentIndex := 0.
-	0 to: opcodeIndex - 1 do:
-		[:i|
+
+	0 to: opcodeIndex - 1 do: [:i|
 		abstractInstruction := self abstractInstructionAt: i.
 		abstractInstruction isPCDependent
 			ifTrue:
@@ -7643,8 +7652,7 @@ Cogit >> generateInstructionsAt: eventualAbsoluteAddress [
 				 absoluteAddress := absoluteAddress + abstractInstruction machineCodeSize]
 			ifFalse:
 				[absoluteAddress := abstractInstruction concretizeAt: absoluteAddress]].
-	0 to: pcDependentIndex - 1 do:
-		[:j|
+	0 to: pcDependentIndex - 1 do: [:j|
 		fixup := self fixupAtIndex: j.
 		abstractInstruction := self abstractInstructionAt: fixup instructionIndex.
 		abstractInstruction concretizeAt: abstractInstruction address].
@@ -11202,16 +11210,7 @@ Cogit >> setInterpreter: aCoInterpreter [
 
 	extA := numExtB := extB := 0.
 
-	compilationTrace ifNil: [
-		compilationTrace := self class initializationOptions
-			                    at: #compilationTrace
-			                    ifAbsent: [ 0 ] ].
-	debugOpcodeIndices := self class initializationOptions
-		                      at: #debugOpcodeIndices
-		                      ifAbsent: [ Set new ].
-	debugBytecodePointers := self class initializationOptions
-		                         at: #debugBytecodePointers
-		                         ifAbsent: [ Set new ]
+	compilationTrace ifNil: [compilationTrace := self class initializationOptions at: #compilationTrace ifAbsent: [0]]
 ]
 
 { #category : 'jit - api' }

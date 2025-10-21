@@ -90,6 +90,16 @@ TStatementListNode >> addAllFirst: aListOfStatement [
 { #category : 'adding' }
 TStatementListNode >> addAllLast: aListOfStatement [
 
+	self statements: (statements
+			 addAllLast: aListOfStatement;
+			 yourself)
+]
+
+{ #category : 'adding' }
+TStatementListNode >> addAllLastKeepingEndComments: aListOfStatement [
+
+	"This method adds the statements in the argument to this statement list, guaranteeing that comments at the end remain at the end."
+
 	(statements isNotEmpty and: [ statements last isComment ])
 		ifFalse: [
 			self statements: (statements
@@ -418,6 +428,7 @@ TStatementListNode >> copyWithoutReturn [
 			newStmtsListNode
 				replaceChild: actualLast
 				with: actualLast copyWithoutReturn ].
+	newStmtsListNode parent: parent.
 	^ newStmtsListNode
 ]
 
@@ -658,6 +669,14 @@ TStatementListNode >> removeAssertions [
 ]
 
 { #category : 'transformations' }
+TStatementListNode >> removeFirstNonCommentStatement [
+
+	| first |
+	first := self firstNonCommentStatement.
+	statements := statements select: [ :e | e ~= first ]
+]
+
+{ #category : 'transformations' }
 TStatementListNode >> removeLast [
 	"the last statement can be a comment if the TStatementList has been through inlining, remove the actual last statement"
 
@@ -804,9 +823,19 @@ TStatementListNode >> shouldExpand [
 ]
 
 { #category : 'accessing' }
+TStatementListNode >> sizeWithoutComments [
+
+	| size |
+	size := 0.
+	statements do: [ :stmt |
+		stmt isComment ifFalse: [ size := size + 1 ] ].
+	^ size
+]
+
+{ #category : 'accessing' }
 TStatementListNode >> statements [
 
-	^statements
+	^ statements
 ]
 
 { #category : 'accessing' }

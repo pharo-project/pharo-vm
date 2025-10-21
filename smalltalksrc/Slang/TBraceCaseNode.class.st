@@ -11,6 +11,12 @@ Class {
 	#tag : 'AST'
 }
 
+{ #category : 'visiting' }
+TBraceCaseNode >> accept: aVisitor [
+
+	^ aVisitor visitBraceCaseNode: self
+]
+
 { #category : 'transformations' }
 TBraceCaseNode >> bindVariableUsesIn: aDictionary [
 

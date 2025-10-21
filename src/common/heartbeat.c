@@ -17,8 +17,8 @@
 
 
 #include "sq.h"
-#include "sqAssert.h"
-#include "sqMemoryFence.h"
+#include "assert.h"
+#include "memoryFence.h"
 //#include "sqSCCSVersion.h"
 #include <errno.h>
 
@@ -31,7 +31,7 @@
 
 #include <sys/types.h>
 
-#include "sqaio.h"
+#include "aio.h"
 
 #include "pharovm/debug.h"
 
@@ -148,7 +148,7 @@ currentUTCMicroseconds()
  * implemented without locks using atomic 64-bit reads and writes.
  */
 
-#include "sqAtomicOps.h"
+#include "atomic.h"
 
 static void
 updateMicrosecondClock()

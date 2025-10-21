@@ -19,7 +19,7 @@ static char __buildInfo[] = "LocalePlugin VMMaker.oscog-eem.2495 uuid: fcbf4c90-
 
 /* Do not include the entire sq.h file but just those parts needed. */
 #include "sqConfig.h"			/* Configuration options */
-#include "sqVirtualMachine.h"	/*  The virtual machine proxy definition */
+#include "virtualMachine.h"	/*  The virtual machine proxy definition */
 #include "sqPlatformSpecific.h"	/* Platform specific definitions */
 
 #define true 1
@@ -31,7 +31,7 @@ static char __buildInfo[] = "LocalePlugin VMMaker.oscog-eem.2495 uuid: fcbf4c90-
 #endif
 
 #include "LocalePlugin.h"
-#include "sqMemoryAccess.h"
+#include "memoryAccess.h"
 
 
 /*** Function Prototypes ***/

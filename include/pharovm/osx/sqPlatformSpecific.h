@@ -49,12 +49,11 @@
  Alternately, this acknowledgment may appear in the software itself, in the same form and location as other 
  such third-party acknowledgments.
  */
-//
+
+#pragma once
 
 #include "pharovm/exportDefinition.h"
 
-#ifdef macintoshSqueak
-//#define SQUEAK_BUILTIN_PLUGIN
 #define ENABLE_URL_FETCH
 /* replace the image file manipulation macros with functions */
 
@@ -143,7 +142,3 @@ extern const pthread_key_t tltiIndex;
 # undef VM_LABEL
 # define VM_LABEL(foo) ((void)0)
 #endif
-
-#endif /* macintoshSqueak */
-
-

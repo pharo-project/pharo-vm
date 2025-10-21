@@ -278,12 +278,6 @@ SLDeadCodeElimination >> initialize [
 	sLExpandASTVisitor := SLExpandASTVisitor new
 ]
 
-{ #category : 'testing' }
-SLDeadCodeElimination >> isStructAccessorWithNoSideEffect: aSendNode [
-
-	^ (codeGenerator isStructSend: aSendNode) and: [ aSendNode numArgs = 0 ]
-]
-
 { #category : 'mark' }
 SLDeadCodeElimination >> markAsExpression: aNode [
 
@@ -330,8 +324,8 @@ SLDeadCodeElimination >> mayMarkSendNode: aSendNode [
 	(aSendNode hasSideEffect not or: [
 		 aSendNode isConditionalSend or: [
 			 aSendNode isIterativeSend or: [
-				 (self isStructAccessorWithNoSideEffect: aSendNode) or: [
-					 aSendNode selector beginsWith: #cCoerce ] ] ] ]) ifTrue: [
+				 (codeGenerator isStructAccessorWithNoSideEffect: aSendNode)
+					 or: [ aSendNode selector beginsWith: #cCoerce ] ] ] ]) ifTrue: [
 		^ self ].
 	self visitSendNode: aSendNode
 ]

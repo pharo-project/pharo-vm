@@ -52,9 +52,9 @@
  */
 
 #include "sq.h"
-#include "sqAssert.h"
-#include "sqAtomicOps.h"
-#include "sqMemoryFence.h"
+#include "assert.h"
+#include "atomic.h"
+#include "memoryFence.h"
 
 
 #define NUM_ASYNCHRONOUS_TICKEES 4

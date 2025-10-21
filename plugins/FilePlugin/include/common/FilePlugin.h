@@ -24,7 +24,7 @@
 typedef int mode_t;
 #endif
 
-#include "sqMemoryAccess.h"
+#include "memoryAccess.h"
 
 /* squeak file record; see sqFilePrims.c for details */
 typedef struct {
@@ -49,7 +49,7 @@ typedef struct {
 sqInt   sqFileAtEnd(SQFile *f);
 sqInt   sqFileClose(SQFile *f);
 sqInt   sqFileDeleteNameSize(char *sqFileName, sqInt sqFileNameSize);
-squeakFileOffsetType sqFileGetPosition(SQFile *f);
+fileOffset_t sqFileGetPosition(SQFile *f);
 sqInt   sqFileInit(void);
 sqInt   sqFileShutdown(void);
 sqInt   sqFileOpen(SQFile *f, char *sqFileName, sqInt sqFileNameSize, sqInt writeFlag);
@@ -58,13 +58,13 @@ sqInt   sqConnectToFileDescriptor(SQFile *f, int fd, sqInt writeFlag);
 sqInt   sqConnectToFile(SQFile *f, void *file, sqInt writeFlag);
 size_t  sqFileReadIntoAt(SQFile *f, size_t count, char *byteArrayIndex, size_t startIndex);
 sqInt   sqFileRenameOldSizeNewSize(char *sqOldName, sqInt sqOldNameSize, char *sqNewName, sqInt sqNewNameSize);
-sqInt   sqFileSetPosition(SQFile *f, squeakFileOffsetType position);
-squeakFileOffsetType sqFileSize(SQFile *f);
+sqInt   sqFileSetPosition(SQFile *f, fileOffset_t position);
+fileOffset_t sqFileSize(SQFile *f);
 sqInt   sqFileValid(SQFile *f);
 size_t  sqFileWriteFromAt(SQFile *f, size_t count, char *byteArrayIndex, size_t startIndex);
 sqInt   sqFileFlush(SQFile *f);
 sqInt   sqFileSync(SQFile *f);
-sqInt   sqFileTruncate(SQFile *f,squeakFileOffsetType offset);
+sqInt   sqFileTruncate(SQFile *f,fileOffset_t offset);
 sqInt   sqFileThisSession(void);
 sqInt   sqFileStdioHandlesInto(SQFile files[3]);
 sqInt   sqFileDescriptorType(int fdNum);
@@ -79,11 +79,11 @@ sqInt dir_Delimitor(void);
 sqInt dir_Lookup(char *pathString, sqInt pathStringLength, sqInt index,
 		/* outputs: */
 		char *name, sqInt *nameLength, sqInt *creationDate, sqInt *modificationDate,
-		sqInt *isDirectory, squeakFileOffsetType *sizeIfFile, sqInt *posixPermissions, sqInt *isSymlink);
+		sqInt *isDirectory, fileOffset_t *sizeIfFile, sqInt *posixPermissions, sqInt *isSymlink);
 sqInt dir_EntryLookup(char *pathString, sqInt pathStringLength, char *nameString, sqInt nameStringLength,
 		/* outputs: */
 		char *name, sqInt *nameLength, sqInt *creationDate, sqInt *modificationDate,
-		sqInt *isDirectory, squeakFileOffsetType *sizeIfFile, sqInt *posixPermissions, sqInt *isSymlink);
+		sqInt *isDirectory, fileOffset_t *sizeIfFile, sqInt *posixPermissions, sqInt *isSymlink);
 sqInt dir_PathToWorkingDir(char *pathName, sqInt pathNameMax);
 sqInt dir_SetMacFileTypeAndCreator(char *filename, sqInt filenameSize, char *fType, char *fCreator);
 sqInt dir_GetMacFileTypeAndCreator(char *filename, sqInt filenameSize, char *fType, char *fCreator);

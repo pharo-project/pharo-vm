@@ -19,7 +19,7 @@ static char __buildInfo[] = "BalloonEnginePlugin VMMaker.oscog-eem.2480 uuid: bb
 
 /* Do not include the entire sq.h file but just those parts needed. */
 #include "sqConfig.h"			/* Configuration options */
-#include "sqVirtualMachine.h"	/*  The virtual machine proxy definition */
+#include "virtualMachine.h"	/*  The virtual machine proxy definition */
 #include "sqPlatformSpecific.h"	/* Platform specific definitions */
 
 #define true 1
@@ -30,7 +30,7 @@ static char __buildInfo[] = "BalloonEnginePlugin VMMaker.oscog-eem.2480 uuid: bb
 # define EXPORT(returnType) static returnType
 #endif
 
-#include "sqMemoryAccess.h"
+#include "memoryAccess.h"
 
 
 /*** Constants ***/
@@ -798,7 +798,7 @@ extern sqInt isArray(sqInt oop);
 extern sqInt isBytes(sqInt oop);
 extern sqInt isFloatObject(sqInt oop);
 #if !defined(isImmediate)
-#if VM_PROXY_MAJOR > 1 || (VM_PROXY_MAJOR == 1 && VM_PROXY_MINOR >= 13)
+#if VM_PROXY_MINOR >= 13
 extern sqInt isImmediate(sqInt anObject);
 #else
 # define isImmediate(anObject) 0
@@ -12561,9 +12561,7 @@ setAALevel(sqInt level)
 }
 
 
-/*	Note: This is coded so that it can be run in Squeak. */
-
-	/* InterpreterPlugin>>#setInterpreter: */
+/* InterpreterPlugin>>#setInterpreter: */
 EXPORT(sqInt)
 setInterpreter(struct VirtualMachine *anInterpreter)
 {

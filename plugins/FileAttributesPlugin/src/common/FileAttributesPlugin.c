@@ -50,7 +50,7 @@ static char __buildInfo[] = "FileAttributesPlugin FileAttributesPlugin.oscog-akg
 
 /* Do not include the entire sq.h file but just those parts needed. */
 #include "sqConfig.h"			/* Configuration options */
-#include "sqVirtualMachine.h"	/*  The virtual machine proxy definition */
+#include "virtualMachine.h"	/*  The virtual machine proxy definition */
 #include "sqPlatformSpecific.h"	/* Platform specific definitions */
 
 #define true 1
@@ -62,7 +62,7 @@ static char __buildInfo[] = "FileAttributesPlugin FileAttributesPlugin.oscog-akg
 #endif
 
 #include "faCommon.h"
-#include "sqMemoryAccess.h"
+#include "memoryAccess.h"
 
 
 /*** Constants ***/
@@ -243,15 +243,8 @@ attributeArrayformask(sqInt *attributeArrayPtr, fapath *faPath, sqInt attributeM
 			return -15 /* interpreterError */;
 		}
 		
-#if SPURVM
 		status = faFileStatAttributes(faPath, getLinkStats, attributeArray);
-
-#else /* SPURVM */
-		pushRemappableOop(attributeArray);
-		status = faFileStatAttributes(faPath, getLinkStats, attributeArray);
-		attributeArray = popRemappableOop()
-#endif /* SPURVM */
-;
+		
 		if (status != 0) {
 			return status;
 		}
@@ -259,15 +252,8 @@ attributeArrayformask(sqInt *attributeArrayPtr, fapath *faPath, sqInt attributeM
 	}
 	if (getAccess) {
 		
-#if SPURVM
 		accessArray = instantiateClassindexableSize(classArray(), 3);
 
-#else /* SPURVM */
-		pushRemappableOop(attributeArray);
-		accessArray = instantiateClassindexableSize(classArray(), 3);
-		attributeArray = popRemappableOop()
-#endif /* SPURVM */
-;
 		if (!(accessArray)) {
 			primitiveFailFor(PrimErrNoMemory);
 
@@ -282,17 +268,8 @@ attributeArrayformask(sqInt *attributeArrayPtr, fapath *faPath, sqInt attributeM
 	if (getStats
 	 && (getAccess)) {
 		
-#if SPURVM
 		resultOop = instantiateClassindexableSize(classArray(), 2);
 
-#else /* SPURVM */
-		pushRemappableOop(attributeArray);
-		pushRemappableOop(accessArray);
-		resultOop = instantiateClassindexableSize(classArray(), 2);
-		accessArray = popRemappableOop();
-		attributeArray = popRemappableOop()
-#endif /* SPURVM */
-;
 		if (!(resultOop)) {
 			primitiveFailFor(PrimErrNoMemory);
 
@@ -773,7 +750,6 @@ primitiveOpendir(void)
 	faInitSessionId(&faPathPtr.sessionId);
 	(faPathPtr.faPath = faPath);
 	
-#if SPURVM
 	/* begin objectFromStruct:size: */
 	aMachineAddress = (&faPathPtr);
 	structSize = sizeOfFaPathPtr();
@@ -787,23 +763,6 @@ primitiveOpendir(void)
 	dirOop = addressOop;
 	l1:	/* end objectFromStruct:size: */;
 
-#else /* SPURVM */
-	pushRemappableOop(resultOop);
-	/* begin objectFromStruct:size: */
-	aMachineAddress = (&faPathPtr);
-	structSize = sizeOfFaPathPtr();
-	addressOop = instantiateClassindexableSize(classByteArray(), structSize);
-	if (!(addressOop)) {
-		dirOop = primitiveFailFor(PrimErrNoMemory);
-		goto l1;
-	}
-	addressOopArrayPointer = arrayValueOf(addressOop);
-	memcpy(addressOopArrayPointer, aMachineAddress, structSize);
-	dirOop = addressOop;
-	l1:	/* end objectFromStruct:size: */;
-	resultOop = popRemappableOop()
-#endif /* SPURVM */
-;
 	return (storePointerofObjectwithValue(2, resultOop, dirOop),
 		methodReturnValue(resultOop));
 }
@@ -1069,17 +1028,8 @@ processDirectory(fapath *faPath)
 		}
 	}
 	
-#if SPURVM
 	resultArray = instantiateClassindexableSize(classArray(), 3);
 
-#else /* SPURVM */
-	pushRemappableOop(entryName);
-	pushRemappableOop(attributeArray);
-	resultArray = instantiateClassindexableSize(classArray(), 3);
-	attributeArray = popRemappableOop();
-	entryName = popRemappableOop()
-#endif /* SPURVM */
-;
 	if (!(resultArray)) {
 		return primitiveFailFor(PrimErrNoMemory);
 	}

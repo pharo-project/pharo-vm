@@ -127,12 +127,14 @@ address_space_used(char *address, usqInt bytes)
 	MEMORY_BASIC_INFORMATION info;
 	int addressSpaceUnused;
 
-	if (address < minAppAddr || address > maxAppAddr)
+	if (address < minAppAddr || address > maxAppAddr){
 		return 1;
-	if (!VirtualQuery(address, &info, sizeof(info)))
-		sqMessageBox(MB_OK | MB_ICONSTOP, TEXT("VM Error:"),
-					TEXT("Unable to VirtualQuery range [%p, %p), Error: %u"),
-					address, (char *)address + bytes, GetLastError());
+	}
+	if (!VirtualQuery(address, &info, sizeof(info))){
+		logError("Unable to VirtualQuery range [%p, %p)", address, (char *)address + bytes);
+		logErrorFromGetLastError("Unable to VirtualQuery range");
+		exit(1);
+	}
 
 	addressSpaceUnused = info.BaseAddress == address
 						&& info.RegionSize >= bytes
@@ -151,11 +153,7 @@ sqAllocateMemorySegmentOfSizeAboveAllocatedSizeInto(sqInt size, void *minAddress
 	bytes = roundUpToPage(size);
 	delta = max(pageSize,1024*1024);
 
-# define printProbes 0
-# define printMaps 0
 	while ((usqIntptr_t)(address + bytes) > (usqIntptr_t)address) {
-		if (printProbes)
-			logTrace("probing [%p,%p)\n", address, address + bytes);
 		if (address_space_used(address, bytes)) {
 			address += delta;
 			continue;
@@ -167,14 +165,11 @@ sqAllocateMemorySegmentOfSizeAboveAllocatedSizeInto(sqInt size, void *minAddress
 		 * So accept allocs above minAddress rather than allocs above address
 		 */
 		if (alloc >= (char *)minAddress && alloc <= address + delta) {
-			if (printMaps)
-				logWarn("VirtualAlloc [%p,%p) above %p)\n",
-						address, address+bytes, minAddress);
 			*allocatedSizePointer = bytes;
 			return alloc;
 		}
 		if (!alloc) {
-			logWarn("Unable to VirtualAlloc committed memory at desired address (%lld bytes requested at %p, above %p)", bytes, address, minAddress);
+			logError("Unable to VirtualAlloc committed memory at desired address (%lld bytes requested at %p, above %p)", bytes, address, minAddress);
 			logErrorFromGetLastError("Unable to VirtualAlloc committed memory at desired address");
 			return 0;
 		}
@@ -198,10 +193,11 @@ sqAllocateMemorySegmentOfSizeAboveAllocatedSizeInto(sqInt size, void *minAddress
 void
 sqDeallocateMemorySegmentAtOfSize(void *addr, sqInt sz)
 {
-	if (!VirtualFree(addr, SizeForRelease(sz), MEM_RELEASE))
-		sqMessageBox(MB_OK | MB_ICONSTOP, TEXT("VM Warning:"),
-					TEXT("Unable to VirtualFree committed memory (%") TEXT(PRIuSQINT) TEXT(" bytes requested), Error: %ul"),
-					sz, GetLastError());
+	if (!VirtualFree(addr, SizeForRelease(sz), MEM_RELEASE)){
+		logError("Unable to VirtualFree committed memory (%"PRIuSQINT" bytes requested)", sz);
+		logErrorFromGetLastError("Unable to VirtualFree committed memory");
+		exit(1);
+	}
 }
 
 # if COGVM

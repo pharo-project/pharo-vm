@@ -3603,21 +3603,24 @@ CogX64Compiler >> dispatchConcretizeProcessorSpecific [
 { #category : 'concretize' }
 CogX64Compiler >> fillFrom: startMemoryAddr until: endMemoryAddr with: fillReg usingVr: vectorRegister [
 	<inline: true>
-	| fillLoop |
 	
-	cogit MoveR: fillReg Mw: 0 r: startMemoryAddr.
-	cogit AddCq: 8 R: startMemoryAddr.
-	
-	cogit AndCq: 16rFFFFFFFFFFFFFFF0 R: startMemoryAddr.	
-	
-	cogit DupS: 64 R: fillReg Vr: vectorRegister.
-	"St1 copies data in 128-bit chunks. This may exceed the size of an object (that only needs to be a multiple of 64 bits).
-	This overflow is not an issue, however. The reason for that is that objects are allocated sequentially in the Eden space
-	using a bumpAllocator, which means that the overflowing bits won't overwrite another object. This is true even when reaching
-	the end of the Eden space, as after it we reserve additional headroom."
-	fillLoop := cogit AlignedSt1S: 64 Vr: vectorRegister R: startMemoryAddr Mw: 16.
-	cogit CmpR: startMemoryAddr R: endMemoryAddr.
-	cogit JumpAbove: fillLoop.
+	self cppIf: FEATURE_JIT_SIMD
+		ifTrue: [  | fillLoop |
+			cogit MoveR: fillReg Mw: 0 r: startMemoryAddr.
+			cogit AddCq: 8 R: startMemoryAddr.
+			
+			cogit AndCq: 16rFFFFFFFFFFFFFFF0 R: startMemoryAddr.	
+			
+			cogit DupS: 64 R: fillReg Vr: vectorRegister.
+			"St1 copies data in 128-bit chunks. This may exceed the size of an object (that only needs to be a multiple of 64 bits).
+			This overflow is not an issue, however. The reason for that is that objects are allocated sequentially in the Eden space
+			using a bumpAllocator, which means that the overflowing bits won't overwrite another object. This is true even when reaching
+			the end of the Eden space, as after it we reserve additional headroom."
+			fillLoop := cogit AlignedSt1S: 64 Vr: vectorRegister R: startMemoryAddr Mw: 16.
+			cogit CmpR: startMemoryAddr R: endMemoryAddr.
+			cogit JumpAbove: fillLoop.
+		] ifFalse: [ 
+			super fillFrom: startMemoryAddr until: endMemoryAddr with: fillReg usingVr: vectorRegister ].
 	
 	^0 "Necessary to keep Slang happy"
 ]

@@ -5,7 +5,7 @@
  * sendBreakpointreceiver and bytecodeDispatchDebugHook macros.
  */
 
-#include "sqAssert.h"
+#include "assert.h"
 
 #include "pharovm/debug.h"
 

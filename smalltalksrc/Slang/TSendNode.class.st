@@ -179,16 +179,22 @@ TSendNode >> asCASTIn: aCCodeGenerator [
 TSendNode >> asTransformedConstantPerform [
 	"If the receiver is a send of perform: with a constant selector,
 	 answer a send node that elides the perform:, otherwise answer nil."
-	^(selector isSymbol
-	  and: [(selector beginsWith: #perform:)
-	  and: [(selector keywords allSatisfy: [:kw| #('perform:' 'with:') includes: kw])
-	  and: [arguments first isConstant
-	  and: [arguments first value isSymbol
-	  and: [arguments first value numArgs + 1 = arguments size]]]]]) ifTrue:
-		[TSendNode new
-			setSelector: arguments first value
-			receiver: receiver
-			arguments: arguments allButFirst]
+
+	| replacement |
+	replacement := (selector isSymbol and: [
+		                (selector beginsWith: #perform:) and: [
+			                (selector keywords allSatisfy: [ :kw |
+				                 #( 'perform:' 'with:' ) includes: kw ]) and: [
+				                arguments first isConstant and: [
+					                arguments first value isSymbol and: [
+						                arguments first value numArgs + 1
+						                = arguments size ] ] ] ] ]) ifTrue: [
+		               self class new
+			               setSelector: arguments first value
+			               receiver: receiver
+			               arguments: arguments allButFirst ].
+	replacement ifNotNil: [ :node | node parent: parent ].
+	^ replacement
 ]
 
 { #category : 'transformations' }
@@ -321,16 +327,17 @@ TSendNode >> constantNumbericValueOrNil [
 
 { #category : 'transformations' }
 TSendNode >> copyWithoutReturn [
+
 	self assert: self endsWithReturn.
-	^self class new
-		setSelector: selector
-			receiver: receiver
-				arguments: (arguments collect:
-								[:arg|
-								 arg endsWithReturn
-									ifTrue: [arg copyWithoutReturn]
-									ifFalse: [arg]]);
-		yourself
+	^ self class new
+		  setSelector: selector
+		  receiver: receiver
+		  arguments: (arguments collect: [ :arg |
+					   arg endsWithReturn
+						   ifTrue: [ arg copyWithoutReturn ]
+						   ifFalse: [ arg ] ]);
+		  parent: parent;
+		  yourself
 ]
 
 { #category : 'displaying' }

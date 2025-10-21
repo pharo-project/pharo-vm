@@ -1026,8 +1026,11 @@ CCodeGenerator >> doBasicInlining: inlineFlagOrSymbol [
 	"Inline the bodies of all methods that are suitable for inlining.
 	This method does only the basic inlining suitable for both the core VM and plugins - no bytecode inlining etc"
 
-	| pass progress |
+	| pass progress inliner |
 	self collectInlineList: inlineFlagOrSymbol.
+	inliner := SLInliner new
+		           codeGenerator: self;
+		           yourself.
 	pass := 0.
 	progress := true.
 	[ progress ] whileTrue: [ "repeatedly attempt to inline methods until no further progress is made"
@@ -1041,7 +1044,7 @@ CCodeGenerator >> doBasicInlining: inlineFlagOrSymbol [
 				(self sortMethods: methods) doWithIndex: [ :m :i |
 					bar value: i.
 					self currentMethod: m.
-					(m tryToInlineMethodsIn: self) ifTrue: [ progress := true ] ] ] ]
+					(inliner doInliningIn: m) ifTrue: [ progress := true ] ] ] ]
 ]
 
 { #category : 'inlining' }
@@ -3687,6 +3690,13 @@ CCodeGenerator >> isSpecialSelector: aSelector [
 	^ castTranslationDict includesKey: aSelector
 ]
 
+{ #category : 'testing' }
+CCodeGenerator >> isStructAccessorWithNoSideEffect: aSendNode [
+	"a non-bug free check for now"
+
+	^ aSendNode numArgs = 0 and: [ self isStructSend: aSendNode ]
+]
+
 { #category : 'utilities' }
 CCodeGenerator >> isStructSend: aTSendNode [
 	"Answer if the argument aTSendNode is a send of a structure accessor.
@@ -5077,22 +5087,6 @@ CCodeGenerator >> suppressAsmLabelsWhile: aBlock [
 	oldSuppressAsmLabels := suppressAsmLabels.
 	suppressAsmLabels := true.
 	^aBlock ensure: [suppressAsmLabels := oldSuppressAsmLabels]
-]
-
-{ #category : 'utilities' }
-CCodeGenerator >> testInliningFor: selector as: inlineFlagOrSymbol [
-	"Test inlining for the method with the given selector.
-	 Do all inlining first (cuz that's how the algorithm works).
-	 Then try and inline into a copy of the method.  This isn't
-	 exactly what happens in the real deal but is close enough."
-	| meth |
-	((breakDestInlineSelectors includes:  selector)
-	 or: [(breakSrcInlineSelectors includes:  selector)]) ifTrue:
-		[self halt].
-	meth := (self methodNamed: selector) copy.
-	self doBasicInlining: inlineFlagOrSymbol.
-	self halt.
-	meth tryToInlineMethodsIn: self
 ]
 
 { #category : 'utilities' }
