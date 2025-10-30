@@ -3742,7 +3742,7 @@ CoInterpreter >> mframeNumArgs: theFP [
 CoInterpreter >> mframeReceiver: theFP [
 	<inline: true>
 	<var: #theFP type: #'char *'>
-	^stackPages longAt: theFP + FoxMFReceiver
+	^stackPages unsignedLongAt: theFP + FoxMFReceiver
 ]
 
 { #category : 'frame access' }
