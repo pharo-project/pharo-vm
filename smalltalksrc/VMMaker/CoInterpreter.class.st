@@ -1565,14 +1565,15 @@ CoInterpreter >> ceSendAbort: selector to: rcvr numArgs: numArgs [
 ]
 
 { #category : 'trampolines' }
-CoInterpreter >> ceSendFromInLineCacheMiss: cogMethodOrPIC [
+CoInterpreter >> ceSendFromInLineCacheMiss: cogMethodOrPICAddr [
 	"Send from an Megamorphic IC when the first-level method lookup probe has failed,
 	 or to continue when PIC creation has failed (e.g. because we're out of code space),
 	 or when a send has failed due to a forwarded receiver."
 
 	<api>
-	<var: #cogMethodOrPIC type: #'CogMethod *'>
-	| numArgs rcvr classTag classObj errSelIdx |
+	"<var: #cogMethodOrPIC type: #'CogMethod *'>"
+	| numArgs rcvr classTag classObj errSelIdx cogMethodOrPIC |
+	cogMethodOrPIC := self cCoerceSimple: cogMethodOrPICAddr to: #'CogMethod *'.
 	numArgs := cogMethodOrPIC cmNumArgs.
 	rcvr := self stackValue: numArgs + 1. "skip return pc"
 	self assert: (objectMemory addressCouldBeOop: rcvr).
