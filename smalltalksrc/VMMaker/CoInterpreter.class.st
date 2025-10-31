@@ -1571,7 +1571,6 @@ CoInterpreter >> ceSendFromInLineCacheMiss: cogMethodOrPICAddr [
 	 or when a send has failed due to a forwarded receiver."
 
 	<api>
-	"<var: #cogMethodOrPIC type: #'CogMethod *'>"
 	| numArgs rcvr classTag classObj errSelIdx cogMethodOrPIC |
 	cogMethodOrPIC := self cCoerceSimple: cogMethodOrPICAddr to: #'CogMethod *'.
 	numArgs := cogMethodOrPIC cmNumArgs.
