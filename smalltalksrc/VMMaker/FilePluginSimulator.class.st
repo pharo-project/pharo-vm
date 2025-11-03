@@ -319,7 +319,7 @@ FilePluginSimulator >> sqFileRenameOld: oldNameIndex Size: oldNameSize New: newN
 
 { #category : 'simulation' }
 FilePluginSimulator >> sqFileSize: file [
-	^file stream size
+	^file size
 ]
 
 { #category : 'simulation' }
