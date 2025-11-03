@@ -140,7 +140,7 @@ CogSimStackEntry >> constant [
 CogSimStackEntry >> constant: anObject [
 	"Set the value of constant"
 
-	^constant := anObject
+	^constant := anObject signedIntFromLong64
 ]
 
 { #category : 'compile abstract instructions' }

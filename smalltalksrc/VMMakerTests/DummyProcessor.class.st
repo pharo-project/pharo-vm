@@ -27,12 +27,6 @@ DummyProcessor >> cResultRegister [
 	^ nil
 ]
 
-{ #category : 'accessing' }
-DummyProcessor >> disassembler [
-	
-	^ LLVMDisassembler aarch64
-]
-
 { #category : 'operations' }
 DummyProcessor >> flushICacheFrom: anInteger to: anInteger2 [ 
 	
@@ -67,6 +61,12 @@ DummyProcessor >> hasLinkRegister [
 DummyProcessor >> initializeStackFor: aSimpleStackBasedCogit [ 
 
 	"We are dummy...."
+]
+
+{ #category : 'accessing' }
+DummyProcessor >> instantiateDisassembler [
+	
+	^ LLVMDisassembler aarch64
 ]
 
 { #category : 'accessing' }

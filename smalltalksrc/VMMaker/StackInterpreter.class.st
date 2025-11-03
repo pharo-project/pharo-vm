@@ -3702,7 +3702,7 @@ StackInterpreter >> cannotAssign: resultObj to: targetObj withIndex: index [
 	self push: targetObj.
 	self push: resultObj.
 	self push: (objectMemory integerObjectOf: index + 1).
-	messageSelector := self splObj: SelectorAttemptToAssign.
+	messageSelector := objectMemory splObj: SelectorAttemptToAssign.
 	argumentCount := 2.
 	^ self normalSend
 ]
@@ -10121,7 +10121,7 @@ StackInterpreter >> moveFramesIn: oldPage through: theFP toPage: newPage [
 		by: objectMemory wordSize negated
 		do: [:source|
 			newSP := newSP - objectMemory wordSize.
-			stackPages longAt: newSP put: (stackPages longAt: source)].
+			stackPages unsignedLongAt: newSP put: (stackPages unsignedLongAt: source)].
 
 	"newSP = oldSP + delta => delta = newSP - oldSP"
 	delta := newSP - oldPage headSP.
@@ -12968,7 +12968,7 @@ StackInterpreter >> reapAndResetErrorCodeTo: theFP header: methodHeader [
 { #category : 'internal interpreter access' }
 StackInterpreter >> receiver [
 	<inline: true>
-	^stackPages longAt: framePointer + FoxIFReceiver
+	^stackPages unsignedLongAt: framePointer + FoxIFReceiver
 ]
 
 { #category : 'process primitive support' }
