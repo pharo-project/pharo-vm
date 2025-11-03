@@ -856,8 +856,9 @@ ProcessorSimulator >> temporaryRegisterValue: anInteger [
 { #category : 'simulation-support' }
 ProcessorSimulator >> tmpBufOfAtLeast: aSize [
 
-	^ (tmpBuf isNil or: [ tmpBuf size < aSize ]) ifTrue: [
-		tmpBuf := ByteArray newPinned: aSize ].
+	(tmpBuf isNil or: [ tmpBuf size < aSize ])
+		ifTrue: [ tmpBuf := ByteArray newPinned: aSize ].
+	^ tmpBuf.
 ]
 
 { #category : 'accessing' }
