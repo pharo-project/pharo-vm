@@ -69,7 +69,7 @@ install(
 	COMPONENT c-src)
 
 install(
-	DIRECTORY "${GENERATED_SOURCE_DIR}/generated/32/vm/include/"
+	DIRECTORY "${PHARO_CURRENT_GENERATED}/vm/include/"
 	DESTINATION include/pharovm
 	USE_SOURCE_PERMISSIONS
 	COMPONENT include
