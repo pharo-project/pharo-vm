@@ -99,12 +99,6 @@ UnicornARMv8Simulator >> createUnicorn [
 	^ simulator
 ]
 
-{ #category : 'disassembling' }
-UnicornARMv8Simulator >> disassembler [
-	
-	^ LLVMARMDisassembler aarch64
-]
-
 { #category : 'accessing-registers-abstract' }
 UnicornARMv8Simulator >> doublePrecisionFloatingPointRegister0 [
 
@@ -162,6 +156,12 @@ UnicornARMv8Simulator >> initializeRegisterAliases [
 		at: #x28 put: #vmStackPointer;
 		at: #x29 put: #framePointerRegister;
 		at: #x30 put: #linkRegister
+]
+
+{ #category : 'disassembling' }
+UnicornARMv8Simulator >> instantiateDisassembler [
+	
+	^ LLVMARMDisassembler aarch64
 ]
 
 { #category : 'accessing-registers-abstract' }
