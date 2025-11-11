@@ -344,6 +344,12 @@ NewFilePlugin >> primitiveFileWriteFromAtFileOffset [
 ]
 
 { #category : 'file primitives' }
+NewFilePlugin >> primitiveIsAvailable [
+	<export: true>
+	interpreterProxy failed ifFalse: [ interpreterProxy methodReturnValue: (interpreterProxy trueObject)].
+]
+
+{ #category : 'file primitives' }
 NewFilePlugin >> primitiveMemoryMapWithProtection [
 	<export: true>
 	<var: 'filePointer' type: 'NewFile_t *'>
