@@ -1774,19 +1774,19 @@ StackToRegisterMappingCogit >> genIdenticalNoBranchArgIsConstant: argIsConstant 
 	<var: #label type: #'AbstractInstruction *'>
 	<var: #jumpEqual type: #'AbstractInstruction *'>
 	<var: #jumpNotEqual type: #'AbstractInstruction *'>
-	| label jumpEqual jumpNotEqual resultReg receiverConstant argumentConstant |
+	| label jumpEqual jumpNotEqual resultReg receiverStackSlot argumentStackSlot |
 	
-	receiverConstant := (self ssValue: 1) constant.
-	argumentConstant := self ssTop constant.
+	receiverStackSlot := (self ssValue: 1).
+	argumentStackSlot := self ssTop.
 	self ssPop: 2.
 
 	label := self Label.
 	self assert: (argReg ~= NoReg or: [ rcvrRegOrNone ~= NoReg ]).
 	argIsConstant
-		ifTrue: [ self genCmpConstant: argumentConstant R: rcvrRegOrNone ]
+		ifTrue: [ self genCmpConstant: argumentStackSlot constant R: rcvrRegOrNone ]
 		ifFalse: [
 			rcvrIsConstant
-				ifTrue: [ self genCmpConstant: receiverConstant R: argReg ]
+				ifTrue: [ self genCmpConstant: receiverStackSlot constant R: argReg ]
 				ifFalse: [ self CmpR: argReg R: rcvrRegOrNone ] ].
 
 	resultReg := rcvrRegOrNone = NoReg

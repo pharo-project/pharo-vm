@@ -129,12 +129,6 @@ UnicornRISCVSimulator >> createUnicorn [
 	^ simulator
 ]
 
-{ #category : 'disassembling' }
-UnicornRISCVSimulator >> disassembler [
-
-	^ LLVMRV64Disassembler riscv64
-]
-
 { #category : 'registers' }
 UnicornRISCVSimulator >> doublePrecisionFloatingPointRegister0 [
 
@@ -490,6 +484,12 @@ UnicornRISCVSimulator >> initializeRegisterSmalltalkAliases [
 		at: #x29 put: #sign;
 		at: #x30 put: #overflow;
 		at: #x31 put: #carry
+]
+
+{ #category : 'disassembling' }
+UnicornRISCVSimulator >> instantiateDisassembler [
+
+	^ LLVMRV64Disassembler riscv64
 ]
 
 { #category : 'registers' }

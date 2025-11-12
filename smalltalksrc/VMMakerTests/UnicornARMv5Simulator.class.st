@@ -114,12 +114,6 @@ UnicornARMv5Simulator >> createUnicorn [
 	^ simulator
 ]
 
-{ #category : 'disassembling' }
-UnicornARMv5Simulator >> disassembler [
-	
-	^ LLVMARMDisassembler armv7
-]
-
 { #category : 'executing' }
 UnicornARMv5Simulator >> doStartAt: startAddress until: until timeout: timeout count: count [
 
@@ -220,6 +214,12 @@ UnicornARMv5Simulator >> getReturnAddress [
 { #category : 'testing' }
 UnicornARMv5Simulator >> hasLinkRegister [
 	^ true
+]
+
+{ #category : 'disassembling' }
+UnicornARMv5Simulator >> instantiateDisassembler [
+	
+	^ LLVMARMDisassembler armv7
 ]
 
 { #category : 'registers' }
