@@ -10695,7 +10695,7 @@ SpurMemoryManager >> postBecomeScanClassTable: effectsFlags [
 	 We can somehow avoid following classes from the classTable until after this mark phase."
 	self assert: self validClassTableRootPages.
 
-	(effectsFlags anyMask: BecamePointerObjectFlag) ifFalse: [^self].
+	(effectsFlags anyMask: BecameActiveClassFlag) ifFalse: [^self].
 
 	0 to: numClassTablePages - 1 do:
 		[:i| | page |
