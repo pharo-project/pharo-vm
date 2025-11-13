@@ -257,7 +257,8 @@ else()
 endif()
 
 set(PLUGIN_GENERATED_FILES 
-  	${GENERATED_SOURCE_DIR}/generated/plugins/src/FilePlugin/FilePlugin.c)
+  	${GENERATED_SOURCE_DIR}/generated/plugins/src/FilePlugin/FilePlugin.c
+  	${GENERATED_SOURCE_DIR}/generated/plugins/src/NewFilePlugin/NewFilePlugin.c)
 
 
 if(FLAVOUR MATCHES "CoInterpreter")
