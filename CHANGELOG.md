@@ -1,5 +1,12 @@
 # Change log
 
+## v10.3.9
+* p10-port-1023 by @tesonep in https://github.com/pharo-project/pharo-vm/pull/1027
+* fix/issue-939 - Using AIO Event for sending  by @tesonep in https://github.com/pharo-project/pharo-vm/pull/1015
+* Backporting the fixes on the UUIDPlugin to P10 branch by @tesonep in https://github.com/pharo-project/pharo-vm/pull/1029
+* Updating the test image to be P130 by @tesonep in https://github.com/pharo-project/pharo-vm/pull/1030
+ 
+**Full Changelog**: https://github.com/pharo-project/pharo-vm/compare/v10.3.8...v10.3.9
 
 ## v10.3.8
 
