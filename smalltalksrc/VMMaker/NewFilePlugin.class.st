@@ -49,12 +49,12 @@ NewFilePlugin >> primitiveDeleteFile [
 { #category : 'file primitives' }
 NewFilePlugin >> primitiveDirectoryClose [
 	<export: true>
-	<var: 'directoryPointer' type: 'NewDirectory_t *'>
+	<var: 'directoryPointer' type: #'NewDirectory_t *'>
 	
 	| directoryOop directoryPointer |
 	directoryOop := interpreterProxy stackValue: 0.
 	interpreterProxy failed ifFalse: [
-		directoryPointer := self pointerAtPointer: (interpreterProxy firstIndexableField: directoryOop).
+		directoryPointer := self cCoerce: (self pointerAtPointer: (interpreterProxy firstIndexableField: directoryOop)) to: #'NewDirectory_t *'.
 		self cCode: 'NewDirectory_close(directoryPointer)'
 	].
 	interpreterProxy failed ifFalse: [ interpreterProxy pop: 1  "pop directory; leave rcvr on stack" ].
@@ -82,14 +82,14 @@ NewFilePlugin >> primitiveDirectoryCreate [
 { #category : 'file primitives' }
 NewFilePlugin >> primitiveDirectoryNext [
 	<export: true>
-	<var: 'directoryPointer' type: 'NewDirectory_t *'>
-	<var: 'stringPointer' type: 'char *'>
+	<var: 'directoryPointer' type: #'NewDirectory_t *'>
+	<var: 'stringPointer' type: #'char *'>
 	
 	| directoryOop directoryPointer stringOop stringPointer|
 	directoryOop := interpreterProxy stackValue: 0.
 	stringOop := interpreterProxy instantiateClass: interpreterProxy classExternalAddress indexableSize: BytesPerWord.
 	interpreterProxy failed ifFalse: [
-		directoryPointer := self pointerAtPointer: (interpreterProxy firstIndexableField: directoryOop).
+		directoryPointer := self cCoerce: (self pointerAtPointer: (interpreterProxy firstIndexableField: directoryOop)) to: #'NewDirectory_t *'.
 		stringPointer := self cCode: 'NewDirectory_next(directoryPointer)'.
 		self pointerAtPointer: (interpreterProxy firstIndexableField: stringOop) put: stringPointer.
 	].
@@ -142,12 +142,12 @@ NewFilePlugin >> primitiveDirectoryRemoveEmpty [
 { #category : 'file primitives' }
 NewFilePlugin >> primitiveDirectoryRewind [
 	<export: true>
-	<var: 'directoryPointer' type: 'NewDirectory_t *'>
+	<var: 'directoryPointer' type: #'NewDirectory_t *'>
 	
 	| directoryOop directoryPointer |
 	directoryOop := interpreterProxy stackValue: 0.
 	interpreterProxy failed ifFalse: [
-		directoryPointer := self pointerAtPointer: (interpreterProxy firstIndexableField: directoryOop).
+		directoryPointer := self cCoerce: (self pointerAtPointer: (interpreterProxy firstIndexableField: directoryOop)) to: #'NewDirectory_t *'.
 		self cCode: 'NewDirectory_rewind(directoryPointer)'
 	].
 	interpreterProxy failed ifFalse: [ interpreterProxy pop: 1  "pop directory; leave rcvr on stack" ].
@@ -161,7 +161,7 @@ NewFilePlugin >> primitiveFileClose [
 	| fileOop filePointer |
 	fileOop := interpreterProxy stackValue: 0.
 	interpreterProxy failed ifFalse: [
-		filePointer := 	self pointerAtPointer: (interpreterProxy firstIndexableField: fileOop).
+		filePointer := self cCoerce: (self pointerAtPointer: (interpreterProxy firstIndexableField: fileOop)) to: 'NewFile_t *'.
 		self cCode: 'NewFile_close(filePointer)'
 	].
 	interpreterProxy failed ifFalse: [ interpreterProxy pop: 1  "pop file; leave rcvr on stack" ].
@@ -176,7 +176,7 @@ NewFilePlugin >> primitiveFileGetSize [
 	| fileOop filePointer fileSize |
 	fileOop := interpreterProxy stackValue: 0.
 	interpreterProxy failed ifFalse: [
-		filePointer := 	self pointerAtPointer: (interpreterProxy firstIndexableField: fileOop).
+		filePointer := 	self cCoerce: (self pointerAtPointer: (interpreterProxy firstIndexableField: fileOop)) to: 'NewFile_t *'.
 		fileSize := self cCode: 'NewFile_getSize(filePointer)'
 	].
 	interpreterProxy failed ifFalse: [ interpreterProxy methodReturnValue: (interpreterProxy signed64BitIntegerFor: fileSize)].
@@ -225,7 +225,7 @@ NewFilePlugin >> primitiveFileReadInto [
 
 	interpreterProxy failed ifFalse: [
 		bufferPointer := interpreterProxy firstIndexableField: bufferOop.
-		filePointer := 	self pointerAtPointer: (interpreterProxy firstIndexableField: fileOop).
+		filePointer := 	self cCoerce: (self pointerAtPointer: (interpreterProxy firstIndexableField: fileOop)) to: 'NewFile_t *'.
 		readResult := self cCode: 'NewFile_read(filePointer, bufferPointer, bufferOffset, readSize)'
 	].
 	interpreterProxy failed ifFalse: [ interpreterProxy methodReturnValue: (interpreterProxy signed64BitIntegerFor: readResult)].
@@ -247,7 +247,7 @@ NewFilePlugin >> primitiveFileReadIntoAtFileOffset [
 
 	interpreterProxy failed ifFalse: [
 		bufferPointer := interpreterProxy firstIndexableField: bufferOop.
-		filePointer := 	self pointerAtPointer: (interpreterProxy firstIndexableField: fileOop).
+		filePointer := 	self cCoerce: (self pointerAtPointer: (interpreterProxy firstIndexableField: fileOop)) to: 'NewFile_t *'.
 		readResult := self cCode: 'NewFile_readAtOffset(filePointer, bufferPointer, bufferOffset, readSize, fileOffset)'
 	].
 	interpreterProxy failed ifFalse: [ interpreterProxy methodReturnValue: (interpreterProxy signed64BitIntegerFor: readResult)].
@@ -263,7 +263,7 @@ NewFilePlugin >> primitiveFileSeek [
 	seekOffset := interpreterProxy signed64BitValueOf: (interpreterProxy stackValue: 1).
 	fileOop := interpreterProxy stackValue: 2.
 	interpreterProxy failed ifFalse: [
-		filePointer := 	self pointerAtPointer: (interpreterProxy firstIndexableField: fileOop).
+		filePointer := 	self cCoerce: (self pointerAtPointer: (interpreterProxy firstIndexableField: fileOop)) to: 'NewFile_t *'.
 		self cCode: 'NewFile_seek(filePointer, seekOffset, seekMode)'
 	].
 	interpreterProxy failed ifFalse: [ interpreterProxy pop: 3  "pop seek mode, offset and file; leave rcvr on stack"].
@@ -278,7 +278,7 @@ NewFilePlugin >> primitiveFileTell [
 	| fileOop filePointer fileSize |
 	fileOop := interpreterProxy stackValue: 0.
 	interpreterProxy failed ifFalse: [
-		filePointer := 	self pointerAtPointer: (interpreterProxy firstIndexableField: fileOop).
+		filePointer := 	self cCoerce: (self pointerAtPointer: (interpreterProxy firstIndexableField: fileOop)) to: 'NewFile_t *'.
 		fileSize := self cCode: 'NewFile_tell(filePointer)'
 	].
 	interpreterProxy failed ifFalse: [ interpreterProxy methodReturnValue: (interpreterProxy signed64BitIntegerFor: fileSize)].
@@ -294,7 +294,7 @@ NewFilePlugin >> primitiveFileTruncate [
 	newFileSize := interpreterProxy positive64BitValueOf: (interpreterProxy stackValue: 0).
 	fileOop := interpreterProxy stackValue: 1.
 	interpreterProxy failed ifFalse: [
-		filePointer := 	self pointerAtPointer: (interpreterProxy firstIndexableField: fileOop).
+		filePointer := 	self cCoerce: (self pointerAtPointer: (interpreterProxy firstIndexableField: fileOop)) to: 'NewFile_t *'.
 		result := self cCode: 'NewFile_truncate(filePointer, newFileSize)'
 	].
 	interpreterProxy failed ifFalse: [ interpreterProxy methodReturnBool: result ].
@@ -315,7 +315,7 @@ NewFilePlugin >> primitiveFileWriteFrom [
 
 	interpreterProxy failed ifFalse: [
 		bufferPointer := interpreterProxy firstIndexableField: bufferOop.
-		filePointer := 	self pointerAtPointer: (interpreterProxy firstIndexableField: fileOop).
+		filePointer := 	self cCoerce: (self pointerAtPointer: (interpreterProxy firstIndexableField: fileOop)) to: 'NewFile_t *'.
 		writeResult := self cCode: 'NewFile_write(filePointer, bufferPointer, bufferOffset, writeSize)'
 	].
 	interpreterProxy failed ifFalse: [ interpreterProxy methodReturnValue: (interpreterProxy signed64BitIntegerFor: writeResult)].
@@ -337,7 +337,7 @@ NewFilePlugin >> primitiveFileWriteFromAtFileOffset [
 
 	interpreterProxy failed ifFalse: [
 		bufferPointer := interpreterProxy firstIndexableField: bufferOop.
-		filePointer := 	self pointerAtPointer: (interpreterProxy firstIndexableField: fileOop).
+		filePointer := 	self cCoerce: (self pointerAtPointer: (interpreterProxy firstIndexableField: fileOop)) to: 'NewFile_t *'.
 		writeResult := self cCode: 'NewFile_writeAtOffset(filePointer, bufferPointer, bufferOffset, writeSize, fileOffset)'
 	].
 	interpreterProxy failed ifFalse: [ interpreterProxy methodReturnValue: (interpreterProxy signed64BitIntegerFor: writeResult)].
@@ -360,7 +360,7 @@ NewFilePlugin >> primitiveMemoryMapWithProtection [
 	fileOop := interpreterProxy stackValue: 1.
 	memoryMappedPointerOop := interpreterProxy instantiateClass: interpreterProxy classExternalAddress indexableSize: BytesPerWord.
 	interpreterProxy failed ifFalse: [
-		filePointer := 	self pointerAtPointer: (interpreterProxy firstIndexableField: fileOop).
+		filePointer := 	self cCoerce: (self pointerAtPointer: (interpreterProxy firstIndexableField: fileOop)) to: 'NewFile_t *'.
 		memoryMappedPointer := self cCode: 'NewFile_memoryMap(filePointer, protectionFlags)'.
 		self pointerAtPointer: (interpreterProxy firstIndexableField: memoryMappedPointerOop) put: memoryMappedPointer.
 	].
@@ -375,7 +375,7 @@ NewFilePlugin >> primitiveMemoryUnmap [
 	| fileOop filePointer |
 	fileOop := interpreterProxy stackValue: 0.
 	interpreterProxy failed ifFalse: [
-		filePointer := 	self pointerAtPointer: (interpreterProxy firstIndexableField: fileOop).
+		filePointer := 	self cCoerce: (self pointerAtPointer: (interpreterProxy firstIndexableField: fileOop)) to: 'NewFile_t *'.
 		self cCode: 'NewFile_memoryUnmap(filePointer)'
 	].
 	interpreterProxy failed ifFalse: [ interpreterProxy pop: 1  "pop file; leave rcvr on stack" ].
