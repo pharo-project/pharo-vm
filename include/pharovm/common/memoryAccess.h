@@ -17,6 +17,7 @@
 
 #include "config.h"
 #include "interp.h"
+#include "stdint.h"
 
 #ifndef SIZEOF_LONG
 #  if LLP64
