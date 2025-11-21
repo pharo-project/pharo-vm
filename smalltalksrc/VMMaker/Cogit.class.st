@@ -8189,18 +8189,20 @@ Cogit >> guardPageSize: anInteger [
 { #category : 'translation support' }
 Cogit >> halt [
 	<cmacro: '() warning("halt")'>
+	<debuggerCompleteToSender>
 	Halt signal
 ]
 
 { #category : 'translation support' }
 Cogit >> halt: aString [
 	<cmacro: '(msg) warning("halt: " msg)'>
+	<debuggerCompleteToSender>
 	Halt new signal: aString
 ]
 
 { #category : 'halting' }
 Cogit >> haltIf: aBlock [
-
+	<debuggerCompleteToSender>
 	aBlock value ifTrue: [ self halt ]
 
 ]
