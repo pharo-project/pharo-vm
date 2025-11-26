@@ -172,7 +172,7 @@ VMMASTTranslationTest >> testComplexIfNilIfNotNilWithArgument [
 	self
 		assert: condition receiver name
 		equals: conditional arguments second arguments first.
-	self assert: condition arguments first name equals: 'nil'
+	self assert: condition arguments first value equals: nil
 ]
 
 { #category : 'tests' }
@@ -209,7 +209,7 @@ VMMASTTranslationTest >> testComplexIfNotNilIfNilWithArgument [
 	self
 		assert: condition receiver name
 		equals: conditional arguments second arguments first.
-	self assert: condition arguments first name equals: 'nil'
+	self assert: condition arguments first value equals: nil
 ]
 
 { #category : 'tests' }
@@ -241,7 +241,7 @@ VMMASTTranslationTest >> testComplexIfNotNilWithArgument [
 	self
 		assert: condition receiver name
 		equals: conditional arguments first arguments first.
-	self assert: condition arguments first name equals: 'nil'
+	self assert: condition arguments first value equals: nil
 ]
 
 { #category : 'tests' }
@@ -409,7 +409,7 @@ VMMASTTranslationTest >> testMethodWithConditionInLoopLimitHasLimitVariable [
 	translation := method asTranslationMethodOfClass: TMethod.
 
 	loop := translation statements first.
-	self assert: loop arguments size equals: 4
+	self assert: loop arguments size equals: 5
 ]
 
 { #category : 'tests' }
@@ -420,7 +420,7 @@ VMMASTTranslationTest >> testMethodWithConstantConditionInLoopHasNoLimitVariable
 	translation := method asTranslationMethodOfClass: TMethod.
 
 	loop := translation statements first.
-	self assert: loop arguments size equals: 6
+	self assert: loop arguments size equals: 4
 ]
 
 { #category : 'tests' }

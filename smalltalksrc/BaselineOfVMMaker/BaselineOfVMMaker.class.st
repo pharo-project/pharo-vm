@@ -17,11 +17,11 @@ BaselineOfVMMaker >> baseline: spec [
 				package: 'CAST' with: [ spec requires: #('SmaCC-GLR' ) ];
 				package: 'CAST-Tests' with: [ spec requires: #('CAST') ];
 				package: 'Slang' with: [ spec requires: #('CAST') ];
-				package: 'Slang-Tests' with: [ spec requires: #('Slang') ].
+				package: 'Slang-Tests' with: [ spec requires: #('Slang' 'Melchor') ].
 			
 			"Melchor is a VM-oriented Slang"
 			spec package: 'Melchor' with: [
-				spec requires: #('Slang' 'Slang-Tests') ].
+				spec requires: #('Slang') ].
 			
 			"External Dependencies"
 			spec baseline: 'SmaCC-GLR' with: [ 
@@ -39,14 +39,13 @@ BaselineOfVMMaker >> baseline: spec [
 			"Tests"			
 			spec
 				package: 'VMMakerTests' with: [
-					spec requires: #('VMMakerCompatibilityForPharo6' 'Unicorn' 'LLVMDisassembler' 'Slang-Tests' 'OpalSimdBytecode') ].
+					spec requires: #('VMMaker' 'Unicorn' 'LLVMDisassembler' 'Slang-Tests' 'OpalSimdBytecode') ].
 
 			"Tools"			
 			spec package: 'VMMaker-Tools' with: [ 
-				spec requires: #( 'VMMakerCompatibilityForPharo6' 'VMMakerTests' ) ].
+				spec requires: #( 'VMMakerTests' ) ].
 			
 			spec
-				package: 'VMMakerCompatibilityForPharo6' with: [ spec requires: 'VMMaker' ];
 				package: 'VMMakerLoadingDependencies'.
 			
 			"Dependencies from this repositories"
@@ -60,7 +59,7 @@ BaselineOfVMMaker >> baseline: spec [
 					'VMMakerLoadingDependencies' 'Printf' 'Melchor') ].
 								
 			"VM plugins"
-			spec package: 'FileAttributesPlugin' with: [ spec requires: #( 'VMMakerCompatibilityForPharo6') ].
+			spec package: 'FileAttributesPlugin' with: [ spec requires: #( 'VMMaker' ) ].
 			
 			spec group: 'plugins' with: #('FileAttributesPlugin').
 			spec group: 'core' with: #('VMMaker').

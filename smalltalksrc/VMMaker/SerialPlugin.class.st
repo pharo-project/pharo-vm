@@ -135,6 +135,70 @@ SerialPlugin >> primitiveSerialPortWriteByName: portName from: array startingAt:
 	interpreterProxy success: false
 ]
 
+{ #category : 'simulation' }
+SerialPlugin >> serialPort: portNum Write: count From: pointer [
+	"Defined in C code"
+
+	<doNotGenerate>
+	self notYetImplemented
+]
+
+{ #category : 'simulation' }
+SerialPlugin >> serialPortClose: portNum [
+	"Defined in C code"
+
+	<doNotGenerate>
+	self notYetImplemented
+]
+
+{ #category : 'simulation' }
+SerialPlugin >> serialPortCloseByName: port [
+	"Defined in C code"
+
+	<doNotGenerate>
+	self notYetImplemented
+]
+
+{ #category : 'simulation' }
+SerialPlugin >> serialPortOpen: portNum _: baudRate _: stopBitsType _: parityType _: dataBits _: inFlowControl _: outFlowControl _: xOnChar _: xOffChar [
+	"Defined in C code"
+
+	<doNotGenerate>
+	self notYetImplemented
+]
+
+{ #category : 'simulation' }
+SerialPlugin >> serialPortOpenByName: port _: baudRate _: stopBitsType _: parityType _: dataBits _: inFlowControl _: outFlowControl _: xOnChar _: xOffChar [
+	"Defined in C code"
+
+	<doNotGenerate>
+	self notYetImplemented
+]
+
+{ #category : 'simulation' }
+SerialPlugin >> serialPortReadInto: portNum _: count _: pointer [
+	"Defined in C code"
+
+	<doNotGenerate>
+	self notYetImplemented
+]
+
+{ #category : 'simulation' }
+SerialPlugin >> serialPortReadIntoByName: port _: count _: pointer [
+	"Defined in C code"
+
+	<doNotGenerate>
+	self notYetImplemented
+]
+
+{ #category : 'simulation' }
+SerialPlugin >> serialPortWriteFromByName: port _: count _: pointer [
+	"Defined in C code"
+
+	<doNotGenerate>
+	self notYetImplemented
+]
+
 { #category : 'initialize-release' }
 SerialPlugin >> shutdownModule [
 	<export: true>

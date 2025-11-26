@@ -1,14 +1,15 @@
 Class {
-	#name : #VMMachineCodeDebuggerStackItem,
-	#superclass : #Object,
+	#name : 'VMMachineCodeDebuggerStackItem',
+	#superclass : 'Object',
 	#instVars : [
 		'address',
 		'machineSimulator'
 	],
-	#category : #'VMMaker-Tools'
+	#category : 'VMMaker-Tools',
+	#package : 'VMMaker-Tools'
 }
 
-{ #category : #'instance creation' }
+{ #category : 'instance creation' }
 VMMachineCodeDebuggerStackItem class >> address: anInteger on: machineSimulator [ 
 	
 	^ self new
@@ -17,22 +18,22 @@ VMMachineCodeDebuggerStackItem class >> address: anInteger on: machineSimulator 
 		yourself
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 VMMachineCodeDebuggerStackItem >> address [
 	^ address
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 VMMachineCodeDebuggerStackItem >> address: anInteger [ 
 	address := anInteger
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 VMMachineCodeDebuggerStackItem >> machineSimulator: anUnicornARMv8Simulator [ 
 	machineSimulator := anUnicornARMv8Simulator
 ]
 
-{ #category : #evaluating }
+{ #category : 'evaluating' }
 VMMachineCodeDebuggerStackItem >> specialRegister [
 
 	machineSimulator smalltalkStackPointerRegisterValue = address ifTrue: [ ^ 'SP' ].
@@ -40,7 +41,7 @@ VMMachineCodeDebuggerStackItem >> specialRegister [
 	^ ''
 ]
 
-{ #category : #evaluating }
+{ #category : 'evaluating' }
 VMMachineCodeDebuggerStackItem >> value [ 
 
 	^ machineSimulator wordAt: address

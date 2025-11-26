@@ -1,10 +1,11 @@
 Class {
-	#name : #CASTEqualityTests,
-	#superclass : #TestCase,
-	#category : #'CAST-Tests'
+	#name : 'CASTEqualityTests',
+	#superclass : 'TestCase',
+	#category : 'CAST-Tests',
+	#package : 'CAST-Tests'
 }
 
-{ #category : #tests }
+{ #category : 'tests' }
 CASTEqualityTests >> testArrayDeclaratorNodeEquality [
 
 	self
@@ -12,7 +13,7 @@ CASTEqualityTests >> testArrayDeclaratorNodeEquality [
 		equals: (CArrayDeclaratorNode identifier: 'aLiteralArray')
 ]
 
-{ #category : #tests }
+{ #category : 'tests' }
 CASTEqualityTests >> testArrayDeclaratorNodeInEquality [
 
 	self
@@ -20,7 +21,7 @@ CASTEqualityTests >> testArrayDeclaratorNodeInEquality [
 		equals: (CArrayDeclaratorNode identifier: 'toto')
 ]
 
-{ #category : #tests }
+{ #category : 'tests' }
 CASTEqualityTests >> testAssignmentNodeDefaultOperatorInEquality [
 
 	self
@@ -33,7 +34,7 @@ CASTEqualityTests >> testAssignmentNodeDefaultOperatorInEquality [
 			rvalue: (CConstantNode value: 2))
 ]
 
-{ #category : #tests }
+{ #category : 'tests' }
 CASTEqualityTests >> testAssignmentNodeEquality [
 
 	self
@@ -45,7 +46,7 @@ CASTEqualityTests >> testAssignmentNodeEquality [
 			rvalue: (CConstantNode value: 2))
 ]
 
-{ #category : #tests }
+{ #category : 'tests' }
 CASTEqualityTests >> testAssignmentNodeLvalueInEquality [
 
 	self
@@ -57,7 +58,7 @@ CASTEqualityTests >> testAssignmentNodeLvalueInEquality [
 			rvalue: (CConstantNode value: 2))
 ]
 
-{ #category : #tests }
+{ #category : 'tests' }
 CASTEqualityTests >> testAssignmentNodeRvalueInEquality [
 
 	self
@@ -69,7 +70,7 @@ CASTEqualityTests >> testAssignmentNodeRvalueInEquality [
 			rvalue: (CConstantNode value: 3))
 ]
 
-{ #category : #tests }
+{ #category : 'tests' }
 CASTEqualityTests >> testAssignmentNodeWithSpecialAndDefaultOperatorEquality [
 
 	self
@@ -82,7 +83,7 @@ CASTEqualityTests >> testAssignmentNodeWithSpecialAndDefaultOperatorEquality [
 			rvalue: (CConstantNode value: 2))
 ]
 
-{ #category : #tests }
+{ #category : 'tests' }
 CASTEqualityTests >> testAssignmentNodeWithSpecialOperatorEquality [
 
 	self
@@ -96,7 +97,7 @@ CASTEqualityTests >> testAssignmentNodeWithSpecialOperatorEquality [
 			rvalue: (CConstantNode value: 2))
 ]
 
-{ #category : #tests }
+{ #category : 'tests' }
 CASTEqualityTests >> testAssignmentNodeWithSpecialOperatorLvalueInEquality [
 
 	self
@@ -110,7 +111,7 @@ CASTEqualityTests >> testAssignmentNodeWithSpecialOperatorLvalueInEquality [
 			rvalue: (CConstantNode value: 2))
 ]
 
-{ #category : #tests }
+{ #category : 'tests' }
 CASTEqualityTests >> testAssignmentNodeWithSpecialOperatorOperatorInEquality [
 
 	self
@@ -124,7 +125,7 @@ CASTEqualityTests >> testAssignmentNodeWithSpecialOperatorOperatorInEquality [
 			rvalue: (CConstantNode value: 3))
 ]
 
-{ #category : #tests }
+{ #category : 'tests' }
 CASTEqualityTests >> testAssignmentNodeWithSpecialOperatorRvalueInEquality [
 
 	self
@@ -138,7 +139,7 @@ CASTEqualityTests >> testAssignmentNodeWithSpecialOperatorRvalueInEquality [
 			rvalue: (CConstantNode value: 3))
 ]
 
-{ #category : #tests }
+{ #category : 'tests' }
 CASTEqualityTests >> testConstantNodeEquality [
 
 	self
@@ -146,7 +147,7 @@ CASTEqualityTests >> testConstantNodeEquality [
 		equals: (CConstantNode value: 1)
 ]
 
-{ #category : #tests }
+{ #category : 'tests' }
 CASTEqualityTests >> testConstantNodeInEquality [
 
 	self
@@ -154,7 +155,7 @@ CASTEqualityTests >> testConstantNodeInEquality [
 		equals: (CConstantNode value: 2)
 ]
 
-{ #category : #tests }
+{ #category : 'tests' }
 CASTEqualityTests >> testGoToEquality [
 
 	self
@@ -162,7 +163,7 @@ CASTEqualityTests >> testGoToEquality [
 		equals: (CGotoStatementNode identifier: 'toto')
 ]
 
-{ #category : #tests }
+{ #category : 'tests' }
 CASTEqualityTests >> testGoToInequality [
 
 	self
@@ -170,7 +171,7 @@ CASTEqualityTests >> testGoToInequality [
 		equals: (CGotoStatementNode identifier: 'toto')
 ]
 
-{ #category : #tests }
+{ #category : 'tests' }
 CASTEqualityTests >> testIdentifierNodeEquality [
 
 	self
@@ -178,7 +179,7 @@ CASTEqualityTests >> testIdentifierNodeEquality [
 		equals: (CIdentifierNode name: 'toto')
 ]
 
-{ #category : #tests }
+{ #category : 'tests' }
 CASTEqualityTests >> testIdentifierNodeInEquality [
 
 	self
@@ -186,7 +187,7 @@ CASTEqualityTests >> testIdentifierNodeInEquality [
 		equals: (CIdentifierNode name: 'toto2')
 ]
 
-{ #category : #tests }
+{ #category : 'tests' }
 CASTEqualityTests >> testInitDeclaratorNodeEquality [
 
 	self
@@ -198,7 +199,7 @@ CASTEqualityTests >> testInitDeclaratorNodeEquality [
 			initializer: (CConstantNode value: '1'))
 ]
 
-{ #category : #tests }
+{ #category : 'tests' }
 CASTEqualityTests >> testInitDeclaratorNodeWithDeclaratorInEquality [
 
 	self
@@ -210,7 +211,7 @@ CASTEqualityTests >> testInitDeclaratorNodeWithDeclaratorInEquality [
 			initializer: (CConstantNode value: '1'))
 ]
 
-{ #category : #tests }
+{ #category : 'tests' }
 CASTEqualityTests >> testInitDeclaratorNodeWithInitializerInEquality [
 
 	self
@@ -222,7 +223,7 @@ CASTEqualityTests >> testInitDeclaratorNodeWithInitializerInEquality [
 			initializer: (CConstantNode value: '2'))
 ]
 
-{ #category : #tests }
+{ #category : 'tests' }
 CASTEqualityTests >> testInitializerNodeEquality [
 
 	self
@@ -230,7 +231,7 @@ CASTEqualityTests >> testInitializerNodeEquality [
 		equals: (CGLRInitializerNode initializers: { CConstantNode value: 1 })
 ]
 
-{ #category : #tests }
+{ #category : 'tests' }
 CASTEqualityTests >> testInitializerNodeInEquality [
 
 	self

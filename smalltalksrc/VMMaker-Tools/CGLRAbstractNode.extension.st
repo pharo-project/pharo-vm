@@ -1,6 +1,6 @@
-Extension { #name : #CGLRAbstractNode }
+Extension { #name : 'CGLRAbstractNode' }
 
-{ #category : #'*VMMaker-Tools' }
+{ #category : '*VMMaker-Tools' }
 CGLRAbstractNode >> inspectNode: specBuilder [
 	<inspectorPresentationOrder: 910 title: 'C'>
 

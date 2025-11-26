@@ -64,13 +64,6 @@ CogRASSBytecodeFixup >> mergeSimStack: anObject [
 ]
 
 { #category : 'debug printing' }
-CogRASSBytecodeFixup >> printSimStack [
-	<doNotGenerate>
-	self notAFixup ifFalse:
-		[cogit printSimStack: mergeSimStack toDepth: simStackPtr spillBase: -1 on: cogit coInterpreter transcript]
-]
-
-{ #category : 'debug printing' }
 CogRASSBytecodeFixup >> printStateOn: aStream [
 	<doNotGenerate>
 	(targetInstruction isNil and: [simStackPtr isNil]) ifTrue:

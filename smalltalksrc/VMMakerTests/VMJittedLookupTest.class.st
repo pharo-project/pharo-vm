@@ -95,7 +95,7 @@ VMJittedLookupTest >> setUpMethodDictionaryIn: aClass [
 { #category : 'tests' }
 VMJittedLookupTest >> testLookUpMNUShouldJItCompile [
 
-	| superclass superclassMethodDictionary foundMethod |
+	| superclass superclassMethodDictionary foundMethod compileCountStart |
 	
 	self setUpTrampolines.
 	cogit computeEntryOffsets.
@@ -120,15 +120,20 @@ VMJittedLookupTest >> testLookUpMNUShouldJItCompile [
 	
 	"Install the selector as a DNU selector"
 	memory splObj: SelectorDoesNotUnderstand put: selectorOop.
-	
+
+	self deny: (interpreter methodHasCogMethod: methodOop).
+	compileCountStart := cogit getMethodCompilationCount.
 	foundMethod := interpreter mnuMethodOrNilFor: receiver.
-	self assert: foundMethod equals: methodOop
+
+	self assert: foundMethod equals: methodOop.
+	self assert: (interpreter methodHasCogMethod: methodOop).
+	self assert: (cogit getMethodCompilationCount) equals: (memory integerObjectOf: (memory integerValueOf: compileCountStart) + 1)
 ]
 
 { #category : 'tests' }
 VMJittedLookupTest >> testLookUpMNUWithAnyNonMethodObjectShouldNotJItCompile [
 
-	| superclass superclassMethodDictionary foundMethod |
+	| superclass superclassMethodDictionary foundMethod compileCountStart |
 	
 	self setUpTrampolines.
 	cogit computeEntryOffsets.
@@ -153,7 +158,10 @@ VMJittedLookupTest >> testLookUpMNUWithAnyNonMethodObjectShouldNotJItCompile [
 	
 	"Install the selector as a DNU selector"
 	memory splObj: SelectorDoesNotUnderstand put: selectorOop.
-	
+
+	compileCountStart := cogit getMethodCompilationCount.
 	foundMethod := interpreter mnuMethodOrNilFor: receiver.
-	self assert: foundMethod isNil
+
+	self assert: foundMethod equals: (memory integerValueOf: 37).
+	self assert: (cogit getMethodCompilationCount) equals: compileCountStart
 ]

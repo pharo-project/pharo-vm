@@ -1,10 +1,11 @@
 Class {
-	#name : #VMTFreeTreeNode,
-	#superclass : #VMTFreeListNode,
-	#category : #'VMMaker-Tools'
+	#name : 'VMTFreeTreeNode',
+	#superclass : 'VMTFreeListNode',
+	#category : 'VMMaker-Tools',
+	#package : 'VMMaker-Tools'
 }
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 VMTFreeTreeNode >> edges [
 	
 	| edges |
@@ -14,13 +15,13 @@ VMTFreeTreeNode >> edges [
 	^ edges
 ]
 
-{ #category : #testing }
+{ #category : 'testing' }
 VMTFreeTreeNode >> hasChildren [
 	
 	^ self smallerOop ~= 0 or: [ self largerOop ~= 0 ]
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 VMTFreeTreeNode >> largerOop [
 
 	^ memory
@@ -28,7 +29,7 @@ VMTFreeTreeNode >> largerOop [
 		ofFreeChunk: nodeOop
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 VMTFreeTreeNode >> smallerOop [
 	
 	^ memory

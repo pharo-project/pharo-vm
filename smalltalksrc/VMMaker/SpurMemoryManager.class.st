@@ -619,7 +619,8 @@ Class {
 		'fromPermToOldSpaceRememberedSet',
 		'fromPermToNewSpaceRememberedSet',
 		'permSpaceForwardersToCleanUp',
-		'avoidSearchingSegmentsWithPinnedObjects'
+		'avoidSearchingSegmentsWithPinnedObjects',
+		'maxSlotsForNewSpaceAlloc'
 	],
 	#classVars : [
 		'BitsPerByte',
@@ -683,23 +684,6 @@ SpurMemoryManager class >> bytesPerOop [
 { #category : 'simulation only' }
 SpurMemoryManager class >> characterObjectOf: characterCode [
 	^characterCode asCharacter
-]
-
-{ #category : 'accessing' }
-SpurMemoryManager class >> classIndicesMap [
-	"self classIndicesMap"
-	| map |
-	map := Dictionary new.
-	self selectorsAndMethodsDo:
-		[:s :m| | mn |
-		(('*classindex*' match: s) or: ['*bridge*'match: s])
-		and: [mn := m methodNode block.
-			(mn statements size = 1
-			 and: [mn statements first expr isConstantNumber]) ifTrue:
-				[map at: mn statements first expr key put: s]]].
-	^map keys sort collect:
-		[:n|
-		{ n. map at: n }]
 ]
 
 { #category : 'accessing' }
@@ -977,7 +961,7 @@ SpurMemoryManager class >> memoryManagerVersion [
 ]
 
 { #category : 'translation' }
-SpurMemoryManager class >> mustBeGlobal: var [
+SpurMemoryManager class >> mustBeGlobalAndExport: var [
 	"Answer if a variable must be global and exported.  Used for inst vars that are accessed from VM support code."
 
 	^#('checkForLeaks' 'maxOldSpaceSize') includes: var
@@ -986,23 +970,6 @@ SpurMemoryManager class >> mustBeGlobal: var [
 { #category : 'accessing' }
 SpurMemoryManager class >> numSmallIntegerTagBits [
 	^self subclassResponsibility
-]
-
-{ #category : 'accessing' }
-SpurMemoryManager class >> objectFormatsMap [
-	"self objectFormatsMap"
-	| map |
-	map := Dictionary new.
-	self selectorsAndMethodsDo:
-		[:s :m| | mn |
-		('*format*' match: s)
-		and: [mn := m methodNode block.
-			(mn statements size = 1
-			 and: [mn statements first expr isConstantNumber]) ifTrue:
-				[map at: mn statements first expr key put: s]]].
-	^map keys sort collect:
-		[:n|
-		{ n. map at: n }]
 ]
 
 { #category : 'accessing class hierarchy' }
@@ -3007,7 +2974,77 @@ SpurMemoryManager >> changeClassOf: rcvr to: argClass [
 	 Fail if the format of the receiver is incompatible with the format of the argument,
 	 or if the argument is a fixed class and the receiver's size differs from the size
 	 that an instance of the argument should have."
-	self subclassResponsibility
+
+	<inline: false>
+	| classFormat fixedFields instFormat newFormat classIndex instSlots instBytes |
+	(self isObjImmutable: rcvr) ifTrue: [ ^ PrimErrNoModification ].
+	classFormat := self formatOfClass: argClass.
+	fixedFields := self fixedFieldsOfClassFormat: classFormat.
+	classFormat := self instSpecOfClassFormat: classFormat.
+	instFormat := self formatOf: rcvr.
+
+	"Fail for inability to access classIndex before making contexts snapshot-safe."
+	(classIndex := self ensureBehaviorHash: argClass) < 0 ifTrue: [
+		^ classIndex negated ].
+
+	"Now check the instance for compatibility and compute odd bits if necessary."
+	classFormat <= self lastPointerFormat
+		ifTrue: [
+			instFormat > self lastPointerFormat ifTrue: [
+				^ PrimErrInappropriate ].
+			((instSlots := self numSlotsOf: rcvr) < fixedFields or: [
+				 instSlots > fixedFields and: [
+					 self isFixedSizePointerFormat: classFormat ] ]) ifTrue: [
+				^ PrimErrBadReceiver ].
+			(instFormat = self indexablePointersFormat and: [
+				 self isContextNonImm: rcvr ]) ifTrue: [
+				coInterpreter makeContextSnapshotSafe: rcvr ].
+			newFormat := classFormat ]
+		ifFalse: [ "Fail if the class's format is somehow invalid."
+			classFormat ~= (self classFormatForInstanceFormat: classFormat)
+				ifTrue: [ ^ PrimErrBadArgument ].
+
+			instBytes := self numBytesOf: rcvr.
+			classFormat
+				caseOf: {
+						([ self sixtyFourBitIndexableFormat ] -> [
+						 (instBytes anyMask: 7) ifTrue: [ ^ PrimErrBadReceiver ].
+						 newFormat := classFormat ]).
+						([ self firstLongFormat ] -> [
+						 (instBytes anyMask: 3) ifTrue: [ ^ PrimErrBadReceiver ].
+						 newFormat := classFormat
+						              +
+						              (self
+							               paddingForFormatInstBytes: instBytes
+							               shiftForElement: 2) ]).
+						([ self firstShortFormat ] -> [
+						 (instBytes anyMask: 1) ifTrue: [ ^ PrimErrBadReceiver ].
+						 newFormat := classFormat
+						              +
+						              (self
+							               paddingForFormatInstBytes: instBytes
+							               shiftForElement: 1) ]).
+						([ self firstByteFormat ] -> [
+						 newFormat := classFormat
+						              +
+						              (self
+							               paddingForFormatInstBytes: instBytes
+							               shiftForElement: 0) ]).
+						([ self firstCompiledMethodFormat ] -> [
+						 classFormat ~= self firstCompiledMethodFormat ifTrue: [
+							 ^ PrimErrInappropriate ].
+						 newFormat := instFormat ]) }
+				otherwise: [ "bits instances cannot be adopted by pointer-like classes..."
+					^ PrimErrInappropriate ] ].
+
+	self set: rcvr classIndexTo: classIndex formatTo: newFormat.
+
+	self assert:
+		(self numBytesOf: rcvr) = (classFormat <= self lastPointerFormat
+			 ifTrue: [ instSlots * self bytesPerOop ]
+			 ifFalse: [ instBytes ]).
+	"ok"
+	^ 0
 ]
 
 { #category : 'object access' }
@@ -3484,37 +3521,6 @@ SpurMemoryManager >> checkOkayYoungReferrer: obj [
 ]
 
 { #category : 'debug support' }
-SpurMemoryManager >> checkOopHasOkayClass: obj [
-	"Attempt to verify that the given obj has a reasonable behavior. The class must be a
-	 valid, non-integer oop and must not be nilObj. It must be a pointers object with three
-	 or more fields. Finally, the instance specification field of the behavior must match that
-	 of the instance. If OK answer true.  If  not, print reason and answer false."
-
-	<api>
-	<var: #obj type: #usqInt>
-	| objClass objFormat |
-	<var: #objClass type: #usqInt>
-
-	(self checkOkayOop: obj) ifFalse:
-		[^false].
-	objClass := self cCoerce: (self fetchClassOfNonImm: obj) to: #usqInt.
-
-	(self isImmediate: objClass) ifTrue:
-		[self print: 'obj '; printHex: obj; print: ' an immediate is not a valid class or behavior'; cr. ^false].
-	(self okayOop: objClass) ifFalse:
-		[self print: 'obj '; printHex: obj; print: ' class obj is not ok'; cr. ^false].
-	((self isPointersNonImm: objClass) and: [(self numSlotsOf: objClass) >= 3]) ifFalse:
-		[self print: 'obj '; printHex: obj; print: ' a class (behavior) must be a pointers object of size >= 3'; cr. ^false].
-	objFormat := (self isBytes: obj)
-						ifTrue: [(self formatOf: obj) bitClear: 7]  "ignore extra bytes size bits"
-						ifFalse: [self formatOf: obj].
-
-	(self instSpecOfClass: objClass) ~= objFormat ifTrue:
-		[self print: 'obj '; printHex: obj; print: ' and its class (behavior) formats differ'; cr. ^false].
-	^true
-]
-
-{ #category : 'debug support' }
 SpurMemoryManager >> checkOopIntegrity: obj named: name [
 	<inline: false>
 	<var: #name type: #'char *'>
@@ -3565,17 +3571,25 @@ SpurMemoryManager >> classArray: anOop [
 
 { #category : 'class table' }
 SpurMemoryManager >> classAtIndex: classIndex [
+
 	<api>
 	<inline: true>
 	| classTablePage |
-	self assert: (classIndex >= 0 and: [classIndex <= self tagMask or: [classIndex >= self arrayClassIndexPun and: [classIndex <= self classIndexMask]]]).
-	classTablePage := self fetchPointer: classIndex >> self classTableMajorIndexShift
-							ofObject: hiddenRootsObj.
-	classTablePage = nilObj ifTrue:
-		[^nil].
-	^self
-		fetchPointer: (classIndex bitAnd: self classTableMinorIndexMask)
-		ofObject: classTablePage
+	self assert: (classIndex >= 0 and: [
+			 classIndex <= self tagMask or: [
+				 classIndex
+					 between: self arrayClassIndexPun
+					 and: self classIndexMask ] ]).
+	classTablePage := self
+		                  fetchPointer:
+		                  classIndex >> self classTableMajorIndexShift
+		                  ofObject: hiddenRootsObj.
+	^ classTablePage = nilObj
+		  ifTrue: [ nil ]
+		  ifFalse: [
+			  self
+				  fetchPointer: (classIndex bitAnd: self classTableMinorIndexMask)
+				  ofObject: classTablePage ]
 ]
 
 { #category : 'class table' }
@@ -3699,6 +3713,7 @@ SpurMemoryManager >> classFormatFromInstFormat: instFormat [
 
 { #category : 'header format' }
 SpurMemoryManager >> classIndexFieldWidth [
+	<api>
 	"22-bit class mask => ~ 4M classes"
 	^22
 ]
@@ -4167,6 +4182,18 @@ SpurMemoryManager >> coallesceFreeChunk: objOop [
 		 here := self coalesce: here and: next.
 		 next := self objectAfter: here limit: memoryMap oldSpaceEnd].
 	^here
+]
+
+{ #category : 'accessing' }
+SpurMemoryManager >> codeEnd [
+	<api>
+	^ self getMemoryMap codeZoneEnd
+]
+
+{ #category : 'accessing' }
+SpurMemoryManager >> codeStart [
+	<api>
+	^ self getMemoryMap codeZoneStart
 ]
 
 { #category : 'object access' }
@@ -6832,6 +6859,8 @@ SpurMemoryManager >> initialize [
 							ifNil: [0].
 	
 	avoidSearchingSegmentsWithPinnedObjects := false.
+	
+	maxSlotsForNewSpaceAlloc := 0. "We will use the default value"
 
 ]
 
@@ -7909,6 +7938,15 @@ SpurMemoryManager >> isNormalObject: objOop [
 ]
 
 { #category : 'object testing' }
+SpurMemoryManager >> isNotForwarded: oop [
+	"Note that (sadly) this is not the negation of `isForwarded`.
+	 `isForwarded` performs an unconditional memory access that can cause a crash
+	 (or an erroneous result) when applied on immediates."
+	<api>
+	^ (self isImmediate: oop) or: [ (self isForwarded: oop) not ]
+]
+
+{ #category : 'object testing' }
 SpurMemoryManager >> isObjEphemeron: objOop [
 	^self isEphemeronFormat: (self formatOf: objOop)
 ]
@@ -8195,6 +8233,7 @@ SpurMemoryManager >> isValidClassIndex: classIndex [
 SpurMemoryManager >> isValidClassTag: classIndex [
 	<api>
 	| classOrNil |
+
 	self assert: (classIndex between: 0 and: 1 << self classIndexFieldWidth - 1).
 	classOrNil := self classOrNilAtIndex: classIndex.
 	^classOrNil ~= nilObj
@@ -8681,54 +8720,66 @@ SpurMemoryManager >> longPrintReferencesTo: anOop [
 SpurMemoryManager >> lookupAddress: address [
 	"If address appears to be that of a Symbol or a few well-known objects (such as classes) answer it, otherwise answer nil.
 	 For code disassembly"
+
 	<doNotGenerate>
 	| fmt size string class classSize maybeThisClass classNameIndex thisClassIndex |
-	((self addressCouldBeObj: address)
-	 and: [(thisClassIndex := self classIndexOf: address) > 0]) ifFalse:
-		[^address = scavengeThreshold ifTrue:
-			['scavengeThreshold']].
-	address - self baseHeaderSize = hiddenRootsObj ifTrue:
-		[^'(hiddenRootsObj+baseHeaderSize)'].
+	((self addressCouldBeObj: address) and: [
+		 (thisClassIndex := self classIndexOf: address) > 0 ]) ifFalse: [
+		^ address = scavengeThreshold ifTrue: [ 'scavengeThreshold' ] ].
+	address - self baseHeaderSize = hiddenRootsObj ifTrue: [
+		^ '(hiddenRootsObj+baseHeaderSize)' ].
 	fmt := self formatOf: address.
 	size := self lengthOf: address format: fmt.
-	size = 0 ifTrue:
-		[^address caseOf: { [nilObj] -> ['nil']. [trueObj] -> ['true']. [falseObj] -> ['false'] } otherwise: []].
-	((fmt between: self firstByteFormat and: self firstCompiledMethodFormat - 1) "indexable byte fields"
-	and: [(size between: 1 and: 64)
-	and: [(Scanner isLiteralSymbol: (string := (0 to: size - 1) collect: [:i| Character value: (self fetchByte: i ofObject: address)]))]])
-		ifTrue: [^'#', (ByteString withAll: string)].
+	size = 0 ifTrue: [
+		^ address
+			  caseOf: {
+					  ([ nilObj ] -> [ 'nil' ]).
+					  ([ trueObj ] -> [ 'true' ]).
+					  ([ falseObj ] -> [ 'false' ]) }
+			  otherwise: [  ] ].
 	class := self noCheckClassAtIndex: thisClassIndex.
-	(class isNil or: [class = nilObj]) ifTrue:
-		[^nil].
+	(class isNil or: [ class = nilObj ]) ifTrue: [ ^ nil ].
 	"address is either a class or a metaclass, or an instance of a class or invalid.  determine which."
 	classNameIndex := coInterpreter classNameIndex.
 	thisClassIndex := coInterpreter thisClassIndex.
-	((classSize := self numSlotsOf: class) <= (classNameIndex max: thisClassIndex)
-	 or: [classSize > 255]) ifTrue:
-		[^nil].
+	((classSize := self numSlotsOf: class)
+	 <= (classNameIndex max: thisClassIndex) or: [ classSize > 255 ])
+		ifTrue: [ ^ nil ].
 	"Address could be a class or a metaclass"
-	(fmt = 1 and: [size > classNameIndex]) ifTrue:
-		["Is address a class? If so class's thisClass is address."
-		 (self lookupAddress: (self fetchPointer: classNameIndex ofObject: address)) ifNotNil:
-			[:maybeClassName|
-			(self fetchPointer: thisClassIndex ofObject: class) = address ifTrue:
-				[^maybeClassName allButFirst]].
+	(fmt = 1 and: [ size > classNameIndex ]) ifTrue: [ "Is address a class? If so class's thisClass is address."
+		(self lookupAddress:
+			 (self fetchPointer: classNameIndex ofObject: address)) ifNotNil: [
+			:maybeClassName |
+			(self fetchPointer: thisClassIndex ofObject: class) = address
+				ifTrue: [ ^ maybeClassName allButFirst ] ].
 		"Is address a Metaclass?  If so class's name is Metaclass and address's thisClass holds the class name"
 		((self isBytes: (self fetchPointer: classNameIndex ofObject: class))
-		 and: [(self lookupAddress: (self fetchPointer: classNameIndex ofObject: class)) = '#Metaclass'
-		 and: [size >= thisClassIndex]]) ifTrue:
-			[maybeThisClass := self fetchPointer: thisClassIndex ofObject: address.
-			(self lookupAddress: (self fetchPointer: classNameIndex ofObject: maybeThisClass)) ifNotNil:
-				[:maybeThisClassName| ^maybeThisClassName allButFirst, ' class']]].
-	^(self lookupAddress: (self fetchPointer: classNameIndex ofObject: class)) ifNotNil:
-		[:maybeClassName|
-		(size = 2
-		 and: [fmt = self nonIndexablePointerFormat
-		 and: ['#ClassBinding' = maybeClassName]]) ifTrue:
-			[^'a ClassBinding '
-				, ((self lookupAddress: (self fetchPointer: KeyIndex ofObject: address)) ifNil: [''])
-				, ((self lookupAddress: (self fetchPointer: ValueIndex ofObject: address)) ifNil: [''] ifNotNil: [:val| ' -> ', val])].
-		'a(n) ', maybeClassName allButFirst]
+			 and: [
+				 (self lookupAddress:
+					  (self fetchPointer: classNameIndex ofObject: class))
+				 = '#Metaclass' and: [ size >= thisClassIndex ] ]) ifTrue: [
+			maybeThisClass := self
+				                  fetchPointer: thisClassIndex
+				                  ofObject: address.
+			(self lookupAddress:
+				 (self fetchPointer: classNameIndex ofObject: maybeThisClass))
+				ifNotNil: [ :maybeThisClassName |
+				^ maybeThisClassName allButFirst , ' class' ] ] ].
+	^ (self lookupAddress:
+		   (self fetchPointer: classNameIndex ofObject: class)) ifNotNil: [
+		  :maybeClassName |
+		  (size = 2 and: [
+			   fmt = self nonIndexablePointerFormat and: [
+				   '#ClassBinding' = maybeClassName ] ]) ifTrue: [
+			  ^ 'a ClassBinding '
+			    ,
+				    ((self lookupAddress:
+					      (self fetchPointer: KeyIndex ofObject: address)) ifNil: [
+					     '' ]) , ((self lookupAddress:
+				      (self fetchPointer: ValueIndex ofObject: address))
+				     ifNil: [ '' ]
+				     ifNotNil: [ :val | ' -> ' , val ]) ].
+		  'a(n) ' , maybeClassName allButFirst ]
 ]
 
 { #category : 'free space' }
@@ -9307,7 +9358,12 @@ SpurMemoryManager >> maxSlotsForNewSpaceAlloc [
 	"Almost entirely arbitrary, but we dont want 1Mb bitmaps allocated in eden.
 	 But this choice means no check for numSlots > maxSlotsForNewSpaceAlloc
 	 for non-variable allocations."
-	^self fixedFieldsOfClassFormatMask
+	
+	^ maxSlotsForNewSpaceAlloc = 0 
+		ifTrue: [ self fixedFieldsOfClassFormatMask ]
+		ifFalse: [ maxSlotsForNewSpaceAlloc ]
+	
+	
 ]
 
 { #category : 'interpreter access' }
@@ -9655,56 +9711,6 @@ SpurMemoryManager >> newObjectHash [
 	 hash := lastHash + (lastHash >> 4). "adding the top bits gives much better spread.  See below:"
 	 (hash bitAnd: self identityHashHalfWordMask) = 0] whileTrue.
 	^hash
-
-	"the standard algorithm doesn't vary well in the least significant bits:"
-	"| r s n |
-	r := 1.
-	n := 256 * 256 * 256.
-	s := Set new: n * 2.
-	n timesRepeat:
-		[s add: (r bitAnd: n - 1).
-		r := r * 16807 bitAnd: 16rFFFFFFFF].
-	{ s size. s size / n asFloat. s includes: 0. r hex }
-=>	 #(2097152 0.125 false '16r38000001')"
-
-	"this can be improved by adding in shifted upper bits"
-	"| r s n |
-	r := 1.
-	n := 256 * 256 * 256.
-	s := Set new: n * 2.
-	n timesRepeat:
-		[s add: (r + (r bitShift: -8) bitAnd: n - 1).
-		r := r * 16807 bitAnd: 16rFFFFFFFF].
-	{ s size. s size / n asFloat. s includes: 0. r hex }
-=>	#(10702109 0.637895405292511 false '16r38000001')"
-
-
-"but which shift is best?  Looks like -4:"
-"(-2 to: -15 by: -1) do:
-	[:shift|
-	| r s n |
-	r := 1.
-	n := 256 * 256 * 256.
-	s := Set new: n * 2.
-	n timesRepeat:
-		[s add: (r + (r bitShift: shift) bitAnd: n - 1).
-		r := r * 16807 bitAnd: 16rFFFFFFFF].
-	Transcript cr; print: { shift. s size. s size / n asFloat. s includes: 0. r hex }; flush]
-
-#(-2 8388608 0.5 true '16r38000001')
-#(-3 8388608 0.5 false '16r38000001')
-#(-4 12582503 0.749975621700287 true '16r38000001')
-#(-5 11468379 0.6835686564445495 false '16r38000001')
-#(-6 11013442 0.656452298164368 true '16r38000001')
-#(-7 10804094 0.643974184989929 true '16r38000001')
-#(-8 10702109 0.637895405292511 false '16r38000001')
-#(-9 10703730 0.637992024421692 false '16r38000001')
-#(-10 7865201 0.468802511692047 false '16r38000001')
-#(-11 8444092 0.503307104110718 false '16r38000001')
-#(-12 10703317 0.6379674077034 true '16r38000001')
-#(-13 10701116 0.637836217880249 true '16r38000001')
-#(-14 10689443 0.637140452861786 true '16r38000001')
-#(-15 7853923 0.4681302905082702 true '16r38000001')"
 ]
 
 { #category : 'as yet unclassified' }
@@ -10455,6 +10461,21 @@ SpurMemoryManager >> outerContextOf: aBlockClosureOop [
 	^ self fetchPointer: FullClosureOuterContextIndex ofObject: aBlockClosureOop
 ]
 
+{ #category : 'interpreter access' }
+SpurMemoryManager >> paddingForFormatInstBytes: instBytes shiftForElement: shiftForElement [
+	"NOTE: shiftForElement is elementSizeInBytes log: 2.
+	This means elementSizeInBytes should be a power of two."
+
+	| trailingBytes paddingBytes |
+	"Cheap way to do instBytes \\ self wordSize (assumes self wordSize is a power of two)"
+	trailingBytes := instBytes bitAnd: self wordSize - 1.
+	paddingBytes := self wordSize - trailingBytes.
+	"self wordSize - 0 is self wordSize, but we want to say 'there is no padding' in that case"
+	paddingBytes := paddingBytes bitAnd: self wordSize - 1.
+	"Cheap way to do paddingBytes // elementSizeInBytes"
+	^ paddingBytes >> shiftForElement
+]
+
 { #category : 'accessing' }
 SpurMemoryManager >> pastSpaceStart [
 	<cmacro: '() GIV(pastSpaceStart)'>
@@ -10674,7 +10695,7 @@ SpurMemoryManager >> postBecomeScanClassTable: effectsFlags [
 	 We can somehow avoid following classes from the classTable until after this mark phase."
 	self assert: self validClassTableRootPages.
 
-	(effectsFlags anyMask: BecamePointerObjectFlag) ifFalse: [^self].
+	(effectsFlags anyMask: BecameActiveClassFlag) ifFalse: [^self].
 
 	0 to: numClassTablePages - 1 do:
 		[:i| | page |
@@ -11829,11 +11850,12 @@ SpurMemoryManager >> rtRefCountOf: obj put: refCount [
 
 { #category : 'debug support' }
 SpurMemoryManager >> runLeakCheckerFor: gcModes [
+
 	<inline: false>
-	^self
-		inLineRunLeakCheckerFor: gcModes
-		excludeUnmarkedObjs: false
-		classIndicesShouldBeValid: true
+	^ self
+		  inLineRunLeakCheckerFor: gcModes
+		  excludeUnmarkedObjs: false
+		  classIndicesShouldBeValid: true
 ]
 
 { #category : 'debug support' }
@@ -12147,6 +12169,15 @@ SpurMemoryManager >> setMaxOldSpaceSize: limit [
 	<var: #limit type: #usqInt>
 	maxOldSpaceSize := limit.
 	^0
+]
+
+{ #category : 'instantiation' }
+SpurMemoryManager >> setMaxSlotsForNewSpaceAlloc: aValue [
+	
+	<api>
+	
+	maxSlotsForNewSpaceAlloc := aValue
+	
 ]
 
 { #category : 'accessing' }

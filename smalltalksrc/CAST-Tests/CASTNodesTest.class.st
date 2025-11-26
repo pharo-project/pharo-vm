@@ -1,10 +1,11 @@
 Class {
-	#name : #CASTNodesTest,
-	#superclass : #TestCase,
-	#category : #'CAST-Tests'
+	#name : 'CASTNodesTest',
+	#superclass : 'TestCase',
+	#category : 'CAST-Tests',
+	#package : 'CAST-Tests'
 }
 
-{ #category : #identifiers }
+{ #category : 'identifiers' }
 CASTNodesTest >> testIdentifierNodeNameIsInvalid [
 
 	| identifier |
@@ -12,7 +13,7 @@ CASTNodesTest >> testIdentifierNodeNameIsInvalid [
 	self shouldnt: identifier hasValidName
 ]
 
-{ #category : #identifiers }
+{ #category : 'identifiers' }
 CASTNodesTest >> testIdentifierNodeNameIsValid [
 
 	| identifier |

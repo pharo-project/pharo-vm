@@ -156,10 +156,7 @@ CogMethodZone >> allocate: numBytes [
 	allocation := mzFreeStart.
 	mzFreeStart := mzFreeStart + roundedBytes.
 	methodCount := methodCount + 1.
-	self cCode: '' inSmalltalk:
-		[(cogit breakPC isInteger
-		   and: [cogit breakPC between: allocation and: mzFreeStart]) ifTrue:
-			[cogit singleStep: true]].
+
 	^allocation
 ]
 
@@ -234,58 +231,64 @@ CogMethodZone >> cogit [
 
 { #category : 'compaction' }
 CogMethodZone >> compactCompiledCode [
-	| objectHeaderValue source dest bytes |
+
 	<var: #source type: #'CogMethod *'>
 	<var: #dest type: #'CogMethod *'>
+	| objectHeaderValue source dest |
 	compactionInProgress := true.
 	objectHeaderValue := objectMemory nullHeaderForMachineCodeMethod.
 	source := coInterpreter cCoerceSimple: baseAddress to: #'CogMethod *'.
 	self voidOpenPICList. "The list will be rebuilt with the current live set"
 	methodCount := 0.
-	[source < self limitZony
-	 and: [source cmType ~= CMFree]] whileTrue:
-		[self assert: (cogit cogMethodDoesntLookKosher: source) = 0.
-		 source objectHeader: objectHeaderValue.
-		 source cmUsageCount > 0 ifTrue:
-			[source cmUsageCount: source cmUsageCount // 2].
-		 SistaVM ifTrue:
-			[self clearSavedPICUsageCount: source].
-		 source cmType = CMMegamorphicIC ifTrue:
-			[self addToMegamorphicICList: source].
-		 methodCount := methodCount + 1.
-		 source := self methodAfter: source].
-	source >= self limitZony ifTrue:
-		[^self halt: 'no free methods; cannot compact.'].
+	[ source < self limitZony and: [ source cmType ~= CMFree ] ]
+		whileTrue: [
+			self assert: (cogit cogMethodDoesntLookKosher: source) = 0.
+			source objectHeader: objectHeaderValue.
+			source cmUsageCount > 0 ifTrue: [
+				source cmUsageCount: source cmUsageCount // 2 ].
+			SistaVM ifTrue: [ self clearSavedPICUsageCount: source ].
+			source cmType = CMMegamorphicIC ifTrue: [
+				self addToMegamorphicICList: source ].
+			methodCount := methodCount + 1.
+			source := self methodAfter: source ].
+	source >= self limitZony ifTrue: [
+		^ self halt: 'no free methods; cannot compact.' ].
 	dest := source.
-	[source < self limitZony] whileTrue:
-		[self assert: (cogit maybeFreeCogMethodDoesntLookKosher: source) = 0.
-		 bytes := source blockSize.
-		 source cmType ~= CMFree ifTrue:
-			[methodCount := methodCount + 1.
-			 objectMemory memmove: dest _: source _: bytes.
-			 dest objectHeader: objectHeaderValue.
-			 dest cmType = CMMethod
-				ifTrue:
-					["There should be a one-to-one mapping between bytecoded and cog methods."
-					"Only update the original method's header if it is referring to this CogMethod."
-					 (coInterpreter rawHeaderOf: dest methodObject) asInteger = source asInteger
-						ifTrue:
-							[coInterpreter rawHeaderOf: dest methodObject put: dest asInteger]
-						ifFalse:
-							[self assert: (cogit noAssertMethodClassAssociationOf: dest methodObject) = objectMemory nilObject]]
-				ifFalse:
-					[SistaVM ifTrue:
-						[self clearSavedPICUsageCount: dest].
-					 dest cmType = CMMegamorphicIC ifTrue:
-						[self addToMegamorphicICList: dest]].
-			 dest cmUsageCount > 0 ifTrue:
-				[dest cmUsageCount: dest cmUsageCount // 2].
-			 dest := coInterpreter
-								cCoerceSimple: dest asUnsignedInteger + bytes
-								to: #'CogMethod *'].
-		 source := coInterpreter
-							cCoerceSimple: source asUnsignedInteger + bytes
-							to: #'CogMethod *'].
+	[ source < self limitZony ] whileTrue: [
+		| byteSize |
+		self assert: (cogit maybeFreeCogMethodDoesntLookKosher: source) = 0.
+
+		byteSize := source blockSize.
+
+		source cmType ~= CMFree ifTrue: [
+			methodCount := methodCount + 1.
+			objectMemory memmove: dest _: source _: byteSize.
+			dest objectHeader: objectHeaderValue.
+			dest cmType = CMMethod
+				ifTrue: [ "
+					There should be a one-to-one mapping between bytecoded and cog methods.
+					Only update the original method's header if it is referring to this CogMethod."
+					(coInterpreter rawHeaderOf: dest methodObject) asInteger
+					= source asInteger
+						ifTrue: [
+						coInterpreter rawHeaderOf: dest methodObject put: dest asInteger ]
+						ifFalse: [
+							self assert:
+								(cogit noAssertMethodClassAssociationOf: dest methodObject)
+								= objectMemory nilObject ] ]
+				ifFalse: [
+					SistaVM ifTrue: [ self clearSavedPICUsageCount: dest ].
+					dest cmType = CMMegamorphicIC ifTrue: [
+						self addToMegamorphicICList: dest ] ].
+			dest cmUsageCount > 0 ifTrue: [
+				dest cmUsageCount: dest cmUsageCount // 2 ].
+			dest := self methodAfter: dest ].
+		"One would like to write `source := self methodAfter: source` here.
+		 That's not possible because we nuked it from existence. This here is
+		 therefore an inlined copy of that method"
+		source := coInterpreter
+		cCoerceSimple: (self roundUpLength: source asInteger + byteSize)
+		to: #'CogMethod *'. ].
 	mzFreeStart := dest asUnsignedInteger.
 	methodBytesFreedSinceLastCompaction := 0.
 	compactionInProgress := false
@@ -324,28 +327,30 @@ CogMethodZone >> followForwardedLiteralsInOpenPICList [
 
 { #category : 'compaction' }
 CogMethodZone >> freeMethod: cogMethod [
+
 	<api>
 	<var: #cogMethod type: #'CogMethod *'>
 	<inline: false>
 	self assert: cogMethod cmType ~= CMFree.
 	self assert: (cogit cogMethodDoesntLookKosher: cogMethod) = 0.
-	cogMethod cmType = CMMethod ifTrue:
-		["There should be a one-to-one mapping between bytecoded and cog methods."
-		"Only reset the original method's header if it is referring to this CogMethod."
-		 (coInterpreter rawHeaderOf: cogMethod methodObject) asInteger = cogMethod asInteger
-			ifTrue:
-				[ coInterpreter rawHeaderOf: cogMethod methodObject put: cogMethod methodHeader ]
-			ifFalse:
-				[self cCode: [self assert: (cogit noAssertMethodClassAssociationOf: cogMethod methodObject) = objectMemory nilObject]
-					inSmalltalk: [self assert: ((cogit noAssertMethodClassAssociationOf: cogMethod methodObject) = objectMemory nilObject
-											or: [coInterpreter isKindOf: CurrentImageCoInterpreterFacade])] ].
-		 cogit maybeFreeCountersOf: cogMethod].
-	cogMethod cmType = CMMegamorphicIC ifTrue:
-		[self removeFromOpenPICList: cogMethod].
+	cogMethod cmType = CMMethod ifTrue: [ "There should be a one-to-one mapping between bytecoded and cog methods.""Only reset the original method's header if it is referring to this CogMethod."
+		(coInterpreter rawHeaderOf: cogMethod methodObject) asInteger
+		= cogMethod asInteger
+			ifTrue: [
+				coInterpreter
+					rawHeaderOf: cogMethod methodObject
+					put: cogMethod methodHeader ]
+			ifFalse: [
+				self assert:
+					(cogit noAssertMethodClassAssociationOf: cogMethod methodObject)
+					= objectMemory nilObject ].
+		cogit maybeFreeCountersOf: cogMethod ].
+	cogMethod cmType = CMMegamorphicIC ifTrue: [
+		self removeFromOpenPICList: cogMethod ].
 	cogMethod cmRefersToYoung: false.
 	cogMethod cmType: CMFree.
 	methodBytesFreedSinceLastCompaction := methodBytesFreedSinceLastCompaction
-												+ cogMethod blockSize
+	                                       + cogMethod blockSize
 ]
 
 { #category : 'compaction' }

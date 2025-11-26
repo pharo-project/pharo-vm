@@ -1,6 +1,6 @@
-Extension { #name : #TParseNode }
+Extension { #name : 'TParseNode' }
 
-{ #category : #'*VMMaker-Tools' }
+{ #category : '*VMMaker-Tools' }
 TParseNode >> inspectNode [
 	<inspectorPresentationOrder: 912 title: 'C (Not Expr)'>
 
@@ -10,7 +10,7 @@ TParseNode >> inspectNode [
 		yourself
 ]
 
-{ #category : #'*VMMaker-Tools' }
+{ #category : '*VMMaker-Tools' }
 TParseNode >> inspectNodeContext: aContext [
 
 	aContext active: self isExpression not.
@@ -19,7 +19,7 @@ TParseNode >> inspectNodeContext: aContext [
 		withoutEvaluator
 ]
 
-{ #category : #'*VMMaker-Tools' }
+{ #category : '*VMMaker-Tools' }
 TParseNode >> inspectNodeExpression [
 	<inspectorPresentationOrder: 912 title: 'C (Expression)'>
 
@@ -29,7 +29,7 @@ TParseNode >> inspectNodeExpression [
 		yourself
 ]
 
-{ #category : #'*VMMaker-Tools' }
+{ #category : '*VMMaker-Tools' }
 TParseNode >> inspectNodeExpressionContext: aContext [
 
 	aContext active: self isExpression.
@@ -38,7 +38,7 @@ TParseNode >> inspectNodeExpressionContext: aContext [
 		withoutEvaluator
 ]
 
-{ #category : #'*VMMaker-Tools' }
+{ #category : '*VMMaker-Tools' }
 TParseNode >> inspectionTree [
 	<inspectorPresentationOrder: 35 title: 'Tree'>
 
@@ -58,7 +58,7 @@ TParseNode >> inspectionTree [
 		yourself
 ]
 
-{ #category : #'*VMMaker-Tools' }
+{ #category : '*VMMaker-Tools' }
 TParseNode >> newCodeGeneratorForInspection [
 
 	| cg |

@@ -1,5 +1,11 @@
 Extension { #name : 'ByteArray' }
 
+{ #category : '*VMMaker-Simulation-accessing' }
+ByteArray >> bytesPerElement [
+	"Number of bytes in each item.  This multiplied by (self size)*8 gives the number of bits stored."
+	^ 1
+]
+
 { #category : '*VMMaker-plugin generation' }
 ByteArray class >> ccg: cg prolog: aBlock expr: aString index: anInteger [
 

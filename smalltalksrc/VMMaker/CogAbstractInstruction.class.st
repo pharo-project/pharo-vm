@@ -300,16 +300,16 @@ CogAbstractInstruction class >> structTypeName [
 { #category : 'translation' }
 CogAbstractInstruction class >> translateableSubclassesAndOptions [
 	"CogAbstractInstruction translateableSubclassesAndOptions"
+
 	| translateableSubclassesAndOptions |
 	translateableSubclassesAndOptions := OrderedCollection new.
-	self subclasses do:
-		[:subclass|
-		subclass ifTranslateableAddWithOptionsTo: translateableSubclassesAndOptions].
-	^translateableSubclassesAndOptions sort:
-		[:a :b|
-		a first name < b first name
-		or: [a first name = b first name "If equal, sort on the ABI"
-			and: [a last last < b last last]]]
+	self allSubclasses do: [ :subclass |
+		subclass isAbstract ifFalse: [
+			subclass ifTranslateableAddWithOptionsTo:
+				translateableSubclassesAndOptions ] ].
+	^ translateableSubclassesAndOptions sort: [ :a :b |
+		  a first name < b first name or: [
+			  a first name = b first name and: [ a last last < b last last ] "If equal, sort on the ABI" ] ]
 ]
 
 { #category : 'translation' }
@@ -335,29 +335,6 @@ CogAbstractInstruction class >> unimplementedOpcodes [
 		at: #computeMaximumSize put: (opcodes reject: [:opcode| cmsLiterals includes: opcode]);
 		at: #dispatchConcretize put: (opcodes reject: [:opcode| dcLiterals includes: opcode]);
 		yourself
-]
-
-{ #category : 'verification' }
-CogAbstractInstruction class >> usedUnimplementedOpcodes [
-	"Check for uses of unimplemented opcodes"
-	"self subclasses collect: [:compiler| {compiler. compiler usedUnimplementedOpcodes}]"
-	| genericUnimplementedOpcodeBindings specificUnimplementedOpcodeBindings |
-	genericUnimplementedOpcodeBindings := Set new.
-	specificUnimplementedOpcodeBindings := Set new.
-	self unimplementedOpcodes do:
-		[:arrayOfOpcodes|
-		arrayOfOpcodes do:
-			[:opcode|
-			(self bindingOf: opcode)
-				ifNotNil: [:b| specificUnimplementedOpcodeBindings add: b]
-				ifNil: [genericUnimplementedOpcodeBindings add: (CogRTLOpcodes bindingOf: opcode)]]].
-	^ { (SystemNavigation new allCallsOn: genericUnimplementedOpcodeBindings localToPackage: #VMMaker)
-			inject: Set new
-			into:  [:them :methodRef| "These should be in Cogit's abstract instructions category"
-				them
-					addAll: (SystemNavigation new allCallsOn: methodRef method selector localToPackage: #VMMaker);
-					yourself].
-		SystemNavigation new allCallsOn: specificUnimplementedOpcodeBindings localToPackage: #VMMaker }
 ]
 
 { #category : 'translation' }
@@ -711,22 +688,6 @@ CogAbstractInstruction >> dependent: anInstruction [
 	^dependent := anInstruction
 ]
 
-{ #category : 'full transfer run-time support' }
-CogAbstractInstruction >> disassemble [
-	<doNotGenerate>
-	self disassembleOn: Transcript
-]
-
-{ #category : 'full transfer run-time support' }
-CogAbstractInstruction >> disassembleOn: aStream [
-	<doNotGenerate>
-	cogit processor
-		disassembleFrom: 0
-		to: machineCodeSize - 1
-		in: machineCode object
-		on: aStream
-]
-
 { #category : 'accessing' }
 CogAbstractInstruction >> fillFrom: startMemoryAddr until: endMemoryAddr with: fillReg usingVr: vectorRegister [
 	<inline: true>
@@ -796,7 +757,7 @@ CogAbstractInstruction >> genJumpFPEqual: jumpTarget [
 	<inline: true>
 	<returnTypeC: #'AbstractInstruction *'>
 	<var: #jumpTarget type: #'void *'>
-	^cogit gen: JumpFPEqual operand: jumpTarget asInteger
+	^cogit genConditionalBranch: JumpFPEqual operand: jumpTarget asInteger
 ]
 
 { #category : 'abstract instructions' }
@@ -804,7 +765,7 @@ CogAbstractInstruction >> genJumpFPGreater: jumpTarget [
 	<inline: true>
 	<returnTypeC: #'AbstractInstruction *'>
 	<var: #jumpTarget type: #'void *'>
-	^cogit gen: JumpFPGreater operand: jumpTarget asInteger
+	^cogit genConditionalBranch: JumpFPGreater operand: jumpTarget asInteger
 ]
 
 { #category : 'abstract instructions' }
@@ -812,7 +773,7 @@ CogAbstractInstruction >> genJumpFPGreaterOrEqual: jumpTarget [
 	<inline: true>
 	<returnTypeC: #'AbstractInstruction *'>
 	<var: #jumpTarget type: #'void *'>
-	^cogit gen: JumpFPGreaterOrEqual operand: jumpTarget asInteger
+	^cogit genConditionalBranch: JumpFPGreaterOrEqual operand: jumpTarget asInteger
 ]
 
 { #category : 'abstract instructions' }
@@ -820,7 +781,7 @@ CogAbstractInstruction >> genJumpFPLess: jumpTarget [
 	<inline: true>
 	<returnTypeC: #'AbstractInstruction *'>
 	<var: #jumpTarget type: #'void *'>
-	^cogit gen: JumpFPLess operand: jumpTarget asInteger
+	^cogit genConditionalBranch: JumpFPLess operand: jumpTarget asInteger
 ]
 
 { #category : 'abstract instructions' }
@@ -828,7 +789,7 @@ CogAbstractInstruction >> genJumpFPLessOrEqual: jumpTarget [
 	<inline: true>
 	<returnTypeC: #'AbstractInstruction *'>
 	<var: #jumpTarget type: #'void *'>
-	^cogit gen: JumpFPLessOrEqual operand: jumpTarget asInteger
+	^cogit genConditionalBranch: JumpFPLessOrEqual operand: jumpTarget asInteger
 ]
 
 { #category : 'abstract instructions' }
@@ -836,7 +797,7 @@ CogAbstractInstruction >> genJumpFPNotEqual: jumpTarget [
 	<inline: true>
 	<returnTypeC: #'AbstractInstruction *'>
 	<var: #jumpTarget type: #'void *'>
-	^cogit gen: JumpFPNotEqual operand: jumpTarget asInteger
+	^cogit genConditionalBranch: JumpFPNotEqual operand: jumpTarget asInteger
 ]
 
 { #category : 'abstract instructions' }
@@ -902,6 +863,16 @@ CogAbstractInstruction >> genMarshallNArgs: numArgs floatArg: regOrConst0 floatA
 	 register assignments the original author has grown accustomed to."
 	<inline: true>
 	^self subclassResponsibility
+]
+
+{ #category : 'abstract instructions' }
+CogAbstractInstruction >> genMoveM32: offset r: baseReg R: destReg [
+
+	^ cogit
+		  gen: MoveM32rR
+		  quickConstant: offset
+		  operand: baseReg
+		  operand: destReg
 ]
 
 { #category : 'abstract instructions' }
@@ -1057,7 +1028,7 @@ CogAbstractInstruction >> getOperandsWithFormat: format [
 						ifTrue: [ (operand > 16 and: [ opcode ~= Label ]) 
 							ifTrue: [ 
 								(operand allMask: 16r80000000) 
-									ifTrue: [ strOperands add: operand, '/', operand signedIntFromLong ].
+									ifTrue: [ strOperands add: operand printString, '/', operand signedIntFromLong printString ].
 									strOperands add: operand asString, '/', (operand hex)]
 							ifFalse: [ 
 								strOperands add: operand.
@@ -1780,15 +1751,24 @@ CogAbstractInstruction >> symbolicOn: aStream [
 
 { #category : 'memory access' }
 CogAbstractInstruction >> unalignedLongAt: byteAddress [
-	"Some processors need this, but word-oriented RISCs don't. Hence doNotGenerate."
-	<doNotGenerate>
-	^self subclassResponsibility
+
+	self
+		cCode: [
+			| readValue |
+			self cCall: 'memcpy' withArguments: {
+					(self addressOf: readValue).
+					byteAddress.
+					(self sizeof: readValue) }.
+			^ readValue ]
+		inSmalltalk: [ ^ objectMemory unalignedLongAt: byteAddress ]
 ]
 
 { #category : 'memory access' }
 CogAbstractInstruction >> unalignedLongAt: byteAddress put: aWord [
-	"Some processors need this, but word-oriented RISCs don't. Hence doNotGenerate."
-	^self subclassResponsibility
+
+	<cmacro: '(byteAddress,aWord) memcpy((void*)byteAddress, &aWord, sizeof(sqInt))'>
+
+	^ objectMemory unalignedLongAt: byteAddress put: aWord
 ]
 
 { #category : 'generate machine code' }

@@ -144,7 +144,7 @@ VMPluginCodeGenerator >> emitCHeaderOn: aStream [
 
 /* Do not include the entire sq.h file but just those parts needed. */
 #include "sqConfig.h"			/* Configuration options */
-#include "sqVirtualMachine.h"	/*  The virtual machine proxy definition */
+#include "virtualMachine.h"	/*  The virtual machine proxy definition */
 #include "sqPlatformSpecific.h"	/* Platform specific definitions */
 
 #define true 1
@@ -154,7 +154,7 @@ VMPluginCodeGenerator >> emitCHeaderOn: aStream [
 # undef EXPORT
 # define EXPORT(returnType) static returnType
 #endif'; newLine; newLine.
-	self addHeaderFile: '"sqMemoryAccess.h"'.
+	self addHeaderFile: '"memoryAccess.h"'.
 	"Additional header files; include squeak VM ones last"
 	self emitHeaderFiles: (headerFiles reject: [:hdr| hdr includes: $<]) on: aStream.
 	self maybePutPreambleFor: pluginClass on: aStream.
@@ -223,7 +223,7 @@ VMPluginCodeGenerator >> generateCASTRemapOopIn: aTSendNode [
 	"Generate the C code for this message onto the given stream."
 
 	| arm result |
-	"Avoid nesting #if SPURVM...#else...#endif within arms of an outer #if SPURVM...#else...#endif."
+	"Avoid nesting #if DEFINE...#else...#endif within arms of an outer #if DEFINE...#else...#endif."
 	(Notification new
 		 tag: #inRemapOopInArm;
 		 signal) ifNotNil: [ :inRemapOopInArm | 
@@ -418,7 +418,6 @@ VMPluginCodeGenerator >> preDeclareMacrosForFastClassCheckingOn: aStream [
 
 		'# define isIntegerObject(oop) ((oop) & 1)' newLine
 
-		'# if SPURVM'
 		'extern sqInt classIndexOf(sqInt);'
 	"Compact class indices are hardcoded here because there is no guarantee that the pool values at generation time
 	 are that of SPUR.. Make sure they are in sync with SpurMemoryManager class>>initializeCompactClassIndices"
@@ -433,7 +432,6 @@ VMPluginCodeGenerator >> preDeclareMacrosForFastClassCheckingOn: aStream [
 		'#	define isLargeIntegerObject(oop) (!isImmediate(oop) && (unsigned)(classIndexOf(oop) - LargeNegativeIntegerClassIndex) <= 1)'
 		'#	define isLargeNegativeIntegerObject(oop) (!isImmediate(oop) && classIndexOf(oop) == LargeNegativeIntegerClassIndex)'
 		'#	define isLargePositiveIntegerObject(oop) (!isImmediate(oop) && classIndexOf(oop) == LargePositiveIntegerClassIndex)'
-		'# endif /* SPURVM */'
 		'#endif /* defined(SQUEAK_BUILTIN_PLUGIN) */' newLine
 
 	"If the functionality has not been defined via macros, define default versions using existing plugin API"
@@ -504,9 +502,9 @@ VMPluginCodeGenerator >> sizeOfIntegralCType: anIntegralCType [ "<String>"
 	(anIntegralCType beginsWith: 'register ') ifTrue:
 		[^self sizeOfIntegralCType: (anIntegralCType allButFirst: 9)].
 	prunedCType := (anIntegralCType beginsWith: 'unsigned ')
-						ifTrue: [(anIntegralCType allButFirst: 9) withBlanksTrimmed]
+						ifTrue: [(anIntegralCType allButFirst: 9) trimBoth]
 						ifFalse: [(anIntegralCType beginsWith: 'signed ')
-									ifTrue: [(anIntegralCType allButFirst: 7) withBlanksTrimmed]
+									ifTrue: [(anIntegralCType allButFirst: 7) trimBoth]
 									ifFalse: [anIntegralCType]].
 	
 	^prunedCType asString caseOf: {
@@ -529,7 +527,7 @@ VMPluginCodeGenerator >> sizeOfIntegralCType: anIntegralCType [ "<String>"
 		[((anIntegralCType beginsWith: 'unsigned') "e.g. 'unsigned  : 8'"
 		  and: [(anIntegralCType includesAnyOf: '[*]') not
 		  and: [(index := anIntegralCType indexOf: $:) > 0]])
-			ifTrue: [(Integer readFrom: (anIntegralCType copyFrom: index + 1 to: anIntegralCType size) withBlanksTrimmed readStream) + 7 // 8]
+			ifTrue: [(Integer readFrom: (anIntegralCType copyFrom: index + 1 to: anIntegralCType size) trimBoth readStream) + 7 // 8]
 			ifFalse: [self error: 'unrecognized integral type']]
 ]
 
@@ -545,7 +543,7 @@ VMPluginCodeGenerator >> structTargetKindForDeclaration: decl [ "<String>"
 		[pluginClass ifNotNil:
 			[(pluginClass isStructType: (decl last = $*
 											ifTrue: [decl allButLast]
-											ifFalse: [decl]) withBlanksTrimmed) ifTrue:
+											ifFalse: [decl]) trimBoth) ifTrue:
 				[(decl indexOf: $*) > 0
 					ifTrue: [#pointer]
 					ifFalse: [#struct]]]]

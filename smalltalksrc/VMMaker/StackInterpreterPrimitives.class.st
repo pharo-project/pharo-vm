@@ -10,6 +10,12 @@ Class {
 	#tag : 'Interpreter'
 }
 
+{ #category : 'translation' }
+StackInterpreterPrimitives class >> mustBeGlobalInFile: var [
+
+	^ #( #composedImageWriter #spurImageWriter ) includes: var
+]
+
 { #category : 'initialization' }
 StackInterpreterPrimitives >> allocateParameters: anInteger using: allocationBlock [
 	<inline: #always>
@@ -947,46 +953,51 @@ StackInterpreterPrimitives >> primitiveDoPrimitiveWithArgs [
 	 or Context>>receiver: anObject tryPrimitive: primIndex withArgs: argArray.
 	 If this primitive fails, arrange that its error code is a negative integer, to
 	 distinguish between this failing and the primitive it invokes failing."
-	| argumentArray arraySize index primIdx savedNumArgs rcvr |
+
+	| argumentArray arraySize index primIdx savedNumArgs rcvr savedTempOop savedTempOop2 |
 	"See checkForAndFollowForwardedPrimitiveState"
 	metaAccessorDepth := -2.
-	(argumentCount between: 2 and: 3) ifFalse:
-		[^self primitiveFailFor: PrimErrUnsupported negated].
+	(argumentCount between: 2 and: 3) ifFalse: [
+		^ self primitiveFailFor: PrimErrUnsupported negated ].
 	argumentArray := self stackTop.
 	primIdx := self stackValue: 1.
-	((objectMemory isArray: argumentArray)
-	 and: [objectMemory isIntegerObject: primIdx]) ifFalse:
-		[^self primitiveFailFor: PrimErrBadArgument negated].
+	((objectMemory isArray: argumentArray) and: [
+		 objectMemory isIntegerObject: primIdx ]) ifFalse: [
+		^ self primitiveFailFor: PrimErrBadArgument negated ].
 	arraySize := objectMemory numSlotsOf: argumentArray.
-	(self roomToPushNArgs: arraySize) ifFalse:
-		[^self primitiveFailFor: PrimErrLimitExceeded negated].
+	(self roomToPushNArgs: arraySize) ifFalse: [
+		^ self primitiveFailFor: PrimErrLimitExceeded negated ].
 
 	primIdx := objectMemory integerValueOf: primIdx.
-	primitiveFunctionPointer := self functionPointerFor: primIdx inClass: nil.
-	primitiveFunctionPointer = 0 ifTrue:
-		[primitiveFunctionPointer := #primitiveDoPrimitiveWithArgs.
-		 ^self primitiveFailFor: PrimErrBadIndex negated].
+	primitiveFunctionPointer := self functionPointerFor: primIdx.
+	primitiveFunctionPointer = 0 ifTrue: [
+		primitiveFunctionPointer := #primitiveDoPrimitiveWithArgs.
+		^ self primitiveFailFor: PrimErrBadIndex negated ].
 
 	"Pop primIndex and argArray, then push args in place..."
 	(savedNumArgs := argumentCount) = 3
-		ifTrue: "...and receiver if the three arg form"
-			[tempOop2 := self stackValue: 4. "actual receiver"
-			 rcvr := self stackValue: 3. "receiver for primitive"
-			 (objectMemory isOopForwarded: rcvr) ifTrue:
-				[rcvr := objectMemory followForwarded: rcvr].
-			 self pop: 4; push: rcvr] "use first arg as receiver"
-		ifFalse:
-			[self pop: 2].
+		ifTrue: [ "...and receiver if the three arg form"
+			savedTempOop2 := tempOop2.
+			tempOop2 := self stackValue: 3. "actual receiver"
+			rcvr := self stackValue: 2. "receiver for primitive"
+			(objectMemory isOopForwarded: rcvr) ifTrue: [
+				rcvr := objectMemory followForwarded: rcvr ].
+			self
+				pop: 4;
+				"use first arg as receiver"
+				push: rcvr ]
+		ifFalse: [ self pop: 2 ].
 	argumentCount := arraySize.
 	index := 1.
-	[index <= arraySize] whileTrue:
-		[self push: (objectMemory fetchPointer: index - 1 ofObject: argumentArray).
-		 index := index + 1].
+	[ index <= arraySize ] whileTrue: [
+		self push:
+			(objectMemory fetchPointer: index - 1 ofObject: argumentArray).
+		index := index + 1 ].
 
-	self isPrimitiveFunctionPointerAnIndex ifTrue:
-		[self executeQuickPrimitive.
-		 tempOop2 := 0.
-		^nil].
+	self isPrimitiveFunctionPointerAnIndex ifTrue: [
+		self executeQuickPrimitive.
+		tempOop2 := savedTempOop2.
+		^ nil ].
 	"We use tempOop instead of pushRemappableOop:/popRemappableOop here because in
 	 the Cogit primitiveEnterCriticalSection, primitiveSignal, primitiveResume et al longjmp back
 	 to either the interpreter or machine code, depending on the process activated.  So if we're
@@ -994,6 +1005,7 @@ StackInterpreterPrimitives >> primitiveDoPrimitiveWithArgs [
 	 popRemappableOop: wouldn't occur, potentially overflowing the remap buffer.
 	 Note that while recursion could occur (nil tryPrimitive: 118 withArgs: #(118 #(110 #())))
 	 it counts as shooting oneself in the foot."
+	savedTempOop := tempOop.
 	tempOop := argumentArray. "prim might alloc/gc"
 
 	"Run the primitive (sets primFailCode)"
@@ -1001,17 +1013,18 @@ StackInterpreterPrimitives >> primitiveDoPrimitiveWithArgs [
 	metaAccessorDepth := primitiveAccessorDepthTable at: primIdx.
 	self slowPrimitiveResponse.
 
-	self successful ifFalse: "If primitive failed, then restore state for failure code"
-		[self pop: arraySize.
-		 savedNumArgs = 3 ifTrue:
-			[rcvr := self stackTop.
-			 self stackTopPut: tempOop2.
-			 self push: rcvr].
-		 self pushInteger: primIdx.
-		 self push: tempOop.
-		 primitiveFunctionPointer := #primitiveDoPrimitiveWithArgs.
-		 argumentCount := savedNumArgs].
-	tempOop := tempOop2 := 0
+	self successful ifFalse: [ "If primitive failed, then restore state for failure code"
+		self pop: arraySize.
+		savedNumArgs = 3 ifTrue: [
+			rcvr := self stackTop.
+			self stackTopPut: tempOop2.
+			tempOop2 := savedTempOop2.
+			self push: rcvr ].
+		self pushInteger: primIdx.
+		self push: tempOop.
+		primitiveFunctionPointer := #primitiveDoPrimitiveWithArgs.
+		argumentCount := savedNumArgs.
+		tempOop := savedTempOop ]
 ]
 
 { #category : 'control primitives' }
@@ -1027,7 +1040,7 @@ StackInterpreterPrimitives >> primitiveExecuteMethod [
 		[^self primitiveFailFor: PrimErrBadNumArgs].
 	newMethod := self popStack.
 	primitiveIndex := self primitiveIndexOf: newMethod.
-	primitiveFunctionPointer := self functionPointerFor: primitiveIndex inClass: nil.
+	primitiveFunctionPointer := self functionPointerFor: primitiveIndex.
 	argumentCount := argumentCount - 1.
 	self executeNewMethod.
 	"Recursive xeq affects primErrorCode"
@@ -1064,7 +1077,7 @@ StackInterpreterPrimitives >> primitiveExecuteMethodArgsArray [
 		self push: (objectMemory fetchPointer: i ofObject: argumentArray)].
 	newMethod := methodArgument.
 	primitiveIndex := self primitiveIndexOf: newMethod.
-	primitiveFunctionPointer := self functionPointerFor: primitiveIndex inClass: nil.
+	primitiveFunctionPointer := self functionPointerFor: primitiveIndex.
 	argumentCount := argCnt.
 	self executeNewMethod.
 	"Recursive xeq affects primErrorCode"
@@ -1462,7 +1475,7 @@ StackInterpreterPrimitives >> primitiveGetVMParameter: index [
 			[9]  ->	[^objectMemory integerObjectOf: objectMemory statScavenges].
 			[10] ->	[^objectMemory integerObjectOf: objectMemory statScavengeGCUsecs + 500 // 1000].
 			[11] ->	[^objectMemory integerObjectOf: objectMemory statTenures].
-			[12] ->	[^ConstZero]. "Was JITTER VM info"
+			[12] ->	[^objectMemory integerObjectOf: objectMemory maxSlotsForNewSpaceAlloc ]. 
 			[13] ->	[^ConstZero]. "Was JITTER VM info"
 			[14] ->	[^ConstZero]. "Was JITTER VM info"
 			[15] ->	[^ConstZero]. "Was JITTER VM info"
@@ -2583,6 +2596,9 @@ StackInterpreterPrimitives >> primitiveSetVMParameter: index arg: argOop [
 					[result := objectMemory integerObjectOf: objectMemory statTenures.
 					 objectMemory statTenures: arg.
 					 self initPrimCall]].
+		[12] ->	[result := objectMemory integerObjectOf: objectMemory maxSlotsForNewSpaceAlloc.
+					 objectMemory setMaxSlotsForNewSpaceAlloc: arg.
+					 self initPrimCall ]. 			
 		[17] ->	[(SistaVM and: [self isCog]) ifTrue:
 					[result := objectMemory floatObjectOf: self getCogCodeZoneThreshold.
 					 primFailCode := self setCogCodeZoneThreshold: (self noInlineLoadFloatOrIntFrom: argOop)]].

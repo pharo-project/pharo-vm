@@ -1,6 +1,6 @@
 Class {
 	#name : 'SlangMethodPrototypeTranslationTest',
-	#superclass : 'TestCase',
+	#superclass : 'SLAbstractTranslationTestCase',
 	#instVars : [
 		'generator'
 	],
@@ -26,11 +26,4 @@ SlangMethodPrototypeTranslationTest >> testMethodPrototype [
 	tMethod := generator methodNamed: #first:second:.
 	translation := self translate: tMethod.
 	self assert: translation trimBoth equals: 'static sqInt firstsecond(sqInt param1, sqInt param2);'
-]
-
-{ #category : 'helpers' }
-SlangMethodPrototypeTranslationTest >> translate: tast [
-
-	^ String streamContents: [ :str | 
-		self astTranslate: tast inStream: str ]
 ]

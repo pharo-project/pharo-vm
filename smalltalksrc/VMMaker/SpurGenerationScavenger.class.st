@@ -250,17 +250,22 @@ SpurGenerationScavenger >> computeRefCountToShrinkRememberedSet [
 	 remembered set was full, the remembered set would soon fill up as new numbers were computed.
 	 Only by selectively pruning the remembered set of nodes that shared data, was a balance achieved
 	 whereby the remembered set population was kept small, and tenuring rates were low."
+
 	<inline: #never>
-	| population |
 	<var: 'population' declareC: 'long population[MaxRTRefCount + 1]'>
-	self cCode: [self me: population ms: 0 et: (self sizeof: #long) * (MaxRTRefCount + 1)]
-		inSmalltalk: [population := CArrayAccessor on: (Array new: MaxRTRefCount + 1 withAll: 0)].
+	| population |
+	self
+		cCode: [
+			self cCall: 'memset' withArguments: {
+					population.
+					0.
+					((self sizeof: #long) * (MaxRTRefCount + 1)) } ]
+		inSmalltalk: [
+			population := CArrayAccessor on:
+				              (Array new: MaxRTRefCount + 1 withAll: 0) ].
 	self assert: self allNewSpaceObjectsHaveZeroRTRefCount.
 	self referenceCountRememberedReferents: population.
 	self setRefCountToShrinkRT: population
-
-	"For debugging:
-	(manager allNewSpaceObjectsDo: [:o| manager rtRefCountOf: o put: 0])"
 ]
 
 { #category : 'tenuring' }

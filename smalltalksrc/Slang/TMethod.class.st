@@ -92,7 +92,8 @@ TMethod >> addLabelsTo: aTMethod [
 TMethod >> addLocal: aString [
 
 	cachedLocals := nil.
-	self locals add: aString
+	self locals add: aString.
+	^ aString
 ]
 
 { #category : 'adding' }
@@ -118,7 +119,7 @@ TMethod >> addVarsDeclarationsAndLabelsOf: methodToBeInlined except: doNotRename
 
     | newLocals |
 
-   newLocals := methodToBeInlined args , methodToBeInlined allLocals asOrderedCollection .
+   newLocals := methodToBeInlined allLocals copyWithAll: methodToBeInlined args.
 
 	self addLocals: (newLocals copyWithoutAll: doNotRename).
 
@@ -143,9 +144,10 @@ TMethod >> allLocals [
 
 	| allLocals |
 	cachedLocals ifNotNil: [ ^ cachedLocals ].
-	
+
 	allLocals := Set new.
-	allLocals addAll: (declarations keys asSet reject: [:k| (declarations at: k) == #implicit]).
+	allLocals addAll: (declarations keys asSet reject: [ :k |
+			 (declarations at: k) == #implicit ]).
 	allLocals addAll: self locals.
 	self nodesDo: [ :node |
 		node isStatementList ifTrue: [ allLocals addAll: node locals ] ].
@@ -240,7 +242,7 @@ TMethod >> argConversionExprFor: varName stackIndex: stackIndex [
 	| exprList decl type stmtList |
 	exprList := OrderedCollection new.
 	((decl := declarations at: varName ifAbsent: []) notNil
-	 and: ['int' ~= (type := (decl copyReplaceAll: varName with: '') withBlanksTrimmed)])
+	 and: ['int' ~= (type := (decl copyReplaceAll: varName with: '') trimBoth)])
 		ifTrue:
 			[(decl includes: $*) ifTrue: "array"
 				[(decl includesSubstring: 'char')
@@ -268,6 +270,12 @@ TMethod >> args [
 	"The arguments of this method."
 
 	^args
+]
+
+{ #category : 'accessing' }
+TMethod >> args: arguments [
+
+	args := arguments
 ]
 
 { #category : 'CAST translation' }
@@ -358,7 +366,7 @@ TMethod >> asCASTFunctionPrototypeIn: aCodeGen isPrototype: isPrototype [
 { #category : 'CAST translation' }
 TMethod >> asCASTIn: aCodeGen [
 
-	| compoundStatement functionDefinition body|
+	| compoundStatement functionDefinition body |
 	aCodeGen currentMethod: self.
 	compoundStatement := CCompoundStatementNode new
 		                     needsBrackets: false;
@@ -427,6 +435,13 @@ TMethod >> asExpressionIn: aMLStatementListBuider [
 { #category : 'transformations' }
 TMethod >> asInlineNode [
 	^TInlineNode new method: self
+]
+
+{ #category : 'transformations' }
+TMethod >> asInlineNodeInto: atMethod in: aCodeGen [
+
+	self renameVarsForInliningInto: atMethod except: Set new in: aCodeGen.
+	^ TInlineNode new method: self
 ]
 
 { #category : 'transformations' }
@@ -526,37 +541,6 @@ TMethod >> buildSwitchStmt: aSendNode parent: parentNode [
 	^ switch
 ]
 
-{ #category : 'inlining support' }
-TMethod >> checkForCompletenessIn: aCodeGen [
-	"Set the complete flag if the parse tree contains no further candidates for inlining."
-	| foundIncompleteSend incompleteSends |
-	aCodeGen maybeBreakForTestOfInliningOf: selector.
-
-	foundIncompleteSend := false.
-	incompleteSends := IdentitySet new.
-
-	parseTree
-		nodesDo:
-			[:node|
-			 node isSend ifTrue:
-				[(self methodIsEffectivelyComplete: node selector in: aCodeGen)
-					ifTrue:
-						[(self inlineableFunctionCall: node in: aCodeGen) ifTrue:
-							[complete := false.  "more inlining to do"
-							^self]]
-					ifFalse:
-						[foundIncompleteSend := true.
-						 incompleteSends add: node]]]
-		unless:
-			[:node|
-			node isSend
-			and: [node selector == #cCode:inSmalltalk:
-				or: [aCodeGen isAssertSelector: node selector]]].
-
-	foundIncompleteSend ifFalse:
-		[complete := true]
-]
-
 { #category : 'testing' }
 TMethod >> checkForRequiredInlinability [
 	"This is used in methods answering inlinability.
@@ -614,6 +598,13 @@ TMethod >> compiledMethod [
 		ifAbsent: [definingClass compiledMethodAt: properties selector]
 ]
 
+{ #category : 'accessing' }
+TMethod >> complete: aBoolean [
+
+	complete := aBoolean.
+	^ aBoolean
+]
+
 { #category : 'inlining support' }
 TMethod >> computePossibleSideEffectsInto: writtenToVars visited: visitedSelectors in: aCodeGen [
 	"Add all variables written to by this method and its callees to writtenToVars.
@@ -640,7 +631,7 @@ TMethod >> computePossibleSideEffectsInto: writtenToVars visited: visitedSelecto
 						computePossibleSideEffectsInto: writtenToVars
 						visited: visitedSelectors
 						in: aCodeGen]]].
-	writtenToGlobalVarsCache := writtenToVars copy
+	self writtenToGlobalVarsCache: writtenToVars copy
 ]
 
 { #category : 'accessing' }
@@ -824,39 +815,6 @@ TMethod >> emitCFunctionPrototype: aStream generator: aCodeGen isPrototype: isPr
 ]
 
 { #category : 'C code generation' }
-TMethod >> emitCLocalsOn: aStream generator: aCodeGen [
-	"Emit a C function header for this method onto the given stream."
-
-	| volatileVariables maybeExternFunctions |
-	volatileVariables := properties includesKey: #volatile.
-	self refersToGlobalStruct ifTrue:
-		[aStream
-			next: 3 put: Character space; "there's already an opening ${ on this line; see sender"
-			nextPutAll: (volatileVariables
-						ifTrue: ['DECL_MAYBE_VOLATILE_SQ_GLOBAL_STRUCT']
-						ifFalse: ['DECL_MAYBE_SQ_GLOBAL_STRUCT'])].
-	aStream cr.
-	maybeExternFunctions := (declarations select: [:decl| decl beginsWith: 'extern']) keys.
-	(locals isEmpty and: [maybeExternFunctions isEmpty]) ifFalse:
-		[(aCodeGen sortStrings: locals, maybeExternFunctions) do:
-			[ :var | | decl |
-			decl := self declarationAt: var
-							ifAbsent: [aCodeGen defaultType, ' ', var].
-			(volatileVariables
-			 or: [(decl beginsWith: 'static')
-			 or: [(decl beginsWith: 'extern')
-			 or: [usedVariablesCache includes: var]]]) ifTrue:
-				[aStream next: 4 put: Character space.
-				 volatileVariables ifTrue:
-					[aStream nextPutAll: #volatile; space].
-				 aStream
-					nextPutAll: decl;
-					nextPut: $;;
-					cr]].
-		 aStream cr]
-]
-
-{ #category : 'C code generation' }
 TMethod >> emitInlineOn: aStream level: level generator: aCodeGen [
 	"Emit C code for this method onto the given stream. All calls to inlined methods should already have been expanded."
 	self removeUnusedTempsAndNilIfRequiredIn: aCodeGen.
@@ -909,36 +867,8 @@ TMethod >> endsWithReturn [
 	^parseTree endsWithReturn
 ]
 
-{ #category : 'inlining' }
-TMethod >> ensureConditionalAssignmentsAreTransformedIn: aCodeGen [
-	"Make passes transforming
-		foo := expr ifTrue: [a] ifFalse: [b]
-	 into
-		expr ifTrue: [foo := a] ifFalse: [foo := b]
-	 until no such instances exist in the tree.  This is needed for correct inlining
-	 given the limitations of inlineCodeOrNilForStatement:returningNodes:in:"
-	| transformedAssignments |
-	[transformedAssignments := Dictionary new.
-	 parseTree
-		nodesDo:
-			[:node|
-			(self transformConditionalAssignment: node in: aCodeGen) ifNotNil:
-				[:replacement|
-				 transformedAssignments at: node put: replacement]]
-		unless: "Don't inline the arguments to asserts to keep the asserts readable"
-			[:node|
-			node isSend
-			and: [node selector == #cCode:inSmalltalk:
-				or: [aCodeGen isAssertSelector: node selector]]].
-	 transformedAssignments notEmpty
-	 and: [self replaceNodesIn: transformedAssignments.
-		  true]] whileTrue
-		
-]
-
 { #category : 'transformations' }
 TMethod >> ensureToByDoLoopLimitIsSafeAndEfficient: node in: aCodeGen [
-
 	"For both safety and efficiency, make sure that to:[by:]do: loops
 	 with complex limits have a variable to hold the limit expression.
 	 In C the limit expression is evaluated each time round the loop
@@ -947,35 +877,17 @@ TMethod >> ensureToByDoLoopLimitIsSafeAndEfficient: node in: aCodeGen [
 
 	| limitExpr hasSideEffects |
 	limitExpr := node arguments first.
-	hasSideEffects := limitExpr anySatisfy: [ :subNode | 
-		                  subNode isSend and: [ 
+	hasSideEffects := limitExpr anySatisfy: [ :subNode |
+		                  subNode isSend and: [
 			                  (aCodeGen isBuiltinSelector: subNode selector)
 				                  not and: [ (aCodeGen isStructSend: subNode) not ] ] ].
-	node arguments size = 4
-		ifTrue: [ 
+	node arguments size = 5
+		ifTrue: [
 			hasSideEffects
-				ifTrue: [ 
+				ifTrue: [
 					cachedLocals := nil.
 					self addLocal: node arguments last name ]
 				ifFalse: [ node arguments: node arguments allButLast ] ]
-		ifFalse: [ "If the expression is complex but as yet there is no limit variable, add it"
-			hasSideEffects ifTrue: [ 
-				| var |
-				var := self
-					       unusedNamePrefixedBy: 'toDoLimit'
-					       avoiding: self locals. "N.B. adds it to locals!!"
-				node arguments: node arguments , { (TVariableNode new
-						 setName: var;
-						 yourself) }.
-				declarations
-					at: node arguments third arguments first
-					ifPresent: [ :decl | 
-						self
-							declarationAt: var
-							put:
-								(self
-									 typeFor: node arguments third arguments first
-									 in: aCodeGen) , ' ' , var ] ] ]
 ]
 
 { #category : 'inlining' }
@@ -996,8 +908,8 @@ TMethod >> exitVar: exitVar label: exitLabel [
 	eliminateReturnSelfs := ((definingClass inheritsFrom: SlangClass)
 		                         and: [ definingClass isStructClass ]) not
 		                        and: [
-		                        returnType = #void or: [
-			                        returnType = #sqInt ] ].
+		                        #( #void #sqInt ) includes: returnType ].
+
 	parseTree nodesDo: [ :node |
 		| replacement |
 		node isReturn ifTrue: [
@@ -1315,6 +1227,12 @@ TMethod >> hasProperties [
 	^properties notNil and: [properties notEmpty]
 ]
 
+{ #category : 'transformations' }
+TMethod >> hasProperty: aName [
+
+	^ self hasProperties and: [ properties includesKey: aName ]
+]
+
 { #category : 'testing' }
 TMethod >> hasReturn [
 	"Answer true if this method contains a return statement."
@@ -1354,31 +1272,6 @@ TMethod >> inline: aBoolean [
 ]
 
 { #category : 'inlining' }
-TMethod >> inlineBuiltin: aSendNode in: aCodeGen [
-
-	| sel meth inlinedReplacement |
-	(aSendNode selector beginsWith: 'perform:') ifTrue: [ 
-		^ self
-			  inlineFunctionCall: aSendNode asTransformedConstantPerform
-			  in: aCodeGen ].
-	sel := aSendNode receiver selector.
-	meth := aCodeGen methodNamed: sel.
-	(meth notNil and: [ meth inline == true ]) ifFalse: [ ^ nil ].
-	(meth isFunctionalIn: aCodeGen) ifTrue: [ 
-		inlinedReplacement := (aCodeGen methodNamed:
-			                       aSendNode receiver selector) copy
-			                      inlineFunctionCall: aSendNode receiver
-			                      in: aCodeGen.
-		^ TSendNode new
-			  setSelector: aSendNode selector
-			  receiver: inlinedReplacement
-			  arguments: aSendNode arguments copy ].
-	(self isInlineableConditional: aSendNode in: aCodeGen) ifTrue: [ 
-		^ self inlineConditional: aSendNode in: aCodeGen ].
-	^ nil
-]
-
-{ #category : 'inlining' }
 TMethod >> inlineCaseStatementBranchesIn: aCodeGen [
 
 	parseTree nodesDo: [ :n | 
@@ -1389,158 +1282,11 @@ TMethod >> inlineCaseStatementBranchesIn: aCodeGen [
 					(meth := aCodeGen methodNamed: stmt selector) ifNotNil: [ 
 						(meth hasUnrenamableCCode not and: [ meth args isEmpty ]) 
 							ifTrue: [ 
-							self inlineMethod: meth copy inCaseStatement: stmtNode ] ] ] ] ] ]
+							self inlineMethod: meth copy inCaseStatement: stmtNode in: aCodeGen ] ] ] ] ] ]
 ]
 
 { #category : 'inlining' }
-TMethod >> inlineCodeOrNilForStatement: aNode returningNodes: returningNodes in: aCodeGen [
-	"If the given statement node can be inlined, answer the statements that replace it. Otherwise, answer nil."
-
-	| stmts |
-	(aNode isReturn and: [
-		 self inlineableSend: aNode expression in: aCodeGen ]) ifTrue: [
-		| last indexOfLast |
-		stmts := self
-			         inlineSend: aNode expression
-			         directReturn: true
-			         exitVar: nil
-			         in: aCodeGen.
-
-    "the last statements may be comments"
-		last := stmts last.
-		indexOfLast := stmts size.
-		[ last isComment ] whileTrue: [
-			indexOfLast := indexOfLast - 1.
-			last := stmts at: indexOfLast ].
-		last endsWithReturn ifFalse: [
-			stmts at: indexOfLast put: last asReturnNode ].
-		^ stmts ].
-
-  (aNode isAssignment and: [
-		 self inlineableSend: aNode expression in: aCodeGen ]) ifTrue: [
-		^ self
-			  inlineSend: aNode expression
-			  directReturn: false
-			  exitVar: aNode variable name
-			  in: aCodeGen ].
-	(aNode isSend and: [ self inlineableSend: aNode in: aCodeGen ])
-		ifTrue: [
-			^ self
-				  inlineSend: aNode
-				  directReturn: (returningNodes includes: aNode)
-				  exitVar: nil
-				  in: aCodeGen ].
-	^ nil
-]
-
-{ #category : 'inlining' }
-TMethod >> inlineConditional: aSendNode in: aCodeGen [
-
-	"If possible answer the inlining of a conditional, otherwise answer nil.
-	 Currently the only pattern we support is
-		aSend ifTrue:/ifFalse: [...]
-	 where aSend is marked inline and always answers booleans."
-
-	self assert: (self isInlineableConditional: aSendNode in: aCodeGen).
-	self assert: aSendNode arguments first isStatementList.
-	^ (aSendNode arguments first statements size = 1 and: [ 
-		   aSendNode arguments first statements first isReturn ])
-		  ifTrue: [ self inlineReturningConditional: aSendNode in: aCodeGen ]
-		  ifFalse: [ self inlineGuardingConditional: aSendNode in: aCodeGen ]
-]
-
-{ #category : 'inlining' }
-TMethod >> inlineFunctionCall: aSendNode in: aCodeGen [
-	"Answer the body of the called function, substituting the actual
-	 parameters for the formal argument variables in the method body.
-	 Assume caller has established that:
-		1. the method arguments are all substitutable nodes, and
-		2. the method to be inlined contains no additional embedded returns."
-
-	| sel meth doNotRename argsForInlining substitutionDict |
-	sel := aSendNode selector.
-	meth := (aCodeGen methodNamed: sel) copy.
-	meth ifNil: [ ^ self inlineBuiltin: aSendNode in: aCodeGen ].
-	doNotRename := Set withAll: args.
-	argsForInlining := aSendNode argumentsForInliningCodeGenerator:
-		                   aCodeGen.
-	meth args with: argsForInlining do: [ :argName :exprNode |
-		exprNode isLeaf ifTrue: [ doNotRename add: argName ] ].
-	(meth statements size = 2 and: [
-		 meth statements first isSend and: [
-			 meth statements first selector == #flag: ] ]) ifTrue: [
-		meth statements removeFirst ].
-	meth renameVarsForInliningInto: self except: doNotRename in: aCodeGen.
-	meth renameLabelsForInliningInto: self.
-	self addVarsDeclarationsAndLabelsOf: meth except: doNotRename.
-	substitutionDict := Dictionary new: meth args size * 2.
-	meth args with: argsForInlining do: [ :argName :exprNode |
-		substitutionDict at: argName put: exprNode.
-		(doNotRename includes: argName) ifFalse: [
-			self removeLocal: argName ] ].
-	meth parseTree bindVariablesIn: substitutionDict.
-	meth parseTree parent: aSendNode parent.
-	^ meth parseTree endsWithReturn
-		  ifTrue: [ meth parseTree copyWithoutReturn ]
-		  ifFalse: [ meth parseTree ]
-]
-
-{ #category : 'inlining' }
-TMethod >> inlineGuardingConditional: aSendNode in: aCodeGen [
-
-	"Inline
-		aSend ifTrue:/ifFalse: [statements]
-	 where aSend is inlineable and always answers booleans.  We convert
-	 the boolean returns in aSend to jumps."
-
-	| evaluateIfTrue replacementTree map lastNode evaluateLabel skipLabel method |
-	self assert: self == aCodeGen currentMethod.
-	self assert: (self isInlineableConditional: aSendNode in: aCodeGen).
-	aCodeGen maybeBreakForInlineOf: aSendNode in: self.
-	evaluateIfTrue := aSendNode selector = #ifTrue:.
-	method := (aCodeGen methodNamed: aSendNode receiver selector) copy.
-	replacementTree := method
-		                   inlineFunctionCall: aSendNode receiver
-		                   in: aCodeGen.
-	map := Dictionary new.
-	(replacementTree statements last isReturn and: [ 
-		 replacementTree statements last expression value = evaluateIfTrue ]) 
-		ifTrue: [ lastNode := replacementTree statements last ].
-	skipLabel := TLabeledCommentNode new setLabel:
-		             (self unusedLabelForInlining: method).
-	replacementTree nodesDo: [ :node | 
-		| expr |
-		node isReturn ifTrue: [ 
-			expr := node expression.
-			self assert:
-				(expr isConstant and: [ #( true false ) includes: expr value ]).
-			map at: node put: (expr value ~~ evaluateIfTrue
-					 ifTrue: [ TGoToNode label: skipLabel label ]
-					 ifFalse: [ 
-						 node == lastNode
-							 ifTrue: [ 
-								 TLabeledCommentNode new setComment:
-									 'end ' , aSendNode receiver selector , '; fall through' ]
-							 ifFalse: [ 
-								 evaluateLabel ifNil: [ 
-									 evaluateLabel := TLabeledCommentNode new setLabel:
-										                  (self unusedLabelForInlining: method) ].
-								 TGoToNode label: evaluateLabel label ] ]) ] ].
-	replacementTree replaceNodesIn: map.
-	replacementTree comment:
-		{ ('inline ' , aSendNode receiver selector) }.
-	self addVarsDeclarationsAndLabelsOf: method except: method args.
-	^ TStatementListNode new setArguments: #(  ) statements: (evaluateLabel
-			   ifNil: [ 
-				   replacementTree statements
-				   , aSendNode arguments first statements , { skipLabel } ]
-			   ifNotNil: [ 
-				   replacementTree statements , { evaluateLabel }
-				   , aSendNode arguments first statements , { skipLabel } ])
-]
-
-{ #category : 'inlining' }
-TMethod >> inlineMethod: meth inCaseStatement: stmtNode [
+TMethod >> inlineMethod: meth inCaseStatement: stmtNode in: aCodeGen [
 
 	| exitLabel newStatements |
 	"Perform the main inlining"
@@ -1558,210 +1304,10 @@ TMethod >> inlineMethod: meth inCaseStatement: stmtNode [
 		newStatements addFirst:
 			(TLabeledCommentNode new setLabel: exitLabel comment: 'end case') ].
 	newStatements
-		addFirst: meth asInlineNode;
+		addFirst: (meth asInlineNodeInto: self in: aCodeGen);
 		addFirst: (TLabeledCommentNode new setComment: meth selector).
 
 	stmtNode statements: newStatements
-]
-
-{ #category : 'inlining' }
-TMethod >> inlineReturningConditional: aSendNode in: aCodeGen [
-	"Inline
-		aSend ifTrue:/ifFalse: [^expr]
-	 where aSend is inlineable and always answers booleans.  We inline ^expr
-	 into aSend."
-
-	| returnIfTrue returnNode replacementTree map lastNode label method |
-	self assert: self == aCodeGen currentMethod.
-	self assert: (self isInlineableConditional: aSendNode in: aCodeGen).
-	aCodeGen maybeBreakForInlineOf: aSendNode receiver in: self.
-	returnIfTrue := aSendNode selector = #ifTrue:.
-	returnNode := aSendNode arguments first.
-	method := (aCodeGen methodNamed: aSendNode receiver selector) copy.
-	"self haltIf: [ selector = #markAndTrace: ]."
-	replacementTree := method
-		                   inlineFunctionCall: aSendNode receiver
-		                   in: aCodeGen.
-	map := Dictionary new.
-	"The last node is either a return or a boolean constant."
-	lastNode := replacementTree statements last.
-	replacementTree statements last isReturn
-		ifTrue: [
-			replacementTree statements last expression value == returnIfTrue
-				ifTrue: [
-					lastNode := nil "i.e. take the fall-through path and /don't/ return" ] ]
-		ifFalse: [
-			self assert:
-				(lastNode isConstant and: [
-					 #( true false ) includes: lastNode value ]).
-			lastNode value == returnIfTrue ifTrue: [ "i.e. /do/ return"
-				map at: lastNode put: returnNode ] ].
-	replacementTree nodesDo: [ :node |
-		| expr |
-		node isReturn ifTrue: [
-			expr := node expression.
-			self assert:
-				(expr isConstant and: [ #( true false ) includes: expr value ]).
-			map at: node put: (expr value == returnIfTrue
-					 ifTrue: [ returnNode ]
-					 ifFalse: [
-						 node == lastNode
-							 ifTrue: [
-								 TLabeledCommentNode new setComment:
-									 'end ' , aSendNode receiver selector , '; fall through' ]
-							 ifFalse: [
-								 label ifNil: [
-									 label := TLabeledCommentNode new setLabel:
-										          (self unusedLabelForInlining: method) ].
-								 TGoToNode label: label label ] ]) ] ].
-	replacementTree replaceNodesIn: map.
-	self addVarsDeclarationsAndLabelsOf: method except: method args.
-	replacementTree comment:
-		{ ('inline ' , aSendNode receiver selector) }.
-	^ label ifNil: [ replacementTree ] ifNotNil: [
-		  TStatementListNode new setArguments: #(  ) statements: {
-				  replacementTree.
-				  label } ]
-]
-
-{ #category : 'inlining' }
-TMethod >> inlineSend: aSendNode directReturn: directReturn exitVar: exitVar in: aCodeGen [
-	"Answer a collection of statements to replace the given send.  directReturn indicates
-	 that the send is the expression in a return statement, so returns can be left in the
-	 body of the inlined method. If exitVar is nil, the value returned by the send is not
-	 used; thus, returns need not assign to the output variable.
-
-	 Types are propagated to as-yet-untyped variables when inlining a send that is assigned,
-	 otherwise the assignee variable type must match the return type of the inlinee.  Return
-	 types are not propagated."
-
-	| sel meth methArgs exitLabel inlineStmts label exitType elidedArgs |
-	sel := aSendNode selector.
-	meth := aCodeGen methodNamed: sel.
-	methArgs := meth args.
-	"convenient for debugging..."
-	aCodeGen maybeBreakForInlineOf: aSendNode in: self.
-	elidedArgs := #(  ).
-	(methArgs notEmpty and: [ methArgs first beginsWith: 'self_in_' ])
-		ifTrue: [ "If the first arg is not used we can and should elide it."
-			| varNode |
-			varNode := TVariableNode new setName: methArgs first.
-			(meth parseTree noneSatisfy: [ :node | varNode isSameAs: node ])
-				ifTrue: [ elidedArgs := { methArgs first } ].
-			methArgs := methArgs allButFirst ].
-	methArgs size = aSendNode arguments size ifFalse: [ ^ nil ].
-	meth := meth copy.
-
-	(meth statements size > 1 and: [
-		 meth statements first isSend and: [
-			 meth statements first selector == #flag: ] ]) ifTrue: [
-		meth statements removeFirst ].
-
-	"Propagate the return type of an inlined method"
-	(directReturn or: [ exitVar notNil ]) ifTrue: [
-		exitType := directReturn
-			            ifTrue: [ returnType ]
-			            ifFalse: [
-			            (self typeFor: exitVar in: aCodeGen) ifNil: [ #sqInt ] ].
-		(exitType = #void or: [ exitType = meth returnType ]) ifFalse: [
-			meth propagateReturnIn: aCodeGen ] ].
-
-	"Propagate any unusual argument types to untyped argument variables"
-	methArgs with: aSendNode arguments do: [ :formal :actual |
-		(meth declarationAt: formal ifAbsent: nil) ifNil: [
-			| type |
-			(actual isVariable and: [
-				 (type := self typeFor: actual name in: aCodeGen) notNil ])
-				ifTrue: [
-					type ~= #sqInt ifTrue: [
-						meth declarationAt: formal put: (type last = $*
-								 ifTrue: [ type , formal ]
-								 ifFalse: [ type , ' ' , formal ]) ] ] ] ].
-
-	meth renameVarsForInliningInto: self except: elidedArgs in: aCodeGen.
-	meth renameLabelsForInliningInto: self.
-	self addVarsDeclarationsAndLabelsOf: meth except: elidedArgs.
-	meth hasReturn ifTrue: [
-		directReturn ifFalse: [
-			exitLabel := self unusedLabelForInliningInto: self.
-			(meth exitVar: exitVar label: exitLabel)
-				ifTrue: [ labels add: exitLabel ]
-				ifFalse: [ "is label used?" exitLabel := nil ] ] ].
-	(inlineStmts := OrderedCollection new:
-			                meth statements size + meth args size + 2)
-		add: (label := TLabeledCommentNode new setComment: 'begin ' , sel);
-		addAll: (self
-				 argAssignmentsFor: meth
-				 send: aSendNode
-				 except: elidedArgs
-				 in: aCodeGen);
-		addAll: meth statements. "method body"
-	directReturn ifTrue: [
-		meth parseTree parent: aSendNode parent.
-		meth endsWithReturn
-			ifTrue: [
-				exitVar ifNotNil: [ "don't remove the returns if being invoked in the context of a return"
-					inlineStmts
-						at: inlineStmts size
-						put: inlineStmts last copyWithoutReturn ] ]
-			ifFalse: [
-				inlineStmts add:
-					(TReturnNode new setExpression:
-						 (TVariableNode new setName: 'nil')) ] ].
-	exitLabel
-    ifNotNil: [
-			inlineStmts add: (TLabeledCommentNode new
-        setLabel: exitLabel
-        comment: 'end ' , sel) ]
-		ifNil: [
-		  inlineStmts add: (TLabeledCommentNode new
-        setComment: 'end ' , sel) ].
-	
-  inlineStmts size = 2 ifTrue: [ "Nuke empty methods; e.g. override of flushAtCache"
-    self assert: inlineStmts first isComment.
-		self assert: inlineStmts second isComment.
-		inlineStmts removeFirst.
-		inlineStmts removeLast ].
-
-  ^ inlineStmts
-]
-
-{ #category : 'inlining' }
-TMethod >> inlineableFunctionCall: aNode in: aCodeGen [
-
-	"Answer if the given send node is a call to a 'functional' method--a method whose body is a single return statement of some expression and whose actual parameters can all be directly substituted."
-
-	aCodeGen maybeBreakForTestToInline: aNode in: self.
-	aNode isSend ifFalse: [ ^ false ].
-	^ (aCodeGen methodNamed: aNode selector)
-		  ifNil: [ 
-			  aNode asTransformedConstantPerform
-				  ifNil: [ self isInlineableConditional: aNode in: aCodeGen ]
-				  ifNotNil: [ :n | self inlineableFunctionCall: n in: aCodeGen ] ]
-		  ifNotNil: [ :m | 
-			  (m ~~ self and: [ 
-				   ((m isFunctionalIn: aCodeGen) or: [ 
-					    m mustBeInlined and: [ m isComplete ] ]) and: [ 
-					   m mayBeInlined and: [ 
-						   (aCodeGen mayInline: m selector) and: [ 
-							   aNode arguments allSatisfy: [ :a | 
-								   self isSubstitutableNode: a intoMethod: m in: aCodeGen ] ] ] ] ]) 
-				  or: [ m checkForRequiredInlinability ] ]
-]
-
-{ #category : 'inlining' }
-TMethod >> inlineableSend: aNode in: aCodeGen [
-	"Answer if the given send node is a call to a method that can be inlined."
-
-	| m |
-	aCodeGen maybeBreakForTestToInline: aNode in: self.
-	aNode isSend ifFalse: [^false].
-	m := aCodeGen methodNamed: aNode selector.  "nil if builtin or external function"
-	^m ~= nil
-	 and: [m ~~ self
-	 and: [m mayBeInlined
-	 and: [(m isComplete and: [aCodeGen mayInline: m selector])
-		or: [m checkForRequiredInlinability]]]]
 ]
 
 { #category : 'accessing' }
@@ -1828,30 +1374,7 @@ TMethod >> isAssertion [
 TMethod >> isComplete [
 	"A method is 'complete' if it does not contain any more inline-able calls."
 
-	^complete
-]
-
-{ #category : 'inlining' }
-TMethod >> isConditionalToBeTransformedForAssignment: aSend in: aCodeGen [
-
-	"Answer if a send is of the form
-		e1
-			ifTrue: [e2 ifTrue: [self m1] ifFalse: [self m2]]
-			ifFalse: [self m3]
-	 such that at least one of the sends mN may be inlined.."
-
-	^ (#( #ifTrue:ifFalse: #ifFalse:ifTrue: ) includes: aSend selector) 
-		  and: [ 
-			  aSend arguments anySatisfy: [ :arg | 
-				  | stmt |
-				  self assert: arg isStatementList.
-				  arg statements size > 1 or: [ 
-					  (stmt := arg statements first) isSwitch or: [ 
-						  stmt isSend and: [ 
-							  (aCodeGen mayInline: stmt selector) or: [ 
-								  self
-									  isConditionalToBeTransformedForAssignment: stmt
-									  in: aCodeGen ] ] ] ] ] ]
+	^ complete
 ]
 
 { #category : 'inlining' }
@@ -1864,39 +1387,21 @@ TMethod >> isFunctionalIn: aCodeGen [
 	 Answer false for methods with return types other than the simple
 	 integer types to work around bugs in the inliner."
 
-	parseTree statements size = 1 ifFalse:
-		[(parseTree statements size = 2
-		  and: [parseTree statements first isSend
-		  and: [parseTree statements first selector == #flag:
-			or: [(aCodeGen isAssertSelector: parseTree statements first selector)
-				and: [parseTree statements first selector ~~ #asserta:]]]]) ifFalse:
-			[^false]].
-	parseTree lastNonCommentStatement isReturn ifFalse:
-		[^false].
-	parseTree lastNonCommentStatement expression nodesDo:
-		[ :n | n isReturn ifTrue: [^false]].
-	^#(int #'unsigned int' #long #'unsigned long' #'long long' #'unsigned long long'
-		sqInt usqInt #'sqIntptr_t' #'usqIntptr_t' sqLong usqLong
-		#'int *' #'unsigned int *' #'sqInt *' #'usqInt *' #'sqLong *' #'usqLong *' #'char *'
-		#'CogMethod *' #'AbstractInstruction *'
-		#'FILE *') includes: returnType
-]
-
-{ #category : 'inlining' }
-TMethod >> isInlineableConditional: aSendNode in: aCodeGen [
-	"Answer if the given send node is of the form aSend [ifTrue:|ifFalse:] [statements]
-	 where the method for aSend is marked as inline and all returns within it answer booleans."
-	|method |
-	^(#(ifTrue: ifFalse:) includes: aSendNode selector)
-	  and: [aSendNode receiver isSend
-	  and: [(method := aCodeGen anyMethodNamed: aSendNode receiver selector) notNil
-	  and: [method inline == true
-	  and: [method parseTree statements last isReturn
-	  and: [method parseTree allSatisfy:
-			[:node|
-			 node isReturn not
-			 or: [node expression isConstant
-				 and: [#(true false) includes: node expression value]]]]]]]]
+	parseTree statements size = 1 ifFalse: [
+		(parseTree statements size = 2 and: [
+			 parseTree statements first isSend and: [
+				 parseTree statements first selector == #flag: or: [
+					 (aCodeGen isAssertSelector: parseTree statements first selector)
+						 and: [ parseTree statements first selector ~~ #asserta: ] ] ] ])
+			ifFalse: [ ^ false ] ].
+	parseTree lastNonCommentStatement isReturn ifFalse: [ ^ false ].
+	parseTree lastNonCommentStatement expression nodesDo: [ :n |
+		n isReturn ifTrue: [ ^ false ] ].
+	^ #( int #'unsigned int' #long #'unsigned long' #'long long'
+	     #'unsigned long long' sqInt usqInt #sqIntptr_t #usqIntptr_t
+	     sqLong usqLong #'int *' #'unsigned int *' #'sqInt *' #'usqInt *'
+	     #'sqLong *' #'usqLong *' #'char *' #'CogMethod *' #'AbstractInstruction *'
+	     #'FILE *' ) includes: returnType
 ]
 
 { #category : 'inlining' }
@@ -2012,49 +1517,6 @@ TMethod >> isStructAccessor [
 		do: [:ex| false]
 ]
 
-{ #category : 'inlining' }
-TMethod >> isSubstitutableNode: aNode intoMethod: targetMeth in: aCodeGen [
-	"Answer true if the given parameter node is either a constant, a local variable, or a formal parameter of the receiver. Such parameter nodes may be substituted directly into the body of the method during inlining. Note that global variables cannot be subsituted into methods with possible side effects (i.e., methods that may assign to global variables) because the inlined method might depend on having the value of the global variable captured when it is passed in as an argument."
-
-	| var |
-	aNode isConstant ifTrue: [ ^ true ].
-
-	aNode isVariable ifTrue: [
-		var := aNode name.
-		((self locals includes: var) or: [args includes: var]) ifTrue: [ ^ true ].
-		(#(self true false nil) includes: var) ifTrue: [ ^ true ].
-		(targetMeth maySubstituteGlobal: var in: aCodeGen) ifTrue: [ ^ true ].
-	].
-
-	"For now allow literal blocks to be substituted.  They better be accessed only
-	 with value[:value:*] messages though!"
-	aNode isStatementList ifTrue: [^true].
-
-	(aNode isSend
-	 and: [aNode numArgs = 0
-	 and: [aCodeGen isStructSend: aNode]]) ifTrue:
-		[^true].
-
-	"scan expression tree; must contain only constants, builtin ops, and inlineable vars"
-	aNode nodesDo: [ :node |
-		node isSend ifTrue: [
-			(node isBuiltinOperator
-			 or: [node numArgs = 0
-				 and: [aCodeGen isStructSend: node]]) ifFalse: [ ^false ].
-		].
-		node isVariable ifTrue: [
-			var := node name.
-			((self locals includes: var) or:
-			 [(args includes: var) or:
-			 [(#(self true false nil) includes: var) or:
-			 [targetMeth maySubstituteGlobal: var in: aCodeGen]]]) ifFalse: [ ^ false ].
-		].
-		(node isConstant or: [node isVariable or: [node isSend]]) ifFalse: [ ^false ].
-	].
-
-	^ true
-]
-
 { #category : 'testing' }
 TMethod >> isTMethod [
 	^true
@@ -2150,14 +1612,14 @@ TMethod >> mergePropertiesOfSuperMethod: superTMethod [
 ]
 
 { #category : 'inlining support' }
-TMethod >> methodIsEffectivelyComplete: selector in: aCodeGen [
+TMethod >> methodIsEffectivelyComplete: aSelector in: aCodeGen [
 	"Answer if selector is effectively not inlineable in the receiver.
 	 This is tricky because block inlining requires that certain methods must be inlined, which
-	 can be at odds wuth the opportunistic strategy the inliner takes.  Since the inliner only
+	 can be at odds with the opportunistic strategy the inliner takes.  Since the inliner only
 	 inlines complete methods and certain methods may never be marked as complete (e.g.
 	 recursive methods) we have to short-cut certain kinds of send.  In particular, short-cut
 	 sends that turn into jumps in the interpret routine (sharedCase and sharedLabel below)."
-	^(aCodeGen methodNamed: selector)
+	^(aCodeGen methodNamed: aSelector)
 		ifNil: [true] "builtins or externals are not inlineable"
 		ifNotNil:
 			[:m|
@@ -2175,28 +1637,26 @@ TMethod >> mustBeInlined [
 
 { #category : 'initialization' }
 TMethod >> newCascadeTempFor: aTParseNode [
+
 	| varName varNode |
 	varName := self extraVariableName: 'cascade'.
 	varNode := TVariableNode new setName: varName.
-	aTParseNode isLeaf ifFalse:
-		[self
-			declarationAt: varName
-			put: [:tm :cg| | type |
-				type := tm determineTypeFor: aTParseNode in: cg.
-				(SlangStructType structTargetKindForType: type) == #struct ifTrue:
-					["can't copy structs into cascade temps; the struct is not updated.
+	aTParseNode isLeaf ifFalse: [
+		self declarationAt: varName put: [ :tm :cg |
+			| type |
+			type := tm determineTypeFor: aTParseNode in: cg.
+			(SlangStructType structTargetKindForType: type) == #struct ifTrue: [ "can't copy structs into cascade temps; the struct is not updated.
 					  must change to a pointer."
-					type := type, ' *'.
-					parseTree nodesDo:
-						[:node|
-						(node isAssignment
-						 and: [node variable name = varName]) ifTrue:
-							[node expression: (TSendNode new
-													setSelector: #addressOf:
-													receiver: (TVariableNode new setName: 'self')
-													arguments: {node expression})]]].
-				type]].
-	^varNode
+				type := type , ' *'.
+				parseTree nodesDo: [ :node |
+					(node isAssignment and: [ node variable name = varName ])
+						ifTrue: [
+							node expression: (TSendNode new
+									 setSelector: #addressOf:
+									 receiver: (TVariableNode new setName: 'self')
+									 arguments: { node expression }) ] ] ].
+			type ] ].
+	^ varNode
 ]
 
 { #category : 'accessing' }
@@ -2308,8 +1768,8 @@ TMethod >> prepareMethodIn: aCodeGen [
 									(subNode isConstant and: [
 										 subNode value isString and: [ subNode value includes: $% ] ])
 										ifTrue: [
-										map at: subNode put: subNode asPrintfFormatStringNode ].
-									node replaceNodesIn: map ] ] ] ] ] ]
+										map at: subNode put: subNode asPrintfFormatStringNode ] ].
+								node replaceNodesIn: map ] ] ] ] ]
 ]
 
 { #category : 'primitive compilation' }
@@ -2590,7 +2050,8 @@ TMethod >> removeLocal: local [
 TMethod >> removeLocal: local ifAbsent: aBlock [
 
 	cachedLocals := nil.
-	self locals remove: local ifAbsent: aBlock
+	self locals remove: local ifAbsent: aBlock.
+	self declarations removeKey: local ifAbsent: [ ] "We assume local-declarations are a subset of locals"
 ]
 
 { #category : 'dead-code-elimination' }
@@ -2603,38 +2064,52 @@ TMethod >> removeUnusedTempsAndNilIfRequiredIn: aCodeGen [
 	"Remove all of the unused temps in this method. Answer a set of the references.
 	 As a side-effect introduce explicit temp := nil statements for temps that are
 	 tested for nil before necessarily being assigned."
+
 	| refs readBeforeAssigned simplyTypedLocals |
 	refs := self removeUnusedTempsIn: aCodeGen.
 	"reset the locals to be only those still referred to"
 	cachedLocals := nil.
-	self locals: (self locals select: [:e| refs includes: e]).
-	(self locals notEmpty
-	 and: [aCodeGen
-			pushScope: self
-			while: [simplyTypedLocals := self locals select:
-											[:var|
-											 declarations
-												at: var
-												ifPresent: [:decl| aCodeGen isSimpleType: (aCodeGen extractTypeFor: var fromDeclaration: decl)]
-												ifAbsent: [true]].
-				(readBeforeAssigned := (self findReadBeforeAssignedIn: simplyTypedLocals in: aCodeGen)) notEmpty]]) ifTrue:
-		[readBeforeAssigned := readBeforeAssigned reject:
-			[:v| | d | "don't initialize externs, statics, arrays or the explicitly initialized."
-			 d := self declarationAt: v ifAbsent: [ aCodeGen defaultType , ' ' , v ].
-			 (d beginsWith: 'extern') or: [(d beginsWith: 'static') or: [(d includes: $[) or: [d includes: $=]]]].
-		 parseTree statements addAllFirst:
-			(readBeforeAssigned asSortedCollection collect:
-				[:var| | varNode varType zeroNode |
-				 varNode := TVariableNode new setName: var; yourself.
+	self locals: (self locals select: [ :e | refs includes: e ]).
+	(self locals notEmpty and: [
+		 aCodeGen pushScope: self while: [
+			 simplyTypedLocals := self locals select: [ :var |
+				                      declarations
+					                      at: var
+					                      ifPresent: [ :decl |
+						                      aCodeGen isSimpleType:
+							                      (aCodeGen
+								                       extractTypeFor: var
+								                       fromDeclaration: decl) ]
+					                      ifAbsent: [ true ] ].
+			 (readBeforeAssigned := self
+				                        findReadBeforeAssignedIn:
+				                        simplyTypedLocals
+				                        in: aCodeGen) notEmpty ] ]) ifTrue: [
+		readBeforeAssigned := readBeforeAssigned reject: [ :v |
+			                      | d |
+			                      "don't initialize externs, statics, arrays or the explicitly initialized."
+			                      d := self
+				                           declarationAt: v
+				                           ifAbsent: [
+				                           aCodeGen defaultType , ' ' , v ].
+			                      (d beginsWith: 'extern') or: [
+				                      (d beginsWith: 'static') or: [
+					                      (d includes: $[) or: [ d includes: $= ] ] ] ].
+		parseTree addAllFirst:
+			(readBeforeAssigned asSortedCollection collect: [ :var |
+				 | varNode varType zeroNode |
+				 varNode := TVariableNode new
+					            setName: var;
+					            yourself.
 				 varType := aCodeGen typeFor: varNode in: self.
 				 zeroNode := TConstantNode value: 0.
 				 TAssignmentNode new
-					setVariable: varNode
-					expression: (((aCodeGen isIntegralCType: varType)
-								    or: [aCodeGen isFloatingPointCType: varType])
-									ifTrue: [zeroNode]
-									ifFalse: [aCodeGen nodeToCast: zeroNode to: varType])])].
-	^refs
+					 setVariable: varNode
+					 expression: (((aCodeGen isIntegralCType: varType) or: [
+							   aCodeGen isFloatingPointCType: varType ])
+							  ifTrue: [ zeroNode ]
+							  ifFalse: [ aCodeGen nodeToCast: zeroNode to: varType ]) ]) ].
+	^ refs
 ]
 
 { #category : 'utilities' }
@@ -2695,6 +2170,72 @@ TMethod >> renameLabelsUsing: aDictionary [
 			[node setLabel: (aDictionary at: node label)].
 		(node isLabel and: [aDictionary includesKey: node label]) ifTrue:
 			[node setLabel: (aDictionary at: node label)]]
+]
+
+{ #category : 'transformations' }
+TMethod >> renameLocalVariablesGivenClassVariables: classVariables andGlobalVariables: globalsVariables inCodeGenerator: aCodeGen [
+	"Answer either the receiver, if it is not contained in the parameters, or a new node with the given variable rebound. only work after type inferences for declarations et pragmas updates"
+
+	| changedVariables |
+	changedVariables := Set new.
+	"necessary for implicit variables"
+	aCodeGen pushScope: self.
+	
+	self parseTree: (parseTree
+			 renameLocalVariablesGivenClassVariables: classVariables
+			 globalVariables: globalsVariables
+			 classNames:
+			 (SlangStructType allSubclasses collect: [ :class | class name ])
+			 inCodeGenerator: aCodeGen
+			 collectingChangesIn: changedVariables).
+	changedVariables isEmpty ifTrue: [ ^ self ].
+	"no need to changed the locals of the TMethod, if the cache is nil they are retrieve from the parseTree which we will update"
+	cachedLocals := nil.
+	changedVariables do: [ :varName |
+		| newName |
+		newName := #_ , varName.
+		self args: (self args collect: [ :e |
+				 e ~= varName
+					 ifTrue: [ e ]
+					 ifFalse: [ newName ] ]).
+		self renameVarInDeclarations: varName with: newName.
+		"rare case but it can happen, see genCallPICEnilopmartNumArgs:"
+		self renameVarInReturnType: varName with: newName.
+
+		"update all the parseTree"
+		self parseTree nodesDo: [ :node |
+			node isStatementList ifTrue: [
+				node renameLocalOrArg: varName with: newName ].
+
+			"rare case but it can happen, see addressIsInFixups:"
+			node isSend ifTrue: [ node renameVarInCCode: varName with: newName ] ] ].
+	aCodeGen popScope
+]
+
+{ #category : 'transformations' }
+TMethod >> renameVarInDeclarations: varName with: newName [
+
+	| oldDeclaration |
+	(declarations keys includes: varName) ifFalse: [ ^ self ].
+	oldDeclaration := declarations at: varName.
+	"new declaration"
+	declarations at: newName put: (oldDeclaration
+			 copyReplaceAll: varName
+			 with: newName
+			 tokenish: [ :ch | ch = $_ or: [ ch isAlphaNumeric ] ]).
+	declarations removeKey: varName
+]
+
+{ #category : 'transformations' }
+TMethod >> renameVarInReturnType: varName with: newName [
+
+	(returnType isNotNil and: [ (returnType findString: varName) > 0 ])
+		ifFalse: [ ^ self ].
+
+	self returnType: (returnType
+			 copyReplaceAll: varName
+			 with: newName
+			 tokenish: [ :ch | ch = $_ or: [ ch isAlphaNumeric ] ])
 ]
 
 { #category : 'inlining support' }
@@ -2839,24 +2380,28 @@ TMethod >> setSelector: sel definingClass: class args: argList locals: localList
 	| tempParseTree |
 	selector := sel.
 	definingClass := class.
-	args := argList asOrderedCollection collect: [:arg | arg name].
+	args := argList asOrderedCollection collect: [ :arg | arg name ].
 	declarations := Dictionary new.
 	
 	primitive := aNumber.
 	properties := methodProperties.
 	comment := aComment.
 	labels := Set new.
-	
+
 	"hack; allows nodes to find their parent, compute the conflicting locals when inlinign super sends..."
 	self parseTree: TStatementListNode new.
 	tempParseTree := parseTree.
-	self locals: tempParseTree locals, (localList  collect: [:arg | arg name]).
+
+	self locals:
+		tempParseTree locals , (localList collect: [ :arg | arg name ]).
 
 	self parseTree: (aBlockNode asTranslatorNodeIn: self).
-	self locals: tempParseTree locals, (localList  collect: [:arg | arg name]).
+	self locals:
+		(tempParseTree locals , (localList collect: [ :arg | arg name ]))
+			asSet.
 	self addTypeForSelf.
-	
-	complete := false.  "set to true when all possible inlining has been done"
+
+	complete := false. "set to true when all possible inlining has been done"
 	export := self extractExportDirective.
 	static := self extractStaticDirective.
 	self extractSharedCase.
@@ -2925,57 +2470,6 @@ TMethod >> statementsFor: sourceText varName: varName [
 			statements
 ]
 
-{ #category : 'inlining' }
-TMethod >> statementsListsForInliningIn: aCodeGen [
-
-	"Answer a collection of statement list nodes that are candidates for inlining.
-	 Currently, we cannot inline into the argument blocks of and: and or: messages.
-	 We do not want to inline code strings within cCode:inSmalltalk: blocks (those with a
-	 proper block for the cCode: argument are inlined in MessageNode>>asTranslatorNodeIn:).
-	 We do not want to inline code within assert: sends (because we want the assert to read nicely)."
-
-	| stmtLists |
-	stmtLists := OrderedCollection new: 10.
-	parseTree
-		nodesDo: [ :node | node isStatementList ifTrue: [ stmtLists add: node ] ]
-		unless: [ :node | 
-			node isSend and: [ 
-				node selector == #cCode:inSmalltalk: or: [ 
-					aCodeGen isAssertSelector: node selector ] ] ].
-	parseTree nodesDo: [ :node | 
-		node isSend ifTrue: [ 
-			node selector = #cCode:inSmalltalk: ifTrue: [ 
-				node nodesDo: [ :ccisNode | 
-					stmtLists remove: ccisNode ifAbsent: [  ] ] ].
-			(node selector = #cppIf:ifTrue:ifFalse: or: [ 
-				 node selector = #cppIf:ifTrue: ]) ifTrue: [ 
-				node arguments first nodesDo: [ :inCondNode | 
-					stmtLists remove: inCondNode ifAbsent: [  ] ] ].
-			(node selector = #and: or: [ node selector = #or: ]) ifTrue: [ "Note: the PP 2.3 compiler produces two arg nodes for these selectors"
-				stmtLists remove: node arguments first ifAbsent: [  ].
-				stmtLists remove: node arguments last ifAbsent: [  ] ].
-			(#( #ifTrue: #ifFalse: #ifTrue:ifFalse: #ifFalse:ifTrue:
-			    #ifNil: #ifNotNil: #ifNil:ifNotNil: #ifNotNil:ifNil: ) 
-				 includes: node selector) ifTrue: [ 
-				stmtLists remove: node receiver ifAbsent: [  ] ].
-			(#( whileTrue whileTrue: whilefalse whileFalse: ) includes:
-				 node selector) ifTrue: [ "Allow inlining if it is a [...] whileTrue/whileFalse.
-				This is identified by having more than one statement in the 
-				receiver block in which case the C code wouldn't work anyways"
-				node receiver statements size = 1 ifTrue: [ 
-					stmtLists remove: node receiver ifAbsent: [  ] ] ].
-			node selector = #to:do: ifTrue: [ 
-				stmtLists remove: node receiver ifAbsent: [  ].
-				stmtLists remove: node args first ifAbsent: [  ] ].
-			node selector = #to:by:do: ifTrue: [ 
-				stmtLists remove: node receiver ifAbsent: [  ].
-				stmtLists remove: node arguments first ifAbsent: [  ].
-				stmtLists remove: node arguments second ifAbsent: [  ] ] ].
-		node isCaseStmt ifTrue: [ "don't inline cases" 
-			node cases do: [ :case | stmtLists remove: case ifAbsent: [  ] ] ] ].
-	^ stmtLists
-]
-
 { #category : 'accessing' }
 TMethod >> static [
 	^static
@@ -2990,44 +2484,52 @@ TMethod >> static: aBoolean [
 TMethod >> superExpansionNodeFor: aSelector args: argumentNodes [
 	"Answer the expansion of a super send.  Merge the super expansion's
 	 locals, properties and comment into this method's properties."
+
 	(definingClass superclass lookupSelector: aSelector)
-		ifNil: [self error: 'superclass does not define super method']
-		ifNotNil:
-			[:superMethod| | superTMethod commonVars varMap |
+		ifNil: [ self error: 'superclass does not define super method' ]
+		ifNotNil: [ :superMethod |
+			| superTMethod commonVars varMap |
 			superTMethod := superMethod asTranslationMethodOfClass: self class.
-			((argumentNodes allSatisfy: [:parseNode| parseNode isVariable])
-			and: [(argumentNodes asOrderedCollection collect: [:parseNode| parseNode name]) = superTMethod args]) ifFalse:
-				[self error: definingClass name, '>>',selector, ' args ~= ',
-							superTMethod definingClass name, '>>', aSelector,
-							(String with: $. with: Character cr),
-							'For super expansions to be translated correctly each argument must be a variable with the same name as the corresponding argument in the super method.'].
-			(commonVars := superTMethod locals intersection: self locals) notEmpty ifTrue: [
+			((argumentNodes allSatisfy: [ :parseNode | parseNode isVariable ])
+				 and: [
+					 (argumentNodes asOrderedCollection collect: [ :parseNode |
+						  parseNode name ]) = superTMethod args ]) ifFalse: [
+				self error: definingClass name , '>>' , selector , ' args ~= '
+					, superTMethod definingClass name , '>>' , aSelector
+					, (String with: $. with: Character cr)
+					,
+					'For super expansions to be translated correctly each argument must be a variable with the same name as the corresponding argument in the super method.' ].
+			(commonVars := superTMethod locals intersection: self locals)
+				notEmpty ifTrue: [
 				| allLocals |
 				varMap := Dictionary new.
 				"The merge of locals and declarations (don't ask)"
-				allLocals := (declarations keys asSet reject: [:k| (declarations at: k) == #implicit])
-					addAll: self locals;
-					yourself.
-				 commonVars do:
-					[:k| varMap at: k put: (superTMethod unusedNamePrefixedBy: k avoiding: allLocals)].
-				 superTMethod renameVariablesUsing: varMap].
+				allLocals := (declarations keys asSet reject: [ :k |
+						              (declarations at: k) == #implicit ])
+					             addAll: self locals;
+					             yourself.
+				commonVars do: [ :k |
+					varMap
+						at: k
+						put: (superTMethod unusedNamePrefixedBy: k avoiding: allLocals) ].
+				superTMethod renameVariablesUsing: varMap ].
 			self mergePropertiesOfSuperMethod: superTMethod.
-			self assert: (superTMethod locals allSatisfy: [:var| (self locals includes: var) not]).
+			self assert: (superTMethod locals allSatisfy: [ :var |
+					 (self locals includes: var) not ]).
 			cachedLocals := nil.
 			self locals addAll: superTMethod locals.
-			superTMethod declarations keysAndValuesDo:
-				[:var :decl|
-				self declarationAt: var put: decl].
-			superTMethod comment ifNotNil:
-				[:superComment|
+			superTMethod declarations keysAndValuesDo: [ :var :decl |
+				self declarationAt: var put: decl ].
+			superTMethod comment ifNotNil: [ :superComment |
 				comment := comment
-								ifNil: [superComment]
-								ifNotNil: [superComment, comment]].
-			superTMethod extraVariableNumber ifNotNil:
-				[:scvn|
-				extraVariableNumber := extraVariableNumber ifNil: [scvn] ifNotNil: [:cvn| cvn + scvn]].
+					           ifNil: [ superComment ]
+					           ifNotNil: [ superComment , comment ] ].
+			superTMethod extraVariableNumber ifNotNil: [ :scvn |
+				extraVariableNumber := extraVariableNumber
+					                       ifNil: [ scvn ]
+					                       ifNotNil: [ :cvn | cvn + scvn ] ].
 			superTMethod elideAnyFinalReturn.
-			^superTMethod parseTree]
+			^ superTMethod parseTree ]
 ]
 
 { #category : 'C code generation' }
@@ -3043,33 +2545,6 @@ TMethod >> terminateConditionalDefineFor: compileTimeOptionPragmas on: aStream [
 	aStream
 		nextPutAll: ' */';
 		cr
-]
-
-{ #category : 'inlining' }
-TMethod >> transformConditionalAssignment: node in: aCodeGen [
-
-	"If possible answer the transformation of code of the form
-		var := e1
-				ifTrue: [e2 ifTrue: [self m1] ifFalse: [self m2]]
-				ifFalse: [self m3]
-	 into
-		e1
-			ifTrue: [e2 ifTrue: [var := self m1] ifFalse: [var := self m2]]
-			ifFalse: [var := self m3]
-	 to allow inlining of m1, m2, et al.  Otherwise answer nil."
-
-	| expr |
-	^ (node isAssignment and: [ 
-		   (expr := node expression) isSend and: [ 
-			   (#( #ifTrue:ifFalse: #ifFalse:ifTrue: ) includes: expr selector) 
-				   and: [ 
-				   self
-					   isConditionalToBeTransformedForAssignment: expr
-					   in: aCodeGen ] ] ]) ifTrue: [ 
-		  expr copy
-			  arguments: (expr arguments collect: [ :stmtList | 
-						   stmtList copy assignLastExpressionTo: node variable ]);
-			  yourself ]
 ]
 
 { #category : 'inlining' }
@@ -3106,25 +2581,23 @@ TMethod >> transformReturns [
 	"Once the return type has been found or inferred, returns may bneed to be modified.
 	 If the return type is #void, any occurrences of ^expr must be replaced with expr. ^self.
 	 If the type is #sqInt any any occurrences of ^self are replaced with ^0."
-	(returnType == #void or: [returnType == #sqInt]) ifFalse:
-		[^self].
-	parseTree nodesWithParentsDo:
-		[:node :parent|
-		node isReturn ifTrue:
-			[(node expression isVariable and: [node expression name = 'self'])
-				ifTrue:
-					[returnType = #sqInt ifTrue:
-						[node setExpression: (TConstantNode value: 0)]]
-				ifFalse:
-					[returnType = #void ifTrue:
-						[parent
+
+	(#( #void #sqInt ) includes: returnType) ifFalse: [ ^ self ].
+	parseTree nodesWithParentsDo: [ :node :parent |
+		node isReturn ifTrue: [
+			(node expression isVariable and: [ node expression name = 'self' ])
+				ifTrue: [
+					returnType = #sqInt ifTrue: [
+						node setExpression: (TConstantNode value: 0) ] ]
+				ifFalse: [
+					returnType = #void ifTrue: [
+						parent
 							replaceChild: node
-							with: (TStatementListNode new
-									setArguments: #()
-									statements: {node expression.
-												  TReturnNode new 
-													setExpression: (TVariableNode new setName: 'self')
-													yourself})]]]]
+							with:
+								(TStatementListNode new setArguments: #(  ) statements: {
+										 node expression.
+										 (TReturnNode new setExpression:
+											  (TVariableNode new setName: 'self') yourself) }) ] ] ] ]
 ]
 
 { #category : 'transformations' }
@@ -3152,7 +2625,7 @@ TMethod >> transformToStructClassMethodFor: aCCodeGenerator [
 					at: node
 					put: (TSendNode new
 							setSelector: node name asSymbol
-							receiver: selfNode
+							receiver: selfNode copy
 							arguments: #())]]].
 	replacements notEmpty ifTrue:
 		[self replaceNodesIn: replacements].
@@ -3160,110 +2633,6 @@ TMethod >> transformToStructClassMethodFor: aCCodeGenerator [
 	self assert: (typeForSelf notNil and: [typeForSelf ~~ #implicit]).
 	self declarationAt: (args addFirst: selfNode name)
 		put: (declarations removeKey: 'self'), '_in_', (aCCodeGenerator cFunctionNameFor: selector)
-]
-
-{ #category : 'inlining' }
-TMethod >> tryToInlineMethodExpressionsIn: aCodeGen [
-	"Expand any (complete) inline methods sent by this method as receivers or parameters.
-	 Answer if anything was inlined."
-
-	| sendsToInline |
-	sendsToInline := Dictionary new: 100.
-	aCodeGen pushScope: self while: [
-		parseTree
-			nodesDo: [ :node |
-				(self inlineableFunctionCall: node in: aCodeGen) ifTrue: [
-					(self inlineFunctionCall: node in: aCodeGen) ifNotNil: [
-						:replacement |
-						(replacement isConstant and: [
-							 replacement isDefine not and: [
-								 replacement value isNumber and: [ replacement comment isNil ] ] ])
-							ifTrue: [ replacement comment: node selector ].
-						sendsToInline at: node put: replacement ] ] ]
-			unless: [ :node | "Don't inline the arguments to asserts to keep the asserts readable"
-				node isSend and: [
-					node selector == #cCode:inSmalltalk: or: [
-						aCodeGen isAssertSelector: node selector ] ] ] ].
-
-	sendsToInline isEmpty ifTrue: [ ^ false ].
-	self replaceNodesIn: sendsToInline.
-	^ true
-]
-
-{ #category : 'inlining' }
-TMethod >> tryToInlineMethodStatementsIn: aCodeGen statementListsInto: aBlock [
-	"Expand any (complete) inline methods sent by this method as top-level statements.
-	 Answer if anything was inlined."
-
-	| stmtLists didSomething newStatements returningNodes |
-	didSomething := false.
-	returningNodes := Set new.
-	parseTree nodesDo: [ :node |
-		node isReturn ifTrue: [
-			returningNodes add: node expression.
-			node expression isConditionalSend ifTrue: [
-				returningNodes addAll:
-					(node expression arguments collect: [ :stmtList |
-						 stmtList statements last ]) ] ] ].
-	stmtLists := self statementsListsForInliningIn: aCodeGen.
-	stmtLists do: [ :stmtList |
-		newStatements := OrderedCollection new: stmtList statements size.
-		stmtList statements do: [ :stmt |
-			(self
-				 inlineCodeOrNilForStatement: stmt
-				 returningNodes: returningNodes
-				 in: aCodeGen)
-				ifNil: [ newStatements addLast: stmt ]
-				ifNotNil: [ :inlinedStmts |
-					didSomething := true.
-					newStatements addAllLast: inlinedStmts ] ].
-		stmtList statements: newStatements asArray ].
-
-
-
-	"This is a hack; forgive me. The inlining above tends to keep return statements in statement lists.
-	 In the case of returning ifs we don't want the returns in case the returning if is generated as an expression."
-	returningNodes do: [ :returningNode |
-		(returningNode isConditionalSend and: [
-			 returningNode arguments anySatisfy: [ :alternativeNode |
-				 alternativeNode endsWithReturn ] ]) ifTrue: [
-			returningNode arguments withIndexDo: [ :alternativeNode :index |
-				alternativeNode endsWithReturn ifTrue: [
-					returningNode arguments
-						at: index
-						put: alternativeNode copyWithoutReturn ] ] ] ].
-
-	aBlock value: stmtLists.
-
-	^ didSomething
-]
-
-{ #category : 'inlining' }
-TMethod >> tryToInlineMethodsIn: aCodeGen [
-	"Expand any (complete) inline methods sent by this method.
-	 Set the complete flag when all inlining has been done.
-	 Answer if something was inlined."
-
-	| didSomething statementLists |
-	"complete ifTrue:
-		[^false]."
-	self definedAsMacro ifTrue: [
-		complete ifTrue: [ ^ false ].
-		^ complete := true ].
-
-	self ensureConditionalAssignmentsAreTransformedIn: aCodeGen.
-	didSomething := self
-		                tryToInlineMethodStatementsIn: aCodeGen
-		                statementListsInto: [ :stmtLists |
-		                statementLists := stmtLists ].
-	didSomething := (self tryToInlineMethodExpressionsIn: aCodeGen) or: [
-		                didSomething ].
-
-	didSomething ifTrue: [ writtenToGlobalVarsCache := nil ].
-	complete ifFalse: [
-		self checkForCompletenessIn: aCodeGen.
-		complete ifTrue: [ didSomething := true ] ]. "marking a method complete is progress"
-	^ didSomething
 ]
 
 { #category : 'utilities' }
@@ -3310,11 +2679,11 @@ TMethod >> unusedNamePrefixedBy: aString avoiding: usedNames [
 	 the names in the given collection. The selected name is added to usedNames."
 
 	| n newVarName |
-	n := 1.
-	[newVarName := aString, n printString.
-	 usedNames includes: newVarName] whileTrue:
-		[n := n + 1].
-	^usedNames add: newVarName
+	n := 2.
+	[
+	newVarName := aString , n printString.
+	usedNames includes: newVarName ] whileTrue: [ n := n + 1 ].
+	^ usedNames add: newVarName
 ]
 
 { #category : 'inlining' }
@@ -3333,7 +2702,7 @@ TMethod >> validateVariableDeclarationExists: aVariableName [
 
 	| shouldCheckVariable |
 	shouldCheckVariable := (aVariableName beginsWithAnyOf:
-		                       #( #self #cascade #toDoLimit #std )) not.
+		                       #( #self #cascade #std )) not.
 
 	(shouldCheckVariable and: [
 		 (self declaresVariableWithName: aVariableName) not]) ifTrue: [
@@ -3358,4 +2727,10 @@ TMethod >> variablesAssignedTo [
 TMethod >> vmNameString [
 	"return the string to use as the vm name in code generated for this method"
 	^'self'
+]
+
+{ #category : 'accessing' }
+TMethod >> writtenToGlobalVarsCache: value [
+
+	writtenToGlobalVarsCache := value
 ]

@@ -25,9 +25,7 @@ function(build_ffi)
 		set_target_properties(objlib PROPERTIES POSITION_INDEPENDENT_CODE OFF)
 	endif()
 
-  set_target_properties(ffi_shared PROPERTIES MACOSX_RPATH ON)
-  set_target_properties(ffi_shared PROPERTIES LIBRARY_OUTPUT_DIRECTORY "${LIBRARY_OUTPUT_DIRECTORY}")
-  set_target_properties(ffi_shared PROPERTIES INSTALL_NAME_DIR "${PHARO_LIBRARY_PATH}")
+	set_target_properties(ffi_shared PROPERTIES LIBRARY_OUTPUT_DIRECTORY "${LIBRARY_OUTPUT_DIRECTORY}")
 
 	# libffi cmakelists does not correctly export the library includes
 	# so we have to make it ourselves...

@@ -6,7 +6,8 @@ Class {
 	#superclass : 'Object',
 	#instVars : [
 		'parent',
-		'comment'
+		'comment',
+		'isExpression'
 	],
 	#category : 'Slang-AST',
 	#package : 'Slang',
@@ -145,6 +146,13 @@ TParseNode >> collect: aBlock [
 	^nodes
 ]
 
+{ #category : 'dead-code-elimination' }
+TParseNode >> collectSendInSelf: sendToCollect [
+	"used to rearrange sends in a sendNode (with no side effects) receiver after the arguments have been found empty"
+
+	^ self
+]
+
 { #category : 'accessing' }
 TParseNode >> comment [
 	^comment
@@ -202,13 +210,6 @@ TParseNode >> hasExplicitReturn [
 ]
 
 { #category : 'testing' }
-TParseNode >> hasNothingButComments [
-	"an alternative to isEmpty related to inlining"
-
-	^ self children allSatisfy: [ :child | child isComment ]
-]
-
-{ #category : 'testing' }
 TParseNode >> hasSideEffect [
 	"Answer if the parse tree rooted at this node has a side-effect or not.  By default assume it has.  Nodes that don't override."
 	^true
@@ -256,6 +257,13 @@ TParseNode >> isDefine [
 ]
 
 { #category : 'testing' }
+TParseNode >> isEmptyOrHasNothingButComments [
+	"an alternative to isEmpty related to inlining, return true ifthe node is empty or has only comment"
+
+	^ self children allSatisfy: [ :child | child isComment ]
+]
+
+{ #category : 'testing' }
 TParseNode >> isExpression [
 
 	^ false
@@ -294,15 +302,6 @@ TParseNode >> isLiteralArrayDeclaration [
 TParseNode >> isNonNullCCode [
 	"overridden in TSendNode"
 	^false
-]
-
-{ #category : 'testing' }
-TParseNode >> isNotExpression [
-
-	^ parent isNil or: [
-		  parent isTMethod or: [
-			  parent isSend not and: [
-				  parent isReturn not and: [ parent isAssignment not ] ] ] ]
 ]
 
 { #category : 'testing' }
@@ -474,8 +473,15 @@ TParseNode >> removeUnusedNodesInBranch: aChild [
 	"this method should be only called when cleaning an AST tree after an unused expression was found"
 
 	self children remove: aChild.
-	(self children isEmpty or: [ self hasNothingButComments ]) ifTrue: [
+	(self children isEmpty or: [ self isEmptyOrHasNothingButComments ]) ifTrue: [
 		self parent removeUnusedNodesInBranch: self ]
+]
+
+{ #category : 'transformations' }
+TParseNode >> renameLocalVariablesGivenClassVariables: classVariables globalVariables: globalsVariables classNames: classNames inCodeGenerator: aCodeGen collectingChangesIn: changedVariables [
+	"Answer either the receiver, if it contains no references to the given variables, or a new node with the given variables rebound.
+	 But do not change variables that appear on the left-hand-side of an assignment statement."
+	^self
 ]
 
 { #category : 'transformations' }
@@ -493,7 +499,11 @@ TParseNode >> replaceChild: aNode with: aReplacementNode [
 { #category : 'transformations' }
 TParseNode >> replaceNodesIn: aDictionary [
 
-	^aDictionary at: self ifAbsent: [self]
+	| aDictionaryAtSelf |
+	aDictionaryAtSelf := aDictionary at: self ifAbsent: [ nil ].
+	aDictionaryAtSelf ifNotNil: [ ^ aDictionaryAtSelf copy ].
+
+	^ self
 ]
 
 { #category : 'enumerating' }

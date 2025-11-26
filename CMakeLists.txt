@@ -8,39 +8,48 @@
 cmake_minimum_required(VERSION 3.7.2)
 # Use new and simpler escape sequences
 cmake_policy(SET CMP0053 NEW)
+#RPATH settings on macOS do not affect install_name.
+cmake_policy(SET CMP0068 NEW)
 
 include(cmake/BuildType.cmake)
-include(macros.cmake)
+include(cmake/macros.cmake)
 
 message(STATUS "CMAKE_GENERATOR=${CMAKE_GENERATOR}")
 
 # Build options
-option(VERBOSE_BUILD					"Verbose Build"									OFF)
-option(FEATURE_FFI					"Enable FFI"									 ON)
-option(FEATURE_THREADED_FFI				"Enable Threaded (running in another thread) FFI"				 ON)
-option(FEATURE_MESSAGE_COUNT				"Enable the option to count messages, only valid for StackVM"			OFF)
-option(FEATURE_NETWORK					"Enable network and sockets"							 ON)
-option(FEATURE_LIB_SDL2					"Build SDL2 support"								 ON)
-option(FEATURE_LIB_CAIRO				"Build Cairo support"								 ON)
-option(FEATURE_LIB_FREETYPE2				"Build freetype2 support"							 ON)
-option(FEATURE_LIB_GIT2					"Build LibGit2 support"								 ON)
-option(FEATURE_LIB_PTHREADW32				"Windows only, link to win32 version of pthread"				OFF)
-option(GENERATE_VMMAKER					"If it generates the VMMaker image"						 ON)
-option(GENERATE_SOURCES					"If it generates the C sources"							 ON)
-option(ALWAYS_INTERACTIVE				"Be interactive by default"							OFF)
-option(BUILD_BUNDLE					"Builds a bundle with all dependencies"						 ON)
-option(FEATURE_COMPILE_GNUISATION			"Use gcc gnu extensions to compile the VM"					 ON)
-option(PHARO_DEPENDENCIES_PREFER_DOWNLOAD_BINARIES	"Prefer downloading dependencies"						OFF)
-option(FEATURE_COMPILE_INLINE_MEMORY_ACCESSORS		"Use inline memory accessors instead of macros"					 ON)
-option(PHARO_VM_IN_WORKER_THREAD			"Have support for pharo running in a different thread that the main one"	 ON)
-option(DEPENDENCIES_FORCE_BUILD         "Force build libraries" OFF)
-option(BUILD_WITH_GRAPHVIZ              "Generate dependency graphs" ON)
-option(VERSION_UPDATE_FROM_GIT              "Extract version information from git tags. Default to true. Follow vX.Y.Z-suffix" TRUE)
+option(VERBOSE_BUILD			"Verbose Build"														OFF)
+option(FEATURE_FFI				"Enable FFI"														ON)
+option(FEATURE_THREADED_FFI		"Enable Threaded (running in another thread) FFI"					ON)
+option(FEATURE_MESSAGE_COUNT	"Enable the option to count messages, only valid for StackVM"		OFF)
+option(FEATURE_NETWORK			"Enable network and sockets"										ON)
+option(FEATURE_JIT_SIMD			"Use SIMD support in JIT compilation when available"				ON)
+option(FEATURE_LIB_SDL2			"Build SDL2 support"												ON)
+option(FEATURE_LIB_CAIRO		"Build Cairo support"												ON)
+option(FEATURE_LIB_FREETYPE2	"Build freetype2 support"											ON)
+option(FEATURE_LIB_GIT2			"Build LibGit2 support"												ON)
+option(FEATURE_LIB_PTHREADW32	"Windows only, link to win32 version of pthread"					OFF)
+option(GENERATE_VMMAKER			"If it generates the VMMaker image"									ON)
+option(GENERATE_SOURCES			"If it generates the C sources"										ON)
+option(ALWAYS_INTERACTIVE		"Be interactive by default"											OFF)
+option(BUILD_BUNDLE				"Builds a bundle with all dependencies"								ON)
+option(FEATURE_COMPILE_GNUISATION
+								"Use gcc gnu extensions to compile the VM"							ON)
+option(FEATURE_COMPILE_INLINE_MEMORY_ACCESSORS
+								"Use inline memory accessors instead of macros"						ON)
+option(PHARO_DEPENDENCIES_PREFER_DOWNLOAD_BINARIES
+								"Prefer downloading dependencies"									OFF)
+option(PHARO_VM_IN_WORKER_THREAD
+								"Run the VM in a thread different that the main"					ON)
+option(DEPENDENCIES_FORCE_BUILD
+								"Force build libraries"												OFF)
+option(BUILD_WITH_GRAPHVIZ
+								"Generate dependency graphs"										ON)
+option(VERSION_UPDATE_FROM_GIT
+								"Extract version information from git tags. Default to true. Follow vX.Y.Z-suffix" ON)
 
 
 set(APPNAME			"Pharo"         CACHE STRING                 "VM Application name")
 set(FLAVOUR			"CoInterpreter" CACHE STRING                 "The kind of VM to generate. Possible values: StackVM, CoInterpreter")
-set(PHARO_LIBRARY_PATH		"@executable_path/Plugins" CACHE STRING      "The RPATH to use in the build")
 set(ICEBERG_DEFAULT_REMOTE	"scpUrl"        CACHE STRING                 "If Iceberg uses HTTPS (httpsUrl) or tries first with SSH (scpUrl)")
 set(CMAKE_OSX_DEPLOYMENT_TARGET "11.0")
 
@@ -213,7 +222,7 @@ elseif(WIN)
     SET(CMAKE_SYSTEM_NAME Windows)
 
     add_compile_definitions(WIN32_LEAN_AND_MEAN)
-    add_compile_definitions(NO_ISNAN NO_SERVICE LSB_FIRST=1 AllocationCheckFiller=0xADD4E55)
+    add_compile_definitions(NO_ISNAN LSB_FIRST=1 AllocationCheckFiller=0xADD4E55)
 
     #Setting minimal Windows Version to VISTA
     add_compile_definitions(_WIN32_WINNT=0x0600 WINVER=0x0600 NTDDI_VERSION=0x06000000 WIN64=1)
@@ -247,12 +256,9 @@ else()
     set(GENERATED_SOURCE_DIR ${CMAKE_CURRENT_BINARY_DIR} CACHE STRING "Source directory where to find the generated source. Default value is CMAKE_CURRENT_BINARY_DIR")
 endif()
 
-if (${FEATURE_COMPILE_INLINE_MEMORY_ACCESSORS})
-    add_compile_definitions(USE_INLINE_MEMORY_ACCESSORS=1)
-endif()
-
 set(PLUGIN_GENERATED_FILES 
-  	${GENERATED_SOURCE_DIR}/generated/plugins/src/FilePlugin/FilePlugin.c)
+  	${GENERATED_SOURCE_DIR}/generated/plugins/src/FilePlugin/FilePlugin.c
+  	${GENERATED_SOURCE_DIR}/generated/plugins/src/NewFilePlugin/NewFilePlugin.c)
 
 
 if(FLAVOUR MATCHES "CoInterpreter")
@@ -280,11 +286,7 @@ endif()
 add_compile_options(
 	${OPTIMIZATION_LEVEL}
     -Wno-sometimes-uninitialized
-    -Wno-self-assign
-    -Wno-unused-variable
-    -Wno-unused-but-set-variable
     -Wno-int-conversion
-    -Wno-absolute-value
     -Wno-unused-function
     -Wno-non-literal-null-conversion
     -Wno-pointer-integer-compare
@@ -293,7 +295,6 @@ add_compile_options(
     -Wno-deprecated-declarations
     -Wno-pointer-to-int-cast
     -Wno-compare-distinct-pointer-types
-    -Wno-unused-local-typedef
     -Wno-unknown-warning-option
 )
 
@@ -302,7 +303,6 @@ add_compile_options(
 add_compile_definitions(
     IMMUTABILITY=1
     COGMTVM=0
-    PharoVM=1
     DEBUGVM=${DEBUGVM}
     _FILE_OFFSET_BITS=64
 )
@@ -350,14 +350,6 @@ message(STATUS "int ${SIZEOF_INT}")
 message(STATUS "long ${SIZEOF_LONG}")
 message(STATUS "long long ${SIZEOF_LONG_LONG}")
 message(STATUS "void* ${SIZEOF_VOID_P}")
-
-if("${SIZEOF_LONG}" STREQUAL "8")
-	set(SQUEAK_INT64_TYPEDEF "long")
-elseif("${SIZEOF_LONG_LONG}" STREQUAL "8")
-	set(SQUEAK_INT64_TYPEDEF "long long")
-else()
-	message(FATAL_ERROR "Failed to find a 64 bits integer type.")
-endif()
 
 set(EXECUTABLE_OUTPUT_PATH "${CMAKE_CURRENT_BINARY_DIR}/build/vm/")
 
@@ -417,37 +409,39 @@ list(APPEND SUPPORT_SOURCES
 	${CMAKE_CURRENT_SOURCE_DIR}/src/debug.c
 	${CMAKE_CURRENT_SOURCE_DIR}/src/utils.c
     ${CMAKE_CURRENT_SOURCE_DIR}/src/errorCode.c
-	${CMAKE_CURRENT_SOURCE_DIR}/src/nullDisplay.c
 	${CMAKE_CURRENT_SOURCE_DIR}/src/externalPrimitives.c
 	${CMAKE_CURRENT_SOURCE_DIR}/src/client.c
     ${CMAKE_CURRENT_SOURCE_DIR}/src/pathUtilities.c
     ${CMAKE_CURRENT_SOURCE_DIR}/src/fileDialogCommon.c
     ${CMAKE_CURRENT_SOURCE_DIR}/src/stringUtilities.c
     ${CMAKE_CURRENT_SOURCE_DIR}/src/imageAccess.c
-    
     ${CMAKE_CURRENT_SOURCE_DIR}/src/parameters/parameterVector.c
     ${CMAKE_CURRENT_SOURCE_DIR}/src/parameters/parameters.c
-
     ${CMAKE_CURRENT_SOURCE_DIR}/src/semaphores/platformSemaphore.c
 
-    ${CMAKE_CURRENT_SOURCE_DIR}/extracted/vm/src/common/heartbeat.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/common/heartbeat.c    
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/common/sqHeapMap.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/common/sqVirtualMachine.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/common/sqNamedPrims.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/common/sqExternalSemaphores.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/common/sqTicker.c
 )
 
 if(${FEATURE_FFI})
     list (APPEND SUPPORT_SOURCES
-        ${CMAKE_CURRENT_SOURCE_DIR}/ffi/src/functionDefinitionPrimitives.c
-        ${CMAKE_CURRENT_SOURCE_DIR}/ffi/src/primitiveCalls.c
-        ${CMAKE_CURRENT_SOURCE_DIR}/ffi/src/primitiveUtils.c
-        ${CMAKE_CURRENT_SOURCE_DIR}/ffi/src/types.c
-        ${CMAKE_CURRENT_SOURCE_DIR}/ffi/src/typesPrimitives.c
-        ${CMAKE_CURRENT_SOURCE_DIR}/ffi/src/utils.c
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/ffi/functionDefinitionPrimitives.c
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/ffi/primitiveCalls.c
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/ffi/primitiveUtils.c
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/ffi/types.c
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/ffi/typesPrimitives.c
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/ffi/utils.c
 
         # Single-threaded callout support
-        ${CMAKE_CURRENT_SOURCE_DIR}/ffi/src/sameThread/sameThread.c
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/ffi/sameThread/sameThread.c
     
         # Callback support
-        ${CMAKE_CURRENT_SOURCE_DIR}/ffi/src/callbacks/callbackPrimitives.c
-        ${CMAKE_CURRENT_SOURCE_DIR}/ffi/src/callbacks/callbacks.c
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/ffi/callbacks/callbackPrimitives.c
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/ffi/callbacks/callbacks.c
 
         # Required by callbacks
         ${CMAKE_CURRENT_SOURCE_DIR}/src/semaphores/pharoSemaphore.c
@@ -455,10 +449,10 @@ if(${FEATURE_FFI})
     )
     if (${FEATURE_THREADED_FFI})
         list(APPEND SUPPORT_SOURCES
-            ${CMAKE_CURRENT_SOURCE_DIR}/ffi/src/pThreadedFFI.c
-            ${CMAKE_CURRENT_SOURCE_DIR}/ffi/src/worker/worker.c
-            ${CMAKE_CURRENT_SOURCE_DIR}/ffi/src/worker/workerPrimitives.c
-            ${CMAKE_CURRENT_SOURCE_DIR}/ffi/src/worker/workerTask.c
+            ${CMAKE_CURRENT_SOURCE_DIR}/src/ffi/pThreadedFFI.c
+            ${CMAKE_CURRENT_SOURCE_DIR}/src/ffi/worker/worker.c
+            ${CMAKE_CURRENT_SOURCE_DIR}/src/ffi/worker/workerPrimitives.c
+            ${CMAKE_CURRENT_SOURCE_DIR}/src/ffi/worker/workerTask.c
         )
     endif()
 endif()
@@ -472,6 +466,14 @@ set(VM_SOURCES
 add_executable(${VM_EXECUTABLE_NAME} ${VM_FRONTEND_APPLICATION_TYPE} ${VM_FRONTEND_SOURCES})
 addLibraryWithRPATH(${VM_LIBRARY_NAME} ${VM_SOURCES})
 
+if (${FEATURE_COMPILE_INLINE_MEMORY_ACCESSORS})
+	target_compile_definitions(${VM_LIBRARY_NAME} PRIVATE USE_INLINE_MEMORY_ACCESSORS=1) 
+endif()
+
+if(${FEATURE_JIT_SIMD})
+	target_compile_definitions(${VM_LIBRARY_NAME} PRIVATE FEATURE_JIT_SIMD=1)
+endif()
+
 #
 # LibFFI
 #
@@ -483,7 +485,7 @@ target_include_directories(${VM_LIBRARY_NAME}
 PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${CMAKE_CURRENT_SOURCE_DIR}/include/pharovm
-    ${CMAKE_CURRENT_SOURCE_DIR}/extracted/vm/include
+    ${CMAKE_CURRENT_SOURCE_DIR}/include/pharovm/common
     ${CMAKE_CURRENT_BINARY_DIR}/build/include/pharovm/
     ${PHARO_CURRENT_GENERATED}/vm/include
 PRIVATE
@@ -493,7 +495,7 @@ add_platform_headers()
 
 if (${FEATURE_FFI})
     target_include_directories(${VM_LIBRARY_NAME}
-        PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/ffi/include)
+        PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include/pharovm/ffi)
     target_compile_definitions(${VM_LIBRARY_NAME} 
         PRIVATE FEATURE_FFI=1)
 
@@ -522,7 +524,7 @@ target_link_libraries(${VM_EXECUTABLE_NAME} ${VM_LIBRARY_NAME})
 
 add_required_libs_per_platform()
 
-include(plugins.cmake)
+include(cmake/plugins.cmake)
 
 add_subdirectory(ffiTestLibrary ${CMAKE_CURRENT_BINARY_DIR}/build/ffiTestLibrary)
 
@@ -530,7 +532,7 @@ add_subdirectory(ffiTestLibrary ${CMAKE_CURRENT_BINARY_DIR}/build/ffiTestLibrary
 add_third_party_dependencies_per_platform()
 
 if (UNIX)
-    addIndependentLibraryWithRPATH(tty ${CMAKE_CURRENT_SOURCE_DIR}/tty/tty.c)
+    addIndependentLibraryWithRPATH(tty ${CMAKE_CURRENT_SOURCE_DIR}/src/tty/tty.c)
 endif()
 
 # Signing Setup

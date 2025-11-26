@@ -16,7 +16,7 @@ low address:
 	subsequent oldSpace segment
 high address:
 
-It would be convenient if the code zone were placed between newSpace and oldSpace; then Cog methods could be onsidered neither old nor young, filtering them out of copyAndForward: and the store check with single bounds checks.  But the CoInterpreter already assumes Cog methods are less than all objects (e.g. in its isMachineCodeFrame:).  If the dynamic frequency of isMachineCodeFrame: is higher (likely because this is used in e.g. scanning for unwind protects in non-local return) then it should keep the single bounds check.  So the coder zone remains beneath newSpace and Spur64BitCoMemoryManager ocerrides isReallyYoungObject: to filter-out Cog methods for copyAndForward:.
+It would be convenient if the code zone were placed between newSpace and oldSpace; then Cog methods could be onsidered neither old nor young, filtering them out of copyAndForward: and the store check with single bounds checks.  But the CoInterpreter already assumes Cog methods are less than all objects (e.g. in its isMachineCodeFrame:).  If the dynamic frequency of isMachineCodeFrame: is higher (likely because this is used in e.g. scanning for unwind protects in non-local return) then it should keep the single bounds check.  So the coder zone remains beneath newSpace and Spur64BitCoMemoryManager overrides isReallyYoungObject: to filter-out Cog methods for copyAndForward:.
 
 Instance Variables
 	cogit:		<SimpleStackBasedCogit or subclass>
@@ -52,15 +52,6 @@ Spur64BitCoMemoryManager class >> objectRepresentationClass [
 { #category : 'simulation' }
 Spur64BitCoMemoryManager class >> simulatorClass [
 	^ Spur64BitMMLECoSimulator
-]
-
-{ #category : 'growing/shrinking memory' }
-Spur64BitCoMemoryManager >> assimilateNewSegment: segInfo [
-	"Update after adding a segment.
-	 Here we make sure the new segment is not executable."
-	<var: #segInfo type: #'SpurSegmentInfo *'>
-	super assimilateNewSegment: segInfo.
-	coInterpreter sqMakeMemoryNotExecutableFrom: segInfo segStart To: segInfo segLimit
 ]
 
 { #category : 'trampolines' }

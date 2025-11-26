@@ -40,15 +40,3 @@ CCommentNode >> isComment [
 
 	^ true
 ]
-
-{ #category : 'testing' }
-CCommentNode >> needsSeparator [
-
-	^ false
-]
-
-{ #category : 'testing' }
-CCommentNode >> needsTrailingSemicolon [
-
-	^ false
-]

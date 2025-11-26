@@ -153,7 +153,7 @@ FilePlugin >> makeDirEntryName: entryName size: entryNameSize
 	createDate: createDate modDate: modifiedDate
 		isDir: dirFlag fileSize: fileSize [
 	<var: 'entryName' type: #'char *'>
-	<var: 'fileSize' type: #squeakFileOffsetType>
+	<var: 'fileSize' type: #fileOffset_t>
 	| modDateOop createDateOop nameString results stringPtr fileSizeOop |
 	<var: 'stringPtr' type: #'char *'>
 
@@ -190,8 +190,7 @@ FilePlugin >> makeDirEntryName: entryName size: entryNameSize
 { #category : 'directory primitives' }
 FilePlugin >> makeDirEntryName: entryName size: entryNameSize createDate: createDate modDate: modifiedDate isDir: dirFlag fileSize: fileSize posixPermissions: posixPermissions isSymlink: symlinkFlag [
 	<var: 'entryName' type: #'char *'>
-	<var: 'fileSize' type: #squeakFileOffsetType>
-	<option: #PharoVM>
+	<var: 'fileSize' type: #fileOffset_t>
 	| modDateOop createDateOop nameString results stringPtr posixPermissionsOop fileSizeOop |
 	<var: 'stringPtr' type: #'char *'>
 
@@ -304,7 +303,7 @@ FilePlugin >> primitiveDirectoryCreate [
 	dirNameIndex := interpreterProxy firstIndexableField: dirName.
 	dirNameSize := interpreterProxy byteSizeOf: dirName.
 
-	(self dir_Create: dirNameIndex _: dirNameSize) ifFalse:
+	(self cCall: 'dir_Create' withArguments: {dirNameIndex . dirNameSize}) ifFalse:
 		[^interpreterProxy primitiveFail].
 	interpreterProxy pop: 1
 ]
@@ -355,7 +354,7 @@ FilePlugin >> primitiveDirectoryEntry [
 	<var: 'entryName' declareC: 'char entryName[256]'>
 	<var: 'pathNameIndex' type: 'char *'>
 	<var: 'reqNameIndex' type: 'char *'>
-	<var: 'fileSize' type: 'squeakFileOffsetType'>
+	<var: 'fileSize' type: 'fileOffset_t'>
 	<export: true>
 
 	requestedName := interpreterProxy stackValue: 0.
@@ -441,66 +440,63 @@ FilePlugin >> primitiveDirectoryGetMacTypeAndCreator [
 { #category : 'directory primitives' }
 FilePlugin >> primitiveDirectoryLookup [
 
-	| index pathName pathNameIndex pathNameSize status entryName entryNameSize createDate modifiedDate dirFlag symlinkFlag posixPermissions fileSize |
-	
 	<var: 'entryName' declareC: 'char entryName[256]'>
 	<var: 'pathNameIndex' type: 'char *'>
-	<var: 'fileSize' type: 'squeakFileOffsetType'>
+	<var: 'fileSize' type: 'fileOffset_t'>
 	<export: true>
-
+	| index pathName pathNameIndex pathNameSize status entryName entryNameSize createDate modifiedDate dirFlag symlinkFlag posixPermissions fileSize |
 	index := interpreterProxy stackIntegerValue: 0.
 	pathName := interpreterProxy stackValue: 1.
-	(interpreterProxy isBytes: pathName)
-		ifFalse: [^interpreterProxy primitiveFail].
+	(interpreterProxy isBytes: pathName) ifFalse: [
+		^ interpreterProxy primitiveFail ].
 	pathNameIndex := interpreterProxy firstIndexableField: pathName.
 	pathNameSize := interpreterProxy byteSizeOf: pathName.
-	self cCode: '' inSmalltalk:
-		[entryName := ByteString new: 256.
-		 entryNameSize := createDate := modifiedDate := dirFlag := fileSize := posixPermissions := symlinkFlag := nil].
+	self cCode: '' inSmalltalk: [
+		entryName := ByteString new: 256.
+		entryNameSize := createDate := modifiedDate := dirFlag := fileSize := posixPermissions := symlinkFlag := nil ].
 	"If the security plugin can be loaded, use it to check for permission. 
 	If not, assume it's ok"
-	status := self dir_Lookup: pathNameIndex _: pathNameSize
-					_: index
-					_: entryName _: (self addressOf: entryNameSize put: [:v| entryNameSize := v])
-					_: (self addressOf: createDate put: [:v| createDate := v])
-					_: (self addressOf: modifiedDate put: [:v| modifiedDate := v])
-					_: (self addressOf: dirFlag put: [:v| dirFlag := v])
-					_: (self addressOf: fileSize put: [:v| fileSize := v])
-					_: (self addressOf: posixPermissions put: [:v| posixPermissions := v])
-					_: (self addressOf: symlinkFlag put: [:v| symlinkFlag := v]).
-					
-	interpreterProxy failed ifTrue:
-		[^nil].
-	status = DirNoMoreEntries ifTrue: "no more entries; return nil"
-		[interpreterProxy "pop pathName, index, rcvr"
-			pop: 3 thenPush: interpreterProxy nilObject.
-		^nil].
-	status = DirBadPath ifTrue:
-		[^interpreterProxy primitiveFail]."bad path"
+	status := self
+		          dir_Lookup: pathNameIndex
+		          _: pathNameSize
+		          _: index
+		          _: entryName
+		          _:
+		          (self
+			           addressOf: entryNameSize
+			           put: [ :v | entryNameSize := v ])
+		          _:
+		          (self addressOf: createDate put: [ :v | createDate := v ])
+		          _:
+		          (self
+			           addressOf: modifiedDate
+			           put: [ :v | modifiedDate := v ])
+		          _: (self addressOf: dirFlag put: [ :v | dirFlag := v ])
+		          _: (self addressOf: fileSize put: [ :v | fileSize := v ])
+		          _:
+		          (self
+			           addressOf: posixPermissions
+			           put: [ :v | posixPermissions := v ])
+		          _:
+		          (self
+			           addressOf: symlinkFlag
+			           put: [ :v | symlinkFlag := v ]).
 
-	interpreterProxy 
-		pop: 3	"pop pathName, index, rcvr" 
-		thenPush:
-			(self 
-				cppIf: PharoVM 
-				ifTrue:
-					[self
-						makeDirEntryName: entryName
-						size: entryNameSize
-						createDate: createDate
-						modDate: modifiedDate
-						isDir: dirFlag
-						fileSize: fileSize
-						posixPermissions: posixPermissions
-						isSymlink: symlinkFlag]
-				ifFalse:
-					[self
-						makeDirEntryName: entryName
-						size: entryNameSize
-						createDate: createDate
-						modDate: modifiedDate
-						isDir: dirFlag
-						fileSize: fileSize])
+	interpreterProxy failed ifTrue: [ ^ nil ].
+	status = DirNoMoreEntries ifTrue: [ "no more entries; return nil"
+		interpreterProxy pop: 3 thenPush: interpreterProxy nilObject. "pop pathName, index, rcvr"
+		^ nil ].
+	status = DirBadPath ifTrue: [ ^ interpreterProxy primitiveFail ]. "bad path"
+
+	interpreterProxy pop: 3 thenPush: (self
+			 makeDirEntryName: entryName
+			 size: entryNameSize
+			 createDate: createDate
+			 modDate: modifiedDate
+			 isDir: dirFlag
+			 fileSize: fileSize
+			 posixPermissions: posixPermissions
+			 isSymlink: symlinkFlag) "pop pathName, index, rcvr"
 ]
 
 { #category : 'directory primitives' }
@@ -559,21 +555,17 @@ FilePlugin >> primitiveFileClose [
 { #category : 'file primitives' }
 FilePlugin >> primitiveFileDelete [
 
-	| namePointer nameIndex nameSize  okToDelete |
 	<var: 'nameIndex' type: 'char *'>
 	<export: true>
-
+	| namePointer nameIndex nameSize |
 	namePointer := interpreterProxy stackValue: 0.
-	(interpreterProxy isBytes: namePointer)
-		ifFalse: [^ interpreterProxy primitiveFail].
+	(interpreterProxy isBytes: namePointer) ifFalse: [
+		^ interpreterProxy primitiveFail ].
 	nameIndex := interpreterProxy firstIndexableField: namePointer.
 	nameSize := interpreterProxy byteSizeOf: namePointer.
 
-	self
-		sqFileDeleteName: nameIndex
-		Size: nameSize.
-	interpreterProxy failed
-		ifFalse: [interpreterProxy pop: 1]
+	self sqFileDeleteName: nameIndex Size: nameSize.
+	interpreterProxy failed ifFalse: [ interpreterProxy pop: 1 ]
 ]
 
 { #category : 'file primitives' }
@@ -616,7 +608,7 @@ FilePlugin >> primitiveFileFlush [
 FilePlugin >> primitiveFileGetPosition [
 	| file position |
 	<var: 'file' type: 'SQFile *'>
-	<var: 'position' type: 'squeakFileOffsetType'>
+	<var: 'position' type: 'fileOffset_t'>
 	<export: true>
 	file := self fileValueOf: (interpreterProxy stackValue: 0).
 	interpreterProxy failed ifFalse: [position := self sqFileGetPosition: file].
@@ -724,9 +716,9 @@ FilePlugin >> primitiveFileRename [
 FilePlugin >> primitiveFileSetPosition [
 	| newPosition file |
 	<var: 'file' type: 'SQFile *'>
-	<var: 'newPosition' type: 'squeakFileOffsetType'>
+	<var: 'newPosition' type: 'fileOffset_t'>
 	<export: true>
-	(interpreterProxy byteSizeOf: (interpreterProxy stackValue: 0)) > (self sizeof: #squeakFileOffsetType) ifTrue:
+	(interpreterProxy byteSizeOf: (interpreterProxy stackValue: 0)) > (self sizeof: #fileOffset_t) ifTrue:
 		[^interpreterProxy primitiveFail].
 	newPosition := interpreterProxy positive64BitValueOf: (interpreterProxy stackValue: 0).
 	file := self fileValueOf: (interpreterProxy stackValue: 1).
@@ -740,7 +732,7 @@ FilePlugin >> primitiveFileSetPosition [
 FilePlugin >> primitiveFileSize [
 	| file size |
 	<var: 'file' type: 'SQFile *'>
-	<var: 'size' type: 'squeakFileOffsetType'>
+	<var: 'size' type: 'fileOffset_t'>
 	<export: true>
 	file := self fileValueOf: (interpreterProxy stackValue: 0).
 	interpreterProxy failed ifFalse:[size := self sqFileSize: file].
@@ -803,10 +795,10 @@ FilePlugin >> primitiveFileTruncate [
 "ftruncate is not an ansi function so we have a macro to point to a suitable platform implementation" 
 	| truncatePosition file |
 	<var: 'file' type: #'SQFile *'>
-	<var: 'truncatePosition' type: #squeakFileOffsetType>
+	<var: 'truncatePosition' type: #fileOffset_t>
 	<export: true>
 	(interpreterProxy isIntegerObject: (interpreterProxy stackValue: 0)) ifFalse:
-		[(interpreterProxy byteSizeOf: (interpreterProxy stackValue: 0)) > (self sizeof: #squeakFileOffsetType) ifTrue:
+		[(interpreterProxy byteSizeOf: (interpreterProxy stackValue: 0)) > (self sizeof: #fileOffset_t) ifTrue:
 			[^interpreterProxy primitiveFail]].
 	truncatePosition := interpreterProxy positive64BitValueOf: (interpreterProxy stackValue: 0).
 	file := self fileValueOf: (interpreterProxy stackValue: 1).

@@ -187,7 +187,7 @@ CogMIPSELCompiler class >> printFormatForOpcodeName: opcodeName [
 	"Answer a sequence of $r, $f or nil for the operands in the opcode, used for printing, where
 	 r => integer register, f => floating point register, and nil => numeric or address operand.
 	 Subclasses can override to provide a format string for their own private opcodes."
-	^(opcodeName startsWith: 'Br') ifTrue: [' rr'] ifFalse: [#()]
+	^(opcodeName beginsWith: 'Br') ifTrue: [' rr'] ifFalse: [#()]
 ]
 
 { #category : 'translation' }
@@ -1908,6 +1908,8 @@ CogMIPSELCompiler >> inlineCacheTagAt: callSiteReturnAddress [
 	 ...  <-- callSiteReturnAddress"
 	
 	<var: #callSiteReturnAddress type: #usqInt>
+	<returnTypeC: #usqInt>
+	
 	self assert: (self opcodeAtAddress: callSiteReturnAddress - 24) = LUI.
 	self assert: (self opcodeAtAddress: callSiteReturnAddress - 20) = ORI.
 	self assert: (self opcodeAtAddress: callSiteReturnAddress - 16) = LUI.
@@ -1916,7 +1918,8 @@ CogMIPSELCompiler >> inlineCacheTagAt: callSiteReturnAddress [
 	self assert: (self functionAtAddress: callSiteReturnAddress - 8) = JALR.
 	self assert: (objectMemory longAt: callSiteReturnAddress - 4) = self nop.
 
-	^self literalAtAddress: callSiteReturnAddress - 20
+	^(self literalAtAddress: callSiteReturnAddress - 20) bitAnd:
+		  1 << objectMemory classIndexFieldWidth - 1
 ]
 
 { #category : 'disassembly' }

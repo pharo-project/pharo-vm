@@ -67,10 +67,44 @@ TStatementListNode >> accept: aVisitor [
 ]
 
 { #category : 'adding' }
+TStatementListNode >> addAllFirst: aListOfStatement [
+
+	(statements isNotEmpty and: [ statements first isComment ])
+		ifFalse: [ self statements: aListOfStatement , statements ]
+		ifTrue: [
+			| actualFirst actualFirstMet firstComments allWithoutFirstComments |
+			actualFirst := self firstNonCommentStatement.
+			firstComments := OrderedCollection new.
+			allWithoutFirstComments := OrderedCollection new.
+			actualFirstMet := false.
+			statements do: [ :e |
+				actualFirstMet
+					ifFalse: [
+						firstComments add: e.
+						actualFirstMet := e == actualFirst ]
+					ifTrue: [ allWithoutFirstComments add: e ] ].
+			self statements:
+				firstComments , aListOfStatement , allWithoutFirstComments ]
+]
+
+{ #category : 'adding' }
 TStatementListNode >> addAllLast: aListOfStatement [
 
+	self statements: (statements
+			 addAllLast: aListOfStatement;
+			 yourself)
+]
+
+{ #category : 'adding' }
+TStatementListNode >> addAllLastKeepingEndComments: aListOfStatement [
+
+	"This method adds the statements in the argument to this statement list, guaranteeing that comments at the end remain at the end."
+
 	(statements isNotEmpty and: [ statements last isComment ])
-		ifFalse: [ statements addAllLast: aListOfStatement ]
+		ifFalse: [
+			self statements: (statements
+					 addAllLast: aListOfStatement;
+					 yourself) ]
 		ifTrue: [
 			| actualLast actualLastMet allWithoutEndComment endComment |
 			actualLast := self lastNonCommentStatement.
@@ -83,7 +117,8 @@ TStatementListNode >> addAllLast: aListOfStatement [
 						allWithoutEndComment add: e.
 						actualLastMet := e == actualLast ]
 					ifTrue: [ endComment add: e ] ].
-			statements := allWithoutEndComment , aListOfStatement , endComment ]
+			self statements:
+				allWithoutEndComment , aListOfStatement , endComment ]
 ]
 
 { #category : 'declarations' }
@@ -91,6 +126,11 @@ TStatementListNode >> addDeclarations: aCollection [
 	
 	declarations addAll: aCollection.
 	locals addAll: aCollection keys.
+]
+
+{ #category : 'adding' }
+TStatementListNode >> addFirst: aNode [ 
+	self statements: (OrderedCollection new add: aNode ; yourself) , statements 
 ]
 
 { #category : 'utilities' }
@@ -123,23 +163,27 @@ TStatementListNode >> addReadBeforeAssignedIn: variables to: readBeforeAssigned 
 							assigned add:
 								(node arguments first detect: [ :subnode | subnode isVariable ])
 									name ].
-					(#( #to:do: #to:by:do: ) includes: node selector) ifTrue: [
+					#to:by:do: = node selector ifTrue: [
 						assigned addAll:
 							(node arguments at: node selector numArgs) arguments.
-						mayHaveSideEffects := node arguments size = 4. "See TMethod>>prepareMethodIn:"
+						mayHaveSideEffects := node arguments size = 5. "See TMethod>>prepareMethodIn:"
 						mayHaveSideEffects ifTrue: [
 							assigned add: node arguments last name ] ].
 					"Then deal with read-before-written in the arms of conditionals..."
 					(#( ifTrue: ifFalse: ifNil: ifNotNil: ) intersection:
 						 node selector keywords) notEmpty
 						ifTrue: [ "First find assignments in the expression..."
+							| receiver |
+							receiver := node receiver.
 							(TStatementListNode new
-								 statements: { node receiver };
+								 statements: { receiver };
 								 yourself)
 								addReadBeforeAssignedIn: variables
 								to: readBeforeAssigned
 								assignments: assigned
 								in: aCodeGen.
+							"restore the right parent"
+							receiver parent: node.
 							"Now find read-before-written in each arm, and collect the assignments to spot those assigned in both arms"
 							conditionalAssignments := node arguments
 								                          collect: [ :block |
@@ -205,7 +249,11 @@ TStatementListNode >> asCASTExpressionIn: aBuilder [
 	statements withIndexDo: [ :node :idx |
 		(node isLeaf and: [
 			 node isLabel not and: [ node ~~ self lastNonCommentStatement ] ])
-			ifFalse: [ expressionList , (node asCASTExpressionIn: aBuilder) ] ].
+			ifFalse: [
+				| expr |
+				expr := node asCASTExpressionIn: aBuilder.
+				expr parent: expressionList.
+				expressionList , expr ] ].
 	^ expressionList
 ]
 
@@ -351,14 +399,23 @@ TStatementListNode >> children [
 	^ statements
 ]
 
+{ #category : 'dead-code-elimination' }
+TStatementListNode >> collectSendInSelf: sendToCollect [
+
+	statements do: [ :stmt | stmt collectSendInSelf: sendToCollect ]
+]
+
 { #category : 'transformations' }
 TStatementListNode >> copyWithoutReturn [
 
 	| newStmtsListNode |
 	self assert: self endsWithReturn.
+
 	statements size = 1 ifTrue: [
-		statements last parent: self parent.
-		^ statements last copyWithoutReturn ].
+		^ statements last copyWithoutReturn
+			  parent: self parent;
+			  yourself ].
+
 	newStmtsListNode := self class new setArguments: arguments.
 	statements last isComment
 		ifFalse: [
@@ -371,6 +428,7 @@ TStatementListNode >> copyWithoutReturn [
 			newStmtsListNode
 				replaceChild: actualLast
 				with: actualLast copyWithoutReturn ].
+	newStmtsListNode parent: parent.
 	^ newStmtsListNode
 ]
 
@@ -414,6 +472,22 @@ TStatementListNode >> first [
 	^ self statements first
 ]
 
+{ #category : 'accessing' }
+TStatementListNode >> firstNonCommentStatement [
+	"the first statement can be a comment if the TStatementList has been through inlining, return the actual first statement"
+
+	| first indexOfFirst limitIndex |
+	first := statements first.
+	indexOfFirst := 1.
+	limitIndex := statements size.
+	[ first isComment ] whileTrue: [
+		indexOfFirst := indexOfFirst + 1.
+		indexOfFirst = limitIndex ifTrue: [ ^ nil ].
+		first := statements at: indexOfFirst ].
+
+	^ first
+]
+
 { #category : 'flattening' }
 TStatementListNode >> flattened [
 
@@ -427,14 +501,14 @@ TStatementListNode >> initialize [
 	super initialize.
 	declarations := Dictionary new.
 	usedVariables := Set new.
-	locals := OrderedCollection new.
+	locals := Set new.
 	arguments := #()
 ]
 
 { #category : 'testing' }
 TStatementListNode >> isComment [
 
-	^ self hasNothingButComments
+	^ self isEmptyOrHasNothingButComments
 ]
 
 { #category : 'testing' }
@@ -454,10 +528,10 @@ TStatementListNode >> isExpression [
 { #category : 'testing' }
 TStatementListNode >> isNilStmtListNode [
 
-	|stmt|
-	statements size = 1 ifFalse: [^false].
+	| stmt |
+	statements size = 1 ifFalse: [ ^ false ].
 	stmt := statements at: 1.
-	^ stmt isVariable and: [stmt name = 'nil']
+	^ stmt isConstant and: [ stmt value isNil ]
 ]
 
 { #category : 'testing' }
@@ -508,7 +582,7 @@ TStatementListNode >> locals [
 { #category : 'accessing' }
 TStatementListNode >> locals: anObject [
 
-	locals := anObject
+	locals := anObject asSet
 ]
 
 { #category : 'enumerating' }
@@ -595,19 +669,39 @@ TStatementListNode >> removeAssertions [
 ]
 
 { #category : 'transformations' }
+TStatementListNode >> removeFirstNonCommentStatement [
+
+	| first |
+	first := self firstNonCommentStatement.
+	statements := statements select: [ :e | e ~= first ]
+]
+
+{ #category : 'transformations' }
 TStatementListNode >> removeLast [
 	"the last statement can be a comment if the TStatementList has been through inlining, remove the actual last statement"
 
-	statements := self allButLastNonCommentStatement
+	self statements: self allButLastNonCommentStatement
+]
+
+{ #category : 'dead-code-elimination' }
+TStatementListNode >> removeLocal: local [
+
+	self locals: (locals select: [ :l | l ~= local ])
 ]
 
 { #category : 'dead-code-elimination' }
 TStatementListNode >> removeUnusedNodesInBranch: aChild [
 	"this method should be only called when cleaning an AST tree after an unused expression was found, remove aChild from the list of statements"
 
-	statements := statements select: [ :stmt | stmt ~~ aChild ].
-	(statements isEmpty or: [ self hasNothingButComments ]) ifTrue: [
-		self parent removeUnusedNodesInBranch: self ]
+	self statements: (statements select: [ :stmt | stmt ~~ aChild ]).
+	self isEmptyOrHasNothingButComments ifTrue: [
+		self parent removeUnusedNodesInBranch: self ].
+	(statements size = 1 and: [
+		 self parent isNotNil and: [
+			 self parent isTMethod not and: [
+				 self parent isSend and: [
+					 self parent isUnaryIterativeSendWithImportantLastStatement ] ] ] ])
+		ifTrue: [ self parent removeUnusedNodesInBranch: self ]
 ]
 
 { #category : 'inlining support' }
@@ -621,6 +715,31 @@ TStatementListNode >> renameLabelsForInliningInto: aTMethod [
 		parseTree: self;
 		labels: labels;
 		renameLabelsForInliningInto: aTMethod
+]
+
+{ #category : 'transformations' }
+TStatementListNode >> renameLocalOrArg: varName with: newName [
+
+	locals := locals collect: [ :e |
+		          e ~= varName
+			          ifTrue: [ e ]
+			          ifFalse: [ newName ] ].
+	arguments := arguments collect: [ :e |
+		             e ~= varName
+			             ifTrue: [ e ]
+			             ifFalse: [ newName ] ]
+]
+
+{ #category : 'transformations' }
+TStatementListNode >> renameLocalVariablesGivenClassVariables: classVariables globalVariables: globalsVariables classNames: classNames inCodeGenerator: aCodeGen collectingChangesIn: changedVariables [
+
+	self statements: (statements collect: [ :s |
+			 s
+				 renameLocalVariablesGivenClassVariables: classVariables
+				 globalVariables: globalsVariables
+				 classNames: classNames
+				 inCodeGenerator: aCodeGen
+				 collectingChangesIn: changedVariables ])
 ]
 
 { #category : 'transformations' }
@@ -645,29 +764,29 @@ TStatementListNode >> replaceChild: aNode withList: aListOfStatement [
 				aNodeMet := e == aNode.
 				aNodeMet ifFalse: [ allWithoutANode add: e ] ]
 			ifTrue: [ endWithoutANode add: e ] ].
-	statements := allWithoutANode , aListOfStatement , endWithoutANode
+	self statements: allWithoutANode , aListOfStatement , endWithoutANode
 ]
 
 { #category : 'transformations' }
 TStatementListNode >> replaceNodesIn: aDictionary [
 
-	^aDictionary at: self ifAbsent: [
-		self statements: (statements collect: [ :s | s replaceNodesIn: aDictionary ]).
-		self]
+	| aDictionaryAtSelf |
+	aDictionaryAtSelf := aDictionary at: self ifAbsent: [ nil ].
+	aDictionaryAtSelf ifNotNil: [ ^ aDictionaryAtSelf copy ].
+
+	self statements:
+		(statements collect: [ :s | s replaceNodesIn: aDictionary ]).
+	^ self
 ]
 
 { #category : 'testing' }
 TStatementListNode >> returnsExpression [
 	"Answer true if the last statement of this block is a return of some expression, not merely self or nil."
 
-	statements isEmpty ifTrue:
-		[^false].
-	self lastNonCommentStatement isReturn ifFalse:
-		[^false].
-	self lastNonCommentStatement isVariable ifFalse:
-		[^true].
-	^self lastNonCommentStatement variable ~= 'self'
-	  and: [self lastNonCommentStatement variable ~= 'nil']
+	statements isEmpty ifTrue: [ ^ false ].
+	self lastNonCommentStatement isReturn ifFalse: [ ^ false ].
+	self lastNonCommentStatement isVariable ifFalse: [ ^ true ].
+	^ self lastNonCommentStatement variable ~= 'self'
 ]
 
 { #category : 'accessing' }
@@ -704,9 +823,19 @@ TStatementListNode >> shouldExpand [
 ]
 
 { #category : 'accessing' }
+TStatementListNode >> sizeWithoutComments [
+
+	| size |
+	size := 0.
+	statements do: [ :stmt |
+		stmt isComment ifFalse: [ size := size + 1 ] ].
+	^ size
+]
+
+{ #category : 'accessing' }
 TStatementListNode >> statements [
 
-	^statements
+	^ statements
 ]
 
 { #category : 'accessing' }

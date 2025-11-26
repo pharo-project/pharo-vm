@@ -200,7 +200,7 @@ BitBltSimulation class >> declareCVarsIn: aCCodeGenerator [
 
 	"add option of  fast path BitBLT code header"
 	aCCodeGenerator
-		addHeaderFile:'"sqAssert.h"';
+		addHeaderFile:'"assert.h"';
 		addHeaderFile:'#ifdef ENABLE_FAST_BLT
 #include "BitBltDispatch.h"
 #else
@@ -1265,13 +1265,13 @@ BitBltSimulation >> copyBitsFastPathSpecialised [
 { #category : 'setup' }
 BitBltSimulation >> copyBitsFrom: startX to: stopX at: yValue [
 	"Support for the balloon engine."
+
 	<export: true>
 	destX := startX.
 	destY := yValue.
 	sourceX := startX.
-	width := (stopX - startX).
-	self copyBits.
-
+	width := stopX - startX.
+	self copyBits
 ]
 
 { #category : 'setup' }
@@ -2559,7 +2559,7 @@ BitBltSimulation >> moduleUnloaded: aModuleName [
 	 Make sure we have no dangling references."
 	<export: true>
 	<var: #aModuleName type: 'char *'>
-	(aModuleName strcmp: 'SurfacePlugin') = 0 ifTrue: "The surface plugin just shut down. How nasty."
+	(self cCall: 'strcmp' withArguments: {aModuleName . 'SurfacePlugin'}) = 0 ifTrue: "The surface plugin just shut down. How nasty."
 		[querySurfaceFn := 0.
 		 lockSurfaceFn := 0.
 		 unlockSurfaceFn := 0]
@@ -2989,7 +2989,6 @@ BitBltSimulation >> primitiveCopyBits [
 		[^interpreterProxy primitiveFail].
 	self copyBits.
 	interpreterProxy failed ifTrue: [^nil].
-	interpreterProxy failed ifTrue: [^nil].
 	(combinationRule = 22 or: [combinationRule = 32])
 		ifTrue: [interpreterProxy methodReturnInteger: bitCount]
 		ifFalse: [interpreterProxy methodReturnReceiver]
@@ -3081,15 +3080,16 @@ BitBltSimulation >> primitiveDisplayString [
 { #category : 'primitives' }
 BitBltSimulation >> primitiveDrawLoop [
 	"Invoke the line drawing primitive."
-	| rcvr xDelta yDelta |
+
 	<export: true>
+	| rcvr xDelta yDelta |
 	rcvr := interpreterProxy stackValue: 2.
 	xDelta := interpreterProxy stackIntegerValue: 1.
 	yDelta := interpreterProxy stackIntegerValue: 0.
-	(self loadBitBltFrom: rcvr) ifFalse:[^interpreterProxy primitiveFail].
-	interpreterProxy failed ifFalse:[
-		self drawLoopX: xDelta Y: yDelta].
-	interpreterProxy failed ifFalse:[interpreterProxy pop: 2].
+	(self loadBitBltFrom: rcvr) ifFalse: [
+		^ interpreterProxy primitiveFail ].
+	interpreterProxy failed ifFalse: [ self drawLoopX: xDelta Y: yDelta ].
+	interpreterProxy failed ifFalse: [ interpreterProxy pop: 2 ]
 ]
 
 { #category : 'primitives' }
@@ -3147,8 +3147,6 @@ BitBltSimulation >> primitiveWarpBits [
 	(self loadWarpBltFrom: rcvr) 
 		ifFalse:[^interpreterProxy primitiveFail].
 	self warpBits.
-	interpreterProxy failed ifTrue:[^nil].
-
 	interpreterProxy failed ifTrue:[^nil].
 	interpreterProxy methodReturnReceiver
 ]
@@ -3999,34 +3997,44 @@ BitBltSimulation >> tryCopyingBitsQuickly [
 { #category : 'surface support' }
 BitBltSimulation >> unlockSurfaces [
 	"Unlock the bits of any OS surfaces."
+
 	"See the comment in lockSurfaces. Similar rules apply. That is, the area provided in ioUnlockSurface
 	 can be used to determine the dirty region after drawing. If a source is unlocked, then the area will
 	 be (0,0,0,0) to indicate that no portion is dirty.  Note that if a GC happens during unlockSourceFn
 	 (if it is effectively a callback) no matter.  No bits are touched after unlock."
+
 	| sourceHandle destHandle destLocked |
-	hasSurfaceLock ifFalse: [^self].
-	unlockSurfaceFn = 0 ifTrue:
-		[self loadSurfacePlugin ifFalse:
-			[^self]].
+	hasSurfaceLock ifFalse: [ ^ self ].
+	unlockSurfaceFn = 0 ifTrue: [
+		self loadSurfacePlugin ifFalse: [ ^ self ] ].
 	self ensureDestAndSourceFormsAreValid.
 	destLocked := false.
-	destHandle := interpreterProxy fetchPointer: FormBitsIndex ofObject: destForm.
-	(interpreterProxy isIntegerObject: destHandle) ifTrue: "The destBits are always assumed to be dirty"
-		[self unlockSurfaceFn: (interpreterProxy integerValueOf: destHandle)
-							_: affectedL
-							_: affectedT
-							_: affectedR - affectedL
-							_: affectedB - affectedT.
-		 destBits := destPitch := 0.
-		 destLocked := true].
-	noSource ifFalse:
-		[self ensureDestAndSourceFormsAreValid.
-		 sourceHandle := interpreterProxy fetchPointer: FormBitsIndex ofObject: sourceForm.
-		 (interpreterProxy isIntegerObject: sourceHandle) ifTrue:
-			["Only unlock sourceHandle if different from destHandle"
-			 (destLocked and: [sourceHandle = destHandle]) ifFalse:
-				[self unlockSurfaceFn: (interpreterProxy integerValueOf: sourceHandle) _: 0 _: 0 _: 0 _: 0].
-			sourceBits := sourcePitch := 0]].
+	destHandle := interpreterProxy
+		              fetchPointer: FormBitsIndex
+		              ofObject: destForm.
+	(interpreterProxy isIntegerObject: destHandle) ifTrue: [ "The destBits are always assumed to be dirty"
+		self cCall: 'unlockSurfaceFn' withArguments: {
+				(interpreterProxy integerValueOf: destHandle).
+				affectedL.
+				affectedT.
+				(affectedR - affectedL).
+				(affectedB - affectedT) }.
+		destBits := destPitch := 0.
+		destLocked := true ].
+	noSource ifFalse: [
+		self ensureDestAndSourceFormsAreValid.
+		sourceHandle := interpreterProxy
+			                fetchPointer: FormBitsIndex
+			                ofObject: sourceForm.
+		(interpreterProxy isIntegerObject: sourceHandle) ifTrue: [ "Only unlock sourceHandle if different from destHandle"
+			(destLocked and: [ sourceHandle = destHandle ]) ifFalse: [
+				self cCall: 'unlockSurfaceFn' withArguments: {
+						(interpreterProxy integerValueOf: sourceHandle).
+						0.
+						0.
+						0.
+						0 } ].
+			sourceBits := sourcePitch := 0 ] ].
 	hasSurfaceLock := false
 ]
 

@@ -1,8 +1,9 @@
 Class {
 	#name : 'ManifestVMMaker',
 	#superclass : 'PackageManifest',
-	#category : 'VMMaker',
-	#package : 'VMMaker'
+	#category : 'VMMaker-Manifest',
+	#package : 'VMMaker',
+	#tag : 'Manifest'
 }
 
 { #category : 'code-critics' }

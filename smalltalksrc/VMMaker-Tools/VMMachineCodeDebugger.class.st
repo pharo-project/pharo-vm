@@ -1,6 +1,6 @@
 Class {
-	#name : #VMMachineCodeDebugger,
-	#superclass : #SpPresenter,
+	#name : 'VMMachineCodeDebugger',
+	#superclass : 'SpPresenter',
 	#instVars : [
 		'cogit',
 		'machineSimulator',
@@ -15,10 +15,11 @@ Class {
 		'jumpToButton',
 		'abstractInstructions'
 	],
-	#category : #'VMMaker-Tools'
+	#category : 'VMMaker-Tools',
+	#package : 'VMMaker-Tools'
 }
 
-{ #category : #layout }
+{ #category : 'layout' }
 VMMachineCodeDebugger class >> defaultLayout [
 
 	^  SpBoxLayout newVertical
@@ -41,13 +42,13 @@ VMMachineCodeDebugger class >> defaultLayout [
 		yourself
 ]
 
-{ #category : #'as yet unclassified' }
+{ #category : 'as yet unclassified' }
 VMMachineCodeDebugger class >> openOnCogit: aCogit [
 
 	self openOnCogit: aCogit ip: aCogit processor machineSimulator pc
 ]
 
-{ #category : #'as yet unclassified' }
+{ #category : 'as yet unclassified' }
 VMMachineCodeDebugger class >> openOnCogit: aCogit ip: anInstructionPointer [
 
 	self new
@@ -57,29 +58,29 @@ VMMachineCodeDebugger class >> openOnCogit: aCogit ip: anInstructionPointer [
 		openWithSpec.
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 VMMachineCodeDebugger >> abstractInstructions [
 
 	^ abstractInstructions
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 VMMachineCodeDebugger >> abstractInstructions: aCollection [
 
 	^ abstractInstructions := aCollection
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 VMMachineCodeDebugger >> cogit [
 	^ cogit
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 VMMachineCodeDebugger >> cogit: anObject [
 	cogit := anObject
 ]
 
-{ #category : #initialization }
+{ #category : 'initialization' }
 VMMachineCodeDebugger >> connectButtons [
 
 	stepButton action: [ self step ].
@@ -87,7 +88,7 @@ VMMachineCodeDebugger >> connectButtons [
 	jumpToButton action: [ self jump ]
 ]
 
-{ #category : #initialization }
+{ #category : 'initialization' }
 VMMachineCodeDebugger >> connectIRInstructionsPresenter [
 
 	|  irinstructionsContextMenu |
@@ -105,7 +106,7 @@ VMMachineCodeDebugger >> connectIRInstructionsPresenter [
 	irinstructions contextMenu: irinstructionsContextMenu
 ]
 
-{ #category : #initialization }
+{ #category : 'initialization' }
 VMMachineCodeDebugger >> connectInstructionsPresenter [
 
 	| instructionsContextMenu |
@@ -133,7 +134,7 @@ VMMachineCodeDebugger >> connectInstructionsPresenter [
 	instructions contextMenu: instructionsContextMenu
 ]
 
-{ #category : #initialization }
+{ #category : 'initialization' }
 VMMachineCodeDebugger >> connectMachineStatePresenter [
 
 	| contextMenu |
@@ -162,7 +163,7 @@ VMMachineCodeDebugger >> connectMachineStatePresenter [
 
 ]
 
-{ #category : #initialization }
+{ #category : 'initialization' }
 VMMachineCodeDebugger >> connectPresenters [
 
 	self connectButtons.
@@ -171,14 +172,14 @@ VMMachineCodeDebugger >> connectPresenters [
 	self connectMachineStatePresenter
 ]
 
-{ #category : #actions }
+{ #category : 'actions' }
 VMMachineCodeDebugger >> disassembleAtPC [
 
 	self initialInstructionToDisassemble:  machineSimulator instructionPointerRegisterValue.
 	self refreshInstructions.
 ]
 
-{ #category : #showing }
+{ #category : 'showing' }
 VMMachineCodeDebugger >> doInitialDisassemble [
 
 	^ machineSimulator disassembler
@@ -192,7 +193,7 @@ VMMachineCodeDebugger >> doInitialDisassemble [
 		pc: machineSimulator instructionPointerRegisterValue
 ]
 
-{ #category : #actions }
+{ #category : 'actions' }
 VMMachineCodeDebugger >> highlightMCInstructions: aVMDebuggerIRInstruction [
 
 	"Extract the machine code instructions from the IR instruction"
@@ -208,7 +209,7 @@ VMMachineCodeDebugger >> highlightMCInstructions: aVMDebuggerIRInstruction [
 
 ]
 
-{ #category : #actions }
+{ #category : 'actions' }
 VMMachineCodeDebugger >> highlightPCInstruction [
 
 	| index |
@@ -217,7 +218,7 @@ VMMachineCodeDebugger >> highlightPCInstruction [
 
 ]
 
-{ #category : #actions }
+{ #category : 'actions' }
 VMMachineCodeDebugger >> highlightRegisters: aVMDebuggerInstruction [
 
 	"Extract registers name from instruction assembly and highlight the corresponding lines"
@@ -232,7 +233,7 @@ VMMachineCodeDebugger >> highlightRegisters: aVMDebuggerInstruction [
 
 ]
 
-{ #category : #actions }
+{ #category : 'actions' }
 VMMachineCodeDebugger >> highlightSelectedIRInstructionMCInstructions [
 
 	self selectedIRInstruction
@@ -241,14 +242,14 @@ VMMachineCodeDebugger >> highlightSelectedIRInstructionMCInstructions [
 
 ]
 
-{ #category : #actions }
+{ #category : 'actions' }
 VMMachineCodeDebugger >> highlightSelectedInstructionRegisters [
 
 	self selectedInstruction ifNotNil: [
 		self highlightRegisters: self selectedInstruction ]
 ]
 
-{ #category : #showing }
+{ #category : 'showing' }
 VMMachineCodeDebugger >> initialDisassembly [
 
 	^ self doInitialDisassemble collect: [ :anInstruction |
@@ -260,13 +261,13 @@ VMMachineCodeDebugger >> initialDisassembly [
 				yourself ]
 ]
 
-{ #category : #showing }
+{ #category : 'showing' }
 VMMachineCodeDebugger >> initialExtent [
 
 	^ 1000@600
 ]
 
-{ #category : #showing }
+{ #category : 'showing' }
 VMMachineCodeDebugger >> initialIRDisassembly [
 
 	^ self abstractInstructions collect: [ :anInstruction | VMMachineCodeDebuggerIRInstruction new
@@ -277,20 +278,20 @@ VMMachineCodeDebugger >> initialIRDisassembly [
 				yourself ]
 ]
 
-{ #category : #showing }
+{ #category : 'showing' }
 VMMachineCodeDebugger >> initialInstructionToDisassemble [
 
 	^ initialInstructionToDisassemble
 		ifNil: [ machineSimulator instructionPointerRegisterValue ]
 ]
 
-{ #category : #showing }
+{ #category : 'showing' }
 VMMachineCodeDebugger >> initialInstructionToDisassemble: anInstructionAddress [
 
 	initialInstructionToDisassemble := anInstructionAddress
 ]
 
-{ #category : #initialization }
+{ #category : 'initialization' }
 VMMachineCodeDebugger >> initializeButtons [
 
 	stepButton := self newButton.
@@ -302,7 +303,7 @@ VMMachineCodeDebugger >> initializeButtons [
 	jumpToButton label: 'Jump to'
 ]
 
-{ #category : #initialization }
+{ #category : 'initialization' }
 VMMachineCodeDebugger >> initializeIRInstructionsPresenter [
 
 	irinstructions := self newTable.
@@ -336,7 +337,7 @@ VMMachineCodeDebugger >> initializeIRInstructionsPresenter [
 		whenSelectionChangedDo: [ self highlightSelectedIRInstructionMCInstructions ]
 ]
 
-{ #category : #initialization }
+{ #category : 'initialization' }
 VMMachineCodeDebugger >> initializeInstructionsPresenter [
 
 	instructions := self newTable.
@@ -362,7 +363,7 @@ VMMachineCodeDebugger >> initializeInstructionsPresenter [
 		whenSelectionChangedDo: [ self highlightSelectedInstructionRegisters ]
 ]
 
-{ #category : #initialization }
+{ #category : 'initialization' }
 VMMachineCodeDebugger >> initializeMachineStatePresenter [
 
 
@@ -382,7 +383,7 @@ VMMachineCodeDebugger >> initializeMachineStatePresenter [
 			evaluated: [ :register | register printString ])
 ]
 
-{ #category : #initialization }
+{ #category : 'initialization' }
 VMMachineCodeDebugger >> initializePresenters [
 
 	self initializeIRInstructionsPresenter.
@@ -392,7 +393,7 @@ VMMachineCodeDebugger >> initializePresenters [
 	self initializeButtons
 ]
 
-{ #category : #initialization }
+{ #category : 'initialization' }
 VMMachineCodeDebugger >> initializeStackPresenter [
 
 	stack := self newTable.
@@ -410,24 +411,24 @@ VMMachineCodeDebugger >> initializeStackPresenter [
 						 do: [ 'Error' ] ])
 ]
 
-{ #category : #actions }
+{ #category : 'actions' }
 VMMachineCodeDebugger >> inspectSelectedIRInstruction [
 
 	irinstructions selection selectedItem inspect
 ]
 
-{ #category : #actions }
+{ #category : 'actions' }
 VMMachineCodeDebugger >> inspectSelectedInstruction [
 
 	instructions selection selectedItem inspect
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 VMMachineCodeDebugger >> irinstructions: aCollection [
 	irinstructions := aCollection
 ]
 
-{ #category : #actions }
+{ #category : 'actions' }
 VMMachineCodeDebugger >> jump [
 
 	machineSimulator instructionPointerRegisterValue: (NumberParser parse: ipInput text).
@@ -435,24 +436,24 @@ VMMachineCodeDebugger >> jump [
 	self refreshRegisters.
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 VMMachineCodeDebugger >> machineSimulator [
 	^ machineSimulator
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 VMMachineCodeDebugger >> machineSimulator: anObject [
 	machineSimulator := anObject
 ]
 
-{ #category : #showing }
+{ #category : 'showing' }
 VMMachineCodeDebugger >> openWithSpec [
 
 	self refreshAll.
 	super open
 ]
 
-{ #category : #showing }
+{ #category : 'showing' }
 VMMachineCodeDebugger >> refreshAll [
 
 	self refreshIRInstructions.
@@ -461,31 +462,31 @@ VMMachineCodeDebugger >> refreshAll [
 	self refreshRegisters.
 ]
 
-{ #category : #showing }
+{ #category : 'showing' }
 VMMachineCodeDebugger >> refreshIRInstructions [
 
 	irinstructions items: self initialIRDisassembly
 ]
 
-{ #category : #showing }
+{ #category : 'showing' }
 VMMachineCodeDebugger >> refreshInstructions [
 
 	instructions items: self initialDisassembly
 ]
 
-{ #category : #showing }
+{ #category : 'showing' }
 VMMachineCodeDebugger >> refreshRegisters [
 
 	machineState items: machineSimulator registerDescriptors
 ]
 
-{ #category : #showing }
+{ #category : 'showing' }
 VMMachineCodeDebugger >> refreshStack [
 
 	stack items: machineSimulator stackValues
 ]
 
-{ #category : #actions }
+{ #category : 'actions' }
 VMMachineCodeDebugger >> runToSelectedInstruction [
 
 	| selectedInstruction |
@@ -500,25 +501,25 @@ VMMachineCodeDebugger >> runToSelectedInstruction [
 	self refreshStack.
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 VMMachineCodeDebugger >> selectedIRInstruction [
 
 	^ irinstructions selection selectedItem
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 VMMachineCodeDebugger >> selectedInstruction [
 
 	^ instructions selection selectedItem
 ]
 
-{ #category : #actions }
+{ #category : 'actions' }
 VMMachineCodeDebugger >> setInstructionPointerToSelectedInstruction [	
 
   machineSimulator instructionPointerRegisterValue: instructions selection selectedItem address
 ]
 
-{ #category : #actions }
+{ #category : 'actions' }
 VMMachineCodeDebugger >> step [
 
 	machineSimulator step.
@@ -526,7 +527,7 @@ VMMachineCodeDebugger >> step [
 	self highlightPCInstruction
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 VMMachineCodeDebugger >> title [
    
 	^ 'VM Debugger'

@@ -1,15 +1,16 @@
 Class {
-	#name : #VMTFreeListNodeEdge,
-	#superclass : #Object,
+	#name : 'VMTFreeListNodeEdge',
+	#superclass : 'Object',
 	#instVars : [
 		'memory',
 		'label',
 		'nodeOop'
 	],
-	#category : #'VMMaker-Tools'
+	#category : 'VMMaker-Tools',
+	#package : 'VMMaker-Tools'
 }
 
-{ #category : #'instance-creation' }
+{ #category : 'instance-creation' }
 VMTFreeListNodeEdge class >> memory: aMemory label: aLabel oop: anOop [
 	
 	^ self new
@@ -19,55 +20,55 @@ VMTFreeListNodeEdge class >> memory: aMemory label: aLabel oop: anOop [
 		yourself
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 VMTFreeListNodeEdge >> address [
 
 	^ ''
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 VMTFreeListNodeEdge >> children [
 	
 	^ { VMTFreeTreeNode on: nodeOop memory: memory }
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 VMTFreeListNodeEdge >> hasChildren [
 	
 	^ nodeOop ~= 0
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 VMTFreeListNodeEdge >> label [
 	^ label
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 VMTFreeListNodeEdge >> label: anObject [
 	label := anObject
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 VMTFreeListNodeEdge >> memory [
 	^ memory
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 VMTFreeListNodeEdge >> memory: anObject [
 	memory := anObject
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 VMTFreeListNodeEdge >> nodeOop [
 	^ nodeOop
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 VMTFreeListNodeEdge >> nodeOop: anObject [
 	nodeOop := anObject
 ]
 
-{ #category : #printing }
+{ #category : 'printing' }
 VMTFreeListNodeEdge >> printOn: aStream [
 
 	aStream
@@ -76,7 +77,7 @@ VMTFreeListNodeEdge >> printOn: aStream [
 		nextPutAll: nodeOop hex
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 VMTFreeListNodeEdge >> size [
 
 	^ ''

@@ -32,9 +32,7 @@ TVariableNode >> accept: aVisitor [
 { #category : 'tranforming' }
 TVariableNode >> asCASTIn: aBuilder [
 
-	^ name = 'nil'
-		  ifTrue: [ CIdentifierNode name: aBuilder nilTranslation ]
-		  ifFalse: [ CIdentifierNode name: (aBuilder returnPrefixFromVariable: name) ]
+	^ CIdentifierNode name: (aBuilder returnPrefixFromVariable: name)
 ]
 
 { #category : 'transformations' }
@@ -50,8 +48,9 @@ TVariableNode >> bindVariableUsesIn: aDictionary andConstantFoldIf: constantFold
 ]
 
 { #category : 'transformations' }
-TVariableNode >> bindVariablesIn: aDictionary [ 
-	^ (aDictionary at: name ifAbsent: [^ self]) copy
+TVariableNode >> bindVariablesIn: aDictionary [
+
+	^ (aDictionary at: name ifAbsent: [ ^ self ]) copy
 ]
 
 { #category : 'transformations' }
@@ -124,6 +123,34 @@ TVariableNode >> printOn: aStream level: level [
 		nextPutAll: '(';
 		nextPutAll: name;
 		nextPutAll: ')'
+]
+
+{ #category : 'transformations' }
+TVariableNode >> renameLocalVariablesGivenClassVariables: classVariables globalVariables: globalsVariables classNames: classNames inCodeGenerator: aCodeGen collectingChangesIn: changedVariables [
+	"Answer either the receiver, if it is not a reference to one of the given variables, or the replacement if it is. classVariables is a Dictionary and globalsVariables is a collection"
+
+	"'self', 'self_in...', 'super' and 'cascade are reserved variable names"
+	(name = #super or: [
+		 (name beginsWith: #self) or: [ name beginsWith: #cascade ] ])
+		ifTrue: [ ^ self ].
+
+	"don't rename variables which reference class name"
+	(classNames includes: name) ifTrue: [ ^ self ].
+
+	"don't rename implicit arguments, they do not appear in the C code but some of them are hard coded in Slang"
+	(aCodeGen isNonArgumentImplicitReceiverVariableName: name) ifTrue: [
+		^ self ].
+
+	(globalsVariables includes: name) ifTrue: [ ^ self ].
+	classVariables
+		at: name
+		ifPresent: [ :replacement |
+			replacement shouldBeGenerated ifTrue: [ ^ replacement ].
+			"in case of library name don't redefine them"
+			^ self ]
+		ifAbsent: [ "the variable is local, we update its name with an _ and add it to the changedVariables collection which will change all its appearance in the TMethods/parseTree "
+			changedVariables add: name.
+			^ self class new setName: #_ , name ]
 ]
 
 { #category : 'accessing' }

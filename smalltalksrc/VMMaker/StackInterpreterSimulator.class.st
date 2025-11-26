@@ -5,9 +5,6 @@ To see the thing actually run, you could (after backing up this image and change
 
 	(StackInterpreterSimulator new openOn: Smalltalk imageName) test
 
-	((StackInterpreterSimulator newWithOptions: #(NewspeakVM true MULTIPLEBYTECODESETS true))
-		openOn: 'ns101.image') test
-
 and be patient both to wait for things to happen, and to accept various things that may go wrong depending on how large or unusual your image may be.  We usually do this with a small and simple benchmark image.
 
 Here's an example of what Eliot uses to launch the simulator in a window.  The bottom-right window has a menu packed with useful stuff:
@@ -163,6 +160,18 @@ StackInterpreterSimulator >> atEachStepBlock: aBlock [
 	atEachStepBlock := aBlock
 ]
 
+{ #category : 'other primitives' }
+StackInterpreterSimulator >> attributeSize: index [
+
+	<doNotGenerate>
+	| attribute |
+	attribute := systemAttributes
+		             at: index
+		             ifAbsent: [ Smalltalk vm getSystemAttribute: index ].
+	attribute ifNil: [ ^ self primitiveFail ].
+	^ attribute size
+]
+
 { #category : 'initialization' }
 StackInterpreterSimulator >> basicInitialize [
 	"Initialize the StackInterpreterSimulator when running the interpreter
@@ -242,12 +251,6 @@ StackInterpreterSimulator >> byteAt: byteAddress [
 	^objectMemory byteAt: byteAddress
 ]
 
-{ #category : 'memory access' }
-StackInterpreterSimulator >> byteAt: byteAddress put: byte [
-	self deprecated.
-	^objectMemory byteAt: byteAddress put: byte
-]
-
 { #category : 'debug support' }
 StackInterpreterSimulator >> byteCount [
 	"So you can call this from temp debug statements in, eg, Interpreter, such as
@@ -284,13 +287,6 @@ StackInterpreterSimulator >> callExternalPrimitive: mapIndex [
 	 for accurate following of forwarders on primitive failure."
 	primitiveFunctionPointer := entry at: 2.
 	^ (entry at: 1) perform: (entry at: 2)
-]
-
-{ #category : 'object memory support' }
-StackInterpreterSimulator >> checkStackIntegrity [
-	"Override to deal with incomplete initialization."
-	stackPages ifNil: [^true].
-	^super checkStackIntegrity
 ]
 
 { #category : 'debug support' }
@@ -552,13 +548,27 @@ StackInterpreterSimulator >> framePointer [
 ]
 
 { #category : 'interpreter shell' }
-StackInterpreterSimulator >> functionPointerFor: primIndex inClass: lookupClass [
-	"Override Interpreter to handle the external primitives caching.  See also
-	 internalExecuteNewMethod."
+StackInterpreterSimulator >> functionPointerFor: primIndex [
+	"Override Interpreter to handle the external primitives caching."
 
 	^(primIndex between: 1 and: MaxPrimitiveIndex)
 		ifTrue: [primitiveTable at: primIndex + 1]
 		ifFalse: [0]
+]
+
+{ #category : 'other primitives' }
+StackInterpreterSimulator >> getAttribute: index Into: objectBody Length: sz [
+
+	1 to: sz do: [ :i |
+		| attribute |
+		attribute := systemAttributes
+			             at: index
+			             ifAbsent: [ Smalltalk vm getSystemAttribute: index ].
+		attribute ifNil: [ ^ self primitiveFail ].
+
+		objectMemory
+			byteAt: objectBody + i - 1
+			put: (attribute at: i) asciiValue ]
 ]
 
 { #category : 'memory access' }
@@ -569,12 +579,6 @@ StackInterpreterSimulator >> halfWordHighInLong32: long32 [
 { #category : 'memory access' }
 StackInterpreterSimulator >> halfWordLowInLong32: long32 [
 	^self subclassResponsibility
-]
-
-{ #category : 'debug support' }
-StackInterpreterSimulator >> headerStart: oop [
-
-	^ (objectMemory extraHeaderBytes: oop) negated
 ]
 
 { #category : 'image save/restore' }
@@ -834,16 +838,6 @@ StackInterpreterSimulator >> ioRelinquishProcessorForMicroseconds: microseconds 
 	self incrementByteCount
 ]
 
-{ #category : 'I/O primitives' }
-StackInterpreterSimulator >> ioScreenDepth [
-	^DisplayScreen actualScreenDepth.
-]
-
-{ #category : 'I/O primitives support' }
-StackInterpreterSimulator >> ioScreenScaleFactor [
-	^ 1.0
-]
-
 { #category : 'process primitive support' }
 StackInterpreterSimulator >> ioSetMaxExtSemTableSize: anInteger [
 	"Inform the VM of the maximum size the image will grow the exernal semaphore table (specialObjectsArray at: 39) to.
@@ -869,10 +863,10 @@ StackInterpreterSimulator >> ioUTCMicroseconds [
 StackInterpreterSimulator >> ioUTCStartMicroseconds [
 	"Answer the value of the microsecond clock at startup."
 
-	^startMicroseconds ifNil:
-		[self class initializationOptions
-			at: #startMicroseconds
-			ifAbsent: [[Time utcMicrosecondClock] on: Error do: [Time totalSeconds * 1000000]]]
+	^ startMicroseconds ifNil: [
+		  self class initializationOptions
+			  at: #startMicroseconds
+			  ifAbsent: [ Time primUTCMicrosecondsClock ] ]
 ]
 
 { #category : 'primitive support' }
@@ -899,18 +893,6 @@ StackInterpreterSimulator >> loadNewPlugin: pluginString [
 		[:entry|
 		 pluginList := pluginList copyWith: entry.
 		 entry]
-]
-
-{ #category : 'memory access' }
-StackInterpreterSimulator >> longAt: byteAddress [
-	self deprecated.
-	^objectMemory longAt: byteAddress
-]
-
-{ #category : 'memory access' }
-StackInterpreterSimulator >> longAt: byteAddress put: a32BitValue [
-	self deprecated.
-	^objectMemory longAt: byteAddress put: a32BitValue
 ]
 
 { #category : 'plugin support' }
@@ -1014,44 +996,9 @@ StackInterpreterSimulator >> primitiveContextAt [
 ]
 
 { #category : 'debugging traps' }
-StackInterpreterSimulator >> primitiveDoPrimitiveWithArgs [
-	self halt.
-	^super primitiveDoPrimitiveWithArgs
-]
-
-{ #category : 'control primitives' }
-StackInterpreterSimulator >> primitiveExecuteMethod [
-	self halt: thisContext selector.
-	^super primitiveExecuteMethod
-]
-
-{ #category : 'control primitives' }
-StackInterpreterSimulator >> primitiveExecuteMethodArgsArray [
-	self halt: thisContext selector.
-	"(objectMemory isOopCompiledMethod: self stackTop) ifFalse:
-		[self halt]."
-	^super primitiveExecuteMethodArgsArray
-]
-
-{ #category : 'debugging traps' }
 StackInterpreterSimulator >> primitiveFailFor: reasonCode [
 	"self halt."
 	^super primitiveFailFor: reasonCode
-]
-
-{ #category : 'other primitives' }
-StackInterpreterSimulator >> primitiveGetAttribute [
-	"Fetch the system attribute with the given integer ID. The result is a string, which will be empty if the attribute is not defined."
-
-	| index s attribute |
-	index := self stackIntegerValue: 0.
-	self successful ifTrue: [
-		attribute := systemAttributes at: index ifAbsent: [Smalltalk vm getSystemAttribute: index].
-		attribute ifNil: [ ^self primitiveFail ].
-		s := objectMemory instantiateClass: (objectMemory splObj: ClassByteString) indexableSize: attribute size.
-		1 to: attribute size do: [ :i |
-			objectMemory storeByte: i-1 ofObject: s withValue: (attribute at: i) asciiValue].
-		self pop: 2 "rcvr, attr" thenPush: s]
 ]
 
 { #category : 'debugging traps' }
@@ -1118,31 +1065,6 @@ StackInterpreterSimulator >> primitiveNewWithArg [
 StackInterpreterSimulator >> primitiveObjectPointsTo [
 	"self halt."
 	^super primitiveObjectPointsTo
-]
-
-{ #category : 'object access primitives' }
-StackInterpreterSimulator >> primitiveStoreStackp [
-	"self printContext: (self stackValue: 1).
-	self halt."
-	super primitiveStoreStackp.
-	"self printContext: self stackTop"
-]
-
-{ #category : 'system control primitives' }
-StackInterpreterSimulator >> primitiveVMParameter [
-	
-	(self stackTop = (objectMemory integerObjectOf: 9)
-	 or: [self stackTop = (objectMemory integerObjectOf: 52)]) ifTrue:
-		[self halt].
-	^super primitiveVMParameter
-]
-
-{ #category : 'debugging traps' }
-StackInterpreterSimulator >> primitiveWait [
-	"Catch errors before we start the whole morphic error process"
-
-	"byteCount > 1000000 ifTrue: [self halt]."  "Ignore early process activity"
-	^ super primitiveWait
 ]
 
 { #category : 'debug printing' }
@@ -1454,15 +1376,6 @@ StackInterpreterSimulator >> singleStep [
 	atEachStepBlock value. "N.B. may be nil"
 	self dispatchOn: currentBytecode in: BytecodeTable.
 	self incrementByteCount
-]
-
-{ #category : 'primitive support' }
-StackInterpreterSimulator >> slowPrimitiveResponse [
-	primTraceLog ifNotNil:
-		[primTraceLog size > 127 ifTrue:
-			[primTraceLog removeFirst].
-		 primTraceLog addLast: primitiveFunctionPointer].
-	^super slowPrimitiveResponse
 ]
 
 { #category : 'debug printing' }

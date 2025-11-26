@@ -19,7 +19,7 @@ ComposedImageReader >> endOfSTON: file [
 	^ self 
 		cCode: [ | aCharacter |
 			aCharacter := self fgetc: file.
-			self ungetc: aCharacter  _:file.
+			self cCall: 'ungetc' withArguments: {aCharacter. file}.
 			aCharacter = -1 or: [ aCharacter = $} ]] 
 		inSmalltalk: [ file peek = $} ].
 	

@@ -9,7 +9,7 @@ This class does not take any special action to flush the instruction cache on in
 "
 Class {
 	#name : 'CogIA32Compiler',
-	#superclass : 'CogAbstractInstruction',
+	#superclass : 'CogX86Compiler',
 	#classVars : [
 		'CDQ',
 		'CLD',
@@ -3399,54 +3399,6 @@ CogIA32Compiler >> genPushRd: reg [
 ]
 
 { #category : 'smalltalk calling convention' }
-CogIA32Compiler >> genPushRegisterArgsForAbortMissNumArgs: numArgs [
-	"Ensure that the register args are pushed before the outer and
-	 inner retpcs at an entry miss for arity <= self numRegArgs.  The
-	 outer retpc is that of a call at a send site.  The inner is the call
-	 from a method or PIC abort/miss to the trampoline."
-
-	"This won't be as clumsy on a RISC.  But putting the receiver and
-	 args above the return address means the CoInterpreter has a
-	 single machine-code frame format which saves us a lot of work."
-
-	"Iff there are register args convert
-		base	->	outerRetpc		(send site retpc)
-		sp		->	innerRetpc		(PIC abort/miss retpc)
-	 to
-		base	->	receiver
-					(arg0)
-					(arg1)
-					outerRetpc
-		sp		->	innerRetpc		(PIC abort/miss retpc)"
-	numArgs <= cogit numRegArgs ifTrue:
-		[self assert: cogit numRegArgs <= 2.
-		 numArgs = 0 ifTrue:
-			[cogit MoveMw: 0 r: SPReg R: TempReg.
-			 cogit PushR: TempReg.
-			 cogit MoveMw: objectMemory wordSize * 2 r: SPReg R: TempReg.
-			 cogit MoveR: TempReg Mw: objectMemory wordSize r: SPReg.
-			 cogit MoveR: ReceiverResultReg Mw: 2 * objectMemory wordSize r: SPReg.
-			 ^self].
-		 numArgs = 1 ifTrue:
-			[cogit MoveMw: objectMemory wordSize r: SPReg R: TempReg.
-			 cogit PushR: TempReg.
-			 cogit MoveMw: objectMemory wordSize r: SPReg R: TempReg.
-			 cogit PushR: TempReg.
-			 cogit MoveR: ReceiverResultReg Mw: 3 * objectMemory wordSize r: SPReg.
-			 cogit MoveR: Arg0Reg Mw: 2 * objectMemory wordSize r: SPReg.
-			 ^self].
-		 numArgs = 2 ifTrue:
-			[cogit PushR: Arg1Reg.
-			 cogit MoveMw: objectMemory wordSize * 2 r: SPReg R: TempReg.
-			 cogit PushR: TempReg.
-			 cogit MoveMw: objectMemory wordSize * 2 r: SPReg R: TempReg.
-			 cogit PushR: TempReg.
-			 cogit MoveR: ReceiverResultReg Mw: 4 * objectMemory wordSize r: SPReg.
-			 cogit MoveR: Arg0Reg Mw: 3 * objectMemory wordSize r: SPReg.
-			 ^self]]
-]
-
-{ #category : 'smalltalk calling convention' }
 CogIA32Compiler >> genPushRegisterArgsForNumArgs: numArgs scratchReg: scratchReg [
 	"Ensure that the register args are pushed before the retpc for arity <= self numRegArgs.  This
 	 isn't as clumsy on a RISC.  But putting the receiver and args above the return address
@@ -3646,7 +3598,11 @@ CogIA32Compiler >> hasThreeAddressArithmetic [
 { #category : 'inline cacheing' }
 CogIA32Compiler >> inlineCacheTagAt: callSiteReturnAddress [
 	"Answer the inline cache tag for the return address of a send."
-	^self literalBeforeFollowingAddress: callSiteReturnAddress - 5
+
+	<returnTypeC: #usqInt>
+
+	^ (self literalBeforeFollowingAddress: callSiteReturnAddress - 5)
+		  bitAnd: 1 << objectMemory classIndexFieldWidth - 1
 ]
 
 { #category : 'disassembly' }
@@ -4167,25 +4123,30 @@ CogIA32Compiler >> stop [
 
 { #category : 'generate machine code' }
 CogIA32Compiler >> stopsFrom: startAddr to: endAddr [
+
 	self
-		cCode: [self me: startAddr ms: self stop et: endAddr - startAddr + 1]
-		inSmalltalk:
-			[| alignedEnd alignedStart stops |
+		cCode: [
+			self cCall: 'memset' withArguments: {
+					startAddr.
+					self stop.
+					(endAddr - startAddr + 1) } ]
+		inSmalltalk: [
+			| alignedEnd alignedStart stops |
 			stops := self stop << 8 + self stop.
 			stops := stops << 16 + stops.
 			alignedStart := startAddr + 3 // 4 * 4.
 			alignedEnd := endAddr - 1 // 4 * 4.
 			alignedEnd <= startAddr
-				ifTrue:
-					[startAddr to: endAddr do:
-						[:addr | objectMemory byteAt: addr put: self stop]]
-				ifFalse:
-					[startAddr to: alignedStart - 1 do:
-						[:addr | objectMemory byteAt: addr put: self stop].
-					 alignedStart to: alignedEnd by: 4 do:
-						[:addr | objectMemory long32At: addr put: stops].
-					 alignedEnd + 4 to: endAddr do:
-						[:addr | objectMemory byteAt: addr put: self stop]]]
+				ifTrue: [
+					startAddr to: endAddr do: [ :addr |
+					objectMemory byteAt: addr put: self stop ] ]
+				ifFalse: [
+					startAddr to: alignedStart - 1 do: [ :addr |
+					objectMemory byteAt: addr put: self stop ].
+					alignedStart to: alignedEnd by: 4 do: [ :addr |
+					objectMemory long32At: addr put: stops ].
+					alignedEnd + 4 to: endAddr do: [ :addr |
+					objectMemory byteAt: addr put: self stop ] ] ]
 ]
 
 { #category : 'inline cacheing' }
@@ -4204,18 +4165,6 @@ CogIA32Compiler >> twoByteInstructionSizeAt: pc [
 	op := objectMemory byteAt: pc + 1. 
 	^(op bitAnd: 16rF0) caseOf:
 		{	[16r80]	->	[6 "long conditional jumps"] }
-]
-
-{ #category : 'memory access' }
-CogIA32Compiler >> unalignedLongAt: byteAddress [
-	<cmacro: '(byteAddress) longAt(byteAddress)'>
-	^objectMemory unalignedLongAt: byteAddress
-]
-
-{ #category : 'memory access' }
-CogIA32Compiler >> unalignedLongAt: byteAddress put: aWord [
-	<cmacro: '(byteAddress,aWord) longAtput(byteAddress,aWord)'>
-	^objectMemory unalignedLongAt: byteAddress put: aWord
 ]
 
 { #category : 'accessing' }

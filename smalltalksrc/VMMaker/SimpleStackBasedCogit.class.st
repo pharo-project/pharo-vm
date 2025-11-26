@@ -770,11 +770,10 @@ SimpleStackBasedCogit >> compileOpenPIC: selector numArgs: numArgs [
 	<var: #jumpClassMiss type: #'AbstractInstruction *'>
 	<var: #itsAHit type: #'AbstractInstruction *'>
 	<var: #jumpBCMethod type: #'AbstractInstruction *'>
+	<flag: #lookupInMethodCacheSel:classTag:> "so this method shows up as a sender of lookupInMethodCacheSel:class:"
 	self preenMethodLabel.
 	self compilePICAbort: numArgs.
 	entry := objectRepresentation genGetClassTagOf: ReceiverResultReg into: SendNumArgsReg scratchReg: TempReg.
-
-	self flag: #lookupInMethodCacheSel:classTag:. "so this method shows up as a sender of lookupInMethodCacheSel:class:"
 
 	cacheBaseReg := NoReg.
 	(backEnd isWithinMwOffsetRange: coInterpreter methodCacheAddress) ifFalse:
@@ -790,7 +789,7 @@ SimpleStackBasedCogit >> compileOpenPIC: selector numArgs: numArgs [
 								ifFalse: [MethodCacheMethod << objectMemory shiftForWord])
 					r: ClassReg
 					R: SendNumArgsReg.
-			.
+
 	"If the method is compiled jump to its unchecked entry-point, otherwise interpret it."
 	objectRepresentation genLoadSlot: HeaderIndex sourceReg: SendNumArgsReg destReg: ClassReg.
 	jumpBCMethod := objectRepresentation genJumpImmediate: ClassReg.
@@ -1639,12 +1638,11 @@ SimpleStackBasedCogit >> genLookupForPerformNumArgs: numArgs [
 	<var: #jumpClassMiss type: #'AbstractInstruction *'>
 	<var: #jumpInterpret type: #'AbstractInstruction *'>
 	<var: #itsAHit type: #'AbstractInstruction *'>
+	<flag: #lookupInMethodCacheSel:classTag:> "so this method shows up as a sender of lookupInMethodCacheSel:class:"
 
 	"N.B.  Can't assume TempReg already contains the tag because a method can
 	 of course be invoked via the unchecked entry-point, e.g. as does perform:."
-	objectRepresentation genGetInlineCacheClassTagFrom: ReceiverResultReg into: SendNumArgsReg forEntry: false.
-
-	self flag: #lookupInMethodCacheSel:classTag:. "so this method shows up as a sender of lookupInMethodCacheSel:class:"
+	objectRepresentation genGetInlineCacheClassTagFrom: ReceiverResultReg into: SendNumArgsReg.
 
 	cacheBaseReg := NoReg.
 	(backEnd isWithinMwOffsetRange: coInterpreter methodCacheAddress) ifFalse:
@@ -1872,7 +1870,6 @@ SimpleStackBasedCogit >> genPrimitiveFullClosureValue [
 	 block entry or the no-context-switch entry, as appropriate, and we're done.  If not,
 	 invoke the interpreter primitive."
 
-	<option: #SistaV1BytecodeSet>
 	<var: #jumpFailImmediateMethod type: #'AbstractInstruction *'>
 	<var: #jumpFail4 type: #'AbstractInstruction *'>
 	<var: #jumpFailNArgs type: #'AbstractInstruction *'>
@@ -2336,6 +2333,9 @@ SimpleStackBasedCogit >> genSend: selectorIndex numArgs: numArgs [
 SimpleStackBasedCogit >> genSend: selectorIndex numArgs: numArgs sendTable: sendTable [
 	<inline: false>
 	<var: #sendTable type: #'sqInt *'>
+	
+	<story: #pic>
+	
 	| annotation |
 	self assert: needsFrame.
 	annotation := self annotationForSendTable: sendTable.
@@ -2811,17 +2811,13 @@ SimpleStackBasedCogit >> generateTracingTrampolines [
 	ceTraceBlockActivationTrampoline :=
 		self genTrampolineFor: #ceTraceBlockActivation
 			called: 'ceTraceBlockActivationTrampoline'
-			regsToSave: CallerSavedRegisterMask..
+			regsToSave: CallerSavedRegisterMask.
 	ceTraceStoreTrampoline :=
 		self genTrampolineFor: #ceTraceStoreOf:into:
 			called: 'ceTraceStoreTrampoline'
 			arg: ClassReg
 			arg: ReceiverResultReg
-			regsToSave: CallerSavedRegisterMask..
-	self cCode: [] inSmalltalk:
-		[ceTraceLinkedSendTrampoline := self simulatedTrampolineFor: #ceShortCutTraceLinkedSend:.
-		 ceTraceBlockActivationTrampoline := self simulatedTrampolineFor: #ceShortCutTraceBlockActivation:.
-		 ceTraceStoreTrampoline := self simulatedTrampolineFor: #ceShortCutTraceStore:]
+			regsToSave: CallerSavedRegisterMask.
 ]
 
 { #category : 'register management' }

@@ -94,7 +94,7 @@ CSlangPrettyPrinterTest >> testVisitBreakStatement [
 	| print |
 	print := self prettyPrint: (CBreakStatementNode new).
 
-	self assert: print trimBoth equals: 'break'
+	self assert: print trimBoth equals: 'break;'
 ]
 
 { #category : 'tests-visitor' }
@@ -207,7 +207,8 @@ CSlangPrettyPrinterTest >> testVisitDeclaration [
 	9, 10, 12
 }, tutu[] = {
 	5, 2
-}'
+};
+'
 
 
 ]
@@ -246,9 +247,9 @@ CSlangPrettyPrinterTest >> testVisitDoStatement [
 					           right: (CIdentifierNode name: 'b'))
 			          statement: compound).
 
-	self assert: print trimBoth equals: 'do{
+	self assert: print trimBoth equals: 'do {
 	15;
-}while(a && b)'
+} while (a && b);'
 ]
 
 { #category : 'tests-visitor' }
@@ -347,7 +348,8 @@ CSlangPrettyPrinterTest >> testVisitGotoStatement [
 	| print |
 	print := self prettyPrint: (CGotoStatementNode identifier: 'toto').
 	
-	self assert: print equals: 'goto toto'
+	self assert: print equals: 'goto toto;
+'
 
 
 ]
@@ -575,7 +577,8 @@ CSlangPrettyPrinterTest >> testVisitReturnStatement [
 	| print |
 	print := self prettyPrint: (CReturnStatementNode expression: (CIdentifierNode name: 'x')).
 	
-	self assert: print equals: 'return x'
+	self assert: print equals: 'return x;
+'
 
 
 ]

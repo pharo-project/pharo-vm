@@ -32,7 +32,6 @@ VMClass class >> initializeMiscConstants [
 
 	"Use ifAbsentPut: so that they will get copied back to the
 	 VMMaker's options and dead code will likely be eliminated."
-	PharoVM := InitializationOptions at: #PharoVM ifAbsentPut: [ false ].
 	FEATURE_FFI := InitializationOptions
 		               at: #FEATURE_FFI
 		               ifAbsentPut: [ false ].

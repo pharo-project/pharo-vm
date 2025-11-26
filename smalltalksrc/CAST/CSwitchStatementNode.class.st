@@ -46,12 +46,6 @@ CSwitchStatementNode >> isSwitch [
 	^ true
 ]
 
-{ #category : 'testing' }
-CSwitchStatementNode >> needsSeparator [
-
-	^ false
-]
-
 { #category : 'generated' }
 CSwitchStatementNode >> statement [
 	^ statement

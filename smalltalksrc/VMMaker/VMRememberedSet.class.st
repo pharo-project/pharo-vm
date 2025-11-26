@@ -13,8 +13,9 @@ Class {
 		'previousRememberedSetSize',
 		'doFullScan'
 	],
-	#category : 'VMMaker',
-	#package : 'VMMaker'
+	#category : 'VMMaker-Memory',
+	#package : 'VMMaker',
+	#tag : 'Memory'
 }
 
 { #category : 'translation' }
@@ -154,7 +155,7 @@ VMRememberedSet >> growRememberedSet [
 	base := self rememberedSetArrayPointerFromObject: newObj.
 
 	0 to: rememberedSetSize - 1 do: [ :i |
-	base at: i put: (self rememberedSetArray at: i) ].
+		base at: i put: (self rememberedSetArray at: i) ].
 	"if growing in the middle of a GC, need to preserve marked status."
 	(manager isMarked: obj) ifTrue: [
 		manager
@@ -360,13 +361,9 @@ VMRememberedSet >> rememberedSetArray: anObject [
 ]
 
 { #category : 'initialization' }
-VMRememberedSet >> rememberedSetArrayPointerFromObject: anOop [ 
-	
-	^ manager cCoerce: (manager firstIndexableField: anOop) to: 'usqInt *'
-	
-	
-	
-	
+VMRememberedSet >> rememberedSetArrayPointerFromObject: anOop [
+
+	^ manager cCoerce: (manager firstIndexableField: anOop) to: 'sqInt *'
 ]
 
 { #category : 'accessing' }
@@ -540,7 +537,7 @@ VMRememberedSet >> shrinkRememberedSet [
 	base := self rememberedSetArrayPointerFromObject: newObj.
 
 	0 to: rememberedSetSize - 1 do: [ :i |
-	base at: i put: (self rememberedSetArray at: i) ].
+		base at: i put: (self rememberedSetArray at: i) ].
 	"if growing in the middle of a GC, need to preserve marked status."
 	(manager isMarked: obj) ifTrue: [
 		manager

@@ -362,7 +362,7 @@ CogObjectRepresentation >> genGetFormatOf: srcReg into: destReg [
 ]
 
 { #category : 'compile abstract instructions' }
-CogObjectRepresentation >> genGetInlineCacheClassTagFrom: sourceReg into: destReg forEntry: forEntry [
+CogObjectRepresentation >> genGetInlineCacheClassTagFrom: sourceReg into: destReg [
 	"Extract the inline cache tag for the object in sourceReg into destReg. The inline cache tag
 	 for a given object is the value loaded in inline caches to distinguish objects of different
 	 classes. If forEntry is true answer the entry label at which control is to enter (cmEntryOffset).
@@ -897,7 +897,6 @@ CogObjectRepresentation >> genPrimitiveFormat [
 CogObjectRepresentation >> genPrimitiveFullClosureValue [
 	"Defer to the cogit for this one, to match the split for genPrimitiveClosureValue."
 	<doNotGenerate>
-	<option: #SistaV1BytecodeSet>
 	^cogit genPrimitiveFullClosureValue
 ]
 
@@ -1729,11 +1728,6 @@ CogObjectRepresentation >> inlineCacheTagForClass: classOop [
 CogObjectRepresentation >> inlineCacheTagForInstance: oop [
 	"Answer the relevant inline cache tag for an instance.
 	 c.f. getInlineCacheClassTagFrom:into: & inlineCacheTagForClass:"
-	^self subclassResponsibility
-]
-
-{ #category : 'in-line cacheing' }
-CogObjectRepresentation >> inlineCacheTagIsYoung: cacheTag [
 	^self subclassResponsibility
 ]
 

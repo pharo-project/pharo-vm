@@ -34,7 +34,6 @@ Class {
 		'HashMultiplyMask',
 		'IMMUTABILITY',
 		'PRIdSQINT',
-		'PharoVM',
 		'PrimErrBadArgument',
 		'PrimErrBadIndex',
 		'PrimErrBadMethod',
@@ -100,8 +99,7 @@ VMBasicConstants class >> namesDefinedAtCompileTime [
 	 will be emitted within #if defined(ANameDefinedAtCompileTime)...#endif."
 	^#(	VMBIGENDIAN
 		IMMUTABILITY
-		STACKVM COGVM SPURVM
-		PharoVM								"Pharo vs Squeak"
+		STACKVM COGVM
 		CheckRememberedInTrampoline		"IMMUTABILITY"
 		LLDB									"As of lldb-370.0.42 Swift-3.1, passing funciton parameters to printOopsSuchThat fails with Internal error [IRForTarget]: Couldn't rewrite one of the arguments of a function call.  Turning off link time optimization with -fno-lto has no effect.  hence we define some debugging functions as being <option: LLDB>"
 
@@ -124,8 +122,7 @@ VMBasicConstants class >> namesDefinedAtCompileTime [
 		PRIdSQINT
 		
 		FEATURE_FFI
-		FEATURE_THREADED_FFI
-		FEATURE_MESSAGE_COUNT)
+		FEATURE_THREADED_FFI)
 ]
 
 { #category : 'C translation' }

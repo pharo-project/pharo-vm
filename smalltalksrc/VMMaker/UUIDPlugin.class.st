@@ -25,6 +25,13 @@ UUIDPlugin class >> requiresPlatformFiles [
 	^true
 ]
 
+{ #category : 'system primitives' }
+UUIDPlugin >> MakeUUID: location [
+
+	<doNotGenerate>
+	self notYetImplemented
+]
+
 { #category : 'initialize' }
 UUIDPlugin >> initialiseModule [
 	<export: true>

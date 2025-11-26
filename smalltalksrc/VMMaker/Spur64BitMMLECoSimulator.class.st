@@ -323,6 +323,19 @@ Spur64BitMMLECoSimulator >> storeFloatAt: floatBitsAddress from: aFloat [
 ]
 
 { #category : 'memory access' }
+Spur64BitMMLECoSimulator >> unsignedlongAt: byteAddress [
+	"Answer the 64-bit word at byteAddress which must be 0 mod 4."
+
+	^ memoryManager unsignedLong64At: byteAddress
+]
+
+{ #category : 'memory access' }
+Spur64BitMMLECoSimulator >> unsignedlongAt: byteAddress put: a64BitValue [
+	"Store an unsigned word-sized value at byteAddress which must be 0 mod 8."
+	^memoryManager unsignedLong64At: byteAddress put: a64BitValue
+]
+
+{ #category : 'memory access' }
 Spur64BitMMLECoSimulator >> vmEndianness [
 	"1 = big, 0 = little"
 	^0

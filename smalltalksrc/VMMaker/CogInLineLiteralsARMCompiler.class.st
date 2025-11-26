@@ -14,7 +14,7 @@ CogInLineLiteralsARMCompiler >> callFullTargetFromReturnAddress: callSiteReturnA
 	call := self instructionBeforeAddress: callSiteReturnAddress.
 	self assert: ((self instructionIsBX: call) or: [self instructionIsBLX: call]).
 	"A Long Call/Jump. Extract the value saved to RISCTempReg from all the instructions before."
-	^self extract32BitOperandFrom4Instructionspreceding: callSiteReturnAddress - 4
+	^self extract32BitOperandFrom4InstructionsPreceding: callSiteReturnAddress - 4
 ]
 
 { #category : 'accessing' }
@@ -50,8 +50,15 @@ CogInLineLiteralsARMCompiler >> getDefaultCogCodeSize [
 { #category : 'inline cacheing' }
 CogInLineLiteralsARMCompiler >> inlineCacheTagAt: callSiteReturnAddress [
 	"Answer the inline cache tag for the return address of a send."
-	self assert: (self instructionIsBL: (self instructionBeforeAddress: callSiteReturnAddress)).
-	^self extract32BitOperandFrom4InstructionsPreceding: callSiteReturnAddress - 4
+
+	<returnTypeC: #usqInt>
+
+	self assert: (self instructionIsBL:
+			 (self instructionBeforeAddress: callSiteReturnAddress)).
+
+	^ (self extract32BitOperandFrom4InstructionsPreceding:
+		   callSiteReturnAddress - 4) bitAnd:
+		  1 << objectMemory classIndexFieldWidth - 1
 ]
 
 { #category : 'testing' }

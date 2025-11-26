@@ -163,3 +163,75 @@ VMX64InstructionTest >> testFsubSRvRvRvWithThreeDifferentRegisters [
 	self assert: (result doubleAt: 1) equals: -1.0.	
 	self assert: (result doubleAt: 9) equals: -1.0.	
 ]
+
+{ #category : 'tests' }
+VMX64InstructionTest >> testLoadCloseAddressAheadOfBaseIntoSPFails [
+
+	| distance addressToLoad from end |
+	distance := (0.5 "MB" * 1024 * 1024) asInteger.
+	addressToLoad := cogit varBaseAddress + distance.
+
+	from := self compile: [
+		        cogit MoveAw: addressToLoad R: SPReg.
+		        end := cogit Stop ].
+
+	machineSimulator baseRegisterValue: cogit varBaseAddress.
+	cogit simulatedVariableAt: addressToLoad put: 17.
+
+	self runFrom: from until: end address.
+
+	self assert: machineSimulator stackPointerRegisterValue equals: 17
+]
+
+{ #category : 'tests' }
+VMX64InstructionTest >> testLoadCloseAddressBehindOfBaseIntoSPFails [
+
+	| distance addressToLoad from end |
+	distance := (-0.5 "MB" * 1024 * 1024) asInteger.
+	addressToLoad := cogit varBaseAddress + distance.
+
+	from := self compile: [
+		        cogit MoveAw: addressToLoad R: SPReg.
+		        end := cogit Stop ].
+
+	machineSimulator baseRegisterValue: cogit varBaseAddress.
+	cogit simulatedVariableAt: addressToLoad put: 17.
+
+	self runFrom: from until: end address.
+
+	self assert: machineSimulator stackPointerRegisterValue equals: 17
+]
+
+{ #category : 'tests' }
+VMX64InstructionTest >> testLoadVeryFarAddressAheadOfBaseIntoSPFails [
+
+	| distance addressToLoad |
+	distance := 5 "MB" * 1024 * 1024.
+	addressToLoad := cogit varBaseAddress + distance.
+
+	[
+		self compile: [ cogit MoveAw: addressToLoad R: SPReg].
+		
+		"Should not execute successfully"
+		self fail.
+	] on: Error do: [ :error |
+		self assert: error messageText equals: 'Cannot compile store into SP from far address' ]
+
+]
+
+{ #category : 'tests' }
+VMX64InstructionTest >> testLoadVeryFarAddressBehindOfBaseIntoSPFails [
+
+	| distance addressToLoad |
+	distance := -5 "MB" * 1024 * 1024.
+	addressToLoad := cogit varBaseAddress + distance.
+
+	[
+		self compile: [ cogit MoveAw: addressToLoad R: SPReg].
+		
+		"Should not execute successfully"
+		self fail.
+	] on: Error do: [ :error |
+		self assert: error messageText equals: 'Cannot compile store into SP from far address' ]
+
+]
