@@ -2973,8 +2973,10 @@ CoInterpreter >> handleUnlinkedSendFor: maybeForwardedSelector to: receiver isSu
 					           methodOperand: (self mnuMethodOrNilFor: receiver)
 					           numArgs: argumentCount).
 				mnuPIC asUnsignedIntegerPtr > cogit minCogMethodAddress ifTrue: [
+					| callerReturnAddress |
+					callerReturnAddress := self stackTop.
 					cogit
-						linkSendAt: (stackPages longAt: stackPointer)
+						linkSendAt: callerReturnAddress
 						in: (self mframeHomeMethod: framePointer)
 						to: mnuPIC
 							offset: (isSuper = 0
@@ -3004,8 +3006,10 @@ CoInterpreter >> handleUnlinkedSendFor: maybeForwardedSelector to: receiver isSu
 
 	cogMethod selector = selector
 		ifTrue: [
+			| callerReturnAddress |
+			callerReturnAddress := self stackTop.
 			cogit
-				linkSendAt: (stackPages longAt: stackPointer)
+				linkSendAt: callerReturnAddress
 				in: (self mframeHomeMethod: framePointer)
 				to: cogMethod
 				offset: (isSuper = 0

@@ -10099,9 +10099,9 @@ Cogit >> patchToMegamorphicICFor: selector numArgs: numArgs receiver: receiver [
 	 sp=>	sender return address"
 
 	<api>
-	| oPIC outerReturn extent |
+	| oPIC callerReturnAddress extent |
 	<var: #oPIC type: #'CogMethod *'>
-	outerReturn := coInterpreter stackTop.
+	callerReturnAddress := coInterpreter stackTop.
 
 	oPIC := methodZone openPICWithSelector: selector.
 	
@@ -10125,14 +10125,14 @@ Cogit >> patchToMegamorphicICFor: selector numArgs: numArgs receiver: receiver [
 		"Relink the send site to the pic.  Reset the cache tag to the selector, for the
 		 benefit of the cacheTag assert check in checkIfValidOopRef:pc:cogMethod: et al."
 		extent := backEnd
-					rewriteInlineCacheAt: outerReturn
+					rewriteInlineCacheAt: callerReturnAddress
 					tag: (self inlineCacheValueForSelector: selector
 							  in: coInterpreter mframeHomeMethodExport
-							  at: outerReturn)
+							  at: callerReturnAddress)
 					target: oPIC asInteger + cmEntryOffset]
 		flushingCacheWith: [ 
 			self
-				flushICacheFrom: outerReturn asUnsignedInteger - extent to: outerReturn asUnsignedInteger ].
+				flushICacheFrom: callerReturnAddress asUnsignedInteger - extent to: callerReturnAddress asUnsignedInteger ].
 
 	"Jump into the oPIC at its entry"
 	coInterpreter executeCogMethod: oPIC fromLinkedSendWithReceiver: receiver.
