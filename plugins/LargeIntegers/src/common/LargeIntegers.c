@@ -117,7 +117,7 @@ static sqInt (*isBooleanObject)(sqInt oop);
 static sqInt (*isIntegerObject)(sqInt objectPointer);
 static void (*popthenPush)(sqInt nItems, sqInt oop);
 static sqInt (*popRemappableOop)(void);
-static usqInt (*positive32BitValueOf)(sqInt oop);
+static unsigned int (*positive32BitValueOf)(sqInt oop);
 static sqInt (*primitiveFail)(void);
 static sqInt (*primitiveFailFor)(sqInt reasonCode);
 static void (*pushRemappableOop)(sqInt oop);
@@ -150,7 +150,7 @@ extern sqInt isIntegerObject(sqInt objectPointer);
 #endif
 extern void popthenPush(sqInt nItems, sqInt oop);
 extern sqInt popRemappableOop(void);
-extern usqInt positive32BitValueOf(sqInt oop);
+extern unsigned int positive32BitValueOf(sqInt oop);
 extern sqInt primitiveFail(void);
 extern sqInt primitiveFailFor(sqInt reasonCode);
 extern void pushRemappableOop(sqInt oop);

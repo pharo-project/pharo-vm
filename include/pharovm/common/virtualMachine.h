@@ -105,7 +105,7 @@ typedef struct VirtualMachine {
 	sqInt  (*integerObjectOf)(sqInt value);
 	sqInt  (*integerValueOf)(sqInt oop);
 	sqInt  (*positive32BitIntegerFor)(unsigned int integerValue);
-	usqInt (*positive32BitValueOf)(sqInt oop);
+	unsigned int (*positive32BitValueOf)(sqInt oop);
 
 	/* InterpreterProxy methodsFor: 'special objects' */
 

@@ -17,6 +17,7 @@
 
 #include "config.h"
 #include "interp.h"
+#include "stdint.h"
 
 #ifndef SIZEOF_LONG
 #  if LLP64
@@ -280,8 +281,13 @@ typedef unsigned long long usqIntptr_t;
 # define asIEEE32BitWord(val) (*((unsigned int*)&val))
 #endif /* USE_INLINE_MEMORY_ACCESSORS */
 
+#ifndef long32At
 #define long32At	intAt
+#endif
+
+#ifndef long32Atput  
 #define long32Atput	intAtput
+#endif
 
 /* platform-dependent float conversion macros.
  * Note: Second argument must be a variable name, not an expression!

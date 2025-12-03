@@ -90,7 +90,7 @@ double floatValueOf(sqInt oop);
 sqInt  integerObjectOf(sqInt value);
 sqInt  integerValueOf(sqInt oop);
 sqInt  positive32BitIntegerFor(unsigned int integerValue);
-usqInt  positive32BitValueOf(sqInt oop);
+unsigned int positive32BitValueOf(sqInt oop);
 sqInt  signed32BitIntegerFor(sqInt integerValue);
 int    signed32BitValueOf(sqInt oop);
 sqInt  positive64BitIntegerFor(usqLong integerValue);
