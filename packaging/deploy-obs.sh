@@ -13,9 +13,9 @@ rm -rf ${TARGET}/*
 
 SOURCESPATH=`find ${BUILD}/build/packages/ -name "PharoVM*-Darwin-arm64-c-src.tar.gz" | head -n 1`
 SOURCESBASENAME=$(basename "$SOURCESPATH")
-cp "${SOURCESPATH}" "${TARGET}/${SOURCESBASENAME//-Darwin-arm64-c-src/}"
+cp "${SOURCESPATH}" "${TARGET}/src.tar.gz"
 
-OBS_PACKAGE=`find ${BUILD}/build/packages/ -name "PharoVM-v10.3.9+4.72b4570889*-obs.zip" | head -n 1`
+OBS_PACKAGE=`find ${BUILD}/build/packages/ -name "PharoVM-v*-obs.zip" | head -n 1`
 unzip ${OBS_PACKAGE} -d ${TARGET}/
 mv ${TARGET}/obs/* ${TARGET}
 rm -rf ${TARGET}/obs

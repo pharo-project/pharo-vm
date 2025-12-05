@@ -5,33 +5,41 @@ License:        MIT
 Summary:        Pharo is a pure object-oriented programming language and a powerful environment
 Url:            https://github.com/pharo-project/pharo-vm
 Group:          Development/Languages/Pharo
-Source:         https://github.com/pharo-project/pharo-vm/release/%{name}-%{version}.tar.gz
+
+# Source tarball URL
+Source:         https://github.com/pharo-project/pharo-vm/release/src.tar.gz
+
+# Common build dependencies
 BuildRequires:  gcc
 BuildRequires:  gcc-c++
-BuildRequires:  cmake wget
-%if 0%{?suse_version} || 0%{?sle_version} >= 150100
-BuildRequires:  clang 
-BuildRequires:	libopenssl-1_0_0-devel libuuid-devel libffi7-devel
-BuildRequires:	-post-build-checks
-Requires:       glibc libopenssl1_0_0 libuuid1 libffi7
-%endif
-%if 0%{?fedora}
+BuildRequires:  cmake
 BuildRequires:  clang
-%if 0%{?fedora} >= 36
-BuildRequires:	openssl-devel libuuid-devel libffi-devel
-Requires:       glibc openssl libuuid libffi
-%else 
-BuildRequires:	openssl-devel libuuid-devel libffi7-devel
-Requires:       glibc openssl libuuid libffi7
+
+# Fedora 43 has conflicting wget packages
+%if 0%{?fedora} == 43
+BuildRequires: wget1-wget
+%else
+BuildRequires: wget
 %endif
+
+# OpenSUSE / SLE dependencies
+%if 0%{?suse_version} || 0%{?sle_version} >= 150100
+BuildRequires: libopenssl-devel libuuid-devel libffi-devel
+Requires:       glibc libopenssl1_1 libuuid1 libffi
+%endif
+
+# Fedora / RHEL dependencies
+%if 0%{?fedora}
+BuildRequires: openssl-devel libuuid-devel libffi-devel
+Requires:       glibc openssl libuuid libffi
 %endif
 
 BuildRoot:      %{_tmppath}/%{name}-%{version}-build
 
-%define destdir %{_libdir}/%{name}-%{version}
+%define destdir %{_libdir}/pharo-vm-%{version}
 
 %description
-Pharo is a pure object-oriented programming language and a powerful environment, 
+Pharo is a pure object-oriented programming language and a powerful environment,
 focused on simplicity and immediate feedback (think IDE and OS rolled into one).
 
 %prep
@@ -39,55 +47,60 @@ focused on simplicity and immediate feedback (think IDE and OS rolled into one).
 
 %build
 cmake . \
-	-DGENERATE_SOURCES=FALSE \
-	-DPHARO_DEPENDENCIES_PREFER_DOWNLOAD_BINARIES=FALSE \
-	-DPHARO_LIBRARY_PATH=%{destdir}/lib \
-	-DPHARO_BIN_LOCATION=%{destdir}/lib \
-	-DBUILD_BUNDLE=FALSE
+    -DGENERATE_SOURCES=FALSE \
+    -DPHARO_DEPENDENCIES_PREFER_DOWNLOAD_BINARIES=FALSE \
+    -DPHARO_LIBRARY_PATH=%{destdir}/lib \
+    -DPHARO_BIN_LOCATION=%{destdir}/lib \
+    -DBUILD_BUNDLE=FALSE
 make install
 
 %install
-# Workaround for fedora >= 35
+# Fedora >= 35 workaround for rpaths
 %if 0%{?fedora} >= 35
 export QA_RPATHS=\$[0x0007]
 %endif
+
 mkdir -p %{buildroot}%{destdir}/bin
 mkdir -p %{buildroot}%{destdir}/lib
-install -Dm755 build/dist/pharo %{buildroot}%{destdir}
+mkdir -p %{buildroot}%{_bindir}
+
+install -Dm755 build/dist/pharo %{buildroot}%{destdir}/pharo
 install -D build/dist/bin/* %{buildroot}%{destdir}/bin
 install -D build/dist/lib/* %{buildroot}%{destdir}/lib
-mkdir -p %{buildroot}/%{_bindir}
-ln -s %{destdir}/pharo %{buildroot}/%{_bindir}/pharo
-# Workaround to bypass test phase on OSL versions (rpath is no valid there, but 
-# we do not care as it will be ignored)
-#%if 0%{?suse_version} > 1500 || 0%{?sle_version} >= 150100
+
+# Symlink in buildroot so RPM tracks /usr/bin/pharo
+ln -s %{destdir}/pharo %{buildroot}%{_bindir}/pharo
+
+%post
+# Register Pharo VM in update-alternatives
+/usr/sbin/update-alternatives --install /usr/bin pharo %{destdir}/pharo 1
+
+%preun
+# Remove the alternative when uninstalling
+if [ $1 -eq 0 ]; then
+    /usr/sbin/update-alternatives --remove pharo %{destdir}/pharo
+fi
+# Disable RPATH checks for SLE / OpenSUSE
 export NO_BRP_CHECK_RPATH=true
-#%endif
 
 %files
 %defattr(-,root,root,-)
-#%doc README.md
 %{_bindir}/pharo
 %{destdir}
 %{destdir}/bin
 %{destdir}/lib
-%{destdir}/pharo
-%{destdir}/bin/pharo
 %{destdir}/lib/libB2DPlugin.so
 %{destdir}/lib/libBitBltPlugin.so
 %{destdir}/lib/libDSAPrims.so
 %{destdir}/lib/libFileAttributesPlugin.so
 %{destdir}/lib/libFilePlugin.so
-#destdir/lib/libIA32ABI.so
 %{destdir}/lib/libJPEGReadWriter2Plugin.so
 %{destdir}/lib/libJPEGReaderPlugin.so
 %{destdir}/lib/libLargeIntegers.so
 %{destdir}/lib/libLocalePlugin.so
 %{destdir}/lib/libMiscPrimitivePlugin.so
 %{destdir}/lib/libPharoVMCore.so
-#destdir/lib/libSecurityPlugin.so
 %{destdir}/lib/libSocketPlugin.so
-#destdir/lib/libSqueakFFIPrims.so
 %{destdir}/lib/libSqueakSSL.so
 %{destdir}/lib/libSurfacePlugin.so
 %{destdir}/lib/libFloatArrayPlugin.so
@@ -96,4 +109,3 @@ export NO_BRP_CHECK_RPATH=true
 %{destdir}/lib/pharo
 
 %changelog
-
