@@ -409,9 +409,9 @@ foreach(OBS_FILE ${OBS_FILES})
     get_filename_component(OBS_FILE_NAME "${OBS_FILE}" NAME)
     message(STATUS "Configuring OBS file: ${OBS_FILE_NAME}")
     
-    if(OBS_FILE_NAME MATCHES "pharo.*")
+    if(OBS_FILE_NAME MATCHES "pharo-vm-VERSION")
         #replace pharo by pharo-vm-{full_version}
-        string(REGEX REPLACE "pharo" "pharo-vm-${PharoVM_VERSION_MAJOR}.${PharoVM_VERSION_MINOR}" OBS_TARGET_NAME ${OBS_FILE_NAME})
+        string(REGEX REPLACE "VERSION" "${PharoVM_VERSION_MAJOR}.${PharoVM_VERSION_MINOR}" OBS_TARGET_NAME ${OBS_FILE_NAME})
     else()
         set(OBS_TARGET_NAME ${OBS_FILE_NAME})
     endif()
