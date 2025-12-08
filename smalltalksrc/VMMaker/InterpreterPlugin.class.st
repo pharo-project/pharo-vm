@@ -430,6 +430,7 @@ InterpreterPlugin >> getModuleName [
 
 { #category : 'debugging' }
 InterpreterPlugin >> halt [
+	<debuggerCompleteToSender>
 	self cCode: '' inSmalltalk: [^super halt "avoid the ^0 below"].
 	^0
 ]
