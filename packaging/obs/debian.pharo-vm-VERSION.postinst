@@ -1,7 +1,0 @@
-#!/bin/sh
-set -e
-
-# Add pharo to the alternatives system
-update-alternatives --install /usr/bin/pharo pharo /usr/lib/pharo-vm-10.3/pharo 1
-
-exit 0

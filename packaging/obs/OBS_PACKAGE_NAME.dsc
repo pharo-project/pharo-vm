@@ -1,7 +1,7 @@
 Format: 1.0
-Source: pharo-vm-@PharoVM_VERSION_MAJOR@.@PharoVM_VERSION_MINOR@
+Source: @OBS_PACKAGE_NAME@
 Version: @PharoVM_VERSION_FULL@
-Binary: pharo-vm-@PharoVM_VERSION_MAJOR@.@PharoVM_VERSION_MINOR@
+Binary: @OBS_PACKAGE_NAME@
 Maintainer: Esteban Lorenzano <estebanlm@netc.eu>, Pablo Tesone <tesonep@gmail.com>
 Architecture: amd64 aarch64 armv7l
 Homepage: https://github.com/pharo-project/pharo-vm

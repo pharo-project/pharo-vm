@@ -5,10 +5,10 @@ version=@PharoVM_VERSION_FULL@
 
 # Best practice: do NOT use multiarch here.
 # VMs are not coinstallable; use a stable directory.
-pkgdir=/usr/lib/pharo-vm-@PharoVM_VERSION_MAJOR@.@PharoVM_VERSION_MINOR@
+pkgdir=/usr/lib/@OBS_PACKAGE_NAME@
 
 # Debian staging directory
-buildPrefix=debian/pharo-vm-@PharoVM_VERSION_MAJOR@.@PharoVM_VERSION_MINOR@
+buildPrefix=debian/@OBS_PACKAGE_NAME@
 
 %:
 	dh $@

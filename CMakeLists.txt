@@ -403,15 +403,16 @@ include(cmake/vmmaker.cmake)
 configure_file(${CMAKE_CURRENT_SOURCE_DIR}/include/pharovm/config.h.in ${CMAKE_CURRENT_BINARY_DIR}/build/include/pharovm/config.h)
 
 #Generate obs config files, generating a debian-like changelog from our current CHANGELOG.md file
+set(OBS_PACKAGE_NAME "pharo-vm-${PharoVM_VERSION_MAJOR}")
 file(READ "${CMAKE_CURRENT_SOURCE_DIR}/CHANGELOG.md" CHANGELOG_STRING)
 file(GLOB OBS_FILES "${CMAKE_CURRENT_SOURCE_DIR}/packaging/obs/*")
 foreach(OBS_FILE ${OBS_FILES})
     get_filename_component(OBS_FILE_NAME "${OBS_FILE}" NAME)
     message(STATUS "Configuring OBS file: ${OBS_FILE_NAME}")
     
-    if(OBS_FILE_NAME MATCHES "pharo-vm-VERSION")
-        #replace pharo by pharo-vm-{full_version}
-        string(REGEX REPLACE "VERSION" "${PharoVM_VERSION_MAJOR}.${PharoVM_VERSION_MINOR}" OBS_TARGET_NAME ${OBS_FILE_NAME})
+    if(OBS_FILE_NAME MATCHES "OBS_PACKAGE_NAME")
+        #replace PACKAGE_NAME by pharo-vm-{major_version}
+        string(REGEX REPLACE "OBS_PACKAGE_NAME" "${OBS_PACKAGE_NAME}" OBS_TARGET_NAME ${OBS_FILE_NAME})
     else()
         set(OBS_TARGET_NAME ${OBS_FILE_NAME})
     endif()

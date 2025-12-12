@@ -1,4 +1,4 @@
-Name:           pharo-vm-@PharoVM_VERSION_MAJOR@.@PharoVM_VERSION_MINOR@
+Name:           @OBS_PACKAGE_NAME@
 Version:        @PharoVM_VERSION_FULL@
 Release:        0
 License:        MIT
@@ -34,9 +34,9 @@ BuildRequires: openssl-devel libuuid-devel libffi-devel
 Requires:       glibc openssl libuuid libffi
 %endif
 
-BuildRoot:      %{_tmppath}/%{name}-%{version}-build
+BuildRoot:      %{_tmppath}/%{name}-build
 
-%define destdir %{_libdir}/pharo-vm-%{version}
+%define destdir %{_libdir}/%{name}
 
 %description
 Pharo is a pure object-oriented programming language and a powerful environment,

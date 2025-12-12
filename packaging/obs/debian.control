@@ -1,4 +1,4 @@
-Source: pharo-vm-@PharoVM_VERSION_MAJOR@.@PharoVM_VERSION_MINOR@
+Source: @OBS_PACKAGE_NAME@
 Maintainer: Esteban Lorenzano <estebanlm@netc.eu>, Pablo Tesone <tesonep@gmail.com>, Guille Polito <guillermopolito@gmail.com>
 Section: devel
 Priority: optional
@@ -8,7 +8,7 @@ Standards-Version: 4.7.0
 Homepage: https://github.com/pharo-project/pharo-vm
 
 
-Package: pharo-vm-@PharoVM_VERSION_MAJOR@.@PharoVM_VERSION_MINOR@
+Package: @OBS_PACKAGE_NAME@
 Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends}
 Recommends: libcairo2, libsdl2-2.0-0, libgit2-1.7, libfreetype6
