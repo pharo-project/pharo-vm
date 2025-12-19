@@ -1288,8 +1288,8 @@ SimpleStackBasedCogit >> genExtPushPseudoVariable [
 		caseOf: {
 				([ 0 ] -> [ ^ self genPushActiveContextBytecode ]).
 				([ 1 ] -> [
-				 "Fetch the special objects array, read the scheduler association, its value, and the active process from it"
-				 self MoveAw: objectMemory specialObjectsOop R: TempReg.
+				 "Fetch the special objects array address, read the scheduler association, its value, and the active process from it"
+				 self MoveAw: objectMemory specialObjectsArrayAddress R: TempReg.
 				 self AddCq: SchedulerAssociation << 3 R: TempReg.
 				 self MoveMw: 1 * objectMemory wordSize r: TempReg R: TempReg.
 				 self AddCq: ValueIndex << objectMemory shiftForWord R: TempReg.
