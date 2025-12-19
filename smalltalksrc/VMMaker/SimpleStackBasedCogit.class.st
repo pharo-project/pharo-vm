@@ -1287,17 +1287,7 @@ SimpleStackBasedCogit >> genExtPushPseudoVariable [
 	ext
 		caseOf: {
 				([ 0 ] -> [ ^ self genPushActiveContextBytecode ]).
-				([ 1 ] -> [
-				 "Fetch the special objects array address, read the scheduler association, its value, and the active process from it"
-				 self MoveAw: objectMemory specialObjectsArrayAddress R: TempReg.
-				 self AddCq: SchedulerAssociation << 3 R: TempReg.
-				 self MoveMw: 1 * objectMemory wordSize r: TempReg R: TempReg.
-				 self AddCq: ValueIndex << objectMemory shiftForWord R: TempReg.
-				 self MoveMw: 1 * objectMemory wordSize r: TempReg R: TempReg.
-				 self AddCq: ActiveProcessIndex << objectMemory shiftForWord R: TempReg.
-				 self MoveMw: 1 * objectMemory wordSize r: TempReg R: TempReg.
-				 self PushR: TempReg.
-				 ^ 0 ]) }
+				([ 1 ] -> [ ^ self genPushActiveProcessBytecode ]) }
 		otherwise: [ ^ self unknownBytecode ].
 	^ 0
 ]
@@ -1983,6 +1973,12 @@ SimpleStackBasedCogit >> genPushActiveContextBytecode [
 		inBlock: inBlock.
 	self PushR: ReceiverResultReg.
 	^0
+]
+
+{ #category : 'bytecode generators' }
+SimpleStackBasedCogit >> genPushActiveProcessBytecode [
+
+	^ self unknownBytecode
 ]
 
 { #category : 'constant support' }
