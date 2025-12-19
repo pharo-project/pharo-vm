@@ -1279,16 +1279,27 @@ SimpleStackBasedCogit >> genExtPushLiteralVariableBytecode [
 { #category : 'bytecode generators' }
 SimpleStackBasedCogit >> genExtPushPseudoVariable [
 	"SistaV1: *	82			01010010			Push thisContext, (then Extend B = 1 => push thisProcess)"
+
 	| ext |
 	ext := extB.
 	extB := 0.
 	numExtB := 0.
-	ext caseOf: {
-		[0]	->	[^self genPushActiveContextBytecode].
-		}
-		otherwise:
-			[^self unknownBytecode].
-	^0
+	ext
+		caseOf: {
+				([ 0 ] -> [ ^ self genPushActiveContextBytecode ]).
+				([ 1 ] -> [
+				 "Fetch the special objects array, read the scheduler association, its value, and the active process from it"
+				 self MoveAw: objectMemory specialObjectsOop R: TempReg.
+				 self AddCq: SchedulerAssociation << 3 R: TempReg.
+				 self MoveMw: 1 * objectMemory wordSize r: TempReg R: TempReg.
+				 self AddCq: ValueIndex << objectMemory shiftForWord R: TempReg.
+				 self MoveMw: 1 * objectMemory wordSize r: TempReg R: TempReg.
+				 self AddCq: ActiveProcessIndex << objectMemory shiftForWord R: TempReg.
+				 self MoveMw: 1 * objectMemory wordSize r: TempReg R: TempReg.
+				 self PushR: TempReg.
+				 ^ 0 ]) }
+		otherwise: [ ^ self unknownBytecode ].
+	^ 0
 ]
 
 { #category : 'bytecode generators' }
