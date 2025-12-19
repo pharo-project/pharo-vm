@@ -6107,6 +6107,11 @@ Cogit >> extABytecode [
 	^0
 ]
 
+{ #category : 'accessing' }
+Cogit >> extB [
+	^ extB
+]
+
 { #category : 'bytecode generators' }
 Cogit >> extBBytecode [
 	"225		11100001	sbbbbbbb	Extend B (Ext B = Ext B prev * 256 + Ext B)"
