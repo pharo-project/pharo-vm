@@ -165,9 +165,9 @@ extern
 struct VirtualMachine* interpreterProxy;
 static const char *moduleName =
 #ifdef SQUEAK_BUILTIN_PLUGIN
-	"LargeIntegers v2.0 VMMaker.oscog-eem.2495 (i)"
+	"LargeIntegers v2.1 VMMaker.oscog-eem.2495 (i)"
 #else
-	"LargeIntegers v2.0 VMMaker.oscog-eem.2495 (e)"
+	"LargeIntegers v2.1 VMMaker.oscog-eem.2495 (e)"
 #endif
 ;
 static const int  orOpIndex = 1;
@@ -1588,6 +1588,9 @@ primDigitDivNegative(void)
 		div = popRemappableOop()
 #endif /* SPURVM */
 ;
+		if (!quo) {
+			return primitiveFailFor(PrimErrNoMemory);
+		}
 		/* begin cDigitDiv:len:rem:len:quo:len: */
 		pDiv = ((unsigned int *) (firstIndexableField(div)));
 		divLen = ((slotSizeOf(div)) + 3) / 4;
