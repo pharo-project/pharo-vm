@@ -7288,7 +7288,7 @@ SpurMemoryManager >> instantiateClass: classObj isPinned: isPinned isOldSpace: i
 	(self isFixedSizePointerFormat: instSpec) ifFalse:
 		[self primitiveFailFor: PrimErrBadReceiver. "bad format"
 		 ^nil].
-	classIndex := self ensureBehaviorHash: classObj.
+	classIndex := self cCoerce: (self ensureBehaviorHash: classObj) to: 'sqInt'.
 	classIndex < 0 ifTrue:
 		[coInterpreter primitiveFailFor: classIndex negated.
 		 ^nil].

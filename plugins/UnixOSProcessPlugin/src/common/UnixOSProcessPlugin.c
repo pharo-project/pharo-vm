@@ -427,7 +427,7 @@ cStringFromString(sqInt aString)
 
 /*	Answer a new collection, usually of type ByteArray or ByteString copied
 	from a null-terminated C string. Caution: This may invoke the garbage
-	collector. 
+	collector.
  */
 
 	/* OSProcessPlugin>>#cString:asCollection: */
@@ -450,10 +450,10 @@ cStringasCollection(const char *aCString, sqInt classIdentifier)
 	way to do this. If this implementation does not work on your Unix
 	platform, try changing
 	it to answer the value of FOPEN:=MAX, which will hopefully be defined in
-	stdio.h. 
+	stdio.h.
 	eem:
 	If we know that (e.g.) stdin is open we can use fd=dup(0);close(fd);fd
-	instead. 
+	instead.
  */
 
 	/* UnixOSProcessPlugin>>#descriptorTableSize */
@@ -686,7 +686,7 @@ fileRecordSize(void)
 /*	Return a pointer to the first byte of of the SQFile data structure file
 	record within
 	anSQFileRecord, which is expected to be a ByteArray of size
-	self>>fileRecordSize. 
+	self>>fileRecordSize.
  */
 
 	/* OSProcessPlugin>>#fileValueOf: */
@@ -751,7 +751,7 @@ fixPointersInArrayOfStringswithOffsets(sqInt flattenedStrings, sqInt offsets)
 	If useSignalHandler is true, set the signal handler for SIGCHLD.
 	Otherwise, assume
 	that death of child events are handled through some other mechanism.
-	
+
 	In this implementation, memory for the argument and environment arrays is
 	allocated in the image prior to calling this primitive. This allows us to
 	avoid invoking the
@@ -762,7 +762,7 @@ fixPointersInArrayOfStringswithOffsets(sqInt flattenedStrings, sqInt offsets)
 	environment and
 	argument vectors, but I think it is a good idea to avoid malloc as much as
 	possible so as not to limit future ObjectMemory implementations.
-	
+
 	This primitive replaces #primitiveForkAndExec from earlier versions of the
 	plugin. The new name permits backward compatibility for an image running
 	on a VM
@@ -777,7 +777,7 @@ fixPointersInArrayOfStringswithOffsets(sqInt flattenedStrings, sqInt offsets)
 	due to the old file descriptors remaining open. This is also cleaner in
 	that garbage
 	descriptors are not left hanging around the the child.
-	
+
 	On entry, the stack contains:
 	0: workingDir, a null terminated string specifying the working directory
 	to use, or nil.
@@ -917,7 +917,7 @@ forkAndExecInDirectory(sqInt useSignalHandler)
 
 /*	Fork a child process, and continue running squeak in the child process.
 	Answer the result of the fork() call, either the child pid or zero.
-	
+
 	After calling fork(), two OS processes exist, one of which is the child of
 	the other. On
 	systems which implement copy-on-write memory management, and which support
@@ -928,7 +928,7 @@ forkAndExecInDirectory(sqInt useSignalHandler)
 	process id of the child process (a non-zero integer). In the child
 	process, the value of
 	pid is zero.
-	
+
 	The child recreates sufficient external resources to continue running.
 	This is done by
 	attaching to a new X session. The child is otherwise a copy of the parent
@@ -937,13 +937,13 @@ forkAndExecInDirectory(sqInt useSignalHandler)
 	parent. The return
 	value of this primitive may be used by the two running Smalltalk images to
 	determine which is the parent and which is the child.
-	
+
 	The child should not depend on using existing connections to external
 	resources. For
 	example, the child may lose its connections to stdin, stdout, and stderr
 	after its parent
 	exits.
-	
+
 	The new child image does not start itself from the image in the file
 	system; rather it is
 	a clone of the parent image as it existed at the time of
@@ -952,7 +952,7 @@ forkAndExecInDirectory(sqInt useSignalHandler)
 	to save the
 	image to the file system, otherwise one Smalltalk may overwrite the image
 	of the other.
-	
+
 	This is a simple call to fork(), rather than the more common idiom of
 	vfork() followed
 	by exec(). The vfork() call cannot be used here because it is designed to
@@ -994,12 +994,12 @@ forkSqueak(sqInt useSignalHandler)
 	prior value of the signal handler. If semaphoreIndex is zero, the handler
 	is unregistered, and the VM returns to its default behavior for handling
 	that signal. A handler must be unregistered before it can be registered
-	again. 
+	again.
 	The Smalltalk semaphore is expected to be kept at the same index location
 	indefinitely during the lifetime of a Squeak session. If that is not the
 	case, the
 	handler must be unregistered prior to unregistering the Smalltalk
-	semaphore. 
+	semaphore.
  */
 
 	/* UnixOSProcessPlugin>>#forwardSignal:toSemaphoreAt: */
@@ -1294,7 +1294,7 @@ isSQSocketObject(sqInt objectPointer)
 
 
 /*	Answer true if the file session matches the current interpreter session
-	identifier. 
+	identifier.
  */
 
 	/* OSProcessPlugin>>#isValidFileSession: */
@@ -1364,7 +1364,7 @@ maskForThisThreadAndResend(int sigNum)
 
 
 /*	Prevent future invocations of signal sigNum from being delivered to this
-	pthread. 
+	pthread.
  */
 
 	/* UnixOSProcessPlugin>>#maskSignalForThisThread: */
@@ -1428,7 +1428,7 @@ needSigaltstack(void)
 	if ((sigaltstack(0,&sigstack)) < 0) {
 		logErrorFromErrno("sigaltstack");
 	}
-	
+
 #  if defined(SA_DISABLE)
 	if (!(sigstack.ss_size == 0 || (sigstack.ss_flags & SA_DISABLE))) {
 		return 1;
@@ -2070,7 +2070,7 @@ primitiveFixPointersInArrayOfStrings(void)
 /*	Fork a child OS process, and do an exec in the child. The parent continues
 	on in
 	Smalltalk, and this method answers the pid of the child which was created.
-	
+
 	On entry, the stack contains:
 	0: workingDir, a null terminated string specifying the working directory
 	to use, or nil.
@@ -2099,7 +2099,7 @@ primitiveForkAndExecInDirectory(void)
 /*	Fork a child OS process, and do an exec in the child. The parent continues
 	on in
 	Smalltalk, and this method answers the pid of the child which was created.
-	
+
 	On entry, the stack contains:
 	0: workingDir, a null terminated string specifying the working directory
 	to use, or nil.
@@ -2130,7 +2130,7 @@ primitiveForkExec(void)
 	X session connected to the parent process, but close its file descriptor
 	for the child
 	process. Open a new X session for the child.
-	
+
 	The child should not depend on using existing connections to external
 	resources. For
 	example, the child may lose its connections to stdin, stdout, and stderr
@@ -2158,7 +2158,7 @@ primitiveForkSqueak(void)
 	X session connected to the parent process, but close its file descriptor
 	for the child
 	process. Open a new X session for the child.
-	
+
 	The child should not depend on using existing connections to external
 	resources. For
 	example, the child may lose its connections to stdin, stdout, and stderr
@@ -2186,12 +2186,12 @@ primitiveForkSqueakWithoutSigHandler(void)
 	handler is unregistered, and the VM returns to its default behavior for
 	handling that
 	signal.
-	
+
 	The Smalltalk semaphore is expected to be kept at the same index location
 	indefinitely during the lifetime of a Squeak session. If that is not the
 	case, the
 	handler must be unregistered prior to unregistering the Smalltalk
-	semaphore. 
+	semaphore.
  */
 
 	/* UnixOSProcessPlugin>>#primitiveForwardSignalToSemaphore */
@@ -2560,7 +2560,7 @@ primitiveGetUid(void)
 	reached end of file.
  */
 /*	Deprecated. The return values are reversed. Use
-	primitiveTestEndOfFileFlag. 
+	primitiveTestEndOfFileFlag.
  */
 
 	/* UnixOSProcessPlugin>>#primitiveIsAtEndOfFile */
@@ -2648,7 +2648,7 @@ primitiveKillOnExit(void)
 	processes may hold a read lock (shared lock) on a file region, but only
 	one process may
 	hold a write lock (exclusive lock). Answer the result of the call to
-	fcntl(). 
+	fcntl().
 	If length is zero, then the entire file will be locked, including region
 	extents that
 	have not yet been allocated for the file. */
@@ -2837,7 +2837,7 @@ primitiveModuleName(void)
 	increment. A positive increment decreases the priority. Only the superuser
 	can specify
 	a negative value (to increase the priority). See man(2) nice.
-	
+
 	Different versions of Unix are inconsistent in their return values. The
 	only reliable test for success is to clear errno prior to the call, and
 	test its value
@@ -2907,7 +2907,7 @@ primitiveRealpath(void)
 
 
 /*	Answer a byte array with the real path for a path string as determined by
-	realpath(). 
+	realpath().
  */
 
 	/* UnixOSProcessPlugin>>#primitiveRealpathAsBytes */
@@ -3321,7 +3321,7 @@ primitiveSendSigtermTo(void)
 	argument. Use
 	an explicit check for isIntegerObject so we can return -1 on error (the
 	stackIntegerValue: method answers 1 on error, and 1 is a valid pid
-	number). 
+	number).
  */
 
 	/* UnixOSProcessPlugin>>#primitiveSendSigusr1To */
@@ -3352,7 +3352,7 @@ primitiveSendSigusr1To(void)
 	argument. Use
 	an explicit check for isIntegerObject so we can return -1 on error (the
 	stackIntegerValue: method answers 1 on error, and 1 is a valid pid
-	number). 
+	number).
  */
 
 	/* UnixOSProcessPlugin>>#primitiveSendSigusr2To */
@@ -3971,10 +3971,10 @@ primitiveTestEndOfFileFlag(void)
 	processes may hold a read lock (shared lock) on a file region, but only
 	one process may
 	hold a write lock (exclusive lock).
-	
+
 	If length is zero, then the request is for the entire file to be locked,
 	including region extents that have not yet been allocated for the file.
-	
+
 	If the fcntl() call fails, answer -1 (the result of the failed call).
 	Otherwise, answer an array with the following six fields:
 	lockable (true or false)
@@ -4107,7 +4107,7 @@ primitiveUnixFileNumber(void)
 	therefore the
 	unlock should be attempted regardless of whether this image thinks that
 	the region has previously been locked. Answer the result of the call to
-	fcntl(). 
+	fcntl().
  */
 
 	/* UnixOSProcessPlugin>>#primitiveUnlockFileRegion */
@@ -4152,7 +4152,7 @@ primitiveUnlockFileRegion(void)
 /*	FIXME: unsetenv() is not portable. For Solaris or any other system which
 	does not
 	support unsetenv(), just comment it out in this method and rebuild the
-	plugin. 
+	plugin.
  */
 
 	/* UnixOSProcessPlugin>>#primitiveUnsetEnv */
@@ -4223,7 +4223,7 @@ realpathAsType(sqInt classIdentifier)
 	Smalltalk, and should only be called indirectly as a result of a death of
 	child signal from
 	the operating system.
-	
+
 	Child processes must be cleaned up by the parent, otherwise they continue
 	to exist as zombies until the parent exits. This handler resets the signal
 	handler to catch the next SIGCHLD signal, then sets a semaphore to notify
@@ -4231,7 +4231,7 @@ realpathAsType(sqInt classIdentifier)
 	that a child process needs to be cleaned up. The actual clean up is done
 	by a
 	Smalltalk process which waits on the semaphore, then calls
-	primitiveReapChildProcess. 
+	primitiveReapChildProcess.
 	Note: If child processes die faster than we can clean them up, signals
 	will be lost
 	and child processes will remain as zombies.
@@ -4241,10 +4241,10 @@ realpathAsType(sqInt classIdentifier)
 static void
 reapChildProcess(int sigNum)
 {
-	
+
 #if !defined(SA_NOCLDSTOP)
 	setSigChldHandler();
-	
+
 #endif /* defined(SA_NOCLDSTOP) */
 	if (sigChldSemaIndex > 0) {
 		signalSemaphoreWithIndex(sigChldSemaIndex);
@@ -4352,7 +4352,7 @@ setInterpreter(struct VirtualMachine *anInterpreter)
 	ok = ((interpreterProxy->majorVersion()) == (VM_PROXY_MAJOR))
 	 && ((interpreterProxy->minorVersion()) >= (VM_PROXY_MINOR));
 	if (ok) {
-		
+
 #if !defined(SQUEAK_BUILTIN_PLUGIN)
 		arrayValueOf = interpreterProxy->arrayValueOf;
 		byteSizeOf = interpreterProxy->byteSizeOf;
@@ -4397,8 +4397,8 @@ setInterpreter(struct VirtualMachine *anInterpreter)
 #  if defined(SA_NOCLDSTOP)
 /* This wrapper is used to handle the new signature of the function */
 
-static void 
-reapChildProcessWrapper(int sigNum, struct __siginfo * sigInfo, void * userData){
+static void
+reapChildProcessWrapper(int sigNum, siginfo_t * sigInfo, void * userData){
 	reapChildProcess(sigNum);
 }
 # endif
@@ -4411,7 +4411,7 @@ setSigChldHandler(void)
 {
     struct sigaction sigchldHandlerAction;
 
-	
+
 #  if defined(SA_NOCLDSTOP)
 	sigchldHandlerAction.sa_sigaction = reapChildProcessWrapper;
 	sigchldHandlerAction.sa_flags = SA_NODEFER | SA_NOCLDSTOP;
@@ -4495,7 +4495,7 @@ setSigPipeHandler(void)
 
 
 /*	Set the SIGPIPE signal handler in the virtual machine to ignore pipe error
-	signals. 
+	signals.
  */
 
 	/* UnixOSProcessPlugin>>#setSigPipeIgnore */
@@ -4678,7 +4678,7 @@ sigStopNumber(void)
 
 
 /*	Termination signal. This is the default signal sent by the unix kill(1)
-	command. 
+	command.
  */
 
 	/* UnixOSProcessPlugin>>#sigTermNumber */
@@ -4746,12 +4746,12 @@ sizeOfSession(void)
 	structure, or answer -1 if unable to obtain the file descriptor (probably
 	due to receiving
 	an incorrect type of object as aFileHandle).
-	
+
 	Warning: The first element of privateSocketStruct happens to be the Unix
 	file number of the socket. See sqUnixSocket.c for the definition. This
 	method takes
 	advantage of this, and will break if anyone ever redefines the data
-	structure. 
+	structure.
  */
 
 	/* OSProcessPlugin>>#socketDescriptorFrom: */
@@ -4784,7 +4784,7 @@ socketRecordSize(void)
 /*	Return a pointer to the first byte of of the SQsocket data structure
 	socket record within
 	anSQSocketRecord, which is expected to be a ByteArray of size
-	self>>socketRecordSize. 
+	self>>socketRecordSize.
  */
 
 	/* OSProcessPlugin>>#socketValueOf: */
@@ -4824,7 +4824,7 @@ stringFromCString(const char *aCString)
 	garbage collector is guaranteed not to run. Note also that
 	this method may itself invoke the garbage collector prior
 	to allocating the new C string.
-	
+
 	Warning: The result of this method will be invalidated by the
 	next garbage collection, including a GC triggered by creation
 	of a new object within a primitive. Do not call this method
@@ -4856,7 +4856,7 @@ transientCStringFromString(sqInt aString)
 
 
 /*	Answer the integer Unix file number corresponding to a file handle (FILE*
-	). 
+	).
  */
 
 	/* UnixOSProcessPlugin>>#unixFileNumber: */

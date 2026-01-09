@@ -5471,7 +5471,7 @@ StackInterpreter >> extUnconditionalJump [
 	<compilationInfo: #isMapped> "because of interrupt check"
 	<compilationInfo: #v4:Long:Branch:Distance:>
 	byte := self fetchByte.
-	offset := byte + (extB << 8).
+	offset := self cCoerce: byte + (extB << 8) to: 'sqInt'.
 	
 	"If backwards, we should consider the delta from before the previous extensions.
 	Consider each extension is 2 bytes."

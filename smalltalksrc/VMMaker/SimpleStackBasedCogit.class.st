@@ -3229,7 +3229,8 @@ SimpleStackBasedCogit >> v3: descriptor LongForward: pc Branch: nExts Distance: 
 
 { #category : 'span functions' }
 SimpleStackBasedCogit >> v3: unusedButKeptForPolymorphism ShortForward: pc Branch: unusedButKeptForPolymorphism2 Distance: aMethodObj [
-	
+	<var: #unusedButKeptForPolymorphism type: #'BytecodeDescriptor *'>
+
 	^ self distanceForShortForwardBranch: pc inMethod: aMethodObj
 ]
 
@@ -3249,6 +3250,7 @@ SimpleStackBasedCogit >> v4: descriptor Block: pc Code: nExts Size: aMethodObj [
 { #category : 'span functions' }
 SimpleStackBasedCogit >> v4: descriptor Long: pc Branch: nExts Distance: aMethodObj [
 	"242		11110010	i i i i i i i i	Jump i i i i i i i i (+ Extend B * 256, where bbbbbbbb = sddddddd, e.g. -32768 = i=0, a=0, s=1)"
+	<var: #descriptor type: #'BytecodeDescriptor *'>
 	| extBValue |
 	self assert: nExts >= 0.
 	self parseV4Exts: nExts priorTo: pc in: aMethodObj into: [:ea :eb| extBValue := eb].
