@@ -594,6 +594,7 @@ static void sendHandler(sqInt fd, void *data, int flags)
 	pss->waitingToSend = false;
 
 	notify(pss, WRITE_NOTIFY);
+	notify(pss, READ_NOTIFY);
 }
 
 /* read data transfer is now possible for the socket. */
