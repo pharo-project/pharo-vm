@@ -4,9 +4,9 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 #include "pharovm/stringUtilities.h"
-#include <sys/mman.h>
 
 #if !defined(_WIN32)
+#include <sys/mman.h>
 #include <unistd.h>
 #endif
 
@@ -230,7 +230,7 @@ int basicImageIsDirectory(const char* aPath){
 
 size_t basicLoadDataUsingMMap(const char* aPath, size_t fileSize, void* targetAddress){
 
-#ifndef _WIN32
+#ifdef _WIN32
 	return 0;
 #else
 
