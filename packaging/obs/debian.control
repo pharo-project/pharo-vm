@@ -1,0 +1,16 @@
+Source: @OBS_PACKAGE_NAME@
+Maintainer: Esteban Lorenzano <estebanlm@netc.eu>, Pablo Tesone <tesonep@gmail.com>, Guille Polito <guillermopolito@gmail.com>
+Section: devel
+Priority: optional
+Build-Depends: debhelper (>= 11.0.0), cmake, clang, libssl-dev, uuid-dev
+#, libffi7-dev (==3.3-4)
+Standards-Version: 4.7.0
+Homepage: https://github.com/pharo-project/pharo-vm
+
+
+Package: @OBS_PACKAGE_NAME@
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}
+Recommends: libcairo2, libsdl2-2.0-0, libgit2-1.7, libfreetype6
+Description: Pharo VM 10.3
+ The Pharo virtual machine for Pharo language/environment, version 10.3.

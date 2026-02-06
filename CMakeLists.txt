@@ -104,11 +104,13 @@ endif()
 #Set up the project
 #This needs to be at this point, after setting the toolchain configuration
 project(PharoVM)
+set(SUPPORTED_PHARO_VERSIONS 11 12 13 14)
 
 include(cmake/versionExtraction.cmake)
 
 set(BUILT_FROM "${PharoVM_VERSION_STRING_FULL} - Commit: ${PharoVM_VERSION_GIT_SHA} - Date: ${PharoVM_VERSION_GIT_COMMIT_DATE}")
 message(STATUS ${BUILT_FROM})
+
 
 
 # Correctly set the system processor under MSVC

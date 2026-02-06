@@ -1,0 +1,44 @@
+#! /usr/bin/make -f
+
+export DH_VERBOSE=1
+version=@PharoVM_VERSION_FULL@
+
+# Best practice: do NOT use multiarch here.
+# VMs are not coinstallable; use a stable directory.
+pkgdir=/usr/lib/@OBS_PACKAGE_NAME@
+
+# Debian staging directory
+buildPrefix=debian/@OBS_PACKAGE_NAME@
+
+%:
+	dh $@
+	
+override_dh_auto_configure:
+	dh_auto_configure -- \
+		-DGENERATE_SOURCES=FALSE \
+		-DPHARO_DEPENDENCIES_PREFER_DOWNLOAD_BINARIES=FALSE \
+		-DPHARO_LIBRARY_PATH=$(pkgdir)/lib \
+		-DPHARO_BIN_LOCATION=$(pkgdir)/lib \
+		-DGENERATED_SOURCE_DIR="${PWD}/" \
+		-DBUILD_BUNDLE=FALSE
+
+override_dh_auto_build:
+	cd obj-$(DEB_TARGET_MULTIARCH) && make install
+
+override_dh_auto_install:
+	# Create directories in the staging area
+	mkdir -p $(buildPrefix)$(pkgdir)/bin
+	mkdir -p $(buildPrefix)$(pkgdir)/lib
+	mkdir -p $(buildPrefix)/usr/bin
+
+	# Install VM binary
+	install -Dm755 obj-$(DEB_TARGET_MULTIARCH)/build/dist/pharo \
+		$(buildPrefix)$(pkgdir)/pharo
+
+	# Install bundled bins
+	install -D obj-$(DEB_TARGET_MULTIARCH)/build/dist/bin/* \
+		$(buildPrefix)$(pkgdir)/bin/
+
+	# Install bundled libs
+	install -D obj-$(DEB_TARGET_MULTIARCH)/build/dist/lib/* \
+		$(buildPrefix)$(pkgdir)/lib/

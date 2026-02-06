@@ -7,8 +7,29 @@
 
 make_directory("build/packages")
 
-# Selecting files to include in the packages
+foreach(PHARO_VERSION ${SUPPORTED_PHARO_VERSIONS})
 
+	#Generate obs config files, generating a debian-like changelog from our current CHANGELOG.md file
+	set(OBS_PACKAGE_NAME "pharo-vm-${PHARO_VERSION}")
+	
+	file(READ "${CMAKE_CURRENT_SOURCE_DIR}/CHANGELOG.md" CHANGELOG_STRING)
+	file(GLOB OBS_FILES "${CMAKE_CURRENT_SOURCE_DIR}/packaging/obs/*")
+	foreach(OBS_FILE ${OBS_FILES})
+    	get_filename_component(OBS_FILE_NAME "${OBS_FILE}" NAME)
+		message(STATUS "Configuring OBS file: ${OBS_FILE_NAME}")
+    
+		if(OBS_FILE_NAME MATCHES "OBS_PACKAGE_NAME")
+        	#replace PACKAGE_NAME by pharo-vm-{major_version}
+			string(REGEX REPLACE "OBS_PACKAGE_NAME" "${OBS_PACKAGE_NAME}" OBS_TARGET_NAME ${OBS_FILE_NAME})
+		else()
+			set(OBS_TARGET_NAME ${OBS_FILE_NAME})
+		endif()
+		message(STATUS "Writing OBS file to: ${CMAKE_CURRENT_BINARY_DIR}/obs/${OBS_TARGET_NAME}")
+		configure_file("${OBS_FILE}" "${CMAKE_CURRENT_BINARY_DIR}/obs/${OBS_PACKAGE_NAME}/${OBS_TARGET_NAME}" @ONLY)
+	endforeach()
+endforeach()
+
+# Selecting files to include in the packages
 configure_installables(bin)
 
 install(FILES
@@ -59,6 +80,8 @@ file(GLOB SUPPORT_CMAKE_FILES
 
 install(FILES
     "CMakeLists.txt"
+    "${CMAKE_CURRENT_SOURCE_DIR}/CHANGELOG.md"
+    "${CMAKE_CURRENT_BINARY_DIR}/version.info"
     ${SUPPORT_CMAKE_FILES}
     DESTINATION pharo-vm
     COMPONENT c-src
@@ -78,7 +101,18 @@ install(
 	COMPONENT include
 	FILES_MATCHING PATTERN *.h)
 
-set(CPACK_PACKAGE_DESCRIPTION "${APPNAME} Headless VM for ${FULL_PLATFORM_NAME}")
+foreach(PHARO_VERSION ${SUPPORTED_PHARO_VERSIONS})
+	#List all obs files
+	set(OBS_PACKAGE_NAME "pharo-vm-${PHARO_VERSION}")
+	file(GLOB OBS_FILES "${CMAKE_CURRENT_BINARY_DIR}/obs/${OBS_PACKAGE_NAME}/*")
+
+	install(
+		FILES ${OBS_FILES}
+		DESTINATION "obs-${PHARO_VERSION}"
+		COMPONENT "obs-${PHARO_VERSION}")
+endforeach()
+
+set(CPACK_PACKAGE_DESCRIPTION "${APPNAME} VM for ${FULL_PLATFORM_NAME}")
 set(CPACK_PACKAGE_VENDOR "${APPNAME}")
 set(CPACK_PACKAGE_HOMEPAGE_URL "https://pharo.org")
 
