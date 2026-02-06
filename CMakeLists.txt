@@ -104,11 +104,13 @@ endif()
 #Set up the project
 #This needs to be at this point, after setting the toolchain configuration
 project(PharoVM)
+set(SUPPORTED_PHARO_VERSIONS 11 12 13 14)
 
 include(cmake/versionExtraction.cmake)
 
 set(BUILT_FROM "${PharoVM_VERSION_STRING_FULL} - Commit: ${PharoVM_VERSION_GIT_SHA} - Date: ${PharoVM_VERSION_GIT_COMMIT_DATE}")
 message(STATUS ${BUILT_FROM})
+
 
 
 # Correctly set the system processor under MSVC
@@ -401,24 +403,6 @@ include(cmake/vmmaker.cmake)
 
 #Generating config file
 configure_file(${CMAKE_CURRENT_SOURCE_DIR}/include/pharovm/config.h.in ${CMAKE_CURRENT_BINARY_DIR}/build/include/pharovm/config.h)
-
-#Generate obs config files, generating a debian-like changelog from our current CHANGELOG.md file
-set(OBS_PACKAGE_NAME "pharo-vm-${PharoVM_VERSION_MAJOR}")
-file(READ "${CMAKE_CURRENT_SOURCE_DIR}/CHANGELOG.md" CHANGELOG_STRING)
-file(GLOB OBS_FILES "${CMAKE_CURRENT_SOURCE_DIR}/packaging/obs/*")
-foreach(OBS_FILE ${OBS_FILES})
-    get_filename_component(OBS_FILE_NAME "${OBS_FILE}" NAME)
-    message(STATUS "Configuring OBS file: ${OBS_FILE_NAME}")
-    
-    if(OBS_FILE_NAME MATCHES "OBS_PACKAGE_NAME")
-        #replace PACKAGE_NAME by pharo-vm-{major_version}
-        string(REGEX REPLACE "OBS_PACKAGE_NAME" "${OBS_PACKAGE_NAME}" OBS_TARGET_NAME ${OBS_FILE_NAME})
-    else()
-        set(OBS_TARGET_NAME ${OBS_FILE_NAME})
-    endif()
-    message(STATUS "Writing OBS file to: ${CMAKE_CURRENT_BINARY_DIR}/obs/${OBS_TARGET_NAME}")
-    configure_file("${OBS_FILE}" "${CMAKE_CURRENT_BINARY_DIR}/obs/${OBS_TARGET_NAME}" @ONLY)
-endforeach()
 
 message(STATUS "C Compiler: ${CMAKE_C_COMPILER}")
 message(STATUS "C++ Compiler: ${CMAKE_CXX_COMPILER}")
