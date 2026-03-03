@@ -136,7 +136,7 @@ if(GENERATE_SOURCES)
             )
     endif()
 
-	set(IMAGE_PATH ${VMMAKER_DIR}/image/Pharo12.0-SNAPSHOT-64bit-92f3bb989f.image)
+	set(IMAGE_PATH ${VMMAKER_DIR}/image/Pharo13.0-SNAPSHOT-64bit-f201357c22.image)
 
 	convert_cygwin_path_ifNeeded(${IMAGE_PATH} IMAGE_PATH_TO_USE)
 	convert_cygwin_path_ifNeeded(${VMMAKER_IMAGE} VMMAKER_IMAGE_TO_USE)
@@ -149,8 +149,8 @@ if(GENERATE_SOURCES)
         ExternalProject_Add(
             vmmaker
 
-            URL https://files.pharo.org/image/120/Pharo12.0-SNAPSHOT.build.1551.sha.92f3bb989f.arch.64bit.zip
-            URL_HASH SHA256=fd84c9f345d806389ecdad52f63eeb8bad7f983c99c5e010d83cf2d12ca97766
+            URL https://files.pharo.org/image/130/Pharo13.0-SNAPSHOT.build.729.sha.f201357c22.arch.64bit.zip 
+            URL_HASH SHA256=10584905f03f4683574e901c439d404bcbbeee71cdb84ee31b820fa8f051614f
             BUILD_COMMAND ${VMMAKER_VM} --headless ${IMAGE_PATH_TO_USE} --no-default-preferences save VMMaker
 	    COMMAND ${VMMAKER_VM} --headless ${VMMAKER_IMAGE_TO_USE} --no-default-preferences --save --quit "${CMAKE_CURRENT_SOURCE_DIR_OUT}/scripts/installVMMaker.st" "${CMAKE_CURRENT_SOURCE_DIR_OUT}" "${ICEBERG_DEFAULT_REMOTE}"
             UPDATE_COMMAND      ""
