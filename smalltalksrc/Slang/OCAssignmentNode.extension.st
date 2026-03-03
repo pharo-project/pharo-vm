@@ -1,7 +1,7 @@
-Extension { #name : 'RBAssignmentNode' }
+Extension { #name : 'OCAssignmentNode' }
 
 { #category : '*Slang' }
-RBAssignmentNode >> anyReturns: aSequenceOfNodes [
+OCAssignmentNode >> anyReturns: aSequenceOfNodes [
 	aSequenceOfNodes do:
 		[:node|
 		node nodesDo:
@@ -12,7 +12,7 @@ RBAssignmentNode >> anyReturns: aSequenceOfNodes [
 ]
 
 { #category : '*Slang' }
-RBAssignmentNode >> asTranslatorNodeIn: aTMethod [
+OCAssignmentNode >> asTranslatorNodeIn: aTMethod [
 	"Answer a TParseNode subclass equivalent of me"
 	| varNode valueNode |
 	varNode := variable asTranslatorNodeIn: aTMethod.
