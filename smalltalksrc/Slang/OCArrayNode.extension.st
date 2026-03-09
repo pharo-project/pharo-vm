@@ -1,7 +1,7 @@
-Extension { #name : 'RBArrayNode' }
+Extension { #name : 'OCArrayNode' }
 
 { #category : '*Slang' }
-RBArrayNode >> asTranslatorNodeIn: aTMethod [
+OCArrayNode >> asTranslatorNodeIn: aTMethod [
 	"Answer a TParseNode subclass equivalent of me."
 
 	"This is for case statements"

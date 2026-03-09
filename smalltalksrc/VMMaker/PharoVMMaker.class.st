@@ -130,7 +130,6 @@ PharoVMMaker >> generate: interpreterClass memoryManager: memoryManager compiler
 					imageWriterClassName 	:= SpurImageWriter name].
 	
 	
-	Author useAuthor: 'vmMaker' during: [
 	
 		VMMakerConfiguration initializeForPharo.
 
@@ -155,7 +154,7 @@ PharoVMMaker >> generate: interpreterClass memoryManager: memoryManager compiler
 				internal: #() external: #(FilePlugin SurfacePlugin FloatArrayPlugin);
 				generateInterpreterFile;
 				generateCogitFiles.
-		generatePlugins ifTrue: [ vmmaker generateExternalPlugins ]] valueSupplyingAnswer:true.]
+		generatePlugins ifTrue: [ vmmaker generateExternalPlugins ]] valueSupplyingAnswer:true.
 ]
 
 { #category : 'generation' }

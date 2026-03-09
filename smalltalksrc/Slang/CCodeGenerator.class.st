@@ -78,7 +78,7 @@ CCodeGenerator class >> monticelloDescriptionFor: aClass [
 		uuid := pkg ancestry ancestors first id ].
 	^ aClass name , (pkg modified
 		   ifTrue: [ ' * ' ]
-		   ifFalse: [ ' ' ]) , pkg ancestry ancestorString , ' uuid: '
+		   ifFalse: [ ' ' ]) , pkg ancestry name , ' uuid: '
 	  , uuid asString
 ]
 
