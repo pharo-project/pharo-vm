@@ -805,7 +805,7 @@ sqFileThisSession() {
 }
 
 void
-signalOnDataArrival(int fd, void *clientData, int flag){
+signalOnDataArrival(sqInt fd, void *clientData, int flag){
 	interpreterProxy->signalSemaphoreWithIndex((sqInt)clientData);
 	aioDisable(fd);
 }
