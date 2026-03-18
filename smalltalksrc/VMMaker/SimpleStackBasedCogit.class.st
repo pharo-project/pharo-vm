@@ -1279,16 +1279,17 @@ SimpleStackBasedCogit >> genExtPushLiteralVariableBytecode [
 { #category : 'bytecode generators' }
 SimpleStackBasedCogit >> genExtPushPseudoVariable [
 	"SistaV1: *	82			01010010			Push thisContext, (then Extend B = 1 => push thisProcess)"
+
 	| ext |
 	ext := extB.
 	extB := 0.
 	numExtB := 0.
-	ext caseOf: {
-		[0]	->	[^self genPushActiveContextBytecode].
-		}
-		otherwise:
-			[^self unknownBytecode].
-	^0
+	ext
+		caseOf: {
+				([ 0 ] -> [ ^ self genPushActiveContextBytecode ]).
+				([ 1 ] -> [ ^ self genPushActiveProcessBytecode ]) }
+		otherwise: [ ^ self unknownBytecode ].
+	^ 0
 ]
 
 { #category : 'bytecode generators' }
@@ -1972,6 +1973,12 @@ SimpleStackBasedCogit >> genPushActiveContextBytecode [
 		inBlock: inBlock.
 	self PushR: ReceiverResultReg.
 	^0
+]
+
+{ #category : 'bytecode generators' }
+SimpleStackBasedCogit >> genPushActiveProcessBytecode [
+
+	^ self unknownBytecode
 ]
 
 { #category : 'constant support' }
