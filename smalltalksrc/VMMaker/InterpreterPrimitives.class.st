@@ -2986,14 +2986,16 @@ InterpreterPrimitives >> primitiveRelinquishProcessor [
 
 	| microSecs |
 	microSecs := self stackIntegerValue: 0.
-	self successful ifTrue: [
+	self successful ifTrue: [ 
 		"DO NOT allow relinquishing the processor while we are profiling since this
 		may skew the time base for our measures (it may reduce processor speed etc).
 		Instead we go full speed, therefore measuring the precise time we spend in the
 		inner idle loop as a busy loop."
-		nextProfileTick = 0 ifTrue:[self ioRelinquishProcessorForMicroseconds: microSecs].
-		self pop: 1.  "microSecs; leave rcvr on stack"
-	]
+		nextProfileTick = 0 ifTrue: [ | startTime |
+			startTime := self ioUTCMicrosecondsNow.
+			self ioRelinquishProcessorForMicroseconds: microSecs.
+			self addIdleUsecs: (self ioUTCMicrosecondsNow - startTime) ].
+		self pop: 1 "microSecs; leave rcvr on stack" ]
 ]
 
 { #category : 'arithmetic largeint primitives' }
