@@ -3882,6 +3882,24 @@ StackInterpreterPrimitives >> primitiveVMParameter [
 	self primitiveSetVMParameter: index arg: self stackTop
 ]
 
+{ #category : 'other primitives' }
+StackInterpreterPrimitives >> primitiveVMVersion [
+
+	<export: true>
+	
+	| resultArray |
+	
+	resultArray := objectMemory instantiateClass: objectMemory classArray indexableSize: 3.
+	self failed ifTrue: [ ^ self ].
+	
+	objectMemory storeInteger: 0 ofObject: resultArray withValue: PharoVM_VERSION_MAJOR.
+	objectMemory storeInteger: 1 ofObject: resultArray withValue: PharoVM_VERSION_MINOR.
+	objectMemory storeInteger: 2 ofObject: resultArray withValue: PharoVM_VERSION_PATCH.
+	
+	self pop: 1 thenPush: resultArray
+
+]
+
 { #category : 'system control primitives' }
 StackInterpreterPrimitives >> primitiveVoidReceiver [
 	"Potentially crash the VM by voiding the receiver.  A subsequent inst var
