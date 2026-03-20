@@ -4398,7 +4398,7 @@ setInterpreter(struct VirtualMachine *anInterpreter)
 /* This wrapper is used to handle the new signature of the function */
 
 static void
-reapChildProcessWrapper(int sigNum, struct siginfo_t * sigInfo, void * userData){
+reapChildProcessWrapper(int sigNum, siginfo_t * sigInfo, void * userData){
 	reapChildProcess(sigNum);
 }
 # endif
