@@ -14,11 +14,11 @@ EXPORT(int) singleCallToCallback(SIMPLE_CALLBACK fun, int base){
 EXPORT(int) callbackInALoop(SIMPLE_CALLBACK fun){
 	int i;
 	int acc = 0;
-	
+
 	for(i=0;i<42;i++){
 		acc = fun(acc);
 	}
-	
+
 	return acc;
 }
 
@@ -36,7 +36,7 @@ static int value = 0;
 #if FEATURE_THREADED_FFI
 void* otherThread(void* aFunction){
 	SIMPLE_CALLBACK f = (SIMPLE_CALLBACK) aFunction;
-	
+
 #ifdef _WIN32
 	Sleep(3);
 #else
@@ -44,6 +44,8 @@ void* otherThread(void* aFunction){
 #endif
 
 	value = f(42);
+
+    return NULL;
 }
 #endif //FEATURE_THREADED_FFI
 
