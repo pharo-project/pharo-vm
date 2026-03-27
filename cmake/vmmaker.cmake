@@ -38,7 +38,7 @@ else()
   endif()
 endif()
 
-set(PLUGIN_GENERATED_FILES 
+set(PLUGIN_GENERATED_FILES
     ${PHARO_CURRENT_GENERATED}/plugins/src/FilePlugin/FilePlugin.c
     ${PHARO_CURRENT_GENERATED}/plugins/src/NewFilePlugin/NewFilePlugin.c
     ${PHARO_CURRENT_GENERATED}/plugins/src/SurfacePlugin/SurfacePlugin.c
@@ -58,8 +58,8 @@ if(GENERATE_SOURCES)
     endif()
 
     #Setting platform specific vmmaker virtual machine, with cached download or override
-    if (GENERATE_PHARO_VM) 
-        message("Overriding VM used for code generation")  
+    if (GENERATE_PHARO_VM)
+        message("Overriding VM used for code generation")
         set(VMMAKER_VM ${GENERATE_PHARO_VM})
         # add empty target because is required later when installing vmmaker
 	add_custom_target(vmmaker_vm)
@@ -102,18 +102,19 @@ if(GENERATE_SOURCES)
         #Download VM
         ExternalProject_Add(
             vmmaker_vm
-
+            DOWNLOAD_EXTRACT_TIMESTAMP TRUE
+            DOWNLOAD_NO_PROGRESS TRUE
             URL ${VM_URL}
             URL_HASH ${VM_URL_HASH}
-	    BUILD_COMMAND       ""
-	    UPDATE_COMMAND      ""
-	    CONFIGURE_COMMAND   ""
-	    INSTALL_COMMAND     ""
+            BUILD_COMMAND       ""
+            UPDATE_COMMAND      ""
+            CONFIGURE_COMMAND   ""
+            INSTALL_COMMAND     ""
 
             PREFIX "${VMMAKER_DIR}"
             SOURCE_DIR "${VMMAKER_DIR}/vm"
             BUILD_IN_SOURCE True
-            )
+        )
     endif()
 
 	set(IMAGE_PATH ${VMMAKER_DIR}/image/Pharo12.0-SNAPSHOT-64bit-92f3bb989f.image)
@@ -125,14 +126,15 @@ if(GENERATE_SOURCES)
 
     if(GENERATE_VMMAKER)
         #Bootstrap VMMaker.image from downloaded plain Pharo image
-		
+
         ExternalProject_Add(
             vmmaker
-
+            DOWNLOAD_EXTRACT_TIMESTAMP TRUE
+            DOWNLOAD_NO_PROGRESS TRUE
             URL https://files.pharo.org/image/120/Pharo12.0-SNAPSHOT.build.1551.sha.92f3bb989f.arch.64bit.zip
             URL_HASH SHA256=fd84c9f345d806389ecdad52f63eeb8bad7f983c99c5e010d83cf2d12ca97766
             BUILD_COMMAND ${VMMAKER_VM} --headless ${IMAGE_PATH_TO_USE} --no-default-preferences save VMMaker
-	    COMMAND ${VMMAKER_VM} --headless ${VMMAKER_IMAGE_TO_USE} --no-default-preferences --save --quit "${CMAKE_CURRENT_SOURCE_DIR_OUT}/scripts/installVMMaker.st" "${CMAKE_CURRENT_SOURCE_DIR_OUT}" "${ICEBERG_DEFAULT_REMOTE}"
+            COMMAND ${VMMAKER_VM} --headless ${VMMAKER_IMAGE_TO_USE} --no-default-preferences --save --quit "${CMAKE_CURRENT_SOURCE_DIR_OUT}/scripts/installVMMaker.st" "${CMAKE_CURRENT_SOURCE_DIR_OUT}" "${ICEBERG_DEFAULT_REMOTE}"
             UPDATE_COMMAND      ""
             CONFIGURE_COMMAND   ""
             INSTALL_COMMAND     ""
@@ -143,7 +145,7 @@ if(GENERATE_SOURCES)
             WORKING_DIRECTORY "${VMMAKER_DIR}"
 
             DEPENDS vmmaker_vm
-            )
+        )
 
     else()
         #Use the given vmimage
