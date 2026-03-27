@@ -7,8 +7,10 @@
 
 cmake_minimum_required(VERSION 3.12)
 
-if(POLICY CMP0135)
-  cmake_policy(SET CMP0135 NEW)
+if(POLICY CMP0177)
+    # cmake --help-policy CMP0177
+    # install() DESTINATION paths are normalized
+    cmake_policy(SET CMP0177 NEW)
 endif()
 
 include(cmake/BuildType.cmake)
