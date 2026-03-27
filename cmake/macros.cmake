@@ -65,7 +65,7 @@ macro(add_third_party_dependency_with_baseurl NAME BASEURL)
 
     get_platform_name(PLATNAME)
     message("Adding third-party libraries for ${PLATNAME}: ${NAME}")
-    
+
     include(DownloadProject)
     download_project(PROJ ${NAME}
         URL         "${BASEURL}${NAME}.zip"
@@ -97,18 +97,3 @@ macro(add_third_party_dependency NAME)
     add_third_party_dependency_with_baseurl(${NAME} ${BASE_URL})
 endmacro()
 
-
-#
-# Compatibility with old CMAKE versions to remove, as fast as posible
-#
-
-if(${CMAKE_VERSION} VERSION_LESS "3.12.0") 
-    message(STATUS "Please consider to switch to CMake 3.12.0 or later")
-	
-	macro(add_compile_definitions)
-		foreach(loop_var ${ARGN})
-			add_definitions("-D'${loop_var}'")
-		endforeach()
-	endmacro()
-	
-endif()
