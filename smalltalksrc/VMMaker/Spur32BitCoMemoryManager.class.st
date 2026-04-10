@@ -232,6 +232,13 @@ Spur32BitCoMemoryManager >> smallIntegerTag [
 	^1
 ]
 
+{ #category : 'trampoline support' }
+Spur32BitCoMemoryManager >> specialObjectsArrayAddress [
+	<api>
+	^self cCode: [(self addressOf: specialObjectsOop) asUnsignedInteger]
+		inSmalltalk: [cogit simulatedVariableAddress: #specialObjectsOop in: self]
+]
+
 { #category : 'simulation only' }
 Spur32BitCoMemoryManager >> unalignedLongAt: byteAddress [
 	<doNotGenerate>
