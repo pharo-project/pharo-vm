@@ -1,0 +1,117 @@
+Class {
+	#name : 'VMContextReificationTest',
+	#superclass : 'VMBasicPrimitiveTest',
+	#category : 'VMMakerTests-InterpreterTests',
+	#package : 'VMMakerTests',
+	#tag : 'InterpreterTests'
+}
+
+{ #category : 'tests' }
+VMContextReificationTest >> testMissing [
+
+	"TO finish this implementation we need:
+		- A test with a base frame where we don't have a caller
+		- Plug this into the VM
+		- Bench the primitive overhead
+		- Fix the tests
+	"
+]
+
+{ #category : 'tests' }
+VMContextReificationTest >> testSenderObjectWithCallerInDifferentPage [
+
+	| method newFP frameCaller frameCallee callerReceiver currentPage newPage |
+
+	callerReceiver := memory integerObjectOf: 11.
+	method := methodBuilder newMethod buildMethod.
+	frameCaller := stackBuilder addNewFrame
+		receiver: callerReceiver;
+		stack: { memory integerObjectOf: 42 };
+		method: method; yourself.
+
+	frameCallee := stackBuilder addNewFrame
+		receiver: (memory integerObjectOf: 17);
+		method: method; yourself.
+
+	stackBuilder buildStack.
+	
+	currentPage := interpreter stackPage.
+	interpreter ensureFrameIsMarried: frameCaller framePointer SP:frameCaller stackPointer. 
+	newPage := interpreter stackPages newStackPage.
+	
+	newFP := interpreter moveFramesIn: currentPage through: frameCallee framePointer toPage: newPage.
+	interpreter setStackPageAndLimit: newPage.
+	interpreter setStackPointersFromPage: newPage.
+	
+	interpreter push: memory nilObject.
+	interpreter primitiveSenderObject.
+
+	self assert: interpreter stackTop equals: callerReceiver
+	
+
+]
+
+{ #category : 'tests' }
+VMContextReificationTest >> testSenderObjectWithCallerInTheSamePage [
+
+	| method frameCaller frameCallee callerReceiver |
+
+	callerReceiver := memory integerObjectOf: 11.
+	method := methodBuilder newMethod buildMethod.
+	frameCaller := stackBuilder addNewFrame
+		receiver: callerReceiver;
+		stack: { memory integerObjectOf: 42 };
+		method: method; yourself.
+
+	frameCallee := stackBuilder addNewFrame
+		receiver: (memory integerObjectOf: 17);
+		method: method; yourself.
+
+	stackBuilder buildStack.
+	
+	interpreter push: memory nilObject.
+	interpreter primitiveSenderObject.
+
+	self assert: interpreter stackTop equals: callerReceiver
+	
+
+]
+
+{ #category : 'tests' }
+VMContextReificationTest >> testSenderObjectWithCallerOutsideStack [
+
+	| method newFP frameCaller frameCallee callerReceiver oldPage newPage |
+
+	callerReceiver := memory integerObjectOf: 11.
+	method := methodBuilder newMethod buildMethod.
+	frameCaller := stackBuilder addNewFrame
+		receiver: callerReceiver;
+		method: method;
+		beSuspendedAt: (interpreter initialIPForHeader:
+			(memory methodHeaderOf: method) method: method);
+		stack: { memory integerObjectOf: 42 };
+		yourself.
+
+	frameCallee := stackBuilder addNewFrame
+		receiver: (memory integerObjectOf: 17);
+		method: method; yourself.
+
+	stackBuilder buildStack.
+
+	oldPage := interpreter stackPage.
+	
+	interpreter ensureFrameIsMarried: frameCaller framePointer SP:frameCaller stackPointer. 
+	newPage := interpreter stackPages newStackPage.
+	newFP := interpreter moveFramesIn: oldPage through: frameCallee framePointer toPage: newPage.
+	interpreter setStackPageAndLimit: newPage.
+	interpreter setStackPointersFromPage: newPage.
+	
+	interpreter divorceFramesIn: oldPage.
+	
+	interpreter push: memory nilObject.
+	interpreter primitiveSenderObject.
+
+	self assert: interpreter stackTop equals: callerReceiver
+	
+
+]

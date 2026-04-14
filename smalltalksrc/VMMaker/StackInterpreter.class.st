@@ -11061,6 +11061,22 @@ StackInterpreter >> primitiveResume [
 			inInterpreter ]
 ]
 
+{ #category : 'primitives' }
+StackInterpreter >> primitiveSenderObject [
+
+	| callerFramePointer senderObject |
+
+	(self isBaseFrame: framePointer) ifTrue: [ | callerFrameContext |
+		callerFrameContext := self frameCallerContext: framePointer.
+		(self isSingleContext: callerFrameContext) ifTrue: [ 1 halt. ] ifFalse: [
+			callerFramePointer := self frameOfMarriedContext: callerFrameContext.
+		]
+	] ifFalse: [ callerFramePointer := self frameCallerFP: framePointer ].
+
+	senderObject := self frameReceiver: callerFramePointer.
+	self pop: 1 thenPush: senderObject
+]
+
 { #category : 'process primitives' }
 StackInterpreter >> primitiveSuspend [
 	"Primitive. Suspend the receiver, aProcess such that it can be executed again

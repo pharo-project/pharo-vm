@@ -136,9 +136,11 @@ VMStackBuilder >> page: anObject [
 { #category : 'build' }
 VMStackBuilder >> preparePage [
 	"Page setup before the base frame"
-	interpreter push: memory nilObject.	"receiver"
+	interpreter push: memory nilObject.  "senderContext of baseFrame"
+	interpreter push: memory nilObject.  "frameContext of the current context"
+	interpreter push: frames first receiver.	"receiver"	
 	self pushArgs. "arguments"
-	interpreter push: memory nilObject.  "senderContext"
+	interpreter push: memory nilObject.  "savedCaller Instruction Pointer"
 	interpreter push: 0. "savedFp"
 	page baseFP: interpreter stackPointer.
 
@@ -152,7 +154,10 @@ VMStackBuilder >> pushAllButFirstFrames [
 			aFrame previousFrameArgsSize: ((frames at: anIndex - 1) argumentSize).
 			
 			interpreter push: interpreter framePointer.	
-				
+			
+			"When we are calling a method, we should push to the stack as many values as the number of arguments + 1 ( receiver )"
+			self assert: (aFrame argumentSize + 1) <= (frames at: anIndex - 1) stack size.
+			
 			self pushFrame: aFrame.
 			aFrame callerFrame: (frames at: anIndex - 1)."for better inspection"
 			]
