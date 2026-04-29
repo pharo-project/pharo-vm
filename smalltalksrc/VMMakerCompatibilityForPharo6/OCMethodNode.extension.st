@@ -1,7 +1,7 @@
-Extension { #name : 'RBMethodNode' }
+Extension { #name : 'OCMethodNode' }
 
 { #category : '*VMMakerCompatibilityForPharo6-C translation' }
-RBMethodNode >> asTranslationMethodOfClass: aTMethodClass [
+OCMethodNode >> asTranslationMethodOfClass: aTMethodClass [
  	"Answer a TMethod (or subclass) derived from the receiver."
 	| additionalMethodState comment |
 	additionalMethodState := AdditionalMethodState forMethod: nil selector: selector.
@@ -36,7 +36,7 @@ RBMethodNode >> asTranslationMethodOfClass: aTMethodClass [
 ]
 
 { #category : '*VMMakerCompatibilityForPharo6-C translation' }
-RBMethodNode >> asTranslationMethodOfClass: aTMethodClass forCodeGenerator: aCodeGenerator [
+OCMethodNode >> asTranslationMethodOfClass: aTMethodClass forCodeGenerator: aCodeGenerator [
  	"Answer a TMethod (or subclass) derived from the receiver."
 	| additionalMethodState comment renamedSelector |
 	additionalMethodState := AdditionalMethodState forMethod: nil selector: selector.
@@ -75,7 +75,7 @@ RBMethodNode >> asTranslationMethodOfClass: aTMethodClass forCodeGenerator: aCod
 ]
 
 { #category : '*VMMakerCompatibilityForPharo6-results' }
-RBMethodNode >> printSchematicTempsFor: blockNode in: blockScope on: stream [
+OCMethodNode >> printSchematicTempsFor: blockNode in: blockScope on: stream [
 	| startPos vectorStartPos |
 	startPos := stream position.
 	blockNode arguments do:
@@ -103,7 +103,7 @@ RBMethodNode >> printSchematicTempsFor: blockNode in: blockScope on: stream [
 ]
 
 { #category : '*VMMakerCompatibilityForPharo6-C translation' }
-RBMethodNode >> quickMethodReturnLiteral [
+OCMethodNode >> quickMethodReturnLiteral [
 	| node |
 	node := body statements last value.
 	^node isVariable

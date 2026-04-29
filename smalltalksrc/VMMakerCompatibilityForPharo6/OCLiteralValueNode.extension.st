@@ -1,11 +1,11 @@
-Extension { #name : 'RBLiteralValueNode' }
+Extension { #name : 'OCLiteralValueNode' }
 
 { #category : '*VMMakerCompatibilityForPharo6-testing' }
-RBLiteralValueNode >> isConstantNumber [
+OCLiteralValueNode >> isConstantNumber [
 	^value isNumber
 ]
 
 { #category : '*VMMakerCompatibilityForPharo6-testing' }
-RBLiteralValueNode >> isNodeNil [
+OCLiteralValueNode >> isNodeNil [
 	^value == nil
 ]

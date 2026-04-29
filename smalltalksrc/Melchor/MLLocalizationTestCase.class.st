@@ -105,13 +105,14 @@ MLLocalizationTestCase >> setUp [
 
 { #category : 'helpers' }
 MLLocalizationTestCase >> tastFor: someCode [
-
 	"Parse the expression as a method with a single expression.
 	Transform it to TAST and get the first statement of the TMethod.
 	
 	Expected: the first statement of the TMethod should correspond to the first statement of the RMethod"
 	^ ((RBParser parseExpression: someCode) methodNode
-		compilationContext: CompilationContext new;
+		compilationContext: (OCCompilationContext new
+			class: MLLocalizationTestCase;
+			yourself);
 		asTranslationMethodOfClass: TMethod)
 			parseTree
 ]
