@@ -3,6 +3,7 @@
 #include "pharovm/debug.h"
 #include "pharovm/pathUtilities.h"
 #include <assert.h>
+#include <unistd.h>
 
 typedef VMErrorCode (*vm_parameter_process_function)(const char *argument, VMParameters* params);
 

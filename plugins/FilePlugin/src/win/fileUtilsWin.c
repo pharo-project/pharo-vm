@@ -13,7 +13,7 @@
 * 3 - file
 * 4 - cygwin terminal (windows only)
 */
-sqInt
+int
 fileHandleType(HANDLE fdHandle) {
    if (fdHandle == INVALID_HANDLE_VALUE) {
        return -1;
@@ -82,8 +82,8 @@ fileHandleType(HANDLE fdHandle) {
 * Allow to test whether the file handle is from a console or not
 * 1 if one of the stdio is redirected to a console pipe, else 0 (and in this case, a file should be created)
 */
-sqInt
+int
 isFileHandleATTY(HANDLE fdHandle) {
-   sqInt res = fileHandleType(fdHandle) ;
+   int res = fileHandleType(fdHandle) ;
    return res == 1 || res == 4;
 }

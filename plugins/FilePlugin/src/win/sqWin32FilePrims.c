@@ -31,6 +31,7 @@
 
 #include "pharovm/debug.h"
 #include "aio.h"
+#include <io.h>
 
 extern struct VirtualMachine *interpreterProxy;
 
