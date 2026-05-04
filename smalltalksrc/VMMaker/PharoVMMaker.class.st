@@ -122,32 +122,31 @@ PharoVMMaker >> generate: interpreterClass memoryManager: memoryManager compiler
 					imageWriterClassName 	:= SpurImageWriter name].
 	
 	
-	Author useAuthor: 'vmMaker' during: [
+
+	VMMakerConfiguration initializeForPharo.
+
+	platformDirectory := self platformDirectoryFor: memoryManager.
+
+	[ 
 	
-		VMMakerConfiguration initializeForPharo.
+	vmmaker := VMMaker
+		makerFor: interpreterClass
+		and: compilerClass
+		with: {#ObjectMemory. memoryManager name.
+				 #bytecodeTableInitializer. #initializeBytecodeTableForSistaV1.
+				 #ImageReader. imageReaderClassName.
+	  			 #ImageWriter. imageWriterClassName} , options
+		to: platformDirectory
+		platformDir:platformDirectory
+		including: #()
+		configuration: VMMakerConfiguration.
 
-		platformDirectory := self platformDirectoryFor: memoryManager.
-
-		[ 
-		
-		vmmaker := VMMaker
-			makerFor: interpreterClass
-			and: compilerClass
-			with: {#ObjectMemory. memoryManager name.
-					 #bytecodeTableInitializer. #initializeBytecodeTableForSistaV1.
-					 #ImageReader. imageReaderClassName.
-		  			 #ImageWriter. imageWriterClassName} , options
-			to: platformDirectory
-			platformDir:platformDirectory
-			including: #()
-			configuration: VMMakerConfiguration.
-
-		vmmaker
-				stopOnErrors: stopOnErrors;
-				internal: #() external: #(NewFilePlugin FilePlugin SurfacePlugin FloatArrayPlugin);
-				generateInterpreterFile;
-				generateCogitFiles.
-		generatePlugins ifTrue: [ vmmaker generateExternalPlugins ]] valueSupplyingAnswer:true.]
+	vmmaker
+			stopOnErrors: stopOnErrors;
+			internal: #() external: #(NewFilePlugin FilePlugin SurfacePlugin FloatArrayPlugin);
+			generateInterpreterFile;
+			generateCogitFiles.
+	generatePlugins ifTrue: [ vmmaker generateExternalPlugins ]] valueSupplyingAnswer:true.
 ]
 
 { #category : 'generation' }
