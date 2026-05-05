@@ -10,10 +10,8 @@ Class {
 VMContextReificationTest >> testMissing [
 
 	"TO finish this implementation we need:
-		- A test with a base frame where we don't have a caller
 		- Plug this into the VM
 		- Bench the primitive overhead
-		- Fix the tests
 	"
 ]
 
@@ -113,5 +111,28 @@ VMContextReificationTest >> testSenderObjectWithCallerOutsideStack [
 
 	self assert: interpreter stackTop equals: callerReceiver
 	
+
+]
+
+{ #category : 'tests' }
+VMContextReificationTest >> testSenderObjectWithNoSenderFails [
+
+	| method frameCallee callerReceiver top |
+
+	callerReceiver := memory integerObjectOf: 11.
+	method := methodBuilder newMethod buildMethod.
+	top := memory integerObjectOf: 16rcafebabe.
+
+	frameCallee := stackBuilder addNewFrame
+		receiver: (memory integerObjectOf: 17);
+		stack: { top };
+		method: method; yourself.
+
+	stackBuilder buildStack.
+
+	interpreter primitiveSenderObject.	
+	
+	self assert: interpreter failed.
+	self assert: interpreter stackTop equals: top
 
 ]

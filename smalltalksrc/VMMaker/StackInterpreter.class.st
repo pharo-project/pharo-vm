@@ -11068,6 +11068,10 @@ StackInterpreter >> primitiveSenderObject [
 
 	(self isBaseFrame: framePointer) ifTrue: [ | callerFrameContext |
 		callerFrameContext := self frameCallerContext: framePointer.
+		(callerFrameContext = objectMemory nilObject) ifTrue: [
+			"case where there is no sender frame"
+			^ self primitiveFail	
+		].
 		(self isSingleContext: callerFrameContext) ifTrue: [ | receiverObject |
 			receiverObject := objectMemory fetchPointer: ReceiverIndex ofObject: callerFrameContext.
 			self pop: 1 thenPush: receiverObject.
