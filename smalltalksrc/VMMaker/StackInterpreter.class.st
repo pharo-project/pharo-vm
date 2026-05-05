@@ -11068,7 +11068,11 @@ StackInterpreter >> primitiveSenderObject [
 
 	(self isBaseFrame: framePointer) ifTrue: [ | callerFrameContext |
 		callerFrameContext := self frameCallerContext: framePointer.
-		(self isSingleContext: callerFrameContext) ifTrue: [ 1 halt. ] ifFalse: [
+		(self isSingleContext: callerFrameContext) ifTrue: [ | receiverObject |
+			receiverObject := objectMemory fetchPointer: ReceiverIndex ofObject: callerFrameContext.
+			self pop: 1 thenPush: receiverObject.
+			^ self
+		] ifFalse: [
 			callerFramePointer := self frameOfMarriedContext: callerFrameContext.
 		]
 	] ifFalse: [ callerFramePointer := self frameCallerFP: framePointer ].

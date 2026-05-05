@@ -89,11 +89,12 @@ VMContextReificationTest >> testSenderObjectWithCallerOutsideStack [
 		method: method;
 		beSuspendedAt: (interpreter initialIPForHeader:
 			(memory methodHeaderOf: method) method: method);
-		stack: { memory integerObjectOf: 42 };
+		stack: { memory integerObjectOf: 17 };
 		yourself.
 
 	frameCallee := stackBuilder addNewFrame
 		receiver: (memory integerObjectOf: 17);
+		stack: { memory nilObject };
 		method: method; yourself.
 
 	stackBuilder buildStack.
@@ -107,8 +108,7 @@ VMContextReificationTest >> testSenderObjectWithCallerOutsideStack [
 	interpreter setStackPointersFromPage: newPage.
 	
 	interpreter divorceFramesIn: oldPage.
-	
-	interpreter push: memory nilObject.
+
 	interpreter primitiveSenderObject.
 
 	self assert: interpreter stackTop equals: callerReceiver
