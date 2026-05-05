@@ -48,6 +48,10 @@ VMStackBuilder >> addFrame: aFrame [
 { #category : 'frames' }
 VMStackBuilder >> addNewFrame [
 	| frame |
+	
+	"Only the top frame should not be suspended"
+	frames ifNotEmpty: [ frames last beSuspended ].
+
 	"'add' a new frame in the sense of an OrderedCollection, which will be iterated with #do:
 	The last frame added, will be the stackTop"
 	frame := VMFrameBuilder new initializeWithInterpreter: interpreter andMemory: memory andMethodBuilder: methodBuilder.

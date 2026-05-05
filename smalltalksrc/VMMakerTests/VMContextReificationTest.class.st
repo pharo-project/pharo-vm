@@ -26,15 +26,16 @@ VMContextReificationTest >> testSenderObjectWithCallerInDifferentPage [
 	method := methodBuilder newMethod buildMethod.
 	frameCaller := stackBuilder addNewFrame
 		receiver: callerReceiver;
-		stack: { memory integerObjectOf: 42 };
+		stack: { memory integerObjectOf: 17 };
 		method: method; yourself.
 
 	frameCallee := stackBuilder addNewFrame
 		receiver: (memory integerObjectOf: 17);
+		stack: { memory nilObject };
 		method: method; yourself.
 
 	stackBuilder buildStack.
-	
+
 	currentPage := interpreter stackPage.
 	interpreter ensureFrameIsMarried: frameCaller framePointer SP:frameCaller stackPointer. 
 	newPage := interpreter stackPages newStackPage.
@@ -42,8 +43,7 @@ VMContextReificationTest >> testSenderObjectWithCallerInDifferentPage [
 	newFP := interpreter moveFramesIn: currentPage through: frameCallee framePointer toPage: newPage.
 	interpreter setStackPageAndLimit: newPage.
 	interpreter setStackPointersFromPage: newPage.
-	
-	interpreter push: memory nilObject.
+
 	interpreter primitiveSenderObject.
 
 	self assert: interpreter stackTop equals: callerReceiver
@@ -60,16 +60,16 @@ VMContextReificationTest >> testSenderObjectWithCallerInTheSamePage [
 	method := methodBuilder newMethod buildMethod.
 	frameCaller := stackBuilder addNewFrame
 		receiver: callerReceiver;
-		stack: { memory integerObjectOf: 42 };
+		stack: { memory integerObjectOf: 17 };
 		method: method; yourself.
 
 	frameCallee := stackBuilder addNewFrame
 		receiver: (memory integerObjectOf: 17);
+		stack: { memory nilObject };
 		method: method; yourself.
 
 	stackBuilder buildStack.
 	
-	interpreter push: memory nilObject.
 	interpreter primitiveSenderObject.
 
 	self assert: interpreter stackTop equals: callerReceiver
