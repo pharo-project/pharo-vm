@@ -1090,7 +1090,7 @@ StackInterpreter class >> initializePrimitiveTable [
 		(79 primitiveNewMethod)
 
 		"Control Primitives (80-89)"
-		(80 primitiveFail)
+		(80 primitiveSenderObject)
 		(81 primitiveFail)
 		(82 primitiveFail)
 		(83 primitivePerform)
