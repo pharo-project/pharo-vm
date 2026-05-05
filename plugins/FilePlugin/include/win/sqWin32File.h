@@ -46,4 +46,7 @@
   } \
 }
 
+int isFileHandleATTY(HANDLE fdHandle);
+int fileHandleType(HANDLE fdHandle);
+
 #endif /* __SQ_WIN32_FILE_H */
