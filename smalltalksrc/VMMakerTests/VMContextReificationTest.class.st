@@ -7,15 +7,6 @@ Class {
 }
 
 { #category : 'tests' }
-VMContextReificationTest >> testMissing [
-
-	"TO finish this implementation we need:
-		- Plug this into the VM
-		- Bench the primitive overhead
-	"
-]
-
-{ #category : 'tests' }
 VMContextReificationTest >> testSenderObjectWithCallerInDifferentPage [
 
 	| method newFP frameCaller frameCallee callerReceiver currentPage newPage |
@@ -45,8 +36,6 @@ VMContextReificationTest >> testSenderObjectWithCallerInDifferentPage [
 	interpreter primitiveSenderObject.
 
 	self assert: interpreter stackTop equals: callerReceiver
-	
-
 ]
 
 { #category : 'tests' }
@@ -71,8 +60,6 @@ VMContextReificationTest >> testSenderObjectWithCallerInTheSamePage [
 	interpreter primitiveSenderObject.
 
 	self assert: interpreter stackTop equals: callerReceiver
-	
-
 ]
 
 { #category : 'tests' }
@@ -110,8 +97,6 @@ VMContextReificationTest >> testSenderObjectWithCallerOutsideStack [
 	interpreter primitiveSenderObject.
 
 	self assert: interpreter stackTop equals: callerReceiver
-	
-
 ]
 
 { #category : 'tests' }
@@ -134,5 +119,4 @@ VMContextReificationTest >> testSenderObjectWithNoSenderFails [
 	
 	self assert: interpreter failed.
 	self assert: interpreter stackTop equals: top
-
 ]
