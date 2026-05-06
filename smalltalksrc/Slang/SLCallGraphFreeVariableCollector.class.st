@@ -9,12 +9,20 @@ Class {
 	#superclass : 'SLCallGraphVisitor',
 	#instVars : [
 		'accumulatedFreeVariables',
-		'freeVariablesPerMethod'
+		'freeVariablesPerMethod',
+		'candidateVariables'
 	],
 	#category : 'Slang-Optimizations',
 	#package : 'Slang',
 	#tag : 'Optimizations'
 }
+
+{ #category : 'as yet unclassified' }
+SLCallGraphFreeVariableCollector >> candidateVariables: aCollection [ 
+	
+	candidateVariables := aCollection 
+
+]
 
 { #category : 'accessing' }
 SLCallGraphFreeVariableCollector >> freeVariablesUsedByMethodNamed: aSelector [
@@ -51,6 +59,9 @@ SLCallGraphFreeVariableCollector >> postVisitMethod: aMethod [
 	| myVariables parentVariables |
 	myVariables := accumulatedFreeVariables removeLast.
 	myVariables value addAll: aMethod freeVariableReferences.
+
+	(aMethod hasProperty: #externalizeAllVariables)
+		ifTrue: [ myVariables value addAll: candidateVariables ].
 
 	freeVariablesPerMethod at: aMethod selector put: myVariables value.
 	

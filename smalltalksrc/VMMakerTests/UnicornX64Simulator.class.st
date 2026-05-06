@@ -6,6 +6,12 @@ Class {
 	#tag : 'Unicorn'
 }
 
+{ #category : 'as yet unclassified' }
+UnicornX64Simulator class >> supportISA: isa andAbi: abi [ 
+	
+	^ isa = #X64 and: [ abi = #default or: [ abi = #SysV ] ]
+]
+
 { #category : 'registers' }
 UnicornX64Simulator >> arg0Register [
 	
@@ -88,6 +94,12 @@ UnicornX64Simulator >> doublePrecisionFloatingPointRegister2 [
 	^ UcX86Registers xmm2
 ]
 
+{ #category : 'registers' }
+UnicornX64Simulator >> doublePrecisionFloatingPointRegister3 [
+
+	^ UcX86Registers xmm3
+]
+
 { #category : 'as yet unclassified' }
 UnicornX64Simulator >> extractDestinationRegisterFromAssembly: aLLVMInstruction [ 
 	
@@ -137,6 +149,12 @@ UnicornX64Simulator >> instantiateDisassembler [
 UnicornX64Simulator >> instructionPointerRegister [
 	
 	^ UcX86Registers rip
+]
+
+{ #category : 'as yet unclassified' }
+UnicornX64Simulator >> instructionPointerValue [
+	
+	^ self instructionPointerRegister value
 ]
 
 { #category : 'as yet unclassified' }
@@ -464,7 +482,7 @@ UnicornX64Simulator >> smashCallerSavedRegistersWithValuesFrom: base by: step in
 			 #(rcx rdx r8 r9) withIndexDo:
 				[:getter :index|
 				 aMemory
-					unsignedLong64At: self rbp + 9 + (index * 8) "skip saved fp and retpc; aMemory is 1-relative"
+					unsignedLong64At: self rbp + 8 + (index * 8) "skip saved fp and retpc"
 					put: (self perform: getter)]].
 	volatileRegisters withIndexDo:
 		[:setter :index|

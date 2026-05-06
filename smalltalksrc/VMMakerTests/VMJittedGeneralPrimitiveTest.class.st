@@ -1391,6 +1391,62 @@ VMJittedGeneralPrimitiveTest >> testPrimitiveFormatTrueObject [
 	self assert: self machineSimulator receiverRegisterValue equals: (memory integerObjectOf: 0). "According to SpurMemomyManager >> formatOfHeader:, the format of the True object is 0."
 ]
 
+{ #category : 'tests - primitiveGetAddressOfOOPPinningIfNeeded' }
+VMJittedGeneralPrimitiveTest >> testPrimitiveGetAddressOfOOPPinningIfNeededFailsIfObjectIsNotPinned [
+	
+	| endInstruction primitiveAddress oop |
+	
+	primitiveAddress := self compile: [ 
+		cogit objectRepresentation genPrimitiveGetAddressOfOOPPinningIfNeeded.
+		"If the primitive fails it continues, so we need to have an instruction to detect the end"
+		endInstruction := cogit Stop ].
+
+	oop := self newObjectWithSlots: 2.
+
+	self prepareStackForSendReceiver: oop arguments: {}.
+	
+	self runFrom: primitiveAddress until: endInstruction address.
+]
+
+{ #category : 'tests - primitiveGetAddressOfOOPPinningIfNeeded' }
+VMJittedGeneralPrimitiveTest >> testPrimitiveGetAddressOfOOPPinningIfNeededFailsWithImmediate [
+	
+	| endInstruction primitiveAddress |
+	
+	primitiveAddress := self compile: [ 
+		cogit objectRepresentation genPrimitiveGetAddressOfOOPPinningIfNeeded.
+		"If the primitive fails it continues, so we need to have an instruction to detect the end"
+		endInstruction := cogit Stop ].
+
+	self prepareStackForSendReceiver: (memory integerObjectOf: 7) arguments: {}.
+	
+	self runFrom: primitiveAddress until: endInstruction address.
+]
+
+{ #category : 'tests - primitiveGetAddressOfOOPPinningIfNeeded' }
+VMJittedGeneralPrimitiveTest >> testPrimitiveGetAddressOfOOPPinningIfNeededReturnsTheContentsAddress [
+	
+	| endInstruction primitiveAddress oop externalAddressClass |
+	
+	externalAddressClass := self newClassInOldSpaceWithSlots: 0 instSpec: (memory byteFormatForNumBytes: 0).
+	memory classExternalAddress: externalAddressClass.	
+	
+	primitiveAddress := self compile: [ 
+		cogit objectRepresentation genPrimitiveGetAddressOfOOPPinningIfNeeded.
+		"If the primitive fails it continues, so we need to have an instruction to detect the end"
+		endInstruction := cogit Stop ].
+
+	oop := self newOldSpaceObjectWithSlots: 2.
+	memory setIsPinnedOf: oop to: true.
+
+	self prepareStackForSendReceiver: oop arguments: {}.
+	
+	self runFrom: primitiveAddress until: callerAddress.
+	
+	self assert: (memory fetchClassOf: self machineSimulator receiverRegisterValue) equals: externalAddressClass.
+	self assert: (interpreter readAddress: self machineSimulator receiverRegisterValue) equals: oop + memory baseHeaderSize.	
+]
+
 { #category : 'tests - primitiveGreaterOrEqual' }
 VMJittedGeneralPrimitiveTest >> testPrimitiveGreaterOrEqualDoesNotCompileIfReceiverTagIsNotSmallInteger [
 	

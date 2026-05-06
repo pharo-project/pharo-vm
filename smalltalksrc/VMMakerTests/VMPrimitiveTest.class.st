@@ -1873,6 +1873,54 @@ VMPrimitiveTest >> testPrimitiveFormatWithWeakArray [
 		equals: (memory integerObjectOf: memory weakArrayFormat)
 ]
 
+{ #category : 'tests - primitiveGetAddressOfOOPPinningIfNeeded' }
+VMPrimitiveTest >> testPrimitiveGetAddressOfOOPPinningIfNeededFailsOnImmediate [
+
+	interpreter push: (memory integerObjectOf: 2).
+	
+	interpreter primitiveGetAddressOfOOPPinningIfNeeded. 
+
+	self assert: interpreter failed.
+	
+	
+]
+
+{ #category : 'tests - primitiveGetAddressOfOOPPinningIfNeeded' }
+VMPrimitiveTest >> testPrimitiveGetAddressOfOOPPinningIfNeededReturnsAddressAndPinsIfObjectIsNotPinned [
+
+	| oop externalAddressClass |
+	oop := self newObjectWithSlots: 2.
+	externalAddressClass := self newClassInOldSpaceWithSlots: 0 instSpec: (memory byteFormatForNumBytes: 0).
+	memory classExternalAddress: externalAddressClass.
+
+	interpreter push: oop.
+	interpreter primitiveGetAddressOfOOPPinningIfNeeded. 
+
+	self assert: (memory isForwarded: oop).	
+
+	self assert: (memory fetchClassOf: interpreter stackTop) equals: externalAddressClass.
+	self assert: (interpreter readAddress: interpreter stackTop) equals: (memory followForwarded: oop) + memory baseHeaderSize.	
+]
+
+{ #category : 'tests - primitiveGetAddressOfOOPPinningIfNeeded' }
+VMPrimitiveTest >> testPrimitiveGetAddressOfOOPPinningIfNeededReturnsAddressIfObjectIsPinned [
+
+	| oop externalAddressClass |
+	oop := self newObjectWithSlots: 2.
+	oop := memory pinObject: oop.
+	
+	externalAddressClass := self newClassInOldSpaceWithSlots: 0 instSpec: (memory byteFormatForNumBytes: 0).
+	memory classExternalAddress: externalAddressClass.
+
+	interpreter push: oop.
+	interpreter primitiveGetAddressOfOOPPinningIfNeeded. 
+
+	self deny: (memory isForwarded: oop).	
+
+	self assert: (memory fetchClassOf: interpreter stackTop) equals: externalAddressClass.
+	self assert: (interpreter readAddress: interpreter stackTop) equals: oop + memory baseHeaderSize.	
+]
+
 { #category : 'tests - primitiveImmutability' }
 VMPrimitiveTest >> testPrimitiveGetImmutabilityOfImmediateReturnsTrue [
 

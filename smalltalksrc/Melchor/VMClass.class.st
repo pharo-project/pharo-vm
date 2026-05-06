@@ -710,6 +710,14 @@ VMClass >> logDebug: aFormat _: aParameter [
 	(aFormat printf: { aParameter }) traceCr
 ]
 
+{ #category : 'logging' }
+VMClass >> logDebug: aFormat _: aParameter _:anotherParam [
+
+	<doNotGenerate>
+
+	(aFormat printf: { aParameter. anotherParam }) traceCr
+]
+
 { #category : 'debug support' }
 VMClass >> logError: aMessage [
 	

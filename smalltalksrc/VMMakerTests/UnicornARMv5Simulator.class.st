@@ -6,6 +6,12 @@ Class {
 	#tag : 'Unicorn'
 }
 
+{ #category : 'as yet unclassified' }
+UnicornARMv5Simulator class >> supportISA: isa andAbi: abi [ 
+	
+	^ isa = #ARMv5
+]
+
 { #category : 'registers' }
 UnicornARMv5Simulator >> arg0Register [
 	
@@ -186,6 +192,12 @@ UnicornARMv5Simulator >> doublePrecisionFloatingPointRegister1 [
 UnicornARMv5Simulator >> doublePrecisionFloatingPointRegister2 [
 
 	^ UcARMRegisters d2
+]
+
+{ #category : 'as yet unclassified' }
+UnicornARMv5Simulator >> doublePrecisionFloatingPointRegister3 [
+
+	^ UcARMRegisters d3
 ]
 
 { #category : 'as yet unclassified' }

@@ -7,6 +7,13 @@ Class {
 }
 
 { #category : 'code-critics' }
+ManifestVMMaker class >> ruleBadMessageRule2V1FalsePositive [
+
+	<ignoreForCoverage>
+	^ #(#(#(#RGClassDefinition #(#CogARMv8Compiler)) #'2025-06-18T18:28:03.188809+02:00') )
+]
+
+{ #category : 'code-critics' }
 ManifestVMMaker class >> ruleCodeCruftLeftInMethodsRuleV1FalsePositive [
 
 	<ignoreForCoverage>
@@ -24,7 +31,7 @@ ManifestVMMaker class >> ruleExcessiveArgumentsRuleV1FalsePositive [
 ManifestVMMaker class >> ruleLongMethodsRuleV1FalsePositive [
 
 	<ignoreForCoverage>
-	^ #(#(#(#RGClassDefinition #(#DruidJIT)) #'2023-04-26T00:25:44.408297+02:00') #(#(#RGMethodDefinition #(#CogObjectRepresentationForSpur #genGetClassObjectOf:into:scratchReg:instRegIsReceiver: #false)) #'2024-03-20T14:24:36.77799+01:00') )
+	^ #(#(#(#RGClassDefinition #(#DruidJIT)) #'2023-04-26T00:25:44.408297+02:00') #(#(#RGMethodDefinition #(#CogObjectRepresentationForSpur #genGetClassObjectOf:into:scratchReg:instRegIsReceiver: #false)) #'2024-03-20T14:24:36.77799+01:00') #(#(#RGClassDefinition #(#SimpleStackBasedCogit)) #'2025-06-18T18:28:40.088111+02:00') )
 ]
 
 { #category : 'code-critics' }
@@ -38,5 +45,5 @@ ManifestVMMaker class >> ruleTempsReadBeforeWrittenRuleV1FalsePositive [
 ManifestVMMaker class >> ruleUncommonMessageSendRuleV1FalsePositive [
 
 	<ignoreForCoverage>
-	^ #(#(#(#RGClassDefinition #(#DruidJIT)) #'2023-04-26T00:25:40.525381+02:00') #(#(#RGClassDefinition #(#Cogit)) #'2023-11-14T14:51:46.485495+01:00') #(#(#RGMethodDefinition #(#CogObjectRepresentationForSpur #genGetClassObjectOfClassIndex:into:scratchReg: #false)) #'2024-03-20T12:06:14.044383+01:00') #(#(#RGMethodDefinition #(#CogObjectRepresentationForSpur #genGetClassObjectOf:into:scratchReg:instRegIsReceiver: #false)) #'2024-03-20T12:09:37.299869+01:00') #(#(#RGMethodDefinition #(#CogObjectRepresentation #genPrimitiveFormat #false)) #'2024-03-21T10:01:25.937395+01:00') #(#(#RGClassDefinition #(#StackToRegisterMappingCogit)) #'2024-08-21T15:58:49.593558+02:00') )
+	^ #(#(#(#RGClassDefinition #(#DruidJIT)) #'2023-04-26T00:25:40.525381+02:00') #(#(#RGClassDefinition #(#Cogit)) #'2023-11-14T14:51:46.485495+01:00') #(#(#RGMethodDefinition #(#CogObjectRepresentationForSpur #genGetClassObjectOfClassIndex:into:scratchReg: #false)) #'2024-03-20T12:06:14.044383+01:00') #(#(#RGMethodDefinition #(#CogObjectRepresentationForSpur #genGetClassObjectOf:into:scratchReg:instRegIsReceiver: #false)) #'2024-03-20T12:09:37.299869+01:00') #(#(#RGMethodDefinition #(#CogObjectRepresentation #genPrimitiveFormat #false)) #'2024-03-21T10:01:25.937395+01:00') #(#(#RGClassDefinition #(#StackToRegisterMappingCogit)) #'2024-08-21T15:58:49.593558+02:00') #(#(#RGClassDefinition #(#SimpleStackBasedCogit)) #'2025-06-18T18:27:45.211828+02:00') #(#(#RGClassDefinition #(#CogAbstractInstruction)) #'2025-06-18T18:28:20.068642+02:00') )
 ]

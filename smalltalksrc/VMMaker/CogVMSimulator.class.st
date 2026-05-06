@@ -459,6 +459,7 @@ CogVMSimulator >> cr [
 
 { #category : 'debug support' }
 CogVMSimulator >> debugStackPointersFor: aMethod [
+
 	^CArrayAccessor on:
 		(StackDepthFinder on: (VMCompiledMethodProxy new
 									for: aMethod

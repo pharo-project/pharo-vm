@@ -12,7 +12,11 @@ Class {
 		'externalPrimJumpOffsets',
 		'externalSetPrimOffsets',
 		'introspectionDataIndex',
-		'introspectionData'
+		'introspectionData',
+		'ceSameThreadCalloutTrampoline',
+		'ceFallbackInvalidFFICallTrampoline',
+		'ceFFIFullCallInRegisterTrampoline',
+		'ceFFIFullCallInRegisterTrampolineWithExtraArgument'
 	],
 	#pools : [
 		'VMClassIndices',
@@ -28,7 +32,9 @@ Class {
 { #category : 'translation' }
 SimpleStackBasedCogit class >> ancilliaryClasses [
 	"Answer any extra classes to be included in the translation."
-	^super ancilliaryClasses, (self objectRepresentationClass withAllSuperclasses copyUpThrough: CogObjectRepresentation) reverse
+	^super ancilliaryClasses, 
+	{LibFFI},
+	(self objectRepresentationClass withAllSuperclasses copyUpThrough: CogObjectRepresentation) reverse
 ]
 
 { #category : 'documentation' }
@@ -67,7 +73,11 @@ SimpleStackBasedCogit class >> declareCVarsIn: aCCodeGenerator [
 		var: #externalSetPrimOffsets
 			declareC: 'sqInt externalSetPrimOffsets[MaxNumArgs + 1]';
 		var: #primSetFunctionLabel type: #'AbstractInstruction *';
-		var: #primInvokeInstruction type: #'AbstractInstruction *'
+		var: #primInvokeInstruction type: #'AbstractInstruction *';
+		addHeaderFile: '#if FEATURE_FFI
+#include <ffi.h>
+#endif //FEATURE_FFI'.
+
 ]
 
 { #category : 'class initialization' }
@@ -272,6 +282,26 @@ SimpleStackBasedCogit >> cPICMissTrampolineFor: numArgs [
 SimpleStackBasedCogit >> ceCPICMissTrampoline: anAddress [ 
 	
 	ceCPICMissTrampoline := anAddress
+]
+
+{ #category : 'accessing' }
+SimpleStackBasedCogit >> ceFallbackInvalidFFICallTrampoline [
+	<doNotGenerate>
+	^ ceFallbackInvalidFFICallTrampoline
+]
+
+{ #category : 'accessing' }
+SimpleStackBasedCogit >> ceSameThreadCalloutTrampoline [
+	
+	<doNotGenerate>
+	^ ceSameThreadCalloutTrampoline
+]
+
+{ #category : 'accessing' }
+SimpleStackBasedCogit >> ceSameThreadCalloutTrampoline: anAddress [ 
+
+	<doNotGenerate>
+	ceSameThreadCalloutTrampoline := anAddress
 ]
 
 { #category : 'simulation only' }
@@ -2806,6 +2836,34 @@ SimpleStackBasedCogit >> generateMissAbortTrampolines [
 ]
 
 { #category : 'initialization' }
+SimpleStackBasedCogit >> generateRunTimeTrampolines [
+
+	super generateRunTimeTrampolines.
+	self generateSameThreadCalloutTrampolines
+]
+
+{ #category : 'initialization' }
+SimpleStackBasedCogit >> generateSameThreadCalloutTrampolines [
+
+	ceSameThreadCalloutTrampoline := self
+		                                 genTrampolineFor:
+		                                 #ceSameThreadCalloutWithLiteralIndex:
+		                                 called:
+		                                 'ceSameThreadCalloutTrampoline'
+		                                 arg: SendNumArgsReg
+		                                 result: ReceiverResultReg.
+
+	ceFallbackInvalidFFICallTrampoline := self
+		                                      genTrampolineFor:
+		                                      #ceFallbackInvalidFFICall
+		                                      called:
+		                                      'ceFallbackInvalidFFICallTrampoline'.
+		
+	ceFFIFullCallInRegisterTrampoline := self maybeGenerateFFIFullCallInRegisterTrampoline: false.
+	ceFFIFullCallInRegisterTrampolineWithExtraArgument := self maybeGenerateFFIFullCallInRegisterTrampoline: true.	
+]
+
+{ #category : 'initialization' }
 SimpleStackBasedCogit >> generateTracingTrampolines [
 	"Generate trampolines for tracing.  In the simulator we can save a lot of time
 	 and avoid noise instructions in the lastNInstructions log by short-cutting these
@@ -2825,6 +2883,20 @@ SimpleStackBasedCogit >> generateTracingTrampolines [
 			arg: ClassReg
 			arg: ReceiverResultReg
 			regsToSave: CallerSavedRegisterMask.
+]
+
+{ #category : 'accessing' }
+SimpleStackBasedCogit >> getFFIFullCallInRegisterTrampoline: handlesExtraDoubleArgument [
+
+	^ handlesExtraDoubleArgument
+		  ifTrue: [ ceFFIFullCallInRegisterTrampolineWithExtraArgument ]
+		  ifFalse: [ ceFFIFullCallInRegisterTrampoline ]
+]
+
+{ #category : 'accessing' }
+SimpleStackBasedCogit >> getFallbackInvalidFFICallTrampoline [
+
+	^ ceFallbackInvalidFFICallTrampoline
 ]
 
 { #category : 'register management' }
@@ -2903,6 +2975,83 @@ SimpleStackBasedCogit >> maybeCompileAllocFillerCheck [
 		 self MoveCq: PrimErrWritePastObject R: TempReg.
 		 self MoveR: TempReg Aw: coInterpreter primFailCodeAddress.
 		 jmpOk jmpTarget: self Label]
+]
+
+{ #category : 'initialization' }
+SimpleStackBasedCogit >> maybeGenerateFFIFullCallInRegisterTrampoline: handlesExtraDoubleArgument [
+
+	"This trampoline is used to have a fixed point where all the calls to FFI methods can return.
+	This is needed because if we do a FFI call that is reentrant in the interpreter, the machine code method that has perform the call might move or disappear.
+	Producing a crash when returning from the FFI call.
+	As the affected return address is in the C stack, it will not be handled by the code compaction code. 
+	So, we need a trampoline, so the return IP is in the top of a Machine Code Pharo Stack, and it is correctly patched.
+	We need two flavors of this trampoline, as Win64 requires to handle the an extra double argument in the stack"
+
+	| startAddress |
+
+	<inline: true>
+
+	backEnd needsFFIFullCallInRegisterTrampoline 
+		ifFalse: [ ^ 0 ].
+	
+	self allocateOpcodes: 15 bytecodes: 0.	
+	
+	"We need to ensure that the Extra0Reg is not in conflict with the registers used for the calling convention"
+	backEnd cArg0Register = Extra0Reg ifTrue: [ self error: 'Cannot generate ceFFIFullCallInRegisterTrampoline. Extra0Reg collides with cArg0Register' ]. 
+	backEnd cArg1Register = Extra0Reg ifTrue: [ self error: 'Cannot generate ceFFIFullCallInRegisterTrampoline. Extra0Reg collides with cArg1Register' ]. 
+	backEnd cArg2Register = Extra0Reg ifTrue: [ self error: 'Cannot generate ceFFIFullCallInRegisterTrampoline. Extra0Reg collides with cArg2Register' ]. 
+	backEnd cArg3Register = Extra0Reg ifTrue: [ self error: 'Cannot generate ceFFIFullCallInRegisterTrampoline. Extra0Reg collides with cArg3Register' ]. 
+
+	"If we don't have LinkRegister, we need an extra register, that should not conflict with the calling convetion"
+	(backEnd hasLinkRegister) ifFalse: [ 
+		backEnd cArg0Register = Extra2Reg ifTrue: [ self error: 'Cannot generate ceFFIFullCallInRegisterTrampoline. Extra2Reg collides with cArg0Register' ]. 
+		backEnd cArg1Register = Extra2Reg ifTrue: [ self error: 'Cannot generate ceFFIFullCallInRegisterTrampoline. Extra2Reg collides with cArg1Register' ]. 
+		backEnd cArg2Register = Extra2Reg ifTrue: [ self error: 'Cannot generate ceFFIFullCallInRegisterTrampoline. Extra2Reg collides with cArg2Register' ]. 
+		backEnd cArg3Register = Extra2Reg ifTrue: [ self error: 'Cannot generate ceFFIFullCallInRegisterTrampoline. Extra2Reg collides with cArg3Register' ] 
+	].
+	
+	startAddress := methodZoneBase.
+
+	"We are not pushing the return IP to the stack. 
+	We need to store it in the instructionPointer variable. If we are coming back into the interpreter in a callback, the ptEnterInterpreterFromCallback 
+	assumes that the return IP is in the variable, and will put it in the stack so it can be remapped.
+	
+	We need to use an extra register if we don't have LinkReg or PC register"
+
+	backEnd hasLinkRegister 
+		ifTrue:
+			[self MoveR: LinkReg Aw: coInterpreter instructionPointerAddress]
+		ifFalse:
+			[self PopR: Extra2Reg. "instruction pointer"
+			 self MoveR: Extra2Reg Aw: coInterpreter instructionPointerAddress].
+
+	self genSmalltalkToCStackSwitch: false.
+	
+	backEnd prepareStackForFFICall: handlesExtraDoubleArgument.
+		
+	self CallR: Extra0Reg.
+	
+	backEnd genLoadStackPointers.
+
+	(backEnd hasLinkRegister)
+		ifTrue:
+			[backEnd hasPCRegister
+				ifTrue: [self MoveAw: coInterpreter instructionPointerAddress R: PCReg]
+				ifFalse: [
+						self MoveAw: coInterpreter instructionPointerAddress R: LinkReg. 
+						self RetN: 0]]
+		ifFalse: [	
+			self MoveAw: coInterpreter instructionPointerAddress R: Extra2Reg.
+			self PushR: Extra2Reg.
+			self RetN: 0].
+			
+	self outputInstructionsForGeneratedRuntimeAt: startAddress.
+		
+	self recordGeneratedRunTime: (handlesExtraDoubleArgument 
+		ifTrue: [ 'ceFFIFullCallInRegisterTrampolineWithExtraArgument' ]
+		ifFalse: [ 'ceFFIFullCallInRegisterTrampoline' ]) address: startAddress.
+		
+	^ startAddress.
 ]
 
 { #category : 'trampolines' }

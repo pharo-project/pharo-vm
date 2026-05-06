@@ -349,6 +349,27 @@ StackDepthFinder >> resetStackAfterBranchOrReturn [
 ]
 
 { #category : 'instruction decoding' }
+StackDepthFinder >> sameThreadCallout: literalIndex [ 
+
+	| objectMemory functionDefintionOop cif |
+	objectMemory := instructionStream compiledCode objectMemory.
+	functionDefintionOop := (instructionStream compiledCode literalAt: literalIndex + 1) oop.
+
+	functionDefintionOop = objectMemory nilObject 
+		ifTrue: [ self error ].
+
+	cif := objectMemory coInterpreter getHandlerAsCif:(objectMemory
+				fetchPointer: 1
+				ofObject: functionDefintionOop).
+
+	self drop: cif nargs.
+
+	"If it returns void, it does not push nothing in the stack"
+	cif returnType type = cif libFFI void type 
+		ifFalse: [ self push. ]
+]
+
+{ #category : 'instruction decoding' }
 StackDepthFinder >> send: selector super: supered numArgs: numArgs [
 	"Send Message With Selector, selector, bytecode. The argument, 
 	supered, indicates whether the receiver of the message is specified with 

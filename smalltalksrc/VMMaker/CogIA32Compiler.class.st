@@ -3356,6 +3356,15 @@ CogIA32Compiler >> genMulR: regSource R: regDest [
 	^cogit gen: IMULRR operand: regSource operand: regDest
 ]
 
+{ #category : 'sameThread callout - optimizations' }
+CogIA32Compiler >> genOptimizedSameThreadCalloutFor: cif flags: flags andFunctionAddress: externalFunctionAddress [
+
+	<var: #cif type: #'ffi_cif *'>
+	<var: #externalFunctionAddress type: #'void *'>
+
+	^ false
+]
+
 { #category : 'abstract instructions' }
 CogIA32Compiler >> genPopRd: reg [
 	<inline: true>
@@ -3793,6 +3802,12 @@ CogIA32Compiler >> mod: mod RM: regMode RO: regOpcode [
 				Valid digit values range from 0 to 7.
 		/r		Indicates that the ModRM byte specifies both a register operand and a reg/mem (register or memory) operand."
 	^mod << 6 + (regOpcode << 3) + regMode
+]
+
+{ #category : 'testing' }
+CogIA32Compiler >> needsFFIFullCallInRegisterTrampoline [
+	
+	^ false
 ]
 
 { #category : 'feature detection' }

@@ -845,6 +845,34 @@ CogARMv8Compiler >> byteReadsZeroExtend [
 ]
 
 { #category : 'abi' }
+CogARMv8Compiler >> cArg0Register [
+
+	<inline: true>
+	^R0
+]
+
+{ #category : 'accessing' }
+CogARMv8Compiler >> cArg1Register [
+
+	<inline: true>
+	^R1
+]
+
+{ #category : 'accessing' }
+CogARMv8Compiler >> cArg2Register [
+
+	<inline: true>
+	^R2
+]
+
+{ #category : 'accessing' }
+CogARMv8Compiler >> cArg3Register [
+
+	<inline: true>
+	^R3
+]
+
+{ #category : 'abi' }
 CogARMv8Compiler >> cResultRegister [
 	"Answer the register through which C funcitons return integral results."
 	<inline: true>
@@ -1000,6 +1028,7 @@ CogARMv8Compiler >> computeMaximumSize [
 		"Control"
 		[Call]					-> [^4].
 		[CallFull]				-> [^self literalLoadInstructionBytes + 4].
+		[CallR]					-> [^4].
 		[JumpR]					-> [^4].
 		[Jump]					-> [^4].
 		[JumpFull]				-> [^self literalLoadInstructionBytes + 4].
@@ -1588,6 +1617,15 @@ CogARMv8Compiler >> concretizeCallFull [
 	self machineCodeAt: instrOffset put: (self blr: ConcreteIPReg).
 	self assert: instrOffset = self literalLoadInstructionBytes.
 	^ machineCodeSize := instrOffset + 4
+]
+
+{ #category : 'generate machine code - concretize' }
+CogARMv8Compiler >> concretizeCallR [
+
+	<inline: true>
+
+	self machineCodeAt: 0 put: (self blr: (operands at: 0)).
+	^ machineCodeSize := 4
 ]
 
 { #category : 'generate machine code' }
@@ -3414,6 +3452,7 @@ CogARMv8Compiler >> dispatchConcretize [
 		"Control"
 		[Call]						-> [^self concretizeCall]. "call code within code space"
 		[CallFull]					-> [^self concretizeCallFull]. "call code anywhere in address space"
+		[CallR]						-> [^self concretizeCallR].
 		[JumpR]						-> [^self concretizeJumpR].
 		[JumpFull]					-> [^self concretizeJumpFull]."jump within address space"
 		[JumpLong]					-> [^self concretizeJumpLong]."jumps witihn code space"
@@ -5343,6 +5382,12 @@ CogARMv8Compiler >> nameForRegister: reg [ "<Integer>"
 				ifNone: [default]]
 		ifFalse:
 			[default]
+]
+
+{ #category : 'testing' }
+CogARMv8Compiler >> needsFFIFullCallInRegisterTrampoline [
+	
+	^ true
 ]
 
 { #category : 'assembler' }

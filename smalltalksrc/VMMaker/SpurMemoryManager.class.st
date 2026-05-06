@@ -880,6 +880,8 @@ SpurMemoryManager class >> initializeSpecialObjectIndices [
 
 	ClassExternalAddress := 43.
 
+	SelectorInvalidFFICall := 44.
+
 	SelectorAboutToReturn := 48.
 	SelectorRunWithIn := 49.
 
@@ -10536,6 +10538,7 @@ SpurMemoryManager >> pinObject: objOop [
 
 { #category : 'header format' }
 SpurMemoryManager >> pinnedBitShift [
+	<api>
 	<cmacro>
 	"bit 1 of 3-bit field above format (little endian)"
 	^30

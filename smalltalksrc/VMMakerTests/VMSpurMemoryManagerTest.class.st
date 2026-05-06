@@ -114,6 +114,50 @@ VMSpurMemoryManagerTest >> createEphemeronClass [
 ]
 
 { #category : 'utils' }
+VMSpurMemoryManagerTest >> createExternalAddressClass [
+
+	memory classExternalAddress: (self
+			 newClassInOldSpaceWithSlots: 0
+			 instSpec: (memory byteFormatForNumBytes: 0))
+]
+
+{ #category : 'helpers' }
+VMSpurMemoryManagerTest >> createExternalFunctionFor: aBlock withArgumentTypes: argumentTypes withReturnType: returnType [
+
+	^ self
+		  createExternalFunctionFor: aBlock
+		  withArgumentTypes: argumentTypes
+		  withReturnType: returnType
+		  flags: 0
+]
+
+{ #category : 'helpers' }
+VMSpurMemoryManagerTest >> createExternalFunctionFor: aBlock withArgumentTypes: argumentTypes withReturnType: returnType flags: flags [
+
+	| functionAddress tfExternalFunction functionExternalAddress tfFunctionDefinition cif cifExternalAddress |
+		
+	functionAddress := interpreter libFFI registerFunction: aBlock.
+
+	tfExternalFunction := self newObjectWithSlots: 3. 
+	functionExternalAddress := self newExternalAddress: functionAddress. 
+	tfFunctionDefinition := self newObjectWithSlots: 1.
+	
+	cif := interpreter libFFI newCif.
+	cif argumentTypes: argumentTypes.
+	cif returnType: returnType.
+		
+	cifExternalAddress := self newExternalAddress: (cif address). 
+
+	memory storePointer: 0 ofObject: tfExternalFunction withValue: functionExternalAddress.
+	memory storePointer: 1 ofObject: tfExternalFunction withValue: tfFunctionDefinition.
+	memory storeInteger: 2 ofObject: tfExternalFunction withValue: flags.
+
+	memory storePointer: 0 ofObject: tfFunctionDefinition withValue: cifExternalAddress.	
+
+	^ tfExternalFunction
+]
+
+{ #category : 'utils' }
 VMSpurMemoryManagerTest >> createLargeIntegerClasses [
 
 	| classLargeInteger classLargeNegativeInteger |
@@ -314,6 +358,21 @@ VMSpurMemoryManagerTest >> installFloatClass [
 	"This simulated classFloat class is necessary because the 32bits VM cannot instanciate boxed floats by itself"
 ]
 
+{ #category : 'tests' }
+VMSpurMemoryManagerTest >> installSelector: aSelectorOop method: aMethodOop inMethodDictionary: aMethodDictionary [
+	
+	| anArrayOfMethods |
+	anArrayOfMethods := memory fetchPointer: MethodArrayIndex ofObject: aMethodDictionary.
+	memory
+		storePointer: (memory methodDictionaryHash: aSelectorOop mask: 11) + 2
+		ofObject: aMethodDictionary
+		withValue: aSelectorOop.
+	memory
+		storePointer: (memory methodDictionaryHash: aSelectorOop mask: 11)
+		ofObject: anArrayOfMethods
+		withValue: aMethodOop
+]
+
 { #category : 'accessor' }
 VMSpurMemoryManagerTest >> interpreter [
 	^ interpreter
@@ -484,6 +543,19 @@ VMSpurMemoryManagerTest >> newEphemeronObject [
 		newObjectWithSlots: 3
 		format: memory ephemeronFormat
 		classIndex: (memory ensureBehaviorHash: ourEphemeronClass)
+]
+
+{ #category : 'helpers' }
+VMSpurMemoryManagerTest >> newExternalAddress: anInteger [
+
+	| anExternalAddress |
+	anExternalAddress := self
+		newObjectWithSlots: (memory numSlotsForBytes: self wordSize)
+		format: (memory byteFormatForNumBytes: self wordSize)
+		classIndex: memory classExternalAddressIndex.
+		
+	memory storePointer: 0 ofObject: anExternalAddress withValue: anInteger.
+	^ anExternalAddress
 ]
 
 { #category : 'helpers - methods' }
@@ -813,6 +885,33 @@ VMSpurMemoryManagerTest >> setUp [
 		
 	oldSpaceSize := environmentBuilder oldSpaceSize.
 	memory lastHash: 1.
+]
+
+{ #category : 'tests' }
+VMSpurMemoryManagerTest >> setUpMethodDictionaryIn: aClass [
+	"2 instances variables the array of methods and the tally
+	and 12 entries to put elemetns of the collection"
+	
+	| aMethodDictionary anArrayOfMethods |
+	aMethodDictionary := self
+		newObjectWithSlots: 2 + 12
+		format: MethodDictionary instSpec
+		classIndex: memory arrayClassIndexPun.
+	anArrayOfMethods := self
+		newObjectWithSlots: 12
+		format: Array instSpec
+		classIndex: memory arrayClassIndexPun.
+	memory
+		storePointer: MethodDictionaryIndex
+		ofObject: aClass
+		withValue: aMethodDictionary.
+	memory
+		storePointer: MethodArrayIndex
+		ofObject: aMethodDictionary
+		withValue: anArrayOfMethods.
+		
+	
+
 ]
 
 { #category : 'running' }

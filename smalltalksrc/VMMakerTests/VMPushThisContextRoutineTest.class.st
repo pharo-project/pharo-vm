@@ -33,6 +33,7 @@ VMPushThisContextRoutineTest >> setUp [
 VMPushThisContextRoutineTest >> testMarriedContextReturnsSpouseObject [
 
 	| isLargeContext isInBlock routine numberOfArguments methodObject contextOop |
+
 	isLargeContext := false.
 	isInBlock := 0. "non-block, i.e., a normal method"
 	cogit objectRepresentation ceScheduleScavengeTrampoline:

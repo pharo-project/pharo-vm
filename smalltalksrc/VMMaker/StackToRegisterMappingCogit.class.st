@@ -141,6 +141,7 @@ Class {
 	],
 	#pools : [
 		'CogCompilationConstants',
+		'LibFFIConstants',
 		'VMMethodCacheConstants',
 		'VMObjectIndices',
 		'VMStackFrameOffsets'
@@ -347,7 +348,7 @@ StackToRegisterMappingCogit class >> initializeBytecodeTableForSistaV1 [
 		(2 227 227 genExtPushLiteralVariableBytecode			needsFrameNever: 1)
 		(2 228 228 genExtPushLiteralBytecode					needsFrameNever: 1)
 		(2 229 229 genLongPushTemporaryVariableBytecode)
-		(2 230 230 unknownBytecode)
+		(2 230 230 genSameThreadCalloutBytecode isMapped)
 		(2 231 231 genPushNewArrayBytecode)
 		(2 232 232 genExtPushIntegerBytecode				needsFrameNever: 1)
 		(2 233 233 genExtPushCharacterBytecode				needsFrameNever: 1)
@@ -2417,6 +2418,45 @@ StackToRegisterMappingCogit >> genReturnTopFromBlock [
 StackToRegisterMappingCogit >> genReturnTopFromMethod [
 	self ssPopTopToReg: ReceiverResultReg.
 	^self genUpArrowReturn
+]
+
+{ #category : 'bytecode generators' }
+StackToRegisterMappingCogit >> genSameThreadCalloutBytecode [
+
+	| literalIndex functionDefinition cif externalFunction flags |
+	literalIndex := byte1.
+
+	functionDefinition := self getLiteral: literalIndex.
+
+	externalFunction := coInterpreter getHandler: functionDefinition.
+	externalFunction ifNil: [ ^ ShouldNotJIT ].
+	flags := objectMemory fetchInteger: 2 ofObject: functionDefinition.
+
+	cif := coInterpreter getHandlerAsCif:
+		       (objectMemory fetchPointer: 1 ofObject: functionDefinition).
+	cif ifNil: [ ^ ShouldNotJIT ].
+
+	(backEnd
+		 genOptimizedSameThreadCalloutFor: cif
+		 flags: flags
+		 andFunctionAddress: externalFunction) ifTrue: [ ^ 0 ].
+
+	self ssFlushStack.
+	self ssAllocateCallReg: SendNumArgsReg.
+
+	"The index of the literal with the function definition is passed as parameter of the trampoline"
+	self MoveCq: literalIndex R: SendNumArgsReg.
+	self CallRT: ceSameThreadCalloutTrampoline.
+	"We need to annotate the bytecode as there might be a message send in the function call through a Callback"
+	self annotateBytecode: self Label.
+
+	"The trampoline has already poped the values. We need to update the stack count, but not generate pops."
+	self ssPop: cif numberArguments popSpilled: false.
+
+	cif returnType type = FFI_TYPE_VOID ifFalse: [
+		self ssPushRegister: ReceiverResultReg ].
+
+	^ 0
 ]
 
 { #category : 'bytecode generator support' }

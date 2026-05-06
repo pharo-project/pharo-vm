@@ -362,7 +362,8 @@ CogObjectRepresentationForSpur >> genActiveContextTrampolineLarge: isLarge inBlo
 ]
 
 { #category : 'primitive generators' }
-CogObjectRepresentationForSpur >> genAllocExternalAddressValue: valueReg into: resultReg scratchReg: scratch1 scratchReg: scratch2 [
+CogObjectRepresentationForSpur >> genAllocExternalAddressValue: valueReg into: resultReg scratchReg: scratch1 [ 
+
 	<returnTypeC: #'AbstractInstruction *'>
 	| allocSize newExternalAddressHeader jumpFail |
 	allocSize := objectMemory baseHeaderSize + objectMemory wordSize.
@@ -1255,6 +1256,30 @@ CogObjectRepresentationForSpur >> genPrimitiveAtPut [
 ]
 
 { #category : 'primitive generators' }
+CogObjectRepresentationForSpur >> genPrimitiveGetAddressOfOOPPinningIfNeeded [
+	
+	| jumpImmediate jumpNonPinned jumpFailAlloc |
+	jumpImmediate := self genJumpImmediate: ReceiverResultReg.
+
+	cogit MoveMw: 0 r: ReceiverResultReg R: ClassReg.
+
+	cogit TstCq: (1 << objectMemory pinnedBitShift) R: ClassReg.
+	jumpNonPinned := cogit JumpZero: 0.
+	
+	cogit LoadEffectiveAddressMw: objectMemory baseHeaderSize r: ReceiverResultReg R: ClassReg.
+
+	jumpFailAlloc := self genAllocExternalAddressValue: ClassReg into: ReceiverResultReg scratchReg: SendNumArgsReg.
+	
+	cogit genPrimReturn.
+	
+	jumpImmediate jmpTarget:
+		(jumpNonPinned jmpTarget: 
+			(jumpFailAlloc jmpTarget: cogit Label)).
+	
+	^ 0
+]
+
+{ #category : 'primitive generators' }
 CogObjectRepresentationForSpur >> genPrimitiveIdenticalOrNotIf: orNot [
 	| jumpCmp comp |
 	<var: #jumpCmp type: #'AbstractInstruction *'>
@@ -1625,9 +1650,11 @@ CogObjectRepresentationForSpur >> genPrimitiveLoadPointerFromBytes [
 	^ self genPrimitiveLoad: BytesPerWord fromBytesWith: [ :sourcePointer |
 		| jumpFailAlloc |
 		cogit MoveMw: 0 r: sourcePointer R: ClassReg.
-		jumpFailAlloc := self genAllocExternalAddressValue: ClassReg into: SendNumArgsReg scratchReg: Extra0Reg scratchReg: TempReg.
-			 cogit MoveR: SendNumArgsReg R: ReceiverResultReg.
-			 cogit genPrimReturn.
+		jumpFailAlloc := self genAllocExternalAddressValue: ClassReg into: SendNumArgsReg scratchReg: Extra0Reg.
+		
+		cogit MoveR: SendNumArgsReg R: ReceiverResultReg.
+		cogit genPrimReturn.
+		
 		cogit MoveR: SendNumArgsReg R: ReceiverResultReg.
 		cogit genPrimReturn.
 		jumpFailAlloc jmpTarget: cogit Label
@@ -1639,9 +1666,10 @@ CogObjectRepresentationForSpur >> genPrimitiveLoadPointerFromExternalAddress [
 	^ self genPrimitiveLoadFromExternalAddressWith: [ :sourcePointer |
 		| jumpFailAlloc |
 		cogit MoveMw: 0 r: sourcePointer R: ClassReg.
-		jumpFailAlloc := self genAllocExternalAddressValue: ClassReg into: SendNumArgsReg scratchReg: Extra0Reg scratchReg: TempReg.
-			 cogit MoveR: SendNumArgsReg R: ReceiverResultReg.
-			 cogit genPrimReturn.
+		jumpFailAlloc := self genAllocExternalAddressValue: ClassReg into: SendNumArgsReg scratchReg: Extra0Reg.
+		
+		cogit MoveR: SendNumArgsReg R: ReceiverResultReg.
+		cogit genPrimReturn.
 		cogit MoveR: SendNumArgsReg R: ReceiverResultReg.
 		cogit genPrimReturn.
 		jumpFailAlloc jmpTarget: cogit Label

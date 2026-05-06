@@ -6,6 +6,12 @@ Class {
 	#tag : 'Unicorn'
 }
 
+{ #category : 'as yet unclassified' }
+UnicornRISCVSimulator class >> supportISA: isa andAbi: abi [ 
+	
+	^ isa = #riscv64
+]
+
 { #category : 'machine registers' }
 UnicornRISCVSimulator >> a0 [
 
@@ -145,6 +151,12 @@ UnicornRISCVSimulator >> doublePrecisionFloatingPointRegister1 [
 UnicornRISCVSimulator >> doublePrecisionFloatingPointRegister2 [
 
 	^ UcRISCVRegisters f2
+]
+
+{ #category : 'as yet unclassified' }
+UnicornRISCVSimulator >> doublePrecisionFloatingPointRegister3 [
+
+	^ UcRISCVRegisters f3
 ]
 
 { #category : 'disassembling' }

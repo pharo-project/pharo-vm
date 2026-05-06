@@ -12,29 +12,6 @@ Class {
 }
 
 { #category : 'helpers' }
-VMPrimitiveCallAbstractTest >> callCogMethod: callingMethod receiver: receiver arguments: arguments returnAddress: returnAddress [
-
-	machineSimulator receiverRegisterValue: receiver.
-	self pushAddress: receiver.
-	
-	arguments do: [ :e | self pushAddress: e ].
-
-	arguments size = 1 
-		ifTrue: [ machineSimulator arg0RegisterValue: (arguments at: 1) ].
-
-	arguments size = 2 
-		ifTrue: [
-			machineSimulator arg0RegisterValue: (arguments at: 1).
-			machineSimulator arg1RegisterValue: (arguments at: 2). ].
-	
-	self prepareCall.
-	machineSimulator instructionPointerRegisterValue: callingMethod address + cogit noCheckEntryOffset. 
-
-	self runFrom: callingMethod address + cogit noCheckEntryOffset until: returnAddress.
-
-]
-
-{ #category : 'helpers' }
 VMPrimitiveCallAbstractTest >> findMethod: aSelector [
 
 	^ self class lookupSelector: aSelector

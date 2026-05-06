@@ -68,7 +68,8 @@ SLLinearisationVisitor >> codeGenerator: anObject [
 { #category : 'accessing' }
 SLLinearisationVisitor >> localizedVariables: anObject [
 
-	localizedVariables := anObject
+	localizedVariables := anObject.
+	callgraphVariableCollector candidateVariables: localizedVariables
 ]
 
 { #category : 'visiting' }

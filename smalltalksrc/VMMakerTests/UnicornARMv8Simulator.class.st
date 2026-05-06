@@ -6,6 +6,12 @@ Class {
 	#tag : 'Unicorn'
 }
 
+{ #category : 'as yet unclassified' }
+UnicornARMv8Simulator class >> supportISA: isa andAbi: abi [ 
+	
+	^ isa = #aarch64
+]
+
 { #category : 'accessing-registers-abstract' }
 UnicornARMv8Simulator >> arg0Register [
 	
@@ -117,6 +123,12 @@ UnicornARMv8Simulator >> doublePrecisionFloatingPointRegister2 [
 	^ UcARM64Registers d2
 ]
 
+{ #category : 'accessing-registers-abstract' }
+UnicornARMv8Simulator >> doublePrecisionFloatingPointRegister3 [
+
+	^ UcARM64Registers d3
+]
+
 { #category : 'disassembling' }
 UnicornARMv8Simulator >> extractDestinationRegisterFromAssembly: aLLVMInstruction [ 
 	
@@ -168,6 +180,12 @@ UnicornARMv8Simulator >> instantiateDisassembler [
 UnicornARMv8Simulator >> instructionPointerRegister [
 
 	^ UcARM64Registers pc
+]
+
+{ #category : 'as yet unclassified' }
+UnicornARMv8Simulator >> instructionPointerValue [
+	
+	^ self instructionPointerRegister value
 ]
 
 { #category : 'accessing-registers-abstract' }
@@ -308,19 +326,19 @@ UnicornARMv8Simulator >> temporaryRegister [
 { #category : 'accessing-registers-physical' }
 UnicornARMv8Simulator >> v0 [
 
-	^ self readRawRegister: UcARM64Registers v0 size: 16
+	^ self readRawRegister: UcARM64Registers v0 size: 32
 ]
 
 { #category : 'accessing-registers-physical' }
 UnicornARMv8Simulator >> v1 [
 
-	^ self readRawRegister: UcARM64Registers v1 size: 16
+	^ self readRawRegister: UcARM64Registers v1 size: 32
 ]
 
 { #category : 'accessing-registers-physical' }
 UnicornARMv8Simulator >> v2 [
 
-	^ self readRawRegister: UcARM64Registers v2 size: 16
+	^ self readRawRegister: UcARM64Registers v2 size: 32
 ]
 
 { #category : 'accessing-registers-abstract' }
@@ -484,10 +502,22 @@ UnicornARMv8Simulator >> x20 [
 	^ self readRegister: UcARM64Registers x20
 ]
 
+{ #category : 'accessing' }
+UnicornARMv8Simulator >> x21: anInteger [ 
+
+	^ self writeRegister: UcARM64Registers x21 value: anInteger
+]
+
 { #category : 'accessing-registers-physical' }
 UnicornARMv8Simulator >> x22 [
-	
+
 	^ self readRegister: UcARM64Registers x22
+]
+
+{ #category : 'accessing-registers-physical' }
+UnicornARMv8Simulator >> x22: anInteger [ 
+	
+	self writeRegister: UcARM64Registers x22 value: anInteger
 ]
 
 { #category : 'accessing-registers-physical' }

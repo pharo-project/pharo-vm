@@ -90,6 +90,13 @@ LibFFICIF >> interpreter [
 ]
 
 { #category : 'accessing' }
+LibFFICIF >> libFFI [ 
+	
+	<doNotGenerate>	
+	^ libFFI
+]
+
+{ #category : 'accessing' }
 LibFFICIF >> libFFI: aLibFFI [ 
 	<doNotGenerate>	
 	libFFI := aLibFFI

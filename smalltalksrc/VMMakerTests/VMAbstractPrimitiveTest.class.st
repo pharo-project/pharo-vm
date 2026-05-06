@@ -12,6 +12,12 @@ Class {
 }
 
 { #category : 'running' }
+VMAbstractPrimitiveTest >> createMethod [
+
+	^ self newMethodWithBytecodes: #[ 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 ].
+]
+
+{ #category : 'running' }
 VMAbstractPrimitiveTest >> createProcessFor: newMethod priority: aPriority [
 
 	| aProcess |
@@ -44,6 +50,13 @@ VMAbstractPrimitiveTest >> createSuspendedProcessFor: newMethod priority: aPrior
 	memory storePointer: SuspendedContextIndex ofObject: aProcess withValue: suspendedContext.
 
 	^ aProcess
+]
+
+{ #category : 'running' }
+VMAbstractPrimitiveTest >> initialIP [
+
+	"The IP of the method is the header of the method + 1"
+	^ self wordSize + 1
 ]
 
 { #category : 'as yet unclassified' }
@@ -137,10 +150,10 @@ VMAbstractPrimitiveTest >> setUp [
 
 	"Create the root context with a valid method"
 	"Let's create a method with enough size. It should have at least a literal (4 or 8 bytes depending the word size) and some bytecodes, so we can put the IP inside the method"
-	newMethod := self newMethodWithBytecodes: #[ 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 ].
+	newMethod := self createMethod.
 	
 	"The context has 5 (in 32 bits) or 9 (in 64 bits) as initial IP, as method has at least one literal"
-	ctx := self newSmallContextReceiver: memory nilObject method: newMethod arguments: #() temporaries: #() ip: self wordSize + 1.
+	ctx := self newSmallContextReceiver: memory nilObject method: newMethod arguments: #() temporaries: #() ip: self initialIP.
 	
 	page := interpreter makeBaseFrameFor: ctx.
 	interpreter setStackPageAndLimit: page.
@@ -149,7 +162,7 @@ VMAbstractPrimitiveTest >> setUp [
 	self createActiveProcess.	
 	
 	"The current instruction pointer is an absolute address pointing to the current bytecode inside the method"
-	interpreter instructionPointer: newMethod + memory baseHeaderSize + memory wordSize + 1.
+	interpreter instructionPointer: newMethod + memory baseHeaderSize + self initialIP.
 	interpreter method: newMethod.
 
 	memory flushNewSpace.
@@ -157,7 +170,8 @@ VMAbstractPrimitiveTest >> setUp [
 	self createProcessFor: newMethod priority: 1.
 	self createProcessFor: newMethod priority: 1.
 	
-	memory classExternalAddress: (self newClassInOldSpaceWithSlots: 0 instSpec: (memory byteFormatForNumBytes: 0) ).
+	self createExternalAddressClass.
+	
 	memory classArray: (self newClassInOldSpaceWithSlots: 0 instSpec: memory arrayFormat ).
 	memory classByteArray: (self newClassInOldSpaceWithSlots: 0 instSpec: (memory byteFormatForNumBytes: 0) ).
 

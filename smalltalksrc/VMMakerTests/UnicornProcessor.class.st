@@ -110,7 +110,11 @@ UnicornProcessor >> hasLinkRegister [
 UnicornProcessor >> initializeStackFor: aCompiler [
 	
 	"Initialize the machine code simulator"
-	machineSimulator := UnicornSimulator perform: aCompiler backend class ISA asSymbol.
+	| isa abi |
+	isa := aCompiler backend class ISA asSymbol.
+	abi := aCompiler backend class ABI.
+	
+	machineSimulator := ProcessorSimulator simulatorForISA: isa andABI: abi.
 	machineSimulator memory: aCompiler objectMemory.
 	machineSimulator mapMemoryInManager: aCompiler objectMemory memoryManager.
 
@@ -192,6 +196,12 @@ UnicornProcessor >> r10: anInteger [
 UnicornProcessor >> r11: anInteger [ 
 	
 	machineSimulator r11: anInteger
+]
+
+{ #category : 'registers' }
+UnicornProcessor >> r12: anInteger [
+
+	machineSimulator r12: anInteger
 ]
 
 { #category : 'registers' }
@@ -447,6 +457,18 @@ UnicornProcessor >> x19: anInteger [
 UnicornProcessor >> x1: anInteger [ 
 
 	machineSimulator x1: anInteger
+]
+
+{ #category : 'accessing' }
+UnicornProcessor >> x21: anInteger [ 
+
+	machineSimulator x21: anInteger
+]
+
+{ #category : 'as yet unclassified' }
+UnicornProcessor >> x22: anInteger [ 
+	
+	machineSimulator x22: anInteger
 ]
 
 { #category : 'accessing' }

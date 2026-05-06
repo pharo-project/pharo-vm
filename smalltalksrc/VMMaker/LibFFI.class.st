@@ -2,11 +2,11 @@ Class {
 	#name : 'LibFFI',
 	#superclass : 'VMClass',
 	#instVars : [
-		'nextAddress',
 		'cifs',
 		'functions',
 		'interpreter',
-		'testWorker'
+		'testWorker',
+		'nextAddress'
 	],
 	#pools : [
 		'LibFFIConstants'
@@ -110,11 +110,15 @@ LibFFI >> registerFunction: aBlockClosure [
 	<doNotGenerate>	
 	
 	| functionAddress |
-	
-	functionAddress := nextAddress.
-	functions at: nextAddress put: aBlockClosure.
-	nextAddress := nextAddress + 1.
-	
+
+	(interpreter cogit isKindOf: Cogit) 
+		ifTrue: [  	
+			functionAddress := interpreter cogit simulatedAddressFor: aBlockClosure.
+			interpreter cogit simulatedTrampolines at: functionAddress put: aBlockClosure ]
+		ifFalse: [  functionAddress := nextAddress.
+						nextAddress := nextAddress + 1].
+
+	functions at: functionAddress put: aBlockClosure.	
 	^ functionAddress
 ]
 

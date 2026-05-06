@@ -43,6 +43,16 @@ MockLocalizationInterpreterMock class >> initializeWithAutoLocalizedVariableOnly
 ]
 
 { #category : 'initialization' }
+MockLocalizationInterpreterMock class >> initializeWithBytecodeUsingExternalizeAllVariables [
+
+	BytecodeTable := Array new: 1.
+	self table: BytecodeTable from:
+	#(
+	(  0  bytecodeUsingExternalizeAllVariables)
+	)
+]
+
+{ #category : 'initialization' }
 MockLocalizationInterpreterMock class >> initializeWithEscapingCall [
 
 	BytecodeTable := Array new: 1.
@@ -153,6 +163,13 @@ MockLocalizationInterpreterMock class >> initializeWithoutAutoLocalizedVariable 
 ]
 
 { #category : 'interpreter shell' }
+MockLocalizationInterpreterMock >> aMethodHavingExternalizeAllVariables [
+
+	<inline: false>
+	<externalizeAllVariables>
+]
+
+{ #category : 'interpreter shell' }
 MockLocalizationInterpreterMock >> bytecodeInliningSharedMethod [
 
 	self sharedMethod
@@ -181,6 +198,12 @@ MockLocalizationInterpreterMock >> bytecodeUsingAutoLocalizedVariable [
 MockLocalizationInterpreterMock >> bytecodeUsingComplexAssert [
 
 	self assert: (self foo or: [ self bar and: [ self fum ] ])
+]
+
+{ #category : 'interpreter shell' }
+MockLocalizationInterpreterMock >> bytecodeUsingExternalizeAllVariables [
+
+	self aMethodHavingExternalizeAllVariables
 ]
 
 { #category : 'interpreter shell' }

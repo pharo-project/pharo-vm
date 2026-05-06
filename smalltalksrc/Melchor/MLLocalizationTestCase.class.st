@@ -158,7 +158,7 @@ MLLocalizationTestCase >> testAutoLocalizeVariableDoesNotLineariseUnnecessarySta
 
 	printedString := String streamContents: [ :str | (block asCASTIn: ccg) prettyPrintOn: str ].
 
-	self assert: printedString equals: '{
+	self assert: printedString trimBoth equals: '{
 	nonInlinedMethodNotUsingAutolocalizedVariables(nonInlinedMethodNotUsingAutolocalizedVariables());
 }'
 ]
@@ -184,7 +184,7 @@ MLLocalizationTestCase >> testAutoLocalizeVariableExternalizesBeforeReturnRefere
 	printedString := String streamContents: [ :str | 
 		                 ((TStatementListNode statements: (interpretMethod statements last: 2)) asCASTIn: ccg) 
 			                 prettyPrintOn: str ].
-	self assert: printedString equals: '{
+	self assert: printedString trimBoth equals: '{
 	local_autoLocalizedVariable += 1;
 	{
 		autoLocalizedVariable = local_autoLocalizedVariable;
@@ -240,14 +240,50 @@ MLLocalizationTestCase >> testAutoLocalizeVariableReplacesByLocalOnInline [
 	self assert: (variableNode isVariable and: [ variableNode name = #local_autoLocalizedVariable ]).
 ]
 
+{ #category : 'tests - localisation' }
+MLLocalizationTestCase >> testBytecodeUsingExternalizeAllVariables [
+	
+	| interpretMethod cast printedString linearizedBlock |
+	
+	MockLocalizationInterpreterMock initializeWithBytecodeUsingExternalizeAllVariables.	
+			
+	interpretMethod := self applyLocalizationTo: #interpretWithSeveralVariablesToLocalize.
+
+	"Assert that the send node is preceded by variable externalization"
+	linearizedBlock := self linearizedBlockOfCaseMethod: interpretMethod.
+	cast := linearizedBlock asCASTIn: ccg.
+	
+	printedString := String streamContents: [ :str | cast prettyPrintOn: str ].
+	
+	"The if statement should not be wrapped. Only the inner statements"
+	self assert: printedString trimBoth equals:
+'{
+	{
+		autoLocalizedVariable = local_autoLocalizedVariable;
+		autoLocalizedVariable1 = local_autoLocalizedVariable1;
+		autoLocalizedVariable2 = local_autoLocalizedVariable2;
+		autoLocalizedVariable3 = local_autoLocalizedVariable3;
+		autoLocalizedVariable4 = local_autoLocalizedVariable4;
+		aMethodHavingExternalizeAllVariables();
+		local_autoLocalizedVariable = autoLocalizedVariable;
+		local_autoLocalizedVariable1 = autoLocalizedVariable1;
+		local_autoLocalizedVariable2 = autoLocalizedVariable2;
+		local_autoLocalizedVariable3 = autoLocalizedVariable3;
+		local_autoLocalizedVariable4 = autoLocalizedVariable4;
+	}
+}
+' trimBoth
+]
+
 { #category : 'tests - free variables' }
 MLLocalizationTestCase >> testCollectFreeVariablesOfMethodWithManyCallers [
 
 	| collector |
 	collector := SLCallGraphFreeVariableCollector codeGenerator: ccg.
+		
 	ccg addClass: MockLocalizationInterpreterMock.
 	ccg prepareMethods.
-	
+
 	"
 	variableToLocalize should be considered free in the entire transitive call graph.
 	
@@ -259,10 +295,17 @@ MLLocalizationTestCase >> testCollectFreeVariablesOfMethodWithManyCallers [
 	"
 	collector startFromSelector: #methodWithDiamond.
 
-	self assert: ((collector freeVariablesUsedByMethodNamed: #bytecodeUsingLocalizedVariable) includes: #variableToLocalize).	
-	self assert: ((collector freeVariablesUsedByMethodNamed: #methodCallingBytecodeUsingLocalizedVariable) includes: #variableToLocalize).
-	self assert: ((collector freeVariablesUsedByMethodNamed: #methodCallingBytecodeUsingLocalizedVariable2) includes: #variableToLocalize).
-	self assert: ((collector freeVariablesUsedByMethodNamed: #methodWithDiamond) includes: #variableToLocalize).
+	self assert: ((collector freeVariablesUsedByMethodNamed:
+			  #bytecodeUsingLocalizedVariable) includes: #variableToLocalize).
+	self assert: ((collector freeVariablesUsedByMethodNamed:
+			  #methodCallingBytecodeUsingLocalizedVariable) includes:
+			 #variableToLocalize).
+	self assert: ((collector freeVariablesUsedByMethodNamed:
+			  #methodCallingBytecodeUsingLocalizedVariable2) includes:
+			 #variableToLocalize).
+	self assert:
+		((collector freeVariablesUsedByMethodNamed: #methodWithDiamond)
+			 includes: #variableToLocalize)
 ]
 
 { #category : 'tests - localisation' }
@@ -277,7 +320,7 @@ MLLocalizationTestCase >> testExternalEscapingAsArgument [
 	
 	printedString := String streamContents: [ :str | cast prettyPrintOn: str ].
 	
-	self assert: printedString equals:
+	self assert: printedString trimBoth equals:
 '{
 	sqInt t0;
 
@@ -303,7 +346,7 @@ MLLocalizationTestCase >> testExternalEscapingAsArgumentOfExternalCall [
 
 	printedString := String streamContents: [ :str | cast prettyPrintOn: str ].
 	
-	self assert: printedString equals: '{
+	self assert: printedString trimBoth equals: '{
 	sqInt t0;
 
 	{
@@ -335,7 +378,7 @@ MLLocalizationTestCase >> testExternalEscapingSendNodeInInlinedMethod [
 	
 	printedString := String streamContents: [ :str | cast prettyPrintOn: str ].
 	
-	self assert: printedString equals: '{
+	self assert: printedString trimBoth equals: '{
 	autoLocalizedVariable = local_autoLocalizedVariable;
 	autoLocalizedVariable1 = local_autoLocalizedVariable1;
 	foo2();
@@ -357,7 +400,7 @@ MLLocalizationTestCase >> testExternalEscapingSendNodeShouldBeTranslatedWithExte
 
 	printedString := String streamContents: [ :str | cast prettyPrintOn: str ].
 	
-	self assert: printedString equals: '{
+	self assert: printedString trimBoth equals: '{
 	local_autoLocalizedVariable += 1;
 	{
 		autoLocalizedVariable = local_autoLocalizedVariable;
@@ -380,7 +423,7 @@ MLLocalizationTestCase >> testExternalEscapingStatementInConditionalBody [
 	printedString := String streamContents: [ :str | cast prettyPrintOn: str ].
 	
 	"The if statement should not be wrapped. Only the inner statements"
-	self assert: printedString equals:
+	self assert: printedString trimBoth equals:
 '{
 	if (1) {
 		sqInt t0;
@@ -411,7 +454,7 @@ MLLocalizationTestCase >> testExternalPerform [
 	
 	printedString := String streamContents: [ :str | cast prettyPrintOn: str ].
 	
-	self assert: printedString equals:
+	self assert: printedString trimBoth trimBoth equals:
 '{
 	{
 		autoLocalizedVariable = local_autoLocalizedVariable;
@@ -433,7 +476,7 @@ MLLocalizationTestCase >> testExternalSendNodeExternalizeAndInternalizeOnlyNeede
 	cast := linearizedBlock asCASTIn: ccg.
 
 	printedString := String streamContents: [ :str | cast prettyPrintOn: str ].
-	self assert: printedString equals: '{
+	self assert: printedString trimBoth equals: '{
 	local_autoLocalizedVariable += 1;
 	{
 		autoLocalizedVariable = local_autoLocalizedVariable;
@@ -460,7 +503,7 @@ MLLocalizationTestCase >> testExternalSendNodeShouldBeTranslatedWithExternalizat
 	cast := linearizedBlock asCASTIn: ccg.
 	printedString := String streamContents: [ :str | cast prettyPrintOn: str ].
 	
-	self assert: printedString equals: '{
+	self assert: printedString trimBoth equals: '{
 	sqInt t0;
 
 	{
@@ -499,8 +542,8 @@ MLLocalizationTestCase >> testLinearizeAndInsideValueIf [
 				t0
 					ifTrue: [ t0 := self condition ]
 					ifFalse: [ t0 := t0 ] ].
-		overflow := t0.
-		^ overflow'.
+		_overflow := t0.
+		^ _overflow'.
 ]
 
 { #category : 'tests - linearization' }
@@ -532,8 +575,8 @@ MLLocalizationTestCase >> testLinearizeAndInsideValueIfNestedTwice [
 						t0
 							ifTrue: [ t0 := self condition ]
 							ifFalse: [ t0 := t0 ] ] ].
-		overflow := t0.
-		^ overflow'.
+		_overflow := t0.
+		^ _overflow'.
 ]
 
 { #category : 'tests - linearization' }
@@ -640,7 +683,7 @@ MLLocalizationTestCase >> testLinearizeNestedCallsWithAssignment [
 					arguments: { TVariableNode named: 't0' }))).
 	self assert: (replacementBlock statements third
 			isSameAs: (TAssignmentNode
-				variableNamed: 'foo'
+				variableNamed: '_foo'
 				expression: (TVariableNode named: 't1')))
 ]
 
@@ -728,8 +771,8 @@ MLLocalizationTestCase >> testLinearizeReceiverOfConditionalAndAssigned [
 	self assert: replacementBlock isRewrittenAs: '
 		t0 := self nonInlinedMethodUsingAutolocalizedVariable.
 		t0 ifTrue: [ t1 := self nonInlinedMethodUsingAutolocalizedVariable ] ifFalse: [ t1 := t0 ].
-		var := t1.
-		var ifTrue: [nil]'.
+		_var := t1.
+		_var ifTrue: [nil]'.
 ]
 
 { #category : 'tests - linearization' }
@@ -883,7 +926,7 @@ MLLocalizationTestCase >> testNoExternalSendNodeOnSafeExternalCall [
 	
 	printedString := String streamContents: [ :str | cast prettyPrintOn: str ].
 	
-	self assert: printedString equals: '{
+	self assert: printedString trimBoth equals: '{
 	nonInlinedMethodNotUsingAutolocalizedVariables((local_autoLocalizedVariable += 1));
 }'
 ]

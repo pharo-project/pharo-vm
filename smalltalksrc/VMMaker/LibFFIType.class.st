@@ -59,6 +59,13 @@ LibFFIType class >> type: aType size: aSize on: aLibFFI [
 		yourself
 ]
 
+{ #category : 'comparing' }
+LibFFIType >> = another [
+	<doNotGenerate>
+	(another isKindOf: self class) ifFalse: [ ^ self ].
+	^ another type = self type
+]
+
 { #category : 'accessing' }
 LibFFIType >> elements: aCollection [ 
 	elements := aCollection
@@ -113,6 +120,12 @@ LibFFIType >> fromSmalltalk: aNumber putInto: aCArrayAccessor [
 		} otherwise: [ self halt ]
 ]
 
+{ #category : 'testing' }
+LibFFIType >> isFloatType [
+	
+	^ type = FFI_TYPE_FLOAT or: [type = FFI_TYPE_DOUBLE]
+]
+
 { #category : 'accessing' }
 LibFFIType >> libFFI: aLibFFI [ 
 	libFFI := aLibFFI
@@ -138,6 +151,18 @@ LibFFIType >> marshallToSmalltalk: holder [
 
 			[ FFI_TYPE_SINT64 ] -> [ (holder asIntAccessorOfSize: 8 signed: true) at: 0 ].
 			[ FFI_TYPE_UINT64 ] -> [ (holder asIntAccessorOfSize: 8 signed: false) at: 0 ].		
+		} 
+		otherwise: [ self halt ]
+
+]
+
+{ #category : 'simulating' }
+LibFFIType >> marshallToSmalltalkFromByteArray: aByteArray [ 
+		
+	^ [ type ] 
+		caseOf: { 
+			[ FFI_TYPE_DOUBLE ] -> [ aByteArray float64AtOffset: 0 ].
+			[ FFI_TYPE_POINTER ] -> [ aByteArray integerAt: 1 size: size signed: false  ].		
 		} 
 		otherwise: [ self halt ]
 

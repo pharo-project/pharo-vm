@@ -1202,6 +1202,28 @@ CoInterpreter >> ceCounterTripped: condition [
 ]
 
 { #category : 'trampolines' }
+CoInterpreter >> ceFallbackInvalidFFICall [
+
+	<api>
+	instructionPointer := self popStack.
+	^ self ceFallbackInvalidFFICall: instructionPointer 
+]
+
+{ #category : 'trampolines' }
+CoInterpreter >> ceFallbackInvalidFFICall: savedInstructionPointer [
+
+	| ourContext |
+	ourContext := self ensureFrameIsMarried: framePointer SP: stackPointer.
+	self push: ourContext.
+
+	self push: savedInstructionPointer.
+	^self
+		ceSendAbort: (objectMemory splObj: SelectorInvalidFFICall)
+		to: ourContext
+		numArgs: 2
+]
+
+{ #category : 'trampolines' }
 CoInterpreter >> ceInterpretMethodFromPIC: aMethodObj receiver: rcvr [
 	<api>
 	| pic primitiveIndex |
@@ -1426,6 +1448,44 @@ CoInterpreter >> ceReturnToInterpreter: anOop [
 	self push: anOop.
 	self siglong: reenterInterpreter jmp: ReturnToInterpreter.
 	self unreachable
+]
+
+{ #category : 'trampolines' }
+CoInterpreter >> ceSameThreadCalloutWithLiteralIndex: functionDefinitionIndex [
+	
+	<api>	
+	<var: #cogMethod type: #'CogMethod *'>		
+		
+	| cogMethod functionDefinition externalFunction cif returnValue |
+	
+	instructionPointer := self popStack.
+	
+	self assert: stackPointer < framePointer.
+	
+	cogMethod := self mframeCogMethod: framePointer .
+	functionDefinition := self literal: functionDefinitionIndex ofMethod: cogMethod methodObject.
+
+	externalFunction := self getHandler: functionDefinition.
+	externalFunction ifNil: [
+		self logDebug: 'Invalid External Function Argument'.		
+		^ self ceFallbackInvalidFFICall: instructionPointer ].
+
+	cif := self getHandlerAsCif: (objectMemory fetchPointer: 1 ofObject: functionDefinition).
+
+	cif ifNil: [
+		self logDebug: 'Invalid CIF in ExternalFunction'.
+		^ self ceFallbackInvalidFFICall: instructionPointer ]	.
+	
+	self doSameThreadCalloutBytecodeFor: externalFunction andCif: cif.
+		
+	self failed 
+		ifTrue: [ ^ self ceFallbackInvalidFFICall: instructionPointer ].
+	
+	returnValue := cif returnType type = FFI_TYPE_VOID ifTrue: [ 0 ] ifFalse: [ self popStack ].
+	
+	self push: instructionPointer.
+	
+	^ returnValue 
 ]
 
 { #category : 'trampolines' }

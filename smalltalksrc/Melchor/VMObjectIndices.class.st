@@ -74,6 +74,7 @@ Class {
 		'SelectorCannotReturn',
 		'SelectorCounterTripped',
 		'SelectorDoesNotUnderstand',
+		'SelectorInvalidFFICall',
 		'SelectorMustBeBoolean',
 		'SelectorRunWithIn',
 		'SelectorSistaTrap',

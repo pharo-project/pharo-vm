@@ -35,9 +35,9 @@ Class {
 
 { #category : 'instance creation' }
 SLCallGraphVisitor class >> codeGenerator: aCodeGenerator [
-	
+
 	^ self new
-		codeGenerator: aCodeGenerator;
+		codeGenerator: aCodeGenerator
 		yourself
 ]
 

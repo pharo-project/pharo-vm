@@ -721,7 +721,7 @@ StackInterpreter class >> initializeBytecodeTableForSistaV1 [
 		(227		extPushLiteralVariableBytecode)
 		(228		extPushLiteralBytecode)
 		(229		longPushTemporaryVariableBytecode)
-		(230		unknownBytecode)
+		(230		sameThreadCalloutBytecode)
 		(231		pushNewArrayBytecode)
 		(232		extPushIntegerBytecode)
 		(233		extPushCharacterBytecode)
@@ -989,7 +989,7 @@ StackInterpreter class >> initializePrimitiveTable [
 	"self initializePrimitiveTable"
 
 	"NOTE: The real limit here is 2047 because of the old method header layout but there is no point in going over the needed size"
-	MaxPrimitiveIndex := 660.	
+	MaxPrimitiveIndex := 661.	
 	MaxQuickPrimitiveIndex := 519.
 	PrimNumberExternalCall := 117.
 	PrimNumberDoPrimitive := 118.
@@ -1386,7 +1386,8 @@ StackInterpreter class >> initializePrimitiveTable [
 		(658 primitiveStoreFloat32IntoExternalAddress)
 		(659 primitiveStoreFloat64IntoExternalAddress)
 		
-		(660 primitiveFail)
+		(660 primitiveGetAddressOfOOPPinningIfNeeded)
+		(661 primitiveFail)
 		)
 ]
 
@@ -5037,6 +5038,72 @@ StackInterpreter >> doRecordSendTrace [
 			cr ]
 ]
 
+{ #category : 'FFI bytecode' }
+StackInterpreter >> doSameThreadCalloutBytecodeFor: externalFunction andCif: cif [
+
+	<externalizeAllVariables>
+	<inline: false>
+
+	<var: #parameters type: #'void **'>
+	<var: #returnHolder type: #'void *'>
+	<var: #externalFunction type: #'void *'>
+	<var: #cif type: #'ffi_cif *'>
+	
+	| argumentSize parameters returnHolder |
+		
+	self initPrimCall.
+	
+	argumentSize := cif numberArguments.
+
+	" 1. Prepare Arguments:
+	- Allocate space for all the arguments in the stack and a holder for the return, and the parameters' pointer C array
+	- Marshall arguments and store in the parameter array."
+
+	parameters := self allocateParameters: argumentSize 
+		using: [:aSize | self alloca: (self sizeof: #'void*') * aSize ].
+
+	0 to: argumentSize - 1 do: [ :i | 
+		| argType argHolder argOop |
+		argType := cif argTypeAt: i.
+
+		argHolder := self alloca: argType size.
+		parameters at: i put: argHolder.
+
+		argOop := objectMemory followMaybeForwarded: (self stackValue: (argumentSize - i - 1)).
+	
+		self 
+			marshallArgument: argOop
+			into: argHolder 
+			ofType: argType type 
+			withSize: argType size
+			handleOopAsPointer: true. 
+				
+		self failed 
+				ifTrue: [ 
+					self logDebug: 'Could not convert argument index: %d value: %p' _: i + 1 _: (self cCoerce: argOop to: #'void*').
+					self logDebug: 'Could not convert argument type: %d size: %ld' _: argType type _: argType size.
+
+					^ self ]].
+	
+	returnHolder := self alloca: cif returnType size.
+
+	" 2. Call and then return
+	- Call
+	- Marshall Argument and push it to the stack
+	- Return"
+	self
+		ffi_call: cif
+		_: externalFunction
+		_: returnHolder
+		_: parameters.
+
+	self
+		marshallAndPushReturnValueFrom: returnHolder
+		ofType: cif returnType
+		poping: argumentSize
+		leaveReceiverOnVoid: false
+]
+
 { #category : 'process primitive support' }
 StackInterpreter >> doSignalSemaphoreWithIndex: index [
 	"Signal the external semaphore with the given index.  Answer if a context switch
@@ -5643,6 +5710,19 @@ StackInterpreter >> failUnbalancedPrimitive [
 	"not inlined for breakpoint value..."
 	<inline: false>
 	self primitiveFailFor: PrimErrBadNumArgs
+]
+
+{ #category : 'FFI bytecode' }
+StackInterpreter >> fallbackInvalidFFICall [
+	"We have an invalid FFI call: either the function or the cif are not valid. We cannot proceed.
+	Instead, send a message #invalidFFICall to the Context object"
+
+	| ourContext |
+	ourContext := self ensureFrameIsMarried: framePointer SP: stackPointer.
+	self push: ourContext.
+	messageSelector := objectMemory splObj: SelectorInvalidFFICall.
+	argumentCount := 0.
+	self normalSend
 ]
 
 { #category : 'utilities' }
@@ -6982,6 +7062,29 @@ StackInterpreter >> getExtraVMMemory [
 StackInterpreter >> getGCMode [
 	"This is a no-op in the StackVM"
 	^0
+]
+
+{ #category : 'ffi - helpers' }
+StackInterpreter >> getHandler: anOop [ 
+
+	<api>
+	<returnTypeC: #'void *'>
+
+	((objectMemory isPointers: anOop) not or: [ (objectMemory slotSizeOf: anOop) < 1 ])
+		ifTrue: [ self primitiveFail. ^ nil ].
+		
+	^ self readAddress: (objectMemory fetchPointer: 0 ofObject: anOop)
+
+]
+
+{ #category : 'ffi - helpers' }
+StackInterpreter >> getHandlerAsCif: anOop [
+
+	<api>
+	
+	^ self
+		cCode: [ self cCoerce: (self getHandler: anOop) to: 'ffi_cif *' ]
+		inSmalltalk: [ libFFI cifAtAddress: (self getHandler: anOop)]
 ]
 
 { #category : 'image save/restore' }
@@ -9683,6 +9786,7 @@ StackInterpreter >> marryFrame: theFP SP: theSP copyTemps: copyTemps [
 	<inline: true>
 	<var: #theFP type: #'char *'>
 	<var: #theSP type: #'char *'>
+	<var: #numStack type: #'sqInt'>
 	| theContext methodHeader closureOrNil numSlots numArgs numStack numTemps |
 
 	self assert: (self frameHasContext: theFP) not.
@@ -13328,6 +13432,43 @@ StackInterpreter >> safeMethodClassOf: methodPointer [
 	(objectMemory isOopForwarded: maybeClass) ifTrue:
 		[maybeClass := objectMemory followForwarded: maybeClass].
 	^maybeClass
+]
+
+{ #category : 'FFI bytecode' }
+StackInterpreter >> sameThreadCalloutBytecode [
+
+	| functionDefinitionLiteralIndex functionDefinition externalFunction cif |
+
+	self
+		cppIf: FEATURE_FFI
+		ifTrue: [
+			functionDefinitionLiteralIndex := self fetchByte.
+			self fetchNextBytecode.
+
+			functionDefinition := self literal: functionDefinitionLiteralIndex.
+			functionDefinition := objectMemory followMaybeForwarded: functionDefinition.
+
+			externalFunction := self getHandler: functionDefinition.
+			externalFunction ifNil: [
+				self logDebug: 'Invalid External Function Argument'.
+				primFailCode := 0.
+				^ self fallbackInvalidFFICall ].
+			
+			cif := self getHandlerAsCif:(objectMemory
+						fetchPointer: 1
+						ofObject: functionDefinition).
+						
+			cif ifNil: [ 
+					self logDebug: 'Invalid CIF in ExternalFunction'.			
+					primFailCode := 0.
+					^ self fallbackInvalidFFICall ].			
+			
+			self doSameThreadCalloutBytecodeFor: externalFunction andCif: cif.
+			self failed 
+				ifTrue: [ 
+					primFailCode := 0.
+					^ self fallbackInvalidFFICall ] ]
+		ifFalse: [ self unknownBytecode ]
 ]
 
 { #category : 'primitive support' }

@@ -76,9 +76,12 @@ SLAutomaticLocalization >> autoLocalizationOfVariablesIn: aSelector withVariable
 	(replacementList isNil or: [ replacementList isEmpty ]) ifTrue: [ ^ self ].
 
 	codeGenerator currentMethod: m.
-
+	
 	replacementDict := (replacementList collect: [ :asso | 
 				 asso key -> (TVariableNode named: asso value) ]) asDictionary.
+
+	callgraphVariableCollector candidateVariables: replacementDict keys.
+
 	"Replace all localized variables by their localized versions"
 	m parseTree
 		bindVariablesIn: replacementDict.
@@ -107,6 +110,7 @@ SLAutomaticLocalization >> codeGenerator: anObject [
 
 	codeGenerator := anObject.
 	callgraphVariableCollector := SLCallGraphFreeVariableCollector codeGenerator: codeGenerator
+		                              
 ]
 
 { #category : 'applying' }

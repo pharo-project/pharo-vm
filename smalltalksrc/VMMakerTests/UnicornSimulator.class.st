@@ -10,10 +10,19 @@ Class {
 	#tag : 'Unicorn'
 }
 
-{ #category : 'instance creation' }
-UnicornSimulator class >> supportsISA: isa [
+{ #category : 'accessing' }
+UnicornSimulator >> cArgRegisterRaw: anInteger [ 
+	
+	| reg |
 
-	^ #( #ARMv5 #ARMv8 #IA32 #X64 #aarch64 #riscv64 ) includes: isa
+	anInteger = 1 ifTrue: [ reg := self carg0Register ].
+	anInteger = 2 ifTrue: [ reg := self carg1Register ].
+	anInteger = 3 ifTrue: [ reg := self carg2Register ].	
+	anInteger = 4 ifTrue: [ reg := self carg3Register ].	
+	
+	reg ifNil: [ self error: 'I can handle up to 4 registers' ].
+	
+	^ self readRawRegister: reg size: self wordSize 
 ]
 
 { #category : 'initialization' }
@@ -71,6 +80,43 @@ UnicornSimulator >> doStartAt: startAddress until: until timeout: timeout count:
 								signal ]].
 			self instructionPointerRegisterValue = until
 				ifTrue: [ ^ result ]]
+]
+
+{ #category : 'as yet unclassified' }
+UnicornSimulator >> doublePrecisionFloatingPointRegisterRaw: anInteger [ 
+	
+	| reg |
+	anInteger = 1 ifTrue: [ reg := self doublePrecisionFloatingPointRegister0 ].
+	anInteger = 2 ifTrue: [ reg := self doublePrecisionFloatingPointRegister1 ].
+	anInteger = 3 ifTrue: [ reg := self doublePrecisionFloatingPointRegister2 ].	
+	anInteger = 4 ifTrue: [ reg := self doublePrecisionFloatingPointRegister3 ].	
+	
+	reg ifNil: [ self error: 'I can handle up to 4 registers' ].
+	
+	^ self readRawRegister: reg size: 32
+]
+
+{ #category : 'simulating' }
+UnicornSimulator >> fetchArgumentsOfTypes: argumentTypes [ 
+
+	| byteArray doubleIndex integerIndex |
+
+	doubleIndex := integerIndex := 0.
+
+	^ argumentTypes collect: [ :type  | 
+		doubleIndex = 5 ifTrue: [ self halt ].
+		integerIndex = 5 ifTrue: [ self halt ].
+
+		byteArray := type isFloatType 
+			ifTrue: [ 
+				doubleIndex := doubleIndex + 1.
+				self doublePrecisionFloatingPointRegisterRaw: doubleIndex  ]
+			ifFalse: [ 
+				integerIndex := integerIndex + 1.
+				self cArgRegisterRaw: integerIndex ].
+		
+		type marshallToSmalltalkFromByteArray: byteArray
+	]
 ]
 
 { #category : 'stack-access' }

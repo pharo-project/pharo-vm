@@ -83,7 +83,8 @@ SLLocalizableVariableCollector >> localizableCandidateVariables [
 { #category : 'accessing' }
 SLLocalizableVariableCollector >> localizableCandidateVariables: anObject [
 
-	localizableCandidateVariables := anObject
+	localizableCandidateVariables := anObject.
+
 ]
 
 { #category : 'accessing' }

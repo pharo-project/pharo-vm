@@ -2,6 +2,9 @@ Class {
 	#name : 'LibFFIConstants',
 	#superclass : 'SharedPool',
 	#classVars : [
+		'FFI_FLAG_POINTERS_MIGHT_BE_EXTERNAL_ADDRESSES',
+		'FFI_FLAG_POINTERS_MIGHT_BE_OBJECTS',
+		'FFI_FLAG_USE_OPTIMIZED_VERSION',
 		'FFI_TYPE_DOUBLE',
 		'FFI_TYPE_FLOAT',
 		'FFI_TYPE_INT',
@@ -58,8 +61,11 @@ LibFFIConstants class >> initialize [
 	FFI_TYPE_STRUCT := 13.
 
 	FFI_TYPE_POINTER := 14.
-	
 
+	FFI_FLAG_USE_OPTIMIZED_VERSION       			:= 1 << 0.
+	FFI_FLAG_POINTERS_MIGHT_BE_OBJECTS				:= 1 << 1.
+	FFI_FLAG_POINTERS_MIGHT_BE_EXTERNAL_ADDRESSES	:= 1 << 2.
+		
 	"Max ranges as defined in stdint.h"
 	INT8_MAX :=  2**( 8 - 1) - 1.
 	INT8_MIN :=  (2**( 8 - 1)) negated.

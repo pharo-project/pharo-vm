@@ -852,7 +852,7 @@ Cogit class >> initializePrimitiveTable [
 	 N.B. primitives that don't have an explicit arg count (the integer following the generator) may be variadic."
 	"SimpleStackBasedCogit initializePrimitiveTable"
 	MaxCompiledPrimitiveIndex := self objectRepresentationClass wordSize = 8
-										ifTrue: [659]
+										ifTrue: [660]
 										ifFalse: [222].
 	primitiveTable := CArrayAccessor on: (Array new: MaxCompiledPrimitiveIndex + 1).
 	self table: primitiveTable from: 
@@ -1141,6 +1141,9 @@ Cogit class >> initializePrimitiveTable [
 		(657 genPrimitiveStoreChar32IntoExternalAddress)
 		(658 genPrimitiveStoreFloat32IntoExternalAddress)
 		(659 genPrimitiveStoreFloat64IntoExternalAddress)
+
+		(660 genPrimitiveGetAddressOfOOPPinningIfNeeded)
+		
 	)
 ]
 
@@ -1236,8 +1239,8 @@ Cogit class >> notesAndQueries [
 
 { #category : 'accessing' }
 Cogit class >> numTrampolines [
-	^39 "31 + 4 each for self and super sends"
-
+	^ 41 
+	
 	"self withAllSubclasses collect: [:c| {c. (c instVarNames select: [:ea| ea beginsWith: 'ce']) size}]"
 ]
 
@@ -8075,12 +8078,14 @@ Cogit >> handleCallOrJumpSimulationTrap: aProcessorSimulationTrap [
 	(function beginsWith: 'ceShort') ifTrue:
 		[^self perform: function with: aProcessorSimulationTrap].
 	
+	memory := coInterpreter objectMemory.
+	
 	aProcessorSimulationTrap type == #call
 		ifTrue:
 			[processor
 				simulateCallOf: aProcessorSimulationTrap address
 				nextpc: aProcessorSimulationTrap nextpc
-				memory: (memory := coInterpreter memory).
+				memory: memory.
 			 self recordInstruction: {'(simulated call of '. aProcessorSimulationTrap address. '/'. function. ')'}]
 		ifFalse:
 			[processor
