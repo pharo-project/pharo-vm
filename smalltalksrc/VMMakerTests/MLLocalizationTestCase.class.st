@@ -4,8 +4,8 @@ Class {
 	#instVars : [
 		'ccg'
 	],
-	#category : 'Melchor',
-	#package : 'Melchor'
+	#category : 'VMMakerTests',
+	#package : 'VMMakerTests'
 }
 
 { #category : 'running' }
@@ -99,7 +99,6 @@ MLLocalizationTestCase >> setUp [
 	super setUp.
 	ccg := MLVMCCodeGenerator new.
 	ccg vmMaker: VMMaker new.
-	ccg vmMaker vmmakerConfiguration: VMMakerConfiguration.
 	MockLocalizationInterpreterMock initialize
 ]
 
