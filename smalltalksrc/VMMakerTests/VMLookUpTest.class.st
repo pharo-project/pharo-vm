@@ -437,6 +437,74 @@ VMLookUpTest >> testLookUpNonExistingSelectorAnswersDNUMethod [
 ]
 
 { #category : 'tests' }
+VMLookUpTest >> testLookUpWithNilMethodDictionaryAndNilSuperclassFails [
+	"There is no superclass, so no cannotInterpret: to call"
+
+	| nonExistingSelector cannotInterpretSelectorOop |
+	self setUpClassAndMethod.
+	self setArrayClassIntoClassTable.
+	self setMessageClassIntoClassTable.
+
+	cannotInterpretSelectorOop := self newString: 'CannotInterpret'.
+	memory
+		splObj: SelectorCannotInterpret
+		put: cannotInterpretSelectorOop.
+
+	nonExistingSelector := memory integerObjectOf: 41.
+
+	interpreter methodDictLinearSearchLimit: 3.
+	interpreter setBreakSelector: nil.
+	interpreter messageSelector: nonExistingSelector.
+	self should: [ interpreter lookupMethodInClass: receiverClass ] raise: Error
+]
+
+{ #category : 'tests' }
+VMLookUpTest >> testLookUpWithNilMethodDictionaryAndNoCannotInterpretAnswersDNUMethod [
+	"Class has a nil methodDictionary, so `cannotInterpret:` is send.
+	But superclass does not understand it, so `doesNotUnderstand:` is called instead."
+
+	| nonExistingSelector dnuMethodOop dnuSelectorOop cannotInterpretSelectorOop superclass superclassMethodDictionary |
+	self setUpClassAndMethod.
+	self setArrayClassIntoClassTable.
+	self setMessageClassIntoClassTable.
+
+	superclass := self
+		              newClassInOldSpaceWithSlots: 0
+		              instSpec: memory arrayFormat.
+	self setUpMethodDictionaryIn: superclass.
+	superclassMethodDictionary := memory
+		                              fetchPointer: MethodDictionaryIndex
+		                              ofObject: superclass.
+	memory
+		storePointer: SuperclassIndex
+		ofObject: receiverClass
+		withValue: superclass.
+
+	dnuMethodOop := methodBuilder newMethod buildMethod.
+	dnuSelectorOop := self newString: 'DNU'.
+	cannotInterpretSelectorOop := self newString: 'CannotInterpret'.
+	self
+		installSelector: dnuSelectorOop
+		method: dnuMethodOop
+		inMethodDictionary: superclassMethodDictionary.
+
+	memory
+		splObj: SelectorDoesNotUnderstand
+		put: dnuSelectorOop.
+	memory
+		splObj: SelectorCannotInterpret
+		put: cannotInterpretSelectorOop.
+
+	nonExistingSelector := memory integerObjectOf: 41.
+
+	interpreter methodDictLinearSearchLimit: 3.
+	interpreter setBreakSelector: nil.
+	interpreter messageSelector: nonExistingSelector.
+	interpreter lookupMethodInClass: receiverClass.
+	self assert: interpreter newMethod equals: dnuMethodOop
+]
+
+{ #category : 'tests' }
 VMLookUpTest >> testLookUpWithNilMethodDictionaryFindsCannotInterpret [
 
 	| nonExistingSelector cannotInterpretMethodOop cannotInterpretSelectorOop superclass superclassMethodDictionary |

@@ -162,19 +162,6 @@ VMMakerConfiguration class >> generateSqueakSpurCogVM [
 		configuration: self
 ]
 
-{ #category : 'configurations' }
-VMMakerConfiguration class >> generateSqueakSpurRegisterCogVM [
-	"No primitives since we can use those for the Cog VM"
-	^VMMaker
-		generate: CoInterpreter
-		and: RegisterAllocatingCogit
-		with: #(ObjectMemory Spur32BitCoMemoryManager)
-		to: self sourceTree, '/spurregsrc'
-		platformDir: self sourceTree, '/platforms'
-		including:#()
-		configuration: self
-]
-
 { #category : 'initialisation' }
 VMMakerConfiguration class >> initialize [
 	"VMMaker initialize"

@@ -8,27 +8,20 @@ Class {
 { #category : 'baselines' }
 BaselineOfVMMaker >> baseline: spec [
 	<baseline>
-
 	spec
 		for: #common
 		do: [
 			
 			"Slang, the basics"			
 			spec
-				package: 'CAST' with: [
-					spec requires: #( 'SmaCC-GLR' )
-				];
-				package: 'Slang' with: [
-					spec requires: #( 'CAST' )
-				];
+				package: 'CAST' with: [ spec requires: #('SmaCC-GLR' ) ];
+				package: 'CAST-Tests' with: [ spec requires: #('CAST') ];
+				package: 'Slang' with: [ spec requires: #('CAST') ];
+				package: 'Slang-Tests' with: [ spec requires: #('Slang' 'Melchor') ].
 			
 			"Melchor is a VM-oriented Slang"
-			package: 'Melchor' with: [
-				spec requires: #('Slang') ];
-			
-			package: 'Slang-Tests' with: [
-					spec requires: #('Slang' 'Melchor') ].
-
+			spec package: 'Melchor' with: [
+				spec requires: #('Slang') ].
 			
 			"External Dependencies"
 			spec baseline: 'SmaCC-GLR' with: [ 
@@ -46,14 +39,13 @@ BaselineOfVMMaker >> baseline: spec [
 			"Tests"			
 			spec
 				package: 'VMMakerTests' with: [
-					spec requires: #('VMMakerCompatibilityForPharo6' 'Unicorn' 'LLVMDisassembler' 'Slang-Tests' 'OpalSimdBytecode') ].
+					spec requires: #('VMMaker' 'Unicorn' 'LLVMDisassembler' 'Slang-Tests' 'OpalSimdBytecode') ].
 
 			"Tools"			
 			spec package: 'VMMaker-Tools' with: [ 
-				spec requires: #( 'VMMakerCompatibilityForPharo6' 'VMMakerTests' ) ].
+				spec requires: #( 'VMMakerTests' ) ].
 			
 			spec
-				package: 'VMMakerCompatibilityForPharo6' with: [ spec requires: 'VMMaker' ];
 				package: 'VMMakerLoadingDependencies'.
 			
 			"Dependencies from this repositories"
@@ -67,11 +59,11 @@ BaselineOfVMMaker >> baseline: spec [
 					'VMMakerLoadingDependencies' 'Printf' 'Melchor') ].
 								
 			"VM plugins"
-			spec package: 'FileAttributesPlugin' with: [ spec requires: #( 'VMMakerCompatibilityForPharo6') ].
+			spec package: 'FileAttributesPlugin' with: [ spec requires: #( 'VMMaker' ) ].
 			
 			spec group: 'plugins' with: #('FileAttributesPlugin').
 			spec group: 'core' with: #('VMMaker').
 			spec group: 'tools' with: #('VMMaker-Tools').			
-			spec group: 'tests' with: #('VMMakerTests').
+			spec group: 'tests' with: #('VMMakerTests' 'CAST-Tests').
 			spec group: 'default' with: #( 'core' 'plugins' 'tools' 'tests') ]
 ]

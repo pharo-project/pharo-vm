@@ -189,14 +189,126 @@ LocalePlugin >> primitiveVMOffsetToUTC [
 
 ]
 
+{ #category : 'system primitives' }
+LocalePlugin >> sqLocCurrencyNotation [
+
+	<doNotGenerate>
+	self notYetImplemented
+]
+
+{ #category : 'system primitives' }
+LocalePlugin >> sqLocCurrencySymbolSize [
+
+	<doNotGenerate>
+	self notYetImplemented
+]
+
+{ #category : 'system primitives' }
+LocalePlugin >> sqLocDaylightSavings [
+
+	<doNotGenerate>
+	self notYetImplemented
+]
+
+{ #category : 'system primitives' }
+LocalePlugin >> sqLocGetCountryInto: pointer [
+
+	<doNotGenerate>
+	self notYetImplemented
+]
+
+{ #category : 'system primitives' }
+LocalePlugin >> sqLocGetCurrencySymbolInto: pointer [
+
+	<doNotGenerate>
+	self notYetImplemented
+]
+
+{ #category : 'system primitives' }
+LocalePlugin >> sqLocGetDecimalSymbolInto: pointer [
+
+	<doNotGenerate>
+	self notYetImplemented
+]
+
+{ #category : 'system primitives' }
+LocalePlugin >> sqLocGetDigitGroupingSymbolInto: aPointer [
+
+	<doNotGenerate>
+	self notYetImplemented
+]
+
+{ #category : 'system primitives' }
+LocalePlugin >> sqLocGetLanguageInto: aPointer [
+
+	<doNotGenerate>
+	self notYetImplemented
+]
+
+{ #category : 'system primitives' }
+LocalePlugin >> sqLocGetLongDateFormatInto: aPointer [
+
+	<doNotGenerate>
+	self notYetImplemented
+]
+
+{ #category : 'system primitives' }
+LocalePlugin >> sqLocGetShortDateFormatInto: aPointer [
+
+	<doNotGenerate>
+	self notYetImplemented
+]
+
+{ #category : 'system primitives' }
+LocalePlugin >> sqLocGetTimeFormatInto: aPointer [
+
+	<doNotGenerate>
+	self notYetImplemented
+]
+
 { #category : 'simulation support' }
 LocalePlugin >> sqLocGetTimezoneOffset [
 	<doNotGenerate>
 	^(DateAndTime localTimeZone offset asSeconds / 60) rounded
 ]
 
+{ #category : 'system primitives' }
+LocalePlugin >> sqLocGetVMOffsetToUTC [
+
+	<doNotGenerate>
+	self notYetImplemented
+]
+
 { #category : 'simulation support' }
 LocalePlugin >> sqLocInitialize [
 	<doNotGenerate>
 	^true
+]
+
+{ #category : 'system primitives' }
+LocalePlugin >> sqLocLongDateFormatSize [
+
+	<doNotGenerate>
+	self notYetImplemented
+]
+
+{ #category : 'system primitives' }
+LocalePlugin >> sqLocMeasurementMetric [
+
+	<doNotGenerate>
+	self notYetImplemented
+]
+
+{ #category : 'system primitives' }
+LocalePlugin >> sqLocShortDateFormatSize [
+
+	<doNotGenerate>
+	self notYetImplemented
+]
+
+{ #category : 'system primitives' }
+LocalePlugin >> sqLocTimeFormatSize [
+
+	<doNotGenerate>
+	self notYetImplemented
 ]

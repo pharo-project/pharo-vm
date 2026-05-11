@@ -57,18 +57,7 @@ InterpreterPlugin class >> browseTranslatedPrimitives [
 { #category : 'translation' }
 InterpreterPlugin class >> buildCodeGenerator [
 	"Build a CCodeGenerator for the plugin"
-	| cg pluginClasses |
-	cg := self codeGeneratorClass new initialize.
-	cg vmClass: self.
-	cg pluginClass: self.
-	cg vmMaker: VMMaker new.
-	cg vmMaker vmmakerConfiguration: VMMakerConfiguration.
-	(pluginClasses := self pluginClassesUpToRoot) do:
-		[:aClass| cg addClass: aClass].
-	(cg structClassesForTranslationClasses: pluginClasses) do:
-		[:structClasss| cg addStructClass: structClasss].
-	cg addMethodsForTranslatedPrimitives: self translatedPrimitives.
-	^cg
+	self buildCodeGeneratorForVMClass: self
 ]
 
 { #category : 'translation' }
@@ -85,14 +74,9 @@ InterpreterPlugin class >> buildCodeGeneratorForVMClass: aVMClass [
 	(cg structClassesForTranslationClasses: pluginClasses) do:
 		[:structClasss| cg addStructClass: structClasss].
 	cg addMethodsForTranslatedPrimitives: self translatedPrimitives.
+	cg inferTypes.	
+	cg prepareMethods.
 	^cg
-]
-
-{ #category : 'translation' }
-InterpreterPlugin class >> buildCodeGeneratorUpTo: aPluginClass [
-	"Build a CCodeGenerator for the plugin - Deprecated and here only in case old plugin code tries to use it"
-	self deprecated.
-	^self buildCodeGenerator
 ]
 
 { #category : 'private' }
@@ -340,7 +324,6 @@ InterpreterPlugin class >> translateInDirectory: directory doInlining: inlineFla
 	"The VM class should be nil for plugins, because there is code that conditionally checks if it is nil or not.
 	A nil VM class is assumed as a plugin context..."
 	cg := self buildCodeGeneratorForVMClass: nil.
-	cg inferTypes.
 	self pruneUnusedInterpreterPluginMethodsIn: cg.
 	cg storeCodeOnFile:  (directory / fname) fullName doInlining: inlineFlag.
 	^cg exportedPrimitiveNames asArray
@@ -377,51 +360,6 @@ InterpreterPlugin >> cCoerceSimple: value to: cType [
 InterpreterPlugin >> close [
 	"Simulation subclasses needing some specific close action override as required."
 	<doNotGenerate>
-]
-
-{ #category : 'simulation support' }
-InterpreterPlugin >> doesNotUnderstand: aMessage [
-	<doNotGenerate>
-	"Override doesNotUnderstand: to iuntercept sends of translated primitive selectors.
-	 The translated primitives are primitives derived from the primitive methods themselves
-	 translating their failure code/method body into Slang code."
-	(self methodAndTypesOrNilForTranslatedPrimitiveSelector: aMessage selector)
-		ifNil: [^super doesNotUnderstand: aMessage]
-		ifNotNil:
-			[:tuple| | method |
-			 "First check the cache for validity; if the ast element of the tuple is the actual method
-			 then the cache is up-to-date.  if it is not, the method has changed and should be regenerated."
-			 method := tuple last.
-			 method == (method methodClass >> method selector) ifFalse:
-				[translatedMethodCache removeKey: aMessage selector.
-				 ^self doesNotUnderstand: aMessage].
-			 method := tuple first.
-			 tuple second
-				ifNil: [interpreterProxy primitiveFail]
-				ifNotNil:
-					[:types|
-					 self tryToRunTranslatedPrimitive: method types: types subsidiaries: tuple third].
-			(#(	compare:with:collated:
-				findFirstInString:inSet:startingAt:
-				findSubstring:in:startingAt:matchTable:
-				hashBytes:startingWith:
-				indexOfAscii:inString:startingAt:
-				translate:from:to:table:
-				compress:toByteArray:
-				decompress:fromByteArray:at:)
-					includes: method selector) ifFalse:
-				[interpreterProxy transcript print: method; cr.
-				 interpreterProxy coInterpreter printExternalHeadFrame].
-			 interpreterProxy failed ifTrue:
-				[interpreterProxy transcript
-					nextPutAll: 'WARNING! Failing translated primitive ';
-					nextPutAll: aMessage selector;
-					nextPutAll: ' implemented by ';
-					nextPutAll: method methodClass name;
-					nextPutAll: '>>';
-					nextPutAll: method selector;
-					cr;
-					flush]]
 ]
 
 { #category : 'simulation' }
@@ -492,6 +430,7 @@ InterpreterPlugin >> getModuleName [
 
 { #category : 'debugging' }
 InterpreterPlugin >> halt [
+	<debuggerCompleteToSender>
 	self cCode: '' inSmalltalk: [^super halt "avoid the ^0 below"].
 	^0
 ]
@@ -531,40 +470,6 @@ InterpreterPlugin >> memmove: destAddress _: sourceAddress _: bytes [
 	"implementation of memcpy(3). N.B. If ranges overlap, must use memmove."
 
 	^interpreterProxy memmove: destAddress _: sourceAddress _: bytes
-]
-
-{ #category : 'simulation' }
-InterpreterPlugin >> methodAndTypesOrNilForTranslatedPrimitiveSelector: selector [
-	<doNotGenerate>
-	"If selector maps to a simulateable translated primitive method, then
-	 answer the method and its types for selector, the selector of a translated primitive.
-	 Otherwise answer nil.  This caches the results of analysis in translatedMethodCache."
-	translatedMethodCache ifNil:
-		[translatedMethodCache := IdentityDictionary new.
-		 translatedMethodCache at: #CCodeGenerator put: CCodeGenerator new].
-	^translatedMethodCache
-		at: selector
-		ifAbsentPut: [self tupleOrNilForTranslatedPrimitiveSelector: selector]
-]
-
-{ #category : 'simulation' }
-InterpreterPlugin >> methodWithoutPrimitive: method [
-	"Answer either aMethod or a copy of aMehtod, such that the result does /not/ have a primitive."
-	<doNotGenerate>
-	| mn properties newProperties |
-	method primitive = 0 ifTrue:
-		[^method].
-	mn := method methodNode.
-	properties := mn properties.
-	newProperties := properties copy.
-	properties pragmas do:
-		[:pragma|
-		(pragma keyword beginsWith: #primitive:) ifTrue:
-			[newProperties := newProperties copyWithout: pragma]].
-	^mn
-		instVarNamed: 'primitive' put: 0;
-		instVarNamed: 'properties' put: newProperties;
-		generate: method trailer using: method class
 ]
 
 { #category : 'simulation support' }
@@ -639,7 +544,7 @@ InterpreterPlugin >> sizeof: objectSymbolOrClass [
 		objectSymbolOrClass == #SQSocket ifTrue:
 			[^8 + interpreterProxy wordSize].
 		"We assume the file offset type is always 64-bits."
-		objectSymbolOrClass == #squeakFileOffsetType ifTrue:
+		objectSymbolOrClass == #fileOffset_t ifTrue:
 			[^8].
 		(objectSymbolOrClass last == $*
 		 or: [#long == objectSymbolOrClass
@@ -712,52 +617,4 @@ InterpreterPlugin >> tryToRunTranslatedPrimitive: method types: types subsidiari
 				[result isInteger
 					ifTrue: [interpreterProxy methodReturnValue: (interpreterProxy integerObjectOf: result)]
 					ifFalse: [self halt]]]
-]
-
-{ #category : 'simulation' }
-InterpreterPlugin >> tupleOrNilForTranslatedPrimitiveSelector: selector [
-	"Answer a tuple of {simulation method, types, subsidiary methods, original method}
-	 for the selector of a translated primitive.  If the method cannot be simulated, for
-	 example if it accesses instance variables, answer a tuple whose types element is nil."
-	<doNotGenerate>
-	^(self class methodOrNilForTranslatedPrimitiveSelector: selector) ifNotNil:
-		[:method| | argNames argPragmas cg types subsidiaryMethods |
-		"Since the plugin itself runs the method, and the method is on some
-		 distant class, if the method accesses inst vars, the mechanism can't work."
-		method hasInstVarRef ifTrue: [^{method. nil. nil. method}].
-		argNames := [method methodClass newParser parseParameterNames: method getSource]
-						on: Error
-						do: [:ex|
-							^{method. nil. nil. method}].
-		argPragmas := method pragmas select:
-							[:p|
-							(p keyword beginsWith: 'var:')
-							and: [argNames includes: p arguments first]].
-		cg := translatedMethodCache at: #CCodeGenerator.
-		types := (1 to: method numArgs) collect:
-					[:i|
-					(argPragmas detect: [:p| p arguments first = (argNames at: i)] ifNone: [])
-						ifNil: [#sqInt]
-						ifNotNil:
-							[:pragma|
-							cg extractTypeFor: (argNames at: i) fromDeclaration: pragma arguments second]].
-		 "Subsidiary methods are typically implemented for the primitive method only."
-		 subsidiaryMethods :=
-			method messages
-				select:
-					[:subsidiary|
-					 (method methodClass includesSelector: subsidiary)
-					 and: [(Object includesSelector: subsidiary) not]]
-				thenCollect:
-					[:subsidiary| | subsidiaryMethod |
-					subsidiaryMethod := method methodClass >> subsidiary.
-					subsidiaryMethod hasInstVarRef ifTrue:
-						[^{method. nil. nil. method}].
-					subsidiaryMethod].
-		 { self methodWithoutPrimitive: method.
-		   types.
-		   Dictionary withAll:
-			(subsidiaryMethods collect:
-				[:m| m selector -> (self methodWithoutPrimitive: m)]).
-		   method}]
 ]

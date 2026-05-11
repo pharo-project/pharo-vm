@@ -38,6 +38,7 @@ VMTStackFrame >> framePointer: anObject [
 	framePointer := anObject
 ]
 
+<<<<<<< HEAD
 { #category : 'debugging' }
 VMTStackFrame >> gtStackFrameInspector: composite [
 	<gtInspectorPresentationOrder: 0>
@@ -48,6 +49,8 @@ VMTStackFrame >> gtStackFrameInspector: composite [
 		column: 'Value' evaluated: [ :descriptor | descriptor value ]
 ]
 
+=======
+>>>>>>> 0c6de9df559c3ee3416255822f6bc2cbe9d3cfba
 { #category : 'accessing' }
 VMTStackFrame >> interpreter [
 	^ memory coInterpreter

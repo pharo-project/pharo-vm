@@ -115,74 +115,6 @@ Spur64BitMemoryManager >> bytesPerOop [
 	^8
 ]
 
-{ #category : 'interpreter access' }
-Spur64BitMemoryManager >> changeClassOf: rcvr to: argClass [
-	"Attempt to change the class of the receiver to the argument given that the
-	 format of the receiver matches the format of the argument.  If successful,
-	 answer 0, otherwise answer an error code indicating the reason for failure. 
-	 Fail if the format of the receiver is incompatible with the format of the argument,
-	 or if the argument is a fixed class and the receiver's size differs from the size
-	 that an instance of the argument should have."
-	<inline: false>
-	| classFormat fixedFields instFormat newFormat classIndex instSlots instBytes |
-	(self isObjImmutable: rcvr) ifTrue:
-		[^PrimErrNoModification].
-	classFormat := self formatOfClass: argClass.
-	fixedFields := self fixedFieldsOfClassFormat: classFormat.
-	classFormat := self instSpecOfClassFormat: classFormat.
-	instFormat := self formatOf: rcvr.
-
-	"Fail for inability to access classIndex before making contexts snapshot-safe."
-	(classIndex := self ensureBehaviorHash: argClass) < 0 ifTrue:
-		[^classIndex negated].
-
-	"Now check the instance for compatibility and compute odd bits if necessary."
-	classFormat <= self lastPointerFormat
-		ifTrue:
-			[instFormat > self lastPointerFormat ifTrue:
-				[^PrimErrInappropriate].
-			 ((instSlots := self numSlotsOf: rcvr) < fixedFields
-			  or: [instSlots > fixedFields and: [self isFixedSizePointerFormat: classFormat]]) ifTrue:
-				[^PrimErrBadReceiver].
-			 (instFormat = self indexablePointersFormat
-			  and: [self isContextNonImm: rcvr]) ifTrue:
-				[coInterpreter makeContextSnapshotSafe: rcvr].
-			 newFormat := classFormat]
-		ifFalse:
-			["Fail if the class's format is somehow invalid."
-			 classFormat ~= (self classFormatForInstanceFormat: classFormat) ifTrue:
-				[^PrimErrBadArgument].
-
-			 instBytes := self numBytesOf: rcvr.
-			 classFormat
-				caseOf: {
-				[self sixtyFourBitIndexableFormat]
-					-> [(instBytes anyMask: 7) ifTrue: [^PrimErrBadReceiver].
-						newFormat := classFormat].
-				[self firstLongFormat] 		
-					-> [(instBytes anyMask: 3) ifTrue: [^PrimErrBadReceiver].
-						newFormat := classFormat + (2 - (instBytes >> 2) bitAnd: 1)].
-				[self firstShortFormat] 		
-					-> [(instBytes anyMask: 1) ifTrue: [^PrimErrBadReceiver].
-						newFormat := classFormat + (4 - (instBytes >> 1) bitAnd: 3)].
-				[self firstByteFormat]
-					-> [newFormat := classFormat + (8 - instBytes bitAnd: 7)].
-				[self firstCompiledMethodFormat]
-					-> [classFormat ~= self firstCompiledMethodFormat ifTrue:
-							[^PrimErrInappropriate].
-						newFormat := instFormat] }
-				otherwise: "bits instances cannot be adopted by pointer-like classes..."
-					[^PrimErrInappropriate]].
-
-	self set: rcvr classIndexTo: classIndex formatTo: newFormat.
-
-	self assert: (self numBytesOf: rcvr) = (classFormat <= self lastPointerFormat
-											ifTrue: [instSlots * self bytesPerOop]
-											ifFalse: [instBytes]).
-	"ok"
-	^0
-]
-
 { #category : 'gc - global' }
 Spur64BitMemoryManager >> coalesce: obj1 and: obj2 [
 	| header1NumSlots header2NumSlots obj2slots newNumSlots |
@@ -427,7 +359,10 @@ Spur64BitMemoryManager >> instantiateClass: classObj indexableSize: nElements is
 	<var: #nElements type: #usqInt>
 	"Allocate an instance of a variable class, excepting CompiledMethod."
 	| instSpec classFormat numSlots classIndex newObj fillValue |
-	classFormat := self formatOfClass: classObj.
+	classFormat := self formatOfClassSafe: classObj.
+	classFormat == -1 ifTrue:
+		[self primitiveFailFor: PrimErrBadReceiver. "no format"
+		 ^nil].
 	instSpec := self instSpecOfClassFormat: classFormat.
 	classIndex := self rawHashBitsOf: classObj.
 	fillValue := 0.
@@ -462,7 +397,8 @@ Spur64BitMemoryManager >> instantiateClass: classObj indexableSize: nElements is
 			  this method.
 			  Hence allow fixed classes to be instantiated here iff nElements = 0."
 			 (nElements ~= 0 or: [instSpec > self lastPointerFormat]) ifTrue:
-				[^nil].
+				[coInterpreter primitiveFailFor: PrimErrBadReceiver.
+				 ^nil].
 			 numSlots := self fixedFieldsOfClassFormat: classFormat.
 			 fillValue := nilObj].
 	classIndex = 0 ifTrue:
@@ -483,7 +419,8 @@ Spur64BitMemoryManager >> instantiateClass: classObj indexableSize: nElements is
 		ifFalse:
 			[newObj := self allocateSlots: numSlots format: instSpec classIndex: classIndex].
 	newObj ifNotNil:
-		[self fillObj: newObj numSlots: numSlots with: fillValue].
+		[self fillObj: newObj numSlots: numSlots with: fillValue]
+		ifNil: [ self primitiveFailFor: PrimErrNoMemory ].	
 	^newObj
 ]
 

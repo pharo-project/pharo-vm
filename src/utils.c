@@ -21,17 +21,12 @@
 
 #include <signal.h>
 
-char vmName[PATH_MAX];
-char imageName[PATH_MAX];
+char _imageName[PATH_MAX];
 char vmFullPath[PATH_MAX];
 char vmPath[PATH_MAX];
 
 #if __APPLE__
 	void fillApplicationDirectory(char* vmPath);
-#endif
-
-#ifdef _WIN32
-BOOL fIsConsole = 1;
 #endif
 
 int isVMRunOnWorkerThread(void);
@@ -66,6 +61,14 @@ static const char* systemSearchPaths[] = {
 
 char** pluginPaths = NULL;
 char* emptyPaths[] = {NULL};
+
+sqInt
+ioProcessEvents(void)
+{
+    aioPoll(0);
+    return 0;
+}
+
 
 EXPORT(const char*) getSourceVersion(){
 	return VM_BUILD_SOURCE_STRING;
@@ -159,36 +162,12 @@ sqInt getAttributeIntoLength(sqInt id, sqInt byteArrayIndex, sqInt length)
     return 0;
 }
 
-/**
- * Returns the VM Name
- */
-EXPORT(char*) getVMName(){
-	return vmName;
-}
-
-/**
- * Sets the VMName.
- * It copies the parameter to internal storage.
- */
-void setVMName(const char* name){
-#ifdef _WIN32
-	/*
-	* Unsafe version of deprecated strcpy for compatibility
-	* - does not check error code
-	* - does use count as the size of the destination buffer
-	*/
-	strcpy_s(vmName, strlen(name), name);
-#else
-	strcpy(vmName, name);
-#endif
-}
-
 char* getImageName(){
-	return imageName;
+	return _imageName;
 }
 
 /**
- * Sets the ImageName.
+ * Sets the _imageName.
  * It copies the parameter to internal storage.
  */
 void setImageName(const char* name){
@@ -198,9 +177,9 @@ void setImageName(const char* name){
 	* - does not check error code
 	* - does use count as the size of the destination buffer
 	*/
-	strcpy_s(imageName, PATH_MAX, name);
+	strcpy_s(_imageName, PATH_MAX, name);
 #else
-	strcpy(imageName, name);
+	strcpy(_imageName, name);
 #endif
 }
 
@@ -254,7 +233,7 @@ sqInt vmPathGetLength(sqInt sqVMPathIndex, sqInt length){
     count = strlen(vmPath);
     count = (length < count) ? length : count;
 
-    /* copy the file name into the Squeak string */
+    /* copy the file name into the string object */
     memcpy(stVMPath, vmPath, count);
 
     return count;
@@ -264,11 +243,11 @@ sqInt imageNameGetLength(sqInt sqImageNameIndex, sqInt length){
     char *sqImageName = pointerForOop(sqImageNameIndex);
     int count;
 
-    count= strlen(imageName);
+    count= strlen(_imageName);
     count= (length < count) ? length : count;
 
-    /* copy the file name into the Squeak string */
-    memcpy(sqImageName, imageName, count);
+    /* copy the file name into the string object */
+    memcpy(sqImageName, _imageName, count);
 
     return count;
 }
@@ -277,11 +256,11 @@ sqInt imageNamePutLength(sqInt sqImageNameIndex, sqInt length){
     char *sqImageName= pointerForOop(sqImageNameIndex);
     int count;
 
-    count = (length >= sizeof(imageName)) ? sizeof(imageName) - 1 : length;
+    count = (length >= sizeof(_imageName)) ? sizeof(_imageName) - 1 : length;
 
     /* copy the file name into a null-terminated C string */
-    memcpy(imageName, sqImageName, count);
-    imageName[count] = 0;
+    memcpy(_imageName, sqImageName, count);
+    _imageName[count] = 0;
 
     return count;
 }
@@ -289,7 +268,7 @@ sqInt imageNamePutLength(sqInt sqImageNameIndex, sqInt length){
 sqInt
 imageNameSize(void)
 {
-    return strlen(imageName);
+    return strlen(_imageName);
 }
 
 int vmParamsCount = 0;
@@ -442,7 +421,6 @@ sqGetFilenameFromString(char * aCharBuffer, char * aFilenameString, sqInt filena
 
 
 #ifndef bzero
-
 //We have to provide a bzero implementation for windows as the Cog code depends on it.
 void bzero(void *s, size_t n){
 	memset(s, 0, n);
@@ -471,50 +449,9 @@ isCFramePointerInUse()
 }
 #endif // COGVM
 
-/* Answer an approximation of the size of the redzone (if any).  Do so by
- * sending a signal to the process and computing the difference between the
- * stack pointer in the signal handler and that in the caller. Assumes stacks
- * descend.
- */
-
-static char * volatile redZoneTestEndPointer = 0;
-
-
-#ifdef SIGPROF
-static void redZoneTestSigHandler(int sig, siginfo_t *info, void *uap)
-{
-	redZoneTestEndPointer = (char *)&sig;
-}
-#else
-static void redZoneTestSigHandler(int sig)
-{
-	redZoneTestEndPointer = (char *)&sig;
-}
-#endif
-
 #ifndef _WIN32
 static long int min(long int x, long int y) { return (x < y) ? x : y; }
 #endif
-
-static int getRedZoneSize()
-{
-#if defined(SIGPROF) /* cygwin */
-	struct sigaction handler_action, old;
-	handler_action.sa_sigaction = redZoneTestSigHandler;
-	handler_action.sa_flags = SA_NODEFER | SA_SIGINFO;
-	sigemptyset(&handler_action.sa_mask);
-	(void)sigaction(SIGPROF, &handler_action, &old);
-
-	do kill(getpid(),SIGPROF); while (!redZoneTestEndPointer);
-	(void)sigaction(SIGPROF, &old, 0);
-	return (int)min((usqInt)&old,(usqInt)&handler_action) - sizeof(struct sigaction) - (usqInt)redZoneTestEndPointer;
-#else /* cygwin */
-	void (*old)(int) = signal(SIGBREAK, redZoneTestSigHandler);
-
-	do raise(SIGBREAK); while (!redZoneTestEndPointer);
-	return (int) ((char *)&old - redZoneTestEndPointer);
-#endif /* cygwin */
-}
 
 sqInt reportStackHeadroom;
 static int stackPageHeadroom;
@@ -528,8 +465,14 @@ static int stackPageHeadroom;
 int
 osCogStackPageHeadroom()
 {
-	if (!stackPageHeadroom)
-		stackPageHeadroom = getRedZoneSize() + 1024;
+	if (!stackPageHeadroom){
+		#if defined(SIGSTKSZ) /* posix */
+		stackPageHeadroom = SIGSTKSZ + 1024;
+		#else // Non-posix, possibly mingw using exception, use 4k as stack size
+		stackPageHeadroom = 4096 + 1024;
+		#endif
+	}
+		
 	return stackPageHeadroom;
 }
 
@@ -538,57 +481,6 @@ osCogStackPageHeadroom()
 /* Helper to pop up a message box with a message formatted from the         */
 /*   printf() format string and arguments                                   */
 /****************************************************************************/
-#ifdef _WIN32
-EXPORT(int) __cdecl sqMessageBox(DWORD dwFlags, const char *titleString, const char* fmt, ...)
-{ TCHAR *buf;
-  va_list args;
-  DWORD result;
-
-  buf = (TCHAR*) calloc(sizeof(TCHAR), 4096);
-  va_start(args, fmt);
-  vsnprintf(buf, 4096-1, fmt, args);
-  va_end(args);
-
-  result = MessageBox(NULL,buf,titleString,dwFlags|MB_SETFOREGROUND);
-  free(buf);
-  return result;
-}
-
-EXPORT(void) printLastError(const TCHAR *prefix) {
-  LPVOID lpMsgBuf;
-  DWORD lastError;
-
-  lastError = GetLastError();
-  FormatMessage(FORMAT_MESSAGE_ALLOCATE_BUFFER |  FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
-                NULL, GetLastError(), MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
-                (LPTSTR) &lpMsgBuf, 0, NULL );
-  wprintf(TEXT("%s (%ld) -- %s\n"), prefix, lastError, (unsigned short*)lpMsgBuf);
-  LocalFree( lpMsgBuf );
-}
-
-EXPORT(int) __cdecl abortMessage(TCHAR *fmt, ...)
-{ TCHAR *buf;
-	va_list args;
-
-	va_start(args, fmt);
-	if (fIsConsole) {
-		vfwprintf(stderr, fmt, args);
-		exit(-1);
-	}
-	buf = (TCHAR*) calloc(sizeof(TCHAR), 4096);
-
-	wvsprintf(buf, fmt, args);
-
-	va_end(args);
-
-	MessageBox(NULL,buf,TEXT(VM_NAME) TEXT("!"),MB_OK | MB_TASKMODAL | MB_SETFOREGROUND);
-	free(buf);
-	exit(-1);
-	return 0;
-}
-
-#endif
-
 EXPORT(char*) getFullPath(char const *relativePath, char* fullPath, int fullPathSize){
 #ifdef _WIN32
 
@@ -678,6 +570,7 @@ EXPORT(const char**) getProcessArgumentVector(){
 EXPORT(const char **) getProcessEnvironmentVector(){
 	return vmProcessEnvironmentVector;
 }
+
 EXPORT(int) ioGetCurrentWorkingDirectorymaxLength(char * aCString, size_t maxLength){
 	return vm_path_get_current_working_dir_into(aCString, maxLength) == VM_SUCCESS ? 0 : -1 ;
 }

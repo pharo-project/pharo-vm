@@ -31,39 +31,32 @@ set(Win32ConsoleManifest "${CMAKE_CURRENT_BINARY_DIR}/${VM_EXECUTABLE_CONSOLE_NA
 function(add_platform_headers)
     target_include_directories(${VM_LIBRARY_NAME}
     PUBLIC
-        ${CMAKE_CURRENT_SOURCE_DIR}/extracted/vm/include/win
-        ${CMAKE_CURRENT_SOURCE_DIR}/extracted/vm/include/common
+        ${CMAKE_CURRENT_SOURCE_DIR}/include/pharovm/win
+        ${CMAKE_CURRENT_SOURCE_DIR}/include/pharovm/common
     )
 endfunction()
 
 set(EXTRACTED_SOURCES
-#Common sources
-    ${CMAKE_CURRENT_SOURCE_DIR}/extracted/vm/src/common/sqHeapMap.c
-    ${CMAKE_CURRENT_SOURCE_DIR}/extracted/vm/src/common/sqVirtualMachine.c
-    ${CMAKE_CURRENT_SOURCE_DIR}/extracted/vm/src/common/sqNamedPrims.c
-    ${CMAKE_CURRENT_SOURCE_DIR}/extracted/vm/src/common/sqExternalSemaphores.c
-    ${CMAKE_CURRENT_SOURCE_DIR}/extracted/vm/src/common/sqTicker.c
-
 #Platform sources
-    ${CMAKE_CURRENT_SOURCE_DIR}/extracted/vm/src/win/sqWin32SpurAlloc.c
-    ${CMAKE_CURRENT_SOURCE_DIR}/extracted/vm/src/win/aioWin.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/win/sqWin32SpurAlloc.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/win/aioWin.c
     ${CMAKE_CURRENT_SOURCE_DIR}/src/win/winDebug.c
     ${CMAKE_CURRENT_SOURCE_DIR}/src/win/winDebugMenu.c
     ${CMAKE_CURRENT_SOURCE_DIR}/src/win/winDebugWindow.c
 
 # Support sources
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/fileDialogWin32.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/win/fileDialogWin32.c
 
 # Resource with DLL version info.
     ${Win32DLLResource}
 )
 
 set(VM_FRONTEND_SOURCES
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/win32Main.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/win/win32Main.c
     ${Win32Resource})
 
 set(VM_CONSOLE_FRONTEND_SOURCES
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/win32Main.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/win/win32Main.c
     ${Win32ConsoleResource})
 
 set(VM_FRONTEND_APPLICATION_TYPE WIN32)
@@ -130,7 +123,7 @@ macro(configure_installables INSTALL_COMPONENT)
 		PERMISSIONS OWNER_READ OWNER_EXECUTE GROUP_READ GROUP_EXECUTE WORLD_READ WORLD_EXECUTE)
 
 	install(
-	    DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/extracted/vm/include/win/"
+	    DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/include/win/"
 	    DESTINATION include/pharovm
 	    COMPONENT include
 	    FILES_MATCHING PATTERN *.h)

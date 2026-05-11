@@ -29,40 +29,50 @@ InternetConfigPlugin >> initialiseModule [
 
 { #category : 'system primitives' }
 InternetConfigPlugin >> primitiveGetMacintoshFileTypeAndCreatorFrom: aFileName [
-	| oop ptr keyLength creator |
 
 	<var: #creator declareC: 'char creator[8]'>
 	<var: #ptr type: 'char *'>
-	self primitive: 'primitiveGetMacintoshFileTypeAndCreatorFrom'
-		parameters: #(String).
+	| oop ptr keyLength creator |
+	self
+		primitive: 'primitiveGetMacintoshFileTypeAndCreatorFrom'
+		parameters: #( String ).
 
 	keyLength := interpreterProxy byteSizeOf: aFileName cPtrAsOop.
-	self sqInternetGetMacintoshFileTypeAndCreatorFrom: aFileName keySize: keyLength into: creator.
-	oop := interpreterProxy instantiateClass: interpreterProxy classString indexableSize: 8.
+	self
+		cCall: 'sqInternetGetMacintoshFileTypeAndCreatorFromkeySizeinto'
+		withArguments: {
+				aFileName.
+				keyLength.
+				creator }.
+	oop := interpreterProxy
+		       instantiateClass: interpreterProxy classString
+		       indexableSize: 8.
 	ptr := interpreterProxy firstIndexableField: oop.
-	0 to: 7 do:[:i|
-		ptr at: i put: (creator at: i)].
-	^oop.
-
+	0 to: 7 do: [ :i | ptr at: i put: (creator at: i) ].
+	^ oop
 ]
 
 { #category : 'system primitives' }
 InternetConfigPlugin >> primitiveGetStringKeyedBy: aKey [
-	| oop ptr size aString keyLength |
 
 	<var: #aString declareC: 'char aString[1025]'>
 	<var: #ptr type: 'char *'>
-	self primitive: 'primitiveGetStringKeyedBy'
-		parameters: #(String).
-	self cCode: '' inSmalltalk: [aString := ByteString new: 1025].
+	| oop ptr size aString keyLength |
+	self primitive: 'primitiveGetStringKeyedBy' parameters: #( String ).
+	self cCode: '' inSmalltalk: [ aString := ByteString new: 1025 ].
 	keyLength := interpreterProxy byteSizeOf: aKey cPtrAsOop.
-	size := self sqInternetConfigurationGetStringKeyedBy: aKey keySize: keyLength into: aString.
-	oop := interpreterProxy instantiateClass: interpreterProxy classString indexableSize: size.
+	size := self
+		        cCall: 'sqInternetConfigurationGetStringKeyedBykeySizeinto'
+		        withArguments: {
+				        aKey.
+				        keyLength.
+				        aString }.
+	oop := interpreterProxy
+		       instantiateClass: interpreterProxy classString
+		       indexableSize: size.
 	ptr := interpreterProxy firstIndexableField: oop.
-	0 to: size-1 do:[:i|
-		ptr at: i put: (aString at: i)].
-	^oop.
-
+	0 to: size - 1 do: [ :i | ptr at: i put: (aString at: i) ].
+	^ oop
 ]
 
 { #category : 'initialize' }

@@ -30,6 +30,12 @@ SlangClass class >> defineAtCompileTime: anObject [
 	^ false
 ]
 
+{ #category : 'initialization' }
+SlangClass class >> initializeWithOptions: optionsDictionaryOrArray [
+
+	self initialize
+]
+
 { #category : 'translation' }
 SlangClass class >> isStructClass [
 	"The various VMStructType classes override this."
@@ -69,6 +75,26 @@ SlangClass class >> shouldGenerateDeadCode [
 SlangClass class >> typeForSelf [
 	"Answer the type to give self if appropriate, or nil if not."
 	^nil
+]
+
+{ #category : 'translation support' }
+SlangClass >> cCall: function [
+	"Support for Smalltalk-to-C translation.
+	 For translation only; fail when running in Smalltalk.
+	 The first argument is called with the said arguments when generating C code."
+	<doNotGenerate>
+	
+	self cCall: function withArguments: #()
+]
+
+{ #category : 'translation support' }
+SlangClass >> cCall: function withArguments: arguments [
+	"Support for Smalltalk-to-C translation.
+	 For translation only; fail when running in Smalltalk.
+	 The first argument is called with the said arguments when generating C code."
+	<doNotGenerate>
+	
+	self error: 'Cannot simulate generic C Call'
 ]
 
 { #category : 'translation support' }

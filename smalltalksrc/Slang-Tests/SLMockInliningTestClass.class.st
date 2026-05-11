@@ -1,0 +1,296 @@
+Class {
+	#name : 'SLMockInliningTestClass',
+	#superclass : 'SlangClass',
+	#category : 'Slang-Tests',
+	#package : 'Slang-Tests'
+}
+
+{ #category : 'helpers' }
+SLMockInliningTestClass >> emptyMethod: arg [
+
+	
+]
+
+{ #category : 'inlining-arguments' }
+SLMockInliningTestClass >> emptyMethodAWithSimpleArgumentsInlined [
+
+	self emptyMethod: self methodBAlwaysInlined
+]
+
+{ #category : 'inlining-simple' }
+SLMockInliningTestClass >> methodA [
+
+	1 + 1.
+	self methodB
+]
+
+{ #category : 'inlining-assignment-helpers' }
+SLMockInliningTestClass >> methodAAssignOnReturn [
+
+	1 + 1.
+	^ self methodBAssignOnReturn
+]
+
+{ #category : 'inlining-assignment' }
+SLMockInliningTestClass >> methodAInlineIfFalseReturningIfTrueInAssignement [
+
+	| a |
+	a := self methodBIfFalseReturningIfTrue
+]
+
+{ #category : 'inlining-returning-conditional' }
+SLMockInliningTestClass >> methodAInlineIfFalseReturningIfTrueInReturn [
+
+	^ self methodBIfFalseReturningIfTrue
+]
+
+{ #category : 'inlining-assignment' }
+SLMockInliningTestClass >> methodAInlineMultipleIfFalseReturningIfTrueInAssignment [
+
+	| a |
+	a := self methodB
+		  ifFalse: [ self methodBIfFalseReturningIfTrue ]
+		  ifTrue: [
+			  5.
+			  self methodBIfFalseReturningIfTrue ]
+]
+
+{ #category : 'inlining-assignment' }
+SLMockInliningTestClass >> methodAInlineReturningIfTrueIfFalseInAssignment [
+
+	| a |
+	a := self methodBReturningIfTrueIfFalse
+]
+
+{ #category : 'inlining-returning-conditional' }
+SLMockInliningTestClass >> methodAInlineReturningIfTrueIfFalseInReturn [
+
+	^ self methodBReturningIfTrueIfFalse
+]
+
+{ #category : 'inlining-assignment' }
+SLMockInliningTestClass >> methodAInlineReturningIfTrueInAssignment [
+
+	| a |
+	a := self methodBReturningIfTrue
+]
+
+{ #category : 'inlining-returning-conditional' }
+SLMockInliningTestClass >> methodAInlineReturningIfTrueInReturn [
+
+	^ self methodBReturningIfTrue
+]
+
+{ #category : 'inlining-assignment' }
+SLMockInliningTestClass >> methodAInlineReturningInlinedIfTrueInAssignment [
+
+	| a |
+	a := self methodBReturningInlinedIfTrue
+]
+
+{ #category : 'inlining-jump' }
+SLMockInliningTestClass >> methodAMultipleReturn [
+
+	self methodBMultipleReturn.
+	^ 1 + 1
+]
+
+{ #category : 'inlining-jump' }
+SLMockInliningTestClass >> methodAMultipleReturnAsAssignmentExpression [
+
+	| x |
+	x := self methodBMultipleReturn
+]
+
+{ #category : 'inlining-jump' }
+SLMockInliningTestClass >> methodAMultipleReturnAsReturnExpression [
+
+	^ self methodBMultipleReturn
+]
+
+{ #category : 'inlining-jump' }
+SLMockInliningTestClass >> methodAMultipleReturnExpression [
+
+	self methodBMultipleReturn.
+	^ 1 + 1
+]
+
+{ #category : 'inlining-assignment' }
+SLMockInliningTestClass >> methodAReturnAssignment [
+
+	| a |
+	^ a := self methodB
+]
+
+{ #category : 'inlining-assignment-helpers' }
+SLMockInliningTestClass >> methodAReturnOnAssignment [
+
+	| var |
+	1 + 1.
+	^ self methodBReturnOnAssignment: [ :x |
+		var := x.
+		 ]
+]
+
+{ #category : 'inlining-jump' }
+SLMockInliningTestClass >> methodASimpleReturn [
+
+	self methodBSimpleReturn.
+	^ 1 + 1
+]
+
+{ #category : 'inlining-arguments' }
+SLMockInliningTestClass >> methodAWithArgumentsInlined [
+
+	^ self methodB: self methodCAlwaysInlined
+]
+
+{ #category : 'inlining-arguments' }
+SLMockInliningTestClass >> methodAWithReturningSendArgumentsInlined [
+
+	^ self methodB: self methodCAlwaysInlined
+]
+
+{ #category : 'inlining-arguments' }
+SLMockInliningTestClass >> methodAWithSimpleArgumentsInlined [
+
+	self methodB: self methodBAlwaysInlined
+]
+
+{ #category : 'inlining-simple-helpers' }
+SLMockInliningTestClass >> methodB [
+
+	2 + 2
+]
+
+{ #category : 'inlining-arguments-helpers' }
+SLMockInliningTestClass >> methodB: anArg [
+
+	<inline: #never>
+	^ anArg
+]
+
+{ #category : 'inlining-arguments-helpers' }
+SLMockInliningTestClass >> methodBAlwaysInlined [
+
+	<inline: #always>
+	2 + 2
+]
+
+{ #category : 'inlining-assignment-helpers' }
+SLMockInliningTestClass >> methodBAssignOnReturn [
+
+	^ 2 + 2
+]
+
+{ #category : 'inlining-returning-conditional-helpers' }
+SLMockInliningTestClass >> methodBIfFalseReturningIfTrue [
+
+	self methodB
+		ifFalse: [ true ]
+		ifTrue: [ ^ false ].
+	^ true
+]
+
+{ #category : 'inlining-jump-helpers' }
+SLMockInliningTestClass >> methodBMultipleReturn [
+
+	self methodB ifTrue: [ ^ 0 ].
+	self methodCMultipleReturn.
+	^ 2 + 2
+]
+
+{ #category : 'inlining-assignment-helpers' }
+SLMockInliningTestClass >> methodBReturnOnAssignment [
+
+	| var |
+	var := 2 + 2
+]
+
+{ #category : 'inlining-assignment-helpers' }
+SLMockInliningTestClass >> methodBReturnOnAssignment: aBlock [
+
+	| var |
+	var := 2 + 2.
+	^ aBlock value: var
+]
+
+{ #category : 'inlining-returning-conditional-helpers' }
+SLMockInliningTestClass >> methodBReturningIfTrue [
+
+	^ self methodB ifTrue: [ true ]
+]
+
+{ #category : 'inlining-returning-conditional-helpers' }
+SLMockInliningTestClass >> methodBReturningIfTrueIfFalse [
+
+	^ self methodB ifTrue: [ 1 ] ifFalse: [ 2 ]
+]
+
+{ #category : 'inlining-returning-conditional-helpers' }
+SLMockInliningTestClass >> methodBReturningInlinedIfTrue [
+
+	^ self methodB ifTrue: [ self methodB ]
+]
+
+{ #category : 'inlining-jump-helpers' }
+SLMockInliningTestClass >> methodBSimpleReturn [
+
+	self methodCSimpleReturn.
+	^ 2 + 2
+]
+
+{ #category : 'inlining-simple-helpers' }
+SLMockInliningTestClass >> methodC [
+
+	3 + 3.
+	self methodA
+]
+
+{ #category : 'inlining-arguments-helpers' }
+SLMockInliningTestClass >> methodCAlwaysInlined [
+
+	<inline: #always>
+	3 + 3.
+	self methodA
+]
+
+{ #category : 'inlining-assignment' }
+SLMockInliningTestClass >> methodCAssignOnReturn [
+
+	| a |
+	3 + 3.
+	a := self methodAAssignOnReturn
+]
+
+{ #category : 'inlining-jump-helpers' }
+SLMockInliningTestClass >> methodCMultipleReturn [
+
+	self methodC ifTrue: [ ^ 1 ].
+	^ 3 + 3
+]
+
+{ #category : 'inlining-assignment' }
+SLMockInliningTestClass >> methodCReturnOnAssignment [
+
+	3 + 3.
+	^ self methodAReturnOnAssignment
+]
+
+{ #category : 'inlining-jump-helpers' }
+SLMockInliningTestClass >> methodCSimpleReturn [
+
+	^ 3 + 3
+]
+
+{ #category : 'collect-statements-for-inlining' }
+SLMockInliningTestClass >> methodWithAvoidedSelectors [
+
+	self cCode: [  ] inSmalltalk: [  ].
+	self cCall: 'method'.
+	self cCall: 'method' withArguments: { 1. 2. 3 }.
+	self cppIf: ['cppCond'. true] ifTrue: [ 'in cppIfTrue'. false ] ifFalse: [ 'in cppIfFalse'. true ].
+	[ 'and receiver'. true ] and: [ 'and argument'. false ].
+	[ 'or receiver' . false ] or: [ 'or argument'. true ].
+	[ 'ifTrue receiver'. false ] ifTrue: ['ifTrue argument' . true ]
+]

@@ -86,6 +86,14 @@ MIDIPlugin >> primitiveMIDIOpenPort: portNum sema: semaIndex speed: clockRate [
 	self cCode: 'sqMIDIOpenPort(portNum, semaIndex, clockRate)'
 ]
 
+{ #category : 'simulation' }
+MIDIPlugin >> primitiveMIDIParameterGet [
+	"Defined in C code"
+
+	<doNotGenerate>
+	self notYetImplemented
+]
+
 { #category : 'primitives' }
 MIDIPlugin >> primitiveMIDIParameterGet: whichParameter [
 
@@ -104,6 +112,14 @@ MIDIPlugin >> primitiveMIDIParameterGetOrSet [
 	interpreterProxy methodArgumentCount = 1
 		ifTrue:[^self primitiveMIDIParameterGet]
 		ifFalse:[^self primitiveMIDIParameterSet]
+]
+
+{ #category : 'simulation' }
+MIDIPlugin >> primitiveMIDIParameterSet [
+	"Defined in C code"
+
+	<doNotGenerate>
+	self notYetImplemented
 ]
 
 { #category : 'primitives' }
@@ -146,4 +162,60 @@ MIDIPlugin >> primitiveMIDIWrite: portNum from: array at: time [
 MIDIPlugin >> shutdownModule [
 	<export: true>
 	^self cCode: 'midiShutdown()' inSmalltalk:[true]
+]
+
+{ #category : 'simulation' }
+MIDIPlugin >> sqMIDIClosePort: portNum [
+	"Defined in C code"
+
+	<doNotGenerate>
+	self notYetImplemented
+]
+
+{ #category : 'simulation' }
+MIDIPlugin >> sqMIDIGet: portNum Port: portName Name: name [
+	"Defined in C code"
+
+	<doNotGenerate>
+	self notYetImplemented
+]
+
+{ #category : 'simulation' }
+MIDIPlugin >> sqMIDIGetClock [
+	"Defined in C code"
+
+	<doNotGenerate>
+	self notYetImplemented
+]
+
+{ #category : 'simulation' }
+MIDIPlugin >> sqMIDIGetPortCount [
+	"Defined in C code"
+
+	<doNotGenerate>
+	self notYetImplemented
+]
+
+{ #category : 'simulation' }
+MIDIPlugin >> sqMIDIGetPortDirectionality: portNum [
+	"Defined in C code"
+
+	<doNotGenerate>
+	self notYetImplemented
+]
+
+{ #category : 'simulation' }
+MIDIPlugin >> sqMIDIPort: portNum Read: arrayLength Into: array [
+	"Defined in C code"
+
+	<doNotGenerate>
+	self notYetImplemented
+]
+
+{ #category : 'primitives' }
+MIDIPlugin >> sqMIDIPort: portNum Write: arrayLength From: array At: time [
+	"Defined in C code"
+
+	<doNotGenerate>
+	self notYetImplemented
 ]

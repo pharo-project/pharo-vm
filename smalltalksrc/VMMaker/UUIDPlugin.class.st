@@ -25,6 +25,13 @@ UUIDPlugin class >> requiresPlatformFiles [
 	^true
 ]
 
+{ #category : 'system primitives' }
+UUIDPlugin >> MakeUUID: location [
+
+	<doNotGenerate>
+	self notYetImplemented
+]
+
 { #category : 'initialize' }
 UUIDPlugin >> initialiseModule [
 	<export: true>
@@ -33,6 +40,7 @@ UUIDPlugin >> initialiseModule [
 
 { #category : 'system primitives' }
 UUIDPlugin >> primitiveMakeUUID [
+    "This generates an UUID inside the 16 bytes long ByteArray to which it is sent."
 	| oop location |
 	<export: true>
 	<var: #location type: #'char*'>

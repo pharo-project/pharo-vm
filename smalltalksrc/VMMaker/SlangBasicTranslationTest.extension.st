@@ -11,6 +11,7 @@ SlangBasicTranslationTest >> setUp [
 		labels: Set new;
 		definingClass: self class;
 		selector: #setUp;
+		parseTree: (TStatementListNode new statements: #())
 		yourself).
 	generator pushScope: TStatementListNode new.
 	

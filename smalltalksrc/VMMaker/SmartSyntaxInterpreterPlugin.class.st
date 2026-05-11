@@ -67,15 +67,6 @@ SmartSyntaxInterpreterPlugin class >> simulatorForInterpreterInterface: objectMe
 			yourself]
 ]
 
-{ #category : 'translation' }
-SmartSyntaxInterpreterPlugin class >> translateDoInlining: inlineFlag locally: localFlag debug: debugFlag [ 
-	^ self
-		translate: self moduleName , '.c'
-		doInlining: inlineFlag
-		locally: localFlag
-		debug: debugFlag
-]
-
 { #category : 'simulation' }
 SmartSyntaxInterpreterPlugin >> primitive: primName [
 	<doNotGenerate>

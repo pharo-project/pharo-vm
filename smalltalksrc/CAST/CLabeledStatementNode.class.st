@@ -61,15 +61,6 @@ CLabeledStatementNode >> label: aCGLRIdentifierNode [
 		ifTrue: [ self label parent: self ]
 ]
 
-{ #category : 'testing' }
-CLabeledStatementNode >> needsSeparator [
-
-	"The labeled statement node is a case:.
-	The case itself should not have a statement separator.
-	Its child statement will have its own separator"
-	^ false
-]
-
 { #category : 'generated' }
 CLabeledStatementNode >> statement [
 	^ statement

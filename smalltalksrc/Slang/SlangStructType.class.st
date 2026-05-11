@@ -26,6 +26,33 @@ SlangStructType class >> filteredInstVarNames [
 ]
 
 { #category : 'translation' }
+SlangStructType class >> instVarNamesAndTypesForTranslationDo: aBinaryBlock [
+	"enumerate aBinaryBlock with the names and C type strings for the inst vars to include in a struct of this type."
+
+	self subclassResponsibility
+]
+
+{ #category : 'translation' }
+SlangStructType class >> instVarTypeDeclarationsDo: aBinaryBlock [
+
+	| instVarNameTypeDeclarations |
+	instVarNameTypeDeclarations := Dictionary new.
+
+	self instVarNamesAndTypesForTranslationDo: [ :ivn :type |
+		instVarNameTypeDeclarations at: ivn put: type ].
+
+
+	self filteredInstVarNames do: [ :ivn |
+		| typeDeclaration |
+		typeDeclaration := instVarNameTypeDeclarations at: ivn ifAbsent: [
+			                   TranslationError signal:
+				                   'Missing type declaration for instance variable '
+				                   , ivn ].
+
+		aBinaryBlock value: ivn value: typeDeclaration ]
+]
+
+{ #category : 'translation' }
 SlangStructType class >> isAccessor: aSelector [
 	"Answer if aSelector is simply an accessor method for one of our fields."
 	^(self instVarIndexFor: (aSelector copyWithout: $:) ifAbsent: [0]) > 0
@@ -65,7 +92,7 @@ SlangStructType class >> isTypeStruct: type [
 
 { #category : 'translation' }
 SlangStructType class >> needsTypeTag [
-	self instVarNamesAndTypesForTranslationDo:
+	self instVarTypeDeclarationsDo:
 		[:ivn :type|
 		((type isArray ifTrue: [type] ifFalse: [{type}]) anySatisfy:
 			[:str|
@@ -79,64 +106,77 @@ SlangStructType class >> needsTypeTag [
 
 { #category : 'translation' }
 SlangStructType class >> printTypedefOn: aStream [
+
+	^self printTypedefOn: aStream withTranslations: Dictionary new.
+]
+
+{ #category : 'translation' }
+SlangStructType class >> printTypedefOn: aStream withTranslations: ivnTranslations [
+
 	aStream nextPutAll: 'typedef struct '.
-	self needsTypeTag
-		ifTrue: [ aStream
-				nextPutAll: self structTagName;
-				space ].
+	self needsTypeTag ifTrue: [
+		aStream
+			nextPutAll: self structTagName;
+			space ].
 	aStream
 		nextPut: ${;
 		cr.
-	self
-		instVarNamesAndTypesForTranslationDo: [ :ivn :typeArg | 
-			| type |
-			ivn first == $#
-				ifTrue: [ aStream nextPutAll: ivn ]
-				ifFalse: [ type := typeArg.
-					#(BytesPerWord BaseHeaderSize BytesPerOop)
-						do: [ :sizeConstant | 
-							| index sizeConstantSize |
-							(type notNil
-								and: [ (index := type indexOf: sizeConstant ifAbsent: 0) > 0 ])
-								ifTrue: [ sizeConstantSize := self constantClass classPool at: sizeConstant.
-									type := (type at: index + 1) = sizeConstantSize
-										ifTrue: [ type := type copyReplaceFrom: index to: index + 1 with: #().
-											type size = 1
-												ifTrue: [ type first ]
-												ifFalse: [ type ] ] ] ].
-					type
-						ifNotNil: [ type isArray
-								ifTrue: [ aStream tab: 1.
-									aStream nextPutAll: type first.
-									(type first last isSeparator or: [ type first last = $* ])
-										ifFalse: [ aStream tab: 2 ].
-									aStream nextPutAll: ivn.
-									type last first isSeparator
-										ifFalse: [ aStream space ].
-									aStream nextPutAll: type last ]
-								ifFalse: [ aStream tab: 1.
-									aStream nextPutAll: type.
-									(type last isSeparator or: [ type last = $* ])
-										ifFalse: [ aStream tab: 1 ].
-									aStream nextPutAll: ivn ] ].
-					aStream nextPut: $; ].
-			aStream cr ].
+	self instVarTypeDeclarationsDo: [ :ivn :typeArg |
+		| type ivnC|
+		ivnC := ivnTranslations at: ivn ifAbsent: [ ivn ].
+		ivnC first == $#
+			ifTrue: [ aStream nextPutAll: ivnC ]
+			ifFalse: [
+				type := typeArg.
+				#( BytesPerWord BaseHeaderSize BytesPerOop ) do: [ :sizeConstant |
+					| index sizeConstantSize |
+					(type notNil and: [
+						 (index := type indexOf: sizeConstant ifAbsent: 0) > 0 ])
+						ifTrue: [
+							sizeConstantSize := self constantClass classPool at:
+								                    sizeConstant.
+							type := (type at: index + 1) = sizeConstantSize ifTrue: [
+								        type := type
+									                copyReplaceFrom: index
+									                to: index + 1
+									                with: #(  ).
+								        type size = 1
+									        ifTrue: [ type first ]
+									        ifFalse: [ type ] ] ] ].
+				type ifNotNil: [
+					type isArray
+						ifTrue: [
+							aStream tab: 1.
+							aStream nextPutAll: type first.
+							(type first last isSeparator or: [ type first last = $* ])
+								ifFalse: [ aStream tab: 2 ].
+							aStream nextPutAll: ivnC.
+							type last first isSeparator ifFalse: [ aStream space ].
+							aStream nextPutAll: type last ]
+						ifFalse: [
+							aStream tab: 1.
+							aStream nextPutAll: type.
+							(type last isSeparator or: [ type last = $* ]) ifFalse: [
+								aStream tab: 1 ].
+							aStream nextPutAll: ivnC ] ].
+				aStream nextPut: $; ].
+		aStream cr ].
 	aStream
 		nextPutAll: ' } ';
 		nextPutAll: self structTypeName;
 		nextPut: $;;
 		cr.
-	self name ~= self structTypeName
-		ifTrue: [ (self withAllSuperclasses
-				copyUpThrough: (self class whichClassIncludesSelector: #structTypeName) instanceSide)
-				do: [ :structClass | 
-					aStream
-						cr;
-						nextPutAll: '#define ';
-						nextPutAll: structClass name;
-						space;
-						nextPutAll: self structTypeName ].
-			aStream cr ].
+	self name ~= self structTypeName ifTrue: [
+		(self withAllSuperclasses copyUpThrough:
+			 (self class whichClassIncludesSelector: #structTypeName)
+				 instanceSide) do: [ :structClass |
+			aStream
+				cr;
+				nextPutAll: '#define ';
+				nextPutAll: structClass name;
+				space;
+				nextPutAll: self structTypeName ].
+		aStream cr ].
 	aStream flush
 ]
 
@@ -145,7 +185,7 @@ SlangStructType class >> returnTypeForAccessor: aSelector [
 	| varName deStructTag |
 	varName := aSelector copyWithout: $:.
 	deStructTag := [:decl| decl copyReplaceAll: 'struct ', self structTagName with: self structTypeName].
-	self instVarNamesAndTypesForTranslationDo:
+	self instVarTypeDeclarationsDo:
 		[:var :typeSpec|
 		var = varName ifTrue:
 			[^typeSpec isArray

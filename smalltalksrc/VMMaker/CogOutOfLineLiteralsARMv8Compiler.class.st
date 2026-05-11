@@ -371,8 +371,8 @@ CogOutOfLineLiteralsARMv8Compiler >> rewriteInlineCacheAt: callSiteReturnAddress
 	<var: #callSiteReturnAddress type: #usqInt>
 	<var: #callTargetAddress type: #usqInt>
 	| call callDistance |
-	callTargetAddress >= cogit minCallAddress ifFalse:
-		[self error: 'linking callsite to invalid address'].
+	callTargetAddress >= cogit minCallAddress
+		ifFalse: [ self error: 'linking callsite to invalid address' ].
 	callDistance := (callTargetAddress - (callSiteReturnAddress - 4 "return offset")).
 	self assert: (self isInImmediateJumpRange: callDistance). "we don't support long call updates here"
 	call := self bl: callDistance.
@@ -476,7 +476,7 @@ CogOutOfLineLiteralsARMv8Compiler >> usesOutOfLineLiteral [
 				([ AddCqR ] -> [
 				 | constant |
 				 constant := operands at: 0.
-				 ^ (constant abs bitAnd: 16rfff) ~= constant abs ]).
+				 ^ (constant signedIntFromLong64 abs bitAnd: 16rfff) ~= constant abs ]).
 				([ AndCqR ] -> [
 				 ^ self
 					   encodeLogicalImmediate: (operands at: 0)
@@ -490,10 +490,10 @@ CogOutOfLineLiteralsARMv8Compiler >> usesOutOfLineLiteral [
 					   ifPossible: [ :value | false ]
 					   ifNotPossible: [ true ] ]).
 				([ CmpCqR ] -> [
-				 ((operands at: 0) abs bitAnd: 16rFFF) = (operands at: 0) abs
+				 ((operands at: 0) signedIntFromLong64 abs bitAnd: 16rFFF) = (operands at: 0) signedIntFromLong64 abs
 					 ifTrue: [ ^ false ].
-				 ((operands at: 0) abs << 12 >> 12 bitAnd: 16rFFF)
-				 = (operands at: 0) abs ifTrue: [ ^ false ].
+				 ((operands at: 0) signedIntFromLong64 abs << 12 >> 12 bitAnd: 16rFFF)
+				 = (operands at: 0) signedIntFromLong64 abs ifTrue: [ ^ false ].
 				 ^ true ]).
 				([ CmpC32R ] -> [
 				 ^ self

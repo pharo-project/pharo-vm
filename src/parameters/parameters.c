@@ -3,6 +3,7 @@
 #include "pharovm/debug.h"
 #include "pharovm/pathUtilities.h"
 #include <assert.h>
+#include <unistd.h>
 
 typedef VMErrorCode (*vm_parameter_process_function)(const char *argument, VMParameters* params);
 
@@ -77,6 +78,10 @@ static VMErrorCode processEdenSizeOption(const char *argument, VMParameters * pa
 static VMErrorCode processWorkerOption(const char *argument, VMParameters * params);
 static VMErrorCode processMinPermSpaceSizeOption(const char *argument, VMParameters * params);
 static VMErrorCode processMaxSlotsForNewSpaceAlloc(const char *argument, VMParameters * params);
+<<<<<<< HEAD
+=======
+static VMErrorCode processStackPageSizeOption(const char *argument, VMParameters * params);
+>>>>>>> 0c6de9df559c3ee3416255822f6bc2cbe9d3cfba
 static VMErrorCode processWorkingDirectory(const char *argument, VMParameters * params);
 static VMErrorCode processAvoidSearchingSegmentsWithPinnedObjects(const char *argument, VMParameters * params);
 
@@ -92,6 +97,7 @@ static const VMParameterSpec vm_parameters_spec[] =
   {.name = "h", .hasArgument = false, .function = processHelpOption},
   {.name = "version", .hasArgument = false, .function = processPrintVersionOption},
   {.name = "logLevel", .hasArgument = true, .function = processLogLevelOption},
+  {.name = "stackPageSize", .hasArgument = true, .function = processStackPageSizeOption},
   {.name = "maxFramesToLog", .hasArgument = true, .function = processMaxFramesToPrintOption},
   {.name = "maxOldSpaceSize", .hasArgument = true, .function = processMaxOldSpaceSizeOption},
   {.name = "codeSize", .hasArgument = true, .function = processMaxCodeSpaceSizeOption},
@@ -277,8 +283,6 @@ findImageNameIndex(int argc, const char** argv)
 
 static VMErrorCode
 fillUpImageName(int argc, const char** argv, VMParameters* parameters){
-	
-	VMErrorCode error;
 		
 	int imageNameIndex = findImageNameIndex(argc, argv);
 
@@ -439,19 +443,20 @@ vm_printUsageTo(FILE *out)
 "                                       spaces are fixed (or calculated from this) with\n"
 "                                       this parameter is possible to set the total size.\n"
 "                                       It is possible to use k(kB), M(MB) and G(GB).\n"
-"  --codeSize=<size>[mk]                Sets the max size of code zone.\n"
+"  --codeSize=<size>[mk]                Sets the max size of code zone (default: 1M)\n"
 "                                       It is possible to use k(kB), M(MB) and G(GB).\n"
-"  --edenSize=<size>[mk]                Sets the size of eden\n"
+"  --edenSize=<size>[mk]                Sets the size of eden (default: 15M)\n"
 "                                       It is possible to use k(kB), M(MB) and G(GB).\n"
 "  --maxSlotsForNewSpaceAlloc=<words>	The max numbers of slots to allow allocating in a single young indexable object"
 "  --minPermSpaceSize=<size>[mk]        Sets the min size of the permanent space (default: 0k)\n"
 "                                       It is possible to use k(kB), M(MB) and G(GB).\n"
-"  --workingDirectory=<dir>				It sets the working directory for the running image.\n"
-"\n"
+"  --stackPageSize=<size>[mk]           Sets the size of each stack page (default: 8k)\n"
+"                                       It is possible to use k(kB), M(MB) and G(GB).\n"
+"  --workingDirectory=<dir>		It sets the working directory for the running image.\n"
 "  --avoidSearchingSegmentsWithPinnedObjects\n"
-"                                       When pinning young objects, the objects are clonned into the old space.\n"
+"                                       When pinning young objects, the objects are cloned into the old space. (default: false)\n"
 "                                       It tries to allocate the object in a segment with already pinned objects.\n"
-"	                                    Avoid the clonning process avoid this search and allocate the clonned object anywhere?\n"
+"	                                  Avoid the clonning process avoid this search and allocate the clonned object anywhere?\n"
 "\n"
 "\n"
 "Notes:\n"
@@ -476,6 +481,25 @@ processLogLevelOption(const char* value, VMParameters * params)
 	}
 
 	logLevel(intValue);
+	return VM_SUCCESS;
+}
+
+static VMErrorCode
+processStackPageSizeOption(const char* value, VMParameters * params)
+{
+	int intValue = 0;
+
+    intValue = parseByteSize(value);
+
+	if(intValue < 0)
+	{
+		logError("Invalid option for stackPageSize: %s\n", value);
+	    vm_printUsageTo(stderr);
+		return VM_ERROR_INVALID_PARAMETER_VALUE;
+	}
+
+	params->stackPageSize = intValue;
+
 	return VM_SUCCESS;
 }
 
@@ -781,6 +805,7 @@ vm_parameters_init(VMParameters *parameters){
 	parameters->maxSlotsForNewSpaceAlloc = 0;
 	parameters->edenSize = 0;
 	parameters->minPermSpaceSize = 0;
+    parameters->stackPageSize = 0;
 	parameters->imageFileName = NULL;
 	parameters->isDefaultImage = false;
 	parameters->defaultImageFound = false;

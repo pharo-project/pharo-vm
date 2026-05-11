@@ -46,14 +46,14 @@ VMCallbackContext class >> instVarNamesAndTypesForTranslationDo: aBinaryBlock [
 
 { #category : 'translation' }
 VMCallbackContext class >> needsTypeTag [
-	"This allows sqVirtualMachine.h to declare VMCallbackContext  as an
+	"This allows virtualMachine.h to declare VMCallbackContext  as an
 	 opaque type avoiding everyone including setjmp.h & vmCallback.h"
 	^true
 ]
 
 { #category : 'translation' }
-VMCallbackContext class >> printTypedefOn: aStream [
-	super printTypedefOn: aStream.
+VMCallbackContext class >> printTypedefOn: aStream  withTranslations: ivnTranslations [
+	super printTypedefOn: aStream  withTranslations: ivnTranslations.
 	aStream
 		newLine;
 		nextPutAll: '/* The callback return type codes */'; newLine;

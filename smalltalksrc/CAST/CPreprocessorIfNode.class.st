@@ -1,6 +1,6 @@
 Class {
 	#name : 'CPreprocessorIfNode',
-	#superclass : 'CExpressionNode',
+	#superclass : 'CGLRAbstractNode',
 	#instVars : [
 		'then',
 		'else',
@@ -89,10 +89,10 @@ CPreprocessorIfNode >> isArgument: aBoolean [
 	isArgument := aBoolean
 ]
 
-{ #category : 'accessing' }
-CPreprocessorIfNode >> needsSeparator [
+{ #category : 'testing' }
+CPreprocessorIfNode >> isExpression [
 
-	^ false
+	^ then isExpression
 ]
 
 { #category : 'accessing' }

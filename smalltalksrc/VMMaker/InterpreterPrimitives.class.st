@@ -75,8 +75,7 @@ Class {
 		'profileProcess',
 		'profileSemaphore',
 		'nextProfileTick',
-		'preemptionYields',
-		'ffiExceptionResponse'
+		'preemptionYields'
 	],
 	#classVars : [
 		'CrossedX',
@@ -110,7 +109,7 @@ InterpreterPrimitives class >> defineAtCompileTime: anObject [
 	 because the VM generated is specific to these varables."
 	anObject isSymbol ifFalse:
 		[^false].
-	(#(STACKVM COGVM SPURVM) includes: anObject) ifTrue:
+	(#(STACKVM COGVM) includes: anObject) ifTrue:
 		[^false].
 	^VMBasicConstants namesDefinedAtCompileTime includes: anObject
 ]
@@ -127,12 +126,6 @@ InterpreterPrimitives class >> initializeMiscConstants [
 InterpreterPrimitives >> asUnsigned: anInteger [
 	<inline: true>
 	^self cCode: [anInteger asUnsignedInteger] inSmalltalk: [anInteger bitAnd: objectMemory maxCInteger]
-]
-
-{ #category : 'stack access' }
-InterpreterPrimitives >> booleanValueOf: obj [
-
-	self subclassResponsibility
 ]
 
 { #category : 'primitive support' }
@@ -269,7 +262,7 @@ InterpreterPrimitives >> initPrimCall [
 InterpreterPrimitives >> initialize [
 
 	"Here we can initialize the variables C initializes to zero.  #initialize methods do /not/ get translated."
-	argumentCount := primFailCode := nextProfileTick := osErrorCode := exceptionPC := ffiExceptionResponse := 0
+	argumentCount := primFailCode := nextProfileTick := osErrorCode := exceptionPC := 0
 ]
 
 { #category : 'simulation support' }
@@ -327,15 +320,12 @@ InterpreterPrimitives >> isInstanceOfClassArray: oop [
 
 { #category : 'primitive support' }
 InterpreterPrimitives >> isInstanceOfClassBlockClosure: oop [
+
 	<inline: true>
-	"N.B.  Because Slang always inlines is:instanceOf:compactClassIndex:
-	 (because is:instanceOf:compactClassIndex: has an inline: pragma) the
-	 phrase (objectMemory splObj: ClassBlockClosure) is expanded in-place
-	 and is _not_ evaluated if oop has a non-zero CompactClassIndex."
-	^objectMemory
-		is: oop
-		instanceOf: nil
-		compactClassIndex: ClassFullBlockClosureCompactIndex
+	^ objectMemory
+		  is: oop
+		  instanceOf: nil
+		  compactClassIndex: ClassFullBlockClosureCompactIndex
 ]
 
 { #category : 'primitive support' }
@@ -349,6 +339,13 @@ InterpreterPrimitives >> isInstanceOfClassByteString: oop [
 		is: oop
 		instanceOf: (objectMemory splObj: ClassByteString) 
 		compactClassIndex: ClassByteStringCompactIndex
+]
+
+{ #category : 'system control primitives' }
+InterpreterPrimitives >> isLogDebug [
+
+	<doNotGenerate>
+	^ true
 ]
 
 { #category : 'primitive support' }
@@ -484,14 +481,9 @@ InterpreterPrimitives >> magnitude64BitValueOf: oop [
 		[self primitiveFail.
 		 ^0].
 
-	"self cppIf: SPURVM
-		ifTrue:
-			[""Memory is 8 byte aligned in Spur and oversized bytes are set to zero, so we can safely fetch 8 bytes""
-			value := objectMemory byteSwapped64IfBigEndian: (objectMemory fetchLong64: 0 ofObject: oop)]
-		ifFalse:
-			["sz > 4
-				ifTrue: [value := objectMemory byteSwapped64IfBigEndian: (objectMemory fetchLong64: 0 ofObject: oop)]
-				ifFalse: [value := self cCoerceSimple: (objectMemory byteSwapped32IfBigEndian: (objectMemory fetchLong32: 0 ofObject: oop)) to: #'unsigned int']"]".
+	sz > 4
+		ifTrue: [value := objectMemory byteSwapped64IfBigEndian: (objectMemory fetchLong64: 0 ofObject: oop)]
+		ifFalse: [value := self cCoerceSimple: (objectMemory byteSwapped32IfBigEndian: (objectMemory fetchLong32: 0 ofObject: oop)) to: #'unsigned int'].
 	^value
 ]
 
@@ -581,12 +573,6 @@ InterpreterPrimitives >> noInlineSigned32BitValueGutsOf: oop [
 	^value
 ]
 
-{ #category : 'stack access' }
-InterpreterPrimitives >> pop: nItems thenPushBool: boolean [
-
-	self subclassResponsibility
-]
-
 { #category : 'primitive support' }
 InterpreterPrimitives >> positive32BitValueOf: oop [
 	"Convert the given object into an integer value.
@@ -638,14 +624,9 @@ InterpreterPrimitives >> positive64BitValueOf: oop [
 		[self primitiveFail.
 		 ^0].
 
-	"self cppIf: SPURVM
-		ifTrue:
-			[""Memory is 8 byte aligned in Spur and oversized bytes are set to zero, so we can safely fetch 8 bytes""
-			value := objectMemory byteSwapped64IfBigEndian: (objectMemory fetchLong64: 0 ofObject: oop)]
-		ifFalse:
-			["sz > 4
-				ifTrue: [value := objectMemory byteSwapped64IfBigEndian: (objectMemory fetchLong64: 0 ofObject: oop)]
-				ifFalse: [value := self cCoerceSimple: (objectMemory byteSwapped32IfBigEndian: (objectMemory fetchLong32: 0 ofObject: oop)) to: #'unsigned int']"]".
+	sz > 4
+		ifTrue: [value := objectMemory byteSwapped64IfBigEndian: (objectMemory fetchLong64: 0 ofObject: oop)]
+		ifFalse: [value := self cCoerceSimple: (objectMemory byteSwapped32IfBigEndian: (objectMemory fetchLong32: 0 ofObject: oop)) to: #'unsigned int'].
 	^value
 ]
 
@@ -677,15 +658,9 @@ InterpreterPrimitives >> positiveMachineIntegerValueOf: oop [
 		[self primitiveFail.
 		 ^0].
 
-	"self cppIf: SPURVM
-		ifTrue: [""Memory is 8 byte aligned in Spur and oversized bytes are set to zero, so we can safely fetch 8 bytes""
-			^objectMemory byteSwapped64IfBigEndian: (objectMemory fetchLong64: 0 ofObject: oop)]
-		ifFalse: ["((self sizeof: #'usqIntptr_t') = 8
-			and: [bs > 4])
-				ifTrue:
-					[^objectMemory byteSwapped64IfBigEndian: (objectMemory fetchLong64: 0 ofObject: oop)]
-				ifFalse:
-					[^self cCoerceSimple: (objectMemory byteSwapped32IfBigEndian: (objectMemory fetchLong32: 0 ofObject: oop)) to: #'unsigned int']"]"
+	((self sizeof: #'usqIntptr_t') = 8 and: [bs > 4])
+		ifTrue: [^objectMemory byteSwapped64IfBigEndian: (objectMemory fetchLong64: 0 ofObject: oop)]
+		ifFalse: [^self cCoerceSimple: (objectMemory byteSwapped32IfBigEndian: (objectMemory fetchLong32: 0 ofObject: oop)) to: #'unsigned int']
 ]
 
 { #category : 'arithmetic integer primitives' }
@@ -802,13 +777,14 @@ InterpreterPrimitives >> primitiveAllObjects [
 { #category : 'arithmetic float primitives' }
 InterpreterPrimitives >> primitiveArctan [
 	"N.B. IMO we should be able to assume the receiver is a float because this primitive is specific to floats. eem 2/13/2017"
-	| rcvr |
+
 	<var: #rcvr type: #double>
+	| rcvr |
 	rcvr := self stackFloatValue: 0.
-	self successful ifTrue:
-		[self stackTopPut: (objectMemory floatObjectOf:
-								(self cCode: [rcvr atan]
-									inSmalltalk: [rcvr arcTan]))]
+	self successful ifTrue: [
+		self stackTopPut: (objectMemory floatObjectOf: (self
+					  cCode: [ self cCall: 'atan' withArguments: { rcvr } ]
+					  inSmalltalk: [ rcvr arcTan ])) ]
 ]
 
 { #category : 'object access primitives' }
@@ -1160,47 +1136,6 @@ InterpreterPrimitives >> primitiveClass [
 			[self pop: argumentCount + 1 thenPush: (objectMemory fetchClassOf: instance)]
 ]
 
-{ #category : 'process primitives' }
-InterpreterPrimitives >> primitiveClearVMProfile [
-	"Primitive. Void the VM profile histograms."
-	self ioClearProfile.
-	self pop: argumentCount
-]
-
-{ #category : 'system control primitives' }
-InterpreterPrimitives >> primitiveClockLogAddresses [
-	"Take a boolean which if true turns or keeps clock logging on.  Answer an array supplying
-	 the size of the clock logs, the address of the usecs log, the index in it, the address of the
-	 msecs log, and the index into it."
-	<export: true>
-	| result runInNOut usecs uidx msecs midx v1 v2 |
-	<var: #usecs type: #'void *'>
-	<var: #msecs type: #'void *'>
-	<var: #runInNOut type: #sqInt> "bypass type inference which would deduce int"
-	argumentCount ~= 1 ifTrue:
-		[^self primitiveFail].
-	runInNOut := (self stackValue: 0) == objectMemory trueObject.
-	self ioGetClockLogSize: (self addressOf: runInNOut)
-		Usecs: (self addressOf: usecs) Idx: (self addressOf: uidx)
-		Msecs: (self addressOf: msecs) Idx: (self addressOf: midx).
-	result := objectMemory instantiateClass: (objectMemory splObj: ClassArray) indexableSize: 5.
-	result = 0 ifTrue:
-		[^self primitiveFail].
-	objectMemory pushRemappableOop: result.
-	objectMemory storePointerUnchecked: 0 ofObject: objectMemory topRemappableOop withValue: (objectMemory integerObjectOf: runInNOut).
-	v1 := self positive32BitIntegerFor: usecs asUnsignedInteger.
-	v2 := self positive32BitIntegerFor: msecs asUnsignedInteger.
-	self successful ifFalse:
-		[objectMemory popRemappableOop.
-		 ^self primitiveFail].
-	objectMemory storePointer: 1 ofObject: objectMemory topRemappableOop withValue: v1.
-	objectMemory storePointerUnchecked: 2 ofObject: objectMemory topRemappableOop withValue: (objectMemory integerObjectOf: uidx).
-	objectMemory storePointer: 3 ofObject: objectMemory topRemappableOop withValue: v2.
-	objectMemory storePointerUnchecked: 4 ofObject: objectMemory topRemappableOop withValue: (objectMemory integerObjectOf: midx).
-	self pop: 2 thenPush: objectMemory popRemappableOop
-
-]
-
 { #category : 'object access primitives' }
 InterpreterPrimitives >> primitiveClone [
 	"Return a shallow copy of the receiver."
@@ -1301,32 +1236,6 @@ InterpreterPrimitives >> primitiveConstantFillSpur [
 	self pop: 1
 ]
 
-{ #category : 'process primitives' }
-InterpreterPrimitives >> primitiveControlVMProfiling [
-	"Primitive. Start or stop the VM profiler.  The first argument is a boolean
-	 to switch profiling on or off.  The second argument is an integer or nil.
-	 If an integer it determines the maximum number of samples in the VM's
-	 sample buffer. Answer the current number of samples in the buffer."
-	| onOffBar bufferSize numSamples |
-	argumentCount ~= 2 ifTrue:
-		[^self primitiveFail].
-	(onOffBar := self stackValue: 1) = objectMemory trueObject
-		ifTrue: [onOffBar := 1]
-		ifFalse:
-			[onOffBar = objectMemory falseObject
-				ifTrue: [onOffBar := 0]
-				ifFalse: [^self primitiveFail]].
-	(bufferSize := self stackTop) = objectMemory nilObject
-		ifTrue: [bufferSize := 0]
-		ifFalse:
-			[((objectMemory isIntegerObject: bufferSize)
-			  and: [(bufferSize := objectMemory integerValueOf: bufferSize) > 0]) ifFalse:
-				[^self primitiveFail]].
-		
-	numSamples := self cCode: [ self ioControlNewProfile: onOffBar _: bufferSize ] inSmalltalk: [1667].
-	self pop: 3 thenPushInteger: numSamples
-]
-
 { #category : 'object access primitives' }
 InterpreterPrimitives >> primitiveCopyObject [
 	"Primitive. Copy the state of the receiver from the argument. 
@@ -1373,38 +1282,6 @@ InterpreterPrimitives >> primitiveCopyObject [
 
 	"Note: The above could be faster for young receivers but I don't think it'll matter"
 	self pop: self methodArgumentCount "pop arg; answer receiver"
-]
-
-{ #category : 'system control primitives' }
-InterpreterPrimitives >> primitiveCrashVM [
-	"Crash the VM by indirecting through a null pointer.  If the sole argument
-	 is true crash in this thread, and if it is false crash in a new thread.  If the
-	 argument is an integer use the method that implies.
-		bit 0 = thread to crash in; 1 => this thread
-		bit 1 = crash method; 0 => indirect through null pointer; 1 => call exit"
-
-	| crashInThisThread |
-	<export: true>
-	(objectMemory isIntegerObject: self stackTop)
-		ifTrue: [crashInThisThread := objectMemory integerValueOf: self stackTop]
-		ifFalse: [crashInThisThread := self booleanValueOf: self stackTop].
-	(self failed
-	 or: [argumentCount ~= 1]) ifTrue:
-		[^self primitiveFailFor: PrimErrBadNumArgs].
-	self crashInThisOrAnotherThread: crashInThisThread.
-	self pop: 1
-]
-
-{ #category : 'system control primitives' }
-InterpreterPrimitives >> primitiveDisablePowerManager [
-	"Pass in a non-negative value to disable the architectures powermanager if any, zero to enable. This is a named (not numbered) primitive in the null module (ie the VM)"
-
-	| integer |
-	<export: true>
-	integer := self stackIntegerValue: 0.
-	self successful ifTrue: [
-		self ioDisablePowerManager: integer.
-		self pop: 1].  "integer; leave rcvr on stack"
 ]
 
 { #category : 'arithmetic integer primitives' }
@@ -1542,15 +1419,19 @@ InterpreterPrimitives >> primitiveExp [
 InterpreterPrimitives >> primitiveExponent [
 	"Exponent part of this float.
 	 N.B. IMO we should be able to assume the receiver is a float because this primitive is specific to floats. eem 2/13/2017"
-	| rcvr pwr |
+
 	<var: #rcvr type: #double>
 	<var: #pwr type: #int>
+	| rcvr pwr |
 	rcvr := self stackFloatValue: 0.
-	self successful ifTrue:
-		["rcvr = frac * 2^pwr, where frac is in [0.5..1.0)"
-		 self cCode: [self fr: rcvr exp: (self addressOf: pwr)]
-			inSmalltalk: [pwr := rcvr exponent].
-		 self stackTopPut: (objectMemory integerObjectOf: pwr - 1)]
+	self successful ifTrue: [ "rcvr = frac * 2^pwr, where frac is in [0.5..1.0)"
+		self
+			cCode: [
+				self cCall: 'frexp' withArguments: {
+						rcvr.
+						(self addressOf: pwr) } ]
+			inSmalltalk: [ pwr := rcvr exponent ].
+		self stackTopPut: (objectMemory integerObjectOf: pwr - 1) ]
 ]
 
 { #category : 'primitive support' }
@@ -1772,19 +1653,22 @@ InterpreterPrimitives >> primitiveFormat [
 InterpreterPrimitives >> primitiveFractionalPart [
 	"Fractional part of this float.
 	 N.B. IMO we should be able to assume the receiver is a float because this primitive is specific to floats. eem 2/13/2017"
-	| rcvr trunc |
+
 	<var: #rcvr type: #double>
 	<var: #trunc type: #double>
+	| rcvr trunc |
 	rcvr := self stackFloatValue: 0.
-	self successful ifTrue:
-		[self stackTopPut: (objectMemory floatObjectOf:
-							(self cCode: [self mod: rcvr f: (self addressOf: trunc)]
-								inSmalltalk: [rcvr fractionPart]))]
+	self successful ifTrue: [
+		self stackTopPut: (objectMemory floatObjectOf: (self
+					  cCode: [
+						  self cCall: 'modf' withArguments: {
+								  rcvr.
+								  (self addressOf: trunc) } ]
+					  inSmalltalk: [ rcvr fractionPart ])) ]
 ]
 
 { #category : 'control primitives' }
 InterpreterPrimitives >> primitiveFullClosureValue [
-	<option: #SistaV1BytecodeSet>
 	| blockClosure numArgs closureMethod |
 	blockClosure := self stackValue: argumentCount.
 	numArgs := self argumentCountOfClosure: blockClosure.
@@ -1804,7 +1688,6 @@ InterpreterPrimitives >> primitiveFullClosureValueNoContextSwitch [
 	 check for interrupts on stack overflow.  It may invoke the garbage collector
 	 but will not switch processes.  See checkForInterruptsMayContextSwitch:"
 	<api>
-	<option: #SistaV1BytecodeSet>
 	| blockClosure numArgs closureMethod |
 	blockClosure := self stackValue: argumentCount.
 	numArgs := self argumentCountOfClosure: blockClosure.
@@ -1820,7 +1703,6 @@ InterpreterPrimitives >> primitiveFullClosureValueNoContextSwitch [
 
 { #category : 'control primitives' }
 InterpreterPrimitives >> primitiveFullClosureValueWithArgs [
-	<option: #SistaV1BytecodeSet>
 	| argumentArray arraySize blockClosure numArgs closureMethod index |
 	argumentArray := self stackTop.
 	(objectMemory isArray: argumentArray) ifFalse:
@@ -1865,19 +1747,22 @@ InterpreterPrimitives >> primitiveGetAttribute [
 	"Fetch the system attribute with the given integer ID. The 
 	result is a string, which will be empty if the attribute is not 
 	defined."
-	| attr sz s |
-	attr := self stackIntegerValue: 0.
-	self successful
-		ifTrue: [sz := self attributeSize: attr].
-	self successful
-		ifTrue: [s := objectMemory
-						instantiateClass: (objectMemory splObj: ClassByteString)
-						indexableSize: sz.
-			self
-				getAttribute: attr
-				Into: s + objectMemory baseHeaderSize
-				Length: sz.
-			self pop: 2 thenPush: s]
+
+	| index sz s |
+	index := self stackIntegerValue: 0.
+	self successful ifFalse: [
+		^ self ].
+	sz := self attributeSize: index.
+	self successful ifFalse: [
+		^ self ].
+	s := objectMemory
+		     instantiateClass: (objectMemory splObj: ClassByteString)
+		     indexableSize: sz.
+	self
+		getAttribute: index
+		Into: s + objectMemory baseHeaderSize
+		Length: sz.
+	self pop: 2 thenPush: s.
 ]
 
 { #category : 'object access primitives' }
@@ -1886,45 +1771,6 @@ InterpreterPrimitives >> primitiveGetImmutability [
 	| rcvr |
 	rcvr := self stackValue: 0.
 	self pop: argumentCount + 1 thenPushBool: (objectMemory isOopImmutable: rcvr)
-]
-
-{ #category : 'I/O primitives' }
-InterpreterPrimitives >> primitiveGetLogDirectory [
-	"Primitive. Answer the VM's current log directory"
-	| ptr sz stringOop |
-	<var: 'ptr' type: 'char*'>
-	<export: true>
-	ptr := self ioGetLogDirectory.
-	ptr == nil ifTrue:[^self success: false].
-	sz := self strlen: ptr.
-	stringOop := objectMemory instantiateClass: objectMemory classString indexableSize: sz.
-	0 to: sz-1 do:[:i| objectMemory storeByte: i ofObject: stringOop withValue: (ptr at: i)].
-	self pop: argumentCount+1 thenPush: stringOop
-]
-
-{ #category : 'I/O primitives' }
-InterpreterPrimitives >> primitiveGetWindowLabel [
-	"Primitive. Answer the OS window's label"
-	| ptr sz labelOop |
-	<var: 'ptr' type: 'char*'>
-	<export: true>
-	ptr := self ioGetWindowLabel.
-	ptr == nil ifTrue:[^self success: false].
-	sz := self strlen: ptr.
-	labelOop := objectMemory instantiateClass: objectMemory classString indexableSize: sz.
-	0 to: sz-1 do:[:i| objectMemory storeByte: i ofObject: labelOop withValue: (ptr at: i)].
-	self pop: argumentCount+1 thenPush: labelOop
-]
-
-{ #category : 'I/O primitives' }
-InterpreterPrimitives >> primitiveGetWindowSize [
-	"Primitive. Answer the OS window's size (extent)"
-	| w h |
-	<export: true>
-	w := self ioGetWindowWidth.
-	h := self ioGetWindowHeight.
-	self pop: self methodArgumentCount+1.
-	self push: (self makePointwithxValue: w yValue: h).
 ]
 
 { #category : 'other primitives' }
@@ -2054,7 +1900,7 @@ InterpreterPrimitives >> primitiveHeartbeatFrequency [
 	| reset |
 	reset := argumentCount = 1 and: [self stackTop = objectMemory trueObject].
 	self pop: argumentCount + 1
-		thenPush: (self positive32BitIntegerFor: (self ioHeartbeatFrequency: reset))
+		thenPush: (self positive32BitIntegerFor: (self cCall: 'ioHeartbeatFrequency' withArguments: {reset}))
 ]
 
 { #category : 'system control primitives' }
@@ -2433,15 +2279,6 @@ InterpreterPrimitives >> primitiveIsPinned [
 		thenPushBool: (objectMemory isPinned: obj)
 ]
 
-{ #category : 'I/O primitives' }
-InterpreterPrimitives >> primitiveIsWindowObscured [
-	"Primitive. Answer whether the OS window is currently partially or fully obscured."
-	<export: true>
-	self pop: self methodArgumentCount+1.
-	self pushBool: self ioIsWindowObscured.
-
-]
-
 { #category : 'arithmetic integer primitives' }
 InterpreterPrimitives >> primitiveLessOrEqual [
 	| integerReceiver integerArgument |
@@ -2506,7 +2343,7 @@ InterpreterPrimitives >> primitiveListBuiltinModule [
 	self methodArgumentCount = 1 ifFalse:[^self primitiveFail].
 	index := self stackIntegerValue: 0.
 	index <= 0 ifTrue:[^self primitiveFail].
-	moduleName := self ioListBuiltinModule: index.
+	moduleName := self cCall: 'ioListBuiltinModule' withArguments: { index }.
 	moduleName == nil ifTrue:[
 		self pop: 2. "arg+rcvr"
 		^self push: objectMemory nilObject].
@@ -2526,7 +2363,7 @@ InterpreterPrimitives >> primitiveListExternalModule [
 	self methodArgumentCount = 1 ifFalse:[^self primitiveFail].
 	index := self stackIntegerValue: 0.
 	index <= 0 ifTrue:[^self primitiveFail].
-	moduleName := self ioListLoadedModule: index.
+	moduleName := self cCall: 'ioListLoadedModule' withArguments: { index }.
 	moduleName == nil ifTrue:[
 		self pop: 2. "arg+rcvr"
 		^self push: objectMemory nilObject].
@@ -2728,11 +2565,6 @@ InterpreterPrimitives >> primitiveNew [
 
 	(objectMemory instantiateClass: self stackTop)
 		ifNotNil: [ :obj | self pop: argumentCount + 1 thenPush: obj ]
-		ifNil: [ 
-			self primitiveFailFor: ((objectMemory isFixedSizePointerFormat:
-					  (objectMemory instSpecOfClass: self stackTop))
-					 ifTrue: [ PrimErrNoMemory ]
-					 ifFalse: [ PrimErrBadReceiver ]) ]
 ]
 
 { #category : 'compiled methods' }
@@ -2812,13 +2644,6 @@ InterpreterPrimitives >> primitiveNewWithArg [
 		 instantiateClass: (self stackValue: 1)
 		 indexableSize: size)
 		ifNotNil: [ :obj | self pop: argumentCount + 1 thenPush: obj ]
-		ifNil: [ 
-			instSpec := objectMemory instSpecOfClass: (self stackValue: 1).
-			self primitiveFailFor:
-				(((objectMemory isIndexableFormat: instSpec) and: [ 
-					  (objectMemory isCompiledMethodFormat: instSpec) not ])
-					 ifTrue: [ PrimErrNoMemory ]
-					 ifFalse: [ PrimErrBadReceiver ]) ]
 ]
 
 { #category : 'object access primitives' }
@@ -2978,28 +2803,6 @@ InterpreterPrimitives >> primitiveObjectPointsTo [
 		(objectMemory longAt: rcvr + i) = thang ifTrue:
 			[^self pop: 2 thenPushBool: true]].
 	self pop: 2 thenPushBool: false
-]
-
-{ #category : 'other primitives' }
-InterpreterPrimitives >> primitivePathToUsing [
-	"primitivePathTo: anObject using: stack <Array> followWeak: boolean
-	 Answer a path to anObject from the root that does not pass through
-	 the current context"
-	| err path |
-	<export: true>
-	self writeBackHeadFramePointers.
-	argumentCount >= 2 ifFalse:
-		[^self primitiveFailFor: PrimErrBadNumArgs].
-	(self stackTop = objectMemory trueObject
-	 or: [self stackTop = objectMemory falseObject]) ifFalse:
-		[^self primitiveFailFor: PrimErrBadArgument].
-	err := self pathTo: (self stackValue: 2)
-				using: (self stackValue: 1)
-				followWeak: self stackTop = objectMemory trueObject.
-	err ~= 0 ifTrue:
-		[^self primitiveFailFor: err].
-	path := self self stackValue: 1.
-	self pop: argumentCount + 1 thenPush: path
 ]
 
 { #category : 'control primitives' }
@@ -3183,14 +2986,16 @@ InterpreterPrimitives >> primitiveRelinquishProcessor [
 
 	| microSecs |
 	microSecs := self stackIntegerValue: 0.
-	self successful ifTrue: [
+	self successful ifTrue: [ 
 		"DO NOT allow relinquishing the processor while we are profiling since this
 		may skew the time base for our measures (it may reduce processor speed etc).
 		Instead we go full speed, therefore measuring the precise time we spend in the
 		inner idle loop as a busy loop."
-		nextProfileTick = 0 ifTrue:[self ioRelinquishProcessorForMicroseconds: microSecs].
-		self pop: 1.  "microSecs; leave rcvr on stack"
-	]
+		nextProfileTick = 0 ifTrue: [ | startTime |
+			startTime := self ioUTCMicrosecondsNow.
+			self ioRelinquishProcessorForMicroseconds: microSecs.
+			self addIdleUsecs: (self ioUTCMicrosecondsNow - startTime) ].
+		self pop: 1 "microSecs; leave rcvr on stack" ]
 ]
 
 { #category : 'arithmetic largeint primitives' }
@@ -3214,27 +3019,6 @@ InterpreterPrimitives >> primitiveRemLargeIntegers [
 
 	oopResult := self magnitude64BitIntegerFor: result neg: aIsNegative.
 	self successful ifTrue: [self pop: 2 thenPush: oopResult].
-]
-
-{ #category : 'I/O primitives' }
-InterpreterPrimitives >> primitiveScreenDepth [
-	"Return a SmallInteger indicating the current depth of the OS screen. Negative values are used to imply LSB type pixel format an there is some support in the VM for handling either MSB or LSB"
-	| depth |
-	<export: true>
-	depth := self ioScreenDepth.
-	self failed ifTrue:[^self primitiveFail].
-	self pop: 1 thenPushInteger: depth.
-]
-
-{ #category : 'I/O primitives' }
-InterpreterPrimitives >> primitiveScreenScaleFactor [
-	"Answer a float indicating the current scale factor for pixels of the Smalltalk window."
-	| factor |
-	<export: true>
-	<var: #factor type: #double>
-	factor := self ioScreenScaleFactor.
-	self failed ifTrue:[^self primitiveFail].
-	self pop: 1; pushFloat: factor.
 ]
 
 { #category : 'system control primitives' }
@@ -3276,18 +3060,6 @@ InterpreterPrimitives >> primitiveSetImmutability [
 	 self pop: argumentCount + 1 thenPushBool: wasImmutable
 ]
 
-{ #category : 'I/O primitives' }
-InterpreterPrimitives >> primitiveSetLogDirectory [
-	"Primitive. Set the VM's log directory"
-	| stringOop sz |
-	<export: true>
-	stringOop := self stackTop.
-	(objectMemory isBytes: stringOop) ifFalse:[^self success: false].
-	sz := objectMemory byteSizeOf: stringOop.
-	self ioSetLogDirectory: (objectMemory firstIndexableField: stringOop) OfSize: sz.
-	self successful ifTrue:[self pop: self methodArgumentCount]
-]
-
 { #category : 'object access primitives' }
 InterpreterPrimitives >> primitiveSetOrHasIdentityHash [
 
@@ -3314,31 +3086,6 @@ InterpreterPrimitives >> primitiveSetOrHasIdentityHash [
 			"next line figures out if the index is anbiguous and fix all the instances if needed"
 			objectMemory allInstancesOf: thisReceiver ].
 		self pop: argumentCount + 1 thenPushInteger: oldHash ]
-]
-
-{ #category : 'I/O primitives' }
-InterpreterPrimitives >> primitiveSetWindowLabel [
-	"Primitive. Set the OS window's label"
-	| labelOop sz |
-	<export: true>
-	labelOop := self stackTop.
-	(objectMemory isBytes: labelOop) ifFalse:[^self success: false].
-	sz := objectMemory byteSizeOf: labelOop.
-	self ioSetWindowLabel: (objectMemory firstIndexableField: labelOop) OfSize: sz.
-	self successful ifTrue:[self pop: self methodArgumentCount]
-]
-
-{ #category : 'I/O primitives' }
-InterpreterPrimitives >> primitiveSetWindowSize [
-	"Primitive. Answer the OS window's size (extent)"
-	| w h |
-	<export: true>
-	h := self stackIntegerValue: 0.
-	w := self stackIntegerValue: 1.
-	self successful ifTrue:[
-		self ioSetWindowWidth: w Height: h.
-		self pop: self methodArgumentCount.
-	]
 ]
 
 { #category : 'sound primitives' }
@@ -3642,12 +3389,14 @@ InterpreterPrimitives >> primitiveSmallFloatAdd [
 
 { #category : 'arithmetic float primitives' }
 InterpreterPrimitives >> primitiveSmallFloatArctan [
+
 	<option: #Spur64BitMemoryManager>
-	| rcvr |
 	<var: #rcvr type: #double>
+	| rcvr |
 	rcvr := objectMemory smallFloatValueOf: self stackTop.
-	self stackTopPut: (objectMemory floatObjectOf: (self cCode: [rcvr atan]
-														inSmalltalk: [rcvr arcTan]))
+	self stackTopPut: (objectMemory floatObjectOf: (self
+				  cCode: [ self cCall: 'atan' withArguments: { rcvr } ]
+				  inSmalltalk: [ rcvr arcTan ]))
 ]
 
 { #category : 'arithmetic float primitives' }
@@ -3699,14 +3448,19 @@ InterpreterPrimitives >> primitiveSmallFloatExponent [
 
 { #category : 'arithmetic float primitives' }
 InterpreterPrimitives >> primitiveSmallFloatFractionalPart [
+
 	<option: #Spur64BitMemoryManager>
-	| rcvr frac trunc |
 	<var: #rcvr type: #double>
 	<var: #frac type: #double>
 	<var: #trunc type: #double>
+	| rcvr frac trunc |
 	rcvr := objectMemory smallFloatValueOf: self stackTop.
-	frac := self cCode: [self mod: rcvr f: (self addressOf: trunc)]
-				inSmalltalk: [rcvr fractionPart].
+	frac := self
+		        cCode: [
+			        self cCall: 'modf' withArguments: {
+					        rcvr.
+					        (self addressOf: trunc) } ]
+		        inSmalltalk: [ rcvr fractionPart ].
 	self stackTopPut: (objectMemory floatObjectOf: frac)
 ]
 
@@ -3848,46 +3602,59 @@ InterpreterPrimitives >> primitiveSmallFloatSubtract [
 { #category : 'arithmetic float primitives' }
 InterpreterPrimitives >> primitiveSmallFloatTimesTwoPower [
 	"Multiply the receiver by the power of the argument."
+
 	<option: #Spur64BitMemoryManager>
 	| rcvr result arg twiceMaxExponent |
 	arg := self stackTop.
-	(objectMemory isIntegerObject: arg) ifFalse:
-		[^self primitiveFailFor: PrimErrBadArgument].
+	(objectMemory isIntegerObject: arg) ifFalse: [
+		^ self primitiveFailFor: PrimErrBadArgument ].
 	rcvr := self stackValue: 1.
 	"N.B. SmallFloats are finite.  NaN and Infinity overflow into boxed floats.
 	 This is doing range checking work that is done in ldexp, but we include
 	 it explicitly to exemplify bit manipulation of SmallFloats."
 	(objectMemory isSmallFloatZero: rcvr)
-		ifTrue:
-			[result := rcvr]
-		ifFalse:
-			[arg := objectMemory integerValueOf: arg.
-			 twiceMaxExponent := 2 * (1 << self floatExponentBits).
-			 arg < twiceMaxExponent negated
-				ifTrue:
-					[result := objectMemory mapSignedSmallFloatToSignedSmallFloatZero: rcvr]
-				ifFalse:
-					["clip arg to at most int range; ldexp's last arg is of type int"
-					 arg > twiceMaxExponent ifTrue: [arg := twiceMaxExponent].
-					 result := objectMemory floatObjectOf: (self cCode: [self ld: (objectMemory smallFloatValueOf: rcvr)
-																				exp: (self cCoerceSimple: arg to: #int)]
-																inSmalltalk: [(objectMemory smallFloatValueOf: rcvr) timesTwoPower: arg])]].
+		ifTrue: [ result := rcvr ]
+		ifFalse: [
+			arg := objectMemory integerValueOf: arg.
+			twiceMaxExponent := 2 * (1 << self floatExponentBits).
+			arg < twiceMaxExponent negated
+				ifTrue: [
+					result := objectMemory
+						          mapSignedSmallFloatToSignedSmallFloatZero: rcvr ]
+				ifFalse: [ "clip arg to at most int range; ldexp's last arg is of type int"
+					arg > twiceMaxExponent ifTrue: [ arg := twiceMaxExponent ].
+					result := objectMemory floatObjectOf: (self
+							           cCode: [
+								           self cCall: 'ldexp' withArguments: {
+										           (objectMemory smallFloatValueOf: rcvr).
+										           (self cCoerceSimple: arg to: #int) } ]
+							           inSmalltalk: [
+							           (objectMemory smallFloatValueOf: rcvr)
+								           timesTwoPower: arg ]) ] ].
 	self pop: 2 thenPush: result
 ]
 
 { #category : 'arithmetic float primitives' }
 InterpreterPrimitives >> primitiveSmallFloatTruncated [
+
 	<option: #Spur64BitMemoryManager>
-	| rcvr trunc |
 	<var: #rcvr type: #double>
 	<var: #trunc type: #double>
+	| rcvr trunc |
 	rcvr := objectMemory smallFloatValueOf: self stackTop.
-	self cCode: [self mod: rcvr f: (self addressOf: trunc)]
-		inSmalltalk: [trunc := rcvr truncated].
-	((trunc between: objectMemory minSmallInteger asFloat and: objectMemory maxSmallInteger asFloat)
-	 and: [objectMemory isIntegerValue: trunc asInteger])
-		ifTrue: [self stackTopPut: (objectMemory integerObjectOf: trunc asInteger)]
-		ifFalse: [self primitiveFail]
+	self
+		cCode: [
+			self cCall: 'modf' withArguments: {
+					rcvr.
+					(self addressOf: trunc) } ]
+		inSmalltalk: [ trunc := rcvr truncated ].
+	((trunc
+		  between: objectMemory minSmallInteger asFloat
+		  and: objectMemory maxSmallInteger asFloat) and: [
+		 objectMemory isIntegerValue: trunc asInteger ])
+		ifTrue: [
+		self stackTopPut: (objectMemory integerObjectOf: trunc asInteger) ]
+		ifFalse: [ self primitiveFail ]
 ]
 
 { #category : 'system control primitives' }
@@ -3932,51 +3699,6 @@ InterpreterPrimitives >> primitiveSquareRoot [
 	(self successful and: [rcvr >= 0.0])
 		ifTrue: [self stackTopPut: (objectMemory floatObjectOf: rcvr sqrt)]
 		ifFalse: [self primitiveFail]
-]
-
-{ #category : 'process primitives' }
-InterpreterPrimitives >> primitiveStartVMProfiling [
-	"Primitive. Start the VM profiler."
-	self cCode: 'ioControlProfile(1,0,0,0,0)'.
-	self pop: argumentCount
-]
-
-{ #category : 'process primitives' }
-InterpreterPrimitives >> primitiveStopVMProfiling [
-	"Primitive. Stop the VM profiler and either copy the histogram data into the
-	 supplied arguments, if they're non-nil.  Fail if the arguments are not of the right type or size."
-	| vmHistArrayOrNil vmHist vmBins easHistArrayOrNil easHist easBins |
-	<var: #vmHist type: #'long *'>
-	<var: #vmBins type: #long>
-	<var: #easHist type: #'long *'>
-	<var: #easBins type: #long>
-	self success: argumentCount = 2.
-	vmHistArrayOrNil := self stackObjectValue: 1.
-	easHistArrayOrNil := self stackObjectValue: 0.
-	self successful ifFalse:
-		[^nil].
-	"Both args must be either nil or arrays.  If they're arrays and the wrong size we incorrectly stop profiling."
-	((vmHistArrayOrNil = objectMemory nilObject or: [(objectMemory fetchClassOfNonImm: vmHistArrayOrNil) = (objectMemory splObj: ClassArray)])
-	 and: [(objectMemory fetchClassOfNonImm: vmHistArrayOrNil) = (objectMemory fetchClassOfNonImm: easHistArrayOrNil)]) ifFalse:
-		[^self primitiveFail].
-	
-	self cCode: [ self ioControlProfile: 0 _: (self addressOf: vmHist) _: (self addressOf: vmBins) _: (self addressOf: easHist) _: (self addressOf: easBins) ]
-		inSmalltalk: [vmHist := vmBins := easHist := easBins := 0].
-	vmHistArrayOrNil ~= objectMemory nilObject ifTrue:
-		[((objectMemory numSlotsOf: vmHistArrayOrNil) = vmBins
-		  and: [(objectMemory numSlotsOf: easHistArrayOrNil) = easBins]) ifFalse:
-			[^self primitiveFail].
-		0 to: vmBins - 1 do:
-			[:i|
-			objectMemory storePointerUnchecked: i
-				ofObject: vmHistArrayOrNil
-				withValue: (objectMemory integerObjectOf: (vmHist at: i))].
-		0 to: easBins - 1 do:
-			[:i|
-			objectMemory storePointerUnchecked: i
-				ofObject: easHistArrayOrNil
-				withValue: (objectMemory integerObjectOf: (easHist at: i))]].
-	self pop: argumentCount
 ]
 
 { #category : 'indexing primitives' }
@@ -4240,39 +3962,53 @@ InterpreterPrimitives >> primitiveTestShortenIndexableSize [
 { #category : 'arithmetic float primitives' }
 InterpreterPrimitives >> primitiveTimesTwoPower [
 	"Multiply the receiver by the power of the argument."
-	| rcvr result arg |
+
 	<var: #rcvr type: #double>
 	<var: #result type: #double>
+	| rcvr result arg |
 	arg := self stackTop.
-	(objectMemory isIntegerObject: arg) ifFalse:
-		[^self primitiveFailFor: PrimErrBadArgument].
+	(objectMemory isIntegerObject: arg) ifFalse: [
+		^ self primitiveFailFor: PrimErrBadArgument ].
 	arg := objectMemory integerValueOf: arg.
-	objectMemory bytesPerOop > 4 ifTrue:
-		[| twiceMaxExponent | "clip arg to at most int range; ldexp's last arg is of type int"
-		 twiceMaxExponent := 2 * (1 << self floatExponentBits).
-	 	 arg < twiceMaxExponent negated
-			ifTrue: [arg := twiceMaxExponent negated]
-			ifFalse: [arg > twiceMaxExponent ifTrue:
-						[arg := twiceMaxExponent]]].
+	objectMemory bytesPerOop > 4 ifTrue: [
+		| twiceMaxExponent |
+		"clip arg to at most int range; ldexp's last arg is of type int"
+		twiceMaxExponent := 2 * (1 << self floatExponentBits).
+		arg < twiceMaxExponent negated
+			ifTrue: [ arg := twiceMaxExponent negated ]
+			ifFalse: [
+			arg > twiceMaxExponent ifTrue: [ arg := twiceMaxExponent ] ] ].
 	rcvr := objectMemory floatValueOf: (self stackValue: 1).
-	result := self cCode: [self ld: rcvr exp: (self cCoerceSimple: arg to: #int)]
-					inSmalltalk: [rcvr timesTwoPower: arg].
+	result := self
+		          cCode: [
+			          self cCall: 'ldexp' withArguments: {
+					          rcvr.
+					          (self cCoerceSimple: arg to: #int) } ]
+		          inSmalltalk: [ rcvr timesTwoPower: arg ].
 	self pop: 2 thenPushFloat: result
 ]
 
 { #category : 'arithmetic float primitives' }
 InterpreterPrimitives >> primitiveTruncated [
 	"N.B. IMO we should be able to assume the receiver is a float because this primitive is specific to floats. eem 2/13/2017"
-	| rcvr trunc |
+
 	<var: #rcvr type: #double>
 	<var: #trunc type: #double>
+	| rcvr trunc |
 	rcvr := self stackFloatValue: 0.
-	self successful ifTrue:
-		[self cCode: [self mod: rcvr f: (self addressOf: trunc)]
-			inSmalltalk: [trunc := rcvr truncated].
-		 (trunc between: objectMemory minSmallInteger asFloat and: objectMemory maxSmallInteger asFloat)
-			ifTrue: [self stackTopPut: (objectMemory integerObjectOf: trunc asInteger)]
-			ifFalse: [self primitiveFail]]
+	self successful ifTrue: [
+		self
+			cCode: [
+				self cCall: 'modf' withArguments: {
+						rcvr.
+						(self addressOf: trunc) } ]
+			inSmalltalk: [ trunc := rcvr truncated ].
+		(trunc
+			 between: objectMemory minSmallInteger asFloat
+			 and: objectMemory maxSmallInteger asFloat)
+			ifTrue: [
+			self stackTopPut: (objectMemory integerObjectOf: trunc asInteger) ]
+			ifFalse: [ self primitiveFail ] ]
 ]
 
 { #category : 'system control primitives' }
@@ -4426,69 +4162,6 @@ InterpreterPrimitives >> primitiveVMPath [
 ]
 
 { #category : 'process primitives' }
-InterpreterPrimitives >> primitiveVMProfileInfoInto [
-	"Primitive. Answer whether the profiler is running or not.
-	 If the argument is an Array of suitable size fill it with the following information:
-		1. the addresses of the first element of the VM histogram (the first address in the executable)
-		2. the address following the last element (the last address in the executable, excluding dynamically linked libraries)
-		3. the size of the VM histogram in bins (each bin is a 4 byte unsigned long)
-		4. the size of the VM histogram in bins (each bin is a 4 byte unsigned long)"
-	| info running exeStart exeLimit vmBins easBins |
-	<var: #exeStart type: #'char *'>
-	<var: #exeLimit type: #'char *'>
-	<var: #vmBins type: #long>
-	<var: #easBins type: #long>
-	self success: argumentCount = 1.
-	self successful ifTrue:
-		[info := self stackObjectValue: 0].
-	self successful ifTrue:
-		[info ~= objectMemory nilObject ifTrue:
-			[self assertClassOf: info is: (objectMemory splObj: ClassArray).
-			 self success: (objectMemory numSlotsOf: info) >= 4]].
-	self successful ifFalse:
-		[^nil].
-	self cCode: 	[ self ioProfileStatus: (self addressOf: running) _: (self addressOf: exeStart) _: (self addressOf: exeLimit) _: 0 _: (self addressOf: vmBins) _: 0 _: (self addressOf: easBins) ]
-		inSmalltalk: [running := exeStart := exeLimit := vmBins := easBins := 0].
-	info ~= objectMemory nilObject ifTrue:
-		[objectMemory storePointerUnchecked: 0
-			ofObject: info
-			withValue: (objectMemory integerObjectOf: (self oopForPointer: exeStart)).
-		objectMemory storePointerUnchecked: 1
-			ofObject: info
-			withValue: (objectMemory integerObjectOf: (self oopForPointer: exeLimit)).
-		objectMemory storePointerUnchecked: 2
-			ofObject: info
-			withValue: (objectMemory integerObjectOf: vmBins).
-		objectMemory storePointerUnchecked: 3
-			ofObject: info
-			withValue: (objectMemory integerObjectOf: easBins)].
-	self pop: 2 thenPushBool: running
-]
-
-{ #category : 'process primitives' }
-InterpreterPrimitives >> primitiveVMProfileSamplesInto [
-	"Primitive.
-	 0 args: Answer whether the VM Profiler is running or not.
-	 1 arg:	Copy the sample data into the supplied argument, which must be a Bitmap
-			of suitable size. Answer the number of samples copied into the buffer."
-	| sampleBuffer running bufferSize numSamples |
-	<var: #bufferSize type: #long>
-	self ioNewProfile: (self addressOf: running put: [:v| running := v])
-		Status: (self addressOf: bufferSize put: [:v| bufferSize := v]).
-	argumentCount = 0 ifTrue:
-		[^self pop: 1 thenPushBool: running].
-	argumentCount = 1 ifFalse:
-		[^self primitiveFailFor: PrimErrBadNumArgs].
-	sampleBuffer := self stackValue: 0.
-	((objectMemory isNonImmediate: sampleBuffer)
-	 and: [(objectMemory isPureBitsNonImm: sampleBuffer)
-	 and: [(objectMemory numBytesOf: sampleBuffer) >= (bufferSize * objectMemory wordSize)]]) ifFalse:
-		[^self primitiveFailFor: PrimErrBadArgument].
-	numSamples := self ioNewProfileSamplesInto: (objectMemory firstFixedField: sampleBuffer).
-	self pop: argumentCount + 1 thenPushInteger: numSamples
-]
-
-{ #category : 'process primitives' }
 InterpreterPrimitives >> primitiveWait [
 	| sema |
 	sema := self stackTop.  "rcvr"
@@ -4619,14 +4292,9 @@ InterpreterPrimitives >> signed64BitValueOf: oop [
 		[self primitiveFail.
 		 ^0].
 
-	"self cppIf: SPURVM
-		ifTrue:
-			[""Memory is 8 byte aligned in Spur and oversized bytes are set to zero, so we can safely fetch 8 bytes""
-			magnitude := objectMemory byteSwapped64IfBigEndian: (objectMemory fetchLong64: 0 ofObject: oop)]
-		ifFalse:
-			["sz > 4
-				ifTrue: [magnitude := objectMemory byteSwapped64IfBigEndian: (objectMemory fetchLong64: 0 ofObject: oop)]
-				ifFalse: [magnitude := self cCoerceSimple: (objectMemory byteSwapped32IfBigEndian: (objectMemory fetchLong32: 0 ofObject: oop)) to: #'unsigned int']"]".
+	sz > 4
+		ifTrue: [magnitude := objectMemory byteSwapped64IfBigEndian: (objectMemory fetchLong64: 0 ofObject: oop)]
+		ifFalse: [magnitude := self cCoerceSimple: (objectMemory byteSwapped32IfBigEndian: (objectMemory fetchLong32: 0 ofObject: oop)) to: #'unsigned int'].
 
 	(negative
 		ifTrue: [magnitude > 16r8000000000000000]
@@ -4669,17 +4337,9 @@ InterpreterPrimitives >> signedMachineIntegerValueOf: oop [
 	bs > (self sizeof: #'usqIntptr_t') ifTrue:
 		[^self primitiveFail].
 
-	"self cppIf: SPURVM
-		ifTrue:
-			[""Memory is 8 byte aligned in Spur and oversized bytes are set to zero, so we can safely fetch 8 bytes""
-			magnitude := objectMemory byteSwapped64IfBigEndian: (objectMemory fetchLong64: 0 ofObject: oop)]
-		ifFalse:
-			["((self sizeof: #'sqIntptr_t') = 8
-			and: [bs > 4])
-				ifTrue:
-					[magnitude := objectMemory byteSwapped64IfBigEndian: (objectMemory fetchLong64: 0 ofObject: oop)]
-				ifFalse:
-					[magnitude := self cCoerceSimple: (objectMemory byteSwapped32IfBigEndian: (objectMemory fetchLong32: 0 ofObject: oop)) to: #'unsigned int']"]".
+	((self sizeof: #'sqIntptr_t') = 8 and: [bs > 4])
+		ifTrue: [magnitude := objectMemory byteSwapped64IfBigEndian: (objectMemory fetchLong64: 0 ofObject: oop)]
+		ifFalse: [magnitude := self cCoerceSimple: (objectMemory byteSwapped32IfBigEndian: (objectMemory fetchLong32: 0 ofObject: oop)) to: #'unsigned int'].
 
 	limit := 1 asUnsignedIntegerPtr << ((self sizeof: #'sqIntptr_t') * 8 - 1).
 	(negative

@@ -11,6 +11,12 @@ Class {
 	#tag : 'AST'
 }
 
+{ #category : 'visiting' }
+TBraceCaseNode >> accept: aVisitor [
+
+	^ aVisitor visitBraceCaseNode: self
+]
+
 { #category : 'transformations' }
 TBraceCaseNode >> bindVariableUsesIn: aDictionary [
 
@@ -79,6 +85,12 @@ TBraceCaseNode >> cases: anObject [
 	cases do: [ :e | e parent: self ]
 ]
 
+{ #category : 'accessing' }
+TBraceCaseNode >> children [
+
+	^ self caseLabels , self cases
+]
+
 { #category : 'enumerating' }
 TBraceCaseNode >> nodesDo: aBlock [
 	"Apply aBlock to all nodes in the receiver.
@@ -123,13 +135,37 @@ TBraceCaseNode >> nodesDo: aBlock unless: cautionaryBlock [
 	aBlock value: self
 ]
 
-{ #category : 'enumerating' }
+{ #category : 'transformations' }
+TBraceCaseNode >> renameLocalVariablesGivenClassVariables: classVariables globalVariables: globalsVariables classNames: classNames inCodeGenerator: aCodeGen collectingChangesIn: changedVariables [
+
+	self caseLabels: (caseLabels collect: [ :node |
+			 node
+				 renameLocalVariablesGivenClassVariables: classVariables
+				 globalVariables: globalsVariables
+				 classNames: classNames
+				 inCodeGenerator: aCodeGen
+				 collectingChangesIn: changedVariables ]).
+	self cases: (cases collect: [ :node |
+			 node
+				 renameLocalVariablesGivenClassVariables: classVariables
+				 globalVariables: globalsVariables
+				 classNames: classNames
+				 inCodeGenerator: aCodeGen
+				 collectingChangesIn: changedVariables ])
+]
+
+{ #category : 'transformations' }
 TBraceCaseNode >> replaceNodesIn: aDictionary [
 
-	^aDictionary at: self ifAbsent: [
-		self caseLabels: (caseLabels collect: [:node| node replaceNodesIn: aDictionary]).
-		self cases: (cases collect: [:node| node replaceNodesIn: aDictionary]).
-		self]
+	| aDictionaryAtSelf |
+	aDictionaryAtSelf := aDictionary at: self ifAbsent: [ nil ].
+	aDictionaryAtSelf ifNotNil: [ ^ aDictionaryAtSelf copy ].
+
+	self caseLabels:
+		(caseLabels collect: [ :node | node replaceNodesIn: aDictionary ]).
+	self cases:
+		(cases collect: [ :node | node replaceNodesIn: aDictionary ]).
+	^ self
 ]
 
 { #category : 'type inference' }

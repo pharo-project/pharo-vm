@@ -75,7 +75,7 @@ CogPrimitiveDescriptor >> printCInitializerOn: aStream in: aCCodeGenerator [
 	| first |
 	first := true.
 	aStream nextPut: ${; space.
-	self class instVarNamesAndTypesForTranslationDo:
+	self class instVarTypeDeclarationsDo:
 		[:ivn :type| | value |
 		first ifTrue: [first := false] ifFalse: [aStream nextPut: $,; space].
 		value := self instVarNamed: ivn.

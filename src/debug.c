@@ -137,7 +137,7 @@ void getCrashDumpFilenameInto(char *buf)
 #endif
 }
 
-char *getVersionInfo(int verbose)
+char *getVersionInfo()
 {
 #if STACKVM
   extern char *__interpBuildInfo;
@@ -155,27 +155,12 @@ char *getVersionInfo(int verbose)
   char *info= (char *)malloc(BUFFER_SIZE);
   info[0]= '\0';
 
-#if SPURVM
-# if BytesPerOop == 8
-#	define ObjectMemory " Spur 64-bit"
-# else
-#	define ObjectMemory " Spur"
-# endif
-#else
-# define ObjectMemory
-#endif
 #if defined(NDEBUG)
-# define BuildVariant "Production" ObjectMemory
+# define BuildVariant "Production"
 #elif DEBUGVM
-# define BuildVariant "Debug" ObjectMemory
+# define BuildVariant "Debug"
 # else
-# define BuildVariant "Assert" ObjectMemory
-#endif
-
-#if USE_XSHM
-#define USE_XSHM_STRING " XShm"
-#else
-#define USE_XSHM_STRING ""
+# define BuildVariant "Assert"
 #endif
 
 #if ITIMER_HEARTBEAT
@@ -184,12 +169,7 @@ char *getVersionInfo(int verbose)
 # define HBID
 #endif
 
-  if(verbose){
-	  snprintf(info, BUFFER_SIZE, IMAGE_DIALECT_NAME "VM version:" VM_VERSION "-" VM_BUILD_STRING USE_XSHM_STRING " " COMPILER_VERSION " [" BuildVariant HBID " VM]\nBuilt from: %s\n With:%s\n Revision: " VM_BUILD_SOURCE_STRING, INTERP_BUILD, GetAttributeString(1008));
-  }else{
-	  snprintf(info, BUFFER_SIZE, VM_VERSION "-" VM_BUILD_STRING USE_XSHM_STRING " " COMPILER_VERSION " [" BuildVariant HBID " VM]\n%s\n%s\n" VM_BUILD_SOURCE_STRING, INTERP_BUILD, GetAttributeString(1008));
-  }
-
+  snprintf(info, BUFFER_SIZE, VM_BUILD_STRING " " COMPILER_VERSION " [" BuildVariant HBID " VM]\nBuilt from: %s\n With:%s\n Revision: " VM_BUILD_SOURCE_STRING, INTERP_BUILD, GetAttributeString(1008));
   return info;
 }
 

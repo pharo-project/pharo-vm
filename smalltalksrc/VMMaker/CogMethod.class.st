@@ -1,5 +1,5 @@
 "
-I am a native Cog method or polymorphic inline cache.  If the former I have been produced by compiling a bytecoded CompiledMethod into machine code by the JIT, and I have a circular reference to that CompiledMethod.  The CompiledMethod's header field is a pointer to me, the CogMethod, and my methodHeader field holds the compiled method's actual header.  My objectHeader field looks like a single word object with a compact header with the mark bit set so as to placate the GC, i.e. make a CogMethod look like an object so that the reference to a CogMethod from a compiled method doesn't break the GC.  The cmType, stackCheckOffset, cmNumArgs & cmNumTemps fields are early in the structure because we place dummy two-word CogMethod headers within a method for each block within it to record this information for each block method (see my superclass CogBlockMethod).  In this case the objectHeader field is overlaid by the homeOffset and startpc fields.  The objectHeader field is also used to hold the relocation distance when compacting methods since when functioning as an obhject header it is a constant value and so can easily be reinitialized.  See Cogit class>>structureOfACogMethod for more information.
+I am a native Cog method or polymorphic inline cache.  If the former I have been produced by compiling a bytecoded CompiledMethod into machine code by the JIT, and I have a circular reference to that CompiledMethod.  The CompiledMethod's header field is a pointer to me, the CogMethod, and my methodHeader field holds the compiled method's actual header.  My objectHeader field looks like a single word object with a compact header with the mark bit set so as to placate the GC, i.e. make a CogMethod look like an object so that the reference to a CogMethod from a compiled method doesn't break the GC.  The cmType, stackCheckOffset, cmNumArgs & cmNumTemps fields are early in the structure because we place dummy two-word CogMethod headers within a method for each block within it to record this information for each block method (see my superclass CogBlockMethod).  In this case the objectHeader field is overlaid by the homeOffset and startpc fields.  The objectHeader field is also used to hold the relocation distance when compacting methods since when functioning as an object header it is a constant value and so can easily be reinitialized.  See Cogit class>>structureOfACogMethod for more information.
 
 In C I look like
 
@@ -74,6 +74,13 @@ CogMethod class >> cogMethodHeader [
 	^ String streamContents: [ :s | self printTypedefOn: s ]
 ]
 
+{ #category : 'translation' }
+CogMethod class >> filteredInstVarNames [
+	"Eliminate the obvious simulation-only inst vars"
+	^super filteredInstVarNames copyWithoutAll: #('homeOffset' 'startpc' 'padToWord')
+
+]
+
 { #category : 'class initialization' }
 CogMethod class >> initialize [
 	"CogMethod initialize"
@@ -88,10 +95,9 @@ CogMethod class >> instVarNamesAndTypesForTranslationDo: aBinaryBlock [
 	"enumerate aBinaryBlock with the names and C type strings for the
 	 inst vars to include in a CogMethod or CogBlockMethod struct."
 
-	self allInstVarNames do:
-		[:ivn|
-		"Notionally objectHeader is in a union with homeOffset and startpc but
+	self filteredInstVarNames do: [ :ivn | "Notionally objectHeader is in a union with homeOffset and startpc but
 		 we don't have any convenient support for unions.  So hack, hack, hack, hack."
+<<<<<<< HEAD
 		(#('homeOffset' 'startpc' 'padToWord') includes: ivn) ifFalse:
 				[aBinaryBlock
 					value: ivn
@@ -117,6 +123,32 @@ CogMethod class >> instVarNamesAndTypesForTranslationDo: aBinaryBlock [
 								['counters']					-> [#usqInt]}				"See SistaCogMethod"
 							otherwise:
 								[#sqInt])]]
+=======
+		aBinaryBlock value: ivn value: (ivn
+				 caseOf: {
+						 ([ 'objectHeader' ] -> [
+						  VMClass objectMemoryClass baseHeaderSize = 8
+							  ifTrue: [ #sqLong ]
+							  ifFalse: [ #sqInt ] ]).
+						 ([ 'cmNumArgs' ] -> [ #( unsigned ' : 8' ) ]). "SqueakV3 needs only 5 bits"
+						 ([ 'cmType' ] -> [ #( unsigned ' : 3' ) ]).
+						 ([ 'cmRefersToYoung' ] -> [ #( unsigned #Boolean ' : 1' ) ]).
+						 ([ 'cpicHasMNUCaseOrCMIsFullBlock' ]
+						  -> [ #( unsigned #Boolean ' : 1' ) ]).
+						 ([ 'cmUsageCount' ] -> [ #( unsigned ' : 3' ) ]). "See CMMaxUsageCount in initialize"
+						 ([ 'cmUsesPenultimateLit' ]
+						  -> [ #( unsigned #Boolean ' : 1' ) ]).
+						 ([ 'cbUsesInstVars' ] -> [ #( unsigned #Boolean ' : 1' ) ]).
+						 ([ 'cmUnusedFlags' ] -> [ #( unsigned ' : 2' ) ]).
+						 ([ 'stackCheckOffset' ] -> [ #( unsigned ' : 12' ) ]). "See MaxStackCheckOffset in initialize. a.k.a. cPICNumCases"
+						 ([ 'blockSize' ] -> [ #'unsigned short' ]). "See MaxMethodSize in initialize"
+						 ([ 'picUsage' ] -> [ #'unsigned short' ]).
+						 ([ 'homeOffset' ] -> [ #'unsigned short' ]).
+						 ([ 'startpc' ] -> [ #'unsigned short' ]).
+						 ([ 'padToWord' ] -> [ #( #BaseHeaderSize 8 'unsigned int' ) ]).
+						 ([ 'counters' ] -> [ #usqInt ]) }
+				 otherwise: [ #sqInt ]) "See SistaCogMethod" ]
+>>>>>>> 0c6de9df559c3ee3416255822f6bc2cbe9d3cfba
 ]
 
 { #category : 'translation' }
@@ -183,9 +215,7 @@ CogMethod >> cbUsesInstVars: anObject [
 CogMethod >> cmIsFullBlock [
 	"Answer the value of cpicHasMNUCaseOrCMIsFullBlock"
 	<inline: true>
-	^SistaV1BytecodeSet
-		ifTrue: [self cpicHasMNUCaseOrCMIsFullBlock]
-		ifFalse: [false]
+	^ self cpicHasMNUCaseOrCMIsFullBlock
 ]
 
 { #category : 'accessing' }
@@ -276,9 +306,7 @@ CogMethod >> cpicHasMNUCase [
 	"Answer if the receiver has an MNU case."
 	<inline: true>
 
-	^SistaV1BytecodeSet
-		ifTrue: [self cpicHasMNUCaseOrCMIsFullBlock and: [self cmType = CMPolymorphicIC]]
-		ifFalse: [cpicHasMNUCaseOrCMIsFullBlock]
+	^ self cpicHasMNUCaseOrCMIsFullBlock and: [self cmType = CMPolymorphicIC]
 ]
 
 { #category : 'accessing' }

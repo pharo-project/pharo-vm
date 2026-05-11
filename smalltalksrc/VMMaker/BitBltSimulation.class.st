@@ -200,7 +200,7 @@ BitBltSimulation class >> declareCVarsIn: aCCodeGenerator [
 
 	"add option of  fast path BitBLT code header"
 	aCCodeGenerator
-		addHeaderFile:'"sqAssert.h"';
+		addHeaderFile:'"assert.h"';
 		addHeaderFile:'#ifdef ENABLE_FAST_BLT
 #include "BitBltDispatch.h"
 #else
@@ -416,22 +416,6 @@ BitBltSimulation class >> timingTest: extent [
 		with: (Time millisecondsToRun: [100 timesRepeat: [f fillWithColor: Color white]])
 		with: (Time millisecondsToRun: [100 timesRepeat: [f copy: f boundingBox from: 0 @ 0 in: f2 rule: Form over]])
 		with: (Time millisecondsToRun: [100 timesRepeat: [f copyBits: f boundingBox from: f2 at: 0 @ 0 colorMap: map]])
-]
-
-{ #category : 'system simulation' }
-BitBltSimulation class >> warpBitsFrom: aBitBlt [
-	"Simulate the warpBits primitive"
-	| proxy bb |
-	proxy := InterpreterProxy new.
-	proxy loadStackFrom: thisContext sender home.
-	bb := self simulatorClass new.
-	bb initialiseModule.
-	bb setInterpreter: proxy.
-	proxy success: (bb loadWarpBltFrom: aBitBlt).
-	bb warpBits.
-	proxy failed ifFalse:[
-		proxy showDisplayBits: aBitBlt destForm Left: bb affectedLeft Top: bb affectedTop Right: bb affectedRight Bottom: bb affectedBottom].
-	^proxy stackValue: 0
 ]
 
 { #category : 'combination rules' }
@@ -1281,13 +1265,13 @@ BitBltSimulation >> copyBitsFastPathSpecialised [
 { #category : 'setup' }
 BitBltSimulation >> copyBitsFrom: startX to: stopX at: yValue [
 	"Support for the balloon engine."
+
 	<export: true>
 	destX := startX.
 	destY := yValue.
 	sourceX := startX.
-	width := (stopX - startX).
-	self copyBits.
-	self showDisplayBits.
+	width := stopX - startX.
+	self copyBits
 ]
 
 { #category : 'setup' }
@@ -1882,7 +1866,6 @@ BitBltSimulation >> drawLoopX: xDelta Y: yDelta [
 							["If affected rectangle gets large, update it in chunks"
 							affectedL := affL.  affectedR := affR.
 							affectedT := affT.  affectedB := affB.
-							self showDisplayBits.
 							affL := affT := 9999.  "init null rectangle"
 							affR := affB := -9999]].
 					]]]
@@ -1909,7 +1892,6 @@ BitBltSimulation >> drawLoopX: xDelta Y: yDelta [
 							["If affected rectangle gets large, update it in chunks"
 							affectedL := affL.  affectedR := affR.
 							affectedT := affT.  affectedB := affB.
-							self showDisplayBits.
 							affL := affT := 9999.  "init null rectangle"
 							affR := affB := -9999]].
 					]]].
@@ -2577,7 +2559,7 @@ BitBltSimulation >> moduleUnloaded: aModuleName [
 	 Make sure we have no dangling references."
 	<export: true>
 	<var: #aModuleName type: 'char *'>
-	(aModuleName strcmp: 'SurfacePlugin') = 0 ifTrue: "The surface plugin just shut down. How nasty."
+	(self cCall: 'strcmp' withArguments: {aModuleName . 'SurfacePlugin'}) = 0 ifTrue: "The surface plugin just shut down. How nasty."
 		[querySurfaceFn := 0.
 		 lockSurfaceFn := 0.
 		 unlockSurfaceFn := 0]
@@ -3007,8 +2989,6 @@ BitBltSimulation >> primitiveCopyBits [
 		[^interpreterProxy primitiveFail].
 	self copyBits.
 	interpreterProxy failed ifTrue: [^nil].
-	self showDisplayBits.
-	interpreterProxy failed ifTrue: [^nil].
 	(combinationRule = 22 or: [combinationRule = 32])
 		ifTrue: [interpreterProxy methodReturnInteger: bitCount]
 		ifFalse: [interpreterProxy methodReturnReceiver]
@@ -3091,7 +3071,7 @@ BitBltSimulation >> primitiveDisplayString [
 	affectedL := left.
 	quickBlt ifFalse:
 		[self unlockSurfaces].
-	self showDisplayBits.
+
 	"store destX back"	
 	interpreterProxy storeInteger: BBDestXIndex ofObject: bbObj withValue: destX.
 	interpreterProxy pop: 6 "pop args, return rcvr"
@@ -3100,16 +3080,16 @@ BitBltSimulation >> primitiveDisplayString [
 { #category : 'primitives' }
 BitBltSimulation >> primitiveDrawLoop [
 	"Invoke the line drawing primitive."
-	| rcvr xDelta yDelta |
+
 	<export: true>
+	| rcvr xDelta yDelta |
 	rcvr := interpreterProxy stackValue: 2.
 	xDelta := interpreterProxy stackIntegerValue: 1.
 	yDelta := interpreterProxy stackIntegerValue: 0.
-	(self loadBitBltFrom: rcvr) ifFalse:[^interpreterProxy primitiveFail].
-	interpreterProxy failed ifFalse:[
-		self drawLoopX: xDelta Y: yDelta.
-		self showDisplayBits].
-	interpreterProxy failed ifFalse:[interpreterProxy pop: 2].
+	(self loadBitBltFrom: rcvr) ifFalse: [
+		^ interpreterProxy primitiveFail ].
+	interpreterProxy failed ifFalse: [ self drawLoopX: xDelta Y: yDelta ].
+	interpreterProxy failed ifFalse: [ interpreterProxy pop: 2 ]
 ]
 
 { #category : 'primitives' }
@@ -3167,8 +3147,6 @@ BitBltSimulation >> primitiveWarpBits [
 	(self loadWarpBltFrom: rcvr) 
 		ifFalse:[^interpreterProxy primitiveFail].
 	self warpBits.
-	interpreterProxy failed ifTrue:[^nil].
-	self showDisplayBits.
 	interpreterProxy failed ifTrue:[^nil].
 	interpreterProxy methodReturnReceiver
 ]
@@ -3846,17 +3824,6 @@ BitBltSimulation >> setupColorMasksFrom: srcBits to: targetBits [
 
 ]
 
-{ #category : 'interpreter interface' }
-BitBltSimulation >> showDisplayBits [
-	self ensureDestAndSourceFormsAreValid.
-	interpreterProxy 
-		showDisplayBits: destForm
-		Left: affectedL
-		Top: affectedT
-		Right: affectedR
-		Bottom: affectedB
-]
-
 { #category : 'setup' }
 BitBltSimulation >> sourceSkewAndPointerInit [
 	"This is only used when source and dest are same depth,
@@ -4030,34 +3997,44 @@ BitBltSimulation >> tryCopyingBitsQuickly [
 { #category : 'surface support' }
 BitBltSimulation >> unlockSurfaces [
 	"Unlock the bits of any OS surfaces."
+
 	"See the comment in lockSurfaces. Similar rules apply. That is, the area provided in ioUnlockSurface
 	 can be used to determine the dirty region after drawing. If a source is unlocked, then the area will
 	 be (0,0,0,0) to indicate that no portion is dirty.  Note that if a GC happens during unlockSourceFn
 	 (if it is effectively a callback) no matter.  No bits are touched after unlock."
+
 	| sourceHandle destHandle destLocked |
-	hasSurfaceLock ifFalse: [^self].
-	unlockSurfaceFn = 0 ifTrue:
-		[self loadSurfacePlugin ifFalse:
-			[^self]].
+	hasSurfaceLock ifFalse: [ ^ self ].
+	unlockSurfaceFn = 0 ifTrue: [
+		self loadSurfacePlugin ifFalse: [ ^ self ] ].
 	self ensureDestAndSourceFormsAreValid.
 	destLocked := false.
-	destHandle := interpreterProxy fetchPointer: FormBitsIndex ofObject: destForm.
-	(interpreterProxy isIntegerObject: destHandle) ifTrue: "The destBits are always assumed to be dirty"
-		[self unlockSurfaceFn: (interpreterProxy integerValueOf: destHandle)
-							_: affectedL
-							_: affectedT
-							_: affectedR - affectedL
-							_: affectedB - affectedT.
-		 destBits := destPitch := 0.
-		 destLocked := true].
-	noSource ifFalse:
-		[self ensureDestAndSourceFormsAreValid.
-		 sourceHandle := interpreterProxy fetchPointer: FormBitsIndex ofObject: sourceForm.
-		 (interpreterProxy isIntegerObject: sourceHandle) ifTrue:
-			["Only unlock sourceHandle if different from destHandle"
-			 (destLocked and: [sourceHandle = destHandle]) ifFalse:
-				[self unlockSurfaceFn: (interpreterProxy integerValueOf: sourceHandle) _: 0 _: 0 _: 0 _: 0].
-			sourceBits := sourcePitch := 0]].
+	destHandle := interpreterProxy
+		              fetchPointer: FormBitsIndex
+		              ofObject: destForm.
+	(interpreterProxy isIntegerObject: destHandle) ifTrue: [ "The destBits are always assumed to be dirty"
+		self cCall: 'unlockSurfaceFn' withArguments: {
+				(interpreterProxy integerValueOf: destHandle).
+				affectedL.
+				affectedT.
+				(affectedR - affectedL).
+				(affectedB - affectedT) }.
+		destBits := destPitch := 0.
+		destLocked := true ].
+	noSource ifFalse: [
+		self ensureDestAndSourceFormsAreValid.
+		sourceHandle := interpreterProxy
+			                fetchPointer: FormBitsIndex
+			                ofObject: sourceForm.
+		(interpreterProxy isIntegerObject: sourceHandle) ifTrue: [ "Only unlock sourceHandle if different from destHandle"
+			(destLocked and: [ sourceHandle = destHandle ]) ifFalse: [
+				self cCall: 'unlockSurfaceFn' withArguments: {
+						(interpreterProxy integerValueOf: sourceHandle).
+						0.
+						0.
+						0.
+						0 } ].
+			sourceBits := sourcePitch := 0 ] ].
 	hasSurfaceLock := false
 ]
 

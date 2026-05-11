@@ -32,6 +32,15 @@ CIdentifierNode >> acceptVisitor: anAbstractVisitor [
 	^ anAbstractVisitor visitIdentifier: self
 ]
 
+{ #category : 'accessing' }
+CIdentifierNode >> hasValidName [
+
+	| cIdentifierRegExp |
+	cIdentifierRegExp := '^[a-zA-Z_][a-zA-Z_0-9]*$' asRegex.
+
+	^ cIdentifierRegExp matches: name
+]
+
 { #category : 'comparing' }
 CIdentifierNode >> hash [
 

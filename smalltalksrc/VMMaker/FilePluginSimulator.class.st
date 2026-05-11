@@ -29,7 +29,7 @@ FilePluginSimulator >> close [  "close any files that ST may have opened"
 FilePluginSimulator >> dir_EntryLookup: pathString _: pathStringLength _: entryNameString _: entryNameStringLength _: name _: nameLength _: creationDate _: modificationDate _: isDirectory _: sizeIfFile _: posixPermissions _: isSymlink [
 	"sqInt dir_EntryLookup(char *pathString, sqInt pathStringLength, char *nameString, sqInt nameStringLength,
 		/* outputs: */		char *name, sqInt *nameLength, sqInt *creationDate, sqInt *modificationDate,
-  						      sqInt *isDirectory, squeakFileOffsetType *sizeIfFile, sqInt *posixPermissions, sqInt *isSymlink)"
+  						      sqInt *isDirectory, fileOffset_t *sizeIfFile, sqInt *posixPermissions, sqInt *isSymlink)"
 	| result pathName entryName |
 	pathName := ((0 to: pathStringLength - 1) collect: [:i| (pathString at: i) asCharacter]) as: ByteString.
 	entryName := ((0 to: entryNameStringLength - 1) collect: [:i| (entryNameString at: i) asCharacter]) as: ByteString.
@@ -54,7 +54,7 @@ FilePluginSimulator >> dir_EntryLookup: pathString _: pathStringLength _: entryN
 FilePluginSimulator >> dir_Lookup: pathString _: pathStringLength _: index _: name _: nameLength _: creationDate _: modificationDate _: isDirectory _: sizeIfFile _: posixPermissions _: isSymlink [
 	"sqInt dir_Lookup(	char *pathString, sqInt pathStringLength, sqInt index,
 		/* outputs: */	char *name, sqInt *nameLength, sqInt *creationDate, sqInt *modificationDate,
-		   				sqInt *isDirectory, squeakFileOffsetType *sizeIfFile, sqInt * posixPermissions, sqInt *isSymlink)"
+		   				sqInt *isDirectory, fileOffset_t *sizeIfFile, sqInt * posixPermissions, sqInt *isSymlink)"
 	| result pathName |
 	pathName := ((0 to: pathStringLength - 1) collect: [:i| (pathString at: i) asCharacter]) as: ByteString.
 	result := self primLookupEntryIn: pathName index: index.
@@ -201,6 +201,22 @@ FilePluginSimulator >> recordStateOf: file [
 ]
 
 { #category : 'simulation' }
+FilePluginSimulator >> sqConnect: file To: cfile File: writeFlag [
+	"Defined in C code"
+
+	<doNotGenerate>
+	self notYetImplemented
+]
+
+{ #category : 'simulation' }
+FilePluginSimulator >> sqConnect: file ToFile: fd Descriptor: writeFlag [
+	"Defined in C code"
+
+	<doNotGenerate>
+	self notYetImplemented
+]
+
+{ #category : 'simulation' }
 FilePluginSimulator >> sqFile: file Read: countArg Into: byteArrayIndexArg At: startIndex [
 	| byteArrayIndex count |
 	count := file isFakeStdinStream
@@ -266,6 +282,14 @@ FilePluginSimulator >> sqFileClose: file [
 ]
 
 { #category : 'simulation' }
+FilePluginSimulator >> sqFileDeleteName: nameIndex Size: nameSize [
+	"Defined in C code"
+
+	<doNotGenerate>
+	self notYetImplemented
+]
+
+{ #category : 'simulation' }
 FilePluginSimulator >> sqFileFlush: file [
 	^file flush
 ]
@@ -288,8 +312,14 @@ FilePluginSimulator >> sqFileInit [
 ]
 
 { #category : 'simulation' }
+FilePluginSimulator >> sqFileRenameOld: oldNameIndex Size: oldNameSize New: newNameIndex Size: newNameSize [
+
+	self notYetImplemented
+]
+
+{ #category : 'simulation' }
 FilePluginSimulator >> sqFileSize: file [
-	^file stream size
+	^file size
 ]
 
 { #category : 'simulation' }

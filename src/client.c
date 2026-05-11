@@ -7,8 +7,9 @@
 extern void setMaxStacksToPrint(sqInt anInteger);
 extern sqInt setMaxOldSpaceSize(usqInt limit);
 extern void setDesiredCogCodeSize(sqInt anInteger);
-extern sqInt setDesiredEdenBytes(usqLong bytes);
+extern void setDesiredEdenBytes(sqLong anInteger);
 extern void setMinimalPermSpaceSize(sqInt min);
+extern void setDesiredStackPageBytes(sqLong anInteger);
 extern void setAvoidSearchingSegmentsWithPinnedObjects(sqInt aValue);
 extern void setMaxSlotsForNewSpaceAlloc(usqInt aValue);
 
@@ -71,6 +72,10 @@ EXPORT(int) vm_init(VMParameters* parameters)
 	setMaxOldSpaceSize(parameters->maxOldSpaceSize);
 	setDesiredEdenBytes(parameters->edenSize);
 	setMinimalPermSpaceSize(parameters->minPermSpaceSize);
+<<<<<<< HEAD
+=======
+	setDesiredStackPageBytes(parameters->stackPageSize);
+>>>>>>> 0c6de9df559c3ee3416255822f6bc2cbe9d3cfba
 	setMaxSlotsForNewSpaceAlloc(parameters->maxSlotsForNewSpaceAlloc);
 
 	setAvoidSearchingSegmentsWithPinnedObjects(parameters->avoidSearchingSegmentsWithPinnedObjects);

@@ -24,6 +24,11 @@ SlangBasicTranslationTestClass class >> objectMemoryClass [
 ]
 
 { #category : 'inline' }
+SlangBasicTranslationTestClass >> continue [
+	"reserved name selector"
+]
+
+{ #category : 'inline' }
 SlangBasicTranslationTestClass >> emptyMethod [
 	self cCode: [  ] inSmalltalk: [  ]
 ]
@@ -43,6 +48,15 @@ SlangBasicTranslationTestClass >> increment: x [
 SlangBasicTranslationTestClass >> initializationOptions [
 
 	^ nil
+]
+
+{ #category : 'inline' }
+SlangBasicTranslationTestClass >> methodCallingCFunction [
+
+	self cCall: 'function' withArguments: { 
+		"The inline of functions as arguments of cCall is not implemented yet.
+		So, it should not be done right now"
+		self methodWithInlinePragma }
 ]
 
 { #category : 'inline' }
@@ -91,6 +105,15 @@ SlangBasicTranslationTestClass >> methodCallingMethodWithInlinePragma [
 ]
 
 { #category : 'inline' }
+SlangBasicTranslationTestClass >> methodDefiningConflictingVariable [
+
+	<var: 'methodWithoutReturn' type: 'char *'>
+	| methodWithoutReturn |
+	
+	^ methodWithoutReturn
+]
+
+{ #category : 'inline' }
 SlangBasicTranslationTestClass >> methodDefiningSingleExternVariable [
 
 	<var: 'foo' type: #'extern int' >
@@ -110,10 +133,61 @@ SlangBasicTranslationTestClass >> methodDefiningSingleVariable [
 	| foo |
 ]
 
+{ #category : 'generation-targets' }
+SlangBasicTranslationTestClass >> methodFrom: pFrom to: pTo len: sizeLen [
+
+	0 to: sizeLen - 1 do: [ : i | pTo at: i put: (pFrom at: i) ]
+]
+
+{ #category : 'generation-targets' }
+SlangBasicTranslationTestClass >> methodFromWithAnnotations: pFrom to: pTo [
+	<var: #pTo type: #'unsigned int *'>
+	<var: #pFrom type: #'unsigned int *'>
+
+	0 to: 10 do: [ : i | pTo at: i put: (pFrom at: i) ].
+]
+
+{ #category : 'generation-targets' }
+SlangBasicTranslationTestClass >> methodFromWithAnnotations: pFrom to: pTo len: len [
+	<var: #pTo type: #'unsigned int *'>
+	<var: #pFrom type: #'unsigned int *'>
+
+	0 to: len - 1 do: [ : i | pTo at: i put: (pFrom at: i) ].
+	^ 0
+]
+
 { #category : 'inline-comment' }
 SlangBasicTranslationTestClass >> methodInlinineSwitch [
 
 	self switch
+]
+
+{ #category : 'inline' }
+SlangBasicTranslationTestClass >> methodToBeTranslatedWithIfAndShiftRight [
+
+	self methodWithIfAndShiftRight: 2
+]
+
+{ #category : 'generation-targets' }
+SlangBasicTranslationTestClass >> methodUseParametersWithAnnotations: pFrom to: pTo with: anInteger [
+
+	<var: #pTo type: #'unsigned int *'>
+	<var: #pFrom type: #'unsigned int *'>
+
+	^ self
+			methodFromWithAnnotations: pFrom + anInteger 
+			to: pTo yourself
+			len: 5
+]
+
+{ #category : 'generation-targets' }
+SlangBasicTranslationTestClass >> methodUseParametersWithAnnotationsBuiltIn: pFrom to: pTo with: anInteger [
+	<var: #pTo type: #'unsigned int *'>
+	<var: #pFrom type: #'unsigned int *'>
+
+	self
+		methodFromWithAnnotations: pFrom + anInteger 
+		to: pTo
 ]
 
 { #category : 'inline' }
@@ -168,6 +242,14 @@ SlangBasicTranslationTestClass >> methodWithCCoerceInReturn [
 ]
 
 { #category : 'inline' }
+SlangBasicTranslationTestClass >> methodWithIfAndShiftRight: var [
+
+	^ (var < 0
+		ifTrue:  [ 0 ]
+		ifFalse: [ var ]) >> (var - 1 * 32)
+]
+
+{ #category : 'inline' }
 SlangBasicTranslationTestClass >> methodWithInlinePragma [
 
 	<inline: true>
@@ -203,6 +285,28 @@ SlangBasicTranslationTestClass >> methodWithOptionPragma [
 	<option: #OPTION1>
 	<notOption: #OPTION2>
 	<option: #OPTION3>
+	
+]
+
+{ #category : 'inline' }
+SlangBasicTranslationTestClass >> methodWithRepeatedCFunctionName [
+
+	^ true
+]
+
+{ #category : 'inline' }
+SlangBasicTranslationTestClass >> methodWithRepeatedCFunctionName: arg1 [
+
+	^ true
+]
+
+{ #category : 'inline' }
+SlangBasicTranslationTestClass >> methodWithReservedWordLocal: register [
+
+	<var: #case type: 'char *'>
+	<var: #register type: 'char *'>
+	| case |
+	case := register nextPutAll: 'foo'
 	
 ]
 

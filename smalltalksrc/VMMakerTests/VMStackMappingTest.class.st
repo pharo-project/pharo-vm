@@ -50,23 +50,17 @@ VMStackMappingTest >> testDivorceAMarriedContextShuoldMakeItSingle [
 
 { #category : 'tests' }
 VMStackMappingTest >> testDivorceFramesInPage [
+
 	| page |
 	self buildStackFromFrames.
 	page := stackBuilder page.
-	stackBuilder frames do:[ :aFrame |
-		aFrame marryToContext.
-		].
-	stackBuilder frames do:[ :aFrame |
-		self assert: aFrame isMarried.
-		].
-	
-	interpreter divorceFramesIn: page.
-	
-	stackBuilder frames do:[ :aFrame |
-		self assert: aFrame isSingle.
-		].
-	self assert: (interpreter stackPages isFree: page)
+	stackBuilder frames do: [ :aFrame | aFrame marryToContext ].
+	stackBuilder frames do: [ :aFrame | self assert: aFrame isMarried ].
 
+	interpreter divorceFramesIn: page.
+
+	stackBuilder frames do: [ :aFrame | self assert: aFrame isSingle ].
+	self assert: page isFree
 ]
 
 { #category : 'tests' }

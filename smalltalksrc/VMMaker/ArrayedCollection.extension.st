@@ -1,5 +1,14 @@
 Extension { #name : 'ArrayedCollection' }
 
+{ #category : '*VMMaker-Simulation-accessing' }
+ArrayedCollection >> bytesPerElement [
+	| bytesPerElementOrZero |
+	bytesPerElementOrZero := #[0 0 0 0 0 0 0 0 8 4 4 2 2 2 2 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1] at: self class instSpec.
+	^bytesPerElementOrZero = 0
+		ifTrue: [Smalltalk wordSize]
+		ifFalse: [bytesPerElementOrZero]
+]
+
 { #category : '*VMMaker-plugin generation' }
 ArrayedCollection class >> ccg: cg generateCoerceToOopFrom: aNode on: aStream [
 	"N.B.  The is used both for generation and simulation so answer the result (for interpretation)"

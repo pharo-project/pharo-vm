@@ -5,7 +5,7 @@
 
 #include <stdint.h>
 #define sqImageFile void*
-#define squeakFileOffsetType uint64_t
+#define fileOffset_t uint64_t
 
 typedef struct {
 	sqInt (*imageFileClose)(sqImageFile f);

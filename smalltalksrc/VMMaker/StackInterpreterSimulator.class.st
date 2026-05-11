@@ -5,9 +5,6 @@ To see the thing actually run, you could (after backing up this image and change
 
 	(StackInterpreterSimulator new openOn: Smalltalk imageName) test
 
-	((StackInterpreterSimulator newWithOptions: #(NewspeakVM true MULTIPLEBYTECODESETS true))
-		openOn: 'ns101.image') test
-
 and be patient both to wait for things to happen, and to accept various things that may go wrong depending on how large or unusual your image may be.  We usually do this with a small and simple benchmark image.
 
 Here's an example of what Eliot uses to launch the simulator in a window.  The bottom-right window has a menu packed with useful stuff:
@@ -34,13 +31,11 @@ Class {
 		'printReturns',
 		'traceOn',
 		'myBitBlt',
-		'filesOpen',
 		'imageName',
 		'pluginList',
 		'mappedPluginEntries',
 		'quitBlock',
 		'transcript',
-		'eventTransformer',
 		'printFrameAtEachStep',
 		'printBytecodeAtEachStep',
 		'systemAttributes',
@@ -51,7 +46,6 @@ Class {
 		'extSemTabSize',
 		'atEachStepBlock',
 		'disableBooleanCheat',
-		'performFilters',
 		'eventQueue',
 		'assertVEPAES',
 		'primTraceLog'
@@ -145,11 +139,6 @@ StackInterpreterSimulator >> allObjectsSelect: objBlock [
 	^selected
 ]
 
-{ #category : 'spur bootstrap' }
-StackInterpreterSimulator >> argumentCount: n [
-	argumentCount := n
-]
-
 { #category : 'debug support' }
 StackInterpreterSimulator >> assertValidExecutionPointers [
 	assertVEPAES ifTrue:
@@ -169,6 +158,18 @@ StackInterpreterSimulator >> assertValidExecutionPointersAtEachStep: aBoolean [
 { #category : 'testing' }
 StackInterpreterSimulator >> atEachStepBlock: aBlock [
 	atEachStepBlock := aBlock
+]
+
+{ #category : 'other primitives' }
+StackInterpreterSimulator >> attributeSize: index [
+
+	<doNotGenerate>
+	| attribute |
+	attribute := systemAttributes
+		             at: index
+		             ifAbsent: [ Smalltalk vm getSystemAttribute: index ].
+	attribute ifNil: [ ^ self primitiveFail ].
+	^ attribute size
 ]
 
 { #category : 'initialization' }
@@ -199,8 +200,11 @@ StackInterpreterSimulator >> basicInitialize [
 	externalPrimitiveTableFirstFreeIndex := 0.
 	primitiveTable := self class primitiveTable copy.
 	desiredNumStackPages := desiredEdenBytes := 0.
-	"This is initialized on loading the image, but convenient for testing stack page values..."
-	numStackPages := self defaultNumStackPages. 
+
+	"This is initialized on loading the image, but convenient for testing stack page values..."	
+	desiredStackPageBytes := 0.
+	self setNumStackPages: self defaultNumStackPages.
+
 	startMicroseconds := lastYieldMicroseconds := self ioUTCStartMicroseconds.
 
 	"initialize InterpreterSimulator variables used for debugging"
@@ -221,17 +225,6 @@ StackInterpreterSimulator >> basicInitialize [
 	
 	imageReaderWriter := VMImageReaderWriter newWithMemory: objectMemory andInterpreter: self.
 
-]
-
-{ #category : 'utilities' }
-StackInterpreterSimulator >> booleanCheat: cond [
-	disableBooleanCheat
-		ifTrue: [self pop: 2
-					thenPush: (cond
-								ifTrue: [objectMemory trueObject]
-								ifFalse: [objectMemory falseObject]).
-				self fetchNextBytecode]
-		ifFalse: [super booleanCheat: cond]
 ]
 
 { #category : 'spur bootstrap' }
@@ -256,12 +249,6 @@ StackInterpreterSimulator >> byteAt: byteAddress [
 	"This is really only for the C library simulations memcpy:_:_: et al in VMClass.
 	 Use objectMemory byteAt: directly where possible."
 	^objectMemory byteAt: byteAddress
-]
-
-{ #category : 'memory access' }
-StackInterpreterSimulator >> byteAt: byteAddress put: byte [
-	self deprecated.
-	^objectMemory byteAt: byteAddress put: byte
 ]
 
 { #category : 'debug support' }
@@ -302,13 +289,6 @@ StackInterpreterSimulator >> callExternalPrimitive: mapIndex [
 	^ (entry at: 1) perform: (entry at: 2)
 ]
 
-{ #category : 'object memory support' }
-StackInterpreterSimulator >> checkStackIntegrity [
-	"Override to deal with incomplete initialization."
-	stackPages ifNil: [^true].
-	^super checkStackIntegrity
-]
-
 { #category : 'debug support' }
 StackInterpreterSimulator >> classAndSelectorOfMethod: meth forReceiver: rcvr [
 	| mClass dict length methodArray |
@@ -328,18 +308,6 @@ StackInterpreterSimulator >> classAndSelectorOfMethod: meth forReceiver: rcvr [
 	^ Array
 		with: (objectMemory fetchClassOf: rcvr)
 		with: (objectMemory splObj: SelectorDoesNotUnderstand)
-]
-
-{ #category : 'plugin support' }
-StackInterpreterSimulator >> classNameOf: aClass Is: className [
-	"Check if aClass' name is className"
-	| name |
-	(objectMemory lengthOf: aClass) <= classNameIndex ifTrue:
-		[^false]. "Not a class but maybe behavior" 
-	name := objectMemory fetchPointer: classNameIndex ofObject: aClass.
-	(objectMemory isBytes: name) ifFalse:
-		[^false].
-	^ className = (self stringOf: name)
 ]
 
 { #category : 'I/O primitives' }
@@ -422,14 +390,6 @@ StackInterpreterSimulator >> currentBytecode: anInteger [
 	currentBytecode := anInteger
 ]
 
-{ #category : 'UI' }
-StackInterpreterSimulator >> desiredDisplayExtent [
-	^(savedWindowSize
-		ifNil: [640@480]
-		ifNotNil: [savedWindowSize >> 16 @ (savedWindowSize bitAnd: 16rFFFF)])
-			min: Display extent * 2 // 3
-]
-
 { #category : 'initialization' }
 StackInterpreterSimulator >> desiredEdenBytes: anInteger [
 	desiredEdenBytes := anInteger
@@ -463,13 +423,6 @@ StackInterpreterSimulator >> dispatchOn: anInteger in: selectorArray [
 	For speed, no range test is done, since it is done by the at: operation.
 	Note that, unlike many other arrays used in the Interpreter, this method expect NO CArrayAccessor wrapping - it would duplicate the +1. Maybe this would be better updated to make it all uniform"
 	self perform: (selectorArray at: (anInteger + 1)).
-]
-
-{ #category : 'debugging traps' }
-StackInterpreterSimulator >> divorceFrame: theFP andContext: ctxt [
-	"(theFP = -208 or: [ctxt = 22189568]) ifTrue:
-		[self halt]."
-	^super divorceFrame: theFP andContext: ctxt
 ]
 
 { #category : 'process primitive support' }
@@ -526,11 +479,6 @@ StackInterpreterSimulator >> dumpMethodHeader: hdr [
 		]
 ]
 
-{ #category : 'debug printing' }
-StackInterpreterSimulator >> elementsPerPrintOopLine [
-	^4
-]
-
 { #category : 'compiled methods' }
 StackInterpreterSimulator >> endPCOf: aMethod [
 	"Determine the endPC of a method in the heap using interpretation that looks for returns and uses branches to skip intervening bytecodes."
@@ -577,16 +525,6 @@ StackInterpreterSimulator >> fetchByte [
 	^objectMemory byteAt: (instructionPointer := instructionPointer + 1).
 ]
 
-{ #category : 'control primitives' }
-StackInterpreterSimulator >> filterPerformOf: selector to: receiver [
-	"This is to allow simulator to filter start-up items to avoid as-yet unsimulatable plugins."
-	performFilters ifNil: [^false].
-	(performFilters at: (self shortPrint: receiver) ifAbsent: []) ifNotNil:
-		[:messages|
-		^messages includes: (self stringOf: selector)].
-	^false
-]
-
 { #category : 'memory access' }
 StackInterpreterSimulator >> firstIndexableField: oop [
 	"This is in ObjectMemory and overridden in the obj mem simulators"
@@ -604,40 +542,33 @@ StackInterpreterSimulator >> flushExternalPrimitives [
 	super flushExternalPrimitives
 ]
 
-{ #category : 'control primitives' }
-StackInterpreterSimulator >> forShortPrintString: shortPrintString filterPerformMessages: aCollection [
-	performFilters ifNil:
-		[performFilters := Dictionary new].
-	performFilters at: shortPrintString put: aCollection
-]
-
-{ #category : 'frame access' }
-StackInterpreterSimulator >> frameOfMarriedContext: aContext [ 
-	| senderOop |
-	senderOop := objectMemory fetchPointer: SenderIndex ofObject: aContext.
-	self assert: (objectMemory isIntegerObject: senderOop).
-	^self withoutSmallIntegerTags: senderOop
-]
-
 { #category : 'spur bootstrap' }
 StackInterpreterSimulator >> framePointer [
 	^framePointer
 ]
 
 { #category : 'interpreter shell' }
-StackInterpreterSimulator >> functionPointerFor: primIndex inClass: lookupClass [
-	"Override Interpreter to handle the external primitives caching.  See also
-	 internalExecuteNewMethod."
+StackInterpreterSimulator >> functionPointerFor: primIndex [
+	"Override Interpreter to handle the external primitives caching."
 
 	^(primIndex between: 1 and: MaxPrimitiveIndex)
 		ifTrue: [primitiveTable at: primIndex + 1]
 		ifFalse: [0]
 ]
 
-{ #category : 'debugging traps' }
-StackInterpreterSimulator >> getErrorObjectFromPrimFailCode [
-	(primFailCode > 1 and: [(#(primitiveNew primitiveNewWithArg primitiveFetchNextMourner primitiveAdoptInstance) includes: primitiveFunctionPointer) not]) ifTrue: [self halt].
-	^super getErrorObjectFromPrimFailCode
+{ #category : 'other primitives' }
+StackInterpreterSimulator >> getAttribute: index Into: objectBody Length: sz [
+
+	1 to: sz do: [ :i |
+		| attribute |
+		attribute := systemAttributes
+			             at: index
+			             ifAbsent: [ Smalltalk vm getSystemAttribute: index ].
+		attribute ifNil: [ ^ self primitiveFail ].
+
+		objectMemory
+			byteAt: objectBody + i - 1
+			put: (attribute at: i) asciiValue ]
 ]
 
 { #category : 'memory access' }
@@ -648,12 +579,6 @@ StackInterpreterSimulator >> halfWordHighInLong32: long32 [
 { #category : 'memory access' }
 StackInterpreterSimulator >> halfWordLowInLong32: long32 [
 	^self subclassResponsibility
-]
-
-{ #category : 'debug support' }
-StackInterpreterSimulator >> headerStart: oop [
-
-	^ (objectMemory extraHeaderBytes: oop) negated
 ]
 
 { #category : 'image save/restore' }
@@ -913,16 +838,6 @@ StackInterpreterSimulator >> ioRelinquishProcessorForMicroseconds: microseconds 
 	self incrementByteCount
 ]
 
-{ #category : 'I/O primitives' }
-StackInterpreterSimulator >> ioScreenDepth [
-	^DisplayScreen actualScreenDepth.
-]
-
-{ #category : 'I/O primitives support' }
-StackInterpreterSimulator >> ioScreenScaleFactor [
-	^ 1.0
-]
-
 { #category : 'process primitive support' }
 StackInterpreterSimulator >> ioSetMaxExtSemTableSize: anInteger [
 	"Inform the VM of the maximum size the image will grow the exernal semaphore table (specialObjectsArray at: 39) to.
@@ -948,10 +863,10 @@ StackInterpreterSimulator >> ioUTCMicroseconds [
 StackInterpreterSimulator >> ioUTCStartMicroseconds [
 	"Answer the value of the microsecond clock at startup."
 
-	^startMicroseconds ifNil:
-		[self class initializationOptions
-			at: #startMicroseconds
-			ifAbsent: [[Time utcMicrosecondClock] on: Error do: [Time totalSeconds * 1000000]]]
+	^ startMicroseconds ifNil: [
+		  self class initializationOptions
+			  at: #startMicroseconds
+			  ifAbsent: [ Time primUTCMicrosecondsClock ] ]
 ]
 
 { #category : 'primitive support' }
@@ -969,20 +884,6 @@ StackInterpreterSimulator >> isPrimitiveFunctionPointerAnIndex [
 	  and: [primitiveFunctionPointer <= MaxQuickPrimitiveIndex]]
 ]
 
-{ #category : 'compiled methods' }
-StackInterpreterSimulator >> literal: offset [
-	"trap pushes of forwarded literals to help debug following forwarded primitive args.
-	 it is not an error to push a forwarded literal, but we'd like to step through any resulting
-	 primtive failure code.
-	 Use #literalMaybeForwarder: for resolve forwarders if nedeed
-	"
-	| lit |
-	lit := super literal: offset.
-	(objectMemory isOopForwarded: lit) ifTrue:
-		[self halt: 'forwarded literal in ', thisContext selector].
-	^lit
-]
-
 { #category : 'plugin support' }
 StackInterpreterSimulator >> loadNewPlugin: pluginString [
 	breakSelector ifNotNil:
@@ -994,34 +895,9 @@ StackInterpreterSimulator >> loadNewPlugin: pluginString [
 		 entry]
 ]
 
-{ #category : 'memory access' }
-StackInterpreterSimulator >> longAt: byteAddress [
-	self deprecated.
-	^objectMemory longAt: byteAddress
-]
-
-{ #category : 'memory access' }
-StackInterpreterSimulator >> longAt: byteAddress put: a32BitValue [
-	self deprecated.
-	^objectMemory longAt: byteAddress put: a32BitValue
-]
-
-{ #category : 'callback support' }
-StackInterpreterSimulator >> lookupOrdinaryNoMNUEtcInClass: class [
-	lookupCount := lookupCount + 1.
-	^super lookupOrdinaryNoMNUEtcInClass: class
-]
-
 { #category : 'plugin support' }
 StackInterpreterSimulator >> mappedPluginEntries [
 	^mappedPluginEntries
-]
-
-{ #category : 'frame access' }
-StackInterpreterSimulator >> markContextAsDead: oop [
-	"(self withoutSmallIntegerTags: (objectMemory fetchPointer: SenderIndex ofObject: oop)) = -16r26824 ifTrue:
-		[self halt]."
-	^super markContextAsDead: oop
 ]
 
 { #category : 'simulation only' }
@@ -1120,44 +996,9 @@ StackInterpreterSimulator >> primitiveContextAt [
 ]
 
 { #category : 'debugging traps' }
-StackInterpreterSimulator >> primitiveDoPrimitiveWithArgs [
-	self halt.
-	^super primitiveDoPrimitiveWithArgs
-]
-
-{ #category : 'control primitives' }
-StackInterpreterSimulator >> primitiveExecuteMethod [
-	self halt: thisContext selector.
-	^super primitiveExecuteMethod
-]
-
-{ #category : 'control primitives' }
-StackInterpreterSimulator >> primitiveExecuteMethodArgsArray [
-	self halt: thisContext selector.
-	"(objectMemory isOopCompiledMethod: self stackTop) ifFalse:
-		[self halt]."
-	^super primitiveExecuteMethodArgsArray
-]
-
-{ #category : 'debugging traps' }
 StackInterpreterSimulator >> primitiveFailFor: reasonCode [
 	"self halt."
 	^super primitiveFailFor: reasonCode
-]
-
-{ #category : 'other primitives' }
-StackInterpreterSimulator >> primitiveGetAttribute [
-	"Fetch the system attribute with the given integer ID. The result is a string, which will be empty if the attribute is not defined."
-
-	| index s attribute |
-	index := self stackIntegerValue: 0.
-	self successful ifTrue: [
-		attribute := systemAttributes at: index ifAbsent: [Smalltalk vm getSystemAttribute: index].
-		attribute ifNil: [ ^self primitiveFail ].
-		s := objectMemory instantiateClass: (objectMemory splObj: ClassByteString) indexableSize: attribute size.
-		1 to: attribute size do: [ :i |
-			objectMemory storeByte: i-1 ofObject: s withValue: (attribute at: i) asciiValue].
-		self pop: 2 "rcvr, attr" thenPush: s]
 ]
 
 { #category : 'debugging traps' }
@@ -1220,54 +1061,10 @@ StackInterpreterSimulator >> primitiveNewWithArg [
 	 1->0}"
 ]
 
-{ #category : 'control primitives' }
-StackInterpreterSimulator >> primitiveObject: actualReceiver perform: selector withArguments: argumentArray lookedUpIn: lookupClass [
-	"Override to allow simulator to filter start-up items to avoid as-yet unsimulatable plugins."
-
-	(self filterPerformOf: selector to: actualReceiver) ifTrue:
-		[^self pop: argumentCount + 1 thenPush: actualReceiver].
-	^super primitiveObject: actualReceiver perform: selector withArguments: argumentArray lookedUpIn: lookupClass
-]
-
 { #category : 'object access primitives' }
 StackInterpreterSimulator >> primitiveObjectPointsTo [
 	"self halt."
 	^super primitiveObjectPointsTo
-]
-
-{ #category : 'debugging traps' }
-StackInterpreterSimulator >> primitivePerform [
-	| selector |
-	selector := self stackValue: argumentCount - 1.
-	self sendBreakpoint: selector receiver: (self stackValue: argumentCount).
-	(self filterPerformOf: selector to: (self stackValue: argumentCount)) ifTrue:
-		[^self pop: argumentCount].
-	^super primitivePerform
-]
-
-{ #category : 'object access primitives' }
-StackInterpreterSimulator >> primitiveStoreStackp [
-	"self printContext: (self stackValue: 1).
-	self halt."
-	super primitiveStoreStackp.
-	"self printContext: self stackTop"
-]
-
-{ #category : 'system control primitives' }
-StackInterpreterSimulator >> primitiveVMParameter [
-	
-	(self stackTop = (objectMemory integerObjectOf: 9)
-	 or: [self stackTop = (objectMemory integerObjectOf: 52)]) ifTrue:
-		[self halt].
-	^super primitiveVMParameter
-]
-
-{ #category : 'debugging traps' }
-StackInterpreterSimulator >> primitiveWait [
-	"Catch errors before we start the whole morphic error process"
-
-	"byteCount > 1000000 ifTrue: [self halt]."  "Ignore early process activity"
-	^ super primitiveWait
 ]
 
 { #category : 'debug printing' }
@@ -1301,27 +1098,6 @@ StackInterpreterSimulator >> printCurrentBytecodeOn: aStream [
 { #category : 'debug printing' }
 StackInterpreterSimulator >> printECS [
 	self printCallStackFP: framePointer
-]
-
-{ #category : 'debug printing' }
-StackInterpreterSimulator >> printFrameFlagsForFP: theFP [
-	| address it |
-	<inline: false>
-	<var: #theFP type: #'char *'>
-	<var: #address type: #'char *'>
-	address := theFP + FoxFrameFlags.
-	it := stackPages unsignedLongAt: address.
-	self printHex: address;
-		printChar: $/;
-		printNum: (stackPages memIndexFor: address);
-		print: ':       flags: ';
-		printHex: it.
-	it ~= 0 ifTrue:
-		[self printChar: $=; printNum: it].
-	self print: '  numArgs: '; printNum: (self frameNumArgs: theFP);
-		print: '  hasContext: '; printNum: (self frameHasContext: theFP);
-		print: '  isBlock: '; printNum: (self frameIsBlockActivation: theFP);
-		cr
 ]
 
 { #category : 'debug printing' }
@@ -1461,12 +1237,6 @@ StackInterpreterSimulator >> profileSends: nBytecodes [
 	self close
 ]
 
-{ #category : 'debugging traps' }
-StackInterpreterSimulator >> pushMaybeContextReceiverVariable: index [
-	"(index = SenderIndex or: [index = ClosureIndex]) ifTrue: [self halt]."
-	^super pushMaybeContextReceiverVariable: index
-]
-
 { #category : 'I/O primitives support' }
 StackInterpreterSimulator >> queueForwardedEvent: event [
 	eventQueue ifNil:
@@ -1548,11 +1318,6 @@ StackInterpreterSimulator >> runForNBytes: nBytecodes [
 	"undo the pre-increment of IP before returning"
 ]
 
-{ #category : 'I/O primitives' }
-StackInterpreterSimulator >> savedWindowSize [
-	^savedWindowSize ifNil: [0]
-]
-
 { #category : 'accessing' }
 StackInterpreterSimulator >> setBreakCount: anInteger [
 	breakCount := anInteger
@@ -1567,12 +1332,6 @@ StackInterpreterSimulator >> setImageName: aString [
 StackInterpreterSimulator >> shortPrintContext: aContext [
 	transcript newLine.
 	^super shortPrintContext: aContext
-]
-
-{ #category : 'debug printing' }
-StackInterpreterSimulator >> shortPrintFrame: theFP [
-	self transcript newLine.
-	^super shortPrintFrame: theFP
 ]
 
 { #category : 'process primitive support' }
@@ -1617,15 +1376,6 @@ StackInterpreterSimulator >> singleStep [
 	atEachStepBlock value. "N.B. may be nil"
 	self dispatchOn: currentBytecode in: BytecodeTable.
 	self incrementByteCount
-]
-
-{ #category : 'primitive support' }
-StackInterpreterSimulator >> slowPrimitiveResponse [
-	primTraceLog ifNotNil:
-		[primTraceLog size > 127 ifTrue:
-			[primTraceLog removeFirst].
-		 primTraceLog addLast: primitiveFunctionPointer].
-	^super slowPrimitiveResponse
 ]
 
 { #category : 'debug printing' }
