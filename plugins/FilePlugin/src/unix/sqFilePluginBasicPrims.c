@@ -596,7 +596,7 @@ sqFileReadIntoAt(SQFile *f, size_t count, char *byteArrayIndex, size_t startInde
 	*/
 
 	char *dst;
-	size_t bytesRead;
+	ssize_t bytesRead;
 	FILE *file;
 #if COGMTVM
 	sqInt myThreadIndex;
@@ -615,6 +615,8 @@ sqFileReadIntoAt(SQFile *f, size_t count, char *byteArrayIndex, size_t startInde
 		if (f->lastOp == WRITE_OP)
 			fseek(file, 0, SEEK_CUR);  /* seek between writing and reading */
 	}
+
+	int fd = fileno(file);
 	dst = byteArrayIndex + startIndex;
 	if (f->isStdioStream) {
 #if COGMTVM
@@ -624,31 +626,28 @@ sqFileReadIntoAt(SQFile *f, size_t count, char *byteArrayIndex, size_t startInde
 			dst = bufferOop + BaseHeaderSize + startIndex;
 		}
 		myThreadIndex = interpreterProxy->disownVM(0);
-#endif
+#endif	
+
+		/*
+			* To emulate the behavior of fread on a file we need to
+			* make the stdin non blocking.
+			* As this can produce a problem in Unix systems once
+			* Pharo ends (we are affecting the behavior of a shared FD)
+			* we need to restore it back to the original flags.
+			*
+			* With this the reading of the STDIN will not block
+			* until there is data.
+			*/
+		clearerr(file);
+		int originalFlags = fcntl(fd, F_GETFL);
+		fcntl(fd, F_SETFL, originalFlags | O_NONBLOCK);
 
 		bytesRead = 0;
-		do {
-			clearerr(file);
 
-			/*
-			 * To emulate the behavior of fread on a file we need to
-			 * make the stdin non blocking.
-			 * As this can produce a problem in Unix systems once
-			 * Pharo ends (we are affecting the behavior of a shared FD)
-			 * we need to restore it back to the original flags.
-			 *
-			 * With this the reading of the STDIN will not block
-			 * until there is data.
-			 */
-
-			int originalFlags = fcntl(fileno(file), F_GETFL);
-			fcntl(fileno(file), F_SETFL, originalFlags | O_NONBLOCK);
-
-			bytesRead = fread(dst, 1, count, file);
-
-			fcntl(fileno(file), F_SETFL, originalFlags);
-		}
-		while (bytesRead <= 0 && ferror(file) && errno == EINTR);
+		do { bytesRead = read(fd, dst, count); }
+			while (bytesRead <= 0 && ferror(file) && errno == EINTR);
+		
+		fcntl(fd, F_SETFL, originalFlags);
 
 #if COGMTVM
 		interpreterProxy->ownVM(myThreadIndex);
@@ -656,12 +655,19 @@ sqFileReadIntoAt(SQFile *f, size_t count, char *byteArrayIndex, size_t startInde
 			interpreterProxy->unpinObject(bufferOop);
 #endif /* COGMTVM */
 	}
-	else
+	else {
 		do {
 			clearerr(file);
-			bytesRead = fread(dst, 1, count, file);
+			bytesRead = read(fd, dst, count);
 		}
 		while (bytesRead <= 0 && ferror(file) && errno == EINTR);
+	}
+	
+	if (bytesRead < 0) {
+		bytesRead = 0;
+	}
+
+
 	/* support for skipping back 1 character for stdio streams */
 	if (f->isStdioStream)
 		if (bytesRead > 0)
