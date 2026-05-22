@@ -618,6 +618,7 @@ sqFileReadIntoAt(SQFile *f, size_t count, char *byteArrayIndex, size_t startInde
 
 	int fd = fileno(file);
 	dst = byteArrayIndex + startIndex;
+	int originalFlags = 0;
 	if (f->isStdioStream) {
 #if COGMTVM
 		if (!(wasPinned = interpreterProxy->isPinned(bufferOop))) {
@@ -639,35 +640,31 @@ sqFileReadIntoAt(SQFile *f, size_t count, char *byteArrayIndex, size_t startInde
 			* until there is data.
 			*/
 		clearerr(file);
-		int originalFlags = fcntl(fd, F_GETFL);
+		originalFlags = fcntl(fd, F_GETFL);
 		fcntl(fd, F_SETFL, originalFlags | O_NONBLOCK);
-
+		} else {
+			/*sync libc internal buffer before read */
+			fseek(file, 0, SEEK_CUR);
+    	}
 		/*To remain coherent with the return value of read*/
 		ssize_t sReadBytes;
         do {sReadBytes = read(fd, dst, count);}	
-			while (sReadBytes <= 0 && ferror(file) && errno == EINTR);
-		
-		fcntl(fd, F_SETFL, originalFlags);
+			while (sReadBytes < 0 && errno == EINTR);
+		if (f->isStdioStream) {
+			fcntl(fd, F_SETFL, originalFlags);
+		}
 		
 		if (sReadBytes < 0) {
             bytesRead = 0; 
         } else {
             bytesRead = (size_t)sReadBytes;
         }
-
+		if (f->isStdioStream){
 #if COGMTVM
 		interpreterProxy->ownVM(myThreadIndex);
 		if (!wasPinned)
 			interpreterProxy->unpinObject(bufferOop);
 #endif /* COGMTVM */
-	}
-	else {
-		/* Use buffered fread for regular files to ensure UTF-8 encoding integrity */
-		do {
-			clearerr(file);
-			bytesRead = fread(dst, 1, count, file);
-		}
-		while (bytesRead <= 0 && ferror(file) && errno == EINTR);
 	}
 
 
