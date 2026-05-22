@@ -596,7 +596,7 @@ sqFileReadIntoAt(SQFile *f, size_t count, char *byteArrayIndex, size_t startInde
 	*/
 
 	char *dst;
-	ssize_t bytesRead;
+	size_t bytesRead;
 	FILE *file;
 #if COGMTVM
 	sqInt myThreadIndex;
@@ -642,12 +642,18 @@ sqFileReadIntoAt(SQFile *f, size_t count, char *byteArrayIndex, size_t startInde
 		int originalFlags = fcntl(fd, F_GETFL);
 		fcntl(fd, F_SETFL, originalFlags | O_NONBLOCK);
 
-		bytesRead = 0;
-
-		do { bytesRead = read(fd, dst, count); }
-			while (bytesRead <= 0 && ferror(file) && errno == EINTR);
+		/*To remain coherent with the return value of read*/
+		ssize_t sReadBytes;
+        do {sReadBytes = read(fd, dst, count);}	
+			while (sReadBytes <= 0 && ferror(file) && errno == EINTR);
 		
 		fcntl(fd, F_SETFL, originalFlags);
+		
+		if (sReadBytes < 0) {
+            bytesRead = 0; 
+        } else {
+            bytesRead = (size_t)sReadBytes;
+        }
 
 #if COGMTVM
 		interpreterProxy->ownVM(myThreadIndex);
@@ -656,15 +662,12 @@ sqFileReadIntoAt(SQFile *f, size_t count, char *byteArrayIndex, size_t startInde
 #endif /* COGMTVM */
 	}
 	else {
+		/* Use buffered fread for regular files to ensure UTF-8 encoding integrity */
 		do {
 			clearerr(file);
-			bytesRead = read(fd, dst, count);
+			bytesRead = fread(dst, 1, count, file);
 		}
 		while (bytesRead <= 0 && ferror(file) && errno == EINTR);
-	}
-	
-	if (bytesRead < 0) {
-		bytesRead = 0;
 	}
 
 
