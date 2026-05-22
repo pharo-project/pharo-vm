@@ -497,6 +497,7 @@ StackInterpreter class >> declareCVarsIn: aCCodeGenerator [
 		addHeaderFile: '<stdint.h> /* for e.g. alloca */';
 		addHeaderFile: '"sigjmp_support.h"';
 		addHeaderFile: '<wchar.h> /* for wint_t */';
+		addHeaderFile: '"cogStackAlignment.h"';
 		addHeaderFile: '"vmCallback.h"';
 		addHeaderFile: '"memoryFence.h"';
 		addHeaderFile: '"dispdbg.h"';
