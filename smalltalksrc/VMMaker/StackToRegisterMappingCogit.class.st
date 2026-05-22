@@ -2128,17 +2128,33 @@ StackToRegisterMappingCogit >> genPushActiveContextBytecode [
 
 { #category : 'bytecode generators' }
 StackToRegisterMappingCogit >> genPushActiveProcessBytecode [
+	"Get a free register to push thisProcess to the stack.
+	If we cannot get a register, abort compilation"
 
-	self MoveAw: objectMemory specialObjectsArrayAddress R: TempReg.
-	"Fetch the special objects array address, read the scheduler association, its value, and the active process from it"
-	self AddCq: SchedulerAssociation << 3 R: TempReg.
-	self MoveMw: 1 * objectMemory wordSize r: TempReg R: TempReg.
-	self AddCq: ValueIndex << objectMemory shiftForWord R: TempReg.
-	self MoveMw: 1 * objectMemory wordSize r: TempReg R: TempReg.
+	| freeReg |
+	freeReg := self allocateRegNotConflictingWith: 0.
+	freeReg = NoReg ifTrue: [ ^ self unknownBytecode ].
+
+	"The following generates code equivalent to:
+	
+		schedulerAssociation := smalltalkObjectArray[schedulerIndex].
+		scheduler := schedulerAssociation[valueIndex].
+		activeProcess := scheduler[activeProcessIndex].
+		push(activeProcess)
+	"
+	self MoveAw: objectMemory specialObjectsArrayAddress R: freeReg.
+	objectRepresentation
+		genLoadSlot: SchedulerAssociation
+		sourceReg: freeReg
+		destReg: freeReg.
+	objectRepresentation
+		genLoadSlot: ValueIndex
+		sourceReg: freeReg
+		destReg: freeReg.
 	self
-		AddCq: ActiveProcessIndex << objectMemory shiftForWord
-		R: TempReg.
-	self ssPushBase: TempReg offset: 1 * objectMemory wordSize.
+		ssPushBase: freeReg
+		offset:
+		(objectRepresentation slotOffsetOfInstVarIndex: ActiveProcessIndex).
 	^ 0
 ]
 

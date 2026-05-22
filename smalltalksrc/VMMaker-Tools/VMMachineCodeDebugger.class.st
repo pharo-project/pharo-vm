@@ -184,7 +184,6 @@ VMMachineCodeDebugger >> doInitialDisassemble [
 
 	^ machineSimulator disassembler
 		printImmediatesInHexa;
-		useAlternatePrinterVariant;
 		disassembleNext: 150
 		instructionsIn: (cogit objectMemory memoryManager
 			copyFrom: self initialInstructionToDisassemble
