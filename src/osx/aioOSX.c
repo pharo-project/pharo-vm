@@ -46,7 +46,7 @@
  */
 typedef struct _AioOSXDescriptor {
 
-	int fd;
+	sqInt fd;
 	void* clientData;
 	aioHandler readHandlerFn;
 	aioHandler writeHandlerFn;
@@ -63,8 +63,8 @@ AioOSXDescriptor* descriptorList = NULL;
 /*
  * I can access the elements in the list
  */
-AioOSXDescriptor* AioOSXDescriptor_find(int fd);
-void AioOSXDescriptor_remove(int fd);
+AioOSXDescriptor* AioOSXDescriptor_find(sqInt fd);
+void AioOSXDescriptor_remove(sqInt fd);
 
 /*
  * This is kqueue used in the poll of the events.
@@ -281,7 +281,7 @@ aioInterruptPoll(){
  * This function should be call to each FD to use.
  */
 EXPORT(void)
-aioEnable(int fd, void *clientData, int flags){
+aioEnable(sqInt fd, void *clientData, int flags){
 	AioOSXDescriptor * descriptor;
 
 	descriptor = AioOSXDescriptor_find(fd);
@@ -322,7 +322,7 @@ aioEnable(int fd, void *clientData, int flags){
  * - AIO_W
  */
 EXPORT(void)
-aioSuspend(int fd, int mask){
+aioSuspend(sqInt fd, int mask){
 	int cant = 0;
 	int nextIndex = 0;
 
@@ -366,7 +366,7 @@ aioSuspend(int fd, int mask){
  * I disable all the events of a given FD and I forget about it!
  */
 EXPORT(void)
-aioDisable(int fd){
+aioDisable(sqInt fd){
 	aioSuspend(fd, AIO_RWX);
 	AioOSXDescriptor_remove(fd);
 }
@@ -384,7 +384,7 @@ aioDisable(int fd){
  */
 
 EXPORT(void)
-aioHandle(int fd, aioHandler handlerFn, int mask){
+aioHandle(sqInt fd, aioHandler handlerFn, int mask){
 	struct kevent newEvents[3];
 
 	AioOSXDescriptor *descriptor = AioOSXDescriptor_find(fd);
@@ -409,7 +409,7 @@ aioHandle(int fd, aioHandler handlerFn, int mask){
 	aio_handle_events(newEvents, 3, 0);
 }
 
-AioOSXDescriptor* AioOSXDescriptor_find(int fd){
+AioOSXDescriptor* AioOSXDescriptor_find(sqInt fd){
 	AioOSXDescriptor* found;
 
 	found = descriptorList;
@@ -422,7 +422,7 @@ AioOSXDescriptor* AioOSXDescriptor_find(int fd){
 	return NULL;
 }
 
-void AioOSXDescriptor_remove(int fd){
+void AioOSXDescriptor_remove(sqInt fd){
 	AioOSXDescriptor* found;
 	AioOSXDescriptor* prev = NULL;
 

@@ -171,7 +171,6 @@ sqInt ioExitWithErrorCode(int);
 sqInt crashInThisOrAnotherThread(sqInt flags);
 sqInt ioSeconds(void);
 sqInt ioSecondsNow(void);
-
 sqInt ioRelinquishProcessorForMicroseconds(sqInt microSeconds);
 
 #if STACKVM

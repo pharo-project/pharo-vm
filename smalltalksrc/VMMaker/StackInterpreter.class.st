@@ -497,6 +497,7 @@ StackInterpreter class >> declareCVarsIn: aCCodeGenerator [
 		addHeaderFile: '<stdint.h> /* for e.g. alloca */';
 		addHeaderFile: '"sigjmp_support.h"';
 		addHeaderFile: '<wchar.h> /* for wint_t */';
+		addHeaderFile: '"cogStackAlignment.h"';
 		addHeaderFile: '"vmCallback.h"';
 		addHeaderFile: '"memoryFence.h"';
 		addHeaderFile: '"dispdbg.h"';
@@ -1172,7 +1173,9 @@ StackInterpreter class >> initializePrimitiveTable [
 		(149 primitiveGetAttribute)
 
 		"Were File Primitives (150-169) - NO LONGER INDEXED"
-		(150 157 primitiveFail)
+		(150 155 primitiveFail)
+		(156 primitiveCompareBytes)
+		(157 primitiveFail)
 		(158 primitiveStringCompareWith)
 		(159 primitiveHashMultiply)
 		(160 primitiveAdoptInstance)
@@ -5956,8 +5959,6 @@ StackInterpreter >> findNewMethodOrdinary [
 StackInterpreter >> findNewMethodOrdinaryIfFound: aBlock [
 	"Find the compiled method to be run when the current messageSelector is sent to the class 'lkupClass', setting the values of 'newMethod' and 'primitiveIndex'."
 
-	| classTag |
-	classTag := lkupClassTag.
 	^ self findNewMethodInClassTag: lkupClassTag ifFound: aBlock
 ]
 
