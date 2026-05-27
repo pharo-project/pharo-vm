@@ -698,7 +698,7 @@ CogObjectRepresentationFor64BitSpur >> genIntegerTo64BitSignedIntegerValue: valu
 	| jumpNotSmallInteger jumpMerge jumpFail |
 	cogit MoveR: valueReg R: scratch1.
 	cogit ArithmeticShiftRightCq: self numSmallIntegerBits R: scratch1. "If in range this is now 0 or -1"
-	cogit AndCq: 16rF R: scratch1.
+	cogit AddCq: 1 R: scratch1.
 	cogit CmpCq: 1 R: scratch1.
 	jumpNotSmallInteger := cogit JumpAbove: 0.
 	
@@ -1286,7 +1286,7 @@ CogObjectRepresentationFor64BitSpur >> genPrimitiveAtSigned: signedVersion [
 	signedVersion
 		ifTrue: "c.f. Spur64BitMemoryManager>>#isIntegerValue:"
 			[cogit ArithmeticShiftRightCq: self numSmallIntegerBits R: TempReg. "If in range this is now 0 or -1"
-			 cogit AndCq: 16rF R: TempReg.
+			 cogit AddCq: 1 R: TempReg.
 			 cogit CmpCq: 1 R: TempReg.
 			 jumpNotSmallInteger := cogit JumpAbove: 0.
 			 cogit MoveR: ClassReg R: ReceiverResultReg.

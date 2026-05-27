@@ -38,7 +38,6 @@ VMJittedByteArrayAccessPrimitiveTest >> assertEqualsTo: expectedValue bitSize: b
 			equals: (expectedValue twoComplementOfBitSize: bitSize) ].
 
 	bitSize = 64 ifTrue: [ 
-		1halt.
 		self
 			assert: (memory fetchLong64: 0 ofObject: targetReceiver)
 			equals: (expectedValue twoComplementOfBitSize: bitSize) ].
@@ -366,7 +365,6 @@ VMJittedByteArrayAccessPrimitiveTest >> testPrimitiveLoadInt64LoadsLargeNegative
 
 	self genPrimitive: #LoadInt64.
 	
-	1halt.
 	self 
 		executePrimitiveWithReceiver: receiver
 		withArgument: (self memory integerObjectOf: 0).
@@ -375,6 +373,26 @@ VMJittedByteArrayAccessPrimitiveTest >> testPrimitiveLoadInt64LoadsLargeNegative
 	#[255 255 255 255 255 255 255 127] withIndexDo: [ :expectedByte :index |
 		self assert: (memory fetchByte: index - 1 ofObject: largeIntegerOop) equals: expectedByte.
 	]
+]
+
+{ #category : 'tests - load integers' }
+VMJittedByteArrayAccessPrimitiveTest >> testPrimitiveLoadInt64LoadsNegative32bitSmallInteger [
+
+	| expectedValue |
+	expectedValue := -2147483649.
+	self newReceiverWithValue: expectedValue ofBitSize: 64.	
+	#[255 255 255 127 255 255 255 255] withIndexDo: [ :byte :index |
+		self assert: (memory fetchByte: index - 1 ofObject: receiver) equals: byte.
+	].
+
+	self genPrimitive: #LoadInt64.
+	
+	self 
+		executePrimitiveWithReceiver: receiver
+		withArgument: (self memory integerObjectOf: 0).
+
+	self assert: (memory isIntegerObject: machineSimulator receiverRegisterValue).
+	self assert: (memory integerValueOf: machineSimulator receiverRegisterValue) equals: -2147483649
 ]
 
 { #category : 'tests - load integers' }
@@ -396,6 +414,26 @@ VMJittedByteArrayAccessPrimitiveTest >> testPrimitiveLoadInt64LoadsNegativeValue
 		assert: (memory integerValueOf: machineSimulator receiverRegisterValue) 
 	 	equals: expectedValue
 
+]
+
+{ #category : 'tests - load integers' }
+VMJittedByteArrayAccessPrimitiveTest >> testPrimitiveLoadInt64LoadsPositiveSmallInteger [
+
+	| expectedValue |
+	expectedValue := 17.
+	self newReceiverWithValue: expectedValue ofBitSize: 64.	
+	#[17 0 0 0 0 0 0 0] withIndexDo: [ :byte :index |
+		self assert: (memory fetchByte: index - 1 ofObject: receiver) equals: byte.
+	].
+
+	self genPrimitive: #LoadInt64.
+	
+	self 
+		executePrimitiveWithReceiver: receiver
+		withArgument: (self memory integerObjectOf: 0).
+
+	self assert: (memory isIntegerObject: machineSimulator receiverRegisterValue).
+	self assert: (memory integerValueOf: machineSimulator receiverRegisterValue) equals: 17
 ]
 
 { #category : 'tests - load integers' }
