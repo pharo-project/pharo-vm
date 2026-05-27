@@ -376,6 +376,28 @@ VMJittedByteArrayAccessPrimitiveTest >> testPrimitiveLoadInt64LoadsLargeNegative
 ]
 
 { #category : 'tests - load integers' }
+VMJittedByteArrayAccessPrimitiveTest >> testPrimitiveLoadInt64LoadsLargePositiveValue [
+
+	| expectedValue largeIntegerOop |
+	expectedValue := 9223372036854775806.
+	self newReceiverWithValue: expectedValue ofBitSize: 64.	
+	#[254 255 255 255 255 255 255 127] withIndexDo: [ :byte :index |
+		self assert: (memory fetchByte: index - 1 ofObject: receiver) equals: byte.
+	].
+
+	self genPrimitive: #LoadInt64.
+	
+	self 
+		executePrimitiveWithReceiver: receiver
+		withArgument: (self memory integerObjectOf: 0).
+
+	largeIntegerOop := machineSimulator receiverRegisterValue.
+	#[254 255 255 255 255 255 255 127] withIndexDo: [ :expectedByte :index |
+		self assert: (memory fetchByte: index - 1 ofObject: largeIntegerOop) equals: expectedByte.
+	]
+]
+
+{ #category : 'tests - load integers' }
 VMJittedByteArrayAccessPrimitiveTest >> testPrimitiveLoadInt64LoadsNegative32bitSmallInteger [
 
 	| expectedValue |

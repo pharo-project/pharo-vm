@@ -180,7 +180,7 @@ CogObjectRepresentationFor64BitSpur >> genAlloc64BitPositiveIntegerValue: valueR
 { #category : 'primitive generators' }
 CogObjectRepresentationFor64BitSpur >> genAlloc64BitSignedIntegerValue: valueReg into: resultReg scratchReg: scratch1 scratchReg: scratch2 [
 	<returnTypeC: #'AbstractInstruction *'>
-	| allocSize newLNIHeader jumpFail jumpNeg |
+	| allocSize newLNIHeader jumpFail jumpNeg continue |
 	allocSize := objectMemory baseHeaderSize + objectMemory wordSize.
 	newLNIHeader := objectMemory
 							headerForSlots: 1
@@ -194,24 +194,22 @@ CogObjectRepresentationFor64BitSpur >> genAlloc64BitSignedIntegerValue: valueReg
 	cogit MoveCq: newLNIHeader R: scratch1.
 	cogit CmpCq: 0 R: valueReg.
 	jumpNeg := cogit JumpLess: 0.
+	
 	"We can avoid duplicating the large constant and a jump choosing between
 	 the alternatives by incrementing the single constant if positive.  The assert
 	 checks that the hack works. Compact code is to be preferred because it is
 	 an uncommon case; usually the value will fit in a SmallInteger."
 	self assert: (objectMemory headerForSlots: 0 format: 0 classIndex: 1) = 1.
 	cogit AddCq: ClassLargePositiveIntegerCompactIndex - ClassLargeNegativeIntegerCompactIndex R: scratch1.
-	jumpNeg jmpTarget:
-	(cogit MoveR: scratch1 Mw: 0 r: resultReg).
-	"The old less compact code was
-	cogit CmpCq: 0 R: valueReg.
-	jumpNeg := cogit JumpLess: 0.
-	cogit MoveCq: newLPIHeader R: scratch1.
-	jumpJoin := cogit Jump: 0.
-	jumpNeg jmpTarget:
-	(cogit MoveCq: newLNIHeader R: scratch1).
-	jumpJoin jmpTarget:
-	(cogit MoveR: scratch1 Mw: 0 r: resultReg)."
+	continue := cogit Jump: 0.
+	
+	"Now box the value into the object, this code below is for both positive and negative values"
+	jumpNeg jmpTarget: cogit Label.
 	cogit NegateR: valueReg.
+	
+	"Write the header, then the value"
+	continue jmpTarget: cogit Label.
+	cogit MoveR: scratch1 Mw: 0 r: resultReg.
 	cogit MoveR: valueReg Mw: objectMemory baseHeaderSize r: resultReg.
 	^jumpFail
 ]
