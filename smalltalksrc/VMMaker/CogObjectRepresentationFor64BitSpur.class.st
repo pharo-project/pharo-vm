@@ -211,6 +211,7 @@ CogObjectRepresentationFor64BitSpur >> genAlloc64BitSignedIntegerValue: valueReg
 	(cogit MoveCq: newLNIHeader R: scratch1).
 	jumpJoin jmpTarget:
 	(cogit MoveR: scratch1 Mw: 0 r: resultReg)."
+	cogit NegateR: valueReg.
 	cogit MoveR: valueReg Mw: objectMemory baseHeaderSize r: resultReg.
 	^jumpFail
 ]
@@ -697,7 +698,7 @@ CogObjectRepresentationFor64BitSpur >> genIntegerTo64BitSignedIntegerValue: valu
 	| jumpNotSmallInteger jumpMerge jumpFail |
 	cogit MoveR: valueReg R: scratch1.
 	cogit ArithmeticShiftRightCq: self numSmallIntegerBits R: scratch1. "If in range this is now 0 or -1"
-	cogit AddCq: 1 R: scratch1.
+	cogit AndCq: 16rF R: scratch1.
 	cogit CmpCq: 1 R: scratch1.
 	jumpNotSmallInteger := cogit JumpAbove: 0.
 	

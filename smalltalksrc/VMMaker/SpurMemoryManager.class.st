@@ -13295,7 +13295,7 @@ SpurMemoryManager >> unalignedLong64At: index put: aValue [
 
 	| odd hi lo mask |
 	aValue < 0 ifTrue:
-		[self unalignedLong64At: index put: (aValue bitAnd: 16rFFFFFFFFFFFFFFFF).
+		[self unalignedLong64At: index asInteger put: (aValue bitAnd: 16rFFFFFFFFFFFFFFFF).
 		 ^aValue].
 	(odd := index bitAnd: 7) = 0 ifTrue:
 		[^self long64At: index put: aValue].

@@ -56,6 +56,19 @@ VMJittedPrimitivesTest >> executePrimitiveWithReceiver: receiverOop withArgument
 	self runUntilReturn
 ]
 
+{ #category : 'utils' }
+VMJittedPrimitivesTest >> executePrimitiveWithReceiver: receiverOop withArgument: firstArgumentOop and: secondArgumentOop until: target [ 
+
+	"Simulate a primitive execution having an object as receiver and a single argument
+	  - the receiver goes to the receiver register
+	  - the arguments should be pushed to the stack
+	If we are in a system without a link register, we need to push the caller IP to the stack to simulate a call"
+
+	self prepareStackForSendReceiver: receiverOop arguments: { firstArgumentOop. secondArgumentOop }.
+	
+	self runFrom: cogInitialAddress until: target
+]
+
 { #category : 'helpers' }
 VMJittedPrimitivesTest >> prepareStackForSendReceiver: aReceiver [
 

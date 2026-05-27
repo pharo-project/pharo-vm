@@ -641,7 +641,7 @@ VMSimpleStackBasedCogitAbstractTest >> prepareStackForSendReceiver: aReceiver ar
 	"If the cogit is the StackToRegisterMapping the arguments should go in the registers also"
 	(cogit isKindOf: StackToRegisterMappingCogit) ifTrue: [
 		arguments size >= 1 ifTrue: [ self machineSimulator arg0RegisterValue: (arguments at: 1) ].
-		arguments size > 1 ifTrue: [ self halt ]].
+		arguments size > 1 ifTrue: [ self machineSimulator arg1RegisterValue: (arguments at: 2) ]].
 	
 	self prepareCall
 ]

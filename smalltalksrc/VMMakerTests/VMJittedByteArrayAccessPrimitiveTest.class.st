@@ -3,7 +3,8 @@ Class {
 	#superclass : 'VMJittedPrimitivesTest',
 	#instVars : [
 		'receiver',
-		'targetReceiver'
+		'targetReceiver',
+		'stop'
 	],
 	#category : 'VMMakerTests-JitTests',
 	#package : 'VMMakerTests',
@@ -37,6 +38,7 @@ VMJittedByteArrayAccessPrimitiveTest >> assertEqualsTo: expectedValue bitSize: b
 			equals: (expectedValue twoComplementOfBitSize: bitSize) ].
 
 	bitSize = 64 ifTrue: [ 
+		1halt.
 		self
 			assert: (memory fetchLong64: 0 ofObject: targetReceiver)
 			equals: (expectedValue twoComplementOfBitSize: bitSize) ].
@@ -51,9 +53,17 @@ VMJittedByteArrayAccessPrimitiveTest >> genPrimitive: aString [
 	endPart := (aString beginsWith: 'Load') ifTrue: [ 'From' ] ifFalse: [ 'Into' ].
 	endPart := endPart , self trailingName.
 
-	self compile: [ cogit objectRepresentation 
-			perform: ('genPrimitive', aString, endPart) asSymbol ].
+	self compile: [ 
+		cogit objectRepresentation 
+			perform: ('genPrimitive', aString, endPart) asSymbol.
+		stop := cogit Stop ].
 
+]
+
+{ #category : 'tests - store integers' }
+VMJittedByteArrayAccessPrimitiveTest >> jitCompilerClass [
+
+	^ StackToRegisterMappingCogit
 ]
 
 { #category : 'utils' }
@@ -342,6 +352,29 @@ VMJittedByteArrayAccessPrimitiveTest >> testPrimitiveLoadInt32LoadsPositiveValue
 		assert: (memory integerValueOf: machineSimulator receiverRegisterValue) 
 	 	equals: expectedValue
 
+]
+
+{ #category : 'tests - load integers' }
+VMJittedByteArrayAccessPrimitiveTest >> testPrimitiveLoadInt64LoadsLargeNegativeValue [
+
+	| expectedValue largeIntegerOop |
+	expectedValue := -9223372036854775807.
+	self newReceiverWithValue: expectedValue ofBitSize: 64.	
+	#[1 0 0 0 0 0 0 128] withIndexDo: [ :byte :index |
+		self assert: (memory fetchByte: index - 1 ofObject: receiver) equals: byte.
+	].
+
+	self genPrimitive: #LoadInt64.
+	
+	1halt.
+	self 
+		executePrimitiveWithReceiver: receiver
+		withArgument: (self memory integerObjectOf: 0).
+
+	largeIntegerOop := machineSimulator receiverRegisterValue.
+	#[255 255 255 255 255 255 255 127] withIndexDo: [ :expectedByte :index |
+		self assert: (memory fetchByte: index - 1 ofObject: largeIntegerOop) equals: expectedByte.
+	]
 ]
 
 { #category : 'tests - load integers' }
@@ -821,6 +854,55 @@ VMJittedByteArrayAccessPrimitiveTest >> testPrimitiveStoreInt32StoresPositiveVal
 	
 	4 to: 7 do: [ :i | 
 		self assert: (memory fetchByte: i ofObject: targetReceiver) equals: 16r90 + i + 1. ].
+]
+
+{ #category : 'tests - store integers' }
+VMJittedByteArrayAccessPrimitiveTest >> testPrimitiveStoreInt64StoresLargeNegativeValueFails [
+
+	| expectedValue target |
+	self createLargeIntegerClasses.
+
+	expectedValue := -9223372036854775807.
+	self genPrimitive: #StoreInt64.
+	self newReceiver.
+
+	"This primitive fails when the integer to write is not a small integer.
+	Thus, it should fall through and stop at the stop address.
+	If it does not stop (thus the behavior changes) we expect this test to eventually timeout or fail on simulation"
+	target := stop address.
+	self prepareStackForSendReceiver: receiver arguments: {
+			(self memory integerObjectOf: 0).
+			(self memory signed64BitIntegerFor: expectedValue) }.
+	self runFrom: cogInitialAddress until: target
+]
+
+{ #category : 'tests - store integers' }
+VMJittedByteArrayAccessPrimitiveTest >> testPrimitiveStoreInt64StoresLargeNegativeValueKeepsRegisterValues [
+
+	| expectedValue target receiverRegisterBefore arg0RegisterBefore arg1RegisterBefore |
+	self createLargeIntegerClasses.
+
+	expectedValue := -9223372036854775807.
+	self genPrimitive: #StoreInt64.
+	self newReceiver.
+
+	"This primitive fails when the integer to write is not a small integer.
+	Thus, it should fall through and stop at the stop address.
+	If it does not stop (thus the behavior changes) we expect this test to eventually timeout or fail on simulation"
+	target := stop address.
+	self prepareStackForSendReceiver: receiver arguments: {
+			(self memory integerObjectOf: 0).
+			(self memory signed64BitIntegerFor: expectedValue) }.
+	
+	receiverRegisterBefore := machineSimulator receiverRegisterValue.
+	arg0RegisterBefore := machineSimulator arg0RegisterValue.
+	arg1RegisterBefore := machineSimulator arg1RegisterValue.
+
+	self runFrom: cogInitialAddress until: target.
+	
+	self assert: receiverRegisterBefore equals: machineSimulator receiverRegisterValue.
+	self assert: arg0RegisterBefore equals: machineSimulator arg0RegisterValue.
+	self assert: arg1RegisterBefore equals: machineSimulator arg1RegisterValue.
 ]
 
 { #category : 'tests - store integers' }
