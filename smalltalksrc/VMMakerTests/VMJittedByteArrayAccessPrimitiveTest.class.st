@@ -360,7 +360,7 @@ VMJittedByteArrayAccessPrimitiveTest >> testPrimitiveLoadInt64LoadsLargeNegative
 	expectedValue := -9223372036854775807.
 	self newReceiverWithValue: expectedValue ofBitSize: 64.	
 	#[1 0 0 0 0 0 0 128] withIndexDo: [ :byte :index |
-		self assert: (memory fetchByte: index - 1 ofObject: receiver) equals: byte.
+		self assert: (memory fetchByte: index - 1 ofObject: targetReceiver) equals: byte.
 	].
 
 	self genPrimitive: #LoadInt64.
@@ -379,10 +379,11 @@ VMJittedByteArrayAccessPrimitiveTest >> testPrimitiveLoadInt64LoadsLargeNegative
 VMJittedByteArrayAccessPrimitiveTest >> testPrimitiveLoadInt64LoadsLargePositiveValue [
 
 	| expectedValue largeIntegerOop |
+
 	expectedValue := 9223372036854775806.
 	self newReceiverWithValue: expectedValue ofBitSize: 64.	
 	#[254 255 255 255 255 255 255 127] withIndexDo: [ :byte :index |
-		self assert: (memory fetchByte: index - 1 ofObject: receiver) equals: byte.
+		self assert: (memory fetchByte: index - 1 ofObject: targetReceiver) equals: byte.
 	].
 
 	self genPrimitive: #LoadInt64.
@@ -404,7 +405,7 @@ VMJittedByteArrayAccessPrimitiveTest >> testPrimitiveLoadInt64LoadsNegative32bit
 	expectedValue := -2147483649.
 	self newReceiverWithValue: expectedValue ofBitSize: 64.	
 	#[255 255 255 127 255 255 255 255] withIndexDo: [ :byte :index |
-		self assert: (memory fetchByte: index - 1 ofObject: receiver) equals: byte.
+		self assert: (memory fetchByte: index - 1 ofObject: targetReceiver) equals: byte.
 	].
 
 	self genPrimitive: #LoadInt64.
@@ -445,7 +446,7 @@ VMJittedByteArrayAccessPrimitiveTest >> testPrimitiveLoadInt64LoadsPositiveSmall
 	expectedValue := 17.
 	self newReceiverWithValue: expectedValue ofBitSize: 64.	
 	#[17 0 0 0 0 0 0 0] withIndexDo: [ :byte :index |
-		self assert: (memory fetchByte: index - 1 ofObject: receiver) equals: byte.
+		self assert: (memory fetchByte: index - 1 ofObject: targetReceiver) equals: byte.
 	].
 
 	self genPrimitive: #LoadInt64.

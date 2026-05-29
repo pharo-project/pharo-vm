@@ -105,20 +105,38 @@ VMByteArrayAccessPrimitive >> testPrimitiveLoadInt64LoadsNegative32bitSmallInteg
 	| array1 largeIntegerObject largeIntegerValue |
 	array1 := self new8BitIndexableOfSize: 8.
 	largeIntegerObject := memory signed64BitIntegerFor: -2147483649.
-	
-	largeIntegerValue := interpreter signed64BitValueOf: largeIntegerObject.
-	interpreter int64AtPointer: (memory firstBytePointerOfDataObject: array1) put: largeIntegerValue.
-	#[255 255 255 127 255 255 255 255] withIndexDo: [ :byte :index |
-		self assert: (memory fetchByte: index - 1 ofObject: array1) equals: byte.
-	].
+
+	largeIntegerValue := interpreter signed64BitValueOf:
+		                     largeIntegerObject.
+	interpreter
+		int64AtPointer: (memory firstBytePointerOfDataObject: array1)
+		put: largeIntegerValue.
+	#[ 255 255 255 127 255 255 255 255 ] withIndexDo: [ :byte :index |
+		self
+			assert: (memory fetchByte: index - 1 ofObject: array1)
+			equals: byte ].
 
 	"Read the 64 bits at the array starting at offset 0 as a signed integer"
 	interpreter push: array1.
 	interpreter push: (memory integerObjectOf: 0).
 	interpreter primitiveLoadInt64FromBytes.
 
-	self assert: (memory isIntegerObject: interpreter stackTop).
-	self assert: (memory integerValueOf: interpreter stackTop) equals: -2147483649
+	memory wordSize = 8
+		ifTrue: [
+			self assert: (memory isIntegerObject: interpreter stackTop).
+			self
+				assert: (memory integerValueOf: interpreter stackTop)
+				equals: -2147483649 ]
+		ifFalse: [ "32bit"
+			| largeIntegerOop |
+			self deny: (memory isIntegerObject: interpreter stackTop).
+			largeIntegerOop := interpreter stackTop.
+			#[ 1 0 0 128 0 0 0 0 ] withIndexDo: [
+				:expectedByte
+				:index |
+				self
+					assert: (memory fetchByte: index - 1 ofObject: largeIntegerOop)
+					equals: expectedByte ] ]
 ]
 
 { #category : 'tests' }
