@@ -171,7 +171,7 @@ CogMethodSurrogate >> isZero [
 ]
 
 { #category : 'accessing' }
-CogMethodSurrogate >> nextOpenPIC [
+CogMethodSurrogate >> nextMegamorphicIC [
 	| moField |
 	moField := self methodObject.
 	^moField ~= 0 ifTrue:
@@ -179,7 +179,7 @@ CogMethodSurrogate >> nextOpenPIC [
 ]
 
 { #category : 'accessing' }
-CogMethodSurrogate >> nextOpenPIC: cogMethodSurrogateOrNil [
+CogMethodSurrogate >> nextMegamorphicIC: cogMethodSurrogateOrNil [
 	^self methodObject: (cogMethodSurrogateOrNil ifNil: [0] ifNotNil: [cogMethodSurrogateOrNil asUnsignedInteger])
 ]
 

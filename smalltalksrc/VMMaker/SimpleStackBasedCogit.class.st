@@ -762,7 +762,7 @@ SimpleStackBasedCogit >> compileMachineCodeInterpreterPrimitive: primitiveRoutin
 ]
 
 { #category : 'in-line cacheing' }
-SimpleStackBasedCogit >> compileOpenPIC: selector numArgs: numArgs [
+SimpleStackBasedCogit >> compileMegamorphicIC: selector numArgs: numArgs [
 	"Compile the code for an open PIC.  Perform a probe of the first-level method
 	 lookup cache followed by a call of ceSendFromInLineCacheMiss: if the probe fails."
 	| cacheBaseReg jumpSelectorMiss jumpClassMiss itsAHit jumpBCMethod |
@@ -780,7 +780,7 @@ SimpleStackBasedCogit >> compileOpenPIC: selector numArgs: numArgs [
 		[self MoveCq: coInterpreter methodCacheAddress R: (cacheBaseReg := Extra0Reg)].
 
 	"Do first of three probes.  See CoInterpreter>>lookupInMethodCacheSel:classTag:"
-	jumpSelectorMiss := self compileOpenPICMethodCacheProbeFor: selector withShift: 0 baseRegOrNone: cacheBaseReg.
+	jumpSelectorMiss := self compileMegamorphicICMethodCacheProbeFor: selector withShift: 0 baseRegOrNone: cacheBaseReg.
 	jumpClassMiss := self JumpNonZero: 0.
 
 	"Fetch the method.  The interpret trampoline requires the bytecoded method in SendNumArgsReg"
@@ -799,12 +799,12 @@ SimpleStackBasedCogit >> compileOpenPIC: selector numArgs: numArgs [
 
 	"First probe missed.  Do second of three probes.  Shift hash right one and retry."
 	jumpSelectorMiss jmpTarget: (jumpClassMiss jmpTarget: self Label).
-	jumpSelectorMiss := self compileOpenPICMethodCacheProbeFor: selector withShift: 1 baseRegOrNone: cacheBaseReg.
+	jumpSelectorMiss := self compileMegamorphicICMethodCacheProbeFor: selector withShift: 1 baseRegOrNone: cacheBaseReg.
 	self JumpZero: itsAHit.
 
 	"Second probe missed.  Do last probe.  Shift hash right two and retry."
 	jumpSelectorMiss jmpTarget: self Label.
-	jumpSelectorMiss := self compileOpenPICMethodCacheProbeFor: selector withShift: 2 baseRegOrNone: cacheBaseReg.
+	jumpSelectorMiss := self compileMegamorphicICMethodCacheProbeFor: selector withShift: 2 baseRegOrNone: cacheBaseReg.
 	self JumpZero: itsAHit.
 
 	"Last probe missed.  Call ceSendFromInLineCacheMiss: to do the full lookup."
@@ -826,8 +826,8 @@ SimpleStackBasedCogit >> compileOpenPIC: selector numArgs: numArgs [
 ]
 
 { #category : 'in-line cacheing' }
-SimpleStackBasedCogit >> compileOpenPICMethodCacheProbeFor: selector withShift: shift baseRegOrNone: baseRegOrNone [
-	"Compile one method cache probe in an OpenPIC's lookup of selector.
+SimpleStackBasedCogit >> compileMegamorphicICMethodCacheProbeFor: selector withShift: shift baseRegOrNone: baseRegOrNone [
+	"Compile one method cache probe in a megamorphic IC's lookup of selector.
 	 Answer the jump taken if the selector probe fails.
 	 The class tag of the receiver must be in SendNumArgsReg.  ClassReg and TempReg are used as scratch registers.
 	 On a hit, the offset of the entry is in ClassReg."
