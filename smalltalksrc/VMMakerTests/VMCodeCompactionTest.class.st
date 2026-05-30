@@ -325,7 +325,7 @@ VMCodeCompactionTest >> testCompactingShouldRelocateMonomorphicCallsite [
 ]
 
 { #category : 'tests' }
-VMCodeCompactionTest >> testCompactingShouldRelocatePolymorphicPICCallsite [
+VMCodeCompactionTest >> testCompactingShouldRelocatePICCallsite [
 
 	"This method sets up a method A that is linked to a polymorphic PIC linked to B and C.
 	Code compaction is launched so both A, B, C and the PIC are moved and remapped.
@@ -422,13 +422,13 @@ VMCodeCompactionTest >> testCompactingShouldRelocatePolymorphicPICCallsite [
 ]
 
 { #category : 'tests' }
-VMCodeCompactionTest >> testCompactingShouldRelocatePolymorphicPICInterpreterAbortCallsite [
+VMCodeCompactionTest >> testCompactingShouldRelocatePICInterpreterAbortCallsite [
 
 	"This method sets up a method A that is linked to a polymorphic PIC linked to B and C.
 	Code compaction is launched so both A, B, C and the PIC are moved and remapped.
 	Re-sending a message should still work and arrive to all cases of the PIC after remap."
 
-	| firstMethod callerMethodOop calleeCogMethod selector callerCogMethod calleeMethodOop calleeCogMethod2 calleeMethodOop2 pic |
+	| firstMethod callerMethodOop calleeCogMethod selector callerCogMethod calleeMethodOop calleeMethodOop2 pic |
 	"Create a method that will be collected and force compaction of all the next ones"
 	firstMethod := self
 		               jitMethod: (self findMethod: #methodToCompile1)
@@ -512,7 +512,7 @@ VMCodeCompactionTest >> testCompactingShouldRelocatePolymorphicPICInterpreterAbo
 ]
 
 { #category : 'tests' }
-VMCodeCompactionTest >> testCompactingShouldRelocatePolymorphicPICMNUAbortCallsite [
+VMCodeCompactionTest >> testCompactingShouldRelocatePICMNUAbortCallsite [
 
 	"This method sets up a method A that is linked to a polymorphic PIC linked to B and C.
 	Code compaction is launched so both A, B, C and the PIC are moved and remapped.
