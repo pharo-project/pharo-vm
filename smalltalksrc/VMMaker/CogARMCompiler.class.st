@@ -3158,9 +3158,10 @@ CogARMCompiler >> rewritePICJumpAt: addressFollowingJump target: jumpTargetAddr 
 { #category : 'inline cacheing' }
 CogARMCompiler >> rewriteTransferAt: callSiteReturnAddress target: callTargetAddress [
 	"Rewrite a call/jump instruction to call a different target.  This variant is used to link PICs
-	 in ceSendMiss et al, and to rewrite call/jumps in CPICs.
+	 in ceSendMiss et al, and to rewrite call/jumps in PICs.
 	Answer the extent of
 	 the code change which is used to compute the range of the icache to flush."
+	
 	<var: #callSiteReturnAddress type: #usqInt>
 	<var: #callTargetAddress type: #usqInt>
 	| callDistance instr |

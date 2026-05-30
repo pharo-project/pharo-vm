@@ -263,15 +263,10 @@ SimpleStackBasedCogit >> bytecodePC: anInteger [
 	bytecodePC := anInteger 
 ]
 
-{ #category : 'trampolines' }
-SimpleStackBasedCogit >> cPICMissTrampolineFor: numArgs [
-	^ceCPICMissTrampoline
-]
-
 { #category : 'accessing' }
-SimpleStackBasedCogit >> ceCPICMissTrampoline: anAddress [ 
+SimpleStackBasedCogit >> cePICMissTrampoline: anAddress [ 
 	
-	ceCPICMissTrampoline := anAddress
+	cePICMissTrampoline := anAddress
 ]
 
 { #category : 'simulation only' }
@@ -2796,8 +2791,8 @@ SimpleStackBasedCogit >> generateMissAbortTrampolines [
 
 	ceMethodAbortTrampoline := self genMethodAbortTrampoline.
 	cePICAbortTrampoline := self genPICAbortTrampoline.
-	ceCPICMissTrampoline := self genTrampolineFor: #ceCPICMiss:receiver:
-								called: 'ceCPICMissTrampoline'
+	cePICMissTrampoline := self genTrampolineFor: #cePICMiss:receiver:
+								called: 'cePICMissTrampoline'
 								arg: ClassReg
 								arg: ReceiverResultReg.
 	ceReapAndResetErrorCodeTrampoline := self genTrampolineFor: #ceReapAndResetErrorCodeFor:
@@ -3008,6 +3003,11 @@ SimpleStackBasedCogit >> pcDataFor: descriptor Annotation: isBackwardBranchAndAn
 { #category : 'trampolines' }
 SimpleStackBasedCogit >> picAbortTrampolineFor: numArgs [
 	^cePICAbortTrampoline
+]
+
+{ #category : 'trampolines' }
+SimpleStackBasedCogit >> picMissTrampolineFor: numArgs [
+	^cePICMissTrampoline
 ]
 
 { #category : 'primitive generators' }

@@ -867,7 +867,7 @@ VMSimpleStackBasedCogitAbstractTest >> setUpTrampolines [
 	cogit ordinarySendTrampolineAt: 3 "args" put: send3TrampolineAddress.
 
 
-	cogit ceCPICMissTrampoline: (self compileTrampoline: [ cogit RetN: 0 ] named:#ceCPICMissTrampoline).
+	cogit cePICMissTrampoline: (self compileTrampoline: [ cogit RetN: 0 ] named:#cePICMissTrampoline).
 	cogit cePICAbortTrampoline: (self compileTrampoline: [ cogit RetN: 0 ] named:#cePICAbortTrampoline).
 	cogit ceMethodAbortTrampoline: (self compileTrampoline: [ cogit RetN: 0 ] named:#ceMethodAbortTrampoline).
 

@@ -864,11 +864,6 @@ StackToRegisterMappingCogit >> bytecodeFixupClass [
 	^CogSSBytecodeFixup
 ]
 
-{ #category : 'trampolines' }
-StackToRegisterMappingCogit >> cPICMissTrampolineFor: numArgs [
-	^picMissTrampolines at: (numArgs min: self numRegArgs + 1)
-]
-
 { #category : 'debugging' }
 StackToRegisterMappingCogit >> callCogCodePopReceiverArg0Regs [
 	"This is a static version of ceCallCogCodePopReceiverArg0Regs
@@ -2056,7 +2051,7 @@ StackToRegisterMappingCogit >> genPICMissTrampolineFor: numArgs [
 	self zeroOpcodeIndex.
 	"N.B. a closed PIC jumps to the miss routine, not calls it, so there is only one retpc on the stack."
 	backEnd genPushRegisterArgsForNumArgs: numArgs scratchReg: SendNumArgsReg.
-	self genTrampolineFor: #ceCPICMiss:receiver:
+	self genTrampolineFor: #cePICMiss:receiver:
 		called: (self trampolineName: 'cePICMiss' numRegArgs: numArgs)
 		numArgs: 2
 		arg: ClassReg
@@ -3704,6 +3699,11 @@ StackToRegisterMappingCogit >> picAbortTrampolines [
 
 	<doNotGenerate>
 	^ picAbortTrampolines
+]
+
+{ #category : 'trampolines' }
+StackToRegisterMappingCogit >> picMissTrampolineFor: numArgs [
+	^picMissTrampolines at: (numArgs min: self numRegArgs + 1)
 ]
 
 { #category : 'accessing' }

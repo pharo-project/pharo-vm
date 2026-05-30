@@ -3966,7 +3966,7 @@ CogIA32Compiler >> rewriteJumpLongAt: callSiteReturnAddress target: callTargetAd
 
 { #category : 'inline cacheing' }
 CogIA32Compiler >> rewritePICJumpAt: addressFollowingJump target: jumpTargetAddr [
-	"Rewrite the short jump instruction to jump to a new cpic case target. "
+	"Rewrite the short jump instruction to jump to a new pic case target. "
 	<var: #addressFollowingJump type: #usqInt>
 	<var: #jumpTargetAddr type: #usqInt>
 	<var: #callDistance type: #sqInt> "prevent type inference for avoiding warning on abs"

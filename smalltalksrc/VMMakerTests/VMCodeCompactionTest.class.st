@@ -414,11 +414,11 @@ VMCodeCompactionTest >> testCompactingShouldRelocatePolymorphicPICCallsite [
 	
 	self
 		runFrom: (interpreter cogMethodOf: callerMethodOop) address + cogit noCheckEntryOffset
-		until: cogit ceCPICMissTrampoline.
+		until: cogit cePICMissTrampoline.
 
 	self
 		assert: machineSimulator instructionPointerRegisterValue
-		equals: cogit ceCPICMissTrampoline
+		equals: cogit cePICMissTrampoline
 ]
 
 { #category : 'tests' }

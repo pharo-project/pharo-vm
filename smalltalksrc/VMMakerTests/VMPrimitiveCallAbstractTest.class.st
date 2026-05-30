@@ -189,10 +189,10 @@ VMPrimitiveCallAbstractTest >> setUpTrampolines [
 	cogit methodAbortTrampolines at: 2 put: cogit ceMethodAbortTrampoline.
 	cogit methodAbortTrampolines at: 3 put: cogit ceMethodAbortTrampoline.
 	
-	cogit picMissTrampolines at: 0 put: cogit ceCPICMissTrampoline.
-	cogit picMissTrampolines at: 1 put: cogit ceCPICMissTrampoline.
-	cogit picMissTrampolines at: 2 put: cogit ceCPICMissTrampoline.
-	cogit picMissTrampolines at: 3 put: cogit ceCPICMissTrampoline.
+	cogit picMissTrampolines at: 0 put: cogit cePICMissTrampoline.
+	cogit picMissTrampolines at: 1 put: cogit cePICMissTrampoline.
+	cogit picMissTrampolines at: 2 put: cogit cePICMissTrampoline.
+	cogit picMissTrampolines at: 3 put: cogit cePICMissTrampoline.
 
 	cogit picAbortTrampolines at: 0 put: cogit cePICAbortTrampoline.
 	cogit picAbortTrampolines at: 1 put: cogit cePICAbortTrampoline.

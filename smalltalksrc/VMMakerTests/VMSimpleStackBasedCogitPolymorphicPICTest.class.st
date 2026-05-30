@@ -71,13 +71,13 @@ VMSimpleStackBasedCogitPolymorphicPICTest >> assertPICMiss: pic [
 	machineSimulator receiverRegisterValue: receiver.
 	machineSimulator classRegisterValue: (picTypeTags at: 0).
 
-	self runFrom: pic address + cogit entryOffset until: cogit ceCPICMissTrampoline.
+	self runFrom: pic address + cogit entryOffset until: cogit cePICMissTrampoline.
 
 	"Failing all two PIC cases calls the pic trampoline.
 	 - The instruction pointer is at the trampoline
 	 - The class register value contains the pic
 	 - the receiver register value contains the receiver"	
-	self assert: machineSimulator instructionPointerRegisterValue equals: cogit ceCPICMissTrampoline.
+	self assert: machineSimulator instructionPointerRegisterValue equals: cogit cePICMissTrampoline.
 	self assert: machineSimulator classRegisterValue equals: pic address.
 	self assert: machineSimulator receiverRegisterValue equals: receiver
 ]
