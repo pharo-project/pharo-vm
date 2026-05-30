@@ -99,8 +99,8 @@ VMSimpleStackBasedCogitPolymorphicPICTest >> extendPIC: aPic [
 
 	cogit
 		cogExtendPIC: aPic
-		CaseNMethod: (compiledMethods at: aPic cPICNumCases)
-		tag: (picTypeTags at: aPic cPICNumCases)
+		CaseNMethod: (compiledMethods at: aPic picNumCases)
+		tag: (picTypeTags at: aPic picNumCases)
 		isMNUCase: false.
 ]
 
@@ -124,7 +124,7 @@ VMSimpleStackBasedCogitPolymorphicPICTest >> setUp [
 
 	super setUp.
 	self setUpCogMethodEntry.
-	cogit generateClosedPICPrototype.
+	cogit generatePICPrototype.
 
 	cogit methodZone
 		manageFrom: cogit methodZoneBase
@@ -166,7 +166,7 @@ VMSimpleStackBasedCogitPolymorphicPICTest >> testHasConfiguredCases [
 
 	pic := self makePolymorphicPIC.
 
-	self assert: pic cPICNumCases equals: self configuredPicCases
+	self assert: pic picNumCases equals: self configuredPicCases
 ]
 
 { #category : 'tests - metadata' }
@@ -214,7 +214,7 @@ VMSimpleStackBasedCogitPolymorphicPICTest >> testHitCase5 [
 ]
 
 { #category : 'tests - metadata' }
-VMSimpleStackBasedCogitPolymorphicPICTest >> testIsClosedPic [
+VMSimpleStackBasedCogitPolymorphicPICTest >> testIsPIC [
 	| pic |	
 	pic := self makePolymorphicPIC.
 

@@ -3715,15 +3715,16 @@ StackToRegisterMappingCogit >> picMissTrampolines [
 ]
 
 { #category : 'method introspection' }
-StackToRegisterMappingCogit >> populate: tuple withPICInfoFor: cPIC firstCacheTag: firstCacheTag [
-	"Populate tuple (which must be large enough) with the ClosedPIC's target method class pairs.
-	 The first entry in tuple contains the bytecode pc for the send, so skip the tuple's first field."
-	<var: #cPIC type: #'CogMethod *'>
+StackToRegisterMappingCogit >> populate: tuple withPICInfoFor: aPIC firstCacheTag: firstCacheTag [
+	"Populate tuple (which must be large enough) with the PIC's target method class pairs.
+	 The first entry in tuple contains the bytecode pc for the send, so skip the tuple's first field.
+	"
+	<var: #aPIC type: #'CogMethod *'>
 	| picCaseMachineCodePC cacheTag classOop entryPoint targetMethod value |
 	<var: #targetMethod type: #'CogMethod *'>
 
-	1 to: cPIC cPICNumCases do: [:i|
-		picCaseMachineCodePC := self addressOfEndOfCase: i inCPIC: cPIC.
+	1 to: aPIC picNumCases do: [:i|
+		picCaseMachineCodePC := self addressOfEndOfCase: i inPIC: aPIC.
 		cacheTag := i = 1
 						ifTrue: [firstCacheTag]
 						ifFalse: [backEnd literal32BeforeFollowingAddress: picCaseMachineCodePC - backEnd jumpLongConditionalByteSize].
@@ -3734,7 +3735,7 @@ StackToRegisterMappingCogit >> populate: tuple withPICInfoFor: cPIC firstCacheTa
 						ifTrue: [backEnd jumpLongTargetBeforeFollowingAddress: picCaseMachineCodePC]
 						ifFalse: [backEnd jumpLongConditionalTargetBeforeFollowingAddress: picCaseMachineCodePC].
 		"Find target from jump.  A jump to the MNU entry-point should collect #doesNotUnderstand:"
-		(cPIC containsAddress: entryPoint)
+		(aPIC containsAddress: entryPoint)
 			ifTrue: [ value := objectMemory splObj: SelectorDoesNotUnderstand ]
 			ifFalse: [
 				targetMethod := self cCoerceSimple: entryPoint - cmNoCheckEntryOffset to: #'CogMethod *'.
@@ -3958,7 +3959,7 @@ StackToRegisterMappingCogit >> profilingDataForSendTo: cogCodeSendTarget methodC
 					eeInstantiateClassIndex: ClassArrayCompactIndex
 					format: objectMemory arrayFormat
 					numSlots: (cogCodeSendTarget cmType = CMPolymorphicIC
-								ifTrue: [2 * cogCodeSendTarget cPICNumCases + 1]
+								ifTrue: [2 * cogCodeSendTarget picNumCases + 1]
 								ifFalse: [3]).
 	tuple = 0 ifTrue:
 		[^0].

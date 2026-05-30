@@ -76,12 +76,12 @@ InLineLiteralsManager >> fetchLiteralAtAnnotatedAddress: address using: instruct
 ]
 
 { #category : 'garbage collection' }
-InLineLiteralsManager >> literalBytesFollowingBranchInClosedPIC [
+InLineLiteralsManager >> literalBytesFollowingBranchInPIC [
 	^0
 ]
 
 { #category : 'garbage collection' }
-InLineLiteralsManager >> literalBytesFollowingJumpInClosedPIC [
+InLineLiteralsManager >> literalBytesFollowingJumpInPIC [
 	^0
 ]
 

@@ -2563,32 +2563,6 @@ CogMIPSELCompiler >> relocateMethodReferenceBeforeAddress: pc by: delta [
 ]
 
 { #category : 'inline cacheing' }
-CogMIPSELCompiler >> rewriteCPICJumpAt: addressFollowingJump target: jumpTargetAddr [
-	"Rewrite a jump instruction to call a different target.  This variant is used to reset the 
-	jumps in the prototype CPIC to suit each use,.   
-	Answer the extent of the code change which is used to compute the range of the icache to flush."
-	<var: #addressFollowingJump type: #usqInt>
-	<var: #jumpTargetAddr type: #usqInt>
-	
-	"self CmpR: ClassReg R: TempReg.
-	^self JumpNonZero: 0"
-	
-	"bne s5, s3, +156 ; =BE7C
-	 nop (delay slot)
-	 .... <-- addressFollowingJump"
-	
-	self assert: (self opcodeAtAddress: addressFollowingJump - 8) = BNE.
-	self assert: (objectMemory longAt: addressFollowingJump - 4) = self nop.
-	"cogit disassembleFrom: addressFollowingJump - 8 to: addressFollowingJump."
-	
-	self rewriteITypeBranchAtAddress: addressFollowingJump - 8 target: jumpTargetAddr.
-	
-	self assert: (self opcodeAtAddress: addressFollowingJump - 8) = BNE.
-	self assert: (objectMemory longAt: addressFollowingJump - 4) = self nop.
-	"cogit disassembleFrom: addressFollowingJump - 8 to: addressFollowingJump."
-]
-
-{ #category : 'inline cacheing' }
 CogMIPSELCompiler >> rewriteCallAt: callSiteReturnAddress target: callTargetAddress [
 	"Rewrite a call instruction to call a different target.  This variant is used to link PICs
 	 in ceSendMiss et al,.   
@@ -2795,6 +2769,32 @@ CogMIPSELCompiler >> rewriteOpcode: anOpcode with: left with: right [
 		"0 is target"
 		at: 1 put: left;
 		at: 2 put: right
+]
+
+{ #category : 'inline cacheing' }
+CogMIPSELCompiler >> rewritePICJumpAt: addressFollowingJump target: jumpTargetAddr [
+	"Rewrite a jump instruction to call a different target.  This variant is used to reset the 	jumps in the prototype PIC to suit each use,.   
+	Answer the extent of the code change which is used to compute the range of the icache to flush."
+	
+	<var: #addressFollowingJump type: #usqInt>
+	<var: #jumpTargetAddr type: #usqInt>
+	
+	"self CmpR: ClassReg R: TempReg.
+	^self JumpNonZero: 0"
+	
+	"bne s5, s3, +156 ; =BE7C
+	 nop (delay slot)
+	 .... <-- addressFollowingJump"
+	
+	self assert: (self opcodeAtAddress: addressFollowingJump - 8) = BNE.
+	self assert: (objectMemory longAt: addressFollowingJump - 4) = self nop.
+	"cogit disassembleFrom: addressFollowingJump - 8 to: addressFollowingJump."
+	
+	self rewriteITypeBranchAtAddress: addressFollowingJump - 8 target: jumpTargetAddr.
+	
+	self assert: (self opcodeAtAddress: addressFollowingJump - 8) = BNE.
+	self assert: (objectMemory longAt: addressFollowingJump - 4) = self nop.
+	"cogit disassembleFrom: addressFollowingJump - 8 to: addressFollowingJump."
 ]
 
 { #category : 'inline cacheing' }

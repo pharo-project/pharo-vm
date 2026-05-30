@@ -3894,22 +3894,6 @@ CogIA32Compiler >> returnFromCallCFunctionInSmalltalkStack: numberOfArguments [
 ]
 
 { #category : 'inline cacheing' }
-CogIA32Compiler >> rewriteCPICJumpAt: addressFollowingJump target: jumpTargetAddr [
-	"Rewrite the short jump instruction to jump to a new cpic case target. "
-	<var: #addressFollowingJump type: #usqInt>
-	<var: #jumpTargetAddr type: #usqInt>
-	<var: #callDistance type: #sqInt> "prevent type inference for avoiding warning on abs"
-	| callDistance |
-	callDistance := jumpTargetAddr - addressFollowingJump.
-	self assert: callDistance abs < 128.
-	objectMemory
-		byteAt: addressFollowingJump - 1
-		put:  (callDistance bitAnd: 16rFF).
-	"self cCode: ''
-		inSmalltalk: [cogit disassembleFrom: addressFollowingJump - 10 to: addressFollowingJump - 1]."
-]
-
-{ #category : 'inline cacheing' }
 CogIA32Compiler >> rewriteCallAt: callSiteReturnAddress target: callTargetAddress [
 	"Rewrite a call instruction to call a different target.  This variant is used to link PICs
 	 in ceSendMiss et al, and to rewrite cached primitive calls.   Answer the extent of
@@ -3978,6 +3962,22 @@ CogIA32Compiler >> rewriteJumpLongAt: callSiteReturnAddress target: callTargetAd
 	 is used to rewrite cached primitive calls.   Answer the extent of the
 	 code change which is used to compute the range of the icache to flush."
 	^self rewriteCallAt: callSiteReturnAddress target: callTargetAddress
+]
+
+{ #category : 'inline cacheing' }
+CogIA32Compiler >> rewritePICJumpAt: addressFollowingJump target: jumpTargetAddr [
+	"Rewrite the short jump instruction to jump to a new cpic case target. "
+	<var: #addressFollowingJump type: #usqInt>
+	<var: #jumpTargetAddr type: #usqInt>
+	<var: #callDistance type: #sqInt> "prevent type inference for avoiding warning on abs"
+	| callDistance |
+	callDistance := jumpTargetAddr - addressFollowingJump.
+	self assert: callDistance abs < 128.
+	objectMemory
+		byteAt: addressFollowingJump - 1
+		put:  (callDistance bitAnd: 16rFF).
+	"self cCode: ''
+		inSmalltalk: [cogit disassembleFrom: addressFollowingJump - 10 to: addressFollowingJump - 1]."
 ]
 
 { #category : 'encoding' }

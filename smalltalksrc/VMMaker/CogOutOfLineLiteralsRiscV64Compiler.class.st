@@ -5996,33 +5996,6 @@ CogOutOfLineLiteralsRiscV64Compiler >> rewriteBTypeBranchAtAddress: mcpc target:
 ]
 
 { #category : 'inline cacheing' }
-CogOutOfLineLiteralsRiscV64Compiler >> rewriteCPICJumpAt: addressFollowingJump target: jumpTargetAddr [
-	"Rewrite a jump instruction to call a different target.  This variant is used to reset the 
-	jumps in the prototype CPIC to suit each use,.   
-	Answer the extent of the code change which is used to compute the range of the icache to flush."
-	<var: #addressFollowingJump type: #usqInt>
-	<var: #jumpTargetAddr type: #usqInt>
-	| callOffset |
-	"self CmpR: ClassReg R: TempReg.
-	^self JumpNonZero: 0"
-	
-	"bne r1, r2, offset
-	 .... <-- addressFollowingJump
-	 
-	 ...  <-- jumpTargetAddress"
-	callOffset := jumpTargetAddr - addressFollowingJump + 4.
-	self assertValue: callOffset isContainedIn: 12. 
-	
- 	self assert: (self instructionIsB: (self instructionBeforeAddress: addressFollowingJump) withCondition: NE).
-	self rewriteBTypeBranchAtAddress: addressFollowingJump - 4 offset: callOffset withCondition: NE.
-	
-	self assert: (self instructionIsB: (self instructionBeforeAddress: addressFollowingJump) withCondition: NE).
-	self assert: (self extractOffsetFromConditionalBranch: (self instructionBeforeAddress: addressFollowingJump)) = callOffset.
-
-	^4
-]
-
-{ #category : 'inline cacheing' }
 CogOutOfLineLiteralsRiscV64Compiler >> rewriteCallAt: callSiteReturnAddress target: callTargetAddress [
 	"Rewrite a call/jump instruction to call a different target.  This variant is used to link PICs
 	 in ceSendMiss et al, and to rewrite call/jumps in CPICs. Answer the extent of the code change 
@@ -6207,6 +6180,33 @@ CogOutOfLineLiteralsRiscV64Compiler >> rewriteOpcode: anOpcode with: left with: 
 		"0 is target"
 		at: 1 put: left;
 		at: 2 put: right
+]
+
+{ #category : 'inline cacheing' }
+CogOutOfLineLiteralsRiscV64Compiler >> rewritePICJumpAt: addressFollowingJump target: jumpTargetAddr [
+	"Rewrite a jump instruction to call a different target.  This variant is used to reset the jumps in the prototype PIC to suit each use,.   
+	Answer the extent of the code change which is used to compute the range of the icache to flush."
+	
+	<var: #addressFollowingJump type: #usqInt>
+	<var: #jumpTargetAddr type: #usqInt>
+	| callOffset |
+	"self CmpR: ClassReg R: TempReg.
+	^self JumpNonZero: 0"
+	
+	"bne r1, r2, offset
+	 .... <-- addressFollowingJump
+	 
+	 ...  <-- jumpTargetAddress"
+	callOffset := jumpTargetAddr - addressFollowingJump + 4.
+	self assertValue: callOffset isContainedIn: 12. 
+	
+ 	self assert: (self instructionIsB: (self instructionBeforeAddress: addressFollowingJump) withCondition: NE).
+	self rewriteBTypeBranchAtAddress: addressFollowingJump - 4 offset: callOffset withCondition: NE.
+	
+	self assert: (self instructionIsB: (self instructionBeforeAddress: addressFollowingJump) withCondition: NE).
+	self assert: (self extractOffsetFromConditionalBranch: (self instructionBeforeAddress: addressFollowingJump)) = callOffset.
+
+	^4
 ]
 
 { #category : 'machine code instruction' }

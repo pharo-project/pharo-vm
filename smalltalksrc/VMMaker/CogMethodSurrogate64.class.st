@@ -152,19 +152,6 @@ CogMethodSurrogate64 >> cmUsesPenultimateLit: aValue [
 ]
 
 { #category : 'accessing' }
-CogMethodSurrogate64 >> cpicHasMNUCaseOrCMIsFullBlock [
-	^(((memory unsignedByteAt: address + 1 + baseHeaderSize) bitShift: -4) bitAnd: 16r1) ~= 0
-]
-
-{ #category : 'accessing' }
-CogMethodSurrogate64 >> cpicHasMNUCaseOrCMIsFullBlock: aValue [
-	memory
-		unsignedByteAt: address + baseHeaderSize + 1
-		put: (((memory unsignedByteAt: address + baseHeaderSize + 1) bitAnd: 16rEF) + ((aValue ifTrue: [1] ifFalse: [0]) bitShift: 4)).
-	^aValue
-]
-
-{ #category : 'accessing' }
 CogMethodSurrogate64 >> homeOffset [
 	^memory unsignedShortAt: address + 0
 ]
@@ -210,6 +197,19 @@ CogMethodSurrogate64 >> padToWord: aValue [
 	^memory
 		unsignedLong64At: address + 4
 		put: aValue
+]
+
+{ #category : 'accessing' }
+CogMethodSurrogate64 >> picHasMNUCaseOrCMIsFullBlock [
+	^(((memory unsignedByteAt: address + 1 + baseHeaderSize) bitShift: -4) bitAnd: 16r1) ~= 0
+]
+
+{ #category : 'accessing' }
+CogMethodSurrogate64 >> picHasMNUCaseOrCMIsFullBlock: aValue [
+	memory
+		unsignedByteAt: address + baseHeaderSize + 1
+		put: (((memory unsignedByteAt: address + baseHeaderSize + 1) bitAnd: 16rEF) + ((aValue ifTrue: [1] ifFalse: [0]) bitShift: 4)).
+	^aValue
 ]
 
 { #category : 'accessing' }

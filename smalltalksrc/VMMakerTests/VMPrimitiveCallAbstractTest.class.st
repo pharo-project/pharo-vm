@@ -162,7 +162,7 @@ VMPrimitiveCallAbstractTest >> setUp [
 	super setUp.
 	
 	self setUpCogMethodEntry.
-	cogit generateClosedPICPrototype.
+	cogit generatePICPrototype.
 	cogit methodZone manageFrom: cogit methodZoneBase to: cogit methodZone effectiveLimit.
 
 	"Initializing the accessor depth table with a value for the first primitive"
