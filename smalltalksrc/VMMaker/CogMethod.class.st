@@ -103,7 +103,7 @@ CogMethod class >> instVarNamesAndTypesForTranslationDo: aBinaryBlock [
 						  VMClass objectMemoryClass baseHeaderSize = 8
 							  ifTrue: [ #sqLong ]
 							  ifFalse: [ #sqInt ] ]).
-						 ([ 'cmNumArgs' ] -> [ #( unsigned ' : 8' ) ]). "SqueakV3 needs only 5 bits"
+						 (['cmNumArgs'] -> [#(unsigned ' : 8')] ).
 						 ([ 'cmType' ] -> [ #( unsigned ' : 3' ) ]).
 						 ([ 'cmRefersToYoung' ] -> [ #( unsigned #Boolean ' : 1' ) ]).
 						 ([ 'cpicHasMNUCaseOrCMIsFullBlock' ]
@@ -126,7 +126,7 @@ CogMethod class >> instVarNamesAndTypesForTranslationDo: aBinaryBlock [
 { #category : 'translation' }
 CogMethod class >> isAccessor: aSelector [
 	"Answer if aSelector is simply an accessor method for one of our fields."
-	^(#(cPICNumCases cPICNumCases: nextOpenPIC nextOpenPIC:) includes: aSelector)
+	^(#(cPICNumCases cPICNumCases: #nextMegamorphicIC #nextMegamorphicIC:) includes: aSelector)
 	  or: [super isAccessor: aSelector]
 ]
 
@@ -331,15 +331,15 @@ CogMethod >> methodObject: anObject [
 ]
 
 { #category : 'accessing' }
-CogMethod >> nextOpenPIC [
-	"Answer the value of nextOpenPIC (a.k.a. methodObject)"
+CogMethod >> nextMegamorphicIC [
+	"Answer the value of nextMegamorphicIC (a.k.a. methodObject)"
 	<cmacro: ' methodObject'>
 	^methodObject
 ]
 
 { #category : 'accessing' }
-CogMethod >> nextOpenPIC: anObject [
-	"Set the value of nextOpenPIC (a.k.a. methodObject)"
+CogMethod >> nextMegamorphicIC: anObject [
+	"Set the value of nextMegamorphicIC (a.k.a. methodObject)"
 	<cmacro: 'Hack hack hack hack i.e. the getter macro does all the work'>
 	^methodObject := anObject
 ]

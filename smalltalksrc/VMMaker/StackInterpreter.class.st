@@ -497,6 +497,7 @@ StackInterpreter class >> declareCVarsIn: aCCodeGenerator [
 		addHeaderFile: '<stdint.h> /* for e.g. alloca */';
 		addHeaderFile: '"sigjmp_support.h"';
 		addHeaderFile: '<wchar.h> /* for wint_t */';
+		addHeaderFile: '"cogStackAlignment.h"';
 		addHeaderFile: '"vmCallback.h"';
 		addHeaderFile: '"memoryFence.h"';
 		addHeaderFile: '"dispdbg.h"';
@@ -1090,7 +1091,7 @@ StackInterpreter class >> initializePrimitiveTable [
 		(79 primitiveNewMethod)
 
 		"Control Primitives (80-89)"
-		(80 primitiveFail)
+		(80 primitiveSenderObject)
 		(81 primitiveFail)
 		(82 primitiveFail)
 		(83 primitivePerform)
@@ -1172,7 +1173,9 @@ StackInterpreter class >> initializePrimitiveTable [
 		(149 primitiveGetAttribute)
 
 		"Were File Primitives (150-169) - NO LONGER INDEXED"
-		(150 157 primitiveFail)
+		(150 155 primitiveFail)
+		(156 primitiveCompareBytes)
+		(157 primitiveFail)
 		(158 primitiveStringCompareWith)
 		(159 primitiveHashMultiply)
 		(160 primitiveAdoptInstance)
@@ -5956,8 +5959,6 @@ StackInterpreter >> findNewMethodOrdinary [
 StackInterpreter >> findNewMethodOrdinaryIfFound: aBlock [
 	"Find the compiled method to be run when the current messageSelector is sent to the class 'lkupClass', setting the values of 'newMethod' and 'primitiveIndex'."
 
-	| classTag |
-	classTag := lkupClassTag.
 	^ self findNewMethodInClassTag: lkupClassTag ifFound: aBlock
 ]
 
@@ -11059,6 +11060,30 @@ StackInterpreter >> primitiveResume [
 		 from: CSResume) ifTrue: [
 		self forProcessPrimitiveReturnToExecutivePostContextSwitch:
 			inInterpreter ]
+]
+
+{ #category : 'primitives' }
+StackInterpreter >> primitiveSenderObject [
+
+	| callerFramePointer senderObject |
+
+	(self isBaseFrame: framePointer) ifTrue: [ | callerFrameContext |
+		callerFrameContext := self frameCallerContext: framePointer.
+		(callerFrameContext = objectMemory nilObject) ifTrue: [
+			"case where there is no sender frame"
+			^ self primitiveFail	
+		].
+		(self isSingleContext: callerFrameContext) ifTrue: [ | receiverObject |
+			receiverObject := objectMemory fetchPointer: ReceiverIndex ofObject: callerFrameContext.
+			self pop: 1 thenPush: receiverObject.
+			^ self
+		] ifFalse: [
+			callerFramePointer := self frameOfMarriedContext: callerFrameContext.
+		]
+	] ifFalse: [ callerFramePointer := self frameCallerFP: framePointer ].
+
+	senderObject := self frameReceiver: callerFramePointer.
+	self pop: 1 thenPush: senderObject
 ]
 
 { #category : 'process primitives' }

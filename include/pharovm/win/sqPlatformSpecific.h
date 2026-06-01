@@ -61,12 +61,6 @@
 error "Not Win32 or Win64!"
 #endif /* _WIN32 || _WIN64 */
 
-#ifdef _WIN32
-int ioSetCursorARGB(sqInt cursorBitsIndex, sqInt extentX, sqInt extentY, sqInt offsetX, sqInt offsetY);
-#else
-sqInt ioSetCursorARGB(sqInt cursorBitsIndex, sqInt extentX, sqInt extentY, sqInt offsetX, sqInt offsetY);
-#endif
-
 /* poll and profile thread priorities.  The stack vm uses a thread to cause the
  * VM to poll for I/O, check for delay expiry et al at regular intervals.  Both
  * VMs use a thread to sample the pc for VM profiling.  The poll thread needs

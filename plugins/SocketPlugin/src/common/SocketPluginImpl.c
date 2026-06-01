@@ -191,7 +191,9 @@ The Socket plugin uses this value as a limit for the FQDN (Fully Qualified Domai
 #define LINGER_SECS		 1
 
 volatile static int thisNetSession = 0;
-static int one = 1;
+static int one= 1;
+
+static char   localHostName[MAXHOSTNAMELEN];
 
 /*
  * The ERROR constants are different in Windows and in Unix.
@@ -229,6 +231,7 @@ typedef struct privateSocketStruct
   int multiListen;		/* whether to listen for multiple connections */
   int acceptedSock;		/* a connection that has been accepted */
   int socketType;
+  int waitingToSend;
 } privateSocketStruct;
 
 #define CONN_NOTIFY	(1<<0)
@@ -259,7 +262,7 @@ typedef struct privateSocketStruct
 #define SOCKETERROR(S)		(PSP(S)->sockError)
 #define SOCKETPEER(S)		(PSP(S)->peer)
 #define SOCKETPEERSIZE(S)	(PSP(S)->peerSize)
-
+#define SOCKET_WAITINGTOSEND(S) (PSP(S)->waitingToSend)
 
 /*** Resolver state ***/
 
@@ -277,10 +280,10 @@ extern struct VirtualMachine *interpreterProxy;
 int setHookFn;
 
 
-static void acceptHandler(int, void *, int);
-static void connectHandler(int, void *, int);
-static void dataHandler(int, void *, int);
-static void closeHandler(int, void *, int);
+static void acceptHandler(sqInt, void *, int);
+static void connectHandler(sqInt, void *, int);
+static void dataHandler(sqInt, void *, int);
+static void closeHandler(sqInt, void *, int);
 
 /**
  * The Error reporting is different in Windows and in Unix, so we need to provide a function.
@@ -293,6 +296,20 @@ int getLastSocketError(){
 	return errno;
 #endif
 }
+
+
+#ifdef AIO_DEBUG
+char *socketHandlerName(aioHandler h)
+{
+  if (h == acceptHandler)     return "acceptHandler";
+  if (h == connectHandler)    return "connectHandler";
+  if (h == dataHandler)       return "dataHandler";
+  if (h == closeHandler)      return "closeHandler";
+  if (h == sendHandler)       return "sendHandler";
+  return "***unknownHandler***";
+}
+#endif
+
 
 /*** module initialisation/shutdown ***/
 
@@ -447,75 +464,74 @@ static int socketError(int s)
    and replace the server socket with the new client socket
    leaving the client socket unhandled
 */
-static void acceptHandler(int fd, void *data, int flags)
+static void acceptHandler(sqInt fd, void *data, int flags)
 {
-	int lastError;
-
-	privateSocketStruct *pss= (privateSocketStruct *)data;
-	
-	logTrace("acceptHandler(%d, %p ,%d)\n", fd, data, flags);
-	if (flags & AIO_X) /* -- exception */
+  int lastError;
+    
+  privateSocketStruct *pss= (privateSocketStruct *)data;
+  logTrace("acceptHandler(%d, %p ,%d)\n", fd, data, flags);
+  if (flags & AIO_X) /* -- exception */
+    {
+      /* error during listen() */
+      aioDisable(fd);
+      pss->sockError= socketError(fd);
+      pss->sockState= Invalid;
+      pss->s= -1;
+  	  pss->waitingToSend = false;
+	  closesocket(fd);
+      logTrace("acceptHandler: aborting server %d pss=%p\n", fd, pss);
+    }
+  else /* (flags & AIO_R) -- accept() is ready */
+    {
+      int newSock= accept(fd, 0, 0);
+      if (newSock < 0)
 	{
-		/* error during listen() */
-		aioDisable(fd);
-		pss->sockError= socketError(fd);
-		pss->sockState= Invalid;
-		pss->s= -1;
-		closesocket(fd);
-		logTrace("acceptHandler: aborting server %d pss=%p\n", fd, pss);
+	  if ((lastError = getLastSocketError()) == ECONNABORTED)
+	    {
+	      /* let's just pretend this never happened */
+	      aioHandle(fd, acceptHandler, AIO_RX);
+	      return;
+	    }
+	  /* something really went wrong */
+	  pss->sockError= lastError;
+	  pss->sockState= Invalid;
+	  logWarnFromErrno("acceptHandler");
+	  aioDisable(fd);
+	  closesocket(fd);
+	  logTrace("acceptHandler: aborting server %d pss=%p\n", fd, pss);
 	}
-	else /* (flags & AIO_R) -- accept() is ready */
+      else /* newSock >= 0 -- connection accepted */
 	{
-		int newSock= accept(fd, 0, 0);
-		if (newSock < 0)
-		{
-			if ((lastError = getLastSocketError()) == ECONNABORTED)
-			{
-				/* let's just pretend this never happened */
-				aioHandle(fd, acceptHandler, AIO_RX);
-				return;
+	  pss->sockState= Connected;
+	  setLinger(newSock, 1);
+	  if (pss->multiListen)
+	    {
+			logTrace("acceptHandler: multiListen old: %d new: %d", fd, newSock);
+			if(pss->acceptedSock > 0){
+				logWarn("Socket %d has accepted socket pending %d", pss->s, pss->acceptedSock);
+    	  setLinger(pss->acceptedSock, 0);
+        closesocket(pss->acceptedSock);
 			}
-			
-			/* something really went wrong */
-			pss->sockError= lastError;
-			pss->sockState= Invalid;
-			logWarnFromErrno("acceptHandler");
-			aioDisable(fd);
-			closesocket(fd);
-			logTrace("acceptHandler: aborting server %d pss=%p\n", fd, pss);
-		}
-		else /* newSock >= 0 -- connection accepted */
-		{
-			pss->sockState= Connected;
-			setLinger(newSock, 1);
-
-			if (pss->multiListen)
-			{
-				logTrace("acceptHandler: multiListen old: %d new: %d", fd, newSock);
-				if(pss->acceptedSock > 0){
-					logWarn("Socket %d has accepted socket pending %d", pss->s, pss->acceptedSock);
-					setLinger(pss->acceptedSock, 0);
-					closesocket(pss->acceptedSock);
-				}
-				pss->acceptedSock= newSock;
-			}
-			else /* traditional listen -- replace server with client in-place */
-			{
-				logTrace("acceptHandler: traditionalListen old: %d new: %d", fd, newSock);
-				aioDisable(fd);
-				closesocket(fd);
-				pss->s= newSock;
-				aioEnable(newSock, pss, 0);
-			}
-		}
+			pss->acceptedSock= newSock;
+	    }
+	  else /* traditional listen -- replace server with client in-place */
+	    {
+		  logTrace("acceptHandler: traditionalListen old: %d new: %d", fd, newSock);
+  		  aioDisable(fd);
+	      closesocket(fd);
+	      pss->s= newSock;
+		  pss->waitingToSend = false;
+		  aioEnable(newSock, pss, 0);
+	    }
 	}
-	notify(pss, CONN_NOTIFY);
+    }
+  notify(pss, CONN_NOTIFY);
 }
 
 
 /* connect() has completed: check errors, leaving the socket unhandled */
 
-static void connectHandler(int fd, void *data, int flags)
+static void connectHandler(sqInt fd, void *data, int flags)
 {
 
   int error;
@@ -562,9 +578,28 @@ static void connectHandler(int fd, void *data, int flags)
 }
 
 
-/* read or write data transfer is now possible for the socket. */
+/* send data transfer is now possible for the socket. */
 
-static void dataHandler(int fd, void *data, int flags)
+static void sendHandler(sqInt fd, void *data, int flags)
+{
+  privateSocketStruct *pss= (privateSocketStruct *)data;
+  logTrace("sendHandler(%d=%d, %p, %d)\n", fd, pss->s, data, flags);
+
+  if (pss == NULL)
+    {
+      logTrace("sendHandler: pss is NULL fd=%d data=%p flags=0x%x\n", fd, data, flags);
+      return;
+    }
+
+	pss->waitingToSend = false;
+
+	notify(pss, WRITE_NOTIFY);
+	notify(pss, READ_NOTIFY);
+}
+
+/* read data transfer is now possible for the socket. */
+
+static void dataHandler(sqInt fd, void *data, int flags)
 {
   privateSocketStruct *pss= (privateSocketStruct *)data;
   logTrace("dataHandler(%d=%d, %p, %d)\n", fd, pss->s, data, flags);
@@ -602,32 +637,29 @@ static void dataHandler(int fd, void *data, int flags)
       int n= recv(fd, (void *)buf, 1, MSG_OOB);
       if (n == 1) logTrace("socket: received OOB data: %02x\n", buf[0]);
     }
-  if (flags & AIO_R) notify(pss, READ_NOTIFY);
-  if (flags & AIO_W) notify(pss, WRITE_NOTIFY);
+
+	if (flags & AIO_R) notify(pss, READ_NOTIFY);
 }
 
 
 /* a non-blocking close() has completed -- finish tidying up */
 
-static void closeHandler(int fd, void *data, int flags)
+static void closeHandler(sqInt fd, void *data, int flags)
 {
-	privateSocketStruct *pss= (privateSocketStruct *)data;
-	
-	aioDisable(fd);
-	
-	logTrace("closeHandler(%d, %p, %d)\n", fd, data, flags);
-	
-	int result = closesocket(fd);
-	
-	if(result == 0){
-		logTrace("closesocket(%d): correctly closed");
-	}else{
-		logTrace("closesocket(%d): error while closing %d", getLastSocketError());
-	}
-	
-	pss->sockState= Unconnected;
-	pss->s= -1;
-	notify(pss, READ_NOTIFY | CONN_NOTIFY);
+  privateSocketStruct *pss= (privateSocketStruct *)data;
+  aioDisable(fd);
+  logTrace("closeHandler(%d, %p, %d)\n", fd, data, flags);
+  int result = closesocket(fd);
+  if(result == 0){
+    logTrace("closesocket(%d): correctly closed");
+  }else{
+    logTrace("closesocket(%d): error while closing %d", getLastSocketError());
+  }
+  pss->sockState= Unconnected;
+  pss->s= -1;
+  pss->waitingToSend = false;
+
+  notify(pss, READ_NOTIFY | CONN_NOTIFY);
 }
 
 
@@ -723,6 +755,7 @@ void sqSocketCreateNetTypeSocketTypeRecvBytesSendBytesSemaIDReadSemaIDWriteSemaI
       return;
     }
   pss->s= newSocket;
+  pss->waitingToSend = false;
   pss->connSema= semaIndex;
   pss->readSema= readSemaIndex;
   pss->writeSema= writeSemaIndex;
@@ -778,6 +811,7 @@ void sqSocketCreateRawProtoTypeRecvBytesSendBytesSemaIDReadSemaIDWriteSemaID(Soc
       return;
     }
   pss->s= newSocket;
+  pss->waitingToSend = false;
   pss->connSema= semaIndex;
   pss->readSema= readSemaIndex;
   pss->writeSema= writeSemaIndex;
@@ -984,6 +1018,7 @@ void sqSocketAcceptFromRecvBytesSendBytesSemaIDReadSemaIDWriteSemaID(SocketPtr s
 
   _PSP(s)= pss;
   pss->s= PSP(serverSocket)->acceptedSock;
+  pss->waitingToSend = false;
   PSP(serverSocket)->acceptedSock= -1;
   SOCKETSTATE(serverSocket)= WaitingForConnection;
   aioHandle(SOCKET(serverSocket), acceptHandler, AIO_RX);
@@ -1004,52 +1039,55 @@ void sqSocketAcceptFromRecvBytesSendBytesSemaIDReadSemaIDWriteSemaID(SocketPtr s
 
 void sqSocketCloseConnection(SocketPtr s)
 {
-	int result= 0;
+  int result= 0;
 
-	if (!socketValid(s))
-		return;
+  if (!socketValid(s))
+    return;
 
-	logTrace("closeConnection(%d)\n", SOCKET(s));
+  logTrace("closeConnection(%d)\n", SOCKET(s));
 
-	if (SOCKET(s) < 0)
- 	   return;	/* already closed */
+  if (SOCKET(s) < 0)
+    return;	/* already closed */
 
-	if(PSP(s)->acceptedSock > 0){
-		logWarn("Socket %d has accepted socket pending %d", PSP(s)->s, PSP(s)->acceptedSock);
-		setLinger(PSP(s)->acceptedSock, 0);
-		closesocket(PSP(s)->acceptedSock);
-	}
+  if(PSP(s)->acceptedSock > 0){
+	  logWarn("Socket %d has accepted socket pending %d", PSP(s)->s, PSP(s)->acceptedSock);
+	  setLinger(PSP(s)->acceptedSock, 0);
+    closesocket(PSP(s)->acceptedSock);
+  }
 
-	SOCKETSTATE(s)= ThisEndClosed;
-	result = closesocket(SOCKET(s));
-	int lastError = getLastSocketError();
+  SOCKETSTATE(s)= ThisEndClosed;
+  result = closesocket(SOCKET(s));
+  int lastError = getLastSocketError();
 
-	if ((result == -1) && (lastError != ERROR_WOULD_BLOCK))
-	{
-		/* error */
-		SOCKETSTATE(s)= Unconnected;
-		SOCKETERROR(s)= lastError;
-		aioDisable(SOCKET(s));
+  if ((result == -1) && (lastError != ERROR_WOULD_BLOCK))
+    {
+      /* error */
+      SOCKETSTATE(s)= Unconnected;
+      SOCKETERROR(s)= lastError;
+      aioDisable(SOCKET(s));
 
-		notify(PSP(s), CONN_NOTIFY);
-		logWarnFromErrno("closeConnection");
-		
-	} else if (0 == result) {
-		/* close completed synchronously */
-		SOCKETSTATE(s)= Unconnected;
-		aioDisable(SOCKET(s));
+      notify(PSP(s), CONN_NOTIFY);
+      logWarnFromErrno("closeConnection");
+    }
+  else if (0 == result)
+    {
+      /* close completed synchronously */
+      SOCKETSTATE(s)= Unconnected;
+      aioDisable(SOCKET(s));
 
-		logTrace("closeConnection: disconnected\n");
-		SOCKET(s)= -1;
-	} else {
-		/* asynchronous close in progress */
+      logTrace("closeConnection: disconnected\n");
+      SOCKET(s)= -1;
+    }
+  else
+    {
+      /* asynchronous close in progress */
 
-		shutdown(SOCKET(s), SD_SEND);
+	  shutdown(SOCKET(s), SD_SEND);
 
-		SOCKETSTATE(s)= ThisEndClosed;
-		aioHandle(SOCKET(s), closeHandler, AIO_RWX);  /* => close() done */
-		logTrace("closeConnection: deferred [aioHandle is set]\n");
-	}
+      SOCKETSTATE(s)= ThisEndClosed;
+      aioHandle(SOCKET(s), closeHandler, AIO_RWX);  /* => close() done */
+      logTrace("closeConnection: deferred [aioHandle is set]\n");
+    }
 }
 
 
@@ -1214,9 +1252,8 @@ sqInt sqSocketSendDone(SocketPtr s)
   if (!socketValid(s))
     return false;
   
-  // If the socket is connected we just return true. Then the send/sendto might block, but we will use the event system
   if(SOCKETSTATE(s) == Connected)
-	return true;
+	return !SOCKET_WAITINGTOSEND(s);
   
   return false;
 }
@@ -1309,30 +1346,34 @@ sqInt sqSocketSendDataBufCount(SocketPtr s, char *buf, sqInt bufSize)
     {
       /* --- TCP --- */
       logTrace( "TCP sendData(%d, %ld)\n", SOCKET(s), bufSize);
-      if ((nsent= send(SOCKET(s), buf, bufSize, 0)) <= 0)
-	{
-      lastError = getLastSocketError();
-	  if ((nsent == -1) && (lastError == ERROR_WOULD_BLOCK))
-	    {
-	      logTrace( "TCP sendData(%d, %ld) -> %d [blocked]",
-		       SOCKET(s), bufSize, nsent);
-	      return 0;
-	    }
-	  else
-	    {
-	      /* error: most likely "connection closed by peer" */
-	      SOCKETSTATE(s)= OtherEndClosed;
-	      SOCKETERROR(s)= lastError;
-          logWarn("errno %d\n", lastError);
-          logWarnFromErrno("write");
+      if ((nsent= send(SOCKET(s), buf, bufSize, 0)) <= 0){
+		lastError = getLastSocketError();
+		if ((nsent == -1) && (lastError == ERROR_WOULD_BLOCK))
+			{
+			logTrace( "TCP sendData(%d, %ld) -> %d [blocked]", SOCKET(s), bufSize, nsent);
+			SOCKET_WAITINGTOSEND(s) = true;
+			aioHandle(SOCKET(s), sendHandler, AIO_WX);
+			return 0;
+			}
+		else
+			{
+			/* error: most likely "connection closed by peer" */
+			SOCKETSTATE(s)= OtherEndClosed;
+			SOCKETERROR(s)= lastError;
+			SOCKET_WAITINGTOSEND(s) = false;
 
-	      return 0;
-	    }
-	}
+			logWarn("errno %d\n", lastError);
+			logWarnFromErrno("write");
+			SOCKET_WAITINGTOSEND(s) = false;
+
+			return 0;
+			}
+		}
     }
-  /* write completed synchronously */
-  logTrace( "sendData(%d) done = %d\n", SOCKET(s), nsent);
-  return nsent;
+	/* write completed synchronously */
+	logTrace( "sendData(%d) done = %d\n", SOCKET(s), nsent);
+	SOCKET_WAITINGTOSEND(s) = false;
+	return nsent;
 }
 
 
@@ -1385,13 +1426,21 @@ sqInt sqSockettoHostportSendDataBufCount(SocketPtr s, sqInt address, sqInt port,
       saddr.sin_addr.s_addr= htonl(address);
       {
 	int nsent= sendto(SOCKET(s), buf, bufSize, 0, (struct sockaddr *)&saddr, sizeof(saddr));
-	if (nsent >= 0)
-	  return nsent;
+	if (nsent >= 0){
+		SOCKET_WAITINGTOSEND(s) = false;
+		return nsent;
+	}
 	
 	int lastError = getLastSocketError();
 
-	if (lastError == ERROR_WOULD_BLOCK)	/* asynchronous write in progress */
-	  return 0;
+	if (lastError == ERROR_WOULD_BLOCK)	{
+		  SOCKET_WAITINGTOSEND(s) = true;
+		  aioHandle(SOCKET(s), sendHandler, AIO_WX);
+		  
+		  /* asynchronous write in progress */
+	     return 0;
+	}
+	
 	logTrace( "UDP send failed\n");
 	SOCKETERROR(s)= lastError;
       }
