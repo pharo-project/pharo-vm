@@ -3,7 +3,7 @@
    from
 	BalloonEnginePlugin VMMaker.oscog-eem.2480 uuid: bb3ffda7-8241-4dea-b886-d656e474b6c1
  */
-static char __buildInfo[] = "BalloonEnginePlugin VMMaker.oscog-eem.2480 uuid: bb3ffda7-8241-4dea-b886-d656e474b6c1 " __DATE__ ;
+static char __buildInfo[] = "BalloonEnginePlugin VMMaker.oscog-eem.2480 uuid: bb3ffda7-8241-4dea-b886-d656e474b6c1";
 
 
 

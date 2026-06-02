@@ -43,7 +43,7 @@
 
 static uchar *mapPages[NUMPAGES] = { 0, };
 
-#define PAGESIZE (1024*1024)
+#define HEAP_MAP_PAGE_SIZE (1024*1024)
 #define PAGESHIFT 24
 #define PAGEMASK 0xFFFFFF
 #define LOGWORDSIZE 2
@@ -78,12 +78,12 @@ heapMapAtWordPut(void *wordPointer, int bit)
 	if ((address & ((1<<LOGWORDSIZE)-1)))
 		error("misaligned word");
 	if (!page) {
-		if (!(page = malloc(PAGESIZE))) {
+		if (!(page = malloc(HEAP_MAP_PAGE_SIZE))) {
 			logErrorFromErrno("heapMap malloc");
 			exit(1);
 		}
 		mapPages[PAGEINDEX(address)] = page;
-		memset(page,0,PAGESIZE);
+		memset(page,0,HEAP_MAP_PAGE_SIZE);
 	}
 	if (bit)
 		page[BYTEINDEX(address)] |= 1 << BITINDEX(address);
@@ -101,7 +101,7 @@ clearHeapMap(void)
 
 	for (i = 0; i < NUMPAGES; i++)
 		if (mapPages[i])
-			memset(mapPages[i],0,PAGESIZE);
+			memset(mapPages[i],0,HEAP_MAP_PAGE_SIZE);
 }
 #else /* SQ_IMAGE32 */
 /*
@@ -118,7 +118,7 @@ clearHeapMap(void)
 
 static uchar **mapPages[NUMROOTPAGES] = { 0, };
 
-#define PAGESIZE (8*1024*1024)
+#define HEAP_MAP_PAGE_SIZE (8*1024*1024)
 #define PAGESHIFT 26 /* 8mb = 2^23, + 2^3 for 64-bit units = 2^26 */
 #define PAGEMASK 0x3FFFFFF
 #define DIRECTORYSIZE ((1 << 19) * sizeof(void *))
@@ -169,12 +169,12 @@ heapMapAtWordPut(void *wordPointer, int bit)
 		memset(directory,0,DIRECTORYSIZE);
 	}
 	if (!(page = directory[PAGEINDEX(address)])) {
-		if (!(page = malloc(PAGESIZE))) {
+		if (!(page = malloc(HEAP_MAP_PAGE_SIZE))) {
 			logErrorFromErrno("heapMap malloc");
 			exit(1);
 		}
 		directory[PAGEINDEX(address)] = page;
-		memset(page,0,PAGESIZE);
+		memset(page,0,HEAP_MAP_PAGE_SIZE);
 	}
 	if (bit)
 		page[BYTEINDEX(address)] |= 1 << BITINDEX(address);
@@ -195,6 +195,6 @@ clearHeapMap(void)
 		if ((directory = mapPages[i]))
 			for (j = 0; j < DIRECTORYSIZE / sizeof(void *); j++)
 				if ((page = directory[j]))
-					memset(page,0,PAGESIZE);
+					memset(page,0,HEAP_MAP_PAGE_SIZE);
 }
 #endif /* SQ_IMAGE32 */

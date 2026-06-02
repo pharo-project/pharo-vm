@@ -3,7 +3,7 @@
    from
 	SocketPlugin VMMaker.oscog-eem.2495 uuid: fcbf4c90-4c50-4ff3-8690-0edfded4f9c4
  */
-static char __buildInfo[] = "SocketPlugin VMMaker.oscog-eem.2495 uuid: fcbf4c90-4c50-4ff3-8690-0edfded4f9c4 " __DATE__ ;
+static char __buildInfo[] = "SocketPlugin VMMaker.oscog-eem.2495 uuid: fcbf4c90-4c50-4ff3-8690-0edfded4f9c4";
 
 
 

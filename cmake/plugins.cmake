@@ -17,7 +17,7 @@ target_link_libraries(FileAttributesPlugin PRIVATE FilePlugin)
 
 # UUIDPlugin
 
-if(NOT OPENBSD)
+if(FEATURE_PLUGIN_UUID AND NOT OPENBSD)
     message(STATUS "Adding plugin: UUIDPlugin")
 
     file(GLOB UUIDPlugin_SOURCES
@@ -58,15 +58,17 @@ if(OSX)
 	target_link_libraries(LocalePlugin PRIVATE "-framework CoreFoundation")
 endif()
 
-add_vm_plugin(SqueakSSL FALSE FALSE)
-if(OSX)
-    target_link_libraries(SqueakSSL PRIVATE "-framework CoreFoundation")
-    target_link_libraries(SqueakSSL PRIVATE "-framework Security")
-elseif(WIN)
-    target_link_libraries(SqueakSSL PRIVATE Crypt32 Secur32)
-else()
-    find_package(OpenSSL REQUIRED)
-    target_link_libraries(SqueakSSL PRIVATE OpenSSL::SSL OpenSSL::Crypto)
+if(FEATURE_PLUGIN_SSL)
+    add_vm_plugin(SqueakSSL FALSE FALSE)
+    if(OSX)
+        target_link_libraries(SqueakSSL PRIVATE "-framework CoreFoundation")
+        target_link_libraries(SqueakSSL PRIVATE "-framework Security")
+    elseif(WIN)
+        target_link_libraries(SqueakSSL PRIVATE Crypt32 Secur32)
+    else()
+        find_package(OpenSSL REQUIRED)
+        target_link_libraries(SqueakSSL PRIVATE OpenSSL::SSL OpenSSL::Crypto)
+    endif()
 endif()
 
 # UnixOSProcessPlugin

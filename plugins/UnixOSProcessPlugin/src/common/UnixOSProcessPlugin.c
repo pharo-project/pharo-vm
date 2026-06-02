@@ -3,7 +3,7 @@
    from
 	UnixOSProcessPlugin VMConstruction-Plugins-OSProcessPlugin.oscog-dtl.66 uuid: a8a2bf10-e7b3-4963-90b3-d69a2bee77bb
  */
-static char __buildInfo[] = "UnixOSProcessPlugin VMConstruction-Plugins-OSProcessPlugin.oscog-dtl.66 uuid: a8a2bf10-e7b3-4963-90b3-d69a2bee77bb " __DATE__ ;
+static char __buildInfo[] = "UnixOSProcessPlugin VMConstruction-Plugins-OSProcessPlugin.oscog-dtl.66 uuid: a8a2bf10-e7b3-4963-90b3-d69a2bee77bb";
 /* D T Lewis - UnixOSProcessPlugin.c translated from class
    UnixOSProcessPlugin of OSProcessPlugin version 4.6.4 Cog */
 
