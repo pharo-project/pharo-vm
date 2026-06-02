@@ -34,6 +34,9 @@ Class {
 		'HashMultiplyMask',
 		'IMMUTABILITY',
 		'PRIdSQINT',
+		'PharoVM_VERSION_MAJOR',
+		'PharoVM_VERSION_MINOR',
+		'PharoVM_VERSION_PATCH',
 		'PrimErrBadArgument',
 		'PrimErrBadIndex',
 		'PrimErrBadMethod',
@@ -122,7 +125,12 @@ VMBasicConstants class >> namesDefinedAtCompileTime [
 		PRIdSQINT
 		
 		FEATURE_FFI
-		FEATURE_THREADED_FFI)
+		FEATURE_THREADED_FFI
+		
+		PharoVM_VERSION_MAJOR
+		PharoVM_VERSION_MINOR
+		PharoVM_VERSION_PATCH
+		)
 ]
 
 { #category : 'C translation' }

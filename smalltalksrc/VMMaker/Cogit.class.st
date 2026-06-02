@@ -168,7 +168,6 @@ Class {
 		'cPICCaseSize',
 		'cPICEndSize',
 		'closedPICSize',
-		'openPICSize',
 		'fixups',
 		'abstractOpcodes',
 		'generatorTable',
@@ -250,7 +249,8 @@ Class {
 		'statCompileFullBlockUsecs',
 		'statCompileMethodCount',
 		'statCompileMethodUsecs',
-		'jitCodeZoneWriteEnabled'
+		'jitCodeZoneWriteEnabled',
+		'megamorphicICSize'
 	],
 	#classVars : [
 		'AnnotationConstantNames',
@@ -478,7 +478,7 @@ Cogit class >> declareCVarsIn: aCCodeGenerator [
 		var: #ceUnlockVMOwner declareC: 'void (*ceUnlockVMOwner)(void)';
 		var: #postCompileHook
 		declareC: 'void (*postCompileHook)(CogMethod *)';
-		var: #openPICList declareC: 'CogMethod *openPICList = 0';
+		var: #megamorphicICList declareC: 'CogMethod *megamorphicICList = 0';
 		var: #maxMethodBefore type: #'CogMethod *';
 		var: 'enumeratingCogMethod' type: #'CogMethod *'.
 	aCCodeGenerator
@@ -1377,8 +1377,7 @@ Cogit class >> structureOfACogMethod [
 	"A CogMethod is the machine code for executable code in the Cog VM, and in the simulator these are
 	 instances of CogMethod.  In actuality they are structures in memory in the CogMethodZone..  There
 	 are four real kinds, defined by the cmType field, free space: CMFree, methods: CMMethod, closed
-	 PICs: CMClosedPIC (finite polymorphic inline caches with up to 6 entries), and open PICs: CMOpenPIC
-	 (infinite megamorphicinline caches that probe the first-level method lookup cache).  There is a fifth
+	 PICs: CMClosedPIC (finite polymorphic inline caches with up to 6 entries), and megamorphic ICs: CMMegamorphicPIC (infinite megamorphic inline caches that probe the first-level method lookup cache).  There is a fifth
 	 kind of method, which is merely a header, for blocks: CMBlock, one which exists only within CMMethods,
 	 and exist only to allow block activations to refer to something that looks like a CogMethod.
 
@@ -3232,11 +3231,11 @@ Cogit >> assertSaneJumpTarget: jumpTarget [
 	<var: #jumpTarget type: #'AbstractInstruction *'>
 
 	self assert: (closedPICSize isNil "don't whinge when producing the PIC prototypes"
-			or: [openPICSize isNil
+			or: [megamorphicICSize isNil
 			or: [(self addressIsInInstructions: jumpTarget)
 			or: [(jumpTarget asUnsignedInteger
 					between: codeBase
-					and: methodZone limitZony asInteger + (closedPICSize max: openPICSize))]]])
+					and: methodZone limitZony asInteger + (closedPICSize max: megamorphicICSize))]]])
 ]
 
 { #category : 'trampoline support' }
@@ -3648,7 +3647,7 @@ Cogit >> ceBaseFrameReturnTrampoline: anInteger [
 Cogit >> ceCPICMiss: cPIC receiver: receiver [
 	"Code entry closed PIC miss.  A send has fallen
 	 through a closed (finite) polymorphic inline cache.
-	 Either extend it or patch the send site to an open PIC.
+	 Either extend it or patch the send site to an megamorphic IC.
 	 The stack looks like:
 			receiver
 			args
@@ -3960,7 +3959,7 @@ Cogit >> ceSICMiss: receiver [
 		ifFalse: [ inlineCache := nil ]
 		ifTrue: [
 			| extent |
-			inlineCache := methodZone openPICWithSelector:
+			inlineCache := methodZone megamorphicICWithSelector:
 				               missedTargetCogMethod selector.
 			linkingSucceeded := inlineCache isNotNil.
 			inlineCache ifNotNil: [
@@ -4608,7 +4607,7 @@ Cogit >> cogExtendPIC: cPIC CaseNMethod: caseNMethod tag: caseNTag isMNUCase: is
  	<var: #cPIC type: #'CogMethod *'>
 	| operand target address |
 	self enableCodeZoneWriteDuring: [  
-			"Caller patches to open pic if caseNMethod is young."
+			"Caller patches to megamorphicIC if caseNMethod is young."
 			self assert: (caseNMethod notNil and: [(objectMemory isYoung: caseNMethod) not]).
 			(isMNUCase not and: [coInterpreter methodHasCogMethod: caseNMethod])
 				ifTrue: "this isn't an MNU and we have an already cogged method to jump to"
@@ -4722,6 +4721,40 @@ Cogit >> cogMNUPICSelector: selector receiver: rcvr methodOperand: methodOperand
 	^ pic
 ]
 
+{ #category : 'in-line cacheing' }
+Cogit >> cogMegamorphicICSelector: selector numArgs: numArgs [
+	"Create a megamorphic IC.  Temporarily create a direct call of ceSendFromInLineCacheMiss:.
+	 Should become a probe of the first-level method lookup cache followed by a
+	 call of ceSendFromInLineCacheMiss: if the probe fails."
+	
+	<returnTypeC: #'CogMethod *'>
+	| startAddress codeSize mapSize end pic |
+	startAddress := methodZone allocate: megamorphicICSize.
+	startAddress = 0 ifTrue:
+		[^self cCoerceSimple: InsufficientCodeSpace to: #'CogMethod *'].
+	methodLabel
+		address: startAddress;
+		dependent: nil.
+	"stack allocate the various collections so that they
+	 are effectively garbage collected on return."
+	self allocateOpcodes: 100 bytecodes: 0.
+	self compileMegamorphicIC: selector numArgs: numArgs.
+	self computeMaximumSizes.
+	methodLabel concretizeAt: startAddress.
+	codeSize := self generateInstructionsAt: startAddress + (self sizeof: CogMethod).
+	mapSize := self generateMapAt: startAddress + megamorphicICSize - 1 start: startAddress + cmNoCheckEntryOffset.
+	self assert: entry address - startAddress = cmEntryOffset.
+	self assert: (methodZone roundUpLength: (self sizeof: CogMethod) + codeSize) + (methodZone roundUpLength: mapSize) <= megamorphicICSize.
+
+	end := self outputInstructionsAt: startAddress + (self sizeof: CogMethod).
+	pic := self
+		fillInMegamorphicICHeader: (self cCoerceSimple: startAddress to: #'CogMethod *')
+		numArgs: numArgs
+		selector: selector.
+			
+	^ pic
+]
+
 { #category : 'debugging' }
 Cogit >> cogMethodDoesntLookKosher: cogMethod [
 	"Check that the header fields onf a non-free method are consistent with
@@ -4752,11 +4785,11 @@ Cogit >> cogMethodDoesntLookKosher: cogMethod [
 		 ^0].
 
 	cogMethod cmType = CMMegamorphicIC ifTrue:
-		[cogMethod blockSize ~= openPICSize ifTrue:
+		[cogMethod blockSize ~= megamorphicICSize ifTrue:
 			[^21].
 		 cogMethod methodHeader ~= 0 ifTrue:
 			[^22].
-		 "Check the nextOpenPIC link unless we're compacting"
+		 "Check the nextMegamorphicIC link unless we're compacting"
 		 cogMethod objectHeader >= 0 ifTrue:
 			[(cogMethod methodObject = 0
 			  or: [methodZone compactionInProgress
@@ -4804,39 +4837,6 @@ Cogit >> cogMethodSurrogateAt: address [
 Cogit >> cogMethodSurrogateClass [
 	<doNotGenerate>
 	^cogMethodSurrogateClass
-]
-
-{ #category : 'in-line cacheing' }
-Cogit >> cogOpenPICSelector: selector numArgs: numArgs [
-	"Create an Open PIC.  Temporarily create a direct call of ceSendFromOpenPIC:.
-	 Should become a probe of the first-level method lookup cache followed by a
-	 call of ceSendFromOpenPIC: if the probe fails."
-	<returnTypeC: #'CogMethod *'>
-	| startAddress codeSize mapSize end pic |
-	startAddress := methodZone allocate: openPICSize.
-	startAddress = 0 ifTrue:
-		[^self cCoerceSimple: InsufficientCodeSpace to: #'CogMethod *'].
-	methodLabel
-		address: startAddress;
-		dependent: nil.
-	"stack allocate the various collections so that they
-	 are effectively garbage collected on return."
-	self allocateOpcodes: 100 bytecodes: 0.
-	self compileOpenPIC: selector numArgs: numArgs.
-	self computeMaximumSizes.
-	methodLabel concretizeAt: startAddress.
-	codeSize := self generateInstructionsAt: startAddress + (self sizeof: CogMethod).
-	mapSize := self generateMapAt: startAddress + openPICSize - 1 start: startAddress + cmNoCheckEntryOffset.
-	self assert: entry address - startAddress = cmEntryOffset.
-	self assert: (methodZone roundUpLength: (self sizeof: CogMethod) + codeSize) + (methodZone roundUpLength: mapSize) <= openPICSize.
-
-	end := self outputInstructionsAt: startAddress + (self sizeof: CogMethod).
-	pic := self
-		fillInOPICHeader: (self cCoerceSimple: startAddress to: #'CogMethod *')
-		numArgs: numArgs
-		selector: selector .
-			
-	^ pic
 ]
 
 { #category : 'in-line cacheing' }
@@ -4897,7 +4897,7 @@ Cogit >> cogitPostGCAction: gcMode [
 		 objectRepresentation allYoungObjectsAgeInFullGC ]) ifTrue: [ 
 		methodZone voidYoungReferrersPostTenureAll ].
 	gcMode = GCModeBecome ifTrue: [ 
-		methodZone followForwardedLiteralsInOpenPICList ].
+		methodZone followForwardedLiteralsInMegamorphicICList ].
 	"Post-GC update every full method's objectHeader to whatever it needs to be"
 	self assert: self allMethodsHaveCorrectHeader.
 	"The youngReferrers should be correct after a GC since that is the point at which it is
@@ -5349,6 +5349,14 @@ Cogit >> compileFullBlockEntry [
 	^0
 ]
 
+{ #category : 'in-line cacheing' }
+Cogit >> compileMegamorphicIC: selector numArgs: numArgs [
+	"Compile the code for a megamorphicIC.  
+	Perform a probe of the first-level method lookup cache followed by a call of ceSendFromMegamorphicIC: if the probe fails.
+	 Since megamorphicICs replicate the CoInterpreter's first-level method cache lookup this is a subclass responsibility."
+	self subclassResponsibility
+]
+
 { #category : 'compile abstract instructions' }
 Cogit >> compileMethodBody [
 	"Compile the top-level method body."
@@ -5360,15 +5368,6 @@ Cogit >> compileMethodBody [
 										+ (self deltaToSkipPrimAndErrorStoreIn: methodObj
 												header: methodHeader)
 		through: endPC
-]
-
-{ #category : 'in-line cacheing' }
-Cogit >> compileOpenPIC: selector numArgs: numArgs [
-	"Compile the code for an open PIC.  Perform a probe of the first-level method
-	 lookup cache followed by a call of ceSendFromOpenPIC: if the probe fails.
-	 Since open PICs replicate the CoInterpreter's first-level method cache lookup
-	 this is a subclass responsibility."
-	self subclassResponsibility
 ]
 
 { #category : 'in-line cacheing' }
@@ -5719,7 +5718,7 @@ Cogit >> createCPICData: cPIC [
 		i = 1
 			ifTrue:
 				[class := cPIC methodObject. "first case may have been collected and stored here by collectCogConstituentFor:Annotation:Mcpc:Bcpc:Method:"
-				 class = 0 ifTrue: [class := objectMemory nilObject]. "cPIC is unreferenced; likely evolved to OpenPIC"
+				 class = 0 ifTrue: [class := objectMemory nilObject]. "cPIC is unreferenced; likely evolved to megamorphicIC"
 				 entryPoint := backEnd jumpLongTargetBeforeFollowingAddress: pc]
 			ifFalse:
 				[class := objectRepresentation classForInlineCacheTag:
@@ -6172,6 +6171,33 @@ Cogit >> fillInCPICHeader: pic numArgs: numArgs numCases: numCases hasMNUCase: h
 ]
 
 { #category : 'generate machine code' }
+Cogit >> fillInMegamorphicICHeader: pic numArgs: numArgs selector: selector [
+	<returnTypeC: #'CogMethod *'>
+	<var: #pic type: #'CogMethod *'>
+	<inline: true>
+	pic cmType: CMMegamorphicIC.
+	pic objectHeader: 0.
+	pic blockSize: megamorphicICSize.
+	"pic methodObject: 0.""This is also the megamorphicIC link so don't initialize it"
+	methodZone addToMegamorphicICList: pic.
+	pic methodHeader: 0.
+	pic selector: selector.
+	pic cmNumArgs: numArgs.
+	(pic cmRefersToYoung: (objectMemory isYoung: selector)) ifTrue:
+		[methodZone addToYoungReferrers: pic].
+	pic cmUsageCount: self initialMegamorphicICUsageCount.
+	pic cpicHasMNUCase: false.
+	pic cPICNumCases: 0.
+	pic picUsage: 0.
+	self assert: pic cmType = CMMegamorphicIC.
+	self assert: pic selector = selector.
+	self assert: pic cmNumArgs = numArgs.
+	self assert: (backEnd callTargetFromReturnAddress: pic asInteger + missOffset) = (self picAbortTrampolineFor: numArgs).
+	self assert: megamorphicICSize = (methodZone roundUpLength: megamorphicICSize).
+	^pic
+]
+
+{ #category : 'generate machine code' }
 Cogit >> fillInMethodHeader: method size: size selector: selector [
 	<returnTypeC: #'CogMethod *'>
 	<var: #method type: #'CogMethod *'>
@@ -6211,33 +6237,6 @@ Cogit >> fillInMethodHeader: method size: size selector: selector [
 				= (self methodAbortTrampolineFor: method cmNumArgs).
 	self assert: size = (methodZone roundUpLength: size).
 	^method
-]
-
-{ #category : 'generate machine code' }
-Cogit >> fillInOPICHeader: pic numArgs: numArgs selector: selector [
-	<returnTypeC: #'CogMethod *'>
-	<var: #pic type: #'CogMethod *'>
-	<inline: true>
-	pic cmType: CMMegamorphicIC.
-	pic objectHeader: 0.
-	pic blockSize: openPICSize.
-	"pic methodObject: 0.""This is also the nextOpenPIC link so don't initialize it"
-	methodZone addToMegamorphicICList: pic.
-	pic methodHeader: 0.
-	pic selector: selector.
-	pic cmNumArgs: numArgs.
-	(pic cmRefersToYoung: (objectMemory isYoung: selector)) ifTrue:
-		[methodZone addToYoungReferrers: pic].
-	pic cmUsageCount: self initialOpenPICUsageCount.
-	pic cpicHasMNUCase: false.
-	pic cPICNumCases: 0.
-	pic picUsage: 0.
-	self assert: pic cmType = CMMegamorphicIC.
-	self assert: pic selector = selector.
-	self assert: pic cmNumArgs = numArgs.
-	self assert: (backEnd callTargetFromReturnAddress: pic asInteger + missOffset) = (self picAbortTrampolineFor: numArgs).
-	self assert: openPICSize = (methodZone roundUpLength: openPICSize).
-	^pic
 ]
 
 { #category : 'method map' }
@@ -6476,7 +6475,7 @@ Cogit >> freePICsWithFreedTargets [
 { #category : 'jit - api' }
 Cogit >> freeUnmarkedMachineCode [
 	"Free machine-code methods whose compiled methods are unmarked
-	 and open PICs whose selectors are not marked, and closed PICs that
+	 and megamorphicICs whose selectors are not marked, and closed PICs that
 	 refer to unmarked objects."
 	<api>
 	<option: #SpurObjectMemory>
@@ -7706,15 +7705,7 @@ Cogit >> generateMapAt: addressOrNull start: startAddress [
 ]
 
 { #category : 'initialization' }
-Cogit >> generateMissAbortTrampolines [
-	"Generate the run-time entries for the various method and PIC entry misses and aborts.
-	 Read the class-side method trampolines for documentation on the various trampolines"
-
-	self subclassResponsibility
-]
-
-{ #category : 'initialization' }
-Cogit >> generateOpenPICPrototype [
+Cogit >> generateMegamorphicICPrototype [
 	"Generate the prototype ClosedPIC to determine how much space as full PIC takes.
 	 When we first allocate a closed PIC it only has one or two cases and we want to grow it.
 	 So we have to determine how big a full one is before hand."
@@ -7728,7 +7719,7 @@ Cogit >> generateOpenPICPrototype [
 	"Need a real selector here so that the map accomodates the annotations for the selector.
 	 Use self numRegArgs to generate the longest possible code sequence due to
 	 genPushRegisterArgsForNumArgs:"
-	self compileOpenPIC: (coInterpreter specialSelector: 0) numArgs: self numRegArgs.
+	self compileMegamorphicIC: (coInterpreter specialSelector: 0) numArgs: self numRegArgs.
 	self computeMaximumSizes.
 	methodLabel concretizeAt: methodZoneBase.
 
@@ -7736,13 +7727,21 @@ Cogit >> generateOpenPICPrototype [
 		codeSize := self generateInstructionsAt: methodZoneBase + (self sizeof: CogMethod).
 		mapSize := self generateMapAt: nil start: methodZoneBase + cmNoCheckEntryOffset].
 	
-	openPICSize := (methodZone roundUpLength: (self sizeof: CogMethod) + codeSize) + (methodZone roundUpLength: mapSize).
+	megamorphicICSize := (methodZone roundUpLength: (self sizeof: CogMethod) + codeSize) + (methodZone roundUpLength: mapSize).
 	"self cCode: ''
 		inSmalltalk:
 			[| end |
 			 end := self outputInstructionsAt: methodZoneBase + headerSize.
 			 self disassembleFrom: methodZoneBase + (self sizeof: CogMethod) to: end - 1.
 			 self halt]"
+]
+
+{ #category : 'initialization' }
+Cogit >> generateMissAbortTrampolines [
+	"Generate the run-time entries for the various method and PIC entry misses and aborts.
+	 Read the class-side method trampolines for documentation on the various trampolines"
+
+	self subclassResponsibility
 ]
 
 { #category : 'initialization' }
@@ -8288,6 +8287,12 @@ Cogit >> initialClosedPICUsageCount [
 ]
 
 { #category : 'generate machine code' }
+Cogit >> initialMegamorphicICUsageCount [
+	"Answer a usage count that reflects likely long-term usage."
+	^CMMaxUsageCount - 1
+]
+
+{ #category : 'generate machine code' }
 Cogit >> initialMethodUsageCount [
 	"Answer a usage count that reflects likely long-term usage.
 	 Answer 1 for non-primitives or quick primitives (inst var accessors),
@@ -8298,12 +8303,6 @@ Cogit >> initialMethodUsageCount [
 	self primitiveDescriptor primitiveGenerator ifNil:
 		[^2].
 	^3
-]
-
-{ #category : 'generate machine code' }
-Cogit >> initialOpenPICUsageCount [
-	"Answer a usage count that reflects likely long-term usage."
-	^CMMaxUsageCount - 1
 ]
 
 { #category : 'initialization' }
@@ -8364,7 +8363,7 @@ Cogit >> initializeCodeZoneFrom: startAddress upTo: endAddress [
 	"repeat so that now the methodZone ignores the generated run-time"
 	methodZone manageFrom: methodZoneBase to: endAddress.
 	"N.B. this is assumed to be the last thing done in initialization; see Cogit>>initialized"
-	self generateOpenPICPrototype
+	self generateMegamorphicICPrototype
 ]
 
 { #category : 'compile abstract instructions' }
@@ -8430,7 +8429,7 @@ Cogit >> initializeProcessorStack: rumpCStackAddress [
 { #category : 'testing' }
 Cogit >> initialized [
 	<doNotGenerate>
-	^openPICSize isInteger
+	^megamorphicICSize isInteger
 ]
 
 { #category : 'in-line cacheing' }
@@ -9406,8 +9405,9 @@ Cogit >> markAndTraceOrFreeCogMethod: cogMethod firstVisit: firstVisit [
 			unlinks sends to targets that should be freed.
 	 For a CMClosedPIC this
 			frees if it refers to anything that should be freed or isn't marked.
-	 For a CMOpenPIC this
+	 For a CMMegamorphicIC this
 			frees if the selector isn't marked."
+			
 	<var: #cogMethod type: #'CogMethod *'>
 	<inline: false> "this recurses at most one level down"
 	cogMethod cmType = CMFree ifTrue:
@@ -9755,6 +9755,12 @@ Cogit >> mclassIsSmallInteger [
 	^objectMemory isIntegerObject: receiverTags
 ]
 
+{ #category : 'accessing' }
+Cogit >> megamorphicICSize [
+	<doNotGenerate>
+	^ megamorphicICSize
+]
+
 { #category : 'garbage collection' }
 Cogit >> method: methodA hasSameCodeAs: methodB [
 	"For the purposes of become: see if the two methods are similar, i.e. can be safely becommed.
@@ -10033,12 +10039,6 @@ Cogit >> offsetAndSendTableFor: entryPoint annotation: annotation into: binaryBl
 ]
 
 { #category : 'accessing' }
-Cogit >> openPICSize [
-	<doNotGenerate>
-	^ openPICSize
-]
-
-{ #category : 'accessing' }
 Cogit >> ordinarySendTrampolineAt: anInteger put: aTrampolineAddress [ 
 	<doNotGenerate>
 	
@@ -10104,16 +10104,16 @@ Cogit >> patchToMegamorphicICFor: selector numArgs: numArgs receiver: receiver [
 	<var: #oPIC type: #'CogMethod *'>
 	callerReturnAddress := coInterpreter stackTop.
 
-	oPIC := methodZone openPICWithSelector: selector.
+	oPIC := methodZone megamorphicICWithSelector: selector.
 	
 	"See if an Open PIC is already available."
 	oPIC ifNil:
 		["otherwise attempt to create an Open PIC."
 			self 
-				enableCodeZoneWriteDuring: [oPIC := self cogOpenPICSelector: selector numArgs: numArgs]
+				enableCodeZoneWriteDuring: [oPIC := self cogMegamorphicICSelector: selector numArgs: numArgs]
 				flushingCacheWith: [ 
 					(oPIC asInteger between: MaxNegativeErrorCode and: -1) 
-						ifFalse: [ self flushICacheFrom: oPIC asUnsignedInteger to: oPIC asUnsignedInteger + openPICSize]]].
+						ifFalse: [ self flushICacheFrom: oPIC asUnsignedInteger to: oPIC asUnsignedInteger + megamorphicICSize]]].
 
 	(oPIC asInteger between: MaxNegativeErrorCode and: -1) ifTrue:[
 		"For some reason the PIC couldn't be generated, most likely a lack of code memory."
@@ -10148,6 +10148,12 @@ Cogit >> picAbortAddress: cPIC [
 	The first thing in the machine code stream is the abort section."
 
 	^ cPIC asInteger + (self sizeof: CogMethod)
+]
+
+{ #category : 'trampoline support' }
+Cogit >> picAbortTrampolineFor: numArgs [
+	
+	^ self subclassResponsibility
 ]
 
 { #category : 'debugging' }
@@ -11670,7 +11676,7 @@ Cogit >> unlinkAllSends [
 
 	self enableCodeZoneWriteDuring: [  
 		cogMethod := self cCoerceSimple: methodZoneBase to: #'CogMethod *'.
-		methodZone voidOpenPICList.
+		methodZone voidMegamorphicICList.
 		[cogMethod < methodZone limitZony] whileTrue:
 			[cogMethod cmType = CMMethod
 				ifTrue:
@@ -11709,12 +11715,14 @@ Cogit >> unlinkIfFreeOrLinkedSend: annotation pc: mcpc of: theSelector [
 
 { #category : 'in-line cacheing' }
 Cogit >> unlinkIfInvalidClassSend: annotation pc: mcpc ignored: superfluity [
+	
 	<var: #mcpc type: #'char *'>
 	| entryPoint |
 
 	(self isPureSendAnnotation: annotation) ifTrue:
 		[entryPoint := backEnd callTargetFromReturnAddress: mcpc asInteger.
-		 entryPoint > methodZoneBase ifTrue: "It's a linked send, but maybe a super send or linked to an OpenPIC, in which case the cache tag will be a selector...."
+		 entryPoint > methodZoneBase ifTrue: "It's a linked send, but maybe a super send or linked to an megamorphic IC, in which case the cache tag will be a selector...."
+		
 			[self targetMethodAndSendTableFor: entryPoint annotation: annotation into:
 				[:targetMethod :sendTable|
 				 ((self annotationIsForUncheckedEntryPoint: annotation)

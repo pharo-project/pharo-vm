@@ -98,8 +98,6 @@ sqAllocateMemory(minimumMemory, heapSize, baseAddress)
 
 sqInt sqMemoryExtraBytesLeft(sqInt includingSwap);
 
-sqInt ioSetCursorARGB(sqInt cursorBitsIndex, sqInt extentX, sqInt extentY, sqInt offsetX, sqInt offsetY);
-
 #if COGVM
 extern void sqMakeMemoryExecutableFromTo(unsigned long, unsigned long);
 extern void sqMakeMemoryNotExecutableFromTo(unsigned long, unsigned long);

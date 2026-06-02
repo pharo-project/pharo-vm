@@ -588,86 +588,88 @@ sqInt sqFileDescriptorType(int fdNum) {
 
 size_t
 sqFileReadIntoAt(SQFile *f, size_t count, char *byteArrayIndex, size_t startIndex) {
-	/* Read count bytes from the given file into byteArray starting at
-	   startIndex. byteArray is the address of the first byte of a
-	   The library bytes object (e.g. String or ByteArray). startIndex
-	   is a zero-based index; that is a startIndex of 0 starts writing
-	   at the first byte of byteArray.
-	*/
+    /* Read count bytes from the given file into byteArray starting at
+       startIndex. byteArray is the address of the first byte of a
+       The library bytes object (e.g. String or ByteArray). startIndex
+       is a zero-based index; that is a startIndex of 0 starts writing
+       at the first byte of byteArray.
+    */
 
-	char *dst;
-	size_t bytesRead;
-	FILE *file;
+    char *dst;
+    size_t bytesRead;
+    FILE *file;
 #if COGMTVM
-	sqInt myThreadIndex;
-#endif
-#if COGMTVM
-	int wasPinned;
-	sqInt bufferOop = (sqInt)byteArrayIndex - BaseHeaderSize;
+    sqInt myThreadIndex;
+    int wasPinned;
+    sqInt bufferOop = (sqInt)byteArrayIndex - BaseHeaderSize;
 #endif
 
-	if (!sqFileValid(f))
-		return interpreterProxy->success(false);
-	file = getFile(f);
-	if (f->writable) {
-		if (f->isStdioStream)
-			return interpreterProxy->success(false);
-		if (f->lastOp == WRITE_OP)
-			fseek(file, 0, SEEK_CUR);  /* seek between writing and reading */
-	}
-	dst = byteArrayIndex + startIndex;
-	if (f->isStdioStream) {
+    /*
+     * - For stdio streams We use a non-blocking, OS-level read() to prevent
+     * freezing the VM thread while waiting for interactive input.
+     * - Regular files: We strictly use fread() to preserve the libc internal buffer.
+	 * As the file is opened with fdopen which uses the libc internal buffer, using read() 
+	 * causes a gap between the position of the cursor of the read and the reality of the file 
+     * because the buffer is not known by read.
+     */
+
+    if (!sqFileValid(f))
+        return interpreterProxy->success(false);
+    file = getFile(f);
+    if (f->writable) {
+        if (f->isStdioStream)
+            return interpreterProxy->success(false);
+        if (f->lastOp == WRITE_OP)
+            fseek(file, 0, SEEK_CUR);  /* seek between writing and reading */
+    }
+
+    int fd = fileno(file);
+    dst = byteArrayIndex + startIndex;
+    if (f->isStdioStream) {
 #if COGMTVM
-		if (!(wasPinned = interpreterProxy->isPinned(bufferOop))) {
-			if (!(bufferOop = interpreterProxy->pinObject(bufferOop)))
-				return 0;
-			dst = bufferOop + BaseHeaderSize + startIndex;
-		}
-		myThreadIndex = interpreterProxy->disownVM(0);
-#endif
+        if (!(wasPinned = interpreterProxy->isPinned(bufferOop))) {
+            if (!(bufferOop = interpreterProxy->pinObject(bufferOop)))
+                return 0;
+            dst = bufferOop + BaseHeaderSize + startIndex;
+        }
+        myThreadIndex = interpreterProxy->disownVM(0);
+#endif  
 
-		bytesRead = 0;
-		do {
-			clearerr(file);
-
-			/*
-			 * To emulate the behavior of fread on a file we need to
-			 * make the stdin non blocking.
-			 * As this can produce a problem in Unix systems once
-			 * Pharo ends (we are affecting the behavior of a shared FD)
-			 * we need to restore it back to the original flags.
-			 *
-			 * With this the reading of the STDIN will not block
-			 * until there is data.
-			 */
-
-			int originalFlags = fcntl(fileno(file), F_GETFL);
-			fcntl(fileno(file), F_SETFL, originalFlags | O_NONBLOCK);
-
-			bytesRead = fread(dst, 1, count, file);
-
-			fcntl(fileno(file), F_SETFL, originalFlags);
-		}
-		while (bytesRead <= 0 && ferror(file) && errno == EINTR);
-
+        clearerr(file);
+        int originalFlags = fcntl(fd, F_GETFL);
+        fcntl(fd, F_SETFL, originalFlags | O_NONBLOCK);
+        
+        ssize_t sReadBytes;
+        do {
+            sReadBytes = read(fd, dst, count);
+        } while (sReadBytes < 0 && errno == EINTR);
+        
+        fcntl(fd, F_SETFL, originalFlags);
+        
+        if (sReadBytes < 0) {
+            bytesRead = 0; 
+        } else {
+            bytesRead = (size_t)sReadBytes;
+        }
 #if COGMTVM
-		interpreterProxy->ownVM(myThreadIndex);
-		if (!wasPinned)
-			interpreterProxy->unpinObject(bufferOop);
+        interpreterProxy->ownVM(myThreadIndex);
+        if (!wasPinned)
+            interpreterProxy->unpinObject(bufferOop);
 #endif /* COGMTVM */
-	}
-	else
-		do {
-			clearerr(file);
-			bytesRead = fread(dst, 1, count, file);
-		}
-		while (bytesRead <= 0 && ferror(file) && errno == EINTR);
-	/* support for skipping back 1 character for stdio streams */
-	if (f->isStdioStream)
-		if (bytesRead > 0)
-			f->lastChar = dst[bytesRead-1];
-	f->lastOp = READ_OP;
-	return bytesRead;
+    } else {
+        /* Use buffered fread for regular files to ensure data integrity */
+        do {
+            clearerr(file);
+            bytesRead = fread(dst, 1, count, file);
+        } while (bytesRead <= 0 && ferror(file) && errno == EINTR);
+    }
+
+    /* support for skipping back 1 character for stdio streams */
+    if (f->isStdioStream)
+        if (bytesRead > 0)
+            f->lastChar = dst[bytesRead-1];
+    f->lastOp = READ_OP;
+    return bytesRead;
 }
 
 sqInt
@@ -805,7 +807,7 @@ sqFileThisSession() {
 }
 
 void
-signalOnDataArrival(int fd, void *clientData, int flag){
+signalOnDataArrival(sqInt fd, void *clientData, int flag){
 	interpreterProxy->signalSemaphoreWithIndex((sqInt)clientData);
 	aioDisable(fd);
 }

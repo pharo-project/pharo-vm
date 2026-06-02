@@ -1566,7 +1566,7 @@ CoInterpreter >> ceSendAbort: selector to: rcvr numArgs: numArgs [
 
 { #category : 'trampolines' }
 CoInterpreter >> ceSendFromInLineCacheMiss: cogMethodOrPICAddr [
-	"Send from an Megamorphic IC when the first-level method lookup probe has failed,
+	"Send from a megamorphic IC when the first-level method lookup probe has failed,
 	 or to continue when PIC creation has failed (e.g. because we're out of code space),
 	 or when a send has failed due to a forwarded receiver."
 
