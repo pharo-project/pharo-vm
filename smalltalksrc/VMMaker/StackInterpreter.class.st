@@ -1091,7 +1091,7 @@ StackInterpreter class >> initializePrimitiveTable [
 		(79 primitiveNewMethod)
 
 		"Control Primitives (80-89)"
-		(80 primitiveSenderObject)
+		(80 primitiveFail)
 		(81 primitiveFail)
 		(82 primitiveFail)
 		(83 primitivePerform)
@@ -11060,30 +11060,6 @@ StackInterpreter >> primitiveResume [
 		 from: CSResume) ifTrue: [
 		self forProcessPrimitiveReturnToExecutivePostContextSwitch:
 			inInterpreter ]
-]
-
-{ #category : 'primitives' }
-StackInterpreter >> primitiveSenderObject [
-
-	| callerFramePointer senderObject |
-
-	(self isBaseFrame: framePointer) ifTrue: [ | callerFrameContext |
-		callerFrameContext := self frameCallerContext: framePointer.
-		(callerFrameContext = objectMemory nilObject) ifTrue: [
-			"case where there is no sender frame"
-			^ self primitiveFail	
-		].
-		(self isSingleContext: callerFrameContext) ifTrue: [ | receiverObject |
-			receiverObject := objectMemory fetchPointer: ReceiverIndex ofObject: callerFrameContext.
-			self pop: 1 thenPush: receiverObject.
-			^ self
-		] ifFalse: [
-			callerFramePointer := self frameOfMarriedContext: callerFrameContext.
-		]
-	] ifFalse: [ callerFramePointer := self frameCallerFP: framePointer ].
-
-	senderObject := self frameReceiver: callerFramePointer.
-	self pop: 1 thenPush: senderObject
 ]
 
 { #category : 'process primitives' }
