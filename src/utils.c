@@ -420,7 +420,7 @@ sqGetFilenameFromString(char * aCharBuffer, char * aFilenameString, sqInt filena
 #endif
 
 
-#ifndef bzero
+#ifndef HAVE_BZERO
 //We have to provide a bzero implementation for windows as the Cog code depends on it.
 void bzero(void *s, size_t n){
 	memset(s, 0, n);

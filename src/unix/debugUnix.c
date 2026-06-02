@@ -545,7 +545,11 @@ EXPORT(void) printStatusAfterError(){
 	
 	ucontext_t uap;
 	
+#ifdef HAVE_GETCONTEXT
 	getcontext(&uap);
+#else
+	memset(&uap, 0, sizeof(uap));
+#endif
 	
 	int saved_errno = errno;
 
@@ -568,4 +572,3 @@ EXPORT(int) fprintf_impl(FILE * stream, const char * format, ... ){
 EXPORT(int) vfprintf_impl(FILE * stream, const char * format, va_list arg){
 	return vfprintf(stream, format, arg);
 }
-

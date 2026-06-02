@@ -3,7 +3,7 @@
    from
 	DSAPlugin CryptographyPlugins-eem.14 uuid: 54292ff0-b538-43ba-9195-26766c158ba9
  */
-static char __buildInfo[] = "DSAPlugin CryptographyPlugins-eem.14 uuid: 54292ff0-b538-43ba-9195-26766c158ba9 " __DATE__ ;
+static char __buildInfo[] = "DSAPlugin CryptographyPlugins-eem.14 uuid: 54292ff0-b538-43ba-9195-26766c158ba9";
 
 
 

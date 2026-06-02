@@ -3,7 +3,7 @@
    from
 	BitBltSimulation VMMaker.oscog-eem.2493 uuid: d7437cc5-75c7-4a43-af6b-0f85bf0cebe6
  */
-static char __buildInfo[] = "BitBltSimulation VMMaker.oscog-eem.2493 uuid: d7437cc5-75c7-4a43-af6b-0f85bf0cebe6 " __DATE__ ;
+static char __buildInfo[] = "BitBltSimulation VMMaker.oscog-eem.2493 uuid: d7437cc5-75c7-4a43-af6b-0f85bf0cebe6";
 
 
 

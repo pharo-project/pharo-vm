@@ -3,7 +3,7 @@
    from
 	FileAttributesPlugin FileAttributesPlugin.oscog-akg.49 uuid: 00b4eed5-b2a8-454a-90b7-c3662d7c5423
  */
-static char __buildInfo[] = "FileAttributesPlugin FileAttributesPlugin.oscog-akg.49 uuid: 00b4eed5-b2a8-454a-90b7-c3662d7c5423 " __DATE__ ;
+static char __buildInfo[] = "FileAttributesPlugin FileAttributesPlugin.oscog-akg.49 uuid: 00b4eed5-b2a8-454a-90b7-c3662d7c5423";
 
 
 

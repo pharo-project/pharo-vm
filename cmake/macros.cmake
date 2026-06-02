@@ -8,13 +8,29 @@ macro(addLibraryWithRPATH NAME)
 
     #Declare the plugin depends on the VM core library
     if(NOT "${NAME}" STREQUAL "${VM_LIBRARY_NAME}")
-      target_link_libraries(${NAME} PRIVATE ${VM_LIBRARY_NAME})
+      if(BUILD_VM_CORE_STATIC)
+        target_include_directories(${NAME}
+          PUBLIC
+            ${CMAKE_CURRENT_SOURCE_DIR}/include
+            ${CMAKE_CURRENT_SOURCE_DIR}/include/pharovm
+            ${CMAKE_CURRENT_SOURCE_DIR}/include/pharovm/common
+            ${CMAKE_CURRENT_SOURCE_DIR}/include/pharovm/unix
+            ${CMAKE_CURRENT_BINARY_DIR}/build/include/pharovm/
+            ${PHARO_CURRENT_GENERATED}/vm/include)
+      else()
+        target_link_libraries(${NAME} PRIVATE ${VM_LIBRARY_NAME})
+      endif()
     endif()
 endmacro()
 
 # Include a loose-dependency library in the project, but do not link it to the main library
 macro(addIndependentLibraryWithRPATH NAME)
-    add_library(${NAME} SHARED ${ARGN})
+    if("${NAME}" STREQUAL "${VM_LIBRARY_NAME}" AND BUILD_VM_CORE_STATIC)
+        add_library(${NAME} STATIC ${ARGN})
+        set_target_properties(${NAME} PROPERTIES POSITION_INDEPENDENT_CODE ON)
+    else()
+        add_library(${NAME} SHARED ${ARGN})
+    endif()
     set_target_properties(${NAME} PROPERTIES LIBRARY_OUTPUT_DIRECTORY ${LIBRARY_OUTPUT_DIRECTORY})
 endmacro()
 
