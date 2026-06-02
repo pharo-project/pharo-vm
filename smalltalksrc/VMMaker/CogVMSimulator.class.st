@@ -235,7 +235,7 @@ CogVMSimulator >> basicInitialize [
 	primitiveTable := self class primitiveTable copy.
 
 	desiredNumStackPages := desiredEdenBytes := desiredCogCodeSize := 0.
-	self setDesiredStackPageBytes: 256 * objectMemory wordSize.
+	self setDesiredStackPageBytes: 1024 * 1024 "1MB".
 	"This is initialized on loading the image, but convenient for testing stack page values..."
 	numStackPages := self defaultNumStackPages. 
 	startMicroseconds := lastYieldMicroseconds := self ioUTCStartMicroseconds.
