@@ -1,10 +1,10 @@
 # Change log
 
-## v12.0.2-beta
+## v12.0.3-beta
 
 Fix issue with ssl on linuxes https://github.com/pharo-project/pharo-vm/pull/1073
 
-## v12.0.1-beta
+## v12.0.2-beta
 
 This is a major release featuring:
 
