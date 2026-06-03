@@ -1,5 +1,175 @@
 # Change log
 
+## v12.0.1-beta
+
+This is a major release featuring:
+
+* Frame unification and stack management improvements, delivering substantial interpreter and execution engine cleanups.
+* RISC-V JIT support, expanding platform coverage and future-proofing VM development.
+* New memory management capabilities, including direct old-space allocation and numerous GC and allocation improvements.
+* Extensive compiler and Slang/C translation work, with many correctness fixes, new tests, and improved inspection tools.
+* Platform and build modernization, including SDL updates, improved CI, cross-build support, and updated third-party dependencies.
+* Large-scale cleanup and refactoring efforts across the VM, interpreter, Cogit, PICs, and infrastructure.
+
+### VM Runtime, Interpreter & JIT
+
+* Frame unification (#602)
+* Improvements in stack management (#710)
+* Initialize stack pages during simulation (#853)
+* Robust `cannotInterpret:` in the interpreter (#641)
+* Simplify stack-to-register mapping API (#627)
+* Improve and use unreachable (#630)
+* Clean up Interpreter State (#658)
+* Void the instructionPointer systematically when creating a base frame (#914)
+* Cleanup make base frame when compacting code (#943)
+* Fix meta try primitive (#968)
+* Feature: `thisProcess` JIT (#1037)
+* OpenPIC / Megamorphic IC work (#1067)
+* PIC Cleanup (#889)
+* Cleanup PIC (#1021)
+* Allow `Cogit>>#mnuMethodOrNilFor:` to return non-`CompiledMethod` oops (#936)
+* Remove entry alignment (#934)
+* Mark debugging overrides in Cogit as `#debuggerCompleteToSender` (#1035)
+
+### Memory Management & Garbage Collection
+
+* Do not unlink all sends on GC (#503)
+* Improving perm space P12 (#621)
+* Added new primitive for allocating directly in the old space (#701)
+* Adding test to test Ephemerons in the Old Space (#702)
+* Clean special object array a little (#640)
+* Collapse allocation logs (#913)
+* Only scan the class table if `become:` was performed to an active class object (#1023)
+* Set the size of larger indexable objects allocated in young space (#976)
+* Fix LargeIntegers segfault on allocation failure (#1040)
+
+### Compiler, Slang & Code Generation
+
+* Reject reserved words (#613)
+* Rename reserved words: selectors, locals and instance variables (#624)
+* Rename conflicting identifiers (#646)
+* Validate if locals/args exist when adding a type declaration (#603)
+* Check structs' instance variable type declarations (#607)
+* Redundant type declaration linter rule (#662)
+* Fix cast tests (#660)
+* Fix and test inlinings with `if`s and right shifts not translated (#667)
+* Add tests and fix incorrectly generated inlined C code from CCodeGenerator (#666)
+* C AST translation right-side parenthesis in expression (#685)
+* Add a palette with the C translation of any inspected C node (#686)
+* Add C source code inspection tab for TParseNode (#687)
+* Created new package CAST-Tests (#679)
+* Better dead code elimination (#915)
+* Fix issue #822: remove unused argument for `functionPointerFor:inClass:` (#956)
+* Fix CASTParserTests>>#testParseSizeofTypeInt (#965)
+* Refactor inlining code and add tests for it (#987)
+* Suppress the old inlining implementation (#1000)
+* Fix small bug related to method inlining and comments (#957)
+* Remove the idea that we might have a different bytecode set (#927)
+* Add a dumb `isNotNil` implementation (same as `notNil`) (#890)
+
+### Platform Support & Portability
+
+* RISC-V JIT Support (#932)
+* Initial work on W^X for Linux systems (#905)
+* Add Windows support for non-ASCII filenames in `basicImageFileExists` (#922)
+* Fix the Windows build (#938)
+* Windows improvements (#1062)
+* Make `next` non-blocking on Linux (#1065)
+* Support x86_64 musl cross-build smoke testing with QEMU (#1069)
+* Updating versions for OSX (ARM / Intel) (#937)
+
+### Build System, CI & Dependencies
+
+* Update SDL (#615)
+* Remove strange SDL2_copy CMake target (#620)
+* Forward VM build parameters from CMake (#654)
+* Use Pharo 11 on CI (#669)
+* Use Pharo file server @ Inria (#868)
+* Extract full semantic version from git (#870)
+* Remove old versions of libgit in new builds (#902)
+* Update CMake minimal version for recent CMake compatibility (#945)
+* Updating LibGit2 build to use new OpenSSL and libssh2 (#1033)
+* SDL2 2.32.6 update for Windows and macOS (#978)
+* Fix OBS build (#981)
+* Add FEATURE_JIT_SIMD option (#966)
+* Fix Linux compilation error (#1053)
+
+### Plugins, I/O & Networking
+
+* New file plugin (#1024)
+* Fix missing socket `accept` on Pharo 12 (#1005)
+* Move warnings to debug when loading plugins (#675)
+
+### Testing & Simulation
+
+* Small stack interpreter tests (#690)
+* Simulator fixes (#1025)
+* Fix VM tests: `specialObjectsArrayAddress` (#1056)
+* Fix broken GC tests (#917)
+* Fix some Slang tests (#891)
+* Redo ML localization test fixes (#1064)
+
+### Bug Fixes
+
+* Resolved UUID primitive bug (#610)
+* Make `instantiateClass` more robust when format is missing (#629)
+* Revert #629 (#631)
+* Revert the revert and restore primitive failure handling (#634)
+* Add `getClass` for Pharo 12 compatibility (#651)
+* Fix warning absolute value (#782)
+* Fix load 32 bits (#920)
+* Fix headerAt:put: (#919)
+* Fix sign coercion warnings (#950)
+* Fix int boxing/loading (#1066)
+* VM version primitive (#1050)
+* Profile data extraction from PIC cache tags (#969)
+
+### Refactoring, Cleanup & Maintenance
+
+* Added comments and renamed methods during dojo (#623)
+* Fixing categorization P12 (#626)
+* Updating P12 with changes from P10 branch (#733)
+* Forward porting P10 → P12 (#851)
+* Forward port 10 → 12 (#893)
+* Forward port 10.3.3 → Pharo 12 (#903)
+* Realign P12 branch to P10 (#1057)
+* Removing duplicated code (#857)
+* Cleanups and improvements (#871)
+* Lots of cleanups (#874)
+* Cleaning (#881)
+* Cleanup dead code (#961)
+* Cleanup warnings (#906)
+* Fix warnings (#1034)
+* Remove debugging code (#911)
+* Remove unused variables (#930)
+* Normalize variable (#897)
+* Remove `gcMode` because `getGCMode` is used (#963)
+* Remove `ceShortCutTraceStore:` and simulation guard users (#960)
+* Simplify signal handler space calculation using POSIX `SIGSTKSZ` (#910)
+
+### Documentation & Developer Experience
+
+* README: Developer documentation is not a link (#637)
+* Update README (#878)
+* Add default values to `--help` parameters (#872)
+* Fix typos in comments (#958)
+
+### New Contributors
+
+* @Mathilde411
+* @LucFabresse
+* @ivojawer
+* @Gabriel-Darbord
+* @iglosiggio
+* @rolandbernard
+* @fouziray
+* @kilian-kier
+* @NathanMalenge
+* @FedeLoch
+* @Ducasse
+* @takano32
+
+**Full Changelog:** https://github.com/pharo-project/pharo-vm/compare/v10.3.3...v12.0.2-beta
 
 ## v10.3.8
 
