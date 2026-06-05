@@ -70,7 +70,7 @@ PharoVMMaker class >> generate: anInterpreterClass outputDirectory: aDirectory [
 		nextPutAll: ' in ';
 		nextPutAll: aDirectory printString;
 		nextPutAll: '...';
-		newLine;
+		cr;
 		flush.
 
 	self new
