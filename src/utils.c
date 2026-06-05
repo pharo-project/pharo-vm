@@ -110,19 +110,6 @@ const char * GetAttributeString(sqInt id)
     case 1006:
         /* vm build string */
         return getVMVersion();
-#if STACKVM
-    case 1007: { /* interpreter build info */
-        extern char *__interpBuildInfo;
-        return __interpBuildInfo;
-    }
-# if COGVM
-    case 1008: { /* cogit build info */
-        extern char *__cogitBuildInfo;
-        return __cogitBuildInfo;
-    }
-# endif
-#endif
-
     case 1009: /* source tree version info */
         return getSourceVersion();
 
