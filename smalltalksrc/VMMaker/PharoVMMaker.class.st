@@ -110,44 +110,52 @@ PharoVMMaker >> generate: interpreterClass memoryManager: memoryManager [
 PharoVMMaker >> generate: interpreterClass memoryManager: memoryManager compilerClass: compilerClass [
 
 	| platformDirectory vmmaker imageReaderClassName imageWriterClassName |
-	
-	imageFormatName := (Dictionary newFromPairs: options) at: 'ImageFormat' ifAbsent: [ imageFormatName ].
-	(#(SpurFormat ComposedFormat) includes: imageFormatName asSymbol)
-		ifFalse:[ self error: 'Invalid Image Format: ', imageFormatName].
-	
-	imageFormatName = 'ComposedFormat' 
-		ifTrue: [imageReaderClassName 	:= ComposedImageReader name.
-					imageWriterClassName 	:= ComposedImageWriter name]
-		ifFalse: [imageReaderClassName := SpurImageReader name.
-					imageWriterClassName 	:= SpurImageWriter name].
-	
-	
-	Author useAuthor: 'vmMaker' during: [
-	
-		VMMakerConfiguration initializeForPharo.
+	imageFormatName := (Dictionary newFromPairs: options)
+		                   at: 'ImageFormat'
+		                   ifAbsent: [ imageFormatName ].
+	(#( SpurFormat ComposedFormat ) includes: imageFormatName asSymbol)
+		ifFalse: [ self error: 'Invalid Image Format: ' , imageFormatName ].
 
-		platformDirectory := self platformDirectoryFor: memoryManager.
+	imageFormatName = 'ComposedFormat'
+		ifTrue: [
+				imageReaderClassName := ComposedImageReader name.
+				imageWriterClassName := ComposedImageWriter name ]
+		ifFalse: [
+				imageReaderClassName := SpurImageReader name.
+				imageWriterClassName := SpurImageWriter name ].
 
-		[ 
-		
+
+	VMMakerConfiguration initializeForPharo.
+
+	platformDirectory := self platformDirectoryFor: memoryManager.
+
+	[
 		vmmaker := VMMaker
-			makerFor: interpreterClass
-			and: compilerClass
-			with: {#ObjectMemory. memoryManager name.
-					 #bytecodeTableInitializer. #initializeBytecodeTableForSistaV1.
-					 #ImageReader. imageReaderClassName.
-		  			 #ImageWriter. imageWriterClassName} , options
-			to: platformDirectory
-			platformDir:platformDirectory
-			including: #()
-			configuration: VMMakerConfiguration.
+			           makerFor: interpreterClass
+			           and: compilerClass
+			           with: {
+					           #ObjectMemory.
+					           memoryManager name.
+					           #bytecodeTableInitializer.
+					           #initializeBytecodeTableForSistaV1.
+					           #ImageReader.
+					           imageReaderClassName.
+					           #ImageWriter.
+					           imageWriterClassName } , options
+			           to: platformDirectory
+			           platformDir: platformDirectory
+			           including: #(  )
+			           configuration: VMMakerConfiguration.
 
 		vmmaker
-				stopOnErrors: stopOnErrors;
-				internal: #() external: #(NewFilePlugin FilePlugin SurfacePlugin FloatArrayPlugin);
-				generateInterpreterFile;
-				generateCogitFiles.
-		generatePlugins ifTrue: [ vmmaker generateExternalPlugins ]] valueSupplyingAnswer:true.]
+			stopOnErrors: stopOnErrors;
+			internal: #(  )
+			external:
+				#( NewFilePlugin FilePlugin SurfacePlugin FloatArrayPlugin );
+			generateInterpreterFile;
+			generateCogitFiles.
+		generatePlugins ifTrue: [ vmmaker generateExternalPlugins ] ]
+		valueSupplyingAnswer: true
 ]
 
 { #category : 'generation' }
