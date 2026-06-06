@@ -226,8 +226,7 @@ VMMemoryMap >> allocationGranularity [
 	https://docs.microsoft.com/en-us/windows/win32/api/sysinfoapi/ns-sysinfoapi-system_info"
 
 	<returnTypeC: #sqInt>
-	self cppIf: #WIN32 ifTrue: [ ^ 64 * 1024 ].
-	^ 0
+	self cppIf: WIN32 ifTrue: [ ^ 64 * 1024 ] ifFalse: [ ^ 0 ]
 ]
 
 { #category : 'accessing' }
