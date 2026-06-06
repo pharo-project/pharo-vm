@@ -76,7 +76,7 @@ macro(configure_installables INSTALL_COMPONENT)
 
     install(
       DIRECTORY "${CMAKE_BINARY_DIR}/build/packaging/linux/"
-      DESTINATION "./"
+      DESTINATION "."
       USE_SOURCE_PERMISSIONS
       COMPONENT ${INSTALL_COMPONENT})
     install(

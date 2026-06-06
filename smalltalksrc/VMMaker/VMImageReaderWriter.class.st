@@ -100,14 +100,16 @@ VMImageReaderWriter >> initWithMemory: memory andInterpreter: anInterpreter [
 { #category : 'api' }
 VMImageReaderWriter >> loadImageFromFile: aFile withHeader: aSpurImageHeaderStruct [
 
+	<var: #aFile type: #'void *'>
+	<var: #aSpurImageHeaderStruct type: #SpurImageHeaderStruct>
 	^ self hasToUseComposedFormat
 		ifTrue: [
 			composedImageReader
-				doLoadImageFromFile: aFile
+				doLoadImageFromFile: (self cCoerceSimple: aFile to: #'char *')
 				withHeader: aSpurImageHeaderStruct ]
 		ifFalse: [
 			spurImageReader
-				doLoadImageFromFile: aFile
+				doLoadImageFromFile: (self cCoerceSimple: aFile to: #sqImageFile)
 				withHeader: aSpurImageHeaderStruct ]
 ]
 

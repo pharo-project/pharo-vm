@@ -31,7 +31,9 @@ AbstractComposedImageAccess >> createImageDirectory: imageFileName [
 { #category : 'file operations' }
 AbstractComposedImageAccess >> existSegment: segmentIndex inImage: imageFileName [
 
+	<var: #imageFileName type: #'char *'>
 	<var: #buffer declareC: 'char buffer[255]'>
+	<var: #fileName type: #'char *'>
 	| buffer fileName |
 
 	fileName := self
@@ -106,6 +108,9 @@ AbstractComposedImageAccess >> headFormat [
 { #category : 'file operations' }
 AbstractComposedImageAccess >> headerFileNameinImage: imageFileName into: buffer bufferSize: bufferSize [
 
+	<returnTypeC: #'char *'>
+	<var: #imageFileName type: #'char *'>
+	<var: #buffer type: #'char *'>
 	| headerFileName |
 	headerFileName := 'header.ston'.
 
@@ -133,6 +138,8 @@ AbstractComposedImageAccess >> msgFormat: aMessage [
 AbstractComposedImageAccess >> permSpaceDataFileInImage: imageFileName [ 
 
 	<inline: #always>
+	<returnTypeC: #'char *'>
+	<var: #imageFileName type: #'char *'>
 	<var: #buffer declareC: 'char buffer[255]'>
 
 	| buffer |
@@ -145,6 +152,10 @@ AbstractComposedImageAccess >> permSpaceDataFileInImage: imageFileName [
 { #category : 'perm - space' }
 AbstractComposedImageAccess >> permSpaceFileName: fileName inImage: imageFileName into: buffer bufferSize: bufferSize [
 
+	<returnTypeC: #'char *'>
+	<var: #fileName type: #'char *'>
+	<var: #imageFileName type: #'char *'>
+	<var: #buffer type: #'char *'>
 	^ self 
 		cCode: [ 
 			self 
@@ -160,6 +171,8 @@ AbstractComposedImageAccess >> permSpaceFileName: fileName inImage: imageFileNam
 AbstractComposedImageAccess >> permSpaceMetadataFileNameInImage: imageFileName [
 
 	<inline: #always>
+	<returnTypeC: #'char *'>
+	<var: #imageFileName type: #'char *'>
 	<var: #buffer declareC: 'char buffer[255]'>
 
 	| buffer |
@@ -223,6 +236,10 @@ AbstractComposedImageAccess >> segmentDataFile: segmentIndex inImage: imageFileN
 { #category : 'segments' }
 AbstractComposedImageAccess >> segmentFileName: segmentIndex withExtension: extension inImage: imageFileName into: buffer bufferSize: bufferSize [
 
+	<returnTypeC: #'char *'>
+	<var: #extension type: #'char *'>
+	<var: #imageFileName type: #'char *'>
+	<var: #buffer type: #'char *'>
 	^ self 
 		cCode: [ 
 			self snprintf: buffer _: bufferSize 
@@ -238,6 +255,8 @@ AbstractComposedImageAccess >> segmentFileName: segmentIndex withExtension: exte
 AbstractComposedImageAccess >> segmentMetadataFile: segmentIndex inImage: imageFileName [
 
 	<inline: true>
+	<returnTypeC: #'char *'>
+	<var: #imageFileName type: #'char *'>
 	<var: #buffer declareC: 'char buffer[255]'>
 
 	| buffer |

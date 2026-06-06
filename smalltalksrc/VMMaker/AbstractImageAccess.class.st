@@ -230,6 +230,9 @@ AbstractImageAccess >> sq: start Image: n File: segSize Write: file [
 AbstractImageAccess >> sqImageFile: imageName Open: fileMode [
 
 	<doNotGenerate>
+	<returnTypeC: #sqImageFile>
+	<var: #imageName type: #'char *'>
+	<var: #fileMode type: #'char *'>
 	| file |
 	file := imageName asFileReference.
 	(fileMode = 'r') ifTrue: [ ^ file readStream ].
@@ -243,6 +246,7 @@ AbstractImageAccess >> sqImageFile: imageName Open: fileMode [
 AbstractImageAccess >> sqImageFileClose: file [
 
 	<doNotGenerate>
+	<var: #file type: #sqImageFile>
 	file close
 ]
 

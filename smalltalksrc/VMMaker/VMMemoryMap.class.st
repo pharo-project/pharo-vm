@@ -83,7 +83,7 @@ VMMemoryMap >> allocateCodeZone [
 	
 	initialCodeZoneSize = 0 ifTrue: [ ^ self ].
 	
-	self codeZoneStart: (self allocateJITMemory: initialCodeZoneSize _: memoryMapConfiguration codeZoneInitialAddress).
+	self codeZoneStart: ((self allocateJITMemory: initialCodeZoneSize _: memoryMapConfiguration codeZoneInitialAddress) asUnsignedIntegerPtr).
 	self codeZoneStart ifNil: [ self insufficientMemoryAvailableError ].
 
 	self codeZoneStart = memoryMapConfiguration codeZoneInitialAddress 
@@ -101,6 +101,7 @@ VMMemoryMap >> allocateHeap [
 	self allocateCodeZone.
 	self allocateNewObjectsSpace.
 	self allocateOldObjectsSpace.
+	self calculateMaskToUse.
 	self allocatePermObjectsSpace.
 ]
 
@@ -114,6 +115,7 @@ VMMemoryMap >> allocateJITMemory: desiredSize _: desiredPosition [
 { #category : 'private' }
 VMMemoryMap >> allocateMemory: desiredSize BaseAddress: baseAddress [
 
+	<returnTypeC: #'void *'>
 	<doNotGenerate>
 	^ memoryManager allocate: desiredSize desiredPosition: baseAddress
 ]
@@ -125,7 +127,7 @@ VMMemoryMap >> allocateNewObjectsSpace [
 	
 	newSpaceSizeToAllocate := self roundToAllocationSize: self initialNewSpaceSize + self allocationReserve.
 	
-	self newSpaceStart: (self allocateMemory: newSpaceSizeToAllocate BaseAddress: memoryMapConfiguration newSpaceInitialAddress).
+	self newSpaceStart: ((self allocateMemory: newSpaceSizeToAllocate BaseAddress: memoryMapConfiguration newSpaceInitialAddress) asUnsignedIntegerPtr).
 	
 	self newSpaceStart ifNil: [ self insufficientMemoryAvailableError ].
 	
@@ -144,14 +146,9 @@ VMMemoryMap >> allocateOldObjectsSpace [
 
 	sizeToAllocate := self roundToAllocationSize: self initialOldSpaceSize + self initialHeadroom.
 
-	self oldSpaceStart: (self allocateMemory: sizeToAllocate BaseAddress: memoryMapConfiguration oldSpaceInitialAddress).
+	self oldSpaceStart: ((self allocateMemory: sizeToAllocate BaseAddress: memoryMapConfiguration oldSpaceInitialAddress) asUnsignedIntegerPtr).
 
 	self oldSpaceStart ifNil: [ self insufficientMemoryAvailableError ].
-
-	self oldSpaceStart = memoryMapConfiguration oldSpaceInitialAddress 
-		ifFalse: [ 
-			self logError: 'Could not allocate oldSpace in the expected place (%p), got %p' _: self oldSpaceStart _: memoryMapConfiguration oldSpaceInitialAddress.
-			self error: 'Error allocating' ].
 
 	self setOldSpaceEnd: self oldSpaceStart + sizeToAllocate
 ]
@@ -167,9 +164,9 @@ VMMemoryMap >> allocatePermObjectsSpace [
 
 	minSize := self roundToAllocationSize: minSize.
 
-	self permSpaceStart: (self 
+	self permSpaceStart: ((self 
 		allocateMemory: minSize 
-		BaseAddress: memoryMapConfiguration permSpaceInitialAddress).
+		BaseAddress: memoryMapConfiguration permSpaceInitialAddress) asUnsignedIntegerPtr).
 
 	self permSpaceStart ifNil: [ self insufficientMemoryAvailableError ].
 
@@ -194,7 +191,7 @@ VMMemoryMap >> allocateSegmentOfSize: ammount minAddress: minAddress resultsIn: 
 	<var: #segmentAddress type:'void *'>
 	
 	sizeToRequest := self roundToAllocationSize: ammount.
-	segmentAddress := self allocateMemory: sizeToRequest BaseAddress: minAddress.
+	segmentAddress := (self allocateMemory: sizeToRequest BaseAddress: minAddress) asVoidPointer.
 	
 	blockWithAddressAndSegSize value: segmentAddress value: sizeToRequest.
 ]
@@ -208,7 +205,7 @@ VMMemoryMap >> allocateStackPages: initialStackSize [
 	| sizeToRequest |
 	sizeToRequest := self roundToAllocationSize: initialStackSize.
 	
-	self stackPagesStart: (self allocateMemory: sizeToRequest BaseAddress: memoryMapConfiguration stackPagesInitialAddress).
+	self stackPagesStart: ((self allocateMemory: sizeToRequest BaseAddress: memoryMapConfiguration stackPagesInitialAddress) asUnsignedIntegerPtr).
 	
 	self stackPagesStart ifNil: [ self insufficientMemoryAvailableError ].
 	
@@ -219,7 +216,7 @@ VMMemoryMap >> allocateStackPages: initialStackSize [
 	
 	self stackPagesEnd: self stackPagesStart + sizeToRequest.
 	
-	self memset: self stackPagesStart _: 0 _: sizeToRequest.
+	self memset: self stackPagesStart asVoidPointer _: 0 _: sizeToRequest.
 
 ]
 
@@ -229,7 +226,8 @@ VMMemoryMap >> allocationGranularity [
 	https://docs.microsoft.com/en-us/windows/win32/api/sysinfoapi/ns-sysinfoapi-system_info"
 
 	<returnTypeC: #sqInt>
-	self cppIf: WIN32 ifTrue: [ ^ 64 * 1024 ] ifFalse: [ ^ 0 ]
+	self cppIf: #WIN32 ifTrue: [ ^ 64 * 1024 ].
+	^ 0
 ]
 
 { #category : 'accessing' }
@@ -251,23 +249,30 @@ VMMemoryMap >> calculateMaskToUse [
 	<var: #newSpaceLast type: #uint64_t> 
 	<var: #oldSpaceFirst type: #uint64_t> 
 	<var: #oldSpaceLast type: #uint64_t> 
+	<var: #oldSpaceLimit type: #uint64_t> 
 	<var: #newSpaceMaskAttempt type: #uint64_t> 
 	<var: #oldSpaceMaskAttempt type: #uint64_t> 
 	<var: #allOnes type: #uint64_t> 
 	
-	| newSpaceFirst newSpaceLast oldSpaceFirst oldSpaceLast newSpaceMaskAttempt oldSpaceMaskAttempt allOnes |
+	| newSpaceFirst newSpaceLast oldSpaceFirst oldSpaceLast oldSpaceLimit newSpaceMaskAttempt oldSpaceMaskAttempt allOnes |
 	
 	memoryMapConfiguration confWordSize = 8 
 		ifTrue: [ allOnes := 16rFFFFFFFFFFFFFFFF ]
 		ifFalse: [ allOnes := 16rFFFFFFFF ].
 
 	newSpaceFirst := memoryMapConfiguration newSpaceInitialAddress.
-	newSpaceLast := memoryMapConfiguration oldSpaceInitialAddress - 1.
-	newSpaceMaskAttempt := (newSpaceLast - newSpaceFirst) bitXor: allOnes.
+	oldSpaceFirst := oldSpaceStart ifNil: [ memoryMapConfiguration oldSpaceInitialAddress ].
 
-	oldSpaceFirst := memoryMapConfiguration oldSpaceInitialAddress.
-	oldSpaceLast := memoryMapConfiguration permSpaceInitialAddress - 1.
-	oldSpaceMaskAttempt := (oldSpaceLast - oldSpaceFirst) bitXor: allOnes.
+	newSpaceLast := (newSpaceEnd notNil and: [ newSpaceEnd > newSpaceFirst ])
+		ifTrue: [ newSpaceEnd - 1 ]
+		ifFalse: [ oldSpaceFirst - 1 ].
+
+	oldSpaceLimit := oldSpaceFirst = memoryMapConfiguration oldSpaceInitialAddress
+		ifTrue: [ memoryMapConfiguration permSpaceInitialAddress ]
+		ifFalse: [ self nextPowerOfTwoAfter: oldSpaceFirst ].
+	oldSpaceLast := oldSpaceLimit - 1.
+	newSpaceMaskAttempt := self maskForObjectsFrom: newSpaceFirst to: newSpaceLast allOnes: allOnes.
+	oldSpaceMaskAttempt := self maskForObjectsFrom: oldSpaceFirst to: oldSpaceLast allOnes: allOnes.
 
 	self spaceMaskToUse: (newSpaceMaskAttempt bitAnd: oldSpaceMaskAttempt).
 	self spaceMaskToUse = 0 
@@ -275,8 +280,44 @@ VMMemoryMap >> calculateMaskToUse [
 	
 
 	self newSpaceMask: (memoryMapConfiguration newSpaceInitialAddress bitAnd: self spaceMaskToUse).
-	self oldSpaceMask: (memoryMapConfiguration oldSpaceInitialAddress bitAnd: self spaceMaskToUse).	
+	self oldSpaceMask: (oldSpaceFirst bitAnd: self spaceMaskToUse).	
 	self permSpaceMask: (memoryMapConfiguration permSpaceInitialAddress bitAnd: self spaceMaskToUse).		
+]
+
+{ #category : 'initial addresses' }
+VMMemoryMap >> maskForObjectsFrom: firstAddress to: lastAddress allOnes: allOnes [
+
+	<inline: false>
+	<var: #firstAddress type: #uint64_t>
+	<var: #lastAddress type: #uint64_t>
+	<var: #allOnes type: #uint64_t>
+	<var: #variableBits type: #uint64_t>
+	<var: #variableMask type: #uint64_t>
+
+	| variableBits variableMask |
+
+	variableBits := firstAddress bitXor: lastAddress.
+	variableMask := 0.
+	[ variableBits ~= 0 ] whileTrue: [
+		variableMask := (variableMask bitShift: 1) + 1.
+		variableBits := variableBits bitShift: -1 ].
+
+	^ variableMask bitXor: allOnes
+]
+
+{ #category : 'initial addresses' }
+VMMemoryMap >> nextPowerOfTwoAfter: anAddress [
+
+	<inline: false>
+	<var: #anAddress type: #uint64_t>
+	<var: #limit type: #uint64_t>
+
+	| limit |
+
+	limit := 1.
+	[ limit <= anAddress ] whileTrue: [
+		limit := limit bitShift: 1 ].
+	^ limit
 ]
 
 { #category : 'accessing' }
@@ -475,6 +516,10 @@ VMMemoryMap >> initializeMemoryMap [
 	initialCodeZoneSize := 0.
 	initialPermSpaceSize := 0.
 	minPermSpaceSize := 0.
+	oldSpaceStart := 0.
+	oldSpaceEnd := 0.
+	newSpaceStart := 0.
+	newSpaceEnd := 0.
 	permSpaceStart := 0.
 	permSpaceEnd := 0.
 	permSpaceMask := -1.

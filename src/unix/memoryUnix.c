@@ -19,6 +19,18 @@ sqInt uxMemoryExtraBytesLeft(sqInt includingSwap);
 
 #define MAP_PROT	(PROT_READ | PROT_WRITE)
 
+#if !defined(MAP_FIXED_NOREPLACE)
+# define MAP_FIXED_NOREPLACE 0
+#endif
+
+#define VA39_FALLBACK_BASE ((usqInt)0x4000000000ULL)
+#define VA39_FALLBACK_LIMIT ((usqInt)0x7F00000000ULL)
+#define VA39_ADDRESS_LIMIT ((usqInt)0x8000000000ULL)
+
+#define VA48_FALLBACK_BASE ((usqInt)0x400000000000ULL)
+#define VA48_FALLBACK_LIMIT ((usqInt)0x7F0000000000ULL)
+#define VA48_ADDRESS_LIMIT ((usqInt)0x800000000000ULL)
+
 #if __OpenBSD__
 #define MAP_FLAGS	(MAP_ANON | MAP_PRIVATE | MAP_STACK)
 #else
@@ -97,10 +109,10 @@ void* allocateJITMemory(usqInt desiredSize, usqInt desiredPosition){
 	usqInt desiredBaseAddressAligned = valign(desiredPosition);
 
 #if __APPLE__
-	int additionalFlags = MAP_JIT;
-	int prot = PROT_READ | PROT_WRITE | PROT_EXEC;
+		int additionalFlags = MAP_JIT;
+		int prot = PROT_READ | PROT_WRITE | PROT_EXEC;
 #else
-	int additionalFlags = desiredPosition ? MAP_FIXED : 0;
+		int additionalFlags = desiredPosition ? MAP_FIXED_NOREPLACE : 0;
 #	if READ_ONLY_CODE_ZONE
 		int prot = PROT_READ | PROT_EXEC;
 #	else
@@ -125,11 +137,13 @@ usqInt
 sqAllocateMemory(usqInt minHeapSize, usqInt desiredHeapSize, usqInt desiredBaseAddress) {
     char *heap    =  0;
     sqInt   heapLimit    =  0;
+    sqInt   initialHeapLimit = 0;
+    usqInt  fallbackBaseAddress = 0;
 
 #if __APPLE__
 	int additionalFlags = 0;
 #else
-	int additionalFlags = desiredBaseAddress ? MAP_FIXED : 0;
+	int additionalFlags = desiredBaseAddress ? MAP_FIXED_NOREPLACE : 0;
 #endif
 
 	pageSize = getpagesize();
@@ -140,6 +154,7 @@ sqAllocateMemory(usqInt minHeapSize, usqInt desiredHeapSize, usqInt desiredBaseA
 	if(heapLimit < desiredHeapSize){
 		heapLimit += pageSize;
 	}
+	initialHeapLimit = heapLimit;
 
 	while ((!heap) && (heapLimit >= minHeapSize)) {
 		if (MAP_FAILED == (heap = mmap((void*) desiredBaseAddressAligned, heapLimit, MAP_PROT, MAP_FLAGS | additionalFlags, devZero, 0))) {
@@ -152,7 +167,7 @@ sqAllocateMemory(usqInt minHeapSize, usqInt desiredHeapSize, usqInt desiredBaseA
  * To avoid it, we force to use the required base address
  */
 #ifndef __APPLE__
-		if(heap != 0 && (usqInt)heap != desiredBaseAddressAligned){
+		if(desiredBaseAddress && additionalFlags && heap != 0 && (usqInt)heap != desiredBaseAddressAligned){
 
 			desiredBaseAddressAligned = valign(desiredBaseAddressAligned + pageSize);
 
@@ -173,6 +188,50 @@ sqAllocateMemory(usqInt minHeapSize, usqInt desiredHeapSize, usqInt desiredBaseA
 #endif
 	}
 
+#ifndef __APPLE__
+	if(!heap && desiredBaseAddress){
+		heapLimit = initialHeapLimit;
+		if(desiredBaseAddress >= VA48_ADDRESS_LIMIT){
+			fallbackBaseAddress = VA48_FALLBACK_BASE;
+		} else if(desiredBaseAddress >= VA39_ADDRESS_LIMIT){
+			fallbackBaseAddress = VA39_FALLBACK_BASE;
+		}
+		while ((!heap) && (heapLimit >= minHeapSize)) {
+			if (MAP_FAILED == (heap = mmap((void*) fallbackBaseAddress, heapLimit, MAP_PROT, MAP_FLAGS | (fallbackBaseAddress ? MAP_FIXED_NOREPLACE : 0), devZero, 0))) {
+				heap = 0;
+				heapLimit = valign(heapLimit / 4 * 3);
+				if(fallbackBaseAddress){
+					fallbackBaseAddress = valign(fallbackBaseAddress + initialHeapLimit);
+					heapLimit = initialHeapLimit;
+					if(fallbackBaseAddress >= VA48_ADDRESS_LIMIT && fallbackBaseAddress >= VA48_FALLBACK_LIMIT){
+						fallbackBaseAddress = 0;
+					} else if(fallbackBaseAddress < VA48_ADDRESS_LIMIT && fallbackBaseAddress >= VA39_FALLBACK_LIMIT){
+						fallbackBaseAddress = 0;
+					}
+				}
+			}
+		}
+		/* If VA48 fallback failed, try VA39 fallback if we haven't already */
+		if (!heap && desiredBaseAddress >= VA48_ADDRESS_LIMIT) {
+			fallbackBaseAddress = VA39_FALLBACK_BASE;
+			heapLimit = initialHeapLimit;
+			while ((!heap) && (heapLimit >= minHeapSize)) {
+				if (MAP_FAILED == (heap = mmap((void*) fallbackBaseAddress, heapLimit, MAP_PROT, MAP_FLAGS | (fallbackBaseAddress ? MAP_FIXED_NOREPLACE : 0), devZero, 0))) {
+					heap = 0;
+					heapLimit = valign(heapLimit / 4 * 3);
+					if(fallbackBaseAddress){
+						fallbackBaseAddress = valign(fallbackBaseAddress + initialHeapLimit);
+						heapLimit = initialHeapLimit;
+						if(fallbackBaseAddress >= VA39_FALLBACK_LIMIT){
+							fallbackBaseAddress = 0;
+						}
+					}
+				}
+			}
+		}
+	}
+#endif
+
 	logDebug("Requested memory size: %zu at: %p, aligned size: %zu at: %p, obtained at: %p" , desiredHeapSize, desiredBaseAddress, heapLimit, desiredBaseAddressAligned, heap);
 	return (usqInt) heap;
 }
@@ -186,4 +245,3 @@ sqDeallocateMemorySegmentAtOfSize(void *addr, sqInt sz)
 	if (munmap(addr, sz) != 0)
 		logErrorFromErrno("sqDeallocateMemorySegment... munmap");
 }
-

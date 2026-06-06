@@ -381,7 +381,7 @@ sqGetFilenameFromString(char * aCharBuffer, char * aFilenameString, sqInt filena
                 if (++numLinks > MAXSYMLINKS)
                     return -1;	/* too many levels of indirection */
 
-	            filenameLength= readlink(aCharBuffer, linkbuf, PATH_MAX);
+                filenameLength= readlink(aCharBuffer, linkbuf, PATH_MAX);
 	            if ((filenameLength < 0) || (filenameLength >= PATH_MAX))
                     return -1;	/* link unavailable or path too long */
 

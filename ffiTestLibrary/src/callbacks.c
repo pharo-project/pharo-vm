@@ -44,6 +44,7 @@ void* otherThread(void* aFunction){
 #endif
 
 	value = f(42);
+	return NULL;
 }
 
 #ifdef _WIN32

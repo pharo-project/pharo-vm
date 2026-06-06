@@ -38,8 +38,6 @@ typedef my_source_mgr * my_src_ptr;
  * before any data is actually read.
  */
 METHODDEF(void) init_source (j_decompress_ptr cinfo) {
-  my_src_ptr src = (my_src_ptr) cinfo->src;
-
   /* We don't clear the input buffer.
    * This is correct behavior for reading a series of images from one source.
    */

@@ -704,7 +704,7 @@ SimpleStackBasedCogit >> compileInterpreterPrimitiveMayCallBack: primitiveRoutin
 SimpleStackBasedCogit >> compileMachineCodeInterpreterPrimitive: primitiveRoutine [
 	"Compile a call to a machine-code convention interpreter primitive.  Call the C routine
 	 on the Smalltalk stack, assuming it consumes little or no stack space."
-	<var: #primitiveRoutine declareC: 'void (*primitiveRoutine)(void)'>
+	<var: #primitiveRoutine declareC: 'sqInt (*primitiveRoutine)(sqInt)'>
 	| jmpFail liveRegsMask |
 	
 
@@ -2790,6 +2790,9 @@ SimpleStackBasedCogit >> genUpArrowReturn [
 
 { #category : 'primitive generators - call' }
 SimpleStackBasedCogit >> generateCheckProfileTickFromJump: arrivingJmp returningTo: returningLabel beforeCallDo: aBlockClosure [
+
+	<var: #arrivingJmp type: #'AbstractInstruction *'>
+	<var: #returningLabel type: #'AbstractInstruction *'>
 
 	arrivingJmp jmpTarget: self Label.
 

@@ -194,7 +194,7 @@ sqInt
 doSignalExternalSemaphores(sqInt externalSemaphoreTableSize)
 {
 	volatile int i, lowTide, highTide;
-	char switched, signalled = 0;
+	char switched;
 
 #if !defined(_WIN32)
     sigset_t blockedSignalSet;
@@ -249,7 +249,6 @@ doSignalExternalSemaphores(sqInt externalSemaphoreTableSize)
 			if (doSignalSemaphoreWithIndex(i+1))
 				switched = 1;
 			++signalRequests[i].responses;
-			signalled = 1;
 		}
 
 #if !defined(_WIN32)

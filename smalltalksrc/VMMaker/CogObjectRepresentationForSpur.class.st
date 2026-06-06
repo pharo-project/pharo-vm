@@ -546,7 +546,9 @@ CogObjectRepresentationForSpur >> genEnsureOopInRegNotForwarded: reg scratchReg:
 { #category : 'compile abstract instructions' }
 CogObjectRepresentationForSpur >> genEnsureOopInRegNotForwarded: reg scratchReg: scratch ifForwarder: fwdJumpTarget ifNotForwarder: nonFwdJumpTargetOrZero [
 	"Make sure that the oop in reg is not forwarded.  
-	 Use the fact that isForwardedObjectClassIndexPun is a power of two to save an instruction."
+	Use the fact that isForwardedObjectClassIndexPun is a power of two to save an instruction."
+	<var: #fwdJumpTarget type: #'AbstractInstruction *'>
+	<var: #nonFwdJumpTargetOrZero type: #'void *'>
 	| imm ok finished |
 	self assert: reg ~= scratch.
 	imm := self genJumpImmediate: reg.
@@ -563,7 +565,7 @@ CogObjectRepresentationForSpur >> genEnsureOopInRegNotForwarded: reg scratchReg:
 	cogit Jump: fwdJumpTarget.
 	finished := nonFwdJumpTargetOrZero asUnsignedInteger = 0
 					ifTrue: [cogit Label]
-					ifFalse: [nonFwdJumpTargetOrZero].
+					ifFalse: [self cCoerceSimple: nonFwdJumpTargetOrZero to: #'AbstractInstruction *'].
 	imm jmpTarget: (ok jmpTarget: finished).
 	^0
 ]

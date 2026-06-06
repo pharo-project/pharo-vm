@@ -5,7 +5,7 @@
 #  vmmaker: generates a Pharo development environment with the virtual machine code, Slang transpiler and machine code simulation
 #  generate-sources: generates the virtual machine source code in C, using the Slang-to-C transpiler
 
-cmake_minimum_required(VERSION 3.7.2)
+cmake_minimum_required(VERSION 3.10)
 # Use new and simpler escape sequences
 cmake_policy(SET CMP0053 NEW)
 #RPATH settings on macOS do not affect install_name.
@@ -38,7 +38,7 @@ option(BUILD_BUNDLE				"Builds a bundle with all dependencies"								ON)
 option(FEATURE_COMPILE_GNUISATION
 								"Use gcc gnu extensions to compile the VM"							ON)
 option(FEATURE_COMPILE_INLINE_MEMORY_ACCESSORS
-								"Use inline memory accessors instead of macros"						ON)
+								"Use inline memory accessors instead of macros"						OFF)
 option(PHARO_DEPENDENCIES_PREFER_DOWNLOAD_BINARIES
 								"Prefer downloading dependencies"									OFF)
 option(PHARO_VM_IN_WORKER_THREAD
@@ -116,6 +116,10 @@ endif()
 #Set up the project
 #This needs to be at this point, after setting the toolchain configuration
 project(PharoVM)
+
+set(CMAKE_C_STANDARD 11)
+set(CMAKE_C_STANDARD_REQUIRED ON)
+set(CMAKE_C_EXTENSIONS ON)
 
 include(cmake/versionExtraction.cmake)
 
@@ -288,17 +292,11 @@ endif()
 
 add_compile_options(
 	${OPTIMIZATION_LEVEL}
-    -Wno-sometimes-uninitialized
-    -Wno-int-conversion
     -Wno-unused-function
-    -Wno-non-literal-null-conversion
-    -Wno-pointer-integer-compare
     -Wno-unknown-pragmas
     -Wno-pointer-sign
     -Wno-deprecated-declarations
     -Wno-pointer-to-int-cast
-    -Wno-compare-distinct-pointer-types
-    -Wno-unknown-warning-option
 )
 
 

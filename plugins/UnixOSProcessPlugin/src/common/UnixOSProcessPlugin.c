@@ -419,7 +419,8 @@ cStringFromString(sqInt aString)
 
 	/* Space for a null terminated C string. */
 	cString = callocWrappersize(len + 1, 1);
-	strncpy (cString, sPtr, len);
+	memcpy (cString, sPtr, len);
+	cString[len] = 0;
 
 	return cString;
 }
@@ -439,7 +440,7 @@ cStringasCollection(const char *aCString, sqInt classIdentifier)
 
 	len = strlen(aCString);
 	newString = instantiateClassindexableSize(classIdentifier, len);
-	strncpy(arrayValueOf(newString), aCString, len);
+	memcpy(arrayValueOf(newString),aCString, len);
 	return newString;
 }
 
@@ -608,8 +609,9 @@ environmentAtAsType(sqInt classIdentifier)
 		sPtr = p[index - 1];
 		/* begin cString:asCollection: */
 		len = strlen(sPtr);
-		newString = instantiateClassindexableSize(classIdentifier, len);
-		strncpy(arrayValueOf(newString), sPtr, len);
+		newString = instantiateClassindexableSize(classIdentifier, len + 1);
+		memcpy(arrayValueOf(newString), sPtr, len);
+		((char*)arrayValueOf(newString))[len] = 0;
 		s = newString;
 		pop(2);
 		push(s);
@@ -1078,7 +1080,7 @@ getCurrentWorkingDirectoryAsType(sqInt classIdentifier)
 		/* begin cString:asCollection: */
 		len = strlen(cwd);
 		newString = instantiateClassindexableSize(classIdentifier, len);
-		strncpy(arrayValueOf(newString), cwd, len);
+		memcpy(arrayValueOf(newString),cwd, len);
 		cwdString = newString;
 		methodReturnValue(cwdString);
 	}
@@ -1563,8 +1565,9 @@ primitiveArgumentAt(void)
 		sPtr = argVec[index - 1];
 		/* begin cString:asCollection: */
 		len = strlen(sPtr);
-		newString = instantiateClassindexableSize(classIdentifier, len);
-		strncpy(arrayValueOf(newString), sPtr, len);
+		newString = instantiateClassindexableSize(classIdentifier, len + 1);
+		memcpy(arrayValueOf(newString), sPtr, len);
+		((char*)arrayValueOf(newString))[len] = 0;
 		s = newString;
 		popthenPush(2, s);
 	}
@@ -1599,8 +1602,9 @@ primitiveArgumentAtAsBytes(void)
 		sPtr = argVec[index - 1];
 		/* begin cString:asCollection: */
 		len = strlen(sPtr);
-		newString = instantiateClassindexableSize(classIdentifier, len);
-		strncpy(arrayValueOf(newString), sPtr, len);
+		newString = instantiateClassindexableSize(classIdentifier, len + 1);
+		memcpy(arrayValueOf(newString), sPtr, len);
+		((char*)arrayValueOf(newString))[len] = 0;
 		s = newString;
 		popthenPush(2, s);
 	}
@@ -1921,7 +1925,7 @@ primitiveErrorMessageAt(void)
 	classIdentifier = classString();
 	len = strlen(p);
 	newString = instantiateClassindexableSize(classIdentifier, len);
-	strncpy(arrayValueOf(newString), p, len);
+	memcpy(arrayValueOf(newString),p, len);
 	errMessage = newString;
 	pop(2);
 	push(errMessage);
@@ -2003,17 +2007,13 @@ primitiveFileStat(void)
 {
     sqInt buffer;
     extern int errno;
-    sqInt gid;
     sqInt mask;
     sqInt mode;
     char *path;
     sqInt result;
     struct stat *statBuf;
-    sqInt uid;
 
 	result = instantiateClassindexableSize(classArray(), 3);
-	uid = instantiateClassindexableSize(classByteArray(), sizeof(uid_t));
-	gid = instantiateClassindexableSize(classByteArray(), sizeof(gid_t));
 	mask = instantiateClassindexableSize(classArray(), 4);
 	buffer = instantiateClassindexableSize(classByteArray(), sizeof(struct stat));
 	statBuf = arrayValueOf(buffer);
@@ -2049,12 +2049,11 @@ primitiveFileStat(void)
 EXPORT(sqInt)
 primitiveFixPointersInArrayOfStrings(void)
 {
-    sqInt count;
     sqInt cStringArray;
     sqInt offsetArray;
 
-	count = stackIntegerValue(0);
-	offsetArray = stackObjectValue(1);
+    (void)stackIntegerValue(0);
+    offsetArray = stackObjectValue(1);
 	cStringArray = stackObjectValue(2);
 	if ((failed())
 	 || ((fixPointersInArrayOfStringswithOffsets(cStringArray, offsetArray)) == 0)) {
@@ -4210,7 +4209,7 @@ realpathAsType(sqInt classIdentifier)
 		/* begin cString:asCollection: */
 		len = strlen(realpathResult);
 		newString = instantiateClassindexableSize(classIdentifier, len);
-		strncpy(arrayValueOf(newString), realpathResult, len);
+		memcpy(arrayValueOf(newString),realpathResult, len);
 		s = newString;
 		pop(2);
 		push(s);
@@ -4419,7 +4418,7 @@ setSigChldHandler(void)
 		sigchldHandlerAction.sa_flags |= SA_ONSTACK;
 	}
 	sigemptyset(&sigchldHandlerAction.sa_mask);
-	if ((sigaction(SIGCHLD, (usqIntptr_t) &sigchldHandlerAction, 0)) == (sigErrorNumber())) {
+	if ((sigaction(SIGCHLD, &sigchldHandlerAction, 0)) == (intptr_t)sigErrorNumber()) {
 		logErrorFromErrno("signal");
 	}
 #  else /* defined(SA_NOCLDSTOP) */
@@ -4591,7 +4590,7 @@ sigHoldNumber(void)
 #ifdef SIG_HOLD
 	return SIG_HOLD;
 #else
-	return -1;
+	return (void *)-1;
 #endif
 }
 
@@ -4810,7 +4809,7 @@ stringFromCString(const char *aCString)
 	classIdentifier = classString();
 	len = strlen(aCString);
 	newString = instantiateClassindexableSize(classIdentifier, len);
-	strncpy(arrayValueOf(newString), aCString, len);
+	memcpy(arrayValueOf(newString),aCString, len);
 	return newString;
 }
 
