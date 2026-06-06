@@ -261,7 +261,14 @@ VMMemoryMap >> calculateMaskToUse [
 		ifFalse: [ allOnes := 16rFFFFFFFF ].
 
 	newSpaceFirst := memoryMapConfiguration newSpaceInitialAddress.
-	oldSpaceFirst := oldSpaceStart ifNil: [ memoryMapConfiguration oldSpaceInitialAddress ].
+	"Use the configured base until old space has actually been allocated.
+	 oldSpaceStart is 0 (not nil) before allocation, e.g. when this is called
+	 from initializeMemoryMap; testing = 0 matches the generated C, which
+	 translates the former ifNil: to !(oldSpaceStart), and avoids producing a
+	 degenerate zero mask (which raises an error) in the Smalltalk simulator."
+	oldSpaceFirst := oldSpaceStart = 0
+		ifTrue: [ memoryMapConfiguration oldSpaceInitialAddress ]
+		ifFalse: [ oldSpaceStart ].
 
 	newSpaceLast := (newSpaceEnd notNil and: [ newSpaceEnd > newSpaceFirst ])
 		ifTrue: [ newSpaceEnd - 1 ]
