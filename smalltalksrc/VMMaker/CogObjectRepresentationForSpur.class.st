@@ -913,7 +913,7 @@ CogObjectRepresentationForSpur >> genGetClassObjectOfClassIndex: classIndexRegis
 	self assert: (self shouldAnnotateObjectReference: objectMemory classTableRootObj) not.
 	
 	"classTableRootObj is the level one table. There is only one of this, and in particular this table is a object too! As such it has a header. So to access all the entries we need to skip the header."
-	(cogit backEnd isWithinMwOffsetRange: objectMemory classTableRootObj + objectMemory baseHeaderSize)
+	(cogit backEnd isWithinMwOffsetRange: (objectMemory classTableRootObj + objectMemory baseHeaderSize) asUnsignedInteger)
 		"Here we basically do a load from memory to a register. The method MoveMw:r:R: corresponds to an instruction which reads from memory, at base: the arg1, offset: the arg2 and puts the result on arg3.
 		In this case we add the base given by the start of the table (skipping the header) to the offset given by the scratchReg which has the ClassIndex (in bytes) to access to the entry in the table. This entry would have 
 		in turn a reference to the second level table. This new index will be loaded on destReg."
