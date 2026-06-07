@@ -105,11 +105,11 @@ VMImageReaderWriter >> loadImageFromFile: aFile withHeader: aSpurImageHeaderStru
 	^ self hasToUseComposedFormat
 		ifTrue: [
 			composedImageReader
-				doLoadImageFromFile: (self cCoerceSimple: aFile to: #'char *')
+				doLoadImageFromFile: (self cCode: [ self cCoerceSimple: aFile to: #'char *' ] inSmalltalk: [ aFile ])
 				withHeader: aSpurImageHeaderStruct ]
 		ifFalse: [
 			spurImageReader
-				doLoadImageFromFile: (self cCoerceSimple: aFile to: #sqImageFile)
+				doLoadImageFromFile: (self cCode: [ self cCoerceSimple: aFile to: #sqImageFile ] inSmalltalk: [ aFile ])
 				withHeader: aSpurImageHeaderStruct ]
 ]
 

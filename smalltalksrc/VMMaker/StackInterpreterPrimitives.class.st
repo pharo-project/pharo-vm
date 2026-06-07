@@ -239,7 +239,9 @@ StackInterpreterPrimitives >> doPrimitiveWorkerCallout [
 
 	self worker_dispatch_callout: worker _: task.
 
-	self pop: 4 thenPush: (objectMemory newExternalAddressWithValue: (self cCoerce: task to: 'void*'))
+	self pop: 4 thenPush: (objectMemory newExternalAddressWithValue: (self
+		 cCode: [ self cCoerce: task to: 'void*' ]
+		 inSmalltalk: [ self cCoerce: task asInteger to: 'void*' ]))
 ]
 
 { #category : 'ffi' }
