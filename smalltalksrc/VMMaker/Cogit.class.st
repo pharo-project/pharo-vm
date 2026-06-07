@@ -437,7 +437,6 @@ Cogit class >> declareCVarsIn: aCCodeGenerator [
 		addHeaderFile: '<stddef.h>';
 		"for e.g. offsetof"addHeaderFile: '"jit/jit.h"';
 		addHeaderFile: '"debug.h"';
-		addHeaderFile: '"cogStackAlignment.h"';
 		addHeaderFile: '"dispdbg.h"';
 		"must precede cointerp.h & cogit.h otherwise NoDbgRegParms gets screwed up"
 		addHeaderFile: '"cogmethod.h"'.

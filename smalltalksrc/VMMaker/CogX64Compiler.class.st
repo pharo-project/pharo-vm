@@ -4805,6 +4805,7 @@ CogX64Compiler >> unalignedLong32At: byteAddress [
 	<returnTypeC: 'int'>
 	self
 		cCode: [
+			| readValue |
 			self
 				memcpy: (self addressOf: readValue)
 				_: (self cCoerceSimple: byteAddress to: #'void *')
