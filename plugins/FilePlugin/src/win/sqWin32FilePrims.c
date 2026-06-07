@@ -336,7 +336,7 @@ int	status = 0;
 * 4 - cygwin terminal (windows only)
 */
 sqInt  sqFileDescriptorType(int fdNum) {
-	return fileHandleType(_get_osfhandle(fdNum));
+	return fileHandleType((HANDLE)_get_osfhandle(fdNum));
 }
 
 /*

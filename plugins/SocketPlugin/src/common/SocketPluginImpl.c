@@ -48,7 +48,7 @@
  // Windows.h will import otherwise winsock (1) and create conflicts
 #include <winsock2.h>
 #include <windows.h>
-#include <Ws2tcpip.h>
+#include <ws2tcpip.h>
 #endif //WIN32
 
 #include "pharovm/pharo.h"
