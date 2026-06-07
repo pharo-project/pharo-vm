@@ -380,3 +380,4 @@ healthchecksdb
 /build-*-aarch64
 /build-*-x86_64
 /genroot-native
+/build-macos-*
