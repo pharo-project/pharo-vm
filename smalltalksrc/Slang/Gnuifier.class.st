@@ -126,7 +126,7 @@ Gnuifier >> gnuifyFrom: inputFile to: outFileStream [
 									ifTrue: [ 
 									outLine := 'register struct foo * foo FOO_REG = &fum;' ].
 								(inLine findString: ' local_instructionPointer;') > 0 ifTrue: [ 
-									outLine := '	register char* local_instructionPointer IP_REG;' ].
+									outLine := '	register usqInt local_instructionPointer IP_REG;' ].
 								(inLine findString: ' local_framePointer;') > 0 ifTrue: [ 
 									outLine := '	register char* local_framePointer FP_REG;' ].
 								(inLine findString: ' local_stackPointer;') > 0 ifTrue: [ 

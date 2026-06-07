@@ -167,6 +167,7 @@ SpurImageReader >> readImageFromFile: f StartingAt: headerStart [
 SpurImageReader >> readImageNamed: imageName [
 	
 	<var: #imageName declareC: 'char *imageName'>
+	<var: #file type: #sqImageFile>
 	
 	| file |
 	

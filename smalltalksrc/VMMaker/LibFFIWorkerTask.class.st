@@ -89,12 +89,16 @@ LibFFIWorkerTask >> cif: anObject [
 LibFFIWorkerTask >> doFreeFromTask: anAddress [
 
 	<cmacro: '(aTask,anAddress) (free(anAddress))'>
+	<var: #anAddress type: #'void *'>
 	
 ]
 
 { #category : 'operations' }
 LibFFIWorkerTask >> freeTask [
 	
+	<var: #parameters type: #'void **'>
+	<var: #anAddress type: #'void *'>
+	<var: #anParameterAddress type: #'void *'>
 	self parametersAddress
 		ifNotNil: [ :anAddress | | parameters |
 			parameters := self cCoerce: anAddress to: #'void **'. 
@@ -105,7 +109,9 @@ LibFFIWorkerTask >> freeTask [
 	self returnHolderAddress 
 		ifNotNil: [ :anAddress | self doFreeFromTask: anAddress ]. 
 		
-	self doFreeFromTask: self asInteger
+	self
+		cCode: [ self doFreeFromTask: self ]
+		inSmalltalk: [ self doFreeFromTask: self asInteger ]
 ]
 
 { #category : 'accessing' }

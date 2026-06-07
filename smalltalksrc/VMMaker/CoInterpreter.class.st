@@ -602,7 +602,7 @@ CoInterpreter >> addNewMethodToCache: classObj [
 { #category : 'image save/restore' }
 CoInterpreter >> allocateMemoryForImage: f withHeader: header [
 
-	<var: #f type: #sqImageFile>
+	<var: #f type: #'void *'>
 	<var: #header type: #SpurImageHeaderStruct>
 
 	cogCodeSize := desiredCogCodeSize ~= 0
@@ -1565,14 +1565,14 @@ CoInterpreter >> ceSendAbort: selector to: rcvr numArgs: numArgs [
 ]
 
 { #category : 'trampolines' }
-CoInterpreter >> ceSendFromInLineCacheMiss: cogMethodOrPICAddr [
+CoInterpreter >> ceSendFromInLineCacheMiss: cogMethodOrPIC [
 	"Send from a megamorphic IC when the first-level method lookup probe has failed,
 	 or to continue when PIC creation has failed (e.g. because we're out of code space),
 	 or when a send has failed due to a forwarded receiver."
 
 	<api>
-	| numArgs rcvr classTag classObj errSelIdx cogMethodOrPIC |
-	cogMethodOrPIC := self cCoerceSimple: cogMethodOrPICAddr to: #'CogMethod *'.
+	<var: #cogMethodOrPIC type: #'CogMethod *'>
+	| numArgs rcvr classTag classObj errSelIdx |
 	numArgs := cogMethodOrPIC cmNumArgs.
 	rcvr := self stackValue: numArgs + 1. "skip return pc"
 	self assert: (objectMemory addressCouldBeOop: rcvr).
@@ -3600,7 +3600,7 @@ CoInterpreter >> maybeReturnToMachineCodeFrame [
 		instructionPointer asUnsignedInteger ~= cogit ceReturnToInterpreterPC ifTrue: [
 			"localIP in the cog method zone indicates a return to machine code."
 			^self returnToMachineCodeFrame].
-		 instructionPointer := self pointerForOop: (self iframeSavedIP: framePointer) ]
+		 instructionPointer := self iframeSavedIP: framePointer ]
 ]
 
 { #category : 'stack bytecodes' }
@@ -3628,6 +3628,7 @@ CoInterpreter >> maybeTraceStackOverflow [
 { #category : 'cog jit support' }
 CoInterpreter >> mcprimFunctionForPrimitiveIndex: primIndex [
 	<api>
+	<returnTypeC: #'sqInt (*mcprimFunctionForPrimitiveIndex(sqInt primIndex))(sqInt)'>
 	primIndex = PrimNumberHashMultiply ifTrue:
 		[^#mcprimHashMultiply:].
 	self error: 'unknown mcprim'.
@@ -4400,7 +4401,7 @@ CoInterpreter >> printMethodFieldForPrintContext: aContext [
 	(self methodHasCogMethod: meth) ifTrue: [
 		self
 			space;
-			printHexnp: (self cogMethodOf: meth) ]
+			printHexnp: (self cogMethodOf: meth) asUnsignedInteger ]
 ]
 
 { #category : 'debug printing' }
@@ -4518,6 +4519,9 @@ CoInterpreter >> remapInstructionPointerInFrame: theFP inSavedInstructionPointer
 	If this is an interpreter frame that has called a machine code frame, the saved IP will be a trampoline, so the MC method can return without extra checks.
 	In that case, the current saved IP is a the FoxIFSavedIP of the frame"
 
+	<var: #theFP type: #'char *'>
+	<var: #theIPPtr type: #'char *'>
+	<var: #frameSavedInstructionPointerLocation type: #'char *'>
 	| theIP frameSavedInstructionPointerLocation |
 	frameSavedInstructionPointerLocation := theIPPtr.
 	theIP := stackPages unsignedLongAt: theIPPtr.
@@ -4729,6 +4733,8 @@ CoInterpreter >> saveCStackStateForCallbackContext: vmCallbackContext [
 { #category : 'object memory support' }
 CoInterpreter >> savedInstructioPointerLocation: theFP [
 
+	<returnTypeC: #'char *'>
+	<var: #theFP type: #'char *'>
 	^ ((self isMachineCodeFrame: theFP) or: [
 		   (self iframeSavedIP: theFP) = 0 ])
 		  ifTrue: [ super savedInstructioPointerLocation: theFP ]

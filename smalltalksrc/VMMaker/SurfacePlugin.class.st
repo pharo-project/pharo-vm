@@ -407,8 +407,9 @@ SurfacePlugin >> primitiveRegisterSurface [
 
 	<export: true>
 	<var: #result type:'int'>
-	<var: #surfaceHandlePtr type: 'void*'>
+	<var: #surfaceHandlePtr type: #'sqIntptr_t'>
 	<var: #surfaceIDPtr type: 'void*'>
+	<var: #sqSurfaceDispatchPtr type: #'sqSurfaceDispatch *'>
 	
 	interpreterProxy methodArgumentCount == 3 
 		ifFalse: [^interpreterProxy primitiveFail].
@@ -432,8 +433,8 @@ SurfacePlugin >> primitiveRegisterSurface [
 
 	
 	surfaceIDPtr := interpreterProxy firstIndexableField: surfaceIDHolder.
-	sqSurfaceDispatchPtr := interpreterProxy fetchPointer: 0 ofObject: dispatchAddress.
-	surfaceHandlePtr := interpreterProxy fetchPointer: 0 ofObject: surfaceHandle.
+	sqSurfaceDispatchPtr := self cCoerce: (interpreterProxy fetchPointer: 0 ofObject: dispatchAddress) to: #'sqSurfaceDispatch *'.
+	surfaceHandlePtr := (interpreterProxy fetchPointer: 0 ofObject: surfaceHandle) asIntegerPtr.
 	
 	result := self ioRegisterSurface: surfaceHandlePtr _: sqSurfaceDispatchPtr _: surfaceIDPtr.
 	

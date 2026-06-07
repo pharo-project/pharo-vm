@@ -704,7 +704,7 @@ SimpleStackBasedCogit >> compileInterpreterPrimitiveMayCallBack: primitiveRoutin
 SimpleStackBasedCogit >> compileMachineCodeInterpreterPrimitive: primitiveRoutine [
 	"Compile a call to a machine-code convention interpreter primitive.  Call the C routine
 	 on the Smalltalk stack, assuming it consumes little or no stack space."
-	<var: #primitiveRoutine declareC: 'void (*primitiveRoutine)(void)'>
+	<var: #primitiveRoutine declareC: 'sqInt (*primitiveRoutine)(sqInt)'>
 	| jmpFail liveRegsMask |
 	
 
@@ -776,8 +776,8 @@ SimpleStackBasedCogit >> compileMegamorphicIC: selector numArgs: numArgs [
 	entry := objectRepresentation genGetClassTagOf: ReceiverResultReg into: SendNumArgsReg scratchReg: TempReg.
 
 	cacheBaseReg := NoReg.
-	(backEnd isWithinMwOffsetRange: coInterpreter methodCacheAddress) ifFalse:
-		[self MoveCq: coInterpreter methodCacheAddress R: (cacheBaseReg := Extra0Reg)].
+	(backEnd isWithinMwOffsetRange: coInterpreter methodCacheAddress asUnsignedInteger) ifFalse:
+		[self MoveCq: coInterpreter methodCacheAddress asUnsignedInteger R: (cacheBaseReg := Extra0Reg)].
 
 	"Do first of three probes.  See CoInterpreter>>lookupInMethodCacheSel:classTag:"
 	jumpSelectorMiss := self compileMegamorphicICMethodCacheProbeFor: selector withShift: 0 baseRegOrNone: cacheBaseReg.
@@ -1646,8 +1646,8 @@ SimpleStackBasedCogit >> genLookupForPerformNumArgs: numArgs [
 	objectRepresentation genGetInlineCacheClassTagFrom: ReceiverResultReg into: SendNumArgsReg.
 
 	cacheBaseReg := NoReg.
-	(backEnd isWithinMwOffsetRange: coInterpreter methodCacheAddress) ifFalse:
-		[self MoveCq: coInterpreter methodCacheAddress R: (cacheBaseReg := Extra0Reg)].
+	(backEnd isWithinMwOffsetRange: coInterpreter methodCacheAddress asUnsignedInteger) ifFalse:
+		[self MoveCq: coInterpreter methodCacheAddress asUnsignedInteger R: (cacheBaseReg := Extra0Reg)].
 
 	"Do first of three probes.  See CoInterpreter>>lookupInMethodCacheSel:classTag:"
 	jumpSelectorMiss := self compilePerformMethodCacheProbeFor: Arg0Reg withShift: 0 baseRegOrNone: cacheBaseReg.
@@ -2790,6 +2790,9 @@ SimpleStackBasedCogit >> genUpArrowReturn [
 
 { #category : 'primitive generators - call' }
 SimpleStackBasedCogit >> generateCheckProfileTickFromJump: arrivingJmp returningTo: returningLabel beforeCallDo: aBlockClosure [
+
+	<var: #arrivingJmp type: #'AbstractInstruction *'>
+	<var: #returningLabel type: #'AbstractInstruction *'>
 
 	arrivingJmp jmpTarget: self Label.
 

@@ -129,7 +129,7 @@ interpret(void){
  local_instructionPointer;
 }'.
 	
-	self assert: (gnuified lineNumber: 6) equals: '	register char* local_instructionPointer IP_REG;'
+	self assert: (gnuified lineNumber: 6) equals: '	register usqInt local_instructionPointer IP_REG;'
 ]
 
 { #category : 'tests' }
