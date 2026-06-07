@@ -1757,7 +1757,7 @@ CogAbstractInstruction >> unalignedLongAt: byteAddress [
 			| readValue |
 			self cCall: 'memcpy' withArguments: {
 					(self addressOf: readValue).
-					byteAddress.
+					(self cCoerceSimple: byteAddress to: #'void *').
 					(self sizeof: readValue) }.
 			^ readValue ]
 		inSmalltalk: [ ^ objectMemory unalignedLongAt: byteAddress ].
