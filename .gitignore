@@ -371,3 +371,6 @@ healthchecksdb
 /stack64/generated
 
 **/.DS_Store
+
+# Local qemu-bootstrap generated VM sources (out-of-tree generation dir)
+/genroot
