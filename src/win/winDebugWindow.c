@@ -1,5 +1,5 @@
 #include "pharovm/pharo.h"
-#include <Windows.h>
+#include <windows.h>
 #include <shellapi.h>
 #include <CommCtrl.h>
 #include "pharovm/win/resources.h"

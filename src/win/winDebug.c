@@ -1,5 +1,5 @@
 #include "pharovm/pharo.h"
-#include <Windows.h>
+#include <windows.h>
 #include <DbgHelp.h>
 
 #ifndef PATH_MAX
