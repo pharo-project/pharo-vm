@@ -226,7 +226,11 @@ VMMemoryMap >> allocationGranularity [
 	https://docs.microsoft.com/en-us/windows/win32/api/sysinfoapi/ns-sysinfoapi-system_info"
 
 	<returnTypeC: #sqInt>
-	self cppIf: WIN32 ifTrue: [ ^ 64 * 1024 ] ifFalse: [ ^ 0 ]
+	self cppIf: WIN32 ifTrue: [ ^ 64 * 1024 ] ifFalse: [ ^ 0 ].
+	"Both cppIf: branches return; this trailing ^0 stops Slang from appending the
+	 default `return self` (a VMMemoryMap*), which breaks the sqInt return type
+	 under -Werror=int-conversion. Unreachable in both C and the simulator."
+	^ 0
 ]
 
 { #category : 'accessing' }
