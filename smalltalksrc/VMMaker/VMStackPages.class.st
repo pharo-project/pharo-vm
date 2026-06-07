@@ -259,7 +259,7 @@ VMStackPages >> initializeWithByteSize: byteSize inMemoryMap: aMemoryMap for: an
 	| stackAddress |
 	
 	aMemoryMap allocateStackPages: byteSize.
-	stackAddress := aMemoryMap stackPagesStart asVoidPointer.
+	stackAddress := aMemoryMap stackPagesStart.
 
 	self 
 		cCode: [] 

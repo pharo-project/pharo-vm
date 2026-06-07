@@ -240,7 +240,7 @@ FilePlugin >> pointerFrom: pointerByteArray [
 	<var: 'addressUnion' type: #'union {void *address; unsigned char bytes[sizeof(void *)];}'>
 	((interpreterProxy is: pointerByteArray KindOf: 'ByteArray') and:
 		[(interpreterProxy stSizeOf: pointerByteArray) = self sizeOfPointer])
-		ifFalse: [interpreterProxy primitiveFailFor: PrimErrBadArgument. ^nil].
+		ifFalse: [^interpreterProxy primitiveFailFor: PrimErrBadArgument].
 	ptr := interpreterProxy arrayValueOf: pointerByteArray.
 	interpreterProxy failed ifTrue: [^nil].
 	idx := 0.

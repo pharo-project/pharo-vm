@@ -6104,7 +6104,7 @@ SpurMemoryManager >> freeTreeOverlapCheck [
 SpurMemoryManager >> freeUnscannedEphemerons [
 	"Free all the memory allocated to keep the unscanned ephemerons"
 	
-	self free: unscannedEphemerons start asVoidPointer.
+	self free: unscannedEphemerons start.
 	unscannedEphemerons start: nil
 ]
 
@@ -9682,7 +9682,6 @@ SpurMemoryManager >> newArrayWith: aCollection [
 { #category : 'ffi - helpers' }
 SpurMemoryManager >> newExternalAddressWithValue: aPointer [
 	| ptr oop |
-	<var: #aPointer type: #'void *'>
 	<var: #ptr type:'void **'>
 
 	oop := self
@@ -9690,7 +9689,7 @@ SpurMemoryManager >> newExternalAddressWithValue: aPointer [
 		       indexableSize: (self sizeof: #'void*').
 
 	ptr := self cCoerce: (self firstIndexableField: oop) to: #'void **'.
-	ptr at: 0 put: aPointer.
+	ptr at: 0 put: aPointer asIntegerPtr.
 	^ oop
 ]
 
@@ -11396,18 +11395,17 @@ SpurMemoryManager >> pushOnUnscannedEphemeronsStack: anEphemeron [
 	 stack overflowing isn't a disaster; it simply means treating the
 	 ephemeron as strong in this GC cycle."
 	<inline: false>
-	<var: #reallocated type: #'void *'>
 	self assert: (self isEphemeron: anEphemeron).
 	unscannedEphemerons top >= unscannedEphemerons limit ifTrue: [ | desiredSize reallocated |
 		"Reallocate and duplication"
 		desiredSize := (unscannedEphemerons limit - unscannedEphemerons start) * 2.
 		reallocated := self
-			realloc: unscannedEphemerons start asVoidPointer
+			realloc: unscannedEphemerons start
 			_: desiredSize.
 		reallocated ifNil: [ self error: 'Not enough room to grow unscannedEphemerons queue' ].
-		unscannedEphemerons limit: reallocated asUnsignedInteger + desiredSize.
-		unscannedEphemerons top: reallocated asUnsignedInteger + (unscannedEphemerons top - unscannedEphemerons start).
-		unscannedEphemerons start: reallocated asUnsignedInteger ].
+		unscannedEphemerons limit: reallocated + desiredSize.
+		unscannedEphemerons top: reallocated + (unscannedEphemerons top - unscannedEphemerons start).
+		unscannedEphemerons start: reallocated ].
 
 	self longAt: unscannedEphemerons top put: anEphemeron.
 	unscannedEphemerons top: unscannedEphemerons top + self bytesPerOop.
@@ -11493,7 +11491,6 @@ SpurMemoryManager >> rawOverflowSlotsOf: objOop put: numSlots [
 { #category : 'ffi - helpers' }
 SpurMemoryManager >> readFloat32AtPointer: aCArrayAccessor [ 
 	
-	<var: #aCArrayAccessor type: #'void *'>
 	| floatPtr |
 	floatPtr := self cCoerce: (aCArrayAccessor) to: #'float *'.
 	^ floatPtr at: 0
@@ -11502,7 +11499,6 @@ SpurMemoryManager >> readFloat32AtPointer: aCArrayAccessor [
 { #category : 'ffi - helpers' }
 SpurMemoryManager >> readFloat64AtPointer: aCArrayAccessor [ 
 	
-	<var: #aCArrayAccessor type: #'void *'>
 	| floatPtr |
 	floatPtr := self cCoerce: (aCArrayAccessor) to: #'double *'.
 	^ floatPtr at: 0
@@ -11511,7 +11507,6 @@ SpurMemoryManager >> readFloat64AtPointer: aCArrayAccessor [
 { #category : 'ffi - helpers' }
 SpurMemoryManager >> readPointerAtPointer: aCArrayAccessor [ 
 
-	<var: #aCArrayAccessor type: #'void *'>
 	| ptrPtr |
 	ptrPtr := self cCoerce: aCArrayAccessor to: #'void **'.
 	^ ptrPtr at: 0
@@ -11520,7 +11515,6 @@ SpurMemoryManager >> readPointerAtPointer: aCArrayAccessor [
 { #category : 'ffi - helpers' }
 SpurMemoryManager >> readSINT16AtPointer: aCArrayAccessor [ 
 	
-	<var: #aCArrayAccessor type: #'void *'>
 	| intPtr |
 	intPtr := self cCoerce: aCArrayAccessor to: #'int16_t *'.
 	^ intPtr at: 0
@@ -11529,7 +11523,6 @@ SpurMemoryManager >> readSINT16AtPointer: aCArrayAccessor [
 { #category : 'ffi - helpers' }
 SpurMemoryManager >> readSINT32AtPointer: aCArrayAccessor [ 
 	
-	<var: #aCArrayAccessor type: #'void *'>
 	| intPtr |
 	intPtr := self cCoerce: aCArrayAccessor to: #'int32_t *'.
 	^ intPtr at: 0
@@ -11538,7 +11531,6 @@ SpurMemoryManager >> readSINT32AtPointer: aCArrayAccessor [
 { #category : 'ffi - helpers' }
 SpurMemoryManager >> readSINT64AtPointer: aCArrayAccessor [ 
 	
-	<var: #aCArrayAccessor type: #'void *'>
 	| intPtr |
 	intPtr := self cCoerce: aCArrayAccessor to: #'int64_t *'.
 	^ intPtr at: 0
@@ -11547,7 +11539,6 @@ SpurMemoryManager >> readSINT64AtPointer: aCArrayAccessor [
 { #category : 'ffi - helpers' }
 SpurMemoryManager >> readSINT8AtPointer: aCArrayAccessor [ 
 	
-	<var: #aCArrayAccessor type: #'void *'>
 	| intPtr |
 	intPtr := self cCoerce: aCArrayAccessor to: #'int8_t *'.
 	^ intPtr at: 0
@@ -11556,7 +11547,6 @@ SpurMemoryManager >> readSINT8AtPointer: aCArrayAccessor [
 { #category : 'ffi - helpers' }
 SpurMemoryManager >> readUINT16AtPointer: aCArrayAccessor [ 
 	
-	<var: #aCArrayAccessor type: #'void *'>
 	| intPtr |
 	intPtr := self cCoerce: aCArrayAccessor to: #'uint16_t *'.
 	^ intPtr at: 0
@@ -11565,7 +11555,6 @@ SpurMemoryManager >> readUINT16AtPointer: aCArrayAccessor [
 { #category : 'ffi - helpers' }
 SpurMemoryManager >> readUINT32AtPointer: aCArrayAccessor [ 
 	
-	<var: #aCArrayAccessor type: #'void *'>
 	| intPtr |
 	intPtr := self cCoerce: aCArrayAccessor to: #'uint32_t *'.
 	^ intPtr at: 0
@@ -11574,7 +11563,6 @@ SpurMemoryManager >> readUINT32AtPointer: aCArrayAccessor [
 { #category : 'ffi - helpers' }
 SpurMemoryManager >> readUINT64AtPointer: aCArrayAccessor [ 
 	
-	<var: #aCArrayAccessor type: #'void *'>
 	| intPtr |
 	intPtr := self cCoerce: aCArrayAccessor to: #'uint64_t *'.
 	^ intPtr at: 0
@@ -11583,7 +11571,6 @@ SpurMemoryManager >> readUINT64AtPointer: aCArrayAccessor [
 { #category : 'ffi - helpers' }
 SpurMemoryManager >> readUINT8AtPointer: aCArrayAccessor [ 
 	
-	<var: #aCArrayAccessor type: #'void *'>
 	| intPtr |
 	intPtr := self cCoerce: aCArrayAccessor to: #'uint8_t *'.
 	^ intPtr at: 0

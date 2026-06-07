@@ -602,7 +602,7 @@ CoInterpreter >> addNewMethodToCache: classObj [
 { #category : 'image save/restore' }
 CoInterpreter >> allocateMemoryForImage: f withHeader: header [
 
-	<var: #f type: #'void *'>
+	<var: #f type: #sqImageFile>
 	<var: #header type: #SpurImageHeaderStruct>
 
 	cogCodeSize := desiredCogCodeSize ~= 0
@@ -1565,14 +1565,14 @@ CoInterpreter >> ceSendAbort: selector to: rcvr numArgs: numArgs [
 ]
 
 { #category : 'trampolines' }
-CoInterpreter >> ceSendFromInLineCacheMiss: cogMethodOrPIC [
+CoInterpreter >> ceSendFromInLineCacheMiss: cogMethodOrPICAddr [
 	"Send from a megamorphic IC when the first-level method lookup probe has failed,
 	 or to continue when PIC creation has failed (e.g. because we're out of code space),
 	 or when a send has failed due to a forwarded receiver."
 
 	<api>
-	<var: #cogMethodOrPIC type: #'CogMethod *'>
-	| numArgs rcvr classTag classObj errSelIdx |
+	| numArgs rcvr classTag classObj errSelIdx cogMethodOrPIC |
+	cogMethodOrPIC := self cCoerceSimple: cogMethodOrPICAddr to: #'CogMethod *'.
 	numArgs := cogMethodOrPIC cmNumArgs.
 	rcvr := self stackValue: numArgs + 1. "skip return pc"
 	self assert: (objectMemory addressCouldBeOop: rcvr).
@@ -3628,7 +3628,6 @@ CoInterpreter >> maybeTraceStackOverflow [
 { #category : 'cog jit support' }
 CoInterpreter >> mcprimFunctionForPrimitiveIndex: primIndex [
 	<api>
-	<returnTypeC: #'sqInt (*mcprimFunctionForPrimitiveIndex(sqInt primIndex))(sqInt)'>
 	primIndex = PrimNumberHashMultiply ifTrue:
 		[^#mcprimHashMultiply:].
 	self error: 'unknown mcprim'.
@@ -4401,7 +4400,7 @@ CoInterpreter >> printMethodFieldForPrintContext: aContext [
 	(self methodHasCogMethod: meth) ifTrue: [
 		self
 			space;
-			printHexnp: (self cogMethodOf: meth) asUnsignedInteger ]
+			printHexnp: (self cogMethodOf: meth) ]
 ]
 
 { #category : 'debug printing' }
@@ -4519,9 +4518,6 @@ CoInterpreter >> remapInstructionPointerInFrame: theFP inSavedInstructionPointer
 	If this is an interpreter frame that has called a machine code frame, the saved IP will be a trampoline, so the MC method can return without extra checks.
 	In that case, the current saved IP is a the FoxIFSavedIP of the frame"
 
-	<var: #theFP type: #'char *'>
-	<var: #theIPPtr type: #'char *'>
-	<var: #frameSavedInstructionPointerLocation type: #'char *'>
 	| theIP frameSavedInstructionPointerLocation |
 	frameSavedInstructionPointerLocation := theIPPtr.
 	theIP := stackPages unsignedLongAt: theIPPtr.
@@ -4733,8 +4729,6 @@ CoInterpreter >> saveCStackStateForCallbackContext: vmCallbackContext [
 { #category : 'object memory support' }
 CoInterpreter >> savedInstructioPointerLocation: theFP [
 
-	<returnTypeC: #'char *'>
-	<var: #theFP type: #'char *'>
 	^ ((self isMachineCodeFrame: theFP) or: [
 		   (self iframeSavedIP: theFP) = 0 ])
 		  ifTrue: [ super savedInstructioPointerLocation: theFP ]

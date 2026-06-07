@@ -4793,7 +4793,7 @@ Cogit >> cogMethodDoesntLookKosher: cogMethod [
 		 cogMethod objectHeader >= 0 ifTrue:
 			[(cogMethod methodObject = 0
 			  or: [methodZone compactionInProgress
-			  or: [cogMethod methodObject = (methodZone methodFor: cogMethod methodObject asVoidPointer) asUnsignedInteger]]) ifFalse:
+			  or: [cogMethod methodObject = (methodZone methodFor: cogMethod methodObject) asUnsignedInteger]]) ifFalse:
 				[^23]].
 		 cogMethod stackCheckOffset ~= 0 ifTrue:
 			[^24].
@@ -4932,7 +4932,7 @@ Cogit >> collectCogConstituentFor: descriptor Annotation: isBackwardBranchAndAnn
 	| address entryPoint |
 	descriptor ifNil: [^0].
 	descriptor isMapped ifFalse: [^0].
-	address := self positiveMachineIntegerFor: mcpc asUnsignedInteger.
+	address := self positiveMachineIntegerFor: mcpc.
 	address ifNil: [^PrimErrNoMemory]. "This cannot trigger a GC but fails if not enough space in Eden,"
 	"Assumes we write the values into topRemappableOop"
 	coInterpreter
@@ -4953,7 +4953,7 @@ Cogit >> collectCogConstituentFor: descriptor Annotation: isBackwardBranchAndAnn
 			[self targetMethodAndSendTableFor: entryPoint annotation: isBackwardBranchAndAnnotation >> 1 into:
 				[:targetMethod :sendTable|
 				  targetMethod cmType = CMPolymorphicIC ifTrue:
-					[targetMethod methodObject: (objectRepresentation classForInlineCacheTag: (backEnd inlineCacheTagAt: mcpc asUnsignedInteger))]]]].
+					[targetMethod methodObject: (objectRepresentation classForInlineCacheTag: (backEnd inlineCacheTagAt: mcpc))]]]].
 	^0
 ]
 
@@ -7477,7 +7477,7 @@ Cogit >> generateClosedPICPrototype [
 	
 	"update the methodZoneBase so we keep the prototype around for later use"
 	methodZoneBase := self alignUptoRoutineBoundary: endAddress.
-	cPICPrototype := cPIC asUnsignedIntegerPtr.
+	cPICPrototype := cPIC.
 	"self cCode: ''
 		inSmalltalk:
 			[self disassembleFrom: cPIC + (self sizeof: CogMethod) to: cPIC + closedPICSize - 1.
@@ -8238,7 +8238,6 @@ Cogit >> indexForSelector: selector in: cogMethod at: mcpc [
 	 and so the cache is loaded with the index of the selector."
 
 	<var: #cogMethod type: #'CogMethod *'>
-	<var: #mcpc type: #sqInt>
 	<inline: false>
 	| methodOop |
 	
@@ -8449,7 +8448,6 @@ Cogit >> inlineCacheValueForSelector: selector in: aCogMethod at: mcpc [
 	 Usually this is simply the selector, but in 64-bits the cache is only 32-bits wide
 	 and so the cache is loaded with the index of the selector."
 	<var: #aCogMethod type: #'CogMethod *'>
-	<var: #mcpc type: #sqInt>
 	<inline: true>
 	^self inlineCacheTagsAreIndexes
 		ifTrue: [self indexForSelector: selector in: aCogMethod at: mcpc]
@@ -10542,7 +10540,7 @@ Cogit >> printWhereIs: address [
 						print: ' in trampoline ';
 						print: (self codeEntryNameFor: address);
 						print: ' (starting at address ';
-						printHexnp: trampAddr asUnsignedIntegerPtr;
+						printHexnp: trampAddr;
 						print: ')';
 						cr ] ]
 		ifFalse: [ 
@@ -10895,7 +10893,7 @@ Cogit >> relocateIfCallOrMethodReference: annotation mcpc: mcpc delta: refDelta 
 					tag: (self
 							 inlineCacheValueForSelector: targetMethod selector
 							 in: enumeratingCogMethod
-							 at: mcpc asUnsignedInteger)
+							 at: mcpc)
 					target: unlinkedRoutine - callDelta.
 				^ 0 ] ].
 
@@ -11021,7 +11019,6 @@ Cogit >> rewritePICCaseAt: followingAddress tag: newTag objRef: newObjRef target
 Cogit >> safeFreeMethod: cogMethod [
 	
 	<api>
-	<var: #cogMethod type: #'CogMethod *'>
 	"Free the method as paremeter taking care of enabling/disabling the code zone.
 	To be used by the interpreter and by usages that are not already enabling code zone writing"
 	self enableCodeZoneWriteDuring: [
@@ -11809,7 +11806,7 @@ Cogit >> unlinkSendAt: mcpc targetMethod: targetMethod sendTable: sendTable [
 	unlinkedRoutine := sendTable at: (targetMethod cmNumArgs min: NumSendTrampolines - 1).
 	backEnd
 		rewriteInlineCacheAt: mcpc asInteger
-		tag: (self inlineCacheValueForSelector: targetMethod selector in: enumeratingCogMethod at: mcpc asUnsignedInteger)
+		tag: (self inlineCacheValueForSelector: targetMethod selector in: enumeratingCogMethod at: mcpc)
 		target: unlinkedRoutine.
 	codeModified := true
 ]

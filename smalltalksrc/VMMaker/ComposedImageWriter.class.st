@@ -49,8 +49,6 @@ ComposedImageWriter >> unlink: aFileName [
 { #category : 'writing' }
 ComposedImageWriter >> writeDataStatingAt: start withSize: size inFileName: fullFileName [
 
-	<var: #start type: #'void *'>
-	<var: #fullFileName type: #'char *'>
 	<var: #dataFile type: #sqImageFile>
 	<var: #nWritten type: #'size_t'>
 	<returnTypeC: #'size_t'>
@@ -166,7 +164,6 @@ ComposedImageWriter >> writeImageSegments: imageFileName [
 { #category : 'writing' }
 ComposedImageWriter >> writeMetadata: metadata inFileName: fullFileName [
 
-	<var: #fullFileName type: #'char *'>
 	<var: #metadataFile type: #sqImageFile>
 	<var: #metadata type: #ComposedMetadataStruct>
 
@@ -239,8 +236,6 @@ ComposedImageWriter >> writeSegment: segment nextIndex: segmentIndex inImage: im
 { #category : 'segments' }
 ComposedImageWriter >> writeSegmentData: segment nextIndex: segmentIndex inImage: imageFileName [
 
-	<var: 'segment' type: #'SpurSegmentInfo *'>
-	<var: #imageFileName type: #'char *'>
 	<returnTypeC: #'size_t'>
 
 	^ self
@@ -252,8 +247,6 @@ ComposedImageWriter >> writeSegmentData: segment nextIndex: segmentIndex inImage
 { #category : 'segments' }
 ComposedImageWriter >> writeSegmentMetadata: segment nextIndex: segmentIndex inImage: imageFileName [
 
-	<var: 'segment' type: #'SpurSegmentInfo *'>
-	<var: #imageFileName type: #'char *'>
 	<var: #metadata type: #ComposedMetadataStruct>
 	| metadata |
 

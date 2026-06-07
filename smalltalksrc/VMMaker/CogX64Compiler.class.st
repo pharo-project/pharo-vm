@@ -4757,7 +4757,7 @@ CogX64Compiler >> stopsFrom: startAddr to: endAddr [
 	self
 		cCode: [
 			self cCall: 'memset' withArguments: {
-					(self cCoerceSimple: startAddr to: #'void *').
+					startAddr.
 					self stop.
 					(endAddr - startAddr + 1) } ]
 		inSmalltalk: [
@@ -4808,20 +4808,14 @@ CogX64Compiler >> unalignedLong32At: byteAddress [
 			| readValue |
 			self
 				memcpy: (self addressOf: readValue)
-				_: (self cCoerceSimple: byteAddress to: #'void *')
+				_: byteAddress
 				_: (self sizeof: readValue).
 			^ readValue ]
 		inSmalltalk: [
-			| val |
-			val := (objectMemory byteAt: byteAddress + 3) << 24
+			^ (objectMemory byteAt: byteAddress + 3) << 24
 			  + ((objectMemory byteAt: byteAddress + 2) << 16)
 			  + ((objectMemory byteAt: byteAddress + 1) << 8)
-			  + (objectMemory byteAt: byteAddress).
-			^ val ].
-	"Both branches return above; this trailing ^0 stops Slang appending the
-	 default `return self` (an AbstractInstruction*), which breaks the int return
-	 type under -Werror=int-conversion when this method is not inlined (x64)."
-	^ 0
+			  + (objectMemory byteAt: byteAddress) ]
 ]
 
 { #category : 'memory access' }

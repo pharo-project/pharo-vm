@@ -3245,8 +3245,6 @@ StackToRegisterMappingCogit >> generateSistaRuntime [
 { #category : 'initialization' }
 StackToRegisterMappingCogit >> generateSuperSendTrampolineTo: function named: name numArgs: numArgs in: table [
 	
-	<var: #function declareC: #'void (*function)(sqInt, sqInt, sqInt, sqInt)'>
-	<var: #name type: #'char *'>
 	<var: #table type: #'sqInt *'>
 	| trampoline |
 	trampoline := self genSendTrampolineFor: function
@@ -4675,7 +4673,7 @@ StackToRegisterMappingCogit >> tempsValidAndVolatileEntriesSpilled [
 
 { #category : 'simulation only' }
 StackToRegisterMappingCogit >> traceDescriptor: descriptor [
-	<cmacro: '(ign) ((void)0)'>
+	<cmacro: '(ign) 0'>
 	(compilationTrace anyMask: 2) ifTrue:
 		[coInterpreter transcript cr; print: bytecodePC; space; nextPutAll: descriptor generator.
 		 deadCode ifTrue: [coInterpreter transcript nextPutAll: ' => deadCode'].
@@ -4684,7 +4682,7 @@ StackToRegisterMappingCogit >> traceDescriptor: descriptor [
 
 { #category : 'simulation only' }
 StackToRegisterMappingCogit >> traceSpill: simStackEntry [
-	<cmacro: '(ign) ((void)0)'>
+	<cmacro: '(ign) 0'>
 	(compilationTrace anyMask: 8) ifTrue:
 		[coInterpreter transcript cr; print: bytecodePC; space; print: simStackEntry; flush]
 ]

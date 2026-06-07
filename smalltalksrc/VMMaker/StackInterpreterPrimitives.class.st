@@ -81,7 +81,6 @@ StackInterpreterPrimitives >> doPrimitiveSameThreadCallout [
 	<var: #parameters type: #'void **'>
 	<var: #returnHolder type: #'void *'>
 	<var: #externalFunction type: #'void *'>
-	<var: #argHolder type: #'void *'>
 
 	PARAM_EXTERNALFUNCTION := 1.
 	PARAM_ARGUMENTS := 0.
@@ -167,7 +166,6 @@ StackInterpreterPrimitives >> doPrimitiveWorkerCallout [
 	<var: #returnHolder type: #'void *'>
 	<var: #task type: #'WorkerTask *'>
 	<var: #externalFunction type: #'void *'>
-	<var: #argHolder type: #'void *'>
 	
 	PARAM_RECEIVER 				:= 3.
 	PARAM_EXTERNALFUNCTION 	:= 2.
@@ -239,9 +237,7 @@ StackInterpreterPrimitives >> doPrimitiveWorkerCallout [
 
 	self worker_dispatch_callout: worker _: task.
 
-	self pop: 4 thenPush: (objectMemory newExternalAddressWithValue: (self
-		 cCode: [ self cCoerce: task to: 'void*' ]
-		 inSmalltalk: [ task asInteger ]))
+	self pop: 4 thenPush: (objectMemory newExternalAddressWithValue: (self cCoerce: task asInteger to: 'void*'))
 ]
 
 { #category : 'ffi' }
@@ -257,7 +253,6 @@ StackInterpreterPrimitives >> doPrimitiveWorkerExtractReturnValue [
 	<var: #returnHolder type: #'void *'>
 	<var: #task type: #'WorkerTask *'>
 	<var: #worker type: #'Worker *'>
-	<var: #taskAddress type: #'void *'>
 
 	PARAM_RECEIVER 				:= 1.
 	PARAM_TASK_ADDRESS			:= 0.
@@ -296,8 +291,6 @@ StackInterpreterPrimitives >> ffi_call: aCif _: externalFunctionAddress _: retur
 { #category : 'ffi - helpers' }
 StackInterpreterPrimitives >> freeArgumentsArray: arguments count: count [
 
-	<var: #arguments type: #'void **'>
-	<var: #aPtr type: #'void *'>
 	0 to: count - 1 do: [ :i |  
 		(arguments at: i) ifNotNil: [ :aPtr | 
 			arguments at: i put: nil.
@@ -331,8 +324,6 @@ StackInterpreterPrimitives >> getHandlerAsCif: anOop [
 { #category : 'ffi - helpers' }
 StackInterpreterPrimitives >> getTaskFromAddress: anInteger [
 
-	<returnTypeC: #'WorkerTask *'>
-	<var: #anInteger type: #'void *'>
 	^ self
 		  cCode: [ self cCoerce: anInteger to: #'WorkerTask *' ]
 		  inSmalltalk: [ libFFI testWorker tasks detect: [ :e | e asInteger = anInteger ] ]
@@ -341,8 +332,6 @@ StackInterpreterPrimitives >> getTaskFromAddress: anInteger [
 { #category : 'ffi - helpers' }
 StackInterpreterPrimitives >> getWorkerFromAddress: anInteger [
 
-	<returnTypeC: #'Worker *'>
-	<var: #anInteger type: #'void *'>
 	^ self
 		  cCode: [ self cCoerce: anInteger to: #'Worker *' ]
 		  inSmalltalk: [ 
@@ -388,14 +377,13 @@ StackInterpreterPrimitives >> loadModuleByName: moduleNameOop [
 	moduleNameString := objectMemory firstIndexableField: moduleNameOop.
 	moduleNameStringSize := objectMemory byteSizeOf: moduleNameOop.
 		
-	^ self ioLoadModule: moduleNameString asUnsignedInteger OfLength: moduleNameStringSize
+	^ self ioLoadModule: moduleNameString OfLength: moduleNameStringSize
 ]
 
 { #category : 'ffi - helpers' }
 StackInterpreterPrimitives >> marshallAndPushReturnValueFrom: returnHolder ofType: ffiType poping: argumentsAndReceiverCount [
 
 	<option: #FEATURE_FFI>
-	<var: #returnHolder type: #'void *'>
 	<var: #ffiType type: #'ffi_type *'>
 
 	[ ffiType type ]
@@ -433,7 +421,6 @@ StackInterpreterPrimitives >> marshallAndPushReturnValueFrom: returnHolder ofTyp
 StackInterpreterPrimitives >> marshallArgumentFrom: argumentsArrayOop atIndex: i into: argHolder ofType: argType withSize: argTypeSize [
 
 	<option: #FEATURE_FFI>
-	<var: #argHolder type: #'void *'>
 	[ argType ]
 		caseOf:
 			{([ FFI_TYPE_POINTER ]
@@ -466,7 +453,6 @@ StackInterpreterPrimitives >> marshallArgumentFrom: argumentsArrayOop atIndex: i
 { #category : 'ffi - helpers' }
 StackInterpreterPrimitives >> marshallDoubleFrom: argumentArrayOop at: index into: holder [ 
 
-	<var: #holder type: #'void *'>
 	| doubleHolder |
 	doubleHolder := self cCoerce: holder to: #'double *'.
 	
@@ -477,7 +463,6 @@ StackInterpreterPrimitives >> marshallDoubleFrom: argumentArrayOop at: index int
 { #category : 'ffi - helpers' }
 StackInterpreterPrimitives >> marshallFloatFrom: argumentArrayOop at: index into: holder [ 
 	
-	<var: #holder type: #'void *'>
 	| floatHolder |
 	floatHolder := self cCoerce: holder to: #'float *'.
 	
@@ -488,8 +473,6 @@ StackInterpreterPrimitives >> marshallFloatFrom: argumentArrayOop at: index into
 { #category : 'ffi - helpers' }
 StackInterpreterPrimitives >> marshallPointerFrom: argumentArrayOop at: index into: holder [ 
 	
-	<var: #holder type: #'void *'>
-	<var: #pointerHolder type: #'void **'>
 	| pointerHolder externalAddress |
 	pointerHolder := self cCoerce: holder to: #'void **'.
 	externalAddress := objectMemory fetchPointer: index ofObject: argumentArrayOop.
@@ -500,7 +483,6 @@ StackInterpreterPrimitives >> marshallPointerFrom: argumentArrayOop at: index in
 { #category : 'ffi - helpers' }
 StackInterpreterPrimitives >> marshallSInt16From: argumentArrayOop at: index into: holder [
 
-	<var: #holder type: #'void *'>
 	| intHolder value |
 
 	value := self fetchInteger: index ofObject: argumentArrayOop.	
@@ -515,7 +497,6 @@ StackInterpreterPrimitives >> marshallSInt16From: argumentArrayOop at: index int
 { #category : 'ffi - helpers' }
 StackInterpreterPrimitives >> marshallSInt32From: argumentArrayOop at: index into: holder [
 
-	<var: #holder type: #'void *'>
 	| intHolder value |
 
 	value := self signed32BitValueOf: (objectMemory fetchPointer: index ofObject: argumentArrayOop).
@@ -530,7 +511,6 @@ StackInterpreterPrimitives >> marshallSInt32From: argumentArrayOop at: index int
 { #category : 'ffi - helpers' }
 StackInterpreterPrimitives >> marshallSInt64From: argumentArrayOop at: index into: holder [
 
-	<var: #holder type: #'void *'>
 	| intHolder value |
 	
 	value := self signed64BitValueOf: (objectMemory fetchPointer: index ofObject: argumentArrayOop).
@@ -545,7 +525,6 @@ StackInterpreterPrimitives >> marshallSInt64From: argumentArrayOop at: index int
 { #category : 'ffi - helpers' }
 StackInterpreterPrimitives >> marshallSInt8From: argumentArrayOop at: index into: holder [
 
-	<var: #holder type: #'void *'>
 	| intHolder value |
 
 	value := self fetchInteger: index ofObject: argumentArrayOop.	
@@ -561,9 +540,6 @@ StackInterpreterPrimitives >> marshallSInt8From: argumentArrayOop at: index into
 StackInterpreterPrimitives >> marshallStructFrom: argumentsArrayOop at: index into: holder withSize: typeSize [ 
 
 
-	<var: #holder type: #'void *'>
-	<var: #address type: #'void *'>
-	<var: #srcPtr type: #'void *'>
 	| address srcPtr oop |
 
 	oop := objectMemory fetchPointer: index ofObject: argumentsArrayOop.
@@ -590,7 +566,6 @@ StackInterpreterPrimitives >> marshallStructFrom: argumentsArrayOop at: index in
 { #category : 'ffi - helpers' }
 StackInterpreterPrimitives >> marshallUInt16From: argumentArrayOop at: index into: holder [
 
-	<var: #holder type: #'void *'>
 	| intHolder value |
 	
 	value := self fetchInteger: index ofObject: argumentArrayOop.
@@ -605,7 +580,6 @@ StackInterpreterPrimitives >> marshallUInt16From: argumentArrayOop at: index int
 { #category : 'ffi - helpers' }
 StackInterpreterPrimitives >> marshallUInt32From: argumentArrayOop at: index into: holder [
 
-	<var: #holder type: #'void *'>
 	| intHolder value |
 	
 	value := self positive32BitValueOf: (objectMemory fetchPointer: index ofObject: argumentArrayOop).
@@ -620,7 +594,6 @@ StackInterpreterPrimitives >> marshallUInt32From: argumentArrayOop at: index int
 { #category : 'ffi - helpers' }
 StackInterpreterPrimitives >> marshallUInt64From: argumentArrayOop at: index into: holder [
 
-	<var: #holder type: #'void *'>
 	| intHolder value |
 
 	value := self positive64BitValueOf:( objectMemory fetchPointer: index ofObject: argumentArrayOop ).	
@@ -636,7 +609,6 @@ StackInterpreterPrimitives >> marshallUInt64From: argumentArrayOop at: index int
 { #category : 'ffi - helpers' }
 StackInterpreterPrimitives >> marshallUInt8From: argumentArrayOop at: index into: holder [
 
-	<var: #holder type: #'void *'>
 	| intHolder value oop |
 	
 	oop := objectMemory fetchPointer: index ofObject: argumentArrayOop.
@@ -1238,7 +1210,6 @@ StackInterpreterPrimitives >> primitiveFFIAllocate [
 	<returnTypeC: #void>
 	<export: true>
 	<inline: false>
-	<var: #addr type: #'void *'>
 
 	byteSize := self stackIntegerValue: 0.
 	self failed ifTrue: [ ^ self ].
@@ -1265,7 +1236,7 @@ StackInterpreterPrimitives >> primitiveFFIFree [
 
 	(addr = 0
 	 or: [(addr asUnsignedIntegerPtr bitAnd: (self sizeof: #'sqIntptr_t') - 1) ~= 0
-	 or: [objectMemory isInMemory: addr asUnsignedInteger]]) ifTrue:
+	 or: [objectMemory isInMemory: addr]]) ifTrue:
 		[^ self primitiveFail].
 	
 	self free: addr.
@@ -2140,7 +2111,6 @@ StackInterpreterPrimitives >> primitiveLoadSymbolFromModule [
 
 	<export: true>
 	<var: #address type: #'void *'>
-	<var: #moduleHandle type: #'void *'>
 	<var: #symbolString type: #'char *'>
 	
 	self methodArgumentCount = 2 ifFalse:
@@ -2164,7 +2134,7 @@ StackInterpreterPrimitives >> primitiveLoadSymbolFromModule [
 	symbolStringSize := objectMemory byteSizeOf: symbol.
 
 	address := self
-					ioLoadSymbol: symbolString asUnsignedInteger
+					ioLoadSymbol: symbolString
 					OfLength: symbolStringSize
 					FromModule: moduleHandle.
 	
@@ -4062,9 +4032,7 @@ StackInterpreterPrimitives >> readAddress: anOop [
 	(objectMemory is: anOop KindOfClass: objectMemory classExternalAddress)
 		ifFalse: [ self primitiveFail. ^ nil ].
 
-	^ self
-		  cCoerceSimple: (objectMemory fetchPointer: 0 ofObject: anOop)
-		  to: #'void *'
+	^ objectMemory fetchPointer: 0 ofObject: anOop.
 ]
 
 { #category : 'ffi - helpers' }
@@ -4079,11 +4047,7 @@ StackInterpreterPrimitives >> worker_dispatch_callout: worker _: task [
 StackInterpreterPrimitives >> worker_task_new: externalFunction _: cif _: parameters _: returnHolder _: semaphoreIndex [
 	<doNotGenerate>
 	
-	<returnTypeC: #'WorkerTask *'>
-	<var: #externalFunction type: #'void *'>
-	<var: #cif type: #'ffi_cif *'>
-	<var: #parameters type: #'void **'>
-	<var: #returnHolder type: #'void *'>
+	<returnTypeC: #sqInt>
 	
 	^ LibFFIWorkerTask new
 			anExternalFunction: externalFunction;

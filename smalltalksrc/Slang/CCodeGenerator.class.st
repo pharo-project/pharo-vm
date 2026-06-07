@@ -1426,9 +1426,8 @@ CCodeGenerator >> fileHeaderVersionStampForSourceClass: sourceClass [
 			[s nextPutAll: 'static char __buildInfo[] = "'.
 			 s nextPutAll: (sourceDescription copyReplaceAll: '\' withCRs with: '\n\', '\' withCRs).
 			 s nextPutAll: ' " __DATE__ ;'; cr.
-			exportBuildInfo
-				ifNotNil: [s nextPutAll: exportBuildInfo; cr]
-				ifNil: [s nextPutAll: 'static void suppress_warning_buildInfo(void) { (void)__buildInfo; }'; cr].
+			exportBuildInfo ifNotNil:
+				[s nextPutAll: exportBuildInfo; cr].
 			s cr]]
 ]
 
