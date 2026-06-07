@@ -241,7 +241,7 @@ StackInterpreterPrimitives >> doPrimitiveWorkerCallout [
 
 	self pop: 4 thenPush: (objectMemory newExternalAddressWithValue: (self
 		 cCode: [ self cCoerce: task to: 'void*' ]
-		 inSmalltalk: [ self cCoerce: task asInteger to: 'void*' ]))
+		 inSmalltalk: [ task asInteger ]))
 ]
 
 { #category : 'ffi' }
