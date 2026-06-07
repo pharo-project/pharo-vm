@@ -1,7 +1,7 @@
 #include "pharovm/pharo.h"
 #include <windows.h>
 #include <shellapi.h>
-#include <CommCtrl.h>
+#include <commctrl.h>
 #include "pharovm/win/resources.h"
 
 HWND debugWindowHWND;
