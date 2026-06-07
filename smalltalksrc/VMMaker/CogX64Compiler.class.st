@@ -4817,7 +4817,11 @@ CogX64Compiler >> unalignedLong32At: byteAddress [
 			  + ((objectMemory byteAt: byteAddress + 2) << 16)
 			  + ((objectMemory byteAt: byteAddress + 1) << 8)
 			  + (objectMemory byteAt: byteAddress).
-			^ val ]
+			^ val ].
+	"Both branches return above; this trailing ^0 stops Slang appending the
+	 default `return self` (an AbstractInstruction*), which breaks the int return
+	 type under -Werror=int-conversion when this method is not inlined (x64)."
+	^ 0
 ]
 
 { #category : 'memory access' }

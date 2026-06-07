@@ -1760,7 +1760,11 @@ CogAbstractInstruction >> unalignedLongAt: byteAddress [
 					byteAddress.
 					(self sizeof: readValue) }.
 			^ readValue ]
-		inSmalltalk: [ ^ objectMemory unalignedLongAt: byteAddress ]
+		inSmalltalk: [ ^ objectMemory unalignedLongAt: byteAddress ].
+	"Both branches return above; this trailing ^0 stops Slang appending the
+	 default `return self` (an AbstractInstruction*), which breaks the sqInt
+	 return type under -Werror=int-conversion when not inlined (x64)."
+	^ 0
 ]
 
 { #category : 'memory access' }
