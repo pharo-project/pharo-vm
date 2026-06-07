@@ -3600,7 +3600,7 @@ CoInterpreter >> maybeReturnToMachineCodeFrame [
 		instructionPointer asUnsignedInteger ~= cogit ceReturnToInterpreterPC ifTrue: [
 			"localIP in the cog method zone indicates a return to machine code."
 			^self returnToMachineCodeFrame].
-		 instructionPointer := self iframeSavedIP: framePointer ]
+		 instructionPointer := self pointerForOop: (self iframeSavedIP: framePointer) ]
 ]
 
 { #category : 'stack bytecodes' }

@@ -526,10 +526,10 @@ If ffi is put as a separate header, slang will sort the header and put it outsid
 	"These are all pointers; char * because Slang has no support for C pointer arithmetic."
 	self
 		declareC:
-		#( stackPointer framePointer stackLimit breakSelector )
+		#( instructionPointer stackPointer framePointer stackLimit
+		   breakSelector )
 		as: #'char *'
 		in: aCCodeGenerator.
-	self declareC: #( instructionPointer ) as: #usqInt in: aCCodeGenerator.
 	aCCodeGenerator
 		var: #breakSelectorLength
 		declareC: 'sqInt breakSelectorLength = MinSmallInteger'.
@@ -2271,7 +2271,7 @@ StackInterpreter >> baseFrameReturn [
 
 	stackPointer := theSP.
 	framePointer := theFP.
-	instructionPointer := self stackTop.
+	instructionPointer := self pointerForOop: self stackTop.
 	self maybeReturnToMachineCodeFrame.
 
 	self assert: (self
@@ -4475,7 +4475,7 @@ StackInterpreter >> commonReturn [
 
 	framePointer = frameToReturnTo
 		ifTrue: [ "pop the saved IP, push the return value and continue."
-			instructionPointer := self stackTop ]
+			instructionPointer := self pointerForOop: self stackTop ]
 		ifFalse: [
 			[
 			callerFP := framePointer.
@@ -6597,9 +6597,9 @@ StackInterpreter >> frameCallerSP: theFP [
 { #category : 'frame access' }
 StackInterpreter >> frameCallerSavedIP: theFP [
 	<inline: true>
-	<returnTypeC: #usqInt>
+	<returnTypeC: #'char *'>
 	<var: #theFP type: #'char *'>
-	^stackPages unsignedLongAt: theFP + FoxCallerSavedIP "a.k.a. FoxCallerSavedIP"
+	^self pointerForOop: (stackPages unsignedLongAt: theFP + FoxCallerSavedIP) "a.k.a. FoxCallerSavedIP"
 ]
 
 { #category : 'frame access' }
@@ -13847,9 +13847,10 @@ StackInterpreter >> setupFrameForNewMethodInterpreted [
 		withReceiver: rcvr.
 
 	"-1 to account for pre-increment in fetchNextBytecode"
-	instructionPointer := (self
-		                       initialIPForHeader: methodHeader
-		                       method: newMethod) - 1.
+	instructionPointer := self pointerForOop:
+		                      (self
+			                       initialIPForHeader: methodHeader
+			                       method: newMethod) - 1.
 
 	"Initialize temps to nil"
 	numArgs + 1 to: numTemps do: [ :i |
