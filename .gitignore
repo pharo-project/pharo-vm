@@ -374,6 +374,7 @@ healthchecksdb
 
 # Local qemu-bootstrap generated VM sources (out-of-tree generation dir)
 /genroot
+/genroot-*
 
 # Native/cross build trees for the 5-target build effort
 /build-native-*
