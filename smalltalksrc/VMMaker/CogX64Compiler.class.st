@@ -4803,6 +4803,7 @@ CogX64Compiler >> unalignedLong32At: byteAddress [
 
 	<var: 'readValue' type: 'int'>
 	<returnTypeC: 'int'>
+	| readValue |
 	self
 		cCode: [
 			self
