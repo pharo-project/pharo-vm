@@ -1,6 +1,10 @@
 option(READ_ONLY_CODE_ZONE "Makes Cogit's code zone never writeable and executable at the same time" OFF)
 
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wl,-rpath=.")
+# -rpath is a link-time flag; keep it out of CMAKE_C_FLAGS so it isn't passed to
+# every compile step (which makes clang emit -Wunused-command-line-argument).
+set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -Wl,-rpath=.")
+set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -Wl,-rpath=.")
+set(CMAKE_MODULE_LINKER_FLAGS "${CMAKE_MODULE_LINKER_FLAGS} -Wl,-rpath=.")
 set(PHARO_BIN_LOCATION "default" CACHE STRING "The default location of the PHARO bin, used by the launch.sh.in")
 
 if(${PHARO_BIN_LOCATION} STREQUAL "default")
