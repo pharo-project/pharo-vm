@@ -4817,7 +4817,10 @@ CogX64Compiler >> unalignedLong32At: byteAddress [
 			  + ((objectMemory byteAt: byteAddress + 2) << 16)
 			  + ((objectMemory byteAt: byteAddress + 1) << 8)
 			  + (objectMemory byteAt: byteAddress).
-			^ val ]
+			^ val ].
+	"Both branches return; trailing ^0 stops Slang appending `return self`
+	 (an AbstractInstruction*) after the int return type."
+	^ 0
 ]
 
 { #category : 'memory access' }

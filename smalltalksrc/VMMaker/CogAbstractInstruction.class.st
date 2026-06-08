@@ -1757,10 +1757,14 @@ CogAbstractInstruction >> unalignedLongAt: byteAddress [
 			| readValue |
 			self cCall: 'memcpy' withArguments: {
 					(self addressOf: readValue).
-					byteAddress.
+					(self cCoerceSimple: byteAddress to: #'void *').
 					(self sizeof: readValue) }.
 			^ readValue ]
-		inSmalltalk: [ ^ objectMemory unalignedLongAt: byteAddress ]
+		inSmalltalk: [ ^ objectMemory unalignedLongAt: byteAddress ].
+	"Both branches return; trailing ^0 stops Slang appending `return self`
+	 (an AbstractInstruction*), which breaks the scalar return type under
+	 -Werror=int-conversion. Unreachable in C and in the simulator."
+	^ 0
 ]
 
 { #category : 'memory access' }
