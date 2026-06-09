@@ -42,6 +42,19 @@
 #define INCOMING_EVENTS_SIZE	50
 
 /*
+ * EVFILT_EXCEPT (out-of-band / exceptional-condition readiness) is a macOS
+ * kqueue extension. FreeBSD's kqueue has no equivalent filter; there OOB data
+ * is surfaced through EVFILT_READ. When the filter is unavailable we compile
+ * the exception path out so this same kqueue implementation builds on every
+ * kqueue-based platform (macOS and FreeBSD).
+ */
+#ifdef EVFILT_EXCEPT
+# define AIO_HAS_EVFILT_EXCEPT 1
+#else
+# define AIO_HAS_EVFILT_EXCEPT 0
+#endif
+
+/*
  * This is the struct that I am keeping for the registered FD
  */
 typedef struct _AioOSXDescriptor {
@@ -177,7 +190,11 @@ aio_handle_events(struct kevent* changes, int numberOfChanges, long microSeconds
 				//If not is a regular registered FD
 				AioOSXDescriptor *descriptor = (AioOSXDescriptor*)incomingEvents[index].udata;
 				
+#if AIO_HAS_EVFILT_EXCEPT
 				logTrace("Event %d %hd %hd %hd %hd", incomingEvents[index].ident, incomingEvents[index].filter, EVFILT_EXCEPT, EVFILT_READ, EVFILT_WRITE );
+#else
+				logTrace("Event %d %hd %hd %hd", incomingEvents[index].ident, incomingEvents[index].filter, EVFILT_READ, EVFILT_WRITE );
+#endif
 				
 				// Check if we have an exception
 				/*
@@ -186,6 +203,7 @@ aio_handle_events(struct kevent* changes, int numberOfChanges, long microSeconds
 				*/
 				
 				
+#if AIO_HAS_EVFILT_EXCEPT
 				if(incomingEvents[index].filter == EVFILT_EXCEPT 
 					&& ((incomingEvents[index].flags & EV_ERROR) == EV_ERROR)
 					&& ((incomingEvents[index].flags & NOTE_OOB) != NOTE_OOB)){
@@ -197,7 +215,9 @@ aio_handle_events(struct kevent* changes, int numberOfChanges, long microSeconds
 						if(descriptor->writeHandlerFn)
 							descriptor->writeHandlerFn(incomingEvents[index].ident, descriptor->clientData, AIO_W | AIO_X);
 					}
-				}else{
+				}else
+#endif
+				{
 					if(incomingEvents[index].filter == EVFILT_READ){
 						if(descriptor->readHandlerFn)
 							descriptor->readHandlerFn(incomingEvents[index].ident, descriptor->clientData, AIO_R);
@@ -335,11 +355,13 @@ aioSuspend(sqInt fd, int mask){
 		return;
 	}
 
+#if AIO_HAS_EVFILT_EXCEPT
 	if((mask & AIO_X) == AIO_X){
 		EV_SET(&newEvents[nextIndex], fd, EVFILT_EXCEPT, EV_DELETE, 0, 0, descriptor);
 		nextIndex++;
 		cant++;
 	}
+#endif
 
 	if((mask & AIO_R) == AIO_R){
 		descriptor->readHandlerFn = NULL;
@@ -396,17 +418,23 @@ aioHandle(sqInt fd, aioHandler handlerFn, int mask){
 
 	int hasRead = (mask & AIO_R) == AIO_R;
 	int hasWrite = (mask & AIO_W) == AIO_W;
-	int hasExceptions = (mask & AIO_X) == AIO_X;
+	int nextIndex = 0;
 
-	EV_SET(&newEvents[0], fd, EVFILT_EXCEPT, hasExceptions?(EV_ADD | EV_ONESHOT):EV_DELETE, 0, 0, descriptor);
+#if AIO_HAS_EVFILT_EXCEPT
+	int hasExceptions = (mask & AIO_X) == AIO_X;
+	EV_SET(&newEvents[nextIndex], fd, EVFILT_EXCEPT, hasExceptions?(EV_ADD | EV_ONESHOT):EV_DELETE, 0, 0, descriptor);
+	nextIndex++;
+#endif
 
 	descriptor->readHandlerFn = hasRead ? handlerFn : NULL;
-	EV_SET(&newEvents[1], fd, EVFILT_READ, hasRead?(EV_ADD | EV_ONESHOT):EV_DELETE, 0, 0, descriptor);
+	EV_SET(&newEvents[nextIndex], fd, EVFILT_READ, hasRead?(EV_ADD | EV_ONESHOT):EV_DELETE, 0, 0, descriptor);
+	nextIndex++;
 
 	descriptor->writeHandlerFn = hasWrite ? handlerFn : NULL;
-	EV_SET(&newEvents[2], fd, EVFILT_WRITE, hasWrite?(EV_ADD | EV_ONESHOT):EV_DELETE, 0, 0, descriptor);
+	EV_SET(&newEvents[nextIndex], fd, EVFILT_WRITE, hasWrite?(EV_ADD | EV_ONESHOT):EV_DELETE, 0, 0, descriptor);
+	nextIndex++;
 
-	aio_handle_events(newEvents, 3, 0);
+	aio_handle_events(newEvents, nextIndex, 0);
 }
 
 AioOSXDescriptor* AioOSXDescriptor_find(sqInt fd){

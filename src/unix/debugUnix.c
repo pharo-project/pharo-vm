@@ -495,6 +495,9 @@ void reportStackState(const char *msg, char *date, int printAll, ucontext_t *uap
 # elif defined(__aarch64__) && __APPLE__
 			void *fp = (void *)(uap ? uap->uc_mcontext->__ss.__fp: 0); 
 			void *sp = (void *)(uap ? uap->uc_mcontext->__ss.__sp: 0);
+# elif defined(__aarch64__) && __FreeBSD__
+			void *fp = (void *)(uap ? uap->uc_mcontext.mc_gpregs.gp_x[29]: 0); // x29 is the FramePointer
+			void *sp = (void *)(uap ? uap->uc_mcontext.mc_gpregs.gp_sp: 0);
 # elif defined(__aarch64__)
 			void *fp = (void *)(uap ? uap->uc_mcontext.regs[29]: 0); // This is the Register that we are using for the FramePointer
 			void *sp = (void *)(uap ? uap->uc_mcontext.sp: 0);
