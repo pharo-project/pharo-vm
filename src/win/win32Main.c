@@ -36,7 +36,7 @@ WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdS
 	totalSize += sizeof(char*) * numberOfArgs;
 	argsInUtf8 = malloc(totalSize);
 	
-	currentString = &argsInUtf8[numberOfArgs];
+	currentString = (char *)&argsInUtf8[numberOfArgs];
 	
 	for( i=0; i<numberOfArgs; i++){
 		argsInUtf8[i] = currentString;
