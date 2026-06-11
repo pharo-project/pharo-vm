@@ -101,6 +101,7 @@ VMMemoryMap >> allocateHeap [
 	self allocateCodeZone.
 	self allocateNewObjectsSpace.
 	self allocateOldObjectsSpace.
+	self calculateMaskToUse.
 	self allocatePermObjectsSpace.
 ]
 
@@ -148,10 +149,11 @@ VMMemoryMap >> allocateOldObjectsSpace [
 
 	self oldSpaceStart ifNil: [ self insufficientMemoryAvailableError ].
 
-	self oldSpaceStart = memoryMapConfiguration oldSpaceInitialAddress 
-		ifFalse: [ 
-			self logError: 'Could not allocate oldSpace in the expected place (%p), got %p' _: self oldSpaceStart _: memoryMapConfiguration oldSpaceInitialAddress.
-			self error: 'Error allocating' ].
+	"The platform allocator may return a different address than requested,
+	 e.g. on kernels whose user virtual address space cannot reach the
+	 configured base (aarch64 VA39). calculateMaskToUse recomputes the space
+	 masks from the address actually obtained, so any successful allocation
+	 is usable."
 
 	self setOldSpaceEnd: self oldSpaceStart + sizeToAllocate
 ]
@@ -247,36 +249,93 @@ VMMemoryMap >> allocationReserve: anInteger [
 VMMemoryMap >> calculateMaskToUse [
 
 	<inline: false>
-	<var: #newSpaceFirst type: #uint64_t> 
-	<var: #newSpaceLast type: #uint64_t> 
-	<var: #oldSpaceFirst type: #uint64_t> 
-	<var: #oldSpaceLast type: #uint64_t> 
-	<var: #newSpaceMaskAttempt type: #uint64_t> 
-	<var: #oldSpaceMaskAttempt type: #uint64_t> 
-	<var: #allOnes type: #uint64_t> 
-	
-	| newSpaceFirst newSpaceLast oldSpaceFirst oldSpaceLast newSpaceMaskAttempt oldSpaceMaskAttempt allOnes |
-	
-	memoryMapConfiguration confWordSize = 8 
+	<var: #newSpaceFirst type: #uint64_t>
+	<var: #newSpaceLast type: #uint64_t>
+	<var: #oldSpaceFirst type: #uint64_t>
+	<var: #oldSpaceLast type: #uint64_t>
+	<var: #oldSpaceLimit type: #uint64_t>
+	<var: #newSpaceMaskAttempt type: #uint64_t>
+	<var: #oldSpaceMaskAttempt type: #uint64_t>
+	<var: #allOnes type: #uint64_t>
+
+	| newSpaceFirst newSpaceLast oldSpaceFirst oldSpaceLast oldSpaceLimit newSpaceMaskAttempt oldSpaceMaskAttempt allOnes |
+
+	memoryMapConfiguration confWordSize = 8
 		ifTrue: [ allOnes := 16rFFFFFFFFFFFFFFFF ]
 		ifFalse: [ allOnes := 16rFFFFFFFF ].
 
 	newSpaceFirst := memoryMapConfiguration newSpaceInitialAddress.
-	newSpaceLast := memoryMapConfiguration oldSpaceInitialAddress - 1.
-	newSpaceMaskAttempt := (newSpaceLast - newSpaceFirst) bitXor: allOnes.
+	"Use the configured base until old space has actually been allocated.
+	 oldSpaceStart is 0 before allocation, e.g. when this is called from
+	 initializeMemoryMap. After allocation, use the address actually obtained:
+	 on kernels whose user virtual address space cannot reach the configured
+	 base (aarch64 VA39), the platform allocator falls back to a reachable
+	 address, and the masks must be derived from it."
+	oldSpaceFirst := oldSpaceStart = 0
+		ifTrue: [ memoryMapConfiguration oldSpaceInitialAddress ]
+		ifFalse: [ oldSpaceStart ].
 
-	oldSpaceFirst := memoryMapConfiguration oldSpaceInitialAddress.
-	oldSpaceLast := memoryMapConfiguration permSpaceInitialAddress - 1.
-	oldSpaceMaskAttempt := (oldSpaceLast - oldSpaceFirst) bitXor: allOnes.
+	newSpaceLast := (newSpaceEnd notNil and: [ newSpaceEnd > newSpaceFirst ])
+		ifTrue: [ newSpaceEnd - 1 ]
+		ifFalse: [ oldSpaceFirst - 1 ].
+
+	oldSpaceLimit := oldSpaceFirst = memoryMapConfiguration oldSpaceInitialAddress
+		ifTrue: [ memoryMapConfiguration permSpaceInitialAddress ]
+		ifFalse: [ self nextPowerOfTwoAfter: oldSpaceFirst ].
+	oldSpaceLast := oldSpaceLimit - 1.
+	newSpaceMaskAttempt := self maskForObjectsFrom: newSpaceFirst to: newSpaceLast allOnes: allOnes.
+	oldSpaceMaskAttempt := self maskForObjectsFrom: oldSpaceFirst to: oldSpaceLast allOnes: allOnes.
 
 	self spaceMaskToUse: (newSpaceMaskAttempt bitAnd: oldSpaceMaskAttempt).
-	self spaceMaskToUse = 0 
+	self spaceMaskToUse = 0
 		ifTrue: [ objectMemory error: 'Could not calculate mask to use to identify new/old/perm objects' ].
-	
+
 
 	self newSpaceMask: (memoryMapConfiguration newSpaceInitialAddress bitAnd: self spaceMaskToUse).
-	self oldSpaceMask: (memoryMapConfiguration oldSpaceInitialAddress bitAnd: self spaceMaskToUse).	
-	self permSpaceMask: (memoryMapConfiguration permSpaceInitialAddress bitAnd: self spaceMaskToUse).		
+	self oldSpaceMask: (oldSpaceFirst bitAnd: self spaceMaskToUse).
+	self permSpaceMask: (memoryMapConfiguration permSpaceInitialAddress bitAnd: self spaceMaskToUse).
+]
+
+{ #category : 'initial addresses' }
+VMMemoryMap >> maskForObjectsFrom: firstAddress to: lastAddress allOnes: allOnes [
+
+	<inline: false>
+	<var: #firstAddress type: #uint64_t>
+	<var: #lastAddress type: #uint64_t>
+	<var: #allOnes type: #uint64_t>
+	<var: #variableBits type: #uint64_t>
+	<var: #variableMask type: #uint64_t>
+
+	| variableBits variableMask |
+
+	"Bound the differing bits to the word width (allOnes). This both matches
+	 the uint64_t semantics of the generated C and, crucially, keeps the
+	 right-shift loop finite in the Smalltalk simulator: without the mask a
+	 degenerate range (e.g. lastAddress = firstAddress - 1 during early
+	 initialization) yields a negative bitXor whose arithmetic right shift
+	 sign-extends forever, hanging the VMMaker simulator."
+	variableBits := (firstAddress bitXor: lastAddress) bitAnd: allOnes.
+	variableMask := 0.
+	[ variableBits ~= 0 ] whileTrue: [
+		variableMask := (variableMask bitShift: 1) + 1.
+		variableBits := variableBits bitShift: -1 ].
+
+	^ variableMask bitXor: allOnes
+]
+
+{ #category : 'initial addresses' }
+VMMemoryMap >> nextPowerOfTwoAfter: anAddress [
+
+	<inline: false>
+	<var: #anAddress type: #uint64_t>
+	<var: #limit type: #uint64_t>
+
+	| limit |
+
+	limit := 1.
+	[ limit <= anAddress ] whileTrue: [
+		limit := limit bitShift: 1 ].
+	^ limit
 ]
 
 { #category : 'accessing' }
@@ -475,6 +534,10 @@ VMMemoryMap >> initializeMemoryMap [
 	initialCodeZoneSize := 0.
 	initialPermSpaceSize := 0.
 	minPermSpaceSize := 0.
+	oldSpaceStart := 0.
+	oldSpaceEnd := 0.
+	newSpaceStart := 0.
+	newSpaceEnd := 0.
 	permSpaceStart := 0.
 	permSpaceEnd := 0.
 	permSpaceMask := -1.
