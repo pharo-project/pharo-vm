@@ -107,6 +107,7 @@ static const char *moduleName =
 EXPORT(const char*)
 getModuleName(void)
 {
+	(void)__buildInfo;
 	return moduleName;
 }
 

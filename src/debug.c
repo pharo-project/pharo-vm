@@ -144,9 +144,13 @@ char *getVersionInfo()
 # define INTERP_BUILD __interpBuildInfo
 # if COGVM
   extern char *__cogitBuildInfo;
+#  define COGIT_BUILD __cogitBuildInfo
+# else
+#  define COGIT_BUILD ""
 # endif
 #else
 # define INTERP_BUILD interpreterVersion
+# define COGIT_BUILD ""
 #endif
   extern char *revisionAsString();
 
@@ -157,7 +161,7 @@ char *getVersionInfo()
 
 #if defined(NDEBUG)
 # define BuildVariant "Production"
-#elif DEBUGVM
+#elif defined(DEBUGVM)
 # define BuildVariant "Debug"
 # else
 # define BuildVariant "Assert"
@@ -169,7 +173,7 @@ char *getVersionInfo()
 # define HBID
 #endif
 
-  snprintf(info, BUFFER_SIZE, VM_BUILD_STRING " " COMPILER_VERSION " [" BuildVariant HBID " VM]\nBuilt from: %s\n With:%s\n Revision: " VM_BUILD_SOURCE_STRING, INTERP_BUILD, GetAttributeString(1008));
+  snprintf(info, BUFFER_SIZE, VM_BUILD_STRING " " COMPILER_VERSION " [" BuildVariant HBID " VM]\nBuilt from: %s %s\n With:%s\n Revision: " VM_BUILD_SOURCE_STRING, INTERP_BUILD, COGIT_BUILD, GetAttributeString(1008));
   return info;
 }
 
