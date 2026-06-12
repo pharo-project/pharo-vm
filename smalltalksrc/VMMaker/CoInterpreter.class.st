@@ -491,7 +491,7 @@ CoInterpreter >> activateCoggedNewMethod: inInterpreter [
 		 self push: rcvr.
 		 self callEnilopmart: #ceEnterCogCodePopReceiverReg.
 		 self unreachable].
-	instructionPointer := cogMethod asInteger + cogMethod stackCheckOffset.
+	instructionPointer := self pointerForOop: cogMethod asInteger + cogMethod stackCheckOffset.
 	switched := self handleStackOverflowOrEventAllowContextSwitch: (self canContextSwitchIfActivating: newMethod header: methodHeader).
 	self returnToExecutive: inInterpreter postContextSwitch: switched
 ]
@@ -552,7 +552,7 @@ CoInterpreter >> activateNewFullClosure: blockClosure method: theMethod numArgs:
 		                  instructionPointer) ifFalse: [
 		instructionPointer asUnsignedIntegerPtr
 		= cogit ceReturnToInterpreterPC ifTrue: [
-			instructionPointer := self iframeSavedIP: framePointer ] ].
+			instructionPointer := self pointerForOop: (self iframeSavedIP: framePointer) ] ].
 
 	^ super
 		  activateNewFullClosure: blockClosure
@@ -575,7 +575,7 @@ CoInterpreter >> activateNewMethod [
 		ifTrue:
 			[inInterpreter ifTrue:
 				[self iframeSavedIP: framePointer put: instructionPointer asInteger.
-				 instructionPointer := cogit ceReturnToInterpreterPC].
+				 instructionPointer := self pointerForOop: cogit ceReturnToInterpreterPC].
 			^ self activateCoggedNewMethod: inInterpreter]
 		ifFalse: [ self activateNewMethodInterpreted ].
 
@@ -739,7 +739,7 @@ CoInterpreter >> assertValidStackedInstructionPointersIn: aStackPage line: ln [
 	 which is indicated by a 0 instructionPointer."
 	(stackPage = aStackPage and: [ instructionPointer ~= 0 ])
 		ifTrue: [
-			theIP := instructionPointer.
+			theIP := instructionPointer asUnsignedInteger.
 			theFP := framePointer ]
 		ifFalse: [
 			theIP := (stackPages unsignedLongAt: aStackPage headSP)
@@ -1034,10 +1034,10 @@ CoInterpreter >> ceBaseFrameReturn: returnValue [
 		self push: returnValue.
 		self callEnilopmart: #ceEnterCogCodePopReceiverReg.
 		self unreachable ].
-	instructionPointer := self stackTop.
+	instructionPointer := self pointerForOop: self stackTop.
 	instructionPointer asUnsignedIntegerPtr
 	= cogit ceReturnToInterpreterPC ifTrue: [
-		instructionPointer := self iframeSavedIP: framePointer ].
+		instructionPointer := self pointerForOop: (self iframeSavedIP: framePointer) ].
 	self setMethod: (self iframeMethod: framePointer).
 	self stackTopPut: returnValue. "a.k.a. pop saved ip then push result"
 	self assert: (self
@@ -1052,7 +1052,7 @@ CoInterpreter >> ceCannotAssignTo: immutableObject withIndex: index valueToAssig
 	"index is unboxed and 0-based. The call-back expects 1-based value (to perform the operation with instVarAt:put:"
 	<api>
 	<option: #IMMUTABILITY>
-	instructionPointer := self popStack.
+	instructionPointer := self pointerForOop: self popStack.
 	self push: immutableObject.
 	self push: valueToAssign.
 	self push: (objectMemory integerObjectOf: index + 1).
@@ -1124,7 +1124,7 @@ CoInterpreter >> ceContext: maybeContext instVar: slotIndex [
 	| result |
 	(objectMemory isContextNonImm: maybeContext)
 		ifTrue:
-			[instructionPointer := self popStack.
+			[instructionPointer := self pointerForOop: self popStack.
 			 result := self instVar: slotIndex ofContext: maybeContext.
 			 self push: instructionPointer]
 		ifFalse: [result := objectMemory fetchPointer: slotIndex ofObject: maybeContext].
@@ -1140,7 +1140,7 @@ CoInterpreter >> ceContext: maybeMarriedContext instVar: slotIndex value: anOop 
 	((objectMemory isContextNonImm: maybeMarriedContext) 
 	 and: [self isMarriedOrWidowedContext: maybeMarriedContext])
 		ifTrue:
-			[instructionPointer := self popStack.
+			[instructionPointer := self pointerForOop: self popStack.
 			 self instVar: slotIndex ofContext: maybeMarriedContext put: anOop.
 			 self push: instructionPointer]
 		ifFalse:
@@ -1227,7 +1227,7 @@ CoInterpreter >> ceInterpretMethodFromPIC: aMethodObj receiver: rcvr [
 	primitiveIndex := self primitiveIndexOf: aMethodObj.
 	primitiveFunctionPointer := self functionPointerFor: primitiveIndex.
 	argumentCount := pic cmNumArgs.
-	instructionPointer := self popStack.
+	instructionPointer := self pointerForOop: self popStack.
 	self interpretMethodFromMachineCode.
 	self unreachable
 ]
@@ -1246,7 +1246,7 @@ CoInterpreter >> ceMNUFromPICMNUMethod: aMethodObj receiver: rcvr [
 	argumentCount := cPIC cmNumArgs.
 	messageSelector := cPIC selector.
 	aMethodObj ~= 0 ifTrue:
-		[instructionPointer := self popStack.
+		[instructionPointer := self pointerForOop: self popStack.
 		self createActualMessageTo: (objectMemory fetchClassOf: rcvr).
 		(self maybeMethodHasCogMethod: aMethodObj) ifTrue:
 			[self push: instructionPointer.
@@ -1384,12 +1384,12 @@ CoInterpreter >> ceNonLocalReturn: returnValue [
 	 peel back any frames on the page until we get to the correct frame."
 	framePointer = frameToReturnTo
 		ifTrue:
-			[instructionPointer := self popStack]
+			[instructionPointer := self pointerForOop: self popStack]
 		ifFalse:
 			[[callerFP := framePointer.
 			  framePointer := self frameCallerFP: framePointer.
 			  framePointer ~~ frameToReturnTo] whileTrue.
-			 instructionPointer := (self frameCallerSavedIP: callerFP) asUnsignedInteger.
+			 instructionPointer := self pointerForOop: (self frameCallerSavedIP: callerFP) asUnsignedInteger.
 			 stackPointer := (self frameCallerSP: callerFP)].
 	^self return: returnValue toExecutive: false
 ]
@@ -1422,7 +1422,7 @@ CoInterpreter >> ceReturnToInterpreter: anOop [
 		s: stackPointer
 		imbar: true
 		line: #'__LINE__'.
-	instructionPointer := self iframeSavedIP: framePointer.
+	instructionPointer := self pointerForOop: (self iframeSavedIP: framePointer).
 	self push: anOop.
 	self siglong: reenterInterpreter jmp: ReturnToInterpreter.
 	self unreachable
@@ -1556,7 +1556,7 @@ CoInterpreter >> ceSendAbort: selector to: rcvr numArgs: numArgs [
 			 (errSelIdx := self lookupMethodWithoutMNUProcessingInClass: classObj) ~= 0 ifTrue:
 				[self handleMNU: errSelIdx InMachineCodeTo: rcvr classForMessage: classObj.
 				self unreachable]].
-	instructionPointer := self popStack.
+	instructionPointer := self pointerForOop: self popStack.
 	(self maybeMethodHasCogMethod: newMethod) ifTrue:
 		[self executeNewMethod.
 		 self unreachable].
@@ -1571,6 +1571,7 @@ CoInterpreter >> ceSendFromInLineCacheMiss: cogMethodOrPICAddr [
 	 or when a send has failed due to a forwarded receiver."
 
 	<api>
+	<var: #cogMethodOrPICAddr type: #'CogMethod *'>
 	| numArgs rcvr classTag classObj errSelIdx cogMethodOrPIC |
 	cogMethodOrPIC := self cCoerceSimple: cogMethodOrPICAddr to: #'CogMethod *'.
 	numArgs := cogMethodOrPIC cmNumArgs.
@@ -1584,12 +1585,12 @@ CoInterpreter >> ceSendFromInLineCacheMiss: cogMethodOrPICAddr [
 		cogit
 			setSelectorOf: cogMethodOrPIC
 			to: (self handleForwardedSelectorFaultFor: cogMethodOrPIC selector).
-		^ self ceSendFromInLineCacheMiss: cogMethodOrPIC ].
+		^ self ceSendFromInLineCacheMiss: (self cCoerceSimple: cogMethodOrPIC asInteger to: #'CogMethod *') ].
 	(objectMemory isForwardedClassTag: classTag) ifTrue: [
 		self
 			handleForwardedSendFaultForReceiver: rcvr
 			rcvrStackOffsetFromTop: numArgs + 1. "skip return pc"
-		^ self ceSendFromInLineCacheMiss: cogMethodOrPIC ].
+		^ self ceSendFromInLineCacheMiss: (self cCoerceSimple: cogMethodOrPIC asInteger to: #'CogMethod *') ].
 
 	(self
 		 lookupInMethodCacheSel: cogMethodOrPIC selector
@@ -1609,7 +1610,7 @@ CoInterpreter >> ceSendFromInLineCacheMiss: cogMethodOrPICAddr [
 					classForMessage: classObj.
 				self unreachable ] ].
 
-	instructionPointer := self popStack.
+	instructionPointer := self pointerForOop: self popStack.
 	(self maybeMethodHasCogMethod: newMethod) ifTrue: [
 		self executeNewMethod.
 		self unreachable ].
@@ -1620,7 +1621,7 @@ CoInterpreter >> ceSendFromInLineCacheMiss: cogMethodOrPICAddr [
 { #category : 'trampolines' }
 CoInterpreter >> ceSendMustBeBoolean: anObject [
 	<api>
-	instructionPointer := self popStack.
+	instructionPointer := self pointerForOop: self popStack.
 	self push: anObject.
 	self push: instructionPointer.
 	^self
@@ -1652,11 +1653,11 @@ CoInterpreter >> ceSendMustBeBooleanTo: aNonBooleanObject interpretingAtDelta: j
 	startBcpc := self startPCOfMethod: methodObj.
 
 	"Map the machine code instructionPointer to the interpreter instructionPointer of the branch."
-	instructionPointer := self popStack.
-	instructionPointer := cogit
-		                      bytecodePCFor: instructionPointer
+	instructionPointer := self pointerForOop: self popStack.
+	instructionPointer := self pointerForOop: (cogit
+		                      bytecodePCFor: instructionPointer asInteger
 		                      startBcpc: startBcpc
-		                      in: cogMethod.
+		                      in: cogMethod).
 	instructionPointer := methodObj + objectMemory baseHeaderSize
 	                      + instructionPointer - jumpSize - 1. "pre-decrement"
 
@@ -1716,8 +1717,8 @@ CoInterpreter >> ceStackOverflow: contextSwitchIfNotNil [
 	cesoRetAddr := self popStack. "discard the ceStackOverflow call return address."
 	cogMethod := self mframeCogMethod: framePointer.
 	self assert: cesoRetAddr - cogit abortOffset = cogMethod asInteger.
-	instructionPointer := cogMethod asInteger + cogMethod stackCheckOffset.
-	self assertValidExecutionPointe: instructionPointer r: framePointer s: stackPointer imbar: false line: #'__LINE__'.
+	instructionPointer := self pointerForOop: cogMethod asInteger + cogMethod stackCheckOffset.
+	self assertValidExecutionPointe: instructionPointer asUnsignedInteger r: framePointer s: stackPointer imbar: false line: #'__LINE__'.
 	method := newMethod := messageSelector := objectMemory nilObject.
 	switched := self handleStackOverflowOrEventAllowContextSwitch: contextSwitchIfNotNil ~= 0.
 	self returnToExecutive: false postContextSwitch: switched.
@@ -1947,7 +1948,7 @@ CoInterpreter >> commenceCogCompiledCodeCompaction [
 	cogit compactCogCompiledCode.
 	self nilUncoggableMethods.
 	instructionPointer ~= 0 ifTrue:
-		[instructionPointer := self popStack.
+		[instructionPointer := self pointerForOop: self popStack.
 		 self writeBackHeadStackPointer].
 
 	statCodeCompactionCount := statCodeCompactionCount + 1.
@@ -2318,9 +2319,9 @@ CoInterpreter >> enterSmalltalkExecutiveImplementation [
 	self setMethod: (self iframeMethod: framePointer).
 	instructionPointer asUnsignedIntegerPtr
 	= cogit ceReturnToInterpreterPC ifTrue: [
-		instructionPointer := self iframeSavedIP: framePointer ].
+		instructionPointer := self pointerForOop: (self iframeSavedIP: framePointer) ].
 	self
-		assertValidExecutionPointe: instructionPointer
+		assertValidExecutionPointe: instructionPointer asUnsignedInteger
 		r: framePointer
 		s: stackPointer
 		imbar: true
@@ -2882,7 +2883,7 @@ CoInterpreter >> handleMNU: selectorIndex InMachineCodeTo: rcvr classForMessage:
 	<inline: false>
 	| errSelIdx classForThisMessage |
 	self assert: (objectMemory addressCouldBeOop: rcvr).
-	instructionPointer := self popStack.
+	instructionPointer := self pointerForOop: self popStack.
 	self createActualMessageTo: classForMessage.
 	messageSelector := objectMemory splObj: selectorIndex.
 	(self lookupInMethodCacheSel: messageSelector classTag: (objectMemory classTagForClass: lkupClass))
@@ -2994,7 +2995,7 @@ CoInterpreter >> handleUnlinkedSendFor: maybeForwardedSelector to: receiver isSu
 
 	(self maybeMethodHasCogMethod: newMethod) ifFalse: [ "
 		Method has no cog method, transfer control to the interpreter"
-		instructionPointer := self popStack.
+		instructionPointer := self pointerForOop: self popStack.
 		self interpretMethodFromMachineCode.
 		self unreachable ].
 
@@ -3023,7 +3024,7 @@ CoInterpreter >> handleUnlinkedSendFor: maybeForwardedSelector to: receiver isSu
 					patchToMegamorphicICFor: selector
 					numArgs: numArgs
 					receiver: receiver ] ].
-	instructionPointer := self popStack.
+	instructionPointer := self pointerForOop: self popStack.
 	self executeNewMethod.
 	self unreachable
 ]
@@ -3244,7 +3245,7 @@ CoInterpreter >> interpretMethodFromMachineCode [
 	<inline: false>
 	cogit assertCStackWellAligned.
 	self assert: (self
-			 validInstructionPointer: instructionPointer
+			 validInstructionPointer: (self oopForPointer: instructionPointer)
 			 inFrame: framePointer).
 
 	"Invoke an interpreter primitive (because the method is to be interpreted or has not yet been
@@ -3628,8 +3629,9 @@ CoInterpreter >> maybeTraceStackOverflow [
 { #category : 'cog jit support' }
 CoInterpreter >> mcprimFunctionForPrimitiveIndex: primIndex [
 	<api>
+	<returnTypeC: #'void (*mcprimFunctionForPrimitiveIndex(sqInt primIndex))(void)'>
 	primIndex = PrimNumberHashMultiply ifTrue:
-		[^#mcprimHashMultiply:].
+		[^self cCode: '(void (*)(void))mcprimHashMultiply' inSmalltalk: [#mcprimHashMultiply:]].
 	self error: 'unknown mcprim'.
 	^nil
 ]
@@ -4400,7 +4402,7 @@ CoInterpreter >> printMethodFieldForPrintContext: aContext [
 	(self methodHasCogMethod: meth) ifTrue: [
 		self
 			space;
-			printHexnp: (self cogMethodOf: meth) ]
+			printHexnp: (self oopForPointer: (self cogMethodOf: meth)) ]
 ]
 
 { #category : 'debug printing' }
@@ -4518,6 +4520,9 @@ CoInterpreter >> remapInstructionPointerInFrame: theFP inSavedInstructionPointer
 	If this is an interpreter frame that has called a machine code frame, the saved IP will be a trampoline, so the MC method can return without extra checks.
 	In that case, the current saved IP is a the FoxIFSavedIP of the frame"
 
+	<var: #theFP type: #'char *'>
+	<var: #theIPPtr type: #'char *'>
+	<var: #frameSavedInstructionPointerLocation type: #'char *'>
 	| theIP frameSavedInstructionPointerLocation |
 	frameSavedInstructionPointerLocation := theIPPtr.
 	theIP := stackPages unsignedLongAt: theIPPtr.
@@ -4575,7 +4580,7 @@ CoInterpreter >> return: returnValue toExecutive: inInterpreter [
 	cogit assertCStackWellAligned.
 	(self isMachineCodeFrame: framePointer) ifTrue: [
 		self
-			assertValidExecutionPointe: instructionPointer
+			assertValidExecutionPointe: instructionPointer asUnsignedInteger
 			r: framePointer
 			s: stackPointer
 			imbar: false
@@ -4587,14 +4592,14 @@ CoInterpreter >> return: returnValue toExecutive: inInterpreter [
 	self push: returnValue.
 	self setMethod: (self iframeMethod: framePointer).
 	self
-		assertValidExecutionPointe: instructionPointer
+		assertValidExecutionPointe: instructionPointer asUnsignedInteger
 		r: framePointer
 		s: stackPointer
 		imbar: true
 		line: #__LINE__.
 	instructionPointer asUnsignedIntegerPtr
 	= cogit ceReturnToInterpreterPC ifTrue: [
-		instructionPointer := self iframeSavedIP: framePointer ].
+		instructionPointer := self pointerForOop: (self iframeSavedIP: framePointer) ].
 	inInterpreter ifTrue: [ ^ nil ].
 	self siglong: reenterInterpreter jmp: ReturnToInterpreter.
 	^ self unreachable
@@ -4622,7 +4627,7 @@ CoInterpreter >> returnToExecutive: inInterpreter postContextSwitch: switchedCon
 	cogit assertCStackWellAligned.
 	(self isMachineCodeFrame: framePointer) ifTrue: [
 		self
-			assertValidExecutionPointe: instructionPointer
+			assertValidExecutionPointe: instructionPointer asUnsignedInteger
 			r: framePointer
 			s: stackPointer
 			imbar: false
@@ -4641,7 +4646,7 @@ CoInterpreter >> returnToExecutive: inInterpreter postContextSwitch: switchedCon
 						 < cogit maxCogMethodAddress ]).
 				(instructionPointer asUnsignedIntegerPtr
 				 ~= (cogMethod asInteger + cogMethod stackCheckOffset) and: [
-					 cogit isSendReturnPC: instructionPointer ])
+					 cogit isSendReturnPC: instructionPointer asInteger ])
 					ifTrue: [
 						self assert: (objectMemory addressCouldBeOop: self stackTop).
 						retValue := self popStack ]
@@ -4655,11 +4660,11 @@ CoInterpreter >> returnToExecutive: inInterpreter postContextSwitch: switchedCon
 	fullyInInterpreter := inInterpreter.
 	instructionPointer asUnsignedIntegerPtr
 	= cogit ceReturnToInterpreterPC ifTrue: [
-		instructionPointer := (self iframeSavedIP: framePointer)
+		instructionPointer := self pointerForOop: (self iframeSavedIP: framePointer)
 			                      asUnsignedIntegerPtr.
 		fullyInInterpreter := false ].
 	self
-		assertValidExecutionPointe: instructionPointer
+		assertValidExecutionPointe: instructionPointer asUnsignedInteger
 		r: framePointer
 		s: stackPointer
 		imbar: true
@@ -4677,7 +4682,7 @@ CoInterpreter >> returnToMachineCodeFrame [
 
 	<inline: true>
 	cogit assertCStackWellAligned.
-	self assert: (self isInstructionPointerInInterpreter: instructionPointer) not.
+	self assert: (self isInstructionPointerInInterpreter: instructionPointer asUnsignedInteger) not.
 	self assert: (self isMachineCodeFrame: framePointer).
 	self
 		assertValidExecutionPointe: instructionPointer asUnsignedInteger
@@ -4729,6 +4734,8 @@ CoInterpreter >> saveCStackStateForCallbackContext: vmCallbackContext [
 { #category : 'object memory support' }
 CoInterpreter >> savedInstructioPointerLocation: theFP [
 
+	<returnTypeC: #'char *'>
+	<var: #theFP type: #'char *'>
 	^ ((self isMachineCodeFrame: theFP) or: [
 		   (self iframeSavedIP: theFP) = 0 ])
 		  ifTrue: [ super savedInstructioPointerLocation: theFP ]
@@ -4934,7 +4941,7 @@ CoInterpreter >> tearDownAndRebuildFrameForCannotReturnBaseFrameReturnFrom: cont
 	 the returnValue will be taken from top-of-stack by ceCannotResume."
 	self stackTopPut: returnValue.
 	"Assign it to instructionPointer as externalCannotReturn:from: pushes it."
-	instructionPointer := cogit ceCannotResumePC
+	instructionPointer := self pointerForOop: cogit ceCannotResumePC
 ]
 
 { #category : 'internal interpreter access' }

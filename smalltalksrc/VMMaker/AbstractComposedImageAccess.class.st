@@ -32,6 +32,8 @@ AbstractComposedImageAccess >> createImageDirectory: imageFileName [
 AbstractComposedImageAccess >> existSegment: segmentIndex inImage: imageFileName [
 
 	<var: #buffer declareC: 'char buffer[255]'>
+	<var: #imageFileName type: #'char *'>
+	<var: #fileName type: #'char *'>
 	| buffer fileName |
 
 	fileName := self
@@ -106,6 +108,9 @@ AbstractComposedImageAccess >> headFormat [
 { #category : 'file operations' }
 AbstractComposedImageAccess >> headerFileNameinImage: imageFileName into: buffer bufferSize: bufferSize [
 
+	<var: #imageFileName type: #'char *'>
+	<var: #buffer type: #'char *'>
+	<returnTypeC: #'char *'>
 	| headerFileName |
 	headerFileName := 'header.ston'.
 
@@ -239,6 +244,8 @@ AbstractComposedImageAccess >> segmentMetadataFile: segmentIndex inImage: imageF
 
 	<inline: true>
 	<var: #buffer declareC: 'char buffer[255]'>
+	<var: #imageFileName type: #'char *'>
+	<returnTypeC: #'char *'>
 
 	| buffer |
 		

@@ -81,6 +81,7 @@ StackInterpreterPrimitives >> doPrimitiveSameThreadCallout [
 	<var: #parameters type: #'void **'>
 	<var: #returnHolder type: #'void *'>
 	<var: #externalFunction type: #'void *'>
+	<var: #argHolder type: #'void *'>
 
 	PARAM_EXTERNALFUNCTION := 1.
 	PARAM_ARGUMENTS := 0.
@@ -166,7 +167,8 @@ StackInterpreterPrimitives >> doPrimitiveWorkerCallout [
 	<var: #returnHolder type: #'void *'>
 	<var: #task type: #'WorkerTask *'>
 	<var: #externalFunction type: #'void *'>
-	
+	<var: #argHolder type: #'void *'>
+
 	PARAM_RECEIVER 				:= 3.
 	PARAM_EXTERNALFUNCTION 	:= 2.
 	PARAM_ARGUMENTS 			:= 1.
@@ -291,7 +293,8 @@ StackInterpreterPrimitives >> ffi_call: aCif _: externalFunctionAddress _: retur
 { #category : 'ffi - helpers' }
 StackInterpreterPrimitives >> freeArgumentsArray: arguments count: count [
 
-	0 to: count - 1 do: [ :i |  
+	<var: #aPtr type: #'void *'>
+	0 to: count - 1 do: [ :i |
 		(arguments at: i) ifNotNil: [ :aPtr | 
 			arguments at: i put: nil.
 			self free: aPtr ]].
@@ -377,7 +380,9 @@ StackInterpreterPrimitives >> loadModuleByName: moduleNameOop [
 	moduleNameString := objectMemory firstIndexableField: moduleNameOop.
 	moduleNameStringSize := objectMemory byteSizeOf: moduleNameOop.
 		
-	^ self ioLoadModule: moduleNameString OfLength: moduleNameStringSize
+	^ self
+		cCode: [ self ioLoadModule: (self cCoerce: moduleNameString to: #sqInt) OfLength: moduleNameStringSize ]
+		inSmalltalk: [ self ioLoadModule: moduleNameString OfLength: moduleNameStringSize ]
 ]
 
 { #category : 'ffi - helpers' }
@@ -385,6 +390,7 @@ StackInterpreterPrimitives >> marshallAndPushReturnValueFrom: returnHolder ofTyp
 
 	<option: #FEATURE_FFI>
 	<var: #ffiType type: #'ffi_type *'>
+	<var: #returnHolder type: #'void *'>
 
 	[ ffiType type ]
 		caseOf: {
@@ -421,6 +427,7 @@ StackInterpreterPrimitives >> marshallAndPushReturnValueFrom: returnHolder ofTyp
 StackInterpreterPrimitives >> marshallArgumentFrom: argumentsArrayOop atIndex: i into: argHolder ofType: argType withSize: argTypeSize [
 
 	<option: #FEATURE_FFI>
+	<var: #argHolder type: #'void *'>
 	[ argType ]
 		caseOf:
 			{([ FFI_TYPE_POINTER ]
@@ -1208,6 +1215,7 @@ StackInterpreterPrimitives >> primitiveFFIAllocate [
 	"Primitive. Allocate an object on the external heap."
 	| byteSize addr oop |
 	<returnTypeC: #void>
+	<var: #addr type: #'void *'>
 	<export: true>
 	<inline: false>
 
@@ -1236,7 +1244,7 @@ StackInterpreterPrimitives >> primitiveFFIFree [
 
 	(addr = 0
 	 or: [(addr asUnsignedIntegerPtr bitAnd: (self sizeof: #'sqIntptr_t') - 1) ~= 0
-	 or: [objectMemory isInMemory: addr]]) ifTrue:
+	 or: [objectMemory isInMemory: (self cCoerce: addr to: #sqInt)]]) ifTrue:
 		[^ self primitiveFail].
 	
 	self free: addr.
@@ -2134,9 +2142,14 @@ StackInterpreterPrimitives >> primitiveLoadSymbolFromModule [
 	symbolStringSize := objectMemory byteSizeOf: symbol.
 
 	address := self
+		cCode: [ self
+					ioLoadSymbol: (self cCoerce: symbolString to: #sqInt)
+					OfLength: symbolStringSize
+					FromModule: moduleHandle ]
+		inSmalltalk: [ self
 					ioLoadSymbol: symbolString
 					OfLength: symbolStringSize
-					FromModule: moduleHandle.
+					FromModule: moduleHandle ].
 	
 	address = 0 ifTrue:
 		[^self primitiveFailFor: PrimErrNotFound].
@@ -4032,7 +4045,9 @@ StackInterpreterPrimitives >> readAddress: anOop [
 	(objectMemory is: anOop KindOfClass: objectMemory classExternalAddress)
 		ifFalse: [ self primitiveFail. ^ nil ].
 
-	^ objectMemory fetchPointer: 0 ofObject: anOop.
+	^ self
+		cCode: [ self cCoerce: (objectMemory fetchPointer: 0 ofObject: anOop) to: #'void *' ]
+		inSmalltalk: [ objectMemory fetchPointer: 0 ofObject: anOop ]
 ]
 
 { #category : 'ffi - helpers' }
