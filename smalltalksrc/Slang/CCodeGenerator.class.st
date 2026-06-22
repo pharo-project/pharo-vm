@@ -1223,6 +1223,8 @@ CCodeGenerator >> emitCHeaderOn: aStream [
 	"Additional header files; include squeak VM ones last"
 	self emitHeaderFiles: (headerFiles reject: [:hdr| hdr includes: $<]) on: aStream.
 
+	aStream nextPutAll: '#include "extra.h"'; cr.
+
 	aStream cr
 ]
 
