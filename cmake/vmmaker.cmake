@@ -35,6 +35,7 @@ else()
       list(APPEND VMSOURCEFILES ${PHARO_CURRENT_GENERATED}/vm/src/gcc3x-cointerp.c)
   else()
       list(APPEND VMSOURCEFILES ${PHARO_CURRENT_GENERATED}/vm/src/cointerp.c)
+  list(APPEND VMSOURCEFILES ${PHARO_CURRENT_GENERATED}/vm/src/extra.c)
   endif()
 endif()
 
