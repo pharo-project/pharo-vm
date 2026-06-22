@@ -4993,9 +4993,21 @@ CCodeGenerator >> storeCodeOnFile: fileName doInlining: inlineFlag [
 CCodeGenerator >> storeCodeOnFile: fileName doInlining: inlineFlag doAssertions: assertionFlag [
 	"Store C code for this code base on the given file."
 
-	| stream |
+	| stream extraCStream extraHStream |
 	stream := VMMaker forceNewFileNamed: fileName.
 	stream ifNil: [Error signal: 'Could not open C code file: ', fileName].
+
+	extraCStream := VMMaker forceNewFileNamed: (fileName asFileReference parent / 'extra.c') fullName.
+	extraCStream nextPutAll: 'int f() { return 2; }'.
+	extraCStream close.
+
+	extraHStream := VMMaker forceNewFileNamed: (fileName asFileReference parent / 'extra.h') fullName.
+	extraHStream nextPutAll: '#ifndef EXTRA_H
+#define EXTRA_H
+int f();
+#endif'.
+	extraHStream close.
+
 	self emitCCodeOn: stream doInlining: inlineFlag doAssertions: assertionFlag.
 	stream close
 ]
