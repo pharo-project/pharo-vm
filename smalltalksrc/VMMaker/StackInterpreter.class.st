@@ -1756,27 +1756,6 @@ StackInterpreter >> ISA [
 					ifFalse: [#IA32]]
 ]
 
-{ #category : 'debug support' }
-StackInterpreter >> abstractDetailedSymbolicMethod: aMethod [
-	<doNotGenerate>
-	| ts prim |
-	(ts := self transcript) newLine.
-	(prim := self primitiveIndexOf: aMethod) > 0 ifTrue:
-		[ts nextPutAll: '<primitive: '; print: prim; nextPut: $>.
-		(self isQuickPrimitiveIndex: prim) ifTrue:
-			[ts nextPutAll: ' quick method'; cr; flush.
-			 ^self].
-		ts cr].
-	(RelativeDetailedInstructionPrinter
-			on: (VMCompiledMethodProxy new
-					for: aMethod
-					coInterpreter: self
-					objectMemory: objectMemory))
-		indent: 0;
-		printInstructionsOn: ts.
-	ts flush
-]
-
 { #category : 'control primitives' }
 StackInterpreter >> activateNewFullClosure: blockClosure method: theMethod numArgs: numArgs mayContextSwitch: mayContextSwitch [
 	"Similar to activateNewMethod but for Closure and newMethod."
@@ -15174,30 +15153,6 @@ StackInterpreter >> superclassSend [
 	self ensureReceiverUnforwarded.
 	self assert: lkupClassTag ~= objectMemory nilObject.
 	self commonSendOrdinary
-]
-
-{ #category : 'debug support' }
-StackInterpreter >> symbolicMethod: aMethod [
-	<doNotGenerate>
-	 self transcript
-		newLine;
-		nextPutAll:
-			((String streamContents:
-				[:ts| | prim |
-				(prim := self primitiveIndexOf: aMethod) > 0 ifTrue:
-					[ts nextPutAll: '<primitive: '; print: prim; nextPut: $>.
-					(self isQuickPrimitiveIndex: prim) ifTrue:
-						[ts nextPutAll: ' quick method'; cr; flush.
-						 ^self].
-					ts cr].
-				(InstructionPrinter
-						on: (VMCompiledMethodProxy new
-								for: aMethod
-								coInterpreter: self
-								objectMemory: objectMemory))
-					indent: 0;
-					printInstructionsOn: ts]) copyReplaceAll: 'a VMObjectProxy for ' with: '');
-		flush
 ]
 
 { #category : 'process primitive support' }

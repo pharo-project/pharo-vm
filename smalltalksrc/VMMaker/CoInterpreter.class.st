@@ -1100,8 +1100,6 @@ CoInterpreter >> ceCheckAndMaybeRetryPrimitive: primIndex [
 CoInterpreter >> ceCheckForInterrupts [
 	<api>
 	| switched |
-	self cCode: [] inSmalltalk:
-		[self maybeCheckStackDepth: 0 sp: stackPointer pc: instructionPointer].
 	switched := self checkForEventsMayContextSwitch: true.
 	self returnToExecutive: false postContextSwitch: switched
 ]
@@ -1748,13 +1746,6 @@ CoInterpreter >> ceTraceLinkedSend: theReceiver [
 	<var: #cogMethod type: #'CogMethod *'>
 	cogMethod := self cCoerceSimple: (self stackTop - cogit traceLinkedSendOffset)
 						to: #'CogMethod *'.
-	self cCode: [] inSmalltalk:
-		[cogit checkStackDepthOnSend ifTrue:
-			[self maybeCheckStackDepth: (cogMethod cmNumArgs > cogit numRegArgs
-											ifTrue: [cogMethod cmNumArgs + 1]
-											ifFalse: [0])
-				sp: stackPointer + objectMemory wordSize
-				pc: (self stackValue: 1)]].
 	"cogit recordSendTrace ifTrue: is implicit; wouldn't compile the call otherwise."
 	self recordTrace: (objectMemory fetchClassOf: theReceiver)
 		thing: cogMethod selector
@@ -4692,8 +4683,6 @@ CoInterpreter >> returnToMachineCodeFrame [
 		line: #__LINE__.
 	self stackTopPut: instructionPointer.
 	self push: localReturnValue.
-	self cCode: '' inSmalltalk: [ 
-		self maybeCheckStackDepth: 1 sp: stackPointer pc: instructionPointer ].
 	self callEnilopmart: #ceEnterCogCodePopReceiverReg.
 	self unreachable
 ]

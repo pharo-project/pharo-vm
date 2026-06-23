@@ -116,7 +116,6 @@ Class {
 	#superclass : 'SimpleStackBasedCogit',
 	#instVars : [
 		'prevBCDescriptor',
-		'numPushNilsFunction',
 		'pushNilSizeFunction',
 		'methodOrBlockNumTemps',
 		'regArgsHaveBeenPushed',
@@ -128,8 +127,6 @@ Class {
 		'ceCall0ArgsPIC',
 		'ceCall1ArgsPIC',
 		'ceCall2ArgsPIC',
-		'debugStackPointers',
-		'debugFixupBreaks',
 		'realCECallCogCodePopReceiverArg0Regs',
 		'realCECallCogCodePopReceiverArg1Arg0Regs',
 		'deadCode',
@@ -142,10 +139,6 @@ Class {
 		'VMMethodCacheConstants',
 		'VMObjectIndices',
 		'VMStackFrameOffsets'
-	],
-	#classInstVars : [
-		'numPushNilsFunction',
-		'pushNilSizeFunction'
 	],
 	#category : 'VMMaker-JIT',
 	#package : 'VMMaker',
@@ -239,22 +232,13 @@ StackToRegisterMappingCogit class >> declareCVarsIn: aCodeGen [
 		var: 'simStackState'
 			declareC: 'CogCompileTimeStackState simStackState';
 		var: 'prevBCDescriptor'
-			type: #'BytecodeDescriptor *'.
-
-	self numPushNilsFunction ifNotNil:
-		[aCodeGen
-			var: 'numPushNilsFunction'
-				declareC: 'sqInt (* const numPushNilsFunction)(struct _BytecodeDescriptor *,sqInt,sqInt,sqInt) = ', (aCodeGen cFunctionNameFor: self numPushNilsFunction);
-			var: 'pushNilSizeFunction'
-				declareC: 'sqInt (* const pushNilSizeFunction)(sqInt,sqInt) = ', (aCodeGen cFunctionNameFor: self pushNilSizeFunction)].
+			type: #'BytecodeDescriptor *'
 ]
 
 { #category : 'class initialization' }
 StackToRegisterMappingCogit class >> initializeBytecodeTableForSistaV1 [
 	"StackToRegisterMappingCogit initializeBytecodeTableForSistaV1"
 
-	numPushNilsFunction := #sistaV1:Num:Push:Nils:.
-	pushNilSizeFunction := #sistaV1PushNilSize:numInitialNils:.
 	BytecodeSetHasDirectedSuperSend := true.
 	BytecodeSetHasExtensions := true.
 	FirstSpecialSelector := 96.
@@ -434,33 +418,11 @@ StackToRegisterMappingCogit class >> mustBeGlobalInFile: var [
 ]
 
 { #category : 'accessing' }
-StackToRegisterMappingCogit class >> numPushNilsFunction [
-	"Answer the value of numPushNilsFunction"
-
-	^numPushNilsFunction
-]
-
-{ #category : 'accessing' }
 StackToRegisterMappingCogit class >> numTrampolines [
 	^super numTrampolines + 12 "includes register args aborts"
 
 	"Cogit withAllSubclasses collect: [:c| {c. (c instVarNames select: [:ea| ea beginsWith: 'ce']) size}]"
 	"self instVarNames select: [:ea| ea beginsWith: 'ce']"
-]
-
-{ #category : 'accessing' }
-StackToRegisterMappingCogit class >> pushNilSizeFunction [
-	"Answer the value of pushNilSizeFunction"
-
-	^ pushNilSizeFunction
-]
-
-{ #category : 'translation' }
-StackToRegisterMappingCogit class >> requiredMethodNames: options [
-	^(super requiredMethodNames: options)
-		add: self numPushNilsFunction;
-		add: self pushNilSizeFunction;
-		yourself
 ]
 
 { #category : 'translation' }
@@ -827,18 +789,22 @@ StackToRegisterMappingCogit >> anyReferencesToRegister: reg inTopNItems: n [
 
 { #category : 'compile abstract instructions' }
 StackToRegisterMappingCogit >> assertCorrectSimStackPtr [
-	<inline: true>
 	"Would like to assert simply simSpillBase > methodOrBlockNumTemps but can't because
 	 of the initialNils hack for nested blocks in SqueakV3PlusClosures"
-	self assert: ((self addressOf: simStackState) simSpillBase >= methodOrBlockNumTemps).
-	(needsFrame and: [(self addressOf: simStackState) simSpillBase > 0]) ifTrue:
-		[self assert: ((self addressOf: simStackState) simStackAt: (self addressOf: simStackState) simSpillBase - 1) spilled == true.
-		 self assert: ((self addressOf: simStackState) simSpillBase > (self addressOf: simStackState) simStackPtr or: [((self addressOf: simStackState) simStackAt: (self addressOf: simStackState) simSpillBase) spilled == false])].
 
- 	self cCode: '' inSmalltalk:
-		[deadCode ifFalse:
-			[self assert: (self addressOf: simStackState) simStackPtr + (needsFrame ifTrue: [0] ifFalse: [1])
-						= (self debugStackPointerFor: bytecodePC)]].
+	<inline: true>
+	self assert:
+		(self addressOf: simStackState) simSpillBase
+		>= methodOrBlockNumTemps.
+	(needsFrame and: [ (self addressOf: simStackState) simSpillBase > 0 ])
+		ifTrue: [
+			self assert: ((self addressOf: simStackState) simStackAt:
+					 (self addressOf: simStackState) simSpillBase - 1) spilled
+				== true.
+			self assert: ((self addressOf: simStackState) simSpillBase
+				 > (self addressOf: simStackState) simStackPtr or: [
+					 ((self addressOf: simStackState) simStackAt:
+						  (self addressOf: simStackState) simSpillBase) spilled == false ]) ]
 ]
 
 { #category : 'simulation stack' }
@@ -946,16 +912,12 @@ StackToRegisterMappingCogit >> compileAbstractInstructionsFrom: start through: e
 { #category : 'compile abstract instructions' }
 StackToRegisterMappingCogit >> compileCogFullBlockMethod: numCopied [
 	methodOrBlockNumTemps := coInterpreter tempCountOf: methodObj.
-	self cCode: '' inSmalltalk:
-		[debugStackPointers := coInterpreter debugStackPointersFor: methodObj].
 	^super compileCogFullBlockMethod: numCopied
 ]
 
 { #category : 'compile abstract instructions' }
 StackToRegisterMappingCogit >> compileCogMethod: selector [
 	methodOrBlockNumTemps := coInterpreter tempCountOf: methodObj.
-	self cCode: '' inSmalltalk:
-		[debugStackPointers := coInterpreter debugStackPointersFor: methodObj].
 	^super compileCogMethod: selector
 ]
 
@@ -1053,12 +1015,6 @@ StackToRegisterMappingCogit >> compileTwoPathFramelessInit [
 	jumpOld jmpTarget: self Label
 ]
 
-{ #category : 'simulation only' }
-StackToRegisterMappingCogit >> debugStackPointerFor: bcpc [
-	<doNotGenerate>
-	^(debugStackPointers at: bcpc) + (needsFrame ifTrue: [0] ifFalse: [1])
-]
-
 { #category : 'bytecode generators' }
 StackToRegisterMappingCogit >> doubleExtendedDoAnythingBytecode [
 	"Replaces the Blue Book double-extended send [132], in which the first byte was wasted on 8 bits of argument count. 
@@ -1116,30 +1072,29 @@ StackToRegisterMappingCogit >> ensureFixupAt: targetPC [
 StackToRegisterMappingCogit >> ensureFixupAt: targetPC withStackPointer: aStackPointer [
 	"Make sure there's a flagged fixup at the target pc in fixups.
 	 Initially a fixup's target is just a flag.  Later on it is replaced with a proper instruction."
+
 	<returnTypeC: #'BytecodeFixup *'>
-	| fixup |
 	<var: #fixup type: #'BytecodeFixup *'>
-	fixup := self fixupAt:  targetPC.
-	self cCode: '' inSmalltalk:
-		[self assert: aStackPointer = (self debugStackPointerFor: targetPC).
-		 (fixup isMergeFixupOrIsFixedUp
-		  and: [fixup isBackwardBranchFixup not]) ifTrue: "ignore backward branch targets"
-			[self assert: fixup simStackPtr = aStackPointer]].
-	
+	| fixup |
+	fixup := self fixupAt: targetPC.
+	self cCode: '' inSmalltalk: [
+		(fixup isMergeFixupOrIsFixedUp and: [
+			 fixup isBackwardBranchFixup not ]) ifTrue: [ "ignore backward branch targets"
+			self assert: fixup simStackPtr = aStackPointer ] ].
+
 
 	fixup isNonMergeFixupOrNotAFixup
-		ifTrue: "convert a non-merge into a merge"
-			[fixup becomeMergeFixup.
-			 fixup simStackPtr: aStackPointer ]
-		ifFalse:
-			[fixup isBackwardBranchFixup
-				ifTrue: "this is the target of a backward branch and
+		ifTrue: [ "convert a non-merge into a merge"
+			fixup becomeMergeFixup.
+			fixup simStackPtr: aStackPointer ]
+		ifFalse: [
+			fixup isBackwardBranchFixup
+				ifTrue: [ "this is the target of a backward branch and
 						 so doesn't have a simStackPtr assigned yet."
-					[fixup simStackPtr: aStackPointer ]
-				ifFalse:
-					[self assert: fixup simStackPtr = aStackPointer ]].
+					fixup simStackPtr: aStackPointer ]
+				ifFalse: [ self assert: fixup simStackPtr = aStackPointer ] ].
 	fixup recordBcpc: bytecodePC.
-	^fixup
+	^ fixup
 ]
 
 { #category : 'compile abstract instructions' }
@@ -1152,11 +1107,6 @@ StackToRegisterMappingCogit >> ensureNonMergeFixupAt: targetPC [
 	fixup := self fixupAt:  targetPC.
 	fixup notAFixup ifTrue:
 		[fixup becomeNonMergeFixup].
-	self cCode: '' inSmalltalk:
-		[fixup isMergeFixupOrIsFixedUp ifTrue:
-			[self assert:
-					(fixup isBackwardBranchFixup
-					 or: [fixup simStackPtr = (self debugStackPointerFor: targetPC)])]].
 	fixup recordBcpc: bytecodePC.
 	^fixup
 ]
@@ -3405,17 +3355,6 @@ StackToRegisterMappingCogit >> initializeFixupAt: targetPC [
 	self initializeFixup: fixup
 ]
 
-{ #category : 'span functions' }
-StackToRegisterMappingCogit >> isPushNil: descriptor pc: pc nExts: nExts method: aMethodObj [
-	<inline: true>
-	<var: #descriptor type: #'BytecodeDescriptor *'>
-	^self perform: numPushNilsFunction
-		with: descriptor
-		with: pc
-		with: nExts
-		with: aMethodObj
-]
-
 { #category : 'simulation stack' }
 StackToRegisterMappingCogit >> liveFloatRegisters [
 	| regsSet |
@@ -3610,8 +3549,6 @@ StackToRegisterMappingCogit >> mergeWithFixupIfRequired: fixup [
 		[fixup simStackPtr: (self addressOf: simStackState) simStackPtr ].
 	fixup targetInstruction: self Label.
 	self assert: (self addressOf: simStackState) simStackPtr = fixup simStackPtr.
-	self cCode: '' inSmalltalk:
-		[self assert: fixup simStackPtr = (self debugStackPointerFor: bytecodePC)].
 	self restoreSimStackAtMergePoint: fixup.
 
 	^0
@@ -3636,6 +3573,12 @@ StackToRegisterMappingCogit >> methodFoundInvalidPostScan [
 	needsFrame ifFalse:
 		[^methodOrBlockNumTemps > methodOrBlockNumArgs].
 	^super methodFoundInvalidPostScan
+]
+
+{ #category : 'accessing' }
+StackToRegisterMappingCogit >> methodOrBlockNumTemps: anInteger [ 
+
+	methodOrBlockNumTemps := anInteger
 ]
 
 { #category : 'compile abstract instructions' }
@@ -3670,17 +3613,6 @@ StackToRegisterMappingCogit >> needsFrameIfStackGreaterThanOne: stackDelta [
 	 spilled.  So avoid this by only allowing class to be sent if the stack contains a single element."
 
 	^stackDelta > 1
-]
-
-{ #category : 'span functions' }
-StackToRegisterMappingCogit >> numPushNils: descriptor pc: pc nExts: nExts method: aMethodObj [
-	<inline: true>
-	<var: #descriptor type: #'BytecodeDescriptor *'>
-	^self perform: numPushNilsFunction
-		with: descriptor
-		with: pc
-		with: nExts
-		with: aMethodObj
 ]
 
 { #category : 'compile abstract instructions' }
@@ -3951,12 +3883,6 @@ StackToRegisterMappingCogit >> profilingDataForSendTo: cogCodeSendTarget methodC
 	^0 "to get Slang to type this method as answering sqInt"
 ]
 
-{ #category : 'span functions' }
-StackToRegisterMappingCogit >> pushNilSize: aMethodObj numInitialNils: numInitialNils [
-	<inline: true>
-	^self perform: pushNilSizeFunction with: aMethodObj with: numInitialNils
-]
-
 { #category : 'bytecode generator support' }
 StackToRegisterMappingCogit >> putSelfInReceiverResultReg [
 	<inline: true>
@@ -4085,14 +4011,7 @@ StackToRegisterMappingCogit >> setInterpreter: aCoInterpreter [
 
 	simStackState := CogCompileTimeStackState new.
 	simStack := CArrayAccessor on: ((1 to: self class simStackSlots) collect: [:i| self simStackEntryClass new cogit: self]).
-	(self addressOf: simStackState) simStack: simStack.
-
-	debugFixupBreaks := self class initializationOptions
-		                    at: #debugFixupBreaks
-		                    ifAbsent: [ Set new ].
-
-	numPushNilsFunction := self class numPushNilsFunction.
-	pushNilSizeFunction := self class pushNilSizeFunction
+	(self addressOf: simStackState) simStack: simStack
 ]
 
 { #category : 'simulation stack' }

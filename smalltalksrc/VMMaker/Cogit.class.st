@@ -4166,12 +4166,6 @@ Cogit >> checkMaybeObjRefInPIC: maybeObject [
 	^objectRepresentation checkValidObjectReference: maybeObject
 ]
 
-{ #category : 'debugging' }
-Cogit >> checkStackDepthOnSend [
-	<doNotGenerate>
-	^(traceFlags bitAnd: 128) ~= 0
-]
-
 { #category : 'garbage collection' }
 Cogit >> checkValidObjectReferencesInPIC: aPIC [
 	<var: #aPIC type: #'CogMethod *'>
