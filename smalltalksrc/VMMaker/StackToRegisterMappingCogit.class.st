@@ -4102,7 +4102,6 @@ StackToRegisterMappingCogit >> simNativeStackSlots [
 
 { #category : 'accessing' }
 StackToRegisterMappingCogit >> simSelf [
-	<cmacro: '() simStack'>
 	<returnTypeC: #'CogSimStackEntry *'>
 	^simStackState simStackAt: 0
 ]
