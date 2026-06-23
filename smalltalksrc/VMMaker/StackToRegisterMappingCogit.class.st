@@ -120,7 +120,6 @@ Class {
 		'pushNilSizeFunction',
 		'methodOrBlockNumTemps',
 		'regArgsHaveBeenPushed',
-		'simStackPtr',
 		'ceCallCogCodePopReceiverArg0Regs',
 		'ceCallCogCodePopReceiverArg1Arg0Regs',
 		'methodAbortTrampolines',
@@ -810,7 +809,7 @@ StackToRegisterMappingCogit >> annotateInstructionForBytecode [
 StackToRegisterMappingCogit >> anyReferencesToRegister: reg inAllButTopNItems: n [
 	| regMask |
 	regMask := self registerMaskFor: reg.
-	simStackPtr - n to: 0 by: -1 do:
+	simStackState simStackPtr - n to: 0 by: -1 do:
 		[:i|
 		((simStackState simStackAt: i) registerMask anyMask: regMask) ifTrue:
 			[^true]].
@@ -821,7 +820,7 @@ StackToRegisterMappingCogit >> anyReferencesToRegister: reg inAllButTopNItems: n
 StackToRegisterMappingCogit >> anyReferencesToRegister: reg inTopNItems: n [
 	| regMask |
 	regMask := self registerMaskFor: reg.
-	simStackPtr to: simStackPtr - n + 1 by: -1 do:
+	simStackState simStackPtr to: simStackState simStackPtr - n + 1 by: -1 do:
 		[:i|
 		((simStackState simStackAt: i) registerMask anyMask: regMask) ifTrue:
 			[^true]].
@@ -836,11 +835,11 @@ StackToRegisterMappingCogit >> assertCorrectSimStackPtr [
 	self assert: (simStackState simSpillBase >= methodOrBlockNumTemps).
 	(needsFrame and: [simStackState simSpillBase > 0]) ifTrue:
 		[self assert: (simStackState simStackAt: simStackState simSpillBase - 1) spilled == true.
-		 self assert: (simStackState simSpillBase > simStackPtr or: [(simStackState simStackAt: simStackState simSpillBase) spilled == false])].
+		 self assert: (simStackState simSpillBase > simStackState simStackPtr or: [(simStackState simStackAt: simStackState simSpillBase) spilled == false])].
 
  	self cCode: '' inSmalltalk:
 		[deadCode ifFalse:
-			[self assert: simStackPtr + (needsFrame ifTrue: [0] ifFalse: [1])
+			[self assert: simStackState simStackPtr + (needsFrame ifTrue: [0] ifFalse: [1])
 						= (self debugStackPointerFor: bytecodePC)]].
 ]
 
@@ -1112,7 +1111,7 @@ StackToRegisterMappingCogit >> duplicateTopBytecode [
 { #category : 'compile abstract instructions' }
 StackToRegisterMappingCogit >> ensureFixupAt: targetPC [
 	
-	^ self ensureFixupAt: targetPC withStackPointer: simStackPtr
+	^ self ensureFixupAt: targetPC withStackPointer: simStackState simStackPtr
 ]
 
 { #category : 'compile abstract instructions' }
@@ -1343,7 +1342,7 @@ StackToRegisterMappingCogit >> freeAnyRegNotConflictingWith: regMask [
 	self assert: needsFrame.
 	reg := NoReg.
 	index := simStackState simSpillBase max: 0.
-	[reg = NoReg and: [index < simStackPtr]] whileTrue: 
+	[reg = NoReg and: [index < simStackState simStackPtr]] whileTrue: 
 		[ | desc |
 		 desc := simStackState simStackAt: index.
 		 desc type = SSRegister ifTrue:
@@ -1683,7 +1682,7 @@ StackToRegisterMappingCogit >> genGenericStorePop: popBoolean MaybeContextSlotIn
 	"Avoid allocating ClassReg if at the top the stack, to avoid extra push/pops, given that we are going to pop it next"
 	self
 		ssAllocateCallReg: ClassReg
-		upThrough: simStackPtr - 1.
+		upThrough: simStackState simStackPtr - 1.
 	self ssStoreAndReplacePop: popBoolean toReg: ClassReg.
 	
 	"Flush the rest of the stack now that all stack manipulations have been done.
@@ -1731,7 +1730,7 @@ StackToRegisterMappingCogit >> genGenericStorePop: popBoolean slotIndex: slotInd
 	<inline: true>
 	self cppIf: IMMUTABILITY ifTrue:
 		[needsImmCheck ifTrue: 
-			[self ssAllocateRequiredReg: ClassReg upThrough: simStackPtr - 1. "If already classReg don't spill it"
+			[self ssAllocateRequiredReg: ClassReg upThrough: simStackState simStackPtr - 1. "If already classReg don't spill it"
 			 "we replace the top value for the flush"
 			 self ssStoreAndReplacePop: popBoolean toReg: ClassReg.
 			 self ssFlushStack.
@@ -1893,7 +1892,7 @@ StackToRegisterMappingCogit >> genJumpTo: targetBytecodePC [
 			"Since we are threading the jumps, spill everything above the top.
 			Leave the top for the next instruction that is assuming that this JUMP instruction did not consume the top"
 			self ssFlushStackExceptTop: 1.
-			fixup := self ensureFixupAt: eventualTarget withStackPointer: simStackPtr - 1]
+			fixup := self ensureFixupAt: eventualTarget withStackPointer: simStackState simStackPtr - 1]
 		ifFalse:
 			[self ssFlushStack.
 			fixup := self ensureFixupAt: eventualTarget].
@@ -2637,8 +2636,8 @@ StackToRegisterMappingCogit >> genSpecialSelectorClass [
 	| topReg |
 	topReg := simStackState ssTop registerOrNone.
 	(topReg = NoReg or: [topReg = ClassReg])
-		ifTrue: [self ssAllocateRequiredReg: (topReg := SendNumArgsReg) and: ClassReg upThrough: simStackPtr - 1]
-		ifFalse: [self ssAllocateRequiredReg: ClassReg upThrough: simStackPtr - 1].
+		ifTrue: [self ssAllocateRequiredReg: (topReg := SendNumArgsReg) and: ClassReg upThrough: simStackState simStackPtr - 1]
+		ifFalse: [self ssAllocateRequiredReg: ClassReg upThrough: simStackState simStackPtr - 1].
 
 	self ssPopTopToReg: topReg.
 	objectRepresentation
@@ -3277,7 +3276,7 @@ StackToRegisterMappingCogit >> generateTracingTrampolines [
 { #category : 'simulation stack' }
 StackToRegisterMappingCogit >> initSimStackForFramefulMethod: startpc [
 	<var: #desc type: #'CogSimStackEntry *'>
-	simStackPtr := methodOrBlockNumTemps. "N.B. Includes num args"
+	simStackState simStackPtr: methodOrBlockNumTemps. "N.B. Includes num args"
 	simStackState simSpillBase: methodOrBlockNumTemps + 1.
 	self simSelf
 		type: SSBaseOffset;
@@ -3296,7 +3295,7 @@ StackToRegisterMappingCogit >> initSimStackForFramefulMethod: startpc [
 			offset: FoxCallerSavedIP + ((methodOrBlockNumArgs - i + 1) * objectMemory wordSize);
 			bcptr: startpc].
 	"temps"
-	methodOrBlockNumArgs + 1 to: simStackPtr do:
+	methodOrBlockNumArgs + 1 to: simStackState simStackPtr do:
 		[:i| | desc |
 		desc := simStackState simStackAt: i.
 		desc
@@ -3330,7 +3329,7 @@ StackToRegisterMappingCogit >> initSimStackForFramelessBlock: startpc [
 								ifTrue: [methodOrBlockNumArgs - i]
 								ifFalse: [methodOrBlockNumArgs + 1 - i]) * objectMemory wordSize);
 			bcptr: startpc].
-	simStackPtr := methodOrBlockNumTemps. "N.B. Includes num args"
+	simStackState simStackPtr: methodOrBlockNumTemps. "N.B. Includes num args"
 	simStackState simSpillBase: methodOrBlockNumTemps + 1.
 ]
 
@@ -3372,14 +3371,14 @@ StackToRegisterMappingCogit >> initSimStackForFramelessMethod: startpc [
 								ifTrue: [methodOrBlockNumArgs - i]
 								ifFalse: [methodOrBlockNumArgs + 1 - i]) * objectMemory wordSize);
 					bcptr: startpc]].
-	simStackPtr := methodOrBlockNumArgs.
+	simStackState simStackPtr: methodOrBlockNumArgs.
 	simStackState simSpillBase: methodOrBlockNumArgs + 1.
 ]
 
 { #category : 'simulation stack' }
 StackToRegisterMappingCogit >> initSimStackPointer: wat [
 
-	simStackPtr := methodOrBlockNumTemps.
+	simStackState simStackPtr: methodOrBlockNumTemps.
 	simStackState simSpillBase: methodOrBlockNumTemps + 1
 ]
 
@@ -3391,7 +3390,7 @@ StackToRegisterMappingCogit >> initializeFixup: fixup [
 	<var: #fixup type: #'BytecodeFixup *'>
 	<inline: true>
 	fixup
-		simStackPtr: simStackPtr;
+		simStackPtr: simStackState simStackPtr;
 		becomeMergeFixup;
 		setIsBackwardBranchFixup
 ]
@@ -3423,7 +3422,7 @@ StackToRegisterMappingCogit >> isPushNil: descriptor pc: pc nExts: nExts method:
 StackToRegisterMappingCogit >> liveFloatRegisters [
 	| regsSet |
 	regsSet := 0.
-	(simStackState simSpillBase max: 0) to: simStackPtr do:
+	(simStackState simSpillBase max: 0) to: simStackState simStackPtr do:
 		[:i|
 		regsSet := regsSet bitOr: (simStackState simStackAt: i) floatRegisterMask].
 	^regsSet
@@ -3441,7 +3440,7 @@ StackToRegisterMappingCogit >> liveRegisters [
 				[regsSet := regsSet bitOr: (self registerMaskFor: Arg0Reg).
 				 (self numRegArgs > 1 and: [methodOrBlockNumArgs > 1]) ifTrue:
 					[regsSet := regsSet bitOr: (self registerMaskFor: Arg1Reg)]]].
-	(simStackState simSpillBase max: 0) to: simStackPtr do:
+	(simStackState simSpillBase max: 0) to: simStackState simStackPtr do:
 		[:i|
 		regsSet := regsSet bitOr: (simStackState simStackAt: i) registerMask].
 	^regsSet
@@ -3452,7 +3451,7 @@ StackToRegisterMappingCogit >> liveVectorRegisters [
 
 	| regsSet |
 	regsSet := 0.
-	(simStackState simSpillBase max: 0) to: simStackPtr do: [ :i | 
+	(simStackState simSpillBase max: 0) to: simStackState simStackPtr do: [ :i | 
 		| ssEntry |
 		ssEntry := simStackState simStackAt: i.
 		(ssEntry type = SSVectorRegister) ifTrue: [ 
@@ -3490,9 +3489,9 @@ StackToRegisterMappingCogit >> marshallSendArguments: numArgs [
 			(numSpilled > 0 or: [ anyRefs ])
 				ifTrue: [
 					self ssFlushStack.
-					(simStackState simStackAt: simStackPtr - numArgs) copyToReg: ReceiverResultReg ]
+					(simStackState simStackAt: simStackState simStackPtr - numArgs) copyToReg: ReceiverResultReg ]
 				ifFalse: [
-					(simStackState simStackAt: simStackPtr - numArgs)
+					(simStackState simStackAt: simStackState simStackPtr - numArgs)
 						copyToReg: ReceiverResultReg;
 						type: SSRegister;
 						registerr: ReceiverResultReg.
@@ -3509,14 +3508,14 @@ StackToRegisterMappingCogit >> marshallSendArguments: numArgs [
 			numArgs > 0 ifTrue: [
 				(self numRegArgs > 1 and: [ numArgs > 1 ])
 					ifTrue: [
-						self ssAllocateRequiredReg: Arg0Reg upThrough: simStackPtr - 2.
-						self ssAllocateRequiredReg: Arg1Reg upThrough: simStackPtr - 1 ]
-					ifFalse: [ self ssAllocateRequiredReg: Arg0Reg upThrough: simStackPtr - 1 ] ].
+						self ssAllocateRequiredReg: Arg0Reg upThrough: simStackState simStackPtr - 2.
+						self ssAllocateRequiredReg: Arg1Reg upThrough: simStackState simStackPtr - 1 ]
+					ifFalse: [ self ssAllocateRequiredReg: Arg0Reg upThrough: simStackState simStackPtr - 1 ] ].
 
-			(self numRegArgs > 1 and: [ numArgs > 1 ]) ifTrue: [ (simStackState simStackAt: simStackPtr) copyToReg: Arg1Reg ].
+			(self numRegArgs > 1 and: [ numArgs > 1 ]) ifTrue: [ (simStackState simStackAt: simStackState simStackPtr) copyToReg: Arg1Reg ].
 
-			numArgs > 0 ifTrue: [ (simStackState simStackAt: simStackPtr - numArgs + 1) copyToReg: Arg0Reg ].
-			(simStackState simStackAt: simStackPtr - numArgs) copyToReg: ReceiverResultReg.
+			numArgs > 0 ifTrue: [ (simStackState simStackAt: simStackState simStackPtr - numArgs + 1) copyToReg: Arg0Reg ].
+			(simStackState simStackAt: simStackState simStackPtr - numArgs) copyToReg: ReceiverResultReg.
 
 			"Pop from the stack, so that subsequent compilation in this unit make as if they were popped.
 			Here, DO discard the entries in the runtime stack.
@@ -3603,16 +3602,16 @@ StackToRegisterMappingCogit >> mergeWithFixupIfRequired: fixup [
 			["Would like to assert fixup simStackPtr >= methodOrBlockNumTemps
 			   but can't because of the initialNils hack."
 			 self assert: (fixup simStackPtr >= methodOrBlockNumTemps).
-			 simStackPtr := fixup simStackPtr ]
+			 simStackState simStackPtr: fixup simStackPtr ]
 		ifFalse: "case 4"
 			[self ssFlushStack].
 
 	"cases 3 and 4"
 	deadCode := false.
 	fixup isBackwardBranchFixup ifTrue:
-		[fixup simStackPtr: simStackPtr ].
+		[fixup simStackPtr: simStackState simStackPtr ].
 	fixup targetInstruction: self Label.
-	self assert: simStackPtr = fixup simStackPtr.
+	self assert: simStackState simStackPtr = fixup simStackPtr.
 	self cCode: '' inSmalltalk:
 		[self assert: fixup simStackPtr = (self debugStackPointerFor: bytecodePC)].
 	self restoreSimStackAtMergePoint: fixup.
@@ -3694,9 +3693,9 @@ StackToRegisterMappingCogit >> numRegArgs [
 
 { #category : 'simulation stack' }
 StackToRegisterMappingCogit >> numberOfSpillsInTopNItems: n [
-	simStackPtr to: simStackPtr - n + 1 by: -1 do:
+	simStackState simStackPtr to: simStackState simStackPtr - n + 1 by: -1 do:
 		[:i| (simStackState simStackAt: i) type = SSSpill ifTrue:
-			[^n - (simStackPtr - i)]].
+			[^n - (simStackState simStackPtr - i)]].
 	^0
 ]
 
@@ -3985,14 +3984,14 @@ StackToRegisterMappingCogit >> restoreSimStackAtMergePoint: fixup [
 	"All the execution paths reaching a merge point expect everything
 	 to be spilled on stack. Throw away all simStack optimization state."
 	self voidReceiverOptStatus.
-	methodOrBlockNumTemps + 1 to: simStackPtr do:
+	methodOrBlockNumTemps + 1 to: simStackState simStackPtr do:
 		[:i|
 		 (simStackState simStackAt: i)
 			type: SSSpill;
 			offset: FoxMFReceiver - (i - methodOrBlockNumArgs * objectMemory bytesPerOop);
 			registerr: FPReg;
 			spilled: true].
-	simStackState simSpillBase: simStackPtr + 1.
+	simStackState simSpillBase: simStackState simStackPtr + 1.
 	^ 0
 ]
 
@@ -4155,7 +4154,7 @@ StackToRegisterMappingCogit >> ssAllocateCallReg: requiredReg [
 	<inline: true>
 	self ssAllocateRequiredRegMask: (CallerSavedRegisterMask
 										bitOr: (self registerMaskFor: requiredReg))
-		upThrough: simStackPtr
+		upThrough: simStackState simStackPtr
 ]
 
 { #category : 'simulation stack' }
@@ -4167,7 +4166,7 @@ StackToRegisterMappingCogit >> ssAllocateCallReg: requiredReg1 and: requiredReg2
 	self ssAllocateRequiredRegMask: (CallerSavedRegisterMask
 										bitOr: ((self registerMaskFor: requiredReg1)
 										bitOr: (self registerMaskFor: requiredReg2)))
-		upThrough: simStackPtr
+		upThrough: simStackState simStackPtr
 ]
 
 { #category : 'simulation stack' }
@@ -4178,7 +4177,7 @@ StackToRegisterMappingCogit >> ssAllocateCallReg: requiredReg1 and: requiredReg2
 	<inline: true>
 	self ssAllocateRequiredRegMask: (CallerSavedRegisterMask bitOr:
 										(self registerMaskFor: requiredReg1 and: requiredReg2 and: requiredReg3))
-		upThrough: simStackPtr
+		upThrough: simStackState simStackPtr
 ]
 
 { #category : 'simulation stack' }
@@ -4192,7 +4191,7 @@ StackToRegisterMappingCogit >> ssAllocateCallReg: requiredReg1 and: requiredReg2
 										bitOr: ((self registerMaskFor: requiredReg2)
 										bitOr: ((self registerMaskFor: requiredReg3)
 										bitOr: (self registerMaskFor: requiredReg4)))))
-		upThrough: simStackPtr
+		upThrough: simStackState simStackPtr
 ]
 
 { #category : 'simulation stack' }
@@ -4221,7 +4220,7 @@ StackToRegisterMappingCogit >> ssAllocateCallReg: requiredReg upThrough: aStackP
 { #category : 'simulation stack' }
 StackToRegisterMappingCogit >> ssAllocateRequiredFloatReg: requiredReg [
 	self ssAllocateRequiredFloatRegMask: (self registerMaskFor: requiredReg)
-		upThrough: simStackPtr
+		upThrough: simStackState simStackPtr
 ]
 
 { #category : 'simulation stack' }
@@ -4250,7 +4249,7 @@ StackToRegisterMappingCogit >> ssAllocateRequiredFloatRegMask: requiredRegsMask 
 StackToRegisterMappingCogit >> ssAllocateRequiredReg: requiredReg [
 	<inline: true>
 	self ssAllocateRequiredRegMask: (self registerMaskFor: requiredReg)
-		upThrough: simStackPtr
+		upThrough: simStackState simStackPtr
 ]
 
 { #category : 'simulation stack' }
@@ -4258,7 +4257,7 @@ StackToRegisterMappingCogit >> ssAllocateRequiredReg: requiredReg1 and: required
 	<inline: true>
 	self ssAllocateRequiredRegMask: ((self registerMaskFor: requiredReg1)
 										bitOr: (self registerMaskFor: requiredReg2))
-		upThrough: simStackPtr
+		upThrough: simStackState simStackPtr
 ]
 
 { #category : 'simulation stack' }
@@ -4305,7 +4304,7 @@ StackToRegisterMappingCogit >> ssFlushStack [
 { #category : 'as yet unclassified' }
 StackToRegisterMappingCogit >> ssFlushStackExceptTop: n [
 	
-	self ssFlushTo: simStackPtr - n
+	self ssFlushTo: simStackState simStackPtr - n
 ]
 
 { #category : 'simulation stack' }
@@ -4313,7 +4312,7 @@ StackToRegisterMappingCogit >> ssFlushTo: index [
 	<inline: true>
 	self assert: self tempsValidAndVolatileEntriesSpilled.
 	simStackState simSpillBase <= index ifTrue:
-		[(((simStackState simSpillBase max: methodOrBlockNumTemps + 1) min: simStackPtr) min: index) to: index do:
+		[(((simStackState simSpillBase max: methodOrBlockNumTemps + 1) min: simStackState simStackPtr) min: index) to: index do:
 			[:i|
 			self assert: needsFrame.
 			(simStackState simStackAt: i)
@@ -4328,7 +4327,7 @@ StackToRegisterMappingCogit >> ssFlushUpThrough: unaryBlock [
 	 must be flushed, and hence any values colder than them stack."
 
 	self assert: simStackState simSpillBase >= 0.
-	simStackPtr - 1 to: simStackState simSpillBase by: -1 do:
+	simStackState simStackPtr - 1 to: simStackState simSpillBase by: -1 do:
 		[ :index |
 		(unaryBlock value: (simStackState simStackAt: index)) ifTrue: [ ^ self ssFlushTo: index ] ]
 ]
@@ -4388,16 +4387,16 @@ StackToRegisterMappingCogit >> ssPop: popBoolean andCopyReg: reg [
 { #category : 'simulation stack' }
 StackToRegisterMappingCogit >> ssPop: n popSpilled: popSpilled [
 	| spilledToPop |
-	self assert: (simStackPtr - n >= methodOrBlockNumTemps
-				or: [(needsFrame not and: [simStackPtr - n >= 0])]).
+	self assert: (simStackState simStackPtr - n >= methodOrBlockNumTemps
+				or: [(needsFrame not and: [simStackState simStackPtr - n >= 0])]).
 
 	"Pop from the simulated stack"
-	simStackPtr := simStackPtr - n.
+	simStackState simStackPtr: simStackState simStackPtr - n.
 
 	"Check how many elements to pop from the stack have been spilled.
 	If the spill base is above the stack, it means we popped spilled elements.
 	If the spill base is below or equals to the stack pointer, we don't need ot do anything"	
-	spilledToPop := simStackState simSpillBase - 1 - simStackPtr.
+	spilledToPop := simStackState simSpillBase - 1 - simStackState simStackPtr.
 	(popSpilled and: [spilledToPop > 0]) ifTrue:
 		[self AddCq: spilledToPop * objectMemory wordSize R: SPReg].
 	
@@ -4425,7 +4424,7 @@ StackToRegisterMappingCogit >> ssPopTopToVectorReg: aVectorRegister [
 
 { #category : 'simulation stack' }
 StackToRegisterMappingCogit >> ssPush: n [ 
-	simStackPtr := simStackPtr + n
+	simStackState simStackPtr: simStackState simStackPtr + n
 ]
 
 { #category : 'simulation stack' }
@@ -4470,10 +4469,10 @@ StackToRegisterMappingCogit >> ssPushDesc: simStackEntry [
 				spilled: false;
 				bcptr: bytecodePC.
 			 simStackState
-				simStackAt: (simStackPtr := simStackPtr + 1)
+				simStackAt: (simStackState simStackPtr: simStackState simStackPtr + 1)
 				put: simStackEntry]
 		inSmalltalk:
-			[(simStackState simStackAt: (simStackPtr := simStackPtr + 1))
+			[(simStackState simStackAt: (simStackState simStackPtr: simStackState simStackPtr + 1))
 				copyFrom: simStackEntry;
 				type: (simStackEntry type = SSSpill
 						ifTrue: [SSBaseOffset]
@@ -4519,7 +4518,7 @@ StackToRegisterMappingCogit >> ssSelfDescriptor [
 { #category : 'simulation stack' }
 StackToRegisterMappingCogit >> ssSize [
 	
-	^ simStackPtr + 1
+	^ simStackState simStackPtr + 1
 ]
 
 { #category : 'simulation stack' }
@@ -4560,7 +4559,7 @@ StackToRegisterMappingCogit >> ssTopNeedsStoreCheck [
 { #category : 'simulation stack' }
 StackToRegisterMappingCogit >> ssValue: n [
 	<returnTypeC: #'CogSimStackEntry *'>
-	^simStackState simStackAt: simStackPtr - n
+	^simStackState simStackAt: simStackState simStackPtr - n
 ]
 
 { #category : 'testing' }
@@ -4575,7 +4574,7 @@ StackToRegisterMappingCogit >> stackEntryIsBoolean: simStackEntry [
 { #category : 'testing' }
 StackToRegisterMappingCogit >> stackTopIsBoolean [
 	<inline: true>
-	^simStackPtr >= methodOrBlockNumArgs and: [self stackEntryIsBoolean: simStackState ssTop]
+	^simStackState simStackPtr >= methodOrBlockNumArgs and: [self stackEntryIsBoolean: simStackState ssTop]
 ]
 
 { #category : 'debugging' }
@@ -4689,21 +4688,21 @@ StackToRegisterMappingCogit >> updateSimSpillBase [
 	"Something volatile has been pushed on the stack; update simSpillBase accordingly."
 	<inline: true>
 	self assert: ((simStackState simSpillBase > methodOrBlockNumTemps
-				and: [simStackPtr >= methodOrBlockNumTemps])).
-	simStackState simSpillBase > simStackPtr
+				and: [simStackState simStackPtr >= methodOrBlockNumTemps])).
+	simStackState simSpillBase > simStackState simStackPtr
 		ifTrue:
-			[simStackState simSpillBase: simStackPtr + 1.
+			[simStackState simSpillBase: simStackState simStackPtr + 1.
 			 [simStackState simSpillBase - 1 > methodOrBlockNumTemps
 			   and: [(simStackState simStackAt: simStackState simSpillBase - 1) spilled not]] whileTrue:
 				[simStackState simSpillBase: simStackState simSpillBase - 1]]
 		ifFalse:
 			[[(simStackState simStackAt: simStackState simSpillBase) spilled
-			   and: [simStackState simSpillBase <= simStackPtr]] whileTrue:
+			   and: [simStackState simSpillBase <= simStackState simStackPtr]] whileTrue:
 				[simStackState simSpillBase: simStackState simSpillBase + 1]].
-	methodOrBlockNumTemps + 1 to: (simStackState simSpillBase - 1 min: simStackPtr) do:
+	methodOrBlockNumTemps + 1 to: (simStackState simSpillBase - 1 min: simStackState simStackPtr) do:
 		[:i|
 		self assert: (simStackState simStackAt: i) spilled == true].
-	self assert: (simStackState simSpillBase > simStackPtr or: [(simStackState simStackAt: simStackState simSpillBase) spilled == false])
+	self assert: (simStackState simSpillBase > simStackState simStackPtr or: [(simStackState simStackAt: simStackState simSpillBase) spilled == false])
 ]
 
 { #category : 'accessing' }
@@ -4740,7 +4739,7 @@ StackToRegisterMappingCogit >> voidReceiverResultRegContainsSelf [
 	| spillIndex |
 	self voidReceiverOptStatus.
 	spillIndex := 0.
-	(methodOrBlockNumTemps + 1 max: simStackState simSpillBase) to: simStackPtr do:
+	(methodOrBlockNumTemps + 1 max: simStackState simSpillBase) to: simStackState simStackPtr do:
 		[:i|
 		(simStackState simStackAt: i) registerOrNone = ReceiverResultReg ifTrue:
 			[spillIndex := i]].
