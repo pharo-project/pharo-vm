@@ -112,3 +112,17 @@ CogCompileTimeStackState >> simStackPtr: anObject [
 
 	simStackPtr := anObject
 ]
+
+{ #category : 'accessing' }
+CogCompileTimeStackState >> ssTop [
+	<returnTypeC: #'CogSimStackEntry *'>
+	^self simStackAt: simStackPtr
+]
+
+{ #category : 'accessing' }
+CogCompileTimeStackState >> ssTopDescriptor [
+
+	<returnTypeC: #SimStackEntry>
+	<inline: true>
+	^ self simStackAt: simStackPtr
+]
