@@ -155,7 +155,7 @@ Class {
 { #category : 'translation' }
 StackToRegisterMappingCogit class >> ancilliaryClasses [
 	^super ancilliaryClasses,
-	  { self basicNew simStackEntryClass. self basicNew bytecodeFixupClass. CogSSOptStatus . CogCompileTimeStackState }
+	  { self basicNew simStackEntryClass. self basicNew bytecodeFixupClass . CogCompileTimeStackState }
 ]
 
 { #category : 'documentation' }
@@ -238,8 +238,6 @@ StackToRegisterMappingCogit class >> declareCVarsIn: aCodeGen [
 			declareC: 'void (*realCECallCogCodePopReceiverArg1Arg0Regs)(void)';
 		var: 'simStackState'
 			declareC: 'CogCompileTimeStackState simStackState';
-		var: #optStatus
-			type: #CogSSOptStatus;
 		var: 'prevBCDescriptor'
 			type: #'BytecodeDescriptor *'.
 

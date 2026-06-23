@@ -1356,7 +1356,7 @@ Cogit class >> runtime [
 { #category : 'translation' }
 Cogit class >> shouldGenerateTypedefFor: aStructClass [
 	"Hack to work-around mutliple definitions.  Sometimes a type has been defined in an include."
-	^({ CogMethod. SistaCogMethod } includes: aStructClass) not
+	^ CogMethod ~= aStructClass
 ]
 
 { #category : 'translation' }
