@@ -162,7 +162,7 @@ VMPrimitiveCallAbstractTest >> setUp [
 	super setUp.
 	
 	self setUpCogMethodEntry.
-	cogit generateClosedPICPrototype.
+	cogit generatePICPrototype.
 	cogit methodZone manageFrom: cogit methodZoneBase to: cogit methodZone effectiveLimit.
 
 	"Initializing the accessor depth table with a value for the first primitive"
@@ -189,10 +189,10 @@ VMPrimitiveCallAbstractTest >> setUpTrampolines [
 	cogit methodAbortTrampolines at: 2 put: cogit ceMethodAbortTrampoline.
 	cogit methodAbortTrampolines at: 3 put: cogit ceMethodAbortTrampoline.
 	
-	cogit picMissTrampolines at: 0 put: cogit ceCPICMissTrampoline.
-	cogit picMissTrampolines at: 1 put: cogit ceCPICMissTrampoline.
-	cogit picMissTrampolines at: 2 put: cogit ceCPICMissTrampoline.
-	cogit picMissTrampolines at: 3 put: cogit ceCPICMissTrampoline.
+	cogit picMissTrampolines at: 0 put: cogit cePICMissTrampoline.
+	cogit picMissTrampolines at: 1 put: cogit cePICMissTrampoline.
+	cogit picMissTrampolines at: 2 put: cogit cePICMissTrampoline.
+	cogit picMissTrampolines at: 3 put: cogit cePICMissTrampoline.
 
 	cogit picAbortTrampolines at: 0 put: cogit cePICAbortTrampoline.
 	cogit picAbortTrampolines at: 1 put: cogit cePICAbortTrampoline.
