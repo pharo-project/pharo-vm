@@ -4604,22 +4604,6 @@ StackToRegisterMappingCogit >> tempsValidAndVolatileEntriesSpilled [
 	^true
 ]
 
-{ #category : 'simulation only' }
-StackToRegisterMappingCogit >> traceDescriptor: descriptor [
-	<cmacro: '(ign) 0'>
-	(compilationTrace anyMask: 2) ifTrue:
-		[coInterpreter transcript cr; print: bytecodePC; space; nextPutAll: descriptor generator.
-		 deadCode ifTrue: [coInterpreter transcript nextPutAll: ' => deadCode'].
-		 coInterpreter flush]
-]
-
-{ #category : 'simulation only' }
-StackToRegisterMappingCogit >> traceSpill: simStackEntry [
-	<cmacro: '(ign) 0'>
-	(compilationTrace anyMask: 8) ifTrue:
-		[coInterpreter transcript cr; print: bytecodePC; space; print: simStackEntry; flush]
-]
-
 { #category : 'peephole optimizations' }
 StackToRegisterMappingCogit >> tryCollapseTempVectorInitializationOfSize: slots [
 	"If the sequence of bytecodes is
@@ -4719,14 +4703,6 @@ StackToRegisterMappingCogit >> updateSimSpillBase [
 StackToRegisterMappingCogit >> useTwoPaths: aBoolean [ 
 	<doNotGenerate>
 	useTwoPaths := aBoolean
-]
-
-{ #category : 'span functions' }
-StackToRegisterMappingCogit >> v4PushNilSize: aMethodObj numInitialNils: numInitialNils [
-	"77			01001101				Push false [* 1:true, 2:nil, 3:thisContext, ..., -N: pushExplicitOuter: N, N = Extend B]
-	 225		11100001	sbbbbbbb	Extend B (Ext B = Ext B prev * 256 + Ext B)"
-	<inline: true>
-	^3 * numInitialNils
 ]
 
 { #category : 'testing' }
