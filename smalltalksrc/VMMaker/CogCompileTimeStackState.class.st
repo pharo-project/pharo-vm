@@ -20,7 +20,7 @@ CogCompileTimeStackState class >> instVarNamesAndTypesForTranslationDo: aBinaryB
 	self filteredInstVarNames do: [ :ivn |
 		aBinaryBlock value: ivn value: (ivn first ~= $# ifTrue: [
 				 ivn caseOf: {
-						 ([ 'simStack' ] -> [ 'SimStackEntry simStack[' , StackToRegisterMappingCogit simStackSlots asString , ']' ]).
+						 ([ 'simStack' ] -> [ {'SimStackEntry' .'[' , StackToRegisterMappingCogit simStackSlots asString , ']'} ]).
 						 ([ 'simStackPtr' ] -> [ #'unsigned char' ]).
 						 ([ 'simSpillBase' ] -> [ #'unsigned char' ]) } ]) ]
 ]
@@ -90,9 +90,17 @@ CogCompileTimeStackState >> simStackAt: index [
 ]
 
 { #category : 'accessing' }
-CogCompileTimeStackState >> simStackAt: index put: anEntry [
+CogCompileTimeStackState >> simStackAt: index put: simStackEntry [
 
-	^ simStack at: index put: anEntry
+	<var: #simStackEntry type: #SimStackEntry>
+	simStack at: index put: simStackEntry
+]
+
+{ #category : 'accessing' }
+CogCompileTimeStackState >> simStackDescriptorAt: index [
+
+	<returnTypeC: #SimStackEntry>
+	^ simStack at: index
 ]
 
 { #category : 'accessing' }
@@ -124,5 +132,5 @@ CogCompileTimeStackState >> ssTopDescriptor [
 
 	<returnTypeC: #SimStackEntry>
 	<inline: true>
-	^ self simStackAt: simStackPtr
+	^ self simStackDescriptorAt: simStackPtr
 ]
