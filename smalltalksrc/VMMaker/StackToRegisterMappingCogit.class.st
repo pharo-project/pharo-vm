@@ -155,7 +155,7 @@ Class {
 { #category : 'translation' }
 StackToRegisterMappingCogit class >> ancilliaryClasses [
 	^super ancilliaryClasses,
-	  { self basicNew simStackEntryClass. self basicNew bytecodeFixupClass. CogSSOptStatus }
+	  { self basicNew simStackEntryClass. self basicNew bytecodeFixupClass. CogSSOptStatus . CogCompileTimeStackState }
 ]
 
 { #category : 'documentation' }
