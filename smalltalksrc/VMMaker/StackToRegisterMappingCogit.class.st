@@ -116,7 +116,6 @@ Class {
 	#superclass : 'SimpleStackBasedCogit',
 	#instVars : [
 		'prevBCDescriptor',
-		'pushNilSizeFunction',
 		'methodOrBlockNumTemps',
 		'regArgsHaveBeenPushed',
 		'ceCallCogCodePopReceiverArg0Regs',
@@ -132,7 +131,8 @@ Class {
 		'deadCode',
 		'useTwoPaths',
 		'counterIndex',
-		'simStackState'
+		'simStackState',
+		'compileTimeState'
 	],
 	#pools : [
 		'CogCompilationConstants',
@@ -229,10 +229,8 @@ StackToRegisterMappingCogit class >> declareCVarsIn: aCodeGen [
 			declareC: 'void (*ceCallCogCodePopReceiverArg1Arg0Regs)(void)';
 		var: #realCECallCogCodePopReceiverArg1Arg0Regs
 			declareC: 'void (*realCECallCogCodePopReceiverArg1Arg0Regs)(void)';
-		var: 'simStackState'
-			declareC: 'CogCompileTimeStackState simStackState';
-		var: 'prevBCDescriptor'
-			type: #'BytecodeDescriptor *'
+		var: 'compileTimeState'
+			type: 'CogCompileTimeState'
 ]
 
 { #category : 'class initialization' }
@@ -4217,13 +4215,13 @@ StackToRegisterMappingCogit >> ssAllocateRequiredRegMask: requiredRegsMask upThr
 		 self deny: (self liveRegisters anyMask: requiredRegsMask)]
 ]
 
-{ #category : 'as yet unclassified' }
+{ #category : 'simulation stack' }
 StackToRegisterMappingCogit >> ssFlushStack [
 	
 	self ssFlushStackExceptTop: 0
 ]
 
-{ #category : 'as yet unclassified' }
+{ #category : 'simulation stack' }
 StackToRegisterMappingCogit >> ssFlushStackExceptTop: n [
 	
 	self ssFlushTo: (self addressOf: simStackState) simStackPtr - n
