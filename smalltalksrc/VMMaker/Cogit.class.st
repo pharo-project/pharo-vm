@@ -125,7 +125,6 @@ Class {
 		'simulatedTrampolines',
 		'simulatedVariableGetters',
 		'simulatedVariableSetters',
-		'singleStep',
 		'traceFlags',
 		'traceStores',
 		'methodObj',
@@ -10809,7 +10808,6 @@ Cogit >> setInterpreter: aCoInterpreter [
 		              ifTrue: [ "record prim trace on by default (see Cogit class>>decareCVarsIn:)"
 			              8 ]
 		              ifFalse: [ 0 ].
-	singleStep := false.
 	backEnd := CogCompilerClass for: self.
 	methodLabel := CogCompilerClass for: self.
 	(literalsManager := backEnd class literalsManagerClass new) cogit:
@@ -10968,9 +10966,6 @@ Cogit >> simulateLeafCallOf: someFunction [
 		simulateLeafCallOf: someFunction
 		nextpc: 16rBADF00D0
 		memory: nil.
-	
-	singleStep 
-		ifTrue: [ self notYetImplemented ].
 		
 	processor runUntil: 16rBADF00D0.
 
@@ -11082,18 +11077,6 @@ Cogit >> simulatedVariableAt: address put: value [
 
 	<doNotGenerate>
 	^ simulatedVariableGetters at: address put: value
-]
-
-{ #category : 'debugging' }
-Cogit >> singleStep [
-	<doNotGenerate>
-	^singleStep
-]
-
-{ #category : 'debugging' }
-Cogit >> singleStep: aBoolean [
-	<doNotGenerate>
-	singleStep := aBoolean
 ]
 
 { #category : 'debugging' }
