@@ -1157,11 +1157,6 @@ StackInterpreterSimulator >> printNum: anInteger [
 ]
 
 { #category : 'debug printing' }
-StackInterpreterSimulator >> printSends [
-	^printSends or: [printBytecodeAtEachStep]
-]
-
-{ #category : 'debug printing' }
 StackInterpreterSimulator >> printSends: aBoolean [
 	printSends := aBoolean
 ]

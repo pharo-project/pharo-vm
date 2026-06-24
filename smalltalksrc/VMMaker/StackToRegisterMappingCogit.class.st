@@ -2963,14 +2963,6 @@ StackToRegisterMappingCogit >> genSubFloat64Vector [
 	^0
 ]
 
-{ #category : 'bytecode generator stores' }
-StackToRegisterMappingCogit >> genTraceStores [
-	<inline: true>
-	traceStores > 0 ifTrue: 
-		[ self MoveR: ClassReg R: TempReg.
-		self CallRT: ceTraceStoreTrampoline ].
-]
-
 { #category : 'bytecode generators' }
 StackToRegisterMappingCogit >> genUpArrowReturn [
 	"Generate a method return from within a method or a block.
@@ -3166,11 +3158,6 @@ StackToRegisterMappingCogit >> generateSendTrampolines [
 ]
 
 { #category : 'initialization' }
-StackToRegisterMappingCogit >> generateSistaRuntime [
-	"No sita vm"
-]
-
-{ #category : 'initialization' }
 StackToRegisterMappingCogit >> generateSuperSendTrampolineTo: function named: name numArgs: numArgs in: table [
 
 	<var: #function type: #'void *'>
@@ -3186,32 +3173,6 @@ StackToRegisterMappingCogit >> generateSuperSendTrampolineTo: function named: na
 		arg: (self numArgsOrSendNumArgsReg: numArgs).
 	table at: numArgs put: trampoline.
 	^ trampoline
-]
-
-{ #category : 'initialization' }
-StackToRegisterMappingCogit >> generateTracingTrampolines [
-	"Generate trampolines for tracing.  In the simulator we can save a lot of time
-	 and avoid noise instructions in the lastNInstructions log by short-cutting these
-	 trampolines, but we need them in the real vm."
-	ceTraceLinkedSendTrampoline :=
-		self genTrampolineFor: #ceTraceLinkedSend:
-			called: 'ceTraceLinkedSendTrampoline'
-			arg: ReceiverResultReg
-			regsToSave: CallerSavedRegisterMask..
-	ceTraceBlockActivationTrampoline :=
-		self genTrampolineFor: #ceTraceBlockActivation
-			called: 'ceTraceBlockActivationTrampoline'
-			regsToSave: CallerSavedRegisterMask..
-	ceTraceStoreTrampoline :=
-		self genTrampolineFor: #ceTraceStoreOf:into:
-			called: 'ceTraceStoreTrampoline'
-			arg: TempReg
-			arg: ReceiverResultReg
-			regsToSave: CallerSavedRegisterMask..
-	self cCode: [] inSmalltalk:
-		[ceTraceLinkedSendTrampoline := self simulatedTrampolineFor: #ceShortCutTraceLinkedSend:.
-		 ceTraceBlockActivationTrampoline := self simulatedTrampolineFor: #ceShortCutTraceBlockActivation:.
-		 ceTraceStoreTrampoline := self simulatedTrampolineFor: #ceShortCutTraceStore:]
 ]
 
 { #category : 'simulation stack' }

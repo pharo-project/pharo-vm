@@ -4467,7 +4467,6 @@ StackInterpreter >> commonSendOrdinary [
 	"Note: This method is inlined into the interpreter dispatch loop."
 	<sharedCodeInCase: #extSendBytecode>
 	self sendBreakpoint: messageSelector receiver: (self stackValue: argumentCount).
-	self doRecordSendTrace.
 	self findNewMethodOrdinary.
 	self executeNewMethod: false.
 	self fetchNextBytecode
@@ -4997,16 +4996,6 @@ StackInterpreter >> doPrimitiveMod: rcvr by: arg [
 			ifTrue: [integerResult := integerResult + integerArg]].
 	self success: (objectMemory isIntegerValue: integerResult).
 	^ integerResult
-]
-
-{ #category : 'send bytecodes' }
-StackInterpreter >> doRecordSendTrace [
-	<inline: true>
-	self printSends ifTrue: [
-		self
-			printActivationNameForSelector: messageSelector
-			startClass: (objectMemory classForClassTag: lkupClassTag);
-			cr ]
 ]
 
 { #category : 'process primitive support' }
@@ -10958,12 +10947,6 @@ StackInterpreter >> primitiveObject: actualReceiver perform: selector withArgume
 	argumentCount := arraySize.
 	messageSelector := selector.
 	self sendBreakpoint: messageSelector receiver: actualReceiver.
-	self printSends ifTrue:
-		[self printActivationNameForSelector: messageSelector
-				startClass: (lookupClassOrNil isNil
-								ifTrue: [objectMemory fetchClassOf: actualReceiver]
-								ifFalse: [lookupClassOrNil]);
-			cr].
 	self findNewMethodInClassTag: (lookupClassOrNil isNil
 										ifTrue: [objectMemory fetchClassTagOf: actualReceiver]
 										ifFalse: [objectMemory classTagForClass: lookupClassOrNil]).
@@ -12186,11 +12169,6 @@ StackInterpreter >> printProcsOnList: procList [
 ]
 
 { #category : 'debug printing' }
-StackInterpreter >> printSends [
-	^false
-]
-
-{ #category : 'debug printing' }
 StackInterpreter >> printStackCallStack [
 	<doNotGenerate>
 	self printStackCallStackOf: (framePointer ifNil: [framePointer])
@@ -12622,7 +12600,6 @@ StackInterpreter >> pushFullClosureNumArgs: numArgs copiedValues: numCopiedArg c
 		              numArgs: numArgs
 		              numCopiedValues: numCopiedArg
 		              compiledBlock: compiledBlock.
-	self maybeTraceBlockCreation: newClosure.
 	receiverIsOnStack
 		ifFalse: [
 			startIndex := FullClosureFirstCopiedValueIndex.

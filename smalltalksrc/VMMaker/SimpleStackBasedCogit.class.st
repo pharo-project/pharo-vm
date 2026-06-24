@@ -266,27 +266,6 @@ SimpleStackBasedCogit >> cePICMissTrampoline: anAddress [
 	cePICMissTrampoline := anAddress
 ]
 
-{ #category : 'simulation only' }
-SimpleStackBasedCogit >> ceShortCutTraceBlockActivation: aProcessorSimulationTrap [
-	self shortcutTrampoline: aProcessorSimulationTrap
-		to: [coInterpreter ceTraceBlockActivation]
-]
-
-{ #category : 'simulation only' }
-SimpleStackBasedCogit >> ceShortCutTraceLinkedSend: aProcessorSimulationTrap [
-	self shortcutTrampoline: aProcessorSimulationTrap
-		to: [coInterpreter ceTraceLinkedSend: (processor registerAt: ReceiverResultReg)]
-]
-
-{ #category : 'simulation only' }
-SimpleStackBasedCogit >> ceShortCutTraceStore: aProcessorSimulationTrap [
-	<doNotGenerate>
-	self shortcutTrampoline: aProcessorSimulationTrap
-		to: [coInterpreter
-				ceTraceStoreOf: (processor registerAt: ClassReg)
-				into: (processor registerAt: ReceiverResultReg)]
-]
-
 { #category : 'accessing' }
 SimpleStackBasedCogit >> ceStoreContextInstVarTrampoline: anInteger [ 
 	<doNotGenerate>
@@ -2750,21 +2729,6 @@ SimpleStackBasedCogit >> genSubConstant: constant R: reg [
 		ifFalse: [ self SubCq: constant R: reg ]
 ]
 
-{ #category : 'initialization' }
-SimpleStackBasedCogit >> genTraceStoreTrampoline [
-	ceTraceStoreTrampoline := self genTrampolineFor: #ceTraceStoreOf:into:
-										called: 'ceTraceStoreTrampoline'
-										arg: ClassReg
-										arg: ReceiverResultReg
-										regsToSave: CallerSavedRegisterMask
-]
-
-{ #category : 'bytecode generator support' }
-SimpleStackBasedCogit >> genTraceStores [
-	<inline: true>
-	traceStores > 0 ifTrue: [ self CallRT: ceTraceStoreTrampoline ].
-]
-
 { #category : 'bytecode generators' }
 SimpleStackBasedCogit >> genUnconditionalTrapBytecode [
 	"SistaV1: *	217		Trap"
@@ -2822,28 +2786,6 @@ SimpleStackBasedCogit >> generateMissAbortTrampolines [
 	ceReapAndResetErrorCodeTrampoline := self genTrampolineFor: #ceReapAndResetErrorCodeFor:
 												called: 'ceReapAndResetErrorCodeTrampoline'
 												arg: ClassReg
-]
-
-{ #category : 'initialization' }
-SimpleStackBasedCogit >> generateTracingTrampolines [
-	"Generate trampolines for tracing.  In the simulator we can save a lot of time
-	 and avoid noise instructions in the lastNInstructions log by short-cutting these
-	 trampolines, but we need them in the real vm."
-	ceTraceLinkedSendTrampoline :=
-		self genTrampolineFor: #ceTraceLinkedSend:
-			called: 'ceTraceLinkedSendTrampoline'
-			arg: ReceiverResultReg
-			regsToSave: CallerSavedRegisterMask.
-	ceTraceBlockActivationTrampoline :=
-		self genTrampolineFor: #ceTraceBlockActivation
-			called: 'ceTraceBlockActivationTrampoline'
-			regsToSave: CallerSavedRegisterMask.
-	ceTraceStoreTrampoline :=
-		self genTrampolineFor: #ceTraceStoreOf:into:
-			called: 'ceTraceStoreTrampoline'
-			arg: ClassReg
-			arg: ReceiverResultReg
-			regsToSave: CallerSavedRegisterMask.
 ]
 
 { #category : 'register management' }

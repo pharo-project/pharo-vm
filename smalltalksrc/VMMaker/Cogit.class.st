@@ -126,7 +126,6 @@ Class {
 		'simulatedVariableGetters',
 		'simulatedVariableSetters',
 		'traceFlags',
-		'traceStores',
 		'methodObj',
 		'enumeratingCogMethod',
 		'methodHeader',
@@ -191,9 +190,6 @@ Class {
 		'ceEnclosingObjectTrampoline',
 		'ceFlushICache',
 		'ceCheckFeaturesFunction',
-		'ceTraceLinkedSendTrampoline',
-		'ceTraceBlockActivationTrampoline',
-		'ceTraceStoreTrampoline',
 		'ceGetFP',
 		'ceGetSP',
 		'ceCaptureCStackPointers',
@@ -3369,13 +3365,6 @@ Cogit >> blockDispatchTargetsFor: cogMethod perform: binaryFunction arg: arg [
 	^0
 ]
 
-{ #category : 'debugging' }
-Cogit >> breakOnImplicitReceiver [
-	<api>
-	<cmacro: '() (traceFlags & 64)'>
-	^(traceFlags bitAnd: 64) ~= 0
-]
-
 { #category : 'accessing' }
 Cogit >> byte1: anInteger [
 	<doNotGenerate>
@@ -4877,10 +4866,7 @@ Cogit >> compileEntry [
 	entry := objectRepresentation genGetInlineCacheClassTagFrom: ReceiverResultReg into: TempReg.
 	self CmpR: ClassReg R: TempReg.
 	self JumpNonZero: sendMiss.
-	noCheckEntry := self Label.
-	self compileSendTrace ifTrue:
-		[backEnd saveAndRestoreLinkRegAround:
-			[self CallRT: ceTraceLinkedSendTrampoline]]
+	noCheckEntry := self Label
 ]
 
 { #category : 'compile abstract instructions' }
@@ -5035,13 +5021,6 @@ Cogit >> compilePolymorphicICPrototype [
 	picEndOfCodeLabel := self Label.
 	literalsManager dumpLiterals: false.
 	^0
-]
-
-{ #category : 'debugging' }
-Cogit >> compileSendTrace [
-	"2 is trace sends; 256+2 is traceLinkedSends, so one can trace just unlinked sends using 2"
-	<cmacro: '() ((traceFlags & 258) == 258)'>
-	^traceFlags allMask: 256 + 2
 ]
 
 { #category : 'initialization' }
@@ -7414,9 +7393,7 @@ Cogit >> generateTrampolines [
 			self generateMissAbortTrampolines.
 			objectRepresentation generateObjectRepresentationTrampolines.
 			self generateRunTimeTrampolines.
-			SistaVM ifTrue: [self generateSistaRuntime].
 			self generateEnilopmarts.
-			self generateTracingTrampolines.
 			self recordGeneratedRunTime: 'methodZoneBase' address: methodZoneBase]
 		flushingCacheWith: [ self flushICacheFrom: methodZoneStart asUnsignedInteger to: methodZoneBase asUnsignedInteger ].
 
@@ -10028,13 +10005,6 @@ Cogit >> printNum: n [
 	coInterpreter transcript printNum: n
 ]
 
-{ #category : 'debugging' }
-Cogit >> printOnTrace [
-	<api>
-	<cmacro: '() (traceFlags & 1)'>
-	^(traceFlags bitAnd: 1) ~= 0
-]
-
 { #category : 'method map' }
 Cogit >> printPCMapPairsFor: cogMethod [
 	"<api>
@@ -10254,13 +10224,6 @@ Cogit >> receiverTags: anInteger [
 ]
 
 { #category : 'debugging' }
-Cogit >> recordBlockTrace [
-	<api>
-	<cmacro: '() (traceFlags & 4)'>
-	^(traceFlags bitAnd: 4) ~= 0
-]
-
-{ #category : 'debugging' }
 Cogit >> recordEventTrace [
 	<api>
 	<cmacro: '() (traceFlags & 16)'>
@@ -10312,13 +10275,6 @@ Cogit >> recordRunTimeObjectReferences [
 				at: runtimeObjectRefIndex
 				put: instruction mapEntryAddress asUnsignedInteger.
 			 runtimeObjectRefIndex := runtimeObjectRefIndex + 1]]
-]
-
-{ #category : 'debugging' }
-Cogit >> recordSendTrace [
-	<api>
-	<cmacro: '() (traceFlags & 2)'>
-	^(traceFlags bitAnd: 2) ~= 0
 ]
 
 { #category : 'register management' }
@@ -10801,7 +10757,6 @@ Cogit >> setInterpreter: aCoInterpreter [
 	simulatedTrampolines := Dictionary new.
 	simulatedVariableGetters := Dictionary new.
 	simulatedVariableSetters := Dictionary new.
-	traceStores := 0.
 	traceFlags := (self class initializationOptions
 		               at: #recordPrimTrace
 		               ifAbsent: [ true ])
@@ -11178,14 +11133,6 @@ Cogit >> traceLinkedSendOffset [
 	 + (backEnd hasLinkRegister
 		ifTrue: [backEnd pushLinkRegisterByteSize]
 		ifFalse: [0])
-]
-
-{ #category : 'debugging' }
-Cogit >> traceStores: aBooleanOrInteger [
-	<doNotGenerate>
-	traceStores := aBooleanOrInteger isInteger
-							ifTrue: [aBooleanOrInteger]
-							ifFalse: [aBooleanOrInteger ifTrue: [1] ifFalse: [0]]
 ]
 
 { #category : 'initialization' }
