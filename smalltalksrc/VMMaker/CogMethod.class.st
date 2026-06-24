@@ -36,7 +36,6 @@ Class {
 		'cmNumArgs',
 		'cmType',
 		'cmRefersToYoung',
-		'cpicHasMNUCaseOrCMIsFullBlock',
 		'cmUsageCount',
 		'cmUsesPenultimateLit',
 		'cbUsesInstVars',
@@ -46,7 +45,8 @@ Class {
 		'picUsage',
 		'methodObject',
 		'methodHeader',
-		'selector'
+		'selector',
+		'picHasMNUCaseOrCMIsFullBlock'
 	],
 	#pools : [
 		'CogMethodConstants',
@@ -106,14 +106,14 @@ CogMethod class >> instVarNamesAndTypesForTranslationDo: aBinaryBlock [
 						 (['cmNumArgs'] -> [#(unsigned ' : 8')] ).
 						 ([ 'cmType' ] -> [ #( unsigned ' : 3' ) ]).
 						 ([ 'cmRefersToYoung' ] -> [ #( unsigned #Boolean ' : 1' ) ]).
-						 ([ 'cpicHasMNUCaseOrCMIsFullBlock' ]
+						 ([ 'picHasMNUCaseOrCMIsFullBlock' ]
 						  -> [ #( unsigned #Boolean ' : 1' ) ]).
 						 ([ 'cmUsageCount' ] -> [ #( unsigned ' : 3' ) ]). "See CMMaxUsageCount in initialize"
 						 ([ 'cmUsesPenultimateLit' ]
 						  -> [ #( unsigned #Boolean ' : 1' ) ]).
 						 ([ 'cbUsesInstVars' ] -> [ #( unsigned #Boolean ' : 1' ) ]).
 						 ([ 'cmUnusedFlags' ] -> [ #( unsigned ' : 2' ) ]).
-						 ([ 'stackCheckOffset' ] -> [ #( unsigned ' : 12' ) ]). "See MaxStackCheckOffset in initialize. a.k.a. cPICNumCases"
+						 ([ 'stackCheckOffset' ] -> [ #( unsigned ' : 12' ) ]). "See MaxStackCheckOffset in initialize. a.k.a. picNumCases"
 						 ([ 'blockSize' ] -> [ #'unsigned short' ]). "See MaxMethodSize in initialize"
 						 ([ 'picUsage' ] -> [ #'unsigned short' ]).
 						 ([ 'homeOffset' ] -> [ #'unsigned short' ]).
@@ -126,7 +126,7 @@ CogMethod class >> instVarNamesAndTypesForTranslationDo: aBinaryBlock [
 { #category : 'translation' }
 CogMethod class >> isAccessor: aSelector [
 	"Answer if aSelector is simply an accessor method for one of our fields."
-	^(#(cPICNumCases cPICNumCases: #nextMegamorphicIC #nextMegamorphicIC:) includes: aSelector)
+	^(#(#picNumCases #picNumCases: #nextMegamorphicIC #nextMegamorphicIC:) includes: aSelector)
 	  or: [super isAccessor: aSelector]
 ]
 
@@ -158,20 +158,6 @@ CogMethod >> blockSize: anObject [
 ]
 
 { #category : 'accessing' }
-CogMethod >> cPICNumCases [
-	"Answer the value of cPICNumCases (a.k.a. stackCheckOffset)"
-	<cmacro: ' stackCheckOffset'>
-	^stackCheckOffset
-]
-
-{ #category : 'accessing' }
-CogMethod >> cPICNumCases: anObject [
-	"Set the value of cPICNumCases (a.k.a. stackCheckOffset)"
-	<cmacro: 'Hack hack hack hack i.e. the getter macro does all the work'>
-	^stackCheckOffset := anObject
-]
-
-{ #category : 'accessing' }
 CogMethod >> cbUsesInstVars [
 
 	^cbUsesInstVars
@@ -185,9 +171,9 @@ CogMethod >> cbUsesInstVars: anObject [
 
 { #category : 'accessing' }
 CogMethod >> cmIsFullBlock [
-	"Answer the value of cpicHasMNUCaseOrCMIsFullBlock"
+	"Answer the value of picHasMNUCaseOrCMIsFullBlock"
 	<inline: true>
-	^ self cpicHasMNUCaseOrCMIsFullBlock
+	^ self picHasMNUCaseOrCMIsFullBlock
 ]
 
 { #category : 'accessing' }
@@ -274,35 +260,6 @@ CogMethod >> counters [
 ]
 
 { #category : 'accessing' }
-CogMethod >> cpicHasMNUCase [
-	"Answer if the receiver has an MNU case."
-	<inline: true>
-
-	^ self cpicHasMNUCaseOrCMIsFullBlock and: [self cmType = CMPolymorphicIC]
-]
-
-{ #category : 'accessing' }
-CogMethod >> cpicHasMNUCase: anObject [
-	"Set if the receiver has an MNU case."
-	<inline: true>
-	^cpicHasMNUCaseOrCMIsFullBlock := anObject
-]
-
-{ #category : 'accessing' }
-CogMethod >> cpicHasMNUCaseOrCMIsFullBlock [
-	"Answer the value of cpicHasMNUCaseOrCMIsFullBlock"
-
-	^cpicHasMNUCaseOrCMIsFullBlock
-]
-
-{ #category : 'accessing' }
-CogMethod >> cpicHasMNUCaseOrCMIsFullBlock: anObject [
-	"Set the value of cpicHasMNUCaseOrCMIsFullBlock"
-
-	^cpicHasMNUCaseOrCMIsFullBlock := anObject
-]
-
-{ #category : 'accessing' }
 CogMethod >> methodHeader [
 	"Answer the value of methodHeader"
 
@@ -356,6 +313,49 @@ CogMethod >> objectHeader: anObject [
 	"Set the value of objectHeader"
 
 	^objectHeader := anObject
+]
+
+{ #category : 'accessing' }
+CogMethod >> picHasMNUCase [
+	"Answer if the receiver has an MNU case."
+	<inline: true>
+
+	^ self picHasMNUCaseOrCMIsFullBlock and: [self cmType = CMPolymorphicIC]
+]
+
+{ #category : 'accessing' }
+CogMethod >> picHasMNUCase: anObject [
+	"Set if the receiver has an MNU case."
+	<inline: true>
+	^picHasMNUCaseOrCMIsFullBlock := anObject
+]
+
+{ #category : 'accessing' }
+CogMethod >> picHasMNUCaseOrCMIsFullBlock [
+	"Answer the value of picHasMNUCaseOrCMIsFullBlock"
+
+	^picHasMNUCaseOrCMIsFullBlock
+]
+
+{ #category : 'accessing' }
+CogMethod >> picHasMNUCaseOrCMIsFullBlock: anObject [
+	"Set the value of picHasMNUCaseOrCMIsFullBlock"
+
+	^picHasMNUCaseOrCMIsFullBlock := anObject
+]
+
+{ #category : 'accessing' }
+CogMethod >> picNumCases [
+	"Answer the value of picNumCases (a.k.a. stackCheckOffset)"
+	<cmacro: ' stackCheckOffset'>
+	^stackCheckOffset
+]
+
+{ #category : 'accessing' }
+CogMethod >> picNumCases: anObject [
+	"Set the value of picNumCases (a.k.a. stackCheckOffset)"
+	<cmacro: 'Hack hack hack hack i.e. the getter macro does all the work'>
+	^stackCheckOffset := anObject
 ]
 
 { #category : 'accessing' }

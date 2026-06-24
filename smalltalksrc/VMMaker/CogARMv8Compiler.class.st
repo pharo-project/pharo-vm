@@ -5548,32 +5548,6 @@ CogARMv8Compiler >> rewriteBranch: conditionalBranch withNewOffset: newOffset [
 ]
 
 { #category : 'inline cacheing' }
-CogARMv8Compiler >> rewriteCPICJumpAt: callSiteReturnAddress target: callTargetAddress [
-	"Rewrite a jump instruction to call a different target.  This variant is used to reset the 
-	jumps in the prototype CPIC to suit each use,.   
-	Answer the extent of the code change which is used to compute the range of the icache to flush."
-	<var: #callSiteReturnAddress type: #usqInt>
-	<var: #callTargetAddress type: #usqInt>
-	| callDistance instr |
-
-	callTargetAddress >= cogit minCallAddress
-		ifFalse: [self error: 'linking callsite to invalid address'].
-
-	callDistance := (callTargetAddress - (callSiteReturnAddress - 4 "return offset")).
-	self assert: (self isInImmediateJumpRange: callDistance). "we don't support long call updates, yet"
-
-	instr := self instructionBeforeAddress: callSiteReturnAddress.
-	self assert: (self instructionIsConditionalBranch: instr).
-
-	objectMemory
-		long32At: (self instructionAddressBefore: callSiteReturnAddress)
-		put: (self branchCondition: (self extractConditionFromB: instr) offset: callDistance).
-
-	self assert: (self extractOffsetFromConditionalBranch: ((self branchCondition: (self extractConditionFromB: instr) offset: callDistance))) = callDistance.
-	^4
-]
-
-{ #category : 'inline cacheing' }
 CogARMv8Compiler >> rewriteCallAt: callSiteReturnAddress target: callTargetAddress [
 	"Rewrite a call instruction to call a different target.  This variant is used to link PICs
 	 in ceSendMiss et al,.   
@@ -5600,7 +5574,7 @@ CogARMv8Compiler >> rewriteCallFullAt: callSiteReturnAddress target: callTargetA
 { #category : 'inline cacheing' }
 CogARMv8Compiler >> rewriteConditionalJumpLongAt: callSiteReturnAddress target: callTargetAddress [
 	"Rewrite a jump instruction to call a different target.  This variant is used to reset the 
-	jumps in the prototype CPIC to suit each use,.   
+	jumps in the prototype PIC to suit each use,.   
 	Answer the extent of the code change which is used to compute the range of the icache to flush."
 	<var: #callSiteReturnAddress type: #usqInt>
 	<var: #callTargetAddress type: #usqInt>
@@ -5658,7 +5632,7 @@ CogARMv8Compiler >> rewriteJumpFullAt: callSiteReturnAddress target: callTargetA
 { #category : 'inline cacheing' }
 CogARMv8Compiler >> rewriteJumpLongAt: callSiteReturnAddress target: callTargetAddress [
 	"Rewrite a jump instruction to call a different target.  This variant is used to reset the 
-	jumps in the prototype CPIC to suit each use,.   
+	jumps in the prototype PIC to suit each use,.   
 	Answer the extent of the code change which is used to compute the range of the icache to flush."
 	<var: #callSiteReturnAddress type: #usqInt>
 	<var: #callTargetAddress type: #usqInt>
@@ -5666,9 +5640,35 @@ CogARMv8Compiler >> rewriteJumpLongAt: callSiteReturnAddress target: callTargetA
 ]
 
 { #category : 'inline cacheing' }
+CogARMv8Compiler >> rewritePICJumpAt: callSiteReturnAddress target: callTargetAddress [
+	"Rewrite a jump instruction to call a different target.  This variant is used to reset the jumps in the prototype PIC to suit each use,.   
+	Answer the extent of the code change which is used to compute the range of the icache to flush."
+	
+	<var: #callSiteReturnAddress type: #usqInt>
+	<var: #callTargetAddress type: #usqInt>
+	| callDistance instr |
+
+	callTargetAddress >= cogit minCallAddress
+		ifFalse: [self error: 'linking callsite to invalid address'].
+
+	callDistance := (callTargetAddress - (callSiteReturnAddress - 4 "return offset")).
+	self assert: (self isInImmediateJumpRange: callDistance). "we don't support long call updates, yet"
+
+	instr := self instructionBeforeAddress: callSiteReturnAddress.
+	self assert: (self instructionIsConditionalBranch: instr).
+
+	objectMemory
+		long32At: (self instructionAddressBefore: callSiteReturnAddress)
+		put: (self branchCondition: (self extractConditionFromB: instr) offset: callDistance).
+
+	self assert: (self extractOffsetFromConditionalBranch: ((self branchCondition: (self extractConditionFromB: instr) offset: callDistance))) = callDistance.
+	^4
+]
+
+{ #category : 'inline cacheing' }
 CogARMv8Compiler >> rewriteTransferAt: callSiteReturnAddress target: callTargetAddress [
 	"Rewrite a call/jump instruction to call a different target.  This variant is used to link PICs
-	 in ceSendMiss et al, and to rewrite call/jumps in CPICs.
+	 in ceSendMiss et al, and to rewrite call/jumps in PICs.
 	Answer the extent of
 	 the code change which is used to compute the range of the icache to flush."
 	<var: #callSiteReturnAddress type: #usqInt>

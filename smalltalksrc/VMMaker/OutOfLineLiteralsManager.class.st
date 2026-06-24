@@ -159,7 +159,7 @@ OutOfLineLiteralsManager >> dumpLiterals: generateBranchAround [
 
 { #category : 'closed PIC parsing' }
 OutOfLineLiteralsManager >> endSizeOffset [
-	"return the offset need from the cPICEndSize in order to point to just after the last instruction - here that means bytesPerOop * list size"
+	"return the offset need from the picEndSize in order to point to just after the last instruction - here that means bytesPerOop * list size"
 	^nextLiteralIndex * objectMemory bytesPerOop
 ]
 
