@@ -3659,8 +3659,7 @@ CCodeGenerator >> isStructSend: aTSendNode [
 	 distinguish between self-sends of ordinary methods from self sends of accessors."
 	^aTSendNode numArgs <= 1
 	   and: [(aTSendNode receiver structTargetKindIn: self) notNil
-	   and: [		
-		(self methodNamed: aTSendNode selector)
+	   and: [(self methodNamed: aTSendNode selector)
 				ifNil: [false]
 				ifNotNil: [:method| method isStructAccessor]]]
 ]
@@ -5102,7 +5101,7 @@ CCodeGenerator >> typeForDereference: sendNode in: aTMethod [
 	(self typeFor: sendNode receiver in: aTMethod) ifNotNil:
 		[:type|
 		 type last = $* ifTrue:
-			[^type allButLast trimBoth]].
+			[^type allButLast withBlanksTrimmed]].
 	"It would be nice to warn here, but there are contexts when the type is unknown, for example determining
 	 the return types of apiMethods.  inferTypesForImplicitlyTypedVariablesAndMethods could provide a signal
 	 handler to suppress the warnings in that case but that's too fancy.  Instead we live with the default."
