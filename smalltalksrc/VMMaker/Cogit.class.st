@@ -128,7 +128,6 @@ Class {
 		'simulatedVariableSetters',
 		'printRegisters',
 		'printInstructions',
-		'compilationTrace',
 		'singleStep',
 		'guardPageSize',
 		'traceFlags',
@@ -4256,9 +4255,6 @@ Cogit >> cog: aMethodObj selector: aSelectorOop [
 	
 	| selector cogMethod startTime |
 	<var: #cogMethod type: #'CogMethod *'>
-	(self exclude: aMethodObj selector: aSelectorOop) ifTrue:
-		[^nil].
-	
 	startTime := coInterpreter ioUTCMicrosecondsNow.		
 	
 	self deny: (coInterpreter methodHasCogMethod: aMethodObj).
@@ -4350,11 +4346,7 @@ Cogit >> cogFullBlockMethod: aMethodObj numCopied: numCopied [
 	<var: #startTime type: #usqLong>
 	<var: #cogMethod type: #'CogMethod *'>
 
-	| cogMethod 	startTime ultimateLiteral |
-
-	(self exclude: aMethodObj) ifTrue:
-		[^nil].
-	
+	| cogMethod 	startTime ultimateLiteral |	
 	startTime := coInterpreter ioUTCMicrosecondsNow.	
 	objectRepresentation ensureNoForwardedLiteralsIn: aMethodObj.
 	ultimateLiteral := coInterpreter ultimateLiteralOf: aMethodObj.
@@ -4655,23 +4647,6 @@ Cogit >> compactPICsWithFreedTargets [
 		 cogMethod := methodZone methodAfter: cogMethod.
 		 count := count + 1].
 	self assert: count = methodZone numMethods
-]
-
-{ #category : 'simulation only' }
-Cogit >> compilationTrace [
-	^compilationTrace
-]
-
-{ #category : 'simulation only' }
-Cogit >> compilationTrace: anInteger [
-	"  1 = method/block compilation
-	   2 = bytecode descriptor.
-	   4 = simStack & optStatus
-	   8 = spill
-	 16 = merge
-	 32 = fixup
-	 64 = map"
-	compilationTrace := anInteger
 ]
 
 { #category : 'compile abstract instructions' }
@@ -5563,62 +5538,6 @@ Cogit >> entryOffset [
 Cogit >> estimateOfAbstractOpcodesPerBytecodes [
 	<inline: true>
 	^ 15
-]
-
-{ #category : 'simulation only' }
-Cogit >> exclude: aMethodObj [
-	"For debugging, allow excluding methods based on selector or methodClass.  Answer if the mehtod should be excluded."
-	<inline: true>
-	self cCode: [] inSmalltalk: "for debugging, allow excluding methods based on selector or methodClass"
-		[self class initializationOptions
-			at: #DoNotJIT
-			ifPresent:
-				[:excluded| 
-				(excluded anySatisfy: [:exclude| aMethodObj = exclude]) ifTrue:
-					[coInterpreter transcript
-						newLine; nextPutAll: 'EXCLUDING ';
-						nextPutAll: aMethodObj; nextPutAll: ' (compiled block)';
-						newLine; flush.
-					 ^true]].
-		 (compilationTrace anyMask: 1) ifTrue:
-			[| methodClass |
-			 methodClass := coInterpreter nameOfClass: (coInterpreter methodClassOf: aMethodObj).
-			 coInterpreter transcript
-				newLine;
-				nextPutAll: 'compiling compiled block in ';
-				nextPutAll: methodClass;
-				newLine; flush]].
-	^false
-]
-
-{ #category : 'simulation only' }
-Cogit >> exclude: aMethodObj selector: aSelectorOop [
-	"For debugging, allow excluding methods based on selector or methodClass.  Answer if the mehtod should be excluded."
-	<inline: true>
-	self cCode: [] inSmalltalk:
-		[| methodClass selector |
-		 self class initializationOptions
-			at: #DoNotJIT
-			ifPresent:
-				[:excluded|
-				methodClass := coInterpreter nameOfClass: (coInterpreter methodClassOf: aMethodObj).
-				selector := coInterpreter stringOf: aSelectorOop.
-				(excluded anySatisfy: [:exclude| selector = exclude or: [methodClass = exclude]]) ifTrue:
-					[coInterpreter transcript
-						newLine; nextPutAll: 'EXCLUDING ';
-						nextPutAll: methodClass; nextPutAll: '>>#'; nextPutAll: selector;
-						cr; flush.
-					 ^true]].
-		 (compilationTrace anyMask: 1) ifTrue:
-			[methodClass := coInterpreter nameOfClass: (coInterpreter methodClassOf: aMethodObj).
-			 selector := coInterpreter stringOf: aSelectorOop.
-			 selector isEmpty ifTrue:
-				[selector := coInterpreter stringOf: (coInterpreter maybeSelectorOfMethod: aMethodObj)].
-			 coInterpreter transcript
-				newLine; nextPutAll: 'compiling ';
-				nextPutAll: methodClass; nextPutAll: '>>#'; nextPutAll: selector;
-				cr; flush]].
-	^false
 ]
 
 { #category : 'in-line cacheing' }
@@ -11046,9 +10965,7 @@ Cogit >> setInterpreter: aCoInterpreter [
 		                       (Array new: NumTrampolines * 2).
 	trampolineTableIndex := 0.
 
-	extA := numExtB := extB := 0.
-
-	compilationTrace ifNil: [compilationTrace := self class initializationOptions at: #compilationTrace ifAbsent: [0]]
+	extA := numExtB := extB := 0
 ]
 
 { #category : 'jit - api' }
