@@ -410,12 +410,10 @@ Cogit class >> declareCVarsIn: aCCodeGenerator [
 
 	#( 'coInterpreter' 'objectMemory' 'methodZone' 'objectRepresentation'
 	   'cogMethodSurrogateClass'
-	   'processor' 'lastNInstructions' 'simulatedAddresses'
+	   'processor' 'simulatedAddresses'
 	   'simulatedTrampolines' 'simulatedVariableGetters'
-	   'simulatedVariableSetters' 'printRegisters' 'printInstructions'
-	   'clickConfirm' 'singleStep' ) do: [
-		:simulationVariableNotNeededForRealVM |
-		aCCodeGenerator removeVariable: simulationVariableNotNeededForRealVM ].
+	   'simulatedVariableSetters' ) do: [ :simulationVariableNotNeededForRealVM |
+			aCCodeGenerator removeVariable: simulationVariableNotNeededForRealVM ].
 
 	aCCodeGenerator
 		addHeaderFile: '<stddef.h>';
