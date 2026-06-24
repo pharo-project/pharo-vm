@@ -121,7 +121,6 @@ Class {
 		'methodZoneBase',
 		'codeBase',
 		'minValidCallAddress',
-		'lastNInstructions',
 		'simulatedAddresses',
 		'simulatedTrampolines',
 		'simulatedVariableGetters',
@@ -7596,23 +7595,11 @@ Cogit >> handleCallOrJumpSimulationTrap: aProcessorSimulationTrap [
 			processor
 				simulateCallOf: aProcessorSimulationTrap address
 				nextpc: aProcessorSimulationTrap nextpc
-				memory: (memory := coInterpreter memory).
-			self recordInstruction: {
-					'(simulated call of '.
-					aProcessorSimulationTrap address.
-					'/'.
-					function.
-					')' } ]
+				memory: (memory := coInterpreter memory) ]
 		ifFalse: [
 			processor
 				simulateJumpCallOf: aProcessorSimulationTrap address
-				memory: nil.
-			self recordInstruction: {
-					'(simulated jump to '.
-					aProcessorSimulationTrap address.
-					'/'.
-					function.
-					')' } ].
+				memory: nil ].
 	savedFramePointer := coInterpreter framePointer.
 	savedStackPointer := coInterpreter stackPointer.
 	savedArgumentCount := coInterpreter argumentCount.
@@ -7653,10 +7640,6 @@ Cogit >> handleCallOrJumpSimulationTrap: aProcessorSimulationTrap [
 				self assert: savedFramePointer = coInterpreter framePointer.
 				self assert: savedStackPointer = coInterpreter stackPointer ] ].
 	result ~~ #continueNoReturn ifTrue: [
-		self recordInstruction: {
-				'(simulated return to '.
-				(processor retpcIn: memory).
-				')' }.
 		rpc := processor retpcIn: memory.
 		self assert: (rpc >= codeBase and: [ rpc < methodZone freeStart ]).
 		processor
@@ -7939,7 +7922,6 @@ Cogit >> initializePIC: aPIC atDelta: addrDelta numArgs: numArgs [
 Cogit >> initializeProcessor [
 	"Initialize the simulation processor, arranging that its initial stack is somewhere on the rump C stack."
 	<doNotGenerate>
-	lastNInstructions := OrderedCollection new.
 	processor initializeStackFor: self.
 	self initializeProcessorStack: coInterpreter rumpCStackAddress.
 	self setCFramePointer: processor fp.
@@ -8154,12 +8136,6 @@ Cogit >> labelForSimulationAccessor: blockOrMessageSendOrSelector [
 			ifFalse: [blockOrMessageSendOrSelector isMessageSend
 						ifTrue: [blockOrMessageSendOrSelector selector]
 						ifFalse: [blockOrMessageSendOrSelector]])
-]
-
-{ #category : 'accessing' }
-Cogit >> lastNInstructions: aCollection [ 
-	<doNotGenerate>
-	lastNInstructions := aCollection
 ]
 
 { #category : 'compile abstract instructions' }
@@ -10328,17 +10304,6 @@ Cogit >> recordGeneratedRunTime: aString address: address [
 	trampolineTableIndex := trampolineTableIndex + 2
 ]
 
-{ #category : 'simulation only' }
-Cogit >> recordInstruction: thing [
-	<doNotGenerate>
-	lastNInstructions addLast: thing.
-	[lastNInstructions size > 160"80"] whileTrue:
-		[lastNInstructions removeFirst.
-		 lastNInstructions size * 2 > lastNInstructions capacity ifTrue:
-			[lastNInstructions makeRoomAtLast]].
-	^thing
-]
-
 { #category : 'debugging' }
 Cogit >> recordOverflowTrace [
 	<api>
@@ -10358,13 +10323,6 @@ Cogit >> recordPrimTraceFunc [
 	"This one for C support code."
 	<api>
 	^self recordPrimTrace
-]
-
-{ #category : 'simulation only' }
-Cogit >> recordRegisters [
-	<doNotGenerate>
-	self recordInstruction: processor integerRegisterState
-	"self recordInstruction: processor registerState"
 ]
 
 { #category : 'initialization' }
@@ -11032,8 +10990,6 @@ Cogit >> simulateLeafCallOf: someFunction [
 	 answering the result returned by someFunction."
 	<doNotGenerate>
 	| spOnEntry |
-	self recordRegisters.
-
 	spOnEntry := processor sp.
 	
 	processor
@@ -11048,8 +11004,7 @@ Cogit >> simulateLeafCallOf: someFunction [
 
 	self assert: processor sp = spOnEntry.
 	self assert: processor pc = 16rBADF00D0.
-	
-	self recordRegisters.	
+
 	^processor cResultRegister
 ]
 
