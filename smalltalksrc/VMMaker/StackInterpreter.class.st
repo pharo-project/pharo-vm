@@ -1655,7 +1655,7 @@ StackInterpreter class >> requiredMethodNames: options [
 	                   interpret loadInitialContext primitiveFail
 	                   primitiveFailFor: primitiveFlushExternalPrimitives
 	                   printAllStacks printCallStack printContext:
-	                   printExternalHeadFrame printFramesInPage:
+	                   printFramesInPage:
 	                   printFrame: printHeadFrame printMemory printOop:
 	                   printStackPages printStackPageList
 	                   printStackPagesInUse printStackPageListInUse
@@ -11417,12 +11417,6 @@ StackInterpreter >> printDecodeMethodHeaderOop: methodHeaderOop [
 	self print: ' nLits '; printNum: (objectMemory literalCountOfMethodHeader: methodHeaderOop);
 		print: ' nArgs '; printNum: (self argumentCountOfMethodHeader: methodHeaderOop);
 		print: ' nTemps '; printNum: (self temporaryCountOfMethodHeader: methodHeaderOop)
-]
-
-{ #category : 'debug printing' }
-StackInterpreter >> printExternalHeadFrame [
-	<inline: false>
-	self printFrame: framePointer WithSP: stackPointer
 ]
 
 { #category : 'debug printing' }

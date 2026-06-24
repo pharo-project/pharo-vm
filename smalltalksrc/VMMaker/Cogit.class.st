@@ -125,8 +125,6 @@ Class {
 		'simulatedTrampolines',
 		'simulatedVariableGetters',
 		'simulatedVariableSetters',
-		'printRegisters',
-		'printInstructions',
 		'singleStep',
 		'traceFlags',
 		'traceStores',
@@ -9906,19 +9904,6 @@ Cogit >> printCogMethodHeaderFor: address [
 ]
 
 { #category : 'disassembly' }
-Cogit >> printInstructions [
-	<doNotGenerate>
-	^printInstructions
-]
-
-{ #category : 'disassembly' }
-Cogit >> printInstructions: aBoolean [
-	<doNotGenerate>
-	printInstructions := aBoolean.
-	singleStep := singleStep or: [aBoolean]
-]
-
-{ #category : 'disassembly' }
 Cogit >> printMethodHeader: cogMethod on: aStream [
 
 	<doNotGenerate>
@@ -10162,18 +10147,6 @@ Cogit >> printRegisterMapOn: aStream [
 			aStream nextPutAll: abstractName; nextPutAll: ' => '; nextPutAll: regName]
 		separatedBy: [(n := n + 1) \\ 4 = 0 ifTrue: [aStream cr] ifFalse: [aStream tab]].
 	aStream cr; flush
-]
-
-{ #category : 'debugging' }
-Cogit >> printRegisters [
-	<doNotGenerate>
-	^printRegisters
-]
-
-{ #category : 'debugging' }
-Cogit >> printRegisters: aBoolean [
-	<doNotGenerate>
-	printRegisters := aBoolean
 ]
 
 { #category : 'debugging' }
@@ -10836,7 +10809,7 @@ Cogit >> setInterpreter: aCoInterpreter [
 		              ifTrue: [ "record prim trace on by default (see Cogit class>>decareCVarsIn:)"
 			              8 ]
 		              ifFalse: [ 0 ].
-	singleStep := printRegisters := printInstructions := false.
+	singleStep := false.
 	backEnd := CogCompilerClass for: self.
 	methodLabel := CogCompilerClass for: self.
 	(literalsManager := backEnd class literalsManagerClass new) cogit:
@@ -10950,7 +10923,6 @@ Cogit >> simulateCogCodeAt: address [
 
 { #category : 'simulation only' }
 Cogit >> simulateEnilopmart: enilopmartAddress numArgs: n [
-	<doNotGenerate>
 	"Enter Cog code, popping the class reg and receiver from the stack
 	 and then returning to the address beneath them.
 	 In the actual VM the enilopmart is a function pointer and so senders
@@ -10959,10 +10931,10 @@ Cogit >> simulateEnilopmart: enilopmartAddress numArgs: n [
 	 the interpreter) or return to the simulation (if we're in the run-time
 	 called from machine code. We should also smash the register state
 	 since, being an abnormal entry, no saved registers will be restored."
+
+	<doNotGenerate>
 	self assert: (coInterpreter isOnRumpCStack: processor sp).
 	"As a convenience for stack printing, nil localFP so we know we're in machine code."
-	(printInstructions or: [printRegisters]) ifTrue:
-		[coInterpreter printExternalHeadFrame].
 	processor
 		smashRegistersWithValuesFrom: 16r80000000 by: objectMemory wordSize;
 		simulateLeafCallOf: enilopmartAddress
