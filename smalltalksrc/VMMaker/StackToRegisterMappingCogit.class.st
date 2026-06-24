@@ -412,7 +412,7 @@ StackToRegisterMappingCogit class >> mustBeGlobalAndExport: var [
 { #category : 'translation' }
 StackToRegisterMappingCogit class >> mustBeGlobalInFile: var [
 
-	^ #( #aMethodLabel #generatorTable ) includes: var
+	^ #( #aMethodLabel #generatorTable aCompileTimeState ) includes: var
 ]
 
 { #category : 'accessing' }
