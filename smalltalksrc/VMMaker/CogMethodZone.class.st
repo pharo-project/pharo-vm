@@ -620,7 +620,11 @@ CogMethodZone >> printCogMethods [
 			[CMMegamorphicIC]	->	[no:= no+ 1] }
 			otherwise: [nu := nu + 1].
 		 cogMethod := self methodAfter: cogMethod].
-	coInterpreter print: 'CMMethod '; printNum: nm;  print: ' CMClosedPIC '; printNum: nc;  print: ' CMMegamorphicIC '; printNum: no;  print: ' CMFree '; printNum: nf.
+	coInterpreter 
+		print: 'CMMethod '; printNum: nm;  
+		print: ' CMPIC '; printNum: nc;  
+		print: ' CMMegamorphicIC '; printNum: no;  
+		print: ' CMFree '; printNum: nf.
 	nu > 0 ifTrue:
 		[coInterpreter print: ' UNKNOWN '; printNum: nu].
 	coInterpreter print: ' total '; printNum: nm+nc+no+nf+nu; cr
@@ -804,7 +808,7 @@ CogMethodZone >> relocateMethodsPreCompaction [
 	[cogMethod asUnsignedInteger < mzFreeStart] whileTrue:
 		[cogMethod cmType ~= CMFree ifTrue:
 			[cogMethod cmType = CMPolymorphicIC
-				ifTrue: [cogit relocateCallsInClosedPIC: cogMethod]
+				ifTrue: [cogit relocateCallsInPIC: cogMethod]
 				ifFalse: [cogit relocateCallsAndSelfReferencesInMethod: cogMethod]].
 		 cogMethod := self methodAfter: cogMethod].
 	self relocateAndPruneYoungReferrers.
