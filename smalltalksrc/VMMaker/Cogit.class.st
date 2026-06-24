@@ -218,8 +218,6 @@ Class {
 		'runtimeObjectRefIndex',
 		'cFramePointerInUse',
 		'debugPrimCallStackOffset',
-		'ceTryLockVMOwner',
-		'ceUnlockVMOwner',
 		'extA',
 		'extB',
 		'numExtB',
@@ -231,7 +229,6 @@ Class {
 		'ceMallocTrampoline',
 		'ceFreeTrampoline',
 		'disassemblingMethod',
-		'cogConstituentIndex',
 		'directedSendUsesBinding',
 		'simulateFPInUse',
 		'statCompileFullBlockCount',
@@ -4300,115 +4297,6 @@ Cogit >> cogCodeBase: anInteger [
 	
 ]
 
-{ #category : 'profiling primitives' }
-Cogit >> cogCodeConstituents: withDetails [
-
-	"Answer the contents of the code zone as an array of pair-wise element, address in ascending address order.
-	 Answer a string for a runtime routine or abstract label (beginning, end, etc), a CompiledMethod for a CMMethod,
-	 or a selector (presumably a Symbol) for a PIC.
-	 If withDetails is true
-		- answer machine-code to bytecode pc mapping information for methods
-		- answer class, target pair information for closed PIC
-	 N.B. Since the class tag for the first case of a closed PIC is stored at the send site, it must be collected
-		  by scanning methods (see collectCogConstituentFor:Annotation:Mcpc:Bcpc:Method:).  Since closed PICs
-		  are never shared they always come after the method that references them, so we don't need an extra pass
-		  to collect the first case class tags, which are (temporarily) assigned to each closed PIC's methodObject field.
-		  But we do need to reset the methodObject fields to zero.  This is done in createPICData:, unless memory
-		  runs out, in which case it is done by cleanUpFailingCogCodeConstituents:."
-
-	<api>
-	<var: #cogMethod type: #'CogMethod *'>
-	| count cogMethod constituents label value |
-	count := trampolineTableIndex / 2 + 3. "+ 3 for start, freeStart and end"
-	cogMethod := self cCoerceSimple: methodZoneBase to: #'CogMethod *'.
-	[ cogMethod < methodZone limitZony ] whileTrue: [ 
-		cogMethod cmType ~= CMFree ifTrue: [ count := count + 1 ].
-		cogMethod := methodZone methodAfter: cogMethod ].
-	constituents := coInterpreter
-		                instantiateClass: coInterpreter classArray
-		                indexableSize: count * 2.
-	constituents ifNil: [ ^ constituents ].
-	coInterpreter pushRemappableOop: constituents.
-	((label := objectMemory stringForCString: 'CogCode') isNil or: [ 
-		 (value := self positiveMachineIntegerFor: codeBase) isNil ]) 
-		ifTrue: [ 
-			coInterpreter popRemappableOop.
-			^ nil ].
-	coInterpreter
-		storePointerUnchecked: 0 ofObject: constituents withValue: label;
-		storePointerUnchecked: 1 ofObject: constituents withValue: value.
-	0 to: trampolineTableIndex - 1 by: 2 do: [ :i | 
-		((label := objectMemory stringForCString:
-			           (trampolineAddresses at: i)) isNil or: [ 
-			 (value := self positiveMachineIntegerFor:
-				           (trampolineAddresses at: i + 1) asUnsignedInteger)
-				 isNil ]) ifTrue: [ 
-			coInterpreter popRemappableOop.
-			^ nil ].
-		coInterpreter
-			storePointerUnchecked: 2 + i
-			ofObject: constituents
-			withValue: label;
-			storePointerUnchecked: 3 + i
-			ofObject: constituents
-			withValue: value ].
-	count := trampolineTableIndex + 2.
-	cogMethod := self cCoerceSimple: methodZoneBase to: #'CogMethod *'.
-	[ cogMethod < methodZone limitZony ] whileTrue: [ 
-		cogMethod cmType ~= CMFree ifTrue: [ 
-			| profileData |
-			profileData := self
-				               profileDataFor: cogMethod
-				               withDetails: withDetails.
-			profileData ifNil: [ 
-				^ self cleanUpFailingCogCodeConstituents: cogMethod ].
-			coInterpreter
-				storePointerUnchecked: count
-				ofObject: constituents
-				withValue: profileData.
-			value := withDetails
-				         ifTrue: [ self collectCogMethodConstituent: cogMethod ]
-				         ifFalse: [ 
-				         self positiveMachineIntegerFor:
-					         cogMethod asUnsignedInteger ].
-			value ifNil: [ ^ self cleanUpFailingCogCodeConstituents: cogMethod ].
-			coInterpreter
-				storePointerUnchecked: count + 1
-				ofObject: constituents
-				withValue: value.
-			count := count + 2 ].
-		cogMethod := methodZone methodAfter: cogMethod ].
-	((label := objectMemory stringForCString: 'CCFree') isNil or: [ 
-		 (value := self positiveMachineIntegerFor: methodZone zoneFree)
-			 isNil ]) ifTrue: [ 
-		coInterpreter popRemappableOop.
-		^ nil ].
-	coInterpreter
-		storePointerUnchecked: count
-		ofObject: constituents
-		withValue: label;
-		storePointerUnchecked: count + 1
-		ofObject: constituents
-		withValue: value.
-	((label := objectMemory stringForCString: 'CCEnd') isNil or: [ 
-		 (value := self positiveMachineIntegerFor: methodZone zoneEnd) isNil ]) 
-		ifTrue: [ 
-			coInterpreter popRemappableOop.
-			^ nil ].
-	coInterpreter
-		storePointerUnchecked: count + 2
-		ofObject: constituents
-		withValue: label;
-		storePointerUnchecked: count + 3
-		ofObject: constituents
-		withValue: value.
-	constituents := coInterpreter popRemappableOop.
-	coInterpreter beRootIfOld: constituents.
-	"would like to assert this, but it requires the leak checked be run :-(
-		self assert: self allMachineCodeObjectReferencesValid."
-	^ constituents
-]
-
 { #category : 'in-line cacheing' }
 Cogit >> cogExtendPIC: aPIC CaseNMethod: caseNMethod tag: caseNTag isMNUCase: isMNUCase [
 	"Extend the aPIC with the supplied case.  If caseNMethod is cogged dispatch direct to
@@ -4716,92 +4604,6 @@ Cogit >> cogitPostGCAction: gcMode [
 	 pruned.  But at other times false positives or free methods on the list are acceptable."
 	self assert: ((gcMode noMask: GCModeFull + GCModeNewSpace) or: [ 
 			 methodZone kosherYoungReferrers ])
-]
-
-{ #category : 'multi-threading' }
-Cogit >> cogitTryLockVMOwner [
-	<api>
-		"ceTryLockVMOwner does an atomic swap of the lock with 1 and
-		 then subtracts 1from lock's value.  So if the result is 0 the lock was
-		 already held.  Anything else (in fact -1) implies we hold the lock."
-	<cmacro: '() (ceTryLockVMOwner() != 0)'>
-	^(self simulateLeafCallOf: ceTryLockVMOwner) ~= 0
-]
-
-{ #category : 'multi-threading' }
-Cogit >> cogitUnlockVMOwner [
-	<api>
-	<cmacro: '() ceUnlockVMOwner()'>
-	^self simulateLeafCallOf: ceUnlockVMOwner
-]
-
-{ #category : 'profiling primitives' }
-Cogit >> collectCogConstituentFor: descriptor Annotation: isBackwardBranchAndAnnotation Mcpc: mcpc Bcpc: bcpc Method: cogMethodArg [
-	<var: #descriptor type: #'BytecodeDescriptor *'>
-	<var: #mcpc type: #'char *'>
-	<var: #cogMethodArg type: #'void *'>
-	<var: #targetMethod type: #'CogMethod *'>
-	| address entryPoint |
-	descriptor ifNil: [^0].
-	descriptor isMapped ifFalse: [^0].
-	address := self positiveMachineIntegerFor: (self cCoerceSimple: mcpc to: #'usqIntptr_t').
-	address ifNil: [^PrimErrNoMemory]. "This cannot trigger a GC but fails if not enough space in Eden,"
-	"Assumes we write the values into topRemappableOop"
-	coInterpreter
-		storePointerUnchecked: cogConstituentIndex
-		ofObject: coInterpreter topRemappableOop
-		withValue: address.
-	coInterpreter
-		storePointerUnchecked: cogConstituentIndex + 1
-		ofObject: coInterpreter topRemappableOop
-		withValue: (objectMemory integerObjectOf: bcpc).
-	cogConstituentIndex := cogConstituentIndex + 2.
-
-	"Collect any first case classTags for closed PICs."
-	((isBackwardBranchAndAnnotation noMask: 1)
-	 and: [self isSendAnnotation: isBackwardBranchAndAnnotation >> 1]) ifTrue:
-		[entryPoint := backEnd callTargetFromReturnAddress: mcpc asInteger.
-		 entryPoint > methodZoneBase ifTrue: "send is linked"
-			[self targetMethodAndSendTableFor: entryPoint annotation: isBackwardBranchAndAnnotation >> 1 into:
-				[:targetMethod :sendTable|
-				  targetMethod cmType = CMPolymorphicIC ifTrue:
-					[targetMethod methodObject: (objectRepresentation classForInlineCacheTag: (backEnd inlineCacheTagAt: (self cCoerceSimple: mcpc to: #sqInt)))]]]].
-	^0
-]
-
-{ #category : 'profiling primitives' }
-Cogit >> collectCogMethodConstituent: cogMethod [
-	"Answer a description of the mapping between machine code pointers and bytecode pointers for the Cog Method.
-	 First value is the address of the cog method.
-	 Following values are pairs of machine code pc and bytecode pc"
-	<var: #cogMethod type: #'CogMethod *'>
-	| cm nSlots errCode address data |
-	(cogMethod cmType = CMMethod) 
-		ifFalse: [^self positiveMachineIntegerFor: cogMethod asUnsignedInteger ].
-	cogMethod stackCheckOffset = 0 "isFrameless ?"
-		ifTrue: [^self positiveMachineIntegerFor: cogMethod asUnsignedInteger].
-	cm := cogMethod methodObject.
-	nSlots := ((objectMemory byteSizeOf: cm) - (coInterpreter startPCOfMethod: cm)) * 2 + objectMemory minSlotsForShortening + 1."+1 for first address"
-	data := objectMemory instantiateClass: (objectMemory splObj: ClassArray) indexableSize: nSlots.
-	data ifNil: [^nil].
-	coInterpreter pushRemappableOop: data.
-	"The iteration assumes the object is the top remappable oop"
-	address := (self positiveMachineIntegerFor: cogMethod asUnsignedInteger).
-	address ifNil: [coInterpreter popRemappableOop. ^nil].
-	coInterpreter
-		storePointerUnchecked: 0
-		ofObject: coInterpreter topRemappableOop
-		withValue: address.
-	cogConstituentIndex := 1.
-	errCode := self
-		mapFor: cogMethod
-		bcpc: (coInterpreter startPCOfMethod: cogMethod methodObject)
-		performUntil: #collectCogConstituentFor:Annotation:Mcpc:Bcpc:Method:
-		arg: cogMethod asVoidPointer.
-	errCode ~= 0 ifTrue: [coInterpreter popRemappableOop. ^nil].
-	cogConstituentIndex < nSlots ifTrue:
-		[objectMemory shorten: coInterpreter topRemappableOop toIndexableSize: cogConstituentIndex].
-	^coInterpreter popRemappableOop.
 ]
 
 { #category : 'disassembly' }
