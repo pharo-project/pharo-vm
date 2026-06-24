@@ -216,7 +216,6 @@ Class {
 		'objectReferencesInRuntime',
 		'runtimeObjectRefIndex',
 		'cFramePointerInUse',
-		'debugPrimCallStackOffset',
 		'extA',
 		'extB',
 		'numExtB',
@@ -500,13 +499,12 @@ Cogit class >> declareCVarsIn: aCCodeGenerator [
 		declareC: 'sqInt ordinarySendTrampolines[NumSendTrampolines]';
 		var: #superSendTrampolines
 		declareC: 'sqInt superSendTrampolines[NumSendTrampolines]'.
-	BytecodeSetHasDirectedSuperSend ifTrue: [
-		aCCodeGenerator
-			var: #directedSuperSendTrampolines
-			declareC: 'sqInt directedSuperSendTrampolines[NumSendTrampolines]';
-			var: #directedSuperBindingSendTrampolines
-			declareC:
-				'sqInt directedSuperBindingSendTrampolines[NumSendTrampolines]' ].
+	aCCodeGenerator
+		var: #directedSuperSendTrampolines
+		declareC: 'sqInt directedSuperSendTrampolines[NumSendTrampolines]';
+		var: #directedSuperBindingSendTrampolines
+		declareC:
+			'sqInt directedSuperBindingSendTrampolines[NumSendTrampolines]'.
 	aCCodeGenerator
 		var: #trampolineAddresses
 		declareC: 'static char *trampolineAddresses[NumTrampolines*2]';
@@ -717,9 +715,8 @@ Cogit class >> initializeAnnotationConstants [
 	IsSendCall := 7.
 	"These are formed by combining IsSendCall and IsAnnotationExtension annotations."
 	IsSuperSend := 8.
-
-	IsDirectedSuperSend := BytecodeSetHasDirectedSuperSend ifTrue: [9].
-	IsDirectedSuperBindingSend := BytecodeSetHasDirectedSuperSend ifTrue: [10].
+	IsDirectedSuperSend := 9.
+	IsDirectedSuperBindingSend := 10.
 
 	DisplacementMask := (1 << AnnotationShift) - 1.
 	DisplacementX2N := IsDisplacementX2N << AnnotationShift.
@@ -762,7 +759,6 @@ Cogit class >> initializeBytecodeTable [
 	"StackToRegisterMappingCogit initializeBytecodeTableWith: Dictionary new"
 
 	| initializer |
-	BytecodeSetHasDirectedSuperSend := BytecodeSetHasExtensions := false.
 	initializer := InitializationOptions
 		               at: #bytecodeTableInitializer
 		               ifAbsent: [ #initializeBytecodeTableForSistaV1 ].
@@ -836,7 +832,7 @@ Cogit class >> initializeMiscConstants [
 Cogit class >> initializeNumTrampolines [
 	NumTrampolines := self numTrampolines
 						+ self objectRepresentationClass numTrampolines
-						+ (BytecodeSetHasDirectedSuperSend ifTrue: [NumSendTrampolines * 2] ifFalse: [0])
+						+ (NumSendTrampolines * 2)
 ]
 
 { #category : 'class initialization' }
@@ -3194,12 +3190,12 @@ Cogit >> annotationForMcpc: mcpc in: cogHomeMethod [
 
 { #category : 'in-line cacheing' }
 Cogit >> annotationIsForUncheckedEntryPoint: annotation [
+
 	<inline: true>
-	^annotation = IsSuperSend
-	  or: [BytecodeSetHasDirectedSuperSend
-		  and: [annotation
-					between: IsDirectedSuperSend
-					and: IsDirectedSuperBindingSend]]
+	^ annotation = IsSuperSend or: [
+		  annotation
+			  between: IsDirectedSuperSend
+			  and: IsDirectedSuperBindingSend ]
 ]
 
 { #category : 'simulation only' }
@@ -6425,13 +6421,7 @@ Cogit >> genInnerPICAbortTrampoline: name [
 
 { #category : 'trampoline support' }
 Cogit >> genLoadCStackPointersForPrimCall [
-	debugPrimCallStackOffset = 0
-		ifTrue:
-			[self MoveAw: self cStackPointerAddress R: backEnd cStackPointer]
-		ifFalse:
-			[self MoveAw: self cStackPointerAddress R: TempReg.
-			 self SubCq: debugPrimCallStackOffset R: TempReg.
-			 self MoveR: TempReg R: backEnd cStackPointer].
+	self MoveAw: self cStackPointerAddress R: backEnd cStackPointer.
 	cFramePointerInUse ifTrue:
 		[self MoveAw: self cFramePointerAddress R: FPReg].
 	^0
@@ -7354,48 +7344,45 @@ Cogit >> generateRunTimeTrampolines [
 
 { #category : 'initialization' }
 Cogit >> generateSendTrampolines [
-	0 to: NumSendTrampolines - 1 do:
-		[:numArgs|
-		ordinarySendTrampolines
-			at: numArgs
-			put: (self genTrampolineFor: #ceSend:super:to:numArgs:
-					  called: (self trampolineName: 'ceSend' numArgs: numArgs)
-					  arg: ClassReg
-					  arg: (self trampolineArgConstant: false)
-					  arg: ReceiverResultReg
-					  arg: (self numArgsOrSendNumArgsReg: numArgs))].
+
+	0 to: NumSendTrampolines - 1 do: [ :numArgs |
+		ordinarySendTrampolines at: numArgs put: (self
+				 genTrampolineFor: #ceSend:super:to:numArgs:
+				 called: (self trampolineName: 'ceSend' numArgs: numArgs)
+				 arg: ClassReg
+				 arg: (self trampolineArgConstant: false)
+				 arg: ReceiverResultReg
+				 arg: (self numArgsOrSendNumArgsReg: numArgs)) ].
 
 	"Generate these in the middle so they are within [firstSend, lastSend]."
-	BytecodeSetHasDirectedSuperSend ifTrue:
-		[0 to: NumSendTrampolines - 1 do:
-			[:numArgs|
-			directedSuperSendTrampolines
-				at: numArgs
-				put: (self genTrampolineFor: #ceSend:above:to:numArgs:
-						  called: (self trampolineName: 'ceDirectedSuperSend' numArgs: numArgs)
-						  arg: ClassReg
-						  arg: TempReg
-						  arg: ReceiverResultReg
-						  arg: (self numArgsOrSendNumArgsReg: numArgs)).
-			directedSuperBindingSendTrampolines
-				at: numArgs
-				put: (self genTrampolineFor: #ceSend:aboveClassBinding:to:numArgs:
-						  called: (self trampolineName: 'ceDirectedSuperBindingSend' numArgs: numArgs)
-						  arg: ClassReg
-						  arg: TempReg
-						  arg: ReceiverResultReg
-						  arg: (self numArgsOrSendNumArgsReg: numArgs))]].
+	0 to: NumSendTrampolines - 1 do: [ :numArgs |
+		directedSuperSendTrampolines at: numArgs put: (self
+				 genTrampolineFor: #ceSend:above:to:numArgs:
+				 called:
+				 (self trampolineName: 'ceDirectedSuperSend' numArgs: numArgs)
+				 arg: ClassReg
+				 arg: TempReg
+				 arg: ReceiverResultReg
+				 arg: (self numArgsOrSendNumArgsReg: numArgs)).
+		directedSuperBindingSendTrampolines at: numArgs put: (self
+				 genTrampolineFor: #ceSend:aboveClassBinding:to:numArgs:
+				 called:
+				 (self
+					  trampolineName: 'ceDirectedSuperBindingSend'
+					  numArgs: numArgs)
+				 arg: ClassReg
+				 arg: TempReg
+				 arg: ReceiverResultReg
+				 arg: (self numArgsOrSendNumArgsReg: numArgs)) ].
 
-	0 to: NumSendTrampolines - 1 do:
-		[:numArgs|
-		superSendTrampolines
-			at: numArgs
-			put: (self genTrampolineFor: #ceSend:super:to:numArgs:
-					  called: (self trampolineName: 'ceSuperSend' numArgs: numArgs)
-					  arg: ClassReg
-					  arg: (self trampolineArgConstant: true)
-					  arg: ReceiverResultReg
-					  arg: (self numArgsOrSendNumArgsReg: numArgs))].
+	0 to: NumSendTrampolines - 1 do: [ :numArgs |
+		superSendTrampolines at: numArgs put: (self
+				 genTrampolineFor: #ceSend:super:to:numArgs:
+				 called: (self trampolineName: 'ceSuperSend' numArgs: numArgs)
+				 arg: ClassReg
+				 arg: (self trampolineArgConstant: true)
+				 arg: ReceiverResultReg
+				 arg: (self numArgsOrSendNumArgsReg: numArgs)) ].
 	firstSend := ordinarySendTrampolines at: 0.
 	lastSend := superSendTrampolines at: NumSendTrampolines - 1
 ]
@@ -9587,10 +9574,10 @@ Cogit >> offsetAndSendTableFor: entryPoint annotation: annotation into: binaryBl
 	annotation = IsSendCall ifTrue:
 		[offset := cmEntryOffset.
 		 sendTable := ordinarySendTrampolines] ifFalse:
-	[(BytecodeSetHasDirectedSuperSend and: [annotation = IsDirectedSuperSend]) ifTrue:
+	[(annotation = IsDirectedSuperSend) ifTrue:
 		[offset := cmNoCheckEntryOffset.
 		 sendTable := directedSuperSendTrampolines] ifFalse:
-	[(BytecodeSetHasDirectedSuperSend and: [annotation = IsDirectedSuperBindingSend]) ifTrue:
+	[(annotation = IsDirectedSuperBindingSend) ifTrue:
 		[offset := cmNoCheckEntryOffset.
 		 sendTable := directedSuperBindingSendTrampolines] ifFalse:
 	[self assert: annotation = IsSuperSend.
@@ -10161,8 +10148,7 @@ Cogit >> printPCMapPairsFor: cogMethod [
 			printChar: $ ;
 			printNum: annotation;
 			print: ' ('.
-		(BytecodeSetHasDirectedSuperSend and: [
-			 value between: IsDirectedSuperSend and: IsDirectedSuperBindingSend ])
+		(value between: IsDirectedSuperSend and: IsDirectedSuperBindingSend)
 			ifTrue: [
 				value caseOf: {
 						([ IsDirectedSuperSend ]
@@ -10939,7 +10925,6 @@ Cogit >> setInterpreter: aCoInterpreter [
 		              ifTrue: [ "record prim trace on by default (see Cogit class>>decareCVarsIn:)"
 			              8 ]
 		              ifFalse: [ 0 ].
-	debugPrimCallStackOffset := 0.
 	singleStep := printRegisters := printInstructions := false.
 	backEnd := CogCompilerClass for: self.
 	methodLabel := CogCompilerClass for: self.
@@ -10949,13 +10934,12 @@ Cogit >> setInterpreter: aCoInterpreter [
 		                           (Array new: NumSendTrampolines).
 	superSendTrampolines := CArrayAccessor on:
 		                        (Array new: NumSendTrampolines).
-	BytecodeSetHasDirectedSuperSend ifTrue: [
-		directedSuperSendTrampolines := CArrayAccessor on:
+	directedSuperSendTrampolines := CArrayAccessor on:
 			                                (Array new: NumSendTrampolines).
 		directedSuperBindingSendTrampolines := CArrayAccessor on:
 			                                       (Array new:
 				                                        NumSendTrampolines).
-		directedSendUsesBinding := false ].
+	directedSendUsesBinding := false.
 	"debug metadata"
 	objectReferencesInRuntime := CArrayAccessor on:
 		                             (Array new: NumObjRefsInRuntime).

@@ -538,10 +538,6 @@ If ffi is put as a separate header, slang will sort the header and put it outsid
 		as: #'StackPage *'
 		in: aCCodeGenerator.
 	aCCodeGenerator removeVariable: 'stackPages'. "this is an implicit receiver in the translated code."
-	BytecodeSetHasExtensions == false ifTrue: [
-		aCCodeGenerator
-			removeVariable: 'extA';
-			removeVariable: 'extB' ].
 	aCCodeGenerator
 		var: #methodCache
 		declareC: 'sqIntptr_t methodCache[MethodCacheSize + 1 /* '
@@ -622,10 +618,6 @@ StackInterpreter class >> initializeAssociationIndex [
 StackInterpreter class >> initializeBytecodeTable [
 
 	"StackInterpreter initializeBytecodeTable"
-
-	VMBytecodeConstants falsifyBytecodeSetFlags: InitializationOptions.
-	BytecodeSetHasDirectedSuperSend := false.
-
 	^ self initializeBytecodeTableForSistaV1
 ]
 
@@ -637,8 +629,6 @@ StackInterpreter class >> initializeBytecodeTableForSistaV1 [
 
 	BytecodeTable := Array new: 256.
 	BytecodeEncoderClassName := #EncoderForSistaV1.
-	BytecodeSetHasDirectedSuperSend := true.
-	BytecodeSetHasExtensions := true.
 	LongStoreBytecode := 245.
 	self table: BytecodeTable from:
 	#(	"1 byte bytecodes"
@@ -5519,16 +5509,16 @@ StackInterpreter >> extSendSuperBytecode [
 		ExtendB < 64
 			ifTrue: [Send To Superclass Literal Selector #iiiii (+ Extend A * 32) with jjj (+ Extend B * 8) Arguments]
 			ifFalse: [Send To Superclass of Stacked Class Literal Selector #iiiii (+ Extend A * 32) with jjj (+ (Extend B bitAnd: 63) * 8) Arguments]"
+
 	| byte |
 	byte := self fetchByte.
-	messageSelector := self literal: (byte >> 3) + (extA << 5).
+	messageSelector := self literal: byte >> 3 + (extA << 5).
 	extA := 0.
-	BytecodeSetHasDirectedSuperSend ifTrue:
-		[extB >= 64 ifTrue:
-			[argumentCount := (byte bitAnd: 7) + (extB - 64 << 3).
-			 extB := 0.
-			 numExtB := 0.
-			 ^self directedSuperclassSend]].
+	extB >= 64 ifTrue: [
+		argumentCount := (byte bitAnd: 7) + (extB - 64 << 3).
+		extB := 0.
+		numExtB := 0.
+		^ self directedSuperclassSend ].
 	argumentCount := (byte bitAnd: 7) + (extB << 3).
 	extB := 0.
 	numExtB := 0.
@@ -7391,7 +7381,7 @@ StackInterpreter >> includesBehavior: aClass ThatOf: aSuperclass [
 { #category : 'simulation support' }
 StackInterpreter >> initExtensions [
 	<inline: true>
-	BytecodeSetHasExtensions ifTrue: [extA := numExtB := extB := 0]
+	extA := numExtB := extB := 0
 ]
 
 { #category : 'object memory support' }
