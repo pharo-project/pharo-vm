@@ -146,8 +146,9 @@ StackToRegisterMappingCogit class >> ancilliaryClasses [
 		  self basicNew simStackEntryClass.
 		  self basicNew bytecodeFixupClass.
 
-		  CogStackToRegisterCompilationState.
-		  CogCompileTimeStackState }
+		  "Declare CogCompileTimeStackState before, it's used by CogStackToRegisterCompilationState"
+		  CogCompileTimeStackState.
+		  CogStackToRegisterCompilationState }
 ]
 
 { #category : 'documentation' }
@@ -228,7 +229,7 @@ StackToRegisterMappingCogit class >> declareCVarsIn: aCodeGen [
 			declareC: 'void (*ceCallCogCodePopReceiverArg1Arg0Regs)(void)';
 		var: #realCECallCogCodePopReceiverArg1Arg0Regs
 			declareC: 'void (*realCECallCogCodePopReceiverArg1Arg0Regs)(void)';
-		declareVar: 'aCompileTimeState'
+		declareVar: #aCompileTimeState
 			type: #CogStackToRegisterCompilationState;
 		var: #compileTimeState
 			declareC: 'CogStackToRegisterCompilationState * const compileTimeState = &aCompileTimeState'

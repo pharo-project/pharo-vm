@@ -82,6 +82,7 @@ CogStackToRegisterCompilationState >> regArgsHaveBeenPushed: anObject [
 { #category : 'accessing' }
 CogStackToRegisterCompilationState >> simStackState [
 
+	<returnTypeC: 'CogCompileTimeStackState *'>
 	^ self addressOf: self simStackStateField
 ]
 

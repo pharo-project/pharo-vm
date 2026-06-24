@@ -1170,18 +1170,17 @@ Cogit class >> mustBeGlobalAndExport: var [
 	 only used outside of Cogit by the object representation).  Include CFramePointer CStackPointer as
 	 a hack to get them declared at all."
 
-	^#(	'ceBaseFrameReturnTrampoline' #ceCaptureCStackPointers 'ceCheckForInterruptTrampoline'
-		ceEnterCogCodePopReceiverReg realCEEnterCogCodePopReceiverReg
-		ceCallCogCodePopReceiverReg realCECallCogCodePopReceiverReg
-		ceCallCogCodePopReceiverAndClassRegs realCECallCogCodePopReceiverAndClassRegs
-		'ceReturnToInterpreterTrampoline' 'ceCannotResumeTrampoline'
-		ceTryLockVMOwner ceUnlockVMOwner
-		'cmEntryOffset' 'cmNoCheckEntryOffset' 'cmDynSuperEntryOffset' 'cmSelfSendEntryOffset'
-		'missOffset' 'cbEntryOffset' 'cbNoSwitchEntryOffset' 'blockNoContextSwitchOffset'
-		CFramePointer CStackPointer 'cFramePointerInUse' ceGetFP ceGetSP
-		traceFlags 'traceStores' debugPrimCallStackOffset)
-			includes: var
-
+	^ #( 'ceBaseFrameReturnTrampoline' #ceCaptureCStackPointers
+	     'ceCheckForInterruptTrampoline' ceEnterCogCodePopReceiverReg
+	     realCEEnterCogCodePopReceiverReg
+	     ceCallCogCodePopReceiverReg realCECallCogCodePopReceiverReg
+	     ceCallCogCodePopReceiverAndClassRegs
+	     realCECallCogCodePopReceiverAndClassRegs
+	     'ceReturnToInterpreterTrampoline'
+	     'ceCannotResumeTrampoline' 'cmEntryOffset' 'cmNoCheckEntryOffset'
+	     'missOffset' 'cbEntryOffset' 'cbNoSwitchEntryOffset'
+	     CFramePointer CStackPointer 'cFramePointerInUse'
+	     ceGetFP ceGetSP traceFlags ) includes: var
 ]
 
 { #category : 'translation' }
