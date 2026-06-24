@@ -6,8 +6,8 @@ Class {
 		'methodOrBlockNumTemps',
 		'prevBCDescriptor',
 		'regArgsHaveBeenPushed',
-		'simStackState',
-		'useTwoPaths'
+		'useTwoPaths',
+		'simStackStateField'
 	],
 	#category : 'VMMaker-JIT',
 	#package : 'VMMaker',
@@ -27,7 +27,7 @@ CogStackToRegisterCompilationState class >> instVarNamesAndTypesForTranslationDo
 						 ([ 'methodOrBlockNumTemps' ] -> [ #sqInt ]).
 						 ([ 'prevBCDescriptor' ] -> [ #'BytecodeDescriptor *' ]).
 						 ([ 'regArgsHaveBeenPushed' ] -> [ #sqInt ]).
-						 ([ 'simStackState' ] -> [ #CogCompileTimeStackState ]).
+						 ([ 'simStackStateField' ] -> [ #CogCompileTimeStackState ]).
 						 ([ 'useTwoPaths' ] -> [ #sqInt ]) } ]) ]
 ]
 
@@ -82,13 +82,19 @@ CogStackToRegisterCompilationState >> regArgsHaveBeenPushed: anObject [
 { #category : 'accessing' }
 CogStackToRegisterCompilationState >> simStackState [
 
-	^ simStackState
+	^ self addressOf: self simStackStateField
 ]
 
 { #category : 'accessing' }
-CogStackToRegisterCompilationState >> simStackState: anObject [
+CogStackToRegisterCompilationState >> simStackStateField [
 
-	simStackState := anObject
+	^ simStackStateField
+]
+
+{ #category : 'accessing' }
+CogStackToRegisterCompilationState >> simStackStateField: anObject [
+
+	simStackStateField := anObject
 ]
 
 { #category : 'accessing' }

@@ -1429,7 +1429,6 @@ CoInterpreter >> ceSend: maybeForwardedSelector above: methodClass to: receiver 
 	<api>
 	<story: #pic>
 	<inline: false>
-	<option: #BytecodeSetHasDirectedSuperSend>
 	| classTag classObj |
 	self assert: (objectMemory addressCouldBeOop: receiver).
 
@@ -1456,7 +1455,6 @@ CoInterpreter >> ceSend: selector aboveClassBinding: methodClassBinding to: rcvr
 	                args
 	     head sp -> sender return pc"
 	<api>
-	<option: #BytecodeSetHasDirectedSuperSend>
 	self ceSend: selector
 		above: (self fetchPointer: ValueIndex
 					ofObject: (objectMemory followMaybeForwarded: methodClassBinding))

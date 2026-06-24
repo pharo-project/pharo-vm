@@ -3659,7 +3659,8 @@ CCodeGenerator >> isStructSend: aTSendNode [
 	 distinguish between self-sends of ordinary methods from self sends of accessors."
 	^aTSendNode numArgs <= 1
 	   and: [(aTSendNode receiver structTargetKindIn: self) notNil
-	   and: [(self methodNamed: aTSendNode selector)
+	   and: [		
+		(self methodNamed: aTSendNode selector)
 				ifNil: [false]
 				ifNotNil: [:method| method isStructAccessor]]]
 ]
@@ -5114,7 +5115,6 @@ CCodeGenerator >> typeForDereference: sendNode in: aTMethod [
 { #category : 'C code generator' }
 CCodeGenerator >> typeOfVariable: varName [
 	"<String>"
-
 	self assert: varName isString.
 	scopeStack reverseDo: [ :scope |
 		(scope declarations includesKey: varName) ifTrue: [

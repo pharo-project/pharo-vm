@@ -213,7 +213,9 @@ SlangStructType class >> structTargetKindForDeclaration: decl [
 			or: [StructTypeNameCache anySatisfy:
 					[:structType|
 					(decl beginsWith: structType)
-					and: [(decl indexOf: $* ifAbsent: [decl indexOf: Character space]) > structType size]]]]) ifTrue:
+					and: [
+						
+					"1halt."(decl indexOf: $* ifAbsent: [decl indexOf: Character space]) > structType size]]]]) ifTrue:
 		[(decl indexOf: $*) > 0
 			ifTrue: [#pointer]
 			ifFalse: [#struct]]
