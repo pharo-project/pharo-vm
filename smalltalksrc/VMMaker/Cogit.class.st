@@ -129,7 +129,6 @@ Class {
 		'printRegisters',
 		'printInstructions',
 		'singleStep',
-		'guardPageSize',
 		'traceFlags',
 		'traceStores',
 		'methodObj',
@@ -226,7 +225,6 @@ Class {
 		'CFramePointer',
 		'ceMallocTrampoline',
 		'ceFreeTrampoline',
-		'disassemblingMethod',
 		'directedSendUsesBinding',
 		'simulateFPInUse',
 		'statCompileFullBlockCount',
@@ -645,11 +643,6 @@ Cogit class >> generatorTableFrom: anArray [
 			[:index|
 			generatorTable at: index put: descriptor]].
 	^generatorTable
-]
-
-{ #category : 'accessing' }
-Cogit class >> guardPageSize [
-	^1024
 ]
 
 { #category : 'translation' }
@@ -7525,13 +7518,6 @@ Cogit >> getPrimitiveIndex [
 	^primitiveIndex
 ]
 
-{ #category : 'accessing' }
-Cogit >> guardPageSize: anInteger [ 
-
-	<doNotGenerate>
-	guardPageSize := anInteger
-]
-
 { #category : 'translation support' }
 Cogit >> halt [
 	<cmacro: '() warning("halt")'>
@@ -7953,7 +7939,6 @@ Cogit >> initializePIC: aPIC atDelta: addrDelta numArgs: numArgs [
 Cogit >> initializeProcessor [
 	"Initialize the simulation processor, arranging that its initial stack is somewhere on the rump C stack."
 	<doNotGenerate>
-	guardPageSize := self class guardPageSize.
 	lastNInstructions := OrderedCollection new.
 	processor initializeStackFor: self.
 	self initializeProcessorStack: coInterpreter rumpCStackAddress.
@@ -8349,31 +8334,6 @@ Cogit >> lookupAddress: address [
 	(simulatedVariableGetters includesKey: address) ifTrue:
 		[^self labelForSimulationAccessor: (simulatedVariableGetters at: address)].
 	^coInterpreter lookupAddress: address
-]
-
-{ #category : 'disassembly' }
-Cogit >> lookupCHexString: aCHexString [ 
-	<doNotGenerate>
-	| pastLastZero shortened address |
-	(aCHexString beginsWith: '0x') ifFalse:
-		[^aCHexString].
-	pastLastZero := aCHexString findFirst: [:c| c ~= $0 and: [c ~= $x]].
-	shortened := pastLastZero = 0
-					ifTrue: ['0x0']
-					ifFalse:
-						[(aCHexString size >= 16 and: [pastLastZero >= 4])
-							ifTrue: [aCHexString copyReplaceFrom: 3 to: pastLastZero - 1 with: '']
-							ifFalse: [aCHexString]].
-	address := Number readFrom: (ReadStream on: shortened from: 3 to: shortened size) base: 16.
-	(disassemblingMethod notNil
-	 and: [address > disassemblingMethod
-	 and: [address < (disassemblingMethod asInteger + disassemblingMethod blockSize)]]) ifTrue:
-		[shortened := '.+', (address - disassemblingMethod asInteger printStringBase: 16 length: 4 padded: true)].
-	^(self lookupAddress: (Number
-								readFrom: (ReadStream on: shortened from: 3 to: shortened size)
-								base: 16))
-		ifNotNil: [:string| shortened, '=', string]
-		ifNil: [shortened]
 ]
 
 { #category : 'disassembly' }
@@ -10492,13 +10452,6 @@ Cogit >> registerMaskFor: reg1 and: reg2 and: reg3 and: reg4 and: reg5 and: reg6
 ]
 
 { #category : 'disassembly' }
-Cogit >> relativeBaseForDisassemblyInto: aBlock [
-	<doNotGenerate>
-	disassemblingMethod ifNotNil:
-		[aBlock value: disassemblingMethod asInteger value: '.']
-]
-
-{ #category : 'disassembly' }
 Cogit >> relativeLabelForPC: pc [ 
 	<doNotGenerate>
 	pc < methodZone limitZony ifFalse:
@@ -11031,19 +10984,9 @@ Cogit >> simulateCogCodeAt: address [
 	<doNotGenerate>
 	processor pc: address.
 	[
-	[
-	singleStep
-		ifTrue: [
-			processor
-				singleStepIn: coInterpreter memory
-				minimumAddress: guardPageSize
-				readOnlyBelow: methodZone zoneEnd ]
-		ifFalse: [
-			processor
-				runInMemory: nil
-				minimumAddress: guardPageSize
-				readOnlyBelow: methodZone zoneEnd ].
-	true ] whileTrue.
+	
+	processor run.
+
 	true ] whileTrue
 ]
 
@@ -11059,7 +11002,6 @@ Cogit >> simulateEnilopmart: enilopmartAddress numArgs: n [
 	 called from machine code. We should also smash the register state
 	 since, being an abnormal entry, no saved registers will be restored."
 	self assert: (coInterpreter isOnRumpCStack: processor sp).
-	self assert: ((coInterpreter stackValue: n) between: guardPageSize and: methodZone freeStart - 1).
 	"As a convenience for stack printing, nil localFP so we know we're in machine code."
 	(printInstructions or: [printRegisters]) ifTrue:
 		[coInterpreter printExternalHeadFrame].
