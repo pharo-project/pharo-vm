@@ -1235,16 +1235,16 @@ CoInterpreter >> ceInterpretMethodFromPIC: aMethodObj receiver: rcvr [
 { #category : 'trampolines' }
 CoInterpreter >> ceMNUFromPICMNUMethod: aMethodObj receiver: rcvr [
 	<api>
-	| cPIC primitiveIndex |
-	<var: #cPIC type: #'CogMethod *'>
+	| aPIC primitiveIndex |
+	<var: #aPIC type: #'CogMethod *'>
 	self assert: (objectMemory addressCouldBeOop: rcvr).
 	self assert: (aMethodObj = 0
 				or: [(objectMemory addressCouldBeObj: aMethodObj)
 					and: [objectMemory isOopCompiledMethod: aMethodObj]]).
-	cPIC := self cCoerceSimple: self popStack - cogit mnuOffset to: #'CogMethod *'.
-	self assert: (cPIC cmType = CMPolymorphicIC or: [cPIC cmType = CMMegamorphicIC]).
-	argumentCount := cPIC cmNumArgs.
-	messageSelector := cPIC selector.
+	aPIC := self cCoerceSimple: self popStack - cogit mnuOffset to: #'CogMethod *'.
+	self assert: (aPIC cmType = CMPolymorphicIC or: [aPIC cmType = CMMegamorphicIC]).
+	argumentCount := aPIC cmNumArgs.
+	messageSelector := aPIC selector.
 	aMethodObj ~= 0 ifTrue:
 		[instructionPointer := self pointerForOop: self popStack.
 		self createActualMessageTo: (objectMemory fetchClassOf: rcvr).
@@ -4152,7 +4152,7 @@ CoInterpreter >> printCogMethod: cogMethod [
 			[self print: ' prim '; printNum: primitive]].
 	cogMethod cmType = CMPolymorphicIC ifTrue:
 		[self print: ': Closed PIC N: ';
-			printHex: cogMethod cPICNumCases].
+			printHex: cogMethod picNumCases].
 	cogMethod cmType = CMMegamorphicIC ifTrue:
 		[self print: ': Open PIC '].
 	self print: ' selector: '; printHex: cogMethod selector.

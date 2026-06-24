@@ -162,12 +162,6 @@ Class {
 		'cbNoSwitchEntryOffset',
 		'picMNUAbort',
 		'picInterpretAbort',
-		'endCPICCase0',
-		'endCPICCase1',
-		'firstCPICCaseOffset',
-		'cPICCaseSize',
-		'cPICEndSize',
-		'closedPICSize',
 		'fixups',
 		'abstractOpcodes',
 		'generatorTable',
@@ -187,7 +181,6 @@ Class {
 		'ceMethodAbortTrampoline',
 		'cePICAbortTrampoline',
 		'ceCheckForInterruptTrampoline',
-		'ceCPICMissTrampoline',
 		'ceReturnToInterpreterTrampoline',
 		'ceBaseFrameReturnTrampoline',
 		'ceReapAndResetErrorCodeTrampoline',
@@ -236,9 +229,6 @@ Class {
 		'cogMethodSurrogateClass',
 		'CStackPointer',
 		'CFramePointer',
-		'cPICPrototype',
-		'cPICEndOfCodeOffset',
-		'cPICEndOfCodeLabel',
 		'ceMallocTrampoline',
 		'ceFreeTrampoline',
 		'disassemblingMethod',
@@ -250,7 +240,17 @@ Class {
 		'statCompileMethodCount',
 		'statCompileMethodUsecs',
 		'jitCodeZoneWriteEnabled',
-		'megamorphicICSize'
+		'megamorphicICSize',
+		'picSize',
+		'endPICCase0',
+		'endPICCase1',
+		'firstPICCaseOffset',
+		'picCaseSize',
+		'picEndSize',
+		'picEndOfCodeLabel',
+		'picEndOfCodeOffset',
+		'picPrototype',
+		'cePICMissTrampoline'
 	],
 	#classVars : [
 		'AnnotationConstantNames',
@@ -273,9 +273,9 @@ Class {
 		'IsSendCall',
 		'IsSuperSend',
 		'MapEnd',
-		'MaxCPICCases',
 		'MaxCompiledPrimitiveIndex',
 		'MaxNumberOfAbstractOpcodes',
+		'MaxPICCases',
 		'MaxX2NDisplacement',
 		'NumObjRefsInRuntime',
 		'NumSpecialSelectors',
@@ -493,8 +493,8 @@ Cogit class >> declareCVarsIn: aCCodeGenerator [
 			#( abstractOpcodes stackCheckLabel blockEntryLabel blockEntryNoContextSwitch
 			   stackOverflowCall sendMiss entry noCheckEntry selfSendEntry
 			   dynSuperEntry fullBlockNoContextSwitchEntry
-			   fullBlockEntry picMNUAbort picInterpretAbort endCPICCase0
-			   endCPICCase1 cPICEndOfCodeLabel )
+			   fullBlockEntry picMNUAbort picInterpretAbort endPICCase0
+			   endPICCase1 picEndOfCodeLabel )
 		as: #'AbstractInstruction *'
 		in: aCCodeGenerator.
 	aCCodeGenerator declareVar: #fixups type: #'BytecodeFixup *'.
@@ -830,7 +830,7 @@ Cogit class >> initializeMiscConstants [
 	"Currently not even the ceImplicitReceiverTrampoline contains object references."
 	NumObjRefsInRuntime := 0.
 	"6 is a fine number for the max number of PCI entries.  8 is too large."
-	MaxCPICCases := 6.
+	MaxPICCases := 6.
 
 	"One variable defines whether in a block and whether in a vanilla or full block."
 	InFullBlock := 2.
@@ -1300,7 +1300,7 @@ Cogit class >> runtime [
 		ceActiveContext => ReceiverResultReg
 		ceBaseFrameReturn: returnValue (ReceiverResultReg)
 		ceBaseFrameReturnPC
-		ceCPICMiss: cPIC (ClassReg) receiver: receiver (ReceiverResultReg)
+		cePICMiss: aPIC (ClassReg) receiver: receiver (ReceiverResultReg)
 		ceCall0ArgsPIC
 		ceCall1ArgsPIC
 		ceCall2ArgsPIC
@@ -1376,8 +1376,8 @@ Cogit class >> specialValueForConstant: constantName default: defaultValue [
 Cogit class >> structureOfACogMethod [
 	"A CogMethod is the machine code for executable code in the Cog VM, and in the simulator these are
 	 instances of CogMethod.  In actuality they are structures in memory in the CogMethodZone..  There
-	 are four real kinds, defined by the cmType field, free space: CMFree, methods: CMMethod, closed
-	 PICs: CMClosedPIC (finite polymorphic inline caches with up to 6 entries), and megamorphic ICs: CMMegamorphicPIC (infinite megamorphic inline caches that probe the first-level method lookup cache).  There is a fifth
+	 are four real kinds, defined by the cmType field, free space: CMFree, methods: CMMethod,
+	 PICs: CMPIC (finite polymorphic inline caches with up to 6 entries), and megamorphic ICs: CMMegamorphicIC (infinite megamorphic inline caches that probe the first-level method lookup cache).  There is a fifth
 	 kind of method, which is merely a header, for blocks: CMBlock, one which exists only within CMMethods,
 	 and exist only to allow block activations to refer to something that looks like a CogMethod.
 
@@ -1473,7 +1473,7 @@ ceSendMustBeBooleanTrampoline
 ceCheckForInterruptsTrampoline
 	pops return pc into instructionPointer
 
-ceCPICMissTrampoline
+cePICMissTrampoline
 	return pc left on stack because it is used to locate the failing send target PIC of a linked send
 
 ceSendFromInLineCacheMissTrampoline
@@ -3032,14 +3032,14 @@ Cogit >> addressIsInInstructions: address [
 ]
 
 { #category : 'in-line cacheing' }
-Cogit >> addressOfEndOfCase: n inCPIC: cPIC [ 
-	"calculate the end of the n'th case statement - which is complicated because we have case 1 right at the top of our CPIC and then build up from the last one. Yes I know this sounds strange, but trust me - I'm an Engineer, we do things backwards all the emit"
+Cogit >> addressOfEndOfCase: n inPIC: aPIC [ 
+	"calculate the end of the n'th case statement - which is complicated because we have case 1 right at the top of our PIC and then build up from the last one. Yes I know this sounds strange, but trust me - I'm an Engineer, we do things backwards all the emit"
 
-	<var: #cPIC type: #'CogMethod *'>
-	self assert: (n >= 1and: [n <= MaxCPICCases]).
+	<var: #aPIC type: #'CogMethod *'>
+	self assert: (n >= 1and: [n <= MaxPICCases]).
 	^n = 1
-		ifTrue: [cPIC asInteger + firstCPICCaseOffset]
-		ifFalse: [cPIC asInteger + firstCPICCaseOffset + (MaxCPICCases + 1 - n * cPICCaseSize)]
+		ifTrue: [aPIC asInteger + firstPICCaseOffset]
+		ifFalse: [aPIC asInteger + firstPICCaseOffset + (MaxPICCases + 1 - n * picCaseSize)]
 ]
 
 { #category : 'accessing' }
@@ -3087,7 +3087,7 @@ Cogit >> allMachineCodeObjectReferencesValid [
 				[(self asserta: (objectRepresentation checkValidDerivedObjectReference: cogMethod counters)) ifFalse:
 					[ok := false]]].
 		cogMethod cmType = CMPolymorphicIC ifTrue:
-			[(self asserta: (self noTargetsFreeInClosedPIC: cogMethod)) ifFalse:
+			[(self asserta: (self noTargetsFreeInPIC: cogMethod)) ifFalse:
 				[ok := false]].
 		cogMethod := methodZone methodAfter: cogMethod].
 	^ok
@@ -3230,12 +3230,12 @@ Cogit >> assertExtsAreConsumed: descriptor [
 Cogit >> assertSaneJumpTarget: jumpTarget [
 	<var: #jumpTarget type: #'AbstractInstruction *'>
 
-	self assert: (closedPICSize isNil "don't whinge when producing the PIC prototypes"
+	self assert: (picSize isNil "don't whinge when producing the PIC prototypes"
 			or: [megamorphicICSize isNil
 			or: [(self addressIsInInstructions: jumpTarget)
 			or: [(jumpTarget asUnsignedInteger
 					between: codeBase
-					and: methodZone limitZony asInteger + (closedPICSize max: megamorphicICSize))]]])
+					and: methodZone limitZony asInteger + (picSize max: megamorphicICSize))]]])
 ]
 
 { #category : 'trampoline support' }
@@ -3456,138 +3456,6 @@ Cogit >> cFramePointerAddress [
 		ifFalse: [coInterpreter inMemoryCFramePointerAddress]
 ]
 
-{ #category : 'in-line cacheing' }
-Cogit >> cPIC: cPIC HasTarget: targetMethod [
-	"Are any of the jumps from this CPIC to targetMethod?"
-	<var: #cPIC type: #'CogMethod *'>
-	<var: #targetMethod type: #'CogMethod *'>
-	| pc target |
-	target := targetMethod asUnsignedInteger + cmNoCheckEntryOffset.
-	pc := cPIC asInteger + firstCPICCaseOffset.
-	"Since this is a fast test doing simple compares we don't need to care that some
-	cases have nonsense addresses in there. Just zip on through."
-	"First jump is unconditional; subsequent ones are conditional"
-	target = (backEnd jumpLongTargetBeforeFollowingAddress: pc) ifTrue:
-		[^true].
-	2 to: MaxCPICCases do:
-		[:i|
-		pc := pc + cPICCaseSize.
-		target = (backEnd jumpLongConditionalTargetBeforeFollowingAddress: pc) ifTrue:
-			[^true]].
-	^false
-]
-
-{ #category : 'in-line cacheing' }
-Cogit >> cPICCompactAndIsNowEmpty: cPIC [
-	"Scan the CPIC for target methods that have been freed and eliminate them.
-	 Since the first entry cannot be eliminated, answer that the PIC should be
-	 freed if the first entry is to a free target.  Answer if the PIC is now empty or should be freed."
-	<var: #cPIC type: #'CogMethod *'>
-	| pc entryPoint targetMethod targets tags methods used |
-	<var: #targetMethod	type: #'CogMethod *'>
-	<var: #tags			declareC: 'int tags[MaxCPICCases]'>
-	<var: #targets			declareC: 'sqInt targets[MaxCPICCases]'>
-	<var: #methods		declareC: 'sqInt methods[MaxCPICCases]'>
-	self cCode: [] inSmalltalk:
-		[tags := CArrayAccessor on: (Array new: MaxCPICCases).
-		 targets := CArrayAccessor on: (Array new: MaxCPICCases).
-		 methods := CArrayAccessor on: (Array new: MaxCPICCases)].
-	used := 0.
-	1 to: cPIC cPICNumCases do:
-		[:i| | valid |
-		 pc := self addressOfEndOfCase: i inCPIC: cPIC.
-		 entryPoint := i = 1
-						ifTrue: [backEnd jumpLongTargetBeforeFollowingAddress: pc]
-						ifFalse: [backEnd jumpLongConditionalTargetBeforeFollowingAddress: pc].
-		 valid := true.
-		 "Collect all target triples except for triples whose entry-point is a freed method"
-		 (cPIC containsAddress: entryPoint) ifFalse:
-			[targetMethod := self cCoerceSimple: entryPoint - cmNoCheckEntryOffset to: #'CogMethod *'.
-			 self assert: (targetMethod cmType = CMMethod or: [targetMethod cmType = CMFree]).
-			 targetMethod cmType = CMFree ifTrue:
-				[i = 1 ifTrue: [^true]. "cannot filter out the first entry cuz classTag is at pont of send."
-				 valid := false]].
-		 valid ifTrue:
-			[tags at: used put: (i > 1 ifTrue: [backEnd literal32BeforeFollowingAddress: pc - backEnd jumpLongConditionalByteSize]).
-			 targets at: used put: entryPoint.
-			 methods at: used put: (backEnd literalBeforeFollowingAddress: pc - (i = 1
-																				ifTrue: [backEnd jumpLongByteSize]
-																				ifFalse: [backEnd jumpLongConditionalByteSize + backEnd cmpC32RTempByteSize])).
-			 used := used + 1]].
-	used = cPIC cPICNumCases ifTrue:
-		[^false].
-	used = 0 ifTrue:
-		[^true].
-	cPIC cPICNumCases: used.
-	used = 1 ifTrue:
-		[pc := self addressOfEndOfCase: 2 inCPIC: cPIC.
-		 self rewriteCPIC: cPIC caseJumpTo: pc.
-		 ^false].
-	"the first entry cannot change..."
-	1 to: used - 1 do:
-		[:i|
-		 pc := self addressOfEndOfCase: i + 1 inCPIC: cPIC.
-		 self rewritePICCaseAt: pc tag: (tags at: i) objRef: (methods at: i) target: (targets at: i)].
-
-	"finally, rewrite the jump 3 instr  before firstCPICCaseOffset to jump to the beginning of this new case"
-	self rewriteCPIC: cPIC caseJumpTo: pc - cPICCaseSize.
-	^false
-]
-
-{ #category : 'in-line cacheing' }
-Cogit >> cPICHasForwardedClass: cPIC [ 
-	"The first case in a CPIC doesn't have a class reference so we need only step over actually usd subsequent cases."
-	| pc |
-	<var: #cPIC type: #'CogMethod *'>
-	"start by finding the address of the topmost case, the cPICNumCases'th one"
-	pc := (self addressOfEndOfCase: cPIC cPICNumCases inCPIC: cPIC)
-				- backEnd jumpLongConditionalByteSize.
-	2 to: cPIC cPICNumCases do: 
-			[:i |  | classIndex |
-			classIndex := backEnd literal32BeforeFollowingAddress: pc.
-			(objectMemory isForwardedClassIndex: classIndex)
-				ifTrue: [^ true].
-			"since we started at the top, we can just add the case size each time to move on to the next case"
-			pc := pc + cPICCaseSize].
-	^ false
-]
-
-{ #category : 'in-line cacheing' }
-Cogit >> cPICHasFreedTargets: cPIC [
-	"scan the CPIC for target methods that have been freed. "
-	<var: #cPIC type: #'CogMethod *'>
-	| pc entryPoint targetMethod |
-	<var: #targetMethod type: #'CogMethod *'>
-
-	1 to: cPIC cPICNumCases do:
-		[:i|
-		pc := self addressOfEndOfCase: i inCPIC: cPIC.
-		entryPoint := i = 1
-						ifTrue: [backEnd jumpLongTargetBeforeFollowingAddress: pc]
-						ifFalse: [backEnd jumpLongConditionalTargetBeforeFollowingAddress: pc].
-		"Find target from jump.  Ignore jumps to the interpret and MNU calls within this PIC"
-		(cPIC containsAddress: entryPoint) ifFalse:
-			[targetMethod := self cCoerceSimple: entryPoint - cmNoCheckEntryOffset to: #'CogMethod *'.
-			 self assert: (targetMethod cmType = CMMethod or: [targetMethod cmType = CMFree]).
-			 targetMethod cmType = CMFree ifTrue:
-				[^true]]].
-	^false
-]
-
-{ #category : 'accessing' }
-Cogit >> cPICPrototype [
-	"For Cogit clas>>#genAndDisPICoptions:"
-	<doNotGenerate>
-	^cPICPrototype
-]
-
-{ #category : 'in-line cacheing' }
-Cogit >> cPICPrototypeCaseOffset [
-	"Whimsey; we want 16rCA5E10 + cPICPrototypeCaseOffset to be somewhere in the middle of the zone."
-	<inline: true>
-	^methodZoneBase + methodZone youngReferrers / 2 - 16rCA5E10
-]
-
 { #category : 'trampoline support' }
 Cogit >> cStackPointerAddress [
 	<cmacro: '() ((usqIntptr_t)&CStackPointer)'>
@@ -3641,89 +3509,6 @@ Cogit >> ceBaseFrameReturnTrampoline: anInteger [
 	<doNotGenerate>
 	
 	ceBaseFrameReturnTrampoline := anInteger
-]
-
-{ #category : 'in-line cacheing' }
-Cogit >> ceCPICMiss: cPIC receiver: receiver [
-	"Code entry closed PIC miss.  A send has fallen
-	 through a closed (finite) polymorphic inline cache.
-	 Either extend it or patch the send site to an megamorphic IC.
-	 The stack looks like:
-			receiver
-			args
-	  sp=>	sender return address"
-
-	<api>
-	<story: #pic>
-	<var: #cPIC type: #'CogMethod *'>
-	| callerReturnAddress newTargetMethodOrNil errorSelectorOrNil |
-	self simulationOnly: [
-		cPIC isInteger ifTrue: [
-			^ self
-				  ceCPICMiss: (self cogMethodSurrogateAt: cPIC)
-				  receiver: receiver ] ].
-
-	(objectMemory isOopForwarded: receiver) ifTrue: [
-		^ coInterpreter ceSendFromInLineCacheMiss: cPIC ].
-
-	callerReturnAddress := coInterpreter stackTop.
-	self deny: (backEnd inlineCacheTagAt: callerReturnAddress)
-		= self isMNUPicAbortDiscriminatorValue.
-
-	"Transition to megamorphic if the PIC is full"
-	MaxCPICCases <= cPIC cPICNumCases ifTrue: [
-		self
-			patchToMegamorphicICFor: cPIC selector
-			numArgs: cPIC cmNumArgs
-			receiver: receiver.
-		^ coInterpreter ceSendFromInLineCacheMiss: cPIC ].
-
-	self
-		lookup: cPIC selector
-		for: receiver
-		methodAndErrorSelectorInto: [ :method :errsel |
-			newTargetMethodOrNil := method.
-			errorSelectorOrNil := errsel ].
-
-	"      method | errorSelector             | situation
-	 -------------+---------------------------+-------------------------------------------------------------
-	          nil | SelectorCannotInterpret   | There was an error during the lookup (ill-formed class)
-	          nil | SelectorDoesNotUnderstand | Didn't find the method nor the DNU implementation
-	  foundMethod | SelectorCannotInterpret   | Found something that isn't a CompiledMethod (#run:with:in:)
-	  foundMethod | *                         | foundMethod is young (may not be a CompiledMethod!)"
-	(errorSelectorOrNil = SelectorCannotInterpret or: [
-		 newTargetMethodOrNil isNil or: [
-			 objectMemory isYoung: newTargetMethodOrNil ] ]) ifTrue: [
-		self
-			patchToMegamorphicICFor: cPIC selector
-			numArgs: cPIC cmNumArgs
-			receiver: receiver.
-		^ coInterpreter ceSendFromInLineCacheMiss: cPIC ].
-
-	"      method | errorSelector             | situation
-	 -------------+---------------------------+---------------------------------------------------------
-	  foundMethod | SelectorDoesNotUnderstand | Didn't find the method but found the DNU implementation
-	  foundMethod | nil                       | Found the method
-
-	Now extend the PIC with the new case."
-	self
-		cogExtendPIC: cPIC
-		CaseNMethod: newTargetMethodOrNil
-		tag: (objectRepresentation inlineCacheTagForInstance: receiver)
-		isMNUCase: errorSelectorOrNil = SelectorDoesNotUnderstand.
-
-	"Jump back into the pic at its entry in case this is an MNU."
-	coInterpreter
-		executeCogPIC: cPIC
-		fromLinkedSendWithReceiver: receiver
-		andCacheTag: (backEnd inlineCacheTagAt: callerReturnAddress).
-	self unreachable
-]
-
-{ #category : 'accessing' }
-Cogit >> ceCPICMissTrampoline [
-	<doNotGenerate>
-	^ ceCPICMissTrampoline
 ]
 
 { #category : 'simulation only' }
@@ -3871,6 +3656,89 @@ Cogit >> cePICAbortTrampoline: anInteger [
 	cePICAbortTrampoline := anInteger
 ]
 
+{ #category : 'in-line cacheing' }
+Cogit >> cePICMiss: aPIC receiver: receiver [
+	"Code entry closed PIC miss.  A send has fallen
+	 through a closed (finite) polymorphic inline cache.
+	 Either extend it or patch the send site to an megamorphic IC.
+	 The stack looks like:
+			receiver
+			args
+	  sp=>	sender return address"
+
+	<api>
+	<story: #pic>
+	<var: #aPIC type: #'CogMethod *'>
+	| callerReturnAddress newTargetMethodOrNil errorSelectorOrNil |
+	self simulationOnly: [
+		aPIC isInteger ifTrue: [
+			^ self
+				  cePICMiss: (self cogMethodSurrogateAt: aPIC)
+				  receiver: receiver ] ].
+
+	(objectMemory isOopForwarded: receiver) ifTrue: [
+		^ coInterpreter ceSendFromInLineCacheMiss: aPIC ].
+
+	callerReturnAddress := coInterpreter stackTop.
+	self deny: (backEnd inlineCacheTagAt: callerReturnAddress)
+		= self isMNUPicAbortDiscriminatorValue.
+
+	"Transition to megamorphic if the PIC is full"
+	MaxPICCases <= aPIC picNumCases ifTrue: [
+		self
+			patchToMegamorphicICFor: aPIC selector
+			numArgs: aPIC cmNumArgs
+			receiver: receiver.
+		^ coInterpreter ceSendFromInLineCacheMiss: aPIC ].
+
+	self
+		lookup: aPIC selector
+		for: receiver
+		methodAndErrorSelectorInto: [ :method :errsel |
+			newTargetMethodOrNil := method.
+			errorSelectorOrNil := errsel ].
+
+	"      method | errorSelector             | situation
+	 -------------+---------------------------+-------------------------------------------------------------
+	          nil | SelectorCannotInterpret   | There was an error during the lookup (ill-formed class)
+	          nil | SelectorDoesNotUnderstand | Didn't find the method nor the DNU implementation
+	  foundMethod | SelectorCannotInterpret   | Found something that isn't a CompiledMethod (#run:with:in:)
+	  foundMethod | *                         | foundMethod is young (may not be a CompiledMethod!)"
+	(errorSelectorOrNil = SelectorCannotInterpret or: [
+		 newTargetMethodOrNil isNil or: [
+			 objectMemory isYoung: newTargetMethodOrNil ] ]) ifTrue: [
+		self
+			patchToMegamorphicICFor: aPIC selector
+			numArgs: aPIC cmNumArgs
+			receiver: receiver.
+		^ coInterpreter ceSendFromInLineCacheMiss: aPIC ].
+
+	"      method | errorSelector             | situation
+	 -------------+---------------------------+---------------------------------------------------------
+	  foundMethod | SelectorDoesNotUnderstand | Didn't find the method but found the DNU implementation
+	  foundMethod | nil                       | Found the method
+
+	Now extend the PIC with the new case."
+	self
+		cogExtendPIC: aPIC
+		CaseNMethod: newTargetMethodOrNil
+		tag: (objectRepresentation inlineCacheTagForInstance: receiver)
+		isMNUCase: errorSelectorOrNil = SelectorDoesNotUnderstand.
+
+	"Jump back into the pic at its entry in case this is an MNU."
+	coInterpreter
+		executeCogPIC: aPIC
+		fromLinkedSendWithReceiver: receiver
+		andCacheTag: (backEnd inlineCacheTagAt: callerReturnAddress).
+	self unreachable
+]
+
+{ #category : 'accessing' }
+Cogit >> cePICMissTrampoline [
+	<doNotGenerate>
+	^ cePICMissTrampoline
+]
+
 { #category : 'accessing' }
 Cogit >> ceReturnToInterpreterPC [
 	<api>
@@ -4007,7 +3875,7 @@ Cogit >> ceSICMiss: receiver [
 					linkingSucceeded ifTrue: [
 						self
 							flushICacheFrom: inlineCache asUnsignedInteger
-							to: inlineCache asUnsignedInteger + closedPICSize.
+							to: inlineCache asUnsignedInteger + picSize.
 						self
 							flushICacheFrom: callerReturnAddress asUnsignedInteger - extent
 							to: callerReturnAddress asUnsignedInteger ] ] ].
@@ -4278,7 +4146,7 @@ Cogit >> checkIntegrityOfObjectReferencesInCode: gcModes [
 				ifFalse:
 					[cogMethod cmType = CMPolymorphicIC
 						ifTrue:
-							[(self checkValidObjectReferencesInClosedPIC: cogMethod) ifFalse:
+							[(self checkValidObjectReferencesInPIC: cogMethod) ifFalse:
 								[ok := false]]
 						ifFalse:
 							[cogMethod cmType = CMMegamorphicIC
@@ -4292,7 +4160,7 @@ Cogit >> checkIntegrityOfObjectReferencesInCode: gcModes [
 ]
 
 { #category : 'garbage collection' }
-Cogit >> checkMaybeObjRefInClosedPIC: maybeObject [
+Cogit >> checkMaybeObjRefInPIC: maybeObject [
 	maybeObject = 0 ifTrue:
 		[^true].
 	(objectRepresentation couldBeObject: maybeObject) ifFalse:
@@ -4307,35 +4175,35 @@ Cogit >> checkStackDepthOnSend [
 ]
 
 { #category : 'garbage collection' }
-Cogit >> checkValidObjectReferencesInClosedPIC: cPIC [
-	<var: #cPIC type: #'CogMethod *'>
+Cogit >> checkValidObjectReferencesInPIC: aPIC [
+	<var: #aPIC type: #'CogMethod *'>
 	| ok pc |
 	ok := true.
-	pc := cPIC asInteger + firstCPICCaseOffset.
+	pc := aPIC asInteger + firstPICCaseOffset.
 	
-	"first we check the obj ref at the beginning of the CPIC"
-	(self checkMaybeObjRefInClosedPIC: (backEnd literalBeforeFollowingAddress: pc - backEnd jumpLongByteSize)) ifFalse:
-		[self print: 'object leak in CPIC '; printHex: cPIC asInteger;
+	"first we check the obj ref at the beginning of the PIC"
+	(self checkMaybeObjRefInPIC: (backEnd literalBeforeFollowingAddress: pc - backEnd jumpLongByteSize)) ifFalse:
+		[self print: 'object leak in PIC '; printHex: aPIC asInteger;
 			print: ' @ '; printHex: pc - backEnd jumpLongByteSize; cr.
 		 ok := false].
 	
-	"Next we step over each case that is in use. We find the end address of the cPICNumCases'th case and can then just step forward by the case size thereafter"
-	pc := self addressOfEndOfCase: cPIC cPICNumCases inCPIC: cPIC.
+	"Next we step over each case that is in use. We find the end address of the picNumCases'th case and can then just step forward by the case size thereafter"
+	pc := self addressOfEndOfCase: aPIC picNumCases inPIC: aPIC.
 	
 	"For each case we check any object reference at the end address - sizeof(conditional instruction) and then increment the end address by case size"
-	2 to: cPIC cPICNumCases do:
+	2 to: aPIC picNumCases do:
 		[:i|
 		(self inlineCacheTagsAreIndexes not
 		 and: [objectRepresentation inlineCacheTagsMayBeObjects]) ifTrue:
-			[(self checkMaybeObjRefInClosedPIC: (backEnd literal32BeforeFollowingAddress: pc - backEnd jumpLongConditionalByteSize)) ifFalse:
-				[self print: 'object leak in CPIC '; printHex: cPIC asInteger;
+			[(self checkMaybeObjRefInPIC: (backEnd literal32BeforeFollowingAddress: pc - backEnd jumpLongConditionalByteSize)) ifFalse:
+				[self print: 'object leak in PIC '; printHex: aPIC asInteger;
 					print: ' @ '; printHex: pc - backEnd jumpLongConditionalByteSize - backEnd loadLiteralByteSize; cr.
 				 ok := false]].
-		(self checkMaybeObjRefInClosedPIC: (backEnd literalBeforeFollowingAddress: pc - backEnd jumpLongConditionalByteSize - backEnd cmpC32RTempByteSize)) ifFalse:
-			[self print: 'object leak in CPIC '; printHex: cPIC asInteger;
+		(self checkMaybeObjRefInPIC: (backEnd literalBeforeFollowingAddress: pc - backEnd jumpLongConditionalByteSize - backEnd cmpC32RTempByteSize)) ifFalse:
+			[self print: 'object leak in PIC '; printHex: aPIC asInteger;
 				print: ' @ '; printHex: pc - backEnd jumpLongConditionalByteSize; cr.
 			 ok := false].
-		pc := pc + cPICCaseSize].
+		pc := pc + picCaseSize].
 	^ok
 ]
 
@@ -4354,54 +4222,6 @@ Cogit >> cleanUpFailingCogCodeConstituents: cogMethodArg [
 		self assert: self allMachineCodeObjectReferencesValid."
 	coInterpreter popRemappableOop.
 	^nil
-]
-
-{ #category : 'garbage collection' }
-Cogit >> closedPICRefersToUnmarkedObject: cPIC [
-	"Answer if the ClosedPIC refers to any unmarked objects or freed/freeable target methods,
-	 applying markAndTraceOrFreeCogMethod:firstVisit: to those targets to determine if freed/freeable."
-	<var: #cPIC type: #'CogMethod *'>
-	| pc object |
-	((objectMemory isImmediate: cPIC selector)
-	or: [objectMemory isMarkedOrPermanent: cPIC selector]) ifFalse:
-		[^true].
-
-	"First jump is unconditional; subsequent ones are conditional."
-	"Check the potential method oop for the first case only.
-	 Inline cache tags for the 1st case are at the send site."
-	pc := self addressOfEndOfCase: 1 inCPIC: cPIC.
-	(objectRepresentation couldBeObject: (object := backEnd literalBeforeFollowingAddress: pc - backEnd jumpLongByteSize)) ifTrue:
-		[(objectMemory isMarkedOrPermanent: object) ifFalse:
-			[^true]].
-
-	"Check the first target"
-	(self markAndTraceOrFreePICTarget: (backEnd jumpLongTargetBeforeFollowingAddress: pc) in: cPIC) ifTrue:
-		[^true].
-
-	2 to: cPIC cPICNumCases do:
-		[:i| 
-		pc := self addressOfEndOfCase: i inCPIC: cPIC.
-		(self inlineCacheTagsAreIndexes not
-		 and: [objectRepresentation inlineCacheTagsMayBeObjects
-		 and: [objectRepresentation couldBeObject: (object := backEnd literal32BeforeFollowingAddress: pc - backEnd jumpLongConditionalByteSize)]]) ifTrue:
-			[(objectMemory isMarkedOrPermanent: object) ifFalse:
-				[^true]].
-		"Check the potential method oop for subsequent cases."
-		(objectRepresentation couldBeObject: (object := backEnd literalBeforeFollowingAddress: pc - backEnd jumpLongConditionalByteSize - backEnd cmpC32RTempByteSize)) ifTrue:
-			[(objectMemory isMarkedOrPermanent: object) ifFalse:
-				[^true]].
-		"Check subsequent targets"
-		(self markAndTraceOrFreePICTarget: (backEnd jumpLongConditionalTargetBeforeFollowingAddress: pc) in: cPIC) ifTrue:
-			[^true]].
-
-	^false
-]
-
-{ #category : 'accessing' }
-Cogit >> closedPICSize [
-	"For Cogit clas>>#genAndDisPICoptions:"
-	<doNotGenerate>
-	^closedPICSize
 ]
 
 { #category : 'accessing' }
@@ -4599,12 +4419,13 @@ Cogit >> cogCodeConstituents: withDetails [
 ]
 
 { #category : 'in-line cacheing' }
-Cogit >> cogExtendPIC: cPIC CaseNMethod: caseNMethod tag: caseNTag isMNUCase: isMNUCase [
-	"Extend the cPIC with the supplied case.  If caseNMethod is cogged dispatch direct to
+Cogit >> cogExtendPIC: aPIC CaseNMethod: caseNMethod tag: caseNTag isMNUCase: isMNUCase [
+	"Extend the aPIC with the supplied case.  If caseNMethod is cogged dispatch direct to
 	 its unchecked entry-point.  If caseNMethod is not cogged, jump to the fast interpreter
-	 dispatch, and if isMNUCase then dispatch to fast MNU invocation and mark the cPIC as
+	 dispatch, and if isMNUCase then dispatch to fast MNU invocation and mark the aPIC as
 	 having the MNU case for cache flushing."
- 	<var: #cPIC type: #'CogMethod *'>
+	
+ 	<var: #aPIC type: #'CogMethod *'>
 	| operand target address |
 	self enableCodeZoneWriteDuring: [  
 			"Caller patches to megamorphicIC if caseNMethod is young."
@@ -4616,24 +4437,24 @@ Cogit >> cogExtendPIC: cPIC CaseNMethod: caseNMethod tag: caseNTag isMNUCase: is
 				ifFalse: 
 					[operand := caseNMethod.
 					 isMNUCase
-						ifTrue: "this is an MNU so tag the CPIC header and setup a jump to the MNUAbort"
-							[cPIC cpicHasMNUCase: true.
-							 target := self picAbortAddress: cPIC]
+						ifTrue: "this is an MNU so tag the PIC header and setup a jump to the MNUAbort"
+							[aPIC picHasMNUCase: true.
+							 target := self picAbortAddress: aPIC]
 						ifFalse: "setup a jump to the interpretAbort so we can cog the target method"
-							[target := cPIC asInteger + self picInterpretAbortOffset]].
+							[target := aPIC asInteger + self picInterpretAbortOffset]].
 
 			"find the end address of the new case"
-			address := self addressOfEndOfCase: cPIC cPICNumCases +1 inCPIC: cPIC.
+			address := self addressOfEndOfCase: aPIC picNumCases +1 inPIC: aPIC.
 			
 			self rewritePICCaseAt: address tag: caseNTag objRef: operand target: target.
 
-			"finally, rewrite the jump 3 instr  before firstCPICCaseOffset to jump to the beginning of this new case"
-			self rewriteCPIC: cPIC caseJumpTo: address - cPICCaseSize. 
+			"finally, rewrite the jump 3 instr  before firstPICCaseOffset to jump to the beginning of this new case"
+			self rewritePIC: aPIC caseJumpTo: address - picCaseSize. 
 
 			"update the header flag for the number of cases"
-			cPIC cPICNumCases: cPIC cPICNumCases + 1]
+			aPIC picNumCases: aPIC picNumCases + 1]
 
-		flushingCacheWith:  [self flushICacheFrom: cPIC asUnsignedInteger to: cPIC asUnsignedInteger + closedPICSize].
+		flushingCacheWith:  [self flushICacheFrom: aPIC asUnsignedInteger to: aPIC asUnsignedInteger + picSize].
 
 	^0
 ]
@@ -4690,9 +4511,9 @@ Cogit >> cogMNUPICSelector: selector receiver: rcvr methodOperand: methodOperand
 		 (objectRepresentation inlineCacheTagForInstance: rcvr)
 		 = self isMNUPicAbortDiscriminatorValue ]) ifTrue: [ ^ 0 ].
 
-	self assert: endCPICCase0 notNil.
-	"get memory in the code zone for the CPIC; if that fails we return an error code for the sender to use to work out how to blow up"
-	startAddress := methodZone allocate: closedPICSize.
+	self assert: endPICCase0 notNil.
+	"get memory in the code zone for the PIC; if that fails we return an error code for the sender to use to work out how to blow up"
+	startAddress := methodZone allocate: picSize.
 	startAddress = 0 ifTrue: [
 		coInterpreter callForCogCompiledCodeCompaction.
 		^ 0 ].
@@ -4702,13 +4523,13 @@ Cogit >> cogMNUPICSelector: selector receiver: rcvr methodOperand: methodOperand
 		enableCodeZoneWriteDuring: [ "memcpy the prototype across to our allocated space; because anything else would be silly"
 			self
 				initializePIC: pic
-				atDelta: startAddress - cPICPrototype
+				atDelta: startAddress - picPrototype
 				numArgs: numArgs.
 
-			self configureMNUCPIC: pic methodOperand: methodOperand.
+			self configureMNUPIC: pic methodOperand: methodOperand.
 
 			self
-				fillInCPICHeader: pic
+				fillInPICHeader: pic
 				numArgs: numArgs
 				numCases: 1
 				hasMNUCase: true
@@ -4716,7 +4537,7 @@ Cogit >> cogMNUPICSelector: selector receiver: rcvr methodOperand: methodOperand
 		flushingCacheWith: [
 			self
 				flushICacheFrom: pic asUnsignedInteger
-				to: pic asUnsignedInteger + closedPICSize ].
+				to: pic asUnsignedInteger + picSize ].
 
 	^ pic
 ]
@@ -4800,9 +4621,9 @@ Cogit >> cogMethodDoesntLookKosher: cogMethod [
 		 ^0].
 
 	cogMethod cmType = CMPolymorphicIC ifTrue:
-		[cogMethod blockSize ~= closedPICSize ifTrue:
+		[cogMethod blockSize ~= picSize ifTrue:
 			[^31].
-		 (cogMethod cPICNumCases between: 1 and: MaxCPICCases) ifFalse:
+		 (cogMethod picNumCases between: 1 and: MaxPICCases) ifFalse:
 			[^32].
 		 cogMethod methodHeader ~= 0 ifTrue:
 			[^33].
@@ -4855,25 +4676,25 @@ Cogit >> cogPICSelector: selector numArgs: numArgs Case0Method: case0CogMethod C
 	(objectMemory isYoung: selector) ifTrue: [
 		^ self cCoerceSimple: YoungSelectorInPIC to: #'CogMethod *' ].
 
-	"get memory in the code zone for the CPIC; if that fails we return an error code for the sender to use to work out how to blow up"
-	startAddress := methodZone allocate: closedPICSize.
+	"get memory in the code zone for the PIC; if that fails we return an error code for the sender to use to work out how to blow up"
+	startAddress := methodZone allocate: picSize.
 	pic := self cCoerceSimple: startAddress to: #'CogMethod *'.
 	startAddress = 0 ifTrue: [
 		^ self cCoerceSimple: InsufficientCodeSpace to: #'CogMethod *' ].
 
 	self
 		initializePIC: pic
-		atDelta: startAddress - cPICPrototype
+		atDelta: startAddress - picPrototype
 		numArgs: numArgs.
 	self
-		configureCPIC: pic
+		configurePIC: pic
 		Case0: case0CogMethod
 		Case1Method: case1MethodOrNil
 		tag: case1Tag
 		isMNUCase: isMNUCase.
 
 	self
-		fillInCPICHeader: pic
+		fillInPICHeader: pic
 		numArgs: numArgs
 		numCases: 2
 		hasMNUCase: isMNUCase
@@ -5036,7 +4857,7 @@ Cogit >> compactPICsWithFreedTargets [
 	count := 0.
 	[cogMethod < methodZone limitZony] whileTrue:
 		[(cogMethod cmType = CMPolymorphicIC
-		  and: [self cPICCompactAndIsNowEmpty: cogMethod]) ifTrue:
+		  and: [self picCompactAndIsNowEmpty: cogMethod]) ifTrue:
 			[cogMethod cmType: CMFree].
 		 cogMethod := methodZone methodAfter: cogMethod.
 		 count := count + 1].
@@ -5105,15 +4926,6 @@ Cogit >> compileAbstractInstructionsFrom: start through: end [
 			[nExts := descriptor isExtension ifTrue: [nExts + 1] ifFalse: [0]].
 	self checkEnoughOpcodes.
 	^result
-]
-
-{ #category : 'in-line cacheing' }
-Cogit >> compileCPICEntry [
-	<returnTypeC: #'AbstractInstruction *'>
-	"Compile the cache tag computation and the first comparison.  Answer the address of that comparison."
-	entry := objectRepresentation genGetInlineCacheClassTagFrom: ReceiverResultReg into: TempReg.
-	self CmpR: ClassReg R: TempReg.
-	^self JumpNonZero: 0
 ]
 
 { #category : 'initialization' }
@@ -5394,6 +5206,15 @@ Cogit >> compilePICAbort: numArgs [
 ]
 
 { #category : 'in-line cacheing' }
+Cogit >> compilePICEntry [
+	<returnTypeC: #'AbstractInstruction *'>
+	"Compile the cache tag computation and the first comparison.  Answer the address of that comparison."
+	entry := objectRepresentation genGetInlineCacheClassTagFrom: ReceiverResultReg into: TempReg.
+	self CmpR: ClassReg R: TempReg.
+	^self JumpNonZero: 0
+]
+
+{ #category : 'in-line cacheing' }
 Cogit >> compilePolymorphicICPrototype [
 	"Compile the abstract instructions for a PIC, used to generate the chunk of code
 	 which is copied to form each PIC.  A Polymorphic Inline Cache is a small jump
@@ -5440,25 +5261,25 @@ Cogit >> compilePolymorphicICPrototype [
 	| numArgs jumpNext |
 	<var: #jumpNext type: #'AbstractInstruction *'>
 	self compilePICAbort: (numArgs := 0). "Will get rewritten to appropriate arity when configuring."
-	jumpNext := self compileCPICEntry.
+	jumpNext := self compilePICEntry.
 	"At the end of the entry code we need to jump to the first case code, which is actually the last chunk.
 	 On each entension we must update this jump to move back one case."
 	self MoveUniqueCw: self firstPrototypeMethodOop R: SendNumArgsReg.
-	self JumpLong: self cPICPrototypeCaseOffset + 16rCA5E10.
-	endCPICCase0 := self Label.
-	1 to: MaxCPICCases - 1 do:
+	self JumpLong: self picPrototypeCaseOffset + 16rCA5E10.
+	endPICCase0 := self Label.
+	1 to: MaxPICCases - 1 do:
 		[:h|
-		h = (MaxCPICCases - 1) ifTrue:
+		h = (MaxPICCases - 1) ifTrue:
 			[jumpNext jmpTarget: self Label]. "this is where we jump to for the first case"
 		self MoveUniqueCw: self subsequentPrototypeMethodOop + h R: SendNumArgsReg.
 		"16rBABE1F15+h is the class tag for the Nth case"
 		self CmpC32: 16rBABE1F15+h R: TempReg.
-		self JumpLongZero: self cPICPrototypeCaseOffset + 16rCA5E10 + (h * 16).
+		self JumpLongZero: self picPrototypeCaseOffset + 16rCA5E10 + (h * 16).
 		h = 1 ifTrue:
-			[endCPICCase1 := self Label]].
+			[endPICCase1 := self Label]].
 	self MoveCw: methodLabel address R: ClassReg.
-	self JumpLong: (self cPICMissTrampolineFor: numArgs).	"Will get rewritten to appropriate arity when configuring."
-	cPICEndOfCodeLabel := self Label.
+	self JumpLong: (self picMissTrampolineFor: numArgs).	"Will get rewritten to appropriate arity when configuring."
+	picEndOfCodeLabel := self Label.
 	literalsManager dumpLiterals: false.
 	^0
 ]
@@ -5613,8 +5434,39 @@ Cogit >> computeMaximumSizes [
 ]
 
 { #category : 'in-line cacheing' }
-Cogit >> configureCPIC: aPIC Case0: case0CogMethod Case1Method: case1Method tag: case1Tag isMNUCase: isMNUCase [
-	"Configure a copy of the prototype CPIC for a two-case PIC for 
+Cogit >> configureMNUPIC: aPIC methodOperand: methodOop [
+	"Configure a copy of the prototype PIC for a one-case MNU PIC that calls ceMNUFromPIC for
+	 case0Tag The tag for case0 is at the send site and so doesn't need to be generated.
+	 addDelta is the address change from the prototype to the new PIC location, needed
+	 because the loading of the PIC label at the end may be a literal instead of a pc-relative load."
+
+	<var: #aPIC type: #'CogMethod *'>
+	| operand |	
+	"We do not scavenge PICs, hence we cannot cache the MNU method if it is in new space."
+	operand := (methodOop isNil or: [
+		            objectMemory getMemoryMap isYoungObject: methodOop ])
+		           ifTrue: [ 0 ]
+		           ifFalse: [ methodOop ].
+
+	"set the jump to the case0 method"
+	backEnd
+		rewriteJumpLongAt: aPIC asInteger + firstPICCaseOffset
+		target: (self picAbortAddress: aPIC).
+
+	"finally, rewrite the jump 3 instr before firstPICCaseOffset to jump to the end of case 2, missing the actual case"
+	backEnd
+		storeLiteral: operand
+		beforeFollowingAddress:
+		aPIC asInteger + firstPICCaseOffset - backEnd jumpLongByteSize.
+	self
+		rewritePIC: aPIC
+		caseJumpTo: (self addressOfEndOfCase: 2 inPIC: aPIC).
+	^ 0
+]
+
+{ #category : 'in-line cacheing' }
+Cogit >> configurePIC: aPIC Case0: case0CogMethod Case1Method: case1Method tag: case1Tag isMNUCase: isMNUCase [
+	"Configure a copy of the prototype PIC for a two-case PIC for 
 	case0CogMethod and
 	case1Method
 	case1Tag.
@@ -5623,10 +5475,10 @@ Cogit >> configureCPIC: aPIC Case0: case0CogMethod Case1Method: case1Method tag:
 		- a Cog method; jump to its unchecked entry-point
 		- a CompiledMethod; jump to the ceInterpretFromPIC trampoline
 		- nil; call ceMNUFromPIC
-	addDelta is the address change from the prototype to the new CPIC location, needed
-	because the loading of the CPIC label at the end may use a literal instead of a pc relative load."
+	addDelta is the address change from the prototype to the new PIC location, needed
+	because the loading of the PIC label at the end may use a literal instead of a pc relative load."
 
-	"self disassembleFrom: cPIC asInteger + (self sizeof: CogMethod) to: cPIC asInteger + closedPICSize"
+	"self disassembleFrom: pic asInteger + (self sizeof: CogMethod) to: aPIC asInteger + picSize"
 
 	<var: #aPIC type: #'CogMethod *'>
 	<var: #case0CogMethod type: #'CogMethod *'>
@@ -5650,11 +5502,11 @@ Cogit >> configureCPIC: aPIC Case0: case0CogMethod Case1Method: case1Method tag:
 				               aPIC asInteger + self picInterpretAbortOffset ] ].
 	"set the jump to the case0 method"
 	backEnd
-		rewriteJumpLongAt: aPIC asInteger + firstCPICCaseOffset
+		rewriteJumpLongAt: aPIC asInteger + firstPICCaseOffset
 		target: case0CogMethod asInteger + cmNoCheckEntryOffset.
 	
-	"update the cpic case"
-	caseEndAddress := self addressOfEndOfCase: 2 inCPIC: aPIC.
+	"update the pic case"
+	caseEndAddress := self addressOfEndOfCase: 2 inPIC: aPIC.
 	self
 		rewritePICCaseAt: caseEndAddress
 		tag: case1Tag
@@ -5665,37 +5517,6 @@ Cogit >> configureCPIC: aPIC Case0: case0CogMethod Case1Method: case1Method tag:
 	^ 0
 ]
 
-{ #category : 'in-line cacheing' }
-Cogit >> configureMNUCPIC: aPIC methodOperand: methodOop [
-	"Configure a copy of the prototype CPIC for a one-case MNU CPIC that calls ceMNUFromPIC for
-	 case0Tag The tag for case0 is at the send site and so doesn't need to be generated.
-	 addDelta is the address change from the prototype to the new CPIC location, needed
-	 because the loading of the CPIC label at the end may be a literal instead of a pc-relative load."
-
-	<var: #aPIC type: #'CogMethod *'>
-	| operand |	
-	"We do not scavenge PICs, hence we cannot cache the MNU method if it is in new space."
-	operand := (methodOop isNil or: [
-		            objectMemory getMemoryMap isYoungObject: methodOop ])
-		           ifTrue: [ 0 ]
-		           ifFalse: [ methodOop ].
-
-	"set the jump to the case0 method"
-	backEnd
-		rewriteJumpLongAt: aPIC asInteger + firstCPICCaseOffset
-		target: (self picAbortAddress: aPIC).
-
-	"finally, rewrite the jump 3 instr before firstCPICCaseOffset to jump to the end of case 2, missing the actual case"
-	backEnd
-		storeLiteral: operand
-		beforeFollowingAddress:
-		aPIC asInteger + firstCPICCaseOffset - backEnd jumpLongByteSize.
-	self
-		rewriteCPIC: aPIC
-		caseJumpTo: (self addressOfEndOfCase: 2 inCPIC: aPIC).
-	^ 0
-]
-
 { #category : 'printing' }
 Cogit >> cr [
 	<cmacro: '() putchar(''\n'')'>
@@ -5703,29 +5524,29 @@ Cogit >> cr [
 ]
 
 { #category : 'profiling primitives' }
-Cogit >> createCPICData: cPIC [
+Cogit >> createPICData: aPIC [
 	"Answer an Array of the PIC's selector, followed by class and targetMethod/doesNotUnderstand: for each entry in the PIC."
-	<var: #cPIC type: #'CogMethod *'>
+	<var: #aPIC type: #'CogMethod *'>
 	| picData |
 	<var: #targetMethod type: #'CogMethod *'>
-	self assert: (cPIC methodObject = 0 or: [objectMemory addressCouldBeOop: cPIC methodObject]).
-	picData := objectMemory instantiateClass: objectMemory classArray indexableSize: cPIC cPICNumCases * 2 + 1.
+	self assert: (aPIC methodObject = 0 or: [objectMemory addressCouldBeOop: aPIC methodObject]).
+	picData := objectMemory instantiateClass: objectMemory classArray indexableSize: aPIC picNumCases * 2 + 1.
 	picData ifNil: [^picData].
-      objectMemory storePointerUnchecked: 0 ofObject: picData withValue: cPIC selector.
-	1 to: cPIC cPICNumCases do:
+      objectMemory storePointerUnchecked: 0 ofObject: picData withValue: aPIC selector.
+	1 to: aPIC picNumCases do:
 		[:i| | pc entryPoint target targetMethod class |
-		pc := self addressOfEndOfCase: i inCPIC: cPIC.
+		pc := self addressOfEndOfCase: i inPIC: aPIC.
 		i = 1
 			ifTrue:
-				[class := cPIC methodObject. "first case may have been collected and stored here by collectCogConstituentFor:Annotation:Mcpc:Bcpc:Method:"
-				 class = 0 ifTrue: [class := objectMemory nilObject]. "cPIC is unreferenced; likely evolved to megamorphicIC"
+				[class := aPIC methodObject. "first case may have been collected and stored here by collectCogConstituentFor:Annotation:Mcpc:Bcpc:Method:"
+				 class = 0 ifTrue: [class := objectMemory nilObject]. "PIC is unreferenced; likely evolved to megamorphicIC"
 				 entryPoint := backEnd jumpLongTargetBeforeFollowingAddress: pc]
 			ifFalse:
 				[class := objectRepresentation classForInlineCacheTag:
 							(backEnd literal32BeforeFollowingAddress: pc - backEnd jumpLongConditionalByteSize).
 				 entryPoint := backEnd jumpLongConditionalTargetBeforeFollowingAddress: pc].
 		"Find target from jump.  A jump to the MNU entry-point should collect #doesNotUnderstand:"
-		(cPIC containsAddress: entryPoint)
+		(aPIC containsAddress: entryPoint)
 			ifTrue:
 				[target := objectMemory splObj: SelectorDoesNotUnderstand]
 			ifFalse:
@@ -5736,7 +5557,7 @@ Cogit >> createCPICData: cPIC [
 			storePointerUnchecked: i * 2 - 1 ofObject: picData withValue: class;
 			storePointerUnchecked: i * 2 ofObject: picData withValue: target].
 	objectMemory beRootIfOld: picData.
-	cPIC methodObject: 0. "restore invariant."
+	aPIC methodObject: 0. "restore invariant."
 	^picData
 ]
 
@@ -6008,19 +5829,18 @@ Cogit >> exclude: aMethodObj selector: aSelectorOop [
 ]
 
 { #category : 'in-line cacheing' }
-Cogit >> expectedClosedPICPrototype: cPIC [
+Cogit >> expectedPICPrototype: aPIC [
 
-	"Use asserts to check if the ClosedPICPrototype is as expected from compileClosedPICPrototype,
-	 and can be updated as required via rewriteCPICCaseAt:tag:objRef:target:.  If all asserts pass, answer
+	"Use asserts to check if the PICPrototype is as expected from compilePICPrototype, and can be updated as required via rewritePICCaseAt:tag:objRef:target:.  If all asserts pass, answer
 	 0, otherwise answer a bit mask identifying all the errors."
 
-	"self disassembleFrom: methodZoneBase + (self sizeof: CogMethod) to: methodZoneBase + closedPICSize"
+	"self disassembleFrom: methodZoneBase + (self sizeof: CogMethod) to: methodZoneBase + picSize"
 
-	<var: #cPIC type: #'CogMethod *'>
+	<var: #aPIC type: #'CogMethod *'>
 	| pc errors object classTag entryPoint |
 
 	errors := 0.
-	pc := cPIC asUnsignedInteger + firstCPICCaseOffset.
+	pc := aPIC asUnsignedInteger + firstPICCaseOffset.
 	"First jump is unconditional; subsequent ones are conditional"
 	object := backEnd literalBeforeFollowingAddress:
 		          pc - backEnd jumpLongByteSize.
@@ -6029,12 +5849,12 @@ Cogit >> expectedClosedPICPrototype: cPIC [
 
 	entryPoint := backEnd jumpLongTargetBeforeFollowingAddress: pc.
 	(self asserta:
-		 entryPoint = (self cPICPrototypeCaseOffset + 16rCA5E10)) ifFalse: [ 
+		 entryPoint = (self picPrototypeCaseOffset + 16rCA5E10)) ifFalse: [ 
 		errors := errors + 2 ].
 
-	1 to: MaxCPICCases - 1 do: [ :i | 
+	1 to: MaxPICCases - 1 do: [ :i | 
 		| methodObjPC classTagPC |
-		pc := pc + cPICCaseSize.
+		pc := pc + picCaseSize.
 
 		"verify information in case is as expected."
 		methodObjPC := pc - backEnd jumpLongConditionalByteSize
@@ -6052,10 +5872,10 @@ Cogit >> expectedClosedPICPrototype: cPIC [
 			              jumpLongConditionalTargetBeforeFollowingAddress: pc.
 		(self asserta:
 			 entryPoint
-			 = (self cPICPrototypeCaseOffset + 16rCA5E10 + (i * 16))) 
+			 = (self picPrototypeCaseOffset + 16rCA5E10 + (i * 16))) 
 			ifFalse: [ errors := errors bitOr: 16 ].
 
-		"change case via rewriteCPICCaseAt:tag:objRef:target:"
+		"change case via rewritePICCaseAt:tag:objRef:target:"
 		self
 			rewritePICCaseAt: pc
 			tag: (classTag bitXor: 16r5A5A5A5A)
@@ -6075,7 +5895,7 @@ Cogit >> expectedClosedPICPrototype: cPIC [
 			              jumpLongConditionalTargetBeforeFollowingAddress: pc.
 		(self asserta: entryPoint
 			 =
-			 (self cPICPrototypeCaseOffset + 16rCA5E10 + (i * 16) bitXor:
+			 (self picPrototypeCaseOffset + 16rCA5E10 + (i * 16) bitXor:
 				  16r5AA50)) ifFalse: [ errors := errors bitOr: 128 ].
 
 		"finally restore case to the original state"
@@ -6086,8 +5906,8 @@ Cogit >> expectedClosedPICPrototype: cPIC [
 			target: (entryPoint bitXor: 16r5AA50) ].
 
 	entryPoint := backEnd jumpLongTargetBeforeFollowingAddress:
-		              pc + cPICEndSize - literalsManager endSizeOffset.
-	(self asserta: entryPoint = (self cPICMissTrampolineFor: 0)) 
+		              pc + picEndSize - literalsManager endSizeOffset.
+	(self asserta: entryPoint = (self picMissTrampolineFor: 0)) 
 		ifFalse: [ errors := errors + 256 ] .
 
 	^ errors
@@ -6144,33 +5964,6 @@ Cogit >> fillFrom: startMemoryAddr until: endMemoryAddr with: fillReg usingVr: v
 ]
 
 { #category : 'generate machine code' }
-Cogit >> fillInCPICHeader: pic numArgs: numArgs numCases: numCases hasMNUCase: hasMNUCase selector: selector [
-	<returnTypeC: #'CogMethod *'>
-	<var: #pic type: #'CogMethod *'>
-	<inline: true>
-	self assert: (objectMemory isYoung: selector) not.
-	pic cmType: CMPolymorphicIC.
-	pic objectHeader: 0.
-	pic blockSize: closedPICSize.
-	pic methodObject: 0.
-	pic methodHeader: 0.
-	pic selector: selector.
-	pic cmNumArgs: numArgs.
-	pic cmRefersToYoung: false.
-	pic cmUsageCount: self initialClosedPICUsageCount.
-	pic cpicHasMNUCase: hasMNUCase.
-	pic cPICNumCases: numCases.
-	pic picUsage: 0.
-	self assert: pic cmType = CMPolymorphicIC.
-	self assert: pic selector = selector.
-	self assert: pic cmNumArgs = numArgs.
-	self assert: pic cPICNumCases = numCases.
-	self assert: (backEnd callTargetFromReturnAddress: pic asInteger + missOffset) = (self picAbortTrampolineFor: numArgs).
-	self assert: closedPICSize = (methodZone roundUpLength: closedPICSize).
-	^pic
-]
-
-{ #category : 'generate machine code' }
 Cogit >> fillInMegamorphicICHeader: pic numArgs: numArgs selector: selector [
 	<returnTypeC: #'CogMethod *'>
 	<var: #pic type: #'CogMethod *'>
@@ -6186,8 +5979,8 @@ Cogit >> fillInMegamorphicICHeader: pic numArgs: numArgs selector: selector [
 	(pic cmRefersToYoung: (objectMemory isYoung: selector)) ifTrue:
 		[methodZone addToYoungReferrers: pic].
 	pic cmUsageCount: self initialMegamorphicICUsageCount.
-	pic cpicHasMNUCase: false.
-	pic cPICNumCases: 0.
+	pic picHasMNUCase: false.
+	pic picNumCases: 0.
 	pic picUsage: 0.
 	self assert: pic cmType = CMMegamorphicIC.
 	self assert: pic selector = selector.
@@ -6222,7 +6015,7 @@ Cogit >> fillInMethodHeader: method size: size selector: selector [
 	(method cmRefersToYoung: hasYoungReferent) ifTrue:
 		[methodZone addToYoungReferrers: method].
 	method cmUsageCount: self initialMethodUsageCount.
-	method cpicHasMNUCase: false.
+	method picHasMNUCase: false.
 	method cmUsesPenultimateLit: maxLitIndex >= ((objectMemory literalCountOfMethodHeader: methodHeader) - 2).
 	method picUsage: 0.
 	"This can be an error check since a large stackCheckOffset is caused by compiling
@@ -6237,6 +6030,33 @@ Cogit >> fillInMethodHeader: method size: size selector: selector [
 				= (self methodAbortTrampolineFor: method cmNumArgs).
 	self assert: size = (methodZone roundUpLength: size).
 	^method
+]
+
+{ #category : 'generate machine code' }
+Cogit >> fillInPICHeader: pic numArgs: numArgs numCases: numCases hasMNUCase: hasMNUCase selector: selector [
+	<returnTypeC: #'CogMethod *'>
+	<var: #pic type: #'CogMethod *'>
+	<inline: true>
+	self assert: (objectMemory isYoung: selector) not.
+	pic cmType: CMPolymorphicIC.
+	pic objectHeader: 0.
+	pic blockSize: picSize.
+	pic methodObject: 0.
+	pic methodHeader: 0.
+	pic selector: selector.
+	pic cmNumArgs: numArgs.
+	pic cmRefersToYoung: false.
+	pic cmUsageCount: self initialPICUsageCount.
+	pic picHasMNUCase: hasMNUCase.
+	pic picNumCases: numCases.
+	pic picUsage: 0.
+	self assert: pic cmType = CMPolymorphicIC.
+	self assert: pic selector = selector.
+	self assert: pic cmNumArgs = numArgs.
+	self assert: pic picNumCases = numCases.
+	self assert: (backEnd callTargetFromReturnAddress: pic asInteger + missOffset) = (self picAbortTrampolineFor: numArgs).
+	self assert: picSize = (methodZone roundUpLength: picSize).
+	^pic
 ]
 
 { #category : 'method map' }
@@ -6392,7 +6212,7 @@ Cogit >> followForwardedMethods [
 					(objectMemory getMemoryMap isYoungObject: cogMethod methodObject) 
 						ifTrue: [ methodZone ensureInYoungReferrers: cogMethod ] ] ].
 			cogMethod cmType = CMPolymorphicIC ifTrue: [ 
-				(self followMethodReferencesInClosedPIC: cogMethod) ifTrue: [ 
+				(self followMethodReferencesInPIC: cogMethod) ifTrue: [ 
 					freedPIC := true.
 					methodZone freeMethod: cogMethod ] ].
 			cogMethod := methodZone methodAfter: cogMethod ].
@@ -6403,12 +6223,12 @@ Cogit >> followForwardedMethods [
 ]
 
 { #category : 'garbage collection' }
-Cogit >> followMaybeObjRefInClosedPICAt: mcpc [
-	"Follow a potential object reference from a closed PIC.
+Cogit >> followMaybeObjRefInPICAt: mcpc [
+	"Follow a potential object reference from a PIC.
 	 This may be a method reference or null.
 	 Answer if the followed literal is young.
-	'mcpc' refers to the jump/branch instruction at the end of
-	each cpic case"
+	'mcpc' refers to the jump/branch instruction at the end of	each pic case"
+		
 	| object subject |
 	object := backEnd literalBeforeFollowingAddress: mcpc.
 	(objectRepresentation couldBeObject: object) ifFalse:
@@ -6422,25 +6242,26 @@ Cogit >> followMaybeObjRefInClosedPICAt: mcpc [
 ]
 
 { #category : 'garbage collection' }
-Cogit >> followMethodReferencesInClosedPIC: cPIC [
-	"Remap all object references in the closed PIC.  Answer if any references are young.
+Cogit >> followMethodReferencesInPIC: aPIC [
+	"Remap all object references in the PIC.  Answer if any references are young.
 	Set codeModified if any modifications are made."
-	<var: #cPIC type: #'CogMethod *'>
+	
+	<var: #aPIC type: #'CogMethod *'>
 	| pc refersToYoung |
-	pc := self addressOfEndOfCase: 1 inCPIC: cPIC.
+	pc := self addressOfEndOfCase: 1 inPIC: aPIC.
 
-	"first we check the potential method oop load at the beginning of the CPIC"
-	refersToYoung := self followMaybeObjRefInClosedPICAt: pc - backEnd jumpLongByteSize.
+	"first we check the potential method oop load at the beginning of the PIC"
+	refersToYoung := self followMaybeObjRefInPICAt: pc - backEnd jumpLongByteSize.
 
-	"We find the end address of the cPICNumCases'th case and can then just step forward by the case size thereafter"
-	pc := self addressOfEndOfCase:  cPIC cPICNumCases inCPIC: cPIC.
+	"We find the end address of the picNumCases'th case and can then just step forward by the case size thereafter"
+	pc := self addressOfEndOfCase:  aPIC picNumCases inPIC: aPIC.
 	
 	"Next we check the potential potential method oop load for each case."
-	2 to: cPIC cPICNumCases do:
+	2 to: aPIC picNumCases do:
 		[:i|
-		(self followMaybeObjRefInClosedPICAt: pc - backEnd jumpLongConditionalByteSize - backEnd cmpC32RTempByteSize) ifTrue:
+		(self followMaybeObjRefInPICAt: pc - backEnd jumpLongConditionalByteSize - backEnd cmpC32RTempByteSize) ifTrue:
 			[refersToYoung := true].
-		pc := pc + cPICCaseSize].
+		pc := pc + picCaseSize].
 	^refersToYoung
 ]
 
@@ -6465,7 +6286,7 @@ Cogit >> freePICsWithFreedTargets [
 	count := 0.
 	[cogMethod < methodZone limitZony] whileTrue:
 		[(cogMethod cmType = CMPolymorphicIC
-		 and: [self cPICHasFreedTargets: cogMethod]) ifTrue:
+		 and: [self picHasFreedTargets: cogMethod]) ifTrue:
 			[cogMethod cmType: CMFree].
 		 cogMethod := methodZone methodAfter: cogMethod.
 		 count := count + 1].
@@ -6496,7 +6317,7 @@ Cogit >> freeUnmarkedMachineCode [
 				[freedMethod := true.
 				 methodZone freeMethod: cogMethod].
 			 (cogMethod cmType = CMPolymorphicIC
-			  and: [self closedPICRefersToUnmarkedObject: cogMethod]) ifTrue:
+			  and: [self picRefersToUnmarkedObject: cogMethod]) ifTrue:
 				[freedMethod := true.
 				 methodZone freeMethod: cogMethod].
 			 cogMethod := methodZone methodAfter: cogMethod].
@@ -6860,7 +6681,8 @@ Cogit >> genInnerPICAbortTrampoline: name [
 	 This poses a problem in 32-bit Spur, where zero is the cache tag for immediate
 	 characters (tag pattern 2r10) because SmallIntegers have tag patterns 2r11
 	 and 2r01, so anding with 1 reduces these to 0 & 1.  We solve the ambiguity by
-	 patching send sites with a 0 cache tag to open PICs instead of closed PICs."
+	 patching send sites with a 0 cache tag to megamorphic ICs instead of PICs."
+	
 	<var: #name type: #'char *'>
 	| jumpMNUCase |
 	<var: #jumpMNUCase type: #'AbstractInstruction *'>
@@ -7524,7 +7346,7 @@ Cogit >> generateCogFullBlock [
 			method := self fillInMethodHeader: (self cCoerceSimple: startAddress to: #'CogMethod *')
 							size: totalSize
 							selector: objectMemory nilObject.
-			method cpicHasMNUCaseOrCMIsFullBlock: true.
+			method picHasMNUCaseOrCMIsFullBlock: true.
 			postCompileHook ifNotNil:
 				[self perform: postCompileHook with: method.
 				 postCompileHook := nil]] 
@@ -7706,9 +7528,10 @@ Cogit >> generateMapAt: addressOrNull start: startAddress [
 
 { #category : 'initialization' }
 Cogit >> generateMegamorphicICPrototype [
-	"Generate the prototype ClosedPIC to determine how much space as full PIC takes.
-	 When we first allocate a closed PIC it only has one or two cases and we want to grow it.
+	"Generate the prototype PIC to determine how much space as full PIC takes.
+	 When we first allocate a PIC it only has one or two cases and we want to grow it.
 	 So we have to determine how big a full one is before hand."
+
 	| codeSize mapSize |
 	"stack allocate the various collections so that they
 	 are effectively garbage collected on return."
@@ -7742,6 +7565,47 @@ Cogit >> generateMissAbortTrampolines [
 	 Read the class-side method trampolines for documentation on the various trampolines"
 
 	self subclassResponsibility
+]
+
+{ #category : 'initialization' }
+Cogit >> generatePICPrototype [
+	"Generate the prototype PIC to determine how much space as full PIC takes.
+	 When we first allocate a PIC it only has one or two cases and we want to grow it.
+	 So we have to determine how big a full one is before hand."
+	
+	| aPIC endAddress |
+	<var: 'aPIC' type: #'CogMethod *'>
+	"stack allocate the various collections so that they
+	 are effectively garbage collected on return."
+	self allocateOpcodes: MaxPICCases * 9 bytecodes: 0.
+	methodLabel address: methodZoneBase; dependent: nil. "for pc-relative MoveCw: aPIC R: ClassReg"
+	self compilePolymorphicICPrototype.
+	self computeMaximumSizes.
+	aPIC := (self cCoerceSimple: methodZoneBase to: #'CogMethod *').
+	picSize := (self sizeof: CogMethod) + (self generateInstructionsAt: methodZoneBase + (self sizeof: CogMethod)).
+
+	self enableCodeZoneWriteDuring: [ endAddress := self outputInstructionsAt: methodZoneBase + (self sizeof: CogMethod) ].
+
+	self assert: methodZoneBase + picSize = endAddress.
+	firstPICCaseOffset := endPICCase0 address - methodZoneBase.
+	picEndOfCodeOffset := picEndOfCodeLabel address - methodZoneBase.
+	picCaseSize := endPICCase1 address - endPICCase0 address.
+	picEndSize := picSize - (MaxPICCases - 1 * picCaseSize + firstPICCaseOffset).
+	picSize := methodZone roundUpLength: picSize.
+	self assert: picInterpretAbort address = (methodLabel address + self picInterpretAbortOffset).
+	
+	self enableCodeZoneWriteDuring: [
+		self assert: (self expectedPICPrototype: aPIC) = 0.
+	"tpr this is a little tiresome but after any assert checking we need to 0 out the case0 objRef rather than leaving 16r5EAF00D lying around"
+		backEnd storeLiteral: 0 beforeFollowingAddress: endPICCase0 address - backEnd jumpLongByteSize].
+	
+	"update the methodZoneBase so we keep the prototype around for later use"
+	methodZoneBase := self alignUptoRoutineBoundary: endAddress.
+	picPrototype := aPIC.
+	"self cCode: ''
+		inSmalltalk:
+			[self disassembleFrom: aPIC + (self sizeof: CogMethod) to: aPIC + picSize - 1.
+			 self halt]"
 ]
 
 { #category : 'initialization' }
@@ -8281,12 +8145,6 @@ Cogit >> indexForSelector: selector in: cogMethod at: mcpc [
 ]
 
 { #category : 'generate machine code' }
-Cogit >> initialClosedPICUsageCount [
-	"Answer a usage count that reflects likely long-term usage."
-	^CMMaxUsageCount // 2
-]
-
-{ #category : 'generate machine code' }
 Cogit >> initialMegamorphicICUsageCount [
 	"Answer a usage count that reflects likely long-term usage."
 	^CMMaxUsageCount - 1
@@ -8303,6 +8161,12 @@ Cogit >> initialMethodUsageCount [
 	self primitiveDescriptor primitiveGenerator ifNil:
 		[^2].
 	^3
+]
+
+{ #category : 'generate machine code' }
+Cogit >> initialPICUsageCount [
+	"Answer a usage count that reflects likely long-term usage."
+	^CMMaxUsageCount // 2
 ]
 
 { #category : 'initialization' }
@@ -8359,7 +8223,7 @@ Cogit >> initializeCodeZoneFrom: startAddress upTo: endAddress [
 	self generateTrampolines.
 	self computeEntryOffsets.
 	self computeFullBlockEntryOffsets.
-	self generateClosedPICPrototype.
+	self generatePICPrototype.
 	"repeat so that now the methodZone ignores the generated run-time"
 	methodZone manageFrom: methodZoneBase to: endAddress.
 	"N.B. this is assumed to be the last thing done in initialization; see Cogit>>initialized"
@@ -8381,23 +8245,23 @@ Cogit >> initializePIC: aPIC atDelta: addrDelta numArgs: numArgs [
 	<var: #aPIC type: #'CogMethod *'>
 	objectMemory
 		memcpy: aPIC
-		_: (self cCoerceSimple: cPICPrototype to: #'CogMethod *')
-		_: closedPICSize.
+		_: (self cCoerceSimple: picPrototype to: #'CogMethod *')
+		_: picSize.
 
 	backEnd
 		rewriteCallAt: aPIC asInteger + missOffset
 		target: (self picAbortTrampolineFor: numArgs). "adjust the call at missOffset, the ceAbortXArgs"
 
-	"update the loading of the CPIC address"
+	"update the loading of the PIC address"
 	backEnd
 		relocateMethodReferenceBeforeAddress:
-		aPIC asInteger + cPICEndOfCodeOffset - backEnd jumpLongByteSize
+		aPIC asInteger + picEndOfCodeOffset - backEnd jumpLongByteSize
 		by: addrDelta.
 
 	"write the final desperate jump to cePICMissXArgs"
 	backEnd
-		rewriteJumpLongAt: aPIC asInteger + cPICEndOfCodeOffset
-		target: (self cPICMissTrampolineFor: numArgs)
+		rewriteJumpLongAt: aPIC asInteger + picEndOfCodeOffset
+		target: (self picMissTrampolineFor: numArgs)
 ]
 
 { #category : 'initialization' }
@@ -9036,33 +8900,6 @@ Cogit >> mapFor: cogMethod performUntil: functionSymbol arg: arg [
 ]
 
 { #category : 'garbage collection' }
-Cogit >> mapObjectReferencesInClosedPIC: cPIC [
-	"Remap all object references in the closed PIC.  Answer if any references are young.
-	Set codeModified if any modifications are made."
-	<var: #cPIC type: #'CogMethod *'>
-	| pc refersToYoung |
-	pc := self addressOfEndOfCase:1 inCPIC:cPIC.
-
-	"first we check the potential method oop load at the beginning of the CPIC"
-	refersToYoung := self remapMaybeObjRefInClosedPICAt: pc - backEnd jumpLongByteSize.
-
-	"We find the end address of the cPICNumCases'th case and can then just step forward by the case size thereafter"
-	pc := self addressOfEndOfCase: cPIC cPICNumCases inCPIC: cPIC.
-	
-	"Next we check the potential class ref in the compare instruction, and the potential method oop load for each case."
-	2 to: cPIC cPICNumCases do:
-		[:i|
-		(self inlineCacheTagsAreIndexes not
-		 and: [objectRepresentation inlineCacheTagsMayBeObjects]) ifTrue:
-			[(self remapMaybeObjRefInClosedPICAt: pc - backEnd jumpLongConditionalByteSize) ifTrue:
-				[refersToYoung := true]].
-		(self remapMaybeObjRefInClosedPICAt: pc - backEnd jumpLongConditionalByteSize - backEnd cmpC32RTempByteSize) ifTrue:
-			[refersToYoung := true].
-		pc := pc + cPICCaseSize].
-	^refersToYoung
-]
-
-{ #category : 'garbage collection' }
 Cogit >> mapObjectReferencesInGeneratedRuntime [
 	"Update all references to objects in the generated runtime."
 	0 to: runtimeObjectRefIndex - 1 do:
@@ -9113,7 +8950,7 @@ Cogit >> mapObjectReferencesInMachineCodeForBecome [
 				 cogMethod cmType = CMPolymorphicIC
 					ifTrue:
 						[((objectMemory isYoung: cogMethod selector)
-						   or: [self mapObjectReferencesInClosedPIC: cogMethod]) ifTrue:
+						   or: [self mapObjectReferencesInPIC: cogMethod]) ifTrue:
 							[freedPIC := true.
 							 methodZone freeMethod: cogMethod]]
 					ifFalse:
@@ -9195,7 +9032,7 @@ Cogit >> mapObjectReferencesInMachineCodeForFullGC [
 				 cogMethod cmType = CMPolymorphicIC
 					ifTrue:
 						[self assert: cogMethod cmRefersToYoung not.
-						 self mapObjectReferencesInClosedPIC: cogMethod]
+						 self mapObjectReferencesInPIC: cogMethod]
 					ifFalse:
 						[cogMethod cmType = CMMethod ifTrue:
 							[self assert: cogMethod objectHeader = objectMemory nullHeaderForMachineCodeMethod.
@@ -9259,6 +9096,34 @@ Cogit >> mapObjectReferencesInMachineCodeForYoungGC [
 		codeModified ifTrue: "After updating oops in inline caches we need to flush the icache."
 			[self flushICacheFrom: codeBase asUnsignedInteger to: methodZone limitZony asUnsignedInteger] ]
 
+]
+
+{ #category : 'garbage collection' }
+Cogit >> mapObjectReferencesInPIC: aPIC [
+	"Remap all object references in the PIC.  Answer if any references are young.
+	Set codeModified if any modifications are made."
+	
+	<var: #aPIC type: #'CogMethod *'>
+	| pc refersToYoung |
+	pc := self addressOfEndOfCase:1 inPIC:aPIC.
+
+	"first we check the potential method oop load at the beginning of the PIC"
+	refersToYoung := self remapMaybeObjRefInPICAt: pc - backEnd jumpLongByteSize.
+
+	"We find the end address of the picNumCases'th case and can then just step forward by the case size thereafter"
+	pc := self addressOfEndOfCase: aPIC picNumCases inPIC: aPIC.
+	
+	"Next we check the potential class ref in the compare instruction, and the potential method oop load for each case."
+	2 to: aPIC picNumCases do:
+		[:i|
+		(self inlineCacheTagsAreIndexes not
+		 and: [objectRepresentation inlineCacheTagsMayBeObjects]) ifTrue:
+			[(self remapMaybeObjRefInPICAt: pc - backEnd jumpLongConditionalByteSize) ifTrue:
+				[refersToYoung := true]].
+		(self remapMaybeObjRefInPICAt: pc - backEnd jumpLongConditionalByteSize - backEnd cmpC32RTempByteSize) ifTrue:
+			[refersToYoung := true].
+		pc := pc + picCaseSize].
+	^refersToYoung
 ]
 
 { #category : 'simulation only' }
@@ -9403,7 +9268,7 @@ Cogit >> markAndTraceOrFreeCogMethod: cogMethod firstVisit: firstVisit [
 			frees if the bytecode method isnt marked,
 			marks and traces object literals and selectors,
 			unlinks sends to targets that should be freed.
-	 For a CMClosedPIC this
+	 For a CMPolymorphicIC this
 			frees if it refers to anything that should be freed or isn't marked.
 	 For a CMMegamorphicIC this
 			frees if the selector isn't marked."
@@ -9421,7 +9286,7 @@ Cogit >> markAndTraceOrFreeCogMethod: cogMethod firstVisit: firstVisit [
 			[self markLiteralsAndUnlinkUnmarkedSendsIn: cogMethod].
 		^false].
 	cogMethod cmType = CMPolymorphicIC ifTrue:
-		[(self closedPICRefersToUnmarkedObject: cogMethod) ifFalse:
+		[(self picRefersToUnmarkedObject: cogMethod) ifFalse:
 			[^false].
 		 methodZone freeMethod: cogMethod.
 		 ^true].
@@ -9461,19 +9326,19 @@ Cogit >> markAndTraceOrFreeMachineCodeForFullGC [
 ]
 
 { #category : 'garbage collection' }
-Cogit >> markAndTraceOrFreePICTarget: entryPoint in: cPIC [
+Cogit >> markAndTraceOrFreePICTarget: entryPoint in: aPIC [
 	"If entryPoint is that of some method, then mark and trace objects in it and free if it is appropriate.
 	 Answer if the method has been freed."
-	<var: #cPIC type: #'CogMethod *'>
+	<var: #aPIC type: #'CogMethod *'>
 	| targetMethod |
 	<var: #targetMethod type: #'CogMethod *'>
 	self assert: (entryPoint > methodZoneBase and: [entryPoint < methodZone freeStart]).
-	(cPIC containsAddress: entryPoint) ifTrue:
+	(aPIC containsAddress: entryPoint) ifTrue:
 		[^false].
 	targetMethod := self cCoerceSimple: entryPoint - cmNoCheckEntryOffset to: #'CogMethod *'.
 	self assert: (targetMethod cmType = CMMethod or: [targetMethod cmType = CMFree]).
 	^self markAndTraceOrFreeCogMethod: targetMethod
-		  firstVisit: targetMethod asUnsignedInteger > cPIC asUnsignedInteger
+		  firstVisit: targetMethod asUnsignedInteger > aPIC asUnsignedInteger
 ]
 
 { #category : 'garbage collection' }
@@ -9976,10 +9841,11 @@ Cogit >> noCogMethodsMaximallyMarked [
 ]
 
 { #category : 'compaction' }
-Cogit >> noTargetsFreeInClosedPIC: cPIC [
+Cogit >> noTargetsFreeInPIC: aPIC [
 	"Answer if all targets in the PIC are in-use methods."
-	<var: #cPIC type: #'CogMethod *'>
-	^(self cPICHasFreedTargets: cPIC) not
+	
+	<var: #aPIC type: #'CogMethod *'>
+	^(self picHasFreedTargets: aPIC) not
 ]
 
 { #category : 'initialization' }
@@ -10141,19 +10007,141 @@ Cogit >> patchToMegamorphicICFor: selector numArgs: numArgs receiver: receiver [
 ]
 
 { #category : 'in-line cacheing' }
-Cogit >> picAbortAddress: cPIC [
+Cogit >> picAbortAddress: aPIC [
 
-	<var: #cPIC type: #'CogMethod *'>
+	<var: #aPIC type: #'CogMethod *'>
 	"The PIC starts with a header of meta-data followed by machine code.
 	The first thing in the machine code stream is the abort section."
 
-	^ cPIC asInteger + (self sizeof: CogMethod)
+	^ aPIC asInteger + (self sizeof: CogMethod)
 ]
 
 { #category : 'trampoline support' }
 Cogit >> picAbortTrampolineFor: numArgs [
 	
 	^ self subclassResponsibility
+]
+
+{ #category : 'in-line cacheing' }
+Cogit >> picCompactAndIsNowEmpty: aPIC [
+	"Scan the PIC for target methods that have been freed and eliminate them.
+	 Since the first entry cannot be eliminated, answer that the PIC should be
+	 freed if the first entry is to a free target.  Answer if the PIC is now empty or should be freed."
+	
+	<var: #aPIC type: #'CogMethod *'>
+	| pc entryPoint targetMethod targets tags methods used |
+	<var: #targetMethod	type: #'CogMethod *'>
+	<var: #tags			declareC: 'int tags[MaxPICCases]'>
+	<var: #targets			declareC: 'sqInt targets[MaxPICCases]'>
+	<var: #methods		declareC: 'sqInt methods[MaxPICCases]'>
+	self cCode: [] inSmalltalk:
+		[tags := CArrayAccessor on: (Array new: MaxPICCases).
+		 targets := CArrayAccessor on: (Array new: MaxPICCases).
+		 methods := CArrayAccessor on: (Array new: MaxPICCases)].
+	used := 0.
+	1 to: aPIC picNumCases do:
+		[:i| | valid |
+		 pc := self addressOfEndOfCase: i inPIC: aPIC.
+		 entryPoint := i = 1
+						ifTrue: [backEnd jumpLongTargetBeforeFollowingAddress: pc]
+						ifFalse: [backEnd jumpLongConditionalTargetBeforeFollowingAddress: pc].
+		 valid := true.
+		 "Collect all target triples except for triples whose entry-point is a freed method"
+		 (aPIC containsAddress: entryPoint) ifFalse:
+			[targetMethod := self cCoerceSimple: entryPoint - cmNoCheckEntryOffset to: #'CogMethod *'.
+			 self assert: (targetMethod cmType = CMMethod or: [targetMethod cmType = CMFree]).
+			 targetMethod cmType = CMFree ifTrue:
+				[i = 1 ifTrue: [^true]. "cannot filter out the first entry cuz classTag is at pont of send."
+				 valid := false]].
+		 valid ifTrue:
+			[tags at: used put: (i > 1 ifTrue: [backEnd literal32BeforeFollowingAddress: pc - backEnd jumpLongConditionalByteSize]).
+			 targets at: used put: entryPoint.
+			 methods at: used put: (backEnd literalBeforeFollowingAddress: pc - (i = 1
+																				ifTrue: [backEnd jumpLongByteSize]
+																				ifFalse: [backEnd jumpLongConditionalByteSize + backEnd cmpC32RTempByteSize])).
+			 used := used + 1]].
+	used = aPIC picNumCases ifTrue:
+		[^false].
+	used = 0 ifTrue:
+		[^true].
+	aPIC picNumCases: used.
+	used = 1 ifTrue:
+		[pc := self addressOfEndOfCase: 2 inPIC: aPIC.
+		 self rewritePIC: aPIC caseJumpTo: pc.
+		 ^false].
+	"the first entry cannot change..."
+	1 to: used - 1 do:
+		[:i|
+		 pc := self addressOfEndOfCase: i + 1 inPIC: aPIC.
+		 self rewritePICCaseAt: pc tag: (tags at: i) objRef: (methods at: i) target: (targets at: i)].
+
+	"finally, rewrite the jump 3 instr  before firstPICCaseOffset to jump to the beginning of this new case"
+	self rewritePIC: aPIC caseJumpTo: pc - picCaseSize.
+	^false
+]
+
+{ #category : 'in-line cacheing' }
+Cogit >> picHasForwardedClass: aPIC [ 
+	"The first case in a PIC doesn't have a class reference so we need only step over actually usd subsequent cases."
+	
+	| pc |
+	<var: #aPIC type: #'CogMethod *'>
+	"start by finding the address of the topmost case, the picNumCases'th one"
+	pc := (self addressOfEndOfCase: aPIC picNumCases inPIC: aPIC)
+				- backEnd jumpLongConditionalByteSize.
+	2 to: aPIC picNumCases do: 
+			[:i |  | classIndex |
+			classIndex := backEnd literal32BeforeFollowingAddress: pc.
+			(objectMemory isForwardedClassIndex: classIndex)
+				ifTrue: [^ true].
+			"since we started at the top, we can just add the case size each time to move on to the next case"
+			pc := pc + picCaseSize].
+	^ false
+]
+
+{ #category : 'in-line cacheing' }
+Cogit >> picHasFreedTargets: aPIC [
+	"scan the PIC for target methods that have been freed. "
+	
+	<var: #aPIC type: #'CogMethod *'>
+	| pc entryPoint targetMethod |
+	<var: #targetMethod type: #'CogMethod *'>
+
+	1 to: aPIC picNumCases do:
+		[:i|
+		pc := self addressOfEndOfCase: i inPIC: aPIC.
+		entryPoint := i = 1
+						ifTrue: [backEnd jumpLongTargetBeforeFollowingAddress: pc]
+						ifFalse: [backEnd jumpLongConditionalTargetBeforeFollowingAddress: pc].
+		"Find target from jump.  Ignore jumps to the interpret and MNU calls within this PIC"
+		(aPIC containsAddress: entryPoint) ifFalse:
+			[targetMethod := self cCoerceSimple: entryPoint - cmNoCheckEntryOffset to: #'CogMethod *'.
+			 self assert: (targetMethod cmType = CMMethod or: [targetMethod cmType = CMFree]).
+			 targetMethod cmType = CMFree ifTrue:
+				[^true]]].
+	^false
+]
+
+{ #category : 'in-line cacheing' }
+Cogit >> picI: aPIC hasTarget: targetMethod [
+	"Are any of the jumps from this PIC to targetMethod?"
+	
+	<var: #aPIC type: #'CogMethod *'>
+	<var: #targetMethod type: #'CogMethod *'>
+	| pc target |
+	target := targetMethod asUnsignedInteger + cmNoCheckEntryOffset.
+	pc := aPIC asInteger + firstPICCaseOffset.
+	"Since this is a fast test doing simple compares we don't need to care that some
+	cases have nonsense addresses in there. Just zip on through."
+	"First jump is unconditional; subsequent ones are conditional"
+	target = (backEnd jumpLongTargetBeforeFollowingAddress: pc) ifTrue:
+		[^true].
+	2 to: MaxPICCases do:
+		[:i|
+		pc := pc + picCaseSize.
+		target = (backEnd jumpLongConditionalTargetBeforeFollowingAddress: pc) ifTrue:
+			[^true]].
+	^false
 ]
 
 { #category : 'debugging' }
@@ -10163,6 +10151,70 @@ Cogit >> picInterpretAbortOffset [
 	 - (backEnd hasLinkRegister
 		ifTrue: [backEnd pushLinkRegisterByteSize + backEnd callInstructionByteSize]
 		ifFalse: [backEnd callInstructionByteSize])
+]
+
+{ #category : 'accessing' }
+Cogit >> picPrototype [
+	"For Cogit clas>>#genAndDisPICoptions:"
+	<doNotGenerate>
+	^picPrototype
+]
+
+{ #category : 'in-line cacheing' }
+Cogit >> picPrototypeCaseOffset [
+	"We want 16rCA5E10 + picPrototypeCaseOffset to be somewhere in the middle of the zone."
+	
+	<inline: true>
+	^methodZoneBase + methodZone youngReferrers / 2 - 16rCA5E10
+]
+
+{ #category : 'garbage collection' }
+Cogit >> picRefersToUnmarkedObject: aPIC [
+	"Answer if the PIC refers to any unmarked objects or freed/freeable target methods,
+	 applying markAndTraceOrFreeCogMethod:firstVisit: to those targets to determine if freed/freeable."
+	
+	<var: #aPIC type: #'CogMethod *'>
+	| pc object |
+	((objectMemory isImmediate: aPIC selector)
+	or: [objectMemory isMarkedOrPermanent: aPIC selector]) ifFalse:
+		[^true].
+
+	"First jump is unconditional; subsequent ones are conditional."
+	"Check the potential method oop for the first case only.
+	 Inline cache tags for the 1st case are at the send site."
+	pc := self addressOfEndOfCase: 1 inPIC: aPIC.
+	(objectRepresentation couldBeObject: (object := backEnd literalBeforeFollowingAddress: pc - backEnd jumpLongByteSize)) ifTrue:
+		[(objectMemory isMarkedOrPermanent: object) ifFalse:
+			[^true]].
+
+	"Check the first target"
+	(self markAndTraceOrFreePICTarget: (backEnd jumpLongTargetBeforeFollowingAddress: pc) in: aPIC) ifTrue:
+		[^true].
+
+	2 to: aPIC picNumCases do:
+		[:i| 
+		pc := self addressOfEndOfCase: i inPIC: aPIC.
+		(self inlineCacheTagsAreIndexes not
+		 and: [objectRepresentation inlineCacheTagsMayBeObjects
+		 and: [objectRepresentation couldBeObject: (object := backEnd literal32BeforeFollowingAddress: pc - backEnd jumpLongConditionalByteSize)]]) ifTrue:
+			[(objectMemory isMarkedOrPermanent: object) ifFalse:
+				[^true]].
+		"Check the potential method oop for subsequent cases."
+		(objectRepresentation couldBeObject: (object := backEnd literalBeforeFollowingAddress: pc - backEnd jumpLongConditionalByteSize - backEnd cmpC32RTempByteSize)) ifTrue:
+			[(objectMemory isMarkedOrPermanent: object) ifFalse:
+				[^true]].
+		"Check subsequent targets"
+		(self markAndTraceOrFreePICTarget: (backEnd jumpLongConditionalTargetBeforeFollowingAddress: pc) in: aPIC) ifTrue:
+			[^true]].
+
+	^false
+]
+
+{ #category : 'accessing' }
+Cogit >> picSize [
+	"For Cogit clas>>#genAndDisPICoptions:"
+	<doNotGenerate>
+	^picSize
 ]
 
 { #category : 'profiling primitives' }
@@ -10176,10 +10228,8 @@ Cogit >> positiveMachineIntegerFor: value [
 
 { #category : 'compile abstract instructions' }
 Cogit >> preenMethodLabel [
-	"The methodLabel serves as the reference to the start of the current code object
-	 being produced (CMMethod, CMClosedPIC etc), but it also carries type flags for
-	 the frame method field, set via the labelOffset.  So we must clean the flags on each
-	 compilation to avoid stale lags being left behind from previous compilations."
+	"The methodLabel serves as the reference to the start of the current code object  being produced (CMMethod, CMPolymorphicIC, etc), but it also carries type flags for  the frame method field, set via the labelOffset.  So we must clean the flags on each compilation to avoid stale lags being left behind from previous compilations."
+	
 	<inline: true>
 	methodLabel setLabelOffset: 0
 ]
@@ -10320,12 +10370,12 @@ Cogit >> printMethodHeader: cogMethod on: aStream [
 			aStream
 				newLine;
 				tab;
-				nextPutAll: 'cPICNumCases: '.
-			cogMethod cPICNumCases printOn: aStream base: 16.
+				nextPutAll: 'picNumCases: '.
+			cogMethod picNumCases printOn: aStream base: 16.
 			aStream
 				tab;
-				nextPutAll: 'cpicHasMNUCase: ';
-				nextPutAll: (cogMethod cpicHasMNUCase
+				nextPutAll: 'picHasMNUCase: ';
+				nextPutAll: (cogMethod picHasMNUCase
 						 ifTrue: [ 'yes' ]
 						 ifFalse: [ 'no' ]) ]
 		ifFalse: [
@@ -10602,7 +10652,7 @@ Cogit >> profileDataFor: cogMethod withDetails: withDetails [
 	^cogMethod cmType = CMMethod 
 		ifTrue: [cogMethod methodObject]
 		ifFalse: [(withDetails and: [cogMethod cmType = CMPolymorphicIC])
-					ifTrue: [self createCPICData: cogMethod]
+					ifTrue: [self createPICData: cogMethod]
 					ifFalse: [cogMethod selector]]
 ]
 
@@ -10794,25 +10844,26 @@ Cogit >> relocateCallsAndSelfReferencesInMethod: cogMethod [
 ]
 
 { #category : 'compaction' }
-Cogit >> relocateCallsInClosedPIC: cPIC [
-	<var: #cPIC type: #'CogMethod *'>
+Cogit >> relocateCallsInPIC: aPIC [
+
+	<var: #aPIC type: #'CogMethod *'>
 	| refDelta callDelta pc entryPoint targetMethod |
 	<var: #targetMethod type: #'CogMethod *'>
-	refDelta := cPIC objectHeader.
+	refDelta := aPIC objectHeader.
 	callDelta := backEnd zoneCallsAreRelative ifTrue: [refDelta] ifFalse: [0].
 	
-	self assert: (backEnd callTargetFromReturnAddress: cPIC asInteger + missOffset)
-					= (self picAbortTrampolineFor: cPIC cmNumArgs).
-	backEnd relocateCallBeforeReturnPC: cPIC asInteger + missOffset by: callDelta negated.
+	self assert: (backEnd callTargetFromReturnAddress: aPIC asInteger + missOffset)
+					= (self picAbortTrampolineFor: aPIC cmNumArgs).
+	backEnd relocateCallBeforeReturnPC: aPIC asInteger + missOffset by: callDelta negated.
 
-	pc := cPIC asInteger + firstCPICCaseOffset.
-	1 to: cPIC cPICNumCases do:
+	pc := aPIC asInteger + firstPICCaseOffset.
+	1 to: aPIC picNumCases do:
 		[:i|
-		pc := self addressOfEndOfCase: i inCPIC: cPIC.
+		pc := self addressOfEndOfCase: i inPIC: aPIC.
 		entryPoint := i = 1
 						ifTrue: [backEnd jumpLongTargetBeforeFollowingAddress: pc]
 						ifFalse: [backEnd jumpLongConditionalTargetBeforeFollowingAddress: pc].
-		(cPIC containsAddress: entryPoint) 
+		(aPIC containsAddress: entryPoint) 
 			ifTrue: 
 			["Interpret/MNU"
 			backEnd zoneCallsAreRelative ifFalse: [
@@ -10835,11 +10886,11 @@ Cogit >> relocateCallsInClosedPIC: cPIC [
 				[backEnd
 					relocateJumpLongConditionalBeforeFollowingAddress: pc
 					by: (callDelta - targetMethod objectHeader) negated]]].
-	self assert: cPIC cPICNumCases > 0.
+	self assert: aPIC picNumCases > 0.
 
-	"Finally relocate the load of the PIC and the jump to the overflow routine ceCPICMiss:receiver:"
-	backEnd relocateMethodReferenceBeforeAddress: (self addressOfEndOfCase: 2 inCPIC: cPIC)+ backEnd loadPICLiteralByteSize by: refDelta.
-	backEnd relocateJumpLongBeforeFollowingAddress: cPIC asInteger + cPICEndOfCodeOffset by: callDelta negated
+	"Finally relocate the load of the PIC and the jump to the overflow routine cePICMiss:receiver:"
+	backEnd relocateMethodReferenceBeforeAddress: (self addressOfEndOfCase: 2 inPIC: aPIC)+ backEnd loadPICLiteralByteSize by: refDelta.
+	backEnd relocateJumpLongBeforeFollowingAddress: aPIC asInteger + picEndOfCodeOffset by: callDelta negated
 ]
 
 { #category : 'compaction' }
@@ -10953,7 +11004,7 @@ Cogit >> remapIfObjectRef: annotation pc: mcpc hasYoung: hasYoungPtr [
 ]
 
 { #category : 'garbage collection' }
-Cogit >> remapMaybeObjRefInClosedPICAt: mcpc [
+Cogit >> remapMaybeObjRefInPICAt: mcpc [
 	"Remap a potential object reference from a closed PIC.
 	 This may be an object reference, an inline cache tag or null.
 	 Answer if the updated literal is young.
@@ -10991,16 +11042,16 @@ Cogit >> resolveToOopOrNil: proxyOrSpecialSelector [
 ]
 
 { #category : 'in-line cacheing' }
-Cogit >> rewriteCPIC: cPIC caseJumpTo: target [ 
-	"adding a new CPIC case, or making an MNU CPIC, requires altering the jump that takes us to the first case to be used"
+Cogit >> rewritePIC: aPIC caseJumpTo: target [ 
+	"adding a new PIC case, or making an MNU PIC, requires altering the jump that takes us to the first case to be used"
 	<inline: true>
-	backEnd rewriteCPICJumpAt: cPIC asInteger + firstCPICCaseOffset - backEnd jumpLongByteSize - backEnd loadLiteralByteSize target: target
+	backEnd rewritePICJumpAt: aPIC asInteger + firstPICCaseOffset - backEnd jumpLongByteSize - backEnd loadLiteralByteSize target: target
 ]
 
 { #category : 'in-line cacheing' }
 Cogit >> rewritePICCaseAt: followingAddress tag: newTag objRef: newObjRef target: newTarget [
-	"Rewrite the three values involved in a CPIC case.  Used by the initialize & extend CPICs.
-	 c.f. expectedClosedPICPrototype:"
+	"Rewrite the three values involved in a PIC case.  Used by the initialize & extend PICs.
+	 c.f. expectedPICPrototype:"
 
 	"write the obj ref/operand via the second ldr"
 	| classTagPC methodObjPC |
@@ -11832,7 +11883,7 @@ self enableCodeZoneWriteDuring:  [
 					 arg: 0]
 			ifFalse:
 				[(cogMethod cmType = CMPolymorphicIC
-				  and: [self cPICHasForwardedClass: cogMethod]) ifTrue:
+				  and: [self picHasForwardedClass: cogMethod]) ifTrue:
 					[methodZone freeMethod: cogMethod.
 					 freedPIC := true]].
 		cogMethod := methodZone methodAfter: cogMethod].
@@ -11862,7 +11913,7 @@ Cogit >> unlinkSendsOf: selector isMNUSelector: isMNUSelector [
 			ifTrue:
 				[[cogMethod < methodZone limitZony] whileTrue:
 					[cogMethod cmType ~= CMFree ifTrue:
-						[cogMethod cpicHasMNUCase
+						[cogMethod picHasMNUCase
 							ifTrue:
 								[self assert: cogMethod cmType = CMPolymorphicIC.
 								 methodZone freeMethod: cogMethod.
@@ -11925,7 +11976,7 @@ Cogit >> unlinkSendsTo: targetMethodObject andFreeIf: freeIfTrue [
 							 arg: targetMethod asInteger]
 					ifFalse:
 						[(cogMethod cmType = CMPolymorphicIC
-						  and: [self cPIC: cogMethod HasTarget: targetMethod]) ifTrue:
+						  and: [self picI: cogMethod hasTarget: targetMethod]) ifTrue:
 							[methodZone freeMethod: cogMethod.
 							 freedPIC := true]].
 				cogMethod := methodZone methodAfter: cogMethod].
@@ -11939,7 +11990,6 @@ Cogit >> unlinkSendsTo: targetMethodObject andFreeIf: freeIfTrue [
 
 { #category : 'garbage collection' }
 Cogit >> unlinkSendsToFree [
-
 	"Unlink all sends in cog methods to free methods and/or pics."
 
 	<api>
@@ -11958,7 +12008,7 @@ Cogit >> unlinkSendsToFree [
 					 arg: 0]
 			ifFalse:
 				[cogMethod cmType = CMPolymorphicIC ifTrue:
-					[self assert: (self noTargetsFreeInClosedPIC: cogMethod)]].
+					[self assert: (self noTargetsFreeInPIC: cogMethod)]].
 		cogMethod := methodZone methodAfter: cogMethod]
 ]
 

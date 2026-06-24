@@ -4542,22 +4542,6 @@ CogX64Compiler >> returnFromCallCFunctionInSmalltalkStack: anInteger [
 ]
 
 { #category : 'inline cacheing' }
-CogX64Compiler >> rewriteCPICJumpAt: addressFollowingJump target: jumpTargetAddr [
-	"Rewrite the short jump instruction to jump to a new cpic case target. "
-	<var: #addressFollowingJump type: #usqInt>
-	<var: #jumpTargetAddr type: #usqInt>
-	<var: #callDistance type: #sqInt> "prevent type inference for avoiding warning on abs"
-	| callDistance |
-	callDistance := jumpTargetAddr - addressFollowingJump.
-	self assert: callDistance abs < 128.
-	objectMemory
-		byteAt: addressFollowingJump - 1
-		put:  (callDistance bitAnd: 16rFF).
-	"self cCode: ''
-		inSmalltalk: [cogit disassembleFrom: addressFollowingJump - 10 to: addressFollowingJump - 1]."
-]
-
-{ #category : 'inline cacheing' }
 CogX64Compiler >> rewriteCallAt: callSiteReturnAddress target: callTargetAddress [
 	"Rewrite a call instruction to call a different target.  This variant is used to link PICs
 	 in ceSendMiss et al, and to rewrite cached primitive calls.   Answer the extent of
@@ -4650,6 +4634,23 @@ CogX64Compiler >> rewriteJumpLongAt: addressFollowingJump target: jumpTargetAddr
 	 code change which is used to compute the range of the icache to flush."
 	<inline: true>
 	^self rewriteCallAt: addressFollowingJump target: jumpTargetAddr
+]
+
+{ #category : 'inline cacheing' }
+CogX64Compiler >> rewritePICJumpAt: addressFollowingJump target: jumpTargetAddr [
+	"Rewrite the short jump instruction to jump to a new PIC case target. "
+	
+	<var: #addressFollowingJump type: #usqInt>
+	<var: #jumpTargetAddr type: #usqInt>
+	<var: #callDistance type: #sqInt> "prevent type inference for avoiding warning on abs"
+	| callDistance |
+	callDistance := jumpTargetAddr - addressFollowingJump.
+	self assert: callDistance abs < 128.
+	objectMemory
+		byteAt: addressFollowingJump - 1
+		put:  (callDistance bitAnd: 16rFF).
+	"self cCode: ''
+		inSmalltalk: [cogit disassembleFrom: addressFollowingJump - 10 to: addressFollowingJump - 1]."
 ]
 
 { #category : 'encoding' }
