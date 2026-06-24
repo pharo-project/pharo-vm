@@ -4001,6 +4001,7 @@ StackToRegisterMappingCogit >> setInterpreter: aCoInterpreter [
 	picMissTrampolines := CArrayAccessor on:
 		                      (Array new: self numRegArgs + 2).
 
+	compileTimeState := CogStackToRegisterCompilationState new.
 	compileTimeState simStackState: CogCompileTimeStackState new.
 	simStack := CArrayAccessor on: ((1 to: self class simStackSlots) collect: [:i| self simStackEntryClass new cogit: self]).
 	(self addressOf: compileTimeState simStackState) simStack: simStack
@@ -4309,7 +4310,7 @@ StackToRegisterMappingCogit >> ssPop: n popSpilled: popSpilled [
 
 	"Check how many elements to pop from the stack have been spilled.
 	If the spill base is above the stack, it means we popped spilled elements.
-	If the spill base is below or equals to the stack pointer, we don't need ot do anything"	
+	If the spill base is below or equals to the stack pointer, we don't need ot do anything"
 	spilledToPop := (self addressOf: compileTimeState simStackState) simSpillBase - 1 - (self addressOf: compileTimeState simStackState) simStackPtr.
 	(popSpilled and: [spilledToPop > 0]) ifTrue:
 		[self AddCq: spilledToPop * objectMemory wordSize R: SPReg].

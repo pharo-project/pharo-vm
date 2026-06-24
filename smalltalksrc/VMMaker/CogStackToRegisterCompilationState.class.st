@@ -1,5 +1,5 @@
 Class {
-	#name : 'CogCompileTimeState',
+	#name : 'CogStackToRegisterCompilationState',
 	#superclass : 'VMStructType',
 	#instVars : [
 		'deadCode',
@@ -15,7 +15,7 @@ Class {
 }
 
 { #category : 'translation' }
-CogCompileTimeState class >> instVarNamesAndTypesForTranslationDo: aBinaryBlock [
+CogStackToRegisterCompilationState class >> instVarNamesAndTypesForTranslationDo: aBinaryBlock [
 	"Enumerate aBinaryBlock with the names and C type strings for the inst vars to include in a BytecodeFixup struct."
 
 	"self withAllSubclasses collect: [:ea| self typedef]"
@@ -32,73 +32,73 @@ CogCompileTimeState class >> instVarNamesAndTypesForTranslationDo: aBinaryBlock 
 ]
 
 { #category : 'accessing' }
-CogCompileTimeState >> deadCode [
+CogStackToRegisterCompilationState >> deadCode [
 
 	^ deadCode
 ]
 
 { #category : 'accessing' }
-CogCompileTimeState >> deadCode: anObject [
+CogStackToRegisterCompilationState >> deadCode: anObject [
 
 	deadCode := anObject
 ]
 
 { #category : 'accessing' }
-CogCompileTimeState >> methodOrBlockNumTemps [
+CogStackToRegisterCompilationState >> methodOrBlockNumTemps [
 
 	^ methodOrBlockNumTemps
 ]
 
 { #category : 'accessing' }
-CogCompileTimeState >> methodOrBlockNumTemps: anObject [
+CogStackToRegisterCompilationState >> methodOrBlockNumTemps: anObject [
 
 	methodOrBlockNumTemps := anObject
 ]
 
 { #category : 'accessing' }
-CogCompileTimeState >> prevBCDescriptor [
+CogStackToRegisterCompilationState >> prevBCDescriptor [
 
 	^ prevBCDescriptor
 ]
 
 { #category : 'accessing' }
-CogCompileTimeState >> prevBCDescriptor: anObject [
+CogStackToRegisterCompilationState >> prevBCDescriptor: anObject [
 
 	prevBCDescriptor := anObject
 ]
 
 { #category : 'accessing' }
-CogCompileTimeState >> regArgsHaveBeenPushed [
+CogStackToRegisterCompilationState >> regArgsHaveBeenPushed [
 
 	^ regArgsHaveBeenPushed
 ]
 
 { #category : 'accessing' }
-CogCompileTimeState >> regArgsHaveBeenPushed: anObject [
+CogStackToRegisterCompilationState >> regArgsHaveBeenPushed: anObject [
 
 	regArgsHaveBeenPushed := anObject
 ]
 
 { #category : 'accessing' }
-CogCompileTimeState >> simStackState [
+CogStackToRegisterCompilationState >> simStackState [
 
 	^ simStackState
 ]
 
 { #category : 'accessing' }
-CogCompileTimeState >> simStackState: anObject [
+CogStackToRegisterCompilationState >> simStackState: anObject [
 
 	simStackState := anObject
 ]
 
 { #category : 'accessing' }
-CogCompileTimeState >> useTwoPaths [
+CogStackToRegisterCompilationState >> useTwoPaths [
 
 	^ useTwoPaths
 ]
 
 { #category : 'accessing' }
-CogCompileTimeState >> useTwoPaths: anObject [
+CogStackToRegisterCompilationState >> useTwoPaths: anObject [
 
 	useTwoPaths := anObject
 ]
