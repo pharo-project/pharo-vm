@@ -7,4 +7,4 @@ Iceberg remoteTypeSelector: defaultRemoteType.
 Metacello new
 	baseline: 'VMMaker';
 	repository: 'tonel://' , path , '/smalltalksrc';
-	load.
+	load
