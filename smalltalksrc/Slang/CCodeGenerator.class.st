@@ -3762,8 +3762,7 @@ CCodeGenerator >> localizeGlobalVariables [
 			(localized at: name) do: [ :var |
 				logger
 					newLine;
-					show: var , ' localised to ' , name;
-					cr ] ] ].
+					show: var , ' localised to ' , name ] ] ].
 
 	elected do: [ :var | self removeVariable: var ]
 ]

@@ -5,11 +5,13 @@
 #  vmmaker: generates a Pharo development environment with the virtual machine code, Slang transpiler and machine code simulation
 #  generate-sources: generates the virtual machine source code in C, using the Slang-to-C transpiler
 
-cmake_minimum_required(VERSION 3.7.2)
-# Use new and simpler escape sequences
-cmake_policy(SET CMP0053 NEW)
-#RPATH settings on macOS do not affect install_name.
-cmake_policy(SET CMP0068 NEW)
+cmake_minimum_required(VERSION 3.24)
+
+if(POLICY CMP0177)
+    # cmake --help-policy CMP0177
+    # install() DESTINATION paths are normalized
+    cmake_policy(SET CMP0177 NEW)
+endif()
 
 include(cmake/BuildType.cmake)
 include(cmake/macros.cmake)
@@ -66,12 +68,12 @@ set(user_file "${CMAKE_SOURCE_DIR}/CMakeSettings.json" )
 set(template_file "${CMAKE_SOURCE_DIR}/CMakeSettings.json.template" )
 
 if(EXISTS "${user_file}")
-    # Get uuid from 'user_file' 
+    # Get uuid from 'user_file'
     file(READ "${user_file}" user_settings )
     string(REGEX MATCH ".*template-uuid[^a-zA-Z0-9]*([a-zA-Z0-9-]*).*" _ ${user_settings})
     set(user_uuid ${CMAKE_MATCH_1})
 
-    # Get uuid from 'template_file' 
+    # Get uuid from 'template_file'
     file(READ "${template_file}" template_settings )
     string(REGEX MATCH ".*template-uuid[^a-zA-Z0-9]*([a-zA-Z0-9-]*).*" _ ${template_settings})
     set(template_uuid ${CMAKE_MATCH_1})
@@ -106,7 +108,7 @@ if ((CMAKE_HOST_UNIX) AND (${CMAKE_HOST_SYSTEM_NAME} MATCHES "CYGWIN*"))
 
   # specify the cross compiler
   set(CMAKE_TOOLCHAIN_PREFIX x86_64-w64-mingw32)
-  
+
   SET(CMAKE_C_COMPILER   ${CMAKE_TOOLCHAIN_PREFIX}-clang)
   SET(CMAKE_CXX_COMPILER ${CMAKE_TOOLCHAIN_PREFIX}-clang++)
   SET(CMAKE_RC_COMPILER ${CMAKE_TOOLCHAIN_PREFIX}-windres)
@@ -195,12 +197,12 @@ if(MSVC)
     set(OS_TYPE "Win32")
     get_platform_name(VM_TARGET_OS)
     message(STATUS "Building for ${VM_TARGET_OS}")
-    
+
     # Define WIN32_LEAN_AND_MEAN to exclude APIs such as Cryptography, DDE, RPC, Shell, and Windows Sockets
     # They can be included if needed
     # https://docs.microsoft.com/en-us/windows/win32/winprog/using-the-windows-headers
     add_compile_definitions(WIN32_LEAN_AND_MEAN)
-    
+
 elseif(WIN)
     message(STATUS "Building for WINDOWS")
 
@@ -241,6 +243,8 @@ elseif(UNIX)
         set(OSX 1)
         set(OS_TYPE "Mac OS")
         set(VM_TARGET_OS "1000") # Used to recognise OS X
+        #RPATH settings on macOS do not affect install_name.
+        cmake_policy(SET CMP0068 NEW) # still useful?
     elseif(${CMAKE_SYSTEM_NAME} MATCHES "Linux")
         set(VM_TARGET_OS "linux-gnu")
     elseif(${CMAKE_SYSTEM_NAME} MATCHES "OpenBSD")
@@ -259,7 +263,7 @@ else()
     set(GENERATED_SOURCE_DIR ${CMAKE_CURRENT_BINARY_DIR} CACHE STRING "Source directory where to find the generated source. Default value is CMAKE_CURRENT_BINARY_DIR")
 endif()
 
-set(PLUGIN_GENERATED_FILES 
+set(PLUGIN_GENERATED_FILES
   	${GENERATED_SOURCE_DIR}/generated/plugins/src/FilePlugin/FilePlugin.c
   	${GENERATED_SOURCE_DIR}/generated/plugins/src/NewFilePlugin/NewFilePlugin.c)
 
@@ -299,9 +303,15 @@ add_compile_options(
     -Wno-pointer-to-int-cast
     -Wno-compare-distinct-pointer-types
     -Wno-unknown-warning-option
+    -Wno-strict-aliasing
+    -Wno-unused-command-line-argument
+    -Wno-unused-but-set-variable
+    -Wno-unused-variable
+    -Wno-unused-value
+    -Wno-misleading-indentation
+    -Wno-incompatible-pointer-types-discards-qualifiers
+    -Wno-return-stack-address
 )
-
-
 
 add_compile_definitions(
     IMMUTABILITY=1
@@ -410,7 +420,7 @@ include(cmake/${CMAKE_SYSTEM_NAME}.cmake)
 
 set(GENERATED_SOURCES ${VMSOURCEFILES})
 
-list(APPEND SUPPORT_SOURCES	
+list(APPEND SUPPORT_SOURCES
 	${CMAKE_CURRENT_SOURCE_DIR}/src/debug.c
 	${CMAKE_CURRENT_SOURCE_DIR}/src/utils.c
     ${CMAKE_CURRENT_SOURCE_DIR}/src/errorCode.c
@@ -424,7 +434,7 @@ list(APPEND SUPPORT_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/src/parameters/parameters.c
     ${CMAKE_CURRENT_SOURCE_DIR}/src/semaphores/platformSemaphore.c
 
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/common/heartbeat.c    
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/common/heartbeat.c
     ${CMAKE_CURRENT_SOURCE_DIR}/src/common/sqHeapMap.c
     ${CMAKE_CURRENT_SOURCE_DIR}/src/common/sqVirtualMachine.c
     ${CMAKE_CURRENT_SOURCE_DIR}/src/common/sqNamedPrims.c
@@ -443,7 +453,7 @@ if(${FEATURE_FFI})
 
         # Single-threaded callout support
         ${CMAKE_CURRENT_SOURCE_DIR}/src/ffi/sameThread/sameThread.c
-    
+
         # Callback support
         ${CMAKE_CURRENT_SOURCE_DIR}/src/ffi/callbacks/callbackPrimitives.c
         ${CMAKE_CURRENT_SOURCE_DIR}/src/ffi/callbacks/callbacks.c
@@ -472,7 +482,7 @@ add_executable(${VM_EXECUTABLE_NAME} ${VM_FRONTEND_APPLICATION_TYPE} ${VM_FRONTE
 addLibraryWithRPATH(${VM_LIBRARY_NAME} ${VM_SOURCES})
 
 if (${FEATURE_COMPILE_INLINE_MEMORY_ACCESSORS})
-	target_compile_definitions(${VM_LIBRARY_NAME} PRIVATE USE_INLINE_MEMORY_ACCESSORS=1) 
+	target_compile_definitions(${VM_LIBRARY_NAME} PRIVATE USE_INLINE_MEMORY_ACCESSORS=1)
 endif()
 
 if(${FEATURE_JIT_SIMD})
@@ -501,7 +511,7 @@ add_platform_headers()
 if (${FEATURE_FFI})
     target_include_directories(${VM_LIBRARY_NAME}
         PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include/pharovm/ffi)
-    target_compile_definitions(${VM_LIBRARY_NAME} 
+    target_compile_definitions(${VM_LIBRARY_NAME}
         PRIVATE FEATURE_FFI=1)
 
     if(${FEATURE_THREADED_FFI})
@@ -511,7 +521,7 @@ endif()
 
 
 if(${FEATURE_MESSAGE_COUNT})
-    target_compile_definitions(${VM_LIBRARY_NAME} 
+    target_compile_definitions(${VM_LIBRARY_NAME}
         PRIVATE FEATURE_MESSAGE_COUNT=1)
 endif()
 
