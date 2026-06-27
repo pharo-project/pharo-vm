@@ -12,10 +12,9 @@ Class {
 SLASTTransformationTest >> setUp [
 
 	super setUp.
-	ccg addClass: SLASTTransformationTestClass.
+	testClass := SLASTTransformationTestClass.
 	"necessary to get the type of sqInt"
 	SpurMemoryManager initBytesPerWord: 8.
-	ccg inferTypes.
 	sLExpandASTVisitor := SLExpandASTVisitor new
 ]
 
@@ -23,9 +22,9 @@ SLASTTransformationTest >> setUp [
 SLASTTransformationTest >> testMethodWithBlockValue [
 
 	| translation tMethod |
-	tMethod := ccg methodNamed: #methodWithBlockValue.
+	tMethod := self addMethodAndMethodCalledBy: #methodWithBlockValue.
 
-	sLExpandASTVisitor currentMethod: tMethod .
+	sLExpandASTVisitor currentMethod: tMethod.
 	sLExpandASTVisitor expandASTInCurrentMethod.
 
 	translation := self translate: tMethod.
@@ -39,9 +38,7 @@ methodWithBlockValue(void)
 {
 	sqInt arg;
 
-	{
-		2 + 1;
-	}
+	2 + 1;
 	return 0;
 }'
 ]
@@ -50,7 +47,7 @@ methodWithBlockValue(void)
 SLASTTransformationTest >> testMethodWithBlockValueValue [
 
 	| translation tMethod |
-	tMethod := ccg methodNamed: #methodWithBlockValueValue.
+	tMethod := self addMethodAndMethodCalledBy: #methodWithBlockValueValue.
 
 	sLExpandASTVisitor currentMethod: tMethod.
 	sLExpandASTVisitor expandASTInCurrentMethod.
@@ -68,9 +65,7 @@ methodWithBlockValueValue(void)
 	sqInt arg1;
 	sqInt arg2;
 
-	{
-		2 + 3;
-	}
+	2 + 3;
 	return 0;
 }'
 ]
@@ -79,7 +74,7 @@ methodWithBlockValueValue(void)
 SLASTTransformationTest >> testMethodWithBockInAssignment [
 
 	| translation tMethod |
-	tMethod := ccg methodNamed: #methodWithBockInAssignment.
+	tMethod := self addMethodAndMethodCalledBy: #methodWithBockInAssignment.
 
 	sLExpandASTVisitor currentMethod: tMethod.
 	sLExpandASTVisitor expandASTInCurrentMethod.
@@ -108,7 +103,7 @@ methodWithBockInAssignment(void)
 SLASTTransformationTest >> testMethodWithBockValueInAssignment [
 
 	| translation tMethod |
-	tMethod := ccg methodNamed: #methodWithBockValueInAssignment.
+	tMethod := self addMethodAndMethodCalledBy: #methodWithBockValueInAssignment.
 
 	sLExpandASTVisitor currentMethod: tMethod.
 	sLExpandASTVisitor expandASTInCurrentMethod.
@@ -126,10 +121,8 @@ methodWithBockValueInAssignment(void)
 	sqInt arg;
 	sqInt var;
 
-	{
-		emptyMethod(1);
-		var = 5;
-	}
+	emptyMethod(1);
+	var = 5;
 	return 0;
 }'
 ]
@@ -138,7 +131,7 @@ methodWithBockValueInAssignment(void)
 SLASTTransformationTest >> testMethodWithBockValueValueInAssignment [
 
 	| translation tMethod |
-	tMethod := ccg methodNamed: #methodWithBockValueValueInAssignment.
+	tMethod := self addMethodAndMethodCalledBy: #methodWithBockValueValueInAssignment.
 
 	sLExpandASTVisitor currentMethod: tMethod.
 	sLExpandASTVisitor expandASTInCurrentMethod.
@@ -157,11 +150,9 @@ methodWithBockValueValueInAssignment(void)
 	sqInt arg2;
 	sqInt var;
 
-	{
-		emptyMethod(1);
-		emptyMethod(2);
-		var = 5;
-	}
+	emptyMethod(1);
+	emptyMethod(2);
+	var = 5;
 	return 0;
 }'
 ]
@@ -170,7 +161,7 @@ methodWithBockValueValueInAssignment(void)
 SLASTTransformationTest >> testMethodWithFPrintF [
 
 	| translation tMethod |
-	tMethod := ccg methodNamed: #methodWithFPrintF.
+	tMethod := self addMethodAndMethodCalledBy: #methodWithFPrintF.
 
 	sLExpandASTVisitor currentMethod: tMethod.
 	sLExpandASTVisitor expandASTInCurrentMethod.

@@ -69,6 +69,12 @@ TStatementListNode >> accept: aVisitor [
 { #category : 'adding' }
 TStatementListNode >> addAllFirst: aListOfStatement [
 
+	self statements: aListOfStatement , statements
+]
+
+{ #category : 'adding' }
+TStatementListNode >> addAllFirstKeepingFirstComments: aListOfStatement [
+
 	(statements isNotEmpty and: [ statements first isComment ])
 		ifFalse: [ self statements: aListOfStatement , statements ]
 		ifTrue: [
@@ -80,8 +86,10 @@ TStatementListNode >> addAllFirst: aListOfStatement [
 			statements do: [ :e |
 				actualFirstMet
 					ifFalse: [
-						firstComments add: e.
-						actualFirstMet := e == actualFirst ]
+						actualFirstMet := e == actualFirst.
+						actualFirstMet
+							ifTrue: [ allWithoutFirstComments add: e ]
+							ifFalse: [ firstComments add: e ] ]
 					ifTrue: [ allWithoutFirstComments add: e ] ].
 			self statements:
 				firstComments , aListOfStatement , allWithoutFirstComments ]
@@ -131,6 +139,14 @@ TStatementListNode >> addDeclarations: aCollection [
 { #category : 'adding' }
 TStatementListNode >> addFirst: aNode [ 
 	self statements: (OrderedCollection new add: aNode ; yourself) , statements 
+]
+
+{ #category : 'adding' }
+TStatementListNode >> addLast: aNode [
+
+	self statements: statements , (OrderedCollection new
+			 add: aNode;
+			 yourself)
 ]
 
 { #category : 'utilities' }
@@ -462,8 +478,7 @@ TStatementListNode >> endsWithReturn [
 	"Answer true if the last statement of this lock is a return."
 
 	^ statements notEmpty and: [
-		  self lastNonCommentStatement isReturn or: [
-			  self lastNonCommentStatement isReturningIf ] ]
+		  self lastNonCommentStatement endsWithReturn ]
 ]
 
 { #category : 'accessing' }
@@ -478,7 +493,7 @@ TStatementListNode >> firstNonCommentStatement [
 
 	| first indexOfFirst limitIndex |
 	first := statements first.
-	indexOfFirst := 1.
+	indexOfFirst := 0.
 	limitIndex := statements size.
 	[ first isComment ] whileTrue: [
 		indexOfFirst := indexOfFirst + 1.
@@ -559,6 +574,28 @@ TStatementListNode >> last [
 ]
 
 { #category : 'accessing' }
+TStatementListNode >> lastExpression [
+
+	^ self lastNonCommentStatement lastExpression
+]
+
+{ #category : 'accessing' }
+TStatementListNode >> lastNonCommentOrGoToOrLabelStatement [
+	"the last statement can be a comment if the TStatementList has been through inlining, return the actual last statement"
+
+	| last indexOfLast |
+	last := statements last.
+	indexOfLast := statements size.
+	[ last isComment or: [ last isGoTo or: [ last isLabel ] ] ]
+		whileTrue: [
+			indexOfLast := indexOfLast - 1.
+			indexOfLast = 0 ifTrue: [ ^ nil ].
+			last := statements at: indexOfLast ].
+
+	^ last
+]
+
+{ #category : 'accessing' }
 TStatementListNode >> lastNonCommentStatement [
 	"the last statement can be a comment if the TStatementList has been through inlining, return the actual last statement"
 
@@ -633,7 +670,7 @@ TStatementListNode >> parameterNames [
 TStatementListNode >> postCopy [
 
 	arguments := arguments copy.
-	self statements: (statements collect: [ :s | s copy parent: self ])
+	self statements: (statements collect: [ :s | s copy  ])
 ]
 
 { #category : 'printing' }
@@ -745,10 +782,14 @@ TStatementListNode >> renameLocalVariablesGivenClassVariables: classVariables gl
 { #category : 'transformations' }
 TStatementListNode >> replaceChild: aNode with: bNode [
 
+	bNode isStatementList ifTrue: [
+		self replaceChild: aNode withList: bNode statements.
+		^ self ].
+
 	self statements: (statements collect: [ :node |
-		node == aNode
-			ifTrue: [ bNode ]
-			ifFalse: [ node ] ])
+			 node == aNode
+				 ifTrue: [ bNode ]
+				 ifFalse: [ node ] ])
 ]
 
 { #category : 'transformations' }

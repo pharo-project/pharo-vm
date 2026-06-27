@@ -445,13 +445,6 @@ TMethod >> asInlineNodeInto: atMethod in: aCodeGen [
 ]
 
 { #category : 'transformations' }
-TMethod >> bindClassVariablesIn: constantDictionary [
-	"Class variables are used as constants. This method replaces all references to class variables in the body of this method with the corresponding constant looked up in the class pool dictionary of the source class. The source class class variables should be initialized before this method is called."
-
-	self parseTree: (parseTree bindVariablesIn: constantDictionary)
-]
-
-{ #category : 'transformations' }
 TMethod >> bindVariableUsesIn: aDictionary [
 
 	self parseTree: (parseTree bindVariableUsesIn: aDictionary)
@@ -2095,7 +2088,7 @@ TMethod >> removeUnusedTempsAndNilIfRequiredIn: aCodeGen [
 			                      (d beginsWith: 'extern') or: [
 				                      (d beginsWith: 'static') or: [
 					                      (d includes: $[) or: [ d includes: $= ] ] ] ].
-		parseTree addAllFirst:
+		parseTree addAllFirstKeepingFirstComments:
 			(readBeforeAssigned asSortedCollection collect: [ :var |
 				 | varNode varType zeroNode |
 				 varNode := TVariableNode new
@@ -2549,31 +2542,31 @@ TMethod >> terminateConditionalDefineFor: compileTimeOptionPragmas on: aStream [
 
 { #category : 'inlining' }
 TMethod >> transformReturnSubExpression: node toAssignmentOf: exitVar andGoto: exitLabel unless: eliminateReturnSelfs into: aBinaryBlock [
+
 	| expr replacement |
-	expr := node isReturn ifTrue: [node expression] ifFalse: [node].
-	replacement := (expr isVariable "Eliminate ^self's"
-					   and: [expr name = 'self'
-					   and: [eliminateReturnSelfs]])
-						ifTrue: [nil]
-						ifFalse:
-							[exitVar
-								ifNil: [expr]
-								ifNotNil: [TAssignmentNode new
-											setVariable: (TVariableNode new setName: exitVar)
-											expression: expr]].
-	 node == parseTree lastNonCommentStatement 
-		ifTrue:
-			[aBinaryBlock value: replacement value: false]
-		ifFalse:
-			[replacement := replacement
-								ifNil: [TGoToNode label: exitLabel]
-								ifNotNil:
-									[TStatementListNode new
-										setArguments: #()
-										statements: {replacement.
-													  TGoToNode label: exitLabel};
-										yourself].
-			 aBinaryBlock value: replacement value: true]
+	expr := node isReturn
+		        ifTrue: [ node expression ]
+		        ifFalse: [ node ].
+	replacement := (expr isVariable and: [
+		                expr name = 'self' and: [ eliminateReturnSelfs ] ])
+		               ifTrue: [ nil ]
+		               ifFalse: [
+			               exitVar ifNil: [ expr ] ifNotNil: [
+				               TAssignmentNode new
+					               setVariable: (TVariableNode new setName: exitVar)
+					               expression: expr ] ]. "Eliminate ^self's"
+	(parseTree lastExpression includes: node)
+		ifTrue: [ aBinaryBlock value: replacement value: false ]
+		ifFalse: [
+			replacement := replacement
+				               ifNil: [ TGoToNode label: exitLabel ]
+				               ifNotNil: [
+					               TStatementListNode new
+						               setArguments: #(  ) statements: {
+								               replacement.
+								               (TGoToNode label: exitLabel) };
+						               yourself ].
+			aBinaryBlock value: replacement value: true ]
 ]
 
 { #category : 'type inference' }

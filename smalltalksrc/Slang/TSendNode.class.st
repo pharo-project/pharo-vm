@@ -437,10 +437,23 @@ TSendNode >> isConditionalSend [
 		ifNil:ifNotNil: ifNotNil:ifNil: ifNil: ifNotNil:) includes: selector
 ]
 
+{ #category : 'testing' }
+TSendNode >> isCppConditional [
+
+	^ selector beginsWith: #cppIf:
+]
+
 { #category : 'dead-code-elimination' }
 TSendNode >> isDoIterativeSend [
 
 	^ #( #to:do: #to:by:do: ) includes: selector
+]
+
+{ #category : 'testing' }
+TSendNode >> isExitPoint [
+	"useful for error() or abort()"
+
+	^ #( #error: #abort ) includes: selector
 ]
 
 { #category : 'testing' }
@@ -538,6 +551,16 @@ TSendNode >> isValueExpansion [
 	"Answer if the receiver is of the form literalBlock value[: arg]"
 	^receiver isStatementList
 	 and: [selector keywords allSatisfy: [:k| #('value' 'value:') includes: k]]
+]
+
+{ #category : 'accessing' }
+TSendNode >> lastExpression [
+
+	| lastExpressions |
+	self isConditionalSend ifFalse: [ ^ super lastExpression ].
+	lastExpressions := IdentitySet new.
+	arguments do: [ :arg | lastExpressions addAll: arg lastExpression ].
+	^ lastExpressions
 ]
 
 { #category : 'accessing' }

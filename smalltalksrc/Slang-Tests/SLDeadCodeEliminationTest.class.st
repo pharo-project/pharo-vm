@@ -13,12 +13,10 @@ Class {
 SLDeadCodeEliminationTest >> setUp [
 
 	super setUp.
-	ccg addStructClass: SLDeadCodeEliminationTestClass.
+	testClass := SLDeadCodeEliminationTestClass.
 	"necessary to get the type of sqInt"
 	SpurMemoryManager initBytesPerWord: 8.
-	ccg inferTypes.
-	sLDeadCodeElimination := SLDeadCodeElimination new codeGenerator: ccg.
-
+	sLDeadCodeElimination := SLDeadCodeElimination new codeGenerator: ccg
 ]
 
 { #category : 'only-comment' }
@@ -26,11 +24,11 @@ SLDeadCodeEliminationTest >> testConditionalWithOnlyCommentNoSendInReceiver [
 	"currently the only way to get comments in a methods is through inlining, having only comments is equivalent to being empty so it shouldn't change the behavior of the dead code elimination process"
 
 	| translation tMethod |
-	tMethod := ccg methodNamed:
+	tMethod := self addStructMethodAndMethodCalledBy:
 		           #conditionalWithOnlyCommentNoSendInReceiver.
 
 	ccg prepareMethods.
-	ccg doBasicInlining: true.
+	self doInliningIn: tMethod.
 
 	sLDeadCodeElimination currentMethod: tMethod.
 	sLDeadCodeElimination removeDeadCodeInCurrentMethod.
@@ -45,9 +43,7 @@ SLDeadCodeEliminationTest >> testConditionalWithOnlyCommentNoSendInReceiver [
 static void
 conditionalWithOnlyCommentNoSendInReceiver(SLDeadCodeEliminationTestClass * self_in_conditionalWithOnlyCommentNoSendInReceiver)
 {
-	{
-		return;
-	}
+	return;
 }'
 ]
 
@@ -56,10 +52,10 @@ SLDeadCodeEliminationTest >> testConditionalWithOnlyCommentSendInReceiver [
 	"currently the only way to get comments in a methods is through inlining, having only comments is equivalent to being empty so it shouldn't change the behavior of the dead code elimination process"
 
 	| translation tMethod |
-	tMethod := ccg methodNamed: #conditionalWithOnlyCommentSendInReceiver.
+	tMethod := self addStructMethodAndMethodCalledBy: #conditionalWithOnlyCommentSendInReceiver.
 
 	ccg prepareMethods.
-	ccg doBasicInlining: true.
+	self doInliningIn: tMethod.
 
 	sLDeadCodeElimination currentMethod: tMethod.
 	sLDeadCodeElimination removeDeadCodeInCurrentMethod.
@@ -74,12 +70,8 @@ SLDeadCodeEliminationTest >> testConditionalWithOnlyCommentSendInReceiver [
 static void
 conditionalWithOnlyCommentSendInReceiver(SLDeadCodeEliminationTestClass * self_in_conditionalWithOnlyCommentSendInReceiver)
 {
-	{
-		method(self_in_conditionalWithOnlyCommentSendInReceiver, method(self_in_conditionalWithOnlyCommentSendInReceiver));
-	}
-	{
-		return;
-	}
+	method(self_in_conditionalWithOnlyCommentSendInReceiver, method(self_in_conditionalWithOnlyCommentSendInReceiver));
+	return;
 }'
 ]
 
@@ -87,7 +79,7 @@ conditionalWithOnlyCommentSendInReceiver(SLDeadCodeEliminationTestClass * self_i
 SLDeadCodeEliminationTest >> testMethodAddingCallInCoerce [
 
 	| translation tMethod |
-	tMethod := ccg methodNamed: #methodAddingCallInCoerce.
+	tMethod := self addStructMethodAndMethodCalledBy: #methodAddingCallInCoerce.
 
 	sLDeadCodeElimination currentMethod: tMethod.
 	sLDeadCodeElimination removeDeadCodeInCurrentMethod.
@@ -103,9 +95,7 @@ static void
 methodAddingCallInCoerce(SLDeadCodeEliminationTestClass * self_in_methodAddingCallInCoerce)
 {
 	((type) ((method(self_in_methodAddingCallInCoerce)) + (method(self_in_methodAddingCallInCoerce))) );
-	{
-		return;
-	}
+	return;
 }'
 ]
 
@@ -113,7 +103,7 @@ methodAddingCallInCoerce(SLDeadCodeEliminationTestClass * self_in_methodAddingCa
 SLDeadCodeEliminationTest >> testMethodWithBlockValueAssignmentIntoSameVariableInArguments [
 
 	| translation tMethod |
-	tMethod := ccg methodNamed:
+	tMethod := self addStructMethodAndMethodCalledBy:
 		           #methodWithBlockValueAssignmentIntoSameVariableInArguments.
 
 	sLDeadCodeElimination currentMethod: tMethod.
@@ -134,9 +124,7 @@ methodWithBlockValueAssignmentIntoSameVariableInArguments(SLDeadCodeEliminationT
 	sqInt var;
 
 	var = 0;
-	{
-		method(self_in_methodWithBlockValueAssignmentIntoSameVariableInArguments, var);
-	}
+	method(self_in_methodWithBlockValueAssignmentIntoSameVariableInArguments, var);
 	return var;
 }'
 ]
@@ -145,7 +133,7 @@ methodWithBlockValueAssignmentIntoSameVariableInArguments(SLDeadCodeEliminationT
 SLDeadCodeEliminationTest >> testMethodWithBlockValueAssignmentNotIntoSameVariableInArguments [
 
 	| translation tMethod |
-	tMethod := ccg methodNamed:
+	tMethod := self addStructMethodAndMethodCalledBy:
 		           #methodWithBlockValueAssignmentNotIntoSameVariableInArguments.
 
 	sLDeadCodeElimination currentMethod: tMethod.
@@ -167,10 +155,8 @@ methodWithBlockValueAssignmentNotIntoSameVariableInArguments(SLDeadCodeEliminati
 	sqInt var2;
 
 	var2 = 0;
-	{
-		method(self_in_methodWithBlockValueAssignmentNotIntoSameVariableInArguments, var2);
-		var = var2;
-	}
+	method(self_in_methodWithBlockValueAssignmentNotIntoSameVariableInArguments, var2);
+	var = var2;
 	return var;
 }'
 ]
@@ -180,7 +166,7 @@ SLDeadCodeEliminationTest >> testMethodWithBlockValueValueAssignmentIntoSameVari
 	"remove var = var"
 
 	| translation tMethod |
-	tMethod := ccg methodNamed:
+	tMethod := self addStructMethodAndMethodCalledBy:
 		           #methodWithBlockValueValueAssignmentIntoSameVariableInArguments.
 
 	sLDeadCodeElimination currentMethod: tMethod.
@@ -204,10 +190,8 @@ methodWithBlockValueValueAssignmentIntoSameVariableInArguments(SLDeadCodeElimina
 
 	var = 0;
 	var2 = 0;
-	{
-		method(self_in_methodWithBlockValueValueAssignmentIntoSameVariableInArguments, var2);
-		method(self_in_methodWithBlockValueValueAssignmentIntoSameVariableInArguments, var);
-	}
+	method(self_in_methodWithBlockValueValueAssignmentIntoSameVariableInArguments, var2);
+	method(self_in_methodWithBlockValueValueAssignmentIntoSameVariableInArguments, var);
 	return var;
 }'
 ]
@@ -216,7 +200,7 @@ methodWithBlockValueValueAssignmentIntoSameVariableInArguments(SLDeadCodeElimina
 SLDeadCodeEliminationTest >> testMethodWithBlockValueValueAssignmentNotIntoSameVariableInArguments [
 
 	| translation tMethod |
-	tMethod := ccg methodNamed:
+	tMethod := self addStructMethodAndMethodCalledBy:
 		           #methodWithBlockValueValueAssignmentNotIntoSameVariableInArguments.
 
 	sLDeadCodeElimination currentMethod: tMethod.
@@ -240,14 +224,10 @@ methodWithBlockValueValueAssignmentNotIntoSameVariableInArguments(SLDeadCodeElim
 
 	var = 0;
 	var2 = 0;
-	{
-		method(self_in_methodWithBlockValueValueAssignmentNotIntoSameVariableInArguments, var);
-		method(self_in_methodWithBlockValueValueAssignmentNotIntoSameVariableInArguments, var2);
-		var = var2;
-	}
-	{
-		return;
-	}
+	method(self_in_methodWithBlockValueValueAssignmentNotIntoSameVariableInArguments, var);
+	method(self_in_methodWithBlockValueValueAssignmentNotIntoSameVariableInArguments, var2);
+	var = var2;
+	return;
 }'
 ]
 
@@ -256,7 +236,7 @@ SLDeadCodeEliminationTest >> testMethodWithCallInCoerce [
 	"the cCoerce is unecessary but is kept anyway"
 
 	| translation tMethod |
-	tMethod := ccg methodNamed: #methodWithCallInCoerce.
+	tMethod := self addStructMethodAndMethodCalledBy: #methodWithCallInCoerce.
 
 	sLDeadCodeElimination currentMethod: tMethod.
 	sLDeadCodeElimination removeDeadCodeInCurrentMethod.
@@ -273,9 +253,7 @@ static void
 methodWithCallInCoerce(SLDeadCodeEliminationTestClass * self_in_methodWithCallInCoerce)
 {
 	((type) (method(self_in_methodWithCallInCoerce)) );
-	{
-		return;
-	}
+	return;
 }'
 ]
 
@@ -283,7 +261,7 @@ methodWithCallInCoerce(SLDeadCodeEliminationTestClass * self_in_methodWithCallIn
 SLDeadCodeEliminationTest >> testMethodWithConstantInAssignment [
 
 	| translation tMethod |
-	tMethod := ccg methodNamed: #methodWithConstantInAssignment.
+	tMethod := self addStructMethodAndMethodCalledBy: #methodWithConstantInAssignment.
 
 	sLDeadCodeElimination currentMethod: tMethod.
 	sLDeadCodeElimination removeDeadCodeInCurrentMethod.
@@ -310,7 +288,7 @@ methodWithConstantInAssignment(SLDeadCodeEliminationTestClass * self_in_methodWi
 SLDeadCodeEliminationTest >> testMethodWithConstantInReturn [
 
 	| translation tMethod |
-	tMethod := ccg methodNamed: #methodWithConstantInReturn.
+	tMethod := self addStructMethodAndMethodCalledBy: #methodWithConstantInReturn.
 
 	sLDeadCodeElimination currentMethod: tMethod.
 	sLDeadCodeElimination removeDeadCodeInCurrentMethod.
@@ -334,7 +312,7 @@ methodWithConstantInReturn(SLDeadCodeEliminationTestClass * self_in_methodWithCo
 SLDeadCodeEliminationTest >> testMethodWithDeadCodeInRepeat [
 
 	| translation tMethod |
-	tMethod := ccg methodNamed: #methodWithDeadCodeInRepeat.
+	tMethod := self addStructMethodAndMethodCalledBy: #methodWithDeadCodeInRepeat.
 
 	sLDeadCodeElimination currentMethod: tMethod.
 	sLDeadCodeElimination removeDeadCodeInCurrentMethod.
@@ -352,9 +330,7 @@ methodWithDeadCodeInRepeat(SLDeadCodeEliminationTestClass * self_in_methodWithDe
 	while (1) {
 		method(self_in_methodWithDeadCodeInRepeat);
 	}
-	{
-		return;
-	}
+	return;
 }'
 ]
 
@@ -362,7 +338,7 @@ methodWithDeadCodeInRepeat(SLDeadCodeEliminationTestClass * self_in_methodWithDe
 SLDeadCodeEliminationTest >> testMethodWithDeadCodeInTimesRepeat [
 
 	| translation tMethod |
-	tMethod := ccg methodNamed: #methodWithDeadCodeInTimesRepeat.
+	tMethod := self addStructMethodAndMethodCalledBy: #methodWithDeadCodeInTimesRepeat.
 
 	sLDeadCodeElimination currentMethod: tMethod.
 	sLDeadCodeElimination removeDeadCodeInCurrentMethod.
@@ -399,7 +375,7 @@ methodWithDeadCodeInTimesRepeat(SLDeadCodeEliminationTestClass * self_in_methodW
 SLDeadCodeEliminationTest >> testMethodWithDeadCodeInToByDo [
 
 	| translation tMethod |
-	tMethod := ccg methodNamed: #methodWithDeadCodeInToByDo.
+	tMethod := self addStructMethodAndMethodCalledBy: #methodWithDeadCodeInToByDo.
 
 	sLDeadCodeElimination currentMethod: tMethod.
 	sLDeadCodeElimination removeDeadCodeInCurrentMethod.
@@ -427,7 +403,7 @@ methodWithDeadCodeInToByDo(SLDeadCodeEliminationTestClass * self_in_methodWithDe
 SLDeadCodeEliminationTest >> testMethodWithDeadCodeInToDo [
 
 	| translation tMethod |
-	tMethod := ccg methodNamed: #methodWithDeadCodeInToDo.
+	tMethod := self addStructMethodAndMethodCalledBy: #methodWithDeadCodeInToDo.
 
 	sLDeadCodeElimination currentMethod: tMethod.
 	sLDeadCodeElimination removeDeadCodeInCurrentMethod.
@@ -455,7 +431,7 @@ methodWithDeadCodeInToDo(SLDeadCodeEliminationTestClass * self_in_methodWithDead
 SLDeadCodeEliminationTest >> testMethodWithDeadCodeInWhileFalse [
 
 	| translation tMethod |
-	tMethod := ccg methodNamed:
+	tMethod := self addStructMethodAndMethodCalledBy:
 		           #methodWithDeadCodeInWhileFalseLastExpressionIsLeaf.
 
 	sLDeadCodeElimination currentMethod: tMethod.
@@ -474,9 +450,7 @@ methodWithDeadCodeInWhileFalseLastExpressionIsLeaf(SLDeadCodeEliminationTestClas
 	do {
 		method(self_in_methodWithDeadCodeInWhileFalseLastExpressionIsLeaf);
 	} while (!1);
-	{
-		return;
-	}
+	return;
 }'
 ]
 
@@ -484,7 +458,7 @@ methodWithDeadCodeInWhileFalseLastExpressionIsLeaf(SLDeadCodeEliminationTestClas
 SLDeadCodeEliminationTest >> testMethodWithDeadCodeInWhileFalseBinaryNoSendInReceiver [
 
 	| translation tMethod |
-	tMethod := ccg methodNamed:
+	tMethod := self addStructMethodAndMethodCalledBy:
 		           #methodWithDeadCodeInWhileFalseBinaryNoSendInReceiver.
 
 	sLDeadCodeElimination currentMethod: tMethod.
@@ -508,9 +482,7 @@ methodWithDeadCodeInWhileFalseBinaryNoSendInReceiver(SLDeadCodeEliminationTestCl
 	while (!(var == 1)) {
 		method(self_in_methodWithDeadCodeInWhileFalseBinaryNoSendInReceiver);
 	}
-	{
-		return;
-	}
+	return;
 }'
 ]
 
@@ -518,7 +490,7 @@ methodWithDeadCodeInWhileFalseBinaryNoSendInReceiver(SLDeadCodeEliminationTestCl
 SLDeadCodeEliminationTest >> testMethodWithDeadCodeInWhileFalseBinarySendInReceiver [
 
 	| translation tMethod |
-	tMethod := ccg methodNamed:
+	tMethod := self addStructMethodAndMethodCalledBy:
 		           #methodWithDeadCodeInWhileFalseBinarySendInReceiver.
 
 	sLDeadCodeElimination currentMethod: tMethod.
@@ -537,9 +509,7 @@ methodWithDeadCodeInWhileFalseBinarySendInReceiver(SLDeadCodeEliminationTestClas
 	while (!(method(self_in_methodWithDeadCodeInWhileFalseBinarySendInReceiver))) {
 		method(self_in_methodWithDeadCodeInWhileFalseBinarySendInReceiver);
 	}
-	{
-		return;
-	}
+	return;
 }'
 ]
 
@@ -547,7 +517,7 @@ methodWithDeadCodeInWhileFalseBinarySendInReceiver(SLDeadCodeEliminationTestClas
 SLDeadCodeEliminationTest >> testMethodWithDeadCodeInWhileTrue [
 
 	| translation tMethod |
-	tMethod := ccg methodNamed:
+	tMethod := self addStructMethodAndMethodCalledBy:
 		           #methodWithDeadCodeInWhileTrueLastExpressionIsLeaf.
 
 	sLDeadCodeElimination currentMethod: tMethod.
@@ -566,9 +536,7 @@ methodWithDeadCodeInWhileTrueLastExpressionIsLeaf(SLDeadCodeEliminationTestClass
 	do {
 		method(self_in_methodWithDeadCodeInWhileTrueLastExpressionIsLeaf);
 	} while (1);
-	{
-		return;
-	}
+	return;
 }'
 ]
 
@@ -576,7 +544,7 @@ methodWithDeadCodeInWhileTrueLastExpressionIsLeaf(SLDeadCodeEliminationTestClass
 SLDeadCodeEliminationTest >> testMethodWithDeadCodeInWhileTrueBinaryNoSendInReceiver [
 
 	| translation tMethod |
-	tMethod := ccg methodNamed:
+	tMethod := self addStructMethodAndMethodCalledBy:
 		           #methodWithDeadCodeInWhileTrueBinaryNoSendInReceiver.
 
 	sLDeadCodeElimination currentMethod: tMethod.
@@ -600,9 +568,7 @@ methodWithDeadCodeInWhileTrueBinaryNoSendInReceiver(SLDeadCodeEliminationTestCla
 	while (var == 0) {
 		method(self_in_methodWithDeadCodeInWhileTrueBinaryNoSendInReceiver);
 	}
-	{
-		return;
-	}
+	return;
 }'
 ]
 
@@ -610,7 +576,7 @@ methodWithDeadCodeInWhileTrueBinaryNoSendInReceiver(SLDeadCodeEliminationTestCla
 SLDeadCodeEliminationTest >> testMethodWithDeadCodeInWhileTrueBinarySendInReceiver [
 
 	| translation tMethod |
-	tMethod := ccg methodNamed:
+	tMethod := self addStructMethodAndMethodCalledBy:
 		           #methodWithDeadCodeInWhileTrueBinarySendInReceiver.
 
 	sLDeadCodeElimination currentMethod: tMethod.
@@ -629,9 +595,7 @@ methodWithDeadCodeInWhileTrueBinarySendInReceiver(SLDeadCodeEliminationTestClass
 	while (method(self_in_methodWithDeadCodeInWhileTrueBinarySendInReceiver)) {
 		method(self_in_methodWithDeadCodeInWhileTrueBinarySendInReceiver);
 	}
-	{
-		return;
-	}
+	return;
 }'
 ]
 
@@ -640,7 +604,7 @@ SLDeadCodeEliminationTest >> testMethodWithEmptyCaseOfNoSendInReceiver [
 	"we need to use prepareMethodIn to build switch node, we keep the switch because of the default being an error"
 
 	| translation tMethod |
-	tMethod := ccg methodNamed: #methodWithEmptyCaseOfNoSendInReceiver:.
+	tMethod := self addStructMethodAndMethodCalledBy: #methodWithEmptyCaseOfNoSendInReceiver:.
 	tMethod prepareMethodIn: ccg.
 
 	sLDeadCodeElimination currentMethod: tMethod.
@@ -665,9 +629,7 @@ methodWithEmptyCaseOfNoSendInReceiver(SLDeadCodeEliminationTestClass * self_in_m
 		default:
 		error("Case not found and no otherwise clause");
 	}
-	{
-		return;
-	}
+	return;
 }'
 ]
 
@@ -676,7 +638,7 @@ SLDeadCodeEliminationTest >> testMethodWithEmptyCaseOfOtherwiseNoSendInReceiver 
 	"we need to use prepareMethodIn to build switch node, the cases and the otherwise are empty so the node is suppressed"
 
 	| translation tMethod |
-	tMethod := ccg methodNamed:
+	tMethod := self addStructMethodAndMethodCalledBy:
 		           #methodWithEmptyCaseOfOtherwiseNoSendInReceiver:.
 	tMethod prepareMethodIn: ccg.
 
@@ -693,9 +655,7 @@ SLDeadCodeEliminationTest >> testMethodWithEmptyCaseOfOtherwiseNoSendInReceiver 
 static void
 methodWithEmptyCaseOfOtherwiseNoSendInReceiver(SLDeadCodeEliminationTestClass * self_in_methodWithEmptyCaseOfOtherwiseNoSendInReceiver, sqInt anInt)
 {
-	{
-		return;
-	}
+	return;
 }'
 ]
 
@@ -704,7 +664,7 @@ SLDeadCodeEliminationTest >> testMethodWithEmptyCaseOfOtherwiseSendInReceiver [
 	"we need to use prepareMethodIn to build switch node, we keep the message send but the cases and the otherwise are empty so the node is suppressed "
 
 	| translation tMethod |
-	tMethod := ccg methodNamed:
+	tMethod := self addStructMethodAndMethodCalledBy:
 		           #methodWithEmptyCaseOfOtherwiseSendInReceiver.
 	tMethod prepareMethodIn: ccg.
 
@@ -721,12 +681,8 @@ SLDeadCodeEliminationTest >> testMethodWithEmptyCaseOfOtherwiseSendInReceiver [
 static void
 methodWithEmptyCaseOfOtherwiseSendInReceiver(SLDeadCodeEliminationTestClass * self_in_methodWithEmptyCaseOfOtherwiseSendInReceiver)
 {
-	{
-		method(self_in_methodWithEmptyCaseOfOtherwiseSendInReceiver, 2);
-	}
-	{
-		return;
-	}
+	method(self_in_methodWithEmptyCaseOfOtherwiseSendInReceiver, 2);
+	return;
 }'
 ]
 
@@ -735,7 +691,7 @@ SLDeadCodeEliminationTest >> testMethodWithEmptyCaseOfSendInReceiver [
 	"we need to use prepareMethodIn to build switch node, the cases are empty only the default remains "
 
 	| translation tMethod |
-	tMethod := ccg methodNamed: #methodWithEmptyCaseOfSendInReceiver.
+	tMethod := self addStructMethodAndMethodCalledBy: #methodWithEmptyCaseOfSendInReceiver.
 	tMethod prepareMethodIn: ccg.
 
 	sLDeadCodeElimination currentMethod: tMethod.
@@ -761,9 +717,7 @@ methodWithEmptyCaseOfSendInReceiver(SLDeadCodeEliminationTestClass * self_in_met
 		default:
 		error("Case not found and no otherwise clause");
 	}
-	{
-		return;
-	}
+	return;
 }'
 ]
 
@@ -772,7 +726,7 @@ SLDeadCodeEliminationTest >> testMethodWithEmptyIfFalseIfTrueAndNoSendInReceiver
 	"supress the send"
 
 	| translation tMethod |
-	tMethod := ccg methodNamed:
+	tMethod := self addStructMethodAndMethodCalledBy:
 		           #methodWithEmptyIfFalseIfTrueAndNoSendInReceiver.
 		
 	sLDeadCodeElimination currentMethod: tMethod.
@@ -788,9 +742,7 @@ SLDeadCodeEliminationTest >> testMethodWithEmptyIfFalseIfTrueAndNoSendInReceiver
 static void
 methodWithEmptyIfFalseIfTrueAndNoSendInReceiver(SLDeadCodeEliminationTestClass * self_in_methodWithEmptyIfFalseIfTrueAndNoSendInReceiver)
 {
-	{
-		return;
-	}
+	return;
 }'
 ]
 
@@ -799,7 +751,7 @@ SLDeadCodeEliminationTest >> testMethodWithEmptyIfFalseIfTrueAndSendInReceiver [
 	"suppress the send and keep the 4 send in the receiver"
 
 	| translation tMethod |
-	tMethod := ccg methodNamed:
+	tMethod := self addStructMethodAndMethodCalledBy:
 		           #methodWithEmptyIfFalseIfTrueAndSendInReceiver.
 
 	sLDeadCodeElimination currentMethod: tMethod.
@@ -815,15 +767,11 @@ SLDeadCodeEliminationTest >> testMethodWithEmptyIfFalseIfTrueAndSendInReceiver [
 static void
 methodWithEmptyIfFalseIfTrueAndSendInReceiver(SLDeadCodeEliminationTestClass * self_in_methodWithEmptyIfFalseIfTrueAndSendInReceiver)
 {
-	{
-		method(self_in_methodWithEmptyIfFalseIfTrueAndSendInReceiver);
-		method(self_in_methodWithEmptyIfFalseIfTrueAndSendInReceiver, 1);
-		method(self_in_methodWithEmptyIfFalseIfTrueAndSendInReceiver);
-		method(self_in_methodWithEmptyIfFalseIfTrueAndSendInReceiver, method(self_in_methodWithEmptyIfFalseIfTrueAndSendInReceiver));
-	}
-	{
-		return;
-	}
+	method(self_in_methodWithEmptyIfFalseIfTrueAndSendInReceiver);
+	method(self_in_methodWithEmptyIfFalseIfTrueAndSendInReceiver, 1);
+	method(self_in_methodWithEmptyIfFalseIfTrueAndSendInReceiver);
+	method(self_in_methodWithEmptyIfFalseIfTrueAndSendInReceiver, method(self_in_methodWithEmptyIfFalseIfTrueAndSendInReceiver));
+	return;
 }'
 ]
 
@@ -832,7 +780,7 @@ SLDeadCodeEliminationTest >> testMethodWithEmptyIfFalseInIfFalseIfTrueAndNoSendI
 	"reduce the conditional to an ifTrue"
 
 	| translation tMethod |
-	tMethod := ccg methodNamed:
+	tMethod := self addStructMethodAndMethodCalledBy:
 		           #methodWithEmptyIfFalseInIfFalseIfTrueAndNoSendInReceiver.
 
 	sLDeadCodeElimination currentMethod: tMethod.
@@ -864,7 +812,7 @@ SLDeadCodeEliminationTest >> testMethodWithEmptyIfFalseInIfFalseIfTrueAndSendInR
 	"reduce the conditional to an ifTrue"
 
 	| translation tMethod |
-	tMethod := ccg methodNamed:
+	tMethod := self addStructMethodAndMethodCalledBy:
 		           #methodWithEmptyIfFalseInIfFalseIfTrueAndSendInReceiver.
 
 	sLDeadCodeElimination currentMethod: tMethod.
@@ -894,7 +842,7 @@ SLDeadCodeEliminationTest >> testMethodWithEmptyIfFalseInIfTrueIfFalseAndNoSendI
 	"reduce the conditional to an ifTrue"
 
 	| translation tMethod |
-	tMethod := ccg methodNamed:
+	tMethod := self addStructMethodAndMethodCalledBy:
 		           #methodWithEmptyIfFalseInIfTrueIfFalseAndNoSendInReceiver.
 
 	sLDeadCodeElimination currentMethod: tMethod.
@@ -926,7 +874,7 @@ SLDeadCodeEliminationTest >> testMethodWithEmptyIfFalseInIfTrueIfFalseAndSendInR
 	"reduce the conditional to an ifTrue"
 
 	| translation tMethod |
-	tMethod := ccg methodNamed:
+	tMethod := self addStructMethodAndMethodCalledBy:
 		           #methodWithEmptyIfFalseInIfTrueIfFalseAndSendInReceiver.
 
 	sLDeadCodeElimination currentMethod: tMethod.
@@ -956,7 +904,7 @@ SLDeadCodeEliminationTest >> testMethodWithEmptyIfNilIfNotNilAndNoSendInReceiver
 	"supress the send"
 
 	| translation tMethod |
-	tMethod := ccg methodNamed:
+	tMethod := self addStructMethodAndMethodCalledBy:
 		           #methodWithEmptyIfNilIfNotNilAndNoSendInReceiver.
 
 	sLDeadCodeElimination currentMethod: tMethod.
@@ -972,9 +920,7 @@ SLDeadCodeEliminationTest >> testMethodWithEmptyIfNilIfNotNilAndNoSendInReceiver
 static void
 methodWithEmptyIfNilIfNotNilAndNoSendInReceiver(SLDeadCodeEliminationTestClass * self_in_methodWithEmptyIfNilIfNotNilAndNoSendInReceiver)
 {
-	{
-		return;
-	}
+	return;
 }'
 ]
 
@@ -983,7 +929,7 @@ SLDeadCodeEliminationTest >> testMethodWithEmptyIfNilIfNotNilAndSendInReceiver [
 	"supress the send and keep the send in the receiver"
 
 	| translation tMethod |
-	tMethod := ccg methodNamed:
+	tMethod := self addStructMethodAndMethodCalledBy:
 		           #methodWithEmptyIfNilIfNotNilAndSendInReceiver.
 
 	sLDeadCodeElimination currentMethod: tMethod.
@@ -999,12 +945,8 @@ SLDeadCodeEliminationTest >> testMethodWithEmptyIfNilIfNotNilAndSendInReceiver [
 static void
 methodWithEmptyIfNilIfNotNilAndSendInReceiver(SLDeadCodeEliminationTestClass * self_in_methodWithEmptyIfNilIfNotNilAndSendInReceiver)
 {
-	{
-		method(self_in_methodWithEmptyIfNilIfNotNilAndSendInReceiver);
-	}
-	{
-		return;
-	}
+	method(self_in_methodWithEmptyIfNilIfNotNilAndSendInReceiver);
+	return;
 }'
 ]
 
@@ -1013,7 +955,7 @@ SLDeadCodeEliminationTest >> testMethodWithEmptyIfNotNilIfNilAndNoSendInReceiver
 	"supress the send"
 
 	| translation tMethod |
-	tMethod := ccg methodNamed:
+	tMethod := self addStructMethodAndMethodCalledBy:
 		           #methodWithEmptyIfNotNilIfNilAndNoSendInReceiver.
 
 	sLDeadCodeElimination currentMethod: tMethod.
@@ -1029,9 +971,7 @@ SLDeadCodeEliminationTest >> testMethodWithEmptyIfNotNilIfNilAndNoSendInReceiver
 static void
 methodWithEmptyIfNotNilIfNilAndNoSendInReceiver(SLDeadCodeEliminationTestClass * self_in_methodWithEmptyIfNotNilIfNilAndNoSendInReceiver)
 {
-	{
-		return;
-	}
+	return;
 }'
 ]
 
@@ -1040,7 +980,7 @@ SLDeadCodeEliminationTest >> testMethodWithEmptyIfNotNilIfNilAndSendInReceiver [
 	"supress the send and keep the send in the receiver"
 
 	| translation tMethod |
-	tMethod := ccg methodNamed:
+	tMethod := self addStructMethodAndMethodCalledBy:
 		           #methodWithEmptyIfNotNilIfNilAndSendInReceiver.
 
 	sLDeadCodeElimination currentMethod: tMethod.
@@ -1056,12 +996,8 @@ SLDeadCodeEliminationTest >> testMethodWithEmptyIfNotNilIfNilAndSendInReceiver [
 static void
 methodWithEmptyIfNotNilIfNilAndSendInReceiver(SLDeadCodeEliminationTestClass * self_in_methodWithEmptyIfNotNilIfNilAndSendInReceiver)
 {
-	{
-		method(self_in_methodWithEmptyIfNotNilIfNilAndSendInReceiver);
-	}
-	{
-		return;
-	}
+	method(self_in_methodWithEmptyIfNotNilIfNilAndSendInReceiver);
+	return;
 }'
 ]
 
@@ -1070,7 +1006,7 @@ SLDeadCodeEliminationTest >> testMethodWithEmptyIfTrueIfFalseAndNoSendInReceiver
 	"supress the send"
 
 	| translation tMethod |
-	tMethod := ccg methodNamed:
+	tMethod := self addStructMethodAndMethodCalledBy:
 		           #methodWithEmptyIfTrueIfFalseAndNoSendInReceiver.
 
 	sLDeadCodeElimination currentMethod: tMethod.
@@ -1086,9 +1022,7 @@ SLDeadCodeEliminationTest >> testMethodWithEmptyIfTrueIfFalseAndNoSendInReceiver
 static void
 methodWithEmptyIfTrueIfFalseAndNoSendInReceiver(SLDeadCodeEliminationTestClass * self_in_methodWithEmptyIfTrueIfFalseAndNoSendInReceiver)
 {
-	{
-		return;
-	}
+	return;
 }'
 ]
 
@@ -1097,7 +1031,7 @@ SLDeadCodeEliminationTest >> testMethodWithEmptyIfTrueIfFalseAndSendInReceiver [
 	"supress the send and keep the 4 send in the receiver"
 
 	| translation tMethod |
-	tMethod := ccg methodNamed:
+	tMethod := self addStructMethodAndMethodCalledBy:
 		           #methodWithEmptyIfTrueIfFalseAndSendInReceiver.
 
 	sLDeadCodeElimination currentMethod: tMethod.
@@ -1113,15 +1047,11 @@ SLDeadCodeEliminationTest >> testMethodWithEmptyIfTrueIfFalseAndSendInReceiver [
 static void
 methodWithEmptyIfTrueIfFalseAndSendInReceiver(SLDeadCodeEliminationTestClass * self_in_methodWithEmptyIfTrueIfFalseAndSendInReceiver)
 {
-	{
-		method(self_in_methodWithEmptyIfTrueIfFalseAndSendInReceiver);
-		method(self_in_methodWithEmptyIfTrueIfFalseAndSendInReceiver, 1);
-		method(self_in_methodWithEmptyIfTrueIfFalseAndSendInReceiver);
-		method(self_in_methodWithEmptyIfTrueIfFalseAndSendInReceiver, method(self_in_methodWithEmptyIfTrueIfFalseAndSendInReceiver));
-	}
-	{
-		return;
-	}
+	method(self_in_methodWithEmptyIfTrueIfFalseAndSendInReceiver);
+	method(self_in_methodWithEmptyIfTrueIfFalseAndSendInReceiver, 1);
+	method(self_in_methodWithEmptyIfTrueIfFalseAndSendInReceiver);
+	method(self_in_methodWithEmptyIfTrueIfFalseAndSendInReceiver, method(self_in_methodWithEmptyIfTrueIfFalseAndSendInReceiver));
+	return;
 }'
 ]
 
@@ -1130,7 +1060,7 @@ SLDeadCodeEliminationTest >> testMethodWithEmptyIfTrueInIfFalseIfTrueAndNoSendIn
 	"reduce the conditional to an ifFalse"
 
 	| translation tMethod |
-	tMethod := ccg methodNamed:
+	tMethod := self addStructMethodAndMethodCalledBy:
 		           #methodWithEmptyIfTrueInIfFalseIfTrueAndNoSendInReceiver.
 
 	sLDeadCodeElimination currentMethod: tMethod.
@@ -1162,7 +1092,7 @@ SLDeadCodeEliminationTest >> testMethodWithEmptyIfTrueInIfFalseIfTrueAndSendInRe
 	"reduce the conditional to an ifFalse"
 
 	| translation tMethod |
-	tMethod := ccg methodNamed:
+	tMethod := self addStructMethodAndMethodCalledBy:
 		           #methodWithEmptyIfTrueInIfFalseIfTrueAndSendInReceiver.
 
 	sLDeadCodeElimination currentMethod: tMethod.
@@ -1192,7 +1122,7 @@ SLDeadCodeEliminationTest >> testMethodWithEmptyIfTrueInIfTrueIfFalseAndNoSendIn
 	"reduce the conditional to an ifFalse"
 
 	| translation tMethod |
-	tMethod := ccg methodNamed:
+	tMethod := self addStructMethodAndMethodCalledBy:
 		           #methodWithEmptyIfTrueInIfTrueIfFalseAndNoSendInReceiver.
 
 	sLDeadCodeElimination currentMethod: tMethod.
@@ -1224,7 +1154,7 @@ SLDeadCodeEliminationTest >> testMethodWithEmptyIfTrueInIfTrueIfFalseAndSendInRe
 	"reduce the conditional to an ifFalse"
 
 	| translation tMethod |
-	tMethod := ccg methodNamed:
+	tMethod := self addStructMethodAndMethodCalledBy:
 		           #methodWithEmptyIfTrueInIfTrueIfFalseAndSendInReceiver.
 
 	sLDeadCodeElimination currentMethod: tMethod.
@@ -1253,7 +1183,7 @@ methodWithEmptyIfTrueInIfTrueIfFalseAndSendInReceiver(SLDeadCodeEliminationTestC
 SLDeadCodeEliminationTest >> testMethodWithEmptyWhileFalseNoSendInCondition [
 
 	| translation tMethod |
-	tMethod := ccg methodNamed:
+	tMethod := self addStructMethodAndMethodCalledBy:
 		           #methodWithEmptyWhileFalseNoSendInCondition.
 
 	sLDeadCodeElimination currentMethod: tMethod.
@@ -1269,9 +1199,7 @@ SLDeadCodeEliminationTest >> testMethodWithEmptyWhileFalseNoSendInCondition [
 static void
 methodWithEmptyWhileFalseNoSendInCondition(SLDeadCodeEliminationTestClass * self_in_methodWithEmptyWhileFalseNoSendInCondition)
 {
-	{
-		return;
-	}
+	return;
 }'
 ]
 
@@ -1279,7 +1207,7 @@ methodWithEmptyWhileFalseNoSendInCondition(SLDeadCodeEliminationTestClass * self
 SLDeadCodeEliminationTest >> testMethodWithEmptyWhileFalseSendInCondition [
 
 	| translation tMethod |
-	tMethod := ccg methodNamed: #methodWithEmptyWhileFalseSendInCondition.
+	tMethod := self addStructMethodAndMethodCalledBy: #methodWithEmptyWhileFalseSendInCondition.
 
 	sLDeadCodeElimination currentMethod: tMethod.
 	sLDeadCodeElimination removeDeadCodeInCurrentMethod.
@@ -1294,12 +1222,8 @@ SLDeadCodeEliminationTest >> testMethodWithEmptyWhileFalseSendInCondition [
 static void
 methodWithEmptyWhileFalseSendInCondition(SLDeadCodeEliminationTestClass * self_in_methodWithEmptyWhileFalseSendInCondition)
 {
-	{
-		method(self_in_methodWithEmptyWhileFalseSendInCondition);
-	}
-	{
-		return;
-	}
+	method(self_in_methodWithEmptyWhileFalseSendInCondition);
+	return;
 }'
 ]
 
@@ -1307,7 +1231,7 @@ methodWithEmptyWhileFalseSendInCondition(SLDeadCodeEliminationTestClass * self_i
 SLDeadCodeEliminationTest >> testMethodWithEmptyWhileTrueNoSendInCondition [
 
 	| translation tMethod |
-	tMethod := ccg methodNamed:
+	tMethod := self addStructMethodAndMethodCalledBy:
 		           #methodWithEmptyWhileTrueNoSendInCondition.
 
 	sLDeadCodeElimination currentMethod: tMethod.
@@ -1323,9 +1247,7 @@ SLDeadCodeEliminationTest >> testMethodWithEmptyWhileTrueNoSendInCondition [
 static void
 methodWithEmptyWhileTrueNoSendInCondition(SLDeadCodeEliminationTestClass * self_in_methodWithEmptyWhileTrueNoSendInCondition)
 {
-	{
-		return;
-	}
+	return;
 }'
 ]
 
@@ -1333,7 +1255,7 @@ methodWithEmptyWhileTrueNoSendInCondition(SLDeadCodeEliminationTestClass * self_
 SLDeadCodeEliminationTest >> testMethodWithEmptyWhileTrueSendInCondition [
 
 	| translation tMethod |
-	tMethod := ccg methodNamed: #methodWithEmptyWhileTrueSendInCondition.
+	tMethod := self addStructMethodAndMethodCalledBy: #methodWithEmptyWhileTrueSendInCondition.
 
 	sLDeadCodeElimination currentMethod: tMethod.
 	sLDeadCodeElimination removeDeadCodeInCurrentMethod.
@@ -1348,12 +1270,8 @@ SLDeadCodeEliminationTest >> testMethodWithEmptyWhileTrueSendInCondition [
 static void
 methodWithEmptyWhileTrueSendInCondition(SLDeadCodeEliminationTestClass * self_in_methodWithEmptyWhileTrueSendInCondition)
 {
-	{
-		method(self_in_methodWithEmptyWhileTrueSendInCondition);
-	}
-	{
-		return;
-	}
+	method(self_in_methodWithEmptyWhileTrueSendInCondition);
+	return;
 }'
 ]
 
@@ -1362,7 +1280,7 @@ SLDeadCodeEliminationTest >> testMethodWithEmptyifNilInIfNilIfNotNilAndNoSendInR
 	"reduce the conditional to an ifNotNil"
 
 	| translation tMethod |
-	tMethod := ccg methodNamed:
+	tMethod := self addStructMethodAndMethodCalledBy:
 		           #methodWithEmptyifNilInIfNilIfNotNilAndNoSendInReceiver.
 
 	sLDeadCodeElimination currentMethod: tMethod.
@@ -1394,7 +1312,7 @@ SLDeadCodeEliminationTest >> testMethodWithEmptyifNilInIfNilIfNotNilAndSendInRec
 	"reduce the conditional to an ifNotNil"
 
 	| translation tMethod |
-	tMethod := ccg methodNamed:
+	tMethod := self addStructMethodAndMethodCalledBy:
 		           #methodWithEmptyifNilInIfNilIfNotNilAndSendInReceiver.
 
 	sLDeadCodeElimination currentMethod: tMethod.
@@ -1426,7 +1344,7 @@ SLDeadCodeEliminationTest >> testMethodWithEmptyifNilInIfNotNilIfNilAndNoSendInR
 	"reduce the conditional to an ifNotNil"
 
 	| translation tMethod |
-	tMethod := ccg methodNamed:
+	tMethod := self addStructMethodAndMethodCalledBy:
 		           #methodWithEmptyifNilInIfNotNilIfNilAndNoSendInReceiver.
 	
 	sLDeadCodeElimination currentMethod: tMethod.
@@ -1458,7 +1376,7 @@ SLDeadCodeEliminationTest >> testMethodWithEmptyifNilInIfNotNilIfNilAndSendInRec
 	"reduce the conditional to an ifNotNil"
 
 	| translation tMethod |
-	tMethod := ccg methodNamed:
+	tMethod := self addStructMethodAndMethodCalledBy:
 		           #methodWithEmptyifNilInIfNotNilIfNilAndSendInReceiver.
 
 	sLDeadCodeElimination currentMethod: tMethod.
@@ -1490,7 +1408,7 @@ SLDeadCodeEliminationTest >> testMethodWithEmptyifNotNilInIfNilIfNotNilAndNoSend
 	"reduce the conditional to an ifNil"
 
 	| translation tMethod |
-	tMethod := ccg methodNamed:
+	tMethod := self addStructMethodAndMethodCalledBy:
 		           #methodWithEmptyifNotNilInIfNilIfNotNilAndNoSendInReceiver.
 
 	sLDeadCodeElimination currentMethod: tMethod.
@@ -1522,7 +1440,7 @@ SLDeadCodeEliminationTest >> testMethodWithEmptyifNotNilInIfNilIfNotNilAndSendIn
 	"reduce the conditional to an ifNil"
 
 	| translation tMethod |
-	tMethod := ccg methodNamed:
+	tMethod := self addStructMethodAndMethodCalledBy:
 		           #methodWithEmptyifNotNilInIfNilIfNotNilAndSendInReceiver.
 
 	sLDeadCodeElimination currentMethod: tMethod.
@@ -1554,7 +1472,7 @@ SLDeadCodeEliminationTest >> testMethodWithEmptyifNotNilInIfNotNilIfNilAndNoSend
 	"reduce the conditional to an ifNil"
 
 	| translation tMethod |
-	tMethod := ccg methodNamed:
+	tMethod := self addStructMethodAndMethodCalledBy:
 		           #methodWithEmptyifNotNilInIfNotNilIfNilAndNoSendInReceiver.
 
 	sLDeadCodeElimination currentMethod: tMethod.
@@ -1586,7 +1504,7 @@ SLDeadCodeEliminationTest >> testMethodWithEmptyifNotNilInIfNotNilIfNilAndSendIn
 	"reduce the conditional to an ifNil"
 
 	| translation tMethod |
-	tMethod := ccg methodNamed:
+	tMethod := self addStructMethodAndMethodCalledBy:
 		           #methodWithEmptyifNotNilInIfNotNilIfNilAndSendInReceiver.
 
 	sLDeadCodeElimination currentMethod: tMethod.
@@ -1617,7 +1535,7 @@ methodWithEmptyifNotNilInIfNotNilIfNilAndSendInReceiver(SLDeadCodeEliminationTes
 SLDeadCodeEliminationTest >> testMethodWithInstanceVariableInAssignment [
 
 	| translation tMethod |
-	tMethod := ccg methodNamed: #methodWithInstanceVariableInAssignment.
+	tMethod := self addStructMethodAndMethodCalledBy: #methodWithInstanceVariableInAssignment.
 
 	sLDeadCodeElimination currentMethod: tMethod.
 	sLDeadCodeElimination removeDeadCodeInCurrentMethod.
@@ -1643,7 +1561,7 @@ methodWithInstanceVariableInAssignment(SLDeadCodeEliminationTestClass * self_in_
 SLDeadCodeEliminationTest >> testMethodWithInstanceVariableInReturn [
 
 	| translation tMethod |
-	tMethod := ccg methodNamed: #methodWithInstanceVariableInReturn.
+	tMethod := self addStructMethodAndMethodCalledBy: #methodWithInstanceVariableInReturn.
 
 	sLDeadCodeElimination currentMethod: tMethod.
 	sLDeadCodeElimination removeDeadCodeInCurrentMethod.
@@ -1666,7 +1584,7 @@ methodWithInstanceVariableInReturn(SLDeadCodeEliminationTestClass * self_in_meth
 SLDeadCodeEliminationTest >> testMethodWithNeverUsedLocals [
 
 	| translation tMethod |
-	tMethod := ccg methodNamed: #methodWithNeverUsedLocals.
+	tMethod := self addStructMethodAndMethodCalledBy: #methodWithNeverUsedLocals.
 	tMethod prepareMethodIn: ccg.
 
 	sLDeadCodeElimination currentMethod: tMethod.
@@ -1696,7 +1614,7 @@ methodWithNeverUsedLocals(SLDeadCodeEliminationTestClass * self_in_methodWithNev
 SLDeadCodeEliminationTest >> testMethodWithNeverUsedLocalsFromBlock [
 
 	| translation tMethod |
-	tMethod := ccg methodNamed: #methodWithNeverUsedLocalsFromBlock.
+	tMethod := self addStructMethodAndMethodCalledBy: #methodWithNeverUsedLocalsFromBlock.
 	tMethod prepareMethodIn: ccg.
 
 	sLDeadCodeElimination currentMethod: tMethod.
@@ -1716,9 +1634,7 @@ methodWithNeverUsedLocalsFromBlock(SLDeadCodeEliminationTestClass * self_in_meth
 	int var1;
 
 	var1 = 5;
-	{
-		var1 += 1;
-	}
+	var1 += 1;
 	return var1;
 }'
 ]
@@ -1727,7 +1643,7 @@ methodWithNeverUsedLocalsFromBlock(SLDeadCodeEliminationTestClass * self_in_meth
 SLDeadCodeEliminationTest >> testMethodWithNeverUsedLocalsFromBlockStatement [
 
 	| translation tMethod |
-	tMethod := ccg methodNamed:
+	tMethod := self addStructMethodAndMethodCalledBy:
 		           #methodWithNeverUsedLocalsFromBlockStatement.
 	tMethod prepareMethodIn: ccg.
 
@@ -1750,9 +1666,7 @@ methodWithNeverUsedLocalsFromBlockStatement(SLDeadCodeEliminationTestClass * sel
 	sqInt var2;
 
 	var1 = 4;
-	{
-		var2 = var1 + 1;
-	}
+	var2 = var1 + 1;
 	return var2;
 }'
 ]
@@ -1761,7 +1675,7 @@ methodWithNeverUsedLocalsFromBlockStatement(SLDeadCodeEliminationTestClass * sel
 SLDeadCodeEliminationTest >> testMethodWithNeverUsedLocalsFromBlockWithExpressionInArguments [
 
 	| translation tMethod |
-	tMethod := ccg methodNamed:
+	tMethod := self addStructMethodAndMethodCalledBy:
 		           #methodWithNeverUsedLocalsFromBlockWithExpressionInArguments.
 
 
@@ -1782,10 +1696,8 @@ methodWithNeverUsedLocalsFromBlockWithExpressionInArguments(SLDeadCodeEliminatio
 	sqInt arg1;
 	sqInt var1;
 
-	{
-		arg1 = 5 + 1;
-		var1 = arg1 + 1;
-	}
+	arg1 = 5 + 1;
+	var1 = arg1 + 1;
 	return var1;
 }'
 ]
@@ -1794,11 +1706,11 @@ methodWithNeverUsedLocalsFromBlockWithExpressionInArguments(SLDeadCodeEliminatio
 SLDeadCodeEliminationTest >> testMethodWithNeverUsedLocalsFromBlockasArguments [
 
 	| translation tMethod |
-	tMethod := ccg methodNamed:
+	tMethod := self addStructMethodAndMethodCalledBy:
 		           #methodWithNeverUsedLocalsFromBlockasArguments.
 
 	ccg prepareMethods.
-	ccg doBasicInlining: true.
+	self doInliningIn: tMethod.
 
 	sLDeadCodeElimination currentMethod: tMethod.
 	sLDeadCodeElimination removeDeadCodeInCurrentMethod.
@@ -1823,7 +1735,7 @@ methodWithNeverUsedLocalsFromBlockasArguments(SLDeadCodeEliminationTestClass * s
 SLDeadCodeEliminationTest >> testMethodWithNoRedundantLocalDefinition [
 
 	| translation tMethod |
-	tMethod := ccg methodNamed: #methodWithNoRedundantLocalDefinition.
+	tMethod := self addStructMethodAndMethodCalledBy: #methodWithNoRedundantLocalDefinition.
 
 	sLDeadCodeElimination currentMethod: tMethod.
 	sLDeadCodeElimination removeDeadCodeInCurrentMethod.
@@ -1861,7 +1773,7 @@ SLDeadCodeEliminationTest >> testMethodWithOnlyBlockValueAssignmentIntoSameVaria
 	"all of the body is dead code"
 
 	| translation tMethod |
-	tMethod := ccg methodNamed:
+	tMethod := self addStructMethodAndMethodCalledBy:
 		           #methodWithOnlyBlockValueAssignmentIntoSameVariableInArguments.
 
 	sLDeadCodeElimination currentMethod: tMethod.
@@ -1887,7 +1799,7 @@ methodWithOnlyBlockValueAssignmentIntoSameVariableInArguments(SLDeadCodeEliminat
 SLDeadCodeEliminationTest >> testMethodWithOnlyBlockValueAssignmentNotIntoSameVariableInArguments [
 
 	| translation tMethod |
-	tMethod := ccg methodNamed:
+	tMethod := self addStructMethodAndMethodCalledBy:
 		           #methodWithOnlyBlockValueAssignmentNotIntoSameVariableInArguments.
 
 	sLDeadCodeElimination currentMethod: tMethod.
@@ -1908,9 +1820,7 @@ methodWithOnlyBlockValueAssignmentNotIntoSameVariableInArguments(SLDeadCodeElimi
 	sqInt var2;
 
 	var2 = 0;
-	{
-		var = var2;
-	}
+	var = var2;
 	return var;
 }'
 ]
@@ -1920,10 +1830,10 @@ SLDeadCodeEliminationTest >> testMethodWithOnlyComment [
 	"currently the only way to get comments in a methods is through inlining, having only comments is equivalent to being empty so it shouldn't change the behavior of the dead code elimination process"
 
 	| translation tMethod |
-	tMethod := ccg methodNamed: #methodWithOnlyComment.
+	tMethod := self addStructMethodAndMethodCalledBy: #methodWithOnlyComment.
 
 	ccg prepareMethods.
-	ccg doBasicInlining: true.
+	self doInliningIn: tMethod.
 
 	sLDeadCodeElimination currentMethod: tMethod.
 	sLDeadCodeElimination removeDeadCodeInCurrentMethod.
@@ -1940,9 +1850,7 @@ methodWithOnlyComment(SLDeadCodeEliminationTestClass * self_in_methodWithOnlyCom
 {
 	/* begin method */
 	/* end method */
-	{
-		return;
-	}
+	return;
 }'
 ]
 
@@ -1950,7 +1858,7 @@ methodWithOnlyComment(SLDeadCodeEliminationTestClass * self_in_methodWithOnlyCom
 SLDeadCodeEliminationTest >> testMethodWithOnlyDeadCodeInRepeat [
 
 	| translation tMethod |
-	tMethod := ccg methodNamed: #methodWithOnlyDeadCodeInRepeat.
+	tMethod := self addStructMethodAndMethodCalledBy: #methodWithOnlyDeadCodeInRepeat.
 
 	sLDeadCodeElimination currentMethod: tMethod.
 	sLDeadCodeElimination removeDeadCodeInCurrentMethod.
@@ -1977,7 +1885,7 @@ methodWithOnlyDeadCodeInRepeat(SLDeadCodeEliminationTestClass * self_in_methodWi
 SLDeadCodeEliminationTest >> testMethodWithOnlyDeadCodeInWhileFalse [
 
 	| translation tMethod |
-	tMethod := ccg methodNamed: #methodWithOnlyDeadCodeInWhileFalse.
+	tMethod := self addStructMethodAndMethodCalledBy: #methodWithOnlyDeadCodeInWhileFalse.
 
 	sLDeadCodeElimination currentMethod: tMethod.
 	sLDeadCodeElimination removeDeadCodeInCurrentMethod.
@@ -2004,7 +1912,7 @@ methodWithOnlyDeadCodeInWhileFalse(SLDeadCodeEliminationTestClass * self_in_meth
 SLDeadCodeEliminationTest >> testMethodWithOnlyDeadCodeInWhileFalseBinaryNoSendInReceiver [
 
 	| translation tMethod |
-	tMethod := ccg methodNamed:
+	tMethod := self addStructMethodAndMethodCalledBy:
 		           #methodWithOnlyDeadCodeInWhileFalseBinaryNoSendInReceiver.
 
 	sLDeadCodeElimination currentMethod: tMethod.
@@ -2031,7 +1939,7 @@ methodWithOnlyDeadCodeInWhileFalseBinaryNoSendInReceiver(SLDeadCodeEliminationTe
 SLDeadCodeEliminationTest >> testMethodWithOnlyDeadCodeInWhileFalseBinarySendInReceiver [
 
 	| translation tMethod |
-	tMethod := ccg methodNamed:
+	tMethod := self addStructMethodAndMethodCalledBy:
 		           #methodWithOnlyDeadCodeInWhileFalseBinarySendInReceiver.
 
 	sLDeadCodeElimination currentMethod: tMethod.
@@ -2051,9 +1959,7 @@ methodWithOnlyDeadCodeInWhileFalseBinarySendInReceiver(SLDeadCodeEliminationTest
 	sqInt var;
 
 	var = 0;
-	{
-		method(self_in_methodWithOnlyDeadCodeInWhileFalseBinarySendInReceiver);
-	}
+	method(self_in_methodWithOnlyDeadCodeInWhileFalseBinarySendInReceiver);
 	return var;
 }'
 ]
@@ -2062,7 +1968,7 @@ methodWithOnlyDeadCodeInWhileFalseBinarySendInReceiver(SLDeadCodeEliminationTest
 SLDeadCodeEliminationTest >> testMethodWithOnlyDeadCodeInWhileTrue [
 
 	| translation tMethod |
-	tMethod := ccg methodNamed: #methodWithOnlyDeadCodeInWhileTrue.
+	tMethod := self addStructMethodAndMethodCalledBy: #methodWithOnlyDeadCodeInWhileTrue.
 
 	sLDeadCodeElimination currentMethod: tMethod.
 	sLDeadCodeElimination removeDeadCodeInCurrentMethod.
@@ -2089,7 +1995,7 @@ methodWithOnlyDeadCodeInWhileTrue(SLDeadCodeEliminationTestClass * self_in_metho
 SLDeadCodeEliminationTest >> testMethodWithOnlyDeadCodeInWhileTrueBinaryNoSendInReceiver [
 
 	| translation tMethod |
-	tMethod := ccg methodNamed:
+	tMethod := self addStructMethodAndMethodCalledBy:
 		           #methodWithOnlyDeadCodeInWhileTrueBinaryNoSendInReceiver.
 
 	sLDeadCodeElimination currentMethod: tMethod.
@@ -2117,7 +2023,7 @@ methodWithOnlyDeadCodeInWhileTrueBinaryNoSendInReceiver(SLDeadCodeEliminationTes
 SLDeadCodeEliminationTest >> testMethodWithOnlyDeadCodeInWhileTrueBinarySendInReceiver [
 
 	| translation tMethod |
-	tMethod := ccg methodNamed:
+	tMethod := self addStructMethodAndMethodCalledBy:
 		           #methodWithOnlyDeadCodeInWhileTrueBinarySendInReceiver.
 
 	sLDeadCodeElimination currentMethod: tMethod.
@@ -2137,9 +2043,7 @@ methodWithOnlyDeadCodeInWhileTrueBinarySendInReceiver(SLDeadCodeEliminationTestC
 	sqInt var;
 
 	var = 0;
-	{
-		method(self_in_methodWithOnlyDeadCodeInWhileTrueBinarySendInReceiver);
-	}
+	method(self_in_methodWithOnlyDeadCodeInWhileTrueBinarySendInReceiver);
 	return var;
 }'
 ]
@@ -2148,7 +2052,7 @@ methodWithOnlyDeadCodeInWhileTrueBinarySendInReceiver(SLDeadCodeEliminationTestC
 SLDeadCodeEliminationTest >> testMethodWithOnlyNeverUsedLocals [
 
 	| translation tMethod |
-	tMethod := ccg methodNamed: #methodWithOnlyNeverUsedLocals.
+	tMethod := self addStructMethodAndMethodCalledBy: #methodWithOnlyNeverUsedLocals.
 	tMethod prepareMethodIn: ccg.
 
 	sLDeadCodeElimination currentMethod: tMethod.
@@ -2174,7 +2078,7 @@ methodWithOnlyNeverUsedLocals(SLDeadCodeEliminationTestClass * self_in_methodWit
 SLDeadCodeEliminationTest >> testMethodWithOnlyUselessAssignment [
 
 	| translation tMethod |
-	tMethod := ccg methodNamed: #methodWithOnlyUselessAssignment.
+	tMethod := self addStructMethodAndMethodCalledBy: #methodWithOnlyUselessAssignment.
 	tMethod prepareMethodIn: ccg.
 
 	sLDeadCodeElimination currentMethod: tMethod.
@@ -2192,9 +2096,7 @@ SLDeadCodeEliminationTest >> testMethodWithOnlyUselessAssignment [
 static void
 methodWithOnlyUselessAssignment(SLDeadCodeEliminationTestClass * self_in_methodWithOnlyUselessAssignment)
 {
-	{
-		return;
-	}
+	return;
 }'
 ]
 
@@ -2202,7 +2104,7 @@ methodWithOnlyUselessAssignment(SLDeadCodeEliminationTestClass * self_in_methodW
 SLDeadCodeEliminationTest >> testMethodWithRedundantLocalDefinition [
 
 	| translation tMethod |
-	tMethod := ccg methodNamed: #methodWithRedundantLocalDefinition.
+	tMethod := self addStructMethodAndMethodCalledBy: #methodWithRedundantLocalDefinition.
 
 	sLDeadCodeElimination currentMethod: tMethod.
 	sLDeadCodeElimination removeDeadCodeInCurrentMethod.
@@ -2238,7 +2140,7 @@ SLDeadCodeEliminationTest >> testMethodWithSelfAssign [
 	"happens because of polymorphisme or inlining"
 
 	| translation tMethod |
-	tMethod := ccg methodNamed: #methodWithSelfAssign.
+	tMethod := self addStructMethodAndMethodCalledBy: #methodWithSelfAssign.
 
 	sLDeadCodeElimination currentMethod: tMethod.
 	sLDeadCodeElimination removeDeadCodeInCurrentMethod.
@@ -2265,7 +2167,7 @@ methodWithSelfAssign(SLDeadCodeEliminationTestClass * self_in_methodWithSelfAssi
 SLDeadCodeEliminationTest >> testMethodWithSendWithNoSideEffectInCoerce [
 
 	| translation tMethod |
-	tMethod := ccg methodNamed: #methodWithSendWithNoSideEffectInCoerce.
+	tMethod := self addStructMethodAndMethodCalledBy: #methodWithSendWithNoSideEffectInCoerce.
 
 	sLDeadCodeElimination currentMethod: tMethod.
 	sLDeadCodeElimination removeDeadCodeInCurrentMethod.
@@ -2280,9 +2182,7 @@ SLDeadCodeEliminationTest >> testMethodWithSendWithNoSideEffectInCoerce [
 static void
 methodWithSendWithNoSideEffectInCoerce(SLDeadCodeEliminationTestClass * self_in_methodWithSendWithNoSideEffectInCoerce)
 {
-	{
-		return;
-	}
+	return;
 }'
 ]
 
@@ -2290,7 +2190,7 @@ methodWithSendWithNoSideEffectInCoerce(SLDeadCodeEliminationTestClass * self_in_
 SLDeadCodeEliminationTest >> testMethodWithUnusedConstant [
 
 	| translation tMethod |
-	tMethod := ccg methodNamed: #methodWithUnusedConstant.
+	tMethod := self addStructMethodAndMethodCalledBy: #methodWithUnusedConstant.
 
 	sLDeadCodeElimination currentMethod: tMethod.
 	sLDeadCodeElimination removeDeadCodeInCurrentMethod.
@@ -2305,9 +2205,7 @@ SLDeadCodeEliminationTest >> testMethodWithUnusedConstant [
 static void
 methodWithUnusedConstant(SLDeadCodeEliminationTestClass * self_in_methodWithUnusedConstant)
 {
-	{
-		return;
-	}
+	return;
 }'
 ]
 
@@ -2316,7 +2214,7 @@ SLDeadCodeEliminationTest >> testMethodWithUnusedConstantAndReturnInCaseOfNoSend
 	"we need to use prepareMethodIn to build switch node"
 
 	| translation tMethod |
-	tMethod := ccg methodNamed:
+	tMethod := self addStructMethodAndMethodCalledBy:
 		           #methodWithUnusedConstantAndReturnInCaseOfNoSendInExpression:.
 	tMethod prepareMethodIn: ccg.
 
@@ -2341,17 +2239,12 @@ methodWithUnusedConstantAndReturnInCaseOfNoSendInExpression(SLDeadCodeEliminatio
 		break;
 		case 6:
 		{
-			{
-				return;
-			}
+			return;
 		}
-		break;
 		default:
 		error("Case not found and no otherwise clause");
 	}
-	{
-		return;
-	}
+	return;
 }'
 ]
 
@@ -2360,7 +2253,7 @@ SLDeadCodeEliminationTest >> testMethodWithUnusedConstantAndReturnInCaseOfSendIn
 	"we need to use prepareMethodIn to build switch node."
 
 	| translation tMethod |
-	tMethod := ccg methodNamed:
+	tMethod := self addStructMethodAndMethodCalledBy:
 		           #methodWithUnusedConstantAndReturnInCaseOfSendInExpression.
 	tMethod prepareMethodIn: ccg.
 
@@ -2399,7 +2292,7 @@ SLDeadCodeEliminationTest >> testMethodWithUnusedConstantInCaseOfAndReturnInOthe
 	"we need to use prepareMethodIn to build switch node"
 
 	| translation tMethod |
-	tMethod := ccg methodNamed:
+	tMethod := self addStructMethodAndMethodCalledBy:
 		           #methodWithUnusedConstantInCaseOfAndReturnInOtherwiseNoSendInExpression:.
 	tMethod prepareMethodIn: ccg.
 
@@ -2441,7 +2334,7 @@ SLDeadCodeEliminationTest >> testMethodWithUnusedConstantInCaseOfAndReturnInOthe
 	"we need to use prepareMethodIn to build switch node"
 
 	| translation tMethod |
-	tMethod := ccg methodNamed:
+	tMethod := self addStructMethodAndMethodCalledBy:
 		           #methodWithUnusedConstantInCaseOfAndReturnInOtherwiseSendInExpression.
 	tMethod prepareMethodIn: ccg.
 
@@ -2482,7 +2375,7 @@ SLDeadCodeEliminationTest >> testMethodWithUnusedConstantInCaseOfAndUnusedConsta
 	"we need to use prepareMethodIn to build switch node, the cases and the otherwise all have unused constant so the node is suppressed"
 
 	| translation tMethod |
-	tMethod := ccg methodNamed:
+	tMethod := self addStructMethodAndMethodCalledBy:
 		           #methodWithUnusedConstantInCaseOfAndUnusedConstantInOtherwiseNoSendInExpression:.
 	tMethod prepareMethodIn: ccg.
 
@@ -2509,7 +2402,7 @@ SLDeadCodeEliminationTest >> testMethodWithUnusedConstantInCaseOfAndUnusedConsta
 	"we need to use prepareMethodIn to build switch node, the cases and the otherwise all have unused constant, the node is suppressed but the message call is kept"
 
 	| translation tMethod |
-	tMethod := ccg methodNamed:
+	tMethod := self addStructMethodAndMethodCalledBy:
 		           #methodWithUnusedConstantInCaseOfAndUnusedConstantInOtherwiseSendInExpression.
 	tMethod prepareMethodIn: ccg.
 
@@ -2527,9 +2420,7 @@ SLDeadCodeEliminationTest >> testMethodWithUnusedConstantInCaseOfAndUnusedConsta
 static sqInt
 methodWithUnusedConstantInCaseOfAndUnusedConstantInOtherwiseSendInExpression(SLDeadCodeEliminationTestClass * self_in_methodWithUnusedConstantInCaseOfAndUnusedConstantInOtherwiseSendInExpression)
 {
-	{
-		method(self_in_methodWithUnusedConstantInCaseOfAndUnusedConstantInOtherwiseSendInExpression, 3);
-	}
+	method(self_in_methodWithUnusedConstantInCaseOfAndUnusedConstantInOtherwiseSendInExpression, 3);
 	return 0;
 }'
 ]
@@ -2539,7 +2430,7 @@ SLDeadCodeEliminationTest >> testMethodWithUnusedConstantInCaseOfNoSendInExpress
 	"we need to use prepareMethodIn to build switch node"
 
 	| translation tMethod |
-	tMethod := ccg methodNamed:
+	tMethod := self addStructMethodAndMethodCalledBy:
 		           #methodWithUnusedConstantInCaseOfNoSendInExpression:.
 	tMethod prepareMethodIn: ccg.
 
@@ -2573,7 +2464,7 @@ SLDeadCodeEliminationTest >> testMethodWithUnusedConstantInCaseOfSendInExpressio
 	"we need to use prepareMethodIn to build switch node"
 
 	| translation tMethod |
-	tMethod := ccg methodNamed:
+	tMethod := self addStructMethodAndMethodCalledBy:
 		           #methodWithUnusedConstantInCaseOfSendInExpression.
 	tMethod prepareMethodIn: ccg.
 
@@ -2606,7 +2497,7 @@ methodWithUnusedConstantInCaseOfSendInExpression(SLDeadCodeEliminationTestClass 
 SLDeadCodeEliminationTest >> testMethodWithUnusedConstantInCoerce [
 
 	| translation tMethod |
-	tMethod := ccg methodNamed: #methodWithUnusedConstantInCoerce.
+	tMethod := self addStructMethodAndMethodCalledBy: #methodWithUnusedConstantInCoerce.
 
 	sLDeadCodeElimination currentMethod: tMethod.
 	sLDeadCodeElimination removeDeadCodeInCurrentMethod.
@@ -2629,7 +2520,7 @@ methodWithUnusedConstantInCoerce(SLDeadCodeEliminationTestClass * self_in_method
 SLDeadCodeEliminationTest >> testMethodWithUnusedConstantInIfFalseIfTrueNoSendInReceiver [
 
 	| translation tMethod |
-	tMethod := ccg methodNamed:
+	tMethod := self addStructMethodAndMethodCalledBy:
 		           #methodWithUnusedConstantInIfFalseIfTrueNoSendInReceiver.
 
 	sLDeadCodeElimination currentMethod: tMethod.
@@ -2653,7 +2544,7 @@ methodWithUnusedConstantInIfFalseIfTrueNoSendInReceiver(SLDeadCodeEliminationTes
 SLDeadCodeEliminationTest >> testMethodWithUnusedConstantInIfFalseIfTrueSendInReceiver [
 
 	| translation tMethod |
-	tMethod := ccg methodNamed:
+	tMethod := self addStructMethodAndMethodCalledBy:
 		           #methodWithUnusedConstantInIfFalseIfTrueSendInReceiver.
 
 	sLDeadCodeElimination currentMethod: tMethod.
@@ -2669,14 +2560,10 @@ SLDeadCodeEliminationTest >> testMethodWithUnusedConstantInIfFalseIfTrueSendInRe
 static void
 methodWithUnusedConstantInIfFalseIfTrueSendInReceiver(SLDeadCodeEliminationTestClass * self_in_methodWithUnusedConstantInIfFalseIfTrueSendInReceiver)
 {
-	{
-		method(self_in_methodWithUnusedConstantInIfFalseIfTrueSendInReceiver);
-		method(self_in_methodWithUnusedConstantInIfFalseIfTrueSendInReceiver, 3);
-		method(self_in_methodWithUnusedConstantInIfFalseIfTrueSendInReceiver, method(self_in_methodWithUnusedConstantInIfFalseIfTrueSendInReceiver));
-	}
-	{
-		return;
-	}
+	method(self_in_methodWithUnusedConstantInIfFalseIfTrueSendInReceiver);
+	method(self_in_methodWithUnusedConstantInIfFalseIfTrueSendInReceiver, 3);
+	method(self_in_methodWithUnusedConstantInIfFalseIfTrueSendInReceiver, method(self_in_methodWithUnusedConstantInIfFalseIfTrueSendInReceiver));
+	return;
 }'
 ]
 
@@ -2684,7 +2571,7 @@ methodWithUnusedConstantInIfFalseIfTrueSendInReceiver(SLDeadCodeEliminationTestC
 SLDeadCodeEliminationTest >> testMethodWithUnusedConstantInIfFalseNoSendInReceiver [
 
 	| translation tMethod |
-	tMethod := ccg methodNamed:
+	tMethod := self addStructMethodAndMethodCalledBy:
 		           #methodWithUnusedConstantInIfFalseNoSendInReceiver.
 
 	sLDeadCodeElimination currentMethod: tMethod.
@@ -2700,9 +2587,7 @@ SLDeadCodeEliminationTest >> testMethodWithUnusedConstantInIfFalseNoSendInReceiv
 static void
 methodWithUnusedConstantInIfFalseNoSendInReceiver(SLDeadCodeEliminationTestClass * self_in_methodWithUnusedConstantInIfFalseNoSendInReceiver)
 {
-	{
-		return;
-	}
+	return;
 }'
 ]
 
@@ -2710,7 +2595,7 @@ methodWithUnusedConstantInIfFalseNoSendInReceiver(SLDeadCodeEliminationTestClass
 SLDeadCodeEliminationTest >> testMethodWithUnusedConstantInIfFalseSendInReceiver [
 
 	| translation tMethod |
-	tMethod := ccg methodNamed:
+	tMethod := self addStructMethodAndMethodCalledBy:
 		           #methodWithUnusedConstantInIfFalseSendInReceiver.
 
 	sLDeadCodeElimination currentMethod: tMethod.
@@ -2726,14 +2611,10 @@ SLDeadCodeEliminationTest >> testMethodWithUnusedConstantInIfFalseSendInReceiver
 static void
 methodWithUnusedConstantInIfFalseSendInReceiver(SLDeadCodeEliminationTestClass * self_in_methodWithUnusedConstantInIfFalseSendInReceiver)
 {
-	{
-		method(self_in_methodWithUnusedConstantInIfFalseSendInReceiver);
-		method(self_in_methodWithUnusedConstantInIfFalseSendInReceiver, 3);
-		method(self_in_methodWithUnusedConstantInIfFalseSendInReceiver, method(self_in_methodWithUnusedConstantInIfFalseSendInReceiver));
-	}
-	{
-		return;
-	}
+	method(self_in_methodWithUnusedConstantInIfFalseSendInReceiver);
+	method(self_in_methodWithUnusedConstantInIfFalseSendInReceiver, 3);
+	method(self_in_methodWithUnusedConstantInIfFalseSendInReceiver, method(self_in_methodWithUnusedConstantInIfFalseSendInReceiver));
+	return;
 }'
 ]
 
@@ -2741,7 +2622,7 @@ methodWithUnusedConstantInIfFalseSendInReceiver(SLDeadCodeEliminationTestClass *
 SLDeadCodeEliminationTest >> testMethodWithUnusedConstantInIfNilIfNotNilNoSendInReceiver [
 
 	| translation tMethod |
-	tMethod := ccg methodNamed:
+	tMethod := self addStructMethodAndMethodCalledBy:
 		           #methodWithUnusedConstantInIfNilIfNotNilNoSendInReceiver.
 
 	sLDeadCodeElimination currentMethod: tMethod.
@@ -2757,9 +2638,7 @@ SLDeadCodeEliminationTest >> testMethodWithUnusedConstantInIfNilIfNotNilNoSendIn
 static void
 methodWithUnusedConstantInIfNilIfNotNilNoSendInReceiver(SLDeadCodeEliminationTestClass * self_in_methodWithUnusedConstantInIfNilIfNotNilNoSendInReceiver)
 {
-	{
-		return;
-	}
+	return;
 }'
 ]
 
@@ -2767,7 +2646,7 @@ methodWithUnusedConstantInIfNilIfNotNilNoSendInReceiver(SLDeadCodeEliminationTes
 SLDeadCodeEliminationTest >> testMethodWithUnusedConstantInIfNilIfNotNillSendInReceiver [
 
 	| translation tMethod |
-	tMethod := ccg methodNamed:
+	tMethod := self addStructMethodAndMethodCalledBy:
 		           #methodWithUnusedConstantInIfNilIfNotNilSendInReceiver.
 
 	sLDeadCodeElimination currentMethod: tMethod.
@@ -2783,12 +2662,8 @@ SLDeadCodeEliminationTest >> testMethodWithUnusedConstantInIfNilIfNotNillSendInR
 static void
 methodWithUnusedConstantInIfNilIfNotNilSendInReceiver(SLDeadCodeEliminationTestClass * self_in_methodWithUnusedConstantInIfNilIfNotNilSendInReceiver)
 {
-	{
-		method(self_in_methodWithUnusedConstantInIfNilIfNotNilSendInReceiver, method(self_in_methodWithUnusedConstantInIfNilIfNotNilSendInReceiver));
-	}
-	{
-		return;
-	}
+	method(self_in_methodWithUnusedConstantInIfNilIfNotNilSendInReceiver, method(self_in_methodWithUnusedConstantInIfNilIfNotNilSendInReceiver));
+	return;
 }'
 ]
 
@@ -2796,7 +2671,7 @@ methodWithUnusedConstantInIfNilIfNotNilSendInReceiver(SLDeadCodeEliminationTestC
 SLDeadCodeEliminationTest >> testMethodWithUnusedConstantInIfNilNoSendInReceiver [
 
 	| translation tMethod |
-	tMethod := ccg methodNamed:
+	tMethod := self addStructMethodAndMethodCalledBy:
 		           #methodWithUnusedConstantInIfNilNoSendInReceiver.
 
 	sLDeadCodeElimination currentMethod: tMethod.
@@ -2812,9 +2687,7 @@ SLDeadCodeEliminationTest >> testMethodWithUnusedConstantInIfNilNoSendInReceiver
 static void
 methodWithUnusedConstantInIfNilNoSendInReceiver(SLDeadCodeEliminationTestClass * self_in_methodWithUnusedConstantInIfNilNoSendInReceiver)
 {
-	{
-		return;
-	}
+	return;
 }'
 ]
 
@@ -2822,7 +2695,7 @@ methodWithUnusedConstantInIfNilNoSendInReceiver(SLDeadCodeEliminationTestClass *
 SLDeadCodeEliminationTest >> testMethodWithUnusedConstantInIfNilSendInReceiver [
 
 	| translation tMethod |
-	tMethod := ccg methodNamed:
+	tMethod := self addStructMethodAndMethodCalledBy:
 		           #methodWithUnusedConstantInIfNilSendInReceiver.
 
 	sLDeadCodeElimination currentMethod: tMethod.
@@ -2838,12 +2711,8 @@ SLDeadCodeEliminationTest >> testMethodWithUnusedConstantInIfNilSendInReceiver [
 static void
 methodWithUnusedConstantInIfNilSendInReceiver(SLDeadCodeEliminationTestClass * self_in_methodWithUnusedConstantInIfNilSendInReceiver)
 {
-	{
-		method(self_in_methodWithUnusedConstantInIfNilSendInReceiver, method(self_in_methodWithUnusedConstantInIfNilSendInReceiver));
-	}
-	{
-		return;
-	}
+	method(self_in_methodWithUnusedConstantInIfNilSendInReceiver, method(self_in_methodWithUnusedConstantInIfNilSendInReceiver));
+	return;
 }'
 ]
 
@@ -2851,7 +2720,7 @@ methodWithUnusedConstantInIfNilSendInReceiver(SLDeadCodeEliminationTestClass * s
 SLDeadCodeEliminationTest >> testMethodWithUnusedConstantInIfNotNilIfNilNoSendInReceiver [
 
 	| translation tMethod |
-	tMethod := ccg methodNamed:
+	tMethod := self addStructMethodAndMethodCalledBy:
 		           #methodWithUnusedConstantInIfNotNilIfNilNoSendInReceiver.
 
 	sLDeadCodeElimination currentMethod: tMethod.
@@ -2867,9 +2736,7 @@ SLDeadCodeEliminationTest >> testMethodWithUnusedConstantInIfNotNilIfNilNoSendIn
 static void
 methodWithUnusedConstantInIfNotNilIfNilNoSendInReceiver(SLDeadCodeEliminationTestClass * self_in_methodWithUnusedConstantInIfNotNilIfNilNoSendInReceiver)
 {
-	{
-		return;
-	}
+	return;
 }'
 ]
 
@@ -2877,7 +2744,7 @@ methodWithUnusedConstantInIfNotNilIfNilNoSendInReceiver(SLDeadCodeEliminationTes
 SLDeadCodeEliminationTest >> testMethodWithUnusedConstantInIfNotNilIfNilSendInReceiver [
 
 	| translation tMethod |
-	tMethod := ccg methodNamed:
+	tMethod := self addStructMethodAndMethodCalledBy:
 		           #methodWithUnusedConstantInIfNotNilIfNilSendInReceiver.
 
 	sLDeadCodeElimination currentMethod: tMethod.
@@ -2893,12 +2760,8 @@ SLDeadCodeEliminationTest >> testMethodWithUnusedConstantInIfNotNilIfNilSendInRe
 static void
 methodWithUnusedConstantInIfNotNilIfNilSendInReceiver(SLDeadCodeEliminationTestClass * self_in_methodWithUnusedConstantInIfNotNilIfNilSendInReceiver)
 {
-	{
-		method(self_in_methodWithUnusedConstantInIfNotNilIfNilSendInReceiver, method(self_in_methodWithUnusedConstantInIfNotNilIfNilSendInReceiver));
-	}
-	{
-		return;
-	}
+	method(self_in_methodWithUnusedConstantInIfNotNilIfNilSendInReceiver, method(self_in_methodWithUnusedConstantInIfNotNilIfNilSendInReceiver));
+	return;
 }'
 ]
 
@@ -2906,7 +2769,7 @@ methodWithUnusedConstantInIfNotNilIfNilSendInReceiver(SLDeadCodeEliminationTestC
 SLDeadCodeEliminationTest >> testMethodWithUnusedConstantInIfNotNilNoSendInReceiver [
 
 	| translation tMethod |
-	tMethod := ccg methodNamed:
+	tMethod := self addStructMethodAndMethodCalledBy:
 		           #methodWithUnusedConstantInIfNotNilNoSendInReceiver.
 
 	sLDeadCodeElimination currentMethod: tMethod.
@@ -2922,9 +2785,7 @@ SLDeadCodeEliminationTest >> testMethodWithUnusedConstantInIfNotNilNoSendInRecei
 static void
 methodWithUnusedConstantInIfNotNilNoSendInReceiver(SLDeadCodeEliminationTestClass * self_in_methodWithUnusedConstantInIfNotNilNoSendInReceiver)
 {
-	{
-		return;
-	}
+	return;
 }'
 ]
 
@@ -2932,7 +2793,7 @@ methodWithUnusedConstantInIfNotNilNoSendInReceiver(SLDeadCodeEliminationTestClas
 SLDeadCodeEliminationTest >> testMethodWithUnusedConstantInIfNotNilSendInReceiver [
 
 	| translation tMethod |
-	tMethod := ccg methodNamed:
+	tMethod := self addStructMethodAndMethodCalledBy:
 		           #methodWithUnusedConstantInIfNotNilSendInReceiver.
 
 	sLDeadCodeElimination currentMethod: tMethod.
@@ -2948,12 +2809,8 @@ SLDeadCodeEliminationTest >> testMethodWithUnusedConstantInIfNotNilSendInReceive
 static void
 methodWithUnusedConstantInIfNotNilSendInReceiver(SLDeadCodeEliminationTestClass * self_in_methodWithUnusedConstantInIfNotNilSendInReceiver)
 {
-	{
-		method(self_in_methodWithUnusedConstantInIfNotNilSendInReceiver, method(self_in_methodWithUnusedConstantInIfNotNilSendInReceiver));
-	}
-	{
-		return;
-	}
+	method(self_in_methodWithUnusedConstantInIfNotNilSendInReceiver, method(self_in_methodWithUnusedConstantInIfNotNilSendInReceiver));
+	return;
 }'
 ]
 
@@ -2961,7 +2818,7 @@ methodWithUnusedConstantInIfNotNilSendInReceiver(SLDeadCodeEliminationTestClass 
 SLDeadCodeEliminationTest >> testMethodWithUnusedConstantInIfTrueIfFalseNoSendInReceiver [
 
 	| translation tMethod |
-	tMethod := ccg methodNamed:
+	tMethod := self addStructMethodAndMethodCalledBy:
 		           #methodWithUnusedConstantInIfTrueIfFalseNoSendInReceiver.
 
 	sLDeadCodeElimination currentMethod: tMethod.
@@ -2977,9 +2834,7 @@ SLDeadCodeEliminationTest >> testMethodWithUnusedConstantInIfTrueIfFalseNoSendIn
 static void
 methodWithUnusedConstantInIfTrueIfFalseNoSendInReceiver(SLDeadCodeEliminationTestClass * self_in_methodWithUnusedConstantInIfTrueIfFalseNoSendInReceiver)
 {
-	{
-		return;
-	}
+	return;
 }'
 ]
 
@@ -2987,7 +2842,7 @@ methodWithUnusedConstantInIfTrueIfFalseNoSendInReceiver(SLDeadCodeEliminationTes
 SLDeadCodeEliminationTest >> testMethodWithUnusedConstantInIfTrueIfFalseSendInReceiver [
 
 	| translation tMethod |
-	tMethod := ccg methodNamed:
+	tMethod := self addStructMethodAndMethodCalledBy:
 		           #methodWithUnusedConstantInIfTrueIfFalseSendInReceiver.
 
 	sLDeadCodeElimination currentMethod: tMethod.
@@ -3003,14 +2858,10 @@ SLDeadCodeEliminationTest >> testMethodWithUnusedConstantInIfTrueIfFalseSendInRe
 static void
 methodWithUnusedConstantInIfTrueIfFalseSendInReceiver(SLDeadCodeEliminationTestClass * self_in_methodWithUnusedConstantInIfTrueIfFalseSendInReceiver)
 {
-	{
-		method(self_in_methodWithUnusedConstantInIfTrueIfFalseSendInReceiver);
-		method(self_in_methodWithUnusedConstantInIfTrueIfFalseSendInReceiver, 3);
-		method(self_in_methodWithUnusedConstantInIfTrueIfFalseSendInReceiver, method(self_in_methodWithUnusedConstantInIfTrueIfFalseSendInReceiver));
-	}
-	{
-		return;
-	}
+	method(self_in_methodWithUnusedConstantInIfTrueIfFalseSendInReceiver);
+	method(self_in_methodWithUnusedConstantInIfTrueIfFalseSendInReceiver, 3);
+	method(self_in_methodWithUnusedConstantInIfTrueIfFalseSendInReceiver, method(self_in_methodWithUnusedConstantInIfTrueIfFalseSendInReceiver));
+	return;
 }'
 ]
 
@@ -3018,7 +2869,7 @@ methodWithUnusedConstantInIfTrueIfFalseSendInReceiver(SLDeadCodeEliminationTestC
 SLDeadCodeEliminationTest >> testMethodWithUnusedConstantInIfTrueNoSendInReceiver [
 
 	| translation tMethod |
-	tMethod := ccg methodNamed:
+	tMethod := self addStructMethodAndMethodCalledBy:
 		           #methodWithUnusedConstantInIfTrueNoSendInReceiver.
 
 	sLDeadCodeElimination currentMethod: tMethod.
@@ -3034,9 +2885,7 @@ SLDeadCodeEliminationTest >> testMethodWithUnusedConstantInIfTrueNoSendInReceive
 static void
 methodWithUnusedConstantInIfTrueNoSendInReceiver(SLDeadCodeEliminationTestClass * self_in_methodWithUnusedConstantInIfTrueNoSendInReceiver)
 {
-	{
-		return;
-	}
+	return;
 }'
 ]
 
@@ -3044,7 +2893,7 @@ methodWithUnusedConstantInIfTrueNoSendInReceiver(SLDeadCodeEliminationTestClass 
 SLDeadCodeEliminationTest >> testMethodWithUnusedConstantInIfTrueSendInReceiver [
 
 	| translation tMethod |
-	tMethod := ccg methodNamed:
+	tMethod := self addStructMethodAndMethodCalledBy:
 		           #methodWithUnusedConstantInIfTrueSendInReceiver.
 
 	sLDeadCodeElimination currentMethod: tMethod.
@@ -3060,14 +2909,10 @@ SLDeadCodeEliminationTest >> testMethodWithUnusedConstantInIfTrueSendInReceiver 
 static void
 methodWithUnusedConstantInIfTrueSendInReceiver(SLDeadCodeEliminationTestClass * self_in_methodWithUnusedConstantInIfTrueSendInReceiver)
 {
-	{
-		method(self_in_methodWithUnusedConstantInIfTrueSendInReceiver);
-		method(self_in_methodWithUnusedConstantInIfTrueSendInReceiver, 3);
-		method(self_in_methodWithUnusedConstantInIfTrueSendInReceiver, method(self_in_methodWithUnusedConstantInIfTrueSendInReceiver));
-	}
-	{
-		return;
-	}
+	method(self_in_methodWithUnusedConstantInIfTrueSendInReceiver);
+	method(self_in_methodWithUnusedConstantInIfTrueSendInReceiver, 3);
+	method(self_in_methodWithUnusedConstantInIfTrueSendInReceiver, method(self_in_methodWithUnusedConstantInIfTrueSendInReceiver));
+	return;
 }'
 ]
 
@@ -3076,7 +2921,7 @@ SLDeadCodeEliminationTest >> testMethodWithUnusedConstantReturnInCaseOfAndUnused
 	"we need to use prepareMethodIn to build switch node"
 
 	| translation tMethod |
-	tMethod := ccg methodNamed:
+	tMethod := self addStructMethodAndMethodCalledBy:
 		           #methodWithUnusedConstantReturnInCaseOfAndUnusedConstantInOtherwiseNoSendInExpression:.
 	tMethod prepareMethodIn: ccg.
 
@@ -3116,7 +2961,7 @@ SLDeadCodeEliminationTest >> testMethodWithUnusedConstantReturnInCaseOfAndUnused
 	"we need to use prepareMethodIn to build switch node"
 
 	| translation tMethod |
-	tMethod := ccg methodNamed:
+	tMethod := self addStructMethodAndMethodCalledBy:
 		           #methodWithUnusedConstantReturnInCaseOfAndUnusedConstantInOtherwiseSendInExpression.
 	tMethod prepareMethodIn: ccg.
 
@@ -3154,7 +2999,7 @@ methodWithUnusedConstantReturnInCaseOfAndUnusedConstantInOtherwiseSendInExpressi
 SLDeadCodeEliminationTest >> testMethodWithUnusedInstanceVariable [
 
 	| translation tMethod |
-	tMethod := ccg methodNamed: #methodWithUnusedInstanceVariable.
+	tMethod := self addStructMethodAndMethodCalledBy: #methodWithUnusedInstanceVariable.
 
 	sLDeadCodeElimination currentMethod: tMethod.
 	sLDeadCodeElimination removeDeadCodeInCurrentMethod.
@@ -3169,9 +3014,7 @@ SLDeadCodeEliminationTest >> testMethodWithUnusedInstanceVariable [
 static void
 methodWithUnusedInstanceVariable(SLDeadCodeEliminationTestClass * self_in_methodWithUnusedInstanceVariable)
 {
-	{
-		return;
-	}
+	return;
 }'
 ]
 
@@ -3180,7 +3023,7 @@ SLDeadCodeEliminationTest >> testMethodWithUnusedInstanceVariableAndReturnInCase
 	"we need to use prepareMethodIn to build switch node"
 
 	| translation tMethod |
-	tMethod := ccg methodNamed:
+	tMethod := self addStructMethodAndMethodCalledBy:
 		           #methodWithUnusedInstanceVariableAndReturnInCaseOfNoSendInExpression:.
 	tMethod prepareMethodIn: ccg.
 
@@ -3218,7 +3061,7 @@ SLDeadCodeEliminationTest >> testMethodWithUnusedInstanceVariableAndReturnInCase
 	"we need to use prepareMethodIn to build switch node"
 
 	| translation tMethod |
-	tMethod := ccg methodNamed:
+	tMethod := self addStructMethodAndMethodCalledBy:
 		           #methodWithUnusedInstanceVariableAndReturnInCaseOfSendInExpression.
 	tMethod prepareMethodIn: ccg.
 
@@ -3256,7 +3099,7 @@ SLDeadCodeEliminationTest >> testMethodWithUnusedInstanceVariableInCaseOfAndRetu
 	"we need to use prepareMethodIn to build switch node"
 
 	| translation tMethod |
-	tMethod := ccg methodNamed:
+	tMethod := self addStructMethodAndMethodCalledBy:
 		           #methodWithUnusedInstanceVariableInCaseOfAndReturnInOtherwiseNoSendInExpression:.
 	tMethod prepareMethodIn: ccg.
 
@@ -3293,7 +3136,7 @@ SLDeadCodeEliminationTest >> testMethodWithUnusedInstanceVariableInCaseOfAndRetu
 	"we need to use prepareMethodIn to build switch node"
 
 	| translation tMethod |
-	tMethod := ccg methodNamed:
+	tMethod := self addStructMethodAndMethodCalledBy:
 		           #methodWithUnusedInstanceVariableInCaseOfAndReturnInOtherwiseSendInExpression.
 	tMethod prepareMethodIn: ccg.
 
@@ -3330,7 +3173,7 @@ SLDeadCodeEliminationTest >> testMethodWithUnusedInstanceVariableInCaseOfAndUnus
 	"we need to use prepareMethodIn to build switch node, the cases and the otherwise have unused instance variable, they are all suppressed"
 
 	| translation tMethod |
-	tMethod := ccg methodNamed:
+	tMethod := self addStructMethodAndMethodCalledBy:
 		           #methodWithUnusedInstanceVariableInCaseOfAndUnusedInstanceVariableInOtherwiseNoSendInExpression:.
 	tMethod prepareMethodIn: ccg.
 
@@ -3356,7 +3199,7 @@ SLDeadCodeEliminationTest >> testMethodWithUnusedInstanceVariableInCaseOfAndUnus
 	"we need to use prepareMethodIn to build switch node, the cases and the otherwise all have unused instance variable, the node is suppressed but the message call is kept"
 
 	| translation tMethod |
-	tMethod := ccg methodNamed:
+	tMethod := self addStructMethodAndMethodCalledBy:
 		           #methodWithUnusedInstanceVariableInCaseOfAndUnusedInstanceVariableInOtherwiseSendInExpression.
 	tMethod prepareMethodIn: ccg.
 
@@ -3373,9 +3216,7 @@ SLDeadCodeEliminationTest >> testMethodWithUnusedInstanceVariableInCaseOfAndUnus
 static sqInt
 methodWithUnusedInstanceVariableInCaseOfAndUnusedInstanceVariableInOtherwiseSendInExpression(SLDeadCodeEliminationTestClass * self_in_methodWithUnusedInstanceVariableInCaseOfAndUnusedInstanceVariableInOtherwiseSendInExpression)
 {
-	{
-		method(self_in_methodWithUnusedInstanceVariableInCaseOfAndUnusedInstanceVariableInOtherwiseSendInExpression, 3);
-	}
+	method(self_in_methodWithUnusedInstanceVariableInCaseOfAndUnusedInstanceVariableInOtherwiseSendInExpression, 3);
 	return 0;
 }'
 ]
@@ -3385,7 +3226,7 @@ SLDeadCodeEliminationTest >> testMethodWithUnusedInstanceVariableInCaseOfNoSendI
 	"we need to use prepareMethodIn to build switch node"
 
 	| translation tMethod |
-	tMethod := ccg methodNamed:
+	tMethod := self addStructMethodAndMethodCalledBy:
 		           #methodWithUnusedInstanceVariableInCaseOfNoSendInExpression:.
 	tMethod prepareMethodIn: ccg.
 
@@ -3410,9 +3251,7 @@ methodWithUnusedInstanceVariableInCaseOfNoSendInExpression(SLDeadCodeElimination
 		default:
 		error("Case not found and no otherwise clause");
 	}
-	{
-		return;
-	}
+	return;
 }'
 ]
 
@@ -3421,7 +3260,7 @@ SLDeadCodeEliminationTest >> testMethodWithUnusedInstanceVariableInCaseOfSendInE
 	"we need to use prepareMethodIn to build switch node"
 
 	| translation tMethod |
-	tMethod := ccg methodNamed:
+	tMethod := self addStructMethodAndMethodCalledBy:
 		           #methodWithUnusedInstanceVariableInCaseOfSendInExpression.
 	tMethod prepareMethodIn: ccg.
 
@@ -3447,9 +3286,7 @@ methodWithUnusedInstanceVariableInCaseOfSendInExpression(SLDeadCodeEliminationTe
 		default:
 		error("Case not found and no otherwise clause");
 	}
-	{
-		return;
-	}
+	return;
 }'
 ]
 
@@ -3457,7 +3294,7 @@ methodWithUnusedInstanceVariableInCaseOfSendInExpression(SLDeadCodeEliminationTe
 SLDeadCodeEliminationTest >> testMethodWithUnusedInstanceVariableInCoerce [
 
 	| translation tMethod |
-	tMethod := ccg methodNamed: #methodWithUnusedInstanceVariableInCoerce.
+	tMethod := self addStructMethodAndMethodCalledBy: #methodWithUnusedInstanceVariableInCoerce.
 
 	sLDeadCodeElimination currentMethod: tMethod.
 	sLDeadCodeElimination removeDeadCodeInCurrentMethod.
@@ -3472,9 +3309,7 @@ SLDeadCodeEliminationTest >> testMethodWithUnusedInstanceVariableInCoerce [
 static void
 methodWithUnusedInstanceVariableInCoerce(SLDeadCodeEliminationTestClass * self_in_methodWithUnusedInstanceVariableInCoerce)
 {
-	{
-		return;
-	}
+	return;
 }'
 ]
 
@@ -3482,7 +3317,7 @@ methodWithUnusedInstanceVariableInCoerce(SLDeadCodeEliminationTestClass * self_i
 SLDeadCodeEliminationTest >> testMethodWithUnusedInstanceVariableInIfFalseIfTrueNoSendInReceiver [
 
 	| translation tMethod |
-	tMethod := ccg methodNamed:
+	tMethod := self addStructMethodAndMethodCalledBy:
 		           #methodWithUnusedInstanceVariableInIfFalseIfTrueNoSendInReceiver.
 
 	sLDeadCodeElimination currentMethod: tMethod.
@@ -3498,9 +3333,7 @@ SLDeadCodeEliminationTest >> testMethodWithUnusedInstanceVariableInIfFalseIfTrue
 static void
 methodWithUnusedInstanceVariableInIfFalseIfTrueNoSendInReceiver(SLDeadCodeEliminationTestClass * self_in_methodWithUnusedInstanceVariableInIfFalseIfTrueNoSendInReceiver)
 {
-	{
-		return;
-	}
+	return;
 }'
 ]
 
@@ -3508,7 +3341,7 @@ methodWithUnusedInstanceVariableInIfFalseIfTrueNoSendInReceiver(SLDeadCodeElimin
 SLDeadCodeEliminationTest >> testMethodWithUnusedInstanceVariableInIfFalseIfTrueSendInReceiver [
 
 	| translation tMethod |
-	tMethod := ccg methodNamed:
+	tMethod := self addStructMethodAndMethodCalledBy:
 		           #methodWithUnusedInstanceVariableInIfFalseIfTrueSendInReceiver.
 
 	sLDeadCodeElimination currentMethod: tMethod.
@@ -3524,14 +3357,10 @@ SLDeadCodeEliminationTest >> testMethodWithUnusedInstanceVariableInIfFalseIfTrue
 static void
 methodWithUnusedInstanceVariableInIfFalseIfTrueSendInReceiver(SLDeadCodeEliminationTestClass * self_in_methodWithUnusedInstanceVariableInIfFalseIfTrueSendInReceiver)
 {
-	{
-		method(self_in_methodWithUnusedInstanceVariableInIfFalseIfTrueSendInReceiver);
-		method(self_in_methodWithUnusedInstanceVariableInIfFalseIfTrueSendInReceiver, 3);
-		method(self_in_methodWithUnusedInstanceVariableInIfFalseIfTrueSendInReceiver, method(self_in_methodWithUnusedInstanceVariableInIfFalseIfTrueSendInReceiver));
-	}
-	{
-		return;
-	}
+	method(self_in_methodWithUnusedInstanceVariableInIfFalseIfTrueSendInReceiver);
+	method(self_in_methodWithUnusedInstanceVariableInIfFalseIfTrueSendInReceiver, 3);
+	method(self_in_methodWithUnusedInstanceVariableInIfFalseIfTrueSendInReceiver, method(self_in_methodWithUnusedInstanceVariableInIfFalseIfTrueSendInReceiver));
+	return;
 }'
 ]
 
@@ -3539,7 +3368,7 @@ methodWithUnusedInstanceVariableInIfFalseIfTrueSendInReceiver(SLDeadCodeEliminat
 SLDeadCodeEliminationTest >> testMethodWithUnusedInstanceVariableInIfFalseNoSendInReceiver [
 
 	| translation tMethod |
-	tMethod := ccg methodNamed:
+	tMethod := self addStructMethodAndMethodCalledBy:
 		           #methodWithUnusedInstanceVariableInIfFalseNoSendInReceiver.
 
 	sLDeadCodeElimination currentMethod: tMethod.
@@ -3555,9 +3384,7 @@ SLDeadCodeEliminationTest >> testMethodWithUnusedInstanceVariableInIfFalseNoSend
 static void
 methodWithUnusedInstanceVariableInIfFalseNoSendInReceiver(SLDeadCodeEliminationTestClass * self_in_methodWithUnusedInstanceVariableInIfFalseNoSendInReceiver)
 {
-	{
-		return;
-	}
+	return;
 }'
 ]
 
@@ -3565,7 +3392,7 @@ methodWithUnusedInstanceVariableInIfFalseNoSendInReceiver(SLDeadCodeEliminationT
 SLDeadCodeEliminationTest >> testMethodWithUnusedInstanceVariableInIfFalseSendInReceiver [
 
 	| translation tMethod |
-	tMethod := ccg methodNamed:
+	tMethod := self addStructMethodAndMethodCalledBy:
 		           #methodWithUnusedInstanceVariableInIfFalseSendInReceiver.
 
 	sLDeadCodeElimination currentMethod: tMethod.
@@ -3581,14 +3408,10 @@ SLDeadCodeEliminationTest >> testMethodWithUnusedInstanceVariableInIfFalseSendIn
 static void
 methodWithUnusedInstanceVariableInIfFalseSendInReceiver(SLDeadCodeEliminationTestClass * self_in_methodWithUnusedInstanceVariableInIfFalseSendInReceiver)
 {
-	{
-		method(self_in_methodWithUnusedInstanceVariableInIfFalseSendInReceiver);
-		method(self_in_methodWithUnusedInstanceVariableInIfFalseSendInReceiver, 3);
-		method(self_in_methodWithUnusedInstanceVariableInIfFalseSendInReceiver, method(self_in_methodWithUnusedInstanceVariableInIfFalseSendInReceiver));
-	}
-	{
-		return;
-	}
+	method(self_in_methodWithUnusedInstanceVariableInIfFalseSendInReceiver);
+	method(self_in_methodWithUnusedInstanceVariableInIfFalseSendInReceiver, 3);
+	method(self_in_methodWithUnusedInstanceVariableInIfFalseSendInReceiver, method(self_in_methodWithUnusedInstanceVariableInIfFalseSendInReceiver));
+	return;
 }'
 ]
 
@@ -3596,7 +3419,7 @@ methodWithUnusedInstanceVariableInIfFalseSendInReceiver(SLDeadCodeEliminationTes
 SLDeadCodeEliminationTest >> testMethodWithUnusedInstanceVariableInIfNilIfNotNilNoSendInReceiver [
 
 	| translation tMethod |
-	tMethod := ccg methodNamed:
+	tMethod := self addStructMethodAndMethodCalledBy:
 		           #methodWithUnusedInstanceVariableInIfNilIfNotNilNoSendInReceiver.
 
 	sLDeadCodeElimination currentMethod: tMethod.
@@ -3612,9 +3435,7 @@ SLDeadCodeEliminationTest >> testMethodWithUnusedInstanceVariableInIfNilIfNotNil
 static void
 methodWithUnusedInstanceVariableInIfNilIfNotNilNoSendInReceiver(SLDeadCodeEliminationTestClass * self_in_methodWithUnusedInstanceVariableInIfNilIfNotNilNoSendInReceiver)
 {
-	{
-		return;
-	}
+	return;
 }'
 ]
 
@@ -3622,7 +3443,7 @@ methodWithUnusedInstanceVariableInIfNilIfNotNilNoSendInReceiver(SLDeadCodeElimin
 SLDeadCodeEliminationTest >> testMethodWithUnusedInstanceVariableInIfNilIfNotNilSendInReceiver [
 
 	| translation tMethod |
-	tMethod := ccg methodNamed:
+	tMethod := self addStructMethodAndMethodCalledBy:
 		           #methodWithUnusedInstanceVariableInIfNilIfNotNilSendInReceiver.
 	
 	sLDeadCodeElimination currentMethod: tMethod.
@@ -3638,12 +3459,8 @@ SLDeadCodeEliminationTest >> testMethodWithUnusedInstanceVariableInIfNilIfNotNil
 static void
 methodWithUnusedInstanceVariableInIfNilIfNotNilSendInReceiver(SLDeadCodeEliminationTestClass * self_in_methodWithUnusedInstanceVariableInIfNilIfNotNilSendInReceiver)
 {
-	{
-		method(self_in_methodWithUnusedInstanceVariableInIfNilIfNotNilSendInReceiver, method(self_in_methodWithUnusedInstanceVariableInIfNilIfNotNilSendInReceiver));
-	}
-	{
-		return;
-	}
+	method(self_in_methodWithUnusedInstanceVariableInIfNilIfNotNilSendInReceiver, method(self_in_methodWithUnusedInstanceVariableInIfNilIfNotNilSendInReceiver));
+	return;
 }'
 ]
 
@@ -3651,7 +3468,7 @@ methodWithUnusedInstanceVariableInIfNilIfNotNilSendInReceiver(SLDeadCodeEliminat
 SLDeadCodeEliminationTest >> testMethodWithUnusedInstanceVariableInIfNilNoSendInReceiver [
 
 	| translation tMethod |
-	tMethod := ccg methodNamed:
+	tMethod := self addStructMethodAndMethodCalledBy:
 		           #methodWithUnusedInstanceVariableInIfNilNoSendInReceiver.
 
 	sLDeadCodeElimination currentMethod: tMethod.
@@ -3667,9 +3484,7 @@ SLDeadCodeEliminationTest >> testMethodWithUnusedInstanceVariableInIfNilNoSendIn
 static void
 methodWithUnusedInstanceVariableInIfNilNoSendInReceiver(SLDeadCodeEliminationTestClass * self_in_methodWithUnusedInstanceVariableInIfNilNoSendInReceiver)
 {
-	{
-		return;
-	}
+	return;
 }'
 ]
 
@@ -3677,7 +3492,7 @@ methodWithUnusedInstanceVariableInIfNilNoSendInReceiver(SLDeadCodeEliminationTes
 SLDeadCodeEliminationTest >> testMethodWithUnusedInstanceVariableInIfNilSendInReceiver [
 
 	| translation tMethod |
-	tMethod := ccg methodNamed:
+	tMethod := self addStructMethodAndMethodCalledBy:
 		           #methodWithUnusedInstanceVariableInIfNilSendInReceiver.
 
 	sLDeadCodeElimination currentMethod: tMethod.
@@ -3693,12 +3508,8 @@ SLDeadCodeEliminationTest >> testMethodWithUnusedInstanceVariableInIfNilSendInRe
 static void
 methodWithUnusedInstanceVariableInIfNilSendInReceiver(SLDeadCodeEliminationTestClass * self_in_methodWithUnusedInstanceVariableInIfNilSendInReceiver)
 {
-	{
-		method(self_in_methodWithUnusedInstanceVariableInIfNilSendInReceiver, method(self_in_methodWithUnusedInstanceVariableInIfNilSendInReceiver));
-	}
-	{
-		return;
-	}
+	method(self_in_methodWithUnusedInstanceVariableInIfNilSendInReceiver, method(self_in_methodWithUnusedInstanceVariableInIfNilSendInReceiver));
+	return;
 }'
 ]
 
@@ -3706,7 +3517,7 @@ methodWithUnusedInstanceVariableInIfNilSendInReceiver(SLDeadCodeEliminationTestC
 SLDeadCodeEliminationTest >> testMethodWithUnusedInstanceVariableInIfNotNilIfNilNoSendInReceiver [
 
 	| translation tMethod |
-	tMethod := ccg methodNamed:
+	tMethod := self addStructMethodAndMethodCalledBy:
 		           #methodWithUnusedInstanceVariableInIfNotNilIfNilNoSendInReceiver.
 
 	sLDeadCodeElimination currentMethod: tMethod.
@@ -3722,9 +3533,7 @@ SLDeadCodeEliminationTest >> testMethodWithUnusedInstanceVariableInIfNotNilIfNil
 static void
 methodWithUnusedInstanceVariableInIfNotNilIfNilNoSendInReceiver(SLDeadCodeEliminationTestClass * self_in_methodWithUnusedInstanceVariableInIfNotNilIfNilNoSendInReceiver)
 {
-	{
-		return;
-	}
+	return;
 }'
 ]
 
@@ -3732,7 +3541,7 @@ methodWithUnusedInstanceVariableInIfNotNilIfNilNoSendInReceiver(SLDeadCodeElimin
 SLDeadCodeEliminationTest >> testMethodWithUnusedInstanceVariableInIfNotNilIfNilSendInReceiver [
 
 	| translation tMethod |
-	tMethod := ccg methodNamed:
+	tMethod := self addStructMethodAndMethodCalledBy:
 		           #methodWithUnusedInstanceVariableInIfNotNilIfNilSendInReceiver.
 
 	sLDeadCodeElimination currentMethod: tMethod.
@@ -3748,12 +3557,8 @@ SLDeadCodeEliminationTest >> testMethodWithUnusedInstanceVariableInIfNotNilIfNil
 static void
 methodWithUnusedInstanceVariableInIfNotNilIfNilSendInReceiver(SLDeadCodeEliminationTestClass * self_in_methodWithUnusedInstanceVariableInIfNotNilIfNilSendInReceiver)
 {
-	{
-		method(self_in_methodWithUnusedInstanceVariableInIfNotNilIfNilSendInReceiver, method(self_in_methodWithUnusedInstanceVariableInIfNotNilIfNilSendInReceiver));
-	}
-	{
-		return;
-	}
+	method(self_in_methodWithUnusedInstanceVariableInIfNotNilIfNilSendInReceiver, method(self_in_methodWithUnusedInstanceVariableInIfNotNilIfNilSendInReceiver));
+	return;
 }'
 ]
 
@@ -3761,7 +3566,7 @@ methodWithUnusedInstanceVariableInIfNotNilIfNilSendInReceiver(SLDeadCodeEliminat
 SLDeadCodeEliminationTest >> testMethodWithUnusedInstanceVariableInIfNotNilNoSendInReceiver [
 
 	| translation tMethod |
-	tMethod := ccg methodNamed:
+	tMethod := self addStructMethodAndMethodCalledBy:
 		           #methodWithUnusedInstanceVariableInIfNotNilNoSendInReceiver.
 
 	sLDeadCodeElimination currentMethod: tMethod.
@@ -3777,9 +3582,7 @@ SLDeadCodeEliminationTest >> testMethodWithUnusedInstanceVariableInIfNotNilNoSen
 static void
 methodWithUnusedInstanceVariableInIfNotNilNoSendInReceiver(SLDeadCodeEliminationTestClass * self_in_methodWithUnusedInstanceVariableInIfNotNilNoSendInReceiver)
 {
-	{
-		return;
-	}
+	return;
 }'
 ]
 
@@ -3787,7 +3590,7 @@ methodWithUnusedInstanceVariableInIfNotNilNoSendInReceiver(SLDeadCodeElimination
 SLDeadCodeEliminationTest >> testMethodWithUnusedInstanceVariableInIfNotNilSendInReceiver [
 
 	| translation tMethod |
-	tMethod := ccg methodNamed:
+	tMethod := self addStructMethodAndMethodCalledBy:
 		           #methodWithUnusedInstanceVariableInIfNotNilSendInReceiver.
 
 	sLDeadCodeElimination currentMethod: tMethod.
@@ -3802,12 +3605,8 @@ SLDeadCodeEliminationTest >> testMethodWithUnusedInstanceVariableInIfNotNilSendI
 static void
 methodWithUnusedInstanceVariableInIfNotNilSendInReceiver(SLDeadCodeEliminationTestClass * self_in_methodWithUnusedInstanceVariableInIfNotNilSendInReceiver)
 {
-	{
-		method(self_in_methodWithUnusedInstanceVariableInIfNotNilSendInReceiver, method(self_in_methodWithUnusedInstanceVariableInIfNotNilSendInReceiver));
-	}
-	{
-		return;
-	}
+	method(self_in_methodWithUnusedInstanceVariableInIfNotNilSendInReceiver, method(self_in_methodWithUnusedInstanceVariableInIfNotNilSendInReceiver));
+	return;
 }'
 ]
 
@@ -3815,7 +3614,7 @@ methodWithUnusedInstanceVariableInIfNotNilSendInReceiver(SLDeadCodeEliminationTe
 SLDeadCodeEliminationTest >> testMethodWithUnusedInstanceVariableInIfTrueIfFalseNoSendInReceiver [
 
 	| translation tMethod |
-	tMethod := ccg methodNamed:
+	tMethod := self addStructMethodAndMethodCalledBy:
 		           #methodWithUnusedInstanceVariableInIfTrueIfFalseNoSendInReceiver.
 
 	sLDeadCodeElimination currentMethod: tMethod.
@@ -3831,9 +3630,7 @@ SLDeadCodeEliminationTest >> testMethodWithUnusedInstanceVariableInIfTrueIfFalse
 static void
 methodWithUnusedInstanceVariableInIfTrueIfFalseNoSendInReceiver(SLDeadCodeEliminationTestClass * self_in_methodWithUnusedInstanceVariableInIfTrueIfFalseNoSendInReceiver)
 {
-	{
-		return;
-	}
+	return;
 }'
 ]
 
@@ -3841,7 +3638,7 @@ methodWithUnusedInstanceVariableInIfTrueIfFalseNoSendInReceiver(SLDeadCodeElimin
 SLDeadCodeEliminationTest >> testMethodWithUnusedInstanceVariableInIfTrueIfFalseSendInReceiver [
 
 	| translation tMethod |
-	tMethod := ccg methodNamed:
+	tMethod := self addStructMethodAndMethodCalledBy:
 		           #methodWithUnusedInstanceVariableInIfTrueIfFalseSendInReceiver.
 
 	sLDeadCodeElimination currentMethod: tMethod.
@@ -3857,14 +3654,10 @@ SLDeadCodeEliminationTest >> testMethodWithUnusedInstanceVariableInIfTrueIfFalse
 static void
 methodWithUnusedInstanceVariableInIfTrueIfFalseSendInReceiver(SLDeadCodeEliminationTestClass * self_in_methodWithUnusedInstanceVariableInIfTrueIfFalseSendInReceiver)
 {
-	{
-		method(self_in_methodWithUnusedInstanceVariableInIfTrueIfFalseSendInReceiver);
-		method(self_in_methodWithUnusedInstanceVariableInIfTrueIfFalseSendInReceiver, 3);
-		method(self_in_methodWithUnusedInstanceVariableInIfTrueIfFalseSendInReceiver, method(self_in_methodWithUnusedInstanceVariableInIfTrueIfFalseSendInReceiver));
-	}
-	{
-		return;
-	}
+	method(self_in_methodWithUnusedInstanceVariableInIfTrueIfFalseSendInReceiver);
+	method(self_in_methodWithUnusedInstanceVariableInIfTrueIfFalseSendInReceiver, 3);
+	method(self_in_methodWithUnusedInstanceVariableInIfTrueIfFalseSendInReceiver, method(self_in_methodWithUnusedInstanceVariableInIfTrueIfFalseSendInReceiver));
+	return;
 }'
 ]
 
@@ -3872,7 +3665,7 @@ methodWithUnusedInstanceVariableInIfTrueIfFalseSendInReceiver(SLDeadCodeEliminat
 SLDeadCodeEliminationTest >> testMethodWithUnusedInstanceVariableInIfTrueNoSendInReceiver [
 
 	| translation tMethod |
-	tMethod := ccg methodNamed:
+	tMethod := self addStructMethodAndMethodCalledBy:
 		           #methodWithUnusedInstanceVariableInIfTrueNoSendInReceiver.
 
 	sLDeadCodeElimination currentMethod: tMethod.
@@ -3888,9 +3681,7 @@ SLDeadCodeEliminationTest >> testMethodWithUnusedInstanceVariableInIfTrueNoSendI
 static void
 methodWithUnusedInstanceVariableInIfTrueNoSendInReceiver(SLDeadCodeEliminationTestClass * self_in_methodWithUnusedInstanceVariableInIfTrueNoSendInReceiver)
 {
-	{
-		return;
-	}
+	return;
 }'
 ]
 
@@ -3898,7 +3689,7 @@ methodWithUnusedInstanceVariableInIfTrueNoSendInReceiver(SLDeadCodeEliminationTe
 SLDeadCodeEliminationTest >> testMethodWithUnusedInstanceVariableInIfTrueSendInReceiver [
 
 	| translation tMethod |
-	tMethod := ccg methodNamed:
+	tMethod := self addStructMethodAndMethodCalledBy:
 		           #methodWithUnusedInstanceVariableInIfTrueSendInReceiver.
 
 	sLDeadCodeElimination currentMethod: tMethod.
@@ -3914,14 +3705,10 @@ SLDeadCodeEliminationTest >> testMethodWithUnusedInstanceVariableInIfTrueSendInR
 static void
 methodWithUnusedInstanceVariableInIfTrueSendInReceiver(SLDeadCodeEliminationTestClass * self_in_methodWithUnusedInstanceVariableInIfTrueSendInReceiver)
 {
-	{
-		method(self_in_methodWithUnusedInstanceVariableInIfTrueSendInReceiver);
-		method(self_in_methodWithUnusedInstanceVariableInIfTrueSendInReceiver, 3);
-		method(self_in_methodWithUnusedInstanceVariableInIfTrueSendInReceiver, method(self_in_methodWithUnusedInstanceVariableInIfTrueSendInReceiver));
-	}
-	{
-		return;
-	}
+	method(self_in_methodWithUnusedInstanceVariableInIfTrueSendInReceiver);
+	method(self_in_methodWithUnusedInstanceVariableInIfTrueSendInReceiver, 3);
+	method(self_in_methodWithUnusedInstanceVariableInIfTrueSendInReceiver, method(self_in_methodWithUnusedInstanceVariableInIfTrueSendInReceiver));
+	return;
 }'
 ]
 
@@ -3930,7 +3717,7 @@ SLDeadCodeEliminationTest >> testMethodWithUnusedInstanceVariableReturnInCaseOfA
 	"we need to use prepareMethodIn to build switch node"
 
 	| translation tMethod |
-	tMethod := ccg methodNamed:
+	tMethod := self addStructMethodAndMethodCalledBy:
 		           #methodWithUnusedInstanceVariableReturnInCaseOfAndUnusedInstanceVariableInOtherwiseNoSendInExpression:.
 	tMethod prepareMethodIn: ccg.
 
@@ -3954,18 +3741,13 @@ methodWithUnusedInstanceVariableReturnInCaseOfAndUnusedInstanceVariableInOtherwi
 		break;
 		case 6:
 		{
-			{
-				return;
-			}
+			return;
 		}
-		break;
 		default:
 		{
 		}
 	}
-	{
-		return;
-	}
+	return;
 }'
 ]
 
@@ -3974,7 +3756,7 @@ SLDeadCodeEliminationTest >> testMethodWithUnusedInstanceVariableReturnInCaseOfA
 	"we need to use prepareMethodIn to build switch node"
 
 	| translation tMethod |
-	tMethod := ccg methodNamed:
+	tMethod := self addStructMethodAndMethodCalledBy:
 		           #methodWithUnusedInstanceVariableReturnInCaseOfAndUnusedInstanceVariableInOtherwiseSendInExpression.
 	tMethod prepareMethodIn: ccg.
 
@@ -3998,18 +3780,13 @@ methodWithUnusedInstanceVariableReturnInCaseOfAndUnusedInstanceVariableInOtherwi
 		break;
 		case 6:
 		{
-			{
-				return;
-			}
+			return;
 		}
-		break;
 		default:
 		{
 		}
 	}
-	{
-		return;
-	}
+	return;
 }'
 ]
 
@@ -4017,7 +3794,7 @@ methodWithUnusedInstanceVariableReturnInCaseOfAndUnusedInstanceVariableInOtherwi
 SLDeadCodeEliminationTest >> testMethodWithUnusedVariable [
 
 	| translation tMethod |
-	tMethod := ccg methodNamed: #methodWithUnusedVariable.
+	tMethod := self addStructMethodAndMethodCalledBy: #methodWithUnusedVariable.
 
 	sLDeadCodeElimination currentMethod: tMethod.
 	sLDeadCodeElimination removeDeadCodeInCurrentMethod.
@@ -4033,9 +3810,7 @@ SLDeadCodeEliminationTest >> testMethodWithUnusedVariable [
 static void
 methodWithUnusedVariable(SLDeadCodeEliminationTestClass * self_in_methodWithUnusedVariable)
 {
-	{
-		return;
-	}
+	return;
 }'
 ]
 
@@ -4044,7 +3819,7 @@ SLDeadCodeEliminationTest >> testMethodWithUnusedVariableAndReturnInCaseOfNoSend
 	"we need to use prepareMethodIn to build switch node"
 
 	| translation tMethod |
-	tMethod := ccg methodNamed:
+	tMethod := self addStructMethodAndMethodCalledBy:
 		           #methodWithUnusedVariableAndReturnInCaseOfNoSendInExpression:.
 	tMethod prepareMethodIn: ccg.
 
@@ -4086,7 +3861,7 @@ SLDeadCodeEliminationTest >> testMethodWithUnusedVariableAndReturnInCaseOfSendIn
 	"we need to use prepareMethodIn to build switch node"
 
 	| translation tMethod |
-	tMethod := ccg methodNamed:
+	tMethod := self addStructMethodAndMethodCalledBy:
 		           #methodWithUnusedVariableAndReturnInCaseOfSendInExpression.
 	tMethod prepareMethodIn: ccg.
 
@@ -4127,7 +3902,7 @@ SLDeadCodeEliminationTest >> testMethodWithUnusedVariableInCaseOfAndReturnInOthe
 	"we need to use prepareMethodIn to build switch node"
 
 	| translation tMethod |
-	tMethod := ccg methodNamed:
+	tMethod := self addStructMethodAndMethodCalledBy:
 		           #methodWithUnusedVariableInCaseOfAndReturnInOtherwiseNoSendInExpression:.
 	tMethod prepareMethodIn: ccg.
 
@@ -4167,7 +3942,7 @@ SLDeadCodeEliminationTest >> testMethodWithUnusedVariableInCaseOfAndReturnInOthe
 	"we need to use prepareMethodIn to build switch node"
 
 	| translation tMethod |
-	tMethod := ccg methodNamed:
+	tMethod := self addStructMethodAndMethodCalledBy:
 		           #methodWithUnusedVariableInCaseOfAndReturnInOtherwiseSendInExpression.
 	tMethod prepareMethodIn: ccg.
 
@@ -4207,7 +3982,7 @@ SLDeadCodeEliminationTest >> testMethodWithUnusedVariableInCaseOfAndUnusedVariab
 	"we need to use prepareMethodIn to build switch node, the case and the otherwise all have unused variable, the node is suppressed"
 
 	| translation tMethod |
-	tMethod := ccg methodNamed:
+	tMethod := self addStructMethodAndMethodCalledBy:
 		           #methodWithUnusedVariableInCaseOfAndUnusedVariableInOtherwiseNoSendInExpression:.
 	tMethod prepareMethodIn: ccg.
 
@@ -4224,9 +3999,7 @@ SLDeadCodeEliminationTest >> testMethodWithUnusedVariableInCaseOfAndUnusedVariab
 static void
 methodWithUnusedVariableInCaseOfAndUnusedVariableInOtherwiseNoSendInExpression(SLDeadCodeEliminationTestClass * self_in_methodWithUnusedVariableInCaseOfAndUnusedVariableInOtherwiseNoSendInExpression, sqInt anInt)
 {
-	{
-		return;
-	}
+	return;
 }'
 ]
 
@@ -4235,7 +4008,7 @@ SLDeadCodeEliminationTest >> testMethodWithUnusedVariableInCaseOfAndUnusedVariab
 	"we need to use prepareMethodIn to build switch node, the cases and the otherwise all have unused variable, the node is suppressed but the message call is kept"
 
 	| translation tMethod |
-	tMethod := ccg methodNamed:
+	tMethod := self addStructMethodAndMethodCalledBy:
 		           #methodWithUnusedVariableInCaseOfAndUnusedVariableInOtherwiseSendInExpression.
 	tMethod prepareMethodIn: ccg.
 
@@ -4252,12 +4025,8 @@ SLDeadCodeEliminationTest >> testMethodWithUnusedVariableInCaseOfAndUnusedVariab
 static void
 methodWithUnusedVariableInCaseOfAndUnusedVariableInOtherwiseSendInExpression(SLDeadCodeEliminationTestClass * self_in_methodWithUnusedVariableInCaseOfAndUnusedVariableInOtherwiseSendInExpression)
 {
-	{
-		method(self_in_methodWithUnusedVariableInCaseOfAndUnusedVariableInOtherwiseSendInExpression, 3);
-	}
-	{
-		return;
-	}
+	method(self_in_methodWithUnusedVariableInCaseOfAndUnusedVariableInOtherwiseSendInExpression, 3);
+	return;
 }'
 ]
 
@@ -4266,7 +4035,7 @@ SLDeadCodeEliminationTest >> testMethodWithUnusedVariableInCaseOfNoSendInExpress
 	"we need to use prepareMethodIn to build switch node"
 
 	| translation tMethod |
-	tMethod := ccg methodNamed:
+	tMethod := self addStructMethodAndMethodCalledBy:
 		           #methodWithUnusedVariableInCaseOfNoSendInExpression:.
 	tMethod prepareMethodIn: ccg.
 
@@ -4292,9 +4061,7 @@ methodWithUnusedVariableInCaseOfNoSendInExpression(SLDeadCodeEliminationTestClas
 		default:
 		error("Case not found and no otherwise clause");
 	}
-	{
-		return;
-	}
+	return;
 }'
 ]
 
@@ -4303,7 +4070,7 @@ SLDeadCodeEliminationTest >> testMethodWithUnusedVariableInCaseOfSendInExpressio
 	"we need to use prepareMethodIn to build switch node"
 
 	| translation tMethod |
-	tMethod := ccg methodNamed:
+	tMethod := self addStructMethodAndMethodCalledBy:
 		           #methodWithUnusedVariableInCaseOfSendInExpression.
 	tMethod prepareMethodIn: ccg.
 
@@ -4328,9 +4095,7 @@ methodWithUnusedVariableInCaseOfSendInExpression(SLDeadCodeEliminationTestClass 
 		default:
 		error("Case not found and no otherwise clause");
 	}
-	{
-		return;
-	}
+	return;
 }'
 ]
 
@@ -4338,7 +4103,7 @@ methodWithUnusedVariableInCaseOfSendInExpression(SLDeadCodeEliminationTestClass 
 SLDeadCodeEliminationTest >> testMethodWithUnusedVariableInCoerce [
 
 	| translation tMethod |
-	tMethod := ccg methodNamed: #methodWithUnusedVariableInCoerce.
+	tMethod := self addStructMethodAndMethodCalledBy: #methodWithUnusedVariableInCoerce.
 
 	sLDeadCodeElimination currentMethod: tMethod.
 	sLDeadCodeElimination removeDeadCodeInCurrentMethod.
@@ -4353,9 +4118,7 @@ SLDeadCodeEliminationTest >> testMethodWithUnusedVariableInCoerce [
 static void
 methodWithUnusedVariableInCoerce(SLDeadCodeEliminationTestClass * self_in_methodWithUnusedVariableInCoerce)
 {
-	{
-		return;
-	}
+	return;
 }'
 ]
 
@@ -4363,7 +4126,7 @@ methodWithUnusedVariableInCoerce(SLDeadCodeEliminationTestClass * self_in_method
 SLDeadCodeEliminationTest >> testMethodWithUnusedVariableInIfFalseIfTrueNoSendInReceiver [
 
 	| translation tMethod |
-	tMethod := ccg methodNamed:
+	tMethod := self addStructMethodAndMethodCalledBy:
 		           #methodWithUnusedVariableInIfFalseIfTrueNoSendInReceiver.
 
 	sLDeadCodeElimination currentMethod: tMethod.
@@ -4379,9 +4142,7 @@ SLDeadCodeEliminationTest >> testMethodWithUnusedVariableInIfFalseIfTrueNoSendIn
 static void
 methodWithUnusedVariableInIfFalseIfTrueNoSendInReceiver(SLDeadCodeEliminationTestClass * self_in_methodWithUnusedVariableInIfFalseIfTrueNoSendInReceiver)
 {
-	{
-		return;
-	}
+	return;
 }'
 ]
 
@@ -4389,7 +4150,7 @@ methodWithUnusedVariableInIfFalseIfTrueNoSendInReceiver(SLDeadCodeEliminationTes
 SLDeadCodeEliminationTest >> testMethodWithUnusedVariableInIfFalseIfTrueSendInReceiver [
 
 	| translation tMethod |
-	tMethod := ccg methodNamed:
+	tMethod := self addStructMethodAndMethodCalledBy:
 		           #methodWithUnusedVariableInIfFalseIfTrueSendInReceiver.
 
 	sLDeadCodeElimination currentMethod: tMethod.
@@ -4405,14 +4166,10 @@ SLDeadCodeEliminationTest >> testMethodWithUnusedVariableInIfFalseIfTrueSendInRe
 static void
 methodWithUnusedVariableInIfFalseIfTrueSendInReceiver(SLDeadCodeEliminationTestClass * self_in_methodWithUnusedVariableInIfFalseIfTrueSendInReceiver)
 {
-	{
-		method(self_in_methodWithUnusedVariableInIfFalseIfTrueSendInReceiver);
-		method(self_in_methodWithUnusedVariableInIfFalseIfTrueSendInReceiver, 3);
-		method(self_in_methodWithUnusedVariableInIfFalseIfTrueSendInReceiver, method(self_in_methodWithUnusedVariableInIfFalseIfTrueSendInReceiver));
-	}
-	{
-		return;
-	}
+	method(self_in_methodWithUnusedVariableInIfFalseIfTrueSendInReceiver);
+	method(self_in_methodWithUnusedVariableInIfFalseIfTrueSendInReceiver, 3);
+	method(self_in_methodWithUnusedVariableInIfFalseIfTrueSendInReceiver, method(self_in_methodWithUnusedVariableInIfFalseIfTrueSendInReceiver));
+	return;
 }'
 ]
 
@@ -4420,7 +4177,7 @@ methodWithUnusedVariableInIfFalseIfTrueSendInReceiver(SLDeadCodeEliminationTestC
 SLDeadCodeEliminationTest >> testMethodWithUnusedVariableInIfFalseNoSendInReceiver [
 
 	| translation tMethod |
-	tMethod := ccg methodNamed:
+	tMethod := self addStructMethodAndMethodCalledBy:
 		           #methodWithUnusedVariableInIfFalseNoSendInReceiver.
 		
 	sLDeadCodeElimination currentMethod: tMethod.
@@ -4436,9 +4193,7 @@ SLDeadCodeEliminationTest >> testMethodWithUnusedVariableInIfFalseNoSendInReceiv
 static void
 methodWithUnusedVariableInIfFalseNoSendInReceiver(SLDeadCodeEliminationTestClass * self_in_methodWithUnusedVariableInIfFalseNoSendInReceiver)
 {
-	{
-		return;
-	}
+	return;
 }'
 ]
 
@@ -4446,7 +4201,7 @@ methodWithUnusedVariableInIfFalseNoSendInReceiver(SLDeadCodeEliminationTestClass
 SLDeadCodeEliminationTest >> testMethodWithUnusedVariableInIfFalseSendInReceiver [
 
 	| translation tMethod |
-	tMethod := ccg methodNamed:
+	tMethod := self addStructMethodAndMethodCalledBy:
 		           #methodWithUnusedVariableInIfFalseSendInReceiver.
 
 	sLDeadCodeElimination currentMethod: tMethod.
@@ -4462,14 +4217,10 @@ SLDeadCodeEliminationTest >> testMethodWithUnusedVariableInIfFalseSendInReceiver
 static void
 methodWithUnusedVariableInIfFalseSendInReceiver(SLDeadCodeEliminationTestClass * self_in_methodWithUnusedVariableInIfFalseSendInReceiver)
 {
-	{
-		method(self_in_methodWithUnusedVariableInIfFalseSendInReceiver);
-		method(self_in_methodWithUnusedVariableInIfFalseSendInReceiver, 3);
-		method(self_in_methodWithUnusedVariableInIfFalseSendInReceiver, method(self_in_methodWithUnusedVariableInIfFalseSendInReceiver));
-	}
-	{
-		return;
-	}
+	method(self_in_methodWithUnusedVariableInIfFalseSendInReceiver);
+	method(self_in_methodWithUnusedVariableInIfFalseSendInReceiver, 3);
+	method(self_in_methodWithUnusedVariableInIfFalseSendInReceiver, method(self_in_methodWithUnusedVariableInIfFalseSendInReceiver));
+	return;
 }'
 ]
 
@@ -4478,7 +4229,7 @@ SLDeadCodeEliminationTest >> testMethodWithUnusedVariableInIfNilIfNotNilNoSendIn
 	"in case of variable, the definition is still here after the supression process, we need to use removeUnusedTempsAndNilIfRequiredIn: to clean the ast"
 
 	| translation tMethod |
-	tMethod := ccg methodNamed:
+	tMethod := self addStructMethodAndMethodCalledBy:
 		           #methodWithUnusedVariableInIfNilIfNotNilNoSendInReceiver.
 
 	sLDeadCodeElimination currentMethod: tMethod.
@@ -4494,9 +4245,7 @@ SLDeadCodeEliminationTest >> testMethodWithUnusedVariableInIfNilIfNotNilNoSendIn
 static void
 methodWithUnusedVariableInIfNilIfNotNilNoSendInReceiver(SLDeadCodeEliminationTestClass * self_in_methodWithUnusedVariableInIfNilIfNotNilNoSendInReceiver)
 {
-	{
-		return;
-	}
+	return;
 }'
 ]
 
@@ -4504,7 +4253,7 @@ methodWithUnusedVariableInIfNilIfNotNilNoSendInReceiver(SLDeadCodeEliminationTes
 SLDeadCodeEliminationTest >> testMethodWithUnusedVariableInIfNilIfNotNilSendInReceiver [
 
 	| translation tMethod |
-	tMethod := ccg methodNamed:
+	tMethod := self addStructMethodAndMethodCalledBy:
 		           #methodWithUnusedVariableInIfNilIfNotNilSendInReceiver.
 
 	sLDeadCodeElimination currentMethod: tMethod.
@@ -4520,12 +4269,8 @@ SLDeadCodeEliminationTest >> testMethodWithUnusedVariableInIfNilIfNotNilSendInRe
 static void
 methodWithUnusedVariableInIfNilIfNotNilSendInReceiver(SLDeadCodeEliminationTestClass * self_in_methodWithUnusedVariableInIfNilIfNotNilSendInReceiver)
 {
-	{
-		method(self_in_methodWithUnusedVariableInIfNilIfNotNilSendInReceiver, method(self_in_methodWithUnusedVariableInIfNilIfNotNilSendInReceiver));
-	}
-	{
-		return;
-	}
+	method(self_in_methodWithUnusedVariableInIfNilIfNotNilSendInReceiver, method(self_in_methodWithUnusedVariableInIfNilIfNotNilSendInReceiver));
+	return;
 }'
 ]
 
@@ -4533,7 +4278,7 @@ methodWithUnusedVariableInIfNilIfNotNilSendInReceiver(SLDeadCodeEliminationTestC
 SLDeadCodeEliminationTest >> testMethodWithUnusedVariableInIfNilNoSendInReceiver [
 
 	| translation tMethod |
-	tMethod := ccg methodNamed:
+	tMethod := self addStructMethodAndMethodCalledBy:
 		           #methodWithUnusedVariableInIfNilNoSendInReceiver.
 
 	sLDeadCodeElimination currentMethod: tMethod.
@@ -4549,9 +4294,7 @@ SLDeadCodeEliminationTest >> testMethodWithUnusedVariableInIfNilNoSendInReceiver
 static void
 methodWithUnusedVariableInIfNilNoSendInReceiver(SLDeadCodeEliminationTestClass * self_in_methodWithUnusedVariableInIfNilNoSendInReceiver)
 {
-	{
-		return;
-	}
+	return;
 }'
 ]
 
@@ -4559,7 +4302,7 @@ methodWithUnusedVariableInIfNilNoSendInReceiver(SLDeadCodeEliminationTestClass *
 SLDeadCodeEliminationTest >> testMethodWithUnusedVariableInIfNilSendInReceiver [
 
 	| translation tMethod |
-	tMethod := ccg methodNamed:
+	tMethod := self addStructMethodAndMethodCalledBy:
 		           #methodWithUnusedVariableInIfNilSendInReceiver.
 
 	sLDeadCodeElimination currentMethod: tMethod.
@@ -4575,12 +4318,8 @@ SLDeadCodeEliminationTest >> testMethodWithUnusedVariableInIfNilSendInReceiver [
 static void
 methodWithUnusedVariableInIfNilSendInReceiver(SLDeadCodeEliminationTestClass * self_in_methodWithUnusedVariableInIfNilSendInReceiver)
 {
-	{
-		method(self_in_methodWithUnusedVariableInIfNilSendInReceiver, method(self_in_methodWithUnusedVariableInIfNilSendInReceiver));
-	}
-	{
-		return;
-	}
+	method(self_in_methodWithUnusedVariableInIfNilSendInReceiver, method(self_in_methodWithUnusedVariableInIfNilSendInReceiver));
+	return;
 }'
 ]
 
@@ -4588,7 +4327,7 @@ methodWithUnusedVariableInIfNilSendInReceiver(SLDeadCodeEliminationTestClass * s
 SLDeadCodeEliminationTest >> testMethodWithUnusedVariableInIfNotNilIfNilNoSendInReceiver [
 
 	| translation tMethod |
-	tMethod := ccg methodNamed:
+	tMethod := self addStructMethodAndMethodCalledBy:
 		           #methodWithUnusedVariableInIfNotNilIfNilNoSendInReceiver.
 
 	sLDeadCodeElimination currentMethod: tMethod.
@@ -4604,9 +4343,7 @@ SLDeadCodeEliminationTest >> testMethodWithUnusedVariableInIfNotNilIfNilNoSendIn
 static void
 methodWithUnusedVariableInIfNotNilIfNilNoSendInReceiver(SLDeadCodeEliminationTestClass * self_in_methodWithUnusedVariableInIfNotNilIfNilNoSendInReceiver)
 {
-	{
-		return;
-	}
+	return;
 }'
 ]
 
@@ -4614,7 +4351,7 @@ methodWithUnusedVariableInIfNotNilIfNilNoSendInReceiver(SLDeadCodeEliminationTes
 SLDeadCodeEliminationTest >> testMethodWithUnusedVariableInIfNotNilIfNilSendInReceiver [
 
 	| translation tMethod |
-	tMethod := ccg methodNamed:
+	tMethod := self addStructMethodAndMethodCalledBy:
 		           #methodWithUnusedVariableInIfNotNilIfNilSendInReceiver.
 
 	sLDeadCodeElimination currentMethod: tMethod.
@@ -4630,12 +4367,8 @@ SLDeadCodeEliminationTest >> testMethodWithUnusedVariableInIfNotNilIfNilSendInRe
 static void
 methodWithUnusedVariableInIfNotNilIfNilSendInReceiver(SLDeadCodeEliminationTestClass * self_in_methodWithUnusedVariableInIfNotNilIfNilSendInReceiver)
 {
-	{
-		method(self_in_methodWithUnusedVariableInIfNotNilIfNilSendInReceiver, method(self_in_methodWithUnusedVariableInIfNotNilIfNilSendInReceiver));
-	}
-	{
-		return;
-	}
+	method(self_in_methodWithUnusedVariableInIfNotNilIfNilSendInReceiver, method(self_in_methodWithUnusedVariableInIfNotNilIfNilSendInReceiver));
+	return;
 }'
 ]
 
@@ -4643,7 +4376,7 @@ methodWithUnusedVariableInIfNotNilIfNilSendInReceiver(SLDeadCodeEliminationTestC
 SLDeadCodeEliminationTest >> testMethodWithUnusedVariableInIfNotNilNoSendInReceiver [
 
 	| translation tMethod |
-	tMethod := ccg methodNamed:
+	tMethod := self addStructMethodAndMethodCalledBy:
 		           #methodWithUnusedVariableInIfNotNilNoSendInReceiver.
 
 	sLDeadCodeElimination currentMethod: tMethod.
@@ -4659,9 +4392,7 @@ SLDeadCodeEliminationTest >> testMethodWithUnusedVariableInIfNotNilNoSendInRecei
 static void
 methodWithUnusedVariableInIfNotNilNoSendInReceiver(SLDeadCodeEliminationTestClass * self_in_methodWithUnusedVariableInIfNotNilNoSendInReceiver)
 {
-	{
-		return;
-	}
+	return;
 }'
 ]
 
@@ -4669,7 +4400,7 @@ methodWithUnusedVariableInIfNotNilNoSendInReceiver(SLDeadCodeEliminationTestClas
 SLDeadCodeEliminationTest >> testMethodWithUnusedVariableInIfNotNilSendInReceiver [
 
 	| translation tMethod |
-	tMethod := ccg methodNamed:
+	tMethod := self addStructMethodAndMethodCalledBy:
 		           #methodWithUnusedVariableInIfNotNilSendInReceiver.
 
 	sLDeadCodeElimination currentMethod: tMethod.
@@ -4685,12 +4416,8 @@ SLDeadCodeEliminationTest >> testMethodWithUnusedVariableInIfNotNilSendInReceive
 static void
 methodWithUnusedVariableInIfNotNilSendInReceiver(SLDeadCodeEliminationTestClass * self_in_methodWithUnusedVariableInIfNotNilSendInReceiver)
 {
-	{
-		method(self_in_methodWithUnusedVariableInIfNotNilSendInReceiver, method(self_in_methodWithUnusedVariableInIfNotNilSendInReceiver));
-	}
-	{
-		return;
-	}
+	method(self_in_methodWithUnusedVariableInIfNotNilSendInReceiver, method(self_in_methodWithUnusedVariableInIfNotNilSendInReceiver));
+	return;
 }'
 ]
 
@@ -4698,7 +4425,7 @@ methodWithUnusedVariableInIfNotNilSendInReceiver(SLDeadCodeEliminationTestClass 
 SLDeadCodeEliminationTest >> testMethodWithUnusedVariableInIfTrueIfFalseNoSendInReceiver [
 
 	| translation tMethod |
-	tMethod := ccg methodNamed:
+	tMethod := self addStructMethodAndMethodCalledBy:
 		           #methodWithUnusedVariableInIfTrueIfFalseNoSendInReceiver.
 
 	sLDeadCodeElimination currentMethod: tMethod.
@@ -4714,9 +4441,7 @@ SLDeadCodeEliminationTest >> testMethodWithUnusedVariableInIfTrueIfFalseNoSendIn
 static void
 methodWithUnusedVariableInIfTrueIfFalseNoSendInReceiver(SLDeadCodeEliminationTestClass * self_in_methodWithUnusedVariableInIfTrueIfFalseNoSendInReceiver)
 {
-	{
-		return;
-	}
+	return;
 }'
 ]
 
@@ -4724,7 +4449,7 @@ methodWithUnusedVariableInIfTrueIfFalseNoSendInReceiver(SLDeadCodeEliminationTes
 SLDeadCodeEliminationTest >> testMethodWithUnusedVariableInIfTrueIfFalseSendInReceiver [
 
 	| translation tMethod |
-	tMethod := ccg methodNamed:
+	tMethod := self addStructMethodAndMethodCalledBy:
 		           #methodWithUnusedVariableInIfTrueIfFalseSendInReceiver.
 
 	sLDeadCodeElimination currentMethod: tMethod.
@@ -4740,14 +4465,10 @@ SLDeadCodeEliminationTest >> testMethodWithUnusedVariableInIfTrueIfFalseSendInRe
 static void
 methodWithUnusedVariableInIfTrueIfFalseSendInReceiver(SLDeadCodeEliminationTestClass * self_in_methodWithUnusedVariableInIfTrueIfFalseSendInReceiver)
 {
-	{
-		method(self_in_methodWithUnusedVariableInIfTrueIfFalseSendInReceiver);
-		method(self_in_methodWithUnusedVariableInIfTrueIfFalseSendInReceiver, 3);
-		method(self_in_methodWithUnusedVariableInIfTrueIfFalseSendInReceiver, method(self_in_methodWithUnusedVariableInIfTrueIfFalseSendInReceiver));
-	}
-	{
-		return;
-	}
+	method(self_in_methodWithUnusedVariableInIfTrueIfFalseSendInReceiver);
+	method(self_in_methodWithUnusedVariableInIfTrueIfFalseSendInReceiver, 3);
+	method(self_in_methodWithUnusedVariableInIfTrueIfFalseSendInReceiver, method(self_in_methodWithUnusedVariableInIfTrueIfFalseSendInReceiver));
+	return;
 }'
 ]
 
@@ -4755,7 +4476,7 @@ methodWithUnusedVariableInIfTrueIfFalseSendInReceiver(SLDeadCodeEliminationTestC
 SLDeadCodeEliminationTest >> testMethodWithUnusedVariableInIfTrueNoSendInReceiver [
 
 	| translation tMethod |
-	tMethod := ccg methodNamed:
+	tMethod := self addStructMethodAndMethodCalledBy:
 		           #methodWithUnusedVariableInIfTrueNoSendInReceiver.
 
 	sLDeadCodeElimination currentMethod: tMethod.
@@ -4771,9 +4492,7 @@ SLDeadCodeEliminationTest >> testMethodWithUnusedVariableInIfTrueNoSendInReceive
 static void
 methodWithUnusedVariableInIfTrueNoSendInReceiver(SLDeadCodeEliminationTestClass * self_in_methodWithUnusedVariableInIfTrueNoSendInReceiver)
 {
-	{
-		return;
-	}
+	return;
 }'
 ]
 
@@ -4781,7 +4500,7 @@ methodWithUnusedVariableInIfTrueNoSendInReceiver(SLDeadCodeEliminationTestClass 
 SLDeadCodeEliminationTest >> testMethodWithUnusedVariableInIfTrueSendInReceiver [
 
 	| translation tMethod |
-	tMethod := ccg methodNamed:
+	tMethod := self addStructMethodAndMethodCalledBy:
 		           #methodWithUnusedVariableInIfTrueSendInReceiver.
 
 	sLDeadCodeElimination currentMethod: tMethod.
@@ -4797,14 +4516,10 @@ SLDeadCodeEliminationTest >> testMethodWithUnusedVariableInIfTrueSendInReceiver 
 static void
 methodWithUnusedVariableInIfTrueSendInReceiver(SLDeadCodeEliminationTestClass * self_in_methodWithUnusedVariableInIfTrueSendInReceiver)
 {
-	{
-		method(self_in_methodWithUnusedVariableInIfTrueSendInReceiver);
-		method(self_in_methodWithUnusedVariableInIfTrueSendInReceiver, 3);
-		method(self_in_methodWithUnusedVariableInIfTrueSendInReceiver, method(self_in_methodWithUnusedVariableInIfTrueSendInReceiver));
-	}
-	{
-		return;
-	}
+	method(self_in_methodWithUnusedVariableInIfTrueSendInReceiver);
+	method(self_in_methodWithUnusedVariableInIfTrueSendInReceiver, 3);
+	method(self_in_methodWithUnusedVariableInIfTrueSendInReceiver, method(self_in_methodWithUnusedVariableInIfTrueSendInReceiver));
+	return;
 }'
 ]
 
@@ -4812,7 +4527,7 @@ methodWithUnusedVariableInIfTrueSendInReceiver(SLDeadCodeEliminationTestClass * 
 SLDeadCodeEliminationTest >> testMethodWithUnusedVariableReturnInCaseOfAndUnusedVariableInOtherwiseNoSendInExpression [
 
 	| translation tMethod |
-	tMethod := ccg methodNamed:
+	tMethod := self addStructMethodAndMethodCalledBy:
 		           #methodWithUnusedVariableReturnInCaseOfAndUnusedVariableInOtherwiseNoSendInExpression:.
 	tMethod prepareMethodIn: ccg.
 
@@ -4852,7 +4567,7 @@ methodWithUnusedVariableReturnInCaseOfAndUnusedVariableInOtherwiseNoSendInExpres
 SLDeadCodeEliminationTest >> testMethodWithUnusedVariableReturnInCaseOfAndUnusedVariableInOtherwiseSendInExpression [
 
 	| translation tMethod |
-	tMethod := ccg methodNamed:
+	tMethod := self addStructMethodAndMethodCalledBy:
 		           #methodWithUnusedVariableReturnInCaseOfAndUnusedVariableInOtherwiseSendInExpression.
 	tMethod prepareMethodIn: ccg.
 
@@ -4893,7 +4608,7 @@ methodWithUnusedVariableReturnInCaseOfAndUnusedVariableInOtherwiseSendInExpressi
 SLDeadCodeEliminationTest >> testMethodWithUselessAssignment [
 
 	| translation tMethod |
-	tMethod := ccg methodNamed: #methodWithUselessAssignment.
+	tMethod := self addStructMethodAndMethodCalledBy: #methodWithUselessAssignment.
 	tMethod prepareMethodIn: ccg.
 
 	sLDeadCodeElimination currentMethod: tMethod.
@@ -4924,7 +4639,7 @@ methodWithUselessAssignment(SLDeadCodeEliminationTestClass * self_in_methodWithU
 SLDeadCodeEliminationTest >> testMethodWithUselessCodeInBinaryIterativeNoSendInLimit [
 
 	| translation tMethod |
-	tMethod := ccg methodNamed: #methodWithUselessCodeInBinaryIterativeNoSendInLimit.
+	tMethod := self addStructMethodAndMethodCalledBy: #methodWithUselessCodeInBinaryIterativeNoSendInLimit.
 	tMethod prepareMethodIn: ccg.
 	
 	sLDeadCodeElimination currentMethod: tMethod.
@@ -4957,7 +4672,7 @@ methodWithUselessCodeInBinaryIterativeNoSendInLimit(SLDeadCodeEliminationTestCla
 SLDeadCodeEliminationTest >> testMethodWithUselessCodeInBinaryIterativeSendWithNoSideEffectsInLimit [
 
 	| translation tMethod |
-	tMethod := ccg methodNamed:
+	tMethod := self addStructMethodAndMethodCalledBy:
 		           #methodWithUselessCodeInBinaryIterativeSendWithNoSideEffectsInLimit.
 	tMethod prepareMethodIn: ccg.
 
@@ -4989,7 +4704,7 @@ methodWithUselessCodeInBinaryIterativeSendWithNoSideEffectsInLimit(SLDeadCodeEli
 { #category : 'dead-code-in-do-iterative' }
 SLDeadCodeEliminationTest >> testMethodWithUselessCodeInBinaryIterativeSendWithSideEffectsInLimit [
 	| translation tMethod |
-	tMethod := ccg methodNamed:
+	tMethod := self addStructMethodAndMethodCalledBy:
 		           #methodWithUselessCodeInBinaryIterativeSendWithSideEffectsInLimit.
 	tMethod prepareMethodIn: ccg.
 
@@ -5023,7 +4738,7 @@ methodWithUselessCodeInBinaryIterativeSendWithSideEffectsInLimit(SLDeadCodeElimi
 SLDeadCodeEliminationTest >> testMethodWithUselessLocalsDefinitionsWithSameNameInSubBranches [
 
 	| translation tMethod |
-	tMethod := ccg methodNamed:
+	tMethod := self addStructMethodAndMethodCalledBy:
 		           #methodWithUselessLocalsDefinitionsWithSameNameInSubBranches.
 	tMethod prepareMethodIn: ccg.
 
@@ -5062,7 +4777,7 @@ methodWithUselessLocalsDefinitionsWithSameNameInSubBranches(SLDeadCodeEliminatio
 SLDeadCodeEliminationTest >> testMethodWithUselessLocalsInSubBranches [
 
 	| translation tMethod |
-	tMethod := ccg methodNamed: #methodWithUselessLocalsInSubBranches.
+	tMethod := self addStructMethodAndMethodCalledBy: #methodWithUselessLocalsInSubBranches.
 	tMethod prepareMethodIn: ccg.
 
 	sLDeadCodeElimination currentMethod: tMethod.
@@ -5097,7 +4812,7 @@ methodWithUselessLocalsInSubBranches(SLDeadCodeEliminationTestClass * self_in_me
 SLDeadCodeEliminationTest >> testMethodWithUselessLocalsWithSameNameInSubBranches [
 
 	| translation tMethod |
-	tMethod := ccg methodNamed:
+	tMethod := self addStructMethodAndMethodCalledBy:
 		           #methodWithUselessLocalsWithSameNameInSubBranches.
 	tMethod prepareMethodIn: ccg.
 
@@ -5139,7 +4854,7 @@ methodWithUselessLocalsWithSameNameInSubBranches(SLDeadCodeEliminationTestClass 
 SLDeadCodeEliminationTest >> testMethodWithVariableInAssignment [
 
 	| translation tMethod |
-	tMethod := ccg methodNamed: #methodWithVariableInAssignment.
+	tMethod := self addStructMethodAndMethodCalledBy: #methodWithVariableInAssignment.
 
 	sLDeadCodeElimination currentMethod: tMethod.
 	ccg currentMethod: tMethod.
@@ -5167,7 +4882,7 @@ methodWithVariableInAssignment(SLDeadCodeEliminationTestClass * self_in_methodWi
 SLDeadCodeEliminationTest >> testMethodWithVariableInReturn [
 
 	| translation tMethod |
-	tMethod := ccg methodNamed: #methodWithVariableInReturn.
+	tMethod := self addStructMethodAndMethodCalledBy: #methodWithVariableInReturn.
 
 	sLDeadCodeElimination currentMethod: tMethod.
 	ccg currentMethod: tMethod.
@@ -5195,10 +4910,10 @@ SLDeadCodeEliminationTest >> testSwitchWithOnlyCommentNoSendInReceiver [
 	"currently the only way to get comments in a methods is through inlining, having only comments is equivalent to being empty so it shouldn't change the behavior of the dead code elimination process"
 
 	| translation tMethod |
-	tMethod := ccg methodNamed: #switchWithOnlyCommentNoSendInReceiver:.
+	tMethod := self addStructMethodAndMethodCalledBy: #switchWithOnlyCommentNoSendInReceiver:.
 
 	ccg prepareMethods.
-	ccg doBasicInlining: true.
+	self doInliningIn: tMethod.
 
 	sLDeadCodeElimination currentMethod: tMethod.
 	ccg currentMethod: tMethod.
@@ -5214,9 +4929,7 @@ SLDeadCodeEliminationTest >> testSwitchWithOnlyCommentNoSendInReceiver [
 static void
 switchWithOnlyCommentNoSendInReceiver(SLDeadCodeEliminationTestClass * self_in_switchWithOnlyCommentNoSendInReceiver, sqInt _anInt)
 {
-	{
-		return;
-	}
+	return;
 }'
 ]
 
@@ -5225,10 +4938,10 @@ SLDeadCodeEliminationTest >> testSwitchWithOnlyCommentSendInReceiver [
 	"currently the only way to get comments in a methods is through inlining, having only comments is equivalent to being empty so it shouldn't change the behavior of the dead code elimination process"
 
 	| translation tMethod |
-	tMethod := ccg methodNamed: #switchWithOnlyCommentSendInReceiver.
+	tMethod := self addStructMethodAndMethodCalledBy: #switchWithOnlyCommentSendInReceiver.
 
 	ccg prepareMethods.
-	ccg doBasicInlining: true.
+	self doInliningIn: tMethod.
 
 	sLDeadCodeElimination currentMethod: tMethod.
 	sLDeadCodeElimination removeDeadCodeInCurrentMethod.
@@ -5243,11 +4956,7 @@ SLDeadCodeEliminationTest >> testSwitchWithOnlyCommentSendInReceiver [
 static void
 switchWithOnlyCommentSendInReceiver(SLDeadCodeEliminationTestClass * self_in_switchWithOnlyCommentSendInReceiver)
 {
-	{
-		method(self_in_switchWithOnlyCommentSendInReceiver, method(self_in_switchWithOnlyCommentSendInReceiver));
-	}
-	{
-		return;
-	}
+	method(self_in_switchWithOnlyCommentSendInReceiver, method(self_in_switchWithOnlyCommentSendInReceiver));
+	return;
 }'
 ]

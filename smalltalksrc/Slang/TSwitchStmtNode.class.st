@@ -521,6 +521,23 @@ TSwitchStmtNode >> renameLocalVariablesGivenClassVariables: classVariables globa
 ]
 
 { #category : 'transformations' }
+TSwitchStmtNode >> replaceChild: aNode with: aReplacementNode [
+
+	expression == aNode ifTrue: [ self expression: aReplacementNode ].
+	otherwiseOrNil == aNode ifTrue: [
+		self otherwiseOrNil: aReplacementNode ].
+	self cases: (cases collect: [ :case |
+			 {
+				 (case first collect: [ :label |
+					  label == aNode
+						  ifTrue: [ aReplacementNode ]
+						  ifFalse: [ label ] ]).
+				 (case second == aNode
+					  ifTrue: [ aReplacementNode ]
+					  ifFalse: [ case second ]) } ])
+]
+
+{ #category : 'transformations' }
 TSwitchStmtNode >> replaceNodesIn: aDictionary [
 
 	| aDictionaryAtSelf |

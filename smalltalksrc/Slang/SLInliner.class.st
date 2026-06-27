@@ -52,12 +52,6 @@ SLInliner >> codeGenerator [
 ]
 
 { #category : 'accessing' }
-SLInliner >> codeGenerator: aCodeGenerator [
-
-	codeGenerator := aCodeGenerator
-]
-
-{ #category : 'accessing' }
 SLInliner >> currentMethod [
 
 	^ currentMethod
@@ -73,7 +67,6 @@ SLInliner >> currentMethod: aTMethod [
 SLInliner >> doInliningIn: aTMethod [
 
 	self currentMethod: aTMethod.
-	self codeGenerator: codeGenerator.
 	^ self tryToInlineMethodsInCurrentMethod
 ]
 
@@ -467,10 +460,12 @@ SLInliner >> isInlineableConditional: aSendNode [
 
 { #category : 'inlining-decision' }
 SLInliner >> isInlineableFunctionCall: aNode [
-	"Answer if the given send node is a call to a 'functional' method--a method whose body is a single return statement of some expression and whose actual parameters can all be directly substituted."
+	"Answer if the given send node is a call to a 'functional' method--a method whose body is a single return statement of some expression and whose actual parameters can all be directly substituted.
+	if a method is marked as always inlined and complete, the method also returns true"
 
 	codeGenerator maybeBreakForTestToInline: aNode in: self.
 	aNode isSend ifFalse: [ ^ false ].
+
 	^ (codeGenerator methodNamed: aNode selector)
 		  ifNil: [
 			  aNode asTransformedConstantPerform
@@ -494,9 +489,11 @@ SLInliner >> isInlineableSend: aNode [
 	| m |
 	codeGenerator maybeBreakForTestToInline: aNode in: self.
 	aNode isSend ifFalse: [ ^ false ].
+
 	m := codeGenerator methodNamed: aNode selector. "nil if builtin or external function"
+
 	^ m isNotNil and: [
-		  m ~~ self and: [
+		  m ~~ currentMethod and: [
 			  m mayBeInlined and: [
 				  (m isComplete and: [ codeGenerator mayInline: m selector ]) or: [
 					  m checkForRequiredInlinability ] ] ] ]
@@ -789,6 +786,7 @@ SLInliner >> tryToInlineMethodsInCurrentMethod [
 	"marking a method complete is progress"
 	currentMethod isComplete ifFalse: [
 		self checkForCompletenessFor: currentMethod.
-		currentMethod isComplete ifTrue: [ didSomething := true ] ]. "marking a method complete is progress"
+		currentMethod isComplete ifTrue: [ didSomething := true ] ].
+	
 	^ didSomething
 ]

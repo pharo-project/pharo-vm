@@ -1639,8 +1639,8 @@ switchInReturn(void)
 		}
 		default:
 		error("Case not found and no otherwise clause");
-		return -1;
 	}
+	return 0;
 }'
 ]
 
