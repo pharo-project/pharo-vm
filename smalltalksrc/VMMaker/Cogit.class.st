@@ -3025,7 +3025,7 @@ Cogit >> addressIsInFixups: address [
 Cogit >> addressIsInInstructions: address [
 	<var: #address type: #'AbstractInstruction *'>
 	"Hardcode renaming to _address"
-	^self cCode: '!((usqInt)(_address) & BytesPerWord-1) \
+	^self cCode: '!((usqInt)(_address) & (BytesPerWord-1)) \
 				&& (_address) >= &abstractOpcodes[0] \
 				&& (_address) < &abstractOpcodes[opcodeIndex]'
 		inSmalltalk: [(abstractOpcodes object identityIndexOf: address) between: 1 and: opcodeIndex]
@@ -11514,7 +11514,7 @@ Cogit >> sizeOfTrampoline: address [
 	<var: #address type: #'char *'>
 	0 to: trampolineTableIndex - 3 by: 2 do: [ :i | 
 		address = (trampolineAddresses at: i + 1) ifTrue: [ 
-			[ i + 3 > NumTrampolines * 2 ] ifTrue: [ 
+			( i + 3 > (NumTrampolines * 2) ) ifTrue: [ 
 				^ self methodZoneBase - (trampolineAddresses at: i + 1) asInteger ].
 			^ (trampolineAddresses at: i + 3) asInteger - (trampolineAddresses at: i + 1) asInteger ] ].
 	^ 0

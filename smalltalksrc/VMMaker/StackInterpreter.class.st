@@ -6269,6 +6269,7 @@ StackInterpreter >> followForwardedFrameContents: theFP stackPointer: theSP [
 	<inline: false>
 	 | oop |
 	<var: #ptr type: #'char *'>
+	oop := 0 .
 	theSP
 		to: (self frameReceiverLocation: theFP)
 		by: objectMemory wordSize

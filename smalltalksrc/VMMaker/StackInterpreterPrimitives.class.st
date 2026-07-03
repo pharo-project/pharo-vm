@@ -2563,7 +2563,7 @@ StackInterpreterPrimitives >> primitiveSetGCSemaphore [
 StackInterpreterPrimitives >> primitiveSetVMParameter: index arg: argOop [
 	"See primitiveVMParameter method comment"
 	| arg result |
-
+	arg := 0.
 	"argOop read & checks; in most cases this is an integer parameter.  In some it is either an integer or a Float"
 	index 
 		caseOf: {  

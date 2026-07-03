@@ -2539,6 +2539,11 @@ StackToRegisterMappingCogit >> genSpecialSelectorArithmetic [
 	<var: #jumpContinue type: #'AbstractInstruction *'>
 	<var: #primDescriptor type: #'BytecodeDescriptor *'>
 	<var: #jumpNotSmallInts type: #'AbstractInstruction *'>
+	
+	result := 0.
+	rcvrInt := 0.
+	jumpContinue := nil.
+	
 	primDescriptor := self generatorAt: byte0.
 
 	argIsInt := ((argIsConst := self ssTop type = SSConstant)
@@ -2765,6 +2770,7 @@ StackToRegisterMappingCogit >> genStaticallyResolvedSpecialSelectorComparison [
 	"Assumes both operands are ints"
 	<var: #primDescriptor type: #'BytecodeDescriptor *'>
 	| rcvrInt argInt primDescriptor result |
+	result := 0 .
 	primDescriptor := self generatorAt: byte0.
 	argInt := self ssTop constant.
 	rcvrInt := (self ssValue: 1) constant.
@@ -4683,7 +4689,7 @@ StackToRegisterMappingCogit >> traceDescriptor: descriptor [
 
 { #category : 'simulation only' }
 StackToRegisterMappingCogit >> traceSpill: simStackEntry [
-	<cmacro: '(ign) 0'>
+	<cmacro: '(ign) (void)0'>
 	(compilationTrace anyMask: 8) ifTrue:
 		[coInterpreter transcript cr; print: bytecodePC; space; print: simStackEntry; flush]
 ]

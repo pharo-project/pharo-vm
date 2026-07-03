@@ -11081,6 +11081,7 @@ SpurMemoryManager >> printInvalidClassTableEntries [
 
 	self classTableEntriesDo:
 		[:classOrNil :index| | hash |
+		hash := 0.
 		 ((self isForwarded: classOrNil)
 		  or: [(hash := self rawHashBitsOf: classOrNil) = 0
 		  or: [(self noCheckClassAtIndex: hash) ~= classOrNil]]) ifTrue:

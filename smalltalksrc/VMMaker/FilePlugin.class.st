@@ -610,6 +610,7 @@ FilePlugin >> primitiveFileGetPosition [
 	<var: 'file' type: 'SQFile *'>
 	<var: 'position' type: 'fileOffset_t'>
 	<export: true>
+	position := 0.
 	file := self fileValueOf: (interpreterProxy stackValue: 0).
 	interpreterProxy failed ifFalse: [position := self sqFileGetPosition: file].
 	interpreterProxy failed ifFalse: [
@@ -734,6 +735,7 @@ FilePlugin >> primitiveFileSize [
 	<var: 'file' type: 'SQFile *'>
 	<var: 'size' type: 'fileOffset_t'>
 	<export: true>
+	size := 0.
 	file := self fileValueOf: (interpreterProxy stackValue: 0).
 	interpreterProxy failed ifFalse:[size := self sqFileSize: file].
 	interpreterProxy failed ifFalse: [
