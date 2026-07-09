@@ -217,6 +217,12 @@ aio_handle_events(struct kevent* changes, int numberOfChanges, long microSeconds
 					}
 				}else
 #endif
+				/*
+				 * When AIO_HAS_EVFILT_EXCEPT is 0 (e.g. FreeBSD) the EVFILT_EXCEPT
+				 * branch above is compiled out and this becomes a plain scoped
+				 * compound block, not an empty "{}": it still contains the
+				 * EVFILT_READ/EVFILT_WRITE dispatch below and always executes.
+				 */
 				{
 					if(incomingEvents[index].filter == EVFILT_READ){
 						if(descriptor->readHandlerFn)
