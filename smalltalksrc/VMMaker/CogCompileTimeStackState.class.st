@@ -118,7 +118,7 @@ CogCompileTimeStackState >> simStackPtr [
 { #category : 'accessing' }
 CogCompileTimeStackState >> simStackPtr: anObject [
 
-	simStackPtr := anObject
+	^ simStackPtr := anObject
 ]
 
 { #category : 'accessing' }

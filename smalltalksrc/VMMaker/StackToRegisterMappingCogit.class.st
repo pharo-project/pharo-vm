@@ -3892,7 +3892,7 @@ StackToRegisterMappingCogit >> scanMethod [
 		- what are the targets of any backward branches"
 	| latestContinuation nExts descriptor pc distance targetPC framelessStackDelta seenInstVarStore |
 	<var: #descriptor type: #'BytecodeDescriptor *'>
-	needsFrame := compileTimeState useTwoPaths: (seenInstVarStore := false).
+	compileTimeState useTwoPaths: (needsFrame := seenInstVarStore := false).
 	self maybeInitNumFixups.
 	self maybeInitNumCounters.
 	compileTimeState prevBCDescriptor: nil.
