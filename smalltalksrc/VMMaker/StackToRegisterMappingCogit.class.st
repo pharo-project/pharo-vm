@@ -3975,7 +3975,7 @@ StackToRegisterMappingCogit >> setInterpreter: aCoInterpreter [
 		                      (Array new: self numRegArgs + 2).
 
 	compileTimeState := CogStackToRegisterCompilationState new.
-	compileTimeState simStackState: CogCompileTimeStackState new.
+	compileTimeState simStackStateField: CogCompileTimeStackState new.
 	simStack := CArrayAccessor on: ((1 to: self class simStackSlots) collect: [:i| self simStackEntryClass new cogit: self]).
 	compileTimeState simStackState simStack: simStack
 ]
