@@ -968,6 +968,11 @@ StackToRegisterMappingCogit >> compileFullBlockMethodFrameBuild: numCopied [
 	self initSimStackForFramefulMethod: initialPC
 ]
 
+{ #category : 'accessing' }
+StackToRegisterMappingCogit >> compileTimeState [
+	^ compileTimeState
+]
+
 { #category : 'compile abstract instructions' }
 StackToRegisterMappingCogit >> compileTwoPathFrameBuild [
 	"We are in a method where the frame is needed *only* for instance variable store, typically a setter method.

@@ -7830,11 +7830,7 @@ Cogit >> initializeCodeZoneFrom: startAddress upTo: endAddress [
 	self enableCodeZoneWriteDuring: [
 		backEnd stopsFrom: startAddress to: endAddress - 1 ].
 
-	self
-		simulationOnly: [
-			startAddress = self class guardPageSize ifTrue: [
-				backEnd stopsFrom: 0 to: endAddress - 1 ].
-			self initializeProcessor ].
+	self simulationOnly: [ self initializeProcessor ].
 	codeBase := methodZoneBase := startAddress.
 	minValidCallAddress := (codeBase min: coInterpreter interpretAddress)
 		                       min: coInterpreter primitiveFailAddress.
