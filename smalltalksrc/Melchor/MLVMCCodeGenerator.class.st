@@ -521,15 +521,6 @@ MLVMCCodeGenerator >> shouldGenerateAsInterpreterProxySend: aSendNode [
 ]
 
 { #category : 'C code generator' }
-MLVMCCodeGenerator >> shouldGenerateHeader [
-	^ [ 
-	  ((self class monticelloDescriptionFor: self vmClass) includes: $*)
-		  not ]
-		  on: Error
-		  do: [ :ex | false ]
-]
-
-{ #category : 'C code generator' }
 MLVMCCodeGenerator >> shouldGenerateStruct: structClass [
 
 	^ (super shouldGenerateStruct: structClass)
