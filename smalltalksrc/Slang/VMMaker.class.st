@@ -728,6 +728,16 @@ VMMaker >> generateExternalPlugins [
 ]
 
 { #category : 'generate sources' }
+VMMaker >> generateExtraFile [
+		
+	| cg |
+	1halt.
+	cg := CCodeGenerator new.
+	cg addClass: ExtraVMClass.
+	cg storeCodeOnFile: (self sourceFilePathFor: ExtraVMClass sourceFileName) doInlining: self doInlining
+]
+
+{ #category : 'generate sources' }
 VMMaker >> generateInternalPlugin: pluginName [
 	"generate the named internal plugin. Make sure the exports list is actually 
 	correct and write it out"
@@ -784,6 +794,7 @@ VMMaker >> generateMainVM [
 	self
 		generateInterpreterFile;
 		generateCogitFiles;
+		generateExtraFile;
 		generateInternalPlugins;
 		generateExportsFile
 ]
