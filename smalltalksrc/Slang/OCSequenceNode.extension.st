@@ -1,7 +1,7 @@
-Extension { #name : 'RBSequenceNode' }
+Extension { #name : 'OCSequenceNode' }
 
 { #category : '*Slang' }
-RBSequenceNode >> asTranslatorNodeIn: aTMethod [
+OCSequenceNode >> asTranslatorNodeIn: aTMethod [
 
 	"Answer a TParseNode subclass equivalent of me"
 

@@ -110,7 +110,7 @@ MLLocalizationTestCase >> tastFor: someCode [
 	
 	Expected: the first statement of the TMethod should correspond to the first statement of the RMethod"
 	^ ((RBParser parseExpression: someCode) methodNode
-		compilationContext: (CompilationContext new);
+		compilationContext: (OCCompilationContext new);
 		asTranslationMethodOfClass: TMethod)
 			parseTree
 ]

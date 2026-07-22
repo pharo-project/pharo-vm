@@ -1,7 +1,7 @@
-Extension { #name : 'RBPragmaNode' }
+Extension { #name : 'OCPragmaNode' }
 
 { #category : '*VMMaker' }
-RBPragmaNode >> isTypeDefinition [
+OCPragmaNode >> isTypeDefinition [
 
 	^ #( #var:type: #var:declareC: ) includes: self selector
 ]
