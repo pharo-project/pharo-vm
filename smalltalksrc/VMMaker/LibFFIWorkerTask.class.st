@@ -106,9 +106,7 @@ LibFFIWorkerTask >> freeTask [
 	self returnHolderAddress 
 		ifNotNil: [ :anAddress | self doFreeFromTask: anAddress ]. 
 		
-	self
-		cCode: [ self doFreeFromTask: (self cCoerce: self asInteger to: #'void *') ]
-		inSmalltalk: [ self doFreeFromTask: self asInteger ]
+	self doFreeFromTask: (self cCoerce: self asInteger to: #'void *')
 ]
 
 { #category : 'accessing' }

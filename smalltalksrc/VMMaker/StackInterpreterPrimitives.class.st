@@ -380,9 +380,7 @@ StackInterpreterPrimitives >> loadModuleByName: moduleNameOop [
 	moduleNameString := objectMemory firstIndexableField: moduleNameOop.
 	moduleNameStringSize := objectMemory byteSizeOf: moduleNameOop.
 		
-	^ self
-		cCode: [ self ioLoadModule: (self cCoerce: moduleNameString to: #sqInt) OfLength: moduleNameStringSize ]
-		inSmalltalk: [ self ioLoadModule: moduleNameString OfLength: moduleNameStringSize ]
+	^ self ioLoadModule: (self cCoerce: moduleNameString to: #sqInt) OfLength: moduleNameStringSize
 ]
 
 { #category : 'ffi - helpers' }
@@ -2142,14 +2140,9 @@ StackInterpreterPrimitives >> primitiveLoadSymbolFromModule [
 	symbolStringSize := objectMemory byteSizeOf: symbol.
 
 	address := self
-		cCode: [ self
 					ioLoadSymbol: (self cCoerce: symbolString to: #sqInt)
 					OfLength: symbolStringSize
-					FromModule: moduleHandle ]
-		inSmalltalk: [ self
-					ioLoadSymbol: symbolString
-					OfLength: symbolStringSize
-					FromModule: moduleHandle ].
+					FromModule: moduleHandle.
 	
 	address = 0 ifTrue:
 		[^self primitiveFailFor: PrimErrNotFound].
@@ -4045,9 +4038,7 @@ StackInterpreterPrimitives >> readAddress: anOop [
 	(objectMemory is: anOop KindOfClass: objectMemory classExternalAddress)
 		ifFalse: [ self primitiveFail. ^ nil ].
 
-	^ self
-		cCode: [ self cCoerce: (objectMemory fetchPointer: 0 ofObject: anOop) to: #'void *' ]
-		inSmalltalk: [ objectMemory fetchPointer: 0 ofObject: anOop ]
+	^ self cCoerce: (objectMemory fetchPointer: 0 ofObject: anOop) to: #'void *'
 ]
 
 { #category : 'ffi - helpers' }

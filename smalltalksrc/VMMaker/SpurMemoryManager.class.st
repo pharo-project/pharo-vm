@@ -9689,9 +9689,7 @@ SpurMemoryManager >> newExternalAddressWithValue: aPointer [
 		       indexableSize: (self sizeof: #'void*').
 
 	ptr := self cCoerce: (self firstIndexableField: oop) to: #'void **'.
-	self
-		cCode: [ ptr at: 0 put: (self cCoerce: aPointer to: #'void *') ]
-		inSmalltalk: [ ptr at: 0 put: aPointer asIntegerPtr ].
+	ptr at: 0 put: (self cCoerce: aPointer to: #'void *').
 	^ oop
 ]
 
