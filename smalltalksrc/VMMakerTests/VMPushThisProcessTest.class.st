@@ -7,6 +7,14 @@ Class {
 }
 
 { #category : 'tests - thisContext' }
+VMPushThisProcessTest >> setUp [
+
+	super setUp.
+	wordSize = 4 ifTrue: [ self skip ].
+
+]
+
+{ #category : 'tests - thisContext' }
 VMPushThisProcessTest >> testPushThisProcessBytecodePushesOnlyThisProcess [
 
 	| method machineCodeBreakpoint |

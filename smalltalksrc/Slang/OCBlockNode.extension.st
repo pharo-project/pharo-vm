@@ -1,7 +1,7 @@
-Extension { #name : 'RBBlockNode' }
+Extension { #name : 'OCBlockNode' }
 
 { #category : '*Slang' }
-RBBlockNode >> asTranslatorNodeIn: aTMethod [
+OCBlockNode >> asTranslatorNodeIn: aTMethod [
 
 	body := body asTranslatorNodeIn: aTMethod.
 	body statements ifEmpty: [
@@ -10,12 +10,12 @@ RBBlockNode >> asTranslatorNodeIn: aTMethod [
 ]
 
 { #category : '*Slang' }
-RBBlockNode >> isBlockNode [
+OCBlockNode >> isBlockNode [
 	^true
 ]
 
 { #category : '*Slang' }
-RBBlockNode >> isPotentialCCaseLabel: stmt in: aTMethod [
+OCBlockNode >> isPotentialCCaseLabel: stmt in: aTMethod [
 	(stmt isVariable
 	 or: [stmt isLiteralNode
 		and: [stmt isConstantNumber or: [stmt literalValue isSymbol]]]) ifTrue:
@@ -46,7 +46,7 @@ RBBlockNode >> isPotentialCCaseLabel: stmt in: aTMethod [
 ]
 
 { #category : '*Slang' }
-RBBlockNode >> isPotentialCCaseLabelIn: aTMethod [
+OCBlockNode >> isPotentialCCaseLabelIn: aTMethod [
 	body statements size ~= 1 ifTrue: [^false].
 	^self isPotentialCCaseLabel: body statements first in: aTMethod
 ]

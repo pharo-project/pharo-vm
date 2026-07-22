@@ -137,42 +137,6 @@ void getCrashDumpFilenameInto(char *buf)
 #endif
 }
 
-char *getVersionInfo()
-{
-#if STACKVM
-  extern char *__interpBuildInfo;
-# define INTERP_BUILD __interpBuildInfo
-# if COGVM
-  extern char *__cogitBuildInfo;
-# endif
-#else
-# define INTERP_BUILD interpreterVersion
-#endif
-  extern char *revisionAsString();
-
-#define BUFFER_SIZE 4096
-
-  char *info= (char *)malloc(BUFFER_SIZE);
-  info[0]= '\0';
-
-#if defined(NDEBUG)
-# define BuildVariant "Production"
-#elif DEBUGVM
-# define BuildVariant "Debug"
-# else
-# define BuildVariant "Assert"
-#endif
-
-#if ITIMER_HEARTBEAT
-# define HBID " ITHB"
-#else
-# define HBID
-#endif
-
-  snprintf(info, BUFFER_SIZE, VM_BUILD_STRING " " COMPILER_VERSION " [" BuildVariant HBID " VM]\nBuilt from: %s\n With:%s\n Revision: " VM_BUILD_SOURCE_STRING, INTERP_BUILD, GetAttributeString(1008));
-  return info;
-}
-
 /***
  *  This SHOULD be rewritten passing the FILE* as a parameter.
  */
