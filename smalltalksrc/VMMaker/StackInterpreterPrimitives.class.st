@@ -4038,7 +4038,14 @@ StackInterpreterPrimitives >> readAddress: anOop [
 	(objectMemory is: anOop KindOfClass: objectMemory classExternalAddress)
 		ifFalse: [ self primitiveFail. ^ nil ].
 
-	^ self cCoerce: (objectMemory fetchPointer: 0 ofObject: anOop) to: #'void *'
+	"C must return a void*; the simulator must return the plain integer
+	 address (in simulation cCoerce: wraps an Integer into a CArray
+	 accessor, and the FFI marshalling machinery keys lookups by the
+	 integer address), so the two sides genuinely differ and a single
+	 cCoerce: cannot express this."
+	^ self
+		cCode: [ self cCoerce: (objectMemory fetchPointer: 0 ofObject: anOop) to: #'void *' ]
+		inSmalltalk: [ objectMemory fetchPointer: 0 ofObject: anOop ]
 ]
 
 { #category : 'ffi - helpers' }

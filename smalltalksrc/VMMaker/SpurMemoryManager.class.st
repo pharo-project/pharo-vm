@@ -9689,7 +9689,13 @@ SpurMemoryManager >> newExternalAddressWithValue: aPointer [
 		       indexableSize: (self sizeof: #'void*').
 
 	ptr := self cCoerce: (self firstIndexableField: oop) to: #'void **'.
-	ptr at: 0 put: (self cCoerce: aPointer to: #'void *').
+	"C must store a void*; the simulator must store the plain integer address
+	 (in simulation cCoerce: wraps an Integer into a CArray accessor, which
+	 the address-keyed structures downstream cannot use), so the two sides
+	 genuinely differ and a single cCoerce: cannot express this."
+	self
+		cCode: [ ptr at: 0 put: (self cCoerce: aPointer to: #'void *') ]
+		inSmalltalk: [ ptr at: 0 put: aPointer asIntegerPtr ].
 	^ oop
 ]
 

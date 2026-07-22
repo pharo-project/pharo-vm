@@ -7561,7 +7561,10 @@ Cogit >> generatePICPrototype [
 	
 	"update the methodZoneBase so we keep the prototype around for later use"
 	methodZoneBase := self alignUptoRoutineBoundary: endAddress.
-	picPrototype := self cCoerce: aPIC to: #sqInt.
+	"C stores the prototype's address in the sqInt-typed variable; the
+	 simulator must keep the CogMethod surrogate itself (it does not
+	 understand coerceTo:sim:, so a cCoerce: here would fail in simulation)."
+	picPrototype := self cCode: [ aPIC asInteger ] inSmalltalk: [ aPIC ].
 	"self cCode: ''
 		inSmalltalk:
 			[self disassembleFrom: aPIC + (self sizeof: CogMethod) to: aPIC + picSize - 1.
