@@ -601,6 +601,13 @@ VMMemoryMap >> memoryManager: anObject [
 	memoryManager := anObject
 ]
 
+{ #category : 'accessing' }
+VMMemoryMap >> memoryMapConfiguration: aConfiguration [
+
+	<doNotGenerate>
+	memoryMapConfiguration := aConfiguration
+]
+
 { #category : 'simulation' }
 VMMemoryMap >> memset: startAddress _: value _: size [
 
