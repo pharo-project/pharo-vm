@@ -13,7 +13,6 @@ void printAllStacks();
 void printCallStack();
 
 char* GetAttributeString(int idx);
-char * getVersionInfo();
 void getCrashDumpFilenameInto(char *buf);
 
 EXPORT(void) printCrashDebugInformation(LPEXCEPTION_POINTERS exp);
@@ -201,7 +200,6 @@ extern void dumpPrimTraceLog(void);
 void reportStackState(LPEXCEPTION_POINTERS exp, char* date, FILE* output){
 
 	fprintf_impl(output,"\n%s(%ld) at 0x%016llx - %s\n\n", getExceptionMessage(exp), exp->ExceptionRecord->ExceptionCode, (unsigned long long)exp->ExceptionRecord->ExceptionAddress, date);
-	fprintf_impl(output,"%s\n%s\n\n", GetAttributeString(0), getVersionInfo());
 
 
 	fprintf_impl(output,"C stack backtrace & registers:\n");

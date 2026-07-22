@@ -121,8 +121,7 @@ const char * GetAttributeString(sqInt id)
         return __cogitBuildInfo;
     }
 # endif
-#endif
-
+# endif
     case 1009: /* source tree version info */
         return getSourceVersion();
 

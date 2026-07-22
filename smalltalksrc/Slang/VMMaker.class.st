@@ -615,7 +615,6 @@ VMMaker >> generateEntire [
 	"Generate the interp, internal plugins and exports as well as the external plugins.
 	 If this comes from a generator method, log it for convenience."
 	abortBlock := [^self].
-	self logGeneration.
 	self generateMainVM.
 	self generateExternalPlugins
 ]
@@ -623,45 +622,71 @@ VMMaker >> generateEntire [
 { #category : 'exports' }
 VMMaker >> generateExportsFile [
 	"Store the exports on the given file"
+
 	| cg contents filePath fileStream |
 	filePath := self interpreterExportsFilePath.
 	"don't bother endlessly regenerating the example file."
-	(internalPlugins isEmpty
-	 and: [(filePath includesSubstring: 'example')
-	 and: [filePath asFileReference exists]]) ifTrue:
-		[^self].
+	(internalPlugins isEmpty and: [
+			 (filePath includesSubstring: 'example') and: [
+				 filePath asFileReference exists ] ]) ifTrue: [ ^ self ].
 	cg := self createCodeGenerator.
 	cg vmClass: self interpreterClass.
-	contents := String streamContents:
-		[:s|
-		s
-			nextPutAll:'/* This is an automatically generated table of all builtin modules in the VM';
-			cr;
-			next: 3 put: Character space;
-			nextPutAll: (cg shortMonticelloDescriptionForClass: cg vmClass);
-			cr;
-			nextPutAll:' */';
-			cr.
-		s cr; nextPutAll:'extern sqExport vm_exports[];'.
-		s cr; nextPutAll: 'extern sqExport os_exports[];'.
-		self internalPluginsDo:[:cls|
-			s cr; nextPutAll: 'extern sqExport '; nextPutAll: cls moduleName; nextPutAll:'_exports[];'.
-		].
-		s cr.
+	contents := String streamContents: [ :s |
+			            s
+				            nextPutAll:
+					            '/* This is an automatically generated table of all builtin modules in the VM';
+				            cr;
+				            nextPutAll: ' */';
+				            cr.
+			            s
+				            cr;
+				            nextPutAll: 'extern sqExport vm_exports[];'.
+			            s
+				            cr;
+				            nextPutAll: 'extern sqExport os_exports[];'.
+			            self internalPluginsDo: [ :cls |
+					            s
+						            cr;
+						            nextPutAll: 'extern sqExport ';
+						            nextPutAll: cls moduleName;
+						            nextPutAll: '_exports[];' ].
+			            s cr.
 
-		s cr; nextPutAll:'sqExport *pluginExports[] = {'.
-		s newLine; tab; nextPutAll:'vm_exports,'.
-		s newLine; tab; nextPutAll: 'os_exports,'.
-		self internalPluginsDo:[:cls|
-			s newLine; tab; nextPutAll: cls moduleName; nextPutAll:'_exports,'
-		].
-		s newLine; tab; nextPutAll:'NULL'.
-		s cr; nextPutAll:'};'; cr].
-	(cg needToGenerateHeader: (filePath asFileReference basename) file: filePath contents: contents) ifTrue:
-		[[fileStream := VMMaker forceNewFileNamed: filePath] 
-			on: FileDoesNotExistException 
-			do:[^self couldNotOpenFile: filePath].
-		 fileStream nextPutAll: contents; close]
+			            s
+				            cr;
+				            nextPutAll: 'sqExport *pluginExports[] = {'.
+			            s
+				            newLine;
+				            tab;
+				            nextPutAll: 'vm_exports,'.
+			            s
+				            newLine;
+				            tab;
+				            nextPutAll: 'os_exports,'.
+			            self internalPluginsDo: [ :cls |
+					            s
+						            newLine;
+						            tab;
+						            nextPutAll: cls moduleName;
+						            nextPutAll: '_exports,' ].
+			            s
+				            newLine;
+				            tab;
+				            nextPutAll: 'NULL'.
+			            s
+				            cr;
+				            nextPutAll: '};';
+				            cr ].
+	(cg
+		 needToGenerateHeader: filePath asFileReference basename
+		 file: filePath
+		 contents: contents) ifTrue: [
+			[ fileStream := VMMaker forceNewFileNamed: filePath ]
+				on: FileDoesNotExistException
+				do: [ ^ self couldNotOpenFile: filePath ].
+			fileStream
+				nextPutAll: contents;
+				close ]
 ]
 
 { #category : 'generate sources' }
@@ -695,23 +720,21 @@ VMMaker >> generateExternalPlugin: pluginName [
 VMMaker >> generateExternalPlugins [
 	"generate the external plugins"
 
-	self logDateAndTime.
 	self deleteUnwantedExternalPluginDirectories.
 	self vmmakerConfiguration interpreterPluginClass initialize.
-	self externalPluginsDo: [:plugin | 
-		self generateExternalPlugin: plugin].
-	self storeExternalPluginList.
-	self logDateAndTime
+	self externalPluginsDo: [ :plugin |
+		self generateExternalPlugin: plugin ].
+	self storeExternalPluginList
 ]
 
 { #category : 'generate sources' }
-VMMaker >> generateInternalPlugin: pluginName [ 
+VMMaker >> generateInternalPlugin: pluginName [
 	"generate the named internal plugin. Make sure the exports list is actually 
 	correct and write it out"
+
 	self deleteUnwantedInternalPluginDirectories.
 	self privateGenerateInternalPlugin: pluginName.
-	self generateExportsFile.
-	self logDateAndTime
+	self generateExportsFile
 ]
 
 { #category : 'generate sources' }
@@ -720,10 +743,9 @@ VMMaker >> generateInternalPlugins [
 
 	self deleteUnwantedInternalPluginDirectories.
 	self vmmakerConfiguration interpreterPluginClass initialize.
-	self internalPluginsDo: [:plugin | 
-		self privateGenerateInternalPlugin: plugin].
-	self logDateAndTime.
-	self storeInternalPluginList.
+	self internalPluginsDo: [ :plugin |
+		self privateGenerateInternalPlugin: plugin ].
+	self storeInternalPluginList
 ]
 
 { #category : 'generate sources' }
@@ -759,20 +781,19 @@ VMMaker >> generateMainVM [
 	 the objectMemory and interpreter classes are initialized before the Cogit
 	 code is generated."
 
-	self logDateAndTime;
+	self
 		generateInterpreterFile;
 		generateCogitFiles;
 		generateInternalPlugins;
-		generateExportsFile;
-		logDateAndTime
+		generateExportsFile
 ]
 
 { #category : 'generate sources' }
 VMMaker >> generatePlugins [
 	"Generate the ``external'' plugins.
 	 If this comes from a generator method, log it for convenience."
-	abortBlock := [^self].
-	self logGeneration.
+
+	abortBlock := [ ^ self ].
 	self generateExternalPlugins
 ]
 
@@ -918,26 +939,6 @@ VMMaker >> interpreterHeaderPath [
 VMMaker >> isFor64BitVM [
 "is my flag to make a 64bit pointer model VM?"
 	^is64BitVM
-]
-
-{ #category : 'UI access' }
-VMMaker >> logDateAndTime [
-	| now |
-	"do it this way since Time now includes milliseconds in some versions."
-	now := DateAndTime now.
-	logger print: now asDate; space; print: now asTime; cr; flush
-]
-
-{ #category : 'generate sources' }
-VMMaker >> logGeneration [
-	self configurationGeneratorNameOrNil ifNotNil:
-		[:generator|
-		 logger cr; nextPutAll: (generator selector copyReplaceAll: 'generate' with: '').
-		 interpreterClassName ifNotNil:
-			[logger space; nextPutAll: (CCodeGenerator shortMonticelloDescriptionForClass: (Smalltalk classNamed: interpreterClassName))].
-		 sourceDirName ifNotNil:
-			[logger nextPutAll: ' to '; nextPutAll: sourceDirName].
-		 logger cr; flush]
 ]
 
 { #category : 'UI access' }
