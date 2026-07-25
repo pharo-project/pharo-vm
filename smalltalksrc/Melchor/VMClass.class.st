@@ -122,11 +122,11 @@ VMClass class >> declareCVarsIn: aCCodeGenerator [
 ]
 
 { #category : 'translation' }
-VMClass class >> declareInterpreterVersionIn: aCCodeGenerator defaultName: defaultName [	
+VMClass class >> declareInterpreterVersionIn: aCCodeGenerator defaultName: defaultName [
+
 	aCCodeGenerator
 		var: #interpreterVersion
-		declareC: 'const char *interpreterVersion = "Croquet Closure ', defaultName, ' VM [',
-					(aCCodeGenerator shortMonticelloDescriptionForClass: self),']"'.
+		declareC: 'const char *interpreterVersion = "PharoVM"'
 ]
 
 { #category : 'accessing class hierarchy' }
@@ -255,13 +255,6 @@ VMClass class >> isSpurMemoryManagerClass [
 { #category : 'accessing' }
 VMClass class >> memoryManagerVersion [ 
 	^ self subclassResponsibility
-]
-
-{ #category : 'translation' }
-VMClass class >> monticelloDescription [
-	"Answer the Monticello version of the packlage containing the receiver.
-	 This is a hook to allow subclasses to expand upon the default monticello description."
-	^CCodeGenerator monticelloDescriptionFor: self
 ]
 
 { #category : 'translation' }

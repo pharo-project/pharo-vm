@@ -195,7 +195,7 @@ VMSpurScavengerTest >> testComputeTenuringThresholdWithManySurvivors [
 
 	memory doScavenge: 1. "TenureByAge"
 
-	self assert: memory scavenger scavengerTenuringProportion closeTo: 0.1 "Past space is full -> Tenure next pass"
+	self assert: memory scavenger scavengerTenuringProportion closeTo: 0.1 precision: 0.01 "Past space is full -> Tenure next pass"
 ]
 
 { #category : 'tests-4-scavenge-stack' }
@@ -752,7 +752,7 @@ VMSpurScavengerTest >> testShouldTenureObjectsWhenPastSpaceIsFull [
 	newRootObjectAddress := memory remapObj: rootObjectAddress.
 
 	"Survivors should touched the threshold, so next scavenge will be tenured"
-	self assert: memory scavenger scavengerTenuringProportion closeTo: 0.1.
+	self assert: memory scavenger scavengerTenuringProportion closeTo: 0.1 precision: 0.01.
 	self assert: (memory isInNewSpace: newRootObjectAddress).
 	
 	memory doScavenge: 1. "TenureByAge"

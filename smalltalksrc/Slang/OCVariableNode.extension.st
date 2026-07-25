@@ -1,7 +1,7 @@
-Extension { #name : 'RBVariableNode' }
+Extension { #name : 'OCVariableNode' }
 
 { #category : '*Slang' }
-RBVariableNode >> asTranslatorNodeIn: aTMethod [
+OCVariableNode >> asTranslatorNodeIn: aTMethod [
 	"Answer a TParseNode subclass equivalent of me"
 	name = 'true' ifTrue: [^ TConstantNode value: true].
 	name = 'false' ifTrue: [^ TConstantNode value: false].
@@ -9,6 +9,6 @@ RBVariableNode >> asTranslatorNodeIn: aTMethod [
 ]
 
 { #category : '*Slang' }
-RBVariableNode >> isVariableNode [
+OCVariableNode >> isVariableNode [
 	^true
 ]
