@@ -254,6 +254,16 @@ static int fillEPollDescriptor(){
 		events |= hasWrite ? (EPOLLOUT | EPOLLRDHUP) : 0;
 		events |= hasExceptions ? (EPOLLERR | EPOLLRDHUP) : 0;
 
+		/*
+		 * AIO handlers are one-shot: after delivery the mask is reset to 0 until
+		 * the client re-arms the descriptor via aioHandle(). A zero event mask is
+		 * invalid for epoll, so we must skip these inactive descriptors.
+		 */
+		if(events == 0){
+			descriptor = descriptor->next;
+			continue;
+		}
+
 		if(addFDToEPoll(epollDescriptor, descriptor->fd, events, descriptor) == -1){
 			if(epollDescriptor != -1){
 				close(epollDescriptor);
