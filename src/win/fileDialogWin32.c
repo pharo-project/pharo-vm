@@ -7,7 +7,7 @@
 #include "pharovm/fileDialog.h"
 #include "pharovm/stringUtilities.h"
 #include <windows.h>
-#include <Shobjidl.h>
+#include <shobjidl.h>
 
 bool
 vm_file_dialog_is_nop(void)
