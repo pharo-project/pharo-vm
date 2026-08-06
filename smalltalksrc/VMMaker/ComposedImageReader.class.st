@@ -31,6 +31,8 @@ ComposedImageReader >> readDataFromFileName: fullFileName startingAt: startingAd
 
 	<inline: true>
 	<var: #file type: #sqImageFile>
+	<var: #fullFileName type: #'char *'>
+	<var: #startingAddress type: #'void *'>
 	| file bytes |
 
 	file := self
@@ -177,6 +179,7 @@ ComposedImageReader >> readMetadataFromFileName: fullFileName [
 
 	<inline: true>
 	<var: #file type: #sqImageFile>
+	<var: #fullFileName type: #'char *'>
 	<var: #metadata type: #ComposedMetadataStruct>
 	<var: #metadataPointer type: #'ComposedMetadataStruct *'>
 	
@@ -210,12 +213,13 @@ ComposedImageReader >> readPermanentSpaceDataFromImage: imageFileName startingAt
 ComposedImageReader >> readPermanentSpaceFromImageFile: imageFileName header: aHeader [
 
 	<inline: false>
+	<var: #imageFileName type: #'char *'>
 	<var: #aHeader type: #SpurImageHeaderStruct>
 	<var: #permSpaceMetadata type: #ComposedMetadataStruct>
 	<var: #bytesRead type: #'size_t'>
 	<var: #dataSize type: #'size_t'>
-	<var: #oldBase type: #'void*'>
-	<var: #newBase type: #'void*'>
+	<var: #oldBase type: #'usqInt'>
+	<var: #newBase type: #'usqInt'>
 	<returnTypeC: #size_t>
 
 	| newBase permSpaceMetadata oldBase dataSize bytesRead |
@@ -283,6 +287,7 @@ ComposedImageReader >> readSegmentMetadata: segmentIndex fromImage: imageFileNam
 ComposedImageReader >> readSegmentsFromImageFile: imageFileName header: aHeader [
 
 	<inline: false>
+	<var: #imageFileName type: #'char *'>
 	<var: 'segInfo' type: #'SpurSegmentInfo *'>
 	<var: 'aHeader' type: #SpurImageHeaderStruct>
 	<var: #segmentMetadata type: #ComposedMetadataStruct>

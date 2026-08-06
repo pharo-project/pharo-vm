@@ -1066,7 +1066,7 @@ SpurPlanningCompactor >> useFreeChunkForSavedFirstFieldsSpace: highestSuitableFr
 SpurPlanningCompactor >> useSegmentForSavedFirstFieldsSpace: spaceEstimate [
 	"Attempt to allocate a memory segment large enough to hold the savedFirstFieldsSpace.
 	 Invoked when neither eden nor a large free chunk are found to be big enough for the job."
-	<var: #segAddress type: #'void *'>
+	<var: #segAddress type: #usqInt>
 	| roundedSize allocatedSize segAddress |
 	roundedSize := spaceEstimate + 1023 // 1024 * 1024.
 	
