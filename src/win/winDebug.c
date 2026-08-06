@@ -315,7 +315,7 @@ void printSymbolInfo(STACKFRAME64 *frame, FILE* output){
 		fprintf_impl(output, "\n");
 	}else{
 #if COGVM
-		printCogMethodFor(frame->AddrPC.Offset);
+		printCogMethodFor((void *)frame->AddrPC.Offset);
 #else
 		fprintf_impl(output, "Cannot identify frame method");
 #endif

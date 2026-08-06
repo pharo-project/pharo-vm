@@ -4123,7 +4123,7 @@ CogIA32Compiler >> stopsFrom: startAddr to: endAddr [
 	self
 		cCode: [
 			self cCall: 'memset' withArguments: {
-					startAddr.
+					(self cCoerceSimple: startAddr to: #'void *').
 					self stop.
 					(endAddr - startAddr + 1) } ]
 		inSmalltalk: [

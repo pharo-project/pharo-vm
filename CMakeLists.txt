@@ -5,11 +5,16 @@
 #  vmmaker: generates a Pharo development environment with the virtual machine code, Slang transpiler and machine code simulation
 #  generate-sources: generates the virtual machine source code in C, using the Slang-to-C transpiler
 
-cmake_minimum_required(VERSION 3.7.2)
+cmake_minimum_required(VERSION 3.10)
 # Use new and simpler escape sequences
 cmake_policy(SET CMP0053 NEW)
 #RPATH settings on macOS do not affect install_name.
 cmake_policy(SET CMP0068 NEW)
+# Use the timestamp of extraction for downloaded archives (silences the
+# CMP0135 deprecation warning on CMake >= 3.24; no-op on older CMake).
+if(POLICY CMP0135)
+	cmake_policy(SET CMP0135 NEW)
+endif()
 
 include(cmake/BuildType.cmake)
 include(cmake/macros.cmake)

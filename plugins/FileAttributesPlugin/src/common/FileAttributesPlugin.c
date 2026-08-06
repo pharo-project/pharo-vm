@@ -5,6 +5,8 @@
  */
 static char __buildInfo[] = "FileAttributesPlugin FileAttributesPlugin.oscog-akg.49 uuid: 00b4eed5-b2a8-454a-90b7-c3662d7c5423";
 
+static void suppress_warning_buildInfo() { (void)__buildInfo; }
+
 
 
 #include "config.h"
@@ -604,10 +606,8 @@ primitiveFileAttributes(void)
     sqInt fileName;
     sqInt resultOop;
     sqInt status;
-    sqInt val;
 
 	resultOop = 0;
-	val = 0;
 	fileName = stackObjectValue(1);
 	attributeMask = stackIntegerValue(0);
 	if ((failed())
@@ -1007,11 +1007,9 @@ processDirectory(fapath *faPath)
     sqInt entryName;
     sqInt resultArray;
     sqInt status;
-    sqInt val;
 
 	attributeArray = 0;
 	entryName = 0;
-	val = 0;
 	status = faCharToByteArray(faGetStFile(faPath), (&entryName));
 	if (status != 0) {
 		return primitiveFailForOSError(status);
@@ -1153,7 +1151,7 @@ stringFromCString(const char *aCString)
 	if (!(newString)) {
 		return primitiveFailFor(PrimErrNoMemory);
 	}
-	strncpy(arrayValueOf(newString), aCString, len);
+	memcpy(arrayValueOf(newString), aCString, len);
 	return newString;
 }
 

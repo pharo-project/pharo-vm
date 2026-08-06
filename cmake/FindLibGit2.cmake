@@ -12,7 +12,7 @@ find_library(LIBGIT2_LIBRARY NAMES git2)
 # handle the QUIETLY and REQUIRED arguments and set GIT2_FOUND to TRUE if
 # all listed variables are TRUE
 include(FindPackageHandleStandardArgs)
-find_package_handle_standard_args(libgit2 REQUIRED_VARS LIBGIT2_LIBRARY LIBGIT2_INCLUDE_PATH)
+find_package_handle_standard_args(LibGit2 REQUIRED_VARS LIBGIT2_LIBRARY LIBGIT2_INCLUDE_PATH)
 
 if(LIBGIT2_FOUND AND NOT TARGET git2)
     add_library(git2 SHARED IMPORTED)
