@@ -218,8 +218,9 @@ VMMemoryMap >> allocateStackPages: initialStackSize [
 			self error: 'Error allocating' ].
 	
 	self stackPagesEnd: self stackPagesStart + sizeToRequest.
-	
-	self memset: (self cCoerce: self stackPagesStart to: #'void *') _: 0 _: sizeToRequest.
+
+	"Set memory to 0 on C, on Pharo this is already the default for newly allocated memory"
+	self cCode: 	[self memset: (self cCoerce: self stackPagesStart to: #'void *') _: 0 _: sizeToRequest]
 
 ]
 
