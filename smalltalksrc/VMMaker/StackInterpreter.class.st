@@ -4808,7 +4808,7 @@ StackInterpreter >> defaultNumStackPages [
 	 The Spur default reflects tuning for GC performance ast Cadence.
 	 The actual value can be set via vmParameterAt: and/or a preference in the ini file."
 	<inline: false>
-	^50
+	^30
 ]
 
 { #category : 'send bytecodes' }

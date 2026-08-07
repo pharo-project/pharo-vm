@@ -41,7 +41,7 @@ VMSimulatedEnvironmentBuilder >> doBuild [
 	"Check #scavengerDenominator in SpurMemoryManager"
 	edenSize := (2 * 1024) + interpreter interpreterAllocationReserveBytes.
  	newSpaceSize := self roundToPageSize: (edenSize * 7 / 5).
-	stackSpaceSize := 9 * 4096.
+	stackSpaceSize := interpreter stackPageFrameBytes.
 	methodCacheSize := 4096 * wordSize.
 	
 	initialAddress := 16r1000000.

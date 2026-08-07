@@ -29,17 +29,17 @@ VMMemoryMapConfigurationFor32Bits >> newSpaceInitialAddress [
 { #category : 'initial addresses' }
 VMMemoryMapConfigurationFor32Bits >> oldSpaceInitialAddress [
 
-	^ 16r40000000 "(1024 MB)"
+	^ 16r80000000 "(2048 MB)"
 ]
 
 { #category : 'initial addresses' }
 VMMemoryMapConfigurationFor32Bits >> permSpaceInitialAddress [
 
-	^ 16r80000000 "(2048 MB)"
+	^ 16rC0000000 "(3096 MB)"
 ]
 
 { #category : 'initial addresses' }
 VMMemoryMapConfigurationFor32Bits >> stackPagesInitialAddress [
 
-	^ 16r0F000000 "(240 MB)"
+	^ 16rC800000 "(200 MB)"
 ]
