@@ -19,7 +19,11 @@
 
 # include <windows.h>
 
-#ifdef PHARO_VM_IN_WORKER_THREAD
+/* ioCurrentOSThread() below expands to pthread_self() unconditionally, so the
+ * header must be available even when PHARO_VM_IN_WORKER_THREAD is off. MinGW
+ * toolchains always ship winpthreads; only MSVC may lack pthread.h, and there
+ * the previous behavior is kept. */
+#if defined(PHARO_VM_IN_WORKER_THREAD) || !defined(_MSC_VER)
 # include <pthread.h>
 #endif
 

@@ -1,13 +1,13 @@
-Extension { #name : 'RBProgramNode' }
+Extension { #name : 'OCProgramNode' }
 
 { #category : '*Slang' }
-RBProgramNode >> asTranslatorNodeIn: aTMethod [
+OCProgramNode >> asTranslatorNodeIn: aTMethod [
 	"Answer a TParseNode subclass equivalent of me"
 	self subclassResponsibility
 ]
 
 { #category : '*Slang' }
-RBProgramNode >> commentOrNil [
+OCProgramNode >> commentOrNil [
 	
 	| comments |
 	comments := self propertyAt: #comments ifAbsent: [ ^ nil ].
@@ -15,27 +15,27 @@ RBProgramNode >> commentOrNil [
 ]
 
 { #category : '*Slang' }
-RBProgramNode >> isBlockNode [
+OCProgramNode >> isBlockNode [
 	^false
 ]
 
 { #category : '*Slang' }
-RBProgramNode >> isConstantNumber [  "Overridden in RBLiteralValueNode"
+OCProgramNode >> isConstantNumber [  "Overridden in RBLiteralValueNode"
 	^false
 ]
 
 { #category : '*Slang' }
-RBProgramNode >> isNodeNil [
+OCProgramNode >> isNodeNil [
 	^false
 ]
 
 { #category : '*Slang' }
-RBProgramNode >> isVariableNode [
+OCProgramNode >> isVariableNode [
 	^false
 ]
 
 { #category : '*Slang' }
-RBProgramNode >> missingCommentNeededForCTranslation [
+OCProgramNode >> missingCommentNeededForCTranslation [
 	"So far the RBProgramNode hierarchy omits/elides comments :-("
 	^nil
 ]

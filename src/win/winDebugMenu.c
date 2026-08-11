@@ -1,5 +1,5 @@
 #include "pharovm/pharo.h"
-#include <Windows.h>
+#include <windows.h>
 
 #define IDM_OPEN_DEBUGWINDOW 	0xE001
 

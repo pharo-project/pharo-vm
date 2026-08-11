@@ -1662,7 +1662,7 @@ StackToRegisterMappingCogit >> genForwardersInlinedIdenticalOrNotIf: orNot [
 				 ifFalse: [ argReg ])
 		scratchReg: TempReg
 		ifForwarder: label
-		ifNotForwarder: fixup.
+		ifNotForwarder: (self cCoerceSimple: fixup to: #'AbstractInstruction *').
 
 	"Not reached, execution flow has jumped to fixup"
 	deadCode ifFalse: [ self ssPushConstant: objectMemory trueObject ]. "dummy value"
@@ -3239,7 +3239,9 @@ StackToRegisterMappingCogit >> generateSistaRuntime [
 
 { #category : 'initialization' }
 StackToRegisterMappingCogit >> generateSuperSendTrampolineTo: function named: name numArgs: numArgs in: table [
-	
+
+	<var: #function type: #'void *'>
+	<var: #name type: #'char *'>
 	<var: #table type: #'sqInt *'>
 	| trampoline |
 	trampoline := self genSendTrampolineFor: function

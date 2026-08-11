@@ -140,9 +140,9 @@ macro(add_required_libs_per_platform)
 	target_link_libraries(${VM_EXECUTABLE_CONSOLE_NAME} ${VM_LIBRARY_NAME})
 
 	target_link_libraries(${VM_LIBRARY_NAME} winmm)
-	target_link_libraries(${VM_LIBRARY_NAME} Ws2_32)
-	target_link_libraries(${VM_LIBRARY_NAME} DbgHelp)
-	target_link_libraries(${VM_LIBRARY_NAME} Ole32)
+	target_link_libraries(${VM_LIBRARY_NAME} ws2_32)
+	target_link_libraries(${VM_LIBRARY_NAME} dbghelp)
+	target_link_libraries(${VM_LIBRARY_NAME} ole32)
 	target_link_libraries(${VM_LIBRARY_NAME} comctl32)
 	target_link_libraries(${VM_LIBRARY_NAME} uuid)
     # Disable Safe Structured Exception Handling
@@ -160,11 +160,11 @@ macro(add_required_libs_per_platform)
 		target_link_libraries(${VM_LIBRARY_NAME} pthread)
 	endif()
 
-	target_link_libraries(${VM_EXECUTABLE_NAME} Ole32)
+	target_link_libraries(${VM_EXECUTABLE_NAME} ole32)
 	target_link_libraries(${VM_EXECUTABLE_NAME} comctl32)
 	target_link_libraries(${VM_EXECUTABLE_NAME} uuid)
 
-	target_link_libraries(${VM_EXECUTABLE_CONSOLE_NAME} Ole32)
+	target_link_libraries(${VM_EXECUTABLE_CONSOLE_NAME} ole32)
 	target_link_libraries(${VM_EXECUTABLE_CONSOLE_NAME} comctl32)
 	target_link_libraries(${VM_EXECUTABLE_CONSOLE_NAME} uuid)
 

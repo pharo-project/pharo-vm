@@ -86,7 +86,7 @@ SpurSegmentManager >> addSegmentOfSize: ammount [
 	<inline: false>
 	| allocatedSize segAddress |
 	<var: #newSeg type: #'SpurSegmentInfo *'>
-	<var: #segAddress type: #'void *'>
+	<var: #segAddress type: #usqInt>
 	<var: #allocatedSize type: #'usqInt'>
 	self cCode: [] inSmalltalk: [segments ifNil: [^nil]]. "bootstrap"
 

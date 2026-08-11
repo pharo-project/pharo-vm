@@ -24,6 +24,12 @@ extern int __longjmp_wrapper(jmp_buf, int);
 # define setjmp(jb) __setjmp_wrapper(jb)
 # define sigsetjmp(jb,ssmf) __setjmp_wrapper(jb)
 # define siglongjmp(jb,v) __longjmp_wrapper(jb,v)
+#elif _WIN64 && __GNUC__ && defined(__aarch64__)
+// mingw-w64 declares no 2-argument _setjmp on aarch64; its __mingw_setjmp /
+// __mingw_longjmp pair is the minimal non-unwinding implementation there
+// (the header's own setjmp macro maps to it as well).
+# define sigsetjmp(jb,ssmf) __mingw_setjmp(jb)
+# define siglongjmp(jb,v) __mingw_longjmp(jb,v)
 #elif _WIN64 && __GNUC__
 # define sigsetjmp(jb,ssmf) _setjmp(jb,NULL)
 # define siglongjmp(jb,v) longjmp(jb,v)

@@ -1,7 +1,7 @@
-Extension { #name : 'RBReturnNode' }
+Extension { #name : 'OCReturnNode' }
 
 { #category : '*Slang' }
-RBReturnNode >> asTranslatorNodeIn: aTMethod [
+OCReturnNode >> asTranslatorNodeIn: aTMethod [
 	"Answer a TParseNode subclass equivalent of a return."
 	| exprTranslation lastExpr |
 	exprTranslation := value asTranslatorNodeIn: aTMethod.

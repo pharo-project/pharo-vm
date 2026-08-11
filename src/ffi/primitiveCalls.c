@@ -99,11 +99,10 @@ PrimitiveWithDepth(primitivePrepareParametersForCall, 2){
 PrimitiveWithDepth(primitiveReleaseParametersForCall, 2){
 
 	sqInt aParameterArrayAddress;
-	sqInt aReturnAddress;
 
 	void* parameters;
 
-	aReturnAddress = stackValue(0);
+	stackValue(0);
 	checkFailed();
 
 	aParameterArrayAddress = stackValue(1);

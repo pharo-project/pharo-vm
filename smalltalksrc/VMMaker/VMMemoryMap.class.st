@@ -83,7 +83,7 @@ VMMemoryMap >> allocateCodeZone [
 	
 	initialCodeZoneSize = 0 ifTrue: [ ^ self ].
 	
-	self codeZoneStart: (self allocateJITMemory: initialCodeZoneSize _: memoryMapConfiguration codeZoneInitialAddress).
+	self codeZoneStart: (self cCoerce: (self allocateJITMemory: initialCodeZoneSize _: memoryMapConfiguration codeZoneInitialAddress) to: #usqInt).
 	self codeZoneStart ifNil: [ self insufficientMemoryAvailableError ].
 
 	self codeZoneStart = memoryMapConfiguration codeZoneInitialAddress 
@@ -193,7 +193,7 @@ VMMemoryMap >> allocateSegmentOfSize: ammount minAddress: minAddress resultsIn: 
 
 	<inline:true>
 	<var: #sizeToRequest type:'size_t'>
-	<var: #segmentAddress type:'void *'>
+	<var: #segmentAddress type: #usqInt>
 	
 	sizeToRequest := self roundToAllocationSize: ammount.
 	segmentAddress := self allocateMemory: sizeToRequest BaseAddress: minAddress.
@@ -221,7 +221,7 @@ VMMemoryMap >> allocateStackPages: initialStackSize [
 	
 	self stackPagesEnd: self stackPagesStart + sizeToRequest.
 	
-	self memset: self stackPagesStart _: 0 _: sizeToRequest.
+	self memset: (self cCoerce: self stackPagesStart to: #'void *') _: 0 _: sizeToRequest.
 
 ]
 
@@ -231,7 +231,8 @@ VMMemoryMap >> allocationGranularity [
 	https://docs.microsoft.com/en-us/windows/win32/api/sysinfoapi/ns-sysinfoapi-system_info"
 
 	<returnTypeC: #sqInt>
-	self cppIf: WIN32 ifTrue: [ ^ 64 * 1024 ] ifFalse: [ ^ 0 ]
+	self cppIf: WIN32 ifTrue: [ ^ 64 * 1024 ] ifFalse: [ ^ 0 ].
+	^ 0
 ]
 
 { #category : 'accessing' }

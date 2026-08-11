@@ -94,7 +94,8 @@ LibFFIWorkerTask >> doFreeFromTask: anAddress [
 
 { #category : 'operations' }
 LibFFIWorkerTask >> freeTask [
-	
+
+	<var: #anParameterAddress type: #'void *'>
 	self parametersAddress
 		ifNotNil: [ :anAddress | | parameters |
 			parameters := self cCoerce: anAddress to: #'void **'. 
@@ -105,7 +106,7 @@ LibFFIWorkerTask >> freeTask [
 	self returnHolderAddress 
 		ifNotNil: [ :anAddress | self doFreeFromTask: anAddress ]. 
 		
-	self doFreeFromTask: self asInteger
+	self doFreeFromTask: (self cCoerce: self asInteger to: #'void *')
 ]
 
 { #category : 'accessing' }
