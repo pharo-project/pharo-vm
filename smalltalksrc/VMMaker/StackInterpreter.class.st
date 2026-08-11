@@ -1812,7 +1812,7 @@ StackInterpreter >> activateNewFullClosure: blockClosure method: theMethod numAr
 
 	numArgs + numCopied + 1 to: numTemps do: [ :i | self push: objectMemory nilObject].
 
-	instructionPointer := (self initialIPForHeader: methodHeader method: theMethod) - 1.
+	instructionPointer := self pointerForOop: (self initialIPForHeader: methodHeader method: theMethod) - 1.
 	
 	self setMethod: theMethod.
 
@@ -6268,17 +6268,16 @@ StackInterpreter >> followForwardedFrameContents: theFP stackPointer: theSP [
 	<var: #theSP type: #'char *'>
 	<inline: false>
 	 | oop |
-	<var: #ptr type: #'char *'>
-	theSP
-		to: (self frameReceiverLocation: theFP)
+	(self oopForPointer: theSP)
+		to: (self oopForPointer: (self frameReceiverLocation: theFP))
 		by: objectMemory wordSize
 		do: [:ptr|
 			oop := stackPages unsignedLongAt: ptr.
 			((objectMemory isNonImmediate: oop)
 			 and: [objectMemory isForwarded: oop]) ifTrue:
 				[stackPages unsignedLongAt: ptr put: (objectMemory followForwarded: oop)]].
-	theFP + FoxCallerSavedIP + objectMemory wordSize
-		to: theFP + (self frameStackedReceiverOffset: theFP)
+	(self oopForPointer: theFP + FoxCallerSavedIP + objectMemory wordSize)
+		to: (self oopForPointer: theFP + (self frameStackedReceiverOffset: theFP))
 		by: objectMemory wordSize
 		do: [:ptr|
 			oop := stackPages unsignedLongAt: ptr.
@@ -6414,9 +6413,9 @@ StackInterpreter >> followForwardingPointersInStackZone: theBecomeEffectsFlags [
 
 	(theBecomeEffectsFlags anyMask: BecameCompiledMethodFlag) ifTrue: [
 		(objectMemory isForwarded: method) ifTrue: [
-			theIPPtr := instructionPointer - method.
+			theIPPtr := (self oopForPointer: instructionPointer) - method.
 			method := objectMemory followForwarded: method.
-			instructionPointer := method + theIPPtr ].
+			instructionPointer := self pointerForOop: method + theIPPtr ].
 		(objectMemory isOopForwarded: newMethod) ifTrue: [
 			newMethod := objectMemory followForwarded: newMethod ] ].
 
@@ -7148,7 +7147,7 @@ StackInterpreter >> handleStackOverflow [
 							inMethod: method
 							framePointer: framePointer)]
 		ifTrue:
-			[self assert: (self validInstructionPointer: instructionPointer + 1
+			[self assert: (self validInstructionPointer: (self oopForPointer: instructionPointer) + 1
 							inFrame: framePointer).
 			 self assert: ((self frameHasContext: framePointer) not
 						or: [objectMemory isContext: (self frameContext: framePointer)])].
@@ -7448,17 +7447,17 @@ StackInterpreter >> initStackPages [
 	 frame ID so putting the stack anywhere else can confuse the thread system."
 
 	<inline: true>
-	<var: #theStackMemory type: #'void *'>
+	<var: #theStackMemory type: #'usqInt'>
 	| stackPageBytes stackPagesBytes theStackMemory |
 	stackPageBytes := self stackPageByteSize.
 	stackPagesBytes := self computeStackZoneSize.
 
-	theStackMemory :=  stackPages
+	theStackMemory := stackPages
 									initializeWithByteSize: stackPagesBytes
 									inMemoryMap: objectMemory getMemoryMap
 									for: self.		
 	stackPages
-		initializeStack: theStackMemory
+		initializeStack: (self pointerForOop: theStackMemory)
 		numSlots: stackPagesBytes / objectMemory wordSize
 		pageSize: stackPageBytes / objectMemory wordSize
 ]
@@ -9658,7 +9657,7 @@ StackInterpreter >> marryContextInNewStackPageAndInitializeInterpreterRegisters:
 	self setStackPageAndLimit: newPage.
 	self setStackPointersFromPage: newPage.
 	self setMethod: (self iframeMethod: stackPage headFP).
-	instructionPointer := self popStack
+	instructionPointer := self pointerForOop: self popStack
 ]
 
 { #category : 'frame access' }
@@ -12365,22 +12364,22 @@ StackInterpreter >> printStackReferencesTo: oop [
 			oop = (stackPages unsignedLongAt: theSP) ifTrue: [
 				self
 					print: 'FP: ';
-					printHexnp: theFP;
+					printHexnp: (self oopForPointer: theFP);
 					print: ' @ ';
-					printHexnp: theSP;
+					printHexnp: (self oopForPointer: theSP);
 					cr ].
 			theSP := theSP + objectMemory wordSize ].
 		(self frameHasContext: theFP) ifTrue: [
 			oop = (self frameContext: theFP) ifTrue: [
 				self
 					print: 'FP: ';
-					printHexnp: theFP;
+					printHexnp: (self oopForPointer: theFP);
 					print: ' CTXT';
 					cr ] ].
 		oop = (self iframeMethod: theFP) ifTrue: [
 			self
 				print: 'FP: ';
-				printHexnp: theFP;
+				printHexnp: (self oopForPointer: theFP);
 				print: ' MTHD';
 				cr ].
 		(callerFP := self frameCallerFP: theFP) ~= 0 ] whileTrue: [
@@ -12391,9 +12390,9 @@ StackInterpreter >> printStackReferencesTo: oop [
 			oop = (stackPages unsignedLongAt: theSP) ifTrue: [
 				self
 					print: 'FP: ';
-					printHexnp: theFP;
+					printHexnp: (self oopForPointer: theFP);
 					print: ' @ ';
-					printHexnp: theSP;
+					printHexnp: (self oopForPointer: theSP);
 					cr ].
 			theSP := theSP + objectMemory wordSize ] ]
 ]
@@ -12949,6 +12948,7 @@ StackInterpreter >> reapAndResetErrorCodeTo: theFP header: methodHeader [
 	Then zero the primFailCode.  This is infrequent code, so keep it out of the common path."
 
 	<inline: #never>
+	<var: #theFP type: #'char *'>
 	| initialPC |
 	self assert: primFailCode ~= 0.
 	initialPC := (self initialIPForHeader: methodHeader method: newMethod)
@@ -12995,6 +12995,8 @@ StackInterpreter >> remapCallbackState [
 StackInterpreter >> remapInstructionPointerInFrame: theFP inSavedInstructionPointerLocation: frameSavedInstructionPointerLocation byRemapDelta: delta [
 	"The IP is in theIPPtr and needs to be mapped by delta, which is the distance the method has moved"
 
+	<var: #theFP type: #'char *'>
+	<var: #frameSavedInstructionPointerLocation type: #'char *'>
 	| theIP |
 	theIP := stackPages unsignedLongAt: frameSavedInstructionPointerLocation.
 	stackPages unsignedLongAt: frameSavedInstructionPointerLocation put: theIP - delta
@@ -13376,6 +13378,8 @@ StackInterpreter >> saveCallerFrameStateCallingNewInterpreterFrame: isInterprete
 { #category : 'object memory support' }
 StackInterpreter >> savedInstructioPointerLocation: theFP [
 
+	<returnTypeC: #'char *'>
+	<var: #theFP type: #'char *'>
 	^ 0
 ]
 
@@ -13744,7 +13748,7 @@ StackInterpreter >> setStackPageAndPointersForSuspendedContextOfProcess: aProces
 	self setStackPointersFromPage: thePage.
 	(self isMachineCodeFrame: framePointer) ifFalse:
 		[self setMethod: (self iframeMethod: framePointer)].
-	instructionPointer := self popStack.
+	instructionPointer := self pointerForOop: self popStack.
 	self assertValidExecutionPointe: instructionPointer r: framePointer s: stackPointer
 ]
 

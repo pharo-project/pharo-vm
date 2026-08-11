@@ -657,7 +657,7 @@ CoInterpreterPrimitives >> primitiveVoidVMStateForMethod [
 	self assert: thePage headFP = theFrame.
 	self setStackPageAndLimit: thePage.
 	self setStackPointersFromPage: thePage.
-	instructionPointer := self popStack.
+	instructionPointer := self pointerForOop: self popStack.
 	self assert: (methodObj = self stackTop or: [argumentCount > 0 and: [methodObj = (self stackValue: 1)]]).
 	self pop: argumentCount
 ]

@@ -771,7 +771,7 @@ SimpleStackBasedCogit >> compileMegamorphicIC: selector numArgs: numArgs [
 	entry := objectRepresentation genGetClassTagOf: ReceiverResultReg into: SendNumArgsReg scratchReg: TempReg.
 
 	cacheBaseReg := NoReg.
-	(backEnd isWithinMwOffsetRange: coInterpreter methodCacheAddress) ifFalse:
+	(backEnd isWithinMwOffsetRange: coInterpreter methodCacheAddress asUnsignedInteger) ifFalse:
 		[self MoveCq: coInterpreter methodCacheAddress R: (cacheBaseReg := Extra0Reg)].
 
 	"Do first of three probes.  See CoInterpreter>>lookupInMethodCacheSel:classTag:"
@@ -949,7 +949,9 @@ SimpleStackBasedCogit >> compilePrimitive [
 	(flags anyMask: PrimCallOnSmalltalkStack) ifTrue: [ 
 		self assert: flags = PrimCallOnSmalltalkStack.
 		^ self compileMachineCodeInterpreterPrimitive:
-			  (coInterpreter mcprimFunctionForPrimitiveIndex: primitiveIndex) ].
+			  (self cCoerceSimple:
+				   (coInterpreter mcprimFunctionForPrimitiveIndex: primitiveIndex)
+				   to: #'void (*)(void)') ].
 
 	((primitiveRoutine := coInterpreter
 		                      functionPointerForCompiledMethod: methodObj
@@ -1641,7 +1643,7 @@ SimpleStackBasedCogit >> genLookupForPerformNumArgs: numArgs [
 	objectRepresentation genGetInlineCacheClassTagFrom: ReceiverResultReg into: SendNumArgsReg.
 
 	cacheBaseReg := NoReg.
-	(backEnd isWithinMwOffsetRange: coInterpreter methodCacheAddress) ifFalse:
+	(backEnd isWithinMwOffsetRange: coInterpreter methodCacheAddress asUnsignedInteger) ifFalse:
 		[self MoveCq: coInterpreter methodCacheAddress R: (cacheBaseReg := Extra0Reg)].
 
 	"Do first of three probes.  See CoInterpreter>>lookupInMethodCacheSel:classTag:"
@@ -2786,6 +2788,7 @@ SimpleStackBasedCogit >> genUpArrowReturn [
 { #category : 'primitive generators - call' }
 SimpleStackBasedCogit >> generateCheckProfileTickFromJump: arrivingJmp returningTo: returningLabel beforeCallDo: aBlockClosure [
 
+	<var: #arrivingJmp type: #'AbstractInstruction *'>
 	arrivingJmp jmpTarget: self Label.
 
 	aBlockClosure value.

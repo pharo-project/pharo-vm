@@ -10,7 +10,7 @@
 #include <ffi.h>
 #if FEATURE_THREADED_FFI
 #ifdef _WIN32
-# include <Windows.h>
+# include <windows.h>
 #else
 # include <pthread.h>
 #endif

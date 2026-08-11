@@ -97,7 +97,7 @@ sqAllocateMemory(usqInt minHeapSize, usqInt desiredHeapSize, usqInt desiredBaseA
 	alloc = sqAllocateMemorySegmentOfSizeAboveAllocatedSizeInto
 				(roundUpToPage(desiredHeapSize), address, &allocBytes);
 
-	return alloc;
+	return (usqInt)alloc;
 }
 
 #define roundDownToPage(v) ((v)&pageMask)

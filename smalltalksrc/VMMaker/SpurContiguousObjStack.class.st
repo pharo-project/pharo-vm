@@ -38,11 +38,12 @@ SpurContiguousObjStack >> calloc: num _: size [
 SpurContiguousObjStack >> extendObjStack [
 
 	| newTop newSize newStart newLimit |
+	<var: #newStart type: #'void *'>
 
 	"We double the size of the stack"
 	newSize := ((self limit - self start) / objectMemory wordSize) * 2.
 
-	newStart := objectMemory realloc: self start _: (objectMemory wordSize * newSize).
+	newStart := objectMemory realloc: (objectMemory pointerForOop: self start) _: (objectMemory wordSize * newSize).
 	newStart ifNil: [ 
 		objectMemory error: 'Imposible to extend SpurContiguousObjStack' ].
 
@@ -67,7 +68,7 @@ SpurContiguousObjStack >> free: anAddress [
 { #category : 'freeing' }
 SpurContiguousObjStack >> freeObjectStack [
 	
-	objectMemory free: self start.
+	objectMemory free: (objectMemory pointerForOop: self start).
 	self start: 0.
 	self top: 0.
 ]
@@ -93,6 +94,7 @@ SpurContiguousObjStack >> initializeWithAtLeast: anInitialSizeIfNotProvided onEr
 	  - top is by default the start"
 
 	<inline: true>
+	<var: #allocation type: #'void *'>
 
 	| allocation |
 	
