@@ -4787,15 +4787,6 @@ CoInterpreter >> setMethod: aMethodObj [
 	super setMethod: aMethodObj
 ]
 
-{ #category : 'debug support' }
-CoInterpreter >> setUpForUseByFacade: aCurrentImageCoInterpreterFacade [
-	"Set up variables with default values so that other initializations work.
-	 numStackPages needs to be initialized so that interpreterAllocationReserveBytes
-	 can be computed."
-	<doNotGenerate>
-	numStackPages := 0
-]
-
 { #category : 'frame access' }
 CoInterpreter >> setupFrameFixedPart: theMethod withHeader: methodHeader withContext: aContext maybeClosure: maybeClosure withNumArgs: numArgs withReceiver: rcvr [
 

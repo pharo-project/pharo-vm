@@ -13672,6 +13672,7 @@ StackInterpreter >> setNumStackPages: requestedNumPages [
 	desiredNumStackPages := requestedNumPages.
 
 	desiredStackPageBytes = 0 ifTrue: [
+		1halt.
 			objectMemory wordSize = 8
 				ifTrue: [ self setDesiredStackPageBytes: 1024 * 1024 "1MB" ]
 				ifFalse: [ self setDesiredStackPageBytes: 256 * 1024 "256KB" ] ]
