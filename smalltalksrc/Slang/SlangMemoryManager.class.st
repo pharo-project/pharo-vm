@@ -4,7 +4,9 @@ Class {
 	#instVars : [
 		'memoryMap',
 		'wordSize',
-		'initialAddress'
+		'initialAddress',
+		'pageSize',
+		'shiftForPageSize'
 	],
 	#category : 'Slang-Simulation',
 	#package : 'Slang',
@@ -15,36 +17,6 @@ Class {
 SlangMemoryManager >> allocate: desiredSize [
 
 	^ self allocate: desiredSize desiredPosition: initialAddress limit: 0
-]
-
-{ #category : 'allocating' }
-SlangMemoryManager >> allocate: desiredSize desiredPosition: desiredPos [ 
-
-	| allocatedAddress newMemoryRegion allocatedSize newMemory desiredPosition |
-	"Allocate chunks multiple of 4KB, as they are required by the machine code simulator"
-
-	allocatedSize := self roundUpToPageSize: desiredSize.
-	desiredPosition := self roundUpToPageSize: desiredPos.
-
-	self checkIsRegionAddress: desiredPosition.
-
-	allocatedAddress := self findHoleBiggerThan: allocatedSize from: desiredPosition.
-
-	"Warrantee that memory regions do not move, for simulation purposes with the FFI"
-	newMemory := ByteArray new: allocatedSize.
-	newMemory pinInMemory.
-	newMemoryRegion := SlangMemoryRegion new
-		                   start: allocatedAddress;
-		                   memory: newMemory;
-		                   originallyRequestedMemory: desiredSize;
-		                   yourself.
-
-	"Index regions by the high bits of the address"
-	self
-		registerNewRegion: newMemoryRegion
-		size: desiredSize
-		address: allocatedAddress.
-	^ allocatedAddress
 ]
 
 { #category : 'allocating' }
@@ -176,7 +148,7 @@ SlangMemoryManager >> float64At: address put: value [
 SlangMemoryManager >> free: address [ 
 	
 	self checkIsRegionAddress: address.
-	memoryMap removeKey: address >> 12
+	memoryMap removeKey: address >> shiftForPageSize
 ]
 
 { #category : 'accessing' }
@@ -190,7 +162,9 @@ SlangMemoryManager >> initialize [
 
 	super initialize.
 	initialAddress := 4*1024.
-	memoryMap := Dictionary new
+	memoryMap := Dictionary new.
+	
+	self pageSize: 4096 * 8
 ]
 
 { #category : 'memory-access' }
@@ -204,7 +178,7 @@ SlangMemoryManager >> isValidAddress: address [
 
 	"Memory regions are allocated in multiples of 4KB (12 bits).
 	The Memory map indexes memory regions by the high part"
-	^ memoryMap includesKey: address >> 12
+	^ memoryMap includesKey: address >> shiftForPageSize
 ]
 
 { #category : 'memory-access' }
@@ -246,7 +220,16 @@ SlangMemoryManager >> longAt: address put: aWordSizedValue [
 { #category : 'utils' }
 SlangMemoryManager >> pageSize [
 
-	^ 4096
+	^ pageSize
+]
+
+{ #category : 'allocating' }
+SlangMemoryManager >> pageSize: aPageSize [
+
+	self assert: (1024*1024 >> (aPageSize log: 2) asInteger) = (1024*1024 // aPageSize).
+
+	pageSize := aPageSize.
+	shiftForPageSize := (aPageSize log: 2) asInteger
 ]
 
 { #category : 'memory-access' }
@@ -301,7 +284,7 @@ SlangMemoryManager >> regionForAddress: address [
 
 	"Memory regions are allocated in multiples of 4KB (12 bits).
 	The Memory map indexes memory regions by the high part"
-	^ memoryMap at: address >> 12
+	^ memoryMap at: address >> shiftForPageSize
 ]
 
 { #category : 'enumerating' }
@@ -318,7 +301,7 @@ SlangMemoryManager >> registerNewRegion: newMemoryRegion size: desiredSize addre
 
 	allocatedAddress to: (allocatedAddress + desiredSize - 1) by: self pageSize do: [ 
 		:pageAddress | "Index regions by the high bits of the address" 
-		memoryMap at: pageAddress >> 12 put: newMemoryRegion ]
+		memoryMap at: pageAddress >> shiftForPageSize put: newMemoryRegion ]
 ]
 
 { #category : 'utils' }
@@ -401,7 +384,7 @@ SlangMemoryManager >> unsignedShortAt: anAddress put: aValue [
 SlangMemoryManager >> wholeAt: foundPosition fits: desiredSize [
 
 	^ (foundPosition to: (foundPosition + desiredSize) by: self pageSize)
-		allSatisfy: [ :position | self checkIsRegionAddress: position. (memoryMap includesKey: position >> 12) not ]
+		allSatisfy: [ :position | self checkIsRegionAddress: position. (memoryMap includesKey: position >> shiftForPageSize) not ]
 ]
 
 { #category : 'accessing' }
