@@ -27,6 +27,8 @@ if(FEATURE_PLUGIN_UUID AND NOT OPENBSD)
     addLibraryWithRPATH(UUIDPlugin ${UUIDPlugin_SOURCES})
     if(WIN)
         target_link_libraries(UUIDPlugin PRIVATE "-lole32")
+    elseif(CMAKE_SYSTEM_NAME STREQUAL "FreeBSD")
+        # FreeBSD provides uuidgen(2) in libc; no separate libuuid is needed.
     elseif(UNIX AND NOT OSX)
        #find_path(LIB_UUID_INCLUDE_DIR uuid.h PATH_SUFFIXES uuid)
         find_library(LIB_UUID_LIBRARY uuid)
