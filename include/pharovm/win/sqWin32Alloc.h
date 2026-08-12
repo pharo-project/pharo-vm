@@ -19,11 +19,8 @@
 #undef sqAllocateMemory
 #undef sqMemoryExtraBytesLeft
 
-extern usqInt sqAllocateMemory(usqInt minHeapSize, usqInt desiredHeapSize, usqInt baseAddress);
-extern void* allocateJITMemory(usqInt desiredSize, usqInt desiredPosition);
-
-#define allocateMemoryMinimumImageFileHeaderSizeBaseAddress(heapSize, minimumMemory, fileStream, headerSize, baseAddress) \
-sqAllocateMemory(minimumMemory, heapSize, baseAddress)
+extern usqInt sqAllocateMemory(usqInt minHeapSize, usqInt desiredHeapSize, usqInt baseAddress, usqInt limit);
+extern void* allocateJITMemory(usqInt desiredSize, usqInt desiredPosition, usqInt limit);
 
 int sqMemoryExtraBytesLeft(int includingSwap);
 

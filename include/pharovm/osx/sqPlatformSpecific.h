@@ -78,12 +78,8 @@ void		sqFilenameFromStringOpen(char *buffer,sqInt fileIndex, long fileLength);
 void		sqFilenameFromString(char *buffer,sqInt fileIndex, long fileLength);
 #undef allocateMemoryMinimumImageFileHeaderSize
 
-extern void* allocateJITMemory(usqInt desiredSize, usqInt desiredPosition);
-extern usqInt sqAllocateMemory(usqInt minHeapSize, usqInt desiredHeapSize, usqInt baseAddress);
-
-#define allocateMemoryMinimumImageFileHeaderSizeBaseAddress(heapSize, minimumMemory, fileStream, headerSize, baseAddress) \
-sqAllocateMemory(minimumMemory, heapSize, baseAddress)
-
+extern void* allocateJITMemory(usqInt desiredSize, usqInt desiredPosition, usqInt limit);
+extern usqInt sqAllocateMemory(usqInt minHeapSize, usqInt desiredHeapSize, usqInt baseAddress, usqInt limit);
 
 # define sqMacMemoryFree() 
 
