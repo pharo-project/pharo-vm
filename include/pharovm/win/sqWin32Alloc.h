@@ -20,7 +20,7 @@
 #undef sqMemoryExtraBytesLeft
 
 extern usqInt sqAllocateMemory(usqInt minHeapSize, usqInt desiredHeapSize, usqInt baseAddress, usqInt limit);
-extern void* allocateJITMemory(usqInt desiredSize, usqInt desiredPosition, usqInt limit);
+extern void* allocateJITMemory_limit(usqInt desiredSize, usqInt desiredPosition, usqInt limit);
 
 int sqMemoryExtraBytesLeft(int includingSwap);
 

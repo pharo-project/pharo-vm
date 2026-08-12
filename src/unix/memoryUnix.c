@@ -89,7 +89,7 @@ sqMakeMemoryNotExecutableFromTo(unsigned long startAddr, unsigned long endAddr)
 }
 
 
-void* allocateJITMemory(usqInt desiredSize, usqInt desiredPosition, usqInt limit){
+void* allocateJITMemory_limit(usqInt desiredSize, usqInt desiredPosition, usqInt limit){
 	
 	pageMask = ~(getpagesize() - 1);
 
@@ -116,7 +116,7 @@ void* allocateJITMemory(usqInt desiredSize, usqInt desiredPosition, usqInt limit
 		exit(1);
 	}
 	
-	if (limit > 0 && result != 0 && heap + alignedSize > limit){
+	if (limit > 0 && result != 0 && result + alignedSize > limit){
 		logError("Allocation steps into the limit: %p", (void*)limit);
 		return 0;
 	}

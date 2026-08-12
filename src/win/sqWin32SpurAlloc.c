@@ -39,7 +39,7 @@ static char  *maxAppAddr;	/* SYSTEM_INFO lpMaximumApplicationAddress */
 # define roundDownToPage(v) ((v)&pageMask)
 # define roundUpToPage(v) (((v)+pageSize-1)&pageMask)
 
-void* allocateJITMemory(usqInt desiredSize, usqInt desiredPosition, usqInt limit){
+void* allocateJITMemory_limit(usqInt desiredSize, usqInt desiredPosition, usqInt limit){
 	
 	char *address, *alloc;
 	usqIntptr_t alignment;
