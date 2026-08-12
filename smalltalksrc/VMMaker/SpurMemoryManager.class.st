@@ -1941,8 +1941,7 @@ SpurMemoryManager >> allocateMemoryOfSize: memoryBytes newSpaceSize: newSpaceByt
 	self assert: newSpaceActualBytes
 		>= (coInterpreter interpreterAllocationReserveBytes + newSpaceBytes).
 
-"	scavengeThreshold := memoryMap newSpaceStart."
-
+	scavengeThreshold := memoryMap newSpaceStart.
 	scavenger := SpurGenerationScavenger simulatorClass new.
 	scavenger manager: self.
 	scavenger
