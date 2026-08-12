@@ -1908,16 +1908,8 @@ SpurMemoryManager >> allocateLargestFreeChunk [
 	^freeChunk
 ]
 
-{ #category : 'testing' }
-SpurMemoryManager >> allocateMemoryOfSize: memoryBytes initialAddress: initialAddress [
-	<doNotGenerate>
-
-	^ memoryManager allocate: memoryBytes desiredPosition: initialAddress
-]
-
 { #category : 'initialization' }
 SpurMemoryManager >> allocateMemoryOfSize: memoryBytes newSpaceSize: newSpaceBytes stackSize: stackBytes codeSize: codeBytes methodCacheSize: methodCacheSize primitiveTraceLogSize: primitiveLogSize rumpCStackSize: rumpCStackSize permSpaceSize: permSpaceSize [
-
 	"Intialize the receiver for bootsraping an image.
 	 Set up a large oldSpace and an empty newSpace and set-up freeStart and scavengeThreshold
 	 to allocate in oldSpace.  Later on (in initializePostBootstrap) freeStart and scavengeThreshold
@@ -1925,17 +1917,17 @@ SpurMemoryManager >> allocateMemoryOfSize: memoryBytes newSpaceSize: newSpaceByt
 
 	<doNotGenerate>
 	| vmMemoryConf newSpaceActualBytes |
+	self assert: (memoryBytes \\ self allocationUnit = 0 and: [
+				 newSpaceBytes \\ self allocationUnit = 0 and: [
+					 codeBytes \\ self allocationUnit = 0 ] ]).
 
-	self assert: (memoryBytes \\ self allocationUnit = 0 and: [ 
-			 newSpaceBytes \\ self allocationUnit = 0 and: [ 
-				 codeBytes \\ self allocationUnit = 0 ] ]).
+	self ensureMemoryManager.
 
-	self ensureMemoryManager.	
+	primitiveLogSize ~= 0 ifTrue: [
+			coInterpreter movePrimTraceLogToMemoryAt:
+				(memoryManager allocate: primitiveLogSize) ].
 
-	primitiveLogSize ~= 0 
-		ifTrue: [ coInterpreter movePrimTraceLogToMemoryAt: (memoryManager allocate: primitiveLogSize)].
-
-	memoryMap 		
+	memoryMap
 		allocationReserve: coInterpreter interpreterAllocationReserveBytes;
 		initialOldSpaceSize: memoryBytes;
 		initialNewSpaceSize: newSpaceBytes;
@@ -1943,30 +1935,36 @@ SpurMemoryManager >> allocateMemoryOfSize: memoryBytes newSpaceSize: newSpaceByt
 		initialCodeZoneSize: codeBytes;
 		initialPermSpaceSize: permSpaceSize;
 		allocateHeap.
-		
-	newSpaceActualBytes := memoryMap newSpaceEnd - memoryMap newSpaceStart.
-	
-	self assert: newSpaceActualBytes >= newSpaceBytes.
-		
-	freeStart := newSpaceActualBytes + memoryMap newSpaceStart.
-	
-	scavengeThreshold := memoryMap newSpaceStart.
+
+	newSpaceActualBytes := memoryMap newSpaceEnd
+	                       - memoryMap newSpaceStart.
+	self assert: newSpaceActualBytes
+		>= (coInterpreter interpreterAllocationReserveBytes + newSpaceBytes).
+
+"	scavengeThreshold := memoryMap newSpaceStart."
 
 	scavenger := SpurGenerationScavenger simulatorClass new.
 	scavenger manager: self.
 	scavenger
 		newSpaceStart: memoryMap newSpaceStart
 		newSpaceBytes: newSpaceActualBytes
-		survivorBytes: newSpaceActualBytes // self scavengerDenominator.
+		survivorBytes: memoryMap newSpaceEnd - memoryMap newSpaceStart
+			- coInterpreter interpreterAllocationReserveBytes
+			// self scavengerDenominator.
+	freeStart := scavenger eden start.
+	pastSpaceStart := scavenger pastSpace start.
+
+"	self initializeNewSpaceVariables."
+
+	freeOldSpaceStart := memoryMap oldSpaceEnd.
+	permSpaceFreeStart := memoryMap permSpaceStart.
 
 	compactor := self class compactorClass simulatorClass new
 		             manager: self;
 		             yourself.
-	
-	vmMemoryConf := (VMMemoryMapConfiguration forWordsize: self wordSize) new.
-				
-	permSpaceFreeStart := memoryMap permSpaceStart 
 
+	vmMemoryConf := (VMMemoryMapConfiguration forWordsize: self wordSize)
+		                new.
 ]
 
 { #category : 'allocation' }

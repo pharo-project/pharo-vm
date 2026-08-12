@@ -80,18 +80,27 @@ VMMemoryMap class >> shouldBeGenerated [
 
 { #category : 'private' }
 VMMemoryMap >> allocateCodeZone [
-	
+
 	initialCodeZoneSize = 0 ifTrue: [ ^ self ].
-	
-	self codeZoneStart: (self cCoerce: (self allocateJITMemory: initialCodeZoneSize _: memoryMapConfiguration codeZoneInitialAddress) to: #usqInt).
+
+	self codeZoneStart: (self
+			 cCoerce: (self
+					  allocateJITMemory: initialCodeZoneSize
+					  _: memoryMapConfiguration codeZoneInitialAddress
+					  limit: memoryMapConfiguration newSpaceInitialAddress)
+			 to: #usqInt).
 	self codeZoneStart ifNil: [ self insufficientMemoryAvailableError ].
 
-	self codeZoneStart = memoryMapConfiguration codeZoneInitialAddress 
-		ifFalse: [ 
-			self logError: 'Could not allocate codeZone in the expected place (%p), got %p' _: memoryMapConfiguration codeZoneInitialAddress _: self codeZoneStart.
-			self error: 'Error allocating' ].
-	
-	self codeZoneEnd: codeZoneStart + initialCodeZoneSize.
+	self codeZoneStart = memoryMapConfiguration codeZoneInitialAddress
+		ifFalse: [
+				self
+					logError:
+					'Could not allocate codeZone in the expected place (%p), got %p'
+					_: memoryMapConfiguration codeZoneInitialAddress
+					_: self codeZoneStart.
+				self error: 'Error allocating' ].
+
+	self codeZoneEnd: codeZoneStart + initialCodeZoneSize
 ]
 
 { #category : 'allocating' }
@@ -105,53 +114,61 @@ VMMemoryMap >> allocateHeap [
 ]
 
 { #category : 'private' }
-VMMemoryMap >> allocateJITMemory: desiredSize _: desiredPosition [ 
+VMMemoryMap >> allocateJITMemory: desiredSize _: desiredPosition limit: limit [
 
 	<doNotGenerate>
-	^ memoryManager allocate: desiredSize desiredPosition: desiredPosition
-]
+	"This version will get replaced by native C code"
 
-{ #category : 'private' }
-VMMemoryMap >> allocateMemory: desiredSize BaseAddress: baseAddress [
-
-	<doNotGenerate>
-	^ memoryManager allocate: desiredSize desiredPosition: baseAddress
+	^ memoryManager allocate: desiredSize desiredPosition: desiredPosition limit: limit
 ]
 
 { #category : 'private' }
 VMMemoryMap >> allocateNewObjectsSpace [
-	
+
 	| newSpaceSizeToAllocate |
-	
-	newSpaceSizeToAllocate := self roundToAllocationSize: self initialNewSpaceSize + self allocationReserve.
-	
-	self newSpaceStart: (self allocateMemory: newSpaceSizeToAllocate BaseAddress: memoryMapConfiguration newSpaceInitialAddress).
-	
+	newSpaceSizeToAllocate := self roundToAllocationSize:
+		                          self initialNewSpaceSize
+		                          + self allocationReserve.
+	self newSpaceStart: (memoryManager
+			 allocate: newSpaceSizeToAllocate
+			 desiredPosition: memoryMapConfiguration newSpaceInitialAddress
+			 limit: memoryMapConfiguration oldSpaceInitialAddress).
+
 	self newSpaceStart ifNil: [ self insufficientMemoryAvailableError ].
-	
-	self newSpaceStart = memoryMapConfiguration newSpaceInitialAddress 
-		ifFalse: [ 
-			self logError: 'Could not allocate newSpace in the expected place (%p), got %p' _: self newSpaceStart _: memoryMapConfiguration newSpaceInitialAddress.
-			self error: 'Error allocating' ].
-			
-	self newSpaceEnd: self newSpaceStart + newSpaceSizeToAllocate.
+
+	self newSpaceStart = memoryMapConfiguration newSpaceInitialAddress
+		ifFalse: [
+				self
+					logError:
+					'Could not allocate newSpace in the expected place (%p), got %p'
+					_: self newSpaceStart
+					_: memoryMapConfiguration newSpaceInitialAddress.
+				self error: 'Error allocating' ].
+
+	self newSpaceEnd: self newSpaceStart + newSpaceSizeToAllocate
 ]
 
 { #category : 'private' }
 VMMemoryMap >> allocateOldObjectsSpace [
 
 	| sizeToAllocate |
-
-	sizeToAllocate := self roundToAllocationSize: self initialOldSpaceSize + self initialHeadroom.
-
-	self oldSpaceStart: (self allocateMemory: sizeToAllocate BaseAddress: memoryMapConfiguration oldSpaceInitialAddress).
+	sizeToAllocate := self roundToAllocationSize:
+		                  self initialOldSpaceSize + self initialHeadroom.
+	self oldSpaceStart: (memoryManager
+			 allocate: sizeToAllocate
+			 desiredPosition: memoryMapConfiguration oldSpaceInitialAddress
+			 limit: memoryMapConfiguration permSpaceInitialAddress).
 
 	self oldSpaceStart ifNil: [ self insufficientMemoryAvailableError ].
 
-	self oldSpaceStart = memoryMapConfiguration oldSpaceInitialAddress 
-		ifFalse: [ 
-			self logError: 'Could not allocate oldSpace in the expected place (%p), got %p' _: self oldSpaceStart _: memoryMapConfiguration oldSpaceInitialAddress.
-			self error: 'Error allocating' ].
+	self oldSpaceStart = memoryMapConfiguration oldSpaceInitialAddress
+		ifFalse: [
+				self
+					logError:
+					'Could not allocate oldSpace in the expected place (%p), got %p'
+					_: self oldSpaceStart
+					_: memoryMapConfiguration oldSpaceInitialAddress.
+				self error: 'Error allocating' ].
 
 	self setOldSpaceEnd: self oldSpaceStart + sizeToAllocate
 ]
@@ -162,66 +179,77 @@ VMMemoryMap >> allocatePermObjectsSpace [
 	| minSize |
 	minSize := minPermSpaceSize max: initialPermSpaceSize.
 
-	minSize = 0 ifTrue: [ 
-		^ self ].
+	minSize = 0 ifTrue: [ ^ self ].
 
 	minSize := self roundToAllocationSize: minSize.
-
-	self permSpaceStart: (self 
-		allocateMemory: minSize 
-		BaseAddress: memoryMapConfiguration permSpaceInitialAddress).
+	self permSpaceStart:
+		(memoryManager
+			 allocate: minSize
+			 desiredPosition: memoryMapConfiguration permSpaceInitialAddress
+			 limit: 0).
 
 	self permSpaceStart ifNil: [ self insufficientMemoryAvailableError ].
 
-	self permSpaceStart = memoryMapConfiguration permSpaceInitialAddress 
-		ifFalse: [ 
-			self logError: 'Could not allocate permSpace in the expected place (%p), got %p' _: self permSpaceStart _: memoryMapConfiguration permSpaceInitialAddress.
-			self error: 'Error allocating' ].
+	self permSpaceStart = memoryMapConfiguration permSpaceInitialAddress
+		ifFalse: [
+				self
+					logError:
+					'Could not allocate permSpace in the expected place (%p), got %p'
+					_: self permSpaceStart
+					_: memoryMapConfiguration permSpaceInitialAddress.
+				self error: 'Error allocating' ].
 
 	self permSpaceEnd: self permSpaceStart + minSize.
-	objectMemory setPermSpaceFreeStart: self permSpaceStart. 
-
-
+	objectMemory setPermSpaceFreeStart: self permSpaceStart
 ]
 
 { #category : 'allocating' }
 VMMemoryMap >> allocateSegmentOfSize: ammount minAddress: minAddress resultsIn: blockWithAddressAndSegSize [
 
-	| sizeToRequest segmentAddress |
-
-	<inline:true>
-	<var: #sizeToRequest type:'size_t'>
+	<inline: true>
+	<var: #sizeToRequest type: 'size_t'>
 	<var: #segmentAddress type: #usqInt>
-	
+	| sizeToRequest segmentAddress |
 	sizeToRequest := self roundToAllocationSize: ammount.
-	segmentAddress := self allocateMemory: sizeToRequest BaseAddress: minAddress.
-	
-	blockWithAddressAndSegSize value: segmentAddress value: sizeToRequest.
+	segmentAddress := memoryManager
+		                  allocate: sizeToRequest
+		                  desiredPosition: minAddress
+		                  limit: 0.
+
+	blockWithAddressAndSegSize value: segmentAddress value: sizeToRequest
 ]
 
 { #category : 'allocating' }
-VMMemoryMap >> allocateStackPages: initialStackSize [ 
-	
+VMMemoryMap >> allocateStackPages: initialStackSize [
+
 	<inline: false>
 	<returnTypeC: #void>
-	
 	| sizeToRequest |
 	sizeToRequest := self roundToAllocationSize: initialStackSize.
-	
-	self stackPagesStart: (self allocateMemory: sizeToRequest BaseAddress: memoryMapConfiguration stackPagesInitialAddress).
-	
+	self stackPagesStart: (memoryManager
+			 allocate: sizeToRequest
+			 desiredPosition: memoryMapConfiguration stackPagesInitialAddress
+			 limit: memoryMapConfiguration codeZoneInitialAddress).
+
 	self stackPagesStart ifNil: [ self insufficientMemoryAvailableError ].
-	
-	self stackPagesStart = memoryMapConfiguration stackPagesInitialAddress 
-		ifFalse: [ 
-			self logError: 'Could not allocate stack in the expected place (%p), got %p' _: memoryMapConfiguration stackPagesInitialAddress  _: self stackPagesStart.
+
+	self stackPagesStart
+	= memoryMapConfiguration stackPagesInitialAddress ifFalse: [
+			self
+				logError:
+				'Could not allocate stack in the expected place (%p), got %p'
+				_: memoryMapConfiguration stackPagesInitialAddress
+				_: self stackPagesStart.
 			self error: 'Error allocating' ].
-	
+
 	self stackPagesEnd: self stackPagesStart + sizeToRequest.
 
 	"Set memory to 0 on C, on Pharo this is already the default for newly allocated memory"
-	self cCode: 	[self memset: (self cCoerce: self stackPagesStart to: #'void *') _: 0 _: sizeToRequest]
-
+	self cCode: [
+			self
+				memset: (self cCoerce: self stackPagesStart to: #'void *')
+				_: 0
+				_: sizeToRequest ]
 ]
 
 { #category : 'utils' }
@@ -352,19 +380,20 @@ VMMemoryMap >> ensureAtLeastPermSpaceOf: requestedSize [
 VMMemoryMap >> extendPermObjectsSpaceBy: aSize [
 
 	| requestedSize extendedAddress |
-
 	requestedSize := self roundToAllocationSize: aSize.
 
-	extendedAddress := self 
-		allocateMemory: requestedSize 
-		BaseAddress: self permSpaceEnd.
-	
-	extendedAddress ~= self permSpaceEnd 
-		ifTrue: [ self logError: 'Could not extend perm space.'. ^ false ].
-	
-	self permSpaceEnd: self permSpaceEnd + requestedSize.	
-		
-	^ true.
+	extendedAddress := memoryManager
+		                   allocate: requestedSize
+		                   desiredPosition: self permSpaceEnd
+		                   limit: 0.
+
+	extendedAddress ~= self permSpaceEnd ifTrue: [
+			self logError: 'Could not extend perm space.'.
+			^ false ].
+
+	self permSpaceEnd: self permSpaceEnd + requestedSize.
+
+	^ true
 ]
 
 { #category : 'allocating' }

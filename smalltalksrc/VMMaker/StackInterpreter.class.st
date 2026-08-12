@@ -13665,14 +13665,16 @@ StackInterpreter >> setNumStackPages: requestedNumPages [
 	numStackPages := desiredNumStackPages ~= 0
 		                 ifTrue: [ desiredNumStackPages ]
 		                 ifFalse: [
-			                 requestedNumPages = 0
-				                 ifTrue: [ self defaultNumStackPages ]
-				                 ifFalse: [ requestedNumPages ] ].
+				                 requestedNumPages = 0
+					                 ifTrue: [ self defaultNumStackPages ]
+					                 ifFalse: [ requestedNumPages ] ].
 
 	desiredNumStackPages := requestedNumPages.
 
 	desiredStackPageBytes = 0 ifTrue: [
-		self setDesiredStackPageBytes: 1024 * 1024 "1MB" ]
+			objectMemory wordSize = 8
+				ifTrue: [ self setDesiredStackPageBytes: 1024 * 1024 "1MB" ]
+				ifFalse: [ self setDesiredStackPageBytes: 256 * 1024 "256KB" ] ]
 ]
 
 { #category : 'process primitive support' }

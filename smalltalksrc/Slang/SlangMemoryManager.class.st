@@ -14,7 +14,7 @@ Class {
 { #category : 'allocating' }
 SlangMemoryManager >> allocate: desiredSize [
 
-	^ self allocate: desiredSize desiredPosition: initialAddress
+	^ self allocate: desiredSize desiredPosition: initialAddress limit: 0
 ]
 
 { #category : 'allocating' }
@@ -30,6 +30,39 @@ SlangMemoryManager >> allocate: desiredSize desiredPosition: desiredPos [
 
 	allocatedAddress := self findHoleBiggerThan: allocatedSize from: desiredPosition.
 
+	"Warrantee that memory regions do not move, for simulation purposes with the FFI"
+	newMemory := ByteArray new: allocatedSize.
+	newMemory pinInMemory.
+	newMemoryRegion := SlangMemoryRegion new
+		                   start: allocatedAddress;
+		                   memory: newMemory;
+		                   originallyRequestedMemory: desiredSize;
+		                   yourself.
+
+	"Index regions by the high bits of the address"
+	self
+		registerNewRegion: newMemoryRegion
+		size: desiredSize
+		address: allocatedAddress.
+	^ allocatedAddress
+]
+
+{ #category : 'allocating' }
+SlangMemoryManager >> allocate: desiredSize desiredPosition: desiredPos limit: memoryLimit [
+
+	| allocatedAddress newMemoryRegion allocatedSize newMemory desiredPosition |
+	"Allocate chunks multiple of 4KB, as they are required by the machine code simulator.
+	Do not go over memory limit, as this would break the memory map"
+
+	allocatedSize := self roundUpToPageSize: desiredSize.
+	desiredPosition := self roundUpToPageSize: desiredPos.
+
+	self checkIsRegionAddress: desiredPosition.
+
+	allocatedAddress := self findHoleBiggerThan: allocatedSize from: desiredPosition.
+	(memoryLimit > 0 and: [ allocatedAddress + allocatedSize > memoryLimit ])
+		ifTrue: [ self error: 'Allocated region goes over the limit: ', memoryLimit asString ].
+	
 	"Warrantee that memory regions do not move, for simulation purposes with the FFI"
 	newMemory := ByteArray new: allocatedSize.
 	newMemory pinInMemory.
