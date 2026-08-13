@@ -206,7 +206,6 @@ VMMemoryMap >> allocatePermObjectsSpace [
 { #category : 'allocating' }
 VMMemoryMap >> allocateSegmentOfSize: ammount minAddress: minAddress resultsIn: blockWithAddressAndSegSize [
 
-	<inline: true>
 	<var: #sizeToRequest type: 'size_t'>
 	<var: #segmentAddress type: #usqInt>
 	| sizeToRequest segmentAddress |
