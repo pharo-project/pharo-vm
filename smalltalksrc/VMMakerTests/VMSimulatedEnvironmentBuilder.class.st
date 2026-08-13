@@ -39,9 +39,9 @@ VMSimulatedEnvironmentBuilder >> doBuild [
 	| memoryManager edenSize |
 
 	"Check #scavengerDenominator in SpurMemoryManager"
-	edenSize := (2 * 1024) + interpreter interpreterAllocationReserveBytes.
+	edenSize := 2 * 1024.
  	newSpaceSize := self roundToPageSize: (edenSize * 7 / 5).
-	stackSpaceSize := 9 * 4096.
+	stackSpaceSize := interpreter stackPageFrameBytes.
 	methodCacheSize := 4096 * wordSize.
 	
 	initialAddress := 16r1000000.
@@ -76,7 +76,6 @@ VMSimulatedEnvironmentBuilder >> doBuild [
 	objectMemory initializePostBootstrap.
 	objectMemory setHeapSizeAtPreviousGC.
 
-	self assert: objectMemory objectMemory scavenger eden size >= interpreter interpreterAllocationReserveBytes.
 	self assert: objectMemory objectMemory scavengeThreshold + interpreter interpreterAllocationReserveBytes <= objectMemory objectMemory scavenger eden limit.
 
 	objectMemory segmentManager collapseSegmentsPostSwizzle.

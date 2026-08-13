@@ -4808,7 +4808,7 @@ StackInterpreter >> defaultNumStackPages [
 	 The Spur default reflects tuning for GC performance ast Cadence.
 	 The actual value can be set via vmParameterAt: and/or a preference in the ini file."
 	<inline: false>
-	^50
+	^30
 ]
 
 { #category : 'send bytecodes' }
@@ -13665,14 +13665,17 @@ StackInterpreter >> setNumStackPages: requestedNumPages [
 	numStackPages := desiredNumStackPages ~= 0
 		                 ifTrue: [ desiredNumStackPages ]
 		                 ifFalse: [
-			                 requestedNumPages = 0
-				                 ifTrue: [ self defaultNumStackPages ]
-				                 ifFalse: [ requestedNumPages ] ].
+				                 requestedNumPages = 0
+					                 ifTrue: [ self defaultNumStackPages ]
+					                 ifFalse: [ requestedNumPages ] ].
 
 	desiredNumStackPages := requestedNumPages.
 
 	desiredStackPageBytes = 0 ifTrue: [
-		self setDesiredStackPageBytes: 256 * objectMemory wordSize ]
+		1halt.
+			objectMemory wordSize = 8
+				ifTrue: [ self setDesiredStackPageBytes: 1024 * 1024 "1MB" ]
+				ifFalse: [ self setDesiredStackPageBytes: 256 * 1024 "256KB" ] ]
 ]
 
 { #category : 'process primitive support' }

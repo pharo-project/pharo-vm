@@ -202,9 +202,10 @@ StackInterpreterSimulator >> basicInitialize [
 	desiredNumStackPages := desiredEdenBytes := 0.
 
 	"This is initialized on loading the image, but convenient for testing stack page values..."	
-	desiredStackPageBytes := 0.
-	self setNumStackPages: self defaultNumStackPages.
+	desiredNumStackPages := desiredEdenBytes := 0.
+	self setDesiredStackPageBytes: 4 * 1024 "4k for simulation".
 
+	numStackPages := self defaultNumStackPages.
 	startMicroseconds := lastYieldMicroseconds := self ioUTCStartMicroseconds.
 
 	"initialize InterpreterSimulator variables used for debugging"

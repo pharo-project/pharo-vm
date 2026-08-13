@@ -3271,20 +3271,6 @@ CoInterpreter >> interpretMethodFromMachineCode [
 			self unreachable ]
 ]
 
-{ #category : 'stack pages' }
-CoInterpreter >> interpreterAllocationReserveBytes [
-	"At a rough approximation we may need to allocate up to a couple
-	 of page's worth of contexts when switching stack pages, assigning
-	 to senders, etc.  But the snapshot primitive voids all stack pages.
-	 So a safe margin is the size of a large context times the maximum
-	 number of frames per page times the number of pages."
-	<inline: #never>
-	| maxUsedBytesPerPage maxFramesPerPage |
-	maxUsedBytesPerPage := self stackPageFrameBytes + self stackLimitOffset.
-	maxFramesPerPage := maxUsedBytesPerPage / objectMemory wordSize // MFrameSlots.
-	^maxFramesPerPage * LargeContextSlots * objectMemory bytesPerOop * numStackPages
-]
-
 { #category : 'internal interpreter access' }
 CoInterpreter >> is: fieldIndex methodAssignmentToContextWithMachineCodePC: anOop [
 	"If the method is assigned, any machine code pc must be mapped to a bytecode one
@@ -4799,15 +4785,6 @@ CoInterpreter >> setImageHeaderFlagsFrom: headerFlags [
 CoInterpreter >> setMethod: aMethodObj [
 	self assert: aMethodObj asUnsignedInteger >= objectMemory getMemoryMap startOfObjectMemory.
 	super setMethod: aMethodObj
-]
-
-{ #category : 'debug support' }
-CoInterpreter >> setUpForUseByFacade: aCurrentImageCoInterpreterFacade [
-	"Set up variables with default values so that other initializations work.
-	 numStackPages needs to be initialized so that interpreterAllocationReserveBytes
-	 can be computed."
-	<doNotGenerate>
-	numStackPages := 0
 ]
 
 { #category : 'frame access' }

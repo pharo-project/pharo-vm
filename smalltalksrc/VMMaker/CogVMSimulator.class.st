@@ -235,9 +235,10 @@ CogVMSimulator >> basicInitialize [
 	primitiveTable := self class primitiveTable copy.
 
 	desiredNumStackPages := desiredEdenBytes := desiredCogCodeSize := 0.
-	self setDesiredStackPageBytes: 256 * objectMemory wordSize.
+	self setDesiredStackPageBytes: 4 * 1024 "4k for simulation".
+
 	"This is initialized on loading the image, but convenient for testing stack page values..."
-	numStackPages := self defaultNumStackPages. 
+	numStackPages := self defaultNumStackPages.
 	startMicroseconds := lastYieldMicroseconds := self ioUTCStartMicroseconds.
 	maxLiteralCountForCompile := MaxLiteralCountForCompile.
 	minBackwardJumpCountForCompile := MinBackwardJumpCountForCompile.
@@ -722,15 +723,6 @@ CogVMSimulator >> incrementByteCount [
 		[ self halt: 'breakCount reached' ].
 	byteCount \\ 1000 = 0 ifTrue:
 		[ self forceInterruptCheck ]
-]
-
-{ #category : 'test support' }
-CogVMSimulator >> initStackPagesForTests [
-	numStackPages := 8.
-	stackPages := self stackPagesClass new setInterpreter: self.
-	objectMemory memoryManager allocate: 1024 * 1024.
-	cogCodeSize := 0.
-	self initStackPages
 ]
 
 { #category : 'accessing' }
