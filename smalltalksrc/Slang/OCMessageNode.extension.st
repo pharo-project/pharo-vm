@@ -1,7 +1,7 @@
-Extension { #name : 'RBMessageNode' }
+Extension { #name : 'OCMessageNode' }
 
 { #category : '*Slang' }
-RBMessageNode >> asTranslatorNodeIn: aTMethod [
+OCMessageNode >> asTranslatorNodeIn: aTMethod [
 	"Answer a TParseNode subclass equivalent of me"
 
 	"selector is sometimes a Symbol, sometimes a SelectorNode!

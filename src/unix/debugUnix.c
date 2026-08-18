@@ -42,7 +42,6 @@ void printCallStack();
 char* GetAttributeString(int idx);
 void reportStackState(const char *msg, char *date, int printAll, ucontext_t *uap, FILE* output);
 
-char * getVersionInfo();
 void getCrashDumpFilenameInto(char *buf);
 void dumpPrimTraceLog();
 
@@ -430,7 +429,6 @@ void reportStackState(const char *msg, char *date, int printAll, ucontext_t *uap
 #endif
 
 	fprintf_impl(output,"\n%s%s%s\n\n", msg, date ? " " : "", date ? date : "");
-	fprintf_impl(output,"%s\n%s\n\n", GetAttributeString(0), getVersionInfo());
 
 #if COGVM
 	/* Do not attempt to report the stack until the VM is initialized!! */
@@ -495,6 +493,9 @@ void reportStackState(const char *msg, char *date, int printAll, ucontext_t *uap
 # elif defined(__aarch64__) && __APPLE__
 			void *fp = (void *)(uap ? uap->uc_mcontext->__ss.__fp: 0); 
 			void *sp = (void *)(uap ? uap->uc_mcontext->__ss.__sp: 0);
+# elif defined(__aarch64__) && __FreeBSD__
+			void *fp = (void *)(uap ? uap->uc_mcontext.mc_gpregs.gp_x[29]: 0); // x29 is the FramePointer
+			void *sp = (void *)(uap ? uap->uc_mcontext.mc_gpregs.gp_sp: 0);
 # elif defined(__aarch64__)
 			void *fp = (void *)(uap ? uap->uc_mcontext.regs[29]: 0); // This is the Register that we are using for the FramePointer
 			void *sp = (void *)(uap ? uap->uc_mcontext.sp: 0);

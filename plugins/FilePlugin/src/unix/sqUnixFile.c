@@ -164,6 +164,7 @@ static int maybeOpenDir(char *unixPath)
       closedir(openDir);
     lastPathValid= false;
     strncpy(lastPath, unixPath, MAXPATHLEN);
+    lastPath[MAXPATHLEN] = '\0';
     if ((openDir= opendir(unixPath)) == 0)
       return false;
     lastPathValid= true;

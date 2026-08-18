@@ -14,14 +14,16 @@ endif()
 function(add_platform_headers)
 target_include_directories(${VM_LIBRARY_NAME}
 PUBLIC
-    ${CMAKE_CURRENT_SOURCE_DIR}/include/unix
-    ${CMAKE_CURRENT_SOURCE_DIR}/include/common
+    ${CMAKE_CURRENT_SOURCE_DIR}/include/pharovm/unix
+    ${CMAKE_CURRENT_SOURCE_DIR}/include/pharovm/common
 )
 endfunction() #add_platform_headers
 
 set(EXTRACTED_SOURCES
 #Platform sources
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/unix/aio.c
+# FreeBSD has no epoll(7); use the kqueue-based AIO implementation, which is
+# portable across the kqueue-based platforms (also used by macOS/Darwin).
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/osx/aioOSX.c
     ${CMAKE_CURRENT_SOURCE_DIR}/src/unix/debugUnix.c
 
 #Virtual Memory functions

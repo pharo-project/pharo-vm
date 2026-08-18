@@ -51,6 +51,8 @@ ComposedImageWriter >> writeDataStatingAt: start withSize: size inFileName: full
 
 	<var: #dataFile type: #sqImageFile>
 	<var: #nWritten type: #'size_t'>
+	<var: #start type: #'void *'>
+	<var: #fullFileName type: #'char *'>
 	<returnTypeC: #'size_t'>
 	
 	| dataFile nWritten |
@@ -166,6 +168,7 @@ ComposedImageWriter >> writeMetadata: metadata inFileName: fullFileName [
 
 	<var: #metadataFile type: #sqImageFile>
 	<var: #metadata type: #ComposedMetadataStruct>
+	<var: #fullFileName type: #'char *'>
 
 	| metadataFile |
 

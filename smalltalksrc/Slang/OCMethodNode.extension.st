@@ -1,7 +1,7 @@
-Extension { #name : 'RBMethodNode' }
+Extension { #name : 'OCMethodNode' }
 
 { #category : '*Slang' }
-RBMethodNode >> asTranslationMethodOfClass: aTMethodClass [
+OCMethodNode >> asTranslationMethodOfClass: aTMethodClass [
  	"Answer a TMethod (or subclass) derived from the receiver."
 	| additionalMethodState comment |
 	additionalMethodState := AdditionalMethodState forMethod: nil selector: selector.
@@ -36,7 +36,7 @@ RBMethodNode >> asTranslationMethodOfClass: aTMethodClass [
 ]
 
 { #category : '*Slang' }
-RBMethodNode >> asTranslationMethodOfClass: aTMethodClass forCodeGenerator: aCodeGenerator [
+OCMethodNode >> asTranslationMethodOfClass: aTMethodClass forCodeGenerator: aCodeGenerator [
 	"Answer a TMethod (or subclass) derived from the receiver."
 
 	| additionalMethodState comment renamedSelector |
@@ -87,7 +87,7 @@ RBMethodNode >> asTranslationMethodOfClass: aTMethodClass forCodeGenerator: aCod
 ]
 
 { #category : '*Slang' }
-RBMethodNode >> printSchematicTempsFor: blockNode in: blockScope on: stream [
+OCMethodNode >> printSchematicTempsFor: blockNode in: blockScope on: stream [
 	| startPos vectorStartPos |
 	startPos := stream position.
 	blockNode arguments do:
@@ -115,7 +115,7 @@ RBMethodNode >> printSchematicTempsFor: blockNode in: blockScope on: stream [
 ]
 
 { #category : '*Slang' }
-RBMethodNode >> quickMethodReturnLiteral [
+OCMethodNode >> quickMethodReturnLiteral [
 	| node |
 	node := body statements last value.
 	^node isVariable

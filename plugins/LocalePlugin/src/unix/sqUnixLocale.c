@@ -471,7 +471,7 @@ languageCodes[] = {
   { "ur", "urd" },      /* Urdu */
   { "uz", "uzb" },      /* Uzbek */
   { "vi", "vie" },      /* Vietnamese */
-  { "vo", "vol" },      /* Volapük */
+  { "vo", "vol" },      /* Volapï¿½k */
   { "cy", "cym" },      /* Welsh */
   { "cy", "wel" },      /* Welsh */
   { "wo", "wol" },      /* Wolof */
@@ -614,7 +614,7 @@ sqInt sqLocCurrencyNotation(void)
 #define safestrcpy(str,source) do { \
 	const char *src = (source); \
 	int len = strlen(src); \
-	strncpy(str,src,len); \
+	memcpy(str,src,len); \
 } while (0)
 
 /* Store the currency symbol into the given string.

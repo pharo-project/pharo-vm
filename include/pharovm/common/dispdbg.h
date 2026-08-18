@@ -34,22 +34,22 @@
 #endif
 
 #if PRODUCTION && !SENDTRACE /* default for no send breakpoint. */
-# define sendBreakpointreceiver(sel, len, rcvr) 0
-# define mnuBreakpointreceiver(sel, len, rcvr) 0
+# define sendBreakpointreceiver(sel, len, rcvr) ((void)0)
+# define mnuBreakpointreceiver(sel, len, rcvr) ((void)0)
 
 #elif SENDTRACE /* send tracing.  */
 # define sendBreakpointreceiver(sel, len, rcvr) do { \
 	if (sendTrace) \
 		logTrace("%.*s\n", (int)(len), (char *)(sel)); \
 } while (0)
-# define mnuBreakpointreceiver(sel, len, rcvr) 0
+# define mnuBreakpointreceiver(sel, len, rcvr) ((void)0)
 
 #elif 0 /* send trace/byte count.  */
 # define sendBreakpointreceiver(sel, len, rcvr) do { \
 	if (sendTrace) \
 		logTrace("%u %.*s\n", GIV(byteCount), (int)(len), (char *)(sel)); \
 } while (0)
-# define mnuBreakpointreceiver(sel, len, rcvr) 0
+# define mnuBreakpointreceiver(sel, len, rcvr) ((void)0)
 
 #else /* breakpoint for assert and debug configurations. */
 # define sendBreakpointreceiver(sel, len, rcvr) do { \
@@ -71,4 +71,4 @@
 
 #endif
 
-#define bytecodeDispatchDebugHook() 0
+#define bytecodeDispatchDebugHook() ((void)0)

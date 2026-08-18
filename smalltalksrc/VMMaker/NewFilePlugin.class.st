@@ -90,7 +90,7 @@ NewFilePlugin >> primitiveDirectoryNext [
 	stringOop := interpreterProxy instantiateClass: interpreterProxy classExternalAddress indexableSize: BytesPerWord.
 	interpreterProxy failed ifFalse: [
 		directoryPointer := self cCoerce: (self pointerAtPointer: (interpreterProxy firstIndexableField: directoryOop)) to: #'NewDirectory_t *'.
-		stringPointer := self cCode: 'NewDirectory_next(directoryPointer)'.
+		stringPointer := self cCode: '(char *)NewDirectory_next(directoryPointer)'.
 		self pointerAtPointer: (interpreterProxy firstIndexableField: stringOop) put: stringPointer.
 	].
 	interpreterProxy failed ifFalse: [ interpreterProxy methodReturnValue: stringOop ].

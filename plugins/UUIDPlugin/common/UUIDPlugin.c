@@ -3,7 +3,7 @@
 
 typedef char sqUUID[16];
 
-int MakeUUID(sqUUID location);
+int MakeUUID(char *location);
 int sqUUIDInit(void);
 int sqUUIDShutdown(void);
 

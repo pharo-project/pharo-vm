@@ -201,7 +201,7 @@ VMByteCodesTest >> testArraySumUsingVectorBytecode [
 	y := self new64BitIndexableFromArray: #(10.0 20.0).
 	z := self new64BitIndexableOfSize: 2.
 	
-	cm := IRBuilder buildMethod: [ :builder |
+	cm := OCIRBuilder buildMethod: [ :builder |
 		builder
 				numArgs: 3; 		
 				addTemps: { #firstVector. #secondVector. #thirdVector };
