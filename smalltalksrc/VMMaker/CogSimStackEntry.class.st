@@ -167,7 +167,6 @@ CogSimStackEntry >> ensureSpilledAt: baseOffset from: baseRegister [
 			[self assert: ((offset = baseOffset and: [registerr = baseRegister]) or: [cogit violatesEnsureSpilledSpillAssert]).
 			 ^self]].
 	self assert: type ~= SSSpill.
-	cogit traceSpill: self.
 	type = SSConstant
 		ifTrue:
 			[inst := cogit genPushConstant: constant]

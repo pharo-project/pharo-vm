@@ -66,7 +66,7 @@ VMStackToRegisterMappingTest >> testPopConstant [
 	cogit ssPop: 1.
 	
 	self assert: cogit ssSize equals: 1.
-	self assert: cogit ssTop equals: cogit simSelf.
+	self assert: cogit compileTimeState simStackStateField ssTop equals: cogit simSelf.
 ]
 
 { #category : 'tests' }
@@ -103,7 +103,7 @@ VMStackToRegisterMappingTest >> testPopRegister [
 	cogit ssPop: 1.
 	
 	self assert: cogit ssSize equals: 1.
-	self assert: cogit ssTop equals: cogit simSelf
+	self assert: cogit compileTimeState simStackStateField ssTop equals: cogit simSelf
 ]
 
 { #category : 'tests' }
@@ -192,9 +192,9 @@ VMStackToRegisterMappingTest >> testPushConstant [
 	cogit ssPushConstant: 1.
 	
 	self assert: cogit ssSize equals: 2.
-	self assert: cogit ssTop type equals: SSConstant.
-	self assert: cogit ssTop constant equals: 1.
-	self deny: cogit ssTop spilled
+	self assert: cogit compileTimeState simStackStateField ssTop type equals: SSConstant.
+	self assert: cogit compileTimeState simStackStateField ssTop constant equals: 1.
+	self deny: cogit compileTimeState simStackStateField ssTop spilled
 ]
 
 { #category : 'tests' }
@@ -203,9 +203,9 @@ VMStackToRegisterMappingTest >> testPushRegister [
 	cogit ssPushRegister: TempReg.
 
 	self assert: cogit ssSize equals: 2.
-	self assert: cogit ssTop type equals: SSRegister.
-	self assert: cogit ssTop registerr equals: TempReg.
-	self deny: cogit ssTop spilled
+	self assert: cogit compileTimeState simStackStateField ssTop type equals: SSRegister.
+	self assert: cogit compileTimeState simStackStateField ssTop registerr equals: TempReg.
+	self deny: cogit compileTimeState simStackStateField ssTop spilled
 ]
 
 { #category : 'tests' }
@@ -218,11 +218,11 @@ VMStackToRegisterMappingTest >> testSpillConstant [
 	self assert: cogit ssSize equals: 2.
 	
 	"The element should be the same as before"
-	self assert: cogit ssTop type equals: SSConstant.
-	self assert: cogit ssTop constant equals: 1.
+	self assert: cogit compileTimeState simStackStateField ssTop type equals: SSConstant.
+	self assert: cogit compileTimeState simStackStateField ssTop constant equals: 1.
 	
 	"But not it is spilled"
-	self assert: cogit ssTop spilled
+	self assert: cogit compileTimeState simStackStateField ssTop spilled
 ]
 
 { #category : 'tests' }
@@ -236,17 +236,17 @@ VMStackToRegisterMappingTest >> testSpillRegister [
 	
 	"The element should now be in a spilled position in the stack.
 	I.e., Relative to FPReg, with offset 4 (base 0) in the frame (the first three are saved FP, method, context, receiver)"
-	self assert: cogit ssTop type equals: SSSpill.
-	self assert: cogit ssTop base equals: FPReg.
-	self assert: cogit ssTop offset equals: -4 * memory wordSize.
+	self assert: cogit compileTimeState simStackStateField ssTop type equals: SSSpill.
+	self assert: cogit compileTimeState simStackStateField ssTop base equals: FPReg.
+	self assert: cogit compileTimeState simStackStateField ssTop offset equals: -4 * memory wordSize.
 	
 	"But it is spilled"
-	self assert: cogit ssTop spilled
+	self assert: cogit compileTimeState simStackStateField ssTop spilled
 ]
 
 { #category : 'tests' }
 VMStackToRegisterMappingTest >> testTopOfEmptyIsSimSelf [
 	
 	self assert: cogit ssSize equals: 1.
-	self assert: cogit ssTop equals: cogit simSelf
+	self assert: cogit compileTimeState simStackStateField ssTop equals: cogit simSelf
 ]

@@ -402,13 +402,6 @@ VMClass class >> writeVMHeaderTo: aStream bytesPerWord: bytesPerWord generator: 
 ]
 
 { #category : 'translation support' }
-VMClass >> addressOf: anObject [
-	<doNotGenerate>
-	"Translates into &anObject in C."
-	^anObject
-]
-
-{ #category : 'translation support' }
 VMClass >> addressOf: anObject put: aBlock [
 	<doNotGenerate>
 	"Simulate a C pointer.  Translates into &anObject in C. Provides something

@@ -12,7 +12,6 @@ Class {
 	#superclass : 'SharedPool',
 	#classVars : [
 		'BaseHeaderSize',
-		'BytecodeSetHasExtensions',
 		'BytesPerOop',
 		'BytesPerWord',
 		'COGVM',
