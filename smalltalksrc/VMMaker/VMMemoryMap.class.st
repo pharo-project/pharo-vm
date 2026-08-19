@@ -276,9 +276,7 @@ VMMemoryMap >> calculateMaskToUse [
 		ifTrue: [ memoryMapConfiguration oldSpaceInitialAddress ]
 		ifFalse: [ oldSpaceStart ].
 
-	newSpaceLast := (newSpaceEnd notNil and: [ newSpaceEnd > newSpaceFirst ])
-		ifTrue: [ newSpaceEnd - 1 ]
-		ifFalse: [ oldSpaceFirst - 1 ].
+	newSpaceLast := oldSpaceFirst - 1.
 
 	oldSpaceLimit := oldSpaceFirst = memoryMapConfiguration oldSpaceInitialAddress
 		ifTrue: [ memoryMapConfiguration permSpaceInitialAddress ]
