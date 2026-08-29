@@ -5397,7 +5397,7 @@ StackInterpreter >> extJumpIfFalse [
 	byte := self fetchByte.
 	offset := byte + (extB << 8).
 	numExtB := extB := extA := 0.
-	self jumplfFalseBy: offset
+	self jumpIfFalseBy: offset
 ]
 
 { #category : 'jump bytecodes' }
@@ -5407,7 +5407,7 @@ StackInterpreter >> extJumpIfTrue [
 	byte := self fetchByte.
 	offset := byte + (extB << 8).
 	numExtB := extB := extA := 0.
-	self jumplfTrueBy: offset
+	self jumpIfTrueBy: offset
 ]
 
 { #category : 'miscellaneous bytecodes' }
@@ -8399,6 +8399,34 @@ StackInterpreter >> jumpBinaryInlinePrimitive: primIndex [
 	self pop: 2
 ]
 
+{ #category : 'jump bytecodes' }
+StackInterpreter >> jumpIfFalseBy: offset [
+
+	| boolean |
+	boolean := self stackTop.
+	boolean = objectMemory falseObject
+		ifTrue: [ self jump: offset ]
+		ifFalse: [ 
+			boolean = objectMemory trueObject ifFalse: [ 
+				^ self internalMustBeBoolean ].
+			self fetchNextBytecode ].
+	self pop: 1
+]
+
+{ #category : 'jump bytecodes' }
+StackInterpreter >> jumpIfTrueBy: offset [
+
+	| boolean |
+	boolean := self stackTop.
+	boolean = objectMemory trueObject
+		ifTrue: [ self jump: offset ]
+		ifFalse: [ 
+			boolean = objectMemory falseObject ifFalse: [ 
+				^ self internalMustBeBoolean ].
+			self fetchNextBytecode ].
+	self pop: 1
+]
+
 { #category : 'sista bytecodes' }
 StackInterpreter >> jumpTrinaryInlinePrimitive: primIndex [
 
@@ -8468,34 +8496,6 @@ StackInterpreter >> jumpUnaryInlinePrimitive: primIndex [
 		self fetchNextBytecode.
 		^ self pop: 1 ].
 	^ self unknownInlinePrimitive
-]
-
-{ #category : 'jump bytecodes' }
-StackInterpreter >> jumplfFalseBy: offset [
-
-	| boolean |
-	boolean := self stackTop.
-	boolean = objectMemory falseObject
-		ifTrue: [ self jump: offset ]
-		ifFalse: [ 
-			boolean = objectMemory trueObject ifFalse: [ 
-				^ self internalMustBeBoolean ].
-			self fetchNextBytecode ].
-	self pop: 1
-]
-
-{ #category : 'jump bytecodes' }
-StackInterpreter >> jumplfTrueBy: offset [
-
-	| boolean |
-	boolean := self stackTop.
-	boolean = objectMemory trueObject
-		ifTrue: [ self jump: offset ]
-		ifFalse: [ 
-			boolean = objectMemory falseObject ifFalse: [ 
-				^ self internalMustBeBoolean ].
-			self fetchNextBytecode ].
-	self pop: 1
 ]
 
 { #category : 'debug printing' }
@@ -8612,13 +8612,13 @@ StackInterpreter >> long: aJumpBuf jmp: returnValue [
 { #category : 'jump bytecodes' }
 StackInterpreter >> longJumpIfFalse [
 
-	self jumplfFalseBy: ((currentBytecode bitAnd: 3) * 256) + self fetchByte.
+	self jumpIfFalseBy: ((currentBytecode bitAnd: 3) * 256) + self fetchByte.
 ]
 
 { #category : 'jump bytecodes' }
 StackInterpreter >> longJumpIfTrue [
 
-	self jumplfTrueBy: ((currentBytecode bitAnd: 3) * 256) + self fetchByte.
+	self jumpIfTrueBy: ((currentBytecode bitAnd: 3) * 256) + self fetchByte.
 ]
 
 { #category : 'debug printing' }
@@ -13881,13 +13881,13 @@ StackInterpreter >> setupFrameForNewMethodInterpreted [
 { #category : 'jump bytecodes' }
 StackInterpreter >> shortConditionalJumpFalse [
 
-	self jumplfFalseBy: (currentBytecode bitAnd: 7) + 1
+	self jumpIfFalseBy: (currentBytecode bitAnd: 7) + 1
 ]
 
 { #category : 'jump bytecodes' }
 StackInterpreter >> shortConditionalJumpTrue [
 
-	self jumplfTrueBy: (currentBytecode bitAnd: 7) + 1
+	self jumpIfTrueBy: (currentBytecode bitAnd: 7) + 1
 ]
 
 { #category : 'simulation' }
