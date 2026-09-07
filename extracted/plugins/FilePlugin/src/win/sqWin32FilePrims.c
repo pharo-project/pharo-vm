@@ -33,6 +33,7 @@
 
 #include "pharovm/debug.h"
 #include "sqaio.h"
+#include <io.h>
 
 extern struct VirtualMachine *interpreterProxy;
 
