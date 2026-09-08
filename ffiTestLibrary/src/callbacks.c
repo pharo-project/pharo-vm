@@ -2,6 +2,14 @@
 #if FEATURE_THREADED_FFI
 #ifdef _WIN32
 # include <Windows.h>
+
+void* otherThread(void* aFunction);
+
+static DWORD WINAPI thread_trampoline(LPVOID arg)
+{
+  return (DWORD)(uintptr_t)otherThread(arg);
+}
+
 #else
 # include <pthread.h>
 #endif
@@ -59,7 +67,7 @@ EXPORT(void) callbackFromAnotherThread(SIMPLE_CALLBACK fun){
 	CreateThread(
 		NULL,					// default security attributes
 		0,						// use default stack size
-		otherThread,	// thread function name
+		thread_trampoline,		// thread function name
 		fun,					// argument to thread function
 		0,						// use default creation flags: 0 is run immediately
 		NULL);				// returns the thread identifier
