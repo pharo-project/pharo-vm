@@ -1,5 +1,23 @@
 # Change log
 
+## v12.0.4-beta
+
+* just add third party dependences if BUILD_BUNDLE is enabled by @estebanlm in https://github.com/pharo-project/pharo-vm/pull/1081
+* Closed pics to pics by @Ducasse in https://github.com/pharo-project/pharo-vm/pull/1068
+* Updating thirdparty libraries for OSX and Windows x86 by @tesonep in https://github.com/pharo-project/pharo-vm/pull/1086
+* Build on top of Pharo 13 by @guillep in https://github.com/pharo-project/pharo-vm/pull/1077
+* Skip adding handles with empty mask to epoll (fixes #1018) by @daniels220 in https://github.com/pharo-project/pharo-vm/pull/1092
+* Minimal changes to type annotations by @takano32 in https://github.com/pharo-project/pharo-vm/pull/1083
+* Build hygiene and small portability fixes by @takano32 in https://github.com/pharo-project/pharo-vm/pull/1084
+* Minimal Windows x86_64 and aarch64 cross-build support by @takano32 in https://github.com/pharo-project/pharo-vm/pull/1082
+* Minimal FreeBSD x86_64 and aarch64 cross-build support by @takano32 in https://github.com/pharo-project/pharo-vm/pull/1080
+* Fix issue 1095 by @tesonep in https://github.com/pharo-project/pharo-vm/pull/1097
+
+### New Contributors
+* @daniels220 made their first contribution in https://github.com/pharo-project/pharo-vm/pull/1092
+
+**Full Changelog**: https://github.com/pharo-project/pharo-vm/compare/v12.0.3-beta...v12.0.4-beta
+
 ## v12.0.3-beta
 
 Fix issue with ssl on linuxes https://github.com/pharo-project/pharo-vm/pull/1073
