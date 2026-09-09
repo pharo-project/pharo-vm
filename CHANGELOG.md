@@ -1,5 +1,14 @@
 # Change log
 
+## v10.3.10
+* Notify read semaphore as well on write by @akgrant43 in https://github.com/pharo-project/pharo-vm/pull/1039
+* P10 - Fix Issue 1095 by @tesonep in https://github.com/pharo-project/pharo-vm/pull/1098
+* Adding missing header for chdir() by @tesonep in https://github.com/pharo-project/pharo-vm/pull/1099
+* Fix StackVM by @tesonep in https://github.com/pharo-project/pharo-vm/pull/1100
+
+
+**Full Changelog**: https://github.com/pharo-project/pharo-vm/compare/v10.3.9...v10.3.10
+
 ## v10.3.9
 * p10-port-1023 by @tesonep in https://github.com/pharo-project/pharo-vm/pull/1027
 * fix/issue-939 - Using AIO Event for sending  by @tesonep in https://github.com/pharo-project/pharo-vm/pull/1015
