@@ -745,6 +745,7 @@ SpurPlanningCompactor >> unmarkObjectsFromFirstFreeObject [
 	"Sweep the final immobile heap, freeing and coalescing unmarked and free objects,
 	 and unmarking all marked objects up to the end of memory."
 	| startOfFree freeBytes |
+	 <var: 'freeBytes' type: #usqInt>
 	freeBytes := 0.
 	manager allOldSpaceEntitiesFrom: firstFreeObject do:
 		[:o|
