@@ -19,6 +19,22 @@ sqInt uxMemoryExtraBytesLeft(sqInt includingSwap);
 
 #define MAP_PROT	(PROT_READ | PROT_WRITE)
 
+/* MAP_FIXED_NOREPLACE (Linux >= 4.17) places the mapping exactly at the hint
+ * but fails instead of clobbering an existing mapping. Where unavailable we
+ * fall back to plain hinting (0), which never clobbers either. */
+#if !defined(MAP_FIXED_NOREPLACE)
+# define MAP_FIXED_NOREPLACE 0
+#endif
+
+/* The 64-bit memory map assumes a 48-bit user virtual address space and asks
+ * for oldSpace at 2^40 and permSpace at 2^41. Kernels with a smaller VA (e.g.
+ * aarch64 built with CONFIG_ARM64_VA_BITS_39, user space < 2^39) cannot map
+ * those addresses, so we retry inside the VA39 user space. VMMemoryMap
+ * recomputes the space masks from the addresses actually obtained. */
+#define VA39_ADDRESS_LIMIT	((usqInt)0x8000000000ULL)
+#define VA39_FALLBACK_BASE	((usqInt)0x4000000000ULL)
+#define VA39_FALLBACK_LIMIT	((usqInt)0x7F00000000ULL)
+
 #if __OpenBSD__
 #define MAP_FLAGS	(MAP_ANON | MAP_PRIVATE | MAP_STACK)
 #else
@@ -125,6 +141,7 @@ usqInt
 sqAllocateMemory(usqInt minHeapSize, usqInt desiredHeapSize, usqInt desiredBaseAddress) {
     char *heap    =  0;
     sqInt   heapLimit    =  0;
+    sqInt   initialHeapLimit = 0;
 
 #if __APPLE__
 	int additionalFlags = 0;
@@ -140,6 +157,7 @@ sqAllocateMemory(usqInt minHeapSize, usqInt desiredHeapSize, usqInt desiredBaseA
 	if(heapLimit < desiredHeapSize){
 		heapLimit += pageSize;
 	}
+	initialHeapLimit = heapLimit;
 
 	while ((!heap) && (heapLimit >= minHeapSize)) {
 		if (MAP_FAILED == (heap = mmap((void*) desiredBaseAddressAligned, heapLimit, MAP_PROT, MAP_FLAGS | additionalFlags, devZero, 0))) {
@@ -172,6 +190,29 @@ sqAllocateMemory(usqInt minHeapSize, usqInt desiredHeapSize, usqInt desiredBaseA
 		}
 #endif
 	}
+
+#ifndef __APPLE__
+	/* Fallback for kernels whose user address space cannot reach the
+	 * configured base (see VA39_* above). Slide a MAP_FIXED_NOREPLACE window
+	 * up through the VA39 user space; as a last resort let the kernel pick. */
+	if (!heap && desiredBaseAddress >= VA39_ADDRESS_LIMIT) {
+		usqInt fallbackBaseAddress = VA39_FALLBACK_BASE;
+		heapLimit = initialHeapLimit;
+		while ((!heap) && (heapLimit >= minHeapSize)) {
+			if (MAP_FAILED == (heap = mmap((void*) fallbackBaseAddress, heapLimit, MAP_PROT, MAP_FLAGS | (fallbackBaseAddress ? MAP_FIXED_NOREPLACE : 0), devZero, 0))) {
+				heap = 0;
+				if (fallbackBaseAddress) {
+					fallbackBaseAddress = valign(fallbackBaseAddress + initialHeapLimit);
+					if (fallbackBaseAddress >= VA39_FALLBACK_LIMIT) {
+						fallbackBaseAddress = 0;
+					}
+				} else {
+					heapLimit = valign(heapLimit / 4 * 3);
+				}
+			}
+		}
+	}
+#endif
 
 	logDebug("Requested memory size: %zu at: %p, aligned size: %zu at: %p, obtained at: %p" , desiredHeapSize, desiredBaseAddress, heapLimit, desiredBaseAddressAligned, heap);
 	return (usqInt) heap;
