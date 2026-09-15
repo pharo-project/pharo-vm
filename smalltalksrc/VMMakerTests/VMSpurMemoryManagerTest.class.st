@@ -902,5 +902,5 @@ VMSpurMemoryManagerTest >> wordSize: aWordSize [
 { #category : 'helpers' }
 VMSpurMemoryManagerTest >> zeroSizedObjectClassIndex [
 
-	^ zeroSizedObjectClassIndex ifNil: [ self nextOrdinaryClassIndex ]
+	^ zeroSizedObjectClassIndex ifNil: [ zeroSizedObjectClassIndex := self nextOrdinaryClassIndex ]
 ]

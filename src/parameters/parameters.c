@@ -447,7 +447,7 @@ vm_printUsageTo(FILE *out)
 "  --maxSlotsForNewSpaceAlloc=<words>	The max numbers of slots to allow allocating in a single young indexable object"
 "  --minPermSpaceSize=<size>[mk]        Sets the min size of the permanent space (default: 0k)\n"
 "                                       It is possible to use k(kB), M(MB) and G(GB).\n"
-"  --stackPageSize=<size>[mk]           Sets the size of each stack page (default: 8k)\n"
+"  --stackPageSize=<size>[mk]           Sets the size of each stack page (default: 1MB)\n"
 "                                       It is possible to use k(kB), M(MB) and G(GB).\n"
 "  --workingDirectory=<dir>		It sets the working directory for the running image.\n"
 "  --avoidSearchingSegmentsWithPinnedObjects\n"

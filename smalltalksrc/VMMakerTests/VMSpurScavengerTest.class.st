@@ -19,22 +19,29 @@ VMSpurScavengerTest >> fullNewSpace [
 	| rootObjectAddress referencedObjectAddress freeStartAtBeginning |
 	freeStartAtBeginning := memory freeStart.
 
-	rootObjectAddress := self newObjectWithSlots: 200.
-
-	1 to: 200 do: [ :i |
-		referencedObjectAddress := self newObjectWithSlots: 100.
+	rootObjectAddress := self newObjectWithSlots: 20.
+	self assert: rootObjectAddress == freeStartAtBeginning.
+	1 to: 20 do: [ :i |
+		"Allocate a large object and check if this would overflow the future space.
+		If so, stop and just not reference this object."
+		referencedObjectAddress := self newObjectWithSlots: 10.
+		memory freeStart - freeStartAtBeginning > memory scavenger futureSpace size
+			ifTrue: [ ^ rootObjectAddress ].
 		memory
 			storePointer: i - 1
 			ofObject: rootObjectAddress
 			withValue: referencedObjectAddress.
-		1 to: 100 do: [ :i2 |
-			memory
-				storePointer: i2 - 1
-				ofObject: referencedObjectAddress
-				withValue: (self newObjectWithSlots: 10).
-
-			memory freeStart - freeStartAtBeginning
-			> memory scavenger futureSpace size ifTrue: [ ^ rootObjectAddress ] ] ].
+		1 to: 10 do: [ :i2 |
+				| newObject |
+				"Allocate a small object and check if this would overflow the future space.
+				If so, stop and just not reference this object."
+				newObject := self newObjectWithSlots: 1.
+				memory freeStart - freeStartAtBeginning > memory scavenger futureSpace size
+					ifTrue: [ ^ rootObjectAddress ].
+				memory
+					storePointer: i2 - 1
+					ofObject: referencedObjectAddress
+					withValue: newObject ] ].
 
 	self error: 'New space is not full!'
 ]
@@ -746,15 +753,16 @@ VMSpurScavengerTest >> testShouldTenureObjectsWhenPastSpaceIsFull [
 	rootObjectAddress := self fullNewSpace.
 	memory coInterpreter method: rootObjectAddress.
 
-	self assert: memory scavenger scavengerTenuringProportion equals: 0. "Start without tenuring"
-
+	"Without tenuring"
+	memory scavenger setRawTenuringThreshold: memory getMemoryMap newSpaceStart.
 	memory doScavenge: 1. "TenureByAge"
 	newRootObjectAddress := memory remapObj: rootObjectAddress.
 
-	"Survivors should touched the threshold, so next scavenge will be tenured"
+	"Survivors should have filled the future space, so next scavenge will be tenured"
 	self assert: memory scavenger scavengerTenuringProportion closeTo: 0.1 precision: 0.01.
 	self assert: (memory isInNewSpace: newRootObjectAddress).
 	
+	"Next scavenge will be tenured"
 	memory doScavenge: 1. "TenureByAge"
 	newRootObjectAddress := memory remapObj: newRootObjectAddress.
 

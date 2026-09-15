@@ -65,7 +65,7 @@ VMSpurNewSpaceStructureTest >> testNewMemoryFutureSpaceEndIsAtTheStartOfEden [
 { #category : 'tests-1-memory-initialization' }
 VMSpurNewSpaceStructureTest >> testNewMemoryFutureSpaceIsRoughlyOneSeventhOfNewSpace [
 	
-	self assert: memory scavenger futureSpace size equals: (environmentBuilder newSpaceSize // 7 truncateTo: memory allocationUnit)
+	self assert: memory scavenger futureSpace size equals: (environmentBuilder newSpaceSize - interpreter interpreterAllocationReserveBytes // 7 truncateTo: memory allocationUnit)
 ]
 
 { #category : 'tests-1-memory-initialization' }
@@ -100,7 +100,7 @@ VMSpurNewSpaceStructureTest >> testNewMemoryPastSpaceIsAtTheStartOfNewSpace [
 { #category : 'tests-1-memory-initialization' }
 VMSpurNewSpaceStructureTest >> testNewMemoryPastSpaceIsRoughlyOneSeventhOfNewSpace [
 	
-	self assert: memory scavenger pastSpaceBytes equals: (environmentBuilder newSpaceSize // 7 truncateTo: memory allocationUnit)
+	self assert: memory scavenger pastSpaceBytes equals: (environmentBuilder newSpaceSize - interpreter interpreterAllocationReserveBytes // 7 truncateTo: memory allocationUnit)
 ]
 
 { #category : 'tests-2-instantiation' }

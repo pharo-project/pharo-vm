@@ -1266,7 +1266,7 @@ VMPermanentSpaceMemoryTest >> testPermanentObjectPointingToYoungObjectIsRemovedW
 	For example, check the header to see if it is a forwarder, a machine code method is never a forwarder."
 	
 	fakeMachineCodeMethod := (VMMemoryMapConfiguration forWordsize: wordSize) new codeZoneInitialAddress.
-	memory memoryManager allocate: 32 desiredPosition: fakeMachineCodeMethod.
+	memory memoryManager allocate: 32 desiredPosition: fakeMachineCodeMethod limit: 0.
 	memory unsignedLong64At: fakeMachineCodeMethod put: memory nullHeaderForMachineCodeMethod.
 	
 	"We update the permanent object with the value as if it was a CompiledMethod with a corresponding MachineCodeMethod"	

@@ -39,7 +39,7 @@ static char  *maxAppAddr;	/* SYSTEM_INFO lpMaximumApplicationAddress */
 # define roundDownToPage(v) ((v)&pageMask)
 # define roundUpToPage(v) (((v)+pageSize-1)&pageMask)
 
-void* allocateJITMemory(usqInt desiredSize, usqInt desiredPosition){
+void* allocateJITMemory_limit(usqInt desiredSize, usqInt desiredPosition, usqInt limit){
 	
 	char *address, *alloc;
 	usqIntptr_t alignment;
@@ -68,6 +68,11 @@ void* allocateJITMemory(usqInt desiredSize, usqInt desiredPosition){
 		logErrorFromErrno("Could not make JIT memory executable");
 		exit(1);
 	}
+	
+	if (limit > 0 && alloc != 0 && alloc + allocBytes > limit){
+		logError("Allocation steps into the limit: %p", (void*)limit);
+		return 0;
+	}
 
 	return alloc;
 }
@@ -77,7 +82,7 @@ void* allocateJITMemory(usqInt desiredSize, usqInt desiredPosition){
 /* sqAllocateMemory: Initialize virtual memory                          */
 /************************************************************************/
 usqInt
-sqAllocateMemory(usqInt minHeapSize, usqInt desiredHeapSize, usqInt desiredBaseAddress)
+sqAllocateMemory(usqInt minHeapSize, usqInt desiredHeapSize, usqInt desiredBaseAddress, usqInt limit)
 {
 	char *address, *alloc;
 	usqIntptr_t alignment;
@@ -96,6 +101,11 @@ sqAllocateMemory(usqInt minHeapSize, usqInt desiredHeapSize, usqInt desiredBaseA
 
 	alloc = sqAllocateMemorySegmentOfSizeAboveAllocatedSizeInto
 				(roundUpToPage(desiredHeapSize), address, &allocBytes);
+	
+	if (limit > 0 && alloc != 0 && alloc + allocBytes > limit){
+		logError("Allocation steps into the limit: %p", (void*)limit);
+		return 0;
+	}
 
 	return (usqInt)alloc;
 }

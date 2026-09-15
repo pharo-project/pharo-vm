@@ -32,11 +32,9 @@
 
 #include "memoryAccess.h"
 
-extern usqInt sqAllocateMemory(usqInt minHeapSize, usqInt desiredHeapSize, usqInt baseAddress);
-extern void* allocateJITMemory(usqInt desiredSize, usqInt desiredPosition);
+extern usqInt sqAllocateMemory(usqInt minHeapSize, usqInt desiredHeapSize, usqInt baseAddress, usqInt limit);
+extern void* allocateJITMemory_limit(usqInt desiredSize, usqInt desiredPosition, usqInt limit);
 
-#define allocateMemoryMinimumImageFileHeaderSizeBaseAddress(heapSize, minimumMemory, fileStream, headerSize, baseAddress) \
-sqAllocateMemory(minimumMemory, heapSize, baseAddress)
 extern sqInt sqMemoryExtraBytesLeft(sqInt includingSwap);
 #if COGVM
 extern void sqMakeMemoryExecutableFromTo(unsigned long, unsigned long);

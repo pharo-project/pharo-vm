@@ -89,7 +89,7 @@ sqMakeMemoryNotExecutableFromTo(unsigned long startAddr, unsigned long endAddr)
 }
 
 
-void* allocateJITMemory(usqInt desiredSize, usqInt desiredPosition){
+void* allocateJITMemory_limit(usqInt desiredSize, usqInt desiredPosition, usqInt limit){
 	
 	pageMask = ~(getpagesize() - 1);
 
@@ -115,6 +115,11 @@ void* allocateJITMemory(usqInt desiredSize, usqInt desiredPosition){
 		logErrorFromErrno("Could not allocate JIT memory");
 		exit(1);
 	}
+	
+	if (limit > 0 && result != 0 && result + alignedSize > limit){
+		logError("Allocation steps into the limit: %p", (void*)limit);
+		return 0;
+	}
 
 	return result;
 }
@@ -122,7 +127,7 @@ void* allocateJITMemory(usqInt desiredSize, usqInt desiredPosition){
 
 /* answer the address of (minHeapSize <= N <= desiredHeapSize) bytes of memory. */
 usqInt
-sqAllocateMemory(usqInt minHeapSize, usqInt desiredHeapSize, usqInt desiredBaseAddress) {
+sqAllocateMemory(usqInt minHeapSize, usqInt desiredHeapSize, usqInt desiredBaseAddress, usqInt limit) {
     char *heap    =  0;
     sqInt   heapLimit    =  0;
 
@@ -171,6 +176,10 @@ sqAllocateMemory(usqInt minHeapSize, usqInt desiredHeapSize, usqInt desiredBaseA
 			heap = 0;
 		}
 #endif
+		if (limit > 0 && heap != 0 && heap + heapLimit > limit){
+			logError("Allocation steps into the limit: %p", (void*)limit);
+			return 0;
+		}
 	}
 
 	logDebug("Requested memory size: %zu at: %p, aligned size: %zu at: %p, obtained at: %p" , desiredHeapSize, desiredBaseAddress, heapLimit, desiredBaseAddressAligned, heap);
