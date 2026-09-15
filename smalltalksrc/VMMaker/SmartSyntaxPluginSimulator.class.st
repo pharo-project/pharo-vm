@@ -187,7 +187,6 @@ SmartSyntaxPluginSimulator >> doesNotUnderstand: aMessage [
 	signature := signatureMap
 					at: aMessage selector
 					ifAbsent: [^super doesNotUnderstand: aMessage].
-	self log: [interpreterProxy coInterpreter printExternalHeadFrame; print: aMessage selector; cr].
 	"record the stack pointer to avoid cutting back the stack twice in plugins that mix smart syntax and traditional style."
 	sp := interpreterProxy getStackPointer.
 	selector := signature first.

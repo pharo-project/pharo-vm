@@ -2670,7 +2670,6 @@ CogObjectRepresentationForSpur >> genStoreHeader: header intoNewInstance: rcvrRe
 { #category : 'compile abstract instructions' }
 CogObjectRepresentationForSpur >> genStoreSourceReg: sourceReg slotIndex: index destReg: destReg scratchReg: scratchReg inFrame: inFrame needsStoreCheck: needsStoreCheck [
 	
-	cogit genTraceStores.
 	"do the store"
 	cogit MoveR: sourceReg
 		   Mw: index * objectMemory wordSize + objectMemory baseHeaderSize
@@ -2837,8 +2836,6 @@ CogObjectRepresentationForSpur >> genStoreWithImmutabilityAndStoreCheckSourceReg
 
 	immutableJump := self genJumpImmutable: destReg scratchReg: scratchReg.
 	
-	cogit genTraceStores.
-	
 	"do the store"
 	cogit MoveR: sourceReg
 		   Mw: index * objectMemory wordSize + objectMemory baseHeaderSize
@@ -2896,8 +2893,6 @@ CogObjectRepresentationForSpur >> genStoreWithImmutabilityButNoStoreCheckSourceR
 	immutabilityFailure := cogit Jump: 0.
 	mutableJump jmpTarget: cogit Label.
 
-	cogit genTraceStores.
-	
 	"do the store"
 	cogit MoveR: sourceReg
 		   Mw: index * objectMemory wordSize + objectMemory baseHeaderSize

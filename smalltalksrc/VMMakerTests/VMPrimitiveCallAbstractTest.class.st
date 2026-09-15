@@ -171,12 +171,7 @@ VMPrimitiveCallAbstractTest >> setUp [
 	1 to: interpreter primitiveTable size 
 		do: [ :i | primitiveAccessorDepthTable at: i put: -1 ].	 
 
-	interpreter primitiveAccessorDepthTable: primitiveAccessorDepthTable.
-	
-	cogit 	lastNInstructions: OrderedCollection new.
-	
-	cogit guardPageSize: cogit class guardPageSize.
-
+	interpreter primitiveAccessorDepthTable: primitiveAccessorDepthTable
 ]
 
 { #category : 'running' }

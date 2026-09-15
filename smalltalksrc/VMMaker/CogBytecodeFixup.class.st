@@ -62,8 +62,6 @@ CogBytecodeFixup class >> instVarNamesAndTypesForTranslationDo: aBinaryBlock [
 							['mergeSimStack']				-> [#'SimStackEntry *'].
 							['instructionIndex']				-> [#'unsigned short'].
 							['simStackPtr']					-> [#'unsigned char'].
-							['simNativeStackPtr']			-> [#'short'].
-							['simNativeStackSize']			-> [#'unsigned short'].
 							['isTargetOfBackwardBranch']	-> [#char] }])]
 ]
 

@@ -8,7 +8,6 @@ Class {
 	#name : 'VMBytecodeConstants',
 	#superclass : 'SharedPool',
 	#classVars : [
-		'BytecodeSetHasDirectedSuperSend',
 		'CtxtTempFrameStart',
 		'LargeContextBit',
 		'LargeContextSlots',
@@ -21,15 +20,3 @@ Class {
 	#package : 'VMMaker',
 	#tag : 'Interpreter'
 }
-
-{ #category : 'simulator initialization' }
-VMBytecodeConstants class >> falsifyBytecodeSetFlags: initializationOptions [
-
-	classPool keys do:
-		[:k|
-		(k endsWith: 'BytecodeSet') ifTrue:
-			[classPool at: k put: false.
-			 initializationOptions at: k put: false]]
-
-	"classPool keys select: [:k| k endsWith: 'BytecodeSet']"
-]
