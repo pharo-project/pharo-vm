@@ -1,5 +1,13 @@
 # Change log
 
+## v10.3.11
+
+* Backport #1092: Skip adding handles with empty mask to epoll by @daniels220 in https://github.com/pharo-project/pharo-vm/pull/1103
+* Memorymap by @guillep in https://github.com/pharo-project/pharo-vm/pull/1105
+
+
+**Full Changelog**: https://github.com/pharo-project/pharo-vm/compare/v10.3.10...v10.3.11
+
 ## v10.3.10
 * Notify read semaphore as well on write by @akgrant43 in https://github.com/pharo-project/pharo-vm/pull/1039
 * P10 - Fix Issue 1095 by @tesonep in https://github.com/pharo-project/pharo-vm/pull/1098
