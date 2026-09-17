@@ -46,9 +46,9 @@ set(VM_FRONTEND_SOURCES
 configure_file(resources/mac/Info.plist.in build/includes/Info.plist)
 
 macro(add_third_party_dependencies_per_platform)
-	if(${FEATURE_LIB_GIT2})
-		include(cmake/importLibGit2.cmake)
-	endif()
+  if(${FEATURE_LIB_GIT2})
+    include(cmake/importLibGit2.cmake)
+  endif()
 
   if(${FEATURE_LIB_FREETYPE2})
     include(cmake/importFreetype2.cmake)
@@ -60,6 +60,10 @@ macro(add_third_party_dependencies_per_platform)
 
   if(${FEATURE_LIB_SDL2})
     include(cmake/importSDL2.cmake)
+  endif()
+
+  if(${FEATURE_LIB_ARCHIVE})
+    include(cmake/importLibArchive.cmake)
   endif()
 endmacro()
 
