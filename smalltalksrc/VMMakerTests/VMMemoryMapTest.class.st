@@ -118,7 +118,7 @@ VMMemoryMapTest >> testNextPowerOfTwoAfter [
 ]
 
 { #category : 'asserting' }
-VMMemoryMapTest >> assertOldSpaceFallbackToBase: aBase isClassifiedCorrectly [
+VMMemoryMapTest >> assertOldSpaceFallbackIsClassifiedCorrectlyAtBase: aBase [
 
 	"Feed the map an oldSpace obtained at aBase (as the platform allocator's
 	 fallback would on a kernel whose user address space cannot reach the
@@ -149,7 +149,7 @@ VMMemoryMapTest >> testOldSpaceFallbackIsClassifiedCorrectlyForAnyAddressSpaceSi
 	#(16r800000000 16r4000000000 16r8000000000 16r20000000000 16r400000000000)
 		do: [ :fallbackBase |
 			self setUp.
-			self assertOldSpaceFallbackToBase: fallbackBase isClassifiedCorrectly ]
+			self assertOldSpaceFallbackIsClassifiedCorrectlyAtBase: fallbackBase ]
 ]
 
 { #category : 'tests' }
