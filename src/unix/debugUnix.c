@@ -29,6 +29,7 @@
 
 #include <signal.h>
 #include <string.h>
+#include <unistd.h>
 
 
 #define BACKTRACE_DEPTH 64
@@ -45,11 +46,49 @@ void reportStackState(const char *msg, char *date, int printAll, ucontext_t *uap
 void getCrashDumpFilenameInto(char *buf);
 void dumpPrimTraceLog();
 
+/* If the fatal-signal report path deadlocks, terminate rather than hang forever.
+ * The report is not async-signal-safe: it fopen()s the crash file, which
+ * allocates. When the fatal signal was raised from inside the allocator itself
+ * -- e.g. glibc abort() on detected heap corruption, which holds the arena
+ * mutex -- that allocation deadlocks, and the process would otherwise wedge with
+ * no diagnostics at all (an empty crash.dmp and a stuck stderr). */
+#define CRASH_REPORT_WATCHDOG_SECONDS 30
+
+static void
+crashReportWatchdogExpired(int sig)
+{
+	static const char msg[] =
+		"\nVM crash-report handler timed out (deadlocked, most likely inside the "
+		"allocator); terminating.\n";
+	/* async-signal-safe only */
+	(void)write(STDERR_FILENO, msg, sizeof(msg) - 1);
+	_exit(128 + SIGABRT);
+}
+
 void doReport(char* fault, ucontext_t *uap){
+	static volatile sig_atomic_t reporting = 0;
+	struct sigaction prevAlarm, watchdog;
 	time_t now = time(NULL);
 	char ctimebuf[32];
 	char crashdumpFileName[PATH_MAX+1];
 	FILE *crashDumpFile;
+
+	/* A fault raised while already reporting (e.g. the report machinery itself
+	 * crashes) must not recurse into the report path again. */
+	if (reporting) {
+		signal(SIGABRT, SIG_DFL);
+		abort();
+	}
+	reporting = 1;
+
+	/* Arm the watchdog. SIGALRM is otherwise routed to the crash handler (see
+	 * installErrorHandlers), so install a dedicated async-signal-safe handler
+	 * for the duration and restore the previous one afterwards. */
+	sigemptyset(&watchdog.sa_mask);
+	watchdog.sa_flags = 0;
+	watchdog.sa_handler = crashReportWatchdogExpired;
+	sigaction(SIGALRM, &watchdog, &prevAlarm);
+	alarm(CRASH_REPORT_WATCHDOG_SECONDS);
 
 	ctime_r(&now,ctimebuf);
 
@@ -59,7 +98,7 @@ void doReport(char* fault, ucontext_t *uap){
 	crashDumpFile = fopen(crashdumpFileName, "a+");
 	if (crashDumpFile != NULL) {
 		vm_setVMOutputStream(crashDumpFile);
-	
+
 		reportStackState(fault, ctimebuf, 1, uap, crashDumpFile);
 	}
 
@@ -70,6 +109,10 @@ void doReport(char* fault, ucontext_t *uap){
 
 	reportStackState(fault, ctimebuf, 1, uap, stderr);
 
+	/* Report finished; disarm the watchdog and restore SIGALRM. */
+	alarm(0);
+	sigaction(SIGALRM, &prevAlarm, NULL);
+	reporting = 0;
 }
 
 void sigusr1(int sig, siginfo_t *info, ucontext_t *uap)
