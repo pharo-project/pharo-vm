@@ -2,7 +2,7 @@
 #define __PLATFORM_SEMAPHORE__
 
 #include "pharovm/semaphores/pSemaphore.h"
-#include "pharovm/pharo.h"
+#include "pharovm/exportDefinition.h"
 
 #include <stdlib.h>
 
@@ -10,7 +10,7 @@
 
 #include <windows.h>
 
-typedef HANDLE PlatformSemaphore;
+typedef struct PharoPlatformSemaphore *PlatformSemaphore;
 #define isValidSemaphore(aSemaphore) (aSemaphore != NULL)
 
 #elif !defined(__APPLE__)
@@ -27,7 +27,7 @@ typedef sem_t* PlatformSemaphore;
 #include <dispatch/dispatch.h>
 
 typedef dispatch_semaphore_t PlatformSemaphore;
-#define isValidSemaphore(aSemaphore) (1)
+#define isValidSemaphore(aSemaphore) (aSemaphore != NULL)
 #endif // ifndef __APPLE__
 
 EXPORT(Semaphore) *platform_semaphore_new(int initialValue);
