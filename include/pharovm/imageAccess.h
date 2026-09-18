@@ -20,6 +20,9 @@ typedef struct {
 	int (*imageFileExists)(const char* aPath);
 	void (*imageReportProgress)(size_t totalSize, size_t currentSize);
 	int (*imageIsDirectory)(const char* aPath);
+
+	size_t (*loadDataUsingMMap)(const char* aPath, size_t fileSize, void* targetAddress);
+
 } _FileAccessHandler;
 
 typedef _FileAccessHandler FileAccessHandler;
@@ -43,5 +46,7 @@ EXPORT(void) setFileAccessHandler(FileAccessHandler* aFileAccessHandler);
 
 #define sqImageFileStartLocation(fileRef, fileName, size)  0
 #define sqImageReportProgress(totalSize, currentSize)	currentFileAccessHandler()->imageReportProgress(totalSize, currentSize)
+
+#define vmLoadDataUsingMMapfileSizeaddress(aPath, fileSize, targetPath)	currentFileAccessHandler()->loadDataUsingMMap(aPath, fileSize, targetAddress)
 
 #endif

@@ -3,7 +3,8 @@ Class {
 	#superclass : 'VMStructType',
 	#instVars : [
 		'startAddress',
-		'dataSize'
+		'dataSize',
+		'fileSize'
 	],
 	#category : 'VMMaker-ImageFormat',
 	#package : 'VMMaker',
@@ -27,6 +28,7 @@ ComposedMetadataStruct class >> instVarNamesAndTypesForTranslationDo: aBinaryBlo
 
 	aBinaryBlock
 		value: 'dataSize' value:'size_t';
+		value: 'fileSize' value:'size_t';
 		value: 'startAddress' value:'squeakFileOffsetType'.
 	
 
@@ -44,11 +46,24 @@ ComposedMetadataStruct >> dataSize: anObject [
 	dataSize := anObject
 ]
 
+{ #category : 'accessing' }
+ComposedMetadataStruct >> fileSize [
+
+	^ fileSize
+]
+
+{ #category : 'accessing' }
+ComposedMetadataStruct >> fileSize: anObject [
+
+	fileSize := anObject
+]
+
 { #category : 'initialization' }
 ComposedMetadataStruct >> initialize [
 
 	startAddress := 0.
-	dataSize := 0
+	dataSize := 0.
+	fileSize := 0
 ]
 
 { #category : 'accessing' }

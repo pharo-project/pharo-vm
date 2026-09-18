@@ -220,6 +220,8 @@ VMImageHeaderWritingTest >> testWritingSTONPermSpace [
 	expectedPermSpaceMetadata := ComposedMetadataStruct new.
 	expectedPermSpaceMetadata startAddress: interpreter objectMemory getMemoryMap permSpaceStart.
 	expectedPermSpaceMetadata dataSize: interpreter objectMemory totalBytesInPermanentSpace.
+	expectedPermSpaceMetadata fileSize: interpreter objectMemory getMemoryMap permSpaceSize.
+	
 
 	self assert: writtenMetadata equals: (self stonPretty: expectedPermSpaceMetadata).
 ]
@@ -253,6 +255,7 @@ VMImageHeaderWritingTest >> testWritingSTONSegment [
 	segmentMetadata := ComposedMetadataStruct new.
 	segmentMetadata startAddress: header oldBaseAddr.
 	segmentMetadata dataSize: header dataSize.
+	segmentMetadata fileSize: header dataSize.
 
 	self assert: writtenHeader equals: (self stonPretty: segmentMetadata).
 ]

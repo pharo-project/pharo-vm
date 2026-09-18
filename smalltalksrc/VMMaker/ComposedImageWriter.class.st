@@ -138,7 +138,9 @@ ComposedImageWriter >> writeImagePermanentSpace: imageFileName [
 	
 	self writePermanentSpaceMetadata: imageFileName.
 
-	^ self writePermanentSpaceData: imageFileName
+	self writePermanentSpaceData: imageFileName.
+	
+	^ objectMemory totalBytesInPermanentSpace.
 ]
 
 { #category : 'segments' }
@@ -187,7 +189,7 @@ ComposedImageWriter >> writePermanentSpaceData: imageFileName [
 
 	^ self
 		  writeDataStatingAt: objectMemory getMemoryMap permSpaceStart asVoidPointer
-		  withSize: objectMemory totalBytesInPermanentSpace
+		  withSize: objectMemory getMemoryMap permSpaceSize
 		  inFileName: (self permSpaceDataFileInImage: imageFileName)
 ]
 
@@ -199,6 +201,7 @@ ComposedImageWriter >> writePermanentSpaceMetadata: imageFileName [
 	self simulationOnly: [ metadata := ComposedMetadataStruct new ].
 	metadata startAddress: objectMemory getMemoryMap permSpaceStart.
 	metadata dataSize: objectMemory totalBytesInPermanentSpace.
+	metadata fileSize: objectMemory getMemoryMap permSpaceSize.
 
 	self
 		writeMetadata: metadata
@@ -253,6 +256,7 @@ ComposedImageWriter >> writeSegmentMetadata: segment nextIndex: segmentIndex inI
 	self simulationOnly: [ metadata := ComposedMetadataStruct new. ].
 	metadata startAddress: segment segStart.
 	metadata dataSize: segment segSize.
+	metadata fileSize: segment segSize.
 
 	self
 		writeMetadata: metadata
