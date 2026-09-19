@@ -1,3 +1,6 @@
+# The list of VM_PLUGINS targets define.
+set(VM_PLUGIN_TARGETS)
+
 macro(add_vm_plugin NAME)
 
     set(${NAME}_SOURCES_EXTRA ${ARGN})
@@ -36,4 +39,5 @@ macro(add_vm_plugin NAME)
     message(STATUS "Adding plugin: ${NAME}")    
 
     addLibraryWithRPATH(${NAME} ${${NAME}_SOURCES} ${${NAME}_SOURCES_EXTRA})
+    list(APPEND VM_PLUGIN_TARGETS ${NAME})
 endmacro()

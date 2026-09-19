@@ -30,54 +30,52 @@ install(
     COMPONENT include
     FILES_MATCHING PATTERN *.h)
 
-install(DIRECTORY
-    "${CMAKE_CURRENT_SOURCE_DIR}/cmake"
-    "${CMAKE_CURRENT_SOURCE_DIR}/extracted"
-    "${CMAKE_CURRENT_SOURCE_DIR}/include"
-    "${CMAKE_CURRENT_SOURCE_DIR}/packaging"
-    "${CMAKE_CURRENT_SOURCE_DIR}/plugins"
-    "${CMAKE_CURRENT_SOURCE_DIR}/resources"
-    "${CMAKE_CURRENT_SOURCE_DIR}/scripts"
-    "${CMAKE_CURRENT_SOURCE_DIR}/src"
-    "${CMAKE_CURRENT_SOURCE_DIR}/ffiTestLibrary"
-    "${CMAKE_CURRENT_SOURCE_DIR}/ffi"
-    "${CMAKE_CURRENT_SOURCE_DIR}/tty"
-    DESTINATION pharo-vm
-    USE_SOURCE_PERMISSIONS
-    COMPONENT c-src
-)
+if(INSTALL_C_SOURCE)
+    install(DIRECTORY
+        "${CMAKE_CURRENT_SOURCE_DIR}/cmake"
+        "${CMAKE_CURRENT_SOURCE_DIR}/extracted"
+        "${CMAKE_CURRENT_SOURCE_DIR}/include"
+        "${CMAKE_CURRENT_SOURCE_DIR}/plugins"
+        "${CMAKE_CURRENT_SOURCE_DIR}/resources"
+        "${CMAKE_CURRENT_SOURCE_DIR}/scripts"
+        "${CMAKE_CURRENT_SOURCE_DIR}/src"
+        "${CMAKE_CURRENT_SOURCE_DIR}/ffiTestLibrary"
+        "${CMAKE_CURRENT_SOURCE_DIR}/ffi"
+        "${CMAKE_CURRENT_SOURCE_DIR}/tty"
+        DESTINATION pharo-vm
+        USE_SOURCE_PERMISSIONS
+        COMPONENT c-src)
 
-install(FILES
+    install(FILES
 	"${CMAKE_CURRENT_BINARY_DIR}/version.info"
 	DESTINATION pharo-vm
 	COMPONENT c-src)
+
+    install(FILES
+        "CMakeLists.txt"
+        ${SUPPORT_CMAKE_FILES}
+        DESTINATION pharo-vm
+        COMPONENT c-src)
+
+    #Define generated files as elements in the c-src component for packaging
+    install(
+        DIRECTORY "${GENERATED_SOURCE_DIR}/generated/"
+        DESTINATION pharo-vm/generated/
+        USE_SOURCE_PERMISSIONS
+        COMPONENT c-src)
+
+    install(
+        DIRECTORY "${GENERATED_SOURCE_DIR}/generated/32/vm/include/"
+        DESTINATION include/pharovm
+        USE_SOURCE_PERMISSIONS
+        COMPONENT include
+        FILES_MATCHING PATTERN *.h)
+endif(INSTALL_C_SOURCE)
 
 #List all cmake files
 file(GLOB SUPPORT_CMAKE_FILES
   "${CMAKE_CURRENT_SOURCE_DIR}/*.cmake"
 )
-
-install(FILES
-    "CMakeLists.txt"
-    ${SUPPORT_CMAKE_FILES}
-    DESTINATION pharo-vm
-    COMPONENT c-src
-)
-
-#Define generated files as elements in the c-src component for packaging
-install(
-	DIRECTORY "${GENERATED_SOURCE_DIR}/generated/"
-	DESTINATION pharo-vm/generated/
-	USE_SOURCE_PERMISSIONS
-	COMPONENT c-src)
-
-install(
-	DIRECTORY "${GENERATED_SOURCE_DIR}/generated/32/vm/include/"
-	DESTINATION include/pharovm
-	USE_SOURCE_PERMISSIONS
-	COMPONENT include
-	FILES_MATCHING PATTERN *.h)
-
 set(CPACK_PACKAGE_DESCRIPTION "${APPNAME} Headless VM for ${FULL_PLATFORM_NAME}")
 set(CPACK_PACKAGE_VENDOR "${APPNAME}")
 set(CPACK_PACKAGE_HOMEPAGE_URL "https://pharo.org")

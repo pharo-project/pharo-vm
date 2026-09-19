@@ -47,6 +47,7 @@ endif()
 addLibraryWithRPATH(FilePlugin
     ${FilePlugin_SOURCES}
     ${PHARO_CURRENT_GENERATED}/plugins/src/FilePlugin/FilePlugin.c)
+list(APPEND VM_PLUGIN_TARGETS FilePlugin)
 
 if(OSX)
     target_link_libraries(FilePlugin PRIVATE "-framework CoreFoundation")
@@ -75,6 +76,7 @@ if(NOT OPENBSD)
     )
 
     addLibraryWithRPATH(UUIDPlugin ${UUIDPlugin_SOURCES})
+    list(APPEND VM_PLUGIN_TARGETS UUIDPlugin)
     if(WIN)
         target_link_libraries(UUIDPlugin PRIVATE "-lole32")
     elseif(UNIX AND NOT OSX)
@@ -147,6 +149,7 @@ set(BitBltPlugin_SOURCES
 )
 
 addLibraryWithRPATH(BitBltPlugin ${BitBltPlugin_SOURCES})
+list(APPEND VM_PLUGIN_TARGETS BitBltPlugin)
 
 #
 # B2DPlugin
@@ -193,6 +196,7 @@ else()
 endif()
 
 addLibraryWithRPATH(LocalePlugin ${LocalePlugin_SOURCES})
+list(APPEND VM_PLUGIN_TARGETS LocalePlugin)
 
 if(OSX)
 	target_link_libraries(LocalePlugin PRIVATE "-framework CoreFoundation")
@@ -239,6 +243,7 @@ else()
 endif()
 
 addLibraryWithRPATH(SqueakSSL ${SqueakSSL_SOURCES})
+list(APPEND VM_PLUGIN_TARGETS SqueakSSL)
 
 if(OSX)
     target_link_libraries(SqueakSSL PRIVATE "-framework CoreFoundation")
