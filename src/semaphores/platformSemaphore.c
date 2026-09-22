@@ -1,4 +1,3 @@
-#include "pharovm/pharo.h"
 #include "pharovm/semaphores/platformSemaphore.h"
 
 /*
@@ -11,53 +10,104 @@ int semaphore_release(PlatformSemaphore sem);
 
 #if defined(_WIN32)
 
+#include <windows.h>
+
 /*
-* Win32 semaphore implementation
-* Based on the documentation in 
-*   https://docs.microsoft.com/en-us/windows/win32/sync/using-semaphore-objects
-*   https://docs.microsoft.com/en-us/windows/win32/api/winbase/nf-winbase-createsemaphorea
-*/
+ * Win32 semaphore implementation based on WaitOnAddress.
+ *
+ * The count is changed atomically. Waiting threads sleep only while the count
+ * is zero, and a signal wakes one waiter after publishing one token. As
+ * WaitOnAddress permits spurious wake-ups, semaphore_wait always rechecks the
+ * count and claims a token with compare-and-exchange.
+ *
+ * https://learn.microsoft.com/windows/win32/api/synchapi/nf-synchapi-waitonaddress
+ */
+
+#define PLATFORM_SEMAPHORE_MAX_COUNT 255
+
+struct PharoPlatformSemaphore {
+	volatile LONG count;
+};
 
 PlatformSemaphore
 semaphore_new(long initialValue) {
-    PlatformSemaphore ghSemaphore = CreateSemaphore(
-        NULL,				// default security attributes
-        initialValue,		// initial count
-        255,				// maximum count
-        NULL);				// unnamed semaphore
-  
-    return ghSemaphore;
+	PlatformSemaphore semaphore;
+
+	if (initialValue < 0 || initialValue > PLATFORM_SEMAPHORE_MAX_COUNT) {
+		return NULL;
+	}
+
+	semaphore = malloc(sizeof(*semaphore));
+	if (semaphore == NULL) {
+		return NULL;
+	}
+
+	semaphore->count = (LONG) initialValue;
+	return semaphore;
 }
 
 int
 semaphore_wait(PlatformSemaphore sem) {
-	DWORD returnValue;
-	
-	returnValue = WaitForSingleObject(
-			sem,	// handle to semaphore
-			INFINITE) ;	// Infinite time-out interval
-			
-	return (returnValue != WAIT_FAILED) ? 0 : 1; // Should return 0 on Success 1 on failure
+	LONG count;
+	LONG unavailable = 0;
+
+	if (sem == NULL) {
+		return 1;
+	}
+
+	for (;;) {
+		/* InterlockedCompareExchange with identical exchange and comparand
+		 * values provides an atomic load with the required memory ordering. */
+		count = InterlockedCompareExchange(&sem->count, 0, 0);
+
+		if (count == 0) {
+			if (!WaitOnAddress(
+					&sem->count,
+					&unavailable,
+					sizeof(unavailable),
+					INFINITE)) {
+				return 1;
+			}
+			continue;
+		}
+
+		if (InterlockedCompareExchange(&sem->count, count - 1, count) == count) {
+			return 0;
+		}
+	}
 }
 
 int
 semaphore_signal(PlatformSemaphore sem) {
-    BOOL returnValue;
-	
-	returnValue = ReleaseSemaphore(
-			sem,		// handle to semaphore
-			1,			// increase count by one
-			NULL);		// not interested in previous count
-	
-	return (returnValue != 0) ? 0 : 1; // Should return 0 on Success 1 on failure
+	LONG count;
+
+	if (sem == NULL) {
+		return 1;
+	}
+
+	for (;;) {
+		count = InterlockedCompareExchange(&sem->count, 0, 0);
+		if (count >= PLATFORM_SEMAPHORE_MAX_COUNT) {
+			return 1;
+		}
+
+		if (InterlockedCompareExchange(&sem->count, count + 1, count) == count) {
+			/* Wake after every published token. Restricting this to the zero-to-one
+			 * transition can strand waiters when several signals arrive together. */
+			WakeByAddressSingle((PVOID) &sem->count);
+			return 0;
+		}
+	}
 }
 
 int
 semaphore_release(PlatformSemaphore sem) {
-	BOOL returnValue;
-	returnValue = CloseHandle(sem);
-	
-	return (returnValue != 0) ? 0 : 1; // Should return 0 on Success 1 on failure;
+	if (sem == NULL) {
+		return 1;
+	}
+
+	free(sem);
+	return 0;
 }
 
 #elif !defined(__APPLE__)
@@ -67,9 +117,14 @@ semaphore_new(long initialValue){
 	PlatformSemaphore wrapper = malloc(sizeof(sem_t));
     int returnCode;
 
+	if (wrapper == NULL) {
+		return NULL;
+	}
+
     returnCode = sem_init(wrapper, 0, initialValue);
 
     if(returnCode != 0){
+		free(wrapper);
         return NULL;
     }
 
@@ -147,7 +202,19 @@ platform_semaphore_free(Semaphore *semaphore){
 Semaphore*
 platform_semaphore_new(int initialValue) {
 	Semaphore *semaphore = (Semaphore *) malloc(sizeof(Semaphore));
-	semaphore->handle = (void *) semaphore_new(initialValue);
+	PlatformSemaphore handle;
+
+	if (semaphore == NULL) {
+		return NULL;
+	}
+
+	handle = semaphore_new(initialValue);
+	if (!isValidSemaphore(handle)) {
+		free(semaphore);
+		return NULL;
+	}
+
+	semaphore->handle = (void *) handle;
 	semaphore->wait = platform_semaphore_wait;
 	semaphore->signal = platform_semaphore_signal;
 	semaphore->free = platform_semaphore_free;
