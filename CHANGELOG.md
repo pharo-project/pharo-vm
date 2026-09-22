@@ -1,5 +1,14 @@
 # Change log
 
+## v12.0.5-beta
+* Minimal ARM64 VA39 support, enabling the VM to run on ARM Chromebooks by @takano32 in https://github.com/pharo-project/pharo-vm/pull/1079
+* Relocate codeZone/newSpace/stackPages above the macOS dyld shared cache by @dweinstein in https://github.com/pharo-project/pharo-vm/pull/1078
+
+### New Contributors
+* @dweinstein made their first contribution in https://github.com/pharo-project/pharo-vm/pull/1078
+
+**Full Changelog**: https://github.com/pharo-project/pharo-vm/compare/v12.0.4-beta...v12.0.5-beta
+
 ## v12.0.4-beta
 
 * just add third party dependences if BUILD_BUNDLE is enabled by @estebanlm in https://github.com/pharo-project/pharo-vm/pull/1081
