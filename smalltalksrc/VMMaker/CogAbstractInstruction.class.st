@@ -409,6 +409,17 @@ CogAbstractInstruction >> annotation: aByte [
 	^annotation := aByte
 ]
 
+{ #category : 'printing' }
+CogAbstractInstruction >> argumentNames [
+	<doNotGenerate>
+
+	| format argumentAsStrings |
+	argumentAsStrings := String streamContents: [ :aStream |
+		  format := self getFormatFromOpCodeName: self opCodeName.
+		  self printOperandsOn: aStream withFormat: format ].
+	^ Character space split: argumentAsStrings trim
+]
+
 { #category : 'coercion' }
 CogAbstractInstruction >> asInteger [
 	<doNotGenerate>
@@ -1401,6 +1412,13 @@ CogAbstractInstruction >> numIntRegArgs [
 { #category : 'multi-threading' }
 CogAbstractInstruction >> numLowLevelLockOpcodes [
 	self subclassResponsibility
+]
+
+{ #category : 'printing' }
+CogAbstractInstruction >> opCodeName [
+	<doNotGenerate>
+
+	^ self class nameForOpcode: opcode
 ]
 
 { #category : 'accessing' }
