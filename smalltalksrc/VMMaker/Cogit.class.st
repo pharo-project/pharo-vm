@@ -121,19 +121,11 @@ Class {
 		'methodZoneBase',
 		'codeBase',
 		'minValidCallAddress',
-		'lastNInstructions',
 		'simulatedAddresses',
 		'simulatedTrampolines',
 		'simulatedVariableGetters',
 		'simulatedVariableSetters',
-		'printRegisters',
-		'printInstructions',
-		'compilationTrace',
-		'clickConfirm',
-		'singleStep',
-		'guardPageSize',
 		'traceFlags',
-		'traceStores',
 		'methodObj',
 		'enumeratingCogMethod',
 		'methodHeader',
@@ -198,9 +190,6 @@ Class {
 		'ceEnclosingObjectTrampoline',
 		'ceFlushICache',
 		'ceCheckFeaturesFunction',
-		'ceTraceLinkedSendTrampoline',
-		'ceTraceBlockActivationTrampoline',
-		'ceTraceStoreTrampoline',
 		'ceGetFP',
 		'ceGetSP',
 		'ceCaptureCStackPointers',
@@ -218,9 +207,6 @@ Class {
 		'objectReferencesInRuntime',
 		'runtimeObjectRefIndex',
 		'cFramePointerInUse',
-		'debugPrimCallStackOffset',
-		'ceTryLockVMOwner',
-		'ceUnlockVMOwner',
 		'extA',
 		'extB',
 		'numExtB',
@@ -231,8 +217,6 @@ Class {
 		'CFramePointer',
 		'ceMallocTrampoline',
 		'ceFreeTrampoline',
-		'disassemblingMethod',
-		'cogConstituentIndex',
 		'directedSendUsesBinding',
 		'simulateFPInUse',
 		'statCompileFullBlockCount',
@@ -426,12 +410,10 @@ Cogit class >> declareCVarsIn: aCCodeGenerator [
 
 	#( 'coInterpreter' 'objectMemory' 'methodZone' 'objectRepresentation'
 	   'cogMethodSurrogateClass'
-	   'processor' 'lastNInstructions' 'simulatedAddresses'
+	   'processor' 'simulatedAddresses'
 	   'simulatedTrampolines' 'simulatedVariableGetters'
-	   'simulatedVariableSetters' 'printRegisters' 'printInstructions'
-	   'clickConfirm' 'singleStep' ) do: [
-		:simulationVariableNotNeededForRealVM |
-		aCCodeGenerator removeVariable: simulationVariableNotNeededForRealVM ].
+	   'simulatedVariableSetters' ) do: [ :simulationVariableNotNeededForRealVM |
+			aCCodeGenerator removeVariable: simulationVariableNotNeededForRealVM ].
 
 	aCCodeGenerator
 		addHeaderFile: '<stddef.h>';
@@ -505,13 +487,12 @@ Cogit class >> declareCVarsIn: aCCodeGenerator [
 		declareC: 'sqInt ordinarySendTrampolines[NumSendTrampolines]';
 		var: #superSendTrampolines
 		declareC: 'sqInt superSendTrampolines[NumSendTrampolines]'.
-	BytecodeSetHasDirectedSuperSend ifTrue: [
-		aCCodeGenerator
-			var: #directedSuperSendTrampolines
-			declareC: 'sqInt directedSuperSendTrampolines[NumSendTrampolines]';
-			var: #directedSuperBindingSendTrampolines
-			declareC:
-				'sqInt directedSuperBindingSendTrampolines[NumSendTrampolines]' ].
+	aCCodeGenerator
+		var: #directedSuperSendTrampolines
+		declareC: 'sqInt directedSuperSendTrampolines[NumSendTrampolines]';
+		var: #directedSuperBindingSendTrampolines
+		declareC:
+			'sqInt directedSuperBindingSendTrampolines[NumSendTrampolines]'.
 	aCCodeGenerator
 		var: #trampolineAddresses
 		declareC: 'static char *trampolineAddresses[NumTrampolines*2]';
@@ -654,11 +635,6 @@ Cogit class >> generatorTableFrom: anArray [
 	^generatorTable
 ]
 
-{ #category : 'accessing' }
-Cogit class >> guardPageSize [
-	^1024
-]
-
 { #category : 'translation' }
 Cogit class >> implicitReturnTypeFor: aSelector [
 	"Answer the return type for methods that don't have an explicit return."
@@ -722,9 +698,8 @@ Cogit class >> initializeAnnotationConstants [
 	IsSendCall := 7.
 	"These are formed by combining IsSendCall and IsAnnotationExtension annotations."
 	IsSuperSend := 8.
-
-	IsDirectedSuperSend := BytecodeSetHasDirectedSuperSend ifTrue: [9].
-	IsDirectedSuperBindingSend := BytecodeSetHasDirectedSuperSend ifTrue: [10].
+	IsDirectedSuperSend := 9.
+	IsDirectedSuperBindingSend := 10.
 
 	DisplacementMask := (1 << AnnotationShift) - 1.
 	DisplacementX2N := IsDisplacementX2N << AnnotationShift.
@@ -767,7 +742,6 @@ Cogit class >> initializeBytecodeTable [
 	"StackToRegisterMappingCogit initializeBytecodeTableWith: Dictionary new"
 
 	| initializer |
-	BytecodeSetHasDirectedSuperSend := BytecodeSetHasExtensions := false.
 	initializer := InitializationOptions
 		               at: #bytecodeTableInitializer
 		               ifAbsent: [ #initializeBytecodeTableForSistaV1 ].
@@ -841,7 +815,7 @@ Cogit class >> initializeMiscConstants [
 Cogit class >> initializeNumTrampolines [
 	NumTrampolines := self numTrampolines
 						+ self objectRepresentationClass numTrampolines
-						+ (BytecodeSetHasDirectedSuperSend ifTrue: [NumSendTrampolines * 2] ifFalse: [0])
+						+ (NumSendTrampolines * 2)
 ]
 
 { #category : 'class initialization' }
@@ -1196,18 +1170,17 @@ Cogit class >> mustBeGlobalAndExport: var [
 	 only used outside of Cogit by the object representation).  Include CFramePointer CStackPointer as
 	 a hack to get them declared at all."
 
-	^#(	'ceBaseFrameReturnTrampoline' #ceCaptureCStackPointers 'ceCheckForInterruptTrampoline'
-		ceEnterCogCodePopReceiverReg realCEEnterCogCodePopReceiverReg
-		ceCallCogCodePopReceiverReg realCECallCogCodePopReceiverReg
-		ceCallCogCodePopReceiverAndClassRegs realCECallCogCodePopReceiverAndClassRegs
-		'ceReturnToInterpreterTrampoline' 'ceCannotResumeTrampoline'
-		ceTryLockVMOwner ceUnlockVMOwner
-		'cmEntryOffset' 'cmNoCheckEntryOffset' 'cmDynSuperEntryOffset' 'cmSelfSendEntryOffset'
-		'missOffset' 'cbEntryOffset' 'cbNoSwitchEntryOffset' 'blockNoContextSwitchOffset'
-		CFramePointer CStackPointer 'cFramePointerInUse' ceGetFP ceGetSP
-		traceFlags 'traceStores' debugPrimCallStackOffset)
-			includes: var
-
+	^ #( 'ceBaseFrameReturnTrampoline' #ceCaptureCStackPointers
+	     'ceCheckForInterruptTrampoline' ceEnterCogCodePopReceiverReg
+	     realCEEnterCogCodePopReceiverReg
+	     ceCallCogCodePopReceiverReg realCECallCogCodePopReceiverReg
+	     ceCallCogCodePopReceiverAndClassRegs
+	     realCECallCogCodePopReceiverAndClassRegs
+	     'ceReturnToInterpreterTrampoline'
+	     'ceCannotResumeTrampoline' 'cmEntryOffset' 'cmNoCheckEntryOffset'
+	     'missOffset' 'cbEntryOffset' 'cbNoSwitchEntryOffset'
+	     CFramePointer CStackPointer 'cFramePointerInUse'
+	     ceGetFP ceGetSP traceFlags ) includes: var
 ]
 
 { #category : 'translation' }
@@ -1356,7 +1329,7 @@ Cogit class >> runtime [
 { #category : 'translation' }
 Cogit class >> shouldGenerateTypedefFor: aStructClass [
 	"Hack to work-around mutliple definitions.  Sometimes a type has been defined in an include."
-	^({ CogMethod. SistaCogMethod } includes: aStructClass) not
+	^ CogMethod ~= aStructClass
 ]
 
 { #category : 'translation' }
@@ -3199,12 +3172,12 @@ Cogit >> annotationForMcpc: mcpc in: cogHomeMethod [
 
 { #category : 'in-line cacheing' }
 Cogit >> annotationIsForUncheckedEntryPoint: annotation [
+
 	<inline: true>
-	^annotation = IsSuperSend
-	  or: [BytecodeSetHasDirectedSuperSend
-		  and: [annotation
-					between: IsDirectedSuperSend
-					and: IsDirectedSuperBindingSend]]
+	^ annotation = IsSuperSend or: [
+		  annotation
+			  between: IsDirectedSuperSend
+			  and: IsDirectedSuperBindingSend ]
 ]
 
 { #category : 'simulation only' }
@@ -3387,13 +3360,6 @@ Cogit >> blockDispatchTargetsFor: cogMethod perform: binaryFunction arg: arg [
 					[^result]]].
 		pc := pc + (backEnd instructionSizeAt: pc)].
 	^0
-]
-
-{ #category : 'debugging' }
-Cogit >> breakOnImplicitReceiver [
-	<api>
-	<cmacro: '() (traceFlags & 64)'>
-	^(traceFlags bitAnd: 64) ~= 0
 ]
 
 { #category : 'accessing' }
@@ -4166,12 +4132,6 @@ Cogit >> checkMaybeObjRefInPIC: maybeObject [
 	^objectRepresentation checkValidObjectReference: maybeObject
 ]
 
-{ #category : 'debugging' }
-Cogit >> checkStackDepthOnSend [
-	<doNotGenerate>
-	^(traceFlags bitAnd: 128) ~= 0
-]
-
 { #category : 'garbage collection' }
 Cogit >> checkValidObjectReferencesInPIC: aPIC [
 	<var: #aPIC type: #'CogMethod *'>
@@ -4266,9 +4226,6 @@ Cogit >> cog: aMethodObj selector: aSelectorOop [
 	
 	| selector cogMethod startTime |
 	<var: #cogMethod type: #'CogMethod *'>
-	(self exclude: aMethodObj selector: aSelectorOop) ifTrue:
-		[^nil].
-	
 	startTime := coInterpreter ioUTCMicrosecondsNow.		
 	
 	self deny: (coInterpreter methodHasCogMethod: aMethodObj).
@@ -4305,115 +4262,6 @@ Cogit >> cogCodeBase: anInteger [
 	<doNotGenerate>
 	codeBase := anInteger
 	
-]
-
-{ #category : 'profiling primitives' }
-Cogit >> cogCodeConstituents: withDetails [
-
-	"Answer the contents of the code zone as an array of pair-wise element, address in ascending address order.
-	 Answer a string for a runtime routine or abstract label (beginning, end, etc), a CompiledMethod for a CMMethod,
-	 or a selector (presumably a Symbol) for a PIC.
-	 If withDetails is true
-		- answer machine-code to bytecode pc mapping information for methods
-		- answer class, target pair information for closed PIC
-	 N.B. Since the class tag for the first case of a closed PIC is stored at the send site, it must be collected
-		  by scanning methods (see collectCogConstituentFor:Annotation:Mcpc:Bcpc:Method:).  Since closed PICs
-		  are never shared they always come after the method that references them, so we don't need an extra pass
-		  to collect the first case class tags, which are (temporarily) assigned to each closed PIC's methodObject field.
-		  But we do need to reset the methodObject fields to zero.  This is done in createPICData:, unless memory
-		  runs out, in which case it is done by cleanUpFailingCogCodeConstituents:."
-
-	<api>
-	<var: #cogMethod type: #'CogMethod *'>
-	| count cogMethod constituents label value |
-	count := trampolineTableIndex / 2 + 3. "+ 3 for start, freeStart and end"
-	cogMethod := self cCoerceSimple: methodZoneBase to: #'CogMethod *'.
-	[ cogMethod < methodZone limitZony ] whileTrue: [ 
-		cogMethod cmType ~= CMFree ifTrue: [ count := count + 1 ].
-		cogMethod := methodZone methodAfter: cogMethod ].
-	constituents := coInterpreter
-		                instantiateClass: coInterpreter classArray
-		                indexableSize: count * 2.
-	constituents ifNil: [ ^ constituents ].
-	coInterpreter pushRemappableOop: constituents.
-	((label := objectMemory stringForCString: 'CogCode') isNil or: [ 
-		 (value := self positiveMachineIntegerFor: codeBase) isNil ]) 
-		ifTrue: [ 
-			coInterpreter popRemappableOop.
-			^ nil ].
-	coInterpreter
-		storePointerUnchecked: 0 ofObject: constituents withValue: label;
-		storePointerUnchecked: 1 ofObject: constituents withValue: value.
-	0 to: trampolineTableIndex - 1 by: 2 do: [ :i | 
-		((label := objectMemory stringForCString:
-			           (trampolineAddresses at: i)) isNil or: [ 
-			 (value := self positiveMachineIntegerFor:
-				           (trampolineAddresses at: i + 1) asUnsignedInteger)
-				 isNil ]) ifTrue: [ 
-			coInterpreter popRemappableOop.
-			^ nil ].
-		coInterpreter
-			storePointerUnchecked: 2 + i
-			ofObject: constituents
-			withValue: label;
-			storePointerUnchecked: 3 + i
-			ofObject: constituents
-			withValue: value ].
-	count := trampolineTableIndex + 2.
-	cogMethod := self cCoerceSimple: methodZoneBase to: #'CogMethod *'.
-	[ cogMethod < methodZone limitZony ] whileTrue: [ 
-		cogMethod cmType ~= CMFree ifTrue: [ 
-			| profileData |
-			profileData := self
-				               profileDataFor: cogMethod
-				               withDetails: withDetails.
-			profileData ifNil: [ 
-				^ self cleanUpFailingCogCodeConstituents: cogMethod ].
-			coInterpreter
-				storePointerUnchecked: count
-				ofObject: constituents
-				withValue: profileData.
-			value := withDetails
-				         ifTrue: [ self collectCogMethodConstituent: cogMethod ]
-				         ifFalse: [ 
-				         self positiveMachineIntegerFor:
-					         cogMethod asUnsignedInteger ].
-			value ifNil: [ ^ self cleanUpFailingCogCodeConstituents: cogMethod ].
-			coInterpreter
-				storePointerUnchecked: count + 1
-				ofObject: constituents
-				withValue: value.
-			count := count + 2 ].
-		cogMethod := methodZone methodAfter: cogMethod ].
-	((label := objectMemory stringForCString: 'CCFree') isNil or: [ 
-		 (value := self positiveMachineIntegerFor: methodZone zoneFree)
-			 isNil ]) ifTrue: [ 
-		coInterpreter popRemappableOop.
-		^ nil ].
-	coInterpreter
-		storePointerUnchecked: count
-		ofObject: constituents
-		withValue: label;
-		storePointerUnchecked: count + 1
-		ofObject: constituents
-		withValue: value.
-	((label := objectMemory stringForCString: 'CCEnd') isNil or: [ 
-		 (value := self positiveMachineIntegerFor: methodZone zoneEnd) isNil ]) 
-		ifTrue: [ 
-			coInterpreter popRemappableOop.
-			^ nil ].
-	coInterpreter
-		storePointerUnchecked: count + 2
-		ofObject: constituents
-		withValue: label;
-		storePointerUnchecked: count + 3
-		ofObject: constituents
-		withValue: value.
-	constituents := coInterpreter popRemappableOop.
-	coInterpreter beRootIfOld: constituents.
-	"would like to assert this, but it requires the leak checked be run :-(
-		self assert: self allMachineCodeObjectReferencesValid."
-	^ constituents
 ]
 
 { #category : 'in-line cacheing' }
@@ -4469,11 +4317,7 @@ Cogit >> cogFullBlockMethod: aMethodObj numCopied: numCopied [
 	<var: #startTime type: #usqLong>
 	<var: #cogMethod type: #'CogMethod *'>
 
-	| cogMethod 	startTime ultimateLiteral |
-
-	(self exclude: aMethodObj) ifTrue:
-		[^nil].
-	
+	| cogMethod 	startTime ultimateLiteral |	
 	startTime := coInterpreter ioUTCMicrosecondsNow.	
 	objectRepresentation ensureNoForwardedLiteralsIn: aMethodObj.
 	ultimateLiteral := coInterpreter ultimateLiteralOf: aMethodObj.
@@ -4725,92 +4569,6 @@ Cogit >> cogitPostGCAction: gcMode [
 			 methodZone kosherYoungReferrers ])
 ]
 
-{ #category : 'multi-threading' }
-Cogit >> cogitTryLockVMOwner [
-	<api>
-		"ceTryLockVMOwner does an atomic swap of the lock with 1 and
-		 then subtracts 1from lock's value.  So if the result is 0 the lock was
-		 already held.  Anything else (in fact -1) implies we hold the lock."
-	<cmacro: '() (ceTryLockVMOwner() != 0)'>
-	^(self simulateLeafCallOf: ceTryLockVMOwner) ~= 0
-]
-
-{ #category : 'multi-threading' }
-Cogit >> cogitUnlockVMOwner [
-	<api>
-	<cmacro: '() ceUnlockVMOwner()'>
-	^self simulateLeafCallOf: ceUnlockVMOwner
-]
-
-{ #category : 'profiling primitives' }
-Cogit >> collectCogConstituentFor: descriptor Annotation: isBackwardBranchAndAnnotation Mcpc: mcpc Bcpc: bcpc Method: cogMethodArg [
-	<var: #descriptor type: #'BytecodeDescriptor *'>
-	<var: #mcpc type: #'char *'>
-	<var: #cogMethodArg type: #'void *'>
-	<var: #targetMethod type: #'CogMethod *'>
-	| address entryPoint |
-	descriptor ifNil: [^0].
-	descriptor isMapped ifFalse: [^0].
-	address := self positiveMachineIntegerFor: (self cCoerceSimple: mcpc to: #'usqIntptr_t').
-	address ifNil: [^PrimErrNoMemory]. "This cannot trigger a GC but fails if not enough space in Eden,"
-	"Assumes we write the values into topRemappableOop"
-	coInterpreter
-		storePointerUnchecked: cogConstituentIndex
-		ofObject: coInterpreter topRemappableOop
-		withValue: address.
-	coInterpreter
-		storePointerUnchecked: cogConstituentIndex + 1
-		ofObject: coInterpreter topRemappableOop
-		withValue: (objectMemory integerObjectOf: bcpc).
-	cogConstituentIndex := cogConstituentIndex + 2.
-
-	"Collect any first case classTags for closed PICs."
-	((isBackwardBranchAndAnnotation noMask: 1)
-	 and: [self isSendAnnotation: isBackwardBranchAndAnnotation >> 1]) ifTrue:
-		[entryPoint := backEnd callTargetFromReturnAddress: mcpc asInteger.
-		 entryPoint > methodZoneBase ifTrue: "send is linked"
-			[self targetMethodAndSendTableFor: entryPoint annotation: isBackwardBranchAndAnnotation >> 1 into:
-				[:targetMethod :sendTable|
-				  targetMethod cmType = CMPolymorphicIC ifTrue:
-					[targetMethod methodObject: (objectRepresentation classForInlineCacheTag: (backEnd inlineCacheTagAt: (self cCoerceSimple: mcpc to: #sqInt)))]]]].
-	^0
-]
-
-{ #category : 'profiling primitives' }
-Cogit >> collectCogMethodConstituent: cogMethod [
-	"Answer a description of the mapping between machine code pointers and bytecode pointers for the Cog Method.
-	 First value is the address of the cog method.
-	 Following values are pairs of machine code pc and bytecode pc"
-	<var: #cogMethod type: #'CogMethod *'>
-	| cm nSlots errCode address data |
-	(cogMethod cmType = CMMethod) 
-		ifFalse: [^self positiveMachineIntegerFor: cogMethod asUnsignedInteger ].
-	cogMethod stackCheckOffset = 0 "isFrameless ?"
-		ifTrue: [^self positiveMachineIntegerFor: cogMethod asUnsignedInteger].
-	cm := cogMethod methodObject.
-	nSlots := ((objectMemory byteSizeOf: cm) - (coInterpreter startPCOfMethod: cm)) * 2 + objectMemory minSlotsForShortening + 1."+1 for first address"
-	data := objectMemory instantiateClass: (objectMemory splObj: ClassArray) indexableSize: nSlots.
-	data ifNil: [^nil].
-	coInterpreter pushRemappableOop: data.
-	"The iteration assumes the object is the top remappable oop"
-	address := (self positiveMachineIntegerFor: cogMethod asUnsignedInteger).
-	address ifNil: [coInterpreter popRemappableOop. ^nil].
-	coInterpreter
-		storePointerUnchecked: 0
-		ofObject: coInterpreter topRemappableOop
-		withValue: address.
-	cogConstituentIndex := 1.
-	errCode := self
-		mapFor: cogMethod
-		bcpc: (coInterpreter startPCOfMethod: cogMethod methodObject)
-		performUntil: #collectCogConstituentFor:Annotation:Mcpc:Bcpc:Method:
-		arg: cogMethod asVoidPointer.
-	errCode ~= 0 ifTrue: [coInterpreter popRemappableOop. ^nil].
-	cogConstituentIndex < nSlots ifTrue:
-		[objectMemory shorten: coInterpreter topRemappableOop toIndexableSize: cogConstituentIndex].
-	^coInterpreter popRemappableOop.
-]
-
 { #category : 'disassembly' }
 Cogit >> collectMapEntry: annotation address: mcpc into: aDictionary [
 	<doNotGenerate>
@@ -4860,23 +4618,6 @@ Cogit >> compactPICsWithFreedTargets [
 		 cogMethod := methodZone methodAfter: cogMethod.
 		 count := count + 1].
 	self assert: count = methodZone numMethods
-]
-
-{ #category : 'simulation only' }
-Cogit >> compilationTrace [
-	^compilationTrace
-]
-
-{ #category : 'simulation only' }
-Cogit >> compilationTrace: anInteger [
-	"  1 = method/block compilation
-	   2 = bytecode descriptor.
-	   4 = simStack & optStatus
-	   8 = spill
-	 16 = merge
-	 32 = fixup
-	 64 = map"
-	compilationTrace := anInteger
 ]
 
 { #category : 'compile abstract instructions' }
@@ -5122,10 +4863,7 @@ Cogit >> compileEntry [
 	entry := objectRepresentation genGetInlineCacheClassTagFrom: ReceiverResultReg into: TempReg.
 	self CmpR: ClassReg R: TempReg.
 	self JumpNonZero: sendMiss.
-	noCheckEntry := self Label.
-	self compileSendTrace ifTrue:
-		[backEnd saveAndRestoreLinkRegAround:
-			[self CallRT: ceTraceLinkedSendTrampoline]]
+	noCheckEntry := self Label
 ]
 
 { #category : 'compile abstract instructions' }
@@ -5280,13 +5018,6 @@ Cogit >> compilePolymorphicICPrototype [
 	picEndOfCodeLabel := self Label.
 	literalsManager dumpLiterals: false.
 	^0
-]
-
-{ #category : 'debugging' }
-Cogit >> compileSendTrace [
-	"2 is trace sends; 256+2 is traceLinkedSends, so one can trace just unlinked sends using 2"
-	<cmacro: '() ((traceFlags & 258) == 258)'>
-	^traceFlags allMask: 256 + 2
 ]
 
 { #category : 'initialization' }
@@ -5768,62 +5499,6 @@ Cogit >> entryOffset [
 Cogit >> estimateOfAbstractOpcodesPerBytecodes [
 	<inline: true>
 	^ 15
-]
-
-{ #category : 'simulation only' }
-Cogit >> exclude: aMethodObj [
-	"For debugging, allow excluding methods based on selector or methodClass.  Answer if the mehtod should be excluded."
-	<inline: true>
-	self cCode: [] inSmalltalk: "for debugging, allow excluding methods based on selector or methodClass"
-		[self class initializationOptions
-			at: #DoNotJIT
-			ifPresent:
-				[:excluded| 
-				(excluded anySatisfy: [:exclude| aMethodObj = exclude]) ifTrue:
-					[coInterpreter transcript
-						newLine; nextPutAll: 'EXCLUDING ';
-						nextPutAll: aMethodObj; nextPutAll: ' (compiled block)';
-						newLine; flush.
-					 ^true]].
-		 (compilationTrace anyMask: 1) ifTrue:
-			[| methodClass |
-			 methodClass := coInterpreter nameOfClass: (coInterpreter methodClassOf: aMethodObj).
-			 coInterpreter transcript
-				newLine;
-				nextPutAll: 'compiling compiled block in ';
-				nextPutAll: methodClass;
-				newLine; flush]].
-	^false
-]
-
-{ #category : 'simulation only' }
-Cogit >> exclude: aMethodObj selector: aSelectorOop [
-	"For debugging, allow excluding methods based on selector or methodClass.  Answer if the mehtod should be excluded."
-	<inline: true>
-	self cCode: [] inSmalltalk:
-		[| methodClass selector |
-		 self class initializationOptions
-			at: #DoNotJIT
-			ifPresent:
-				[:excluded|
-				methodClass := coInterpreter nameOfClass: (coInterpreter methodClassOf: aMethodObj).
-				selector := coInterpreter stringOf: aSelectorOop.
-				(excluded anySatisfy: [:exclude| selector = exclude or: [methodClass = exclude]]) ifTrue:
-					[coInterpreter transcript
-						newLine; nextPutAll: 'EXCLUDING ';
-						nextPutAll: methodClass; nextPutAll: '>>#'; nextPutAll: selector;
-						cr; flush.
-					 ^true]].
-		 (compilationTrace anyMask: 1) ifTrue:
-			[methodClass := coInterpreter nameOfClass: (coInterpreter methodClassOf: aMethodObj).
-			 selector := coInterpreter stringOf: aSelectorOop.
-			 selector isEmpty ifTrue:
-				[selector := coInterpreter stringOf: (coInterpreter maybeSelectorOfMethod: aMethodObj)].
-			 coInterpreter transcript
-				newLine; nextPutAll: 'compiling ';
-				nextPutAll: methodClass; nextPutAll: '>>#'; nextPutAll: selector;
-				cr; flush]].
-	^false
 ]
 
 { #category : 'in-line cacheing' }
@@ -6711,13 +6386,7 @@ Cogit >> genInnerPICAbortTrampoline: name [
 
 { #category : 'trampoline support' }
 Cogit >> genLoadCStackPointersForPrimCall [
-	debugPrimCallStackOffset = 0
-		ifTrue:
-			[self MoveAw: self cStackPointerAddress R: backEnd cStackPointer]
-		ifFalse:
-			[self MoveAw: self cStackPointerAddress R: TempReg.
-			 self SubCq: debugPrimCallStackOffset R: TempReg.
-			 self MoveR: TempReg R: backEnd cStackPointer].
+	self MoveAw: self cStackPointerAddress R: backEnd cStackPointer.
 	cFramePointerInUse ifTrue:
 		[self MoveAw: self cFramePointerAddress R: FPReg].
 	^0
@@ -7640,48 +7309,45 @@ Cogit >> generateRunTimeTrampolines [
 
 { #category : 'initialization' }
 Cogit >> generateSendTrampolines [
-	0 to: NumSendTrampolines - 1 do:
-		[:numArgs|
-		ordinarySendTrampolines
-			at: numArgs
-			put: (self genTrampolineFor: #ceSend:super:to:numArgs:
-					  called: (self trampolineName: 'ceSend' numArgs: numArgs)
-					  arg: ClassReg
-					  arg: (self trampolineArgConstant: false)
-					  arg: ReceiverResultReg
-					  arg: (self numArgsOrSendNumArgsReg: numArgs))].
+
+	0 to: NumSendTrampolines - 1 do: [ :numArgs |
+		ordinarySendTrampolines at: numArgs put: (self
+				 genTrampolineFor: #ceSend:super:to:numArgs:
+				 called: (self trampolineName: 'ceSend' numArgs: numArgs)
+				 arg: ClassReg
+				 arg: (self trampolineArgConstant: false)
+				 arg: ReceiverResultReg
+				 arg: (self numArgsOrSendNumArgsReg: numArgs)) ].
 
 	"Generate these in the middle so they are within [firstSend, lastSend]."
-	BytecodeSetHasDirectedSuperSend ifTrue:
-		[0 to: NumSendTrampolines - 1 do:
-			[:numArgs|
-			directedSuperSendTrampolines
-				at: numArgs
-				put: (self genTrampolineFor: #ceSend:above:to:numArgs:
-						  called: (self trampolineName: 'ceDirectedSuperSend' numArgs: numArgs)
-						  arg: ClassReg
-						  arg: TempReg
-						  arg: ReceiverResultReg
-						  arg: (self numArgsOrSendNumArgsReg: numArgs)).
-			directedSuperBindingSendTrampolines
-				at: numArgs
-				put: (self genTrampolineFor: #ceSend:aboveClassBinding:to:numArgs:
-						  called: (self trampolineName: 'ceDirectedSuperBindingSend' numArgs: numArgs)
-						  arg: ClassReg
-						  arg: TempReg
-						  arg: ReceiverResultReg
-						  arg: (self numArgsOrSendNumArgsReg: numArgs))]].
+	0 to: NumSendTrampolines - 1 do: [ :numArgs |
+		directedSuperSendTrampolines at: numArgs put: (self
+				 genTrampolineFor: #ceSend:above:to:numArgs:
+				 called:
+				 (self trampolineName: 'ceDirectedSuperSend' numArgs: numArgs)
+				 arg: ClassReg
+				 arg: TempReg
+				 arg: ReceiverResultReg
+				 arg: (self numArgsOrSendNumArgsReg: numArgs)).
+		directedSuperBindingSendTrampolines at: numArgs put: (self
+				 genTrampolineFor: #ceSend:aboveClassBinding:to:numArgs:
+				 called:
+				 (self
+					  trampolineName: 'ceDirectedSuperBindingSend'
+					  numArgs: numArgs)
+				 arg: ClassReg
+				 arg: TempReg
+				 arg: ReceiverResultReg
+				 arg: (self numArgsOrSendNumArgsReg: numArgs)) ].
 
-	0 to: NumSendTrampolines - 1 do:
-		[:numArgs|
-		superSendTrampolines
-			at: numArgs
-			put: (self genTrampolineFor: #ceSend:super:to:numArgs:
-					  called: (self trampolineName: 'ceSuperSend' numArgs: numArgs)
-					  arg: ClassReg
-					  arg: (self trampolineArgConstant: true)
-					  arg: ReceiverResultReg
-					  arg: (self numArgsOrSendNumArgsReg: numArgs))].
+	0 to: NumSendTrampolines - 1 do: [ :numArgs |
+		superSendTrampolines at: numArgs put: (self
+				 genTrampolineFor: #ceSend:super:to:numArgs:
+				 called: (self trampolineName: 'ceSuperSend' numArgs: numArgs)
+				 arg: ClassReg
+				 arg: (self trampolineArgConstant: true)
+				 arg: ReceiverResultReg
+				 arg: (self numArgsOrSendNumArgsReg: numArgs)) ].
 	firstSend := ordinarySendTrampolines at: 0.
 	lastSend := superSendTrampolines at: NumSendTrampolines - 1
 ]
@@ -7724,9 +7390,7 @@ Cogit >> generateTrampolines [
 			self generateMissAbortTrampolines.
 			objectRepresentation generateObjectRepresentationTrampolines.
 			self generateRunTimeTrampolines.
-			SistaVM ifTrue: [self generateSistaRuntime].
 			self generateEnilopmarts.
-			self generateTracingTrampolines.
 			self recordGeneratedRunTime: 'methodZoneBase' address: methodZoneBase]
 		flushingCacheWith: [ self flushICacheFrom: methodZoneStart asUnsignedInteger to: methodZoneBase asUnsignedInteger ].
 
@@ -7824,13 +7488,6 @@ Cogit >> getPrimitiveIndex [
 	^primitiveIndex
 ]
 
-{ #category : 'accessing' }
-Cogit >> guardPageSize: anInteger [ 
-
-	<doNotGenerate>
-	guardPageSize := anInteger
-]
-
 { #category : 'translation support' }
 Cogit >> halt [
 	<cmacro: '() warning("halt")'>
@@ -7880,88 +7537,95 @@ Cogit >> handleABICallOrJumpSimulationTrap: aProcessorSimulationTrap evaluable: 
 
 { #category : 'simulation only' }
 Cogit >> handleCallOrJumpSimulationTrap: aProcessorSimulationTrap [
+
 	<doNotGenerate>
 	| evaluable function memory result savedFramePointer savedStackPointer savedArgumentCount rpc |
+	evaluable := simulatedTrampolines at:
+		             aProcessorSimulationTrap address.
 
-	evaluable := simulatedTrampolines at: aProcessorSimulationTrap address.
-
-	(evaluable isBlock not and: [self isPrimitiveRunningInSmalltalkStack: evaluable selector]) 
-		ifTrue: [ self assertCStackWellAligned ]. 
+	(evaluable isBlock not and: [
+		 self isPrimitiveRunningInSmalltalkStack: evaluable selector ])
+		ifTrue: [ self assertCStackWellAligned ].
 
 	function := evaluable isBlock
-					ifTrue: ['aBlock; probably some plugin primitive']
-					ifFalse:
-						[evaluable receiver == backEnd ifTrue:
-							[^self handleABICallOrJumpSimulationTrap: aProcessorSimulationTrap evaluable: evaluable].
-						 evaluable selector].
-	function ~~ #ceBaseFrameReturn: ifTrue:
-		[coInterpreter assertValidExternalStackPointers].
-	(function beginsWith: 'ceShort') ifTrue:
-		[^self perform: function with: aProcessorSimulationTrap].
-	
+		            ifTrue: [ 'aBlock; probably some plugin primitive' ]
+		            ifFalse: [
+			            evaluable receiver == backEnd ifTrue: [
+				            ^ self
+					              handleABICallOrJumpSimulationTrap:
+					              aProcessorSimulationTrap
+					              evaluable: evaluable ].
+			            evaluable selector ].
+	function ~~ #ceBaseFrameReturn: ifTrue: [
+		coInterpreter assertValidExternalStackPointers ].
+	(function beginsWith: 'ceShort') ifTrue: [
+		^ self perform: function with: aProcessorSimulationTrap ].
+
 	aProcessorSimulationTrap type == #call
-		ifTrue:
-			[processor
+		ifTrue: [
+			processor
 				simulateCallOf: aProcessorSimulationTrap address
 				nextpc: aProcessorSimulationTrap nextpc
-				memory: (memory := coInterpreter memory).
-			 self recordInstruction: {'(simulated call of '. aProcessorSimulationTrap address. '/'. function. ')'}]
-		ifFalse:
-			[processor
+				memory: (memory := coInterpreter memory) ]
+		ifFalse: [
+			processor
 				simulateJumpCallOf: aProcessorSimulationTrap address
-				memory: nil.
-			 self recordInstruction: {'(simulated jump to '. aProcessorSimulationTrap address. '/'. function. ')'}].
+				memory: nil ].
 	savedFramePointer := coInterpreter framePointer.
 	savedStackPointer := coInterpreter stackPointer.
 	savedArgumentCount := coInterpreter argumentCount.
-	result := ["self halt: evaluable selector."
-		   	   ((printRegisters or: [printInstructions]) and: [clickConfirm]) ifTrue:
-			 	[(self confirm: 'skip run-time call?') ifFalse:
-					[clickConfirm := false. self halt]].
-			   evaluable valueWithArguments: (processor
-												postCallArgumentsNumArgs: evaluable numArgs
-												in: nil)]
-				on: ReenterMachineCode
-				do: [:ex| ex return: ex returnValue].
-			
+	result := [
+	          evaluable valueWithArguments:
+		          (processor
+			           postCallArgumentsNumArgs: evaluable numArgs
+			           in: nil) ]
+		          on: ReenterMachineCode
+		          do: [ :ex | ex return: ex returnValue ].
+
 	coInterpreter assertValidExternalStackPointers.
 	"Verify the stack layout assumption compileInterpreterPrimitive: makes, provided we've
 	 not called something that has built a frame, such as closure value or evaluate method, or
 	 switched frames, such as primitiveSignal, primitiveWait, primitiveResume, primitiveSuspend et al."
-	(function beginsWith: 'primitive') ifTrue:
-		[coInterpreter checkForLastObjectOverwrite.
-		 coInterpreter primFailCode = 0
-			ifTrue: [(#(
-						primitiveFullClosureValue primitiveFullClosureValueWithArgs primitiveFullClosureValueNoContextSwitch
-						primitiveSignal primitiveWait primitiveResume primitiveSuspend primitiveYield
-						primitiveExecuteMethodArgsArray primitiveExecuteMethod
-						primitivePerform primitivePerformWithArgs primitivePerformInSuperclass
-						primitiveTerminateTo primitiveStoreStackp primitiveDoPrimitiveWithArgs)
-							includes: function) ifFalse:
-						["This is a rare case (e.g. in Scorch where a married context's sender is set to nil on trapTrpped and hence the stack layout is altered."
-						 (function == #primitiveSlotAtPut and: [objectMemory isContext: (coInterpreter frameReceiver: coInterpreter framePointer)]) ifFalse:
-							[self assert: savedFramePointer = coInterpreter framePointer.
-							 self assert: savedStackPointer + (savedArgumentCount * objectMemory wordSize)
-									= coInterpreter stackPointer]]]
-			ifFalse:
-				[self assert: savedFramePointer = coInterpreter framePointer.
-				 self assert: savedStackPointer = coInterpreter stackPointer]].
-	result ~~ #continueNoReturn ifTrue:
-		[self recordInstruction: {'(simulated return to '. processor retpcIn: memory. ')'}.
-		 rpc := processor retpcIn: memory.
-		 self assert: (rpc >= codeBase and: [rpc < methodZone freeStart]).
-		 processor
-			smashCallerSavedRegistersWithValuesFrom: 16r80000000 by: objectMemory wordSize in: memory;
-			simulateReturnIn: memory].
-	self assert: (result isInteger "an oop result"
-			or: [result == coInterpreter
-			or: [result == objectMemory
-			or: [#(nil continue continueNoReturn) includes: result]]]).
-	processor cResultRegister: (result
-							ifNil: [0]
-							ifNotNil: [result isInteger
-										ifTrue: [result]
-										ifFalse: [16rF00BA222]])
+	(function beginsWith: 'primitive') ifTrue: [
+		coInterpreter checkForLastObjectOverwrite.
+		coInterpreter primFailCode = 0
+			ifTrue: [
+				(#( primitiveFullClosureValue primitiveFullClosureValueWithArgs
+				    primitiveFullClosureValueNoContextSwitch
+				    primitiveSignal primitiveWait primitiveResume primitiveSuspend
+				    primitiveYield primitiveExecuteMethodArgsArray
+				    primitiveExecuteMethod primitivePerform primitivePerformWithArgs
+				    primitivePerformInSuperclass primitiveTerminateTo
+				    primitiveStoreStackp primitiveDoPrimitiveWithArgs ) includes:
+					 function) ifFalse: [ "This is a rare case (e.g. in Scorch where a married context's sender is set to nil on trapTrpped and hence the stack layout is altered."
+					(function == #primitiveSlotAtPut and: [
+						 objectMemory isContext:
+							 (coInterpreter frameReceiver: coInterpreter framePointer) ])
+						ifFalse: [
+							self assert: savedFramePointer = coInterpreter framePointer.
+							self assert:
+								savedStackPointer
+								+ (savedArgumentCount * objectMemory wordSize)
+								= coInterpreter stackPointer ] ] ]
+			ifFalse: [
+				self assert: savedFramePointer = coInterpreter framePointer.
+				self assert: savedStackPointer = coInterpreter stackPointer ] ].
+	result ~~ #continueNoReturn ifTrue: [
+		rpc := processor retpcIn: memory.
+		self assert: (rpc >= codeBase and: [ rpc < methodZone freeStart ]).
+		processor
+			smashCallerSavedRegistersWithValuesFrom: 16r80000000
+			by: objectMemory wordSize
+			in: memory;
+			simulateReturnIn: memory ].
+	self assert: (result isInteger or: [
+			 result == coInterpreter or: [
+				 result == objectMemory or: [
+					 #( nil continue continueNoReturn ) includes: result ] ] ]). "an oop result"
+	processor cResultRegister: (result ifNil: [ 0 ] ifNotNil: [
+			 result isInteger
+				 ifTrue: [ result ]
+				 ifFalse: [ 16rF00BA222 ] ])
 
 	"coInterpreter cr.
 	 processor sp + 32 to: processor sp - 32 by: -4 do:
@@ -8166,11 +7830,7 @@ Cogit >> initializeCodeZoneFrom: startAddress upTo: endAddress [
 	self enableCodeZoneWriteDuring: [
 		backEnd stopsFrom: startAddress to: endAddress - 1 ].
 
-	self
-		simulationOnly: [
-			startAddress = self class guardPageSize ifTrue: [
-				backEnd stopsFrom: 0 to: endAddress - 1 ].
-			self initializeProcessor ].
+	self simulationOnly: [ self initializeProcessor ].
 	codeBase := methodZoneBase := startAddress.
 	minValidCallAddress := (codeBase min: coInterpreter interpretAddress)
 		                       min: coInterpreter primitiveFailAddress.
@@ -8229,8 +7889,6 @@ Cogit >> initializePIC: aPIC atDelta: addrDelta numArgs: numArgs [
 Cogit >> initializeProcessor [
 	"Initialize the simulation processor, arranging that its initial stack is somewhere on the rump C stack."
 	<doNotGenerate>
-	guardPageSize := self class guardPageSize.
-	lastNInstructions := OrderedCollection new.
 	processor initializeStackFor: self.
 	self initializeProcessorStack: coInterpreter rumpCStackAddress.
 	self setCFramePointer: processor fp.
@@ -8447,12 +8105,6 @@ Cogit >> labelForSimulationAccessor: blockOrMessageSendOrSelector [
 						ifFalse: [blockOrMessageSendOrSelector]])
 ]
 
-{ #category : 'accessing' }
-Cogit >> lastNInstructions: aCollection [ 
-	<doNotGenerate>
-	lastNInstructions := aCollection
-]
-
 { #category : 'compile abstract instructions' }
 Cogit >> lastOpcode [
 	<returnTypeC: #'AbstractInstruction *'>
@@ -8625,31 +8277,6 @@ Cogit >> lookupAddress: address [
 	(simulatedVariableGetters includesKey: address) ifTrue:
 		[^self labelForSimulationAccessor: (simulatedVariableGetters at: address)].
 	^coInterpreter lookupAddress: address
-]
-
-{ #category : 'disassembly' }
-Cogit >> lookupCHexString: aCHexString [ 
-	<doNotGenerate>
-	| pastLastZero shortened address |
-	(aCHexString beginsWith: '0x') ifFalse:
-		[^aCHexString].
-	pastLastZero := aCHexString findFirst: [:c| c ~= $0 and: [c ~= $x]].
-	shortened := pastLastZero = 0
-					ifTrue: ['0x0']
-					ifFalse:
-						[(aCHexString size >= 16 and: [pastLastZero >= 4])
-							ifTrue: [aCHexString copyReplaceFrom: 3 to: pastLastZero - 1 with: '']
-							ifFalse: [aCHexString]].
-	address := Number readFrom: (ReadStream on: shortened from: 3 to: shortened size) base: 16.
-	(disassemblingMethod notNil
-	 and: [address > disassemblingMethod
-	 and: [address < (disassemblingMethod asInteger + disassemblingMethod blockSize)]]) ifTrue:
-		[shortened := '.+', (address - disassemblingMethod asInteger printStringBase: 16 length: 4 padded: true)].
-	^(self lookupAddress: (Number
-								readFrom: (ReadStream on: shortened from: 3 to: shortened size)
-								base: 16))
-		ifNotNil: [:string| shortened, '=', string]
-		ifNil: [shortened]
 ]
 
 { #category : 'disassembly' }
@@ -9850,10 +9477,10 @@ Cogit >> offsetAndSendTableFor: entryPoint annotation: annotation into: binaryBl
 	annotation = IsSendCall ifTrue:
 		[offset := cmEntryOffset.
 		 sendTable := ordinarySendTrampolines] ifFalse:
-	[(BytecodeSetHasDirectedSuperSend and: [annotation = IsDirectedSuperSend]) ifTrue:
+	[(annotation = IsDirectedSuperSend) ifTrue:
 		[offset := cmNoCheckEntryOffset.
 		 sendTable := directedSuperSendTrampolines] ifFalse:
-	[(BytecodeSetHasDirectedSuperSend and: [annotation = IsDirectedSuperBindingSend]) ifTrue:
+	[(annotation = IsDirectedSuperBindingSend) ifTrue:
 		[offset := cmNoCheckEntryOffset.
 		 sendTable := directedSuperBindingSendTrampolines] ifFalse:
 	[self assert: annotation = IsSuperSend.
@@ -10246,19 +9873,6 @@ Cogit >> printCogMethodHeaderFor: address [
 ]
 
 { #category : 'disassembly' }
-Cogit >> printInstructions [
-	<doNotGenerate>
-	^printInstructions
-]
-
-{ #category : 'disassembly' }
-Cogit >> printInstructions: aBoolean [
-	<doNotGenerate>
-	printInstructions := aBoolean.
-	singleStep := singleStep or: [aBoolean]
-]
-
-{ #category : 'disassembly' }
 Cogit >> printMethodHeader: cogMethod on: aStream [
 
 	<doNotGenerate>
@@ -10384,13 +9998,6 @@ Cogit >> printNum: n [
 	coInterpreter transcript printNum: n
 ]
 
-{ #category : 'debugging' }
-Cogit >> printOnTrace [
-	<api>
-	<cmacro: '() (traceFlags & 1)'>
-	^(traceFlags bitAnd: 1) ~= 0
-]
-
 { #category : 'method map' }
 Cogit >> printPCMapPairsFor: cogMethod [
 	"<api>
@@ -10424,8 +10031,7 @@ Cogit >> printPCMapPairsFor: cogMethod [
 			printChar: $ ;
 			printNum: annotation;
 			print: ' ('.
-		(BytecodeSetHasDirectedSuperSend and: [
-			 value between: IsDirectedSuperSend and: IsDirectedSuperBindingSend ])
+		(value between: IsDirectedSuperSend and: IsDirectedSuperBindingSend)
 			ifTrue: [
 				value caseOf: {
 						([ IsDirectedSuperSend ]
@@ -10503,18 +10109,6 @@ Cogit >> printRegisterMapOn: aStream [
 			aStream nextPutAll: abstractName; nextPutAll: ' => '; nextPutAll: regName]
 		separatedBy: [(n := n + 1) \\ 4 = 0 ifTrue: [aStream cr] ifFalse: [aStream tab]].
 	aStream cr; flush
-]
-
-{ #category : 'debugging' }
-Cogit >> printRegisters [
-	<doNotGenerate>
-	^printRegisters
-]
-
-{ #category : 'debugging' }
-Cogit >> printRegisters: aBoolean [
-	<doNotGenerate>
-	printRegisters := aBoolean
 ]
 
 { #category : 'debugging' }
@@ -10623,13 +10217,6 @@ Cogit >> receiverTags: anInteger [
 ]
 
 { #category : 'debugging' }
-Cogit >> recordBlockTrace [
-	<api>
-	<cmacro: '() (traceFlags & 4)'>
-	^(traceFlags bitAnd: 4) ~= 0
-]
-
-{ #category : 'debugging' }
 Cogit >> recordEventTrace [
 	<api>
 	<cmacro: '() (traceFlags & 16)'>
@@ -10643,17 +10230,6 @@ Cogit >> recordGeneratedRunTime: aString address: address [
 		at: trampolineTableIndex put: aString;
 		at: trampolineTableIndex + 1 put: (self cCoerceSimple: address to: #'char *').
 	trampolineTableIndex := trampolineTableIndex + 2
-]
-
-{ #category : 'simulation only' }
-Cogit >> recordInstruction: thing [
-	<doNotGenerate>
-	lastNInstructions addLast: thing.
-	[lastNInstructions size > 160"80"] whileTrue:
-		[lastNInstructions removeFirst.
-		 lastNInstructions size * 2 > lastNInstructions capacity ifTrue:
-			[lastNInstructions makeRoomAtLast]].
-	^thing
 ]
 
 { #category : 'debugging' }
@@ -10677,13 +10253,6 @@ Cogit >> recordPrimTraceFunc [
 	^self recordPrimTrace
 ]
 
-{ #category : 'simulation only' }
-Cogit >> recordRegisters [
-	<doNotGenerate>
-	self recordInstruction: processor integerRegisterState
-	"self recordInstruction: processor registerState"
-]
-
 { #category : 'initialization' }
 Cogit >> recordRunTimeObjectReferences [
 	<var: #instruction type: #'AbstractInstruction *'>
@@ -10699,13 +10268,6 @@ Cogit >> recordRunTimeObjectReferences [
 				at: runtimeObjectRefIndex
 				put: instruction mapEntryAddress asUnsignedInteger.
 			 runtimeObjectRefIndex := runtimeObjectRefIndex + 1]]
-]
-
-{ #category : 'debugging' }
-Cogit >> recordSendTrace [
-	<api>
-	<cmacro: '() (traceFlags & 2)'>
-	^(traceFlags bitAnd: 2) ~= 0
 ]
 
 { #category : 'register management' }
@@ -10766,13 +10328,6 @@ Cogit >> registerMaskFor: reg1 and: reg2 and: reg3 and: reg4 and: reg5 and: reg6
 Cogit >> registerMaskFor: reg1 and: reg2 and: reg3 and: reg4 and: reg5 and: reg6 and: reg7 and: reg8 and: reg9 and: reg10 [
 	<inline: true>
 	^((((((((1 << reg1 bitOr: 1 << reg2) bitOr: 1 << reg3) bitOr: 1 << reg4) bitOr: 1 << reg5) bitOr: 1 << reg6) bitOr: 1 << reg7) bitOr: 1 << reg8) bitOr: 1 << reg9) bitOr: 1 << reg10
-]
-
-{ #category : 'disassembly' }
-Cogit >> relativeBaseForDisassemblyInto: aBlock [
-	<doNotGenerate>
-	disassemblingMethod ifNotNil:
-		[aBlock value: disassemblingMethod asInteger value: '.']
 ]
 
 { #category : 'disassembly' }
@@ -11195,15 +10750,12 @@ Cogit >> setInterpreter: aCoInterpreter [
 	simulatedTrampolines := Dictionary new.
 	simulatedVariableGetters := Dictionary new.
 	simulatedVariableSetters := Dictionary new.
-	traceStores := 0.
 	traceFlags := (self class initializationOptions
 		               at: #recordPrimTrace
 		               ifAbsent: [ true ])
 		              ifTrue: [ "record prim trace on by default (see Cogit class>>decareCVarsIn:)"
 			              8 ]
 		              ifFalse: [ 0 ].
-	debugPrimCallStackOffset := 0.
-	singleStep := printRegisters := printInstructions := clickConfirm := false.
 	backEnd := CogCompilerClass for: self.
 	methodLabel := CogCompilerClass for: self.
 	(literalsManager := backEnd class literalsManagerClass new) cogit:
@@ -11212,13 +10764,12 @@ Cogit >> setInterpreter: aCoInterpreter [
 		                           (Array new: NumSendTrampolines).
 	superSendTrampolines := CArrayAccessor on:
 		                        (Array new: NumSendTrampolines).
-	BytecodeSetHasDirectedSuperSend ifTrue: [
-		directedSuperSendTrampolines := CArrayAccessor on:
+	directedSuperSendTrampolines := CArrayAccessor on:
 			                                (Array new: NumSendTrampolines).
 		directedSuperBindingSendTrampolines := CArrayAccessor on:
 			                                       (Array new:
 				                                        NumSendTrampolines).
-		directedSendUsesBinding := false ].
+	directedSendUsesBinding := false.
 	"debug metadata"
 	objectReferencesInRuntime := CArrayAccessor on:
 		                             (Array new: NumObjRefsInRuntime).
@@ -11228,9 +10779,7 @@ Cogit >> setInterpreter: aCoInterpreter [
 		                       (Array new: NumTrampolines * 2).
 	trampolineTableIndex := 0.
 
-	extA := numExtB := extB := 0.
-
-	compilationTrace ifNil: [compilationTrace := self class initializationOptions at: #compilationTrace ifAbsent: [0]]
+	extA := numExtB := extB := 0
 ]
 
 { #category : 'jit - api' }
@@ -11312,25 +10861,14 @@ Cogit >> simulateCogCodeAt: address [
 	<doNotGenerate>
 	processor pc: address.
 	[
-	[
-	singleStep
-		ifTrue: [
-			processor
-				singleStepIn: coInterpreter memory
-				minimumAddress: guardPageSize
-				readOnlyBelow: methodZone zoneEnd ]
-		ifFalse: [
-			processor
-				runInMemory: nil
-				minimumAddress: guardPageSize
-				readOnlyBelow: methodZone zoneEnd ].
-	true ] whileTrue.
+	
+	processor run.
+
 	true ] whileTrue
 ]
 
 { #category : 'simulation only' }
 Cogit >> simulateEnilopmart: enilopmartAddress numArgs: n [
-	<doNotGenerate>
 	"Enter Cog code, popping the class reg and receiver from the stack
 	 and then returning to the address beneath them.
 	 In the actual VM the enilopmart is a function pointer and so senders
@@ -11339,11 +10877,10 @@ Cogit >> simulateEnilopmart: enilopmartAddress numArgs: n [
 	 the interpreter) or return to the simulation (if we're in the run-time
 	 called from machine code. We should also smash the register state
 	 since, being an abnormal entry, no saved registers will be restored."
+
+	<doNotGenerate>
 	self assert: (coInterpreter isOnRumpCStack: processor sp).
-	self assert: ((coInterpreter stackValue: n) between: guardPageSize and: methodZone freeStart - 1).
 	"As a convenience for stack printing, nil localFP so we know we're in machine code."
-	(printInstructions or: [printRegisters]) ifTrue:
-		[coInterpreter printExternalHeadFrame].
 	processor
 		smashRegistersWithValuesFrom: 16r80000000 by: objectMemory wordSize;
 		simulateLeafCallOf: enilopmartAddress
@@ -11371,24 +10908,18 @@ Cogit >> simulateLeafCallOf: someFunction [
 	 answering the result returned by someFunction."
 	<doNotGenerate>
 	| spOnEntry |
-	self recordRegisters.
-
 	spOnEntry := processor sp.
 	
 	processor
 		simulateLeafCallOf: someFunction
 		nextpc: 16rBADF00D0
 		memory: nil.
-	
-	singleStep 
-		ifTrue: [ self notYetImplemented ].
 		
 	processor runUntil: 16rBADF00D0.
 
 	self assert: processor sp = spOnEntry.
 	self assert: processor pc = 16rBADF00D0.
-	
-	self recordRegisters.	
+
 	^processor cResultRegister
 ]
 
@@ -11497,18 +11028,6 @@ Cogit >> simulatedVariableAt: address put: value [
 ]
 
 { #category : 'debugging' }
-Cogit >> singleStep [
-	<doNotGenerate>
-	^singleStep
-]
-
-{ #category : 'debugging' }
-Cogit >> singleStep: aBoolean [
-	<doNotGenerate>
-	singleStep := aBoolean
-]
-
-{ #category : 'debugging' }
 Cogit >> sizeOfTrampoline: address [
 
 	<api>
@@ -11607,14 +11126,6 @@ Cogit >> traceLinkedSendOffset [
 	 + (backEnd hasLinkRegister
 		ifTrue: [backEnd pushLinkRegisterByteSize]
 		ifFalse: [0])
-]
-
-{ #category : 'debugging' }
-Cogit >> traceStores: aBooleanOrInteger [
-	<doNotGenerate>
-	traceStores := aBooleanOrInteger isInteger
-							ifTrue: [aBooleanOrInteger]
-							ifFalse: [aBooleanOrInteger ifTrue: [1] ifFalse: [0]]
 ]
 
 { #category : 'initialization' }
