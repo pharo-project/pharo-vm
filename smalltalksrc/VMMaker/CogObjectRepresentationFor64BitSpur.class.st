@@ -1563,9 +1563,8 @@ CogObjectRepresentationFor64BitSpur >> genPrimitiveNewWithArg [
 	| headerReg fillReg instSpecReg byteSizeReg maxSlots
 	  jumpArrayTooBig jumpByteTooBig jumpLongTooBig
 	  jumpArrayFormat jumpByteFormat jumpBytePrepDone jumpLongPrepDone
-	  jumpUnhashed jumpNElementsNonInt jumpFailCuzFixed jumpNoSpace jumpHasSlots fillLoop skip |
+	  jumpUnhashed jumpNElementsNonInt jumpFailCuzFixed jumpNoSpace jumpHasSlots skip |
 	<var: 'skip' type: #'AbstractInstruction *'>
-	<var: 'fillLoop' type: #'AbstractInstruction *'>	
 	<var: 'jumpHasSlots' type: #'AbstractInstruction *'>
 	<var: 'jumpNoSpace' type: #'AbstractInstruction *'>
 	<var: 'jumpUnhashed' type: #'AbstractInstruction *'>
