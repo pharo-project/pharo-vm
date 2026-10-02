@@ -991,7 +991,7 @@ Spur64BitMemoryManager >> shorten: objOop toIndexableSize: indexableSize [
 	self assert: (self addressAfter: freeChunk) <= memoryMap oldSpaceEnd.
 	(self isInOldSpace: objOop)
 		ifTrue:
-			[totalFreeOldSpace := totalFreeOldSpace + delta.
+			[self totalFreeOldSpace: self totalFreeOldSpace + delta.
 			 self addToFreeList: freeChunk bytes: delta]
 		ifFalse:
 			[self
