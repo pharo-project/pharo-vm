@@ -1434,7 +1434,7 @@ SpurMemoryManager >> allInstancesOf: aClass [
 	 If no memory is available answer the number of instances as a SmallInteger.
 	 Since objects are at least 16 bytes big, and the largest SmallInteger covers
 	 1/4 of the address space, the count can never overflow."
-	| classIndex freeChunk ptr start limit count bytes |
+	| classIndex freeChunk ptr start limit count bytes remainingBytes |
 	classIndex := self rawHashBitsOf: aClass.
 	classIndex = 0 ifTrue:
 		[freeChunk := self allocateSlots: 0 format: self arrayFormat classIndex: ClassArrayCompactIndex.
@@ -1458,7 +1458,8 @@ SpurMemoryManager >> allInstancesOf: aClass [
 			[self assert: (self isEmptyObjStack: weaklingStack)].
 	(count > (ptr - start / self bytesPerOop) "not enough room"
 	 or: [limit ~= ptr and: [limit - ptr <= self allocationUnit]]) ifTrue: "can't split a single word"
-		[self freeObject: freeChunk.
+		[self freeChunkWithBytes: (self bytesInObject: freeChunk) at: (self startOfObject: freeChunk).
+		 self checkFreeSpace: GCModeFull.		
 		 ^self integerObjectOf: count].
 	count < self numSlotsMask ifTrue:
 		[| smallObj |
@@ -1472,8 +1473,12 @@ SpurMemoryManager >> allInstancesOf: aClass [
 		 ^smallObj].
 	bytes := self largeObjectBytesForSlots: count.
 	start := self startOfObject: freeChunk.
-	self freeChunkWithBytes: limit - start - bytes at: start + bytes.
-	totalFreeOldSpace := totalFreeOldSpace - bytes.
+
+	remainingBytes := limit - start - bytes.
+	"Only we return bytes if there is something to return"
+	remainingBytes > 0 ifTrue: [self freeChunkWithBytes: remainingBytes at: start + bytes].
+
+	self totalFreeOldSpace: self totalFreeOldSpace - bytes.
 	self rawOverflowSlotsOf: freeChunk put: count.
 	self set: freeChunk classIndexTo: ClassArrayCompactIndex formatTo: self arrayFormat.
 	self possibleOldObjectStoreInto: freeChunk.
@@ -1527,7 +1532,7 @@ SpurMemoryManager >> allObjects [
 	 If no memory is available answer the number of objects as a SmallInteger.
 	 Since objects are at least 16 bytes big, and the largest SmallInteger covers
 	 1/4 of the address space, the count can never overflow."
-	| freeChunk ptr start limit count bytes |
+	| freeChunk ptr start limit count bytes remainingBytes |
 	MarkObjectsForEnumerationPrimitives ifTrue:
 		[self markObjects: true]. "may not want to revive objects unnecessarily; but marking is sloooow."
 	freeChunk := self allocateLargestFreeChunk. "N.B. Does /not/ update totalFreeOldSpace"
@@ -1566,8 +1571,12 @@ SpurMemoryManager >> allObjects [
 		 ^self integerObjectOf: count].
 	bytes := self largeObjectBytesForSlots: count.
 	start := self startOfObject: freeChunk.
-	self freeChunkWithBytes: limit - start - bytes at: start + bytes.
-	totalFreeOldSpace := totalFreeOldSpace - bytes.
+
+	remainingBytes := limit - start - bytes.
+	"Only we return bytes if there is something to return"
+	remainingBytes > 0 ifTrue: [self freeChunkWithBytes: remainingBytes at: start + bytes].
+
+	self totalFreeOldSpace: self totalFreeOldSpace - bytes.
 	self rawOverflowSlotsOf: freeChunk put: count.
 	self set: freeChunk classIndexTo: ClassArrayCompactIndex formatTo: self arrayFormat.
 	self possibleOldObjectStoreInto: freeChunk.
