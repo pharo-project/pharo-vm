@@ -295,48 +295,6 @@ VMMemoryMap >> calculateMaskToUse [
 	self permSpaceMask: (memoryMapConfiguration permSpaceInitialAddress bitAnd: self spaceMaskToUse).
 ]
 
-{ #category : 'initial addresses' }
-VMMemoryMap >> maskForObjectsFrom: firstAddress to: lastAddress allOnes: allOnes [
-
-	<inline: false>
-	<var: #firstAddress type: #uint64_t>
-	<var: #lastAddress type: #uint64_t>
-	<var: #allOnes type: #uint64_t>
-	<var: #variableBits type: #uint64_t>
-	<var: #variableMask type: #uint64_t>
-
-	| variableBits variableMask |
-
-	"Bound the differing bits to the word width (allOnes). This both matches
-	 the uint64_t semantics of the generated C and, crucially, keeps the
-	 right-shift loop finite in the Smalltalk simulator: without the mask a
-	 degenerate range (e.g. lastAddress = firstAddress - 1 during early
-	 initialization) yields a negative bitXor whose arithmetic right shift
-	 sign-extends forever, hanging the VMMaker simulator."
-	variableBits := (firstAddress bitXor: lastAddress) bitAnd: allOnes.
-	variableMask := 0.
-	[ variableBits ~= 0 ] whileTrue: [
-		variableMask := (variableMask bitShift: 1) + 1.
-		variableBits := variableBits bitShift: -1 ].
-
-	^ variableMask bitXor: allOnes
-]
-
-{ #category : 'initial addresses' }
-VMMemoryMap >> nextPowerOfTwoAfter: anAddress [
-
-	<inline: false>
-	<var: #anAddress type: #uint64_t>
-	<var: #limit type: #uint64_t>
-
-	| limit |
-
-	limit := 1.
-	[ limit <= anAddress ] whileTrue: [
-		limit := limit bitShift: 1 ].
-	^ limit
-]
-
 { #category : 'accessing' }
 VMMemoryMap >> codeZoneEnd [
 
@@ -588,6 +546,33 @@ VMMemoryMap >> isYoungObject: anOop [
 	^ (anOop bitAnd: spaceMaskToUse) = newSpaceMask and: [ anOop >= newSpaceStart ]
 ]
 
+{ #category : 'initial addresses' }
+VMMemoryMap >> maskForObjectsFrom: firstAddress to: lastAddress allOnes: allOnes [
+
+	<inline: false>
+	<var: #firstAddress type: #uint64_t>
+	<var: #lastAddress type: #uint64_t>
+	<var: #allOnes type: #uint64_t>
+	<var: #variableBits type: #uint64_t>
+	<var: #variableMask type: #uint64_t>
+
+	| variableBits variableMask |
+
+	"Bound the differing bits to the word width (allOnes). This both matches
+	 the uint64_t semantics of the generated C and, crucially, keeps the
+	 right-shift loop finite in the Smalltalk simulator: without the mask a
+	 degenerate range (e.g. lastAddress = firstAddress - 1 during early
+	 initialization) yields a negative bitXor whose arithmetic right shift
+	 sign-extends forever, hanging the VMMaker simulator."
+	variableBits := (firstAddress bitXor: lastAddress) bitAnd: allOnes.
+	variableMask := 0.
+	[ variableBits ~= 0 ] whileTrue: [
+		variableMask := (variableMask bitShift: 1) + 1.
+		variableBits := variableBits bitShift: -1 ].
+
+	^ variableMask bitXor: allOnes
+]
+
 { #category : 'accessing' }
 VMMemoryMap >> memoryManager [
 
@@ -663,6 +648,21 @@ VMMemoryMap >> newSpaceStart [
 VMMemoryMap >> newSpaceStart: anObject [
 
 	newSpaceStart := anObject
+]
+
+{ #category : 'initial addresses' }
+VMMemoryMap >> nextPowerOfTwoAfter: anAddress [
+
+	<inline: false>
+	<var: #anAddress type: #uint64_t>
+	<var: #limit type: #uint64_t>
+
+	| limit |
+
+	limit := 1.
+	[ limit <= anAddress ] whileTrue: [
+		limit := limit bitShift: 1 ].
+	^ limit
 ]
 
 { #category : 'accessing' }

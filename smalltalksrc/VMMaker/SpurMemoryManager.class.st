@@ -1114,7 +1114,7 @@ SpurMemoryManager >> activeAndDeferredScan: anEphemeron [
 
 { #category : 'free space' }
 SpurMemoryManager >> addFreeChunkWithBytes: bytes at: address [
-	totalFreeOldSpace := totalFreeOldSpace + bytes.
+	self totalFreeOldSpace: self totalFreeOldSpace + bytes.
 	^self freeChunkWithBytes: bytes at: address
 ]
 
@@ -2017,7 +2017,7 @@ SpurMemoryManager >> allocateOldSpaceChunkOfBytes: chunkBytes [
 	<var: #chunkBytes type: #usqInt>
 	| initialIndex chunk index nodeBytes parent child |
 	"for debugging:" "totalFreeOldSpace := self totalFreeListBytes"
-	totalFreeOldSpace := totalFreeOldSpace - chunkBytes. "be optimistic (& don't wait for the write)"
+	self totalFreeOldSpace: self totalFreeOldSpace - chunkBytes. "be optimistic (& don't wait for the write)"
 	initialIndex := chunkBytes / self allocationUnit.
 	(initialIndex < self numFreeLists and: [1 << initialIndex <= freeListsMask]) ifTrue:
 		[(freeListsMask anyMask: 1 << initialIndex) ifTrue:
@@ -2025,6 +2025,7 @@ SpurMemoryManager >> allocateOldSpaceChunkOfBytes: chunkBytes [
 				[self assert: chunk = (self startOfObject: chunk).
 				 self assertValidFreeObject: chunk.
 				 self unlinkFreeChunk: chunk atIndex: initialIndex chunkBytes: chunkBytes.
+				self checkFreeSpace: GCModeFreeSpace.
 				^ chunk].
 			 freeListsMask := freeListsMask - (1 << initialIndex)].
 		 "first search for free chunks of a multiple of chunkBytes in size"
@@ -2039,6 +2040,7 @@ SpurMemoryManager >> allocateOldSpaceChunkOfBytes: chunkBytes [
 					 self assert: (self bytesInObject: chunk) = (index * self allocationUnit).
 					 self freeChunkWithBytes: index * self allocationUnit - chunkBytes
 						at: (self startOfObject: chunk) + chunkBytes.
+					self checkFreeSpace: GCModeFreeSpace.
 					^chunk].
 				 freeListsMask := freeListsMask - (1 << index)]].
 		 "now get desperate and use the first that'll fit.
@@ -2056,6 +2058,7 @@ SpurMemoryManager >> allocateOldSpaceChunkOfBytes: chunkBytes [
 					 self assert: (self bytesInObject: chunk) = (index * self allocationUnit).
 					 self freeChunkWithBytes: index * self allocationUnit - chunkBytes
 						at: (self startOfObject: chunk) + chunkBytes.
+					self checkFreeSpace: GCModeFreeSpace.
 					^chunk].
 				 freeListsMask := freeListsMask - (1 << index)]]].
 
@@ -2080,6 +2083,7 @@ SpurMemoryManager >> allocateOldSpaceChunkOfBytes: chunkBytes [
 						setNextFreeChunkOf: child 
 						withValue: (self fetchPointer: self freeChunkNextIndex ofFreeChunk: chunk) 
 						isLilliputianSize: false.
+					 self checkFreeSpace: GCModeFreeSpace.						
 					 ^self startOfObject: chunk].
 				 nodeBytes := childBytes.
 				 parent := child.
@@ -2096,7 +2100,8 @@ SpurMemoryManager >> allocateOldSpaceChunkOfBytes: chunkBytes [
 						 nodeBytes := childBytes.
 						 child := self fetchPointer: self freeChunkSmallerIndex ofFreeChunk: child]]].
 	parent = 0 ifTrue:
-		[totalFreeOldSpace := totalFreeOldSpace + chunkBytes. "optimism was unfounded"
+		[self totalFreeOldSpace: self totalFreeOldSpace + chunkBytes. "optimism was unfounded"
+		 self checkFreeSpace: GCModeFreeSpace.
 		 ^nil].
 
 	"self printFreeChunk: parent"
@@ -2114,6 +2119,7 @@ SpurMemoryManager >> allocateOldSpaceChunkOfBytes: chunkBytes [
 		 chunkBytes ~= nodeBytes ifTrue:
 			[self freeChunkWithBytes: nodeBytes - chunkBytes
 					at: (self startOfObject: chunk) + chunkBytes].
+		 self checkFreeSpace: GCModeFreeSpace.
 		 ^self startOfObject: chunk].
 
 	"no list; remove the interior node"
@@ -2124,6 +2130,8 @@ SpurMemoryManager >> allocateOldSpaceChunkOfBytes: chunkBytes [
 	chunkBytes ~= nodeBytes ifTrue:
 		[self freeChunkWithBytes: nodeBytes - chunkBytes
 				at: (self startOfObject: chunk) + chunkBytes].
+	
+	self checkFreeSpace: GCModeFreeSpace.
 	^self startOfObject: chunk
 ]
 
@@ -2137,7 +2145,7 @@ SpurMemoryManager >> allocateOldSpaceChunkOfBytes: chunkBytes suchThat: acceptan
 	| initialIndex node next prev index child childBytes acceptedChunk acceptedNode |
 
 	"for debugging:" "totalFreeOldSpace := self totalFreeListBytes"
-	totalFreeOldSpace := totalFreeOldSpace - chunkBytes. "be optimistic (& don't wait for the write)"
+	self totalFreeOldSpace: self totalFreeOldSpace - chunkBytes. "be optimistic (& don't wait for the write)"
 	initialIndex := chunkBytes / self allocationUnit.
 	(initialIndex < self numFreeLists and: [1 << initialIndex <= freeListsMask]) ifTrue:
 		[(freeListsMask anyMask: 1 << initialIndex) ifTrue:
@@ -2153,6 +2161,7 @@ SpurMemoryManager >> allocateOldSpaceChunkOfBytes: chunkBytes suchThat: acceptan
 							[prev = 0
 								ifTrue: [self unlinkFreeChunk: node atIndex: initialIndex chunkBytes: chunkBytes]
 								ifFalse: [self setNextFreeChunkOf: prev withValue: next chunkBytes: chunkBytes].
+							 self checkFreeSpace: GCModeFreeSpace.
 							 ^node].
 						 prev := node.
 						 node := next]]].
@@ -2175,6 +2184,7 @@ SpurMemoryManager >> allocateOldSpaceChunkOfBytes: chunkBytes suchThat: acceptan
 									ifFalse: [self setNextFreeChunkOf: prev withValue: next isLilliputianSize: false.]. 
 								 self freeChunkWithBytes: index * self allocationUnit - chunkBytes
 									at: (self startOfObject: node) + chunkBytes.
+								 self checkFreeSpace: GCModeFreeSpace.
 								 ^node].
 							 prev := node.
 							 node := next]]]].
@@ -2200,6 +2210,7 @@ SpurMemoryManager >> allocateOldSpaceChunkOfBytes: chunkBytes suchThat: acceptan
 									ifFalse: [self setNextFreeChunkOf: prev withValue: next isLilliputianSize: false.]. 
 								 self freeChunkWithBytes: index * self allocationUnit - chunkBytes
 									at: (self startOfObject: node) + chunkBytes.
+								 self checkFreeSpace: GCModeFreeSpace.
 								 ^node].
 							 prev := node.
 							 node := next]]]]].
@@ -2227,6 +2238,7 @@ SpurMemoryManager >> allocateOldSpaceChunkOfBytes: chunkBytes suchThat: acceptan
 						setNextFreeChunkOf: prev 
 						withValue: (self fetchPointer: self freeChunkNextIndex ofFreeChunk: node) 
 						isLilliputianSize: false.
+					 self checkFreeSpace: GCModeFreeSpace.
 					 ^self startOfObject: node]].
 			 (acceptanceBlock value: child) ifTrue:
 				[next := self fetchPointer: self freeChunkNextIndex ofFreeChunk: child.
@@ -2235,6 +2247,7 @@ SpurMemoryManager >> allocateOldSpaceChunkOfBytes: chunkBytes suchThat: acceptan
 						[self unlinkSolitaryFreeTreeNode: child]
 					ifFalse: "list; replace node with it"
 						[self inFreeTreeReplace: child with: next].
+				 self checkFreeSpace: GCModeFreeSpace.
 				 ^self startOfObject: child]].
 		 child ~= 0 ifTrue:
 			["Note that because the minimum free size is 16 bytes (2 * allocationUnit), to
@@ -2275,6 +2288,7 @@ SpurMemoryManager >> allocateOldSpaceChunkOfBytes: chunkBytes suchThat: acceptan
 				isLilliputianSize: false.
 			self freeChunkWithBytes: (self bytesInObject: acceptedChunk) - chunkBytes
 					at: (self startOfObject: acceptedChunk) + chunkBytes.
+			self checkFreeSpace: GCModeFreeSpace.
 			^self startOfObject: acceptedChunk].
 		next := self fetchPointer: self freeChunkNextIndex ofFreeChunk: acceptedNode.
 		next = 0
@@ -2285,9 +2299,11 @@ SpurMemoryManager >> allocateOldSpaceChunkOfBytes: chunkBytes suchThat: acceptan
 		 self assert: (self bytesInObject: acceptedNode) >= (chunkBytes + self allocationUnit).
 		 self freeChunkWithBytes: (self bytesInObject: acceptedNode) - chunkBytes
 				at: (self startOfObject: acceptedNode) + chunkBytes.
+		self checkFreeSpace: GCModeFreeSpace.
 		^self startOfObject: acceptedNode].
 
-	totalFreeOldSpace := totalFreeOldSpace + chunkBytes. "optimism was unfounded"
+	self totalFreeOldSpace: self totalFreeOldSpace + chunkBytes. "optimism was unfounded"
+	self checkFreeSpace: GCModeFreeSpace.
 	^nil
 ]
 
@@ -4426,8 +4442,9 @@ SpurMemoryManager >> detachFreeObject: freeChunk [
 	<inline: true>
 	| chunkBytes |
 	chunkBytes := self bytesInObject: freeChunk.
-	totalFreeOldSpace := totalFreeOldSpace - chunkBytes.
-	self unlinkFreeChunk: freeChunk chunkBytes: chunkBytes
+	self totalFreeOldSpace: self totalFreeOldSpace - chunkBytes.
+	self unlinkFreeChunk: freeChunk chunkBytes: chunkBytes.
+	self checkFreeSpace: GCModeFreeSpace.
 ]
 
 { #category : 'private - perm space' }
@@ -5961,7 +5978,7 @@ SpurMemoryManager >> freeObject: objOop [
 	(self isFreeObject: next) ifTrue:
 		[self detachFreeObject: next.
 		 bytes := bytes + (self bytesInObject: next)].
-	totalFreeOldSpace := totalFreeOldSpace + bytes.
+	self totalFreeOldSpace: self totalFreeOldSpace + bytes.
 	^self freeChunkWithBytes: bytes at: start
 ]
 
@@ -5977,7 +5994,7 @@ SpurMemoryManager >> freeObjectWithoutCoalesce: objOop [
 		[self getFromOldSpaceRememberedSet forgetObject: objOop].
 	bytes := self bytesInObject: objOop.
 	start := self startOfObject: objOop.
-	totalFreeOldSpace := totalFreeOldSpace + bytes.
+	self totalFreeOldSpace: self totalFreeOldSpace + bytes.
 	^self freeChunkWithBytes: bytes at: start
 ]
 
@@ -6698,7 +6715,7 @@ SpurMemoryManager >> inactiveOrFailedToDeferScan: anEphemeron [
 
 { #category : 'free space' }
 SpurMemoryManager >> increaseFreeOldSpaceBy: bytes [ 
-	totalFreeOldSpace := totalFreeOldSpace + bytes
+	self totalFreeOldSpace: self totalFreeOldSpace + bytes
 
 ]
 
@@ -7060,7 +7077,7 @@ SpurMemoryManager >> initializeOldSpaceFirstFree: startOfFreeOldSpace [
 	<var: 'freeOldStart' type: #usqInt>
 	limit := memoryMap oldSpaceEnd - self bridgeSize.
 	limit > startOfFreeOldSpace ifTrue:
-		[totalFreeOldSpace := totalFreeOldSpace + (limit - startOfFreeOldSpace).
+		[self totalFreeOldSpace: self totalFreeOldSpace + (limit - startOfFreeOldSpace).
 		 freeOldStart := startOfFreeOldSpace.
 		 self wordSize > 4 ifTrue:
 			[[limit - freeOldStart >= (1 << 32)] whileTrue:
@@ -13217,13 +13234,14 @@ SpurMemoryManager >> totalFreeListBytes [
 
 { #category : 'debug support' }
 SpurMemoryManager >> totalFreeOldSpace [
-	<doNotGenerate>
+
 	^ totalFreeOldSpace
 ]
 
 { #category : 'accessing' }
 SpurMemoryManager >> totalFreeOldSpace: anInteger [
-	totalFreeOldSpace := anInteger
+	totalFreeOldSpace := anInteger.
+
 ]
 
 { #category : 'accessing' }
