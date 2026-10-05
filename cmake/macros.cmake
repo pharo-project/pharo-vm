@@ -92,11 +92,33 @@ macro(add_third_party_dependency_with_baseurl NAME BASEURL)
     )
     add_custom_target(${NAME})
 		foreach(LIBRARY_PATH IN LISTS DOWNLOADED_THIRD_PARTY_LIBRARIES)
-      message(STATUS ${LIBRARY_PATH})
-      add_custom_command(TARGET ${NAME}
-        POST_BUILD
-        COMMAND ${CMAKE_COMMAND} -E copy "${LIBRARY_PATH}" "${LIBRARY_OUTPUT_DIRECTORY}"
-      )
+      if(IS_SYMLINK ${LIBRARY_PATH})
+        execute_process(COMMAND basename ${LIBRARY_PATH}
+          WORKING_DIRECTORY "${${NAME}_SOURCE_DIR}"
+          OUTPUT_VARIABLE ${LIBRARY_PATH}_LINKNAME
+          OUTPUT_STRIP_TRAILING_WHITESPACE)
+
+        execute_process(COMMAND readlink ${LIBRARY_PATH}
+          WORKING_DIRECTORY "${${NAME}_SOURCE_DIR}"
+          OUTPUT_VARIABLE ${LIBRARY_PATH}_REAL_FILE
+          OUTPUT_STRIP_TRAILING_WHITESPACE)
+        
+          message(STATUS "Creating link ${${LIBRARY_PATH}_LINKNAME}  ->  ${${LIBRARY_PATH}_REAL_FILE}")
+
+          add_custom_command(TARGET ${NAME}
+            POST_BUILD
+            COMMAND ${CMAKE_COMMAND} -E create_symlink "${${LIBRARY_PATH}_REAL_FILE}" "${${LIBRARY_PATH}_LINKNAME}" 
+            WORKING_DIRECTORY "${LIBRARY_OUTPUT_DIRECTORY}"
+          )
+      else()
+        message(STATUS "Copying: ${LIBRARY_PATH}")
+        
+        add_custom_command(TARGET ${NAME}
+          POST_BUILD
+          COMMAND ${CMAKE_COMMAND} -E copy "${LIBRARY_PATH}" "${LIBRARY_OUTPUT_DIRECTORY}"
+        )        
+      endif()
+      
 		endforeach()
     add_dependencies(${VM_EXECUTABLE_NAME} ${NAME})
 endmacro()
