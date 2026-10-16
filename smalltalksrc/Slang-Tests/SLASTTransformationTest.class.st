@@ -19,13 +19,42 @@ SLASTTransformationTest >> setUp [
 	sLExpandASTVisitor := SLExpandASTVisitor new
 ]
 
+{ #category : 'assignment-transformation' }
+SLASTTransformationTest >> testMethodWithBlockInAssignment [
+
+	| translation tMethod |
+	tMethod := ccg methodNamed: #methodWithBlockInAssignment.
+
+	sLExpandASTVisitor currentMethod: tMethod.
+	sLExpandASTVisitor expandASTInCurrentMethod.
+
+	translation := self translate: tMethod.
+	translation := translation trimBoth.
+
+	self
+		assert: translation
+		equals:
+			'/* SLASTTransformationTestClass>>#methodWithBlockInAssignment */
+static sqInt
+methodWithBlockInAssignment(void)
+{
+	int var;
+
+	{
+		emptyMethod();
+		var = 5;
+	}
+	return 0;
+}'
+]
+
 { #category : 'send-transformation' }
 SLASTTransformationTest >> testMethodWithBlockValue [
 
 	| translation tMethod |
 	tMethod := ccg methodNamed: #methodWithBlockValue.
 
-	sLExpandASTVisitor currentMethod: tMethod .
+	sLExpandASTVisitor currentMethod: tMethod.
 	sLExpandASTVisitor expandASTInCurrentMethod.
 
 	translation := self translate: tMethod.
@@ -41,6 +70,36 @@ methodWithBlockValue(void)
 
 	{
 		2 + 1;
+	}
+	return 0;
+}'
+]
+
+{ #category : 'assignment-transformation' }
+SLASTTransformationTest >> testMethodWithBlockValueInAssignment [
+
+	| translation tMethod |
+	tMethod := ccg methodNamed: #methodWithBlockValueInAssignment.
+
+	sLExpandASTVisitor currentMethod: tMethod.
+	sLExpandASTVisitor expandASTInCurrentMethod.
+
+	translation := self translate: tMethod.
+	translation := translation trimBoth.
+
+	self
+		assert: translation
+		equals:
+			'/* SLASTTransformationTestClass>>#methodWithBlockValueInAssignment */
+static sqInt
+methodWithBlockValueInAssignment(void)
+{
+	sqInt arg;
+	sqInt var;
+
+	{
+		emptyMethod(1);
+		var = 5;
 	}
 	return 0;
 }'
@@ -76,10 +135,10 @@ methodWithBlockValueValue(void)
 ]
 
 { #category : 'assignment-transformation' }
-SLASTTransformationTest >> testMethodWithBockInAssignment [
+SLASTTransformationTest >> testMethodWithBlockValueValueInAssignment [
 
 	| translation tMethod |
-	tMethod := ccg methodNamed: #methodWithBockInAssignment.
+	tMethod := ccg methodNamed: #methodWithBlockValueValueInAssignment.
 
 	sLExpandASTVisitor currentMethod: tMethod.
 	sLExpandASTVisitor expandASTInCurrentMethod.
@@ -90,68 +149,9 @@ SLASTTransformationTest >> testMethodWithBockInAssignment [
 	self
 		assert: translation
 		equals:
-			'/* SLASTTransformationTestClass>>#methodWithBockInAssignment */
+			'/* SLASTTransformationTestClass>>#methodWithBlockValueValueInAssignment */
 static sqInt
-methodWithBockInAssignment(void)
-{
-	int var;
-
-	{
-		emptyMethod();
-		var = 5;
-	}
-	return 0;
-}'
-]
-
-{ #category : 'assignment-transformation' }
-SLASTTransformationTest >> testMethodWithBockValueInAssignment [
-
-	| translation tMethod |
-	tMethod := ccg methodNamed: #methodWithBockValueInAssignment.
-
-	sLExpandASTVisitor currentMethod: tMethod.
-	sLExpandASTVisitor expandASTInCurrentMethod.
-
-	translation := self translate: tMethod.
-	translation := translation trimBoth.
-
-	self
-		assert: translation
-		equals:
-			'/* SLASTTransformationTestClass>>#methodWithBockValueInAssignment */
-static sqInt
-methodWithBockValueInAssignment(void)
-{
-	sqInt arg;
-	sqInt var;
-
-	{
-		emptyMethod(1);
-		var = 5;
-	}
-	return 0;
-}'
-]
-
-{ #category : 'assignment-transformation' }
-SLASTTransformationTest >> testMethodWithBockValueValueInAssignment [
-
-	| translation tMethod |
-	tMethod := ccg methodNamed: #methodWithBockValueValueInAssignment.
-
-	sLExpandASTVisitor currentMethod: tMethod.
-	sLExpandASTVisitor expandASTInCurrentMethod.
-
-	translation := self translate: tMethod.
-	translation := translation trimBoth.
-
-	self
-		assert: translation
-		equals:
-			'/* SLASTTransformationTestClass>>#methodWithBockValueValueInAssignment */
-static sqInt
-methodWithBockValueValueInAssignment(void)
+methodWithBlockValueValueInAssignment(void)
 {
 	sqInt arg1;
 	sqInt arg2;

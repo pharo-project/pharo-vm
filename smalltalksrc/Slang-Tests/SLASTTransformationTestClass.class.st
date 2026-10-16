@@ -22,16 +22,44 @@ SLASTTransformationTestClass >> f: string printf: args [
 	
 ]
 
+{ #category : 'assignment-transformation' }
+SLASTTransformationTestClass >> methodWithBlockInAssignment [
+
+	| var |
+	var := [
+	       self emptyMethod.
+	       5 ]
+]
+
 { #category : 'send-transformation' }
 SLASTTransformationTestClass >> methodWithBlockValue [
 
 	[ :arg | arg + 1 ] value: 2
 ]
 
+{ #category : 'assignment-transformation' }
+SLASTTransformationTestClass >> methodWithBlockValueInAssignment [
+
+	| var |
+	var := [ :arg |
+	       self emptyMethod: arg.
+	       5 ] value: 1
+]
+
 { #category : 'send-transformation' }
 SLASTTransformationTestClass >> methodWithBlockValueValue [
 
 	[ :arg1 :arg2 | arg1 + arg2 ] value: 2 value: 3
+]
+
+{ #category : 'assignment-transformation' }
+SLASTTransformationTestClass >> methodWithBlockValueValueInAssignment [
+
+	| var |
+	var := [ :arg1 :arg2 |
+	       self emptyMethod: arg1.
+	       self emptyMethod: arg2.
+	       5 ] value: 1 value: 2
 ]
 
 { #category : 'assignment-transformation' }
