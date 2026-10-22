@@ -256,3 +256,76 @@ VMRISCV64CallJumpOffsetTest >> testJumpLongPositiveOffsetRewriting [
 
 
 ]
+
+{ #category : 'running' }
+VMRISCV64CallJumpOffsetTest >> testCallNegativeOffsetOver2KB [
+
+	"A call more than 2KB backwards: the auipc field is negative (-1 here, with a positive low part), which
+	 addUpperImmediateToPC: must accept and encode. testCallNegativeOffset stays within the 12-bit low part.
+	 See concretizeCall for more details on how it is handled in practice."
+
+	| callInstruction |
+	self
+		compile: [
+			600 timesRepeat: [ cogit Nop ].
+			callInstruction := cogit Call: cogInitialAddress ]
+		bytecodes: 70.
+
+	self assert: callInstruction address - cogInitialAddress > 16r800.
+	self assert: (cogit backend callTargetFromReturnAddress: callInstruction address + cogit backend callInstructionByteSize) equals: cogInitialAddress.
+
+	self machineSimulator
+			startAt: callInstruction address
+			until: cogInitialAddress
+			timeout: 0
+			count: 0.
+
+	self assert: machineSimulator linkRegisterValue equals: callInstruction address + cogit backend callInstructionByteSize.
+	self assert: machineSimulator instructionPointerRegisterValue equals: cogInitialAddress
+]
+
+{ #category : 'running' }
+VMRISCV64CallJumpOffsetTest >> testJumpLongNegativeOffsetOver2KB [
+
+	"A long jump more than 2KB backwards: the auipc field is negative (-1 here, with a positive low part).
+	 See concretizeJumpLong for more details on how it is handled in practice."
+
+	| jumpInstruction |
+	self
+		compile: [
+			600 timesRepeat: [ cogit Nop ].
+			jumpInstruction := cogit JumpLong: cogInitialAddress ]
+		bytecodes: 70.
+
+	self assert: jumpInstruction address - cogInitialAddress > 16r800.
+	self assert: (cogit backend jumpLongTargetBeforeFollowingAddress: jumpInstruction address + cogit backend jumpLongByteSize) equals: cogInitialAddress.
+
+	self machineSimulator
+			startAt: jumpInstruction address
+			until: cogInitialAddress
+			timeout: 0
+			count: 0.
+
+	self assert: machineSimulator instructionPointerRegisterValue equals: cogInitialAddress
+]
+
+{ #category : 'running' }
+VMRISCV64CallJumpOffsetTest >> testJumpLongNegativeOffsetOver2KBRewriting [
+
+	"Rewriting a long jump to a target more than 2KB backwards goes through the same auipc/jalr split.
+	 See rewriteJumpLongAt:target: for more details."
+
+	| jumpInstruction followingAddress |
+	self
+		compile: [
+			600 timesRepeat: [ cogit Nop ].
+			jumpInstruction := cogit JumpLong: cogInitialAddress + 16rE8 ]
+		bytecodes: 70.
+	followingAddress := jumpInstruction address + cogit backend jumpLongByteSize.
+
+	cogit backend rewriteJumpLongAt: followingAddress target: cogInitialAddress.
+	self assert: (cogit backend jumpLongTargetBeforeFollowingAddress: followingAddress) equals: cogInitialAddress.
+
+	self machineSimulator startAt: jumpInstruction address until: cogInitialAddress timeout: 0 count: 0.
+	self assert: machineSimulator instructionPointerRegisterValue equals: cogInitialAddress
+]
