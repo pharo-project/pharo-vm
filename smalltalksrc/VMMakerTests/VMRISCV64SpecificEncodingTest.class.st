@@ -14,6 +14,13 @@ VMRISCV64SpecificEncodingTest class >> wordSizeParameters [
 		yourself
 ]
 
+{ #category : 'running' }
+VMRISCV64SpecificEncodingTest >> initialCodeSize [
+	"The branch range tests generate more than 4KB of code"
+
+	^ 16 * 1024
+]
+
 { #category : 'tests' }
 VMRISCV64SpecificEncodingTest >> testEncode12BitImmediate [
 
@@ -231,4 +238,101 @@ VMRISCV64SpecificEncodingTest >> testEncode64BitImmediateFA1 [
 	self runGeneratedCode.
 
 	self assert: machineSimulator receiverRegisterValue equals: 16rFFFFFFFFFFFFFFA1
+]
+
+{ #category : 'tests - branch ranges' }
+VMRISCV64SpecificEncodingTest >> testConditionalJumpOverMoreThan4KB [
+	"Conditional branches (beq/bne...) have a signed 13-bit offset (+-4KB).
+	 A conditional jump over more code than that must still reach its target"
+
+	| jump |
+	self
+		compile: [
+			cogit CmpR: ClassReg R: ClassReg.
+			jump := cogit JumpZero: 0.
+			1100 timesRepeat: [ cogit Nop ].
+			cogit MoveCq: 2 R: ReceiverResultReg.
+			jump jmpTarget: cogit Label.
+			cogit Nop ]
+		bytecodes: 120.
+
+	machineSimulator receiverRegisterValue: 1.
+	self runGeneratedCode.
+
+	self assert: machineSimulator receiverRegisterValue equals: 1
+]
+
+{ #category : 'tests - branch ranges' }
+VMRISCV64SpecificEncodingTest >> testConditionalJumpBackwardOverMoreThan4KB [
+	"A loop whose body is more than 4KB: the backward conditional branch needs the long form"
+
+	| loop |
+	self
+		compile: [
+			loop := cogit Label.
+			cogit AddCq: 1 R: ReceiverResultReg.
+			1100 timesRepeat: [ cogit Nop ].
+			cogit CmpCq: 3 R: ReceiverResultReg.
+			cogit JumpLess: loop.
+			cogit Nop ]
+		bytecodes: 120.
+
+	machineSimulator receiverRegisterValue: 0.
+	self runGeneratedCode.
+
+	self assert: machineSimulator receiverRegisterValue equals: 3
+]
+
+{ #category : 'tests - branch ranges' }
+VMRISCV64SpecificEncodingTest >> testFPConditionalJumpOverMoreThan4KB [
+	"FP branches are a compare into a register then a branch on it: the branch needs the long form too"
+
+	| jump |
+	self
+		compile: [
+			cogit CmpRd: DPFPReg0 Rd: DPFPReg0.
+			jump := cogit JumpFPEqual: 0.
+			1100 timesRepeat: [ cogit Nop ].
+			cogit MoveCq: 2 R: ReceiverResultReg.
+			jump jmpTarget: cogit Label.
+			cogit Nop ]
+		bytecodes: 120.
+
+	machineSimulator receiverRegisterValue: 1.
+	self runGeneratedCode.
+
+	self assert: machineSimulator receiverRegisterValue equals: 1
+]
+
+{ #category : 'tests - branch ranges' }
+VMRISCV64SpecificEncodingTest >> testNearConditionalJumpKeepsShortForm [
+	"A branch that reaches stays a single 4-byte B-type instruction (the compare is folded into it, the jump
+	 instruction becomes the branch)"
+
+	| jump |
+	self
+		compile: [
+			cogit CmpR: ClassReg R: ClassReg.
+			jump := cogit JumpZero: 0.
+			10 timesRepeat: [ cogit Nop ].
+			jump jmpTarget: cogit Label ]
+		bytecodes: 20.
+
+	self assert: jump machineCodeSize equals: 4
+]
+
+{ #category : 'tests - branch ranges' }
+VMRISCV64SpecificEncodingTest >> testFarConditionalJumpUsesLongForm [
+	"A branch over more than 4KB becomes the opposite branch over a jal: 8 bytes"
+
+	| jump |
+	self
+		compile: [
+			cogit CmpR: ClassReg R: ClassReg.
+			jump := cogit JumpZero: 0.
+			1100 timesRepeat: [ cogit Nop ].
+			jump jmpTarget: cogit Label ]
+		bytecodes: 120.
+
+	self assert: jump machineCodeSize equals: 8
 ]

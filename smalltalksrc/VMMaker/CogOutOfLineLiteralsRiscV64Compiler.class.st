@@ -244,12 +244,12 @@ CogOutOfLineLiteralsRiscV64Compiler class >> initialize [
 	
 	
 	"Branch Condition Codes"
-	EQ  := 2r000. "Equal"
-	NE  := 2r001. "Not equal"
-	GE  := 2r101. "Greater or Equal"
-	GEU := 2r111. "Greater or Equal Unsigned"
-	LT  := 2r100. "Less Than"
-	LTU := 2r110. "Less Than Unsigned"
+	EQ  := 2r000. "beq: Equal"
+	NE  := 2r001. "bne: Not equal"
+	GE  := 2r101. "bge: Greater or Equal"
+	GEU := 2r111. "bgeu: Greater or Equal Unsigned"
+	LT  := 2r100. "blt: Less Than"
+	LTU := 2r110. "bltu: Less Than Unsigned"
 	
 	MSTATUS := 2r001100000000. "mstatus csr"
 	
@@ -1055,23 +1055,24 @@ CogOutOfLineLiteralsRiscV64Compiler >> computeMaximumSize [
 			([ Fill32 ]        -> [ ^ 4 ]).
 			([ Nop ]           -> [ ^ 4 ]). 
 			"Branches"
-			([ BrEqualRR ]                 -> [ ^ 4 ]).
-			([ BrNotEqualRR ]              -> [ ^ 4 ]).
-			([ BrSignedGreaterRR ]         -> [ ^ 4 ]).
-			([ BrSignedGreaterEqualRR ]    -> [ ^ 4 ]).
-			([ BrSignedLessRR ]            -> [ ^ 4 ]).
-			([ BrSignedLessEqualRR ]       -> [ ^ 4 ]).
-			([ BrUnsignedLessRR ]          -> [ ^ 4 ]).
-			([ BrUnsignedLessEqualRR ]     -> [ ^ 4 ]).
-			([ BrUnsignedGreaterRR ]       -> [ ^ 4 ]).
-			([ BrUnsignedGreaterEqualRR ]  -> [ ^ 4 ]).
+			"Conditional branches: the long form, sizeConditionalBranchAt: picks the short one when it reaches"
+			([ BrEqualRR ]                 -> [ ^ 8 ]).
+			([ BrNotEqualRR ]              -> [ ^ 8 ]).
+			([ BrSignedGreaterRR ]         -> [ ^ 8 ]).
+			([ BrSignedGreaterEqualRR ]    -> [ ^ 8 ]).
+			([ BrSignedLessRR ]            -> [ ^ 8 ]).
+			([ BrSignedLessEqualRR ]       -> [ ^ 8 ]).
+			([ BrUnsignedLessRR ]          -> [ ^ 8 ]).
+			([ BrUnsignedLessEqualRR ]     -> [ ^ 8 ]).
+			([ BrUnsignedGreaterRR ]       -> [ ^ 8 ]).
+			([ BrUnsignedGreaterEqualRR ]  -> [ ^ 8 ]).
 			([ BrLongEqualRR ]             -> [ ^ 12 ]).
-			([ BrFPEqualRR ]               -> [ ^ 8 ]).
-			([ BrFPNotEqualRR ]            -> [ ^ 8 ]).
-			([ BrFPLessRR ]                -> [ ^ 8 ]).
-			([ BrFPLessEqualRR ]           -> [ ^ 8 ]).
-			([ BrFPGreaterRR ]             -> [ ^ 8 ]).
-			([ BrFPGreaterEqualRR ]        -> [ ^ 8 ]).
+			([ BrFPEqualRR ]               -> [ ^ 12 ]).
+			([ BrFPNotEqualRR ]            -> [ ^ 12 ]).
+			([ BrFPLessRR ]                -> [ ^ 12 ]).
+			([ BrFPLessEqualRR ]           -> [ ^ 12 ]).
+			([ BrFPGreaterRR ]             -> [ ^ 12 ]).
+			([ BrFPGreaterEqualRR ]        -> [ ^ 12 ]).
 			
 			"Overflow"
 			([ AddCheckOverflowRR ]       -> [ ^ 16 ]).
@@ -1631,49 +1632,61 @@ CogOutOfLineLiteralsRiscV64Compiler >> concretizeAt: actualAddress [
 	^ super concretizeAt: actualAddress
 ]
 
+{ #category : 'concretization helpers' }
+CogOutOfLineLiteralsRiscV64Compiler >> concretizeConditionalBranchAt: index condition: condition between: leftReg and: rightReg [
+	"Emit the B-type branch of a conditional jump at index (0, or 4 after an FP compare), in the form
+	 sizeConditionalBranchAt: chose. beq/bne/blt/bge/bltu/bgeu reach +-4KB; past that, branch on the
+	 opposite condition (the condition codes differ only in bit 0) over a jal, which reaches +-1MB.
+	 Instructions must keep the size they were given, so a long branch stays long even if it would now fit.
+
+	 short:  b<cond>   rs1, rs2, offset     (see branchTo:ifCondition:betweenRegister:andRegister:)
+	 long:   b<!cond>  rs1, rs2, +8         skip the jal
+	         jal       x0, offset           (see jumpToOffset:andStorePreviousPCPlus4in:)"
+	| offset |
+	(machineCodeSize = 0 "not sized, e.g. the initial trampolines"
+		ifTrue: [self isInImmediateBranchRange: (self computeJumpTargetOffsetPlus: index)]
+		ifFalse: [machineCodeSize = (index + 4)]) ifTrue:
+		[offset := self computeJumpTargetOffsetPlus: index.
+		 self assert: (self isInImmediateBranchRange: offset).
+		 self machineCodeAt: index put: (self branchTo: offset ifCondition: condition betweenRegister: leftReg andRegister: rightReg).
+		 ^machineCodeSize := index + 4].
+	offset := self computeJumpTargetOffsetPlus: index + 4.
+	self assert: (self isInImmediateJumpRange: offset).
+	self machineCodeAt: index put: (self branchTo: 8 ifCondition: (condition bitXor: 1) betweenRegister: leftReg andRegister: rightReg).
+	self machineCodeAt: index + 4 put: (self jumpToOffset: offset andStorePreviousPCPlus4in: X0).
+	^machineCodeSize := index + 8
+]
+
 { #category : 'concretization' }
 CogOutOfLineLiteralsRiscV64Compiler >> concretizeBrEqualRR [
 
 	<inline: true>
-	| offset left right |
-	offset := self computeJumpTargetOffsetPlus: 0.
-	left := operands at: 1.
-	right := operands at: 2.
- 	self assert: (self isInImmediateBranchRange: offset).
-	self machineCodeAt: 0 put: (self branchTo: offset ifRegisterValue: left isEqualToRegisterValue: right).
-	^ machineCodeSize := 4
+	^ self concretizeConditionalBranchAt: 0 condition: EQ between: (operands at: 1) and: (operands at: 2)
 ]
 
 { #category : 'concretization' }
 CogOutOfLineLiteralsRiscV64Compiler >> concretizeBrFPEqualRR [ 
 
 	<inline: true>
-	| offset left right |
-	offset := self computeJumpTargetOffsetPlus: 4.
+	| left right |
 	left := operands at: 1.
 	right := operands at: 2.
- 	self assert: (self isInImmediateBranchRange: offset).
 	"No direct branching but set one in register if comparison!"
 	self machineCodeAt: 0 put: (self 
 		fSetOneIn: ConcreteIPReg  
 		ifRegisterValue: left 
 		isEqualToRegisterValue: right).
 	"Sets one if values equal -> br if ConcreteIPReg is not equal to zero"
-	self machineCodeAt: 4 put: (self 
-		branchTo: offset 
-		ifRegisterValueIsNotEqualToZero: ConcreteIPReg ).
-	^ machineCodeSize := 8
+	^ self concretizeConditionalBranchAt: 4 condition: NE between: ConcreteIPReg and: X0
 ]
 
 { #category : 'concretization' }
 CogOutOfLineLiteralsRiscV64Compiler >> concretizeBrFPGreaterEqualRR [ 
 
 	<inline: true>
-	| offset left right |
-	offset := self computeJumpTargetOffsetPlus: 4.
+	| left right |
 	left := operands at: 1.
 	right := operands at: 2.
- 	self assert: (self isInImmediateBranchRange: offset).
 	"No direct branching but set one in register if comparison!"
 	"left>=right reversed to right<left"
 	self machineCodeAt: 0 put: (self 
@@ -1681,21 +1694,16 @@ CogOutOfLineLiteralsRiscV64Compiler >> concretizeBrFPGreaterEqualRR [
 		ifRegisterValue: right 
 		isLessThanRegisterValue: left).
 	"Sets one if right<left -> NOT left>=right -> br if set is equal to zero"
-	self machineCodeAt: 4 put: (self 
-		branchTo: offset 
-		ifRegisterValueIsEqualToZero: ConcreteIPReg ).
-	^ machineCodeSize := 8
+	^ self concretizeConditionalBranchAt: 4 condition: EQ between: ConcreteIPReg and: X0
 ]
 
 { #category : 'concretization' }
 CogOutOfLineLiteralsRiscV64Compiler >> concretizeBrFPGreaterRR [ 
 
 	<inline: true>
-	| offset left right |
-	offset := self computeJumpTargetOffsetPlus: 4.
+	| left right |
 	left := operands at: 1.
 	right := operands at: 2.
- 	self assert: (self isInImmediateBranchRange: offset).
 	"No direct branching but set one in register if comparison!"
 	"left>right reversed to right<=left"
 	self machineCodeAt: 0 put: (self 
@@ -1703,73 +1711,55 @@ CogOutOfLineLiteralsRiscV64Compiler >> concretizeBrFPGreaterRR [
 		ifRegisterValue: right 
 		isLessThanOrEqualToRegisterValue: left).
 	"Sets one if right<left -> br if ConcreteIPReg is equal to zero"
-	self machineCodeAt: 4 put: (self 
-		branchTo: offset 
-		ifRegisterValueIsEqualToZero: ConcreteIPReg ).
-	^ machineCodeSize := 8
+	^ self concretizeConditionalBranchAt: 4 condition: EQ between: ConcreteIPReg and: X0
 ]
 
 { #category : 'concretization' }
 CogOutOfLineLiteralsRiscV64Compiler >> concretizeBrFPLessEqualRR [ 
 
 	<inline: true>
-	| offset left right |
-	offset := self computeJumpTargetOffsetPlus: 4.
+	| left right |
 	left := operands at: 1.
 	right := operands at: 2.
- 	self assert: (self isInImmediateBranchRange: offset).
 	"No direct branching but set one in register if comparison!"
 	self machineCodeAt: 0 put: (self 
 		fSetOneIn: ConcreteIPReg  
 		ifRegisterValue: left 
 		isLessThanOrEqualToRegisterValue: right).
 	"Sets one if values equal -> br if ConcreteIPReg is not equal to zero"
-	self machineCodeAt: 4 put: (self 
-		branchTo: offset 
-		ifRegisterValueIsNotEqualToZero: ConcreteIPReg ).
-	^ machineCodeSize := 8
+	^ self concretizeConditionalBranchAt: 4 condition: NE between: ConcreteIPReg and: X0
 ]
 
 { #category : 'concretization' }
 CogOutOfLineLiteralsRiscV64Compiler >> concretizeBrFPLessRR [ 
 
 	<inline: true>
-	| offset left right |
-	offset := self computeJumpTargetOffsetPlus: 4.
+	| left right |
 	left := operands at: 1.
 	right := operands at: 2.
- 	self assert: (self isInImmediateBranchRange: offset).
 	"No direct branching but set one in register if comparison!"
 	self machineCodeAt: 0 put: (self 
 		fSetOneIn: ConcreteIPReg  
 		ifRegisterValue: left 
 		isLessThanRegisterValue: right).
 	"Sets one if values equal -> br if ConcreteIPReg is not equal to zero"
-	self machineCodeAt: 4 put: (self 
-		branchTo: offset 
-		ifRegisterValueIsNotEqualToZero: ConcreteIPReg ).
-	^ machineCodeSize := 8
+	^ self concretizeConditionalBranchAt: 4 condition: NE between: ConcreteIPReg and: X0
 ]
 
 { #category : 'concretization' }
 CogOutOfLineLiteralsRiscV64Compiler >> concretizeBrFPNotEqualRR [ 
 
 	<inline: true>
-	| offset left right |
-	offset := self computeJumpTargetOffsetPlus: 4.
+	| left right |
 	left := operands at: 1.
 	right := operands at: 2.
- 	self assert: (self isInImmediateBranchRange: offset).
 	"No direct branching but set one in register if comparison!"
 	self machineCodeAt: 0 put: (self 
 		fSetOneIn: ConcreteIPReg  
 		ifRegisterValue: left 
 		isEqualToRegisterValue: right).
 	"Sets one if values equal -> br if ConcreteIPReg is equal to zero"
-	self machineCodeAt: 4 put: (self 
-		branchTo: offset 
-		ifRegisterValueIsEqualToZero: ConcreteIPReg ).
-	^ machineCodeSize := 8
+	^ self concretizeConditionalBranchAt: 4 condition: EQ between: ConcreteIPReg and: X0
 ]
 
 { #category : 'concretization' }
@@ -1821,120 +1811,70 @@ CogOutOfLineLiteralsRiscV64Compiler >> concretizeBrLongNotEqualRR [
 ]
 
 { #category : 'concretization' }
-CogOutOfLineLiteralsRiscV64Compiler >> concretizeBrNotEqualRR [ 
+CogOutOfLineLiteralsRiscV64Compiler >> concretizeBrNotEqualRR [
 
 	<inline: true>
-	| offset left right |
-	offset := self computeJumpTargetOffsetPlus: 0.
-	left := operands at: 1.
-	right := operands at: 2.
- 	self assert: (self isInImmediateBranchRange: offset).
-	self machineCodeAt: 0 put: (self branchTo: offset ifRegisterValue: left isNotEqualToRegisterValue: right).
-	^ machineCodeSize := 4
+	^ self concretizeConditionalBranchAt: 0 condition: NE between: (operands at: 1) and: (operands at: 2)
 ]
 
 { #category : 'concretization' }
-CogOutOfLineLiteralsRiscV64Compiler >> concretizeBrSignedGreaterEqualRR [  
+CogOutOfLineLiteralsRiscV64Compiler >> concretizeBrSignedGreaterEqualRR [
 
 	<inline: true>
-	| offset left right |
-	offset := self computeJumpTargetOffsetPlus: 0.
-	left := operands at: 1.
-	right := operands at: 2.
- 	self assert: (self isInImmediateBranchRange: offset).
-	self machineCodeAt: 0 put: (self branchTo: offset ifRegisterValue: left isGreaterThanOrEqualRegisterValue: right).
-	^ machineCodeSize := 4
+	^ self concretizeConditionalBranchAt: 0 condition: GE between: (operands at: 1) and: (operands at: 2)
 ]
 
 { #category : 'concretization' }
-CogOutOfLineLiteralsRiscV64Compiler >> concretizeBrSignedGreaterRR [  
+CogOutOfLineLiteralsRiscV64Compiler >> concretizeBrSignedGreaterRR [
 
 	<inline: true>
-	| offset left right |
-	offset := self computeJumpTargetOffsetPlus: 0.
-	left := operands at: 1.
-	right := operands at: 2.
- 	self assert: (self isInImmediateBranchRange: offset).
-	self machineCodeAt: 0 put: (self branchTo: offset ifRegisterValue: left isGreaterThanRegisterValue: right).
-	^ machineCodeSize := 4
+	"RISC-V has no bgt: a > b is b < a, blt with swapped operands"
+	^ self concretizeConditionalBranchAt: 0 condition: LT between: (operands at: 2) and: (operands at: 1)
 ]
 
 { #category : 'concretization' }
-CogOutOfLineLiteralsRiscV64Compiler >> concretizeBrSignedLessEqualRR [  
+CogOutOfLineLiteralsRiscV64Compiler >> concretizeBrSignedLessEqualRR [
 
 	<inline: true>
-	| offset left right |
-	offset := self computeJumpTargetOffsetPlus: 0.
-	left := operands at: 1.
-	right := operands at: 2.
- 	self assert: (self isInImmediateBranchRange: offset).
-	self machineCodeAt: 0 put: (self branchTo: offset ifRegisterValue: left isLessThanOrEqualRegisterValue: right).
-	^ machineCodeSize := 4
+	"RISC-V has no ble: a <= b is b >= a, bge with swapped operands"
+	^ self concretizeConditionalBranchAt: 0 condition: GE between: (operands at: 2) and: (operands at: 1)
 ]
 
 { #category : 'concretization' }
-CogOutOfLineLiteralsRiscV64Compiler >> concretizeBrSignedLessRR [  
+CogOutOfLineLiteralsRiscV64Compiler >> concretizeBrSignedLessRR [
 
 	<inline: true>
-	| offset left right |
-	offset := self computeJumpTargetOffsetPlus: 0.
-	left := operands at: 1.
-	right := operands at: 2.
- 	self assert: (self isInImmediateBranchRange: offset).
-	self machineCodeAt: 0 put: (self branchTo: offset ifRegisterValue: left isLessThanRegisterValue: right).
-	^ machineCodeSize := 4
+	^ self concretizeConditionalBranchAt: 0 condition: LT between: (operands at: 1) and: (operands at: 2)
 ]
 
 { #category : 'concretization' }
-CogOutOfLineLiteralsRiscV64Compiler >> concretizeBrUnsignedGreaterEqualRR [   
+CogOutOfLineLiteralsRiscV64Compiler >> concretizeBrUnsignedGreaterEqualRR [
 
 	<inline: true>
-	| offset left right |
-	offset := self computeJumpTargetOffsetPlus: 0.
-	left := operands at: 1.
-	right := operands at: 2.
- 	self assert: (self isInImmediateBranchRange: offset).
-	self machineCodeAt: 0 put: (self branchTo: offset ifRegisterValueUnsigned: left isGreaterThanOrEqualRegisterValueUnsigned: right).
-	^ machineCodeSize := 4
+	^ self concretizeConditionalBranchAt: 0 condition: GEU between: (operands at: 1) and: (operands at: 2)
 ]
 
 { #category : 'concretization' }
-CogOutOfLineLiteralsRiscV64Compiler >> concretizeBrUnsignedGreaterRR [  
+CogOutOfLineLiteralsRiscV64Compiler >> concretizeBrUnsignedGreaterRR [
 
 	<inline: true>
-	| offset left right |
-	offset := self computeJumpTargetOffsetPlus: 0.
-	left := operands at: 1.
-	right := operands at: 2.
- 	self assert: (self isInImmediateBranchRange: offset).
-	self machineCodeAt: 0 put: (self branchTo: offset ifRegisterValueUnsigned: left isGreaterThanRegisterValueUnsigned: right).
-	^ machineCodeSize := 4
+	"RISC-V has no bgtu: a > b is b < a, bltu with swapped operands"
+	^ self concretizeConditionalBranchAt: 0 condition: LTU between: (operands at: 2) and: (operands at: 1)
 ]
 
 { #category : 'concretization' }
-CogOutOfLineLiteralsRiscV64Compiler >> concretizeBrUnsignedLessEqualRR [  
+CogOutOfLineLiteralsRiscV64Compiler >> concretizeBrUnsignedLessEqualRR [
 
 	<inline: true>
-	| offset left right |
-	offset := self computeJumpTargetOffsetPlus: 0.
-	left := operands at: 1.
-	right := operands at: 2.
- 	self assert: (self isInImmediateBranchRange: offset).
-	self machineCodeAt: 0 put: (self branchTo: offset ifRegisterValueUnsigned: left isLessThanOrEqualRegisterValueUnsigned: right).
-	^ machineCodeSize := 4
+	"RISC-V has no bleu: a <= b is b >= a, bgeu with swapped operands"
+	^ self concretizeConditionalBranchAt: 0 condition: GEU between: (operands at: 2) and: (operands at: 1)
 ]
 
 { #category : 'concretization' }
-CogOutOfLineLiteralsRiscV64Compiler >> concretizeBrUnsignedLessRR [  
+CogOutOfLineLiteralsRiscV64Compiler >> concretizeBrUnsignedLessRR [
 
 	<inline: true>
-	| offset left right |
-	offset := self computeJumpTargetOffsetPlus: 0.
-	left := operands at: 1.
-	right := operands at: 2.
- 	self assert: (self isInImmediateBranchRange: offset).
-	self machineCodeAt: 0 put: (self branchTo: offset ifRegisterValueUnsigned: left isLessThanRegisterValueUnsigned: right).
-	^ machineCodeSize := 4
+	^ self concretizeConditionalBranchAt: 0 condition: LTU between: (operands at: 1) and: (operands at: 2)
 ]
 
 { #category : 'concretization' }
@@ -5045,6 +4985,19 @@ CogOutOfLineLiteralsRiscV64Compiler >> isInLongJumpCallRange: offset [
 	^ self isInPCRelativeRange: offset
 ]
 
+{ #category : 'testing' }
+CogOutOfLineLiteralsRiscV64Compiler >> isSpanSizedBranch [
+	"The B-type conditional branches, sized by their span (see sizeConditionalBranchAt:).
+	 BrLongEqualRR and BrLongNotEqualRR keep their fixed 12-byte form: they get patched."
+	^(opcode between: BrEqualRR and: BrSignedGreaterEqualRR)
+	  or: [self isFPSpanSizedBranch]
+]
+
+{ #category : 'testing' }
+CogOutOfLineLiteralsRiscV64Compiler >> isFPSpanSizedBranch [
+	^opcode between: BrFPEqualRR and: BrFPGreaterEqualRR
+]
+
 { #category : 'machine code instruction' }
 CogOutOfLineLiteralsRiscV64Compiler >> isJump [
 	^super isJump or: [opcode between: BrEqualRR and: BrFPGreaterEqualRR]
@@ -6513,6 +6466,31 @@ CogOutOfLineLiteralsRiscV64Compiler >> signExtendValue: value forSize: size [
 ]
 
 { #category : 'concretization helpers' }
+CogOutOfLineLiteralsRiscV64Compiler >> sizeConditionalBranchAt: eventualAbsoluteAddress [
+	"Choose between the short (4 bytes, after an 4-byte compare for FP) and the long form of a conditional branch
+	 (see concretizeConditionalBranchAt:condition:between:and:). The span to a following instruction is between
+	 virtual addresses computed with maximum sizes, so the final span can only be shorter; the span to a preceding
+	 instruction or an absolute address is final. See CogInLineLiteralsX64Compiler>>sizePCDependentInstructionAt:."
+	<var: #targetInstruction type: #'AbstractInstruction *'>
+	<var: #span type: #sqInt>
+	| target targetInstruction branchIndex span |
+	branchIndex := self isFPSpanSizedBranch ifTrue: [4] ifFalse: [0].
+	target := operands at: 0.
+	targetInstruction := cogit cCoerceSimple: target to: #'AbstractInstruction *'.
+	span := (self isAnInstruction: targetInstruction)
+				ifTrue:
+					[targetInstruction address
+					 - (((cogit abstractInstruction: self follows: targetInstruction)
+							ifTrue: [eventualAbsoluteAddress]
+							ifFalse: [address]) + branchIndex)]
+				ifFalse: [target - (eventualAbsoluteAddress + branchIndex)].
+	address := eventualAbsoluteAddress.
+	^machineCodeSize := (self isInImmediateBranchRange: span)
+							ifTrue: [branchIndex + 4]
+							ifFalse: [branchIndex + 8]
+]
+
+{ #category : 'concretization helpers' }
 CogOutOfLineLiteralsRiscV64Compiler >> sizePCDependentInstructionAt: eventualAbsoluteAddress [
 	"Size a jump and set its address.  The target may be another instruction
 	 or an absolute address.  On entry the address inst var holds our virtual
@@ -6542,6 +6520,8 @@ CogOutOfLineLiteralsRiscV64Compiler >> sizePCDependentInstructionAt: eventualAbs
 	self assert: (self isJump or: [opcode = Call or: [opcode = CallFull
 				or: [dependent notNil and: [dependent opcode = Literal]]]]).
 	self isJump ifTrue: [self resolveJumpTarget].
+	self isSpanSizedBranch ifTrue:
+		[^self sizeConditionalBranchAt: eventualAbsoluteAddress].
 	address := eventualAbsoluteAddress.
 	(dependent notNil and: [dependent opcode = Literal]) ifTrue:
 		[opcode = Literal ifTrue:
