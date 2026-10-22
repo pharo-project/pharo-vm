@@ -329,9 +329,10 @@ VMCodeCompactionTest >> testCompactingShouldRelocatePICCallsite [
 
 	"This method sets up a method A that is linked to a polymorphic PIC linked to B and C.
 	Code compaction is launched so both A, B, C and the PIC are moved and remapped.
-	Re-sending a message should still work and arrive to all cases of the PIC after remap."
+	Re-sending a message should still work and arrive to all cases of the PIC after remap,
+	and a PIC miss should still reach the miss trampoline with the send site as return address."
 
-	| firstMethod callerMethodOop calleeCogMethod selector callerCogMethod calleeMethodOop calleeCogMethod2 calleeMethodOop2 pic |
+	| firstMethod callerMethodOop calleeCogMethod selector callerCogMethod calleeMethodOop calleeCogMethod2 calleeMethodOop2 pic sendReturnOffset |
 	"Create a method that will be collected and force compaction of all the next ones"
 	firstMethod := self jitMethod: (self findMethod: #methodToCompile1) selector: memory trueObject.
 	firstMethod cmUsageCount: 0.
@@ -356,6 +357,7 @@ VMCodeCompactionTest >> testCompactingShouldRelocatePICCallsite [
 	self createFramefulCallFrom: callerAddress.
 	self prepareStackForSendReceiver: memory falseObject arguments: { memory falseObject }.
 	self runFrom: callerCogMethod address + cogit noCheckEntryOffset until: sendTrampolineAddress.
+	sendReturnOffset := machineSimulator getReturnAddress - callerCogMethod asInteger.
 
 	"First monomorphic link"
 	cogit 
@@ -418,7 +420,11 @@ VMCodeCompactionTest >> testCompactingShouldRelocatePICCallsite [
 
 	self
 		assert: machineSimulator instructionPointerRegisterValue
-		equals: cogit cePICMissTrampoline
+		equals: cogit cePICMissTrampoline.
+	"The PIC jumps to the trampoline: the return address is still the send site in the caller"
+	self
+		assert: machineSimulator getReturnAddress
+		equals: (interpreter cogMethodOf: callerMethodOop) asInteger + sendReturnOffset
 ]
 
 { #category : 'tests' }

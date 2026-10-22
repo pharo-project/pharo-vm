@@ -5706,6 +5706,18 @@ CogOutOfLineLiteralsRiscV64Compiler >> relocateCallBeforeReturnPC: retpc by: del
 ]
 
 { #category : 'inline cacheing' }
+CogOutOfLineLiteralsRiscV64Compiler >> relocateJumpLongBeforeFollowingAddress: pc by: delta [
+	"A long jump is auipc + jalr x0, a call is auipc + jalr ra. The inherited version relocates
+	 the jump as a call, which would turn it into a call (e.g. a closed PIC's jump to the PIC miss
+	 trampoline, which then sees a return address inside the PIC). Long conditional jumps end with
+	 the same long jump, so the inherited conditional variant, which sends this, is covered too."
+
+	self assert: delta \\ 4 = 0.
+	delta = 0 ifTrue: [ ^ self ].
+	self rewriteJumpLongAt: pc target: (self jumpLongTargetBeforeFollowingAddress: pc) + delta
+]
+
+{ #category : 'inline cacheing' }
 CogOutOfLineLiteralsRiscV64Compiler >> relocateMethodReferenceBeforeAddress: pc by: delta [
 	"If possible we generate the method address using pc-relative addressing.
 	 If so we don't need to relocate it in code.  So check if pc-relative code was
