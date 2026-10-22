@@ -457,16 +457,6 @@ CogVMSimulator >> cr [
 	traceOn ifTrue: [ transcript cr; flush ].
 ]
 
-{ #category : 'debug support' }
-CogVMSimulator >> debugStackPointersFor: aMethod [
-	^CArrayAccessor on:
-		(StackDepthFinder on: (VMCompiledMethodProxy new
-									for: aMethod
-									coInterpreter: self
-									objectMemory: objectMemory))
-			stackPointers
-]
-
 { #category : 'initialization' }
 CogVMSimulator >> desiredCogCodeSize: anInteger [
 	desiredCogCodeSize := anInteger
@@ -1084,42 +1074,6 @@ CogVMSimulator >> mapFunctionToAddress: aSymbolOrIndexOrBlock [
 { #category : 'plugin support' }
 CogVMSimulator >> mappedPluginEntries [
 	^mappedPluginEntries
-]
-
-{ #category : 'debug support' }
-CogVMSimulator >> maybeCheckStackDepth: delta sp: sp pc: mcpc [
-
-	| asp bcpc startbcpc cogMethod csp debugStackPointers |
-	debugStackDepthDictionary ifNil: [ ^ self ].
-	(self isMachineCodeFrame: framePointer) ifFalse: [ ^ self ].
-	cogMethod := self mframeCogMethod: framePointer.
-	debugStackPointers := debugStackDepthDictionary
-		                      at: cogMethod methodObject
-		                      ifAbsentPut: [
-		                      self debugStackPointersFor:
-			                      cogMethod methodObject ].
-	startbcpc := self startPCOfMethod: cogMethod methodObject.
-	bcpc := cogit bytecodePCFor: mcpc startBcpc: startbcpc in: cogMethod.
-	self assert: bcpc ~= 0.
-	(cogMethod cmIsFullBlock and: [ cogit isNonLocalReturnPC: mcpc ])
-		ifTrue: [
-			| lastbcpc |
-			"Method returns within a block (within an unwind-protect) must check the stack depth at the
-		  return, not the bytecode following, but the pc mapping maps to the bytecode following the
-		  return. lastBytecodePCForBlockAt:in: catches method returns at the end of a block, modifying
-		  the bcpc to that of the return.  isNonLocalReturnPC: catches method returns not at the end.
-		  Assumes method return bytecodes are 1 bytecode long;a  dodgy assumption, but good enough."
-			lastbcpc := cogit endPCOf: cogMethod methodObject.
-			bcpc > lastbcpc ifTrue: [ bcpc := lastbcpc ] ].
-	asp := self
-		       stackPointerIndexForFrame: framePointer
-		       WithSP: sp + objectMemory wordSize.
-	csp := debugStackPointers at: bcpc ifAbsent: [ -1 ].
-	"Compensate for some edge cases"
-	asp - delta = csp ifTrue: [ "Compensate for the implicit context receiver push in a trap bytecode with the absence of a contnuation.
-		  Assumes trap bytecodes are 1 byte bytecodes."
-		(SistaVM and: [ cogit isTrapAt: mcpc ]) ifTrue: [ csp := csp + 1 ] ].
-	self assert: asp - delta + 1 = csp
 ]
 
 { #category : 'primitive support' }

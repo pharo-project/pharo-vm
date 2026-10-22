@@ -16,9 +16,7 @@ Class {
 	#superclass : 'CogBytecodeFixup',
 	#instVars : [
 		'simStackPtr',
-		'isTargetOfBackwardBranch',
-		'simNativeStackPtr',
-		'simNativeStackSize'
+		'isTargetOfBackwardBranch'
 	],
 	#classVars : [
 		'NeedsMergeFixupFlag',
@@ -182,20 +180,6 @@ CogSSBytecodeFixup >> reinitialize [
 CogSSBytecodeFixup >> setIsBackwardBranchFixup [
 	<inline: true>
 	isTargetOfBackwardBranch := true
-]
-
-{ #category : 'accessing' }
-CogSSBytecodeFixup >> simNativeStackSize [
-	"Answer the value of simStackPtr"
-
-	^ simNativeStackSize
-]
-
-{ #category : 'accessing' }
-CogSSBytecodeFixup >> simNativeStackSize: anObject [
-	"Set the value of simStackPtr"
-
-	^simNativeStackSize := anObject
 ]
 
 { #category : 'accessing' }
