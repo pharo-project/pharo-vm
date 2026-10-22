@@ -3427,34 +3427,35 @@ CogOutOfLineLiteralsRiscV64Compiler >> concretizeStop [
 
 { #category : 'concretization' }
 CogOutOfLineLiteralsRiscV64Compiler >> concretizeSubCheckOverflowCqR [
-	"Check for the overflow, as according to the example in the book: 
-	 sub   res,  imm,  src      # res = src - imm
-    slti  t1,   src,  0        # t1 = (src2 < 0)
-    slt   t2,   res,   imm     # t2 = (src1 - src2 < res)
+	"Check for the overflow of res = src - cq:
+	 sub   res,  src,  cq
+    t1 := (cq <= 0)             # a constant when cq is an immediate, slti t1, cq, 1 otherwise
+    slt   t2,   res,  src       # t2 = (res < src)
 	 * since res and src are equal we have to res to another result then move back
-    be    t1,   t2,    offset  # overflow if (src2 < 0) && (src1 + src2 < res)    case 1 1 (overflow)
-                                          || (src2 >= 0) && (src1 + src2 >= res)  case 0 0 (underflow)"
+    beq   t1,   t2,   offset    # overflow if (cq <= 0) && (res < src)     case 1 1 (overflow)
+                                          || (cq > 0) && (res >= src)    case 0 0 (underflow)
+	 Unlike addition, the operands cannot be swapped: (src <= 0) and (res < cq) are wrong"
 	<inline: true>
 	| cq srcReg destReg loadOffset |
 	cq := operands at: 0.
 	srcReg := destReg := operands at: 1.
 	"Perform the SUB operation"
-	dependent ifNil: [ 
+	dependent ifNil: [
 		self assertValue: cq negated fitsSigned: 12.
 		self machineCodeAt: 0 put: (self
 			addImmediate: cq negated
 			toRegister:  srcReg
 			inRegister: ConcreteOverflowReg).
-		"1. Check if one operand is negative, OR EQUAL TO ZERO"
-		self machineCodeAt: 4 put: (self 
-			setOneIn: ConcreteIPReg2 
-			ifValueIn: srcReg
-			isLessThanImmediate: 1). 
-		"2. Check if the sum is smaller than one operand"
-		self machineCodeAt: 8 put: (self 
-			setOneIn: ConcreteIPReg3 
-			ifValueIn: ConcreteOverflowReg 
-			isLessThanImmediate: cq).
+		"1. Whether the constant is negative or zero, known at compile time"
+		self machineCodeAt: 4 put: (self
+			addImmediate: (cq <= 0 ifTrue: [ 1 ] ifFalse: [ 0 ])
+			toRegister: X0
+			inRegister: ConcreteIPReg2).
+		"2. Check if the difference is smaller than the source"
+		self machineCodeAt: 8 put: (self
+			setOneIn: ConcreteIPReg3
+			ifValueIn: ConcreteOverflowReg
+			isLessThanValueIn: srcReg).
 		"3. Move result to destination register"
 		self machineCodeAt: 12 put: (self 
 			moveRegister: ConcreteOverflowReg toRegister: destReg).
