@@ -700,6 +700,127 @@ VMRISCV64SpecificEncodingTest >> testAddRRDoesNotOverflowWhenNegative [
 ]
 
 { #category : 'tests - overflow' }
+VMRISCV64SpecificEncodingTest >> testAddCqRDoesNotOverflowWithPositiveReceiverAndNegativeConstant [
+
+	self
+		doTestOverflowOf: [ cogit AddCq: -1 R: ReceiverResultReg ]
+		receiver: 5
+		argument: -1
+		overflows: false
+		result: 5 + -1
+]
+
+{ #category : 'tests - overflow' }
+VMRISCV64SpecificEncodingTest >> testAddCqRDoesNotOverflowWithNegativeReceiverAndPositiveConstant [
+
+	self
+		doTestOverflowOf: [ cogit AddCq: 1 R: ReceiverResultReg ]
+		receiver: -5
+		argument: 1
+		overflows: false
+		result: -5 + 1
+]
+
+{ #category : 'tests - overflow' }
+VMRISCV64SpecificEncodingTest >> testAddCqRDoesNotOverflowFromMaxWithNegativeConstant [
+
+	self
+		doTestOverflowOf: [ cogit AddCq: -1 R: ReceiverResultReg ]
+		receiver: self maxInt64
+		argument: -1
+		overflows: false
+		result: self maxInt64 + -1
+]
+
+{ #category : 'tests - overflow' }
+VMRISCV64SpecificEncodingTest >> testAddCqRDoesNotOverflowFromMinWithPositiveConstant [
+
+	self
+		doTestOverflowOf: [ cogit AddCq: 1 R: ReceiverResultReg ]
+		receiver: self minInt64
+		argument: 1
+		overflows: false
+		result: self minInt64 + 1
+]
+
+{ #category : 'tests - overflow' }
+VMRISCV64SpecificEncodingTest >> testAddCqRLiteralDoesNotOverflowWithPositiveReceiverAndNegativeConstant [
+
+	self
+		doTestOverflowOf: [ cogit AddCq: -4096 R: ReceiverResultReg ]
+		receiver: 5
+		argument: -4096
+		overflows: false
+		result: 5 + -4096
+]
+
+{ #category : 'tests - overflow' }
+VMRISCV64SpecificEncodingTest >> testAddCqRLiteralDoesNotOverflowFromMaxWithNegativeConstant [
+
+	self
+		doTestOverflowOf: [ cogit AddCq: -4096 R: ReceiverResultReg ]
+		receiver: self maxInt64
+		argument: -4096
+		overflows: false
+		result: self maxInt64 + -4096
+]
+
+{ #category : 'tests - overflow' }
+VMRISCV64SpecificEncodingTest >> testAddCqRLiteralDoesNotOverflowFromMinWithPositiveConstant [
+
+	self
+		doTestOverflowOf: [ cogit AddCq: 4096 R: ReceiverResultReg ]
+		receiver: self minInt64
+		argument: 4096
+		overflows: false
+		result: self minInt64 + 4096
+]
+
+{ #category : 'tests - overflow' }
+VMRISCV64SpecificEncodingTest >> testAddRRDoesNotOverflowWithPositiveReceiverAndNegativeArgument [
+
+	self
+		doTestOverflowOf: [ cogit AddR: Arg1Reg R: ReceiverResultReg ]
+		receiver: 5
+		argument: -1
+		overflows: false
+		result: 5 + -1
+]
+
+{ #category : 'tests - overflow' }
+VMRISCV64SpecificEncodingTest >> testAddRRDoesNotOverflowWithNegativeReceiverAndPositiveArgument [
+
+	self
+		doTestOverflowOf: [ cogit AddR: Arg1Reg R: ReceiverResultReg ]
+		receiver: -5
+		argument: 1
+		overflows: false
+		result: -5 + 1
+]
+
+{ #category : 'tests - overflow' }
+VMRISCV64SpecificEncodingTest >> testAddRRDoesNotOverflowFromMaxWithNegativeArgument [
+
+	self
+		doTestOverflowOf: [ cogit AddR: Arg1Reg R: ReceiverResultReg ]
+		receiver: self maxInt64
+		argument: -1
+		overflows: false
+		result: self maxInt64 + -1
+]
+
+{ #category : 'tests - overflow' }
+VMRISCV64SpecificEncodingTest >> testAddRRDoesNotOverflowFromMinWithPositiveArgument [
+
+	self
+		doTestOverflowOf: [ cogit AddR: Arg1Reg R: ReceiverResultReg ]
+		receiver: self minInt64
+		argument: 1
+		overflows: false
+		result: self minInt64 + 1
+]
+
+{ #category : 'tests - overflow' }
 VMRISCV64SpecificEncodingTest >> testSubCqROverflowsBelowMin [
 
 	self
