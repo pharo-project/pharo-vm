@@ -402,7 +402,7 @@ CogOutOfLineLiteralsRiscV64Compiler >> addImmediate: anImmediate toRegister: sou
 	| signExtendedImmediate |
 	"Check size and sign"
 	self assertValue: anImmediate isContainedIn: 12.
-	signExtendedImmediate := self computeSignedValueOf: anImmediate ofSize: 12.
+	signExtendedImmediate := self twosComplementOf: anImmediate inBits: 12.
 	^ ((((signExtendedImmediate bitAnd: 16rfff) << 20) 
 	  bitOr: (sourceRegister bitAnd: 16r1f) << 15) 
 	  bitOr: (destinationRegister bitAnd: 16r1f) << 7) 
@@ -437,7 +437,7 @@ CogOutOfLineLiteralsRiscV64Compiler >> addUpperImmediateToPC: anImmediate toRegi
 	| signExtendedImmediate |
 	"Check size and sign"	
 	self assertValue: anImmediate isContainedIn: 32.
-	signExtendedImmediate := self computeSignedValueOf: anImmediate ofSize: 32.
+	signExtendedImmediate := self twosComplementOf: anImmediate inBits: 32.
 	^ (((signExtendedImmediate bitAnd: 16rfffff) << 12) 
 	  bitOr: (destinationRegister bitAnd: 16r1f) << 7) 
 	  bitOr: 2r0010111
@@ -458,7 +458,7 @@ CogOutOfLineLiteralsRiscV64Compiler >> addWordImmediate: anImmediate toRegister:
 	self flag: #CLEANUP.
 	"Check size and sign"
 	self assertValue: anImmediate isContainedIn: 12.
-	signExtendedImmediate := self computeSignedValueOf: anImmediate ofSize: 12.
+	signExtendedImmediate := self twosComplementOf: anImmediate inBits: 12.
 	^ ((((signExtendedImmediate bitAnd: 16rfff) << 20) 
 	  bitOr: (sourceRegister bitAnd: 16r1f) << 15) 
 	  bitOr: (destinationRegister bitAnd: 16r1f) << 7) 
@@ -552,7 +552,7 @@ CogOutOfLineLiteralsRiscV64Compiler >> bitwiseAndBetweenRegister: sourceReg andI
 	| signExtendedImmediate |
 	"Check size and sign"
 	self assertValue: anImmediate isContainedIn: 12.
-	signExtendedImmediate := self computeSignedValueOf: anImmediate ofSize: 12.
+	signExtendedImmediate := self twosComplementOf: anImmediate inBits: 12.
 	^ (((((signExtendedImmediate bitAnd: 16rfff) << 20)
 	  bitOr: (sourceReg bitAnd: 16r1f) << 15)
 	  bitOr: 2r111 << 12)
@@ -589,7 +589,7 @@ CogOutOfLineLiteralsRiscV64Compiler >> bitwiseOrBetweenRegister: sourceReg andIm
 	| signExtendedImmediate |
 	"Check size and sign"
 	self assertValue: anImmediate isContainedIn: 12.	
-	signExtendedImmediate := self computeSignedValueOf: anImmediate ofSize: 12.
+	signExtendedImmediate := self twosComplementOf: anImmediate inBits: 12.
 	^ (((((signExtendedImmediate bitAnd: 16rfff) << 20)
 	  bitOr: (sourceReg bitAnd: 16r1f) << 15)
 	  bitOr: 2r110 << 12)
@@ -628,7 +628,7 @@ CogOutOfLineLiteralsRiscV64Compiler >> bitwiseXorBetweenRegister: srcReg andImme
 	| signExtendedImmediate |	
 	"Check for sign and size"
 	self assertValue: immediate isContainedIn: 12.	
-	signExtendedImmediate :=	self computeSignedValueOf: immediate ofSize: 12.
+	signExtendedImmediate :=	self twosComplementOf: immediate inBits: 12.
 	^ (((((signExtendedImmediate bitAnd: 16rfff) << 20)
 	  bitOr: (srcReg bitAnd: 16r1f) << 15)
 	  bitOr: (2r100 << 12))
@@ -665,7 +665,7 @@ CogOutOfLineLiteralsRiscV64Compiler >> branchTo: offset ifCondition: condition b
 	| signExtendedOffset |
 	 "Check size and sign"	
 	self assertValue: offset isContainedIn: 13.
-	signExtendedOffset := self computeSignedValueOf: offset ofSize: 13.
+	signExtendedOffset := self twosComplementOf: offset inBits: 13.
 	^ (((((((((signExtendedOffset >> 12) bitAnd: 16r1) << 31)
 	  bitOr: ((signExtendedOffset >> 5) bitAnd: 16r3f)  << 25)
 	  bitOr: (srcReg2 bitAnd: 16r1f)  << 20)
@@ -1302,18 +1302,15 @@ CogOutOfLineLiteralsRiscV64Compiler >> computeMaximumSize [
 { #category : 'machine code instruction' }
 CogOutOfLineLiteralsRiscV64Compiler >> computeSignedValue64Bits: aValue [ 
 
-	^ self computeSignedValueOf: aValue ofSize: 64
+	^ self twosComplementOf: aValue inBits: 64
 ]
 
 { #category : 'helpers - size sign' }
-CogOutOfLineLiteralsRiscV64Compiler >> computeSignedValueOf: aValue ofSize: aSize [
-
-	"If the number is negative, returns two's complement in given size, otherwise return the value"
-	aValue < 0
-		ifTrue: [ | mask |
-			mask := (1 << aSize) - 1.
-			^ mask - aValue abs + 1 ]  "Compute two's complement" 
-		ifFalse: [ ^ aValue ]
+CogOutOfLineLiteralsRiscV64Compiler >> twosComplementOf: aValue inBits: aSize [
+	"Answer the aSize-bit two's complement encoding of aValue, ready to be put in an instruction field"
+	<var: #aValue type: #sqInt>
+	aSize >= 64 ifTrue: [ ^ aValue ].
+	^ aValue bitAnd: (1 << aSize) - 1
 ]
 
 { #category : 'concretization' }
@@ -3440,7 +3437,7 @@ CogOutOfLineLiteralsRiscV64Compiler >> concretizePopR [
 	<inline: true>
 	| destReg offset |
 	destReg := operands at: 0.
-	offset := self computeSignedValueOf: 8 ofSize: 12.
+	offset := 8.
 	self machineCodeAt: 0 put: (self loadDoubleWordFromAddressInRegister: SPReg withOffset: 0 toRegister: destReg).	
 	self machineCodeAt: 4 put: (self addImmediate: offset toRegister: SPReg inRegister: SPReg).
 	^ machineCodeSize := 8
@@ -3482,7 +3479,7 @@ CogOutOfLineLiteralsRiscV64Compiler >> concretizePushCq [
 		ifNotNil: [ 
 			"Literal -> Compute the distance from the current address and add auipc then ld instructions"
 			instrOffset := self loadLiteralInRegister: ConcreteIPReg ].
-	offset := self computeSignedValueOf: -8 ofSize: 12.
+	offset := -8.
 	self machineCodeAt: instrOffset put: (self addImmediate: offset toRegister: SPReg inRegister: SPReg).
    self machineCodeAt: instrOffset + 4 put: (self storeDoubleWordFromRegister: ConcreteIPReg toAddressInRegister: SPReg withOffset: 0).
 	^ machineCodeSize := instrOffset + 8 
@@ -3496,7 +3493,7 @@ CogOutOfLineLiteralsRiscV64Compiler >> concretizePushCw [
 	| word instrOffset offset |
 	word := operands at: 0.
 	instrOffset := self loadCwInto: ConcreteIPReg.
-	offset := self computeSignedValueOf: -8 ofSize: 12.
+	offset := -8.
 	self machineCodeAt: instrOffset put: (self addImmediate: offset toRegister: SPReg inRegister: SPReg).
    self machineCodeAt: instrOffset + 4 put: (self storeDoubleWordFromRegister: ConcreteIPReg toAddressInRegister: SPReg withOffset: 0).
 	^ machineCodeSize := instrOffset + 8 
@@ -3510,7 +3507,7 @@ CogOutOfLineLiteralsRiscV64Compiler >> concretizePushR [
 	<inline: true>
 	| srcReg offset |
 	srcReg := operands at: 0.
-	offset := self computeSignedValueOf: -8 ofSize: 12.
+	offset := -8.
 	self machineCodeAt: 0 put: (self addImmediate: offset toRegister: SPReg inRegister: SPReg).
    self machineCodeAt: 4 put: (self storeDoubleWordFromRegister: srcReg toAddressInRegister: SPReg withOffset: 0).
 	^ machineCodeSize := 8
@@ -4305,7 +4302,7 @@ CogOutOfLineLiteralsRiscV64Compiler >> fLoadDoubleWordFromAddressInRegister: bas
 	| signExtendedOffset |
 	"Check size and sign"
 	self assertValue: offset isContainedIn: 12.
-	signExtendedOffset := self computeSignedValueOf: offset ofSize: 12.
+	signExtendedOffset := self twosComplementOf: offset inBits: 12.
 	"Actual bit instruction"
 	^ ((((((signExtendedOffset bitAnd: 16rfff) << 20) 
 	  bitOr: (baseRegister bitAnd: 16r1f) << 15)
@@ -4330,7 +4327,7 @@ CogOutOfLineLiteralsRiscV64Compiler >> fLoadWordFromAddressInRegister: baseRegis
 	| signExtendedOffset |
 	"Check size and sign"
 	self assertValue: offset isContainedIn: 12.
-	signExtendedOffset := self computeSignedValueOf: offset ofSize: 12.
+	signExtendedOffset := self twosComplementOf: offset inBits: 12.
 	"Actual bit instruction"
 	^ ((((((signExtendedOffset bitAnd: 16rfff) << 20) 
 	  bitOr: (baseRegister bitAnd: 16r1f) << 15)
@@ -4506,7 +4503,7 @@ CogOutOfLineLiteralsRiscV64Compiler >> fStoreDoubleWordFromRegister: sourceRegis
 	| signExtendedOffset |
 	"Check for sign and size"
 	self assertValue: offset isContainedIn: 12.
-	signExtendedOffset := self computeSignedValueOf: offset ofSize: 12.
+	signExtendedOffset := self twosComplementOf: offset inBits: 12.
 	^ ((((((
 	  signExtendedOffset >> 5 bitAnd: 16r7f) << 25) 
 	  bitOr: (sourceRegister bitAnd: 16r1f) << 20)
@@ -4528,7 +4525,7 @@ CogOutOfLineLiteralsRiscV64Compiler >> fStoreWordFromRegister: sourceRegister to
 	| signExtendedOffset |
 	"Check for sign and size"
 	self assertValue: offset isContainedIn: 12.
-	signExtendedOffset := self computeSignedValueOf: offset ofSize: 12.
+	signExtendedOffset := self twosComplementOf: offset inBits: 12.
 	^ ((((((
 	  signExtendedOffset >> 5 bitAnd: 16r7f) << 25) 
 	  bitOr: (sourceRegister bitAnd: 16r1f) << 20)
@@ -5132,7 +5129,7 @@ CogOutOfLineLiteralsRiscV64Compiler >> jumpTo: sourceRegisterValueAddress withOf
 	| signExtendedOffset |
 	"Check size and sign"
 	self assertValue: offset isContainedIn: 12.
-	signExtendedOffset := self computeSignedValueOf: offset ofSize: 12.
+	signExtendedOffset := self twosComplementOf: offset inBits: 12.
 	^ (((((signExtendedOffset bitAnd: 16rfff) << 20)
 		bitOr: (sourceRegisterValueAddress bitAnd: 16r1f) << 15)
 		bitOr: (destinationRegister bitAnd: 16r1f) << 7)
@@ -5160,7 +5157,7 @@ CogOutOfLineLiteralsRiscV64Compiler >> jumpToOffset: offset andStorePreviousPCPl
 	| signExtendedOffset |
 	"Check size and sign"	
 	self assertValue: offset isContainedIn: 21.	
-	signExtendedOffset := self computeSignedValueOf: offset ofSize: 21.
+	signExtendedOffset := self twosComplementOf: offset inBits: 21.
 	^  (((((((signExtendedOffset >> 20)  bitAnd: 16r1) << 31) 
 		bitOr: ((signExtendedOffset >> 1) bitAnd: 16r3ff) << 21)
 		bitOr: ((signExtendedOffset >> 11) bitAnd: 16r1) << 20)
@@ -5283,7 +5280,7 @@ CogOutOfLineLiteralsRiscV64Compiler >> loadByteFromAddressInRegister: baseRegist
 	| signExtendedOffset |
 	"Check size and sign"
 	self assertValue: offset isContainedIn: 12.	
-	signExtendedOffset := self computeSignedValueOf: offset ofSize: 12.
+	signExtendedOffset := self twosComplementOf: offset inBits: 12.
 	"Actual bit instruction"
 	^ ((((((signExtendedOffset bitAnd: 16rfff) << 20) 
 	  bitOr: (baseRegister bitAnd: 16r1f) << 15)
@@ -5334,7 +5331,7 @@ CogOutOfLineLiteralsRiscV64Compiler >> loadDoubleWordFromAddressInRegister: base
 	| signExtendedOffset |
 	"Check size and sign"
 	self assertValue: offset isContainedIn: 12.	
-	signExtendedOffset := self computeSignedValueOf: offset ofSize: 12.
+	signExtendedOffset := self twosComplementOf: offset inBits: 12.
 	"Actual bit instruction"
 	^ ((((((signExtendedOffset bitAnd: 16rfff) << 20) 
 	  bitOr: (baseRegister bitAnd: 16r1f) << 15)
@@ -5359,7 +5356,7 @@ CogOutOfLineLiteralsRiscV64Compiler >> loadHalfWordFromAddressInRegister: baseRe
 	self flag: #CLEANUP.
 	"Check size and sign"
 	self assertValue: offset isContainedIn: 12.	
-	signExtendedOffset := self computeSignedValueOf: offset ofSize: 12.
+	signExtendedOffset := self twosComplementOf: offset inBits: 12.
 	"Actual bit instruction"
 	^ ((((((signExtendedOffset bitAnd: 16rfff) << 20) 
 	  bitOr: (baseRegister bitAnd: 16r1f) << 15)
@@ -5434,7 +5431,7 @@ CogOutOfLineLiteralsRiscV64Compiler >> loadUnsignedByteFromAddressInRegister: ba
 	| signExtendedOffset |
 	"Check size and sign"
 	self assertValue: offset isContainedIn: 12.	
-	signExtendedOffset := self computeSignedValueOf: offset ofSize: 12.
+	signExtendedOffset := self twosComplementOf: offset inBits: 12.
 	"Actual bit instruction"
 	^ ((((((signExtendedOffset bitAnd: 16rfff) << 20) 
 	  bitOr: (baseRegister bitAnd: 16r1f) << 15)
@@ -5458,7 +5455,7 @@ CogOutOfLineLiteralsRiscV64Compiler >> loadUnsignedHalfWordFromAddressInRegister
 	| signExtendedOffset |
 	"Check size and sign"
 	self assertValue: offset isContainedIn: 12.	
-	signExtendedOffset := self computeSignedValueOf: offset ofSize: 12.
+	signExtendedOffset := self twosComplementOf: offset inBits: 12.
 	"Actual bit instruction"
 	^ ((((((signExtendedOffset bitAnd: 16rfff) << 20) 
 	  bitOr: (baseRegister bitAnd: 16r1f) << 15)
@@ -5482,7 +5479,7 @@ CogOutOfLineLiteralsRiscV64Compiler >> loadUnsignedWordFromAddressInRegister: ba
 	| signExtendedOffset |
 	"Check size and sign"
 	self assertValue: offset isContainedIn: 12.	
-	signExtendedOffset := self computeSignedValueOf: offset ofSize: 12.
+	signExtendedOffset := self twosComplementOf: offset inBits: 12.
 	"Actual bit instruction"
 	^ ((((((signExtendedOffset bitAnd: 16rfff) << 20) 
 	  bitOr: (baseRegister bitAnd: 16r1f) << 15)
@@ -5508,7 +5505,7 @@ CogOutOfLineLiteralsRiscV64Compiler >> loadUpperImmediate: anImmediate inRegiste
 	self flag: #CLEANUP.
 	"Check size and sign"
 	self assertValue: anImmediate isContainedIn: 20.	
-	signExtendedImmediate := self computeSignedValueOf: anImmediate ofSize: 20.
+	signExtendedImmediate := self twosComplementOf: anImmediate inBits: 20.
 	^ (((signExtendedImmediate bitAnd: 16rfffff) << 12) 
 	  bitOr: (destReg bitAnd: 16r1f) << 7) 
 	  bitOr: 2r0110111
@@ -5527,7 +5524,7 @@ CogOutOfLineLiteralsRiscV64Compiler >> loadWordFromAddressInRegister: baseRegist
 	self flag: #CLEANUP.
 	"Check size and sign"
 	self assertValue: offset isContainedIn: 12.	
-	signExtendedOffset := self computeSignedValueOf: offset ofSize: 12.
+	signExtendedOffset := self twosComplementOf: offset inBits: 12.
 	"Actual bit instruction"
 	^ ((((((signExtendedOffset bitAnd: 16rfff) << 20) 
 	  bitOr: (baseRegister bitAnd: 16r1f) << 15)
@@ -5866,8 +5863,8 @@ CogOutOfLineLiteralsRiscV64Compiler >> pcRelativeAddressAt: instrAddress [
 	self assert: (self instructionIsAUIPC: instAUIPC).
 	self assert: (self instructionIsLD: instLD).
 	"Each offset is sign-extended then added"
-	offsetAUIPC := self computeSignedValueOf: (instAUIPC >> 12 bitAnd: 16rfffff) << 12 ofSize: 32. "20 upper bits"
-	offsetLD := self computeSignedValueOf: (instLD >> 20 bitAnd: 16rfff) ofSize: 32. "12 lower bits"
+	offsetAUIPC := self twosComplementOf: (instAUIPC >> 12 bitAnd: 16rfffff) << 12 inBits: 32. "20 upper bits"
+	offsetLD := self twosComplementOf: (instLD >> 20 bitAnd: 16rfff) inBits: 32. "12 lower bits"
 	"((offset allMask: (1 << 12))
 						   ifTrue: [offset negated]
 							ifFalse: [offset])"
@@ -6428,7 +6425,7 @@ CogOutOfLineLiteralsRiscV64Compiler >> shiftLeftValueInRegister: sourceReg byShi
 	| signExtendedShamt |
 	"Check size and sign"
 	self assertValue: shiftAmount isContainedIn: 6.
-	signExtendedShamt := self computeSignedValueOf: shiftAmount ofSize: 6.
+	signExtendedShamt := self twosComplementOf: shiftAmount inBits: 6.
 	^ (((((signExtendedShamt bitAnd: 16r3f) << 20) 
 	  bitOr: (sourceReg bitAnd: 16r1f) << 15)
 	  bitOr: (2r001 << 12))
@@ -6466,7 +6463,7 @@ CogOutOfLineLiteralsRiscV64Compiler >> shiftRightValueInRegister: sourceReg bySh
 	| signExtendedShamt |
 	"Check size and sign"
 	self assertValue: shiftAmount isContainedIn: 6.
-	signExtendedShamt := self computeSignedValueOf: shiftAmount ofSize: 6.
+	signExtendedShamt := self twosComplementOf: shiftAmount inBits: 6.
 	^ (((((signExtendedShamt bitAnd: 16r3f) << 20) 
 	  bitOr: (sourceReg bitAnd: 16r1f) << 15)
 	  bitOr: (2r101 << 12)) 
@@ -6589,7 +6586,7 @@ CogOutOfLineLiteralsRiscV64Compiler >> storeByteFromRegister: sourceRegister toA
 	| signExtendedOffset |
 	"Check for sign and size"
 	self assertValue: offset isContainedIn: 12.	
-	signExtendedOffset := self computeSignedValueOf: offset ofSize: 12.
+	signExtendedOffset := self twosComplementOf: offset inBits: 12.
 	^ ((((((
 	  offset >> 5 bitAnd: 16r7f) << 25) 
 	  bitOr: (sourceRegister bitAnd: 16r1f) << 20 )
@@ -6611,7 +6608,7 @@ CogOutOfLineLiteralsRiscV64Compiler >> storeDoubleWordFromRegister: sourceRegist
 	| signExtendedOffset |
 	"Check for sign and size"
 	self assertValue: offset isContainedIn: 12.	
-	signExtendedOffset := self computeSignedValueOf: offset ofSize: 12.
+	signExtendedOffset := self twosComplementOf: offset inBits: 12.
 	^ ((((((
 	  signExtendedOffset >> 5 bitAnd: 16r7f) << 25) 
 	  bitOr: (sourceRegister bitAnd: 16r1f) << 20)
@@ -6633,7 +6630,7 @@ CogOutOfLineLiteralsRiscV64Compiler >> storeHalfWordFromRegister: sourceRegister
 	| signExtendedOffset |
 	"Check for sign and size"
 	self assertValue: offset isContainedIn: 12.	
-	signExtendedOffset := self computeSignedValueOf: offset ofSize: 12.
+	signExtendedOffset := self twosComplementOf: offset inBits: 12.
 	^ ((((((
 	  offset >> 5 bitAnd: 16r7f) << 25) 
 	  bitOr: (sourceRegister bitAnd: 16r1f) << 20 )
@@ -6690,7 +6687,7 @@ CogOutOfLineLiteralsRiscV64Compiler >> storeWordFromRegister: sourceRegister toA
 	| signExtendedOffset |
 	"Check for sign and size"
 	self assertValue: offset isContainedIn: 12.	
-	signExtendedOffset := self computeSignedValueOf: offset ofSize: 12.
+	signExtendedOffset := self twosComplementOf: offset inBits: 12.
 	^ ((((((
 	  offset >> 5 bitAnd: 16r7f) << 25) 
 	  bitOr: (sourceRegister bitAnd: 16r1f) << 20 )
