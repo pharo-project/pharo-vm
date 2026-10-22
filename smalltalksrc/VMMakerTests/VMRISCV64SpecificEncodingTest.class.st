@@ -240,6 +240,161 @@ VMRISCV64SpecificEncodingTest >> testEncode64BitImmediateFA1 [
 	self assert: machineSimulator receiverRegisterValue equals: 16rFFFFFFFFFFFFFFA1
 ]
 
+{ #category : 'tests - immediate ranges' }
+VMRISCV64SpecificEncodingTest >> doTestOperation: aSelector constants: constants expected: aBlock [
+	"Compile aSelector (an xxCq:R: opcode) once per constant, each on its own register, and check each
+	 register against aBlock value: initialValue value: constant.
+	 I-type immediates are signed 12-bit: 2047 and -2048 fit, 2048 and -2049 must go through a literal."
+
+	| registers setters getters initialValue |
+	registers := { ReceiverResultReg. Arg0Reg. Arg1Reg. ClassReg. TempReg }.
+	setters := #( #receiverRegisterValue: #arg0RegisterValue: #arg1RegisterValue: #classRegisterValue: #temporaryRegisterValue: ).
+	getters := #( #receiverRegisterValue #arg0RegisterValue #arg1RegisterValue #classRegisterValue #temporaryRegisterValue ).
+	self assert: constants size <= registers size.
+	initialValue := 16r123456.
+
+	self
+		compile: [ constants withIndexDo: [ :constant :i | cogit perform: aSelector with: constant with: (registers at: i) ] ]
+		bytecodes: 10.
+
+	constants withIndexDo: [ :constant :i | machineSimulator perform: (setters at: i) with: initialValue ].
+	self runGeneratedCode.
+
+	constants withIndexDo: [ :constant :i |
+		self
+			assert: (machineSimulator perform: (getters at: i))
+			equals: ((aBlock value: initialValue value: constant) bitAnd: 16rFFFFFFFFFFFFFFFF) ]
+]
+
+{ #category : 'tests - immediate ranges' }
+VMRISCV64SpecificEncodingTest >> negativeBoundaryConstants [
+
+	^ #( -2048 -2049 -2050 -4096 -4097 )
+]
+
+{ #category : 'tests - immediate ranges' }
+VMRISCV64SpecificEncodingTest >> positiveBoundaryConstants [
+
+	^ #( 2047 2048 2049 4095 4096 )
+]
+
+{ #category : 'tests - immediate ranges' }
+VMRISCV64SpecificEncodingTest >> testAddCqRNegativeBoundaryConstants [
+
+	self doTestOperation: #AddCq:R: constants: self negativeBoundaryConstants expected: [ :v :c | v + c ]
+]
+
+{ #category : 'tests - immediate ranges' }
+VMRISCV64SpecificEncodingTest >> testAddCqRPositiveBoundaryConstants [
+
+	self doTestOperation: #AddCq:R: constants: self positiveBoundaryConstants expected: [ :v :c | v + c ]
+]
+
+{ #category : 'tests - immediate ranges' }
+VMRISCV64SpecificEncodingTest >> testAndCqRNegativeBoundaryConstants [
+
+	self doTestOperation: #AndCq:R: constants: self negativeBoundaryConstants expected: [ :v :c | v bitAnd: c ]
+]
+
+{ #category : 'tests - immediate ranges' }
+VMRISCV64SpecificEncodingTest >> testAndCqRPositiveBoundaryConstants [
+
+	self doTestOperation: #AndCq:R: constants: self positiveBoundaryConstants expected: [ :v :c | v bitAnd: c ]
+]
+
+{ #category : 'tests - immediate ranges' }
+VMRISCV64SpecificEncodingTest >> testOrCqRNegativeBoundaryConstants [
+
+	self doTestOperation: #OrCq:R: constants: self negativeBoundaryConstants expected: [ :v :c | v bitOr: c ]
+]
+
+{ #category : 'tests - immediate ranges' }
+VMRISCV64SpecificEncodingTest >> testOrCqRPositiveBoundaryConstants [
+
+	self doTestOperation: #OrCq:R: constants: self positiveBoundaryConstants expected: [ :v :c | v bitOr: c ]
+]
+
+{ #category : 'tests - immediate ranges' }
+VMRISCV64SpecificEncodingTest >> testSubCqRNegativeBoundaryConstants [
+
+	"SubCq is encoded as addi of the negated constant: 2048 cannot be, -2048 can"
+	self doTestOperation: #SubCq:R: constants: self negativeBoundaryConstants expected: [ :v :c | v - c ]
+]
+
+{ #category : 'tests - immediate ranges' }
+VMRISCV64SpecificEncodingTest >> testSubCqRPositiveBoundaryConstants [
+
+	self doTestOperation: #SubCq:R: constants: self positiveBoundaryConstants expected: [ :v :c | v - c ]
+]
+
+{ #category : 'tests - immediate ranges' }
+VMRISCV64SpecificEncodingTest >> doTestMoveMwrRAtOffsets: offsets [
+	"Load words at offsets from one base register (ld's offset is a signed 12-bit immediate)"
+
+	| destinations getters base |
+	destinations := { ReceiverResultReg. Arg0Reg. Arg1Reg. TempReg }.
+	getters := #( #receiverRegisterValue #arg0RegisterValue #arg1RegisterValue #temporaryRegisterValue ).
+	"The middle of a 1100-slot object, so that +-4096 stays inside it"
+	base := (self newObjectWithSlots: 1100) + 8 + 4400.
+
+	self
+		compile: [ offsets withIndexDo: [ :offset :i | cogit MoveMw: offset r: ClassReg R: (destinations at: i) ] ]
+		bytecodes: 10.
+
+	offsets withIndexDo: [ :offset :i | memory long64At: base + offset put: 16r1000 + i ].
+	machineSimulator classRegisterValue: base.
+	self runGeneratedCode.
+
+	offsets withIndexDo: [ :offset :i |
+		self assert: (machineSimulator perform: (getters at: i)) equals: 16r1000 + i ]
+]
+
+{ #category : 'tests - immediate ranges' }
+VMRISCV64SpecificEncodingTest >> doTestMoveRMwrAtOffsets: offsets [
+	"Store words at offsets from one base register (sd's offset is a signed 12-bit immediate)"
+
+	| sources setters base |
+	sources := { ReceiverResultReg. Arg0Reg. Arg1Reg. TempReg }.
+	setters := #( #receiverRegisterValue: #arg0RegisterValue: #arg1RegisterValue: #temporaryRegisterValue: ).
+	"The middle of a 1100-slot object, so that +-4096 stays inside it"
+	base := (self newObjectWithSlots: 1100) + 8 + 4400.
+
+	self
+		compile: [ offsets withIndexDo: [ :offset :i | cogit MoveR: (sources at: i) Mw: offset r: ClassReg ] ]
+		bytecodes: 10.
+
+	offsets withIndexDo: [ :offset :i | machineSimulator perform: (setters at: i) with: 16r1000 + i ].
+	machineSimulator classRegisterValue: base.
+	self runGeneratedCode.
+
+	offsets withIndexDo: [ :offset :i |
+		self assert: (memory long64At: base + offset) equals: 16r1000 + i ]
+]
+
+{ #category : 'tests - immediate ranges' }
+VMRISCV64SpecificEncodingTest >> testMoveMwrRNegativeBoundaryOffsets [
+
+	self doTestMoveMwrRAtOffsets: #( -2048 -2056 -4088 -4096 )
+]
+
+{ #category : 'tests - immediate ranges' }
+VMRISCV64SpecificEncodingTest >> testMoveMwrRPositiveBoundaryOffsets [
+
+	self doTestMoveMwrRAtOffsets: #( 2040 2048 2056 4088 )
+]
+
+{ #category : 'tests - immediate ranges' }
+VMRISCV64SpecificEncodingTest >> testMoveRMwrNegativeBoundaryOffsets [
+
+	self doTestMoveRMwrAtOffsets: #( -2048 -2056 -4088 -4096 )
+]
+
+{ #category : 'tests - immediate ranges' }
+VMRISCV64SpecificEncodingTest >> testMoveRMwrPositiveBoundaryOffsets [
+
+	self doTestMoveRMwrAtOffsets: #( 2040 2048 2056 4088 )
+]
+
 { #category : 'tests - branch ranges' }
 VMRISCV64SpecificEncodingTest >> testConditionalJumpOverMoreThan4KB [
 	"Conditional branches (beq/bne...) have a signed 13-bit offset (+-4KB).
