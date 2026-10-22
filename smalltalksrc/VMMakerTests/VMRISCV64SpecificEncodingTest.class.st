@@ -367,3 +367,19 @@ VMRISCV64SpecificEncodingTest >> testPCRelativeAddressWithPositiveFieldAndOffset
 
 	self doTestPCRelativeAddressWithAUIPCField: 1 offset: 16r7F8
 ]
+
+{ #category : 'tests - pc-relative addresses' }
+VMRISCV64SpecificEncodingTest >> testLiteralMoreThan2KBAway [
+	"Out-of-line literals are dumped after outOfLineLiteralOpcodeLimit opcodes, which can be more
+	 than 2KB of code: the auipc + ld literal load must reach them"
+
+	self
+		compile: [
+			cogit MoveCq: 16r123456789AB R: ReceiverResultReg.
+			600 timesRepeat: [ cogit Nop ] ]
+		bytecodes: 70.
+
+	self runGeneratedCode.
+
+	self assert: machineSimulator receiverRegisterValue equals: 16r123456789AB
+]

@@ -2630,10 +2630,11 @@ CogOutOfLineLiteralsRiscV64Compiler >> concretizeMovePatcheableC32R [
 	| literalAddress distance |
 	literalAddress := (cogit cCoerceSimple: dependent to: #'AbstractInstruction *') address.
 	distance := literalAddress - address.
-	self machineCodeAt: 0 put: (self addUpperImmediateToPC: 0 toRegister: ConcreteIPReg).
+	self assert: (self isInPCRelativeRange: distance).
+	self machineCodeAt: 0 put: (self addUpperImmediateToPC: (self high20BitsOf: distance) toRegister: ConcreteIPReg).
 	self machineCodeAt: 4 put: (self
 	  loadDoubleWordFromAddressInRegister: ConcreteIPReg
-	  withOffset: distance
+	  withOffset: (self low12BitsOf: distance)
      toRegister: (operands at: 1)).
 	^ machineCodeSize := 8
 ]
@@ -5212,10 +5213,12 @@ CogOutOfLineLiteralsRiscV64Compiler >> loadLiteralInRegister: destReg startingAt
 	self assert: dependent opcode = Literal.
 	self assert: (cogit addressIsInCurrentCompilation: dependent address).
 	literalAddress := (cogit cCoerceSimple: dependent to: #'AbstractInstruction *') address.
-	distance := literalAddress - address.
-	self assertValue: distance fitsSigned: 12.
-	self machineCodeAt: index put: (self addUpperImmediateToPC: 0 toRegister: destReg).
-   	self machineCodeAt: index + 4 put: (self loadDoubleWordFromAddressInRegister: destReg withOffset: distance toRegister: destReg).
+	"The literal can be more than 2KB away: outOfLineLiteralOpcodeLimit bounds the distance in opcodes,
+	 and one opcode can emit several instructions. Split the distance between auipc and ld, see high20BitsOf:"
+	distance := literalAddress - (address + index).
+	self assert: (self isInPCRelativeRange: distance).
+	self machineCodeAt: index put: (self addUpperImmediateToPC: (self high20BitsOf: distance) toRegister: destReg).
+	self machineCodeAt: index + 4 put: (self loadDoubleWordFromAddressInRegister: destReg withOffset: (self low12BitsOf: distance) toRegister: destReg).
 	^ machineCodeSize := 8
 
 ]
