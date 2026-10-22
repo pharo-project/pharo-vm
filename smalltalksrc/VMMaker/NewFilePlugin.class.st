@@ -291,6 +291,7 @@ NewFilePlugin >> primitiveFileTruncate [
 	<var: 'result' type: 'bool'>
 	
 	| fileOop filePointer newFileSize result |
+	result := false .
 	newFileSize := interpreterProxy positive64BitValueOf: (interpreterProxy stackValue: 0).
 	fileOop := interpreterProxy stackValue: 1.
 	interpreterProxy failed ifFalse: [
