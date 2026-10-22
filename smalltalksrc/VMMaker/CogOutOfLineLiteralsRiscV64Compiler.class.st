@@ -1148,10 +1148,22 @@ CogOutOfLineLiteralsRiscV64Compiler >> computeMaximumSize [
 	^ 0 "to keep C compiler qui Unmatched "
 ]
 
-{ #category : 'machine code instruction' }
-CogOutOfLineLiteralsRiscV64Compiler >> computeSignedValue64Bits: aValue [ 
+{ #category : 'helpers - size sign' }
+CogOutOfLineLiteralsRiscV64Compiler >> high20BitsOf: offset [
+	"Answer the signed auipc/lui field of a 32-bit offset split as auipc/lui + a sign-extended 12-bit low part
+	 (see low12BitsOf:), as R_RISCV_PCREL_HI20 computes it (RISC-V ELF psABI, 10.4.10 PC-Relative Symbol Addresses,
+	 https://riscv-non-isa.github.io/riscv-elf-psabi-doc/#_pc_relative_symbol_addresses).
+	 The 16r800 compensates for the low part being negative when its bit 11 is set.
+	 >>> because Slang translates >> to a logical (unsigned) shift."
+	<var: #offset type: #sqInt>
+	^ (offset + 16r800) >>> 12
+]
 
-	^ self twosComplementOf: aValue inBits: 64
+{ #category : 'helpers - size sign' }
+CogOutOfLineLiteralsRiscV64Compiler >> low12BitsOf: offset [
+	"Answer the low 12 bits of offset sign-extended, i.e. what addi/ld/jalr add after auipc/lui (see high20BitsOf:)"
+	<var: #offset type: #sqInt>
+	^ self signExtendValue: (offset bitAnd: 16rFFF) forSize: 12
 ]
 
 { #category : 'helpers - size sign' }
@@ -1164,7 +1176,7 @@ CogOutOfLineLiteralsRiscV64Compiler >> twosComplementOf: aValue inBits: aSize [
 
 { #category : 'testing' }
 CogOutOfLineLiteralsRiscV64Compiler >> isInPCRelativeRange: offset [
-	"Answer if offset can be reached by auipc + a sign-extended 12-bit immediate (addi/ld/jalr):
+	"Answer if offset can be reached by auipc + a 12-bit signed immediate (see high20BitsOf:):
 	 -2^31 - 2^11 <= offset < 2^31 - 2^11"
 	<var: #offset type: #sqInt>
 	^ self value: offset + 16r800 fitsSigned: 32
@@ -1614,11 +1626,8 @@ CogOutOfLineLiteralsRiscV64Compiler >> concretizeBrLongEqualRR [
 	leftReg := operands at: 1.
 	rightReg := operands at: 2.
 
-	"This mangling avoid having to bias the 11th bit in case of a negative value
-	 it is also used in loadImmediate:inRegister:"
-	"https://github.com/llvm/llvm-project/blob/4c3d916c4bd2a392101c74dd270bd1e6a4fec15b/llvm/lib/Target/RISCV/MCTargetDesc/RISCVMatInt.cpp"
-	offsetLow := self signExtendValue: (offset bitAnd: 16rFFF) forSize: 12.
-	offsetHigh := ((self computeSignedValue64Bits: offset) + 16r800) >>> 12.
+	offsetLow := self low12BitsOf: offset.
+	offsetHigh := self high20BitsOf: offset.
 	
 
 	"Branch over the jump if the condition is not met"
@@ -1638,11 +1647,8 @@ CogOutOfLineLiteralsRiscV64Compiler >> concretizeBrLongNotEqualRR [
 	leftReg := operands at: 1.
 	rightReg := operands at: 2.
 
-	"This mangling avoid having to bias the 11th bit in case of a negative value
-	 it is also used in loadImmediate:inRegister:"
-	"https://github.com/llvm/llvm-project/blob/4c3d916c4bd2a392101c74dd270bd1e6a4fec15b/llvm/lib/Target/RISCV/MCTargetDesc/RISCVMatInt.cpp"
-	offsetLow := self signExtendValue: (offset bitAnd: 16rFFF) forSize: 12.
-	offsetHigh := ((self computeSignedValue64Bits: offset) + 16r800) >>> 12.
+	offsetLow := self low12BitsOf: offset.
+	offsetHigh := self high20BitsOf: offset.
 	
 
 	"Branch over the jump if the condition is not met"
@@ -1735,11 +1741,8 @@ CogOutOfLineLiteralsRiscV64Compiler >> concretizeCall [
    offset := (operands at: 0) signedIntFromLong - address signedIntFromLong.
 	self assert: (self isInLongJumpCallRange: offset).
 	
-	"This mangling avoid having to bias the 11th bit in case of a negative value
-	 it is also used in loadImmediate:inRegister:"
-	"https://github.com/llvm/llvm-project/blob/4c3d916c4bd2a392101c74dd270bd1e6a4fec15b/llvm/lib/Target/RISCV/MCTargetDesc/RISCVMatInt.cpp"
-	offsetLow := self signExtendValue: (offset bitAnd: 16rFFF) forSize: 12.
-	offsetHigh := ((self computeSignedValue64Bits: offset) + 16r800) >>> 12.
+	offsetLow := self low12BitsOf: offset.
+	offsetHigh := self high20BitsOf: offset.
 	
 	self machineCodeAt: 0 put: (self addUpperImmediateToPC: offsetHigh toRegister: ConcreteIPReg).
 	self machineCodeAt: 4 put: (self jumpTo: ConcreteIPReg withOffset: offsetLow andStorePreviousPCPlus4in: LR).
@@ -2098,11 +2101,8 @@ CogOutOfLineLiteralsRiscV64Compiler >> concretizeJumpLong [
    offset := (operands at: 0) signedIntFromLong - address signedIntFromLong.
 	self assert: (self isInLongJumpCallRange: offset).
 	
-	"This mangling avoid having to bias the 11th bit in case of a negative value
-	 it is also used in loadImmediate:inRegister:"
-	"https://github.com/llvm/llvm-project/blob/4c3d916c4bd2a392101c74dd270bd1e6a4fec15b/llvm/lib/Target/RISCV/MCTargetDesc/RISCVMatInt.cpp"
-	offsetLow := self signExtendValue: (offset bitAnd: 16rFFF) forSize: 12.
-	offsetHigh := ((self computeSignedValue64Bits: offset) + 16r800) >>> 12.
+	offsetLow := self low12BitsOf: offset.
+	offsetHigh := self high20BitsOf: offset.
 	
 	self machineCodeAt: 0 put: (self addUpperImmediateToPC: offsetHigh toRegister: ConcreteIPReg).
 	self machineCodeAt: 4 put: (self jumpTo: ConcreteIPReg withOffset: offsetLow andStorePreviousPCPlus4in: X0).
@@ -5116,12 +5116,11 @@ CogOutOfLineLiteralsRiscV64Compiler >> loadCwInto: destReg [
 	(cogit addressIsInCurrentCompilation: operand)
 		ifTrue: [ 
 			distance := operand signedIntFromLong - address signedIntFromLong.
-			"Check if the absolute distance fits in 12 bits or produce a way to split the distance between the two instructions
+			"Split the distance between auipc and addi, see high20BitsOf:
 		    https://forums.sifive.com/t/bit-11-of-jalr-sign-extened-for-call-auipc-jalr/1950"
 			self assert: (self isInPCRelativeRange: distance).
-			"https://github.com/llvm/llvm-project/blob/4c3d916c4bd2a392101c74dd270bd1e6a4fec15b/llvm/lib/Target/RISCV/MCTargetDesc/RISCVMatInt.cpp"
-			offsetLow := self signExtendValue: (distance bitAnd: 16rFFF) forSize: 12.
-			offsetHigh := ((self computeSignedValue64Bits: distance) + 16r800) >>> 12.
+			offsetLow := self low12BitsOf: distance.
+			offsetHigh := self high20BitsOf: distance.
 			self machineCodeAt: 0 put: (self addUpperImmediateToPC: offsetHigh toRegister: destReg).
 			self machineCodeAt: 4 put: (self addImmediate: offsetLow toRegister: destReg inRegister: destReg).
 			^ machineCodeSize := 8 ].
@@ -5823,11 +5822,8 @@ CogOutOfLineLiteralsRiscV64Compiler >> rewriteCallAt: callSiteReturnAddress targ
 	self assert: (self instructionIsAUIPC: (self instructionBeforeAddress: callSiteReturnAddress - 4)).
 	self assert: (self instructionIsJALR: (self instructionBeforeAddress: callSiteReturnAddress)).
 	"Need to modify the whole instructions -> auipc + jalr"
-	"This mangling avoid having to bias the 11th bit in case of a negative value
-	 it is also used in loadImmediate:inRegister:"
-	"https://github.com/llvm/llvm-project/blob/4c3d916c4bd2a392101c74dd270bd1e6a4fec15b/llvm/lib/Target/RISCV/MCTargetDesc/RISCVMatInt.cpp"
-	offsetLow := self signExtendValue: (callDistance bitAnd: 16rFFF) forSize: 12.
-	offsetHigh := ((self computeSignedValue64Bits: callDistance) + 16r800) >>> 12.
+	offsetLow := self low12BitsOf: callDistance.
+	offsetHigh := self high20BitsOf: callDistance.
 
 	"auipc"
 	objectMemory
@@ -5959,11 +5955,8 @@ CogOutOfLineLiteralsRiscV64Compiler >> rewriteJumpLongAt: jumpReturnAddress targ
 	self assert: (self instructionIsJALR: instr).
 	"Need to modify the whole instructions -> auipc + jalr"
 	
-	"This mangling avoid having to bias the 11th bit in case of a negative value
-	 it is also used in loadImmediate:inRegister:"
-	"https://github.com/llvm/llvm-project/blob/4c3d916c4bd2a392101c74dd270bd1e6a4fec15b/llvm/lib/Target/RISCV/MCTargetDesc/RISCVMatInt.cpp"
-	offsetLow := self signExtendValue: (jumpDistance bitAnd: 16rFFF) forSize: 12.
-	offsetHigh := ((self computeSignedValue64Bits: jumpDistance) + 16r800) >>> 12.
+	offsetLow := self low12BitsOf: jumpDistance.
+	offsetHigh := self high20BitsOf: jumpDistance.
 
 	"auipc"
 	objectMemory
@@ -6301,7 +6294,10 @@ CogOutOfLineLiteralsRiscV64Compiler >> shiftRightValueInRegister: sourceReg1 byS
 { #category : 'machine code instruction' }
 CogOutOfLineLiteralsRiscV64Compiler >> signExtendValue: value forSize: size [
 
-	| mask bitMask signMask |
+	<var: #value type: #sqInt>
+	<var: #mask type: #sqInt>
+	<var: #signMask type: #sqInt>
+	| mask signMask |
 	"Reverse two's complement"
 	signMask := 1 << (size - 1).
 	mask := 1 << size - 1.
