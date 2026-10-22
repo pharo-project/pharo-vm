@@ -5672,11 +5672,8 @@ CogOutOfLineLiteralsRiscV64Compiler >> pcRelativeAddressAt: instrAddress [
 	self assert: (self instructionIsAUIPC: instAUIPC).
 	self assert: (self instructionIsLD: instLD).
 	"Each offset is sign-extended then added"
-	offsetAUIPC := self twosComplementOf: (instAUIPC >> 12 bitAnd: 16rfffff) << 12 inBits: 32. "20 upper bits"
-	offsetLD := self twosComplementOf: (instLD >> 20 bitAnd: 16rfff) inBits: 32. "12 lower bits"
-	"((offset allMask: (1 << 12))
-						   ifTrue: [offset negated]
-							ifFalse: [offset])"
+	offsetAUIPC := self signExtendValue: (instAUIPC >> 12 bitAnd: 16rfffff) << 12 forSize: 32. "20 upper bits"
+	offsetLD := self signExtendValue: (instLD >> 20 bitAnd: 16rfff) forSize: 12. "12 lower bits"
 	^instrAddress + offsetAUIPC + offsetLD
 ]
 

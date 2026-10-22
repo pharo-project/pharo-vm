@@ -336,3 +336,34 @@ VMRISCV64SpecificEncodingTest >> testFarConditionalJumpUsesLongForm [
 
 	self assert: jump machineCodeSize equals: 8
 ]
+
+{ #category : 'tests - pc-relative addresses' }
+VMRISCV64SpecificEncodingTest >> doTestPCRelativeAddressWithAUIPCField: high20 offset: low12 [
+	"Write auipc t0, high20 + ld t0, low12(t0) and check pcRelativeAddressAt: decodes the address the hardware computes:
+	 both immediates are sign-extended"
+
+	| address |
+	address := cogInitialAddress + 16r100.
+	memory long32At: address put: (cogit backend addUpperImmediateToPC: high20 toRegister: 5).
+	memory long32At: address + 4 put: (cogit backend loadDoubleWordFromAddressInRegister: 5 withOffset: low12 toRegister: 5).
+
+	self assert: (cogit backend pcRelativeAddressAt: address) equals: address + (high20 << 12) + low12
+]
+
+{ #category : 'tests - pc-relative addresses' }
+VMRISCV64SpecificEncodingTest >> testPCRelativeAddressWithNegativeAUIPCField [
+
+	self doTestPCRelativeAddressWithAUIPCField: -1 offset: 16
+]
+
+{ #category : 'tests - pc-relative addresses' }
+VMRISCV64SpecificEncodingTest >> testPCRelativeAddressWithNegativeOffset [
+
+	self doTestPCRelativeAddressWithAUIPCField: 0 offset: -8
+]
+
+{ #category : 'tests - pc-relative addresses' }
+VMRISCV64SpecificEncodingTest >> testPCRelativeAddressWithPositiveFieldAndOffset [
+
+	self doTestPCRelativeAddressWithAUIPCField: 1 offset: 16r7F8
+]
