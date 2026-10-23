@@ -1,5 +1,11 @@
 # Change log
 
+## v10.3.12
+* [P10] - Fix/all instances primitive memory corruption by @tesonep in https://github.com/pharo-project/pharo-vm/pull/1116
+
+
+**Full Changelog**: https://github.com/pharo-project/pharo-vm/compare/v10.3.11...v10.3.12
+
 ## v10.3.11
 
 * Backport #1092: Skip adding handles with empty mask to epoll by @daniels220 in https://github.com/pharo-project/pharo-vm/pull/1103
