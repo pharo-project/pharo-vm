@@ -317,6 +317,39 @@ VMJittedPrimitiveAtTest >> testPrimitiveAt64bitIndexableWithSmallIntegerShouldRe
 		equals: (memory integerObjectOf: 17)
 ]
 
+{ #category : 'tests - 64bit indexable' }
+VMJittedPrimitiveAtTest >> testPrimitiveIntegerAt64bitIndexableSmallIntegerBoundaryValues [
+
+	| integerArray codeAddress |
+	self wordSize ~= 8 ifTrue: [ ^ self skip ].
+	codeAddress := self compile: [
+		cogit objectRepresentation genPrimitiveAtSigned: true.
+		stop := cogit Stop ] bytecodes: 10.
+	integerArray := self new64BitIndexableOfSize: 1.
+	#(
+		-16r8000000000000000 -16r2000000000000001
+		-16r2000000000000000 -16r1000000000000001
+		-16r1000000000000000 16r0FFFFFFFFFFFFFFF
+		16r1000000000000000 16r1FFFFFFFFFFFFFFF
+		16r2000000000000000 16r7FFFFFFFFFFFFFFF
+	) do: [ :expectedValue |
+		memory
+			storeLong64: 0
+			ofObject: integerArray
+			withValue: (expectedValue twoComplementOfBitSize: 64).
+		self
+			prepareStackForSendReceiver: integerArray
+			arguments: { memory integerObjectOf: 1 }.
+		machineSimulator baseRegisterValue: cogit varBaseAddress.
+		self runUntilReturnFrom: codeAddress.
+		self
+			assert: (memory signed64BitValueOf: machineSimulator receiverRegisterValue)
+			equals: expectedValue.
+		self
+			assert: (memory isIntegerObject: machineSimulator receiverRegisterValue)
+			equals: (memory isIntegerValue: expectedValue) ]
+]
+
 { #category : 'tests - 8bit indexable' }
 VMJittedPrimitiveAtTest >> testPrimitiveAt8bitIndexableFifthPaddingOutOfBoundsShouldFallThrough [
 

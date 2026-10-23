@@ -481,6 +481,29 @@ VMJittedByteArrayAccessPrimitiveTest >> testPrimitiveLoadInt64LoadsPositiveValue
 ]
 
 { #category : 'tests - load integers' }
+VMJittedByteArrayAccessPrimitiveTest >> testPrimitiveLoadInt64LoadsSmallIntegerBoundaryValues [
+
+	self genPrimitive: #LoadInt64.
+	#(
+		-16r8000000000000000 -16r2000000000000001
+		-16r2000000000000000 -16r1000000000000001
+		-16r1000000000000000 16r0FFFFFFFFFFFFFFF
+		16r1000000000000000 16r1FFFFFFFFFFFFFFF
+		16r2000000000000000 16r7FFFFFFFFFFFFFFF
+	) do: [ :expectedValue |
+		self newReceiverWithValue: expectedValue ofBitSize: 64.
+		self
+			executePrimitiveWithReceiver: receiver
+			withArgument: (memory integerObjectOf: 0).
+		self
+			assert: (memory signed64BitValueOf: machineSimulator receiverRegisterValue)
+			equals: expectedValue.
+		self
+			assert: (memory isIntegerObject: machineSimulator receiverRegisterValue)
+			equals: (memory isIntegerValue: expectedValue) ]
+]
+
+{ #category : 'tests - load integers' }
 VMJittedByteArrayAccessPrimitiveTest >> testPrimitiveLoadInt8LoadsNegativeValue [
 
 	| expectedValue |
