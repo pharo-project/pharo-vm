@@ -1,5 +1,15 @@
 # Change log
 
+## v12.0.6-beta
+
+* Just cleaning Bock into Block by @Ducasse in https://github.com/pharo-project/pharo-vm/pull/1119
+* Handling the case where the libraries have symlinks by @tesonep in https://github.com/pharo-project/pharo-vm/pull/1117
+* Adding the dependency to libarchive for OSX by @tesonep in https://github.com/pharo-project/pharo-vm/pull/1109
+* Fix/all instances primitive memory corruption by @tesonep in https://github.com/pharo-project/pharo-vm/pull/1115
+
+
+**Full Changelog**: https://github.com/pharo-project/pharo-vm/compare/v12.0.5-beta...v12.0.6-beta
+
 ## v12.0.5-beta
 * Minimal ARM64 VA39 support, enabling the VM to run on ARM Chromebooks by @takano32 in https://github.com/pharo-project/pharo-vm/pull/1079
 * Relocate codeZone/newSpace/stackPages above the macOS dyld shared cache by @dweinstein in https://github.com/pharo-project/pharo-vm/pull/1078
