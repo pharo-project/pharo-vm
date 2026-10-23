@@ -117,6 +117,41 @@ VMMemoryMapTest >> testNextPowerOfTwoAfter [
 	self assert: (memoryMap nextPowerOfTwoAfter: 1) equals: 2
 ]
 
+{ #category : 'asserting' }
+VMMemoryMapTest >> assertOldSpaceFallbackIsClassifiedCorrectlyAtBase: aBase [
+
+	"Feed the map an oldSpace obtained at aBase (as the platform allocator's
+	 fallback would on a kernel whose user address space cannot reach the
+	 configured base) and confirm the recomputed masks still discriminate all
+	 spaces. aBase is 2 raisedTo: (vaBits - 1), the fallback base the C
+	 allocator computes as userVaLimit >> 1 for a vaBits-bit address space."
+
+	memoryMap newSpaceStart: configuration newSpaceInitialAddress.
+	memoryMap newSpaceEnd:
+		configuration newSpaceInitialAddress + (64 * 1024 * 1024).
+	memoryMap oldSpaceStart: aBase.
+	memoryMap setOldSpaceEnd: aBase + (512 * 1024 * 1024).
+	memoryMap calculateMaskToUse.
+	self assertSpacesAreClassifiedCorrectly
+]
+
+{ #category : 'tests' }
+VMMemoryMapTest >> testOldSpaceFallbackIsClassifiedCorrectlyForAnyAddressSpaceSize [
+
+	"The fallback is no longer VA39-specific: the C allocator measures the
+	 user address-space limit and slides a window through its upper half
+	 (base = limit >> 1). Whatever the address-space size, the masks
+	 recomputed from the obtained oldSpace base must discriminate all spaces.
+	 Bases below cover 36/39/40/42/47-bit user address spaces; each is
+	 (2 raisedTo: vaBits - 1), i.e. what the C code passes as the fallback
+	 base for that limit."
+
+	#(16r800000000 16r4000000000 16r8000000000 16r20000000000 16r400000000000)
+		do: [ :fallbackBase |
+			self setUp.
+			self assertOldSpaceFallbackIsClassifiedCorrectlyAtBase: fallbackBase ]
+]
+
 { #category : 'tests' }
 VMMemoryMapTest >> testOldSpaceAllocatedAtVA39FallbackAddressIsClassifiedCorrectly [
 

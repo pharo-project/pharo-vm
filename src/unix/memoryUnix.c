@@ -27,13 +27,39 @@ sqInt uxMemoryExtraBytesLeft(sqInt includingSwap);
 #endif
 
 /* The 64-bit memory map assumes a 48-bit user virtual address space and asks
- * for oldSpace at 2^40 and permSpace at 2^41. Kernels with a smaller VA (e.g.
- * aarch64 built with CONFIG_ARM64_VA_BITS_39, user space < 2^39) cannot map
- * those addresses, so we retry inside the VA39 user space. VMMemoryMap
+ * for oldSpace at 2^40 and permSpace at 2^41. Kernels with a smaller user
+ * address space (e.g. aarch64 built with CONFIG_ARM64_VA_BITS_39, user space
+ * < 2^39) cannot map those addresses, so when the configured base lies beyond
+ * the measured limit we retry inside the reachable space. VMMemoryMap
  * recomputes the space masks from the addresses actually obtained. */
-#define VA39_ADDRESS_LIMIT	((usqInt)0x8000000000ULL)
-#define VA39_FALLBACK_BASE	((usqInt)0x4000000000ULL)
-#define VA39_FALLBACK_LIMIT	((usqInt)0x7F00000000ULL)
+
+/* Measure the user address-space limit by probing one-page mappings at
+ * descending powers of two. With MAP_FIXED_NOREPLACE both an exact placement
+ * and EEXIST prove the address is reachable (EEXIST means valid but occupied).
+ * Where the flag is unavailable (#defined to 0 above: Linux < 4.17,
+ * non-Linux) the probe degrades to plain hinting: only an exact placement
+ * proves reachability, so an occupied candidate can under-estimate the limit
+ * by one step - safe, the fallback window just sits lower. */
+static usqInt
+findUserAddressSpaceLimit(void)
+{
+	int bits;
+	long probePageSize = getpagesize();
+
+	for (bits = 56; bits >= 32; bits--) {
+		void *hint = (void *)(1ULL << (bits - 1));
+		void *probe = mmap(hint, probePageSize, PROT_NONE,
+			MAP_ANON | MAP_PRIVATE | MAP_FIXED_NOREPLACE, -1, 0);
+		if (probe != MAP_FAILED) {
+			munmap(probe, probePageSize);
+			if (probe == hint)
+				return (usqInt)(1ULL << bits);
+		}
+		else if (MAP_FIXED_NOREPLACE && errno == EEXIST)
+			return (usqInt)(1ULL << bits);
+	}
+	return 0; /* could not measure; caller skips the fallback */
+}
 
 #if __OpenBSD__
 #define MAP_FLAGS	(MAP_ANON | MAP_PRIVATE | MAP_STACK)
@@ -193,21 +219,27 @@ sqAllocateMemory(usqInt minHeapSize, usqInt desiredHeapSize, usqInt desiredBaseA
 
 #ifndef __APPLE__
 	/* Fallback for kernels whose user address space cannot reach the
-	 * configured base (see VA39_* above). Slide a MAP_FIXED_NOREPLACE window
-	 * up through the VA39 user space; as a last resort let the kernel pick. */
-	if (!heap && desiredBaseAddress >= VA39_ADDRESS_LIMIT) {
-		usqInt fallbackBaseAddress = VA39_FALLBACK_BASE;
-		heapLimit = initialHeapLimit;
-		while ((!heap) && (heapLimit >= minHeapSize)) {
-			if (MAP_FAILED == (heap = mmap((void*) fallbackBaseAddress, heapLimit, MAP_PROT, MAP_FLAGS | (fallbackBaseAddress ? MAP_FIXED_NOREPLACE : 0), devZero, 0))) {
-				heap = 0;
-				if (fallbackBaseAddress) {
-					fallbackBaseAddress = valign(fallbackBaseAddress + initialHeapLimit);
-					if (fallbackBaseAddress >= VA39_FALLBACK_LIMIT) {
-						fallbackBaseAddress = 0;
+	 * configured base. Slide a MAP_FIXED_NOREPLACE window up through the upper
+	 * half of the measured address space; as a last resort let the kernel
+	 * pick. On a VA39 kernel this computes exactly the former VA39 constants:
+	 * base 0x4000000000, limit 0x7F00000000. */
+	if (!heap) {
+		usqInt userVaLimit = findUserAddressSpaceLimit();
+		if (userVaLimit && desiredBaseAddress >= userVaLimit) {
+			usqInt fallbackBaseAddress = userVaLimit >> 1;
+			usqInt fallbackWindowLimit = userVaLimit - (userVaLimit >> 7);
+			heapLimit = initialHeapLimit;
+			while ((!heap) && (heapLimit >= minHeapSize)) {
+				if (MAP_FAILED == (heap = mmap((void*) fallbackBaseAddress, heapLimit, MAP_PROT, MAP_FLAGS | (fallbackBaseAddress ? MAP_FIXED_NOREPLACE : 0), devZero, 0))) {
+					heap = 0;
+					if (fallbackBaseAddress) {
+						fallbackBaseAddress = valign(fallbackBaseAddress + initialHeapLimit);
+						if (fallbackBaseAddress >= fallbackWindowLimit) {
+							fallbackBaseAddress = 0;
+						}
+					} else {
+						heapLimit = valign(heapLimit / 4 * 3);
 					}
-				} else {
-					heapLimit = valign(heapLimit / 4 * 3);
 				}
 			}
 		}
