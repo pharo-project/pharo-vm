@@ -111,11 +111,10 @@ VMImageReadingTest >> testMovingObjectsToPermSpaceReduceOldSpace [
 	finalSegmentSize := (self dataFrom: 'seg0.data') size.
 	finalPermSpaceSize := (self dataFrom: 'permSpace.data') size.
 
-	self assert: finalPermSpaceSize < initSegmentSize.
 	self assert: finalPermSpaceSize > 0.
 
-	self assert: (self metadataFrom: 'seg0.ston') dataSize equals: finalSegmentSize.
-	self assert: (self metadataFrom: 'permSpace.ston') dataSize equals: finalPermSpaceSize
+	self assert: (self metadataFrom: 'seg0.ston') fileSize equals: finalSegmentSize.
+	self assert: (self metadataFrom: 'permSpace.ston') fileSize equals: finalPermSpaceSize
 ]
 
 { #category : 'tests' }

@@ -135,9 +135,7 @@ AbstractComposedImageAccess >> permSpaceDataFileInImage: imageFileName [
 	<var: #buffer declareC: 'char buffer[255]'>
 
 	| buffer |
-		
-	self simulationOnly: [ buffer := nil ].
-	
+			
 	^ self permSpaceFileName: 'permSpace.data' inImage: imageFileName into: buffer bufferSize: 255
 ]
 
