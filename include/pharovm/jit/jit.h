@@ -11,7 +11,7 @@ static inline BOOL flushICacheFromto(char* startAddress,char* endAddress) {
 	return FlushInstructionCache(GetCurrentProcess(), startAddress, endAddress - startAddress);
 }
 
-#elif defined(__arm__)|| defined(__aarch64__)
+#elif defined(__arm__)|| defined(__aarch64__) || defined(__riscv)
 
 // Flush the instruction cache on Linux systems using __clear_cache
 #define flushICacheFromto(startAddress,endAddress) __clear_cache((char*) startAddress, (char*) (endAddress ))
