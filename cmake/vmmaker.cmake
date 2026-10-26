@@ -105,6 +105,7 @@ if(GENERATE_SOURCES)
 
             URL ${VM_URL}
             URL_HASH ${VM_URL_HASH}
+            BUILD_BYPRODUCTS ${VMMAKER_VM}
 	    BUILD_COMMAND       ""
 	    UPDATE_COMMAND      ""
 	    CONFIGURE_COMMAND   ""
