@@ -6378,6 +6378,25 @@ SlangBasicTranslationTest >> testSendWordSize [
 	self assert: translation equals: 'BytesPerWord'
 ]
 
+{ #category : 'tests-structs' }
+SlangBasicTranslationTest >> testStructCastToPointer [
+
+	| translation tMethod |
+	tMethod := self getTMethodFrom: #methodAccessStructPointer.
+	translation := self translate: tMethod.
+	self
+		assert: translation
+		equals: '/* SlangBasicTranslationTestClass>>#methodAccessStructPointer */
+static Struct *
+methodAccessStructPointer(void)
+{
+	Struct _t;
+
+	return somethingWithStructPointer(&_t);
+}
+'
+]
+
 { #category : 'tests-builtins' }
 SlangBasicTranslationTest >> testStructFieldIsRenamedWithReservedWord [
 	"Tests if the struct field is renamed when it's a reserved word"

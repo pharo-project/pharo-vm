@@ -78,6 +78,13 @@ SlangClass class >> typeForSelf [
 ]
 
 { #category : 'translation support' }
+SlangClass >> addressOf: anObject [
+	<doNotGenerate>
+	"Translates into &anObject in C."
+	^anObject
+]
+
+{ #category : 'translation support' }
 SlangClass >> cCall: function [
 	"Support for Smalltalk-to-C translation.
 	 For translation only; fail when running in Smalltalk.

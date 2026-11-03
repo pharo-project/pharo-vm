@@ -2477,11 +2477,6 @@ StackInterpreterPrimitives >> primitivePerform [
 	self pop: 1.
 	lookupClassTag := objectMemory fetchClassTagOf: newReceiver.
 	self sendBreakpoint: messageSelector receiver: newReceiver.
-	self printSends ifTrue: [ 
-		self
-			printActivationNameForSelector: messageSelector
-			startClass: (objectMemory classForClassTag: lookupClassTag);
-			cr ].
 	self findNewMethodInClassTag: lookupClassTag.
 
 	"Only test CompiledMethods for argument count - other objects will have to take their chances"

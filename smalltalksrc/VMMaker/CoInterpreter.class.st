@@ -101,8 +101,6 @@ Class {
 		'MinBackwardJumpCountForCompile',
 		'PrimTraceLogSize',
 		'RumpCStackSize',
-		'TraceBlockActivation',
-		'TraceBlockCreation',
 		'TraceBufferSize',
 		'TraceCodeCompaction',
 		'TraceContextSwitch',
@@ -113,9 +111,7 @@ Class {
 		'TracePrimitiveFailure',
 		'TracePrimitiveRetry',
 		'TraceSources',
-		'TraceStackOverflow',
-		'TraceVMCallback',
-		'TraceVMCallbackReturn'
+		'TraceStackOverflow'
 	],
 	#pools : [
 		'CogMethodConstants',
@@ -285,13 +281,9 @@ CoInterpreter class >> initializeMiscConstants [
 	PrimTraceLogSize := 256. "Room for 256 selectors.  Must be 256 because we use a byte to hold the index"
 	TraceBufferSize := 256 * 3. "Room for 256 events"
 	TraceContextSwitch := self objectMemoryClass basicNew integerObjectOf: 1.
-	TraceBlockActivation := self objectMemoryClass basicNew integerObjectOf: 2.
-	TraceBlockCreation := self objectMemoryClass basicNew integerObjectOf: 3.
 	TraceIncrementalGC := self objectMemoryClass basicNew integerObjectOf: 4.
 	TraceFullGC := self objectMemoryClass basicNew integerObjectOf: 5.
 	TraceCodeCompaction := self objectMemoryClass basicNew integerObjectOf: 6.
-	TraceVMCallback := self objectMemoryClass basicNew integerObjectOf: 11.
-	TraceVMCallbackReturn := self objectMemoryClass basicNew integerObjectOf: 12.
 	TraceStackOverflow := self objectMemoryClass basicNew integerObjectOf: 13.
 	TracePrimitiveFailure := self objectMemoryClass basicNew integerObjectOf: 14.
 	TracePrimitiveRetry := self objectMemoryClass basicNew integerObjectOf: 15.
@@ -315,7 +307,6 @@ CoInterpreter class >> initializePrimitiveTable [
 		[:pidx| self assert: (PrimitiveTable at: pidx + 1) = #primitiveFail].
 	self assert: (PrimitiveTable at: 215 + 1) = #primitiveFlushCacheByMethod.
 	PrimitiveTable
-		at: 253 + 1 put: #primitiveCollectCogCodeConstituents;
 		at: 215 + 1 put: #primitiveVoidVMStateForMethod;
 		at: 216 + 1 put: #primitiveMethodXray;
 		at: 217 + 1 put: #primitiveMethodProfilingData
@@ -1100,8 +1091,6 @@ CoInterpreter >> ceCheckAndMaybeRetryPrimitive: primIndex [
 CoInterpreter >> ceCheckForInterrupts [
 	<api>
 	| switched |
-	self cCode: [] inSmalltalk:
-		[self maybeCheckStackDepth: 0 sp: stackPointer pc: instructionPointer].
 	switched := self checkForEventsMayContextSwitch: true.
 	self returnToExecutive: false postContextSwitch: switched
 ]
@@ -1440,7 +1429,6 @@ CoInterpreter >> ceSend: maybeForwardedSelector above: methodClass to: receiver 
 	<api>
 	<story: #pic>
 	<inline: false>
-	<option: #BytecodeSetHasDirectedSuperSend>
 	| classTag classObj |
 	self assert: (objectMemory addressCouldBeOop: receiver).
 
@@ -1467,7 +1455,6 @@ CoInterpreter >> ceSend: selector aboveClassBinding: methodClassBinding to: rcvr
 	                args
 	     head sp -> sender return pc"
 	<api>
-	<option: #BytecodeSetHasDirectedSuperSend>
 	self ceSend: selector
 		above: (self fetchPointer: ValueIndex
 					ofObject: (objectMemory followMaybeForwarded: methodClassBinding))
@@ -1724,48 +1711,6 @@ CoInterpreter >> ceStackOverflow: contextSwitchIfNotNil [
 	self returnToExecutive: false postContextSwitch: switched.
 	self error: 'should not be reached'
 
-]
-
-{ #category : 'debug support' }
-CoInterpreter >> ceTraceBlockActivation [
-	<api>
-	cogit recordBlockTrace ifTrue:
-		[self recordTrace: TraceBlockActivation
-			thing: (self mframeHomeMethod: framePointer) methodObject
-			source: TraceIsFromMachineCode.
-		 cogit printOnTrace ifTrue:
-			[self printActivationNameFor: (self mframeHomeMethod: framePointer) methodObject
-				receiver: (self frameReceiver: framePointer)
-				isBlock: true
-				firstTemporary: nil.
-			 self cr]]
-]
-
-{ #category : 'debug support' }
-CoInterpreter >> ceTraceLinkedSend: theReceiver [
-	| cogMethod |
-	<api>
-	<var: #cogMethod type: #'CogMethod *'>
-	cogMethod := self cCoerceSimple: (self stackTop - cogit traceLinkedSendOffset)
-						to: #'CogMethod *'.
-	self cCode: [] inSmalltalk:
-		[cogit checkStackDepthOnSend ifTrue:
-			[self maybeCheckStackDepth: (cogMethod cmNumArgs > cogit numRegArgs
-											ifTrue: [cogMethod cmNumArgs + 1]
-											ifFalse: [0])
-				sp: stackPointer + objectMemory wordSize
-				pc: (self stackValue: 1)]].
-	"cogit recordSendTrace ifTrue: is implicit; wouldn't compile the call otherwise."
-	self recordTrace: (objectMemory fetchClassOf: theReceiver)
-		thing: cogMethod selector
-		source: TraceIsFromMachineCode.
-	cogit printOnTrace ifTrue:
-		[self printActivationNameFor: cogMethod methodObject
-			receiver: theReceiver
-			isBlock: false
-			firstTemporary: (self cCode: [nil] inSmalltalk: [0]);
-			cr].
-	self sendBreakpoint: cogMethod selector receiver: theReceiver
 ]
 
 { #category : 'trampolines' }
@@ -2143,18 +2088,6 @@ CoInterpreter >> divorceSomeMachineCodeFramesWithMethod: cogMethod [
 		(self divorceAMachineCodeFrameWithCogMethod: cogMethod in: aPage)
 			ifTrue: [ divorcedSome := true ] ].
 	^ divorcedSome
-]
-
-{ #category : 'send bytecodes' }
-CoInterpreter >> doRecordSendTrace [
-
-	<inline: true>
-	cogit recordSendTrace ifTrue: [
-		self
-			recordTrace: (objectMemory classForClassTag: lkupClassTag)
-			thing: messageSelector
-			source: TraceIsFromInterpreter.
-		super doRecordSendTrace ]
 ]
 
 { #category : 'debug support' }
@@ -3604,16 +3537,6 @@ CoInterpreter >> maybeReturnToMachineCodeFrame [
 		 instructionPointer := self pointerForOop: (self iframeSavedIP: framePointer) ]
 ]
 
-{ #category : 'stack bytecodes' }
-CoInterpreter >> maybeTraceBlockCreation: newClosure [
-
-	cogit recordSendTrace ifTrue: [
-		self
-			recordTrace: TraceBlockCreation
-			thing: newClosure
-			source: TraceIsFromInterpreter ]
-]
-
 { #category : 'debug support' }
 CoInterpreter >> maybeTraceStackOverflow [
 	cogit recordOverflowTrace ifTrue:
@@ -4329,20 +4252,12 @@ CoInterpreter >> printLogEntryAt: i [
 				[self print: 'stack overflow'].
 			 intOrClass = TraceContextSwitch ifTrue:
 				[self print: 'context switch from '; printHex: selectorMethodOrProcess].
-			 intOrClass = TraceBlockActivation ifTrue:
-				[self print: ' [] in '; printHex: selectorMethodOrProcess].
-			 intOrClass = TraceBlockCreation ifTrue:
-				[self print: 'create [] '; printHex: selectorMethodOrProcess].
 			 intOrClass = TraceIncrementalGC ifTrue:
 				[self print: 'incrementalGC'].
 			 intOrClass = TraceFullGC ifTrue:
 				[self print: 'fullGC'].
 			 intOrClass = TraceCodeCompaction ifTrue:
-				[self print: 'compactCode'].
-			 intOrClass = TraceVMCallback ifTrue:
-				[self print: 'callback'].
-			 intOrClass = TraceVMCallbackReturn ifTrue:
-				[self print: 'return from callback']]
+				[self print: 'compactCode'] ]
 		ifFalse:
 			[self space; printNameOfClass: intOrClass count: 5; print: '>>'; printStringOf: selectorMethodOrProcess].
 	source > TraceIsFromInterpreter ifTrue:
@@ -4445,12 +4360,6 @@ CoInterpreter >> printPrimLogEntryAt: i [
 			[intOrSelector = 0
 				ifTrue: [self printNum: i; print: '!!!']
 				ifFalse: [objectMemory safePrintStringOf: intOrSelector]]
-]
-
-{ #category : 'debug printing' }
-CoInterpreter >> printSends [
-	<inline: true>
-	^cogit printOnTrace
 ]
 
 { #category : 'cog jit support' }
@@ -4692,8 +4601,6 @@ CoInterpreter >> returnToMachineCodeFrame [
 		line: #__LINE__.
 	self stackTopPut: instructionPointer.
 	self push: localReturnValue.
-	self cCode: '' inSmalltalk: [ 
-		self maybeCheckStackDepth: 1 sp: stackPointer pc: instructionPointer ].
 	self callEnilopmart: #ceEnterCogCodePopReceiverReg.
 	self unreachable
 ]
