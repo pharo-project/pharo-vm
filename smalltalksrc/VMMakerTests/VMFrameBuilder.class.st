@@ -261,7 +261,7 @@ VMFrameBuilder >> pushFlags [
 { #category : 'building' }
 VMFrameBuilder >> pushFrame [
 	interpreter push: receiver.
-	
+
 	temps do: [ :oop |  interpreter push: oop ].
 ]
 
@@ -314,7 +314,7 @@ VMFrameBuilder >> setInstructionPointerBeforeFirstBytecode [
 
 	"If possible, setting IP to before the first bytecode, so it is ready for fetchNextBytecode"
 
-	(instructionPointer = 0 ) ifFalse: [ ^ self ]. 
+	(instructionPointer = 0) ifFalse: [ ^ self ]. 
 	instructionPointer := methodBuilder bytecodeAt: 0 forMethod: method.
 	interpreter instructionPointer: instructionPointer
 ]
