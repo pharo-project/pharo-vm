@@ -899,6 +899,11 @@ SpurPlanningCompactor >> updatePointersInManagerHeapEntities [
 		[firstFieldOfRememberedSet := manager fetchPointer: 0 ofObject: firstFieldOfRememberedSet].
 	self relocateObjectsInHeapEntity: manager oldRememberedSetObj from: 1 to: manager getFromOldSpaceRememberedSet rememberedSetSize - 1.
 
+	"The perm remembered set arrays are unpinned during compaction and may have moved in a
+	 previous pass. Their roots are not updated yet in this pass, so refresh the cached arrays from them."
+	manager getFromPermToOldSpaceRememberedSet relocateRememberedSet.
+	manager getFromPermToNewSpaceRememberedSet relocateRememberedSet.
+
 	"We use the mark bit to avoid duplicates... only in the remembered set"
 
 	(manager getFromPermToOldSpaceRememberedSet rememberedSetSize > 0) ifTrue:

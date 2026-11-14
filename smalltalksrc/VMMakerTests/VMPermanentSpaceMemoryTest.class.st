@@ -1172,6 +1172,40 @@ VMPermanentSpaceMemoryTest >> testPermObjectPointingToOldSpaceIsUpdatedWhenCompa
 ]
 
 { #category : 'test - moving' }
+VMPermanentSpaceMemoryTest >> testPermObjectsPointingToOldSpaceAreUpdatedWhenRememberedSetMovesInMultiPassCompaction [
+
+	"The compactor unpins the perm-to-old remembered set during compaction, so its array
+	 can move in one pass. The next passes must not walk it through a stale pointer."
+	| permanentObjects oldObjects oldObjectHashes |
+
+	"A hole bigger than the remembered set array, then a fresh array after the hole,
+	 so the array moves down early and its old location is reused in later passes."
+	self newOldSpaceObjectWithSlots: 3000.
+	memory getFromPermToOldSpaceRememberedSet emptyRememberedSet.
+
+	"Three perm objects in the remembered set: entries after the first one are read
+	 through the array. The referenced old objects are above the array, so they move later."
+	permanentObjects := OrderedCollection new.
+	oldObjects := OrderedCollection new.
+	3 timesRepeat: [ | oldObject1 oldObject2 |
+		oldObject1 := self newOldSpaceObjectWithSlots: 1.
+		oldObject2 := self newOldSpaceObjectWithSlots: 2000.
+		memory storePointer: 0 ofObject: oldObject1 withValue: oldObject2.
+		oldObjects add: oldObject2.
+		permanentObjects add: (memory moveToPermSpace: oldObject1) ].
+	oldObjectHashes := oldObjects collect: [ :each | memory hashBitsOf: each ].
+
+	"One saved first field per pass forces a multi-pass compaction."
+	memory compactor savedFirstFieldSpaceMaxSlots: 1.
+	memory garbageCollectForSnapshot.
+
+	permanentObjects with: oldObjectHashes do: [ :permanentObject :oldObjectHash |
+		self
+			assert: (memory hashBitsOf: (memory fetchPointer: 0 ofObject: permanentObject))
+			equals: oldObjectHash ]
+]
+
+{ #category : 'test - moving' }
 VMPermanentSpaceMemoryTest >> testPermanentObjectMarksItsOldClass [
 
 	| permanentObject oldObject oldClass oldClassHash found |
