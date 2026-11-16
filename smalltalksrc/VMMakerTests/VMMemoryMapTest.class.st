@@ -138,15 +138,16 @@ VMMemoryMapTest >> assertOldSpaceFallbackIsClassifiedCorrectlyAtBase: aBase [
 { #category : 'tests' }
 VMMemoryMapTest >> testOldSpaceFallbackIsClassifiedCorrectlyForAnyAddressSpaceSize [
 
-	"The fallback is no longer VA39-specific: the C allocator measures the
-	 user address-space limit and slides a window through its upper half
-	 (base = limit >> 1). Whatever the address-space size, the masks
+	"The fallback is no longer VA39-specific: when the configured oldSpace
+	 base (2^40) exceeds the measured user address-space limit, the C
+	 allocator slides a window through the upper half of that limit
+	 (base = limit >> 1). For every reachable fallback base (35- to 40-bit
+	 user address spaces, where newSpaceEnd <= base < oldSpaceInitialAddress,
+	 including 38-bit RISC-V Sv39 and 39-bit aarch64 VA39), the masks
 	 recomputed from the obtained oldSpace base must discriminate all spaces.
-	 Bases below cover 36/39/40/42/47-bit user address spaces; each is
-	 (2 raisedTo: vaBits - 1), i.e. what the C code passes as the fallback
-	 base for that limit."
+	 Each entry below is (2 raisedTo: vaBits - 1) for vaBits in 35..40."
 
-	#(16r800000000 16r4000000000 16r8000000000 16r20000000000 16r400000000000)
+	#(16r400000000 16r800000000 16r1000000000 16r2000000000 16r4000000000 16r8000000000)
 		do: [ :fallbackBase |
 			self setUp.
 			self assertOldSpaceFallbackIsClassifiedCorrectlyAtBase: fallbackBase ]

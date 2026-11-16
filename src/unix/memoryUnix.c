@@ -43,6 +43,7 @@ sqInt uxMemoryExtraBytesLeft(sqInt includingSwap);
 static usqInt
 findUserAddressSpaceLimit(void)
 {
+#if SQ_HOST64
 	int bits;
 	long probePageSize = getpagesize();
 
@@ -58,6 +59,7 @@ findUserAddressSpaceLimit(void)
 		else if (MAP_FIXED_NOREPLACE && errno == EEXIST)
 			return (usqInt)(1ULL << bits);
 	}
+#endif
 	return 0; /* could not measure; caller skips the fallback */
 }
 
