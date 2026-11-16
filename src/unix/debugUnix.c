@@ -68,26 +68,34 @@ crashReportWatchdogExpired(int sig)
 void doReport(char* fault, ucontext_t *uap){
 	static volatile sig_atomic_t reporting = 0;
 	struct sigaction prevAlarm, watchdog;
+	sigset_t alarmMask, prevMask;
 	time_t now = time(NULL);
 	char ctimebuf[32];
 	char crashdumpFileName[PATH_MAX+1];
 	FILE *crashDumpFile;
 
 	/* A fault raised while already reporting (e.g. the report machinery itself
-	 * crashes) must not recurse into the report path again. */
+	 * crashes) must not recurse into the report path again. Use _exit rather
+	 * than abort() so re-entry from an outer abort() stays async-signal-safe. */
 	if (reporting) {
-		signal(SIGABRT, SIG_DFL);
-		abort();
+		static const char reentrantMsg[] =
+			"\nRecursive fault inside VM crash-report handler; terminating.\n";
+		(void)write(STDERR_FILENO, reentrantMsg, sizeof(reentrantMsg) - 1);
+		_exit(128 + SIGABRT);
 	}
 	reporting = 1;
 
 	/* Arm the watchdog. SIGALRM is otherwise routed to the crash handler (see
 	 * installErrorHandlers), so install a dedicated async-signal-safe handler
-	 * for the duration and restore the previous one afterwards. */
+	 * and ensure SIGALRM is unblocked for the duration, restoring both
+	 * afterwards. */
 	sigemptyset(&watchdog.sa_mask);
 	watchdog.sa_flags = 0;
 	watchdog.sa_handler = crashReportWatchdogExpired;
 	sigaction(SIGALRM, &watchdog, &prevAlarm);
+	sigemptyset(&alarmMask);
+	sigaddset(&alarmMask, SIGALRM);
+	sigprocmask(SIG_UNBLOCK, &alarmMask, &prevMask);
 	alarm(CRASH_REPORT_WATCHDOG_SECONDS);
 
 	ctime_r(&now,ctimebuf);
@@ -111,6 +119,7 @@ void doReport(char* fault, ucontext_t *uap){
 
 	/* Report finished; disarm the watchdog and restore SIGALRM. */
 	alarm(0);
+	sigprocmask(SIG_SETMASK, &prevMask, NULL);
 	sigaction(SIGALRM, &prevAlarm, NULL);
 	reporting = 0;
 }
