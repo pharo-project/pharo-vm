@@ -2137,7 +2137,6 @@ SpurMemoryManager >> allocateOldSpaceChunkOfBytes: chunkBytes [
 		[self freeChunkWithBytes: nodeBytes - chunkBytes
 				at: (self startOfObject: chunk) + chunkBytes].
 	
-	self checkFreeSpace: GCModeFreeSpace.
 	^self startOfObject: chunk
 ]
 
