@@ -61,6 +61,8 @@ VMSpurTreeAllocationStrategyForSmallTreeTest >> setUpTree [
 	childNumber := 3.
 	self assert: (memory bytesInObject: (self smallerNodeOf: parent)) equals: (sizesInBreadthFirstOrder at: childNumber * 2).
 	self assert: (memory bytesInObject: (self largerNodeOf: parent)) equals: (sizesInBreadthFirstOrder at: childNumber * 2 + 1).
+	
+	memory totalFreeOldSpace: memory totalFreeListBytes 
 ]
 
 { #category : 'accessing' }
