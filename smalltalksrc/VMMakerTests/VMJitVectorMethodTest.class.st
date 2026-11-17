@@ -20,10 +20,10 @@ VMJitVectorMethodTest >> addVector: arg1 with: arg2 intoVector: arg3 [
 
 	| tmp1 tmp2 |
 	tmp1 := 0.
-	tmp2 := 8.
+	tmp2 := 2.
 	[ tmp2 == tmp1 ] whileFalse: [
 			arg3.
-			tmp1 := tmp1 + 4 ].
+			tmp1 := tmp1 + 2 ].
 	^ arg3
 ]
 
