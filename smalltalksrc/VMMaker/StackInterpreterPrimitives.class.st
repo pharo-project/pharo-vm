@@ -2568,121 +2568,161 @@ StackInterpreterPrimitives >> primitiveSetGCSemaphore [
 { #category : 'system control primitives' }
 StackInterpreterPrimitives >> primitiveSetVMParameter: index arg: argOop [
 	"See primitiveVMParameter method comment"
-	| arg result |
 
+	| arg result |
 	"argOop read & checks; in most cases this is an integer parameter.  In some it is either an integer or a Float"
-	index 
-		caseOf: {  
-			[17] -> [((objectMemory isFloatInstance: argOop)
-			  or: [objectMemory isIntegerObject: argOop]) ifFalse:
-				[^self primitiveFailFor: PrimErrBadArgument]].
-			[55] -> [((objectMemory isFloatInstance: argOop)
-			  or: [objectMemory isIntegerObject: argOop]) ifFalse:
-				[^self primitiveFailFor: PrimErrBadArgument]].
-			[68] -> [((objectMemory isFloatInstance: argOop)
-			  or: [objectMemory isIntegerObject: argOop]) ifFalse:
-				[^self primitiveFailFor: PrimErrBadArgument]].
-			[86] -> [ 
-			(objectMemory isBooleanObject: argOop) ifFalse:
-				[^self primitiveFailFor: PrimErrBadArgument].
-			 arg := objectMemory booleanValueOf: argOop 
-			 ]}
-		otherwise: [ 
-			(objectMemory isIntegerObject: argOop) ifFalse:
-				[^self primitiveFailFor: PrimErrBadArgument].
-			 arg := objectMemory integerValueOf: argOop ].
+	index
+		caseOf: {
+				([ 17 ] -> [
+					 ((objectMemory isFloatInstance: argOop) or: [
+						  objectMemory isIntegerObject: argOop ]) ifFalse: [
+						 ^ self primitiveFailFor: PrimErrBadArgument ] ]).
+				([ 55 ] -> [
+					 ((objectMemory isFloatInstance: argOop) or: [
+						  objectMemory isIntegerObject: argOop ]) ifFalse: [
+						 ^ self primitiveFailFor: PrimErrBadArgument ] ]).
+				([ 68 ] -> [
+					 ((objectMemory isFloatInstance: argOop) or: [
+						  objectMemory isIntegerObject: argOop ]) ifFalse: [
+						 ^ self primitiveFailFor: PrimErrBadArgument ] ]).
+				([ 86 ] -> [
+					 (objectMemory isBooleanObject: argOop) ifFalse: [
+						 ^ self primitiveFailFor: PrimErrBadArgument ].
+					 arg := objectMemory booleanValueOf: argOop ]) }
+		otherwise: [
+				(objectMemory isIntegerObject: argOop) ifFalse: [
+					^ self primitiveFailFor: PrimErrBadArgument ].
+				arg := objectMemory integerValueOf: argOop ].
 
 	"assume failure, then set success for handled indices"
 	self primitiveFailFor: PrimErrBadArgument.
-	index caseOf: {
-		[5] ->	[ "Nothing?" ].
-		[6] ->	[result := objectMemory integerObjectOf: objectMemory tenuringThreshold.
-				 primFailCode := objectMemory tenuringThreshold: arg].
-		[11] ->	[arg >= 0 ifTrue:
-					[result := objectMemory integerObjectOf: objectMemory statTenures.
-					 objectMemory statTenures: arg.
-					 self initPrimCall]].
-		[12] ->	[result := objectMemory integerObjectOf: objectMemory maxSlotsForNewSpaceAlloc.
+	index
+		caseOf: {
+				([ 5 ] -> [ "Nothing?" ]).
+				([ 6 ] -> [
+					 result := objectMemory integerObjectOf:
+						           objectMemory tenuringThreshold.
+					 primFailCode := objectMemory tenuringThreshold: arg ]).
+				([ 11 ] -> [
+					 arg >= 0 ifTrue: [
+							 result := objectMemory integerObjectOf:
+								           objectMemory statTenures.
+							 objectMemory statTenures: arg.
+							 self initPrimCall ] ]).
+				([ 12 ] -> [
+					 result := objectMemory integerObjectOf:
+						           objectMemory maxSlotsForNewSpaceAlloc.
 					 objectMemory setMaxSlotsForNewSpaceAlloc: arg.
-					 self initPrimCall ]. 			
-		[17] ->	[(SistaVM and: [self isCog]) ifTrue:
-					[result := objectMemory floatObjectOf: self getCogCodeZoneThreshold.
-					 primFailCode := self setCogCodeZoneThreshold: (self noInlineLoadFloatOrIntFrom: argOop)]].
-		[23] ->	[result := objectMemory integerObjectOf: extraVMMemory.
-				 extraVMMemory := arg.
-				 self initPrimCall].
-		[24] ->	[arg > 0 ifTrue:
-					[result := objectMemory integerObjectOf: objectMemory shrinkThreshold.
-					 objectMemory shrinkThreshold: arg.
-					 self initPrimCall]].
-		[25] ->	[arg > 0 ifTrue:
-					[result := objectMemory integerObjectOf: objectMemory growHeadroom.
-					 objectMemory growHeadroom: arg.
-					 self initPrimCall]].
-		[26] ->	[arg >= 0 ifTrue: "0 turns off the heartbeat"
-					[result := objectMemory integerObjectOf: self ioHeartbeatMilliseconds.
-					 self ioSetHeartbeatMilliseconds: arg.
-					 self initPrimCall]].
-		[34] ->	[
-			arg >= 0 ifTrue: [
-				result := objectMemory positive64BitIntegerFor: objectMemory currentAllocatedBytes.
-				objectMemory setCurrentAllocatedBytesTo: arg.
-				self initPrimCall ]].
-		[43] ->	[(arg between: 0 and: 65535) ifTrue:
-					[result := objectMemory integerObjectOf: desiredNumStackPages.
-					 desiredNumStackPages := arg.
-					 self initPrimCall]].
-		[45] ->	[arg >= 0 ifTrue:
-					[result := objectMemory integerObjectOf: desiredEdenBytes.
-					 desiredEdenBytes := arg.
-					 self initPrimCall]].
-		[47] ->	[(self isCog
-				  and: [arg between: 0 and: self maxCogCodeSize]) ifTrue:
-					[result := objectMemory integerObjectOf: self getDesiredCogCodeSize.
-					 self setDesiredCogCodeSize: arg.
-					 self initPrimCall]].
-		[48] ->	[arg >= 0 ifTrue:
-					[result := objectMemory integerObjectOf: self getCogVMFlags.
-					 self initPrimCall. "i.e. setCogVMFlags: can fail"
-					 self setCogVMFlags: arg]].
-		[49] ->	[(arg between: 0 and: 65535) ifTrue:
-					[result := objectMemory integerObjectOf: self ioGetMaxExtSemTableSize.
-					 self initPrimCall. "i.e. ioSetMaxExtSemTableSize: is allowed to fail"
-					 self setMaxExtSemSizeTo: arg]].
-		[55] ->	[result := objectMemory floatObjectOf: objectMemory getHeapGrowthToSizeGCRatio.
-					 primFailCode := objectMemory setHeapGrowthToSizeGCRatio: (self noInlineLoadFloatOrIntFrom: argOop)].
-		[67] ->	[
-			arg >= 0 ifTrue: [
-				result := objectMemory integerObjectOf: objectMemory maxOldSpaceSize.
-				 primFailCode := objectMemory setMaxOldSpaceSize: arg ]].
-		[68] ->	[result := objectMemory floatObjectOf: stackPages statAverageLivePagesWhenMapping.
-				 self initPrimCall. "i.e. statAverageLivePagesWhenMapping: is allowed to fail"
-				 stackPages statAverageLivePagesWhenMapping: (self noInlineLoadFloatOrIntFrom: argOop)].
-		[69] ->	[arg >= 0 ifTrue:
-					[result := objectMemory integerObjectOf: stackPages statMaxPageCountWhenMapping.
-					 stackPages statMaxPageCountWhenMapping: arg.
-					 self initPrimCall]].
-		[74] ->	[
-			arg >= 0 ifTrue: [
-				result := objectMemory integerObjectOf: objectMemory statMaxAllocSegmentTime + 500 // 1000.
-				stackPages statMaxAllocSegmentTime: arg. "usually 0"
-				self initPrimCall ]].
-		[79] -> [ (arg between: 0 and: 65535) ifTrue:
-					[result := objectMemory integerObjectOf: self getImageVersion.
-					 self setImageVersion: arg.
-					 self initPrimCall] ].
-		[86] -> [ 
-			result := objectMemory getAvoidSearchingSegmentsWithPinnedObjects 
-				ifTrue: [objectMemory trueObject] 
-				ifFalse: [objectMemory falseObject].
-				
-			objectMemory setAvoidSearchingSegmentsWithPinnedObjects: arg.
-			self initPrimCall ]}
-		otherwise: [].
+					 self initPrimCall ]).
+				([ 17 ] -> [
+					 (SistaVM and: [ self isCog ]) ifTrue: [
+							 result := objectMemory floatObjectOf:
+								           self getCogCodeZoneThreshold.
+							 primFailCode := self setCogCodeZoneThreshold:
+								                 (self noInlineLoadFloatOrIntFrom: argOop) ] ]).
+				([ 23 ] -> [
+					 result := objectMemory integerObjectOf: extraVMMemory.
+					 extraVMMemory := arg.
+					 self initPrimCall ]).
+				([ 24 ] -> [
+					 arg > 0 ifTrue: [
+							 result := objectMemory integerObjectOf:
+								           objectMemory shrinkThreshold.
+							 objectMemory shrinkThreshold: arg.
+							 self initPrimCall ] ]).
+				([ 25 ] -> [
+					 arg > 0 ifTrue: [
+							 result := objectMemory integerObjectOf:
+								           objectMemory growHeadroom.
+							 objectMemory growHeadroom: arg.
+							 self initPrimCall ] ]).
+				([ 26 ] -> [
+					 arg >= 0 ifTrue: [ "0 turns off the heartbeat"
+							 result := objectMemory integerObjectOf:
+								           self ioHeartbeatMilliseconds.
+							 self ioSetHeartbeatMilliseconds: arg.
+							 self initPrimCall ] ]).
+				([ 34 ] -> [
+					 arg >= 0 ifTrue: [
+							 result := objectMemory positive64BitIntegerFor:
+								           objectMemory currentAllocatedBytes.
+							 objectMemory setCurrentAllocatedBytesTo: arg.
+							 self initPrimCall ] ]).
+				([ 43 ] -> [
+					 (arg between: 0 and: 65535) ifTrue: [
+							 result := objectMemory integerObjectOf: desiredNumStackPages.
+							 desiredNumStackPages := arg.
+							 self initPrimCall ] ]).
+				([ 45 ] -> [
+					 arg >= 0 ifTrue: [
+							 result := objectMemory integerObjectOf: desiredEdenBytes.
+							 desiredEdenBytes := arg.
+							 self initPrimCall ] ]).
+				([ 47 ] -> [
+					 (self isCog and: [ arg between: 0 and: self maxCogCodeSize ])
+						 ifTrue: [
+								 result := objectMemory integerObjectOf:
+									           self getDesiredCogCodeSize.
+								 self setDesiredCogCodeSize: arg.
+								 self initPrimCall ] ]).
+				([ 48 ] -> [
+					 arg >= 0 ifTrue: [
+							 result := objectMemory integerObjectOf: self getCogVMFlags.
+							 self initPrimCall. "i.e. setCogVMFlags: can fail"
+							 self setCogVMFlags: arg ] ]).
+				([ 49 ] -> [
+					 (arg between: 0 and: 65535) ifTrue: [
+							 result := objectMemory integerObjectOf:
+								           self ioGetMaxExtSemTableSize.
+							 self initPrimCall. "i.e. ioSetMaxExtSemTableSize: is allowed to fail"
+							 self setMaxExtSemSizeTo: arg ] ]).
+				([ 55 ] -> [
+					 result := objectMemory floatObjectOf:
+						           objectMemory getHeapGrowthToSizeGCRatio.
+					 primFailCode := objectMemory setHeapGrowthToSizeGCRatio:
+						                 (self noInlineLoadFloatOrIntFrom: argOop) ]).
+				([ 67 ] -> [
+					 arg >= 0 ifTrue: [
+							 result := objectMemory integerObjectOf:
+								           objectMemory maxOldSpaceSize.
+							 primFailCode := objectMemory setMaxOldSpaceSize: arg ] ]).
+				([ 68 ] -> [
+					 result := objectMemory floatObjectOf:
+						           stackPages statAverageLivePagesWhenMapping.
+					 self initPrimCall. "i.e. statAverageLivePagesWhenMapping: is allowed to fail"
+					 stackPages statAverageLivePagesWhenMapping:
+						 (self noInlineLoadFloatOrIntFrom: argOop) ]).
+				([ 69 ] -> [
+					 arg >= 0 ifTrue: [
+							 result := objectMemory integerObjectOf:
+								           stackPages statMaxPageCountWhenMapping.
+							 stackPages statMaxPageCountWhenMapping: arg.
+							 self initPrimCall ] ]).
+				([ 74 ] -> [
+					 arg >= 0 ifTrue: [
+							 result := objectMemory integerObjectOf:
+								           objectMemory statMaxAllocSegmentTime + 500 // 1000.
+							 objectMemory statMaxAllocSegmentTime: arg. "usually 0"
+							 self initPrimCall ] ]).
+				([ 79 ] -> [
+					 (arg between: 0 and: 65535) ifTrue: [
+							 result := objectMemory integerObjectOf: self getImageVersion.
+							 self setImageVersion: arg.
+							 self initPrimCall ] ]).
+				([ 86 ] -> [
+					 result := objectMemory
+						           getAvoidSearchingSegmentsWithPinnedObjects
+						           ifTrue: [ objectMemory trueObject ]
+						           ifFalse: [ objectMemory falseObject ].
+
+					 objectMemory setAvoidSearchingSegmentsWithPinnedObjects: arg.
+					 self initPrimCall ]) }
+		otherwise: [ ].
 
 	self successful
-		ifTrue: [self methodReturnValue: result]  "return old value"
-		ifFalse: [self primitiveFailFor: PrimErrInappropriate] "attempting to write a read-only or non-existent parameter"
+		ifTrue: [ "return old value" self methodReturnValue: result ]
+		ifFalse: [ "attempting to write a read-only or non-existent parameter"
+			self primitiveFailFor: PrimErrInappropriate ]
 ]
 
 { #category : 'system control primitives' }

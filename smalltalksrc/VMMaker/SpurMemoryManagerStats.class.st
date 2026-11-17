@@ -50,6 +50,71 @@ SpurMemoryManagerStats class >> implicitReturnTypeFor: aSelector [
 	^ #void
 ]
 
+{ #category : 'updating' }
+SpurMemoryManagerStats >> incrementCoalesces [
+
+	statCoalesces := statCoalesces + 1
+]
+
+{ #category : 'updating' }
+SpurMemoryManagerStats >> incrementCompactionUsecsBy: usecs [
+
+	<var: #usecs type: #usqLong>
+	statCompactionUsecs := statCompactionUsecs + usecs
+]
+
+{ #category : 'updating' }
+SpurMemoryManagerStats >> incrementFullGCUsecsBy: usecs [
+
+	<var: #usecs type: #usqLong>
+	statFullGCUsecs := statFullGCUsecs + usecs
+]
+
+{ #category : 'updating' }
+SpurMemoryManagerStats >> incrementFullGCs [
+
+	statFullGCs := statFullGCs + 1
+]
+
+{ #category : 'updating' }
+SpurMemoryManagerStats >> incrementGrowMemory [
+
+	statGrowMemory := statGrowMemory + 1
+]
+
+{ #category : 'updating' }
+SpurMemoryManagerStats >> incrementMarkUsecsBy: usecs [
+
+	<var: #usecs type: #usqLong>
+	statMarkUsecs := statMarkUsecs + usecs
+]
+
+{ #category : 'updating' }
+SpurMemoryManagerStats >> incrementScavengeGCUsecsBy: usecs [
+
+	<var: #usecs type: #usqLong>
+	statScavengeGCUsecs := statScavengeGCUsecs + usecs
+]
+
+{ #category : 'updating' }
+SpurMemoryManagerStats >> incrementScavenges [
+
+	statScavenges := statScavenges + 1
+]
+
+{ #category : 'updating' }
+SpurMemoryManagerStats >> incrementShrinkMemory [
+
+	statShrinkMemory := statShrinkMemory + 1
+]
+
+{ #category : 'updating' }
+SpurMemoryManagerStats >> incrementSweepUsecsBy: usecs [
+
+	<var: #usecs type: #usqLong>
+	statSweepUsecs := statSweepUsecs + usecs
+]
+
 { #category : 'initialization' }
 SpurMemoryManagerStats >> initialize [
 	"In C all global variables are initialized to 0."
@@ -82,12 +147,6 @@ SpurMemoryManagerStats >> statCoalesces [
 ]
 
 { #category : 'accessing' }
-SpurMemoryManagerStats >> statCoalesces: aValue [
-
-	statCoalesces := aValue
-]
-
-{ #category : 'accessing' }
 SpurMemoryManagerStats >> statCompMoveCount [
 	"Spur never compacts by moving; but it does make compaction passes."
 
@@ -101,22 +160,9 @@ SpurMemoryManagerStats >> statCompactPassCount [
 ]
 
 { #category : 'accessing' }
-SpurMemoryManagerStats >> statCompactPassCount: aValue [
-
-	statCompactPassCount := aValue
-]
-
-{ #category : 'accessing' }
 SpurMemoryManagerStats >> statCompactionUsecs [
 
 	^ statCompactionUsecs
-]
-
-{ #category : 'accessing' }
-SpurMemoryManagerStats >> statCompactionUsecs: aValue [
-
-	<var: #aValue type: #usqLong>
-	statCompactionUsecs := aValue
 ]
 
 { #category : 'accessing' }
@@ -126,35 +172,15 @@ SpurMemoryManagerStats >> statFGCDeltaUsecs [
 ]
 
 { #category : 'accessing' }
-SpurMemoryManagerStats >> statFGCDeltaUsecs: aValue [
-
-	<var: #aValue type: #usqLong>
-	statFGCDeltaUsecs := aValue
-]
-
-{ #category : 'accessing' }
 SpurMemoryManagerStats >> statFullGCUsecs [
 
 	^ statFullGCUsecs
 ]
 
 { #category : 'accessing' }
-SpurMemoryManagerStats >> statFullGCUsecs: aValue [
-
-	<var: #aValue type: #usqLong>
-	statFullGCUsecs := aValue
-]
-
-{ #category : 'accessing' }
 SpurMemoryManagerStats >> statFullGCs [
 
 	^ statFullGCs
-]
-
-{ #category : 'accessing' }
-SpurMemoryManagerStats >> statFullGCs: aValue [
-
-	statFullGCs := aValue
 ]
 
 { #category : 'accessing' }
@@ -177,22 +203,9 @@ SpurMemoryManagerStats >> statGrowMemory [
 ]
 
 { #category : 'accessing' }
-SpurMemoryManagerStats >> statGrowMemory: aValue [
-
-	statGrowMemory := aValue
-]
-
-{ #category : 'accessing' }
 SpurMemoryManagerStats >> statIGCDeltaUsecs [
 
 	^ statIGCDeltaUsecs
-]
-
-{ #category : 'accessing' }
-SpurMemoryManagerStats >> statIGCDeltaUsecs: aValue [
-
-	<var: #aValue type: #usqLong>
-	statIGCDeltaUsecs := aValue
 ]
 
 { #category : 'accessing' }
@@ -211,13 +224,6 @@ SpurMemoryManagerStats >> statMarkCount: aValue [
 SpurMemoryManagerStats >> statMarkUsecs [
 
 	^ statMarkUsecs
-]
-
-{ #category : 'accessing' }
-SpurMemoryManagerStats >> statMarkUsecs: aValue [
-
-	<var: #aValue type: #usqLong>
-	statMarkUsecs := aValue
 ]
 
 { #category : 'accessing' }
@@ -258,12 +264,6 @@ SpurMemoryManagerStats >> statRootTableOverflows [
 ]
 
 { #category : 'accessing' }
-SpurMemoryManagerStats >> statRootTableOverflows: aValue [
-
-	statRootTableOverflows := aValue
-]
-
-{ #category : 'accessing' }
 SpurMemoryManagerStats >> statSGCDeltaUsecs [
 
 	^ statSGCDeltaUsecs
@@ -283,22 +283,9 @@ SpurMemoryManagerStats >> statScavengeGCUsecs [
 ]
 
 { #category : 'accessing' }
-SpurMemoryManagerStats >> statScavengeGCUsecs: aValue [
-
-	<var: #aValue type: #usqLong>
-	statScavengeGCUsecs := aValue
-]
-
-{ #category : 'accessing' }
 SpurMemoryManagerStats >> statScavenges [
 
 	^ statScavenges
-]
-
-{ #category : 'accessing' }
-SpurMemoryManagerStats >> statScavenges: aValue [
-
-	statScavenges := aValue
 ]
 
 { #category : 'accessing' }
@@ -308,20 +295,28 @@ SpurMemoryManagerStats >> statShrinkMemory [
 ]
 
 { #category : 'accessing' }
-SpurMemoryManagerStats >> statShrinkMemory: aValue [
-
-	statShrinkMemory := aValue
-]
-
-{ #category : 'accessing' }
 SpurMemoryManagerStats >> statSweepUsecs [
 
 	^ statSweepUsecs
 ]
 
-{ #category : 'accessing' }
-SpurMemoryManagerStats >> statSweepUsecs: aValue [
+{ #category : 'updating' }
+SpurMemoryManagerStats >> updateFullGCStatsStartUsecs: startUsecs markEndUsecs: markEndUsecs compactionStartUsecs: compactionStartTime sweepEndUsecs: sweepEndUsecs [
+	"Stats updated (since VM start-up): 
+	1) number of full GCs,
+	2) time spent in full GC,
+	3) time spent in compaction (included in 2)
+	4) time spent in sweep phase (included in 2 & 3, 0 if no sweep phase)
+	5) time spent in mark phase (included in 2)"
 
-	<var: #aValue type: #usqLong>
-	statSweepUsecs := aValue
+	<var: #startUsecs type: #usqLong>
+	<var: #markEndUsecs type: #usqLong>
+	<var: #compactionStartTime type: #usqLong>
+	<var: #sweepEndUsecs type: #usqLong>
+	self incrementFullGCs.
+	self incrementFullGCUsecsBy: statGCEndUsecs - startUsecs.
+	self incrementCompactionUsecsBy: statGCEndUsecs - compactionStartTime.
+	sweepEndUsecs = 0 ifFalse: [
+		self incrementSweepUsecsBy: sweepEndUsecs - compactionStartTime ].
+	self incrementMarkUsecsBy: markEndUsecs - startUsecs
 ]

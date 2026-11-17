@@ -2712,8 +2712,7 @@ SpurMemoryManager >> attemptToShrink [
 			 totalFreeOldSpace > growHeadroom and: [
 					 segmentManager shrinkObjectMemory:
 						 (totalFreeOldSpace - growHeadroom max: growHeadroom) ] ])
-		ifTrue: [
-		statistics statShrinkMemory: statistics statShrinkMemory + 1 ]
+		ifTrue: [ statistics incrementShrinkMemory ]
 ]
 
 { #category : 'accessing' }
@@ -4203,7 +4202,7 @@ SpurMemoryManager >> coallesceFreeChunk: objOop [
 	next := self objectAfter: here limit: memoryMap oldSpaceEnd.
 	[ self isMarked: next ] whileFalse: [ "coalescing; rare case"
 			self assert: (self isRemembered: next) not.
-			statistics statCoalesces: statistics statCoalesces + 1.
+			statistics incrementCoalesces.
 			here := self coalesce: here and: next.
 			next := self objectAfter: here limit: memoryMap oldSpaceEnd ].
 	^ here
@@ -6156,7 +6155,11 @@ SpurMemoryManager >> fullGC [
 	self globalGarbageCollect.
 	coInterpreter postGCAction: GCModeFull.
 	statistics statGCEndUsecs: coInterpreter ioUTCMicrosecondsNow.
-	self updateFullGCStats.
+	statistics
+		updateFullGCStatsStartUsecs: gcStartUsecs
+		markEndUsecs: gcMarkEndUsecs
+		compactionStartUsecs: compactionStartUsecs
+		sweepEndUsecs: gcSweepEndUsecs.
 	^ (freeLists at: 0) ~= 0
 		  ifTrue: [ self bytesInObject: self findLargestFreeChunk ]
 		  ifFalse: [ 0 ]
@@ -6326,7 +6329,7 @@ SpurMemoryManager >> growOldSpaceByAtLeast: minAmmount callingOperation: aString
 	<var: #segInfo type: #'SpurSegmentInfo *'>
 	<var: #aString type: #'char *'>
 	| ammount headroom total start interval |
-	statistics statGrowMemory: statistics statGrowMemory + 1.
+	statistics incrementGrowMemory.
 
 	"statGrowMemory counts attempts, not successes." "we need to include overhead for a new object header plus the segment bridge."
 	ammount := minAmmount + (self baseHeaderSize * 2 + self bridgeSize).
@@ -12028,12 +12031,11 @@ SpurMemoryManager >> scavengingGCTenuringIf: tenuringCriterion [
 
 	self doScavenge: tenuringCriterion.
 
-	statistics statScavenges: statistics statScavenges + 1.
+	statistics incrementScavenges.
 	statistics statGCEndUsecs: coInterpreter ioUTCMicrosecondsNow.
 	statistics statSGCDeltaUsecs:
 		statistics statGCEndUsecs - gcStartUsecs.
-	statistics statScavengeGCUsecs:
-		statistics statScavengeGCUsecs + statistics statSGCDeltaUsecs.
+	statistics incrementScavengeGCUsecsBy: statistics statSGCDeltaUsecs.
 	statistics statRootTableCount:
 		fromOldSpaceRememberedSet rememberedSetSize.
 
@@ -12709,13 +12711,6 @@ SpurMemoryManager >> statCompactPassCount [
 
 	<doNotGenerate>
 	^ statistics statCompactPassCount
-]
-
-{ #category : 'accessing' }
-SpurMemoryManager >> statCompactPassCount: anInteger [
-
-	<doNotGenerate>
-	statistics statCompactPassCount: anInteger
 ]
 
 { #category : 'accessing' }
@@ -13715,28 +13710,6 @@ SpurMemoryManager >> updateFreeLists [
 	self freeTreeNodesDo: [:freeNode |
 		self updateListStartingAt: freeNode.
 		freeNode]
-]
-
-{ #category : 'gc - global' }
-SpurMemoryManager >> updateFullGCStats [
-	"Stats updated (since VM start-up): 
-	1) number of full GCs,
-	2) time spent in full GC,
-	3) time spent in compaction (included in 2)
-	4) time spent in sweep phase (included in 2 & 3, 0 if no sweep phase)
-	5) time spent in mark phase (included in 2)"
-
-	statistics statFullGCs: statistics statFullGCs + 1.
-	statistics statFullGCUsecs: statistics statFullGCUsecs
-		+ (statistics statGCEndUsecs - gcStartUsecs).
-	statistics statCompactionUsecs: statistics statCompactionUsecs
-		+ (statistics statGCEndUsecs - compactionStartUsecs).
-	gcSweepEndUsecs = 0 ifFalse: [
-			statistics statSweepUsecs:
-				statistics statSweepUsecs
-				+ (gcSweepEndUsecs - compactionStartUsecs) ].
-	statistics statMarkUsecs:
-		statistics statMarkUsecs + (gcMarkEndUsecs - gcStartUsecs)
 ]
 
 { #category : 'initialization' }
