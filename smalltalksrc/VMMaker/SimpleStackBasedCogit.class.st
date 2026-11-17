@@ -269,27 +269,6 @@ SimpleStackBasedCogit >> cePICMissTrampoline: anAddress [
 	cePICMissTrampoline := anAddress
 ]
 
-{ #category : 'simulation only' }
-SimpleStackBasedCogit >> ceShortCutTraceBlockActivation: aProcessorSimulationTrap [
-	self shortcutTrampoline: aProcessorSimulationTrap
-		to: [coInterpreter ceTraceBlockActivation]
-]
-
-{ #category : 'simulation only' }
-SimpleStackBasedCogit >> ceShortCutTraceLinkedSend: aProcessorSimulationTrap [
-	self shortcutTrampoline: aProcessorSimulationTrap
-		to: [coInterpreter ceTraceLinkedSend: (processor registerAt: ReceiverResultReg)]
-]
-
-{ #category : 'simulation only' }
-SimpleStackBasedCogit >> ceShortCutTraceStore: aProcessorSimulationTrap [
-	<doNotGenerate>
-	self shortcutTrampoline: aProcessorSimulationTrap
-		to: [coInterpreter
-				ceTraceStoreOf: (processor registerAt: ClassReg)
-				into: (processor registerAt: ReceiverResultReg)]
-]
-
 { #category : 'accessing' }
 SimpleStackBasedCogit >> ceStoreContextInstVarTrampoline: anInteger [ 
 	<doNotGenerate>

@@ -3257,28 +3257,22 @@ StackToRegisterMappingCogit >> generateSuperSendTrampolineTo: function named: na
 
 { #category : 'initialization' }
 StackToRegisterMappingCogit >> generateTracingTrampolines [
-	"Generate trampolines for tracing.  In the simulator we can save a lot of time
-	 and avoid noise instructions in the lastNInstructions log by short-cutting these
-	 trampolines, but we need them in the real vm."
+	"Generate trampolines for tracing."
 	ceTraceLinkedSendTrampoline :=
 		self genTrampolineFor: #ceTraceLinkedSend:
 			called: 'ceTraceLinkedSendTrampoline'
 			arg: ReceiverResultReg
-			regsToSave: CallerSavedRegisterMask..
+			regsToSave: CallerSavedRegisterMask.
 	ceTraceBlockActivationTrampoline :=
 		self genTrampolineFor: #ceTraceBlockActivation
 			called: 'ceTraceBlockActivationTrampoline'
-			regsToSave: CallerSavedRegisterMask..
+			regsToSave: CallerSavedRegisterMask.
 	ceTraceStoreTrampoline :=
 		self genTrampolineFor: #ceTraceStoreOf:into:
 			called: 'ceTraceStoreTrampoline'
 			arg: TempReg
 			arg: ReceiverResultReg
-			regsToSave: CallerSavedRegisterMask..
-	self cCode: [] inSmalltalk:
-		[ceTraceLinkedSendTrampoline := self simulatedTrampolineFor: #ceShortCutTraceLinkedSend:.
-		 ceTraceBlockActivationTrampoline := self simulatedTrampolineFor: #ceShortCutTraceBlockActivation:.
-		 ceTraceStoreTrampoline := self simulatedTrampolineFor: #ceShortCutTraceStore:]
+			regsToSave: CallerSavedRegisterMask.
 ]
 
 { #category : 'simulation stack' }

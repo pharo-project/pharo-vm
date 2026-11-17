@@ -1344,11 +1344,6 @@ Cogit class >> runtime [
 		ceCallCogCodePopReceiverReg
 		ceEnterCogCodePopReceiverReg
 
-	Simulation only
-		ceShortCutTraceBlockActivation: aProcessorSimulationTrap
-		ceShortCutTraceLinkedSend: aProcessorSimulationTrap
-		ceShortCutTraceStore: aProcessorSimulationTrap
-
 	Misnamed:
 		ceSendAbort:to:numArgs: not a code entry.  Used by ceCannotResume, ceSendMustBeBoolean et al to execute their sends"
 ]
@@ -11265,30 +11260,6 @@ Cogit >> setStackAlignment: stackAlignment expectedSPOffset: spOffset expectedFP
 	expectedFPAlignment := fpOffset \\ stackAlignment.
 	cStackAlignment := stackAlignment
 
-]
-
-{ #category : 'simulation only' }
-Cogit >> shortcutTrampoline: aProcessorSimulationTrap to: aBlock [
-	<doNotGenerate>
-	backEnd hasLinkRegister ifTrue:
-		[processor pushWord: processor lr in: coInterpreter memory].
-	processor
-		simulateLeafCallOf: aProcessorSimulationTrap address
-		nextpc: aProcessorSimulationTrap nextpc
-		memory: nil.
-	coInterpreter
-		stackPointer: processor sp;
-		framePointer: processor fp.
-	processor
-		sp: self getCStackPointer;
-		fp: self getCFramePointer.
-	aBlock value.
-	processor
-		sp: coInterpreter stackPointer;
-		fp: coInterpreter framePointer;
-		simulateLeafReturnIn: coInterpreter memory.
-	backEnd hasLinkRegister ifTrue:
-		[processor lr: (processor popWordIn: coInterpreter memory)]
 ]
 
 { #category : 'bytecode generator support' }
