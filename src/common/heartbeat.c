@@ -293,26 +293,34 @@ ioUTCSecondsNow(void) { return currentUTCMicroseconds() / MicrosecondsPerSecond;
 sqInt
 ioRelinquishProcessorForMicroseconds(sqInt microSeconds)
 {
-    long	realTimeToWait;
+	long realTimeToWait = microSeconds;
 	extern usqLong getNextWakeupUsecs();
+	extern sqInt forceInterruptCheck(void);
 	usqLong nextWakeupUsecs = getNextWakeupUsecs();
-	usqLong utcNow = get64(utcMicrosecondClock);
 
-    if (nextWakeupUsecs <= utcNow) {
-		/* if nextWakeupUsecs is non-zero the next wakeup time has already
-		 * passed and we should not wait.
+	if (nextWakeupUsecs != 0) {
+		usqLong utcNow;
+
+		/* utcMicrosecondClock might be stale (heartbeat does not tick while VM
+		 * sleeps in aioPoll). Refresh it, otherwise we'd wait based on time before
+		 * the last sleep and overshoot the wakeup time.
 		 */
-        if (nextWakeupUsecs != 0)
+		updateMicrosecondClock();
+		utcNow = get64(utcMicrosecondClock);
+
+		if (nextWakeupUsecs <= utcNow) {
+			/* Timer has elapsed, we shouldn't wait. Make the interpreter check
+			 * instead of waiting for another heartbeat.
+			 */
+			forceInterruptCheck();
 			return 0;
-		realTimeToWait = microSeconds;
-    }
-    else {
-        realTimeToWait = nextWakeupUsecs - utcNow;
-		if (realTimeToWait > microSeconds)
-			realTimeToWait = microSeconds;
+		}
+
+		if (nextWakeupUsecs - utcNow < (usqLong) realTimeToWait)
+			realTimeToWait = nextWakeupUsecs - utcNow;
 	}
 
-    aioPoll(realTimeToWait);
+	aioPoll(realTimeToWait);
 
 	return 0;
 }
