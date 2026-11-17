@@ -1281,7 +1281,9 @@ SpurMemoryManager >> adjustAllOopsBy: bytesToShift [
 	self assert: self newSpaceIsEmpty.
 	self countNumClassPagesPreSwizzle: bytesToShift.
 
-	(bytesToShift = 0 and: [segmentManager numSegments = 1]) ifTrue:[ ^ self ].
+	(bytesToShift = 0
+	 and: [ segmentManager numSegments = 1
+	 and: [ segmentManager hasPermSpaceSwizzleDelta not ] ]) ifTrue: [ ^ self ].
 	
 	obj := self objectStartingAt: memoryMap oldSpaceStart.
 	 [self oop: obj isLessThan: freeOldSpaceStart] whileTrue:
@@ -7076,6 +7078,7 @@ SpurMemoryManager >> initializeObjectMemory: bytesToShift [
 	markStack := self swizzleObjStackAt: MarkStackRootIndex.
 	weaklingStack := self swizzleObjStackAt: WeaklingStackRootIndex.
 	mournQueue := self swizzleObjStackAt: MournQueueRootIndex.
+	self swizzleRememberedSetAt: PermToOldRememberedSetRootIndex.
 	self assert: self validObjStacks.
 	self assert: (self isEmptyObjStack: markStack).
 	self assert: (self isEmptyObjStack: weaklingStack).
@@ -13191,6 +13194,27 @@ SpurMemoryManager >> swizzleObjStackAt: objStackRootIndex [
 		  (stackOrNil := self fetchPointer: ObjStackFreex ofObject: page) ~=  0] whileTrue].
 	self assert: (self isValidObjStackAt: objStackRootIndex).
 	^self fetchPointer: objStackRootIndex ofObject: hiddenRootsObj
+]
+
+{ #category : 'snapshot' }
+SpurMemoryManager >> swizzleRememberedSetAt: objStackRootIndex [
+	"When an image is saved with entries in a permanent remembered set, those entries are stored
+	 as raw oops in a wordIndexableFormat object and are skipped by adjustAllOopsBy: because
+	 wordIndexable objects do not contain oops. Swizzle them before collapseSegmentsPostSwizzle."
+
+	| rememberedSetObj numSlots entry |
+	rememberedSetObj := self objStackAt: objStackRootIndex.
+	rememberedSetObj = nilObj ifTrue: [ ^ self ].
+	(self formatOf: rememberedSetObj) = self wordIndexableFormat ifFalse: [ ^ self ].
+	numSlots := self numSlotsOf: rememberedSetObj.
+	0 to: numSlots - 1 do: [ :i |
+		entry := self fetchPointer: i ofObject: rememberedSetObj.
+		(entry = 0 or: [ entry = nilObj ]) ifTrue: [ ^ self ].
+		(self isNonImmediate: entry) ifTrue: [
+			self
+				storePointerUnchecked: i
+				ofObject: rememberedSetObj
+				withValue: (segmentManager swizzleObj: entry) ] ]
 ]
 
 { #category : 'word size' }

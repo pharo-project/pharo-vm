@@ -135,6 +135,26 @@ VMMemoryMapTest >> testOldSpaceAllocatedAtVA39FallbackAddressIsClassifiedCorrect
 ]
 
 { #category : 'tests' }
+VMMemoryMapTest >> testPermSpaceAllocatedAtFallbackAddressIsClassifiedCorrectly [
+
+	"When both oldSpace and permSpace fall back inside a smaller user address
+	 space (e.g. aarch64 VA39, where both land in the [2^38, 2^39) window),
+	 fixedPermSpaceStart must reflect the obtained permSpaceStart and
+	 isOldObject:/isPermanentObject: must still partition all three spaces."
+
+	memoryMap newSpaceStart: configuration newSpaceInitialAddress.
+	memoryMap newSpaceEnd:
+		configuration newSpaceInitialAddress + (64 * 1024 * 1024).
+	memoryMap oldSpaceStart: 16r4000000000.
+	memoryMap setOldSpaceEnd: 16r4000000000 + (512 * 1024 * 1024).
+	memoryMap permSpaceStart: 16r6000000000.
+	memoryMap permSpaceEnd: 16r6000000000 + (64 * 1024 * 1024).
+	memoryMap calculateMaskToUse.
+	self assert: memoryMap fixedPermSpaceStart equals: 16r6000000000.
+	self assertSpacesAreClassifiedCorrectly
+]
+
+{ #category : 'tests' }
 VMMemoryMapTest >> testSpacesAllocatedAtConfiguredBasesAreClassifiedCorrectly [
 
 	"The primary path: allocation succeeded exactly at the configured bases

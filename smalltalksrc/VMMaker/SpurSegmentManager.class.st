@@ -55,7 +55,10 @@ Class {
 		'canSwizzle',
 		'sweepIndex',
 		'preferredPinningSegment',
-		'totalHeapSizeIncludingBridges'
+		'totalHeapSizeIncludingBridges',
+		'permSwizzleStart',
+		'permSwizzleLimit',
+		'permSwizzleDelta'
 	],
 	#category : 'VMMaker-SpurMemoryManager',
 	#package : 'VMMaker',
@@ -66,7 +69,10 @@ Class {
 SpurSegmentManager class >> declareCVarsIn: aCCodeGenerator [
 	aCCodeGenerator
 		var: #segments type: #'SpurSegmentInfo *';
-		var: #totalHeapSizeIncludingBridges type: #usqInt
+		var: #totalHeapSizeIncludingBridges type: #usqInt;
+		var: #permSwizzleStart type: #usqInt;
+		var: #permSwizzleLimit type: #usqInt;
+		var: #permSwizzleDelta type: #sqInt
 ]
 
 { #category : 'translation' }
@@ -243,6 +249,7 @@ SpurSegmentManager >> collapseSegmentsPostSwizzle [
 	 swizzled into a single contiguous segment.  Collapse the segments into one."
 	<inline: false>
 	canSwizzle := false.
+	permSwizzleStart := permSwizzleLimit := permSwizzleDelta := 0.
 	self cCode: []
 		inSmalltalk:
 			[segments ifNil:
@@ -332,6 +339,7 @@ SpurSegmentManager >> initSegmentForInImageCompilationFrom: base to: limit [
 { #category : 'initialization' }
 SpurSegmentManager >> initialize [
 	numSegments := numSegInfos := sweepIndex := totalHeapSizeIncludingBridges := 0.
+	permSwizzleStart := permSwizzleLimit := permSwizzleDelta := 0.
 	canSwizzle := false
 ]
 
@@ -671,14 +679,33 @@ SpurSegmentManager >> someSegmentContainsPinned [
 ]
 
 { #category : 'snapshot' }
+SpurSegmentManager >> hasPermSpaceSwizzleDelta [
+	^ permSwizzleLimit > permSwizzleStart and: [ permSwizzleDelta ~= 0 ]
+]
+
+{ #category : 'snapshot' }
+SpurSegmentManager >> registerPermSpaceSwizzleFrom: oldBase size: dataSize swizzle: delta [
+	<var: #oldBase type: #usqInt>
+	<var: #dataSize type: #'size_t'>
+	<var: #delta type: #sqInt>
+	permSwizzleStart := oldBase.
+	permSwizzleLimit := oldBase + dataSize.
+	permSwizzleDelta := delta
+]
+
+{ #category : 'snapshot' }
 SpurSegmentManager >> swizzleObj: objOop [
 	<inline: false>
 	self assert: canSwizzle.
 
-	"The permanent space is always loaded in the same place"	
-	(manager getMemoryMap isPermanentObject: objOop)
-		ifTrue: [ ^ objOop ].
-	
+	"Match permanent space by its exact save-time address range before
+	 checking oldSpace segments, avoiding assumptions about load-time
+	 memory maps or relative segment ordering (#955)."
+	(permSwizzleLimit > permSwizzleStart
+	 and: [ objOop >= permSwizzleStart
+	 and: [ objOop < permSwizzleLimit ] ]) ifTrue:
+		[ ^ objOop + permSwizzleDelta ].
+
 	numSegments - 1 to: 1 by: -1 do:
 		[:i|
 		objOop >= (segments at: i) segStart ifTrue:

@@ -26,11 +26,18 @@ VMImageReadingTest >> initializationOptions [
 { #category : 'utilities' }
 VMImageReadingTest >> loadImage [
 
+	self loadImageWithMemoryMapConfiguration: nil
+
+]
+
+{ #category : 'utilities' }
+VMImageReadingTest >> loadImageWithMemoryMapConfiguration: aMemoryMapConfiguration [
+
 	environmentBuilder := VMSimulatedEnvironmentBuilder new.
-	environmentBuilder 
+	environmentBuilder
 		interpreterClass: self interpreterClass;
 		objectMemoryClass: self memoryClass;
-	 	initializationOptions: self initializationOptions;
+		initializationOptions: self initializationOptions;
 		wordSize: self wordSize;
 		useComposedImageFormatAsDefault: useComposedImageFormat.
 
@@ -38,9 +45,16 @@ VMImageReadingTest >> loadImage [
 
 	interpreter := environmentBuilder interpreter.
 	memory := environmentBuilder objectMemory.
-	
-	interpreter openOn: self imageFileName extraMemory: 0.
+	aMemoryMapConfiguration ifNotNil: [ :config |
+		interpreter memoryManager: (MachineSimulatorMemoryManager new
+				 wordSize: self wordSize;
+				 yourself).
+		memory memoryManager: interpreter memoryManager.
+		memory ensureMemoryMap.
+		memory getMemoryMap memoryMapConfiguration: config.
+		memory getMemoryMap calculateMaskToUse ].
 
+	interpreter openOn: self imageFileName extraMemory: 0
 ]
 
 { #category : 'query' }
@@ -137,8 +151,28 @@ VMImageReadingTest >> testReadingSTONHeader [
 ]
 
 { #category : 'tests' }
+VMImageReadingTest >> testSavedImageLoadsUnderSmallerMemoryMapConfiguration [
+
+	"Regression test for #955: an image saved under the 64-bit memory map
+	 (oldSpace at 16r10000000000) and loaded under a smaller memory map
+	 (where permSpaceInitialAddress is 16r80000000, below the saved oldSpace
+	 base) must still swizzle old-space pointers instead of misclassifying
+	 save-time oops against the load-time permSpace boundary."
+
+	self wordSize = 8 ifFalse: [ ^ self skip ].
+
+	self saveImage.
+	self loadImageWithMemoryMapConfiguration:
+		VMMemoryMapConfigurationFor32Bits new.
+
+	self
+		assert: originalNilObjectIdentityHash
+		equals: (memory hashBitsOf: memory nilObject)
+]
+
+{ #category : 'tests' }
 VMImageReadingTest >> testSavedImageSavesObjectFromOldSpace [
-	
+
 	self saveImage.	
 	self loadImage.
 		
@@ -159,6 +193,190 @@ VMImageReadingTest >> testSavedImageSavesObjectFromPermanentSpace [
 		
 	self assert: originalPermanentObjectIdentityHash equals: (memory hashBitsOf: permanentObject).
 
+]
+
+{ #category : 'tests' }
+VMImageReadingTest >> testSavedImageWithPermanentSpaceLoadsUnderSmallerMemoryMapConfiguration [
+
+	"When a composed image carrying permanent-space objects is saved under the
+	 64-bit memory map (oldSpace at 2^40, permSpace at 2^41) and loaded under
+	 a smaller memory map (oldSpace at 16r40000000, permSpace at 16r80000000),
+	 both spaces and cross-space pointers must be relocated and swizzled."
+
+	| oldObj oldObjHash loadedOldObj loadedPermObj |
+	(useComposedImageFormat and: [ self wordSize = 8 ]) ifFalse: [
+		^ self skip ].
+
+	permanentObject := self newPermanentByteObjectOfSize: 14.
+	originalPermanentObjectIdentityHash := memory hashBitsOf:
+		                                       permanentObject.
+	oldObj := self newOldSpaceObjectWithSlots: 1.
+	oldObjHash := memory hashBitsOf: oldObj.
+	memory storePointer: 0 ofObject: oldObj withValue: permanentObject.
+	memory splObj: 4 put: oldObj.
+
+	self saveImage.
+	self loadImageWithMemoryMapConfiguration:
+		VMMemoryMapConfigurationFor32Bits new.
+
+	loadedOldObj := memory splObj: 4.
+	loadedPermObj := memory fetchPointer: 0 ofObject: loadedOldObj.
+	self assert: (memory hashBitsOf: loadedOldObj) equals: oldObjHash.
+	self
+		assert: (memory hashBitsOf: loadedPermObj)
+		equals: originalPermanentObjectIdentityHash.
+	self assert: (memory getMemoryMap isOldObject: loadedOldObj).
+	self assert: (memory getMemoryMap isPermanentObject: loadedPermObj).
+	self deny: (memory getMemoryMap isPermanentObject: loadedOldObj).
+	self deny: (memory getMemoryMap isOldObject: loadedPermObj)
+]
+
+{ #category : 'tests' }
+VMImageReadingTest >> testSavedImageWithPermToOldRememberedSetLoadsUnderSmallerMemoryMapConfiguration [
+
+	"Permanent-space objects pointing into old space are recorded in
+	 fromPermToOldSpaceRememberedSet (a wordIndexableFormat object preserved
+	 across snapshots). When permSpace or oldSpace relocates on load,
+	 those remembered-set entries must also be swizzled before fullGC."
+
+	| permObj permObjHash oldObj oldObjHash loadedPermObj loadedOldObj remSet |
+	(useComposedImageFormat and: [ self wordSize = 8 ]) ifFalse: [
+		^ self skip ].
+
+	permObj := self newPermanentObjectWithSlots: 1.
+	permObjHash := memory hashBitsOf: permObj.
+	oldObj := self newOldSpaceObjectWithSlots: 0.
+	oldObjHash := memory hashBitsOf: oldObj.
+	memory storePointer: 0 ofObject: permObj withValue: oldObj.
+	memory splObj: 4 put: permObj.
+
+	self saveImage.
+	self loadImageWithMemoryMapConfiguration:
+		VMMemoryMapConfigurationFor32Bits new.
+
+	loadedPermObj := memory splObj: 4.
+	loadedOldObj := memory fetchPointer: 0 ofObject: loadedPermObj.
+	remSet := memory getFromPermToOldSpaceRememberedSet.
+
+	self assert: (memory hashBitsOf: loadedPermObj) equals: permObjHash.
+	self assert: (memory hashBitsOf: loadedOldObj) equals: oldObjHash.
+	self assert: remSet rememberedSetSize equals: 1.
+	self assert: (remSet objectAt: 0) equals: loadedPermObj.
+	self assert: (remSet isInRememberedSet: loadedPermObj).
+
+	"Full GC relies on the swizzled remembered set to trace and keep oldObj alive."
+	interpreter initStackPages.
+	memory fullGC.
+
+	loadedOldObj := memory fetchPointer: 0 ofObject: loadedPermObj.
+	self assert: (memory hashBitsOf: loadedOldObj) equals: oldObjHash.
+	self assert: remSet rememberedSetSize equals: 1.
+
+	memory storePointer: 0 ofObject: loadedPermObj withValue: memory nilObject.
+	memory fullGC.
+
+	self assert: remSet rememberedSetSize equals: 0.
+	self deny: (remSet isInRememberedSet: loadedPermObj)
+]
+
+{ #category : 'tests' }
+VMImageReadingTest >> testSavedImageWithOnlyPermSpaceRelocatedLoadsCleanly [
+
+	"When oldSpace reloads at its saved base (bytesToShift = 0, numSegments = 1)
+	 but permSpace relocates to a different address, adjustAllOopsBy: must
+	 still run so old->perm, perm->old, and perm->old remembered-set entries
+	 are swizzled."
+
+	| customConfig permObj permObjHash oldObj oldObjHash loadedOldObj loadedPermObj remSet |
+	(useComposedImageFormat and: [ self wordSize = 8 ]) ifFalse: [
+		^ self skip ].
+
+	permObj := self newPermanentObjectWithSlots: 1.
+	permObjHash := memory hashBitsOf: permObj.
+	oldObj := self newOldSpaceObjectWithSlots: 1.
+	oldObjHash := memory hashBitsOf: oldObj.
+	memory storePointer: 0 ofObject: oldObj withValue: permObj.
+	memory storePointer: 0 ofObject: permObj withValue: oldObj.
+	memory splObj: 4 put: oldObj.
+
+	self saveImage.
+
+	customConfig := VMMemoryMapConfigurationFor64Bits newAnonymousSubclass.
+	customConfig compile: 'permSpaceInitialAddress ^ 16r18000000000'.
+	self loadImageWithMemoryMapConfiguration: customConfig new.
+
+	loadedOldObj := memory splObj: 4.
+	loadedPermObj := memory fetchPointer: 0 ofObject: loadedOldObj.
+	remSet := memory getFromPermToOldSpaceRememberedSet.
+
+	self assert: memory getMemoryMap permSpaceStart equals: 16r18000000000.
+	self assert: (memory hashBitsOf: loadedOldObj) equals: oldObjHash.
+	self assert: (memory hashBitsOf: loadedPermObj) equals: permObjHash.
+	self
+		assert: (memory fetchPointer: 0 ofObject: loadedPermObj)
+		equals: loadedOldObj.
+	self assert: (remSet isInRememberedSet: loadedPermObj).
+
+	interpreter initStackPages.
+	memory fullGC.
+
+	self
+		assert: (memory fetchPointer: 0 ofObject: loadedPermObj)
+		equals: (memory splObj: 4)
+]
+
+{ #category : 'tests' }
+VMImageReadingTest >> testSavedMultiSegmentImageWithPermanentSpaceLoadsUnderSmallerMemoryMapConfiguration [
+
+	"Multi-segment oldSpace combined with permanent space (and bidirectional
+	 cross-space references) must coalesce oldSpace segments, relocate permSpace
+	 independently of segment order, and swizzle all oops including remembered sets."
+
+	| firstNewSegmentSize oldObj oldObjHash permObj permObjHash loadedOldObj loadedPermObj |
+	(useComposedImageFormat and: [ self wordSize = 8 ]) ifFalse: [
+		^ self skip ].
+
+	firstNewSegmentSize := memory
+		                       growOldSpaceByAtLeast: 12 * 1024
+		                       callingOperation: 'testSavedMultiSegmentImageWithPermanentSpaceLoadsUnderSmallerMemoryMapConfiguration'.
+	memory
+		growOldSpaceByAtLeast: 12 * 1024
+		callingOperation: 'testSavedMultiSegmentImageWithPermanentSpaceLoadsUnderSmallerMemoryMapConfiguration'.
+
+	oldObj := self newOldSpaceObjectWithSlots:
+		          firstNewSegmentSize / 2 // memory wordSize.
+	self assert: oldObj > (memory segmentManager segments at: 2) segStart.
+	oldObjHash := memory hashBitsOf: oldObj.
+
+	permObj := self newPermanentObjectWithSlots: 1.
+	permObjHash := memory hashBitsOf: permObj.
+
+	memory storePointer: 0 ofObject: oldObj withValue: permObj.
+	memory storePointer: 0 ofObject: permObj withValue: oldObj.
+	memory splObj: 4 put: oldObj.
+
+	self saveImage.
+	self loadImageWithMemoryMapConfiguration:
+		VMMemoryMapConfigurationFor32Bits new.
+
+	self assert: memory segmentManager numSegments equals: 1.
+	loadedOldObj := memory splObj: 4.
+	loadedPermObj := memory fetchPointer: 0 ofObject: loadedOldObj.
+	self assert: (memory hashBitsOf: loadedOldObj) equals: oldObjHash.
+	self assert: (memory hashBitsOf: loadedPermObj) equals: permObjHash.
+	self
+		assert: (memory fetchPointer: 0 ofObject: loadedPermObj)
+		equals: loadedOldObj.
+	self assert: (memory getMemoryMap isOldObject: loadedOldObj).
+	self assert: (memory getMemoryMap isPermanentObject: loadedPermObj).
+
+	interpreter initStackPages.
+	memory fullGC.
+
+	loadedOldObj := memory splObj: 4.
+	self
+		assert: (memory fetchPointer: 0 ofObject: loadedPermObj)
+		equals: loadedOldObj
 ]
 
 { #category : 'tests' }

@@ -235,9 +235,13 @@ ComposedImageReader >> readPermanentSpaceFromImageFile: imageFileName header: aH
 		ifFalse: [ coInterpreter error: 'Could not allocate PermSpace' ].
 
 	newBase := objectMemory getMemoryMap permSpaceStart.
-	newBase ~= oldBase ifTrue: [ 
-		self logError: 'Expecting Base %p Got %p' _: oldBase _: newBase.		
-		coInterpreter unableToReadImageError ].
+	"Register permSpace's save-time range and swizzle delta so swizzleObj:
+	 relocates permanent-space pointers regardless of the load-time map (#955)."
+	dataSize > 0 ifTrue: [
+		segmentManager
+			registerPermSpaceSwizzleFrom: oldBase
+			size: dataSize
+			swizzle: newBase - oldBase ].
 
 	bytesRead := self
 		             readPermanentSpaceDataFromImage: imageFileName
