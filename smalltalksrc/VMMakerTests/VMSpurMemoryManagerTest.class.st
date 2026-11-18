@@ -197,6 +197,7 @@ VMSpurMemoryManagerTest >> initializeOldSpaceForFullGC [
 	memory growHeadroom: 10*1024*1024.
 	
 	memory flushNewSpace.
+
 ]
 
 { #category : 'helpers' }
