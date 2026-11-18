@@ -11684,15 +11684,20 @@ SpurMemoryManager >> recreateFromPermSpaceRememberedSet [
 	
 		slotIndex := 0.
 
-		[ refersNewSpace not and: [slotIndex < numPointerSlots]  ]
-			whileTrue: [ 
+		"Visit every slot, also after a young referent is found: a perm object moved by an earlier
+		 move can point to objects that this move forwarded. Store the followed value back, as this
+		 object may end up in no remembered set, so no GC would follow (and fix) that field later."
+		[ slotIndex < numPointerSlots ]
+			whileTrue: [
 				referenced := self fetchPointer: slotIndex ofObject: aPermSpaceObject.
 
 				"We check if we have an object in the pointer slots of objOop"
 					((self isNonImmediate: referenced) and: [self isInObjectMemory: referenced ])
-						ifTrue: [ 
+						ifTrue: [
 							(self isForwarded: referenced)
-								ifTrue: [ referenced := self followForwarded: referenced ].
+								ifTrue: [
+									referenced := self followForwarded: referenced.
+									self storePointerUnchecked: slotIndex ofObject: aPermSpaceObject withValue: referenced ].
 
 
 							(self isFixedKnownObject: referenced)
