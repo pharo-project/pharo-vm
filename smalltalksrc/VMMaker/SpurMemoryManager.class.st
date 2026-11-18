@@ -594,33 +594,14 @@ Class {
 		'gcSweepEndUsecs',
 		'compactionStartUsecs',
 		'bogon',
-		'statCoalesces',
-		'statCompactPassCount',
-		'statFGCDeltaUsecs',
-		'statFullGCUsecs',
-		'statCompactionUsecs',
-		'statSweepUsecs',
-		'statMarkUsecs',
-		'statFullGCs',
-		'statGCEndUsecs',
-		'statGrowMemory',
-		'statIGCDeltaUsecs',
-		'statMarkCount',
-		'statRootTableCount',
-		'statRootTableOverflows',
-		'statSGCDeltaUsecs',
-		'statScavengeGCUsecs',
-		'statScavenges',
-		'statShrinkMemory',
-		'statAllocatedBytes',
-		'statMaxAllocSegmentTime',
 		'permSpaceFreeStart',
 		'fromOldSpaceRememberedSet',
 		'fromPermToOldSpaceRememberedSet',
 		'fromPermToNewSpaceRememberedSet',
 		'permSpaceForwardersToCleanUp',
 		'avoidSearchingSegmentsWithPinnedObjects',
-		'maxSlotsForNewSpaceAlloc'
+		'maxSlotsForNewSpaceAlloc',
+		'statistics'
 	],
 	#classVars : [
 		'BitsPerByte',
@@ -659,13 +640,20 @@ Class {
 { #category : 'translation' }
 SpurMemoryManager class >> ancilliaryClasses [
 	"Answer any extra classes to be included in the translation."
-	^{	SpurGenerationScavenger. SpurScavengeLogRecord. SpurSegmentManager. SpurSegmentInfo. VMMemoryMap. 
-		VMMemoryMapConfiguration. VMMemoryMapConfiguration forWordsize: self objectMemoryClass wordSize.
-		VMRememberedSet }, 
-		self compactorClass classesForTranslation,
-		SpurNewSpaceSpace withAllSubclasses
-		
-	
+
+	^ {
+		  SpurGenerationScavenger.
+		  SpurScavengeLogRecord.
+		  SpurSegmentManager.
+		  SpurSegmentInfo.
+		  VMMemoryMap.
+		  VMMemoryMapConfiguration.
+		  (VMMemoryMapConfiguration forWordsize:
+			   self objectMemoryClass wordSize).
+		  VMRememberedSet.
+		  SpurMemoryManagerStats }
+	  , self compactorClass classesForTranslation
+	  , SpurNewSpaceSpace withAllSubclasses
 ]
 
 { #category : 'accessing' }
@@ -700,10 +688,15 @@ SpurMemoryManager class >> compactorClass [
 
 { #category : 'translation' }
 SpurMemoryManager class >> declareCVarsIn: aCCodeGenerator [
-	self declareCAsOop: #(freeStart scavengeThreshold pastSpaceStart
-							lowSpaceThreshold freeOldSpaceStart)
+
+	self
+		declareCAsOop:
+			#( freeStart scavengeThreshold pastSpaceStart lowSpaceThreshold
+			   freeOldSpaceStart )
 		in: aCCodeGenerator.
-	self declareCAsUSqLong: (self allInstVarNames select: [:ivn| ivn endsWith: 'Usecs']), #(statAllocatedBytes)
+	self
+		declareCAsUSqLong:
+		(self allInstVarNames select: [ :ivn | ivn endsWith: 'Usecs' ])
 		in: aCCodeGenerator.
 	aCCodeGenerator
 		var: #freeListsMask type: #usqInt;
@@ -714,22 +707,23 @@ SpurMemoryManager class >> declareCVarsIn: aCCodeGenerator [
 		var: #heapSizeAtPreviousGC type: #usqInt;
 		var: #totalFreeOldSpace type: #usqInt;
 		var: #maxOldSpaceSize type: #usqInt.
-	aCCodeGenerator
-		var: #oldSpaceUsePriorToScavenge type: #sqLong.
+	aCCodeGenerator var: #oldSpaceUsePriorToScavenge type: #sqLong.
 	aCCodeGenerator
 		var: #remapBuffer
-		declareC: 'sqInt remapBuffer[RemapBufferSize + 1 /* ', (RemapBufferSize + 1) printString, ' */]'.
+		declareC: 'sqInt remapBuffer[RemapBufferSize + 1 /* '
+			, (RemapBufferSize + 1) printString , ' */]'.
 	aCCodeGenerator
 		var: #extraRoots
-		declareC: 'sqInt *extraRoots[ExtraRootsSize + 1 /* ', (ExtraRootsSize + 1) printString, ' */]'.
-		
-	aCCodeGenerator 
+		declareC: 'sqInt *extraRoots[ExtraRootsSize + 1 /* '
+			, (ExtraRootsSize + 1) printString , ' */]'.
+
+	aCCodeGenerator
 		var: #memoryMap type: #'VMMemoryMap *';
 		var: #fromOldSpaceRememberedSet type: #'VMRememberedSet *';
 		var: #fromPermToOldSpaceRememberedSet type: #'VMRememberedSet *';
 		var: #fromPermToNewSpaceRememberedSet type: #'VMRememberedSet *';
-		var: #permSpaceForwardersToCleanUp type: #'SpurContiguousObjStack *'
-
+		var: #permSpaceForwardersToCleanUp
+		type: #'SpurContiguousObjStack *'
 ]
 
 { #category : 'translation' }
@@ -934,7 +928,10 @@ SpurMemoryManager class >> isImmediate: anObject [
 
 { #category : 'translation' }
 SpurMemoryManager class >> isNonArgumentImplicitReceiverVariableName: aString [
-	^#('self' 'coInterpreter' 'manager' 'scavenger' 'segmentManager' 'compactor' 'planningCompactor' 'selectiveCompactor' 'heapMap') includes: aString
+
+	^ #( 'self' 'coInterpreter' 'manager' 'scavenger' 'segmentManager'
+	     'compactor' 'planningCompactor' 'selectiveCompactor'
+	     'heapMap' 'statistics' ) includes: aString
 ]
 
 { #category : 'translation' }
@@ -2140,7 +2137,6 @@ SpurMemoryManager >> allocateOldSpaceChunkOfBytes: chunkBytes [
 		[self freeChunkWithBytes: nodeBytes - chunkBytes
 				at: (self startOfObject: chunk) + chunkBytes].
 	
-	self checkFreeSpace: GCModeFreeSpace.
 	^self startOfObject: chunk
 ]
 
@@ -2711,10 +2707,12 @@ SpurMemoryManager >> attemptToShrink [
 	"Attempt to shrink memory after successfully reclaiming lots of memory.
 	 If there's enough memory to shrink then be sure to attept to shrink by
 	 at least growHeaqdroom because segments are typically of that size."
-	(totalFreeOldSpace > shrinkThreshold
-	 and: [totalFreeOldSpace > growHeadroom
-	 and: [segmentManager shrinkObjectMemory: (totalFreeOldSpace - growHeadroom max: growHeadroom)]]) ifTrue:
-		[statShrinkMemory := statShrinkMemory + 1]
+
+	(totalFreeOldSpace > shrinkThreshold and: [
+			 totalFreeOldSpace > growHeadroom and: [
+					 segmentManager shrinkObjectMemory:
+						 (totalFreeOldSpace - growHeadroom max: growHeadroom) ] ])
+		ifTrue: [ statistics incrementShrinkMemory ]
 ]
 
 { #category : 'accessing' }
@@ -4195,18 +4193,19 @@ SpurMemoryManager >> coalesce: obj1 and: obj2 [
 SpurMemoryManager >> coallesceFreeChunk: objOop [
 	"Attempt to coallesce objOop with the following objects in memory.
 	 Answer the possibly changed start of objOop after coallescing."
+
 	| here next |
 	here := objOop.
 	self assert: (self isRemembered: here) not.
 	"Because lastBridge is marked loop below will terminate on reaching lastBridge."
 	self assert: (self isMarked: segmentManager lastBridge).
 	next := self objectAfter: here limit: memoryMap oldSpaceEnd.
-	[self isMarked: next] whileFalse: "coalescing; rare case"
-		[self assert: (self isRemembered: next) not.
-		 statCoalesces := statCoalesces + 1.
-		 here := self coalesce: here and: next.
-		 next := self objectAfter: here limit: memoryMap oldSpaceEnd].
-	^here
+	[ self isMarked: next ] whileFalse: [ "coalescing; rare case"
+			self assert: (self isRemembered: next) not.
+			statistics incrementCoalesces.
+			here := self coalesce: here and: next.
+			next := self objectAfter: here limit: memoryMap oldSpaceEnd ].
+	^ here
 ]
 
 { #category : 'accessing' }
@@ -4387,14 +4386,14 @@ SpurMemoryManager >> countNumClassPagesPreSwizzle: bytesToShift [
 SpurMemoryManager >> currentAllocatedBytes [
 	"Compute the current allocated bytes since last set.
 	 This is the cumulative total in statAllocatedBytes plus the allocation since the last scavenge."
+
+	<var: 'use' type: #usqInt>
 	| use |
 	"Slang infers the type of the difference between two unsigned variables as signed.
 	 In this case we want it to be unsigned."
-	<var: 'use' type: #usqInt>
 	use := segmentManager totalOldSpaceCapacity - totalFreeOldSpace.
-	^statAllocatedBytes
-	 + (freeStart - scavenger eden start)
-	 + (use - oldSpaceUsePriorToScavenge)
+	^ statistics statAllocatedBytes + (freeStart - scavenger eden start)
+	  + (use - oldSpaceUsePriorToScavenge)
 ]
 
 { #category : 'interpreter access' }
@@ -4471,8 +4470,9 @@ SpurMemoryManager >> doAfterMoveToPermSpace [
 
 { #category : 'allocation accounting' }
 SpurMemoryManager >> doAllocationAccountingForScavenge [
+
 	<inline: true>
-	statAllocatedBytes := self currentAllocatedBytes
+	statistics statAllocatedBytes: self currentAllocatedBytes
 ]
 
 { #category : 'become implementation' }
@@ -6143,19 +6143,26 @@ SpurMemoryManager >> fromOldSpaceRememberedSet [
 { #category : 'gc - global' }
 SpurMemoryManager >> fullGC [
 	"Perform a full eager compacting GC.  Answer the size of the largest free chunk."
+
+	"for profiling"
+
 	<returnTypeC: #usqLong>
-	<inline: #never> "for profiling"
+	<inline: #never>
 	needGCFlag := false.
 	gcStartUsecs := coInterpreter ioUTCMicrosecondsNow.
-	statMarkCount := 0.
+	statistics statMarkCount: 0.
 	coInterpreter preGCAction: GCModeFull.
 	self globalGarbageCollect.
 	coInterpreter postGCAction: GCModeFull.
-	statGCEndUsecs := coInterpreter ioUTCMicrosecondsNow.
-	self updateFullGCStats.
-	^(freeLists at: 0) ~= 0
-		ifTrue: [self bytesInObject: self findLargestFreeChunk]
-		ifFalse: [0]
+	statistics statGCEndUsecs: coInterpreter ioUTCMicrosecondsNow.
+	statistics
+		updateFullGCStatsStartUsecs: gcStartUsecs
+		markEndUsecs: gcMarkEndUsecs
+		compactionStartUsecs: compactionStartUsecs
+		sweepEndUsecs: gcSweepEndUsecs.
+	^ (freeLists at: 0) ~= 0
+		  ifTrue: [ self bytesInObject: self findLargestFreeChunk ]
+		  ifFalse: [ 0 ]
 ]
 
 { #category : 'gc - global' }
@@ -6317,13 +6324,14 @@ SpurMemoryManager >> growHeadroom: aValue [
 SpurMemoryManager >> growOldSpaceByAtLeast: minAmmount callingOperation: aString [
 	"Attempt to grow memory by at least minAmmount bytes.
 	 Answer the size of the new segment in bytes, or nil if the attempt failed."
-	| ammount headroom total start interval |
+
 	<returnTypeC: #size_t>
 	<var: #segInfo type: #'SpurSegmentInfo *'>
 	<var: #aString type: #'char *'>
-	
-	"statGrowMemory counts attempts, not successes."
-	statGrowMemory := statGrowMemory + 1."we need to include overhead for a new object header plus the segment bridge."
+	| ammount headroom total start interval |
+	statistics incrementGrowMemory.
+
+	"statGrowMemory counts attempts, not successes." "we need to include overhead for a new object header plus the segment bridge."
 	ammount := minAmmount + (self baseHeaderSize * 2 + self bridgeSize).
 	"round up to the nearest power of two."
 	ammount := 1 << (ammount - 1) highBit.
@@ -6331,41 +6339,48 @@ SpurMemoryManager >> growOldSpaceByAtLeast: minAmmount callingOperation: aString
 	ammount := ammount max: growHeadroom.
 
 	"Now apply the maxOldSpaceSize limit, if one is in effect."
-	maxOldSpaceSize > 0 ifTrue:
-		[total := segmentManager totalBytesInSegments.
-		 total >= maxOldSpaceSize ifTrue:[
-			self logError: 'Could not allocate more memory while %s. MaxOldSpaceSize reached.' _: aString.
-			^nil].
-		 headroom := maxOldSpaceSize - total.
-		 headroom < ammount ifTrue:
-			[headroom < (minAmmount + (self baseHeaderSize * 2 + self bridgeSize)) ifTrue:
-				[
-				self logError: 'Required space is bigger than the headroom while %s. Could not allocate' _: aString.
-				^nil].
-			 ammount := headroom]].
-		 
+	maxOldSpaceSize > 0 ifTrue: [
+			total := segmentManager totalBytesInSegments.
+			total >= maxOldSpaceSize ifTrue: [
+					self
+						logError:
+						'Could not allocate more memory while %s. MaxOldSpaceSize reached.'
+						_: aString.
+					^ nil ].
+			headroom := maxOldSpaceSize - total.
+			headroom < ammount ifTrue: [
+					headroom
+					< (minAmmount + (self baseHeaderSize * 2 + self bridgeSize))
+						ifTrue: [
+								self
+									logError:
+									'Required space is bigger than the headroom while %s. Could not allocate'
+									_: aString.
+								^ nil ].
+					ammount := headroom ] ].
+
 	start := coInterpreter ioUTCMicrosecondsNow.
 	(segmentManager addSegmentOfSize: ammount)
 		ifNil: [ ^ 0 ]
 		ifNotNil: [ :segInfo |
-			| freeChunk |
-			self assimilateNewSegment: segInfo.
-			"and add the new free chunk to the free list; done here
+				| freeChunk |
+				self assimilateNewSegment: segInfo.
+				"and add the new free chunk to the free list; done here
 		  instead of in assimilateNewSegment: for the assert"
-			freeChunk := self
-				             addFreeChunkWithBytes:
-				             segInfo segSize - self bridgeSize
-				             at: segInfo segStart.
-			self assert: freeChunk = (self objectStartingAt: segInfo segStart).
-			self assert:
-				(self addressAfter: freeChunk)
-				= (segInfo segLimit - self bridgeSize).
-			self checkFreeSpace: GCModeFreeSpace.
-			segmentManager checkSegments.
-			interval := coInterpreter ioUTCMicrosecondsNow - start.
-			interval > statMaxAllocSegmentTime ifTrue: [
-				statMaxAllocSegmentTime := interval ].
-			^ segInfo segSize ]
+				freeChunk := self
+					             addFreeChunkWithBytes:
+					             segInfo segSize - self bridgeSize
+					             at: segInfo segStart.
+				self assert: freeChunk = (self objectStartingAt: segInfo segStart).
+				self assert:
+					(self addressAfter: freeChunk)
+					= (segInfo segLimit - self bridgeSize).
+				self checkFreeSpace: GCModeFreeSpace.
+				segmentManager checkSegments.
+				interval := coInterpreter ioUTCMicrosecondsNow - start.
+				interval > statistics statMaxAllocSegmentTime ifTrue: [
+					statistics statMaxAllocSegmentTime: interval ].
+				^ segInfo segSize ]
 ]
 
 { #category : 'growing/shrinking memory' }
@@ -6854,40 +6869,55 @@ SpurMemoryManager >> initialInstanceOf: classObj [
 SpurMemoryManager >> initialize [
 	"We can put all initializations that set something to 0 or to false here.
 	 In C all global variables are initialized to 0, and 0 is false."
+
 	remapBuffer := Array new: RemapBufferSize.
 	remapBufferCount := extraRootCount := 0. "see below"
 	freeListsMask := totalFreeOldSpace := lowSpaceThreshold := 0.
 	checkForLeaks := 0.
 	needGCFlag := signalLowSpace := marking := false.
 	becomeEffectsFlags := gcPhaseInProgress := 0.
-	statScavenges := statFullGCs := 0.
-	statMaxAllocSegmentTime := 0.
-	statMarkUsecs := statSweepUsecs := statScavengeGCUsecs := statFullGCUsecs := statCompactionUsecs := statGCEndUsecs := gcSweepEndUsecs := 0.
-	statSGCDeltaUsecs := statIGCDeltaUsecs := statFGCDeltaUsecs := 0.
-	statGrowMemory := statShrinkMemory := statRootTableCount := statAllocatedBytes := 0.
-	statRootTableOverflows := statMarkCount := statCompactPassCount := statCoalesces := 0.
+	gcSweepEndUsecs := 0.
 
 	"we can initialize things that are virtual in C."
-	fromOldSpaceRememberedSet := VMRememberedSet new manager: self; rootIndex: OldRememberedSetRootIndex; yourself.
-	fromPermToOldSpaceRememberedSet := VMRememberedSet new manager: self; rootIndex: PermToOldRememberedSetRootIndex; yourself.
-	fromPermToNewSpaceRememberedSet := VMRememberedSet new manager: self; rootIndex: PermToNewRememberedSetRootIndex; yourself.
+	statistics := SpurMemoryManagerStats new.
 
-	scavenger := SpurGenerationScavenger simulatorClass new manager: self; yourself.
-	segmentManager := SpurSegmentManager simulatorClass new manager: self; yourself.
-	compactor := self class compactorClass simulatorClass new manager: self; yourself.
+	fromOldSpaceRememberedSet := VMRememberedSet new
+		                             manager: self;
+		                             rootIndex: OldRememberedSetRootIndex;
+		                             yourself.
+	fromPermToOldSpaceRememberedSet := VMRememberedSet new
+		                                   manager: self;
+		                                   rootIndex:
+			                                   PermToOldRememberedSetRootIndex;
+		                                   yourself.
+	fromPermToNewSpaceRememberedSet := VMRememberedSet new
+		                                   manager: self;
+		                                   rootIndex:
+			                                   PermToNewRememberedSetRootIndex;
+		                                   yourself.
+
+	scavenger := SpurGenerationScavenger simulatorClass new
+		             manager: self;
+		             yourself.
+	segmentManager := SpurSegmentManager simulatorClass new
+		                  manager: self;
+		                  yourself.
+	compactor := self class compactorClass simulatorClass new
+		             manager: self;
+		             yourself.
 
 	"We can also initialize here anything that is only for simulation."
 	heapMap := CogCheck32BitHeapMap new.
 
 	"N.B. We *don't* initialize extraRoots because we don't simulate it."
 	maxOldSpaceSize := self class initializationOptions
-							ifNotNil: [:initOpts| initOpts at: #maxOldSpaceSize ifAbsent: [0]]
-							ifNil: [0].
-	
-	avoidSearchingSegmentsWithPinnedObjects := false.
-	
-	maxSlotsForNewSpaceAlloc := 0. "We will use the default value"
+		                   ifNotNil: [ :initOpts |
+		                   initOpts at: #maxOldSpaceSize ifAbsent: [ 0 ] ]
+		                   ifNil: [ 0 ].
 
+	avoidSearchingSegmentsWithPinnedObjects := false.
+
+	maxSlotsForNewSpaceAlloc := 0 "We will use the default value"
 ]
 
 { #category : 'bootstrap' }
@@ -11971,13 +12001,20 @@ SpurMemoryManager >> scavengingGC [
 { #category : 'gc - scavenging' }
 SpurMemoryManager >> scavengingGCTenuringIf: tenuringCriterion [
 	"Run the scavenger."
+
 	<inline: false>
 	self assert: remapBufferCount = 0.
-	(self asserta: scavenger eden limit - freeStart >= coInterpreter interpreterAllocationReserveBytes) ifFalse:
-		[coInterpreter tab;
-			printNum: scavenger eden limit - freeStart; space;
-			printNum: coInterpreter interpreterAllocationReserveBytes; space;
-			printNum: coInterpreter interpreterAllocationReserveBytes - (scavenger eden limit - freeStart); cr].
+	(self asserta: scavenger eden limit - freeStart
+		 >= coInterpreter interpreterAllocationReserveBytes) ifFalse: [
+			coInterpreter
+				tab;
+				printNum: scavenger eden limit - freeStart;
+				space;
+				printNum: coInterpreter interpreterAllocationReserveBytes;
+				space;
+				printNum: coInterpreter interpreterAllocationReserveBytes
+					- (scavenger eden limit - freeStart);
+				cr ].
 	self checkMemoryMap.
 	self checkFreeSpace: GCModeNewSpace.
 	self runLeakCheckerFor: GCModeNewSpace.
@@ -11986,18 +12023,21 @@ SpurMemoryManager >> scavengingGCTenuringIf: tenuringCriterion [
 		preGCAction: GCModeNewSpace;
 		"would prefer this to be in mapInterpreterOops, but
 		 compatibility with ObjectMemory dictates it goes here."
-		flushMethodCacheFrom: memoryMap newSpaceStart to: memoryMap newSpaceEnd.
+		flushMethodCacheFrom: memoryMap newSpaceStart
+		to: memoryMap newSpaceEnd.
 	needGCFlag := false.
 
 	gcStartUsecs := coInterpreter ioUTCMicrosecondsNow.
 
 	self doScavenge: tenuringCriterion.
 
-	statScavenges := statScavenges + 1.
-	statGCEndUsecs := coInterpreter ioUTCMicrosecondsNow.
-	statSGCDeltaUsecs := statGCEndUsecs - gcStartUsecs.
-	statScavengeGCUsecs := statScavengeGCUsecs + statSGCDeltaUsecs.
-	statRootTableCount := fromOldSpaceRememberedSet rememberedSetSize.
+	statistics incrementScavenges.
+	statistics statGCEndUsecs: coInterpreter ioUTCMicrosecondsNow.
+	statistics statSGCDeltaUsecs:
+		statistics statGCEndUsecs - gcStartUsecs.
+	statistics incrementScavengeGCUsecsBy: statistics statSGCDeltaUsecs.
+	statistics statRootTableCount:
+		fromOldSpaceRememberedSet rememberedSetSize.
 
 	scavenger logScavenge.
 
@@ -12073,9 +12113,10 @@ SpurMemoryManager >> setCurrentAllocatedBytesTo: n [
 	"Reset the allocation count to n (n will typically be zero).  Since we wish to
 	 discount the current use we must set statAllocatedBytes to n and update
 	 oldSpaceUsePriorToScavenge to discount the current allocated bytes."
+
 	| delta |
-	delta := self currentAllocatedBytes - statAllocatedBytes.
-	statAllocatedBytes := n.
+	delta := self currentAllocatedBytes - statistics statAllocatedBytes.
+	statistics statAllocatedBytes: n.
 	oldSpaceUsePriorToScavenge := oldSpaceUsePriorToScavenge + delta.
 	self assert: self currentAllocatedBytes = n
 ]
@@ -12660,73 +12701,93 @@ SpurMemoryManager >> startOfObject: objOop given: rawNumSlots [
 
 { #category : 'accessing' }
 SpurMemoryManager >> statCompMoveCount [
-	"Spur never compacts by moving; but it does make compaction passes."
-	^statCompactPassCount
+
+	<doNotGenerate>
+	^ statistics statCompMoveCount
 ]
 
 { #category : 'accessing' }
 SpurMemoryManager >> statCompactPassCount [
-	^statCompactPassCount
-]
 
-{ #category : 'accessing' }
-SpurMemoryManager >> statCompactPassCount: anInteger [
-	^statCompactPassCount := anInteger
+	<doNotGenerate>
+	^ statistics statCompactPassCount
 ]
 
 { #category : 'accessing' }
 SpurMemoryManager >> statCompactionUsecs [
-	^statCompactionUsecs
+
+	<doNotGenerate>
+	^ statistics statCompactionUsecs
 ]
 
 { #category : 'accessing' }
 SpurMemoryManager >> statFGCDeltaUsecs [
-	^statFGCDeltaUsecs
+
+	<doNotGenerate>
+	^ statistics statFGCDeltaUsecs
 ]
 
 { #category : 'accessing' }
 SpurMemoryManager >> statFullGCUsecs [
-	^statFullGCUsecs
+
+	<doNotGenerate>
+	^ statistics statFullGCUsecs
 ]
 
 { #category : 'accessing' }
 SpurMemoryManager >> statFullGCs [
-	^statFullGCs
+
+	<doNotGenerate>
+	^ statistics statFullGCs
 ]
 
 { #category : 'accessing' }
 SpurMemoryManager >> statGCEndUsecs [
-	^statGCEndUsecs
+
+	<doNotGenerate>
+	^ statistics statGCEndUsecs
 ]
 
 { #category : 'accessing' }
 SpurMemoryManager >> statGrowMemory [
-	^statGrowMemory
+
+	<doNotGenerate>
+	^ statistics statGrowMemory
 ]
 
 { #category : 'accessing' }
 SpurMemoryManager >> statIGCDeltaUsecs [
-	^statIGCDeltaUsecs
+
+	<doNotGenerate>
+	^ statistics statIGCDeltaUsecs
 ]
 
 { #category : 'accessing' }
 SpurMemoryManager >> statMarkCount [
-	^statMarkCount
+
+	<doNotGenerate>
+	^ statistics statMarkCount
 ]
 
 { #category : 'accessing' }
 SpurMemoryManager >> statMarkUsecs [
-	^statMarkUsecs
+
+	<doNotGenerate>
+	^ statistics statMarkUsecs
 ]
 
 { #category : 'accessing' }
 SpurMemoryManager >> statMaxAllocSegmentTime [
-	^statMaxAllocSegmentTime
+
+	<doNotGenerate>
+	^ statistics statMaxAllocSegmentTime
 ]
 
 { #category : 'accessing' }
 SpurMemoryManager >> statMaxAllocSegmentTime: aValue [
-	statMaxAllocSegmentTime := aValue
+
+	<doNotGenerate>
+	statistics statMaxAllocSegmentTime: aValue
 ]
 
 { #category : 'accessing' }
@@ -12736,38 +12797,51 @@ SpurMemoryManager >> statMkFwdCount [
 
 { #category : 'accessing' }
 SpurMemoryManager >> statNumGCs [
-	<export: true>
-	^statScavenges + statFullGCs
+
+	<doNotGenerate>
+	^ statistics statNumGCs
 ]
 
 { #category : 'accessing' }
 SpurMemoryManager >> statRootTableCount [
-	^statRootTableCount
+
+	<doNotGenerate>
+	^ statistics statRootTableCount
 ]
 
 { #category : 'accessing' }
 SpurMemoryManager >> statRootTableOverflows [
-	^statRootTableOverflows
+
+	<doNotGenerate>
+	^ statistics statRootTableOverflows
 ]
 
 { #category : 'accessing' }
 SpurMemoryManager >> statSGCDeltaUsecs [
-	^statSGCDeltaUsecs
+
+	<doNotGenerate>
+	^ statistics statSGCDeltaUsecs
 ]
 
 { #category : 'accessing' }
 SpurMemoryManager >> statScavengeGCUsecs [
-	^statScavengeGCUsecs
+
+	<doNotGenerate>
+	^ statistics statScavengeGCUsecs
 ]
 
 { #category : 'accessing' }
 SpurMemoryManager >> statScavenges [
-	^statScavenges
+
+	<doNotGenerate>
+	^ statistics statScavenges
 ]
 
 { #category : 'accessing' }
 SpurMemoryManager >> statShrinkMemory [
-	^statShrinkMemory
+
+	<doNotGenerate>
+	^ statistics statShrinkMemory
 ]
 
 { #category : 'accessing' }
@@ -12788,7 +12862,9 @@ SpurMemoryManager >> statSweepCount [
 
 { #category : 'accessing' }
 SpurMemoryManager >> statSweepUsecs [
-	^statSweepUsecs
+
+	<doNotGenerate>
+	^ statistics statSweepUsecs
 ]
 
 { #category : 'accessing' }
@@ -12801,6 +12877,13 @@ SpurMemoryManager >> statTenures [
 SpurMemoryManager >> statTenures: aValue [
 	<doNotGenerate>
 	scavenger statTenures: aValue
+]
+
+{ #category : 'accessing' }
+SpurMemoryManager >> statistics [
+
+	<doNotGenerate>
+	^ statistics
 ]
 
 { #category : 'object access' }
@@ -13627,21 +13710,6 @@ SpurMemoryManager >> updateFreeLists [
 	self freeTreeNodesDo: [:freeNode |
 		self updateListStartingAt: freeNode.
 		freeNode]
-]
-
-{ #category : 'gc - global' }
-SpurMemoryManager >> updateFullGCStats [	
-	"Stats updated (since VM start-up): 
-	1) number of full GCs,
-	2) time spent in full GC,
-	3) time spent in compaction (included in 2)
-	4) time spent in sweep phase (included in 2 & 3, 0 if no sweep phase)
-	5) time spent in mark phase (included in 2)"
-	statFullGCs := statFullGCs + 1.
-	statFullGCUsecs := statFullGCUsecs + (statGCEndUsecs - gcStartUsecs).
-	statCompactionUsecs := statCompactionUsecs + (statGCEndUsecs - compactionStartUsecs).
-	gcSweepEndUsecs = 0 ifFalse: [statSweepUsecs := statSweepUsecs + (gcSweepEndUsecs - compactionStartUsecs)].
-	statMarkUsecs := statMarkUsecs + (gcMarkEndUsecs - gcStartUsecs).
 ]
 
 { #category : 'initialization' }

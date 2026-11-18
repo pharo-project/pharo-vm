@@ -79,7 +79,7 @@ VMSpurOldSpaceTest >> testAllocateExactBiggerChunkShouldNotReuseSmallFreeChunk [
 
 	| secondAddress newAddress |
 	secondAddress := memory allocateOldSpaceChunkOfBytes: 160.
-	memory freeChunkWithBytes: 160 at: secondAddress.
+	memory addFreeChunkWithBytes: 160 at: secondAddress.
 
 	newAddress := memory allocateOldSpaceChunkOfBytes: 240.
 	self deny: newAddress equals: secondAddress
@@ -102,7 +102,7 @@ VMSpurOldSpaceTest >> testAllocateExactFitInListShouldRemoveNodeFromList [
 
 	| secondAddress |
 	secondAddress := memory allocateOldSpaceChunkOfBytes: 160.
-	memory freeChunkWithBytes: 160 at: secondAddress.
+	memory addFreeChunkWithBytes: 160 at: secondAddress.
 
 	memory allocateOldSpaceChunkOfBytes: 160.
 	self assert: (self freeListForSize: 160) equals: 0
@@ -143,11 +143,11 @@ VMSpurOldSpaceTest >> testAllocateHalfOfTreeNodeShouldSplitIt [
 	
 	size := 1600.	"Big enough size to be in the tree"
 	childAddress := memory allocateOldSpaceChunkOfBytes: size.
-	memory freeChunkWithBytes: size at: childAddress.
+	memory addFreeChunkWithBytes: size at: childAddress.
 	
 	aBitBiggerThanHalf := size / 2 + 8.	"node a bit bigger than half"
 	childAddress := memory allocateOldSpaceChunkOfBytes: aBitBiggerThanHalf.
-	memory freeChunkWithBytes: aBitBiggerThanHalf at: childAddress.
+	memory addFreeChunkWithBytes: aBitBiggerThanHalf at: childAddress.
 	
 	smallerChildOop := self smallerNodeOf: self freeTreeRootOop.
 	self assert: (memory bytesInObject: smallerChildOop) equals: (size - aBitBiggerThanHalf).
@@ -284,7 +284,7 @@ VMSpurOldSpaceTest >> testAllocateSmallerChunkShouldReusePartiallyFreeChunk [
 
 	| secondAddress newAddress |
 	secondAddress := memory allocateOldSpaceChunkOfBytes: 160.
-	memory freeChunkWithBytes: 160 at: secondAddress.
+	memory addFreeChunkWithBytes: 160 at: secondAddress.
 
 	newAddress := memory allocateOldSpaceChunkOfBytes: 80.
 	self assert: newAddress equals: secondAddress
@@ -342,7 +342,7 @@ VMSpurOldSpaceTest >> testAllocationShouldNotLeaveFreeChunkSmallerThanLiliputian
 
 	| newAddress freeLargeSpaceAddressBeforeAllocation freeAddress |
 	freeAddress := memory allocateOldSpaceChunkOfBytes: 32.
-	memory freeChunkWithBytes: 32 at: freeAddress.
+	memory addFreeChunkWithBytes: 32 at: freeAddress.
 
 	"Allocating 24 bytes should not reuse the 32bytes free chunk because it will leave a free chunk < 16bytes (a liliputian)"	
 	freeLargeSpaceAddressBeforeAllocation := self freeTreeRootStartAddress.
@@ -602,9 +602,9 @@ VMSpurOldSpaceTest >> testFreeChunksWithSameSizeShouldBeListedAsDifferentFreeChu
 
 	| secondAddress newAddress |
 	secondAddress := memory allocateOldSpaceChunkOfBytes: 160.
-	memory freeChunkWithBytes: 160 at: secondAddress.
+	memory addFreeChunkWithBytes: 160 at: secondAddress.
 	newAddress := memory allocateOldSpaceChunkOfBytes: 80.
-	memory freeChunkWithBytes: 80 at: newAddress.
+	memory addFreeChunkWithBytes: 80 at: newAddress.
 	
 	self assert: memory allFreeObjects size equals: 3
 ]
@@ -631,7 +631,7 @@ VMSpurOldSpaceTest >> testFreeListsShouldBeIndexedBySlotSize [
 		byteSize := numberOfSlots * memory allocationUnit.
 		
 		firstAddress := memory allocateOldSpaceChunkOfBytes: byteSize.
-		memory freeChunkWithBytes: byteSize at: firstAddress.
+		memory addFreeChunkWithBytes: byteSize at: firstAddress.
 	
 		freeListHead := memory freeLists at: numberOfSlots.
 		self assert: freeListHead equals: firstAddress
@@ -801,7 +801,7 @@ VMSpurOldSpaceTest >> testPartiallyReusingFreeChunkShouldKeepNumberOfEntriesInFr
 	| secondAddress freeChunksBefore |
 	secondAddress := memory allocateOldSpaceChunkOfBytes: 160.
 
-	memory freeChunkWithBytes: 160 at: secondAddress.
+	memory addFreeChunkWithBytes: 160 at: secondAddress.
 	freeChunksBefore := memory allFreeObjects size.
 	memory allocateOldSpaceChunkOfBytes: 80.
 	
@@ -813,7 +813,7 @@ VMSpurOldSpaceTest >> testReuseFreeChunkShouldRemoveEntryFromFreeList [
 
 	| secondAddress |
 	secondAddress := memory allocateOldSpaceChunkOfBytes: 160.
-	memory freeChunkWithBytes: 160 at: secondAddress.
+	memory addFreeChunkWithBytes: 160 at: secondAddress.
 	memory allocateOldSpaceChunkOfBytes: 160.
 	
 	self assert: memory allFreeObjects size equals: 1
