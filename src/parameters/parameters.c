@@ -6,6 +6,10 @@
 #include <limits.h>
 #include <string.h>
 #include <unistd.h>
+#ifdef __APPLE__
+# include <mach-o/dyld.h>
+# include <stdint.h>
+#endif
 
 #ifndef PATH_MAX
 # define PATH_MAX FILENAME_MAX
@@ -823,6 +827,36 @@ resolveVMExecutablePath(const char *argv0, char *fullPathBuffer, size_t bufferSi
 	if(!savedErrno)
 	{
 		savedErrno = errno;
+	}
+#elif defined(__APPLE__)
+	char *rawExecPath = (char*)calloc(1, bufferSize);
+	if(rawExecPath)
+	{
+		uint32_t execPathSize = (uint32_t)bufferSize;
+		int dyldRes = _NSGetExecutablePath(rawExecPath, &execPathSize);
+		if(dyldRes == -1 && execPathSize > bufferSize)
+		{
+			char *largerPath = (char*)realloc(rawExecPath, execPathSize);
+			if(largerPath)
+			{
+				rawExecPath = largerPath;
+				dyldRes = _NSGetExecutablePath(rawExecPath, &execPathSize);
+			}
+		}
+		if(dyldRes == 0)
+		{
+			errno = 0;
+			fullPath = realpath(rawExecPath, fullPathBuffer);
+			if(!fullPath && !savedErrno)
+			{
+				savedErrno = errno;
+			}
+		}
+		free(rawExecPath);
+		if(fullPath)
+		{
+			return fullPath;
+		}
 	}
 #endif
 
