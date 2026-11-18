@@ -55,13 +55,26 @@ void dumpPrimTraceLog();
 #define CRASH_REPORT_WATCHDOG_SECONDS 30
 
 static void
+writeStderrAsyncSignalSafe(const char *msg, size_t len)
+{
+	while (len > 0) {
+		ssize_t written = write(STDERR_FILENO, msg, len);
+		if (written <= 0) {
+			break;
+		}
+		msg += written;
+		len -= (size_t)written;
+	}
+}
+
+static void
 crashReportWatchdogExpired(int sig)
 {
 	static const char msg[] =
 		"\nVM crash-report handler timed out (deadlocked, most likely inside the "
 		"allocator); terminating.\n";
 	/* async-signal-safe only */
-	(void)write(STDERR_FILENO, msg, sizeof(msg) - 1);
+	writeStderrAsyncSignalSafe(msg, sizeof(msg) - 1);
 	_exit(128 + SIGABRT);
 }
 
@@ -80,7 +93,7 @@ void doReport(char* fault, ucontext_t *uap){
 	if (reporting) {
 		static const char reentrantMsg[] =
 			"\nRecursive fault inside VM crash-report handler; terminating.\n";
-		(void)write(STDERR_FILENO, reentrantMsg, sizeof(reentrantMsg) - 1);
+		writeStderrAsyncSignalSafe(reentrantMsg, sizeof(reentrantMsg) - 1);
 		_exit(128 + SIGABRT);
 	}
 	reporting = 1;
