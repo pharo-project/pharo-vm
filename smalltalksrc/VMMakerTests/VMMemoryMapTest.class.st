@@ -22,16 +22,6 @@ Class {
 	#tag : 'MemoryTests'
 }
 
-{ #category : 'running' }
-VMMemoryMapTest >> setUp [
-
-	super setUp.
-	configuration := VMMemoryMapConfigurationFor64Bits new.
-	memoryMap := VMMemoryMap new.
-	memoryMap initializeMemoryMap.
-	memoryMap memoryMapConfiguration: configuration
-]
-
 { #category : 'asserting' }
 VMMemoryMapTest >> assertSpacesAreClassifiedCorrectly [
 
@@ -54,6 +44,16 @@ VMMemoryMapTest >> assertSpacesAreClassifiedCorrectly [
 	self assert: (memoryMap isPermanentObject: memoryMap fixedPermSpaceStart).
 	self deny: (memoryMap isYoungObject: memoryMap fixedPermSpaceStart).
 	self deny: (memoryMap isOldObject: memoryMap fixedPermSpaceStart)
+]
+
+{ #category : 'running' }
+VMMemoryMapTest >> setUp [
+
+	super setUp.
+	configuration := VMMemoryMapConfigurationFor64Bits new.
+	memoryMap := VMMemoryMap new.
+	memoryMap initializeMemoryMap.
+	memoryMap memoryMapConfiguration: configuration
 ]
 
 { #category : 'tests' }

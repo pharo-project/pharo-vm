@@ -94,12 +94,18 @@ Spur32BitMMLESimulator >> freeLists [
 Spur32BitMMLESimulator >> globalGarbageCollect [
 	"If we're /not/ a clone, clone the VM and push it over the cliff.
 	 If it survives, destroy the clone and continue.  We should be OK until next time."
-	parent ifNil:
-		[coInterpreter cr; print: 'GC number '; print: statFullGCs; tab; flush.
-		 CloneOnGC ifTrue:
-			[coInterpreter cloneSimulation objectMemory globalGarbageCollect.
-			 Smalltalk garbageCollect]].
-	^super globalGarbageCollect
+
+	parent ifNil: [
+			coInterpreter
+				cr;
+				print: 'GC number ';
+				print: statistics statFullGCs;
+				tab;
+				flush.
+			CloneOnGC ifTrue: [
+					coInterpreter cloneSimulation objectMemory globalGarbageCollect.
+					Smalltalk garbageCollect ] ].
+	^ super globalGarbageCollect
 ]
 
 { #category : 'memory access' }
@@ -292,13 +298,19 @@ Spur32BitMMLESimulator >> runLeakCheckerFor: gcModes excludeUnmarkedObjs: exclud
 Spur32BitMMLESimulator >> scavengingGCTenuringIf: tenuringCriterion [
 	"If we're /not/ a clone, clone the VM and push it over the cliff.
 	 If it survives, destroy the clone and continue.  We should be OK until next time."
-	(self leakCheckNewSpaceGC
-	 and: [parent isNil]) ifTrue:
-		[coInterpreter cr; print: 'scavenge '; print: statScavenges; tab; flush.
-		 CloneOnScavenge ifTrue:
-			[coInterpreter cloneSimulation objectMemory scavengingGCTenuringIf: tenuringCriterion.
-			 Smalltalk garbageCollect]].
-	^super scavengingGCTenuringIf: tenuringCriterion
+
+	(self leakCheckNewSpaceGC and: [ parent isNil ]) ifTrue: [
+			coInterpreter
+				cr;
+				print: 'scavenge ';
+				print: statistics statScavenges;
+				tab;
+				flush.
+			CloneOnScavenge ifTrue: [
+					coInterpreter cloneSimulation objectMemory
+						scavengingGCTenuringIf: tenuringCriterion.
+					Smalltalk garbageCollect ] ].
+	^ super scavengingGCTenuringIf: tenuringCriterion
 ]
 
 { #category : 'memory access' }
