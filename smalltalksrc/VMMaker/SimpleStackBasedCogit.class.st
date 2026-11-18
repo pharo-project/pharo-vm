@@ -2797,9 +2797,7 @@ SimpleStackBasedCogit >> generateMissAbortTrampolines [
 
 { #category : 'initialization' }
 SimpleStackBasedCogit >> generateTracingTrampolines [
-	"Generate trampolines for tracing.  In the simulator we can save a lot of time
-	 and avoid noise instructions in the lastNInstructions log by short-cutting these
-	 trampolines, but we need them in the real vm."
+	"Generate trampolines for tracing."
 	ceTraceLinkedSendTrampoline :=
 		self genTrampolineFor: #ceTraceLinkedSend:
 			called: 'ceTraceLinkedSendTrampoline'

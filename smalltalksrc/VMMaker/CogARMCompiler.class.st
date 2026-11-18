@@ -3398,13 +3398,6 @@ CogARMCompiler >> type: type op: flagsOrOpcode set: doUpdateStatusRegister rn:  
 	^(self type: type op: flagsOrOpcode set: doUpdateStatusRegister rn: sourceRegister rd: targetRegister) bitOr: (so bitAnd: 16rFFF)
 ]
 
-{ #category : 'simulation' }
-CogARMCompiler >> wantsNearAddressFor: anObject [
-	"A hack hook to allow ARM to override the simulated address for the short-cut trampolines"
-	<doNotGenerate>
-	^anObject isSymbol and: [anObject beginsWith: 'ceShortCut']
-]
-
 { #category : 'inline cacheing' }
 CogARMCompiler >> zoneCallsAreRelative [
 	"Answer if Call and JumpLong are relative and hence need to take the caller's
