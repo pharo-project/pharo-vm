@@ -886,13 +886,12 @@ CogVMSimulator >> ioLoadFunction: functionString From: pluginString AccessorDept
 	"Load and return the requested function from a module.
 	 Assign the accessor depth through accessorDepthPtr.
 	 N.B. The actual code lives in platforms/Cross/vm/sqNamedPrims.h"
+
 	| firstTime plugin fnSymbol |
+
 	firstTime := false.
 	fnSymbol := functionString asSymbol.
-	transcript
-		cr;
-		show: '(', byteCount printString, ') Looking for ', functionString, ' in ',
-				(pluginString isEmpty ifTrue: ['vm'] ifFalse: [pluginString]).
+
 	(breakSelector notNil
 	 and: [(pluginString size = breakSelector size
 			and: [(self strncmp: pluginString _: breakSelector _: pluginString size) = 0])
@@ -904,18 +903,17 @@ CogVMSimulator >> ioLoadFunction: functionString From: pluginString AccessorDept
 				ifNone:
 					[firstTime := true.
 					 self loadNewPlugin: pluginString].
-	plugin ifNil:
-		[firstTime ifTrue: [transcript cr; show: '... FAILED; primitive not in plugin'].
-		 ^0].
+	
+	plugin ifNil:[^0].
+	
 	plugin := plugin value.
 	mappedPluginEntries withIndexDo:
 		[:pluginAndName :index|
 		 ((pluginAndName at: 1) == plugin 
 		  and:[(pluginAndName at: 2) == fnSymbol]) ifTrue:
-			[firstTime ifTrue: [transcript show: ' ... okay'].
-			 accessorDepthPtr at: 0 put: (pluginAndName at: 4).
+			[accessorDepthPtr at: 0 put: (pluginAndName at: 4).
 			 ^index]].
-	firstTime ifTrue: [transcript cr; show: '... FAILED; primitive not in plugin'].
+
 	^0
 ]
 

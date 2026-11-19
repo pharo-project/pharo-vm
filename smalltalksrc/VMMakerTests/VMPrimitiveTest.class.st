@@ -3384,6 +3384,76 @@ VMPrimitiveTest >> testPrimitiveNotEqualWithTypeErrorOnSecondOperand [
 	self assert: interpreter failed. 
 ]
 
+{ #category : 'tests - primitiveNotIdentical' }
+VMPrimitiveTest >> testPrimitiveNotIdenticalWithForwardedFirstObjectAndDifferentObject [
+
+	| forwardedObject otherObject |
+	forwardedObject := self setUpForwardedObjects.
+	otherObject := self newArrayWith: { memory nilObject }.
+
+	interpreter argumentCount: 2.
+	interpreter push: memory nilObject.
+	interpreter push: forwardedObject.
+	interpreter push: otherObject.
+
+	interpreter primitiveNotIdentical.
+
+	self deny: interpreter failed.
+	self assert: interpreter stackTop equals: memory trueObject
+]
+
+{ #category : 'tests - primitiveNotIdentical' }
+VMPrimitiveTest >> testPrimitiveNotIdenticalWithForwardedFirstObjectAndImmediate [
+
+	| forwardedObject |
+	forwardedObject := self setUpForwardedObjects.
+
+	interpreter argumentCount: 2.
+	interpreter push: memory nilObject.
+	interpreter push: forwardedObject.
+	interpreter push: (memory integerObjectOf: 16).
+
+	interpreter primitiveNotIdentical.
+
+	self deny: interpreter failed.
+	self assert: interpreter stackTop equals: memory trueObject
+]
+
+{ #category : 'tests - primitiveNotIdentical' }
+VMPrimitiveTest >> testPrimitiveNotIdenticalWithForwardedFirstObjectAndTarget [
+
+	| forwardedObject target |
+	forwardedObject := self setUpForwardedObjects.
+	target := memory followForwarded: forwardedObject.
+
+	interpreter argumentCount: 2.
+	interpreter push: memory nilObject.
+	interpreter push: forwardedObject.
+	interpreter push: target.
+
+	interpreter primitiveNotIdentical.
+
+	self deny: interpreter failed.
+	self assert: interpreter stackTop equals: memory falseObject
+]
+
+{ #category : 'tests - primitiveNotIdentical' }
+VMPrimitiveTest >> testPrimitiveNotIdenticalWithForwardedSecondObject [
+
+	| forwardedObject target |
+	forwardedObject := self setUpForwardedObjects.
+	target := memory followForwarded: forwardedObject.
+
+	interpreter argumentCount: 1.
+	interpreter push: target.
+	interpreter push: forwardedObject.
+
+	interpreter primitiveNotIdentical.
+
+	self deny: interpreter failed.
+	self assert: interpreter stackTop equals: memory falseObject
+]
+
 { #category : 'tests - primitivePin' }
 VMPrimitiveTest >> testPrimitivePinFailsForForwardedObjects [
 

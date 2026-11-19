@@ -190,7 +190,6 @@ SpurPlanningCompactor >> copyAndUnmark: firstPass [
 	 restoring their savedFirstFields."
 	<inline: #never>
 	| finalPass |
-	self logPhase: 'copying and unmarking...'.
 	firstPass ifTrue: [
 		self unmarkInitialImmobileObjects ].
 	finalPass := self copyAndUnmarkMobileObjects.
@@ -352,11 +351,11 @@ SpurPlanningCompactor >> freeFrom: initialToFinger upTo: limit nextObject: nextO
 	<inline: false>
 	<var: 'limit' type: #usqInt>
 	<var: 'initialToFinger' type: #usqInt>
-	| toFinger obj objStart |
 	<var: 'objStart' type: #usqInt>
 	<var: 'toFinger' type: #usqInt>
-	self cCode: [] inSmalltalk:
-		[coInterpreter cr; cr; print: 'freeing at '; printHexnp: initialToFinger; print: ' up to '; printHexnp: limit; cr].
+
+	| toFinger obj objStart |
+
 	toFinger := initialToFinger.
 	objStart := manager startOfObject: nextObject.
 	toFinger < objStart ifTrue:
@@ -438,12 +437,6 @@ SpurPlanningCompactor >> isPostMobile: obj [
 ]
 
 { #category : 'private' }
-SpurPlanningCompactor >> logPhase: phaseName [
-	<inline: true>
-	self cCode: '' inSmalltalk: [coInterpreter transcript nextPutAll: phaseName; flush].
-]
-
-{ #category : 'private' }
 SpurPlanningCompactor >> numPointerSlotsWhileCompactingOf: obj withFormat: fmt savedFirstFieldPointer: firstFieldPtr [
 	"This is a version of SpurMemoryManager>>numPointerSlotsOf: that deals with the
 	 possibility of obj being a CompiledMethod whose header is in savedFirstFieldsSpace.
@@ -486,8 +479,6 @@ SpurPlanningCompactor >> planCompactSavingForwarders [
 	<var: 'toFinger' type: #usqInt>
 	<var: 'previousPin' type: #usqInt>
 	<var: 'startOfPreviousPin' type: #usqInt>
-	savedFirstFieldsSpace top < savedFirstFieldsSpace start ifTrue:
-		[self logPhase: 'planning...'].
 	self deny: (manager isMarked: firstFreeObject).
 	toFinger := manager startOfObject: firstFreeObject.
 	top := savedFirstFieldsSpace start.
@@ -825,7 +816,6 @@ SpurPlanningCompactor >> updatePointers [
 	 Remember to update the savedFirstFields of pointer objects, as these have been forwarded."
 	<inline: #never>
 	| onePass |
-	self logPhase: 'updating pointers...'.
 	self thereAreObjectsToMove ifFalse:
 		[^self].
 	self assert: (manager startOfObject: firstFreeObject) = mobileStart.

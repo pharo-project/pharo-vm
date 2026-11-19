@@ -244,12 +244,12 @@ CogOutOfLineLiteralsRiscV64Compiler class >> initialize [
 	
 	
 	"Branch Condition Codes"
-	EQ  := 2r000. "Equal"
-	NE  := 2r001. "Not equal"
-	GE  := 2r101. "Greater or Equal"
-	GEU := 2r111. "Greater or Equal Unsigned"
-	LT  := 2r100. "Less Than"
-	LTU := 2r110. "Less Than Unsigned"
+	EQ  := 2r000. "beq: Equal"
+	NE  := 2r001. "bne: Not equal"
+	GE  := 2r101. "bge: Greater or Equal"
+	GEU := 2r111. "bgeu: Greater or Equal Unsigned"
+	LT  := 2r100. "blt: Less Than"
+	LTU := 2r110. "bltu: Less Than Unsigned"
 	
 	MSTATUS := 2r001100000000. "mstatus csr"
 	
@@ -401,8 +401,8 @@ CogOutOfLineLiteralsRiscV64Compiler >> addImmediate: anImmediate toRegister: sou
 	
 	| signExtendedImmediate |
 	"Check size and sign"
-	self assertValue: anImmediate isContainedIn: 12.
-	signExtendedImmediate := self computeSignedValueOf: anImmediate ofSize: 12.
+	self assertValue: anImmediate fitsSigned: 12.
+	signExtendedImmediate := self twosComplementOf: anImmediate inBits: 12.
 	^ ((((signExtendedImmediate bitAnd: 16rfff) << 20) 
 	  bitOr: (sourceRegister bitAnd: 16r1f) << 15) 
 	  bitOr: (destinationRegister bitAnd: 16r1f) << 7) 
@@ -436,8 +436,8 @@ CogOutOfLineLiteralsRiscV64Compiler >> addUpperImmediateToPC: anImmediate toRegi
 
 	| signExtendedImmediate |
 	"Check size and sign"	
-	self assertValue: anImmediate isContainedIn: 32.
-	signExtendedImmediate := self computeSignedValueOf: anImmediate ofSize: 32.
+	self assertValue: anImmediate fitsSigned: 20.
+	signExtendedImmediate := self twosComplementOf: anImmediate inBits: 20.
 	^ (((signExtendedImmediate bitAnd: 16rfffff) << 12) 
 	  bitOr: (destinationRegister bitAnd: 16r1f) << 7) 
 	  bitOr: 2r0010111
@@ -457,8 +457,8 @@ CogOutOfLineLiteralsRiscV64Compiler >> addWordImmediate: anImmediate toRegister:
 	| signExtendedImmediate |
 	self flag: #CLEANUP.
 	"Check size and sign"
-	self assertValue: anImmediate isContainedIn: 12.
-	signExtendedImmediate := self computeSignedValueOf: anImmediate ofSize: 12.
+	self assertValue: anImmediate fitsSigned: 12.
+	signExtendedImmediate := self twosComplementOf: anImmediate inBits: 12.
 	^ ((((signExtendedImmediate bitAnd: 16rfff) << 20) 
 	  bitOr: (sourceRegister bitAnd: 16r1f) << 15) 
 	  bitOr: (destinationRegister bitAnd: 16r1f) << 7) 
@@ -520,10 +520,15 @@ CogOutOfLineLiteralsRiscV64Compiler >> arithmeticShiftRightValueInRegister: sour
 ]
 
 { #category : 'helpers - size sign' }
-CogOutOfLineLiteralsRiscV64Compiler >> assertValue: aValue isContainedIn: aSize [ 
+CogOutOfLineLiteralsRiscV64Compiler >> assertValue: aValue fitsSigned: aSize [
 
-	"Checks that the given value is contained in a certain number of bits"
-	self assert: (self value: aValue isContainedIn: aSize)
+	self assert: (self value: aValue fitsSigned: aSize)
+]
+
+{ #category : 'helpers - size sign' }
+CogOutOfLineLiteralsRiscV64Compiler >> assertValue: aValue fitsUnsigned: aSize [
+
+	self assert: (self value: aValue fitsUnsigned: aSize)
 ]
 
 { #category : 'register allocation' }
@@ -551,8 +556,8 @@ CogOutOfLineLiteralsRiscV64Compiler >> bitwiseAndBetweenRegister: sourceReg andI
 	"
 	| signExtendedImmediate |
 	"Check size and sign"
-	self assertValue: anImmediate isContainedIn: 12.
-	signExtendedImmediate := self computeSignedValueOf: anImmediate ofSize: 12.
+	self assertValue: anImmediate fitsSigned: 12.
+	signExtendedImmediate := self twosComplementOf: anImmediate inBits: 12.
 	^ (((((signExtendedImmediate bitAnd: 16rfff) << 20)
 	  bitOr: (sourceReg bitAnd: 16r1f) << 15)
 	  bitOr: 2r111 << 12)
@@ -588,8 +593,8 @@ CogOutOfLineLiteralsRiscV64Compiler >> bitwiseOrBetweenRegister: sourceReg andIm
 	"
 	| signExtendedImmediate |
 	"Check size and sign"
-	self assertValue: anImmediate isContainedIn: 12.	
-	signExtendedImmediate := self computeSignedValueOf: anImmediate ofSize: 12.
+	self assertValue: anImmediate fitsSigned: 12.
+	signExtendedImmediate := self twosComplementOf: anImmediate inBits: 12.
 	^ (((((signExtendedImmediate bitAnd: 16rfff) << 20)
 	  bitOr: (sourceReg bitAnd: 16r1f) << 15)
 	  bitOr: 2r110 << 12)
@@ -627,8 +632,8 @@ CogOutOfLineLiteralsRiscV64Compiler >> bitwiseXorBetweenRegister: srcReg andImme
 
 	| signExtendedImmediate |	
 	"Check for sign and size"
-	self assertValue: immediate isContainedIn: 12.	
-	signExtendedImmediate :=	self computeSignedValueOf: immediate ofSize: 12.
+	self assertValue: immediate fitsSigned: 12.
+	signExtendedImmediate :=	self twosComplementOf: immediate inBits: 12.
 	^ (((((signExtendedImmediate bitAnd: 16rfff) << 20)
 	  bitOr: (srcReg bitAnd: 16r1f) << 15)
 	  bitOr: (2r100 << 12))
@@ -664,8 +669,8 @@ CogOutOfLineLiteralsRiscV64Compiler >> branchTo: offset ifCondition: condition b
 
 	| signExtendedOffset |
 	 "Check size and sign"	
-	self assertValue: offset isContainedIn: 13.
-	signExtendedOffset := self computeSignedValueOf: offset ofSize: 13.
+	self assertValue: offset fitsSigned: 13.
+	signExtendedOffset := self twosComplementOf: offset inBits: 13.
 	^ (((((((((signExtendedOffset >> 12) bitAnd: 16r1) << 31)
 	  bitOr: ((signExtendedOffset >> 5) bitAnd: 16r3f)  << 25)
 	  bitOr: (srcReg2 bitAnd: 16r1f)  << 20)
@@ -689,59 +694,6 @@ CogOutOfLineLiteralsRiscV64Compiler >> branchTo: offset ifRegisterValue: srcReg1
 ]
 
 { #category : 'machine code instruction' }
-CogOutOfLineLiteralsRiscV64Compiler >> branchTo: offset ifRegisterValue: srcReg1 isGreaterThanOrEqualRegisterValue: srcReg2 [
-	
-	"bge: If register x[rs1] is greater than or equal x[rs2], treating the values as two's complement numbers,
-	 set the PC to the current PC plus the sign-extended offset
-	
-	31                25 24   20 19   15 14   12 11             7 6         0
-	|  	offset[12|10:5]  |  rs2  |  rs1  |  101  | offset[4:1|11] | 1100011 
-	"
-	
-	^ self branchTo: offset ifCondition: GE betweenRegister: srcReg1 andRegister: srcReg2
-	
-	
-]
-
-{ #category : 'machine code instruction' }
-CogOutOfLineLiteralsRiscV64Compiler >> branchTo: offset ifRegisterValue: srcReg1 isGreaterThanRegisterValue: srcReg2 [
-	
-	"bgt: Pseudo-instruction that adds the offset to the PC if x[rs1] > x[rs2] 
-	 Expands to blt rs2, rs1, offset
-	"
-	
-	^ self branchTo: offset ifCondition: LT betweenRegister: srcReg2 andRegister: srcReg1
-	
-	
-]
-
-{ #category : 'machine code instruction' }
-CogOutOfLineLiteralsRiscV64Compiler >> branchTo: offset ifRegisterValue: srcReg1 isLessThanOrEqualRegisterValue: srcReg2 [
-	
-	"ble: Pseudo-instruction that adds the offset to the PC if x[rs1] <= x[rs2] 
-	 Expands to bge rs2, rs1, offset
-	"
-	
-	^ self branchTo: offset ifCondition: GE betweenRegister: srcReg2 andRegister: srcReg1
-	
-	
-]
-
-{ #category : 'machine code instruction' }
-CogOutOfLineLiteralsRiscV64Compiler >> branchTo: offset ifRegisterValue: srcReg1 isLessThanRegisterValue: srcReg2 [
-	
-	"blt: If register x[rs1] is less than x[rs2], treating the values as two's complement numbers,
-	 set the PC to the current PC plus the sign-extended offset
-	
-	31                25 24   20 19   15 14   12 11             7 6         0
-	|  	offset[12|10:5]  |  rs2  |  rs1  |  100  | offset[4:1|11] | 1100011 
-	"
-	
-	^ self branchTo: offset ifCondition: LT betweenRegister: srcReg1 andRegister: srcReg2
-	
-]
-
-{ #category : 'machine code instruction' }
 CogOutOfLineLiteralsRiscV64Compiler >> branchTo: offset ifRegisterValue: srcReg1 isNotEqualToRegisterValue: srcReg2 [
 	
 	"bne: If register x[rs1] does not equal x[rs2], set the PC to the current PC plus the sign-extended offset
@@ -751,110 +703,6 @@ CogOutOfLineLiteralsRiscV64Compiler >> branchTo: offset ifRegisterValue: srcReg1
 	"
 	
 	^ self branchTo: offset ifCondition: NE betweenRegister: srcReg1 andRegister: srcReg2
-	
-	
-]
-
-{ #category : 'machine code instruction' }
-CogOutOfLineLiteralsRiscV64Compiler >> branchTo: offset ifRegisterValueIsEqualToZero: srcReg [
-	
-	"beqz: Pseudo instruction that branches to the offset if the value in the register is 0
-	Expands to beq x[rs1], x0, offset
- 	"
-	
-	^ self branchTo: offset ifCondition: EQ betweenRegister: srcReg andRegister: X0
-	
-	
-]
-
-{ #category : 'machine code instruction' }
-CogOutOfLineLiteralsRiscV64Compiler >> branchTo: offset ifRegisterValueIsNegative: srcReg [
-	
-	"bltz: Pseudo instruction that branches to the offset if the value in the register is < 0
-	Expands to blt x[rs1], x0, offset
- 	"
-	self flag: #CLEANUP.
-	^ self branchTo: offset ifRegisterValue: srcReg isLessThanRegisterValue: X0
-	
-	
-]
-
-{ #category : 'machine code instruction' }
-CogOutOfLineLiteralsRiscV64Compiler >> branchTo: offset ifRegisterValueIsNonNegative: srcReg [
-	
-	"bgtz: Pseudo instruction that branches to the offset if the value in the register is > 0
-	Expands to blt x0, x[rs1], offset
- 	"
-	self flag: #CLEANUP.
-	^ self branchTo: offset ifRegisterValue: X0 isLessThanRegisterValue: srcReg
-	
-	
-]
-
-{ #category : 'machine code instruction' }
-CogOutOfLineLiteralsRiscV64Compiler >> branchTo: offset ifRegisterValueIsNotEqualToZero: srcReg [
-	
-	"bnez: Pseudo instruction that branches to the offset if the value in the register is not 0
-	Expands to bne x[rs1], x0, offset
- 	"
-	
-	^ self branchTo: offset ifCondition: NE betweenRegister: srcReg andRegister: X0
-	
-	
-]
-
-{ #category : 'machine code instruction' }
-CogOutOfLineLiteralsRiscV64Compiler >> branchTo: offset ifRegisterValueUnsigned: srcReg1 isGreaterThanOrEqualRegisterValueUnsigned: srcReg2 [
-	
-	"bgeu: If register x[rs1] is greater than or equal x[rs2], treating the values as unsigned numbers,
-	 set the PC to the current PC plus the sign-extended offset
-	
-	31                25 24   20 19   15 14   12 11             7 6         0
-	|  	offset[12|10:5]  |  rs2  |  rs1  |  111  | offset[4:1|11] | 1100011 
-	"
-	
-	^ self branchTo: offset ifCondition: GEU betweenRegister: srcReg1 andRegister: srcReg2
-	
-	
-]
-
-{ #category : 'machine code instruction' }
-CogOutOfLineLiteralsRiscV64Compiler >> branchTo: offset ifRegisterValueUnsigned: srcReg1 isGreaterThanRegisterValueUnsigned: srcReg2 [
-
-	"bgtu: If register x[rs1] is greater than x[rs2], treating the values as unsigned numbers,
-	 set the PC to the current PC plus the sign-extended offset
-	Expands to: bltu x[rs2], x[rs1], offset
-	"
-	
-	^ self branchTo: offset ifCondition: LTU betweenRegister: srcReg2 andRegister: srcReg1
-	
-	
-]
-
-{ #category : 'machine code instruction' }
-CogOutOfLineLiteralsRiscV64Compiler >> branchTo: offset ifRegisterValueUnsigned: srcReg1 isLessThanOrEqualRegisterValueUnsigned: srcReg2 [
-
-	"bleu If register x[rs1] is less than or equal x[rs2], treating the values as unsigned numbers,
-	 set the PC to the current PC plus the sign-extended offset
-	Expands to: bgeu x[rs2], x[rs1], offset
-	"
-	
-	^ self branchTo: offset ifCondition: GEU betweenRegister: srcReg2 andRegister: srcReg1
-	
-	
-]
-
-{ #category : 'machine code instruction' }
-CogOutOfLineLiteralsRiscV64Compiler >> branchTo: offset ifRegisterValueUnsigned: srcReg1 isLessThanRegisterValueUnsigned: srcReg2 [
-	
-	"bltu: If register x[rs1] is less than x[rs2], treating the values as unsigned numbers,
-	 set the PC to the current PC plus the sign-extended offset
-	
-	31                25 24   20 19   15 14   12 11             7 6         0
-	|  	offset[12|10:5]  |  rs2  |  rs1  |  110  | offset[4:1|11] | 1100011 
-	"
-	
-	^ self branchTo: offset ifCondition: LTU betweenRegister: srcReg1 andRegister: srcReg2
 	
 	
 ]
@@ -879,7 +727,7 @@ CogOutOfLineLiteralsRiscV64Compiler >> bytesForCMPCq [
 	
 	| loadOffset | 
 	self flag: #CLEANUP.
-	(self value: (operands at: 0) isContainedIn: 12)
+	(self value: (operands at: 0) fitsSigned: 12)
 		ifTrue: [ loadOffset := self bytesToLoadImmediate: (operands at: 0) ] "Immediate embedded in operations" 
 		ifFalse: [ loadOffset := self literalLoadInstructionBytes ].
 	^ loadOffset + self bytesForSUBOverflowCheck + self bytesForArithmeticFlagUpdate + 4
@@ -893,7 +741,7 @@ CogOutOfLineLiteralsRiscV64Compiler >> bytesForDataLoadOperationOfSize: operatio
 	"When loading, the offset is operands at 0"
 	dependent
 		ifNil: [ 
-			self assertValue: (operands at: 0) isContainedIn: 12.
+			self assertValue: (operands at: 0) fitsSigned: 12.
 			^ immOperationSize ].
 	^ self literalLoadInstructionBytes + operationSize 
 ]
@@ -904,7 +752,7 @@ CogOutOfLineLiteralsRiscV64Compiler >> bytesForDataStoreOperationOfSize: operati
 	"When storing, the offset is operands at 1"
 	dependent
 		ifNil: [ 
-			self assertValue: (operands at: 1) isContainedIn: 12.
+			self assertValue: (operands at: 1) fitsSigned: 12.
 			^ immOperationSize ].
 	^ self literalLoadInstructionBytes + operationSize 
 ]
@@ -1050,23 +898,24 @@ CogOutOfLineLiteralsRiscV64Compiler >> computeMaximumSize [
 			([ Fill32 ]        -> [ ^ 4 ]).
 			([ Nop ]           -> [ ^ 4 ]). 
 			"Branches"
-			([ BrEqualRR ]                 -> [ ^ 4 ]).
-			([ BrNotEqualRR ]              -> [ ^ 4 ]).
-			([ BrSignedGreaterRR ]         -> [ ^ 4 ]).
-			([ BrSignedGreaterEqualRR ]    -> [ ^ 4 ]).
-			([ BrSignedLessRR ]            -> [ ^ 4 ]).
-			([ BrSignedLessEqualRR ]       -> [ ^ 4 ]).
-			([ BrUnsignedLessRR ]          -> [ ^ 4 ]).
-			([ BrUnsignedLessEqualRR ]     -> [ ^ 4 ]).
-			([ BrUnsignedGreaterRR ]       -> [ ^ 4 ]).
-			([ BrUnsignedGreaterEqualRR ]  -> [ ^ 4 ]).
+			"Conditional branches: the long form, sizeConditionalBranchAt: picks the short one when it reaches"
+			([ BrEqualRR ]                 -> [ ^ 8 ]).
+			([ BrNotEqualRR ]              -> [ ^ 8 ]).
+			([ BrSignedGreaterRR ]         -> [ ^ 8 ]).
+			([ BrSignedGreaterEqualRR ]    -> [ ^ 8 ]).
+			([ BrSignedLessRR ]            -> [ ^ 8 ]).
+			([ BrSignedLessEqualRR ]       -> [ ^ 8 ]).
+			([ BrUnsignedLessRR ]          -> [ ^ 8 ]).
+			([ BrUnsignedLessEqualRR ]     -> [ ^ 8 ]).
+			([ BrUnsignedGreaterRR ]       -> [ ^ 8 ]).
+			([ BrUnsignedGreaterEqualRR ]  -> [ ^ 8 ]).
 			([ BrLongEqualRR ]             -> [ ^ 12 ]).
-			([ BrFPEqualRR ]               -> [ ^ 8 ]).
-			([ BrFPNotEqualRR ]            -> [ ^ 8 ]).
-			([ BrFPLessRR ]                -> [ ^ 8 ]).
-			([ BrFPLessEqualRR ]           -> [ ^ 8 ]).
-			([ BrFPGreaterRR ]             -> [ ^ 8 ]).
-			([ BrFPGreaterEqualRR ]        -> [ ^ 8 ]).
+			([ BrFPEqualRR ]               -> [ ^ 12 ]).
+			([ BrFPNotEqualRR ]            -> [ ^ 12 ]).
+			([ BrFPLessRR ]                -> [ ^ 12 ]).
+			([ BrFPLessEqualRR ]           -> [ ^ 12 ]).
+			([ BrFPGreaterRR ]             -> [ ^ 12 ]).
+			([ BrFPGreaterEqualRR ]        -> [ ^ 12 ]).
 			
 			"Overflow"
 			([ AddCheckOverflowRR ]       -> [ ^ 16 ]).
@@ -1140,7 +989,7 @@ CogOutOfLineLiteralsRiscV64Compiler >> computeMaximumSize [
 			([ RemRR ]   -> [ ^ 4 ]).
 			([ NegateR ] -> [ ^ 4 ]).
 		
-			([ CmpCqR ] -> [ (self value: (operands at: 0) isContainedIn: 12)
+			([ CmpCqR ] -> [ (self value: (operands at: 0) fitsSigned: 12)
 				ifTrue: [ ^ self bytesToLoadImmediate: (operands at: 0) + 4 ] "Immediate embedded in operations" 
 				ifFalse: [ ^ self literalLoadInstructionBytes + 4 ]. ]). 
 			([ CmpC32R ] -> [ ^ 0 ]).
@@ -1190,7 +1039,7 @@ CogOutOfLineLiteralsRiscV64Compiler >> computeMaximumSize [
 				 ifNil: [ 
 					 | cq |
 					 cq := operands at: 0.
-					 self assertValue: cq isContainedIn: 12.
+					 self assertValue: cq fitsSigned: 12.
 					 ^ self bytesToLoadImmediate: cq ]
 				 ifNotNil: [ "Literal load" ^ self literalLoadInstructionBytes ] ]).
 			([ MoveC32R ] -> [ ^ 0 ]). "shouldBeImplemented"
@@ -1299,21 +1148,38 @@ CogOutOfLineLiteralsRiscV64Compiler >> computeMaximumSize [
 	^ 0 "to keep C compiler qui Unmatched "
 ]
 
-{ #category : 'machine code instruction' }
-CogOutOfLineLiteralsRiscV64Compiler >> computeSignedValue64Bits: aValue [ 
-
-	^ self computeSignedValueOf: aValue ofSize: 64
+{ #category : 'helpers - size sign' }
+CogOutOfLineLiteralsRiscV64Compiler >> high20BitsOf: offset [
+	"Answer the signed auipc/lui field of a 32-bit offset split as auipc/lui + a sign-extended 12-bit low part
+	 (see low12BitsOf:), as R_RISCV_PCREL_HI20 computes it (RISC-V ELF psABI, 10.4.10 PC-Relative Symbol Addresses,
+	 https://riscv-non-isa.github.io/riscv-elf-psabi-doc/#_pc_relative_symbol_addresses).
+	 The 16r800 compensates for the low part being negative when its bit 11 is set.
+	 >>> because Slang translates >> to a logical (unsigned) shift."
+	<var: #offset type: #sqInt>
+	^ (offset + 16r800) >>> 12
 ]
 
 { #category : 'helpers - size sign' }
-CogOutOfLineLiteralsRiscV64Compiler >> computeSignedValueOf: aValue ofSize: aSize [
+CogOutOfLineLiteralsRiscV64Compiler >> low12BitsOf: offset [
+	"Answer the low 12 bits of offset sign-extended, i.e. what addi/ld/jalr add after auipc/lui (see high20BitsOf:)"
+	<var: #offset type: #sqInt>
+	^ self signExtendValue: (offset bitAnd: 16rFFF) forSize: 12
+]
 
-	"If the number is negative, returns two's complement in given size, otherwise return the value"
-	aValue < 0
-		ifTrue: [ | mask |
-			mask := (1 << aSize) - 1.
-			^ mask - aValue abs + 1 ]  "Compute two's complement" 
-		ifFalse: [ ^ aValue ]
+{ #category : 'helpers - size sign' }
+CogOutOfLineLiteralsRiscV64Compiler >> twosComplementOf: aValue inBits: aSize [
+	"Answer the aSize-bit two's complement encoding of aValue, ready to be put in an instruction field"
+	<var: #aValue type: #sqInt>
+	aSize >= 64 ifTrue: [ ^ aValue ].
+	^ aValue bitAnd: (1 << aSize) - 1
+]
+
+{ #category : 'testing' }
+CogOutOfLineLiteralsRiscV64Compiler >> isInPCRelativeRange: offset [
+	"Answer if offset can be reached by auipc + a 12-bit signed immediate (see high20BitsOf:):
+	 -2^31 - 2^11 <= offset < 2^31 - 2^11"
+	<var: #offset type: #sqInt>
+	^ self value: offset + 16r800 fitsSigned: 32
 ]
 
 { #category : 'concretization' }
@@ -1333,7 +1199,7 @@ CogOutOfLineLiteralsRiscV64Compiler >> concretizeAddCheckOverflowCqR [
 	cq := operands at: 0.
 	srcReg := destReg := operands at: 1.
 	dependent ifNil: [ 
-		self assertValue: cq isContainedIn: 12.
+		self assertValue: cq fitsSigned: 12.
 		"Perform the ADD operation"
 		self machineCodeAt: 0 put: (self
 			addImmediate: cq
@@ -1421,7 +1287,7 @@ CogOutOfLineLiteralsRiscV64Compiler >> concretizeAddCqR [
 	cq := operands at: 0.
 	sourceReg := destReg := operands at: 1.
 	dependent ifNil: [ 
-		self assertValue: cq isContainedIn: 12.
+		self assertValue: cq fitsSigned: 12.
 		"Use the provided immediate instruction"
 		self machineCodeAt: 0 put: (self 
 			addImmediate: cq 
@@ -1500,7 +1366,7 @@ CogOutOfLineLiteralsRiscV64Compiler >> concretizeAndCqR [
 	sourceReg := destReg := operands at: 1.
 	"Use immediate with quick or literal load"
 	dependent ifNil: [ 
-		self assertValue: cq isContainedIn: 12.
+		self assertValue: cq fitsSigned: 12.
 		"Use the provided immediate instruction"
 		self machineCodeAt: 0 put: (self
 				 bitwiseAndBetweenRegister: sourceReg
@@ -1528,7 +1394,7 @@ CogOutOfLineLiteralsRiscV64Compiler >> concretizeAndCqRR [
 	sourceReg := operands at: 1.
 	destReg := operands at: 2.
 	dependent ifNil: [ 
-		self assertValue: cq isContainedIn: 12.
+		self assertValue: cq fitsSigned: 12.
 		"Use the provided immediate instruction"
 		self machineCodeAt: 0 put: (self
 				 bitwiseAndBetweenRegister: sourceReg
@@ -1582,7 +1448,7 @@ CogOutOfLineLiteralsRiscV64Compiler >> concretizeArithmeticShiftRightCqR [
 	cq := operands at: 0.
 	sourceReg := destReg := operands at: 1.
 	dependent ifNil: [ 
-		self value: cq isContainedIn: 12.
+		self assertValue: cq fitsUnsigned: 6.
 		"Direct encoding as an immediate ASRLI"
 		self machineCodeAt: 0 put: (self
 				 arithmeticShiftRightValueInRegister: sourceReg
@@ -1621,49 +1487,61 @@ CogOutOfLineLiteralsRiscV64Compiler >> concretizeAt: actualAddress [
 	^ super concretizeAt: actualAddress
 ]
 
+{ #category : 'concretization helpers' }
+CogOutOfLineLiteralsRiscV64Compiler >> concretizeConditionalBranchAt: index condition: condition between: leftReg and: rightReg [
+	"Emit the B-type branch of a conditional jump at index (0, or 4 after an FP compare), in the form
+	 sizeConditionalBranchAt: chose. beq/bne/blt/bge/bltu/bgeu reach +-4KB; past that, branch on the
+	 opposite condition (the condition codes differ only in bit 0) over a jal, which reaches +-1MB.
+	 Instructions must keep the size they were given, so a long branch stays long even if it would now fit.
+
+	 short:  b<cond>   rs1, rs2, offset     (see branchTo:ifCondition:betweenRegister:andRegister:)
+	 long:   b<!cond>  rs1, rs2, +8         skip the jal
+	         jal       x0, offset           (see jumpToOffset:andStorePreviousPCPlus4in:)"
+	| offset |
+	(machineCodeSize = 0 "not sized, e.g. the initial trampolines"
+		ifTrue: [self isInImmediateBranchRange: (self computeJumpTargetOffsetPlus: index)]
+		ifFalse: [machineCodeSize = (index + 4)]) ifTrue:
+		[offset := self computeJumpTargetOffsetPlus: index.
+		 self assert: (self isInImmediateBranchRange: offset).
+		 self machineCodeAt: index put: (self branchTo: offset ifCondition: condition betweenRegister: leftReg andRegister: rightReg).
+		 ^machineCodeSize := index + 4].
+	offset := self computeJumpTargetOffsetPlus: index + 4.
+	self assert: (self isInImmediateJumpRange: offset).
+	self machineCodeAt: index put: (self branchTo: 8 ifCondition: (condition bitXor: 1) betweenRegister: leftReg andRegister: rightReg).
+	self machineCodeAt: index + 4 put: (self jumpToOffset: offset andStorePreviousPCPlus4in: X0).
+	^machineCodeSize := index + 8
+]
+
 { #category : 'concretization' }
 CogOutOfLineLiteralsRiscV64Compiler >> concretizeBrEqualRR [
 
 	<inline: true>
-	| offset left right |
-	offset := self computeJumpTargetOffsetPlus: 0.
-	left := operands at: 1.
-	right := operands at: 2.
- 	self assert: (self isInImmediateBranchRange: offset).
-	self machineCodeAt: 0 put: (self branchTo: offset ifRegisterValue: left isEqualToRegisterValue: right).
-	^ machineCodeSize := 4
+	^ self concretizeConditionalBranchAt: 0 condition: EQ between: (operands at: 1) and: (operands at: 2)
 ]
 
 { #category : 'concretization' }
 CogOutOfLineLiteralsRiscV64Compiler >> concretizeBrFPEqualRR [ 
 
 	<inline: true>
-	| offset left right |
-	offset := self computeJumpTargetOffsetPlus: 4.
+	| left right |
 	left := operands at: 1.
 	right := operands at: 2.
- 	self assert: (self isInImmediateBranchRange: offset).
 	"No direct branching but set one in register if comparison!"
 	self machineCodeAt: 0 put: (self 
 		fSetOneIn: ConcreteIPReg  
 		ifRegisterValue: left 
 		isEqualToRegisterValue: right).
 	"Sets one if values equal -> br if ConcreteIPReg is not equal to zero"
-	self machineCodeAt: 4 put: (self 
-		branchTo: offset 
-		ifRegisterValueIsNotEqualToZero: ConcreteIPReg ).
-	^ machineCodeSize := 8
+	^ self concretizeConditionalBranchAt: 4 condition: NE between: ConcreteIPReg and: X0
 ]
 
 { #category : 'concretization' }
 CogOutOfLineLiteralsRiscV64Compiler >> concretizeBrFPGreaterEqualRR [ 
 
 	<inline: true>
-	| offset left right |
-	offset := self computeJumpTargetOffsetPlus: 4.
+	| left right |
 	left := operands at: 1.
 	right := operands at: 2.
- 	self assert: (self isInImmediateBranchRange: offset).
 	"No direct branching but set one in register if comparison!"
 	"left>=right reversed to right<left"
 	self machineCodeAt: 0 put: (self 
@@ -1671,21 +1549,16 @@ CogOutOfLineLiteralsRiscV64Compiler >> concretizeBrFPGreaterEqualRR [
 		ifRegisterValue: right 
 		isLessThanRegisterValue: left).
 	"Sets one if right<left -> NOT left>=right -> br if set is equal to zero"
-	self machineCodeAt: 4 put: (self 
-		branchTo: offset 
-		ifRegisterValueIsEqualToZero: ConcreteIPReg ).
-	^ machineCodeSize := 8
+	^ self concretizeConditionalBranchAt: 4 condition: EQ between: ConcreteIPReg and: X0
 ]
 
 { #category : 'concretization' }
 CogOutOfLineLiteralsRiscV64Compiler >> concretizeBrFPGreaterRR [ 
 
 	<inline: true>
-	| offset left right |
-	offset := self computeJumpTargetOffsetPlus: 4.
+	| left right |
 	left := operands at: 1.
 	right := operands at: 2.
- 	self assert: (self isInImmediateBranchRange: offset).
 	"No direct branching but set one in register if comparison!"
 	"left>right reversed to right<=left"
 	self machineCodeAt: 0 put: (self 
@@ -1693,73 +1566,55 @@ CogOutOfLineLiteralsRiscV64Compiler >> concretizeBrFPGreaterRR [
 		ifRegisterValue: right 
 		isLessThanOrEqualToRegisterValue: left).
 	"Sets one if right<left -> br if ConcreteIPReg is equal to zero"
-	self machineCodeAt: 4 put: (self 
-		branchTo: offset 
-		ifRegisterValueIsEqualToZero: ConcreteIPReg ).
-	^ machineCodeSize := 8
+	^ self concretizeConditionalBranchAt: 4 condition: EQ between: ConcreteIPReg and: X0
 ]
 
 { #category : 'concretization' }
 CogOutOfLineLiteralsRiscV64Compiler >> concretizeBrFPLessEqualRR [ 
 
 	<inline: true>
-	| offset left right |
-	offset := self computeJumpTargetOffsetPlus: 4.
+	| left right |
 	left := operands at: 1.
 	right := operands at: 2.
- 	self assert: (self isInImmediateBranchRange: offset).
 	"No direct branching but set one in register if comparison!"
 	self machineCodeAt: 0 put: (self 
 		fSetOneIn: ConcreteIPReg  
 		ifRegisterValue: left 
 		isLessThanOrEqualToRegisterValue: right).
 	"Sets one if values equal -> br if ConcreteIPReg is not equal to zero"
-	self machineCodeAt: 4 put: (self 
-		branchTo: offset 
-		ifRegisterValueIsNotEqualToZero: ConcreteIPReg ).
-	^ machineCodeSize := 8
+	^ self concretizeConditionalBranchAt: 4 condition: NE between: ConcreteIPReg and: X0
 ]
 
 { #category : 'concretization' }
 CogOutOfLineLiteralsRiscV64Compiler >> concretizeBrFPLessRR [ 
 
 	<inline: true>
-	| offset left right |
-	offset := self computeJumpTargetOffsetPlus: 4.
+	| left right |
 	left := operands at: 1.
 	right := operands at: 2.
- 	self assert: (self isInImmediateBranchRange: offset).
 	"No direct branching but set one in register if comparison!"
 	self machineCodeAt: 0 put: (self 
 		fSetOneIn: ConcreteIPReg  
 		ifRegisterValue: left 
 		isLessThanRegisterValue: right).
 	"Sets one if values equal -> br if ConcreteIPReg is not equal to zero"
-	self machineCodeAt: 4 put: (self 
-		branchTo: offset 
-		ifRegisterValueIsNotEqualToZero: ConcreteIPReg ).
-	^ machineCodeSize := 8
+	^ self concretizeConditionalBranchAt: 4 condition: NE between: ConcreteIPReg and: X0
 ]
 
 { #category : 'concretization' }
 CogOutOfLineLiteralsRiscV64Compiler >> concretizeBrFPNotEqualRR [ 
 
 	<inline: true>
-	| offset left right |
-	offset := self computeJumpTargetOffsetPlus: 4.
+	| left right |
 	left := operands at: 1.
 	right := operands at: 2.
- 	self assert: (self isInImmediateBranchRange: offset).
 	"No direct branching but set one in register if comparison!"
 	self machineCodeAt: 0 put: (self 
 		fSetOneIn: ConcreteIPReg  
 		ifRegisterValue: left 
 		isEqualToRegisterValue: right).
 	"Sets one if values equal -> br if ConcreteIPReg is equal to zero"
-	self machineCodeAt: 4 put: (self 
-		branchTo: offset 
-		ifRegisterValueIsEqualToZero: ConcreteIPReg ).
-	^ machineCodeSize := 8
+	^ self concretizeConditionalBranchAt: 4 condition: EQ between: ConcreteIPReg and: X0
 ]
 
 { #category : 'concretization' }
@@ -1771,11 +1626,8 @@ CogOutOfLineLiteralsRiscV64Compiler >> concretizeBrLongEqualRR [
 	leftReg := operands at: 1.
 	rightReg := operands at: 2.
 
-	"This mangling avoid having to bias the 11th bit in case of a negative value
-	 it is also used in loadImmediate:inRegister:"
-	"https://github.com/llvm/llvm-project/blob/4c3d916c4bd2a392101c74dd270bd1e6a4fec15b/llvm/lib/Target/RISCV/MCTargetDesc/RISCVMatInt.cpp"
-	offsetLow := self computeSignedValue64Bits: (offset bitAnd: 16rFFF).
-	offsetHigh := (((self computeSignedValue64Bits: offset) + 16r800) >> 12) bitAnd: 16rFFFFF.
+	offsetLow := self low12BitsOf: offset.
+	offsetHigh := self high20BitsOf: offset.
 	
 
 	"Branch over the jump if the condition is not met"
@@ -1795,11 +1647,8 @@ CogOutOfLineLiteralsRiscV64Compiler >> concretizeBrLongNotEqualRR [
 	leftReg := operands at: 1.
 	rightReg := operands at: 2.
 
-	"This mangling avoid having to bias the 11th bit in case of a negative value
-	 it is also used in loadImmediate:inRegister:"
-	"https://github.com/llvm/llvm-project/blob/4c3d916c4bd2a392101c74dd270bd1e6a4fec15b/llvm/lib/Target/RISCV/MCTargetDesc/RISCVMatInt.cpp"
-	offsetLow := self computeSignedValue64Bits: (offset bitAnd: 16rFFF).
-	offsetHigh := (((self computeSignedValue64Bits: offset) + 16r800) >> 12) bitAnd: 16rFFFFF.
+	offsetLow := self low12BitsOf: offset.
+	offsetHigh := self high20BitsOf: offset.
 	
 
 	"Branch over the jump if the condition is not met"
@@ -1811,120 +1660,70 @@ CogOutOfLineLiteralsRiscV64Compiler >> concretizeBrLongNotEqualRR [
 ]
 
 { #category : 'concretization' }
-CogOutOfLineLiteralsRiscV64Compiler >> concretizeBrNotEqualRR [ 
+CogOutOfLineLiteralsRiscV64Compiler >> concretizeBrNotEqualRR [
 
 	<inline: true>
-	| offset left right |
-	offset := self computeJumpTargetOffsetPlus: 0.
-	left := operands at: 1.
-	right := operands at: 2.
- 	self assert: (self isInImmediateBranchRange: offset).
-	self machineCodeAt: 0 put: (self branchTo: offset ifRegisterValue: left isNotEqualToRegisterValue: right).
-	^ machineCodeSize := 4
+	^ self concretizeConditionalBranchAt: 0 condition: NE between: (operands at: 1) and: (operands at: 2)
 ]
 
 { #category : 'concretization' }
-CogOutOfLineLiteralsRiscV64Compiler >> concretizeBrSignedGreaterEqualRR [  
+CogOutOfLineLiteralsRiscV64Compiler >> concretizeBrSignedGreaterEqualRR [
 
 	<inline: true>
-	| offset left right |
-	offset := self computeJumpTargetOffsetPlus: 0.
-	left := operands at: 1.
-	right := operands at: 2.
- 	self assert: (self isInImmediateBranchRange: offset).
-	self machineCodeAt: 0 put: (self branchTo: offset ifRegisterValue: left isGreaterThanOrEqualRegisterValue: right).
-	^ machineCodeSize := 4
+	^ self concretizeConditionalBranchAt: 0 condition: GE between: (operands at: 1) and: (operands at: 2)
 ]
 
 { #category : 'concretization' }
-CogOutOfLineLiteralsRiscV64Compiler >> concretizeBrSignedGreaterRR [  
+CogOutOfLineLiteralsRiscV64Compiler >> concretizeBrSignedGreaterRR [
 
 	<inline: true>
-	| offset left right |
-	offset := self computeJumpTargetOffsetPlus: 0.
-	left := operands at: 1.
-	right := operands at: 2.
- 	self assert: (self isInImmediateBranchRange: offset).
-	self machineCodeAt: 0 put: (self branchTo: offset ifRegisterValue: left isGreaterThanRegisterValue: right).
-	^ machineCodeSize := 4
+	"RISC-V has no bgt: a > b is b < a, blt with swapped operands"
+	^ self concretizeConditionalBranchAt: 0 condition: LT between: (operands at: 2) and: (operands at: 1)
 ]
 
 { #category : 'concretization' }
-CogOutOfLineLiteralsRiscV64Compiler >> concretizeBrSignedLessEqualRR [  
+CogOutOfLineLiteralsRiscV64Compiler >> concretizeBrSignedLessEqualRR [
 
 	<inline: true>
-	| offset left right |
-	offset := self computeJumpTargetOffsetPlus: 0.
-	left := operands at: 1.
-	right := operands at: 2.
- 	self assert: (self isInImmediateBranchRange: offset).
-	self machineCodeAt: 0 put: (self branchTo: offset ifRegisterValue: left isLessThanOrEqualRegisterValue: right).
-	^ machineCodeSize := 4
+	"RISC-V has no ble: a <= b is b >= a, bge with swapped operands"
+	^ self concretizeConditionalBranchAt: 0 condition: GE between: (operands at: 2) and: (operands at: 1)
 ]
 
 { #category : 'concretization' }
-CogOutOfLineLiteralsRiscV64Compiler >> concretizeBrSignedLessRR [  
+CogOutOfLineLiteralsRiscV64Compiler >> concretizeBrSignedLessRR [
 
 	<inline: true>
-	| offset left right |
-	offset := self computeJumpTargetOffsetPlus: 0.
-	left := operands at: 1.
-	right := operands at: 2.
- 	self assert: (self isInImmediateBranchRange: offset).
-	self machineCodeAt: 0 put: (self branchTo: offset ifRegisterValue: left isLessThanRegisterValue: right).
-	^ machineCodeSize := 4
+	^ self concretizeConditionalBranchAt: 0 condition: LT between: (operands at: 1) and: (operands at: 2)
 ]
 
 { #category : 'concretization' }
-CogOutOfLineLiteralsRiscV64Compiler >> concretizeBrUnsignedGreaterEqualRR [   
+CogOutOfLineLiteralsRiscV64Compiler >> concretizeBrUnsignedGreaterEqualRR [
 
 	<inline: true>
-	| offset left right |
-	offset := self computeJumpTargetOffsetPlus: 0.
-	left := operands at: 1.
-	right := operands at: 2.
- 	self assert: (self isInImmediateBranchRange: offset).
-	self machineCodeAt: 0 put: (self branchTo: offset ifRegisterValueUnsigned: left isGreaterThanOrEqualRegisterValueUnsigned: right).
-	^ machineCodeSize := 4
+	^ self concretizeConditionalBranchAt: 0 condition: GEU between: (operands at: 1) and: (operands at: 2)
 ]
 
 { #category : 'concretization' }
-CogOutOfLineLiteralsRiscV64Compiler >> concretizeBrUnsignedGreaterRR [  
+CogOutOfLineLiteralsRiscV64Compiler >> concretizeBrUnsignedGreaterRR [
 
 	<inline: true>
-	| offset left right |
-	offset := self computeJumpTargetOffsetPlus: 0.
-	left := operands at: 1.
-	right := operands at: 2.
- 	self assert: (self isInImmediateBranchRange: offset).
-	self machineCodeAt: 0 put: (self branchTo: offset ifRegisterValueUnsigned: left isGreaterThanRegisterValueUnsigned: right).
-	^ machineCodeSize := 4
+	"RISC-V has no bgtu: a > b is b < a, bltu with swapped operands"
+	^ self concretizeConditionalBranchAt: 0 condition: LTU between: (operands at: 2) and: (operands at: 1)
 ]
 
 { #category : 'concretization' }
-CogOutOfLineLiteralsRiscV64Compiler >> concretizeBrUnsignedLessEqualRR [  
+CogOutOfLineLiteralsRiscV64Compiler >> concretizeBrUnsignedLessEqualRR [
 
 	<inline: true>
-	| offset left right |
-	offset := self computeJumpTargetOffsetPlus: 0.
-	left := operands at: 1.
-	right := operands at: 2.
- 	self assert: (self isInImmediateBranchRange: offset).
-	self machineCodeAt: 0 put: (self branchTo: offset ifRegisterValueUnsigned: left isLessThanOrEqualRegisterValueUnsigned: right).
-	^ machineCodeSize := 4
+	"RISC-V has no bleu: a <= b is b >= a, bgeu with swapped operands"
+	^ self concretizeConditionalBranchAt: 0 condition: GEU between: (operands at: 2) and: (operands at: 1)
 ]
 
 { #category : 'concretization' }
-CogOutOfLineLiteralsRiscV64Compiler >> concretizeBrUnsignedLessRR [  
+CogOutOfLineLiteralsRiscV64Compiler >> concretizeBrUnsignedLessRR [
 
 	<inline: true>
-	| offset left right |
-	offset := self computeJumpTargetOffsetPlus: 0.
-	left := operands at: 1.
-	right := operands at: 2.
- 	self assert: (self isInImmediateBranchRange: offset).
-	self machineCodeAt: 0 put: (self branchTo: offset ifRegisterValueUnsigned: left isLessThanRegisterValueUnsigned: right).
-	^ machineCodeSize := 4
+	^ self concretizeConditionalBranchAt: 0 condition: LTU between: (operands at: 1) and: (operands at: 2)
 ]
 
 { #category : 'concretization' }
@@ -1942,11 +1741,8 @@ CogOutOfLineLiteralsRiscV64Compiler >> concretizeCall [
    offset := (operands at: 0) signedIntFromLong - address signedIntFromLong.
 	self assert: (self isInLongJumpCallRange: offset).
 	
-	"This mangling avoid having to bias the 11th bit in case of a negative value
-	 it is also used in loadImmediate:inRegister:"
-	"https://github.com/llvm/llvm-project/blob/4c3d916c4bd2a392101c74dd270bd1e6a4fec15b/llvm/lib/Target/RISCV/MCTargetDesc/RISCVMatInt.cpp"
-	offsetLow := self computeSignedValue64Bits: (offset  bitAnd: 16rFFF).
-	offsetHigh := (((self computeSignedValue64Bits: offset) + 16r800) >> 12) bitAnd: 16rFFFFF.
+	offsetLow := self low12BitsOf: offset.
+	offsetHigh := self high20BitsOf: offset.
 	
 	self machineCodeAt: 0 put: (self addUpperImmediateToPC: offsetHigh toRegister: ConcreteIPReg).
 	self machineCodeAt: 4 put: (self jumpTo: ConcreteIPReg withOffset: offsetLow andStorePreviousPCPlus4in: LR).
@@ -2305,11 +2101,8 @@ CogOutOfLineLiteralsRiscV64Compiler >> concretizeJumpLong [
    offset := (operands at: 0) signedIntFromLong - address signedIntFromLong.
 	self assert: (self isInLongJumpCallRange: offset).
 	
-	"This mangling avoid having to bias the 11th bit in case of a negative value
-	 it is also used in loadImmediate:inRegister:"
-	"https://github.com/llvm/llvm-project/blob/4c3d916c4bd2a392101c74dd270bd1e6a4fec15b/llvm/lib/Target/RISCV/MCTargetDesc/RISCVMatInt.cpp"
-	offsetLow := self computeSignedValue64Bits: (offset bitAnd: 16rFFF).
-	offsetHigh := (((self computeSignedValue64Bits: offset) + 16r800) >> 12) bitAnd: 16rFFFFF.
+	offsetLow := self low12BitsOf: offset.
+	offsetHigh := self high20BitsOf: offset.
 	
 	self machineCodeAt: 0 put: (self addUpperImmediateToPC: offsetHigh toRegister: ConcreteIPReg).
 	self machineCodeAt: 4 put: (self jumpTo: ConcreteIPReg withOffset: offsetLow andStorePreviousPCPlus4in: X0).
@@ -2447,7 +2240,7 @@ CogOutOfLineLiteralsRiscV64Compiler >> concretizeLoadEffectiveAddressMwrR [
 	sourceReg := operands at: 1.
 	destReg := operands at: 2.
 	dependent ifNil: [ 
-			self assertValue: offset isContainedIn: 12.
+			self assertValue: offset fitsSigned: 12.
 			self machineCodeAt: 0 put: (self
 					 addImmediate: offset
 					 toRegister: sourceReg
@@ -2472,7 +2265,7 @@ CogOutOfLineLiteralsRiscV64Compiler >> concretizeLogicalShiftLeftCqR [
 	cq := operands at: 0.
 	sourceReg := destReg := operands at: 1.
 	dependent ifNil: [ 
-		self value: cq isContainedIn: 12.
+		self assertValue: cq fitsUnsigned: 6.
 		"Direct encoding as an immediate"
 		self machineCodeAt: 0 put: (self
 				 shiftLeftValueInRegister: sourceReg
@@ -2512,7 +2305,7 @@ CogOutOfLineLiteralsRiscV64Compiler >> concretizeLogicalShiftRightCqR [
 	cq := operands at: 0.
 	sourceReg := destReg := operands at: 1.
 	dependent ifNil: [ 
-		self value: cq isContainedIn: 12.
+		self assertValue: cq fitsUnsigned: 6.
 		"Direct encoding as an immediate SRLI"
 		self machineCodeAt: 0 put: (self
 				 shiftRightValueInRegister: sourceReg
@@ -2641,7 +2434,7 @@ CogOutOfLineLiteralsRiscV64Compiler >> concretizeMoveM16rR [
 	destReg := operands at: 2.
 	dependent 
 		ifNil: [ 
-			self assertValue: offset isContainedIn: 12. 
+			self assertValue: offset fitsSigned: 12.
 			self machineCodeAt: 0 put: (self
 				loadUnsignedHalfWordFromAddressInRegister: baseReg 
 				withOffset: offset 
@@ -2675,7 +2468,7 @@ CogOutOfLineLiteralsRiscV64Compiler >> concretizeMoveM32rR [
 	destReg := operands at: 2.
 	dependent 
 		ifNil: [ 
-			self assertValue: offset isContainedIn: 12.
+			self assertValue: offset fitsSigned: 12.
 			self machineCodeAt: 0 put: (self
 				loadUnsignedWordFromAddressInRegister: baseReg 
 				withOffset: offset 
@@ -2708,7 +2501,7 @@ CogOutOfLineLiteralsRiscV64Compiler >> concretizeMoveM32rRs [
 	destReg := operands at: 2.
 	dependent 
 		ifNil: [ 
-			self assertValue: offset isContainedIn: 12.
+			self assertValue: offset fitsSigned: 12.
 			self machineCodeAt: 0 put: (self
 				fLoadWordFromAddressInRegister: baseReg 
 				withOffset: offset 
@@ -2740,7 +2533,7 @@ CogOutOfLineLiteralsRiscV64Compiler >> concretizeMoveM64rRd [
 	destReg := operands at: 2.
 	dependent 
 		ifNil: [ 
-			self assertValue: offset isContainedIn: 12. 
+			self assertValue: offset fitsSigned: 12.
 			self machineCodeAt: 0 put: (self
 				fLoadDoubleWordFromAddressInRegister: baseReg 
 				withOffset: offset 
@@ -2775,7 +2568,7 @@ CogOutOfLineLiteralsRiscV64Compiler >> concretizeMoveMbrR [
 	destReg := operands at: 2.
 	dependent 
 		ifNil: [ 
-			self assertValue: offset isContainedIn: 12.
+			self assertValue: offset fitsSigned: 12.
 			self machineCodeAt: 0 put: (self
 				loadUnsignedByteFromAddressInRegister: baseReg 
 				withOffset: offset 
@@ -2810,7 +2603,7 @@ CogOutOfLineLiteralsRiscV64Compiler >> concretizeMoveMwrR [
 	destReg := operands at: 2.
 	dependent 
 		ifNil: [ 
-			self assertValue: offset isContainedIn: 12.
+			self assertValue: offset fitsSigned: 12.
 			self machineCodeAt: 0 put: (self
 				loadDoubleWordFromAddressInRegister: baseReg 
 				withOffset: offset 
@@ -2837,10 +2630,11 @@ CogOutOfLineLiteralsRiscV64Compiler >> concretizeMovePatcheableC32R [
 	| literalAddress distance |
 	literalAddress := (cogit cCoerceSimple: dependent to: #'AbstractInstruction *') address.
 	distance := literalAddress - address.
-	self machineCodeAt: 0 put: (self addUpperImmediateToPC: 0 toRegister: ConcreteIPReg).
+	self assert: (self isInPCRelativeRange: distance).
+	self machineCodeAt: 0 put: (self addUpperImmediateToPC: (self high20BitsOf: distance) toRegister: ConcreteIPReg).
 	self machineCodeAt: 4 put: (self
 	  loadDoubleWordFromAddressInRegister: ConcreteIPReg
-	  withOffset: distance
+	  withOffset: (self low12BitsOf: distance)
      toRegister: (operands at: 1)).
 	^ machineCodeSize := 8
 ]
@@ -2909,7 +2703,7 @@ CogOutOfLineLiteralsRiscV64Compiler >> concretizeMoveRM16r [
 	baseReg := operands at: 2.
 	dependent 
 		ifNil: [ 
-			self assertValue: offset isContainedIn: 12. 
+			self assertValue: offset fitsSigned: 12.
 			self machineCodeAt: 0 put: (self
 				 storeHalfWordFromRegister: srcReg
 				 toAddressInRegister: baseReg
@@ -2945,7 +2739,7 @@ CogOutOfLineLiteralsRiscV64Compiler >> concretizeMoveRM32r [
 	baseReg := operands at: 2.
 	dependent 
 		ifNil: [ 
-			self assertValue: offset isContainedIn: 12.
+			self assertValue: offset fitsSigned: 12.
 			self machineCodeAt: 0 put: (self
 				 storeWordFromRegister: srcReg
 				 toAddressInRegister: baseReg
@@ -2980,7 +2774,7 @@ CogOutOfLineLiteralsRiscV64Compiler >> concretizeMoveRMbr [
 	baseReg := operands at: 2.
 	dependent 
 		ifNil: [ 
-			self assertValue: offset isContainedIn: 12. 
+			self assertValue: offset fitsSigned: 12.
 			self machineCodeAt: 0 put: (self
 				 storeByteFromRegister: srcReg
 				 toAddressInRegister: baseReg
@@ -3015,7 +2809,7 @@ CogOutOfLineLiteralsRiscV64Compiler >> concretizeMoveRMwr [
 	baseReg := operands at: 2.
 	dependent 
 		ifNil: [ 
-			self assertValue: offset isContainedIn: 12.
+			self assertValue: offset fitsSigned: 12.
 			self machineCodeAt: 0 put: (self
 				 storeDoubleWordFromRegister: srcReg
 				 toAddressInRegister: baseReg
@@ -3154,7 +2948,7 @@ CogOutOfLineLiteralsRiscV64Compiler >> concretizeMoveRdM64r [
 	offset := operands at: 1.
 	baseReg := operands at: 2.
 	dependent ifNil: [ 
-		self assertValue: offset isContainedIn: 12.
+		self assertValue: offset fitsSigned: 12.
 		self machineCodeAt: 0 put: (self
 				 fStoreDoubleWordFromRegister: srcReg
 				 toAddressInRegister: baseReg
@@ -3202,7 +2996,7 @@ CogOutOfLineLiteralsRiscV64Compiler >> concretizeMoveRsM32r [
 	offset := operands at: 1.
 	baseReg := operands at: 2.
 	dependent ifNil: [ 
-		self assertValue: offset isContainedIn: 12.
+		self assertValue: offset fitsSigned: 12.
 		self machineCodeAt: 0 put: (self
 				 fStoreWordFromRegister: srcReg
 				 toAddressInRegister: baseReg
@@ -3388,7 +3182,7 @@ CogOutOfLineLiteralsRiscV64Compiler >> concretizeOrCqR [
 	cq := operands at: 0.
 	sourceReg := destReg := operands at: 1.
 	dependent ifNil: [ 
-		self assertValue: cq isContainedIn: 12.
+		self assertValue: cq fitsSigned: 12.
 		"Direct encoding as an immediate"
 		self machineCodeAt: 0 put: (self
 				 bitwiseOrBetweenRegister: sourceReg
@@ -3440,7 +3234,7 @@ CogOutOfLineLiteralsRiscV64Compiler >> concretizePopR [
 	<inline: true>
 	| destReg offset |
 	destReg := operands at: 0.
-	offset := self computeSignedValueOf: 8 ofSize: 12.
+	offset := 8.
 	self machineCodeAt: 0 put: (self loadDoubleWordFromAddressInRegister: SPReg withOffset: 0 toRegister: destReg).	
 	self machineCodeAt: 4 put: (self addImmediate: offset toRegister: SPReg inRegister: SPReg).
 	^ machineCodeSize := 8
@@ -3482,7 +3276,7 @@ CogOutOfLineLiteralsRiscV64Compiler >> concretizePushCq [
 		ifNotNil: [ 
 			"Literal -> Compute the distance from the current address and add auipc then ld instructions"
 			instrOffset := self loadLiteralInRegister: ConcreteIPReg ].
-	offset := self computeSignedValueOf: -8 ofSize: 12.
+	offset := -8.
 	self machineCodeAt: instrOffset put: (self addImmediate: offset toRegister: SPReg inRegister: SPReg).
    self machineCodeAt: instrOffset + 4 put: (self storeDoubleWordFromRegister: ConcreteIPReg toAddressInRegister: SPReg withOffset: 0).
 	^ machineCodeSize := instrOffset + 8 
@@ -3496,7 +3290,7 @@ CogOutOfLineLiteralsRiscV64Compiler >> concretizePushCw [
 	| word instrOffset offset |
 	word := operands at: 0.
 	instrOffset := self loadCwInto: ConcreteIPReg.
-	offset := self computeSignedValueOf: -8 ofSize: 12.
+	offset := -8.
 	self machineCodeAt: instrOffset put: (self addImmediate: offset toRegister: SPReg inRegister: SPReg).
    self machineCodeAt: instrOffset + 4 put: (self storeDoubleWordFromRegister: ConcreteIPReg toAddressInRegister: SPReg withOffset: 0).
 	^ machineCodeSize := instrOffset + 8 
@@ -3510,7 +3304,7 @@ CogOutOfLineLiteralsRiscV64Compiler >> concretizePushR [
 	<inline: true>
 	| srcReg offset |
 	srcReg := operands at: 0.
-	offset := self computeSignedValueOf: -8 ofSize: 12.
+	offset := -8.
 	self machineCodeAt: 0 put: (self addImmediate: offset toRegister: SPReg inRegister: SPReg).
    self machineCodeAt: 4 put: (self storeDoubleWordFromRegister: srcReg toAddressInRegister: SPReg withOffset: 0).
 	^ machineCodeSize := 8
@@ -3557,7 +3351,7 @@ CogOutOfLineLiteralsRiscV64Compiler >> concretizeRotateLeftCqR [
 	cq := operands at: 0.
 	srcReg := destReg := operands at: 1.
 	dependent ifNil: [ 
-		self value: cq isContainedIn: 12.
+		self assertValue: cq fitsUnsigned: 6.
 		"Direct encoding as an immediate"
 		rotateOffset := self
 			                rotateLeftValueInRegister: srcReg
@@ -3585,7 +3379,7 @@ CogOutOfLineLiteralsRiscV64Compiler >> concretizeRotateRightCqR [
 	cq := operands at: 0.
 	srcReg := destReg := operands at: 1.
 	dependent ifNil: [ 
-		self value: cq isContainedIn: 12.
+		self assertValue: cq fitsUnsigned: 6.
 		"Direct encoding as an immediate"
 		rotateOffset := self
 			                rotateRightValueInRegister: srcReg
@@ -3633,34 +3427,35 @@ CogOutOfLineLiteralsRiscV64Compiler >> concretizeStop [
 
 { #category : 'concretization' }
 CogOutOfLineLiteralsRiscV64Compiler >> concretizeSubCheckOverflowCqR [
-	"Check for the overflow, as according to the example in the book: 
-	 sub   res,  imm,  src      # res = src - imm
-    slti  t1,   src,  0        # t1 = (src2 < 0)
-    slt   t2,   res,   imm     # t2 = (src1 - src2 < res)
+	"Check for the overflow of res = src - cq:
+	 sub   res,  src,  cq
+    t1 := (cq <= 0)             # a constant when cq is an immediate, slti t1, cq, 1 otherwise
+    slt   t2,   res,  src       # t2 = (res < src)
 	 * since res and src are equal we have to res to another result then move back
-    be    t1,   t2,    offset  # overflow if (src2 < 0) && (src1 + src2 < res)    case 1 1 (overflow)
-                                          || (src2 >= 0) && (src1 + src2 >= res)  case 0 0 (underflow)"
+    beq   t1,   t2,   offset    # overflow if (cq <= 0) && (res < src)     case 1 1 (overflow)
+                                          || (cq > 0) && (res >= src)    case 0 0 (underflow)
+	 Unlike addition, the operands cannot be swapped: (src <= 0) and (res < cq) are wrong"
 	<inline: true>
 	| cq srcReg destReg loadOffset |
 	cq := operands at: 0.
 	srcReg := destReg := operands at: 1.
 	"Perform the SUB operation"
-	dependent ifNil: [ 
-		self assertValue: cq negated isContainedIn: 12.
+	dependent ifNil: [
+		self assertValue: cq negated fitsSigned: 12.
 		self machineCodeAt: 0 put: (self
 			addImmediate: cq negated
 			toRegister:  srcReg
 			inRegister: ConcreteOverflowReg).
-		"1. Check if one operand is negative, OR EQUAL TO ZERO"
-		self machineCodeAt: 4 put: (self 
-			setOneIn: ConcreteIPReg2 
-			ifValueIn: srcReg
-			isLessThanImmediate: 1). 
-		"2. Check if the sum is smaller than one operand"
-		self machineCodeAt: 8 put: (self 
-			setOneIn: ConcreteIPReg3 
-			ifValueIn: ConcreteOverflowReg 
-			isLessThanImmediate: cq).
+		"1. Whether the constant is negative or zero, known at compile time"
+		self machineCodeAt: 4 put: (self
+			addImmediate: (cq <= 0 ifTrue: [ 1 ] ifFalse: [ 0 ])
+			toRegister: X0
+			inRegister: ConcreteIPReg2).
+		"2. Check if the difference is smaller than the source"
+		self machineCodeAt: 8 put: (self
+			setOneIn: ConcreteIPReg3
+			ifValueIn: ConcreteOverflowReg
+			isLessThanValueIn: srcReg).
 		"3. Move result to destination register"
 		self machineCodeAt: 12 put: (self 
 			moveRegister: ConcreteOverflowReg toRegister: destReg).
@@ -3733,7 +3528,7 @@ CogOutOfLineLiteralsRiscV64Compiler >> concretizeSubCqR [
 	sourceReg := destReg := operands at: 1.
 	dependent
 		ifNil: [ "Immediate load in a register"
-			self assertValue: cq negated isContainedIn: 12.
+			self assertValue: cq negated fitsSigned: 12.
 			"Use the provided immediate instruction"
 			self machineCodeAt: 0 put: (self 
 				addImmediate: cq negated
@@ -3804,7 +3599,7 @@ CogOutOfLineLiteralsRiscV64Compiler >> concretizeTstCqR [
 	cq := operands at: 0.
 	srcReg := operands at: 1.
 	dependent ifNil: [ "If the cq fits in 12 bits, encode it directly"
-		self assertValue: cq abs isContainedIn: 12.
+		self assertValue: cq fitsSigned: 12.
 		"Direct encoding as an immediate"
 		self machineCodeAt: 0 put: (self
 				 bitwiseAndBetweenRegister: srcReg
@@ -3836,7 +3631,7 @@ CogOutOfLineLiteralsRiscV64Compiler >> concretizeXorCqR [
 	cq := operands at: 0.
 	sourceReg := destReg := operands at: 1.
 	dependent ifNil: [ 
-		self assertValue: cq isContainedIn: 12.
+		self assertValue: cq fitsSigned: 12.
 		"Direct encoding as an immediate"
 		self machineCodeAt: 0 put: (self
 				 bitwiseXorBetweenRegister: sourceReg
@@ -4304,8 +4099,8 @@ CogOutOfLineLiteralsRiscV64Compiler >> fLoadDoubleWordFromAddressInRegister: bas
 
 	| signExtendedOffset |
 	"Check size and sign"
-	self assertValue: offset isContainedIn: 12.
-	signExtendedOffset := self computeSignedValueOf: offset ofSize: 12.
+	self assertValue: offset fitsSigned: 12.
+	signExtendedOffset := self twosComplementOf: offset inBits: 12.
 	"Actual bit instruction"
 	^ ((((((signExtendedOffset bitAnd: 16rfff) << 20) 
 	  bitOr: (baseRegister bitAnd: 16r1f) << 15)
@@ -4329,8 +4124,8 @@ CogOutOfLineLiteralsRiscV64Compiler >> fLoadWordFromAddressInRegister: baseRegis
 
 	| signExtendedOffset |
 	"Check size and sign"
-	self assertValue: offset isContainedIn: 12.
-	signExtendedOffset := self computeSignedValueOf: offset ofSize: 12.
+	self assertValue: offset fitsSigned: 12.
+	signExtendedOffset := self twosComplementOf: offset inBits: 12.
 	"Actual bit instruction"
 	^ ((((((signExtendedOffset bitAnd: 16rfff) << 20) 
 	  bitOr: (baseRegister bitAnd: 16r1f) << 15)
@@ -4505,8 +4300,8 @@ CogOutOfLineLiteralsRiscV64Compiler >> fStoreDoubleWordFromRegister: sourceRegis
 
 	| signExtendedOffset |
 	"Check for sign and size"
-	self assertValue: offset isContainedIn: 12.
-	signExtendedOffset := self computeSignedValueOf: offset ofSize: 12.
+	self assertValue: offset fitsSigned: 12.
+	signExtendedOffset := self twosComplementOf: offset inBits: 12.
 	^ ((((((
 	  signExtendedOffset >> 5 bitAnd: 16r7f) << 25) 
 	  bitOr: (sourceRegister bitAnd: 16r1f) << 20)
@@ -4527,8 +4322,8 @@ CogOutOfLineLiteralsRiscV64Compiler >> fStoreWordFromRegister: sourceRegister to
 
 	| signExtendedOffset |
 	"Check for sign and size"
-	self assertValue: offset isContainedIn: 12.
-	signExtendedOffset := self computeSignedValueOf: offset ofSize: 12.
+	self assertValue: offset fitsSigned: 12.
+	signExtendedOffset := self twosComplementOf: offset inBits: 12.
 	^ ((((((
 	  signExtendedOffset >> 5 bitAnd: 16r7f) << 25) 
 	  bitOr: (sourceRegister bitAnd: 16r1f) << 20)
@@ -5009,29 +4804,43 @@ CogOutOfLineLiteralsRiscV64Compiler >> isCallPrecedingReturnPC: mcpc [
 
 { #category : 'testing' }
 CogOutOfLineLiteralsRiscV64Compiler >> isInImmediateBranchRange: operand [
-	"RISC-V branches can use immediates of max size 13 bits"
-	<var: #operand type: #'usqIntptr_t'>
-	^ self value: operand isContainedIn: 13
+	"RISC-V conditional branches have a signed 13-bit offset (+-4KB)"
+	<var: #operand type: #sqInt>
+	^ self value: operand fitsSigned: 13
 ]
 
 { #category : 'testing' }
 CogOutOfLineLiteralsRiscV64Compiler >> isInImmediateCallRange: operand [
-	"RISC-V calls can use immediates of max size 32 bits, embedded in two instructions (auipc + jalr)"
-	<var: #operand type: #'usqIntptr_t'>
-	^ self value: operand isContainedIn: 32
+	"RISC-V calls are embedded in two instructions (auipc + jalr)"
+	<var: #operand type: #sqInt>
+	^ self isInPCRelativeRange: operand
 ]
 
 { #category : 'testing' }
 CogOutOfLineLiteralsRiscV64Compiler >> isInImmediateJumpRange: operand [
-	"RISC-V jal and jalr can use immediates of max size 21 bits"
-	<var: #operand type: #'usqIntptr_t'>
-	^ self value: operand isContainedIn: 21
+	"RISC-V jal has a signed 21-bit offset (+-1MB)"
+	<var: #operand type: #sqInt>
+	^ self value: operand fitsSigned: 21
 ]
 
 { #category : 'testing' }
 CogOutOfLineLiteralsRiscV64Compiler >> isInLongJumpCallRange: offset [
-	"RISC-V calls and jumps can use values of max size 32 bits through auipc / jal|jalr"
-	^ self value: offset isContainedIn: 32
+	"RISC-V long calls and jumps are auipc + jalr"
+	<var: #offset type: #sqInt>
+	^ self isInPCRelativeRange: offset
+]
+
+{ #category : 'testing' }
+CogOutOfLineLiteralsRiscV64Compiler >> isSpanSizedBranch [
+	"The B-type conditional branches, sized by their span (see sizeConditionalBranchAt:).
+	 BrLongEqualRR and BrLongNotEqualRR keep their fixed 12-byte form: they get patched."
+	^(opcode between: BrEqualRR and: BrSignedGreaterEqualRR)
+	  or: [self isFPSpanSizedBranch]
+]
+
+{ #category : 'testing' }
+CogOutOfLineLiteralsRiscV64Compiler >> isFPSpanSizedBranch [
+	^opcode between: BrFPEqualRR and: BrFPGreaterEqualRR
 ]
 
 { #category : 'machine code instruction' }
@@ -5131,8 +4940,8 @@ CogOutOfLineLiteralsRiscV64Compiler >> jumpTo: sourceRegisterValueAddress withOf
 
 	| signExtendedOffset |
 	"Check size and sign"
-	self assertValue: offset isContainedIn: 12.
-	signExtendedOffset := self computeSignedValueOf: offset ofSize: 12.
+	self assertValue: offset fitsSigned: 12.
+	signExtendedOffset := self twosComplementOf: offset inBits: 12.
 	^ (((((signExtendedOffset bitAnd: 16rfff) << 20)
 		bitOr: (sourceRegisterValueAddress bitAnd: 16r1f) << 15)
 		bitOr: (destinationRegister bitAnd: 16r1f) << 7)
@@ -5159,8 +4968,8 @@ CogOutOfLineLiteralsRiscV64Compiler >> jumpToOffset: offset andStorePreviousPCPl
 
 	| signExtendedOffset |
 	"Check size and sign"	
-	self assertValue: offset isContainedIn: 21.	
-	signExtendedOffset := self computeSignedValueOf: offset ofSize: 21.
+	self assertValue: offset fitsSigned: 21.
+	signExtendedOffset := self twosComplementOf: offset inBits: 21.
 	^  (((((((signExtendedOffset >> 20)  bitAnd: 16r1) << 31) 
 		bitOr: ((signExtendedOffset >> 1) bitAnd: 16r3ff) << 21)
 		bitOr: ((signExtendedOffset >> 11) bitAnd: 16r1) << 20)
@@ -5282,8 +5091,8 @@ CogOutOfLineLiteralsRiscV64Compiler >> loadByteFromAddressInRegister: baseRegist
 
 	| signExtendedOffset |
 	"Check size and sign"
-	self assertValue: offset isContainedIn: 12.	
-	signExtendedOffset := self computeSignedValueOf: offset ofSize: 12.
+	self assertValue: offset fitsSigned: 12.
+	signExtendedOffset := self twosComplementOf: offset inBits: 12.
 	"Actual bit instruction"
 	^ ((((((signExtendedOffset bitAnd: 16rfff) << 20) 
 	  bitOr: (baseRegister bitAnd: 16r1f) << 15)
@@ -5309,12 +5118,11 @@ CogOutOfLineLiteralsRiscV64Compiler >> loadCwInto: destReg [
 	(cogit addressIsInCurrentCompilation: operand)
 		ifTrue: [ 
 			distance := operand signedIntFromLong - address signedIntFromLong.
-			"Check if the absolute distance fits in 12 bits or produce a way to split the distance between the two instructions
+			"Split the distance between auipc and addi, see high20BitsOf:
 		    https://forums.sifive.com/t/bit-11-of-jalr-sign-extened-for-call-auipc-jalr/1950"
-			self assertValue: distance isContainedIn: 32.
-			"https://github.com/llvm/llvm-project/blob/4c3d916c4bd2a392101c74dd270bd1e6a4fec15b/llvm/lib/Target/RISCV/MCTargetDesc/RISCVMatInt.cpp"
-			offsetLow := self computeSignedValue64Bits: (distance  bitAnd: 16rFFF).
-			offsetHigh := (((self computeSignedValue64Bits: distance) + 16r800) >> 12) bitAnd: 16rFFFFF.
+			self assert: (self isInPCRelativeRange: distance).
+			offsetLow := self low12BitsOf: distance.
+			offsetHigh := self high20BitsOf: distance.
 			self machineCodeAt: 0 put: (self addUpperImmediateToPC: offsetHigh toRegister: destReg).
 			self machineCodeAt: 4 put: (self addImmediate: offsetLow toRegister: destReg inRegister: destReg).
 			^ machineCodeSize := 8 ].
@@ -5333,8 +5141,8 @@ CogOutOfLineLiteralsRiscV64Compiler >> loadDoubleWordFromAddressInRegister: base
 
 	| signExtendedOffset |
 	"Check size and sign"
-	self assertValue: offset isContainedIn: 12.	
-	signExtendedOffset := self computeSignedValueOf: offset ofSize: 12.
+	self assertValue: offset fitsSigned: 12.
+	signExtendedOffset := self twosComplementOf: offset inBits: 12.
 	"Actual bit instruction"
 	^ ((((((signExtendedOffset bitAnd: 16rfff) << 20) 
 	  bitOr: (baseRegister bitAnd: 16r1f) << 15)
@@ -5358,8 +5166,8 @@ CogOutOfLineLiteralsRiscV64Compiler >> loadHalfWordFromAddressInRegister: baseRe
 	| signExtendedOffset |
 	self flag: #CLEANUP.
 	"Check size and sign"
-	self assertValue: offset isContainedIn: 12.	
-	signExtendedOffset := self computeSignedValueOf: offset ofSize: 12.
+	self assertValue: offset fitsSigned: 12.
+	signExtendedOffset := self twosComplementOf: offset inBits: 12.
 	"Actual bit instruction"
 	^ ((((((signExtendedOffset bitAnd: 16rfff) << 20) 
 	  bitOr: (baseRegister bitAnd: 16r1f) << 15)
@@ -5376,7 +5184,7 @@ CogOutOfLineLiteralsRiscV64Compiler >> loadImmediate: immediate inRegister: dest
 
 	"Uses an addi instruction to load an 11-bit long immediate. If 12 bit long, it will get sign-extended and be incorrect.
 	If it is wider than 12 bits, it should be loaded as an out-of-line literal"
-	self assertValue: immediate isContainedIn: 11.
+	self assertValue: immediate fitsSigned: 12.
 	self machineCodeAt: 0 put: (self addImmediate: immediate toRegister: X0 inRegister: destReg).
 	^ machineCodeSize := 4
 	
@@ -5406,10 +5214,12 @@ CogOutOfLineLiteralsRiscV64Compiler >> loadLiteralInRegister: destReg startingAt
 	self assert: dependent opcode = Literal.
 	self assert: (cogit addressIsInCurrentCompilation: dependent address).
 	literalAddress := (cogit cCoerceSimple: dependent to: #'AbstractInstruction *') address.
-	distance := literalAddress - address.
-	self assertValue: distance isContainedIn: 12.
-	self machineCodeAt: index put: (self addUpperImmediateToPC: 0 toRegister: destReg).
-   	self machineCodeAt: index + 4 put: (self loadDoubleWordFromAddressInRegister: destReg withOffset: distance toRegister: destReg).
+	"The literal can be more than 2KB away: outOfLineLiteralOpcodeLimit bounds the distance in opcodes,
+	 and one opcode can emit several instructions. Split the distance between auipc and ld, see high20BitsOf:"
+	distance := literalAddress - (address + index).
+	self assert: (self isInPCRelativeRange: distance).
+	self machineCodeAt: index put: (self addUpperImmediateToPC: (self high20BitsOf: distance) toRegister: destReg).
+	self machineCodeAt: index + 4 put: (self loadDoubleWordFromAddressInRegister: destReg withOffset: (self low12BitsOf: distance) toRegister: destReg).
 	^ machineCodeSize := 8
 
 ]
@@ -5433,8 +5243,8 @@ CogOutOfLineLiteralsRiscV64Compiler >> loadUnsignedByteFromAddressInRegister: ba
 
 	| signExtendedOffset |
 	"Check size and sign"
-	self assertValue: offset isContainedIn: 12.	
-	signExtendedOffset := self computeSignedValueOf: offset ofSize: 12.
+	self assertValue: offset fitsSigned: 12.
+	signExtendedOffset := self twosComplementOf: offset inBits: 12.
 	"Actual bit instruction"
 	^ ((((((signExtendedOffset bitAnd: 16rfff) << 20) 
 	  bitOr: (baseRegister bitAnd: 16r1f) << 15)
@@ -5457,8 +5267,8 @@ CogOutOfLineLiteralsRiscV64Compiler >> loadUnsignedHalfWordFromAddressInRegister
 
 	| signExtendedOffset |
 	"Check size and sign"
-	self assertValue: offset isContainedIn: 12.	
-	signExtendedOffset := self computeSignedValueOf: offset ofSize: 12.
+	self assertValue: offset fitsSigned: 12.
+	signExtendedOffset := self twosComplementOf: offset inBits: 12.
 	"Actual bit instruction"
 	^ ((((((signExtendedOffset bitAnd: 16rfff) << 20) 
 	  bitOr: (baseRegister bitAnd: 16r1f) << 15)
@@ -5481,8 +5291,8 @@ CogOutOfLineLiteralsRiscV64Compiler >> loadUnsignedWordFromAddressInRegister: ba
 
 	| signExtendedOffset |
 	"Check size and sign"
-	self assertValue: offset isContainedIn: 12.	
-	signExtendedOffset := self computeSignedValueOf: offset ofSize: 12.
+	self assertValue: offset fitsSigned: 12.
+	signExtendedOffset := self twosComplementOf: offset inBits: 12.
 	"Actual bit instruction"
 	^ ((((((signExtendedOffset bitAnd: 16rfff) << 20) 
 	  bitOr: (baseRegister bitAnd: 16r1f) << 15)
@@ -5507,8 +5317,8 @@ CogOutOfLineLiteralsRiscV64Compiler >> loadUpperImmediate: anImmediate inRegiste
 	| signExtendedImmediate |
 	self flag: #CLEANUP.
 	"Check size and sign"
-	self assertValue: anImmediate isContainedIn: 20.	
-	signExtendedImmediate := self computeSignedValueOf: anImmediate ofSize: 20.
+	self assertValue: anImmediate fitsSigned: 20.
+	signExtendedImmediate := self twosComplementOf: anImmediate inBits: 20.
 	^ (((signExtendedImmediate bitAnd: 16rfffff) << 12) 
 	  bitOr: (destReg bitAnd: 16r1f) << 7) 
 	  bitOr: 2r0110111
@@ -5526,8 +5336,8 @@ CogOutOfLineLiteralsRiscV64Compiler >> loadWordFromAddressInRegister: baseRegist
 	| signExtendedOffset |
 	self flag: #CLEANUP.
 	"Check size and sign"
-	self assertValue: offset isContainedIn: 12.	
-	signExtendedOffset := self computeSignedValueOf: offset ofSize: 12.
+	self assertValue: offset fitsSigned: 12.
+	signExtendedOffset := self twosComplementOf: offset inBits: 12.
 	"Actual bit instruction"
 	^ ((((((signExtendedOffset bitAnd: 16rfff) << 20) 
 	  bitOr: (baseRegister bitAnd: 16r1f) << 15)
@@ -5866,11 +5676,8 @@ CogOutOfLineLiteralsRiscV64Compiler >> pcRelativeAddressAt: instrAddress [
 	self assert: (self instructionIsAUIPC: instAUIPC).
 	self assert: (self instructionIsLD: instLD).
 	"Each offset is sign-extended then added"
-	offsetAUIPC := self computeSignedValueOf: (instAUIPC >> 12 bitAnd: 16rfffff) << 12 ofSize: 32. "20 upper bits"
-	offsetLD := self computeSignedValueOf: (instLD >> 20 bitAnd: 16rfff) ofSize: 32. "12 lower bits"
-	"((offset allMask: (1 << 12))
-						   ifTrue: [offset negated]
-							ifFalse: [offset])"
+	offsetAUIPC := self signExtendValue: (instAUIPC >> 12 bitAnd: 16rfffff) << 12 forSize: 32. "20 upper bits"
+	offsetLD := self signExtendValue: (instLD >> 20 bitAnd: 16rfff) forSize: 12. "12 lower bits"
 	^instrAddress + offsetAUIPC + offsetLD
 ]
 
@@ -5897,6 +5704,18 @@ CogOutOfLineLiteralsRiscV64Compiler >> relocateCallBeforeReturnPC: retpc by: del
 	delta = 0 ifTrue: [ ^ self ].
    offset := self callTargetFromReturnAddress: retpc.
    self rewriteCallAt: retpc target: offset + delta
+]
+
+{ #category : 'inline cacheing' }
+CogOutOfLineLiteralsRiscV64Compiler >> relocateJumpLongBeforeFollowingAddress: pc by: delta [
+	"A long jump is auipc + jalr x0, a call is auipc + jalr ra. The inherited version relocates
+	 the jump as a call, which would turn it into a call (e.g. a closed PIC's jump to the PIC miss
+	 trampoline, which then sees a return address inside the PIC). Long conditional jumps end with
+	 the same long jump, so the inherited conditional variant, which sends this, is covered too."
+
+	self assert: delta \\ 4 = 0.
+	delta = 0 ifTrue: [ ^ self ].
+	self rewriteJumpLongAt: pc target: (self jumpLongTargetBeforeFollowingAddress: pc) + delta
 ]
 
 { #category : 'inline cacheing' }
@@ -6016,11 +5835,8 @@ CogOutOfLineLiteralsRiscV64Compiler >> rewriteCallAt: callSiteReturnAddress targ
 	self assert: (self instructionIsAUIPC: (self instructionBeforeAddress: callSiteReturnAddress - 4)).
 	self assert: (self instructionIsJALR: (self instructionBeforeAddress: callSiteReturnAddress)).
 	"Need to modify the whole instructions -> auipc + jalr"
-	"This mangling avoid having to bias the 11th bit in case of a negative value
-	 it is also used in loadImmediate:inRegister:"
-	"https://github.com/llvm/llvm-project/blob/4c3d916c4bd2a392101c74dd270bd1e6a4fec15b/llvm/lib/Target/RISCV/MCTargetDesc/RISCVMatInt.cpp"
-	offsetLow := self computeSignedValue64Bits: (callDistance bitAnd: 16rFFF).
-	offsetHigh := (((self computeSignedValue64Bits: callDistance) + 16r800) >> 12) bitAnd: 16rFFFFF.
+	offsetLow := self low12BitsOf: callDistance.
+	offsetHigh := self high20BitsOf: callDistance.
 
 	"auipc"
 	objectMemory
@@ -6152,11 +5968,8 @@ CogOutOfLineLiteralsRiscV64Compiler >> rewriteJumpLongAt: jumpReturnAddress targ
 	self assert: (self instructionIsJALR: instr).
 	"Need to modify the whole instructions -> auipc + jalr"
 	
-	"This mangling avoid having to bias the 11th bit in case of a negative value
-	 it is also used in loadImmediate:inRegister:"
-	"https://github.com/llvm/llvm-project/blob/4c3d916c4bd2a392101c74dd270bd1e6a4fec15b/llvm/lib/Target/RISCV/MCTargetDesc/RISCVMatInt.cpp"
-	offsetLow := self computeSignedValue64Bits: (jumpDistance bitAnd: 16rFFF).
-	offsetHigh := (((self computeSignedValue64Bits: jumpDistance) + 16r800) >> 12) bitAnd: 16rFFFFF.
+	offsetLow := self low12BitsOf: jumpDistance.
+	offsetHigh := self high20BitsOf: jumpDistance.
 
 	"auipc"
 	objectMemory
@@ -6198,7 +6011,7 @@ CogOutOfLineLiteralsRiscV64Compiler >> rewritePICJumpAt: addressFollowingJump ta
 	 
 	 ...  <-- jumpTargetAddress"
 	callOffset := jumpTargetAddr - addressFollowingJump + 4.
-	self assertValue: callOffset isContainedIn: 12. 
+	self assertValue: callOffset fitsSigned: 13.
 	
  	self assert: (self instructionIsB: (self instructionBeforeAddress: addressFollowingJump) withCondition: NE).
 	self rewriteBTypeBranchAtAddress: addressFollowingJump - 4 offset: callOffset withCondition: NE.
@@ -6222,7 +6035,7 @@ CogOutOfLineLiteralsRiscV64Compiler >> rotateLeftValueInRegister: srcReg byShift
 	"
 	"https://stackoverflow.com/questions/55394123/how-do-i-write-rotation-operation-for-the-risc-vassembly-language-do-we-have-a"
 	self assert: shamt > 0.
-	self assertValue: shamt isContainedIn: 6. "6 bits for RV64, 5 or RV32"
+	self assertValue: shamt fitsUnsigned: 6. "6 bits for RV64, 5 or RV32"
 	"Notice that srcReg is the same as destReg"
 	self machineCodeAt: index put: (self shiftLeftValueInRegister: srcReg byShiftAmount: shamt intoRegister: ConcreteIPReg2).
 	self machineCodeAt: index + 4 put: (self shiftRightValueInRegister: srcReg byShiftAmount: (shamt negated bitAnd: 16r3f) intoRegister: destReg). 
@@ -6264,7 +6077,7 @@ CogOutOfLineLiteralsRiscV64Compiler >> rotateRightValueInRegister: srcReg byShif
 	"https://stackoverflow.com/questions/55394123/how-do-i-write-rotation-operation-for-the-risc-vassembly-language-do-we-have-a"
 	
 	self assert: shamt > 0.
-	self assertValue: shamt isContainedIn: 6. "6 bits for RV64, 5 or RV32"
+	self assertValue: shamt fitsUnsigned: 6. "6 bits for RV64, 5 or RV32"
 	self machineCodeAt: 0 put: (self shiftRightValueInRegister: srcReg byShiftAmount: shamt intoRegister: ConcreteIPReg2).
 	self machineCodeAt: 4 put: (self shiftLeftValueInRegister: srcReg byShiftAmount: (shamt negated bitAnd: 16r3f) intoRegister: destReg).
 	self machineCodeAt: 8 put: (self bitwiseOrBetweenRegister: ConcreteIPReg2 andRegister: destReg toRegister: destReg).
@@ -6427,8 +6240,8 @@ CogOutOfLineLiteralsRiscV64Compiler >> shiftLeftValueInRegister: sourceReg byShi
 	"
 	| signExtendedShamt |
 	"Check size and sign"
-	self assertValue: shiftAmount isContainedIn: 6.
-	signExtendedShamt := self computeSignedValueOf: shiftAmount ofSize: 6.
+	self assertValue: shiftAmount fitsUnsigned: 6.
+	signExtendedShamt := self twosComplementOf: shiftAmount inBits: 6.
 	^ (((((signExtendedShamt bitAnd: 16r3f) << 20) 
 	  bitOr: (sourceReg bitAnd: 16r1f) << 15)
 	  bitOr: (2r001 << 12))
@@ -6465,8 +6278,8 @@ CogOutOfLineLiteralsRiscV64Compiler >> shiftRightValueInRegister: sourceReg bySh
 	"
 	| signExtendedShamt |
 	"Check size and sign"
-	self assertValue: shiftAmount isContainedIn: 6.
-	signExtendedShamt := self computeSignedValueOf: shiftAmount ofSize: 6.
+	self assertValue: shiftAmount fitsUnsigned: 6.
+	signExtendedShamt := self twosComplementOf: shiftAmount inBits: 6.
 	^ (((((signExtendedShamt bitAnd: 16r3f) << 20) 
 	  bitOr: (sourceReg bitAnd: 16r1f) << 15)
 	  bitOr: (2r101 << 12)) 
@@ -6494,11 +6307,39 @@ CogOutOfLineLiteralsRiscV64Compiler >> shiftRightValueInRegister: sourceReg1 byS
 { #category : 'machine code instruction' }
 CogOutOfLineLiteralsRiscV64Compiler >> signExtendValue: value forSize: size [
 
-	| mask bitMask signMask |
+	<var: #value type: #sqInt>
+	<var: #mask type: #sqInt>
+	<var: #signMask type: #sqInt>
+	| mask signMask |
 	"Reverse two's complement"
 	signMask := 1 << (size - 1).
 	mask := 1 << size - 1.
 	^ ((value bitAnd: mask) bitXor: signMask) - signMask
+]
+
+{ #category : 'concretization helpers' }
+CogOutOfLineLiteralsRiscV64Compiler >> sizeConditionalBranchAt: eventualAbsoluteAddress [
+	"Choose between the short (4 bytes, after an 4-byte compare for FP) and the long form of a conditional branch
+	 (see concretizeConditionalBranchAt:condition:between:and:). The span to a following instruction is between
+	 virtual addresses computed with maximum sizes, so the final span can only be shorter; the span to a preceding
+	 instruction or an absolute address is final. See CogInLineLiteralsX64Compiler>>sizePCDependentInstructionAt:."
+	<var: #targetInstruction type: #'AbstractInstruction *'>
+	<var: #span type: #sqInt>
+	| target targetInstruction branchIndex span |
+	branchIndex := self isFPSpanSizedBranch ifTrue: [4] ifFalse: [0].
+	target := operands at: 0.
+	targetInstruction := cogit cCoerceSimple: target to: #'AbstractInstruction *'.
+	span := (self isAnInstruction: targetInstruction)
+				ifTrue:
+					[targetInstruction address
+					 - (((cogit abstractInstruction: self follows: targetInstruction)
+							ifTrue: [eventualAbsoluteAddress]
+							ifFalse: [address]) + branchIndex)]
+				ifFalse: [target - (eventualAbsoluteAddress + branchIndex)].
+	address := eventualAbsoluteAddress.
+	^machineCodeSize := (self isInImmediateBranchRange: span)
+							ifTrue: [branchIndex + 4]
+							ifFalse: [branchIndex + 8]
 ]
 
 { #category : 'concretization helpers' }
@@ -6531,6 +6372,8 @@ CogOutOfLineLiteralsRiscV64Compiler >> sizePCDependentInstructionAt: eventualAbs
 	self assert: (self isJump or: [opcode = Call or: [opcode = CallFull
 				or: [dependent notNil and: [dependent opcode = Literal]]]]).
 	self isJump ifTrue: [self resolveJumpTarget].
+	self isSpanSizedBranch ifTrue:
+		[^self sizeConditionalBranchAt: eventualAbsoluteAddress].
 	address := eventualAbsoluteAddress.
 	(dependent notNil and: [dependent opcode = Literal]) ifTrue:
 		[opcode = Literal ifTrue:
@@ -6588,8 +6431,8 @@ CogOutOfLineLiteralsRiscV64Compiler >> storeByteFromRegister: sourceRegister toA
 
 	| signExtendedOffset |
 	"Check for sign and size"
-	self assertValue: offset isContainedIn: 12.	
-	signExtendedOffset := self computeSignedValueOf: offset ofSize: 12.
+	self assertValue: offset fitsSigned: 12.
+	signExtendedOffset := self twosComplementOf: offset inBits: 12.
 	^ ((((((
 	  offset >> 5 bitAnd: 16r7f) << 25) 
 	  bitOr: (sourceRegister bitAnd: 16r1f) << 20 )
@@ -6610,8 +6453,8 @@ CogOutOfLineLiteralsRiscV64Compiler >> storeDoubleWordFromRegister: sourceRegist
 
 	| signExtendedOffset |
 	"Check for sign and size"
-	self assertValue: offset isContainedIn: 12.	
-	signExtendedOffset := self computeSignedValueOf: offset ofSize: 12.
+	self assertValue: offset fitsSigned: 12.
+	signExtendedOffset := self twosComplementOf: offset inBits: 12.
 	^ ((((((
 	  signExtendedOffset >> 5 bitAnd: 16r7f) << 25) 
 	  bitOr: (sourceRegister bitAnd: 16r1f) << 20)
@@ -6632,8 +6475,8 @@ CogOutOfLineLiteralsRiscV64Compiler >> storeHalfWordFromRegister: sourceRegister
 
 	| signExtendedOffset |
 	"Check for sign and size"
-	self assertValue: offset isContainedIn: 12.	
-	signExtendedOffset := self computeSignedValueOf: offset ofSize: 12.
+	self assertValue: offset fitsSigned: 12.
+	signExtendedOffset := self twosComplementOf: offset inBits: 12.
 	^ ((((((
 	  offset >> 5 bitAnd: 16r7f) << 25) 
 	  bitOr: (sourceRegister bitAnd: 16r1f) << 20 )
@@ -6689,8 +6532,8 @@ CogOutOfLineLiteralsRiscV64Compiler >> storeWordFromRegister: sourceRegister toA
 
 	| signExtendedOffset |
 	"Check for sign and size"
-	self assertValue: offset isContainedIn: 12.	
-	signExtendedOffset := self computeSignedValueOf: offset ofSize: 12.
+	self assertValue: offset fitsSigned: 12.
+	signExtendedOffset := self twosComplementOf: offset inBits: 12.
 	^ ((((((
 	  offset >> 5 bitAnd: 16r7f) << 25) 
 	  bitOr: (sourceRegister bitAnd: 16r1f) << 20 )
@@ -6856,18 +6699,18 @@ CogOutOfLineLiteralsRiscV64Compiler >> usesOutOfLineLiteral [
 		[CallFull]		   -> [^true].
 		[JumpFull]		   -> [^true].
 		"CqR operations try to constant in an immediate, otherwise fallback in load literal (like Cw)"
-		[AddCqR]               -> [^ (self value: (operands at: 0) isContainedIn: 12) not]. 
-		[AddCheckOverflowCqR ] -> [^ (self value: (operands at: 0) isContainedIn: 12) not]. 
-		[AndCqR]               -> [^ (self value: (operands at: 0) isContainedIn: 12) not].
-		[AndCqRR]              -> [^ (self value: (operands at: 0) isContainedIn: 12) not].
-		[CmpCqR]               -> [^ (self value: (operands at: 0) isContainedIn: 11) not]. "uses load immediate"
+		[AddCqR]               -> [^ (self value: (operands at: 0) fitsSigned: 12) not].
+		[AddCheckOverflowCqR ] -> [^ (self value: (operands at: 0) fitsSigned: 12) not].
+		[AndCqR]               -> [^ (self value: (operands at: 0) fitsSigned: 12) not].
+		[AndCqRR]              -> [^ (self value: (operands at: 0) fitsSigned: 12) not].
+		[CmpCqR]               -> [^ (self value: (operands at: 0) fitsSigned: 12) not]. "uses loadImmediate:inRegister:"
 		[CmpC32R]              -> [^ true]. 
-		[OrCqR]                -> [^ (self value: (operands at: 0) isContainedIn: 12) not].
-		[SubCqR]               -> [^ (self value: ((operands at: 0) negated) isContainedIn: 12) not]. 
-	   [SubCheckOverflowCqR ] -> [^ (self value: ((operands at: 0) negated) isContainedIn: 12) not]. 
-		[TstCqR]               -> [^ (self value: (operands at: 0) isContainedIn: 12) not].
-		[XorCqR]               -> [^ (self value: (operands at: 0) isContainedIn: 12) not].
-		[LoadEffectiveAddressMwrR] -> [^ (self value: (operands at: 0) isContainedIn: 12) not]. 
+		[OrCqR]                -> [^ (self value: (operands at: 0) fitsSigned: 12) not].
+		[SubCqR]               -> [^ (self value: (operands at: 0) negated fitsSigned: 12) not].
+	   [SubCheckOverflowCqR ] -> [^ (self value: (operands at: 0) negated fitsSigned: 12) not].
+		[TstCqR]               -> [^ (self value: (operands at: 0) fitsSigned: 12) not].
+		[XorCqR]               -> [^ (self value: (operands at: 0) fitsSigned: 12) not].
+		[LoadEffectiveAddressMwrR] -> [^ (self value: (operands at: 0) fitsSigned: 12) not].
 		"CwR operations use a word size value and need a full literal load"
 		[AddCwR]		-> [^true].
 		[AndCwR]		-> [^true].
@@ -6876,7 +6719,7 @@ CogOutOfLineLiteralsRiscV64Compiler >> usesOutOfLineLiteral [
 		[SubCwR]		-> [^true].
 		[XorCwR]		-> [^true].
 		"Data Movement - Moves"						
-		[MoveCqR]		-> [^ (self value: (operands at: 0) isContainedIn: 11) not]. "11 because uses loadImmediate:inRegister:"
+		[MoveCqR]		-> [^ (self value: (operands at: 0) fitsSigned: 12) not]. "uses loadImmediate:inRegister:"
 		[MoveC32R]  -> [ self shouldBeImplemented ].
 		"Data Movement - Absolute addresses"
 		[MoveCwR]		-> [^(self inCurrentCompilation: (operands at: 0)) not].
@@ -6885,24 +6728,24 @@ CogOutOfLineLiteralsRiscV64Compiler >> usesOutOfLineLiteral [
 		[MoveAbR]		-> [^(self isAddressRelativeToVarBase: (operands at: 0)) not].
 		[MoveRAb]		-> [^(self isAddressRelativeToVarBase: (operands at: 1)) not].
 		"Data Movement - Stores"
-		[MoveRMbr]	-> [^ (self value: (operands at: 1) isContainedIn: 12) not].
-		[MoveRM8r]	-> [^ (self value: (operands at: 1) isContainedIn: 12) not].
-		[MoveRM16r]	-> [^ (self value: (operands at: 1) isContainedIn: 12) not].
-		[MoveRM32r]	-> [^ (self value: (operands at: 1) isContainedIn: 12) not].
-		[MoveRMwr]	-> [^ (self value: (operands at: 1) isContainedIn: 12) not].
-		[MoveRsM32r]	-> [^ (self value: (operands at: 1) isContainedIn: 12) not]. 												
-		[MoveRdM64r]	-> [^ (self value: (operands at: 1) isContainedIn: 12) not]. 
+		[MoveRMbr]	-> [^ (self value: (operands at: 1) fitsSigned: 12) not].
+		[MoveRM8r]	-> [^ (self value: (operands at: 1) fitsSigned: 12) not].
+		[MoveRM16r]	-> [^ (self value: (operands at: 1) fitsSigned: 12) not].
+		[MoveRM32r]	-> [^ (self value: (operands at: 1) fitsSigned: 12) not].
+		[MoveRMwr]	-> [^ (self value: (operands at: 1) fitsSigned: 12) not].
+		[MoveRsM32r]	-> [^ (self value: (operands at: 1) fitsSigned: 12) not].
+		[MoveRdM64r]	-> [^ (self value: (operands at: 1) fitsSigned: 12) not].
 		"Data Movement - Loads"
-		[MoveMbrR]	-> [^ (self value: (operands at: 0) isContainedIn: 12) not].
-		[MoveM8rR]	-> [^ (self value: (operands at: 0) isContainedIn: 12) not].
-		[MoveM16rR]	-> [^ (self value: (operands at: 0) isContainedIn: 12) not].
-		[MoveM32rR] -> [^ (self value: (operands at: 0) isContainedIn: 12) not].
-		[MoveMwrR]	-> [^ (self value: (operands at: 0) isContainedIn: 12) not].
-		[MoveM32rRs]	-> [^ (self value: (operands at: 0) isContainedIn: 12) not].
-		[MoveM64rRd]	-> [^ (self value: (operands at: 0) isContainedIn: 12) not].
+		[MoveMbrR]	-> [^ (self value: (operands at: 0) fitsSigned: 12) not].
+		[MoveM8rR]	-> [^ (self value: (operands at: 0) fitsSigned: 12) not].
+		[MoveM16rR]	-> [^ (self value: (operands at: 0) fitsSigned: 12) not].
+		[MoveM32rR] -> [^ (self value: (operands at: 0) fitsSigned: 12) not].
+		[MoveMwrR]	-> [^ (self value: (operands at: 0) fitsSigned: 12) not].
+		[MoveM32rRs]	-> [^ (self value: (operands at: 0) fitsSigned: 12) not].
+		[MoveM64rRd]	-> [^ (self value: (operands at: 0) fitsSigned: 12) not].
 								
 		[PushCw]		-> [^ (self inCurrentCompilation: (operands at: 0)) not].
-		[PushCq]		-> [^(self value: (operands at: 0) isContainedIn: 11) not]. "11 because uses loadImmediate:"
+		[PushCq]		-> [^(self value: (operands at: 0) fitsSigned: 12) not]. "uses loadImmediate:inRegister:"
 		[PrefetchAw] 	-> [^(self isAddressRelativeToVarBase: (operands at: 0)) not].
 
 		"Patcheable instruction. Moves a literal. Uses out of line literal."
@@ -6914,15 +6757,26 @@ CogOutOfLineLiteralsRiscV64Compiler >> usesOutOfLineLiteral [
 ]
 
 { #category : 'helpers - size sign' }
-CogOutOfLineLiteralsRiscV64Compiler >> value: value isContainedIn: size [ 
+CogOutOfLineLiteralsRiscV64Compiler >> value: value fitsSigned: size [
+	"Answer if value fits in a two's complement field of size bits: -2^(size-1) <= value < 2^(size-1).
+	 This is the range of every I/S/B/J-type immediate (addi, andi, loads, stores, branches, jal...):
+	 the hardware sign-extends the field, so e.g. 16r800 in 12 bits reads as -2048."
+	<var: #value type: #sqInt>
+	<var: #limit type: #sqInt>
+	| limit |
+	limit := 1 << (size - 1).
+	^ value >= limit negated and: [ value < limit ]
+]
 
-	<inline: true>
-	| mask twosComplement |
-	mask := (1 << size) - 1.
-	twosComplement := mask - value abs + 1.
-	(value >= 0)
-		ifTrue: [ ^ (value bitAnd: mask) = value ]
-		ifFalse: [ ^ (twosComplement >= 0 and: [twosComplement <= mask]) ]	
+{ #category : 'helpers - size sign' }
+CogOutOfLineLiteralsRiscV64Compiler >> value: value fitsUnsigned: size [
+	"Answer if value fits in an unsigned field of size bits: 0 <= value < 2^size.
+	 Used for the fields the hardware does not sign-extend: shift amounts and the raw 20-bit lui/auipc field."
+	<var: #value type: #sqInt>
+	<var: #limit type: #sqInt>
+	| limit |
+	limit := 1 << size.
+	^ value >= 0 and: [ value < limit ]
 ]
 
 { #category : 'machine code instruction' }

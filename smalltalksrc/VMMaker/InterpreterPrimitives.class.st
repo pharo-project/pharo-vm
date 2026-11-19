@@ -2751,7 +2751,7 @@ InterpreterPrimitives >> primitiveNotIdentical [
 	thisObject := self stackTop.
 	(objectMemory isOopForwarded: otherObject) ifTrue:
 		[self assert: argumentCount > 1.
-		 otherObject := objectMemory followForwarded: thisObject].
+		 otherObject := objectMemory followForwarded: otherObject].
 	(objectMemory isOopForwarded: thisObject) ifTrue:
 		[thisObject := objectMemory followForwarded: thisObject].
 	self pop: argumentCount + 1 thenPushBool: thisObject ~= otherObject
