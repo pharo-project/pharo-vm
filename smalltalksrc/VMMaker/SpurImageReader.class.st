@@ -14,6 +14,20 @@ SpurImageReader >> getLongFromFile: aFile swap: swapFlag [
 	<var: #aFile type: #sqImageFile>
 	<var: #w type: #usqInt>
 	| w |
+	w := self readLongFromFile: aFile.
+	^swapFlag
+		ifTrue: [objectMemory byteSwapped: w]
+		ifFalse: [w]
+]
+
+{ #category : 'file operations' }
+SpurImageReader >> readLongFromFile: aFile [
+	"Answer the next 32 or 64 bit word read from aFile without byte-swapping."
+	<inline: true>
+	<var: #aFile type: #sqImageFile>
+	<var: #w type: #usqInt>
+	<returnTypeC: #usqInt>
+	| w |
 	w := 0.
 	self cCode: [self
 					sq: (self addressOf: w)
@@ -21,9 +35,7 @@ SpurImageReader >> getLongFromFile: aFile swap: swapFlag [
 					File: 1
 					Read: aFile]
 		inSmalltalk: [w := objectMemory nextLongFrom: aFile].
-	^swapFlag
-		ifTrue: [objectMemory byteSwapped: w]
-		ifFalse: [w]
+	^w
 ]
 
 { #category : 'file operations' }
@@ -91,7 +103,7 @@ SpurImageReader >> readHeaderFrom: f startingAt: headerStart [
 	header hdrLastHash: (self getLongFromFile: f swap: header swapBytes).
 
 	"Unused, it was ScreenSize, used until Pharo9 Images"
-	self getLongFromFile: f swap: header swapBytes.
+	self readLongFromFile: f.
 
 	header headerFlags: (self getLongFromFile: f swap: header swapBytes).
 

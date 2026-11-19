@@ -222,3 +222,15 @@ SlangBasicTranslationTest >> testSendMemberAccessWithFunctionCallReceiverWithPoi
 
 	self assert: translation equals: '((foo())->stackp)'
 ]
+
+{ #category : '*VMMaker' }
+SlangBasicTranslationTest >> testRISCV64High20BitsOfIsASignedShift [
+	"The auipc/lui field is signed: high20BitsOf: must shift arithmetically in C as it does in Smalltalk.
+	 Slang translates >> to a logical shift on an unsigned cast, >>> to an arithmetic shift on a signed one"
+
+	| tMethod translation |
+	tMethod := (CogOutOfLineLiteralsRiscV64Compiler >> #high20BitsOf:) asTranslationMethodOfClass: TMethod.
+	translation := self translate: tMethod statements last expression.
+
+	self assert: translation equals: '((sqInt) (offset + 2048) ) >> 12'
+]

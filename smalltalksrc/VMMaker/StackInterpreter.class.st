@@ -15487,34 +15487,24 @@ StackInterpreter >> tryLoadNewPlugin: pluginString pluginEntries: pluginEntries 
 	"Load the plugin and if on Spur, populate pluginEntries with the prmitives in the plugin."
 
 	<doNotGenerate>
+
 	| plugin realPluginClass plugins realPlugin cg |
-	self transcript
-		cr;
-		show: 'Looking for module ' , pluginString.
+
 	pluginString isEmpty
 		ifTrue: [ plugin := self ]
 		ifFalse: [ 
 			plugins := InterpreterPlugin allSubclasses select: [ :psc | 
 				           psc moduleName asString = pluginString asString and: [ 
 					           psc shouldBeTranslated ] ].
-			plugins isEmpty ifTrue: [ 
-				self transcript show: ' ... not found'.
-				^ nil ].
+			plugins isEmpty ifTrue: [ ^ nil ].
 			plugins size > 1 ifTrue: [ ^ self error: 'This won''t work...' ].
-			"plugins size > 1 ifTrue:
-				[self transcript show: '...multiple plugin classes; choosing ', plugins last name]."
+
 			realPluginClass := plugins anyOne. "hopefully lowest in the hierarchy..."
-			plugin := realPluginClass simulatorForInterpreterInterface:
-				          objectMemory.
-			plugin ifNil: [ 
-				self transcript show: ' ... no simulator class; cannot simulate'.
-				^ nil ].
+			plugin := realPluginClass simulatorForInterpreterInterface: objectMemory.
+			plugin ifNil: [ ^ nil ].
 			(plugin respondsTo: #initialiseModule) ifTrue: [ 
-				plugin initialiseModule ifFalse: [ 
-					self transcript show: ' ... initialiser failed'.
-					^ nil ] ] ]. "module initialiser failed"
-	self transcript show: ' ... loaded'.
-	self transcript show: '...computing accessor depths'.
+				plugin initialiseModule ifFalse: [ ^ nil ] ] ]. "module initialiser failed"
+
 	plugin class isPluginClass
 		ifTrue: [ 
 			realPlugin := (plugin isSmartSyntaxPluginSimulator
@@ -15543,7 +15533,7 @@ StackInterpreter >> tryLoadNewPlugin: pluginString pluginEntries: pluginEntries 
 				plugin perform: fnSymbol.
 				self ].
 				(cg accessorDepthCalculator accessorDepthForSelector: fnSymbol) } ].
-	self transcript show: '...done'.
+
 	^ pluginString asString -> plugin
 ]
 

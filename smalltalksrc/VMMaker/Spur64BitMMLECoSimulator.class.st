@@ -109,12 +109,6 @@ Spur64BitMMLECoSimulator >> globalGarbageCollect [
 	 If it survives, destroy the clone and continue.  We should be OK until next time."
 
 	parent ifNil: [
-			coInterpreter
-				cr;
-				print: 'GC number ';
-				print: statistics statFullGCs;
-				tab;
-				flush.
 			CloneOnGC ifTrue: [
 					coInterpreter cloneSimulation objectMemory globalGarbageCollect.
 					Smalltalk garbageCollect ] ].

@@ -249,31 +249,12 @@ Spur64BitMMLESimulator >> parent: anObject [
 	parent := anObject
 ]
 
-{ #category : 'debug support' }
-Spur64BitMMLESimulator >> runLeakCheckerFor: gcModes excludeUnmarkedObjs: excludeUnmarkedObjs classIndicesShouldBeValid: classIndicesShouldBeValid [
-
-	(gcModes anyMask: checkForLeaks) ifTrue: [ 
-		coInterpreter transcript
-			nextPutAll: 'leak-checking...';
-			flush ].
-	^ super
-		  runLeakCheckerFor: gcModes
-		  excludeUnmarkedObjs: excludeUnmarkedObjs
-		  classIndicesShouldBeValid: classIndicesShouldBeValid
-]
-
 { #category : 'gc - global' }
 Spur64BitMMLESimulator >> scavengingGCTenuringIf: tenuringCriterion [
 	"If we're /not/ a clone, clone the VM and push it over the cliff.
 	 If it survives, destroy the clone and continue.  We should be OK until next time."
 
 	(self leakCheckNewSpaceGC and: [ parent isNil ]) ifTrue: [
-			coInterpreter
-				cr;
-				print: 'scavenge ';
-				print: statistics statScavenges;
-				tab;
-				flush.
 			CloneOnScavenge ifTrue: [
 					coInterpreter cloneSimulation objectMemory
 						scavengingGCTenuringIf: tenuringCriterion.
