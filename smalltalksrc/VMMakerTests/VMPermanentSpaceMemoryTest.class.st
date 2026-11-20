@@ -6,6 +6,13 @@ Class {
 	#tag : 'PermSpace'
 }
 
+{ #category : 'helpers' }
+VMPermanentSpaceMemoryTest >> assertClassAt: aClassIndex isAliveFor: permanentObject [
+
+	self deny: (memory classOrNilAtIndex: aClassIndex) equals: memory nilObject.
+	self assert: (memory rawHashBitsOf: (memory fetchClassOfNonImm: permanentObject)) equals: aClassIndex
+]
+
 { #category : 'running' }
 VMPermanentSpaceMemoryTest >> setUp [
 
@@ -1172,14 +1179,77 @@ VMPermanentSpaceMemoryTest >> testPermObjectPointingToOldSpaceIsUpdatedWhenCompa
 ]
 
 { #category : 'test - moving' }
+VMPermanentSpaceMemoryTest >> testPermanentObjectAdoptedByOldClassKeepsItAlive [
+	"The class index is not a pointer slot. A permanent object adopted by an old class must keep it alive."
+
+	| permanentObject oldClass oldClassHash |
+	permanentObject := self newPermanentObjectWithSlots: 0.
+	oldClass := self newClassInOldSpaceWithSlots: 0 instSpec: memory zeroSlotsNonIndexablePointerFormat.
+	oldClassHash := memory ensureBehaviorHash: oldClass.
+
+	self assert: (memory changeClassOf: permanentObject to: oldClass) equals: 0.
+
+	memory fullGC.
+
+	self assertClassAt: oldClassHash isAliveFor: permanentObject
+]
+
+{ #category : 'test - become' }
+VMPermanentSpaceMemoryTest >> testPermanentObjectKeepsItsOldClassAliveAfterBecomeOfAnotherPermanentObject [
+	"A become involving a permanent object recreates the permanent remembered sets.
+	 A permanent object with an old class must still be in them."
+
+	| permanentObject oldObject oldClass oldClassHash otherPermanentObject oldReplacement arrFrom arrTo |
+	oldClass := self newClassInOldSpaceWithSlots: 0 instSpec: memory zeroSlotsNonIndexablePointerFormat.
+	oldClassHash := memory ensureBehaviorHash: oldClass.
+	oldObject := self newOldSpaceObjectWithSlots: 0 format: memory zeroSlotsNonIndexablePointerFormat classIndex: oldClassHash.
+	permanentObject := memory moveToPermSpace: oldObject.
+
+	otherPermanentObject := self newPermanentObjectWithSlots: 0.
+	oldReplacement := self newOldSpaceObjectWithSlots: 0.
+	self keepObjectInVMVariable1: oldReplacement.
+	arrFrom := self newArrayWithSlots: 1.
+	arrTo := self newArrayWithSlots: 1.
+	memory storePointer: 0 ofObject: arrFrom withValue: otherPermanentObject.
+	memory storePointer: 0 ofObject: arrTo withValue: oldReplacement.
+	self assert: (memory become: arrFrom with: arrTo twoWay: false copyHash: false) equals: PrimNoErr.
+
+	memory fullGC.
+
+	self assertClassAt: oldClassHash isAliveFor: permanentObject
+]
+
+{ #category : 'test - moving' }
+VMPermanentSpaceMemoryTest >> testPermanentObjectKeepsItsOldClassAliveAfterScavengeDropsItsYoungReference [
+	"The scavenger removes a permanent object from the perm to new remembered set when it no longer
+	 refers to new space. A permanent object with an old class must go to the perm to old one."
+
+	| permanentObject oldObject oldClass oldClassHash youngObject |
+	oldClass := self newClassInOldSpaceWithSlots: 1 instSpec: memory nonIndexablePointerFormat.
+	oldClassHash := memory ensureBehaviorHash: oldClass.
+	oldObject := self newOldSpaceObjectWithSlots: 1 format: memory nonIndexablePointerFormat classIndex: oldClassHash.
+	youngObject := self newObjectWithSlots: 0.
+	memory storePointer: 0 ofObject: oldObject withValue: youngObject.
+	permanentObject := memory moveToPermSpace: oldObject.
+	self assert: (memory getFromPermToNewSpaceRememberedSet isInRememberedSet: permanentObject).
+
+	memory storePointer: 0 ofObject: permanentObject withValue: (memory integerObjectOf: 1).
+	memory doScavenge: 1.
+	self deny: (memory getFromPermToNewSpaceRememberedSet isInRememberedSet: permanentObject).
+
+	memory fullGC.
+
+	self assertClassAt: oldClassHash isAliveFor: permanentObject
+]
+
+{ #category : 'test - moving' }
 VMPermanentSpaceMemoryTest >> testPermanentObjectMarksItsOldClass [
 
-	| permanentObject oldObject oldClass oldClassHash found |
+	| permanentObject oldObject oldClass oldClassHash |
 	
 	"When a old class is referenced indirectly from the perm space it is not marked. 
 	We need to guarantee that the instances on the perm space or they are from permanent classes
 	or old classes are never collected."
-	self skip.
 	
 	oldClass := self newClassInOldSpaceWithSlots: 0 instSpec: memory zeroSlotsNonIndexablePointerFormat.
 	oldClassHash := memory ensureBehaviorHash: oldClass.
@@ -1188,13 +1258,9 @@ VMPermanentSpaceMemoryTest >> testPermanentObjectMarksItsOldClass [
 	permanentObject := memory moveToPermSpace: oldObject.
 	
 	memory fullGC.
+	memory fullGC.
 	
-	found := false.
-	
-	memory allOldSpaceObjectsDo: [ :anOop | ((memory rawHashBitsOf: anOop) = oldClassHash) 
-		ifTrue: [ found := true ]  ].
-	
-	self assert: found
+	self assertClassAt: oldClassHash isAliveFor: permanentObject
 ]
 
 { #category : 'test - moving' }
