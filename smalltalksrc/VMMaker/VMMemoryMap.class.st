@@ -175,10 +175,10 @@ VMMemoryMap >> allocatePermObjectsSpace [
 
 	self permSpaceStart ifNil: [ self insufficientMemoryAvailableError ].
 
-	self permSpaceStart = memoryMapConfiguration permSpaceInitialAddress 
-		ifFalse: [ 
-			self logError: 'Could not allocate permSpace in the expected place (%p), got %p' _: self permSpaceStart _: memoryMapConfiguration permSpaceInitialAddress.
-			self error: 'Error allocating' ].
+	"The platform allocator may return a different address than requested when
+	 the configured base is unreachable (e.g. aarch64 VA39 / RISC-V Sv39).
+	 fixedPermSpaceStart uses the obtained permSpaceStart and ComposedImageReader
+	 swizzles permanent-space pointers from their saved base to the obtained base."
 
 	self permSpaceEnd: self permSpaceStart + minSize.
 	objectMemory setPermSpaceFreeStart: self permSpaceStart. 
@@ -292,7 +292,7 @@ VMMemoryMap >> calculateMaskToUse [
 
 	self newSpaceMask: (memoryMapConfiguration newSpaceInitialAddress bitAnd: self spaceMaskToUse).
 	self oldSpaceMask: (oldSpaceFirst bitAnd: self spaceMaskToUse).
-	self permSpaceMask: (memoryMapConfiguration permSpaceInitialAddress bitAnd: self spaceMaskToUse).
+	self permSpaceMask: (self effectivePermSpaceStart bitAnd: self spaceMaskToUse).
 ]
 
 { #category : 'accessing' }
@@ -398,10 +398,21 @@ VMMemoryMap >> extendPermObjectsSpaceMinimum: minimalSize [
 ]
 
 { #category : 'as yet unclassified' }
+VMMemoryMap >> effectivePermSpaceStart [
+
+	<inline: #always>
+	<returnTypeC: #uint64_t>
+	^ permSpaceStart = 0
+		ifTrue: [ memoryMapConfiguration permSpaceInitialAddress ]
+		ifFalse: [ permSpaceStart ]
+]
+
+{ #category : 'as yet unclassified' }
 VMMemoryMap >> fixedPermSpaceStart [
 
 	<api>
-	^ memoryMapConfiguration permSpaceInitialAddress
+	<returnTypeC: #uint64_t>
+	^ self effectivePermSpaceStart
 ]
 
 { #category : 'accessing' }
@@ -526,7 +537,7 @@ VMMemoryMap >> isOldObject: anOop [
 
 	<api>
 
-	^ (anOop bitAnd: spaceMaskToUse) = oldSpaceMask
+	^ (anOop bitAnd: spaceMaskToUse) = oldSpaceMask and: [ anOop < self effectivePermSpaceStart ]
 
 ]
 
@@ -535,7 +546,7 @@ VMMemoryMap >> isPermanentObject: anOop [
 
 	<api>
 
-	^ anOop >= self fixedPermSpaceStart 
+	^ anOop >= self effectivePermSpaceStart 
 ]
 
 { #category : 'testing objects' }
