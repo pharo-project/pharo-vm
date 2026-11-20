@@ -469,6 +469,40 @@ VMMASTTranslationTest >> testMethodWithoutExplicitReturnReturnsVoid [
 ]
 
 { #category : 'tests' }
+VMMASTTranslationTest >> testSegmentMetadataFileIsAlwaysInlinedIntoEnsureDeleteSegments [
+
+	| codeGenerator writerMethod segMetaMethod segNameMethod remainingSends |
+	codeGenerator := CCodeGeneratorGlobalStructure new.
+	codeGenerator vmMaker: VMMaker new.
+	codeGenerator vmMaker vmmakerConfiguration: VMMakerConfiguration.
+
+	writerMethod := (ComposedImageWriter lookupSelector:
+		                 #ensureDeleteSegments:)
+		                asTranslationMethodOfClass: TMethod.
+	segMetaMethod := (ComposedImageWriter lookupSelector:
+		                  #segmentMetadataFile:inImage:)
+		                 asTranslationMethodOfClass: TMethod.
+	segNameMethod := (ComposedImageWriter lookupSelector:
+		                  #segmentFileName:withExtension:inImage:into:bufferSize:)
+		                 asTranslationMethodOfClass: TMethod.
+
+	codeGenerator addMethod: writerMethod.
+	codeGenerator addMethod: segMetaMethod.
+	codeGenerator addMethod: segNameMethod.
+	codeGenerator inferTypes.
+	codeGenerator prepareMethods.
+	codeGenerator doInlining: true.
+
+	remainingSends := OrderedCollection new.
+	writerMethod parseTree nodesDo: [ :node |
+		(node isSend and: [ node selector = #segmentMetadataFile:inImage: ])
+			ifTrue: [ remainingSends add: node ] ].
+
+	self assert: remainingSends isEmpty.
+	self assert: (writerMethod allLocals includes: #_buffer)
+]
+
+{ #category : 'tests' }
 VMMASTTranslationTest >> testTranslateBinaryMethodHasSameName [
 
 	| translation |
