@@ -321,7 +321,7 @@ UnicornProcessor >> rsp: anInteger [
 ]
 
 { #category : 'as yet unclassified' }
-UnicornProcessor >> runInMemory: aMemory minimumAddress: minimumAddress readOnlyBelow: minimumWritableAddress [
+UnicornProcessor >> run [
 
 
 	^ machineSimulator startAt: machineSimulator instructionPointerRegisterValue

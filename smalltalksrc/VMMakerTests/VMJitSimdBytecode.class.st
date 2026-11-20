@@ -125,7 +125,7 @@ VMJitSimdBytecode >> testAddVectorPushesArraySumIntoSimulatedStack [
 
 	self runFrom: primitiveAddress until: endInstruction address.
 	
-	entry := cogit ssTop.
+	entry := cogit compileTimeState simStackStateField ssTop.
 	"The register with the result is the same as the first one"
 	self assert: (entry type) equals: SSVectorRegister.
 	self assert: (entry registerr) equals: 0.
@@ -187,7 +187,7 @@ VMJitSimdBytecode >> testPushArrayToRegisterPushesArrayChunkIntoSimulatedStack [
 
 	self runFrom: primitiveAddress until: endInstruction address.
 	
-	entry := cogit ssTop.
+	entry := cogit compileTimeState simStackStateField ssTop.
 	
 	self assert: (entry type) equals: SSVectorRegister.
 	self assert: (entry registerr) equals: 0.

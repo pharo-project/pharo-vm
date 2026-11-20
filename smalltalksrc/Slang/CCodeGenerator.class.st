@@ -5114,7 +5114,6 @@ CCodeGenerator >> typeForDereference: sendNode in: aTMethod [
 { #category : 'C code generator' }
 CCodeGenerator >> typeOfVariable: varName [
 	"<String>"
-
 	self assert: varName isString.
 	scopeStack reverseDo: [ :scope |
 		(scope declarations includesKey: varName) ifTrue: [

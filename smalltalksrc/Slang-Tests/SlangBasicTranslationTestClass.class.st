@@ -51,6 +51,17 @@ SlangBasicTranslationTestClass >> initializationOptions [
 ]
 
 { #category : 'inline' }
+SlangBasicTranslationTestClass >> methodAccessStructPointer [
+
+	| t |
+	<var: #t type: #Struct >
+	
+	"This should automatically extract the pointer from t
+	somethingWithStructPointer(&t)"
+	^ self somethingWithStructPointer: (self addressOf: t)
+]
+
+{ #category : 'inline' }
 SlangBasicTranslationTestClass >> methodCallingCFunction [
 
 	self cCall: 'function' withArguments: { 
@@ -371,6 +382,13 @@ SlangBasicTranslationTestClass >> methodWithoutInlinePragmaAndEmptyMethodCall [
 SlangBasicTranslationTestClass >> methodWithoutReturn [
 
 	<returnTypeC: #sqInt>
+]
+
+{ #category : 'inline' }
+SlangBasicTranslationTestClass >> somethingWithStructPointer: t [
+
+	<var: #t type: #'Struct *'>
+	^ t
 ]
 
 { #category : 'inline-comment' }

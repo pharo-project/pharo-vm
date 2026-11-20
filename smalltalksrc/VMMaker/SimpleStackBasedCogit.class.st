@@ -74,8 +74,6 @@ SimpleStackBasedCogit class >> declareCVarsIn: aCCodeGenerator [
 SimpleStackBasedCogit class >> initializeBytecodeTableForSistaV1 [
 	"SimpleStackBasedCogit initializeBytecodeTableForSistaV1"
 
-	BytecodeSetHasDirectedSuperSend := true.
-	BytecodeSetHasExtensions := true.	
 	FirstSpecialSelector := 96.
 	NumSpecialSelectors := 32.
 	self flag:
@@ -238,17 +236,16 @@ SimpleStackBasedCogit >> adjustArgumentsForPerform: numArgs [
 { #category : 'bytecode generator support' }
 SimpleStackBasedCogit >> annotationForSendTable: sendTable [
 	"c.f. offsetAndSendTableFor:annotation:into:"
+
 	<inline: true>
 	<var: #sendTable type: #'sqInt *'>
-	sendTable == ordinarySendTrampolines ifTrue:
-		[^IsSendCall].
-	BytecodeSetHasDirectedSuperSend ifTrue:
-		[sendTable == directedSuperSendTrampolines ifTrue:
-			[^IsDirectedSuperSend].
-		 sendTable == directedSuperBindingSendTrampolines ifTrue:
-			[^IsDirectedSuperBindingSend]].
+	sendTable == ordinarySendTrampolines ifTrue: [ ^ IsSendCall ].
+	sendTable == directedSuperSendTrampolines ifTrue: [
+		^ IsDirectedSuperSend ].
+	sendTable == directedSuperBindingSendTrampolines ifTrue: [
+		^ IsDirectedSuperBindingSend ].
 	self assert: sendTable == superSendTrampolines.
-	^IsSuperSend
+	^ IsSuperSend
 ]
 
 { #category : 'simulation only' }
@@ -267,27 +264,6 @@ SimpleStackBasedCogit >> bytecodePC: anInteger [
 SimpleStackBasedCogit >> cePICMissTrampoline: anAddress [ 
 	
 	cePICMissTrampoline := anAddress
-]
-
-{ #category : 'simulation only' }
-SimpleStackBasedCogit >> ceShortCutTraceBlockActivation: aProcessorSimulationTrap [
-	self shortcutTrampoline: aProcessorSimulationTrap
-		to: [coInterpreter ceTraceBlockActivation]
-]
-
-{ #category : 'simulation only' }
-SimpleStackBasedCogit >> ceShortCutTraceLinkedSend: aProcessorSimulationTrap [
-	self shortcutTrampoline: aProcessorSimulationTrap
-		to: [coInterpreter ceTraceLinkedSend: (processor registerAt: ReceiverResultReg)]
-]
-
-{ #category : 'simulation only' }
-SimpleStackBasedCogit >> ceShortCutTraceStore: aProcessorSimulationTrap [
-	<doNotGenerate>
-	self shortcutTrampoline: aProcessorSimulationTrap
-		to: [coInterpreter
-				ceTraceStoreOf: (processor registerAt: ClassReg)
-				into: (processor registerAt: ReceiverResultReg)]
 ]
 
 { #category : 'accessing' }
@@ -2040,17 +2016,21 @@ SimpleStackBasedCogit >> genPushLiteralConstantBytecode [
 ]
 
 { #category : 'bytecode generator support' }
-SimpleStackBasedCogit >> genPushLiteralIndex: literalIndex [ "<SmallInteger>"
+SimpleStackBasedCogit >> genPushLiteralIndex: literalIndex [
+	"<SmallInteger>"
+
 	<inline: false>
 	| literal |
 	literal := self getLiteral: literalIndex.
-	BytecodeSetHasDirectedSuperSend ifTrue:
-		[self nextDescriptorExtensionsAndNextPCInto:
-			[:descriptor :exta :extb :followingPC|
-			(self isDirectedSuper: descriptor extA: exta extB: extb) ifTrue:
-				[tempOop := literal.
-				 ^0]]].
-	^self genPushLiteral: literal
+	self nextDescriptorExtensionsAndNextPCInto: [
+		:descriptor
+		:exta
+		:extb
+		:followingPC |
+		(self isDirectedSuper: descriptor extA: exta extB: extb) ifTrue: [
+			tempOop := literal.
+			^ 0 ] ].
+	^ self genPushLiteral: literal
 ]
 
 { #category : 'bytecode generators' }
@@ -2061,20 +2041,23 @@ SimpleStackBasedCogit >> genPushLiteralVariable16CasesBytecode [
 
 { #category : 'bytecode generator support' }
 SimpleStackBasedCogit >> genPushLiteralVariable: literalIndex [
+
 	<inline: false>
 	| association |
 	association := self getLiteral: literalIndex.
 	"If followed by a directed super send bytecode, avoid generating any code yet.
 	 The association will be passed to the directed send trampoline in a register
 	 and fully dereferenced only when first linked.  It will be ignored in later sends."
-	BytecodeSetHasDirectedSuperSend ifTrue:
-		[self deny: directedSendUsesBinding.
-		 self nextDescriptorExtensionsAndNextPCInto:
-			[:descriptor :exta :extb :followingPC|
-			(self isDirectedSuper: descriptor extA: exta extB: extb) ifTrue:
-				[tempOop := association.
-				 directedSendUsesBinding := true.
-				 ^0]]].
+	self deny: directedSendUsesBinding.
+	self nextDescriptorExtensionsAndNextPCInto: [
+		:descriptor
+		:exta
+		:extb
+		:followingPC |
+		(self isDirectedSuper: descriptor extA: exta extB: extb) ifTrue: [
+			tempOop := association.
+			directedSendUsesBinding := true.
+			^ 0 ] ].
 	"N.B. Do _not_ use ReceiverResultReg to avoid overwriting receiver in assignment in frameless methods."
 	self genMoveConstant: association R: ClassReg.
 	objectRepresentation
@@ -2085,7 +2068,7 @@ SimpleStackBasedCogit >> genPushLiteralVariable: literalIndex [
 		sourceReg: ClassReg
 		destReg: TempReg.
 	self PushR: TempReg.
-	^0
+	^ 0
 ]
 
 { #category : 'bytecode generators' }
@@ -2348,33 +2331,37 @@ SimpleStackBasedCogit >> genSend: selectorIndex numArgs: numArgs [
 
 { #category : 'bytecode generator support' }
 SimpleStackBasedCogit >> genSend: selectorIndex numArgs: numArgs sendTable: sendTable [
+
 	<inline: false>
 	<var: #sendTable type: #'sqInt *'>
-	
 	<story: #pic>
-	
 	| annotation |
 	self assert: needsFrame.
 	annotation := self annotationForSendTable: sendTable.
 	self assert: (numArgs between: 0 and: 255). "say"
-	self MoveMw: numArgs * objectMemory wordSize r: SPReg R: ReceiverResultReg.
+	self
+		MoveMw: numArgs * objectMemory wordSize
+		r: SPReg
+		R: ReceiverResultReg.
 	"Deal with stale super sends; see SpurMemoryManager's class comment."
-	(self annotationIsForUncheckedEntryPoint: annotation) ifTrue:
-		[objectRepresentation genEnsureOopInRegNotForwarded: ReceiverResultReg scratchReg: TempReg].
+	(self annotationIsForUncheckedEntryPoint: annotation) ifTrue: [
+		objectRepresentation
+			genEnsureOopInRegNotForwarded: ReceiverResultReg
+			scratchReg: TempReg ].
 	"0 through (NumSendTrampolines - 2) numArgs sends have the arg count implciti in the trampoline.
 	 The last send trampoline (NumSendTrampolines - 1) passes numArgs in SendNumArgsReg."
-	numArgs >= (NumSendTrampolines - 1) ifTrue:
-		[self MoveCq: numArgs R: SendNumArgsReg].
-	(BytecodeSetHasDirectedSuperSend
-	 and: [annotation
-			between: IsDirectedSuperSend
-			and: IsDirectedSuperBindingSend]) ifTrue:
-		[self genMoveConstant: tempOop R: TempReg].
+	numArgs >= (NumSendTrampolines - 1) ifTrue: [
+		self MoveCq: numArgs R: SendNumArgsReg ].
+	(annotation
+		 between: IsDirectedSuperSend
+		 and: IsDirectedSuperBindingSend) ifTrue: [
+		self genMoveConstant: tempOop R: TempReg ].
 	self genLoadInlineCacheWithSelector: selectorIndex.
 
-	(self Call: (sendTable at: (numArgs min: NumSendTrampolines - 1))) annotation: annotation.
+	(self Call: (sendTable at: (numArgs min: NumSendTrampolines - 1)))
+		annotation: annotation.
 	self PushR: ReceiverResultReg.
-	^0
+	^ 0
 ]
 
 { #category : 'bytecode generator support' }
@@ -2742,21 +2729,6 @@ SimpleStackBasedCogit >> genSubConstant: constant R: reg [
 		ifFalse: [ self SubCq: constant R: reg ]
 ]
 
-{ #category : 'initialization' }
-SimpleStackBasedCogit >> genTraceStoreTrampoline [
-	ceTraceStoreTrampoline := self genTrampolineFor: #ceTraceStoreOf:into:
-										called: 'ceTraceStoreTrampoline'
-										arg: ClassReg
-										arg: ReceiverResultReg
-										regsToSave: CallerSavedRegisterMask
-]
-
-{ #category : 'bytecode generator support' }
-SimpleStackBasedCogit >> genTraceStores [
-	<inline: true>
-	traceStores > 0 ifTrue: [ self CallRT: ceTraceStoreTrampoline ].
-]
-
 { #category : 'bytecode generators' }
 SimpleStackBasedCogit >> genUnconditionalTrapBytecode [
 	"SistaV1: *	217		Trap"
@@ -2814,28 +2786,6 @@ SimpleStackBasedCogit >> generateMissAbortTrampolines [
 	ceReapAndResetErrorCodeTrampoline := self genTrampolineFor: #ceReapAndResetErrorCodeFor:
 												called: 'ceReapAndResetErrorCodeTrampoline'
 												arg: ClassReg
-]
-
-{ #category : 'initialization' }
-SimpleStackBasedCogit >> generateTracingTrampolines [
-	"Generate trampolines for tracing.  In the simulator we can save a lot of time
-	 and avoid noise instructions in the lastNInstructions log by short-cutting these
-	 trampolines, but we need them in the real vm."
-	ceTraceLinkedSendTrampoline :=
-		self genTrampolineFor: #ceTraceLinkedSend:
-			called: 'ceTraceLinkedSendTrampoline'
-			arg: ReceiverResultReg
-			regsToSave: CallerSavedRegisterMask.
-	ceTraceBlockActivationTrampoline :=
-		self genTrampolineFor: #ceTraceBlockActivation
-			called: 'ceTraceBlockActivationTrampoline'
-			regsToSave: CallerSavedRegisterMask.
-	ceTraceStoreTrampoline :=
-		self genTrampolineFor: #ceTraceStoreOf:into:
-			called: 'ceTraceStoreTrampoline'
-			arg: ClassReg
-			arg: ReceiverResultReg
-			regsToSave: CallerSavedRegisterMask.
 ]
 
 { #category : 'register management' }
