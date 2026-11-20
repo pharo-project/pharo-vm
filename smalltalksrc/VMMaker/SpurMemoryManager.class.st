@@ -10492,13 +10492,14 @@ SpurMemoryManager >> outOfPlaceBecome: obj1 and: obj2 copyHashFlag: copyHashFlag
 				ifTrue: [coInterpreter cloneContext: obj1]
 				ifFalse: [self clone: obj1 shouldAllocateInPermSpace: (memoryMap isPermanentObject: obj1)].
 	
-	clone1 ifNil: [ self error: 'Not enough space to copy the objects in two-way become. This should have been detected before'. ^ self].	
+	"clone: and cloneContext: answer 0, not nil, when there is no space"
+	clone1 = 0 ifTrue: [ self error: 'Not enough space to copy the objects in two-way become. This should have been detected before'. ^ self].
 			
 	clone2 := (self isContextNonImm: obj2)
 				ifTrue: [coInterpreter cloneContext: obj2]
 				ifFalse: [self clone: obj2 shouldAllocateInPermSpace: (memoryMap isPermanentObject: obj2)].	
 
-	clone2 ifNil: [ self error: 'Not enough space to copy the objects in two-way become. This should have been detected before'.^ self ].	
+	clone2 = 0 ifTrue: [ self error: 'Not enough space to copy the objects in two-way become. This should have been detected before'.^ self ].
 			
 	(self isObjImmutable: obj1) ifTrue:
 		[self setIsImmutableOf: clone1 to: true].
