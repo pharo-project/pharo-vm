@@ -1147,6 +1147,36 @@ VMPermanentSpaceMemoryTest >> testPassingTwoObjectsToPermSpaceUpdatesForwarderIn
 	self assert: (memory fetchPointer: 0 ofObject: permanentObject1) equals: permanentObject2
 ]
 
+{ #category : 'tests - become' }
+VMPermanentSpaceMemoryTest >> testPermForwarderReferencedFromLargeOldObjectIsFollowedByFullGC [
+	"An old object with more than traceImmediatelySlotLimit strong slots is scanned by the
+	 large-object branch of markLoopFrom:. A field holding a forwarder that lives in perm space
+	 must be followed there, as in the small-object branch."
+
+	| permanentObject oldReplacement largeOldObject arrFrom arrTo |
+	permanentObject := self newPermanentObjectWithSlots: 1.
+
+	largeOldObject := self newOldSpaceArrayWithSlots: memory traceImmediatelySlotLimit + 1.
+	memory storePointer: 0 ofObject: largeOldObject withValue: permanentObject.
+	self keepObjectInVMVariable1: largeOldObject.
+
+	oldReplacement := self newOldSpaceObjectWithSlots: 0.
+	self keepObjectInVMVariable3: oldReplacement.
+
+	arrFrom := self newArrayWithSlots: 1.
+	arrTo := self newArrayWithSlots: 1.
+	memory storePointer: 0 ofObject: arrFrom withValue: permanentObject.
+	memory storePointer: 0 ofObject: arrTo withValue: oldReplacement.
+	self assert: (memory become: arrFrom with: arrTo twoWay: false copyHash: false) equals: PrimNoErr.
+	self assert: (memory isForwarded: permanentObject).
+
+	memory fullGC.
+
+	self
+		assert: (memory fetchPointer: 0 ofObject: self keptObjectInVMVariable1)
+		equals: self keptObjectInVMVariable3
+]
+
 { #category : 'test - moving' }
 VMPermanentSpaceMemoryTest >> testPermObjectPointingToOldSpaceIsUpdatedWhenCompactingForSaving [
 
