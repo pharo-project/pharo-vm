@@ -1168,7 +1168,61 @@ VMPermanentSpaceMemoryTest >> testPermObjectPointingToOldSpaceIsUpdatedWhenCompa
 
 	memory garbageCollectForSnapshot.
 
-	self assert: (memory hashBitsOf: (memory fetchPointer: 0 ofObject: permanentObject1)) equals: oldObject2Hash 
+	self assert: (memory hashBitsOf: (memory fetchPointer: 0 ofObject: permanentObject1)) equals: oldObject2Hash
+]
+
+{ #category : 'test - moving' }
+VMPermanentSpaceMemoryTest >> testPermObjectMovedInEarlierBulkDoesNotPointToForwarderAfterLaterBulk [
+
+	"A perm object moved by one bulk move points to an old object that a later bulk move
+	 moves too. The perm object must then point to the new perm copy, not to the forwarder
+	 left in old space: it is in no remembered set any more, so no GC would fix it."
+	| oldObject1 oldObject2 array1 array2 permanentObject1 permanentObject2 |
+
+	oldObject1 := self newOldSpaceObjectWithSlots: 1.
+	oldObject2 := self newOldSpaceObjectWithSlots: 0.
+	memory storePointer: 0 ofObject: oldObject1 withValue: oldObject2.
+
+	array1 := self newArrayWithSlots: 1.
+	memory storePointer: 0 ofObject: array1 withValue: oldObject1.
+	memory moveToPermSpaceInBulk: array1.
+	permanentObject1 := memory fetchPointer: 0 ofObject: array1.
+
+	array2 := self newArrayWithSlots: 1.
+	memory storePointer: 0 ofObject: array2 withValue: oldObject2.
+	memory moveToPermSpaceInBulk: array2.
+	permanentObject2 := memory fetchPointer: 0 ofObject: array2.
+
+	self deny: (memory isForwarded: (memory fetchPointer: 0 ofObject: permanentObject1)).
+	self assert: (memory fetchPointer: 0 ofObject: permanentObject1) equals: permanentObject2
+]
+
+{ #category : 'test - moving' }
+VMPermanentSpaceMemoryTest >> testPermObjectMovedInEarlierBulkKeepsReferentAfterLaterBulkAndFullGCs [
+
+	"Same as above, end to end: after the later bulk move, full GCs free the forwarder.
+	 The perm object must still reach the object it referenced (checked by its hash)."
+	| oldObject1 oldObject2 oldObject2Hash array1 array2 permanentObject1 |
+
+	oldObject1 := self newOldSpaceObjectWithSlots: 1.
+	oldObject2 := self newOldSpaceObjectWithSlots: 0.
+	memory storePointer: 0 ofObject: oldObject1 withValue: oldObject2.
+	oldObject2Hash := memory hashBitsOf: oldObject2.
+
+	array1 := self newArrayWithSlots: 1.
+	memory storePointer: 0 ofObject: array1 withValue: oldObject1.
+	memory moveToPermSpaceInBulk: array1.
+	permanentObject1 := memory fetchPointer: 0 ofObject: array1.
+
+	array2 := self newArrayWithSlots: 1.
+	memory storePointer: 0 ofObject: array2 withValue: oldObject2.
+	memory moveToPermSpaceInBulk: array2.
+
+	memory fullGC.
+	memory fullGC.
+
+	self assert: (memory getMemoryMap isPermanentObject: (memory fetchPointer: 0 ofObject: permanentObject1)).
+	self assert: (memory hashBitsOf: (memory fetchPointer: 0 ofObject: permanentObject1)) equals: oldObject2Hash
 ]
 
 { #category : 'test - moving' }
