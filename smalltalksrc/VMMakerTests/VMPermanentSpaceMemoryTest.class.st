@@ -230,6 +230,41 @@ VMPermanentSpaceMemoryTest >> testBecomingOneWayOfPermanentObjectWithYoungObject
 ]
 
 { #category : 'tests - become' }
+VMPermanentSpaceMemoryTest >> testBecomingTwoWayOfPermanentObjectWhenPermSpaceCannotGrowCopiesItOutOfPermSpace [
+
+	"When perm space is full and cannot grow, an out-of-place two-way become must copy the perm object
+	 out of perm space instead of stopping the VM."
+	| permanentObject referenced permanentReferrer oldReplacement arrFrom arrTo ec permContent |
+	permanentObject := self newPermanentObjectWithSlots: 2.
+	referenced := self newOldSpaceObjectWithSlots: 0.
+	memory storePointer: 0 ofObject: permanentObject withValue: referenced.
+	permanentReferrer := self newPermanentObjectWithSlots: 1.
+	memory storePointer: 0 ofObject: permanentReferrer withValue: permanentObject.
+
+	"Another slot count, so the become is out of place"
+	oldReplacement := self newOldSpaceObjectWithSlots: 1.
+	arrFrom := self newArrayWithSlots: 1.
+	arrTo := self newArrayWithSlots: 1.
+	memory storePointer: 0 ofObject: arrFrom withValue: permanentObject.
+	memory storePointer: 0 ofObject: arrTo withValue: oldReplacement.
+
+	"Perm space is exactly full, and the memory after it is taken"
+	memory getMemoryMap permSpaceEnd: memory permSpaceFreeStart.
+
+	ec := memory become: arrFrom with: arrTo twoWay: true copyHash: false.
+
+	self assert: ec equals: PrimNoErr.
+	permContent := memory followForwarded: oldReplacement.
+	self deny: (memory isPermanent: permContent).
+	self assert: (memory numSlotsOf: permContent) equals: 2.
+	self assert: (memory fetchPointer: 0 ofObject: permContent) equals: referenced.
+	self assert: (memory numSlotsOf: (memory followForwarded: permanentObject)) equals: 1.
+	"The perm object that referenced the perm object now references the content of the other one"
+	self assert: (memory fetchPointer: 0 ofObject: permanentReferrer) equals: (memory followForwarded: permanentObject).
+	self assert: memory isPermSpaceRememberedSetSane
+]
+
+{ #category : 'tests - become' }
 VMPermanentSpaceMemoryTest >> testBecomingTwoWayOfPermanentObjectWithOldObjectLeavingForwarded [
 
 	| permanentObject oldReplacement arrFrom arrTo ec youngObjectReferencingPermanent oldObjectReferencingPermanent permanentObjectReferencingPermanent |
