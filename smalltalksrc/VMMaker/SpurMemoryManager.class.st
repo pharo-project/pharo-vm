@@ -10570,6 +10570,11 @@ SpurMemoryManager >> pinObject: objOop [
 	| oldClone seg |
 	<var: #seg type: #'SpurSegmentInfo *'>
 	self assert: (self isNonImmediate: objOop).
+	"Perm space objects never move: pin in place. Cloning one to old space leaves a perm forwarder
+	 that the next full GC frees (cleanUpPermSpaceForwarders) while perm objects still reference it."
+	(self isPermanent: objOop) ifTrue:
+		[self setIsPinnedOf: objOop to: true.
+		 ^objOop].
 	self flag: 'policy decision here. if already old, do we clone in a segment containing pinned objects or merely pin?'.
 	"We choose to clone to keep pinned objects together to reduce fragmentation,
 	 if the object is not too large, assuming that pinning is rare and that fragmentation is a bad thing.
