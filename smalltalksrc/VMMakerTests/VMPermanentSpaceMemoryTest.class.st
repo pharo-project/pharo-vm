@@ -28,6 +28,28 @@ VMPermanentSpaceMemoryTest >> testAllInstancesReturnsObjectsInPermSpace [
 ]
 
 { #category : 'tests - become' }
+VMPermanentSpaceMemoryTest >> testBecomingOneWayOfPermanentObjectFollowsItInProfileSemaphore [
+	"profileSemaphore is a VM root (keepObjectInVMVariable2: stores into it). After a become it must
+	 be followed like the rest of the profile state, or it keeps the forwarder instead of the object.
+	 The bug is not specific to perm space; a perm object is used as in the other become tests."
+
+	| permanentObject oldReplacement arrFrom arrTo ec |
+	permanentObject := self newPermanentObjectWithSlots: 1.
+	oldReplacement := self newOldSpaceObjectWithSlots: 0.
+	self keepObjectInVMVariable2: permanentObject.
+
+	arrFrom := self newArrayWithSlots: 1.
+	arrTo := self newArrayWithSlots: 1.
+	memory storePointer: 0 ofObject: arrFrom withValue: permanentObject.
+	memory storePointer: 0 ofObject: arrTo withValue: oldReplacement.
+	ec := memory become: arrFrom with: arrTo twoWay: false copyHash: false.
+
+	self assert: ec equals: PrimNoErr.
+	self assert: (memory isForwarded: permanentObject).
+	self assert: self keptObjectInVMVariable2 equals: oldReplacement
+]
+
+{ #category : 'tests - become' }
 VMPermanentSpaceMemoryTest >> testBecomingOneWayOfPermanentObjectWithOldObject [
 
 	| permanentObject oldReplacement arrFrom arrTo ec youngObjectReferencingPermanent oldObjectReferencingPermanent permanentObjectReferencingPermanent |
