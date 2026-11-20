@@ -4096,7 +4096,7 @@ SpurMemoryManager >> clone: objOop shouldAllocateInPermSpace: shouldAllocateInPe
 					ofObject: newObj
 					withValue: oop].
 			(hasYoung
-			 and: [(memoryMap isYoungObject: newObj) not]) ifTrue:
+			 and: [memoryMap isOldObject: newObj]) ifTrue:
 				[self getFromOldSpaceRememberedSet remember: newObj]]
 		ifFalse:
 			[0 to: numSlots - 1 do:
@@ -8066,8 +8066,8 @@ SpurMemoryManager >> isPermSpaceRememberedSetSane [
 				              fetchPointer: 0
 				              ofMaybeForwardedObject: aForwardedPermSpaceObject.
 
-			refersOldSpace := self getMemoryMap isYoungObject: referenced.
-			refersNewSpace := self getMemoryMap isOldObject: referenced.
+			refersOldSpace := self getMemoryMap isOldObject: referenced.
+			refersNewSpace := self getMemoryMap isYoungObject: referenced.
 
 			(self
 				 isPermSpaceRememberedSetSaneMember: aForwardedPermSpaceObject
