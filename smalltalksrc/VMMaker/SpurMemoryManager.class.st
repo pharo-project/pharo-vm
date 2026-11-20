@@ -4543,7 +4543,10 @@ SpurMemoryManager >> doBecome: obj1 to: obj2 copyHash: copyHashFlag [
 
 	self forward: obj1 to: obj2.
 	copyHashFlag ifTrue: [
-		self setHashBitsOf: obj2 to: (self rawHashBitsOf: obj1) ].
+		self setHashBitsOf: obj2 to: (self rawHashBitsOf: obj1).
+		"The perm instances of obj2 now carry a duplicate class index; they must be remembered."
+		(memoryMap isPermanentObject: obj2) ifTrue: [
+			becomeEffectsFlags := becomeEffectsFlags bitOr: BecamePermanentObject ] ].
 
 	self deny: (self isOopForwarded: obj2).
 
@@ -5047,7 +5050,6 @@ SpurMemoryManager >> expungeDuplicateAndUnmarkedClasses: expungeUnmarked [
 					[((expungeUnmarked and: [(self isMarkedOrPermanent: classOrNil) not])
 					   or: [(self rawHashBitsOf: classOrNil) ~= classIndex]) ifTrue:
 						[
-						 self deny: (self isPermanent: classOrNil).
 						 self storePointerUnchecked: j
 							ofObject: classTablePage
 							withValue: nilObj.
@@ -10554,14 +10556,20 @@ SpurMemoryManager >> pastSpaceStart [
 { #category : 'perm - space' }
 SpurMemoryManager >> permObjectNeedsItsClassTraced: objOop [
 	"A perm object is scanned by a full GC only if it is in a perm remembered set, and the class index
-	 is not a pointer slot. Answer whether objOop must be scanned anyway because its class is not
-	 permanent: markAndTraceClassOf: must keep that class alive."
+	 is not a pointer slot. Answer whether objOop must be scanned anyway: its class is not permanent
+	 (markAndTraceClassOf: must keep it alive), or its class index is a duplicate left by a one-way
+	 become (markAndTraceClassOf: must fix it before expungeDuplicateAndUnmarkedClasses: clears it)."
 
 	<inline: true>
-	| classIndex |
+	| classIndex classObj |
 	classIndex := self classIndexOf: objOop.
-	^ classIndex > self lastClassIndexPun and: [
-		  (self isPermanent: (self classOrNilAtIndex: classIndex)) not ]
+	classIndex <= self lastClassIndexPun ifTrue: [ ^ false ].
+	classObj := self classOrNilAtIndex: classIndex.
+	"After a one-way become of classes the entry is still the forwarder here: the perm remembered
+	 sets are rebuilt before the class table is followed."
+	(self isForwarded: classObj) ifTrue: [ classObj := self followForwarded: classObj ].
+	^ (self isPermanent: classObj) not or: [
+		  (self rawHashBitsOf: classObj) ~= classIndex ]
 ]
 
 { #category : 'accessing' }

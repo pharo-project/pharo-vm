@@ -1178,6 +1178,62 @@ VMPermanentSpaceMemoryTest >> testPermObjectPointingToOldSpaceIsUpdatedWhenCompa
 	self assert: (memory hashBitsOf: (memory fetchPointer: 0 ofObject: permanentObject1)) equals: oldObject2Hash 
 ]
 
+{ #category : 'test - become' }
+VMPermanentSpaceMemoryTest >> testPermanentInstanceOfBecomeForwardedPermanentClassGetsItsClassIndexFixed [
+	"A one-way become without copying the hash leaves the new class at the old index too. The full GC
+	 fixes the class index of the instances it scans, then clears the duplicate entry. A permanent
+	 instance in no remembered set must be scanned too, or it loses its class."
+
+	| permanentClass1 permanentClass2 classIndex1 classIndex2 permanentObject arrFrom arrTo |
+	permanentClass1 := self newClassInOldSpaceWithSlots: 0 instSpec: memory zeroSlotsNonIndexablePointerFormat.
+	classIndex1 := memory ensureBehaviorHash: permanentClass1.
+	permanentClass1 := memory moveToPermSpace: permanentClass1.
+	permanentClass2 := self newClassInOldSpaceWithSlots: 0 instSpec: memory zeroSlotsNonIndexablePointerFormat.
+	classIndex2 := memory ensureBehaviorHash: permanentClass2.
+	permanentClass2 := memory moveToPermSpace: permanentClass2.
+
+	permanentObject := self newPermanentSpaceObjectWithSlots: 0 classIndex: classIndex1.
+
+	arrFrom := self newArrayWithSlots: 1.
+	arrTo := self newArrayWithSlots: 1.
+	memory storePointer: 0 ofObject: arrFrom withValue: permanentClass1.
+	memory storePointer: 0 ofObject: arrTo withValue: permanentClass2.
+	self assert: (memory become: arrFrom with: arrTo twoWay: false copyHash: false) equals: PrimNoErr.
+
+	memory fullGC.
+
+	self assert: (memory classIndexOf: permanentObject) equals: classIndex2.
+	self assert: (memory fetchClassOfNonImm: permanentObject) equals: permanentClass2
+]
+
+{ #category : 'test - become' }
+VMPermanentSpaceMemoryTest >> testPermanentInstanceOfPermanentClassTargetOfBecomeForwardCopyHashGetsItsClassIndexFixed [
+	"A one-way become copying the hash onto a permanent class changes the hash of that class.
+	 Its permanent instances then carry a duplicate index, which the full GC clears.
+	 They must be scanned so that their class index is fixed first."
+
+	| oldClass permanentClass oldClassIndex permanentClassIndex permanentObject arrFrom arrTo |
+	oldClass := self newClassInOldSpaceWithSlots: 0 instSpec: memory zeroSlotsNonIndexablePointerFormat.
+	oldClassIndex := memory ensureBehaviorHash: oldClass.
+	permanentClass := self newClassInOldSpaceWithSlots: 0 instSpec: memory zeroSlotsNonIndexablePointerFormat.
+	permanentClassIndex := memory ensureBehaviorHash: permanentClass.
+	permanentClass := memory moveToPermSpace: permanentClass.
+
+	permanentObject := self newPermanentSpaceObjectWithSlots: 0 classIndex: permanentClassIndex.
+
+	arrFrom := self newArrayWithSlots: 1.
+	arrTo := self newArrayWithSlots: 1.
+	memory storePointer: 0 ofObject: arrFrom withValue: oldClass.
+	memory storePointer: 0 ofObject: arrTo withValue: permanentClass.
+	self assert: (memory become: arrFrom with: arrTo twoWay: false copyHash: true) equals: PrimNoErr.
+	self assert: (memory rawHashBitsOf: permanentClass) equals: oldClassIndex.
+
+	memory fullGC.
+
+	self assert: (memory classIndexOf: permanentObject) equals: oldClassIndex.
+	self assert: (memory fetchClassOfNonImm: permanentObject) equals: permanentClass
+]
+
 { #category : 'test - moving' }
 VMPermanentSpaceMemoryTest >> testPermanentObjectAdoptedByOldClassKeepsItAlive [
 	"The class index is not a pointer slot. A permanent object adopted by an old class must keep it alive."
