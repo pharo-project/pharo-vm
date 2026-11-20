@@ -6,6 +6,27 @@ Class {
 	#tag : 'PermSpace'
 }
 
+{ #category : 'helpers' }
+VMPermanentSpaceMemoryTest >> newPermForwarderTo: replacement storedInto: permanentReferrer [
+	"Become a new perm object forward into replacement, then store the forwarder into permanentReferrer.
+	 Become is lazy: a temp or an old object can still hold the forwarder and store it into a perm
+	 object after the become. The write barrier ignores perm values, so permanentReferrer is in no
+	 remembered set and the full GC does not follow its field."
+
+	| permanentObject arrFrom arrTo |
+	permanentObject := self newPermanentObjectWithSlots: 1.
+	arrFrom := self newArrayWithSlots: 1.
+	arrTo := self newArrayWithSlots: 1.
+	memory storePointer: 0 ofObject: arrFrom withValue: permanentObject.
+	memory storePointer: 0 ofObject: arrTo withValue: replacement.
+	self assert: (memory become: arrFrom with: arrTo twoWay: false copyHash: false) equals: PrimNoErr.
+
+	memory storePointer: 0 ofObject: permanentReferrer withValue: permanentObject.
+	self deny: (memory getFromPermToOldSpaceRememberedSet isInRememberedSet: permanentReferrer).
+	self deny: (memory getFromPermToNewSpaceRememberedSet isInRememberedSet: permanentReferrer).
+	^ permanentObject
+]
+
 { #category : 'running' }
 VMPermanentSpaceMemoryTest >> setUp [
 
@@ -1145,6 +1166,98 @@ VMPermanentSpaceMemoryTest >> testPassingTwoObjectsToPermSpaceUpdatesForwarderIn
 	memory fullGC.
 
 	self assert: (memory fetchPointer: 0 ofObject: permanentObject1) equals: permanentObject2
+]
+
+{ #category : 'tests - become' }
+VMPermanentSpaceMemoryTest >> testPermForwarderKeepsItsOldTargetAliveAcrossFullGC [
+	"A perm forwarder is never freed: a field that still holds it stays valid, and its target stays
+	 alive and up to date when the compactor moves it."
+
+	| permanentReferrer oldReplacement permanentForwarder |
+	permanentReferrer := self newPermanentObjectWithSlots: 1.
+	"Dead, so that the compactor moves the replacement."
+	self newOldSpaceObjectWithSlots: 8.
+	oldReplacement := self newOldSpaceObjectWithSlots: 1.
+	memory storePointer: 0 ofObject: oldReplacement withValue: (memory integerObjectOf: 42).
+	"The replacement is reachable only through the forwarder."
+	permanentForwarder := self newPermForwarderTo: oldReplacement storedInto: permanentReferrer.
+
+	memory fullGC.
+	memory fullGC.
+
+	self deny: (memory isFreeObject: permanentForwarder).
+	self assert: (memory isForwarded: permanentForwarder).
+	self assert: (memory fetchPointer: 0 ofObject: permanentReferrer) equals: permanentForwarder.
+	self deny: (memory followForwarded: permanentForwarder) equals: oldReplacement.
+	self
+		assert: (memory fetchPointer: 0 ofObject: (memory followForwarded: permanentForwarder))
+		equals: (memory integerObjectOf: 42).
+	self assert: (memory getFromPermToOldSpaceRememberedSet isInRememberedSet: permanentForwarder)
+]
+
+{ #category : 'tests - become' }
+VMPermanentSpaceMemoryTest >> testPermForwarderKeepsItsYoungTargetAliveAcrossFullGC [
+
+	| permanentReferrer youngReplacement permanentForwarder target |
+	permanentReferrer := self newPermanentObjectWithSlots: 1.
+	youngReplacement := self newObjectWithSlots: 1.
+	memory storePointer: 0 ofObject: youngReplacement withValue: (memory integerObjectOf: 42).
+	"The replacement is reachable only through the forwarder."
+	permanentForwarder := self newPermForwarderTo: youngReplacement storedInto: permanentReferrer.
+
+	memory fullGC.
+	memory fullGC.
+
+	self deny: (memory isFreeObject: permanentForwarder).
+	self assert: (memory isForwarded: permanentForwarder).
+	target := memory followForwarded: permanentForwarder.
+	self deny: (memory isFreeObject: target).
+	self deny: (memory isForwarded: target).
+	self assert: (memory fetchPointer: 0 ofObject: target) equals: (memory integerObjectOf: 42)
+]
+
+{ #category : 'tests - become' }
+VMPermanentSpaceMemoryTest >> testPermForwarderToOldForwarderToYoungObjectMovesToPermToNewSpaceRememberedSet [
+	"perm forwarder -> old forwarder -> young object: the full GC shortens the chain, and the perm
+	 forwarder must then be in the perm-to-new set so that the scavenger updates it. The perm-to-new
+	 set is full, so that this grows it during the full GC."
+
+	| permanentReferrer oldReplacement youngReplacement permanentForwarder arrFrom arrTo limit filler fillerReferent target |
+	permanentReferrer := self newPermanentObjectWithSlots: 1.
+	oldReplacement := self newOldSpaceObjectWithSlots: 1.
+	permanentForwarder := self newPermForwarderTo: oldReplacement storedInto: permanentReferrer.
+	memory fullGC.
+	self assert: (memory getFromPermToOldSpaceRememberedSet isInRememberedSet: permanentForwarder).
+
+	oldReplacement := memory followForwarded: permanentForwarder.
+	youngReplacement := self newObjectWithSlots: 1.
+	memory storePointer: 0 ofObject: youngReplacement withValue: (memory integerObjectOf: 42).
+	arrFrom := self newArrayWithSlots: 1.
+	arrTo := self newArrayWithSlots: 1.
+	memory storePointer: 0 ofObject: arrFrom withValue: oldReplacement.
+	memory storePointer: 0 ofObject: arrTo withValue: youngReplacement.
+	self assert: (memory become: arrFrom with: arrTo twoWay: false copyHash: false) equals: PrimNoErr.
+	self assert: (memory isForwarded: oldReplacement).
+
+	fillerReferent := self newObjectWithSlots: 0.
+	limit := memory getFromPermToNewSpaceRememberedSet rememberedSetLimit.
+	[ memory getFromPermToNewSpaceRememberedSet rememberedSetSize < limit ] whileTrue: [
+		filler := self newPermanentObjectWithSlots: 1.
+		memory storePointer: 0 ofObject: filler withValue: fillerReferent ].
+
+	memory fullGC.
+
+	self assert: memory getFromPermToNewSpaceRememberedSet rememberedSetLimit > limit.
+	self deny: (memory isFreeObject: permanentForwarder).
+	self assert: (memory isForwarded: permanentForwarder).
+	target := memory fetchPointer: 0 ofMaybeForwardedObject: permanentForwarder.
+	self deny: (memory isForwarded: target).
+	self deny: (memory isFreeObject: target).
+	self assert: (memory fetchPointer: 0 ofObject: target) equals: (memory integerObjectOf: 42).
+	self assert: ((memory getMemoryMap isOldObject: target)
+		or: [ memory getFromPermToNewSpaceRememberedSet isInRememberedSet: permanentForwarder ]).
+	self deny: (memory isForwarded: (memory fetchPointer: 0 ofObject: filler)).
+	self deny: (memory isFreeObject: (memory fetchPointer: 0 ofObject: filler))
 ]
 
 { #category : 'test - moving' }

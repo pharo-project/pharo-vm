@@ -598,7 +598,6 @@ Class {
 		'fromOldSpaceRememberedSet',
 		'fromPermToOldSpaceRememberedSet',
 		'fromPermToNewSpaceRememberedSet',
-		'permSpaceForwardersToCleanUp',
 		'avoidSearchingSegmentsWithPinnedObjects',
 		'maxSlotsForNewSpaceAlloc',
 		'statistics'
@@ -721,9 +720,7 @@ SpurMemoryManager class >> declareCVarsIn: aCCodeGenerator [
 		var: #memoryMap type: #'VMMemoryMap *';
 		var: #fromOldSpaceRememberedSet type: #'VMRememberedSet *';
 		var: #fromPermToOldSpaceRememberedSet type: #'VMRememberedSet *';
-		var: #fromPermToNewSpaceRememberedSet type: #'VMRememberedSet *';
-		var: #permSpaceForwardersToCleanUp
-		type: #'SpurContiguousObjStack *'
+		var: #fromPermToNewSpaceRememberedSet type: #'VMRememberedSet *'
 ]
 
 { #category : 'translation' }
@@ -3927,42 +3924,6 @@ SpurMemoryManager >> classTagForSpecialObjectsIndex: splObjIndex compactClassInd
 ]
 
 { #category : 'perm - space' }
-SpurMemoryManager >> cleanUpPermSpaceForwarders [
-	
-	permSpaceForwardersToCleanUp objectStackDo: [ :anOop |
-		self freePermObject: anOop ].
-	
-	permSpaceForwardersToCleanUp freeObjectStack.
-]
-
-{ #category : 'perm - space' }
-SpurMemoryManager >> cleanUpPermToNewSpaceRememeberedSet [
-
-	| destIndex sourceIndex referrer |
-	
-	<inline:false>
-	
-	sourceIndex := destIndex := 0.
-
-	"We iterate the remembered set to remove the forwarders to the new space that should be cleaned after full GC. The forwarders are unreacheable after full GC"
-	
-	[sourceIndex < self getFromPermToNewSpaceRememberedSet rememberedSetSize] whileTrue:
-		[	referrer := self getFromPermToNewSpaceRememberedSet objectAt: sourceIndex.
-
-			(self isForwarded: referrer)
-				ifTrue: [ self handleUnreacheablePermanentForwarded: referrer ]
-				ifFalse:[
-						 self getFromPermToNewSpaceRememberedSet save: referrer at: destIndex.
-						 destIndex := destIndex + 1].
-		 sourceIndex := sourceIndex + 1].
-	
-	self getFromPermToNewSpaceRememberedSet setRememberedSetSize: destIndex.
-
-	self getFromPermToNewSpaceRememberedSet shrinkRememberedSet.
-
-]
-
-{ #category : 'perm - space' }
 SpurMemoryManager >> cleanUpPermToOldSpaceRememeberedSet [
 
 	| destIndex sourceIndex referrer |
@@ -3981,14 +3942,14 @@ SpurMemoryManager >> cleanUpPermToOldSpaceRememeberedSet [
 
 			self assert: ((self isForwarded: referrer) or: [(self hasYoungReferents: referrer) not or:[self isRemembered: referrer]]).
 
-			(self isForwarded: referrer) 
-				ifTrue: [ self handleUnreacheablePermanentForwarded:  referrer ]
-				ifFalse: [ 
-						((self isMarked: referrer) not and: [ self hasOldReferents: referrer])
-							ifTrue:[
-									 self getFromPermToOldSpaceRememberedSet save: referrer at: destIndex.
-									 self setIsMarkedOf: referrer to: true. 
-									 destIndex := destIndex + 1]].
+			((self isMarked: referrer) not and: [
+				 (self isForwarded: referrer)
+					 ifTrue: [ self keepPermForwarderInPermToOldSpaceRememberedSet: referrer ]
+					 ifFalse: [ self hasOldReferents: referrer ] ])
+				ifTrue:[
+						 self getFromPermToOldSpaceRememberedSet save: referrer at: destIndex.
+						 self setIsMarkedOf: referrer to: true.
+						 destIndex := destIndex + 1].
 		 sourceIndex := sourceIndex + 1].
 	
 	self getFromPermToOldSpaceRememberedSet setRememberedSetSize: destIndex.
@@ -6013,28 +5974,6 @@ SpurMemoryManager >> freeOldSpaceStart [
 ]
 
 { #category : 'free space' }
-SpurMemoryManager >> freePermObject: objOop [
-	"Free an object in PermSpace.  Coalesce if possible to reduce fragmentation.
-	Warning: because of coalescion, the original objOop can become an invalid entity pointer. We assume the objects are not in the remembered sets"
-	<api>
-	<inline: false>
-
-	| bytes start next |
-
-	self assert: (self isPermanent: objOop).
-	self assert: (self getFromPermToOldSpaceRememberedSet isInRememberedSet: objOop) not.
-	self assert: (self getFromPermToNewSpaceRememberedSet isInRememberedSet: objOop) not.
-
-	bytes := self bytesInObject: objOop.
-	start := self startOfObject: objOop.
-	next := self objectStartingAt: start + bytes.
-	(self isFreeObject: next) ifTrue:
-		[ bytes := bytes + (self bytesInObject: next) ].
-
-	^ self initFreeChunkWithBytes: bytes at: start.
-]
-
-{ #category : 'free space' }
 SpurMemoryManager >> freeSize [
 	^totalFreeOldSpace
 ]
@@ -6394,13 +6333,6 @@ SpurMemoryManager >> growToAccomodateContainerWithNumSlots: numSlots [
 	^ self
 		  growOldSpaceByAtLeast: (growHeadroom max: delta)
 		  callingOperation: 'growing to accomodate allObjects / allInstances container'
-]
-
-{ #category : 'perm - space' }
-SpurMemoryManager >> handleUnreacheablePermanentForwarded: anOop [
-
-	permSpaceForwardersToCleanUp addToStack: anOop.
-
 ]
 
 { #category : 'header access' }
@@ -7129,26 +7061,6 @@ SpurMemoryManager >> initializeOldSpaceFirstFree: startOfFreeOldSpace [
 	memoryMap setOldSpaceEnd: memoryMap oldSpaceEnd - self bridgeSize.
 	freeOldSpaceStart := memoryMap oldSpaceEnd.
 	self checkFreeSpace: GCModeFreeSpace
-]
-
-{ #category : 'initialization' }
-SpurMemoryManager >> initializePermSpaceForwardersToCleanUp [
-	
-	self cCode: [ 
-			permSpaceForwardersToCleanUp ifNil:  [
-				permSpaceForwardersToCleanUp := self cCoerce: (self calloc: (self sizeof: SpurContiguousObjStack) _: 1) 
-													  to: 'SpurContiguousObjStack *']] 	
-	inSmalltalk: [				
-		self ensureMemoryManager.
-		"We can initialize things that are allocated but are lazily initialized."
-		permSpaceForwardersToCleanUp ifNil: [permSpaceForwardersToCleanUp := SpurContiguousObjStack new].
-		permSpaceForwardersToCleanUp memoryManager: memoryManager.
-		permSpaceForwardersToCleanUp objectMemory: self ].
-	
-	permSpaceForwardersToCleanUp 
-		initializeWithAtLeast: 512
-		onError: [ self error: 'Cannot allocate space for Permanent space Forwarders to clean up' ].
-
 ]
 
 { #category : 'spur bootstrap' }
@@ -8485,6 +8397,25 @@ SpurMemoryManager >> isYoung: oop [
 	 and: [ memoryMap isYoungObject: oop ]
 ]
 
+{ #category : 'perm - space' }
+SpurMemoryManager >> keepPermForwarderInPermToOldSpaceRememberedSet: aPermForwarder [
+	"Perm forwarders are never freed: perm objects in no remembered set, and roots that are not
+	 followed, may still refer to them. Answer whether aPermForwarder stays in the perm-to-old set,
+	 that is whether its target is old. A forwarder to a perm object needs no set. A forwarder whose
+	 chain ends in a young object (an old object becomed into a young one) moves to the perm-to-new
+	 set, so that the scavenger updates it. This runs before the perm sets are marked and traced, so
+	 the perm-to-new set may grow here: its new array is marked with the set."
+
+	<inline: false>
+	| target |
+	target := self shortenPermForwarder: aPermForwarder.
+	(self getMemoryMap isYoungObject: target) ifTrue: [
+		(self getFromPermToNewSpaceRememberedSet isInRememberedSet: aPermForwarder) ifFalse: [
+			self getFromPermToNewSpaceRememberedSet remember: aPermForwarder ].
+		^ false ].
+	^ (self isPermanent: target) not
+]
+
 { #category : 'object access' }
 SpurMemoryManager >> keyOfEphemeron: objOop [
 	"Answer the object the ephemeron guards.  This is its first element."
@@ -9080,7 +9011,6 @@ SpurMemoryManager >> markAndTraceHiddenRoots [
 	self markAndTraceObjStack: mournQueue andContents: true.
 
 	self cleanUpPermToOldSpaceRememeberedSet.
-	self cleanUpPermToNewSpaceRememeberedSet.
 	
 	self markAndTraceRememberedSet: self getFromPermToOldSpaceRememberedSet.
 	self markAndTraceRememberedSet: self getFromPermToNewSpaceRememberedSet.
@@ -9132,6 +9062,17 @@ SpurMemoryManager >> markAndTraceObjStack: stackOrNil andContents: markAndTraceC
 		 index := index - 1]
 ]
 
+{ #category : 'perm - space' }
+SpurMemoryManager >> markAndTracePermForwarder: aPermForwarder [
+	"Perm forwarders are never freed (see keepPermForwarderInPermToOldSpaceRememberedSet:).
+	 One in a perm remembered set is a root for its target."
+
+	<inline: false>
+	| target |
+	target := self shortenPermForwarder: aPermForwarder.
+	(self isPermanent: target) ifFalse: [ self markAndTrace: target ]
+]
+
 { #category : 'obj stack' }
 SpurMemoryManager >> markAndTraceRememberedSet: aRememberedSet [
 
@@ -9141,7 +9082,9 @@ SpurMemoryManager >> markAndTraceRememberedSet: aRememberedSet [
 	rememberedSetOop := aRememberedSet objectOop.
 	self setIsMarkedOf: rememberedSetOop to: true.
 	aRememberedSet rememberedSetWithIndexDo: [ :objOop :i | 
-		self markAndTrace: objOop ]
+		(self isForwarded: objOop)
+			ifTrue: [ self markAndTracePermForwarder: objOop ]
+			ifFalse: [ self markAndTrace: objOop ] ]
 ]
 
 { #category : 'weakness and ephemerality' }
@@ -9293,7 +9236,6 @@ SpurMemoryManager >> markObjects: objectsShouldBeUnmarkedAndUnmarkedClassesShoul
 	self initializeMarkStack.
 	self initializeWeaklingStack.
 	self initializeMournQueue.
-	self initializePermSpaceForwardersToCleanUp.
 	 	
 	marking := true.
 	self markAccessibleObjectsAndFireEphemerons.
@@ -9301,7 +9243,6 @@ SpurMemoryManager >> markObjects: objectsShouldBeUnmarkedAndUnmarkedClassesShoul
 	self expungeDuplicateAndUnmarkedClasses: objectsShouldBeUnmarkedAndUnmarkedClassesShouldBeExpunged.
 	self nilUnmarkedWeaklingSlots.
 	self freeUnscannedEphemerons.
-	self cleanUpPermSpaceForwarders. 
 
 	marking := false
 ]
@@ -12342,6 +12283,22 @@ SpurMemoryManager >> shorten: objOop toIndexableSize: indexableSize [
 	 this only works for arrayFormat and longFormat objects.
 	 Answer the number of bytes returned to free memory, which may be zero if no change was possible."
 	self subclassResponsibility
+]
+
+{ #category : 'perm - space' }
+SpurMemoryManager >> shortenPermForwarder: aPermForwarder [
+	"Answer the end of the chain of forwarders starting at aPermForwarder, and store it into its
+	 slot 0: an old forwarder in the chain is not marked and is swept, and the compactor and the
+	 scavenger update slot 0 only. Unchecked, so that no remembered set changes while marking;
+	 the callers keep the perm remembered sets right."
+
+	<inline: false>
+	| target |
+	self assert: (self isPermanent: aPermForwarder).
+	target := self followForwarded: aPermForwarder.
+	(self fetchPointer: 0 ofMaybeForwardedObject: aPermForwarder) ~= target ifTrue: [
+		self storePointerUnchecked: 0 ofMaybeForwardedObject: aPermForwarder withValue: target ].
+	^ target
 ]
 
 { #category : 'debug support' }
