@@ -8066,8 +8066,8 @@ SpurMemoryManager >> isPermSpaceRememberedSetSane [
 				              fetchPointer: 0
 				              ofMaybeForwardedObject: aForwardedPermSpaceObject.
 
-			refersOldSpace := self getMemoryMap isYoungObject: referenced.
-			refersNewSpace := self getMemoryMap isOldObject: referenced.
+			refersOldSpace := self getMemoryMap isOldObject: referenced.
+			refersNewSpace := self getMemoryMap isYoungObject: referenced.
 
 			(self
 				 isPermSpaceRememberedSetSaneMember: aForwardedPermSpaceObject

@@ -1221,6 +1221,28 @@ VMPermanentSpaceMemoryTest >> testPermObjectPointingToOldSpaceIsUpdatedWhenCompa
 	self assert: (memory hashBitsOf: (memory fetchPointer: 0 ofObject: permanentObject1)) equals: oldObject2Hash 
 ]
 
+{ #category : 'tests - become' }
+VMPermanentSpaceMemoryTest >> testPermSpaceRememberedSetIsSaneWithPermForwarderToOldObject [
+	"A perm forwarder to an old object is in the perm to old space remembered set, which is right.
+	 The sanity check must classify its target as old, not young."
+
+	| permanentObject oldReplacement arrFrom arrTo ec |
+	permanentObject := self newPermanentObjectWithSlots: 1.
+	oldReplacement := self newOldSpaceObjectWithSlots: 0.
+	self keepObjectInVMVariable3: oldReplacement.
+
+	arrFrom := self newArrayWithSlots: 1.
+	arrTo := self newArrayWithSlots: 1.
+	memory storePointer: 0 ofObject: arrFrom withValue: permanentObject.
+	memory storePointer: 0 ofObject: arrTo withValue: oldReplacement.
+	ec := memory become: arrFrom with: arrTo twoWay: false copyHash: false.
+
+	self assert: ec equals: PrimNoErr.
+	self assert: (memory isForwarded: permanentObject).
+	self assert: (memory getFromPermToOldSpaceRememberedSet isInRememberedSet: permanentObject).
+	self assert: memory isPermSpaceRememberedSetSane
+]
+
 { #category : 'test - moving' }
 VMPermanentSpaceMemoryTest >> testPermanentObjectMarksItsOldClass [
 
