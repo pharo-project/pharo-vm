@@ -245,6 +245,36 @@ VMMASTTranslationTest >> testComplexIfNotNilWithArgument [
 ]
 
 { #category : 'tests' }
+VMMASTTranslationTest >> testContainsOnlyValidBecomeObjectsDeclaresSizeAsUnsigned [
+
+	{ Spur64BitMemoryManager . Spur32BitMemoryManager } do: [ :memoryClass |
+		| codeGenerator becomeMethod checkMethod |
+		codeGenerator := CCodeGeneratorGlobalStructure new.
+		codeGenerator vmMaker: VMMaker new.
+		codeGenerator vmMaker vmmakerConfiguration: VMMakerConfiguration.
+
+		becomeMethod := (memoryClass lookupSelector:
+			                 #become:with:twoWay:copyHash:)
+			                asTranslationMethodOfClass: TMethod.
+		checkMethod := (memoryClass lookupSelector:
+			                #containsOnlyValidBecomeObjects:and:twoWay:copyHash:)
+			               asTranslationMethodOfClass: TMethod.
+
+		codeGenerator addMethod: becomeMethod.
+		codeGenerator addMethod: checkMethod.
+		codeGenerator inferTypes.
+		codeGenerator prepareMethods.
+		codeGenerator doInlining: true.
+
+		self
+			assert: (becomeMethod declarations at: #_size)
+			equals: 'usqInt _size'.
+		self
+			assert: (codeGenerator typeFor: (TVariableNode new setName: #_size) in: becomeMethod)
+			equals: #usqInt ]
+]
+
+{ #category : 'tests' }
 VMMASTTranslationTest >> testEmptyBlockGeneratesSingleNilStatement [
 
 	| translation method codeGenerator block |
