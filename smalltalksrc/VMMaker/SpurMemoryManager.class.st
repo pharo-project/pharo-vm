@@ -4096,7 +4096,7 @@ SpurMemoryManager >> clone: objOop shouldAllocateInPermSpace: shouldAllocateInPe
 					ofObject: newObj
 					withValue: oop].
 			(hasYoung
-			 and: [(memoryMap isYoungObject: newObj) not]) ifTrue:
+			 and: [memoryMap isOldObject: newObj]) ifTrue:
 				[self getFromOldSpaceRememberedSet remember: newObj]]
 		ifFalse:
 			[0 to: numSlots - 1 do:

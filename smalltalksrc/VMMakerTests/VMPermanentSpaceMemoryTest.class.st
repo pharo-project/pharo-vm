@@ -673,6 +673,34 @@ VMPermanentSpaceMemoryTest >> testBecomingTwoWayOfPermanentObjectWithYoungObject
 	self assert: memory isPermSpaceRememberedSetSane.
 ]
 
+{ #category : 'tests - become' }
+VMPermanentSpaceMemoryTest >> testBecomingTwoWayOfPermanentObjectWithYoungReferentLeavesCloneOutOfOldSet [
+	"An out-of-place two-way become clones the perm object into perm space. The clone refers to a
+	 young object, so it belongs in the perm to new space remembered set, not in the old one."
+
+	| permanentObject youngReferent oldReplacement arrFrom arrTo ec permanentClone |
+	permanentObject := self newPermanentObjectWithSlots: 2.
+	youngReferent := self newObjectWithSlots: 0.
+	memory storePointer: 0 ofObject: permanentObject withValue: youngReferent.
+	self assert: (memory getFromPermToNewSpaceRememberedSet isInRememberedSet: permanentObject).
+
+	oldReplacement := self newOldSpaceObjectWithSlots: 1.
+
+	arrFrom := self newArrayWithSlots: 1.
+	arrTo := self newArrayWithSlots: 1.
+	memory storePointer: 0 ofObject: arrFrom withValue: permanentObject.
+	memory storePointer: 0 ofObject: arrTo withValue: oldReplacement.
+	ec := memory become: arrFrom with: arrTo twoWay: true copyHash: false.
+
+	self assert: ec equals: PrimNoErr.
+	permanentClone := memory followForwarded: oldReplacement.
+	self assert: (memory isPermanent: permanentClone).
+	self assert: (memory fetchPointer: 0 ofObject: permanentClone) equals: youngReferent.
+
+	self deny: (memory getFromOldSpaceRememberedSet isInRememberedSet: permanentClone).
+	self assert: (memory getFromPermToNewSpaceRememberedSet isInRememberedSet: permanentClone)
+]
+
 { #category : 'test - moving' }
 VMPermanentSpaceMemoryTest >> testCompiledMethodWithMachineCodeIsNotRememberedWhenModified [
 
