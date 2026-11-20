@@ -1344,11 +1344,6 @@ Cogit class >> runtime [
 		ceCallCogCodePopReceiverReg
 		ceEnterCogCodePopReceiverReg
 
-	Simulation only
-		ceShortCutTraceBlockActivation: aProcessorSimulationTrap
-		ceShortCutTraceLinkedSend: aProcessorSimulationTrap
-		ceShortCutTraceStore: aProcessorSimulationTrap
-
 	Misnamed:
 		ceSendAbort:to:numArgs: not a code entry.  Used by ceCannotResume, ceSendMustBeBoolean et al to execute their sends"
 ]
@@ -11267,30 +11262,6 @@ Cogit >> setStackAlignment: stackAlignment expectedSPOffset: spOffset expectedFP
 
 ]
 
-{ #category : 'simulation only' }
-Cogit >> shortcutTrampoline: aProcessorSimulationTrap to: aBlock [
-	<doNotGenerate>
-	backEnd hasLinkRegister ifTrue:
-		[processor pushWord: processor lr in: coInterpreter memory].
-	processor
-		simulateLeafCallOf: aProcessorSimulationTrap address
-		nextpc: aProcessorSimulationTrap nextpc
-		memory: nil.
-	coInterpreter
-		stackPointer: processor sp;
-		framePointer: processor fp.
-	processor
-		sp: self getCStackPointer;
-		fp: self getCFramePointer.
-	aBlock value.
-	processor
-		sp: coInterpreter stackPointer;
-		fp: coInterpreter framePointer;
-		simulateLeafReturnIn: coInterpreter memory.
-	backEnd hasLinkRegister ifTrue:
-		[processor lr: (processor popWordIn: coInterpreter memory)]
-]
-
 { #category : 'bytecode generator support' }
 Cogit >> shouldBeImplemented [
 	"In the production VM we can continue in the interpreter..."
@@ -11405,8 +11376,7 @@ Cogit >> simulatedAddressFor: anObject [
 	 into a Smalltalk message send or block evaluation.
 
 	 N.B. These addresses are at the top end of the bottom half of the address space
-	 so that they don't have the sign bit set and so will not look like negative numbers,
-	 unless they're the short-cut routines on ARM, where we want to use a bl, not a blx."
+	 so that they don't have the sign bit set and so will not look like negative numbers."
 	<doNotGenerate>
 	^simulatedAddresses
 		at: anObject

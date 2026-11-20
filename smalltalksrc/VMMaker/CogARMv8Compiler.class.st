@@ -6425,13 +6425,6 @@ CogARMv8Compiler >> unsignedBitfieldMoveSize: is64Bits immr: immr imms: imms sou
 		bitOr: (destinationRegister bitAnd: 16r1f))))))
 ]
 
-{ #category : 'simulation' }
-CogARMv8Compiler >> wantsNearAddressFor: anObject [
-	"A hack hook to allow ARM to override the simulated address for the short-cut trampolines"
-	<doNotGenerate>
-	^anObject isSymbol and: [anObject beginsWith: 'ceShortCut']
-]
-
 { #category : 'inline cacheing' }
 CogARMv8Compiler >> zoneCallsAreRelative [
 	"Answer if Call and JumpLong are relative and hence need to take the caller's
