@@ -120,6 +120,17 @@ VMMemoryMap >> allocateMemory: desiredSize BaseAddress: baseAddress [
 ]
 
 { #category : 'private' }
+VMMemoryMap >> allocateMemory: desiredSize ExactlyAt: address [
+
+	<doNotGenerate>
+	"Simulation of sqAllocateMemoryExactlyAt: allocate exactly at address or nothing"
+	((address \\ memoryManager pageSize) = 0
+		and: [ memoryManager wholeAt: address fits: desiredSize ])
+			ifFalse: [ ^ false ].
+	^ (memoryManager allocate: desiredSize desiredPosition: address) = address
+]
+
+{ #category : 'private' }
 VMMemoryMap >> allocateNewObjectsSpace [
 	
 	| newSpaceSizeToAllocate |
@@ -365,16 +376,15 @@ VMMemoryMap >> ensureAtLeastPermSpaceOf: requestedSize [
 { #category : 'allocating' }
 VMMemoryMap >> extendPermObjectsSpaceBy: aSize [
 
-	| requestedSize extendedAddress |
+	| requestedSize |
 
 	requestedSize := self roundToAllocationSize: aSize.
 
-	extendedAddress := self 
-		allocateMemory: requestedSize 
-		BaseAddress: self permSpaceEnd.
-	
-	extendedAddress ~= self permSpaceEnd 
-		ifTrue: [ self logError: 'Could not extend perm space.'. ^ false ].
+	"Perm space must stay contiguous: take exactly the memory after permSpaceEnd, or nothing.
+	 sqAllocateMemory would put the block elsewhere (on Windows it rounds the address up to 1 MB)
+	 and leak it, or map it over what is there (MAP_FIXED on Linux)."
+	(self allocateMemory: requestedSize ExactlyAt: self permSpaceEnd)
+		ifFalse: [ self logError: 'Could not extend perm space.'. ^ false ].
 	
 	self permSpaceEnd: self permSpaceEnd + requestedSize.	
 		

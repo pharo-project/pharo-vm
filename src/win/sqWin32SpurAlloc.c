@@ -100,6 +100,22 @@ sqAllocateMemory(usqInt minHeapSize, usqInt desiredHeapSize, usqInt desiredBaseA
 	return (usqInt)alloc;
 }
 
+/* Allocate exactly [address, address + size) or nothing; answer 1 on success.
+ * With an explicit address VirtualAlloc never moves the block: it fails if the range is in use.
+ * It rounds an address that is not a multiple of 64 KB down to one; free such a block.
+ */
+int
+sqAllocateMemoryExactlyAt(void *address, usqInt size)
+{
+	void *alloc = VirtualAlloc(address, size, MEM_COMMIT|MEM_RESERVE, PAGE_READWRITE);
+
+	if (alloc == address)
+		return 1;
+	if (alloc && !VirtualFree(alloc, 0, MEM_RELEASE))
+		logWarn("Unable to VirtualFree memory at %p, Error: %lu", alloc, GetLastError());
+	return 0;
+}
+
 #define roundDownToPage(v) ((v)&pageMask)
 #define roundUpToPage(v) (((v)+pageSize-1)&pageMask)
 

@@ -694,6 +694,41 @@ VMPermanentSpaceMemoryTest >> testCompiledMethodWithMachineCodeIsNotRememberedWh
 ]
 
 { #category : 'tests - allocation' }
+VMPermanentSpaceMemoryTest >> testExtendingPermSpaceWhenTheMemoryAfterItIsFreeExtendsItInPlace [
+
+	| map end |
+	self newPermanentObjectWithSlots: 1.
+	map := memory getMemoryMap.
+	end := map permSpaceEnd.
+
+	self assert: (map extendPermObjectsSpaceBy: 10 * 1024 * 1024).
+
+	self assert: map permSpaceEnd equals: end + (10 * 1024 * 1024).
+	self assert: (map memoryManager isValidAddress: end)
+]
+
+{ #category : 'tests - allocation' }
+VMPermanentSpaceMemoryTest >> testExtendingPermSpaceWhenTheMemoryAfterItIsTakenFailsWithoutAllocating [
+
+	| map end regionsBefore regionsAfter |
+	self newPermanentObjectWithSlots: 1.
+	map := memory getMemoryMap.
+	"Move permSpaceEnd back inside the region allocated for perm space: the memory after it is taken"
+	end := map permSpaceStart + (1024 * 1024).
+	map permSpaceEnd: end.
+	regionsBefore := Set new.
+	map memoryManager regionsDo: [ :start :bytes | regionsBefore add: start ].
+
+	self deny: (map extendPermObjectsSpaceBy: 10 * 1024 * 1024).
+
+	self assert: map permSpaceEnd equals: end.
+	"Nothing was allocated elsewhere and left behind"
+	regionsAfter := Set new.
+	map memoryManager regionsDo: [ :start :bytes | regionsAfter add: start ].
+	self assert: regionsAfter equals: regionsBefore
+]
+
+{ #category : 'tests - allocation' }
 VMPermanentSpaceMemoryTest >> testMarkingNewSpaceDoesNotMarkPermSpace [
 
 	| permanentObject newObject |

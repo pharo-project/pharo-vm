@@ -218,6 +218,23 @@ sqAllocateMemory(usqInt minHeapSize, usqInt desiredHeapSize, usqInt desiredBaseA
 	return (usqInt) heap;
 }
 
+/* Allocate exactly [address, address + size) or nothing; answer 1 on success.
+ * MAP_FIXED_NOREPLACE fails instead of replacing an existing mapping. Where it is not
+ * available (0, see above) or not known to the kernel, the address is only a hint: free a
+ * block that lands elsewhere.
+ */
+int
+sqAllocateMemoryExactlyAt(void *address, usqInt size)
+{
+	void *alloc = mmap(address, size, MAP_PROT, MAP_FLAGS | MAP_FIXED_NOREPLACE, devZero, 0);
+
+	if (alloc == address)
+		return 1;
+	if (alloc != MAP_FAILED)
+		munmap(alloc, size);
+	return 0;
+}
+
 /* Deallocate a region of memory previously allocated by
  * sqAllocateMemorySegmentOfSizeAboveAllocatedSizeInto.  Cannot fail.
  */
