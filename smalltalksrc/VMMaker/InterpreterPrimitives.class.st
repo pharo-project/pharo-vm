@@ -3830,7 +3830,13 @@ InterpreterPrimitives >> primitiveStringReplace [
 							storePointerUnchecked: i
 							ofObject: array
 							withValue:
-							(objectMemory fetchPointer: srcDelta + i ofObject: repl) ] ] ]
+							(objectMemory fetchPointer: srcDelta + i ofObject: repl) ].
+					"A perm destination needs the perm barrier for the non-perm heap values it got"
+					(objectMemory getMemoryMap isPermanentObject: array) ifTrue: [ 
+						start - 1 to: stop - 1 do: [ :i | 
+							objectMemory
+								possiblePermObjectStoreInto: array
+								value: (objectMemory fetchPointer: i ofObject: array) ] ] ] ]
 		ifFalse: [ 
 			(start >= 1 and: [ 
 				 start - 1 <= stop and: [ 
