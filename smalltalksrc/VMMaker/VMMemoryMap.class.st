@@ -120,6 +120,17 @@ VMMemoryMap >> allocateMemory: desiredSize BaseAddress: baseAddress [
 ]
 
 { #category : 'private' }
+VMMemoryMap >> allocateMemory: desiredSize ExactlyAt: address [
+
+	<doNotGenerate>
+	"Simulation of sqAllocateMemoryExactlyAt: allocate exactly at address or nothing"
+	((address \\ memoryManager pageSize) = 0
+		and: [ memoryManager wholeAt: address fits: desiredSize ])
+			ifFalse: [ ^ false ].
+	^ (memoryManager allocate: desiredSize desiredPosition: address) = address
+]
+
+{ #category : 'private' }
 VMMemoryMap >> allocateNewObjectsSpace [
 	
 	| newSpaceSizeToAllocate |
@@ -167,7 +178,7 @@ VMMemoryMap >> allocatePermObjectsSpace [
 	minSize = 0 ifTrue: [ 
 		^ self ].
 
-	minSize := self roundToAllocationSize: minSize.
+	minSize := self roundToPermSpaceAllocationSize: minSize.
 
 	self permSpaceStart: (self 
 		allocateMemory: minSize 
@@ -365,16 +376,15 @@ VMMemoryMap >> ensureAtLeastPermSpaceOf: requestedSize [
 { #category : 'allocating' }
 VMMemoryMap >> extendPermObjectsSpaceBy: aSize [
 
-	| requestedSize extendedAddress |
+	| requestedSize |
 
-	requestedSize := self roundToAllocationSize: aSize.
+	requestedSize := self roundToPermSpaceAllocationSize: aSize.
 
-	extendedAddress := self 
-		allocateMemory: requestedSize 
-		BaseAddress: self permSpaceEnd.
-	
-	extendedAddress ~= self permSpaceEnd 
-		ifTrue: [ self logError: 'Could not extend perm space.'. ^ false ].
+	"Perm space must stay contiguous: take exactly the memory after permSpaceEnd, or nothing.
+	 sqAllocateMemory would put the block elsewhere (on Windows it rounds the address up to 1 MB)
+	 and leak it, or map it over what is there (MAP_FIXED on Linux)."
+	(self allocateMemory: requestedSize ExactlyAt: self permSpaceEnd)
+		ifFalse: [ self logError: 'Could not extend perm space.'. ^ false ].
 	
 	self permSpaceEnd: self permSpaceEnd + requestedSize.	
 		
@@ -759,6 +769,24 @@ VMMemoryMap >> roundToAllocationSize: anInteger [
 	rounded < anInteger ifTrue: [ rounded := rounded + pageSize ].
 
 	^ rounded max: self allocationGranularity
+]
+
+{ #category : 'utils' }
+VMMemoryMap >> roundToPermSpaceAllocationSize: anInteger [
+
+	<inline: false>
+
+	"Perm space grows in place, right after permSpaceEnd. On Windows a new allocation can only start
+	 at a multiple of the allocation granularity (64 KB), so keep the size of perm space a multiple of it
+	 (roundToAllocationSize: answers at least 64 KB, but not a multiple). Elsewhere a multiple of the page
+	 size is enough. Both are powers of two. Used for the first allocation and by ensureAtLeastPermSpaceOf:;
+	 extendPermObjectsSpaceMinimum: already asks for multiples of 10 MB."
+
+	| unit |
+
+	unit := self allocationGranularity max: self getpagesize.
+
+	^ (anInteger + unit - 1) bitAnd: (unit - 1) bitInvert64
 ]
 
 { #category : 'initialization' }
