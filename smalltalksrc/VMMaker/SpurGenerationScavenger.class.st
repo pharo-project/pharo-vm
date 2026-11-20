@@ -759,7 +759,7 @@ SpurGenerationScavenger >> mapOopsFromPermSpace [
 						"We clean the remembered set flag, it is only marking if it is maybe pointing to new objects"
 						manager setIsRememberedOf: referrer to: false.
 						"Refers to Old Space, if refers to perm space only, I do nothing. I remove it from the remembered set fromPermSpaceToNewSpace"
-						result = 2 ifTrue: [ 
+						(result = 2 or: [ manager permObjectNeedsItsClassTraced: referrer ]) ifTrue: [
 							manager getFromPermToOldSpaceRememberedSet rememberWithoutMarkingAsRemembered: referrer]
 					].
 		 sourceIndex := sourceIndex + 1].
