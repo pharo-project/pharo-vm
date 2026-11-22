@@ -6197,8 +6197,11 @@ Cogit >> followForwardedMethods [
 	cogMethod := self cCoerceSimple: methodZoneBase to: #'CogMethod *'.
 
 	self enableCodeZoneWriteDuring: [ 
-		[ cogMethod < methodZone limitZony ] whileTrue: [ 
-			(objectMemory isOopForwarded: cogMethod selector) ifTrue: [ | followed |
+		[ cogMethod < methodZone limitZony ] whileTrue: [
+			"A freed method keeps the selector it had when it was freed. Nothing updates it any more
+			 (after a compaction it can point inside another object), so it is not followed."
+			(cogMethod cmType ~= CMFree and: [
+				 objectMemory isOopForwarded: cogMethod selector ]) ifTrue: [ | followed |
 				followed := objectMemory followForwarded: cogMethod selector.
 				cogMethod selector: followed.
 				(objectMemory isYoung: followed) ifTrue:
