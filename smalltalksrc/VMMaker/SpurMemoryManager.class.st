@@ -9633,17 +9633,23 @@ SpurMemoryManager >> moveToPermSpaceAllOldObjects [
 	"Clearing the flag for all"
 	becomeEffectsFlags := 0.
 
+	"The perm remembered sets are not updated object by object: recreateFromPermSpaceRememberedSet
+	 rebuilds both of them below, and nothing in between can scavenge or collect. Updating them
+	 here gave almost every moved object an entry (its referents are not moved yet), and those
+	 entries are dropped by the rebuild anyway. With millions of objects, growing the perm to old
+	 set took most of the time of the move."
 	self allOldSpaceObjectsDo: [ :objOop |
 		"If it is a hidden Object of the VM, we skip it"
 		((self classIndexOf: objOop) <= self classIsItselfClassIndexPun)
 			ifFalse: [
-			(self isValidToMoveToPermSpace: objOop) 
-				ifTrue: [ self doMoveToPermSpace: objOop addToRememberedSet: true ]]].
+			(self isValidToMoveToPermSpace: objOop)
+				ifTrue: [ self doMoveToPermSpace: objOop addToRememberedSet: false ]]].
 
 	self allPermSpaceNonForwardedObjectsDo: [ :permObj |
 		self followForwardedObjectFields: permObj toDepth: 0 ].
 
 	self recreateFromPermSpaceRememberedSet.
+	self assert: self isPermSpaceRememberedSetSane.
 
 	becomeEffectsFlags := BecamePointerObjectFlag + BecameActiveClassFlag
 		                      bitOr: BecameCompiledMethodFlag.
