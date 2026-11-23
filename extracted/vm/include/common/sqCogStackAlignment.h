@@ -145,3 +145,13 @@
 #  endif
 #  define assertCStackWellAligned() 0
 #endif /* defined(STACK_ALIGN_BYTES) */
+
+#if defined(_WIN32)
+#include <windows.h>
+
+static inline size_t getpagesize(void) {
+    SYSTEM_INFO si;
+    GetSystemInfo(&si);
+    return (size_t)si.dwPageSize;
+}
+#endif

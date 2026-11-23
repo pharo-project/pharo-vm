@@ -46,6 +46,10 @@ VMSpurInitializedOldSpaceTest >> createFreeChunkOfSize: aSize [
 	| address |
 	address := memory allocateOldSpaceChunkOfBytes: aSize.
 	memory freeChunkWithBytes: aSize at: address.
+
+	"Realign the total of free memory"
+	memory totalFreeOldSpace: memory totalFreeListBytes.
+
 	^ address
 ]
 

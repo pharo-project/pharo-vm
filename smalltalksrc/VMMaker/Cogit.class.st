@@ -6068,8 +6068,9 @@ Cogit >> ensureAndClearAbstractOpcodes: numberOfAbstractOpcodes [
 					abstractOpcodes := self malloc: allocBytes.
 					fixups := (abstractOpcodes asUnsignedInteger + opcodeBytes) asVoidPointer].
 				
-			 self b: abstractOpcodes zero: clearOpcodesBytes.
-			 self b: fixups zero: clearFixupsBytes]
+			 self memset: abstractOpcodes _: 0 _: clearOpcodesBytes.
+			 self memset: fixups _: 0 _: clearFixupsBytes.
+			]
 		inSmalltalk:
 			[abstractOpcodes := CArrayAccessor on: ((1 to: numAbstractOpcodes) collect: [:ign| CogCompilerClass for: self]).
 			 fixups := CArrayAccessor on: ((1 to: numAbstractOpcodes) collect: [:ign| self bytecodeFixupClass for: self])].

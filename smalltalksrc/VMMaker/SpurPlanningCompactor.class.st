@@ -277,9 +277,12 @@ SpurPlanningCompactor >> copyAndUnmarkMobileObjects [
 								[firstFreeObject := manager initFreeChunkWithBytes: startOfPreviousPin - toFinger at: toFinger]
 							ifFalse:
 								[firstFreeObject := previousPin].
+						manager checkFreeSpace: GCModeFreeSpace.
 						^false]]]].
 	self freeFrom: toFinger upTo: manager getMemoryMap oldSpaceEnd nextObject: (previousPin ifNil: [objectAfterLastMobileObject ifNil: [manager objectAfter: firstFreeObject]]).
 	self coalesceFrom: toFinger.
+	manager checkFreeSpace: GCModeFreeSpace.
+	
 	^true
 ]
 
@@ -370,7 +373,10 @@ SpurPlanningCompactor >> freeFrom: initialToFinger upTo: limit nextObject: nextO
 			ifFalse:
 				[objStart := manager addressAfter: obj]].
 	limit > toFinger ifTrue:
-		[manager addFreeChunkWithBytes: limit - toFinger at: toFinger]
+		[manager addFreeChunkWithBytes: limit - toFinger at: toFinger].
+	
+	manager checkFreeSpace: GCModeFreeSpace.
+
 ]
 
 { #category : 'initialization' }
@@ -745,6 +751,7 @@ SpurPlanningCompactor >> unmarkObjectsFromFirstFreeObject [
 	"Sweep the final immobile heap, freeing and coalescing unmarked and free objects,
 	 and unmarking all marked objects up to the end of memory."
 	| startOfFree freeBytes |
+	 <var: 'freeBytes' type: #usqInt>
 	freeBytes := 0.
 	manager allOldSpaceEntitiesFrom: firstFreeObject do:
 		[:o|
@@ -763,6 +770,8 @@ SpurPlanningCompactor >> unmarkObjectsFromFirstFreeObject [
 					ifFalse: [manager setIsMarkedOf: o to: false]]].
 	startOfFree ifNotNil:
 		[manager addFreeChunkWithBytes: freeBytes at: startOfFree].
+	
+	manager checkFreeSpace: GCModeFreeSpace.
 ]
 
 { #category : 'compaction' }
