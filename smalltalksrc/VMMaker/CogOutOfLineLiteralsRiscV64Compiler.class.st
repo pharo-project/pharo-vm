@@ -1148,40 +1148,6 @@ CogOutOfLineLiteralsRiscV64Compiler >> computeMaximumSize [
 	^ 0 "to keep C compiler qui Unmatched "
 ]
 
-{ #category : 'helpers - size sign' }
-CogOutOfLineLiteralsRiscV64Compiler >> high20BitsOf: offset [
-	"Answer the signed auipc/lui field of a 32-bit offset split as auipc/lui + a sign-extended 12-bit low part
-	 (see low12BitsOf:), as R_RISCV_PCREL_HI20 computes it (RISC-V ELF psABI, 10.4.10 PC-Relative Symbol Addresses,
-	 https://riscv-non-isa.github.io/riscv-elf-psabi-doc/#_pc_relative_symbol_addresses).
-	 The 16r800 compensates for the low part being negative when its bit 11 is set.
-	 >>> because Slang translates >> to a logical (unsigned) shift."
-	<var: #offset type: #sqInt>
-	^ (offset + 16r800) >>> 12
-]
-
-{ #category : 'helpers - size sign' }
-CogOutOfLineLiteralsRiscV64Compiler >> low12BitsOf: offset [
-	"Answer the low 12 bits of offset sign-extended, i.e. what addi/ld/jalr add after auipc/lui (see high20BitsOf:)"
-	<var: #offset type: #sqInt>
-	^ self signExtendValue: (offset bitAnd: 16rFFF) forSize: 12
-]
-
-{ #category : 'helpers - size sign' }
-CogOutOfLineLiteralsRiscV64Compiler >> twosComplementOf: aValue inBits: aSize [
-	"Answer the aSize-bit two's complement encoding of aValue, ready to be put in an instruction field"
-	<var: #aValue type: #sqInt>
-	aSize >= 64 ifTrue: [ ^ aValue ].
-	^ aValue bitAnd: (1 << aSize) - 1
-]
-
-{ #category : 'testing' }
-CogOutOfLineLiteralsRiscV64Compiler >> isInPCRelativeRange: offset [
-	"Answer if offset can be reached by auipc + a 12-bit signed immediate (see high20BitsOf:):
-	 -2^31 - 2^11 <= offset < 2^31 - 2^11"
-	<var: #offset type: #sqInt>
-	^ self value: offset + 16r800 fitsSigned: 32
-]
-
 { #category : 'concretization' }
 CogOutOfLineLiteralsRiscV64Compiler >> concretizeAddCheckOverflowCqR [
 	"Check for the overflow, as according to the example in the book: 
@@ -1485,31 +1451,6 @@ CogOutOfLineLiteralsRiscV64Compiler >> concretizeAt: actualAddress [
 
 	self assert: actualAddress \\ 4 = 0.
 	^ super concretizeAt: actualAddress
-]
-
-{ #category : 'concretization helpers' }
-CogOutOfLineLiteralsRiscV64Compiler >> concretizeConditionalBranchAt: index condition: condition between: leftReg and: rightReg [
-	"Emit the B-type branch of a conditional jump at index (0, or 4 after an FP compare), in the form
-	 sizeConditionalBranchAt: chose. beq/bne/blt/bge/bltu/bgeu reach +-4KB; past that, branch on the
-	 opposite condition (the condition codes differ only in bit 0) over a jal, which reaches +-1MB.
-	 Instructions must keep the size they were given, so a long branch stays long even if it would now fit.
-
-	 short:  b<cond>   rs1, rs2, offset     (see branchTo:ifCondition:betweenRegister:andRegister:)
-	 long:   b<!cond>  rs1, rs2, +8         skip the jal
-	         jal       x0, offset           (see jumpToOffset:andStorePreviousPCPlus4in:)"
-	| offset |
-	(machineCodeSize = 0 "not sized, e.g. the initial trampolines"
-		ifTrue: [self isInImmediateBranchRange: (self computeJumpTargetOffsetPlus: index)]
-		ifFalse: [machineCodeSize = (index + 4)]) ifTrue:
-		[offset := self computeJumpTargetOffsetPlus: index.
-		 self assert: (self isInImmediateBranchRange: offset).
-		 self machineCodeAt: index put: (self branchTo: offset ifCondition: condition betweenRegister: leftReg andRegister: rightReg).
-		 ^machineCodeSize := index + 4].
-	offset := self computeJumpTargetOffsetPlus: index + 4.
-	self assert: (self isInImmediateJumpRange: offset).
-	self machineCodeAt: index put: (self branchTo: 8 ifCondition: (condition bitXor: 1) betweenRegister: leftReg andRegister: rightReg).
-	self machineCodeAt: index + 4 put: (self jumpToOffset: offset andStorePreviousPCPlus4in: X0).
-	^machineCodeSize := index + 8
 ]
 
 { #category : 'concretization' }
@@ -1826,6 +1767,31 @@ CogOutOfLineLiteralsRiscV64Compiler >> concretizeCmpRdRd [
 	"Should be rewritten by noteFollowingConditionalBranch:"
 	self unreachable.
 	^0
+]
+
+{ #category : 'concretization helpers' }
+CogOutOfLineLiteralsRiscV64Compiler >> concretizeConditionalBranchAt: index condition: condition between: leftReg and: rightReg [
+	"Emit the B-type branch of a conditional jump at index (0, or 4 after an FP compare), in the form
+	 sizeConditionalBranchAt: chose. beq/bne/blt/bge/bltu/bgeu reach +-4KB; past that, branch on the
+	 opposite condition (the condition codes differ only in bit 0) over a jal, which reaches +-1MB.
+	 Instructions must keep the size they were given, so a long branch stays long even if it would now fit.
+
+	 short:  b<cond>   rs1, rs2, offset     (see branchTo:ifCondition:betweenRegister:andRegister:)
+	 long:   b<!cond>  rs1, rs2, +8         skip the jal
+	         jal       x0, offset           (see jumpToOffset:andStorePreviousPCPlus4in:)"
+	| offset |
+	(machineCodeSize = 0 "not sized, e.g. the initial trampolines"
+		ifTrue: [self isInImmediateBranchRange: (self computeJumpTargetOffsetPlus: index)]
+		ifFalse: [machineCodeSize = (index + 4)]) ifTrue:
+		[offset := self computeJumpTargetOffsetPlus: index.
+		 self assert: (self isInImmediateBranchRange: offset).
+		 self machineCodeAt: index put: (self branchTo: offset ifCondition: condition betweenRegister: leftReg andRegister: rightReg).
+		 ^machineCodeSize := index + 4].
+	offset := self computeJumpTargetOffsetPlus: index + 4.
+	self assert: (self isInImmediateJumpRange: offset).
+	self machineCodeAt: index put: (self branchTo: 8 ifCondition: (condition bitXor: 1) betweenRegister: leftReg andRegister: rightReg).
+	self machineCodeAt: index + 4 put: (self jumpToOffset: offset andStorePreviousPCPlus4in: X0).
+	^machineCodeSize := index + 8
 ]
 
 { #category : 'concretization' }
@@ -4656,6 +4622,17 @@ CogOutOfLineLiteralsRiscV64Compiler >> hasVarBaseRegister [
 	^true "x26/s10"
 ]
 
+{ #category : 'helpers - size sign' }
+CogOutOfLineLiteralsRiscV64Compiler >> high20BitsOf: offset [
+	"Answer the signed auipc/lui field of a 32-bit offset split as auipc/lui + a sign-extended 12-bit low part
+	 (see low12BitsOf:), as R_RISCV_PCREL_HI20 computes it (RISC-V ELF psABI, 10.4.10 PC-Relative Symbol Addresses,
+	 https://riscv-non-isa.github.io/riscv-elf-psabi-doc/#_pc_relative_symbol_addresses).
+	 The 16r800 compensates for the low part being negative when its bit 11 is set.
+	 >>> because Slang translates >> to a logical (unsigned) shift."
+	<var: #offset type: #sqInt>
+	^ (offset + 16r800) >>> 12
+]
+
 { #category : 'initialization' }
 CogOutOfLineLiteralsRiscV64Compiler >> initialize [
 	"This method intializes the Smalltalk instance.  The C instance is merely a struct and doesn't need initialization."
@@ -4803,6 +4780,11 @@ CogOutOfLineLiteralsRiscV64Compiler >> isCallPrecedingReturnPC: mcpc [
 ]
 
 { #category : 'testing' }
+CogOutOfLineLiteralsRiscV64Compiler >> isFPSpanSizedBranch [
+	^opcode between: BrFPEqualRR and: BrFPGreaterEqualRR
+]
+
+{ #category : 'testing' }
 CogOutOfLineLiteralsRiscV64Compiler >> isInImmediateBranchRange: operand [
 	"RISC-V conditional branches have a signed 13-bit offset (+-4KB)"
 	<var: #operand type: #sqInt>
@@ -4831,16 +4813,11 @@ CogOutOfLineLiteralsRiscV64Compiler >> isInLongJumpCallRange: offset [
 ]
 
 { #category : 'testing' }
-CogOutOfLineLiteralsRiscV64Compiler >> isSpanSizedBranch [
-	"The B-type conditional branches, sized by their span (see sizeConditionalBranchAt:).
-	 BrLongEqualRR and BrLongNotEqualRR keep their fixed 12-byte form: they get patched."
-	^(opcode between: BrEqualRR and: BrSignedGreaterEqualRR)
-	  or: [self isFPSpanSizedBranch]
-]
-
-{ #category : 'testing' }
-CogOutOfLineLiteralsRiscV64Compiler >> isFPSpanSizedBranch [
-	^opcode between: BrFPEqualRR and: BrFPGreaterEqualRR
+CogOutOfLineLiteralsRiscV64Compiler >> isInPCRelativeRange: offset [
+	"Answer if offset can be reached by auipc + a 12-bit signed immediate (see high20BitsOf:):
+	 -2^31 - 2^11 <= offset < 2^31 - 2^11"
+	<var: #offset type: #sqInt>
+	^ self value: offset + 16r800 fitsSigned: 32
 ]
 
 { #category : 'machine code instruction' }
@@ -4887,6 +4864,14 @@ CogOutOfLineLiteralsRiscV64Compiler >> isSharable [
 	<inline: true>
 	self assert: opcode = Literal.
 	^operands at: 1
+]
+
+{ #category : 'testing' }
+CogOutOfLineLiteralsRiscV64Compiler >> isSpanSizedBranch [
+	"The B-type conditional branches, sized by their span (see sizeConditionalBranchAt:).
+	 BrLongEqualRR and BrLongNotEqualRR keep their fixed 12-byte form: they get patched."
+	^(opcode between: BrEqualRR and: BrSignedGreaterEqualRR)
+	  or: [self isFPSpanSizedBranch]
 ]
 
 { #category : 'concretization helpers - mc size' }
@@ -5347,6 +5332,13 @@ CogOutOfLineLiteralsRiscV64Compiler >> loadWordFromAddressInRegister: baseRegist
 
 
 	
+]
+
+{ #category : 'helpers - size sign' }
+CogOutOfLineLiteralsRiscV64Compiler >> low12BitsOf: offset [
+	"Answer the low 12 bits of offset sign-extended, i.e. what addi/ld/jalr add after auipc/lui (see high20BitsOf:)"
+	<var: #offset type: #sqInt>
+	^ self signExtendValue: (offset bitAnd: 16rFFF) forSize: 12
 ]
 
 { #category : 'concretization helpers' }
@@ -6620,6 +6612,14 @@ CogOutOfLineLiteralsRiscV64Compiler >> trailingZerosOf: aNumber [
 	].
 
 	^ zeroBits
+]
+
+{ #category : 'helpers - size sign' }
+CogOutOfLineLiteralsRiscV64Compiler >> twosComplementOf: aValue inBits: aSize [
+	"Answer the aSize-bit two's complement encoding of aValue, ready to be put in an instruction field"
+	<var: #aValue type: #sqInt>
+	aSize >= 64 ifTrue: [ ^ aValue ].
+	^ aValue bitAnd: (1 << aSize) - 1
 ]
 
 { #category : 'concretization' }

@@ -15,12 +15,31 @@ Class {
 	#superclass : 'TestCase',
 	#instVars : [
 		'memoryMap',
-		'configuration'
+		'configuration',
+		'memoryManager'
 	],
 	#category : 'VMMakerTests-MemoryTests',
 	#package : 'VMMakerTests',
 	#tag : 'MemoryTests'
 }
+
+{ #category : 'asserting' }
+VMMemoryMapTest >> assertAllocationFailsDuring: aBlock [
+	"In simulation logError signals the logged message (see VMStructType>>#logError:withArgs:)"
+
+	self should: aBlock raise: Error withExceptionDo: [ :error |
+		self assert:
+			(error messageText beginsWith: 'Could not allocate the ') ]
+]
+
+{ #category : 'asserting' }
+VMMemoryMapTest >> assertCodeZoneIsNotAnObjectSpace [
+
+	self deny: (memoryMap isYoungObject: memoryMap codeZoneStart).
+	self deny: (memoryMap isYoungObject: memoryMap codeZoneEnd - 8).
+	self deny: (memoryMap isOldObject: memoryMap codeZoneStart).
+	self deny: (memoryMap isOldObject: memoryMap codeZoneEnd - 8)
+]
 
 { #category : 'asserting' }
 VMMemoryMapTest >> assertSpacesAreClassifiedCorrectly [
@@ -46,6 +65,46 @@ VMMemoryMapTest >> assertSpacesAreClassifiedCorrectly [
 	self deny: (memoryMap isOldObject: memoryMap fixedPermSpaceStart)
 ]
 
+{ #category : 'helpers' }
+VMMemoryMapTest >> codeZoneSize [
+
+	^ 1024 * 1024
+]
+
+{ #category : 'helpers' }
+VMMemoryMapTest >> occupy: anAddress size: aSize [
+	"Simulate memory taken by someone else (e.g. a thread stack) before the VM allocates."
+
+	^ memoryManager allocate: aSize desiredPosition: anAddress
+]
+
+{ #category : 'helpers' }
+VMMemoryMapTest >> occupyAllHolesOf: aSize from: firstAddress to: lastAddress [
+	"Leave no hole of aSize bytes in [firstAddress, lastAddress).
+	 The simulated allocator looks for a hole stepping by the requested size
+	 (see SlangMemoryManager>>#findHoleBiggerThan:from:), so one page every
+	 aSize bytes is enough."
+
+	firstAddress to: lastAddress - 1 by: aSize do: [ :anAddress |
+	self occupy: anAddress size: memoryManager pageSize ]
+]
+
+{ #category : 'helpers' }
+VMMemoryMapTest >> prepareAllocation [
+	"Allocate through a simulated memory manager. Like the Windows allocator,
+	 it answers the first hole at or above the desired address."
+
+	memoryManager := SlangMemoryManager new.
+	memoryManager wordSize: configuration confWordSize.
+	memoryMap
+		memoryManager: memoryManager;
+		allocationReserve: 0;
+		initialNewSpaceSize: 4 * 1024 * 1024;
+		initialOldSpaceSize: 8 * 1024 * 1024;
+		initialHeadroom: 0;
+		initialCodeZoneSize: self codeZoneSize
+]
+
 { #category : 'running' }
 VMMemoryMapTest >> setUp [
 
@@ -54,6 +113,12 @@ VMMemoryMapTest >> setUp [
 	memoryMap := VMMemoryMap new.
 	memoryMap initializeMemoryMap.
 	memoryMap memoryMapConfiguration: configuration
+]
+
+{ #category : 'helpers' }
+VMMemoryMapTest >> stackPagesSize [
+
+	^ 1024 * 1024
 ]
 
 { #category : 'tests' }
@@ -67,6 +132,36 @@ VMMemoryMapTest >> testCalculateMaskBeforeAllocationTerminatesWithDiscriminating
 
 	memoryMap calculateMaskToUse.
 	self deny: memoryMap spaceMaskToUse = 0
+]
+
+{ #category : 'tests - allocation' }
+VMMemoryMapTest >> testCodeZoneIsAllocatedAboveItsAddressWhenItIsTaken [
+	"Issue #1112: on Windows another mapping (e.g. a thread stack placed by ASLR)
+	 can take the configured address. The allocator answers the next hole above it,
+	 which is usable as long as the code zone stays below new space."
+
+	self prepareAllocation.
+	self occupy: configuration codeZoneInitialAddress size: 1024 * 1024.
+
+	memoryMap allocateHeap.
+
+	self assert:
+		memoryMap codeZoneStart > configuration codeZoneInitialAddress.
+	self assert: memoryMap codeZoneEnd <= memoryMap newSpaceStart.
+	self assertCodeZoneIsNotAnObjectSpace.
+	self assertSpacesAreClassifiedCorrectly
+]
+
+{ #category : 'tests - allocation' }
+VMMemoryMapTest >> testCodeZoneIsRejectedWhenItWouldReachNewSpace [
+
+	self prepareAllocation.
+	self
+		occupyAllHolesOf: self codeZoneSize
+		from: configuration codeZoneInitialAddress
+		to: configuration newSpaceInitialAddress.
+
+	self assertAllocationFailsDuring: [ memoryMap allocateHeap ]
 ]
 
 { #category : 'tests' }
@@ -103,6 +198,40 @@ VMMemoryMapTest >> testMaskForObjectsTerminatesOnDegenerateRange [
 		        to: configuration newSpaceInitialAddress - 1
 		        allOnes: 16rFFFFFFFFFFFFFFFF.
 	self assert: mask >= 0
+]
+
+{ #category : 'tests - allocation' }
+VMMemoryMapTest >> testNewSpaceIsAllocatedAboveItsAddressWhenItIsTaken [
+
+	self prepareAllocation.
+	self occupy: configuration newSpaceInitialAddress size: 1024 * 1024.
+
+	memoryMap allocateHeap.
+
+	self assert:
+		memoryMap newSpaceStart > configuration newSpaceInitialAddress.
+	self assert: memoryMap codeZoneEnd <= memoryMap newSpaceStart.
+	self assert: memoryMap newSpaceEnd <= memoryMap oldSpaceStart.
+	self deny:
+		(memoryMap isYoungObject: configuration newSpaceInitialAddress).
+	self assertCodeZoneIsNotAnObjectSpace.
+	self assertSpacesAreClassifiedCorrectly
+]
+
+{ #category : 'tests - allocation' }
+VMMemoryMapTest >> testNewSpaceIsRejectedWhenItWouldReachOldSpace [
+	"Use the 32 bits memory map: its gap between new and old space is small
+	 enough to fill in the simulator."
+
+	configuration := VMMemoryMapConfigurationFor32Bits new.
+	memoryMap memoryMapConfiguration: configuration.
+	self prepareAllocation.
+	self
+		occupyAllHolesOf: 4 * 1024 * 1024
+		from: configuration newSpaceInitialAddress
+		to: configuration oldSpaceInitialAddress.
+
+	self assertAllocationFailsDuring: [ memoryMap allocateHeap ]
 ]
 
 { #category : 'tests' }
@@ -149,4 +278,35 @@ VMMemoryMapTest >> testSpacesAllocatedAtConfiguredBasesAreClassifiedCorrectly [
 		configuration oldSpaceInitialAddress + (512 * 1024 * 1024).
 	memoryMap calculateMaskToUse.
 	self assertSpacesAreClassifiedCorrectly
+]
+
+{ #category : 'tests - allocation' }
+VMMemoryMapTest >> testStackPagesAreAllocatedAboveTheirAddressWhenItIsTaken [
+	"Issue #1112: the main thread stack can take the configured address of the
+	 stack pages. The next hole above it is usable as long as the stack pages
+	 stay below the code zone."
+
+	self prepareAllocation.
+	memoryMap allocateHeap.
+	self occupy: configuration stackPagesInitialAddress size: 1024 * 1024.
+
+	memoryMap allocateStackPages: self stackPagesSize.
+
+	self assert:
+		memoryMap stackPagesStart > configuration stackPagesInitialAddress.
+	self assert: memoryMap stackPagesEnd <= memoryMap codeZoneStart
+]
+
+{ #category : 'tests - allocation' }
+VMMemoryMapTest >> testStackPagesAreRejectedWhenTheyWouldReachTheCodeZone [
+
+	self prepareAllocation.
+	memoryMap allocateHeap.
+	self
+		occupyAllHolesOf: self stackPagesSize
+		from: configuration stackPagesInitialAddress
+		to: configuration codeZoneInitialAddress.
+
+	self assertAllocationFailsDuring: [
+		memoryMap allocateStackPages: self stackPagesSize ]
 ]
