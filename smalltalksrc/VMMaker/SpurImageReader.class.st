@@ -21,6 +21,24 @@ SpurImageReader >> getLongFromFile: aFile swap: swapFlag [
 ]
 
 { #category : 'file operations' }
+SpurImageReader >> readLongFromFile: aFile [
+	"Answer the next 32 or 64 bit word read from aFile without byte-swapping."
+	<inline: true>
+	<var: #aFile type: #sqImageFile>
+	<var: #w type: #usqInt>
+	<returnTypeC: #usqInt>
+	| w |
+	w := 0.
+	self cCode: [self
+					sq: (self addressOf: w)
+					Image: (self sizeof: w)
+					File: 1
+					Read: aFile]
+		inSmalltalk: [w := objectMemory nextLongFrom: aFile].
+	^w
+]
+
+{ #category : 'file operations' }
 SpurImageReader >> getShortFromFile: aFile swap: swapFlag [
 	"Answer the next 16 bit word read from aFile, byte-swapped according to the swapFlag."
 
@@ -175,24 +193,6 @@ SpurImageReader >> readImageNamed: imageName [
 	self readImageFromFile: file StartingAt: 0.
 	
 	self sqImageFileClose: file
-]
-
-{ #category : 'file operations' }
-SpurImageReader >> readLongFromFile: aFile [
-	"Answer the next 32 or 64 bit word read from aFile without byte-swapping."
-	<inline: true>
-	<var: #aFile type: #sqImageFile>
-	<var: #w type: #usqInt>
-	<returnTypeC: #usqInt>
-	| w |
-	w := 0.
-	self cCode: [self
-					sq: (self addressOf: w)
-					Image: (self sizeof: w)
-					File: 1
-					Read: aFile]
-		inSmalltalk: [w := objectMemory nextLongFrom: aFile].
-	^w
 ]
 
 { #category : 'perm - space' }
