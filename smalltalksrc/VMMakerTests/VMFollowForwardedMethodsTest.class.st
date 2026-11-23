@@ -16,27 +16,20 @@ VMFollowForwardedMethodsTest >> methodReturningNil [
 ]
 
 { #category : 'tests' }
-VMFollowForwardedMethodsTest >> testDoesNotFollowTheSelectorOfAFreedMethod [
-	"A freed method keeps the selector it had, and nothing updates it any more: after a compaction
-	 of old space it can point inside another object. Here it points at a slot holding nil, which
-	 read as a header has class index 0 and passes isOopForwarded:. Following it reads the next word
-	 as the forwarding pointer."
+VMFollowForwardedMethodsTest >> testDoesNotReadTheSelectorOfAFreedMethod [
+	"Nothing updates the selector of a freed method: after a compaction of old space it points inside
+	 another object, and reading it as an object can crash the VM. So the walk after a become must not
+	 read it at all. Here the selector is a canary that cannot be read: any read of it fails."
 
-	| machineCodeMethod objectAroundStaleSelector staleSelector |
-	machineCodeMethod := cogit
-		                     cog: (self createMethodOopFromHostMethod: (self findMethod: #methodReturningNil))
-		                     selector: self newZeroSizedObject.
-	cogit methodZone freeMethod: machineCodeMethod.
+	| freedMethod selectorThatCannotBeRead |
+	freedMethod := cogit
+		               cog: (self createMethodOopFromHostMethod: (self findMethod: #methodReturningNil))
+		               selector: self newZeroSizedObject.
+	cogit methodZone freeMethod: freedMethod.
+	selectorThatCannotBeRead := 0. "nothing is mapped at address 0"
+	freedMethod selector: selectorThatCannotBeRead.
 
-	objectAroundStaleSelector := self newOldSpaceObjectWithSlots: 2.
-	memory storePointer: 1 ofObject: objectAroundStaleSelector withValue: (memory integerObjectOf: 42).
-	staleSelector := objectAroundStaleSelector + memory baseHeaderSize.
-	machineCodeMethod selector: staleSelector.
-	self assert: (memory isOopForwarded: staleSelector).
-
-	cogit followForwardedMethods.
-
-	self assert: machineCodeMethod selector equals: staleSelector
+	self shouldnt: [ cogit followForwardedMethods ] raise: Error
 ]
 
 { #category : 'tests' }
