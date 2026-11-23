@@ -601,7 +601,8 @@ Class {
 		'permSpaceForwardersToCleanUp',
 		'avoidSearchingSegmentsWithPinnedObjects',
 		'maxSlotsForNewSpaceAlloc',
-		'statistics'
+		'statistics',
+		'heapInitialized'
 	],
 	#classVars : [
 		'BitsPerByte',
@@ -6543,6 +6544,12 @@ SpurMemoryManager >> headerForSlots: numSlots hash: hash format: formatField cla
 	+ classIndex
 ]
 
+{ #category : 'initialization' }
+SpurMemoryManager >> heapInitialized: aBoolean [
+
+	heapInitialized := aBoolean
+]
+
 { #category : 'debug support' }
 SpurMemoryManager >> heapMap [
 	^heapMap
@@ -6874,7 +6881,7 @@ SpurMemoryManager >> initialize [
 	remapBufferCount := extraRootCount := 0. "see below"
 	freeListsMask := totalFreeOldSpace := lowSpaceThreshold := 0.
 	checkForLeaks := 0.
-	needGCFlag := signalLowSpace := marking := false.
+	needGCFlag := signalLowSpace := marking := heapInitialized := false.
 	becomeEffectsFlags := gcPhaseInProgress := 0.
 	gcSweepEndUsecs := 0.
 
@@ -7105,7 +7112,10 @@ SpurMemoryManager >> initializeObjectMemory: bytesToShift [
 	growHeadroom := 16*1024*1024.		"headroom when growing"
 	shrinkThreshold := 32*1024*1024.		"free space before shrinking"
 	self setHeapSizeAtPreviousGC.
-	heapGrowthToSizeGCRatio := 0.333333. "By default GC after scavenge if heap has grown by a third since the last GC"
+	heapGrowthToSizeGCRatio := 0.333333. "By default GC after scavenge if heap has grown by a third since the last GC".
+
+	"Everything is in place: the heap can be accessed (e.g. by printAllStacks)."
+	heapInitialized := true
 ]
 
 { #category : 'free space' }
@@ -7160,7 +7170,7 @@ SpurMemoryManager >> initializePostBootstrap [
 	pastSpaceStart := scavenger pastSpace start.
 	scavengeThreshold := scavenger eden limit
 							- coInterpreter interpreterAllocationReserveBytes.
-
+	heapInitialized := true
 ]
 
 { #category : 'gc - global' }
@@ -7720,6 +7730,17 @@ SpurMemoryManager >> isFreeOop: oop [
 { #category : 'header access' }
 SpurMemoryManager >> isGrey: objOop [
 	^((self longAt: objOop) >> self greyBitShift bitAnd: 1) ~= 0
+]
+
+{ #category : 'initialization' }
+SpurMemoryManager >> isHeapInitialized [
+	"Answer whether the heap has been loaded and its objects can be accessed.
+	 Before that, specialObjectsOop still holds the address read from the image
+	 header, and the heap may not even be mapped. Debug printing code
+	 (e.g. printAllStacks, called from error()) must check this first."
+
+	<api>
+	^ heapInitialized
 ]
 
 { #category : 'debug support' }

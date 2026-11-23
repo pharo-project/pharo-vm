@@ -11225,12 +11225,18 @@ StackInterpreter >> printAllPermanentObjects [
 
 { #category : 'debug printing' }
 StackInterpreter >> printAllStacks [
-
 	"Print all the stacks of all running processes, including those that are currently suspended."
 
 	<api>
 	<inline: false>
 	| proc semaphoreClass mutexClass schedLists p processList |
+	"error() calls this, also while the image is loaded (e.g. allocating the heap).
+	 Until then there are no objects to print."
+	objectMemory isHeapInitialized ifFalse: [
+			self
+				print: 'Heap not initialized: no Smalltalk stacks to print';
+				cr.
+			^ nil ].
 	proc := self activeProcess.
 	self
 		printNameOfClass: (objectMemory fetchClassOf: proc) count: 5;
@@ -11248,29 +11254,31 @@ StackInterpreter >> printAllStacks [
 	p := highestRunnableProcessPriority = 0
 		     ifTrue: [ objectMemory numSlotsOf: schedLists ]
 		     ifFalse: [ highestRunnableProcessPriority ].
-	p - 1 to: 0 by: -1 do: [ :pri | 
-		processList := objectMemory fetchPointer: pri ofObject: schedLists.
-		(self isEmptyList: processList) ifFalse: [ 
-			self
-				cr;
-				print: 'processes at priority ';
-				printNum: pri + 1.
-			self printProcsOnList: processList ] ].
+	p - 1 to: 0 by: -1 do: [ :pri |
+			processList := objectMemory fetchPointer: pri ofObject: schedLists.
+			(self isEmptyList: processList) ifFalse: [
+					self
+						cr;
+						print: 'processes at priority ';
+						printNum: pri + 1.
+					self printProcsOnList: processList ] ].
 	self
 		cr;
 		print: 'suspended processes'.
-	
+
 	"Semaphore or mutex classes could not be installed"
 	semaphoreClass := objectMemory classSemaphore.
 	mutexClass := objectMemory classMutex.
-	semaphoreClass := semaphoreClass = objectMemory nilObject ifFalse: [ objectMemory compactIndexOfClass: semaphoreClass ].
-	mutexClass := mutexClass = objectMemory nilObject ifFalse: [ objectMemory compactIndexOfClass: mutexClass ].
-	objectMemory allHeapEntitiesDo: [ :obj | 
-		| classIdx |
-		classIdx := objectMemory classIndexOf: obj.
-		((semaphoreClass notNil and: [ classIdx = semaphoreClass ])
-			or: [ mutexClass notNil and: [ classIdx = mutexClass ] ])
-				ifTrue: [ self printProcsOnList: obj ] ]
+	semaphoreClass := semaphoreClass = objectMemory nilObject ifFalse: [
+		                  objectMemory compactIndexOfClass: semaphoreClass ].
+	mutexClass := mutexClass = objectMemory nilObject ifFalse: [
+		              objectMemory compactIndexOfClass: mutexClass ].
+	objectMemory allHeapEntitiesDo: [ :obj |
+			| classIdx |
+			classIdx := objectMemory classIndexOf: obj.
+			((semaphoreClass notNil and: [ classIdx = semaphoreClass ]) or: [
+				 mutexClass notNil and: [ classIdx = mutexClass ] ]) ifTrue: [
+				self printProcsOnList: obj ] ]
 ]
 
 { #category : 'debug printing' }
@@ -11290,12 +11298,22 @@ StackInterpreter >> printAtCache [
 
 { #category : 'debug printing' }
 StackInterpreter >> printCallStack [
+	"Crash handlers call this, also while the image is loaded (e.g. allocating the heap).
+	 Until then there are no objects to print."
+
 	<inline: false>
-	
+	objectMemory isHeapInitialized ifFalse: [
+			self
+				print: 'Heap not initialized: no Smalltalk stack to print';
+				cr.
+			^ nil ].
 	self resetStackPrintedCount.
 	framePointer = nil
-		ifTrue: [self printCallStackOf: (objectMemory fetchPointer: SuspendedContextIndex ofObject: self activeProcess)]
-		ifFalse: [self printCallStackFP: framePointer]
+		ifTrue: [
+				self printCallStackOf: (objectMemory
+						 fetchPointer: SuspendedContextIndex
+						 ofObject: self activeProcess) ]
+		ifFalse: [ self printCallStackFP: framePointer ]
 ]
 
 { #category : 'debug printing' }
