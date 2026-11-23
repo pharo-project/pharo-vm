@@ -187,6 +187,11 @@ void setImageName(const char* name){
  * It copies the parameter to internal storage.
  */
 EXPORT(void) setVMPath(const char* name){
+	if (!name) {
+		vmFullPath[0] = '\0';
+		vmPath[0] = '\0';
+		return;
+	}
 #ifdef _WIN32
 	/*
 	* Unsafe version of deprecated strcpy for compatibility
@@ -195,18 +200,17 @@ EXPORT(void) setVMPath(const char* name){
 	*/
 	strcpy_s(vmFullPath, PATH_MAX, name);
 #else
-	strcpy(vmFullPath, name);
+	strncpy(vmFullPath, name, PATH_MAX - 1);
+	vmFullPath[PATH_MAX - 1] = '\0';
 #endif
 
 #if __APPLE__
 	fillApplicationDirectory(vmPath);
 
 #else
-	int bufferSize = strlen(name) + 1;
+	char tmpBasedir[PATH_MAX];
 
-	char* tmpBasedir = (char*)alloca(bufferSize);
-
-	getBasePath(name, tmpBasedir, bufferSize);
+	getBasePath(vmFullPath, tmpBasedir, sizeof(tmpBasedir));
 
 # ifdef _WIN32
 	/*
@@ -214,9 +218,10 @@ EXPORT(void) setVMPath(const char* name){
 	* - does not check error code
 	* - does use count as the size of the destination buffer
 	*/
-	strcpy_s(vmPath, bufferSize, tmpBasedir);
+	strcpy_s(vmPath, PATH_MAX, tmpBasedir);
 # else
-	strcpy(vmPath, tmpBasedir);
+	strncpy(vmPath, tmpBasedir, PATH_MAX - 1);
+	vmPath[PATH_MAX - 1] = '\0';
 # endif
 #endif
 }
@@ -498,6 +503,9 @@ EXPORT(char*) getFullPath(char const *relativePath, char* fullPath, int fullPath
 	return fullPath;
 
 #else
+	if(!relativePath || relativePath[0] == '\0'){
+		return NULL;
+	}
 
 	//If the path is relative everything is fine.
 	if(relativePath[0] == '/' || relativePath[0] == '.'){
@@ -505,7 +513,12 @@ EXPORT(char*) getFullPath(char const *relativePath, char* fullPath, int fullPath
 	}
 
 	//If the path is not relative we have to add the './' in the beginning.
-	char* tmpPath = (char*)alloca(fullPathSize);
+	size_t relLen = strlen(relativePath);
+	if(fullPathSize <= 0 || relLen + 3 > (size_t)fullPathSize){
+		errno = ENAMETOOLONG;
+		return NULL;
+	}
+	char* tmpPath = (char*)alloca(relLen + 3);
 	strcpy(tmpPath, "./");
 	strcat(tmpPath, relativePath);
 
@@ -539,8 +552,17 @@ EXPORT(void) getBasePath(char const *path, char* basePath, int basePathSize){
 	WideCharToMultiByte(CP_UTF8, 0, finalBasePathWide, -1, basePath, basePathSize, NULL, 0);
 
 #else
+	if (!path || basePathSize <= 0) {
+		if (basePath && basePathSize > 0) basePath[0] = '\0';
+		return;
+	}
 	char * pathCopy = strdup(path);
-	strcpy(basePath, dirname(pathCopy));
+	if (!pathCopy) {
+		basePath[0] = '\0';
+		return;
+	}
+	strncpy(basePath, dirname(pathCopy), basePathSize - 1);
+	basePath[basePathSize - 1] = '\0';
 	free(pathCopy);
 #endif
 }
