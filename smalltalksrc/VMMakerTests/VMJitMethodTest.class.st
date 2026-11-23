@@ -124,6 +124,54 @@ VMJitMethodTest >> setUpTrampolines [
 	cogit ceReturnToInterpreterTrampoline: (self compileTrampoline: [ cogit Stop ] named:#ceReturnToInterpreterTrampoline).
 ]
 
+{ #category : 'test methods' }
+VMJitMethodTest >> sumWithNegative1 [
+
+	^ self + -1
+]
+
+{ #category : 'test methods' }
+VMJitMethodTest >> sumWithNegative4095 [
+
+	^ self + -4095
+]
+
+{ #category : 'test methods' }
+VMJitMethodTest >> sumWithNegative4096 [
+
+	^ self + -4096
+]
+
+{ #category : 'test methods' }
+VMJitMethodTest >> sumWithNegative4097 [
+
+	^ self + -4097
+]
+
+{ #category : 'test methods' }
+VMJitMethodTest >> sumWithPositive1 [
+
+	^ self + 1
+]
+
+{ #category : 'test methods' }
+VMJitMethodTest >> sumWithPositive4095 [
+
+	^ self + 4095
+]
+
+{ #category : 'test methods' }
+VMJitMethodTest >> sumWithPositive4096 [
+
+	^ self + 4096
+]
+
+{ #category : 'test methods' }
+VMJitMethodTest >> sumWithPositive4097 [
+
+	^ self + 4097
+]
+
 { #category : 'tests' }
 VMJitMethodTest >> testComparingSmallIntegersThatNotFit [
 	| callingMethod parameter aSize bytesPerSlot desiredByteSize numberOfWordSizeSlots padding |
@@ -156,6 +204,148 @@ VMJitMethodTest >> testComparingSmallIntegersThatNotFit [
 	self
 		assert: (memory integerValueOf: machineSimulator receiverRegisterValue)
 		equals: 17
+]
+
+{ #category : 'tests' }
+VMJitMethodTest >> testCompilingAddMessageSendWithConstants [
+	| callingMethod |
+
+	callingMethod := self jitMethod: (self class>>#sumWithNegative4096).
+
+	self deny: callingMethod address equals: 0.
+	
+	self
+		callCogMethod: callingMethod
+		receiver: (memory integerObjectOf: 42)
+		arguments:  { }
+		returnAddress: callerAddress.
+
+	self
+		assert: (memory integerValueOf: machineSimulator receiverRegisterValue)
+		equals: -4054
+]
+
+{ #category : 'tests' }
+VMJitMethodTest >> testCompilingAddMessageSendWithConstants2 [
+	| callingMethod |
+
+	callingMethod := self jitMethod: (self class>>#sumWithNegative4097).
+
+	self deny: callingMethod address equals: 0.
+	
+	self
+		callCogMethod: callingMethod
+		receiver: (memory integerObjectOf: 42)
+		arguments:  { }
+		returnAddress: callerAddress.
+
+	self
+		assert: (memory integerValueOf: machineSimulator receiverRegisterValue)
+		equals: -4055
+]
+
+{ #category : 'tests' }
+VMJitMethodTest >> testCompilingAddMessageSendWithConstants3 [
+	| callingMethod |
+
+	callingMethod := self jitMethod: (self class>>#sumWithNegative4095).
+
+	self deny: callingMethod address equals: 0.
+	
+	self
+		callCogMethod: callingMethod
+		receiver: (memory integerObjectOf: 42)
+		arguments:  { }
+		returnAddress: callerAddress.
+
+	self
+		assert: (memory integerValueOf: machineSimulator receiverRegisterValue)
+		equals: -4053
+]
+
+{ #category : 'tests' }
+VMJitMethodTest >> testCompilingAddMessageSendWithConstants4 [
+	| callingMethod |
+
+	callingMethod := self jitMethod: (self class>>#sumWithPositive4096).
+
+	self
+		callCogMethod: callingMethod
+		receiver: (memory integerObjectOf: 42)
+		arguments:  { }
+		returnAddress: callerAddress.
+
+	self
+		assert: (memory integerValueOf: machineSimulator receiverRegisterValue)
+		equals: 42 + 4096
+]
+
+{ #category : 'tests' }
+VMJitMethodTest >> testCompilingAddMessageSendWithConstants5 [
+	| callingMethod |
+
+	callingMethod := self jitMethod: (self class>>#sumWithPositive4095).
+
+	self
+		callCogMethod: callingMethod
+		receiver: (memory integerObjectOf: 42)
+		arguments:  { }
+		returnAddress: callerAddress.
+
+	self
+		assert: (memory integerValueOf: machineSimulator receiverRegisterValue)
+		equals: 42 + 4095
+]
+
+{ #category : 'tests' }
+VMJitMethodTest >> testCompilingAddMessageSendWithConstants6 [
+	| callingMethod |
+
+	callingMethod := self jitMethod: (self class>>#sumWithPositive4097).
+
+	self
+		callCogMethod: callingMethod
+		receiver: (memory integerObjectOf: 42)
+		arguments:  { }
+		returnAddress: callerAddress.
+
+	self
+		assert: (memory integerValueOf: machineSimulator receiverRegisterValue)
+		equals: 42 + 4097
+]
+
+{ #category : 'tests' }
+VMJitMethodTest >> testCompilingAddMessageSendWithConstants7 [
+	| callingMethod |
+
+	callingMethod := self jitMethod: (self class>>#sumWithPositive1).
+
+	self
+		callCogMethod: callingMethod
+		receiver: (memory integerObjectOf: 42)
+		arguments:  { }
+		returnAddress: callerAddress.
+
+	self
+		assert: (memory integerValueOf: machineSimulator receiverRegisterValue)
+		equals: 42 + 1
+]
+
+{ #category : 'tests' }
+VMJitMethodTest >> testCompilingAddMessageSendWithConstants8 [
+	| callingMethod |
+
+	callingMethod := self jitMethod: (self class>>#sumWithNegative1).
+
+	self
+		callCogMethod: callingMethod
+		receiver: (memory integerObjectOf: 42)
+		arguments:  { }
+		returnAddress: callerAddress.
+
+	self
+		assert: (memory integerValueOf: machineSimulator receiverRegisterValue)
+		equals: 42 - 1
 ]
 
 { #category : 'tests' }

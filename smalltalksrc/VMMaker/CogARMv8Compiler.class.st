@@ -671,26 +671,73 @@ CogARMv8Compiler >> arithmeticShiftedRegisterSize: is64Bits isSubstraction: subs
 ]
 
 { #category : 'as yet unclassified' }
+CogARMv8Compiler >> assembleAddCq: word R: reg [ 
+	
+	| fits12Bits |
+
+	fits12Bits := (word bitAnd: 16rfff) = word.
+	fits12Bits ifTrue: [ 
+		self
+			machineCodeAt: 0
+			put:
+				(self
+					addsSize: 1
+					sourceRegister: reg
+					immediate12BitValue: word
+					shifted: 0
+					destinationRegister: reg).
+		^ machineCodeSize := 4
+	].
+		
+	self assert: dependent notNil.
+
+	self loadCwInto: ConcreteIPReg.
+	self
+		machineCodeAt: machineCodeSize
+		put: ( self
+			addsSize: 1
+			leftRegister: ConcreteIPReg
+			shiftedRightRegister: reg
+			shiftType: 0
+			shiftOffset: 0
+			destinationRegister: reg).
+			
+	^ machineCodeSize := machineCodeSize + 4
+]
+
+{ #category : 'as yet unclassified' }
 CogARMv8Compiler >> assembleSubCq: quickValue R: registerToUse [
 
 	| fits12Bits |
+
 	fits12Bits := (quickValue bitAnd: 16rfff) = quickValue.
-	fits12Bits ifTrue: [ | reg |
-		reg := operands at: 1.
+	fits12Bits ifTrue: [ 
 		self
 			machineCodeAt: 0
 			put:
 				(self
 					subsSize: 1
-					sourceRegister: reg
+					sourceRegister: registerToUse
 					immediate12BitValue: quickValue
 					shifted: 0
-					destinationRegister: reg).
+					destinationRegister: registerToUse).
 		^ machineCodeSize := 4
 	].
 
-	self notYetImplemented.
-	^ 0
+	self assert: dependent notNil.
+	
+	self loadCwInto: ConcreteIPReg..
+	self
+		machineCodeAt: machineCodeSize
+		put: ( self
+			subsSize: 1
+			leftRegister: ConcreteIPReg
+			shiftedRightRegister: registerToUse
+			shiftType: 0
+			shiftOffset: 0
+			destinationRegister: registerToUse).
+
+	^ machineCodeSize := machineCodeSize + 4
 ]
 
 { #category : 'register allocation' }
@@ -1038,7 +1085,7 @@ CogARMv8Compiler >> computeMaximumSize [
 			^ ((operands at: 1) = SP)
 				ifTrue: [ 12 ]
 				ifFalse: [ | fits12Bits word |
-					word := operands at: 0.
+					word := (operands at: 0) abs.
 					fits12Bits := (word bitAnd: 16rfff) = word.
 					fits12Bits ifTrue: [ 4 ] ifFalse: [ 8 ] ] ].
 		[AndCqR]				-> [^self
@@ -1076,7 +1123,7 @@ CogARMv8Compiler >> computeMaximumSize [
 			"If it fits in 12 bits, we can used an immediate instruction.
 			Othewise we need to use a literal and load it"
 			constant := operands at: 0.
-			(constant bitAnd: 16rfff) = constant
+			(constant abs bitAnd: 16rfff) = constant abs
 				ifTrue: [ ^ 4 ]
 				ifFalse: [ ^ self literalLoadInstructionBytes + 4 ] ].
 		[TstCqR]				-> [
@@ -1277,8 +1324,10 @@ CogARMv8Compiler >> computeMaximumSize [
 CogARMv8Compiler >> concretizeAddCqR [
 
 	<var: #word type: #sqInt>
+	<var: #wordNegated type: #sqInt>
+
 	<inline: true>
-	| word fits12Bits |
+	| word fits12Bits wordNegated |
 	word := operands at: 0.
 	
 	((operands at: 1) = SP) ifTrue: [
@@ -1304,8 +1353,9 @@ CogARMv8Compiler >> concretizeAddCqR [
 		^ machineCodeSize := 12
 	].
 	
-	word < 0 ifTrue: [
-		^ self assembleSubCq: word negated R: (operands at: 1)
+	wordNegated := word negated.
+	(word < 0 and: [ (wordNegated bitAnd: 16rfff) = wordNegated]) ifTrue: [
+		^ self assembleSubCq: wordNegated R: (operands at: 1)
 	].
 	
 	fits12Bits := (word bitAnd: 16rfff) = word.
@@ -3168,15 +3218,16 @@ CogARMv8Compiler >> concretizeSubCqR [
 
 	"Try whether the quick constant is a small negative number. If it is, optimize."
 
-	<var: #word type: #usqInt>
+	<var: #word type: #sqInt>
 	<inline: true>
 	| word fits12Bits reg instrOffset |
+
 	word := operands at: 0.
 	reg := operands at: 1.
-	
-	word < 0 ifTrue: [ 
-			self logError: 'Invalid constant'. 
-			self abort  ].
+
+	(word < 0 and: [ (word negated bitAnd: 16rfff) = word negated]) ifTrue: [ 
+		^ self assembleAddCq: word negated R: (operands at: 1)	
+	].
 	
 	fits12Bits := (word bitAnd: 16rfff) = word.
 	fits12Bits ifTrue: [
@@ -3191,6 +3242,7 @@ CogARMv8Compiler >> concretizeSubCqR [
 					destinationRegister: reg).
 		^ machineCodeSize := 4
 	].
+	
 	instrOffset := self loadCwInto: ConcreteIPReg.
 	self machineCodeAt: 4 put: (self
 			subsSize: 1
