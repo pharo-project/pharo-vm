@@ -133,8 +133,8 @@ if(GENERATE_SOURCES)
             URL https://files.pharo.org/image/140/Pharo14.0-SNAPSHOT.build.791.sha.42a90c70a5.arch.64bit.zip
             URL_HASH SHA256=beb21f388f1d3a275745a6e4ce820c6f5219dd2ad517cb4baa3749b408e326cc
             BUILD_BYPRODUCTS ${VMMAKER_IMAGE}
-            BUILD_COMMAND ${VMMAKER_VM} --headless ${IMAGE_PATH_TO_USE} --no-default-preferences save VMMaker
-	    COMMAND ${VMMAKER_VM} --headless ${VMMAKER_IMAGE_TO_USE} --no-default-preferences --save --quit "${CMAKE_CURRENT_SOURCE_DIR_OUT}/scripts/installVMMaker.st" "${CMAKE_CURRENT_SOURCE_DIR_OUT}" "${ICEBERG_DEFAULT_REMOTE}"
+            BUILD_COMMAND ${VMMAKER_VM} --headless ${IMAGE_PATH_TO_USE} save --no-default-preferences VMMaker
+	    COMMAND ${VMMAKER_VM} --headless ${VMMAKER_IMAGE_TO_USE} st --no-default-preferences --save --quit "${CMAKE_CURRENT_SOURCE_DIR_OUT}/scripts/installVMMaker.st" "${CMAKE_CURRENT_SOURCE_DIR_OUT}" "${ICEBERG_DEFAULT_REMOTE}"
             UPDATE_COMMAND      ""
             CONFIGURE_COMMAND   ""
             INSTALL_COMMAND     ""
@@ -155,7 +155,7 @@ if(GENERATE_SOURCES)
     #Custom command that generates the vm source code from VMMaker into the generated folder
     add_custom_command(
         OUTPUT ${VMSOURCEFILES} ${PLUGIN_GENERATED_FILES}
-        COMMAND ${VMMAKER_VM} --headless ${VMMAKER_IMAGE_TO_USE} --no-default-preferences perform PharoVMMaker generate:outputDirectory: ${FLAVOUR} ${CMAKE_CURRENT_BINARY_DIR_OUT}
+        COMMAND ${VMMAKER_VM} --headless ${VMMAKER_IMAGE_TO_USE} perform --no-default-preferences PharoVMMaker generate:outputDirectory: ${FLAVOUR} ${CMAKE_CURRENT_BINARY_DIR_OUT}
         VERBATIM
         DEPENDS vmmaker ${VMMAKER_IMAGE} ${VMMAKER_VM}
         COMMENT "Generating VM files for flavour: ${FLAVOUR}")
