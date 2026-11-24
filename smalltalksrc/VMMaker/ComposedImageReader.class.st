@@ -416,3 +416,23 @@ ComposedImageReader >> validateContent: imageFile [
 	{ 'header.ston'. 'seg0.ston'. 'seg0.data' } do: [ :fileName | 
 		self assert: (imageFile hasChildrenMatching: fileName) ]
 ]
+
+{ #category : 'perm - space' }
+ComposedImageReader >> vmLoadDataUsingMMap: aPath fileSize: fileSize address: targetAddress [
+
+	<doNotGenerate>
+	"I simulate the mapping of a file by allocating the memory (if it is not already reserved) and reading the file in it"
+
+	| file bytesRead |
+
+	(objectMemory memoryManager wholeAt: targetAddress fits: fileSize) ifTrue: [ 
+		objectMemory memoryManager
+			allocate: fileSize
+			desiredPosition: targetAddress ].
+
+	file := self sqImageFile: aPath Open: 'rb'.
+	bytesRead := self sq: targetAddress Image: 1 File: fileSize Read: file.
+	self sqImageFileClose: file.
+
+	^ bytesRead
+]
