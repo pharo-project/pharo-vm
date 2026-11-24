@@ -1,5 +1,14 @@
 # Change log
 
+## v10.3.13
+* Fix Tests after adding checking correctness of the heap by @tesonep in https://github.com/pharo-project/pharo-vm/pull/1143
+* [P10] DSAPrims primitives keep running after primitiveFailFor by @tesonep in https://github.com/pharo-project/pharo-vm/pull/1129
+* [P10] - Updating test image to P14 by @tesonep in https://github.com/pharo-project/pharo-vm/pull/1161
+* [P10] - Fix #1148 Incomplete encoding of constants in ARM64 by @tesonep in https://github.com/pharo-project/pharo-vm/pull/1159
+
+
+**Full Changelog**: https://github.com/pharo-project/pharo-vm/compare/v10.3.12...v10.3.13
+
 ## v10.3.12
 * [P10] - Fix/all instances primitive memory corruption by @tesonep in https://github.com/pharo-project/pharo-vm/pull/1116
 
