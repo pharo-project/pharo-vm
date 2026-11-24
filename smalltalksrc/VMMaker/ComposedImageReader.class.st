@@ -34,14 +34,24 @@ ComposedImageReader >> loadUsingMMapPermanentSpaceFile: imageFileName dataSize: 
 	<var: #dataSize type: #'size_t'>
 	<var: #fileSize type: #'size_t'>
 	<var: #targetAddress type: #'usqInt'>
+	<var: #expectedBase type: #'usqInt'>
+	<var: #map type: #'VMMemoryMap *'>
 	<returnTypeC: #'size_t'>
 
-	| bytesRead |
+	| bytesRead expectedBase map |
 
-	objectMemory getMemoryMap permSpaceStart: targetAddress.
-	objectMemory getMemoryMap permSpaceEnd: targetAddress + fileSize.
+	map := objectMemory getMemoryMap.
+	expectedBase := map fixedPermSpaceStart.
 
-	objectMemory setPermSpaceFreeStart: objectMemory getMemoryMap permSpaceStart + dataSize.
+	targetAddress ~= expectedBase ifTrue: [ 
+		self logError: 'Expecting Base %p Got %p' _: targetAddress _: expectedBase.
+		coInterpreter unableToReadImageError ].
+
+	map permSpaceStart: targetAddress.
+	"The space could have been already reserved with a bigger size (minPermSpaceSize), we should keep it"
+	map permSpaceEnd: (map permSpaceEnd max: targetAddress + fileSize).
+
+	objectMemory setPermSpaceFreeStart: map permSpaceStart + dataSize.
 
 	bytesRead := self
 		             vmLoadDataUsingMMap: (self permSpaceDataFileInImage: imageFileName)
@@ -290,6 +300,9 @@ ComposedImageReader >> readPermanentSpaceFromImageFile: imageFileName header: aH
 		ifFalse: [ ^ 0 ]. 
 	
 	permSpaceMetadata := self readPermanentSpaceMetadataFromImage: imageFileName.
+
+	"There is nothing to load, the PermSpace was empty when saving"
+	permSpaceMetadata dataSize = 0 ifTrue: [ ^ 0 ].
 
 	objectMemory getUseMMapWhenPossible
 		ifTrue: [ 
