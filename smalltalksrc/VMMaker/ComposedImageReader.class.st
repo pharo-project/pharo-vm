@@ -26,6 +26,71 @@ ComposedImageReader >> endOfSTON: file [
 	
 ]
 
+{ #category : 'perm - space' }
+ComposedImageReader >> loadUsingMMapPermanentSpaceFile: imageFileName dataSize: dataSize fileSize: fileSize base: targetAddress [
+
+	<var: #imageFileName type: #'char *'>
+	<var: #bytesRead type: #'size_t'>
+	<var: #dataSize type: #'size_t'>
+	<var: #fileSize type: #'size_t'>
+	<var: #targetAddress type: #'usqInt'>
+	<returnTypeC: #'size_t'>
+
+	| bytesRead |
+
+	objectMemory getMemoryMap permSpaceStart: targetAddress.
+	objectMemory getMemoryMap permSpaceEnd: targetAddress + fileSize.
+
+	objectMemory setPermSpaceFreeStart: objectMemory getMemoryMap permSpaceStart + dataSize.
+
+	bytesRead := self
+		             vmLoadDataUsingMMap: (self permSpaceDataFileInImage: imageFileName)
+		             fileSize: fileSize
+		             address: (self pointerForOop: targetAddress).
+
+	"Check bytes read"
+	bytesRead ~= fileSize ifTrue: [ 
+		self logError: 'Expecting %lld Got %lld' _: fileSize _: bytesRead.
+		coInterpreter unableToReadImageError ].
+
+	^ bytesRead
+]
+
+{ #category : 'perm - space' }
+ComposedImageReader >> loadUsingReadPermanentSpaceFile: imageFileName dataSize: dataSize base: oldBase [
+
+	<var: #imageFileName type: #'char *'>
+	<var: #bytesRead type: #'size_t'>
+	<var: #dataSize type: #'size_t'>
+	<var: #oldBase type: #'usqInt'>
+	<var: #newBase type: #'usqInt'>
+	<returnTypeC: #'size_t'>
+
+	| bytesRead newBase |
+
+	(objectMemory getMemoryMap ensureAtLeastPermSpaceOf: dataSize)
+		ifFalse: [ coInterpreter error: 'Could not allocate PermSpace' ].
+
+	newBase := objectMemory getMemoryMap permSpaceStart.
+	newBase ~= oldBase ifTrue: [ 
+		self logError: 'Expecting Base %p Got %p' _: oldBase _: newBase.
+		coInterpreter unableToReadImageError ].
+
+	bytesRead := self
+		             readPermanentSpaceDataFromImage: imageFileName
+		             startingAt: (self pointerForOop: newBase)
+		             bytes: dataSize.
+
+	objectMemory setPermSpaceFreeStart: (objectMemory getMemoryMap permSpaceStart + dataSize).
+
+	"Check bytes read"
+	bytesRead ~= dataSize ifTrue: [ 
+		self logError: 'Expecting %lld Got %lld' _: dataSize _: bytesRead.
+		coInterpreter unableToReadImageError ].
+
+	^ bytesRead
+]
+
 { #category : 'reading' }
 ComposedImageReader >> readDataFromFileName: fullFileName startingAt: startingAddress bytes: bytesToRead [
 
@@ -217,41 +282,29 @@ ComposedImageReader >> readPermanentSpaceFromImageFile: imageFileName header: aH
 	<var: #aHeader type: #SpurImageHeaderStruct>
 	<var: #permSpaceMetadata type: #ComposedMetadataStruct>
 	<var: #bytesRead type: #'size_t'>
-	<var: #dataSize type: #'size_t'>
-	<var: #oldBase type: #'usqInt'>
-	<var: #newBase type: #'usqInt'>
 	<returnTypeC: #size_t>
 
-	| newBase permSpaceMetadata oldBase dataSize bytesRead |
+	| permSpaceMetadata bytesRead |
 
 	(self fileExists: (self permSpaceMetadataFileNameInImage: imageFileName))
 		ifFalse: [ ^ 0 ]. 
 	
 	permSpaceMetadata := self readPermanentSpaceMetadataFromImage: imageFileName.
-	oldBase := permSpaceMetadata startAddress.
-	dataSize := permSpaceMetadata dataSize.
 
-	(objectMemory getMemoryMap ensureAtLeastPermSpaceOf: dataSize)
-		ifFalse: [ coInterpreter error: 'Could not allocate PermSpace' ].
+	objectMemory getUseMMapWhenPossible
+		ifTrue: [ 
+			bytesRead := self
+				             loadUsingMMapPermanentSpaceFile: imageFileName
+				             dataSize: permSpaceMetadata dataSize
+				             fileSize: permSpaceMetadata fileSize
+				             base: permSpaceMetadata startAddress ]
+		ifFalse: [ 
+			bytesRead := self
+				             loadUsingReadPermanentSpaceFile: imageFileName
+				             dataSize: permSpaceMetadata dataSize
+				             base: permSpaceMetadata startAddress ].
 
-	newBase := objectMemory getMemoryMap permSpaceStart.
-	newBase ~= oldBase ifTrue: [ 
-		self logError: 'Expecting Base %p Got %p' _: oldBase _: newBase.		
-		coInterpreter unableToReadImageError ].
-
-	bytesRead := self
-		             readPermanentSpaceDataFromImage: imageFileName
-		             startingAt: (self pointerForOop: newBase)
-		             bytes: dataSize.
-
-	objectMemory setPermSpaceFreeStart: (objectMemory getMemoryMap permSpaceStart + dataSize).
-
-	"Check bytes read"
-	bytesRead ~= dataSize ifTrue: [ 
-		self logError: 'Expecting %lld Got %lld' _: dataSize _: bytesRead.		
-		coInterpreter unableToReadImageError ].
-
-	^ bytesRead
+	^ permSpaceMetadata dataSize
 ]
 
 { #category : 'perm - space' }
