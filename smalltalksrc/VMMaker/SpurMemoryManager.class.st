@@ -620,7 +620,8 @@ Class {
 		'fromPermToNewSpaceRememberedSet',
 		'permSpaceForwardersToCleanUp',
 		'avoidSearchingSegmentsWithPinnedObjects',
-		'maxSlotsForNewSpaceAlloc'
+		'maxSlotsForNewSpaceAlloc',
+		'useMMapWhenPossible'
 	],
 	#classVars : [
 		'BitsPerByte',
@@ -4590,6 +4591,9 @@ SpurMemoryManager >> doMoveToPermSpace: objOop addToRememberedSet: shouldAddToRe
 	
 	(self isObjImmutable: objOop) ifTrue: [ 
 		self setIsImmutableOf: newObj to: true ].
+	
+	"Permanent objects are always pinned"
+	self setIsPinnedOf: newObj to: true. 
 
 	becomeEffectsFlags := becomeEffectsFlags bitOr: (self becomeEffectFlagsFor: objOop).
 
@@ -6209,6 +6213,14 @@ SpurMemoryManager >> getThisSessionID [
 	^coInterpreter getThisSessionID
 ]
 
+{ #category : 'accessing' }
+SpurMemoryManager >> getUseMMapWhenPossible [
+
+	<api>
+
+	^ useMMapWhenPossible 
+]
+
 { #category : 'gc - global' }
 SpurMemoryManager >> globalGarbageCollect [
 	<inline: true> "inline into fullGC"
@@ -6842,6 +6854,7 @@ SpurMemoryManager >> initialize [
 							ifNil: [0].
 	
 	avoidSearchingSegmentsWithPinnedObjects := false.
+	useMMapWhenPossible := false.
 	
 	maxSlotsForNewSpaceAlloc := 0. "We will use the default value"
 
@@ -12199,6 +12212,15 @@ SpurMemoryManager >> setNextFreeChunkOf: freeChunk withValue: nextFreeChunk isLi
 SpurMemoryManager >> setPermSpaceFreeStart: aValue [
 
 	permSpaceFreeStart := aValue
+]
+
+{ #category : 'accessing' }
+SpurMemoryManager >> setUseMMapWhenPossible: aValue [
+
+	<api>
+	<var: #aValue type: #sqInt>
+
+	useMMapWhenPossible := aValue
 ]
 
 { #category : 'word size' }
