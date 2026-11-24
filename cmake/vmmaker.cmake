@@ -68,8 +68,8 @@ if(GENERATE_SOURCES)
         if(CMAKE_SYSTEM_NAME STREQUAL "Windows")
             message("Defining Windows VM to download for code generation")
             set(VMMAKER_VM ${VMMAKER_DIR}/vm/PharoConsole.exe)
-            set(VM_URL https://files.pharo.org/vm/pharo-spur64-headless/Windows-x86_64/PharoVM-10.3.2-b8793dd2-Windows-x86_64-bin.zip)
-            set(VM_URL_HASH SHA256=f9ae01d7d3fcd2fae2d4d5ffdfa7a5ff6780f390e2a534bcfdc6c10bc1819ef5)
+            set(VM_URL https://files.pharo.org/vm/pharo-spur64-headless/Windows-x86_64/PharoVM-v12.0.7-beta%2B0.8a80d729c-Windows-x86_64-bin.zip)
+            set(VM_URL_HASH SHA256=9d336f6d0fee038567cecd3e3dc991eaff7118d29b4cf065127464828a2bb53c)
         elseif(CMAKE_SYSTEM_NAME STREQUAL "Linux" AND (${CMAKE_SYSTEM_PROCESSOR} MATCHES "aarch64"))
             message("Defining Linux AARCH64 VM to download for code generation")
             set(VMMAKER_VM       ${VMMAKER_DIR}/vm/pharo)
@@ -83,18 +83,18 @@ if(GENERATE_SOURCES)
         elseif(CMAKE_SYSTEM_NAME STREQUAL "Linux")
             message("Defining Linux VM x86_64 to download for code generation")
             set(VMMAKER_VM       ${VMMAKER_DIR}/vm/pharo)
-            set(VM_URL https://files.pharo.org/vm/pharo-spur64-headless/Linux-x86_64/PharoVM-10.3.1-6cdb1e5-Linux-x86_64-bin.zip)
-            set(VM_URL_HASH      SHA256=a12f955f553ffed4d669b4dba6f4c16e8c094346253d8f3ebd1fe377e529fa55)
+            set(VM_URL https://files.pharo.org/vm/pharo-spur64-headless/Linux-x86_64/PharoVM-v12.0.7-beta%2B0.8a80d72-Linux-x86_64-bin.zip)
+            set(VM_URL_HASH      SHA256=ded5ae73d15808faf6bb25e68150172af63a9e2f3f6afd407f280b929de36023)
         elseif(CMAKE_SYSTEM_NAME STREQUAL "Darwin" AND (${CMAKE_SYSTEM_PROCESSOR} MATCHES "arm64"))
             message("Defining arm64 OSX VM to download for code generation")
             set(VMMAKER_VM       ${VMMAKER_DIR}/vm/Contents/MacOS/Pharo)
-            set(VM_URL https://files.pharo.org/vm/pharo-spur64-headless/Darwin-arm64/PharoVM-10.3.2-b8793dd2-Darwin-arm64-bin.zip)
-            set(VM_URL_HASH      SHA256=157837d765435597bdf05f1054aabe5287e59ca6360b7827c8750a5f7fcef7e3)
+            set(VM_URL https://files.pharo.org/vm/pharo-spur64-headless/Darwin-arm64/PharoVM-v12.0.7-beta%2B0.8a80d729c-Darwin-arm64-bin.zip)
+            set(VM_URL_HASH      SHA256=26162c7cd9d7f2a6279f5ab455aeb78efa6269ec49071866070c60154b422d7a)
         elseif(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
             message("Defining OSX VM to download for code generation")
             set(VMMAKER_VM       ${VMMAKER_DIR}/vm/Contents/MacOS/Pharo)
-            set(VM_URL https://files.pharo.org/vm/pharo-spur64-headless/Darwin-x86_64/PharoVM-10.3.2-b8793dd2-Darwin-x86_64-bin.zip)
-            set(VM_URL_HASH      SHA256=38794ac10d758123ef618c84a0a37e98cb700a175d23eadccabf56a1ff9c688a)
+            set(VM_URL https://files.pharo.org/vm/pharo-spur64-headless/Darwin-x86_64/PharoVM-v12.0.7-beta%2B0.8a80d729c-Darwin-x86_64-bin.zip)
+            set(VM_URL_HASH      SHA256=8fb386305aae8c1231e079cb039f762c756f3a7de942e6ec579bf48151a78a3d)
         else()
             message(FATAL_ERROR "VM DOWNLOAD NOT HANDLED FOR CMAKE SYSTEM: ${CMAKE_SYSTEM_NAME}")
         endif()
@@ -130,8 +130,8 @@ if(GENERATE_SOURCES)
         ExternalProject_Add(
             vmmaker
 
-            URL https://files.pharo.org/image/130/Pharo13.0-SNAPSHOT.build.732.sha.e84a2d15c7.arch.64bit.zip
-            URL_HASH SHA256=5977dac81cddae745bb4b1747b3047900fbe4d64af10bfef36d01679e1ad5a5f
+            URL https://files.pharo.org/image/140/Pharo14.0-SNAPSHOT.build.791.sha.42a90c70a5.arch.64bit.zip
+            URL_HASH SHA256=beb21f388f1d3a275745a6e4ce820c6f5219dd2ad517cb4baa3749b408e326cc
             BUILD_BYPRODUCTS ${VMMAKER_IMAGE}
             BUILD_COMMAND ${VMMAKER_VM} --headless ${IMAGE_PATH_TO_USE} --no-default-preferences save VMMaker
 	    COMMAND ${VMMAKER_VM} --headless ${VMMAKER_IMAGE_TO_USE} --no-default-preferences --save --quit "${CMAKE_CURRENT_SOURCE_DIR_OUT}/scripts/installVMMaker.st" "${CMAKE_CURRENT_SOURCE_DIR_OUT}" "${ICEBERG_DEFAULT_REMOTE}"
