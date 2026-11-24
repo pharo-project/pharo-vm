@@ -454,7 +454,7 @@ vm_printUsageTo(FILE *out)
 "                                       It is possible to use k(kB), M(MB) and G(GB).\n"
 "  --edenSize=<size>[mk]                Sets the size of eden (default: 15M)\n"
 "                                       It is possible to use k(kB), M(MB) and G(GB).\n"
-"  --maxSlotsForNewSpaceAlloc=<words>	The max numbers of slots to allow allocating in a single young indexable object"
+"  --maxSlotsForNewSpaceAlloc=<words>   The max numbers of slots to allow allocating in a single young indexable object\n"
 "  --minPermSpaceSize=<size>[mk]        Sets the min size of the permanent space (default: 0k)\n"
 "                                       It is possible to use k(kB), M(MB) and G(GB).\n"
 "  --stackPageSize=<size>[mk]           Sets the size of each stack page (default: 8k)\n"
