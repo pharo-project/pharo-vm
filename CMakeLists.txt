@@ -37,6 +37,7 @@ option(DEPENDENCIES_FORCE_BUILD         "Force build libraries" OFF)
 option(BUILD_WITH_GRAPHVIZ              "Generate dependency graphs" ON)
 option(VERSION_UPDATE_FROM_GIT              "Extract version information from git tags. Default to true. Follow vX.Y.Z-suffix" TRUE)
 
+option(INSTALL_C_SOURCE "Install the generated C source files to `pharo-vm'" OFF)
 
 set(APPNAME			"Pharo"         CACHE STRING                 "VM Application name")
 set(FLAVOUR			"CoInterpreter" CACHE STRING                 "The kind of VM to generate. Possible values: StackVM, CoInterpreter")
@@ -104,6 +105,15 @@ endif()
 #Set up the project
 #This needs to be at this point, after setting the toolchain configuration
 project(PharoVM)
+
+set(CMAKE_INSTALL_RPATH "$ORIGIN/../lib" CACHE STRING "Install-time RPATH")
+
+# Provide a default value for the installation prefix, while
+# preserving any user-specified CMAKE_INSTALL_PREFIX.
+if(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
+    set_property(CACHE CMAKE_INSTALL_PREFIX PROPERTY VALUE
+        "${CMAKE_CURRENT_BINARY_DIR}/build/dist")
+endif()
 
 include(cmake/versionExtraction.cmake)
 
@@ -407,7 +417,12 @@ message(STATUS "C++ Compiler: ${CMAKE_CXX_COMPILER}")
 message(STATUS "Resource Compiler: ${CMAKE_RC_COMPILER}")
 
 set(VM_FRONTEND_APPLICATION_TYPE)
-include(cmake/${CMAKE_SYSTEM_NAME}.cmake)
+
+if(UNIX AND NOT OSX AND NOT WIN)
+    include(cmake/Linux.cmake)
+else()                          # WIN AND OSX
+    include(cmake/${CMAKE_SYSTEM_NAME}.cmake)
+endif()
 
 set(GENERATED_SOURCES ${VMSOURCEFILES})
 
