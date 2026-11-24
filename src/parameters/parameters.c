@@ -118,7 +118,7 @@ static const VMParameterSpec vm_parameters_spec[] =
   {.name = "avoidSearchingSegmentsWithPinnedObjects", .hasArgument = false, .function = processAvoidSearchingSegmentsWithPinnedObjects},
   {.name = "useMMapWhenPossible", .hasArgument = false, .function = processUseMMapWhenPossible},
 
-  #ifdef __APPLE__
+#ifdef __APPLE__
   // This parameter is passed by the XCode debugger.
   {.name = "NSDocumentRevisionsDebugMode", .hasArgument = false, .function = NULL},
 #endif
@@ -468,7 +468,7 @@ vm_printUsageTo(FILE *out)
 "                                       It tries to allocate the object in a segment with already pinned objects.\n"
 "	                                  Avoid the clonning process avoid this search and allocate the clonned object anywhere?\n"
 "\n"
-"  --useMMapWhenPossible				Use MMap when possible to charge the image. Implemented for PermSpace"
+"  --useMMapWhenPossible                Use MMap when possible to load the image. Implemented for PermSpace\n"
 "\n"
 "Notes:\n"
 "\n"
@@ -675,7 +675,6 @@ processUseMMapWhenPossible(const char* argument, VMParameters * params)
 	params->useMMapWhenPossible = true;
 	return VM_SUCCESS;
 }
-
 
 static VMErrorCode
 processVMOptions(VMParameters* parameters)

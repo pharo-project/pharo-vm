@@ -240,17 +240,20 @@ size_t basicLoadDataUsingMMap(const char* aPath, size_t fileSize, void* targetAd
 
 	if(fd < 0){
 		logError("Error opening file: %s", aPath);
-		logErrorFromErrno(open);
+		logErrorFromErrno("open");
 		return 0;
 	}
 
-	void* ptr = (long*)mmap(targetAddress, fileSize, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_FIXED, fd, 0);
+	void* ptr = mmap(targetAddress, fileSize, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_FIXED, fd, 0);
 
 	if(ptr == MAP_FAILED){
 		logErrorFromErrno("Error doing MMAP");
 		close(fd);
 		return 0;
 	}
+
+	// The mapping is still valid after closing the file
+	close(fd);
 
 	return fileSize;
 #endif
