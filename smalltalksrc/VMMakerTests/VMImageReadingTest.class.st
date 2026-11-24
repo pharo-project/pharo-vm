@@ -83,6 +83,27 @@ VMImageReadingTest >> metadataFrom: fileName [
 ]
 
 { #category : 'utilities' }
+VMImageReadingTest >> removeFileSizeFromPermSpaceMetadata [
+
+	"Write the metadata as it was before having the fileSize"
+
+	| metadata file |
+	metadata := self metadataFrom: 'permSpace.ston'.
+	file := self imageFileName asFileReference / 'permSpace.ston'.
+
+	file ensureDelete.
+	file writeStreamDo: [ :stream | 
+		stream
+			nextPutAll: 'ComposedMetadataStruct {'; lf;
+			tab; nextPutAll: '#startAddress : '; print: metadata startAddress; nextPutAll: ','; lf;
+			tab; nextPutAll: '#dataSize : '; print: metadata dataSize; lf;
+			nextPutAll: '}' ].
+
+	self assert: (self metadataFrom: 'permSpace.ston') dataSize equals: metadata dataSize.
+	self assert: (self metadataFrom: 'permSpace.ston') fileSize equals: 0
+]
+
+{ #category : 'utilities' }
 VMImageReadingTest >> saveImage [
 
 	memory garbageCollectForSnapshot.
@@ -232,6 +253,33 @@ VMImageReadingTest >> testLoadingPermanentSpaceUsingMMapWithWrongBaseFails [
 	"It should fail before modifying the memory map"
 	self assert: memory getMemoryMap permSpaceStart equals: 0.
 	self assert: memory getMemoryMap permSpaceEnd equals: 0
+]
+
+{ #category : 'tests - mmap' }
+VMImageReadingTest >> testLoadingPermanentSpaceUsingMMapWithoutFileSizeReadsTheFile [
+
+	| metadata map |
+	"Only valid in the new format"
+	useComposedImageFormat ifFalse: [ ^ self skip ].
+
+	permanentObject := self newPermanentByteObjectOfSize: 14.
+	0 to: 13 do: [ :index | memory storeByte: index ofObject: permanentObject withValue: index + 100 ].
+	originalPermanentObjectIdentityHash := memory hashBitsOf: permanentObject.
+
+	self saveImage.
+	metadata := self metadataFrom: 'permSpace.ston'.
+	self removeFileSizeFromPermSpaceMetadata.
+
+	useMMap := true.
+	self loadImage.
+
+	map := memory getMemoryMap.
+	self assert: map permSpaceStart equals: map fixedPermSpaceStart.
+	self assert: map permSpaceSize >= metadata dataSize.
+	self assert: memory permSpaceFreeStart equals: map permSpaceStart + metadata dataSize.
+
+	self assert: (memory hashBitsOf: permanentObject) equals: originalPermanentObjectIdentityHash.
+	0 to: 13 do: [ :index | self assert: (memory fetchByte: index ofObject: permanentObject) equals: index + 100 ]
 ]
 
 { #category : 'tests' }

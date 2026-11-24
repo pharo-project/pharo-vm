@@ -304,7 +304,8 @@ ComposedImageReader >> readPermanentSpaceFromImageFile: imageFileName header: aH
 	"There is nothing to load, the PermSpace was empty when saving"
 	permSpaceMetadata dataSize = 0 ifTrue: [ ^ 0 ].
 
-	objectMemory getUseMMapWhenPossible
+	"Images saved before having fileSize in the metadata should be read"
+	(objectMemory getUseMMapWhenPossible and: [ permSpaceMetadata fileSize > 0 ])
 		ifTrue: [ 
 			bytesRead := self
 				             loadUsingMMapPermanentSpaceFile: imageFileName
