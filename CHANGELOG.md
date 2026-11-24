@@ -1,5 +1,24 @@
 # Change log
 
+## v12.0.7-beta
+
+* jit.h: flush the instruction cache on RISC-V by @QDucasse in https://github.com/pharo-project/pharo-vm/pull/1124
+* cmake: declare the downloaded VMMaker VM as a byproduct for ninja by @QDucasse in https://github.com/pharo-project/pharo-vm/pull/1123
+* Extract GC statistics from SpurMemoryManager into SpurMemoryManagerStats by @tesonep in https://github.com/pharo-project/pharo-vm/pull/1142
+* Fix/riscv jit backend by @QDucasse in https://github.com/pharo-project/pharo-vm/pull/1144
+* Avoid unused byte-swap when skipping ScreenSize header word by @takano32 in https://github.com/pharo-project/pharo-vm/pull/1138
+* Follow otherObject instead of thisObject in primitiveNotIdentical by @takano32 in https://github.com/pharo-project/pharo-vm/pull/1140
+* Remove Transcript noise from VMMakerTests by @tesonep in https://github.com/pharo-project/pharo-vm/pull/1145
+* [P12] DSAPrims primitives keep running after primitiveFailFor by @tesonep in https://github.com/pharo-project/pharo-vm/pull/1128
+* Changing the test image to P14 by @tesonep in https://github.com/pharo-project/pharo-vm/pull/1160
+* Fix #1148 - Incomplete encoding of constants in ARM64 by @tesonep in https://github.com/pharo-project/pharo-vm/pull/1158
+* Avoid segfault when started with non-path argv[0] by @takano32 in https://github.com/pharo-project/pharo-vm/pull/1141
+* Pin permanent space objects in place by @VincentBlondeau in https://github.com/pharo-project/pharo-vm/pull/1147
+* Add missing newline after --maxSlotsForNewSpaceAlloc in --help by @takano32 in https://github.com/pharo-project/pharo-vm/pull/1136
+* Remove unused file-scope localHostName in SocketPluginImpl.c by @takano32 in https://github.com/pharo-project/pharo-vm/pull/1135
+
+**Full Changelog**: https://github.com/pharo-project/pharo-vm/compare/v12.0.6-beta...v12.0.7-beta
+
 ## v12.0.6-beta
 
 * Just cleaning Bock into Block by @Ducasse in https://github.com/pharo-project/pharo-vm/pull/1119
