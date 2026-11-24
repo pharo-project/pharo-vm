@@ -117,7 +117,7 @@ if(GENERATE_SOURCES)
             )
     endif()
 
-	set(IMAGE_PATH ${VMMAKER_DIR}/image/Pharo13.0-SNAPSHOT-64bit-e84a2d15c7.image)
+	set(IMAGE_PATH ${VMMAKER_DIR}/image/Pharo14.0-SNAPSHOT-64bit-42a90c70a5.image)
 
 	convert_cygwin_path_ifNeeded(${IMAGE_PATH} IMAGE_PATH_TO_USE)
 	convert_cygwin_path_ifNeeded(${VMMAKER_IMAGE} VMMAKER_IMAGE_TO_USE)
