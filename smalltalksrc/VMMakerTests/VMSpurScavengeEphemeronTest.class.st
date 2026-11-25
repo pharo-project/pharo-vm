@@ -30,7 +30,6 @@ VMSpurScavengeEphemeronTest >> setUp [
 	 When the GC checks for stack integrity we should have *something* resembling a stack.
 	 For now adding a dummy frame works well enough :)"
 	stackBuilder addNewFrame; buildStack.
-	memory initializeMournQueue.
 	self createEphemeronClass
 ]
 
@@ -309,6 +308,30 @@ VMSpurScavengeEphemeronTest >> testScavengeEphemeronObjectReferencingDyingObject
 	memory doScavenge: 1. "TenureByAge"
 	ephemeronObjectOop := memory remapObj: ephemeronObjectOop.
 	self assert: memory dequeueMourner equals: ephemeronObjectOop
+]
+
+{ #category : 'tests-ephemerons-globals' }
+VMSpurScavengeEphemeronTest >> testScavengeEphemeronObjectReferencingDyingObjectShouldCreateMournQueue [
+
+	| ephemeronObjectOop nonEphemeronObjectOop |
+	ephemeronObjectOop := self newEphemeronObject.
+	nonEphemeronObjectOop := self newZeroSizedObject.
+	memory
+		storePointer: 0
+		ofObject: ephemeronObjectOop
+		withValue: nonEphemeronObjectOop.
+
+	"Force object to not be collected by putting them in special variables"
+	self keepObjectInVMVariable1: ephemeronObjectOop.
+
+	"No full GC has created the mourn queue yet"
+	self assert: memory mournQueue equals: memory nilObject.
+
+	memory doScavenge: 1. "TenureByAge"
+	ephemeronObjectOop := memory remapObj: ephemeronObjectOop.
+	self assert: (memory isValidObjStack: memory mournQueue).
+	self assert: memory dequeueMourner equals: ephemeronObjectOop.
+	self assert: memory dequeueMourner equals: nil
 ]
 
 { #category : 'tests-ephemerons-globals' }
