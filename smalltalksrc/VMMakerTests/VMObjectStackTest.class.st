@@ -7,6 +7,23 @@ Class {
 }
 
 { #category : 'tests' }
+VMObjectStackTest >> testGrowingMournQueueBetweenMarkingAndSweepingMarksNewPage [
+
+	"After marking and before sweeping, e.g. when a full GC tenures objects, the hidden roots and the obj stack pages
+	are marked but marking is over. A page added to an obj stack then must be marked too, or the sweep frees it."
+	memory initializeMournQueue.
+	memory setIsMarkedOf: memory mournQueue to: true.
+	memory setIsMarkedOf: memory hiddenRootsObject to: true.
+	self testPushObjects: memory objectStackPageLimit + 1 inStackAtIndex: 4098"MournQueueRootIndex".
+	self assert: (memory isMarked: memory mournQueue).
+	self assert: (memory isMarked: (memory fetchPointer: 3"ObjStackNextx" ofObject: memory mournQueue)).
+	self assert: (memory isValidObjStack: memory mournQueue).
+	memory setIsMarkedOf: memory mournQueue to: false.
+	self deny: (memory isValidObjStack: memory mournQueue).
+	memory setIsMarkedOf: memory mournQueue to: true
+]
+
+{ #category : 'tests' }
 VMObjectStackTest >> testGrowingMournQueueUpdatesVMGlobalVariable [
 
 	
