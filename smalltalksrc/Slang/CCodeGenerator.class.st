@@ -2498,14 +2498,18 @@ CCodeGenerator >> generateCASTRounded: tast [
 { #category : 'CAST translation' }
 CCodeGenerator >> generateCASTSequentialAnd: tast [
 
-	(self nilOrBooleanConstantReceiverOf: tast receiver)
+	| receiverConst argConst |
+
+	receiverConst := (self nilOrBooleanConstantReceiverOf: tast receiver).
+	
+	receiverConst
 		ifNil: [ 
-			(self nilOrBooleanConstantReceiverOf: tast arguments first) 
-				ifNotNil: [ :const | 
-				const == true ifTrue: [ ^ tast receiver asCASTExpressionIn: self ] ].
+			(argConst := self nilOrBooleanConstantReceiverOf: tast arguments first) 
+				ifNotNil: [ 
+					argConst == true ifTrue: [ ^ tast receiver asCASTExpressionIn: self ] ].
 			^ self generateCASTAnd: tast ]
-		ifNotNil: [ :const | 
-			const
+		ifNotNil: [ 
+			receiverConst
 				ifTrue: [ ^ tast arguments first asCASTExpressionIn: self ]
 				ifFalse: [ ^ CConstantNode value: 0 ] ]
 ]
@@ -2513,14 +2517,16 @@ CCodeGenerator >> generateCASTSequentialAnd: tast [
 { #category : 'CAST translation' }
 CCodeGenerator >> generateCASTSequentialOr: tast [
 
-	(self nilOrBooleanConstantReceiverOf: tast receiver)
+	| receiverConst argConst |
+	
+	(receiverConst := self nilOrBooleanConstantReceiverOf: tast receiver)
 		ifNil: [ 
-			(self nilOrBooleanConstantReceiverOf: tast arguments first) 
-				ifNotNil: [ :const | 
-				const == false ifTrue: [ ^ tast receiver asCASTExpressionIn: self ] ].
+			(argConst :=self nilOrBooleanConstantReceiverOf: tast arguments first) 
+				ifNotNil: [ 
+				argConst == false ifTrue: [ ^ tast receiver asCASTExpressionIn: self ] ].
 			^ self generateCASTOr: tast ]
-		ifNotNil: [ :const | 
-			const
+		ifNotNil: [
+			receiverConst
 				ifTrue: [ ^ CConstantNode value: 1]
 				ifFalse: [ ^ tast arguments first asCASTExpressionIn: self ] ]
 ]
