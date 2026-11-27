@@ -9234,13 +9234,13 @@ SpurMemoryManager >> markLoopFrom: objOop [
 			[ index > 0 ] whileTrue: [
 				index := index - 1.
 				field := self fetchPointer: index ofObject: objToScan.
-				((self isNonImmediate: field) and: [(self isPermanent: field) not]) ifTrue: [ 
+				(self isNonImmediate: field) ifTrue: [ 
 					(self isForwarded: field) ifTrue: [ "fixFollowedField: is /not/ inlined"
 						field := self
 							         fixFollowedField: index
 							         ofObject: objToScan
 							         withInitialValue: field ].
-					(self markAndShouldScan: field) ifTrue: [
+					((self isPermanent: field) not and: [self markAndShouldScan: field]) ifTrue: [
 						index > 0 ifTrue: [
 							(self topOfObjStack: markStack) ~= objToScan ifTrue: [
 								self push: objToScan onObjStack: markStack ].
