@@ -99,6 +99,19 @@ VMJitMethodTest >> filter: aGlyphForm [
 	^answer
 ]
 
+{ #category : 'as yet unclassified' }
+VMJitMethodTest >> genCogitMethod: aMethodObj [
+
+	| methodOop ast |
+	methodOop := self createMethodOopFromHostMethod: aMethodObj.
+	cogit cog: methodOop selector: memory nilObject.
+
+	ast := CogitDecompiler new buildFrom: cogit abstractOpcodes cPtrAsOop.
+	ast selector: #gen_ , aMethodObj selector.
+	ast arguments: aMethodObj ast arguments copy.
+	self writeAST: ast
+]
+
 { #category : 'running' }
 VMJitMethodTest >> initialCodeSize [
 
@@ -170,6 +183,12 @@ VMJitMethodTest >> sumWithPositive4096 [
 VMJitMethodTest >> sumWithPositive4097 [
 
 	^ self + 4097
+]
+
+{ #category : 'tests' }
+VMJitMethodTest >> testCogitDecompilerSmoteTest [
+
+	self genCogitMethod: SequenceableCollection >> #do:
 ]
 
 { #category : 'tests' }
@@ -355,4 +374,10 @@ VMJitMethodTest >> testMixedInlinedLiteralsSmoteTest [
 	callingMethod := self jitMethod: (self class>>#filter:).
 
 	self deny: callingMethod address equals: 0.
+]
+
+{ #category : 'writing' }
+VMJitMethodTest >> writeAST: aRBMethodNode [
+
+	self class compile: aRBMethodNode formattedCode classified: #'*generated'
 ]
