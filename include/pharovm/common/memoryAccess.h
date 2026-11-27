@@ -18,6 +18,7 @@
 #include "config.h"
 #include "interp.h"
 #include "stdint.h"
+#include <string.h>
 
 #ifndef SIZEOF_LONG
 #  if LLP64
@@ -201,8 +202,18 @@ typedef unsigned long long usqIntptr_t;
   static inline usqLong uint64AtPointer(char *ptr)			    { return (*((usqLong *)ptr)); }
   static inline usqLong uint64AtPointerput(char *ptr, usqLong val)	{ return (*((usqLong *)ptr)= val); }
 
-  static inline sqLong asIEEE64BitWord(double val) {return *((sqLong*)&val); }
-  static inline unsigned int asIEEE32BitWord(float val) {return *((unsigned int*)&val); }
+  static inline sqLong asIEEE64BitWord(double val)
+  {
+    sqLong bits;
+    memcpy(&bits, &val, sizeof(bits));
+    return bits;
+  }
+  static inline unsigned int asIEEE32BitWord(float val)
+  {
+    unsigned int bits;
+    memcpy(&bits, &val, sizeof(bits));
+    return bits;
+  }
 #else /* USE_INLINE_MEMORY_ACCESSORS */
   /* Use macros when static inline functions aren't efficient. */
 # define byteAtPointer(ptr)			((sqInt)(*((unsigned char *)(ptr))))
