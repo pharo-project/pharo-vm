@@ -3061,6 +3061,8 @@ SpurMemoryManager >> changeClassOf: rcvr to: argClass [
 					^ PrimErrInappropriate ] ].
 
 	self set: rcvr classIndexTo: classIndex formatTo: newFormat.
+	((self isPermanent: rcvr) and: [ self permObjectNeedsItsClassTraced: rcvr ]) ifTrue: [
+		self getFromPermToOldSpaceRememberedSet rememberWithoutMarkingAsRemembered: rcvr ].
 
 	self assert:
 		(self numBytesOf: rcvr) = (classFormat <= self lastPointerFormat
@@ -3984,7 +3986,8 @@ SpurMemoryManager >> cleanUpPermToOldSpaceRememeberedSet [
 			(self isForwarded: referrer) 
 				ifTrue: [ self handleUnreacheablePermanentForwarded:  referrer ]
 				ifFalse: [ 
-						((self isMarked: referrer) not and: [ self hasOldReferents: referrer])
+						((self isMarked: referrer) not and: [
+							(self hasOldReferents: referrer) or: [ self permObjectNeedsItsClassTraced: referrer ] ])
 							ifTrue:[
 									 self getFromPermToOldSpaceRememberedSet save: referrer at: destIndex.
 									 self setIsMarkedOf: referrer to: true. 
@@ -4540,7 +4543,10 @@ SpurMemoryManager >> doBecome: obj1 to: obj2 copyHash: copyHashFlag [
 
 	self forward: obj1 to: obj2.
 	copyHashFlag ifTrue: [
-		self setHashBitsOf: obj2 to: (self rawHashBitsOf: obj1) ].
+		self setHashBitsOf: obj2 to: (self rawHashBitsOf: obj1).
+		"The perm instances of obj2 now carry a duplicate class index; they must be remembered."
+		(memoryMap isPermanentObject: obj2) ifTrue: [
+			becomeEffectsFlags := becomeEffectsFlags bitOr: BecamePermanentObject ] ].
 
 	self deny: (self isOopForwarded: obj2).
 
@@ -4611,7 +4617,9 @@ SpurMemoryManager >> doMoveToPermSpace: objOop addToRememberedSet: shouldAddToRe
 		ifTrue: [ 
 			refersNewSpace 
 				ifTrue: [ self getFromPermToNewSpaceRememberedSet remember: newObj ]
-				ifFalse: [ refersOldSpace ifTrue: [ self getFromPermToOldSpaceRememberedSet rememberWithoutMarkingAsRemembered: newObj ] ]].
+				ifFalse: [
+					(refersOldSpace or: [ self permObjectNeedsItsClassTraced: newObj ]) ifTrue: [
+						self getFromPermToOldSpaceRememberedSet rememberWithoutMarkingAsRemembered: newObj ] ] ].
 
 	(hash := self rawHashBitsOf: objOop) ~= 0 ifTrue: [ 
 		self setHashBitsOf: newObj to: hash ].
@@ -5042,7 +5050,6 @@ SpurMemoryManager >> expungeDuplicateAndUnmarkedClasses: expungeUnmarked [
 					[((expungeUnmarked and: [(self isMarkedOrPermanent: classOrNil) not])
 					   or: [(self rawHashBitsOf: classOrNil) ~= classIndex]) ifTrue:
 						[
-						 self deny: (self isPermanent: classOrNil).
 						 self storePointerUnchecked: j
 							ofObject: classTablePage
 							withValue: nilObj.
@@ -10546,6 +10553,25 @@ SpurMemoryManager >> pastSpaceStart [
 	^pastSpaceStart
 ]
 
+{ #category : 'perm - space' }
+SpurMemoryManager >> permObjectNeedsItsClassTraced: objOop [
+	"A perm object is scanned by a full GC only if it is in a perm remembered set, and the class index
+	 is not a pointer slot. Answer whether objOop must be scanned anyway: its class is not permanent
+	 (markAndTraceClassOf: must keep it alive), or its class index is a duplicate left by a one-way
+	 become (markAndTraceClassOf: must fix it before expungeDuplicateAndUnmarkedClasses: clears it)."
+
+	<inline: true>
+	| classIndex classObj |
+	classIndex := self classIndexOf: objOop.
+	classIndex <= self lastClassIndexPun ifTrue: [ ^ false ].
+	classObj := self classOrNilAtIndex: classIndex.
+	"After a one-way become of classes the entry is still the forwarder here: the perm remembered
+	 sets are rebuilt before the class table is followed."
+	(self isForwarded: classObj) ifTrue: [ classObj := self followForwarded: classObj ].
+	^ (self isPermanent: classObj) not or: [
+		  (self rawHashBitsOf: classObj) ~= classIndex ]
+]
+
 { #category : 'accessing' }
 SpurMemoryManager >> permSpaceFreeStart [
 	^ permSpaceFreeStart
@@ -11714,7 +11740,9 @@ SpurMemoryManager >> recreateFromPermSpaceRememberedSet [
 		
 		refersNewSpace 
 			ifTrue: [ self getFromPermToNewSpaceRememberedSet remember: aPermSpaceObject ]
-			ifFalse: [ refersOldSpace ifTrue: [ self getFromPermToOldSpaceRememberedSet rememberWithoutMarkingAsRemembered: aPermSpaceObject ] ]
+			ifFalse: [
+				(refersOldSpace or: [ self permObjectNeedsItsClassTraced: aPermSpaceObject ]) ifTrue: [
+					self getFromPermToOldSpaceRememberedSet rememberWithoutMarkingAsRemembered: aPermSpaceObject ] ]
 	]
 ]
 
