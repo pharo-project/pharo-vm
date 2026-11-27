@@ -25,7 +25,10 @@ Class {
 		'objectMemory',
 		'spaceMaskToUse',
 		'permSpaceMask',
-		'newSpaceMask'
+		'newSpaceMask',
+		'oldSpaceBase',
+		'permSpaceBase',
+		'simulatedUserAddressSpaceLimit'
 	],
 	#pools : [
 		'VMBasicConstants'
@@ -45,7 +48,7 @@ VMMemoryMap class >> declareCVarsIn: aCCodeGenerator [
 { #category : 'translation' }
 VMMemoryMap class >> filteredInstVarNames [
 
-	^ super filteredInstVarNames copyWithoutAll: #(memoryManager memoryMapConfiguration objectMemory)
+	^ super filteredInstVarNames copyWithoutAll: #(memoryManager memoryMapConfiguration objectMemory simulatedUserAddressSpaceLimit)
 ]
 
 { #category : 'translation' }
@@ -100,6 +103,7 @@ VMMemoryMap >> allocateHeap [
 	
 	self allocateCodeZone.
 	self allocateNewObjectsSpace.
+	self computeSpaceBases.
 	self allocateOldObjectsSpace.
 	self calculateMaskToUse.
 	self allocatePermObjectsSpace.
@@ -145,15 +149,15 @@ VMMemoryMap >> allocateOldObjectsSpace [
 
 	sizeToAllocate := self roundToAllocationSize: self initialOldSpaceSize + self initialHeadroom.
 
-	self oldSpaceStart: (self allocateMemory: sizeToAllocate BaseAddress: memoryMapConfiguration oldSpaceInitialAddress).
+	self oldSpaceStart: (self allocateMemory: sizeToAllocate BaseAddress: oldSpaceBase).
 
 	self oldSpaceStart ifNil: [ self insufficientMemoryAvailableError ].
 
-	"The platform allocator may return a different address than requested,
-	 e.g. on kernels whose user virtual address space cannot reach the
-	 configured base (aarch64 VA39). calculateMaskToUse recomputes the space
-	 masks from the address actually obtained, so any successful allocation
-	 is usable."
+	"oldSpaceBase is the configured base, or a reachable one chosen by
+	 computeSpaceBases on platforms with a small user address space. The
+	 platform allocator may still return a different address than requested;
+	 calculateMaskToUse recomputes the space masks from the address actually
+	 obtained, so any successful allocation below permSpaceBase is usable."
 
 	self setOldSpaceEnd: self oldSpaceStart + sizeToAllocate
 ]
@@ -171,13 +175,15 @@ VMMemoryMap >> allocatePermObjectsSpace [
 
 	self permSpaceStart: (self 
 		allocateMemory: minSize 
-		BaseAddress: memoryMapConfiguration permSpaceInitialAddress).
+		BaseAddress: permSpaceBase).
 
 	self permSpaceStart ifNil: [ self insufficientMemoryAvailableError ].
 
-	self permSpaceStart = memoryMapConfiguration permSpaceInitialAddress 
+	"isPermanentObject:, the JIT and the scavenger identify permSpace objects
+	 by comparing against permSpaceBase, so permSpace must start exactly there."
+	self permSpaceStart = permSpaceBase 
 		ifFalse: [ 
-			self logError: 'Could not allocate permSpace in the expected place (%p), got %p' _: self permSpaceStart _: memoryMapConfiguration permSpaceInitialAddress.
+			self logError: 'Could not allocate permSpace in the expected place (%p), got %p' _: permSpaceBase _: self permSpaceStart.
 			self error: 'Error allocating' ].
 
 	self permSpaceEnd: self permSpaceStart + minSize.
@@ -196,7 +202,19 @@ VMMemoryMap >> allocateSegmentOfSize: ammount minAddress: minAddress resultsIn: 
 	<var: #segmentAddress type: #usqInt>
 	
 	sizeToRequest := self roundToAllocationSize: ammount.
-	segmentAddress := self allocateMemory: sizeToRequest BaseAddress: minAddress.
+
+	"oldSpace segments must stay below permSpaceBase: above it they would be
+	 classified as permanent objects and could overlap permSpace. With the
+	 compressed layout of computeSpaceBases this bound is much closer than
+	 the 1TB window of the configured layout."
+	(self cCoerce: minAddress to: #usqInt) + sizeToRequest > permSpaceBase
+		ifTrue: [
+			self
+				cCode: [ self logError: 'Cannot grow oldSpace into permSpace (%p)' _: permSpaceBase ]
+				inSmalltalk: [ "no logging in simulation" ].
+			segmentAddress := self cCode: [ 0 ] inSmalltalk: [ nil ] ]
+		ifFalse: [
+			segmentAddress := self allocateMemory: sizeToRequest BaseAddress: minAddress ].
 	
 	blockWithAddressAndSegSize value: segmentAddress value: sizeToRequest.
 ]
@@ -266,20 +284,22 @@ VMMemoryMap >> calculateMaskToUse [
 		ifFalse: [ allOnes := 16rFFFFFFFF ].
 
 	newSpaceFirst := memoryMapConfiguration newSpaceInitialAddress.
-	"Use the configured base until old space has actually been allocated.
+	"Use the chosen base until old space has actually been allocated.
 	 oldSpaceStart is 0 before allocation, e.g. when this is called from
-	 initializeMemoryMap. After allocation, use the address actually obtained:
-	 on kernels whose user virtual address space cannot reach the configured
-	 base (aarch64 VA39), the platform allocator falls back to a reachable
-	 address, and the masks must be derived from it."
+	 initializeMemoryMap. After allocation, use the address actually obtained,
+	 in case the platform allocator did not honour the requested base."
 	oldSpaceFirst := oldSpaceStart = 0
-		ifTrue: [ memoryMapConfiguration oldSpaceInitialAddress ]
+		ifTrue: [ oldSpaceBase ]
 		ifFalse: [ oldSpaceStart ].
 
 	newSpaceLast := oldSpaceFirst - 1.
 
-	oldSpaceLimit := oldSpaceFirst = memoryMapConfiguration oldSpaceInitialAddress
-		ifTrue: [ memoryMapConfiguration permSpaceInitialAddress ]
+	"oldSpace spans up to permSpaceBase. Both bases are powers of two, so the
+	 range is a single mask class. If old space landed elsewhere, fall back to
+	 the next power of two, which never exceeds permSpaceBase as long as old
+	 space starts below it."
+	oldSpaceLimit := oldSpaceFirst = oldSpaceBase
+		ifTrue: [ permSpaceBase ]
 		ifFalse: [ self nextPowerOfTwoAfter: oldSpaceFirst ].
 	oldSpaceLast := oldSpaceLimit - 1.
 	newSpaceMaskAttempt := self maskForObjectsFrom: newSpaceFirst to: newSpaceLast allOnes: allOnes.
@@ -292,7 +312,7 @@ VMMemoryMap >> calculateMaskToUse [
 
 	self newSpaceMask: (memoryMapConfiguration newSpaceInitialAddress bitAnd: self spaceMaskToUse).
 	self oldSpaceMask: (oldSpaceFirst bitAnd: self spaceMaskToUse).
-	self permSpaceMask: (memoryMapConfiguration permSpaceInitialAddress bitAnd: self spaceMaskToUse).
+	self permSpaceMask: (permSpaceBase bitAnd: self spaceMaskToUse).
 ]
 
 { #category : 'accessing' }
@@ -315,6 +335,41 @@ VMMemoryMap >> codeZoneStart [
 { #category : 'accessing' }
 VMMemoryMap >> codeZoneStart: anInteger [ 
 	codeZoneStart := anInteger
+]
+
+{ #category : 'initial addresses' }
+VMMemoryMap >> computeSpaceBases [
+
+	"Choose where oldSpace and permSpace go. The configured layout (on 64 bits
+	 oldSpace at 2^40 and permSpace at 2^41) needs a user address space larger
+	 than 2^41. Some kernels have a smaller one: aarch64 built with 39-bit VA
+	 (user space below 2^39) or RISC-V Sv39 (below 2^38). When the platform
+	 reports such a limit, compress the layout into the reachable space:
+	 oldSpace gets the quarter from limit/4 to limit/2 and permSpace
+	 starts at limit/2.
+	 Both bases stay powers of two, so calculateMaskToUse still separates the
+	 spaces by mask and isPermanentObject: is still a single comparison.
+	 A limit of 0 means the platform could not tell (or does not need to),
+	 and the configured layout is kept."
+
+	<inline: false>
+	<var: #limit type: #usqInt>
+	| limit |
+
+	oldSpaceBase := memoryMapConfiguration oldSpaceInitialAddress.
+	permSpaceBase := memoryMapConfiguration permSpaceInitialAddress.
+
+	limit := self sqUserAddressSpaceLimit.
+	(limit = 0 or: [ permSpaceBase < limit ]) ifTrue: [ ^ self ].
+
+	(limit >> 2) < newSpaceEnd ifTrue: [
+		self
+			cCode: [ self logError: 'User address space ends at %p, too low to fit oldSpace above newSpace' _: limit ]
+			inSmalltalk: [ "no logging in simulation" ].
+		^ self ].
+
+	oldSpaceBase := limit >> 2.
+	permSpaceBase := limit >> 1
 ]
 
 { #category : 'asserting' }
@@ -400,8 +455,11 @@ VMMemoryMap >> extendPermObjectsSpaceMinimum: minimalSize [
 { #category : 'as yet unclassified' }
 VMMemoryMap >> fixedPermSpaceStart [
 
+	"The address permSpace starts at: the configured base, or the reachable
+	 one chosen by computeSpaceBases. It is fixed once the heap is allocated."
+
 	<api>
-	^ memoryMapConfiguration permSpaceInitialAddress
+	^ permSpaceBase
 ]
 
 { #category : 'accessing' }
@@ -502,6 +560,9 @@ VMMemoryMap >> initializeMemoryMap [
 	self simulationOnly: [ 
 		memoryMapConfiguration := (VMMemoryMapConfiguration forWordsize:
 			                          self class objectMemoryClass wordSize) new ].
+
+	oldSpaceBase := memoryMapConfiguration oldSpaceInitialAddress.
+	permSpaceBase := memoryMapConfiguration permSpaceInitialAddress.
 		
 	self calculateMaskToUse.
 ]
@@ -673,6 +734,12 @@ VMMemoryMap >> objectMemory: aValue [
 ]
 
 { #category : 'accessing' }
+VMMemoryMap >> oldSpaceBase [
+
+	^ oldSpaceBase
+]
+
+{ #category : 'accessing' }
 VMMemoryMap >> oldSpaceEnd [
 	^ oldSpaceEnd
 ]
@@ -769,6 +836,13 @@ VMMemoryMap >> setOldSpaceEnd: anInteger [
 
 ]
 
+{ #category : 'simulation' }
+VMMemoryMap >> simulatedUserAddressSpaceLimit: anInteger [
+
+	<doNotGenerate>
+	simulatedUserAddressSpaceLimit := anInteger
+]
+
 { #category : 'accessing' }
 VMMemoryMap >> spaceMaskToUse [
 
@@ -779,6 +853,17 @@ VMMemoryMap >> spaceMaskToUse [
 VMMemoryMap >> spaceMaskToUse: anObject [
 
 	spaceMaskToUse := anObject
+]
+
+{ #category : 'simulation' }
+VMMemoryMap >> sqUserAddressSpaceLimit [
+
+	"In C this is the platform function of the same name: the end of the user
+	 virtual address space, or 0 when unknown. Tests set it to simulate small
+	 address spaces."
+
+	<doNotGenerate>
+	^ simulatedUserAddressSpaceLimit ifNil: [ 0 ]
 ]
 
 { #category : 'accessing' }

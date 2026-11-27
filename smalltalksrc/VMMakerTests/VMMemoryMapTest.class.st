@@ -23,6 +23,39 @@ Class {
 }
 
 { #category : 'asserting' }
+VMMemoryMapTest >> assertCompressedLayoutForUserAddressSpaceLimit: aLimit [
+
+	"Run the layout decision for a platform whose user address space ends at
+	 aLimit, then place the spaces where allocateHeap would and check that
+	 every space, permSpace included, is classified correctly."
+
+	| permBase |
+	memoryMap simulatedUserAddressSpaceLimit: aLimit.
+	memoryMap newSpaceStart: configuration newSpaceInitialAddress.
+	memoryMap newSpaceEnd:
+		configuration newSpaceInitialAddress + (64 * 1024 * 1024).
+	memoryMap computeSpaceBases.
+
+	self assert: memoryMap oldSpaceBase equals: aLimit >> 2.
+	self assert: memoryMap fixedPermSpaceStart equals: aLimit >> 1.
+	permBase := memoryMap fixedPermSpaceStart.
+	self assert: permBase < aLimit.
+
+	memoryMap oldSpaceStart: memoryMap oldSpaceBase.
+	memoryMap setOldSpaceEnd: memoryMap oldSpaceBase + (512 * 1024 * 1024).
+	memoryMap calculateMaskToUse.
+	self assertSpacesAreClassifiedCorrectly.
+
+	"The whole window up to permSpace is oldSpace (room to grow), and
+	 permSpace itself is neither old nor young."
+	self assert: (memoryMap isOldObject: permBase - 8).
+	self deny: (memoryMap isPermanentObject: permBase - 8).
+	self assert: (memoryMap isPermanentObject: permBase).
+	self deny: (memoryMap isOldObject: permBase).
+	self deny: (memoryMap isYoungObject: permBase)
+]
+
+{ #category : 'asserting' }
 VMMemoryMapTest >> assertSpacesAreClassifiedCorrectly [
 
 	"The behavioral guarantee that used to be enforced by requiring allocation
@@ -67,6 +100,62 @@ VMMemoryMapTest >> testCalculateMaskBeforeAllocationTerminatesWithDiscriminating
 
 	memoryMap calculateMaskToUse.
 	self deny: memoryMap spaceMaskToUse = 0
+]
+
+{ #category : 'tests' }
+VMMemoryMapTest >> testComputeSpaceBasesCompressesLayoutForSmallAddressSpaces [
+
+	"Kernels whose user address space cannot reach the configured permSpace
+	 base (2^41): oldSpace moves to limit/4 (up to limit/2) and permSpace to
+	 limit/2. Covers 36- to 41-bit user address spaces, including RISC-V Sv39
+	 (user space below 2^38) and aarch64 VA39 (below 2^39)."
+
+	#(16r1000000000 16r2000000000 16r4000000000 16r8000000000 16r10000000000 16r20000000000)
+		do: [ :limit |
+			self setUp.
+			self assertCompressedLayoutForUserAddressSpaceLimit: limit ]
+]
+
+{ #category : 'tests' }
+VMMemoryMapTest >> testComputeSpaceBasesKeepsConfiguredLayoutWhenItFits [
+
+	#(0 16r40000000000 16r800000000000) do: [ :limit |
+		self setUp.
+		memoryMap simulatedUserAddressSpaceLimit: limit.
+		memoryMap newSpaceEnd:
+			configuration newSpaceInitialAddress + (64 * 1024 * 1024).
+		memoryMap computeSpaceBases.
+		self assert: memoryMap oldSpaceBase equals: configuration oldSpaceInitialAddress.
+		self assert: memoryMap fixedPermSpaceStart equals: configuration permSpaceInitialAddress ]
+]
+
+{ #category : 'tests' }
+VMMemoryMapTest >> testComputeSpaceBasesKeepsConfiguredLayoutWhenOldSpaceWouldOverlapNewSpace [
+
+	"With a 35-bit user address space limit/4 (8GB) is below the end of
+	 newSpace (13.5GB), so no compressed layout fits; keep the configured one
+	 and let the allocation report the failure."
+
+	memoryMap simulatedUserAddressSpaceLimit: 16r800000000.
+	memoryMap newSpaceEnd:
+		configuration newSpaceInitialAddress + (64 * 1024 * 1024).
+	memoryMap computeSpaceBases.
+	self assert: memoryMap oldSpaceBase equals: configuration oldSpaceInitialAddress.
+	self assert: memoryMap fixedPermSpaceStart equals: configuration permSpaceInitialAddress
+]
+
+{ #category : 'tests' }
+VMMemoryMapTest >> testSegmentAllocationRefusesToGrowIntoPermSpace [
+
+	"oldSpace segments must stay below permSpace. The request is refused
+	 before reaching the platform allocator."
+
+	| address |
+	memoryMap
+		allocateSegmentOfSize: 1024 * 1024
+		minAddress: memoryMap fixedPermSpaceStart - 4096
+		resultsIn: [ :segmentAddress :size | address := segmentAddress ].
+	self assert: address isNil
 ]
 
 { #category : 'tests' }
@@ -117,49 +206,12 @@ VMMemoryMapTest >> testNextPowerOfTwoAfter [
 	self assert: (memoryMap nextPowerOfTwoAfter: 1) equals: 2
 ]
 
-{ #category : 'asserting' }
-VMMemoryMapTest >> assertOldSpaceFallbackIsClassifiedCorrectlyAtBase: aBase [
-
-	"Feed the map an oldSpace obtained at aBase (as the platform allocator's
-	 fallback would on a kernel whose user address space cannot reach the
-	 configured base) and confirm the recomputed masks still discriminate all
-	 spaces. aBase is 2 raisedTo: (vaBits - 1), the fallback base the C
-	 allocator computes as userVaLimit >> 1 for a vaBits-bit address space."
-
-	memoryMap newSpaceStart: configuration newSpaceInitialAddress.
-	memoryMap newSpaceEnd:
-		configuration newSpaceInitialAddress + (64 * 1024 * 1024).
-	memoryMap oldSpaceStart: aBase.
-	memoryMap setOldSpaceEnd: aBase + (512 * 1024 * 1024).
-	memoryMap calculateMaskToUse.
-	self assertSpacesAreClassifiedCorrectly
-]
-
-{ #category : 'tests' }
-VMMemoryMapTest >> testOldSpaceFallbackIsClassifiedCorrectlyForAnyAddressSpaceSize [
-
-	"The fallback is no longer VA39-specific: when the configured oldSpace
-	 base (2^40) exceeds the measured user address-space limit, the C
-	 allocator slides a window through the upper half of that limit
-	 (base = limit >> 1). For every reachable fallback base (35- to 40-bit
-	 user address spaces, where newSpaceEnd <= base < oldSpaceInitialAddress,
-	 including 38-bit RISC-V Sv39 and 39-bit aarch64 VA39), the masks
-	 recomputed from the obtained oldSpace base must discriminate all spaces.
-	 Each entry below is (2 raisedTo: vaBits - 1) for vaBits in 35..40."
-
-	#(16r400000000 16r800000000 16r1000000000 16r2000000000 16r4000000000 16r8000000000)
-		do: [ :fallbackBase |
-			self setUp.
-			self assertOldSpaceFallbackIsClassifiedCorrectlyAtBase: fallbackBase ]
-]
-
 { #category : 'tests' }
 VMMemoryMapTest >> testOldSpaceAllocatedAtVA39FallbackAddressIsClassifiedCorrectly [
 
-	"On CONFIG_ARM64_VA_BITS_39 kernels the configured oldSpace base (2^40)
-	 is not mappable and the platform allocator falls back to a lower window
-	 (base 16r4000000000). The masks recomputed from the obtained address
-	 must still discriminate all spaces."
+	"If the platform allocator returns oldSpace somewhere other than the
+	 requested base (here 16r4000000000, below the configured 2^40), the masks
+	 recomputed from the obtained address must still discriminate all spaces."
 
 	memoryMap newSpaceStart: configuration newSpaceInitialAddress.
 	memoryMap newSpaceEnd:
