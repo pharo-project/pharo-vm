@@ -759,6 +759,36 @@ VMPermanentSpaceMemoryTest >> testMoveOldObjectInRememberedSetIsMovedFromSet [
 ]
 
 { #category : 'test - moving' }
+VMPermanentSpaceMemoryTest >> testMovingAllOldObjectsKeepsThePermRememberedSetsSane [
+	"More old objects than the 1024 slots a remembered set starts with, each referring to the next
+	 one. One refers to a young object, one to a pinned object, which stays in old space. The objects
+	 need a real class: the move skips class indices up to classIsItselfClassIndexPun."
+
+	| classIndex objects young referrerOfYoung pinned referrerOfPinned firstMoved |
+	classIndex := memory ensureBehaviorHash:
+		              (self newClassInOldSpaceWithSlots: 1 instSpec: memory nonIndexablePointerFormat).
+	objects := (1 to: 1500) collect: [ :i | self newOldSpaceObjectWithSlots: 1 classIndex: classIndex ].
+	1 to: objects size - 1 do: [ :i |
+		memory storePointer: 0 ofObject: (objects at: i) withValue: (objects at: i + 1) ].
+	young := self newZeroSizedObject.
+	referrerOfYoung := self newOldSpaceObjectWithSlots: 1 classIndex: classIndex.
+	memory storePointer: 0 ofObject: referrerOfYoung withValue: young.
+	pinned := memory pinObject: (self newOldSpaceObjectWithSlots: 0 classIndex: classIndex).
+	referrerOfPinned := self newOldSpaceObjectWithSlots: 1 classIndex: classIndex.
+	memory storePointer: 0 ofObject: referrerOfPinned withValue: pinned.
+
+	memory moveToPermSpaceAllOldObjects.
+
+	firstMoved := memory followForwarded: objects first.
+	self assert: (memory isPermanent: firstMoved).
+	self assert: (memory fetchPointer: 0 ofObject: firstMoved) equals: (memory followForwarded: objects second).
+	self deny: (memory isPermanent: pinned).
+	self assert: (memory getFromPermToNewSpaceRememberedSet isInRememberedSet: (memory followForwarded: referrerOfYoung)).
+	self assert: (memory getFromPermToOldSpaceRememberedSet isInRememberedSet: (memory followForwarded: referrerOfPinned)).
+	self assert: memory isPermSpaceRememberedSetSane
+]
+
+{ #category : 'test - moving' }
 VMPermanentSpaceMemoryTest >> testMovingAnObjectReferencingAYoungOnePutsInRememberedSet [
 
 	| permanentObject youngObject rootObject|
