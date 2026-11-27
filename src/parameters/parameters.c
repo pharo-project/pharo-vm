@@ -91,6 +91,7 @@ static VMErrorCode processMaxSlotsForNewSpaceAlloc(const char *argument, VMParam
 static VMErrorCode processStackPageSizeOption(const char *argument, VMParameters * params);
 static VMErrorCode processWorkingDirectory(const char *argument, VMParameters * params);
 static VMErrorCode processAvoidSearchingSegmentsWithPinnedObjects(const char *argument, VMParameters * params);
+static VMErrorCode processUseMMapWhenPossible(const char *argument, VMParameters * params);
 
 static const VMParameterSpec vm_parameters_spec[] =
 {
@@ -115,6 +116,8 @@ static const VMParameterSpec vm_parameters_spec[] =
   {.name = "workingDirectory", .hasArgument = true, .function = processWorkingDirectory},
 
   {.name = "avoidSearchingSegmentsWithPinnedObjects", .hasArgument = false, .function = processAvoidSearchingSegmentsWithPinnedObjects},
+  {.name = "useMMapWhenPossible", .hasArgument = false, .function = processUseMMapWhenPossible},
+
 #ifdef __APPLE__
   // This parameter is passed by the XCode debugger.
   {.name = "NSDocumentRevisionsDebugMode", .hasArgument = false, .function = NULL},
@@ -465,6 +468,7 @@ vm_printUsageTo(FILE *out)
 "                                       It tries to allocate the object in a segment with already pinned objects.\n"
 "	                                  Avoid the clonning process avoid this search and allocate the clonned object anywhere?\n"
 "\n"
+"  --useMMapWhenPossible                Use MMap when possible to load the image. Implemented for PermSpace\n"
 "\n"
 "Notes:\n"
 "\n"
@@ -662,6 +666,13 @@ static VMErrorCode
 processAvoidSearchingSegmentsWithPinnedObjects(const char* argument, VMParameters * params)
 {
 	params->avoidSearchingSegmentsWithPinnedObjects = true;
+	return VM_SUCCESS;
+}
+
+static VMErrorCode
+processUseMMapWhenPossible(const char* argument, VMParameters * params)
+{
+	params->useMMapWhenPossible = true;
 	return VM_SUCCESS;
 }
 
@@ -962,6 +973,7 @@ vm_parameters_init(VMParameters *parameters){
 	parameters->defaultImageFound = false;
 	parameters->isInteractiveSession = false;
 	parameters->avoidSearchingSegmentsWithPinnedObjects = false;
+	parameters->useMMapWhenPossible = false;
 
 	parameters->isWorker = false;
 

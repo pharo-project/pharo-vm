@@ -4,12 +4,29 @@ Class {
 	#instVars : [
 		'originalNilObjectIdentityHash',
 		'permanentObject',
-		'originalPermanentObjectIdentityHash'
+		'originalPermanentObjectIdentityHash',
+		'useMMap',
+		'minPermSpaceSize'
 	],
 	#category : 'VMMakerTests-ImageFormat',
 	#package : 'VMMakerTests',
 	#tag : 'ImageFormat'
 }
+
+{ #category : 'utilities' }
+VMImageReadingTest >> changeStartAddressOfPermSpaceTo: newAddress [
+
+	| file contents oldAddress |
+	file := self imageFileName asFileReference / 'permSpace.ston'.
+	contents := file contents.
+	oldAddress := (self metadataFrom: 'permSpace.ston') startAddress.
+
+	file ensureDelete.
+	file writeStreamDo: [ :stream | 
+		stream nextPutAll: (contents copyReplaceAll: oldAddress printString with: newAddress printString) ].
+
+	self assert: (self metadataFrom: 'permSpace.ston') startAddress equals: newAddress
+]
 
 { #category : 'query' }
 VMImageReadingTest >> dataFrom: fileName [
@@ -21,6 +38,18 @@ VMImageReadingTest >> dataFrom: fileName [
 VMImageReadingTest >> initializationOptions [
 
 	^ super initializationOptions , { #CloneOnGC. false. #CloneOnScavenge. false }
+]
+
+{ #category : 'utilities' }
+VMImageReadingTest >> initializeMinPermSpaceSize [
+
+	"The memory map needs the memory manager, that otherwise is created when opening the image"
+
+	interpreter memoryManager: MachineSimulatorMemoryManager new.
+	memory memoryManager: interpreter memoryManager.
+	interpreter memoryManager wordSize: memory wordSize.
+
+	memory setMinimalPermSpaceSize: minPermSpaceSize
 ]
 
 { #category : 'utilities' }
@@ -39,8 +68,10 @@ VMImageReadingTest >> loadImage [
 	interpreter := environmentBuilder interpreter.
 	memory := environmentBuilder objectMemory.
 	
+	memory setUseMMapWhenPossible: useMMap.
+	minPermSpaceSize > 0 ifTrue: [ self initializeMinPermSpaceSize ].
+	
 	interpreter openOn: self imageFileName extraMemory: 0.
-
 ]
 
 { #category : 'query' }
@@ -49,6 +80,27 @@ VMImageReadingTest >> metadataFrom: fileName [
 	| writtenHeader |
 	writtenHeader := (self imageFileName asFileReference / fileName) contents.
 	^ STON fromString: writtenHeader
+]
+
+{ #category : 'utilities' }
+VMImageReadingTest >> removeFileSizeFromPermSpaceMetadata [
+
+	"Write the metadata as it was before having the fileSize"
+
+	| metadata file |
+	metadata := self metadataFrom: 'permSpace.ston'.
+	file := self imageFileName asFileReference / 'permSpace.ston'.
+
+	file ensureDelete.
+	file writeStreamDo: [ :stream | 
+		stream
+			nextPutAll: 'ComposedMetadataStruct {'; lf;
+			tab; nextPutAll: '#startAddress : '; print: metadata startAddress; nextPutAll: ','; lf;
+			tab; nextPutAll: '#dataSize : '; print: metadata dataSize; lf;
+			nextPutAll: '}' ].
+
+	self assert: (self metadataFrom: 'permSpace.ston') dataSize equals: metadata dataSize.
+	self assert: (self metadataFrom: 'permSpace.ston') fileSize equals: 0
 ]
 
 { #category : 'utilities' }
@@ -69,12 +121,165 @@ VMImageReadingTest >> setUp [
 
 	super setUp.
 
+	useMMap := false.
+	minPermSpaceSize := 0.
+
 	"ByteArrayClass is asserted while loading image"
 	memory classByteArray: (self newClassInOldSpaceWithSlots: 0 instSpec: (memory byteFormatForNumBytes: 0)).
 	memory ensureBehaviorHash: memory classByteArray.
 	
 	originalNilObjectIdentityHash := memory hashBitsOf: memory nilObject.
+]
 
+{ #category : 'tests - mmap' }
+VMImageReadingTest >> testLoadingEmptyPermanentSpaceUsingMMap [
+
+	"Only valid in the new format"
+	useComposedImageFormat ifFalse: [ ^ self skip ].
+
+	self saveImage.
+
+	useMMap := true.
+	self loadImage.
+
+	self assert: memory getMemoryMap permSpaceStart equals: 0.
+	self assert: memory getMemoryMap permSpaceEnd equals: 0
+]
+
+{ #category : 'tests' }
+VMImageReadingTest >> testLoadingEmptyPermanentSpaceWithMinPermSpaceSize [
+
+	| map |
+	"Only valid in the new format"
+	useComposedImageFormat ifFalse: [ ^ self skip ].
+
+	self saveImage.
+
+	minPermSpaceSize := 1024 * 1024.
+	self loadImage.
+
+	map := memory getMemoryMap.
+	self assert: map permSpaceStart equals: map fixedPermSpaceStart.
+	self assert: map permSpaceSize equals: minPermSpaceSize.
+	self assert: memory permSpaceFreeStart equals: map permSpaceStart
+]
+
+{ #category : 'tests - mmap' }
+VMImageReadingTest >> testLoadingPermanentSpaceUsingMMap [
+
+	"Only valid in the new format"
+	useComposedImageFormat ifFalse: [ ^ self skip ].
+
+	permanentObject := self newPermanentByteObjectOfSize: 14.
+	0 to: 13 do: [ :index | memory storeByte: index ofObject: permanentObject withValue: index + 100 ].
+	originalPermanentObjectIdentityHash := memory hashBitsOf: permanentObject.
+
+	self saveImage.
+
+	useMMap := true.
+	self loadImage.
+
+	self assert: (memory isPermanent: permanentObject).
+	self assert: (memory hashBitsOf: permanentObject) equals: originalPermanentObjectIdentityHash.
+	0 to: 13 do: [ :index | self assert: (memory fetchByte: index ofObject: permanentObject) equals: index + 100 ]
+]
+
+{ #category : 'tests - mmap' }
+VMImageReadingTest >> testLoadingPermanentSpaceUsingMMapRespectsMinPermSpaceSize [
+
+	| metadata map |
+	"Only valid in the new format"
+	useComposedImageFormat ifFalse: [ ^ self skip ].
+
+	permanentObject := self newPermanentByteObjectOfSize: 14.
+	originalPermanentObjectIdentityHash := memory hashBitsOf: permanentObject.
+
+	self saveImage.
+	metadata := self metadataFrom: 'permSpace.ston'.
+
+	useMMap := true.
+	minPermSpaceSize := metadata fileSize * 2.
+	self loadImage.
+
+	map := memory getMemoryMap.
+	self assert: map permSpaceStart equals: map fixedPermSpaceStart.
+	self assert: map permSpaceSize equals: minPermSpaceSize.
+	self assert: memory permSpaceFreeStart equals: map permSpaceStart + metadata dataSize.
+	self assert: (memory hashBitsOf: permanentObject) equals: originalPermanentObjectIdentityHash
+]
+
+{ #category : 'tests - mmap' }
+VMImageReadingTest >> testLoadingPermanentSpaceUsingMMapSetsLimits [
+
+	| metadata map |
+	"Only valid in the new format"
+	useComposedImageFormat ifFalse: [ ^ self skip ].
+
+	self newPermanentByteObjectOfSize: 14.
+
+	self saveImage.
+	metadata := self metadataFrom: 'permSpace.ston'.
+
+	useMMap := true.
+	self loadImage.
+
+	map := memory getMemoryMap.
+	self assert: map permSpaceStart equals: map fixedPermSpaceStart.
+	self assert: map permSpaceSize equals: metadata fileSize.
+	self assert: memory permSpaceFreeStart equals: map permSpaceStart + metadata dataSize
+]
+
+{ #category : 'tests - mmap' }
+VMImageReadingTest >> testLoadingPermanentSpaceUsingMMapWithWrongBaseFails [
+
+	| wrongAddress |
+	"Only valid in the new format"
+	useComposedImageFormat ifFalse: [ ^ self skip ].
+
+	self newPermanentByteObjectOfSize: 14.
+
+	self saveImage.
+
+	wrongAddress := memory getMemoryMap fixedPermSpaceStart + 16r100000.
+	self changeStartAddressOfPermSpaceTo: wrongAddress.
+
+	useMMap := true.
+	self
+		should: [ self loadImage ]
+		raise: Error
+		whoseDescriptionIncludes: 'Expecting Base'
+		description: 'Loading an image with a wrong base should fail'.
+
+	"It should fail before modifying the memory map"
+	self assert: memory getMemoryMap permSpaceStart equals: 0.
+	self assert: memory getMemoryMap permSpaceEnd equals: 0
+]
+
+{ #category : 'tests - mmap' }
+VMImageReadingTest >> testLoadingPermanentSpaceUsingMMapWithoutFileSizeReadsTheFile [
+
+	| metadata map |
+	"Only valid in the new format"
+	useComposedImageFormat ifFalse: [ ^ self skip ].
+
+	permanentObject := self newPermanentByteObjectOfSize: 14.
+	0 to: 13 do: [ :index | memory storeByte: index ofObject: permanentObject withValue: index + 100 ].
+	originalPermanentObjectIdentityHash := memory hashBitsOf: permanentObject.
+
+	self saveImage.
+	metadata := self metadataFrom: 'permSpace.ston'.
+	self removeFileSizeFromPermSpaceMetadata.
+
+	useMMap := true.
+	self loadImage.
+
+	map := memory getMemoryMap.
+	self assert: map permSpaceStart equals: map fixedPermSpaceStart.
+	self assert: map permSpaceSize >= metadata dataSize.
+	self assert: memory permSpaceFreeStart equals: map permSpaceStart + metadata dataSize.
+
+	self assert: (memory hashBitsOf: permanentObject) equals: originalPermanentObjectIdentityHash.
+	0 to: 13 do: [ :index | self assert: (memory fetchByte: index ofObject: permanentObject) equals: index + 100 ]
 ]
 
 { #category : 'tests' }
@@ -111,11 +316,10 @@ VMImageReadingTest >> testMovingObjectsToPermSpaceReduceOldSpace [
 	finalSegmentSize := (self dataFrom: 'seg0.data') size.
 	finalPermSpaceSize := (self dataFrom: 'permSpace.data') size.
 
-	self assert: finalPermSpaceSize < initSegmentSize.
 	self assert: finalPermSpaceSize > 0.
 
-	self assert: (self metadataFrom: 'seg0.ston') dataSize equals: finalSegmentSize.
-	self assert: (self metadataFrom: 'permSpace.ston') dataSize equals: finalPermSpaceSize
+	self assert: (self metadataFrom: 'seg0.ston') fileSize equals: finalSegmentSize.
+	self assert: (self metadataFrom: 'permSpace.ston') fileSize equals: finalPermSpaceSize
 ]
 
 { #category : 'tests' }

@@ -65,6 +65,9 @@ typedef struct VMParameters_
 	// DEFAULT: false
 	bool avoidSearchingSegmentsWithPinnedObjects;
 
+	// Use MMap to load the image when possible. First implemented for the PermSpace
+	bool useMMapWhenPossible;
+
 	VMParameterVector vmParameters;
 	VMParameterVector imageParameters;
 } VMParameters;

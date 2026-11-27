@@ -6,6 +6,7 @@
 #include "pharovm/stringUtilities.h"
 
 #if !defined(_WIN32)
+#include <sys/mman.h>
 #include <unistd.h>
 #endif
 
@@ -229,6 +230,35 @@ int basicImageIsDirectory(const char* aPath){
 	return S_ISDIR(buffer.st_mode);
 }
 
+size_t basicLoadDataUsingMMap(const char* aPath, size_t fileSize, void* targetAddress){
+
+#ifdef _WIN32
+	return 0;
+#else
+
+	int fd = open(aPath, O_RDONLY);
+
+	if(fd < 0){
+		logError("Error opening file: %s", aPath);
+		logErrorFromErrno("open");
+		return 0;
+	}
+
+	void* ptr = mmap(targetAddress, fileSize, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_FIXED, fd, 0);
+
+	if(ptr == MAP_FAILED){
+		logErrorFromErrno("Error doing MMAP");
+		close(fd);
+		return 0;
+	}
+
+	// The mapping is still valid after closing the file
+	close(fd);
+
+	return fileSize;
+#endif
+}
+
 FileAccessHandler defaultFileAccessHandler = {
 		basicImageFileClose,
 		basicImageFileOpen,
@@ -239,7 +269,8 @@ FileAccessHandler defaultFileAccessHandler = {
 		basicImageFileWrite,
 		basicImageFileExists,
 		basicImageReportProgress,
-		basicImageIsDirectory
+		basicImageIsDirectory,
+		basicLoadDataUsingMMap
 };
 
 FileAccessHandler* fileAccessHandler = &defaultFileAccessHandler;
