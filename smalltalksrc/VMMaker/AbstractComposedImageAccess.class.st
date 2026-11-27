@@ -242,7 +242,7 @@ AbstractComposedImageAccess >> segmentFileName: segmentIndex withExtension: exte
 { #category : 'segments' }
 AbstractComposedImageAccess >> segmentMetadataFile: segmentIndex inImage: imageFileName [
 
-	<inline: true>
+	<inline: #always>
 	<var: #buffer declareC: 'char buffer[255]'>
 	<var: #imageFileName type: #'char *'>
 	<returnTypeC: #'char *'>
