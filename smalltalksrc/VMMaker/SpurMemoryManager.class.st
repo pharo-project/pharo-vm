@@ -4901,7 +4901,7 @@ SpurMemoryManager >> ensureRoomOnObjStackAt: objStackRootIndex [
 					storePointer: ObjStackFreex
 					ofObjStack: stackOrNil
 					withValue: 0.
-				self assert: (marking not or: [ self isMarked: freeOrNewPage ]) ]
+				self assert: ((marking or: [ self isMarked: hiddenRootsObj ]) not or: [ self isMarked: freeOrNewPage ]) ]
 			ifFalse: [
 				freeOrNewPage := self
 					                 allocateSlotsInOldSpace: ObjStackPageSlots
@@ -4921,7 +4921,8 @@ SpurMemoryManager >> ensureRoomOnObjStackAt: objStackRootIndex [
 					storePointer: ObjStackFreex
 					ofObjStack: freeOrNewPage
 					withValue: 0.
-				marking ifTrue: [ self setIsMarkedOf: freeOrNewPage to: true ] ].
+				"Pages must be marked while marking, and after marking until the sweep, e.g. when a full GC tenures objects."
+				(marking or: [ self isMarked: hiddenRootsObj ]) ifTrue: [ self setIsMarkedOf: freeOrNewPage to: true ] ].
 		self
 			storePointer: ObjStackMyx
 			ofObjStack: freeOrNewPage
@@ -8348,8 +8349,8 @@ SpurMemoryManager >> isValidObjStackPage: objStackPage myIndex: myx [
 		[objStackInvalidBecause := 'wrong myx'.
 		 invalidObjStackPage := objStackPage.
 		 ^false].
-	(marking and: [(self isMarked: objStackPage) not]) ifTrue:
-		[objStackInvalidBecause := 'marking but page is unmarked'.
+	((marking or: [self isMarked: hiddenRootsObj]) and: [(self isMarked: objStackPage) not]) ifTrue:
+		[objStackInvalidBecause := 'page should be marked but is unmarked'.
 		 invalidObjStackPage := objStackPage.
 		 ^false].
 	^true
