@@ -11507,6 +11507,9 @@ SpurMemoryManager >> queueMourner: anEphemeronOrWeakArray [
 				   or: [(self formatOf: anEphemeronOrWeakArray) = self weakArrayFormat]]).
 	self deny: ((self formatOf: anEphemeronOrWeakArray) = self ephemeronFormat
 				and: [self is: anEphemeronOrWeakArray onObjStack: mournQueue]).
+	"The mourn queue is created by the first full GC, but a scavenge may fire ephemerons before."
+	mournQueue = nilObj ifTrue:
+		[self initializeMournQueue].
 	self push: anEphemeronOrWeakArray onObjStack: mournQueue
 ]
 
