@@ -79,3 +79,6 @@ EXPORT(int) isVMRunOnWorkerThread();
 void setMaxStacksToPrint(sqInt anInteger);
 
 #define allocateMemoryBaseAddress(desiredSize, baseAddress) sqAllocateMemory(desiredSize, desiredSize, baseAddress)
+
+/* End of the user virtual address space, or 0 when unknown (see VMMemoryMap>>computeSpaceBases). */
+usqInt sqUserAddressSpaceLimit(void);

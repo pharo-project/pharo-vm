@@ -73,6 +73,14 @@ void* allocateJITMemory(usqInt desiredSize, usqInt desiredPosition){
 }
 
 
+/* Windows 64-bit user space (128TB) always fits the configured memory map,
+ * so VMMemoryMap keeps its configured layout. */
+usqInt
+sqUserAddressSpaceLimit(void)
+{
+	return 0;
+}
+
 /************************************************************************/
 /* sqAllocateMemory: Initialize virtual memory                          */
 /************************************************************************/
