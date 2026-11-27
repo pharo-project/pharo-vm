@@ -4295,9 +4295,11 @@ SpurMemoryManager >> containsOnlyValidBecomeObjects: array1 and: array2 twoWay: 
 
 	 Arrays are not modified (and no forwarders unforward)."
 	<inline: true>
+	<var: #size type: #usqInt>
 	| fieldOffset effectsFlags oop1 oop2 size |
 	fieldOffset := self lastPointerOf: array1.
-	effectsFlags := size := 0.
+	effectsFlags := 0.
+	size := 0.
 	"array1 is known to be the same size as array2"
 	[fieldOffset >= self baseHeaderSize] whileTrue:
 		[oop1 := self longAt: array1 + fieldOffset.
