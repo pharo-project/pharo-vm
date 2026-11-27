@@ -538,10 +538,6 @@ If ffi is put as a separate header, slang will sort the header and put it outsid
 		as: #'StackPage *'
 		in: aCCodeGenerator.
 	aCCodeGenerator removeVariable: 'stackPages'. "this is an implicit receiver in the translated code."
-	BytecodeSetHasExtensions == false ifTrue: [
-		aCCodeGenerator
-			removeVariable: 'extA';
-			removeVariable: 'extB' ].
 	aCCodeGenerator
 		var: #methodCache
 		declareC: 'sqIntptr_t methodCache[MethodCacheSize + 1 /* '
@@ -622,10 +618,6 @@ StackInterpreter class >> initializeAssociationIndex [
 StackInterpreter class >> initializeBytecodeTable [
 
 	"StackInterpreter initializeBytecodeTable"
-
-	VMBytecodeConstants falsifyBytecodeSetFlags: InitializationOptions.
-	BytecodeSetHasDirectedSuperSend := false.
-
 	^ self initializeBytecodeTableForSistaV1
 ]
 
@@ -637,8 +629,6 @@ StackInterpreter class >> initializeBytecodeTableForSistaV1 [
 
 	BytecodeTable := Array new: 256.
 	BytecodeEncoderClassName := #EncoderForSistaV1.
-	BytecodeSetHasDirectedSuperSend := true.
-	BytecodeSetHasExtensions := true.
 	LongStoreBytecode := 245.
 	self table: BytecodeTable from:
 	#(	"1 byte bytecodes"
@@ -1665,7 +1655,7 @@ StackInterpreter class >> requiredMethodNames: options [
 	                   interpret loadInitialContext primitiveFail
 	                   primitiveFailFor: primitiveFlushExternalPrimitives
 	                   printAllStacks printCallStack printContext:
-	                   printExternalHeadFrame printFramesInPage:
+	                   printFramesInPage:
 	                   printFrame: printHeadFrame printMemory printOop:
 	                   printStackPages printStackPageList
 	                   printStackPagesInUse printStackPageListInUse
@@ -1754,27 +1744,6 @@ StackInterpreter >> ISA [
 		ifAbsent: [Smalltalk wordSize = 8
 					ifTrue: [#X64]
 					ifFalse: [#IA32]]
-]
-
-{ #category : 'debug support' }
-StackInterpreter >> abstractDetailedSymbolicMethod: aMethod [
-	<doNotGenerate>
-	| ts prim |
-	(ts := self transcript) newLine.
-	(prim := self primitiveIndexOf: aMethod) > 0 ifTrue:
-		[ts nextPutAll: '<primitive: '; print: prim; nextPut: $>.
-		(self isQuickPrimitiveIndex: prim) ifTrue:
-			[ts nextPutAll: ' quick method'; cr; flush.
-			 ^self].
-		ts cr].
-	(RelativeDetailedInstructionPrinter
-			on: (VMCompiledMethodProxy new
-					for: aMethod
-					coInterpreter: self
-					objectMemory: objectMemory))
-		indent: 0;
-		printInstructionsOn: ts.
-	ts flush
 ]
 
 { #category : 'control primitives' }
@@ -4498,7 +4467,6 @@ StackInterpreter >> commonSendOrdinary [
 	"Note: This method is inlined into the interpreter dispatch loop."
 	<sharedCodeInCase: #extSendBytecode>
 	self sendBreakpoint: messageSelector receiver: (self stackValue: argumentCount).
-	self doRecordSendTrace.
 	self findNewMethodOrdinary.
 	self executeNewMethod: false.
 	self fetchNextBytecode
@@ -4817,8 +4785,6 @@ StackInterpreter >> directedSuperclassSend [
 	"Assume: messageSelector and argumentCount have been set, and that
 	 the receiver and arguments have been pushed onto the stack,"
 	"Note: This method is inlined into the interpreter dispatch loop."
-	"<sharedCodeInCase: #extSendSuperBytecode>"
-	<option: #BytecodeSetHasDirectedSuperSend>
 	| class superclass |
 	class := self popStack.
 	(objectMemory isForwarded: class) ifTrue:
@@ -5028,16 +4994,6 @@ StackInterpreter >> doPrimitiveMod: rcvr by: arg [
 			ifTrue: [integerResult := integerResult + integerArg]].
 	self success: (objectMemory isIntegerValue: integerResult).
 	^ integerResult
-]
-
-{ #category : 'send bytecodes' }
-StackInterpreter >> doRecordSendTrace [
-	<inline: true>
-	self printSends ifTrue: [
-		self
-			printActivationNameForSelector: messageSelector
-			startClass: (objectMemory classForClassTag: lkupClassTag);
-			cr ]
 ]
 
 { #category : 'process primitive support' }
@@ -5540,16 +5496,16 @@ StackInterpreter >> extSendSuperBytecode [
 		ExtendB < 64
 			ifTrue: [Send To Superclass Literal Selector #iiiii (+ Extend A * 32) with jjj (+ Extend B * 8) Arguments]
 			ifFalse: [Send To Superclass of Stacked Class Literal Selector #iiiii (+ Extend A * 32) with jjj (+ (Extend B bitAnd: 63) * 8) Arguments]"
+
 	| byte |
 	byte := self fetchByte.
-	messageSelector := self literal: (byte >> 3) + (extA << 5).
+	messageSelector := self literal: byte >> 3 + (extA << 5).
 	extA := 0.
-	BytecodeSetHasDirectedSuperSend ifTrue:
-		[extB >= 64 ifTrue:
-			[argumentCount := (byte bitAnd: 7) + (extB - 64 << 3).
-			 extB := 0.
-			 numExtB := 0.
-			 ^self directedSuperclassSend]].
+	extB >= 64 ifTrue: [
+		argumentCount := (byte bitAnd: 7) + (extB - 64 << 3).
+		extB := 0.
+		numExtB := 0.
+		^ self directedSuperclassSend ].
 	argumentCount := (byte bitAnd: 7) + (extB << 3).
 	extB := 0.
 	numExtB := 0.
@@ -7412,7 +7368,7 @@ StackInterpreter >> includesBehavior: aClass ThatOf: aSuperclass [
 { #category : 'simulation support' }
 StackInterpreter >> initExtensions [
 	<inline: true>
-	BytecodeSetHasExtensions ifTrue: [extA := numExtB := extB := 0]
+	extA := numExtB := extB := 0
 ]
 
 { #category : 'object memory support' }
@@ -10989,12 +10945,6 @@ StackInterpreter >> primitiveObject: actualReceiver perform: selector withArgume
 	argumentCount := arraySize.
 	messageSelector := selector.
 	self sendBreakpoint: messageSelector receiver: actualReceiver.
-	self printSends ifTrue:
-		[self printActivationNameForSelector: messageSelector
-				startClass: (lookupClassOrNil isNil
-								ifTrue: [objectMemory fetchClassOf: actualReceiver]
-								ifFalse: [lookupClassOrNil]);
-			cr].
 	self findNewMethodInClassTag: (lookupClassOrNil isNil
 										ifTrue: [objectMemory fetchClassTagOf: actualReceiver]
 										ifFalse: [objectMemory classTagForClass: lookupClassOrNil]).
@@ -11448,12 +11398,6 @@ StackInterpreter >> printDecodeMethodHeaderOop: methodHeaderOop [
 	self print: ' nLits '; printNum: (objectMemory literalCountOfMethodHeader: methodHeaderOop);
 		print: ' nArgs '; printNum: (self argumentCountOfMethodHeader: methodHeaderOop);
 		print: ' nTemps '; printNum: (self temporaryCountOfMethodHeader: methodHeaderOop)
-]
-
-{ #category : 'debug printing' }
-StackInterpreter >> printExternalHeadFrame [
-	<inline: false>
-	self printFrame: framePointer WithSP: stackPointer
 ]
 
 { #category : 'debug printing' }
@@ -12223,11 +12167,6 @@ StackInterpreter >> printProcsOnList: procList [
 ]
 
 { #category : 'debug printing' }
-StackInterpreter >> printSends [
-	^false
-]
-
-{ #category : 'debug printing' }
 StackInterpreter >> printStackCallStack [
 	<doNotGenerate>
 	self printStackCallStackOf: (framePointer ifNil: [framePointer])
@@ -12659,7 +12598,6 @@ StackInterpreter >> pushFullClosureNumArgs: numArgs copiedValues: numCopiedArg c
 		              numArgs: numArgs
 		              numCopiedValues: numCopiedArg
 		              compiledBlock: compiledBlock.
-	self maybeTraceBlockCreation: newClosure.
 	receiverIsOnStack
 		ifFalse: [
 			startIndex := FullClosureFirstCopiedValueIndex.
@@ -15174,30 +15112,6 @@ StackInterpreter >> superclassSend [
 	self ensureReceiverUnforwarded.
 	self assert: lkupClassTag ~= objectMemory nilObject.
 	self commonSendOrdinary
-]
-
-{ #category : 'debug support' }
-StackInterpreter >> symbolicMethod: aMethod [
-	<doNotGenerate>
-	 self transcript
-		newLine;
-		nextPutAll:
-			((String streamContents:
-				[:ts| | prim |
-				(prim := self primitiveIndexOf: aMethod) > 0 ifTrue:
-					[ts nextPutAll: '<primitive: '; print: prim; nextPut: $>.
-					(self isQuickPrimitiveIndex: prim) ifTrue:
-						[ts nextPutAll: ' quick method'; cr; flush.
-						 ^self].
-					ts cr].
-				(InstructionPrinter
-						on: (VMCompiledMethodProxy new
-								for: aMethod
-								coInterpreter: self
-								objectMemory: objectMemory))
-					indent: 0;
-					printInstructionsOn: ts]) copyReplaceAll: 'a VMObjectProxy for ' with: '');
-		flush
 ]
 
 { #category : 'process primitive support' }
