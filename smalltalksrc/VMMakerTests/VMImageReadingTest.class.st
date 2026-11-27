@@ -11,6 +11,23 @@ Class {
 	#tag : 'ImageFormat'
 }
 
+{ #category : 'utilities' }
+VMImageReadingTest >> buildFreshSimulator [
+
+	environmentBuilder := VMSimulatedEnvironmentBuilder new.
+	environmentBuilder
+		interpreterClass: self interpreterClass;
+		objectMemoryClass: self memoryClass;
+		initializationOptions: self initializationOptions;
+		wordSize: self wordSize;
+		useComposedImageFormatAsDefault: useComposedImageFormat.
+
+	environmentBuilder doBuildSimulator.
+
+	interpreter := environmentBuilder interpreter.
+	memory := environmentBuilder objectMemory
+]
+
 { #category : 'query' }
 VMImageReadingTest >> dataFrom: fileName [
 
@@ -26,21 +43,26 @@ VMImageReadingTest >> initializationOptions [
 { #category : 'utilities' }
 VMImageReadingTest >> loadImage [
 
-	environmentBuilder := VMSimulatedEnvironmentBuilder new.
-	environmentBuilder 
-		interpreterClass: self interpreterClass;
-		objectMemoryClass: self memoryClass;
-	 	initializationOptions: self initializationOptions;
-		wordSize: self wordSize;
-		useComposedImageFormatAsDefault: useComposedImageFormat.
+	self buildFreshSimulator.
 
-	environmentBuilder doBuildSimulator.
+	interpreter openOn: self imageFileName extraMemory: 0
+]
 
-	interpreter := environmentBuilder interpreter.
-	memory := environmentBuilder objectMemory.
-	
-	interpreter openOn: self imageFileName extraMemory: 0.
+{ #category : 'utilities' }
+VMImageReadingTest >> loadImageHeaderOnly [
+	"Load only the header of the saved image, as the VM does before allocating the heap
+	 (see SpurImageReader>>#readImageFromFile:StartingAt:).
+	 At this point specialObjectsOop holds the address read from the header,
+	 but the heap is not mapped yet."
 
+	| reader |
+	self buildFreshSimulator.
+
+	reader := imageReaderClass
+		          newWithMemory: memory
+		          andInterpreter: interpreter.
+	reader loadHeaderToMemory:
+		(reader readHeaderFromImage: self imageFileName)
 ]
 
 { #category : 'query' }
@@ -75,6 +97,24 @@ VMImageReadingTest >> setUp [
 	
 	originalNilObjectIdentityHash := memory hashBitsOf: memory nilObject.
 
+]
+
+{ #category : 'tests' }
+VMImageReadingTest >> testLoadingImageHeaderDoesNotMarkHeapAsInitialized [
+
+	self saveImage.
+	self loadImageHeaderOnly.
+
+	self deny: memory isHeapInitialized
+]
+
+{ #category : 'tests' }
+VMImageReadingTest >> testLoadingImageMarksHeapAsInitialized [
+
+	self saveImage.
+	self loadImage.
+
+	self assert: memory isHeapInitialized
 ]
 
 { #category : 'tests' }
@@ -116,6 +156,28 @@ VMImageReadingTest >> testMovingObjectsToPermSpaceReduceOldSpace [
 
 	self assert: (self metadataFrom: 'seg0.ston') dataSize equals: finalSegmentSize.
 	self assert: (self metadataFrom: 'permSpace.ston') dataSize equals: finalPermSpaceSize
+]
+
+{ #category : 'tests' }
+VMImageReadingTest >> testPrintAllStacksBeforeLoadingTheHeapDoesNotFail [
+	"An error raised while allocating the heap prints all the stacks.
+	 It should not crash because the heap is not loaded yet (issue #1112)."
+
+	self saveImage.
+	self loadImageHeaderOnly.
+
+	self shouldnt: [ interpreter printAllStacks ] raise: Error
+]
+
+{ #category : 'tests' }
+VMImageReadingTest >> testPrintCallStackBeforeLoadingTheHeapDoesNotFail [
+	"A crash while allocating the heap prints the call stack.
+	 It should not crash because the heap is not loaded yet (issue #1112)."
+
+	self saveImage.
+	self loadImageHeaderOnly.
+
+	self shouldnt: [ interpreter printCallStack ] raise: Error
 ]
 
 { #category : 'tests' }

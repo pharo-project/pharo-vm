@@ -341,6 +341,67 @@ VMStructType >> logError: aMessage [
 	self logError: aMessage withArgs: #()
 ]
 
+{ #category : 'debug support' }
+VMStructType >> logError: aFormat _: arg1 [
+
+	<doNotGenerate>
+	self logError: aFormat withArgs: { arg1 }
+]
+
+{ #category : 'debug support' }
+VMStructType >> logError: aFormat _: arg1 _: arg2 [
+
+	<doNotGenerate>
+	self logError: aFormat withArgs: {
+			arg1.
+			arg2 }
+]
+
+{ #category : 'debug support' }
+VMStructType >> logError: aFormat _: arg1 _: arg2 _: arg3 [
+
+	<doNotGenerate>
+	self logError: aFormat withArgs: {
+			arg1.
+			arg2.
+			arg3 }
+]
+
+{ #category : 'debug support' }
+VMStructType >> logError: aFormat _: arg1 _: arg2 _: arg3 _: arg4 [
+
+	<doNotGenerate>
+	self logError: aFormat withArgs: {
+			arg1.
+			arg2.
+			arg3.
+			arg4 }
+]
+
+{ #category : 'debug support' }
+VMStructType >> logError: aFormat withArgs: args [
+
+	<doNotGenerate>
+	Error signal: (aFormat printf: args)
+]
+
+{ #category : 'debug support' }
+VMStructType >> logWarn: aFormat _: arg1 _: arg2 _: arg3 [
+
+	<doNotGenerate>
+	self logWarn: aFormat withArgs: {
+			arg1.
+			arg2.
+			arg3 }
+]
+
+{ #category : 'debug support' }
+VMStructType >> logWarn: aFormat withArgs: args [
+
+	<doNotGenerate>
+	(aFormat printf: args) traceCr
+]
+
 { #category : 'printing' }
 VMStructType >> printOn: aStream [
 	"A hook to allow subclasses to print their state if useful."

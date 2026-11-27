@@ -80,18 +80,26 @@ VMMemoryMap class >> shouldBeGenerated [
 
 { #category : 'private' }
 VMMemoryMap >> allocateCodeZone [
-	
+
 	initialCodeZoneSize = 0 ifTrue: [ ^ self ].
-	
-	self codeZoneStart: (self cCoerce: (self allocateJITMemory: initialCodeZoneSize _: memoryMapConfiguration codeZoneInitialAddress) to: #usqInt).
+
+	self codeZoneStart: (self
+			 cCoerce: (self
+					  allocateJITMemory: initialCodeZoneSize
+					  _: memoryMapConfiguration codeZoneInitialAddress)
+			 to: #usqInt).
 	self codeZoneStart ifNil: [ self insufficientMemoryAvailableError ].
 
-	self codeZoneStart = memoryMapConfiguration codeZoneInitialAddress 
-		ifFalse: [ 
-			self logError: 'Could not allocate codeZone in the expected place (%p), got %p' _: memoryMapConfiguration codeZoneInitialAddress _: self codeZoneStart.
-			self error: 'Error allocating' ].
-	
 	self codeZoneEnd: codeZoneStart + initialCodeZoneSize.
+
+	"Machine code is told apart from objects by being below new space (see #startOfObjectMemory)"
+	self
+		checkZone: 'code zone'
+		from: self codeZoneStart
+		to: self codeZoneEnd
+		desired: memoryMapConfiguration codeZoneInitialAddress
+		above: memoryMapConfiguration codeZoneInitialAddress
+		below: memoryMapConfiguration newSpaceInitialAddress
 ]
 
 { #category : 'allocating' }
@@ -121,39 +129,54 @@ VMMemoryMap >> allocateMemory: desiredSize BaseAddress: baseAddress [
 
 { #category : 'private' }
 VMMemoryMap >> allocateNewObjectsSpace [
-	
+
 	| newSpaceSizeToAllocate |
-	
-	newSpaceSizeToAllocate := self roundToAllocationSize: self initialNewSpaceSize + self allocationReserve.
-	
-	self newSpaceStart: (self allocateMemory: newSpaceSizeToAllocate BaseAddress: memoryMapConfiguration newSpaceInitialAddress).
-	
+	newSpaceSizeToAllocate := self roundToAllocationSize:
+		                          self initialNewSpaceSize
+		                          + self allocationReserve.
+
+	self newSpaceStart: (self
+			 allocateMemory: newSpaceSizeToAllocate
+			 BaseAddress: memoryMapConfiguration newSpaceInitialAddress).
+
 	self newSpaceStart ifNil: [ self insufficientMemoryAvailableError ].
-	
-	self newSpaceStart = memoryMapConfiguration newSpaceInitialAddress 
-		ifFalse: [ 
-			self logError: 'Could not allocate newSpace in the expected place (%p), got %p' _: self newSpaceStart _: memoryMapConfiguration newSpaceInitialAddress.
-			self error: 'Error allocating' ].
-			
+
 	self newSpaceEnd: self newSpaceStart + newSpaceSizeToAllocate.
+
+	self
+		checkZone: 'new space'
+		from: self newSpaceStart
+		to: self newSpaceEnd
+		desired: memoryMapConfiguration newSpaceInitialAddress
+		above: memoryMapConfiguration newSpaceInitialAddress
+		below: memoryMapConfiguration oldSpaceInitialAddress
 ]
 
 { #category : 'private' }
 VMMemoryMap >> allocateOldObjectsSpace [
 
 	| sizeToAllocate |
+	sizeToAllocate := self roundToAllocationSize:
+		                  self initialOldSpaceSize + self initialHeadroom.
 
-	sizeToAllocate := self roundToAllocationSize: self initialOldSpaceSize + self initialHeadroom.
-
-	self oldSpaceStart: (self allocateMemory: sizeToAllocate BaseAddress: memoryMapConfiguration oldSpaceInitialAddress).
+	self oldSpaceStart: (self
+			 allocateMemory: sizeToAllocate
+			 BaseAddress: memoryMapConfiguration oldSpaceInitialAddress).
 
 	self oldSpaceStart ifNil: [ self insufficientMemoryAvailableError ].
 
 	"The platform allocator may return a different address than requested,
 	 e.g. on kernels whose user virtual address space cannot reach the
 	 configured base (aarch64 VA39). calculateMaskToUse recomputes the space
-	 masks from the address actually obtained, so any successful allocation
-	 is usable."
+	 masks from the address actually obtained, so any address between new
+	 space and perm space is usable."
+	self
+		checkZone: 'old space'
+		from: self oldSpaceStart
+		to: self oldSpaceStart + sizeToAllocate
+		desired: memoryMapConfiguration oldSpaceInitialAddress
+		above: self newSpaceEnd
+		below: memoryMapConfiguration permSpaceInitialAddress.
 
 	self setOldSpaceEnd: self oldSpaceStart + sizeToAllocate
 ]
@@ -202,27 +225,36 @@ VMMemoryMap >> allocateSegmentOfSize: ammount minAddress: minAddress resultsIn: 
 ]
 
 { #category : 'allocating' }
-VMMemoryMap >> allocateStackPages: initialStackSize [ 
-	
+VMMemoryMap >> allocateStackPages: initialStackSize [
+
 	<inline: false>
 	<returnTypeC: #void>
-	
 	| sizeToRequest |
 	sizeToRequest := self roundToAllocationSize: initialStackSize.
-	
-	self stackPagesStart: (self allocateMemory: sizeToRequest BaseAddress: memoryMapConfiguration stackPagesInitialAddress).
-	
-	self stackPagesStart ifNil: [ self insufficientMemoryAvailableError ].
-	
-	self stackPagesStart = memoryMapConfiguration stackPagesInitialAddress 
-		ifFalse: [ 
-			self logError: 'Could not allocate stack in the expected place (%p), got %p' _: memoryMapConfiguration stackPagesInitialAddress  _: self stackPagesStart.
-			self error: 'Error allocating' ].
-	
-	self stackPagesEnd: self stackPagesStart + sizeToRequest.
-	
-	self memset: (self cCoerce: self stackPagesStart to: #'void *') _: 0 _: sizeToRequest.
 
+	self stackPagesStart: (self
+			 allocateMemory: sizeToRequest
+			 BaseAddress: memoryMapConfiguration stackPagesInitialAddress).
+
+	self stackPagesStart ifNil: [ self insufficientMemoryAvailableError ].
+
+	self stackPagesEnd: self stackPagesStart + sizeToRequest.
+
+	"The stack pages are allocated after the heap: they must stay below it"
+	self
+		checkZone: 'stack pages'
+		from: self stackPagesStart
+		to: self stackPagesEnd
+		desired: memoryMapConfiguration stackPagesInitialAddress
+		above: memoryMapConfiguration stackPagesInitialAddress
+		below: (self codeZoneStart = 0
+				 ifTrue: [ self newSpaceStart ]
+				 ifFalse: [ self codeZoneStart ]).
+
+	self
+		memset: (self cCoerce: self stackPagesStart to: #'void *')
+		_: 0
+		_: sizeToRequest
 ]
 
 { #category : 'utils' }
@@ -265,7 +297,11 @@ VMMemoryMap >> calculateMaskToUse [
 		ifTrue: [ allOnes := 16rFFFFFFFFFFFFFFFF ]
 		ifFalse: [ allOnes := 16rFFFFFFFF ].
 
-	newSpaceFirst := memoryMapConfiguration newSpaceInitialAddress.
+	"Once allocated, use the address actually obtained for new space: it may be
+	 above its configured base when that address is taken (issue #1112)."
+	newSpaceFirst := newSpaceStart = 0
+		ifTrue: [ memoryMapConfiguration newSpaceInitialAddress ]
+		ifFalse: [ newSpaceStart ].
 	"Use the configured base until old space has actually been allocated.
 	 oldSpaceStart is 0 before allocation, e.g. when this is called from
 	 initializeMemoryMap. After allocation, use the address actually obtained:
@@ -290,9 +326,40 @@ VMMemoryMap >> calculateMaskToUse [
 		ifTrue: [ objectMemory error: 'Could not calculate mask to use to identify new/old/perm objects' ].
 
 
-	self newSpaceMask: (memoryMapConfiguration newSpaceInitialAddress bitAnd: self spaceMaskToUse).
+	self newSpaceMask: (newSpaceFirst bitAnd: self spaceMaskToUse).
 	self oldSpaceMask: (oldSpaceFirst bitAnd: self spaceMaskToUse).
 	self permSpaceMask: (memoryMapConfiguration permSpaceInitialAddress bitAnd: self spaceMaskToUse).
+]
+
+{ #category : 'private' }
+VMMemoryMap >> checkZone: zoneName from: start to: end desired: desiredAddress above: lowerBound below: upperBound [
+	"The platform allocator answers the first hole at or above the desired address.
+	 The desired address may be taken, e.g. by a thread stack (issue #1112).
+	 Any place is fine as long as the zone keeps the order of the spaces:
+	 it must be inside [lowerBound, upperBound)."
+
+	<inline: false>
+	<var: #zoneName type: #'char *'>
+	<var: #start type: #usqInt>
+	<var: #end type: #usqInt>
+	<var: #desiredAddress type: #usqInt>
+	<var: #lowerBound type: #usqInt>
+	<var: #upperBound type: #usqInt>
+	(start >= lowerBound and: [ end <= upperBound ]) ifFalse: [
+			self
+				logError: 'Could not allocate the %s in [%p, %p): got %p'
+				_: zoneName
+				_: lowerBound
+				_: upperBound
+				_: start.
+			self error: 'Error allocating' ].
+
+	start = desiredAddress ifFalse: [
+			self
+				logWarn: 'Allocated the %s at %p instead of %p'
+				_: zoneName
+				_: start
+				_: desiredAddress ]
 ]
 
 { #category : 'accessing' }
@@ -497,6 +564,10 @@ VMMemoryMap >> initializeMemoryMap [
 	newSpaceEnd := 0.
 	permSpaceStart := 0.
 	permSpaceEnd := 0.
+	codeZoneStart := 0.
+	codeZoneEnd := 0.
+	stackPagesStart := 0.
+	stackPagesEnd := 0.
 	permSpaceMask := -1.
 
 	self simulationOnly: [ 
@@ -594,12 +665,12 @@ VMMemoryMap >> memoryMapConfiguration: aConfiguration [
 
 { #category : 'simulation' }
 VMMemoryMap >> memset: startAddress _: value _: size [
+	"Step by the word size of the memory manager that does the writes:
+	 BytesPerWord is shared and depends on the last VM initialized."
 
 	<doNotGenerate>
-	
-	startAddress to: startAddress + size - 1 by: BytesPerWord do: [ :address |
-		memoryManager longAt: address put: value ]
-
+	startAddress to: startAddress + size - 1 by: memoryManager wordSize
+	do: [ :address | memoryManager longAt: address put: value ]
 ]
 
 { #category : 'accessing' }
