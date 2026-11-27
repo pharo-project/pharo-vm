@@ -893,24 +893,24 @@ SpurPlanningCompactor >> updatePointersInManagerHeapEntities [
 
 	(manager getFromPermToOldSpaceRememberedSet rememberedSetSize > 0) ifTrue:
 		[(manager isMarked: firstFieldOfPermToOldRememberedSet) ifFalse:
-			[ self updatePointersIn: firstFieldOfPermToOldRememberedSet. 
+			[ self updatePointersInPermObject: firstFieldOfPermToOldRememberedSet. 
 			  manager mark: firstFieldOfPermToOldRememberedSet ] ].
 	
 	manager getFromPermToOldSpaceRememberedSet 
 		rememberedSetWithIndexDo: [ :oop :index |
 			(manager isMarked: oop) ifFalse:
-				[ self updatePointersIn: oop. 
+				[ self updatePointersInPermObject: oop. 
 				  manager mark: oop ]] startingAt: 1.
 
 	(manager getFromPermToNewSpaceRememberedSet rememberedSetSize > 0) ifTrue:
 		[(manager isMarked: firstFieldOfPermToNewRememberedSet) ifFalse:
-			[ self updatePointersIn: firstFieldOfPermToNewRememberedSet. 
+			[ self updatePointersInPermObject: firstFieldOfPermToNewRememberedSet. 
 			  manager mark: firstFieldOfPermToNewRememberedSet ]]. 
 	
 	manager getFromPermToNewSpaceRememberedSet 
 		rememberedSetWithIndexDo: [ :oop :index |
 			(manager isMarked: oop) ifFalse:
-				[ self updatePointersIn: oop. 
+				[ self updatePointersInPermObject: oop. 
 				  manager mark: oop ]] startingAt: 1.
 	
 	(manager getFromPermToOldSpaceRememberedSet rememberedSetSize > 0) ifTrue:
@@ -1005,6 +1005,24 @@ SpurPlanningCompactor >> updatePointersInObjectsOverflowingSavedFirstFieldsSpace
 		self check: o.
 		(manager isMarked: o) ifTrue:
 			[self updatePointersIn: o]]
+]
+
+{ #category : 'compaction' }
+SpurPlanningCompactor >> updatePointersInPermObject: obj [
+	"Update the pointer fields of a perm object of a perm remembered set. These sets also hold perm
+	 forwarders, which are never freed; update their target without the not-forwarded assertion
+	 of storePointerUnchecked:ofObject:withValue:."
+	<inline: true>
+	| oop fwd |
+	(manager isForwarded: obj)
+		ifFalse: [self updatePointersIn: obj]
+		ifTrue:
+			[oop := manager fetchPointer: 0 ofMaybeForwardedObject: obj.
+			 ((manager isNonImmediate: oop) and: [self isMobile: oop]) ifTrue:
+				[self assert: (manager isMarked: oop).
+				 fwd := manager fetchPointer: 0 ofObject: oop.
+				 self assert: (self isPostMobile: fwd).
+				 manager storePointerUnchecked: 0 ofMaybeForwardedObject: obj withValue: fwd]]
 ]
 
 { #category : 'compaction' }
