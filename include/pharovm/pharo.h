@@ -79,3 +79,7 @@ EXPORT(int) isVMRunOnWorkerThread();
 void setMaxStacksToPrint(sqInt anInteger);
 
 #define allocateMemoryBaseAddress(desiredSize, baseAddress) sqAllocateMemory(desiredSize, desiredSize, baseAddress)
+/* Allocate (read-write) exactly [address, address + size) or nothing, never over an existing mapping.
+ * Answers 1 on success, 0 otherwise. On Windows address must be a multiple of the allocation granularity (64 KB). */
+int sqAllocateMemoryExactlyAt(void *address, usqInt size);
+#define allocateMemoryExactlyAt(desiredSize, address) sqAllocateMemoryExactlyAt((void *)(address), (desiredSize))

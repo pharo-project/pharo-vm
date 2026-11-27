@@ -4113,6 +4113,23 @@ SpurMemoryManager >> clone: objOop shouldAllocateInPermSpace: shouldAllocateInPe
 	^newObj
 ]
 
+{ #category : 'become implementation' }
+SpurMemoryManager >> cloneForTwoWayBecome: objOop [
+	"Answer a copy of objOop for an out-of-place two-way become, or 0 if there is no space.
+	 A perm object is copied in perm space. If perm space is full and cannot grow, it is
+	 copied out of perm space instead, and stops being permanent.
+	 containsOnlyValidBecomeObjects:and:twoWay:copyHash: has checked that old space has
+	 room for every participant, perm ones included."
+	<inline: false>
+	| clone |
+	(self isContextNonImm: objOop) ifTrue:
+		[^coInterpreter cloneContext: objOop].
+	(memoryMap isPermanentObject: objOop) ifTrue:
+		[clone := self clone: objOop shouldAllocateInPermSpace: true.
+		 clone ~= 0 ifTrue: [^clone]].
+	^self clone: objOop shouldAllocateInPermSpace: false
+]
+
 { #category : 'allocation' }
 SpurMemoryManager >> cloneInOldSpace: objOop forPinning: forPinning [
 	<inline: false>
@@ -10488,17 +10505,14 @@ SpurMemoryManager >> outOfPlaceBecome: obj1 and: obj2 copyHashFlag: copyHashFlag
 	"Allocate two new objects, n1 & n2.  Copy the contents appropriately. Convert
 	 obj1 and obj2 into forwarding objects pointing to n2 and n1 respectively"
 	| clone1 clone2 |
-	clone1 := (self isContextNonImm: obj1)
-				ifTrue: [coInterpreter cloneContext: obj1]
-				ifFalse: [self clone: obj1 shouldAllocateInPermSpace: (memoryMap isPermanentObject: obj1)].
+	clone1 := self cloneForTwoWayBecome: obj1.
 	
-	clone1 ifNil: [ self error: 'Not enough space to copy the objects in two-way become. This should have been detected before'. ^ self].	
+	"clone: and cloneContext: answer 0, not nil, when there is no space"
+	clone1 = 0 ifTrue: [ self error: 'Not enough space to copy the objects in two-way become. This should have been detected before'. ^ self].
 			
-	clone2 := (self isContextNonImm: obj2)
-				ifTrue: [coInterpreter cloneContext: obj2]
-				ifFalse: [self clone: obj2 shouldAllocateInPermSpace: (memoryMap isPermanentObject: obj2)].	
+	clone2 := self cloneForTwoWayBecome: obj2.
 
-	clone2 ifNil: [ self error: 'Not enough space to copy the objects in two-way become. This should have been detected before'.^ self ].	
+	clone2 = 0 ifTrue: [ self error: 'Not enough space to copy the objects in two-way become. This should have been detected before'.^ self ].
 			
 	(self isObjImmutable: obj1) ifTrue:
 		[self setIsImmutableOf: clone1 to: true].
