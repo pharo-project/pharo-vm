@@ -3,7 +3,17 @@
 #include "pharovm/debug.h"
 #include "pharovm/pathUtilities.h"
 #include <assert.h>
+#include <limits.h>
+#include <string.h>
 #include <unistd.h>
+#ifdef __APPLE__
+# include <mach-o/dyld.h>
+# include <stdint.h>
+#endif
+
+#ifndef PATH_MAX
+# define PATH_MAX FILENAME_MAX
+#endif
 
 typedef VMErrorCode (*vm_parameter_process_function)(const char *argument, VMParameters* params);
 
@@ -294,7 +304,7 @@ fillUpImageName(int argc, const char** argv, VMParameters* parameters){
 }
 
 static VMErrorCode
-splitVMAndImageParameters(int argc, const char** argv, VMParameters* parameters)
+splitVMAndImageParameters(int argc, const char** argv, VMParameters* parameters, const char* vmExecutablePath)
 {
 	VMErrorCode error;
 	int imageNameIndex = findImageNameIndex(argc, argv);
@@ -303,7 +313,7 @@ splitVMAndImageParameters(int argc, const char** argv, VMParameters* parameters)
 
 	//If we still have an empty image file, we try the default
 	if(parameters->imageFileName == NULL){
-		error = vm_find_startup_image(argv[0], parameters);
+		error = vm_find_startup_image(vmExecutablePath, parameters);
 		if(error) return error;
 		
 		// Is this an interactive environment?
@@ -444,7 +454,7 @@ vm_printUsageTo(FILE *out)
 "                                       It is possible to use k(kB), M(MB) and G(GB).\n"
 "  --edenSize=<size>[mk]                Sets the size of eden (default: 15M)\n"
 "                                       It is possible to use k(kB), M(MB) and G(GB).\n"
-"  --maxSlotsForNewSpaceAlloc=<words>	The max numbers of slots to allow allocating in a single young indexable object"
+"  --maxSlotsForNewSpaceAlloc=<words>   The max numbers of slots to allow allocating in a single young indexable object\n"
 "  --minPermSpaceSize=<size>[mk]        Sets the min size of the permanent space (default: 0k)\n"
 "                                       It is possible to use k(kB), M(MB) and G(GB).\n"
 "  --stackPageSize=<size>[mk]           Sets the size of each stack page (default: 8k)\n"
@@ -738,10 +748,147 @@ processVMOptions(VMParameters* parameters)
 	return VM_SUCCESS;
 }
 
+#ifndef _WIN32
+static char *
+resolveExecutableInPath(const char *programName, char *fullPathBuffer, size_t bufferSize)
+{
+	const char *pathEnv = getenv("PATH");
+	if(!pathEnv || !programName || programName[0] == '\0')
+	{
+		return NULL;
+	}
+
+	size_t progLen = strlen(programName);
+	char *candidate = (char*)calloc(1, bufferSize);
+	if(!candidate)
+	{
+		return NULL;
+	}
+
+	const char *cursor = pathEnv;
+	while(cursor)
+	{
+		const char *sep = strchr(cursor, ':');
+		size_t dirLen = sep ? (size_t)(sep - cursor) : strlen(cursor);
+		const char *dir = dirLen == 0 ? "." : cursor;
+		if(dirLen == 0)
+		{
+			dirLen = 1;
+		}
+
+		if(dirLen + 1 + progLen + 1 <= bufferSize)
+		{
+			memcpy(candidate, dir, dirLen);
+			candidate[dirLen] = '/';
+			memcpy(candidate + dirLen + 1, programName, progLen);
+			candidate[dirLen + 1 + progLen] = '\0';
+
+			if(access(candidate, X_OK) == 0)
+			{
+				char *resolved = realpath(candidate, fullPathBuffer);
+				if(resolved)
+				{
+					free(candidate);
+					return resolved;
+				}
+			}
+		}
+		cursor = sep ? sep + 1 : NULL;
+	}
+
+	free(candidate);
+	return NULL;
+}
+
+static const char *
+resolveVMExecutablePath(const char *argv0, char *fullPathBuffer, size_t bufferSize)
+{
+	char *fullPath = NULL;
+	int savedErrno = 0;
+
+	if(argv0 && argv0[0] != '\0')
+	{
+		errno = 0;
+		fullPath = getFullPath(argv0, fullPathBuffer, (int)bufferSize);
+		if(fullPath)
+		{
+			return fullPath;
+		}
+		savedErrno = errno;
+	}
+
+#ifdef __linux__
+	errno = 0;
+	fullPath = realpath("/proc/self/exe", fullPathBuffer);
+	if(fullPath)
+	{
+		return fullPath;
+	}
+	if(!savedErrno)
+	{
+		savedErrno = errno;
+	}
+#elif defined(__APPLE__)
+	char *rawExecPath = (char*)calloc(1, bufferSize);
+	if(rawExecPath)
+	{
+		uint32_t execPathSize = (uint32_t)bufferSize;
+		int dyldRes = _NSGetExecutablePath(rawExecPath, &execPathSize);
+		if(dyldRes == -1 && execPathSize > bufferSize)
+		{
+			char *largerPath = (char*)realloc(rawExecPath, execPathSize);
+			if(largerPath)
+			{
+				rawExecPath = largerPath;
+				dyldRes = _NSGetExecutablePath(rawExecPath, &execPathSize);
+			}
+		}
+		if(dyldRes == 0)
+		{
+			errno = 0;
+			fullPath = realpath(rawExecPath, fullPathBuffer);
+			if(!fullPath && !savedErrno)
+			{
+				savedErrno = errno;
+			}
+		}
+		free(rawExecPath);
+		if(fullPath)
+		{
+			return fullPath;
+		}
+	}
+#endif
+
+	if(argv0 && argv0[0] != '\0' && strchr(argv0, '/') == NULL)
+	{
+		fullPath = resolveExecutableInPath(argv0, fullPathBuffer, bufferSize);
+		if(fullPath)
+		{
+			return fullPath;
+		}
+	}
+
+	logWarn("Failed to resolve full VM path for '%s': %s",
+		argv0 ? argv0 : "(null)",
+		savedErrno ? strerror(savedErrno) : strerror(errno));
+
+	if(argv0)
+	{
+		strncpy(fullPathBuffer, argv0, bufferSize - 1);
+		fullPathBuffer[bufferSize - 1] = '\0';
+		return fullPathBuffer;
+	}
+
+	fullPathBuffer[0] = '\0';
+	return fullPathBuffer;
+}
+#endif
+
 EXPORT(VMErrorCode)
 vm_parameters_parse(int argc, const char** argv, VMParameters* parameters)
 {
-	char* fullPath;
+	const char *fullPath;
 
 #ifdef __APPLE__
 	//If it is OSX I read parameters from the PList
@@ -750,14 +897,10 @@ vm_parameters_parse(int argc, const char** argv, VMParameters* parameters)
 
 	//We read the arguments from the command line, and override whatever is set before
 	VMErrorCode error = fillUpImageName(argc, argv, parameters);
-	if(error) return error;	
-
-	// Split the argument vector in two separate vectors (If there is no Image, it gives a default one).
-	error = splitVMAndImageParameters(argc, argv, parameters);
 	if(error) return error;
 
-	// I get the VM location from the argv[0]
-	char *fullPathBuffer = (char*)calloc(1, FILENAME_MAX);
+	// I get the VM location from the argv[0] (falling back cleanly if argv[0] is not a path)
+	char *fullPathBuffer = (char*)calloc(1, PATH_MAX);
 	if(!fullPathBuffer)
 	{
 		vm_parameters_destroy(parameters);
@@ -768,13 +911,24 @@ vm_parameters_parse(int argc, const char** argv, VMParameters* parameters)
 	WCHAR pathString[MAX_PATH];
 	char encodedPath[MAX_PATH];
 	GetModuleFileNameW(NULL, pathString, MAX_PATH);
-	WideCharToMultiByte(CP_UTF8, 0, pathString, -1, encodedPath, FILENAME_MAX, NULL, 0);
-	fullPath = getFullPath(encodedPath, fullPathBuffer, FILENAME_MAX);
+	WideCharToMultiByte(CP_UTF8, 0, pathString, -1, encodedPath, MAX_PATH, NULL, 0);
+	fullPath = getFullPath(encodedPath, fullPathBuffer, PATH_MAX);
+	if(!fullPath)
+	{
+		strncpy(fullPathBuffer, encodedPath, PATH_MAX - 1);
+		fullPathBuffer[PATH_MAX - 1] = '\0';
+		fullPath = fullPathBuffer;
+	}
 #else
-	fullPath = getFullPath(argv[0], fullPathBuffer, FILENAME_MAX);
+	const char *argv0 = (argc > 0) ? argv[0] : NULL;
+	fullPath = resolveVMExecutablePath(argv0, fullPathBuffer, PATH_MAX);
 #endif
 	setVMPath(fullPath);
+
+	// Split the argument vector in two separate vectors (If there is no Image, it gives a default one).
+	error = splitVMAndImageParameters(argc, argv, parameters, fullPath);
 	free(fullPathBuffer);
+	if(error) return error;
 
 	error = processVMOptions(parameters);
 	if(error)

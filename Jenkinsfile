@@ -246,27 +246,27 @@ def runTests(platform, configuration, packages, withWorker, additionalParameters
 		shell "mkdir runTests"
 		dir("runTests"){
 			try{
-				shell "wget -O - get.pharo.org/64/130 | bash "
-				shell "echo 130 > pharo.version"
+				shell "wget -O - get.pharo.org/64/140 | bash "
+				shell "echo 140 > pharo.version"
           
 				if(isWindows()){
 					runInCygwin "cd runTests && unzip ../build/build/packages/PharoVM-*-${platform}-bin.zip -d ."
 					// Disable testAfterSequence that creates incorrect bytecode sequences
-                    runInCygwin "PHARO_CI_TESTING_ENVIRONMENT=true cd runTests && ./PharoConsole.exe  --logLevel=4 ${hasWorker} Pharo.image ${additionalParameters} ../repository/scripts/patchPharoPreTests.st"
-                    runInCygwin "PHARO_CI_TESTING_ENVIRONMENT=true cd runTests && ./PharoConsole.exe  --logLevel=4 ${hasWorker} Pharo.image ${additionalParameters} test --junit-xml-output --stage-name=${stageName} '${packages}'"
+                    runInCygwin "PHARO_CI_TESTING_ENVIRONMENT=true cd runTests && ./PharoConsole.exe  --logLevel=4 ${hasWorker} Pharo.image ${additionalParameters} st --save --quit ../repository/scripts/patchPharoPreTests.st"
+                    runInCygwin "PHARO_CI_TESTING_ENVIRONMENT=true cd runTests && ./PharoConsole.exe  --logLevel=4 ${hasWorker} Pharo.image ${additionalParameters} test --junit-xml-output --stage-name ${stageName} '${packages}'"
 					} else {
 						shell "unzip ../build/build/packages/PharoVM-*-${platform}-bin.zip -d ."
 
 						if(platform == 'Darwin-x86_64' || platform == 'Darwin-arm64'){
         					// Disable testAfterSequence that creates incorrect bytecode sequences
-                            shell "PHARO_CI_TESTING_ENVIRONMENT=true ./Pharo.app/Contents/MacOS/Pharo --logLevel=4 ${hasWorker} Pharo.image ${additionalParameters} ../repository/scripts/patchPharoPreTests.st"
-							shell "PHARO_CI_TESTING_ENVIRONMENT=true ./Pharo.app/Contents/MacOS/Pharo --logLevel=4 ${hasWorker} Pharo.image ${additionalParameters} test --junit-xml-output --stage-name=${stageName} '${packages}'"
+                            shell "PHARO_CI_TESTING_ENVIRONMENT=true ./Pharo.app/Contents/MacOS/Pharo --logLevel=4 ${hasWorker} Pharo.image ${additionalParameters} st --save --quit ../repository/scripts/patchPharoPreTests.st"
+							shell "PHARO_CI_TESTING_ENVIRONMENT=true ./Pharo.app/Contents/MacOS/Pharo --logLevel=4 ${hasWorker} Pharo.image ${additionalParameters} test --junit-xml-output --stage-name ${stageName} '${packages}'"
 						}
 
 						if(platform == 'Linux-x86_64' || platform == 'Linux-aarch64' || platform == 'Linux-armv7l'){
         					// Disable testAfterSequence that creates incorrect bytecode sequences
-                            shell "PHARO_CI_TESTING_ENVIRONMENT=true ./pharo --logLevel=4 ${hasWorker} Pharo.image ${additionalParameters} ../repository/scripts/patchPharoPreTests.st"
-							shell "PHARO_CI_TESTING_ENVIRONMENT=true ./pharo --logLevel=4 ${hasWorker} Pharo.image ${additionalParameters} test --junit-xml-output --stage-name=${stageName} '${packages}'" 
+                            shell "PHARO_CI_TESTING_ENVIRONMENT=true ./pharo --logLevel=4 ${hasWorker} Pharo.image ${additionalParameters} st  --save  --quit ../repository/scripts/patchPharoPreTests.st"
+							shell "PHARO_CI_TESTING_ENVIRONMENT=true ./pharo --logLevel=4 ${hasWorker} Pharo.image ${additionalParameters} test --junit-xml-output --stage-name ${stageName} '${packages}'" 
 						}
 				}
                 

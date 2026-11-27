@@ -1405,3 +1405,34 @@ VMPermanentSpaceMemoryTest >> testReferencingAnObjectFromYoungWeakObjectIsNotNil
 	self assert: (memory fetchPointer: 0 ofObject: weakObject) equals: permanentObject.
 
 ]
+
+{ #category : 'tests - pinning' }
+VMPermanentSpaceMemoryTest >> testPinningPermanentObjectKeepsItInPlace [
+	"Perm objects never move: pinning one must not clone it to old space. The clone left a perm
+	 forwarder that the next full GC frees (cleanUpPermSpaceForwarders), while perm objects still
+	 referencing it are not followed: a perm method literal passed to FFI became a free chunk."
+
+	| permanentObject |
+	permanentObject := self newPermanentByteObjectOfSize: 4.
+
+	self assert: (memory pinObject: permanentObject) equals: permanentObject.
+	self assert: (memory isPinned: permanentObject).
+	self deny: (memory isForwarded: permanentObject)
+]
+
+{ #category : 'tests - pinning' }
+VMPermanentSpaceMemoryTest >> testPinnedPermanentObjectReferencedFromPermSpaceSurvivesFullGC [
+
+	| permanentObject permanentReferrer |
+	permanentObject := self newPermanentByteObjectOfSize: 4.
+	permanentReferrer := self newPermanentObjectWithSlots: 1.
+	memory storePointer: 0 ofObject: permanentReferrer withValue: permanentObject.
+
+	memory pinObject: permanentObject.
+	memory fullGC.
+
+	self assert: (memory fetchPointer: 0 ofObject: permanentReferrer) equals: permanentObject.
+	self deny: (memory isForwarded: permanentObject).
+	self deny: (memory isFreeObject: permanentObject).
+	self assert: (memory fetchClassOfNonImm: permanentObject) equals: memory classByteArray
+]
