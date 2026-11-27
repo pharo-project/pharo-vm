@@ -28,6 +28,28 @@ VMPermanentSpaceMemoryTest >> testAllInstancesReturnsObjectsInPermSpace [
 ]
 
 { #category : 'tests - become' }
+VMPermanentSpaceMemoryTest >> testBecomingOneWayOfPermanentObjectFollowsItInProfileSemaphore [
+	"profileSemaphore is a VM root (keepObjectInVMVariable2: stores into it). After a become it must
+	 be followed like the rest of the profile state, or it keeps the forwarder instead of the object.
+	 The bug is not specific to perm space; a perm object is used as in the other become tests."
+
+	| permanentObject oldReplacement arrFrom arrTo ec |
+	permanentObject := self newPermanentObjectWithSlots: 1.
+	oldReplacement := self newOldSpaceObjectWithSlots: 0.
+	self keepObjectInVMVariable2: permanentObject.
+
+	arrFrom := self newArrayWithSlots: 1.
+	arrTo := self newArrayWithSlots: 1.
+	memory storePointer: 0 ofObject: arrFrom withValue: permanentObject.
+	memory storePointer: 0 ofObject: arrTo withValue: oldReplacement.
+	ec := memory become: arrFrom with: arrTo twoWay: false copyHash: false.
+
+	self assert: ec equals: PrimNoErr.
+	self assert: (memory isForwarded: permanentObject).
+	self assert: self keptObjectInVMVariable2 equals: oldReplacement
+]
+
+{ #category : 'tests - become' }
 VMPermanentSpaceMemoryTest >> testBecomingOneWayOfPermanentObjectWithOldObject [
 
 	| permanentObject oldReplacement arrFrom arrTo ec youngObjectReferencingPermanent oldObjectReferencingPermanent permanentObjectReferencingPermanent |
@@ -651,6 +673,34 @@ VMPermanentSpaceMemoryTest >> testBecomingTwoWayOfPermanentObjectWithYoungObject
 	self assert: memory isPermSpaceRememberedSetSane.
 ]
 
+{ #category : 'tests - become' }
+VMPermanentSpaceMemoryTest >> testBecomingTwoWayOfPermanentObjectWithYoungReferentLeavesCloneOutOfOldSet [
+	"An out-of-place two-way become clones the perm object into perm space. The clone refers to a
+	 young object, so it belongs in the perm to new space remembered set, not in the old one."
+
+	| permanentObject youngReferent oldReplacement arrFrom arrTo ec permanentClone |
+	permanentObject := self newPermanentObjectWithSlots: 2.
+	youngReferent := self newObjectWithSlots: 0.
+	memory storePointer: 0 ofObject: permanentObject withValue: youngReferent.
+	self assert: (memory getFromPermToNewSpaceRememberedSet isInRememberedSet: permanentObject).
+
+	oldReplacement := self newOldSpaceObjectWithSlots: 1.
+
+	arrFrom := self newArrayWithSlots: 1.
+	arrTo := self newArrayWithSlots: 1.
+	memory storePointer: 0 ofObject: arrFrom withValue: permanentObject.
+	memory storePointer: 0 ofObject: arrTo withValue: oldReplacement.
+	ec := memory become: arrFrom with: arrTo twoWay: true copyHash: false.
+
+	self assert: ec equals: PrimNoErr.
+	permanentClone := memory followForwarded: oldReplacement.
+	self assert: (memory isPermanent: permanentClone).
+	self assert: (memory fetchPointer: 0 ofObject: permanentClone) equals: youngReferent.
+
+	self deny: (memory getFromOldSpaceRememberedSet isInRememberedSet: permanentClone).
+	self assert: (memory getFromPermToNewSpaceRememberedSet isInRememberedSet: permanentClone)
+]
+
 { #category : 'test - moving' }
 VMPermanentSpaceMemoryTest >> testCompiledMethodWithMachineCodeIsNotRememberedWhenModified [
 
@@ -1169,6 +1219,28 @@ VMPermanentSpaceMemoryTest >> testPermObjectPointingToOldSpaceIsUpdatedWhenCompa
 	memory garbageCollectForSnapshot.
 
 	self assert: (memory hashBitsOf: (memory fetchPointer: 0 ofObject: permanentObject1)) equals: oldObject2Hash 
+]
+
+{ #category : 'tests - become' }
+VMPermanentSpaceMemoryTest >> testPermSpaceRememberedSetIsSaneWithPermForwarderToOldObject [
+	"A perm forwarder to an old object is in the perm to old space remembered set, which is right.
+	 The sanity check must classify its target as old, not young."
+
+	| permanentObject oldReplacement arrFrom arrTo ec |
+	permanentObject := self newPermanentObjectWithSlots: 1.
+	oldReplacement := self newOldSpaceObjectWithSlots: 0.
+	self keepObjectInVMVariable3: oldReplacement.
+
+	arrFrom := self newArrayWithSlots: 1.
+	arrTo := self newArrayWithSlots: 1.
+	memory storePointer: 0 ofObject: arrFrom withValue: permanentObject.
+	memory storePointer: 0 ofObject: arrTo withValue: oldReplacement.
+	ec := memory become: arrFrom with: arrTo twoWay: false copyHash: false.
+
+	self assert: ec equals: PrimNoErr.
+	self assert: (memory isForwarded: permanentObject).
+	self assert: (memory getFromPermToOldSpaceRememberedSet isInRememberedSet: permanentObject).
+	self assert: memory isPermSpaceRememberedSetSane
 ]
 
 { #category : 'test - moving' }
