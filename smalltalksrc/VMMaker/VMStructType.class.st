@@ -341,6 +341,13 @@ VMStructType >> logError: aMessage [
 	self logError: aMessage withArgs: #()
 ]
 
+{ #category : 'debug support' }
+VMStructType >> logError: aFormat withArgs: args [
+
+	<doNotGenerate>
+	(aFormat printf: args) traceCr
+]
+
 { #category : 'printing' }
 VMStructType >> printOn: aStream [
 	"A hook to allow subclasses to print their state if useful."

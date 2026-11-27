@@ -652,6 +652,64 @@ VMPermanentSpaceMemoryTest >> testBecomingTwoWayOfPermanentObjectWithYoungObject
 ]
 
 { #category : 'test - moving' }
+VMPermanentSpaceMemoryTest >> testBulkMoveOfAnArrayContainingItselfFailsAndMovesNothing [
+
+	| obj anArray |
+	obj := self newOldSpaceObjectWithSlots: 0.
+	anArray := self newArrayWithSlots: 2.
+	memory storePointer: 0 ofObject: anArray withValue: obj.
+	memory storePointer: 1 ofObject: anArray withValue: anArray.
+
+	self assert: (memory moveToPermSpaceInBulk: anArray) isNil.
+
+	self deny: (memory isForwarded: obj).
+	self deny: (memory isForwarded: anArray)
+]
+
+{ #category : 'test - moving' }
+VMPermanentSpaceMemoryTest >> testBulkMoveThatDoesNotFitMovesNothing [
+
+	| obj1 obj2 anArray freeStart |
+	self newPermanentObjectWithSlots: 0. "creates perm space"
+	obj1 := self newOldSpaceObjectWithSlots: 1.
+	obj2 := self newOldSpaceObjectWithSlots: 100.
+	anArray := self newArrayWithSlots: 2.
+	memory storePointer: 0 ofObject: anArray withValue: obj1.
+	memory storePointer: 1 ofObject: anArray withValue: obj2.
+	freeStart := memory permSpaceFreeStart.
+	"Room for obj1 only, and the memory after perm space is taken: it cannot grow"
+	memory getMemoryMap permSpaceEnd: freeStart + (memory bytesInObject: obj1).
+
+	self assert: (memory moveToPermSpaceInBulk: anArray) isNil.
+
+	self deny: (memory isForwarded: obj1).
+	self deny: (memory isForwarded: obj2).
+	self assert: (memory fetchPointer: 0 ofObject: anArray) equals: obj1.
+	self assert: (memory fetchPointer: 1 ofObject: anArray) equals: obj2.
+	self assert: memory permSpaceFreeStart equals: freeStart
+]
+
+{ #category : 'test - moving' }
+VMPermanentSpaceMemoryTest >> testBulkMoveWithTheSameObjectTwiceMovesItOnce [
+
+	| obj anArray freeStart permanentObject |
+	self newPermanentObjectWithSlots: 0. "creates perm space"
+	obj := self newOldSpaceObjectWithSlots: 1.
+	anArray := self newArrayWithSlots: 2.
+	memory storePointer: 0 ofObject: anArray withValue: obj.
+	memory storePointer: 1 ofObject: anArray withValue: obj.
+	freeStart := memory permSpaceFreeStart.
+
+	memory moveToPermSpaceInBulk: anArray.
+
+	permanentObject := memory fetchPointer: 0 ofObject: anArray.
+	self assert: (memory getMemoryMap isPermanentObject: permanentObject).
+	self deny: (memory isForwarded: permanentObject).
+	self assert: (memory fetchPointer: 1 ofObject: anArray) equals: permanentObject.
+	self assert: memory permSpaceFreeStart - freeStart equals: (memory bytesInObject: permanentObject)
+]
+
+{ #category : 'test - moving' }
 VMPermanentSpaceMemoryTest >> testCompiledMethodWithMachineCodeIsNotRememberedWhenModified [
 
 	| oldObject1 permanentObject1 |

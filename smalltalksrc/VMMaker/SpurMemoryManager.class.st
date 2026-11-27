@@ -2497,11 +2497,7 @@ SpurMemoryManager >> allocateSlotsInPermSpace: numSlots bytes: totalBytes format
 
 	| chunk newOop |
 
-	permSpaceFreeStart + totalBytes > memoryMap permSpaceEnd
-		ifTrue: [ 
-			(memoryMap extendPermObjectsSpaceMinimum: 
-				(permSpaceFreeStart + totalBytes - memoryMap permSpaceEnd)) 
-				ifFalse: [ ^ nil ] ].
+	(self ensurePermSpaceFreeBytes: totalBytes) ifFalse: [ ^ nil ].
 	
 	chunk := permSpaceFreeStart.
 	permSpaceFreeStart := permSpaceFreeStart + totalBytes.
@@ -4870,6 +4866,18 @@ SpurMemoryManager >> ensureNoNewObjectsIn: outPointerArray [
 	scanClassTable ifTrue:
 		[self postBecomeScanClassTable: BecamePointerObjectFlag].
 	^0
+]
+
+{ #category : 'perm - space' }
+SpurMemoryManager >> ensurePermSpaceFreeBytes: numBytes [
+	"Answer whether perm space has numBytes free after permSpaceFreeStart, extending it if needed.
+	 A loop: creating perm space puts a first object in it, which takes some of the new room."
+
+	<var: #numBytes type: #usqInt>
+	[ permSpaceFreeStart + numBytes > memoryMap permSpaceEnd ] whileTrue: [
+		(memoryMap extendPermObjectsSpaceMinimum: permSpaceFreeStart + numBytes - memoryMap permSpaceEnd)
+			ifFalse: [ ^ false ] ].
+	^ true
 ]
 
 { #category : 'obj stacks' }
@@ -9655,28 +9663,39 @@ SpurMemoryManager >> moveToPermSpaceAllOldObjects [
 SpurMemoryManager >> moveToPermSpaceInBulk: anArrayOop [
 
 	<inline: false>
-	| newObj objOop size |
+	| newObj objOop size bytesToMove |
+	<var: #bytesToMove type: #usqInt>
 
 	"Clearing the flag for all"
 	becomeEffectsFlags := 0.
 
 	size := self numSlotsOf: anArrayOop.
+	bytesToMove := 0.
 
 	0 to: size - 1 do: [ :index |
 		objOop := self fetchPointer: index ofObject: anArrayOop.
 
-		(self isValidToMoveToPermSpace: objOop) ifFalse: [
+		"The array cannot move itself: it would be a forwarder while it is still being filled"
+		(objOop = anArrayOop or: [ (self isValidToMoveToPermSpace: objOop) not ]) ifTrue: [
 			self primitiveFailFor: PrimErrBadReceiver.
-			^ nil ] ].
+			^ nil ].
+		(self getMemoryMap isPermanentObject: objOop) ifFalse: [
+			"An object that appears twice is counted twice: an over-estimate, harmless"
+			bytesToMove := bytesToMove + (self bytesInObject: objOop) ] ].
 
+	"A move cannot be undone half way: make room for all the objects before moving any"
+	(self ensurePermSpaceFreeBytes: bytesToMove) ifFalse: [
+		self primitiveFailFor: PrimErrNoMemory.
+		^ nil ].
 
 	0 to: size - 1 do: [ :index |
-		objOop := self fetchPointer: index ofObject: anArrayOop.
+		"An object that appears twice is a forwarder by now: follow it, do not move it again"
+		objOop := self followField: index ofObject: anArrayOop.
 
 		(self getMemoryMap isPermanentObject: objOop) ifFalse: [ 
 			"Clonning in permSpace - We don't add to the remembered set, this will be done after all is moved. To minimize the size of the remembered set"
 			newObj := self doMoveToPermSpace: objOop addToRememberedSet: false.
-			newObj ifNil: [ ^ anArrayOop ].
+			self assert: newObj notNil.
 
 			self storePointer: index ofObject: anArrayOop withValue: newObj ] ].
 
