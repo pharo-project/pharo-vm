@@ -26,6 +26,13 @@ VMImageReadingTest >> initializationOptions [
 { #category : 'utilities' }
 VMImageReadingTest >> loadImage [
 
+	self loadImageWithMemoryManager: nil
+]
+
+{ #category : 'utilities' }
+VMImageReadingTest >> loadImageWithMemoryManager: aMemoryManagerOrNil [
+	"When aMemoryManagerOrNil is nil, the simulator creates its default memory manager."
+
 	environmentBuilder := VMSimulatedEnvironmentBuilder new.
 	environmentBuilder 
 		interpreterClass: self interpreterClass;
@@ -38,6 +45,11 @@ VMImageReadingTest >> loadImage [
 
 	interpreter := environmentBuilder interpreter.
 	memory := environmentBuilder objectMemory.
+
+	aMemoryManagerOrNil ifNotNil: [
+		aMemoryManagerOrNil wordSize: self wordSize.
+		interpreter memoryManager: aMemoryManagerOrNil.
+		memory memoryManager: aMemoryManagerOrNil ].
 	
 	interpreter openOn: self imageFileName extraMemory: 0.
 
@@ -116,6 +128,45 @@ VMImageReadingTest >> testMovingObjectsToPermSpaceReduceOldSpace [
 
 	self assert: (self metadataFrom: 'seg0.ston') dataSize equals: finalSegmentSize.
 	self assert: (self metadataFrom: 'permSpace.ston') dataSize equals: finalPermSpaceSize
+]
+
+{ #category : 'tests' }
+VMImageReadingTest >> testLoadingImageWithMovedSegmentsWritesOnlyPermFieldsPointingIntoThem [
+	"Segments after the first one move on load (their bridges are removed).
+	 The perm space can be mapped copy-on-write, so swizzling must not write the perm fields that keep their value."
+
+	| segmentSize oldObj permToPerm permOther permToOld recorder newOldObj |
+	useComposedImageFormat ifFalse: [ ^ self skip ].
+
+	memory growOldSpaceByAtLeast: 12 * 1024 callingOperation: 'test'.
+	segmentSize := memory growOldSpaceByAtLeast: 12 * 1024 callingOperation: 'test'.
+	self assert: memory segmentManager numSegments equals: 3.
+
+	"Big enough to be allocated in the last segment"
+	oldObj := self newOldSpaceObjectWithSlots: segmentSize / 2 // memory wordSize.
+	memory splObj: 4 put: oldObj. "Store object in SpecialObjects Array to keep it"
+	self assert: oldObj > (memory segmentManager segments at: 2) segStart.
+
+	permToPerm := self newPermanentObjectWithSlots: 2.
+	permOther := self newPermanentObjectWithSlots: 1.
+	permToOld := self newPermanentObjectWithSlots: 1.
+	memory storePointer: 0 ofObject: permToPerm withValue: permOther.
+	memory storePointer: 1 ofObject: permToPerm withValue: (memory integerObjectOf: 42).
+	memory storePointer: 0 ofObject: permOther withValue: permToPerm.
+	memory storePointer: 0 ofObject: permToOld withValue: oldObj.
+
+	self saveImage.
+	recorder := VMWriteRecordingMemoryManager new.
+	self loadImageWithMemoryManager: recorder.
+
+	newOldObj := memory splObj: 4.
+	self deny: newOldObj equals: oldObj.
+	self assert: (memory fetchPointer: 0 ofObject: permToOld) equals: newOldObj.
+	self assert: (memory fetchPointer: 0 ofObject: permToPerm) equals: permOther.
+	"permToPerm and permOther"
+	self assert: (recorder writtenAddressesFrom: permToPerm to: permToOld) isEmpty.
+	self assert:
+		(recorder writtenAddresses includes: permToOld + memory baseHeaderSize)
 ]
 
 { #category : 'tests' }

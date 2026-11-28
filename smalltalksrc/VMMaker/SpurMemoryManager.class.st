@@ -13158,13 +13158,17 @@ SpurMemoryManager >> swizzleFieldsOfFreeChunk: chunk [
 
 { #category : 'snapshot' }
 SpurMemoryManager >> swizzleFieldsOfObject: oop [
-	| fieldAddr fieldOop |
+	"Write only the fields that change: the perm space can be mapped copy-on-write,
+	 and writing a field, even with its own value, makes its page private."
+	| fieldAddr fieldOop swizzledOop |
 	<inline: true>
 	fieldAddr := oop + (self lastPointerOfWhileSwizzling: oop).
 	[self oop: fieldAddr isGreaterThanOrEqualTo: oop + self baseHeaderSize] whileTrue:
 		[fieldOop := self longAt: fieldAddr.
 		 (self isNonImmediate: fieldOop) ifTrue:
-			[self longAt: fieldAddr put: (segmentManager swizzleObj: fieldOop)].
+			[swizzledOop := segmentManager swizzleObj: fieldOop.
+			 swizzledOop ~= fieldOop ifTrue:
+				[self longAt: fieldAddr put: swizzledOop]].
 		 fieldAddr := fieldAddr - self bytesPerOop]
 ]
 
